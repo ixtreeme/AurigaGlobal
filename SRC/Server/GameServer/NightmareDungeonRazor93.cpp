@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -320,14 +321,14 @@ namespace
         ecs::QuestSystem::SetFlag(ch, kQfCooldown, get_global_time() + kCooldownSeconds);
     }
 
-    inline bool HasEntryItem(LPCHARACTER ch)
+    inline bool HasEntryItem(entt::entity ch)
     {
-        return (ch->CountSpecifyItem(kEntryItemVnum) >= kEntryItemCount);
+        return (ItemSystem::CountItem(ch, kEntryItemVnum) >= kEntryItemCount);
     }
 
-    inline void RemoveEntryItem(LPCHARACTER ch)
+    inline void RemoveEntryItem(entt::entity ch)
     {
-        ch->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
+        ItemSystem::RemoveSpecifyItemEcs(ch, kEntryItemVnum, kEntryItemCount);
     }
 
     inline void FormatCooldown(int32_t sec, char* out, size_t outSz)
@@ -457,8 +458,7 @@ void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity vic
 
 bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     if (!ecs::PlayerRuntime::CanWarp(character))
@@ -536,8 +536,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     int32_t badVal = 0;
 
     auto checkMember = [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m))
+            if (!ok || !ecs::PlayerRuntime::IsPC(m))
                 return;
 
             if (!CheckLevel(m))
@@ -559,7 +558,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
                 return;
             }
 
-            if (!HasEntryItem(pkM))
+            if (!HasEntryItem(m))
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(m).data();
@@ -610,11 +609,10 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
 
     // Consume items + set cooldown + save return location BEFORE join
     auto applyMember = [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m))
+            if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            RemoveEntryItem(pkM);
+            RemoveEntryItem(m);
             SetCooldown(m);
 
             // Save current position as return point for ExitAllLobby.

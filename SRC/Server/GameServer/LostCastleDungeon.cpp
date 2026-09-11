@@ -1538,8 +1538,7 @@ void CLostCastleDungeon::OnPlayerLogin(entt::entity character)
 
 bool CLostCastleDungeon::OnClickNpc(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     // save "lobby" as where the NPC was clicked (like your flow expects)
@@ -1561,8 +1560,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
         const int32_t leaderMap = ecs::PlayerRuntime::GetMapIndex(character);
 
         auto check = [&](entt::entity m){
-                LPCHARACTER pkM = ecs::LegacyCharOf(m);
-                if (!pkM || !ecs::PlayerRuntime::IsPC(m))
+                if (!ecs::PlayerRuntime::IsPC(m))
                     return;
 
                 if (ecs::PlayerRuntime::GetMapIndex(m) != leaderMap)
@@ -1575,7 +1573,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
                     ok = false;
                     return;
                 }
-                if (pkM->CountSpecifyItem(kEntryItemVnum) < 1)
+                if (ItemSystem::CountItem(m, kEntryItemVnum) < 1)
                 {
                     ok = false;
                     return;
@@ -1597,7 +1595,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
             return true;
         }
-        if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
+        if (ItemSystem::CountItem(character, kEntryItemVnum) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
             return true;
@@ -1622,11 +1620,10 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     d->SetFlag(kFlagClonesRemain, 0);
 
     auto applyMember = [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m))
+            if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            pkM->RemoveSpecifyItem(kEntryItemVnum, 1);
+            ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
 
             // rejoin flags reset
             ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);

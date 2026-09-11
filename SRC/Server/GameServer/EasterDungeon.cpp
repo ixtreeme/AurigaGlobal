@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -229,10 +230,9 @@ namespace
 
         FCooldownCheck(int32_t n, const char* qf) : now(n), qfCooldown(qf), ok(true), name(nullptr), remain(0) {}
 
-        void operator()(LPCHARACTER ch)
+        void operator()(entt::entity chEntity)
         {
-            const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-            if (!ch || !ecs::PlayerRuntime::IsPC(chEntity))
+            if (!ecs::PlayerRuntime::IsPC(chEntity))
                 return;
 
             const int32_t until = ecs::QuestSystem::GetFlag(chEntity, qfCooldown);
@@ -253,13 +253,12 @@ namespace
 
         explicit FEntryItemCheck(uint32_t v) : vnum(v), ok(true), name(nullptr) {}
 
-        void operator()(LPCHARACTER ch)
+        void operator()(entt::entity chEntity)
         {
-            const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-            if (!ch || !ecs::PlayerRuntime::IsPC(chEntity))
+            if (!ecs::PlayerRuntime::IsPC(chEntity))
                 return;
 
-            if (ch->CountSpecifyItem(vnum) < 1 && ok)
+            if (ItemSystem::CountItem(chEntity, vnum) < 1 && ok)
             {
                 ok = false;
                 name = ecs::PlayerRuntime::GetName(chEntity).data();
@@ -633,8 +632,7 @@ bool CEasterDungeon::IsEasterDungeonMap(int32_t mapIndex) const
 
 void CEasterDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -648,8 +646,7 @@ void CEasterDungeon::OnPlayerDisconnect(entt::entity character)
 
 void CEasterDungeon::OnPlayerLogin(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -765,8 +762,7 @@ void CEasterDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
 bool CEasterDungeon::OnClickNpc(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     if (!ecs::PlayerRuntime::CanWarp(character))
@@ -873,10 +869,9 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
     {
         FCooldownCheck f(now, "easter_dungeon.cooldown");
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+            if (!ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
-            f(pkM);
+            f(m);
         });
 if (!f.ok)
         {
@@ -892,7 +887,7 @@ if (!f.ok)
     // Entry item check (NAME not VNUM)
     if (!party)
     {
-        if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
+        if (ItemSystem::CountItem(character, kEntryItemVnum) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Easter: required to enter: %s (x1).", entryItemName);
             return true;
@@ -902,10 +897,9 @@ if (!f.ok)
     {
         FEntryItemCheck it(kEntryItemVnum);
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+            if (!ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
-            it(pkM);
+            it(m);
         });
 if (!it.ok)
         {
@@ -935,12 +929,11 @@ if (!it.ok)
 
     // Set per-player rejoin flags + consume entry item
     auto applyMember = [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m))
+            if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
             // Consume entry item (already checked above)
-            pkM->RemoveSpecifyItem(kEntryItemVnum, 1);
+            ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
 
             ecs::QuestSystem::SetFlag(m, "easter_dungeon.disconnect", 0);
             ecs::QuestSystem::SetFlag(m, "easter_dungeon.idx", d->GetMapIndex());

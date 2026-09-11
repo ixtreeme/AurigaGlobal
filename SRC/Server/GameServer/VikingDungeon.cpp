@@ -296,13 +296,13 @@ namespace
         return ecs::PlayerRuntime::IsValid(ch) && ecs::PlayerRuntime::GetMapIndex(ch) == 219;
     }
 
-    void SetOutsideWarpLocation(LPCHARACTER ch)
+    void SetOutsideWarpLocation(entt::entity ch)
     {
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
-        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), mapIdx, x, y);
-        ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), mapIdx, x, y);
+        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(ch), mapIdx, x, y);
+        ecs::MovementSystem::SetWarpLocation(ch, mapIdx, x, y);
     }
 
     void WarpOut(entt::entity ch)
@@ -358,8 +358,7 @@ namespace
             return;
 
         ForEachPcOnMap(mapIndex, [&](entt::entity ch){
-            LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
-            if (!pkCh || ecs::PlayerRuntime::GetHP(ch) <= 1)
+            if (!ecs::PlayerRuntime::IsValid(ch) || ecs::PlayerRuntime::GetHP(ch) <= 1)
                 return;
 
             int64_t dmg = (ecs::PlayerRuntime::GetHP(ch) * pct) / 100;
@@ -1008,8 +1007,7 @@ bool CVikingDungeon::IsVikingDungeonMap(int32_t mapIndex) const
 
 void CVikingDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -1020,15 +1018,14 @@ void CVikingDungeon::OnPlayerDisconnect(entt::entity character)
     if (!d)
         return;
 
-    SetOutsideWarpLocation(ch);
+    SetOutsideWarpLocation(character);
     if (d->GetFlag(kFlagCompleted) == 0 && d->GetFlag(kFlagBlockRejoin) == 0)
         SetRejoinFlags(character, idx);
 }
 
 void CVikingDungeon::OnPlayerLogin(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -1049,7 +1046,7 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
         return;
     }
 
-    SetOutsideWarpLocation(ch);
+    SetOutsideWarpLocation(character);
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
@@ -1097,8 +1094,7 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
 
 bool CVikingDungeon::OnUseItem(entt::entity character, CItem* item)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !item)
+    if (!ecs::PlayerRuntime::IsValid(character) || !item)
         return false;
 
     if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) != kResetItemVnum)
@@ -1117,7 +1113,7 @@ bool CVikingDungeon::OnUseItem(entt::entity character, CItem* item)
         return true;
     }
 
-    ch->RemoveSpecifyItem(kResetItemVnum, 1);
+    ItemSystem::RemoveSpecifyItemEcs(character, kResetItemVnum, 1);
     ecs::QuestSystem::SetFlag(character, kQfCooldown, 0);
     ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeon cooldown reset successfully.");
     return true;
@@ -1125,8 +1121,7 @@ bool CVikingDungeon::OnUseItem(entt::entity character, CItem* item)
 
 bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsValid(npc) || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsValid(npc) || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(npc);
@@ -1191,7 +1186,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         return true;
     }
 
-    if (quest::CQuestManager::instance().GetEventFlag("vikingdungeon_zone_block") == 1 && !ch->IsGM())
+    if (quest::CQuestManager::instance().GetEventFlag("vikingdungeon_zone_block") == 1 && ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "The dungeon is currently blocked.");
         return true;
@@ -1244,8 +1239,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     bool ok = true;
 
     auto checkMember = [&](entt::entity m){
-        LPCHARACTER pkM = ecs::LegacyCharOf(m);
-        if (!pkM || !ecs::PlayerRuntime::IsPC(m) || !ok)
+        if (!ecs::PlayerRuntime::IsPC(m) || !ok)
             return;
 
         if (ecs::PointSystem::GetLevel(m) < kMinLevel || ecs::PointSystem::GetLevel(m) > kMaxLevel)
@@ -1267,7 +1261,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
         if (!quickRestart)
         {
-            if (pkM->CountSpecifyItem(kEntryItemVnum) < kEntryItemCount)
+            if (ItemSystem::CountItem(m, kEntryItemVnum) < kEntryItemCount)
             {
                 ok = false;
                 bad = BAD_ITEM;
@@ -1326,11 +1320,10 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     const int32_t dungeonMapIdx = d->GetMapIndex();
 
     auto prepareMember = [&](entt::entity m){
-        LPCHARACTER pkM = ecs::LegacyCharOf(m);
-        if (!pkM || !ecs::PlayerRuntime::IsPC(m))
+        if (!ecs::PlayerRuntime::IsPC(m))
             return;
 
-        SetOutsideWarpLocation(pkM);
+        SetOutsideWarpLocation(m);
         ClearRejoinFlags(m);
         ecs::QuestSystem::SetFlag(m, kQfIdx, dungeonMapIdx);
         ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
@@ -1338,7 +1331,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         if (!quickRestart)
         {
             SetCooldown(m);
-            pkM->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
+            ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
         }
     };
 

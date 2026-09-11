@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -106,27 +107,6 @@ namespace
         map->for_each(f);
     }
 
-    struct FRemoveItems
-    {
-        uint32_t vnumReq;
-        uint32_t vnumRemoveAll;
-        bool ok;
-
-        FRemoveItems(uint32_t req, uint32_t rmAll) : vnumReq(req), vnumRemoveAll(rmAll), ok(true) {}
-
-        void operator()(LPCHARACTER ch)
-        {
-            if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-                return;
-
-            // must have required item
-            if (ch->CountSpecifyItem(vnumReq) < 1)
-            {
-                ok = false;
-                return;
-            }
-        }
-    };
 }
 
 // ------------------ Event plumbing ------------------
@@ -279,10 +259,9 @@ struct FCooldownCheck
 
     FCooldownCheck(int32_t n, const char* qf) : now(n), qfCooldown(qf), ok(true), name(nullptr), remain(0) {}
 
-    void operator()(LPCHARACTER ch)
+    void operator()(entt::entity chEntity)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        if (!ch || !ecs::PlayerRuntime::IsPC(chEntity))
+        if (!ecs::PlayerRuntime::IsPC(chEntity))
             return;
 
         const int32_t until = ecs::QuestSystem::GetFlag(chEntity, qfCooldown);
@@ -366,8 +345,7 @@ void COrcsDungeon::OnPlayerDisconnect(entt::entity character)
 
 void COrcsDungeon::OnPlayerLogin(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -406,8 +384,7 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
     const int32_t now = get_global_time();
 
     ForEachPcOnMap(dungeonMapIdx, [&](entt::entity ch){
-            LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
-            if (!pkCh)
+            if (!ecs::PlayerRuntime::IsValid(ch))
                 return;
 
             // mimic questlua_dungeon::d.complete (simplified)
@@ -635,8 +612,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 // NPC click entry/exit.
 bool COrcsDungeon::OnClickNpc(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     if (!ecs::PlayerRuntime::CanWarp(character))
@@ -713,10 +689,9 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     {
         FCooldownCheck f(now, kQfCooldown);
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+            if (!ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
-            f(pkM);
+            f(m);
         });
         if (!f.ok)
         {
@@ -728,7 +703,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     // Check level + entry item for everyone who will enter (same map as leader)
     if (!party)
     {
-        if (ch->CountSpecifyItem(kRequiredItem) < 1)
+        if (ItemSystem::CountItem(character, kRequiredItem) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Orc Dungeon: you don't have the entry item.");
             return true;
@@ -742,8 +717,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
         bool missingItem = false;
 
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+            if (!ok || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
 
             if (ecs::PointSystem::GetLevel(m) < kMinLevel || ecs::PointSystem::GetLevel(m) > kMaxLevel)
@@ -755,7 +729,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
                 return;
             }
 
-            if (pkM->CountSpecifyItem(kRequiredItem) < 1)
+            if (ItemSystem::CountItem(m, kRequiredItem) < 1)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(m).data();
@@ -790,14 +764,13 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
 
     // Consume items + set per-player flags
     auto applyMember = [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m))
+            if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            pkM->RemoveSpecifyItem(kRequiredItem, 1);
-            const int32_t rmAll = pkM->CountSpecifyItem(kRemoveAllItem);
+            ItemSystem::RemoveSpecifyItemEcs(m, kRequiredItem, 1);
+            const int32_t rmAll = ItemSystem::CountItem(m, kRemoveAllItem);
             if (rmAll > 0)
-                pkM->RemoveSpecifyItem(kRemoveAllItem, rmAll);
+                ItemSystem::RemoveSpecifyItemEcs(m, kRemoveAllItem, rmAll);
 
             ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
             ecs::QuestSystem::SetFlag(m, kQfIdx, d->GetMapIndex());

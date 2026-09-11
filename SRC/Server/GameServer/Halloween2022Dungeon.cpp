@@ -263,10 +263,9 @@ namespace
         }
     }
 
-    void SetOutsideWarpLocation(LPCHARACTER ch)
+    void SetOutsideWarpLocation(entt::entity chEntity)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(chEntity))
             return;
         int32_t x = 0, y = 0;
         GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity), x, y);
@@ -632,8 +631,7 @@ void CHalloween2022Dungeon::OnPlayerDisconnect(entt::entity character)
 
 void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -647,7 +645,7 @@ void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
             return;
         }
 
-        SetOutsideWarpLocation(ch);
+        SetOutsideWarpLocation(character);
         ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
         ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
         return;
@@ -659,8 +657,7 @@ void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
 
 bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::IsValid(npc))
+    if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::IsValid(npc))
         return false;
 
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(npc);
@@ -744,7 +741,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         return true;
     }
 
-    if (quest::CQuestManager::instance().GetEventFlag("Halloween2022Dungeon_block") == 1 && !ch->IsGM())
+    if (quest::CQuestManager::instance().GetEventFlag("Halloween2022Dungeon_block") == 1 && ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "The Bloody cathedral is currently blocked.");
         return true;
@@ -773,8 +770,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
     int32_t badVal = 0;
 
     auto checkMember = [&](entt::entity m){
-        LPCHARACTER pkM = ecs::LegacyCharOf(m);
-        if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m))
+        if (!ok || !ecs::PlayerRuntime::IsPC(m))
             return;
 
         const int32_t lv = ecs::PointSystem::GetLevel(m);
@@ -805,7 +801,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return;
         }
 
-        if (pkM->CountSpecifyItem(kEntryItemVnum) < kEntryItemCount)
+        if (ItemSystem::CountItem(m, kEntryItemVnum) < kEntryItemCount)
         {
             ok = false;
             bad = BAD_ITEM;
@@ -853,18 +849,17 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
     const int32_t dungeonMapIdx = d->GetMapIndex();
 
     auto prepareMember = [&](entt::entity m){
-        LPCHARACTER pkM = ecs::LegacyCharOf(m);
-        if (!pkM || !ecs::PlayerRuntime::IsPC(m))
+        if (!ecs::PlayerRuntime::IsPC(m))
             return;
 
         if (!fromCompletedInside)
-            SetOutsideWarpLocation(pkM);
+            SetOutsideWarpLocation(m);
 
         ClearRejoinFlags(m);
         ecs::QuestSystem::SetFlag(m, kQfIdx, dungeonMapIdx);
         ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
         SetCooldown(m);
-        pkM->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
+        ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
     };
 
     if (!party)

@@ -233,8 +233,7 @@ namespace
         const int32_t now = get_global_time();
 
         ForEachPcOnMap(dungeonMapIdx, [&](entt::entity ch){
-                LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
-                if (!pkCh)
+                if (!ecs::PlayerRuntime::IsValid(ch))
                     return;
 
                 // Mimic questlua_dungeon::d.complete()
