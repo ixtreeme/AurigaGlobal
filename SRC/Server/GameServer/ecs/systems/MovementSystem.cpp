@@ -524,7 +524,15 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
         CombatSystem::SendLeaderboardDataGuild(e);
     }
 #endif
-    if (!ecs::PlayerRuntime::IsNPC(e))
+    // CHARACTER::IsNPC() was m_bCharType != CHAR_TYPE_PC, so monsters and
+    // stones took the second branch. ecs::PlayerRuntime::IsNPC reads TagNPC and
+    // means CHAR_TYPE_NPC alone, which sent every monster down the player
+    // branch: none of them got a last-attacked position, Follow measured from
+    // the map origin, and an idle mob turned round and walked there the moment
+    // it chased a player - the cape of courage made that happen to all of them
+    // at once. CharacterType is what the factory fills for players and mobs.
+    const auto* charType = g_registry.try_get<ecs::CharacterType>(e);
+    if (!charType || charType->value == CHAR_TYPE_PC)
     {
         LOG_TRACE("SHOW: {} {}x{}x{}", ecs::PlayerRuntime::GetName(e).data(), x, y, z);
         if (ecs::PlayerRuntime::GetStamina(e) < ecs::PlayerRuntime::GetMaxStamina(e))
