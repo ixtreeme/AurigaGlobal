@@ -1,6 +1,7 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
 #include "ecs/systems/InventorySystem.hpp"
+#include "ecs/systems/AISystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
@@ -371,7 +372,7 @@ namespace
         if (ecs::PlayerRuntime::GetX(cloneEntity) == tx && ecs::PlayerRuntime::GetY(cloneEntity) == ty)
             return;
 
-        clone->StartStateMachine(1);
+        AISystem::StartStateMachine(clone->GetEntityHandle(), 1);
         clone->SetNowWalking(false);
         ecs::MovementSystem::SetRotationToXY(cloneEntity, tx, ty);
         ecs::MovementSystem::Goto(cloneEntity, tx, ty);

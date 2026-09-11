@@ -14,6 +14,7 @@ namespace AISystem {
 // in the AIStateMachine component.
 void GotoState(entt::entity e, ecs::AIFSMState state);
 void UpdateStateMachine(entt::entity e);
+bool StartStateMachine(entt::entity e, int nextPulse);
 
 // The two state bodies. Neither is a CHARACTER method any more.
 void StateIdle(entt::entity e);

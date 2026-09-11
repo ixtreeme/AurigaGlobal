@@ -3619,44 +3619,6 @@ void CHARACTER::SetProto(const CMob* pkMob)
     }
 }
 
-bool CHARACTER::StartStateMachine(int iNextPulse)
-{
-    if (CHARACTER_MANAGER::instance().AddToStateList(GetEntityHandle()))
-    {
-        AIHelpers::SetNextStatePulse(GetEntityHandle(), thecore_heart->pulse + iNextPulse);
-        return true;
-    }
-
-    return false;
-}
-
-void CHARACTER::StopStateMachine()
-{
-    CHARACTER_MANAGER::instance().RemoveFromStateList(GetEntityHandle());
-}
-
-void CHARACTER::UpdateStateMachine(uint32_t dwPulse)
-{
-    const auto self = GetEntityHandle();
-    if (!g_registry.valid(self) || dwPulse < AIHelpers::GetNextStatePulse(self))
-        return;
-
-    if (CombatSystem::IsDead(self))
-        return;
-
-    AISystem::UpdateStateMachine(self);
-    AIHelpers::SetNextStatePulse(self, dwPulse + AIHelpers::GetStateDuration(self));
-}
-
-void CHARACTER::SetNextStatePulse(int iNextPulse)
-{
-    CHARACTER_MANAGER::instance().AddToStateList(GetEntityHandle());
-    AIHelpers::SetNextStatePulse(GetEntityHandle(), iNextPulse);
-
-    if (iNextPulse < 10)
-        MonsterLog("´UA1»óAÂ·Î3î1­°!AÚ");
-}
-
 void CHARACTER::MonsterLog(const char* format, ...)
 {
     if (!test_server)
@@ -3699,11 +3661,6 @@ void CHARACTER::MonsterLog(const char* format, ...)
     buf.write(chatbuf, len);
 
     CHARACTER_MANAGER::instance().PacketMonsterLog(GetEntityHandle(), buf.read_peek(), buf.size());
-}
-
-bool CHARACTER::OnIdle()
-{
-    return false;
 }
 
 void CHARACTER::OnMove(bool bIsAttack)

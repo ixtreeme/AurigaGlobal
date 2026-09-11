@@ -462,7 +462,6 @@ unsigned char CHARACTER::GetSkillGroup(void)const { UnexpectedService(__func__);
 void CHARACTER::MonsterLog(char const *,...) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
-void CHARACTER::SetNextStatePulse(int) { UnexpectedService(__func__); }
 CHARACTER * CHARACTER::GetMarryPartner(void)const { UnexpectedService(__func__); }
 int CHARACTER::GetMarriageBonus(unsigned int,bool) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }

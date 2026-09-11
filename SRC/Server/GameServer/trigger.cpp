@@ -270,10 +270,8 @@ int OnClickStoneCraft(TRIGGERPARAM)
  */
 int OnIdleDefault(TRIGGERPARAM)
 {
-	// Both arms return the same thing; the call is kept for its side effects.
-	if (LPCHARACTER pkChr = ecs::LegacyCharOf(ch))
-		(void)pkChr->OnIdle();
-
+	// CHARACTER::OnIdle was a bare return false with no side effects at all,
+	// so the resolve and the call went with it.
 	return PASSES_PER_SEC(1);
 }
 

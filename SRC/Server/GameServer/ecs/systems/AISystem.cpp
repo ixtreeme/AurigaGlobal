@@ -15,6 +15,7 @@
 #include "../VIDRegistry.hpp"
 #include "../CharacterAccessors.hpp"
 #include "../SpatialHelpers.hpp"
+#include "../AIHelpers.hpp"
 #include "../components/ai_components.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
@@ -112,9 +113,23 @@ void GotoState(entt::entity e, ecs::AIFSMState state)
     fsm.hasPending = true;
 }
 
+// The state bodies ask to be left alone for a while by setting
+// AIState::stateDuration, and this is what honours it. The wait used to be
+// read by CHARACTER::UpdateStateMachine, which char_manager stopped calling
+// when the pump became entity-native: every state then ran on every pulse,
+// so a warp NPC asking for sixty seconds got twenty-five passes a second and
+// every aggressive monster rescanned its sector just as often. Dead
+// characters ran their idle pass too, for the same reason.
 void UpdateStateMachine(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    const uint32_t pulse = thecore_pulse();
+    if (pulse < AIHelpers::GetNextStatePulse(e))
+        return;
+
+    if (CombatSystem::IsDead(e))
         return;
 
     auto& fsm = g_registry.get_or_emplace<ecs::AIStateMachine>(e);
@@ -141,6 +156,8 @@ void UpdateStateMachine(entt::entity e)
     case ecs::AIFSMState::Initial:
         break;  // CFSM's m_stateInitial had empty hooks on CHARACTER
     }
+
+    AIHelpers::SetNextStatePulse(e, pulse + AIHelpers::GetStateDuration(e));
 }
 
 } // namespace AISystem
@@ -488,6 +505,16 @@ void StateBattle(entt::entity e)
         MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_NORMAL_ATTACK));
     AIHelpers::SetStateDuration(e, static_cast<uint32_t>(
         motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration)));
+}
+
+// Putting a character on the state list and giving it its first wait.
+bool StartStateMachine(entt::entity e, int nextPulse)
+{
+    if (!CHARACTER_MANAGER::instance().AddToStateList(e))
+        return false;
+
+    AIHelpers::SetNextStatePulse(e, thecore_pulse() + nextPulse);
+    return true;
 }
 
 void StateIdle(entt::entity e)

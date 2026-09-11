@@ -1367,7 +1367,6 @@ protected:
 
 public:
 
-	bool			OnIdle();
 
 	void			OnClick(entt::entity causer);
 	CTrigger&		GetTriggerOnClick() { return m_triggerOnClick; }
@@ -1557,10 +1556,6 @@ private:
 
 	// Events
 public:
-	bool				StartStateMachine(int iPulse = 1);
-	void				StopStateMachine();
-	void				UpdateStateMachine(uint32_t dwPulse);
-	void				SetNextStatePulse(int iPulseNext);
 
 	// ĳ���� �ν��Ͻ� ������Ʈ �Լ�. ������ �̻��� ��ӱ����� CFSM::Update �Լ��� ȣ���ϰų� UpdateStateMachine �Լ��� ����ߴµ�, ������ ������Ʈ �Լ� �߰���.
 

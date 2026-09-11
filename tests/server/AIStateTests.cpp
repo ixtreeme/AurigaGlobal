@@ -6,6 +6,7 @@
 #include "../../SRC/Server/GameServer/stdafx.h"
 #include "../../SRC/Server/GameServer/char.h"
 #include "../../SRC/Server/GameServer/config.h"
+#include "../../SRC/Server/GameServer/char_manager.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/AIHelpers.hpp"
 #include "../../SRC/Server/GameServer/ecs/CharacterAccessors.hpp"
@@ -229,6 +230,11 @@ std::shared_ptr<spdlog::logger> GetErrorLogger()
 } // namespace logging
 uint32_t get_dword_time() { return 1000; }
 
+// The pump reads the pulse, so the cases below drive it.
+int g_pulse = 0;
+int thecore_pulse() { return g_pulse; }
+bool CHARACTER_MANAGER::AddToStateList(entt::entity) { return true; }
+
 // --- the cases --------------------------------------------------------------
 
 namespace {
@@ -237,6 +243,48 @@ void Reset()
 {
     g_registry.clear();
     g_rec = Recorder {};
+}
+
+void SetPulse(int pulse) { g_pulse = pulse; }
+
+// The state bodies ask for a wait by setting AIState::stateDuration. Nothing
+// honoured it after the pump became entity-native, so every state ran on every
+// pulse; these two cases are what would have caught that.
+void AWaitingStateIsNotRunEarly()
+{
+    Reset();
+    SetPulse(100);
+    const entt::entity mob = MakeMonster();
+    const entt::entity victim = g_registry.create();
+    g_rec.victim = victim;
+    g_rec.victimDead = true;
+    AISystem::GotoState(mob, ecs::AIFSMState::Idle);
+    AIHelpers::SetNextStatePulse(mob, 140);
+
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.victimClears.empty(), "a state inside its wait must not run");
+
+    SetPulse(140);
+    AISystem::UpdateStateMachine(mob);
+    Check(!g_rec.victimClears.empty(), "a state whose wait is up must run");
+    Check(AIHelpers::GetNextStatePulse(mob) == 140u + AIHelpers::GetStateDuration(mob),
+        "the pass must book its next one at the duration the state asked for");
+}
+
+// A dead character kept running its idle pass for the same reason.
+void ADeadCharacterDoesNotRunItsState()
+{
+    Reset();
+    SetPulse(100);
+    const entt::entity mob = MakeMonster();
+    const entt::entity victim = g_registry.create();
+    g_rec.victim = victim;
+    g_rec.victimDead = true;
+    g_rec.dead.push_back(mob);
+    AISystem::GotoState(mob, ecs::AIFSMState::Idle);
+
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.victimClears.empty(), "a dead character must not run its state");
 }
 
 // A victim that is still a live entity but has died: idle drops it and slows
@@ -411,6 +459,8 @@ void BattleSurvivesDestructionInsideAttack()
 int main()
 {
     try {
+        AWaitingStateIsNotRunEarly();
+        ADeadCharacterDoesNotRunItsState();
         DeadVictimIsReleased();
         DestroyedVictimDoesNotCrash();
         RecycledHandleIsNotTheNewEntity();
