@@ -2,6 +2,7 @@
 #include "MovementSystem.hpp"
 #include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "AcceSystem.hpp"
 #include "AffectSystem.hpp"
 #include "PointSystem.hpp"
 #include "InventorySystem.hpp"
@@ -2791,7 +2792,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 #ifdef ENABLE_ACCE_SYSTEM
 	if (ecs::PlayerRuntime::IsPC(victim))
 		if (LPCHARACTER windows = ecs::LegacyCharOf(victim))
-			windows->CloseAcce();
+			ecs::AcceSystem::Close(windows->GetEntityHandle());
 #endif
 
 	// The personal shop window and the safebox each close through CHARACTER
@@ -3163,7 +3164,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 	AttrTransfer_close(e);
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
-	self->CloseAcce();
+	ecs::AcceSystem::Close(self->GetEntityHandle());
 #endif
 
 	if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == true)

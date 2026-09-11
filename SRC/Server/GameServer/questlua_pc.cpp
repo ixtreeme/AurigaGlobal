@@ -2,6 +2,7 @@
 #include <cmath>
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/AcceSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -3919,7 +3920,7 @@ teleport_area:
 		{
 			// Explicit legacy boundary: all accessory-window state must move together.
 			if (LPCHARACTER character = CQuestManager::instance().GetCurrentCharacterPtr())
-				character->OpenAcce(lua_toboolean(L, 1));
+				ecs::AcceSystem::Open(character->GetEntityHandle(), lua_toboolean(L, 1));
 		}
 		else
 			sys_err("Invalid argument: arg1 must be boolean.");

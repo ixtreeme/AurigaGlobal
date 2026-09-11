@@ -3,6 +3,7 @@
 #include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/AcceSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/SessionSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -363,7 +364,7 @@ bool CheckCharacterActions(LPCHARACTER ch)
 	}
 
 #ifdef ENABLE_ACCE_SYSTEM
-	if (ch->IsAcceOpen())
+	if (ecs::AcceSystem::IsOpen(ch->GetEntityHandle()))
 	{
 		return false;
 	}

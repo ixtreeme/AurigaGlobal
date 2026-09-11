@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/AcceSystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -381,7 +382,7 @@ void Cube_open (LPCHARACTER ch)
 
 	if (ecs::SocialSystem::HasExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->IsCubeOpen()
 #ifdef ENABLE_ACCE_SYSTEM
-		 || ch->IsAcceOpen()
+		 || ecs::AcceSystem::IsOpen(ch->GetEntityHandle())
 #endif
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 		 || ch->GetOfflineShopGuest() || ch->GetAuctionGuest()

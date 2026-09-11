@@ -9,6 +9,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/AcceSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include <Core/Logging.hpp>
@@ -467,7 +468,7 @@ int CHARACTER::GetMarriageBonus(unsigned int,bool) { UnexpectedService(__func__)
 int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool CHARACTER::IsCubeOpen(void)const { UnexpectedService(__func__); }
 bool CHARACTER::UnEquipSpecialRideUniqueItem(void) { UnexpectedService(__func__); }
-void CHARACTER::CloseAcce(void) { UnexpectedService(__func__); }
+void ecs::AcceSystem::Close(entt::entity) { UnexpectedService(__func__); }
 int CHARACTER::GetSoulItemDamage(entt::entity,int,unsigned char) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, unsigned char) { UnexpectedService(__func__); }
 unsigned int CParty::GetLeaderPID(void) { UnexpectedService(__func__); }

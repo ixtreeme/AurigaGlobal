@@ -1137,13 +1137,6 @@ bool CHARACTER::IsCubeOpen() const
 
 
 #ifdef ENABLE_ACCE_SYSTEM
-std::span<entt::entity> CHARACTER::GetAcceMaterials()
-{
-    if (auto* comp = EnsureAcceWindowComponent(GetEntityHandle()))
-        return comp->materials;
-
-    return {};
-}
 #endif
 
 #ifdef ENABLE_SWITCHBOT

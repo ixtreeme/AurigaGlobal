@@ -1877,30 +1877,6 @@ public:
 	void			SetSyncHackCount(int iCount) { m_iSyncHackCount = iCount; }
 	int				GetSyncHackCount() { return m_iSyncHackCount; }
 
-#ifdef ENABLE_ACCE_SYSTEM
-protected:
-	bool	m_bAcceCombination, m_bAcceAbsorption;
-
-public:
-	bool	isAcceOpened(bool bCombination) { return bCombination ? m_bAcceCombination : m_bAcceAbsorption; }
-	void	OpenAcce(bool bCombination);
-	void	CloseAcce();
-	void	ClearAcceMaterials();
-	std::span<entt::entity> GetAcceMaterials();
-	bool	AcceIsSameGrade(int32_t lGrade);
-	uint32_t	GetAcceCombinePrice(int32_t lGrade
-#ifdef ENABLE_STOLE_COSTUME
-		, bool isCostume
-#endif
-	);
-	void	GetAcceCombineResult(uint32_t& dwItemVnum, uint32_t& dwMinAbs, uint32_t& dwMaxAbs);
-	uint8_t	CheckEmptyMaterialSlot();
-	void	AddAcceMaterial(TItemPos tPos, uint8_t bPos);
-	void	RemoveAcceMaterial(uint8_t bPos);
-	uint8_t	CanRefineAcceMaterials();
-	void	RefineAcceMaterials();
-	bool	IsAcceOpen() const { return m_bAcceCombination || m_bAcceAbsorption; }
-#endif
 
 
 #ifdef __HIDE_COSTUME_SYSTEM__

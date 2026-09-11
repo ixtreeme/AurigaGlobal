@@ -6,6 +6,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/AcceSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -3209,7 +3210,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #endif
 	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
 #ifdef ENABLE_ACCE_SYSTEM
-		|| ch->IsAcceOpen()
+		|| ecs::AcceSystem::IsOpen(ch->GetEntityHandle())
 #endif
 		)
 	{
@@ -4455,22 +4456,22 @@ void CInputMain::Acce(entt::entity character, const char* c_pData)
 	{
 	case ACCE_SUBHEADER_CG_CLOSE:
 	{
-		pkChar->CloseAcce();
+		ecs::AcceSystem::Close(pkChar->GetEntityHandle());
 	}
 	break;
 	case ACCE_SUBHEADER_CG_ADD:
 	{
-		pkChar->AddAcceMaterial(sPacket->tPos, sPacket->bPos);
+		ecs::AcceSystem::AddMaterial(pkChar->GetEntityHandle(), sPacket->tPos, sPacket->bPos);
 	}
 	break;
 	case ACCE_SUBHEADER_CG_REMOVE:
 	{
-		pkChar->RemoveAcceMaterial(sPacket->bPos);
+		ecs::AcceSystem::RemoveMaterial(pkChar->GetEntityHandle(), sPacket->bPos);
 	}
 	break;
 	case ACCE_SUBHEADER_CG_REFINE:
 	{
-		pkChar->RefineAcceMaterials();
+		ecs::AcceSystem::Refine(pkChar->GetEntityHandle());
 	}
 	break;
 	default:
