@@ -841,7 +841,6 @@ char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__
 void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) { UnexpectedService(__func__); }
 int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetMaxHP(entt::entity, int64_t) { UnexpectedService(__func__); }
-int64_t CHARACTER::GetPoint(unsigned char)const { UnexpectedService(__func__); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 void CHARACTER::CheckMaximumPoints(void) { UnexpectedService(__func__); }
 int CHARACTER::GetCurrentDestX(void)const { UnexpectedService(__func__); }

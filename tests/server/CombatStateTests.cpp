@@ -399,7 +399,6 @@ void CHARACTER::SetPosition(int) { UnexpectedService(__func__); }
 int CHARACTER::GetPosition(void)const { UnexpectedService(__func__); }
 int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
 bool ecs::PointSystem::Set(entt::entity,unsigned char,int64_t) { UnexpectedService(__func__); }
-int64_t CHARACTER::GetPoint(unsigned char)const { UnexpectedService(__func__); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool ecs::SocialSystem::HasReviverInParty(entt::entity) { UnexpectedService(__func__); }
 bool ItemSystem::UnEquipSpecialRideUniqueItem(entt::entity) { UnexpectedService(__func__); }

@@ -1896,7 +1896,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 				return;
 		}
 
-		if (GetPoint(idx) < 1)
+		if (ecs::PointSystem::Get(GetEntityHandle(), idx) < 1)
 			return;
 
 		PointChange(idx, -1);
@@ -3033,16 +3033,16 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	}
 
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
-	pkSk->SetPointVar("iq", GetPoint(POINT_IQ));
-	pkSk->SetPointVar("str", GetPoint(POINT_ST));
-	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
-	pkSk->SetPointVar("con", GetPoint(POINT_HT));
+	pkSk->SetPointVar("iq", ecs::PointSystem::Get(GetEntityHandle(), POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::Get(GetEntityHandle(), POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::Get(GetEntityHandle(), POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::Get(GetEntityHandle(), POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(character));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(character));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, character));
-	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", GetPoint(POINT_DEF_GRADE) - GetPoint(POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", GetHorseLevel());
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
@@ -3120,7 +3120,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
@@ -3144,7 +3144,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
@@ -3171,7 +3171,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
@@ -3200,7 +3200,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 		if (iDur > 0)
 		{
-			iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 			// AffectFlag°ˇ ľř°ĹłŞ, toggle ÇĎ´Â °ÍŔĚ ľĆ´Ď¶ó¸é..
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
@@ -3225,7 +3225,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 				AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				bAdded = true;
 			}
@@ -3242,7 +3242,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 				AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
 			}
 			else
@@ -3337,16 +3337,16 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 	}
 
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
-	pkSk->SetPointVar("iq", GetPoint(POINT_IQ));
-	pkSk->SetPointVar("str", GetPoint(POINT_ST));
-	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
-	pkSk->SetPointVar("con", GetPoint(POINT_HT));
+	pkSk->SetPointVar("iq", ecs::PointSystem::Get(GetEntityHandle(), POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::Get(GetEntityHandle(), POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::Get(GetEntityHandle(), POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::Get(GetEntityHandle(), POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, victim));
-	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", GetPoint(POINT_DEF_GRADE) - GetPoint(POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", GetHorseLevel());
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
@@ -3502,16 +3502,16 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	}
 
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
-	pkSk->SetPointVar("iq", GetPoint(POINT_IQ));
-	pkSk->SetPointVar("str", GetPoint(POINT_ST));
-	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
-	pkSk->SetPointVar("con", GetPoint(POINT_HT));
+	pkSk->SetPointVar("iq", ecs::PointSystem::Get(GetEntityHandle(), POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::Get(GetEntityHandle(), POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::Get(GetEntityHandle(), POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::Get(GetEntityHandle(), POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, victim));
-	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", GetPoint(POINT_DEF_GRADE) - GetPoint(POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", GetHorseLevel());
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
@@ -3591,7 +3591,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
@@ -3614,7 +3614,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
@@ -3644,7 +3644,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
@@ -3676,7 +3676,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
 			int iDur = (int32_t) pkSk->kDurationPoly.Eval();
-			iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 			if (pkVictim == this)
 				AffectSystem::AddAffect(GetEntityHandle(), dwVnum,
@@ -3695,7 +3695,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 		if (iDur > 0)
 		{
-			iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 			// AffectFlag°ˇ ľř°ĹłŞ, toggle ÇĎ´Â °ÍŔĚ ľĆ´Ď¶ó¸é..
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
@@ -3710,7 +3710,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 					if (test_server)
 						LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", GetName(), pkSk->szName, iDur2, pkSk->bPointOn2, iAmount2);
 
-					iDur2 += GetPoint(POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
 				}
 				else
@@ -3764,7 +3764,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 				if (iDur2 > 0)
 				{
-					iDur2 += GetPoint(POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 					if (pkSk->IsChargeSkill())
 						AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, AFF_TANHWAN_DASH, iDur2, 0, false);
@@ -3790,7 +3790,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 			if (iDur > 0)
 			{
-				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);

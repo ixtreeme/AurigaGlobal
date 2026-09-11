@@ -539,36 +539,6 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 #endif
 
 
-int64_t CHARACTER::GetPoint(uint8_t type) const
-{
-	if (type >= POINT_MAX_NUM)
-	{
-		LOG_ERROR("Point type overflow (type {})", type);
-		return 0;
-	}
-
-	int64_t val = ecs::PointSystem::ReadInstantArray(GetEntityHandle(), type);
-	int64_t max_val = INT_MAX;
-
-	switch (type)
-	{
-	case POINT_STEAL_HP:
-	case POINT_STEAL_SP:
-		max_val = 50;
-		break;
-	case POINT_GOLD:
-		max_val = GOLD_MAX;
-		break;
-	}
-
-	if (val > max_val)
-		LOG_ERROR("POINT_ERROR: {} type {} val {} (max: {})", GetName(), type, val, max_val);
-
-	return (val);
-}
-
-
-
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 int CHARACTER::Inven_Point() const
 {
