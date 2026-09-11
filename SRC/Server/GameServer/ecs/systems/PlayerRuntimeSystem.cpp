@@ -1430,7 +1430,7 @@ uint64_t GetQuestDamage(entt::entity e, int race)
 uint8_t GetBattlePassID(entt::entity e)
 {
 	LPCHARACTER character = LegacyCharOf(e);
-	return character ? ecs::PlayerRuntime::GetBattlePassId(character->GetEntityHandle()) : 0;
+	return character ? ecs::PlayerRuntime::GetBattlePassId(e) : 0;
 }
 
 #endif
@@ -2739,43 +2739,6 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
 // player busy" guards read this getter, so one closed shop left the
 // player unable to open anything at all.
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-void CHARACTER::SetOfflineShopGuest(offlineshop::CShop* pkShop)
-{
-    const auto e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-        shop.offlineShopGuest = pkShop;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
-    m_pkOfflineShopGuest = pkShop;
-}
-
-void CHARACTER::SetAuctionGuest(offlineshop::CAuction* pk)
-{
-    const auto e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-        shop.auctionGuest = pk;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
-    m_pkAuctionGuest = pk;
-}
-
-void CHARACTER::SetOfflineShopUseTime()
-{
-    m_iOfflineShopUseTime = thecore_pulse();
-    const auto e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-        shop.offlineShopUseTime = m_iOfflineShopUseTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-}
 #endif
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
@@ -2863,16 +2826,6 @@ bool CHARACTER::Update_Inven()
 #endif
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
-{
-    if (m_pkShopSafebox && pk == nullptr)
-        m_pkShopSafebox->SetOwner(nullptr);
-
-    else if (m_pkShopSafebox == nullptr && pk)
-        pk->SetOwner(this);
-
-    m_pkShopSafebox = pk;
-}
 #endif
 
 #ifdef __NEWPET_SYSTEM__
@@ -3794,7 +3747,7 @@ void CHARACTER::OnClick(entt::entity causer)
     LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), GetRaceNum(), vid, pkCauser->GetName());
 
     {
-        if (ecs::SocialSystem::GetMyShop(pkCauser->GetEntityHandle()) && pkCauser != this)
+        if (ecs::SocialSystem::GetMyShop(causer) && pkCauser != this)
         {
             LOG_ERROR("OnClick Fail ({}->{}) - pc has shop", pkCauser->GetName(), GetName());
             return;
@@ -3895,7 +3848,7 @@ void CHARACTER::OnClick(entt::entity causer)
         }
     }
 
-    ecs::PlayerRuntime::SetQuestNPCID(pkCauser->GetEntityHandle(), GetPacketVID());
+    ecs::PlayerRuntime::SetQuestNPCID(causer, GetPacketVID());
 
     if (quest::CQuestManager::instance().Click(pkCauser->GetPlayerID(), this))
     {
@@ -4085,7 +4038,7 @@ EVENTFUNC(switch_channel)
         LOG_ERROR("No char to work on for the switch.");
         return 0;
     }
-	const entt::entity character = ch->GetEntityHandle();
+	const entt::entity character = info->ch;
 
     if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed) != event)
         return 0;
@@ -4338,15 +4291,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_FAKE_SHOP_HEADER
     m_lastBeltMountCount = -999;
 #endif
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-    m_pkOfflineShop = nullptr;
-    m_pkShopSafebox = nullptr;
-    m_pkAuction = nullptr;
-    m_pkAuctionGuest = nullptr;
-    m_pkOfflineShopGuest = nullptr;
-    m_bIsLookingOfflineshopOfferList = false;
-#endif
-
     ResetStopTime();
 #ifdef ENABLE_GAYA_SYSTEM
     GayaSystem::Load(GetEntityHandle());
@@ -4549,7 +4493,7 @@ EVENTFUNC(destroy_when_idle_event)
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDestroyWhenIdleEvent
 
-    if (CombatSystem::GetVictim(ch->GetEntityHandle()) != entt::null)
+    if (CombatSystem::GetVictim(info->ch) != entt::null)
     {
         return PASSES_PER_SEC(300);
     }
@@ -4575,7 +4519,7 @@ EVENTFUNC(drop_event)
         LOG_ERROR("<drop_event> ch is null.");
         return 0;
     }
-	const entt::entity character = ch->GetEntityHandle();
+	const entt::entity character = info->ch;
 
     LPDESC d = ecs::PlayerRuntime::GetDesc(character);
     if (!d) {

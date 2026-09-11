@@ -1037,15 +1037,15 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 				P2P_MANAGER::instance().Send(&p, sizeof(p));
 				SendShout(shoutbuf, ecs::PlayerRuntime::GetEmpire(character));
 #ifdef ENABLE_BATTLE_PASS
-				if (uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle()))
+				if (uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(character))
 				{
 					uint32_t dwCount, dwNotUsed;
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COUNTER_CHAT, &dwNotUsed, &dwCount))
 					{
-						if (!ecs::PlayerRuntime::IsCompletedMission(ch->GetEntityHandle(), COUNTER_CHAT))
+						if (!ecs::PlayerRuntime::IsCompletedMission(character, COUNTER_CHAT))
 						{
-							if (ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), COUNTER_CHAT, bBattlePassId) < dwCount)
-								ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), COUNTER_CHAT, bBattlePassId, 1, dwCount);
+							if (ecs::PlayerRuntime::GetMissionProgress(character, COUNTER_CHAT, bBattlePassId) < dwCount)
+								ecs::PlayerRuntime::UpdateMissionProgress(character, COUNTER_CHAT, bBattlePassId, 1, dwCount);
 						}
 					}
 				}
@@ -1359,16 +1359,16 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 		SendShout(chatbuf, ecs::PlayerRuntime::GetEmpire(character));
 
 #ifdef ENABLE_BATTLE_PASS
-		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
+		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(character);
 		if(bBattlePassId)
 		{
 			uint32_t dwCount, dwNotUsed;
 			if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COUNTER_CHAT, &dwNotUsed, &dwCount))
 			{
-				if (!ecs::PlayerRuntime::IsCompletedMission(ch->GetEntityHandle(), COUNTER_CHAT))
+				if (!ecs::PlayerRuntime::IsCompletedMission(character, COUNTER_CHAT))
 				{
-					if(ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), COUNTER_CHAT, bBattlePassId) < dwCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), COUNTER_CHAT, bBattlePassId, 1, dwCount);
+					if(ecs::PlayerRuntime::GetMissionProgress(character, COUNTER_CHAT, bBattlePassId) < dwCount)
+						ecs::PlayerRuntime::UpdateMissionProgress(character, COUNTER_CHAT, bBattlePassId, 1, dwCount);
 				}
 			}
 		}
@@ -3210,7 +3210,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #endif
 	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->IsCubeOpen() || ecs::SocialSystem::GetShop(character) || ecs::SocialSystem::GetMyShop(character)
 #ifdef ENABLE_ACCE_SYSTEM
-		|| ecs::AcceSystem::IsOpen(ch->GetEntityHandle())
+		|| ecs::AcceSystem::IsOpen(character)
 #endif
 		)
 	{
@@ -3232,7 +3232,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 
 	//Check DungeonMap Genezis
 	//Check if current map is a dungeon!
-//	if (ecs::SocialSystem::GetDungeon(ch->GetEntityHandle()))
+//	if (ecs::SocialSystem::GetDungeon(character))
 //	{
 //#ifdef TEXTS_IMPROVEMENT
 //		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 48, "");
@@ -3310,7 +3310,7 @@ void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInvite");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()))
+	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
@@ -3340,7 +3340,7 @@ void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInviteAnswer");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()))
+	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
@@ -4312,7 +4312,7 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 #endif
 
 	LOG_INFO("MyShop count {}", p->bCount);
-	ecs::SocialSystem::OpenMyShop(ch->GetEntityHandle(), p->szSign, (TShopItemTable *) (c_pData + sizeof(TPacketCGMyShop)), p->bCount
+	ecs::SocialSystem::OpenMyShop(character, p->szSign, (TShopItemTable *) (c_pData + sizeof(TPacketCGMyShop)), p->bCount
 #ifdef KASMIR_PAKET_SYSTEM
 	, p->dwKasmirNpc, p->bKasmirBaslik
 #endif
@@ -4456,22 +4456,22 @@ void CInputMain::Acce(entt::entity character, const char* c_pData)
 	{
 	case ACCE_SUBHEADER_CG_CLOSE:
 	{
-		ecs::AcceSystem::Close(pkChar->GetEntityHandle());
+		ecs::AcceSystem::Close(character);
 	}
 	break;
 	case ACCE_SUBHEADER_CG_ADD:
 	{
-		ecs::AcceSystem::AddMaterial(pkChar->GetEntityHandle(), sPacket->tPos, sPacket->bPos);
+		ecs::AcceSystem::AddMaterial(character, sPacket->tPos, sPacket->bPos);
 	}
 	break;
 	case ACCE_SUBHEADER_CG_REMOVE:
 	{
-		ecs::AcceSystem::RemoveMaterial(pkChar->GetEntityHandle(), sPacket->bPos);
+		ecs::AcceSystem::RemoveMaterial(character, sPacket->bPos);
 	}
 	break;
 	case ACCE_SUBHEADER_CG_REFINE:
 	{
-		ecs::AcceSystem::Refine(pkChar->GetEntityHandle());
+		ecs::AcceSystem::Refine(character);
 	}
 	break;
 	default:
@@ -5184,7 +5184,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 	break;
 	case TURN:
 	{
-		if (ecs::SocialSystem::GetDungeon(ch->GetEntityHandle()) != nullptr || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
+		if (ecs::SocialSystem::GetDungeon(character) != nullptr || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeonban nem tudsz pörgetni./You cannot in dungeon");
 			return;

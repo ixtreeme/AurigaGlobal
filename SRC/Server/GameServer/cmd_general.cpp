@@ -322,7 +322,7 @@ ACMD(do_user_horse_feed)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	// λ  ¿  ̸   .
-	if (ecs::SocialSystem::GetMyShop(ch->GetEntityHandle()))
+	if (ecs::SocialSystem::GetMyShop(character))
 		return;
 
 	if (ch->GetHorse() == nullptr)
@@ -571,7 +571,7 @@ ACMD(do_change_channel)
 		return;
 	}
 
-	if (ecs::SocialSystem::GetDungeon(ch->GetEntityHandle()))
+	if (ecs::SocialSystem::GetDungeon(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 720, "");
@@ -779,7 +779,7 @@ ACMD(do_restart)
 		{
 			return;
 		}
-		else if (subcmd != SCMD_RESTART_TOWN && (!ecs::SocialSystem::GetWarMap(ch->GetEntityHandle()) || ecs::SocialSystem::GetWarMap(ch->GetEntityHandle())->GetType() == GUILD_WAR_TYPE_FLAG))
+		else if (subcmd != SCMD_RESTART_TOWN && (!ecs::SocialSystem::GetWarMap(character) || ecs::SocialSystem::GetWarMap(character)->GetType() == GUILD_WAR_TYPE_FLAG))
 		{
 			return;
 		}
@@ -794,9 +794,9 @@ ACMD(do_restart)
 
 	int32_t mapidx = ecs::PlayerRuntime::GetMapIndex(character);
 
-	if (ecs::SocialSystem::GetWarMap(ch->GetEntityHandle()) && !ecs::PlayerRuntime::IsObserverMode(character))
+	if (ecs::SocialSystem::GetWarMap(character) && !ecs::PlayerRuntime::IsObserverMode(character))
 	{
-		CWarMap * pMap = ecs::SocialSystem::GetWarMap(ch->GetEntityHandle());
+		CWarMap * pMap = ecs::SocialSystem::GetWarMap(character);
 		uint32_t dwGuildOpponent = pMap ? pMap->GetGuildOpponent(character) : 0;
 		if (dwGuildOpponent)
 		{
@@ -2160,9 +2160,9 @@ ACMD(do_ungroup)
 ACMD(do_close_shop)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ecs::SocialSystem::GetMyShop(ch->GetEntityHandle()))
+	if (ecs::SocialSystem::GetMyShop(character))
 	{
-		ecs::SocialSystem::CloseMyShop(ch->GetEntityHandle());
+		ecs::SocialSystem::CloseMyShop(character);
 		return;
 	}
 }
@@ -2573,17 +2573,17 @@ ACMD(do_observer_exit)
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::PlayerRuntime::IsObserverMode(character))
 	{
-		if (ecs::SocialSystem::GetWarMap(ch->GetEntityHandle()))
-			ecs::SocialSystem::SetWarMap(ch->GetEntityHandle(), nullptr);
+		if (ecs::SocialSystem::GetWarMap(character))
+			ecs::SocialSystem::SetWarMap(character, nullptr);
 
-		if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()) != nullptr || ecs::PlayerRuntime::GetArenaObserverMode(ch->GetEntityHandle()) == true)
+		if (ecs::PlayerRuntime::GetArena(character) != nullptr || ecs::PlayerRuntime::GetArenaObserverMode(character) == true)
 		{
-			ecs::PlayerRuntime::SetArenaObserverMode(ch->GetEntityHandle(), false);
+			ecs::PlayerRuntime::SetArenaObserverMode(character, false);
 
-			if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()) != nullptr)
-				ecs::PlayerRuntime::GetArena(ch->GetEntityHandle())->RemoveObserver((ecs::PlayerRuntime::GetPlayerID(character)));
+			if (ecs::PlayerRuntime::GetArena(character) != nullptr)
+				ecs::PlayerRuntime::GetArena(character)->RemoveObserver((ecs::PlayerRuntime::GetPlayerID(character)));
 
-			ecs::PlayerRuntime::SetArena(ch->GetEntityHandle(), nullptr);
+			ecs::PlayerRuntime::SetArena(character, nullptr);
 			ecs::MovementSystem::WarpSet(character, ARENA_RETURN_POINT_X((ecs::PlayerRuntime::GetEmpire(character))), ARENA_RETURN_POINT_Y((ecs::PlayerRuntime::GetEmpire(character))));
 		}
 		else
@@ -2621,7 +2621,7 @@ ACMD(do_view_equip)
 ACMD(do_party_request)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()))
+	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");

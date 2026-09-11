@@ -625,7 +625,7 @@ void CParty::Link(entt::entity character)
 		//LOG_INFO("PARTY-DUNGEON connect {} {}", static_cast<const void*>(this), static_cast<const void*>(GetDungeon()));
 		if (GetDungeon() && GetDungeon()->GetMapIndex() == ecs::PlayerRuntime::GetMapIndex(character))
 		{
-			ecs::SocialSystem::SetDungeon(pkChr->GetEntityHandle(), GetDungeon());
+			ecs::SocialSystem::SetDungeon(character, GetDungeon());
 		}
 
 		RequestSetMemberLevel((ecs::PlayerRuntime::GetPlayerID(character)), (ecs::PointSystem::GetLevel(character)));
@@ -1390,8 +1390,8 @@ void CParty::Update()
 		if (!ch)
 			continue;
 
-		if (ecs::SocialSystem::GetDungeon(l->GetEntityHandle()))
-			it->second.bNear = ecs::SocialSystem::GetDungeon(l->GetEntityHandle()) == ecs::SocialSystem::GetDungeon(ch->GetEntityHandle());
+		if (ecs::SocialSystem::GetDungeon(lEntity))
+			it->second.bNear = ecs::SocialSystem::GetDungeon(lEntity) == ecs::SocialSystem::GetDungeon(ch->GetEntityHandle());
 		else
 			it->second.bNear = (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))) < PARTY_DEFAULT_RANGE);
 
@@ -1402,7 +1402,7 @@ void CParty::Update()
 		}
 	}
 
-	if (iNearMember <= 1 && !ecs::SocialSystem::GetDungeon(l->GetEntityHandle()))
+	if (iNearMember <= 1 && !ecs::SocialSystem::GetDungeon(lEntity))
 	{
 		for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 			it->second.bNear = false;

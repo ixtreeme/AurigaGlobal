@@ -85,8 +85,8 @@ EVENTFUNC(pvp_check_disconnect)
 	LPCHARACTER chA = ecs::LegacyCharOf(info->ch);
 	LPCHARACTER chB = ecs::LegacyCharOf(info->victim);
 
-	const entt::entity characterA = chA ? chA->GetEntityHandle() : entt::null;
-	const entt::entity characterB = chB ? chB->GetEntityHandle() : entt::null;
+	const entt::entity characterA = chA ? info->ch : entt::null;
+	const entt::entity characterB = chB ? info->victim : entt::null;
 
 	if (chA == nullptr && chB == nullptr)
 	{
@@ -176,8 +176,8 @@ EVENTFUNC(pvp_duel_counter)
 	LPCHARACTER chA = ecs::LegacyCharOf(info->ch);
 	LPCHARACTER chB = ecs::LegacyCharOf(info->victim);
 
-	const entt::entity characterA = chA ? chA->GetEntityHandle() : entt::null;
-	const entt::entity characterB = chB ? chB->GetEntityHandle() : entt::null;
+	const entt::entity characterA = chA ? info->ch : entt::null;
+	const entt::entity characterB = chB ? info->victim : entt::null;
 
 	if (chA == nullptr)
 	{

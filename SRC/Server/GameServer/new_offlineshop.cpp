@@ -19,6 +19,7 @@
 #include "ecs/systems/ItemSystem.hpp"
 
 #include "new_offlineshop.h"
+#include "ecs/systems/OfflineShopSystem.hpp"
 #include "new_offlineshop_manager.h"
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -555,7 +556,7 @@ namespace offlineshop
 			LPCHARACTER pkOwner = FindOwnerCharacter();
 			if (pkOwner)
 			{
-				if (pkOwner->GetOfflineShop() && pkOwner->GetOfflineShop() == pkOwner->GetOfflineShopGuest())
+				if (ecs::OfflineShopSystem::GetOfflineShop(pkOwner->GetEntityHandle()) && ecs::OfflineShopSystem::GetOfflineShop(pkOwner->GetEntityHandle()) == ecs::OfflineShopSystem::GetOfflineShopGuest(pkOwner->GetEntityHandle()))
 				{
 					NotifyOffers(pkOwner);
 					GetManager().SendShopOpenMyShopClientPacket(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null));
@@ -773,7 +774,7 @@ namespace offlineshop
 		}
 
 		m_guestsList.push_back(AS_GUESTID(ch));
-		ch->SetAuctionGuest(this);
+		ecs::OfflineShopSystem::SetAuctionGuest(ch->GetEntityHandle(), this);
 		GetManager().SendAuctionOpenAuctionClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), m_info, m_offersVec);
 		return true;
 	}
@@ -788,7 +789,7 @@ namespace offlineshop
 			if (AS_GUESTID(ch) == *it)
 			{
 				m_guestsList.erase(it);
-				ch->SetAuctionGuest(nullptr);
+				ecs::OfflineShopSystem::SetAuctionGuest(ch->GetEntityHandle(), nullptr);
 				return true;
 			}
 		}

@@ -6,6 +6,7 @@
 #include "ecs/systems/AcceSystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/OfflineShopSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "constants.h"
@@ -357,7 +358,7 @@ void Cube_open (LPCHARACTER ch)
 {
 	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	LPCHARACTER	npc;
-	npc = ecs::LegacyCharOf(ecs::PlayerRuntime::GetQuestNPC(ch->GetEntityHandle()));
+	npc = ecs::LegacyCharOf(ecs::PlayerRuntime::GetQuestNPC(chEntity));
 
 
 
@@ -382,10 +383,10 @@ void Cube_open (LPCHARACTER ch)
 
 	if (ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) || ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SessionSystem::IsSafeboxOpen(chEntity) || ch->IsCubeOpen()
 #ifdef ENABLE_ACCE_SYSTEM
-		 || ecs::AcceSystem::IsOpen(ch->GetEntityHandle())
+		 || ecs::AcceSystem::IsOpen(chEntity)
 #endif
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-		 || ch->GetOfflineShopGuest() || ch->GetAuctionGuest()
+		 || ecs::OfflineShopSystem::GetOfflineShopGuest(chEntity) || ecs::OfflineShopSystem::GetAuctionGuest(chEntity)
 #endif
 #ifdef __ATTR_TRANSFER_SYSTEM__
 		 || AttrTransfer_is_open(chEntity)

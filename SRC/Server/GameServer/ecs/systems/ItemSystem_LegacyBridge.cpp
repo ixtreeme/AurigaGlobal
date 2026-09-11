@@ -3155,7 +3155,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 		else
 		{
 			// TAKE_ITEM_BUG_FIX
-			ecs::PlayerRuntime::SetQuestNPCID(from->GetEntityHandle(), GetPacketVID());
+			ecs::PlayerRuntime::SetQuestNPCID(fromEntity, GetPacketVID());
 			// END_OF_TAKE_ITEM_BUG_FIX
 			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), GetRaceNum(), itemEntity);
 		}
@@ -3302,7 +3302,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 
 	default:
 		LOG_INFO("TakeItem {} {} {}", from->GetName(), GetRaceNum(), item->GetName());
-		ecs::PlayerRuntime::SetQuestNPCID(from->GetEntityHandle(), GetPacketVID());
+		ecs::PlayerRuntime::SetQuestNPCID(fromEntity, GetPacketVID());
 		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), GetRaceNum(), itemEntity);
 		break;
 	}

@@ -8,6 +8,7 @@
 #include "PlayerRuntimeSystem.hpp"
 
 #include "SessionSystem.hpp"
+#include "OfflineShopSystem.hpp"
 #include "SocialSystem.hpp"
 #include "SkillSystem.hpp"
 #include "AffectSystem.hpp"
@@ -725,27 +726,25 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     }
 #endif
 
-    if (ecs::SocialSystem::GetWarMap(self->GetEntityHandle()))
-        ecs::SocialSystem::SetWarMap(self->GetEntityHandle(), nullptr);
+    if (ecs::SocialSystem::GetWarMap(e))
+        ecs::SocialSystem::SetWarMap(e, nullptr);
 
-    if (ecs::SocialSystem::GetWeddingMap(self->GetEntityHandle()))
-        ecs::SocialSystem::SetWeddingMap(self->GetEntityHandle(), nullptr);
+    if (ecs::SocialSystem::GetWeddingMap(e))
+        ecs::SocialSystem::SetWeddingMap(e, nullptr);
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
     offlineshop::GetManager().RemoveSafeboxFromCache(ecs::PlayerRuntime::GetPlayerID(e));
     offlineshop::GetManager().RemoveGuestFromShops(e);
 
-    if (auto* auctionGuest = self->GetAuctionGuest())
+    // CAuction::RemoveGuest takes the character; that is its own migration.
+    if (auto* auctionGuest = ecs::OfflineShopSystem::GetAuctionGuest(e))
         auctionGuest->RemoveGuest(self);
 
-    if (self->GetOfflineShop())
-        self->SetOfflineShop(nullptr);
-
-    self->SetShopSafebox(nullptr);
-
-    self->SetAuction(nullptr);
-    self->SetAuctionGuest(nullptr);
-    self->SetLookingOfflineshopOfferList(false);
+    ecs::OfflineShopSystem::SetOfflineShop(e, nullptr);
+    ecs::OfflineShopSystem::SetShopSafebox(e, nullptr);
+    ecs::OfflineShopSystem::SetAuction(e, nullptr);
+    ecs::OfflineShopSystem::SetAuctionGuest(e, nullptr);
+    ecs::OfflineShopSystem::SetLookingOfferList(e, false);
 #endif
 
     if (ecs::SocialSystem::GetGuild(e))

@@ -1511,7 +1511,7 @@ void Stun(entt::entity e)
 	ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
 	ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
 
-	ecs::SocialSystem::CloseMyShop(self->GetEntityHandle());
+	ecs::SocialSystem::CloseMyShop(e);
 
 	ecs::PlayerRuntime::CancelCharEvent(e, ecs::PlayerRuntime::CharEvent::Recovery); // ȸ ̺Ʈ δ.
 
@@ -2177,7 +2177,7 @@ EVENTFUNC(dead_event)
 	}
 
 	auto* ch = LegacyCharOf(info->entity);
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = ch ? info->entity : entt::null;
 
 	if (ch == nullptr)
 	{
@@ -3164,7 +3164,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 	AttrTransfer_close(e);
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
-	ecs::AcceSystem::Close(self->GetEntityHandle());
+	ecs::AcceSystem::Close(e);
 #endif
 
 	if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == true)
@@ -4110,7 +4110,7 @@ void Reward(entt::entity e, bool bItemDrop)
 									return;
 
 								// ugyanabban a dungeon instance-ben kell legyen
-								if (ecs::SocialSystem::GetDungeon(mch->GetEntityHandle()) != pDungeon)
+								if (ecs::SocialSystem::GetDungeon(mchEntity) != pDungeon)
 									return;
 
 								//   ugyanazon a mapindexen legyen (INSTANCE) -> NINCS hibas normalizalas
@@ -4214,7 +4214,7 @@ void Reward(entt::entity e, bool bItemDrop)
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
 									if (bInstantRewardToInventory)
 									{
-										__GiveRewardItemToCharacterOrDrop(rch ? rch->GetEntityHandle() : entt::null, e, newItem, mpos, true);
+										__GiveRewardItemToCharacterOrDrop(rch ? rchEntity : entt::null, e, newItem, mpos, true);
 									}
 									else
 									{
@@ -5734,7 +5734,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 #ifdef ENABLE_BATTLE_PASS
 		if (dam > 0)
 		{
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(pkAttacker->GetEntityHandle());
+			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(attacker);
 			if (bBattlePassId)
 			{
 				if (ecs::PlayerRuntime::IsPC(victim))
@@ -5743,7 +5743,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					uint32_t dwLevel = ecs::PointSystem::GetLevel(victim);
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_DAMAGE, &dwMinLevel, &dwDamage))
 					{
-						if (!ecs::PlayerRuntime::IsCompletedMission(pkAttacker->GetEntityHandle(), PLAYER_DAMAGE))
+						if (!ecs::PlayerRuntime::IsCompletedMission(attacker, PLAYER_DAMAGE))
 						{
 							uint32_t dwDam = dam;
 							if (dwLevel >= dwMinLevel && ecs::PlayerRuntime::GetMissionProgress(victim, PLAYER_DAMAGE, bBattlePassId) < dwDam)
@@ -5759,7 +5759,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_DAMAGE, &dwMonsterVnum, &dwDamage))
 					{
 						uint32_t dwRaceNum = ecs::PlayerRuntime::GetRaceNum(victim);
-						if (!ecs::PlayerRuntime::IsCompletedMission(pkAttacker->GetEntityHandle(), MONSTER_DAMAGE))
+						if (!ecs::PlayerRuntime::IsCompletedMission(attacker, MONSTER_DAMAGE))
 						{
 							uint32_t dwDam = dam;
 							if (dwMonsterVnum == dwRaceNum && ecs::PlayerRuntime::GetMissionProgress(victim, MONSTER_DAMAGE, bBattlePassId) < dwDam)
@@ -6895,7 +6895,7 @@ EVENTFUNC(StunEvent)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	const entt::entity e = (ch ? ch->GetEntityHandle() : entt::null);
+	const entt::entity e = info->ch;
 	ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::Stun, nullptr);
 	if (e != entt::null && g_registry.valid(e))
 	{

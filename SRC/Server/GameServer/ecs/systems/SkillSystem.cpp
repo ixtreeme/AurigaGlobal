@@ -4184,7 +4184,7 @@ EVENTFUNC(skill_muyoung_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	const entt::entity character = ch->GetEntityHandle();
+	const entt::entity character = info->ch;
 
 	if (!AffectSystem::IsAffectFlag(character, AFF_MUYEONG))
 	{
@@ -4240,7 +4240,7 @@ EVENTFUNC(skill_gyeongGong_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	const entt::entity character = ch->GetEntityHandle();
+	const entt::entity character = info->ch;
 
 	if (!AffectSystem::IsAffectFlag(character, AFF_GYEONGGONG))
 	{
@@ -4304,7 +4304,7 @@ EVENTFUNC(mob_skill_hit_event)
 		return 0;
 	}
 
-	const entt::entity e = ch->GetEntityHandle();
+	const entt::entity e = info->ch;
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvSkillUsed { e, info->vnum });
 	ch->ComputeSkillAtPosition(info->vnum, info->pos, info->level);

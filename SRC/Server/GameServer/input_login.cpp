@@ -3,6 +3,7 @@
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/OfflineShopSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
@@ -840,11 +841,11 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	{
 		offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 		if (pkShop)
-			ch->SetOfflineShop(pkShop);
+			ecs::OfflineShopSystem::SetOfflineShop(ch->GetEntityHandle(), pkShop);
 
 		offlineshop::CAuction* auction = offlineshop::GetManager().GetAuctionByOwnerID(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 		if (auction)
-			ch->SetAuction(auction);
+			ecs::OfflineShopSystem::SetAuction(ch->GetEntityHandle(), auction);
 	}
 #endif
 

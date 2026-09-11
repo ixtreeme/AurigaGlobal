@@ -663,7 +663,7 @@ void CEasterDungeon::OnPlayerLogin(entt::entity character)
         return;
     }
 
-    ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), d);
+    ecs::SocialSystem::SetDungeon(character, d);
 
     // Task reminder on login (rejoin)
     if (d->GetFlag(kFlagCompleted) == 0)

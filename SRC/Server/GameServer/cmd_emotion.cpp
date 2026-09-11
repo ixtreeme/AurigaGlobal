@@ -103,7 +103,7 @@ std::set<std::pair<uint32_t, uint32_t> > s_emotion_set;
 ACMD(do_emotion_allow)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if ( ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()) )
+	if ( ecs::PlayerRuntime::GetArena(character) )
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");

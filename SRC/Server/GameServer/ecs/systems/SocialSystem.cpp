@@ -1298,7 +1298,7 @@ CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const ent
     LPCHARACTER pkGuest = ecs::LegacyCharOf(guest);
     if (!CPartyManager::instance().IsEnablePCParty())
         return PERR_SERVER;
-    else if (ecs::SocialSystem::GetDungeon(pkLeader->GetEntityHandle()))
+    else if (ecs::SocialSystem::GetDungeon(leader))
         return PERR_DUNGEON;
     else if (pkGuest->IsObserverMode())
         return PERR_OBSERVER;

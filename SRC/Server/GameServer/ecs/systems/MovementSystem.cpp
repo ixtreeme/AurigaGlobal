@@ -410,12 +410,12 @@ EVENTFUNC(battle_pass_stay_online_event_session){
         return 0;
 
     LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-	const entt::entity character = ch->GetEntityHandle();
+	const entt::entity character = info->ch;
 
     if (!ecs::PlayerRuntime::GetDesc(character))
         return PASSES_PER_SEC(60);
 
-    const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
+    const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(character);
     if (!bBattlePassId)
         return PASSES_PER_SEC(60);
 
@@ -424,13 +424,13 @@ EVENTFUNC(battle_pass_stay_online_event_session){
     if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, STAY_ONLINE_MINUTES, &dwNotUsed, &dwCount))
         return PASSES_PER_SEC(60);
 
-    if (ecs::PlayerRuntime::IsCompletedMission(ch->GetEntityHandle(), STAY_ONLINE_MINUTES))
+    if (ecs::PlayerRuntime::IsCompletedMission(character, STAY_ONLINE_MINUTES))
         return PASSES_PER_SEC(60);
 
-    if (ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
+    if (ecs::PlayerRuntime::GetMissionProgress(character, STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
         return PASSES_PER_SEC(60);
 
-    ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
+    ecs::PlayerRuntime::UpdateMissionProgress(character, STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
     return PASSES_PER_SEC(60);
 }
 #endif
@@ -975,7 +975,7 @@ EVENTFUNC(warp_npc_event)
         return 0;
     }
 
-    const entt::entity e = ch->GetEntityHandle();
+    const entt::entity e = info->ch;
     if (e != entt::null)
     {
         const auto warpPos = ecs::MovementSystem::GetWarpLocation(e);
@@ -1786,7 +1786,7 @@ EVENTFUNC(save_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	const entt::entity saveEntity = ch->GetEntityHandle();
+	const entt::entity saveEntity = info->ch;
 	LOG_TRACE("SAVE_EVENT: {}", ecs::PlayerRuntime::GetName(saveEntity).data());
 	if (saveEntity != entt::null)
 		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
@@ -1948,7 +1948,7 @@ EVENTFUNC(recovery_event)
 	if (ch == nullptr) {
 		return 0;
 	}
-	const entt::entity character = ch->GetEntityHandle();
+	const entt::entity character = info->ch;
 
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkRecoveryEvent
 	if (!ecs::PlayerRuntime::IsPC(character))
@@ -1959,7 +1959,7 @@ EVENTFUNC(recovery_event)
 
 #ifdef ENABLE_DS_RUNE
 		if (ch->GetMobTable().dwVnum == 3996) {
-			LPDUNGEON target = ecs::SocialSystem::GetDungeon(ch->GetEntityHandle());
+			LPDUNGEON target = ecs::SocialSystem::GetDungeon(character);
 			if (target) {
 				if (target->GetFlag("floor") == 5) {
 					CombatSystem::DistributeSP(character, character);
@@ -1983,7 +1983,7 @@ EVENTFUNC(recovery_event)
 			}
 		}
 		else if (ch->GetMobTable().dwVnum == 8202) {
-			LPDUNGEON target = ecs::SocialSystem::GetDungeon(ch->GetEntityHandle());
+			LPDUNGEON target = ecs::SocialSystem::GetDungeon(character);
 			if (target) {
 				if (target->GetFlag("floor") == 1) {
 					CombatSystem::DistributeSP(character, character);

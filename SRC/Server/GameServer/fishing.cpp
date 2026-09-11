@@ -748,8 +748,8 @@ void Grill(entt::entity owner, entt::entity itemEntity)
 		uint32_t dwCount, dwNotUsed;
 		if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, FRY_FISH, &dwNotUsed, &dwCount))
 		{
-			if(ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), FRY_FISH, bBattlePassId) < dwCount)
-				ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), FRY_FISH, bBattlePassId, count, dwCount);
+			if(ecs::PlayerRuntime::GetMissionProgress(owner, FRY_FISH, bBattlePassId) < dwCount)
+				ecs::PlayerRuntime::UpdateMissionProgress(owner, FRY_FISH, bBattlePassId, count, dwCount);
 		}
 	}
 #endif

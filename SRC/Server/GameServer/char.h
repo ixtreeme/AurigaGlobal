@@ -868,43 +868,6 @@ protected:
 	// Quickslot 
 public:
 	void			SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos);
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-public:
-	offlineshop::CShop* GetOfflineShop() { return m_pkOfflineShop; }
-	void					SetOfflineShop(offlineshop::CShop* pkShop) { m_pkOfflineShop = pkShop; }
-
-	offlineshop::CShop* GetOfflineShopGuest() const { return m_pkOfflineShopGuest; }
-	void					SetOfflineShopGuest(offlineshop::CShop* pkShop);
-
-	offlineshop::CShopSafebox*
-		GetShopSafebox() { return m_pkShopSafebox; }
-	void					SetShopSafebox(offlineshop::CShopSafebox* pk);
-
-	void					SetAuction(offlineshop::CAuction* pk) { m_pkAuction = pk; }
-	void					SetAuctionGuest(offlineshop::CAuction* pk);
-
-	offlineshop::CAuction* GetAuction() { return m_pkAuction; }
-	offlineshop::CAuction* GetAuctionGuest() const { return m_pkAuctionGuest; }
-
-
-	//offlineshop-updated 05/08/19
-	void					SetLookingOfflineshopOfferList(bool is) { m_bIsLookingOfflineshopOfferList = is; }
-	bool					IsLookingOfflineshopOfferList() { return m_bIsLookingOfflineshopOfferList; }
-	int						GetOfflineShopUseTime() const { return m_iOfflineShopUseTime; }
-	void					SetOfflineShopUseTime();
-
-private:
-	offlineshop::CShop* m_pkOfflineShop;
-	offlineshop::CShop* m_pkOfflineShopGuest;
-	offlineshop::CShopSafebox* m_pkShopSafebox;
-	offlineshop::CAuction* m_pkAuction;
-	offlineshop::CAuction* m_pkAuctionGuest;
-
-	//offlineshop-updated 05/08/19
-	bool	m_bIsLookingOfflineshopOfferList;
-	// patch with warp check
-	int		m_iOfflineShopUseTime = 0;
-#endif
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Affect

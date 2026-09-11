@@ -3,6 +3,7 @@
 #include <common/stole_length.h>
 
 #include "AcceSystem.hpp"
+#include "OfflineShopSystem.hpp"
 #include "ItemSystem.hpp"
 #include "InventorySystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -555,12 +556,7 @@ uint8_t CanRefine(entt::entity e)
 		return 0;
 
 	auto& acce = g_registry.get_or_emplace<ecs::AcceWindowComponent>(e);
-	// The offline shop and the auction guest have no entity form yet;
-	// each is its own migration and they share this one resolve.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
-		return 0;
-    if (self->GetOfflineShopGuest() || self->GetAuctionGuest())
+    if (ecs::OfflineShopSystem::GetOfflineShopGuest(e) || ecs::OfflineShopSystem::GetAuctionGuest(e))
         return 0;
 
     if (ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e) || (ecs::SocialSystem::GetShopOwner(e) != entt::null) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e)
