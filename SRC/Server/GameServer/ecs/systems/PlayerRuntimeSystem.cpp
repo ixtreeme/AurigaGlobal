@@ -4091,7 +4091,6 @@ void CHARACTER::Initialize()
     m_bDetailLog = false;
     m_bMonsterLog = false;
 
-    m_bDisableCooltime = false;
 
 
 
@@ -4130,9 +4129,6 @@ void CHARACTER::Initialize()
 
     m_dwLogOffInterval = 0;
 
-    m_bComboSequence = 0;
-    m_dwLastComboTime = 0;
-    m_bComboIndex = 0;
 
     m_dwMountTime = 0;
 

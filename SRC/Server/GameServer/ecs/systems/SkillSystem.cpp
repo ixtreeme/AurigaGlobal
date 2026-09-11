@@ -757,6 +757,18 @@ int ComputeCooltime(entt::entity e, int time)
         : time;
 }
 
+// Whether this character's skills skip their cooldown. Only DisableCooltime
+// below sets it, and CHARACTER kept a second copy that its own reads used, so
+// calling the entity form changed nothing the skill code looked at.
+bool IsCooltimeDisabled(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+
+    const auto* cooldowns = g_registry.try_get<ecs::SkillCooldowns>(e);
+    return cooldowns && cooldowns->disableCooltime;
+}
+
 void DisableCooltime(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -1069,12 +1081,6 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
         return SkillSystem::GetSkillLevel(e, dwVnum);
 
     return 0;
-}
-
-void CHARACTER::DisableCooltime()
-{
-    m_bDisableCooltime = true;
-    SkillSystem::DisableCooltime(GetEntityHandle());
 }
 
 bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
@@ -3085,7 +3091,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		{
 			int iAG = 0;
 
-			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
@@ -3105,7 +3111,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (IsPC())
 				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END)) // ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
-					if (!m_bDisableCooltime && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
+					if (!SkillSystem::IsCooltimeDisabled(GetEntityHandle()) && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
 					{
 						//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill cannot hit %s", GetName());
 						return BATTLE_NONE;
@@ -3354,7 +3360,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 		// END_OF_ADD_GRANDMASTER_SKILL
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
-		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, -iAmount, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, -iAmount, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 		if (ecs::PlayerRuntime::GetSectree(victimEntity))
 			ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 		else
@@ -3556,7 +3562,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 			CombatSystem::SetSkillHit(GetEntityHandle(), true);
 #endif
 
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
 				if (ecs::PlayerRuntime::GetSectree(victimEntity))
@@ -3578,7 +3584,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 			if (IsPC())
 				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END)) // ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
-					if (!m_bDisableCooltime && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
+					if (!SkillSystem::IsCooltimeDisabled(GetEntityHandle()) && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
 					{
 						return BATTLE_NONE;
 					}
@@ -3808,7 +3814,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 			if (ecs::PlayerRuntime::GetSectree(victimEntity))
 				ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 
@@ -4053,9 +4059,9 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	}
 
 	int iSplashCount = 1;
-	if (m_bDisableCooltime)
+	if (SkillSystem::IsCooltimeDisabled(GetEntityHandle()))
 		SkillSystem::ResetSkillHitTargets(character, dwVnum);
-	if (false == m_bDisableCooltime)
+	if (false == SkillSystem::IsCooltimeDisabled(GetEntityHandle()))
 	{
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (dwVnum == SKILL_GYEONGGONG)

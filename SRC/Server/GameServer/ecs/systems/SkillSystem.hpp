@@ -62,6 +62,7 @@ bool ChangeSkillColor(entt::entity player, uint8_t slot, const std::array<uint32
 bool CopyBuffSkillColor(entt::entity caster, entt::entity target, uint32_t skillId);
 #endif
 int ComputeCooltime(entt::entity e, int time);
+bool IsCooltimeDisabled(entt::entity e);
 void DisableCooltime(entt::entity e);
 void ResetMobSkillCooltime(entt::entity e);
 void LearnSkill(entt::entity e, uint32_t skillId);

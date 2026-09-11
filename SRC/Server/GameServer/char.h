@@ -1171,9 +1171,6 @@ public:
 
 
 protected:
-	uint8_t m_bComboSequence;
-	uint32_t m_dwLastComboTime;
-	uint8_t m_bComboIndex;
 
 protected:
 
@@ -1269,12 +1266,10 @@ public:
 	uint8_t				GetSkillGroup() const;
 
 
-	void				DisableCooltime();
 	bool				LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb = 0);
 	bool				LearnGrandMasterSkill(uint32_t dwSkillVnum);
 
 private:
-	bool				m_bDisableCooltime;
 	// End of Skill
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
