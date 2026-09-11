@@ -6,7 +6,7 @@
 namespace marriage
 {
 	const uint32_t WEDDING_MAP_INDEX = 81;
-	typedef CHARACTER_SET charset_t;
+	typedef std::unordered_set<entt::entity> charset_t;
 
 	class WeddingMap
 	{
@@ -23,9 +23,9 @@ namespace marriage
 #endif
 			void SetEnded();
 
-			void IncMember(LPCHARACTER ch);
-			void DecMember(LPCHARACTER ch);
-			bool IsMember(LPCHARACTER ch );
+			void IncMember(entt::entity character);
+			void DecMember(entt::entity character);
+			bool IsMember(entt::entity character);
 
 			void SetDark(bool bSet);
 			void SetSnow(bool bSet);
@@ -43,7 +43,7 @@ namespace marriage
 		private:
 			uint32_t m_dwMapIndex;
 			LPEVENT m_pEndEvent;
-			charset_t m_set_pkChr;
+			charset_t m_setMember;
 
 			bool m_isDark;
 			bool m_isSnow;

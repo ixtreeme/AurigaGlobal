@@ -88,10 +88,9 @@ namespace marriage
 		Notice(CHAT_TYPE_NOTICE, 704, "");
 #endif
 
-		for (auto it = m_set_pkChr.begin(); it != m_set_pkChr.end(); ++it)
+		for (auto it = m_setMember.begin(); it != m_setMember.end(); ++it)
 		{
-			LPCHARACTER ch = *it;
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			const entt::entity chEntity = *it;
 
 			if (ecs::PlayerRuntime::GetPlayerID(chEntity) == dwPID1 || ecs::PlayerRuntime::GetPlayerID(chEntity) == dwPID2)
 				continue;
@@ -100,7 +99,7 @@ namespace marriage
 				continue;
 
 			//ch->AutoGiveItem(27003, 5);
-			ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), 27002, 5);
+			ItemSystem::AutoGiveItemEcs(chEntity, 27002, 5);
 		}
 	}
 
@@ -112,8 +111,8 @@ namespace marriage
 		const char * m_format;
 		FNotice(uint8_t type, uint32_t idx, const char * format) : m_type(type), m_idx(idx), m_format(format) {}
 
-		void operator() (LPCHARACTER ch) {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), m_type, m_idx, m_format);
+		void operator() (entt::entity character) {
+			ecs::ChatSystem::SendNew(character, m_type, m_idx, m_format);
 		}
 	};
 #endif
@@ -128,15 +127,14 @@ namespace marriage
 		va_end(args);
 
 		FNotice f(type, idx, chatbuf);
-		std::for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
+		std::for_each(m_setMember.begin(), m_setMember.end(), f);
 	}
 #endif
 
 	struct FWarpEveryone
 	{
-		void operator() (LPCHARACTER ch)
+		void operator() (entt::entity chEntity)
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			if (ecs::PlayerRuntime::IsPC(chEntity))
 			{
 				// ExitToSavedLocation은 WarpSet을 부르는데 이 함수에서
@@ -150,77 +148,75 @@ namespace marriage
 	void WeddingMap::WarpAll()
 	{
 		FWarpEveryone f;
-		for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
+		for_each(m_setMember.begin(), m_setMember.end(), f);
 	}
 
 	struct FDestroyEveryone
 	{
-		void operator() (LPCHARACTER ch)
+		void operator() (entt::entity chEntity)
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			LOG_INFO("WeddingMap::DestroyAll: {}", ecs::PlayerRuntime::GetName(chEntity).data());
 
 			if (ecs::PlayerRuntime::GetDesc(chEntity))
 				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(chEntity));
 			else
-				M2_DESTROY_CHARACTER(ch);
+				ecs::PlayerRuntime::DestroyCharacter(chEntity);
 		}
 	};
 
 	void WeddingMap::DestroyAll()
 	{
-		LOG_INFO("WeddingMap::DestroyAll: m_set_pkChr size {}", m_set_pkChr.size());
+		LOG_INFO("WeddingMap::DestroyAll: m_setMember size {}", m_setMember.size());
 
 		FDestroyEveryone f;
 
-		for (charset_t::iterator it = m_set_pkChr.begin(); it != m_set_pkChr.end(); it = m_set_pkChr.begin())
+		for (charset_t::iterator it = m_setMember.begin(); it != m_setMember.end(); it = m_setMember.begin())
 			f(*it);
 	}
 
-	void WeddingMap::IncMember(LPCHARACTER ch)
+	// The members of the ceremony map. They were held as pointers, which is
+	// why SocialSystem::SetWeddingMap resolved a character just to count it.
+	void WeddingMap::IncMember(entt::entity character)
 	{
-		if (IsMember(ch) == true)
+		if (IsMember(character) == true)
 			return;
 
-		//0, "WeddingMap: IncMember %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
-		m_set_pkChr.insert(ch);
+		m_setMember.insert(character);
 
-		SendLocalEvent(ch ? ch->GetEntityHandle() : entt::null);
+		SendLocalEvent(character);
 
-		if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10)
+		if (ecs::PointSystem::GetLevel(character) < 10)
 		{
-			ecs::PlayerRuntime::SetObserverMode(ch->GetEntityHandle(), true);
+			ecs::PlayerRuntime::SetObserverMode(character, true);
 		}
 	}
 
-	void WeddingMap::DecMember(LPCHARACTER ch)
+	void WeddingMap::DecMember(entt::entity character)
 	{
-		if (IsMember(ch) == false)
+		if (IsMember(character) == false)
 			return;
 
-		//0, "WeddingMap: DecMember %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
-		m_set_pkChr.erase(ch);
+		m_setMember.erase(character);
 
-		if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10)
+		if (ecs::PointSystem::GetLevel(character) < 10)
 		{
-			ecs::PlayerRuntime::SetObserverMode(ch->GetEntityHandle(), false);
+			ecs::PlayerRuntime::SetObserverMode(character, false);
 		}
 	}
 
-	bool WeddingMap::IsMember(LPCHARACTER ch)
+	bool WeddingMap::IsMember(entt::entity character)
 	{
-		if (m_set_pkChr.size() <= 0)
+		if (m_setMember.size() <= 0)
 			return false;
 
-		return m_set_pkChr.find(ch) != m_set_pkChr.end();
+		return m_setMember.find(character) != m_setMember.end();
 	}
 
 	void WeddingMap::ShoutInMap(uint8_t type, const char* msg)
 	{
-		for (auto it = m_set_pkChr.begin(); it != m_set_pkChr.end(); ++it)
+		for (auto it = m_setMember.begin(); it != m_setMember.end(); ++it)
 		{
-			LPCHARACTER ch = *it;
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, msg);
+			ecs::ChatSystem::Send(*it, CHAT_TYPE_COMMAND, msg);
 		}
 	}
 

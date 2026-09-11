@@ -184,20 +184,15 @@ void SetWeddingMap(entt::entity e, marriage::WeddingMap* pMap)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    // WeddingMap counts its members by pointer; that is its own migration.
-    LPCHARACTER self = ecs::LegacyCharOf(e);
-    if (!self)
-        return;
-
     auto& marriageState = g_registry.get_or_emplace<ecs::MarriageState>(e);
 
     if (marriageState.weddingMap)
-        marriageState.weddingMap->DecMember(self);
+        marriageState.weddingMap->DecMember(e);
 
     marriageState.weddingMap = pMap;
 
     if (marriageState.weddingMap)
-        marriageState.weddingMap->IncMember(self);
+        marriageState.weddingMap->IncMember(e);
 
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
