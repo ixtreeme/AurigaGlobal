@@ -72,13 +72,9 @@ class CEntity
 		entt::entity	GetEntityHandle() const noexcept { return m_entity; }
 		void			SetEntityHandle(entt::entity e) noexcept { m_entity = e; }
 
-		void			SetObserverMode(bool bFlag);
-		bool			IsObserverMode() const	{ return m_bIsObserver; }
 
 	protected:
 		entt::entity	m_entity { entt::null };
-		bool			m_bIsObserver;
-		bool			m_bObserverModeChange;
 			int32_t			m_lMapIndex;
 
 	private:

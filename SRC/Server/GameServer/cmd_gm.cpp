@@ -2960,8 +2960,7 @@ ACMD(do_mount_test)
 
 ACMD(do_observer)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->SetObserverMode(!ecs::PlayerRuntime::IsObserverMode(character));
+	ecs::PlayerRuntime::SetObserverMode(character, !ecs::PlayerRuntime::IsObserverMode(character));
 }
 
 ACMD(do_socket_item)

@@ -2590,7 +2590,7 @@ ACMD(do_observer_exit)
 		{
 			ecs::MovementSystem::ExitToSavedLocation(character);
 		}
-		ch->SetObserverMode(false);
+		ecs::PlayerRuntime::SetObserverMode(character, false);
 	}
 }
 

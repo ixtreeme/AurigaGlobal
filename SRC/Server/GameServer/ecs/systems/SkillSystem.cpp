@@ -3887,7 +3887,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (g_bSkillDisable)
 		return false;
 
-	if (IsObserverMode())
+	if (ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
 		return false;
 
 	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))

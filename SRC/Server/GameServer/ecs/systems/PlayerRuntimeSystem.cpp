@@ -6,6 +6,7 @@
 #include "AffectSystem.hpp"
 #include "ActivitySystem.hpp"
 #include "ChatSystem.hpp"
+#include "VisibilitySystem.hpp"
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
 
@@ -884,6 +885,33 @@ bool IsObserverMode(entt::entity e)
 
 	const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
 	return status && status->isObserverMode;
+}
+
+// Watching without being part of the world. CEntity kept m_bIsObserver beside
+// ObserverModeTag and StatusFlags::isObserverMode, and only its setter wrote
+// either; seven readers asked the field and the rest asked the component. The
+// two agreed only because nothing else ever wrote them. One home now.
+void SetObserverMode(entt::entity e, bool flag)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	if (IsObserverMode(e) == flag)
+		return;
+
+	// Commit the state before publishing it: the refresh and the packet can
+	// run callbacks that destroy the entity.
+	if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+		status->isObserverMode = flag;
+	if (flag)
+		g_registry.emplace_or_replace<ecs::ObserverModeTag>(e);
+	else
+		g_registry.remove<ecs::ObserverModeTag>(e);
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+
+	ecs::VisibilitySystem::Refresh(g_registry, e);
+	if (g_registry.valid(e))
+		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "ObserverMode %d", flag ? 1 : 0);
 }
 
 bool IsArenaObserverMode(entt::entity e)
@@ -3319,7 +3347,7 @@ void CHARACTER::MountVnum(uint32_t vnum)
         g_registry.emplace_or_replace<ecs::DirtyTag>(e);
     }
 
-    if (m_bIsObserver)
+    if (ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
         return;
 
     // Phase C.3: legacy destination field write removed. SyncDestinationClear
@@ -3833,7 +3861,7 @@ void CHARACTER::DestroyPvP()
 
 void CHARACTER::RestartAtSamePos()
 {
-    if (m_bIsObserver)
+    if (ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
         return;
 
     const entt::entity self = GetEntityHandle();
@@ -3862,7 +3890,7 @@ void CHARACTER::RestartAtSamePos()
             continue;
 
         ecs::EntityNetworkDispatch::SendRemove(g_registry, self, other);
-        if (!m_bIsObserver)
+        if (!ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
             ecs::EntityNetworkDispatch::SendInsert(g_registry, self, other);
 
         // The original let every non-character through and filtered characters

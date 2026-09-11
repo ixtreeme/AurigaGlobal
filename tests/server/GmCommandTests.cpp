@@ -766,7 +766,7 @@ void CGuild::RequestDisband(unsigned int) { Unexpected(); }
 unsigned int CGuild::UnderAnyWar(unsigned char) { Unexpected(); }
 bool CEntity::IsType(int)const { Unexpected(); }
 SECTREE * CEntity::GetSectree(void)const { Unexpected(); }
-void CEntity::SetObserverMode(bool) { Unexpected(); }
+void ecs::PlayerRuntime::SetObserverMode(entt::entity, bool) { Unexpected(); }
 short CHorseRider::GetHorseMaxHealth(void) { Unexpected(); }
 short CHorseRider::GetHorseMaxStamina(void) { Unexpected(); }
 void CHorseRider::UpdateHorseStamina(int,bool) { Unexpected(); }

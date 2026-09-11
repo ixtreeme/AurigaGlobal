@@ -401,7 +401,7 @@ void CWarMap::IncMember(LPCHARACTER ch)
 	{
 		++m_iObserverCount;
 		LOG_TRACE("WarMap +o {}", m_iObserverCount);
-		ch->SetObserverMode(true);
+		ecs::PlayerRuntime::SetObserverMode(chEntity, true);
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 255, "");
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 448, "");
@@ -463,7 +463,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 		--m_iObserverCount;
 
 		LOG_TRACE("WarMap -o {}", m_iObserverCount);
-		ch->SetObserverMode(false);
+		ecs::PlayerRuntime::SetObserverMode(chEntity, false);
 	}
 
 	UpdateUserCount();

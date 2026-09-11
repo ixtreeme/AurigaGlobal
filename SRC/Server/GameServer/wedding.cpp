@@ -188,7 +188,7 @@ namespace marriage
 
 		if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10)
 		{
-			ch->SetObserverMode(true);
+			ecs::PlayerRuntime::SetObserverMode(ch->GetEntityHandle(), true);
 		}
 	}
 
@@ -202,7 +202,7 @@ namespace marriage
 
 		if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10)
 		{
-			ch->SetObserverMode(false);
+			ecs::PlayerRuntime::SetObserverMode(ch->GetEntityHandle(), false);
 		}
 	}
 

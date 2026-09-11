@@ -1897,7 +1897,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::PickupItem ");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!IsPC() || CombatSystem::IsDead(GetEntityHandle()) || IsObserverMode())
+	if (!IsPC() || CombatSystem::IsDead(GetEntityHandle()) || ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
 	{
 		return false;
 	}
@@ -4393,7 +4393,7 @@ void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, uint8_t bOldValue, ui
 
 bool CHARACTER::CanDoCube() const
 {
-	if (m_bIsObserver)	return false;
+	if (ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))	return false;
 	if (ecs::SocialSystem::GetShop(GetEntityHandle()))		return false;
 	if (ecs::SocialSystem::GetMyShop(GetEntityHandle()))	return false;
 	if (InventorySystem::IsRefining(GetEntityHandle()))	return false;

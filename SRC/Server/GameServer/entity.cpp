@@ -44,8 +44,6 @@ void CEntity::Initialize(int type)
 	// by SECTREE::InsertEntity / RemoveEntity (H.2) is the sole source.
 	m_lpDesc = nullptr;
 	m_lMapIndex = 0;
-	m_bIsObserver = false;
-	m_bObserverModeChange = false;
 }
 
 void CEntity::Destroy()
@@ -171,36 +169,8 @@ void PacketView(entt::entity self, const void* data, int bytes, entt::entity exc
 } // namespace ecs::ViewSystem
 
 
-void CEntity::SetObserverMode(bool bFlag)
-{
-    if (m_bIsObserver == bFlag) return;
-    const auto entity = ecs::SpatialService::EntityFromLPENTITY(this);
-    const bool character = IsType(ENTITY_CHARACTER);
-    m_bIsObserver = bFlag;
-    m_bObserverModeChange = false;
-    // Commit the ECS observer state before publishing visibility changes.
-    // Do not dereference this after any component/network callback.
-    if (!g_registry.valid(entity)) return;
-    if (character) {
-        if (auto* status = g_registry.try_get<ecs::StatusFlags>(entity))
-            status->isObserverMode = bFlag;
-        if (bFlag) {
-            if (!g_registry.all_of<ecs::ObserverModeTag>(entity))
-                g_registry.insert<ecs::ObserverModeTag>(&entity, &entity + 1);
-        }
-        else g_registry.remove<ecs::ObserverModeTag>(entity);
-        if (!g_registry.valid(entity)) return;
-        if (!g_registry.all_of<ecs::DirtyTag>(entity))
-            g_registry.insert<ecs::DirtyTag>(&entity, &entity + 1);
-    }
-    ecs::VisibilitySystem::Refresh(g_registry, entity);
-    if (character && g_registry.valid(entity))
-        ecs::ChatSystem::Send(entity, CHAT_TYPE_COMMAND, "ObserverMode %d", bFlag ? 1 : 0);
-}
-
 void CEntity::UpdateSectree()
 {
     const auto entity = ecs::SpatialService::EntityFromLPENTITY(this);
-    m_bObserverModeChange = false;
     ecs::VisibilitySystem::Refresh(g_registry, entity);
 }

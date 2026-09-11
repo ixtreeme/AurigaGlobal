@@ -1344,7 +1344,7 @@ CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const ent
         return PERR_SERVER;
     else if (ecs::SocialSystem::GetDungeon(leader))
         return PERR_DUNGEON;
-    else if (pkGuest->IsObserverMode())
+    else if (ecs::PlayerRuntime::IsObserverMode(guest))
         return PERR_OBSERVER;
     else if (false == __party_can_join_by_level(
 		leader, guest))

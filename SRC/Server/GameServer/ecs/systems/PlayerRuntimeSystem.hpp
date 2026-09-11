@@ -189,6 +189,7 @@ int GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType);
 uint8_t GetBattlePassId(entt::entity e);
 bool IsPCBang(entt::entity e);
 bool IsObserverMode(entt::entity e);
+void SetObserverMode(entt::entity e, bool flag);
 bool IsArenaObserverMode(entt::entity e);
 void SetItemAwardVnum(entt::entity e, uint32_t vnum);
 uint32_t GetItemAwardVnum(entt::entity e);

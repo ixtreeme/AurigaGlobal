@@ -728,7 +728,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		int memberFlag = CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 		if (memberFlag == MEMBER_OBSERVER)
 		{
-			ch->SetObserverMode(true);
+			ecs::PlayerRuntime::SetObserverMode(ch->GetEntityHandle(), true);
 			ecs::PlayerRuntime::SetArenaObserverMode(ch->GetEntityHandle(), true);
 			const entt::entity character = ch->GetEntityHandle();
 			if (CArenaManager::instance().RegisterObserverPtr(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character) / 100, ecs::PlayerRuntime::GetY(character) / 100))
