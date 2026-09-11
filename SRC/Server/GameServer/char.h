@@ -995,17 +995,6 @@ public:
 
 	bool			PickupItem(uint32_t vid);
 
-	entt::entity		AutoGiveItem(uint32_t dwItemVnum,
-#ifdef ENABLE_NEW_STACK_LIMIT
-		int
-#else
-		uint8_t
-#endif
-		bCount = 1, int iRarePct = -1, bool bMsg = true
-#ifdef __HIGHLIGHT_SYSTEM__
-		, bool isHighLight = true
-#endif
-	);
 	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);
 
 #ifdef ENABLE_EXTRA_INVENTORY

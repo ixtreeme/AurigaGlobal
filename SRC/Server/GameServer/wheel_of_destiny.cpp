@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/AIHelpers.hpp"
@@ -148,7 +149,7 @@ void CWheelDestiny::GiveMyFuckingGift()
 	const auto GiftVnum = GetGiftVnum();
 
 	if (GiftVnum) {
-		ch->AutoGiveItem(GiftVnum, GetGiftCount());
+		ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), GiftVnum, GetGiftCount());
 		SetGift(0, 1); // reset
 	}
 	else

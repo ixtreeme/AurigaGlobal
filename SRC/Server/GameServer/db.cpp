@@ -587,7 +587,9 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					}
 					else
 					{
-						const entt::entity pkItem = ch->AutoGiveItem(pdw[0], pdw[1]);
+						const entt::entity pkItem = static_cast<int>(pdw[1]) > 0
+							? ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), pdw[0], pdw[1])
+							: entt::null;
 
 						if (ItemSystem::IsValidItem(pkItem))
 						{

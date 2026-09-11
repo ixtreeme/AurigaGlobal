@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include <Core/Logging.hpp>
@@ -99,7 +100,7 @@ namespace marriage
 				continue;
 
 			//ch->AutoGiveItem(27003, 5);
-			ch->AutoGiveItem(27002, 5);
+			ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), 27002, 5);
 		}
 	}
 

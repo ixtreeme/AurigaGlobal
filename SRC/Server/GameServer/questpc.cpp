@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ItemSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -696,7 +697,7 @@ namespace quest
 					break;
 
 				case RewardData::REWARD_TYPE_ITEM:
-					ch->AutoGiveItem(it->value1, it->value2);
+					if (it->value2 > 0) ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), it->value1, static_cast<uint32_t>(it->value2));
 					break;
 
 				case RewardData::REWARD_TYPE_NONE:

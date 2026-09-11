@@ -104,7 +104,7 @@ namespace item_change
 				}
 
 				ch->RemoveSpecifyItem(30279, 100);
-				ch->AutoGiveItem(30280, 1);
+				ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), 30280, 1);
 				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Exchange complete.");
 				return true;
 			}
@@ -122,7 +122,7 @@ namespace item_change
 				}
 
 				ch->RemoveSpecifyItem(30277, 100);
-				ch->AutoGiveItem(30278, 1);
+				ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), 30278, 1);
 				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Exchange complete.");
 				return true;
 			}

@@ -1156,7 +1156,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         }
 
         d->SetFlag(rewardFlag, 1);
-        ch->AutoGiveItem(kRewardItemVnum, kRewardItemCount);
+        ItemSystem::AutoGiveItemEcs(character, kRewardItemVnum, kRewardItemCount);
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reward received.");
         return true;
     }
@@ -1477,7 +1477,7 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
     if (floor == 1 && vnum == kFloor1LowBossVnum)
     {
-        pkKiller->AutoGiveItem(kFloor1ItemVnum, 1);
+        ItemSystem::AutoGiveItemEcs(killer, kFloor1ItemVnum, 1);
         NoticeMap(idx, "<Frostbane Fortress> %s received the required item. Use it on the compass.", ecs::PlayerRuntime::GetName(killer).data());
         return;
     }
@@ -1528,7 +1528,7 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         {
             d->SetFlag(kFlagCanKillFloor3Boss, 0);
             d->SetFlag(kFlagCanUseRune, 1);
-            pkKiller->AutoGiveItem(kFloor3ItemVnum, 1);
+            ItemSystem::AutoGiveItemEcs(killer, kFloor3ItemVnum, 1);
             NoticeMap(idx, "<Frostbane Fortress> %s received the rune item. Use it on the memorial.", ecs::PlayerRuntime::GetName(killer).data());
         }
         return;

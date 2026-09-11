@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ItemSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
@@ -722,7 +723,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 			for(int j = 0; j < MISSION_REWARD_COUNT; j++)
 			{
 				if(missionInfo[i].aRewardList[j].dwVnum && missionInfo[i].aRewardList[j].bCount > 0)
-					pkChar->AutoGiveItem(missionInfo[i].aRewardList[j].dwVnum, missionInfo[i].aRewardList[j].bCount);
+					ItemSystem::AutoGiveItemEcs(pkChar->GetEntityHandle(), missionInfo[i].aRewardList[j].dwVnum, missionInfo[i].aRewardList[j].bCount);
 			}
 
 			break;
@@ -832,7 +833,8 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 
 	for (unsigned int i = 0; i < rewardInfo.size(); i++)
 	{
-		pkChar->AutoGiveItem(rewardInfo[i].dwVnum, rewardInfo[i].bCount);
+		if (rewardInfo[i].bCount > 0)
+			ItemSystem::AutoGiveItemEcs(pkChar->GetEntityHandle(), rewardInfo[i].dwVnum, rewardInfo[i].bCount);
 	}
 
 	TBattlePassRegisterRanking ranking;

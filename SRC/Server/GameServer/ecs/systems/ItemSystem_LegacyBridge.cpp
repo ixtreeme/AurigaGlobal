@@ -2888,26 +2888,6 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 	}
 }
 
-entt::entity CHARACTER::AutoGiveItem(uint32_t vnum,
-#ifdef ENABLE_NEW_STACK_LIMIT
-    int
-#else
-    uint8_t
-#endif
-    count, int rarePct, bool message
-#ifdef __HIGHLIGHT_SYSTEM__
-    , bool highlight
-#endif
-)
-{
-    if (count <= 0) return entt::null;
-    return ItemSystem::AutoGiveItemEcs(GetEntityHandle(), vnum, static_cast<uint32_t>(count), rarePct, message
-#ifdef __HIGHLIGHT_SYSTEM__
-        , highlight
-#endif
-    );
-}
-
 bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
 {
 	if (!CanHandleItem())
@@ -3398,7 +3378,9 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		break;
 		default:
 		{
-			item_get = AutoGiveItem(dwVnum, dwCount, iRarePct);
+			item_get = static_cast<int>(dwCount) > 0
+				? ItemSystem::AutoGiveItemEcs(GetEntityHandle(), dwVnum, dwCount, iRarePct)
+				: entt::null;
 
 			if (ItemSystem::IsValidItem(item_get))
 			{

@@ -1131,7 +1131,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
         else
         {
             d->SetFlag(kFlagCanActivateSeal, 1);
-            pkFrom->AutoGiveItem(kActivateItemVnum, 1);
+            ItemSystem::AutoGiveItemEcs(from, kActivateItemVnum, 1);
             NoticeMap(idx, "<Bloody cathedral> Use the item on the first seal.");
         }
         return true;

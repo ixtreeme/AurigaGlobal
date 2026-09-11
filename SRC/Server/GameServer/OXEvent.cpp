@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
@@ -455,11 +456,11 @@ count)
 		{
 #ifdef ENABLE_BLOCK_MULTIFARM
 			if (AffectSystem::FindAffect(charEntity, AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
-				pkChar->AutoGiveItem(dwItemVnum, count);
+				if (count > 0) ItemSystem::AutoGiveItemEcs(pkChar->GetEntityHandle(), dwItemVnum, static_cast<uint32_t>(count));
 				LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(charEntity)), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(charEntity)->GetHostName(), dwItemVnum);
 			}
 #else
-			pkChar->AutoGiveItem(dwItemVnum, count);
+			if (count > 0) ItemSystem::AutoGiveItemEcs(pkChar->GetEntityHandle(), dwItemVnum, static_cast<uint32_t>(count));
 			LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(charEntity)), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(charEntity)->GetHostName(), dwItemVnum);
 #endif
 		}

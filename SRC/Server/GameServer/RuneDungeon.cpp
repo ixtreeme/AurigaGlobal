@@ -1044,14 +1044,14 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             if (!party)
             {
                 if (pkKiller->CountSpecifyItem(kKeyFragment) < 10 && pkKiller->CountSpecifyItem(kFloorKey) < 1)
-                    pkKiller->AutoGiveItem(kKeyFragment, 1);
+                    ItemSystem::AutoGiveItemEcs(killer, kKeyFragment, 1);
             }
             else
             {
                 if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(killer))
                 {
                     if (pkKiller->CountSpecifyItem(kKeyFragment) < 10 && pkKiller->CountSpecifyItem(kFloorKey) < 1)
-                        pkKiller->AutoGiveItem(kKeyFragment, 1);
+                        ItemSystem::AutoGiveItemEcs(killer, kKeyFragment, 1);
                 }
             }
         }
@@ -1490,7 +1490,7 @@ bool CRuneDungeon::OnUseItem89102(entt::entity character)
     }
 
     ch->RemoveSpecifyItem(kKeyFragment, 10);
-    ch->AutoGiveItem(kFloorKey, 1);
+    ItemSystem::AutoGiveItemEcs(character, kFloorKey, 1);
     return true;
 }
 
