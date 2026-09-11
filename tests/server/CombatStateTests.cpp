@@ -454,8 +454,6 @@ void ecs::SocialSystem::CloseMyShop(entt::entity) { UnexpectedService(__func__);
 entt::entity ecs::SocialSystem::GetMarryPartner(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetQuestDamage(int,int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsImmortal(entt::entity) { return false; }
-int64_t CHARACTER::GetRankPoints(int) { UnexpectedService(__func__); }
-void CHARACTER::SetRankPoints(int,int64_t) { UnexpectedService(__func__); }
 int CHARACTER::GetSkillLevel(unsigned int)const { UnexpectedService(__func__); }
 int CHARACTER::GetSkillPower(unsigned int,unsigned char)const { UnexpectedService(__func__); }
 int CHARACTER::ComputeSkill(unsigned int,entt::entity,unsigned char) { UnexpectedService(__func__); }

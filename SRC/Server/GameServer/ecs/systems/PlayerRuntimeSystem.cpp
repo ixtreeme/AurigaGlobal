@@ -1472,6 +1472,27 @@ uint8_t GetBattlePassID(entt::entity e)
 
 #endif
 
+// The item a quest is currently working on. All four CHARACTER accessors
+// were wrappers over QuestContext::questItem, one of them converting the
+// entity back into a pointer on the way out.
+entt::entity GetQuestItem(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return entt::null;
+
+	const auto* context = g_registry.try_get<ecs::QuestContext>(e);
+	return context && ItemSystem::IsValidItem(context->questItem) ? context->questItem : entt::null;
+}
+
+void SetQuestItem(entt::entity e, entt::entity item)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	g_registry.get_or_emplace<ecs::QuestContext>(e).questItem =
+		ItemSystem::IsValidItem(item) ? item : entt::null;
+}
+
 #ifdef ENABLE_RANKING
 int64_t GetRankPoints(entt::entity e, int category)
 {
@@ -1492,6 +1513,10 @@ bool SetRankPoints(entt::entity e, int category, int64_t value)
 	auto& rank = g_registry.get_or_emplace<ecs::RankPoints>(e);
 	rank.points[category] = value;
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+
+	// CHARACTER::SetRankPoints saved on every change and every caller went
+	// through it, so the save comes along rather than being dropped.
+	ecs::SessionSystem::Save(e);
 	return true;
 }
 #endif
@@ -2151,36 +2176,6 @@ uint32_t CHARACTER::GetAID() const
     return dwAID;
 }
 
-void CHARACTER::SetQuestItemPtr(entt::entity item)
-{
-	const entt::entity owner = GetEntityHandle();
-	if (owner == entt::null || !g_registry.valid(owner))
-		return;
-
-	auto& context = g_registry.get_or_emplace<ecs::QuestContext>(owner);
-	context.questItem = ItemSystem::IsValidItem(item) ? item : entt::null;
-}
-
-void CHARACTER::ClearQuestItemPtr()
-{
-	SetQuestItemPtr(entt::null);
-}
-
-entt::entity CHARACTER::GetQuestItemEntity() const
-{
-	const entt::entity owner = GetEntityHandle();
-	if (owner == entt::null || !g_registry.valid(owner))
-		return entt::null;
-
-	const auto* context = g_registry.try_get<ecs::QuestContext>(owner);
-	return context && ItemSystem::IsValidItem(context->questItem) ? context->questItem : entt::null;
-}
-
-LPITEM CHARACTER::GetQuestItemPtr() const
-{
-	return ResolveLegacyItem(GetQuestItemEntity());
-}
-
 // Pet/mount markers live only in StatusFlags; legacy readers use the same store.
 
 #ifdef ENABLE_VOTE4BUFF
@@ -2831,29 +2826,6 @@ bool CHARACTER::Update_Inven()
 #endif
 
 #ifdef ENABLE_RANKING
-long long CHARACTER::GetRankPoints(int iArg)
-{
-    if ((iArg < 0) || (iArg >= RANKING_MAX_CATEGORIES))
-        return 0;
-
-	const entt::entity entity = GetEntityHandle();
-	if (entity != entt::null && g_registry.valid(entity) &&
-		g_registry.all_of<ecs::RankPoints>(entity))
-		return ecs::PlayerRuntime::GetRankPoints(entity, iArg);
-
-	return m_lRankPoints[iArg];
-}
-
-void CHARACTER::SetRankPoints(int iArg, long long lPoint)
-{
-    if ((iArg < 0) || (iArg >= RANKING_MAX_CATEGORIES))
-        return;
-
-	m_lRankPoints[iArg] = lPoint;
-	ecs::PlayerRuntime::SetRankPoints(GetEntityHandle(), iArg, lPoint);
-	ecs::SessionSystem::Save(GetEntityHandle());
-}
-
 void CHARACTER::RankingSubcategory(int iArg)
 {
     if (!GetDesc())
@@ -3504,11 +3476,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()), "GM_LOGIN", "");
         LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(ecs::PlayerRuntime::GetGMLevel(GetEntityHandle())), GetName(), GetPlayerID(), GetX(), GetY());
     }
-
-#ifdef ENABLE_RANKING
-    for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
-        m_lRankPoints[i] = t->lRankPoints[i];
-#endif
 
 #ifdef __PET_SYSTEM__
     if (m_petSystem)
@@ -4203,10 +4170,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_ANTI_CMD_FLOOD
 #endif
     m_iSyncHackCount = 0;
-#ifdef ENABLE_RANKING
-    for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
-        m_lRankPoints[i] = 0;
-#endif
 
 #ifdef ENABLE_BATTLE_PASS
     ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).clear();

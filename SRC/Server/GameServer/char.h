@@ -1233,12 +1233,9 @@ protected:
 
 #ifdef ENABLE_RANKING
 protected:
-	long long	m_lRankPoints[RANKING_MAX_CATEGORIES];
 public:
 #ifdef LEADERBOARD_RAZOR93
 #endif
-	long long	GetRankPoints(int iArg);
-	void		SetRankPoints(int iArg, long long lPoint);
 	void		RankingSubcategory(int iArg);
 #endif
 #ifdef ENABLE_NEW_PET_EDITS
@@ -1544,10 +1541,6 @@ protected:
 	//
 public:
 
-	void				SetQuestItemPtr(entt::entity item);
-	void				ClearQuestItemPtr();
-	entt::entity		GetQuestItemEntity() const;
-	LPITEM				GetQuestItemPtr() const;
 
 
 

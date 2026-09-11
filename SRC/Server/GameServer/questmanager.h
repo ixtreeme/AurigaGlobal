@@ -112,7 +112,6 @@ namespace quest
 		bool		UseItem(unsigned int pc, entt::entity item, bool bReceiveAll);
 		bool		SIGUse(unsigned int pc, uint32_t sig_vnum, entt::entity item, bool bReceiveAll);
 		bool		TakeItem(unsigned int pc, unsigned int npc, entt::entity item);
-		LPITEM		GetCurrentItem();
 		entt::entity	GetCurrentItemEntity();
 		void		ClearCurrentItem();
 		void		SetCurrentItem(entt::entity item);

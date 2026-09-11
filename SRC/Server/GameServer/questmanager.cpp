@@ -1273,35 +1273,19 @@ namespace quest
 		return npc ? ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)) : 0;
 	}
 
-	LPITEM CQuestManager::GetCurrentItem()
-	{
-		return ecs::PlayerRuntime::IsValid(GetCurrentCharacter()) ? GetCurrentCharacterPtr()->GetQuestItemPtr() : nullptr;
-	}
-
 	entt::entity CQuestManager::GetCurrentItemEntity()
 	{
-		return ecs::PlayerRuntime::IsValid(GetCurrentCharacter()) ? GetCurrentCharacterPtr()->GetQuestItemEntity() : entt::null;
+		return ecs::PlayerRuntime::GetQuestItem(GetCurrentCharacter());
 	}
 
 	void CQuestManager::ClearCurrentItem()
 	{
-		if (GetCurrentCharacterPtr())
-			GetCurrentCharacterPtr()->ClearQuestItemPtr();
+		ecs::PlayerRuntime::SetQuestItem(GetCurrentCharacter(), entt::null);
 	}
 
 	void CQuestManager::SetCurrentItem(entt::entity item)
 	{
-		if (item == entt::null)
-		{
-			ClearCurrentItem();
-			return;
-		}
-
-		LPCHARACTER ch = GetCurrentCharacterPtr();
-		if (!ch)
-			return;
-
-		ch->SetQuestItemPtr(item);
+		ecs::PlayerRuntime::SetQuestItem(GetCurrentCharacter(), item);
 	}
 
 	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr() const

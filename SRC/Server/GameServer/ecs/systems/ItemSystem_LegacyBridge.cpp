@@ -1935,7 +1935,8 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				ItemSystem::GiveGold(GetEntityHandle(), (int64_t)item->GetCount());
 				InventorySystem::RemoveFromGround(item->GetEntityHandle());
 #ifdef ENABLE_RANKING
-				SetRankPoints(10, GetRankPoints(10) + item->GetCount());
+				ecs::PlayerRuntime::SetRankPoints(GetEntityHandle(), 10,
+					ecs::PlayerRuntime::GetRankPoints(GetEntityHandle(), 10) + item->GetCount());
 #endif
 				ItemSystem::DestroyItemEntityEcs(
 					(item ? item->GetEntityHandle() : entt::null),
