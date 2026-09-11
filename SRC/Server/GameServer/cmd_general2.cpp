@@ -24,13 +24,11 @@
 
 #ifdef ENABLE_BLOCK_MULTIFARM
 ACMD(do_drop_block) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->BlockDrop();
+	ecs::PlayerRuntime::BlockDrop(character);
 }
 
 ACMD(do_drop_unblock) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->UnblockDrop();
+	ecs::PlayerRuntime::UnblockDrop(character);
 }
 #endif
 

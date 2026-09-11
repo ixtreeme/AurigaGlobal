@@ -1238,7 +1238,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 #endif
 
 #ifdef ENABLE_BLOCK_MULTIFARM
-	self->SetDropStatus();
+	ecs::PlayerRuntime::SetDropStatus(e);
 #endif
 #ifdef ENABLE_BIOLOGIST_UI
 	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_BEGIN pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());

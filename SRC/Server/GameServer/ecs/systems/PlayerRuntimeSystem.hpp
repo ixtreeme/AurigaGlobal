@@ -158,10 +158,17 @@ void SetImmuneFlag(entt::entity e, uint32_t value);
 // The three timed events that used to be CHARACTER members. Slot names the
 // one being addressed; Cancel runs event_cancel on it, Set stores or clears.
 enum class CharEvent : uint8_t { Dead, Stun, Recovery, Fishing, Timed, Warp, WarpNPC,
-                                 BattlePassStayOnline, Save };
+                                 BattlePassStayOnline, Drop, Save };
 LPEVENT GetCharEvent(entt::entity e, CharEvent slot);
 void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev);
 void CancelCharEvent(entt::entity e, CharEvent slot);
+
+#ifdef ENABLE_BLOCK_MULTIFARM
+void BlockProcessed(entt::entity e);
+void BlockDrop(entt::entity e);
+void UnblockDrop(entt::entity e);
+void SetDropStatus(entt::entity e);
+#endif
 
 // Test-server monster diagnostics. Plain text, no varargs: the callers
 // that needed formatting are still CHARACTER::MonsterLog.

@@ -975,6 +975,7 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::Warp:     return &events.warp;
     case ecs::PlayerRuntime::CharEvent::WarpNPC:  return &events.warpNPC;
     case ecs::PlayerRuntime::CharEvent::BattlePassStayOnline: return &events.battlePassStayOnline;
+    case ecs::PlayerRuntime::CharEvent::Drop: return &events.drop;
     }
     return nullptr;
 }
@@ -3243,10 +3244,7 @@ void CHARACTER::Destroy()
 
     event_cancel(&m_pkMiningEvent);
 #ifdef ENABLE_BLOCK_MULTIFARM
-    if (m_pkDropEvent) {
-        event_cancel(&m_pkDropEvent);
-        m_pkDropEvent = nullptr;
-    }
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Drop);
 #endif
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     event_cancel(&m_pkStayOnlineEvent);
@@ -4086,97 +4084,6 @@ bool CHARACTER::StartChannelSwitch(int32_t newAddr, uint16_t newPort)
 #endif
 
 #ifdef ENABLE_BLOCK_MULTIFARM
-void CHARACTER::BlockProcessed()
-{
-    if (!m_pkDropEvent) {
-        LOG_ERROR("<drop_event> process failed, event is null.");
-    }
-    else {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 42, "");
-#endif
-        event_cancel(&m_pkDropEvent);
-        m_pkDropEvent = nullptr;
-        LOG_INFO("<drop_event> processed.");
-    }
-}
-
-void CHARACTER::BlockDrop()
-{
-    if (!IsPC()) {
-        return;
-    }
-
-    if (GetMapIndex() != 358 && GetMapIndex() != 359 && GetMapIndex() != 360 && GetMapIndex() != 361) {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 36, "");
-#endif
-        return;
-    }
-
-    if (m_pkDropEvent) {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 44, "");
-#endif
-        return;
-    }
-
-    drop_event_info* info = AllocEventInfo<drop_event_info>();
-    info->ch = GetEntityHandle();
-    info->time = get_global_time() + 5;
-    info->drop = false;
-    m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
-#ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 43, "%d", 5);
-#endif
-}
-
-void CHARACTER::UnblockDrop()
-{
-    if (GetMapIndex() != 358 && GetMapIndex() != 359 && GetMapIndex() != 360 && GetMapIndex() != 361) {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 36, "");
-#endif
-        return;
-    }
-
-    if (m_pkDropEvent) {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 44, "");
-#endif
-        return;
-    }
-
-    drop_event_info* info = AllocEventInfo<drop_event_info>();
-    info->ch = GetEntityHandle();
-    info->time = get_global_time() + 5;
-    info->drop = true;
-    m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
-#ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 43, "%d", 5);
-#endif
-}
-
-void CHARACTER::SetDropStatus()
-{
-    if (!IsPC())
-        return;
-
-    std::string login = GetDesc()->GetAccountTable().login;
-    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE login='%s'", login.c_str()));
-    if (msg->Get()->uiNumRows != 0) {
-        MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
-        int32_t r = atoi(row[0]);
-        if (r == 1) {
-            AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_DROP_BLOCK);
-            AffectSystem::AddAffect(GetEntityHandle(), AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
-        }
-        else {
-            AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_DROP_UNBLOCK);
-            AffectSystem::AddAffect(GetEntityHandle(), AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
-        }
-    }
-}
 #endif
 
 #ifdef __HIDE_COSTUME_SYSTEM__
@@ -4401,7 +4308,6 @@ void CHARACTER::Initialize()
     m_lastdropitem = 0;
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
-    m_pkDropEvent = nullptr;
 #endif
 }
 
@@ -4514,6 +4420,106 @@ EVENTFUNC(destroy_when_idle_event)
 }
 
 #ifdef ENABLE_BLOCK_MULTIFARM
+namespace ecs::PlayerRuntime {
+
+// The antifarm drop block. The five second countdown lives in CharEvent::Drop;
+// CHARACTER::m_pkDropEvent held it before, which is why drop_event could not
+// clear its own slot and said so in a comment.
+void BlockProcessed(entt::entity e)
+{
+    if (!GetCharEvent(e, CharEvent::Drop))
+    {
+        LOG_ERROR("<drop_event> process failed, event is null.");
+        return;
+    }
+
+#ifdef TEXTS_IMPROVEMENT
+    ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 42, "");
+#endif
+    CancelCharEvent(e, CharEvent::Drop);
+    LOG_INFO("<drop_event> processed.");
+}
+
+namespace {
+
+// BlockDrop and UnblockDrop were the same body twice over, differing only in
+// the flag they hand the event and in BlockDrop's IsPC test.
+void StartDropStatusChange(entt::entity e, bool drop)
+{
+    const int32_t map = GetMapIndex(e);
+    if (map != 358 && map != 359 && map != 360 && map != 361)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 36, "");
+#endif
+        return;
+    }
+
+    if (GetCharEvent(e, CharEvent::Drop))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 44, "");
+#endif
+        return;
+    }
+
+    drop_event_info* info = AllocEventInfo<drop_event_info>();
+    info->ch = e;
+    info->time = get_global_time() + 5;
+    info->drop = drop;
+    SetCharEvent(e, CharEvent::Drop, event_create(drop_event, info, PASSES_PER_SEC(1)));
+#ifdef TEXTS_IMPROVEMENT
+    ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 43, "%d", 5);
+#endif
+}
+
+} // namespace
+
+void BlockDrop(entt::entity e)
+{
+    if (!IsPC(e))
+        return;
+
+    StartDropStatusChange(e, false);
+}
+
+void UnblockDrop(entt::entity e)
+{
+    StartDropStatusChange(e, true);
+}
+
+// The account's antifarm row decides which of the two affects the character
+// carries. Read at login, and again whenever the row changes.
+void SetDropStatus(entt::entity e)
+{
+    if (!IsPC(e))
+        return;
+
+    LPDESC desc = GetDesc(e);
+    if (!desc)
+        return;
+
+    std::string login = desc->GetAccountTable().login;
+    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(
+        "SELECT status FROM account.antifarm WHERE login='%s'", login.c_str()));
+    if (msg->Get()->uiNumRows == 0)
+        return;
+
+    MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+    if (atoi(row[0]) == 1)
+    {
+        AffectSystem::RemoveAffect(e, AFFECT_DROP_BLOCK);
+        AffectSystem::AddAffect(e, AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+    }
+    else
+    {
+        AffectSystem::RemoveAffect(e, AFFECT_DROP_UNBLOCK);
+        AffectSystem::AddAffect(e, AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+    }
+}
+
+} // namespace ecs::PlayerRuntime
+
 EVENTFUNC(drop_event)
 {
     drop_event_info* info = dynamic_cast<drop_event_info*>(event->info);
@@ -4534,8 +4540,6 @@ EVENTFUNC(drop_event)
         LOG_ERROR("<drop_event> {} have no desc connector.", ch->GetName());
         return 0;
     }
-
-    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDropEvent
 
     time_t diff = info->time - get_global_time();
     if (diff > 0) {
@@ -4602,7 +4606,7 @@ EVENTFUNC(drop_event)
             }
         }
 
-        ch->BlockProcessed();
+        ecs::PlayerRuntime::BlockProcessed(character);
     }
 
     return PASSES_PER_SEC(1);

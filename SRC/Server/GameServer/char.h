@@ -1935,10 +1935,6 @@ public:
 	void ProcessCheatCheck(int32_t time);
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
-	void BlockProcessed();
-	void BlockDrop();
-	void UnblockDrop();
-	void SetDropStatus();
 	void ComputeMountInventoryBonuses();
 #endif
 
@@ -1954,7 +1950,6 @@ protected:
 	int32_t m_firstReward, m_rewardCount, m_checkRepeated, m_dropitemcount, m_lastdropitem;
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
-	LPEVENT m_pkDropEvent;
 #endif
 
 #ifdef ENABLE_USEITEM_COOLDOWN

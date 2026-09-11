@@ -855,7 +855,7 @@ int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpec
 void ItemSystem::AutoRecoveryItemProcess(entt::entity, int) { UnexpectedService(__func__); }
 void CHARACTER::AutoRecallProcess(void) { UnexpectedService(__func__); }
 void DragonSoulSystem::Initialize(entt::entity) { UnexpectedService(__func__); }
-void CHARACTER::SetDropStatus(void) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::SetDropStatus(entt::entity) { UnexpectedService(__func__); }
 bool MountSystem::StopRiding(entt::entity) { UnexpectedService(__func__); }
 void ecs::VisibilitySystem::Reencode(entt::registry &,entt::entity) { UnexpectedService(__func__); }
 int SkillSystem::GetSkillLevel(entt::entity,unsigned int) { UnexpectedService(__func__); }
