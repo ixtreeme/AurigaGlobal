@@ -378,7 +378,8 @@ void CParty::Destroy()
 			{
 				// NPC�� ��� ���� �ð� �� ���� ���� �ƴ� �� ������� �ϴ� �̺�Ʈ�� ���۽�Ų��.
 				CombatSystem::SetLastAttacked(rMember.pCharacter->GetEntityHandle(), dwTime);
-				rMember.pCharacter->StartDestroyWhenIdleEvent();
+				ecs::PlayerRuntime::StartDestroyWhenIdleEvent(
+					rMember.pCharacter->GetEntityHandle());
 			}
 
 			rMember.pCharacter->SetParty(nullptr);

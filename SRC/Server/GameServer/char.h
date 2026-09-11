@@ -1556,16 +1556,13 @@ public:
 
 public:
 	void				StartSaveEvent();
-	void				StartDestroyWhenIdleEvent();
 
 
 	//DELAYED_WARP
 	//END_DELAYED_WARP
 
 	// MINING
-	LPEVENT				m_pkMiningEvent;
 	// END_OF_MINING
-	LPEVENT				m_pkDestroyWhenIdleEvent;
 	LPEVENT				m_pkPetSystemUpdateEvent;
 #ifdef __NEWPET_SYSTEM__
 	LPEVENT				m_pkNewPetSystemUpdateEvent;

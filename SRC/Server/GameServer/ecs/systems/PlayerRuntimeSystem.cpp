@@ -95,6 +95,7 @@
 #include "../../DragonSoul.h"
 
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
+EVENTFUNC(destroy_when_idle_event);
 
 namespace {
 
@@ -398,6 +399,24 @@ void SetBlockMode(entt::entity e, uint8_t flag)
 	SetQuestFlag(e, "game_option.block_party_request", flag & BLOCK_PARTY_REQUEST ? 1 : 0);
 
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+// A party member left behind with nobody around is retired after five
+// minutes. The timer was the last LPEVENT CHARACTER kept for itself.
+
+void StartDestroyWhenIdleEvent(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	if (GetCharEvent(e, CharEvent::DestroyWhenIdle))
+		return;
+
+	char_event_info* info = AllocEventInfo<char_event_info>();
+	info->ch = e;
+
+	SetCharEvent(e, CharEvent::DestroyWhenIdle,
+		event_create(destroy_when_idle_event, info, PASSES_PER_SEC(300)));
 }
 
 void SetBlockModeForce(entt::entity e, uint8_t blockMode)
@@ -976,6 +995,8 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::WarpNPC:  return &events.warpNPC;
     case ecs::PlayerRuntime::CharEvent::BattlePassStayOnline: return &events.battlePassStayOnline;
     case ecs::PlayerRuntime::CharEvent::Drop: return &events.drop;
+    case ecs::PlayerRuntime::CharEvent::Mining: return &events.mining;
+    case ecs::PlayerRuntime::CharEvent::DestroyWhenIdle: return &events.destroyWhenIdle;
     }
     return nullptr;
 }
@@ -3174,7 +3195,7 @@ void CHARACTER::Destroy()
     }
 #endif
 
-    event_cancel(&m_pkMiningEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Mining);
 #ifdef ENABLE_BLOCK_MULTIFARM
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Drop);
 #endif
@@ -3185,7 +3206,7 @@ void CHARACTER::Destroy()
 #endif
     AffectSystem::ClearAffect(GetEntityHandle(), false);
 
-    event_cancel(&m_pkDestroyWhenIdleEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::DestroyWhenIdle);
 
 
     if (MountSystem::GetMountInventory(GetEntityHandle()))
@@ -3295,18 +3316,6 @@ void CHARACTER::MountVnum(uint32_t vnum)
     CombatSystem::SetComboSequence(GetEntityHandle(), 0);
 
     ComputePoints();
-}
-
-void CHARACTER::StartDestroyWhenIdleEvent()
-{
-    if (m_pkDestroyWhenIdleEvent)
-        return;
-
-    char_event_info* info = AllocEventInfo<char_event_info>();
-
-    info->ch = GetEntityHandle();
-
-    m_pkDestroyWhenIdleEvent = event_create(destroy_when_idle_event, info, PASSES_PER_SEC(300));
 }
 
 void CHARACTER::SetPlayerProto(const TPlayerTable* t)
@@ -3539,7 +3548,8 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
         info->ch = GetEntityHandle();
 
-        m_pkMiningEvent = event_create(kill_ore_load_event, info, PASSES_PER_SEC(number(7 * 60, 15 * 60)));
+        ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Mining,
+            event_create(kill_ore_load_event, info, PASSES_PER_SEC(number(7 * 60, 15 * 60))));
     }
 }
 
@@ -4016,10 +4026,8 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
 #endif
 
-    m_pkMiningEvent = nullptr;
 
 
-    m_pkDestroyWhenIdleEvent = nullptr;
 
 
 
@@ -4237,9 +4245,9 @@ EVENTFUNC(kill_ore_load_event)
         return 0;
     }
 
-    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkMiningEvent
 
-    ch->m_pkMiningEvent = nullptr;
+    ecs::PlayerRuntime::SetCharEvent(
+        info->ch, ecs::PlayerRuntime::CharEvent::Mining, nullptr);
     M2_DESTROY_CHARACTER(ch);
     return 0;
 }
@@ -4287,7 +4295,8 @@ EVENTFUNC(destroy_when_idle_event)
 
     LOG_INFO("DESTROY_WHEN_IDLE: {}", ch->GetName());
 
-    ch->m_pkDestroyWhenIdleEvent = nullptr;
+    ecs::PlayerRuntime::SetCharEvent(
+        info->ch, ecs::PlayerRuntime::CharEvent::DestroyWhenIdle, nullptr);
     M2_DESTROY_CHARACTER(ch);
     return 0;
 }

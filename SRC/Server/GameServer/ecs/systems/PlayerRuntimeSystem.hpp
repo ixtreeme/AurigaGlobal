@@ -36,6 +36,7 @@ void RefreshGMLevel(entt::entity e);
 uint8_t GetBlockMode(entt::entity e);
 bool IsBlockMode(entt::entity e, uint8_t flag);
 void SetBlockMode(entt::entity e, uint8_t flag);
+void StartDestroyWhenIdleEvent(entt::entity e);
 void SetBlockModeForce(entt::entity e, uint8_t flags);
 uint32_t GetPacketVID(entt::entity e);
 uint32_t GetRaceNum(entt::entity e);
@@ -158,7 +159,8 @@ void SetImmuneFlag(entt::entity e, uint32_t value);
 // The three timed events that used to be CHARACTER members. Slot names the
 // one being addressed; Cancel runs event_cancel on it, Set stores or clears.
 enum class CharEvent : uint8_t { Dead, Stun, Recovery, Fishing, Timed, Warp, WarpNPC,
-                                 BattlePassStayOnline, Drop, Save };
+                                 BattlePassStayOnline, Drop, Mining,
+                                 DestroyWhenIdle, Save };
 LPEVENT GetCharEvent(entt::entity e, CharEvent slot);
 void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev);
 void CancelCharEvent(entt::entity e, CharEvent slot);

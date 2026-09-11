@@ -2584,8 +2584,8 @@ EVENTFUNC(kill_campfire_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkMiningEvent
-	ch->m_pkMiningEvent = nullptr;
+	ecs::PlayerRuntime::SetCharEvent(
+		info->ch, ecs::PlayerRuntime::CharEvent::Mining, nullptr);
 	M2_DESTROY_CHARACTER(ch);
 	return 0;
 }
@@ -7463,7 +7463,9 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 		info->ch = campfire->GetEntityHandle();
 
-		campfire->m_pkMiningEvent = event_create(kill_campfire_event, info, PASSES_PER_SEC(40));
+		ecs::PlayerRuntime::SetCharEvent(campfire->GetEntityHandle(),
+			ecs::PlayerRuntime::CharEvent::Mining,
+			event_create(kill_campfire_event, info, PASSES_PER_SEC(40)));
 
 		ConsumeItemEcs(itemEntity);
 	}

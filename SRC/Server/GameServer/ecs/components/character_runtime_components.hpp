@@ -42,6 +42,8 @@ struct LegacyCharEvents {
     LPEVENT warpNPC { nullptr };
     LPEVENT battlePassStayOnline { nullptr };
     LPEVENT drop { nullptr };
+    LPEVENT mining { nullptr };
+    LPEVENT destroyWhenIdle { nullptr };
 };
 
 struct CharacterRuntimeFlagsComponent {
