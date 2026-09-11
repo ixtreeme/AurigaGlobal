@@ -539,11 +539,6 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 #endif
 
 
-int64_t CHARACTER::GetRealPoint(uint8_t type) const
-{
-	return type < POINT_MAX_NUM ? ecs::PointSystem::ReadRealArray(GetEntityHandle(), type) : 0;
-}
-
 int64_t CHARACTER::GetPoint(uint8_t type) const
 {
 	if (type >= POINT_MAX_NUM)

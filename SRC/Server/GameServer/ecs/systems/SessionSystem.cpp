@@ -550,9 +550,8 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    // GetPoint, GetRealPoint, SetRealPoint, ResetPlayTime, Inven_Point, the
-    // horse table, the play-start stamp and the mobile-auth pair have no
-    // entity form yet; each is its own migration and they share this resolve.
+    // The horse table is CHorseRider state with no component yet; that is its
+    // own migration.
     LPCHARACTER self = ecs::LegacyCharOf(e);
     if (!self)
         return;
@@ -569,9 +568,9 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
     strlcpy(tab.ip, ecs::PlayerRuntime::GetDesc(e) ? ecs::PlayerRuntime::GetDesc(e)->GetHostName() : "", sizeof(tab.ip));
 
     tab.id = ecs::PlayerRuntime::GetPlayerID(e);
-    tab.voice = self->GetPoint(POINT_VOICE);
+    tab.voice = ecs::PointSystem::Get(e, POINT_VOICE);
     tab.level = ecs::PointSystem::GetLevel(e);
-    tab.level_step = self->GetPoint(POINT_LEVEL_STEP);
+    tab.level_step = ecs::PointSystem::Get(e, POINT_LEVEL_STEP);
     tab.exp = ecs::PlayerRuntime::GetExp(e);
     tab.gold = ecs::PointSystem::GetGold(e);
 #ifdef ENABLE_GAYA_SYSTEM
@@ -590,7 +589,7 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
     }
     tab.skill_group = SkillSystem::GetSkillGroup(e);
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    tab.envanter = self->Inven_Point();
+    tab.envanter = ecs::PointSystem::GetInventoryExpansion(e);
 #endif
     uint32_t dwPlayedTime = (get_dword_time() - ecs::PlayerRuntime::GetPlayStartTime(e));
 
@@ -601,11 +600,11 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
             CombatSystem::UpdateAlignment(e, 5 * (dwPlayedTime / 60000));
         }
 
-        ecs::PointSystem::SetReal(e, POINT_PLAYTIME, self->GetRealPoint(POINT_PLAYTIME) + dwPlayedTime / 60000);
+        ecs::PointSystem::SetReal(e, POINT_PLAYTIME, ecs::PointSystem::GetReal(e, POINT_PLAYTIME) + dwPlayedTime / 60000);
         ecs::PlayerRuntime::ResetPlayTime(e, dwPlayedTime % 60000);
     }
 
-    tab.playtime = self->GetRealPoint(POINT_PLAYTIME);
+    tab.playtime = ecs::PointSystem::GetReal(e, POINT_PLAYTIME);
     tab.lAlignment = CombatSystem::GetRealAlignment(e);
 
     const auto warp = ecs::MovementSystem::GetWarpLocation(e);
@@ -640,17 +639,17 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
 
     LOG_TRACE("SAVE: {} {}x{}", ecs::PlayerRuntime::GetName(e).data(), tab.x, tab.y);
 
-    tab.st = self->GetRealPoint(POINT_ST);
-    tab.ht = self->GetRealPoint(POINT_HT);
-    tab.dx = self->GetRealPoint(POINT_DX);
-    tab.iq = self->GetRealPoint(POINT_IQ);
+    tab.st = ecs::PointSystem::GetReal(e, POINT_ST);
+    tab.ht = ecs::PointSystem::GetReal(e, POINT_HT);
+    tab.dx = ecs::PointSystem::GetReal(e, POINT_DX);
+    tab.iq = ecs::PointSystem::GetReal(e, POINT_IQ);
 
-    tab.stat_point = self->GetPoint(POINT_STAT);
-    tab.skill_point = self->GetPoint(POINT_SKILL);
-    tab.sub_skill_point = self->GetPoint(POINT_SUB_SKILL);
-    tab.horse_skill_point = self->GetPoint(POINT_HORSE_SKILL);
+    tab.stat_point = ecs::PointSystem::Get(e, POINT_STAT);
+    tab.skill_point = ecs::PointSystem::Get(e, POINT_SKILL);
+    tab.sub_skill_point = ecs::PointSystem::Get(e, POINT_SUB_SKILL);
+    tab.horse_skill_point = ecs::PointSystem::Get(e, POINT_HORSE_SKILL);
 
-    tab.stat_reset_count = self->GetPoint(POINT_STAT_RESET_COUNT);
+    tab.stat_reset_count = ecs::PointSystem::Get(e, POINT_STAT_RESET_COUNT);
 
     tab.hp = ecs::PlayerRuntime::GetHP(e);
     tab.sp = ecs::PlayerRuntime::GetSP(e);
@@ -690,10 +689,8 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    // GetRealPoint, the login play time, DestroyPvP, the offline shop and
-    // auction handles, the war and wedding maps and the battle-pass loaded
-    // flag have no entity form yet; each is its own migration and they share
-    // this one resolve.
+    // DestroyPvP and CAuction::RemoveGuest take the character; each is its own
+    // migration and they share this one resolve.
     LPCHARACTER self = ecs::LegacyCharOf(e);
     if (!self)
         return;
@@ -738,7 +735,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
 
 #ifdef ENABLE_PCBANG_FEATURE
     {
-        int32_t playTime = self->GetRealPoint(POINT_PLAYTIME) - ecs::PlayerRuntime::GetLoginPlayTime(e);
+        int32_t playTime = ecs::PointSystem::GetReal(e, POINT_PLAYTIME) - ecs::PlayerRuntime::GetLoginPlayTime(e);
         LogManager::instance().LoginLog(false, ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id, ecs::PlayerRuntime::GetPlayerID(e), ecs::PointSystem::GetLevel(e), ecs::PlayerRuntime::GetJob(e), playTime);
 
         if (0)

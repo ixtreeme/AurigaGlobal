@@ -691,7 +691,6 @@ public:
 
 
 
-	int64_t			GetRealPoint(uint8_t idx) const;
 
 
 	int64_t			GetPoint(uint8_t idx) const;
