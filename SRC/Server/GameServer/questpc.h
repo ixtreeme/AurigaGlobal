@@ -1,5 +1,4 @@
-#ifndef __QUEST_PC_H
-#define __QUEST_PC_H
+#pragma once
 
 #include "quest.h"
 
@@ -209,5 +208,3 @@ namespace quest
 		return m_RunningQuestState;
 	}
 }
-
-#endif

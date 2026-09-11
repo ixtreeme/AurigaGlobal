@@ -831,7 +831,6 @@ public:
 
 
 
-	void			StopStaminaConsume();
 	bool			IsStaminaHalfConsume() const;
 
 	void			ResetStopTime();
@@ -842,15 +841,12 @@ protected:
 
 
 
-	uint32_t			m_dwMoveStartTime;
-	uint32_t			m_dwMoveDuration;
 
 	uint32_t			m_dwLastMoveTime;
 
 	uint32_t			m_dwStopTime;
 
 	bool			m_bNowWalking;
-	bool			m_bStaminaConsume;
 	// End
 
 	// Quickslot 
@@ -928,7 +924,6 @@ protected:
 	// Dungeon
 public:
 protected:
-	int			m_iEventAttr;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Guild
@@ -1184,9 +1179,7 @@ public:
 protected:
 	uint8_t m_bComboSequence;
 	uint32_t m_dwLastComboTime;
-	int m_iValidComboInterval;
 	uint8_t m_bComboIndex;
-	int m_iComboHackCount;
 
 protected:
 
@@ -1397,8 +1390,6 @@ public:
 	 * â�������� ��û�� DB �������� ���������� �޾��� ��� �� �Լ��� ����ؼ� ��û�� �� �� �ְ� ���ش�.
 	 */
 
-	void				SetMallLoadTime(int t) { m_iMallLoadTime = t; }
-	int					GetMallLoadTime() const { return m_iMallLoadTime; }
 
 
 
@@ -1406,7 +1397,6 @@ protected:
 
 	bool				 m_bMountInventoryLoaded;
 
-	int					m_iMallLoadTime;
 
 
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -1773,10 +1763,7 @@ public:
 private:
 	// SyncPosition�� �ǿ��Ͽ� Ÿ������ �̻��� ������ ������ �� ����ϱ� ���Ͽ�,
 	// SyncPosition�� �Ͼ ���� ���.
-	int			m_iSyncHackCount;
 public:
-	void			SetSyncHackCount(int iCount) { m_iSyncHackCount = iCount; }
-	int				GetSyncHackCount() { return m_iSyncHackCount; }
 
 
 

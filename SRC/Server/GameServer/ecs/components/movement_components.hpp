@@ -18,7 +18,6 @@ struct MovementState {
     uint32_t stopTime;
     bool isWalking;
     bool isNowWalking;
-    bool staminaConsume;
     // Player preference, independent of current/forced walking and movement ticks.
     bool walkPreference { false };
     // Distinguishes reentrant commands, even when their target/timing is equal.

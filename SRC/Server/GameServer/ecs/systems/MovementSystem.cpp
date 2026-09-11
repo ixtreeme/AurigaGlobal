@@ -119,7 +119,7 @@ namespace
     auto MovementValues(const ecs::MovementState& s)
     {
         return std::tie(s.moveStartTime, s.moveDuration, s.lastMoveTime, s.lastAttackTime,
-            s.walkStartTime, s.stopTime, s.isWalking, s.isNowWalking, s.staminaConsume,
+            s.walkStartTime, s.stopTime, s.isWalking, s.isNowWalking,
             s.walkPreference, s.commandRevision);
     }
 
@@ -1494,20 +1494,22 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	if (ecs::SocialSystem::GetDungeon(GetEntityHandle()))
 	{
 		// Sync quest event attr transitions when entering a new dungeon sector.
-		int iLastEventAttr = m_iEventAttr;
-		m_iEventAttr = new_tree->GetEventAttribute(x, y);
+		auto& membership =
+			g_registry.get_or_emplace<ecs::DungeonMembership>(GetEntityHandle());
+		const int iLastEventAttr = membership.eventAttr;
+		membership.eventAttr = new_tree->GetEventAttribute(x, y);
 
-		if (m_iEventAttr != iLastEventAttr)
+		if (membership.eventAttr != iLastEventAttr)
 		{
 			if (GetParty())
 			{
 				quest::CQuestManager::instance().AttrOut(GetParty()->GetLeaderPID(), this, iLastEventAttr);
-				quest::CQuestManager::instance().AttrIn(GetParty()->GetLeaderPID(), this, m_iEventAttr);
+				quest::CQuestManager::instance().AttrIn(GetParty()->GetLeaderPID(), this, membership.eventAttr);
 			}
 			else
 			{
 				quest::CQuestManager::instance().AttrOut(GetPlayerID(), this, iLastEventAttr);
-				quest::CQuestManager::instance().AttrIn(GetPlayerID(), this, m_iEventAttr);
+				quest::CQuestManager::instance().AttrIn(GetPlayerID(), this, membership.eventAttr);
 			}
 		}
 	}
@@ -1809,15 +1811,6 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
                 MonsterLog("�ڴU");
         }
     }
-}
-
-void CHARACTER::StopStaminaConsume()
-{
-    if (!m_bStaminaConsume)
-        return;
-    PointChange(POINT_STAMINA, 0);
-    m_bStaminaConsume = false;
-    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StopStaminaConsume %d", ecs::PlayerRuntime::GetStamina(GetEntityHandle()));
 }
 
 bool CHARACTER::IsStaminaHalfConsume() const

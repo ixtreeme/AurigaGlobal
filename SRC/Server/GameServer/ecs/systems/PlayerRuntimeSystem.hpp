@@ -71,6 +71,8 @@ int GetWheelFreeCount(entt::entity e);
 void SetWheelFreeCount(entt::entity e, int count);
 uint32_t GetAIFlag(entt::entity e);
 void SetLastSyncTime(entt::entity e, const timeval& tv);
+int GetSyncHackCount(entt::entity e);
+void SetSyncHackCount(entt::entity e, int count);
 const timeval& GetLastSyncTime(entt::entity e);
 const TMobTable* GetMobTable(entt::entity e);
 uint8_t GetJob(entt::entity e);

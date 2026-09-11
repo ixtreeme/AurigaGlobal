@@ -2156,7 +2156,6 @@ void CInputMain::Move(entt::entity character, const char * data)
 
 		ecs::MovementSystem::Move(character, pinfo->lX, pinfo->lY);
 		ecs::MovementSystem::Stop(character);
-		ch->StopStaminaConsume();
 	}
 
 	TPacketGCMove pack;
@@ -2399,8 +2398,8 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 
 		if (fDistWithSyncOwner > fLimitDistWithSyncOwner)
 		{
-			if (ch->GetSyncHackCount() < 60){
-				ch->SetSyncHackCount(ch->GetSyncHackCount() + 1);
+			if (ecs::PlayerRuntime::GetSyncHackCount(character) < 60){
+				ecs::PlayerRuntime::SetSyncHackCount(character, ecs::PlayerRuntime::GetSyncHackCount(character) + 1);
 				continue;
 			} else{
 				LogManager::instance().HackLog( "SYNC_POSITION_HACK", character );
@@ -2422,9 +2421,9 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 
 		if (tvDiff->tv_sec == 0 && tvDiff->tv_usec < g_lValidSyncInterval)
 		{
-			if (ch->GetSyncHackCount() < 60)
+			if (ecs::PlayerRuntime::GetSyncHackCount(character) < 60)
 			{
-				ch->SetSyncHackCount(ch->GetSyncHackCount() + 1);
+				ecs::PlayerRuntime::SetSyncHackCount(character, ecs::PlayerRuntime::GetSyncHackCount(character) + 1);
 				continue;
 			}
 			else

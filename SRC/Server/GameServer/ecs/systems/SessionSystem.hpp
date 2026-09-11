@@ -9,6 +9,8 @@ namespace ecs::SessionSystem {
 
 bool WarpToPID(entt::entity e, uint32_t dwPID);
 CSafebox* GetSafebox(entt::entity e);
+int GetMallLoadTime(entt::entity e);
+void SetMallLoadTime(entt::entity e, int pulse);
 CSafebox* GetMall(entt::entity e);
 void CloseMall(entt::entity e);
 void QuerySafeboxSize(entt::entity e);

@@ -58,7 +58,6 @@ ecs::MovementState MakeDefaultMovementState(uint32_t now)
         now,
         false,
         false,
-        false,
     };
 }
 

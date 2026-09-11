@@ -276,6 +276,26 @@ CSafebox* GetSafebox(entt::entity e)
 }
 
 // The item mall storage, which is a safebox with its own window.
+// The ten second wait between mall load requests. CHARACTER::m_iMallLoadTime
+// held it and SafeboxRef::mallLoadTime beside it was written by nothing.
+int GetMallLoadTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e);
+    return safebox ? safebox->mallLoadTime : 0;
+}
+
+void SetMallLoadTime(entt::entity e, int pulse)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::SafeboxRef>(e).mallLoadTime = pulse;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
 CSafebox* GetMall(entt::entity e)
 {
     return SafeboxSystem::Get(e, MALL).get();

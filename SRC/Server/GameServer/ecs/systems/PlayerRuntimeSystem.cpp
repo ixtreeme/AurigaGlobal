@@ -2056,6 +2056,25 @@ void SetLastSyncTime(entt::entity e, const timeval& tv)
     g_registry.get_or_emplace<ecs::LastSyncTime>(e).tv = tv;
 }
 
+// How many suspicious sync packets this character has sent. CHARACTER held it
+// in m_iSyncHackCount and SyncState::syncHackCount was written by nothing.
+int GetSyncHackCount(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* sync = g_registry.try_get<ecs::SyncState>(e);
+	return sync ? sync->syncHackCount : 0;
+}
+
+void SetSyncHackCount(entt::entity e, int count)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	g_registry.get_or_emplace<ecs::SyncState>(e).syncHackCount = count;
+}
+
 const timeval& GetLastSyncTime(entt::entity e)
 {
     static const timeval zero { 0, 0 };
@@ -4049,15 +4068,12 @@ void CHARACTER::Initialize()
 
     m_bMountInventoryLoaded = false;
 
-    m_iMallLoadTime = 0;
 
 
 
 
 
 
-    // Phase C.2: legacy m_dwMoveStartTime / m_dwMoveDuration zero-init
-    // removed. The ECS MovementState component is created by EntityFactory
     // with default-zero timing fields when this CHARACTER is later attached
     // to an ECS entity. m_entity is entt::null at this Initialize point so
     // an ECS write here would be a no-op anyway.
@@ -4068,7 +4084,6 @@ void CHARACTER::Initialize()
 
     m_bItemLoaded = false;
 
-    m_iEventAttr = 0;
 
 
     // Phase C.2: legacy m_bNowWalking zero-init removed (ECS MovementState
@@ -4085,7 +4100,6 @@ void CHARACTER::Initialize()
 
     m_dwPolymorphRace = 0;
 
-    m_bStaminaConsume = false;
 
     ResetChainLightningIndex();
 
@@ -4121,7 +4135,6 @@ void CHARACTER::Initialize()
     m_bComboSequence = 0;
     m_dwLastComboTime = 0;
     m_bComboIndex = 0;
-    m_iComboHackCount = 0;
 
     m_dwMountTime = 0;
 
@@ -4145,7 +4158,6 @@ void CHARACTER::Initialize()
 
 #ifdef ENABLE_ANTI_CMD_FLOOD
 #endif
-    m_iSyncHackCount = 0;
 
 #ifdef ENABLE_BATTLE_PASS
     ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).clear();

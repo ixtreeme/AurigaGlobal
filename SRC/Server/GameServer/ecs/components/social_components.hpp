@@ -50,7 +50,9 @@ struct GuildDepositState {
 
 struct DungeonMembership {
     LPDUNGEON dungeon { nullptr };
-    int eventAttr;
+    // The sector attribute the quest scripts are told about on the way in and
+    // out. CHARACTER::m_iEventAttr held it and this was written by nothing.
+    int eventAttr { 0 };
     CWarMap* warMap { nullptr };
 };
 

@@ -2089,7 +2089,7 @@ ACMD(do_mall_password)
 		return;
 	}
 
-	if (iPulse - ch->GetMallLoadTime() < passes_per_sec * 10) // 10ʿ ѹ û
+	if (iPulse - ecs::SessionSystem::GetMallLoadTime(character) < passes_per_sec * 10) // 10ʿ ѹ û
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 190, "");
@@ -2097,7 +2097,7 @@ ACMD(do_mall_password)
 		return;
 	}
 
-	ch->SetMallLoadTime(iPulse);
+	ecs::SessionSystem::SetMallLoadTime(character, iPulse);
 
 	TSafeboxLoadPacket p;
 	p.dwID = ecs::PlayerRuntime::GetDesc(character)->GetAccountTable().id;
@@ -2112,7 +2112,7 @@ ACMD(do_mall_close)
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::SessionSystem::GetMall(character))
 	{
-		ch->SetMallLoadTime(thecore_pulse());
+		ecs::SessionSystem::SetMallLoadTime(character, thecore_pulse());
 		ecs::SessionSystem::CloseMall(character);
 		ecs::SessionSystem::Save(character);
 	}
