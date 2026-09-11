@@ -131,20 +131,15 @@ void SetWarMap(entt::entity e, CWarMap* pWarMap)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    // CWarMap counts its members by pointer; that is its own migration.
-    LPCHARACTER self = ecs::LegacyCharOf(e);
-    if (!self)
-        return;
-
     auto& membership = g_registry.get_or_emplace<ecs::DungeonMembership>(e);
 
     if (membership.warMap)
-        membership.warMap->DecMember(self);
+        membership.warMap->DecMember(e);
 
     membership.warMap = pWarMap;
 
     if (membership.warMap)
-        membership.warMap->IncMember(self);
+        membership.warMap->IncMember(e);
 
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }

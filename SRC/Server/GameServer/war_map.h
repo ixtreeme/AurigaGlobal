@@ -55,8 +55,8 @@ class CWarMap
 
 		bool	GetTeamIndex(uint32_t dwGuild, uint8_t & bIdx);
 
-		void	IncMember(LPCHARACTER ch);
-		void	DecMember(LPCHARACTER ch);
+		void	IncMember(entt::entity character);
+		void	DecMember(entt::entity character);
 
 		CGuild * GetGuild(uint8_t bIdx);
 		uint32_t	GetGuildID(uint8_t bIdx);
@@ -93,7 +93,7 @@ class CWarMap
 		void	SendWarPacket(LPDESC d);
 		void	SendScorePacket(uint8_t bIdx, LPDESC d = nullptr);
 
-		void	OnKill(LPCHARACTER killer, LPCHARACTER ch);
+		void	OnKill(entt::entity killer, entt::entity victim);
 
 		void	AddFlag(uint8_t bIdx, uint32_t x=0, uint32_t y=0);
 		void	AddFlagBase(uint8_t bIdx, uint32_t x=0, uint32_t y=0);
@@ -120,8 +120,8 @@ class CWarMap
 			int		iMemberCount;
 			int		iUsePotionPrice;
 			int		iScore;
-			LPCHARACTER pkChrFlag;
-			LPCHARACTER pkChrFlagBase;
+			entt::entity flag { entt::null };
+			entt::entity flagBase { entt::null };
 
 			std::set<uint32_t> set_pidJoiner;
 
@@ -141,7 +141,7 @@ class CWarMap
 
 		TGuildWarInfo	m_WarInfo;
 
-		CHARACTER_SET m_set_pkChr;
+		std::unordered_set<entt::entity> m_setMember;
 };
 
 class CWarMapManager : public singleton<CWarMapManager>

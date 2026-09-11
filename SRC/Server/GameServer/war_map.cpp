@@ -106,8 +106,8 @@ void CWarMap::STeamData::Initialize()
 	iMemberCount = 0;
 	iUsePotionPrice = 0;
 	iScore = 0;
-	pkChrFlag = nullptr;
-	pkChrFlagBase = nullptr;
+	flag = entt::null;
+	flagBase = entt::null;
 
 	set_pidJoiner.clear();
 }
@@ -157,12 +157,11 @@ CWarMap::~CWarMap()
 
 	LOG_INFO("WarMap::~WarMap : map index {}", GetMapIndex());
 
-	auto it = m_set_pkChr.begin();
+	auto it = m_setMember.begin();
 
-	while (it != m_set_pkChr.end())
+	while (it != m_setMember.end())
 	{
-		LPCHARACTER ch = *(it++);
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity chEntity = *(it++);
 
 
 		if (ecs::PlayerRuntime::GetDesc(chEntity))
@@ -172,7 +171,7 @@ CWarMap::~CWarMap()
 		}
 	}
 
-	m_set_pkChr.clear();
+	m_setMember.clear();
 }
 
 void CWarMap::SetBeginEvent(LPEVENT pkEv)
@@ -340,9 +339,8 @@ struct FSendUserCount
 		snprintf(buf2, sizeof(buf2), "WarUC %u %d %u %d %d", g1, g1_count, g2, g2_count, observer);
 	}
 
-	void operator() (LPCHARACTER ch)
+	void operator() (entt::entity chEntity)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, buf1);
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, buf2);
 	}
@@ -357,12 +355,11 @@ void CWarMap::UpdateUserCount()
 			m_TeamData[1].GetAccumulatedJoinerCount(),
 			m_iObserverCount);
 
-	std::for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
+	std::for_each(m_setMember.begin(), m_setMember.end(), f);
 }
 
-void CWarMap::IncMember(LPCHARACTER ch)
+void CWarMap::IncMember(entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (!ecs::PlayerRuntime::IsPC(chEntity))
 		return;
 
@@ -410,7 +407,7 @@ void CWarMap::IncMember(LPCHARACTER ch)
 
 	UpdateUserCount();
 
-	m_set_pkChr.insert(ch);
+	m_setMember.insert(chEntity);
 
 	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
 
@@ -419,9 +416,8 @@ void CWarMap::IncMember(LPCHARACTER ch)
 	SendScorePacket(1, d);
 }
 
-void CWarMap::DecMember(LPCHARACTER ch)
+void CWarMap::DecMember(entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (!ecs::PlayerRuntime::IsPC(chEntity))
 		return;
 
@@ -468,14 +464,13 @@ void CWarMap::DecMember(LPCHARACTER ch)
 
 	UpdateUserCount();
 
-	m_set_pkChr.erase(ch);
+	m_setMember.erase(chEntity);
 }
 
 struct FExitGuildWar
 {
-	void operator() (LPCHARACTER ch)
+	void operator() (entt::entity chEntity)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		if (ecs::PlayerRuntime::IsPC(chEntity))
 		{
 			ecs::MovementSystem::ExitToSavedLocation(chEntity);
@@ -486,7 +481,7 @@ struct FExitGuildWar
 void CWarMap::ExitAll()
 {
 	FExitGuildWar f;
-	std::for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
+	std::for_each(m_setMember.begin(), m_setMember.end(), f);
 }
 
 void CWarMap::CheckWarEnd()
@@ -603,9 +598,9 @@ namespace
 		{
 		}
 
-		void operator () (LPCHARACTER ch)
+		void operator () (entt::entity character)
 		{
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(m_pvData, m_iSize);
+			ecs::PlayerRuntime::GetDesc(character)->Packet(m_pvData, m_iSize);
 		}
 
 		const void * m_pvData;
@@ -620,8 +615,8 @@ namespace
 		const char * m_format;
 		FNotice(uint8_t type, uint32_t idx, const char * format) : m_type(type), m_idx(idx), m_format(format) {}
 
-		void operator() (LPCHARACTER ch) {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), m_type, m_idx, m_format);
+		void operator() (entt::entity character) {
+			ecs::ChatSystem::SendNew(character, m_type, m_idx, m_format);
 		}
 	};
 #endif
@@ -637,14 +632,14 @@ void CWarMap::Notice(uint8_t type, uint32_t idx, const char * format, ...)
 	va_end(args);
 
 	FNotice f(type, idx, chatbuf);
-	std::for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
+	std::for_each(m_setMember.begin(), m_setMember.end(), f);
 }
 #endif
 
 void CWarMap::Packet(const void * p, int size)
 {
 	FPacket f(p, size);
-	std::for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
+	std::for_each(m_setMember.begin(), m_setMember.end(), f);
 }
 
 void CWarMap::SendWarPacket(LPDESC d)
@@ -763,28 +758,28 @@ bool CWarMap::SetEnded()
 	if (m_pkEndEvent)
 		return false;
 
-	if (m_TeamData[0].pkChrFlag)
+	if (m_TeamData[0].flag != entt::null)
 	{
-		M2_DESTROY_CHARACTER(m_TeamData[0].pkChrFlag);
-		m_TeamData[0].pkChrFlag = nullptr;
+		ecs::PlayerRuntime::DestroyCharacter(m_TeamData[0].flag);
+		m_TeamData[0].flag = entt::null;
 	}
 
-	if (m_TeamData[0].pkChrFlagBase)
+	if (m_TeamData[0].flagBase != entt::null)
 	{
-		M2_DESTROY_CHARACTER(m_TeamData[0].pkChrFlagBase);
-		m_TeamData[0].pkChrFlagBase = nullptr;
+		ecs::PlayerRuntime::DestroyCharacter(m_TeamData[0].flagBase);
+		m_TeamData[0].flagBase = entt::null;
 	}
 
-	if (m_TeamData[1].pkChrFlag)
+	if (m_TeamData[1].flag != entt::null)
 	{
-		M2_DESTROY_CHARACTER(m_TeamData[1].pkChrFlag);
-		m_TeamData[1].pkChrFlag = nullptr;
+		ecs::PlayerRuntime::DestroyCharacter(m_TeamData[1].flag);
+		m_TeamData[1].flag = entt::null;
 	}
 
-	if (m_TeamData[1].pkChrFlagBase)
+	if (m_TeamData[1].flagBase != entt::null)
 	{
-		M2_DESTROY_CHARACTER(m_TeamData[1].pkChrFlagBase);
-		m_TeamData[1].pkChrFlagBase = nullptr;
+		ecs::PlayerRuntime::DestroyCharacter(m_TeamData[1].flagBase);
+		m_TeamData[1].flagBase = entt::null;
 	}
 
 	event_cancel(&m_pkResetFlagEvent);
@@ -798,10 +793,8 @@ bool CWarMap::SetEnded()
 	return true;
 }
 
-void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
+void CWarMap::OnKill(entt::entity killerEntity, entt::entity chEntity)
 {
-	const entt::entity killerEntity = killer ? killer->GetEntityHandle() : entt::null;
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (m_bEnded)
 		return;
 
@@ -859,7 +852,7 @@ void CWarMap::AddFlagBase(uint8_t bIdx, uint32_t x, uint32_t y)
 
 	TeamData & r = m_TeamData[bIdx];
 
-	if (r.pkChrFlagBase)
+	if (r.flagBase != entt::null)
 		return;
 
 	if (x == 0)
@@ -868,11 +861,12 @@ void CWarMap::AddFlagBase(uint8_t bIdx, uint32_t x, uint32_t y)
 		y = m_kMapInfo.posStart[bIdx].y;
 	}
 
-	r.pkChrFlagBase = CHARACTER_MANAGER::instance().SpawnMob(warmap::WAR_FLAG_BASE_VNUM, m_kMapInfo.lMapIndex, x, y, 0);
-	LOG_INFO("WarMap::AddFlagBase {} {} id {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlagBase)), r.dwID);
+	LPCHARACTER spawnedBase = CHARACTER_MANAGER::instance().SpawnMob(warmap::WAR_FLAG_BASE_VNUM, m_kMapInfo.lMapIndex, x, y, 0);
+	r.flagBase = spawnedBase ? spawnedBase->GetEntityHandle() : entt::null;
+	LOG_INFO("WarMap::AddFlagBase {} {} id {}", static_cast<int>(bIdx), static_cast<uint32_t>(r.flagBase), r.dwID);
 
-	r.pkChrFlagBase->SetPoint(POINT_STAT, r.dwID);
-	ecs::SocialSystem::SetWarMap(r.pkChrFlagBase->GetEntityHandle(), this);
+	ecs::PointSystem::Set(r.flagBase, POINT_STAT, r.dwID);
+	ecs::SocialSystem::SetWarMap(r.flagBase, this);
 }
 
 void CWarMap::AddFlag(uint8_t bIdx, uint32_t x, uint32_t y)
@@ -884,7 +878,7 @@ void CWarMap::AddFlag(uint8_t bIdx, uint32_t x, uint32_t y)
 
 	TeamData & r = m_TeamData[bIdx];
 
-	if (r.pkChrFlag)
+	if (r.flag != entt::null)
 		return;
 
 	if (x == 0)
@@ -893,11 +887,12 @@ void CWarMap::AddFlag(uint8_t bIdx, uint32_t x, uint32_t y)
 		y = m_kMapInfo.posStart[bIdx].y;
 	}
 
-	r.pkChrFlag = CHARACTER_MANAGER::instance().SpawnMob(bIdx == 0 ? warmap::WAR_FLAG_VNUM0 : warmap::WAR_FLAG_VNUM1, m_kMapInfo.lMapIndex, x, y, 0);
-	LOG_INFO("WarMap::AddFlag {} {} id {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlag)), r.dwID);
+	LPCHARACTER spawnedFlag = CHARACTER_MANAGER::instance().SpawnMob(bIdx == 0 ? warmap::WAR_FLAG_VNUM0 : warmap::WAR_FLAG_VNUM1, m_kMapInfo.lMapIndex, x, y, 0);
+	r.flag = spawnedFlag ? spawnedFlag->GetEntityHandle() : entt::null;
+	LOG_INFO("WarMap::AddFlag {} {} id {}", static_cast<int>(bIdx), static_cast<uint32_t>(r.flag), r.dwID);
 
-	r.pkChrFlag->SetPoint(POINT_STAT, r.dwID);
-	ecs::SocialSystem::SetWarMap(r.pkChrFlag->GetEntityHandle(), this);
+	ecs::PointSystem::Set(r.flag, POINT_STAT, r.dwID);
+	ecs::SocialSystem::SetWarMap(r.flag, this);
 }
 
 void CWarMap::RemoveFlag(uint8_t bIdx)
@@ -906,13 +901,13 @@ void CWarMap::RemoveFlag(uint8_t bIdx)
 
 	TeamData & r = m_TeamData[bIdx];
 
-	if (!r.pkChrFlag)
+	if (r.flag == entt::null)
 		return;
 
-	LOG_INFO("WarMap::RemoveFlag {} {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlag)));
+	LOG_INFO("WarMap::RemoveFlag {} {}", static_cast<int>(bIdx), static_cast<uint32_t>(r.flag));
 
-	CombatSystem::Dead(r.pkChrFlag->GetEntityHandle(), entt::null, true);
-	r.pkChrFlag = nullptr;
+	CombatSystem::Dead(r.flag, entt::null, true);
+	r.flag = entt::null;
 }
 
 bool CWarMap::IsFlagOnBase(uint8_t bIdx)
@@ -921,12 +916,10 @@ bool CWarMap::IsFlagOnBase(uint8_t bIdx)
 
 	TeamData & r = m_TeamData[bIdx];
 
-	if (!r.pkChrFlag)
+	if (r.flag == entt::null)
 		return false;
 
-	const PIXEL_POSITION & pos = r.pkChrFlag->GetXYZ();
-
-	if (pos.x == m_kMapInfo.posStart[bIdx].x && pos.y == m_kMapInfo.posStart[bIdx].y)
+	if (ecs::PlayerRuntime::GetX(r.flag) == m_kMapInfo.posStart[bIdx].x && ecs::PlayerRuntime::GetY(r.flag) == m_kMapInfo.posStart[bIdx].y)
 		return true;
 
 	return false;
@@ -953,9 +946,8 @@ EVENTFUNC(war_reset_flag_event)
 
 struct FRemoveFlagAffect
 {
-	void operator() (LPCHARACTER ch)
+	void operator() (entt::entity chEntity)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		if (AffectSystem::FindAffect(chEntity, AFFECT_WAR_FLAG))
 			AffectSystem::RemoveAffect(chEntity, AFFECT_WAR_FLAG);
 	}
@@ -973,7 +965,7 @@ void CWarMap::ResetFlag()
 		return;
 
 	FRemoveFlagAffect f;
-	std::for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
+	std::for_each(m_setMember.begin(), m_setMember.end(), f);
 
 	RemoveFlag(0);
 	RemoveFlag(1);
