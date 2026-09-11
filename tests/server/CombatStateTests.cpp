@@ -472,9 +472,8 @@ unsigned int CParty::GetLeaderPID(void) { UnexpectedService(__func__); }
 bool CParty::IsPositionNearLeader(entt::entity) { UnexpectedService(__func__); }
 void CParty::SendMessageA(entt::entity,unsigned char,unsigned int,unsigned int) { UnexpectedService(__func__); }
 int CParty::GetExpBonusPercent(void) { UnexpectedService(__func__); }
-CHARACTER * CParty::GetNextOwnership(CHARACTER *,int,int) { UnexpectedService(__func__); }
+entt::entity CParty::GetNextOwnership(entt::entity,int,int) { UnexpectedService(__func__); }
 int CParty::GetExpDistributionMode(void) { UnexpectedService(__func__); }
-CHARACTER * CParty::GetExpCentralizeCharacter(void) { UnexpectedService(__func__); }
 unsigned int SECTREE::GetAttribute(int,int) { UnexpectedService(__func__); }
 bool SECTREE::IsAttr(int,int,unsigned int) { UnexpectedService(__func__); }
 SECTREE * SECTREE_MANAGER::Get(int,int,int) { UnexpectedService(__func__); }

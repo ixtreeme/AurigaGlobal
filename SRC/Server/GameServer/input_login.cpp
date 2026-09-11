@@ -646,7 +646,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	MessengerManager::instance().Login(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 
-	CPartyManager::instance().SetParty(ch);
+	CPartyManager::instance().SetParty(ch->GetEntityHandle());
 	CGuildManager::instance().SendGuildWar(d->GetEntity());
 
 	building::CManager::instance().SendLandList(d, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));

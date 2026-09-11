@@ -977,9 +977,9 @@ bool CHARACTER::CanUseHorseSkill(void) { Unexpected(); }
 bool CHARACTER::IsRiding(void)const { Unexpected(); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpected(); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Unexpected(); }
-int CHARACTER::GetSkillPowerByLevel(int,bool)const { Unexpected(); }
+int ecs::PlayerRuntime::GetSkillPowerByLevel(entt::entity,int,bool) { Unexpected(); }
 int CHARACTER::GetSoulItemDamage(entt::entity,int,unsigned char) { Unexpected(); }
-CHARACTER * CParty::GetNextOwnership(CHARACTER *,int,int) { Unexpected(); }
+entt::entity CParty::GetNextOwnership(entt::entity,int,int) { Unexpected(); }
 bool SECTREE_MANAGER::GetRecallPositionByEmpire(int,unsigned char,pixel_position_s &) { Unexpected(); }
 bool MountSystem::IsRiding(entt::entity) { Unexpected(); }
 unsigned int MountSystem::GetMountVnum(entt::entity) { Unexpected(); }

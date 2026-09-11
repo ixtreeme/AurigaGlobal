@@ -1,5 +1,6 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 #ifndef __INC_METIN_II_GAME_PARTY_H__
 #define __INC_METIN_II_GAME_PARTY_H__
 
@@ -61,7 +62,7 @@ class CPartyManager : public singleton<CPartyManager>
 		LPPARTY		CreateParty(entt::entity leader);
 		void		DeleteParty(LPPARTY pParty);
 		void		DeleteAllParty();
-		bool		SetParty(LPCHARACTER pkChr);
+		bool		SetParty(entt::entity character);
 
 		void		SetPartyMember(uint32_t dwPID, LPPARTY pParty);
 
@@ -95,7 +96,7 @@ class CParty
 	public:
 		typedef struct SMember
 		{
-			LPCHARACTER	pCharacter;
+			entt::entity	member { entt::null };
 			bool	bNear;
 			uint8_t	bRole;
 			uint8_t	bLevel;
@@ -103,6 +104,10 @@ class CParty
 		} TMember;
 
 		typedef std::map<uint32_t, TMember> TMemberMap;
+
+		// A member row holds a handle while its character is linked; a handle whose
+		// entity is gone counts as not linked.
+		static bool IsLinked(entt::entity member) { return member != entt::null && g_registry.valid(member); }
 
 		typedef std::map<std::string, int> TFlagMap;
 
@@ -123,8 +128,7 @@ class CParty
 		void		UpdateOfflineState(uint32_t dwPID);
 
 		uint32_t		GetLeaderPID();
-		LPCHARACTER	GetLeaderCharacter();
-		LPCHARACTER	GetLeader() { return m_pkChrLeader; }
+		entt::entity	GetLeader();
 
 		uint32_t		GetMemberCount();
 		uint32_t		GetNearMemberCount()	{ return m_iCountNearPartyMember; }
@@ -181,7 +185,7 @@ class CParty
 
 		void		SetPCParty(bool b) { m_bPCParty = b; }
 
-		LPCHARACTER	GetNextOwnership(LPCHARACTER ch, int32_t x, int32_t y);
+		entt::entity	GetNextOwnership(entt::entity fallback, int32_t x, int32_t y);
 
 		void		SetFlag(std::string_view name, int value);
 		int		GetFlag(std::string_view name);
@@ -193,9 +197,6 @@ class CParty
 
 		void		SetParameter(int iMode);
 		int		GetExpDistributionMode();
-
-		void		SetExpCentralizeCharacter(uint32_t pid);
-		LPCHARACTER	GetExpCentralizeCharacter();
 
 		void		RequestSetMemberLevel(uint32_t pid, uint8_t level);
 		void		P2PSetMemberLevel(uint32_t pid, uint8_t level);
@@ -217,7 +218,6 @@ class CParty
 
 		TMemberMap	m_memberMap;
 		uint32_t		m_dwLeaderPID;
-		LPCHARACTER	m_pkChrLeader;
 
 		LPEVENT		m_eventUpdate;
 
@@ -225,7 +225,6 @@ class CParty
 
 	private:
 		int		m_iExpDistributionMode;
-		LPCHARACTER	m_pkChrExpCentralize;
 
 		uint32_t		m_dwPartyStartTime;
 
@@ -261,8 +260,6 @@ class CParty
 		LPDUNGEON GetDungeon_for_Only_party();
 };
 
-// The member map still holds character pointers; the walks below hand out the
-// entity, so nothing outside CParty sees one.
 template <class Func> void CParty::ForEachMember(Func & f)
 {
 	TMemberMap::iterator it;
@@ -276,8 +273,8 @@ template <class Func> void CParty::ForEachOnlineMember(Func & f)
 	TMemberMap::iterator it;
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-		if (it->second.pCharacter)
-			f(it->second.pCharacter->GetEntityHandle());
+		if (IsLinked(it->second.member))
+			f(it->second.member);
 }
 
 template <class Func> void CParty::ForEachNearMember(Func & f)
@@ -285,8 +282,8 @@ template <class Func> void CParty::ForEachNearMember(Func & f)
 	TMemberMap::iterator it;
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-		if (it->second.pCharacter && it->second.bNear)
-			f(it->second.pCharacter->GetEntityHandle());
+		if (it->second.bNear && IsLinked(it->second.member))
+			f(it->second.member);
 }
 
 template <class Func> void CParty::ForEachOnMapMember (Func & f, int32_t lMapIndex)
@@ -295,8 +292,8 @@ template <class Func> void CParty::ForEachOnMapMember (Func & f, int32_t lMapInd
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		const entt::entity member = it->second.pCharacter ? it->second.pCharacter->GetEntityHandle() : entt::null;
-		if (member != entt::null && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex)
+		const entt::entity member = it->second.member;
+		if (IsLinked(member) && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex)
 			f(member);
 	}
 }
@@ -307,8 +304,8 @@ template <class Func> bool CParty::ForEachOnMapMemberBool(Func & f, int32_t lMap
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		const entt::entity member = it->second.pCharacter ? it->second.pCharacter->GetEntityHandle() : entt::null;
-		if (member != entt::null && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex && !f(member))
+		const entt::entity member = it->second.member;
+		if (IsLinked(member) && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex && !f(member))
 			return false;
 	}
 	return true;
@@ -320,7 +317,7 @@ inline int CParty::ComputePartyBonusAttackGrade()
 	   if (GetNearMemberCount() <= 1)
 	   return 0;
 
-	   int leadership = SkillSystem::GetSkillLevel(GetLeaderCharacter()->GetEntityHandle(), SKILL_LEADERSHIP);
+	   int leadership = SkillSystem::GetSkillLevel(GetLeader(), SKILL_LEADERSHIP);
 	   int n = GetNearMemberCount();
 
 	   if (n >= 3 && leadership >= 10)
@@ -338,7 +335,7 @@ inline int CParty::ComputePartyBonusDefenseGrade()
 	   if (GetNearMemberCount() <= 1)
 	   return 0;
 
-	   int leadership = SkillSystem::GetSkillLevel(GetLeaderCharacter()->GetEntityHandle(), SKILL_LEADERSHIP);
+	   int leadership = SkillSystem::GetSkillLevel(GetLeader(), SKILL_LEADERSHIP);
 	   int n = GetNearMemberCount();
 
 	   if (n >= 5 && leadership >= 24)

@@ -2405,10 +2405,12 @@ uint32_t CHARACTER::GetNextExp() const
 }
 
 
-int CHARACTER::GetSkillPowerByLevel(int level, bool bMob) const
+namespace ecs::PlayerRuntime {
+int GetSkillPowerByLevel(entt::entity e, int level, bool bMob)
 {
-    return CTableBySkill::instance().GetSkillPowerByLevelFromType(ecs::PlayerRuntime::GetJob(GetEntityHandle()), GetSkillGroup(), MINMAX(0, level, (int)SKILL_MAX_LEVEL), bMob);
+    return CTableBySkill::instance().GetSkillPowerByLevelFromType(GetJob(e), ::SkillSystem::GetSkillGroup(e), MINMAX(0, level, (int)SKILL_MAX_LEVEL), bMob);
 }
+} // namespace ecs::PlayerRuntime
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 std::string CHARACTER::GetLang() {

@@ -512,8 +512,8 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             // Global notice with existing text IDs
             if (ecs::SocialSystem::GetParty(killer))
             {
-                LPCHARACTER leader = ecs::SocialSystem::GetParty(killer)->GetLeaderCharacter();
-                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1272, "%s", leader ? ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data() : ecs::PlayerRuntime::GetName(killer).data());
+                const entt::entity leader = ecs::SocialSystem::GetParty(killer)->GetLeader();
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1272, "%s", leader != entt::null ? ecs::PlayerRuntime::GetName(leader).data() : ecs::PlayerRuntime::GetName(killer).data());
             }
             else
             {

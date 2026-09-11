@@ -1538,9 +1538,9 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
         if (ecs::SocialSystem::GetParty(killer))
         {
-            LPCHARACTER leader = ecs::SocialSystem::GetParty(killer)->GetLeaderCharacter();
-            if (leader)
-                leaderName = ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data();
+            const entt::entity leader = ecs::SocialSystem::GetParty(killer)->GetLeader();
+            if (leader != entt::null)
+                leaderName = ecs::PlayerRuntime::GetName(leader).data();
         }
 
         char notice[256];

@@ -47,9 +47,8 @@ void CPartyManager::DeleteAllParty()
 	}
 }
 
-bool CPartyManager::SetParty(LPCHARACTER ch)	// PC�� ����ؾ� �Ѵ�!!
+bool CPartyManager::SetParty(entt::entity chEntity)	// PC�� ����ؾ� �Ѵ�!!
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	TPartyMap::iterator it = m_map_pkParty.find((ecs::PlayerRuntime::GetPlayerID(chEntity)));
 
 	if (it == m_map_pkParty.end())
@@ -144,7 +143,6 @@ void CPartyManager::P2PDeleteParty(uint32_t pid)
 
 LPPARTY CPartyManager::CreateParty(entt::entity leader)
 {
-	LPCHARACTER pLeader = ecs::LegacyCharOf(leader);
 	if (ecs::SocialSystem::GetParty(leader))
 		return ecs::SocialSystem::GetParty(leader);
 
@@ -171,7 +169,7 @@ LPPARTY CPartyManager::CreateParty(entt::entity leader)
 	else
 	{
 		pParty->SetPCParty(false);
-		pParty->Join(pLeader->GetLegacyVID());
+		pParty->Join(ecs::PlayerRuntime::GetPacketVID(leader));
 	}
 
 	pParty->Link(leader);
@@ -272,7 +270,6 @@ void CParty::Initialize()
 	LOG_TRACE("Party::Initialize");
 
 	m_iExpDistributionMode = PARTY_EXP_DISTRIBUTION_NON_PARITY;
-	m_pkChrExpCentralize = nullptr;
 
 	m_dwLeaderPID = 0;
 
@@ -299,7 +296,6 @@ void CParty::Initialize()
 
 	m_iCountNearPartyMember = 0;
 
-	m_pkChrLeader = nullptr;
 	m_bPCParty = false;
 	m_pkDungeon = nullptr;
 	m_pkDungeon_for_Only_party = nullptr;
@@ -330,27 +326,27 @@ void CParty::Destroy()
 		TMember & rMember = it->second;
 		++it;
 
-		if (rMember.pCharacter)
+		if (IsLinked(rMember.member))
 		{
-			if (ecs::PlayerRuntime::GetDesc(((rMember.pCharacter) ? (rMember.pCharacter)->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::GetDesc(rMember.member))
 			{
 				TPacketGCPartyRemove p;
 				p.header = HEADER_GC_PARTY_REMOVE;
-				p.pid = ecs::PlayerRuntime::GetPlayerID(((rMember.pCharacter) ? (rMember.pCharacter)->GetEntityHandle() : entt::null));
-				ecs::PlayerRuntime::GetDesc(((rMember.pCharacter) ? (rMember.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+				p.pid = ecs::PlayerRuntime::GetPlayerID(rMember.member);
+				ecs::PlayerRuntime::GetDesc(rMember.member)->Packet(&p, sizeof(p));
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((rMember.pCharacter) ? (rMember.pCharacter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 213, "");
+				ecs::ChatSystem::SendNew(rMember.member, CHAT_TYPE_INFO, 213, "");
 #endif
 			}
 			else
 			{
 				// NPC�� ��� ���� �ð� �� ���� ���� �ƴ� �� ������� �ϴ� �̺�Ʈ�� ���۽�Ų��.
-				CombatSystem::SetLastAttacked(rMember.pCharacter->GetEntityHandle(), dwTime);
+				CombatSystem::SetLastAttacked(rMember.member, dwTime);
 				ecs::PlayerRuntime::StartDestroyWhenIdleEvent(
-					rMember.pCharacter->GetEntityHandle());
+					rMember.member);
 			}
 
-			ecs::SocialSystem::SetParty(rMember.pCharacter->GetEntityHandle(), nullptr);
+			ecs::SocialSystem::SetParty(rMember.member, nullptr);
 		}
 	}
 
@@ -375,8 +371,8 @@ void CParty::ChatPacketToAllMemberNew(uint8_t type, uint32_t idx, const char * f
 	TMemberMap::iterator it;
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it) {
 		TMember & rMember = it->second;
-		if (rMember.pCharacter) {
-			ecs::ChatSystem::SendNew(((rMember.pCharacter) ? (rMember.pCharacter)->GetEntityHandle() : entt::null), type, idx, "%s", chatbuf);
+		if (IsLinked(rMember.member)) {
+			ecs::ChatSystem::SendNew(rMember.member, type, idx, "%s", chatbuf);
 		}
 	}
 }
@@ -400,7 +396,7 @@ void CParty::P2PJoin(uint32_t dwPID)
 	{
 		TMember Member;
 
-		Member.pCharacter	= nullptr;
+		Member.member	= entt::null;
 		Member.bNear		= false;
 
 		if (m_memberMap.empty())
@@ -490,7 +486,7 @@ void CParty::P2PQuit(uint32_t dwPID)
 	if (m_bPCParty)
 		RemoveBonusForOne(dwPID);
 
-	auto* ch = it->second.pCharacter;
+	const entt::entity member = it->second.member;
 	uint8_t bRole = it->second.bRole;
 
 	m_memberMap.erase(it);
@@ -506,10 +502,10 @@ void CParty::P2PQuit(uint32_t dwPID)
 		LOG_ERROR("ROLE_COUNT_QUIT_ERROR: INDEX({}) > MAX({})", bRole, PARTY_ROLE_MAX_NUM);
 	}
 
-	if (ch)
+	if (IsLinked(member))
 	{
-		ecs::SocialSystem::SetParty(ch->GetEntityHandle(), nullptr);
-		ComputeRolePoint(((ch) ? (ch)->GetEntityHandle() : entt::null), bRole, false);
+		ecs::SocialSystem::SetParty(member, nullptr);
+		ComputeRolePoint(member, bRole, false);
 	}
 
 	if (m_bPCParty)
@@ -544,13 +540,12 @@ void CParty::Quit(uint32_t dwPID)
 
 void CParty::Link(entt::entity character)
 {
-	LPCHARACTER pkChr = ecs::LegacyCharOf(character);
 	TMemberMap::iterator it;
 
 	if (ecs::PlayerRuntime::IsPC(character))
 		it = m_memberMap.find(ecs::PlayerRuntime::GetPlayerID(character));
 	else
-		it = m_memberMap.find(pkChr->GetLegacyVID());
+		it = m_memberMap.find(ecs::PlayerRuntime::GetPacketVID(character));
 
 	if (it == m_memberMap.end())
 	{
@@ -566,12 +561,9 @@ void CParty::Link(entt::entity character)
 		m_eventUpdate = event_create(party_update_event, info, PASSES_PER_SEC(3));
 	}
 
-	if (it->second.bRole == PARTY_ROLE_LEADER)
-		m_pkChrLeader = pkChr;
-
 	LOG_TRACE("PARTY[{}] {} linked to party", GetLeaderPID(), ecs::PlayerRuntime::GetName(character).data());
 
-	it->second.pCharacter = pkChr;
+	it->second.member = character;
 	ecs::SocialSystem::SetParty(character, this);
 
 	if (ecs::PlayerRuntime::IsPC(character))
@@ -640,13 +632,12 @@ namespace
 
 void CParty::Unlink(entt::entity character)
 {
-	LPCHARACTER pkChr = ecs::LegacyCharOf(character);
 	TMemberMap::iterator it;
 
 	if (ecs::PlayerRuntime::IsPC(character))
 		it = m_memberMap.find(ecs::PlayerRuntime::GetPlayerID(character));
 	else
-		it = m_memberMap.find(pkChr->GetLegacyVID());
+		it = m_memberMap.find(ecs::PlayerRuntime::GetPacketVID(character));
 
 	if (it == m_memberMap.end())
 	{
@@ -663,7 +654,7 @@ void CParty::Unlink(entt::entity character)
 		{
 			RemoveBonus();
 
-			if (ecs::SocialSystem::GetDungeon(it->second.pCharacter->GetEntityHandle()))
+			if (ecs::SocialSystem::GetDungeon(it->second.member))
 			{
 				// TODO: ������ ������ �������� ������
 				FExitDungeon f;
@@ -672,11 +663,7 @@ void CParty::Unlink(entt::entity character)
 		}
 	}
 
-	if (it->second.bRole == PARTY_ROLE_LEADER) {
-		m_pkChrLeader = nullptr;
-	}
-
-	it->second.pCharacter = nullptr;
+	it->second.member = entt::null;
 	ecs::SocialSystem::SetParty(character, nullptr);
 }
 
@@ -690,8 +677,8 @@ void CParty::SendPartyRemoveOneToAll(uint32_t pid)
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)))
-			ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+		if (IsLinked(it->second.member) && ecs::PlayerRuntime::GetDesc(it->second.member))
+			ecs::PlayerRuntime::GetDesc(it->second.member)->Packet(&p, sizeof(p));
 	}
 }
 
@@ -707,8 +694,8 @@ void CParty::SendPartyJoinOneToAll(uint32_t pid)
 
 	for (TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)))
-			ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+		if (IsLinked(it->second.member) && ecs::PlayerRuntime::GetDesc(it->second.member))
+			ecs::PlayerRuntime::GetDesc(it->second.member)->Packet(&p, sizeof(p));
 	}
 }
 
@@ -744,9 +731,9 @@ void CParty::SendPartyUnlinkOneToAll(entt::entity character)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)))
+		if (IsLinked(it->second.member) && ecs::PlayerRuntime::GetDesc(it->second.member))
 		{
-			ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(it->second.member)->Packet(&p, sizeof(p));
 		}
 	}
 }
@@ -765,9 +752,9 @@ void CParty::SendPartyLinkOneToAll(entt::entity character)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)))
+		if (IsLinked(it->second.member) && ecs::PlayerRuntime::GetDesc(it->second.member))
 		{
-			ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(it->second.member)->Packet(&p, sizeof(p));
 		}
 	}
 }
@@ -784,10 +771,10 @@ void CParty::SendPartyLinkAllToOne(entt::entity character)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter)
+		if (IsLinked(it->second.member))
 		{
-			p.vid = ecs::PlayerRuntime::GetPacketVID(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null));
-			p.pid = (ecs::PlayerRuntime::GetPlayerID(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)));
+			p.vid = ecs::PlayerRuntime::GetPacketVID(it->second.member);
+			p.pid = (ecs::PlayerRuntime::GetPlayerID(it->second.member));
 			ecs::PlayerRuntime::GetDesc(character)->Packet(&p, sizeof(p));
 		}
 	}
@@ -800,9 +787,9 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 	if (it == m_memberMap.end())
 		return;
 
-	if (it->second.pCharacter)
+	if (IsLinked(it->second.member))
 	{
-		SendPartyInfoOneToAll(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null));
+		SendPartyInfoOneToAll(it->second.member);
 		return;
 	}
 
@@ -816,10 +803,10 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))))
+		if (IsLinked(it->second.member) && (ecs::PlayerRuntime::GetDesc(it->second.member)))
 		{
-			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPacketVID(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)));
-			ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(it->second.member).data(), ecs::PlayerRuntime::GetPacketVID(it->second.member));
+			ecs::PlayerRuntime::GetDesc(it->second.member)->Packet(&p, sizeof(p));
 		}
 	}
 }
@@ -837,10 +824,10 @@ void CParty::SendPartyInfoOneToAll(entt::entity character)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))))
+		if (IsLinked(it->second.member) && (ecs::PlayerRuntime::GetDesc(it->second.member)))
 		{
-			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPacketVID(character), ecs::PlayerRuntime::GetName(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPacketVID(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)));
-			ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPacketVID(character), ecs::PlayerRuntime::GetName(it->second.member).data(), ecs::PlayerRuntime::GetPacketVID(it->second.member));
+			ecs::PlayerRuntime::GetDesc(it->second.member)->Packet(&p, sizeof(p));
 		}
 	}
 }
@@ -853,7 +840,7 @@ void CParty::SendPartyInfoAllToOne(entt::entity character)
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (!it->second.pCharacter)
+		if (!IsLinked(it->second.member))
 		{
 			uint32_t pid = it->first;
 			memset(&p, 0, sizeof(p));
@@ -865,15 +852,14 @@ void CParty::SendPartyInfoAllToOne(entt::entity character)
 			continue;
 		}
 
-		NetworkSyncSystem::BuildPartyUpdatePacket(g_registry, ((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null), p);
-		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPacketVID(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPacketVID(character));
+		NetworkSyncSystem::BuildPartyUpdatePacket(g_registry, it->second.member, p);
+		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(it->second.member).data(), ecs::PlayerRuntime::GetPacketVID(it->second.member), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPacketVID(character));
 		ecs::PlayerRuntime::GetDesc(character)->Packet(&p, sizeof(p));
 	}
 }
 
 void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, uint32_t dwArg2)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::SocialSystem::GetParty(character) != this)
 	{
 		LOG_ERROR("{} is not member of this party {}", ecs::PlayerRuntime::GetName(character).data(), static_cast<const void*>(this));
@@ -894,21 +880,21 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 					TMember & rMember = it->second;
 					++it;
 
-					auto* pkChr = static_cast<LPCHARACTER>(nullptr);
+					const entt::entity other = rMember.member;
 
-					if ((pkChr = rMember.pCharacter) && ch != pkChr)
+					if (IsLinked(other) && other != character)
 					{
 						uint32_t x = dwArg1 + number(-500, 500);
 						uint32_t y = dwArg2 + number(-500, 500);
 
-						CombatSystem::SetVictim(pkChr->GetEntityHandle(), entt::null);
-						ecs::MovementSystem::SetRotationToXY(pkChr->GetEntityHandle(), x, y);
+						CombatSystem::SetVictim(other, entt::null);
+						ecs::MovementSystem::SetRotationToXY(other, x, y);
 
-						if (ecs::MovementSystem::Goto(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), x, y))
+						if (ecs::MovementSystem::Goto(other, x, y))
 						{
-							const entt::entity victim = CombatSystem::GetVictim(pkChr->GetEntityHandle());
-							LOG_TRACE("{} {} RETURN victim {}", ecs::PlayerRuntime::GetName(pkChr->GetEntityHandle()).data(), static_cast<const void*>(get_pointer(pkChr)), static_cast<uint32_t>(victim));
-							ecs::MovementSystem::SendMovePacket(pkChr->GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
+							const entt::entity victim = CombatSystem::GetVictim(other);
+							LOG_TRACE("{} {} RETURN victim {}", ecs::PlayerRuntime::GetName(other).data(), static_cast<uint32_t>(other), static_cast<uint32_t>(victim));
+							ecs::MovementSystem::SendMovePacket(other, FUNC_WAIT, 0, 0, 0, 0);
 						}
 					}
 				}
@@ -930,12 +916,12 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 					TMember & rMember = it->second;
 					++it;
 
-					auto* pkChr = static_cast<LPCHARACTER>(nullptr);
+					const entt::entity other = rMember.member;
 
-					if ((pkChr = rMember.pCharacter) && ch != pkChr)
+					if (IsLinked(other) && other != character)
 					{
-						if (CombatSystem::CanBeginFight(pkChr->GetEntityHandle()))
-							CombatSystem::BeginFight(pkChr->GetEntityHandle(), victimEntity);
+						if (CombatSystem::CanBeginFight(other))
+							CombatSystem::BeginFight(other, victimEntity);
 					}
 				}
 			}
@@ -955,11 +941,11 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 					TMember & rMember = it->second;
 					++it;
 
-					auto* pkChr = static_cast<LPCHARACTER>(nullptr);
+					const entt::entity other = rMember.member;
 
-					if ((pkChr = rMember.pCharacter) && ch != pkChr)
+					if (IsLinked(other) && other != character)
 					{
-						CombatSystem::UpdateAggrPoint(pkChr->GetEntityHandle(), victim, DAMAGE_TYPE_SPECIAL, dwArg1);
+						CombatSystem::UpdateAggrPoint(other, victim, DAMAGE_TYPE_SPECIAL, dwArg1);
 					}
 				}
 			}
@@ -967,9 +953,13 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 	}
 }
 
-LPCHARACTER CParty::GetLeaderCharacter()
+// The leader is the member holding the leader PID. m_pkChrLeader kept the same
+// pointer a second time, and operator[] here inserted an empty member whenever
+// that row was missing.
+entt::entity CParty::GetLeader()
 {
-	return m_memberMap[GetLeaderPID()].pCharacter;
+	const auto it = m_memberMap.find(GetLeaderPID());
+	return it != m_memberMap.end() && IsLinked(it->second.member) ? it->second.member : entt::null;
 }
 
 bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
@@ -981,8 +971,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 		return false;
 	}
 
-	auto* ch = it->second.pCharacter;
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = it->second.member;
 
 
 	if (bSet)
@@ -995,7 +984,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 
 		it->second.bRole = bRole;
 
-		if (ch && GetLeader())
+		if (IsLinked(chEntity) && GetLeader() != entt::null)
 			ComputeRolePoint(chEntity, bRole, true);
 
 		if (bRole < PARTY_ROLE_MAX_NUM)
@@ -1017,7 +1006,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 
 		it->second.bRole = PARTY_ROLE_NORMAL;
 
-		if (ch && GetLeader())
+		if (IsLinked(chEntity) && GetLeader() != entt::null)
 			ComputeRolePoint(chEntity, PARTY_ROLE_NORMAL, false);
 
 		if (bRole < PARTY_ROLE_MAX_NUM)
@@ -1060,11 +1049,9 @@ void CParty::RemoveBonus()
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		auto* ch = it->second.pCharacter;
-
-		if (ch)
+		if (IsLinked(it->second.member))
 		{
-			ComputeRolePoint(((ch) ? (ch)->GetEntityHandle() : entt::null), it->second.bRole, false);
+			ComputeRolePoint(it->second.member, it->second.bRole, false);
 		}
 
 		it->second.bNear = false;
@@ -1078,10 +1065,8 @@ void CParty::RemoveBonusForOne(uint32_t pid)
 	if (it == m_memberMap.end())
 		return;
 
-	auto* ch = it->second.pCharacter;
-
-	if (ch)
-		ComputeRolePoint(((ch) ? (ch)->GetEntityHandle() : entt::null), it->second.bRole, false);
+	if (IsLinked(it->second.member))
+		ComputeRolePoint(it->second.member, it->second.bRole, false);
 }
 
 void CParty::HealParty()
@@ -1094,17 +1079,15 @@ void CParty::HealParty()
 		return;
 
 	TMemberMap::iterator it;
-	auto* l = GetLeaderCharacter();
-	const entt::entity lEntity = l ? l->GetEntityHandle() : entt::null;
+	const entt::entity lEntity = GetLeader();
 
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (!it->second.pCharacter)
+		if (!IsLinked(it->second.member))
 			continue;
 
-		auto* ch = it->second.pCharacter;
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity chEntity = it->second.member;
 
 
 		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(chEntity)) < PARTY_DEFAULT_RANGE)
@@ -1140,8 +1123,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	int x[12], y[12];
 
 	SECTREE_MANAGER & s = SECTREE_MANAGER::instance();
-	auto* l = GetLeaderCharacter();
-	const entt::entity lEntity = l ? l->GetEntityHandle() : entt::null;
+	const entt::entity lEntity = GetLeader();
 
 
 	if (m_memberMap.find(pid) == m_memberMap.end())
@@ -1152,11 +1134,10 @@ void CParty::SummonToLeader(uint32_t pid)
 		return;
 	}
 
-	auto* ch = m_memberMap[pid].pCharacter;
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = m_memberMap[pid].member;
 
 
-	if (!ch)
+	if (!IsLinked(chEntity))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(lEntity, CHAT_TYPE_INFO, 209, "");
@@ -1215,34 +1196,31 @@ void CParty::IncreaseOwnership()
 	}
 }
 
-LPCHARACTER CParty::GetNextOwnership(LPCHARACTER ch, int32_t x, int32_t y)
+entt::entity CParty::GetNextOwnership(entt::entity fallback, int32_t x, int32_t y)
 {
 	if (m_itNextOwner == m_memberMap.end())
-		return ch;
+		return fallback;
 
 	int size = m_memberMap.size();
 
 	while (size-- > 0)
 	{
-		auto* pkMember = m_itNextOwner->second.pCharacter;
-		const entt::entity member = pkMember ? pkMember->GetEntityHandle() : entt::null;
+		const entt::entity member = m_itNextOwner->second.member;
 
-
-		if (pkMember && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(member) - x, ecs::PlayerRuntime::GetY(member) - y) < 3000)
+		if (IsLinked(member) && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(member) - x, ecs::PlayerRuntime::GetY(member) - y) < 3000)
 		{
 			IncreaseOwnership();
-			return pkMember;
+			return member;
 		}
 
 		IncreaseOwnership();
 	}
 
-	return ch;
+	return fallback;
 }
 
 void CParty::ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!bAdd)
 	{
 		ecs::PointSystem::Change(character, POINT_PARTY_ATTACKER_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_ATTACKER_BONUS));
@@ -1256,7 +1234,7 @@ void CParty::ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd)
 	}
 
 	//SKILL_POWER_BY_LEVEL
-	float k = (float) ch->GetSkillPowerByLevel( MIN(SKILL_MAX_LEVEL, m_iLeadership ) )/ 100.0f;
+	float k = (float) ecs::PlayerRuntime::GetSkillPowerByLevel(character, MIN(SKILL_MAX_LEVEL, m_iLeadership)) / 100.0f;
 	//float k = (float) aiSkillPowerByLevel[MIN(SKILL_MAX_LEVEL, m_iLeadership)] / 100.0f;
 	//
 	//LOG_INFO("ComputeRolePoint {}i {}, {}", k, SKILL_MAX_LEVEL, m_iLeadership);
@@ -1272,7 +1250,7 @@ void CParty::ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd)
 				if (ecs::PointSystem::Get(character, POINT_PARTY_ATTACKER_BONUS) != iBonus)
 				{
 					ecs::PointSystem::Change(character, POINT_PARTY_ATTACKER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_ATTACKER_BONUS));
-					ch->ComputePoints();
+					ecs::PointSystem::Compute(character);
 				}
 			}
 			break;
@@ -1284,7 +1262,7 @@ void CParty::ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd)
 				if (ecs::PointSystem::Get(character, POINT_PARTY_TANKER_BONUS) != iBonus)
 				{
 					ecs::PointSystem::Change(character, POINT_PARTY_TANKER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_TANKER_BONUS));
-					ch->ComputePoints();
+					ecs::PointSystem::Compute(character);
 				}
 			}
 			break;
@@ -1307,7 +1285,7 @@ void CParty::ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd)
 				if (ecs::PointSystem::Get(character, POINT_PARTY_SKILL_MASTER_BONUS) != iBonus)
 				{
 					ecs::PointSystem::Change(character, POINT_PARTY_SKILL_MASTER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_SKILL_MASTER_BONUS));
-					ch->ComputePoints();
+					ecs::PointSystem::Compute(character);
 				}
 			}
 			break;
@@ -1317,7 +1295,7 @@ void CParty::ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd)
 				if (ecs::PointSystem::Get(character, POINT_PARTY_HASTE_BONUS) != iBonus)
 				{
 					ecs::PointSystem::Change(character, POINT_PARTY_HASTE_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_HASTE_BONUS));
-					ch->ComputePoints();
+					ecs::PointSystem::Compute(character);
 				}
 			}
 			break;
@@ -1327,7 +1305,7 @@ void CParty::ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd)
 				if (ecs::PointSystem::Get(character, POINT_PARTY_DEFENDER_BONUS) != iBonus)
 				{
 					ecs::PointSystem::Change(character, POINT_PARTY_DEFENDER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_DEFENDER_BONUS));
-					ch->ComputePoints();
+					ecs::PointSystem::Compute(character);
 				}
 			}
 			break;
@@ -1338,11 +1316,10 @@ void CParty::Update()
 {
 	LOG_TRACE("PARTY::Update");
 
-	auto* l = GetLeaderCharacter();
-	const entt::entity lEntity = l ? l->GetEntityHandle() : entt::null;
+	const entt::entity lEntity = GetLeader();
 
 
-	if (!l)
+	if (lEntity == entt::null)
 		return;
 
 	TMemberMap::iterator it;
@@ -1352,22 +1329,22 @@ void CParty::Update()
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		auto* ch = it->second.pCharacter;
+		const entt::entity member = it->second.member;
 
 		it->second.bNear = false;
 
-		if (!ch)
+		if (!IsLinked(member))
 			continue;
 
 		if (ecs::SocialSystem::GetDungeon(lEntity))
-			it->second.bNear = ecs::SocialSystem::GetDungeon(lEntity) == ecs::SocialSystem::GetDungeon(ch->GetEntityHandle());
+			it->second.bNear = ecs::SocialSystem::GetDungeon(lEntity) == ecs::SocialSystem::GetDungeon(member);
 		else
-			it->second.bNear = (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))) < PARTY_DEFAULT_RANGE);
+			it->second.bNear = (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(member), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(member)) < PARTY_DEFAULT_RANGE);
 
 		if (it->second.bNear)
 		{
 			++iNearMember;
-			//LOG_INFO("NEAR {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			//LOG_INFO("NEAR {}", ecs::PlayerRuntime::GetName(member).data());
 		}
 	}
 
@@ -1408,24 +1385,24 @@ void CParty::Update()
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		auto* ch = it->second.pCharacter;
-		if (!ch)
+		const entt::entity member = it->second.member;
+		if (!IsLinked(member))
 			continue;
 
 #ifdef TEXTS_IMPROVEMENT
-		if (bLongTimeExpBonusChanged && ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 487, "");
+		if (bLongTimeExpBonusChanged && ecs::PlayerRuntime::GetDesc(member)) {
+			ecs::ChatSystem::SendNew(member, CHAT_TYPE_INFO, 487, "");
 		}
 #endif
 
 		bool bNear = it->second.bNear;
 
-		ComputeRolePoint(((ch) ? (ch)->GetEntityHandle() : entt::null), it->second.bRole, bNear);
+		ComputeRolePoint(member, it->second.bRole, bNear);
 
 		if (bNear)
 		{
 			if (!bResendAll)
-				SendPartyInfoOneToAll(((ch) ? (ch)->GetEntityHandle() : entt::null));
+				SendPartyInfoOneToAll(member);
 		}
 	}
 
@@ -1458,8 +1435,8 @@ void CParty::Update()
 
 				// send heal ready
 				if (0) // XXX  DELETEME Ŭ���̾�Ʈ �Ϸ�ɶ�����
-					if (GetLeaderCharacter())
-						ecs::ChatSystem::Send(((GetLeaderCharacter()) ? (GetLeaderCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "PartyHealReady");
+					if (lEntity != entt::null)
+						ecs::ChatSystem::Send(lEntity, CHAT_TYPE_COMMAND, "PartyHealReady");
 			}
 		}
 	}
@@ -1467,8 +1444,8 @@ void CParty::Update()
 	if (bResendAll)
 	{
 		for (TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-			if (it->second.pCharacter)
-				SendPartyInfoOneToAll(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null));
+			if (IsLinked(it->second.member))
+				SendPartyInfoOneToAll(it->second.member);
 	}
 }
 
@@ -1485,8 +1462,8 @@ void CParty::UpdateOnlineState(uint32_t dwPID, const char* name)
 
 	for (TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)))
-			ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+		if (IsLinked(it->second.member) && ecs::PlayerRuntime::GetDesc(it->second.member))
+			ecs::PlayerRuntime::GetDesc(it->second.member)->Packet(&p, sizeof(p));
 	}
 }
 void CParty::UpdateOfflineState(uint32_t dwPID)
@@ -1500,8 +1477,8 @@ void CParty::UpdateOfflineState(uint32_t dwPID)
 
 	for (TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null)))
-			ecs::PlayerRuntime::GetDesc(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+		if (IsLinked(it->second.member) && ecs::PlayerRuntime::GetDesc(it->second.member))
+			ecs::PlayerRuntime::GetDesc(it->second.member)->Packet(&p, sizeof(p));
 	}
 }
 
@@ -1560,8 +1537,8 @@ LPDUNGEON CParty::GetDungeon_for_Only_party()
 
 bool CParty::IsPositionNearLeader(entt::entity character)
 {
-	const entt::entity chrLeader = m_pkChrLeader ? m_pkChrLeader->GetEntityHandle() : entt::null;
-	if (!m_pkChrLeader)
+	const entt::entity chrLeader = GetLeader();
+	if (chrLeader == entt::null)
 		return false;
 
 	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - ecs::PlayerRuntime::GetX(chrLeader), ecs::PlayerRuntime::GetY(character) - ecs::PlayerRuntime::GetY(chrLeader)) >= PARTY_DEFAULT_RANGE)
@@ -1594,20 +1571,20 @@ uint8_t CParty::CountMemberByVnum(uint32_t dwVnum)
 	if (m_bPCParty)
 		return 0;
 
-	auto* tch = static_cast<LPCHARACTER>(nullptr);
 	uint8_t bCount = 0;
 
 	TMemberMap::iterator it;
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (!(tch = it->second.pCharacter))
+		const entt::entity tch = it->second.member;
+		if (!IsLinked(tch))
 			continue;
 
-		if (ecs::PlayerRuntime::IsPC(((tch) ? (tch)->GetEntityHandle() : entt::null)))
+		if (ecs::PlayerRuntime::IsPC(tch))
 			continue;
 
-		const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(tch->GetEntityHandle());
+		const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(tch);
 		if (mobTable && mobTable->dwVnum == dwVnum)
 			++bCount;
 	}
@@ -1638,8 +1615,8 @@ void CParty::SendParameterToAll()
 	TMemberMap::iterator it;
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-		if (it->second.pCharacter)
-			SendParameter(((it->second.pCharacter) ? (it->second.pCharacter)->GetEntityHandle() : entt::null));
+		if (IsLinked(it->second.member))
+			SendParameter(it->second.member);
 }
 
 void CParty::SetParameter(int iMode)
@@ -1657,21 +1634,6 @@ void CParty::SetParameter(int iMode)
 int CParty::GetExpDistributionMode()
 {
 	return m_iExpDistributionMode;
-}
-
-void CParty::SetExpCentralizeCharacter(uint32_t dwPID)
-{
-	TMemberMap::iterator it = m_memberMap.find(dwPID);
-
-	if (it == m_memberMap.end())
-		return;
-
-	m_pkChrExpCentralize = it->second.pCharacter;
-}
-
-LPCHARACTER CParty::GetExpCentralizeCharacter()
-{
-	return m_pkChrExpCentralize;
 }
 
 uint8_t CParty::GetMemberMaxLevel()
@@ -1723,8 +1685,7 @@ int CParty::ComputePartyBonusExpPercent()
 	if (GetNearMemberCount() <= 1)
 		return 0;
 
-	auto* leader = GetLeaderCharacter();
-	const entt::entity leaderEntity = leader ? leader->GetEntityHandle() : entt::null;
+	const entt::entity leaderEntity = GetLeader();
 
 
 	int iBonusPartyExpFromItem = 0;
@@ -1732,15 +1693,15 @@ int CParty::ComputePartyBonusExpPercent()
 	// UPGRADE_PARTY_BONUS
 	int iMemberCount=MIN(8, GetNearMemberCount());
 
-	if (leader && (leader->IsEquipUniqueItem(UNIQUE_ITEM_PARTY_BONUS_EXP) || leader->IsEquipUniqueItem(UNIQUE_ITEM_PARTY_BONUS_EXP_MALL)
-		|| leader->IsEquipUniqueItem(UNIQUE_ITEM_PARTY_BONUS_EXP_GIFT) || leader->IsEquipUniqueGroup(10010)))
+	if (leaderEntity != entt::null && (ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP) || ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP_MALL)
+		|| ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP_GIFT) || ItemSystem::IsEquipUniqueGroup(leaderEntity, 10010)))
 	{
 		// �߱��� ���� ������ Ȯ���ؾ��Ѵ�.
 		iBonusPartyExpFromItem = 30;
 	}
 
 #ifdef ENABLE_NEW_USE_POTION
-	if (leader && ecs::PointSystem::Get(leaderEntity, POINT_PARTY_DROPEXP) > 0) {
+	if (leaderEntity != entt::null && ecs::PointSystem::Get(leaderEntity, POINT_PARTY_DROPEXP) > 0) {
 		iBonusPartyExpFromItem += ecs::PointSystem::Get(leaderEntity, POINT_PARTY_DROPEXP);
 	}
 #endif
@@ -1754,14 +1715,14 @@ bool CParty::IsPartyInDungeon(int mapIndex)
 	// ��Ƽ���� mapIndex�� �����ȿ� �ִ��� ������� �˻�
 	for(TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		auto* ch = it->second.pCharacter;
+		const entt::entity member = it->second.member;
 
-		if(nullptr == ch)
+		if (!IsLinked(member))
 		{
 			continue;
 		}
 
-		LPDUNGEON d = ecs::SocialSystem::GetDungeon(ch->GetEntityHandle());
+		LPDUNGEON d = ecs::SocialSystem::GetDungeon(member);
 
 		if(nullptr == d)
 		{

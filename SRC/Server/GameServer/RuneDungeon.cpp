@@ -1154,8 +1154,8 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         if (LPPARTY party = ecs::SocialSystem::GetParty(killer))
         {
             const char* leaderName = ecs::PlayerRuntime::GetName(killer).data();
-            if (LPCHARACTER leader = party->GetLeaderCharacter())
-                leaderName = ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data();
+            if (const entt::entity leader = party->GetLeader(); leader != entt::null)
+                leaderName = ecs::PlayerRuntime::GetName(leader).data();
             BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1283, "%s", leaderName);
         }
         else

@@ -76,6 +76,7 @@ void SetSyncHackCount(entt::entity e, int count);
 const timeval& GetLastSyncTime(entt::entity e);
 const TMobTable* GetMobTable(entt::entity e);
 uint8_t GetJob(entt::entity e);
+int GetSkillPowerByLevel(entt::entity e, int level, bool bMob = false);
 bool ChangeSex(entt::entity e);
 bool SetRace(entt::entity e, uint8_t race);
 bool SetCostumeHidden(entt::entity e, uint8_t part, bool hidden, bool skipPersistence = false);

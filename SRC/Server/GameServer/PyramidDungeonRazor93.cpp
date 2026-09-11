@@ -650,8 +650,8 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
             // Global notice
             if (ecs::SocialSystem::GetParty(killer))
             {
-                LPCHARACTER leader = ecs::SocialSystem::GetParty(killer)->GetLeaderCharacter();
-                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", (leader ? ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data() : ecs::PlayerRuntime::GetName(killer).data())); SendNotice(buf); }
+                const entt::entity leader = ecs::SocialSystem::GetParty(killer)->GetLeader();
+                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", (leader != entt::null ? ecs::PlayerRuntime::GetName(leader).data() : ecs::PlayerRuntime::GetName(killer).data())); SendNotice(buf); }
             }
             else
             {

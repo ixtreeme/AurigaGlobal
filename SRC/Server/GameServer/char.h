@@ -1576,7 +1576,6 @@ public:
 private:
 
 public:
-	int		GetSkillPowerByLevel(int level, bool bMob = false) const;
 
 	//PREVENT_REFINE_HACK
 	//END_PREVENT_REFINE_HACK

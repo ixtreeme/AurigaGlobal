@@ -2058,8 +2058,7 @@ EVENTFUNC(ChainLightningEvent)
 
 	if (ecs::SocialSystem::GetParty(victimEntity)) // ĆÄĆĽ ¸ŐŔú
 	{
-		LPCHARACTER pkTarget = ecs::SocialSystem::GetParty(victimEntity)->GetNextOwnership(nullptr, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
-		target = pkTarget ? pkTarget->GetEntityHandle() : entt::null;
+		target = ecs::SocialSystem::GetParty(victimEntity)->GetNextOwnership(entt::null, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
 		if (target == victimEntity || !number(0, 2) || pkChr->GetChainLightingExcept().find(target) != pkChr->GetChainLightingExcept().end())
 			target = entt::null;
 	}

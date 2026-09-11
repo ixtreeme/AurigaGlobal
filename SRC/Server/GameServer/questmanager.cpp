@@ -585,10 +585,9 @@ namespace quest
 			// party_kill call script
 			LPCHARACTER ch = GetCurrentCharacterPtr();
 			LPPARTY pParty = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
-			LPCHARACTER leader = pParty ? pParty->GetLeaderCharacter() : ch;
-			const entt::entity leaderEntity = leader ? leader->GetEntityHandle() : entt::null;
+			const entt::entity leaderEntity = pParty ? pParty->GetLeader() : (ch ? ch->GetEntityHandle() : entt::null);
 
-			if (leader)
+			if (leaderEntity != entt::null)
 			{
 				m_pCurrentPartyMember = ch;
 				if (npc >= MAIN_RACE_MAX_NUM) //@fixme109

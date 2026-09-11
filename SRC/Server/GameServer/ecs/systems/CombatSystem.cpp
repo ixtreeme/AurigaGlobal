@@ -1941,23 +1941,6 @@ typedef struct SDamageInfo
 			if (pParty->IsPositionNearLeader(chEntity))
 				iExp = iExp * (100 + pParty->GetExpBonusPercent()) / 100;
 
-			// ġ ֱ (Ƽ ȹ ġ 5%   )
-			if (pParty->GetExpCentralizeCharacter())
-			{
-				auto* tch = pParty->GetExpCentralizeCharacter();
-				const entt::entity tchEntity = tch ? tch->GetEntityHandle() : entt::null;
-
-
-				if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(tchEntity), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(tchEntity)) <= PARTY_DEFAULT_RANGE)
-				{
-					int iExpCenteralize = (int)(iExp * 0.05f);
-					iExp -= iExpCenteralize;
-
-					GiveExp(chEntity,
-						tchEntity, iExpCenteralize);
-				}
-			}
-
 			NPartyExpDistribute::FPartyDistributor fDist(chEntity, f.member_count, f.total, iExp, pParty->GetExpDistributionMode());
 			pParty->ForEachOnlineMember(fDist);
 		}
@@ -4308,7 +4291,7 @@ void Reward(entt::entity e, bool bItemDrop)
 			{
 				int iItemIdx = s_vec_item.size() - 1;
 
-				std::priority_queue<std::pair<uint64_t, LegacyCharHandle> > pq;
+				std::priority_queue<std::pair<uint64_t, entt::entity> > pq;
 
 				uint64_t total_dam = 0;
 
@@ -4317,17 +4300,15 @@ void Reward(entt::entity e, bool bItemDrop)
 					uint64_t iDamage = it->second.totalDamage;
 					if (iDamage > 0)
 					{
-						auto* ch = LegacyCharOf(it->first);
-
-						if (ch)
+						if (ecs::PlayerRuntime::IsValid(it->first))
 						{
-							pq.push(std::make_pair(iDamage, ch));
+							pq.push(std::make_pair(iDamage, it->first));
 							total_dam += iDamage;
 						}
 					}
 				}
 
-				std::vector<LegacyCharHandle> v;
+				std::vector<entt::entity> v;
 
 				while (!pq.empty() && pq.top().first * 10 >= total_dam)
 				{
@@ -4366,7 +4347,7 @@ void Reward(entt::entity e, bool bItemDrop)
 				}
 				else
 				{
-					std::vector<LegacyCharHandle>::iterator it = v.begin();
+					std::vector<entt::entity>::iterator it = v.begin();
 
 					while (iItemIdx >= 0)
 					{
@@ -4378,10 +4359,10 @@ void Reward(entt::entity e, bool bItemDrop)
 							continue;
 						}
 
-						auto* ch = *it;
+						entt::entity owner = *it;
 
-						if (ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)))
-							ch = ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null))->GetNextOwnership(ch, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
+						if (LPPARTY ownerParty = ecs::SocialSystem::GetParty(owner))
+							owner = ownerParty->GetNextOwnership(owner, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
 
 						++it;
 
@@ -4392,7 +4373,7 @@ void Reward(entt::entity e, bool bItemDrop)
 
 						if (bInstantRewardToInventory && !bKeepGroundDrop)
 						{
-							__GiveRewardItemToCharacterOrDrop(ch ? ch->GetEntityHandle() : entt::null, e, itemEntity, pos, true);
+							__GiveRewardItemToCharacterOrDrop(owner, e, itemEntity, pos, true);
 						}
 						else
 						{
@@ -4400,10 +4381,10 @@ void Reward(entt::entity e, bool bItemDrop)
 									itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 								continue;
 
-							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null))) == false)
+							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(owner)) == false)
 							{
 								ItemSystem::SetGroundOwnership(
-									itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
+									itemEntity, owner);
 							}
 
 							LOG_INFO("DROP_ITEM: {} {} {} by {}",
@@ -4457,7 +4438,7 @@ void Reward(entt::entity e, bool bItemDrop)
 			{
 				int iItemIdx = s_vec_item.size() - 1;
 
-				std::priority_queue<std::pair<uint64_t, LegacyCharHandle> > pq;
+				std::priority_queue<std::pair<uint64_t, entt::entity> > pq;
 
 				uint64_t total_dam = 0;
 
@@ -4466,17 +4447,15 @@ void Reward(entt::entity e, bool bItemDrop)
 					uint64_t iDamage = it->second.totalDamage;
 					if (iDamage > 0)
 					{
-						auto* ch = LegacyCharOf(it->first);
-
-						if (ch)
+						if (ecs::PlayerRuntime::IsValid(it->first))
 						{
-							pq.push(std::make_pair(iDamage, ch));
+							pq.push(std::make_pair(iDamage, it->first));
 							total_dam += iDamage;
 						}
 					}
 				}
 
-				std::vector<LegacyCharHandle> v;
+				std::vector<entt::entity> v;
 
 				while (!pq.empty() && pq.top().first * 10 >= total_dam)
 				{
@@ -4515,7 +4494,7 @@ void Reward(entt::entity e, bool bItemDrop)
 				}
 				else
 				{
-					std::vector<LegacyCharHandle>::iterator it = v.begin();
+					std::vector<entt::entity>::iterator it = v.begin();
 
 					while (iItemIdx >= 0)
 					{
@@ -4531,20 +4510,20 @@ void Reward(entt::entity e, bool bItemDrop)
 								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 							continue;
 
-						auto* ch = *it;
+						entt::entity owner = *it;
 
-						if (ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)))
-							ch = ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null))->GetNextOwnership(ch, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
+						if (LPPARTY ownerParty = ecs::SocialSystem::GetParty(owner))
+							owner = ownerParty->GetNextOwnership(owner, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
 
 						++it;
 
 						if (it == v.end())
 							it = v.begin();
 
-						if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null))) == false)
+						if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(owner)) == false)
 						{
 							ItemSystem::SetGroundOwnership(
-								itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
+								itemEntity, owner);
 						}
 
 						pos.x = number(-7, 7) * 20;

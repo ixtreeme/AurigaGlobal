@@ -652,8 +652,7 @@ void SetShop(entt::entity e, CShop* shop)
 entt::entity GetPartyLeader(entt::entity e)
 {
     LPPARTY party = GetParty(e);
-    LPCHARACTER leader = party ? party->GetLeader() : nullptr;
-    return leader ? leader->GetEntityHandle() : entt::null;
+    return party ? party->GetLeader() : entt::null;
 }
 
 void ForEachNearPartyMember(entt::entity e, const std::function<void(entt::entity)>& visitor)
@@ -860,11 +859,11 @@ EVENTFUNC(party_request_event)
 
 bool CHARACTER::RequestToParty(entt::entity leaderEntity)
 {
-    LPCHARACTER leader = ecs::LegacyCharOf(leaderEntity);
+    entt::entity leader = ecs::PlayerRuntime::IsValid(leaderEntity) ? leaderEntity : entt::null;
     if (ecs::SocialSystem::GetParty(leaderEntity))
-        leader = ecs::SocialSystem::GetParty(leader->GetEntityHandle())->GetLeaderCharacter();
+        leader = ecs::SocialSystem::GetParty(leaderEntity)->GetLeader();
 
-    if (!leader)
+    if (leader == entt::null)
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 488, "");
@@ -878,7 +877,7 @@ bool CHARACTER::RequestToParty(entt::entity leaderEntity)
     if (!IsPC() || !ecs::PlayerRuntime::IsPC(leaderEntity))
         return false;
 
-    if (ecs::PlayerRuntime::IsBlockMode(leader->GetEntityHandle(), BLOCK_PARTY_REQUEST))
+    if (ecs::PlayerRuntime::IsBlockMode(leader, BLOCK_PARTY_REQUEST))
         return false;
 
     PartyJoinErrCode errcode = IsPartyJoinableCondition(leaderEntity, GetEntityHandle());

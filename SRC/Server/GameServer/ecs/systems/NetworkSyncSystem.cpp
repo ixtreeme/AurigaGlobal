@@ -717,10 +717,7 @@ bool NetworkSyncSystem::BuildPartyUpdatePacket(entt::registry& reg, entt::entity
     packet.role = party->GetRole(playerID);
     LOG_INFO("PARTY {} role is {}", ecs::PlayerRuntime::GetName(member), packet.role);
 
-    LPCHARACTER leader = party->GetLeaderCharacter();
-    const entt::entity leaderEntity = leader
-        ? leader->GetEntityHandle()
-        : entt::null;
+    const entt::entity leaderEntity = party->GetLeader();
     if (leaderEntity != entt::null && reg.valid(leaderEntity)) {
         const auto* memberPos = reg.try_get<ecs::Position>(member);
         const auto* leaderPos = reg.try_get<ecs::Position>(leaderEntity);
