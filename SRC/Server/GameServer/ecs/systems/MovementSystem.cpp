@@ -1950,7 +1950,6 @@ EVENTFUNC(recovery_event)
 	}
 	const entt::entity character = info->ch;
 
-	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkRecoveryEvent
 	if (!ecs::PlayerRuntime::IsPC(character))
 	{
 		// The four reads below used to go through a reference that dereferenced

@@ -4286,7 +4286,6 @@ EVENTFUNC(destroy_when_idle_event)
         return 0;
     }
 
-    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDestroyWhenIdleEvent
 
     if (CombatSystem::GetVictim(info->ch) != entt::null)
     {
