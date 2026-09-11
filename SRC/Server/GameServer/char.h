@@ -691,7 +691,6 @@ public:
 
 
 
-	void			SetRealPoint(uint8_t idx, int64_t val);
 	int64_t			GetRealPoint(uint8_t idx) const;
 
 

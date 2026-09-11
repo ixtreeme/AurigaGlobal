@@ -544,11 +544,6 @@ int64_t CHARACTER::GetRealPoint(uint8_t type) const
 	return type < POINT_MAX_NUM ? ecs::PointSystem::ReadRealArray(GetEntityHandle(), type) : 0;
 }
 
-void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
-{
-    ecs::PointSystem::SetReal(GetEntityHandle(), type, val);
-}
-
 int64_t CHARACTER::GetPoint(uint8_t type) const
 {
 	if (type >= POINT_MAX_NUM)

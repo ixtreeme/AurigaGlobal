@@ -3424,11 +3424,11 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         ecs::MovementSystem::SetWarpLocationRaw(GetEntityHandle(), t->lExitMapIndex, t->lExitX, t->lExitY);
     }
 
-    SetRealPoint(POINT_PLAYTIME, t->playtime);
-    SetRealPoint(POINT_ST, t->st);
-    SetRealPoint(POINT_HT, t->ht);
-    SetRealPoint(POINT_DX, t->dx);
-    SetRealPoint(POINT_IQ, t->iq);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_PLAYTIME, t->playtime);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_ST, t->st);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_HT, t->ht);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_DX, t->dx);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_IQ, t->iq);
 
     ecs::PointSystem::Set(GetEntityHandle(), POINT_ST, t->st);
     ecs::PointSystem::Set(GetEntityHandle(), POINT_HT, t->ht);
@@ -3443,7 +3443,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     ecs::PointSystem::Set(GetEntityHandle(), POINT_STAT_RESET_COUNT, t->stat_reset_count);
 
     ecs::PointSystem::Set(GetEntityHandle(), POINT_LEVEL_STEP, t->level_step);
-    SetRealPoint(POINT_LEVEL_STEP, t->level_step);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_LEVEL_STEP, t->level_step);
 
     ecs::PlayerRuntime::SetRace(GetEntityHandle(), t->job);
 
@@ -3579,10 +3579,10 @@ void CHARACTER::SetProto(const CMob* pkMob)
     ecs::PlayerRuntime::SetEmpire(GetEntityHandle(), t->bEmpire);
 
     ecs::PlayerRuntime::SetExp(GetEntityHandle(), t->dwExp);
-    SetRealPoint(POINT_ST, t->bStr);
-    SetRealPoint(POINT_DX, t->bDex);
-    SetRealPoint(POINT_HT, t->bCon);
-    SetRealPoint(POINT_IQ, t->bInt);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_ST, t->bStr);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_DX, t->bDex);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_HT, t->bCon);
+    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_IQ, t->bInt);
 
     ComputePoints();
 

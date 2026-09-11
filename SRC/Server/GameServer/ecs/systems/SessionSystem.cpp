@@ -601,7 +601,7 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
             CombatSystem::UpdateAlignment(e, 5 * (dwPlayedTime / 60000));
         }
 
-        self->SetRealPoint(POINT_PLAYTIME, self->GetRealPoint(POINT_PLAYTIME) + dwPlayedTime / 60000);
+        ecs::PointSystem::SetReal(e, POINT_PLAYTIME, self->GetRealPoint(POINT_PLAYTIME) + dwPlayedTime / 60000);
         ecs::PlayerRuntime::ResetPlayTime(e, dwPlayedTime % 60000);
     }
 

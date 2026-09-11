@@ -294,7 +294,7 @@ namespace
             return;
         const int64_t v = ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), pt);
         const int64_t nv = ClampMul10(v * STR_MULTIPLE);
-        ch->SetRealPoint(pt, nv);
+        ecs::PointSystem::SetReal(ch->GetEntityHandle(), pt, nv);
         ecs::PointSystem::Set(ch->GetEntityHandle(), pt, nv);
     }
 
@@ -809,7 +809,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             // erő: pontok másolása
             for (int p = 0; p < POINT_MAX_NUM; ++p)
             {
-                clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(sourceEntity, (uint8_t)p));
+                ecs::PointSystem::SetReal(cloneEntity, (uint8_t)p, ecs::PointSystem::Get(sourceEntity, (uint8_t)p));
                 ecs::PointSystem::Set(cloneEntity, (uint8_t)p, ecs::PointSystem::Get(sourceEntity, (uint8_t)p));
             }
 
@@ -1366,7 +1366,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         // copy points (NO 10x here - real PvP test)
         for (int p = 0; p < POINT_MAX_NUM; ++p)
         {
-            clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
+            ecs::PointSystem::SetReal(cloneEntity, (uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
             ecs::PointSystem::Set(cloneEntity, (uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
         }
         ecs::PlayerRuntime::SetLevel(cloneEntity, (uint8_t)ecs::PointSystem::GetLevel(source));
