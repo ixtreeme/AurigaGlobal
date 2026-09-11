@@ -2734,32 +2734,10 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
 #endif
 
 
-void CHARACTER::SetShop(LPSHOP pkShop)
-{
-    const auto e = GetEntityHandle();
-    ecs::SocialSystem::SetShop(e, pkShop);
-    m_pkShop = pkShop;
-}
-
 // ShopState is the only copy. CShop::RemoveGuest clears it through
-// SocialSystem::SetShop(e, nullptr) without passing through CHARACTER::
-// SetShop, so the old m_pkChrShopOwner mirror was never cleared on the
 // normal close path and stayed pointing at the NPC. Eleven "is this
 // player busy" guards read this getter, so one closed shop left the
 // player unable to open anything at all.
-LPCHARACTER CHARACTER::GetShopOwner() const
-{
-    return ecs::LegacyCharOf(ecs::SocialSystem::GetShopOwner(GetEntityHandle()));
-}
-
-void CHARACTER::SetShopOwner(entt::entity chEntity)
-{
-    LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
-    const auto e = GetEntityHandle();
-    (void)ch;
-    ecs::SocialSystem::SetShopOwner(e, chEntity);
-}
-
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 void CHARACTER::SetOfflineShopGuest(offlineshop::CShop* pkShop)
 {
@@ -3232,10 +3210,10 @@ void CHARACTER::Destroy()
 
     CombatSystem::SetVictim(GetEntityHandle(), entt::null);
 
-    if (GetShop())
+    if (CShop* shop = ecs::SocialSystem::GetShop(GetEntityHandle()))
     {
-        GetShop()->RemoveGuest(GetEntityHandle());
-        SetShop(nullptr);
+        shop->RemoveGuest(GetEntityHandle());
+        ecs::SocialSystem::SetShop(GetEntityHandle(), nullptr);
     }
 
     CombatSystem::ClearStone(GetEntityHandle());
@@ -3842,7 +3820,7 @@ void CHARACTER::OnClick(entt::entity causer)
 
                 if (pkCauser == this)
                 {
-                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || GetShopOwner()) || IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || ecs::SocialSystem::GetShopOwner(GetEntityHandle()) != entt::null) || IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -3862,7 +3840,7 @@ void CHARACTER::OnClick(entt::entity causer)
                 }
                 else
                 {
-                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(pkCauser->GetEntityHandle()) || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(causer) || ecs::SocialSystem::GetShopOwner(causer) != entt::null) || pkCauser->IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -3899,14 +3877,14 @@ void CHARACTER::OnClick(entt::entity causer)
 #endif
                 }
 
-                if (pkCauser->GetShop())
+                if (CShop* shop = ecs::SocialSystem::GetShop(causer))
                 {
-                    pkCauser->GetShop()->RemoveGuest(causer);
-                    pkCauser->SetShop(nullptr);
+                    shop->RemoveGuest(causer);
+                    ecs::SocialSystem::SetShop(causer, nullptr);
                 }
 
                 ecs::SocialSystem::GetMyShop(GetEntityHandle())->AddGuest(causer, GetPacketVID(), false);
-                pkCauser->SetShopOwner(GetEntityHandle());
+                ecs::SocialSystem::SetShopOwner(causer, GetEntityHandle());
                 return;
             }
 
@@ -4275,7 +4253,6 @@ void CHARACTER::Initialize()
 
     m_pkMobData = nullptr;
 
-    m_pkShop = nullptr;
     m_pkParty = nullptr;
     m_pkPartyRequestEvent = nullptr;
 

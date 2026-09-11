@@ -352,7 +352,7 @@ bool CheckCharacterActions(LPCHARACTER ch)
 	}
 
 
-	if(ch->GetShop())
+	if(ecs::SocialSystem::GetShop(ch->GetEntityHandle()))
 	{
 		return false;
 	}

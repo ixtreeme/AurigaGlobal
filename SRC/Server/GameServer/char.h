@@ -1136,11 +1136,7 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Shop related
 public:
-	void			SetShop(LPSHOP pkShop);
-	LPSHOP			GetShop() const { return m_pkShop; }
 
-	void			SetShopOwner(entt::entity character);
-	LPCHARACTER		GetShopOwner() const;
 
 #ifdef ENABLE_PVP_ADVANCED
 	void			DestroyPvP();
@@ -1148,7 +1144,6 @@ public:
 
 protected:
 
-	LPSHOP			m_pkShop;
 	// End of shop
 
 

@@ -4393,7 +4393,7 @@ void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, uint8_t bOldValue, ui
 bool CHARACTER::CanDoCube() const
 {
 	if (m_bIsObserver)	return false;
-	if (GetShop())		return false;
+	if (ecs::SocialSystem::GetShop(GetEntityHandle()))		return false;
 	if (ecs::SocialSystem::GetMyShop(GetEntityHandle()))	return false;
 	if (InventorySystem::IsRefining(GetEntityHandle()))	return false;
 	if (ecs::PlayerRuntime::IsWarping(GetEntityHandle()))	return false;

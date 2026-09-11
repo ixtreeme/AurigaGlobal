@@ -3208,7 +3208,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->IsCubeOpen() || ch->GetShop() || ecs::SocialSystem::GetMyShop(ch->GetEntityHandle())
+	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->IsCubeOpen() || ecs::SocialSystem::GetShop(character) || ecs::SocialSystem::GetMyShop(character)
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ecs::AcceSystem::IsOpen(ch->GetEntityHandle())
 #endif
@@ -4293,7 +4293,7 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 	if (CombatSystem::IsStun(character) || CombatSystem::IsDead(character))
 		return (iExtraLen);
 
-	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->GetShopOwner() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
@@ -4337,7 +4337,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	}
 #endif
 
-	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->GetShopOwner() || ecs::SocialSystem::GetMyShop(ch->GetEntityHandle()) || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SocialSystem::GetMyShop(character) || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 502, "");
