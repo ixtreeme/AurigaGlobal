@@ -61,6 +61,7 @@ bool IsPet(entt::entity e);
 bool IsNewPet(entt::entity e);
 void SetProto(entt::entity e, const CMob* pkMob);
 void SetDungeon(entt::entity e, LPDUNGEON pkDungeon);
+void SetRegen(entt::entity e, LPREGEN regen);
 void SetCoward(entt::entity e);
 void SetNoAttackShinsu(entt::entity e);
 void SetNoAttackChunjo(entt::entity e);

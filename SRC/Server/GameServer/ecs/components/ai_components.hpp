@@ -11,6 +11,8 @@
 
 #include "../../mob_manager.h"
 
+struct regen;
+
 namespace ecs {
 
 // The two-state machine CHARACTER used to inherit from CFSM. Transitions
@@ -68,7 +70,16 @@ struct SpawnInfo {
     int32_t x, y;
     uint32_t mapIndex;
     uint32_t respawnTime;
-    std::size_t regenId;
+};
+
+// The regen that spawned a mob, and that regen's id at the time. Destroying
+// the mob gives the regen its count back. In a dungeon the regen must still
+// be on the dungeon's list with the same id: a dungeon frees its regens, and
+// a new one can take the old address. CHARACTER held these as m_pkRegen and
+// regen_id_.
+struct RegenOrigin {
+    ::regen* regen { nullptr };
+    std::size_t id { 0 };
 };
 
 struct MobDataRef {

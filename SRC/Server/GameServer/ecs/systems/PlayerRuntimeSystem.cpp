@@ -2821,17 +2821,23 @@ void CHARACTER::SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt)
 }
 #endif
 
-void CHARACTER::SetRegen(LPREGEN pkRegen)
-{
-    m_pkRegen = pkRegen;
-    if (pkRegen != nullptr) {
-        regen_id_ = pkRegen->id;
-    }
-    m_fRegenAngle = GetRotation();
-    m_posRegen = GetXYZ();
-}
-
 namespace ecs::PlayerRuntime {
+
+// CHARACTER::SetRegen also stored the spawn position and rotation, which
+// nothing read. A null regen leaves the mob owned by no regen, as before.
+void SetRegen(entt::entity e, LPREGEN regen)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	if (!regen)
+	{
+		g_registry.remove<ecs::RegenOrigin>(e);
+		return;
+	}
+
+	g_registry.emplace_or_replace<ecs::RegenOrigin>(e, regen, static_cast<std::size_t>(regen->id));
+}
 
 } // namespace ecs::PlayerRuntime
 
@@ -3128,17 +3134,20 @@ void CHARACTER::Destroy()
 
     ecs::SocialSystem::CloseMyShop(GetEntityHandle());
 
-    if (m_pkRegen)
+    if (entityToDestroy != entt::null && g_registry.valid(entityToDestroy))
     {
-        if (ecs::SocialSystem::GetDungeon(GetEntityHandle())) {
-            if (ecs::SocialSystem::GetDungeon(GetEntityHandle())->IsValidRegen(m_pkRegen, regen_id_)) {
-                --m_pkRegen->count;
+        if (const auto* origin = g_registry.try_get<ecs::RegenOrigin>(entityToDestroy))
+        {
+            if (LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(entityToDestroy)) {
+                if (dungeon->IsValidRegen(origin->regen, origin->id)) {
+                    --origin->regen->count;
+                }
             }
+            else {
+                --origin->regen->count;
+            }
+            g_registry.remove<ecs::RegenOrigin>(entityToDestroy);
         }
-        else {
-            --m_pkRegen->count;
-        }
-        m_pkRegen = nullptr;
     }
 
     if (ecs::SocialSystem::GetDungeon(GetEntityHandle()))
@@ -4075,13 +4084,9 @@ void CHARACTER::Initialize()
 #endif
     m_iMoveCount = 0;
 
-    m_pkRegen = nullptr;
-    regen_id_ = 0;
-    m_posRegen.x = m_posRegen.y = m_posRegen.z = 0;
     // Phase C.3: legacy destination zero-init removed (entity null at this
     // Initialize point - ECS write would no-op anyway; new MovementDestination
     // is absent until Goto/Move emplaces).
-    m_fRegenAngle = 0.0f;
 
     m_pkMobData = nullptr;
 

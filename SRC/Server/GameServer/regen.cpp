@@ -325,7 +325,7 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 		}
 
 		if (ch && !bOnce)
-			ch->SetRegen(regen);
+			ecs::PlayerRuntime::SetRegen(ch->GetEntityHandle(), regen);
 		
 #ifdef __DEFENSE_WAVE__
 		if (pDungeon)
@@ -397,7 +397,7 @@ static void regen_spawn(LPREGEN regen, bool bOnce)
 		}
 
 		if (ch && !bOnce)
-			ch->SetRegen(regen);
+			ecs::PlayerRuntime::SetRegen(ch->GetEntityHandle(), regen);
 	}
 }
 
@@ -514,7 +514,7 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, L
 
 				pDungeon->AddRegen(regen);
 				// regen_id should be determined at this point,
-				// before the call to CHARACTER::SetRegen()
+				// before the call to ecs::PlayerRuntime::SetRegen()
 			}
 
 			// 처음엔 무조건 리젠 해준다.

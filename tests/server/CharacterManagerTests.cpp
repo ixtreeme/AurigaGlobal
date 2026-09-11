@@ -401,7 +401,7 @@ void CHARACTER::SetProto(const CMob*) { Unexpected(); }
 uint32_t CHARACTER::GetLegacyVID() const { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }
 LPCHARACTER CHARACTER::GetRider() const { return nullptr; }
-void CHARACTER::SetRegen(LPREGEN) { Unexpected(); }
+void ecs::PlayerRuntime::SetRegen(entt::entity, LPREGEN) { Unexpected(); }
 TEMP_BUFFER::TEMP_BUFFER(int, bool) { Unexpected(); }
 TEMP_BUFFER::~TEMP_BUFFER() = default;
 const void* TEMP_BUFFER::read_peek() { Unexpected(); }

@@ -975,7 +975,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		else if (!pkChrMaster)
 		{
 			pkChrMaster = tch;
-			pkChrMaster->SetRegen(pkRegen);
+			ecs::PlayerRuntime::SetRegen(spawned, pkRegen);
 
 			pkParty = CPartyManager::instance().CreateParty(((pkChrMaster) ? (pkChrMaster)->GetEntityHandle() : entt::null));
 		}
@@ -1070,7 +1070,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 		else if (!pkChrMaster)
 		{
 			pkChrMaster = tch;
-			pkChrMaster->SetRegen(pkRegen);
+			ecs::PlayerRuntime::SetRegen(spawned, pkRegen);
 
 			pkParty = CPartyManager::instance().CreateParty(((pkChrMaster) ? (pkChrMaster)->GetEntityHandle() : entt::null));
 		}

@@ -1458,18 +1458,6 @@ public:
 protected:
 
 	////////////////////////////////////////////////////////////////////////////////////////
-	// Regen
-public:
-	void				SetRegen(LPREGEN pkRegen);
-
-protected:
-	PIXEL_POSITION			m_posRegen;
-	float				m_fRegenAngle;
-	LPREGEN				m_pkRegen;
-	size_t				regen_id_; // to help dungeon regen identification
-	// End of Regen
-
-	////////////////////////////////////////////////////////////////////////////////////////
 	// Resists & Proofs
 public:
 	bool				CannotMoveByAffect() const;	// Ư�� ȿ���� ���� ������ �� ���� �����ΰ�?
