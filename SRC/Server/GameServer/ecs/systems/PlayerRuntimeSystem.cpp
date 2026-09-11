@@ -2401,14 +2401,6 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
 }
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-void CHARACTER::CancelStayOnlineEvent()
-{
-    if (m_pkStayOnlineEvent)
-    {
-        event_cancel(&m_pkStayOnlineEvent);
-        m_pkStayOnlineEvent = nullptr;
-    }
-}
 #endif
 
 #ifdef ENABLE_FREE_PASS_RAZOR93
@@ -2446,8 +2438,8 @@ bool UpdateMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBatt
 	if (e == entt::null || !g_registry.valid(e))
 		return false;
 
-	// CancelStayOnlineEvent and BattlePassRewardMission still take the
-	// character; each is its own migration and they share this one resolve.
+	// BattlePassRewardMission still takes the character; that is its own
+	// migration.
 	LPCHARACTER self = LegacyCharOf(e);
 	if (!self)
 		return false;
@@ -2484,7 +2476,8 @@ bool UpdateMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBatt
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
                 if (pkMission->dwMissionId == STAY_ONLINE_MINUTES)
-                    self->CancelStayOnlineEvent();
+                    ecs::PlayerRuntime::CancelCharEvent(e,
+                        ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
 #endif
                 CBattlePass::instance().BattlePassRewardMission(self, dwMissionID, dwBattlePassID);
             }
@@ -2508,7 +2501,8 @@ bool UpdateMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBatt
             newMission->bCompleted = 1;
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
             if (newMission->dwMissionId == STAY_ONLINE_MINUTES)
-                self->CancelStayOnlineEvent();
+                ecs::PlayerRuntime::CancelCharEvent(e,
+                        ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
 #endif
             CBattlePass::instance().BattlePassRewardMission(self, dwMissionID, dwBattlePassID);
 
@@ -3183,9 +3177,6 @@ void CHARACTER::Destroy()
     event_cancel(&m_pkMiningEvent);
 #ifdef ENABLE_BLOCK_MULTIFARM
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Drop);
-#endif
-#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-    event_cancel(&m_pkStayOnlineEvent);
 #endif
 
     SkillSystem::CancelAllMobSkillEvents(GetEntityHandle());
@@ -4152,9 +4143,6 @@ void CHARACTER::Initialize()
     ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).clear();
     ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), false);
 
-#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-    m_pkStayOnlineEvent = nullptr;
-#endif
 
 #endif
     m_stName = "";

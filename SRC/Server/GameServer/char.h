@@ -1834,8 +1834,6 @@ protected:
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE		
 public:
-	LPEVENT				m_pkStayOnlineEvent;
-	void	CancelStayOnlineEvent();
 	//void 	LoadStayActiveBattlePass();
 #endif
 #endif
