@@ -938,10 +938,9 @@ namespace quest
 		{
 		}
 
-		void operator () (LPCHARACTER ch)
+		void operator () (entt::entity chEntity)
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-			if (ch && (ecs::PlayerRuntime::IsPC(chEntity)))
+			if (ecs::PlayerRuntime::IsPC(chEntity))
 			{
 				vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(chEntity)));
 			}
@@ -1484,9 +1483,8 @@ namespace quest
 		{
 		}
 
-		void operator () (LPCHARACTER ch)
+		void operator () (entt::entity member)
 		{
-			const entt::entity member = ch ? ch->GetEntityHandle() : entt::null;
 			if (ecs::PlayerRuntime::IsPC(member))
 			{
 				CGuild* guild = ecs::SocialSystem::GetGuild(member);

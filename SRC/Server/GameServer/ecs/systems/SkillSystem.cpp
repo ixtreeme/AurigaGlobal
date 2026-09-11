@@ -3264,9 +3264,9 @@ struct FComputeSkillParty
 		{
 		}
 
-	void operator () (LegacyCharHandle ch)
+	void operator () (entt::entity member)
 	{
-		m_pkAttacker->ComputeSkill(m_dwVnum, (ch ? ch->GetEntityHandle() : entt::null), m_bSkillLevel);
+		m_pkAttacker->ComputeSkill(m_dwVnum, member, m_bSkillLevel);
 	}
 
 	uint32_t m_dwVnum;
@@ -3281,7 +3281,7 @@ int CHARACTER::ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t b
 	if (ecs::SocialSystem::GetParty(GetEntityHandle()) && ecs::SocialSystem::GetParty(GetEntityHandle())->GetNearMemberCount())
 		ecs::SocialSystem::GetParty(GetEntityHandle())->ForEachNearMember(f);
 	else
-		f(this);
+		f(GetEntityHandle());
 
 	return BATTLE_NONE;
 }
@@ -4322,23 +4322,20 @@ EVENTFUNC(mob_skill_hit_event)
 #ifdef __VERSION_162__
 struct FHealerParty
 {
-	FHealerParty(LegacyCharHandle pkHealer)
-		: m_pkHealer(pkHealer),
-		m_healer(pkHealer ? pkHealer->GetEntityHandle() : entt::null)
+	explicit FHealerParty(entt::entity healer)
+		: m_healer(healer)
 	{
 	}
 
-	void operator () (LegacyCharHandle ch)
+	void operator () (entt::entity target)
 	{
-		const entt::entity target = ch->GetEntityHandle();
 		int iRevive = (int)(ecs::PointSystem::GetMaxHP(m_healer) / 100 * 15);
 		int iHP = (ecs::PointSystem::GetMaxHP(target) >= ecs::PlayerRuntime::GetHP(target) + iRevive) ? (int)(ecs::PlayerRuntime::GetHP(target) + iRevive) : (int)(ecs::PointSystem::GetMaxHP(target));
 		ecs::PlayerRuntime::SetHP(target, iHP);
 		NetworkSyncSystem::BroadcastEffect(g_registry, target, SE_EFFECT_HEALER);
-		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(target).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ecs::PlayerRuntime::GetHP(target));
+		LOG_INFO("FHealerParty: {} (entity: {}) heal the HP of {} (entity: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<uint32_t>(m_healer), ecs::PlayerRuntime::GetName(target).data(), static_cast<uint32_t>(target), iRevive, ecs::PlayerRuntime::GetHP(target));
 	}
 
-	LegacyCharHandle	m_pkHealer;
 	entt::entity m_healer;
 };
 #endif
@@ -4376,8 +4373,8 @@ bool UseMobSkill(entt::entity e, unsigned int idx)
     if (ecs::PlayerRuntime::IsMonster(e) && proto->dwVnum == HEALING_SKILL_VNUM) {
         LPPARTY party = ecs::SocialSystem::GetParty(e);
         if (party && IS_SET(proto->dwFlag, SKILL_FLAG_PARTY)) {
-            FHealerParty heal(ecs::LegacyCharOf(e));
-            party->ForEachMemberPtr(heal);
+            FHealerParty heal(e);
+            party->ForEachOnlineMember(heal);
         } else {
             // Heal fifteen percent of the maximum, capped at full.
             const int64_t maxHP = ecs::PointSystem::GetMaxHP(e);

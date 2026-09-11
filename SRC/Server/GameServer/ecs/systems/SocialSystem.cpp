@@ -656,24 +656,11 @@ entt::entity GetPartyLeader(entt::entity e)
     return leader ? leader->GetEntityHandle() : entt::null;
 }
 
-namespace {
-struct EntityPartyVisitor
-{
-    const std::function<void(entt::entity)>& visitor;
-
-    void operator()(LPCHARACTER character) const
-    {
-        visitor(character ? character->GetEntityHandle() : entt::null);
-    }
-};
-} // namespace
-
 void ForEachNearPartyMember(entt::entity e, const std::function<void(entt::entity)>& visitor)
 {
     if (LPPARTY party = GetParty(e))
     {
-        EntityPartyVisitor adapter { visitor };
-        party->ForEachNearMember(adapter);
+        party->ForEachNearMember(visitor);
     }
 }
 
@@ -681,8 +668,7 @@ void ForEachOnlinePartyMember(entt::entity e, const std::function<void(entt::ent
 {
     if (LPPARTY party = GetParty(e))
     {
-        EntityPartyVisitor adapter { visitor };
-        party->ForEachOnlineMember(adapter);
+        party->ForEachOnlineMember(visitor);
     }
 }
 
@@ -691,8 +677,7 @@ void ForEachPartyMemberOnMap(entt::entity e, int32_t mapIndex,
 {
     if (LPPARTY party = GetParty(e))
     {
-        EntityPartyVisitor adapter { visitor };
-        party->ForEachOnMapMember(adapter, mapIndex);
+        party->ForEachOnMapMember(visitor, mapIndex);
     }
 }
 
@@ -1363,40 +1348,33 @@ int CHARACTER::GetMarriageBonus(uint32_t dwItemVnum, bool bSum)
     return ecs::SocialSystem::GetMarriageBonus(GetEntityHandle(), dwItemVnum, bSum);
 }
 
+// ForEachMemberPtr handed this a null pointer for every member not linked to a
+// character, and it dereferenced it; the online walk skips those members.
 struct FFindReviver
 {
-    FFindReviver()
-        : pChar(nullptr)
-        , HasReviver(false)
+    void operator()(entt::entity member)
     {
-    }
-
-    void operator()(LPCHARACTER ch)
-    {
-        if (ch->IsMonster() != true)
-        {
+        if (!ecs::PlayerRuntime::IsMonster(member))
             return;
-        }
 
-        if (ecs::PlayerRuntime::IsReviver(ch->GetEntityHandle()) == true && pChar != ch && CombatSystem::IsDead(ch->GetEntityHandle()) != true)
+        if (ecs::PlayerRuntime::IsReviver(member) && reviver != member && !CombatSystem::IsDead(member))
         {
-            const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(ch->GetEntityHandle());
+            const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(member);
             if (mobTable && number(1, 100) <= mobTable->bRevivePoint)
             {
                 HasReviver = true;
-                pChar = ch;
+                reviver = member;
             }
         }
     }
 
-    LPCHARACTER pChar;
-    bool HasReviver;
+    entt::entity reviver { entt::null };
+    bool HasReviver { false };
 };
 
 namespace ecs::SocialSystem {
 
-// Whether a reviver mob stands in this one's party. The party still iterates
-// CHARACTER pointers; CParty is its own migration.
+// Whether a reviver mob stands in this one's party.
 bool HasReviverInParty(entt::entity e)
 {
     LPPARTY party = GetParty(e);
@@ -1407,7 +1385,7 @@ bool HasReviverInParty(entt::entity e)
         return false;
 
     FFindReviver f;
-    party->ForEachMemberPtr(f);
+    party->ForEachOnlineMember(f);
     return f.HasReviver;
 }
 

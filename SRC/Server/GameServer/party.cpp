@@ -22,38 +22,6 @@
 #include "unique_item.h"
 #include "ecs/CharacterAccessors.hpp"
 
-#ifdef ENABLE_DICE_SYSTEM
-void FPartyDropDiceRoll::Process(const LPCHARACTER mobVictim)
-{
-	const entt::entity itemOwner = m_itemOwner ? m_itemOwner->GetEntityHandle() : entt::null;
-	if (!m_itemOwner || !ItemSystem::IsValidItem(m_itemDrop))
-		return;
-
-	LPPARTY party = ecs::SocialSystem::GetParty(itemOwner);
-	const bool rollForParty =
-		(!mobVictim || (ecs::PlayerRuntime::GetMobRank(mobVictim->GetEntityHandle()) >= MOB_RANK_BOSS && ecs::PlayerRuntime::GetMobRank(mobVictim->GetEntityHandle()) <= MOB_RANK_KING)) &&
-		party && party->GetNearMemberCount() > 1;
-
-	if (rollForParty)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 542, "%s", ItemSystem::GetItemName(m_itemDrop));
-#endif
-		party->ForEachNearMember(*this);
-		if (!m_itemOwner)
-			return;
-
-		ItemSystem::SetGroundOwnership(m_itemDrop, itemOwner);
-#ifdef TEXTS_IMPROVEMENT
-		party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s",
-			ecs::PlayerRuntime::GetName(itemOwner).data(), ItemSystem::GetItemName(m_itemDrop));
-#endif
-		return;
-	}
-
-	ItemSystem::SetGroundOwnership(m_itemDrop, itemOwner);
-}
-#endif
 CPartyManager::CPartyManager()
 {
 	Initialize();
@@ -663,9 +631,9 @@ namespace
 {
 	struct FExitDungeon
 	{
-		void operator()(LPCHARACTER ch)
+		void operator()(entt::entity member)
 		{
-			ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			ecs::MovementSystem::ExitToSavedLocation(member);
 		}
 	};
 }

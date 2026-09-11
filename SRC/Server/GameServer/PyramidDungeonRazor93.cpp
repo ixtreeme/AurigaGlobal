@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -226,10 +227,9 @@ namespace
         const char* name = nullptr;
         int32_t level = 0;
 
-        void operator()(LPCHARACTER m)
+        void operator()(entt::entity mEntity)
         {
-            const entt::entity mEntity = m ? m->GetEntityHandle() : entt::null;
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(mEntity))
+            if (!ok || !ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
             const int32_t lv = ecs::PointSystem::GetLevel(mEntity);
@@ -251,10 +251,9 @@ namespace
         const char* name = nullptr;
         int32_t remain = 0;
 
-        void operator()(LPCHARACTER m)
+        void operator()(entt::entity mEntity)
         {
-            const entt::entity mEntity = m ? m->GetEntityHandle() : entt::null;
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(mEntity))
+            if (!ok || !ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
             const int32_t until = ecs::QuestSystem::GetFlag(mEntity, kQfCooldown);
@@ -272,13 +271,12 @@ namespace
         bool ok = true;
         const char* name = nullptr;
 
-        void operator()(LPCHARACTER m)
+        void operator()(entt::entity mEntity)
         {
-            const entt::entity mEntity = m ? m->GetEntityHandle() : entt::null;
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(mEntity))
+            if (!ok || !ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
-            if (m->CountSpecifyItem(kEntryItemVnum) < 1)
+            if (ItemSystem::CountItem(mEntity, kEntryItemVnum) < 1)
             {
                 ok = false;
                 name = ecs::PlayerRuntime::GetName(mEntity).data();
@@ -288,18 +286,17 @@ namespace
 
     struct FConsumeEntryItems
     {
-        void operator()(LPCHARACTER m)
+        void operator()(entt::entity mEntity)
         {
-            const entt::entity mEntity = m ? m->GetEntityHandle() : entt::null;
-            if (!m || !ecs::PlayerRuntime::IsPC(mEntity))
+            if (!ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
-            m->RemoveSpecifyItem(kEntryItemVnum, 1);
+            ItemSystem::RemoveSpecifyItemEcs(mEntity, kEntryItemVnum, 1);
 
             // remove "remove_all" item(s) if present (up to 255 as in quests)
-            const int32_t cnt = m->CountSpecifyItem(kRemoveAllItem);
+            const int32_t cnt = ItemSystem::CountItem(mEntity, kRemoveAllItem);
             if (cnt > 0)
-                m->RemoveSpecifyItem(kRemoveAllItem, cnt > 255 ? 255 : cnt);
+                ItemSystem::RemoveSpecifyItemEcs(mEntity, kRemoveAllItem, static_cast<uint32_t>(cnt > 255 ? 255 : cnt));
 
             ecs::QuestSystem::SetFlag(mEntity, kQfCooldown, get_global_time() + kCooldownSeconds);
         }
@@ -383,8 +380,7 @@ void CPyramidDungeonRazor93::OnPlayerLogin(entt::entity character)
 
 bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     if (!ecs::PlayerRuntime::CanWarp(character))
@@ -504,7 +500,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     // Entry item (must exist for everyone who will enter)
     if (!party)
     {
-        if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
+        if (ItemSystem::CountItem(character, kEntryItemVnum) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You don't have the entry item.");
             return true;
@@ -530,13 +526,13 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     else
     {
         FConsumeEntryItems f;
-        f(ch);
+        f(character);
     }
 
     // Reset rejoin flags for new run
     if (party)
     {
-        struct FResetRejoin { void operator()(LPCHARACTER m) { ResetRejoinFlags(m ? m->GetEntityHandle() : entt::null); } } f; party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
+        struct FResetRejoin { void operator()(entt::entity m) { ResetRejoinFlags(m); } } f; party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
         ResetRejoinFlags(character);

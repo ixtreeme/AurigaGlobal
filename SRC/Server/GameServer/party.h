@@ -158,7 +158,6 @@ class CParty
 		inline int	ComputePartyBonusDefenseGrade();
 
 		template <class Func> void ForEachMember(Func & f);
-		template <class Func> void ForEachMemberPtr(Func & f);
 		template <class Func> void ForEachOnlineMember(Func & f);
 		template <class Func> void ForEachNearMember(Func & f);
 		template <class Func> void ForEachOnMapMember (Func & f, int32_t lMapIndex);
@@ -262,6 +261,8 @@ class CParty
 		LPDUNGEON GetDungeon_for_Only_party();
 };
 
+// The member map still holds character pointers; the walks below hand out the
+// entity, so nothing outside CParty sees one.
 template <class Func> void CParty::ForEachMember(Func & f)
 {
 	TMemberMap::iterator it;
@@ -270,21 +271,13 @@ template <class Func> void CParty::ForEachMember(Func & f)
 		f(it->first);
 }
 
-template <class Func> void CParty::ForEachMemberPtr(Func & f)
-{
-	TMemberMap::iterator it;
-
-	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-		f(it->second.pCharacter);
-}
-
 template <class Func> void CParty::ForEachOnlineMember(Func & f)
 {
 	TMemberMap::iterator it;
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 		if (it->second.pCharacter)
-			f(it->second.pCharacter);
+			f(it->second.pCharacter->GetEntityHandle());
 }
 
 template <class Func> void CParty::ForEachNearMember(Func & f)
@@ -293,7 +286,7 @@ template <class Func> void CParty::ForEachNearMember(Func & f)
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 		if (it->second.pCharacter && it->second.bNear)
-			f(it->second.pCharacter);
+			f(it->second.pCharacter->GetEntityHandle());
 }
 
 template <class Func> void CParty::ForEachOnMapMember (Func & f, int32_t lMapIndex)
@@ -302,12 +295,9 @@ template <class Func> void CParty::ForEachOnMapMember (Func & f, int32_t lMapInd
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		LPCHARACTER ch = it->second.pCharacter;
-		if (ch)
-		{
-			if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == lMapIndex)
-				f(ch);
-		}
+		const entt::entity member = it->second.pCharacter ? it->second.pCharacter->GetEntityHandle() : entt::null;
+		if (member != entt::null && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex)
+			f(member);
 	}
 }
 
@@ -317,18 +307,9 @@ template <class Func> bool CParty::ForEachOnMapMemberBool(Func & f, int32_t lMap
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		LPCHARACTER ch = it->second.pCharacter;
-		if (ch)
-		{
-			if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == lMapIndex)
-			{
-				if(f(ch) == false)
-				{
-					return false;
-
-				}
-			}
-		}
+		const entt::entity member = it->second.pCharacter ? it->second.pCharacter->GetEntityHandle() : entt::null;
+		if (member != entt::null && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex && !f(member))
+			return false;
 	}
 	return true;
 }
@@ -368,63 +349,5 @@ inline int CParty::ComputePartyBonusDefenseGrade()
 	 */
 	return 0;
 }
-
-
-#ifdef ENABLE_DICE_SYSTEM
-// Declared rather than included: social_components.hpp includes this header,
-// so pulling SocialSystem.hpp in here would close the loop.
-namespace ecs::SocialSystem { LPPARTY GetParty(entt::entity e); }
-
-struct FPartyDropDiceRoll
-{
-	const entt::entity m_itemDrop;
-	LPCHARACTER m_itemOwner;
-	int m_lastNumber;
-
-	FPartyDropDiceRoll(entt::entity itemDrop, LPCHARACTER itemOwner) : m_itemDrop(itemDrop), m_itemOwner(itemOwner), m_lastNumber(0)
-	{
-	};
-
-	void Process(const LPCHARACTER mobVictim);
-	LPCHARACTER GetItemOwner()
-	{
-		return m_itemOwner;
-	}
-	entt::entity GetItemDrop() const
-	{
-		return m_itemDrop;
-	}
-	void operator () (LPCHARACTER ch)
-	{
-		if (!ch)
-			return;
-
-		LPPARTY pParty = ecs::SocialSystem::GetParty(ch->GetEntityHandle());
-		if (!pParty)
-			return;
-
-		while (true)
-		{
-			int pickedNumber = number(10000, 99999);
-			if (pickedNumber > m_lastNumber)
-			{
-				m_lastNumber = pickedNumber;
-				m_itemOwner = ch;
-			}
-			else if (pickedNumber == m_lastNumber)
-			{
-				continue;
-			}
-			else // if (pickedNumber < m_lastNumber)
-			{
-			}
-#ifdef TEXTS_IMPROVEMENT
-			pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 543, "%s#%d", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), pickedNumber);
-#endif
-			break;
-		}
-	}
-};
-#endif
 
 #endif

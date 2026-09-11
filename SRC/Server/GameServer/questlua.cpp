@@ -76,9 +76,8 @@ namespace quest
 			pPC->SetFlag(flagname, value);
 	}
 
-	bool FPartyCheckFlagLt::operator() (LPCHARACTER ch) const
+	bool FPartyCheckFlagLt::operator() (entt::entity chEntity) const
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		if (!(ecs::PlayerRuntime::IsPC(chEntity)))
 			return false;
 
@@ -100,14 +99,14 @@ namespace quest
 	{
 	}
 
-	void FPartyChat::operator() (LPCHARACTER ch) const
+	void FPartyChat::operator() (entt::entity member) const
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), static_cast<uint8_t>(iChatType), "%s", str);
+		ecs::ChatSystem::Send(member, static_cast<uint8_t>(iChatType), "%s", str);
 	}
 
-	void FPartyClearReady::operator() (LPCHARACTER ch) const
+	void FPartyClearReady::operator() (entt::entity member) const
 	{
-		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_READY);
+		AffectSystem::RemoveAffect(member, AFFECT_DUNGEON_READY);
 	}
 
 	void FSendPacket::operator() (LPENTITY ent)

@@ -1286,10 +1286,9 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
             }
         }
     };
-    auto checkMemberPtr = [&](LPCHARACTER pkMember) { checkMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (party)
-        party->ForEachOnMapMember(checkMemberPtr, ecs::PlayerRuntime::GetMapIndex(character));
+        party->ForEachOnMapMember(checkMember, ecs::PlayerRuntime::GetMapIndex(character));
     else
         checkMember(character);
 
@@ -1342,10 +1341,9 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
             pkM->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
         }
     };
-    auto prepareMemberPtr = [&](LPCHARACTER pkMember) { prepareMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (party)
-        party->ForEachOnMapMember(prepareMemberPtr, ecs::PlayerRuntime::GetMapIndex(character));
+        party->ForEachOnMapMember(prepareMember, ecs::PlayerRuntime::GetMapIndex(character));
     else
         prepareMember(character);
 

@@ -369,8 +369,7 @@ namespace
             if (ecs::PlayerRuntime::IsValid(pc) && ecs::SocialSystem::GetParty(pc) == party)
                 ++count;
         };
-        auto fnPtr = [&](LPCHARACTER pkMember) { fn(pkMember ? pkMember->GetEntityHandle() : entt::null); };
-        party->ForEachOnMapMember(fnPtr, mapIndex);
+        party->ForEachOnMapMember(fn, mapIndex);
         return count;
     }
 
@@ -814,12 +813,11 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return;
         }
     };
-    auto checkMemberPtr = [&](LPCHARACTER pkMember) { checkMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (!party)
         checkMember(character);
     else
-        party->ForEachOnMapMember(checkMemberPtr, originMapForWarp);
+        party->ForEachOnMapMember(checkMember, originMapForWarp);
 
     if (!ok)
     {
@@ -868,12 +866,11 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         SetCooldown(m);
         pkM->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
     };
-    auto prepareMemberPtr = [&](LPCHARACTER pkMember) { prepareMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (!party)
         prepareMember(character);
     else
-        party->ForEachOnMapMember(prepareMemberPtr, originMapForWarp);
+        party->ForEachOnMapMember(prepareMember, originMapForWarp);
 
     SetDungeonReady(d);
     s_hw22.ScheduleTimeout(dungeonMapIdx);

@@ -1623,17 +1623,17 @@ namespace NPartyPickupDistribute
 	struct FFindOwnership
 	{
 		LPITEM item;
-		LegacyCharHandle owner;
+		entt::entity owner { entt::null };
 
 		FFindOwnership(LPITEM item)
-			: item(item), owner(nullptr)
+			: item(item)
 		{
 		}
 
-		void operator () (LegacyCharHandle ch)
+		void operator () (entt::entity member)
 		{
-			if (ItemSystem::IsOwnership(item->GetEntityHandle(), ch->GetEntityHandle()))
-				owner = ch;
+			if (ItemSystem::IsOwnership(item->GetEntityHandle(), member))
+				owner = member;
 		}
 	};
 
@@ -1642,14 +1642,14 @@ namespace NPartyPickupDistribute
 		int		total;
 		int		x, y;
 
-		FCountNearMember(LegacyCharHandle center)
-			: total(0), x(center->GetX()), y(center->GetY())
+		explicit FCountNearMember(entt::entity center)
+			: total(0), x(ecs::PlayerRuntime::GetX(center)), y(ecs::PlayerRuntime::GetY(center))
 		{
 		}
 
-		void operator () (LegacyCharHandle ch)
+		void operator () (entt::entity member)
 		{
-			if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(member) - x, ecs::PlayerRuntime::GetY(member) - y) <= PARTY_DEFAULT_RANGE)
 				total += 1;
 		}
 	};
@@ -1657,25 +1657,25 @@ namespace NPartyPickupDistribute
 	struct FMoneyDistributor
 	{
 		int		total;
-		LegacyCharHandle	c;
+		entt::entity	c;
 		int		x, y;
 		int64_t		iMoney;
 
-		FMoneyDistributor(LegacyCharHandle center, int64_t iMoney)
-			: total(0), c(center), x(center->GetX()), y(center->GetY()), iMoney(iMoney)
+		FMoneyDistributor(entt::entity center, int64_t iMoney)
+			: total(0), c(center), x(ecs::PlayerRuntime::GetX(center)), y(ecs::PlayerRuntime::GetY(center)), iMoney(iMoney)
 		{
 		}
 
-		void operator ()(LegacyCharHandle ch)
+		void operator ()(entt::entity member)
 		{
-			if (ch != c)
-				if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
+			if (member != c)
+				if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(member) - x, ecs::PlayerRuntime::GetY(member) - y) <= PARTY_DEFAULT_RANGE)
 				{
-					ecs::PointSystem::Change((ch ? ch->GetEntityHandle() : entt::null), POINT_GOLD, iMoney, true);
+					ecs::PointSystem::Change(member, POINT_GOLD, iMoney, true);
 
 					if (iMoney > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
 					{
-						LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(ch->GetEntityHandle(), iMoney, "GET_GOLD", ""));
+						LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(member, iMoney, "GET_GOLD", ""));
 					}
 				}
 		}
@@ -2235,7 +2235,9 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 
 			ecs::SocialSystem::GetParty(GetEntityHandle())->ForEachOnlineMember(funcFindOwnership);
 
-			auto* owner = funcFindOwnership.owner;
+			// GetEmptyDragonSoulInventory, GetEmptyExtraInventory and GetName are still
+			// asked of the owner's character; that goes with PickupItem's own migration.
+			LPCHARACTER owner = ecs::LegacyCharOf(funcFindOwnership.owner);
 			// @fixme115
 			if (!owner)
 				return false;
@@ -12769,7 +12771,7 @@ void GiveGold(entt::entity e, int64_t iAmount)
 		int64_t dwTotal = iAmount;
 		int64_t dwMyAmount = dwTotal;
 
-		NPartyPickupDistribute::FCountNearMember funcCountNearMember(this);
+		NPartyPickupDistribute::FCountNearMember funcCountNearMember(e);
 		pParty->ForEachOnlineMember(funcCountNearMember);
 
 		if (funcCountNearMember.total > 1)
@@ -12777,7 +12779,7 @@ void GiveGold(entt::entity e, int64_t iAmount)
 			int64_t dwShare = dwTotal / funcCountNearMember.total;
 			dwMyAmount -= dwShare * (funcCountNearMember.total - 1);
 
-			NPartyPickupDistribute::FMoneyDistributor funcMoneyDist(this, dwShare);
+			NPartyPickupDistribute::FMoneyDistributor funcMoneyDist(e, dwShare);
 			pParty->ForEachOnlineMember(funcMoneyDist);
 		}
 

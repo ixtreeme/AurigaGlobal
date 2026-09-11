@@ -1861,9 +1861,8 @@ namespace NPartyExpDistribute
 		{
 		};
 
-		void operator () (LegacyCharHandle ch)
+		void operator () (entt::entity chEntity)
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - x, ecs::PlayerRuntime::GetY(chEntity) - y) <= PARTY_DEFAULT_RANGE)
 			{
 				total += __GetPartyExpNP(ecs::PointSystem::GetLevel(chEntity));
@@ -1891,9 +1890,8 @@ namespace NPartyExpDistribute
 				m_iMemberCount = 1;
 		};
 
-		void operator () (LegacyCharHandle ch)
+		void operator () (entt::entity chEntity)
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - x, ecs::PlayerRuntime::GetY(chEntity) - y) <= PARTY_DEFAULT_RANGE)
 			{
 				uint32_t iExp2 = 0;
@@ -4274,11 +4272,7 @@ void Reward(entt::entity e, bool bItemDrop)
 					return;
 				}
 
-#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-				const bool bKeepGroundDrop = (pkAttacker && ecs::SocialSystem::GetParty(attacker));
-#else
 				const bool bKeepGroundDrop = false;
-#endif
 
 				if (bInstantRewardToInventory && !bKeepGroundDrop)
 				{
@@ -4297,19 +4291,8 @@ void Reward(entt::entity e, bool bItemDrop)
 
 					if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
 					{
-#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-						if (ecs::SocialSystem::GetParty(attacker))
-						{
-							FPartyDropDiceRoll f(itemEntity, pkAttacker);
-							f.Process(self);
-						}
-						else
-							ItemSystem::SetGroundOwnership(
-								itemEntity, attacker);
-#else
 						ItemSystem::SetGroundOwnership(
 							itemEntity, attacker);
-#endif
 					}
 
 					LOG_INFO("DROP_ITEM: {} {} {} from {}",
@@ -4405,11 +4388,7 @@ void Reward(entt::entity e, bool bItemDrop)
 						if (it == v.end())
 							it = v.begin();
 
-#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-						const bool bKeepGroundDrop = (ch && ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)));
-#else
 						const bool bKeepGroundDrop = false;
-#endif
 
 						if (bInstantRewardToInventory && !bKeepGroundDrop)
 						{
@@ -4423,19 +4402,8 @@ void Reward(entt::entity e, bool bItemDrop)
 
 							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null))) == false)
 							{
-#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-								if (ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)))
-								{
-									FPartyDropDiceRoll f(itemEntity, ch);
-									f.Process(self);
-								}
-								else
-									ItemSystem::SetGroundOwnership(
-										itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
-#else
 								ItemSystem::SetGroundOwnership(
 									itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
-#endif
 							}
 
 							LOG_INFO("DROP_ITEM: {} {} {} by {}",
@@ -4473,19 +4441,8 @@ void Reward(entt::entity e, bool bItemDrop)
 
 				if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
 				{
-#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-					if (ecs::SocialSystem::GetParty(attacker))
-					{
-						FPartyDropDiceRoll f(itemEntity, pkAttacker);
-						f.Process(self);
-					}
-					else
-						ItemSystem::SetGroundOwnership(
-							itemEntity, attacker);
-#else
 					ItemSystem::SetGroundOwnership(
 						itemEntity, attacker);
-#endif
 				}
 
 				pos.x = number(-7, 7) * 20;
@@ -4586,19 +4543,8 @@ void Reward(entt::entity e, bool bItemDrop)
 
 						if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null))) == false)
 						{
-#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-							if (ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)))
-							{
-								FPartyDropDiceRoll f(itemEntity, ch);
-								f.Process(self);
-							}
-							else
-								ItemSystem::SetGroundOwnership(
-									itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
-#else
 							ItemSystem::SetGroundOwnership(
 								itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
-#endif
 						}
 
 						pos.x = number(-7, 7) * 20;

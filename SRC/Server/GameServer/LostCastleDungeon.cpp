@@ -1581,9 +1581,8 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
                     return;
                 }
             };
-        auto checkPtr = [&](LPCHARACTER pkMember) { check(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
-        party->ForEachOnlineMember(checkPtr);
+        party->ForEachOnlineMember(check);
 
         if (!ok)
         {
@@ -1647,10 +1646,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     }
     else
     {
-        auto fn = [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m); applyMember(m); };
-        auto fnPtr = [&](LPCHARACTER pkMember) { fn(pkMember ? pkMember->GetEntityHandle() : entt::null); };
-        party->ForEachOnMapMember(fnPtr, ecs::PlayerRuntime::GetMapIndex(character));
+        party->ForEachOnMapMember(applyMember, ecs::PlayerRuntime::GetMapIndex(character));
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
         d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));

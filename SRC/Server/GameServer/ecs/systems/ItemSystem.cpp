@@ -1570,11 +1570,8 @@ entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner
 
     entt::entity selected = initialOwner;
     int lastNumber = 0;
-    auto roll = [&](LPCHARACTER member)
+    auto roll = [&](entt::entity memberEntity)
     {
-        const entt::entity memberEntity = member
-            ? member->GetEntityHandle()
-            : entt::null;
         if (memberEntity == entt::null || !g_registry.valid(memberEntity))
             return;
 

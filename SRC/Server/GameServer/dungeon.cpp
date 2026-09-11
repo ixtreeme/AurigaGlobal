@@ -70,10 +70,10 @@ struct FWarpToDungeonCoords
 	{
 	}
 
-	void operator () (LPCHARACTER ch)
+	void operator () (entt::entity member)
 	{
-		ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
-		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), m_x, m_y, m_lMapIndex);
+		ecs::MovementSystem::SaveExitLocation(member);
+		ecs::MovementSystem::WarpSet(member, m_x, m_y, m_lMapIndex);
 	}
 
 	int32_t m_lMapIndex;
@@ -166,11 +166,11 @@ struct FWarpToDungeon
 			m_y = pkSectreeMap->m_setting.posSpawn.y;
 		}
 
-	void operator () (LPCHARACTER ch)
+	void operator () (entt::entity member)
 	{
-		ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
-		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), m_x, m_y, m_lMapIndex);
-		//m_pkDungeon->IncPartyMember(ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		ecs::MovementSystem::SaveExitLocation(member);
+		ecs::MovementSystem::WarpSet(member, m_x, m_y, m_lMapIndex);
+		//m_pkDungeon->IncPartyMember(ecs::SocialSystem::GetParty(member));
 	}
 
 	int32_t m_lMapIndex;

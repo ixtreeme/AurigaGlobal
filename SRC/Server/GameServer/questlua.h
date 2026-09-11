@@ -59,7 +59,7 @@ namespace quest
 		std::string flagname;
 		int value;
 
-		bool operator () (LPCHARACTER ch) const;
+		bool operator () (entt::entity member) const;
 	};
 
 	struct FPartyChat
@@ -68,12 +68,12 @@ namespace quest
 		const char* str;
 
 		FPartyChat(int ChatType, const char* str);
-		void operator() (LPCHARACTER ch) const;
+		void operator() (entt::entity member) const;
 	};
 
 	struct FPartyClearReady
 	{
-		void operator() (LPCHARACTER ch) const;
+		void operator() (entt::entity member) const;
 	};
 
 	struct FSendPacket

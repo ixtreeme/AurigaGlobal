@@ -567,12 +567,11 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
                 return;
             }
         };
-    auto checkMemberPtr = [&](LPCHARACTER pkMember) { checkMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (!party)
         checkMember(character);
     else
-        party->ForEachOnMapMember(checkMemberPtr, originMapForWarp);
+        party->ForEachOnMapMember(checkMember, originMapForWarp);
 
     if (!ok)
     {
@@ -623,7 +622,6 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
             if (!fromCompletedInside)
                 ecs::MovementSystem::SetWarpLocation(m, ecs::PlayerRuntime::GetMapIndex(m), (int32_t)(ecs::PlayerRuntime::GetX(m) / 100), (int32_t)(ecs::PlayerRuntime::GetY(m) / 100));
         };
-    auto applyMemberPtr = [&](LPCHARACTER pkMember) { applyMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (!party)
     {
@@ -632,7 +630,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     }
     else
     {
-        party->ForEachOnMapMember(applyMemberPtr, originMapForWarp);
+        party->ForEachOnMapMember(applyMember, originMapForWarp);
         d->JoinParty_Coords(party, 2113, 1729, originMapForWarp);
     }
 
