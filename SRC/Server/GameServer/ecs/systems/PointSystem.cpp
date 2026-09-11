@@ -672,7 +672,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (amount)
 		{
 			uint32_t playStart = 0;
-			if (auto* character = ecs::LegacyCharOf(e)) playStart = character->GetPlayStartTime();
+			playStart = ecs::PlayerRuntime::GetPlayStartTime(e);
 			quest::CQuestManager::instance().LevelUp(ecs::PlayerRuntime::GetPlayerID(e));
 			if (!IsReadableEntity(e)) return;
 

@@ -744,7 +744,6 @@ public:
 	// MINING
 	// END_OF_MINING
 
-	void			ResetPlayTime(uint32_t dwTimeRemain = 0);
 
 
 
@@ -754,7 +753,6 @@ public:
 
 protected:
 	bool			m_bPolyMaintainStat;
-	uint32_t			m_dwLoginPlayTime;
 	uint32_t			m_dwPlayerID;
 	std::string		m_stName;
 	uint8_t			m_bCharType;
@@ -763,7 +761,6 @@ protected:
 
 
 	int				m_iMoveCount;
-	uint32_t			m_dwPlayStartTime;
 	uint8_t			m_bAddChrState;
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -805,7 +802,6 @@ public:
 	// MovementSystem.cpp.
 	int32_t			GetCurrentDestX() const;
 	int32_t			GetCurrentDestY() const;
-	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in
 // CheckMovementDrift state_flags subsection deleted with the
 // m_bAddChrState write migration. CheckMovementDrift body is now empty;
@@ -831,8 +827,6 @@ public:
 
 	bool			IsStaminaHalfConsume() const;
 
-	void			ResetStopTime();
-	uint32_t			GetStopTime() const;
 
 protected:
 
@@ -840,9 +834,7 @@ protected:
 
 
 
-	uint32_t			m_dwLastMoveTime;
 
-	uint32_t			m_dwStopTime;
 
 	bool			m_bNowWalking;
 	// End
@@ -1654,10 +1646,8 @@ public:
 	void SendGuildName(uint32_t dwGuildID);
 
 private:
-	uint32_t m_dwLogOffInterval;
 
 public:
-	uint32_t GetLogOffInterval() const { return m_dwLogOffInterval; }
 
 public:
 	bool UnEquipSpecialRideUniqueItem();
@@ -1680,7 +1670,6 @@ public:
 private:
 public:
 	// Driven by the point-change flow, which lives in ecs::PointSystem now.
-	uint32_t GetPlayStartTime() const { return m_dwPlayStartTime; }
 private:
 
 	// ���� : ��Ȱ�� �׽�Ʈ�� ���Ͽ�.

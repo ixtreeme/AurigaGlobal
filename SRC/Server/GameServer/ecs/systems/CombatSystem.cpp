@@ -3020,7 +3020,7 @@ void DistributeSP(entt::entity e, entt::entity killer, int iMethod)
 		return;
 
 	bool bAttacking = (get_dword_time() - CombatSystem::GetLastAttackTime(e)) < 3000;
-	bool bMoving = (get_dword_time() - self->GetLastMoveTime()) < 3000;
+	bool bMoving = (get_dword_time() - ecs::MovementSystem::GetLastMoveTime(e)) < 3000;
 
 	if (iMethod == 1)
 	{

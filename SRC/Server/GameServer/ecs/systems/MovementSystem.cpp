@@ -1067,6 +1067,48 @@ bool Move(entt::entity e, int32_t x, int32_t y)
     return ch->Move(x, y);
 }
 
+// When this character last moved and last came to a stop. The movement frame
+// writes both on every commit, which is the only thing that sees a monster
+// walking on its own; CHARACTER kept a second pair that only OnMove and
+// ResetStopTime touched, and every reader was asking those.
+uint32_t GetLastMoveTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* state = g_registry.try_get<ecs::MovementState>(e);
+    return state ? state->lastMoveTime : 0;
+}
+
+void SetLastMoveTime(entt::entity e, uint32_t when)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::MovementState>(e).lastMoveTime = when;
+}
+
+uint32_t GetStopTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* state = g_registry.try_get<ecs::MovementState>(e);
+    return state ? state->stopTime : 0;
+}
+
+void ResetStopTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::MovementState>(e).stopTime = get_dword_time();
+}
+
+// When this character last moved and last came to a stop. The movement frame
+// writes both on every commit, which is the only thing that sees a monster
+// walking on its own; CHARACTER kept a second pair that only OnMove and
+// ResetStopTime touched, and every reader was asking those.
 void OnMove(entt::entity e, bool isAttack)
 {
     if (!IsValid(e))
@@ -1818,16 +1860,6 @@ bool CHARACTER::IsStaminaHalfConsume() const
     return IsEquipUniqueItem(UNIQUE_ITEM_HALF_STAMINA);
 }
 
-void CHARACTER::ResetStopTime()
-{
-    m_dwStopTime = get_dword_time();
-}
-
-uint32_t CHARACTER::GetStopTime() const
-{
-    return m_dwStopTime;
-}
-
 void CHARACTER::GoHome()
 {
     ecs::MovementSystem::WarpSet(GetEntityHandle(), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(GetEntityHandle())), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(GetEntityHandle())));
@@ -2032,7 +2064,7 @@ EVENTFUNC(recovery_event)
 		{
 			return 3;
 		}
-		int iSec = (get_dword_time() - ch->GetLastMoveTime()) / 3000;
+		int iSec = (get_dword_time() - ecs::MovementSystem::GetLastMoveTime(character)) / 3000;
 
 		CombatSystem::DistributeSP(character, character);
 

@@ -126,6 +126,9 @@ bool DSManager::IsTimeLeftDragonSoul(entt::entity) const { return true; }
 
 namespace ecs::PlayerRuntime {
 bool IsValid(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Actor>(e); }
+// The played-time cap reads the session start from LoginInfo now, not from
+// a resolved character.
+uint32_t GetPlayStartTime(entt::entity) { return 0; }
 bool IsPC(entt::entity e) { return IsValid(e) && g_registry.get<Actor>(e).player; }
 uint8_t GetJob(entt::entity e) { return g_registry.get<Actor>(e).job; }
 const TMobTable* GetMobTable(entt::entity e) { return IsPC(e) ? nullptr : &g_registry.get<Actor>(e).mob; }

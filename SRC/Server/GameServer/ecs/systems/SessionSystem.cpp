@@ -592,7 +592,7 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
     tab.envanter = self->Inven_Point();
 #endif
-    uint32_t dwPlayedTime = (get_dword_time() - self->GetPlayStartTime());
+    uint32_t dwPlayedTime = (get_dword_time() - ecs::PlayerRuntime::GetPlayStartTime(e));
 
     if (dwPlayedTime > 60000)
     {
@@ -602,7 +602,7 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
         }
 
         self->SetRealPoint(POINT_PLAYTIME, self->GetRealPoint(POINT_PLAYTIME) + dwPlayedTime / 60000);
-        self->ResetPlayTime(dwPlayedTime % 60000);
+        ecs::PlayerRuntime::ResetPlayTime(e, dwPlayedTime % 60000);
     }
 
     tab.playtime = self->GetRealPoint(POINT_PLAYTIME);
@@ -738,7 +738,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
 
 #ifdef ENABLE_PCBANG_FEATURE
     {
-        int32_t playTime = self->GetRealPoint(POINT_PLAYTIME) - self->m_dwLoginPlayTime;
+        int32_t playTime = self->GetRealPoint(POINT_PLAYTIME) - ecs::PlayerRuntime::GetLoginPlayTime(e);
         LogManager::instance().LoginLog(false, ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id, ecs::PlayerRuntime::GetPlayerID(e), ecs::PointSystem::GetLevel(e), ecs::PlayerRuntime::GetJob(e), playTime);
 
         if (0)

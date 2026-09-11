@@ -419,6 +419,8 @@ void ecs::MovementSystem::SetRotationToXY(entt::entity, int, int) { UnexpectedSe
 float CHARACTER::GetRotation(void)const { UnexpectedService(__func__); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { UnexpectedService(__func__); }
 bool ecs::MovementSystem::CanMove(entt::entity) { return canMove; }
+// CombatSystem asks the movement frame how recently this one moved.
+unsigned int ecs::MovementSystem::GetLastMoveTime(entt::entity) { return 0; }
 bool CHARACTER::Sync(int,int) { UnexpectedService(__func__); }
 void CHARACTER::OnMove(bool) { UnexpectedService(__func__); }
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }

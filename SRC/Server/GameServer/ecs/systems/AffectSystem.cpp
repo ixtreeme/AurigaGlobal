@@ -892,7 +892,7 @@ bool UpdateAffect(entt::entity e)
 	// ���׹̳� ȸ��
 	if (ecs::PlayerRuntime::GetMaxStamina(e) > ecs::PlayerRuntime::GetStamina(e))
 	{
-		int iSec = (get_dword_time() - self->GetStopTime()) / 3000;
+		int iSec = (get_dword_time() - ecs::MovementSystem::GetStopTime(e)) / 3000;
 		if (iSec)
 			ecs::PointSystem::Change(e, POINT_STAMINA, ecs::PlayerRuntime::GetMaxStamina(e)/1);
 	}

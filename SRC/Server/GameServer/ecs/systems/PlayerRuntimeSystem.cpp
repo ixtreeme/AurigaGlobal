@@ -1207,6 +1207,34 @@ uint32_t GetPolymorphItemVnum(entt::entity e)
 }
 
 // When this character last shouted, which the fifteen second limit reads.
+// When this session's play timer started, which the played-time report reads.
+// LoginInfo::playStartTime is seeded at login and this is what moves it.
+void ResetPlayTime(entt::entity e, uint32_t remaining)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	g_registry.get_or_emplace<ecs::LoginInfo>(e).playStartTime = get_dword_time() - remaining;
+}
+
+uint32_t GetPlayStartTime(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* login = g_registry.try_get<ecs::LoginInfo>(e);
+	return login ? login->playStartTime : 0;
+}
+
+uint32_t GetLoginPlayTime(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* login = g_registry.try_get<ecs::LoginInfo>(e);
+	return login ? login->loginPlayTime : 0;
+}
+
 uint32_t GetLastShoutPulse(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -2314,11 +2342,6 @@ int GetHPPct(entt::entity e)
 
 } // namespace ecs::PlayerRuntime
 
-void CHARACTER::ResetPlayTime(uint32_t dwTimeRemain)
-{
-    m_dwPlayStartTime = get_dword_time() - dwTimeRemain;
-}
-
 bool CHARACTER::SetPCBang(bool flag)
 {
 	const entt::entity character = GetEntityHandle();
@@ -3360,7 +3383,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     }
 
     SetRealPoint(POINT_PLAYTIME, t->playtime);
-    m_dwLoginPlayTime = t->playtime;
     SetRealPoint(POINT_ST, t->st);
     SetRealPoint(POINT_HT, t->ht);
     SetRealPoint(POINT_DX, t->dx);
@@ -3447,7 +3469,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 			login.premiumTimes.begin());
 	}
 
-    m_dwLogOffInterval = t->logoff_interval;
 
     LOG_INFO("PLAYER_LOAD: {} PREMIUM {} {}, LOGGOFF_INTERVAL {} PTR: {}", t->name, m_aiPremiumTimes[0], m_aiPremiumTimes[1], t->logoff_interval, static_cast<const void*>(this));
 
@@ -3602,12 +3623,13 @@ void CHARACTER::MonsterLog(const char* format, ...)
 
 void CHARACTER::OnMove(bool bIsAttack)
 {
-    m_dwLastMoveTime = get_dword_time();
+    const uint32_t now = get_dword_time();
+    ecs::MovementSystem::SetLastMoveTime(GetEntityHandle(), now);
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), GetMapIndex(), GetX(), GetY(), GetZ());
 
     if (bIsAttack)
     {
-        CombatSystem::SetLastAttackTime(GetEntityHandle(), m_dwLastMoveTime);
+        CombatSystem::SetLastAttackTime(GetEntityHandle(), now);
 
         if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_REVIVE_INVISIBLE))
             AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_REVIVE_INVISIBLE);
@@ -4036,7 +4058,6 @@ void CHARACTER::Initialize()
 
     SetPosition(POS_STANDING);
 
-    m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
 
     EnterIdleState(GetEntityHandle());
 
@@ -4089,14 +4110,13 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_FAKE_SHOP_HEADER
     m_lastBeltMountCount = -999;
 #endif
-    ResetStopTime();
+    ecs::MovementSystem::ResetStopTime(GetEntityHandle());
 #ifdef ENABLE_GAYA_SYSTEM
     GayaSystem::Load(GetEntityHandle());
 #endif
 
 
 
-    m_dwLoginPlayTime = 0;
 
 
 
@@ -4110,7 +4130,6 @@ void CHARACTER::Initialize()
     m_strNewName = "";
 
 
-    m_dwLogOffInterval = 0;
 
 
     m_dwMountTime = 0;

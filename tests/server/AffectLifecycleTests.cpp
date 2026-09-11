@@ -846,7 +846,7 @@ void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedSe
 void CHARACTER::CheckMaximumPoints(void) { UnexpectedService(__func__); }
 int CHARACTER::GetCurrentDestX(void)const { UnexpectedService(__func__); }
 int CHARACTER::GetCurrentDestY(void)const { UnexpectedService(__func__); }
-unsigned int CHARACTER::GetStopTime(void)const { UnexpectedService(__func__); }
+unsigned int ecs::MovementSystem::GetStopTime(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::StartMuyeongEvent(void) { UnexpectedService(__func__); }
 void CHARACTER::StopMuyeongEvent(void) { UnexpectedService(__func__); }
 void CHARACTER::StartGyeongGongEvent(void) { UnexpectedService(__func__); }

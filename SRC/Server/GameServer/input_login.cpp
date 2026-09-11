@@ -635,7 +635,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	}
 
 	// ÷?? ?
-	ch->ResetPlayTime();
+	ecs::PlayerRuntime::ResetPlayTime(ch->GetEntityHandle(), 0);
 
 	// ?  ?T ?
 	ecs::SessionSystem::StartSaveEvent(ch->GetEntityHandle());
