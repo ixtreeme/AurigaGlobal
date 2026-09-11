@@ -1140,8 +1140,8 @@ void CParty::HealParty()
 
 		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(chEntity)) < PARTY_DEFAULT_RANGE)
 		{
-			ecs::PointSystem::Change(chEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chEntity)-ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
-			ecs::PointSystem::Change(chEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chEntity)-ecs::PlayerRuntime::GetSP(ch->GetEntityHandle()));
+			ecs::PointSystem::Change(chEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chEntity)-ecs::PlayerRuntime::GetHP(chEntity));
+			ecs::PointSystem::Change(chEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chEntity)-ecs::PlayerRuntime::GetSP(chEntity));
 		}
 	}
 
@@ -1195,7 +1195,7 @@ void CParty::SummonToLeader(uint32_t pid)
 		return;
 	}
 
-	if (!CombatSystem::CanSummon(ch->GetEntityHandle(), m_iLeadership))
+	if (!CombatSystem::CanSummon(chEntity, m_iLeadership))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(lEntity, CHAT_TYPE_INFO, 198, "");
@@ -1416,7 +1416,7 @@ void CParty::Update()
 		bResendAll = true;
 	}
 
-	m_iLeadership = SkillSystem::GetSkillLevel(l->GetEntityHandle(), SKILL_LEADERSHIP);
+	m_iLeadership = SkillSystem::GetSkillLevel(lEntity, SKILL_LEADERSHIP);
 	int iNewExpBonus = ComputePartyBonusExpPercent();
 	m_iAttBonus = ComputePartyBonusAttackGrade();
 	m_iDefBonus = ComputePartyBonusDefenseGrade();

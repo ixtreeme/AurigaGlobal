@@ -1079,9 +1079,9 @@ struct FuncPurge
 		LOG_INFO("PURGE: {} {}", ecs::PlayerRuntime::GetName(chr).data(), iDist);
 
 #ifdef __NEWPET_SYSTEM__
-		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(pkChr->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(pkChr->GetEntityHandle()) && !ecs::PlayerRuntime::IsMount(pkChr->GetEntityHandle()) && pkChr->GetRider() == nullptr
+		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(chr) && !ecs::PlayerRuntime::IsNewPet(chr) && !ecs::PlayerRuntime::IsMount(chr) && pkChr->GetRider() == nullptr
 #else
-		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(pkChr->GetEntityHandle()) && pkChr->GetRider() == NULL
+		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(chr) && pkChr->GetRider() == NULL
 #endif
 		)
 		{
@@ -2560,7 +2560,7 @@ struct FuncWeaken
 			return;
 
 		if (ecs::PlayerRuntime::IsNPC(chr))
-			ecs::PointSystem::Change(chr, POINT_HP, (10 - ecs::PlayerRuntime::GetHP(pkChr->GetEntityHandle())));
+			ecs::PointSystem::Change(chr, POINT_HP, (10 - ecs::PlayerRuntime::GetHP(chr)));
 	}
 };
 

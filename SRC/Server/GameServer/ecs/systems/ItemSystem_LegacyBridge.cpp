@@ -2605,7 +2605,7 @@ int CalculateConsume(LegacyCharHandle ch)
 	{
 		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		// CheckNeedLifeForWarp
-		const int curLife = ecs::PlayerRuntime::GetHP(ch->GetEntityHandle());
+		const int curLife = ecs::PlayerRuntime::GetHP(chEntity);
 		const int needPercent = WARP_NEED_LIFE_PERCENT;
 		const int needLife = ecs::PointSystem::GetMaxHP(chEntity) * needPercent / 100;
 		if (curLife < needLife)
@@ -2639,7 +2639,7 @@ int CalculateConsumeSP(LegacyCharHandle lpChar)
 	const entt::entity lpCharEntity = lpChar ? lpChar->GetEntityHandle() : entt::null;
 	static const int NEED_WARP_SP_PERCENT = 30;
 
-	const int curSP = ecs::PlayerRuntime::GetSP(lpChar->GetEntityHandle());
+	const int curSP = ecs::PlayerRuntime::GetSP(lpCharEntity);
 	const int needSP = ecs::PointSystem::GetMaxSP(lpCharEntity) * NEED_WARP_SP_PERCENT / 100;
 
 	if (curSP < needSP)

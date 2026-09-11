@@ -373,7 +373,7 @@ namespace
 
         clone->StartStateMachine(1);
         clone->SetNowWalking(false);
-        ecs::MovementSystem::SetRotationToXY(clone->GetEntityHandle(), tx, ty);
+        ecs::MovementSystem::SetRotationToXY(cloneEntity, tx, ty);
         ecs::MovementSystem::Goto(cloneEntity, tx, ty);
 
         // server-controlled chars need explicit MOVE packets
@@ -387,7 +387,7 @@ namespace
         if (!clone || !target)
             return;
 
-        ecs::MovementSystem::SetRotationToXY(clone->GetEntityHandle(),
+        ecs::MovementSystem::SetRotationToXY(cloneEntity,
             ecs::PlayerRuntime::GetX(targetEntity), ecs::PlayerRuntime::GetY(targetEntity));
         ecs::MovementSystem::Stop(cloneEntity);
 
@@ -403,7 +403,7 @@ namespace
         if (!clone || !target)
             return;
 
-        ecs::MovementSystem::SetRotationToXY(clone->GetEntityHandle(),
+        ecs::MovementSystem::SetRotationToXY(cloneEntity,
             ecs::PlayerRuntime::GetX(targetEntity), ecs::PlayerRuntime::GetY(targetEntity));
         ecs::MovementSystem::Stop(cloneEntity);
 
@@ -813,11 +813,11 @@ void ClearClonesOnMap(int32_t mapIndex)
             }
 
             // 10x erosites (HP/SP/DMG/STAT)
-            ecs::PlayerRuntime::SetLevel(clone->GetEntityHandle(), (uint8_t)ecs::PointSystem::GetLevel(sourceEntity));
-            ecs::PlayerRuntime::SetMaxHP(clone->GetEntityHandle(), (int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
-            ecs::PlayerRuntime::SetMaxSP(clone->GetEntityHandle(), (int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
-            ecs::PlayerRuntime::SetHP(clone->GetEntityHandle(), (int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
-            ecs::PlayerRuntime::SetSP(clone->GetEntityHandle(), (int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
+            ecs::PlayerRuntime::SetLevel(cloneEntity, (uint8_t)ecs::PointSystem::GetLevel(sourceEntity));
+            ecs::PlayerRuntime::SetMaxHP(cloneEntity, (int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
+            ecs::PlayerRuntime::SetMaxSP(cloneEntity, (int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
+            ecs::PlayerRuntime::SetHP(cloneEntity, (int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
+            ecs::PlayerRuntime::SetSP(cloneEntity, (int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
 
             MulPoint10(clone, POINT_ST);
             MulPoint10(clone, POINT_HT);
@@ -829,7 +829,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             MulPoint10(clone, POINT_MAGIC_DEF_GRADE);
             MulPoint10(clone, POINT_WEAPON_MIN);
             MulPoint10(clone, POINT_WEAPON_MAX);
-            CombatSystem::SetKillerMode(clone->GetEntityHandle(), true);
+            CombatSystem::SetKillerMode(cloneEntity, true);
 
             // Skillek: csak tamado skillek legyenek az AI listaban (<=127 a skill motion packet miatt)
             std::vector<uint8_t> skillList;
@@ -1114,7 +1114,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                         // NOTE: nálatok az attack skillek (SKILL_FLAG_ATTACK) a UseSkill-ben általában csak
                         // "arm / cooldown"-ot csinálnak, és a tényleges sebzés a kliens attack packetjéből jön.
                         // Mivel a klónnak nincs kliens inputja, itt kézzel lefuttatjuk a ComputeSkill-t.
-                        didAction = clone->UseSkill(p.attackType, (target ? target->GetEntityHandle() : entt::null), true);
+                        didAction = clone->UseSkill(p.attackType, targetEntity, true);
 
                         if (didAction)
                         {
@@ -1124,14 +1124,14 @@ void ClearClonesOnMap(int32_t mapIndex)
                                 // Bizonyos attack skillek már a UseSkill-ben ComputeSkill-oznak (pl. charge, MUYEONG, BYEURAK),
                                 // ezeket ne duplázzuk.
                                 if (p.attackType != SKILL_BYEURAK && p.attackType != SKILL_MUYEONG && !sk->IsChargeSkill())
-                                    clone->ComputeSkill(p.attackType, (target ? target->GetEntityHandle() : entt::null), 0);
+                                    clone->ComputeSkill(p.attackType, targetEntity, 0);
                             }
                         }
                     }
                     else
                     {
-                        didAction = CombatSystem::Attack(clone->GetEntityHandle(),
-                            target ? target->GetEntityHandle() : entt::null, 0);
+                        didAction = CombatSystem::Attack(cloneEntity,
+                            target ? targetEntity : entt::null, 0);
                     }
 
                     if (didAction)
@@ -1368,12 +1368,12 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
             clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
             clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
         }
-        ecs::PlayerRuntime::SetLevel(clone->GetEntityHandle(), (uint8_t)ecs::PointSystem::GetLevel(source));
-        ecs::PlayerRuntime::SetMaxHP(clone->GetEntityHandle(), ecs::PointSystem::GetMaxHP(source)* STR_MULTIPLE);
-        ecs::PlayerRuntime::SetMaxSP(clone->GetEntityHandle(), ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
-        ecs::PlayerRuntime::SetHP(clone->GetEntityHandle(), ecs::PointSystem::GetMaxHP(source) * STR_MULTIPLE);
-        ecs::PlayerRuntime::SetSP(clone->GetEntityHandle(), ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
-        CombatSystem::SetKillerMode(clone->GetEntityHandle(), true);
+        ecs::PlayerRuntime::SetLevel(cloneEntity, (uint8_t)ecs::PointSystem::GetLevel(source));
+        ecs::PlayerRuntime::SetMaxHP(cloneEntity, ecs::PointSystem::GetMaxHP(source)* STR_MULTIPLE);
+        ecs::PlayerRuntime::SetMaxSP(cloneEntity, ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
+        ecs::PlayerRuntime::SetHP(cloneEntity, ecs::PointSystem::GetMaxHP(source) * STR_MULTIPLE);
+        ecs::PlayerRuntime::SetSP(cloneEntity, ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
+        CombatSystem::SetKillerMode(cloneEntity, true);
 
         // Skills (AI uses only ATTACK skills)
         std::vector<uint8_t> skillList;

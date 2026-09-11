@@ -2144,7 +2144,7 @@ struct FuncSplashDamage
 		auto* pkChrVictim = static_cast<LegacyCharHandle>(ent);
 		const entt::entity chrVictim = pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null;
 
-		const entt::entity victimEntity = pkChrVictim->GetEntityHandle();
+		const entt::entity victimEntity = chrVictim;
 
 		if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(victimEntity), m_y - ecs::PlayerRuntime::GetY(victimEntity)) > m_pkSk->iSplashRange)
 		{

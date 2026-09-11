@@ -1427,7 +1427,7 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
 	if (info.aggro < 0)
 		info.aggro = 0;
 
-	//LOG_INFO(0, "UpdateAggrPointEx for %s by %s dam %d total %d", ecs::PlayerRuntime::GetName(self), ecs::PlayerRuntime::GetName((pAttacker ? pAttacker->GetEntityHandle() : entt::null)).data(), dam, total);
+	//LOG_INFO(0, "UpdateAggrPointEx for %s by %s dam %d total %d", ecs::PlayerRuntime::GetName(self), ecs::PlayerRuntime::GetName(eAttacker).data(), dam, total);
 	if (ecs::SocialSystem::GetParty(self) && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
 	{
 		LPPARTY pParty = ecs::SocialSystem::GetParty(self);
@@ -1547,23 +1547,28 @@ void Stun(entt::entity e)
 #ifdef ENABLE_NEWEXP_CALCULATION
 #define NEW_GET_LVDELTA(me, victim) aiPercentByDeltaLev[MINMAX(0, (victim + 15) - me, MAX_EXP_DELTA_OF_LEV - 1)]
 typedef long double rate_t;
-static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
+static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 {
-	const entt::entity toEntity = to ? to->GetEntityHandle() : entt::null;
+	// The marriage bonus, the mount vnum, the pet system, the unique-group test
+	// and the PC-bang flag have no entity form yet; each is its own migration
+	// and they share this one resolve.
+	LPCHARACTER to = ecs::LegacyCharOf(toEntity);
+	if (!to)
+		return;
 	if (test_server && iExp < 0)
 	{
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp(%d) overflow", iExp);
 		return;
 	}
 	// decrease/increase exp based on player<>mob level
-	rate_t lvFactor = static_cast<rate_t>(NEW_GET_LVDELTA(ecs::PointSystem::GetLevel(toEntity), ecs::PointSystem::GetLevel((from ? from->GetEntityHandle() : entt::null)))) / 100.0L;
+	rate_t lvFactor = static_cast<rate_t>(NEW_GET_LVDELTA(ecs::PointSystem::GetLevel(toEntity), ecs::PointSystem::GetLevel(fromEntity))) / 100.0L;
 	iExp *= lvFactor;
 	// start calculating rate exp bonus
 	int iBaseExp = iExp;
 	rate_t rateFactor = 100;
 
 	rateFactor += CPrivManager::instance().GetPriv(toEntity, PRIV_EXP_PCT);
-	if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), UNIQUE_ITEM_LARBOR_MEDAL))
+	if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_LARBOR_MEDAL))
 		rateFactor += 20;
 	if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
 		rateFactor += 20;
@@ -1591,7 +1596,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		if (number(1, 100) <= ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
 			rateFactor += 30;
 #endif
-	if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), UNIQUE_ITEM_DOUBLE_EXP))
+	if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
 		rateFactor += 50;
 
 	switch (to->GetMountVnum())
@@ -1600,8 +1605,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	case 20111:
 	case 20112:
 	case 20113:
-		if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71115) || ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71117) || ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71119) ||
-			ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71121))
+		if (ItemSystem::IsEquipUniqueItem(toEntity, 71115) || ItemSystem::IsEquipUniqueItem(toEntity, 71117) || ItemSystem::IsEquipUniqueItem(toEntity, 71119) ||
+			ItemSystem::IsEquipUniqueItem(toEntity, 71121))
 		{
 			rateFactor += 10;
 		}
@@ -1618,7 +1623,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		break;
 	}
 
-	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(to->GetEntityHandle(), PREMIUM_EXP) > 0)
+	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_EXP) > 0)
 		rateFactor += 50;
 	if (to->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
@@ -1637,7 +1642,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	if (test_server)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "base_exp(%d) * rate(%Lf) = exp(%d)", iBaseExp, rateFactor / 100.0L, iExp);
 	// you can get at maximum only 10% of the total required exp at once (so, you need to kill at least 10 mobs to level up) (useless)
-	iExp = std::min(ecs::PlayerRuntime::GetNextExp(to->GetEntityHandle()) / 10, (uint32_t)iExp);
+	iExp = std::min(ecs::PlayerRuntime::GetNextExp(toEntity) / 10, (uint32_t)iExp);
 	// it recalculate the given exp if the player level is greater than the exp_table size (useless)
 	iExp = AdjustExpByLevel_Combat(to, iExp);
 
@@ -1665,7 +1670,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
-	CombatSystem::CreateFly(from->GetEntityHandle(), FLY_EXP, (to ? to->GetEntityHandle() : entt::null));
+	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
 	// marriage
 	{
 		auto* you = to->GetMarryPartner();
@@ -1674,7 +1679,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 			// sometimes, this overflows
 			uint32_t dwUpdatePoint = (2000.0L / ecs::PointSystem::GetLevel(toEntity) / ecs::PointSystem::GetLevel(toEntity) / 3) * iExp;
 
-			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(to->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0 ||
+			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_MARRIAGE_FAST) > 0 ||
 				ecs::PlayerRuntime::GetPremiumRemainSeconds(you->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint *= 3;
 
@@ -1688,11 +1693,16 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	}
 }
 #else
-static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
+static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 {
-	const entt::entity toEntity = to ? to->GetEntityHandle() : entt::null;
+	// The marriage bonus, the mount vnum, the pet system, the unique-group test
+	// and the PC-bang flag have no entity form yet; each is its own migration
+	// and they share this one resolve.
+	LPCHARACTER to = ecs::LegacyCharOf(toEntity);
+	if (!to)
+		return;
 	//  ġ
-	iExp = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(toEntity), ecs::PointSystem::GetLevel((from ? from->GetEntityHandle() : entt::null)), iExp);
+	iExp = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(toEntity), ecs::PointSystem::GetLevel(fromEntity), iExp);
 
 	int iBaseExp = iExp;
 
@@ -1710,7 +1720,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	// ӳ ⺻ Ǵ ġ ʽ
 	{
 		// 뵿 ޴
-		if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), UNIQUE_ITEM_LARBOR_MEDAL))
+		if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_LARBOR_MEDAL))
 			iExp += iExp * 20 / 100;
 
 		// Ÿ ġ ʽ
@@ -1723,7 +1733,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 				iExp += iExp * 30 / 100; // 1.3 (30%)
 
 		//   (2ð¥)
-		if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), UNIQUE_ITEM_DOUBLE_EXP))
+		if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
 			iExp += iExp * 50 / 100;
 
 		switch (to->GetMountVnum())
@@ -1732,8 +1742,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		case 20111:
 		case 20112:
 		case 20113:
-			if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71115) || ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71117) || ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71119) ||
-				ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71121))
+			if (ItemSystem::IsEquipUniqueItem(toEntity, 71115) || ItemSystem::IsEquipUniqueItem(toEntity, 71117) || ItemSystem::IsEquipUniqueItem(toEntity, 71119) ||
+				ItemSystem::IsEquipUniqueItem(toEntity, 71121))
 			{
 				iExp += iExp * 10 / 100;
 			}
@@ -1755,7 +1765,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	//   Ǹ ġ ʽ
 	{
 		//  : ġ
-		if (ecs::PlayerRuntime::GetPremiumRemainSeconds(to->GetEntityHandle(), PREMIUM_EXP) > 0)
+		if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_EXP) > 0)
 		{
 			iExp += (iExp * 50 / 100);
 		}
@@ -1788,7 +1798,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(toEntity) / 100;
 
 	// ġ ѹ ȹ淮
-	iExp = MIN(ecs::PlayerRuntime::GetNextExp(to->GetEntityHandle()) / 10, iExp);
+	iExp = MIN(ecs::PlayerRuntime::GetNextExp(toEntity) / 10, iExp);
 
 	if (test_server)
 	{
@@ -1815,7 +1825,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 #endif
 
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
-	CombatSystem::CreateFly(from->GetEntityHandle(), FLY_EXP, (to ? to->GetEntityHandle() : entt::null));
+	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
 
 	{
 		auto* you = to->GetMarryPartner();
@@ -1825,7 +1835,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 			// 1 100%
 			uint32_t dwUpdatePoint = 2000 * iExp / ecs::PointSystem::GetLevel(toEntity) / ecs::PointSystem::GetLevel(toEntity) / 3;
 
-			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(to->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0 ||
+			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_MARRIAGE_FAST) > 0 ||
 				ecs::PlayerRuntime::GetPremiumRemainSeconds(you->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint = (uint32_t)(dwUpdatePoint * 3);
 
@@ -1848,8 +1858,9 @@ namespace NPartyExpDistribute
 		int		member_count;
 		int		x, y;
 
-		FPartyTotaler(LegacyCharHandle center)
-			: total(0), member_count(0), x(ecs::PlayerRuntime::GetX((center ? center->GetEntityHandle() : entt::null))), y(ecs::PlayerRuntime::GetY((center ? center->GetEntityHandle() : entt::null)))
+		explicit FPartyTotaler(entt::entity center)
+			: total(0), member_count(0),
+			  x(ecs::PlayerRuntime::GetX(center)), y(ecs::PlayerRuntime::GetY(center))
 		{
 		};
 
@@ -1868,14 +1879,16 @@ namespace NPartyExpDistribute
 	struct FPartyDistributor
 	{
 		int		total;
-		LegacyCharHandle	c;
+		entt::entity	c;
 		int		x, y;
 		uint32_t		_iExp;
 		int		m_iMode;
 		int		m_iMemberCount;
 
-		FPartyDistributor(LegacyCharHandle center, int member_count, int total, uint32_t iExp, int iMode)
-			: total(total), c(center), x(ecs::PlayerRuntime::GetX((center ? center->GetEntityHandle() : entt::null))), y(ecs::PlayerRuntime::GetY((center ? center->GetEntityHandle() : entt::null))), _iExp(iExp), m_iMode(iMode), m_iMemberCount(member_count)
+		FPartyDistributor(entt::entity center, int member_count, int total, uint32_t iExp, int iMode)
+			: total(total), c(center),
+			  x(ecs::PlayerRuntime::GetX(center)), y(ecs::PlayerRuntime::GetY(center)),
+			  _iExp(iExp), m_iMode(iMode), m_iMemberCount(member_count)
 		{
 			if (m_iMemberCount == 0)
 				m_iMemberCount = 1;
@@ -1903,7 +1916,7 @@ namespace NPartyExpDistribute
 					return;
 				}
 
-				GiveExp(c, ch, iExp2);
+				GiveExp(c, chEntity, iExp2);
 			}
 		}
 	};
@@ -1912,23 +1925,22 @@ namespace NPartyExpDistribute
 typedef struct SDamageInfo
 {
 	int iDam;
-	LegacyCharHandle pAttacker;
+	entt::entity pAttacker;
 	LPPARTY pParty;
 
 	void Clear()
 	{
-		pAttacker = nullptr;
+		pAttacker = entt::null;
 		pParty = nullptr;
 	}
 
-	inline void Distribute(LegacyCharHandle ch, int iExp)
+	inline void Distribute(entt::entity chEntity, int iExp)
 	{
-		if (pAttacker)
-			GiveExp(ch, pAttacker, iExp);
+		if (pAttacker != entt::null)
+			GiveExp(chEntity, pAttacker, iExp);
 		else if (pParty)
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-			NPartyExpDistribute::FPartyTotaler f(ch);
+			NPartyExpDistribute::FPartyTotaler f(chEntity);
 			pParty->ForEachOnlineMember(f);
 
 			if (pParty->IsPositionNearLeader(chEntity))
@@ -1946,11 +1958,12 @@ typedef struct SDamageInfo
 					int iExpCenteralize = (int)(iExp * 0.05f);
 					iExp -= iExpCenteralize;
 
-					GiveExp(ch, pParty->GetExpCentralizeCharacter(), iExpCenteralize);
+					GiveExp(chEntity,
+						tchEntity, iExpCenteralize);
 				}
 			}
 
-			NPartyExpDistribute::FPartyDistributor fDist(ch, f.member_count, f.total, iExp, pParty->GetExpDistributionMode());
+			NPartyExpDistribute::FPartyDistributor fDist(chEntity, f.member_count, f.total, iExp, pParty->GetExpDistributionMode());
 			pParty->ForEachOnlineMember(fDist);
 		}
 	}
@@ -1965,18 +1978,13 @@ entt::entity DistributeExp(entt::entity e)
 	if (e == entt::null || !g_registry.valid(e))
 		return entt::null;
 
-	// SDamageInfo::Distribute still takes the character it is paying out for.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
-		return entt::null;
-
 	int iExpToDistribute = ecs::PlayerRuntime::GetExp(e);
 
 	if (iExpToDistribute <= 0)
 		return entt::null;
 
 	uint64_t	iTotalDam = 0;
-	auto* pkChrMostAttacked = static_cast<LegacyCharHandle>(nullptr);
+	entt::entity pkChrMostAttacked = entt::null;
 	uint64_t iMostDam = 0;
 
 	typedef std::vector<TDamageInfo> TDamageInfoTable;
@@ -1995,16 +2003,15 @@ entt::entity DistributeExp(entt::entity e)
 
 		++it;
 
-		auto* pAttacker = LegacyCharOf(eAttacker);
 
 		// NPC ⵵ ϳ? -.-;
-		if (!pAttacker || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(eAttacker), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
+		if (!LegacyCharOf(eAttacker) || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(eAttacker), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
 			continue;
 
 		iTotalDam += iDam;
-		if (!pkChrMostAttacked || iDam > iMostDam)
+		if (pkChrMostAttacked == entt::null || iDam > iMostDam)
 		{
-			pkChrMostAttacked = pAttacker;
+			pkChrMostAttacked = eAttacker;
 			iMostDam = iDam;
 		}
 
@@ -2015,8 +2022,8 @@ entt::entity DistributeExp(entt::entity e)
 			{
 				TDamageInfo di;
 				di.iDam = iDam;
-				di.pAttacker = nullptr;
-				di.pParty = ecs::SocialSystem::GetParty((pAttacker ? pAttacker->GetEntityHandle() : entt::null));
+				di.pAttacker = entt::null;
+				di.pParty = ecs::SocialSystem::GetParty(eAttacker);
 				map_party_damage.insert(std::make_pair(di.pParty, di));
 			}
 			else
@@ -2029,10 +2036,10 @@ entt::entity DistributeExp(entt::entity e)
 			TDamageInfo di;
 
 			di.iDam = iDam;
-			di.pAttacker = pAttacker;
+			di.pAttacker = eAttacker;
 			di.pParty = nullptr;
 
-			//LOG_INFO(0, "__ pq_damage %s %d", ecs::PlayerRuntime::GetName((pAttacker ? pAttacker->GetEntityHandle() : entt::null)).data(), iDam);
+			//LOG_INFO(0, "__ pq_damage %s %d", ecs::PlayerRuntime::GetName(eAttacker).data(), iDam);
 			//pq_damage.push(di);
 			damage_info_table.push_back(di);
 		}
@@ -2066,7 +2073,7 @@ entt::entity DistributeExp(entt::entity e)
 		return entt::null;
 
 	//      HP ȸ Ѵ.
-	CombatSystem::DistributeHP(e, pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null);	//  ý
+	CombatSystem::DistributeHP(e, pkChrMostAttacked);	//  ý
 
 	{
 		//     ̳ Ƽ  ġ 20% + ڱⰡ ŭ ġ Դ´.
@@ -2088,7 +2095,7 @@ entt::entity DistributeExp(entt::entity e)
 
 		if (fPercent > 1.0f)
 		{
-			LOG_ERROR("DistributeExp percent over 1.0 (fPercent {} name {})", fPercent, ecs::PlayerRuntime::GetName((di->pAttacker ? di->pAttacker->GetEntityHandle() : entt::null)).data());
+			LOG_ERROR("DistributeExp percent over 1.0 (fPercent {} name {})", fPercent, ecs::PlayerRuntime::GetName(di->pAttacker).data());
 			fPercent = 1.0f;
 		}
 
@@ -2098,23 +2105,23 @@ entt::entity DistributeExp(entt::entity e)
 #ifdef DISABLE_EXP_FROM_STONES_RAZOR93
 		if (ecs::PlayerRuntime::IsStone(e)) // razor93
 		{
-			//NEM HIVJA MEG A di->Distribute(self, iExp);
+			//NEM HIVJA MEG A di->Distribute(e, iExp);
 		}
 		else
 		{
-			di->Distribute(self, iExp);//HA NEM STNONE AKKOR IGEN
+			di->Distribute(e, iExp);//HA NEM STNONE AKKOR IGEN
 		}
 #else
 		const int race = ecs::PlayerRuntime::GetRaceNum(e);
 		if (race == 8010 || race == 8020 || race == 8738 || race == 8739 || race == 8740 || race == 4811 || race == 4812 || race == 4813 || race == 4814 || race == 4815
 			|| race == 8821 || race == 8822 || race == 8823 || race == 8824
 			)
-			return pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null; // seggbe
-		di->Distribute(self, iExp);
+			return pkChrMostAttacked; // seggbe
+		di->Distribute(e, iExp);
 #endif
 		// 100%  Ծ Ѵ.
 		if (fPercent == 1.0f)
-			return pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null;
+			return pkChrMostAttacked;
 
 		di->Clear();
 	}
@@ -2131,16 +2138,16 @@ entt::entity DistributeExp(entt::entity e)
 
 			if (fPercent > 1.0f)
 			{
-				LOG_ERROR("DistributeExp percent over 1.0 (fPercent {} name {})", fPercent, ecs::PlayerRuntime::GetName((di.pAttacker ? di.pAttacker->GetEntityHandle() : entt::null)).data());
+				LOG_ERROR("DistributeExp percent over 1.0 (fPercent {} name {})", fPercent, ecs::PlayerRuntime::GetName(di.pAttacker).data());
 				fPercent = 1.0f;
 			}
 
 			//LOG_INFO(0, "%s given exp percent %.1f dam %d", ecs::PlayerRuntime::GetName(e).data(), fPercent * 100.0f, di.iDam);
-			di.Distribute(self, (int)(iExpToDistribute * fPercent));
+			di.Distribute(e, (int)(iExpToDistribute * fPercent));
 		}
 	}
 
-	return pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null;
+	return pkChrMostAttacked;
 }
 
 } // namespace CombatSystem
@@ -2188,15 +2195,15 @@ EVENTFUNC(dead_event)
 	{
 		if (ch->IsMonster() == true)
 		{
-			if (CombatSystem::IsRevive(ch->GetEntityHandle()) == false && ecs::SocialSystem::HasReviverInParty(chEntity) == true)
+			if (CombatSystem::IsRevive(chEntity) == false && ecs::SocialSystem::HasReviverInParty(chEntity) == true)
 			{
 				ecs::PlayerRuntime::SetPosition(chEntity, POS_STANDING);
-				ecs::PlayerRuntime::SetHP(ch->GetEntityHandle(), ecs::PointSystem::GetMaxHP(chEntity));
+				ecs::PlayerRuntime::SetHP(chEntity, ecs::PointSystem::GetMaxHP(chEntity));
 
 				ecs::ViewSystem::ViewReencode(chEntity);
 
 				CombatSystem::SetAggressive(chEntity);
-				CombatSystem::SetRevive(ch->GetEntityHandle(), true);
+				CombatSystem::SetRevive(chEntity, true);
 
 				return 0;
 			}
@@ -4131,7 +4138,7 @@ void Reward(entt::entity e, bool bItemDrop)
 								uint64_t dmgNew = 0;
 								uint64_t dmgOld = 0;
 
-								auto itNew = CombatSystem::DamageLedgerOf(e).entries.find(mch->GetEntityHandle());
+								auto itNew = CombatSystem::DamageLedgerOf(e).entries.find(mchEntity);
 								if (itNew != CombatSystem::DamageLedgerOf(e).entries.end())
 									dmgNew = itNew->second.totalDamage;
 

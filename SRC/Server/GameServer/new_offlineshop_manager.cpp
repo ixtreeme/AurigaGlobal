@@ -937,7 +937,7 @@ namespace offlineshop
 
 			else
 			{
-				InventorySystem::AddToCharacter(pkItem, ch->GetEntityHandle(), pos);
+				InventorySystem::AddToCharacter(pkItem, chEntity, pos);
 			}
 
 			uint32_t dwItemID = pItem->GetID();

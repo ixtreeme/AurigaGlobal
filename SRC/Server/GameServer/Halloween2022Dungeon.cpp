@@ -270,7 +270,7 @@ namespace
             return;
         int32_t x = 0, y = 0;
         GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity), x, y);
-        ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity)), x, y);
+        ecs::MovementSystem::SetWarpLocation(chEntity, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity)), x, y);
     }
 
     void WarpOut(entt::entity ch)

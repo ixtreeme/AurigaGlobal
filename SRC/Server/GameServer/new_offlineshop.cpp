@@ -89,7 +89,7 @@ namespace offlineshop
 			}
 			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(item);
 			//patch 08-03-2020
-			m_itemInfo.expiration = GetItemExpiration(pItem->GetEntityHandle());
+			m_itemInfo.expiration = GetItemExpiration(item);
 
 			//attributes
 			const TPlayerItemAttribute* pAttributes = pItem->GetAttributes();

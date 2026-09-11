@@ -211,7 +211,7 @@ EVENTFUNC(pvp_duel_counter)
 		}
 		case 2:
 		{
-			if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockParty")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockParty")))
+			if ((ecs::PlayerRuntime::GetDuelOption(characterA, "BlockParty")) && (ecs::PlayerRuntime::GetDuelOption(characterB, "BlockParty")))
 			{
 				LPPARTY chParty = ecs::SocialSystem::GetParty(characterA);
 				LPPARTY victimParty = ecs::SocialSystem::GetParty(characterB);
@@ -223,7 +223,7 @@ EVENTFUNC(pvp_duel_counter)
 					victimParty->Quit((ecs::PlayerRuntime::GetPlayerID(characterB)));
 			}
 
-			if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockPet")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockPet")))
+			if ((ecs::PlayerRuntime::GetDuelOption(characterA, "BlockPet")) && (ecs::PlayerRuntime::GetDuelOption(characterB, "BlockPet")))
 			{
 #ifdef __PET_SYSTEM__
 				{
@@ -249,7 +249,7 @@ EVENTFUNC(pvp_duel_counter)
 #endif
 			}
 
-			if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockPoly")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockPoly")))
+			if ((ecs::PlayerRuntime::GetDuelOption(characterA, "BlockPoly")) && (ecs::PlayerRuntime::GetDuelOption(characterB, "BlockPoly")))
 			{
 				if (AffectSystem::IsPolymorphed(characterA)) {
 					AffectSystem::SetPolymorph(characterA, 0);
@@ -262,7 +262,7 @@ EVENTFUNC(pvp_duel_counter)
 				}
 			}
 
-			if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockRide")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockRide")))
+			if ((ecs::PlayerRuntime::GetDuelOption(characterA, "BlockRide")) && (ecs::PlayerRuntime::GetDuelOption(characterB, "BlockRide")))
 			{
 				if (AffectSystem::FindAffect(characterA, AFFECT_MOUNT)) {
 					AffectSystem::RemoveAffect(characterA, AFFECT_MOUNT);
@@ -293,7 +293,7 @@ EVENTFUNC(pvp_duel_counter)
 
 			for (unsigned int i = 0; i < _countof(m_nTableSkill); i++)
 			{
-				if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockBuff")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockBuff")))
+				if ((ecs::PlayerRuntime::GetDuelOption(characterA, "BlockBuff")) && (ecs::PlayerRuntime::GetDuelOption(characterB, "BlockBuff")))
 				{
 					if (ecs::PlayerRuntime::GetJob(characterA) != JOB_SHAMAN)
 						AffectSystem::RemoveAffect(characterA, m_nTableSkill[i]);
@@ -343,8 +343,8 @@ EVENTFUNC(pvp_duel_counter)
 			ecs::ChatSystem::Send(characterA, CHAT_TYPE_COMMAND, chA_buf);
 			ecs::ChatSystem::Send(characterB, CHAT_TYPE_COMMAND, chB_buf);
 
-			ecs::PlayerRuntime::SetHP(chA->GetEntityHandle(), ecs::PointSystem::GetMaxHP(characterA));
-			ecs::PlayerRuntime::SetHP(chB->GetEntityHandle(), ecs::PointSystem::GetMaxHP(characterB));
+			ecs::PlayerRuntime::SetHP(characterA, ecs::PointSystem::GetMaxHP(characterA));
+			ecs::PlayerRuntime::SetHP(characterB, ecs::PointSystem::GetMaxHP(characterB));
 
 			info->pvp->Packet();
 			return 0;
