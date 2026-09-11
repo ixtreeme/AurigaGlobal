@@ -610,25 +610,25 @@ LPCHARACTER CHARACTER_MANAGER::FindPC(const char* name)
 	return ecs::LegacyCharOf(FindPCEntity(name));
 }
 
-LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t lMapIndex)
+entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t lMapIndex)
 {
 	const CMob* pkMob = CMobManager::instance().Get(dwVnum);
 
 	if (!pkMob)
 	{
 		LOG_ERROR("no mob data for vnum {}", dwVnum);
-		return nullptr;
+		return entt::null;
 	}
 
 	if (!map_allow_find(lMapIndex))
 	{
 		LOG_ERROR("not allowed map {}", lMapIndex);
-		return nullptr;
+		return entt::null;
 	}
 
 	LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(lMapIndex);
 	if (pkSectreeMap == nullptr) {
-		return nullptr;
+		return entt::null;
 	}
 
 	int i;
@@ -657,7 +657,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	if (i == 2000)
 	{
 		LOG_ERROR("cannot find valid location");
-		return nullptr;
+		return entt::null;
 	}
 
 	LPSECTREE sectree = SECTREE_MANAGER::instance().Get(lMapIndex, x, y);
@@ -665,7 +665,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	if (!sectree)
 	{
 		LOG_INFO("SpawnMobRandomPosition: cannot create monster at non-exist sectree {} x {} (map {})", x, y, lMapIndex);
-		return nullptr;
+		return entt::null;
 	}
 
 #ifdef ENABLE_MULTI_NAMES
@@ -677,7 +677,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	if (!ch)
 	{
 		LOG_INFO("SpawnMobRandomPosition: cannot create new character");
-		return nullptr;
+		return entt::null;
 	}
 
 	const entt::entity character = ch->GetEntityHandle();
@@ -696,18 +696,11 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	{
 		M2_DESTROY_CHARACTER(ch);
 		LOG_ERROR("SpawnMobRandomPosition: cannot show monster");
-		return nullptr;
+		return entt::null;
 	}
 
 
-	return ch;
-}
-
-LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t vnum, int32_t map, int32_t x, int32_t y, int32_t z, bool motion, int rotation, bool show)
-{
-    // Only old pointer callers cross this compatibility boundary. Native callers
-    // receive the entity produced by the shared spawn implementation directly.
-    return ecs::LegacyCharOf(SpawnMobEntity(vnum, map, x, y, z, motion, rotation, show));
+	return character;
 }
 
 entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bSpawnMotion, int iRot, bool bShow)
@@ -876,12 +869,12 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 	return character;
 }
 
-LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, bool bIsException, bool bSpawnMotion, bool bAggressive)
+entt::entity CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, bool bIsException, bool bSpawnMotion, bool bAggressive)
 {
 	const CMob* pkMob = CMobManager::instance().Get(dwVnum);
 
 	if (!pkMob)
-		return nullptr;
+		return entt::null;
 
 	if (pkMob->m_table.bType == CHAR_TYPE_STONE)	//   SPAWN  ִ.
 		bSpawnMotion = true;
@@ -897,19 +890,18 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 		   if (is_regen_exception(x, y))
 		   continue;
 		 */
-		auto* ch = SpawnMob(dwVnum, lMapIndex, x, y, 0, bSpawnMotion);
+		const entt::entity character = SpawnMobEntity(dwVnum, lMapIndex, x, y, 0, bSpawnMotion);
 
-		if (ch)
+		if (character != entt::null)
 		{
-			const entt::entity character = ch->GetEntityHandle();
 			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPacketVID(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 			if (bAggressive)
 				CombatSystem::SetAggressive(character);
-			return ch;
+			return character;
 		}
 	}
 
-	return nullptr;
+	return entt::null;
 }
 
 void CHARACTER_MANAGER::SelectStone(entt::entity stone)
@@ -931,7 +923,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		return false;
 	}
 
-	LPCHARACTER pkChrMaster = nullptr;
+	entt::entity master = entt::null;
 	LPPARTY pkParty = nullptr;
 
 	const std::vector<uint32_t>& c_rdwMembers = pkGroup->GetMemberVector();
@@ -948,17 +940,15 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 
 	for (uint32_t i = 0; i < c_rdwMembers.size(); ++i)
 	{
-		LPCHARACTER tch = SpawnMobRange(c_rdwMembers[i], lMapIndex, sx, sy, ex, ey, true, bSpawnedByStone);
+		const entt::entity spawned = SpawnMobRange(c_rdwMembers[i], lMapIndex, sx, sy, ex, ey, true, bSpawnedByStone);
 
-		if (!tch)
+		if (spawned == entt::null)
 		{
 			if (i == 0)	//  Ͱ  쿡 ׳
 				return false;
 
 			continue;
 		}
-
-		const entt::entity spawned = tch->GetEntityHandle();
 
 		sx = ecs::PlayerRuntime::GetX(spawned) - number(300, 500);
 		sy = ecs::PlayerRuntime::GetY(spawned) - number(300, 500);
@@ -970,14 +960,14 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		else if (pkParty)
 		{
 			pkParty->Join(ecs::PlayerRuntime::GetPacketVID(spawned));
-			pkParty->Link(((tch) ? (tch)->GetEntityHandle() : entt::null));
+			pkParty->Link(spawned);
 		}
-		else if (!pkChrMaster)
+		else if (master == entt::null)
 		{
-			pkChrMaster = tch;
-			ecs::PlayerRuntime::SetRegen(spawned, pkRegen);
+			master = spawned;
+			ecs::PlayerRuntime::SetRegen(master, pkRegen);
 
-			pkParty = CPartyManager::instance().CreateParty(((pkChrMaster) ? (pkChrMaster)->GetEntityHandle() : entt::null));
+			pkParty = CPartyManager::instance().CreateParty(master);
 		}
 		if (bAggressive)
 			CombatSystem::SetAggressive(spawned);
@@ -995,7 +985,7 @@ bool CHARACTER_MANAGER::SpawnGroupGroup(uint32_t dwVnum, int32_t lMapIndex, int 
 
 	if (dwGroupID != 0)
 	{
-		return SpawnGroup(dwGroupID, lMapIndex, sx, sy, ex, ey, pkRegen, bAggressive_, pDungeon);
+		return SpawnGroup(dwGroupID, lMapIndex, sx, sy, ex, ey, pkRegen, bAggressive_, pDungeon) != entt::null;
 	}
 	else
 	{
@@ -1004,21 +994,21 @@ bool CHARACTER_MANAGER::SpawnGroupGroup(uint32_t dwVnum, int32_t lMapIndex, int 
 	}
 }
 
-LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen, bool bAggressive_, LPDUNGEON pDungeon)
+entt::entity CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen, bool bAggressive_, LPDUNGEON pDungeon)
 {
 
 	if (!dwVnum)
-		return nullptr;
+		return entt::null;
 
 	CMobGroup* pkGroup = CMobManager::Instance().GetGroup(dwVnum);
 
 	if (!pkGroup)
 	{
 		LOG_ERROR("NOT_EXIST_GROUP_VNUM({}) Map({}) ", dwVnum, lMapIndex);
-		return nullptr;
+		return entt::null;
 	}
 
-	LPCHARACTER pkChrMaster = nullptr;
+	entt::entity master = entt::null;
 	LPPARTY pkParty = nullptr;
 
 	const std::vector<uint32_t>& c_rdwMembers = pkGroup->GetMemberVector();
@@ -1034,24 +1024,22 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 			bAggressive = true;
 	}
 
-	LPCHARACTER chLeader = nullptr;
+	entt::entity leader = entt::null;
 
 	for (uint32_t i = 0; i < c_rdwMembers.size(); ++i)
 	{
-		LPCHARACTER tch = SpawnMobRange(c_rdwMembers[i], lMapIndex, sx, sy, ex, ey, true, bSpawnedByStone);
+		const entt::entity spawned = SpawnMobRange(c_rdwMembers[i], lMapIndex, sx, sy, ex, ey, true, bSpawnedByStone);
 
-		if (!tch)
+		if (spawned == entt::null)
 		{
 			if (i == 0)	//  Ͱ  쿡 ׳
-				return nullptr;
+				return entt::null;
 
 			continue;
 		}
 
 		if (i == 0)
-			chLeader = tch;
-
-		const entt::entity spawned = tch->GetEntityHandle();
+			leader = spawned;
 
 		ecs::SocialSystem::SetDungeon(spawned, pDungeon);
 
@@ -1065,21 +1053,21 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 		else if (pkParty)
 		{
 			pkParty->Join(ecs::PlayerRuntime::GetPacketVID(spawned));
-			pkParty->Link(((tch) ? (tch)->GetEntityHandle() : entt::null));
+			pkParty->Link(spawned);
 		}
-		else if (!pkChrMaster)
+		else if (master == entt::null)
 		{
-			pkChrMaster = tch;
-			ecs::PlayerRuntime::SetRegen(spawned, pkRegen);
+			master = spawned;
+			ecs::PlayerRuntime::SetRegen(master, pkRegen);
 
-			pkParty = CPartyManager::instance().CreateParty(((pkChrMaster) ? (pkChrMaster)->GetEntityHandle() : entt::null));
+			pkParty = CPartyManager::instance().CreateParty(master);
 		}
 
 		if (bAggressive)
 			CombatSystem::SetAggressive(spawned);
 	}
 
-	return chLeader;
+	return leader;
 }
 
 void CHARACTER_MANAGER::Update(int iPulse)

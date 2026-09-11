@@ -1514,7 +1514,7 @@ namespace quest
 							continue;
 						}
 
-						CHARACTER_MANAGER::instance().SpawnMob(EventNPC, pPosition->lMapIndex, pos.x+pPosition->x*100, pos.y+pPosition->y*100, 0, false, -1);
+						CHARACTER_MANAGER::instance().SpawnMobEntity(EventNPC, pPosition->lMapIndex, pos.x+pPosition->x*100, pos.y+pPosition->y*100, 0, false, -1);
 					}
 					pPosition++;
 				}

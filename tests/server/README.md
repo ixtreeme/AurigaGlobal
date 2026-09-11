@@ -582,9 +582,10 @@ ctest --test-dir build-asan -C RelWithDebInfo -R '^(character_manager|combat_sta
 ```
 
 Remaining `LegacyCharOf` calls in `char_manager.cpp` are explicit boundaries for
-Disconnect, CHARACTER/dungeon teardown, pointer-returning FindPC/SpawnMob and
-SaveReal. Group/range spawning and `for_each_pc` still have legacy callers; this
-change does not claim the entire character manager or AISystem is legacy-free.
+Disconnect, CHARACTER/dungeon teardown, pointer-returning FindPC and SaveReal.
+No spawn entry point returns a pointer any more; `for_each_pc` still has legacy
+callers. This change does not claim the entire character manager or AISystem is
+legacy-free.
 
 ## Affect ownership and point application
 
@@ -1388,8 +1389,8 @@ not execute the new native walking packet service or command/packet dispatch.
 Before deployment verify NPC/monster/metin spawning (including event-spawned
 metins), mount follow across sectors/maps, name/skin display, riding/unmounting,
 item expiry and logout/relog, and pet summon/skin/bonus behaviour in-game.
-`SpawnMobEntity` now owns the shared spawn implementation; the old pointer-return
-entry point remains only for unmigrated callers. Allocation, movement and horse
+`SpawnMobEntity` owns the shared spawn implementation, and no spawn entry point
+returns a pointer any more. Allocation, movement and horse
 services still contain legacy internals: this is not a fully legacy-free server.
 Growth-pet checks use a fake SQL client and database (no connection or worker
 threads), and exercise the actual SELECT parsing, save queries and actor code.

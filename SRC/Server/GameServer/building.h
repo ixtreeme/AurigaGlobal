@@ -40,7 +40,6 @@ namespace building
 
 			void	Reconstruct(uint32_t dwVnum);
 
-			LPCHARACTER GetNPC() { return m_chNPC; }
 			entt::entity GetNPCEntity() const { return m_npcEntity; }
 			// END_OF_BUILDING_NPC
 
@@ -50,7 +49,6 @@ namespace building
 			uint32_t		m_dwVID;
 			CLand *		m_pkLand;
 
-			LPCHARACTER		m_chNPC;
 			entt::entity		m_npcEntity;
 	};
 

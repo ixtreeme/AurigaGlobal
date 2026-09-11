@@ -1328,7 +1328,6 @@ namespace quest
 	ALUA(_spawn_mob0)
 	{
 		// migrated from CHARACTER::spawn_mob0
-		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4))
 		{
 			lua_pushnumber(L, -1);
@@ -1351,8 +1350,8 @@ namespace quest
 			lua_pushnumber(L, -3);
 			return 1;
 		}
-		const LPCHARACTER ch = CHARACTER_MANAGER::instance().SpawnMob(dwVnum, lMapIndex, pkSectreeMap->m_setting.iBaseX+dwX*100, pkSectreeMap->m_setting.iBaseY+dwY*100, 0, false, -1);
-		lua_pushnumber(L, (ch)?((ch)->GetLegacyVID()):0);
+		const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobEntity(dwVnum, lMapIndex, pkSectreeMap->m_setting.iBaseX+dwX*100, pkSectreeMap->m_setting.iBaseY+dwY*100, 0, false, -1);
+		lua_pushnumber(L, mob != entt::null ? ecs::PlayerRuntime::GetPacketVID(mob) : 0);
 		return 1;
 	}
 #endif
@@ -1360,7 +1359,6 @@ namespace quest
 	ALUA(_spawn_mob)
 	{
 		// migrated from CHARACTER::spawn_mob
-		// DUAL-PATH: ECS update + legacy call during migration window
 		if( false == lua_isnumber(L, 1) || false == lua_isnumber(L, 2) || false == lua_isboolean(L, 3) )
 		{
 			lua_pushnumber(L, 0);
@@ -1381,7 +1379,7 @@ namespace quest
 
 			for( uint32_t i=0 ; i < count ; ++i )
 			{
-				const LPCHARACTER pSpawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange( dwVnum,
+				const entt::entity spawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange( dwVnum,
 						ecs::PlayerRuntime::GetMapIndex(pChar),
 						ecs::PlayerRuntime::GetX(pChar) - number(200, 750),
 						ecs::PlayerRuntime::GetY(pChar) - number(200, 750),
@@ -1390,27 +1388,9 @@ namespace quest
 						true,
 						pMonster->m_table.bType == CHAR_TYPE_STONE,
 						isAggresive );
-						const entt::entity spawnMonster = pSpawnMonster ? pSpawnMonster->GetEntityHandle() : entt::null;
 
-
-				if(nullptr != pSpawnMonster )
-				{
+				if (spawnMonster != entt::null)
 					++SpawnCount;
-				// DUAL-PATH: register spawned mob in ECS registry
-				if (pSpawnMonster) {
-					if (const TMobTable* mobTable =
-							ecs::PlayerRuntime::GetMobTable(spawnMonster))
-					{
-						EntityFactory::CreateMonster(
-							g_registry,
-							*mobTable,
-							ecs::PlayerRuntime::GetX(spawnMonster),
-							ecs::PlayerRuntime::GetY(spawnMonster),
-							ecs::PlayerRuntime::GetMapIndex(spawnMonster),
-							ecs::PlayerRuntime::GetPacketVID(spawnMonster));
-					}
-				}
-				}
 			}
 
 			LOG_INFO("QUEST Spawn Monstster: VNUM({}) COUNT({}) isAggresive(%b)", dwVnum, SpawnCount, isAggresive);
@@ -1425,7 +1405,6 @@ namespace quest
 	ALUA(_spawn_mob_in_map)
 	{
 		// migrated from CHARACTER::spawn_mob_in_map
-		// DUAL-PATH: legacy only during migration window
 		if( false == lua_isnumber(L, 1) || false == lua_isnumber(L, 2) || false == lua_isboolean(L, 3) || false == lua_isnumber(L, 4) || false == lua_isnumber(L, 5) || false == lua_isnumber(L, 6) )
 		{
 			lua_pushnumber(L, 0);
@@ -1455,7 +1434,7 @@ namespace quest
 		{
 			for(uint32_t i=0 ; i < count ; ++i )
 			{
-				const LPCHARACTER pSpawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange(dwVnum,
+				const entt::entity spawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange(dwVnum,
 						iMapIndex,
 						pos.x - number(200, 750) + (iMapX * 100),
 						pos.y - number(200, 750) + (iMapY * 100),
@@ -1465,27 +1444,9 @@ namespace quest
 						pMonster->m_table.bType == CHAR_TYPE_STONE,
 						isAggressive
 				);
-				const entt::entity spawnMonster = pSpawnMonster ? pSpawnMonster->GetEntityHandle() : entt::null;
 
-
-				if(nullptr != pSpawnMonster )
-				{
+				if (spawnMonster != entt::null)
 					++SpawnCount;
-				// DUAL-PATH: register spawned mob in ECS registry
-				if (pSpawnMonster) {
-					if (const TMobTable* mobTable =
-							ecs::PlayerRuntime::GetMobTable(spawnMonster))
-					{
-						EntityFactory::CreateMonster(
-							g_registry,
-							*mobTable,
-							ecs::PlayerRuntime::GetX(spawnMonster),
-							ecs::PlayerRuntime::GetY(spawnMonster),
-							ecs::PlayerRuntime::GetMapIndex(spawnMonster),
-							ecs::PlayerRuntime::GetPacketVID(spawnMonster));
-					}
-				}
-				}
 			}
 
 			LOG_INFO("QUEST Spawn Monster: VNUM({}) COUNT({}) isAggressive(%b)", dwVnum, SpawnCount, isAggressive);

@@ -298,7 +298,7 @@ namespace quest
 		uint32_t dwQuestIdx = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		bool ret = false;
-		LPCHARACTER mob = nullptr;
+		entt::entity mob = entt::null;
 
 		while (count--)
 		{
@@ -310,23 +310,23 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + (int32_t)(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + (int32_t)(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ecs::PlayerRuntime::GetMapIndex(ch), x, y, 0);
+				mob = CHARACTER_MANAGER::instance().SpawnMobEntity(mob_vnum, ecs::PlayerRuntime::GetMapIndex(ch), x, y, 0);
 
-				if (mob)
+				if (mob != entt::null)
 					break;
 			}
 
-			if (mob)
+			if (mob != entt::null)
 			{
 				if (bAggressive)
-					CombatSystem::SetAggressive(mob->GetEntityHandle());
+					CombatSystem::SetAggressive(mob);
 
-				ecs::PlayerRuntime::SetQuestBy(mob->GetEntityHandle(), dwQuestIdx);
+				ecs::PlayerRuntime::SetQuestBy(mob, dwQuestIdx);
 
 				if (!ret)
 				{
 					ret = true;
-					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(((mob) ? (mob)->GetEntityHandle() : entt::null)));
+					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(mob));
 				}
 			}
 		}
@@ -371,7 +371,7 @@ namespace quest
 		const uint32_t dwQuestIdx = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		bool ret = false;
-		LPCHARACTER mob = nullptr;
+		entt::entity mob = entt::null;
 
 		while (count--)
 		{
@@ -385,18 +385,18 @@ namespace quest
 
 				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ecs::PlayerRuntime::GetMapIndex(ch), x, y, x, y, nullptr, bAggressive);
 
-				if (mob)
+				if (mob != entt::null)
 					break;
 			}
 
-			if (mob)
+			if (mob != entt::null)
 			{
-				ecs::PlayerRuntime::SetQuestBy(mob->GetEntityHandle(), dwQuestIdx);
+				ecs::PlayerRuntime::SetQuestBy(mob, dwQuestIdx);
 
 				if (!ret)
 				{
 					ret = true;
-					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(((mob) ? (mob)->GetEntityHandle() : entt::null)));
+					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(mob));
 				}
 			}
 		}

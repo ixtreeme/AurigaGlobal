@@ -861,8 +861,7 @@ void CWarMap::AddFlagBase(uint8_t bIdx, uint32_t x, uint32_t y)
 		y = m_kMapInfo.posStart[bIdx].y;
 	}
 
-	LPCHARACTER spawnedBase = CHARACTER_MANAGER::instance().SpawnMob(warmap::WAR_FLAG_BASE_VNUM, m_kMapInfo.lMapIndex, x, y, 0);
-	r.flagBase = spawnedBase ? spawnedBase->GetEntityHandle() : entt::null;
+	r.flagBase = CHARACTER_MANAGER::instance().SpawnMobEntity(warmap::WAR_FLAG_BASE_VNUM, m_kMapInfo.lMapIndex, x, y, 0);
 	LOG_INFO("WarMap::AddFlagBase {} {} id {}", static_cast<int>(bIdx), static_cast<uint32_t>(r.flagBase), r.dwID);
 
 	ecs::PointSystem::Set(r.flagBase, POINT_STAT, r.dwID);
@@ -887,8 +886,7 @@ void CWarMap::AddFlag(uint8_t bIdx, uint32_t x, uint32_t y)
 		y = m_kMapInfo.posStart[bIdx].y;
 	}
 
-	LPCHARACTER spawnedFlag = CHARACTER_MANAGER::instance().SpawnMob(bIdx == 0 ? warmap::WAR_FLAG_VNUM0 : warmap::WAR_FLAG_VNUM1, m_kMapInfo.lMapIndex, x, y, 0);
-	r.flag = spawnedFlag ? spawnedFlag->GetEntityHandle() : entt::null;
+	r.flag = CHARACTER_MANAGER::instance().SpawnMobEntity(bIdx == 0 ? warmap::WAR_FLAG_VNUM0 : warmap::WAR_FLAG_VNUM1, m_kMapInfo.lMapIndex, x, y, 0);
 	LOG_INFO("WarMap::AddFlag {} {} id {}", static_cast<int>(bIdx), static_cast<uint32_t>(r.flag), r.dwID);
 
 	ecs::PointSystem::Set(r.flag, POINT_STAT, r.dwID);

@@ -334,6 +334,6 @@ void CBattleArena::SpawnLastBoss()
 	int idx = m_nMapIndex - 190;
 	if ( idx < 0 || idx >= 3 ) return;
 
-	CHARACTER_MANAGER::instance().SpawnMob(vnum, m_nMapIndex, position[idx][0], position[idx][1], 0);
+	CHARACTER_MANAGER::instance().SpawnMobEntity(vnum, m_nMapIndex, position[idx][0], position[idx][1], 0);
 }
 

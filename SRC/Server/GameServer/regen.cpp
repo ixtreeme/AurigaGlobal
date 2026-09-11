@@ -272,21 +272,21 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 
 	for (i = 0; i < num; ++i)
 	{
-		LPCHARACTER ch = nullptr;
+		entt::entity mob = entt::null;
 
 		if (regen->type == REGEN_TYPE_ANYWHERE)
 		{
-			ch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(regen->vnum, regen->lMapIndex);
+			mob = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(regen->vnum, regen->lMapIndex);
 
-			if (ch)
+			if (mob != entt::null)
 			{
 				++regen->count;
-				ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), pDungeon);
+				ecs::SocialSystem::SetDungeon(mob, pDungeon);
 			}
 		}
 		else if (regen->sx == regen->ex && regen->sy == regen->ey)
 		{
-			ch = CHARACTER_MANAGER::instance().SpawnMob(regen->vnum,
+			mob = CHARACTER_MANAGER::instance().SpawnMobEntity(regen->vnum,
 					regen->lMapIndex,
 					regen->sx,
 					regen->sy,
@@ -294,27 +294,27 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 					false,
 					regen->direction == 0 ? number(0, 7) * 45 : (regen->direction - 1) * 45);
 
-			if (ch)
+			if (mob != entt::null)
 			{
 				++regen->count;
-				ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), pDungeon);
+				ecs::SocialSystem::SetDungeon(mob, pDungeon);
 			}
 		}
 		else
 		{
 			if (regen->type == REGEN_TYPE_MOB)
 			{
-				ch = CHARACTER_MANAGER::Instance().SpawnMobRange(regen->vnum, regen->lMapIndex, regen->sx, regen->sy, regen->ex, regen->ey, true);
+				mob = CHARACTER_MANAGER::Instance().SpawnMobRange(regen->vnum, regen->lMapIndex, regen->sx, regen->sy, regen->ex, regen->ey, true);
 
-				if (ch)
+				if (mob != entt::null)
 				{
 					++regen->count;
-					ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), pDungeon);
+					ecs::SocialSystem::SetDungeon(mob, pDungeon);
 				}
 			}
 			else if (regen->type == REGEN_TYPE_GROUP)
 			{
-				if (CHARACTER_MANAGER::Instance().SpawnGroup(regen->vnum, regen->lMapIndex, regen->sx, regen->sy, regen->ex, regen->ey, bOnce ? nullptr : regen, regen->is_aggressive, pDungeon))
+				if (CHARACTER_MANAGER::Instance().SpawnGroup(regen->vnum, regen->lMapIndex, regen->sx, regen->sy, regen->ex, regen->ey, bOnce ? nullptr : regen, regen->is_aggressive, pDungeon) != entt::null)
 					++regen->count;
 			}
 			else if (regen->type == REGEN_TYPE_GROUP_GROUP)
@@ -324,17 +324,17 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 			}
 		}
 
-		if (ch && !bOnce)
-			ecs::PlayerRuntime::SetRegen(ch->GetEntityHandle(), regen);
+		if (mob != entt::null && !bOnce)
+			ecs::PlayerRuntime::SetRegen(mob, regen);
 		
 #ifdef __DEFENSE_WAVE__
 		if (pDungeon)
 		{
 			const entt::entity mast = pDungeon->GetMast();
-			// A group regen never sets ch, and a spawn that failed leaves it null.
-			if (ch && ecs::PlayerRuntime::IsValid(mast))
+			// A group regen never sets mob, and a spawn that failed leaves it null.
+			if (mob != entt::null && ecs::PlayerRuntime::IsValid(mast))
 			{
-				CombatSystem::SetVictim(ch->GetEntityHandle(), mast);
+				CombatSystem::SetVictim(mob, mast);
 			}
 		}
 #endif
@@ -353,18 +353,18 @@ static void regen_spawn(LPREGEN regen, bool bOnce)
 
 	for (i = 0; i < num; ++i)
 	{
-		LPCHARACTER ch = nullptr;
+		entt::entity mob = entt::null;
 
 		if (regen->type == REGEN_TYPE_ANYWHERE)
 		{
-			ch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(regen->vnum, regen->lMapIndex);
+			mob = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(regen->vnum, regen->lMapIndex);
 
-			if (ch)
+			if (mob != entt::null)
 				++regen->count;
 		}
 		else if (regen->sx == regen->ex && regen->sy == regen->ey)
 		{
-			ch = CHARACTER_MANAGER::instance().SpawnMob(regen->vnum,
+			mob = CHARACTER_MANAGER::instance().SpawnMobEntity(regen->vnum,
 					regen->lMapIndex,
 					regen->sx,
 					regen->sy,
@@ -372,21 +372,21 @@ static void regen_spawn(LPREGEN regen, bool bOnce)
 					false,
 					regen->direction == 0 ? number(0, 7) * 45 : (regen->direction - 1) * 45);
 
-			if (ch)
+			if (mob != entt::null)
 				++regen->count;
 		}
 		else
 		{
 			if (regen->type == REGEN_TYPE_MOB)
 			{
-				ch = CHARACTER_MANAGER::Instance().SpawnMobRange(regen->vnum, regen->lMapIndex, regen->sx, regen->sy, regen->ex, regen->ey, true, regen->is_aggressive, regen->is_aggressive );
+				mob = CHARACTER_MANAGER::Instance().SpawnMobRange(regen->vnum, regen->lMapIndex, regen->sx, regen->sy, regen->ex, regen->ey, true, regen->is_aggressive, regen->is_aggressive );
 
-				if (ch)
+				if (mob != entt::null)
 					++regen->count;
 			}
 			else if (regen->type == REGEN_TYPE_GROUP)
 			{
-				if (CHARACTER_MANAGER::Instance().SpawnGroup(regen->vnum, regen->lMapIndex, regen->sx, regen->sy, regen->ex, regen->ey, bOnce ? nullptr : regen, regen->is_aggressive))
+				if (CHARACTER_MANAGER::Instance().SpawnGroup(regen->vnum, regen->lMapIndex, regen->sx, regen->sy, regen->ex, regen->ey, bOnce ? nullptr : regen, regen->is_aggressive) != entt::null)
 					++regen->count;
 			}
 			else if (regen->type == REGEN_TYPE_GROUP_GROUP)
@@ -396,8 +396,8 @@ static void regen_spawn(LPREGEN regen, bool bOnce)
 			}
 		}
 
-		if (ch && !bOnce)
-			ecs::PlayerRuntime::SetRegen(ch->GetEntityHandle(), regen);
+		if (mob != entt::null && !bOnce)
+			ecs::PlayerRuntime::SetRegen(mob, regen);
 	}
 }
 

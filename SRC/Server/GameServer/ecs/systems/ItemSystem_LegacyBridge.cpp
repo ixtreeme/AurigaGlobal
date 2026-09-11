@@ -3338,9 +3338,9 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 			int x = GetX() + number(-500, 500);
 			int y = GetY() + number(-500, 500);
 
-			auto* ch = CHARACTER_MANAGER::instance().SpawnMob(dwCount, GetMapIndex(), x, y, 0, true, -1);
-			if (ch)
-				CombatSystem::SetAggressive(ch->GetEntityHandle());
+			const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobEntity(dwCount, GetMapIndex(), x, y, 0, true, -1);
+			if (mob != entt::null)
+				CombatSystem::SetAggressive(mob);
 			bSuccess = true;
 		}
 		break;

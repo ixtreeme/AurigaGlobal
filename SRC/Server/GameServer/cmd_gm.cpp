@@ -788,7 +788,6 @@ ACMD(do_mob_coward)
 {
 	char	arg1[256], arg2[256];
 	uint32_t	vnum = 0;
-	LPCHARACTER	tch;
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
@@ -832,7 +831,7 @@ ACMD(do_mob_coward)
 
 	while (iCount--)
 	{
-		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
+		const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
 				ecs::PlayerRuntime::GetMapIndex(character),
 				ecs::PlayerRuntime::GetX(character) - number(200, 750),
 				ecs::PlayerRuntime::GetY(character) - number(200, 750),
@@ -840,8 +839,8 @@ ACMD(do_mob_coward)
 				ecs::PlayerRuntime::GetY(character) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
-		if (tch)
-			ecs::PlayerRuntime::SetCoward(tch->GetEntityHandle());
+		if (mob != entt::null)
+			ecs::PlayerRuntime::SetCoward(mob);
 	}
 }
 
@@ -858,12 +857,10 @@ ACMD(do_mob_map)
 
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::PlayerRuntime::GetMapIndex(character));
-	const entt::entity tchEntity = tch ? tch->GetEntityHandle() : entt::null;
+	const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::PlayerRuntime::GetMapIndex(character));
 
-
-	if (tch)
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(tchEntity).data(), ecs::PlayerRuntime::GetX(tchEntity), ecs::PlayerRuntime::GetY(tchEntity));
+	if (mob != entt::null)
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(mob).data(), ecs::PlayerRuntime::GetX(mob), ecs::PlayerRuntime::GetY(mob));
 	else
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Spawn failed.");
 }
@@ -872,7 +869,6 @@ ACMD(do_mob_aggresive)
 {
 	char	arg1[256], arg2[256];
 	uint32_t	vnum = 0;
-	LPCHARACTER	tch;
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
@@ -916,7 +912,7 @@ ACMD(do_mob_aggresive)
 
 	while (iCount--)
 	{
-		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
+		const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
 				ecs::PlayerRuntime::GetMapIndex(character),
 				ecs::PlayerRuntime::GetX(character) - number(200, 750),
 				ecs::PlayerRuntime::GetY(character) - number(200, 750),
@@ -924,12 +920,8 @@ ACMD(do_mob_aggresive)
 				ecs::PlayerRuntime::GetY(character) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
-		if (tch)
-				{
-					const entt::entity e = tch->GetEntityHandle();
-					if (e != entt::null)
-						AIHelpers::SetAggressive(e, true);
-				}
+		if (mob != entt::null)
+			AIHelpers::SetAggressive(mob, true);
 	}
 }
 

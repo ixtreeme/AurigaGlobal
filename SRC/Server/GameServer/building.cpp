@@ -46,7 +46,7 @@ enum
 using namespace building;
 
 CObject::CObject(TObject * pData, TObjectProto * pProto)
-	: m_pProto(pProto), m_dwVID(0), m_chNPC(nullptr), m_npcEntity(entt::null)
+	: m_pProto(pProto), m_dwVID(0), m_npcEntity(entt::null)
 {
 	CEntity::Initialize(ENTITY_OBJECT);
 
@@ -89,8 +89,8 @@ void CObject::Destroy()
 	// <Factor> NPC should be destroyed in CHARACTER_MANAGER
 	// BUILDING_NPC
 	/*
-	if (m_chNPC) {
-		M2_DESTROY_CHARACTER(m_chNPC);
+	if (m_npcEntity != entt::null) {
+		M2_DESTROY_CHARACTER(m_npcEntity);
 	}
 	*/
 
@@ -280,7 +280,7 @@ void CObject::RegenNPC()
 	newX = (int)(( x * cosf(rot)) + ( y * sinf(rot)));
 	newY = (int)(( y * cosf(rot)) - ( x * sinf(rot)));
 
-	m_chNPC = CHARACTER_MANAGER::instance().SpawnMob(m_pProto->dwNPCVnum,
+	m_npcEntity = CHARACTER_MANAGER::instance().SpawnMobEntity(m_pProto->dwNPCVnum,
 			GetMapIndex(),
 			GetX() + newX,
 			GetY() + newY,
@@ -289,14 +289,13 @@ void CObject::RegenNPC()
 			(int)m_data.zRot);
 
 
-	if (!m_chNPC)
+	if (m_npcEntity == entt::null)
 	{
 		LOG_ERROR("Cannot create guild npc");
 		return;
 	}
-	m_npcEntity = m_chNPC->GetEntityHandle();
 
-	ecs::SocialSystem::SetGuild(m_chNPC->GetEntityHandle(), pGuild);
+	ecs::SocialSystem::SetGuild(m_npcEntity, pGuild);
 
 	// ���� ������ ��� ��� ������ �渶���� �����س��´�
 	if ( m_pProto->dwVnum == 14061 || m_pProto->dwVnum == 14062 || m_pProto->dwVnum == 14063 )
@@ -459,7 +458,7 @@ void CLand::DeleteObject(uint32_t dwID)
 
 	LOG_INFO("Land::DeleteObject {}", dwID);
 	CManager::instance().UnregisterObject(pkObj);
-	M2_DESTROY_CHARACTER (pkObj->GetNPC());
+	M2_DESTROY_CHARACTER(pkObj->GetNPCEntity());
 
 	m_map_pkObject.erase(dwID);
 	m_map_pkObjectByVID.erase(dwID);
@@ -900,7 +899,7 @@ void CManager::FinalizeBoot()
 		if (!region)
 			continue;
 
-		CHARACTER_MANAGER::instance().SpawnMob(20040, r.lMapIndex, region->sx + r.x + (r.width / 2), region->sy + r.y + (r.height / 2), 0);
+		CHARACTER_MANAGER::instance().SpawnMobEntity(20040, r.lMapIndex, region->sx + r.x + (r.width / 2), region->sy + r.y + (r.height / 2), 0);
 	}
 }
 
@@ -1030,7 +1029,7 @@ void CLand::ClearLand()
 	const TLand & r = GetData();
 	const TMapRegion * region = SECTREE_MANAGER::instance().GetMapRegion(r.lMapIndex);
 
-	CHARACTER_MANAGER::instance().SpawnMob(20040, r.lMapIndex, region->sx + r.x + (r.width / 2), region->sy + r.y + (r.height / 2), 0);
+	CHARACTER_MANAGER::instance().SpawnMobEntity(20040, r.lMapIndex, region->sx + r.x + (r.width / 2), region->sy + r.y + (r.height / 2), 0);
 }
 // END_LAND_CLEAR
 

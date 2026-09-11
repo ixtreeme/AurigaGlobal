@@ -2624,10 +2624,10 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 				if (mobTable && mobTable->dwResurrectionVnum)
 				{
 					// DUNGEON_MONSTER_REBIRTH_BUG_FIX
-					auto* chResurrect = CHARACTER_MANAGER::instance().SpawnMob(mobTable->dwResurrectionVnum, ecs::PlayerRuntime::GetMapIndex(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ecs::PlayerRuntime::GetZ(victim), true, (int)ecs::PlayerRuntime::GetRotation(victim));
-					if (ecs::SocialSystem::GetDungeon(victim) && chResurrect)
+					const entt::entity resurrected = CHARACTER_MANAGER::instance().SpawnMobEntity(mobTable->dwResurrectionVnum, ecs::PlayerRuntime::GetMapIndex(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ecs::PlayerRuntime::GetZ(victim), true, (int)ecs::PlayerRuntime::GetRotation(victim));
+					if (ecs::SocialSystem::GetDungeon(victim) && resurrected != entt::null)
 					{
-						ecs::SocialSystem::SetDungeon(chResurrect->GetEntityHandle(), ecs::SocialSystem::GetDungeon(victim));
+						ecs::SocialSystem::SetDungeon(resurrected, ecs::SocialSystem::GetDungeon(victim));
 					}
 					// END_OF_DUNGEON_MONSTER_REBIRTH_BUG_FIX
 

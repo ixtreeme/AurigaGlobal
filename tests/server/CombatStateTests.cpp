@@ -529,8 +529,8 @@ bool ItemSystem::SetGroundOwnership(entt::entity,entt::entity,int) { UnexpectedS
 CPIDRegistry & CPIDRegistry::Instance(void) { UnexpectedService(__func__); }
 std::vector<entt::entity,std::allocator<entt::entity> > CPIDRegistry::Snapshot(void)const { UnexpectedService(__func__); }
 void CHARACTER_MANAGER::DestroyCharacter(CHARACTER *) { UnexpectedService(__func__); }
-CHARACTER * CHARACTER_MANAGER::SpawnMob(unsigned int,int,int,int,int,bool,int,bool) { UnexpectedService(__func__); }
-CHARACTER * CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { UnexpectedService(__func__); }
+entt::entity CHARACTER_MANAGER::SpawnMobEntity(unsigned int,int,int,int,int,bool,int,bool) { UnexpectedService(__func__); }
+entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { UnexpectedService(__func__); }
 void CHARACTER_MANAGER::SelectStone(entt::entity) { UnexpectedService(__func__); }
 CHARACTER * CHARACTER_MANAGER::Find(unsigned int) { UnexpectedService(__func__); }
 CHARACTER * CHARACTER_MANAGER::FindByPID(unsigned int) { UnexpectedService(__func__); }

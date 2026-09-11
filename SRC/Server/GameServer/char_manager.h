@@ -63,13 +63,12 @@ protected:
 
 		void			Update(int iPulse);
 
-		LPCHARACTER		SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bSpawnMotion = false, int iRot = -1, bool bShow = true);
 		entt::entity		SpawnMobEntity(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bSpawnMotion = false, int iRot = -1, bool bShow = true);
-		LPCHARACTER		SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, bool bIsException=false, bool bSpawnMotion = false , bool bAggressive = false);
-		LPCHARACTER		SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen = nullptr, bool bAggressive_ = false, LPDUNGEON pDungeon = nullptr);
+		entt::entity		SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, bool bIsException=false, bool bSpawnMotion = false , bool bAggressive = false);
+		entt::entity		SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen = nullptr, bool bAggressive_ = false, LPDUNGEON pDungeon = nullptr);
 		bool			SpawnGroupGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen = nullptr, bool bAggressive_ = false, LPDUNGEON pDungeon = nullptr);
 		bool			SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, int tx, int ty, LPREGEN pkRegen = nullptr, bool bAggressive_ = false);
-		LPCHARACTER		SpawnMobRandomPosition(uint32_t dwVnum, int32_t lMapIndex);
+		entt::entity		SpawnMobRandomPosition(uint32_t dwVnum, int32_t lMapIndex);
 
 		void			SelectStone(entt::entity stone);
 

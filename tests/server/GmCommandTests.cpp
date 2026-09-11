@@ -834,10 +834,10 @@ DESC * DESC_MANAGER::FindByCharacterName(char const *) { Unexpected(); }
 void DESC_MANAGER::GetUserCount(int &,int * *,int &) { Unexpected(); }
 void CHARACTER_MANAGER::DestroyCharacter(CHARACTER *) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::SpawnMobEntity(unsigned int,int,int,int,int,bool,int,bool) { Unexpected(); }
-CHARACTER * CHARACTER_MANAGER::SpawnMobRange(unsigned int,int,int,int,int,int,bool,bool,bool) { Unexpected(); }
-CHARACTER * CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { Unexpected(); }
+entt::entity CHARACTER_MANAGER::SpawnMobRange(unsigned int,int,int,int,int,int,bool,bool,bool) { Unexpected(); }
+entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { Unexpected(); }
 bool CHARACTER_MANAGER::SpawnGroupGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { Unexpected(); }
-CHARACTER * CHARACTER_MANAGER::SpawnMobRandomPosition(unsigned int,int) { Unexpected(); }
+entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(unsigned int,int) { Unexpected(); }
 CHARACTER * CHARACTER_MANAGER::FindPC(char const *) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindEntity(unsigned int) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindPCEntity(char const *) { Unexpected(); }
