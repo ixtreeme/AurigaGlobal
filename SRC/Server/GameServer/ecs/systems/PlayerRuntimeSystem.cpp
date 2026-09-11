@@ -2326,16 +2326,6 @@ bool CHARACTER::SetPCBang(bool flag)
 	return flag;
 }
 
-void CHARACTER::UpdateDepositPulse()
-{
-    m_deposit_pulse = thecore_pulse() + PASSES_PER_SEC(60 * 5);
-}
-
-bool CHARACTER::CanDeposit() const
-{
-    return (m_deposit_pulse == 0 || (m_deposit_pulse < thecore_pulse()));
-}
-
 uint32_t CHARACTER::GetNextExp() const
 {
     if (PLAYER_MAX_LEVEL_CONST < ecs::PointSystem::GetLevel(GetEntityHandle()))
@@ -4398,7 +4388,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_deposit_pulse = 0;
 
     m_strNewName = "";
 

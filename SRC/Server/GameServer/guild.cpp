@@ -2089,40 +2089,9 @@ void CGuild::AdvanceLevel(int iLevel)
 	m_data.level = MIN(GUILD_MAX_LEVEL, iLevel);
 }
 
-void CGuild::RequestDepositMoney(entt::entity character, int iGold)
-{
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (false==ch->CanDeposit())
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 493, "");
-#endif
-		return;
-	}
-
-	if (ecs::PointSystem::GetGold(character) < iGold)
-		return;
-
-
-	ecs::PointSystem::Change(character, POINT_GOLD, -iGold);
-
-	TPacketGDGuildMoney p;
-	p.dwGuild = GetID();
-	p.iGold = iGold;
-	db_clientdesc->DBPacket(HEADER_GD_GUILD_DEPOSIT_MONEY, 0, &p, sizeof(p));
-
-	char buf[64+1];
-	snprintf(buf, sizeof(buf), "%u %s", GetID(), GetName());
-	LogManager::instance().CharLog(character, iGold, "GUILD_DEPOSIT", buf);
-
-	ch->UpdateDepositPulse();
-	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character), iGold);
-}
-
 void CGuild::RequestWithdrawMoney(entt::entity character, int iGold)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (false==ch->CanDeposit())
+	if (!ecs::SocialSystem::CanDeposit(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 493, "");
@@ -2151,7 +2120,7 @@ void CGuild::RequestWithdrawMoney(entt::entity character, int iGold)
 	p.iGold = iGold;
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_WITHDRAW_MONEY, 0, &p, sizeof(p));
 
-	ch->UpdateDepositPulse();
+	ecs::SocialSystem::UpdateDepositPulse(character);
 }
 
 void CGuild::RecvMoneyChange(int iGold)

@@ -288,7 +288,6 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		AdvanceLevel(int iLevel);
 
 		// Guild Money
-		void		RequestDepositMoney(entt::entity character, int iGold);
 		void		RequestWithdrawMoney(entt::entity character, int iGold);
 
 		void		RecvMoneyChange(int iGold);

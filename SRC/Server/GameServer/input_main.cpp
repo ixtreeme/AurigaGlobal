@@ -3872,7 +3872,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 					return SubPacketLen;
 				}
 
-				pGuild->RequestDepositMoney(character, gold);
+				ecs::SocialSystem::DepositGuildMoney(character, *pGuild, gold);
 			}
 			return SubPacketLen;
 

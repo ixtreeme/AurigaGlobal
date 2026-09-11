@@ -513,8 +513,8 @@ DESC::~DESC() {}
 namespace ecs::SocialSystem {
 CGuild* GetGuild(entt::entity) { Unexpected(); }
 CGuild* GetRefineGuild(entt::entity) { Unexpected(); }
+bool DepositGuildMoney(entt::entity, CGuild&, int) { Unexpected(); }
 }
-void CGuild::RequestDepositMoney(entt::entity, int) { Unexpected(); }
 uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
 void DESC::Destroy() { Unexpected(); }
 void DESC::SetPhase(int) { Unexpected(); }

@@ -690,6 +690,10 @@ void ForEachPartyMemberOnMap(entt::entity e, int32_t mapIndex,
     }
 }
 
+// The five minute wait between guild deposits. CHARACTER::m_deposit_pulse and
+// GuildDepositState::nextAllowedPulse were two counters for one rule: the mine
+// wrote the component, the guild window wrote the field, and neither could see
+// the other's, so alternating the two entry points skipped the wait entirely.
 bool CanDeposit(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))

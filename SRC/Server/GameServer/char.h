@@ -1722,11 +1722,8 @@ public:
 
 
 private:
-	int		m_deposit_pulse;
 
 public:
-	void	UpdateDepositPulse();
-	bool	CanDeposit() const;
 
 private:
 	void	__OpenPrivateShop(

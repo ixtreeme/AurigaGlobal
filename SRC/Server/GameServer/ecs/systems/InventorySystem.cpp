@@ -487,7 +487,8 @@ void PayRefineFee(entt::entity owner, int64_t total)
 
     if (pGuild && pGuild != ecs::SocialSystem::GetGuild(owner))
     {
-        pGuild->RequestDepositMoney(owner, fee);
+        ecs::SocialSystem::DepositGuildMoney(
+            owner, *pGuild, static_cast<int>(fee));
         remain -= fee;
     }
 
