@@ -179,10 +179,9 @@ namespace
             });
     }
 
-    void DropItemOnGround(LPCHARACTER victim, LPCHARACTER owner, uint32_t vnum, uint32_t count)
+    void DropItemOnGround(entt::entity victimEntity, entt::entity owner, uint32_t vnum, uint32_t count)
     {
-        const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
-        if (!victim)
+        if (!ecs::PlayerRuntime::IsValid(victimEntity))
             return;
 
         const entt::entity item = ITEM_MANAGER::instance().CreateItem(vnum, count);
@@ -192,12 +191,12 @@ namespace
         PIXEL_POSITION pos;
         pos.x = ecs::PlayerRuntime::GetX(victimEntity) + number(-200, 200);
         pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
-        pos.z = victim->GetZ();
+        pos.z = ecs::PlayerRuntime::GetZ(victimEntity);
 
         ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
 
-        if (owner)
-            ItemSystem::SetGroundOwnership(item, owner->GetEntityHandle(), 60 * 3);
+        if (owner != entt::null)
+            ItemSystem::SetGroundOwnership(item, owner, 60 * 3);
     }
 
     bool ConsumeOneGivenItem(entt::entity itemEntity, const char* reason)
@@ -579,14 +578,14 @@ void ClearClonesOnMap(int32_t mapIndex)
                 const int32_t x = kMetinPos[idx][0];
                 const int32_t y = kMetinPos[idx][1];
 
-                LPCHARACTER metin = d->SpawnMob((int32_t)kMetinVnum, x, y);
-                if (!metin)
+                const entt::entity metin = d->SpawnMob((int32_t)kMetinVnum, x, y);
+                if (metin == entt::null)
                 {
                     LOG_ERROR("[LostCastle] metin spawn fail: vnum={} map={} x={} y={} (i={} idx={})", (unsigned)kMetinVnum, mapIndex, x, y, i, idx);
                     continue;
                 }
 
-		spawnedVids.push_back(ecs::PlayerRuntime::GetPacketVID(((metin) ? (metin)->GetEntityHandle() : entt::null)));
+		spawnedVids.push_back(ecs::PlayerRuntime::GetPacketVID(metin));
             }
 
             if (spawnedVids.empty())
@@ -668,9 +667,9 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             d->JumpAll(mapIndex, kFloor2CenterX, kFloor2CenterY);
 
-            LPCHARACTER statue = d->SpawnMob((int32_t)kStatueVnum, kFloor2CenterX, kFloor2CenterY);
-            if (statue)
-	d->SetFlag(kFlagStatueVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((statue) ? (statue)->GetEntityHandle() : entt::null)));
+            const entt::entity statue = d->SpawnMob((int32_t)kStatueVnum, kFloor2CenterX, kFloor2CenterY);
+            if (statue != entt::null)
+	d->SetFlag(kFlagStatueVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(statue));
 
             d->SpawnRegen(kFloor2Regen, true);
 
@@ -910,9 +909,9 @@ void ClearClonesOnMap(int32_t mapIndex)
             d->JumpAll(mapIndex, kFloor4CenterX, kFloor4CenterY);
             d->SpawnRegen(kFloor4Regen, true);
 
-            LPCHARACTER totem = d->SpawnMob((int32_t)kTotemVnum, kFloor4CenterX, kFloor4CenterY);
-            if (totem)
-	d->SetFlag(kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((totem) ? (totem)->GetEntityHandle() : entt::null)));
+            const entt::entity totem = d->SpawnMob((int32_t)kTotemVnum, kFloor4CenterX, kFloor4CenterY);
+            if (totem != entt::null)
+	d->SetFlag(kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(totem));
 
             SendCommandMap(mapIndex, "lostcastle_tile 0");
             BigNoticeMap(mapIndex, "Elveszett Kastely: Mobokbol eshet %u (3%%). Huzd a totemre, hogy csempet tegyel le!", kTileItemVnum);
@@ -1655,9 +1654,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
 
 void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(victim))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);
@@ -1691,13 +1688,13 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
     if (floor == 4)
     {
-        if (pkKiller && ecs::PlayerRuntime::IsPC(killer) && pkVictim->IsMonster())
+        if (ecs::PlayerRuntime::IsPC(killer) && ecs::PlayerRuntime::IsMonster(victim))
         {
             const uint16_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
             if (vnum != kTotemVnum && vnum != kStatueVnum)
             {
                 if (number(1, 100) <= kTileDropChancePct)
-                    DropItemOnGround(pkVictim, pkKiller, kTileItemVnum, 1);
+                    DropItemOnGround(victim, killer, kTileItemVnum, 1);
             }
         }
         return;
@@ -1754,13 +1751,12 @@ bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPIT
             BigNoticeMap(idx, "Elveszett Kastely: Megvan mind az 5 kulcs! Floor3 kovetkezik.");
 
             ForEachPcOnMap(idx, [&](entt::entity pc){
-                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-                if (!pkPc) return;
+                if (!ecs::PlayerRuntime::IsValid(pc)) return;
                 for (uint32_t kv : kKeyItems)
                 {
-                    const int32_t c = pkPc->CountSpecifyItem(kv);
+                    const int32_t c = ItemSystem::CountItem(pc, kv);
                     if (c > 0)
-                        pkPc->RemoveSpecifyItem(kv, c);
+                        ItemSystem::RemoveSpecifyItemEcs(pc, kv, c);
                 }
                 });
 

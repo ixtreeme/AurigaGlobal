@@ -199,19 +199,17 @@ namespace
     void RemoveAllItemOnMap(int32_t mapIndex, uint32_t vnum)
     {
         ForEachPcOnMap(mapIndex, [vnum](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (!pkPc)
+            if (!ecs::PlayerRuntime::IsValid(pc))
                 return;
-            const int32_t cnt = pkPc->CountSpecifyItem(vnum);
+            const int32_t cnt = ItemSystem::CountItem(pc, vnum);
             if (cnt > 0)
-                pkPc->RemoveSpecifyItem(vnum, cnt);
+                ItemSystem::RemoveSpecifyItemEcs(pc, vnum, cnt);
             });
     }
 
-    void DropItemOnGround(LPCHARACTER victim, LPCHARACTER owner, uint32_t vnum, uint32_t count)
+    void DropItemOnGround(entt::entity victimEntity, entt::entity owner, uint32_t vnum, uint32_t count)
     {
-        const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
-        if (!victim)
+        if (!ecs::PlayerRuntime::IsValid(victimEntity))
             return;
 
         const entt::entity item = ITEM_MANAGER::instance().CreateItem(vnum, count);
@@ -221,12 +219,12 @@ namespace
         PIXEL_POSITION pos;
         pos.x = ecs::PlayerRuntime::GetX(victimEntity) + number(-200, 200);
         pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
-        pos.z = victim->GetZ();
+        pos.z = ecs::PlayerRuntime::GetZ(victimEntity);
 
         ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
 
-        if (owner)
-            ItemSystem::SetGroundOwnership(item, owner->GetEntityHandle(), 60 * 3);
+        if (owner != entt::null)
+            ItemSystem::SetGroundOwnership(item, owner, 60 * 3);
     }
     static void RuneDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
     {
@@ -464,19 +462,19 @@ namespace
 
             for (int i = 0; i < 6; ++i)
             {
-                LPCHARACTER stone = d->SpawnMob(kFloor1StoneVnum, pos[i].x, pos[i].y);
-                if (!stone)
+                const entt::entity stone = d->SpawnMob(kFloor1StoneVnum, pos[i].x, pos[i].y);
+                if (stone == entt::null)
                 {
                     d->Notice(948, "", true);
                     ClearDungeon(mapIndex);
                     return;
                 }
 
-                CombatSystem::SetInvincible(stone->GetEntityHandle(), true);
+                CombatSystem::SetInvincible(stone, true);
 
                 char vidFlag[32];
                 snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i + 1);
-		d->SetFlag(vidFlag, (int32_t)ecs::PlayerRuntime::GetPacketVID(((stone) ? (stone)->GetEntityHandle() : entt::null)));
+		d->SetFlag(vidFlag, (int32_t)ecs::PlayerRuntime::GetPacketVID(stone));
             }
 
             d->SetFlag(kFlagCount, 0);
@@ -559,14 +557,14 @@ namespace
                     uint32_t bossVnum = (nextFloor == 2) ? kBossFloor2 : (nextFloor == 3) ? kBossFloor3 : kBossFloor4;
                     SPos bossPos = (nextFloor == 2) ? kBossPosFloor2 : (nextFloor == 3) ? kBossPosFloor3 : kBossPosFloor4;
 
-                    LPCHARACTER boss = d->SpawnMob(bossVnum, bossPos.x, bossPos.y);
-                    if (!boss)
+                    const entt::entity boss = d->SpawnMob(bossVnum, bossPos.x, bossPos.y);
+                    if (boss == entt::null)
                     {
                         d->Notice(981, "", true);
                         ClearDungeon(mapIndex);
                         return;
                     }
-	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
+	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
                     ScheduleCheck(mapIndex, 2);
                 }
                 else // type == 3
@@ -586,16 +584,16 @@ namespace
                 // Floor 5 starts as type 4
                 d->SetFlag(kFlagType, 4);
 
-                LPCHARACTER boss = d->SpawnMob(kBossFloor5_First, kBossPosFloor5_First.x, kBossPosFloor5_First.y);
-                if (!boss)
+                const entt::entity boss = d->SpawnMob(kBossFloor5_First, kBossPosFloor5_First.x, kBossPosFloor5_First.y);
+                if (boss == entt::null)
                 {
                     d->Notice(982, "", true);
                     ClearDungeon(mapIndex);
                     return;
                 }
-                CombatSystem::SetInvincible(boss->GetEntityHandle(), true);
+                CombatSystem::SetInvincible(boss, true);
 
-	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
+	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
 
                 d->SpawnRegen(kRegenFloor5, true);
 
@@ -680,8 +678,8 @@ namespace
                         uint32_t bossVnum = (floor == 2) ? kBossFloor2 : (floor == 3) ? kBossFloor3 : kBossFloor4;
                         SPos bossPos = (floor == 2) ? kBossPosFloor2 : (floor == 3) ? kBossPosFloor3 : kBossPosFloor4;
 
-                        LPCHARACTER boss = d->SpawnMob(bossVnum, bossPos.x, bossPos.y);
-                        if (!boss)
+                        const entt::entity boss = d->SpawnMob(bossVnum, bossPos.x, bossPos.y);
+                        if (boss == entt::null)
                         {
                             d->Notice(981, "", true);
                             ClearDungeon(mapIndex);
@@ -905,8 +903,7 @@ void CRuneDungeon::OnPlayerDisconnect(entt::entity character)
 
 void CRuneDungeon::OnPlayerLogin(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -952,9 +949,7 @@ void CRuneDungeon::OnPlayerLogin(entt::entity character)
 
 void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkKiller || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);
@@ -1042,14 +1037,14 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             LPPARTY party = ecs::SocialSystem::GetParty(killer);
             if (!party)
             {
-                if (pkKiller->CountSpecifyItem(kKeyFragment) < 10 && pkKiller->CountSpecifyItem(kFloorKey) < 1)
+                if (ItemSystem::CountItem(killer, kKeyFragment) < 10 && ItemSystem::CountItem(killer, kFloorKey) < 1)
                     ItemSystem::AutoGiveItemEcs(killer, kKeyFragment, 1);
             }
             else
             {
                 if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(killer))
                 {
-                    if (pkKiller->CountSpecifyItem(kKeyFragment) < 10 && pkKiller->CountSpecifyItem(kFloorKey) < 1)
+                    if (ItemSystem::CountItem(killer, kKeyFragment) < 10 && ItemSystem::CountItem(killer, kFloorKey) < 1)
                         ItemSystem::AutoGiveItemEcs(killer, kKeyFragment, 1);
                 }
             }
@@ -1071,16 +1066,16 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     {
         d->SetFlag(kFlagType, 6);
 
-        LPCHARACTER gate = d->SpawnMob(kBossFloor5_Gate, kBossPosFloor5_Gate.x, kBossPosFloor5_Gate.y);
-        if (!gate)
+        const entt::entity gate = d->SpawnMob(kBossFloor5_Gate, kBossPosFloor5_Gate.x, kBossPosFloor5_Gate.y);
+        if (gate == entt::null)
         {
             d->Notice(983, "", true);
             s_rune.ClearDungeon(idx);
             return;
         }
-        CombatSystem::SetInvincible(gate->GetEntityHandle(), true);
+        CombatSystem::SetInvincible(gate, true);
 
-	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((gate) ? (gate)->GetEntityHandle() : entt::null)));
+	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(gate));
         d->SetFlag(kFlagOpened, 0);
 
         d->SpawnRegen(kRegenFloor6, true);
@@ -1096,7 +1091,7 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     if (floor == 5 && type == 6 && (vnum == kKeyDropMobA || vnum == kKeyDropMobB))
     {
         if (number(1, 100) <= 3)
-            DropItemOnGround(pkVictim, pkKiller, kFloorKey, 1);
+            DropItemOnGround(victim, killer, kFloorKey, 1);
         return;
     }
 
@@ -1106,15 +1101,15 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         d->SetFlag(kFlagStep, 0);
         d->SetFlag(kFlagType, 8);
 
-        LPCHARACTER boss = d->SpawnMob(kBossFloor5_Final, kBossPosFloor5_Final.x, kBossPosFloor5_Final.y);
-        if (!boss)
+        const entt::entity boss = d->SpawnMob(kBossFloor5_Final, kBossPosFloor5_Final.x, kBossPosFloor5_Final.y);
+        if (boss == entt::null)
         {
             d->Notice(983, "", true);
             s_rune.ClearDungeon(idx);
             return;
         }
 
-	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
+	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
         s_rune.ScheduleCheck(idx, 2);
 
         d->Notice(965, "", true);
@@ -1169,8 +1164,7 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
 {
     const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-    LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
-    if (!ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
+    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !item)
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
@@ -1195,7 +1189,7 @@ bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM ite
         ItemSystem::DestroyItemEntityEcs(itemEntity, "RUNE_DUNGEON_TAKE");
 
     // Purge the NPC (Lua: npc.purge())
-    M2_DESTROY_CHARACTER(pkNpc);
+    M2_DESTROY_CHARACTER(npc);
 
     int32_t opened = d->GetFlag(kFlagOpened) + 1;
     d->SetFlag(kFlagOpened, opened);
@@ -1232,8 +1226,7 @@ bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM ite
 
 bool CRuneDungeon::OnClickNpc(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     // Rejoin flow
@@ -1289,25 +1282,24 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
 
     // Level / entry item checks
     auto removeEntranceItems = [](entt::entity pc){
-        LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-        if (!pkPc)
+        if (!ecs::PlayerRuntime::IsValid(pc))
             return;
 
         // Entry item (1x)
-        pkPc->RemoveSpecifyItem(kRequiredItem, 1);
+        ItemSystem::RemoveSpecifyItemEcs(pc, kRequiredItem, 1);
 
         // Leftovers (Lua: d.remove_item / pc.remove_item)
-        const int32_t c = pkPc->CountSpecifyItem(kRemoveAllItem);
+        const int32_t c = ItemSystem::CountItem(pc, kRemoveAllItem);
         if (c > 0)
-            pkPc->RemoveSpecifyItem(kRemoveAllItem, c);
+            ItemSystem::RemoveSpecifyItemEcs(pc, kRemoveAllItem, c);
 
-        const int32_t f = pkPc->CountSpecifyItem(kKeyFragment);
+        const int32_t f = ItemSystem::CountItem(pc, kKeyFragment);
         if (f > 0)
-            pkPc->RemoveSpecifyItem(kKeyFragment, f);
+            ItemSystem::RemoveSpecifyItemEcs(pc, kKeyFragment, f);
 
-        const int32_t k = pkPc->CountSpecifyItem(kFloorKey);
+        const int32_t k = ItemSystem::CountItem(pc, kFloorKey);
         if (k > 0)
-            pkPc->RemoveSpecifyItem(kFloorKey, k);
+            ItemSystem::RemoveSpecifyItemEcs(pc, kFloorKey, k);
         };
 
     LPPARTY party = ecs::SocialSystem::GetParty(character);
@@ -1329,8 +1321,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
 
         // Check only players that will be pulled by JoinParty_Coords (same map as leader)
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (!ok || !pkPc || !ecs::PlayerRuntime::IsPC(pc))
+            if (!ok || !ecs::PlayerRuntime::IsPC(pc))
                 return;
             if (ecs::SocialSystem::GetParty(pc) != party)
                 return;
@@ -1344,7 +1335,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
                 return;
             }
 
-            if (pkPc->CountSpecifyItem(kRequiredItem) < 1)
+            if (ItemSystem::CountItem(pc, kRequiredItem) < 1)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(pc).data();
@@ -1372,7 +1363,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
             return false;
         }
 
-        if (ch->CountSpecifyItem(kRequiredItem) < 1)
+        if (ItemSystem::CountItem(character, kRequiredItem) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You need the entry item.");
             return false;
@@ -1390,8 +1381,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     const int32_t dungeonMapIdx = d->GetMapIndex();
 
     auto setupMember = [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (!pkPc || !ecs::PlayerRuntime::IsPC(pc))
+            if (!ecs::PlayerRuntime::IsPC(pc))
                 return;
 
             removeEntranceItems(pc);
@@ -1427,8 +1417,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
 
 bool CRuneDungeon::OnUseItem89103(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -1453,15 +1442,14 @@ bool CRuneDungeon::OnUseItem89103(entt::entity character)
             return false;
     }
 
-    ch->RemoveSpecifyItem(kFloorKey, 1);
+    ItemSystem::RemoveSpecifyItemEcs(character, kFloorKey, 1);
     s_rune.CreateRandomFloor(idx);
     return true;
 }
 
 bool CRuneDungeon::OnUseItem89102(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -1479,7 +1467,7 @@ bool CRuneDungeon::OnUseItem89102(entt::entity character)
     if (d->GetFlag(kFlagType) != 1)
         return false;
 
-    if (ch->CountSpecifyItem(kKeyFragment) < 10)
+    if (ItemSystem::CountItem(character, kKeyFragment) < 10)
         return false;
 
     if (LPPARTY party = ecs::SocialSystem::GetParty(character))
@@ -1488,15 +1476,14 @@ bool CRuneDungeon::OnUseItem89102(entt::entity character)
             return false;
     }
 
-    ch->RemoveSpecifyItem(kKeyFragment, 10);
+    ItemSystem::RemoveSpecifyItemEcs(character, kKeyFragment, 10);
     ItemSystem::AutoGiveItemEcs(character, kFloorKey, 1);
     return true;
 }
 
 bool CRuneDungeon::OnUseItem89100(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     const int32_t now = get_global_time();
@@ -1509,7 +1496,7 @@ bool CRuneDungeon::OnUseItem89100(entt::entity character)
     ecs::QuestSystem::SetFlag(character, kQfIdx, 0);
     ecs::QuestSystem::SetFlag(character, kQfCh, 0);
     ecs::QuestSystem::SetFlag(character, kQfCooldown, 0);
-    ch->RemoveSpecifyItem(kCooldownReset, 1);
+    ItemSystem::RemoveSpecifyItemEcs(character, kCooldownReset, 1);
 
     return true;
 }

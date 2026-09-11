@@ -499,26 +499,26 @@ bool CDungeon::IsUniqueDead(std::string_view key)
 	return CombatSystem::IsDead(it->second);
 }
 
-LPCHARACTER CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)
+entt::entity CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)
 {
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (!map) {
 		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
-		return nullptr;
+		return entt::null;
 	}
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().SpawnMob(vnum, m_lMapIndex, map->m_setting.iBaseX+x*100, map->m_setting.iBaseY+y*100, 0, false, dir == 0 ? -1 : dir);
+	const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobEntity(vnum, m_lMapIndex, map->m_setting.iBaseX+x*100, map->m_setting.iBaseY+y*100, 0, false, dir == 0 ? -1 : dir);
 
-	if (ch)
+	if (mob != entt::null)
 	{
-		ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), this);
+		ecs::SocialSystem::SetDungeon(mob, this);
 	}
 	else
 	{
 		LOG_ERROR("cannot spawn: vnum({}), x({}), y({}), dir({}) inside the map {}", vnum, x, y, dir, m_lMapIndex);
 	}
 
-	return ch;
+	return mob;
 }
 
 void CDungeon::SpawnRegen(const char* filename, bool once)

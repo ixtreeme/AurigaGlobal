@@ -171,13 +171,13 @@ public:
         d->SpawnMob(kSealMobVnum, kSeal3X, kSeal3Y);
         d->SpawnMob(kSealMobVnum, kSeal4X, kSeal4Y);
 
-        LPCHARACTER boss = d->SpawnMob(kBossVnum, kBossX, kBossY);
-        const uint32_t bossVid = boss ? boss->GetLegacyVID() : 0;
+        const entt::entity boss = d->SpawnMob(kBossVnum, kBossX, kBossY);
+        const uint32_t bossVid = ecs::PlayerRuntime::GetPacketVID(boss);
         d->SetFlag(kFlagBossVid, (int32_t)bossVid);
 
-        const bool ok = boss != nullptr;
+        const bool ok = boss != entt::null;
         if (ok)
-            CombatSystem::SetInvincible(boss->GetEntityHandle(), true);
+            CombatSystem::SetInvincible(boss, true);
 
         if (!ok)
         {
@@ -457,13 +457,12 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
 
 void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!ecs::PlayerRuntime::IsValid(killer) || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
         return;
     if (!ecs::PlayerRuntime::IsPC(killer))
         return;
     // 8009 is often CHAR_TYPE_STONE, not monster.
-    if (!(pkVictim->IsMonster() || ecs::PlayerRuntime::IsStone(victim)))
+    if (!(ecs::PlayerRuntime::IsMonster(victim) || ecs::PlayerRuntime::IsStone(victim)))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);

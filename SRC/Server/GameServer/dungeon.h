@@ -60,7 +60,7 @@ class CDungeon
 	int	GetKillStoneCount();
 	int32_t	GetMapIndex() { return m_lMapIndex; }
 
-	LPCHARACTER SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir = 0);
+	entt::entity SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir = 0);
 
 	void	SpawnRegen(const char* filename, bool once = true);
 	void	AddRegen(LPREGEN regen);

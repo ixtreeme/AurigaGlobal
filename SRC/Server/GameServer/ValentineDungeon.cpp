@@ -154,14 +154,14 @@ namespace
     }
 
     // CDungeon::SpawnMob() expects LOCAL tile coords, but we only know GLOBAL coords.
-    inline LPCHARACTER SpawnMobGlobal(LPDUNGEON d, uint32_t vnum, int32_t gx, int32_t gy, int32_t dir = 0)
+    inline entt::entity SpawnMobGlobal(LPDUNGEON d, uint32_t vnum, int32_t gx, int32_t gy, int32_t dir = 0)
     {
         if (!d)
-            return nullptr;
+            return entt::null;
 
         int32_t baseX = 0, baseY = 0;
         if (!GetMapBaseTiles(d->GetMapIndex(), baseX, baseY))
-            return nullptr;
+            return entt::null;
 
         const int32_t lx = gx - baseX;
         const int32_t ly = gy - baseY;
@@ -403,8 +403,8 @@ public:
         d->SetFlag(kFlagFloor, 3);
         d->SetFlag(kFlagStep, 0);
 
-        LPCHARACTER boss = SpawnMobGlobal(d, kBossVnum, kBossX, kBossY);
-        d->SetFlag(kFlagBossVid, boss ? (int32_t)boss->GetLegacyVID() : 0);
+        const entt::entity boss = SpawnMobGlobal(d, kBossVnum, kBossX, kBossY);
+        d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
 
         ChatToMap(mapIndex, "Valentin: A boss megjelent! Feladat #3: Oljtek meg a bosst.");
     }
@@ -677,13 +677,12 @@ void CValentineDungeon::OnPlayerLogin(entt::entity character)
 
 void CValentineDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!ecs::PlayerRuntime::IsValid(killer) || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
         return;
     if (!ecs::PlayerRuntime::IsPC(killer))
         return;
 
-    if (!(pkVictim->IsMonster() || ecs::PlayerRuntime::IsStone(victim)))
+    if (!(ecs::PlayerRuntime::IsMonster(victim) || ecs::PlayerRuntime::IsStone(victim)))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);

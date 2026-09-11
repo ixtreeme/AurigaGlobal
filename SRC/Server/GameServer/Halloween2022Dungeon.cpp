@@ -298,10 +298,9 @@ namespace
             ItemSystem::DestroyItemEntityEcs(itemEntity, why);
     }
 
-    void DropItemOnGround(LPCHARACTER victim, LPCHARACTER owner, uint32_t vnum, uint32_t count)
+    void DropItemOnGround(entt::entity victimEntity, entt::entity owner, uint32_t vnum, uint32_t count)
     {
-        const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
-        if (!victim)
+        if (!ecs::PlayerRuntime::IsValid(victimEntity))
             return;
 
         const entt::entity item = ITEM_MANAGER::instance().CreateItem(vnum, count);
@@ -311,12 +310,12 @@ namespace
         PIXEL_POSITION pos;
         pos.x = ecs::PlayerRuntime::GetX(victimEntity) + number(-200, 200);
         pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
-        pos.z = victim->GetZ();
+        pos.z = ecs::PlayerRuntime::GetZ(victimEntity);
 
         ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
 
-        if (owner)
-            ItemSystem::SetGroundOwnership(item, owner->GetEntityHandle(), 60 * 3);
+        if (owner != entt::null)
+            ItemSystem::SetGroundOwnership(item, owner, 60 * 3);
     }
 
     bool IsEntryMapForEmpire(entt::entity ch)
@@ -408,12 +407,12 @@ namespace
 
         for (int i = 0; i < 5; ++i)
         {
-            LPCHARACTER stone = d->SpawnMob(kStoneFullVnum, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
-            if (stone)
+            const entt::entity stone = d->SpawnMob(kStoneFullVnum, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
+            if (stone != entt::null)
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_stone_%d", i + 1);
-		d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(((stone) ? (stone)->GetEntityHandle() : entt::null)));
+		d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(stone));
             }
         }
 
@@ -558,9 +557,9 @@ namespace
                 return 0;
 
             d->SetFlag(kFlagFinalBossActive, 1);
-            LPCHARACTER boss = d->SpawnMob(kFinalBossVnum, kFinalBossPos.x, kFinalBossPos.y, kFinalBossPos.dir);
-            if (boss)
-		d->SetUnique("hw22_final_boss", ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
+            const entt::entity boss = d->SpawnMob(kFinalBossVnum, kFinalBossPos.x, kFinalBossPos.y, kFinalBossPos.dir);
+            if (boss != entt::null)
+		d->SetUnique("hw22_final_boss", ecs::PlayerRuntime::GetPacketVID(boss));
 
             BigNoticeMap(idx, "<Bloody cathedral> The final boss has appeared!");
             return 0;
@@ -881,9 +880,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
 void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkKiller || !pkVictim || !ecs::PlayerRuntime::IsPC(killer))
+    if (!ecs::PlayerRuntime::IsValid(victim) || !ecs::PlayerRuntime::IsPC(killer))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(killer);
@@ -910,12 +907,12 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
             snprintf(key, sizeof(key), "hw22_stone_%d", i + 1);
 	if (ecs::PlayerRuntime::GetPacketVID(victim) == (uint32_t)d->GetUniqueVid(key))
             {
-                LPCHARACTER stoneNpc = d->SpawnMob(kStoneNpc, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
-                if (stoneNpc)
+                const entt::entity stoneNpc = d->SpawnMob(kStoneNpc, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
+                if (stoneNpc != entt::null)
                 {
                     char u[32];
                     snprintf(u, sizeof(u), "hw22_spellstone_%d", i + 1);
-		d->SetUnique(u, ecs::PlayerRuntime::GetPacketVID(((stoneNpc) ? (stoneNpc)->GetEntityHandle() : entt::null)));
+		d->SetUnique(u, ecs::PlayerRuntime::GetPacketVID(stoneNpc));
                 }
                 break;
             }
@@ -940,13 +937,13 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
         if (bossCount <= 2)
         {
             d->SetFlag(kFlagCanDestroyStatue, 1);
-            DropItemOnGround(pkVictim, pkKiller, kStatueItemVnum, 1);
+            DropItemOnGround(victim, killer, kStatueItemVnum, 1);
             NoticeMap(idx, "<Bloody cathedral> Use the dropped item on an Angel Statue.");
         }
         else
         {
             d->SetFlag(kFlagCanActivateSeal, 1);
-            DropItemOnGround(pkVictim, pkKiller, kActivateItemVnum, 1);
+            DropItemOnGround(victim, killer, kActivateItemVnum, 1);
             NoticeMap(idx, "<Bloody cathedral> Use the dropped item on the next seal.");
         }
         return;
@@ -991,7 +988,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
             else
             {
                 d->SetFlag(kFlagCanActivateSeal, 1);
-                DropItemOnGround(pkVictim, pkKiller, kActivateItemVnum, 1);
+                DropItemOnGround(victim, killer, kActivateItemVnum, 1);
                 NoticeMap(idx, "<Bloody cathedral> Use the dropped item on the next seal.");
             }
         }
@@ -1003,7 +1000,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     {
         d->SetFlag(kFlagCanKillSecondBoss, 0);
         d->SetFlag(kFlagCanFillCalyx, 1);
-        DropItemOnGround(pkVictim, pkKiller, kSecondFloorItem, 1);
+        DropItemOnGround(victim, killer, kSecondFloorItem, 1);
         NoticeMap(idx, "<Bloody cathedral> You got the required item. Fill a calyx now.");
         return;
     }
@@ -1016,7 +1013,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
         {
             d->SetFlag(kFlagCanDestroySecondFloorStone, 0);
             d->SetFlag(kFlagCanFillCalyx, 1);
-            DropItemOnGround(pkVictim, pkKiller, kSecondFloorItem, 1);
+            DropItemOnGround(victim, killer, kSecondFloorItem, 1);
             NoticeMap(idx, "<Bloody cathedral> You may fill another calyx now.");
             return;
         }
@@ -1029,7 +1026,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
                 d->SetFlag(kFlagCanDestroySecondFloorStone, 0);
                 d->SetFlag(kFlagCanFillCalyx, 1);
                 d->ClearRegen();
-                DropItemOnGround(pkVictim, pkKiller, kSecondFloorItem, 1);
+                DropItemOnGround(victim, killer, kSecondFloorItem, 1);
                 NoticeMap(idx, "<Bloody cathedral> You destroyed all required stones. Fill another calyx.");
             }
             return;
@@ -1048,7 +1045,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
             d->SetFlag(kFlagCanFillCalyx, 1);
             d->ClearRegen();
             d->KillAllMonsters();
-            DropItemOnGround(pkVictim, pkKiller, kSecondFloorItem, 1);
+            DropItemOnGround(victim, killer, kSecondFloorItem, 1);
             NoticeMap(idx, "<Bloody cathedral> You killed all monsters. Fill another calyx.");
         }
         return;
@@ -1083,9 +1080,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
 bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item)
 {
     const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-    LPCHARACTER pkFrom = ecs::LegacyCharOf(from);
-    LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
-    if (!pkFrom || !ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
+    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !item)
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
@@ -1106,7 +1101,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
         RemoveOneGivenItem(itemEntity, "HALLOWEEN22_STATUE");
         d->SetFlag(kFlagCanDestroyStatue, 0);
         d->SetFlag(kFlagAngelStatueCount, d->GetFlag(kFlagAngelStatueCount) + 1);
-        M2_DESTROY_CHARACTER(pkNpc);
+        M2_DESTROY_CHARACTER(npc);
 
         if (d->GetFlag(kFlagAngelStatueCount) == 1)
         {
@@ -1137,7 +1132,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagFloor1Monsters, 1);
         d->SpawnMob(kSealMiddleNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
-        M2_DESTROY_CHARACTER(pkNpc);
+        M2_DESTROY_CHARACTER(npc);
         d->SpawnRegen(kFloor1Monsters1Regen);
         NoticeMap(idx, "<Bloody cathedral> The first wave has begun.");
         return true;
@@ -1151,7 +1146,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagKillFirstBoss, 1);
         d->SpawnMob(kSealFullNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
-        M2_DESTROY_CHARACTER(pkNpc);
+        M2_DESTROY_CHARACTER(npc);
         d->SpawnMob(kFirstBossVnum, kFirstBossPos.x, kFirstBossPos.y);
         return true;
     }
@@ -1167,12 +1162,12 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
 
         for (int i = 0; i < 4; ++i)
         {
-            LPCHARACTER calyx = d->SpawnMob(kCalyxEmptyNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
-            if (calyx)
+            const entt::entity calyx = d->SpawnMob(kCalyxEmptyNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
+            if (calyx != entt::null)
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_calyx_%d", i + 1);
-	d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(((calyx) ? (calyx)->GetEntityHandle() : entt::null)));
+	d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(calyx));
             }
         }
 

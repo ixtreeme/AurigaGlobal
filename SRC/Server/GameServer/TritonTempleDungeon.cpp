@@ -284,12 +284,12 @@ public:
         for (const auto& p : seals)
             d->SpawnMob(kSealMobVnum, p[0], p[1]);
 
-        LPCHARACTER boss = d->SpawnMob(kBossVnum, kBossX, kBossY);
+        const entt::entity boss = d->SpawnMob(kBossVnum, kBossX, kBossY);
 
-        const uint32_t bossVid = boss ? boss->GetLegacyVID() : 0;
+        const uint32_t bossVid = ecs::PlayerRuntime::GetPacketVID(boss);
         d->SetFlag(kFlagBossVid, (int32_t)bossVid);
 
-        const bool ok = boss && CombatSystem::SetInvincible(boss->GetEntityHandle(), true);
+        const bool ok = boss != entt::null && CombatSystem::SetInvincible(boss, true);
 
 
         if (!ok)
@@ -458,14 +458,13 @@ void CTritonTempleDungeon::OnPlayerLogin(entt::entity character)
 
 void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!ecs::PlayerRuntime::IsValid(killer) || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
         return;
     if (!ecs::PlayerRuntime::IsPC(killer))
         return;
 
     // 8054 may be STONE on some cores
-    if (!(pkVictim->IsMonster() || ecs::PlayerRuntime::IsStone(victim)))
+    if (!(ecs::PlayerRuntime::IsMonster(victim) || ecs::PlayerRuntime::IsStone(victim)))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);

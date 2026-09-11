@@ -568,17 +568,17 @@ namespace quest
 
 		int32_t vnum = (int32_t)lua_tonumber(L, 2);
 
-		LPCHARACTER ch;
+		entt::entity mob = entt::null;
 		if (lua_isnumber(L, 5))
 		{
-			ch = dungeon->SpawnMob(vnum, (int32_t)lua_tonumber(L, 3), (int32_t)lua_tonumber(L, 4), (int32_t)lua_tonumber(L, 5));
+			mob = dungeon->SpawnMob(vnum, (int32_t)lua_tonumber(L, 3), (int32_t)lua_tonumber(L, 4), (int32_t)lua_tonumber(L, 5));
 		}
 		else
 		{
-			ch = dungeon->SpawnMob(vnum, (int32_t)lua_tonumber(L, 3), (int32_t)lua_tonumber(L, 4));
+			mob = dungeon->SpawnMob(vnum, (int32_t)lua_tonumber(L, 3), (int32_t)lua_tonumber(L, 4));
 		}
 
-		if (!ch)
+		if (mob == entt::null)
 		{
 			lua_pushnumber(L, 0);
 			return 1;
@@ -587,14 +587,14 @@ namespace quest
 #ifdef __DEFENSE_WAVE__
 		if (vnum == 20434)
 		{
-			dungeon->SetMast(ch->GetEntityHandle());
+			dungeon->SetMast(mob);
 		}
 		else if (vnum == 3956)
 		{
 			const entt::entity mast = dungeon->GetMast();
 			if (ecs::PlayerRuntime::IsValid(mast))
 			{
-				CombatSystem::SetVictim(ch->GetEntityHandle(), mast);
+				CombatSystem::SetVictim(mob, mast);
 			}
 		}
 #endif
@@ -602,11 +602,11 @@ namespace quest
 #ifdef ENABLE_MELEY_LAIR
 		if (vnum == 6118)
 		{
-			ecs::MovementSystem::SetRotationToXY(ch->GetEntityHandle(), 320200, 1518100);
+			ecs::MovementSystem::SetRotationToXY(mob, 320200, 1518100);
 		}
 #endif
 
-		lua_pushnumber(L, ((ch)->GetLegacyVID()));
+		lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(mob));
 		return 1;
 	}
 
