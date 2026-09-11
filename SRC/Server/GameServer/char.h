@@ -1584,7 +1584,6 @@ public:
 	void 				SetEmpire(uint8_t bEmpire);
 
 protected:
-	uint8_t				m_bEmpire;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Regen
@@ -1610,23 +1609,16 @@ protected:
 	// QUEST
 	//
 public:
-	void				SetQuestNPCID(uint32_t vid);
-	uint32_t				GetQuestNPCID() const { return m_dwQuestNPCVID; }
-	LPCHARACTER			GetQuestNPC() const;
 
 	void				SetQuestItemPtr(entt::entity item);
 	void				ClearQuestItemPtr();
 	entt::entity		GetQuestItemEntity() const;
 	LPITEM				GetQuestItemPtr() const;
 
-	void				SetQuestBy(uint32_t dwQuestVnum);
-	uint32_t				GetQuestBy() const;
 
 
 
 private:
-	uint32_t				m_dwQuestNPCVID;
-	uint32_t				m_dwQuestByVnum;
 
 	// Events
 public:
@@ -1696,11 +1688,9 @@ private:
 
 	// PC_BANG_ITEM_ADD
 private:
-	bool m_isinPCBang;
 
 public:
 	bool SetPCBang(bool flag);
-	bool IsPCBang() const { return m_isinPCBang; }
 	// END_PC_BANG_ITEM_ADD
 
 	// NEW_HAIR_STYLE_ADD
@@ -1716,15 +1706,9 @@ public:
 
 	// ARENA
 private:
-	CArena* m_pArena;
-	bool m_ArenaObserver;
 
 public:
-	void 	SetArena(CArena* pArena);
-	void	SetArenaObserverMode(bool flag);
 
-	CArena* GetArena() const;
-	bool	GetArenaObserverMode() const;
 
 	// END_ARENA
 
@@ -1877,15 +1861,9 @@ public:
 #endif
 	//���� ���� ��� ��Ŷ �ӽ� ����
 private:
-	unsigned int itemAward_vnum;
-	char		 itemAward_cmd[20];
 	//bool		 itemAward_flag;
 public:
-	unsigned int GetItemAward_vnum() { return itemAward_vnum; }
-	char* GetItemAward_cmd() { return itemAward_cmd; }
 	//bool		 GetItemAward_flag() { return itemAward_flag; }
-	void		 SetItemAward_vnum(unsigned int vnum);
-	void		 SetItemAward_cmd(char* cmd);
 	//void		 SetItemAward_flag(bool flag) { itemAward_flag = flag; }
 #ifdef ENABLE_ANTI_CMD_FLOOD
 private:
@@ -1927,9 +1905,7 @@ public:
 
 #ifdef __HIDE_COSTUME_SYSTEM__
 public:
-	void SetBodyCostumeHidden(bool hidden, bool pass = false);
 
-	void SetHairCostumeHidden(bool hidden, bool pass = false);
 #ifdef ENABLE_FREE_PASS_RAZOR93
 
 
@@ -1938,18 +1914,13 @@ public:
 #endif
 
 #ifdef ENABLE_ACCE_SYSTEM
-	void SetAcceCostumeHidden(bool hidden, bool pass = false);
 #endif
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-	void SetWeaponCostumeHidden(bool hidden, bool pass = false);
 #endif
 
 private:
-	bool m_bHideBodyCostume;
-	bool m_bHideHairCostume;
 #ifdef ENABLE_ACCE_SYSTEM
-	bool m_bHideAcceCostume;
 #endif
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
 	//uint32_t m_dwBattlePassStayOnlineNextTick;
@@ -1958,7 +1929,6 @@ private:
 #endif
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-	bool m_bHideWeaponCostume;
 #endif
 #endif
 

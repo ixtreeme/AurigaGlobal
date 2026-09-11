@@ -3219,12 +3219,12 @@ void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
 		if (d->GetCharacter())
 		{
 			auto* ch = d->GetCharacter();
-			ch->SetItemAward_vnum(data->vnum);	// ch �� �ӽ� �����س��ٰ� QuestLoad �Լ����� ó��
-			ch->SetItemAward_cmd(data->command);
+			ecs::PlayerRuntime::SetItemAwardVnum(ch->GetEntityHandle(), data->vnum);	// ch �� �ӽ� �����س��ٰ� QuestLoad �Լ����� ó��
+			ecs::PlayerRuntime::SetItemAwardCommand(ch->GetEntityHandle(), data->command);
 
 			if(d->IsPhase(PHASE_GAME))			//�����������϶�
 			{
-				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))),ch->GetItemAward_vnum());	//questmanager ȣ��
+				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))),ecs::PlayerRuntime::GetItemAwardVnum(ch->GetEntityHandle()));	//questmanager ȣ��
 			}
 		}
 	}

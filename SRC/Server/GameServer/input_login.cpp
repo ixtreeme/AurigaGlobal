@@ -598,33 +598,33 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 #ifdef __HIDE_COSTUME_SYSTEM__
 	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_body") != 0)
-		ch->SetBodyCostumeHidden(true);
+		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 1, true);
 	else
-		ch->SetBodyCostumeHidden(false);
+		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 1, false);
 
 	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_hair") != 0)
-		ch->SetHairCostumeHidden(true);
+		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 2, true);
 	else
-		ch->SetHairCostumeHidden(false);
+		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 2, false);
 
 #ifdef ENABLE_ACCE_SYSTEM
 	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_acce") != 0)
-		ch->SetAcceCostumeHidden(true);
+		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 3, true);
 	else
-		ch->SetAcceCostumeHidden(false);
+		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 3, false);
 #endif
 
 #ifdef __WEAPON_COSTUME_SYSTEM__
 	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_weapon") != 0)
-		ch->SetWeaponCostumeHidden(true);
+		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 4, true);
 	else
-		ch->SetWeaponCostumeHidden(false);
+		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 4, false);
 #endif
 #endif
 
 
-	if (ch->GetItemAward_cmd())																		// ?
-		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetItemAward_vnum());	//questmanager ?
+	if (ecs::PlayerRuntime::GetItemAwardCommand(ch->GetEntityHandle()))																		// ?
+		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetItemAwardVnum(ch->GetEntityHandle()));	//questmanager ?
 
 	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetZ(), d->GetHostName(), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
@@ -728,7 +728,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		if (memberFlag == MEMBER_OBSERVER)
 		{
 			ch->SetObserverMode(true);
-			ch->SetArenaObserverMode(true);
+			ecs::PlayerRuntime::SetArenaObserverMode(ch->GetEntityHandle(), true);
 			const entt::entity character = ch->GetEntityHandle();
 			if (CArenaManager::instance().RegisterObserverPtr(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character) / 100, ecs::PlayerRuntime::GetY(character) / 100))
 			{
@@ -905,13 +905,13 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-	ch->SetBodyCostumeHidden(ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_body") == 1 ? true : false, true);
-	ch->SetHairCostumeHidden(ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_hair") == 1 ? true : false, true);
+	ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 1, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_body") == 1 ? true : false, true);
+	ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 2, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_hair") == 1 ? true : false, true);
 #ifdef ENABLE_ACCE_SYSTEM
-	ch->SetAcceCostumeHidden(ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_acce") == 1 ? true : false, true);
+	ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 3, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_acce") == 1 ? true : false, true);
 #endif
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-	ch->SetWeaponCostumeHidden(ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_weapon") == 1 ? true : false, true);
+	ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 4, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_weapon") == 1 ? true : false, true);
 #endif
 #endif
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY

@@ -303,6 +303,7 @@ void MultiplierAndValidityChecks() {
 // exercises the real native index and callback dispatch.
 void ecs::SessionSystem::CloseSafebox(entt::entity) { UnexpectedService(__func__); }
 uint8_t SkillSystem::GetSkillGroup(entt::entity) { UnexpectedService(__func__); }
+bool ecs::PlayerRuntime::IsPCBang(entt::entity) { UnexpectedService(__func__); }
 LPENTITY SectreeLegacyEntity(entt::entity) { UnexpectedService(__func__); }
 bool SectreeMember(entt::entity, const SECTREE*) { UnexpectedService(__func__); }
 FCollectEntity SECTREE::SnapshotAround(int) const { UnexpectedService(__func__); }
@@ -458,7 +459,6 @@ int CHARACTER::GetSkillPower(unsigned int,unsigned char)const { UnexpectedServic
 int CHARACTER::ComputeSkill(unsigned int,entt::entity,unsigned char) { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetSkillGroup(void)const { UnexpectedService(__func__); }
 void CHARACTER::MonsterLog(char const *,...) { UnexpectedService(__func__); }
-void CHARACTER::SetQuestNPCID(unsigned int) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
 void CHARACTER::SetNextStatePulse(int) { UnexpectedService(__func__); }

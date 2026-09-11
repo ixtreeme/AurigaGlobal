@@ -322,7 +322,7 @@ namespace quest
 				if (bAggressive)
 					CombatSystem::SetAggressive(mob->GetEntityHandle());
 
-				mob->SetQuestBy(dwQuestIdx);
+				ecs::PlayerRuntime::SetQuestBy(mob->GetEntityHandle(), dwQuestIdx);
 
 				if (!ret)
 				{
@@ -392,7 +392,7 @@ namespace quest
 
 			if (mob)
 			{
-				mob->SetQuestBy(dwQuestIdx);
+				ecs::PlayerRuntime::SetQuestBy(mob->GetEntityHandle(), dwQuestIdx);
 
 				if (!ret)
 				{

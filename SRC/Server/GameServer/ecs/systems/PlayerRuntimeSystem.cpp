@@ -857,6 +857,62 @@ void SetMobilePhone(entt::entity e, const char* phone)
     g_registry.get_or_emplace<ecs::MobileAuth>(e).phone = phone ? phone : "";
 }
 
+void SetArenaObserverMode(entt::entity e, bool flag)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::StatusFlags>(e).isArenaObserver = flag;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+bool GetArenaObserverMode(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+    return status && status->isArenaObserver;
+}
+
+// The quest reward waiting to be handed out, and the command that goes with
+// it. Two CHARACTER fields beside ecs::ItemAward, which the setters also wrote.
+void SetItemAwardVnum(entt::entity e, uint32_t vnum)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::ItemAward>(e).vnum = vnum;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+uint32_t GetItemAwardVnum(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* award = g_registry.try_get<ecs::ItemAward>(e);
+    return award ? award->vnum : 0;
+}
+
+void SetItemAwardCommand(entt::entity e, const char* command)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::ItemAward>(e).command = command ? command : "";
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+const char* GetItemAwardCommand(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return "";
+
+    const auto* award = g_registry.try_get<ecs::ItemAward>(e);
+    return award ? award->command.c_str() : "";
+}
+
 CArena* GetArena(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -1293,10 +1349,6 @@ bool SetQuestNPCID(entt::entity e, uint32_t id)
 
     auto& context = g_registry.get_or_emplace<ecs::QuestContext>(e);
     context.npcVID = id;
-
-    // Compatibility boundary until CHARACTER's duplicate quest context is removed.
-    if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr)
-        legacy->ptr->SetQuestNPCID(id);
 
     return true;
 }
@@ -1783,7 +1835,6 @@ void CHARACTER::SetRace(uint8_t race)
 
 void CHARACTER::SetEmpire(uint8_t bEmpire)
 {
-    m_bEmpire = bEmpire;
 	ecs::PlayerRuntime::SetEmpire(GetEntityHandle(), bEmpire);
 }
 
@@ -2080,36 +2131,6 @@ uint32_t CHARACTER::GetAID() const
     return dwAID;
 }
 
-void CHARACTER::SetQuestNPCID(uint32_t vid)
-{
-    m_dwQuestNPCVID = vid;
-    const entt::entity owner = GetEntityHandle();
-    if (owner != entt::null && g_registry.valid(owner))
-    {
-        auto& context = g_registry.get_or_emplace<ecs::QuestContext>(owner);
-        context.npcVID = vid;
-    }
-}
-
-LPCHARACTER CHARACTER::GetQuestNPC() const
-{
-    return CHARACTER_MANAGER::instance().Find(m_dwQuestNPCVID);
-}
-
-void CHARACTER::SetQuestBy(uint32_t questVnum)
-{
-    m_dwQuestByVnum = questVnum;
-    ecs::PlayerRuntime::SetQuestBy(GetEntityHandle(), questVnum);
-}
-
-uint32_t CHARACTER::GetQuestBy() const
-{
-    const entt::entity self = GetEntityHandle();
-    return self != entt::null && g_registry.valid(self)
-        ? ecs::PlayerRuntime::GetQuestBy(self)
-        : m_dwQuestByVnum;
-}
-
 void CHARACTER::SetQuestItemPtr(entt::entity item)
 {
 	const entt::entity owner = GetEntityHandle();
@@ -2169,30 +2190,6 @@ bool CHARACTER::IsBlockMode(uint8_t bFlag) const
 }
 
 // Pet/mount markers live only in StatusFlags; legacy readers use the same store.
-
-void CHARACTER::SetItemAward_vnum(unsigned int vnum)
-{
-	itemAward_vnum = vnum;
-	const entt::entity entity = GetEntityHandle();
-	if (entity != entt::null && g_registry.valid(entity))
-	{
-		auto& award = g_registry.get_or_emplace<ecs::ItemAward>(entity);
-		award.vnum = vnum;
-		g_registry.emplace_or_replace<ecs::DirtyTag>(entity);
-	}
-}
-
-void CHARACTER::SetItemAward_cmd(char* cmd)
-{
-	strlcpy(itemAward_cmd, cmd ? cmd : "", sizeof(itemAward_cmd));
-	const entt::entity entity = GetEntityHandle();
-	if (entity != entt::null && g_registry.valid(entity))
-	{
-		auto& award = g_registry.get_or_emplace<ecs::ItemAward>(entity);
-		award.command = cmd ? cmd : "";
-		g_registry.emplace_or_replace<ecs::DirtyTag>(entity);
-	}
-}
 
 #ifdef ENABLE_VOTE4BUFF
 long long CHARACTER::GetVoteCoin()
@@ -2336,7 +2333,6 @@ void CHARACTER::ResetPlayTime(uint32_t dwTimeRemain)
 
 bool CHARACTER::SetPCBang(bool flag)
 {
-	m_isinPCBang = flag;
 	const entt::entity character = GetEntityHandle();
 	if (character != entt::null && g_registry.valid(character))
 	{
@@ -2344,7 +2340,7 @@ bool CHARACTER::SetPCBang(bool flag)
 		login.isPCBang = flag;
 		g_registry.emplace_or_replace<ecs::DirtyTag>(character);
 	}
-	return m_isinPCBang;
+	return flag;
 }
 
 void CHARACTER::UpdateDepositPulse()
@@ -3758,49 +3754,9 @@ void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
 }
 #endif
 
-void CHARACTER::SetArena(CArena* arena)
-{
-	m_pArena = arena;
-	ecs::PlayerRuntime::SetArena(GetEntityHandle(), arena);
-}
-
-CArena* CHARACTER::GetArena() const
-{
-	const entt::entity entity = GetEntityHandle();
-	if (entity != entt::null && g_registry.valid(entity))
-		return ecs::PlayerRuntime::GetArena(entity);
-
-	return m_pArena;
-}
-
 #ifdef __NEWPET_SYSTEM__
 
 #endif
-
-void CHARACTER::SetArenaObserverMode(bool flag)
-{
-	m_ArenaObserver = flag;
-
-	const entt::entity entity = GetEntityHandle();
-	if (entity == entt::null || !g_registry.valid(entity))
-		return;
-
-	auto& status = g_registry.get_or_emplace<ecs::StatusFlags>(entity);
-	status.isArenaObserver = flag;
-	g_registry.emplace_or_replace<ecs::DirtyTag>(entity);
-}
-
-bool CHARACTER::GetArenaObserverMode() const
-{
-	const entt::entity entity = GetEntityHandle();
-	if (entity != entt::null && g_registry.valid(entity))
-	{
-		if (const auto* status = g_registry.try_get<ecs::StatusFlags>(entity))
-			return status->isArenaObserver;
-	}
-
-	return m_ArenaObserver;
-}
 
 #ifdef ENABLE_RANKING
 long long CHARACTER::GetRankPoints(int iArg)
@@ -4818,7 +4774,7 @@ void CHARACTER::OnClick(entt::entity causer)
         }
     }
 
-    pkCauser->SetQuestNPCID(GetPacketVID());
+    ecs::PlayerRuntime::SetQuestNPCID(pkCauser->GetEntityHandle(), GetPacketVID());
 
     if (quest::CQuestManager::instance().Click(pkCauser->GetPlayerID(), this))
     {
@@ -5392,34 +5348,10 @@ void CHARACTER::CloseMyShop()
 }
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-void CHARACTER::SetBodyCostumeHidden(bool hidden, bool pass)
-{
-    m_bHideBodyCostume = hidden;
-	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 1, hidden, pass);
-}
-
-void CHARACTER::SetHairCostumeHidden(bool hidden, bool pass)
-{
-    m_bHideHairCostume = hidden;
-	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 2, hidden, pass);
-}
-
 #ifdef ENABLE_ACCE_SYSTEM
-void CHARACTER::SetAcceCostumeHidden(bool hidden, bool pass)
-{
-    m_bHideAcceCostume = hidden;
-	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 3, hidden, pass);
-}
-
 #endif
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
-{
-    m_bHideWeaponCostume = hidden;
-	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 4, hidden, pass);
-}
-
 #endif
 #endif
 
@@ -5524,8 +5456,6 @@ void CHARACTER::Initialize()
     m_bDisableCooltime = false;
 
 
-    m_dwQuestNPCVID = 0;
-    m_dwQuestByVnum = 0;
 
 
     m_dwPolymorphRace = 0;
@@ -5564,9 +5494,7 @@ void CHARACTER::Initialize()
 
 
 
-    m_isinPCBang = false;
 
-    m_pArena = nullptr;
 
 
 
@@ -5628,12 +5556,8 @@ void CHARACTER::Initialize()
 #endif
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-    m_bHideBodyCostume = false;
-    m_bHideHairCostume = false;
 #ifdef ENABLE_ACCE_SYSTEM
-    m_bHideAcceCostume = false;
 #endif
-    m_bHideWeaponCostume = false;
 #endif
 #ifdef ENABLE_NEW_PET_EDITS
 #endif

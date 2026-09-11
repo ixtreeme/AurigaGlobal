@@ -3309,7 +3309,7 @@ void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInvite");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->GetArena())
+	if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
@@ -3339,7 +3339,7 @@ void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInviteAnswer");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->GetArena())
+	if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");

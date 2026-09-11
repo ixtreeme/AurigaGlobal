@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -355,7 +356,7 @@ void Cube_open (LPCHARACTER ch)
 {
 	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	LPCHARACTER	npc;
-	npc = ch->GetQuestNPC();
+	npc = ecs::LegacyCharOf(ecs::PlayerRuntime::GetQuestNPC(ch->GetEntityHandle()));
 
 
 
@@ -426,7 +427,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 		return;
 	}
 
-	LPCHARACTER npc = ch->GetQuestNPC();
+	LPCHARACTER npc = ecs::LegacyCharOf(ecs::PlayerRuntime::GetQuestNPC(ch->GetEntityHandle()));
 	if (!npc)
 		return;
 

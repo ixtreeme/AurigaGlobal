@@ -362,9 +362,9 @@ namespace quest
 
 			if (npc && !(ecs::PlayerRuntime::IsPC(((npc) ? (npc)->GetEntityHandle() : entt::null))))
 			{
-				if ((ecs::PlayerRuntime::GetPlayerID(ch)) == npc->GetQuestNPCID())
+				if ((ecs::PlayerRuntime::GetPlayerID(ch)) == ecs::PlayerRuntime::GetQuestNPCID(npc->GetEntityHandle()))
 				{
-					npc->SetQuestNPCID(0);
+					ecs::PlayerRuntime::SetQuestNPCID(npc->GetEntityHandle(), 0);
 					LOG_TRACE("QUEST NPC lock isn't unlocked : pid {}", (ecs::PlayerRuntime::GetPlayerID(ch)));
 					CQuestManager::instance().WriteRunningStateToSyserr();
 				}

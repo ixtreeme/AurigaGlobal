@@ -1629,7 +1629,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		rateFactor += 50;
 	if (ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) > 0)
 	{
-		if (to->IsPCBang())
+		if (ecs::PlayerRuntime::IsPCBang(toEntity))
 			rateFactor += ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS);
 	}
 	rateFactor += to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
@@ -3934,7 +3934,7 @@ void Reward(entt::entity e, bool bItemDrop)
 				CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 2);
 		}
 
-		pkAttacker->SetQuestNPCID(ecs::PlayerRuntime::GetPacketVID(e));
+		ecs::PlayerRuntime::SetQuestNPCID(pkAttacker->GetEntityHandle(), ecs::PlayerRuntime::GetPacketVID(e));
 		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(attacker), ecs::PlayerRuntime::GetRaceNum(e));
 		CHARACTER_MANAGER::instance().KillLog(ecs::PlayerRuntime::GetRaceNum(e));
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93

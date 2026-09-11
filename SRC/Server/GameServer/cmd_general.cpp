@@ -2576,14 +2576,14 @@ ACMD(do_observer_exit)
 		if (ch->GetWarMap())
 			ch->SetWarMap(nullptr);
 
-		if (ch->GetArena() != nullptr || ch->GetArenaObserverMode() == true)
+		if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()) != nullptr || ecs::PlayerRuntime::GetArenaObserverMode(ch->GetEntityHandle()) == true)
 		{
-			ch->SetArenaObserverMode(false);
+			ecs::PlayerRuntime::SetArenaObserverMode(ch->GetEntityHandle(), false);
 
-			if (ch->GetArena() != nullptr)
-				ch->GetArena()->RemoveObserver((ecs::PlayerRuntime::GetPlayerID(character)));
+			if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()) != nullptr)
+				ecs::PlayerRuntime::GetArena(ch->GetEntityHandle())->RemoveObserver((ecs::PlayerRuntime::GetPlayerID(character)));
 
-			ch->SetArena(nullptr);
+			ecs::PlayerRuntime::SetArena(ch->GetEntityHandle(), nullptr);
 			ecs::MovementSystem::WarpSet(character, ARENA_RETURN_POINT_X((ecs::PlayerRuntime::GetEmpire(character))), ARENA_RETURN_POINT_Y((ecs::PlayerRuntime::GetEmpire(character))));
 		}
 		else
@@ -2621,7 +2621,7 @@ ACMD(do_view_equip)
 ACMD(do_party_request)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->GetArena())
+	if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
