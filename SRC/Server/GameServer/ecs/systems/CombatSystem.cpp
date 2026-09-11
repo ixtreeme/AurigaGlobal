@@ -3617,10 +3617,10 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity
 	return true;
 }
 
-static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHandle pkVictim, entt::entity itemEntity, const PIXEL_POSITION& pos, bool bTrackBattlePass)
+static void __GiveRewardItemToCharacterOrDrop(entt::entity chEntity, entt::entity victim, entt::entity itemEntity, const PIXEL_POSITION& pos, bool bTrackBattlePass)
 {
-	const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	// The auto-give and the battle-pass progress still take the character.
+	LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
 	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
 
@@ -3654,9 +3654,8 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 
 
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
-static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, LegacyCharHandle pkMob)
+static std::string MakeItemLink(entt::entity item, entt::entity killer, entt::entity mob)
 {
-	const entt::entity killer = pkKiller ? pkKiller->GetEntityHandle() : entt::null;
 	char itemlink[512];
 	int len = 0;
 
@@ -3678,7 +3677,7 @@ static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, Le
 
 
 	int lang = LANGUAGE_EN;
-	if (pkKiller && ecs::PlayerRuntime::GetDesc(killer))
+	if (ecs::PlayerRuntime::GetDesc(killer))
 		lang = ecs::PlayerRuntime::GetDesc(killer)->GetLanguage();
 
 
@@ -3718,8 +3717,8 @@ static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, Le
 
 	char szChat[1024];
 	snprintf(szChat, sizeof(szChat), fmt,
-		pkKiller ? ecs::PlayerRuntime::GetName(killer).data() : "Player",
-		pkMob ? ecs::PlayerRuntime::GetName((pkMob ? pkMob->GetEntityHandle() : entt::null)).data() : "Mob",
+		killer != entt::null ? ecs::PlayerRuntime::GetName(killer).data() : "Player",
+		mob != entt::null ? ecs::PlayerRuntime::GetName(mob).data() : "Mob",
 		itemlink,
 		item != entt::null ? ItemSystem::GetItemName(item) : "item");
 
@@ -4024,7 +4023,7 @@ void Reward(entt::entity e, bool bItemDrop)
 		{
 			if (verjema_szadba_ixtreeme.find(ItemSystem::GetItemVnum(dropItem)) != verjema_szadba_ixtreeme.end())
 			{
-		std::string message = MakeItemLink(dropItem, pkAttacker, self);
+		std::string message = MakeItemLink(dropItem, attacker, e);
 				BroadcastNotice(message.c_str());
 			}
 		}
@@ -4214,7 +4213,7 @@ void Reward(entt::entity e, bool bItemDrop)
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
 									if (bInstantRewardToInventory)
 									{
-										__GiveRewardItemToCharacterOrDrop(rch, self, newItem, mpos, true);
+										__GiveRewardItemToCharacterOrDrop(rch ? rch->GetEntityHandle() : entt::null, e, newItem, mpos, true);
 									}
 									else
 									{
@@ -4288,7 +4287,7 @@ void Reward(entt::entity e, bool bItemDrop)
 
 				if (bInstantRewardToInventory && !bKeepGroundDrop)
 				{
-					__GiveRewardItemToCharacterOrDrop(pkAttacker, self, itemEntity, pos, true);
+					__GiveRewardItemToCharacterOrDrop(attacker, e, itemEntity, pos, true);
 				}
 				else
 				{
@@ -4419,7 +4418,7 @@ void Reward(entt::entity e, bool bItemDrop)
 
 						if (bInstantRewardToInventory && !bKeepGroundDrop)
 						{
-							__GiveRewardItemToCharacterOrDrop(ch, self, itemEntity, pos, true);
+							__GiveRewardItemToCharacterOrDrop(ch ? ch->GetEntityHandle() : entt::null, e, itemEntity, pos, true);
 						}
 						else
 						{
