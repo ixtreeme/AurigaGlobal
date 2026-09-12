@@ -3206,8 +3206,11 @@ void CHARACTER::Destroy()
 
     HorseSummon(false);
 
-    if (GetRider())
-        GetRider()->ClearHorseInfo();
+    if (const entt::entity rider = MountSystem::GetRider(GetEntityHandle()); rider != entt::null)
+    {
+        if (LPCHARACTER riderChar = ecs::LegacyCharOf(rider))
+            riderChar->ClearHorseInfo();
+    }
 
     if (GetDesc())
     {
@@ -4168,7 +4171,6 @@ void CHARACTER::Initialize()
     ResetChainLightningIndex();
 
     m_dwMountVnum = 0;
-    m_chRider = nullptr;
 
 #ifdef ENABLE_FAKE_SHOP_HEADER
     m_lastBeltMountCount = -999;

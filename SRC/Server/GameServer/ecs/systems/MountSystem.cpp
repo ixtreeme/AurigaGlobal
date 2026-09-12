@@ -34,6 +34,7 @@
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/social_components.hpp"
+#include "../components/pet_mount_components.hpp"
 
 #include <common/VnumHelper.h>
 #include <utility>
@@ -263,9 +264,7 @@ bool IsRidingCostume(entt::entity rider)
 
 bool IsOwnedHorse(entt::entity rider, entt::entity horse)
 {
-    auto* legacyHorse = ResolveLegacyMountOwnerBoundary(horse);
-    auto* legacyRider = ResolveLegacyMountOwnerBoundary(rider);
-    return legacyHorse && legacyHorse->GetRider() == legacyRider;
+    return horse != entt::null && g_registry.valid(horse) && GetRider(horse) == rider;
 }
 
 bool StartRiding(entt::entity rider)
@@ -349,7 +348,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 		return;
 	if ( bSummon )
 	{
-		if( ecs::LegacyCharOf(GetSummonedHorse(rider)) != nullptr)
+		if (GetSummonedHorse(rider) != entt::null)
 			return;
 
 		if (GetHorseLevel(rider) <= 0)
@@ -385,7 +384,9 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 				x, y,
 				ecs::PlayerRuntime::GetZ(rider), false, (int)(ecs::PlayerRuntime::GetRotation(rider)+180), false));
 
-		if (!ecs::LegacyCharOf(GetSummonedHorse(rider)))
+		// A spawn that answered null left nothing to name, show or ride.
+		const entt::entity horse = GetSummonedHorse(rider);
+		if (horse == entt::null)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 328, "");
@@ -395,21 +396,21 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 
 		if (GetHorseHealth(rider) <= 0)
 		{
-			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetPosition(POS_DEAD);
+			ecs::PlayerRuntime::SetPosition(horse, POS_DEAD);
 
 			char_event_info* info = AllocEventInfo<char_event_info>();
 			info->ch = rider;
-			ecs::PlayerRuntime::SetCharEvent(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
+			ecs::PlayerRuntime::SetCharEvent(horse, ecs::PlayerRuntime::CharEvent::Dead,
 				event_create(horse_dead_event, info, PASSES_PER_SEC(60)));
 		}
 
-		ecs::PlayerRuntime::SetLevel(GetSummonedHorse(rider), GetHorseLevel(rider));
+		ecs::PlayerRuntime::SetLevel(horse, GetHorseLevel(rider));
 
 		const char* pHorseName = CHorseNameManager::instance().GetHorseName(ecs::PlayerRuntime::GetPlayerID(rider));
 
 		if ( pHorseName != nullptr && strlen(pHorseName) != 0 )
 		{
-			ecs::PlayerRuntime::SetName(GetSummonedHorse(rider), pHorseName);
+			ecs::PlayerRuntime::SetName(horse, pHorseName);
 		}
 		else
 		{
@@ -419,13 +420,13 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 			}
 
 			// Three SetName calls built this one name a piece at a time.
-			ecs::PlayerRuntime::SetName(GetSummonedHorse(rider),
+			ecs::PlayerRuntime::SetName(horse,
 				std::string(ecs::PlayerRuntime::GetName(rider)) + " " + m_horseText[bLang]);
 		}
 
-		if (!ecs::MovementSystem::Show(GetSummonedHorse(rider), ecs::PlayerRuntime::GetMapIndex(rider), x, y, ecs::PlayerRuntime::GetZ(rider)))
+		if (!ecs::MovementSystem::Show(horse, ecs::PlayerRuntime::GetMapIndex(rider), x, y, ecs::PlayerRuntime::GetZ(rider)))
 		{
-			M2_DESTROY_CHARACTER(ecs::LegacyCharOf(GetSummonedHorse(rider)));
+			M2_DESTROY_CHARACTER(horse);
 			LOG_ERROR("cannot show monster");
 			SetSummonedHorse(rider, entt::null);
 			return;
@@ -435,41 +436,43 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 		{
 			TPacketGCDead pack;
 			pack.header	= HEADER_GC_DEAD;
-			pack.vid    = ecs::PlayerRuntime::GetPacketVID(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetEntityHandle());
+			pack.vid    = ecs::PlayerRuntime::GetPacketVID(horse);
 			ecs::ViewSystem::PacketView(rider, &pack, sizeof(pack));
 		}
 
-		ecs::LegacyCharOf(GetSummonedHorse(rider))->SetRider(rider);
+		SetRider(horse, rider);
 	}
 	else
 	{
-		if (!ecs::LegacyCharOf(GetSummonedHorse(rider)))
+		const entt::entity horse = GetSummonedHorse(rider);
+		if (horse == entt::null)
 			return;
 
-		auto* chHorse = ecs::LegacyCharOf(GetSummonedHorse(rider));
-
-		chHorse->SetRider(entt::null);
+		SetRider(horse, entt::null);
 
 		if ((GetHorseHealth(rider) <= 0))
 			bFromFar = false;
 
 		if (!bFromFar)
 		{
-			M2_DESTROY_CHARACTER(chHorse);
+			M2_DESTROY_CHARACTER(horse);
 		}
 		else
 		{
-			chHorse->SetNowWalking(false);
-			const entt::entity horseEntity = chHorse->GetEntityHandle();
+			// SetNowWalking is not a forwarder: for an NPC it also writes the
+			// monster log, so the horse is resolved for that one call.
+			if (LPCHARACTER horseChar = ecs::LegacyCharOf(horse))
+				horseChar->SetNowWalking(false);
+
 			float fx, fy;
-			ecs::MovementSystem::SetRotation(horseEntity, GetDegreeFromPositionXY(
-				ecs::PlayerRuntime::GetX(horseEntity),
-				ecs::PlayerRuntime::GetY(horseEntity), ecs::PlayerRuntime::GetX(rider), ecs::PlayerRuntime::GetY(rider)) + 180);
-			GetDeltaByDegree(chHorse->GetRotation(), 3500, &fx, &fy);
-			ecs::MovementSystem::Goto(horseEntity,
-				static_cast<int32_t>(ecs::PlayerRuntime::GetX(horseEntity) + fx),
-				static_cast<int32_t>(ecs::PlayerRuntime::GetY(horseEntity) + fy));
-			ecs::MovementSystem::SendMovePacket(horseEntity, FUNC_WAIT, 0, 0, 0, 0);
+			ecs::MovementSystem::SetRotation(horse, GetDegreeFromPositionXY(
+				ecs::PlayerRuntime::GetX(horse),
+				ecs::PlayerRuntime::GetY(horse), ecs::PlayerRuntime::GetX(rider), ecs::PlayerRuntime::GetY(rider)) + 180);
+			GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(horse), 3500, &fx, &fy);
+			ecs::MovementSystem::Goto(horse,
+				static_cast<int32_t>(ecs::PlayerRuntime::GetX(horse) + fx),
+				static_cast<int32_t>(ecs::PlayerRuntime::GetY(horse) + fy));
+			ecs::MovementSystem::SendMovePacket(horse, FUNC_WAIT, 0, 0, 0, 0);
 		}
 
 		SetSummonedHorse(rider, entt::null);
@@ -863,22 +866,35 @@ EVENTFUNC(horse_dead_event)
 	return 0;
 }
 
-void CHARACTER::SetRider(entt::entity chEntity)
+namespace MountSystem {
+
+entt::entity GetRider(entt::entity horse)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
-	if (m_chRider)
-		m_chRider->ClearHorseInfo();
+	if (horse == entt::null || !g_registry.valid(horse))
+		return entt::null;
 
-	m_chRider = ch;
-
-	if (m_chRider)
-		m_chRider->SendHorseInfo();
+	const auto* link = g_registry.try_get<ecs::HorseRider>(horse);
+	return link ? link->rider : entt::null;
 }
 
-LPCHARACTER CHARACTER::GetRider() const
+// ClearHorseInfo and SendHorseInfo are still CHARACTER methods, so the two
+// riders are resolved here, where the link changes.
+void SetRider(entt::entity horse, entt::entity rider)
 {
-	return m_chRider;
+	if (horse == entt::null || !g_registry.valid(horse))
+		return;
+
+	auto& link = g_registry.get_or_emplace<ecs::HorseRider>(horse);
+	if (LPCHARACTER previous = ecs::LegacyCharOf(link.rider))
+		previous->ClearHorseInfo();
+
+	link.rider = rider;
+
+	if (LPCHARACTER current = ecs::LegacyCharOf(rider))
+		current->SendHorseInfo();
 }
+
+} // namespace MountSystem
 
 void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
 {

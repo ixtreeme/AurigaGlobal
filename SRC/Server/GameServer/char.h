@@ -1385,8 +1385,6 @@ public:
 	void				HorseSummon(bool bSummon, bool bFromFar = false, uint32_t dwVnum = 0, const char* name = nullptr);
 
 	LPCHARACTER			GetHorse() const;
-	LPCHARACTER			GetRider() const; // rider on horse
-	void				SetRider(entt::entity character);
 
 	bool				IsRiding() const;
 
@@ -1431,8 +1429,6 @@ public:
 	void	UpdateMountSkin();
 #endif
 protected:
-	LPCHARACTER			m_chRider;
-
 	uint32_t				m_dwMountVnum;
 	uint32_t				m_dwMountTime;
 

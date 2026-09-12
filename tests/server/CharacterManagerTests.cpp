@@ -13,6 +13,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AISystem.hpp"
@@ -403,7 +404,7 @@ void CHARACTER::Create(uint32_t) { Unexpected(); }
 void CHARACTER::SetProto(const CMob*) { Unexpected(); }
 uint32_t CHARACTER::GetLegacyVID() const { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }
-LPCHARACTER CHARACTER::GetRider() const { return nullptr; }
+entt::entity MountSystem::GetRider(entt::entity) { return entt::null; }
 void ecs::PlayerRuntime::SetRegen(entt::entity, LPREGEN) { Unexpected(); }
 TEMP_BUFFER::TEMP_BUFFER(int, bool) { Unexpected(); }
 TEMP_BUFFER::~TEMP_BUFFER() = default;

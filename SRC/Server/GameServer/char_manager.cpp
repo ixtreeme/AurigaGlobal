@@ -44,6 +44,7 @@
 #include "ecs/systems/AISystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/identity_components.hpp"
@@ -501,7 +502,7 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* fil
 #ifdef __NEWPET_SYSTEM__
 		&& !ecs::PlayerRuntime::IsNewPet(character)
 #endif
-		&& ch->GetRider() == nullptr)
+		&& MountSystem::GetRider(character) == entt::null)
 	{
 		if (auto* dungeon = ecs::SocialSystem::GetDungeon(character))
 			dungeon->DeadCharacter(character);

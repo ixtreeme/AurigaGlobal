@@ -1071,9 +1071,9 @@ struct FuncPurge
 		LOG_INFO("PURGE: {} {}", ecs::PlayerRuntime::GetName(chr).data(), iDist);
 
 #ifdef __NEWPET_SYSTEM__
-		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(chr) && !ecs::PlayerRuntime::IsNewPet(chr) && !ecs::PlayerRuntime::IsMount(chr) && pkChr->GetRider() == nullptr
+		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(chr) && !ecs::PlayerRuntime::IsNewPet(chr) && !ecs::PlayerRuntime::IsMount(chr) && MountSystem::GetRider(chr) == entt::null
 #else
-		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(chr) && pkChr->GetRider() == NULL
+		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(chr) && MountSystem::GetRider(chr) == entt::null
 #endif
 		)
 		{

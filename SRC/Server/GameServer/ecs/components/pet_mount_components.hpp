@@ -43,6 +43,12 @@ struct MountComponent {
     uint32_t state { 0 };
 };
 
+// The rider on this horse. CHARACTER kept it as m_chRider, a pointer the
+// horse held to its rider, and SetRider/GetRider were the whole interface.
+struct HorseRider {
+    entt::entity rider { entt::null };
+};
+
 // The pet enchant level, and when a seed or moon bottle was last used.
 // Both were CHARACTER fields only the item code read.
 struct PetEnchant {
