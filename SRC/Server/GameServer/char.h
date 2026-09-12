@@ -1362,9 +1362,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Mounting
 public:
-	void				MountVnum(uint32_t vnum);
-	uint32_t				GetMountVnum() const { return m_dwMountVnum; }
-	uint32_t				GetLastMountTime() const { return m_dwMountTime; }
 
 	bool				CanUseHorseSkill();
 
@@ -1430,8 +1427,6 @@ public:
 	void	UpdateMountSkin();
 #endif
 protected:
-	uint32_t				m_dwMountVnum;
-	uint32_t				m_dwMountTime;
 
 
 	////////////////////////////////////////////////////////////////////////////////////////

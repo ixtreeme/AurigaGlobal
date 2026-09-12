@@ -1645,11 +1645,11 @@ bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
 	if (true == IsRiding())
 	{
 #ifdef ENABLE_MOUNTSKILL_CHECK
-		eMountType eIsMount = GetMountLevelByVnum(GetMountVnum(), false);
+		eMountType eIsMount = GetMountLevelByVnum(MountSystem::GetMountVnum(GetEntityHandle()), false);
 		if (eIsMount != MOUNT_TYPE_MILITARY)
 		{
 			if (test_server)
-				LOG_INFO("CanUseSkill: Mount can't skill. vnum({}) type({})", GetMountVnum(), static_cast<int>(eIsMount));
+				LOG_INFO("CanUseSkill: Mount can't skill. vnum({}) type({})", MountSystem::GetMountVnum(GetEntityHandle()), static_cast<int>(eIsMount));
 			return false;
 		}
 #endif
@@ -2965,7 +2965,7 @@ EVENTFUNC(skill_gwihwan_event)
 int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel)
 {
 	const auto character = GetEntityHandle();
-	if (GetMountVnum())
+	if (MountSystem::GetMountVnum(character))
 		return BATTLE_NONE;
 
 	if (AffectSystem::IsPolymorphed(character))

@@ -181,6 +181,8 @@ void ModifyPoints(entt::entity item, bool add) {
 namespace MountSystem {
 void ComputeMountInventoryBonuses(entt::entity owner) { if (mountHP) P::Change(owner, POINT_MAX_HP, mountHP); }
 uint32_t GetMountVnum(entt::entity) { return 0; }
+// The point change resolved a character and did nothing without one.
+void SetMountVnum(entt::entity, uint32_t) {}
 int GetHorseLevel(entt::entity) { return 0; }
 bool IsHorseRiding(entt::entity) { return false; }
 int GetHorseArmor(entt::entity) { return 0; }
@@ -241,7 +243,6 @@ void ecs::MovementSystem::CalculateMoveDuration(entt::entity e) {
     if (!onMovement) Unexpected();
     onMovement(e);
 }
-void CHARACTER::MountVnum(uint32_t) { Unexpected(); }
 int ecs::QuestSystem::GetFlag(entt::entity, std::string_view) { Unexpected(); }
 void ecs::QuestSystem::SetFlag(entt::entity, std::string_view, int) { Unexpected(); }
 void ecs::PlayerRuntime::SetExp(entt::entity, uint32_t) { Unexpected(); }

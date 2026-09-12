@@ -1596,7 +1596,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
 		rateFactor += 50;
 
-	switch (to->GetMountVnum())
+	switch (MountSystem::GetMountVnum(toEntity))
 	{
 	case 20110:
 	case 20111:
@@ -1733,7 +1733,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
 			iExp += iExp * 50 / 100;
 
-		switch (to->GetMountVnum())
+		switch (MountSystem::GetMountVnum(toEntity))
 		{
 		case 20110:
 		case 20111:

@@ -41,6 +41,7 @@
 #include <Core/Logging.hpp>
 #include "../CharacterAccessors.hpp"
 #include "../components/visibility_components.hpp"
+#include "../services/EntityNetworkDispatch.hpp"
 #include "MovementSystem.hpp"
 
 namespace
@@ -280,9 +281,50 @@ uint32_t GetMountVnum(entt::entity rider)
 
 void SetMountVnum(entt::entity rider, uint32_t vnum)
 {
-    auto* ch = ResolveLegacyMountOwnerBoundary(rider);
-    if (ch)
-        ch->MountVnum(vnum);
+    if (rider == entt::null || !g_registry.valid(rider))
+        return;
+
+    if (GetMountVnum(rider) == vnum)
+        return;
+    if (GetMountVnum(rider) != 0 && vnum != 0)
+        SetMountVnum(rider, 0);
+
+    auto& mount = g_registry.get_or_emplace<ecs::MountState>(rider);
+    mount.mountVnum = vnum;
+    mount.mountTime = get_dword_time();
+    if (vnum == 0)
+        mount.horseRiding = false;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(rider);
+
+    if (ecs::PlayerRuntime::IsObserverMode(rider))
+        return;
+
+    // Phase C.3: the legacy destination field write is gone.
+    // SyncDestinationClear drops MovementDestination so the next INSERT
+    // packet carries the current position.
+    ecs::MovementSystem::SyncDestinationClear(rider);
+
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, rider, rider);
+
+    // The viewers are re-sent the rider because the mount changes how it
+    // is drawn. This walk reads ViewerMap; the legacy m_map_view it used
+    // to walk had been frozen at spawn, so the rebroadcast reached nobody
+    // and every viewer kept rendering the old mount state.
+    if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(rider))
+    {
+        const auto viewers = viewerMap->viewers;
+        for (const entt::entity viewer : viewers)
+        {
+            if (viewer == entt::null || !g_registry.valid(viewer))
+                continue;
+            ecs::EntityNetworkDispatch::SendInsert(g_registry, rider, viewer);
+        }
+    }
+
+    CombatSystem::SetValidComboInterval(rider, 0);
+    CombatSystem::SetComboSequence(rider, 0);
+
+    ecs::PointSystem::Compute(rider);
 }
 
 } // namespace MountSystem
@@ -695,7 +737,7 @@ void ForceClearRidingState(entt::entity rider)
     auto* ch = ResolveLegacyMountOwnerBoundary(rider);
     if (ch)
     {
-        const uint32_t mountVnum = ch->GetMountVnum();
+        const uint32_t mountVnum = GetMountVnum(rider);
         if (mountVnum != 0)
         {
             if (auto* mountSystem = ch->GetMountSystem())
@@ -705,10 +747,10 @@ void ForceClearRidingState(entt::entity rider)
             }
         }
 
-        if (ch->IsHorseRiding())
+        if (IsHorseRiding(rider))
             ch->StopRiding();
         else
-            ch->MountVnum(0);
+            SetMountVnum(rider, 0);
     }
 
     auto& state = g_registry.get_or_emplace<ecs::MountState>(rider);
@@ -801,7 +843,7 @@ bool CHARACTER::StartRiding()
 
 	HorseSummon(false);
 
-	MountVnum(dwMountVnum);
+	MountSystem::SetMountVnum(rider, dwMountVnum);
 
 	if(test_server)
 		LOG_INFO("Ride Horse : {} ", GetName());
@@ -820,13 +862,14 @@ bool CHARACTER::StopRiding()
 
 		if (!CombatSystem::IsDead(GetEntityHandle()) && !CombatSystem::IsStun(GetEntityHandle()))
 		{
-			uint32_t dwOldVnum = GetMountVnum();
-			MountVnum(0);
+			uint32_t dwOldVnum = MountSystem::GetMountVnum(rider);
+			MountSystem::SetMountVnum(rider, 0);
 			HorseSummon(true, false, dwOldVnum);
 		}
 		else
 		{
-			m_dwMountVnum = 0;
+			if (auto* mount = g_registry.try_get<ecs::MountState>(rider))
+				mount->mountVnum = 0;
 			ComputePoints();
 			NetworkSyncSystem::UpdatePacket(rider);
 		}
@@ -980,12 +1023,12 @@ bool CHARACTER::CanUseHorseSkill()
 		else
 			return false;
 
-		if(GetMountVnum())
+		if(MountSystem::GetMountVnum(GetEntityHandle()))
 		{
-			if (GetMountVnum() >= 20209 && GetMountVnum() <= 20212)
+			if (MountSystem::GetMountVnum(GetEntityHandle()) >= 20209 && MountSystem::GetMountVnum(GetEntityHandle()) <= 20212)
 				return true;
 
-			if (CMobVnumHelper::IsRamadanBlackHorse(GetMountVnum()))
+			if (CMobVnumHelper::IsRamadanBlackHorse(MountSystem::GetMountVnum(GetEntityHandle())))
 				return true;
 		}
 		else
@@ -1025,7 +1068,9 @@ uint8_t CHARACTER::IncreaseMountCounter()
 
 bool CHARACTER::IsRiding() const
 {
-	return IsHorseRiding() || GetMountVnum();
+	// Riding a horse or sitting on a mount: what MountSystem::IsRiding reads
+	// from the one component.
+	return MountSystem::IsRiding(GetEntityHandle());
 }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -1038,7 +1083,7 @@ void CHARACTER::MountUnsummon(entt::entity mountItem)
 
 	const uint32_t mobVnum = GetMountMobVnum(mountItem);
 
-	if (GetMountVnum() == mobVnum)
+	if (MountSystem::GetMountVnum(GetEntityHandle()) == mobVnum)
 		mountSystem->Unmount(mobVnum);
 
 	mountSystem->Unsummon(mobVnum);

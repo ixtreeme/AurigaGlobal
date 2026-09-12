@@ -3175,7 +3175,7 @@ void CHARACTER::Destroy()
             g_registry.get_or_emplace<ecs::MountRuntimeRefs>(GetEntityHandle()).mountSystem = nullptr;
     }
 
-    if (GetMountVnum())
+    if (MountSystem::GetMountVnum(GetEntityHandle()))
     {
         AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
         AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
@@ -3352,66 +3352,6 @@ void CHARACTER::SendGreetMessage()
     {
         ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_NOTICE, it->c_str());
     }
-}
-
-void CHARACTER::MountVnum(uint32_t vnum)
-{
-    if (m_dwMountVnum == vnum)
-        return;
-    if ((m_dwMountVnum != 0) && (vnum != 0))
-        MountVnum(0);
-
-    m_dwMountVnum = vnum;
-    m_dwMountTime = get_dword_time();
-
-    const auto e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& mount = g_registry.get_or_emplace<ecs::MountState>(e);
-        mount.mountVnum = vnum;
-        mount.mountTime = m_dwMountTime;
-        if (vnum == 0)
-            mount.horseRiding = false;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
-    if (ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
-        return;
-
-    // Phase C.3: legacy destination field write removed. SyncDestinationClear
-    // drops ECS MovementDestination so subsequent INSERT packets emit
-    // current position (GetX/Y fallback in GetCurrentDestX/Y).
-    ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
-
-    ecs::EntityNetworkDispatch::SendInsert(g_registry, GetEntityHandle(), GetEntityHandle());
-
-    // Phase 15E-final.LPENTITY.4-architect H fixup-6:
-    // Replace stale m_map_view walk with ECS ViewerMap.viewers walk.
-    // Pre-D.6 the legacy CFuncViewInsert polling kept m_map_view in sync;
-    // after D.6 stubbed that polling for character paths, m_map_view is
-    // a frozen-at-spawn write-only store. The mount-state CharacterAdd
-    // re-broadcast at MountVnum change therefore reached zero peers,
-    // leaving every viewer's client rendering the stale (mount-on)
-    // state of the rider while the freshly spawned mount mob walked
-    // alongside as a duplicate.
-    if (e != entt::null && g_registry.valid(e))
-    {
-        if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(e))
-        {
-            const auto viewers = viewerMap->viewers;
-            for (const entt::entity viewerE : viewers)
-            {
-                if (viewerE == entt::null || !g_registry.valid(viewerE))
-                    continue;
-                ecs::EntityNetworkDispatch::SendInsert(g_registry, GetEntityHandle(), viewerE);
-            }
-        }
-    }
-
-    CombatSystem::SetValidComboInterval(GetEntityHandle(), 0);
-    CombatSystem::SetComboSequence(GetEntityHandle(), 0);
-
-    ComputePoints();
 }
 
 void CHARACTER::SetPlayerProto(const TPlayerTable* t)
@@ -4170,7 +4110,6 @@ void CHARACTER::Initialize()
 
     ResetChainLightningIndex();
 
-    m_dwMountVnum = 0;
 
 #ifdef ENABLE_FAKE_SHOP_HEADER
     m_lastBeltMountCount = -999;
@@ -4197,7 +4136,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_dwMountTime = 0;
 
     m_dwLastGoldDropTime = 0;
 #ifdef ENABLE_NEWSTUFF

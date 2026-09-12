@@ -1315,7 +1315,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_MOUNT:
 		Set(e, type, Get(e, type) + amount);
 		val = Get(e, type);
-		if (auto* character = ecs::LegacyCharOf(e)) character->MountVnum(val);
+		MountSystem::SetMountVnum(e, val);
 		break;
 
 	case POINT_ENERGY:
