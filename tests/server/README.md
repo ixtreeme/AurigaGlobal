@@ -1,5 +1,29 @@
 # Server ECS regression tests
 
+## Entity-only item identity registry
+
+ItemRegistry stores ID/VID-to-entity bindings and an entity-to-key pair for
+generation-checked removal. The CItem pointer indexes, pointer lookup and unused
+legacy-item invariant adapter are deleted. Registration validates ItemIdentity,
+rejects live ID or VID collisions without replacing either item, and preallocates
+new map nodes before committing both indexes. Lookups reject stale handles,
+removed identities and keys that no longer match the entity's current identity.
+Reindexing removes old aliases; cleanup of an older generation cannot remove
+its successor. Zero-ID gold and ID-only items remain supported.
+
+The allocation factory no longer finds/rebinds an existing item by a legacy
+pointer or a duplicate database ID. Repeated binding of the same allocation
+uses the existing entity state instead of rehydrating it from CItem. A new
+allocation colliding with an existing item is rejected. The CItem allocation
+boundary itself remains and is not claimed to be fully migrated.
+
+ItemRuntimeTests now links the real ItemRegistry.cpp rather than lookup doubles.
+It exercises ID/VID conflicts, identity mismatch, idempotency, reindexing, all
+unregister forms, missing identities, recycled generations, zero sentinels and
+the public ItemSystem lookup APIs. Factory integration is compiled with the
+server, not executed by this headless target; allocator failure is not injected
+into the registry maps. Live login/duplicate-load/persistence checks remain needed.
+
 ## Entity-native item load initialization
 
 `CheckItemUseLevel` and `OnAfterCreatedItem` now execute in ItemSystem.cpp,

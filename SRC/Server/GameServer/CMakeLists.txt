@@ -51,6 +51,7 @@ add_test(NAME item_manager_lifecycle COMMAND ItemManagerLifecycleTests)
 add_executable(ItemRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemRuntimeTests.cpp
     ecs/systems/ItemSystem.cpp
+    ecs/ItemRegistry.cpp
 )
 target_link_libraries(ItemRuntimeTests PRIVATE SERVER EnTT::EnTT LUA)
 if(MSVC)

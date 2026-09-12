@@ -4,11 +4,8 @@
 
 #include <entt/entt.hpp>
 
-#include "ItemRegistry.hpp"
-#include "Registry.hpp"
 #include "components/item_components.hpp"
 #include "components/item_proto_components.hpp"
-#include "../item.h"
 #include <Core/Logging.hpp>
 
 namespace ecs::ItemInvariants {
@@ -68,25 +65,6 @@ inline void ValidateItemEntity(entt::registry& reg, entt::entity itemE, const ch
         LOG_WARN("[ITEM_INVARIANT] entity={} ctx={} missing component {}",
             static_cast<uint32_t>(itemE), context ? context : "unknown", missing);
     }
-}
-
-inline void ValidateLegacyItemHasEntity(LPITEM legacyItem, const char* context)
-{
-    if (!legacyItem)
-        return;
-
-    const uint32_t itemID = legacyItem->GetID();
-    if (itemID == 0)
-        return;
-
-    const entt::entity itemE = CItemRegistry::Instance().Find(itemID);
-    if (itemE == entt::null || !g_registry.valid(itemE)) {
-        LOG_WARN("[ITEM_BYPASS] legacy item id={} vid={} vnum={} ctx={} has no ECS entity",
-            itemID, legacyItem->GetVID(), legacyItem->GetVnum(), context ? context : "unknown");
-        return;
-    }
-
-    ValidateItemEntity(g_registry, itemE, context);
 }
 
 } // namespace ecs::ItemInvariants

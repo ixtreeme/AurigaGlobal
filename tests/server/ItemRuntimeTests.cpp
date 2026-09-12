@@ -135,9 +135,6 @@ void CParty::ChatPacketToAllMemberNew(uint8_t, uint32_t, const char*, ...) { Une
 void MountSystem::ForceClearRidingState(entt::entity) { Unexpected(); }
 void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity) { Unexpected(); }
 void ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
-CItemRegistry& CItemRegistry::Instance() { static CItemRegistry registry; return registry; }
-entt::entity CItemRegistry::Find(uint32_t) const { Unexpected(); }
-entt::entity CItemRegistry::FindByVID(uint32_t) const { Unexpected(); }
 int CItem::GetSpecialGroup() const { Unexpected(); }
 uint32_t CItem::GetSIGVnum() const { Unexpected(); }
 void CItem::ChangeRuneAttr(int32_t) { Unexpected(); }
@@ -161,6 +158,77 @@ std::shared_ptr<spdlog::logger> GetErrorLogger() { return GetLogger(); }
 }
 
 namespace {
+void NativeIdentityRegistry() {
+    Reset();
+    CItemRegistry registry;
+    const auto make = [](uint32_t id, uint32_t vid) {
+        const auto item = g_registry.create();
+        auto& identity = g_registry.emplace<ecs::ItemIdentity>(item);
+        identity.id = id; identity.vid = vid;
+        return item;
+    };
+    const auto a = make(10, 20), b = make(30, 40);
+    Check(registry.Register(10, 20, a) && registry.Register(30, b), "native identities not registered");
+    Check(registry.Find(10) == a && registry.FindByVID(20) == a && registry.FindByVID(40) == b,
+        "ID and VID do not resolve the same entity");
+    Check(registry.Register(10, 20, a), "repeated registration is not idempotent");
+    Check(!registry.Register(99, 20, a) && !registry.Register(10, 99, a), "mismatched identity accepted");
+
+    auto& bIdentity = g_registry.get<ecs::ItemIdentity>(b);
+    bIdentity.id = 10;
+    Check(!registry.Register(10, 40, b), "a duplicate ID stole a live item");
+    bIdentity.id = 30; bIdentity.vid = 20;
+    Check(!registry.Register(30, 20, b), "a duplicate VID stole a live item");
+    bIdentity.vid = 40;
+    Check(registry.Find(10) == a && registry.FindByVID(20) == a &&
+        registry.Find(30) == b && registry.FindByVID(40) == b, "failed registration changed existing bindings");
+
+    bIdentity.id = 50; bIdentity.vid = 60;
+    Check(registry.Register(50, 60, b) && registry.Find(30) == entt::null &&
+        registry.FindByVID(40) == entt::null && registry.Find(50) == b && registry.FindByVID(60) == b,
+        "reindexing left stale aliases");
+    registry.Unregister(50, a);
+    Check(registry.Find(50) == b, "foreign generation removed a binding");
+    registry.Unregister(50, b);
+    Check(registry.Find(50) == entt::null && registry.FindByVID(60) == entt::null,
+        "conditional unregister did not remove both indexes");
+
+    g_registry.destroy(a);
+    Check(registry.Find(10) == entt::null && registry.FindByVID(20) == entt::null, "stale entity escaped lookup");
+    const auto reused = make(10, 20);
+    Check(entt::to_entity(a) == entt::to_entity(reused) && a != reused, "entity slot was not recycled");
+    Check(registry.Register(10, 20, reused), "stale binding prevented generation reuse");
+    registry.Unregister(10, a); registry.Unregister(a);
+    Check(registry.Find(10) == reused && registry.FindByVID(20) == reused,
+        "old generation cleanup removed its successor");
+    registry.Unregister(10);
+    Check(registry.Find(10) == entt::null && registry.FindByVID(20) == entt::null, "ID removal left a VID alias");
+
+    const auto gold = make(0, 70), idOnly = make(80, 0);
+    Check(registry.Register(0, 70, gold) && registry.Register(80, idOnly), "zero-ID gold or ID-only item rejected");
+    Check(registry.Find(0) == entt::null && registry.FindByVID(0) == entt::null &&
+        registry.FindByVID(70) == gold && registry.Find(80) == idOnly, "zero sentinel became an identity");
+    const auto noKeys = make(0, 0), nonItem = g_registry.create();
+    Check(!registry.Register(0, 0, noKeys) && !registry.Register(90, 91, nonItem) &&
+        !registry.Register(90, 91, entt::null) && !registry.Register(10, 20, a), "invalid registration accepted");
+
+    g_registry.remove<ecs::ItemIdentity>(gold);
+    Check(registry.FindByVID(70) == entt::null, "an entity without item identity remained visible");
+    const auto replacement = make(0, 70);
+    Check(registry.Register(0, 70, replacement), "removed identity blocked a valid item");
+    registry.Unregister(gold);
+    Check(registry.FindByVID(70) == replacement, "removed item's cleanup deleted a new binding");
+    registry.Unregister(replacement); registry.Unregister(idOnly);
+    Check(registry.FindByVID(70) == entt::null && registry.Find(80) == entt::null, "entity-only cleanup failed");
+
+    // ItemSystem's public lookups execute the same production registry.
+    auto& shared = CItemRegistry::Instance();
+    Check(shared.Register(10, 20, reused), "shared registry rejected a live entity");
+    Check(ItemSystem::FindItemByID(10) == reused && ItemSystem::FindItemByVID(20) == reused,
+        "public item lookup did not use native identity");
+    shared.Unregister(reused);
+}
+
 void LevelChecks() {
     Reset(); Fixture f;
     Check(ItemSystem::CheckItemUseLevel(f.item, 0), "unrestricted item rejected");
@@ -239,7 +307,7 @@ void TimerFailuresAndCallbacks() {
 int main() {
     g_dispatcher.sink<ecs::EvItemExpired>().connect<&Published>();
     g_registry.on_construct<ecs::ItemEvents>().connect<&Constructed>();
-    try { LevelChecks(); LoadedTimers(); TimerFailuresAndCallbacks(); Reset(); }
+    try { NativeIdentityRegistry(); LevelChecks(); LoadedTimers(); TimerFailuresAndCallbacks(); Reset(); }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
     std::cout << "Item runtime: " << checks << " checks passed\n";
 }

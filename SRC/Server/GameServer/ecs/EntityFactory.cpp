@@ -3,6 +3,7 @@
 #include "systems/PlayerRuntimeSystem.hpp"
 
 #include "EntityFactory.hpp"
+#include "../item.h"
 #include "systems/CombatSystem.hpp"
 #include "systems/InventorySystem.hpp"
 #include "EntityInvariants.hpp"
@@ -764,27 +765,29 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, LPITEM item)
         return entt::null;
     }
 
-	entt::entity existing = item->GetEntityHandle();
-	if (existing != entt::null && reg.valid(existing)) {
-		SyncItemEntity(reg, existing, item);
-		CItemRegistry::Instance().Register(itemID, itemVID, item, existing);
-		ecs::ItemInvariants::ValidateItemEntity(reg, existing, "item.factory.handle");
-		return existing;
-	}
-
-	existing = CItemRegistry::Instance().FindByLegacy(item);
-    if (existing == entt::null && itemID != 0)
-        existing = CItemRegistry::Instance().Find(itemID);
+    auto& registry = CItemRegistry::Instance();
+    const entt::entity existing = item->GetEntityHandle();
     if (existing != entt::null && reg.valid(existing)) {
-        SyncItemEntity(reg, existing, item);
-        CItemRegistry::Instance().Register(itemID, itemVID, item, existing);
-        ecs::ItemInvariants::ValidateItemEntity(reg, existing, "item.factory.existing");
+        const auto* binding = reg.try_get<ecs::LegacyItemPtr>(existing);
+        // An existing entity is authoritative. Never rehydrate it from an
+        // allocation, or attach a different allocation through the same ID.
+        if (!binding || binding->ptr != item || !registry.Register(itemID, itemVID, existing))
+            return entt::null;
+        ecs::ItemInvariants::ValidateItemEntity(reg, existing, "item.factory.handle");
         return existing;
     }
 
+    if (registry.Find(itemID) != entt::null || registry.FindByVID(itemVID) != entt::null)
+        return entt::null;
+
     const entt::entity entity = reg.create();
     SyncItemEntity(reg, entity, item);
-    CItemRegistry::Instance().Register(itemID, itemVID, item, entity);
+    if (!registry.Register(itemID, itemVID, entity)) {
+        // A construction callback may have claimed an ID. Retire only this
+        // new entity; the registry leaves all other live bindings untouched.
+        DestroyItemEntity(reg, entity);
+        return entt::null;
+    }
     ecs::ItemInvariants::ValidateItemEntity(reg, entity, "item.factory.create");
     return entity;
 }
