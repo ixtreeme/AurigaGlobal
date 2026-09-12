@@ -558,9 +558,9 @@ void OpenMyShop(entt::entity e, const char* c_pszSign, TShopItemTable* pTable, u
         AffectSystem::RemoveAffect(e, AFFECT_POLYMORPH);
     }
 
-    if (self->GetHorse())
+    if (MountSystem::GetSummonedHorse(e) != entt::null)
     {
-        self->HorseSummon(false, true);
+        MountSystem::SummonHorse(e, false, true);
     }
     else if (MountSystem::GetMountVnum(e))
     {

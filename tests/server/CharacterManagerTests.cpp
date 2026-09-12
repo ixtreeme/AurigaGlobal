@@ -387,7 +387,6 @@ void FlushDelayedSaveItem(entt::entity) {}
 void CHARACTER::SetHorseLevel(int) { Unexpected(); }
 bool CHARACTER::StartRiding() { Unexpected(); }
 bool CHARACTER::StopRiding() { Unexpected(); }
-uint32_t CHARACTER::GetMyHorseVnum() const { Unexpected(); }
 void CHARACTER::HorseDie() { Unexpected(); }
 bool CHARACTER::ReviveHorse() { Unexpected(); }
 void CHARACTER::SendHorseInfo() { Unexpected(); }

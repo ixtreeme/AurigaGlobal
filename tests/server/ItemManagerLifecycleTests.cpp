@@ -233,7 +233,6 @@ bool MountSystem::IsHorseRiding(entt::entity) { return false; }
 void CHARACTER::ComputePoints() { Unexpected(); }
 void CHARACTER::SyncQuickslot(uint8_t, uint8_t, uint8_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueGroup(uint32_t) const { Unexpected(); }
-void CHARACTER::SendMountInventory() { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity, uint8_t) { Unexpected(); }
 int ecs::PointSystem::GetLevel(entt::entity) { Unexpected(); }
 namespace ecs::PlayerRuntime {

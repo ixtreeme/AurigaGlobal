@@ -608,10 +608,8 @@ public:
 	uint32_t			GetPlayerID() const { return m_dwPlayerID; }
 public:
 #ifdef ENABLE_FAKE_SHOP_HEADER
-	int GetBeltCount() const;
 #endif
 #ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
-	int GetBeltCount() const;
 	void CHARACTER::UpdateMountCountOverhead(LPCHARACTER ch, bool force)
 #endif
 
@@ -725,9 +723,6 @@ public:
 
 
 
-	void			ResetMountCounter();
-	uint8_t			IncreaseMountCounter();
-	uint8_t			GetMountCounter() const;
 
 protected:
 	uint32_t			m_dwPlayerID;
@@ -1295,10 +1290,8 @@ public:
 public:
 
 
-	CMountInventory* GetMountInventory() const;
 	void				QueryMountInventory();
 	void				LoadMountInventory(const std::vector<TMountInventoryItemTable>& items);
-	void                SendMountInventory();
 
 	/// â�� ���� ��û
 	/**
@@ -1337,7 +1330,6 @@ public:
 	virtual	bool		StartRiding();
 	virtual	bool		StopRiding();
 
-	virtual	uint32_t		GetMyHorseVnum() const;
 
 	virtual	void		HorseDie();
 	virtual bool		ReviveHorse();
@@ -1346,9 +1338,7 @@ public:
 	virtual	void		ClearHorseInfo();
 	entt::entity			RiderEntity() const override { return GetEntityHandle(); }
 
-	void				HorseSummon(bool bSummon, bool bFromFar = false, uint32_t dwVnum = 0, const char* name = nullptr);
 
-	LPCHARACTER			GetHorse() const;
 
 	bool				IsRiding() const;
 
@@ -1777,7 +1767,6 @@ public:
 	void ProcessCheatCheck(int32_t time);
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
-	void ComputeMountInventoryBonuses();
 #endif
 
 #ifdef __DEFENSE_WAVE__

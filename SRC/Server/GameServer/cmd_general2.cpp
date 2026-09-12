@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
@@ -807,9 +808,9 @@ ACMD(do_doctrine_choose) {
 			name += " Horse";
 			CHorseNameManager::instance().UpdateHorseName((ecs::PlayerRuntime::GetPlayerID(character)), name.c_str(), true);
 
-			if (ch->GetHorse()) {
-				ch->HorseSummon(false, true);
-				ch->HorseSummon(true, true);
+			if (MountSystem::GetSummonedHorse(character) != entt::null) {
+				MountSystem::SummonHorse(character, false, true);
+				MountSystem::SummonHorse(character, true, true);
 			}
 		}
 

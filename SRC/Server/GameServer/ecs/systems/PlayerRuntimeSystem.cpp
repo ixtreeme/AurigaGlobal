@@ -3180,7 +3180,7 @@ void CHARACTER::Destroy()
         AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
         AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
     }
-    HorseSummon(false);
+    MountSystem::SummonHorse(GetEntityHandle(), false);
 #endif
 #ifdef __PET_SYSTEM__
     if (m_petSystem)
@@ -3204,7 +3204,7 @@ void CHARACTER::Destroy()
     }
 #endif
 
-    HorseSummon(false);
+    MountSystem::SummonHorse(GetEntityHandle(), false);
 
     if (const entt::entity rider = MountSystem::GetRider(GetEntityHandle()); rider != entt::null)
     {

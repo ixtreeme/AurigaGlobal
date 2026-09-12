@@ -105,11 +105,6 @@ namespace MountSystem {
 
 } // namespace MountSystem
 
-CMountInventory* CHARACTER::GetMountInventory() const
-{
-    return MountSystem::GetMountInventory(GetEntityHandle());
-}
-
 void CHARACTER::QueryMountInventory()
 {
     if (m_bMountInventoryLoaded || !GetDesc())
@@ -153,13 +148,8 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
     }
 
     m_bMountInventoryLoaded = true;
-    SendMountInventory();
-    ComputePoints();
-}
-
-void CHARACTER::SendMountInventory()
-{
     MountSystem::SendMountInventory(GetEntityHandle());
+    ComputePoints();
 }
 
 void MountSystem::SendMountInventory(entt::entity owner)
@@ -195,11 +185,6 @@ void MountSystem::SendMountInventory(entt::entity owner)
 
     if (auto* desc = ecs::PlayerRuntime::GetDesc(owner))
         desc->Packet(buf.read_peek(), buf.size());
-}
-
-int CHARACTER::GetBeltCount() const
-{
-    return MountSystem::GetBeltCount(GetEntityHandle());
 }
 
 void MountSystem::UpdateMountCountOverheadToViewers(entt::entity owner)
@@ -243,8 +228,7 @@ bool IsRiding(entt::entity rider)
 
 bool IsSummoned(entt::entity rider)
 {
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character && character->GetHorse();
+    return GetSummonedHorse(rider) != entt::null;
 }
 
 bool IsRidingCostume(entt::entity rider)
@@ -328,11 +312,6 @@ void SetMountVnum(entt::entity rider, uint32_t vnum)
 }
 
 } // namespace MountSystem
-
-LPCHARACTER CHARACTER::GetHorse() const
-{
-	return ecs::LegacyCharOf(MountSystem::GetSummonedHorse(GetEntityHandle()));
-}
 
 EVENTFUNC(horse_dead_event);
 
@@ -823,9 +802,10 @@ bool CHARACTER::StartRiding()
 	if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 		return false;
 
-	uint32_t dwMountVnum = GetHorse()
-		? ecs::PlayerRuntime::GetRaceNum(GetHorse()->GetEntityHandle())
-		: GetMyHorseVnum();
+	const entt::entity summoned = MountSystem::GetSummonedHorse(rider);
+	uint32_t dwMountVnum = summoned != entt::null
+		? ecs::PlayerRuntime::GetRaceNum(summoned)
+		: MountSystem::GetMyHorseVnum(rider);
 
 	if (false == CHorseRider::StartRiding())
 	{
@@ -841,7 +821,7 @@ bool CHARACTER::StartRiding()
 		return false;
 	}
 
-	HorseSummon(false);
+	MountSystem::SummonHorse(rider, false);
 
 	MountSystem::SetMountVnum(rider, dwMountVnum);
 
@@ -864,7 +844,7 @@ bool CHARACTER::StopRiding()
 		{
 			uint32_t dwOldVnum = MountSystem::GetMountVnum(rider);
 			MountSystem::SetMountVnum(rider, 0);
-			HorseSummon(true, false, dwOldVnum);
+			MountSystem::SummonHorse(rider, true, false, dwOldVnum);
 		}
 		else
 		{
@@ -895,11 +875,7 @@ EVENTFUNC(horse_dead_event)
 		return 0;
 	}
 
-	auto* ch = ecs::LegacyCharOf(info->ch);
-	if (ch == nullptr) {
-		return 0;
-	}
-	ch->HorseSummon(false);
+	MountSystem::SummonHorse(info->ch, false);
 	return 0;
 }
 
@@ -933,28 +909,18 @@ void SetRider(entt::entity horse, entt::entity rider)
 
 } // namespace MountSystem
 
-void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
-{
-	MountSystem::SummonHorse(GetEntityHandle(), bSummon, bFromFar, dwVnum, pPetName);
-}
-
-uint32_t CHARACTER::GetMyHorseVnum() const
-{
-	return MountSystem::GetMyHorseVnum(GetEntityHandle());
-}
-
 void CHARACTER::HorseDie()
 {
 	CHorseRider::HorseDie();
-	HorseSummon(false);
+	MountSystem::SummonHorse(GetEntityHandle(), false);
 }
 
 bool CHARACTER::ReviveHorse()
 {
 	if (CHorseRider::ReviveHorse())
 	{
-		HorseSummon(false);
-		HorseSummon(true);
+		MountSystem::SummonHorse(GetEntityHandle(), false);
+		MountSystem::SummonHorse(GetEntityHandle(), true);
 		MarkMountDirty(GetEntityHandle());
 		return true;
 	}
@@ -978,7 +944,7 @@ void CHARACTER::ClearHorseInfo()
 
 void CHARACTER::SendHorseInfo()
 {
-	if (GetHorse() || IsHorseRiding())
+	if (MountSystem::GetSummonedHorse(GetEntityHandle()) != entt::null || IsHorseRiding())
 	{
 		int iHealthGrade;
 		int iStaminaGrade;
@@ -1050,21 +1016,6 @@ void CHARACTER::SetHorseLevel(int iLevel)
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 #endif
 #endif
-
-uint8_t CHARACTER::GetMountCounter() const
-{
-	return CombatSystem::GetMountCounter(GetEntityHandle());
-}
-
-void CHARACTER::ResetMountCounter()
-{
-	CombatSystem::ResetMountCounter(GetEntityHandle());
-}
-
-uint8_t CHARACTER::IncreaseMountCounter()
-{
-	return CombatSystem::IncreaseMountCounter(GetEntityHandle());
-}
 
 bool CHARACTER::IsRiding() const
 {
@@ -1207,11 +1158,6 @@ void CHARACTER::UpdateMountSkin() {
 }
 
 #endif
-
-void CHARACTER::ComputeMountInventoryBonuses()
-{
-	MountSystem::ComputeMountInventoryBonuses(GetEntityHandle());
-}
 
 void MountSystem::ComputeMountInventoryBonuses(entt::entity owner)
 {
