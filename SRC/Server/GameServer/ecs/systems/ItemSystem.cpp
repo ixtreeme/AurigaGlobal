@@ -2852,49 +2852,6 @@ bool SyncItemStateFromLegacy(entt::entity item)
     return true;
 }
 
-bool DestroyLoadedDuplicateItem(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem) {
-        LOG_ERROR("DUP_ITEM_DESTROY_RESOLVE_FAIL entity={}", static_cast<uint32_t>(item));
-        return false;
-    }
-
-    const uint32_t itemID = GetItemID(item);
-    const uint32_t itemVID = GetItemVID(item);
-    const uint32_t itemVnum = GetItemVnum(item);
-    const uint32_t lastOwnerPID = GetItemLastOwnerPID(item);
-    const uint8_t itemWindow = GetItemWindow(item);
-    const uint16_t itemCell = GetItemCell(item);
-    LOG_ERROR("DUP_ITEM_DESTROY_BEGIN entity={} item={} id={} vid={} vnum={} last_owner_pid={} window={} cell={}",
-        static_cast<uint32_t>(item), static_cast<const void*>(legacyItem), itemID, itemVID, itemVnum,
-        lastOwnerPID, static_cast<int>(itemWindow), itemCell);
-
-    ItemSystem::SetItemSkipSave(item, true);
-
-    const auto* ownerState = g_registry.try_get<ecs::ItemOwner>(item);
-    const uint32_t ownerPID = ownerState ? ownerState->ownerPID : 0;
-    const entt::entity legacyOwner = GetItemOwnerEntity(item);
-    const entt::entity liveOwner =
-        ownerPID != 0 ? ecs::PlayerRuntime::FindByPlayerID(ownerPID) : entt::null;
-    LOG_ERROR("DUP_ITEM_DESTROY_OWNER entity={} id={} owner_pid={} legacy_owner={} live_owner={}",
-        static_cast<uint32_t>(item), itemID, ownerPID,
-        static_cast<uint32_t>(legacyOwner), static_cast<uint32_t>(liveOwner));
-
-    if (legacyOwner != entt::null) {
-        LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_BEGIN entity={} id={} stale_owner={}",
-            static_cast<uint32_t>(item), itemID, liveOwner != legacyOwner);
-        InventorySystem::RemoveFromCharacter(item);
-        LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_END entity={} id={} owner_after={}",
-            static_cast<uint32_t>(item), itemID, static_cast<uint32_t>(GetItemOwnerEntity(item)));
-    }
-
-    LOG_ERROR("DUP_ITEM_DESTROY_LEGACY_BEGIN item={} id={}", static_cast<const void*>(legacyItem), itemID);
-    M2_DESTROY_ITEM(item);
-    LOG_ERROR("DUP_ITEM_DESTROY_LEGACY_END item={} id={}", static_cast<const void*>(legacyItem), itemID);
-    return true;
-}
-
 static uint32_t EntityPlayerID(entt::entity e)
 {
     if (const auto* playerID = g_registry.try_get<ecs::PlayerID>(e))

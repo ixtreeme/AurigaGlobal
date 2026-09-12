@@ -44,6 +44,9 @@ uint16_t quickslotType = 0, quickslotCell = 0;
 bool rejectFactory = false;
 bool rejectDetach = false;
 bool creationTest = false, entityOnlyFactory = false, rejectAllocation = false, rejectCount = false;
+bool persistenceTest = false;
+std::vector<uint8_t> persistedHeaders;
+std::vector<std::vector<uint8_t>> persistedPayloads;
 bool rejectRune = false, rejectDS = false, rejectTimer = false, blendExists = false;
 bool highDraw = false;
 uint32_t nextItemID = 1000;
@@ -87,9 +90,11 @@ public:
             m_set_pkItemForDelayedSave.contains(item);
     }
     bool Busy(entt::entity item) const { return m_itemsBeingDestroyed.contains(item); }
+    bool PendingSave(entt::entity item) const { return m_set_pkItemForDelayedSave.contains(item); }
     ~Manager() { m_VIDMap.clear(); m_map_pkItemByID.clear(); m_set_pkItemForDelayedSave.clear(); }
 };
 void Reset() {
+    persistenceTest = false; db_clientdesc = nullptr; persistedHeaders.clear(); persistedPayloads.clear();
     onCreation = {}; creationTest = entityOnlyFactory = rejectAllocation = rejectCount = false;
     rejectRune = rejectDS = rejectTimer = blendExists = highDraw = false;
     nextItemID = 1000; creationSaves = allocations = 0; creationStages.clear(); availableSkills.clear();
@@ -135,6 +140,41 @@ CEntity::~CEntity() = default;
 CItem::CItem(uint32_t vnum) : m_pProto(nullptr), m_dwVnum(vnum), m_dwID(0), m_dwVID(0),
     m_lFlag(0), m_dwMaskVnum(0) {}
 CItem::~CItem() { Check(GetEntityHandle() == entt::null, "allocation freed before entity unbinding"); ++frees; }
+// Real descriptor objects with controlled packet sinks; no fabricated pointers
+// or live networking/crypto/parser services in persistence regression tests.
+DESC::DESC() { m_sock = 1; m_entity = entt::null; m_accountTable = {}; }
+DESC::~DESC() {}
+void DESC::Destroy() { Unexpected(); }
+void DESC::SetPhase(int) { Unexpected(); }
+CLIENT_DESC::CLIENT_DESC() {}
+CLIENT_DESC::~CLIENT_DESC() {}
+void CLIENT_DESC::Destroy() { Unexpected(); }
+void CLIENT_DESC::SetPhase(int) { Unexpected(); }
+CInputProcessor::CInputProcessor() {}
+bool CInputProcessor::Process(DESC*, const void*, int, int&) { Unexpected(); }
+void CInputProcessor::Handshake(DESC*, const char*) { Unexpected(); }
+CInputHandshake::CInputHandshake() {}
+CInputHandshake::~CInputHandshake() {}
+int CInputHandshake::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
+int CInputLogin::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
+int CInputMain::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
+int CInputDead::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
+int CInputDB::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
+bool CInputDB::Process(DESC*, const void*, int, int&) { Unexpected(); }
+CInputP2P::CInputP2P() {}
+CInputAuth::CInputAuth() {}
+int CInputP2P::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
+int CInputAuth::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
+CPacketInfo::CPacketInfo() : m_pCurrentPacket(nullptr), m_dwStartTime(0) {}
+CPacketInfo::~CPacketInfo() {}
+CPacketInfoCG::CPacketInfoCG() {}
+CPacketInfoGG::CPacketInfoGG() {}
+CPacketInfoCG::~CPacketInfoCG() {}
+CPacketInfoGG::~CPacketInfoGG() {}
+Cipher::Cipher() : activated_(false), encoder_(nullptr), decoder_(nullptr), key_agreement_(nullptr) {}
+Cipher::~Cipher() {}
+void intrusive_ptr_add_ref(EVENT* event) { ++event->ref_count; }
+void intrusive_ptr_release(EVENT* event) { if (!--event->ref_count) delete event; }
 void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) { Unexpected(); }
 void DESC::Packet(const void*, int) { Unexpected(); }
 CSemaphore::CSemaphore() = default;
@@ -236,10 +276,10 @@ int ecs::PointSystem::GetLevel(entt::entity) { Unexpected(); }
 namespace ecs::PlayerRuntime {
 LPDESC GetDesc(entt::entity owner) { Check(g_registry.valid(owner), "stale descriptor lookup"); return nullptr; }
 uint32_t GetAccountID(entt::entity owner) { Check(g_registry.valid(owner), "stale account lookup"); return 0; }
-uint32_t GetPlayerID(entt::entity) { Unexpected(); }
+uint32_t GetPlayerID(entt::entity owner) { Check(persistenceTest && IsPC(owner), "invalid save owner"); return 1234; }
 uint8_t GetEmpire(entt::entity) { Unexpected(); }
 uint32_t GetRaceNum(entt::entity) { Unexpected(); }
-bool IsValid(entt::entity) { Unexpected(); }
+bool IsValid(entt::entity owner) { Check(persistenceTest, "unexpected player validity check"); return IsPC(owner); }
 bool IsPC(entt::entity owner) { return g_registry.valid(owner) && g_registry.all_of<Player>(owner); }
 bool IsStone(entt::entity) { Unexpected(); }
 uint8_t GetMobRank(entt::entity) { Unexpected(); }
@@ -274,7 +314,7 @@ int32_t GetItemFlags(entt::entity item) { return g_registry.get<ecs::ItemFlags>(
 bool DestroyItemEntityEcs(entt::entity item, const char* reason) {
     ITEM_MANAGER::instance().RemoveItem(item, reason); return !g_registry.valid(item);
 }
-int16_t GetItemLockedAttr(entt::entity) { Unexpected(); }
+int16_t GetItemLockedAttr(entt::entity) { Check(persistenceTest, "unexpected saved locked attribute"); return -1; }
 void StartUniqueExpireEvent(entt::entity item) { CreationStage("unique", item); }
 void StartTimerBasedOnWearExpireEvent(entt::entity) { Unexpected(); }
 uint32_t GetItemSocket(entt::entity, int) { return 0; }
@@ -285,7 +325,7 @@ bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_
 }
 bool ApplyItemAddon(entt::entity item, int) { CreationStage("addon", item); return true; }
 bool IsItemConsumptionPending(entt::entity item) { return g_registry.valid(item) && g_registry.get<ecs::ItemCount>(item).count < 0; }
-void ProcessPendingItemConsumptions() { Unexpected(); }
+void ProcessPendingItemConsumptions() { Check(persistenceTest, "unexpected pending consumption processing"); }
 bool SetItemSkipSave(entt::entity item, bool flag) { g_registry.get<ecs::ItemFlags>(item).skipSave = flag; return true; }
 uint8_t GetItemSize(entt::entity) { return 1; }
 uint32_t GetItemAntiFlags(entt::entity) { return 0; }
@@ -317,8 +357,14 @@ uint8_t CombatSystem::GetDropMetinStonePct(entt::entity) { return 0; }
 int CHARACTER_MANAGER::GetMobItemRate(entt::entity) { Unexpected(); }
 const event_struct_* CHARACTER_MANAGER::CheckEventIsActive(uint8_t, uint8_t) { Unexpected(); }
 void CHARACTER_MANAGER::CheckEventForDrop(entt::entity, entt::entity, std::vector<entt::entity>&) { Unexpected(); }
-void CLIENT_DESC::DBPacketHeader(uint8_t, uint32_t, uint32_t) { Unexpected(); }
-void CLIENT_DESC::Packet(const void*, int) { Unexpected(); }
+void CLIENT_DESC::DBPacketHeader(uint8_t header, uint32_t, uint32_t) {
+    Check(persistenceTest && this == db_clientdesc, "unexpected DB header"); persistedHeaders.push_back(header);
+}
+void CLIENT_DESC::Packet(const void* data, int size) {
+    Check(persistenceTest && this == db_clientdesc && data && size > 0, "invalid DB payload");
+    const auto* bytes = static_cast<const uint8_t*>(data);
+    persistedPayloads.emplace_back(bytes, bytes + size);
+}
 void DBManager::ReturnQuery(int, uint32_t, void*, const char*, ...) { Unexpected(); }
 void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t) { Unexpected(); }
 void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char* reason, const char* hint) {
@@ -875,6 +921,197 @@ void SlotAndPersistenceGuards() {
     manager.DestroyItem(nonItem); manager.DestroyItem(entt::null);
     Check(g_registry.valid(nonItem), "non-item entity destroyed");
 }
+
+void DuplicateLoadRetirement() {
+    for (const bool legacy : {false, true}) {
+        Reset(); Manager manager; const auto item = Item(manager);
+        const auto owner = Owner(item, EQUIPMENT, INVENTORY_MAX_NUM + WEAR_BODY);
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        if (legacy) {
+            auto* allocation = new CItem(100); allocation->SetEntityHandle(item);
+            allocation->SetID(999); allocation->SetVID(998);
+            g_registry.emplace<ecs::LegacyItemPtr>(item).ptr = allocation;
+        }
+        onDetach = [&](entt::entity current) {
+            Check(manager.Busy(current) && ItemSystem::GetItemSkipSave(current),
+                "duplicate detached outside manager guard or could delete DB row");
+        };
+        Check(db_clientdesc == nullptr && ItemSystem::DestroyLoadedDuplicateItem(item),
+            "duplicate retirement required legacy object or DB connection");
+        Check(!g_registry.valid(item) && !manager.Indexed(item) && !manager.Busy(item) &&
+            !inventory.contains({owner, INVENTORY_MAX_NUM + WEAR_BODY}) &&
+            groundCalls == 1 && detachCalls == 1 && factoryCalls == 1 && frees == int(legacy),
+            "duplicate retirement skipped/repeated entity, slot, index or allocation cleanup");
+        Check(!ItemSystem::DestroyLoadedDuplicateItem(item) && factoryCalls == 1,
+            "already retired duplicate was destroyed again");
+    }
+    for (int invalid = 0; invalid < 4; ++invalid) {
+        Reset(); Manager manager; const auto item = Item(manager);
+        if (invalid == 0) g_registry.remove<ecs::ItemIdentity>(item);
+        if (invalid == 1) g_registry.remove<ecs::ItemFlags>(item);
+        if (invalid == 2) g_registry.remove<ecs::ItemOwner>(item);
+        if (invalid == 3) g_registry.remove<ecs::ItemLocation>(item);
+        Check(!ItemSystem::DestroyLoadedDuplicateItem(item) &&
+            !ItemSystem::DestroyLoadedDuplicateItem(entt::null) && g_registry.valid(item) &&
+            groundCalls == 0 && factoryCalls == 0, "incomplete duplicate entered destruction");
+    }
+}
+
+void DuplicateLoadFailuresAndReentry() {
+    for (const bool skipSave : {false, true}) for (int failure = 0; failure < 5; ++failure) {
+        Reset(); Manager manager; const auto item = Item(manager); Owner(item);
+        g_registry.get<ecs::ItemFlags>(item).skipSave = skipSave;
+        if (failure == 0) rejectDetach = true;
+        if (failure == 1) rejectFactory = true;
+        const auto fail = [](entt::entity) { throw std::runtime_error("duplicate callback failure"); };
+        if (failure == 2) onGround = fail;
+        if (failure == 3) onDetach = fail;
+        if (failure == 4) onFactory = fail;
+        bool threw = false, destroyed = false;
+        try { destroyed = ItemSystem::DestroyLoadedDuplicateItem(item); }
+        catch (const std::runtime_error&) { threw = true; }
+        Check(!destroyed && threw == (failure >= 2) && g_registry.valid(item) && manager.Indexed(item) &&
+            !manager.Busy(item) && ItemSystem::GetItemSkipSave(item) == skipSave,
+            "failed duplicate cleanup reported success or lost save policy/index/guard");
+        rejectDetach = rejectFactory = false; onGround = onDetach = onFactory = {};
+        Check(ItemSystem::DestroyLoadedDuplicateItem(item) && !manager.Indexed(item),
+            "duplicate cleanup could not retry after failure");
+    }
+    for (int stage = 0; stage < 3; ++stage) {
+        Reset(); Manager manager; const auto item = Item(manager); Owner(item);
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        const auto recurse = [&](entt::entity current) {
+            Check(manager.Busy(current) && !ItemSystem::DestroyLoadedDuplicateItem(current) &&
+                g_registry.valid(current) && ItemSystem::GetItemSkipSave(current),
+                "recursive duplicate bypassed manager guard or changed outer save policy");
+        };
+        if (stage == 0) onGround = recurse;
+        if (stage == 1) onDetach = recurse;
+        if (stage == 2) onFactory = recurse;
+        Check(ItemSystem::DestroyLoadedDuplicateItem(item) && groundCalls == 1 &&
+            detachCalls == 1 && factoryCalls == 1, "reentrant duplicate cleanup ran more than once");
+    }
+}
+
+void DuplicateLoadTransfersAndGenerations() {
+    for (int stage = 0; stage < 2; ++stage) for (const bool staleOwner : {false, true}) {
+        Reset(); Manager manager; const auto item = Item(manager); Owner(item);
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        entt::entity newOwner = entt::null;
+        const auto transfer = [&](entt::entity current) {
+            newOwner = Owner(current, INVENTORY, 7);
+            g_registry.get<ecs::ItemFlags>(current).isLocked = true;
+            if (staleOwner) g_registry.destroy(newOwner);
+        };
+        if (stage == 0) onGround = transfer; else onDetach = transfer;
+        Check(!ItemSystem::DestroyLoadedDuplicateItem(item) && manager.Indexed(item) &&
+            g_registry.valid(item) && factoryCalls == 0 &&
+            g_registry.get<ecs::ItemOwner>(item).owner == newOwner &&
+            inventory.at({newOwner, 7}) == item && !ItemSystem::GetItemSkipSave(item) &&
+            g_registry.get<ecs::ItemFlags>(item).isLocked,
+            "duplicate cleanup destroyed transferred state or left saving disabled");
+        onGround = onDetach = {}; ItemSystem::SetItemOwnerEntity(item, entt::null);
+        Check(ItemSystem::DestroyLoadedDuplicateItem(item), "transferred duplicate could not be retired later");
+    }
+    for (int stage = 0; stage < 2; ++stage) {
+        Reset(); Manager manager; const auto item = Item(manager); Owner(item);
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        entt::entity replacement = entt::null;
+        const auto recycle = [&](entt::entity current) {
+            g_registry.destroy(current); replacement = Item(manager);
+            Check(current != replacement && entt::to_entity(current) == entt::to_entity(replacement),
+                "duplicate test did not recycle entity generation");
+        };
+        if (stage == 0) onGround = recycle; else onDetach = recycle;
+        Check(ItemSystem::DestroyLoadedDuplicateItem(item) && g_registry.valid(replacement) &&
+            manager.Indexed(replacement) && !manager.Indexed(item) && factoryCalls == 0 &&
+            ItemSystem::GetItemSkipSave(replacement),
+            "retired generation removed replacement identity or overwrote its save policy");
+        onGround = onDetach = {};
+        Check(ItemSystem::DestroyLoadedDuplicateItem(replacement), "replacement cleanup failed");
+    }
+    for (const bool staleOwner : {false, true}) {
+        Reset(); Manager manager; const auto item = Item(manager); auto owner = Owner(item);
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        if (staleOwner) {
+            g_registry.destroy(owner); owner = g_registry.create();
+            g_registry.emplace<Player>(owner);
+        }
+        const auto occupant = Item(manager, 11, 21); inventory[{owner, 5}] = occupant;
+        Check(ItemSystem::DestroyLoadedDuplicateItem(item) && detachCalls == 0 &&
+            g_registry.valid(occupant) && manager.Indexed(occupant) && inventory.at({owner, 5}) == occupant,
+            "duplicate cleanup cleared a foreign occupant or resolved a recycled owner");
+        Check(ItemSystem::DestroyLoadedDuplicateItem(occupant), "foreign occupant cleanup failed");
+    }
+}
+
+void DeferredSavePolicies() {
+    for (int path = 0; path < 5; ++path) for (const bool disconnected : {false, true}) {
+        Reset(); Manager manager; const auto item = Item(manager); const auto owner = Owner(item);
+        persistenceTest = true;
+        CLIENT_DESC connection;
+        db_clientdesc = disconnected ? nullptr : &connection;
+        g_registry.get<ecs::ItemFlags>(item).skipSave = !disconnected;
+        const auto flush = [&] {
+            switch (path) {
+                case 0: return manager.SaveSingleItem(item);
+                case 1: manager.FlushDelayedSave(item); break;
+                case 2: manager.FlushDelayedSaveByOwner(owner); break;
+                case 3: manager.Update(); break;
+                case 4: manager.GracefulShutdown(); break;
+            }
+            return !manager.PendingSave(item);
+        };
+        Check(!flush() && persistedHeaders.empty() && persistedPayloads.empty() && manager.PendingSave(item),
+            "suppressed/disconnected save wrote data or discarded pending work");
+        db_clientdesc = &connection; g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        Check(flush() && persistedHeaders.size() == 1 && persistedHeaders[0] == HEADER_GD_ITEM_SAVE &&
+            persistedPayloads.size() == 1 && persistedPayloads[0].size() == sizeof(TPlayerItem),
+            "deferred save could not retry with restored connection/policy");
+        TPlayerItem saved {}; std::memcpy(&saved, persistedPayloads[0].data(), sizeof(saved));
+        Check(saved.id == 10 && saved.owner == 1234 && saved.pos == 5 && saved.count == 1,
+            "retry saved stale or incorrect native item state");
+        db_clientdesc = nullptr;
+    }
+    {
+        Reset(); Manager manager; const auto item = Item(manager);
+        persistenceTest = true; g_registry.destroy(item);
+        manager.Update();
+        Check(!manager.PendingSave(item) && manager.SaveSingleItem(item), "stale save remained queued");
+    }
+    for (int stage = 0; stage < 3; ++stage) {
+        Reset(); Manager manager; const auto item = Item(manager); const auto owner = Owner(item);
+        persistenceTest = true; CLIENT_DESC connection; db_clientdesc = &connection;
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        const auto flush = [&](entt::entity current) {
+            // The manager guard must protect even when another callback changes
+            // the mutable save flag. The initial no-DB-delete intent stays latched.
+            g_registry.get<ecs::ItemFlags>(current).skipSave = false;
+            Check(!manager.SaveSingleItem(current), "direct save serialized a retiring item");
+            manager.FlushDelayedSave(current); manager.FlushDelayedSaveByOwner(owner);
+            manager.Update(); manager.GracefulShutdown();
+            Check(persistedHeaders.empty() && persistedPayloads.empty(), "duplicate cleanup sent DB data");
+        };
+        if (stage == 0) onGround = flush;
+        if (stage == 1) onDetach = flush;
+        if (stage == 2) onFactory = flush;
+        Check(ItemSystem::DestroyLoadedDuplicateItem(item) && persistedHeaders.empty(),
+            "duplicate retirement lost suppression or failed after nested flush");
+        db_clientdesc = nullptr;
+    }
+    {
+        Reset(); Manager manager; const auto item = Item(manager); Owner(item);
+        persistenceTest = true; CLIENT_DESC connection; db_clientdesc = &connection;
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        rejectDetach = true;
+        Check(!ItemSystem::DestroyLoadedDuplicateItem(item) && !ItemSystem::GetItemSkipSave(item) &&
+            manager.PendingSave(item), "rejected detach lost its pending save/policy");
+        manager.FlushDelayedSave(item);
+        Check(persistedHeaders.size() == 1 && persistedHeaders[0] == HEADER_GD_ITEM_SAVE &&
+            !manager.PendingSave(item), "surviving owned item could not save after rejected purge");
+        db_clientdesc = nullptr;
+    }
+}
 }
 
 int main() {
@@ -886,6 +1123,8 @@ int main() {
         CreationRollbackTransfers();
         NativeAndLegacy(); ReentryAndExceptions(); FactoryFailures(); RecycledAndTransferred(); SlotAndPersistenceGuards();
         NativeRemoval(); RemovalCallbacks(); RemovalFailures(); StorageRemovalIntegration();
+        DuplicateLoadRetirement(); DuplicateLoadFailuresAndReentry(); DuplicateLoadTransfersAndGenerations();
+        DeferredSavePolicies();
         std::cout << "Item-manager lifecycle checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

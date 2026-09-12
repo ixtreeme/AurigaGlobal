@@ -328,6 +328,8 @@ bool StartSoulItemEventEcs(entt::entity item);
 bool RefreshItemEquippedSlot(entt::entity item);
 bool RefreshItemOwnerPID(entt::entity item);
 bool SyncItemStateFromLegacy(entt::entity item);
+// Retire a stale load instance without deleting its DB row. True means this call
+// retired the original entity; surviving items regain their prior save policy.
 bool DestroyLoadedDuplicateItem(entt::entity item);
 bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to);
 // owner == null releases the claim. Existing claims are not extended/stolen;

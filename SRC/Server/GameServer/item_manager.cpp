@@ -117,9 +117,9 @@ void ITEM_MANAGER::Destroy()
 void ITEM_MANAGER::GracefulShutdown()
 {
     ItemSystem::ProcessPendingItemConsumptions();
-	for (const entt::entity itemEntity : m_set_pkItemForDelayedSave)
-		SaveSingleItem(itemEntity);
-	m_set_pkItemForDelayedSave.clear();
+	for (auto it = m_set_pkItemForDelayedSave.begin(); it != m_set_pkItemForDelayedSave.end();)
+		if (SaveSingleItem(*it)) it = m_set_pkItemForDelayedSave.erase(it);
+		else ++it;
 }
 
 bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
@@ -589,8 +589,8 @@ void ITEM_MANAGER::FlushDelayedSave(entt::entity itemEntity)
 	if (it == m_set_pkItemForDelayedSave.end())
 		return;
 
-	m_set_pkItemForDelayedSave.erase(it);
-	SaveSingleItem(itemEntity);
+	if (SaveSingleItem(itemEntity))
+		m_set_pkItemForDelayedSave.erase(it);
 }
 
 void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)
@@ -611,18 +611,22 @@ void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)
 
 		if (ItemSystem::GetItemOwner(item) == owner)
 		{
-			it = m_set_pkItemForDelayedSave.erase(it);
-			SaveSingleItem(item);
+			if (SaveSingleItem(item)) it = m_set_pkItemForDelayedSave.erase(it);
+			else ++it;
 			continue;
 		}
 		++it;
 	}
 }
 
-void ITEM_MANAGER::SaveSingleItem(entt::entity item)
+bool ITEM_MANAGER::SaveSingleItem(entt::entity item)
 {
 	if (!ItemSystem::IsValidItem(item))
-		return;
+		return true; // A retired generation needs no more persistence work.
+	// Existing delayed saves and direct session flushes must obey the same
+	// suppression as SaveItem. Never serialize a half-detached/retiring item.
+	if (ItemSystem::GetItemSkipSave(item) || m_itemsBeingDestroyed.contains(item) || !db_clientdesc)
+		return false;
 
 	if (ItemSystem::GetItemOwner(item) == entt::null ||
         (ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 0))
@@ -635,7 +639,7 @@ void ITEM_MANAGER::SaveSingleItem(entt::entity item)
 		db_clientdesc->Packet(&dwOwnerID, sizeof(uint32_t));
 
 		LOG_INFO("ITEM_DELETE {}:{}", ItemSystem::GetItemName(item), dwID);
-		return;
+		return true;
 	}
 
 	LOG_INFO("ITEM_SAVE {} in window {}", ItemSystem::GetItemID(item), ItemSystem::GetItemWindow(item));
@@ -673,7 +677,7 @@ void ITEM_MANAGER::SaveSingleItem(entt::entity item)
 		LPDESC desc = ecs::PlayerRuntime::GetDesc(owner);
 		if (!desc) {
 			LOG_ERROR("ITEM_SAVE failed: owner has no descriptor (item_id={})", t.id);
-			return;
+			return false;
 		}
 		t.owner = desc->GetAccountTable().id;
 	}
@@ -686,6 +690,7 @@ void ITEM_MANAGER::SaveSingleItem(entt::entity item)
 
 	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_SAVE, 0, sizeof(TPlayerItem));
 	db_clientdesc->Packet(&t, sizeof(TPlayerItem));
+	return true;
 }
 
 void ITEM_MANAGER::Update()
@@ -708,8 +713,8 @@ void ITEM_MANAGER::Update()
 			continue;
 		}
 
-		SaveSingleItem(item);
-		it = m_set_pkItemForDelayedSave.erase(it);
+		if (SaveSingleItem(item)) it = m_set_pkItemForDelayedSave.erase(it);
+		else ++it;
 	}
 }
 
@@ -850,7 +855,8 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char* file, siz
 {
 	const uint32_t id = ItemSystem::GetItemID(itemEntity);
 	const uint32_t vid = ItemSystem::GetItemVID(itemEntity);
-	if (id && !ItemSystem::GetItemSkipSave(itemEntity) && !db_clientdesc)
+	const bool preservePersistence = ItemSystem::GetItemSkipSave(itemEntity);
+	if (id && !preservePersistence && !db_clientdesc)
 	{
 		LOG_ERROR("ITEM_DESTROY deferred: no DB descriptor for item {}", id);
 		return;
@@ -922,7 +928,7 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char* file, siz
 		return;
 	}
 	LOG_INFO("ITEM_DESTROY {}:{}", ItemSystem::GetItemName(itemEntity), id);
-	if (!ItemSystem::GetItemSkipSave(itemEntity) && id)
+	if (!preservePersistence && !ItemSystem::GetItemSkipSave(itemEntity) && id)
 	{
 		if (!db_clientdesc)
 			return;
@@ -972,6 +978,36 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char* file, siz
 #endif
 #endif
 	}
+}
+
+bool ItemSystem::DestroyLoadedDuplicateItem(entt::entity item)
+{
+    if (!IsValidItem(item) ||
+        !g_registry.all_of<ecs::ItemFlags, ecs::ItemOwner, ecs::ItemLocation>(item))
+        return false;
+
+    const uint32_t id = GetItemID(item);
+    const bool originalSkipSave = g_registry.get<ecs::ItemFlags>(item).skipSave;
+    ScopeExit restoreSavePolicy {[item, originalSkipSave] {
+        // A rejected/throwing cleanup must not leave a surviving item unsavable.
+        // Reacquire by versioned handle; never touch a recycled replacement.
+        if (g_registry.valid(item))
+            if (auto* flags = g_registry.try_get<ecs::ItemFlags>(item))
+                flags->skipSave = originalSkipSave;
+    }};
+    // The DB row belongs to the incoming load. Retire only its stale runtime
+    // instance, without deleting persistence or requiring a DB connection.
+    g_registry.get<ecs::ItemFlags>(item).skipSave = true;
+    LOG_ERROR("DUP_ITEM_DESTROY_BEGIN entity={} id={} vid={} vnum={} last_owner_pid={} window={} cell={}",
+        entt::to_integral(item), id, GetItemVID(item), GetItemVnum(item),
+        GetItemLastOwnerPID(item), static_cast<int>(GetItemWindow(item)), GetItemCell(item));
+
+    // The manager owns detachment, its reentry guard, indexes and the optional
+    // legacy allocation. Never detach first outside that protected lifecycle.
+    M2_DESTROY_ITEM(item);
+    const bool destroyed = !g_registry.valid(item);
+    LOG_ERROR("DUP_ITEM_DESTROY_END entity={} id={} destroyed={}", entt::to_integral(item), id, destroyed);
+    return destroyed;
 }
 
 LPITEM ITEM_MANAGER::Find(uint32_t id)

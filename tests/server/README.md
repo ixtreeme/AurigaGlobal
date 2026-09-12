@@ -1,5 +1,40 @@
 # Server ECS regression tests
 
+## Entity-native duplicate-load retirement
+
+`ItemSystem::DestroyLoadedDuplicateItem` now lives beside the existing manager
+destruction path in `item_manager.cpp`; its old pointer-based body is deleted.
+It accepts a complete item entity without a CItem/CHARACTER allocation and does
+not resolve owners through a player ID. It delegates detachment, index cleanup
+and optional legacy allocation release to the manager's guarded lifecycle.
+There is no unguarded pre-detachment or retained item pointer across callbacks.
+
+Only the stale runtime instance is retired; its DB row belongs to the incoming
+load. Save suppression is scoped to this operation and restored on a surviving
+entity after rejection or exceptions. The return value is true only when the
+original versioned entity was retired. Recycled replacements and transferred
+ownership survive; failed cleanup does not permanently disable item saving.
+The existing input_db duplicate-selection policy is unchanged.
+
+Direct and delayed manager saves now respect skip-save, the destruction guard
+and DB availability. Single-item save reports whether the request was handled;
+single/owner/tick/shutdown flushes retain suppressed or disconnected entries for
+retry rather than discarding them. Destruction latches its initial no-delete
+policy so a callback cannot turn a runtime-only retirement into a DB deletion.
+
+ItemManagerLifecycleTests executes the real duplicate helper and manager
+destruction together, covering entity-only and legacy-backed items, absent DB
+connection, equipment, incomplete/stale handles, detach/factory rejection,
+exceptions, nested cleanup, transferred/dead owners, foreign occupants and
+recycled generations. Inventory detachment and the entity/allocation factory
+remain controlled doubles. Constructed descriptor objects and packet sinks test
+all five save paths, disconnected/suppressed retry, native save payloads and
+nested flushes during duplicate retirement without using a live DB. Failed
+retirement is reported, not automatically retried by this helper. Live login,
+DB-row retention and reconnect need
+in-game checks. This change does not remove the remaining CItem allocation
+boundary from other item operations.
+
 ## Transactional rune bottle charging
 
 The rune-charge command now only parses/range-checks slots and forwards native
