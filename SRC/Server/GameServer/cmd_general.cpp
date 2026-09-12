@@ -133,14 +133,13 @@ static bool DailyReward_CheckHWIDLimit(entt::entity ch)
 
 ACMD(do_user_horse_ride)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::PlayerRuntime::IsObserverMode(character))
 		return;
 
 	if (CombatSystem::IsDead(character) || CombatSystem::IsStun(character))
 		return;
 
-	if (ch->IsHorseRiding() == false)
+	if (MountSystem::IsHorseRiding(character) == false)
 	{
 		if (MountSystem::GetMountVnum(character)) {
 #ifdef TEXTS_IMPROVEMENT
@@ -149,7 +148,7 @@ ACMD(do_user_horse_ride)
 			return;
 		}
 
-		if (ch->GetHorse() == nullptr)
+		if (MountSystem::GetSummonedHorse(character) == entt::null)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 332, "");
@@ -157,11 +156,11 @@ ACMD(do_user_horse_ride)
 			return;
 		}
 
-		ch->StartRiding();
+		MountSystem::StartRiding(character);
 	}
 	else
 	{
-		ch->StopRiding();
+		MountSystem::StopRiding(character);
 	}
 }
 ACMD(do_daily_reward_reload){
@@ -297,14 +296,14 @@ ACMD(do_user_horse_back)
 		}
 	}
 
-	if (ch->GetHorse() != nullptr)
+	if (MountSystem::GetSummonedHorse(character) != entt::null)
 	{
-		ch->HorseSummon(false);
+		MountSystem::SummonHorse(character, false);
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 331, "");
 #endif
 	}
-	else if (ch->IsHorseRiding() == true)
+	else if (MountSystem::IsHorseRiding(character) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 330, "");
@@ -320,15 +319,14 @@ ACMD(do_user_horse_back)
 
 ACMD(do_user_horse_feed)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	// λ  ¿  ̸   .
 	if (ecs::SocialSystem::GetMyShop(character))
 		return;
 
-	if (ch->GetHorse() == nullptr)
+	if (MountSystem::GetSummonedHorse(character) == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (ch->IsHorseRiding() == false) {
+		if (MountSystem::IsHorseRiding(character) == false) {
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 332, "");
 		}
 		else {
@@ -338,13 +336,13 @@ ACMD(do_user_horse_feed)
 		return;
 	}
 
-	uint32_t dwFood = ch->GetHorseGrade() + 50054 - 1;
+	uint32_t dwFood = MountSystem::GetHorseGrade(character) + 50054 - 1;
 
 
-	if (ch->CountSpecifyItem(dwFood) > 0)
+	if (ItemSystem::CountItem(character, dwFood) > 0)
 	{
-		ch->RemoveSpecifyItem(dwFood, 1);
-		ch->FeedHorse();
+		ItemSystem::RemoveSpecifyItemEcs(character, dwFood, 1);
+		MountSystem::FeedHorse(character);
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 112, "%s",
 #ifdef ENABLE_MULTI_NAMES
@@ -507,8 +505,7 @@ ACMD(do_shutdown)
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
 ACMD(do_change_channel)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	if (ecs::PlayerRuntime::IsWarping(character))
@@ -2018,7 +2015,6 @@ ACMD(do_skillup)
 //
 ACMD(do_safebox_close)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ecs::SessionSystem::CloseSafebox(character);
 }
 
@@ -2027,7 +2023,6 @@ ACMD(do_safebox_close)
 //
 ACMD(do_safebox_password)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	ecs::SessionSystem::ReqSafeboxLoad(character, arg1);
@@ -2067,7 +2062,6 @@ ACMD(do_safebox_change_password)
 
 ACMD(do_mall_password)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2109,7 +2103,6 @@ ACMD(do_mall_password)
 
 ACMD(do_mall_close)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::SessionSystem::GetMall(character))
 	{
 		ecs::SessionSystem::SetMallLoadTime(character, thecore_pulse());
@@ -2159,7 +2152,6 @@ ACMD(do_ungroup)
 
 ACMD(do_close_shop)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::SocialSystem::GetMyShop(character))
 	{
 		ecs::SocialSystem::CloseMyShop(character);
@@ -2499,7 +2491,6 @@ ACMD(do_messenger_auth)
 
 ACMD(do_setblockmode)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2556,9 +2547,9 @@ ACMD(do_unmount)
 		AffectSystem::RemoveAffect(character, AFFECT_MOUNT);
 		AffectSystem::RemoveAffect(character, AFFECT_MOUNT_BONUS);
 
-		if (ch->IsHorseRiding())
+		if (MountSystem::IsHorseRiding(character))
 		{
-			ch->StopRiding();
+			MountSystem::StopRiding(character);
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT
@@ -2570,7 +2561,6 @@ ACMD(do_unmount)
 
 ACMD(do_observer_exit)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::PlayerRuntime::IsObserverMode(character))
 	{
 		if (ecs::SocialSystem::GetWarMap(character))

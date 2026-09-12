@@ -724,7 +724,6 @@ void ForceClearRidingState(entt::entity rider)
 bool CHARACTER::StartRiding()
 {
 	const entt::entity rider = GetEntityHandle();
-	ecs::ChatSystem::Send(rider, CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StartRiding()");
 #ifdef ENABLE_BUG_FIXES
 	if (IsRiding()) {
 		return false;
@@ -817,7 +816,6 @@ bool CHARACTER::StartRiding()
 bool CHARACTER::StopRiding()
 {
 	const entt::entity rider = GetEntityHandle();
-	ecs::ChatSystem::Send(rider, CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StopRiding()");
 
 	if (CHorseRider::StopRiding())
 	{
