@@ -1,3 +1,8 @@
+#pragma once
+
+#include <set>
+#include <entt/entity/entity.hpp>
+
 
 #define OXEVENT_MAP_INDEX 113
 
@@ -21,13 +26,17 @@ enum OXEventStatus
 class COXEventManager : public singleton<COXEventManager>
 {
 	private :
-		std::map<uint32_t, uint32_t> m_map_char;
-		std::map<uint32_t, uint32_t> m_map_attender;
-		std::map<uint32_t, uint32_t> m_map_miss;
+		std::set<entt::entity> m_participants;
+		std::set<entt::entity> m_attenders;
+		std::set<entt::entity> m_missed;
+        uint64_t m_roundRevision { 0 };
+        bool m_rewarding { false };
+        bool m_checkingAnswer { false };
+        bool m_closing { false };
 
 		std::vector<std::vector<tag_Quiz> > m_vec_quiz;
 
-		LPEVENT m_timedEvent;
+		LPEVENT m_timedEvent {};
 
 	protected :
 		bool CheckAnswer();
@@ -36,6 +45,7 @@ class COXEventManager : public singleton<COXEventManager>
 		bool EnterAttender(entt::entity pChar);
 
 	public :
+        ~COXEventManager();
 		bool Initialize();
 		void Destroy();
 
@@ -50,7 +60,7 @@ class COXEventManager : public singleton<COXEventManager>
 
 		void ClearQuiz();
 		bool AddQuiz(unsigned char level, const char* pszQuestion, bool answer);
-		bool ShowQuizList(LPCHARACTER pChar);
+		bool ShowQuizList(entt::entity character);
 
 		bool Quiz(unsigned char level, int timelimit);
 		bool GiveItemToAttender(uint32_t dwItemVnum,
@@ -66,6 +76,5 @@ class COXEventManager : public singleton<COXEventManager>
 
 		bool LogWinner();
 
-		uint32_t GetAttenderCount() { return m_map_attender.size(); }
+		uint32_t GetAttenderCount();
 };
-

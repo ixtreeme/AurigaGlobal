@@ -1,5 +1,32 @@
 # Server ECS regression tests
 
+## Entity-native OX event cohorts
+
+OXEvent.cpp now stores participants, attenders and eliminated players as
+versioned character entities, without PID lookups or CHARACTER pointers.
+Only live players on the OX map can enter, receive event rewards or be warped.
+Reconnecting with the same PID does not inherit an old generation's attendance;
+an explicit new entry is required. Counts prune departed/retired attenders.
+
+Answer checks, winner logging and grants use snapshots, while elimination,
+audience warps and event closure commit/detach their work before callbacks.
+Nested answer/reward/close calls are guarded; reward audit data is copied before
+item delivery can destroy the recipient. Repeated explicit GM grants remain
+allowed: this is a reentry guard, not an exactly-once reward ledger.
+The manager cancels its timer on initialize/destruction. Quiz stages belong to
+individual events, the level upper boundary is clamped, and invalid/overflowing
+localization IDs are rejected instead of throwing from stoi.
+
+OXEventTests executes the production OX manager, event scheduler and buffers
+with entity-only character fixtures and controlled game/network/DB doubles.
+It covers stale/recycled players, map departure, audience vs attender entry,
+rectangle edges, callback deletion/closure, nested grants/warps/answer checks,
+exception recovery, multifarm eligibility, quiz-list mutation and timer
+replacement/reinitialization. Live quest status propagation, OX notices/effects,
+audience movement, inventory grants and DB audit delivery still need an in-game
+smoke test; those external services are not exercised by the isolated suite.
+
+
 ## Native quest character context and click dispatch
 
 The existing quest manager/PC and trigger implementation now receive native

@@ -6,7 +6,6 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
-#include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
 #include "constants.h"
 #include "config.h"
@@ -16,16 +15,36 @@
 #include "buffer_manager.h"
 #include "log.h"
 #include "char_interface.hpp"
-#include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "OXEvent.h"
 #include "desc.h"
+#include <charconv>
+#include <limits>
+#include <utility>
+
+namespace {
+bool IsOXPlayer(entt::entity e)
+{
+    return ecs::PlayerRuntime::IsPC(e) && ecs::PlayerRuntime::GetMapIndex(e) == OXEVENT_MAP_INDEX;
+}
+struct ScopedOXFlag {
+    bool& flag;
+    explicit ScopedOXFlag(bool& value) : flag(value) { flag = true; }
+    ~ScopedOXFlag() { flag = false; }
+};
+}
+
+COXEventManager::~COXEventManager()
+{
+    event_cancel(&m_timedEvent);
+}
 
 bool COXEventManager::Initialize()
 {
-	m_timedEvent = nullptr;
-	m_map_char.clear();
-	m_map_attender.clear();
+	event_cancel(&m_timedEvent);
+    ++m_roundRevision;
+    m_missed.clear();
+	m_participants.clear();
+	m_attenders.clear();
 	m_vec_quiz.clear();
 
 	SetStatus(OXEVENT_FINISH);
@@ -37,8 +56,8 @@ void COXEventManager::Destroy()
 {
 	CloseEvent();
 
-	m_map_char.clear();
-	m_map_attender.clear();
+	m_participants.clear();
+	m_attenders.clear();
 	m_vec_quiz.clear();
 
 	SetStatus(OXEVENT_FINISH);
@@ -98,6 +117,7 @@ void COXEventManager::SetStatus(OXEventStatus status)
 
 bool COXEventManager::Enter(entt::entity pkChar)
 {
+    if (m_closing || !IsOXPlayer(pkChar)) return false;
 	if (GetStatus() == OXEVENT_FINISH)
 	{
 		LOG_INFO("OXEVENT : map finished. but char enter. {}", ecs::PlayerRuntime::GetName(pkChar).data());
@@ -126,23 +146,20 @@ bool COXEventManager::Enter(entt::entity pkChar)
 	return false;
 }
 
-bool COXEventManager::EnterAttender(entt::entity pkChar)
+bool COXEventManager::EnterAttender(entt::entity character)
 {
-	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(pkChar));
-
-	m_map_char.insert(std::make_pair(pid, pid));
-	m_map_attender.insert(std::make_pair(pid, pid));
-
-	return true;
+    if (m_closing || !IsOXPlayer(character)) return false;
+    m_participants.insert(character);
+    m_attenders.insert(character);
+    m_missed.erase(character);
+    return true;
 }
 
-bool COXEventManager::EnterAudience(entt::entity pkChar)
+bool COXEventManager::EnterAudience(entt::entity character)
 {
-	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(pkChar));
-
-	m_map_char.insert(std::make_pair(pid, pid));
-
-	return true;
+    if (m_closing || !IsOXPlayer(character)) return false;
+    m_participants.insert(character);
+    return true;
 }
 
 bool COXEventManager::AddQuiz(unsigned char level, const char* pszQuestion, bool answer)
@@ -160,25 +177,21 @@ bool COXEventManager::AddQuiz(unsigned char level, const char* pszQuestion, bool
 	return true;
 }
 
-bool COXEventManager::ShowQuizList(LPCHARACTER pkChar)
+bool COXEventManager::ShowQuizList(entt::entity character)
 {
-	const entt::entity charEntity = pkChar ? pkChar->GetEntityHandle() : entt::null;
+    if (!ecs::PlayerRuntime::IsPC(character)) return false;
 #ifdef TEXTS_IMPROVEMENT
-	int c = 0;
-
-	for (size_t i = 0; i < m_vec_quiz.size(); ++i) {
-		for (size_t j = 0; j < m_vec_quiz[i].size(); ++j, ++c) {
-			if (m_vec_quiz[i][j].answer) {
-				ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 608, "%s", m_vec_quiz[i][j].Quiz);
-			} else {
-				ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 609, "%s", m_vec_quiz[i][j].Quiz);
-			}
-		}
-	}
-
-	ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 610, "%d", c);
+    const auto quizzes = m_vec_quiz;
+    int count = 0;
+    for (const auto& level : quizzes) for (const auto& quiz : level) {
+        if (!ecs::PlayerRuntime::IsPC(character)) return false;
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, quiz.answer ? 608 : 609, "%s", quiz.Quiz);
+        ++count;
+    }
+    if (!ecs::PlayerRuntime::IsPC(character)) return false;
+    ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 610, "%d", count);
 #endif
-	return true;
+    return true;
 }
 
 void COXEventManager::ClearQuiz()
@@ -194,6 +207,7 @@ void COXEventManager::ClearQuiz()
 EVENTINFO(OXEventInfoData)
 {
 	bool answer;
+    uint8_t stage { 0 };
 
 	OXEventInfoData()
 	: answer( false )
@@ -203,7 +217,6 @@ EVENTINFO(OXEventInfoData)
 
 EVENTFUNC(oxevent_timer)
 {
-	static uint8_t flag = 0;
 	OXEventInfoData* info = dynamic_cast<OXEventInfoData*>(event->info);
 
 	if ( info == nullptr)
@@ -212,19 +225,20 @@ EVENTFUNC(oxevent_timer)
 		return 0;
 	}
 
-	switch (flag)
+	switch (info->stage)
 	{
 		case 0:
 #ifdef TEXTS_IMPROVEMENT
 			SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 579, "");
 #endif
-			flag++;
+			++info->stage;
 			return PASSES_PER_SEC(10);
 
 		case 1:
 			if (info->answer == true)
 			{
 				COXEventManager::instance().CheckAnswer(true);
+                if (event->is_force_to_end) return 0;
 #ifdef TEXTS_IMPROVEMENT
 				SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 580, "");
 #endif
@@ -232,23 +246,27 @@ EVENTFUNC(oxevent_timer)
 			else
 			{
 				COXEventManager::instance().CheckAnswer(false);
+                if (event->is_force_to_end) return 0;
 #ifdef TEXTS_IMPROVEMENT
 				SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 581, "");
 #endif
 			}
 
+if (event->is_force_to_end) return 0;
 #ifdef TEXTS_IMPROVEMENT
 			SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 582, "");
 #endif
-			flag++;
+			++info->stage;
 			return PASSES_PER_SEC(5);
 		case 2:
 			COXEventManager::instance().WarpToAudience();
-			COXEventManager::instance().SetStatus(OXEVENT_CLOSE);
+			if (event->is_force_to_end) return 0;
+            COXEventManager::instance().SetStatus(OXEVENT_CLOSE);
+            if (event->is_force_to_end) return 0;
 #ifdef TEXTS_IMPROVEMENT
 			SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 583, "");
 #endif
-			flag = 0;
+			info->stage = 0;
 			break;
 	}
 	return 0;
@@ -256,218 +274,159 @@ EVENTFUNC(oxevent_timer)
 
 bool COXEventManager::Quiz(unsigned char level, int timelimit)
 {
-	if (m_vec_quiz.size() == 0) return false;
-	if (level > m_vec_quiz.size()) level = m_vec_quiz.size() - 1;
-	if (m_vec_quiz[level].size() <= 0) return false;
-
-	if (timelimit < 0) timelimit = 30;
-
-	int idx = number(0, m_vec_quiz[level].size()-1);
-
+    if (m_closing || m_vec_quiz.empty()) return false;
+    if (level >= m_vec_quiz.size()) level = static_cast<unsigned char>(m_vec_quiz.size() - 1);
+    if (m_vec_quiz[level].empty()) return false;
+    const int index = number(0, static_cast<int>(m_vec_quiz[level].size() - 1));
+    const auto quiz = m_vec_quiz[level][index];
 #ifdef TEXTS_IMPROVEMENT
-	SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 584, "");
-	SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, std::stoi(m_vec_quiz[level][idx].Quiz), "");
-	SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 585, "");
+    uint32_t textID = 0;
+    const auto* end = quiz.Quiz + std::strlen(quiz.Quiz);
+    const auto parsed = std::from_chars(quiz.Quiz, end, textID);
+    if (parsed.ec != std::errc{} || parsed.ptr != end) {
+        LOG_ERROR("OXEVENT: invalid quiz text ID {}", quiz.Quiz);
+        return false;
+    }
 #endif
-	if (m_timedEvent != nullptr) {
-		event_cancel(&m_timedEvent);
-	}
-
-	OXEventInfoData* answer = AllocEventInfo<OXEventInfoData>();
-
-	answer->answer = m_vec_quiz[level][idx].answer;
-
-	timelimit -= 15;
-	m_timedEvent = event_create(oxevent_timer, answer, PASSES_PER_SEC(timelimit));
-
-	SetStatus(OXEVENT_QUIZ);
-
-	m_vec_quiz[level].erase(m_vec_quiz[level].begin()+idx);
-	return true;
+    if (timelimit < 0) timelimit = 30;
+    const int seconds = std::clamp(timelimit, 15, std::numeric_limits<int>::max() / std::max(1, passes_per_sec)) - 15;
+    event_cancel(&m_timedEvent);
+    ++m_roundRevision;
+    auto* info = AllocEventInfo<OXEventInfoData>();
+    info->answer = quiz.answer;
+    m_timedEvent = event_create(oxevent_timer, info, PASSES_PER_SEC(seconds));
+    const LPEVENT current = m_timedEvent;
+    m_vec_quiz[level].erase(m_vec_quiz[level].begin() + index);
+    SetStatus(OXEVENT_QUIZ);
+#ifdef TEXTS_IMPROVEMENT
+    if (current != m_timedEvent || current->is_force_to_end) return true;
+    SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 584, "");
+    if (current != m_timedEvent || current->is_force_to_end) return true;
+    SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, textID, "");
+    if (current != m_timedEvent || current->is_force_to_end) return true;
+    SendNoticeNew(CHAT_TYPE_BIG_NOTICE, 0, OXEVENT_MAP_INDEX, 585, "");
+#endif
+    return true;
 }
 
 bool COXEventManager::CheckAnswer(bool answer)
 {
-	if (m_map_attender.size() <= 0) return true;
+    if (m_checkingAnswer || m_closing || m_attenders.empty()) return true;
+    ScopedOXFlag checking(m_checkingAnswer);
+    const auto revision = m_roundRevision;
+    const auto attenders = m_attenders;
+    m_missed.clear();
+    const int left = answer ? 896600 : 892600;
+    const int right = answer ? 900300 : 896300;
+    for (const auto character : attenders) {
+        if (revision != m_roundRevision) break;
+        if (!m_attenders.contains(character)) continue;
+        if (!IsOXPlayer(character)) {
+            m_attenders.erase(character);
+            m_participants.erase(character);
+            m_missed.erase(character);
+            continue;
+        }
+        const auto x = ecs::PlayerRuntime::GetX(character), y = ecs::PlayerRuntime::GetY(character);
+        if (x < left || x > right || y < 22900 || y > 26400) {
+            // Commit elimination before publishing a callback-capable effect.
+            m_attenders.erase(character);
+            m_missed.insert(character);
+            NetworkSyncSystem::BroadcastEffect(g_registry, character, SE_FAIL);
+            continue;
+        }
 
-	auto iter = m_map_attender.begin();
-
-
-	m_map_miss.clear();
-
-	int rect[4];
-	if (answer != true)
-	{
-		rect[0] = 892600;
-		rect[1] = 22900;
-		rect[2] = 896300;
-		rect[3] = 26400;
-	}
-	else
-	{
-		rect[0] = 896600;
-		rect[1] = 22900;
-		rect[2] = 900300;
-		rect[3] = 26400;
-	}
-
-	LPCHARACTER pkChar = nullptr;
-	PIXEL_POSITION pos;
-	for (; iter != m_map_attender.end();)
-	{
-		pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
-		if (pkChar != nullptr)
-		{
-			pos = pkChar->GetXYZ();
-
-			if (pos.x < rect[0] || pos.x > rect[2] || pos.y < rect[1] || pos.y > rect[3])
-			{
-			NetworkSyncSystem::BroadcastEffect(g_registry, ((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), SE_FAIL);
-				const auto iter_tmp = iter;
-				iter++;
-				m_map_attender.erase(iter_tmp);
-				m_map_miss.insert(std::make_pair((ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))), (ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)))));
-			}
-			else
-			{
-				// pkChar->CreateFly(number(FLY_FIREWORK1, FLY_FIREWORK6), pkChar);
-				char chatbuf[256];
-				int len = snprintf(chatbuf, sizeof(chatbuf), "%s %u %u", number(0, 1) == 1 ? "cheer1" : "cheer2", (uint32_t)((pkChar)->GetLegacyVID()), 0);
-
-				// ���ϰ��� sizeof(chatbuf) �̻��� ��� truncate�Ǿ��ٴ� ��..
-				if (len < 0 || len >= (int) sizeof(chatbuf))
-					len = sizeof(chatbuf) - 1;
-
-				// \0 ���� ����
-				++len;
-
-				TPacketGCChat pack_chat;
-				pack_chat.header = HEADER_GC_CHAT;
-				pack_chat.size = sizeof(TPacketGCChat) + len;
-				pack_chat.type = CHAT_TYPE_COMMAND;
-				pack_chat.id = 0;
-
-				TEMP_BUFFER buf;
-				buf.write(&pack_chat, sizeof(TPacketGCChat));
-				buf.write(chatbuf, len);
-
-				ecs::ViewSystem::PacketView(pkChar->GetEntityHandle(), buf.read_peek(), buf.size());
-			NetworkSyncSystem::BroadcastEffect(g_registry, ((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), SE_SUCCESS);
-
-				++iter;
-			}
-		}
-		else
-		{
-			auto err = m_map_char.find(iter->first);
-			if (err != m_map_char.end()) m_map_char.erase(err);
-
-			auto err2 = m_map_miss.find(iter->first);
-			if (err2 != m_map_miss.end()) m_map_miss.erase(err2);
-
-			const auto iter_tmp = iter;
-			++iter;
-			m_map_attender.erase(iter_tmp);
-		}
-	}
-	return true;
+        char chat[256];
+        int length = snprintf(chat, sizeof(chat), "%s %u %u",
+            number(0, 1) == 1 ? "cheer1" : "cheer2", ecs::PlayerRuntime::GetPacketVID(character), 0u);
+        if (length < 0 || length >= static_cast<int>(sizeof(chat))) length = sizeof(chat) - 1;
+        ++length;
+        TPacketGCChat packet {};
+        packet.header = HEADER_GC_CHAT;
+        packet.size = sizeof(packet) + length;
+        packet.type = CHAT_TYPE_COMMAND;
+        TEMP_BUFFER buffer;
+        buffer.write(&packet, sizeof(packet));
+        buffer.write(chat, length);
+        ecs::ViewSystem::PacketView(character, buffer.read_peek(), buffer.size());
+        if (revision == m_roundRevision && m_attenders.contains(character) && IsOXPlayer(character))
+            NetworkSyncSystem::BroadcastEffect(g_registry, character, SE_SUCCESS);
+    }
+    return true;
 }
 
 void COXEventManager::WarpToAudience()
 {
-	if (m_map_miss.size() <= 0) return;
-
-	auto iter = m_map_miss.begin();
-	LPCHARACTER pkChar = nullptr;
-
-	for (; iter != m_map_miss.end(); ++iter)
-	{
-		pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
-
-		if (pkChar != nullptr)
-		{
-			switch ( number(0, 3))
-			{
-				case 0 : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 896300, 28900); break;
-				case 1 : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 890900, 28100); break;
-				case 2 : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 896600, 20500); break;
-				case 3 : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 902500, 28100); break;
-				default : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 896300, 28900); break;
-			}
-		}
-	}
-
-	m_map_miss.clear();
+    const auto revision = m_roundRevision;
+    const auto missed = std::exchange(m_missed, {});
+    constexpr int32_t positions[4][2] = {{896300,28900},{890900,28100},{896600,20500},{902500,28100}};
+    for (const auto character : missed) {
+        if (revision != m_roundRevision) break;
+        if (!m_participants.contains(character) || !IsOXPlayer(character)) continue;
+        const auto& position = positions[number(0, 3)];
+        ecs::MovementSystem::Show(character, OXEVENT_MAP_INDEX, position[0], position[1]);
+    }
 }
 
 bool COXEventManager::CloseEvent()
 {
-	if (m_timedEvent != nullptr) {
-		event_cancel(&m_timedEvent);
-	}
-
-	auto iter = m_map_char.begin();
-
-	LPCHARACTER pkChar = nullptr;
-	for (; iter != m_map_char.end(); ++iter)
-	{
-		pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
-
-		if (pkChar != nullptr)
-			ecs::MovementSystem::WarpSet(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))));
-	}
-
-	m_map_char.clear();
-
-	return true;
+    if (m_closing) return true;
+    ScopedOXFlag closing(m_closing);
+    event_cancel(&m_timedEvent);
+    ++m_roundRevision;
+    const auto participants = std::exchange(m_participants, {});
+    m_attenders.clear();
+    m_missed.clear();
+    for (const auto character : participants) {
+        if (!IsOXPlayer(character)) continue;
+        const auto empire = ecs::PlayerRuntime::GetEmpire(character);
+        ecs::MovementSystem::WarpSet(character, EMPIRE_START_X(empire), EMPIRE_START_Y(empire));
+    }
+    return true;
 }
 
 bool COXEventManager::LogWinner()
 {
-	auto iter = m_map_attender.begin();
-
-	for (; iter != m_map_attender.end(); ++iter)
-	{
-		const entt::entity pkChar = CHARACTER_MANAGER::instance().FindEntityByPID(iter->second);
-
-		if (ecs::PlayerRuntime::IsValid(pkChar))
-			LogManager::instance().CharLog(pkChar, 0, "OXEVENT", "LastManStanding");
-	}
-
-	return true;
+    const auto revision = m_roundRevision;
+    const auto attenders = m_attenders;
+    for (const auto character : attenders) {
+        if (revision != m_roundRevision) break;
+        if (m_attenders.contains(character) && IsOXPlayer(character))
+            LogManager::instance().CharLog(character, 0, "OXEVENT", "LastManStanding");
+    }
+    return true;
 }
 
-bool COXEventManager::GiveItemToAttender(uint32_t dwItemVnum,
+bool COXEventManager::GiveItemToAttender(uint32_t itemVnum,
 #ifdef ENABLE_NEW_STACK_LIMIT
-int
+    int
 #else
-uint8_t
+    uint8_t
 #endif
-count)
+    count)
 {
-	auto iter = m_map_attender.begin();
-
-	for (; iter != m_map_attender.end(); ++iter)
-	{
-		LPCHARACTER pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
-		const entt::entity charEntity = pkChar ? pkChar->GetEntityHandle() : entt::null;
-
-		if (pkChar && ecs::PlayerRuntime::IsPC(charEntity))
-		{
+    if (!itemVnum || count <= 0 || m_rewarding || m_closing) return false;
+    ScopedOXFlag rewarding(m_rewarding);
+    const auto revision = m_roundRevision;
+    const auto attenders = m_attenders;
+    for (const auto character : attenders) {
+        if (revision != m_roundRevision) break;
+        if (!m_attenders.contains(character) || !IsOXPlayer(character)) continue;
 #ifdef ENABLE_BLOCK_MULTIFARM
-			if (AffectSystem::FindAffect(charEntity, AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
-				if (count > 0) ItemSystem::AutoGiveItemEcs(pkChar->GetEntityHandle(), dwItemVnum, static_cast<uint32_t>(count));
-				LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(charEntity)), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(charEntity)->GetHostName(), dwItemVnum);
-			}
-#else
-			if (count > 0) ItemSystem::AutoGiveItemEcs(pkChar->GetEntityHandle(), dwItemVnum, static_cast<uint32_t>(count));
-			LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(charEntity)), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(charEntity)->GetHostName(), dwItemVnum);
+        if (!AffectSystem::FindAffect(character, AFFECT_DROP_UNBLOCK, APPLY_NONE)) continue;
 #endif
-		}
-	}
-
-	return true;
+        // Audit data is a value snapshot; item delivery may retire the recipient.
+        const auto pid = ecs::PlayerRuntime::GetPlayerID(character);
+        auto* desc = ecs::PlayerRuntime::GetDesc(character);
+        const std::string host = desc ? desc->GetHostName() : "";
+        ItemSystem::AutoGiveItemEcs(character, itemVnum, static_cast<uint32_t>(count));
+        LogManager::instance().ItemLog(pid, 0, count, itemVnum, "OXEVENT_REWARD", "", host.c_str(), itemVnum);
+    }
+    return true;
 }
 
-
-
+uint32_t COXEventManager::GetAttenderCount()
+{
+    std::erase_if(m_attenders, [](entt::entity character) { return !IsOXPlayer(character); });
+    return static_cast<uint32_t>(m_attenders.size());
+}

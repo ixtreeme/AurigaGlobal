@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "utils.h"
 #include "char_interface.hpp"
 #include "OXEvent.h"
@@ -6,14 +7,13 @@
 #include "questlua.h"
 #include "config.h"
 #include "locale_service.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "cmd.h"
 
 ACMD(do_oxevent_show_quiz)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character)) return;
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "===== OX QUIZ LIST =====");
-	COXEventManager::instance().ShowQuizList(ch);
+	COXEventManager::instance().ShowQuizList(character);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "===== OX QUIZ LIST END =====");
 }
 

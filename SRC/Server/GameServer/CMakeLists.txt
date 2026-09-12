@@ -22,6 +22,20 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
 
+add_executable(OXEventTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/OXEventTests.cpp
+    OXEvent.cpp
+    buffer_manager.cpp
+    event.cpp
+    event_queue.cpp
+)
+target_link_libraries(OXEventTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+if(MSVC)
+    target_compile_options(OXEventTests PRIVATE /Gy)
+    target_link_options(OXEventTests PRIVATE /OPT:REF /OPT:NOICF)
+endif()
+add_test(NAME ox_event COMMAND OXEventTests)
+
 add_executable(QuestRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuestRuntimeTests.cpp
     questmanager.cpp
@@ -217,7 +231,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
+    foreach(_asan_target GameServer OXEventTests QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
