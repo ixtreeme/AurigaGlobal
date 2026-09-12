@@ -61,6 +61,8 @@ std::vector<uint32_t> runeMessages;
 std::function<void(entt::entity, bool)> onRunePoints;
 std::function<void(entt::entity)> onRuneAffect, onRuneChat;
 bool rejectRuneAffect = false;
+bool runeChargeTest = false;
+int runeEmptyCell = 1;
 int stackCategoryLookups = 0;
 int soulAdds = 0, soulRemoves = 0, soulStarts = 0, soulStops = 0, soulLogs = 0, deckStops = 0;
 bool rejectSoulPoints = false, rejectSoulTimer = false;
@@ -135,7 +137,7 @@ void CheckPaymentOrder()
 int passes_per_sec = 25;
 std::shared_ptr<spdlog::logger> logging::GetErrorLogger()
 {
-    if (!transferTest && !extractionTest && !countStateTest) UnexpectedSwitchbotService();
+    if (!transferTest && !extractionTest && !countStateTest && !runeTest) UnexpectedSwitchbotService();
     static auto logger = std::make_shared<spdlog::logger>("transfer-test", spdlog::sinks_init_list{});
     return logger;
 }
@@ -184,7 +186,7 @@ const char* ItemSystem::GetItemName(entt::entity item, uint8_t) {
     return "rune-test";
 }
 uint8_t ItemSystem::GetItemSize(entt::entity item) {
-    Check(extractionTest && ItemSystem::IsValidItem(item), "stale extraction item size");
+    Check((extractionTest || runeChargeTest) && ItemSystem::IsValidItem(item), "stale item size");
     return ItemSystem::GetItemProto(item)->bSize;
 }
 entt::entity ItemSystem::GetItemOwnerEntity(entt::entity) { UnexpectedSwitchbotService(); }
@@ -216,13 +218,18 @@ void LogManager::ItemLog(entt::entity owner, int, int, const char*, const char*)
     if (onLog) onLog(owner);
 }
 entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t, bool, int, bool) {
-    if (!extractionTest) UnexpectedSwitchbotService();
+    if (!extractionTest && !runeChargeTest) UnexpectedSwitchbotService();
     if (rejectCreation) return entt::null;
     const auto item = g_registry.create();
     g_registry.emplace<ecs::ItemIdentity>(item, ecs::ItemIdentity{500, vnum, vnum});
     g_registry.emplace<ecs::ItemCount>(item, ecs::ItemCount{static_cast<int>(count)});
     g_registry.emplace<ecs::ItemProtoRef>(item).proto = &outputProto;
     g_registry.emplace<ecs::ItemLocation>(item, ecs::ItemLocation{RESERVED_WINDOW, 0});
+    if (runeChargeTest) {
+        g_registry.emplace<ecs::ItemOwner>(item);
+        g_registry.emplace<ecs::ItemSockets>(item);
+        g_registry.emplace<ecs::ItemAttributes>(item);
+    }
     createdOutputs.push_back(item);
     if (onCreate) onCreate(item);
     return item;
@@ -266,8 +273,8 @@ int ItemSystem::GetItemDuration(entt::entity) { return 0; }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity item, const char*)
 {
     const bool retired = ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 0;
-    Check(countStateTest || ((transferTest || extractionTest) && (retired ||
-        (extractionTest && ItemSystem::GetItemOwner(item) == entt::null))),
+    Check(countStateTest || ((transferTest || extractionTest || runeChargeTest) && (retired ||
+        ((extractionTest || runeChargeTest) && ItemSystem::GetItemOwner(item) == entt::null))),
         "cleanup entered before committed item retirement");
     destroyAttempts.push_back(item);
     if (onDestroy) onDestroy(item);
@@ -311,8 +318,41 @@ int ItemSystem::GetEmptyDragonSoulInventory(entt::entity, entt::entity) {
     return emptyDSCell;
 }
 bool InventorySystem::CanHandleItems(entt::entity owner, bool, bool) {
-    if (!extractionTest) UnexpectedSwitchbotService();
+    if (!extractionTest && !runeChargeTest) UnexpectedSwitchbotService();
     return allowHandling && ecs::PlayerRuntime::IsPC(owner);
+}
+int InventorySystem::GetEmptyInventory(entt::entity owner, uint8_t size) {
+    Check(runeChargeTest && ecs::PlayerRuntime::IsPC(owner) && size > 0, "invalid rune inventory query");
+    return runeEmptyCell;
+}
+bool InventorySystem::SplitItemWithCommit(entt::entity owner, entt::entity source, int count,
+    TItemPos destination, const std::function<bool(entt::entity)>& commit)
+{
+    Check(runeChargeTest && count == 1 && destination.window_type == INVENTORY, "unexpected rune split request");
+    const auto output = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemVnum(source), count);
+    if (!ItemSystem::IsValidItem(output)) return false;
+    bool committed = false;
+    struct Cleanup {
+        entt::entity item;
+        bool& committed;
+        ~Cleanup() {
+            if (!committed && ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null)
+                ItemSystem::DestroyItemEntityEcs(item, "SPLIT_ABORT");
+        }
+    } cleanup {output, committed};
+    if (rejectPlace || !ItemSystem::IsValidItem(source) || !ecs::PlayerRuntime::IsPC(owner) ||
+        ItemSystem::GetItemOwner(output) != entt::null || ItemSystem::GetItem(owner, destination) != entt::null)
+        return false;
+    g_registry.get<ecs::ItemSockets>(output) = g_registry.get<ecs::ItemSockets>(source);
+    g_registry.get<ecs::ItemAttributes>(output) = g_registry.get<ecs::ItemAttributes>(source);
+    if (!commit(output)) return false;
+    --g_registry.get<ecs::ItemCount>(source).count;
+    g_registry.get<ecs::ItemOwner>(output).owner = owner;
+    g_registry.get<ecs::ItemLocation>(output) = {destination.window_type, destination.cell};
+    inventory[{owner, destination.window_type, destination.cell}] = output;
+    committed = true;
+    if (onPlace) onPlace(output);
+    return true;
 }
 bool InventorySystem::CanUnequipNow(entt::entity, entt::entity item, bool) {
     if (!extractionTest) UnexpectedSwitchbotService();
@@ -611,7 +651,8 @@ struct Fixture {
         floatRandomCalls = 0;
         payments = 0;
         rejectPayment = rejectGoldPayment = false;
-        transferTest = extractionTest = soulStateTest = countStateTest = runeTest = false;
+        transferTest = extractionTest = soulStateTest = countStateTest = runeTest = runeChargeTest = false;
+        runeEmptyCell = 1;
         runePoints.clear(); runePointCalls.clear(); runeAffects.clear(); runeMessages.clear();
         onRunePoints = {}; onRuneAffect = onRuneChat = {}; rejectRuneAffect = false;
         g_bItemCountLimit = 200;
@@ -2974,6 +3015,174 @@ struct RuneFixture : Fixture {
     }
 };
 
+struct RuneChargeFixture : RuneFixture {
+    TItemTable bottleProto {};
+    entt::entity bottle;
+    RuneChargeFixture(int count = 3, int charge = 80, int time = 9000)
+    {
+        runeChargeTest = true; rejectCreation = rejectPlace = false; allowHandling = true;
+        createdOutputs.clear();
+        bottleProto.bType = ITEM_USE; bottleProto.bSubType = USE_RUNE_PERC_CHARGE;
+        bottleProto.bSize = 1; bottleProto.dwFlags = ITEM_FLAG_STACKABLE;
+        bottleProto.alValues[0] = 100;
+        outputProto = bottleProto;
+        bottle = g_registry.create();
+        g_registry.emplace<ecs::ItemIdentity>(bottle, ecs::ItemIdentity{222, 12345, 12345});
+        g_registry.emplace<ecs::ItemProtoRef>(bottle).proto = &bottleProto;
+        g_registry.emplace<ecs::ItemCount>(bottle).count = count;
+        g_registry.emplace<ecs::ItemOwner>(bottle).owner = owner;
+        g_registry.emplace<ecs::ItemLocation>(bottle) = {INVENTORY, 0};
+        g_registry.emplace<ecs::ItemFlags>(bottle).flags = ITEM_FLAG_STACKABLE;
+        auto& sockets = g_registry.emplace<ecs::ItemSockets>(bottle).sockets;
+        sockets[0] = charge; sockets[2] = 77;
+        g_registry.emplace<ecs::ItemAttributes>(bottle).attrs[2] = {APPLY_MAX_SP, 123};
+        inventory[{owner, INVENTORY, 0}] = bottle;
+        Sockets(0)[0] = time;
+        Check(ItemSystem::InitializeRuneItem(runes[0]), "charge rune initialization failed");
+    }
+    bool Charge() { return ItemSystem::ChargeRune(owner, runes[0], bottle); }
+};
+
+void RuneChargeTransactions()
+{
+    for (int count : {1, 3}) for (int charge : {10, 80}) {
+        RuneChargeFixture f(count, charge);
+        onCreate = [&](entt::entity) {
+            Check(ItemSystem::GetItemCount(f.bottle) == count && f.Sockets(0)[0] == 9000,
+                "charge/debit happened before output creation");
+        };
+        onPlace = [&](entt::entity output) {
+            Check(ItemSystem::GetItemCount(f.bottle) == count - 1 && f.Sockets(0)[0] == 10000 &&
+                ItemSystem::GetItemSocket(output, 0) == charge - 10, "split published a partial charge transaction");
+        };
+        Check(f.Charge() && f.Sockets(0)[0] == 10000, "valid rune charge failed");
+        Check(ItemSystem::GetItemCount(f.bottle) == (charge == 10 || count > 1 ? count - 1 : count),
+            "charge consumed the wrong bottle count");
+        if (count > 1 && charge > 10) {
+            Check(createdOutputs.size() == 1 && ItemSystem::GetItemSocket(f.bottle, 0) == charge,
+                "partial split changed the rest of the stack");
+            const auto output = createdOutputs.front();
+            Check(ItemSystem::GetItemSocket(output, 0) == charge - 10 && ItemSystem::GetItemSocket(output, 2) == 77 &&
+                ItemSystem::GetItemAttribute(output, 2).sValue == 123 &&
+                ItemSystem::GetItem(f.owner, TItemPos(INVENTORY, 1)) == output,
+                "split remainder lost payload or placement");
+        } else {
+            Check(createdOutputs.empty(), "fully consumed/single bottle unnecessarily split");
+            if (count == 1 && charge == 80) Check(ItemSystem::GetItemSocket(f.bottle, 0) == 70, "single bottle remainder incorrect");
+        }
+        const auto outputs = createdOutputs.size();
+        Check(!f.Charge() && outputs == createdOutputs.size(), "full rune was charged/debited again");
+    }
+    for (int count : {1, 3}) {
+        RuneChargeFixture f(count, 10); runeEmptyCell = -1;
+        Check(f.Charge() && createdOutputs.empty(), "full inventory blocked a fully consumed bottle");
+    }
+    {
+        RuneChargeFixture f(1, 80); runeEmptyCell = -1;
+        Check(f.Charge() && ItemSystem::GetItemSocket(f.bottle, 0) == 70, "single partial bottle required an empty slot");
+    }
+    {
+        RuneChargeFixture f(1, 5);
+        f.protos[0].alValues[0] = INT_MAX;
+        f.Sockets(0)[0] = (INT_MAX / 100) * 100 - 1;
+        Check(f.Charge() && f.Sockets(0)[0] == INT_MAX && ItemSystem::GetItemSocket(f.bottle, 0) == 4,
+            "large-duration charge overflowed or exceeded max time");
+    }
+    {
+        RuneChargeFixture f(3, 20, 4000);
+        ItemSystem::ActivateRune(f.runes[0]);
+        Check(f.Charge() && f.Sockets(0)[0] == 6000 && runePoints[f.runes[0]][0] == f.Attributes(0)[0].sValue,
+            "active charge did not refresh rune points");
+    }
+    {
+        RuneChargeFixture f(1, 20, 4000);
+        for (int index = 0; index < 6; ++index) ItemSystem::ActivateRune(f.runes[index]);
+        Check(f.Sockets(6)[1] == 0 && f.Charge() && f.Sockets(6)[1] == 1 && f.Affect(AFFECT_RUNE2),
+            "charge crossing 50 percent did not enable complete set bonus");
+    }
+}
+
+void RuneChargeFailuresAndCallbacks()
+{
+    {
+        RuneChargeFixture f;
+        Check(!ItemSystem::ChargeRune(entt::null, f.runes[0], f.bottle) &&
+            !ItemSystem::ChargeRune(f.owner, entt::null, f.bottle) &&
+            !ItemSystem::ChargeRune(f.owner, f.runes[0], entt::null) &&
+            !ItemSystem::ChargeRune(f.owner, f.runes[6], f.bottle) &&
+            ItemSystem::GetItemCount(f.bottle) == 3, "invalid entity/bonus-only rune accepted for charging");
+    }
+    for (int failure = 0; failure < 4; ++failure) {
+        RuneChargeFixture f;
+        if (failure == 0) rejectCreation = true;
+        if (failure == 1) rejectPlace = true;
+        if (failure == 2) runeEmptyCell = -1;
+        if (failure == 3) inventory[{f.owner, INVENTORY, 1}] = g_registry.create();
+        Check(!f.Charge() && ItemSystem::GetItemCount(f.bottle) == 3 &&
+            ItemSystem::GetItemSocket(f.bottle, 0) == 80 && f.Sockets(0)[0] == 9000,
+            "failed preparation consumed bottle/charge");
+        for (auto output : createdOutputs) Check(!g_registry.valid(output), "aborted split output leaked");
+    }
+    for (int invalid = 0; invalid < 8; ++invalid) {
+        RuneChargeFixture f;
+        if (invalid == 0) f.Sockets(0)[0] = -1;
+        if (invalid == 1) f.protos[0].alValues[0] = 99;
+        if (invalid == 2) g_registry.get<ecs::ItemSockets>(f.bottle).sockets[0] = INT_MIN;
+        if (invalid == 3) allowHandling = false;
+        if (invalid == 4) g_registry.get<ecs::ItemFlags>(f.bottle).isLocked = true;
+        if (invalid == 5) g_registry.get<ecs::ItemFlags>(f.bottle).exchanging = true;
+        if (invalid == 6) g_registry.get<ecs::ItemOwner>(f.bottle).owner = g_registry.create();
+        if (invalid == 7) f.bottleProto.bSubType = USE_POTION;
+        const int time = f.Sockets(0)[0];
+        Check(!f.Charge() && ItemSystem::GetItemCount(f.bottle) == 3 && f.Sockets(0)[0] == time && createdOutputs.empty(),
+            "invalid charge input changed state");
+    }
+    for (int mutation = 0; mutation < 5; ++mutation) {
+        RuneChargeFixture f;
+        onCreate = [&](entt::entity) {
+            if (mutation == 0) g_registry.destroy(f.runes[0]);
+            if (mutation == 1) g_registry.destroy(f.owner);
+            if (mutation == 2) g_registry.get<ecs::ItemCount>(f.bottle).count = 2;
+            if (mutation == 3) g_registry.get<ecs::ItemSockets>(f.bottle).sockets[0] = 30;
+            if (mutation == 4) f.Sockets(0)[0] = 8000;
+        };
+        Check(!f.Charge() && ItemSystem::GetItemCount(f.bottle) == (mutation == 2 ? 2 : 3),
+            "creation callback invalidation still debited bottle");
+        Check(ItemSystem::GetItemSocket(f.bottle, 0) == (mutation == 3 ? 30 : 80), "rollback overwrote callback bottle state");
+        if (g_registry.valid(f.runes[0])) Check(f.Sockets(0)[0] == (mutation == 4 ? 8000 : 9000), "rollback overwrote callback rune state");
+        for (auto output : createdOutputs) Check(!g_registry.valid(output), "invalidated split leaked output");
+    }
+    {
+        RuneChargeFixture f;
+        onCreate = [&](entt::entity) { Check(!f.Charge(), "nested creation callback charged twice"); };
+        onPlace = [&](entt::entity) { Check(!f.Charge(), "nested publication callback charged twice"); };
+        Check(f.Charge() && ItemSystem::GetItemCount(f.bottle) == 2 && createdOutputs.size() == 1, "nested charge corrupted outer transaction");
+    }
+    for (int retire = 0; retire < 3; ++retire) {
+        RuneChargeFixture f;
+        onPlace = [&](entt::entity output) {
+            Check(ItemSystem::GetItemCount(f.bottle) == 2 && f.Sockets(0)[0] == 10000, "retirement saw an uncommitted charge");
+            g_registry.destroy(retire == 0 ? output : retire == 1 ? f.runes[0] : f.owner);
+        };
+        Check(f.Charge() && ItemSystem::GetItemCount(f.bottle) == 2, "committed charge reported failure after retirement");
+    }
+    {
+        RuneChargeFixture f;
+        onPlace = [&](entt::entity) { f.Sockets(0)[0] = 1234; f.Attributes(0)[0].sValue = 777; };
+        Check(f.Charge() && f.Sockets(0)[0] == 1234 && f.Attributes(0)[0].sValue == 777,
+            "post-commit refresh overwrote a newer rune mutation");
+    }
+    {
+        RuneChargeFixture f(1, 10);
+        rejectDestruction.insert(f.bottle);
+        Check(f.Charge() && ItemSystem::GetItemCount(f.bottle) == 0 && ItemSystem::IsItemConsumptionPending(f.bottle) &&
+            !ItemSystem::CanConsumeOwnedItem(f.owner, f.bottle), "failed cleanup resurrected consumed bottle");
+        Check(!f.Charge() && f.Sockets(0)[0] == 10000, "retired bottle charged again");
+        rejectDestruction.clear(); ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(f.bottle), "deferred bottle cleanup could not retry");
+    }
+}
+
 void RuneRuntimeTransitions()
 {
     {
@@ -3231,6 +3440,7 @@ int main()
         LogManager logManager;
         RuneInitializationAndBoundaries();
         RuneRuntimeTransitions(); RuneAttributeAndTimerTransitions(); RuneRuntimeCallbacks();
+        RuneChargeTransactions(); RuneChargeFailuresAndCallbacks();
         EntityAndTableValidation();
         LockedSlotAndRarePreservation();
         FailureIsAtomic();

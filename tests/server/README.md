@@ -1,5 +1,47 @@
 # Server ECS regression tests
 
+## Transactional rune bottle charging
+
+The rune-charge command now only parses/range-checks slots and forwards native
+entities to ItemSystem::ChargeRune in the existing ItemAttributeSystem.cpp.
+Owner/wear anchors, inventory restrictions, lock/exchange state, positive bottle
+charge and valid rune durations are checked before any debit. Integer percentage
+steps are preserved; time addition uses wide arithmetic and is capped at the
+configured maximum. Full runes and invalid inputs do not split bottles.
+
+Three paths share one charge commit:
+
+- A partially used single bottle keeps its inventory slot and remaining charge.
+- A fully used bottle consumes one unit, with no output allocation or space
+  requirement. Zero stacks use the existing deferred-consumption retirement queue.
+- A partially used stacked bottle uses InventorySystem::SplitItemWithCommit.
+  This extends the existing MoveItem split algorithm, not a second implementation.
+  Allocation, placement validation and payload revalidation precede a component-only
+  companion commit. Rune time, remaining-bottle charge, source count, output slot,
+  grid and ownership are all committed before split logging/save/packet callbacks.
+  The output preserves the source payload instead of acquiring a fresh full charge.
+
+The companion hook cannot fall back to a move, merge or equipment operation.
+Rejected preparation leaves the original bottle/rune unchanged; an aborted
+unplaced clone is retired with skip-save enabled, without requiring persistent
+deletion. The rune operation guard prevents nested charges/toggles on the owner.
+Post-commit retirement or mutation is not reported as a failed payment and does
+not restore snapshots over newer state. Point/attribute and set-bonus refresh use
+the existing native rune runtime after charge commitment.
+
+ItemAttributeTests exercises the production charge algorithm with controlled
+inventory/factory/point/affect/persistence doubles: all three paths, full inventory,
+creation/placement failure, payload preservation, invalid and stale state, wide
+duration arithmetic, bonus-threshold crossing, nested callbacks, post-commit
+retirement/mutation and deferred destruction retry. QuickslotTests separately
+executes the real shared splitter and its companion hook, including observable
+commit ordering, rejected hooks, allocation/payload/destination failures and
+publication-time retirement. GameServer compilation checks their integration.
+
+This is an in-memory transaction, not a new database transaction or a guarantee
+of atomic persistence across process/power failure. Live client/DB testing remains
+necessary, especially active-rune charging, reconnect and stacked partial bottles.
+
 ## Entity-native rune runtime
 
 Rune activation/deactivation, set-bonus selection, both attribute updates and
@@ -38,10 +80,8 @@ component removal, restart, retirement and replacement-event callbacks.
 GameServer compilation checks the command/event integration. Live client visuals,
 DB persistence, charge-bottle splitting and reconnect/equipment integration still
 need in-game checks; this migration does not claim the entire item system is ECS-only.
-The existing charge command still debits a stacked bottle before creating and
-placing the split item. Creation/placement failure can therefore lose that debit;
-making bottle charging transactional is a separate follow-up, not fixed by this
-rune runtime migration.
+The former debit-before-create charge-command issue is addressed by the later
+transactional rune bottle charging change described above.
 
 ## Entity-only item identity registry
 

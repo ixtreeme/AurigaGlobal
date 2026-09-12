@@ -84,6 +84,8 @@ bool ActivateRuneBonus(entt::entity item);
 bool DeactivateRuneBonus(entt::entity item);
 // Returns the next wear-timer delay in seconds, or zero to stop the event.
 int UpdateRuneWearTime(entt::entity item, int32_t elapsedSeconds);
+// True means charge/cost committed, not that publication kept the entities alive.
+bool ChargeRune(entt::entity owner, entt::entity rune, entt::entity bottle);
 #endif
 uint32_t GetItemID(entt::entity item);
 uint32_t GetItemVID(entt::entity item);

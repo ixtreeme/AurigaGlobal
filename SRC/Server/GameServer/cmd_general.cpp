@@ -3884,82 +3884,8 @@ ACMD(do_rune_charge)
 	if (iArg1 < WEAR_RUNE1 || iArg1 >= WEAR_RUNE7 || iArg2 < 0 || iArg2 >= INVENTORY_MAX_NUM)
 		return;
 
-	entt::entity rune = ItemSystem::GetWearItem(owner, iArg1);
-	if (!ItemSystem::IsValidItem(rune))
-		return;
-
-	if (!ItemSystem::IsRuneItem(rune))
-		return;
-	else if (ItemSystem::GetItemSubType(rune) == RUNE_SLOT7)
-		return;
-
-	entt::entity bottle = ItemSystem::GetInventoryItem(owner, iArg2);
-	if (!ItemSystem::IsValidItem(bottle))
-		return;
-
-	if (ItemSystem::GetItemType(bottle) != ITEM_USE ||
-		ItemSystem::GetItemSubType(bottle) != USE_RUNE_PERC_CHARGE)
-		return;
-
-	if (ItemSystem::GetItemCount(bottle) > 1) {
-		const int pos = ItemSystem::GetEmptyInventoryPositionEcs(owner, bottle);
-		if (pos == -1) {
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 366, "");
-#endif
-			return;
-		}
-
-		const uint32_t bottleVnum = ItemSystem::GetItemVnum(bottle);
-		ItemSystem::ConsumeItemEcs(bottle, 1);
-		const entt::entity splitBottle = ITEM_MANAGER::instance().CreateItem(bottleVnum, 1);
-		if (!ItemSystem::IsValidItem(splitBottle))
-			return;
-		if (!ItemSystem::PlaceItemEcs(owner, splitBottle, INVENTORY, pos)) {
-			ItemSystem::DestroyItemEntityEcs(splitBottle, "RUNE_BOTTLE_SPLIT_FAIL");
-			return;
-		}
-		bottle = splitBottle;
-	}
-
-	int32_t lBottlePercent = ItemSystem::GetItemSocket(bottle, 0);
-	if (lBottlePercent < 1)
-		return;
-
-	int32_t lMaxTime = ItemSystem::GetItemValue(rune, 0);
-	int32_t lOnePercent = lMaxTime / 100;
-	if (lOnePercent <= 0)
-		return;
-	int32_t lRemainPercent =
-		ItemSystem::GetItemSocket(rune, ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
-	if (lRemainPercent > 99) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 33, "%s",
-			ItemSystem::GetItemName(rune));
-#endif
-		return;
-	}
-
-	int32_t dif = 100 - lRemainPercent;
-	dif = dif > lBottlePercent ? lBottlePercent : dif;
-	int32_t add = lOnePercent * dif;
-	int32_t lValue = ItemSystem::GetItemSocket(rune, ITEM_SOCKET_REMAIN_SEC) + add;
-	ItemSystem::SetItemSocket(rune, ITEM_SOCKET_REMAIN_SEC, lValue);
-#ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 34, "%s#%d",
-		ItemSystem::GetItemName(rune), dif);
-#endif
-	ItemSystem::SetItemSocket(bottle, 0, lBottlePercent - dif);
-	if (ItemSystem::GetItemSocket(bottle, 0) < 1)
-		ItemSystem::RemoveItemEcs(bottle);
-
-	ItemSystem::ChangeRuneAttributes(rune, lValue);
-	if (!AffectSystem::FindAffect(owner, AFFECT_RUNE2) &&
-		ItemSystem::GetItemSocket(rune, 1) == 1) {
-		if (int32_t(lValue / lOnePercent) >= 50) {
-			ItemSystem::ActivateRuneBonus(rune);
-		}
-	}
+	ItemSystem::ChargeRune(owner, ItemSystem::GetWearItem(owner, iArg1),
+		ItemSystem::GetInventoryItem(owner, iArg2));
 }
 
 ACMD(do_rune_shop)

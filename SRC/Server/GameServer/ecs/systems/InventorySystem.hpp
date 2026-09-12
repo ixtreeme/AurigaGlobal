@@ -1,5 +1,6 @@
 #pragma once
 #include <span>
+#include <functional>
 
 #include "../Registry.hpp"
 #include "../components/inventory_components.hpp"
@@ -15,6 +16,13 @@ int GetEmptyInventory(entt::entity owner, uint8_t size);
 // Client drag/drop: both positions and the owner remain native entity state.
 // True means committed, including when a publication callback removes the item.
 bool MoveItem(entt::entity owner, TItemPos source, TItemPos destination, int count);
+// Splits only (never moves/merges). The companion commit runs after all split
+// preparation and final validation, before debit/placement/publication. It must
+// not call services, allocate components, or change inventory/ownership/counts.
+// False must leave companion state unchanged; true commits with the split.
+// A committed split stays successful even if publication removes its entities.
+bool SplitItemWithCommit(entt::entity owner, entt::entity item, int count, TItemPos destination,
+    const std::function<bool(entt::entity)>& commit);
 int GetInventorySize(entt::entity owner);
 bool IsEmptyItemGrid(entt::entity owner, TItemPos cell, uint8_t size, int exceptionCell = -1);
 bool HasBeltItems(entt::entity owner);

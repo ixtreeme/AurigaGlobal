@@ -745,6 +745,8 @@ bool ItemSystem::DestroyItemEntityEcs(entt::entity e, char const * reason) {
         g_registry.destroy(e); return true;
     }
     Check(std::string_view(reason) == "SPLIT_ABORT" && RawOwner(e) == entt::null, "unexpected item destruction");
+    if (const auto* flags = g_registry.try_get<ecs::ItemFlags>(e))
+        Check(flags->skipSave, "uncommitted split still required persistent deletion");
     ++retiredSplits; g_registry.destroy(e); return true;
 }
 short ItemSystem::GetItemLockedAttr(entt::entity) { Unexpected(); }
@@ -1960,6 +1962,67 @@ void NativeSplits()
     Check(!InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 2), "failed allocation committed");
     Check(ItemSystem::GetItemCount(item) == 7, "allocation failure debited source");
 }
+void CompanionSplitTransactions()
+{
+    {
+        Reset(); const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 3);
+        EnableSplitting(item);
+        int companion = 0, commits = 0;
+        entt::entity output = entt::null;
+        const auto complete = [&] {
+            Check(companion == 100 && ItemSystem::GetItemCount(item) == 2 &&
+                g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[1] == output &&
+                ItemSystem::GetItemSocket(output, 0) == 70, "split observer saw an incomplete companion commit");
+        };
+        onSave = [&](entt::entity) { complete(); };
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) { complete(); };
+        Check(InventorySystem::SplitItemWithCommit(owner, item, 1, TItemPos(INVENTORY, 1), [&](entt::entity split) {
+            Check(ItemSystem::GetItemCount(item) == 3 && RawOwner(split) == entt::null,
+                "split committed before companion validation");
+            output = split; ++commits; companion = 100;
+            g_registry.get<ecs::ItemSockets>(split).sockets[0] = 70;
+            return true;
+        }), "companion split failed");
+        complete(); Check(commits == 1, "companion callback ran twice");
+    }
+    for (int failure = 0; failure < 5; ++failure) {
+        Reset(); const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 3);
+        EnableSplitting(item);
+        int commits = 0;
+        if (failure == 0) onCreate = [](uint32_t, uint32_t) { return entt::entity(entt::null); };
+        if (failure == 1) StackAt(owner, TItemPos(INVENTORY, 1));
+        if (failure == 2) {
+            const auto create = onCreate;
+            onCreate = [&, create](uint32_t vnum, uint32_t count) {
+                const auto output = create(vnum, count);
+                g_registry.get<ecs::ItemSockets>(item).sockets[0] = 99;
+                return output;
+            };
+        }
+        const int count = failure == 3 ? 3 : 1; // This API must not degrade into a move.
+        Check(!InventorySystem::SplitItemWithCommit(owner, item, count, TItemPos(INVENTORY, 1), [&](entt::entity) {
+            ++commits; return false;
+        }), "rejected companion split committed");
+        Check(ItemSystem::GetItemCount(item) == 3 && RawOwner(item) == owner &&
+            commits == (failure == 4 ? 1 : 0), "failed companion split debited/moved source or ran too early");
+        if (failure == 2 || failure == 4) Check(retiredSplits == 1, "rejected companion output leaked");
+    }
+    {
+        Reset(); const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 3);
+        EnableSplitting(item);
+        entt::entity output = entt::null;
+        onSave = [&](entt::entity) {
+            onSave = {};
+            Check(ItemSystem::GetItemCount(item) == 2, "retirement callback saw unpaid split");
+            g_registry.destroy(output);
+        };
+        Check(InventorySystem::SplitItemWithCommit(owner, item, 1, TItemPos(INVENTORY, 1), [&](entt::entity split) {
+            output = split; return true;
+        }) && !g_registry.valid(output) && ItemSystem::GetItemCount(item) == 2 && retiredSplits == 0,
+            "post-commit retirement triggered rollback or failure");
+    }
+}
+
 void SplitFailuresAndCallbacks()
 {
     for (int scenario = 0; scenario < 11; ++scenario)
@@ -2497,6 +2560,7 @@ int main() {
 #endif
         GroundPlacementAndRemoval(); GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
+        CompanionSplitTransactions();
         RewardQuantitiesAndPlacement(); RewardMergeAndReentry(); RewardCallbacksAndFailures(); RewardGroundAndAcquisition();
         RewardQuickslotConstruction();
         EquipmentPolicies(); EquipmentRoundTripAndSwap(); EquipmentCallbacks(); EquipmentDragonSoulAndTimers();

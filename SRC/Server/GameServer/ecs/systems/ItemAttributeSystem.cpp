@@ -1,5 +1,6 @@
 #include "../../stdafx.h"
 #include "ItemSystem.hpp"
+#include "InventorySystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "PointSystem.hpp"
@@ -1061,6 +1062,109 @@ bool ConsumeOwnedItemCosts(entt::entity owner, std::span<const ItemCost> costs)
     prepared.Publish();
     return true;
 }
+
+#ifdef ENABLE_RUNE_SYSTEM
+bool ChargeRune(entt::entity owner, entt::entity rune, entt::entity bottle)
+{
+    const RuneContext context(rune);
+    RuneOperation operation(context);
+    const auto allowed = [&] {
+        return context.Valid() && context.owner == owner && context.subtype != RUNE_SLOT7 &&
+            ecs::PlayerRuntime::IsPC(owner) && InventorySystem::CanHandleItems(owner) &&
+            !IsItemLocked(rune) && !IsItemExchanging(rune) && !IsItemConsumptionPending(rune) &&
+            CanConsumeOwnedItem(owner, bottle) && GetItemWindow(bottle) == INVENTORY &&
+            GetItemCell(bottle) < INVENTORY_MAX_NUM &&
+            GetItemType(bottle) == ITEM_USE && GetItemSubType(bottle) == USE_RUNE_PERC_CHARGE &&
+            g_registry.all_of<ecs::ItemSockets>(bottle);
+    };
+    if (!operation || !allowed()) return false;
+
+    const auto runeSockets = g_registry.get<ecs::ItemSockets>(rune).sockets;
+    const auto runeAttributes = g_registry.get<ecs::ItemAttributes>(rune).attrs;
+    const auto bottleSockets = g_registry.get<ecs::ItemSockets>(bottle).sockets;
+    const auto bottleCount = GetItemCount(bottle);
+    const auto bottleCell = GetItemCell(bottle);
+    const auto bottleVnum = GetItemVnum(bottle);
+    const int maxTime = GetItemValue(rune, 0), step = maxTime / 100;
+    const int time = runeSockets[ITEM_SOCKET_REMAIN_SEC], available = bottleSockets[0];
+    if (step <= 0 || time < 0 || available <= 0) return false;
+    const int percent = time / step;
+    if (percent >= 100) { RuneMessage(context, 33); return false; }
+    const int used = std::min(100 - percent, available);
+    const int remaining = available - used;
+    // Non-multiple-of-100 durations retain the old percentage steps, but cannot
+    // overflow or charge past the configured duration near INT32_MAX.
+    const int chargedTime = static_cast<int>(std::min<int64_t>(maxTime, int64_t(time) + int64_t(step) * used));
+    const bool split = bottleCount > 1 && remaining > 0;
+    const auto sameRune = [&](int expectedTime) {
+        if (!context.Valid() || GetItemValue(rune, 0) != maxTime) return false;
+        auto expected = runeSockets;
+        expected[ITEM_SOCKET_REMAIN_SEC] = expectedTime;
+        if (g_registry.get<ecs::ItemSockets>(rune).sockets != expected) return false;
+        const auto& current = g_registry.get<ecs::ItemAttributes>(rune).attrs;
+        return std::equal(current.begin(), current.end(), runeAttributes.begin(),
+            [](const auto& a, const auto& b) { return a.bType == b.bType && a.sValue == b.sValue; });
+    };
+    const auto unchanged = [&] {
+        return allowed() && sameRune(time) && GetItemCount(bottle) == bottleCount &&
+            GetItemCell(bottle) == bottleCell && GetItemVnum(bottle) == bottleVnum &&
+            g_registry.get<ecs::ItemSockets>(bottle).sockets == bottleSockets;
+    };
+
+    PreparedCosts cost;
+    bool committed = false;
+    const auto commit = [&](entt::entity output) {
+        if (!unchanged()) return false;
+        if (split) {
+            if (output == bottle || output == rune || !IsValidItem(output) ||
+                !g_registry.all_of<ecs::ItemSockets>(output) || GetItemCount(output) != 1 ||
+                GetItemOwner(output) != entt::null || GetItemVnum(output) != bottleVnum) return false;
+        } else if (remaining == 0) {
+            const ItemCost debit {bottle, 1};
+            if (!cost.Prepare(owner, std::span(&debit, 1), rune)) return false;
+        }
+        // Existing components only: charge and payment commit before any service.
+        if (split) g_registry.get<ecs::ItemSockets>(output).sockets[0] = remaining;
+        else if (remaining == 0) cost.Commit();
+        else g_registry.get<ecs::ItemSockets>(bottle).sockets[0] = remaining;
+        g_registry.get<ecs::ItemSockets>(rune).sockets[ITEM_SOCKET_REMAIN_SEC] = chargedTime;
+        committed = true;
+        return true;
+    };
+
+    if (split) {
+        const int cell = InventorySystem::GetEmptyInventory(owner, GetItemSize(bottle));
+        if (cell < 0) {
+#ifdef TEXTS_IMPROVEMENT
+            if (context.Valid()) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 366, "");
+#endif
+            return false;
+        }
+        if (cell >= INVENTORY_MAX_NUM || !InventorySystem::SplitItemWithCommit(owner, bottle, 1,
+            TItemPos(INVENTORY, static_cast<uint16_t>(cell)), commit)) return false;
+    } else if (!commit(entt::null)) return false;
+
+    // Publication may retire, move or mutate any participant. Never replay the
+    // debit or restore snapshots over that newer state. The runtime refresh uses
+    // the already-held rune operation guard (public reentry stays blocked).
+    if (sameRune(chargedTime)) {
+        if (ChangeRuneAttributesImpl(context, chargedTime) && context.Valid()) {
+            if (GetItemSocket(rune, 1) == 1 && chargedTime / step >= 50)
+                ActivateRuneBonusImpl(context);
+            if (context.Valid()) PublishRune(context);
+        }
+    }
+    if (remaining == 0) cost.Publish(); // Zero stacks remain retired if cleanup must retry.
+    else if (IsValidItem(bottle) && GetItemOwner(bottle) == owner) PublishItemCount(bottle);
+#ifdef TEXTS_IMPROVEMENT
+    if (context.Valid()) {
+        const std::string name = GetItemName(rune, 0);
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 34, "%s#%d", name.c_str(), used);
+    }
+#endif
+    return committed;
+}
+#endif
 
 bool ChangeItemAttributeWithItemCost(entt::entity item, entt::entity material,
     uint32_t amount, const int* probabilities)

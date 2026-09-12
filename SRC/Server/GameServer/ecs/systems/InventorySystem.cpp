@@ -1600,8 +1600,16 @@ struct PreparedSplit
     ~PreparedSplit()
     {
         // Never destroy an entity a callback has transferred elsewhere.
-        if (!committed && Unowned(item) && ItemSystem::GetItemWindow(item) == RESERVED_WINDOW &&
-            !ItemSystem::DestroyItemEntityEcs(item, "SPLIT_ABORT"))
+        if (committed || !Unowned(item) || ItemSystem::GetItemWindow(item) != RESERVED_WINDOW) return;
+        // A newly allocated, unplaced clone is not a persistent item. Retiring
+        // it must not require a DB connection or leave a delayed-save candidate.
+        auto* flags = g_registry.try_get<ecs::ItemFlags>(item);
+        const bool skipSave = flags && flags->skipSave;
+        if (flags) flags->skipSave = true;
+        const bool retired = ItemSystem::DestroyItemEntityEcs(item, "SPLIT_ABORT");
+        if (ItemSystem::IsValidItem(item) && (!Unowned(item) || ItemSystem::GetItemWindow(item) != RESERVED_WINDOW))
+            if (auto* current = g_registry.try_get<ecs::ItemFlags>(item)) current->skipSave = skipSave;
+        if (!retired && ItemSystem::IsValidItem(item))
             LOG_ERROR("Could not retire prepared split item {}", entt::to_integral(item));
     }
 };
@@ -1657,7 +1665,8 @@ void PublishBeltMove(entt::entity owner, TItemPos source, TItemPos dest, bool sp
 }
 } // namespace
 
-bool MoveItem(entt::entity owner, TItemPos source, TItemPos dest, int count)
+static bool MoveItemImpl(entt::entity owner, TItemPos source, TItemPos dest, int count,
+    const std::function<bool(entt::entity)>& commit)
 {
     if (!NormalizeMovePosition(source) || !NormalizeMovePosition(dest) || source == dest || count < 0 ||
         !g_registry.valid(owner)) return false;
@@ -1665,6 +1674,8 @@ bool MoveItem(entt::entity owner, TItemPos source, TItemPos dest, int count)
     if (!action.entered) return false;
     const auto item = SlotAt(owner, source);
     if (!MoveSource(owner, item, source, count) || !MoveDestination(owner, item, source, dest)) return false;
+    if (commit && (source.window_type == EQUIPMENT || dest.window_type == EQUIPMENT ||
+        SlotAt(owner, dest) != entt::null || !IsSplitRequest(item, count))) return false;
     if (dest.window_type == EQUIPMENT)
     {
         if (SlotAt(owner, dest) != entt::null)
@@ -1739,6 +1750,9 @@ bool MoveItem(entt::entity owner, TItemPos source, TItemPos dest, int count)
     char splitHint[80];
     snprintf(splitHint, sizeof(splitHint), "%u %u %u %u ", ItemSystem::GetItemID(prepared.item),
         uint32_t(count), uint32_t(payload.count - count), uint32_t(payload.count));
+    // The caller's component-only writes and the split form one observable
+    // commit. No callback or fallible preparation may be added below this gate.
+    if (commit && !commit(prepared.item)) return false;
     g_registry.get<ecs::ItemCount>(item).count -= count;
     CommitRelocation(owner, prepared.item, source, dest, true);
     prepared.committed = true;
@@ -1748,6 +1762,21 @@ bool MoveItem(entt::entity owner, TItemPos source, TItemPos dest, int count)
     LOG_INFO("ITEM_SPLIT owner entity={} source entity={} target entity={} count={}",
         entt::to_integral(owner), entt::to_integral(item), entt::to_integral(prepared.item), count);
     return true;
+}
+
+bool MoveItem(entt::entity owner, TItemPos source, TItemPos dest, int count)
+{
+    return MoveItemImpl(owner, source, dest, count, {});
+}
+
+bool SplitItemWithCommit(entt::entity owner, entt::entity item, int count, TItemPos destination,
+    const std::function<bool(entt::entity)>& commit)
+{
+    if (!commit || count <= 0 || !ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != owner)
+        return false;
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    if (!location || SlotAt(owner, TItemPos(location->window, location->cell)) != item) return false;
+    return MoveItemImpl(owner, TItemPos(location->window, location->cell), destination, count, commit);
 }
 
 } // namespace InventorySystem
