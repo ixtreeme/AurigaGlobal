@@ -66,6 +66,16 @@ remain necessary for NPC conversations and unlock-on-close/logout, item/EXP
 rewards, party dungeon entry/exit, private-shop opening and C++ dungeon NPCs.
 The unrelated LPCHARACTER paths elsewhere are not claimed to be migrated.
 
+The mob victim search in trigger.cpp also consumes native sectree entities,
+without LPENTITY/CHARACTER conversion. QuestRuntimeTests exercises the real
+search and FCollectEntity enumeration with controlled snapshot/membership and
+character-data seams. It covers self exclusion, nearest/range boundaries,
+invisibility, terror/immunity, empire and attack-mob flags, construction-site
+priority, retired/recycled entities, source retirement during enumeration and
+extreme coordinates. The existing distance weights and construction preference
+are preserved; coordinate arithmetic and the half-HP comparison no longer
+overflow. Live map membership and NPC pursuit still require server smoke tests.
+
 
 ## Entity-native duplicate-load retirement
 

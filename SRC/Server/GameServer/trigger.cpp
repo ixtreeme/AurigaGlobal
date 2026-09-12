@@ -9,6 +9,8 @@
 #include "config.h"
 #include "char_interface.hpp"
 #include "ecs/components/quest_components.hpp"
+#include "ecs/components/spatial_components.hpp"
+#include <limits>
 #include "ecs/systems/SessionSystem.hpp"
 #include "questmanager.h"
 #include "target.h"
@@ -389,17 +391,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 	return 1;
 }
 #endif
-//int OnClickLostCastleDungeon(TRIGGERPARAM)
-//{
-//	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
-//		return 0;
-//
-//	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 20021)
-//		return 0;
-//
-//	CLostCastleDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
-//	return 1;
-//}
+
 #endif
 
 /*
@@ -414,28 +406,25 @@ int OnIdleDefault(TRIGGERPARAM)
 
 namespace {
 
-// Target search for a mob, entity in and entity out. The sectree hands back an
-// LPENTITY, so that one conversion happens once per candidate and the handle
-// stays an entity from there - no candidate is ever turned into a character.
+// Consume the sectree's generation-aware entity snapshot directly.
 class FindMobVictim
 {
 public:
     FindMobVictim(entt::entity self, int maxDistance)
         : m_self(self),
-          m_minDistance(~(1L << 31)),
+          m_minDistance(std::numeric_limits<int64_t>::max()),
           m_maxDistance(maxDistance),
           m_x(ecs::PlayerRuntime::GetX(self)),
           m_y(ecs::PlayerRuntime::GetY(self))
     {
     }
 
-    bool operator()(LPENTITY ent)
+    bool operator()(entt::entity candidate)
     {
-        if (!ent || !ent->IsType(ENTITY_CHARACTER))
+        if (!g_registry.valid(m_self) || candidate == m_self || !g_registry.valid(candidate))
             return false;
-
-        const entt::entity candidate = ecs::SpatialService::EntityFromLPENTITY(ent);
-        if (candidate == entt::null || !g_registry.valid(candidate))
+        const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(candidate);
+        if (!kind || kind->kind != ecs::SpatialKind::Character)
             return false;
 
         if (ecs::PlayerRuntime::IsBuilding(candidate) &&
@@ -485,8 +474,11 @@ public:
         if (AIHelpers::IsNoAttackJinno(m_self) && ecs::PlayerRuntime::GetEmpire(candidate) == 3)
             return false;
 
-        const int distance = DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(candidate),
-                                             m_y - ecs::PlayerRuntime::GetY(candidate));
+        // Same DISTANCE_APPROX coefficients, with wide coordinate differences
+        // and intermediates so distant positions cannot wrap into a near target.
+        const int64_t dx = std::abs(int64_t(m_x) - ecs::PlayerRuntime::GetX(candidate));
+        const int64_t dy = std::abs(int64_t(m_y) - ecs::PlayerRuntime::GetY(candidate));
+        const int64_t distance = (246 * std::max(dx, dy) + 102 * std::min(dx, dy)) >> 8;
 
         if (distance < m_minDistance && distance <= m_maxDistance)
         {
@@ -498,20 +490,20 @@ public:
 
     entt::entity Result() const
     {
-        // A construction site is worth hitting only while this mob is still
-        // healthy; otherwise, and whenever nothing else was found, it is the
-        // answer anyway.
-        if ((m_building != entt::null &&
-             ecs::PlayerRuntime::GetHP(m_self) * 2 > ecs::PointSystem::GetMaxHP(m_self)) ||
-            m_victim == entt::null)
-            return m_building;
-
-        return m_victim;
+        if (!g_registry.valid(m_self)) return entt::null;
+        const auto building = g_registry.valid(m_building) ? m_building : entt::entity(entt::null);
+        const auto victim = g_registry.valid(m_victim) ? m_victim : entt::entity(entt::null);
+        // Preserve the construction-site preference, without overflowing HP * 2.
+        if ((building != entt::null &&
+             ecs::PlayerRuntime::GetHP(m_self) > int64_t(ecs::PointSystem::GetMaxHP(m_self)) / 2) ||
+            victim == entt::null)
+            return building;
+        return victim;
     }
 
 private:
     entt::entity m_self;
-    int m_minDistance;
+    int64_t m_minDistance;
     int m_maxDistance;
     int32_t m_x;
     int32_t m_y;
@@ -527,7 +519,7 @@ namespace CombatSystem {
 // helpers are already set up in this translation unit.
 entt::entity FindVictim(entt::entity self, int maxDistance)
 {
-    if (self == entt::null || !g_registry.valid(self))
+    if (self == entt::null || !g_registry.valid(self) || maxDistance < 0)
         return entt::null;
 
     LPSECTREE sectree = ecs::PlayerRuntime::GetSectree(self);

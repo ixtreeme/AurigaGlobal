@@ -28,6 +28,8 @@
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/quest_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/vital_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/ai_components.hpp"
+#include "../../SRC/Server/GameServer/affect.h"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
@@ -56,6 +58,16 @@ std::vector<uint32_t> gifts;
 std::vector<int64_t> experience;
 std::function<void()> onGive, onTarget, onChat, onAttr, onPublish;
 std::function<void(entt::entity)> onConstruct;
+struct TargetData {
+    int32_t x=0,y=0,level=1,maxHP=100;
+    int64_t hp=100;
+    uint8_t empire=1;
+    bool dead=false,immune=false,member=true;
+    std::set<uint32_t> affects;
+};
+SECTREE* searchTree=nullptr;
+std::vector<entt::entity> searchCandidates;
+std::function<void(entt::entity)> onMember;
 uint32_t nextExp[PLAYER_MAX_LEVEL_CONST+1] {};
 void Check(bool okay,const char* why) { ++checks; if(!okay)throw std::runtime_error(why); }
 void CheckLive(entt::entity e) { Check(g_registry.valid(e),"service received a stale entity"); }
@@ -76,6 +88,7 @@ entt::entity Character(uint32_t pid=0,uint32_t vid=100,uint32_t race=101) {
 }
 void Reset() {
     onGive=onTarget=onChat=onAttr=onPublish={};onConstruct={};
+    searchTree=nullptr;searchCandidates.clear();onMember={};
     g_registry.clear();players.clear();gifts.clear();experience.clear();
     clicks=chats=attrCalls=affects=saves=pidLookups=0;hasTarget=hasChat=false;nextExp[1]=100;
 }
@@ -263,7 +276,9 @@ void CancelTimerEvent(LPEVENT*) {throw std::runtime_error("unexpected timer");}
 LPPARTY ecs::SocialSystem::GetParty(entt::entity) {return nullptr;}
 uint32_t CParty::GetLeaderPID() {throw std::runtime_error("unexpected party");}
 entt::entity CParty::GetLeader() {throw std::runtime_error("unexpected party");}
-int32_t ecs::PointSystem::GetLevel(entt::entity e) {CheckLive(e);return 1;}
+int32_t ecs::PointSystem::GetLevel(entt::entity e) {
+    CheckLive(e);const auto* data=g_registry.try_get<TargetData>(e);return data?data->level:1;
+}
 void ecs::PointSystem::Change(entt::entity e,uint8_t point,int64_t amount,bool,bool,bool) {
     CheckLive(e);Check(point==POINT_EXP,"unexpected point");experience.push_back(amount);
     g_registry.get<ecs::Experience>(e).current+=amount;
@@ -306,7 +321,7 @@ uint32_t GetExp(entt::entity e) {CheckLive(e);return static_cast<uint32_t>(g_reg
 uint32_t GetNextExp(entt::entity e) {CheckLive(e);return static_cast<uint32_t>(g_registry.get<ecs::Experience>(e).next);}
 LPDESC GetDesc(entt::entity) { return nullptr; }
 int32_t GetMapIndex(entt::entity) {Unexpected();}
-uint8_t GetEmpire(entt::entity) {Unexpected();}
+uint8_t GetEmpire(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).empire;}
 void DestroyCharacter(entt::entity) {Unexpected();}
 }
 CLIENT_DESC* db_clientdesc=nullptr;
@@ -359,7 +374,7 @@ void CombatSystem::SetAttackMultiplier(entt::entity,float) {Unexpected();}
 void CombatSystem::SetDamageMultiplier(entt::entity,float) {Unexpected();}
 entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) {Unexpected();}
 CGuild* ecs::SocialSystem::GetGuild(entt::entity) {Unexpected();}
-int32_t ecs::PointSystem::GetMaxHP(entt::entity) {Unexpected();}
+int32_t ecs::PointSystem::GetMaxHP(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).maxHP;}
 bool CShopManager::StartShopping(entt::entity,entt::entity,int) {Unexpected();}
 bool map_allow_find(int32_t) {Unexpected();}
 bool SECTREE_MANAGER::GetMapBasePositionByMapIndex(int32_t,PIXEL_POSITION&) {Unexpected();}
@@ -369,29 +384,37 @@ void ContinueOnFatalError() {Unexpected();}
 
 int passes_per_sec=25;
 bool exchanging=false;
-bool AffectSystem::IsImmune(entt::entity,uint32_t) {Unexpected();}
-bool AffectSystem::IsAffectFlag(entt::entity,uint32_t) {Unexpected();}
+bool AffectSystem::IsImmune(entt::entity e,uint32_t) {CheckLive(e);return g_registry.get<TargetData>(e).immune;}
+bool AffectSystem::IsAffectFlag(entt::entity e,uint32_t flag) {CheckLive(e);return g_registry.get<TargetData>(e).affects.contains(flag);}
 bool ecs::SocialSystem::HasExchange(entt::entity e) {CheckLive(e);return exchanging;}
 CShop* ecs::SocialSystem::GetShop(entt::entity) {Unexpected();}
 CShop* ecs::SocialSystem::GetMyShop(entt::entity e) {CheckLive(e);return nullptr;}
 entt::entity ecs::SocialSystem::GetShopOwner(entt::entity) {Unexpected();}
 void ecs::SocialSystem::SetShop(entt::entity,CShop*) {Unexpected();}
 void ecs::SocialSystem::SetShopOwner(entt::entity,entt::entity) {Unexpected();}
-int64_t ecs::PlayerRuntime::GetHP(entt::entity) {Unexpected();}
-int32_t ecs::PlayerRuntime::GetX(entt::entity) {Unexpected();}
-int32_t ecs::PlayerRuntime::GetY(entt::entity) {Unexpected();}
-LPSECTREE ecs::PlayerRuntime::GetSectree(entt::entity) {Unexpected();}
-bool ecs::PlayerRuntime::IsBuilding(entt::entity) {Unexpected();}
-bool ecs::PlayerRuntime::IsMonster(entt::entity) {Unexpected();}
-bool CombatSystem::IsDead(entt::entity) {Unexpected();}
+int64_t ecs::PlayerRuntime::GetHP(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).hp;}
+int32_t ecs::PlayerRuntime::GetX(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).x;}
+int32_t ecs::PlayerRuntime::GetY(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).y;}
+LPSECTREE ecs::PlayerRuntime::GetSectree(entt::entity e) {CheckLive(e);return searchTree;}
+bool ecs::PlayerRuntime::IsBuilding(entt::entity e) {CheckLive(e);return g_registry.get<ecs::CharacterType>(e).value==CHAR_TYPE_BUILDING;}
+bool ecs::PlayerRuntime::IsMonster(entt::entity e) {CheckLive(e);return g_registry.all_of<ecs::TagMonster>(e);}
+bool CombatSystem::IsDead(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).dead;}
 bool CEntity::IsType(int) const {Unexpected();}
 bool AttrTransfer_is_open(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsSafeboxOpen(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsCubeOpen(entt::entity) {Unexpected();}
 void CShop::RemoveGuest(entt::entity) {Unexpected();}
 LPENTITY SectreeLegacyEntity(entt::entity) {Unexpected();}
-bool SectreeMember(entt::entity,const SECTREE*) {Unexpected();}
-FCollectEntity SECTREE::SnapshotAround(int) const {Unexpected();}
+bool SectreeMember(entt::entity e,const SECTREE*) {
+    if(onMember){auto fn=onMember;fn(e);}
+    const auto* data=g_registry.valid(e)?g_registry.try_get<TargetData>(e):nullptr;
+    return data && data->member;
+}
+SECTREE::SECTREE():m_id{},m_iPCCount(0),isClone(false),m_pkAttribute(nullptr){}
+SECTREE::~SECTREE()=default;
+FCollectEntity SECTREE::SnapshotAround(int) const {
+    FCollectEntity result;for(const auto e:searchCandidates)result.Add(e,this);return result;
+}
 entt::entity ecs::SpatialService::EntityFromLPENTITY(LPENTITY) {Unexpected();}
 COrcsDungeon& COrcsDungeon::instance() {Unexpected();}
 bool COrcsDungeon::OnClickNpc(entt::entity) {Unexpected();}
@@ -416,6 +439,73 @@ namespace {
 int triggerCalls=0;
 int CountTrigger(entt::entity npc,entt::entity causer) {
     CheckLive(npc);CheckLive(causer);++triggerCalls;return 1;
+}
+entt::entity Target(uint8_t type,int32_t x,int32_t y=0) {
+    auto e=Character(type==CHAR_TYPE_PC?1:0);
+    g_registry.get<ecs::CharacterType>(e).value=type;
+    if(type==CHAR_TYPE_MONSTER)g_registry.emplace<ecs::TagMonster>(e);
+    g_registry.emplace<ecs::SpatialKindTag>(e,ecs::SpatialKind::Character);
+    auto& data=g_registry.emplace<TargetData>(e);data.x=x;data.y=y;
+    searchCandidates.push_back(e);return e;
+}
+void NativeVictimSearch() {
+    Reset();SECTREE tree;searchTree=&tree;
+    const auto self=Target(CHAR_TYPE_MONSTER,0);
+    g_registry.emplace<ecs::AIFlags>(self,ecs::AIFlags{});
+    auto& flags=g_registry.get<ecs::AIFlags>(self);flags.isAttackMob=true;
+    Check(CombatSystem::FindVictim(self,500)==entt::null,"mob selected itself");
+    const auto farther=Target(CHAR_TYPE_PC,100),nearer=Target(CHAR_TYPE_PC,50);
+    Check(CombatSystem::FindVictim(self,500)==nearer,"native nearest target search failed");
+    Check(CombatSystem::FindVictim(self,48)==nearer && CombatSystem::FindVictim(self,47)==entt::null,
+        "DISTANCE_APPROX range threshold changed");
+    Check(CombatSystem::FindVictim(self,-1)==entt::null,"negative radius accepted");
+    auto& nearData=g_registry.get<TargetData>(nearer);
+    for(const auto flag:{AFF_EUNHYUNG,AFF_INVISIBILITY,AFF_REVIVE_INVISIBLE}) {
+        nearData.affects.insert(flag);
+        Check(CombatSystem::FindVictim(self,500)==farther,"hidden target was selected");
+        nearData.affects.clear();
+    }
+    nearData.dead=true;Check(CombatSystem::FindVictim(self,500)==farther,"dead target selected");nearData.dead=false;
+    nearData.member=false;Check(CombatSystem::FindVictim(self,500)==farther,"departed snapshot member selected");nearData.member=true;
+    nearData.affects.insert(AFF_TERROR);
+    Check(CombatSystem::FindVictim(self,500)==farther,"terror level gate failed");
+    nearData.level=2;Check(CombatSystem::FindVictim(self,500)==nearer,"higher-level terror target incorrectly skipped");
+    nearData.level=1;nearData.immune=true;Check(CombatSystem::FindVictim(self,500)==nearer,"terror immunity ignored");
+    nearData.affects.clear();nearData.immune=false;
+    flags.isNoAttackShinsu=true;g_registry.get<TargetData>(farther).empire=2;
+    Check(CombatSystem::FindVictim(self,500)==farther,"empire exclusion ignored");
+    flags.isNoAttackShinsu=false;
+
+    const auto monster=Target(CHAR_TYPE_MONSTER,10);
+    Check(CombatSystem::FindVictim(self,500)==monster,"attack-mob flag did not allow another mob");
+    flags.isAggressive=true;Check(CombatSystem::FindVictim(self,500)==nearer,"aggressive searcher attacked a mob");
+    flags.isAggressive=false;flags.isAttackMob=false;
+    Check(CombatSystem::FindVictim(self,500)==nearer,"passive searcher used candidate's attack-mob flag");
+    const auto item=Target(CHAR_TYPE_PC,1);
+    g_registry.get<ecs::SpatialKindTag>(item).kind=ecs::SpatialKind::Item;
+    Check(CombatSystem::FindVictim(self,500)==nearer,"item spatial kind entered character target search");
+    g_registry.remove<ecs::SpatialKindTag>(item);
+    Check(CombatSystem::FindVictim(self,500)==nearer,"untyped entity entered character target search");
+
+    const auto building=Target(CHAR_TYPE_BUILDING,300);
+    g_registry.get<TargetData>(building).affects.insert(AFF_BUILDING_UPGRADE);
+    Check(CombatSystem::FindVictim(self,500)==building,"healthy construction-site preference changed");
+    g_registry.get<TargetData>(self).hp=50;
+    Check(CombatSystem::FindVictim(self,500)==nearer,"half-health construction-site boundary changed");
+    g_registry.get<TargetData>(self).hp=std::numeric_limits<int64_t>::max();
+    Check(CombatSystem::FindVictim(self,500)==building,"construction preference overflowed HP multiplication");
+    g_registry.destroy(building);g_registry.get<TargetData>(self).hp=100;
+    g_registry.destroy(nearer);const auto replacement=Character(1);
+    Check(CombatSystem::FindVictim(self,500)==farther,"stale snapshot selected a recycled target");
+    onMember=[&](entt::entity e){if(e==monster)g_registry.destroy(self);};
+    Check(CombatSystem::FindVictim(self,500)==entt::null,"retired searcher returned a target");
+
+    Reset();searchTree=&tree;
+    const auto edge=Target(CHAR_TYPE_MONSTER,std::numeric_limits<int32_t>::min());
+    const auto distant=Target(CHAR_TYPE_PC,std::numeric_limits<int32_t>::max());
+    Check(CombatSystem::FindVictim(edge,500)==entt::null,"coordinate arithmetic wrapped into a nearby target");
+    searchTree=nullptr;Check(CombatSystem::FindVictim(edge,500)==entt::null,"missing sectree accepted");
+    Check(CombatSystem::FindVictim(entt::null,500)==entt::null,"null searcher accepted");
 }
 void NativeClick() {
     Reset();quest::CQuestManager q;triggerCalls=0;
@@ -478,7 +568,7 @@ int main() {
     auto* L=lua_open();
     try {
         References();OtherPCBlocks();LuaAndDispatch(L);RewardBatches();RewardCompletion();ConstructionCallbacks();
-        NativeClick();TriggerConstruction();Reset();
+        NativeClick();TriggerConstruction();NativeVictimSearch();Reset();
         lua_close(L);std::cout<<"Quest runtime: "<<checks<<" checks passed\n";
     } catch(const std::exception& error) {
         std::cerr<<error.what()<<'\n';Reset();lua_close(L);return 1;
