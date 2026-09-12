@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
@@ -790,8 +791,8 @@ ACMD(do_doctrine_choose) {
 	int group;
 	str_to_number(group, arg1);
 	if (group >= 1 && group <= 2) {
-		ch->SetSkillGroup(group);
-		ch->ClearSkill();
+		SkillSystem::SetSkillGroup(character, group);
+		SkillSystem::ClearSkill(character);
 		//ch->SetSkillLevel(122, 2);
 		ch->SetSkillLevel(131, 1);
 		//ch->SetSkillLevel(137, 20);

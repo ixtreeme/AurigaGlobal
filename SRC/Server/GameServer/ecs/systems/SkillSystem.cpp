@@ -1022,10 +1022,6 @@ bool ResetOneSkill(entt::entity e, uint32_t skillId)
 
 } // namespace SkillSystem
 
-void CHARACTER::SetSkillGroup(uint8_t bSkillGroup)
-{
-    SkillSystem::SetSkillGroup(GetEntityHandle(), bSkillGroup);
-}
 time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
 {
     if (dwVnum >= SKILL_MAX_NUM)
@@ -1271,7 +1267,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	}
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-	if (!SkillCanUp(dwSkillVnum, true))
+	if (!SkillSystem::CanIncreaseSkill(GetEntityHandle(), dwSkillVnum, true))
 		return false;
 #endif
 
@@ -1672,16 +1668,6 @@ bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
 	return false;
 }
 
-void CHARACTER::ResetMobSkillCooltime()
-{
-    SkillSystem::ResetMobSkillCooltime(GetEntityHandle());
-}
-
-void CHARACTER::ResetSkill()
-{
-	SkillSystem::ResetSkill(GetEntityHandle());
-}
-
 // char_skill.cpp slice E + remaining helpers migrated
 
 bool TSkillUseInfo::HitOnce(uint32_t dwVnum)
@@ -1775,10 +1761,6 @@ void CHARACTER::SkillLevelPacket()
 
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-bool CHARACTER::SkillCanUp(uint32_t dwVnum, bool book)
-{
-    return SkillSystem::CanIncreaseSkill(GetEntityHandle(), dwVnum, book);
-}
 #endif
 
 void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
@@ -1798,7 +1780,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	}
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-	if (!SkillCanUp(dwVnum))
+	if (!SkillSystem::CanIncreaseSkill(GetEntityHandle(), dwVnum))
 		return;
 #endif
 
@@ -4846,11 +4828,6 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 	}
 
 	return false;
-}
-
-void CHARACTER::ClearSkill()
-{
-	SkillSystem::ClearSkill(GetEntityHandle());
 }
 
 eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew) // updated to 2014/12/10

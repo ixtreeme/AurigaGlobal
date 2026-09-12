@@ -1161,14 +1161,12 @@ public:
 	};
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-	bool				SkillCanUp(uint32_t dwVnum, bool book = false);
 #endif
 
 	void				SkillLevelPacket();
 	void				SkillLevelUp(uint32_t dwVnum, uint8_t bMethod = SKILL_UP_BY_POINT);
 	// ADD_GRANDMASTER_SKILL
 	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
-	void				ResetSkill();
 	void				SetSkillLevel(uint32_t dwVnum, uint8_t bLev);
 
 	bool				IsLearnableSkill(uint32_t dwSkillVnum) const;
@@ -1192,7 +1190,6 @@ public:
 #endif
 	int					ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel = 0);
 
-	void				SetSkillGroup(uint8_t bSkillGroup);
 	uint8_t				GetSkillGroup() const;
 
 
@@ -1207,7 +1204,6 @@ private:
 	// MOB_SKILL
 public:
 	bool				CanUseMobSkill(unsigned int idx) const;
-	void				ResetMobSkillCooltime();
 protected:
 	// END_OF_MOB_SKILL
 
@@ -1485,7 +1481,6 @@ public:
 	// END_NEW_HAIR_STYLE_ADD
 
 public:
-	void ClearSkill();
 
 	// RESET_ONE_SKILL
 	// END_RESET_ONE_SKILL
