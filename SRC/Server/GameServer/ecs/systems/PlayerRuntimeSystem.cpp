@@ -4035,7 +4035,6 @@ void CHARACTER::Initialize()
 #ifdef __SEND_TARGET_INFO__
     dwLastTargetInfoPulse = 0;
 #endif
-    m_iMoveCount = 0;
 
     // Phase C.3: legacy destination zero-init removed (entity null at this
     // Initialize point - ECS write would no-op anyway; new MovementDestination
@@ -4112,7 +4111,6 @@ void CHARACTER::Initialize()
 
 
 #ifdef ENABLE_FAKE_SHOP_HEADER
-    m_lastBeltMountCount = -999;
 #endif
     ecs::MovementSystem::ResetStopTime(GetEntityHandle());
 #ifdef ENABLE_GAYA_SYSTEM
@@ -4131,7 +4129,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_strNewName = "";
 
 
 
@@ -4148,7 +4145,6 @@ void CHARACTER::Initialize()
 
 #ifdef __NEWPET_SYSTEM__
     m_newpetSystem = nullptr;
-    m_eggvid = 0;
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM

@@ -574,7 +574,6 @@ protected:
 	//////////////////////////////////////////////////////////////////////////////////
 
 public:
-	int m_lastBeltMountCount;
 
 #ifdef ENABLE_VOTE4BUFF
 public:
@@ -612,10 +611,6 @@ protected:
 private:
 	uint32_t			dwLastTargetInfoPulse;
 
-#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
-private:
-	std::string m_strLastSentDisplayedNameWithBelt;
-#endif
 public:
 	uint32_t			GetLastTargetInfoPulse() const { return dwLastTargetInfoPulse; }
 	void			SetLastTargetInfoPulse(uint32_t pulse) { dwLastTargetInfoPulse = pulse; }
@@ -746,14 +741,12 @@ public:
 	uint8_t			GetMountCounter() const;
 
 protected:
-	bool			m_bPolyMaintainStat;
 	uint32_t			m_dwPlayerID;
 	uint8_t			m_bCharType;
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
 
-	int				m_iMoveCount;
 	uint8_t			m_bAddChrState;
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -829,7 +822,6 @@ protected:
 
 
 
-	bool			m_bNowWalking;
 	// End
 
 	// Quickslot 
@@ -1164,16 +1156,6 @@ public:
 #endif
 
 
-	uint32_t				GetDropMetinStofaVnum() const { return m_dwDropMetinStofa; }
-	uint8_t				GetDropMetinStofaPct() const { return m_bDropMetinStofaPct; }
-	uint32_t				GetDropMetinSaccaVnum() const { return m_dwDropMetinSacca; }
-	uint8_t				GetDropMetinSaccaPct() const { return m_bDropMetinSaccaPct; }
-
-protected:
-	uint32_t				m_dwDropMetinStofa;
-	uint8_t				m_bDropMetinStofaPct;
-	uint32_t				m_dwDropMetinSacca;
-	uint8_t				m_bDropMetinSaccaPct;
 
 #ifdef ENABLE_RANKING
 protected:
@@ -1491,7 +1473,6 @@ public:
 
 	// MINING
 	// END_OF_MINING
-	LPEVENT				m_pkPetSystemUpdateEvent;
 #ifdef __NEWPET_SYSTEM__
 	LPEVENT				m_pkNewPetSystemUpdateEvent;
 	LPEVENT				m_pkNewPetSystemExpireEvent;
@@ -1590,7 +1571,6 @@ public:
 
 
 private:
-	std::string m_strNewName;
 
 public:
 
@@ -1646,7 +1626,6 @@ public:
 
 #ifdef __NEWPET_SYSTEM__
 private:
-	int m_eggvid;
 public:
 
 #endif

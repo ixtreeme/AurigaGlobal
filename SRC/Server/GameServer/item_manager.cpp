@@ -1356,8 +1356,6 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 	if (isStone)
 	{
 		add(CombatSystem::GetDropMetinStoneVnum(pkChr->GetEntityHandle()), 1);
-		add(pkChr->GetDropMetinStofaVnum(), 1);
-		add(pkChr->GetDropMetinSaccaVnum(), 1);
 	}
 
 	return !items.empty();
