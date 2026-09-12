@@ -546,6 +546,16 @@ int32_t GetMapIndex(entt::entity e)
 	return 0;
 }
 
+uint8_t GetCharType(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* type = g_registry.try_get<ecs::CharacterType>(e))
+			return type->value;
+	}
+
+	return CHAR_TYPE_MONSTER;
+}
+
 int32_t GetX(entt::entity e)
 {
 	if (e != entt::null && g_registry.valid(e)) {

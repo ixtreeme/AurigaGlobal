@@ -952,7 +952,10 @@ bool CHARACTER::RequestToParty(entt::entity leaderEntity)
 
 void CHARACTER::DenyToParty(entt::entity memberEntity)
 {
-	LPCHARACTER member = ecs::LegacyCharOf(memberEntity);
+    LPCHARACTER member = ecs::LegacyCharOf(memberEntity);
+    if (!member)
+        return;
+
     LOG_INFO("DenyToParty {} member {} {}", GetName(), ecs::PlayerRuntime::GetName(memberEntity).data(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
 
     if (!member->m_pkPartyRequestEvent)
@@ -979,7 +982,10 @@ void CHARACTER::DenyToParty(entt::entity memberEntity)
 
 void CHARACTER::AcceptToParty(entt::entity memberEntity)
 {
-	LPCHARACTER member = ecs::LegacyCharOf(memberEntity);
+    LPCHARACTER member = ecs::LegacyCharOf(memberEntity);
+    if (!member)
+        return;
+
     LOG_INFO("AcceptToParty {} member {} {}", GetName(), ecs::PlayerRuntime::GetName(memberEntity).data(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
 
     if (!member->m_pkPartyRequestEvent)
@@ -1411,9 +1417,4 @@ void SendGuildName(entt::entity viewer, CGuild* pGuild)
 }
 
 } // namespace ecs::SocialSystem
-
-void CHARACTER::SendGuildName(uint32_t dwGuildID)
-{
-    ecs::SocialSystem::SendGuildName(GetEntityHandle(), CGuildManager::instance().FindGuild(dwGuildID));
-}
 

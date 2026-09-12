@@ -24,6 +24,7 @@
 #include "sectree_manager.h"
 #include "locale_service.h"
 #include "guild_manager.h"
+#include "ecs/systems/SocialSystem.hpp"
 
 enum
 {
@@ -49,7 +50,6 @@ void CGuild::GuildWarPacket(uint32_t dwOppGID, uint8_t bWarType, uint8_t bWarSta
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
 		const entt::entity ch = *it;
-		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
 #ifdef TEXTS_IMPROVEMENT
 		if (bWarState == GUILD_WAR_ON_WAR) {
 			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 147, "");
@@ -60,7 +60,7 @@ void CGuild::GuildWarPacket(uint32_t dwOppGID, uint8_t bWarType, uint8_t bWarSta
 
 		if (d)
 		{
-			pkCh->SendGuildName( dwOppGID );
+			ecs::SocialSystem::SendGuildName(ch, CGuildManager::instance().FindGuild(dwOppGID));
 
 			d->BufferedPacket(&pack, sizeof(pack));
 			d->Packet(&pack2, sizeof(pack2));
@@ -70,7 +70,6 @@ void CGuild::GuildWarPacket(uint32_t dwOppGID, uint8_t bWarType, uint8_t bWarSta
 
 void CGuild::SendEnemyGuild(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 
 	if (!d)
@@ -90,7 +89,7 @@ void CGuild::SendEnemyGuild(entt::entity character)
 
 	for (auto it = m_EnemyGuild.begin(); it != m_EnemyGuild.end(); ++it)
 	{
-		ch->SendGuildName( it->first );
+		ecs::SocialSystem::SendGuildName(character, CGuildManager::instance().FindGuild(it->first));
 
 		pack2.dwGuildOpp = it->first;
 		pack2.bType = it->second.type;
@@ -292,7 +291,7 @@ void CGuild::NotifyGuildMaster(uint8_t type, uint32_t idx, const char * format, 
 		vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 		va_end(args);
 
-		ecs::ChatSystem::SendNew(ch ? ch->GetEntityHandle() : entt::null, type, idx, chatbuf);
+		ecs::ChatSystem::SendNew(ch->GetEntityHandle(), type, idx, chatbuf);
 	}
 }
 #endif
@@ -632,7 +631,6 @@ void CGuild::EndWar(uint32_t dwOppGID)
 			for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 			{
 				const entt::entity ch = *it;
-				LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
 				AffectSystem::RemoveAffect(ch, GUILD_SKILL_BLOOD);
 				AffectSystem::RemoveAffect(ch, GUILD_SKILL_BLESS);
 				AffectSystem::RemoveAffect(ch, GUILD_SKILL_SEONGHWI);

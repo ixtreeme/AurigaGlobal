@@ -1763,13 +1763,13 @@ bool CHARACTER::DropItem(TItemPos Cell,
 		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line 8391 if (item->IsExtraItem()) {{ ");
 
 #endif
-		SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
+		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
 	}
 	else {
-		SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 	}
 #else
-	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+	InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 #endif
 
 	entt::entity pkItemToDrop = entt::null;
@@ -2654,11 +2654,6 @@ namespace ItemSystem { void TransformRefineItem(entt::entity pkOldItem, entt::en
 void NotifyRefineSuccess(entt::entity ch, entt::entity item, const char* way);
 void NotifyRefineFail(entt::entity ch, entt::entity item, const char* way, int success = 0);
 
-void CHARACTER::SetRefineNPC(entt::entity npc)
-{
-    InventorySystem::SetRefineNPC(GetEntityHandle(), npc);
-}
-
 enum enum_RefineScrolls
 {
 	CHUKBOK_SCROLL = 0,
@@ -2807,16 +2802,6 @@ void CHARACTER::UseSilkBotaryReal(const TPacketMyshopPricelistHeader * p)
 
 // END_OF_MYSHOP_PRICE_LIST
 
-void CHARACTER::SetRefineMode(int additionalCell)
-{
-    InventorySystem::SetRefineMode(GetEntityHandle(), additionalCell);
-}
-
-void CHARACTER::ClearRefineMode()
-{
-    InventorySystem::ClearRefineMode(GetEntityHandle());
-}
-
 void NotifyRefineSuccess(entt::entity ch, entt::entity item, const char* way)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -2916,12 +2901,12 @@ bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
 
 bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 {
-	LPCHARACTER from = ecs::LegacyCharOf(fromEntity);
 	if (IsPC())
 		return false;
 
 	// TOO_LONG_DISTANCE_EXCHANGE_BUG_FIX
-	if (DISTANCE_APPROX(GetX() - from->GetX(), GetY() - from->GetY()) > 2000)
+	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(fromEntity),
+			GetY() - ecs::PlayerRuntime::GetY(fromEntity)) > 2000)
 		return false;
 	// END_OF_TOO_LONG_DISTANCE_EXCHANGE_BUG_FIX
 
@@ -3218,7 +3203,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 #endif
 			)
 		{
-			from->SetRefineNPC(GetEntityHandle());
+			InventorySystem::SetRefineNPC(fromEntity, GetEntityHandle());
 			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
 		}
 #ifdef TEXTS_IMPROVEMENT
@@ -3237,7 +3222,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 	case BLACKSMITH_ACCESSORY_MOB:
 		if (item->GetRefinedVnum())
 		{
-			from->SetRefineNPC(GetEntityHandle());
+			InventorySystem::SetRefineNPC(fromEntity, GetEntityHandle());
 			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
 		}
 #ifdef TEXTS_IMPROVEMENT
@@ -3444,13 +3429,13 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	if (item->IsExtraItem()) {
-		SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
+		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
 	}
 	else {
-		SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 	}
 #else
-	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+	InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
@@ -3974,7 +3959,7 @@ void CHARACTER::ClearItem()
 				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_INVENTORY");
 
-			SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
+			InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, i, 255);
 		}
 	}
 	for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
@@ -4007,7 +3992,7 @@ void CHARACTER::ClearItem()
 				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_EXTRA_INVENTORY");
 
-			SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
+			InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
 		}
 	}
 #endif
@@ -4029,11 +4014,6 @@ void CHARACTER::ClearItem()
 #endif
 }
 
-
-bool CHARACTER::IsEmptyItemGrid(TItemPos cell, uint8_t size, int exceptionCell) const
-{
-    return InventorySystem::IsEmptyItemGrid(GetEntityHandle(), cell, size, exceptionCell);
-}
 
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 int CHARACTER::ExtraInventoryMaxSlots(int iArg1, bool bAuto) const {
@@ -4182,7 +4162,7 @@ int CHARACTER::GetEmptyExtraInventory(LPITEM pItem) const
 #else
 	for (int i = EXTRA_INVENTORY_CATEGORY_MAX_NUM * category; i < EXTRA_INVENTORY_CATEGORY_MAX_NUM * (category + 1); ++i)
 #endif
-		if (IsEmptyItemGrid(TItemPos(EXTRA_INVENTORY, i), pItem->GetSize()))
+		if (InventorySystem::IsEmptyItemGrid(GetEntityHandle(), TItemPos(EXTRA_INVENTORY, i), pItem->GetSize()))
 			return i;
 
 	return -1;
@@ -4195,7 +4175,7 @@ int CHARACTER::GetEmptyExtraInventory(uint8_t size, uint8_t category) const // n
 #else
 	for (int i = EXTRA_INVENTORY_CATEGORY_MAX_NUM * category; i < EXTRA_INVENTORY_CATEGORY_MAX_NUM * (category + 1); ++i)
 #endif
-		if (IsEmptyItemGrid(TItemPos(EXTRA_INVENTORY, i), size))
+		if (InventorySystem::IsEmptyItemGrid(GetEntityHandle(), TItemPos(EXTRA_INVENTORY, i), size))
 			return i;
 
 	return -1;
@@ -4215,7 +4195,7 @@ int CHARACTER::GetEmptyDragonSoulInventory(LPITEM pItem) const
 		return -1;
 
 	for (int i = 0; i < DRAGON_SOUL_BOX_SIZE; ++i)
-		if (IsEmptyItemGrid(TItemPos(DRAGON_SOUL_INVENTORY, i + wBaseCell), bSize))
+		if (InventorySystem::IsEmptyItemGrid(GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, i + wBaseCell), bSize))
 			return i + wBaseCell;
 
 	return -1;

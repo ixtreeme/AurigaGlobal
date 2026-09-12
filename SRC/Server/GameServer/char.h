@@ -800,7 +800,6 @@ protected:
 
 	// Quickslot 
 public:
-	void			SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos);
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Affect
@@ -912,7 +911,6 @@ public:
 	int		ExtraInventoryMaxSlots(int iArg1, bool bAuto = false) const;
 	void	UnlockExtraInventory(uint8_t category);
 #endif
-	bool			IsEmptyItemGrid(TItemPos Cell, uint8_t size, int iExceptionCell = -1) const;
 
 
 	// MYSHOP_PRICE_LIST
@@ -922,7 +920,6 @@ public:
 
 
 	// ADD_REFINE_BUILDING
-	void			SetRefineNPC(entt::entity character);
 	// END_OF_ADD_REFINE_BUILDING
 
 	bool			DropItem(TItemPos Cell,
@@ -940,8 +937,6 @@ public:
 	// END_OF_ADD_MONSTER_REFINE
 
 
-	void			SetRefineMode(int iAdditionalCell = -1);
-	void			ClearRefineMode();
 
 	bool			GiveItem(entt::entity victim, TItemPos Cell);
 	bool			CanReceiveItem(entt::entity from, LPITEM item) const;
@@ -1538,7 +1533,6 @@ public:
 private:
 
 public:
-	void SendGuildName(uint32_t dwGuildID);
 
 private:
 

@@ -709,11 +709,6 @@ bool SwapQuickslot(entt::entity e, uint8_t a, uint8_t b)
 
 } // namespace InventorySystem
 
-void CHARACTER::SyncQuickslot(uint8_t type, uint8_t oldPos, uint8_t newPos)
-{
-    InventorySystem::SyncQuickslot(GetEntityHandle(), type, oldPos, newPos);
-}
-
 
 #define ENABLE_IMMUNE_FIX
 // return false on error state

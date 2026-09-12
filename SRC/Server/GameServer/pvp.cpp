@@ -884,9 +884,7 @@ bool CPVPManager::Dead(entt::entity character, uint32_t dwKillerPID)
 
 bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bIsFarmMap)//razor93.2024.12.30//CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 {
-	LPCHARACTER pkChr = ecs::LegacyCharOf(character);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-	switch (pkVictim->GetCharType())
+	switch (ecs::PlayerRuntime::GetCharType(victim))
 	{
 		case CHAR_TYPE_NPC:
 		case CHAR_TYPE_WARP:
@@ -894,7 +892,7 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 			return false;
 	}
 
-	if (pkChr == pkVictim)  // ���� �� ĥ��� �ϳ� -_-
+	if (character == victim)  // ���� �� ĥ��� �ϳ� -_-
 		return false;
 
 	if (ecs::PlayerRuntime::IsNPC(victim) && ecs::PlayerRuntime::IsNPC(character) && !ecs::PlayerRuntime::IsGuardNPC(character))

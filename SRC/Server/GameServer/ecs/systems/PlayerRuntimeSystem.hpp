@@ -88,6 +88,7 @@ std::string_view GetPendingName(entt::entity e);
 void SetPendingName(entt::entity e, std::string_view name);
 int RequestNameChange(entt::entity e, std::string_view name);
 int32_t GetMapIndex(entt::entity e);
+uint8_t GetCharType(entt::entity e);
 int32_t GetX(entt::entity e);
 int32_t GetY(entt::entity e);
 int32_t GetZ(entt::entity e);

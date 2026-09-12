@@ -2382,7 +2382,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 		if (!victim)
 			continue;
 
-		switch (victim->GetCharType())
+		switch (ecs::PlayerRuntime::GetCharType(victimEntity))
 		{
 			case CHAR_TYPE_NPC:
 			case CHAR_TYPE_WARP:
@@ -4312,7 +4312,6 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 
 void CInputMain::Refine(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Refine handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -4322,7 +4321,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	const TPacketCGRefine* p = reinterpret_cast<const TPacketCGRefine*>(c_pData);
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
-		ch->ClearRefineMode();
+		InventorySystem::ClearRefineMode(character);
 		return;
 	}
 #endif
@@ -4332,7 +4331,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 502, "");
 #endif
-		ch->ClearRefineMode();
+		InventorySystem::ClearRefineMode(character);
 		return;
 	}
 
@@ -4342,7 +4341,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
 #endif
-		ch->ClearRefineMode();
+		InventorySystem::ClearRefineMode(character);
 		return;
 	}
 #endif
@@ -4350,7 +4349,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	if (p->type == 255)
 	{
 		// DoRefine Cancel
-		ch->ClearRefineMode();
+		InventorySystem::ClearRefineMode(character);
 		return;
 	}
 
@@ -4360,7 +4359,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	if (p->pos >= INVENTORY_MAX_NUM)
 #endif
 	{
-		ch->ClearRefineMode();
+		InventorySystem::ClearRefineMode(character);
 		return;
 	}
 
@@ -4370,7 +4369,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 	if (!CRefineManager::instance().GetPercentage(owner, p->lLow, p->lMedium, p->lExtra, p->lTotal, itemEntity))
 	{
-		ch->ClearRefineMode();
+		InventorySystem::ClearRefineMode(character);
 		return;
 	}
 
@@ -4379,7 +4378,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 
 	if (!ItemSystem::IsValidItem(itemEntity))
 	{
-		ch->ClearRefineMode();
+		InventorySystem::ClearRefineMode(character);
 		return;
 	}
 
@@ -4424,7 +4423,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 		}
 	}
 
-	ch->ClearRefineMode();
+	InventorySystem::ClearRefineMode(character);
 }
 
 
