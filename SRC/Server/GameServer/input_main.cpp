@@ -1571,25 +1571,16 @@ void CInputMain::InventoryExpansion(entt::entity character, const char * data)
 }
 #endif
 
-void CInputMain::ItemPickup(entt::entity character, const char * data)
+void CInputMain::ItemPickup(entt::entity character, const char* data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate ItemPickup handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemPickup");//INGAME_DEBUG_RAZOR93
-#endif
-	struct command_item_pickup * pinfo = (struct command_item_pickup*) data;
-	if (ch) {
+    if (!data || !ecs::PlayerRuntime::IsPC(character)) return;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
-			return;
-		}
+    const auto gm = ecs::PlayerRuntime::GetGMLevel(character);
+    if (gm > GM_PLAYER && gm < GM_IMPLEMENTOR) return;
 #endif
-	}
-
-	ch->PickupItem(pinfo->vid);
+    command_item_pickup packet {};
+    memcpy(&packet, data, sizeof(packet));
+    ItemSystem::PickupItem(character, packet.vid);
 }
 
 void CInputMain::QuickslotAdd(entt::entity character, const char* data)

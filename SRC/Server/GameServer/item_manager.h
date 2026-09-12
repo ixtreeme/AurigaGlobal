@@ -416,8 +416,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 #endif
 		void			RemoveItem(entt::entity item, const char * c_pszReason = nullptr); // 사용자로 부터 아이템을 제거
 
-		LPITEM			Find(uint32_t id);
-		LPITEM                  FindByVID(uint32_t vid);
 		TItemTable *            GetTable(uint32_t vnum);
 		bool			GetVnum(const char * c_pszName, uint32_t & r_dwVnum);
 		bool			GetVnumByOriginalName(const char * c_pszName, uint32_t & r_dwVnum);
@@ -524,9 +522,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		bool IsExtraItem(uint32_t vnum);
 #endif
 	private:
-#ifdef M2_USE_POOL
-		ObjectPool<CItem> pool_;
-#endif
+
 };
 
 #ifndef DEBUG_ALLOC

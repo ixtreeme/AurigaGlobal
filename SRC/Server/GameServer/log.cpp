@@ -79,22 +79,6 @@ void LogManager::ItemLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwItem
 			get_table_postfix(), dwPID, x, y, dwItemID, c_pszText, __escape_hint, c_pszIP, dwVnum);
 }
 
-void LogManager::ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, const char * c_pszHint)
-{
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	if (nullptr == ch || nullptr == item)
-	{
-		LOG_ERROR("character or item nil (ch {} item {} text {})", static_cast<const void*>(get_pointer(ch)), static_cast<const void*>(get_pointer(item)), c_pszText);
-		return;
-	}
-
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(chEntity)), ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), item->GetID(),
-	        nullptr == c_pszText ? "" : c_pszText,
-			c_pszHint, ecs::PlayerRuntime::GetDesc(chEntity) ? ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName() : "",
-		   	item->GetOriginalVnum());
-}
-
 void LogManager::ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c_pszText, const char * c_pszHint)
 {
 	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;

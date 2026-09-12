@@ -17,6 +17,7 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/spatial_components.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
@@ -1236,21 +1237,21 @@ class FRemoveIfAttr
 		{
 		}
 
-		void operator () (LPENTITY entity)
+		void operator () (entt::entity entity)
 		{
-			if (!m_pkTree->IsAttr(entity->GetX(), entity->GetY(), m_dwCheckAttr))
+			if (!m_pkTree->IsAttr(ecs::PlayerRuntime::GetX(entity), ecs::PlayerRuntime::GetY(entity), m_dwCheckAttr))
 				return;
 
-			if (entity->IsType(ENTITY_ITEM))
+			if (ItemSystem::IsValidItem(entity))
 			{
-				LPITEM item = (LPITEM) entity;
 				ItemSystem::DestroyItemEntityEcs(
-					(item ? item->GetEntityHandle() : entt::null),
+					entity,
 					"SECTREE_ATTR_ITEM_CLEANUP");
 			}
-			else if (entity->IsType(ENTITY_CHARACTER))
+			else if (const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(entity);
+                kind && kind->kind == ecs::SpatialKind::Character)
 			{
-				const entt::entity chEntity = entity->GetEntityHandle();
+				const entt::entity chEntity = entity;
 
 
 				if ((ecs::PlayerRuntime::IsPC(chEntity)))

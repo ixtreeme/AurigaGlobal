@@ -927,16 +927,13 @@ public:
 	bool			GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector <uint32_t>& dwItemVnums,
 		std::vector <uint32_t>& dwItemCounts, std::vector<entt::entity>& item_gets, int& count);
 
-	bool			PickupItem(uint32_t vid);
 
 	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);
 
 #ifdef ENABLE_EXTRA_INVENTORY
-	int				GetEmptyExtraInventory(LPITEM pItem) const;
 	int				GetEmptyExtraInventory(uint8_t size, uint8_t category) const; // needed for offline shop
 #endif
 
-	int				GetEmptyDragonSoulInventory(LPITEM pItem) const;
 
 
 	int				CountSpecifyItem(uint32_t vnum) const;
@@ -1530,8 +1527,6 @@ public:
 #endif
 
 public:
-	void BuffOnAttr_AddBuffsFromItem(LPITEM pItem);
-	void BuffOnAttr_RemoveBuffsFromItem(LPITEM pItem);
 
 private:
 public:

@@ -10,13 +10,7 @@
 #include "../../debug_allocator.h"
 #include "../../event.h"
 
-class CItem;
-
 namespace ecs {
-
-struct LegacyItemPtr {
-    CItem* ptr { nullptr };
-};
 
 struct ItemIdentity {
     uint32_t id { 0 };

@@ -9,6 +9,7 @@
 #include "ChatSystem.hpp"
 #include "../Registry.hpp"
 #include "../components/inventory_components.hpp"
+#include "../components/spatial_components.hpp"
 #include "../components/item_proto_components.hpp"
 #include "../detail/ItemAttributeRules.hpp"
 #include "../../constants.h"
@@ -914,6 +915,15 @@ StackMergeResult MergeItemStacksEcs(entt::entity owner, entt::entity source,
         !CanConsumeOwnedItem(owner, target)) return {};
     if (storage == StackSource::Inventory) {
         if (!InventoryStackPosition(source) || !CanConsumeOwnedItem(owner, source)) return {};
+    } else if (storage == StackSource::GroundPickup) {
+        const auto* ownership = g_registry.try_get<ecs::ItemOwner>(source);
+        const auto* location = g_registry.try_get<ecs::ItemLocation>(source);
+        if (!ownership || ownership->owner != entt::null || ownership->ownerPID != 0 ||
+            !location || location->window != GROUND ||
+            !g_registry.all_of<ecs::SpatialEntity, ecs::SectorPlacement>(source) ||
+            IsItemConsumptionPending(source) || !GetItemCount(source) ||
+            IsItemEquipped(source) || IsItemLocked(source) || IsItemExchanging(source) ||
+            !IsOwnership(source, owner)) return {};
     } else if (storage != StackSource::DetachedReward || !DetachedStackSource(source)) return {};
     if (!SameStackPayload(source, target, storage == StackSource::DetachedReward)) return {};
 

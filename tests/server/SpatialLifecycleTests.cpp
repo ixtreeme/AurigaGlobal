@@ -362,8 +362,6 @@ int passes_per_sec = 25;
 int save_event_second_cycle = 60;
 int test_server = 0;
 int CEntity::GetType() const { Unexpected(); }
-CItem* ITEM_MANAGER::Find(uint32_t) { Unexpected(); }
-CItem* ITEM_MANAGER::FindByVID(uint32_t) { Unexpected(); }
 CItemRegistry& CItemRegistry::Instance() { Unexpected(); }
 entt::entity CItemRegistry::Find(uint32_t) const { Unexpected(); }
 entt::entity CItemRegistry::FindByVID(uint32_t) const { Unexpected(); }

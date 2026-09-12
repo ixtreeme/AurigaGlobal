@@ -34,7 +34,6 @@ namespace offlineshop
 		-	contain window type (shop/shop safebox)
 
 		methods
-		-	constructor using LPITEM, price, window (immediatly set)
 		-	constructor default (all to zero, alloc id)
 		-	copy constructor (using in vector)
 
@@ -43,7 +42,6 @@ namespace offlineshop
 		-	getinfo to get the item informations
 
 		-	setprice to set sell price
-		-	setinfo using LPITEM to get immediatly information from item
 		-	setwindow to set the current window (shop/ shop safebox)
 		-	getwindow to get the current window ||
 	*/
@@ -67,56 +65,6 @@ namespace offlineshop
 		CopyObject(m_itemInfo, *rCopy.GetInfo());
 		CopyObject(m_priceInfo, *rCopy.GetPrice());
 	}
-
-	CShopItem::CShopItem(LPITEM pItem, const TPriceInfo& sPrice, uint8_t bWindowType, uint32_t dwID): m_dwID(0)
-	{
-		//setting item window
-		SetWindow(bWindowType);
-
-
-		//setting price info
-		CopyObject(m_priceInfo, sPrice);
-
-		//setting info
-		if (pItem)
-		{
-			const entt::entity item = pItem ? pItem->GetEntityHandle() : entt::null;
-			//basic info
-			m_itemInfo.dwCount	= ItemSystem::GetItemCount(item);
-			{
-				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
-				auto* owner = ecs::LegacyCharOf(ownerEntity);
-				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(((owner) ? (owner)->GetEntityHandle() : entt::null)) : 0;
-			}
-			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(item);
-			//patch 08-03-2020
-			m_itemInfo.expiration = GetItemExpiration(item);
-
-			//attributes
-			const TPlayerItemAttribute* pAttributes = pItem->GetAttributes();
-			memcpy(m_itemInfo.aAttr, pAttributes, sizeof(m_itemInfo.aAttr));
-
-			//sockets
-			const int32_t* pSockets = pItem->GetSockets();
-			memcpy(m_itemInfo.alSockets, pSockets, sizeof(m_itemInfo.alSockets));
-
-#ifdef __ENABLE_CHANGELOOK_SYSTEM__
-			m_itemInfo.dwTransmutation = pItem->GetTransmutation();
-#endif
-#ifdef ATTR_LOCK
-			m_itemInfo.iLockedAttr = pItem->GetLockedAttr();
-#endif
-		}
-
-		else
-		{
-			LOG_ERROR("offlineshop::CShopItem - constructor using item/price/window : item == nullptr! ");
-		}
-
-		if (dwID != 0)
-			m_dwID = dwID;
-	}
-
 
 	CShopItem::~CShopItem()
 	{
@@ -158,42 +106,6 @@ namespace offlineshop
 	{
 		return const_cast<TItemInfoEx*>(&m_itemInfo);
 	}
-
-	void CShopItem::SetInfo(LPITEM pItem)
-	{
-		if (pItem)
-		{
-			const entt::entity item = pItem ? pItem->GetEntityHandle() : entt::null;
-			//basic info
-			m_itemInfo.dwCount	= ItemSystem::GetItemCount(item);
-			{
-				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
-				auto* owner = ecs::LegacyCharOf(ownerEntity);
-				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(((owner) ? (owner)->GetEntityHandle() : entt::null)) : 0;
-			}
-			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(item);
-
-			//attributes
-			const TPlayerItemAttribute* pAttributes = pItem->GetAttributes();
-			memcpy(m_itemInfo.aAttr, pAttributes, sizeof(m_itemInfo.aAttr));
-
-			//sockets
-			const int32_t* pSockets = pItem->GetSockets();
-			memcpy(m_itemInfo.alSockets, pSockets, sizeof(m_itemInfo.alSockets));
-#ifdef __ENABLE_CHANGELOOK_SYSTEM__
-			m_itemInfo.dwTransmutation = pItem->GetTransmutation();
-#endif
-#ifdef ATTR_LOCK
-			m_itemInfo.iLockedAttr = pItem->GetLockedAttr();
-#endif
-		}
-
-		else
-		{
-			LOG_ERROR("offlineshop::CShopItem - SetInfo: item == nullptr! ");
-		}
-	}
-
 
 	void CShopItem::SetInfo(const TItemInfoEx& info)
 	{

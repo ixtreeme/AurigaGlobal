@@ -800,8 +800,6 @@ void ecs::ViewSystem::PacketView(entt::entity item, void const* data, int size, 
     if (onOwnershipPacket) { auto callback = onOwnershipPacket; callback(item, packet); }
     if (giving && onReward) { auto callback = onReward; callback("ownership", item); }
 }
-void CItem::Save() { Unexpected(); }
-int CItem::GetValue(uint32_t) { Unexpected(); }
 SItemTable * ITEM_MANAGER::GetTable(uint32_t vnum) { Check(giving, "unexpected prototype lookup"); return vnum == rewardProto.dwVnum ? &rewardProto : nullptr; }
 CSpecialItemGroup const * ITEM_MANAGER::GetSpecialItemGroup(uint32_t) { Unexpected(); }
 CSpecialAttrGroup const * ITEM_MANAGER::GetSpecialAttrGroup(uint32_t) { Unexpected(); }
@@ -1561,7 +1559,6 @@ void RewardQuantitiesAndPlacement() {
             Check(rewardCreates == 1 && rewardMerges == 1 && rewardRetired == 0 && rewardLogs == 1 && moneyLogs == 1,
                 "reward creation/merge/publication repeated or skipped");
             AssertPlaced(f.owner, item, TItemPos(INVENTORY, 0));
-            Check(!g_registry.any_of<ecs::LegacyItemPtr>(item), "reward fixture acquired legacy pointer");
             Check(notices.size() == 1, "reward message missing");
             Check(packets.size() == (kind < 2 ? 1 : 0), "wrong item received potion shortcut");
         }

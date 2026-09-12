@@ -1,5 +1,6 @@
 #include "../../stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
+#include "SessionSystem.hpp"
 #include "QuestSystem.hpp"
 #include "SocialSystem.hpp"
 #include "InventorySystem.hpp"
@@ -11,6 +12,8 @@
 #include "AffectSystem.hpp"
 #include "CombatSystem.hpp"
 #include "../EntityFactory.hpp"
+#include "../ItemRegistry.hpp"
+#include <charconv>
 #include "../ItemInvariants.hpp"
 #include "../VIDRegistry.hpp"
 
@@ -228,7 +231,7 @@ static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::ent
 
 #endif
 
-static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reason)
+static bool RetireItemEntity(entt::entity itemEntity, const char* reason)
 {
     if (!ItemSystem::IsValidItem(itemEntity))
         return false;
@@ -295,6 +298,136 @@ bool IsExtraPotionUseSubtype(uint8_t subtype)
 	return false;
 }
 
+uint8_t ExtraCategory(uint32_t vnum, uint8_t type, uint8_t subtype)
+{
+	switch (type)
+	{
+	case ITEM_SKILLBOOK:
+	case ITEM_SKILLFORGET:
+	{
+		return 0;
+	}
+	case ITEM_MATERIAL:
+	{
+		return 1;
+	}
+	case ITEM_METIN:
+	{
+		return 2;
+	}
+	case ITEM_GIFTBOX:
+	case ITEM_TREASURE_BOX:
+	case ITEM_TREASURE_KEY:
+	{
+		return 3;
+	}
+	case ITEM_USE:
+	{
+
+
+		if (IsExtraEnchantUseSubtype(subtype))
+			return 4;
+
+		if (IsExtraPotionUseSubtype(subtype))
+			return 5;
+
+		break;
+	}
+	default:
+	{
+		break;
+	}
+	}
+
+	switch (vnum) {
+	case 30277:
+	case 30279:
+	case 30284:
+	case 86053:
+	case 86054:
+	case 86055:
+		return 1;
+	case 70102:
+	case 39008:
+	case 71001:
+	case 72310:
+	case 39030:
+	case 71094:
+#ifdef __NEWPET_SYSTEM__
+	case 86077:
+	case 86076:
+	case 55010:
+	case 55011:
+	case 55012:
+	case 55013:
+	case 55014:
+	case 55015:
+	case 55016:
+	case 55017:
+	case 55018:
+	case 55019:
+	case 55020:
+	case 55021:
+#endif
+	case 50513:
+	case 50525:
+	case 50526:
+	case 50527:
+		return 0;
+	}
+
+	return 0;
+}
+
+
+
+ecs::ItemProtoRef MakeItemPrototype(const TItemTable* proto, uint32_t displayVnum)
+{
+    ecs::ItemProtoRef result {};
+    if (!proto) return result;
+    result.base_vnum = proto->dwVnum;
+    result.type = proto->bType;
+    result.subtype = proto->bSubType;
+    result.weapon_min = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[3]));
+    result.weapon_max = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[4]));
+    result.defense = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[1]));
+    // Weapon magic damage uses values 1/2; value 6 is outside the proto array.
+    result.magic_min = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[1]));
+    result.magic_max = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[2]));
+#ifdef ENABLE_MULTI_NAMES
+    std::strncpy(result.name, proto->szLocaleName[0], ITEM_NAME_MAX_LEN);
+#else
+    std::strncpy(result.name, proto->szLocaleName, ITEM_NAME_MAX_LEN);
+#endif
+    result.name[ITEM_NAME_MAX_LEN] = '\0';
+    result.size = proto->bSize;
+#ifdef ENABLE_EXTRA_INVENTORY
+    result.extra_category = ExtraCategory(displayVnum, proto->bType, proto->bSubType);
+#endif
+    for (const auto& limit : proto->aLimits)
+        if (limit.bType == LIMIT_LEVEL) {
+            result.level_limit = static_cast<uint8_t>(std::clamp(limit.lValue, 0, 255));
+            break;
+        }
+    result.wear_flags = proto->dwWearFlags;
+    result.anti_flags = proto->dwAntiFlags;
+    result.immune_flags = proto->dwImmuneFlag;
+    result.refined_vnum = proto->dwRefinedVnum;
+    // Preserve the original base-name +N convention, with a bounded parse.
+    const std::string_view name(proto->szName, strnlen(proto->szName, sizeof(proto->szName)));
+    const auto plus = name.rfind('+');
+    if (plus != std::string_view::npos) {
+        int level = 0;
+        const auto suffix = name.substr(plus + 1);
+        const auto parsed = std::from_chars(suffix.data(), suffix.data() + suffix.size(), level);
+        if (parsed.ec == std::errc{})
+            result.refine_level = static_cast<uint8_t>(std::clamp(level, 0, 255));
+    }
+    result.limit_timer_wear_index = proto->cLimitTimerBasedOnWearIndex;
+    result.proto = proto;
+    return result;
+}
+
 static bool IS_SUMMON_ITEM(int vnum)
 {
 	switch (vnum)
@@ -315,6 +448,94 @@ static bool IS_SUMMON_ITEM(int vnum)
 
 } // namespace
 
+
+entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, const TItemTable* proto,
+    uint32_t vnum, uint32_t id, uint32_t vid, uint32_t mask)
+{
+    // Item indexes and runtime services belong to the world registry.
+    if (&reg != &g_registry || !proto || !vnum || !vid || !proto->bSize ||
+        (proto->bType != ITEM_ELK && !id)) return entt::null;
+    auto& index = CItemRegistry::Instance();
+    if (index.Find(id) != entt::null || index.FindByVID(vid) != entt::null) return entt::null;
+    const uint32_t display = mask ? mask : vnum;
+    const auto prototype = MakeItemPrototype(proto, display);
+    const auto flags = static_cast<int32_t>(proto->dwFlags);
+    const ecs::ItemIdentity identity {id, display, vnum, vid, mask, 0,
+        ITEM_MANAGER::instance().GetSpecialGroupFromItem(display), 0};
+    const entt::entity item = reg.create();
+    const auto rollback = [&] {
+        index.Unregister(item);
+        if (reg.valid(item)) DestroyItemEntity(reg, item);
+    };
+    try {
+        // Component construction can invoke callbacks. Publish ItemIdentity last,
+        // so gameplay cannot find a half-constructed item. Check the generation
+        // after every signal; never write through a returned component reference.
+        const auto prepare = [&]<typename T>(T value = {}) {
+            if (!reg.valid(item)) return false;
+            // A single-element insert publishes construction without emplace's
+            // trailing get(), which would access a callback-destroyed component.
+            reg.insert<T>(&item, &item + 1, value);
+            return reg.valid(item) && reg.all_of<T>(item);
+        };
+        if (!prepare(ecs::ItemLocation{}) ||
+            !prepare(ecs::ItemGroundPosition{}) ||
+            !prepare(ecs::ItemCount{}) ||
+            !prepare(ecs::ItemPrototypeMeta {prototype.type, prototype.subtype}) ||
+            !prepare(ecs::ItemOwner{}) ||
+            !prepare(ecs::ItemEquipped{}) ||
+            !prepare(ecs::ItemFlags {flags, false, false, false}) ||
+            !prepare(ecs::ItemSockets{}) ||
+            !prepare(ecs::ItemAttributes{}) ||
+            !prepare(ecs::ItemLockedAttribute{}) ||
+            !prepare(prototype) ||
+            !prepare(ecs::ItemEvents{}) ||
+            !prepare(ecs::ViewMap{}) ||
+            !prepare(ecs::ViewerMap{}) ||
+            !prepare(ecs::ViewAgeMap{}) ||
+            !prepare(identity) ||
+            !reg.all_of<ecs::ItemLocation, ecs::ItemGroundPosition, ecs::ItemCount,
+                ecs::ItemPrototypeMeta, ecs::ItemOwner, ecs::ItemEquipped, ecs::ItemFlags,
+                ecs::ItemSockets, ecs::ItemAttributes, ecs::ItemLockedAttribute,
+                ecs::ItemProtoRef, ecs::ItemEvents, ecs::ViewMap, ecs::ViewerMap, ecs::ViewAgeMap>(item) ||
+            !index.Register(id, vid, item)) {
+            rollback();
+            return entt::null;
+        }
+        ecs::ItemInvariants::ValidateItemEntity(reg, item, "item.factory.create");
+        return item;
+    } catch (...) {
+        rollback();
+        throw;
+    }
+}
+
+void EntityFactory::DestroyItemEntity(entt::registry& reg, entt::entity item)
+{
+    if (&reg != &g_registry || !reg.valid(item)) return;
+    struct RetiringItems { std::unordered_set<entt::entity> items; };
+    auto& retiring = reg.ctx().contains<RetiringItems>()
+        ? reg.ctx().get<RetiringItems>() : reg.ctx().emplace<RetiringItems>();
+    if (!retiring.items.insert(item).second) return;
+    struct Guard {
+        RetiringItems& retiring; entt::entity item;
+        ~Guard() { retiring.items.erase(item); }
+    } guard {retiring, item};
+    const auto detached = [&] {
+        if (!reg.valid(item) || reg.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item)) return false;
+        const auto* owner = reg.try_get<ecs::ItemOwner>(item);
+        return !owner || (owner->owner == entt::null && owner->ownerPID == 0);
+    };
+    // The manager owns ground/storage detachment and persistence. Do not delete
+    // an entity which an event callback has moved into someone else's storage.
+    if (!detached()) return;
+    ItemSystem::PrepareItemDestruction(item);
+    if (!reg.valid(item)) { CItemRegistry::Instance().Unregister(item); return; }
+    if (!detached()) return;
+    CItemRegistry::Instance().Unregister(item);
+    reg.destroy(item);
+}
+
 EVENTFUNC(unique_expire_event);
 EVENTFUNC(timer_based_on_wear_expire_event);
 EVENTFUNC(real_time_expire_event);
@@ -322,6 +543,191 @@ EVENTFUNC(accessory_socket_expire_event);
 EVENTFUNC(soul_item_event);
 
 namespace ItemSystem {
+
+bool RefreshItemPrototype(entt::entity item, const TItemTable* proto)
+{
+    if (!IsValidItem(item) ||
+        !g_registry.all_of<ecs::ItemProtoRef, ecs::ItemPrototypeMeta, ecs::ItemFlags>(item)) return false;
+    // Existing component writes only: no callbacks can observe mixed old/new
+    // prototype fields, and a removed prototype clears every borrowed reference.
+    const auto snapshot = MakeItemPrototype(proto, GetItemVnum(item));
+    g_registry.get<ecs::ItemProtoRef>(item) = snapshot;
+    g_registry.get<ecs::ItemPrototypeMeta>(item) = {snapshot.type, snapshot.subtype};
+    g_registry.get<ecs::ItemFlags>(item).flags = proto ? static_cast<int32_t>(proto->dwFlags) : 0;
+    return true;
+}
+
+bool PickupItem(entt::entity character, uint32_t vid)
+{
+    if (!ecs::PlayerRuntime::IsPC(character) || CombatSystem::IsDead(character) ||
+        ecs::PlayerRuntime::IsObserverMode(character)) return false;
+    const entt::entity item = CItemRegistry::Instance().FindByVID(vid);
+    const auto ground = [&] {
+        if (!IsValidItem(item) || IsItemConsumptionPending(item) || !GetItemCount(item) ||
+            IsItemLocked(item) || IsItemExchanging(item) || IsItemEquipped(item)) return false;
+        const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+        return owner && owner->owner == entt::null && owner->ownerPID == 0 &&
+            GetItemWindow(item) == GROUND && ecs::PlayerRuntime::GetSectree(item) &&
+            DistanceValid(item, character);
+    };
+    if (!ground()) return false;
+    // Packet/save/quest callbacks must not initiate another pickup of this item.
+    struct ActivePickups { std::unordered_set<entt::entity> items; };
+    auto& active = g_registry.ctx().contains<ActivePickups>()
+        ? g_registry.ctx().get<ActivePickups>() : g_registry.ctx().emplace<ActivePickups>();
+    if (!active.items.insert(item).second) return false;
+    struct Guard {
+        ActivePickups& active; entt::entity item;
+        ~Guard() { active.items.erase(item); }
+    } guard {active, item};
+
+    if (GetItemType(item) == ITEM_QUEST) {
+        auto* questPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(character));
+        if (!questPC || questPC->IsRunning()) {
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 692, "");
+#endif
+            return false;
+        }
+    }
+    entt::entity owner = character;
+    if (!IsOwnership(item, owner)) {
+        if (GetItemAntiFlags(item) & (ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_DROP)) return false;
+        auto* party = ecs::SocialSystem::GetParty(character);
+        if (!party) return false;
+        owner = entt::null;
+        const auto findOwner = [&](entt::entity member) { if (IsOwnership(item, member)) owner = member; };
+        party->ForEachOnlineMember(findOwner);
+        if (!ecs::PlayerRuntime::IsPC(owner)) return false;
+    }
+    if (!ground()) return false;
+    if (GetItemType(item) == ITEM_ELK) {
+        const uint32_t count = GetItemCount(item);
+        if (!DestroyItemEntityEcs(item, "PICKUP_GOLD")) return false;
+        // Snapshot the amount before retirement; never read a deleted stack.
+        if (ecs::PlayerRuntime::IsPC(owner)) {
+            GiveGold(owner, count);
+#ifdef ENABLE_RANKING
+            if (ecs::PlayerRuntime::IsPC(owner))
+                ecs::PlayerRuntime::SetRankPoints(owner, 10, ecs::PlayerRuntime::GetRankPoints(owner, 10) + count);
+#endif
+            if (ecs::PlayerRuntime::IsPC(owner)) ecs::SessionSystem::Save(owner);
+        }
+        return true;
+    }
+
+    const uint32_t vnum = GetItemVnum(item);
+#ifdef ENABLE_BATTLE_PASS
+    const bool trackPickup = GetItemEvents(item).ownership != nullptr;
+#endif
+    const auto collected = [&](uint32_t count) {
+#ifdef ENABLE_BATTLE_PASS
+        if (!trackPickup || !ecs::PlayerRuntime::IsPC(owner)) return;
+        const uint8_t pass = ecs::PlayerRuntime::GetBattlePassId(owner);
+        if (!pass) return;
+        for (const auto mission : {COLLECT_ITEM, COLLECT_ITEM1, COLLECT_ITEM2}) {
+            if (!ecs::PlayerRuntime::IsPC(owner)) return;
+            uint32_t wantedVnum = 0, goal = 0;
+            if (CBattlePass::instance().BattlePassMissionGetInfo(pass, mission, &wantedVnum, &goal) &&
+                wantedVnum == vnum && ecs::PlayerRuntime::GetMissionProgress(owner, mission, pass) < goal)
+                ecs::PlayerRuntime::UpdateMissionProgress(owner, mission, pass, count, goal);
+        }
+#endif
+    };
+    const auto nameForOwner = [&](entt::entity source) {
+        auto* desc = ecs::PlayerRuntime::GetDesc(owner);
+        return std::string(GetItemName(source, desc ? desc->GetLanguage() : 0));
+    };
+    const auto notify = [&](uint32_t count, const std::string& name) {
+#ifdef TEXTS_IMPROVEMENT
+        if (ecs::PlayerRuntime::IsPC(owner))
+            ecs::ChatSystem::SendNew(owner,
+#ifdef ENABLE_NEW_CHAT
+                CHAT_TYPE_INFO_ITEM,
+#else
+                CHAT_TYPE_INFO,
+#endif
+                102, "%d#%s", count, name.c_str());
+#endif
+    };
+#ifdef ENABLE_EXTRA_INVENTORY
+    const bool extra = IsExtraItem(item);
+#else
+    const bool extra = false;
+#endif
+    if (IsItemStackable(item) && !(GetItemAntiFlags(item) & ITEM_ANTIFLAG_STACK)) {
+        const int slots =
+#ifdef ENABLE_EXTRA_INVENTORY
+            extra ? EXTRA_INVENTORY_MAX_NUM :
+#endif
+            INVENTORY_MAX_NUM;
+        for (int cell = 0; cell < slots; ++cell) {
+            if (!ground() || !ecs::PlayerRuntime::IsPC(owner) || !IsOwnership(item, owner)) return false;
+            const auto target =
+#ifdef ENABLE_EXTRA_INVENTORY
+                extra ? GetExtraInventoryItem(owner, cell) :
+#endif
+                GetInventoryItem(owner, cell);
+            if (!IsValidItem(target)) continue;
+            const std::string name = nameForOwner(target);
+            const auto merged = MergeItemStacksEcs(owner, item, target, 0, StackSource::GroundPickup);
+            if (!merged.transferred) continue;
+            collected(merged.transferred);
+            if (merged.sourceDepleted) { notify(merged.transferred, name); return true; }
+        }
+    }
+    if (!ground() || !ecs::PlayerRuntime::IsPC(owner) || !IsOwnership(item, owner)) return false;
+    const uint8_t window = IsDragonSoulItem(item) ? DRAGON_SOUL_INVENTORY :
+#ifdef ENABLE_EXTRA_INVENTORY
+        extra ? EXTRA_INVENTORY :
+#endif
+        INVENTORY;
+    const auto emptyCell = [&] {
+        if (window == DRAGON_SOUL_INVENTORY) return GetEmptyDragonSoulInventory(owner, item);
+#ifdef ENABLE_EXTRA_INVENTORY
+        if (window == EXTRA_INVENTORY) return GetEmptyExtraInventory(owner, item);
+#endif
+        return InventorySystem::GetEmptyInventory(owner, GetItemSize(item));
+    };
+    int cell = emptyCell();
+    if (cell < 0 && owner != character) {
+#ifdef ENABLE_BUG_FIXES
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1248, "%s", ecs::PlayerRuntime::GetName(owner).data());
+#endif
+        return false;
+#else
+        owner = character;
+        cell = emptyCell();
+#endif
+    }
+    if (cell < 0) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, extra ? 539 : 366, "");
+#endif
+        return false;
+    }
+    const uint32_t count = GetItemCount(item);
+    const std::string name = nameForOwner(item);
+    const uint32_t originalVnum = GetItemOriginalVnum(item);
+    const int32_t map = ecs::PlayerRuntime::GetMapIndex(item);
+    const PIXEL_POSITION position {ecs::PlayerRuntime::GetX(item), ecs::PlayerRuntime::GetY(item), ecs::PlayerRuntime::GetZ(item)};
+    InventorySystem::RemoveFromGround(item);
+    if (!IsValidItem(item)) return false;
+    if (!InventorySystem::AddToCharacter(item, owner, TItemPos(window, cell))) {
+        // Restore only our still-detached item, never a callback-transferred one.
+        if (PlaceItemOnGround(item, map, position)) SetGroundOwnership(item, owner);
+        return false;
+    }
+    collected(count);
+    if (IsValidItem(item) && ecs::PlayerRuntime::IsPC(owner) && GetItemOwner(item) == owner) {
+        char hint[64];
+        snprintf(hint, sizeof(hint), "%s %u %u", name.c_str(), count, originalVnum);
+        LogManager::instance().ItemLogEntity(owner, item, "GET", hint);
+    }
+    notify(count, name);
+    return true;
+}
 
 entt::entity GetItem(entt::entity e, TItemPos cell)
 {
@@ -764,11 +1170,36 @@ bool IsDragonSoulItem(entt::entity item)
 bool IsExtraItem(entt::entity item)
 {
 #ifdef ENABLE_EXTRA_INVENTORY
-    return IsValidItem(item) && ITEM_MANAGER::instance().IsExtraItem(GetItemVnum(item));
+    if (!IsValidItem(item)) return false;
+    // Classify the item's own prototype, not a second table lookup through a
+    // masked display vnum. This preserves the original per-item rules.
+    switch (GetItemVnum(item)) {
+    case 70612: case 70613: case 70614: case 88968:
+    case 30002: case 30003: case 30004: case 30005: case 30006:
+    case 30015: case 30047: case 30050: case 30165: case 30166: case 30167: case 30168:
+    case 30251: case 30252: case 2870: case 2871: case 2872: case 2873: case 2874:
+    case 2875: case 2876: case 2877: case 2878:
+        return false;
+    case 30277: case 30279: case 30284: case 86053: case 86054: case 86055:
+    case 70102: case 39008: case 71001: case 72310: case 39030: case 71094:
+#ifdef __NEWPET_SYSTEM__
+    case 86077: case 86076: case 55010: case 55011: case 55012: case 55013:
+    case 55014: case 55015: case 55016: case 55017: case 55018: case 55019: case 55020: case 55021:
+#endif
+    case 50513: case 50525: case 50526: case 50527: case 71095:
+        return true;
+    }
+    switch (GetItemType(item)) {
+    case ITEM_MATERIAL: case ITEM_METIN: case ITEM_SKILLBOOK: case ITEM_SKILLFORGET:
+    case ITEM_GIFTBOX: case ITEM_TREASURE_BOX: case ITEM_TREASURE_KEY:
+        return true;
+    case ITEM_USE:
+        return IsExtraEnchantUseSubtype(GetItemSubType(item)) || IsExtraPotionUseSubtype(GetItemSubType(item));
+    }
 #else
     (void)item;
-    return false;
 #endif
+    return false;
 }
 
 bool IsRideItem(entt::entity item)
@@ -1114,7 +1545,7 @@ bool ConsumeItem(entt::entity item, uint32_t amount)
         return SetItemCountEcs(item, count - amount);
     }
 
-    return DestroyItemEntityAndLegacy(item, "CONSUME_ITEM");
+    return RetireItemEntity(item, "CONSUME_ITEM");
 }
 
 bool ConsumeItemEcs(entt::entity item, uint32_t amount)
@@ -1124,7 +1555,7 @@ bool ConsumeItemEcs(entt::entity item, uint32_t amount)
 
 bool DestroyItemEntityEcs(entt::entity item, const char* reason)
 {
-    return DestroyItemEntityAndLegacy(item, reason ? reason : "DESTROY_ITEM_ENTITY_ECS");
+    return RetireItemEntity(item, reason ? reason : "DESTROY_ITEM_ENTITY_ECS");
 }
 
 bool FlushDelayedSaveEcs(entt::entity item)
@@ -1435,23 +1866,22 @@ ecs::ItemEvents& GetItemEvents(entt::entity item)
 
 void PrepareItemDestruction(entt::entity item)
 {
-    if (item == entt::null || !g_registry.valid(item))
-        return;
-
-    if (auto* events = g_registry.try_get<ecs::ItemEvents>(item)) {
-        event_cancel(&events->destroy);
-        event_cancel(&events->expire);
-        event_cancel(&events->ownership);
-        event_cancel(&events->uniqueExpire);
-#ifdef ENABLE_SOUL_SYSTEM
-        event_cancel(&events->soulItem);
-#endif
-        event_cancel(&events->timerBasedOnWearExpire);
-        event_cancel(&events->realTimeExpire);
-        event_cancel(&events->accessorySocketExpire);
-    }
-
-    g_dispatcher.trigger(ecs::EvItemDestroyed { item, GetItemID(item) });
+    if (!g_registry.valid(item)) return;
+    const uint32_t id = GetItemID(item);
+    ecs::ItemEvents timers {};
+    if (auto* events = g_registry.try_get<ecs::ItemEvents>(item))
+        timers = std::exchange(*events, {});
+    // Detach every timer first. Cancellation/destructors may retire the entity;
+    // subsequent cancellations then operate on these owned local handles only.
+    event_cancel(&timers.destroy);
+    event_cancel(&timers.expire);
+    event_cancel(&timers.ownership);
+    event_cancel(&timers.uniqueExpire);
+    event_cancel(&timers.soulItem);
+    event_cancel(&timers.timerBasedOnWearExpire);
+    event_cancel(&timers.realTimeExpire);
+    event_cancel(&timers.accessorySocketExpire);
+    if (g_registry.valid(item)) g_dispatcher.trigger(ecs::EvItemDestroyed {item, id});
 }
 
 bool SaveItemEcs(entt::entity item, bool flush)
@@ -1763,18 +2193,14 @@ bool IsSameSpecialGroup(entt::entity item, entt::entity other)
     return group != 0 && GetItemSpecialGroup(other) == group;
 }
 
-bool DistanceValid(entt::entity itemEntity, entt::entity character)
+bool DistanceValid(entt::entity item, entt::entity character)
 {
-	if (!ecs::PlayerRuntime::GetSectree(itemEntity))
-		return false;
-
-	int iDist = DISTANCE_APPROX(
-		ecs::PlayerRuntime::GetX(itemEntity) - ecs::PlayerRuntime::GetX(character),
-		ecs::PlayerRuntime::GetY(itemEntity) - ecs::PlayerRuntime::GetY(character));
-	if (iDist > 2400)
-		return false;
-
-	return true;
+    if (!IsValidItem(item) || !ecs::PlayerRuntime::IsPC(character) ||
+        !ecs::PlayerRuntime::GetSectree(item) ||
+        ecs::PlayerRuntime::GetMapIndex(item) != ecs::PlayerRuntime::GetMapIndex(character)) return false;
+    const int64_t dx = std::abs(int64_t(ecs::PlayerRuntime::GetX(item)) - ecs::PlayerRuntime::GetX(character));
+    const int64_t dy = std::abs(int64_t(ecs::PlayerRuntime::GetY(item)) - ecs::PlayerRuntime::GetY(character));
+    return std::max(dx, dy) + std::min(dx, dy) / 2 <= 2400;
 }
 
 bool CanUsedBy(entt::entity itemEntity, entt::entity character)

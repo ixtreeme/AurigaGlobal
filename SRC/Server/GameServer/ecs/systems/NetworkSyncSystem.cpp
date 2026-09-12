@@ -810,17 +810,6 @@ void NetworkSyncSystem::SendConfirmWithMsg(entt::registry& reg, entt::entity rec
 
 namespace ecs::ItemNetworkSystem {
 
-entt::entity ResolveItemEntity(CItem* item)
-{
-    if (!item)
-        return entt::null;
-
-    entt::entity itemEntity = CItemRegistry::Instance().Find(item->GetID());
-    if (itemEntity == entt::null)
-        itemEntity = CItemRegistry::Instance().FindByVID(item->GetVID());
-    return itemEntity;
-}
-
 entt::entity FindPlayerByPID(entt::registry& reg, uint32_t pid)
 {
     if (pid == 0)
@@ -1164,12 +1153,3 @@ const char* CHARACTER::GetName() const
     return m_pkMobData ? m_pkMobData->m_table.szLocaleName : "";
 }
 #endif
-
-void CItem::UpdatePacket()
-{
-    const entt::entity item = ecs::ItemNetworkSystem::ResolveItemEntity(this);
-    if (item == entt::null)
-        return;
-
-    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
-}

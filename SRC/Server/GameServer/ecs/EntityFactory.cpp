@@ -3,7 +3,7 @@
 #include "systems/PlayerRuntimeSystem.hpp"
 
 #include "EntityFactory.hpp"
-#include "../item.h"
+#include "../item_manager.h"
 #include "systems/CombatSystem.hpp"
 #include "systems/InventorySystem.hpp"
 #include "EntityInvariants.hpp"
@@ -422,155 +422,6 @@ void RemoveFromLegacyMapSector(entt::registry& reg, entt::entity entity)
     // Actual entt::entity-backed map sector membership is introduced in Phase 4.
 }
 
-ecs::ItemIdentity MakeItemIdentity(LPITEM item)
-{
-    return ecs::ItemIdentity {
-        item->GetID(),
-        item->GetVnum(),
-        item->GetOriginalVnum(),
-        item->GetVID(),
-        item->GetMaskVnum(),
-        item->GetSIGVnum(),
-        item->GetSpecialGroup(),
-#ifdef __CHANGELOOK_SYSTEM__
-        item->GetTransmutation(),
-#else
-        0,
-#endif
-    };
-}
-
-ecs::ItemLocation MakeItemLocation(LPITEM item)
-{
-    return ecs::ItemLocation {
-        item->GetWindow(),
-        ItemSystem::GetItemCell(item->GetEntityHandle()),
-    };
-}
-
-ecs::ItemGroundPosition MakeItemGroundPosition(LPITEM item)
-{
-    const PIXEL_POSITION& pos = item->GetXYZ();
-    return ecs::ItemGroundPosition { pos.x, pos.y, pos.z };
-}
-
-ecs::ItemPrototypeMeta MakeItemPrototypeMeta(LPITEM item)
-{
-    return ecs::ItemPrototypeMeta {
-        item->GetType(),
-        item->GetSubType(),
-    };
-}
-
-ecs::ItemOwner MakeItemOwner(LPITEM item)
-{
-    entt::entity ownerEntity = entt::null;
-    uint32_t ownerPID = 0;
-
-    ownerEntity = ItemSystem::GetItemOwner(item->GetEntityHandle());
-    ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
-
-    return ecs::ItemOwner {
-        ownerEntity,
-        ownerPID,
-        ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle()),
-        ownerPID,
-    };
-}
-
-ecs::ItemEquipped MakeItemEquipped(LPITEM item)
-{
-    uint8_t slot = 0;
-    if (ItemSystem::IsItemEquipped(item->GetEntityHandle()) && ItemSystem::GetItemCell(item->GetEntityHandle()) >= INVENTORY_MAX_NUM) {
-        slot = static_cast<uint8_t>(ItemSystem::GetItemCell(item->GetEntityHandle()) - INVENTORY_MAX_NUM);
-    }
-
-    return ecs::ItemEquipped { ItemSystem::IsItemEquipped(item->GetEntityHandle()), slot };
-}
-
-ecs::ItemFlags MakeItemFlags(LPITEM item)
-{
-    return ecs::ItemFlags {
-        item->GetFlag(),
-        item->IsExchanging(),
-        ItemSystem::GetItemSkipSave(item->GetEntityHandle()),
-        item->isLocked(),
-    };
-}
-
-ecs::ItemLockedAttribute MakeItemLockedAttribute(LPITEM item)
-{
-#ifdef ATTR_LOCK
-    return ecs::ItemLockedAttribute { item->GetLockedAttr() };
-#else
-    (void)item;
-    return ecs::ItemLockedAttribute {};
-#endif
-}
-
-ecs::ItemProtoRef MakeItemProtoRef(LPITEM item)
-{
-    ecs::ItemProtoRef protoRef {};
-    const TItemTable* proto = item->GetProto();
-    if (!proto)
-        return protoRef;
-
-    protoRef.base_vnum = proto->dwVnum;
-    protoRef.type = proto->bType;
-    protoRef.subtype = proto->bSubType;
-    protoRef.weapon_min = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[3]));
-    protoRef.weapon_max = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[4]));
-    protoRef.defense = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[1]));
-    protoRef.magic_min = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[5]));
-    protoRef.magic_max = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[6]));
-#ifdef ENABLE_MULTI_NAMES
-    std::strncpy(protoRef.name, proto->szLocaleName[0], ITEM_NAME_MAX_LEN);
-#else
-    std::strncpy(protoRef.name, proto->szLocaleName, ITEM_NAME_MAX_LEN);
-#endif
-    protoRef.name[ITEM_NAME_MAX_LEN] = '\0';
-    protoRef.size = proto->bSize;
-#ifdef ENABLE_EXTRA_INVENTORY
-    protoRef.extra_category = item->GetExtraCategory();
-#endif
-    protoRef.level_limit = static_cast<uint8_t>(std::clamp(item->GetLevelLimit(), 0, 255));
-    protoRef.wear_flags = proto->dwWearFlags;
-    protoRef.anti_flags = proto->dwAntiFlags;
-    protoRef.immune_flags = proto->dwImmuneFlag;
-    protoRef.refined_vnum = item->GetRefinedVnum();
-    protoRef.refine_level = static_cast<uint8_t>(std::clamp(item->GetRefineLevel(), 0, 255));
-    protoRef.limit_timer_wear_index = static_cast<int8_t>(proto->cLimitTimerBasedOnWearIndex);
-    protoRef.proto = proto;
-    return protoRef;
-}
-
-void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
-{
-	item->SetEntityHandle(entity);
-    reg.emplace_or_replace<ecs::LegacyItemPtr>(entity, get_pointer(item));
-    reg.emplace_or_replace<ecs::ItemIdentity>(entity, MakeItemIdentity(item));
-    reg.emplace_or_replace<ecs::ItemLocation>(entity, MakeItemLocation(item));
-    reg.emplace_or_replace<ecs::ItemGroundPosition>(entity, MakeItemGroundPosition(item));
-    // Count has no legacy mirror. Creation starts empty; resync preserves the
-    // current stack (including a committed zero-count retirement).
-    if (!reg.all_of<ecs::ItemCount>(entity))
-        reg.insert<ecs::ItemCount>(&entity, &entity + 1);
-    reg.emplace_or_replace<ecs::ItemPrototypeMeta>(entity, MakeItemPrototypeMeta(item));
-    reg.emplace_or_replace<ecs::ItemOwner>(entity, MakeItemOwner(item));
-    reg.emplace_or_replace<ecs::ItemEquipped>(entity, MakeItemEquipped(item));
-    reg.emplace_or_replace<ecs::ItemFlags>(entity, MakeItemFlags(item));
-    // The arrays live in these components; the item has no copy to seed them
-    // from, so a new entity just gets empty ones.
-    (void)reg.get_or_emplace<ecs::ItemSockets>(entity);
-    (void)reg.get_or_emplace<ecs::ItemAttributes>(entity);
-    reg.emplace_or_replace<ecs::ItemLockedAttribute>(entity, MakeItemLockedAttribute(item));
-    reg.emplace_or_replace<ecs::ItemProtoRef>(entity, MakeItemProtoRef(item));
-    (void)reg.get_or_emplace<ecs::ItemEvents>(entity);
-    (void)reg.get_or_emplace<ecs::ViewMap>(entity);
-    (void)reg.get_or_emplace<ecs::ViewerMap>(entity);
-    (void)reg.get_or_emplace<ecs::ViewAgeMap>(entity);
-}
-
 } // namespace
 
 entt::entity EntityFactory::EnsureLegacyCharacterEntity(entt::registry& reg, LPCHARACTER ch, uint32_t legacyVID)
@@ -753,69 +604,14 @@ entt::entity EntityFactory::CreateStone(entt::registry& reg, const TMobTable& da
     return entity;
 }
 
-entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, LPITEM item)
-{
-    if (!item) {
-        return entt::null;
-    }
-
-    const uint32_t itemID = item->GetID();
-    const uint32_t itemVID = item->GetVID();
-    if (itemID == 0 && itemVID == 0) {
-        return entt::null;
-    }
-
-    auto& registry = CItemRegistry::Instance();
-    const entt::entity existing = item->GetEntityHandle();
-    if (existing != entt::null && reg.valid(existing)) {
-        const auto* binding = reg.try_get<ecs::LegacyItemPtr>(existing);
-        // An existing entity is authoritative. Never rehydrate it from an
-        // allocation, or attach a different allocation through the same ID.
-        if (!binding || binding->ptr != item || !registry.Register(itemID, itemVID, existing))
-            return entt::null;
-        ecs::ItemInvariants::ValidateItemEntity(reg, existing, "item.factory.handle");
-        return existing;
-    }
-
-    if (registry.Find(itemID) != entt::null || registry.FindByVID(itemVID) != entt::null)
-        return entt::null;
-
-    const entt::entity entity = reg.create();
-    SyncItemEntity(reg, entity, item);
-    if (!registry.Register(itemID, itemVID, entity)) {
-        // A construction callback may have claimed an ID. Retire only this
-        // new entity; the registry leaves all other live bindings untouched.
-        DestroyItemEntity(reg, entity);
-        return entt::null;
-    }
-    ecs::ItemInvariants::ValidateItemEntity(reg, entity, "item.factory.create");
-    return entity;
-}
-
-void EntityFactory::DestroyItemEntity(entt::registry& reg, entt::entity entity)
-{
-    if (entity == entt::null || !reg.valid(entity)) {
-        return;
-    }
-
-	ItemSystem::PrepareItemDestruction(entity);
-
-	LPITEM legacyItem = nullptr;
-	if (const auto* legacy = reg.try_get<ecs::LegacyItemPtr>(entity))
-		legacyItem = legacy->ptr;
-
-    CItemRegistry::Instance().Unregister(entity);
-	if (legacyItem && legacyItem->GetEntityHandle() == entity)
-		legacyItem->SetEntityHandle(entt::null);
-
-    if (reg.valid(entity)) {
-        reg.destroy(entity);
-    }
-}
-
 void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
 {
     if (!reg.valid(e)) {
+        return;
+    }
+
+    if (reg.all_of<ecs::ItemIdentity>(e)) {
+        ITEM_MANAGER::instance().RemoveItem(e, "ENTITY_FACTORY_DESTROY");
         return;
     }
 
@@ -836,11 +632,6 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
     if (const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr) {
         legacy->ptr->SetEntityHandle(entt::null);
     }
-	if (const auto* legacyItem = reg.try_get<ecs::LegacyItemPtr>(e);
-		legacyItem && legacyItem->ptr) {
-		legacyItem->ptr->SetEntityHandle(entt::null);
-		CItemRegistry::Instance().Unregister(e);
-	}
 
     if (const auto* session = reg.try_get<ecs::NetworkSession>(e)) {
         if (session->desc) {

@@ -8,6 +8,11 @@
 #include "../../SRC/Server/GameServer/party.h"
 #include "../../SRC/Server/GameServer/constants.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
+#include "../../SRC/Server/GameServer/ecs/EntityFactory.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
+#include "../../SRC/Server/GameServer/battle_pass.h"
+#include "../../SRC/Server/GameServer/sectree.h"
+#include "../../SRC/Server/GameServer/ecs/ItemInvariants.hpp"
 #include "../../SRC/Server/GameServer/ecs/EventDispatcher.hpp"
 #include "../../SRC/Server/GameServer/ecs/events.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_proto_components.hpp"
@@ -35,6 +40,7 @@
 #include <functional>
 #include <iostream>
 #include <stdexcept>
+#include <source_location>
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
@@ -45,7 +51,12 @@ const int aiAccessorySocketDegradeTime[ITEM_ACCESSORY_SOCKET_MAX_NUM + 1] = {};
 
 namespace {
 int checks = 0;
-struct Actor { bool pc = false; uint32_t race = 0; int32_t x = 0, y = 0, map = 1; bool dead = false; };
+struct Actor { bool pc = false; uint32_t race = 0; int32_t x = 0, y = 0, map = 1; bool dead = false; bool observer = false, ground = false; };
+bool pickupTest = false, pickupAllowed = true, rejectPickupPlace = false, rejectPickupDestroy = false;
+int pickupCell = 0, pickupDetaches = 0, pickupPlacements = 0, pickupRestores = 0, pickupSaves = 0;
+int lastPickupWindow = 0;
+int64_t pickupGold = 0;
+std::function<void(entt::entity)> onPickupDetach, onPickupPlace, onPickupDestroy;
 bool npcTest = false;
 int revivals = 0, feeds = 0;
 std::string receivedItemName;
@@ -56,15 +67,21 @@ int flushed = 0;
 std::function<void(entt::entity)> onSave, onUpdate;
 std::vector<LPEVENT> queued;
 std::function<void(entt::entity)> onCreate, onPublish, onComponent;
+std::function<void()> onCancel;
 void Check(bool value, const char* message) {
     ++checks;
     if (!value) throw std::runtime_error(message);
 }
-[[noreturn]] void Unexpected() { throw std::runtime_error("unexpected legacy/live service"); }
+[[noreturn]] void Unexpected(const std::source_location where = std::source_location::current()) {
+    throw std::runtime_error(std::string("unexpected legacy/live service: ") + where.function_name());
+}
 void Published(const ecs::EvItemExpired& event) { if (onPublish) onPublish(event.itemEntity); }
 void Constructed(entt::registry&, entt::entity item) { if (onComponent) onComponent(item); }
 void Reset() {
-    onCreate = onPublish = onComponent = {};
+    pickupTest = rejectPickupPlace = rejectPickupDestroy = false; pickupAllowed = true;
+    pickupCell = pickupDetaches = pickupPlacements = pickupRestores = pickupSaves = 0; pickupGold = 0;
+    onPickupDetach = onPickupPlace = onPickupDestroy = {};
+    onCreate = onPublish = onComponent = {}; onCancel = {};
     onUse = {}; npcTest = false; revivals = feeds = 0; receivedItemName.clear();
     onSave = onUpdate = {}; wearStopTest = false; flushed = 0;
     g_registry.clear(); queued.clear(); failAllocation = false; test_server = 0;
@@ -106,12 +123,18 @@ void event_cancel(LPEVENT* event) {
     if (!event || !*event) return;
     (*event)->is_force_to_end = 1;
     event->reset();
+    if (onCancel) { auto callback = onCancel; callback(); }
 }
 EVENTFUNC(real_time_expire_event) { throw std::runtime_error("unexpected timer execution"); }
 EVENTFUNC(soul_item_event) { throw std::runtime_error("unexpected timer execution"); }
 void ITEM_MANAGER::RemoveItem(entt::entity item, const char*) {
-    Check(npcTest && ItemSystem::IsValidItem(item), "unexpected item removal");
-    g_registry.destroy(item);
+    Check((npcTest || pickupTest) && ItemSystem::IsValidItem(item), "unexpected item removal");
+    if (pickupTest) {
+        if (onPickupDestroy) onPickupDestroy(item);
+        if (rejectPickupDestroy) return;
+        CItemRegistry::Instance().Unregister(item);
+    }
+    if (g_registry.valid(item)) g_registry.destroy(item);
 }
 ITEM_MANAGER::ITEM_MANAGER() {}
 ITEM_MANAGER::~ITEM_MANAGER() {}
@@ -141,9 +164,9 @@ LPDESC GetDesc(entt::entity owner) {
     return nullptr;
 }
 entt::entity FindByPlayerID(uint32_t) { Unexpected(); }
-uint32_t GetPlayerID(entt::entity) { Unexpected(); }
+uint32_t GetPlayerID(entt::entity e) { if (pickupTest) return entt::to_integral(e) + 1; Unexpected(); }
 uint8_t GetJob(entt::entity) { Unexpected(); }
-std::string_view GetName(entt::entity) { Unexpected(); }
+std::string_view GetName(entt::entity) { if (pickupTest) return "owner"; Unexpected(); }
 int32_t GetX(entt::entity e) { return g_registry.get<Actor>(e).x; }
 int32_t GetY(entt::entity e) { return g_registry.get<Actor>(e).y; }
 int32_t GetMapIndex(entt::entity e) { return g_registry.get<Actor>(e).map; }
@@ -151,10 +174,15 @@ uint32_t GetRaceNum(entt::entity e) { return g_registry.get<Actor>(e).race; }
 uint32_t GetPacketVID(entt::entity) { return 99; }
 bool IsPC(entt::entity e) { return IsValid(e) && g_registry.get<Actor>(e).pc; }
 bool SetQuestNPCID(entt::entity, uint32_t) { Unexpected(); }
-LPSECTREE GetSectree(entt::entity) { Unexpected(); }
+LPSECTREE GetSectree(entt::entity e) {
+    if (!pickupTest) Unexpected();
+    static SECTREE tree;
+    const auto* actor = g_registry.try_get<Actor>(e);
+    return actor && actor->ground ? &tree : nullptr;
+}
 bool IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e) && g_registry.all_of<Actor>(e); }
 }
-CParty* ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
+CParty* ecs::SocialSystem::GetParty(entt::entity) { if (pickupTest) return nullptr; Unexpected(); }
 entt::entity InventorySystem::RemoveFromCharacter(entt::entity) { Unexpected(); }
 namespace ItemSystem {
 entt::entity GetWearItem(entt::entity, uint8_t) { Unexpected(); }
@@ -173,9 +201,10 @@ bool SetItemCountEcs(entt::entity item, uint32_t count) {
     return true;
 }
 void ModifyPoints(entt::entity, bool) { Unexpected(); }
-bool IsItemConsumptionPending(entt::entity) { if (npcTest) return false; Unexpected(); }
+// These fixtures never queue consumption; real queue policy is tested in ItemAttributeTests.
+bool IsItemConsumptionPending(entt::entity) { return false; }
 bool RefreshItemOwnerPID(entt::entity) { Unexpected(); }
-bool SetGroundOwnership(entt::entity, entt::entity, int) { Unexpected(); }
+bool SetGroundOwnership(entt::entity, entt::entity, int) { if (pickupTest) return true; Unexpected(); }
 bool UseItemEx(entt::entity, entt::entity item, TItemPos) { if (onUse) return onUse(item); Unexpected(); }
 bool CanConsumeOwnedItem(entt::entity owner, entt::entity item, uint32_t amount, ItemCostStorage) {
     // Full storage/payment policy is covered by ItemAttributeTests.
@@ -206,8 +235,6 @@ void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity item) 
     if (onUpdate) onUpdate(item);
 }
 void ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
-int CItem::GetSpecialGroup() const { Unexpected(); }
-uint32_t CItem::GetSIGVnum() const { Unexpected(); }
 void ITEM_MANAGER::DelayedSave(entt::entity item) {
     Check(wearStopTest && ItemSystem::IsValidItem(item), "wear stop saved a stale item");
     if (onSave) onSave(item);
@@ -227,6 +254,60 @@ std::shared_ptr<spdlog::logger> GetLogger() {
     static auto logger = std::make_shared<spdlog::logger>("item-runtime"); return logger;
 }
 std::shared_ptr<spdlog::logger> GetErrorLogger() { return GetLogger(); }
+}
+
+
+SECTREE::SECTREE() = default;
+SECTREE::~SECTREE() = default;
+int32_t ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
+bool ecs::PlayerRuntime::IsObserverMode(entt::entity e) { return g_registry.get<Actor>(e).observer; }
+uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { return 0; }
+uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { Unexpected(); }
+bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { Unexpected(); }
+int64_t ecs::PlayerRuntime::GetRankPoints(entt::entity, int) { return 0; }
+bool ecs::PlayerRuntime::SetRankPoints(entt::entity, int, int64_t) { return true; }
+bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { Unexpected(); }
+quest::PC* quest::CQuestManager::GetPCForce(unsigned int) { return nullptr; }
+void ecs::SessionSystem::Save(entt::entity owner) {
+    Check(pickupTest && ecs::PlayerRuntime::IsPC(owner), "pickup saved a stale character"); ++pickupSaves;
+}
+void ItemSystem::GiveGold(entt::entity owner, int64_t amount) {
+    Check(pickupTest && ecs::PlayerRuntime::IsPC(owner), "pickup credited stale character"); pickupGold += amount;
+}
+bool ItemSystem::IsOwnership(entt::entity item, entt::entity owner) {
+    return pickupTest && IsValidItem(item) && ecs::PlayerRuntime::IsPC(owner) && pickupAllowed;
+}
+ItemSystem::StackMergeResult ItemSystem::MergeItemStacksEcs(entt::entity, entt::entity, entt::entity,
+    uint32_t, StackSource) { Unexpected(); } // Full stack policy tested with real ItemAttributeSystem.
+int InventorySystem::GetEmptyInventory(entt::entity, uint8_t) { return pickupCell; }
+int ItemSystem::GetEmptyDragonSoulInventory(entt::entity, entt::entity) { return pickupCell; }
+int ItemSystem::GetEmptyExtraInventory(entt::entity, entt::entity) { return pickupCell; }
+entt::entity InventorySystem::RemoveFromGround(entt::entity item) {
+    Check(pickupTest && ItemSystem::IsValidItem(item), "pickup detached stale entity");
+    ++pickupDetaches;
+    g_registry.get<Actor>(item).ground = false;
+    g_registry.get<ecs::ItemLocation>(item).window = RESERVED_WINDOW;
+    if (onPickupDetach) onPickupDetach(item);
+    return item;
+}
+bool InventorySystem::AddToCharacter(entt::entity item, entt::entity owner, TItemPos pos, bool) {
+    Check(pickupTest && ItemSystem::IsValidItem(item), "pickup placed stale entity");
+    if (rejectPickupPlace || ItemSystem::GetItemOwner(item) != entt::null ||
+        !ecs::PlayerRuntime::IsPC(owner)) return false;
+    ++pickupPlacements; lastPickupWindow = pos.window_type;
+    g_registry.get<ecs::ItemOwner>(item).owner = owner;
+    g_registry.get<ecs::ItemLocation>(item) = {pos.window_type, pos.cell};
+    if (onPickupPlace) onPickupPlace(item);
+    return true;
+}
+bool ItemSystem::PlaceItemOnGround(entt::entity item, int32_t map, const PIXEL_POSITION& pos, int) {
+    if (!IsValidItem(item) || GetItemOwner(item) != entt::null || GetItemWindow(item) != RESERVED_WINDOW) return false;
+    ++pickupRestores;
+    auto& actor = g_registry.get<Actor>(item); actor.ground = true; actor.map = map; actor.x = pos.x; actor.y = pos.y;
+    g_registry.get<ecs::ItemLocation>(item).window = GROUND; return true;
+}
+void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char*, const char*) {
+    Check(pickupTest && ecs::PlayerRuntime::IsPC(owner) && ItemSystem::IsValidItem(item), "pickup logged stale entity");
 }
 
 namespace {
@@ -433,7 +514,6 @@ void LoadedTimers() {
     f.FirstUse(true);
     Check(ItemSystem::OnAfterCreatedItem(f.item) && queued.size() == 1, "used item did not resume its timer");
     Check(ItemSystem::OnAfterCreatedItem(f.item) && queued.size() == 1, "loading twice duplicated the timer");
-    Check(!g_registry.any_of<ecs::LegacyItemPtr>(f.item), "load required a CItem");
 #ifdef ENABLE_SOUL_SYSTEM
     Reset(); Fixture soul;
     g_registry.get<ecs::ItemPrototypeMeta>(soul.item).type = ITEM_SOUL;
@@ -538,12 +618,272 @@ void TimerFailuresAndCallbacks() {
     };
     Check(!ItemSystem::OnAfterCreatedItem(published.item), "publication-time retirement reported a live item");
 }
+
+std::function<void(entt::registry&, entt::entity)> onFactoryIdentity;
+std::function<void(const ecs::EvItemDestroyed&)> onRetire;
+void FactoryIdentity(entt::registry& registry, entt::entity item) {
+    if (onFactoryIdentity) { auto callback = onFactoryIdentity; callback(registry, item); }
+}
+void Retired(const ecs::EvItemDestroyed& event) { if (onRetire) { auto callback = onRetire; callback(event); } }
+
+void NativeFactory() {
+    Reset();
+    TItemTable proto {};
+    proto.dwVnum = 100; proto.bType = ITEM_WEAPON; proto.bSize = 2;
+    proto.dwFlags = ITEM_FLAG_STACKABLE; proto.dwWearFlags = WEARABLE_WEAPON;
+    proto.dwAntiFlags = ITEM_ANTIFLAG_GIVE; proto.dwImmuneFlag = 7;
+    proto.aLimits[0] = {LIMIT_LEVEL, 123}; proto.cLimitTimerBasedOnWearIndex = -1;
+    proto.dwRefinedVnum = 101; proto.alValues[3] = -1; proto.alValues[4] = 20;
+    proto.alValues[1] = 8; proto.alValues[2] = 13; proto.alValues[5] = 99;
+    std::strcpy(proto.szName, "test+12");
+    const auto item = EntityFactory::CreateItemEntity(g_registry, &proto, 102, 901, 902, 777);
+    Check(ItemSystem::IsValidItem(item) && ecs::ItemInvariants::HasMinimumItemComponents(g_registry, item),
+        "native factory returned an incomplete item");
+    Check(ItemSystem::GetItemID(item) == 901 && ItemSystem::GetItemVID(item) == 902 &&
+        ItemSystem::GetItemOriginalVnum(item) == 102 && ItemSystem::GetItemVnum(item) == 777,
+        "native factory lost ranged/masked identity");
+    const auto snapshot = g_registry.get<ecs::ItemProtoRef>(item);
+    Check(snapshot.proto == &proto && snapshot.base_vnum == 100 && snapshot.size == 2 &&
+        snapshot.level_limit == 123 && snapshot.refine_level == 12 && snapshot.refined_vnum == 101 &&
+        snapshot.weapon_min == 0 && snapshot.weapon_max == 20 && snapshot.wear_flags == WEARABLE_WEAPON &&
+        snapshot.magic_min == 8 && snapshot.magic_max == 13 && snapshot.defense == 8 &&
+        snapshot.anti_flags == ITEM_ANTIFLAG_GIVE && snapshot.immune_flags == 7,
+        "native prototype snapshot differs from item data");
+    Check(ItemSystem::GetItemCount(item) == 0 && ItemSystem::GetItemOwner(item) == entt::null &&
+        ItemSystem::GetItemWindow(item) == RESERVED_WINDOW && g_registry.get<ecs::ItemLockedAttribute>(item).index == -1 &&
+        !ItemSystem::IsItemEquipped(item) && !ItemSystem::IsItemLocked(item) && !ItemSystem::GetItemSkipSave(item),
+        "native creation did not initialize item state");
+    Check(CItemRegistry::Instance().Find(901) == item && CItemRegistry::Instance().FindByVID(902) == item,
+        "factory failed to publish both indexes");
+    Check(EntityFactory::CreateItemEntity(g_registry, &proto, 100, 901, 903) == entt::null &&
+        EntityFactory::CreateItemEntity(g_registry, &proto, 100, 904, 902) == entt::null &&
+        CItemRegistry::Instance().Find(901) == item, "duplicate creation overwrote a live item");
+    EntityFactory::DestroyItemEntity(g_registry, item);
+    Check(!g_registry.valid(item) && CItemRegistry::Instance().Find(901) == entt::null &&
+        CItemRegistry::Instance().FindByVID(902) == entt::null, "factory retirement left identity indexed");
+
+    Check(EntityFactory::CreateItemEntity(g_registry, nullptr, 100, 1, 2) == entt::null &&
+        EntityFactory::CreateItemEntity(g_registry, &proto, 0, 1, 2) == entt::null &&
+        EntityFactory::CreateItemEntity(g_registry, &proto, 100, 0, 2) == entt::null &&
+        EntityFactory::CreateItemEntity(g_registry, &proto, 100, 1, 0) == entt::null,
+        "invalid native factory input was accepted");
+    proto.bType = ITEM_ELK;
+    const auto gold = EntityFactory::CreateItemEntity(g_registry, &proto, 1, 0, 905);
+    Check(ItemSystem::IsValidItem(gold) && CItemRegistry::Instance().FindByVID(905) == gold &&
+        CItemRegistry::Instance().Find(0) == entt::null, "ID-less gold lost its native VID");
+    EntityFactory::DestroyItemEntity(g_registry, gold);
+}
+
+void NativePrototypeRefresh() {
+    Reset();
+    TItemTable proto {}; proto.dwVnum = 100; proto.bSize = 1; proto.bType = ITEM_MATERIAL;
+    auto item = EntityFactory::CreateItemEntity(g_registry, &proto, 100, 501, 502);
+    Check(ItemSystem::GetItemExtraCategory(item) == 1 && ItemSystem::IsExtraItem(item), "material category initialization changed");
+    g_registry.get<ecs::ItemIdentity>(item).vnum = 777;
+    Check(ItemSystem::IsExtraItem(item), "masked material classification required another prototype");
+    g_registry.get<ecs::ItemIdentity>(item).vnum = 30002;
+    Check(!ItemSystem::IsExtraItem(item), "extra-inventory exclusion was lost");
+    g_registry.get<ecs::ItemIdentity>(item).vnum = 100;
+    auto& flags = g_registry.get<ecs::ItemFlags>(item);
+    flags.skipSave = flags.isLocked = flags.exchanging = true;
+    g_registry.get<ecs::ItemCount>(item).count = 73;
+    g_registry.get<ecs::ItemSockets>(item).sockets[0] = 81;
+    g_registry.get<ecs::ItemAttributes>(item).attrs[0] = {APPLY_MAX_HP, 900};
+    TItemTable updated = proto;
+    updated.bType = ITEM_USE; updated.bSubType = USE_POTION; updated.bSize = 2;
+    updated.dwFlags = ITEM_FLAG_STACKABLE; updated.aLimits[0] = {LIMIT_LEVEL, 300};
+    std::strcpy(updated.szName, "potion+300");
+    Check(ItemSystem::RefreshItemPrototype(item, &updated) && ItemSystem::GetItemProto(item) == &updated &&
+        ItemSystem::GetItemType(item) == ITEM_USE && ItemSystem::GetItemSubType(item) == USE_POTION &&
+        ItemSystem::GetItemExtraCategory(item) == 5 && ItemSystem::GetItemSize(item) == 2 &&
+        ItemSystem::GetItemRefineLevel(item) == 255 && ItemSystem::GetItemLevelLimit(item) == 255 &&
+        ItemSystem::GetItemFlags(item) == ITEM_FLAG_STACKABLE,
+        "reload left stale native proto fields");
+    Check(ItemSystem::GetItemCount(item) == 73 && ItemSystem::GetItemSocket(item, 0) == 81 &&
+        g_registry.get<ecs::ItemLockedAttribute>(item).index == -1 && ItemSystem::IsItemLocked(item) &&
+        ItemSystem::IsItemExchanging(item) && ItemSystem::GetItemSkipSave(item) &&
+        g_registry.get<ecs::ItemAttributes>(item).attrs[0].sValue == 900,
+        "reload overwrote runtime item state");
+    Check(ItemSystem::RefreshItemPrototype(item, nullptr) && !ItemSystem::GetItemProto(item) &&
+        ItemSystem::GetItemSize(item) == 0 && ItemSystem::GetItemType(item) == 0 &&
+        ItemSystem::GetItemFlags(item) == 0 && ItemSystem::GetItemCount(item) == 73,
+        "removed prototype left a dangling reference or lost the stack");
+    EntityFactory::DestroyItemEntity(g_registry, item);
+    Check(!ItemSystem::RefreshItemPrototype(item, &updated), "stale prototype reload succeeded");
+}
+
+void FactoryCallbacks() {
+    for (int stage = 0; stage < 2; ++stage) for (int action = 0; action < 4; ++action) {
+        Reset();
+        TItemTable proto {}; proto.dwVnum = 100; proto.bType = ITEM_WEAPON; proto.bSize = 1;
+        entt::entity watched = entt::null, replacement = entt::null;
+        const auto mutate = [&](entt::entity item) {
+            watched = item;
+            if (action == 0) {
+                g_registry.destroy(item); replacement = g_registry.create();
+                Check(replacement != item && entt::to_entity(replacement) == entt::to_entity(item),
+                    "factory test did not recycle the generation");
+            } else if (action == 1) throw std::runtime_error("component construction failure");
+            else if (action == 2) g_registry.remove<ecs::ItemCount>(item);
+            else if (stage == 0) g_registry.remove<ecs::ItemEvents>(item);
+            else g_registry.remove<ecs::ItemIdentity>(item);
+        };
+        if (stage == 0) onComponent = mutate;
+        else onFactoryIdentity = [&](entt::registry&, entt::entity item) { mutate(item); };
+        entt::entity result = entt::null; bool threw = false;
+        try { result = EntityFactory::CreateItemEntity(g_registry, &proto, 100, 601, 602); }
+        catch (const std::runtime_error&) { threw = true; }
+        onComponent = {}; onFactoryIdentity = {};
+        Check(watched != entt::null && result == entt::null && threw == (action == 1) &&
+            !g_registry.valid(watched) && CItemRegistry::Instance().Find(601) == entt::null,
+            "failed construction left a partially indexed item");
+        if (action == 0) Check(g_registry.valid(replacement) && !g_registry.any_of<ecs::ItemIdentity>(replacement),
+            "factory wrote/destroyed a recycled generation");
+    }
+    Reset();
+    TItemTable proto {}; proto.dwVnum = 100; proto.bType = ITEM_WEAPON; proto.bSize = 1;
+    entt::entity collision = entt::null;
+    onFactoryIdentity = [&](entt::registry& registry, entt::entity item) {
+        // A final construction callback claims the same persistent ID first.
+        auto callback = std::move(onFactoryIdentity); onFactoryIdentity = {};
+        collision = registry.create();
+        auto identity = registry.get<ecs::ItemIdentity>(item); identity.vid = 704;
+        registry.emplace<ecs::ItemIdentity>(collision, identity);
+        Check(CItemRegistry::Instance().Register(identity.id, identity.vid, collision), "collision fixture registration failed");
+    };
+    Check(EntityFactory::CreateItemEntity(g_registry, &proto, 100, 701, 702) == entt::null &&
+        CItemRegistry::Instance().Find(701) == collision && g_registry.valid(collision),
+        "construction rollback removed another entity's index");
+    EntityFactory::DestroyItemEntity(g_registry, collision);
+
+    const auto item = EntityFactory::CreateItemEntity(g_registry, &proto, 100, 801, 802);
+    int calls = 0;
+    onRetire = [&](const ecs::EvItemDestroyed& event) {
+        ++calls; EntityFactory::DestroyItemEntity(g_registry, event.itemEntity);
+        Check(g_registry.valid(item), "recursive factory call bypassed retirement guard");
+    };
+    EntityFactory::DestroyItemEntity(g_registry, item); onRetire = {};
+    Check(calls == 1 && !g_registry.valid(item), "native factory destruction reentered");
+
+    const auto moved = EntityFactory::CreateItemEntity(g_registry, &proto, 100, 803, 804);
+    const auto owner = g_registry.create();
+    onRetire = [&](const ecs::EvItemDestroyed&) { g_registry.get<ecs::ItemOwner>(moved).owner = owner; };
+    EntityFactory::DestroyItemEntity(g_registry, moved); onRetire = {};
+    Check(g_registry.valid(moved) && CItemRegistry::Instance().Find(803) == moved,
+        "event callback's transferred item was deleted");
+    g_registry.get<ecs::ItemOwner>(moved).owner = entt::null;
+    EntityFactory::DestroyItemEntity(g_registry, moved);
+
+    const auto timed = EntityFactory::CreateItemEntity(g_registry, &proto, 100, 805, 806);
+    auto& events = g_registry.get<ecs::ItemEvents>(timed);
+    std::array<LPEVENT, 8> timers;
+    for (auto& timer : timers) timer = LPEVENT(new EVENT);
+    events.destroy = timers[0]; events.expire = timers[1]; events.ownership = timers[2];
+    events.uniqueExpire = timers[3]; events.soulItem = timers[4]; events.timerBasedOnWearExpire = timers[5];
+    events.realTimeExpire = timers[6]; events.accessorySocketExpire = timers[7];
+    entt::entity replacement = entt::null;
+    onCancel = [&] {
+        onCancel = {};
+        g_registry.destroy(timed); replacement = g_registry.create();
+        Check(replacement != timed && entt::to_entity(replacement) == entt::to_entity(timed),
+            "timer cancellation did not recycle the generation");
+    };
+    EntityFactory::DestroyItemEntity(g_registry, timed);
+    Check(g_registry.valid(replacement) && !g_registry.any_of<ecs::ItemEvents>(replacement),
+        "timer cleanup touched a replacement entity");
+    Check(std::all_of(timers.begin(), timers.end(), [](const auto& timer) { return timer->is_force_to_end; }),
+        "native retirement left an active timer");
+
+    const auto retry = EntityFactory::CreateItemEntity(g_registry, &proto, 100, 807, 808);
+    onRetire = [](const ecs::EvItemDestroyed&) { throw std::runtime_error("retirement callback"); };
+    bool threw = false;
+    try { EntityFactory::DestroyItemEntity(g_registry, retry); } catch (const std::runtime_error&) { threw = true; }
+    onRetire = {};
+    Check(threw && g_registry.valid(retry) && CItemRegistry::Instance().Find(807) == retry,
+        "throwing retirement lost a live item's identity");
+    EntityFactory::DestroyItemEntity(g_registry, retry);
+    Check(!g_registry.valid(retry), "retirement guard prevented retry after exception");
+}
+
+
+void NativePickups() {
+    struct PickupFixture {
+        TItemTable proto {};
+        entt::entity owner, item;
+        PickupFixture(uint8_t type = ITEM_WEAPON) {
+            Reset(); pickupTest = true;
+            owner = g_registry.create();
+            g_registry.emplace<Actor>(owner).pc = true;
+            g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner);
+            g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner);
+            proto.dwVnum = 500; proto.bSize = 1; proto.bType = type;
+            item = EntityFactory::CreateItemEntity(g_registry, &proto, 500, type == ITEM_ELK ? 0 : 1501, 1502);
+            g_registry.emplace<Actor>(item).ground = true;
+            g_registry.get<ecs::ItemLocation>(item).window = GROUND;
+            g_registry.get<ecs::ItemCount>(item).count = 7;
+        }
+        bool Pickup() { return ItemSystem::PickupItem(owner, 1502); }
+    };
+    for (uint8_t type : {ITEM_WEAPON, ITEM_MATERIAL, ITEM_DS}) {
+        PickupFixture f(type);
+        Check(f.Pickup() && ItemSystem::GetItemOwner(f.item) == f.owner && pickupDetaches == 1 &&
+            pickupPlacements == 1 && lastPickupWindow == (type == ITEM_DS ? DRAGON_SOUL_INVENTORY :
+                type == ITEM_MATERIAL ? EXTRA_INVENTORY : INVENTORY),
+            "native pickup lost its normal/extra/dragon-soul window");
+        Check(!f.Pickup() && pickupPlacements == 1, "stored item picked twice");
+    }
+    for (int invalid = 0; invalid < 8; ++invalid) {
+        PickupFixture f;
+        if (invalid == 0) g_registry.get<Actor>(f.owner).dead = true;
+        if (invalid == 1) g_registry.get<Actor>(f.owner).observer = true;
+        if (invalid == 2) g_registry.get<Actor>(f.item).map = 2;
+        if (invalid == 3) g_registry.get<Actor>(f.item).x = 2401;
+        if (invalid == 4) { g_registry.get<Actor>(f.item).x = INT_MAX; g_registry.get<Actor>(f.owner).x = INT_MIN; }
+        if (invalid == 5) g_registry.get<ecs::ItemFlags>(f.item).isLocked = true;
+        if (invalid == 6) pickupAllowed = false;
+        if (invalid == 7) pickupCell = -1;
+        Check(!f.Pickup() && pickupDetaches == 0 && pickupPlacements == 0 && ItemSystem::IsValidItem(f.item),
+            "invalid/cross-map/full-inventory pickup modified the item");
+    }
+    {
+        PickupFixture f; rejectPickupPlace = true;
+        Check(!f.Pickup() && pickupRestores == 1 && ItemSystem::GetItemWindow(f.item) == GROUND &&
+            ItemSystem::GetItemOwner(f.item) == entt::null, "failed pickup placement stranded the item");
+    }
+    {
+        PickupFixture f;
+        onPickupDetach = [&](entt::entity item) { Check(!f.Pickup(), "ground callback reentered pickup"); g_registry.destroy(item); };
+        Check(!f.Pickup() && pickupPlacements == 0, "pickup reused a destroyed entity after detachment");
+    }
+    {
+        PickupFixture f;
+        const auto recipient = g_registry.create(); g_registry.emplace<Actor>(recipient).pc = true;
+        onPickupDetach = [&](entt::entity item) { g_registry.get<ecs::ItemOwner>(item).owner = recipient; };
+        Check(!f.Pickup() && pickupRestores == 0 && ItemSystem::GetItemOwner(f.item) == recipient,
+            "pickup rollback stole a callback-transferred item");
+    }
+    {
+        PickupFixture f;
+        onPickupPlace = [&](entt::entity item) { g_registry.destroy(item); };
+        Check(f.Pickup() && pickupPlacements == 1, "committed pickup read a retired entity");
+    }
+    for (bool reject : {false, true}) {
+        PickupFixture f(ITEM_ELK); rejectPickupDestroy = reject;
+        onPickupDestroy = [&](entt::entity) { Check(!f.Pickup(), "gold destruction callback reentered pickup"); };
+        Check(f.Pickup() == !reject && pickupGold == (reject ? 0 : 7) && pickupSaves == (reject ? 0 : 1),
+            "gold was duplicated or credited before successful retirement");
+        Check(!reject || ItemSystem::IsValidItem(f.item), "rejected gold retirement lost the item");
+    }
+}
+
 }
 int main() {
     ITEM_MANAGER itemManager;
     g_dispatcher.sink<ecs::EvItemExpired>().connect<&Published>();
     g_registry.on_construct<ecs::ItemEvents>().connect<&Constructed>();
-    try { NativeInventoryAndUse(); NativeNpcItems(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
+    g_registry.on_construct<ecs::ItemIdentity>().connect<&FactoryIdentity>();
+    g_dispatcher.sink<ecs::EvItemDestroyed>().connect<&Retired>();
+    try { NativeFactory(); NativePrototypeRefresh(); FactoryCallbacks(); NativePickups(); NativeInventoryAndUse(); NativeNpcItems(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
     std::cout << "Item runtime: " << checks << " checks passed\n";
 }

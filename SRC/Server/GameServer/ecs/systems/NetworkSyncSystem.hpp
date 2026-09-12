@@ -43,8 +43,7 @@ void SendConfirmWithMsg(entt::registry& reg, entt::entity recipient, const char*
 
 namespace ecs::ItemNetworkSystem {
 
-// Rebuilds and sends the owner-facing item packet. CItem::UpdatePacket is a
-// one-line forward to this.
+// Rebuilds and sends the owner-facing item packet from native components.
 void SendItemUpdate(entt::registry& reg, entt::entity item);
 
 } // namespace ecs::ItemNetworkSystem

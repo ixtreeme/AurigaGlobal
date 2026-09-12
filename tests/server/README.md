@@ -1604,3 +1604,55 @@ age/expiry, evolution/EXP gates, skins, rename and feeding/skill windows in-game
 Runtime factories, movement, affect calculation and persistence still
 have legacy internals; removing pointer round trips here is not a full engine
 or DB-layer migration.
+
+## Native item lifecycle and pickup (2026-09-12)
+
+The runtime item pointer type, allocation class and pointer-binding component
+have been removed. Item creation/retirement now initializes and retires EnTT
+components directly in the existing ItemSystem implementation. `item.h` retains
+only native event payloads; there is no parallel replacement item class.
+
+`ItemRuntimeTests` executes the real native item factory, identity registry,
+prototype refresh and pickup implementation. It checks masked/ranged identity,
+ID-less gold, duplicate IDs/VIDs, initial component values, prototype removal,
+extra-inventory classification, callback-time component removal, exceptions and
+recycled generations. Retirement tests include recursive destruction, ownership
+transfer, retry after an exception, and entity destruction during cancellation
+of the first of eight timers.
+
+Construction uses single-element insertion: EnTT's `emplace` would perform a
+trailing component lookup after a construction callback had removed that component
+or destroyed its entity. The sanitizer regression covers both cases. Prototype
+snapshots also use the weapon magic-damage fields 1/2; the former initializer
+incorrectly accessed field 6 of the six-element value array.
+
+Pickup fixtures cover normal/extra/dragon-soul routing, stale or transferred
+items, dead/observer characters, full inventories, cross-map and overflowing
+coordinate differences, placement rollback, and reentrant/rejected gold
+retirement. Storage insertion, sector lookup, party, quest, battle-pass,
+network, persistence and stack-merge services are controlled seams here:
+these tests do not simulate an entire connected game client.
+
+`ItemAttributeTests` separately executes the real ground-to-inventory stack
+transaction, including 255/256/700/1000 counts, complete payload comparison,
+ground/ownership/lock guards, atomic two-stack publication and deferred
+retirement without crediting the destination again on retry.
+
+`ItemManagerLifecycleTests` retains creation/removal/persistence/reentry
+coverage with native fixtures only. It additionally exercises entity-only
+shutdown, index mutation during shutdown, rejected-detachment retry, native
+prototype rebinding, removed ranges and empty reloads. Its low-level factory is
+a double; actual factory behavior is covered by ItemRuntimeTests.
+
+Run all configured tests in both normal and AddressSanitizer builds:
+
+~~~powershell
+ctest --test-dir build -C RelWithDebInfo --output-on-failure
+ctest --test-dir build-asan -C RelWithDebInfo --output-on-failure
+~~~
+
+Before deployment, verify pickup (including party reservations and battle pass),
+gold, inventory/equipment/DS/extra/mount storage, offline-shop loading, dungeon
+purge, item expiry, logout/relog and persistence on a test server. The item
+identity/lifecycle is native; character internals and database/prototype pointers
+are not all eliminated by this migration.

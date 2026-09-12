@@ -1699,10 +1699,9 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     }
 }
 
-bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
+bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity itemEntity)
 {
-    const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !item)
+    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::IsValidItem(itemEntity))
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);

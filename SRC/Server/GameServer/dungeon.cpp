@@ -23,6 +23,7 @@
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/spatial_components.hpp"
 #include "ecs/events.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
@@ -627,37 +628,25 @@ namespace
 	};
 #endif
 
-	struct FPurgeSectree
-	{
-		void operator () (LPENTITY ent)
-		{
-			if (ent->IsType(ENTITY_CHARACTER))
-			{
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-
+    struct FPurgeSectree
+    {
+        void operator () (entt::entity entity)
+        {
+            if (ItemSystem::IsValidItem(entity)) {
+                ItemSystem::DestroyItemEntityEcs(entity, "DUNGEON_ENTITY_CLEANUP");
+                return;
+            }
+            const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(entity);
+            if (!kind || kind->kind != ecs::SpatialKind::Character) return;
+            if (!ecs::PlayerRuntime::IsPC(entity) && !ecs::PlayerRuntime::IsPet(entity)
 #ifdef __NEWPET_SYSTEM__
-				if (!ecs::PlayerRuntime::IsPC(chEntity) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(ch->GetEntityHandle())
-#else
-				if (!ecs::PlayerRuntime::IsPC(chEntity) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle())
+                && !ecs::PlayerRuntime::IsNewPet(entity)
 #endif
-				)
-				{
-					M2_DESTROY_CHARACTER(ch);
-				}
-			}
-			else if (ent->IsType(ENTITY_ITEM))
-			{
-				LPITEM item = (LPITEM) ent;
-				ItemSystem::DestroyItemEntityEcs(
-					(item ? item->GetEntityHandle() : entt::null),
-					"DUNGEON_ENTITY_CLEANUP");
-			}
-			else
-				LOG_ERROR("unknown entity type {} is in dungeon", ent->GetType());
-		}
-	};
+            )
+                M2_DESTROY_CHARACTER(entity);
+        }
+    };
+
 }
 
 void CDungeon::KillAll()

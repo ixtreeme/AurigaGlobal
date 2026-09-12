@@ -6,7 +6,6 @@
 #include <entt/entt.hpp>
 
 class CHARACTER;
-class CItem; // forward declaration (LPITEM == CItem*)
 
 /*
     Elveszett Kastely (LostCastle) - Lua mentes C++ dungeon
@@ -38,7 +37,7 @@ public:
     bool OnClickNpc(entt::entity character);
 
     // NPC "take item" handler (drag item onto NPC) - statue/totem
-    bool OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item);
+    bool OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item);
 
     // Floor3 clone sebzes-korlatozas (Damage hook)
     bool CheckCloneDamage(entt::entity attacker, entt::entity victim) const;

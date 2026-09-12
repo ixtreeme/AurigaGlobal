@@ -48,15 +48,6 @@
 
 namespace
 {
-LPITEM ResolveManagedItem(entt::entity item)
-{
-	if (item == entt::null || !g_registry.valid(item))
-		return nullptr;
-
-	const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(item);
-	return legacy ? legacy->ptr : nullptr;
-}
-
 template<class Function>
 struct ScopeExit
 {
@@ -95,23 +86,27 @@ ITEM_MANAGER::~ITEM_MANAGER()
 
 void ITEM_MANAGER::Destroy()
 {
-	for (const auto& [vid, itemEntity] : m_VIDMap)
-	{
-		LPITEM item = ResolveManagedItem(itemEntity);
-		if (!item)
-			continue;
-
-		EntityFactory::DestroyItemEntity(g_registry, itemEntity);
-#ifdef M2_USE_POOL
-		pool_.Destroy(item);
-#else
-		M2_DELETE(item);
-#endif
-	}
-
-	m_VIDMap.clear();
-	m_map_pkItemByID.clear();
-	m_set_pkItemForDelayedSave.clear();
+    // Detachment may mutate manager indexes. Snapshot handles, and use the same
+    // guarded native lifecycle as runtime destruction, without deleting DB rows.
+    std::vector<entt::entity> items;
+    items.reserve(m_VIDMap.size());
+    for (const auto& [vid, item] : m_VIDMap) items.push_back(item);
+    for (const auto item : items) {
+        if (!ItemSystem::IsValidItem(item)) continue;
+        auto* flags = g_registry.try_get<ecs::ItemFlags>(item);
+        if (!flags) continue;
+        const bool skipSave = flags->skipSave;
+        flags->skipSave = true;
+        ScopeExit restorePolicy {[item, skipSave] {
+            if (g_registry.valid(item))
+                if (auto* remaining = g_registry.try_get<ecs::ItemFlags>(item))
+                    remaining->skipSave = skipSave;
+        }};
+        DestroyItem(item);
+    }
+    std::erase_if(m_VIDMap, [](const auto& row) { return !ItemSystem::IsValidItem(row.second); });
+    std::erase_if(m_map_pkItemByID, [](const auto& row) { return !ItemSystem::IsValidItem(row.second); });
+    std::erase_if(m_set_pkItemForDelayedSave, [](entt::entity item) { return !ItemSystem::IsValidItem(item); });
 }
 
 void ITEM_MANAGER::GracefulShutdown()
@@ -124,13 +119,16 @@ void ITEM_MANAGER::GracefulShutdown()
 
 bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 {
-	if (!m_vec_prototype.empty())
-		m_vec_prototype.clear();
+	if (size < 0 || (size && !table)) return false;
+	std::vector<TItemTable> incoming;
+	if (size) incoming.assign(table, table + size);
+	// Retain old storage until every live entity has been rebound below.
+	m_vec_prototype.swap(incoming);
+	m_vec_item_vnum_range_info.clear();
+	m_map_vid.clear();
 
 	int	i;
 
-	m_vec_prototype.resize(size);
-	memcpy(m_vec_prototype.data(), table, sizeof(TItemTable) * size);
 	for (int i = 0; i < size; i++)
 	{
 		if (0 != m_vec_prototype[i].dwVnumRange)
@@ -160,7 +158,7 @@ bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 	}
 
 	int len = 0, len2;
-	char buf[512];
+	char buf[512] {};
 
 	for (i = 0; i < size; ++i)
 	{
@@ -194,28 +192,13 @@ bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 			LOG_INFO("{}", buf);
 	}
 
-	auto it = m_VIDMap.begin();
-
-	LOG_INFO("ITEM_VID_MAP {}", m_VIDMap.size());
-
-	while (it != m_VIDMap.end())
-	{
-		const entt::entity itemEntity = it->second;
-		++it;
-		LPITEM item = ResolveManagedItem(itemEntity);
-		if (!item)
-			continue;
-
-		const TItemTable* tableInfo = GetTable(item->GetOriginalVnum());
-
-		if (nullptr == tableInfo)
-		{
-			LOG_ERROR("cannot reset item table");
-			item->SetProto(nullptr);
-		}
-
-		item->SetProto(tableInfo);
-	}
+    LOG_INFO("ITEM_VID_MAP {}", m_VIDMap.size());
+    for (const auto& [vid, item] : m_VIDMap) {
+        if (!ItemSystem::IsValidItem(item)) continue;
+        const auto* current = GetTable(ItemSystem::GetItemOriginalVnum(item));
+        if (!current) LOG_ERROR("cannot reset item table: item={}", ItemSystem::GetItemID(item));
+        ItemSystem::RefreshItemPrototype(item, current);
+    }
 
 	return true;
 }
@@ -240,23 +223,13 @@ bool ITEM_MANAGER::InitializeExtraProto(TItemExtraProto* table, uint32_t count)
 		//"FINDME : loading table vnum(%u) rarity (%d) ", table->dwVnum, table->iRarity);
 	}
 
-	auto it = m_VIDMap.begin();
-	while (it != m_VIDMap.end())
-	{
-		const entt::entity itemEntity = it->second;
-		++it;
-		LPITEM item = ResolveManagedItem(itemEntity);
-		if (!item)
-			continue;
-
-		auto extra_it = map.find(item->GetOriginalVnum());
-		if (extra_it != map.end()) {
-			ItemSystem::SetItemExtraProto(item->GetEntityHandle(), &extra_it->second);
-			continue;
-		}
-
-		ItemSystem::SetItemExtraProto(item->GetEntityHandle(), nullptr);
-	}
+    std::vector<entt::entity> items;
+    for (const auto& [vid, item] : m_VIDMap) items.push_back(item);
+    for (const auto item : items) {
+        if (!ItemSystem::IsValidItem(item)) continue;
+        const auto extra = map.find(ItemSystem::GetItemOriginalVnum(item));
+        ItemSystem::SetItemExtraProto(item, extra != map.end() ? &extra->second : nullptr);
+    }
 
 	return true;
 }
@@ -331,30 +304,8 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
     const uint32_t mask = GetMaskVnum(vnum);
     const uint32_t displayVnum = mask ? mask : vnum;
 
-    // Temporary allocation boundary: unmigrated consumers still require CItem.
-    // No CItem pointer is used by the initialization pipeline below this block.
-    const entt::entity item = [&] {
-#ifdef M2_USE_POOL
-        LPITEM allocation = pool_.Construct();
-#else
-        LPITEM allocation = M2_NEW CItem(vnum);
-#endif
-        allocation->Initialize();
-        allocation->SetProto(table);
-        allocation->SetMaskVnum(mask);
-        allocation->SetID(itemID);
-        allocation->SetVID(itemVID);
-        const auto entity = EntityFactory::CreateItemEntity(g_registry, allocation);
-        if (!ItemSystem::IsValidItem(entity))
-        {
-#ifdef M2_USE_POOL
-            pool_.Destroy(allocation);
-#else
-            M2_DELETE(allocation);
-#endif
-        }
-        return entity;
-    }();
+    const entt::entity item = EntityFactory::CreateItemEntity(
+        g_registry, table, vnum, itemID, itemVID, mask);
     if (!ItemSystem::IsValidItem(item)) return entt::null;
     bool committed = false;
     const auto* initialFlags = g_registry.try_get<ecs::ItemFlags>(item);
@@ -851,7 +802,7 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t
 #endif
 }
 
-void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char* file, size_t line)
+void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char*, size_t)
 {
 	const uint32_t id = ItemSystem::GetItemID(itemEntity);
 	const uint32_t vid = ItemSystem::GetItemVID(itemEntity);
@@ -919,14 +870,7 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char* file, siz
 		return;
 	}
 
-	// Validate the allocation boundary before requesting persistent deletion.
 	// DBPacket writes/flushes bytes; it does not dispatch gameplay callbacks.
-	LPITEM allocation = ResolveManagedItem(itemEntity);
-	if (allocation && allocation->GetEntityHandle() != itemEntity)
-	{
-		LOG_ERROR("ITEM_DESTROY: mismatched legacy allocation for item {}", id);
-		return;
-	}
 	LOG_INFO("ITEM_DESTROY {}:{}", ItemSystem::GetItemName(itemEntity), id);
 	if (!preservePersistence && !ItemSystem::GetItemSkipSave(itemEntity) && id)
 	{
@@ -936,8 +880,7 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char* file, siz
 		db_clientdesc->DBPacket(HEADER_GD_ITEM_DESTROY, 0, payload.data(), sizeof(payload));
 	}
 
-	// The only legacy boundary left here is releasing an existing allocation.
-	// Entity-only items run the same manager/index/factory cleanup without it.
+	// Preserve live indexes if final ECS retirement fails or is rejected.
 	const bool wasDelayed = m_set_pkItemForDelayedSave.contains(itemEntity);
 	const bool wasByID = id && m_map_pkItemByID.contains(id) && m_map_pkItemByID.at(id) == itemEntity;
 	const bool wasByVID = m_VIDMap.contains(vid) && m_VIDMap.at(vid) == itemEntity;
@@ -966,18 +909,6 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char* file, siz
 		return;
 	}
 
-	if (allocation)
-	{
-#ifdef M2_USE_POOL
-		pool_.Destroy(allocation);
-#else
-#ifndef DEBUG_ALLOC
-		M2_DELETE(allocation);
-#else
-		M2_DELETE_EX(allocation, file, line);
-#endif
-#endif
-	}
 }
 
 bool ItemSystem::DestroyLoadedDuplicateItem(entt::entity item)
@@ -1002,30 +933,12 @@ bool ItemSystem::DestroyLoadedDuplicateItem(entt::entity item)
         entt::to_integral(item), id, GetItemVID(item), GetItemVnum(item),
         GetItemLastOwnerPID(item), static_cast<int>(GetItemWindow(item)), GetItemCell(item));
 
-    // The manager owns detachment, its reentry guard, indexes and the optional
-    // legacy allocation. Never detach first outside that protected lifecycle.
+    // The manager owns detachment, its reentry guard and native indexes.
+    // Never detach first outside that protected lifecycle.
     M2_DESTROY_ITEM(item);
     const bool destroyed = !g_registry.valid(item);
     LOG_ERROR("DUP_ITEM_DESTROY_END entity={} id={} destroyed={}", entt::to_integral(item), id, destroyed);
     return destroyed;
-}
-
-LPITEM ITEM_MANAGER::Find(uint32_t id)
-{
-	const auto it = m_map_pkItemByID.find(id);
-	if (it == m_map_pkItemByID.end())
-		return nullptr;
-
-	return ResolveManagedItem(it->second);
-}
-
-LPITEM ITEM_MANAGER::FindByVID(uint32_t vid)
-{
-	const auto it = m_VIDMap.find(vid);
-	if (it == m_VIDMap.end())
-		return nullptr;
-
-	return ResolveManagedItem(it->second);
 }
 
 TItemTable* ITEM_MANAGER::GetTable(uint32_t vnum)

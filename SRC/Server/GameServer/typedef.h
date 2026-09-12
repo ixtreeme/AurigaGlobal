@@ -28,13 +28,6 @@ typedef std::vector<LPCHARACTER> CHARACTER_VECTOR;
 typedef std::list<LPCHARACTER> CHARACTER_LIST;
 typedef std::unordered_set<LPCHARACTER> CHARACTER_SET;
 
-class CItem;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<CItem> LPITEM;
-#else
-typedef CItem* LPITEM;
-#endif
-
 namespace building {
 class CObject;
 #ifdef USE_DEBUG_PTR

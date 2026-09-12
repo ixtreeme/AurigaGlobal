@@ -100,13 +100,7 @@ EVENTFUNC(destroy_when_idle_event);
 
 namespace {
 
-LPITEM ResolveLegacyItem(entt::entity item)
-{
-	if (!ItemSystem::IsValidItem(item))
-		return nullptr;
 
-	return ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(item));
-}
 
 } // namespace
 

@@ -711,46 +711,6 @@ bool SwapQuickslot(entt::entity e, uint8_t a, uint8_t b)
 
 
 #define ENABLE_IMMUNE_FIX
-// return false on error state
-// The cell lives in ecs::ItemLocation. SetCell is the legacy-facing name for
-// what SetItemCell already does, so it forwards rather than mirroring a field.
-// The owner lives in ecs::ItemOwner. GetOwner keeps returning a pointer
-// because that is what its callers are typed on; GetOwnerEntity is the form
-// this migration moves them to.
-entt::entity CItem::GetOwnerEntity() const
-{
-	return ItemSystem::GetItemOwner(GetEntityHandle());
-}
-
-void CItem::SetOwnerEntity(entt::entity owner)
-{
-	const entt::entity itemEntity = GetEntityHandle();
-	if (itemEntity == entt::null || !g_registry.valid(itemEntity))
-		return;
-
-	auto& itemOwner = g_registry.get_or_emplace<ecs::ItemOwner>(itemEntity);
-	itemOwner.owner = owner;
-	itemOwner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner);
-}
-
-// Same shape as SetCell: ItemSystem::SetItemWindow mirrors through this
-// method, so the component is written here directly.
-void CItem::SetWindow(uint8_t b)
-{
-	const entt::entity itemEntity = GetEntityHandle();
-	if (itemEntity != entt::null && g_registry.valid(itemEntity))
-		g_registry.get_or_emplace<ecs::ItemLocation>(itemEntity).window = b;
-}
-
-uint8_t CItem::GetWindow() const
-{
-	return ItemSystem::GetItemWindow(GetEntityHandle());
-}
-
-uint16_t CItem::GetCell() const
-{
-	return ItemSystem::GetItemCell(GetEntityHandle());
-}
 
 namespace
 {
@@ -3471,8 +3431,3 @@ entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t vnum, uint32_t count,
 }
 
 } // namespace ItemSystem
-
-void CItem::ModifyPoints(bool bAdd)
-{
-	ItemSystem::ModifyPoints(GetEntityHandle(), bAdd);
-}

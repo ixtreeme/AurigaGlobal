@@ -41,16 +41,6 @@ LPENTITY LPENTITYFromEntity(entt::registry& reg, entt::entity e)
     if (const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(e))
         return legacy->ptr;
 
-    if (const auto* item = reg.try_get<ecs::ItemIdentity>(e)) {
-        if (LPITEM legacyItem = ITEM_MANAGER::instance().Find(item->id);
-            legacyItem && legacyItem->GetEntityHandle() == e)
-            return legacyItem;
-        if (item->vid != 0) {
-            auto* legacyItem = ITEM_MANAGER::instance().FindByVID(item->vid);
-            if (legacyItem && legacyItem->GetEntityHandle() == e) return legacyItem;
-        }
-    }
-
     if (auto* building = ecs::CBuildingRegistry::FindLegacyByEntity(e))
         return static_cast<LPENTITY>(building);
 
@@ -67,7 +57,7 @@ entt::entity EntityFromLPENTITY(LPENTITY entity)
     if (!entity)
         return entt::null;
 
-    // Characters and items carry the handle themselves; no cast, no switch.
+    // Characters carry the handle themselves; no cast, no switch.
     if (const entt::entity self = entity->GetEntityHandle(); self != entt::null)
         return self;
 

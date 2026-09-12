@@ -8,6 +8,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/new_switchbot.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/spatial_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_proto_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/social_components.hpp"
@@ -417,7 +418,7 @@ bool DragonSoulSystem::IsDeckActivated(entt::entity owner) { return GetActiveDec
 bool MakeDistinctRandomNumberSet(std::list<float>, std::vector<int>&);
 
 // Deterministic I/O doubles. The system under test never constructs CItem or
-// CHARACTER, and fixtures deliberately contain no LegacyItemPtr component.
+// CHARACTER; item fixtures contain only native components.
 int number_ex(int low, int high, const char*, int)
 {
     Check(low <= high, "invalid random interval");
@@ -532,7 +533,13 @@ bool RemoveAffect(entt::entity owner, uint32_t type)
 }
 }
 
+namespace { struct TestGroundReservation { entt::entity owner {entt::null}; }; }
 namespace ItemSystem {
+bool IsOwnership(entt::entity item, entt::entity owner) {
+    if (!IsValidItem(item) || !ecs::PlayerRuntime::IsPC(owner)) return false;
+    const auto* reservation = g_registry.try_get<TestGroundReservation>(item);
+    return !reservation || reservation->owner == owner;
+}
 bool IsValidItem(entt::entity item)
 {
     return item != entt::null && g_registry.valid(item) && g_registry.all_of<ecs::ItemIdentity>(item);
@@ -677,7 +684,6 @@ struct Fixture {
         g_registry.emplace<ecs::ItemAttributes>(item);
         auto& ref = g_registry.emplace<ecs::ItemProtoRef>(item);
         ref.proto = &proto;
-        Check(!g_registry.any_of<ecs::LegacyItemPtr>(item), "fixture must be entity-only");
     }
     auto& Attrs() { return g_registry.get<ecs::ItemAttributes>(item).attrs; }
     void Rows(int count, bool rare = false)
@@ -2143,7 +2149,7 @@ struct ExtractionFixture : PaidFixture {
             equipped ? INVENTORY_MAX_NUM + WEAR_MAX_NUM : emptyDSCell);
         g_registry.emplace<ecs::ItemEquipped>(item).equipped = equipped;
         Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner) &&
-            !g_registry.any_of<ecs::LegacyItemPtr>(material), "extraction fixtures must be entity-only");
+            ItemSystem::IsValidItem(material), "extraction fixtures must be entity-only");
     }
     bool Run(bool equipped)
     {
@@ -2917,6 +2923,62 @@ void StackMergeCallbacks()
     }
 }
 
+
+void GroundStackMerges()
+{
+    const auto ground = [](StackFixture& f) {
+        f.Detach();
+        g_registry.get<ecs::ItemLocation>(f.item).window = GROUND;
+        g_registry.emplace<ecs::SpatialEntity>(f.item);
+        g_registry.emplace<ecs::SectorPlacement>(f.item);
+    };
+    for (uint32_t count : {255u, 256u, 700u, 1000u}) {
+        StackFixture f; ground(f); g_bItemCountLimit = 1000;
+        g_registry.get<ecs::ItemCount>(f.item).count = count;
+        const auto observe = [&](entt::entity) {
+            const uint32_t moved = std::min(count, 820u);
+            Check(ItemSystem::GetItemCount(f.item) == count - moved &&
+                ItemSystem::GetItemCount(f.material) == 180 + moved, "ground pickup exposed half a transfer");
+        };
+        onSave = onUpdate = onDestroy = observe;
+        const auto result = ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material, 0, ItemSystem::StackSource::GroundPickup);
+        Check(result.transferred == std::min(count, 820u) && result.sourceDepleted == (count <= 820),
+            "ground pickup narrowed counts to eight bits");
+    }
+    for (int invalid = 0; invalid < 10; ++invalid) {
+        StackFixture f; ground(f);
+        if (invalid == 0) g_registry.remove<ecs::SpatialEntity>(f.item);
+        if (invalid == 1) g_registry.remove<ecs::SectorPlacement>(f.item);
+        if (invalid == 2) g_registry.get<ecs::ItemLocation>(f.item).window = RESERVED_WINDOW;
+        if (invalid == 3) g_registry.get<ecs::ItemOwner>(f.item).owner = f.owner;
+        if (invalid == 4) g_registry.get<ecs::ItemOwner>(f.item).ownerPID = 123;
+        if (invalid == 5) g_registry.get<ecs::ItemFlags>(f.item).isLocked = true;
+        if (invalid == 6) g_registry.get<ecs::ItemFlags>(f.item).exchanging = true;
+        if (invalid == 7) g_registry.emplace_or_replace<ecs::ItemEquipped>(f.item).equipped = true;
+        if (invalid == 8) {
+            g_registry.emplace<TestGroundReservation>(f.item);
+        }
+        if (invalid == 9) g_registry.get<ecs::ItemAttributes>(f.item).attrs[0] = {APPLY_MAX_HP, 123};
+        Check(ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material, 0,
+            ItemSystem::StackSource::GroundPickup).transferred == 0 &&
+            ItemSystem::GetItemCount(f.item) == 40 && ItemSystem::GetItemCount(f.material) == 180 && saves == 0,
+            "ground pickup accepted an invalid/reserved/foreign payload");
+    }
+    {
+        StackFixture f; ground(f);
+        g_registry.get<ecs::ItemCount>(f.item).count = 10;
+        rejectDestruction.insert(f.item);
+        const auto result = ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material, 0, ItemSystem::StackSource::GroundPickup);
+        Check(result.transferred == 10 && result.sourceDepleted && ItemSystem::IsItemConsumptionPending(f.item),
+            "failed ground cleanup hid a committed pickup");
+        Check(ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material, 0,
+            ItemSystem::StackSource::GroundPickup).transferred == 0, "pending ground item was picked twice");
+        rejectDestruction.clear(); ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(f.item) && ItemSystem::GetItemCount(f.material) == 190,
+            "ground retirement retry credited the target twice");
+    }
+}
+
 void AutomaticStackMerges()
 {
     {
@@ -3085,7 +3147,6 @@ struct RuneFixture : Fixture {
             g_registry.emplace<ecs::ItemEquipped>(rune).equipped = true;
             inventory[{owner, EQUIPMENT, INVENTORY_MAX_NUM + WEAR_RUNE1 + index}] = rune;
             Check(ItemSystem::InitializeRuneItem(rune), "rune fixture initialization failed");
-            Check(!g_registry.any_of<ecs::LegacyItemPtr>(rune), "rune fixture required CItem");
         }
     }
     auto& Sockets(int index) { return g_registry.get<ecs::ItemSockets>(runes[index]).sockets; }
@@ -3563,7 +3624,7 @@ int main()
         BatchCostValidation();
         BatchReentrancyAndRetirement();
         CountValidationAndLimits(); CountDestructionAndCallbacks();
-        StackMergeBoundaries(); StackMergeGuards(); StackMergeCallbacks(); AutomaticStackMerges();
+        StackMergeBoundaries(); StackMergeGuards(); StackMergeCallbacks(); GroundStackMerges(); AutomaticStackMerges();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) {

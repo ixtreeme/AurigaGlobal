@@ -60,7 +60,10 @@ bool AutoGiveDS(entt::entity e, entt::entity item, bool longOwnerShip = false);
 entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
                              uint32_t count = 1, int rarePct = -1,
                              bool sendMessage = true, bool highlight = true);
+bool PickupItem(entt::entity character, uint32_t vid);
 bool IsValidItem(entt::entity item);
+// Atomically refresh existing proto components; nullptr clears removed prototypes.
+bool RefreshItemPrototype(entt::entity item, const TItemTable* proto);
 bool IsDragonSoulItem(entt::entity item);
 bool IsExtraItem(entt::entity item);
 bool CheckItemUseLevel(entt::entity item, int level);
@@ -128,7 +131,7 @@ bool ConsumeItem(entt::entity item, uint32_t amount = 1);
 // subsequently destroy the item. Zero writes return verified removal success.
 bool SetItemCountEcs(entt::entity item, uint32_t count);
 bool AddItemCountEcs(entt::entity item, int delta);
-enum class StackSource { Inventory, DetachedReward };
+enum class StackSource { Inventory, DetachedReward, GroundPickup };
 struct StackMergeResult {
     uint32_t transferred {0};
     bool sourceDepleted {false};

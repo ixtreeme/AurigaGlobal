@@ -1105,7 +1105,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 		//{
 		//	LPPARTY party = ecs::SocialSystem::GetParty(e);
 		//	if ((!party) || (party && ecs::PlayerRuntime::GetPlayerID(e) != party->GetLeaderPID())) {
-		//		LPITEM item = ItemSystem::FindItemByID(e, e, pElements->dwFlag);
+		//		const entt::entity item = ItemSystem::FindItemByID(e, e, pElements->dwFlag);
 		//		if (item) {
 		//			item->Lock(false);
 		//			item->SetSocket(1, 0);

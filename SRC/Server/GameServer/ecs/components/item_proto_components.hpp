@@ -8,7 +8,7 @@
 namespace ecs {
 
 // Snapshot of proto-derived item data. Populated at CreateItemEntity so
-// read accessors do not need to resolve LPITEM just to inspect proto fields.
+// read accessors inspect native components without a runtime item object.
 struct ItemProtoRef {
     uint32_t base_vnum { 0 };
     uint8_t type { 0 };

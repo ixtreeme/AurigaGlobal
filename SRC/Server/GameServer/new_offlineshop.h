@@ -268,7 +268,6 @@ namespace offlineshop
 
 		CShopItem(uint32_t dwID);
 		CShopItem(const CShopItem& rCopy);
-		CShopItem(LPITEM pItem, const TPriceInfo& sPrice, uint8_t byWindowType, uint32_t dwID=0);
 
 		~CShopItem();
 
@@ -278,7 +277,6 @@ namespace offlineshop
 		entt::entity	CreateItem() const;
 		TItemInfoEx*	GetInfo() const;
 
-		void			SetInfo(LPITEM pItem);
 		void			SetInfo(const TItemInfoEx& info);
 		void			SetPrice(const TPriceInfo& sPrice);
 
