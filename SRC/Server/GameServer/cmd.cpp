@@ -939,9 +939,9 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 			break;
 	}
 
-	if (ch->GetPosition() < cmd_info[icmd].minimum_position)
+	if (ecs::PlayerRuntime::GetPosition(character) < cmd_info[icmd].minimum_position)
 	{
-		switch (ch->GetPosition())
+		switch (ecs::PlayerRuntime::GetPosition(character))
 		{
 			case POS_MOUNTING:
 				break;
@@ -957,7 +957,7 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 				   break;
 				 */
 			default:
-				LOG_ERROR("unknown position {}", ch->GetPosition());
+				LOG_ERROR("unknown position {}", ecs::PlayerRuntime::GetPosition(character));
 				break;
 		}
 

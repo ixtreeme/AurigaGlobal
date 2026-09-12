@@ -659,9 +659,7 @@ public:
 
 	// ���� ���� ���� ����� �����Ѵ�.
 
-	void			SetPosition(int pos);
 	bool			IsPosition(int pos) const;
-	int				GetPosition() const;
 
 
 	int64_t				GetSP() const;
@@ -699,11 +697,6 @@ public:
 	void			Sitdown(int is_ground);
 	void			Standup();
 
-#ifdef ENABLE_ANCIENT_PYRAMID
-	void			SetRotation(float fRot, bool bForce = false);
-#else
-	void			SetRotation(float fRot);
-#endif
 	float			GetRotation() const;
 
 
@@ -1544,7 +1537,6 @@ private:
 public:
 
 public:
-	void GoHome();
 
 private:
 

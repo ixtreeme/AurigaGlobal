@@ -765,7 +765,7 @@ ACMD(do_console)
 ACMD(do_restart)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!(ecs::PlayerRuntime::IsPC(character)) || ch->GetPosition() != POS_DEAD)
+	if (!(ecs::PlayerRuntime::IsPC(character)) || ecs::PlayerRuntime::GetPosition(character) != POS_DEAD)
 	{
 		return;
 	}

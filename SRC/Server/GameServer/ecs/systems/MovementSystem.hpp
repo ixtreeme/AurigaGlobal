@@ -32,6 +32,7 @@ constexpr int32_t ResolveShowHeight(int32_t z, int32_t current)
 
 bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool showSpawnMotion = false);
 bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t privateMapIndex = 0);
+void GoHome(entt::entity e);
 void WarpEnd(entt::entity e);
 void StartWarpNPCEvent(entt::entity e);
 void SaveExitLocation(entt::entity e);

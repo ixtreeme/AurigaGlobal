@@ -4061,7 +4061,7 @@ void CHARACTER::Initialize()
 
     m_bCharType = CHAR_TYPE_MONSTER;
 
-    SetPosition(POS_STANDING);
+    ecs::PlayerRuntime::SetPosition(GetEntityHandle(), POS_STANDING);
 
 
     EnterIdleState(GetEntityHandle());

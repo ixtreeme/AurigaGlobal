@@ -395,8 +395,6 @@ char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__
 unsigned int CHARACTER::GetPacketVID(void)const { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetGMLevel(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetNextExp(entt::entity) { UnexpectedService(__func__); }
-void CHARACTER::SetPosition(int) { UnexpectedService(__func__); }
-int CHARACTER::GetPosition(void)const { UnexpectedService(__func__); }
 int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
 bool ecs::PointSystem::Set(entt::entity,unsigned char,int64_t) { UnexpectedService(__func__); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
@@ -414,7 +412,6 @@ void ecs::PlayerRuntime::SetExp(entt::entity,uint32_t) { UnexpectedService(__fun
 void AffectSystem::ClearAffect(entt::entity,bool) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetMonsterDrainSPPoint(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
-void CHARACTER::SetRotation(float,bool) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SetRotationToXY(entt::entity, int, int) { UnexpectedService(__func__); }
 float CHARACTER::GetRotation(void)const { UnexpectedService(__func__); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { UnexpectedService(__func__); }

@@ -842,9 +842,7 @@ void WarpEnd(entt::entity e)
     {
         LOG_ERROR("location {} {} not allowed to login this server", warp.x, warp.y);
 #ifdef ENABLE_GOHOME_IF_MAP_NOT_ALLOWED
-        // GoHome has no entity form yet; it is its own migration.
-        if (LPCHARACTER self = ecs::LegacyCharOf(e))
-            self->GoHome();
+        GoHome(e);
 #else
         if (LPDESC desc = ecs::PlayerRuntime::GetDesc(e))
             desc->SetPhase(PHASE_CLOSE);
@@ -1390,7 +1388,7 @@ void CHARACTER::Standup()
 	if (!IsPosition(POS_SITTING))
 		return;
 
-	SetPosition(POS_STANDING);
+	ecs::PlayerRuntime::SetPosition(GetEntityHandle(), POS_STANDING);
 
 	LOG_INFO("STANDUP: {}", GetName());
 
@@ -1408,7 +1406,7 @@ void CHARACTER::Sitdown(int is_ground)
 	if (IsPosition(POS_SITTING))
 		return;
 
-	SetPosition(POS_SITTING);
+	ecs::PlayerRuntime::SetPosition(GetEntityHandle(), POS_SITTING);
 	LOG_INFO("SITDOWN: {}", GetName());
 
 	pack_position.header = HEADER_GC_CHARACTER_POSITION;
@@ -1418,18 +1416,6 @@ void CHARACTER::Sitdown(int is_ground)
 }
 
 #ifdef ENABLE_ANCIENT_PYRAMID
-#ifdef ENABLE_ANCIENT_PYRAMID
-void CHARACTER::SetRotation(float fRot, bool bForce)
-{
-	ecs::MovementSystem::SetRotation(GetEntityHandle(), fRot, bForce);
-}
-#else
-void CHARACTER::SetRotation(float fRot)
-{
-	ecs::MovementSystem::SetRotation(GetEntityHandle(), fRot);
-}
-#endif
-
 namespace ecs::MovementSystem {
 
 void SetRotation(entt::entity e, float fRot, bool bForce)
@@ -1868,10 +1854,15 @@ bool CHARACTER::IsStaminaHalfConsume() const
     return IsEquipUniqueItem(UNIQUE_ITEM_HALF_STAMINA);
 }
 
-void CHARACTER::GoHome()
+namespace ecs::MovementSystem {
+
+void GoHome(entt::entity e)
 {
-    ecs::MovementSystem::WarpSet(GetEntityHandle(), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(GetEntityHandle())), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(GetEntityHandle())));
+    const uint8_t empire = ecs::PlayerRuntime::GetEmpire(e);
+    WarpSet(e, EMPIRE_START_X(empire), EMPIRE_START_Y(empire));
 }
+
+} // namespace ecs::MovementSystem
 
 namespace ecs::PlayerRuntime {
 
@@ -1942,19 +1933,9 @@ void SetPosition(entt::entity e, int pos)
 
 } // namespace ecs::PlayerRuntime
 
-void CHARACTER::SetPosition(int pos)
-{
-	ecs::PlayerRuntime::SetPosition(GetEntityHandle(), pos);
-}
-
 bool CHARACTER::IsPosition(int pos) const
 {
-	return GetPosition() == pos;
-}
-
-int CHARACTER::GetPosition() const
-{
-	return ecs::PlayerRuntime::GetPosition(GetEntityHandle());
+	return ecs::PlayerRuntime::GetPosition(GetEntityHandle()) == pos;
 }
 
 float CHARACTER::GetRotation() const

@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "questmanager.h"
 #include "sectree_manager.h"
 #include "char_interface.hpp"
@@ -23,7 +24,7 @@ namespace quest
 				{
 					if ( ((ecs::PlayerRuntime::GetX(chEntity) >= 764503 && ecs::PlayerRuntime::GetX(chEntity) <= 772362) && (ecs::PlayerRuntime::GetY(chEntity) >= 22807 && ecs::PlayerRuntime::GetY(chEntity) <= 26499)) == false )
 					{
-						ch->GoHome();
+						ecs::MovementSystem::GoHome(chEntity);
 					}
 				}
 			}
