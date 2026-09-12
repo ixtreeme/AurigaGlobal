@@ -551,12 +551,10 @@ void Take(fishing_event_info* info, entt::entity ch)
 							uint32_t dwCount, dwNotUsed;
 							if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, CATCH_FISH, &dwNotUsed, &dwCount))
 							{
-								// The battle pass still keeps its mission list on CHARACTER, so this one
-								// call crosses to the legacy object on purpose.
-								if (LPCHARACTER legacy = ecs::LegacyCharOf(ch))
+								if (ecs::PlayerRuntime::IsValid(ch))
 								{
-									if (ecs::PlayerRuntime::GetMissionProgress(legacy->GetEntityHandle(), CATCH_FISH, bBattlePassId) < dwCount)
-										ecs::PlayerRuntime::UpdateMissionProgress(legacy->GetEntityHandle(), CATCH_FISH, bBattlePassId, 1, dwCount);
+									if (ecs::PlayerRuntime::GetMissionProgress(ch, CATCH_FISH, bBattlePassId) < dwCount)
+										ecs::PlayerRuntime::UpdateMissionProgress(ch, CATCH_FISH, bBattlePassId, 1, dwCount);
 								}
 							}
 						}

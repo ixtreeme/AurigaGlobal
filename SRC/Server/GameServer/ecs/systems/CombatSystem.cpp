@@ -2767,20 +2767,14 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 #ifdef ENABLE_ACCE_SYSTEM
 	if (ecs::PlayerRuntime::IsPC(victim))
-		if (LPCHARACTER windows = ecs::LegacyCharOf(victim))
-			ecs::AcceSystem::Close(windows->GetEntityHandle());
+		ecs::AcceSystem::Close(victim);
 #endif
 
-	// The personal shop window and the safebox each close through CHARACTER
-	// still; each is its own migration, and they share one resolve here.
 	if (ecs::PlayerRuntime::IsPC(victim))
 	{
 		CShopManager::instance().StopShopping(victim);
-		if (LPCHARACTER windows = ecs::LegacyCharOf(victim))
-		{
-			ecs::SocialSystem::CloseMyShop(windows->GetEntityHandle());
-			ecs::SessionSystem::CloseSafebox(windows->GetEntityHandle());
-		}
+		ecs::SocialSystem::CloseMyShop(victim);
+		ecs::SessionSystem::CloseSafebox(victim);
 	}
 }
 

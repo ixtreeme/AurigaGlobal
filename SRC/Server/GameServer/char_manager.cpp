@@ -377,8 +377,7 @@ void CHARACTER_MANAGER::GracefulShutdown()
 	// Disconnect still owns the legacy session teardown. Keep only handles
 	// across callbacks: disconnecting one player can remove another.
 	for (const entt::entity character : CPIDRegistry::Instance().Snapshot())
-		if (auto* ch = ecs::LegacyCharOf(character))
-			ecs::SessionSystem::Disconnect(ch->GetEntityHandle(), "GracefulShutdown");
+		ecs::SessionSystem::Disconnect(character, "GracefulShutdown");
 }
 
 uint32_t CHARACTER_MANAGER::AllocVID()
@@ -1239,8 +1238,8 @@ bool CHARACTER_MANAGER::FlushDelayedSave(entt::entity character)
 	if (m_set_pkChrForDelayedSave.erase(character) == 0)
 		return false;
 
-	if (LPCHARACTER ch = ecs::LegacyCharOf(character))
-		ecs::SessionSystem::SaveReal(ch->GetEntityHandle());
+	if (ecs::PlayerRuntime::IsValid(character))
+		ecs::SessionSystem::SaveReal(character);
 	return true;
 }
 

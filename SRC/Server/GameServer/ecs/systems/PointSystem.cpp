@@ -798,7 +798,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			Set(e, POINT_LEVEL_STEP, val);
 			SetReal(e, POINT_LEVEL_STEP, val);
 
-			if (auto* character = ecs::LegacyCharOf(e)) ecs::SessionSystem::Save(character->GetEntityHandle());
+			ecs::SessionSystem::Save(e);
 		}
 		else
 			val = Get(e, POINT_LEVEL_STEP);

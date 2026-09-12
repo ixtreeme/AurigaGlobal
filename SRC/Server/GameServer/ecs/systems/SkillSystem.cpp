@@ -225,9 +225,7 @@ bool SkillLevelDown(entt::entity e, uint32_t dwVnum)
 
 	LOG_INFO("SkillDown: {} {} {} {} type {}", ecs::PlayerRuntime::GetName(e).data(), pkSk->dwVnum, GetSkillMasterType(e, pkSk->dwVnum),
 		GetSkillLevel(e, pkSk->dwVnum), pkSk->dwType);
-	// The character save is still CHARACTER work; one resolve, named.
-	if (LPCHARACTER self = ecs::LegacyCharOf(e))
-		ecs::SessionSystem::Save(self->GetEntityHandle());
+	ecs::SessionSystem::Save(e);
 
 	ecs::PointSystem::Compute(e);
 	SendSkillLevelPacket(e);
