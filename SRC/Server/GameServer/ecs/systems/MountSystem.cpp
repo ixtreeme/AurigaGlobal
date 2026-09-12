@@ -409,7 +409,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 
 		if ( pHorseName != nullptr && strlen(pHorseName) != 0 )
 		{
-			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(pHorseName);
+			ecs::PlayerRuntime::SetName(GetSummonedHorse(rider), pHorseName);
 		}
 		else
 		{
@@ -418,11 +418,9 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 				bLang = ecs::PlayerRuntime::GetDesc(rider)->GetLanguage();
 			}
 
-			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(std::string(ecs::PlayerRuntime::GetName(rider)));
-			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(
-				std::string(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetName()) + " ");
-			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(
-				std::string(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetName()) + m_horseText[bLang]);
+			// Three SetName calls built this one name a piece at a time.
+			ecs::PlayerRuntime::SetName(GetSummonedHorse(rider),
+				std::string(ecs::PlayerRuntime::GetName(rider)) + " " + m_horseText[bLang]);
 		}
 
 		if (!ecs::MovementSystem::Show(GetSummonedHorse(rider), ecs::PlayerRuntime::GetMapIndex(rider), x, y, ecs::PlayerRuntime::GetZ(rider)))

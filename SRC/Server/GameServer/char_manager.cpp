@@ -395,7 +395,7 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 #else
 	auto ch = new CHARACTER;
 #endif
-	ch->Create(name, dwVID, dwPID ? true : false);
+	ch->Create(dwVID);
 
 	if (EntityFactory::EnsureLegacyCharacterEntity(g_registry, ch, dwVID) == entt::null) {
 		--m_iVIDCount;
@@ -406,6 +406,10 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 #endif
 		return nullptr;
 	}
+
+	// CHARACTER::Create held the name in m_stName because the entity did not
+	// exist yet; it does now, one line up.
+	ecs::PlayerRuntime::SetName(ch->GetEntityHandle(), name ? name : "");
 
 #ifdef ENABLE_BUG_FIXES
 	if (dwVID != ch->GetLegacyVID()) {

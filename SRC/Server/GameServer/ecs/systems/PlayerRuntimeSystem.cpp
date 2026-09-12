@@ -461,6 +461,16 @@ std::string_view GetName(entt::entity e)
 	return {};
 }
 
+// What CHARACTER::SetName wrote to m_stName. The component is what the
+// appear packet sends, so a name set here is the name clients see.
+void SetName(entt::entity e, std::string_view name)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	g_registry.emplace_or_replace<ecs::PlayerName>(e, std::string(name));
+}
+
 std::string_view GetPendingName(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -4214,7 +4224,6 @@ void CHARACTER::Initialize()
 
 
 #endif
-    m_stName = "";
 
 
 #ifdef __HIDE_COSTUME_SYSTEM__
@@ -4274,11 +4283,9 @@ uint32_t CHARACTER::GetPacketVID() const
     return GetLegacyVID();
 }
 
-void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
+void CHARACTER::Create(uint32_t vid)
 {
     m_dwLegacyVID = vid;
-    if (isPC)
-        m_stName = c_pszName;
 }
 
 

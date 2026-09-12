@@ -331,6 +331,9 @@ void ecs::PointSystem::ApplyPoint(entt::entity, uint8_t, int32_t) { Unexpected()
 void ecs::PointSystem::Compute(entt::entity) { Unexpected(); }
 namespace ecs::PlayerRuntime {
 LPDESC GetDesc(entt::entity) { return nullptr; }
+void SetName(entt::entity e, std::string_view name) {
+    if (IsValid(e)) g_registry.emplace_or_replace<ecs::PlayerName>(e, std::string(name));
+}
 uint32_t GetDragonCoin(entt::entity) { Unexpected(); }
 int GetProtectTime(entt::entity, std::string_view) { Unexpected(); }
 void SetEmpire(entt::entity, uint8_t) { Unexpected(); }
@@ -396,7 +399,7 @@ CHARACTER::~CHARACTER() {
     EntityFactory::Destroy(g_registry, GetEntityHandle()); ++frees;
 }
 void ecs::SessionSystem::Disconnect(entt::entity, const char*) { Unexpected(); }
-void CHARACTER::Create(const char*, uint32_t, bool) { Unexpected(); }
+void CHARACTER::Create(uint32_t) { Unexpected(); }
 void CHARACTER::SetProto(const CMob*) { Unexpected(); }
 uint32_t CHARACTER::GetLegacyVID() const { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }

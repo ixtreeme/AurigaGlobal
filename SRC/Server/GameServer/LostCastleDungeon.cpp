@@ -775,7 +775,6 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             //clone->SetCharType(CHAR_TYPE_PC);
         //    clone->SetFakePlayer(true);
-            clone->SetName(std::string(evilName));
 
             // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
             ecs::PlayerRuntime::SetRace(cloneEntity, (uint8_t)ecs::PlayerRuntime::GetRaceNum(sourceEntity));
@@ -1333,7 +1332,6 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
 
        // clone->SetCharType(CHAR_TYPE_PC);
       //  clone->SetFakePlayer(true);
-        clone->SetName(std::string(cloneName));
 
         ecs::PlayerRuntime::SetRace(cloneEntity, (uint8_t)ecs::PlayerRuntime::GetRaceNum(source));
         ecs::PlayerRuntime::SetEmpire(cloneEntity, ecs::PlayerRuntime::GetEmpire(source));

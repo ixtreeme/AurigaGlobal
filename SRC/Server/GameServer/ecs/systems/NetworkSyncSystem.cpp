@@ -1142,36 +1142,26 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 #ifdef ENABLE_MULTI_LANGUAGE
 const char* CHARACTER::GetName(uint8_t lang) const
 {
-    if (ecs::PlayerRuntime::IsMount(GetEntityHandle())
-#ifdef __PET_SYSTEM__
-        || ecs::PlayerRuntime::IsPet(GetEntityHandle())
-#endif
-#ifdef __NEWPET_SYSTEM__
-        || ecs::PlayerRuntime::IsNewPet(GetEntityHandle())
-#endif
-    )
-    {
-        const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
-        return name.empty() ? "" : name.data();
-    }
-    return m_stName.empty() ? (m_pkMobData ? m_pkMobData->m_table.szLocaleName[lang] : "") : m_stName.c_str();
+    // The PlayerName component is the name. The spawn puts the proto name
+    // there, so the table below answers only for a character whose entity
+    // has no name at all.
+    const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
+    if (!name.empty())
+        return name.data();
+
+    return m_pkMobData ? m_pkMobData->m_table.szLocaleName[lang] : "";
 }
 #else
 const char* CHARACTER::GetName() const
 {
-    if (ecs::PlayerRuntime::IsMount(GetEntityHandle())
-#ifdef __PET_SYSTEM__
-        || ecs::PlayerRuntime::IsPet(GetEntityHandle())
-#endif
-#ifdef __NEWPET_SYSTEM__
-        || ecs::PlayerRuntime::IsNewPet(GetEntityHandle())
-#endif
-    )
-    {
-        const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
-        return name.empty() ? "" : name.data();
-    }
-    return m_stName.empty() ? (m_pkMobData ? m_pkMobData->m_table.szLocaleName : "") : m_stName.c_str();
+    // The PlayerName component is the name. The spawn puts the proto name
+    // there, so the table below answers only for a character whose entity
+    // has no name at all.
+    const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
+    if (!name.empty())
+        return name.data();
+
+    return m_pkMobData ? m_pkMobData->m_table.szLocaleName : "";
 }
 #endif
 

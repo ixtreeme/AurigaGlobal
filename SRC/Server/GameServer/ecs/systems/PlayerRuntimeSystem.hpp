@@ -83,6 +83,7 @@ bool SetRace(entt::entity e, uint8_t race);
 bool SetCostumeHidden(entt::entity e, uint8_t part, bool hidden, bool skipPersistence = false);
 bool IsCostumeHidden(entt::entity e, uint8_t part);
 std::string_view GetName(entt::entity e);
+void SetName(entt::entity e, std::string_view name);
 std::string_view GetPendingName(entt::entity e);
 void SetPendingName(entt::entity e, std::string_view name);
 int RequestNameChange(entt::entity e, std::string_view name);

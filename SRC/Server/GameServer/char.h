@@ -599,7 +599,7 @@ public:
 	CHARACTER();
 	~CHARACTER() override;
 
-	void			Create(const char* c_pszName, uint32_t vid, bool isPC);
+	void			Create(uint32_t vid);
 	void			Destroy();
 
 
@@ -649,8 +649,6 @@ public:
 	// char.h (public)
 
 	void			SetCharType(uint8_t bType) { m_bCharType = bType; }
-	//void SetName(const char* name) { m_stName = (name ? name : ""); }
-	void			SetName(const std::string& name) { m_stName = name; }
 
 	bool			ChangeSex();
 
@@ -750,7 +748,6 @@ public:
 protected:
 	bool			m_bPolyMaintainStat;
 	uint32_t			m_dwPlayerID;
-	std::string		m_stName;
 	uint8_t			m_bCharType;
 #ifdef ENABLE_EVENT_MANAGER
 #endif
