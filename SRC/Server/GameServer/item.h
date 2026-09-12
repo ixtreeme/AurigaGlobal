@@ -235,18 +235,6 @@ class CItem : public CEntity
 		bool	IsExtraItem();
 		uint8_t	GetExtraCategory();
 #endif
-#ifdef ENABLE_RUNE_SYSTEM
-	public:
-		bool	IsRune();
-		int32_t	GetRuneAttrType(int c);
-		int32_t	GetRuneAttrValue(int c, int32_t lTime);
-		void	ChangeRuneAttr(int32_t lTime);
-		void	ActivateRuneBonus();
-		void	DeactivateRuneBonus();
-		void	DeactivateRuneBonusRefresh();
-		void	ActivateRune();
-		void	DeactivateRune();
-#endif
 };
 
 EVENTINFO(item_event_info)

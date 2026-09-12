@@ -4,6 +4,8 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
+#include "AffectSystem.hpp"
+#include "ChatSystem.hpp"
 #include "../Registry.hpp"
 #include "../components/inventory_components.hpp"
 #include "../components/item_proto_components.hpp"
@@ -59,6 +61,303 @@ bool InitializeRuneItem(entt::entity item)
             g_registry.get<ecs::ItemAttributes>(item).attrs[index] = {static_cast<uint8_t>(type), static_cast<int16_t>(value)};
     }
     return true;
+}
+
+namespace {
+void LogAttribute(entt::entity item, int index, const TPlayerItemAttribute& attr, const char* action);
+
+bool HasRuneState(entt::entity item)
+{
+    return IsRuneItem(item) && GetItemProto(item) &&
+        g_registry.all_of<ecs::ItemSockets, ecs::ItemAttributes>(item) && GetItemSocket(item, 1) <= 1;
+}
+
+struct RuneContext {
+    entt::entity item, owner;
+    uint8_t subtype;
+    bool worn;
+    explicit RuneContext(entt::entity e, bool requireWear = true)
+        : item(e), owner(GetItemOwner(e)), subtype(GetItemSubType(e)), worn(requireWear) {}
+
+    bool Valid() const
+    {
+        if (!HasRuneState(item) || GetItemSubType(item) != subtype || GetItemOwner(item) != owner)
+            return false;
+        if (owner != entt::null && !g_registry.valid(owner)) return false;
+        return !worn || (owner != entt::null && IsItemEquipped(item) &&
+            GetWearItem(owner, WEAR_RUNE1 + subtype - RUNE_SLOT1) == item);
+    }
+};
+
+// Shared by all seven slots. No component pointer is kept across services.
+struct RuneOperations { std::vector<entt::entity> busy; };
+class RuneOperation {
+    std::array<entt::entity, 2> keys;
+    bool entered = false;
+public:
+    explicit RuneOperation(const RuneContext& context) : keys{context.item, context.owner}
+    {
+        if (!context.Valid()) return;
+        auto* state = g_registry.ctx().find<RuneOperations>();
+        if (!state) state = &g_registry.ctx().emplace<RuneOperations>();
+        for (const auto key : keys)
+            if (key != entt::null && std::find(state->busy.begin(), state->busy.end(), key) != state->busy.end())
+                return;
+        state->busy.reserve(state->busy.size() + keys.size());
+        for (const auto key : keys) if (key != entt::null) state->busy.push_back(key);
+        entered = true;
+    }
+    RuneOperation(const RuneOperation&) = delete;
+    RuneOperation& operator=(const RuneOperation&) = delete;
+    ~RuneOperation()
+    {
+        if (entered)
+            if (auto* state = g_registry.ctx().find<RuneOperations>())
+                for (const auto key : keys) std::erase(state->busy, key);
+    }
+    explicit operator bool() const { return entered; }
+};
+
+bool PublishRune(const RuneContext& context)
+{
+    if (!context.Valid()) return false;
+    SaveItem(context.item);
+    if (!context.Valid()) return false;
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, context.item);
+    return context.Valid();
+}
+
+bool RuneMessage(const RuneContext& context, uint32_t message)
+{
+    if (!context.Valid()) return false;
+#ifdef TEXTS_IMPROVEMENT
+    if (context.owner != entt::null) {
+        const std::string name = GetItemName(context.item, 0);
+        ecs::ChatSystem::SendNew(context.owner, CHAT_TYPE_INFO, message, "%s", name.c_str());
+    }
+#endif
+    return context.Valid();
+}
+
+bool SetRuneAffect(const RuneContext& context, uint32_t type, bool enabled)
+{
+    if (!context.Valid() || context.owner == entt::null) return false;
+    const bool present = AffectSystem::FindAffect(context.owner, type) != nullptr;
+    if (enabled && !present) {
+        if (!AffectSystem::AddAffect(context.owner, type, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false))
+            return false;
+    } else if (!enabled && present) {
+        AffectSystem::RemoveAffect(context.owner, type);
+    }
+    return context.Valid();
+}
+
+bool SetRuneActive(const RuneContext& context, bool active)
+{
+    if (!context.Valid()) return false;
+    if (GetItemSocket(context.item, 1) == static_cast<uint32_t>(active)) return true;
+    // Commit before point/packet callbacks: repeat calls cannot apply twice and
+    // unequip sees the new active state. Generic point calculation stays shared.
+    g_registry.get<ecs::ItemSockets>(context.item).sockets[1] = active;
+    ModifyPoints(context.item, active);
+    return context.Valid() && GetItemSocket(context.item, 1) == static_cast<uint32_t>(active) &&
+        PublishRune(context);
+}
+
+entt::entity BonusRune(const RuneContext& source)
+{
+    if (!source.Valid() || source.owner == entt::null) return entt::null;
+    const auto item = GetWearItem(source.owner, WEAR_RUNE7);
+    const RuneContext bonus(item);
+    return bonus.Valid() && bonus.owner == source.owner && bonus.subtype == RUNE_SLOT7 ? item : entt::null;
+}
+
+bool CanActivateRuneBonus(entt::entity owner)
+{
+    for (int index = 0; index < RUNE_SUBTYPES - 1; ++index) {
+        const auto item = GetWearItem(owner, WEAR_RUNE1 + index);
+        const RuneContext context(item);
+        if (!context.Valid() || context.owner != owner || context.subtype != RUNE_SLOT1 + index ||
+            GetItemSocket(item, 1) != 1) return false;
+        const int step = GetItemValue(item, 0) / 100;
+        const int remaining = g_registry.get<ecs::ItemSockets>(item).sockets[0];
+        if (step <= 0 || remaining / step < 50) return false;
+    }
+    return true;
+}
+
+bool ActivateRuneBonusImpl(const RuneContext& source)
+{
+    const auto item = BonusRune(source);
+    if (item == entt::null) return source.Valid(); // A bonus rune is optional.
+    const RuneContext bonus(item);
+    if (GetItemSocket(item, 1) == 1) return true;
+    if (!CanActivateRuneBonus(source.owner))
+        return SetRuneAffect(bonus, AFFECT_RUNE2, false) && source.Valid() &&
+            SetRuneAffect(bonus, AFFECT_RUNE1, true) && source.Valid();
+    if (!SetRuneAffect(bonus, AFFECT_RUNE1, false) || !source.Valid() ||
+        !CanActivateRuneBonus(source.owner)) return false;
+    if (!SetRuneAffect(bonus, AFFECT_RUNE2, true) || !source.Valid()) return false;
+    // Affect publication can change another slot. Never activate from a stale snapshot.
+    if (!CanActivateRuneBonus(source.owner)) {
+        SetRuneAffect(bonus, AFFECT_RUNE2, false);
+        return false;
+    }
+    return SetRuneActive(bonus, true) && source.Valid() && RuneMessage(bonus, 31) && source.Valid();
+}
+
+bool DeactivateRuneBonusImpl(const RuneContext& source)
+{
+    const auto item = BonusRune(source);
+    if (item == entt::null) return source.Valid();
+    const RuneContext bonus(item);
+    if (GetItemSocket(item, 1) != 1) return true;
+    return SetRuneAffect(bonus, AFFECT_RUNE2, false) && source.Valid() &&
+        SetRuneActive(bonus, false) && source.Valid() && RuneMessage(bonus, 901) && source.Valid();
+}
+
+bool RefreshRuneAffect(const RuneContext& source)
+{
+    if (!source.Valid()) return false;
+    bool enabled = false;
+    for (int index = 0; index < RUNE_SUBTYPES - 1; ++index) {
+        const auto item = GetWearItem(source.owner, WEAR_RUNE1 + index);
+        // Preserve the old visual-affect rule: missing slots also keep RUNE1.
+        if (!HasRuneState(item) || GetItemSocket(item, 1) != 0) { enabled = true; break; }
+    }
+    return SetRuneAffect(source, AFFECT_RUNE1, enabled);
+}
+} // namespace
+
+bool ActivateRune(entt::entity item)
+{
+    const RuneContext context(item);
+    RuneOperation operation(context);
+    if (!operation || context.subtype == RUNE_SLOT7 || GetItemValue(item, 0) < 100) return false;
+    if (g_registry.get<ecs::ItemSockets>(item).sockets[0] <= 0) {
+        RuneMessage(context, 30);
+        return false;
+    }
+    // Exhaustion stops the wear event. Charging an equipped rune must be able
+    // to restart it before points are applied; allocation failure stays inactive.
+    if (!StartTimerBasedOnWearExpireEventEcs(item) || !context.Valid()) return false;
+    if (GetItemSocket(item, 1) == 1) return true;
+    return SetRuneActive(context, true) && RuneMessage(context, 31) && ActivateRuneBonusImpl(context);
+}
+
+namespace {
+bool DeactivateRuneImpl(const RuneContext& context)
+{
+    const auto item = context.item;
+    if (!context.Valid()) return false;
+    if (GetItemSocket(item, 1) == 0) return true;
+    if (!DeactivateRuneBonusImpl(context)) return false;
+    // The bonus itself was already disabled above; SetRuneActive is idempotent.
+    return SetRuneActive(context, false) && RefreshRuneAffect(context) && RuneMessage(context, 32);
+}
+} // namespace
+
+bool DeactivateRune(entt::entity item)
+{
+    const RuneContext context(item);
+    RuneOperation operation(context);
+    return operation && DeactivateRuneImpl(context);
+}
+
+bool ActivateRuneBonus(entt::entity item)
+{
+    const RuneContext context(item);
+    RuneOperation operation(context);
+    return operation && ActivateRuneBonusImpl(context);
+}
+
+bool DeactivateRuneBonus(entt::entity item)
+{
+    const RuneContext context(item);
+    RuneOperation operation(context);
+    return operation && DeactivateRuneBonusImpl(context);
+}
+
+namespace {
+bool ChangeRuneAttributesImpl(const RuneContext& context, int32_t time)
+{
+    const auto item = context.item;
+    if (!HasRuneState(item) || time < 0 || GetItemValue(item, 0) < 100) return false;
+    const bool active = GetItemSocket(item, 1) == 1;
+    if (!context.Valid()) return false;
+    const auto old = g_registry.get<ecs::ItemAttributes>(item).attrs;
+    auto next = old;
+    bool changed = false;
+    for (int index = 0; index < RUNE_ATTR_EACH; ++index) {
+        const auto value = GetRuneAttributeValue(item, index, time);
+        if (value < 0 || value > INT16_MAX) return false;
+        next[index].sValue = static_cast<int16_t>(value);
+        changed |= next[index].sValue != old[index].sValue;
+    }
+    if (!changed) return true;
+    if (active) {
+        g_registry.get<ecs::ItemSockets>(item).sockets[1] = 0;
+        ModifyPoints(item, false);
+        if (!context.Valid() || GetItemSocket(item, 1) != 0) return false;
+        // Do not overwrite attributes changed by another callback.
+        const auto current = g_registry.get<ecs::ItemAttributes>(item).attrs;
+        for (int index = 0; index < ITEM_ATTRIBUTE_MAX_NUM; ++index)
+            if (current[index].bType != old[index].bType || current[index].sValue != old[index].sValue) {
+                PublishRune(context); // Persist the safely disabled state, not the stale snapshot.
+                return false;
+            }
+    }
+    g_registry.get<ecs::ItemAttributes>(item).attrs = next;
+    if (active) {
+        g_registry.get<ecs::ItemSockets>(item).sockets[1] = 1;
+        ModifyPoints(item, true);
+        if (!context.Valid() || GetItemSocket(item, 1) != 1) return false;
+    }
+    if (!PublishRune(context)) return false;
+    for (int index = 0; index < RUNE_ATTR_EACH; ++index) {
+        if (next[index].bType != 0 && next[index].sValue != old[index].sValue)
+            LogAttribute(item, index, next[index], "SET_FORCE_ATTR");
+        if (!context.Valid()) return false;
+    }
+    return true;
+}
+} // namespace
+
+bool ChangeRuneAttributes(entt::entity item, int32_t time)
+{
+    const RuneContext context(item, GetItemSocket(item, 1) == 1);
+    RuneOperation operation(context);
+    return operation && ChangeRuneAttributesImpl(context, time);
+}
+
+int UpdateRuneWearTime(entt::entity item, int32_t elapsedSeconds)
+{
+    const RuneContext context(item);
+    RuneOperation operation(context);
+    if (!operation || elapsedSeconds < 0) return 0;
+    const int current = g_registry.get<ecs::ItemSockets>(item).sockets[0];
+    const int remaining = static_cast<int>(std::max<int64_t>(0, static_cast<int64_t>(current) - elapsedSeconds));
+    if (remaining == 0) {
+        g_registry.get<ecs::ItemSockets>(item).sockets[0] = 0;
+        DeactivateRuneImpl(context);
+        if (context.Valid()) PublishRune(context);
+        return 0;
+    }
+    const int step = GetItemValue(item, 0) / 100;
+    if (step <= 0) {
+        DeactivateRuneImpl(context);
+        return 0;
+    }
+    if (remaining / step < 50) {
+        if (!DeactivateRuneBonusImpl(context) || !context.Valid()) return 0;
+    }
+    // Inactive runes and the seventh (bonus-only) rune retain their charge.
+    if (context.subtype == RUNE_SLOT7 || GetItemSocket(item, 1) != 1)
+        return std::min(60, remaining);
+    g_registry.get<ecs::ItemSockets>(item).sockets[0] = remaining;
+    if (!ChangeRuneAttributesImpl(context, remaining) || !context.Valid()) return 0;
+    if (!PublishRune(context)) return 0;
+    return std::min(60, remaining);
 }
 #endif
 namespace {

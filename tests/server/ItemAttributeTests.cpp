@@ -5,6 +5,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/new_switchbot.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_proto_components.hpp"
@@ -52,6 +53,14 @@ bool rejectGoldPayment = false;
 bool transferTest = false;
 bool soulStateTest = false;
 bool countStateTest = false;
+bool runeTest = false;
+std::map<entt::entity, std::array<int, RUNE_ATTR_EACH>> runePoints;
+std::vector<std::pair<entt::entity, bool>> runePointCalls;
+std::map<std::pair<entt::entity, uint32_t>, CAffect> runeAffects;
+std::vector<uint32_t> runeMessages;
+std::function<void(entt::entity, bool)> onRunePoints;
+std::function<void(entt::entity)> onRuneAffect, onRuneChat;
+bool rejectRuneAffect = false;
 int stackCategoryLookups = 0;
 int soulAdds = 0, soulRemoves = 0, soulStarts = 0, soulStops = 0, soulLogs = 0, deckStops = 0;
 bool rejectSoulPoints = false, rejectSoulTimer = false;
@@ -135,7 +144,13 @@ void intrusive_ptr_release(EVENT*) { UnexpectedSwitchbotService(); }
 LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { UnexpectedSwitchbotService(); }
 void event_cancel(LPEVENT*) { UnexpectedSwitchbotService(); }
 #ifdef TEXTS_IMPROVEMENT
-void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) { if (!transferTest && !extractionTest) UnexpectedSwitchbotService(); }
+void ecs::ChatSystem::SendNew(entt::entity owner, uint8_t, uint32_t message, const char*, ...) {
+    if (runeTest) {
+        Check(ecs::PlayerRuntime::IsPC(owner), "rune message used a stale owner");
+        runeMessages.push_back(message);
+        if (onRuneChat) onRuneChat(owner);
+    } else if (!transferTest && !extractionTest) UnexpectedSwitchbotService();
+}
 #endif
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { if (!transferTest && !extractionTest) UnexpectedSwitchbotService(); return 42; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { UnexpectedSwitchbotService(); }
@@ -161,8 +176,12 @@ entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t) { UnexpectedSwitchbotS
 void P2P_MANAGER::Send(const void*, int, LPDESC) { UnexpectedSwitchbotService(); }
 entt::entity ItemSystem::FindItemByID(uint32_t) { UnexpectedSwitchbotService(); }
 const char* ItemSystem::GetItemName(entt::entity item) {
-    Check(extractionTest && ItemSystem::IsValidItem(item), "stale extraction item name");
+    Check((extractionTest || runeTest) && ItemSystem::IsValidItem(item), "stale item name");
     return "dragon-soul-test";
+}
+const char* ItemSystem::GetItemName(entt::entity item, uint8_t) {
+    Check(runeTest && ItemSystem::IsValidItem(item), "stale localized rune name");
+    return "rune-test";
 }
 uint8_t ItemSystem::GetItemSize(entt::entity item) {
     Check(extractionTest && ItemSystem::IsValidItem(item), "stale extraction item size");
@@ -221,7 +240,7 @@ bool DragonSoulTable::GetDragonSoulExtValues(uint8_t, uint8_t, float& probabilit
 }
 void LogManager::ItemLogEntity(LPCHARACTER, entt::entity, const char*, const char*) { UnexpectedSwitchbotService(); }
 entt::entity ItemSystem::GetWearItem(entt::entity owner, uint8_t wear) {
-    if (!extractionTest) UnexpectedSwitchbotService();
+    if (!extractionTest && !runeTest) UnexpectedSwitchbotService();
     return ItemSystem::GetItem(owner, TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wear));
 }
 void ItemSystem::AutoGiveItem(entt::entity owner, entt::entity item, bool
@@ -323,7 +342,7 @@ bool ItemSystem::ModifyItemPointsEcs(entt::entity item, bool add) {
     return true;
 }
 bool ItemSystem::StartTimerBasedOnWearExpireEventEcs(entt::entity item) {
-    Check(soulStateTest && IsValidItem(item), "invalid soul timer start");
+    Check((soulStateTest || runeTest) && IsValidItem(item), "invalid item timer start");
     if (rejectSoulTimer) return false;
     ++soulStarts; soulTimers.insert(item);
     if (onSoulStart) onSoulStart(item);
@@ -429,9 +448,48 @@ void ecs::PointSystem::Change(entt::entity e, uint8_t type, int64_t amount, bool
 }
 void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity item)
 {
+    if (runeTest) Check(ItemSystem::IsValidItem(item), "rune update used a stale entity");
     if (!transferTest || item == watchedItem) ++updates;
     else publishedCounts.push_back(item);
     if (onUpdate) onUpdate(item);
+}
+
+void ItemSystem::ModifyPoints(entt::entity item, bool add)
+{
+    Check(runeTest && ItemSystem::IsRuneItem(item) &&
+        ecs::PlayerRuntime::IsPC(ItemSystem::GetItemOwner(item)), "rune points used a stale item/owner");
+    const auto attrs = g_registry.get<ecs::ItemAttributes>(item).attrs;
+    for (int index = 0; index < RUNE_ATTR_EACH; ++index)
+        runePoints[item][index] += (add ? 1 : -1) * attrs[index].sValue;
+    runePointCalls.emplace_back(item, add);
+    if (onRunePoints) onRunePoints(item, add);
+}
+
+namespace AffectSystem {
+CAffect* FindAffect(entt::entity owner, uint32_t type, uint8_t)
+{
+    Check(runeTest && ecs::PlayerRuntime::IsPC(owner), "rune affect lookup used a stale owner");
+    const auto found = runeAffects.find({owner, type});
+    return found == runeAffects.end() ? nullptr : &found->second;
+}
+bool AddAffect(entt::entity owner, uint32_t type, uint8_t apply, int32_t value,
+    uint32_t flag, int32_t duration, int32_t cost, bool overwrite, bool)
+{
+    Check(runeTest && ecs::PlayerRuntime::IsPC(owner), "rune affect add used a stale owner");
+    Check(apply == APPLY_NONE && value == 0 && flag == 0 && duration == INFINITE_AFFECT_DURATION &&
+        cost == 0 && !overwrite, "rune visual affect parameters changed");
+    if (rejectRuneAffect) return false;
+    runeAffects[{owner, type}] = {};
+    if (onRuneAffect) onRuneAffect(owner);
+    return true;
+}
+bool RemoveAffect(entt::entity owner, uint32_t type)
+{
+    Check(runeTest && ecs::PlayerRuntime::IsPC(owner), "rune affect remove used a stale owner");
+    const bool removed = runeAffects.erase({owner, type}) != 0;
+    if (onRuneAffect) onRuneAffect(owner);
+    return removed;
+}
 }
 
 namespace ItemSystem {
@@ -522,6 +580,7 @@ TItemExtraProto* GetItemExtraProto(entt::entity item)
 }
 void SaveItem(entt::entity item)
 {
+    if (runeTest) Check(IsValidItem(item), "rune save used a stale entity");
     if (!transferTest || item == watchedItem) ++saves;
     if (onSave) onSave(item);
 }
@@ -552,7 +611,9 @@ struct Fixture {
         floatRandomCalls = 0;
         payments = 0;
         rejectPayment = rejectGoldPayment = false;
-        transferTest = extractionTest = soulStateTest = countStateTest = false;
+        transferTest = extractionTest = soulStateTest = countStateTest = runeTest = false;
+        runePoints.clear(); runePointCalls.clear(); runeAffects.clear(); runeMessages.clear();
+        onRunePoints = {}; onRuneAffect = onRuneChat = {}; rejectRuneAffect = false;
         g_bItemCountLimit = 200;
         stackCategoryLookups = 0;
         onSoulPoints = {}; onSoulStart = onSoulStop = {};
@@ -2876,6 +2937,216 @@ void SwitchbotTransactions()
 #endif
 }
 
+struct RuneFixture : Fixture {
+    entt::entity owner;
+    std::array<TItemTable, RUNE_SUBTYPES> protos {};
+    std::array<entt::entity, RUNE_SUBTYPES> runes {};
+    RuneFixture()
+    {
+        runeTest = true;
+        rejectSoulTimer = false; soulStarts = 0; soulTimers.clear();
+        owner = g_registry.create();
+        g_registry.emplace<TestPlayer>(owner);
+        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner), "rune owner required CHARACTER");
+        for (int index = 0; index < RUNE_SUBTYPES; ++index) {
+            auto& table = protos[index];
+            table.bType = ITEM_COSTUME; table.bSubType = RUNE_SLOT1 + index; table.alValues[0] = 10000;
+            const auto rune = runes[index] = g_registry.create();
+            g_registry.emplace<ecs::ItemIdentity>(rune).id = 100 + index;
+            g_registry.emplace<ecs::ItemProtoRef>(rune).proto = &table;
+            g_registry.emplace<ecs::ItemAttributes>(rune);
+            g_registry.emplace<ecs::ItemSockets>(rune).sockets[0] = 10000;
+            g_registry.emplace<ecs::ItemOwner>(rune).owner = owner;
+            g_registry.emplace<ecs::ItemEquipped>(rune).equipped = true;
+            inventory[{owner, EQUIPMENT, INVENTORY_MAX_NUM + WEAR_RUNE1 + index}] = rune;
+            Check(ItemSystem::InitializeRuneItem(rune), "rune fixture initialization failed");
+            Check(!g_registry.any_of<ecs::LegacyItemPtr>(rune), "rune fixture required CItem");
+        }
+    }
+    auto& Sockets(int index) { return g_registry.get<ecs::ItemSockets>(runes[index]).sockets; }
+    auto& Attributes(int index) { return g_registry.get<ecs::ItemAttributes>(runes[index]).attrs; }
+    bool Affect(uint32_t type) { return runeAffects.contains({owner, type}); }
+    void ActivateAll()
+    {
+        for (int index = 0; index < RUNE_SUBTYPES - 1; ++index)
+            Check(ItemSystem::ActivateRune(runes[index]), "rune activation failed");
+        Check(Sockets(6)[1] == 1 && Affect(AFFECT_RUNE2) && !Affect(AFFECT_RUNE1), "complete rune set did not activate bonus");
+    }
+};
+
+void RuneRuntimeTransitions()
+{
+    {
+        RuneFixture f;
+        Check(!ItemSystem::ActivateRune(f.runes[6]), "seventh rune activated without the set");
+        Check(ItemSystem::ActivateRune(f.runes[0]) && f.Sockets(0)[1] == 1 && f.Affect(AFFECT_RUNE1),
+            "single rune did not activate");
+        const auto points = runePoints[f.runes[0]];
+        const auto calls = runePointCalls.size();
+        Check(ItemSystem::ActivateRune(f.runes[0]) && runePointCalls.size() == calls,
+            "repeat activation applied points twice");
+        Check(points[0] == f.Attributes(0)[0].sValue && points[1] == f.Attributes(0)[1].sValue,
+            "activation lost a rune attribute");
+        f.ActivateAll();
+        Check(ItemSystem::DeactivateRune(f.runes[2]) && f.Sockets(2)[1] == 0 && f.Sockets(6)[1] == 0 &&
+            !f.Affect(AFFECT_RUNE2) && f.Affect(AFFECT_RUNE1), "deactivation left the set bonus active");
+        Check(runePoints[f.runes[2]][0] == 0 && runePoints[f.runes[6]][0] == 0, "deactivation did not balance points");
+        for (int index = 0; index < 6; ++index) Check(ItemSystem::DeactivateRune(f.runes[index]), "bulk deactivation failed");
+        Check(!f.Affect(AFFECT_RUNE1), "all inactive runes retained the visual affect");
+        const auto after = runePointCalls.size();
+        Check(ItemSystem::DeactivateRune(f.runes[0]) && runePointCalls.size() == after, "repeat deactivation removed points twice");
+    }
+    for (int remaining : {4999, 5000}) {
+        RuneFixture f;
+        f.Sockets(0)[0] = remaining;
+        for (int index = 0; index < 6; ++index) ItemSystem::ActivateRune(f.runes[index]);
+        Check((f.Sockets(6)[1] == 1) == (remaining >= 5000), "50-percent bonus boundary changed");
+    }
+    for (int duration : {INT_MIN, -100, 0, 1, 99}) {
+        RuneFixture f;
+        f.protos[0].alValues[0] = duration;
+        Check(!ItemSystem::ActivateRune(f.runes[0]), "invalid duration activated a rune");
+        for (int index = 0; index < 6; ++index) f.Sockets(index)[1] = 1;
+        Check(ItemSystem::ActivateRuneBonus(f.runes[1]) && f.Sockets(6)[1] == 0, "invalid duration enabled/divided in bonus check");
+    }
+    {
+        RuneFixture f;
+        f.Sockets(0)[0] = -1;
+        Check(!ItemSystem::ActivateRune(f.runes[0]) && runePointCalls.empty() && runeMessages.back() == 30,
+            "negative/expired charge activated");
+        f.Sockets(0)[0] = 0;
+        Check(!ItemSystem::ActivateRune(f.runes[0]), "zero charge activated");
+        inventory.erase({f.owner, EQUIPMENT, INVENTORY_MAX_NUM + WEAR_RUNE1});
+        Check(!ItemSystem::ActivateRune(f.runes[0]) && !ItemSystem::DeactivateRune(f.runes[0]), "unanchored rune toggled");
+        Check(!ItemSystem::ActivateRune(f.item), "ordinary item toggled as rune");
+        g_registry.remove<ecs::ItemSockets>(f.runes[1]);
+        Check(!ItemSystem::ActivateRune(f.runes[1]) && !ItemSystem::ChangeRuneAttributes(f.runes[1], 100), "missing sockets recreated");
+        g_registry.remove<ecs::ItemAttributes>(f.runes[2]);
+        Check(!ItemSystem::ActivateRune(f.runes[2]), "missing attributes accepted");
+        g_registry.destroy(f.owner);
+        Check(!ItemSystem::ActivateRune(f.runes[3]) && !ItemSystem::ActivateRuneBonus(f.runes[3]), "stale owner accepted");
+        const auto retired = f.runes[3]; g_registry.destroy(retired); const auto replacement = g_registry.create();
+        Check(!ItemSystem::ActivateRune(retired) && !ItemSystem::DeactivateRune(retired) &&
+            !ItemSystem::ChangeRuneAttributes(retired, 100) && !ItemSystem::ActivateRune(entt::null) &&
+            g_registry.valid(replacement), "stale item generation accepted");
+    }
+}
+
+void RuneAttributeAndTimerTransitions()
+{
+    {
+        RuneFixture f;
+        f.Attributes(0)[0].sValue = 1900; f.Attributes(0)[1].sValue = 9;
+        f.Attributes(0)[3] = {APPLY_MAX_SP, 123};
+        ItemSystem::ActivateRune(f.runes[0]);
+        const auto calls = runePointCalls.size();
+        Check(ItemSystem::ChangeRuneAttributes(f.runes[0], 5000) && f.Attributes(0)[1].sValue == 10,
+            "second-only rune attribute change was skipped");
+        Check(runePointCalls.size() == calls + 2 && runePoints[f.runes[0]][0] == 1900 && runePoints[f.runes[0]][1] == 10,
+            "active rune attributes were not removed/reapplied once");
+        Check(f.Attributes(0)[3].sValue == 123 && f.Attributes(0)[3].bType == APPLY_MAX_SP, "unrelated attribute overwritten");
+        const int beforeSave = saves, beforeUpdate = updates;
+        Check(ItemSystem::ChangeRuneAttributes(f.runes[0], 5000) && beforeSave == saves && beforeUpdate == updates,
+            "unchanged rune republished/reapplied");
+        Check(!ItemSystem::ChangeRuneAttributes(f.runes[0], -1), "negative attribute time accepted");
+        ItemSystem::DeactivateRune(f.runes[0]);
+        const auto inactiveCalls = runePointCalls.size();
+        Check(ItemSystem::ChangeRuneAttributes(f.runes[0], 1000) && runePointCalls.size() == inactiveCalls,
+            "inactive attribute refresh applied owner points");
+    }
+    {
+        RuneFixture f; f.ActivateAll();
+        f.Sockets(0)[0] = 5060;
+        Check(ItemSystem::UpdateRuneWearTime(f.runes[0], 60) == 60 && f.Sockets(0)[0] == 5000 && f.Sockets(6)[1] == 1,
+            "rune timer lost exact 50-percent boundary");
+        Check(ItemSystem::UpdateRuneWearTime(f.runes[0], 60) == 60 && f.Sockets(0)[0] == 4940 && f.Sockets(6)[1] == 0,
+            "rune timer did not drop the bonus below 50 percent");
+        Check(ItemSystem::UpdateRuneWearTime(f.runes[0], INT_MAX) == 0 && f.Sockets(0)[0] == 0 &&
+            f.Sockets(0)[1] == 0 && runePoints[f.runes[0]][0] == 0, "rune exhaustion did not stop/balance points");
+        const auto calls = runePointCalls.size();
+        Check(ItemSystem::UpdateRuneWearTime(f.runes[0], 60) == 0 && runePointCalls.size() == calls,
+            "repeat exhaustion removed points twice");
+        f.Sockets(0)[0] = 10000;
+        Check(ItemSystem::UpdateRuneWearTime(f.runes[0], 60) == 60 && f.Sockets(0)[0] == 10000,
+            "inactive rune consumed charge");
+        Check(ItemSystem::UpdateRuneWearTime(f.runes[6], 60) == 60 && f.Sockets(6)[0] == 10000,
+            "bonus-only rune consumed charge");
+    }
+    {
+        RuneFixture f; f.ActivateAll();
+        f.Sockets(6)[0] = 1;
+        Check(ItemSystem::UpdateRuneWearTime(f.runes[6], 60) == 0 && runePoints[f.runes[6]][0] == 0,
+            "bonus rune expiry removed the same points twice");
+    }
+}
+
+void RuneRuntimeCallbacks()
+{
+    {
+        RuneFixture f;
+        rejectSoulTimer = true;
+        Check(!ItemSystem::ActivateRune(f.runes[0]) && f.Sockets(0)[1] == 0 && runePointCalls.empty(),
+            "failed wear timer allocation still activated points");
+        rejectSoulTimer = false;
+        Check(ItemSystem::ActivateRune(f.runes[0]) && soulTimers.contains(f.runes[0]), "wear timer allocation could not retry");
+        ItemSystem::DeactivateRune(f.runes[0]); soulTimers.clear();
+        Check(ItemSystem::ActivateRune(f.runes[0]) && soulTimers.contains(f.runes[0]), "charged rune did not restart its stopped timer");
+    }
+    {
+        RuneFixture f;
+        onRunePoints = [&](entt::entity item, bool) {
+            Check(!ItemSystem::DeactivateRune(item) && !ItemSystem::ActivateRune(f.runes[1]) &&
+                !ItemSystem::ChangeRuneAttributes(item, 5000), "nested owner rune operation accepted");
+        };
+        Check(ItemSystem::ActivateRune(f.runes[0]) && runePointCalls.size() == 1, "nested callback duplicated point changes");
+        onRunePoints = {};
+        Check(ItemSystem::DeactivateRune(f.runes[0]), "operation guard remained stuck");
+    }
+    for (int boundary = 0; boundary < 3; ++boundary) {
+        RuneFixture f;
+        entt::entity replacement = entt::null;
+        const auto retire = [&](entt::entity item) { g_registry.destroy(item); replacement = g_registry.create(); };
+        if (boundary == 0) onSave = retire;
+        if (boundary == 1) onUpdate = retire;
+        if (boundary == 2) onRunePoints = [&](entt::entity item, bool) { retire(item); };
+        Check(!ItemSystem::ActivateRune(f.runes[0]) && g_registry.valid(replacement), "retirement callback was ignored");
+        Check(!g_registry.any_of<ecs::ItemSockets, ecs::ItemAttributes>(replacement), "retired generation mutated its replacement");
+    }
+    {
+        RuneFixture f;
+        onRuneChat = [](entt::entity owner) { g_registry.destroy(owner); };
+        Check(!ItemSystem::ActivateRune(f.runes[0]), "chat callback retired owner but activation continued");
+    }
+    {
+        RuneFixture f;
+        onRuneAffect = [&](entt::entity) { g_registry.remove<ecs::ItemAttributes>(f.runes[6]); };
+        Check(!ItemSystem::ActivateRune(f.runes[0]), "affect callback removed bonus state but operation continued");
+    }
+    {
+        RuneFixture f;
+        for (int index = 0; index < 6; ++index) f.Sockets(index)[1] = 1;
+        onRuneAffect = [&](entt::entity) { f.Sockets(0)[1] = 0; };
+        Check(!ItemSystem::ActivateRuneBonus(f.runes[1]) && f.Sockets(6)[1] == 0 && !f.Affect(AFFECT_RUNE2),
+            "bonus activated from an invalidated six-rune snapshot");
+    }
+    {
+        RuneFixture f;
+        ItemSystem::ActivateRune(f.runes[0]);
+        const auto original = f.Attributes(0);
+        const auto otherOwner = g_registry.create(); g_registry.emplace<TestPlayer>(otherOwner);
+        onRunePoints = [&](entt::entity item, bool add) { if (!add) g_registry.get<ecs::ItemOwner>(item).owner = otherOwner; };
+        Check(!ItemSystem::ChangeRuneAttributes(f.runes[0], 5000) && EqualAttributes(original, f.Attributes(0)) &&
+            f.Sockets(0)[1] == 0, "attribute refresh wrote/reapplied into a different owner");
+    }
+    {
+        RuneFixture f;
+        rejectRuneAffect = true;
+        Check(!ItemSystem::ActivateRune(f.runes[0]) && f.Sockets(6)[1] == 0, "failed affect allocation activated bonus");
+        rejectRuneAffect = false;
+        Check(ItemSystem::ActivateRuneBonus(f.runes[0]), "failed affect operation left the guard stuck");
+    }
+}
+
 void RuneInitializationAndBoundaries()
 {
 #ifdef ENABLE_RUNE_SYSTEM
@@ -2959,6 +3230,7 @@ int main()
         ITEM_MANAGER itemManager;
         LogManager logManager;
         RuneInitializationAndBoundaries();
+        RuneRuntimeTransitions(); RuneAttributeAndTimerTransitions(); RuneRuntimeCallbacks();
         EntityAndTableValidation();
         LockedSlotAndRarePreservation();
         FailureIsAtomic();

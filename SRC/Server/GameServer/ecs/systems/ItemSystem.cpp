@@ -878,50 +878,6 @@ bool IsRuneItem(entt::entity item)
         GetItemSubType(item) >= RUNE_SLOT1 && GetItemSubType(item) <= RUNE_SLOT7;
 }
 
-bool ActivateRuneLegacyBoundary(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-    legacyItem->ActivateRune();
-    return SyncItemStateFromLegacy(item);
-}
-
-bool DeactivateRuneLegacyBoundary(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-    legacyItem->DeactivateRune();
-    return SyncItemStateFromLegacy(item);
-}
-
-bool ChangeRuneAttributesLegacyBoundary(entt::entity item, int32_t time)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-    legacyItem->ChangeRuneAttr(time);
-    return SyncItemStateFromLegacy(item);
-}
-
-bool ActivateRuneBonusLegacyBoundary(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-    legacyItem->ActivateRuneBonus();
-    return SyncItemStateFromLegacy(item);
-}
-
-bool DeactivateRuneBonusLegacyBoundary(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-    legacyItem->DeactivateRuneBonus();
-    return SyncItemStateFromLegacy(item);
-}
 #endif
 
 uint32_t GetItemID(entt::entity item)
@@ -1038,6 +994,27 @@ const char* GetItemName(entt::entity item)
         return protoRef->name;
 
     return "";
+}
+
+const char* GetItemName(entt::entity item, uint8_t language)
+{
+    const auto* proto = IsValidItem(item) ? GetItemProto(item) : nullptr;
+    if (!proto) return "";
+#ifdef ENABLE_MULTI_NAMES
+    constexpr size_t count = std::extent_v<decltype(TItemTable::szLocaleName)>;
+    constexpr uint8_t fallback = count > 1 ? 1 : 0;
+    if (language == 0) {
+        language = fallback;
+        const auto owner = GetItemOwner(item);
+        if (owner != entt::null)
+            if (auto* desc = ecs::PlayerRuntime::GetDesc(owner); desc && desc->GetLanguage() != 0)
+                language = desc->GetLanguage();
+    }
+    if (language >= count) language = fallback;
+    return proto->szLocaleName[language][0] ? proto->szLocaleName[language] : proto->szName;
+#else
+    return proto->szLocaleName;
+#endif
 }
 
 const char* GetItemNameByVnum(uint32_t vnum)
@@ -1420,47 +1397,35 @@ void StopUniqueExpireEvent(entt::entity item)
 
 void StartTimerBasedOnWearExpireEvent(entt::entity item)
 {
-	auto& events = GetItemEvents(item);
-	if (events.timerBasedOnWearExpire)
-		return;
-
-	if (IsRealTimeItem(item))
-		return;
-
-	if (-1 == GetItemProto(item)->cLimitTimerBasedOnWearIndex)
-		return;
-
-	int iSec = GetItemSocket(item, 0);
-
-	if (0 != iSec)
-	{
-		iSec %= 60;
-		if (0 == iSec)
-			iSec = 60;
-	}
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = item;
-
-	events.timerBasedOnWearExpire = event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec));
-
-	const entt::entity e = item;
-	if (e != entt::null)
-		g_dispatcher.trigger(ecs::EvItemExpired { e, GetItemID(item) });
+    StartTimerBasedOnWearExpireEventEcs(item);
 }
 
 void StopTimerBasedOnWearExpireEvent(entt::entity item)
 {
-	auto& events = GetItemEvents(item);
-	if (!events.timerBasedOnWearExpire)
-		return;
-
-	int remain_time = GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC) - event_processing_time(events.timerBasedOnWearExpire) / passes_per_sec;
-
-	SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, remain_time);
-	event_cancel(&events.timerBasedOnWearExpire);
-
-	ITEM_MANAGER::instance().FlushDelayedSave(item);
+    auto* events = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
+    if (!events || !events->timerBasedOnWearExpire) return;
+    LPEVENT pending = events->timerBasedOnWearExpire;
+    const int elapsed = event_processing_time(pending) / passes_per_sec;
+    events = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
+    if (!events || events->timerBasedOnWearExpire != pending) return;
+    events->timerBasedOnWearExpire = nullptr;
+    event_cancel(&pending);
+    if (!IsValidItem(item) || !g_registry.all_of<ecs::ItemSockets>(item)) return;
+    bool consumesTime = true;
+#ifdef ENABLE_RUNE_SYSTEM
+    consumesTime = !IsRuneItem(item) || (GetItemSubType(item) != RUNE_SLOT7 && GetItemSocket(item, 1) == 1);
+#endif
+    if (consumesTime) {
+        const int remaining = g_registry.get<ecs::ItemSockets>(item).sockets[0];
+        g_registry.get<ecs::ItemSockets>(item).sockets[0] = static_cast<int32_t>(
+            std::max<int64_t>(0, static_cast<int64_t>(remaining) - std::max(0, elapsed)));
+    }
+    // Detach/cancel first. A save/update callback may remove ItemEvents, retire
+    // the item, or install a new timer; none may be touched through the old reference.
+    SaveItem(item);
+    if (!IsValidItem(item)) return;
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+    if (IsValidItem(item)) ITEM_MANAGER::instance().FlushDelayedSave(item);
 }
 
 void StartAccessorySocketExpireEvent(entt::entity item)
@@ -2507,15 +2472,6 @@ bool ModifyItemPointsEcs(entt::entity item, bool add)
     return true;
 }
 
-bool StartTimerBasedOnWearExpireEventEcs(entt::entity item)
-{
-    if (!IsValidItem(item))
-        return false;
-
-    ItemSystem::StartTimerBasedOnWearExpireEvent(item);
-    return true;
-}
-
 bool StopTimerBasedOnWearExpireEventEcs(entt::entity item)
 {
     if (!IsValidItem(item))
@@ -2528,6 +2484,7 @@ bool StopTimerBasedOnWearExpireEventEcs(entt::entity item)
 namespace {
 // Allocation and event publication are callback boundaries. Never keep a
 // component reference through either, or overwrite a nested timer start.
+template <typename EventInfo = item_vid_event_info>
 bool StartItemRuntimeTimer(entt::entity item, LPEVENT ecs::ItemEvents::*slot,
     TEVENTFUNC callback, int32_t delay, bool newPotion = false)
 {
@@ -2540,10 +2497,11 @@ bool StartItemRuntimeTimer(entt::entity item, LPEVENT ecs::ItemEvents::*slot,
     if (g_registry.get<ecs::ItemEvents>(item).*slot)
         return true;
 
-    auto* info = AllocEventInfo<item_vid_event_info>();
+    auto* info = AllocEventInfo<EventInfo>();
     info->item = item;
 #ifdef ENABLE_NEW_USE_POTION
-    info->newpotion = newPotion;
+    if constexpr (std::is_same_v<EventInfo, item_vid_event_info>)
+        info->newpotion = newPotion;
 #endif
     LPEVENT pending = event_create(callback, info, delay);
     if (!pending)
@@ -2557,9 +2515,23 @@ bool StartItemRuntimeTimer(entt::entity item, LPEVENT ecs::ItemEvents::*slot,
     }
     state->*slot = pending;
     g_dispatcher.trigger(ecs::EvItemExpired { item, GetItemID(item) });
-    return IsValidItem(item);
+    const auto* published = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
+    const bool scheduled = published && bool(published->*slot);
+    if (!scheduled || published->*slot != pending) event_cancel(&pending);
+    return scheduled;
 }
 } // namespace
+
+bool StartTimerBasedOnWearExpireEventEcs(entt::entity item)
+{
+    if (!IsValidItem(item) || !GetItemProto(item)) return false;
+    // A live item without this limit has nothing to schedule (as before).
+    if (IsRealTimeItem(item) || GetItemProto(item)->cLimitTimerBasedOnWearIndex == -1) return true;
+    const int seconds = static_cast<int32_t>(GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC));
+    const int delay = seconds <= 0 ? 1 : seconds % 60 == 0 ? 60 : seconds % 60;
+    return StartItemRuntimeTimer<item_event_info>(item, &ecs::ItemEvents::timerBasedOnWearExpire,
+        timer_based_on_wear_expire_event, PASSES_PER_SEC(delay));
+}
 
 bool StartRealTimeExpireEventEcs(entt::entity item)
 {

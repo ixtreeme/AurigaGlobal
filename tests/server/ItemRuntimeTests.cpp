@@ -36,6 +36,9 @@ const int aiAccessorySocketDegradeTime[ITEM_ACCESSORY_SOCKET_MAX_NUM + 1] = {};
 namespace {
 int checks = 0;
 bool failAllocation = false;
+bool wearStopTest = false;
+int flushed = 0;
+std::function<void(entt::entity)> onSave, onUpdate;
 std::vector<LPEVENT> queued;
 std::function<void(entt::entity)> onCreate, onPublish, onComponent;
 void Check(bool value, const char* message) {
@@ -47,6 +50,7 @@ void Published(const ecs::EvItemExpired& event) { if (onPublish) onPublish(event
 void Constructed(entt::registry&, entt::entity item) { if (onComponent) onComponent(item); }
 void Reset() {
     onCreate = onPublish = onComponent = {};
+    onSave = onUpdate = {}; wearStopTest = false; flushed = 0;
     g_registry.clear(); queued.clear(); failAllocation = false; test_server = 0;
 }
 struct Fixture {
@@ -74,10 +78,12 @@ LPEVENT event_create_ex(TEVENTFUNC callback, event_info_data* info, int32_t dela
     LPEVENT result(new EVENT);
     result->info = info; result->func = callback;
     const auto* itemInfo = dynamic_cast<item_vid_event_info*>(info);
-    Check(itemInfo != nullptr && delay > 0, "timer lost its entity payload or positive delay");
+    const auto* wearInfo = dynamic_cast<item_event_info*>(info);
+    Check((itemInfo || wearInfo) && delay > 0, "timer lost its entity payload or positive delay");
+    const auto item = itemInfo ? itemInfo->item : wearInfo->item;
     if (failAllocation) return nullptr;
     queued.push_back(result);
-    if (onCreate) onCreate(itemInfo->item);
+    if (onCreate) onCreate(item);
     return result;
 }
 void event_cancel(LPEVENT* event) {
@@ -88,6 +94,8 @@ void event_cancel(LPEVENT* event) {
 EVENTFUNC(real_time_expire_event) { throw std::runtime_error("unexpected timer execution"); }
 EVENTFUNC(soul_item_event) { throw std::runtime_error("unexpected timer execution"); }
 void ITEM_MANAGER::RemoveItem(entt::entity, const char*) { throw std::runtime_error("unexpected item removal"); }
+ITEM_MANAGER::ITEM_MANAGER() {}
+ITEM_MANAGER::~ITEM_MANAGER() {}
 namespace AffectSystem {
 CAffect* FindAffect(entt::entity, uint32_t, uint8_t) { return nullptr; }
 bool RemoveAffect(entt::entity, uint32_t) { return false; }
@@ -98,12 +106,16 @@ void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...)
 int MIN(int a, int b) { return std::min(a, b); }
 int MINMAX(int low, int value, int high) { return std::clamp(value, low, high); }
 int number_ex(int, int, const char*, int) { Unexpected(); }
-int32_t event_processing_time(LPEVENT) { Unexpected(); }
+int32_t event_processing_time(LPEVENT) { if (!wearStopTest) Unexpected(); return passes_per_sec * 10; }
 int32_t event_time(LPEVENT) { Unexpected(); }
 EVENTFUNC(unique_expire_event) { Unexpected(); }
 EVENTFUNC(timer_based_on_wear_expire_event) { Unexpected(); }
 EVENTFUNC(accessory_socket_expire_event) { Unexpected(); }
 namespace ecs::PlayerRuntime {
+LPDESC GetDesc(entt::entity owner) {
+    Check(g_registry.valid(owner), "name lookup used a stale owner");
+    return nullptr;
+}
 entt::entity FindByPlayerID(uint32_t) { Unexpected(); }
 uint32_t GetPlayerID(entt::entity) { Unexpected(); }
 uint8_t GetJob(entt::entity) { Unexpected(); }
@@ -133,17 +145,21 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t, std::vector<uint32_t>&,
     std::vector<uint32_t>&, std::vector<entt::entity>&, int&) { Unexpected(); }
 void CParty::ChatPacketToAllMemberNew(uint8_t, uint32_t, const char*, ...) { Unexpected(); }
 void MountSystem::ForceClearRidingState(entt::entity) { Unexpected(); }
-void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity) { Unexpected(); }
+void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity item) {
+    Check(wearStopTest && ItemSystem::IsValidItem(item), "wear stop published a stale item");
+    if (onUpdate) onUpdate(item);
+}
 void ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
 int CItem::GetSpecialGroup() const { Unexpected(); }
 uint32_t CItem::GetSIGVnum() const { Unexpected(); }
-void CItem::ChangeRuneAttr(int32_t) { Unexpected(); }
-void CItem::ActivateRuneBonus() { Unexpected(); }
-void CItem::DeactivateRuneBonus() { Unexpected(); }
-void CItem::ActivateRune() { Unexpected(); }
-void CItem::DeactivateRune() { Unexpected(); }
-void ITEM_MANAGER::DelayedSave(entt::entity) { Unexpected(); }
-void ITEM_MANAGER::FlushDelayedSave(entt::entity) { Unexpected(); }
+void ITEM_MANAGER::DelayedSave(entt::entity item) {
+    Check(wearStopTest && ItemSystem::IsValidItem(item), "wear stop saved a stale item");
+    if (onSave) onSave(item);
+}
+void ITEM_MANAGER::FlushDelayedSave(entt::entity item) {
+    Check(wearStopTest && ItemSystem::IsValidItem(item), "wear stop flushed a stale item");
+    ++flushed;
+}
 void ITEM_MANAGER::DestroyItem(entt::entity) { Unexpected(); }
 TItemTable* ITEM_MANAGER::GetTable(uint32_t) { Unexpected(); }
 bool ITEM_MANAGER::IsExtraItem(uint32_t) { Unexpected(); }
@@ -229,6 +245,27 @@ void NativeIdentityRegistry() {
     shared.Unregister(reused);
 }
 
+void LocalizedNames() {
+#ifdef ENABLE_MULTI_NAMES
+    Reset(); Fixture f;
+    strcpy_s(f.proto.szName, "internal-name");
+    strcpy_s(f.proto.szLocaleName[1], "fallback-name");
+    strcpy_s(f.proto.szLocaleName[2], "localized-name");
+    Check(std::string_view(ItemSystem::GetItemName(f.item, 2)) == "localized-name", "explicit item locale was lost");
+    Check(std::string_view(ItemSystem::GetItemName(f.item, 0)) == "fallback-name" &&
+        std::string_view(ItemSystem::GetItemName(f.item, UINT8_MAX)) == "fallback-name", "default/invalid item locale changed");
+    const auto owner = g_registry.create();
+    g_registry.emplace<ecs::ItemOwner>(f.item).owner = owner;
+    Check(std::string_view(ItemSystem::GetItemName(f.item, 0)) == "fallback-name", "owner without descriptor lost fallback");
+    f.proto.szLocaleName[1][0] = 0;
+    Check(std::string_view(ItemSystem::GetItemName(f.item, 0)) == "internal-name", "empty locale did not fall back to proto name");
+    g_registry.destroy(owner);
+    Check(std::string_view(ItemSystem::GetItemName(f.item, 0)) == "internal-name", "retired owner broke native name lookup");
+    g_registry.destroy(f.item);
+    Check(std::string_view(ItemSystem::GetItemName(f.item, 0)).empty() &&
+        std::string_view(ItemSystem::GetItemName(entt::null, 0)).empty(), "stale localized item name escaped");
+#endif
+}
 void LevelChecks() {
     Reset(); Fixture f;
     Check(ItemSystem::CheckItemUseLevel(f.item, 0), "unrestricted item rejected");
@@ -266,6 +303,63 @@ void LoadedTimers() {
     Check(ItemSystem::OnAfterCreatedItem(soul.item) && queued.size() == 1, "soul charging did not resume");
     Check(ItemSystem::OnAfterCreatedItem(soul.item) && queued.size() == 1, "soul charging duplicated");
 #endif
+}
+void WearTimers() {
+    Reset(); Fixture f;
+    Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item) && queued.empty(), "unlimited item started wear timer");
+    f.proto.cLimitTimerBasedOnWearIndex = 0;
+    g_registry.get<ecs::ItemSockets>(f.item).sockets[0] = 100;
+    Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item) && queued.size() == 1 &&
+        dynamic_cast<item_event_info*>(queued.front()->info), "wear timer lost its correct native event payload");
+    Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item) && queued.size() == 1, "wear timer start duplicated");
+    event_cancel(&g_registry.get<ecs::ItemEvents>(f.item).timerBasedOnWearExpire);
+    failAllocation = true;
+    Check(!ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item), "failed wear timer allocation reported success");
+    failAllocation = false;
+    Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item) && queued.size() == 2, "stopped wear timer did not restart");
+
+    Reset(); Fixture retired; retired.proto.cLimitTimerBasedOnWearIndex = 0;
+    onCreate = [](entt::entity item) { g_registry.destroy(item); };
+    Check(!ItemSystem::StartTimerBasedOnWearExpireEventEcs(retired.item) && queued.front()->is_force_to_end,
+        "wear allocation callback left an orphan event");
+
+    Reset(); Fixture removed; removed.proto.cLimitTimerBasedOnWearIndex = 0;
+    onComponent = [](entt::entity item) { g_registry.remove<ecs::ItemEvents>(item); };
+    Check(!ItemSystem::StartTimerBasedOnWearExpireEventEcs(removed.item) && queued.empty(), "wear timer recreated retired components");
+
+    Reset(); Fixture unpublished; unpublished.proto.cLimitTimerBasedOnWearIndex = 0;
+    onPublish = [](entt::entity item) { g_registry.remove<ecs::ItemEvents>(item); };
+    Check(!ItemSystem::StartTimerBasedOnWearExpireEventEcs(unpublished.item) && queued.front()->is_force_to_end,
+        "publication-time component removal left an orphan wear timer");
+}
+void WearTimerStops() {
+    for (bool active : {false, true}) {
+        Reset(); Fixture f; wearStopTest = true;
+        f.proto.cLimitTimerBasedOnWearIndex = 0;
+        auto& meta = g_registry.get<ecs::ItemPrototypeMeta>(f.item);
+        meta.type = ITEM_COSTUME; meta.subType = RUNE_SLOT1;
+        g_registry.get<ecs::ItemSockets>(f.item).sockets[0] = 5;
+        g_registry.get<ecs::ItemSockets>(f.item).sockets[1] = active;
+        Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item), "wear stop fixture timer failed");
+        ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
+        Check(queued.front()->is_force_to_end && !g_registry.get<ecs::ItemEvents>(f.item).timerBasedOnWearExpire &&
+            g_registry.get<ecs::ItemSockets>(f.item).sockets[0] == (active ? 0 : 5) && flushed == 1,
+            "wear stop lost paused-rune semantics, nonnegative time, or cancellation");
+    }
+    for (int boundary = 0; boundary < 2; ++boundary) {
+        Reset(); Fixture f; wearStopTest = true; f.proto.cLimitTimerBasedOnWearIndex = 0;
+        ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item);
+        if (boundary == 0) onSave = [](entt::entity item) { g_registry.destroy(item); };
+        else onUpdate = [](entt::entity item) { g_registry.destroy(item); };
+        ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
+        Check(queued.front()->is_force_to_end && flushed == 0, "wear stop reused a retired entity after publication");
+    }
+    Reset(); Fixture f; wearStopTest = true; f.proto.cLimitTimerBasedOnWearIndex = 0;
+    ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item);
+    onSave = [](entt::entity item) { Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(item), "nested wear restart failed"); };
+    ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
+    Check(queued.size() == 2 && queued[0]->is_force_to_end && !queued[1]->is_force_to_end &&
+        g_registry.get<ecs::ItemEvents>(f.item).timerBasedOnWearExpire == queued[1], "wear stop canceled a replacement timer");
 }
 void TimerFailuresAndCallbacks() {
     Reset(); Fixture f; f.FirstUse(true); failAllocation = true;
@@ -305,9 +399,10 @@ void TimerFailuresAndCallbacks() {
 }
 }
 int main() {
+    ITEM_MANAGER itemManager;
     g_dispatcher.sink<ecs::EvItemExpired>().connect<&Published>();
     g_registry.on_construct<ecs::ItemEvents>().connect<&Constructed>();
-    try { NativeIdentityRegistry(); LevelChecks(); LoadedTimers(); TimerFailuresAndCallbacks(); Reset(); }
+    try { NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
     std::cout << "Item runtime: " << checks << " checks passed\n";
 }

@@ -3814,12 +3814,12 @@ ACMD(do_rune)
 				if (str_to_number(slot, arg1) == false)
 					return;
 
-				if (slot == WEAR_RUNE7)
+				if (slot < WEAR_RUNE1 || slot >= WEAR_RUNE7)
 					return;
 
 				const entt::entity item = ItemSystem::GetWearItem(owner, slot);
 				if (ItemSystem::IsValidItem(item))
-					ItemSystem::ActivateRuneLegacyBoundary(item);
+					ItemSystem::ActivateRune(item);
 			}
 			break;
 		case 'd':
@@ -3829,12 +3829,12 @@ ACMD(do_rune)
 				if (str_to_number(slot, arg1) == false)
 					return;
 
-				if (slot == WEAR_RUNE7)
+				if (slot < WEAR_RUNE1 || slot >= WEAR_RUNE7)
 					return;
 
 				const entt::entity item = ItemSystem::GetWearItem(owner, slot);
 				if (ItemSystem::IsValidItem(item))
-					ItemSystem::DeactivateRuneLegacyBoundary(item);
+					ItemSystem::DeactivateRune(item);
 			}
 			break;
 		case 'l':
@@ -3850,9 +3850,9 @@ ACMD(do_rune)
 						owner, WEAR_RUNE1 + i);
 					if (ItemSystem::IsValidItem(item)) {
 						if (w == 0)
-							ItemSystem::DeactivateRuneLegacyBoundary(item);
+							ItemSystem::DeactivateRune(item);
 						else
-							ItemSystem::ActivateRuneLegacyBoundary(item);
+							ItemSystem::ActivateRune(item);
 					}
 				}
 			}
@@ -3878,6 +3878,10 @@ ACMD(do_rune_charge)
 
 	int iArg2 = 0;
 	if (str_to_number(iArg2, arg2) == false)
+		return;
+
+	// Validate before uint8_t/uint16_t narrowing in inventory accessors.
+	if (iArg1 < WEAR_RUNE1 || iArg1 >= WEAR_RUNE7 || iArg2 < 0 || iArg2 >= INVENTORY_MAX_NUM)
 		return;
 
 	entt::entity rune = ItemSystem::GetWearItem(owner, iArg1);
@@ -3949,11 +3953,11 @@ ACMD(do_rune_charge)
 	if (ItemSystem::GetItemSocket(bottle, 0) < 1)
 		ItemSystem::RemoveItemEcs(bottle);
 
-	ItemSystem::ChangeRuneAttributesLegacyBoundary(rune, lValue);
+	ItemSystem::ChangeRuneAttributes(rune, lValue);
 	if (!AffectSystem::FindAffect(owner, AFFECT_RUNE2) &&
 		ItemSystem::GetItemSocket(rune, 1) == 1) {
 		if (int32_t(lValue / lOnePercent) >= 50) {
-			ItemSystem::ActivateRuneBonusLegacyBoundary(rune);
+			ItemSystem::ActivateRuneBonus(rune);
 		}
 	}
 }

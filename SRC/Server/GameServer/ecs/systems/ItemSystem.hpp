@@ -75,11 +75,15 @@ int32_t GetRuneAttributeType(entt::entity item, int index);
 int32_t GetRuneAttributeValue(entt::entity item, int index, int32_t remainingTime);
 // Creation-only initialization: writes existing components before publication.
 bool InitializeRuneItem(entt::entity item);
-bool ActivateRuneLegacyBoundary(entt::entity item);
-bool DeactivateRuneLegacyBoundary(entt::entity item);
-bool ChangeRuneAttributesLegacyBoundary(entt::entity item, int32_t time);
-bool ActivateRuneBonusLegacyBoundary(entt::entity item);
-bool DeactivateRuneBonusLegacyBoundary(entt::entity item);
+// Runtime operations require live rune components; toggles require the wear
+// anchor owned by the same entity. Reentrant operations on that owner fail.
+bool ActivateRune(entt::entity item);
+bool DeactivateRune(entt::entity item);
+bool ChangeRuneAttributes(entt::entity item, int32_t time);
+bool ActivateRuneBonus(entt::entity item);
+bool DeactivateRuneBonus(entt::entity item);
+// Returns the next wear-timer delay in seconds, or zero to stop the event.
+int UpdateRuneWearTime(entt::entity item, int32_t elapsedSeconds);
 #endif
 uint32_t GetItemID(entt::entity item);
 uint32_t GetItemVID(entt::entity item);

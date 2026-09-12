@@ -1,5 +1,48 @@
 # Server ECS regression tests
 
+## Entity-native rune runtime
+
+Rune activation/deactivation, set-bonus selection, both attribute updates and
+wear-time processing now live beside rune initialization in the existing
+ItemAttributeSystem.cpp. All CItem rune methods and the five legacy-boundary
+adapters are deleted. Commands pass item entities directly and validate slot
+ranges before narrowing. Rune messages use the native localized item-name lookup.
+The generic wear-event callback only forwards to the rune system and retires
+its own event handle on exhaustion; it does not own a parallel rune algorithm.
+
+Runtime operations validate rune components and their owner/wear anchor. A
+registry-scoped operation guard prevents nested rune changes on the same item
+or owner. State changes precede publication; components are reacquired after
+point, affect, save, packet and chat calls. Both attribute values are checked,
+including a changed second value with an unchanged first. A malformed duration
+cannot divide by zero in bonus checks. Deactivating the seventh rune no longer
+removes its points twice. The existing missing-slot RUNE1 visual-affect rule,
+50-percent set threshold and paused/bonus-rune charge behavior are preserved.
+
+Activating a recharged rune restarts its wear timer; failed scheduling does not
+activate its points. Wear scheduling uses the same callback-safe native timer
+publication helper as other item timers. Stopping a wear timer detaches it before
+publication, clamps remaining time to zero, and does not reuse an event-component
+reference after a callback. A callback-installed replacement timer survives.
+
+ItemAttributeTests runs the production rune algorithms without CItem/CHARACTER
+fixtures. It covers transitions, the 50-percent boundary, invalid/missing/stale
+state, both attributes, exhaustion, repeat calls, timer restart/failure and
+callbacks retiring/changing items, owners or bonus prerequisites. Shared point
+calculation, affects, persistence, networking, inventory lookup and scheduling
+are controlled doubles; the full point-calculation implementation is not exercised
+by these rune tests. ItemRuntimeTests separately runs the actual wear scheduling,
+stopping and localized-name lookup, including allocation/publication failure,
+component removal, restart, retirement and replacement-event callbacks.
+
+GameServer compilation checks the command/event integration. Live client visuals,
+DB persistence, charge-bottle splitting and reconnect/equipment integration still
+need in-game checks; this migration does not claim the entire item system is ECS-only.
+The existing charge command still debits a stacked bottle before creating and
+placing the split item. Creation/placement failure can therefore lose that debit;
+making bottle charging transactional is a separate follow-up, not fixed by this
+rune runtime migration.
+
 ## Entity-only item identity registry
 
 ItemRegistry stores ID/VID-to-entity bindings and an entity-to-key pair for
