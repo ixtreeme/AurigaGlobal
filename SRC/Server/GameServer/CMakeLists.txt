@@ -48,6 +48,17 @@ add_executable(ItemManagerLifecycleTests EXCLUDE_FROM_ALL
 target_link_libraries(ItemManagerLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME item_manager_lifecycle COMMAND ItemManagerLifecycleTests)
 
+add_executable(ItemRuntimeTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ItemRuntimeTests.cpp
+    ecs/systems/ItemSystem.cpp
+)
+target_link_libraries(ItemRuntimeTests PRIVATE SERVER EnTT::EnTT LUA)
+if(MSVC)
+    target_compile_options(ItemRuntimeTests PRIVATE /Gy)
+    target_link_options(ItemRuntimeTests PRIVATE /OPT:REF /OPT:NOICF)
+endif()
+add_test(NAME item_runtime COMMAND ItemRuntimeTests)
+
 add_executable(QuickslotTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuickslotTests.cpp
     ecs/systems/InventorySystem.cpp
@@ -173,7 +184,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests SpatialLifecycleTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

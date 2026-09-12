@@ -15,7 +15,6 @@ class CItem : public CEntity
 
 		int			GetLevelLimit();
 
-		bool		CheckItemUseLevel(int nLevel);
 
 		bool		IsPCBangItem();
 
@@ -181,7 +180,6 @@ class CItem : public CEntity
 #endif
 
 	public:
-		bool		OnAfterCreatedItem();			// 서버상에 아이템이 모든 정보와 함께 완전히 생성(로드)된 후 불리우는 함수.
 
 	public:
 		bool		IsRideItem();

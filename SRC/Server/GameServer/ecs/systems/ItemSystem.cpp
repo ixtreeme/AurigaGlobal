@@ -790,6 +790,39 @@ bool IsValidItem(entt::entity item)
            g_registry.any_of<ecs::ItemIdentity>(item);
 }
 
+bool CheckItemUseLevel(entt::entity item, int level)
+{
+    const auto* proto = IsValidItem(item) ? GetItemProto(item) : nullptr;
+    if (!proto)
+        return false;
+    for (const auto& limit : proto->aLimits)
+        if (limit.bType == LIMIT_LEVEL)
+            return level >= limit.lValue;
+    return true;
+}
+
+bool OnAfterCreatedItem(entt::entity item)
+{
+    if (!IsValidItem(item) || !GetItemProto(item))
+        return false;
+
+    if (GetItemProto(item)->cLimitRealTimeFirstUseIndex != -1 && GetItemSocket(item, 1) != 0)
+        if (!StartRealTimeExpireEventEcs(item))
+            return false;
+
+    // Timer publication can retire the item or replace its prototype. Re-read
+    // the live entity before deciding whether it also needs soul charging.
+    if (!IsValidItem(item) || !GetItemProto(item))
+        return false;
+#ifdef ENABLE_SOUL_SYSTEM
+    if (GetItemType(item) == ITEM_SOUL &&
+        static_cast<int>(GetItemSocket(item, 2) / 10000) < GetItemProto(item)->aLimits[1].lValue)
+        if (!StartSoulItemEventEcs(item))
+            return false;
+#endif
+    return IsValidItem(item);
+}
+
 bool IsDragonSoulItem(entt::entity item)
 {
     return IsValidItem(item) && GetItemType(item) == ITEM_DS;
@@ -2492,13 +2525,49 @@ bool StopTimerBasedOnWearExpireEventEcs(entt::entity item)
     return true;
 }
 
+namespace {
+// Allocation and event publication are callback boundaries. Never keep a
+// component reference through either, or overwrite a nested timer start.
+bool StartItemRuntimeTimer(entt::entity item, LPEVENT ecs::ItemEvents::*slot,
+    TEVENTFUNC callback, int32_t delay, bool newPotion = false)
+{
+    if (!IsValidItem(item))
+        return false;
+    if (!g_registry.all_of<ecs::ItemEvents>(item))
+        g_registry.insert<ecs::ItemEvents>(&item, &item + 1);
+    if (!IsValidItem(item) || !g_registry.all_of<ecs::ItemEvents>(item))
+        return false;
+    if (g_registry.get<ecs::ItemEvents>(item).*slot)
+        return true;
+
+    auto* info = AllocEventInfo<item_vid_event_info>();
+    info->item = item;
+#ifdef ENABLE_NEW_USE_POTION
+    info->newpotion = newPotion;
+#endif
+    LPEVENT pending = event_create(callback, info, delay);
+    if (!pending)
+        return false;
+    auto* state = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
+    if (!state || state->*slot)
+    {
+        event_cancel(&pending);
+        const auto* current = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
+        return current && bool(current->*slot);
+    }
+    state->*slot = pending;
+    g_dispatcher.trigger(ecs::EvItemExpired { item, GetItemID(item) });
+    return IsValidItem(item);
+}
+} // namespace
+
 bool StartRealTimeExpireEventEcs(entt::entity item)
 {
     if (!IsValidItem(item))
         return false;
 
-    auto& events = GetItemEvents(item);
-    if (events.realTimeExpire)
+    const auto* events = g_registry.try_get<ecs::ItemEvents>(item);
+    if (events && events->realTimeExpire)
         return true;
 
     const TItemTable* proto = GetItemProto(item);
@@ -2533,27 +2602,14 @@ bool StartRealTimeExpireEventEcs(entt::entity item)
         }
 #endif
 
-        item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-        info->item = item;
 #ifdef ENABLE_NEW_USE_POTION
-        if (isNewPotion)
-        {
-            info->newpotion = true;
-            events.realTimeExpire = event_create(
-                real_time_expire_event, info, PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec));
-        }
-        else
-        {
-            info->newpotion = false;
-            events.realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
-        }
+        const int32_t delay = PASSES_PER_SEC(isNewPotion ? std::min(remainSec, 60) : 1);
+        return StartItemRuntimeTimer(item, &ecs::ItemEvents::realTimeExpire,
+            real_time_expire_event, delay, isNewPotion);
 #else
-        events.realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
+        return StartItemRuntimeTimer(item, &ecs::ItemEvents::realTimeExpire,
+            real_time_expire_event, PASSES_PER_SEC(1));
 #endif
-
-        g_dispatcher.trigger(ecs::EvItemExpired { item, GetItemID(item) });
-        LOG_INFO("REAL_TIME_EXPIRE: StartRealTimeExpireEvent");
-        return true;
     }
 
     return false;
@@ -2565,8 +2621,8 @@ bool StartSoulItemEventEcs(entt::entity item)
     if (!IsValidItem(item) || GetItemType(item) != ITEM_SOUL)
         return false;
 
-    auto& events = GetItemEvents(item);
-    if (events.soulItem)
+    const auto* events = g_registry.try_get<ecs::ItemEvents>(item);
+    if (events && events->soulItem)
         return true;
 
     const TItemTable* proto = GetItemProto(item);
@@ -2577,12 +2633,8 @@ bool StartSoulItemEventEcs(entt::entity item)
     if (minutes >= proto->aLimits[1].lValue)
         return false;
 
-    item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-    info->item = item;
-    events.soulItem = event_create(
-        soul_item_event, info, PASSES_PER_SEC(test_server ? 5 : 60));
-    g_dispatcher.trigger(ecs::EvItemExpired { item, GetItemID(item) });
-    return true;
+    return StartItemRuntimeTimer(item, &ecs::ItemEvents::soulItem,
+        soul_item_event, PASSES_PER_SEC(test_server ? 5 : 60));
 }
 #endif
 

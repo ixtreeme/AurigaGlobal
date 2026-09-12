@@ -845,33 +845,6 @@ bool CItem::IsPCBangItem()
 	return false;
 }
 
-namespace ItemSystem {
-bool CheckItemUseLevel(entt::entity item, int level)
-{
-	LPITEM legacy = LegacyItemBoundary(item);
-	return legacy ? legacy->CheckItemUseLevel(level) : false;
-}
-
-bool OnAfterCreatedItem(entt::entity item)
-{
-	LPITEM legacy = LegacyItemBoundary(item);
-	return legacy ? legacy->OnAfterCreatedItem() : false;
-}
-} // namespace ItemSystem
-
-bool CItem::CheckItemUseLevel(int nLevel)
-{
-	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
-	{
-		if (this->m_pProto->aLimits[i].bType == LIMIT_LEVEL)
-		{
-			if (this->m_pProto->aLimits[i].lValue > nLevel) return false;
-			else return true;
-		}
-	}
-	return true;
-}
-
 int CItem::GetLevelLimit()
 {
 	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
@@ -882,26 +855,6 @@ int CItem::GetLevelLimit()
 		}
 	}
 	return 0;
-}
-
-bool CItem::OnAfterCreatedItem()
-{
-	if (-1 != this->GetProto()->cLimitRealTimeFirstUseIndex)
-	{
-		if (0 != GetSocket(1))
-		{
-			ItemSystem::StartRealTimeExpireEventEcs(GetEntityHandle());
-		}
-	}
-
-#ifdef ENABLE_SOUL_SYSTEM
-	if (GetType() == ITEM_SOUL)
-	{
-		ItemSystem::StartSoulItemEventEcs(GetEntityHandle());
-	}
-#endif
-
-	return true;
 }
 
 bool CItem::IsDragonSoul()

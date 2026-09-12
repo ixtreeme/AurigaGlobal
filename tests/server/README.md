@@ -1,5 +1,28 @@
 # Server ECS regression tests
 
+## Entity-native item load initialization
+
+`CheckItemUseLevel` and `OnAfterCreatedItem` now execute in ItemSystem.cpp,
+without a CItem lookup. Their CHARACTER-era item methods and bridge bodies are
+deleted. The level check preserves the first matching LIMIT_LEVEL rule and
+uses the full-width table value. Loaded first-use items resume only after use;
+partly charged souls resume charging, while fully charged souls succeed without
+a timer. Missing prototypes and stale/non-item handles are rejected.
+
+Real-time and soul timer creation no longer retain an ItemEvents reference
+through allocation callbacks. A removed component or retired generation rejects
+and cancels the pending event; a nested timer start wins over an older pending
+one. Event publication may destroy the entity, so load initialization rechecks
+liveness before continuing and never reports that destroyed handle as ready.
+
+`ItemRuntimeTests` compiles the existing ItemSystem.cpp. Entity-only fixtures
+cover level boundaries above 255, missing/stale state, first-use and soul reload,
+idempotent starts, allocation failure/retry, component removal, generation reuse,
+nested creation and publication-time retirement. Scheduling, event callbacks,
+network/affect and unrelated legacy entry points are controlled doubles; this
+does not test the real event queue, DB hydration or client login. Item allocation
+and other item operations still have CItem dependencies and need further migration.
+
 ## Single combat execution path
 
 The prototype `CombatSystem_Update` and its private cooldown field are deleted,
