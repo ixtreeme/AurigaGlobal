@@ -558,17 +558,6 @@ namespace marriage
 class CHARACTER : public CEntity, public CHorseRider
 {
 protected:
-	time_t m_lastFruitUse;
-	time_t m_lastGoldFruitUse;
-
-public:
-	time_t GetLastFruitUse() const { return m_lastFruitUse; }
-	void SetLastFruitUse(time_t t) { m_lastFruitUse = t; }
-
-	time_t GetLastGoldFruitUse() const { return m_lastGoldFruitUse; }
-	void SetLastGoldFruitUse(time_t t) { m_lastGoldFruitUse = t; }
-
-protected:
 	//////////////////////////////////////////////////////////////////////////////////
 	// Entity
 	//////////////////////////////////////////////////////////////////////////////////
@@ -746,8 +735,6 @@ protected:
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
-
-	uint8_t			m_bAddChrState;
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Move & Synchronize Positions
@@ -933,9 +920,6 @@ public:
 #endif
 #ifdef ENABLE_EXTRA_INVENTORY
 	LPITEM			GetExtraInventoryItem(uint16_t wCell) const;
-	void			SetNextSortExtraInventoryPulse(int pulse) { m_sortExtraInventoryPulse = pulse; }
-	int				GetSortExtraInventoryPulse() { return m_sortExtraInventoryPulse; }
-	int				m_sortExtraInventoryPulse;
 #endif
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 	int		ExtraInventoryMaxSlots(int iArg1, bool bAuto = false) const;
@@ -1761,18 +1745,6 @@ public:
 
 protected:
 	int		m_iSavePointTime;
-#endif
-
-#ifdef ENABLE_SORT_INVEN
-public:
-	int		GetSortInv1Time() const { return m_iSortInv1Time; }
-	void	SetSortInv1Time() { m_iSortInv1Time = thecore_pulse(); }
-	int		GetSortInv2Time() const { return m_iSortInv2Time; }
-	void	SetSortInv2Time() { m_iSortInv2Time = thecore_pulse(); }
-
-protected:
-	int		m_iSortInv1Time;
-	int		m_iSortInv2Time;
 #endif
 
 #ifdef ENABLE_LIMIT_BUY_SPEED

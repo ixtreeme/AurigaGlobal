@@ -4176,8 +4176,6 @@ void CHARACTER::Initialize()
     m_iSavePointTime = 0;
 #endif
 #ifdef ENABLE_SORT_INVEN
-    m_iSortInv1Time = 0;
-    m_iSortInv2Time = 0;
 #endif
 #ifdef ENABLE_LIMIT_BUY_SPEED
 #endif
