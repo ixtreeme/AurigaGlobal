@@ -238,13 +238,11 @@ int OnClickStoneCraft(TRIGGERPARAM)
 	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 9005)
 		return 0;
 
-	// IsOpenSafebox and IsCubeOpen have no entity form; one resolve for the
-	// pair, as in cmd_general's copy of this same guard.
-	LPCHARACTER pkCauser = ecs::LegacyCharOf(causer);
 	if (ecs::SocialSystem::HasExchange(causer)
 		|| ecs::SocialSystem::GetMyShop(causer)
 		|| ecs::SocialSystem::GetShopOwner(causer) != entt::null
-		|| (pkCauser && (ecs::SessionSystem::IsSafeboxOpen(causer) || pkCauser->IsCubeOpen())))
+		|| ecs::SessionSystem::IsSafeboxOpen(causer)
+		|| ecs::SessionSystem::IsCubeOpen(causer))
 		return 0;
 
 	ecs::PlayerRuntime::SetQuestNPCID(causer, ecs::PlayerRuntime::GetPacketVID(ch));

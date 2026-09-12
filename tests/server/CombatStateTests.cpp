@@ -458,9 +458,7 @@ unsigned char CHARACTER::GetSkillGroup(void)const { UnexpectedService(__func__);
 void CHARACTER::MonsterLog(char const *,...) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
-int CHARACTER::GetMarriageBonus(unsigned int,bool) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
-bool CHARACTER::IsCubeOpen(void)const { UnexpectedService(__func__); }
 bool CHARACTER::UnEquipSpecialRideUniqueItem(void) { UnexpectedService(__func__); }
 void ecs::AcceSystem::Close(entt::entity) { UnexpectedService(__func__); }
 int CHARACTER::GetSoulItemDamage(entt::entity,int,unsigned char) { UnexpectedService(__func__); }

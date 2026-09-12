@@ -1342,11 +1342,6 @@ int ecs::SocialSystem::GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool 
     return pair ? pair->GetBonus(itemVnum, share, e) : 0;
 }
 
-int CHARACTER::GetMarriageBonus(uint32_t dwItemVnum, bool bSum)
-{
-    return ecs::SocialSystem::GetMarriageBonus(GetEntityHandle(), dwItemVnum, bSum);
-}
-
 // ForEachMemberPtr handed this a null pointer for every member not linked to a
 // character, and it dereferenced it; the online walk skips those members.
 struct FFindReviver
@@ -1417,13 +1412,8 @@ void SendGuildName(entt::entity viewer, CGuild* pGuild)
 
 } // namespace ecs::SocialSystem
 
-void CHARACTER::SendGuildName(CGuild* pGuild)
-{
-    ecs::SocialSystem::SendGuildName(GetEntityHandle(), pGuild);
-}
-
 void CHARACTER::SendGuildName(uint32_t dwGuildID)
 {
-    SendGuildName(CGuildManager::instance().FindGuild(dwGuildID));
+    ecs::SocialSystem::SendGuildName(GetEntityHandle(), CGuildManager::instance().FindGuild(dwGuildID));
 }
 

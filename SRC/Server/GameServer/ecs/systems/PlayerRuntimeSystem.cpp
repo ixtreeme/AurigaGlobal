@@ -3705,7 +3705,7 @@ void CHARACTER::OnClick(entt::entity causer)
 
                 if (pkCauser == this)
                 {
-                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || ecs::SocialSystem::GetShopOwner(GetEntityHandle()) != entt::null) || IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || ecs::SocialSystem::GetShopOwner(GetEntityHandle()) != entt::null) || ecs::SessionSystem::IsCubeOpen(GetEntityHandle()))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -3725,7 +3725,7 @@ void CHARACTER::OnClick(entt::entity causer)
                 }
                 else
                 {
-                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(causer) || ecs::SocialSystem::GetShopOwner(causer) != entt::null) || pkCauser->IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(causer) || ecs::SocialSystem::GetShopOwner(causer) != entt::null) || ecs::SessionSystem::IsCubeOpen(causer))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -3743,7 +3743,7 @@ void CHARACTER::OnClick(entt::entity causer)
                     }
 #endif
 
-                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || IsCubeOpen()))
+                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || ecs::SessionSystem::IsCubeOpen(GetEntityHandle())))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName());

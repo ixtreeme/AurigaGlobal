@@ -381,7 +381,7 @@ void Cube_open (LPCHARACTER ch)
 	}
 
 
-	if (ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) || ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SessionSystem::IsSafeboxOpen(chEntity) || ch->IsCubeOpen()
+	if (ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) || ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SessionSystem::IsSafeboxOpen(chEntity) || ecs::SessionSystem::IsCubeOpen(chEntity)
 #ifdef ENABLE_ACCE_SYSTEM
 		 || ecs::AcceSystem::IsOpen(chEntity)
 #endif
@@ -423,7 +423,7 @@ void Cube_close(LPCHARACTER ch)
 
 void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve)
 {
-	if (!ch || !ch->IsCubeOpen() || count_item <= 0 ||
+	if (!ch || !ecs::SessionSystem::IsCubeOpen(ch->GetEntityHandle()) || count_item <= 0 ||
 		count_item > static_cast<int>(g_bItemCountLimit))
 	{
 		return;

@@ -1130,11 +1130,6 @@ void CHARACTER::SetCubeNpc(entt::entity npcEntity)
 
 }
 
-bool CHARACTER::IsCubeOpen() const
-{
-    return ecs::SessionSystem::IsCubeOpen(GetEntityHandle());
-}
-
 
 #ifdef ENABLE_ACCE_SYSTEM
 #endif

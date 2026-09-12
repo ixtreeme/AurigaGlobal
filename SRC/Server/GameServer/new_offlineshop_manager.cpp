@@ -359,7 +359,7 @@ bool CheckCharacterActions(LPCHARACTER ch)
 	}
 
 
-	if (ch->IsCubeOpen())
+	if (ecs::SessionSystem::IsCubeOpen(ch->GetEntityHandle()))
 	{
 		return false;
 	}

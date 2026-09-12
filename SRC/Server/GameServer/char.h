@@ -1419,7 +1419,6 @@ protected:
 
 	// Marriage
 public:
-	int					GetMarriageBonus(uint32_t dwItemVnum, bool bSum = true);
 
 
 private:
@@ -1513,7 +1512,6 @@ public:
 public:
 
 	// by mhh
-	bool IsCubeOpen() const;
 	void SetCubeNpc(entt::entity npc);
 	bool CanDoCube() const;
 
@@ -1541,7 +1539,6 @@ public:
 private:
 
 public:
-	void SendGuildName(CGuild* pGuild);
 	void SendGuildName(uint32_t dwGuildID);
 
 private:

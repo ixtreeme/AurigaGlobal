@@ -1629,7 +1629,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		if (ecs::PlayerRuntime::IsPCBang(toEntity))
 			rateFactor += ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS);
 	}
-	rateFactor += to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
+	rateFactor += ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
 	rateFactor += ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP);
 	rateFactor += ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS);
 	// useless (never used except for china intoxication) = always 100
@@ -1780,7 +1780,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		}
 
 		// ȥ ʽ
-		iExp += iExp * to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;
+		iExp += iExp * ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;
 	}
 
 	iExp += (iExp * ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
@@ -5017,7 +5017,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim)) {
-				iCriticalPct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
+				iCriticalPct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
@@ -5048,7 +5048,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim))
-				iPenetratePct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
+				iPenetratePct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
 
 
 			if (iPenetratePct)
@@ -5185,7 +5185,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim)) {
-				iCriticalPct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
+				iCriticalPct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
@@ -5206,7 +5206,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim))
-				iPenetratePct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
+				iPenetratePct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
 
 			{
 				CSkillProto* pkSk = CSkillManager::instance().Get(SKILL_RESIST_PENETRATE);
