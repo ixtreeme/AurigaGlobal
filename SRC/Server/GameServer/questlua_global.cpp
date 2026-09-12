@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/services/SpatialService.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
@@ -1494,45 +1495,27 @@ namespace quest
 		return 1;
 	}
 
-	struct FPurgeArea
-	{
-		int32_t x1, y1, x2, y2;
-		LPCHARACTER ExceptChar;
 
-		FPurgeArea(int32_t a, int32_t b, int32_t c, int32_t d, LPCHARACTER p)
-			: x1(a), y1(b), x2(c), y2(d),
-			ExceptChar(p)
-		{}
-
-		void operator () (LPENTITY ent)
-		{
-			if (true == ent->IsType(ENTITY_CHARACTER))
-			{
-				LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
-				const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
-
-
-				if (pChar == ExceptChar)
-					return;
+    struct FPurgeArea
+    {
+        int32_t x1, y1, x2, y2;
+        entt::entity except;
+        void operator()(entt::entity candidate) const
+        {
+            if (!ecs::PlayerRuntime::IsValid(candidate) || candidate == except) return;
+            if (ecs::PlayerRuntime::IsPet(candidate)) return;
 #ifdef __NEWPET_SYSTEM__
-				if (!ecs::PlayerRuntime::IsPet(pChar->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(pChar->GetEntityHandle()) && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(charEntity)))
-#else
-				if (!ecs::PlayerRuntime::IsPet(pChar->GetEntityHandle()) && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(charEntity)))
+            if (ecs::PlayerRuntime::IsNewPet(candidate)) return;
 #endif
-				{
-					if (x1 <= ecs::PlayerRuntime::GetX(charEntity) && ecs::PlayerRuntime::GetX(charEntity) <= x2 && y1 <= ecs::PlayerRuntime::GetY(charEntity) && ecs::PlayerRuntime::GetY(charEntity) <= y2)
-					{
-						M2_DESTROY_CHARACTER(pChar);
-					}
-				}
-			}
-		}
-	};
+            if (!ecs::PlayerRuntime::IsMonster(candidate) && !ecs::PlayerRuntime::IsStone(candidate)) return;
+            const auto x = ecs::PlayerRuntime::GetX(candidate), y = ecs::PlayerRuntime::GetY(candidate);
+            if (x1 <= x && x <= x2 && y1 <= y && y <= y2)
+                M2_DESTROY_CHARACTER(candidate);
+        }
+    };
 
 	ALUA(_purge_area)
 	{
-		// migrated from CHARACTER::purge_area
-		// DUAL-PATH: legacy only - area purge affects many entities
 		int32_t x1 = (int32_t)lua_tonumber(L, 1);
 		int32_t y1 = (int32_t)lua_tonumber(L, 2);
 		int32_t x2 = (int32_t)lua_tonumber(L, 3);
@@ -1546,14 +1529,9 @@ namespace quest
 			return 0;
 		}
 
-		LPSECTREE_MAP pSectree = SECTREE_MANAGER::instance().GetMap(mapIndex);
 
-		if (nullptr != pSectree)
-		{
-			FPurgeArea func(x1, y1, x2, y2, CQuestManager::instance().GetCurrentNPCCharacterPtr());
-
-			pSectree->for_each(func);
-		}
+        const FPurgeArea purge {x1, y1, x2, y2, CQuestManager::instance().GetCurrentNPCEntity()};
+        ecs::SpatialService::ForEachInMap(g_registry, mapIndex, purge);
 
 		return 0;
 	}

@@ -248,21 +248,23 @@ namespace quest
 	{
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentPartyMember()) ? (CQuestManager::Instance().GetCurrentPartyMember())->GetEntityHandle() : entt::null), CHAT_TYPE_TALKING, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentPartyMemberEntity(), CHAT_TYPE_TALKING, "%s", s.str().c_str());
 		return 0;
 	}
 
 	ALUA(member_clear_ready)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentPartyMember();
-		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_READY);
+		const entt::entity ch = CQuestManager::instance().GetCurrentPartyMemberEntity();
+		if (ch == entt::null) return 0;
+		AffectSystem::RemoveAffect(ch, AFFECT_DUNGEON_READY);
 		return 0;
 	}
 
 	ALUA(member_set_ready)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentPartyMember();
-		AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_READY, POINT_NONE, 0, AFF_DUNGEON_READY, 65535, 0, true);
+		const entt::entity ch = CQuestManager::instance().GetCurrentPartyMemberEntity();
+		if (ch == entt::null) return 0;
+		AffectSystem::AddAffect(ch, AFFECT_DUNGEON_READY, POINT_NONE, 0, AFF_DUNGEON_READY, 65535, 0, true);
 		return 0;
 	}
 

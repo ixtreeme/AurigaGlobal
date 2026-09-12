@@ -1536,19 +1536,20 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 		const int iLastEventAttr = membership.eventAttr;
 		membership.eventAttr = new_tree->GetEventAttribute(x, y);
 
-		if (membership.eventAttr != iLastEventAttr)
-		{
-			if (ecs::SocialSystem::GetParty(GetEntityHandle()))
-			{
-				quest::CQuestManager::instance().AttrOut(ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID(), this, iLastEventAttr);
-				quest::CQuestManager::instance().AttrIn(ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID(), this, membership.eventAttr);
-			}
-			else
-			{
-				quest::CQuestManager::instance().AttrOut(GetPlayerID(), this, iLastEventAttr);
-				quest::CQuestManager::instance().AttrIn(GetPlayerID(), this, membership.eventAttr);
-			}
-		}
+
+        const entt::entity character = GetEntityHandle();
+        const int currentEventAttr = membership.eventAttr;
+        if (currentEventAttr != iLastEventAttr)
+        {
+            auto* party = ecs::SocialSystem::GetParty(character);
+            const entt::entity questPlayer = party ? party->GetLeader() : character;
+            quest::CQuestManager::instance().AttrOut(questPlayer, character, iLastEventAttr);
+            if (!ecs::PlayerRuntime::IsPC(character)) return false;
+            const auto* current = g_registry.try_get<ecs::DungeonMembership>(character);
+            if (!current || current->eventAttr != currentEventAttr) return false;
+            quest::CQuestManager::instance().AttrIn(questPlayer, character, currentEventAttr);
+            if (!ecs::PlayerRuntime::IsPC(character)) return false;
+        }
 	}
 
 	if (GetSectree() != new_tree)

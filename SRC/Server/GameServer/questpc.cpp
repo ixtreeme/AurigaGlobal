@@ -10,7 +10,7 @@
 #include "packet.h"
 #include "buffer_manager.h"
 #include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
+#include <utility>
 #include "desc_client.h"
 #include "questevent.h"
 #include "ecs/systems/SessionSystem.hpp"
@@ -358,14 +358,14 @@ namespace quest
 	{
 		// unlocked locked npc
 		{
-			LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();
+			const entt::entity npc = CQuestManager::instance().GetCurrentNPCEntity();
 			const entt::entity ch = CQuestManager::instance().GetCurrentCharacter();
 
-			if (npc && !(ecs::PlayerRuntime::IsPC(((npc) ? (npc)->GetEntityHandle() : entt::null))))
+			if (npc != entt::null && !ecs::PlayerRuntime::IsPC(npc))
 			{
-				if ((ecs::PlayerRuntime::GetPlayerID(ch)) == ecs::PlayerRuntime::GetQuestNPCID(npc->GetEntityHandle()))
+				if (ch != entt::null && ecs::PlayerRuntime::GetQuestNPCLockOwner(npc) == ch)
 				{
-					ecs::PlayerRuntime::SetQuestNPCID(npc->GetEntityHandle(), 0);
+					ecs::PlayerRuntime::SetQuestNPCLockOwner(npc, entt::null);
 					LOG_TRACE("QUEST NPC lock isn't unlocked : pid {}", (ecs::PlayerRuntime::GetPlayerID(ch)));
 					CQuestManager::instance().WriteRunningStateToSyserr();
 				}
@@ -375,15 +375,21 @@ namespace quest
 		// commit data
 		if (HasReward())
 		{
-			Save();
 
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-			if (ch != nullptr) {
-				Reward(ch);
-				ecs::SessionSystem::Save(ch->GetEntityHandle());
-			}
+            auto& manager = CQuestManager::instance();
+            const entt::entity ch = manager.GetCurrentPCEntity();
+            const auto stillCurrent = [this, ch, &manager] {
+                return manager.GetCurrentPC() == this && manager.GetCurrentPCEntity() == ch;
+            };
+            Save();
+            if (!stillCurrent()) return;
+            if (ecs::PlayerRuntime::IsPC(ch)) {
+                Reward(ch);
+                if (!stillCurrent()) return;
+                ecs::SessionSystem::Save(ch);
+                if (!stillCurrent()) return;
+            }
 		}
-		m_bIsGivenReward = false;
 
 		if (m_iSendToClient)
 		{
@@ -671,44 +677,51 @@ namespace quest
 			m_bIsGivenReward = true;
 	}
 
-	void PC::Reward(LPCHARACTER ch)
-	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-		if (m_bIsGivenReward)
-		{
+
+    void PC::Reward(entt::entity character)
+    {
+        const auto playerID = m_dwID;
+        const auto recipientExists = [=] {
+            return ecs::PlayerRuntime::IsPC(character) &&
+                ecs::PlayerRuntime::GetPlayerID(character) == playerID;
+        };
+        if (!recipientExists()) return;
+
+        // Claim this batch before invoking any service. Reentry may append a new
+        // batch or disconnect this PC; neither invalidates these local values.
+        auto pending = std::exchange(m_vRewardData, {});
+        const bool alreadyGiven = std::exchange(m_bIsGivenReward, false);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 191, "");
+        if (alreadyGiven) ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 191, "");
 #endif
-			m_bIsGivenReward = false;
-		}
-
-		for (vector<RewardData>::iterator it = m_vRewardData.begin(); it != m_vRewardData.end(); ++it)
-		{
-			switch (it->type)
-			{
-				case RewardData::REWARD_TYPE_EXP:
-					LOG_INFO("EXP cur {} add {} next {}", ecs::PlayerRuntime::GetExp(ch->GetEntityHandle()), it->value1, ch->GetNextExp());
-
-					if (ecs::PlayerRuntime::GetExp(ch->GetEntityHandle()) + it->value1 > ch->GetNextExp())
-						ecs::PointSystem::Change(chEntity, POINT_EXP, ch->GetNextExp() - 1 - ecs::PlayerRuntime::GetExp(ch->GetEntityHandle()));
-					else
-						ecs::PointSystem::Change(chEntity, POINT_EXP, it->value1);
-
-					break;
-
-				case RewardData::REWARD_TYPE_ITEM:
-					if (it->value2 > 0) ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), it->value1, static_cast<uint32_t>(it->value2));
-					break;
-
-				case RewardData::REWARD_TYPE_NONE:
-				default:
-					LOG_ERROR("Invalid RewardData type");
-					break;
-			}
-		}
-
-		m_vRewardData.clear();
-	}
+        for (const auto& reward : pending)
+        {
+            if (!recipientExists()) return;
+            switch (reward.type)
+            {
+                case RewardData::REWARD_TYPE_EXP:
+                {
+                    const uint64_t current = ecs::PlayerRuntime::GetExp(character);
+                    const uint64_t next = ecs::PlayerRuntime::GetNextExp(character);
+                    uint64_t amount = reward.value1;
+                    // Preserve the old strict-overshoot cap (equality may level
+                    // up), but never subtract EXP or wrap at/above the threshold.
+                    if (current > next || amount > next - current)
+                        amount = next > current ? next - current - 1 : 0;
+                    if (amount) ecs::PointSystem::Change(character, POINT_EXP, static_cast<int64_t>(amount));
+                    break;
+                }
+                case RewardData::REWARD_TYPE_ITEM:
+                    if (reward.value2 > 0)
+                        ItemSystem::AutoGiveItemEcs(character, reward.value1, static_cast<uint32_t>(reward.value2));
+                    break;
+                case RewardData::REWARD_TYPE_NONE:
+                default:
+                    LOG_ERROR("Invalid RewardData type");
+                    break;
+            }
+        }
+    }
 
 	void PC::Build()
 	{

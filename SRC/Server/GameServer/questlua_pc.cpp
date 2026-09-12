@@ -899,7 +899,7 @@ namespace quest
         // migrated from CHARACTER::ResetPoint
         // TODO Phase 8: CharacterPoints decomposition
         // DUAL-PATH: legacy only during migration window
-		ecs::PointSystem::ResetAllPoints(CQuestManager::instance().GetCurrentCharacterPtr()->GetEntityHandle(), ecs::PointSystem::GetLevel(CQuestManager::instance().GetCurrentCharacter()));
+		ecs::PointSystem::ResetAllPoints(CQuestManager::instance().GetCurrentPCEntity(), ecs::PointSystem::GetLevel(CQuestManager::instance().GetCurrentCharacter()));
 		return 0;
 	}
 
@@ -3905,9 +3905,9 @@ teleport_area:
 	{
 		if (lua_isboolean(L, 1))
 		{
-			// Explicit legacy boundary: all accessory-window state must move together.
-			if (LPCHARACTER character = CQuestManager::instance().GetCurrentCharacterPtr())
-				ecs::AcceSystem::Open(character->GetEntityHandle(), lua_toboolean(L, 1));
+			const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+			if (character != entt::null)
+				ecs::AcceSystem::Open(character, lua_toboolean(L, 1));
 		}
 		else
 			sys_err("Invalid argument: arg1 must be boolean.");

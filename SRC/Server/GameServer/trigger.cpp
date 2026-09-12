@@ -8,7 +8,12 @@
 #include "utils.h"
 #include "config.h"
 #include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
+#include "ecs/components/quest_components.hpp"
+#include "ecs/systems/SessionSystem.hpp"
+#include "questmanager.h"
+#include "target.h"
+#include "shop.h"
+#include "attr_transfer.h"
 #include "sectree_manager.h"
 #include "ecs/services/SpatialService.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -85,17 +90,151 @@ TTriggerFunction OnClickTriggers[ON_CLICK_MAX_NUM] =
 #endif
 };
 
-void CHARACTER::AssignTriggers(const TMobTable* table)
+void ecs::PlayerRuntime::AssignClickTrigger(entt::entity target, uint8_t type)
 {
-	if (table->bOnClickType >= ON_CLICK_MAX_NUM)
-	{
-		LOG_ERROR("{} has invalid OnClick value {}", GetName(), table->bOnClickType);
-		abort();
-	}
+    if (!IsValid(target)) return;
+    if (type >= ON_CLICK_MAX_NUM) {
+        LOG_ERROR("{} has invalid OnClick value {}", GetName(target), type);
+        g_registry.remove<ecs::ClickTrigger>(target);
+        return;
+    }
+    if (!g_registry.all_of<ecs::ClickTrigger>(target))
+        g_registry.insert<ecs::ClickTrigger>(&target, &target + 1);
+    if (!IsValid(target)) return;
+    if (auto* trigger = g_registry.try_get<ecs::ClickTrigger>(target)) {
+        trigger->type = type;
+        trigger->callback = OnClickTriggers[type].func;
+    }
+}
 
-	auto& triggerOnClick = GetTriggerOnClick();
-	triggerOnClick.bType = table->bOnClickType;
-	triggerOnClick.pFunc = OnClickTriggers[table->bOnClickType].func;
+void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
+{
+    if (!IsValid(target) || !IsPC(causer)) return;
+
+    uint32_t vid = GetPacketVID(target);
+    LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(target).data(), ecs::PlayerRuntime::GetRaceNum(target), vid, GetName(causer).data());
+
+    {
+        if (ecs::SocialSystem::GetMyShop(causer) && causer != target)
+        {
+            LOG_ERROR("OnClick Fail ({}->{}) - pc has shop", GetName(causer).data(), GetName(target).data());
+            return;
+        }
+    }
+
+    {
+        if (ecs::SocialSystem::HasExchange(causer))
+        {
+            LOG_ERROR("OnClick Fail ({}->{}) - pc is exchanging", GetName(causer).data(), GetName(target).data());
+            return;
+        }
+    }
+
+    if (IsPC(target))
+    {
+        if (!CTargetManager::instance().GetTargetInfo(GetPlayerID(causer), TARGET_TYPE_VID, GetPacketVID(target)))
+        {
+            if (ecs::SocialSystem::GetMyShop(target))
+            {
+                if (CombatSystem::IsDead(causer) == true)
+                    return;
+
+                if (causer == target)
+                {
+                    if ((ecs::SocialSystem::HasExchange(target) || ecs::SessionSystem::IsSafeboxOpen(target) || ecs::SocialSystem::GetShopOwner(target) != entt::null) || ecs::SessionSystem::IsCubeOpen(target))
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
+#endif
+                        return;
+                    }
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+                    if (AttrTransfer_is_open(target))
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
+#endif
+                        return;
+                    }
+#endif
+                }
+                else
+                {
+                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(causer) || ecs::SocialSystem::GetShopOwner(causer) != entt::null) || ecs::SessionSystem::IsCubeOpen(causer))
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
+#endif
+                        return;
+                    }
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+                    if (AttrTransfer_is_open(causer))
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
+#endif
+                        return;
+                    }
+#endif
+
+                    if ((ecs::SocialSystem::HasExchange(target) || ecs::SessionSystem::IsSafeboxOpen(target) || ecs::SessionSystem::IsCubeOpen(target)))
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName(target).data());
+#endif
+                        return;
+                    }
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+                    if (AttrTransfer_is_open(target))
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName(target).data());
+#endif
+                        return;
+                    }
+#endif
+                }
+
+                if (CShop* shop = ecs::SocialSystem::GetShop(causer))
+                {
+                    shop->RemoveGuest(causer);
+                    if (!IsValid(target) || !IsPC(causer)) return;
+                    ecs::SocialSystem::SetShop(causer, nullptr);
+                }
+
+                if (!IsValid(target) || !IsPC(causer)) return;
+                if (auto* shop = ecs::SocialSystem::GetMyShop(target)) {
+                    shop->AddGuest(causer, GetPacketVID(target), false);
+                    if (IsValid(target) && IsPC(causer) && ecs::SocialSystem::GetShop(causer) == shop &&
+                        ecs::SocialSystem::GetMyShop(target) == shop)
+                        ecs::SocialSystem::SetShopOwner(causer, target);
+                }
+                return;
+            }
+
+            if (test_server)
+                LOG_ERROR("{}.OnClickFailure({}) - target is PC", GetName(causer).data(), GetName(target).data());
+
+            return;
+        }
+    }
+
+    if (!SetQuestNPC(causer, target) || !IsPC(causer)) return;
+
+    if (quest::CQuestManager::instance().Click(causer, target))
+    {
+        return;
+    }
+
+    if (!IsValid(target) || !IsPC(causer)) return;
+    if (!IsPC(target)) {
+        const auto* trigger = g_registry.try_get<ecs::ClickTrigger>(target);
+        const auto callback = trigger ? trigger->callback : nullptr;
+        if (callback) callback(target, causer);
+    }
 }
 
 /*
@@ -245,7 +384,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 		|| ecs::SessionSystem::IsCubeOpen(causer))
 		return 0;
 
-	ecs::PlayerRuntime::SetQuestNPCID(causer, ecs::PlayerRuntime::GetPacketVID(ch));
+	ecs::PlayerRuntime::SetQuestNPC(causer, ch);
 	ecs::ChatSystem::Send(causer, CHAT_TYPE_COMMAND, "stone_craft_open");
 	return 1;
 }

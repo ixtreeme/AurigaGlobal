@@ -471,7 +471,6 @@ namespace quest
 
 	// ALUA(guild_set_war_data0)
 	// {
-		// LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		// CGuild* pGuild = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 		// if (pGuild)

@@ -571,7 +571,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
         data.horse.bRiding != 0,
     });
 
-    reg.emplace_or_replace<ecs::QuestContext>(entity, 0u, 0u, entt::null);
+    reg.emplace_or_replace<ecs::QuestContext>(entity);
     reg.emplace_or_replace<ecs::ItemAward>(entity, ecs::ItemAward {});
     reg.emplace_or_replace<ecs::RankPoints>(entity, MakeRankPoints(data));
     reg.emplace_or_replace<ecs::AlignBonuses>(entity, ecs::AlignBonuses { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, static_cast<uint8_t>(255) });

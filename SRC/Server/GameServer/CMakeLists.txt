@@ -22,6 +22,29 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
 
+add_executable(QuestRuntimeTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/QuestRuntimeTests.cpp
+    questmanager.cpp
+    questpc.cpp
+    questlua_npc.cpp
+    trigger.cpp
+    ecs/VIDRegistry.cpp
+    ecs/systems/QuestSystem.cpp
+    buffer_manager.cpp
+    event.cpp
+    event_queue.cpp
+    utils.cpp
+)
+target_link_libraries(QuestRuntimeTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly)
+if(MSVC)
+    target_compile_options(QuestRuntimeTests PRIVATE /Gy)
+    target_link_options(QuestRuntimeTests PRIVATE /OPT:REF /OPT:NOICF)
+endif()
+if(WIN32)
+    target_link_libraries(QuestRuntimeTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME quest_runtime COMMAND QuestRuntimeTests)
+
 add_executable(HorseRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/HorseRuntimeTests.cpp
     horse_rider.cpp
@@ -194,7 +217,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
+    foreach(_asan_target GameServer QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

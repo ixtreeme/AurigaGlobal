@@ -1510,56 +1510,6 @@ int GetPosition(entt::entity e)
     return runtime ? runtime->position : POS_STANDING;
 }
 
-entt::entity GetQuestNPC(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return entt::null;
-
-    const auto* context = g_registry.try_get<ecs::QuestContext>(e);
-    if (!context || context->npcVID == 0)
-        return entt::null;
-
-    const entt::entity npc = CVIDRegistry::Instance().Find(context->npcVID);
-    return npc != entt::null && g_registry.valid(npc) ? npc : entt::null;
-}
-
-uint32_t GetQuestNPCID(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return 0;
-
-    const auto* context = g_registry.try_get<ecs::QuestContext>(e);
-    return context ? context->npcVID : 0;
-}
-
-bool SetQuestNPCID(entt::entity e, uint32_t id)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return false;
-
-    auto& context = g_registry.get_or_emplace<ecs::QuestContext>(e);
-    context.npcVID = id;
-
-    return true;
-}
-
-uint32_t GetQuestBy(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return 0;
-    const auto* context = g_registry.try_get<ecs::QuestContext>(e);
-    return context ? context->byVnum : 0;
-}
-
-bool SetQuestBy(entt::entity e, uint32_t questVnum)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return false;
-    auto& context = g_registry.get_or_emplace<ecs::QuestContext>(e);
-    context.byVnum = questVnum;
-    return true;
-}
-
 void DestroyCharacter(entt::entity e)
 {
     M2_DESTROY_CHARACTER(e);
@@ -1624,27 +1574,6 @@ uint8_t GetBattlePassID(entt::entity e)
 }
 
 #endif
-
-// The item a quest is currently working on. All four CHARACTER accessors
-// were wrappers over QuestContext::questItem, one of them converting the
-// entity back into a pointer on the way out.
-entt::entity GetQuestItem(entt::entity e)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return entt::null;
-
-	const auto* context = g_registry.try_get<ecs::QuestContext>(e);
-	return context && ItemSystem::IsValidItem(context->questItem) ? context->questItem : entt::null;
-}
-
-void SetQuestItem(entt::entity e, entt::entity item)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-
-	g_registry.get_or_emplace<ecs::QuestContext>(e).questItem =
-		ItemSystem::IsValidItem(item) ? item : entt::null;
-}
 
 #ifdef ENABLE_RANKING
 int64_t GetRankPoints(entt::entity e, int category)
@@ -3561,7 +3490,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
         flags->aiFlag = t->dwAIFlag;
     ecs::PlayerRuntime::SetImmuneFlag(GetEntityHandle(), t->dwImmuneFlag);
 
-    AssignTriggers(t);
+    ecs::PlayerRuntime::AssignClickTrigger(GetEntityHandle(), t->bOnClickType);
 
     AffectSystem::ApplyMobAttribute(GetEntityHandle(), t);
 
@@ -3665,139 +3594,6 @@ void CHARACTER::OnMove(bool bIsAttack)
     // MINING
     ActivitySystem::CancelMining(GetEntityHandle());
     // END_OF_MINING
-}
-
-void CHARACTER::OnClick(entt::entity causer)
-{
-    LPCHARACTER pkCauser = ecs::LegacyCharOf(causer);
-    if (!pkCauser)
-    {
-        LOG_ERROR("OnClick {} by NULL", GetName());
-        return;
-    }
-
-    uint32_t vid = GetPacketVID();
-    LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()), vid, pkCauser->GetName());
-
-    {
-        if (ecs::SocialSystem::GetMyShop(causer) && pkCauser != this)
-        {
-            LOG_ERROR("OnClick Fail ({}->{}) - pc has shop", pkCauser->GetName(), GetName());
-            return;
-        }
-    }
-
-    {
-        if (ecs::SocialSystem::HasExchange(causer))
-        {
-            LOG_ERROR("OnClick Fail ({}->{}) - pc is exchanging", pkCauser->GetName(), GetName());
-            return;
-        }
-    }
-
-    if (IsPC())
-    {
-        if (!CTargetManager::instance().GetTargetInfo(pkCauser->GetPlayerID(), TARGET_TYPE_VID, GetPacketVID()))
-        {
-            if (ecs::SocialSystem::GetMyShop(GetEntityHandle()))
-            {
-                if (CombatSystem::IsDead(causer) == true)
-                    return;
-
-                if (pkCauser == this)
-                {
-                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || ecs::SocialSystem::GetShopOwner(GetEntityHandle()) != entt::null) || ecs::SessionSystem::IsCubeOpen(GetEntityHandle()))
-                    {
-#ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
-#endif
-                        return;
-                    }
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (AttrTransfer_is_open(GetEntityHandle()))
-                    {
-#ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
-#endif
-                        return;
-                    }
-#endif
-                }
-                else
-                {
-                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(causer) || ecs::SocialSystem::GetShopOwner(causer) != entt::null) || ecs::SessionSystem::IsCubeOpen(causer))
-                    {
-#ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
-#endif
-                        return;
-                    }
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (AttrTransfer_is_open(causer))
-                    {
-#ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
-#endif
-                        return;
-                    }
-#endif
-
-                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || ecs::SessionSystem::IsCubeOpen(GetEntityHandle())))
-                    {
-#ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName());
-#endif
-                        return;
-                    }
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (AttrTransfer_is_open(GetEntityHandle()))
-                    {
-#ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName());
-#endif
-                        return;
-                    }
-#endif
-                }
-
-                if (CShop* shop = ecs::SocialSystem::GetShop(causer))
-                {
-                    shop->RemoveGuest(causer);
-                    ecs::SocialSystem::SetShop(causer, nullptr);
-                }
-
-                ecs::SocialSystem::GetMyShop(GetEntityHandle())->AddGuest(causer, GetPacketVID(), false);
-                ecs::SocialSystem::SetShopOwner(causer, GetEntityHandle());
-                return;
-            }
-
-            if (test_server)
-                LOG_ERROR("{}.OnClickFailure({}) - target is PC", pkCauser->GetName(), GetName());
-
-            return;
-        }
-    }
-
-    ecs::PlayerRuntime::SetQuestNPCID(causer, GetPacketVID());
-
-    if (quest::CQuestManager::instance().Click(pkCauser->GetPlayerID(), this))
-    {
-        return;
-    }
-
-    if (!IsPC())
-    {
-        if (!m_triggerOnClick.pFunc)
-        {
-            return;
-        }
-
-        m_triggerOnClick.pFunc(GetEntityHandle(),
-			pkCauser ? causer : entt::null);
-    }
 }
 
 void CHARACTER::DestroyPvP()

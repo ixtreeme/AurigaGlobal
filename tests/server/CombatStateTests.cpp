@@ -348,7 +348,7 @@ void ecs::PlayerRuntime::StartRecoveryEvent(entt::entity) { UnexpectedService(__
 bool ecs::PlayerRuntime::IsStone(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsMonster(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagMonster>(e); }
 unsigned char ecs::PlayerRuntime::GetMobRank(entt::entity) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::SetQuestNPCID(entt::entity,unsigned int) { UnexpectedService(__func__); }
+bool ecs::PlayerRuntime::SetQuestNPC(entt::entity,entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity,unsigned int,unsigned int,unsigned int,unsigned int,bool) { UnexpectedService(__func__); }
 int64_t ecs::PlayerRuntime::GetRankPoints(entt::entity,int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::SetRankPoints(entt::entity,int,int64_t) { UnexpectedService(__func__); }

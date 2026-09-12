@@ -11,8 +11,6 @@
 
 #include "questnpc.h"
 
-class ITEM;
-class CHARACTER;
 class CDungeon;
 
 #ifdef ENABLE_NEWSTUFF
@@ -98,14 +96,13 @@ namespace quest
 		bool		RunState(QuestState& qs);
 
 		PC* GetPC(unsigned int pc);
+        PC* GetPC(entt::entity character);
 		PC* GetPCForce(unsigned int pc);
 
 		unsigned int	GetCurrentNPCRace();
 		const std::string& GetCurrentQuestName();
 		unsigned int	FindNPCIDByName(const std::string& name);
 
-		//void		SetCurrentNPCCharacterPtr(LPCHARACTER ch) { m_pkCurrentNPC = ch; }
-		LPCHARACTER		GetCurrentNPCCharacterPtr() const;
 
 		void		SetCurrentEventIndex(int index) { m_iRunningEventIndex = index; }
 
@@ -129,7 +126,7 @@ namespace quest
 		void		Login(unsigned int pc, const char* c_pszQuestName = nullptr);
 		void		Logout(unsigned int pc);
 		bool		Timer(unsigned int pc, unsigned int npc);
-		bool		Click(unsigned int pc, LPCHARACTER pkNPC);
+		bool		Click(entt::entity pc, entt::entity npc);
 		void		Kill(unsigned int pc, unsigned int npc);
 #ifdef ENABLE_QUEST_DIE_EVENT
 		void		Die(unsigned int pc, unsigned int npc);
@@ -138,8 +135,8 @@ namespace quest
 		void		QuestDamage(unsigned int pc, unsigned int npc);
 #endif
 		void		LevelUp(unsigned int pc);
-		void		AttrIn(unsigned int pc, LPCHARACTER ch, int attr);
-		void		AttrOut(unsigned int pc, LPCHARACTER ch, int attr);
+		void		AttrIn(entt::entity pc, entt::entity ch, int attr);
+		void		AttrOut(entt::entity pc, entt::entity ch, int attr);
 		bool		Target(unsigned int pc, uint32_t dwQuestIndex, const char* c_pszTargetName, const char* c_pszVerb);
 		bool		GiveItemToPC(unsigned int pc, entt::entity pkChr);
 		void		Unmount(unsigned int pc);
@@ -177,10 +174,8 @@ namespace quest
 		bool		CanStartQuest(unsigned int quest_index);
 		bool		CanEndQuestAtState(const std::string& quest_name, const string& state_name);
 
-		entt::entity	GetCurrentCharacter() const { return m_currentCharacter; }
-		// Derived, for the callers that still speak to CHARACTER directly.
-		LPCHARACTER		GetCurrentCharacterPtr() const;
-		LPCHARACTER		GetCurrentPartyMember() const { return m_pCurrentPartyMember; }
+		entt::entity	GetCurrentCharacter() const { return GetCurrentPCEntity(); }
+		entt::entity	GetCurrentPartyMemberEntity() const;
 		PC* GetCurrentPC() const { return m_pCurrentPC; }
 		entt::entity	GetCurrentPCEntity() const;
 		entt::entity	GetCurrentNPCEntity() const;
@@ -266,8 +261,7 @@ namespace quest
 		PCMap			m_mapPC;
 
 		entt::entity		m_currentCharacter;
-		LPCHARACTER		m_pCurrentNPCCharacter;
-		LPCHARACTER		m_pCurrentPartyMember;
+		entt::entity		m_currentPartyMember;
 		PC* m_pCurrentPC;
 
 		std::string			m_strScript;
@@ -314,7 +308,7 @@ namespace quest
 		PC* GetOtherPCBlockRootPC();
 	private:
 		PC* m_pOtherPCBlockRootPC;
-		std::vector <uint32_t>	m_vecPCStack;
+		std::vector<entt::entity> m_vecPCStack;
 #ifdef __QUEST_RENEWAL__
 	public:
 		std::map<uint16_t, unsigned int> QuestCategoryIndexMap;

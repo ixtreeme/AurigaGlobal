@@ -12,6 +12,9 @@ class CNewPetSystem;
 
 namespace ecs::PlayerRuntime {
 
+void OnClick(entt::entity target, entt::entity causer);
+void AssignClickTrigger(entt::entity target, uint8_t type);
+
 entt::entity FindByPlayerID(uint32_t playerID);
 entt::entity FindByPlayerName(std::string_view name);
 entt::entity FindByVID(uint32_t vid);
@@ -214,8 +217,9 @@ int GetDuelOption(entt::entity e, const char* option);
 void SetDuelOption(entt::entity e, const char* option, int value);
 int GetPosition(entt::entity e);
 entt::entity GetQuestNPC(entt::entity e);
-uint32_t GetQuestNPCID(entt::entity e);
-bool SetQuestNPCID(entt::entity e, uint32_t id);
+bool SetQuestNPC(entt::entity e, entt::entity npc);
+entt::entity GetQuestNPCLockOwner(entt::entity npc);
+bool SetQuestNPCLockOwner(entt::entity npc, entt::entity owner);
 uint32_t GetQuestBy(entt::entity e);
 bool SetQuestBy(entt::entity e, uint32_t questVnum);
 void DestroyCharacter(entt::entity e);

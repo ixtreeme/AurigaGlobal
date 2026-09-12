@@ -20,7 +20,6 @@ namespace quest
 	{
 		CQuestManager& q = CQuestManager::instance();
 
-		//q.GetPC(q.GetCurrentCharacterPtr()->GetPlayerID())->SetCurrentQuestStartFlag();
 		q.GetCurrentPC()->SetCurrentQuestStartFlag();
 		return 0;
 	}
@@ -30,7 +29,6 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 
 		q.GetCurrentPC()->SetCurrentQuestDoneFlag();
-		//q.GetPC(q.GetCurrentCharacterPtr()->GetPlayerID())->SetCurrentQuestDoneFlag();
 		return 0;
 	}
 
@@ -38,7 +36,6 @@ namespace quest
 	{
 		CQuestManager& q = CQuestManager::instance();
 
-		//q.GetPC(q.GetCurrentCharacterPtr()->GetPlayerID())->SetCurrentQuestTitle(lua_tostring(L,-1));
 		if (lua_isstring(L,-1))
 			q.GetCurrentPC()->SetCurrentQuestTitle(lua_tostring(L,-1));
 
@@ -59,7 +56,6 @@ namespace quest
 	{
 		CQuestManager& q = CQuestManager::instance();
 
-		//q.GetPC(q.GetCurrentCharacterPtr()->GetPlayerID())->SetCurrentQuestClockName(lua_tostring(L,-1));
 		if (lua_isstring(L,-1))
 			q.GetCurrentPC()->SetCurrentQuestClockName(lua_tostring(L,-1));
 
@@ -70,7 +66,6 @@ namespace quest
 	{
 		CQuestManager& q = CQuestManager::instance();
 
-		//q.GetPC(q.GetCurrentCharacterPtr()->GetPlayerID())->SetCurrentQuestClockValue((int)rint(lua_tonumber(L,-1)));
 		if (lua_isnumber(L,-1))
 			q.GetCurrentPC()->SetCurrentQuestClockValue((int)rint(lua_tonumber(L,-1)));
 
@@ -81,7 +76,6 @@ namespace quest
 	{
 		CQuestManager& q = CQuestManager::instance();
 
-		//q.GetPC(q.GetCurrentCharacterPtr()->GetPlayerID())->SetCurrentQuestCounterName(lua_tostring(L,-1));
 		if (lua_isstring(L,-1))
 			q.GetCurrentPC()->SetCurrentQuestCounterName(lua_tostring(L,-1));
 
@@ -92,7 +86,6 @@ namespace quest
 	{
 		CQuestManager& q = CQuestManager::instance();
 
-		//q.GetPC(q.GetCurrentCharacterPtr()->GetPlayerID())->SetCurrentQuestCounterValue((int)rint(lua_tonumber(L,-1)));
 		if (lua_isnumber(L,-1))
 			q.GetCurrentPC()->SetCurrentQuestCounterValue((int)rint(lua_tonumber(L,-1)));
 
@@ -103,7 +96,6 @@ namespace quest
 	{
 		CQuestManager& q = CQuestManager::instance();
 
-		//q.GetPC(q.GetCurrentCharacterPtr()->GetPlayerID())->SetCurrentQuestCounterValue((int)rint(lua_tonumber(L,-1)));
 		if (lua_isstring(L,-1))
 			q.GetCurrentPC()->SetCurrentQuestIconFile(lua_tostring(L,-1));
 

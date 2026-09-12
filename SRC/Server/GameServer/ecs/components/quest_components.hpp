@@ -9,9 +9,16 @@
 
 namespace ecs {
 
+struct ClickTrigger {
+    uint8_t type { 0 };
+    int (*callback)(entt::entity, entt::entity) { nullptr };
+};
+
 struct QuestContext {
-    uint32_t npcVID;
-    uint32_t byVnum;
+    // Runtime references must keep their generation; a wire VID/PID can be reused.
+    entt::entity npc { entt::null };
+    entt::entity lockOwner { entt::null };
+    uint32_t byVnum { 0 };
     entt::entity questItem { entt::null };
 };
 

@@ -173,7 +173,7 @@ int32_t GetMapIndex(entt::entity e) { return g_registry.get<Actor>(e).map; }
 uint32_t GetRaceNum(entt::entity e) { return g_registry.get<Actor>(e).race; }
 uint32_t GetPacketVID(entt::entity) { return 99; }
 bool IsPC(entt::entity e) { return IsValid(e) && g_registry.get<Actor>(e).pc; }
-bool SetQuestNPCID(entt::entity, uint32_t) { Unexpected(); }
+bool SetQuestNPC(entt::entity, entt::entity) { Unexpected(); }
 LPSECTREE GetSectree(entt::entity e) {
     if (!pickupTest) Unexpected();
     static SECTREE tree;

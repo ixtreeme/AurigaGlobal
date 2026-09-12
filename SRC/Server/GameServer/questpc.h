@@ -2,7 +2,7 @@
 
 #include "quest.h"
 
-class CHARACTER;
+#include <entt/entity/entity.hpp>
 
 namespace quest
 {
@@ -125,7 +125,7 @@ namespace quest
 			void		Save();
 
 			bool		HasReward() { return !m_vRewardData.empty() || m_bIsGivenReward; }
-			void		Reward(LPCHARACTER ch);
+			void		Reward(entt::entity character);
 
 			void		GiveItem(const string& label, uint32_t dwVnum, int count);
 			void		GiveExp(const string& label, uint32_t exp);

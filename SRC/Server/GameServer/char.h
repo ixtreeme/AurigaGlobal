@@ -483,17 +483,6 @@ typedef struct character_point
 #define TRIGGERPARAM		entt::entity ch, entt::entity causer
 
 
-class CTrigger
-{
-public:
-	CTrigger() : bType(0), pFunc(nullptr)
-	{
-	}
-
-	uint8_t	bType;
-	int	(*pFunc) (TRIGGERPARAM);
-};
-
 EVENTINFO(char_event_info)
 {
 	entt::entity ch { entt::null };
@@ -1219,22 +1208,17 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// AI related
 public:
-	void			AssignTriggers(const TMobTable* table);
 
 protected:
 
 public:
 
 
-	void			OnClick(entt::entity causer);
-	CTrigger&		GetTriggerOnClick() { return m_triggerOnClick; }
-	const CTrigger&	GetTriggerOnClick() const { return m_triggerOnClick; }
 
 	uint32_t		 m_dwLegacyVID { 0 };
 
 
 protected:
-	CTrigger		m_triggerOnClick;
 	// End of AI
 
 	////////////////////////////////////////////////////////////////////////////////////////

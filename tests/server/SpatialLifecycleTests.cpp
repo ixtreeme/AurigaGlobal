@@ -342,8 +342,8 @@ const CMotion* CMotionManager::GetMotion(uint32_t race, uint32_t key) {
     auto it = motions.find({race, key}); return it == motions.end() ? nullptr : it->second;
 }
 float GetDegreeFromPositionXY(int32_t, int32_t, int32_t, int32_t) { Unexpected(); }
-void quest::CQuestManager::AttrIn(uint32_t, LPCHARACTER, int) { Unexpected(); }
-void quest::CQuestManager::AttrOut(uint32_t, LPCHARACTER, int) { Unexpected(); }
+void quest::CQuestManager::AttrIn(entt::entity, entt::entity, int) { Unexpected(); }
+void quest::CQuestManager::AttrOut(entt::entity, entt::entity, int) { Unexpected(); }
 entt::entity ItemSystem::GetWearItem(entt::entity e, uint8_t slot) {
     Check(slot == WEAR_WEAPON, "motion read wrong wear slot"); return motionSettings[e].weapon;
 }
@@ -352,6 +352,7 @@ const TItemTable* ItemSystem::GetItemProto(entt::entity e) {
     auto it = weaponProtos.find(e); return it == weaponProtos.end() ? nullptr : &it->second;
 }
 uint32_t CParty::GetLeaderPID() { Unexpected(); }
+entt::entity CParty::GetLeader() { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity e, uint8_t point) {
     Check(point == POINT_MOV_SPEED, "motion read wrong point"); return motionSettings[e].movePoint;
 }

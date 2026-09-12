@@ -39,7 +39,7 @@ namespace quest
 				iShopVnum = (int) lua_tonumber(L, 1);
 		}
 
-		if (CQuestManager::instance().GetCurrentNPCCharacterPtr())
+		if (CQuestManager::instance().GetCurrentNPCEntity() != entt::null)
 			CShopManager::instance().StartShopping(CQuestManager::instance().GetCurrentCharacter(),
 			CQuestManager::instance().GetCurrentNPCEntity(), iShopVnum);
 		return 0;
@@ -92,7 +92,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcE = q.GetNPCEntity(L);
 		const entt::entity pcE = q.GetPCEntity(L);
-		ecs::PlayerRuntime::SetQuestNPCID(pcE, 0);
+		ecs::PlayerRuntime::SetQuestNPC(pcE, entt::null);
 		if (g_registry.valid(npcE)) {
 			g_registry.emplace_or_replace<ecs::DeadTag>(npcE);
 			g_dispatcher.trigger(ecs::EvEntityDied{pcE, npcE});
@@ -106,7 +106,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcE = q.GetNPCEntity(L);
 		const entt::entity pcE = q.GetPCEntity(L);
-		ecs::PlayerRuntime::SetQuestNPCID(pcE, 0);
+		ecs::PlayerRuntime::SetQuestNPC(pcE, entt::null);
 		if (g_registry.valid(npcE)) {
 			g_registry.emplace_or_replace<ecs::DeadTag>(npcE);
 			g_dispatcher.trigger(ecs::EvEntityDied{pcE, npcE});
@@ -176,8 +176,8 @@ namespace quest
 			if (ecs::PlayerRuntime::IsPC(npcEntity))
 				return 0;
 
-			if (ecs::PlayerRuntime::GetQuestNPCID(npcEntity) == ecs::PlayerRuntime::GetPlayerID(chEntity))
-				ecs::PlayerRuntime::SetQuestNPCID(npcEntity, 0);
+			if (ecs::PlayerRuntime::GetQuestNPCLockOwner(npcEntity) == chEntity)
+				ecs::PlayerRuntime::SetQuestNPCLockOwner(npcEntity, entt::null);
 		}
 		return 0;
 	}
@@ -193,12 +193,11 @@ namespace quest
 			return 1;
 		}
 
-		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
-		const uint32_t lockOwner = ecs::PlayerRuntime::GetQuestNPCID(npcEntity);
-		if (lockOwner == 0 || lockOwner == playerID)
+		if (!ecs::PlayerRuntime::IsPC(chEntity)) { lua_pushboolean(L, false); return 1; }
+		const entt::entity lockOwner = ecs::PlayerRuntime::GetQuestNPCLockOwner(npcEntity);
+		if (lockOwner == entt::null || lockOwner == chEntity)
 		{
-			ecs::PlayerRuntime::SetQuestNPCID(npcEntity, playerID);
-			lua_pushboolean(L, true);
+			lua_pushboolean(L, ecs::PlayerRuntime::SetQuestNPCLockOwner(npcEntity, chEntity));
 		}
 		else
 		{

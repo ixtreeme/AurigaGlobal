@@ -2350,7 +2350,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 				if (g1->UnderWar(g2->GetID()))
 					isUnderGuildWar = true;
 
-			ecs::PlayerRuntime::SetQuestNPCID(killer, ecs::PlayerRuntime::GetPacketVID(victim));
+			ecs::PlayerRuntime::SetQuestNPC(killer, victim);
 			quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(killer), quest::QUEST_NO_NPC);
 			// Guild kill bookkeeping is still pointer-shaped; CGuildManager is its
 			// own migration. One resolve, named.
@@ -2366,14 +2366,13 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	//if (ecs::PlayerRuntime::IsPC(victim))
 	//{
 	//	if (hasKiller)
-	//		ecs::PlayerRuntime::SetQuestNPCID(victim, hasKiller->GetVID());
 	//	// quest::CQuestManager::instance().Die(ecs::PlayerRuntime::GetPlayerID(victim), quest::QUEST_NO_NPC);
 	//	quest::CQuestManager::instance().Die(ecs::PlayerRuntime::GetPlayerID(victim), (hasKiller)?ecs::PlayerRuntime::GetRaceNum((hasKiller ? hasKiller->GetEntityHandle() : entt::null)):quest::QUEST_NO_NPC);
 	//}
 	if (ecs::PlayerRuntime::IsPC(victim))
 	{
 		if (hasKiller) {
-			ecs::PlayerRuntime::SetQuestNPCID(victim, ecs::PlayerRuntime::GetPacketVID(killer));
+			ecs::PlayerRuntime::SetQuestNPC(victim, killer);
 		}
 
 		quest::CQuestManager::instance().Die(ecs::PlayerRuntime::GetPlayerID(victim), (hasKiller) ? ecs::PlayerRuntime::GetRaceNum(killer) : quest::QUEST_NO_NPC);
@@ -3846,7 +3845,7 @@ void Reward(entt::entity e, bool bItemDrop)
 				CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 2);
 		}
 
-		ecs::PlayerRuntime::SetQuestNPCID(pkAttacker->GetEntityHandle(), ecs::PlayerRuntime::GetPacketVID(e));
+		ecs::PlayerRuntime::SetQuestNPC(pkAttacker->GetEntityHandle(), e);
 		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(attacker), ecs::PlayerRuntime::GetRaceNum(e));
 		CHARACTER_MANAGER::instance().KillLog(ecs::PlayerRuntime::GetRaceNum(e));
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
@@ -6052,7 +6051,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		if (!ecs::PlayerRuntime::IsPC(victim) && pkAttacker && ecs::PlayerRuntime::IsPC(attacker))
 		{
 			pkAttacker->SetQuestDamage(ecs::PlayerRuntime::GetRaceNum(victim), dam);
-			ecs::PlayerRuntime::SetQuestNPCID(attacker, ecs::PlayerRuntime::GetPacketVID(victim));
+			ecs::PlayerRuntime::SetQuestNPC(attacker, victim);
 			quest::CQuestManager::instance().QuestDamage(ecs::PlayerRuntime::GetPlayerID(attacker), ecs::PlayerRuntime::GetRaceNum(victim));
 		}
 #endif

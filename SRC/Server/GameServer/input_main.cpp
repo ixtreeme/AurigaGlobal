@@ -1902,25 +1902,16 @@ int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 	return 0;
 }
 
-void CInputMain::OnClick(entt::entity character, const char * data)
+void CInputMain::OnClick(entt::entity character, const char* data)
 {
-	if (!data || !ecs::PlayerRuntime::IsPC(character))
-		return;
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate OnClick handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::OnClick(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
-#endif
-	struct command_on_click *	pinfo = (struct command_on_click *) data;
-	LPCHARACTER			victim;
-
-	if ((victim = CHARACTER_MANAGER::instance().Find(pinfo->vid)))
-		victim->OnClick(character);
-	else if (test_server)
-	{
-		LOG_ERROR("CInputMain::OnClick {}.Click.NOT_EXIST_VID[{}]", ecs::PlayerRuntime::GetName(character).data(), pinfo->vid);
-	}
+    if (!data || !ecs::PlayerRuntime::IsPC(character)) return;
+    command_on_click request {};
+    memcpy(&request, data, sizeof(request));
+    const entt::entity target = CHARACTER_MANAGER::instance().FindEntity(request.vid);
+    if (ecs::PlayerRuntime::IsValid(target))
+        ecs::PlayerRuntime::OnClick(target, character);
+    else if (test_server)
+        LOG_ERROR("OnClick {}: missing VID {}", ecs::PlayerRuntime::GetName(character), request.vid);
 }
 
 void CInputMain::Exchange(entt::entity character, const char* data)

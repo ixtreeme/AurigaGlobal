@@ -3418,7 +3418,7 @@ bool ReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity
 		else
 		{
 			// TAKE_ITEM_BUG_FIX
-			ecs::PlayerRuntime::SetQuestNPCID(fromEntity, ecs::PlayerRuntime::GetPacketVID(receiver));
+			ecs::PlayerRuntime::SetQuestNPC(fromEntity, receiver);
 			// END_OF_TAKE_ITEM_BUG_FIX
 			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), ecs::PlayerRuntime::GetRaceNum(receiver), itemEntity);
 		}
@@ -3565,7 +3565,7 @@ bool ReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity
 
 	default:
 		LOG_INFO("TakeItem {} {} {}", ecs::PlayerRuntime::GetName(fromEntity), ecs::PlayerRuntime::GetRaceNum(receiver), itemName.c_str());
-		ecs::PlayerRuntime::SetQuestNPCID(fromEntity, ecs::PlayerRuntime::GetPacketVID(receiver));
+		ecs::PlayerRuntime::SetQuestNPC(fromEntity, receiver);
 		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), ecs::PlayerRuntime::GetRaceNum(receiver), itemEntity);
 		break;
 	}

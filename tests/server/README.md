@@ -1,5 +1,45 @@
 # Server ECS regression tests
 
+## Native quest character context and click dispatch
+
+The existing quest manager/PC and trigger implementation now receive native
+character entities for clicks, dungeon attribute members and reward delivery.
+The input click handler resolves the wire VID once; the quest click entry point
+does not turn the causer into a PID and resolve it again. GetPC(entity) binds that
+generation directly; GetPC(PID) remains for existing ID-based event sources.
+
+QuestContext stores separate entity references for its NPC target and NPC lock
+owner. It no longer overloads one integer as a target VID and an owner's PID.
+The current party member and nested other-PC stack also retain generations.
+Deleted/recycled entities cannot inherit a target, lock or nested return context.
+The character-pointer getters, CHARACTER::OnClick, AssignTriggers and CTrigger
+are removed; the existing trigger.cpp implements ClickTrigger components.
+Native quest-context accessors live together in the existing QuestSystem.cpp.
+
+Reward delivery claims a local batch before calling external services, validates
+the recipient between rewards, and does not clear rewards queued by reentry.
+The strict EXP overshoot cap is preserved without underflow at/above the next
+level threshold. EndRunning revalidates the recipient/current PC after reward
+delivery before saving or touching quest state again. This is not a general
+lifetime rewrite of quest::PC, Lua coroutines or all quest event handlers.
+
+QuestRuntimeTests links the production manager, PC, NPC Lua entry points,
+QuestSystem.cpp and trigger.cpp. It checks recycled NPC/item/player handles,
+failed context selection, nested other-PC restoration, Lua lock ownership,
+native attribute members, target/chat deletion, reward reentry and new batches,
+EXP boundaries, disconnect during reward completion, native click dispatch,
+exchange blocking, invalid trigger types and destructive/throwing component
+construction callbacks. No CHARACTER object is created. Character data access,
+script execution, reward sinks, networking, party/shop and dungeon services are
+controlled doubles; unexpected calls fail the fixture.
+
+Build QuestRuntimeTests and run ctest -C RelWithDebInfo -R quest_runtime
+--output-on-failure in the normal and AddressSanitizer build trees. Live checks
+remain necessary for NPC conversations and unlock-on-close/logout, item/EXP
+rewards, party dungeon entry/exit, private-shop opening and C++ dungeon NPCs.
+The unrelated LPCHARACTER paths elsewhere are not claimed to be migrated.
+
+
 ## Entity-native duplicate-load retirement
 
 `ItemSystem::DestroyLoadedDuplicateItem` now lives beside the existing manager

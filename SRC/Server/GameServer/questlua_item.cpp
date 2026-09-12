@@ -685,7 +685,6 @@ namespace quest
 	// {
 		// CQuestManager& q = CQuestManager::instance();
 		// entt::entity item = q.GetCurrentItemEntity();
-		// LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		// lua_pushboolean((item && ch)?InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), lua_tonumber(L, 1)):false);
 
