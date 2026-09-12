@@ -5,6 +5,7 @@
 #include <entt/entt.hpp>
 
 #include "../components/social_components.hpp"
+#include "../../horse_rider.h"
 
 class CMountInventory;
 
@@ -21,8 +22,6 @@ void UpdatePetSkin(entt::entity e);
 bool IsSummoned(entt::entity rider);
 bool IsRidingCostume(entt::entity rider);
 bool IsOwnedHorse(entt::entity rider, entt::entity horse);
-bool StartRiding(entt::entity rider);
-bool StopRiding(entt::entity rider);
 void SummonHorse(entt::entity rider, bool summon, bool fromFar = false,
     uint32_t vnum = 0, const char* name = nullptr);
 uint32_t GetMountVnum(entt::entity rider);
@@ -45,17 +44,6 @@ void SetSummonedHorse(entt::entity rider, entt::entity horse);
 entt::entity GetRider(entt::entity horse);
 void SetRider(entt::entity horse, entt::entity rider);
 bool IsHorseRiding(entt::entity rider);
-void SetHorseRiding(entt::entity rider, bool riding);
-int GetHorseArmor(entt::entity rider);
-int GetHorseLevel(entt::entity rider);
-void SetHorseLevel(entt::entity rider, int level);
-int GetHorseHealth(entt::entity rider);
-int GetHorseMaxHealth(entt::entity rider);
-int GetHorseStamina(entt::entity rider);
-int GetHorseMaxStamina(entt::entity rider);
-int GetHorseGrade(entt::entity rider);
-bool ReviveHorse(entt::entity rider);
-void FeedHorse(entt::entity rider);
 void ForceClearRidingState(entt::entity rider);
 
 } // namespace MountSystem

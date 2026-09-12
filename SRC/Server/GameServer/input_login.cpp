@@ -629,9 +629,9 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetZ(), d->GetHostName(), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
-	if (ch->GetHorseLevel() > 0)
+	if (MountSystem::GetHorseLevel(d->GetEntity()) > 0)
 	{
-		ch->EnterHorse();
+		MountSystem::EnterHorse(d->GetEntity());
 	}
 
 	// ÷?? ?
@@ -818,15 +818,14 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		}
 	}
 
-	if (ch->GetHorseLevel() > 0)
+	if (MountSystem::GetHorseLevel(d->GetEntity()) > 0)
 	{
 		uint32_t pid = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
 		if (pid != 0 && CHorseNameManager::instance().GetHorseName(pid) == nullptr)
 			db_clientdesc->DBPacket(HEADER_GD_REQ_HORSE_NAME, 0, &pid, sizeof(uint32_t));
 
 #ifdef ENABLE_BUG_FIXES
-		ch->SetHorseLevel(ch->GetHorseLevel());
-		ch->SkillLevelPacket();
+		MountSystem::SetHorseLevel(d->GetEntity(), MountSystem::GetHorseLevel(d->GetEntity()));
 #endif
 	}
 

@@ -1,15 +1,14 @@
 #include "stdafx.h"
 #include "ecs/systems/ViewSystem.hpp"
-#include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include <Core/Logging.hpp>
 #include "utils.h"
-#include "char_interface.hpp"
-#include "char_manager.h"
+#include "cmd.h"
+#include "ecs/systems/ChatSystem.hpp"
 #include "ecs/Registry.hpp"
-#include "ecs/CharacterAccessors.hpp"
-#include "motion.h"
+#include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "packet.h"
 #include "buffer_manager.h"
 #include "unique_item.h"
@@ -102,7 +101,7 @@ std::set<std::pair<uint32_t, uint32_t> > s_emotion_set;
 
 ACMD(do_emotion_allow)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character)) return;
 	if ( ecs::PlayerRuntime::GetArena(character) )
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -118,28 +117,28 @@ ACMD(do_emotion_allow)
 		return;
 
 	uint32_t	val = 0; str_to_number(val, arg1);
-	s_emotion_set.insert(std::make_pair(((ch)->GetLegacyVID()), val));
+	s_emotion_set.insert(std::make_pair(ecs::PlayerRuntime::GetPacketVID(character), val));
 }
 
 #ifdef ENABLE_NEWSTUFF
 #include "config.h"
 #endif
 
-bool CHARACTER_CanEmotion(CHARACTER& rch)
+static bool CanEmotion(entt::entity character)
 {
 #ifdef ENABLE_NEWSTUFF
 	if (g_bDisableEmotionMask)
 		return true;
 #endif
 	// ��ȥ�� �ʿ����� ����� �� �ִ�.
-	if (marriage::WeddingManager::instance().IsWeddingMap(rch.GetMapIndex()))
+	if (marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(character)))
 		return true;
 
 	// ������ ���� ����� ����� �� �ִ�.
-	if (rch.IsEquipUniqueItem(UNIQUE_ITEM_EMOTION_MASK))
+	if (ItemSystem::IsEquipUniqueItem(character, UNIQUE_ITEM_EMOTION_MASK))
 		return true;
 
-	if (rch.IsEquipUniqueItem(UNIQUE_ITEM_EMOTION_MASK2))
+	if (ItemSystem::IsEquipUniqueItem(character, UNIQUE_ITEM_EMOTION_MASK2))
 		return true;
 
 	return false;
@@ -147,10 +146,10 @@ bool CHARACTER_CanEmotion(CHARACTER& rch)
 
 ACMD(do_emotion)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character)) return;
 	int i;
 	{
-		if (ch->IsRiding())
+		if (MountSystem::IsRiding(character))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 798, "");
@@ -174,7 +173,7 @@ ACMD(do_emotion)
 		return;
 	}
 
-	if (!CHARACTER_CanEmotion(*ch))
+	if (!CanEmotion(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 409, "");
@@ -182,7 +181,7 @@ ACMD(do_emotion)
 		return;
 	}
 
-	if (IS_SET(emotion_types[i].flag, WOMAN_ONLY) && SEX_MALE==GET_SEX(ch))
+	if (IS_SET(emotion_types[i].flag, WOMAN_ONLY) && SEX_MALE==ecs::PlayerRuntime::GetSex(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 383, "");
@@ -193,16 +192,15 @@ ACMD(do_emotion)
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
-	LPCHARACTER victim = nullptr;
+	entt::entity victim = entt::null;
 
 	if (*arg1) {
-		const entt::entity victimEntity = NetworkSyncSystem::FindCharacterInView(g_registry, character, arg1, IS_SET(emotion_types[i].flag, NEED_PC));
-		victim = victimEntity != entt::null ? CHARACTER_MANAGER::instance().Find(ecs::PlayerRuntime::GetPacketVID(victimEntity)) : nullptr;
+		victim = NetworkSyncSystem::FindCharacterInView(g_registry, character, arg1, IS_SET(emotion_types[i].flag, NEED_PC));
 	}
 
 	if (IS_SET(emotion_types[i].flag, NEED_TARGET | NEED_PC))
 	{
-		if (!victim)
+		if (!ecs::PlayerRuntime::IsPC(victim))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 267, "");
@@ -211,12 +209,12 @@ ACMD(do_emotion)
 		}
 	}
 
-	if (victim)
+	if (victim != entt::null)
 	{
-		if (!(ecs::PlayerRuntime::IsPC(((victim) ? (victim)->GetEntityHandle() : entt::null))) || victim == ch)
+		if (!ecs::PlayerRuntime::IsPC(victim) || victim == character)
 			return;
 
-		if (victim->IsRiding())
+		if (MountSystem::IsRiding(victim))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 799, "");
@@ -224,7 +222,7 @@ ACMD(do_emotion)
 			return;
 		}
 
-		int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(character) - ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)));
+		int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(character) - ecs::PlayerRuntime::GetY(victim));
 
 		if (distance < 10)
 		{
@@ -244,7 +242,7 @@ ACMD(do_emotion)
 
 		if (IS_SET(emotion_types[i].flag, OTHER_SEX_ONLY))
 		{
-			if (GET_SEX(ch)==GET_SEX(victim))
+			if (ecs::PlayerRuntime::GetSex(character)==ecs::PlayerRuntime::GetSex(victim))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 445, "");
@@ -255,7 +253,7 @@ ACMD(do_emotion)
 
 		if (IS_SET(emotion_types[i].flag, NEED_PC))
 		{
-			if (s_emotion_set.find(std::make_pair(((victim)->GetLegacyVID()), ((ch)->GetLegacyVID()))) == s_emotion_set.end())
+			if (s_emotion_set.find(std::make_pair(ecs::PlayerRuntime::GetPacketVID(victim), ecs::PlayerRuntime::GetPacketVID(character))) == s_emotion_set.end())
 			{
 				if (true == marriage::CManager::instance().IsMarried( (ecs::PlayerRuntime::GetPlayerID(character)) ))
 				{
@@ -263,10 +261,10 @@ ACMD(do_emotion)
 
 					const uint32_t other = marriageInfo->GetOther( (ecs::PlayerRuntime::GetPlayerID(character)) );
 
-					if (0 == other || other != (ecs::PlayerRuntime::GetPlayerID(((victim) ? (victim)->GetEntityHandle() : entt::null))))
+					if (0 == other || other != (ecs::PlayerRuntime::GetPlayerID(victim)))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(victim).data());
 #endif
 						return;
 					}
@@ -274,20 +272,20 @@ ACMD(do_emotion)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(victim).data());
 #endif
 					return;
 				}
 			}
 
-			s_emotion_set.insert(std::make_pair(((ch)->GetLegacyVID()), ((victim)->GetLegacyVID())));
+			s_emotion_set.insert(std::make_pair(ecs::PlayerRuntime::GetPacketVID(character), ecs::PlayerRuntime::GetPacketVID(victim)));
 		}
 	}
 
 	char chatbuf[256+1];
 	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %u %u",
 			emotion_types[i].command_to_client,
-			(uint32_t) ((ch)->GetLegacyVID()), victim ? (uint32_t) ((victim)->GetLegacyVID()) : 0);
+			(uint32_t) ecs::PlayerRuntime::GetPacketVID(character), victim != entt::null ? (uint32_t) ecs::PlayerRuntime::GetPacketVID(victim) : 0);
 
 	if (len < 0 || len >= (int) sizeof(chatbuf))
 		len = sizeof(chatbuf) - 1;
@@ -305,8 +303,8 @@ ACMD(do_emotion)
 
 	ecs::ViewSystem::PacketView(character, buf.read_peek(), buf.size());
 
-	if (victim)
-		LOG_INFO("ACTION: {} TO {}", emotion_types[i].command, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
+	if (ecs::PlayerRuntime::IsPC(victim))
+		LOG_INFO("ACTION: {} TO {}", emotion_types[i].command, ecs::PlayerRuntime::GetName(victim).data());
 	else
 		LOG_INFO("ACTION: {}", emotion_types[i].command);
 }

@@ -1636,7 +1636,7 @@ bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
 		}
 	}
 
-	if (true == IsRiding())
+	if (true == MountSystem::IsRiding(GetEntityHandle()))
 	{
 #ifdef ENABLE_MOUNTSKILL_CHECK
 		eMountType eIsMount = GetMountLevelByVnum(MountSystem::GetMountVnum(GetEntityHandle()), false);
@@ -2170,7 +2170,7 @@ struct FuncSplashDamage
 		m_pkSk->SetPointVar("con", ecs::PointSystem::Get(m_character, POINT_HT));
 		m_pkSk->SetPointVar("def", ecs::PointSystem::Get(m_character, POINT_DEF_GRADE));
 		m_pkSk->SetPointVar("odef", ecs::PointSystem::Get(m_character, POINT_DEF_GRADE) - ecs::PointSystem::Get(m_character, POINT_DEF_GRADE_BONUS));
-		m_pkSk->SetPointVar("horse_level", m_pkChr->GetHorseLevel());
+		m_pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(m_character));
 
 		//int iPenetratePct = (int)(1 + k*4);
 		bool bIgnoreDefense = false;
@@ -3022,7 +3022,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	pkSk->SetPointVar("ar", CalcAttackRating(character, character));
 	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
 	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
-	pkSk->SetPointVar("horse_level", GetHorseLevel());
+	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		OnMove(true);
@@ -3326,7 +3326,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 	pkSk->SetPointVar("ar", CalcAttackRating(character, victim));
 	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
 	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
-	pkSk->SetPointVar("horse_level", GetHorseLevel());
+	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		OnMove(true);
@@ -3359,16 +3359,16 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	const auto character = GetEntityHandle();
 	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 
-	const bool bCanUseHorseSkill = CanUseHorseSkill();
+	const bool bCanUseHorseSkill = MountSystem::CanUseHorseSkill(GetEntityHandle());
 #ifdef ENABLE_BUG_FIXES
 	if(dwVnum != SKILL_MUYEONG) {
-		if (false == bCanUseHorseSkill && true == IsRiding()) {
+		if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(GetEntityHandle())) {
 			return BATTLE_NONE;
 		}
 	}
 #else
 	// ¸»Ŕ» Ĺ¸°íŔÖÁö¸¸ ˝şĹłŔş »çżëÇŇ Ľö ľř´Â »óĹÂ¶ó¸é return
-	if (false == bCanUseHorseSkill && true == IsRiding())
+	if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(GetEntityHandle()))
 		return BATTLE_NONE;
 #endif
 
@@ -3491,7 +3491,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	pkSk->SetPointVar("ar", CalcAttackRating(character, victim));
 	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
 	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
-	pkSk->SetPointVar("horse_level", GetHorseLevel());
+	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		OnMove(true);
@@ -3875,7 +3875,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (AffectSystem::IsPolymorphed(character))
 		return false;
 
-	const bool bCanUseHorseSkill = CanUseHorseSkill();
+	const bool bCanUseHorseSkill = MountSystem::CanUseHorseSkill(GetEntityHandle());
 
 
 	if (dwVnum == SKILL_HORSE_SUMMON)
@@ -3887,7 +3887,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	}
 
 	// ¸»Ŕ» Ĺ¸°íŔÖÁö¸¸ ˝şĹłŔş »çżëÇŇ Ľö ľř´Â »óĹÂ¶ó¸é return false
-	if (false == bCanUseHorseSkill && true == IsRiding())
+	if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(GetEntityHandle()))
 		return false;
 
 	CSkillProto * pkSk = CSkillManager::instance().Get(dwVnum);

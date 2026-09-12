@@ -11,6 +11,7 @@
 #include <common/stl.h>
 #include "entity.h"
 #include "horse_rider.h"
+#include "cmd.h"
 #include "constants.h"
 #include "affect.h"
 #include "affect_flag.h"
@@ -555,7 +556,7 @@ namespace marriage
 }
 
 
-class CHARACTER : public CEntity, public CHorseRider
+class CHARACTER : public CEntity
 {
 protected:
 	//////////////////////////////////////////////////////////////////////////////////
@@ -1279,25 +1280,15 @@ protected:
 	// Mounting
 public:
 
-	bool				CanUseHorseSkill();
 
 	// Horse
-	virtual	void		SetHorseLevel(int iLevel);
-
-	virtual	bool		StartRiding();
-	virtual	bool		StopRiding();
-
-
-	virtual	void		HorseDie();
-	virtual bool		ReviveHorse();
-
-	virtual void		SendHorseInfo();
-	virtual	void		ClearHorseInfo();
-	entt::entity			RiderEntity() const override { return GetEntityHandle(); }
 
 
 
-	bool				IsRiding() const;
+
+
+
+
 
 #ifdef __PET_SYSTEM__
 public:

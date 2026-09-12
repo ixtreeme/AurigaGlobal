@@ -800,7 +800,7 @@ ACMD(do_doctrine_choose) {
 		//ch->SetSkillLevel(139, 20);
 		//ch->SetSkillLevel(140, 20);
 
-		ch->SetHorseLevel(1);
+		MountSystem::SetHorseLevel(character, 1);
 		CAffect * pkAff = nullptr;
 		if (!(pkAff = AffectSystem::FindAffect(character, AFFECT_HORSE_NAME))) {
 			ecs::QuestSystem::SetFlag(character, "horse_name.valid_till", get_global_time() + 126144000);

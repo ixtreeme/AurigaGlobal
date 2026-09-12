@@ -1656,3 +1656,33 @@ gold, inventory/equipment/DS/extra/mount storage, offline-shop loading, dungeon
 purge, item expiry, logout/relog and persistence on a test server. The item
 identity/lifecycle is native; character internals and database/prototype pointers
 are not all eliminated by this migration.
+
+## Native horse rider runtime (2026-09-13)
+
+`CHorseRider` and its CHARACTER inheritance/wrappers are removed. The existing
+horse_rider files now implement entity-based MountSystem operations. HorseRuntime
+owns level, health, stamina, decay deadline and event handles; MountState remains
+the sole riding flag. DB loading/storing uses THorseInfo snapshots, not a second
+mutable horse object. Timer payloads hold versioned entities, never character
+pointers. Component removal cancels both timers, and callbacks check event
+identity before touching or rescheduling a rider. Publication does not retain
+component references across callbacks.
+
+HorseRuntimeTests links the real horse implementation and event queue. It checks
+hydration, malformed DB ranges, offline recovery, level/stat limits, mounting
+policies, consumption/regeneration, exhaustion, health decay, revival, shutdown,
+component removal, entity recycling, stale/replaced timers and reentrant or
+destructive packet/quest callbacks. No CHARACTER object is allocated. Player,
+network, quest, skill, point and world-spawn services are doubles; this suite
+does not validate live mount models, DB I/O or client rendering. The pre-existing
+fixed horse grade of 2 is intentionally preserved.
+
+The emotion command entry points also pass entities directly, including target
+lookup and gender/riding checks. Their packet/UI behavior still needs in-game
+verification. Costume mount actors, account mount inventory loading, descriptor
+ownership, quest contexts and other CHARACTER internals are separate remaining
+migration work; this is not complete LPCHARACTER removal.
+
+Before deployment, test login while mounted, logout/relog, horse feeding and
+revival, zero-stamina dismount, horse skills, GM horse level/stat changes,
+costume mount switching and two-player emotions on a test server.

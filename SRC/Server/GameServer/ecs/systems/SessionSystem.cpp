@@ -550,12 +550,6 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    // The horse table is CHorseRider state with no component yet; that is its
-    // own migration.
-    LPCHARACTER self = ecs::LegacyCharOf(e);
-    if (!self)
-        return;
-
     if (ecs::PlayerRuntime::GetPendingName(e).empty())
     {
         strlcpy(tab.name, ecs::PlayerRuntime::GetName(e).data(), sizeof(tab.name));
@@ -681,10 +675,7 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
     for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
         tab.lRankPoints[i] = ecs::PlayerRuntime::GetRankPoints(rankEntity, i);
 #endif
-    tab.horse = self->GetHorseData();
-    // The riding flag is the component's; the struct only carries it to the
-    // database and back.
-    tab.horse.bRiding = MountSystem::IsHorseRiding(e) ? 1 : 0;
+    tab.horse = MountSystem::StoreHorseData(e);
 }
 
 void Disconnect(entt::entity e, const char* c_pszReason)

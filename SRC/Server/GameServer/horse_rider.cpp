@@ -1,23 +1,28 @@
 #include "stdafx.h"
-#include <Core/Logging.hpp>
-#include "constants.h"
-#include "utils.h"
 #include "horse_rider.h"
+#include "utils.h"
 #include "config.h"
-#include "char_interface.hpp"
-#include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
-#include "ecs/systems/MountSystem.hpp"
+#include "char.h"
+#include "arena.h"
+#include "questmanager.h"
+#include "ecs/Registry.hpp"
 #include "ecs/EventDispatcher.hpp"
-#include "ecs/VIDRegistry.hpp"
 #include "ecs/events.hpp"
-
-const int HORSE_HEALTH_DROP_INTERVAL = 3 * 24 * 60 * 60;
-const int HORSE_STAMINA_CONSUME_INTERVAL = 6 * 60;
-const int HORSE_STAMINA_REGEN_INTERVAL = 12 * 60;
-//const int HORSE_HP_DROP_INTERVAL = 60;
-//const int HORSE_STAMINA_CONSUME_INTERVAL = 3;
-//const int HORSE_STAMINA_REGEN_INTERVAL = 6;
+#include "ecs/components/pet_mount_components.hpp"
+#include "ecs/components/dirty_components.hpp"
+#include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/ChatSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
+#include <algorithm>
+#include <limits>
+#include <utility>
 
 THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
 /*
@@ -68,348 +73,347 @@ THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
 	{ 50,	20107,	50,	200,	67,	89,	45,	22,	99,	79,	118,	59 }
 };
 
-CHorseRider::CHorseRider()
-{
-	Initialize();
+
+namespace {
+constexpr uint32_t HealthInterval = 3 * 24 * 60 * 60;
+constexpr int ConsumeInterval = 6 * 60;
+constexpr int RegenInterval = 12 * 60;
+
+ecs::HorseRuntime* Horse(entt::entity rider) {
+    return g_registry.valid(rider) ? g_registry.try_get<ecs::HorseRuntime>(rider) : nullptr;
 }
-
-CHorseRider::~CHorseRider()
-{
-	Destroy();
+// Commit only the native flag here. Publishing a dirty tag before the timer
+// transaction is complete would let observers re-enter half a riding change.
+bool SetRidingFlag(entt::entity rider, bool riding) {
+    auto* state = g_registry.valid(rider) ? g_registry.try_get<ecs::MountState>(rider) : nullptr;
+    if (!state) return false;
+    state->horseRiding = riding;
+    return true;
 }
-
-void CHorseRider::Initialize()
-{
-	m_eventStaminaRegen = nullptr;
-	m_eventStaminaConsume = nullptr;
-	memset(&m_Horse, 0, sizeof(m_Horse));
+void RemoveHorseTimers(entt::registry&, entt::entity rider) { MountSystem::StopHorseTimers(rider); }
+bool EnsureHorse(entt::entity rider) {
+    if (!ecs::PlayerRuntime::IsPC(rider)) return false;
+    struct Installed {};
+    if (!g_registry.ctx().contains<Installed>()) {
+        g_registry.on_destroy<ecs::HorseRuntime>().connect<&RemoveHorseTimers>();
+        g_registry.ctx().emplace<Installed>();
+    }
+    // Do not use emplace's trailing get() after a construction callback.
+    if (!g_registry.all_of<ecs::HorseRuntime>(rider))
+        g_registry.insert<ecs::HorseRuntime>(&rider, &rider + 1);
+    if (!ecs::PlayerRuntime::IsPC(rider) || !Horse(rider)) return false;
+    if (!g_registry.all_of<ecs::MountState>(rider))
+        g_registry.insert<ecs::MountState>(&rider, &rider + 1);
+    return ecs::PlayerRuntime::IsPC(rider) &&
+        g_registry.all_of<ecs::HorseRuntime, ecs::MountState>(rider);
 }
-
-void CHorseRider::Destroy()
-{
-	event_cancel(&m_eventStaminaRegen);
-	event_cancel(&m_eventStaminaConsume);
+uint32_t Now() { return static_cast<uint32_t>(std::clamp<int64_t>(get_global_time(), 0, std::numeric_limits<uint32_t>::max())); }
+uint32_t NextHealthDrop() {
+    return static_cast<uint32_t>(std::min<uint64_t>(uint64_t(Now()) + HealthInterval,
+        std::numeric_limits<uint32_t>::max()));
 }
-
-void CHorseRider::EnterHorse()
-{
-	if (GetHorseLevel() <= 0)
-		return;
-
-	if (GetHorseHealth() <= 0)
-		return;
-
-	if (IsHorseRiding())
-	{
-		MountSystem::SetHorseRiding(RiderEntity(), false);
-		StartRiding();
-	}
-	else
-	{
-		StartStaminaRegenEvent();
-	}
-	CheckHorseHealthDropTime(false);
+bool Alive(entt::entity rider) {
+    return ecs::PlayerRuntime::IsPC(rider) && MountSystem::GetHorseLevel(rider) > 0 &&
+        MountSystem::GetHorseHealth(rider) > 0;
 }
-
-bool CHorseRider::ReviveHorse()
-{
-	if (GetHorseLevel() <= 0)
-		return false;
-
-	if (GetHorseHealth()>0)
-		return false;
-
-	int level = GetHorseLevel();
-
-	m_Horse.sHealth = c_aHorseStat[level].iMaxHealth;
-	m_Horse.sStamina = c_aHorseStat[level].iMaxStamina;
-
-	// 2005.03.24.ipkn.�� �츰�� �ٽ� �״� ���� ����
-	ResetHorseHealthDropTime();
-
-	StartStaminaRegenEvent();
-	return true;
+void Dirty(entt::entity rider) {
+    if (g_registry.valid(rider) && !g_registry.all_of<ecs::DirtyTag>(rider))
+        g_registry.insert<ecs::DirtyTag>(&rider, &rider + 1);
 }
+EVENTINFO(horserider_info) { entt::entity rider {entt::null}; };
+EVENTFUNC(HorseStaminaConsume);
+EVENTFUNC(HorseStaminaRegen);
 
-short CHorseRider::GetHorseMaxHealth()
-{
-	int level = GetHorseLevel();
-	return c_aHorseStat[level].iMaxHealth;
+bool StartTimer(entt::entity rider, bool consume) {
+    if (!Alive(rider) || MountSystem::IsHorseRiding(rider) != consume) return false;
+    auto* state = Horse(rider);
+    if (!state) return false;
+    if ((consume ? state->consume : state->regen) && !(consume ? state->regen : state->consume))
+        return true;
+    const uint64_t revision = state->timerRevision + 1;
+    MountSystem::StopHorseTimers(rider);
+    const auto ready = [&] {
+        const auto* current = Horse(rider);
+        return Alive(rider) && current && current->timerRevision == revision &&
+            !current->regen && !current->consume && MountSystem::IsHorseRiding(rider) == consume;
+    };
+    if (!ready()) return false;
+    auto* info = AllocEventInfo<horserider_info>(); info->rider = rider;
+    auto timer = event_create(consume ? HorseStaminaConsume : HorseStaminaRegen, info,
+        PASSES_PER_SEC(consume ? ConsumeInterval : RegenInterval));
+    if (!timer || !ready()) { event_cancel(&timer); return false; }
+    state = Horse(rider);
+    (consume ? state->consume : state->regen) = std::move(timer);
+    return true;
 }
-
-short CHorseRider::GetHorseMaxStamina()
-{
-	int level = GetHorseLevel();
-	return c_aHorseStat[level].iMaxStamina;
+bool OwnsTimer(entt::entity rider, LPEVENT event, bool consume) {
+    const auto* state = Horse(rider);
+    return state && (consume ? state->consume : state->regen) == event;
 }
-
-void CHorseRider::FeedHorse()
-{
-	// ��A� �!���� �i3AA�A�����
-	if (GetHorseLevel() > 0 && GetHorseHealth() > 0)
-	{
-		UpdateHorseHealth(+1);
-		UpdateHorseStamina(+1);// etet�sn�l a kitart�s is n� 
-		// 20050324. ipkn �� ��?�A����� A1�� ��1O ��1AI�� �A���U.
-		ResetHorseHealthDropTime();
-	}
+int32_t Tick(LPEVENT event, bool consume) {
+    const auto* info = event ? dynamic_cast<horserider_info*>(event->info) : nullptr;
+    if (!info) return 0;
+    const auto rider = info->rider;
+    if (!OwnsTimer(rider, event, consume)) return 0;
+    if (!Alive(rider) || MountSystem::IsHorseRiding(rider) != consume) {
+        auto* state = Horse(rider);
+        (consume ? state->consume : state->regen).reset();
+        return 0;
+    }
+    MountSystem::ChangeHorseStamina(rider, consume ? -1 : 1);
+    if (!OwnsTimer(rider, event, consume)) return 0;
+    MountSystem::CheckHorseHealthDropTime(rider);
+    if (!OwnsTimer(rider, event, consume)) return 0;
+    if (consume) g_dispatcher.trigger(ecs::EvHorseStaminaConsume {rider});
+    else g_dispatcher.trigger(ecs::EvHorseStaminaRegen {rider});
+    if (!OwnsTimer(rider, event, consume)) return 0;
+    if (!Alive(rider) || MountSystem::IsHorseRiding(rider) != consume ||
+        (consume ? MountSystem::GetHorseStamina(rider) == 0 :
+            MountSystem::GetHorseStamina(rider) >= MountSystem::GetHorseMaxStamina(rider))) {
+        auto* state = Horse(rider);
+        (consume ? state->consume : state->regen).reset();
+        return 0;
+    }
+    return PASSES_PER_SEC(consume ? ConsumeInterval : RegenInterval);
 }
+EVENTFUNC(HorseStaminaConsume) { return Tick(event, true); }
+EVENTFUNC(HorseStaminaRegen) { return Tick(event, false); }
+} // namespace
 
-void CHorseRider::SetHorseData(const THorseInfo& crInfo)
-{
-	m_Horse = crInfo;
+namespace MountSystem {
+int GetHorseLevel(entt::entity rider) {
+    const auto* state = Horse(rider);
+    return state ? std::min<int>(state->level, HORSE_MAX_LEVEL) : 0;
 }
-
-// Stamina
-void CHorseRider::UpdateHorseDataByLogoff(uint32_t dwLogoffTime)
-{
-	if (GetHorseLevel() <= 0)
-		return;
-
-	if (dwLogoffTime >= 12 * 60)
-		UpdateHorseStamina(dwLogoffTime / 12 / 60, false); // �α׿��� 12�д� 1�� ȸ��
+int GetHorseHealth(entt::entity rider) { const auto* state = Horse(rider); return state ? state->health : 0; }
+int GetHorseStamina(entt::entity rider) { const auto* state = Horse(rider); return state ? state->stamina : 0; }
+int GetHorseMaxHealth(entt::entity rider) { return Horse(rider) ? c_aHorseStat[GetHorseLevel(rider)].iMaxHealth : 0; }
+int GetHorseMaxStamina(entt::entity rider) { return Horse(rider) ? c_aHorseStat[GetHorseLevel(rider)].iMaxStamina : 0; }
+int GetHorseArmor(entt::entity rider) { return c_aHorseStat[GetHorseLevel(rider)].iArmor; }
+int GetHorseGrade(entt::entity rider) {
+    // Preserve this server's fixed grade rule. Changing it would change skill
+    // permissions and horse quest behavior, independently of the ECS migration.
+    return Horse(rider) ? 2 : 0;
 }
+bool CanUseHorseSkill(entt::entity rider) { return IsRiding(rider) && GetHorseGrade(rider) == 3; }
 
-void CHorseRider::UpdateHorseStamina(int iStamina, bool bSend)
-{
-	int level = GetHorseLevel();
-
-	m_Horse.sStamina = MINMAX(0, m_Horse.sStamina + iStamina, c_aHorseStat[level].iMaxStamina);
-
-	if (GetHorseStamina() == 0 && IsHorseRiding())
-	{
-		StopRiding();
-	}
-
-	if (bSend)
-		SendHorseInfo();
+void StopHorseTimers(entt::entity rider) {
+    auto* state = Horse(rider);
+    if (!state) return;
+    ++state->timerRevision;
+    auto regen = std::exchange(state->regen, {});
+    auto consume = std::exchange(state->consume, {});
+    // No component reference survives cancellation.
+    event_cancel(&regen);
+    event_cancel(&consume);
 }
-
-bool CHorseRider::IsHorseRiding() const
-{
-	return MountSystem::IsHorseRiding(RiderEntity());
+void LoadHorseData(entt::entity rider, const THorseInfo& data, uint32_t logoffSeconds) {
+    const THorseInfo snapshot = data;
+    if (!EnsureHorse(rider)) return;
+    StopHorseTimers(rider);
+    if (!ecs::PlayerRuntime::IsPC(rider) ||
+        !g_registry.all_of<ecs::HorseRuntime, ecs::MountState>(rider)) return;
+    // Hydration starts with no published mount model; EnterHorse restores it.
+    g_registry.get<ecs::MountState>(rider).mountVnum = 0;
+    auto& state = *Horse(rider);
+    state.level = static_cast<uint8_t>(std::min<int>(snapshot.bLevel, HORSE_MAX_LEVEL));
+    const auto& stats = c_aHorseStat[state.level];
+    state.health = static_cast<int16_t>(std::clamp<int>(snapshot.sHealth, 0, stats.iMaxHealth));
+    const int64_t recovered = state.level ? logoffSeconds / RegenInterval : 0;
+    state.stamina = static_cast<int16_t>(std::clamp<int64_t>(int64_t(snapshot.sStamina) + recovered, 0, stats.iMaxStamina));
+    state.healthDropTime = snapshot.dwHorseHealthDropTime;
+    SetRidingFlag(rider, snapshot.bRiding && state.level && state.health && state.stamina);
 }
-
-bool CHorseRider::StartRiding()
-{
-	if (IsHorseRiding())
-		return false;
-
-	if (GetHorseLevel() <= 0)
-		return false;
-
-	if (GetHorseHealth() <= 0)
-		return false;
-
-	if (GetHorseStamina() <= 0)
-		return false;
-
-	MountSystem::SetHorseRiding(RiderEntity(), true);
-	StartStaminaConsumeEvent();
-	SendHorseInfo();
-	return true;
+THorseInfo StoreHorseData(entt::entity rider) {
+    THorseInfo data {};
+    if (const auto* state = Horse(rider)) {
+        data.bLevel = static_cast<uint8_t>(GetHorseLevel(rider));
+        data.sHealth = state->health; data.sStamina = state->stamina;
+        data.dwHorseHealthDropTime = state->healthDropTime;
+        data.bRiding = IsHorseRiding(rider) ? 1 : 0;
+    }
+    return data;
 }
-
-bool CHorseRider::StopRiding()
-{
-	if (!IsHorseRiding())
-		return false;
-
-	MountSystem::SetHorseRiding(RiderEntity(), false);
-	StartStaminaRegenEvent();
-	return true;
+void SetHorseLevel(entt::entity rider, int level) {
+    if (!EnsureHorse(rider)) return;
+    auto& state = *Horse(rider);
+    state.level = static_cast<uint8_t>(std::clamp(level, 0, HORSE_MAX_LEVEL));
+    state.health = static_cast<int16_t>(c_aHorseStat[state.level].iMaxHealth);
+    state.stamina = static_cast<int16_t>(c_aHorseStat[state.level].iMaxStamina);
+    state.healthDropTime = NextHealthDrop();
+    if (!state.level) {
+        if (IsHorseRiding(rider)) StopRiding(rider);
+        StopHorseTimers(rider);
+    }
+    if (!Horse(rider)) return;
+    SkillSystem::SetSkillLevel(rider, SKILL_HORSE, GetHorseLevel(rider));
+    if (!Horse(rider)) return;
+    SendHorseInfo(rider);
+    if (!Horse(rider)) return;
+    Dirty(rider);
+    if (!Horse(rider)) return;
+    ecs::PointSystem::Compute(rider);
+    if (Horse(rider)) SkillSystem::SendSkillLevelPacket(rider);
 }
-
-EVENTINFO(horserider_info)
-{
-	CHorseRider* hr;
-
-	horserider_info()
-	: hr( nullptr )
-	{
-	}
-};
-
-EVENTFUNC(horse_stamina_consume_event)
-{
-	horserider_info* info = dynamic_cast<horserider_info*>( event->info );
-
-	if ( info == nullptr)
-	{
-		LOG_ERROR("horse_stamina_consume_event> <Factor> Null pointer");
-		return 0;
-	}
-
-	CHorseRider* hr = info->hr;
-
-	if (hr->GetHorseHealth() <= 0)
-	{
-		hr->m_eventStaminaConsume = nullptr;
-		return 0;
-	}
-
-	hr->UpdateHorseStamina(-1);
-	hr->UpdateRideTime(HORSE_STAMINA_CONSUME_INTERVAL);
-
-	int delta = PASSES_PER_SEC(HORSE_STAMINA_CONSUME_INTERVAL);
-
-	if (hr->GetHorseStamina() == 0)
-	{
-		hr->m_eventStaminaConsume = nullptr;
-		delta = 0;
-	}
-
-	hr->CheckHorseHealthDropTime();
-	if (auto* ch = dynamic_cast<CHARACTER*>(hr))
-	{
-		const entt::entity e = CVIDRegistry::Instance().Find(((ch)->GetLegacyVID()));
-		if (e != entt::null)
-			g_dispatcher.trigger(ecs::EvHorseStaminaConsume { e });
-	}
-	LOG_INFO("HORSE STAMINA - {}", static_cast<const void*>(get_pointer(event)));
-	return delta;
+void EnterHorse(entt::entity rider) {
+    if (!Alive(rider)) return;
+    if (IsHorseRiding(rider)) {
+        SetRidingFlag(rider, false);
+        StartRiding(rider);
+    } else StartTimer(rider, false);
+    CheckHorseHealthDropTime(rider, false);
 }
-
-EVENTFUNC(horse_stamina_regen_event)
-{
-	horserider_info* info = dynamic_cast<horserider_info*>( event->info );
-
-	if ( info == nullptr)
-	{
-		LOG_ERROR("horse_stamina_regen_event> <Factor> Null pointer");
-		return 0;
-	}
-
-	CHorseRider* hr = info->hr;
-
-	if (hr->GetHorseHealth()<=0)
-	{
-		hr->m_eventStaminaRegen = nullptr;
-		return 0;
-	}
-
-	hr->UpdateHorseStamina(+1);
-	int delta = PASSES_PER_SEC(HORSE_STAMINA_REGEN_INTERVAL);
-	if (hr->GetHorseStamina() == hr->GetHorseMaxStamina())
-	{
-		delta = 0;
-		hr->m_eventStaminaRegen = nullptr;
-	}
-
-	hr->CheckHorseHealthDropTime();
-	if (auto* ch = dynamic_cast<CHARACTER*>(hr))
-	{
-		const entt::entity e = CVIDRegistry::Instance().Find(((ch)->GetLegacyVID()));
-		if (e != entt::null)
-			g_dispatcher.trigger(ecs::EvHorseStaminaRegen { e });
-	}
-	LOG_INFO("HORSE STAMINA + {}", static_cast<const void*>(get_pointer(event)));
-
-
-	return delta;
+void ChangeHorseStamina(entt::entity rider, int64_t delta, bool send) {
+    auto* state = Horse(rider);
+    if (!state) return;
+    // Clamp the delta first so hostile GM input cannot overflow addition.
+    delta = std::clamp<int64_t>(delta, -GetHorseMaxStamina(rider), GetHorseMaxStamina(rider));
+    state->stamina = static_cast<int16_t>(std::clamp<int64_t>(state->stamina + delta, 0, GetHorseMaxStamina(rider)));
+    if (!state->stamina && IsHorseRiding(rider)) StopRiding(rider);
+    if (send && Horse(rider)) SendHorseInfo(rider);
 }
-
-void CHorseRider::StartStaminaConsumeEvent()
-{
-	if (GetHorseLevel() <= 0)
-		return;
-
-	if (GetHorseHealth() <= 0)
-		return;
-
-	LOG_INFO("HORSE STAMINA REGEN EVENT CANCEL {}", static_cast<const void*>(get_pointer(m_eventStaminaRegen)));
-	event_cancel(&m_eventStaminaRegen);
-
-	if (m_eventStaminaConsume)
-		return;
-
-	horserider_info* info = AllocEventInfo<horserider_info>();
-
-	info->hr = this;
-	m_eventStaminaConsume = event_create(horse_stamina_consume_event, info, PASSES_PER_SEC(HORSE_STAMINA_CONSUME_INTERVAL));
-	LOG_INFO("HORSE STAMINA CONSUME EVENT CREATE {}", static_cast<const void*>(get_pointer(m_eventStaminaConsume)));
+void ChangeHorseHealth(entt::entity rider, int64_t delta, bool send) {
+    auto* state = Horse(rider);
+    if (!state) return;
+    delta = std::clamp<int64_t>(delta, -GetHorseMaxHealth(rider), GetHorseMaxHealth(rider));
+    state->health = static_cast<int16_t>(std::clamp<int64_t>(state->health + delta, 0, GetHorseMaxHealth(rider)));
+    if (state->level && !state->health) HorseDie(rider);
+    if (send && Horse(rider)) SendHorseInfo(rider);
 }
-
-void CHorseRider::StartStaminaRegenEvent()
-{
-	if (GetHorseLevel() <= 0)
-		return;
-
-	if (GetHorseHealth() <= 0)
-		return;
-
-	LOG_INFO("HORSE STAMINA CONSUME EVENT CANCEL {}", static_cast<const void*>(get_pointer(m_eventStaminaConsume)));
-	event_cancel(&m_eventStaminaConsume);
-
-	if (m_eventStaminaRegen)
-		return;
-
-	horserider_info* info = AllocEventInfo<horserider_info>();
-
-	info->hr = this;
-	m_eventStaminaRegen = event_create(horse_stamina_regen_event, info, PASSES_PER_SEC(HORSE_STAMINA_REGEN_INTERVAL));
-	LOG_INFO("HORSE STAMINA REGEN EVENT CREATE {}", static_cast<const void*>(get_pointer(m_eventStaminaRegen)));
+void CheckHorseHealthDropTime(entt::entity rider, bool send) {
+    auto* state = Horse(rider);
+    if (!state || !state->level || state->healthDropTime >= Now()) return;
+    const uint64_t drops = (uint64_t(Now()) - state->healthDropTime + HealthInterval - 1) / HealthInterval;
+    state->healthDropTime = static_cast<uint32_t>(std::min<uint64_t>(
+        uint64_t(state->healthDropTime) + drops * HealthInterval, std::numeric_limits<uint32_t>::max()));
+    ChangeHorseHealth(rider, -static_cast<int64_t>(drops), send);
 }
-
-// Health
-void CHorseRider::ResetHorseHealthDropTime()
-{
-	m_Horse.dwHorseHealthDropTime = get_global_time() + HORSE_HEALTH_DROP_INTERVAL;
+void FeedHorse(entt::entity rider) {
+    if (!Alive(rider)) return;
+    Horse(rider)->healthDropTime = NextHealthDrop();
+    ChangeHorseHealth(rider, 1);
+    if (Alive(rider)) ChangeHorseStamina(rider, 1);
 }
-
-void CHorseRider::CheckHorseHealthDropTime(bool bSend)
-{
-	uint32_t now = get_global_time();
-
-	while (m_Horse.dwHorseHealthDropTime < now)
-	{
-		m_Horse.dwHorseHealthDropTime += HORSE_HEALTH_DROP_INTERVAL;
-		UpdateHorseHealth(-1, bSend);
-	}
+void HorseDie(entt::entity rider) {
+    if (!Horse(rider)) return;
+    ChangeHorseStamina(rider, -GetHorseStamina(rider));
+    if (!Horse(rider)) return;
+    StopHorseTimers(rider);
+    if (Horse(rider)) SummonHorse(rider, false);
 }
-
-void CHorseRider::UpdateHorseHealth(int iHealth, bool bSend)
-{
-	int level = GetHorseLevel();
-
-	m_Horse.sHealth = MINMAX(0, m_Horse.sHealth + iHealth, c_aHorseStat[level].iMaxHealth);
-
-	if (level && m_Horse.sHealth == 0)
-		HorseDie();
-
-	if (bSend)
-		SendHorseInfo();
+bool ReviveHorse(entt::entity rider) {
+    if (!Horse(rider) || GetHorseLevel(rider) <= 0 || GetHorseHealth(rider) > 0) return false;
+    auto& state = *Horse(rider);
+    state.health = static_cast<int16_t>(GetHorseMaxHealth(rider));
+    state.stamina = static_cast<int16_t>(GetHorseMaxStamina(rider));
+    state.healthDropTime = NextHealthDrop();
+    StartTimer(rider, false);
+    if (!Horse(rider)) return true;
+    SummonHorse(rider, false);
+    if (Horse(rider)) SummonHorse(rider, true);
+    if (Horse(rider)) Dirty(rider);
+    return true;
 }
-
-void CHorseRider::HorseDie()
-{
-	LOG_INFO("HORSE DIE {} {}", static_cast<const void*>(get_pointer(m_eventStaminaRegen)), static_cast<const void*>(get_pointer(m_eventStaminaConsume)));
-	UpdateHorseStamina(-m_Horse.sStamina);
-	event_cancel(&m_eventStaminaRegen);
-	event_cancel(&m_eventStaminaConsume);
+bool StartRiding(entt::entity rider) {
+    if (!ecs::PlayerRuntime::IsPC(rider) || IsRiding(rider)) return false;
+#if defined(BLOCK_RIDING_INSIDE_WAR) || defined(ENABLE_NEWSTUFF)
+    if (ecs::SocialSystem::GetWarMap(rider)
+#ifndef BLOCK_RIDING_INSIDE_WAR
+        && g_NoMountAtGuildWar
+#endif
+    ) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 852, "");
+#endif
+        AffectSystem::RemoveAffect(rider, AFFECT_MOUNT);
+        if (g_registry.valid(rider)) AffectSystem::RemoveAffect(rider, AFFECT_MOUNT_BONUS);
+        return false;
+    }
+#endif
+    if (CombatSystem::IsDead(rider) || AffectSystem::IsPolymorphed(rider)) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, CombatSystem::IsDead(rider) ? 356 : 355, "");
+#endif
+        return false;
+    }
+    const auto armor = ItemSystem::GetWearItem(rider, WEAR_BODY);
+    const auto armorVnum = ItemSystem::GetItemVnum(armor);
+    if (ItemSystem::IsValidItem(armor) && armorVnum >= 11901 && armorVnum <= 11904) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 410, "");
+#endif
+        return false;
+    }
+    if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(rider))) return false;
+    if (!Alive(rider) || GetHorseStamina(rider) <= 0) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO,
+            GetHorseLevel(rider) <= 0 ? 333 : GetHorseHealth(rider) <= 0 ? 335 : 334, "");
+#endif
+        return false;
+    }
+    const auto summoned = GetSummonedHorse(rider);
+    const auto vnum = summoned != entt::null ? ecs::PlayerRuntime::GetRaceNum(summoned) : GetMyHorseVnum(rider);
+    if (!SetRidingFlag(rider, true)) return false;
+    if (!StartTimer(rider, true)) { if (Horse(rider)) SetRidingFlag(rider, false); return false; }
+    const auto revision = Horse(rider)->timerRevision;
+    const auto receipt = [&] { const auto* s = Horse(rider); return s && s->timerRevision == revision && IsHorseRiding(rider); };
+    SendHorseInfo(rider);
+    if (receipt()) SummonHorse(rider, false);
+    if (receipt()) SetMountVnum(rider, vnum);
+    if (receipt()) Dirty(rider);
+    return true;
 }
-
-void CHorseRider::SetHorseLevel(int iLevel)
-{
-	m_Horse.bLevel = iLevel = MINMAX(0, iLevel, HORSE_MAX_LEVEL);
-
-	m_Horse.sStamina = c_aHorseStat[iLevel].iMaxStamina;
-	m_Horse.sHealth = c_aHorseStat[iLevel].iMaxHealth;
-	m_Horse.dwHorseHealthDropTime = 0;
-
-	ResetHorseHealthDropTime();
-
-	SendHorseInfo();
+bool StopRiding(entt::entity rider) {
+    if (!Horse(rider) || !IsHorseRiding(rider)) return false;
+    const auto oldVnum = GetMountVnum(rider);
+    SetRidingFlag(rider, false);
+    if (!Horse(rider)) return true;
+    StartTimer(rider, false);
+    if (!Horse(rider)) return true;
+    const auto revision = Horse(rider)->timerRevision;
+    const auto receipt = [&] { const auto* s = Horse(rider); return s && s->timerRevision == revision && !IsHorseRiding(rider); };
+    quest::CQuestManager::instance().Unmount(ecs::PlayerRuntime::GetPlayerID(rider));
+    if (!receipt()) return true;
+    if (!CombatSystem::IsDead(rider) && !CombatSystem::IsStun(rider)) {
+        SetMountVnum(rider, 0);
+        if (receipt()) SummonHorse(rider, true, false, oldVnum);
+    } else {
+        if (auto* state = g_registry.try_get<ecs::MountState>(rider)) state->mountVnum = 0;
+        ecs::PointSystem::Compute(rider);
+        if (receipt()) NetworkSyncSystem::UpdatePacket(rider);
+    }
+    for (const auto point : {POINT_ST, POINT_DX, POINT_HT, POINT_IQ})
+        if (receipt()) ecs::PointSystem::Change(rider, point, 0);
+    if (receipt()) Dirty(rider);
+    return true;
 }
-
-uint8_t CHorseRider::GetHorseGrade()
-{
-	uint8_t grade = 0;
-
-	if (GetHorseLevel())
-		grade = (GetHorseLevel() - 1) / 10 + 1;
-
-	return 2;
+void ClearHorseInfo(entt::entity rider) {
+    if (!g_registry.valid(rider)) return;
+    const bool hide = !IsHorseRiding(rider);
+    SetSummonedHorse(rider, entt::null);
+    if (!g_registry.valid(rider)) return;
+    if (hide) {
+        if (auto* state = g_registry.try_get<ecs::MountState>(rider))
+            state->sendHorseLevel = state->sendHorseHealthGrade = state->sendHorseStaminaGrade = 0;
+    }
+    Dirty(rider);
+    if (hide && g_registry.valid(rider)) ecs::ChatSystem::Send(rider, CHAT_TYPE_COMMAND, "hide_horse_state");
 }
-
-
+void SendHorseInfo(entt::entity rider) {
+    if (!Horse(rider) || (GetSummonedHorse(rider) == entt::null && !IsHorseRiding(rider))) return;
+    auto* state = g_registry.try_get<ecs::MountState>(rider);
+    if (!state) return;
+    const int hp = GetHorseHealth(rider), maxHP = GetHorseMaxHealth(rider);
+    const int stamina = GetHorseStamina(rider), maxStamina = GetHorseMaxStamina(rider);
+    const int healthGrade = !hp ? 0 : hp * 10 <= maxHP * 3 ? 1 : hp * 10 <= maxHP * 7 ? 2 : 3;
+    const int staminaGrade = stamina * 10 <= maxStamina ? 0 : stamina * 10 <= maxStamina * 3 ? 1 :
+        stamina * 10 <= maxStamina * 7 ? 2 : 3;
+    const int level = GetHorseLevel(rider);
+    if (state->sendHorseLevel == level && state->sendHorseHealthGrade == healthGrade &&
+        state->sendHorseStaminaGrade == staminaGrade) return;
+    state->sendHorseLevel = level; state->sendHorseHealthGrade = healthGrade; state->sendHorseStaminaGrade = staminaGrade;
+    Dirty(rider);
+    if (Horse(rider)) ecs::ChatSystem::Send(rider, CHAT_TYPE_COMMAND, "horse_state %d %d %d", level, healthGrade, staminaGrade);
+}
+} // namespace MountSystem

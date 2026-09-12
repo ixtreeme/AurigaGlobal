@@ -3145,6 +3145,7 @@ void CHARACTER::Destroy()
 	// shop and social state are ECS-owned now, so destroying the entity before
 	// ClearItem()/ecs::SocialSystem::CloseMyShop(GetEntityHandle()) turns those cleanup calls into silent no-ops.
 	const entt::entity entityToDestroy = GetEntityHandle();
+    MountSystem::StopHorseTimers(entityToDestroy);
 
     ecs::SocialSystem::CloseMyShop(GetEntityHandle());
 
@@ -3212,8 +3213,7 @@ void CHARACTER::Destroy()
 
     if (const entt::entity rider = MountSystem::GetRider(GetEntityHandle()); rider != entt::null)
     {
-        if (LPCHARACTER riderChar = ecs::LegacyCharOf(rider))
-            riderChar->ClearHorseInfo();
+        MountSystem::ClearHorseInfo(rider);
     }
 
     if (GetDesc())
@@ -3469,10 +3469,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     ecs::PlayerRuntime::SetMobilePhone(GetEntityHandle(), t->szMobile);
 
-    SetHorseData(t->horse);
-
-    if (GetHorseLevel() > 0)
-        UpdateHorseDataByLogoff(t->logoff_interval);
+    MountSystem::LoadHorseData(GetEntityHandle(), t->horse, t->logoff_interval);
 
     memcpy(m_aiPremiumTimes, t->aiPremiumTimes, sizeof(t->aiPremiumTimes));
 	if (const entt::entity character = GetEntityHandle();

@@ -2040,9 +2040,9 @@ void CInputMain::Move(entt::entity character, const char * data)
 			const float fDistFromDest = DISTANCE_SQRT((ch->GetCurrentDestX() - pinfo->lX) / 100, (ch->GetCurrentDestY() - pinfo->lY) / 100);
 			fDist = std::min(fDistFromCurrent, fDistFromDest);
 		}
-		if (((false == ch->IsRiding() && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ecs::PlayerRuntime::GetMapIndex(character))
+		if (((false == MountSystem::IsRiding(character) && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ecs::PlayerRuntime::GetMapIndex(character))
 		{
-			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(character).data(), fDist, fDistFromCurrent, ch->IsRiding());
+			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(character).data(), fDist, fDistFromCurrent, MountSystem::IsRiding(character));
 
 			ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ch->GetZ());
 			ecs::MovementSystem::Stop(character);
@@ -2066,7 +2066,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 						return;
 		}
 #ifdef ENALBE_MOUNT_SECTREE_UPDATE_RAZOR93
-		if (true == ch->IsRiding())
+		if (true == MountSystem::IsRiding(character))
 		{
 			ch->UpdateSectree();
 		}

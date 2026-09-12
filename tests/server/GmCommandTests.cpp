@@ -773,14 +773,13 @@ bool MountSystem::StartRiding(entt::entity) { Unexpected(); }
 bool MountSystem::StopRiding(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseLevel(entt::entity) { Unexpected(); }
 void MountSystem::SetHorseLevel(entt::entity,int) { Unexpected(); }
+void MountSystem::ChangeHorseHealth(entt::entity,int64_t,bool) { Unexpected(); }
+void MountSystem::ChangeHorseStamina(entt::entity,int64_t,bool) { Unexpected(); }
+bool MountSystem::CanUseHorseSkill(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseHealth(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseMaxHealth(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseStamina(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseMaxStamina(entt::entity) { Unexpected(); }
-short CHorseRider::GetHorseMaxHealth(void) { Unexpected(); }
-short CHorseRider::GetHorseMaxStamina(void) { Unexpected(); }
-void CHorseRider::UpdateHorseStamina(int,bool) { Unexpected(); }
-void CHorseRider::UpdateHorseHealth(int,bool) { Unexpected(); }
 int mining::RealRefinePick(entt::entity,entt::entity) { Unexpected(); }
 void mining::CHEAT_MAX_PICK(entt::entity,entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
@@ -981,8 +980,6 @@ void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
 bool CombatSystem::IsStun(entt::entity) { Unexpected(); }
 int CombatSystem::GetArrowAndBow(entt::entity,entt::entity *,entt::entity *,int) { Unexpected(); }
 void CHARACTER::AttackedByFire(entt::entity,int,int) { Unexpected(); }
-bool CHARACTER::CanUseHorseSkill(void) { Unexpected(); }
-bool CHARACTER::IsRiding(void)const { Unexpected(); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpected(); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Unexpected(); }
 int ecs::PlayerRuntime::GetSkillPowerByLevel(entt::entity,int,bool) { Unexpected(); }

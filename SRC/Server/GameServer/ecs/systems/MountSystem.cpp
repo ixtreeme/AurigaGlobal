@@ -35,6 +35,7 @@
 #include "../components/identity_components.hpp"
 #include "../components/social_components.hpp"
 #include "../components/pet_mount_components.hpp"
+#include "../components/movement_components.hpp"
 
 #include <common/VnumHelper.h>
 #include <utility>
@@ -47,28 +48,6 @@
 namespace
 {
 
-using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
-
-// Transitional boundary for the two operations whose side effects still live
-// in CHARACTER/CMountSystem (network rebroadcast and legacy actor teardown).
-// Do not use this for entity state reads.
-LegacyCharHandle ResolveLegacyMountOwnerBoundary(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
-    return legacy ? legacy->ptr : nullptr;
-}
-
-ecs::MountState* GetMountState(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return &g_registry.get_or_emplace<ecs::MountState>(e);
-}
-
 // Was SyncMountState, taking all six fields from CHARACTER members and copying
 // them in. Those members are gone - MountState is the only copy, and MountVnum
 // writes it directly - so every one of the fourteen calls had become the
@@ -79,7 +58,8 @@ void MarkMountDirty(entt::entity e)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    if (!g_registry.all_of<ecs::DirtyTag>(e))
+        g_registry.insert<ecs::DirtyTag>(&e, &e + 1);
 }
 
 uint32_t GetMountMobVnum(entt::entity item)
@@ -233,25 +213,14 @@ bool IsSummoned(entt::entity rider)
 
 bool IsRidingCostume(entt::entity rider)
 {
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character && character->IsRidingMount();
+    return ecs::PlayerRuntime::IsPC(rider) && (ItemSystem::IsValidItem(
+        ItemSystem::GetWearItem(rider, WEAR_COSTUME_MOUNT)) ||
+        AffectSystem::FindAffect(rider, AFFECT_MOUNT));
 }
 
 bool IsOwnedHorse(entt::entity rider, entt::entity horse)
 {
     return horse != entt::null && g_registry.valid(horse) && GetRider(horse) == rider;
-}
-
-bool StartRiding(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character && character->StartRiding();
-}
-
-bool StopRiding(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character && character->StopRiding();
 }
 
 uint32_t GetMountVnum(entt::entity rider)
@@ -460,6 +429,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 			return;
 
 		SetRider(horse, entt::null);
+        if (!g_registry.valid(horse) || !g_registry.valid(rider)) return;
 
 		if ((GetHorseHealth(rider) <= 0))
 			bFromFar = false;
@@ -470,10 +440,13 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 		}
 		else
 		{
-			// SetNowWalking is not a forwarder: for an NPC it also writes the
-			// monster log, so the horse is resolved for that one call.
-			if (LPCHARACTER horseChar = ecs::LegacyCharOf(horse))
-				horseChar->SetNowWalking(false);
+            const auto* movement = g_registry.try_get<ecs::MovementState>(horse);
+            if (movement && movement->isNowWalking) {
+                ecs::MovementSystem::SetNowWalking(horse, false);
+                if (g_registry.valid(horse) && ecs::PlayerRuntime::IsNPC(horse))
+                    ecs::PlayerRuntime::MonsterLog(horse, "horse run");
+            }
+            if (!g_registry.valid(horse) || !g_registry.valid(rider)) return;
 
 			float fx, fy;
 			ecs::MovementSystem::SetRotation(horse, GetDegreeFromPositionXY(
@@ -620,7 +593,11 @@ void SetSummonedHorse(entt::entity rider, entt::entity horse)
     if (rider == entt::null || !g_registry.valid(rider))
         return;
 
-    g_registry.get_or_emplace<ecs::SummonedHorse>(rider).horse = horse;
+    if (!g_registry.all_of<ecs::SummonedHorse>(rider))
+        g_registry.insert<ecs::SummonedHorse>(&rider, &rider + 1);
+    if (g_registry.valid(rider))
+        if (auto* state = g_registry.try_get<ecs::SummonedHorse>(rider))
+            state->horse = horse;
 }
 
 bool IsHorseRiding(entt::entity rider)
@@ -635,235 +612,24 @@ bool IsHorseRiding(entt::entity rider)
     return state && state->horseRiding;
 }
 
-void SetHorseRiding(entt::entity rider, bool riding)
-{
-    if (rider == entt::null || !g_registry.valid(rider))
-        return;
-
-    g_registry.get_or_emplace<ecs::MountState>(rider).horseRiding = riding;
-    g_registry.emplace_or_replace<ecs::DirtyTag>(rider);
-}
-
-int GetHorseArmor(entt::entity rider)
-{
-    // Pure table lookup off the level, exactly as CHorseRider spells it.
-    return c_aHorseStat[GetHorseLevel(rider)].iArmor;
-}
-
-int GetHorseLevel(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character ? character->GetHorseLevel() : 0;
-}
-
-void SetHorseLevel(entt::entity rider, int level)
-{
-    if (auto* character = ResolveLegacyMountOwnerBoundary(rider))
-    {
-        character->SetHorseLevel(level);
-        ecs::PointSystem::Compute(rider);
-        character->SkillLevelPacket();
-    }
-}
-
-int GetHorseHealth(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character ? character->GetHorseHealth() : 0;
-}
-
-int GetHorseMaxHealth(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character ? character->GetHorseMaxHealth() : 0;
-}
-
-int GetHorseStamina(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character ? character->GetHorseStamina() : 0;
-}
-
-int GetHorseMaxStamina(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character ? character->GetHorseMaxStamina() : 0;
-}
-
-int GetHorseGrade(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character ? character->GetHorseGrade() : 0;
-}
-
-bool ReviveHorse(entt::entity rider)
-{
-    auto* character = ResolveLegacyMountOwnerBoundary(rider);
-    return character && character->ReviveHorse();
-}
-
-void FeedHorse(entt::entity rider)
-{
-    if (auto* character = ResolveLegacyMountOwnerBoundary(rider))
-        character->FeedHorse();
-}
-
 void ForceClearRidingState(entt::entity rider)
 {
-    if (rider == entt::null || !g_registry.valid(rider))
-        return;
-
-    auto* ch = ResolveLegacyMountOwnerBoundary(rider);
-    if (ch)
-    {
-        const uint32_t mountVnum = GetMountVnum(rider);
-        if (mountVnum != 0)
-        {
-            if (auto* mountSystem = ch->GetMountSystem())
-            {
-                if (mountSystem->GetByVnum(mountVnum))
-                    mountSystem->Unsummon(mountVnum, false);
-            }
-        }
-
-        if (IsHorseRiding(rider))
-            ch->StopRiding();
-        else
-            SetMountVnum(rider, 0);
+    if (!g_registry.valid(rider)) return;
+    const auto vnum = GetMountVnum(rider);
+    if (auto* system = GetMountSystem(rider); system && vnum && system->GetByVnum(vnum))
+        system->Unsummon(vnum, false);
+    if (!g_registry.valid(rider)) return;
+    if (IsHorseRiding(rider)) StopRiding(rider);
+    else SetMountVnum(rider, 0);
+    if (!g_registry.valid(rider)) return;
+    if (auto* state = g_registry.try_get<ecs::MountState>(rider)) {
+        state->mountVnum = 0;
+        state->horseRiding = false;
     }
-
-    auto& state = g_registry.get_or_emplace<ecs::MountState>(rider);
-    state.mountVnum = 0;
-    state.horseRiding = false;
-    g_registry.emplace_or_replace<ecs::DirtyTag>(rider);
+    MarkMountDirty(rider);
 }
 
 } // namespace MountSystem
-
-bool CHARACTER::StartRiding()
-{
-	const entt::entity rider = GetEntityHandle();
-#ifdef ENABLE_BUG_FIXES
-	if (IsRiding()) {
-		return false;
-	}
-#endif
-
-#ifdef BLOCK_RIDING_INSIDE_WAR
-	if (ecs::SocialSystem::GetWarMap(GetEntityHandle())) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 852, "");
-#endif
-		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
-		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
-		if (IsRiding())
-			StopRiding();
-		return false;
-	}
-#endif
-
-#ifdef ENABLE_NEWSTUFF
-	if (g_NoMountAtGuildWar && ecs::SocialSystem::GetWarMap(GetEntityHandle()))
-	{
-		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
-		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
-		if (IsRiding())
-			StopRiding();
-		return false;
-	}
-#endif
-	if (CombatSystem::IsDead(GetEntityHandle()) == true)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 356, "");
-#endif
-		return false;
-	}
-
-	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 355, "");
-#endif
-		return false;
-	}
-
-	const entt::entity armor = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BODY);
-	const uint32_t armorVnum = ItemSystem::GetItemVnum(armor);
-
-	if (ItemSystem::IsValidItem(armor) && armorVnum >= 11901 && armorVnum <= 11904)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 410, "");
-#endif
-		return false;
-	}
-
-	if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
-		return false;
-
-	const entt::entity summoned = MountSystem::GetSummonedHorse(rider);
-	uint32_t dwMountVnum = summoned != entt::null
-		? ecs::PlayerRuntime::GetRaceNum(summoned)
-		: MountSystem::GetMyHorseVnum(rider);
-
-	if (false == CHorseRider::StartRiding())
-	{
-#ifdef TEXTS_IMPROVEMENT
-		if (GetHorseLevel() <= 0) {
-			ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 333, "");
-		} else if (GetHorseHealth() <= 0) {
-			ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 335, "");
-		} else if (GetHorseStamina() <= 0) {
-			ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 334, "");
-		}
-#endif
-		return false;
-	}
-
-	MountSystem::SummonHorse(rider, false);
-
-	MountSystem::SetMountVnum(rider, dwMountVnum);
-
-	if(test_server)
-		LOG_INFO("Ride Horse : {} ", GetName());
-
-		MarkMountDirty(GetEntityHandle());
-	return true;
-}
-
-bool CHARACTER::StopRiding()
-{
-	const entt::entity rider = GetEntityHandle();
-
-	if (CHorseRider::StopRiding())
-	{
-		quest::CQuestManager::instance().Unmount(GetPlayerID());
-
-		if (!CombatSystem::IsDead(GetEntityHandle()) && !CombatSystem::IsStun(GetEntityHandle()))
-		{
-			uint32_t dwOldVnum = MountSystem::GetMountVnum(rider);
-			MountSystem::SetMountVnum(rider, 0);
-			MountSystem::SummonHorse(rider, true, false, dwOldVnum);
-		}
-		else
-		{
-			if (auto* mount = g_registry.try_get<ecs::MountState>(rider))
-				mount->mountVnum = 0;
-			ecs::PointSystem::Compute(rider);
-			NetworkSyncSystem::UpdatePacket(rider);
-		}
-
-		PointChange(POINT_ST, 0);
-		PointChange(POINT_DX, 0);
-		PointChange(POINT_HT, 0);
-		PointChange(POINT_IQ, 0);
-		MarkMountDirty(GetEntityHandle());
-		return true;
-	}
-
-	return false;
-}
 
 EVENTFUNC(horse_dead_event)
 {
@@ -890,139 +656,19 @@ entt::entity GetRider(entt::entity horse)
 	return link ? link->rider : entt::null;
 }
 
-// ClearHorseInfo and SendHorseInfo are still CHARACTER methods, so the two
-// riders are resolved here, where the link changes.
 void SetRider(entt::entity horse, entt::entity rider)
 {
-	if (horse == entt::null || !g_registry.valid(horse))
-		return;
-
-	auto& link = g_registry.get_or_emplace<ecs::HorseRider>(horse);
-	if (LPCHARACTER previous = ecs::LegacyCharOf(link.rider))
-		previous->ClearHorseInfo();
-
-	link.rider = rider;
-
-	if (LPCHARACTER current = ecs::LegacyCharOf(rider))
-		current->SendHorseInfo();
+    if (!g_registry.valid(horse)) return;
+    if (!g_registry.all_of<ecs::HorseRider>(horse))
+        g_registry.insert<ecs::HorseRider>(&horse, &horse + 1);
+    if (!g_registry.valid(horse) || !g_registry.all_of<ecs::HorseRider>(horse)) return;
+    const auto previous = g_registry.get<ecs::HorseRider>(horse).rider;
+    g_registry.get<ecs::HorseRider>(horse).rider = rider;
+    if (GetSummonedHorse(previous) == horse) ClearHorseInfo(previous);
+    if (g_registry.valid(horse) && GetRider(horse) == rider) SendHorseInfo(rider);
 }
 
 } // namespace MountSystem
-
-void CHARACTER::HorseDie()
-{
-	CHorseRider::HorseDie();
-	MountSystem::SummonHorse(GetEntityHandle(), false);
-}
-
-bool CHARACTER::ReviveHorse()
-{
-	if (CHorseRider::ReviveHorse())
-	{
-		MountSystem::SummonHorse(GetEntityHandle(), false);
-		MountSystem::SummonHorse(GetEntityHandle(), true);
-		MarkMountDirty(GetEntityHandle());
-		return true;
-	}
-	return false;
-}
-
-void CHARACTER::ClearHorseInfo()
-{
-	if (!IsHorseRiding())
-	{
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "hide_horse_state");
-
-		MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel = 0;
-		MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseHealthGrade = 0;
-		MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseStaminaGrade = 0;
-	}
-
-	MountSystem::SetSummonedHorse(GetEntityHandle(), entt::null);
-	MarkMountDirty(GetEntityHandle());
-}
-
-void CHARACTER::SendHorseInfo()
-{
-	if (MountSystem::GetSummonedHorse(GetEntityHandle()) != entt::null || IsHorseRiding())
-	{
-		int iHealthGrade;
-		int iStaminaGrade;
-		if (GetHorseHealth() == 0)
-			iHealthGrade = 0;
-		else if (GetHorseHealth() * 10 <= GetHorseMaxHealth() * 3)
-			iHealthGrade = 1;
-		else if (GetHorseHealth() * 10 <= GetHorseMaxHealth() * 7)
-			iHealthGrade = 2;
-		else
-			iHealthGrade = 3;
-
-		if (GetHorseStamina() * 10 <= GetHorseMaxStamina())
-			iStaminaGrade = 0;
-		else if (GetHorseStamina() * 10 <= GetHorseMaxStamina() * 3)
-			iStaminaGrade = 1;
-		else if (GetHorseStamina() * 10 <= GetHorseMaxStamina() * 7)
-			iStaminaGrade = 2;
-		else
-			iStaminaGrade = 3;
-
-		if (MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel != GetHorseLevel() ||
-				MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseHealthGrade != iHealthGrade ||
-				MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseStaminaGrade != iStaminaGrade)
-		{
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "horse_state %d %d %d", GetHorseLevel(), iHealthGrade, iStaminaGrade);
-
-			MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel = GetHorseLevel();
-			MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseHealthGrade = iHealthGrade;
-			MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseStaminaGrade = iStaminaGrade;
-			MarkMountDirty(GetEntityHandle());
-		}
-	}
-}
-
-bool CHARACTER::CanUseHorseSkill()
-{
-	if(IsRiding())
-	{
-		if (GetHorseGrade() == 3)
-			return true;
-		else
-			return false;
-
-		if(MountSystem::GetMountVnum(GetEntityHandle()))
-		{
-			if (MountSystem::GetMountVnum(GetEntityHandle()) >= 20209 && MountSystem::GetMountVnum(GetEntityHandle()) <= 20212)
-				return true;
-
-			if (CMobVnumHelper::IsRamadanBlackHorse(MountSystem::GetMountVnum(GetEntityHandle())))
-				return true;
-		}
-		else
-			return false;
-
-	}
-
-	return false;
-}
-
-void CHARACTER::SetHorseLevel(int iLevel)
-{
-	CHorseRider::SetHorseLevel(iLevel);
-	SetSkillLevel(SKILL_HORSE, GetHorseLevel());
-	MarkMountDirty(GetEntityHandle());
-}
-
-#ifdef ENABLE_FAKE_SHOP_HEADER
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-#endif
-#endif
-
-bool CHARACTER::IsRiding() const
-{
-	// Riding a horse or sitting on a mount: what MountSystem::IsRiding reads
-	// from the one component.
-	return MountSystem::IsRiding(GetEntityHandle());
-}
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 void CHARACTER::MountUnsummon(entt::entity mountItem)
@@ -1145,7 +791,7 @@ void CHARACTER::UpdateMountSkin() {
 
 	m_mountSystem->UpdateMountSkin();
 
-	if (IsRiding()) {
+	if (MountSystem::IsRiding(GetEntityHandle())) {
 		const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
 		if (!ItemSystem::IsValidItem(item))
 			return;

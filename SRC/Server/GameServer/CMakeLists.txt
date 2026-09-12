@@ -22,6 +22,15 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
 
+add_executable(HorseRuntimeTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/HorseRuntimeTests.cpp
+    horse_rider.cpp
+    event.cpp
+    event_queue.cpp
+)
+target_link_libraries(HorseRuntimeTests PRIVATE SERVER EnTT::EnTT LUA)
+add_test(NAME horse_runtime COMMAND HorseRuntimeTests)
+
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
     MountSystem.cpp
@@ -185,7 +194,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
+    foreach(_asan_target GameServer HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

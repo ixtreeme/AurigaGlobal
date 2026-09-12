@@ -370,13 +370,6 @@ void SendNoticeMap(const char*, int32_t, bool) { Unexpected(); }
 namespace mining { bool IsVeinOfOre(uint32_t) { Unexpected(); } }
 CEntity::CEntity() = default;
 CEntity::~CEntity() = default;
-CHorseRider::CHorseRider() = default;
-CHorseRider::~CHorseRider() = default;
-bool CHorseRider::ReviveHorse() { Unexpected(); }
-void CHorseRider::HorseDie() { Unexpected(); }
-void CHorseRider::SetHorseLevel(int) { Unexpected(); }
-bool CHorseRider::StartRiding() { Unexpected(); }
-bool CHorseRider::StopRiding() { Unexpected(); }
 void AISystem::StateBattle(entt::entity) { Unexpected(); }
 void AISystem::StateIdle(entt::entity) { Unexpected(); }
 namespace ecs::SessionSystem {
@@ -384,13 +377,6 @@ void SaveReal(entt::entity e) { ++saves; if (onSave) onSave(e); }
 void Save(entt::entity) {}
 void FlushDelayedSaveItem(entt::entity) {}
 }
-void CHARACTER::SetHorseLevel(int) { Unexpected(); }
-bool CHARACTER::StartRiding() { Unexpected(); }
-bool CHARACTER::StopRiding() { Unexpected(); }
-void CHARACTER::HorseDie() { Unexpected(); }
-bool CHARACTER::ReviveHorse() { Unexpected(); }
-void CHARACTER::SendHorseInfo() { Unexpected(); }
-void CHARACTER::ClearHorseInfo() { Unexpected(); }
 void intrusive_ptr_release(event*) { Unexpected(); }
 const DESC_MANAGER::DESC_SET& DESC_MANAGER::GetClientSet() { Unexpected(); }
 CHARACTER::CHARACTER() = default;

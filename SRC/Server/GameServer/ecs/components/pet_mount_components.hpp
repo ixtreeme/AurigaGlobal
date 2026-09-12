@@ -4,10 +4,23 @@
 #include <cstdint>
 
 #include <common/length.h>
+#include "../../event.h"
 
 #include <entt/entt.hpp>
 
 namespace ecs {
+
+// The persistent horse data and owned timer handles of a rider. MountState
+// remains the sole source of the riding flag; THorseInfo is a DB snapshot only.
+struct HorseRuntime {
+    uint8_t level { 0 };
+    int16_t health { 0 };
+    int16_t stamina { 0 };
+    uint32_t healthDropTime { 0 };
+    uint64_t timerRevision { 0 };
+    LPEVENT regen;
+    LPEVENT consume;
+};
 
 // Creature-side state: independent of the regular pet's owner-side snapshot.
 struct GrowthPetComponent {

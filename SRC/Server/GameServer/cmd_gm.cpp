@@ -3422,7 +3422,7 @@ ACMD(do_horse_level)
 {
 	char arg1[256] = {0};
 	char arg2[256] = {0};
-	LPCHARACTER victim;
+	entt::entity victim = entt::null;
 	int	level = 0;
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -3433,9 +3433,9 @@ ACMD(do_horse_level)
 		return;
 	}
 
-	victim = CHARACTER_MANAGER::instance().FindPC(arg1);
+	victim = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
-	if (nullptr == victim)
+	if (victim == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 463, "");
@@ -3446,11 +3446,9 @@ ACMD(do_horse_level)
 	str_to_number(level, arg2);
 	level = MINMAX(0, level, HORSE_MAX_LEVEL);
 
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "horse level set (%s: %d)", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), level);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "horse level set (%s: %d)", ecs::PlayerRuntime::GetName(victim).data(), level);
 
-	victim->SetHorseLevel(level);
-	ecs::PointSystem::Compute(victim->GetEntityHandle());
-	victim->SkillLevelPacket();
+	MountSystem::SetHorseLevel(victim, level);
 	return;
 }
 
@@ -3482,7 +3480,6 @@ ACMD(do_horse_unsummon)
 
 ACMD(do_horse_set_stat)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -3493,8 +3490,8 @@ ACMD(do_horse_set_stat)
 		str_to_number(hp, arg1);
 		int stam = 0;
 		str_to_number(stam, arg2);
-		ch->UpdateHorseHealth(hp - ch->GetHorseHealth());
-		ch->UpdateHorseStamina(stam - ch->GetHorseStamina());
+		MountSystem::ChangeHorseHealth(character, int64_t(hp) - MountSystem::GetHorseHealth(character));
+		MountSystem::ChangeHorseStamina(character, int64_t(stam) - MountSystem::GetHorseStamina(character));
 	}
 	else
 	{
