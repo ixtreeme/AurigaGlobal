@@ -1161,10 +1161,9 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     }
 }
 
-bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
+bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item)
 {
-    const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !item)
+    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::CanConsumeOwnedItem(from, item))
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
@@ -1178,15 +1177,14 @@ bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM ite
     if (d->GetFlag(kFlagFloor) != 5 || d->GetFlag(kFlagType) != 6)
         return false;
 
-    if (ItemSystem::GetItemVnum(itemEntity) != kFloorKey)
+    if (ItemSystem::GetItemVnum(item) != kFloorKey)
         return false;
 
     // Consume the exact item that was given (Lua: item.remove())
     // NOTE: ReceiveItem() is triggered by dragging the item onto the NPC, so `item` is the actual stack being given.
-    if (ItemSystem::GetItemCount(itemEntity) > 1)
-        ItemSystem::ConsumeItemEcs(itemEntity);
-    else
-        ItemSystem::DestroyItemEntityEcs(itemEntity, "RUNE_DUNGEON_TAKE");
+    const ItemSystem::ItemCost cost {item, 1};
+    if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
+        return true;
 
     // Purge the NPC (Lua: npc.purge())
     M2_DESTROY_CHARACTER(npc);
@@ -1500,4 +1498,3 @@ bool CRuneDungeon::OnUseItem89100(entt::entity character)
 
     return true;
 }
-

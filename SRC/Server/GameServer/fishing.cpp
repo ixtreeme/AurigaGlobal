@@ -766,7 +766,6 @@ bool UseFishEcs(entt::entity owner, entt::entity fishItem)
 		return false;
 
 	UseFish(owner, fishItem);
-	ItemSystem::SyncItemStateFromLegacy(fishItem);
 	return true;
 }
 
@@ -776,7 +775,6 @@ bool GrillFishEcs(entt::entity owner, entt::entity fishItem)
 		return false;
 
 	Grill(owner, fishItem);
-	ItemSystem::SyncItemStateFromLegacy(fishItem);
 	return true;
 }
 
@@ -1112,4 +1110,3 @@ namespace fishingnew
 	//}
 }
 #endif
-

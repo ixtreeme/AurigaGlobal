@@ -211,6 +211,10 @@ bool AddItemAttribute(entt::entity item, uint8_t type, int16_t value);
 bool RemoveItemAttributeType(entt::entity item, uint8_t type);
 bool ClearNormalItemAttributes(entt::entity item);
 bool ApplyItemAddon(entt::entity item, int addonType);
+#ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
+// Paid hit/skill reroll; preserves every unrelated normal and rare attribute.
+bool ChangeItemHitDamageBonuses(entt::entity owner, entt::entity item, entt::entity scroll);
+#endif
 bool AddItemAttributeEcs(entt::entity item);
 bool AddItemRareAttributeEcs(entt::entity item);
 bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities = nullptr);
@@ -327,7 +331,6 @@ bool StartSoulItemEventEcs(entt::entity item);
 #endif
 bool RefreshItemEquippedSlot(entt::entity item);
 bool RefreshItemOwnerPID(entt::entity item);
-bool SyncItemStateFromLegacy(entt::entity item);
 // Retire a stale load instance without deleting its DB row. True means this call
 // retired the original entity; surviving items regain their prior save policy.
 bool DestroyLoadedDuplicateItem(entt::entity item);
@@ -337,6 +340,7 @@ bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to
 // A detached quest reward may be claimed before ground insertion.
 bool SetGroundOwnership(entt::entity item, entt::entity owner,
                         int seconds = 10);
+bool CanReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item);
 bool ReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item);
 struct SpecialItemGroupResult {
     std::vector<entt::entity> itemEntities;

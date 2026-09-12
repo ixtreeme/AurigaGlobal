@@ -1092,12 +1092,12 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
     SetCooldown(character);
 }
 
-bool CVikingDungeon::OnUseItem(entt::entity character, CItem* item)
+bool CVikingDungeon::OnUseItem(entt::entity character, entt::entity item)
 {
-    if (!ecs::PlayerRuntime::IsValid(character) || !item)
+    if (!ecs::PlayerRuntime::IsValid(character) || !ItemSystem::CanConsumeOwnedItem(character, item))
         return false;
 
-    if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) != kResetItemVnum)
+    if (ItemSystem::GetItemVnum(item) != kResetItemVnum)
         return false;
 
     if (IsVikingDungeonMap(ecs::PlayerRuntime::GetMapIndex(character)))
@@ -1113,7 +1113,9 @@ bool CVikingDungeon::OnUseItem(entt::entity character, CItem* item)
         return true;
     }
 
-    ItemSystem::RemoveSpecifyItemEcs(character, kResetItemVnum, 1);
+    const ItemSystem::ItemCost cost {item, 1};
+    if (!ItemSystem::ConsumeOwnedItemCosts(character, std::span(&cost, 1)))
+        return true;
     ecs::QuestSystem::SetFlag(character, kQfCooldown, 0);
     ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeon cooldown reset successfully.");
     return true;
@@ -1351,9 +1353,9 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     return true;
 }
 
-bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item)
+bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item)
 {
-    if (!ecs::PlayerRuntime::IsValid(npc) || !item || !ecs::PlayerRuntime::IsPC(from))
+    if (!ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::CanConsumeOwnedItem(from, item) || !ecs::PlayerRuntime::IsPC(from))
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
@@ -1365,14 +1367,16 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* i
         return false;
 
     const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(npc);
-    const uint32_t itemVnum = ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
+    const uint32_t itemVnum = ItemSystem::GetItemVnum(item);
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     if (floor == 1 && itemVnum == kFloor1ItemVnum)
     {
         if (npcVnum == kCompassEmptyNpc && d->GetFlag(kFlagCompassState) == 0)
         {
-            ItemSystem::RemoveSpecifyItemEcs(from, kFloor1ItemVnum, 1);
+            const ItemSystem::ItemCost cost {item, 1};
+            if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
+                return true;
             d->SetFlag(kFlagCompassState, 1);
             ReplaceCompass(d, npc, kCompassSmallNpc);
             d->SpawnRegen(kRegen1FloorA, true);
@@ -1383,7 +1387,9 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* i
 
         if (npcVnum == kCompassSmallNpc && d->GetFlag(kFlagCompassState) == 1)
         {
-            ItemSystem::RemoveSpecifyItemEcs(from, kFloor1ItemVnum, 1);
+            const ItemSystem::ItemCost cost {item, 1};
+            if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
+                return true;
             d->SetFlag(kFlagCompassState, 2);
             ReplaceCompass(d, npc, kCompassMediumNpc);
             d->SpawnRegen(kRegen1FloorA, true);
@@ -1394,7 +1400,9 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* i
 
         if (npcVnum == kCompassMediumNpc && d->GetFlag(kFlagCompassState) == 2)
         {
-            ItemSystem::RemoveSpecifyItemEcs(from, kFloor1ItemVnum, 1);
+            const ItemSystem::ItemCost cost {item, 1};
+            if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
+                return true;
             d->SetFlag(kFlagCompassState, 3);
             ReplaceCompass(d, npc, kCompassLargeNpc);
             NoticeMap(idx, "<Frostbane Fortress> The compass was ignited successfully.");
@@ -1409,7 +1417,11 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* i
         if (npcVnum != kMemorialNpc1 && npcVnum != kMemorialNpc2 && npcVnum != kMemorialNpc3)
             return false;
 
-        ItemSystem::RemoveSpecifyItemEcs(from, kFloor3ItemVnum, 1);
+        const ItemSystem::ItemCost cost {item, 1};
+
+        if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
+
+            return true;
         d->SetFlag(kFlagCanUseRune, 0);
 
         int32_t stage = d->GetFlag(kFlagFloor3NpcStage) + 1;
@@ -1547,4 +1559,3 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         return;
     }
 }
-

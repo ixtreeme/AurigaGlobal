@@ -777,14 +777,11 @@ void SetParty(entt::entity e, LPPARTY pkParty)
     {
         if (CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_NEW_POTION31))
         {
-            // FindItemByID has no entity form yet; it is its own migration.
-            if (LPCHARACTER self = ecs::LegacyCharOf(e))
+            const auto item = ItemSystem::FindItemByID(e, pAffect->dwFlag);
+            if (ItemSystem::IsValidItem(item))
             {
-                if (LPITEM pkItem = self->FindItemByID(pAffect->dwFlag))
-                {
-                    ItemSystem::UnlockItem(pkItem->GetEntityHandle());
-                    ItemSystem::SetItemSocket(pkItem->GetEntityHandle(), 1, 0);
-                }
+                ItemSystem::UnlockItem(item);
+                ItemSystem::SetItemSocket(item, 1, 0);
             }
 
             AffectSystem::RemoveAffect(e, AFFECT_NEW_POTION31);

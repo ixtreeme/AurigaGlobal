@@ -46,6 +46,7 @@ int saves = 0;
 int updates = 0;
 int randomCalls = 0;
 int randomOffset = 0;
+float gaussianValue = 4.f;
 int checks = 0;
 int payments = 0;
 bool rejectPayment = false;
@@ -394,7 +395,6 @@ bool ItemSystem::StopTimerBasedOnWearExpireEventEcs(entt::entity item) {
     if (onSoulStop) onSoulStop(item);
     return true;
 }
-bool ItemSystem::SyncItemStateFromLegacy(entt::entity) { UnexpectedSwitchbotService(); }
 
 DragonSoulTable::DragonSoulTable() { ++dsLiveTables; }
 DragonSoulTable::~DragonSoulTable() { --dsLiveTables; }
@@ -425,7 +425,7 @@ int number_ex(int low, int high, const char*, int)
     Check(randomOffset >= 0 && randomOffset <= high - low, "scripted random offset out of range");
     return low + randomOffset;
 }
-float gauss_random(float, float) { return 4.0f; }
+float gauss_random(float, float) { return gaussianValue; }
 void LogManager::ItemLog(uint32_t, uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, uint32_t) {}
 void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char*, const char*) {
     if (soulStateTest) {
@@ -647,6 +647,7 @@ struct Fixture {
         g_map_itemRare.clear();
         saves = updates = randomCalls = 0;
         randomOffset = 0;
+        gaussianValue = 4.f;
         floatDrawFraction = 0.f;
         floatRandomCalls = 0;
         payments = 0;
@@ -950,6 +951,89 @@ void ProtoAndCostumeRules()
     Check(saves == 0 && updates == 0, "invalid force write caused side effects");
     Check(ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, -30), "signed force attribute failed");
     Check(f.Attrs()[6].sValue == -30 && saves == 1 && updates == 1, "force write did not update client and save");
+}
+
+void HitDamageScrollTransactions()
+{
+#ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
+    const auto setup = [](AttributeItemFixture& f) {
+        transferTest = true;
+        g_registry.emplace<ecs::ItemCount>(f.item).count = 1;
+        g_registry.get<ecs::ItemIdentity>(f.material).vnum = 70251;
+        f.Attrs()[0] = {APPLY_NORMAL_HIT_DAMAGE_BONUS, 1};
+        f.Attrs()[1] = {APPLY_SKILL_DAMAGE_BONUS, 2};
+        f.Watch();
+    };
+    {
+        AttributeItemFixture f(USE_CHANGE_ATTRIBUTE);
+        setup(f);
+        const auto before = f.Attrs();
+        Check(ItemSystem::ChangeItemHitDamageBonuses(f.owner, f.item, f.material), "native hit reroll failed");
+        Check(f.Attrs()[0].sValue == 9 && f.Attrs()[1].sValue == 4, "hit/skill distribution changed");
+        for (int i = 2; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+            Check(f.Attrs()[i].bType == before[i].bType && f.Attrs()[i].sValue == before[i].sValue,
+                "hit reroll overwrote an unrelated or rare attribute");
+        Check(ItemSystem::GetItemCount(f.material) == 1, "hit reroll did not charge exactly one scroll");
+    }
+    {
+        AttributeItemFixture f(USE_CHANGE_ATTRIBUTE);
+        setup(f);
+        gaussianValue = 30.f;
+        Check(ItemSystem::ChangeItemHitDamageBonuses(f.owner, f.item, f.material),
+            "negative hit bonus reroll failed");
+        Check(f.Attrs()[0].sValue == -59 && f.Attrs()[1].sValue == 30,
+            "negative hit bonus narrowed to an unsigned attribute level");
+    }
+    for (int mode = 0; mode < 8; ++mode)
+    {
+        AttributeItemFixture f(USE_CHANGE_ATTRIBUTE);
+        setup(f);
+        switch (mode) {
+        case 0: f.Attrs()[0].bType = 20; f.Attrs()[1].bType = 21; break;
+        case 1: g_registry.emplace<ecs::ItemLockedAttribute>(f.item).index = 0; break;
+        case 2: g_registry.emplace<ecs::ItemFlags>(f.material).isLocked = true; break;
+        case 3: g_registry.get<ecs::ItemOwner>(f.material).owner = entt::null; break;
+        case 4: g_registry.get<ecs::ItemIdentity>(f.material).vnum = 1; break;
+        case 5: f.Attrs()[2].bType = APPLY_SKILL_DAMAGE_BONUS; break;
+        case 6: g_registry.emplace<ecs::ItemEquipped>(f.item).equipped = true; break;
+        case 7:
+            f.Attrs()[0] = {}; f.Attrs()[1] = {};
+            g_registry.emplace<ecs::ItemLockedAttribute>(f.item).index = 0;
+            break;
+        }
+        f.Watch();
+        Check(!ItemSystem::ChangeItemHitDamageBonuses(f.owner, f.item, f.material), "invalid hit reroll accepted");
+        f.Unchanged();
+        Check(randomCalls == 0, "rejected hit reroll used randomness");
+    }
+    {
+        AttributeItemFixture f(USE_CHANGE_ATTRIBUTE);
+        setup(f);
+        f.Attrs()[0] = {}; f.Attrs()[1] = {};
+        Check(ItemSystem::ChangeItemHitDamageBonuses(f.owner, f.item, f.material),
+            "empty normal slots could not accept hit bonuses");
+        Check(f.Attrs()[0].bType == APPLY_NORMAL_HIT_DAMAGE_BONUS &&
+            f.Attrs()[1].bType == APPLY_SKILL_DAMAGE_BONUS, "hit bonus types lost");
+    }
+    {
+        AttributeItemFixture f(USE_CHANGE_ATTRIBUTE);
+        setup(f);
+        g_registry.get<ecs::ItemCount>(f.material).count = 1;
+        bool observed = false;
+        onSave = [&](entt::entity item) {
+            if (item != f.item) return;
+            observed = true;
+            Check(ItemSystem::GetItemCount(f.material) == 0 &&
+                ItemSystem::IsItemConsumptionPending(f.material), "attributes published before the scroll debit");
+            Check(!ItemSystem::ChangeItemHitDamageBonuses(f.owner, f.item, f.material),
+                "callback reused the last scroll");
+            g_registry.destroy(item);
+        };
+        Check(ItemSystem::ChangeItemHitDamageBonuses(f.owner, f.item, f.material) && observed,
+            "committed hit reroll failed after callback destruction");
+        Check(!g_registry.valid(f.item) && !g_registry.valid(f.material), "retired hit reroll entities survived");
+    }
+#endif
 }
 
 void PaidRerollTransactions()
@@ -3448,6 +3532,7 @@ int main()
         AddonRemovalAndDuplicates();
         WeightedBoundaries();
         ProtoAndCostumeRules();
+        HitDamageScrollTransactions();
         PaidRerollTransactions();
         PaymentValidation();
         GoldTransactions();

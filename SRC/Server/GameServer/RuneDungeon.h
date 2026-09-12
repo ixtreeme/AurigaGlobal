@@ -5,7 +5,6 @@
 #include <entt/entt.hpp>
 
 class CHARACTER;
-class CItem; // forward declaration (LPITEM == CItem*)
 
 /*
     Rune Dungeon (Lua-free C++ implementation based on rune_zone.lua)
@@ -28,8 +27,8 @@ public:
     bool OnUseItem89102(entt::entity character); // fragment -> key
     bool OnUseItem89100(entt::entity character); // cooldown reset
 
-    // NPC "give item" handler (called from CHARACTER::ReceiveItem)
-    bool OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item);
+    // NPC "give item" handler (called from ItemSystem::ReceiveItemEcs)
+    bool OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item);
 
     bool IsRuneDungeonMap(int32_t mapIndex) const;
 };

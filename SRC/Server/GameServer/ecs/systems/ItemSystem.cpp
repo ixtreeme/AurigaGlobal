@@ -9,6 +9,7 @@
 #include "NetworkSyncSystem.hpp"
 #include "PointSystem.hpp"
 #include "AffectSystem.hpp"
+#include "CombatSystem.hpp"
 #include "../EntityFactory.hpp"
 #include "../ItemInvariants.hpp"
 #include "../VIDRegistry.hpp"
@@ -159,7 +160,7 @@ static entt::entity GetMainInventoryItem(entt::entity e, uint16_t cell)
         return entt::null;
 
     const auto* comp = TryGetMainInventoryRuntimeComponent(e);
-    return comp ? comp->items[cell] : entt::null;
+    return comp && ItemSystem::IsValidItem(comp->items[cell]) ? comp->items[cell] : entt::null;
 }
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -227,15 +228,6 @@ static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::ent
 
 #endif
 
-static LPITEM LegacyItemBoundary(entt::entity itemEntity)
-{
-    if (itemEntity == entt::null || !g_registry.valid(itemEntity))
-        return nullptr;
-
-    const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity);
-    return legacy ? legacy->ptr : nullptr;
-}
-
 static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reason)
 {
     if (!ItemSystem::IsValidItem(itemEntity))
@@ -248,52 +240,10 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     return !g_registry.valid(itemEntity);
 }
 
-static void SyncItemFlagsComponent(LPITEM item)
-{
-	entt::entity e = item ? item->GetEntityHandle() : entt::null;
-    if (e == entt::null)
-        return;
-
-    ecs::ItemFlags flags{};
-    flags.flags = item->GetFlag();
-    flags.exchanging = item->IsExchanging();
-    flags.skipSave = ItemSystem::GetItemSkipSave(e);
-    flags.isLocked = item->isLocked();
-    g_registry.emplace_or_replace<ecs::ItemFlags>(e, flags);
-}
-
 #ifndef ENABLE_SWITCHBOT
 const int MAX_NORM_ATTR_NUM = ITEM_MANAGER::MAX_NORM_ATTR_NUM;
 const int MAX_RARE_ATTR_NUM = ITEM_MANAGER::MAX_RARE_ATTR_NUM;
 #endif
-
-static void SyncItemAttributesComponent(LPITEM item)
-{
-	entt::entity e = item ? item->GetEntityHandle() : entt::null;
-    if (e == entt::null)
-        return;
-
-    ecs::ItemAttributes attrs{};
-    const TPlayerItemAttribute* values = item->GetAttributes();
-    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        attrs.attrs[i] = values[i];
-
-    g_registry.emplace_or_replace<ecs::ItemAttributes>(e, attrs);
-}
-
-static void SyncItemSocketsComponent(LPITEM item)
-{
-	entt::entity e = item ? item->GetEntityHandle() : entt::null;
-    if (e == entt::null)
-        return;
-
-    ecs::ItemSockets sockets{};
-    const int32_t* values = item->GetSockets();
-    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-        sockets.sockets[i] = values[i];
-
-    g_registry.emplace_or_replace<ecs::ItemSockets>(e, sockets);
-}
 
 bool IsExtraEnchantUseSubtype(uint8_t subtype)
 {
@@ -383,24 +333,26 @@ entt::entity GetItem(entt::entity e, TItemPos cell)
     case INVENTORY:
         return GetMainInventoryItem(e, cell.cell);
     case EQUIPMENT:
+        if (cell.cell >= INVENTORY_AND_EQUIP_SLOT_MAX - INVENTORY_MAX_NUM)
+            return entt::null;
         return GetMainInventoryItem(e, static_cast<uint16_t>(INVENTORY_MAX_NUM + cell.cell));
     case DRAGON_SOUL_INVENTORY:
         if (cell.cell < DRAGON_SOUL_INVENTORY_MAX_NUM)
             if (const auto* inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(e))
-                return inventory->items[cell.cell];
+                return IsValidItem(inventory->items[cell.cell]) ? inventory->items[cell.cell] : entt::null;
         return entt::null;
 #ifdef ENABLE_EXTRA_INVENTORY
     case EXTRA_INVENTORY:
         if (cell.cell < EXTRA_INVENTORY_MAX_NUM)
             if (const auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e))
-                return inventory->items[cell.cell];
+                return IsValidItem(inventory->items[cell.cell]) ? inventory->items[cell.cell] : entt::null;
         return entt::null;
 #endif
 #ifdef ENABLE_SWITCHBOT
     case SWITCHBOT:
         if (cell.cell < SWITCHBOT_SLOT_COUNT)
             if (const auto* switchbot = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(e))
-                return switchbot->items[cell.cell];
+                return IsValidItem(switchbot->items[cell.cell]) ? switchbot->items[cell.cell] : entt::null;
         return entt::null;
 #endif
     default:
@@ -420,7 +372,7 @@ entt::entity GetExtraInventoryItem(entt::entity e, uint16_t cell)
         return entt::null;
 
     const auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e);
-    return inventory ? inventory->items[cell] : entt::null;
+    return inventory && IsValidItem(inventory->items[cell]) ? inventory->items[cell] : entt::null;
 }
 
 void SyncExtraInventoryAll(entt::entity e)
@@ -749,25 +701,6 @@ static bool IsSimpleEquipToggleType(uint8_t type)
     }
 }
 
-static bool UseNonEquipItemLegacyBoundary(entt::entity owner,
-                                          entt::entity item,
-                                          TItemPos destCell)
-{
-    if (!IsValidItem(item))
-        return false;
-
-    const bool result = UseItemEx(owner, item, destCell);
-    if (!result)
-        return false;
-
-    if (g_registry.valid(item) && IsValidItem(item)) {
-        SyncItemStateFromLegacy(item);
-        return true;
-    }
-
-    return true;
-}
-
 bool UseItemEcs(entt::entity owner, entt::entity item, TItemPos destCell)
 {
     if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
@@ -780,7 +713,7 @@ bool UseItemEcs(entt::entity owner, entt::entity item, TItemPos destCell)
             : EquipItemEcs(owner, item);
     }
 
-    return UseNonEquipItemLegacyBoundary(owner, item, destCell);
+    return UseItemEx(owner, item, destCell);
 }
 
 
@@ -2284,12 +2217,11 @@ bool IsItemLocked(entt::entity item)
 
 bool IsItemBound(entt::entity item)
 {
-#ifdef __SOULBINDING_SYSTEM__
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        return legacyItem->IsBind() || legacyItem->IsUntilBind();
-#else
-    (void)item;
+#if defined(__SOULBINDING_SYSTEM__) || defined(ENABLE_SOULBIND_SYSTEM)
+#error "Soulbinding requires an ECS binding component and persistence before it can be enabled."
 #endif
+    // Neither legacy soulbinding feature has an implementation in this server.
+    (void)item;
     return false;
 }
 
@@ -2817,41 +2749,6 @@ bool RefreshItemEquippedSlot(entt::entity item)
     return true;
 }
 
-bool SyncItemStateFromLegacy(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || item == entt::null || !g_registry.valid(item))
-        return false;
-
-    g_registry.emplace_or_replace<ecs::ItemIdentity>(
-        item, ecs::ItemIdentity{
-                  legacyItem->GetID(),
-                  legacyItem->GetVnum(),
-                  legacyItem->GetOriginalVnum(),
-                  legacyItem->GetVID(),
-                  legacyItem->GetMaskVnum(),
-#ifdef __CHANGELOOK_SYSTEM__
-                  legacyItem->GetSIGVnum(),
-                  legacyItem->GetSpecialGroup(),
-                  legacyItem->GetTransmutation(),
-#else
-                  legacyItem->GetSIGVnum(),
-                  legacyItem->GetSpecialGroup(),
-                  0,
-#endif
-              });
-    g_registry.emplace_or_replace<ecs::ItemPrototypeMeta>(
-        item, ecs::ItemPrototypeMeta{legacyItem->GetType(), legacyItem->GetSubType()});
-    // Only flags still comes from the legacy object; exchanging, skipSave and
-    // isLocked live in this component and are written directly.
-    auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
-    flags.flags = legacyItem->GetFlag();
-
-    RefreshItemEquippedSlot(item);
-    RefreshItemOwnerPID(item);
-    return true;
-}
-
 static uint32_t EntityPlayerID(entt::entity e)
 {
     if (const auto* playerID = g_registry.try_get<ecs::PlayerID>(e))
@@ -2877,35 +2774,375 @@ bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to
     return true;
 }
 
-static bool ReceiveItemLegacyBoundary(entt::entity receiver,
-                                      entt::entity from,
-                                      entt::entity item)
+bool CanReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity item)
 {
-    LPCHARACTER legacyReceiver = LegacyCharOf(receiver);
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyReceiver || !ecs::PlayerRuntime::IsValid(from) || !IsValidItem(item) ||
-        !legacyReceiver->CanReceiveItem(from, legacyItem))
+    if (!ecs::PlayerRuntime::IsValid(receiver) || ecs::PlayerRuntime::IsPC(receiver) ||
+        !ecs::PlayerRuntime::IsPC(fromEntity) || !CanConsumeOwnedItem(fromEntity, item) ||
+        ecs::PlayerRuntime::GetMapIndex(receiver) != ecs::PlayerRuntime::GetMapIndex(fromEntity))
         return false;
 
-    legacyReceiver->ReceiveItem(from, legacyItem);
-    return true;
+    const int64_t dx = std::abs(int64_t(ecs::PlayerRuntime::GetX(receiver)) - ecs::PlayerRuntime::GetX(fromEntity));
+    const int64_t dy = std::abs(int64_t(ecs::PlayerRuntime::GetY(receiver)) - ecs::PlayerRuntime::GetY(fromEntity));
+    if (dx > 2000 || dy > 2000 || DISTANCE_APPROX(static_cast<int>(dx), static_cast<int>(dy)) > 2000)
+        return false;
+
+	uint32_t racenum = ecs::PlayerRuntime::GetRaceNum(receiver);
+
+	if (racenum == DEVILTOWER_BLACKSMITH_WEAPON_MOB ||
+		racenum == DEVILTOWER_BLACKSMITH_ARMOR_MOB ||
+		racenum == DEVILTOWER_BLACKSMITH_ACCESSORY_MOB) {
+		bool bCanProced = true;
+
+		for (uint8_t i = 0; i < ITEM_LIMIT_MAX_NUM; ++i) {
+			if (ItemSystem::GetItemLimitType(item, i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item, i) >= 90) {
+				bCanProced = false;
+				break;
+			}
+		}
+
+		if (!bCanProced) {
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 1360, "");
+#endif
+			return false;
+		}
+	}
+
+	switch (racenum)
+	{
+	case fishing::CAMPFIRE_MOB:
+		if (GetItemType(item) == ITEM_FISH &&
+			(GetItemSubType(item) == FISH_ALIVE || GetItemSubType(item) == FISH_DEAD))
+			return true;
+		break;
+
+	case fishing::FISHER_MOB:
+		if (GetItemType(item) == ITEM_ROD)
+			return true;
+		break;
+
+	case BLACKSMITH_WEAPON_MOB:
+	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
+		if (GetItemType(item) == ITEM_WEAPON && GetItemRefineVnum(item)) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		break;
+	case BLACKSMITH_ARMOR_MOB:
+	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
+		if ((GetItemType(item) == ITEM_BELT || (GetItemType(item) == ITEM_ARMOR && (GetItemSubType(item) == ARMOR_BODY || GetItemSubType(item) == ARMOR_SHIELD || GetItemSubType(item) == ARMOR_HEAD))) && GetItemRefineVnum(item)) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		break;
+	case BLACKSMITH_ACCESSORY_MOB:
+	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB:
+		if (GetItemType(item) == ITEM_ARMOR && !(GetItemSubType(item) == ARMOR_BODY || GetItemSubType(item) == ARMOR_SHIELD || GetItemSubType(item) == ARMOR_HEAD
+#ifdef ENABLE_PENDANT
+			|| GetItemSubType(item) == ARMOR_PENDANT
+#endif
+			) && GetItemRefineVnum(item)) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		break;
+	case BLACKSMITH_MOB:
+	case BLACKSMITH2_MOB:
+		if (GetItemRefineVnum(item) && GetItemRefineSet(item)) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	case ALCHEMIST_MOB:
+		if (GetItemRefineVnum(item))
+			return true;
+		break;
+
+	case 20101:
+	case 20102:
+	case 20103:
+		// ÃÃÂ±Ã Â¸Â»
+		if (GetItemVnum(item) == ITEM_REVIVE_HORSE_1)
+		{
+			if (!CombatSystem::IsDead(receiver))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (GetItemVnum(item) == ITEM_HORSE_FOOD_1)
+		{
+			if (CombatSystem::IsDead(receiver))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (GetItemVnum(item) == ITEM_HORSE_FOOD_2 || GetItemVnum(item) == ITEM_HORSE_FOOD_3)
+		{
+			return false;
+		}
+		break;
+	case 20104:
+	case 20105:
+	case 20106:
+		// ÃÃÂ±Ã Â¸Â»
+		if (GetItemVnum(item) == ITEM_REVIVE_HORSE_2)
+		{
+			if (!CombatSystem::IsDead(receiver))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (GetItemVnum(item) == ITEM_HORSE_FOOD_2)
+		{
+			if (CombatSystem::IsDead(receiver))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (GetItemVnum(item) == ITEM_HORSE_FOOD_1 || GetItemVnum(item) == ITEM_HORSE_FOOD_3)
+		{
+			return false;
+		}
+		break;
+	case 20107:
+	case 20108:
+	case 20109:
+		// Â°Ã­Â±Ã Â¸Â»
+		if (GetItemVnum(item) == ITEM_REVIVE_HORSE_3)
+		{
+			if (!CombatSystem::IsDead(receiver))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (GetItemVnum(item) == ITEM_HORSE_FOOD_3)
+		{
+			if (CombatSystem::IsDead(receiver))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (GetItemVnum(item) == ITEM_HORSE_FOOD_1 || GetItemVnum(item) == ITEM_HORSE_FOOD_2)
+		{
+			return false;
+		}
+		break;
+	}
+
+	//if (IS_SET(GetItemFlags(item), ITEM_FLAG_QUEST_GIVE))
+	{
+		return true;
+	}
+
+	return false;
 }
 
-bool ReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item)
+bool ReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity item)
 {
-    if (receiver == entt::null || from == entt::null ||
-        !g_registry.valid(receiver) || !g_registry.valid(from) ||
-        !IsValidItem(item))
+    if (!CanReceiveItemEcs(receiver, fromEntity, item))
         return false;
+    // Callbacks may consume the last item or destroy its entity.
+    const std::string itemName = GetItemName(item);
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+	// Rune Dungeon: key pedestal (20507) consumes 89103 and progresses floor 5
+	if (CRuneDungeon::instance().OnNpcTakeItem(fromEntity, receiver, item))
+		return true;
+	if (CHalloween2022Dungeon::instance().OnNpcTakeItem(fromEntity, receiver, item))
+		return true;
+	if (CVikingDungeon::instance().OnNpcTakeItem(fromEntity, receiver, item))
+		return true;
+#endif
+	const entt::entity itemEntity = item;
+	switch (ecs::PlayerRuntime::GetRaceNum(receiver))
+	{
+	case fishing::CAMPFIRE_MOB:
+		if (GetItemType(item) == ITEM_FISH && (GetItemSubType(item) == FISH_ALIVE || GetItemSubType(item) == FISH_DEAD))
+			fishing::GrillFishEcs(fromEntity, itemEntity);
+		else
+		{
+			// TAKE_ITEM_BUG_FIX
+			ecs::PlayerRuntime::SetQuestNPCID(fromEntity, ecs::PlayerRuntime::GetPacketVID(receiver));
+			// END_OF_TAKE_ITEM_BUG_FIX
+			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), ecs::PlayerRuntime::GetRaceNum(receiver), itemEntity);
+		}
+		break;
 
-    if (!ReceiveItemLegacyBoundary(receiver, from, item))
-        return false;
+		// DEVILTOWER_NPC
+	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
+	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
+	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB: {
+		int set = GetItemRefineSet(item);
+		if (GetItemRefineVnum(item) != 0 && set != 0 /*&& GetItemRefineSet(item) < 500*/
+#ifdef ENABLE_ITEM_EXTRA_PROTO
+			&& set != 1021
+			&& set != 1022
+			&& set != 1023
+			&& set != 1024
+			&& set != 19
+			&& set != 20
+			&& set != 21
+			&& set != 22
+			&& set != 28
+			&& set != 29
+			&& set != 30
+			&& set != 31
+			&& set != 32
+			&& set != 396
+			&& set != 397
+			&& set != 398
+			&& set != 399
+			&& set != 640
+			&& set != 641
+			&& set != 642
+			&& set != 643
+			&& set != 370
+			&& set != 371
+			&& set != 372
+			&& set != 373
+			&& set != 461
+			&& set != 462
+			&& set != 463
+			&& set != 464
+			&& set != 474
+			&& set != 475
+			&& set != 476
+			&& set != 477
+			&& set != 487
+			&& set != 488
+			&& set != 489
+			&& set != 490
+			&& set != 235
+			&& set != 236
+			&& set != 237
+			&& set != 238
+			&& set != 383
+			&& set != 384
+			&& set != 385
+			&& set != 386
+			&& set != 769
+			&& set != 770
+			&& set != 771
+			&& set != 772
+			&& set != 995
+			&& set != 996
+			&& set != 997
+			&& set != 998
+			&& set != 1017
+			&& set != 1018
+			&& set != 1019
+			&& set != 1020
+			&& set != 448
+			&& set != 449
+			&& set != 450
+			&& set != 451
+			&& set != 430
+			&& set != 431
+			&& set != 432
+			&& set != 433
+			&& set != 325
+			&& set != 326
+			&& set != 327
+			&& set != 328
+#endif
+			)
+		{
+			InventorySystem::SetRefineNPC(fromEntity, receiver);
+			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
+		}
+#ifdef TEXTS_IMPROVEMENT
+		else {
+			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 427, "");
+		}
+#endif
+		break;
+	}
+											// END_OF_DEVILTOWER_NPC
 
-    if (g_registry.valid(item) && IsValidItem(item)) {
-        SyncItemStateFromLegacy(item);
-        return true;
-    }
+	case BLACKSMITH_MOB:
+	case BLACKSMITH2_MOB:
+	case BLACKSMITH_WEAPON_MOB:
+	case BLACKSMITH_ARMOR_MOB:
+	case BLACKSMITH_ACCESSORY_MOB:
+		if (GetItemRefineVnum(item))
+		{
+			InventorySystem::SetRefineNPC(fromEntity, receiver);
+			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
+		}
+#ifdef TEXTS_IMPROVEMENT
+		else {
+			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 427, "");
+		}
+#endif
+		break;
+	case 20101:
+	case 20102:
+	case 20103:
+	case 20104:
+	case 20105:
+	case 20106:
+	case 20107:
+	case 20108:
+	case 20109:
+		if (GetItemVnum(item) == ITEM_REVIVE_HORSE_1 ||
+			GetItemVnum(item) == ITEM_REVIVE_HORSE_2 ||
+			GetItemVnum(item) == ITEM_REVIVE_HORSE_3)
+		{
+			MountSystem::ReviveHorse(fromEntity);
+			ItemSystem::ConsumeItemEcs(itemEntity);
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 329, "%s", itemName.c_str());
+#endif
+		}
+		else if (GetItemVnum(item) == ITEM_HORSE_FOOD_1 ||
+			GetItemVnum(item) == ITEM_HORSE_FOOD_2 ||
+			GetItemVnum(item) == ITEM_HORSE_FOOD_3)
+		{
+			MountSystem::FeedHorse(fromEntity);
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 112, "%s", itemName.c_str());
+#endif
+			ItemSystem::ConsumeItemEcs(itemEntity);
+			NetworkSyncSystem::BroadcastEffect(g_registry, receiver, SE_HPUP_RED);
+		}
+		break;
 
+	default:
+		LOG_INFO("TakeItem {} {} {}", ecs::PlayerRuntime::GetName(fromEntity), ecs::PlayerRuntime::GetRaceNum(receiver), itemName.c_str());
+		ecs::PlayerRuntime::SetQuestNPCID(fromEntity, ecs::PlayerRuntime::GetPacketVID(receiver));
+		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), ecs::PlayerRuntime::GetRaceNum(receiver), itemEntity);
+		break;
+	}
     return true;
 }
 

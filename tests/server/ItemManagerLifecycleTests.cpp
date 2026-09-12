@@ -347,7 +347,6 @@ bool StartRealTimeExpireEventEcs(entt::entity item) { CreationStage("real-time",
 bool StartSoulItemEventEcs(entt::entity item) { CreationStage("soul", item); return !rejectTimer; }
 bool InitializeRuneItem(entt::entity item) { CreationStage("rune", item); return !rejectRune; }
 void SaveItem(entt::entity item) { ++creationSaves; CreationStage("save", item); }
-bool SyncItemStateFromLegacy(entt::entity) { Unexpected(); }
 }
 // These were inline CHARACTER getters over two zero-initialised fields until
 // DetermineDropMetinStone rolled them. No monster here has been rolled, so the

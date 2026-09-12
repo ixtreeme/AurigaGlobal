@@ -2065,31 +2065,31 @@ namespace offlineshop
 		{
 			TShopItemInfo& rShopItem = vec[i];
 
-			LPITEM item = ch->GetItem(rShopItem.pos);
-			if(!item)
+			const entt::entity item = ItemSystem::GetItem(character, rShopItem.pos);
+			if (!ItemSystem::IsValidItem(item))
 				return false;
 
-			if(IS_SET(ItemSystem::GetItemAntiFlag((item ? item->GetEntityHandle() : entt::null)), ITEM_ANTIFLAG_GIVE))
+			if(IS_SET(ItemSystem::GetItemAntiFlag(item), ITEM_ANTIFLAG_GIVE))
 				return false;
 
-			if(IS_SET(ItemSystem::GetItemAntiFlag((item ? item->GetEntityHandle() : entt::null)), ITEM_ANTIFLAG_MYSHOP))
+			if(IS_SET(ItemSystem::GetItemAntiFlag(item), ITEM_ANTIFLAG_MYSHOP))
 				return false;
 
-			if (item->isLocked() || ItemSystem::IsItemEquipped((item ? item->GetEntityHandle() : entt::null)) || item->IsExchanging())
+			if (ItemSystem::IsItemLocked(item) || ItemSystem::IsItemEquipped(item) || ItemSystem::IsItemExchanging(item))
 			{
 				SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 				return true;
 			}
 
 #ifdef ENABLE_SOULBIND_SYSTEM
-			if (item->IsSealed()){
+			if (ItemSystem::IsItemBound(item)){
 				SendChatPacket(character, CHAT_PACKET_CANNOT_DO_NOW);
 				return true;
 			}
 #endif
 
 #ifdef KASMIR_PAKET_SYSTEM
-			if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) == 88902) {
+			if (ItemSystem::GetItemVnum(item) == 88902) {
 				dwCountStyle2 += 1;
 			}
 #endif
@@ -2108,22 +2108,24 @@ namespace offlineshop
 			ZeroObject(itemInfo);
 
 			itemInfo.dwOwnerID = (ecs::PlayerRuntime::GetPlayerID(character));
-			memcpy(itemInfo.item.aAttr ,	item->GetAttributes(),	sizeof(itemInfo.item.aAttr));
-			memcpy(itemInfo.item.alSockets,	item->GetSockets(),		sizeof(itemInfo.item.alSockets));
+			for (int attr = 0; attr < ITEM_ATTRIBUTE_MAX_NUM; ++attr)
+			itemInfo.item.aAttr[attr] = ItemSystem::GetItemAttribute(item, attr);
+			for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+			itemInfo.item.alSockets[socket] = ItemSystem::GetItemSocket(item, socket);
 
-			itemInfo.item.dwVnum	= ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
-			itemInfo.item.dwCount	= ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null));
+			itemInfo.item.dwVnum	= ItemSystem::GetItemVnum(item);
+			itemInfo.item.dwCount	= ItemSystem::GetItemCount(item);
 			//patch 08-03-2020
-			itemInfo.item.expiration = GetItemExpiration(item->GetEntityHandle());
+			itemInfo.item.expiration = GetItemExpiration(item);
 
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
-			itemInfo.item.dwTransmutation = item->GetTransmutation();
+			itemInfo.item.dwTransmutation = ItemSystem::GetItemTransmutationVnum(item);
 #endif
 #ifdef ATTR_LOCK
-			itemInfo.item.iLockedAttr = item->GetLockedAttr();
+			itemInfo.item.iLockedAttr = ItemSystem::GetItemLockedAttr(item);
 #endif
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-			LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "trying to open shop , adding item vnum %u count %u original id %u ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)));
+			LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "trying to open shop , adding item vnum %u count %u original id %u ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID(item));
 #endif
 			CopyObject(itemInfo.price, rShopItem.price);
 			vecItem.push_back(itemInfo);
@@ -2141,8 +2143,8 @@ namespace offlineshop
 		for (uint32_t i = 0; i < vec.size(); i++)
 		{
 			TShopItemInfo& rShopItem = vec[i];
-			LPITEM item = ch->GetItem(rShopItem.pos);
-			const entt::entity removed = InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+			const entt::entity item = ItemSystem::GetItem(character, rShopItem.pos);
+			const entt::entity removed = InventorySystem::RemoveFromCharacter(item);
 		ItemSystem::DestroyItemEntityEcs(removed, "OFFLINESHOP_SELL");
 		}
 
@@ -2571,26 +2573,26 @@ namespace offlineshop
 		}
 
 
-		LPITEM pkItem = ch->GetItem(pos);
-		if(!pkItem)
+		const entt::entity pkItem = ItemSystem::GetItem(character, pos);
+		if (!ItemSystem::IsValidItem(pkItem))
 			return false;
 
-		if (pkItem->isLocked() || ItemSystem::IsItemEquipped((pkItem ? pkItem->GetEntityHandle() : entt::null)) || pkItem->IsExchanging())
+		if (ItemSystem::IsItemLocked(pkItem) || ItemSystem::IsItemEquipped(pkItem) || ItemSystem::IsItemExchanging(pkItem))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 
 #ifdef ENABLE_SOULBIND_SYSTEM
-		if (pkItem->IsSealed()) {
+		if (ItemSystem::IsItemBound(pkItem)) {
 			SendChatPacket(character, CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 #endif
 
-		if(IS_SET(ItemSystem::GetItemAntiFlag((pkItem ? pkItem->GetEntityHandle() : entt::null)), ITEM_ANTIFLAG_GIVE))
+		if(IS_SET(ItemSystem::GetItemAntiFlag(pkItem), ITEM_ANTIFLAG_GIVE))
 			return false;
-		if(IS_SET(ItemSystem::GetItemAntiFlag((pkItem ? pkItem->GetEntityHandle() : entt::null)), ITEM_ANTIFLAG_MYSHOP))
+		if(IS_SET(ItemSystem::GetItemAntiFlag(pkItem), ITEM_ANTIFLAG_MYSHOP))
 			return false;
 
 //updated 25 - 01 - 2020  //topatch
@@ -2605,27 +2607,29 @@ namespace offlineshop
 		ZeroObject(itemInfo);
 
 		itemInfo.dwOwnerID		= (ecs::PlayerRuntime::GetPlayerID(character));
-		itemInfo.item.dwVnum	= ItemSystem::GetItemVnum((pkItem ? pkItem->GetEntityHandle() : entt::null));
-		itemInfo.item.dwCount	= ItemSystem::GetItemCount((pkItem ? pkItem->GetEntityHandle() : entt::null));
+		itemInfo.item.dwVnum	= ItemSystem::GetItemVnum(pkItem);
+		itemInfo.item.dwCount	= ItemSystem::GetItemCount(pkItem);
 		//patch 08-03-2020
-		itemInfo.item.expiration = GetItemExpiration(pkItem->GetEntityHandle());
+		itemInfo.item.expiration = GetItemExpiration(pkItem);
 
-		memcpy(itemInfo.item.aAttr,		pkItem->GetAttributes(),	sizeof(itemInfo.item.aAttr));
-		memcpy(itemInfo.item.alSockets,	pkItem->GetSockets(),		sizeof(itemInfo.item.alSockets));
+		for (int attr = 0; attr < ITEM_ATTRIBUTE_MAX_NUM; ++attr)
+			itemInfo.item.aAttr[attr] = ItemSystem::GetItemAttribute(pkItem, attr);
+		for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+			itemInfo.item.alSockets[socket] = ItemSystem::GetItemSocket(pkItem, socket);
 
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
-		itemInfo.item.dwTransmutation = pkItem->GetTransmutation();
+		itemInfo.item.dwTransmutation = ItemSystem::GetItemTransmutationVnum(pkItem);
 #endif
 #ifdef ATTR_LOCK
-		itemInfo.item.iLockedAttr = pkItem->GetLockedAttr();
+		itemInfo.item.iLockedAttr = ItemSystem::GetItemLockedAttr(pkItem);
 #endif
 		CopyObject(itemInfo.price, price);
 
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "adding new item to the shop vnum %u count %u (original item ID %u) ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID((pkItem ? pkItem->GetEntityHandle() : entt::null)));
+		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "adding new item to the shop vnum %u count %u (original item ID %u) ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID(pkItem));
 #endif
 
-		const entt::entity removed = InventorySystem::RemoveFromCharacter(pkItem->GetEntityHandle());
+		const entt::entity removed = InventorySystem::RemoveFromCharacter(pkItem);
 		ItemSystem::DestroyItemEntityEcs(removed, "OFFLINESHOP_SELL");
 
 		SendShopAddItemDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), itemInfo);
@@ -3343,15 +3347,15 @@ namespace offlineshop
 
 
 		//checking about duplicate item
-		LPITEM item = ch->GetItem(pos);
-		if(!item)
+		const entt::entity item = ItemSystem::GetItem(character, pos);
+		if (!ItemSystem::IsValidItem(item))
 			return false;
 
-		if(ItemSystem::IsItemEquipped((item ? item->GetEntityHandle() : entt::null)) || item->IsExchanging() || item->isLocked())
+		if(ItemSystem::IsItemEquipped(item) || ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemLocked(item))
 			return false;
 
 
-		TItemTable* pItemTable= ITEM_MANAGER::instance().GetTable(ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)));
+		TItemTable* pItemTable= ITEM_MANAGER::instance().GetTable(ItemSystem::GetItemVnum(item));
 		if(!pItemTable)
 			return false;
 
@@ -3359,7 +3363,7 @@ namespace offlineshop
 			return false;
 
 #ifdef ENABLE_SOULBIND_SYSTEM
-		if (item->IsSealed()) {
+		if (ItemSystem::IsItemBound(item)) {
 			return false;
 		}
 #endif
@@ -3375,24 +3379,26 @@ namespace offlineshop
 
 
 		TItemInfoEx& itemInfo = auction.item;
-		itemInfo.dwCount	= ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null));
-		itemInfo.dwVnum		= ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
+		itemInfo.dwCount	= ItemSystem::GetItemCount(item);
+		itemInfo.dwVnum		= ItemSystem::GetItemVnum(item);
 
 		//patch 08-03-2020
-		itemInfo.expiration = GetItemExpiration(item->GetEntityHandle());
+		itemInfo.expiration = GetItemExpiration(item);
 
-		memcpy(itemInfo.aAttr ,		item->GetAttributes(),	sizeof(itemInfo.aAttr));
-		memcpy(itemInfo.alSockets,	item->GetSockets(),		sizeof(itemInfo.alSockets));
+		for (int attr = 0; attr < ITEM_ATTRIBUTE_MAX_NUM; ++attr)
+			itemInfo.aAttr[attr] = ItemSystem::GetItemAttribute(item, attr);
+		for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+			itemInfo.alSockets[socket] = ItemSystem::GetItemSocket(item, socket);
 
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
-		itemInfo.dwTransmutation = item->GetTransmutation();
+		itemInfo.dwTransmutation = ItemSystem::GetItemTransmutationVnum(item);
 #endif
 #ifdef ATTR_LOCK
-		itemInfo.iLockedAttr = item->GetLockedAttr();
+		itemInfo.iLockedAttr = ItemSystem::GetItemLockedAttr(item);
 #endif
 
 		//destroy/remove/send
-		const entt::entity removed = InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+		const entt::entity removed = InventorySystem::RemoveFromCharacter(item);
 		ItemSystem::DestroyItemEntityEcs(removed, "OFFLINESHOP_SELL");
 		SendAuctionCreateDBPacket(auction);
 		return true;

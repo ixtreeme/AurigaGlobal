@@ -4,12 +4,9 @@
 #include "ecs/systems/PointSystem.hpp"
 
 #include "ItemUse.h"
+#include "char.h" // POINT_GOLD constants; item use does not access CHARACTER.
 
-#include "char_interface.hpp"
-#include "item.h"
 #include "ecs/systems/ItemSystem.hpp"
-#include "ecs/Registry.hpp"
-#include "ecs/EntityFactory.hpp"
 
 #include <algorithm>
 #include <stdint.h>
@@ -18,13 +15,12 @@
 namespace
 {
 	// Adds Dragon Coins safely (clamped to uint32 max) and prints an English message.
-	void AddDragonCoinSafe(LPCHARACTER ch, uint32_t amount)
+	void AddDragonCoinSafe(entt::entity chEntity, uint32_t amount)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-		if (!ch || amount == 0)
+		if (!ecs::PlayerRuntime::IsValid(chEntity) || amount == 0)
 			return;
 
-		const uint32_t cur = ecs::PlayerRuntime::GetDragonCoin(ch->GetEntityHandle());
+		const uint32_t cur = ecs::PlayerRuntime::GetDragonCoin(chEntity);
 		const uint64_t maxCoins = 0xFFFFFFFFULL; // uint32 max
 
 		if ((uint64_t)cur >= maxCoins)
@@ -37,7 +33,7 @@ namespace
 		if (canAdd == 0)
 			return;
 
-		ecs::PlayerRuntime::SetDragonCoin(ch->GetEntityHandle(), cur + (uint32_t)canAdd);
+		ecs::PlayerRuntime::SetDragonCoin(chEntity, cur + (uint32_t)canAdd);
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %u Dragon Coins.", (uint32_t)canAdd);
 	}
 
@@ -58,38 +54,16 @@ namespace
 
 namespace item_change
 {
-	bool HandleUse(CHARACTER* chRaw, CItem* itemRaw)
+	bool HandleUse(entt::entity chEntity, entt::entity item)
 	{
-		LPCHARACTER ch = (LPCHARACTER)chRaw;
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-		LPITEM item = (LPITEM)itemRaw;
-
-		if (!ch || !item)
+		if (!ecs::PlayerRuntime::IsPC(chEntity) || !ItemSystem::CanConsumeOwnedItem(chEntity, item))
 			return false;
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 		if (CVikingDungeon::instance().OnUseItem(chEntity, item))
 			return true;
 #endif
-		switch (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)))
+		switch (ItemSystem::GetItemVnum(item))
 		{
-			//-----------------------------------------//
-			//        EZT A CHAR_ITEM.CPP KEZELI       //
-			// ----------------------------------------//
-			// 39065: +1 Dragon Coin (consumes 1)
-			//case 39065:
-			//{
-			//	if (!CheckCanUseNow(chEntity))
-			//		return true;
-
-			//	if (ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)) < 1)
-			//		return true;
-
-			//	item->SetCount(ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)) - 1);
-			//	AddDragonCoinSafe(ch, 1);
-			//	return true;
-			//}
-
 			// 30279: consumes 100 (across all stacks), gives 30280 x1
 			case 30279:
 			{
@@ -97,14 +71,15 @@ namespace item_change
 					return true;
 
 				
-				if (ch->CountSpecifyItem(30279) < 100)
+				if (ItemSystem::CountItem(chEntity, 30279) < 100)
 				{
 					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
 					return true;
 				}
 
-				ch->RemoveSpecifyItem(30279, 100);
-				ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), 30280, 1);
+				if (!ItemSystem::RemoveSpecifyItemEcs(chEntity, 30279, 100))
+					return true;
+				ItemSystem::AutoGiveItemEcs(chEntity, 30280, 1);
 				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Exchange complete.");
 				return true;
 			}
@@ -115,14 +90,15 @@ namespace item_change
 					return true;
 
 				
-				if (ch->CountSpecifyItem(30277) < 100)
+				if (ItemSystem::CountItem(chEntity, 30277) < 100)
 				{
 					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
 					return true;
 				}
 
-				ch->RemoveSpecifyItem(30277, 100);
-				ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), 30278, 1);
+				if (!ItemSystem::RemoveSpecifyItemEcs(chEntity, 30277, 100))
+					return true;
+				ItemSystem::AutoGiveItemEcs(chEntity, 30278, 1);
 				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Exchange complete.");
 				return true;
 			}
@@ -134,11 +110,11 @@ namespace item_change
 				if (!CheckCanUseNow(chEntity))
 					return true;
 
-				if (ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)) < 1)
+				if (ItemSystem::GetItemCount(item) < 1)
 					return true;
 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
-				AddDragonCoinSafe(ch, 100);
+				if (ItemSystem::ConsumeItemEcs(item))
+					AddDragonCoinSafe(chEntity, 100);
 				return true;
 			}
 
@@ -148,7 +124,7 @@ namespace item_change
 				if (!CheckCanUseNow(chEntity))
 					return true;
 
-				const int32_t count = ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null));
+				const int32_t count = ItemSystem::GetItemCount(item);
 				if (count <= 0)
 					return true;
 
@@ -201,7 +177,7 @@ namespace item_change
 					realUse = count;
 
 				 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), realUse);
+				ItemSystem::ConsumeItemEcs(item, realUse);
 
 				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %lld Yang.", (long long)(kYangPerItem * (int64_t)realUse));
 				return true;
@@ -211,4 +187,3 @@ namespace item_change
 		return false;
 	}
 }
-

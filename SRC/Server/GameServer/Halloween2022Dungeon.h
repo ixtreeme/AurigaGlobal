@@ -5,7 +5,6 @@
 #include <entt/entt.hpp>
 
 class CHARACTER;
-class CItem;
 
 /*
     Bloody Cathedral / Halloween2022 dungeon - Lua mentes C++ verzio
@@ -18,7 +17,7 @@ class CItem;
       - input_login.cpp: CHalloween2022Dungeon::OnPlayerLogin
       - char.cpp: CHalloween2022Dungeon::OnPlayerDisconnect
       - char_battle.cpp: CHalloween2022Dungeon::OnMobKilled
-      - char_item.cpp: CHARACTER::ReceiveItem -> CHalloween2022Dungeon::OnNpcTakeItem
+      - ItemSystem.cpp: ItemSystem::ReceiveItemEcs -> CHalloween2022Dungeon::OnNpcTakeItem
 */
 class CHalloween2022Dungeon
 {
@@ -33,7 +32,7 @@ public:
     bool OnClickNpc(entt::entity character, entt::entity npc);
 
     // Drag item onto NPC: 9477 / 9478 / 9479 / 9480 / 9482
-    bool OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item);
+    bool OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item);
 
     bool IsHalloweenDungeonMap(int32_t mapIndex) const;
 };

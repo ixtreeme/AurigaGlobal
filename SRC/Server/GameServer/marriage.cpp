@@ -715,16 +715,16 @@ namespace marriage
 		const entt::entity p1Entity = p1 ? p1->GetEntityHandle() : entt::null;
 
 		CAffect* pAffect = nullptr;
-		LPITEM pkItem = nullptr;
+		entt::entity pkItem = entt::null;
 		if (p1) {
 			for (int i = 0; i < 6; i++) {
 				dwAffect = AFFECT_NEW_POTION24 + i;
 				pAffect = AffectSystem::FindAffect(p1Entity, dwAffect);
 				if (pAffect != nullptr) {
-					pkItem = p1->FindItemByID(pAffect->dwFlag);
-					if (pkItem) {
-						ItemSystem::UnlockItem((pkItem ? pkItem->GetEntityHandle() : entt::null));
-						ItemSystem::SetItemSocket((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
+					pkItem = ItemSystem::FindItemByID(p1Entity, pAffect->dwFlag);
+					if (ItemSystem::IsValidItem(pkItem)) {
+						ItemSystem::UnlockItem(pkItem);
+						ItemSystem::SetItemSocket(pkItem, 1, 0);
 					}
 
 					AffectSystem::RemoveAffect(p1Entity, dwAffect);
@@ -740,10 +740,10 @@ namespace marriage
 				dwAffect = AFFECT_NEW_POTION24 + i;
 				pAffect = AffectSystem::FindAffect(p2Entity, dwAffect);
 				if (pAffect != nullptr) {
-					pkItem = p2->FindItemByID(pAffect->dwFlag);
-					if (pkItem) {
-						ItemSystem::UnlockItem((pkItem ? pkItem->GetEntityHandle() : entt::null));
-						ItemSystem::SetItemSocket((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
+					pkItem = ItemSystem::FindItemByID(p2Entity, pAffect->dwFlag);
+					if (ItemSystem::IsValidItem(pkItem)) {
+						ItemSystem::UnlockItem(pkItem);
+						ItemSystem::SetItemSocket(pkItem, 1, 0);
 					}
 
 					AffectSystem::RemoveAffect(p2Entity, dwAffect);

@@ -22,6 +22,16 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/ItemRegistry.hpp"
 #include <Core/Logging.hpp>
+#include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
+#include "../../SRC/Server/GameServer/fishing.h"
+#include "../../SRC/Server/GameServer/refine.h"
+#include "../../SRC/Server/GameServer/unique_item.h"
+#include "../../SRC/Server/GameServer/questmanager.h"
+#include "../../SRC/Server/GameServer/RuneDungeon.h"
+#include "../../SRC/Server/GameServer/Halloween2022Dungeon.h"
+#include "../../SRC/Server/GameServer/VikingDungeon.h"
+#include <cstdarg>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -35,6 +45,11 @@ const int aiAccessorySocketDegradeTime[ITEM_ACCESSORY_SOCKET_MAX_NUM + 1] = {};
 
 namespace {
 int checks = 0;
+struct Actor { bool pc = false; uint32_t race = 0; int32_t x = 0, y = 0, map = 1; bool dead = false; };
+bool npcTest = false;
+int revivals = 0, feeds = 0;
+std::string receivedItemName;
+std::function<bool(entt::entity)> onUse;
 bool failAllocation = false;
 bool wearStopTest = false;
 int flushed = 0;
@@ -50,6 +65,7 @@ void Published(const ecs::EvItemExpired& event) { if (onPublish) onPublish(event
 void Constructed(entt::registry&, entt::entity item) { if (onComponent) onComponent(item); }
 void Reset() {
     onCreate = onPublish = onComponent = {};
+    onUse = {}; npcTest = false; revivals = feeds = 0; receivedItemName.clear();
     onSave = onUpdate = {}; wearStopTest = false; flushed = 0;
     g_registry.clear(); queued.clear(); failAllocation = false; test_server = 0;
 }
@@ -93,14 +109,22 @@ void event_cancel(LPEVENT* event) {
 }
 EVENTFUNC(real_time_expire_event) { throw std::runtime_error("unexpected timer execution"); }
 EVENTFUNC(soul_item_event) { throw std::runtime_error("unexpected timer execution"); }
-void ITEM_MANAGER::RemoveItem(entt::entity, const char*) { throw std::runtime_error("unexpected item removal"); }
+void ITEM_MANAGER::RemoveItem(entt::entity item, const char*) {
+    Check(npcTest && ItemSystem::IsValidItem(item), "unexpected item removal");
+    g_registry.destroy(item);
+}
 ITEM_MANAGER::ITEM_MANAGER() {}
 ITEM_MANAGER::~ITEM_MANAGER() {}
 namespace AffectSystem {
 CAffect* FindAffect(entt::entity, uint32_t, uint8_t) { return nullptr; }
 bool RemoveAffect(entt::entity, uint32_t) { return false; }
 }
-void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) {}
+void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t message, const char* format, ...) {
+    if (!npcTest || (message != 329 && message != 112)) return;
+    va_list args; va_start(args, format);
+    receivedItemName = va_arg(args, const char*);
+    va_end(args);
+}
 // Link seams for other ItemSystem operations. Tests must never accidentally
 // pass by falling back to CHARACTER/CItem or starting live server services.
 int MIN(int a, int b) { return std::min(a, b); }
@@ -120,10 +144,15 @@ entt::entity FindByPlayerID(uint32_t) { Unexpected(); }
 uint32_t GetPlayerID(entt::entity) { Unexpected(); }
 uint8_t GetJob(entt::entity) { Unexpected(); }
 std::string_view GetName(entt::entity) { Unexpected(); }
-int32_t GetX(entt::entity) { Unexpected(); }
-int32_t GetY(entt::entity) { Unexpected(); }
+int32_t GetX(entt::entity e) { return g_registry.get<Actor>(e).x; }
+int32_t GetY(entt::entity e) { return g_registry.get<Actor>(e).y; }
+int32_t GetMapIndex(entt::entity e) { return g_registry.get<Actor>(e).map; }
+uint32_t GetRaceNum(entt::entity e) { return g_registry.get<Actor>(e).race; }
+uint32_t GetPacketVID(entt::entity) { return 99; }
+bool IsPC(entt::entity e) { return IsValid(e) && g_registry.get<Actor>(e).pc; }
+bool SetQuestNPCID(entt::entity, uint32_t) { Unexpected(); }
 LPSECTREE GetSectree(entt::entity) { Unexpected(); }
-bool IsValid(entt::entity) { Unexpected(); }
+bool IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e) && g_registry.all_of<Actor>(e); }
 }
 CParty* ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
 entt::entity InventorySystem::RemoveFromCharacter(entt::entity) { Unexpected(); }
@@ -131,16 +160,43 @@ namespace ItemSystem {
 entt::entity GetWearItem(entt::entity, uint8_t) { Unexpected(); }
 bool UnequipItemEcs(entt::entity, entt::entity) { Unexpected(); }
 bool EquipItemEcs(entt::entity, entt::entity, int) { Unexpected(); }
-uint32_t GetItemCount(entt::entity) { Unexpected(); }
-bool SetItemCountEcs(entt::entity, uint32_t) { Unexpected(); }
+uint32_t GetItemCount(entt::entity item) {
+    const auto* count = g_registry.try_get<ecs::ItemCount>(item);
+    return count && count->count > 0 ? count->count : 0;
+}
+bool SetItemCountEcs(entt::entity item, uint32_t count) {
+    Check(npcTest && IsValidItem(item), "NPC consumed a stale item");
+    if (count)
+        g_registry.get<ecs::ItemCount>(item).count = count;
+    else
+        g_registry.destroy(item);
+    return true;
+}
 void ModifyPoints(entt::entity, bool) { Unexpected(); }
-bool IsItemConsumptionPending(entt::entity) { Unexpected(); }
+bool IsItemConsumptionPending(entt::entity) { if (npcTest) return false; Unexpected(); }
 bool RefreshItemOwnerPID(entt::entity) { Unexpected(); }
 bool SetGroundOwnership(entt::entity, entt::entity, int) { Unexpected(); }
-bool UseItemEx(entt::entity, entt::entity, TItemPos) { Unexpected(); }
+bool UseItemEx(entt::entity, entt::entity item, TItemPos) { if (onUse) return onUse(item); Unexpected(); }
+bool CanConsumeOwnedItem(entt::entity owner, entt::entity item, uint32_t amount, ItemCostStorage) {
+    // Full storage/payment policy is covered by ItemAttributeTests.
+    return ecs::PlayerRuntime::IsPC(owner) && IsValidItem(item) && GetItemOwner(item) == owner &&
+        GetItemCount(item) >= amount && !IsItemEquipped(item) && !IsItemLocked(item) && !IsItemExchanging(item);
 }
-bool CHARACTER::CanReceiveItem(entt::entity, LPITEM) const { Unexpected(); }
-void CHARACTER::ReceiveItem(entt::entity, LPITEM) { Unexpected(); }
+bool RefineInformation(entt::entity, uint8_t, uint8_t, int) { Unexpected(); }
+}
+bool CombatSystem::IsDead(entt::entity e) { return g_registry.get<Actor>(e).dead; }
+bool MountSystem::ReviveHorse(entt::entity) { ++revivals; return true; }
+void MountSystem::FeedHorse(entt::entity) { ++feeds; }
+void NetworkSyncSystem::BroadcastEffect(entt::registry&, entt::entity, uint8_t) {}
+void InventorySystem::SetRefineNPC(entt::entity, entt::entity) { Unexpected(); }
+bool fishing::GrillFishEcs(entt::entity, entt::entity) { Unexpected(); }
+bool quest::CQuestManager::TakeItem(unsigned int, unsigned int, entt::entity) { Unexpected(); }
+CRuneDungeon& CRuneDungeon::instance() { static CRuneDungeon dungeon; return dungeon; }
+CHalloween2022Dungeon& CHalloween2022Dungeon::instance() { static CHalloween2022Dungeon dungeon; return dungeon; }
+CVikingDungeon& CVikingDungeon::instance() { static CVikingDungeon dungeon; return dungeon; }
+bool CRuneDungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
+bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
+bool CVikingDungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
 bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t, std::vector<uint32_t>&,
     std::vector<uint32_t>&, std::vector<entt::entity>&, int&) { Unexpected(); }
 void CParty::ChatPacketToAllMemberNew(uint8_t, uint32_t, const char*, ...) { Unexpected(); }
@@ -174,6 +230,91 @@ std::shared_ptr<spdlog::logger> GetErrorLogger() { return GetLogger(); }
 }
 
 namespace {
+void NativeInventoryAndUse() {
+    Reset(); Fixture f;
+    const auto owner = g_registry.create();
+    auto& main = g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner);
+    main.items[0] = f.item;
+    main.items[INVENTORY_MAX_NUM] = f.item;
+    Check(ItemSystem::GetInventoryItem(owner, 0) == f.item &&
+        ItemSystem::GetItem(owner, TItemPos(EQUIPMENT, 0)) == f.item, "native inventory required CItem");
+    Check(ItemSystem::GetItem(owner, TItemPos(EQUIPMENT, static_cast<uint16_t>(65536 - INVENTORY_MAX_NUM))) == entt::null,
+        "equipment offset wrapped into inventory");
+    Check(ItemSystem::GetInventoryItem(owner, INVENTORY_AND_EQUIP_SLOT_MAX) == entt::null,
+        "out of bounds inventory access accepted");
+    g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner).items[0] = f.item;
+#ifdef ENABLE_EXTRA_INVENTORY
+    g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner).items[0] = f.item;
+    Check(ItemSystem::GetExtraInventoryItem(owner, 0) == f.item, "native extra item lookup failed");
+#endif
+#ifdef ENABLE_SWITCHBOT
+    g_registry.emplace<ecs::SwitchbotRuntimeComponent>(owner).items[0] = f.item;
+#endif
+    Check(ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, 0)) == f.item,
+        "native dragon soul item lookup failed");
+    onUse = [](entt::entity item) { g_registry.get<ecs::ItemIdentity>(item).vnum = 4321; return true; };
+    Check(ItemSystem::UseItemEcs(owner, f.item, TItemPos(INVENTORY, 1)) && ItemSystem::GetItemVnum(f.item) == 4321,
+        "native use result was overwritten by legacy synchronization");
+    onUse = [](entt::entity item) { g_registry.destroy(item); return true; };
+    Check(ItemSystem::UseItemEcs(owner, f.item, TItemPos(INVENTORY, 1)), "consumed use lost its handled result");
+    for (uint8_t window : {uint8_t(INVENTORY), uint8_t(EQUIPMENT), uint8_t(DRAGON_SOUL_INVENTORY)
+#ifdef ENABLE_EXTRA_INVENTORY
+        , uint8_t(EXTRA_INVENTORY)
+#endif
+#ifdef ENABLE_SWITCHBOT
+        , uint8_t(SWITCHBOT)
+#endif
+    })
+        Check(ItemSystem::GetItem(owner, TItemPos(window, 0)) == entt::null, "lookup leaked a stale item generation");
+    const auto replacement = g_registry.create();
+    g_registry.emplace<ecs::ItemIdentity>(replacement);
+    Check(ItemSystem::GetInventoryItem(owner, 0) == entt::null, "recycled entity replaced a stale inventory entry");
+}
+
+void NativeNpcItems() {
+    Reset(); Fixture f; npcTest = true;
+    const auto owner = g_registry.create(), npc = g_registry.create();
+    g_registry.emplace<Actor>(owner).pc = true;
+    g_registry.emplace<Actor>(npc).race = BLACKSMITH_WEAPON_MOB;
+    g_registry.emplace<ecs::ItemOwner>(f.item).owner = owner;
+    g_registry.emplace<ecs::ItemCount>(f.item).count = 1;
+    g_registry.get<ecs::ItemPrototypeMeta>(f.item).type = ITEM_WEAPON;
+    f.proto.dwRefinedVnum = 1001;
+    g_registry.get<ecs::ItemProtoRef>(f.item).refined_vnum = 1001;
+    Check(ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "entity-only blacksmith rejected a weapon");
+    g_registry.get<Actor>(npc).map = 2;
+    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "cross-map NPC accepted an item");
+    g_registry.get<Actor>(npc).map = 1;
+    g_registry.get<Actor>(npc).x = INT32_MAX; g_registry.get<Actor>(owner).x = INT32_MIN;
+    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "overflowing NPC distance accepted");
+    g_registry.get<Actor>(npc).x = g_registry.get<Actor>(owner).x = 0;
+    g_registry.get<Actor>(npc).pc = true;
+    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "PC used NPC receive path");
+    g_registry.get<Actor>(npc).pc = false;
+    g_registry.get<ecs::ItemOwner>(f.item).owner = npc;
+    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "foreign item accepted");
+    g_registry.get<ecs::ItemOwner>(f.item).owner = owner;
+    g_registry.get<Actor>(npc).race = DEVILTOWER_BLACKSMITH_WEAPON_MOB;
+    f.proto.aLimits[0] = {LIMIT_LEVEL, 90};
+    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "tower level restriction lost");
+    f.proto.aLimits[0].lValue = 89;
+    Check(ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "eligible tower item rejected");
+    auto& horse = g_registry.get<Actor>(npc); horse.race = 20101;
+    g_registry.get<ecs::ItemIdentity>(f.item).vnum = ITEM_REVIVE_HORSE_1;
+    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "live horse accepted revival");
+    horse.dead = true;
+    std::strcpy(f.proto.szName, "Revival herb");
+    std::strcpy(g_registry.get<ecs::ItemProtoRef>(f.item).name, "Revival herb");
+    Check(ItemSystem::ReceiveItemEcs(npc, owner, f.item) && revivals == 1 && !g_registry.valid(f.item),
+        "entity-only horse revival failed");
+#ifdef TEXTS_IMPROVEMENT
+    Check(receivedItemName == "Revival herb", "revival read item name after destroying it");
+#endif
+    Check(!ItemSystem::ReceiveItemEcs(npc, owner, f.item), "stale item was received twice");
+    g_registry.destroy(npc);
+    Check(!ItemSystem::ReceiveItemEcs(npc, owner, f.item), "stale receiver accepted an item");
+}
+
 void NativeIdentityRegistry() {
     Reset();
     CItemRegistry registry;
@@ -402,7 +543,7 @@ int main() {
     ITEM_MANAGER itemManager;
     g_dispatcher.sink<ecs::EvItemExpired>().connect<&Published>();
     g_registry.on_construct<ecs::ItemEvents>().connect<&Constructed>();
-    try { NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
+    try { NativeInventoryAndUse(); NativeNpcItems(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
     std::cout << "Item runtime: " << checks << " checks passed\n";
 }

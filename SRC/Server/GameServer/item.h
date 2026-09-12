@@ -136,9 +136,6 @@ class CItem : public CEntity
 		int			GetDuration();
 
 		int		GetAttributeCount();
-#ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
-		bool ChangeKKAK(int iAddonType = 0);
-#endif
 
 		int		GetSpecialGroup() const;
 
@@ -175,9 +172,6 @@ class CItem : public CEntity
 
 	protected:
 		bool		EquipEx(bool is_equip);
-#ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
-		void		AddAttr4(uint8_t bApply, uint8_t bLevel);
-#endif
 
 	public:
 

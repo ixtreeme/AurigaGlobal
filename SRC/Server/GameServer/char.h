@@ -891,16 +891,7 @@ public:
 	void			EditMyExtraInven();
 #endif
 
-	LPITEM			GetItem(TItemPos Cell) const;
-	LPITEM			GetInventoryItem(uint16_t wCell) const;
-	LPITEM			GetDragonSoulItem(uint16_t wCell) const;
 	uint16_t			GetDragonSoulGrid(uint16_t wCell) const;
-#ifdef ENABLE_SWITCHBOT
-	LPITEM			GetSwitchbotItem(uint16_t wCell) const;
-#endif
-#ifdef ENABLE_EXTRA_INVENTORY
-	LPITEM			GetExtraInventoryItem(uint16_t wCell) const;
-#endif
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 	int		ExtraInventoryMaxSlots(int iArg1, bool bAuto = false) const;
 	void	UnlockExtraInventory(uint8_t category);
@@ -933,8 +924,6 @@ public:
 
 
 	bool			GiveItem(entt::entity victim, TItemPos Cell);
-	bool			CanReceiveItem(entt::entity from, LPITEM item) const;
-	void			ReceiveItem(entt::entity from, LPITEM item);
 	bool			GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector <uint32_t>& dwItemVnums,
 		std::vector <uint32_t>& dwItemCounts, std::vector<entt::entity>& item_gets, int& count);
 
@@ -952,12 +941,6 @@ public:
 
 	int				CountSpecifyItem(uint32_t vnum) const;
 	void			RemoveSpecifyItem(uint32_t vnum, int count = 1, bool cuberenewal = false);
-	LPITEM			FindSpecifyItem(uint32_t vnum
-#ifdef ENABLE_EXTRA_INVENTORY
-		, bool reinforce = false
-#endif
-	) const;
-	LPITEM			FindItemByID(uint32_t id) const;
 
 	int				CountSpecifyTypeItem(uint8_t type) const;
 	void			RemoveSpecifyTypeItem(uint8_t type, int count = 1);
@@ -1783,4 +1766,3 @@ EVENTINFO(fishingnew_event_info)
 };
 #endif
 #endif
-

@@ -1054,6 +1054,48 @@ bool SetItemAttributesWithItemCosts(entt::entity owner, entt::entity target,
     return true;
 }
 
+#ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
+bool ChangeItemHitDamageBonuses(entt::entity owner, entt::entity item, entt::entity scroll)
+{
+    if (!IsOwnedAttributeTarget(owner, item) || GetItemAttributeSetIndex(item) < 0 ||
+        GetItemType(item) == ITEM_COSTUME || !CanConsumeOwnedItem(owner, scroll) ||
+        GetItemVnum(scroll) != 70251)
+        return false;
+
+    auto desired = g_registry.get<ecs::ItemAttributes>(item);
+    constexpr uint8_t types[] = {APPLY_NORMAL_HIT_DAMAGE_BONUS, APPLY_SKILL_DAMAGE_BONUS};
+    int slots[2] = {-1, -1};
+    for (int bonus = 0; bonus < 2; ++bonus)
+    {
+        for (int index = 0; index < ITEM_ATTRIBUTE_NORM_NUM; ++index)
+            if (desired.attrs[index].bType == types[bonus])
+            {
+                // Malformed duplicates and locked bonuses must not be rewritten.
+                if (slots[bonus] != -1 || index == LockedSlot(item))
+                    return false;
+                slots[bonus] = index;
+            }
+        if (slots[bonus] < 0)
+        {
+            if (HasNormal(item, desired.attrs, types[bonus], false))
+                return false;
+            slots[bonus] = rules::FindEmpty(desired.attrs, 0, ITEM_ATTRIBUTE_NORM_NUM, LockedSlot(item));
+            if (slots[bonus] < 0)
+                return false;
+            desired.attrs[slots[bonus]].bType = types[bonus];
+        }
+    }
+
+    const int skill = std::clamp(static_cast<int>(gauss_random(0, 5) + 0.5f), -30, 30);
+    const int hit = -2 * skill + (abs(skill) <= 20
+        ? abs(number(-8, 8) + number(-8, 8)) + number(1, 4) : number(1, 5));
+    desired.attrs[slots[0]].sValue = static_cast<int16_t>(hit);
+    desired.attrs[slots[1]].sValue = static_cast<int16_t>(skill);
+    const ItemCost cost {scroll, 1};
+    return SetItemAttributesWithItemCosts(owner, item, desired, std::span(&cost, 1));
+}
+#endif
+
 bool ConsumeOwnedItemCosts(entt::entity owner, std::span<const ItemCost> costs)
 {
     PreparedCosts prepared;

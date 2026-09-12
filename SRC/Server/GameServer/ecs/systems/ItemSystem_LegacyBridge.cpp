@@ -133,7 +133,6 @@ struct FFindStone
 	}
 };
 
-static LPITEM LegacyItemBoundary(entt::entity itemEntity);
 
 static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(entt::entity character)
 {
@@ -152,17 +151,6 @@ static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeCompo
         return nullptr;
 
     return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(character);
-}
-
-static LPITEM GetMainInventoryItem(entt::entity character, uint16_t cell)
-{
-    if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
-        return nullptr;
-
-    if (const auto* comp = TryGetMainInventoryRuntimeComponent(character))
-        return LegacyItemBoundary(comp->items[cell]);
-
-    return nullptr;
 }
 
 static uint16_t GetMainInventoryGrid(entt::entity character, uint16_t cell)
@@ -277,16 +265,6 @@ static const ecs::SwitchbotRuntimeComponent* TryGetSwitchbotRuntimeComponent(ent
     return g_registry.try_get<ecs::SwitchbotRuntimeComponent>(character);
 }
 #endif
-
-static LPITEM LegacyItemBoundary(entt::entity itemEntity)
-{
-    if (itemEntity == entt::null || !g_registry.valid(itemEntity))
-        return nullptr;
-
-    const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity);
-    return legacy ? legacy->ptr : nullptr;
-}
-
 
 static uint32_t ItemVnumOrLegacy(LPITEM item)
 {
@@ -740,55 +718,6 @@ void CItem::SetAttribute(int i, uint8_t bType, short sValue)
 
 }
 
-// Phase 11: migrated from item_attribute.cpp batch B
-
-bool CItem::ChangeKKAK(int iAddonType)
-{
-	(void)iAddonType;
-
-	// random
-	int iSkillBonus = MINMAX(-30, int(gauss_random(0, 5) + 0.5f), 30);
-	int iNormalHitBonus = 0;
-	if (abs(iSkillBonus) <= 20)
-		iNormalHitBonus = -2 * iSkillBonus + abs(number(-8, 8) + number(-8, 8)) + number(1, 4);
-	else
-		iNormalHitBonus = -2 * iSkillBonus + number(1, 5);
-
-	// 71/72
-	//RemoveAttributeType(APPLY_SKILL_DAMAGE_BONUS);
-	//RemoveAttributeType(APPLY_NORMAL_HIT_DAMAGE_BONUS);
-	AddAttr4(APPLY_NORMAL_HIT_DAMAGE_BONUS, iNormalHitBonus);
-	AddAttr4(APPLY_SKILL_DAMAGE_BONUS, iSkillBonus);
-
-	return true;
-}
-
-void CItem::AddAttr4(uint8_t bApply, uint8_t bLevel)
-{
-	if (ItemSystem::HasItemAttribute(GetEntityHandle(), bApply))
-		return;
-
-	if (bLevel <= 0)
-		return;
-
-	int i = GetAttributeCount();
-
-	if (i < 5)
-		return;
-	else
-	{
-		const TItemAttrTable& r = g_map_itemAttr[bApply];
-		int32_t lVal = r.lValues[MIN(4, bLevel - 1)];
-#ifdef ENABLE_ATTR_COSTUMES
-		if (GetType() == ITEM_COSTUME)
-			lVal = r.lValues[MIN(9, bLevel + 5 - 1)];
-#endif
-
-		if (lVal)
-			SetAttribute(i, bApply, lVal);
-	}
-}
-
 // Phase 11: migrated from item_attribute.cpp batch C
 
 int CItem::GetRareAttrCount()
@@ -1061,12 +990,6 @@ uint8_t CItem::GetExtraCategory()
 	return 0;
 }
 
-LPITEM CHARACTER::GetInventoryItem(uint16_t wCell) const
-{
-	return GetItem(TItemPos(INVENTORY, wCell));
-}
-
-
 #ifdef ENABLE_EXTRA_INVENTORY
 void CHARACTER::SetCubeNpc(entt::entity npcEntity)
 {
@@ -1077,30 +1000,6 @@ void CHARACTER::SetCubeNpc(entt::entity npcEntity)
 
 #ifdef ENABLE_ACCE_SYSTEM
 #endif
-
-#ifdef ENABLE_SWITCHBOT
-LPITEM CHARACTER::GetSwitchbotItem(uint16_t wCell) const
-{
-    if (wCell >= SWITCHBOT_SLOT_COUNT)
-        return nullptr;
-
-    if (const auto* switchbot = TryGetSwitchbotRuntimeComponent(GetEntityHandle()))
-        return LegacyItemBoundary(switchbot->items[wCell]);
-
-    return nullptr;
-}
-#endif
-
-LPITEM CHARACTER::GetDragonSoulItem(uint16_t wCell) const
-{
-	if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-		return nullptr;
-
-	if (const auto* comp = TryGetDragonSoulInventoryComponent(GetEntityHandle()))
-		return LegacyItemBoundary(comp->items[wCell]);
-
-	return nullptr;
-}
 
 uint16_t CHARACTER::GetDragonSoulGrid(uint16_t wCell) const
 {
@@ -1113,202 +1012,11 @@ uint16_t CHARACTER::GetDragonSoulGrid(uint16_t wCell) const
 	return 0;
 }
 
-LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
-{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	LOG_INFO("Razor93 LOG:: Called: Char_item.cpp LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const");
 #endif
-	if (wCell >= EXTRA_INVENTORY_MAX_NUM)
-		return nullptr;
-
-	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(GetEntityHandle()))
-		return LegacyItemBoundary(comp->items[wCell]);
-
-	return nullptr;
-}
-
-#endif
-
-LPITEM CHARACTER::GetItem(TItemPos Cell) const
-{
-
-	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell))
-		return nullptr;
-	uint16_t wCell = Cell.cell;
-	uint8_t window_type = Cell.window_type;
-	switch (window_type)
-	{
-	case INVENTORY:
-		if (wCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
-		{
-			LOG_ERROR("CHARACTER::GetInventoryItem: invalid item cell {}", wCell);
-			return nullptr;
-		}
-		return GetMainInventoryItem(GetEntityHandle(), wCell);
-	case EQUIPMENT:
-	{
-		const uint16_t storageCell = static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell);
-		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
-		{
-			LOG_ERROR("CHARACTER::GetInventoryItem: invalid equipment cell {}", wCell);
-			return nullptr;
-		}
-		return GetMainInventoryItem(GetEntityHandle(), storageCell);
-	}
-	case DRAGON_SOUL_INVENTORY:
-		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-		{
-			LOG_ERROR("CHARACTER::GetInventoryItem: invalid DS item cell {}", wCell);
-			return nullptr;
-		}
-		return GetDragonSoulItem(wCell);
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	case EXTRA_INVENTORY:
-		if (wCell >= EXTRA_INVENTORY_MAX_NUM)
-		{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :315: case switch :if (wCell >= EXTRA_INVENTORY_MAX_NUM)");
-#endif
-			LOG_ERROR("CHARACTER::GetInventoryItem: invalid EXTRA item cell {}", wCell);
-			return nullptr;
-		}
-		return GetExtraInventoryItem(wCell);
-#endif
-
-#ifdef ENABLE_SWITCHBOT
-	case SWITCHBOT:
-		if (wCell >= SWITCHBOT_SLOT_COUNT)
-		{
-			LOG_ERROR("CHARACTER::GetInventoryItem: invalid switchbot item cell {}", wCell);
-			return nullptr;
-		}
-		return GetSwitchbotItem(wCell);
-#endif
-	default:
-		return nullptr;
-	}
-	return nullptr;
-}
-
-
-LPITEM CHARACTER::FindSpecifyItem(uint32_t vnum
-#ifdef ENABLE_EXTRA_INVENTORY
-	, bool reinforce
-#endif
-) const
-{
-#ifdef ENABLE_EXTRA_INVENTORY
-	if (reinforce) {
-		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-			if (GetExtraInventoryItem(i) && GetExtraInventoryItem(i)->GetVnum() == vnum) {
-				return GetExtraInventoryItem(i);
-			}
-		}
-	}
-	else {
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
-#else
-		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-		{
-			if (GetInventoryItem(i) && GetInventoryItem(i)->GetVnum() == vnum) {
-				return GetInventoryItem(i);
-			}
-		}
-	}
-#else
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
-#else
-	for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-		if (GetInventoryItem(i) && GetInventoryItem(i)->GetVnum() == vnum)
-			return GetInventoryItem(i);
-#endif
-
-	return nullptr;
-}
-
-LPITEM CHARACTER::FindItemByID(uint32_t id) const
-{
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
-#else
-	for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-	{
-		if (nullptr != GetInventoryItem(i) && GetInventoryItem(i)->GetID() == id)
-			return GetInventoryItem(i);
-	}
-
-	for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
-	{
-		if (nullptr != GetInventoryItem(i) && GetInventoryItem(i)->GetID() == id)
-			return GetInventoryItem(i);
-	}
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-	{
-		if (nullptr != GetExtraInventoryItem(i) && GetExtraInventoryItem(i)->GetID() == id)
-			return GetExtraInventoryItem(i);
-	}
-#endif
-
-	return nullptr;
-}
 
 int CHARACTER::CountSpecifyItem(uint32_t vnum) const
 {
-	int	count = 0;
-	LPITEM item;
-#ifdef ENABLE_EXTRA_INVENTORY
-	if (ITEM_MANAGER::instance().IsExtraItem(vnum))
-	{
-		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-		{
-			item = GetExtraInventoryItem(i);
-			if (item && item->GetVnum() == vnum)
-			{
-				if (ecs::SocialSystem::GetMyShop(GetEntityHandle()) && ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(item->GetID())) {
-					continue;
-				}
-				else {
-					count += item->GetCount();
-				}
-			}
-		}
-	}
-	else {
-#endif
-
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
-#else
-		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-		{
-			item = GetInventoryItem(i);
-			if (nullptr != item && item->GetVnum() == vnum)
-			{
-				// �3A� ���!?! ��I�E 1���AI�� 3N3�L�U.
-				if (ecs::SocialSystem::GetMyShop(GetEntityHandle()) && ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(item->GetID()))
-				{
-					continue;
-				}
-				else {
-					count += item->GetCount();
-				}
-			}
-		}
-#ifdef ENABLE_EXTRA_INVENTORY
-	}
-#endif
-
-	return count;
+	return ItemSystem::CountItem(GetEntityHandle(), vnum);
 }
 
 void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
@@ -1636,14 +1344,13 @@ bool CHARACTER::DropItem(TItemPos Cell,
 		stupid = true;
 	}
 
-	bCount = abs(bCount);
 	if (stupid)
 	{
 		LOG_ERROR("I am a stupid hacker 2: {} {}", GetName(), bCount);
 		return false;
 	}
 
-	LPITEM item = nullptr;
+	entt::entity item = entt::null;
 
 	if (!InventorySystem::CanHandleItems(GetEntityHandle()))
 	{
@@ -1679,16 +1386,16 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	if (CombatSystem::IsDead(GetEntityHandle()))
 		return false;
 
-	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !(item = GetItem(Cell)))
+	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !ItemSystem::IsValidItem(item = ItemSystem::GetItem(GetEntityHandle(), Cell)))
 		return false;
 
-	if (item->isLocked() || item->IsExchanging() || ItemSystem::IsItemEquipped(item->GetEntityHandle()))
+	if (ItemSystem::IsItemLocked(item) || ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemEquipped(item))
 		return false;
 
 	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
 		return false;
 
-	if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_DROP | ITEM_ANTIFLAG_GIVE))
+	if (IS_SET(ItemSystem::GetItemAntiFlag(item), ITEM_ANTIFLAG_DROP | ITEM_ANTIFLAG_GIVE))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 353, "");
@@ -1696,15 +1403,15 @@ bool CHARACTER::DropItem(TItemPos Cell,
 		return false;
 	}
 
-	if (bCount == 0 || bCount > item->GetCount())
-		bCount = item->GetCount();
+	if (bCount == 0 || bCount > ItemSystem::GetItemCount(item))
+		bCount = ItemSystem::GetItemCount(item);
 
 #ifdef ENABLE_EXTRA_INVENTORY
-	if (item->IsExtraItem()) {
+	if (ItemSystem::IsExtraItem(item)) {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (item->IsExtraItem()) {");//INGAME_DEBUG_RAZOR93
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (ItemSystem::IsExtraItem(item)) {");//INGAME_DEBUG_RAZOR93
 
-		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line 8391 if (item->IsExtraItem()) {{ ");
+		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line 8391 if (ItemSystem::IsExtraItem(item)) {{ ");
 
 #endif
 		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
@@ -1718,10 +1425,10 @@ bool CHARACTER::DropItem(TItemPos Cell,
 
 	entt::entity pkItemToDrop = entt::null;
 
-	if (bCount == item->GetCount())
+	if (bCount == ItemSystem::GetItemCount(item))
 	{
-		InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
-		pkItemToDrop = item->GetEntityHandle();
+		InventorySystem::RemoveFromCharacter(item);
+		pkItemToDrop = item;
 	}
 	else
 	{
@@ -1732,17 +1439,17 @@ bool CHARACTER::DropItem(TItemPos Cell,
 			return false;
 		}
 
-		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount);
-		ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
+		ItemSystem::ConsumeItemEcs(item, bCount);
+		ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-		pkItemToDrop = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), bCount);
+		pkItemToDrop = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemVnum(item), bCount);
 
 		// copy item socket -- by mhh
-		FN_copy_item_socket(pkItemToDrop, item->GetEntityHandle());
+		FN_copy_item_socket(pkItemToDrop, item);
 
 		char szBuf[51 + 1];
 		snprintf(szBuf, sizeof(szBuf), "%u %u", ItemSystem::GetItemID(pkItemToDrop), ItemSystem::GetItemCount(pkItemToDrop));
-		LogManager::instance().ItemLogEntity(GetEntityHandle(), item->GetEntityHandle(), "ITEM_SPLIT", szBuf);
+		LogManager::instance().ItemLogEntity(GetEntityHandle(), item, "ITEM_SPLIT", szBuf);
 	}
 
 	PIXEL_POSITION pxPos = GetXYZ();
@@ -2790,7 +2497,7 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 		if (item == entt::null)
 			continue;
 
-		if (GetInventoryItem(i)->GetType() != type)
+		if (ItemSystem::GetItemType(item) != type)
 			continue;
 
 
@@ -2841,378 +2548,6 @@ bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
 	}
 
 	return false;
-}
-
-bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
-{
-	if (IsPC())
-		return false;
-
-	// TOO_LONG_DISTANCE_EXCHANGE_BUG_FIX
-	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(fromEntity),
-			GetY() - ecs::PlayerRuntime::GetY(fromEntity)) > 2000)
-		return false;
-	// END_OF_TOO_LONG_DISTANCE_EXCHANGE_BUG_FIX
-
-	uint32_t racenum = ecs::PlayerRuntime::GetRaceNum(GetEntityHandle());
-
-	if (racenum == DEVILTOWER_BLACKSMITH_WEAPON_MOB ||
-		racenum == DEVILTOWER_BLACKSMITH_ARMOR_MOB ||
-		racenum == DEVILTOWER_BLACKSMITH_ACCESSORY_MOB) {
-		bool bCanProced = true;
-
-		for (uint8_t i = 0; i < ITEM_LIMIT_MAX_NUM; ++i) {
-			if (ItemSystem::GetItemLimitType(item->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item->GetEntityHandle(), i) >= 90) {
-				bCanProced = false;
-				break;
-			}
-		}
-
-		if (!bCanProced) {
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 1360, "");
-#endif
-			return false;
-		}
-	}
-
-	switch (racenum)
-	{
-	case fishing::CAMPFIRE_MOB:
-		if (item->GetType() == ITEM_FISH &&
-			(item->GetSubType() == FISH_ALIVE || item->GetSubType() == FISH_DEAD))
-			return true;
-		break;
-
-	case fishing::FISHER_MOB:
-		if (item->GetType() == ITEM_ROD)
-			return true;
-		break;
-
-	case BLACKSMITH_WEAPON_MOB:
-	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
-		if (item->GetType() == ITEM_WEAPON && item->GetRefinedVnum()) {
-			return true;
-		}
-		else {
-			return false;
-		}
-		break;
-	case BLACKSMITH_ARMOR_MOB:
-	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
-		if ((item->GetType() == ITEM_BELT || (item->GetType() == ITEM_ARMOR && (item->GetSubType() == ARMOR_BODY || item->GetSubType() == ARMOR_SHIELD || item->GetSubType() == ARMOR_HEAD))) && item->GetRefinedVnum()) {
-			return true;
-		}
-		else {
-			return false;
-		}
-		break;
-	case BLACKSMITH_ACCESSORY_MOB:
-	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB:
-		if (item->GetType() == ITEM_ARMOR && !(item->GetSubType() == ARMOR_BODY || item->GetSubType() == ARMOR_SHIELD || item->GetSubType() == ARMOR_HEAD
-#ifdef ENABLE_PENDANT
-			|| item->GetSubType() == ARMOR_PENDANT
-#endif
-			) && item->GetRefinedVnum()) {
-			return true;
-		}
-		else {
-			return false;
-		}
-		break;
-	case BLACKSMITH_MOB:
-	case BLACKSMITH2_MOB:
-		if (item->GetRefinedVnum() && item->GetRefineSet()) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	case ALCHEMIST_MOB:
-		if (item->GetRefinedVnum())
-			return true;
-		break;
-
-	case 20101:
-	case 20102:
-	case 20103:
-		// ÃÊ±Þ ¸»
-		if (item->GetVnum() == ITEM_REVIVE_HORSE_1)
-		{
-			if (!CombatSystem::IsDead(GetEntityHandle()))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
-#endif
-				return false;
-			}
-			return true;
-		}
-		else if (item->GetVnum() == ITEM_HORSE_FOOD_1)
-		{
-			if (CombatSystem::IsDead(GetEntityHandle()))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
-#endif
-				return false;
-			}
-			return true;
-		}
-		else if (item->GetVnum() == ITEM_HORSE_FOOD_2 || item->GetVnum() == ITEM_HORSE_FOOD_3)
-		{
-			return false;
-		}
-		break;
-	case 20104:
-	case 20105:
-	case 20106:
-		// Áß±Þ ¸»
-		if (item->GetVnum() == ITEM_REVIVE_HORSE_2)
-		{
-			if (!CombatSystem::IsDead(GetEntityHandle()))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
-#endif
-				return false;
-			}
-			return true;
-		}
-		else if (item->GetVnum() == ITEM_HORSE_FOOD_2)
-		{
-			if (CombatSystem::IsDead(GetEntityHandle()))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
-#endif
-				return false;
-			}
-			return true;
-		}
-		else if (item->GetVnum() == ITEM_HORSE_FOOD_1 || item->GetVnum() == ITEM_HORSE_FOOD_3)
-		{
-			return false;
-		}
-		break;
-	case 20107:
-	case 20108:
-	case 20109:
-		// °í±Þ ¸»
-		if (item->GetVnum() == ITEM_REVIVE_HORSE_3)
-		{
-			if (!CombatSystem::IsDead(GetEntityHandle()))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
-#endif
-				return false;
-			}
-			return true;
-		}
-		else if (item->GetVnum() == ITEM_HORSE_FOOD_3)
-		{
-			if (CombatSystem::IsDead(GetEntityHandle()))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
-#endif
-				return false;
-			}
-			return true;
-		}
-		else if (item->GetVnum() == ITEM_HORSE_FOOD_1 || item->GetVnum() == ITEM_HORSE_FOOD_2)
-		{
-			return false;
-		}
-		break;
-	}
-
-	//if (IS_SET(item->GetFlag(), ITEM_FLAG_QUEST_GIVE))
-	{
-		return true;
-	}
-
-	return false;
-}
-
-void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
-{
-	LPCHARACTER from = ecs::LegacyCharOf(fromEntity);
-	if (IsPC())
-		return;
-#ifdef ENABLE_CPP_DUNGEON_RAZOR93
-	// Rune Dungeon: key pedestal (20507) consumes 89103 and progresses floor 5
-	if (CRuneDungeon::instance().OnNpcTakeItem(fromEntity, GetEntityHandle(), item))
-		return;
-	if (CHalloween2022Dungeon::instance().OnNpcTakeItem(fromEntity, GetEntityHandle(), item))
-		return;
-	if (CVikingDungeon::instance().OnNpcTakeItem(fromEntity, GetEntityHandle(), item))
-		return;
-	// LostCastle Dungeon: statue/totem item usage
-	//if (CLostCastleDungeon::instance().OnNpcTakeItem(fromEntity, GetEntityHandle(), item))
-	//	return;
-#endif
-	const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-	switch (ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()))
-	{
-	case fishing::CAMPFIRE_MOB:
-		if (item->GetType() == ITEM_FISH && (item->GetSubType() == FISH_ALIVE || item->GetSubType() == FISH_DEAD))
-			fishing::GrillFishEcs(fromEntity, itemEntity);
-		else
-		{
-			// TAKE_ITEM_BUG_FIX
-			ecs::PlayerRuntime::SetQuestNPCID(fromEntity, GetPacketVID());
-			// END_OF_TAKE_ITEM_BUG_FIX
-			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()), itemEntity);
-		}
-		break;
-
-		// DEVILTOWER_NPC
-	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
-	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
-	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB: {
-		int set = item->GetRefineSet();
-		if (item->GetRefinedVnum() != 0 && set != 0 /*&& item->GetRefineSet() < 500*/
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-			&& set != 1021
-			&& set != 1022
-			&& set != 1023
-			&& set != 1024
-			&& set != 19
-			&& set != 20
-			&& set != 21
-			&& set != 22
-			&& set != 28
-			&& set != 29
-			&& set != 30
-			&& set != 31
-			&& set != 32
-			&& set != 396
-			&& set != 397
-			&& set != 398
-			&& set != 399
-			&& set != 640
-			&& set != 641
-			&& set != 642
-			&& set != 643
-			&& set != 370
-			&& set != 371
-			&& set != 372
-			&& set != 373
-			&& set != 461
-			&& set != 462
-			&& set != 463
-			&& set != 464
-			&& set != 474
-			&& set != 475
-			&& set != 476
-			&& set != 477
-			&& set != 487
-			&& set != 488
-			&& set != 489
-			&& set != 490
-			&& set != 235
-			&& set != 236
-			&& set != 237
-			&& set != 238
-			&& set != 383
-			&& set != 384
-			&& set != 385
-			&& set != 386
-			&& set != 769
-			&& set != 770
-			&& set != 771
-			&& set != 772
-			&& set != 995
-			&& set != 996
-			&& set != 997
-			&& set != 998
-			&& set != 1017
-			&& set != 1018
-			&& set != 1019
-			&& set != 1020
-			&& set != 448
-			&& set != 449
-			&& set != 450
-			&& set != 451
-			&& set != 430
-			&& set != 431
-			&& set != 432
-			&& set != 433
-			&& set != 325
-			&& set != 326
-			&& set != 327
-			&& set != 328
-#endif
-			)
-		{
-			InventorySystem::SetRefineNPC(fromEntity, GetEntityHandle());
-			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
-		}
-#ifdef TEXTS_IMPROVEMENT
-		else {
-			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 427, "");
-		}
-#endif
-		break;
-	}
-											// END_OF_DEVILTOWER_NPC
-
-	case BLACKSMITH_MOB:
-	case BLACKSMITH2_MOB:
-	case BLACKSMITH_WEAPON_MOB:
-	case BLACKSMITH_ARMOR_MOB:
-	case BLACKSMITH_ACCESSORY_MOB:
-		if (item->GetRefinedVnum())
-		{
-			InventorySystem::SetRefineNPC(fromEntity, GetEntityHandle());
-			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
-		}
-#ifdef TEXTS_IMPROVEMENT
-		else {
-			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 427, "");
-		}
-#endif
-		break;
-	case 20101:
-	case 20102:
-	case 20103:
-	case 20104:
-	case 20105:
-	case 20106:
-	case 20107:
-	case 20108:
-	case 20109:
-		if (item->GetVnum() == ITEM_REVIVE_HORSE_1 ||
-			item->GetVnum() == ITEM_REVIVE_HORSE_2 ||
-			item->GetVnum() == ITEM_REVIVE_HORSE_3)
-		{
-			from->ReviveHorse();
-			ItemSystem::ConsumeItemEcs(itemEntity);
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 329, "%s", item->GetName());
-#endif
-		}
-		else if (item->GetVnum() == ITEM_HORSE_FOOD_1 ||
-			item->GetVnum() == ITEM_HORSE_FOOD_2 ||
-			item->GetVnum() == ITEM_HORSE_FOOD_3)
-		{
-			from->FeedHorse();
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 112, "%s", item->GetName());
-#endif
-			ItemSystem::ConsumeItemEcs(itemEntity);
-			NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_HPUP_RED);
-		}
-		break;
-
-	default:
-		LOG_INFO("TakeItem {} {} {}", from->GetName(), ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()), item->GetName());
-		ecs::PlayerRuntime::SetQuestNPCID(fromEntity, GetPacketVID());
-		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()), itemEntity);
-		break;
-	}
 }
 
 bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<uint32_t> &dwItemVnums,
@@ -3337,7 +2672,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::DestroyItem(TItemPos Cell),");//INGAME_DEBUG_RAZOR93
 #endif
-	LPITEM item = nullptr;
+	entt::entity item = entt::null;
 	if (!InventorySystem::CanHandleItems(GetEntityHandle())) {
 #ifdef TEXTS_IMPROVEMENT
 		if (DragonSoulSystem::CanRefine(GetEntityHandle())) {
@@ -3351,28 +2686,28 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 	if (CombatSystem::IsDead(GetEntityHandle()))
 		return false;
 
-	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !(item = GetItem(Cell)))
+	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !ItemSystem::IsValidItem(item = ItemSystem::GetItem(GetEntityHandle(), Cell)))
 		return false;
 
-	if (ItemSystem::IsItemEquipped(item->GetEntityHandle()))
+	if (ItemSystem::IsItemEquipped(item))
 		return false;
 
-	if (item->IsExchanging())
+	if (ItemSystem::IsItemExchanging(item))
 		return false;
 
-	if (true == item->isLocked())
+	if (true == ItemSystem::IsItemLocked(item))
 		return false;
 
 	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
 		return false;
 
-	if ((item->GetVnum() >= 55701) && (item->GetVnum() <= 55711)) {
-		if (item->GetSocket(0) != 0)
+	if ((ItemSystem::GetItemVnum(item) >= 55701) && (ItemSystem::GetItemVnum(item) <= 55711)) {
+		if (ItemSystem::GetItemSocket(item, 0) != 0)
 			return false;
 	}
 
 #ifdef ENABLE_EXTRA_INVENTORY
-	if (item->IsExtraItem()) {
+	if (ItemSystem::IsExtraItem(item)) {
 		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
 	}
 	else {
@@ -3389,16 +2724,16 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 		uint32_t dwItemVnum, dwCnt;
 		if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, DESTROY_ITEM, &dwItemVnum, &dwCnt))
 		{
-			if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), DESTROY_ITEM, bBattlePassId) < dwCnt)
-				ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), DESTROY_ITEM, bBattlePassId, item->GetCount(), dwCnt);
+			if (dwItemVnum == ItemSystem::GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), DESTROY_ITEM, bBattlePassId) < dwCnt)
+				ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), DESTROY_ITEM, bBattlePassId, ItemSystem::GetItemCount(item), dwCnt);
 		}
 	}
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 47, "%s", item->GetName());
+	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 47, "%s", ItemSystem::GetItemName(item));
 #endif
-	ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "DESTROY");
+	ITEM_MANAGER::instance().RemoveItem(item, "DESTROY");
 	return true;
 }
 
@@ -3872,18 +3207,18 @@ void CHARACTER::ClearItem()
 	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::ClearItem ");//INGAME_DEBUG_RAZOR93
 #endif
 	int		i;
-	LPITEM	item;
+	entt::entity item;
 
 	for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
 	{
-		if ((item = GetInventoryItem(i)))
+		if (ItemSystem::IsValidItem(item = ItemSystem::GetInventoryItem(GetEntityHandle(), i)))
 		{
-			ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
+			ItemSystem::SetItemSkipSave(item, true);
+			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+			InventorySystem::RemoveFromCharacter(item);
 			ItemSystem::DestroyItemEntityEcs(
-				(item ? item->GetEntityHandle() : entt::null),
+				item,
 				"CLEAR_ITEM_INVENTORY");
 
 			InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, i, 255);
@@ -3891,14 +3226,14 @@ void CHARACTER::ClearItem()
 	}
 	for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
 	{
-		if ((item = GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i))))
+		if (ItemSystem::IsValidItem(item = ItemSystem::GetItem(GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, i))))
 		{
-			ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
+			ItemSystem::SetItemSkipSave(item, true);
+			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+			InventorySystem::RemoveFromCharacter(item);
 			ItemSystem::DestroyItemEntityEcs(
-				(item ? item->GetEntityHandle() : entt::null),
+				item,
 				"CLEAR_ITEM_DRAGON_SOUL");
 		}
 	}
@@ -3909,14 +3244,14 @@ void CHARACTER::ClearItem()
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :739: for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)");
 #endif
-		if ((item = GetExtraInventoryItem(i)))
+		if (ItemSystem::IsValidItem(item = ItemSystem::GetExtraInventoryItem(GetEntityHandle(), i)))
 		{
-			ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
+			ItemSystem::SetItemSkipSave(item, true);
+			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+			InventorySystem::RemoveFromCharacter(item);
 			ItemSystem::DestroyItemEntityEcs(
-				(item ? item->GetEntityHandle() : entt::null),
+				item,
 				"CLEAR_ITEM_EXTRA_INVENTORY");
 
 			InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
@@ -3927,14 +3262,14 @@ void CHARACTER::ClearItem()
 #ifdef ENABLE_SWITCHBOT
 	for (i = 0; i < SWITCHBOT_SLOT_COUNT; ++i)
 	{
-		if ((item = GetItem(TItemPos(SWITCHBOT, i))))
+		if (ItemSystem::IsValidItem(item = ItemSystem::GetItem(GetEntityHandle(), TItemPos(SWITCHBOT, i))))
 		{
-			ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
+			ItemSystem::SetItemSkipSave(item, true);
+			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+			InventorySystem::RemoveFromCharacter(item);
 			ItemSystem::DestroyItemEntityEcs(
-				(item ? item->GetEntityHandle() : entt::null),
+				item,
 				"CLEAR_ITEM_SWITCHBOT");
 		}
 	}
@@ -5004,11 +4339,6 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 		InventorySystem::PayRefineFee(e, cost);
 	}
 
-	// Both paths above normally consume the item, so this finds nothing
-	// to copy. The one path that keeps it is the failed creation above,
-	// and there its components are re-read - which is what the old
-	// entry point did on every successful return.
-	SyncItemStateFromLegacy(item);
 	return true;
 }
 
@@ -6372,7 +5702,7 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 	if (IsItemExchanging(item))
 		return false;
 	// Lua-less item_change quest handlers
-	if (item_change::HandleUse(ecs::LegacyCharOf(e), LegacyItemBoundary(item)))
+	if (item_change::HandleUse(e, item))
 		return true;
 #ifdef ENABLE_SWITCHBOT
 	if (Cell.IsSwitchbotPosition())
@@ -9761,15 +9091,10 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					return false;
 				}
 
-				// The attribute roll behind this scroll is still CItem work; it reaches
-				// AddAttr4, which is its own migration.
-				if (LegacyItemBoundary(item2)->ChangeKKAK() == true)
+				if (ChangeItemHitDamageBonuses(e, item2, item))
 				{
-					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", GetItemID(item2));
-					LogManager::instance().ItemLogEntity(e, item, "CHANGE_RARE_ATTR21", buf);
-
-					ConsumeItemEcs(itemEntity);
+					if (IsValidItem(item2))
+						LogManager::instance().ItemLogEntity(e, item2, "CHANGE_HIT_DAMAGE", "");
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {

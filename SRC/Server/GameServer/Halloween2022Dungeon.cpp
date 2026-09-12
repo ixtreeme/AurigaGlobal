@@ -288,14 +288,10 @@ namespace
         });
     }
 
-    void RemoveOneGivenItem(entt::entity itemEntity, const char* why)
+    bool RemoveOneGivenItem(entt::entity owner, entt::entity item)
     {
-        if (itemEntity == entt::null)
-            return;
-        if (ItemSystem::GetItemCount(itemEntity) > 1)
-            ItemSystem::ConsumeItemEcs(itemEntity);
-        else
-            ItemSystem::DestroyItemEntityEcs(itemEntity, why);
+        const ItemSystem::ItemCost cost {item, 1};
+        return ItemSystem::ConsumeOwnedItemCosts(owner, std::span(&cost, 1));
     }
 
     void DropItemOnGround(entt::entity victimEntity, entt::entity owner, uint32_t vnum, uint32_t count)
@@ -1077,10 +1073,9 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     }
 }
 
-bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item)
+bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item)
 {
-    const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !item)
+    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::CanConsumeOwnedItem(from, item))
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
@@ -1093,12 +1088,13 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
 
     const int32_t floor = d->GetFlag(kFlagFloor);
     const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(npc);
-    const uint32_t itemVnum = ItemSystem::GetItemVnum(itemEntity);
+    const uint32_t itemVnum = ItemSystem::GetItemVnum(item);
 
     // Angel statue
     if (floor == 1 && npcVnum == kAngelStatueNpc && d->GetFlag(kFlagCanDestroyStatue) == 1 && itemVnum == kStatueItemVnum)
     {
-        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_STATUE");
+        if (!RemoveOneGivenItem(from, item))
+            return true;
         d->SetFlag(kFlagCanDestroyStatue, 0);
         d->SetFlag(kFlagAngelStatueCount, d->GetFlag(kFlagAngelStatueCount) + 1);
         M2_DESTROY_CHARACTER(npc);
@@ -1127,7 +1123,8 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
     // Small seal -> starts wave 1
     if (floor == 1 && npcVnum == kSealSmallNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_SEAL_SMALL");
+        if (!RemoveOneGivenItem(from, item))
+            return true;
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagFloor1Monsters, 1);
@@ -1141,7 +1138,8 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
     // Middle seal -> spawn boss again
     if (floor == 1 && npcVnum == kSealMiddleNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_SEAL_MIDDLE");
+        if (!RemoveOneGivenItem(from, item))
+            return true;
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagKillFirstBoss, 1);
@@ -1154,7 +1152,8 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
     // Full seal -> transition to floor 2
     if (floor == 1 && npcVnum == kSealFullNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_SEAL_FULL");
+        if (!RemoveOneGivenItem(from, item))
+            return true;
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagFloor, 2);
         d->KillAll();
@@ -1182,7 +1181,8 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
     // Empty calyx -> floor 2 progression
     if (floor == 2 && npcVnum == kCalyxEmptyNpc && d->GetFlag(kFlagCanFillCalyx) == 1 && itemVnum == kSecondFloorItem)
     {
-        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_CALYX");
+        if (!RemoveOneGivenItem(from, item))
+            return true;
         d->SetFlag(kFlagCanFillCalyx, 0);
         d->SetFlag(kFlagCalyxFilled, d->GetFlag(kFlagCalyxFilled) + 1);
         ReplaceUniqueCalyx(d, npc);
@@ -1222,4 +1222,3 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
 
     return false;
 }
-

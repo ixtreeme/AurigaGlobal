@@ -34,17 +34,6 @@ typedef std::vector <std::string> TTokenVector;
 
 namespace {
 
-void SyncDragonSoulItemEntity(entt::entity item)
-{
-	if (item != entt::null)
-		ItemSystem::SyncItemStateFromLegacy(item);
-}
-
-void SyncDragonSoulItemPtr(entt::entity item)
-{
-	SyncDragonSoulItemEntity(item);
-}
-
 TItemPos DragonSoulItemPosition(entt::entity item)
 {
 	return ItemSystem::IsValidItem(item)
@@ -67,16 +56,6 @@ bool ConsumeDragonSoulMaterials(const std::set<entt::entity>& items, int amount)
 		remaining -= static_cast<int>(consumed);
 	}
 	return remaining == 0;
-}
-
-void SyncDragonSoulGridItems(entt::entity ch, const TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
-{
-	if (!ecs::PlayerRuntime::IsValid(ch))
-		return;
-
-	const entt::entity owner = ch;
-	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
-		SyncDragonSoulItemPtr(ItemSystem::GetItem(owner, aItemPoses[i]));
 }
 
 } // namespace
@@ -787,7 +766,6 @@ bool DSManager::DoRefineGradeEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAG
 		return false;
 
 	const bool result = DoRefineGrade(owner, aItemPoses);
-	SyncDragonSoulGridItems(owner, aItemPoses);
 	return result;
 }
 
@@ -912,7 +890,6 @@ bool DSManager::DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGO
 		return false;
 
 	const bool result = DoRefineStep(owner, aItemPoses);
-	SyncDragonSoulGridItems(owner, aItemPoses);
 	return result;
 }
 
@@ -1065,7 +1042,6 @@ bool DSManager::DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[D
 		return false;
 
 	const bool result = DoRefineStrength(owner, aItemPoses);
-	SyncDragonSoulGridItems(owner, aItemPoses);
 	return result;
 }
 
@@ -1220,8 +1196,6 @@ void DSManager::DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t ty
 		return;
 
 	DoRefineAll(owner, subheader, type, grade);
-	for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-		SyncDragonSoulItemPtr(ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, i)));
 }
 
 #endif
