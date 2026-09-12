@@ -640,14 +640,10 @@ void BattleTargetChecks() {
     C::SetLastAttackTime(e,UINT32_MAX-20);
     Check(C::GetLastAttackTime(e)==UINT32_MAX-20, "attack milliseconds lost");
     C::SetVictim(e,replacement);
-    g_registry.emplace<ecs::CombatActiveTag>(e);
-    g_registry.emplace<ecs::LegacyCharPtr>(e,nullptr); // updater's legacy-era view gate only
-    g_registry.emplace<ecs::Health>(e).current=100;
-    g_registry.emplace<ecs::Health>(replacement).current=100;
-    CombatSystem_Update(g_registry,100);
-    Check(C::GetLastAttackTime(e)==UINT32_MAX-20 &&
-          g_registry.get<ecs::AttackCooldown>(e).lastCombatPulse==100 &&
-          g_registry.get<ecs::Health>(replacement).current==99, "combat pulse overwrote attack milliseconds");
+    Check(C::GetVictim(e)==replacement && C::GetLastAttackTime(e)==UINT32_MAX-20,
+        "retargeting changed the attack clock");
+    C::SetLastAttackTime(e,20);
+    Check(C::GetLastAttackTime(e)==20, "wrapped attack milliseconds lost");
     C::SetSkillHit(e,true); Check(C::IsSkillHit(e), "skill-hit state not native");
     C::SetSkillHit(e,false); Check(!C::IsSkillHit(e), "skill-hit reset");
     const auto item=Weapon();

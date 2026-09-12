@@ -1,4 +1,4 @@
-// Idle-state AI, driven through the entity seam. The cases here were
+// Idle and battle AI, driven through the entity seam. The cases here were
 // unreachable while the state bodies were CHARACTER methods: a victim that
 // died, a victim whose entity was destroyed and its slot handed to somebody
 // else, and the AI entity being retired from inside a callback the state body
@@ -55,6 +55,9 @@ struct Recorder {
     int searchCalls { 0 };
     std::vector<entt::entity> fightsBegun;
     std::vector<entt::entity> attacked;
+    uint32_t nowMs { 1000 };
+    uint32_t lastAttackTime { 0 };
+    int attackPeriodMs { 0 };
     std::function<void(entt::entity)> onAttack;
     // Fires inside Goto, standing in for a packet callback that retires the
     // entity while the state body is still running.
@@ -80,7 +83,7 @@ entt::entity MakeMonster(int32_t x = 1000, int32_t y = 1000)
 namespace ecs::PlayerRuntime {
 bool IsStone(entt::entity) { return false; }
 bool IsMonster(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ecs::TagMonster>(e); }
-bool IsPC(entt::entity) { return false; }
+bool IsPC(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e); }
 bool IsWarp(entt::entity) { return false; }
 bool IsGoto(entt::entity) { return false; }
 bool IsBuilding(entt::entity) { return false; }
@@ -141,10 +144,11 @@ bool IsBerserker(entt::entity) { return false; }
 bool IsDeathBlow(entt::entity) { return false; }
 uint16_t GetMobAttackRange(entt::entity) { return 100; }
 uint8_t GetMobBattleType(entt::entity) { return 0; }
-uint32_t GetLastAttackTime(entt::entity) { return 0; }
+uint32_t GetLastAttackTime(entt::entity) { return g_rec.lastAttackTime; }
 bool Attack(entt::entity attacker, entt::entity victim, uint8_t)
 {
     g_rec.attacked.push_back(victim);
+    g_rec.lastAttackTime = g_rec.nowMs;
     if (g_rec.onAttack)
         g_rec.onAttack(attacker);
     return true;
@@ -214,11 +218,10 @@ void GetDeltaByDegree(float, float distance, float* x, float* y)
 bool SECTREE_MANAGER::IsMovablePosition(int, int, int) { return true; }
 
 
-// The AI pump still resolves a character for the flag sync and the two mob
-// instance flags; none of it is reachable from the idle cases below.
+// Motion, party and attack-speed services are controlled at the AI boundary.
 float CMotionManager::GetMotionDuration(uint32_t, uint32_t) { return 0.0f; }
 void CParty::SendMessage(entt::entity, uint8_t, uint32_t, uint32_t) {}
-int CalculateDuration(int, int) { return 0; }
+int CalculateDuration(int, int) { return g_rec.attackPeriodMs; }
 int MAX(int a, int b) { return a > b ? a : b; }
 
 namespace logging {
@@ -228,7 +231,7 @@ std::shared_ptr<spdlog::logger> GetErrorLogger()
     return logger;
 }
 } // namespace logging
-uint32_t get_dword_time() { return 1000; }
+uint32_t get_dword_time() { return g_rec.nowMs; }
 
 // The pump reads the pulse, so the cases below drive it.
 int g_pulse = 0;
@@ -243,6 +246,7 @@ void Reset()
 {
     g_registry.clear();
     g_rec = Recorder {};
+    g_pulse = 0;
 }
 
 void SetPulse(int pulse) { g_pulse = pulse; }
@@ -435,6 +439,121 @@ void BattleDoesNotSwingAtAGoneVictim()
     }
 }
 
+// The character-manager pump owns mob attacks. A target alone must not cause
+// an extra swing between the state deadline and the next scheduled pass.
+void BattlePumpHonoursPulseDeadline()
+{
+    Reset();
+    SetPulse(100);
+    const entt::entity mob = MakeMonster();
+    const entt::entity victim = MakeMonster();
+    g_rec.victim = victim;
+    g_rec.nowMs = 10000;
+    g_rec.attackPeriodMs = 2000;
+    AISystem::GotoState(mob, ecs::AIFSMState::Battle);
+
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.attacked.size() == 1 && g_rec.attacked.front() == victim,
+        "a due battle pass dispatches one entity-native attack");
+    Check(g_rec.lastAttackTime == 10000, "the attack service records milliseconds");
+    Check(AIHelpers::GetNextStatePulse(mob) == 150,
+        "the default attack motion schedules two seconds in pulses");
+
+    // Even when the millisecond clock has advanced far enough for a swing,
+    // the pulse deadline must still suppress repeated or premature updates.
+    g_rec.nowMs = 16000;
+    for (const int pulse : {100, 101, 125, 149}) {
+        SetPulse(pulse);
+        AISystem::UpdateStateMachine(mob);
+        Check(g_rec.attacked.size() == 1, "no extra swing before the pulse deadline");
+        Check(AIHelpers::GetNextStatePulse(mob) == 150,
+            "an early update must not postpone the booked attack");
+    }
+
+    SetPulse(150);
+    AISystem::UpdateStateMachine(mob);
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.attacked.size() == 2 && AIHelpers::GetNextStatePulse(mob) == 200,
+        "the deadline dispatches once, even with two updates in that pulse");
+    Check(!g_registry.any_of<ecs::LegacyCharPtr>(mob),
+        "scheduled attacks do not require a legacy character component");
+}
+
+void BattlePumpConvertsRemainingMillisecondsToPulses()
+{
+    Reset();
+    SetPulse(100);
+    const entt::entity mob = MakeMonster();
+    g_rec.victim = MakeMonster();
+    g_rec.nowMs = 1000;
+    g_rec.lastAttackTime = 250;
+    g_rec.attackPeriodMs = 2000;
+    AISystem::GotoState(mob, ecs::AIFSMState::Battle);
+
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.attacked.empty() && AIHelpers::GetNextStatePulse(mob) == 131,
+        "1250 remaining milliseconds book 31 pulses at 25 Hz");
+
+    SetPulse(130);
+    g_rec.nowMs = 2200;
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.attacked.empty() && AIHelpers::GetNextStatePulse(mob) == 131,
+        "the booked cooldown is not polled early");
+
+    SetPulse(131);
+    g_rec.nowMs = 2240;
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.attacked.empty() && AIHelpers::GetNextStatePulse(mob) == 132,
+        "a sub-pulse remainder waits at least one pulse");
+
+    SetPulse(132);
+    g_rec.nowMs = 2250;
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.attacked.size() == 1 && g_rec.lastAttackTime == 2250,
+        "the attack is dispatched when both clocks permit it");
+}
+
+void BattlePumpHandlesAttackClockWrap()
+{
+    Reset();
+    SetPulse(100);
+    const entt::entity mob = MakeMonster();
+    g_rec.victim = MakeMonster();
+    g_rec.nowMs = 20;
+    g_rec.lastAttackTime = UINT32_MAX - 19;
+    g_rec.attackPeriodMs = 80;
+    AISystem::GotoState(mob, ecs::AIFSMState::Battle);
+
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.attacked.empty() && AIHelpers::GetNextStatePulse(mob) == 101,
+        "wrapping the millisecond clock leaves 40 milliseconds of cooldown");
+
+    SetPulse(101);
+    g_rec.nowMs = 60;
+    AISystem::UpdateStateMachine(mob);
+    Check(g_rec.attacked.size() == 1 && g_rec.lastAttackTime == 60,
+        "a wrapped attack clock does not suppress the next valid attack");
+}
+
+void PlayerBattleStateDoesNotAutoAttack()
+{
+    Reset();
+    const entt::entity player = MakeMonster();
+    g_registry.remove<ecs::TagMonster>(player);
+    g_registry.emplace<ecs::TagPC>(player);
+    g_registry.emplace<ecs::CombatActiveTag>(player);
+    g_rec.victim = MakeMonster();
+    AIHelpers::SetStateDuration(player, 1);
+    AISystem::GotoState(player, ecs::AIFSMState::Battle);
+
+    for (int pulse = 100; pulse <= 200; ++pulse) {
+        SetPulse(pulse);
+        g_rec.nowMs = 10000 + (pulse - 100) * 40;
+        AISystem::UpdateStateMachine(player);
+    }
+    Check(g_rec.attacked.empty(), "a PC with a target still needs client attack input");
+}
+
 // The entity can be retired by a callback while battle is still running.
 void BattleSurvivesDestructionInsideAttack()
 {
@@ -467,6 +586,10 @@ int main()
         EntityDestroyedInsideCallback();
         SearchResultThatWentBadIsNotEngaged();
         BattleDoesNotSwingAtAGoneVictim();
+        BattlePumpHonoursPulseDeadline();
+        BattlePumpConvertsRemainingMillisecondsToPulses();
+        BattlePumpHandlesAttackClockWrap();
+        PlayerBattleStateDoesNotAutoAttack();
         BattleSurvivesDestructionInsideAttack();
     } catch (const std::exception& e) {
         std::cerr << "FAIL: threw: " << e.what() << std::endl;

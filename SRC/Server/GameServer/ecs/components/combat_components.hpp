@@ -68,8 +68,6 @@ struct AttackCooldown {
     int validComboInterval;
     uint8_t comboIndex;
     int comboHackCount;
-    // The prototype combat updater runs in pulses, not get_dword_time() ms.
-    uint32_t lastCombatPulse { 0 };
 };
 
 // Generation-bearing handles prevent a recycled VID/PID from inheriting a hit.

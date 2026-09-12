@@ -168,5 +168,3 @@ bool IsDeathBlow(entt::entity e);
 bool IsDeathBlower(entt::entity e);
 
 } // namespace CombatSystem
-
-void CombatSystem_Update(entt::registry& reg, uint32_t tick);

@@ -60,9 +60,7 @@
 #include "ecs/Registry.hpp"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/systems/MovementSystem.hpp"
-#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/VitalRegenSystem.hpp"
-#include "ecs/systems/AISystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/components/status_components.hpp"
 #include "ecs/systems/ActivitySystem.hpp"
@@ -864,20 +862,11 @@ int idle()
 
 	t = get_dword_time();
 	CHARACTER_MANAGER::instance().Update(thecore_heart->pulse);
-	// Phase 8 audit: the parallel ECS runtime tick is not authoritative yet.
-	// Movement/combat/network sync still rely on the migrated CHARACTER:: bodies.
-	// Leaving the placeholder ECS loops enabled overrides live gameplay with
-	// incomplete movement/combat/points packets.
-	constexpr bool kEnableParallelEcsMigrationTicks = true;
-	if (kEnableParallelEcsMigrationTicks)
+	// CharacterManager advances the entity-native AI state machines above.
+	// AI and client input dispatch real attacks; there is no second damage tick.
 	{
 		const uint32_t tick = static_cast<uint32_t>(get_dword_time());
-		// AISystem is disabled during the migration window.
-		// Legacy CHARACTER FSM handles all AI behavior.
-		// Re-enable in Phase 11 after FSM removal.
-		// AISystem_Update(g_registry, tick);
 		MovementSystem_Update(g_registry, tick);
-		CombatSystem_Update(g_registry, tick);
 		// VitalRegenSystem mirrors legacy recovery_event output back into ECS.
 		VitalRegenSystem_Update(g_registry, tick);
 		AffectSystem::UpdateAffect(g_registry, tick);

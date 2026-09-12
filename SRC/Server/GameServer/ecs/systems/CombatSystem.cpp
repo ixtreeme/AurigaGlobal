@@ -2780,65 +2780,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 } // namespace CombatSystem
 
-void CombatSystem_Update(entt::registry& reg, uint32_t tick)
-{
-    // During the migration window, only process entities with an explicit active combat target.
-    auto view = reg.view<ecs::CombatActiveTag, ecs::CombatTarget, ecs::LegacyCharPtr, ecs::CombatStats, ecs::AttackCooldown, ecs::Health>();
-
-    view.each([&](const entt::entity entity,
-                  ecs::CombatTarget& combatTarget,
-                  const ecs::LegacyCharPtr& legacy,
-                  ecs::CombatStats& combatStats,
-                  ecs::AttackCooldown& attackCooldown,
-                  ecs::Health& attackerHealth) {
-        (void)legacy;
-        (void)combatStats;
-        (void)attackerHealth;
-
-        if (combatTarget.target == entt::null || !reg.valid(combatTarget.target) ||
-            !reg.all_of<ecs::Health>(combatTarget.target) ||
-            reg.all_of<ecs::DeadTag>(combatTarget.target))
-        {
-            combatTarget.target = entt::null;
-            reg.remove<ecs::CombatActiveTag>(entity);
-            return;
-        }
-
-        const uint32_t attackPeriod = PASSES_PER_SEC(1);
-        if (tick < attackCooldown.lastCombatPulse || (tick - attackCooldown.lastCombatPulse) < attackPeriod) {
-            return;
-        }
-
-        auto& victimHealth = reg.get<ecs::Health>(combatTarget.target);
-        const int32_t damage = 1;
-        victimHealth.current = std::max<int32_t>(0, victimHealth.current - damage);
-        attackCooldown.lastCombatPulse = tick;
-
-        reg.emplace_or_replace<ecs::DirtyTag>(combatTarget.target);
-        g_dispatcher.trigger(ecs::EvEntityDamaged { entity, combatTarget.target, damage, DAMAGE_TYPE_NORMAL });
-
-        if (victimHealth.current > 0) {
-            return;
-        }
-
-        reg.emplace_or_replace<ecs::DeadTag>(combatTarget.target);
-        if (auto* statusFlags = reg.try_get<ecs::StatusFlags>(combatTarget.target)) {
-            statusFlags->isDead = true;
-        }
-        // LPENTITY.4-fixup.2.f note: m_bAddChrState DEAD bit is set later by
-        // CHARACTER::SetPosition(POS_DEAD) in the legacy Dead() flow.
-        // EvEntityDied below has no current sink, so the legacy bit only
-        // gets set if the legacy battle.cpp Damage path runs in parallel.
-        // This leaves a transient drift window where ECS reports DEAD but
-        // legacy does not. Resolution is deferred to LPENTITY.6 when this
-        // ECS combat tick is unified with the legacy death path.
-
-        combatTarget.target = entt::null;
-        reg.remove<ecs::CombatActiveTag>(entity);
-        g_dispatcher.trigger(ecs::EvEntityDied { entity, combatTarget.target });
-    });
-}
-
 // char_battle.cpp slice BA moved into CombatSystem.cpp
 
 namespace CombatSystem {

@@ -1,5 +1,30 @@
 # Server ECS regression tests
 
+## Single combat execution path
+
+The prototype `CombatSystem_Update` and its private cooldown field are deleted,
+including the call in `main.cpp`. It subtracted a fixed 1 HP in parallel with
+real attacks, compared millisecond ticks with a pulse-count interval, and marked
+victims dead without the normal Damage/Dead processing. Retiming it would still
+leave a second source of damage. CharacterManager already drives the native AI
+state machine; monsters dispatch `CombatSystem::Attack` there, and player melee
+input dispatches the same attack entry point from `input_main.cpp`. Movement,
+recovery, affects and dispatcher updates retain their existing order.
+
+`AIStateTests` executes the actual AI scheduler and battle state with entity-only
+fixtures. It checks one swing per scheduled pass, duplicate/early updates,
+millisecond-to-pulse cooldown conversion, a minimum one-pulse retry, millisecond
+clock wrap, and no automatic PC attacks just because a target is set. The Attack,
+motion and stat services are controlled doubles: these tests verify dispatch
+and timing, not real damage, death, loot, client packets or database persistence.
+`CombatStateTests` retains target and full-width/wrapped attack-time checks;
+the old assertion of the prototype's extra 1 HP damage is removed.
+
+Before deployment, check player melee/ranged/skill attacks, mob attack cadence,
+target loss, death rewards and logout during combat with a real client/test DB.
+The shared Damage/Dead implementation still has legacy internals; removing the
+parallel updater does not complete that migration.
+
 ## Native movement duration reads
 
 MovementSystem::GetCurrentMoveDuration replaces the CHARACTER getter at all
@@ -44,9 +69,10 @@ movement-point limits and integer speed-factor semantics are retained.
 
 The write-only m_posStart and the two legacy AI scheduling fields are deleted.
 AIState owns stateDuration/nextStatePulse; all AI writers and the real character
-state-machine pump consume those components. The AI state bodies themselves
-remain legacy and still need migration. The pump keeps the entity handle across
-the state callback instead of dereferencing a potentially retired CHARACTER.
+state-machine pump consume those components. The state bodies and scheduler now
+live in AISystem; CharacterManager calls the entity API directly. The pump keeps
+the entity handle across the state callback instead of dereferencing a
+potentially retired CHARACTER.
 
 SpatialLifecycleTests exercises actual command, timing and selection logic on
 entity-only fixtures, with controlled motion/equipment/point/descriptor services.
@@ -736,7 +762,7 @@ damage uses the legacy non-PC meaning rather than the narrower `TagNPC` meaning.
 Normal-hit poison/stun callbacks destroy their victim to check that processing
 does not continue on a dead generation. Anti-cheat checks cover riding, a zero
 speed denominator, both attack logs, recycled target identities and clock wrap.
-Combat pulses and wall-clock attack milliseconds have separate fields.
+Attack timestamps remain milliseconds; AI scheduling uses AIState's pulse fields.
 
 The two remaining `battle.cpp` character resolutions are explicit boundaries to
 soul consumption and the complete legacy `Damage` pipeline, not converted
