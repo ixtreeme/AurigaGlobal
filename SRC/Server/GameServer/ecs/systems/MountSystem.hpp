@@ -45,6 +45,7 @@ void SetSummonedHorse(entt::entity rider, entt::entity horse);
 entt::entity GetRider(entt::entity horse);
 void SetRider(entt::entity horse, entt::entity rider);
 bool IsHorseRiding(entt::entity rider);
+void SetHorseRiding(entt::entity rider, bool riding);
 int GetHorseArmor(entt::entity rider);
 int GetHorseLevel(entt::entity rider);
 void SetHorseLevel(entt::entity rider, int level);

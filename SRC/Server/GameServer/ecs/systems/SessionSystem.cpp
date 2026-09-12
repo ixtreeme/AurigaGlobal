@@ -682,6 +682,9 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
         tab.lRankPoints[i] = ecs::PlayerRuntime::GetRankPoints(rankEntity, i);
 #endif
     tab.horse = self->GetHorseData();
+    // The riding flag is the component's; the struct only carries it to the
+    // database and back.
+    tab.horse.bRiding = MountSystem::IsHorseRiding(e) ? 1 : 0;
 }
 
 void Disconnect(entt::entity e, const char* c_pszReason)

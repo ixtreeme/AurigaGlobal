@@ -1381,6 +1381,7 @@ public:
 
 	virtual void		SendHorseInfo();
 	virtual	void		ClearHorseInfo();
+	entt::entity			RiderEntity() const override { return GetEntityHandle(); }
 
 	void				HorseSummon(bool bSummon, bool bFromFar = false, uint32_t dwVnum = 0, const char* name = nullptr);
 

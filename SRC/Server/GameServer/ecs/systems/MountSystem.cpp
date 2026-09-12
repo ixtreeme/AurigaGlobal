@@ -81,16 +81,6 @@ void MarkMountDirty(entt::entity e)
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-void SyncHorseRiding(entt::entity e, bool riding)
-{
-    auto* state = GetMountState(e);
-    if (!state)
-        return;
-
-    state->horseRiding = riding;
-    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-}
-
 uint32_t GetMountMobVnum(entt::entity item)
 {
     if (!ItemSystem::IsValidItem(item))
@@ -615,14 +605,22 @@ void SetSummonedHorse(entt::entity rider, entt::entity horse)
 bool IsHorseRiding(entt::entity rider)
 {
     // Strictly the riding flag, not IsRiding - that one also answers true for a
-    // summoned mount. MountState::horseRiding is written by SyncHorseRiding at
-    // both ends of CHARACTER::StartRiding / StopRiding, the only paths that
-    // reach CHorseRider's field.
+    // summoned mount. This is the flag itself: CHorseRider used to keep it in
+    // m_Horse.bRiding and have the two riding calls copy it here.
     if (rider == entt::null || !g_registry.valid(rider))
         return false;
 
     const auto* state = g_registry.try_get<ecs::MountState>(rider);
     return state && state->horseRiding;
+}
+
+void SetHorseRiding(entt::entity rider, bool riding)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return;
+
+    g_registry.get_or_emplace<ecs::MountState>(rider).horseRiding = riding;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(rider);
 }
 
 int GetHorseArmor(entt::entity rider)
@@ -809,7 +807,6 @@ bool CHARACTER::StartRiding()
 		LOG_INFO("Ride Horse : {} ", GetName());
 
 		MarkMountDirty(GetEntityHandle());
-	SyncHorseRiding(rider, true);
 	return true;
 }
 
@@ -839,7 +836,6 @@ bool CHARACTER::StopRiding()
 		PointChange(POINT_HT, 0);
 		PointChange(POINT_IQ, 0);
 		MarkMountDirty(GetEntityHandle());
-		SyncHorseRiding(rider, false);
 		return true;
 	}
 

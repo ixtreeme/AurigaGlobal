@@ -1,6 +1,8 @@
 #ifndef __HORSE_H
 #define __HORSE_H
 
+#include <entt/entt.hpp>
+
 #include "constants.h"
 #include "cmd.h"
 // #ifdef ENABLE_NEWSTUFF
@@ -53,7 +55,7 @@ class CHorseRider
 		void FeedHorse();
 		virtual void HorseDie();
 
-		bool IsHorseRiding() const		{ return m_Horse.bRiding; }
+		bool IsHorseRiding() const;
 
 		void ResetHorseHealthDropTime();
 
@@ -70,6 +72,10 @@ class CHorseRider
 		const THorseInfo& GetHorseData() const { return m_Horse; }
 
 	protected:
+		// The riding flag is on the rider's entity; CHARACTER answers with its
+		// own handle, and a CHorseRider that is not one rides nothing.
+		virtual entt::entity RiderEntity() const { return entt::null; }
+
 		void SetHorseData(const THorseInfo& crInfo);
 
 		void UpdateHorseDataByLogoff(uint32_t dwLogoffTime);

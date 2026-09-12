@@ -7,6 +7,7 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/events.hpp"
@@ -100,7 +101,7 @@ void CHorseRider::EnterHorse()
 
 	if (IsHorseRiding())
 	{
-		m_Horse.bRiding = !m_Horse.bRiding;
+		MountSystem::SetHorseRiding(RiderEntity(), false);
 		StartRiding();
 	}
 	else
@@ -184,9 +185,14 @@ void CHorseRider::UpdateHorseStamina(int iStamina, bool bSend)
 		SendHorseInfo();
 }
 
+bool CHorseRider::IsHorseRiding() const
+{
+	return MountSystem::IsHorseRiding(RiderEntity());
+}
+
 bool CHorseRider::StartRiding()
 {
-	if (m_Horse.bRiding)
+	if (IsHorseRiding())
 		return false;
 
 	if (GetHorseLevel() <= 0)
@@ -198,7 +204,7 @@ bool CHorseRider::StartRiding()
 	if (GetHorseStamina() <= 0)
 		return false;
 
-	m_Horse.bRiding = true;
+	MountSystem::SetHorseRiding(RiderEntity(), true);
 	StartStaminaConsumeEvent();
 	SendHorseInfo();
 	return true;
@@ -206,10 +212,10 @@ bool CHorseRider::StartRiding()
 
 bool CHorseRider::StopRiding()
 {
-	if (!m_Horse.bRiding)
+	if (!IsHorseRiding())
 		return false;
 
-	m_Horse.bRiding = false;
+	MountSystem::SetHorseRiding(RiderEntity(), false);
 	StartStaminaRegenEvent();
 	return true;
 }
