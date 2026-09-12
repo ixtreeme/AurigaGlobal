@@ -1701,7 +1701,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 
 	LPITEM item = nullptr;
 
-	if (!CanHandleItem())
+	if (!InventorySystem::CanHandleItems(GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (DragonSoulSystem::CanRefine(GetEntityHandle())) {
@@ -1840,7 +1840,7 @@ bool CHARACTER::DropGold(int64_t gold)
 	if (gold <= 0 || gold > ecs::PointSystem::GetGold(GetEntityHandle()))
 		return false;
 
-	if (!CanHandleItem())
+	if (!InventorySystem::CanHandleItems(GetEntityHandle()))
 		return false;
 
 	if (0 != g_GoldDropTimeLimitValue)
@@ -2872,7 +2872,7 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 
 bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
 {
-	if (!CanHandleItem())
+	if (!InventorySystem::CanHandleItems(GetEntityHandle()))
 		return false;
 
 	// @fixme150 BEGIN
@@ -3394,7 +3394,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::DestroyItem(TItemPos Cell),");//INGAME_DEBUG_RAZOR93
 #endif
 	LPITEM item = nullptr;
-	if (!CanHandleItem()) {
+	if (!InventorySystem::CanHandleItems(GetEntityHandle())) {
 #ifdef TEXTS_IMPROVEMENT
 		if (DragonSoulSystem::CanRefine(GetEntityHandle())) {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
@@ -3541,24 +3541,7 @@ bool IS_BOTARYABLE_ZONE(int nMapIndex)
 // ITEM HANDLING
 /////////////////////////////////////////////////////////////////////////////
 
-bool CHARACTER::CanHandleItem(bool skipRefine, bool skipObserver)
-{
-    return InventorySystem::CanHandleItems(GetEntityHandle(), skipRefine, skipObserver);
-}
-
 #ifdef ENABLE_EXTRA_INVENTORY
-#endif
-
-#ifdef __HIGHLIGHT_SYSTEM__
-void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity, bool isHighLight)
-{
-	ecs::PlayerRuntime::SetItem(GetEntityHandle(), Cell, itemEntity, isHighLight);
-}
-#else
-void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
-{
-	ecs::PlayerRuntime::SetItem(GetEntityHandle(), Cell, itemEntity);
-}
 #endif
 
 namespace ecs::PlayerRuntime {
@@ -3580,7 +3563,7 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 	const bool hasItem = itemEntity != entt::null && ItemSystem::IsValidItem(itemEntity);
 	if (itemEntity != entt::null && !hasItem)
 	{
-		LOG_ERROR("CHARACTER::SetItem: item entity {} is not a valid item (char: {} cell: {})",
+		LOG_ERROR("PlayerRuntime::SetItem: item entity {} is not a valid item (char: {} cell: {})",
 			static_cast<uint32_t>(itemEntity), ecs::PlayerRuntime::GetName(e), wCell);
 		return;
 	}
@@ -3598,14 +3581,14 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 		const uint16_t storageCell = wCell;
 		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
 		{
-			LOG_ERROR("CHARACTER::SetItem: invalid item cell {}", storageCell);
+			LOG_ERROR("PlayerRuntime::SetItem: invalid item cell {}", storageCell);
 			return;
 		}
 
 		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(e);
 		if (!pMainInventory)
 		{
-			LOG_ERROR("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
+			LOG_ERROR("PlayerRuntime::SetItem: missing MainInventoryRuntimeComponent");
 			return;
 		}
 
@@ -3658,14 +3641,14 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 		const uint16_t storageCell = static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell);
 		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
 		{
-			LOG_ERROR("CHARACTER::SetItem: invalid equipment item cell {}", wCell);
+			LOG_ERROR("PlayerRuntime::SetItem: invalid equipment item cell {}", wCell);
 			return;
 		}
 
 		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(e);
 		if (!pMainInventory)
 		{
-			LOG_ERROR("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
+			LOG_ERROR("PlayerRuntime::SetItem: missing MainInventoryRuntimeComponent");
 			return;
 		}
 
@@ -3685,14 +3668,14 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 	{
 		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		{
-			LOG_ERROR("CHARACTER::SetItem: invalid DS item cell {}", wCell);
+			LOG_ERROR("PlayerRuntime::SetItem: invalid DS item cell {}", wCell);
 			return;
 		}
 
 		auto* pDragonSoulInventory = EnsureDragonSoulInventoryComponent(e);
 		if (!pDragonSoulInventory)
 		{
-			LOG_ERROR("CHARACTER::SetItem: missing DragonSoulInventoryComponent");
+			LOG_ERROR("PlayerRuntime::SetItem: missing DragonSoulInventoryComponent");
 			return;
 		}
 
@@ -3738,14 +3721,14 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 			ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (wCell >= EXTRA_INVENTORY_MAX_NUM)");//INGAME_DEBUG_RAZOR93
 #endif
-			LOG_ERROR("CHARACTER::SetItem: invalid EXTRA item cell {}", wCell);
+			LOG_ERROR("PlayerRuntime::SetItem: invalid EXTRA item cell {}", wCell);
 			return;
 		}
 
 		auto* pExtraInventory = EnsureExtraInventoryRuntimeComponent(e);
 		if (!pExtraInventory)
 		{
-			LOG_ERROR("CHARACTER::SetItem: missing ExtraInventoryRuntimeComponent");
+			LOG_ERROR("PlayerRuntime::SetItem: missing ExtraInventoryRuntimeComponent");
 			return;
 		}
 
@@ -3813,7 +3796,7 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 
 		if (wCell >= SWITCHBOT_SLOT_COUNT)
 		{
-			LOG_ERROR("CHARACTER::SetItem: invalid switchbot item cell {}", wCell);
+			LOG_ERROR("PlayerRuntime::SetItem: invalid switchbot item cell {}", wCell);
 			return;
 		}
 

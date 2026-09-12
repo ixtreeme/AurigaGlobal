@@ -36,6 +36,7 @@
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "ItemSystem.hpp"
+#include "InventorySystem.hpp"
 #include "PointSystem.hpp"
 #include "MountSystem.hpp"
 #include "../SpatialHelpers.hpp"
@@ -944,7 +945,7 @@ namespace {
             if (ecs::PlayerRuntime::IsHack(character))
                 return;
 
-            if (!pkChr->CanHandleItem(false, true))
+            if (!InventorySystem::CanHandleItems(character, false, true))
                 return;
 
             if (m_bUseWarp)

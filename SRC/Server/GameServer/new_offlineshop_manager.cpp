@@ -2018,7 +2018,7 @@ namespace offlineshop
 		if (!_IS_VALID_GM_LEVEL(ch))
 			return false;
 
-		if (!ch->CanHandleItem()|| !CheckCharacterActions(ch))
+		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(ch))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
@@ -2275,7 +2275,7 @@ namespace offlineshop
 		if (!_IS_VALID_GM_LEVEL(ch))
 			return false;
 
-		if (!ch->CanHandleItem() || !CheckCharacterActions(ch))
+		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(ch))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
@@ -2564,7 +2564,7 @@ namespace offlineshop
 		if (!_IS_VALID_GM_LEVEL(ch))
 			return false;
 
-		if (!ch->CanHandleItem()|| !CheckCharacterActions(ch))
+		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(ch))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
@@ -3329,7 +3329,7 @@ namespace offlineshop
 		if (!_IS_VALID_GM_LEVEL(ch))
 			return false;
 
-		if (!ch->CanHandleItem() || !CheckCharacterActions(ch))
+		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(ch))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;

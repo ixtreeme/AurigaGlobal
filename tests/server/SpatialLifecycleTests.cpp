@@ -31,6 +31,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
 #include "../../SRC/Server/GameServer/item_manager.h"
@@ -232,7 +233,7 @@ uint16_t mother_port = 13000;
 bool map_allow_find(int) { Unexpected(); }
 int number_ex(int, int, const char*, int) { Unexpected(); }
 bool CEntity::IsType(int) const { Unexpected(); }
-bool CHARACTER::CanHandleItem(bool, bool) { Unexpected(); }
+bool InventorySystem::CanHandleItems(entt::entity, bool, bool) { Unexpected(); }
 bool ecs::PlayerRuntime::IsHack(entt::entity, bool, bool, int) { Unexpected(); }
 bool ecs::PlayerRuntime::IsHack(entt::entity, bool, bool) { Unexpected(); }
 bool CMapLocation::Get(int, int, int&, uint32_t&, uint16_t&) { Unexpected(); }

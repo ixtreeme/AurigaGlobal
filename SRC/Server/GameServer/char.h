@@ -880,7 +880,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Item related
 public:
-	bool			CanHandleItem(bool bSkipRefineCheck = false, bool bSkipObserver = false); 
 
 	bool			IsItemLoaded() const { return m_bItemLoaded; }
 	void			SetItemLoaded() { m_bItemLoaded = true; }
@@ -892,11 +891,6 @@ public:
 	void			EditMyExtraInven();
 #endif
 
-#ifdef __HIGHLIGHT_SYSTEM__
-	void			SetItem(TItemPos Cell, entt::entity item, bool isHighLight = false);
-#else
-	void			SetItem(TItemPos Cell, entt::entity item);
-#endif
 	LPITEM			GetItem(TItemPos Cell) const;
 	LPITEM			GetInventoryItem(uint16_t wCell) const;
 	LPITEM			GetDragonSoulItem(uint16_t wCell) const;
