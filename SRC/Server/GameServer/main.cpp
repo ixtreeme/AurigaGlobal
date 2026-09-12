@@ -60,7 +60,6 @@
 #include "ecs/Registry.hpp"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/systems/MovementSystem.hpp"
-#include "ecs/systems/VitalRegenSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/components/status_components.hpp"
 #include "ecs/systems/ActivitySystem.hpp"
@@ -867,8 +866,6 @@ int idle()
 	{
 		const uint32_t tick = static_cast<uint32_t>(get_dword_time());
 		MovementSystem_Update(g_registry, tick);
-		// VitalRegenSystem mirrors legacy recovery_event output back into ECS.
-		VitalRegenSystem_Update(g_registry, tick);
 		AffectSystem::UpdateAffect(g_registry, tick);
 		AffectSystem_Update(g_registry, tick);
 		// NetworkSyncSystem is disabled during the migration window.

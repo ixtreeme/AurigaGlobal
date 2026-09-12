@@ -1,5 +1,17 @@
 # Server ECS regression tests
 
+## Removal of the obsolete vital mirror
+
+VitalRegenSystem.cpp/.hpp and its main-loop call are removed. The loop did not
+regenerate anything: it read Health/Mana/Stamina through PlayerRuntime/PointSystem
+and assigned them back to the same components, gated by LegacyCharPtr. Recovery,
+damage and stamina changes already update those components through PointSystem.
+PointCalculationTests now explicitly checks immediate native vital reads/changes,
+upper caps, poisoned old arrays, missing components and recycled handles for both
+player and NPC fixtures. PlayerRuntime setters and external services are doubles;
+this does not test the whole recovery timer. That timer still has separate
+CHARACTER dependencies and needs its own migration and live regeneration checks.
+
 ## Entity-native OX event cohorts
 
 OXEvent.cpp now stores participants, attenders and eliminated players as

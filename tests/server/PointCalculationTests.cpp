@@ -267,6 +267,39 @@ void LogManager::LevelLog(entt::entity, uint32_t, uint32_t) { Unexpected(); }
 const char* CHorseNameManager::GetHorseName(uint32_t) { Unexpected(); }
 
 namespace {
+void NativeVitalSourceChecks() {
+    for (bool player : {false, true}) {
+        Reset(); const auto e = ActorEntity(player);
+        const uint8_t currentTypes[] {POINT_HP, POINT_SP, POINT_STAMINA};
+        const uint8_t maxTypes[] {POINT_MAX_HP, POINT_MAX_SP, POINT_MAX_STAMINA};
+        const int initial[] {500, 80, 100};
+        const int maximum[] {1000, 200, 100};
+        auto& points = g_registry.get<ecs::CharacterStatsComponent>(e).points;
+        for (int i = 0; i < 3; ++i) {
+            // The old instant array is not an authoritative copy of vitals.
+            points[currentTypes[i]] = -999;
+            points[maxTypes[i]] = -999;
+            Check(P::Get(e, currentTypes[i]) == initial[i] && P::Get(e, maxTypes[i]) == maximum[i],
+                "vital read depended on a mirror");
+            P::Change(e, currentTypes[i], -10);
+            Check(P::Get(e, currentTypes[i]) == initial[i] - 10, "vital debit waited for a mirror tick");
+            P::Change(e, currentTypes[i], 10000);
+            Check(P::Get(e, currentTypes[i]) == maximum[i], "vital recovery did not clamp immediately");
+        }
+        Check(g_registry.get<ecs::Health>(e).current == 1000 &&
+            g_registry.get<ecs::Mana>(e).current == 200 &&
+            g_registry.get<ecs::Stamina>(e).current == 100, "vital updates did not reach ECS components");
+        g_registry.get<ecs::Health>(e).current = 42;
+        Check(P::Get(e, POINT_HP) == 42, "direct component state was not authoritative");
+        g_registry.remove<ecs::Health, ecs::Mana, ecs::Stamina>(e);
+        for (int i = 0; i < 3; ++i)
+            Check(P::Get(e, currentTypes[i]) == 0 && P::Get(e, maxTypes[i]) == 0,
+                "missing vital component fell back to an old mirror");
+        g_registry.destroy(e); const auto replacement = ActorEntity(player);
+        Check(replacement != e && P::Get(e, POINT_HP) == 0 && P::Get(replacement, POINT_HP) == 500,
+            "recycled character inherited vital reads");
+    }
+}
 void FormulaChecks() {
     Reset(); const auto e = ActorEntity();
     P::SetReal(e, POINT_MAX_HP, 1000); P::Set(e, POINT_MAX_HP, 300);
@@ -410,7 +443,7 @@ void CallbackChecks() {
 int main() {
     try {
         CSkillManager skills; CHARACTER_MANAGER characters; DSManager dragonSouls;
-        FormulaChecks(); RepeatedCalculation(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
+        NativeVitalSourceChecks(); FormulaChecks(); RepeatedCalculation(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
