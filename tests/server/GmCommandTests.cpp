@@ -786,7 +786,6 @@ void mining::CHEAT_MAX_PICK(entt::entity,entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
 void CHARACTER::Save(void) { Unexpected(); }
 int64_t CHARACTER::GetSP(void)const { Unexpected(); }
-void CHARACTER::ComputePoints(void) { Unexpected(); }
 namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unexpected(); } }
 int CHARACTER::CountSpecifyItem(unsigned int)const { Unexpected(); }
 void CHARACTER::RemoveSpecifyItem(unsigned int,int,bool) { Unexpected(); }

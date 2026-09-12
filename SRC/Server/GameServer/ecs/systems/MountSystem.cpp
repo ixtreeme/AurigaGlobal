@@ -149,7 +149,7 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
 
     m_bMountInventoryLoaded = true;
     MountSystem::SendMountInventory(GetEntityHandle());
-    ComputePoints();
+    ecs::PointSystem::Compute(GetEntityHandle());
 }
 
 void MountSystem::SendMountInventory(entt::entity owner)
@@ -661,7 +661,7 @@ void SetHorseLevel(entt::entity rider, int level)
     if (auto* character = ResolveLegacyMountOwnerBoundary(rider))
     {
         character->SetHorseLevel(level);
-        character->ComputePoints();
+        ecs::PointSystem::Compute(rider);
         character->SkillLevelPacket();
     }
 }
@@ -850,7 +850,7 @@ bool CHARACTER::StopRiding()
 		{
 			if (auto* mount = g_registry.try_get<ecs::MountState>(rider))
 				mount->mountVnum = 0;
-			ComputePoints();
+			ecs::PointSystem::Compute(rider);
 			NetworkSyncSystem::UpdatePacket(rider);
 		}
 

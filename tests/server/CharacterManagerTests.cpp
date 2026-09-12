@@ -402,7 +402,6 @@ void ecs::SessionSystem::Disconnect(entt::entity, const char*) { Unexpected(); }
 void CHARACTER::Create(uint32_t) { Unexpected(); }
 void CHARACTER::SetProto(const CMob*) { Unexpected(); }
 uint32_t CHARACTER::GetLegacyVID() const { Unexpected(); }
-void CHARACTER::ComputePoints() { Unexpected(); }
 entt::entity MountSystem::GetRider(entt::entity) { return entt::null; }
 void ecs::PlayerRuntime::SetRegen(entt::entity, LPREGEN) { Unexpected(); }
 TEMP_BUFFER::TEMP_BUFFER(int, bool) { Unexpected(); }

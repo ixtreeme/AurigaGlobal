@@ -3436,7 +3436,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     // correct values without legacy dest priming.
     ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
-    ComputePoints();
+    ecs::PointSystem::Compute(GetEntityHandle());
 
     ecs::PlayerRuntime::SetHP(GetEntityHandle(), t->hp);
     ecs::PlayerRuntime::SetSP(GetEntityHandle(), t->sp);
@@ -3552,7 +3552,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
     ecs::PointSystem::SetReal(GetEntityHandle(), POINT_HT, t->bCon);
     ecs::PointSystem::SetReal(GetEntityHandle(), POINT_IQ, t->bInt);
 
-    ComputePoints();
+    ecs::PointSystem::Compute(GetEntityHandle());
 
     ecs::PlayerRuntime::SetHP(GetEntityHandle(), ecs::PointSystem::GetMaxHP(GetEntityHandle()));
     ecs::PlayerRuntime::SetSP(GetEntityHandle(), ecs::PointSystem::GetMaxSP(GetEntityHandle()));

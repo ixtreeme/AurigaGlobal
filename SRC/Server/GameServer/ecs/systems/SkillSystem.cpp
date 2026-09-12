@@ -1416,7 +1416,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			if (iReadCount >= needBookCount) {
 				SetSkillLevel(dwSkillVnum, bLastLevel + 1);
 
-				ComputePoints();
+				ecs::PointSystem::Compute(GetEntityHandle());
 				SkillLevelPacket();
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
@@ -1939,7 +1939,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	LogManager::instance().CharLog(GetEntityHandle(), pkSk->dwVnum, "SKILLUP", szSkillUp);
 	ecs::SessionSystem::Save(GetEntityHandle());
 
-	ComputePoints();
+	ecs::PointSystem::Compute(GetEntityHandle());
 	SkillLevelPacket();
 }
 

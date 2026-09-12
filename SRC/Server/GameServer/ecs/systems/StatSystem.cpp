@@ -251,11 +251,6 @@ void Compute(entt::entity e)
 }
 } // namespace ecs::PointSystem
 
-void CHARACTER::ComputePoints()
-{
-    ecs::PointSystem::Compute(GetEntityHandle());
-}
-
 
 
 

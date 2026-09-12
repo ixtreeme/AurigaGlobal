@@ -3449,7 +3449,7 @@ ACMD(do_horse_level)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "horse level set (%s: %d)", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), level);
 
 	victim->SetHorseLevel(level);
-	victim->ComputePoints();
+	ecs::PointSystem::Compute(victim->GetEntityHandle());
 	victim->SkillLevelPacket();
 	return;
 }
@@ -4187,7 +4187,7 @@ ACMD (do_all_skill_master)
 			}
 		}
 	}
-	ch->ComputePoints();
+	ecs::PointSystem::Compute(character);
 	ch->SkillLevelPacket();
 }
 

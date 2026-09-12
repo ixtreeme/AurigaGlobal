@@ -187,7 +187,7 @@ ACMD(do_stat2)
 	limit = ecs::PointSystem::GetReal(character, idx) + limit >= MAX_STATUS_ALTERNATIVE ? MAX_STATUS_ALTERNATIVE - ecs::PointSystem::GetReal(character, idx) : limit;
 	ecs::PointSystem::SetReal(character, idx, ecs::PointSystem::GetReal(character, idx) + limit);
 	ecs::PointSystem::Set(character, idx, ecs::PointSystem::Get(character, idx) + limit);
-	ch->ComputePoints();
+	ecs::PointSystem::Compute(character);
 	ecs::PointSystem::Change(character, idx, 0);
 
 	if (idx == POINT_IQ) {
@@ -198,7 +198,7 @@ ACMD(do_stat2)
 	}
 
 	ecs::PointSystem::Change(character, POINT_STAT, -limit);
-	ch->ComputePoints();
+	ecs::PointSystem::Compute(character);
 }
 
 #ifdef ENABLE_BIOLOGIST_UI
@@ -834,7 +834,7 @@ ACMD(do_doctrine_choose) {
 #endif
 		}
 
-		ch->ComputePoints();
+		ecs::PointSystem::Compute(character);
 		ch->SkillLevelPacket();
 	}
 }

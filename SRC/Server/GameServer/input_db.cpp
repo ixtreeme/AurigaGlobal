@@ -2033,7 +2033,7 @@ void CInputDB::ReloadProto(const char * c_pData)
 
 	CMotionManager::instance().Build();
 
-	CHARACTER_MANAGER::instance().for_each_pc(std::mem_fn(&CHARACTER::ComputePoints));
+	CHARACTER_MANAGER::instance().for_each_pc([](LPCHARACTER ch) { ecs::PointSystem::Compute(ch->GetEntityHandle()); });
 }
 
 void CInputDB::GuildSkillUsableChange(const char* c_pData)

@@ -2614,11 +2614,10 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
 		const entt::entity ch = *it;
-		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
 		if (ch == entt::null)
 			continue;
 
-		pkCh->ComputePoints();
+		ecs::PointSystem::Compute(ch);
 		NetworkSyncSystem::PointsPacket(ch);
 	}
 
@@ -2685,11 +2684,10 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
 		const entt::entity ch = *it;
-		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
 		if (ch == entt::null)
 			continue;
 
-		pkCh->ComputePoints();
+		ecs::PointSystem::Compute(ch);
 		NetworkSyncSystem::PointsPacket(ch);
 	}
 

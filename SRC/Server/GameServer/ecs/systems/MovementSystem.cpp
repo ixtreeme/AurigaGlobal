@@ -697,7 +697,7 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
     }
 
     CombatSystem::SetValidComboInterval(e, 0);
-    self->ComputePoints();
+    ecs::PointSystem::Compute(e);
 #ifdef ENABLE_FAKE_SHOP_HEADER
     if (ecs::PlayerRuntime::IsPC(e))
     {
