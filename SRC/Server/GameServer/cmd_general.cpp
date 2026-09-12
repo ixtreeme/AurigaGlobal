@@ -3620,15 +3620,15 @@ ACMD(do_ride)
 	}
 #endif
 
-	if (ch->IsHorseRiding())
+	if (MountSystem::IsHorseRiding(character))
 	{
-		ch->StopRiding();
+		MountSystem::StopRiding(character);
 		return;
 	}
 
-	if (ch->GetHorse() != nullptr)
+	if (MountSystem::GetSummonedHorse(character) != entt::null)
 	{
-	    ch->StartRiding();
+	    MountSystem::StartRiding(character);
 	    return;
 	}
 

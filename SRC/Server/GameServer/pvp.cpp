@@ -276,17 +276,17 @@ EVENTFUNC(pvp_duel_counter)
 					MountSystem::SetMountVnum(characterB, 0);
 				}
 
-				if (chA->IsHorseRiding())
-					chA->StopRiding();
+				if (MountSystem::IsHorseRiding(characterA))
+					MountSystem::StopRiding(characterA);
 
-				if (chB->IsHorseRiding())
-					chB->StopRiding();
+				if (MountSystem::IsHorseRiding(characterB))
+					MountSystem::StopRiding(characterB);
 
-				if (chA->GetHorse())
-					chA->HorseSummon(false);
+				if (MountSystem::GetSummonedHorse(characterA) != entt::null)
+					MountSystem::SummonHorse(characterA, false);
 
-				if (chB->GetHorse())
-					chB->HorseSummon(false);
+				if (MountSystem::GetSummonedHorse(characterB) != entt::null)
+					MountSystem::SummonHorse(characterB, false);
 			}
 
 			int m_nTableSkill[] = {94,95,96,109,110,111};
@@ -903,9 +903,9 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	// The mount restriction below only gates PC-vs-PC combat.
 	if (!(ecs::PlayerRuntime::IsPC(victim)) || !(ecs::PlayerRuntime::IsPC(character)))
 		return true;
-	if( true == pkChr->IsHorseRiding() )
+	if (MountSystem::IsHorseRiding(character))
 	{
-		if( pkChr->GetHorseLevel() > 0 && 1 == pkChr->GetHorseGrade() )
+		if (MountSystem::GetHorseLevel(character) > 0 && 1 == MountSystem::GetHorseGrade(character))
 			return false;
 	}
 	else

@@ -3412,11 +3412,10 @@ ACMD(do_clear_quest)
 
 ACMD(do_horse_state)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Horse Information:");
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Level  %d", ch->GetHorseLevel());
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Health %d/%d (%d%%)", ch->GetHorseHealth(), ch->GetHorseMaxHealth(), ch->GetHorseHealth() * 100 / ch->GetHorseMaxHealth());
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Stam   %d/%d (%d%%)", ch->GetHorseStamina(), ch->GetHorseMaxStamina(), ch->GetHorseStamina() * 100 / ch->GetHorseMaxStamina());
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Level  %d", MountSystem::GetHorseLevel(character));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Health %d/%d (%d%%)", MountSystem::GetHorseHealth(character), MountSystem::GetHorseMaxHealth(character), MountSystem::GetHorseHealth(character) * 100 / MountSystem::GetHorseMaxHealth(character));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Stam   %d/%d (%d%%)", MountSystem::GetHorseStamina(character), MountSystem::GetHorseMaxStamina(character), MountSystem::GetHorseStamina(character) * 100 / MountSystem::GetHorseMaxStamina(character));
 }
 
 ACMD(do_horse_level)
@@ -3457,23 +3456,21 @@ ACMD(do_horse_level)
 
 ACMD(do_horse_ride)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->IsHorseRiding())
-		ch->StopRiding();
+	if (MountSystem::IsHorseRiding(character))
+		MountSystem::StopRiding(character);
 	else
-		ch->StartRiding();
+		MountSystem::StartRiding(character);
 }
 
 ACMD(do_horse_summon)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (ch->IsRidingMount())
+	if (MountSystem::IsRidingCostume(character))
 		return;
 #endif
 
-	ch->HorseSummon(true, true);
+	MountSystem::SummonHorse(character, true, true);
 }
 
 ACMD(do_horse_unsummon)
@@ -4170,7 +4167,7 @@ ACMD (do_full_set)
 ACMD (do_all_skill_master)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->SetHorseLevel(SKILL_MAX_LEVEL);
+	MountSystem::SetHorseLevel(character, SKILL_MAX_LEVEL);
 	for (int i = 0; i < SKILL_MAX_NUM; i++)
 	{
 		if (true == SkillSystem::CanUseSkill(character, i))

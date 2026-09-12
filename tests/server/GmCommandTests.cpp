@@ -767,7 +767,16 @@ unsigned int CGuild::UnderAnyWar(unsigned char) { Unexpected(); }
 bool CEntity::IsType(int)const { Unexpected(); }
 SECTREE * CEntity::GetSectree(void)const { Unexpected(); }
 void ecs::PlayerRuntime::SetObserverMode(entt::entity, bool) { Unexpected(); }
-bool CHorseRider::IsHorseRiding(void)const { return false; }
+bool MountSystem::IsHorseRiding(entt::entity) { Unexpected(); }
+bool MountSystem::IsRidingCostume(entt::entity) { Unexpected(); }
+bool MountSystem::StartRiding(entt::entity) { Unexpected(); }
+bool MountSystem::StopRiding(entt::entity) { Unexpected(); }
+int MountSystem::GetHorseLevel(entt::entity) { Unexpected(); }
+void MountSystem::SetHorseLevel(entt::entity,int) { Unexpected(); }
+int MountSystem::GetHorseHealth(entt::entity) { Unexpected(); }
+int MountSystem::GetHorseMaxHealth(entt::entity) { Unexpected(); }
+int MountSystem::GetHorseStamina(entt::entity) { Unexpected(); }
+int MountSystem::GetHorseMaxStamina(entt::entity) { Unexpected(); }
 short CHorseRider::GetHorseMaxHealth(void) { Unexpected(); }
 short CHorseRider::GetHorseMaxStamina(void) { Unexpected(); }
 void CHorseRider::UpdateHorseStamina(int,bool) { Unexpected(); }

@@ -736,10 +736,11 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 				LOG_INFO("ARENA : Observer add failed");
 			}
 
-			if (ch->IsHorseRiding() == true)
+			const entt::entity rider = ch->GetEntityHandle();
+			if (MountSystem::IsHorseRiding(rider))
 			{
-				ch->StopRiding();
-				ch->HorseSummon(false);
+				MountSystem::StopRiding(rider);
+				MountSystem::SummonHorse(rider, false);
 			}
 		}
 		else if (memberFlag == MEMBER_DUELIST)
@@ -750,10 +751,11 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&duelStart, sizeof(TPacketGCDuelStart));
 
-			if (ch->IsHorseRiding() == true)
+			const entt::entity rider = ch->GetEntityHandle();
+			if (MountSystem::IsHorseRiding(rider))
 			{
-				ch->StopRiding();
-				ch->HorseSummon(false);
+				MountSystem::StopRiding(rider);
+				MountSystem::SummonHorse(rider, false);
 			}
 
 			LPPARTY pParty = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
@@ -782,9 +784,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	else if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 113)
 	{
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		if (ch->IsHorseRiding()) {
-			ch->StopRiding();
-			ch->HorseSummon(false);
+		const entt::entity rider = ch->GetEntityHandle();
+		if (MountSystem::IsHorseRiding(rider)) {
+			MountSystem::StopRiding(rider);
+			MountSystem::SummonHorse(rider, false);
 		}
 
 		CMountSystem* mountSystem = ch->GetMountSystem();
@@ -879,9 +882,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (ecs::SocialSystem::GetWarMap(ch->GetEntityHandle())) {
-		if (ch->IsHorseRiding()) {
-			ch->StopRiding();
-			ch->HorseSummon(false);
+		const entt::entity rider = ch->GetEntityHandle();
+		if (MountSystem::IsHorseRiding(rider)) {
+			MountSystem::StopRiding(rider);
+			MountSystem::SummonHorse(rider, false);
 		}
 
 		CMountSystem* mountSystem = ch->GetMountSystem();

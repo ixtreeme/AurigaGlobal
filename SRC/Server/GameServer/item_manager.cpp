@@ -1601,7 +1601,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		//}
 	}
 
-	if (pkKiller->IsHorseRiding() &&
+	if (MountSystem::IsHorseRiding(killer) &&
 		GetDropPerKillPct(1000, 1000000, iDeltaPercent, "horse_skill_book_drop") >= number(1, iRandRange))
 	{
 		LOG_INFO("EVENT HORSE_SKILL_BOOK_DROP");
