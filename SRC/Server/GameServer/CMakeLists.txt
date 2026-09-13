@@ -119,6 +119,8 @@ add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     ecs/services/SpatialService.cpp
     ecs/systems/VisibilitySystem.cpp
     ecs/systems/MovementSystem.cpp
+    event.cpp
+    event_queue.cpp
 )
 target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 if(MSVC)

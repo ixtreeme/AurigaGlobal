@@ -34,6 +34,9 @@
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/vital_components.hpp"
+#include "../../SRC/Server/GameServer/event_queue.h"
+#include "../../SRC/Server/GameServer/affect.h"
 #include "../../SRC/Server/GameServer/item_manager.h"
 #include "../../SRC/Server/GameServer/ecs/ItemRegistry.hpp"
 #include "../../SRC/Server/GameServer/ecs/CBuildingRegistry.hpp"
@@ -58,6 +61,26 @@ int VIEW_RANGE = 5000;
 int VIEW_BONUS_RANGE = 500;
 namespace {
 int checks = 0;
+HEART recoveryHeart {};
+TAreaMap recoveryAreas;
+struct RecoveryDungeon : CDungeon { RecoveryDungeon() : CDungeon(1, 1, 1) {} };
+struct RecoveryProbe {
+    TMobTable mob {};
+    CDungeon* dungeon = nullptr;
+    bool dead = false, stun = false, poison = false, missingMob = false;
+    int64_t bonus = 0;
+};
+std::function<void(entt::entity, int)> onRecovery;
+int recoveryChanges = 0, recoveryNotices = 0;
+RecoveryProbe& Recovery(entt::entity e) {
+    if (!g_registry.valid(e) || !g_registry.all_of<RecoveryProbe>(e))
+        throw std::runtime_error("recovery service received stale/unexpected entity");
+    return g_registry.get<RecoveryProbe>(e);
+}
+void RecoveryCallback(entt::entity e, int stage) {
+    Recovery(e); if (onRecovery) { auto fn = onRecovery; fn(e, stage); }
+}
+void Recovered(const ecs::EvRecovery& ev) { ++recoveryNotices; RecoveryCallback(ev.entity, 3); }
 void Check(bool good, const char* why) { ++checks; if (!good) throw std::runtime_error(why); }
 [[noreturn]] void Unexpected() { throw std::runtime_error("unexpected legacy spatial service"); }
 std::map<std::tuple<int, int, int>, SECTREE*> sectors;
@@ -135,6 +158,8 @@ bool Visible(entt::entity source, entt::entity viewer) {
         g_registry.get<ecs::ViewMap>(viewer).visible.contains(source);
 }
 void Reset() {
+    onRecovery = {}; recoveryChanges = recoveryNotices = 0;
+    event_destroy(); recoveryHeart.pulse = 0; recoveryHeart.passes_per_sec = 25;
     onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
     movementPackets.clear(); animationPackets.clear(); onAnimation = {};
     transitions.clear(); motionSettings.clear(); weaponProtos.clear();
@@ -145,6 +170,9 @@ struct Callback {
     void Run(entt::registry& reg, entt::entity e) { fn(reg, e); }
 };
 }
+
+LPHEART thecore_heart = &recoveryHeart;
+void ContinueOnFatalError() { Unexpected(); }
 
 std::shared_ptr<spdlog::logger> logging::GetLogger() {
     static auto log = std::make_shared<spdlog::logger>("spatial-test"); return log;
@@ -193,7 +221,9 @@ DESC* ecs::PlayerRuntime::GetDesc(entt::entity e) {
 uint32_t get_dword_time() { return 123456; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.all_of<ecs::TagPC>(e); }
 bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs::StoneAITag>(e); }
-void ecs::PlayerRuntime::MonsterLog(entt::entity, const char*) {}
+void ecs::PlayerRuntime::MonsterLog(entt::entity e, const char*) {
+    if (g_registry.all_of<RecoveryProbe>(e)) RecoveryCallback(e, 5);
+}
 void ecs::PlayerRuntime::CancelCharEvent(entt::entity e, CharEvent) { Check(g_registry.valid(e), "cancel event on stale entity"); }
 
 // CHARACTER::Show moved into MovementSystem.cpp too, and brought the battle
@@ -214,7 +244,7 @@ void CombatSystem::SendLeaderboardData(entt::entity) { Unexpected(); }
 void CombatSystem::SendLeaderboardDataGuild(entt::entity) { Unexpected(); }
 void CombatSystem::SendLeaderboardDataSkillMob(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdateMountInventoryCountOverhead(entt::entity, entt::entity) { Unexpected(); }
-void CombatSystem::UpdateKillerMode(entt::entity) { Unexpected(); }
+void CombatSystem::UpdateKillerMode(entt::entity e) { RecoveryCallback(e, 1); }
 void CEntity::UpdateSectree() { Unexpected(); }
 uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, uint8_t) { Unexpected(); }
@@ -248,7 +278,7 @@ uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsGoto(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsWarp(entt::entity) { Unexpected(); }
-LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity) { Unexpected(); }
+LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity e) { return Recovery(e).dungeon; }
 // MovementSystem asks for the party on a sector change now that CHARACTER
 // has no getter of its own.
 LPPARTY ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
@@ -278,9 +308,6 @@ void ecs::ViewSystem::PacketView(entt::entity e, const void* data, int size, ent
 }
 // Fail-fast link seams for the still-unmigrated functions in MovementSystem.cpp.
 // None may be reached by the native tick or packet tests.
-void intrusive_ptr_add_ref(event*) { Unexpected(); }
-void intrusive_ptr_release(event*) { Unexpected(); }
-LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { Unexpected(); }
 void ecs::ChatSystem::Send(entt::entity, uint8_t, const char*, ...) { Unexpected(); }
 LPSHOP ecs::SocialSystem::GetMyShop(entt::entity) { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity e) { return motionSettings[e].polymorphed; }
@@ -304,9 +331,9 @@ int32_t ecs::PlayerRuntime::GetY(entt::entity e) {
 LPEVENT ecs::PlayerRuntime::GetCharEvent(entt::entity, CharEvent) { Unexpected(); }
 void ecs::PlayerRuntime::SetCharEvent(entt::entity, CharEvent, LPEVENT) { Unexpected(); }
 int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
-void CombatSystem::CheckTarget(entt::entity) { Unexpected(); }
-bool CombatSystem::IsStun(entt::entity) { Unexpected(); }
-bool CombatSystem::IsDead(entt::entity) { Unexpected(); }
+void CombatSystem::CheckTarget(entt::entity e) { RecoveryCallback(e, 0); }
+bool CombatSystem::IsStun(entt::entity e) { return Recovery(e).stun; }
+bool CombatSystem::IsDead(entt::entity e) { return Recovery(e).dead; }
 int32_t CEntity::GetX() const { Unexpected(); }
 int32_t CEntity::GetY() const { Unexpected(); }
 int32_t CEntity::GetZ() const { Unexpected(); }
@@ -319,18 +346,27 @@ void Save(entt::entity) { Unexpected(); }
 void CHARACTER::Save() { Unexpected(); }
 const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
 uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
-void CombatSystem::DistributeSP(entt::entity, entt::entity, int) { Unexpected(); }
-int64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
+void CombatSystem::DistributeSP(entt::entity e, entt::entity target, int) {
+    Check(e == target, "recovery SP target mismatch"); RecoveryCallback(e, 2);
+}
+int64_t ecs::PlayerRuntime::GetHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).current; }
 int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }
 void ecs::PointSystem::Compute(entt::entity) { Unexpected(); }
-const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { Unexpected(); }
+const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity e) {
+    auto& data = Recovery(e); return data.missingMob ? nullptr : &data.mob;
+}
 void CHARACTER::PointChange(uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
 void CHARACTER::OnMove(bool) { Unexpected(); }
-bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
+bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t flag) {
+    Check(flag == AFF_POISON, "recovery read unexpected affect"); return Recovery(e).poison;
+}
 bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
 void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }
-int CDungeon::GetFlag(std::string) { Unexpected(); }
+CDungeon::CDungeon(IdType, int32_t, int32_t) : m_map_Area(recoveryAreas) {}
+CDungeon::~CDungeon() = default;
+int CDungeon::GetFlag(std::string key) { Check(key == "floor", "unexpected recovery dungeon flag"); return m_map_Flag[key]; }
+void CDungeon::SetFlag(std::string key, int32_t value) { m_map_Flag[key] = value; }
 CMotion::CMotion() {}
 CMotion::~CMotion() {}
 float CMotion::GetDuration() const { return m_fDuration; }
@@ -354,10 +390,19 @@ const TItemTable* ItemSystem::GetItemProto(entt::entity e) {
 uint32_t CParty::GetLeaderPID() { Unexpected(); }
 entt::entity CParty::GetLeader() { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity e, uint8_t point) {
-    Check(point == POINT_MOV_SPEED, "motion read wrong point"); return motionSettings[e].movePoint;
+    if (point == POINT_MOV_SPEED) return motionSettings[e].movePoint;
+    Recovery(e);
+    if (point == POINT_HP) return g_registry.get<ecs::Health>(e).current;
+    if (point == POINT_HP_REGEN) return Recovery(e).bonus;
+    Unexpected();
 }
-int ecs::PointSystem::GetMaxHP(entt::entity) { Unexpected(); }
-void ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
+int ecs::PointSystem::GetMaxHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).max; }
+void ecs::PointSystem::Change(entt::entity e, uint8_t point, int64_t amount, bool, bool, bool) {
+    Recovery(e); Check(point == POINT_HP, "recovery changed unexpected point"); ++recoveryChanges;
+    auto& health = g_registry.get<ecs::Health>(e);
+    health.current = static_cast<int32_t>(std::clamp<int64_t>(int64_t(health.current) + amount, 0, health.max));
+    RecoveryCallback(e, 4);
+}
 uint32_t g_start_position[4][2] {};
 int passes_per_sec = 25;
 int save_event_second_cycle = 60;
@@ -1156,18 +1201,183 @@ void NativeAIScheduleStorage() {
     Check(!g_registry.valid(e), "scheduler recreated stale entity");
 }
 
+entt::entity RecoveryActor(bool player = false, uint8_t type = CHAR_TYPE_MONSTER) {
+    const auto e = g_registry.create();
+    g_registry.emplace<ecs::CharacterType>(e, player ? uint8_t(CHAR_TYPE_PC) : type);
+    g_registry.emplace<ecs::Health>(e, 500, 1000);
+    auto& probe = g_registry.emplace<RecoveryProbe>(e);
+    probe.mob.bRegenCycle = 2; probe.mob.bRegenPercent = 10;
+    motionSettings[e].attached = player;
+    if (player) g_registry.emplace<ecs::TagPC>(e);
+    g_registry.emplace<ecs::MovementState>(e).lastMoveTime = get_dword_time();
+    return e;
+}
+LPEVENT RecoveryTimer(entt::entity e) {
+    const auto* events = g_registry.try_get<ecs::LegacyCharEvents>(e);
+    return events ? events->recovery : nullptr;
+}
+int RecoveryRun(int pulse) { recoveryHeart.pulse = pulse; return event_process(pulse); }
+
+void NativeRecoveryTimers() {
+    Reset(); auto e = RecoveryActor();
+    ecs::PlayerRuntime::StartRecoveryEvent(e); auto timer = RecoveryTimer(e);
+    Check(timer && event_time(timer) == 50, "native NPC recovery was not scheduled");
+    ecs::PlayerRuntime::StartRecoveryEvent(e);
+    Check(RecoveryTimer(e) == timer && event_count() == 1, "recovery start duplicated a timer");
+    Check(RecoveryRun(50) == 1 && g_registry.get<ecs::Health>(e).current == 600 &&
+        recoveryChanges == 1 && recoveryNotices == 1 && event_time(timer) == 50, "NPC recovery tick failed");
+    g_registry.get<ecs::Health>(e).current = 999;
+    RecoveryRun(100);
+    Check(g_registry.get<ecs::Health>(e).current == 1000 && !RecoveryTimer(e) && !timer->q_el,
+        "full NPC did not release recovery slot");
+
+    Reset(); e = RecoveryActor(true); ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e);
+    Check(event_time(timer) == 75, "player initial cadence changed");
+    RecoveryRun(75);
+    Check(g_registry.get<ecs::Health>(e).current == 525 && RecoveryTimer(e), "moving player recovery changed");
+    g_registry.get<ecs::MovementState>(e).lastMoveTime = 0; Recovery(e).bonus = 50;
+    RecoveryRun(150);
+    Check(g_registry.get<ecs::Health>(e).current == 622, "idle regen bonus truncation changed");
+    Recovery(e).poison = true; RecoveryRun(225);
+    Check(event_time(timer) == 3 && recoveryChanges == 2, "player poison cadence/heal changed");
+    Recovery(e).poison = false; g_registry.get<ecs::Health>(e).current = 1000; RecoveryRun(228);
+    Check(RecoveryTimer(e) && event_time(timer) == 75, "full player lost periodic maintenance");
+
+    Reset(); e = RecoveryActor(); Recovery(e).poison = true;
+    ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e); RecoveryRun(50);
+    Check(recoveryChanges == 0 && event_time(timer) == 50, "poisoned NPC healed/changed cadence");
+    Recovery(e).missingMob = true; RecoveryRun(100);
+    Check(!RecoveryTimer(e) && !timer->q_el, "missing prototype stranded timer");
+    ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e);
+    Check(event_time(timer) == 25, "missing prototype initial fallback changed");
+    RecoveryRun(125); Check(!RecoveryTimer(e), "missing prototype fallback did not stop");
+
+    Reset(); e = RecoveryActor(false, CHAR_TYPE_DOOR);
+    ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e); RecoveryRun(50);
+    Check(recoveryChanges == 0 && RecoveryTimer(e), "door recovered HP");
+    Reset(); e = RecoveryActor(); motionSettings[e].race = 6193;
+    ecs::PlayerRuntime::StartRecoveryEvent(e); Check(!RecoveryTimer(e), "Meley exception lost");
+    for (bool stun : {false, true}) {
+        Reset(); e = RecoveryActor(); (stun ? Recovery(e).stun : Recovery(e).dead) = true;
+        ecs::PlayerRuntime::StartRecoveryEvent(e); Check(!RecoveryTimer(e), "dead/stunned actor started recovery");
+        Recovery(e).stun = Recovery(e).dead = false; ecs::PlayerRuntime::StartRecoveryEvent(e);
+        (stun ? Recovery(e).stun : Recovery(e).dead) = true; timer = RecoveryTimer(e); RecoveryRun(50);
+        Check(!RecoveryTimer(e) && !timer->q_el && recoveryChanges == 0, "dead/stunned timer did not stop");
+    }
+    for (int action = 0; action < 3; ++action) {
+        Reset(); e = RecoveryActor(); ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e);
+        if (action == 0) g_registry.remove<ecs::Health>(e);
+        if (action == 1) g_registry.remove<ecs::CharacterType>(e);
+        if (action == 2) g_registry.remove<ecs::LegacyCharEvents>(e);
+        RecoveryRun(50);
+        Check(!RecoveryTimer(e) && !timer->q_el && recoveryChanges == 0, "removed recovery component was recreated/used");
+    }
+    Reset(); e = RecoveryActor(); ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e);
+    g_registry.destroy(e); const auto recycled = RecoveryActor();
+    Check(recycled != e && entt::to_entity(recycled) == entt::to_entity(e), "fixture did not recycle generation");
+    RecoveryRun(50);
+    Check(!timer->q_el && !RecoveryTimer(recycled) && recoveryChanges == 0, "retired timer reached recycled entity");
+
+    // Real event callbacks may retire the owner at any outward call boundary.
+    for (int stage = 0; stage <= 5; ++stage) {
+        Reset(); e = RecoveryActor(stage != 5); ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e);
+        onRecovery = [=](entt::entity current, int at) { if (at == stage) g_registry.destroy(current); };
+        RecoveryRun(stage == 5 ? 50 : 75);
+        Check(!g_registry.valid(e) && !timer->q_el && recoveryChanges == (stage == 4 ? 1 : 0),
+            "callback retirement left a stale recovery operation");
+    }
+    for (int stage : {0, 1, 2, 3, 4}) {
+        Reset(); e = RecoveryActor(true); ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e);
+        LPEVENT replacement;
+        onRecovery = [&](entt::entity current, int at) {
+            if (at != stage) return;
+            onRecovery = {};
+            event_cancel(&g_registry.get<ecs::LegacyCharEvents>(current).recovery);
+            ecs::PlayerRuntime::StartRecoveryEvent(current); replacement = RecoveryTimer(current);
+        };
+        RecoveryRun(75);
+        Check(replacement && replacement != timer && RecoveryTimer(e) == replacement && !timer->q_el &&
+            recoveryChanges == (stage == 4 ? 1 : 0), "old callback cleared/continued a replacement timer");
+    }
+
+    for (auto race : {3996u, 8202u}) {
+        Reset(); RecoveryDungeon dungeon;
+        e = RecoveryActor(); Recovery(e).mob.dwVnum = race; Recovery(e).dungeon = &dungeon;
+        dungeon.SetFlag("floor", race == 3996 ? 5 : 1);
+        ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e); RecoveryRun(50);
+        Check(g_registry.get<ecs::Health>(e).current == 535 && event_time(timer) == 250,
+            "special dungeon HP/cadence changed");
+        g_registry.get<ecs::Health>(e).current = 1000; RecoveryRun(300);
+        Check(RecoveryTimer(e) == timer && event_time(timer) == 75, "full special dungeon maintenance changed");
+        g_registry.get<ecs::Health>(e).current = 500; dungeon.SetFlag("floor", 99); RecoveryRun(375);
+        Check(g_registry.get<ecs::Health>(e).current == 600 && event_time(timer) == 50,
+            "wrong dungeon floor did not use normal NPC recovery");
+        dungeon.SetFlag("floor", race == 3996 ? 5 : 1);
+        onRecovery = [&](entt::entity current, int stage) { if (stage == 2) g_registry.destroy(current); };
+        RecoveryRun(425); Check(!g_registry.valid(e) && !timer->q_el, "special dungeon used retired SP recipient");
+    }
+    // An unwinding callback must not leave a completed slot blocking restart.
+    for (int stage : {0, 1, 2, 3, 4}) {
+        Reset(); e = RecoveryActor(true); ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e);
+        onRecovery = [=](entt::entity, int at) { if (stage == at) throw std::runtime_error("injected recovery failure"); };
+        bool caught = false;
+        try { RecoveryRun(75); } catch (const std::runtime_error&) { caught = true; }
+        Check(caught && !RecoveryTimer(e) && !timer->q_el, "throwing callback stranded recovery slot");
+        onRecovery = {}; ecs::PlayerRuntime::StartRecoveryEvent(e);
+        Check(RecoveryTimer(e) && RecoveryTimer(e) != timer, "recovery could not restart after exception");
+    }
+    Reset(); e = RecoveryActor(true); ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e);
+    LPEVENT afterException;
+    onRecovery = [&](entt::entity current, int stage) {
+        if (stage != 3) return;
+        event_cancel(&g_registry.get<ecs::LegacyCharEvents>(current).recovery);
+        ecs::PlayerRuntime::StartRecoveryEvent(current); afterException = RecoveryTimer(current);
+        throw std::runtime_error("failure after timer replacement");
+    };
+    try { RecoveryRun(75); } catch (const std::runtime_error&) {}
+    Check(afterException && RecoveryTimer(e) == afterException, "unwinding cleared a replacement timer");
+
+    // Component construction is also an external callback boundary.
+    for (int action = 0; action < 3; ++action) {
+        Reset(); e = RecoveryActor();
+        Callback observer {[&](entt::registry& reg, entt::entity current) {
+            if (action == 0) reg.destroy(current);
+            if (action == 1) reg.remove<ecs::LegacyCharEvents>(current);
+            if (action == 2) ecs::PlayerRuntime::StartRecoveryEvent(current);
+        }};
+        auto connection = entt::scoped_connection(g_registry.on_construct<ecs::LegacyCharEvents>().connect<&Callback::Run>(observer));
+        ecs::PlayerRuntime::StartRecoveryEvent(e);
+        Check(event_count() == (action == 2 ? 1 : 0), "construction callback stranded/duplicated a timer");
+    }
+
+    Reset(); e = RecoveryActor(); g_registry.get<ecs::Health>(e).max = INT32_MAX;
+    Recovery(e).mob.bRegenPercent = 255; ecs::PlayerRuntime::StartRecoveryEvent(e); RecoveryRun(50);
+    Check(g_registry.get<ecs::Health>(e).current == INT32_MAX, "NPC regen gain overflowed payload");
+    for (bool negative : {false, true}) {
+        Reset(); e = RecoveryActor(true);
+        Recovery(e).bonus = negative ? INT64_MIN : INT64_MAX;
+        ecs::PlayerRuntime::StartRecoveryEvent(e); RecoveryRun(75);
+        Check(g_registry.get<ecs::Health>(e).current == (negative ? 0 : 1000), "extreme regen bonus overflowed");
+    }
+    Reset(); e = g_registry.create(); ecs::PlayerRuntime::StartRecoveryEvent(e);
+    ecs::PlayerRuntime::StartRecoveryEvent(entt::null);
+    Check(event_count() == 0, "non-character/null entity started recovery");
+}
+
 }
 int main() {
     try {
         SECTREE_MANAGER maps; CHARACTER_MANAGER characters; DESC_MANAGER descriptors; CMotionManager motionManager;
         ecs::VisibilitySystem::Init(g_registry);
+        auto recoveryConnection = entt::scoped_connection(g_dispatcher.sink<ecs::EvRecovery>().connect<&Recovered>());
         MembershipAndSnapshots(); VisibilityRoundTrip(); ViewCallbacks(); PreparationAndPCs();
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
         NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
         NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations(); ShowHeightSentinel();
-        ecs::VisibilitySystem::Shutdown(g_registry);
+        NativeRecoveryTimers();
+        Reset(); ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

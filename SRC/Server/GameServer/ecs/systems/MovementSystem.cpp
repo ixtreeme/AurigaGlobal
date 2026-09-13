@@ -12,6 +12,7 @@
 #include "../AIHelpers.hpp"
 
 #include <cmath>
+#include <exception>
 #include <algorithm>
 #include <tuple>
 #include <optional>
@@ -44,6 +45,7 @@
 #include "AffectSystem.hpp"
 #include "../PositionSync.hpp"
 #include "../components/dirty_components.hpp"
+#include "../components/vital_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/movement_components.hpp"
 #include "../components/status_components.hpp"
@@ -1337,47 +1339,64 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
     }
 }
 
+namespace {
+bool HasRecoveryCharacter(entt::entity e)
+{
+    return g_registry.valid(e) && g_registry.all_of<ecs::CharacterType, ecs::Health>(e);
+}
+
+bool OwnsRecoveryEvent(entt::entity e, const LPEVENT& event)
+{
+    if (!g_registry.valid(e)) return false;
+    const auto* events = g_registry.try_get<ecs::LegacyCharEvents>(e);
+    return events && events->recovery == event;
+}
+
+int StopRecoveryEvent(entt::entity e, const LPEVENT& event)
+{
+    // Never clear a replacement installed by a callback.
+    if (OwnsRecoveryEvent(e, event))
+        g_registry.get<ecs::LegacyCharEvents>(e).recovery = nullptr;
+    return 0;
+}
+}
+
 namespace ecs::PlayerRuntime {
 
 void StartRecoveryEvent(entt::entity e)
 {
-	if (e == entt::null || !g_registry.valid(e))
-		return;
+    if (!HasRecoveryCharacter(e)) return;
+    if (const auto* events = g_registry.try_get<ecs::LegacyCharEvents>(e);
+        events && events->recovery)
+        return;
+    if (CombatSystem::IsDead(e) || CombatSystem::IsStun(e)) return;
 
-	if (GetCharEvent(e, CharEvent::Recovery))
-		return;
-
-	if (CombatSystem::IsDead(e) || CombatSystem::IsStun(e))
-		return;
-
-	// CHARACTER::IsNPC() is m_bCharType != CHAR_TYPE_PC - monsters and stones
-	// included - so this reads the CharacterType component, not TagNPC.
-	const auto* type = g_registry.try_get<ecs::CharacterType>(e);
-	const bool isNotPCType = type && type->value != CHAR_TYPE_PC;
-	if (isNotPCType && ecs::PointSystem::Get(e, POINT_HP) >= ecs::PointSystem::GetMaxHP(e))
-		return;
-
+    const auto type = g_registry.get<ecs::CharacterType>(e).value;
+    if (type != CHAR_TYPE_PC && ecs::PointSystem::Get(e, POINT_HP) >= ecs::PointSystem::GetMaxHP(e))
+        return;
 #ifdef ENABLE_MELEY_LAIR
-	const uint32_t racenum = GetRaceNum(e);
-	if (racenum == 6193 || racenum == 6118)
-		return;
+    const uint32_t race = GetRaceNum(e);
+    if (race == 6193 || race == 6118) return;
 #endif
 
-	char_event_info* info = AllocEventInfo<char_event_info>();
-	info->ch = e;
+    // Preserve descriptor-based initial scheduling and the mob's delay.
+    int seconds = 3;
+    if (!GetDesc(e)) {
+        const auto* mob = GetMobTable(e);
+        seconds = mob ? std::max<int>(1, mob->bRegenCycle) : 1;
+    }
 
-	// CHARACTER::IsPC() is the descriptor test, as everywhere else here.
-	// The regen cycle comes off the mob table MobDataRef already points at,
-	// so no legacy object is needed for it.
-	int iSec = 3;
-	if (!GetDesc(e))
-	{
-		const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
-		iSec = (mob && mob->data) ? std::max<uint8_t>(1, mob->data->m_table.bRegenCycle) : 1;
-	}
-
-	SetCharEvent(e, CharEvent::Recovery,
-		event_create(recovery_event, info, PASSES_PER_SEC(iSec)));
+    if (!g_registry.all_of<ecs::LegacyCharEvents>(e))
+        g_registry.emplace<ecs::LegacyCharEvents>(e);
+    // Construction observers may remove the slot, retire the entity or start
+    // another timer. Do not retain emplace's reference across those callbacks.
+    if (!HasRecoveryCharacter(e)) return;
+    auto* events = g_registry.try_get<ecs::LegacyCharEvents>(e);
+    if (!events || events->recovery || CombatSystem::IsDead(e) || CombatSystem::IsStun(e))
+        return;
+    auto* info = AllocEventInfo<char_event_info>();
+    info->ch = e;
+    events->recovery = event_create(recovery_event, info, PASSES_PER_SEC(seconds));
 }
 
 } // namespace ecs::PlayerRuntime
@@ -1948,136 +1967,96 @@ float CHARACTER::GetRotation() const
 	return 0.0f;
 }
 
-const int aiRecoveryPercents[10] = { 1, 5, 5, 5, 5, 5, 5, 5, 5, 5 };
+namespace {
+int32_t RecoveryAmount(entt::entity e, int percent)
+{
+    const int64_t base = 15 + int64_t(ecs::PointSystem::GetMaxHP(e)) * percent / 100;
+    // Preserve integer truncation for normal bonuses without overflowing on
+    // corrupt/extreme point values. EvRecovery's payload is int32_t.
+    const auto bonus = std::trunc(static_cast<long double>(base) *
+        ecs::PointSystem::Get(e, POINT_HP_REGEN) / 100.0L);
+    return static_cast<int32_t>(std::clamp(static_cast<long double>(base) + bonus,
+        static_cast<long double>(INT32_MIN), static_cast<long double>(INT32_MAX)));
+}
+}
 
 EVENTFUNC(recovery_event)
 {
-	char_event_info* info = dynamic_cast<char_event_info*>(event->info);
-	if (info == nullptr)
-	{
-		LOG_ERROR("recovery_event> <Factor> Null pointer");
-		return 0;
-	}
+    const auto* info = event ? dynamic_cast<char_event_info*>(event->info) : nullptr;
+    if (!info) {
+        LOG_ERROR("recovery_event: missing character event payload");
+        return 0;
+    }
+    const auto character = info->ch;
+    struct FailureGuard {
+        entt::entity character;
+        const LPEVENT& timer;
+        int exceptions = std::uncaught_exceptions();
+        ~FailureGuard() {
+            if (std::uncaught_exceptions() > exceptions)
+                StopRecoveryEvent(character, timer);
+        }
+    } failure {character, event};
+    const auto current = [&] {
+        return OwnsRecoveryEvent(character, event) && HasRecoveryCharacter(character) &&
+            !event->is_force_to_end && !CombatSystem::IsDead(character) && !CombatSystem::IsStun(character);
+    };
+    const auto stop = [&] { return StopRecoveryEvent(character, event); };
+    const auto publish = [&](int32_t gain, bool amount = false) {
+        g_dispatcher.trigger(ecs::EvRecovery {character, gain, 0});
+        if (!current()) return false;
+        ecs::PointSystem::Change(character, POINT_HP, gain, amount);
+        return current();
+    };
+    if (!current()) return stop();
 
-	LPCHARACTER	ch = ecs::LegacyCharOf(info->ch);
-
-	if (ch == nullptr) {
-		return 0;
-	}
-	const entt::entity character = info->ch;
-
-	if (!ecs::PlayerRuntime::IsPC(character))
-	{
-		// The four reads below used to go through a reference that dereferenced
-		// m_pkMobData unguarded. A non-PC with no mob table has nothing to
-		// regenerate from, so the event stops instead.
-		const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(character);
-		if (!mobTable)
-			return 0;
-
-		if (AffectSystem::IsAffectFlag(character, AFF_POISON))
-			return PASSES_PER_SEC(std::max((uint8_t)1, mobTable->bRegenCycle));
-
-
+    if (!ecs::PlayerRuntime::IsPC(character)) {
+        const auto* mob = ecs::PlayerRuntime::GetMobTable(character);
+        if (!mob) return stop();
+        // No prototype pointer survives a gameplay callback.
+        const auto race = mob->dwVnum;
+        const auto percent = mob->bRegenPercent;
+        const int cycle = PASSES_PER_SEC(std::max<int>(1, mob->bRegenCycle));
+        if (AffectSystem::IsAffectFlag(character, AFF_POISON)) return cycle;
 #ifdef ENABLE_DS_RUNE
-		if (mobTable->dwVnum == 3996) {
-			LPDUNGEON target = ecs::SocialSystem::GetDungeon(character);
-			if (target) {
-				if (target->GetFlag("floor") == 5) {
-					CombatSystem::DistributeSP(character, character);
-					if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(character))
-						return PASSES_PER_SEC(3);
-
-					int iPercent = 0;
-					int iAmount = 0;
-
-					{
-						iPercent = 2;
-						iAmount = 15 + (ecs::PointSystem::GetMaxHP(character) * iPercent) / 100;
-					}
-
-					iAmount += (iAmount * ecs::PointSystem::Get(character, POINT_HP_REGEN)) / 100;
-					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(character).data(), iPercent, ecs::PointSystem::Get(character, POINT_HP_REGEN), iAmount);
-					g_dispatcher.trigger(ecs::EvRecovery { character, iAmount, 0 });
-					ecs::PointSystem::Change(character, POINT_HP, iAmount, false);
-					return PASSES_PER_SEC(10);
-				}
-			}
-		}
-		else if (mobTable->dwVnum == 8202) {
-			LPDUNGEON target = ecs::SocialSystem::GetDungeon(character);
-			if (target) {
-				if (target->GetFlag("floor") == 1) {
-					CombatSystem::DistributeSP(character, character);
-					if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(character))
-						return PASSES_PER_SEC(3);
-
-					int iPercent = 0;
-					int iAmount = 0;
-
-					{
-						iPercent = 2;
-						iAmount = 15 + (ecs::PointSystem::GetMaxHP(character) * iPercent) / 100;
-					}
-
-					iAmount += (iAmount * ecs::PointSystem::Get(character, POINT_HP_REGEN)) / 100;
-					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(character).data(), iPercent, ecs::PointSystem::Get(character, POINT_HP_REGEN), iAmount);
-					g_dispatcher.trigger(ecs::EvRecovery { character, iAmount, 0 });
-					ecs::PointSystem::Change(character, POINT_HP, iAmount, false);
-					return PASSES_PER_SEC(10);
-				}
-			}
-		}
+        if (race == 3996 || race == 8202) {
+            auto* dungeon = ecs::SocialSystem::GetDungeon(character);
+            const int floor = dungeon ? dungeon->GetFlag("floor") : 0;
+            if (floor == (race == 3996 ? 5 : 1)) {
+                CombatSystem::DistributeSP(character, character);
+                if (!current()) return stop();
+                if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(character))
+                    return PASSES_PER_SEC(3);
+                if (!publish(RecoveryAmount(character, 2))) return stop();
+                return PASSES_PER_SEC(10);
+            }
+        }
 #endif
+        if (g_registry.get<ecs::CharacterType>(character).value != CHAR_TYPE_DOOR) {
+            const auto gain = static_cast<int32_t>(std::clamp<int64_t>(
+                int64_t(ecs::PointSystem::GetMaxHP(character)) * percent / 100, 1, INT32_MAX));
+            const auto text = fmt::format("HP_REGEN +{}", gain);
+            ecs::PlayerRuntime::MonsterLog(character, text.c_str());
+            if (!current() || !publish(gain, true)) return stop();
+        }
+        if (ecs::PlayerRuntime::GetHP(character) >= ecs::PointSystem::GetMaxHP(character))
+            return stop();
+        return cycle;
+    }
 
-		if (!ch->IsDoor())
-		{
-			const int64_t hpGain = std::max(int64_t {1}, (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(character)) * mobTable->bRegenPercent) / 100);
-			ch->MonsterLog("HP_REGEN +%d", hpGain);
-			g_dispatcher.trigger(ecs::EvRecovery { character, static_cast<int32_t>(hpGain), 0 });
-			ecs::PointSystem::Change(character, POINT_HP, hpGain);
-		}
-
-		if (ecs::PlayerRuntime::GetHP(character) >= ecs::PointSystem::GetMaxHP(character))
-		{
-			ecs::PlayerRuntime::SetCharEvent(character, ecs::PlayerRuntime::CharEvent::Recovery, nullptr);
-			return 0;
-		}
-
-		return PASSES_PER_SEC(std::max((uint8_t)1, mobTable->bRegenCycle));
-	}
-	else
-	{
-		CombatSystem::CheckTarget(character);
-		CombatSystem::UpdateKillerMode(character);
-
-		if (AffectSystem::IsAffectFlag(character, AFF_POISON) == true)
-		{
-			return 3;
-		}
-		int iSec = (get_dword_time() - ecs::MovementSystem::GetLastMoveTime(character)) / 3000;
-
-		CombatSystem::DistributeSP(character, character);
-
-		if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(character))
-			return PASSES_PER_SEC(3);
-
-		int iPercent = 0;
-		int iAmount = 0;
-
-		{
-			iPercent = aiRecoveryPercents[std::min(9, iSec)];
-			iAmount = 15 + (ecs::PointSystem::GetMaxHP(character) * iPercent) / 100;
-		}
-
-		iAmount += (iAmount * ecs::PointSystem::Get(character, POINT_HP_REGEN)) / 100;
-
-		LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(character).data(), iPercent, ecs::PointSystem::Get(character, POINT_HP_REGEN), iAmount);
-
-		g_dispatcher.trigger(ecs::EvRecovery { character, iAmount, 0 });
-		ecs::PointSystem::Change(character, POINT_HP, iAmount, false);
-		return PASSES_PER_SEC(3);
-	}
+    CombatSystem::CheckTarget(character);
+    if (!current()) return stop();
+    CombatSystem::UpdateKillerMode(character);
+    if (!current()) return stop();
+    // The existing player poison cadence is three pulses, not three seconds.
+    if (AffectSystem::IsAffectFlag(character, AFF_POISON)) return 3;
+    const uint32_t idle = (get_dword_time() - ecs::MovementSystem::GetLastMoveTime(character)) / 3000;
+    CombatSystem::DistributeSP(character, character);
+    if (!current()) return stop();
+    if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(character))
+        return PASSES_PER_SEC(3);
+    if (!publish(RecoveryAmount(character, idle == 0 ? 1 : 5))) return stop();
+    return PASSES_PER_SEC(3);
 }
 void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot)
 {

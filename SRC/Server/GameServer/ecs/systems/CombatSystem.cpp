@@ -2916,90 +2916,42 @@ namespace CombatSystem {
 // The soul-point share a party member gets for a kill nearby.
 void DistributeSP(entt::entity e, entt::entity killer, int iMethod)
 {
-	if (e == entt::null || !g_registry.valid(e))
-		return;
+    const auto valid = [&] {
+        return ecs::Invariants::HasAnyTypeTag(g_registry, e) &&
+            ecs::Invariants::HasAnyTypeTag(g_registry, killer);
+    };
+    if (!valid() || ecs::PlayerRuntime::GetSP(killer) >= ecs::PointSystem::GetMaxSP(killer))
+        return;
 
-	// GetLastMoveTime has no entity form yet; it is its own
-	// migration.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
-		return;
-
-	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-	if (ecs::PlayerRuntime::GetSP(killer) >= ecs::PointSystem::GetMaxSP(killer))
-		return;
-
-	bool bAttacking = (get_dword_time() - CombatSystem::GetLastAttackTime(e)) < 3000;
-	bool bMoving = (get_dword_time() - ecs::MovementSystem::GetLastMoveTime(e)) < 3000;
-
-	if (iMethod == 1)
-	{
-		int num = number(0, 3);
-
-		if (!num)
-		{
-			int iLvDelta = ecs::PointSystem::GetLevel(e) - ecs::PointSystem::GetLevel(killer);
-			int iAmount = 0;
-
-			if (iLvDelta >= 5)
-				iAmount = 10;
-			else if (iLvDelta >= 0)
-				iAmount = 6;
-			else if (iLvDelta >= -3)
-				iAmount = 2;
-
-			if (iAmount != 0)
-			{
-				iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
-
-				if (iAmount >= 11)
-					CombatSystem::CreateFly(e, FLY_SP_BIG, killer);
-				else if (iAmount >= 7)
-					CombatSystem::CreateFly(e, FLY_SP_MEDIUM, killer);
-				else
-					CombatSystem::CreateFly(e, FLY_SP_SMALL, killer);
-
-				ecs::PointSystem::Change(killer, POINT_SP, iAmount);
-			}
-		}
-	}
-	else
-	{
-		if (ecs::PlayerRuntime::GetJob(killer) == JOB_SHAMAN || (ecs::PlayerRuntime::GetJob(killer) == JOB_SURA && pkKiller->GetSkillGroup() == 2))
-		{
-			int iAmount;
-
-			if (bAttacking)
-				iAmount = 2 + ecs::PointSystem::GetMaxSP(e) / 100;
-			else if (bMoving)
-				iAmount = 3 + ecs::PointSystem::GetMaxSP(e) * 2 / 100;
-			else
-				iAmount = 10 + ecs::PointSystem::GetMaxSP(e) * 3 / 100; //
-
-			iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
-			ecs::PointSystem::Change(killer, POINT_SP, iAmount);
-		}
-		else
-		{
-			int iAmount;
-
-			if (bAttacking)
-				iAmount = 2 + ecs::PointSystem::GetMaxSP(killer) / 200;
-			else if (bMoving)
-				iAmount = 2 + ecs::PointSystem::GetMaxSP(killer) / 100;
-			else
-			{
-				//
-				if (ecs::PlayerRuntime::GetHP(killer) < ecs::PointSystem::GetMaxHP(killer))
-					iAmount = 2 + (ecs::PointSystem::GetMaxSP(killer) / 100); //   á
-				else
-					iAmount = 9 + (ecs::PointSystem::GetMaxSP(killer) / 100); // ⺻
-			}
-
-			iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
-			ecs::PointSystem::Change(killer, POINT_SP, iAmount);
-		}
-	}
+    const bool attacking = (get_dword_time() - GetLastAttackTime(e)) < 3000;
+    const bool moving = (get_dword_time() - ecs::MovementSystem::GetLastMoveTime(e)) < 3000;
+    int64_t base = 0;
+    if (iMethod == 1) {
+        if (number(0, 3) != 0) return;
+        const int delta = ecs::PointSystem::GetLevel(e) - ecs::PointSystem::GetLevel(killer);
+        base = delta >= 5 ? 10 : delta >= 0 ? 6 : delta >= -3 ? 2 : 0;
+        if (!base) return;
+    } else {
+        const auto job = ecs::PlayerRuntime::GetJob(killer);
+        if (job == JOB_SHAMAN || (job == JOB_SURA && SkillSystem::GetSkillGroup(killer) == 2)) {
+            // Preserve this branch's source-based maximum, including e != killer.
+            const int64_t maxSP = ecs::PointSystem::GetMaxSP(e);
+            base = attacking ? 2 + maxSP / 100 : moving ? 3 + maxSP * 2 / 100 : 10 + maxSP * 3 / 100;
+        } else {
+            const int64_t maxSP = ecs::PointSystem::GetMaxSP(killer);
+            base = attacking ? 2 + maxSP / 200 : moving ? 2 + maxSP / 100 :
+                (ecs::PlayerRuntime::GetHP(killer) < ecs::PointSystem::GetMaxHP(killer) ? 2 : 9) + maxSP / 100;
+        }
+    }
+    const auto bonus = std::trunc(static_cast<long double>(base) *
+        ecs::PointSystem::Get(killer, POINT_SP_REGEN) / 100.0L);
+    const int32_t amount = static_cast<int32_t>(std::clamp(static_cast<long double>(base) + bonus,
+        static_cast<long double>(INT32_MIN), static_cast<long double>(INT32_MAX)));
+    if (iMethod == 1) {
+        CreateFly(e, amount >= 11 ? FLY_SP_BIG : amount >= 7 ? FLY_SP_MEDIUM : FLY_SP_SMALL, killer);
+        if (!valid()) return;
+    }
+    ecs::PointSystem::Change(killer, POINT_SP, amount);
 }
 
 } // namespace CombatSystem

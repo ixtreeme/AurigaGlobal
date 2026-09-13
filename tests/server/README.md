@@ -1,5 +1,35 @@
 # Server ECS regression tests
 
+## Native HP recovery timer and SP distribution
+
+The existing MovementSystem.cpp recovery entry points no longer resolve a
+CHARACTER. Each tick validates the versioned entity, required components and
+ownership of the exact scheduled event. Outward gameplay/notification calls are
+followed by revalidation; a cancelled/replaced timer cannot continue healing or
+clear its replacement. Missing prototypes and stopped ticks release their slot.
+An exception also releases only the failing timer's slot before propagating;
+this is not a global server exception-recovery policy. Initial slot construction
+is checked for observer-driven removal, retirement and nested timer creation.
+
+SpatialLifecycleTests now links the real event scheduler and exercises NPC/player
+healing, doors, poison cadences, Meley exclusions, both special dungeon floors,
+full HP, missing components/prototypes, recycled entities, callback deletion,
+replacement and exceptions. It uses native fixtures with controlled point,
+combat, dungeon and prototype services; no CHARACTER object is allocated.
+
+CombatSystem::DistributeSP also uses native entities and SkillSystem's group
+accessor. CombatStateTests executes its production formulas for class/group,
+attack/movement/idle state, full HP/SP, kill-level thresholds, fly sizes and
+retirement during fly publication. The caster branch intentionally retains its
+source-based maximum when source and recipient differ. HP/SP intermediate
+arithmetic is widened and bonus results saturate to the int32_t payload range.
+
+Shared event storage, dungeon objects and prototype pointers remain separate
+systems; this is not complete CHARACTER removal. Before deployment, check live
+HP/SP recovery, combat/movement transitions, poison, dungeon floor changes,
+death/revival and logout/relog. Packet delivery, real dungeon state and combined
+live gameplay services are outside these isolated regression fixtures.
+
 ## Removal of the obsolete vital mirror
 
 VitalRegenSystem.cpp/.hpp and its main-loop call are removed. The loop did not
@@ -9,8 +39,8 @@ damage and stamina changes already update those components through PointSystem.
 PointCalculationTests now explicitly checks immediate native vital reads/changes,
 upper caps, poisoned old arrays, missing components and recycled handles for both
 player and NPC fixtures. PlayerRuntime setters and external services are doubles;
-this does not test the whole recovery timer. That timer still has separate
-CHARACTER dependencies and needs its own migration and live regeneration checks.
+this suite does not test the whole recovery timer. Its native migration is
+covered separately by the recovery tests described above.
 
 ## Entity-native OX event cohorts
 

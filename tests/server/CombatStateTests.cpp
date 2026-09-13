@@ -103,6 +103,9 @@ namespace {
 struct BattleFixture {
     std::array<int64_t, 256> points {};
     int level {90}, x {0}, y {0};
+    uint8_t job {JOB_WARRIOR}, skillGroup {0};
+    uint32_t lastMove {0};
+    int hp {500}, maxHP {1000}, sp {0}, maxSP {1000};
     uint32_t race {0};
     entt::entity weapon {entt::null};
     bool riding {false};
@@ -118,7 +121,9 @@ int checks = 0, computes = 0, packets = 0, alignmentPackets = 0;
 // A VID nobody registered resolves to entt::null, which is what the manager
 // answers for a target that has gone.
 std::map<uint32_t, entt::entity> vids;
-int viewPackets = 0;
+int viewPackets = 0, spChanges = 0;
+uint8_t lastFlyType = 0;
+std::function<void()> onFly;
 bool canMove = false;
 uint32_t tick = 1000;
 bool guild = false;
@@ -139,7 +144,7 @@ void Reset() {
     g_registry.clear(); computes = packets = alignmentPackets = 0; tick = 1000; guild = false;
     onCompute = onPacket = onAlignment = {}; passes_per_sec = 25;
     onPoison = onAffect = {}; poisonCalls = bleedingCalls = affectCalls = 0;
-    vids.clear(); viewPackets = 0; canMove = false;
+    vids.clear(); viewPackets = spChanges = 0; lastFlyType = 0; onFly = {}; canMove = false;
 }
 void AssertActor(entt::entity e) {
     Check(g_registry.valid(e) && g_registry.any_of<ecs::TagPC, ecs::TagNPC, ecs::TagMonster, ecs::TagStone>(e), "stale/non-character service call");
@@ -303,7 +308,7 @@ void MultiplierAndValidityChecks() {
 // Spatial traversal is outside this combat fixture; SpatialLifecycleTests
 // exercises the real native index and callback dispatch.
 void ecs::SessionSystem::CloseSafebox(entt::entity) { UnexpectedService(__func__); }
-uint8_t SkillSystem::GetSkillGroup(entt::entity) { UnexpectedService(__func__); }
+uint8_t SkillSystem::GetSkillGroup(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).skillGroup; }
 bool ecs::PlayerRuntime::IsPCBang(entt::entity) { UnexpectedService(__func__); }
 LPENTITY SectreeLegacyEntity(entt::entity) { UnexpectedService(__func__); }
 bool SectreeMember(entt::entity, const SECTREE*) { UnexpectedService(__func__); }
@@ -319,7 +324,13 @@ boost::intrusive_ptr<event> event_create_ex(int (*)(boost::intrusive_ptr<event>,
 void ecs::ChatSystem::Send(entt::entity,unsigned char,char const *,...) { UnexpectedService(__func__); }
 void ecs::ChatSystem::SendNew(entt::entity,unsigned char,unsigned int,char const *,...) { UnexpectedService(__func__); }
 void ecs::ViewSystem::ViewReencode(entt::entity) { UnexpectedService(__func__); }
-void ecs::ViewSystem::PacketView(entt::entity,void const *,int,entt::entity) { ++viewPackets; }
+void ecs::ViewSystem::PacketView(entt::entity e,void const* data,int size,entt::entity) {
+    ++viewPackets;
+    if (size == sizeof(TPacketGCCreateFly) && *static_cast<const uint8_t*>(data) == HEADER_GC_CREATE_FLY) {
+        AssertActor(e); lastFlyType = static_cast<const TPacketGCCreateFly*>(data)->bType;
+        if (onFly) { auto fn = onFly; fn(); }
+    }
+}
 DESC * ecs::PlayerRuntime::GetDesc(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetEmpire(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetPacketVID(entt::entity e) {
@@ -328,10 +339,10 @@ unsigned int ecs::PlayerRuntime::GetPacketVID(entt::entity e) {
 }
 unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).race; }
 bool ecs::PlayerRuntime::IsRaceFlag(entt::entity e,unsigned int) { AssertActor(e); return false; }
-int64_t ecs::PlayerRuntime::GetHP(entt::entity) { UnexpectedService(__func__); }
+int64_t ecs::PlayerRuntime::GetHP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).hp; }
 int ecs::PlayerRuntime::GetHPPct(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetAIFlag(entt::entity) { UnexpectedService(__func__); }
-unsigned char ecs::PlayerRuntime::GetJob(entt::entity e) { AssertActor(e); return JOB_WARRIOR; }
+unsigned char ecs::PlayerRuntime::GetJob(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).job; }
 int ecs::PlayerRuntime::GetMapIndex(entt::entity e) { AssertActor(e); return 2; }
 int ecs::PlayerRuntime::GetX(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).x; }
 int ecs::PlayerRuntime::GetY(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).y; }
@@ -363,10 +374,14 @@ bool AffectSystem::AddAffect(entt::entity e,unsigned int,unsigned char,int,unsig
 bool AffectSystem::RemoveAffect(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool AffectSystem::IsPolymorphed(entt::entity e) { AssertActor(e); return false; }
 int64_t ecs::PointSystem::Get(entt::entity e,unsigned char p) { AssertActor(e); return g_registry.get<BattleFixture>(e).points[p]; }
-int ecs::PointSystem::GetMaxHP(entt::entity) { UnexpectedService(__func__); }
-int ecs::PointSystem::GetMaxSP(entt::entity) { UnexpectedService(__func__); }
+int ecs::PointSystem::GetMaxHP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).maxHP; }
+int ecs::PointSystem::GetMaxSP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).maxSP; }
 int ecs::PointSystem::GetLevel(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).level; }
-void ecs::PointSystem::Change(entt::entity,unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
+void ecs::PointSystem::Change(entt::entity e,unsigned char point,int64_t amount,bool,bool,bool) {
+    AssertActor(e); Check(point == POINT_SP, "unexpected point change");
+    auto& data = g_registry.get<BattleFixture>(e); ++spChanges;
+    data.sp = static_cast<int32_t>(std::clamp<int64_t>(int64_t(data.sp) + amount, 0, data.maxSP));
+}
 CParty * ecs::SocialSystem::GetParty(entt::entity) { UnexpectedService(__func__); }
 entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) { UnexpectedService(__func__); }
 int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
@@ -417,7 +432,7 @@ float CHARACTER::GetRotation(void)const { UnexpectedService(__func__); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { UnexpectedService(__func__); }
 bool ecs::MovementSystem::CanMove(entt::entity) { return canMove; }
 // CombatSystem asks the movement frame how recently this one moved.
-unsigned int ecs::MovementSystem::GetLastMoveTime(entt::entity) { return 0; }
+unsigned int ecs::MovementSystem::GetLastMoveTime(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).lastMove; }
 bool CHARACTER::Sync(int,int) { UnexpectedService(__func__); }
 void CHARACTER::OnMove(bool) { UnexpectedService(__func__); }
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }
@@ -430,7 +445,7 @@ int ecs::PlayerRuntime::GetPosition(entt::entity e) {
     const auto* runtime = g_registry.valid(e) ? g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e) : nullptr;
     return runtime ? runtime->position : POS_STANDING;
 }
-int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
+int64_t ecs::PlayerRuntime::GetSP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).sp; }
 void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) {}
 CDungeon* ecs::SocialSystem::GetDungeon(entt::entity) { return nullptr; }
 int SkillSystem::GetSkillPower(entt::entity, uint32_t, uint8_t) { return 0; }
@@ -1101,11 +1116,65 @@ void DeathStateChecks() {
     C::SetDeadByMonster(retired, true);
     Check(!g_registry.valid(retired), "writing through a stale handle stays a no-op");
 }
+void NativeSPRecoveryChecks() {
+    for (int job : {JOB_WARRIOR, JOB_ASSASSIN, JOB_SURA, JOB_SHAMAN}) {
+        for (int group : {1, 2}) for (int activity = 0; activity < 3; ++activity) {
+            Reset(); tick = 10000; const auto e = Actor(); auto& data = g_registry.get<BattleFixture>(e);
+            data.job = static_cast<uint8_t>(job); data.skillGroup = static_cast<uint8_t>(group);
+            if (activity == 0) C::SetLastAttackTime(e, tick);
+            if (activity == 1) data.lastMove = tick;
+            const bool caster = job == JOB_SHAMAN || (job == JOB_SURA && group == 2);
+            const int expected = caster ? (activity == 0 ? 12 : activity == 1 ? 23 : 40) :
+                (activity == 0 ? 7 : 12);
+            C::DistributeSP(e, e);
+            Check(data.sp == expected && spChanges == 1, "native class/activity SP formula mismatch");
+            data.sp = 0; data.hp = data.maxHP; C::DistributeSP(e, e);
+            Check(data.sp == (!caster && activity == 2 ? 19 : expected), "full-HP SP formula changed");
+            data.sp = data.maxSP; C::DistributeSP(e, e);
+            Check(spChanges == 2, "full mana did not skip regeneration");
+        }
+    }
+    for (int delta : {-4, -3, 0, 5}) {
+        Reset(); const auto source = Actor(), recipient = Actor();
+        vids[10] = source; vids[20] = recipient;
+        g_registry.get<BattleFixture>(source).level += delta;
+        C::DistributeSP(source, recipient, 1);
+        Check(g_registry.get<BattleFixture>(recipient).sp == (delta == -4 ? 0 : delta == -3 ? 2 : delta == 0 ? 6 : 10),
+            "kill SP level boundary mismatch");
+    }
+    for (int bonus : {0, 20, 100}) {
+        Reset(); const auto source = Actor(), recipient = Actor();
+        vids[10] = source; vids[20] = recipient;
+        g_registry.get<BattleFixture>(recipient).points[POINT_SP_REGEN] = bonus;
+        C::DistributeSP(source, recipient, 1);
+        Check(lastFlyType == (bonus == 0 ? FLY_SP_SMALL : bonus == 20 ? FLY_SP_MEDIUM : FLY_SP_BIG),
+            "SP fly size threshold changed");
+    }
+    for (bool retireRecipient : {false, true}) {
+        Reset(); const auto source = Actor(), recipient = Actor(); vids[10] = source; vids[20] = recipient;
+        onFly = [&] { g_registry.destroy(retireRecipient ? recipient : source); };
+        C::DistributeSP(source, recipient, 1);
+        Check(spChanges == 0, "SP delivery continued after fly callback retirement");
+    }
+    Reset(); tick = 10000; const auto source = Actor(), recipient = Actor();
+    auto& data = g_registry.get<BattleFixture>(recipient); data.job = JOB_SHAMAN;
+    g_registry.get<BattleFixture>(source).maxSP = 2000;
+    C::DistributeSP(source, recipient);
+    Check(data.sp == 70, "caster source-based maximum changed");
+    data.sp = 0; data.points[POINT_SP_REGEN] = INT64_MAX; C::DistributeSP(source, recipient);
+    Check(data.sp == data.maxSP, "extreme SP bonus overflowed");
+    data.points[POINT_SP_REGEN] = INT64_MIN; data.sp = 1; C::DistributeSP(source, recipient);
+    Check(data.sp == 0, "negative SP bonus overflowed");
+    const int previous = spChanges; g_registry.destroy(source);
+    C::DistributeSP(source, recipient); C::DistributeSP(recipient, source);
+    C::DistributeSP(recipient, entt::null); C::DistributeSP(g_registry.create(), recipient);
+    Check(spChanges == previous, "invalid SP participants were accepted");
+}
 }
 int main() {
     try {
         CHARACTER_MANAGER characters;
-        AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
+        NativeSPRecoveryChecks(); AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
         BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();
         DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); MetinStoneDropChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
