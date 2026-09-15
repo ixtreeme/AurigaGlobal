@@ -691,10 +691,6 @@ public:
 
 
 
-	// FISING
-	void			fishing();
-	void			fishing_take();
-	// END_OF_FISHING
 
 	// MINING
 	// END_OF_MINING

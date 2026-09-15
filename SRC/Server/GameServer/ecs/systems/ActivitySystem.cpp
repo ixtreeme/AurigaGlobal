@@ -688,21 +688,19 @@ int RefineFishingRod(entt::entity owner, entt::entity rod)
 
 } // namespace ActivitySystem
 
-void CHARACTER::fishing()
+void ActivitySystem::Fishing(entt::entity character)
 {
-    const entt::entity character = GetEntityHandle();
-
     if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Fishing))
     {
-        fishing_take();
+        FishingTake(character);
         return;
     }
 
     {
-        int x = GetX();
-        int y = GetY();
+        int x = ecs::PlayerRuntime::GetX(character);
+        int y = ecs::PlayerRuntime::GetY(character);
 
-        LPSECTREE tree = ecs::SectorAt(GetMapIndex(), x, y);
+        LPSECTREE tree = ecs::SectorAt(ecs::PlayerRuntime::GetMapIndex(character), x, y);
         uint32_t dwAttr = tree->GetAttribute(x, y);
 
         if (IS_SET(dwAttr, ATTR_BLOCK))
@@ -738,9 +736,8 @@ void CHARACTER::fishing()
     ecs::PlayerRuntime::SetCharEvent(character, ecs::PlayerRuntime::CharEvent::Fishing, fishing::CreateFishingEvent(character));
 }
 
-void CHARACTER::fishing_take()
+void ActivitySystem::FishingTake(entt::entity character)
 {
-    const entt::entity character = GetEntityHandle();
     const entt::entity rod = ItemSystem::GetWearItem(character, WEAR_WEAPON);
     if (ItemSystem::IsValidItem(rod) && ItemSystem::GetItemType(rod) == ITEM_ROD)
     {

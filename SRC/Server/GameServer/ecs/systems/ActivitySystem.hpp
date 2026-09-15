@@ -17,5 +17,7 @@ void CancelMining(entt::entity miner);
 void FinishMining(entt::entity miner);
 bool IsMining(entt::entity miner);
 int RefineFishingRod(entt::entity owner, entt::entity rod);
+void Fishing(entt::entity fisher);
+void FishingTake(entt::entity fisher);
 
 } // namespace ActivitySystem

@@ -6,6 +6,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/ActivitySystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/SessionSystem.hpp"
@@ -746,7 +747,6 @@ ACMD(do_cmd)
 
 ACMD(do_fishing)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -754,7 +754,7 @@ ACMD(do_fishing)
 		return;
 
 	ecs::MovementSystem::SetRotation(character, atof(arg1));
-	ch->fishing();
+	ActivitySystem::Fishing(character);
 }
 
 ACMD(do_console)

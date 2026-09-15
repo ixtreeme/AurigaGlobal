@@ -4174,16 +4174,12 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 
 void CInputMain::Fishing(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate Fishing handler ECS
-// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Fishin");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGFishing* p = (TPacketCGFishing*)c_pData;
 	ecs::MovementSystem::SetRotation(character, p->dir * 5);
-	ch->fishing();
+	ActivitySystem::Fishing(character);
 	return;
 }
 
