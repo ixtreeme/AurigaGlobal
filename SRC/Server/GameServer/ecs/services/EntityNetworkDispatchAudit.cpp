@@ -18,6 +18,7 @@
 #include "../systems/PointSystem.hpp"
 #include "../systems/SocialSystem.hpp"
 #include "../systems/PlayerRuntimeSystem.hpp"
+#include "../systems/MovementSystem.hpp"
 #include "EntityNetworkDispatch.hpp"
 #include "SpatialService.hpp"
 
@@ -163,11 +164,11 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     // Native may snap pack.x/y to the active destination if the move duration has
     // expired. Legacy applies the same logic. With movement state in sync
     // they produce identical x/y; mismatches here imply movement drift.
-    if (nativePack.x != ch->GetX() && nativePack.x != ch->GetCurrentDestX())
-        LOG_WARN("[INSERT_PARITY] x entity={} native={} legacyX={} legacyDestX={}", entityIdx, nativePack.x, ch->GetX(), ch->GetCurrentDestX());
+    if (nativePack.x != ch->GetX() && nativePack.x != ecs::MovementSystem::GetCurrentDestX(source))
+        LOG_WARN("[INSERT_PARITY] x entity={} native={} legacyX={} legacyDestX={}", entityIdx, nativePack.x, ch->GetX(), ecs::MovementSystem::GetCurrentDestX(source));
 
-    if (nativePack.y != ch->GetY() && nativePack.y != ch->GetCurrentDestY())
-        LOG_WARN("[INSERT_PARITY] y entity={} native={} legacyY={} legacyDestY={}", entityIdx, nativePack.y, ch->GetY(), ch->GetCurrentDestY());
+    if (nativePack.y != ch->GetY() && nativePack.y != ecs::MovementSystem::GetCurrentDestY(source))
+        LOG_WARN("[INSERT_PARITY] y entity={} native={} legacyY={} legacyDestY={}", entityIdx, nativePack.y, ch->GetY(), ecs::MovementSystem::GetCurrentDestY(source));
 }
 
 } // namespace ecs::EntityNetworkDispatchAudit

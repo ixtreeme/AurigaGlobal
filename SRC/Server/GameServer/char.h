@@ -683,8 +683,6 @@ public:
 	void			CheckMaximumPoints();	// HP, SP ���� ���� ���� �ִ밪 ���� ������ �˻��ϰ� ���ٸ� �����.
 
 
-	void			Sitdown(int is_ground);
-	void			Standup();
 
 	float			GetRotation() const;
 
@@ -742,16 +740,6 @@ public:
 	bool			Sync(int32_t x, int32_t y);	// 
 	bool			Move(int32_t x, int32_t y);	// 
 	void			OnMove(bool bIsAttack = false);
-	// Phase 15E-final.LPENTITY.4-architect.B.1.4:
-	// GetCurrentDestX / GetCurrentDestY now read the ECS
-	// MovementDestination component. Per A.2 movement destination row.
-	// When the component is absent (entity is not actively moving),
-	// returns current position via GetX/GetY. This preserves legacy
-	// semantic where the destination is set to current position by Stop()
-	// (and similar settle sites) when no move is active. Bodies in
-	// MovementSystem.cpp.
-	int32_t			GetCurrentDestX() const;
-	int32_t			GetCurrentDestY() const;
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in
 // CheckMovementDrift state_flags subsection deleted with the
 // m_bAddChrState write migration. CheckMovementDrift body is now empty;

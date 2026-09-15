@@ -1401,39 +1401,45 @@ void StartRecoveryEvent(entt::entity e)
 
 } // namespace ecs::PlayerRuntime
 
-void CHARACTER::Standup()
+namespace ecs::MovementSystem {
+
+void Standup(entt::entity e)
 {
 	struct packet_position pack_position;
 
-	if (!IsPosition(POS_SITTING))
+	if (ecs::PlayerRuntime::GetPosition(e) != POS_SITTING)
 		return;
 
-	ecs::PlayerRuntime::SetPosition(GetEntityHandle(), POS_STANDING);
+	ecs::PlayerRuntime::SetPosition(e, POS_STANDING);
 
-	LOG_INFO("STANDUP: {}", GetName());
+	LOG_INFO("STANDUP: {}", ecs::PlayerRuntime::GetName(e));
 
 	pack_position.header = HEADER_GC_CHARACTER_POSITION;
-	pack_position.vid = GetPacketVID();
+	pack_position.vid = ecs::PlayerRuntime::GetPacketVID(e);
 	pack_position.position = POSITION_GENERAL;
 
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack_position, sizeof(pack_position));
+	ecs::ViewSystem::PacketView(e, &pack_position, sizeof(pack_position));
 }
 
-void CHARACTER::Sitdown(int is_ground)
+// Chair or ground, the client is told POSITION_SITTING_GROUND: the argument
+// was never read. The input handler still passes it.
+void Sitdown(entt::entity e, [[maybe_unused]] int isGround)
 {
 	struct packet_position pack_position;
 
-	if (IsPosition(POS_SITTING))
+	if (ecs::PlayerRuntime::GetPosition(e) == POS_SITTING)
 		return;
 
-	ecs::PlayerRuntime::SetPosition(GetEntityHandle(), POS_SITTING);
-	LOG_INFO("SITDOWN: {}", GetName());
+	ecs::PlayerRuntime::SetPosition(e, POS_SITTING);
+	LOG_INFO("SITDOWN: {}", ecs::PlayerRuntime::GetName(e));
 
 	pack_position.header = HEADER_GC_CHARACTER_POSITION;
-	pack_position.vid = GetPacketVID();
+	pack_position.vid = ecs::PlayerRuntime::GetPacketVID(e);
 	pack_position.position = POSITION_SITTING_GROUND;
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack_position, sizeof(pack_position));
+	ecs::ViewSystem::PacketView(e, &pack_position, sizeof(pack_position));
 }
+
+} // namespace ecs::MovementSystem
 
 #ifdef ENABLE_ANCIENT_PYRAMID
 namespace ecs::MovementSystem {
@@ -1772,27 +1778,31 @@ bool CHARACTER::IsWalking() const
 // turn returns 0 (per B.1.1) - matches legacy destination zero-init.
 //
 // Phase C will redirect writes; Phase G removes the legacy field.
-int32_t CHARACTER::GetCurrentDestX() const
+namespace ecs::MovementSystem {
+
+// The destination while a move is in flight; the position once it settles
+// (Stop and the other settle sites leave no MovementDestination behind).
+int32_t GetCurrentDestX(entt::entity e)
 {
-	const entt::entity e = GetEntityHandle();
 	if (e != entt::null && g_registry.valid(e))
 	{
 		if (const auto* dest = g_registry.try_get<ecs::MovementDestination>(e))
 			return dest->x;
 	}
-	return GetX();
+	return ecs::PlayerRuntime::GetX(e);
 }
 
-int32_t CHARACTER::GetCurrentDestY() const
+int32_t GetCurrentDestY(entt::entity e)
 {
-	const entt::entity e = GetEntityHandle();
 	if (e != entt::null && g_registry.valid(e))
 	{
 		if (const auto* dest = g_registry.try_get<ecs::MovementDestination>(e))
 			return dest->y;
 	}
-	return GetY();
+	return ecs::PlayerRuntime::GetY(e);
 }
+
+} // namespace ecs::MovementSystem
 
 // Phase 15E-final.LPENTITY.4-architect.B.1.5:
 // GetAddChrStateFlag composes the 4-bit bStateFlag byte from the ECS

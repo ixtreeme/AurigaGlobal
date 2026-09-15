@@ -843,8 +843,6 @@ int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetMaxHP(entt::entity, int64_t) { UnexpectedService(__func__); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 void CHARACTER::CheckMaximumPoints(void) { UnexpectedService(__func__); }
-int CHARACTER::GetCurrentDestX(void)const { UnexpectedService(__func__); }
-int CHARACTER::GetCurrentDestY(void)const { UnexpectedService(__func__); }
 unsigned int ecs::MovementSystem::GetStopTime(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::StartMuyeongEvent(void) { UnexpectedService(__func__); }
 void CHARACTER::StopMuyeongEvent(void) { UnexpectedService(__func__); }

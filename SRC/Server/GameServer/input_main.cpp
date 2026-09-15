@@ -1950,7 +1950,6 @@ void CInputMain::Exchange(entt::entity character, const char* data)
 
 void CInputMain::Position(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Position handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -1962,15 +1961,15 @@ void CInputMain::Position(entt::entity character, const char * data)
 	switch (pinfo->position)
 	{
 		case POSITION_GENERAL:
-			ch->Standup();
+			ecs::MovementSystem::Standup(character);
 			break;
 
 		case POSITION_SITTING_CHAIR:
-			ch->Sitdown(0);
+			ecs::MovementSystem::Sitdown(character, 0);
 			break;
 
 		case POSITION_SITTING_GROUND:
-			ch->Sitdown(1);
+			ecs::MovementSystem::Sitdown(character, 1);
 			break;
 	}
 }
@@ -2026,9 +2025,9 @@ void CInputMain::Move(entt::entity character, const char * data)
 		// packets get treated as teleports and the server rubberbands the player.
 		if (pinfo->bFunc == FUNC_MOVE &&
 			ecs::MovementSystem::GetCurrentMoveDuration(character) > 0 &&
-			(ch->GetCurrentDestX() != ecs::PlayerRuntime::GetX(character) || ch->GetCurrentDestY() != ecs::PlayerRuntime::GetY(character)))
+			(ecs::MovementSystem::GetCurrentDestX(character) != ecs::PlayerRuntime::GetX(character) || ecs::MovementSystem::GetCurrentDestY(character) != ecs::PlayerRuntime::GetY(character)))
 		{
-			const float fDistFromDest = DISTANCE_SQRT((ch->GetCurrentDestX() - pinfo->lX) / 100, (ch->GetCurrentDestY() - pinfo->lY) / 100);
+			const float fDistFromDest = DISTANCE_SQRT((ecs::MovementSystem::GetCurrentDestX(character) - pinfo->lX) / 100, (ecs::MovementSystem::GetCurrentDestY(character) - pinfo->lY) / 100);
 			fDist = std::min(fDistFromCurrent, fDistFromDest);
 		}
 		if (((false == MountSystem::IsRiding(character) && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ecs::PlayerRuntime::GetMapIndex(character))
