@@ -51,9 +51,9 @@
 #define __ENABLE_OFFLINESHOP_GM_PROTECTION__
 #ifdef __ENABLE_OFFLINESHOP_GM_PROTECTION__
 #define MIN_USE_OFFLINESHOP_GMLEVEL GM_IMPLEMENTOR
-#define _IS_VALID_GM_LEVEL(ch) ((ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))) == GM_PLAYER || (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))) >= MIN_USE_OFFLINESHOP_GMLEVEL)
+#define _IS_VALID_GM_LEVEL(e) (ecs::PlayerRuntime::GetGMLevel(e) == GM_PLAYER || ecs::PlayerRuntime::GetGMLevel(e) >= MIN_USE_OFFLINESHOP_GMLEVEL)
 #else
-#define _IS_VALID_GM_LEVEL(ch) (true)
+#define _IS_VALID_GM_LEVEL(e) (true)
 #endif
 
 #define PI 3.14159265
@@ -333,39 +333,39 @@ bool MatchItemName(std::string stName, const char* table , const size_t tablelen
 }
 
 
-bool CheckCharacterActions(LPCHARACTER ch)
+bool CheckCharacterActions(entt::entity character)
 {
-	if(!ch)
+	if(!ecs::PlayerRuntime::IsValid(character))
 	{
 		return false;
 	}
 
 
-	if(ecs::SocialSystem::HasExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if(ecs::SocialSystem::HasExchange(character))
 	{
 		return false;
 	}
 
 
-	if(ecs::SessionSystem::GetSafebox(ch->GetEntityHandle()))
+	if(ecs::SessionSystem::GetSafebox(character))
 	{
 		return false;
 	}
 
 
-	if(ecs::SocialSystem::GetShop(ch->GetEntityHandle()))
+	if(ecs::SocialSystem::GetShop(character))
 	{
 		return false;
 	}
 
 
-	if (ecs::SessionSystem::IsCubeOpen(ch->GetEntityHandle()))
+	if (ecs::SessionSystem::IsCubeOpen(character))
 	{
 		return false;
 	}
 
 #ifdef ENABLE_ACCE_SYSTEM
-	if (ecs::AcceSystem::IsOpen(ch->GetEntityHandle()))
+	if (ecs::AcceSystem::IsOpen(character))
 	{
 		return false;
 	}
@@ -373,7 +373,7 @@ bool CheckCharacterActions(LPCHARACTER ch)
 #endif
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (AttrTransfer_is_open(ch->GetEntityHandle()))
+	if (AttrTransfer_is_open(character))
 	{
 		return false;
 	}
@@ -995,7 +995,7 @@ namespace offlineshop
 		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
 		//updated 25 - 01 - 2020
@@ -2015,10 +2015,10 @@ namespace offlineshop
 		if(!ch || ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
-		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(ch))
+		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(character))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
@@ -2028,7 +2028,7 @@ namespace offlineshop
 		if ((rShopInfo.dwKasmirNpc < 30000) || (rShopInfo.dwKasmirNpc > 30007))
 			return false;
 
-		if ((rShopInfo.dwKasmirNpc != 30000) && (ch->CountSpecifyItem(88902) < 1)) {
+		if ((rShopInfo.dwKasmirNpc != 30000) && (ItemSystem::CountItem(character, 88902) < 1)) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 45, "");
 #endif
@@ -2057,7 +2057,7 @@ namespace offlineshop
 		TItemInfo itemInfo;
 
 #ifdef KASMIR_PAKET_SYSTEM
-		uint32_t dwCountStyle1 = ch->CountSpecifyItem(88902);
+		uint32_t dwCountStyle1 = ItemSystem::CountItem(character, 88902);
 		uint32_t dwCountStyle2 = 0;
 #endif
 
@@ -2156,7 +2156,7 @@ namespace offlineshop
 
 #ifdef KASMIR_PAKET_SYSTEM
 		if (rShopInfo.dwKasmirNpc != 30000)
-			ch->RemoveSpecifyItem(88902, 1);
+			ItemSystem::RemoveSpecifyItemEcs(character, 88902, 1);
 #endif
 
 		return true;
@@ -2274,10 +2274,10 @@ namespace offlineshop
 		if(!ch)
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
-		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(ch))
+		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(character))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
@@ -2563,10 +2563,10 @@ namespace offlineshop
 		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
-		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(ch))
+		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(character))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
@@ -2643,7 +2643,7 @@ namespace offlineshop
 		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
 		CShop* pkShop		= ecs::OfflineShopSystem::GetOfflineShop(character);
@@ -2850,7 +2850,7 @@ namespace offlineshop
 		if(!ch)
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
 		//offlineshop-updated 03/08/19
@@ -2918,7 +2918,7 @@ namespace offlineshop
 		if(!ch)
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
 		//next feature
@@ -2932,7 +2932,7 @@ namespace offlineshop
 		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
 		CShop* pkShop	= ecs::OfflineShopSystem::GetOfflineShop(character);
@@ -2975,7 +2975,7 @@ namespace offlineshop
 		if(!ch)
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
 		CShop* pkShop	= GetShopByOwnerID(dwOwnerID);
@@ -3018,7 +3018,6 @@ namespace offlineshop
 
 	bool CShopManager::RecvOfferListRequestPacket(entt::entity character) //offlineshop-updated 03/08/19
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if (!ecs::PlayerRuntime::GetDesc(character))
 			return false;
 
@@ -3330,10 +3329,10 @@ namespace offlineshop
 		if(!ch || ecs::OfflineShopSystem::GetAuction(character))
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
-		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(ch))
+		if (!InventorySystem::CanHandleItems(character) || !CheckCharacterActions(character))
 		{
 			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
@@ -3412,7 +3411,7 @@ namespace offlineshop
 		if(!ch || !ecs::OfflineShopSystem::GetAuctionGuest(character) || ecs::OfflineShopSystem::GetAuctionGuest(character)->GetInfo().dwOwnerID != dwOwnerID)
 			return false;
 
-		if (!_IS_VALID_GM_LEVEL(ch))
+		if (!_IS_VALID_GM_LEVEL(character))
 			return false;
 
 		//check anti auto-offer
