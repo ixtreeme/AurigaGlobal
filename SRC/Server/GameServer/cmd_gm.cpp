@@ -4169,7 +4169,7 @@ ACMD (do_all_skill_master)
 	{
 		if (true == SkillSystem::CanUseSkill(character, i))
 		{
-			ch->SetSkillLevel(i, SKILL_MAX_LEVEL);
+			SkillSystem::SetSkillLevel(character, i, SKILL_MAX_LEVEL);
 		}
 		else
 		{
@@ -4179,7 +4179,7 @@ ACMD (do_all_skill_master)
 			case SKILL_HORSE_CHARGE:
 			case SKILL_HORSE_ESCAPE:
 			case SKILL_HORSE_WILDATTACK_RANGE:
-				ch->SetSkillLevel(i, SKILL_MAX_LEVEL);
+				SkillSystem::SetSkillLevel(character, i, SKILL_MAX_LEVEL);
 				break;
 			}
 		}

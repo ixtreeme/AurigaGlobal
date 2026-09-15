@@ -613,7 +613,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 							}
 							else
 							{
-								ConvertEmpireText(ecs::PlayerRuntime::GetEmpire(character), buf, buflen, 10 + 2 * pkChr->GetSkillPower(SKILL_LANGUAGE1 + ecs::PlayerRuntime::GetEmpire(character) - 1)/*º¯È¯È®·ü*/);
+								ConvertEmpireText(ecs::PlayerRuntime::GetEmpire(character), buf, buflen, 10 + 2 * SkillSystem::GetSkillPower(chr, SKILL_LANGUAGE1 + ecs::PlayerRuntime::GetEmpire(character) - 1)/*º¯È¯È®·ü*/);
 							}
 						}
 

@@ -784,7 +784,7 @@ ACMD(do_doctrine_choose) {
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
-	if (!*arg1 || (ecs::PointSystem::GetLevel(character)) < 5 || ch->GetSkillGroup() != 0) {
+	if (!*arg1 || (ecs::PointSystem::GetLevel(character)) < 5 || SkillSystem::GetSkillGroup(character) != 0) {
 		return;
 	}
 
@@ -794,7 +794,7 @@ ACMD(do_doctrine_choose) {
 		SkillSystem::SetSkillGroup(character, group);
 		SkillSystem::ClearSkill(character);
 		//ch->SetSkillLevel(122, 2);
-		ch->SetSkillLevel(131, 1);
+		SkillSystem::SetSkillLevel(character, 131, 1);
 		//ch->SetSkillLevel(137, 20);
 		//ch->SetSkillLevel(138, 20);
 		//ch->SetSkillLevel(139, 20);

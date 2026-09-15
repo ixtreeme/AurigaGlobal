@@ -3,6 +3,7 @@
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "config.h"
 #include "desc_client.h"
@@ -103,7 +104,7 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 					ConvertEmpireText(bToEmpire,
 							buf + sizeof(TPacketGCWhisper),
 							p2->wSize - sizeof(TPacketGCWhisper),
-							10+2*pkChr->GetSkillPower(SKILL_LANGUAGE1 + bToEmpire - 1));
+							10+2*SkillSystem::GetSkillPower(chr, SKILL_LANGUAGE1 + bToEmpire - 1));
 				}
 		}
 

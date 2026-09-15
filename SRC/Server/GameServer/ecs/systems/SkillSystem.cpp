@@ -1052,15 +1052,6 @@ void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
     SkillSystem::SetSkillNextReadTime(GetEntityHandle(), dwVnum, time);
 }
 
-uint8_t CHARACTER::GetSkillGroup() const
-{
-	return SkillSystem::GetSkillGroup(GetEntityHandle());
-}
-
-void CHARACTER::SetSkillLevel(uint32_t dwVnum, uint8_t bLev)
-{
-    SkillSystem::SetSkillLevel(GetEntityHandle(), dwVnum, bLev);
-}
 int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
 {
     if (dwVnum >= SKILL_MAX_NUM)
@@ -1103,7 +1094,7 @@ bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
 		return true;
 	}
 
-	if (GetSkillGroup() == 0)
+	if (SkillSystem::GetSkillGroup(GetEntityHandle()) == 0)
 		return false;
 
 	if (pkSkill->dwType - 1 == ecs::PlayerRuntime::GetJob(GetEntityHandle()))
@@ -1414,7 +1405,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #endif
 		if (number(1, 100) > percent) {
 			if (iReadCount >= needBookCount) {
-				SetSkillLevel(dwSkillVnum, bLastLevel + 1);
+				SkillSystem::SetSkillLevel(GetEntityHandle(), dwSkillVnum, bLastLevel + 1);
 
 				ecs::PointSystem::Compute(GetEntityHandle());
 				SkillLevelPacket();
@@ -1626,9 +1617,9 @@ bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
 {
 	if (0 == dwSkillVnum) return false;
 
-	if (0 < GetSkillGroup())
+	if (0 < SkillSystem::GetSkillGroup(GetEntityHandle()))
 	{
-		const uint32_t* pSkill = SkillListByJob[ ecs::PlayerRuntime::GetJob(GetEntityHandle()) ][ GetSkillGroup()-1 ];
+		const uint32_t* pSkill = SkillListByJob[ ecs::PlayerRuntime::GetJob(GetEntityHandle()) ][ SkillSystem::GetSkillGroup(GetEntityHandle())-1 ];
 
 		for (int i=0 ; i < SKILL_LIST_COUNT ; ++i)
 		{
@@ -1743,7 +1734,7 @@ int CHARACTER::GetChainLightningMaxCount() const
 
 void CHARACTER::SetAffectedEunhyung()
 {
-	m_dwAffectedEunhyungLevel = GetSkillPower(SKILL_EUNHYUNG);
+	m_dwAffectedEunhyungLevel = SkillSystem::GetSkillPower(GetEntityHandle(), SKILL_EUNHYUNG);
 }
 
 
@@ -1846,7 +1837,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 			GetSkillLevel(pkSk->preSkillVnum) < pkSk->preSkillLevel)
 			return;
 
-	if (!GetSkillGroup())
+	if (!SkillSystem::GetSkillGroup(GetEntityHandle()))
 		return;
 
 	if (bMethod == SKILL_UP_BY_POINT)
@@ -1883,7 +1874,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	}
 
 	int SkillPointBefore = GetSkillLevel(pkSk->dwVnum);
-	SetSkillLevel(pkSk->dwVnum, static_cast<uint8_t>(GetSkillLevel(pkSk->dwVnum) + 1));
+	SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, static_cast<uint8_t>(GetSkillLevel(pkSk->dwVnum) + 1));
 
 	if (pkSk->dwType != 0)
 	{
@@ -1895,17 +1886,17 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 				if (GetSkillLevel(pkSk->dwVnum) >= 17)
 				{
 #ifdef ENABLE_FORCE2MASTERSKILL
-					SetSkillLevel(pkSk->dwVnum, 20);
+					SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 20);
 #else
 					if (ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "reset_scroll.force_to_master_skill") > 0)
 					{
-						SetSkillLevel(pkSk->dwVnum, 20);
+						SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 20);
 						ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "reset_scroll.force_to_master_skill", 0);
 					}
 					else
 					{
 						if (number(1, 21 - MIN(20, GetSkillLevel(pkSk->dwVnum))) == 1)
-							SetSkillLevel(pkSk->dwVnum, 20);
+							SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 20);
 					}
 #endif
 				}
@@ -1915,14 +1906,14 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 				if (GetSkillLevel(pkSk->dwVnum) >= 30)
 				{
 					if (number(1, 31 - MIN(30, GetSkillLevel(pkSk->dwVnum))) == 1)
-						SetSkillLevel(pkSk->dwVnum, 30);
+						SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 30);
 				}
 				break;
 
 			case SKILL_GRAND_MASTER:
 				if (GetSkillLevel(pkSk->dwVnum) >= 40)
 				{
-					SetSkillLevel(pkSk->dwVnum, 40);
+					SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 40);
 				}
 				break;
 		}
@@ -4149,11 +4140,6 @@ int CHARACTER::GetSkillMasterType(uint32_t dwVnum) const
 	return SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum);
 }
 
-int CHARACTER::GetSkillPower(uint32_t dwVnum, uint8_t bLevel) const
-{
-    return SkillSystem::GetSkillPower(GetEntityHandle(), dwVnum, bLevel);
-}
-
 EVENTFUNC(skill_muyoung_event)
 {
 	char_event_info* info = dynamic_cast<char_event_info*>( event->info );
@@ -4422,7 +4408,7 @@ bool UseMobSkill(entt::entity e, unsigned int idx)
 
 bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 {
-	uint32_t selfJobGroup = (ecs::PlayerRuntime::GetJob(GetEntityHandle())+1) * 10 + GetSkillGroup();
+	uint32_t selfJobGroup = (ecs::PlayerRuntime::GetJob(GetEntityHandle())+1) * 10 + SkillSystem::GetSkillGroup(GetEntityHandle());
 	const uint32_t SKILL_NUM = 158;
 	static uint32_t s_anSkill2JobGroup[SKILL_NUM] = {
 		0, // common_skill 0

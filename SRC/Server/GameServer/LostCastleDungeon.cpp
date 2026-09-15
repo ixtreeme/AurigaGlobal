@@ -839,7 +839,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 if (lvl <= 0)
                     continue;
 
-                clone->SetSkillLevel(sv, (uint8_t)lvl);
+                SkillSystem::SetSkillLevel(cloneEntity, sv, (uint8_t)lvl);
 
                 if (sv > 127)
                     continue;
@@ -1382,7 +1382,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
             if (lvl <= 0)
                 continue;
 
-            clone->SetSkillLevel(sv, (uint8_t)lvl);
+            SkillSystem::SetSkillLevel(cloneEntity, sv, (uint8_t)lvl);
 
             if (sv > 127)
                 continue;

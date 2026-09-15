@@ -1105,7 +1105,6 @@ public:
 	void				SkillLevelUp(uint32_t dwVnum, uint8_t bMethod = SKILL_UP_BY_POINT);
 	// ADD_GRANDMASTER_SKILL
 	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
-	void				SetSkillLevel(uint32_t dwVnum, uint8_t bLev);
 
 	bool				IsLearnableSkill(uint32_t dwSkillVnum) const;
 	// END_OF_ADD_GRANDMASTER_SKILL
@@ -1114,7 +1113,6 @@ public:
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 	int					GetSkillLevel(uint32_t dwVnum) const;
 	int					GetSkillMasterType(uint32_t dwVnum) const;
-	int					GetSkillPower(uint32_t dwVnum, uint8_t bLevel = 0) const;
 
 	time_t				GetSkillNextReadTime(uint32_t dwVnum) const;
 	void				SetSkillNextReadTime(uint32_t dwVnum, time_t time);
@@ -1128,7 +1126,6 @@ public:
 #endif
 	int					ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel = 0);
 
-	uint8_t				GetSkillGroup() const;
 
 
 	bool				LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb = 0);
