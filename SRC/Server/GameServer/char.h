@@ -1273,11 +1273,6 @@ public:
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 public:
-	CMountSystem* GetMountSystem() { return m_mountSystem; }
-
-	void 				MountUnsummon(entt::entity mountItem);
-	void 				CheckMount();
-	bool 				IsRidingMount();
 
 protected:
 	CMountSystem* m_mountSystem;
@@ -1291,15 +1286,6 @@ protected:
 	CNewPetSystem* m_newpetSystem;
 
 public:
-#endif
-#ifdef ENABLE_COSTUME_PET
-public:
-	void	UpdatePetSkin();
-
-#endif
-#ifdef ENABLE_COSTUME_MOUNT
-public:
-	void	UpdateMountSkin();
 #endif
 protected:
 

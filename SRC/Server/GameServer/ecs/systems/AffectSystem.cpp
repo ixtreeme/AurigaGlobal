@@ -1190,7 +1190,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	AffectSystem::RemoveAffect(e, AFFECT_MOUNT_BONUS);
 	if (ecs::PlayerRuntime::GetMapIndex(e) != 113 && CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == false) {
-		self->CheckMount();
+		MountSystem::CheckMount(e);
 	}
 #endif
 #endif

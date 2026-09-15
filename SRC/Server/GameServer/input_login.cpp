@@ -790,7 +790,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			MountSystem::SummonHorse(rider, false);
 		}
 
-		CMountSystem* mountSystem = ch->GetMountSystem();
+		CMountSystem* mountSystem = MountSystem::GetMountSystem(rider);
 		const entt::entity mount = ItemSystem::GetWearItem(ch ? ch->GetEntityHandle() : entt::null, WEAR_COSTUME_MOUNT);
 		if (mountSystem && MountSystem::GetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null)) && mount != entt::null) {
 			mountSystem->Unmount(ItemSystem::GetItemValue(mount, 1));
@@ -887,7 +887,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			MountSystem::SummonHorse(rider, false);
 		}
 
-		CMountSystem* mountSystem = ch->GetMountSystem();
+		CMountSystem* mountSystem = MountSystem::GetMountSystem(rider);
 		const entt::entity mount = ItemSystem::GetWearItem(ch ? ch->GetEntityHandle() : entt::null, WEAR_COSTUME_MOUNT);
 		if (mountSystem && MountSystem::GetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null)) && mount != entt::null) {
 			mountSystem->Unmount(ItemSystem::GetItemValue(mount, 1));

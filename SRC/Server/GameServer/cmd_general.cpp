@@ -284,7 +284,7 @@ ACMD(do_user_horse_back)
 	if (!ch)
 		return;
 
-	CMountSystem* mountSystem = ch->GetMountSystem();
+	CMountSystem* mountSystem = MountSystem::GetMountSystem(character);
 	if (mountSystem) {
 		if ((mountSystem->CountSummoned() > 0) || MountSystem::GetMountVnum(character)) {
 			const entt::entity owner = character;
@@ -817,7 +817,7 @@ ACMD(do_restart)
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 						CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-						ch->CheckMount();
+						MountSystem::CheckMount(character);
 #endif
 					}
 					break;
@@ -830,7 +830,7 @@ ACMD(do_restart)
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 						CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-						ch->CheckMount();
+						MountSystem::CheckMount(character);
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 						AffectSystem::LoadAffectSkills(character);
@@ -1416,7 +1416,7 @@ ACMD(do_restart)
 				if (showed)
 				{
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-					ch->CheckMount();
+					MountSystem::CheckMount(character);
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 					AffectSystem::LoadAffectSkills(character);
@@ -1438,7 +1438,7 @@ ACMD(do_restart)
 				CombatSystem::DeathPenalty(character, 0);
 				CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-				ch->CheckMount();
+				MountSystem::CheckMount(character);
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 				AffectSystem::LoadAffectSkills(character);
@@ -2511,7 +2511,7 @@ ACMD(do_unmount)
 	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
 	if (ItemSystem::IsValidItem(mount))
 	{
-		CMountSystem* mountSystem = ch->GetMountSystem();
+		CMountSystem* mountSystem = MountSystem::GetMountSystem(character);
 		uint32_t mobVnum = 0;
 
 		if (!mountSystem)
@@ -3555,7 +3555,6 @@ ACMD(do_click_mall)
 
 ACMD(do_ride)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
 	if (!MountSystem::GetMountStateRef(character)) {
@@ -3581,7 +3580,7 @@ ACMD(do_ride)
 	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
 	if (ItemSystem::IsValidItem(mount))
 	{
-		CMountSystem* mountSystem = ch->GetMountSystem();
+		CMountSystem* mountSystem = MountSystem::GetMountSystem(character);
 		uint32_t mobVnum = 0;
 
 		if (!mountSystem)

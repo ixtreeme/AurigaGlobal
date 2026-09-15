@@ -8,6 +8,7 @@
 #include "../../horse_rider.h"
 
 class CMountInventory;
+class CMountSystem;
 
 namespace MountSystem {
 
@@ -18,6 +19,8 @@ bool IsRiding(entt::entity rider);
 
 void UpdateMountSkin(entt::entity e);
 void MountUnsummon(entt::entity e, entt::entity mountItem);
+CMountSystem* GetMountSystem(entt::entity e);
+void CheckMount(entt::entity e);
 void UpdatePetSkin(entt::entity e);
 bool IsSummoned(entt::entity rider);
 bool IsRidingCostume(entt::entity rider);

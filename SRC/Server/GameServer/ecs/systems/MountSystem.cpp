@@ -286,8 +286,6 @@ EVENTFUNC(horse_dead_event);
 
 namespace MountSystem {
 
-static ::CMountSystem* GetMountSystem(entt::entity e);
-
 void MountSummon(entt::entity rider, entt::entity mountItem)
 {
 #define MOUNT_SYSTEM_FIX_POLY
@@ -668,28 +666,24 @@ void SetRider(entt::entity horse, entt::entity rider)
     if (g_registry.valid(horse) && GetRider(horse) == rider) SendHorseInfo(rider);
 }
 
-} // namespace MountSystem
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-void CHARACTER::MountUnsummon(entt::entity mountItem)
+// The costume mount subsystem, read from MountRuntimeRefs. CMountSystem's
+// constructor writes the component and Destroy clears it while it still
+// points at that system, so it agrees with CHARACTER::m_mountSystem.
+::CMountSystem* GetMountSystem(entt::entity e)
 {
-	CMountSystem* mountSystem = GetMountSystem();
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
 
-	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
-		return;
-
-	const uint32_t mobVnum = GetMountMobVnum(mountItem);
-
-	if (MountSystem::GetMountVnum(GetEntityHandle()) == mobVnum)
-		mountSystem->Unmount(mobVnum);
-
-	mountSystem->Unsummon(mobVnum);
+    const auto* refs = g_registry.try_get<ecs::MountRuntimeRefs>(e);
+    return refs ? refs->mountSystem : nullptr;
 }
 
-void CHARACTER::CheckMount()
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+// Summons the worn costume mount when nothing is summoned yet.
+void CheckMount(entt::entity e)
 {
-	CMountSystem* mountSystem = GetMountSystem();
-	const entt::entity mountItem = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
+	::CMountSystem* mountSystem = GetMountSystem(e);
+	const entt::entity mountItem = ItemSystem::GetWearItem(e, WEAR_COSTUME_MOUNT);
 
 	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
 		return;
@@ -701,14 +695,9 @@ void CHARACTER::CheckMount()
 		mountSystem->Summon(mobVnum, mountItem, false);
 	}
 }
-
-bool CHARACTER::IsRidingMount()
-{
-	return ItemSystem::IsValidItem(
-		ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT)) ||
-		AffectSystem::FindAffect(GetEntityHandle(), AFFECT_MOUNT);
-}
 #endif
+
+} // namespace MountSystem
 
 #ifdef ENABLE_COSTUME_PET
 namespace MountSystem {
@@ -716,15 +705,6 @@ namespace MountSystem {
 // The skin and unsummon paths, entity-native. The subsystem pointers come from
 // MountRuntimeRefs / PetRuntimeRefs rather than CHARACTER members, so CItem
 // can drive them without holding an owner pointer.
-
-static ::CMountSystem* GetMountSystem(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    const auto* refs = g_registry.try_get<ecs::MountRuntimeRefs>(e);
-    return refs ? refs->mountSystem : nullptr;
-}
 
 void UpdateMountSkin(entt::entity e)
 {
@@ -774,34 +754,6 @@ void UpdatePetSkin(entt::entity e)
 }
 
 } // namespace MountSystem
-
-void CHARACTER::UpdatePetSkin() {
-	if (!m_petSystem)
-		return;
-
-	m_petSystem->UpdatePetSkin();
-}
-
-#endif
-
-#ifdef ENABLE_COSTUME_MOUNT
-void CHARACTER::UpdateMountSkin() {
-	if (!m_mountSystem)
-		return;
-
-	m_mountSystem->UpdateMountSkin();
-
-	if (MountSystem::IsRiding(GetEntityHandle())) {
-		const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
-		if (!ItemSystem::IsValidItem(item))
-			return;
-
-		const uint32_t mobVnum = GetMountMobVnum(item);
-
-		m_mountSystem->Unmount(mobVnum);
-		m_mountSystem->Mount(mobVnum, item);
-	}
-}
 
 #endif
 

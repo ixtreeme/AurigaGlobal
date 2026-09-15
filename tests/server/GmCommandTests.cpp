@@ -796,7 +796,6 @@ void CombatSystem::PullMonster(entt::entity) { Unexpected(); }
 void ecs::SessionSystem::ChangeSafeboxSize(entt::entity, uint8_t) { Unexpected(); }
 void CombatSystem::SetSkillHit(entt::entity, bool) { Unexpected(); }
 entt::entity MountSystem::GetRider(entt::entity) { Unexpected(); }
-bool CHARACTER::IsRidingMount(void) { Unexpected(); }
 bool ecs::PlayerRuntime::IsPet(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsMount(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsNewPet(entt::entity) { Unexpected(); }
