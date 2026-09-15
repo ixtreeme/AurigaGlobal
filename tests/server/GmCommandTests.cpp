@@ -973,7 +973,6 @@ void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { Unexpected(); }
 bool AffectSystem::IsGoodAffect(uint8_t) { Unexpected(); }
 void AffectSystem::RemoveGoodAffects(entt::entity) { Unexpected(); }
 void AffectSystem::RemoveBadAffects(entt::entity) { Unexpected(); }
-bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { Unexpected(); }
 bool CombatSystem::Damage(entt::entity,entt::entity,int64_t,unsigned char) { Unexpected(); }
 bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }
 void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }

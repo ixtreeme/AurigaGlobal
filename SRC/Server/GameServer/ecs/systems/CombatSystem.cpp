@@ -1622,7 +1622,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 
 	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_EXP) > 0)
 		rateFactor += 50;
-	if (to->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_EXP))
+	if (ItemSystem::IsEquipUniqueGroup(toEntity, UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
 	if (ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) > 0)
 	{
@@ -1644,7 +1644,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	iExp = AdjustExpByLevel_Combat(to, iExp);
 
 #ifdef __NEWPET_SYSTEM__
-	CNewPetSystem* petSystemNew = to->GetNewPetSystem();
+	CNewPetSystem* petSystemNew = ecs::PlayerRuntime::GetNewPetSystem(toEntity);
 	if (petSystemNew)
 	{
 #ifdef ENABLE_NEW_PET_EDITS
@@ -1767,7 +1767,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 			iExp += (iExp * 50 / 100);
 		}
 
-		if (to->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_EXP) == true)
+		if (ItemSystem::IsEquipUniqueGroup(toEntity, UNIQUE_GROUP_RING_OF_EXP) == true)
 		{
 			iExp += (iExp * 50 / 100);
 		}
@@ -1807,7 +1807,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	iExp = AdjustExpByLevel_Combat(to, iExp);
 
 #ifdef __NEWPET_SYSTEM__
-	CNewPetSystem* petSystemNew = to->GetNewPetSystem();
+	CNewPetSystem* petSystemNew = ecs::PlayerRuntime::GetNewPetSystem(toEntity);
 	if (petSystemNew) {
 		if (petSystemNew->GetLevel() < 120)
 		{
@@ -3786,18 +3786,18 @@ void Reward(entt::entity e, bool bItemDrop)
 	{
 		if ((ecs::PointSystem::GetLevel(e) - ecs::PointSystem::GetLevel(attacker)) >= -10)
 		{
-			/*if (CombatSystem::GetRealAlignment(pkAttacker->GetEntityHandle()) < 0) // trsra: minden gyilkols 2 pontot ad
+			/*if (CombatSystem::GetRealAlignment(attacker) < 0) // trsra: minden gyilkols 2 pontot ad
 			{
-				if (ItemSystem::IsEquipUniqueItem(pkAttacker->GetEntityHandle(), UNIQUE_ITEM_FASTER_ALIGNMENT_UP_BY_KILL))
-					CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 14);
+				if (ItemSystem::IsEquipUniqueItem(attacker, UNIQUE_ITEM_FASTER_ALIGNMENT_UP_BY_KILL))
+					CombatSystem::UpdateAlignment(attacker, 14);
 				else
-					CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 7);
+					CombatSystem::UpdateAlignment(attacker, 7);
 			}
 			else*/
-				CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 2);
+				CombatSystem::UpdateAlignment(attacker, 2);
 		}
 
-		ecs::PlayerRuntime::SetQuestNPC(pkAttacker->GetEntityHandle(), e);
+		ecs::PlayerRuntime::SetQuestNPC(attacker, e);
 		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(attacker), ecs::PlayerRuntime::GetRaceNum(e));
 		CHARACTER_MANAGER::instance().KillLog(ecs::PlayerRuntime::GetRaceNum(e));
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
@@ -3807,21 +3807,21 @@ void Reward(entt::entity e, bool bItemDrop)
 		CRuneDungeon::instance().OnMobKilled(attacker, e);
 		CPyramidDungeonRazor93::instance().OnMobKilled(attacker, e);
 		CNightmareDungeonRazor93::instance().OnMobKilled(attacker, e);
-		//CLostCastleDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), e);
+		//CLostCastleDungeon::instance().OnMobKilled(attacker, e);
 		CHalloween2022Dungeon::instance().OnMobKilled(attacker, e);
 		CVikingDungeon::instance().OnMobKilled(attacker, e);
 		CEasterDungeon::instance().OnMobKilled(attacker, e);
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(pkAttacker->GetEntityHandle());
+		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(attacker);
 		if (bBattlePassId)
 		{
 			uint32_t dwMonsterVnum, dwToKillCount;
 			if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_KILL, &dwMonsterVnum, &dwToKillCount))
 			{
-				if (dwMonsterVnum == ecs::PlayerRuntime::GetRaceNum(e) && ecs::PlayerRuntime::GetMissionProgress(pkAttacker->GetEntityHandle(), MONSTER_KILL, bBattlePassId) < dwToKillCount)
-					ecs::PlayerRuntime::UpdateMissionProgress(pkAttacker->GetEntityHandle(), MONSTER_KILL, bBattlePassId, 1, dwToKillCount);
+				if (dwMonsterVnum == ecs::PlayerRuntime::GetRaceNum(e) && ecs::PlayerRuntime::GetMissionProgress(attacker, MONSTER_KILL, bBattlePassId) < dwToKillCount)
+					ecs::PlayerRuntime::UpdateMissionProgress(attacker, MONSTER_KILL, bBattlePassId, 1, dwToKillCount);
 			}
 		}
 #endif
@@ -3936,7 +3936,7 @@ void Reward(entt::entity e, bool bItemDrop)
 					CDungeon* pDungeon = ecs::SocialSystem::GetDungeon(e);
 
 					// csak akkor, ha a killer ugyanebben a dungeon instance-ben van
-					if (ecs::SocialSystem::GetDungeon(pkAttacker->GetEntityHandle()) == pDungeon)
+					if (ecs::SocialSystem::GetDungeon(attacker) == pDungeon)
 					{
 						// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
 						auto MakeHwidHostKey = [&](entt::entity ch) -> std::string
@@ -4503,8 +4503,8 @@ void RewardGold(entt::entity e, entt::entity attacker)
 
 			// ADD_PREMIUM
 			bool isAutoLoot =
-				(ecs::PlayerRuntime::GetPremiumRemainSeconds(pkAttacker->GetEntityHandle(), PREMIUM_AUTOLOOT) > 0 ||
-					pkAttacker->IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT))
+				(ecs::PlayerRuntime::GetPremiumRemainSeconds(attacker, PREMIUM_AUTOLOOT) > 0 ||
+					ItemSystem::IsEquipUniqueGroup(attacker, UNIQUE_GROUP_AUTOLOOT))
 				? true : false; // 3
 			// END_OF_ADD_PREMIUM
 
@@ -4540,8 +4540,8 @@ void RewardGold(entt::entity e, entt::entity attacker)
 			iGoldPercent = iGoldPercent * CHARACTER_MANAGER::instance().GetMobGoldDropRate(attacker) / 100;
 
 			// ADD_PREMIUM
-			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(pkAttacker->GetEntityHandle(), PREMIUM_GOLD) > 0 ||
-				pkAttacker->IsEquipUniqueGroup(UNIQUE_GROUP_LUCKY_GOLD))
+			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(attacker, PREMIUM_GOLD) > 0 ||
+				ItemSystem::IsEquipUniqueGroup(attacker, UNIQUE_GROUP_LUCKY_GOLD))
 				iGoldPercent += iGoldPercent;
 			// END_OF_ADD_PREMIUM
 
@@ -4554,7 +4554,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 				iPercent = ((iGoldPercent * PERCENT_LVDELTA_BOSS(ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(e))) / 100);
 			else
 				iPercent = ((iGoldPercent * PERCENT_LVDELTA(ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(e))) / 100);
-			//int iPercent = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), ecs::PointSystem::GetLevel(e), iGoldPercent);
+			//int iPercent = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(e), iGoldPercent);
 
 			if (number(1, 100) > iPercent)
 				return;
@@ -4619,7 +4619,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 					}
 
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-					ItemSystem::GiveGold(pkAttacker->GetEntityHandle(), iGold);
+					ItemSystem::GiveGold(attacker, iGold);
 					iTotalGold += iGold;
 #else
 					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
@@ -4654,7 +4654,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 					}
 
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-					ItemSystem::GiveGold(pkAttacker->GetEntityHandle(), iGold);
+					ItemSystem::GiveGold(attacker, iGold);
 					iTotalGold += iGold;
 #else
 					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
@@ -4704,12 +4704,12 @@ void RewardGold(entt::entity e, entt::entity attacker)
 						const int64_t splitGold = iGold / iSplitCount;
 						if (isAutoLoot)
 						{
-							ItemSystem::GiveGold(pkAttacker->GetEntityHandle(), splitGold);
+							ItemSystem::GiveGold(attacker, splitGold);
 						}
 						else
 						{
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-							ItemSystem::GiveGold(pkAttacker->GetEntityHandle(), splitGold);
+							ItemSystem::GiveGold(attacker, splitGold);
 #else
 							const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, splitGold);
 							if (ItemSystem::IsValidItem(gold))

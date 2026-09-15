@@ -2,6 +2,7 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "config.h"
 #include "desc_client.h"
@@ -96,7 +97,7 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 			// ý ޼ ӼӸ bType Ʈ  .
 			p2->bType = WHISPER_TYPE_SYSTEM;
 		} else {
-			if (!pkChr->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
+			if (!ItemSystem::IsEquipUniqueGroup(chr, UNIQUE_GROUP_RING_OF_LANGUAGE))
 				if (bToEmpire >= 1 && bToEmpire <= 3 && ecs::PlayerRuntime::GetEmpire(chr) != bToEmpire)
 				{
 					ConvertEmpireText(bToEmpire,

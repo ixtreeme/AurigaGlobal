@@ -575,32 +575,6 @@ bool CHARACTER::IsEquipUniqueItem(uint32_t dwItemVnum) const
 }
 
 
-bool CHARACTER::IsEquipUniqueGroup(uint32_t dwGroupVnum) const
-{
-	{
-		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE1);
-
-		if (u != entt::null && ItemSystem::GetItemSpecialGroup(u) == (int)dwGroupVnum)
-			return true;
-	}
-
-	{
-		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE2);
-
-		if (u != entt::null && ItemSystem::GetItemSpecialGroup(u) == (int)dwGroupVnum)
-			return true;
-	}
-
-	{
-		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
-
-		if (u != entt::null && ItemSystem::GetItemSpecialGroup(u) == (int)dwGroupVnum)
-			return true;
-	}
-
-	return false;
-}
-
 
 bool CHARACTER::UnEquipSpecialRideUniqueItem()
 {

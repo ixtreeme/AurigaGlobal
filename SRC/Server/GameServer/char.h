@@ -923,7 +923,6 @@ public:
 	bool			IsEquipUniqueItem(uint32_t dwItemVnum) const;
 
 	// CHECK_UNIQUE_GROUP
-	bool			IsEquipUniqueGroup(uint32_t dwGroupVnum) const;
 	// END_OF_CHECK_UNIQUE_GROUP
 
 	// End of Item

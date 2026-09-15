@@ -438,6 +438,7 @@ void CHARACTER::OnMove(bool) { UnexpectedService(__func__); }
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }
 float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
+CNewPetSystem* ecs::PlayerRuntime::GetNewPetSystem(entt::entity) { return nullptr; }
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
 // The fixture sets postures on the component, so this reads it rather than
 // answering POS_STANDING for everyone - which is also what production does.
@@ -460,7 +461,7 @@ void InventorySystem::SyncQuickslot(entt::entity,uint16_t,uint16_t,uint16_t) { U
 void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__); }
 void ecs::SocialSystem::SetDungeon(entt::entity, CDungeon *) { UnexpectedService(__func__); }
 bool ItemSystem::IsEquipUniqueItem(entt::entity,unsigned int) { UnexpectedService(__func__); }
-bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { UnexpectedService(__func__); }
+bool ItemSystem::IsEquipUniqueGroup(entt::entity,unsigned int) { UnexpectedService(__func__); }
 void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }
 void ecs::SocialSystem::CloseMyShop(entt::entity) { UnexpectedService(__func__); }
 entt::entity ecs::SocialSystem::GetMarryPartner(entt::entity) { UnexpectedService(__func__); }

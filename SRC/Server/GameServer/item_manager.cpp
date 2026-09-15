@@ -1283,8 +1283,8 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 				add(info.dwVNum, info.iCount);
 		}
 
-		const bool hasDoubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(pkKiller->GetEntityHandle(), PREMIUM_ITEM) > 0 ||
-			pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM)
+		const bool hasDoubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
+			ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM)
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0
 #endif
@@ -1464,7 +1464,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	}
 
 	{
-		if (!ecs::PlayerRuntime::IsStone(chr) && ((ecs::PlayerRuntime::GetPremiumRemainSeconds(pkKiller->GetEntityHandle(), PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
+		if (!ecs::PlayerRuntime::IsStone(chr) && ((ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0) || (ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| (ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif

@@ -264,7 +264,6 @@ bool AffectSystem::IsPolymorphed(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetMobDropItemVnum(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetPolymorphItemVnum(entt::entity) { Unexpected(); }
 bool MountSystem::IsHorseRiding(entt::entity) { return false; }
-bool CHARACTER::IsEquipUniqueGroup(uint32_t) const { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity, uint8_t) { Unexpected(); }
 int ecs::PointSystem::GetLevel(entt::entity) { Unexpected(); }
 namespace ecs::PlayerRuntime {
