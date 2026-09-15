@@ -733,7 +733,7 @@ void CHARACTER::fishing()
     }
 
     float fx, fy;
-    GetDeltaByDegree(GetRotation(), 400.0f, &fx, &fy);
+    GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(character), 400.0f, &fx, &fy);
 
     ecs::PlayerRuntime::SetCharEvent(character, ecs::PlayerRuntime::CharEvent::Fishing, fishing::CreateFishingEvent(character));
 }

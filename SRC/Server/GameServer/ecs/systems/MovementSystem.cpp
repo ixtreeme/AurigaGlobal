@@ -1969,14 +1969,6 @@ bool CHARACTER::IsPosition(int pos) const
 	return ecs::PlayerRuntime::GetPosition(GetEntityHandle()) == pos;
 }
 
-float CHARACTER::GetRotation() const
-{
-	if (const auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
-		return runtime->rotation;
-
-	return 0.0f;
-}
-
 namespace {
 int32_t RecoveryAmount(entt::entity e, int percent)
 {

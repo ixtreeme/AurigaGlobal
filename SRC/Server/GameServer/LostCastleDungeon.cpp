@@ -782,7 +782,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
             SkillSystem::SetSkillGroup(cloneEntity, SkillSystem::GetSkillGroup(sourceEntity));
 
-            ecs::MovementSystem::SetRotation(cloneEntity, source->GetRotation());
+            ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(sourceEntity));
             clone->SetXYZ(gx, gy, 0);
             clone->SetMapIndex(mapIndex);
 
@@ -1338,7 +1338,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
         SkillSystem::SetSkillGroup(cloneEntity, SkillSystem::GetSkillGroup(source));
 
-        ecs::MovementSystem::SetRotation(cloneEntity, pkSource->GetRotation());
+        ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(source));
         clone->SetXYZ(gx, gy, 0);
         clone->SetMapIndex(mapIndex);
 

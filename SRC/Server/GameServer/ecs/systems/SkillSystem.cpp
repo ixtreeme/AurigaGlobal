@@ -2248,7 +2248,7 @@ struct FuncSplashDamage
 			m_character, WEAR_WEAPON);
 		if (m_pkSk->dwVnum == SKILL_AMSEOP)
 		{
-			float fDelta = GetDegreeDelta(m_pkChr->GetRotation(), pkChrVictim->GetRotation());
+			float fDelta = GetDegreeDelta(ecs::PlayerRuntime::GetRotation(m_character), ecs::PlayerRuntime::GetRotation(victimEntity));
 			float adjust;
 
 			if (fDelta < 35.0f)
@@ -2714,13 +2714,13 @@ struct FuncSplashDamage
 
 				if (m_pkSk->dwVnum == SKILL_HORSE_WILDATTACK)
 				{
-					degree -= m_pkChr->GetRotation();
+					degree -= ecs::PlayerRuntime::GetRotation(m_character);
 					degree = fmod(degree, 360.0f) - 180.0f;
 
 					if (degree > 0)
-						degree = m_pkChr->GetRotation() + 90.0f;
+						degree = ecs::PlayerRuntime::GetRotation(m_character) + 90.0f;
 					else
-						degree = m_pkChr->GetRotation() - 90.0f;
+						degree = ecs::PlayerRuntime::GetRotation(m_character) - 90.0f;
 				}
 
 				GetDeltaByDegree(degree, fCrushSlidingLength, &fx, &fy);

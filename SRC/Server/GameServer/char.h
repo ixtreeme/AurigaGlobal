@@ -684,7 +684,6 @@ public:
 
 
 
-	float			GetRotation() const;
 
 
 	void			SendGreetMessage();
