@@ -464,10 +464,75 @@ void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
     MarkDirty(e);
 }
 
-bool IsLearnableSkill(entt::entity e, uint32_t skillId)
+bool IsLearnableSkill(entt::entity e, uint32_t dwSkillVnum)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->IsLearnableSkill(skillId) : false;
+	const CSkillProto * pkSkill = CSkillManager::instance().Get(dwSkillVnum);
+
+	if (!pkSkill)
+		return false;
+
+	if (SkillSystem::GetSkillLevel(e, dwSkillVnum) >= SKILL_MAX_LEVEL)
+		return false;
+
+	if (pkSkill->dwType == 0)
+	{
+		if (SkillSystem::GetSkillLevel(e, dwSkillVnum) >= pkSkill->bMaxLevel)
+			return false;
+
+		return true;
+	}
+
+	if (pkSkill->dwType == 5)
+	{
+		if (dwSkillVnum == SKILL_HORSE_WILDATTACK_RANGE && ecs::PlayerRuntime::GetJob(e) != JOB_ASSASSIN)
+			return false;
+
+		return true;
+	}
+
+	if (SkillSystem::GetSkillGroup(e) == 0)
+		return false;
+
+	if (pkSkill->dwType - 1 == ecs::PlayerRuntime::GetJob(e))
+		return true;
+	if (6 == pkSkill->dwType)
+	{
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+		return true;
+#else
+		if (SKILL_7_A_ANTI_TANHWAN <= dwSkillVnum && dwSkillVnum <= SKILL_7_D_ANTI_YONGBI)
+		{
+			for (int i=0 ; i < 4 ; i++)
+			{
+				if (unsigned(SKILL_7_A_ANTI_TANHWAN + i) != dwSkillVnum)
+				{
+					if (0 != SkillSystem::GetSkillLevel(e, SKILL_7_A_ANTI_TANHWAN + i))
+					{
+						return false;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		if (SKILL_8_A_ANTI_GIGONGCHAM <= dwSkillVnum && dwSkillVnum <= SKILL_8_D_ANTI_BYEURAK)
+		{
+			for (int i=0 ; i < 4 ; i++)
+			{
+				if (unsigned(SKILL_8_A_ANTI_GIGONGCHAM + i) != dwSkillVnum)
+				{
+					if (0 != SkillSystem::GetSkillLevel(e, SKILL_8_A_ANTI_GIGONGCHAM + i))
+						return false;
+				}
+			}
+
+			return true;
+		}
+#endif
+	}
+
+	return false;
 }
 
 bool LearnGrandMasterSkill(entt::entity e, uint32_t skillId)
@@ -1078,77 +1143,6 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
     return 0;
 }
 
-bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
-{
-	const CSkillProto * pkSkill = CSkillManager::instance().Get(dwSkillVnum);
-
-	if (!pkSkill)
-		return false;
-
-	if (GetSkillLevel(dwSkillVnum) >= SKILL_MAX_LEVEL)
-		return false;
-
-	if (pkSkill->dwType == 0)
-	{
-		if (GetSkillLevel(dwSkillVnum) >= pkSkill->bMaxLevel)
-			return false;
-
-		return true;
-	}
-
-	if (pkSkill->dwType == 5)
-	{
-		if (dwSkillVnum == SKILL_HORSE_WILDATTACK_RANGE && ecs::PlayerRuntime::GetJob(GetEntityHandle()) != JOB_ASSASSIN)
-			return false;
-
-		return true;
-	}
-
-	if (SkillSystem::GetSkillGroup(GetEntityHandle()) == 0)
-		return false;
-
-	if (pkSkill->dwType - 1 == ecs::PlayerRuntime::GetJob(GetEntityHandle()))
-		return true;
-	if (6 == pkSkill->dwType)
-	{
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-		return true;
-#else
-		if (SKILL_7_A_ANTI_TANHWAN <= dwSkillVnum && dwSkillVnum <= SKILL_7_D_ANTI_YONGBI)
-		{
-			for (int i=0 ; i < 4 ; i++)
-			{
-				if (unsigned(SKILL_7_A_ANTI_TANHWAN + i) != dwSkillVnum)
-				{
-					if (0 != GetSkillLevel(SKILL_7_A_ANTI_TANHWAN + i))
-					{
-						return false;
-					}
-				}
-			}
-
-			return true;
-		}
-
-		if (SKILL_8_A_ANTI_GIGONGCHAM <= dwSkillVnum && dwSkillVnum <= SKILL_8_D_ANTI_BYEURAK)
-		{
-			for (int i=0 ; i < 4 ; i++)
-			{
-				if (unsigned(SKILL_8_A_ANTI_GIGONGCHAM + i) != dwSkillVnum)
-				{
-					if (0 != GetSkillLevel(SKILL_8_A_ANTI_GIGONGCHAM + i))
-						return false;
-				}
-			}
-
-			return true;
-		}
-#endif
-	}
-
-	return false;
-}
-
 bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 {
 	CSkillProto * pkSk = CSkillManager::instance().Get(dwSkillVnum);
@@ -1156,7 +1150,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (!pkSk)
 		return false;
 
-	if (!IsLearnableSkill(dwSkillVnum))
+	if (!SkillSystem::IsLearnableSkill(GetEntityHandle(), dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 398, "");
@@ -1259,7 +1253,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	if (!pkSk)
 		return false;
 
-	if (!IsLearnableSkill(dwSkillVnum))
+	if (!SkillSystem::IsLearnableSkill(GetEntityHandle(), dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 398, "");
@@ -1789,7 +1783,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 		return;
 	}
 
-	if (!IsLearnableSkill(dwVnum))
+	if (!SkillSystem::IsLearnableSkill(GetEntityHandle(), dwVnum))
 		return;
 
 	// ±×·Łµĺ ¸¶˝şĹÍ´Â Äů˝şĆ®·Î¸¸ ĽöÇŕ°ˇ´É

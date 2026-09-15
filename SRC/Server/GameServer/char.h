@@ -1095,7 +1095,6 @@ public:
 	// ADD_GRANDMASTER_SKILL
 	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
 
-	bool				IsLearnableSkill(uint32_t dwSkillVnum) const;
 	// END_OF_ADD_GRANDMASTER_SKILL
 
 	bool				CanUseSkill(uint32_t dwSkillVnum) const;
