@@ -497,8 +497,18 @@ bool HasMobSkill(entt::entity e)
 
 bool CanUseMobSkill(entt::entity e, unsigned int idx)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->CanUseMobSkill(idx) : false;
+    const TMobSkillInfo* pInfo = SkillSystem::GetMobSkill(e, idx);
+
+    if (!pInfo)
+        return false;
+
+    if (SkillSystem::GetMobSkillCooltime(e, idx) > get_dword_time())
+        return false;
+
+    if (number(0, 1))
+        return false;
+
+    return true;
 }
 
 bool CanUseSkill(entt::entity e, uint32_t skillId)
@@ -1593,22 +1603,6 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #endif
 		LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_FAIL", "");
 	}
-
-	return true;
-}
-
-bool CHARACTER::CanUseMobSkill(unsigned int idx) const
-{
-	const TMobSkillInfo* pInfo = SkillSystem::GetMobSkill(GetEntityHandle(), idx);
-
-	if (!pInfo)
-		return false;
-
-	if (SkillSystem::GetMobSkillCooltime(GetEntityHandle(), idx) > get_dword_time())
-		return false;
-
-	if (number(0, 1))
-		return false;
 
 	return true;
 }

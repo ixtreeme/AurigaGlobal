@@ -1131,7 +1131,6 @@ private:
 #endif
 	// MOB_SKILL
 public:
-	bool				CanUseMobSkill(unsigned int idx) const;
 protected:
 	// END_OF_MOB_SKILL
 
