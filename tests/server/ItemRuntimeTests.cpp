@@ -226,7 +226,7 @@ CVikingDungeon& CVikingDungeon::instance() { static CVikingDungeon dungeon; retu
 bool CRuneDungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
 bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
 bool CVikingDungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
-bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t, std::vector<uint32_t>&,
+bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity, uint32_t, std::vector<uint32_t>&,
     std::vector<uint32_t>&, std::vector<entt::entity>&, int&) { Unexpected(); }
 void CParty::ChatPacketToAllMemberNew(uint8_t, uint32_t, const char*, ...) { Unexpected(); }
 void MountSystem::ForceClearRidingState(entt::entity) { Unexpected(); }

@@ -1186,7 +1186,7 @@ bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
 	return false;
 }
 
-bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<uint32_t> &dwItemVnums,
+bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity e, uint32_t dwGroupNum, std::vector<uint32_t> &dwItemVnums,
 	std::vector<uint32_t> &dwItemCounts, std::vector<entt::entity> &item_gets, int& count)
 {
 	const CSpecialItemGroup* pGroup = ITEM_MANAGER::instance().GetSpecialItemGroup(dwGroupNum);
@@ -1213,15 +1213,15 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		switch (dwVnum)
 		{
 		case CSpecialItemGroup::GOLD:
-			PointChange(POINT_GOLD, dwCount);
-			LogManager::instance().CharLog(GetEntityHandle(), dwCount, "TREASURE_GOLD", "");
+			ecs::PointSystem::Change(e, POINT_GOLD, dwCount);
+			LogManager::instance().CharLog(e, dwCount, "TREASURE_GOLD", "");
 
 			bSuccess = true;
 			break;
 		case CSpecialItemGroup::EXP:
 		{
-			PointChange(POINT_EXP, dwCount);
-			LogManager::instance().CharLog(GetEntityHandle(), dwCount, "TREASURE_EXP", "");
+			ecs::PointSystem::Change(e, POINT_EXP, dwCount);
+			LogManager::instance().CharLog(e, dwCount, "TREASURE_EXP", "");
 
 			bSuccess = true;
 		}
@@ -1230,10 +1230,10 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		case CSpecialItemGroup::MOB:
 		{
 			LOG_INFO("CSpecialItemGroup::MOB {}", dwCount);
-			int x = GetX() + number(-500, 500);
-			int y = GetY() + number(-500, 500);
+			int x = ecs::PlayerRuntime::GetX(e) + number(-500, 500);
+			int y = ecs::PlayerRuntime::GetY(e) + number(-500, 500);
 
-			const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobEntity(dwCount, GetMapIndex(), x, y, 0, true, -1);
+			const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobEntity(dwCount, ecs::PlayerRuntime::GetMapIndex(e), x, y, 0, true, -1);
 			if (mob != entt::null)
 				CombatSystem::SetAggressive(mob);
 			bSuccess = true;
@@ -1242,33 +1242,33 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		case CSpecialItemGroup::SLOW:
 		{
 			LOG_INFO("CSpecialItemGroup::SLOW {}", -(int)dwCount);
-			AffectSystem::AddAffect(GetEntityHandle(), AFFECT_SLOW, POINT_MOV_SPEED, -(int)dwCount, AFF_SLOW, 300, 0, true);
+			AffectSystem::AddAffect(e, AFFECT_SLOW, POINT_MOV_SPEED, -(int)dwCount, AFF_SLOW, 300, 0, true);
 			bSuccess = true;
 		}
 		break;
 		case CSpecialItemGroup::DRAIN_HP:
 		{
-			int64_t iDropHP = ecs::PointSystem::GetMaxHP(GetEntityHandle()) * dwCount / 100;
+			int64_t iDropHP = ecs::PointSystem::GetMaxHP(e) * dwCount / 100;
 			LOG_INFO("CSpecialItemGroup::DRAIN_HP {}", -iDropHP);
-			iDropHP = std::min(iDropHP, ecs::PlayerRuntime::GetHP(GetEntityHandle()) - 1);
+			iDropHP = std::min(iDropHP, ecs::PlayerRuntime::GetHP(e) - 1);
 			LOG_INFO("CSpecialItemGroup::DRAIN_HP {}", -iDropHP);
-			PointChange(POINT_HP, -iDropHP);
+			ecs::PointSystem::Change(e, POINT_HP, -iDropHP);
 			bSuccess = true;
 		}
 		break;
 		case CSpecialItemGroup::POISON:
 		{
-			AffectSystem::ApplyPoison(GetEntityHandle(), entt::null);
+			AffectSystem::ApplyPoison(e, entt::null);
 			bSuccess = true;
 		}
 		break;
 		case CSpecialItemGroup::MOB_GROUP:
 		{
-			int sx = GetX() - number(300, 500);
-			int sy = GetY() - number(300, 500);
-			int ex = GetX() + number(300, 500);
-			int ey = GetY() + number(300, 500);
-			CHARACTER_MANAGER::instance().SpawnGroup(dwCount, GetMapIndex(), sx, sy, ex, ey, nullptr, true);
+			int sx = ecs::PlayerRuntime::GetX(e) - number(300, 500);
+			int sy = ecs::PlayerRuntime::GetY(e) - number(300, 500);
+			int ex = ecs::PlayerRuntime::GetX(e) + number(300, 500);
+			int ey = ecs::PlayerRuntime::GetY(e) + number(300, 500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwCount, ecs::PlayerRuntime::GetMapIndex(e), sx, sy, ex, ey, nullptr, true);
 
 			bSuccess = true;
 		}
@@ -1276,7 +1276,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		default:
 		{
 			item_get = static_cast<int>(dwCount) > 0
-				? ItemSystem::AutoGiveItemEcs(GetEntityHandle(), dwVnum, dwCount, iRarePct)
+				? ItemSystem::AutoGiveItemEcs(e, dwVnum, dwCount, iRarePct)
 				: entt::null;
 
 			if (ItemSystem::IsValidItem(item_get))
@@ -5098,7 +5098,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			std::vector<entt::entity> item_gets;
 			int count = 0;
 
-			if (self->GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
+			if (ItemSystem::GiveItemFromSpecialItemGroup(e, dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 			{
 				ITEM_MANAGER::instance().RemoveItem(itemEntity);
 				ITEM_MANAGER::instance().RemoveItem(item2);
@@ -5190,7 +5190,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 		std::vector<entt::entity> item_gets;
 		int count = 0;
 
-		if (self->GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
+		if (ItemSystem::GiveItemFromSpecialItemGroup(e, dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 		{
 			ConsumeItemEcs(itemEntity);
 #ifdef ENABLE_RANKING
@@ -7130,7 +7130,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				std::vector<entt::entity> item_gets;
 				int count = 0;
 
-				if (self->GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
+				if (ItemSystem::GiveItemFromSpecialItemGroup(e, dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					for (int i = 0; i < count; i++) {
@@ -7166,7 +7166,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					return false;
 				}
 
-				if (self->GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
+				if (ItemSystem::GiveItemFromSpecialItemGroup(e, dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 					ConsumeItemEcs(itemEntity);
 			}
 			break;
@@ -7193,7 +7193,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					return false;
 				}
 
-				if (self->GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
+				if (ItemSystem::GiveItemFromSpecialItemGroup(e, dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 					ConsumeItemEcs(itemEntity);
 			}
 			break;
@@ -7206,7 +7206,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				std::vector<entt::entity> item_gets;
 				int count = 0;
 
-				if (self->GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
+				if (ItemSystem::GiveItemFromSpecialItemGroup(e, dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 				{
 					for (int i = 0; i < count; i++)
 					{

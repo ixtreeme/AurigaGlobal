@@ -3572,16 +3572,6 @@ bool ReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity
     return true;
 }
 
-static bool GiveSpecialItemGroupLegacyBoundary(
-    entt::entity owner, uint32_t groupNum,
-    std::vector<uint32_t>& itemVnums, std::vector<uint32_t>& itemCounts,
-    std::vector<entt::entity>& itemEntities, int& count)
-{
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    return legacyOwner && legacyOwner->GiveItemFromSpecialItemGroup(
-        groupNum, itemVnums, itemCounts, itemEntities, count);
-}
-
 SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum)
 {
     SpecialItemGroupResult result;
@@ -3589,7 +3579,7 @@ SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t gro
         return result;
 
     std::vector<entt::entity> itemGets;
-    if (!GiveSpecialItemGroupLegacyBoundary(
+    if (!GiveItemFromSpecialItemGroup(
             e, groupNum, result.itemVnums, result.itemCounts, itemGets,
             result.count))
         return result;

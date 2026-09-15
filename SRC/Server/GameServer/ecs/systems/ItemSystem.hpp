@@ -352,6 +352,8 @@ struct SpecialItemGroupResult {
     int count = 0;
 };
 SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum);
+bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum, std::vector<uint32_t>& itemVnums,
+    std::vector<uint32_t>& itemCounts, std::vector<entt::entity>& itemEntities, int& count);
 void ItemDivision(entt::entity e, TItemPos cell);
 
 // Slice E - shop / trade / refine

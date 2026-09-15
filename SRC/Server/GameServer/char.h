@@ -901,8 +901,6 @@ public:
 
 
 	bool			GiveItem(entt::entity victim, TItemPos Cell);
-	bool			GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector <uint32_t>& dwItemVnums,
-		std::vector <uint32_t>& dwItemCounts, std::vector<entt::entity>& item_gets, int& count);
 
 
 	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);
