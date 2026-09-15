@@ -544,36 +544,6 @@ void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
 }
 
 } // namespace ecs::PlayerRuntime
-bool CHARACTER::IsEquipUniqueItem(uint32_t dwItemVnum) const
-{
-	{
-		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE1);
-
-		if (u != entt::null && ItemSystem::GetItemVnum(u) == dwItemVnum)
-			return true;
-	}
-
-	{
-		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE2);
-
-		if (u != entt::null && ItemSystem::GetItemVnum(u) == dwItemVnum)
-			return true;
-	}
-
-	{
-		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
-
-		if (u != entt::null && ItemSystem::GetItemVnum(u) == dwItemVnum)
-			return true;
-	}
-
-	// 3?3�1���A� �a?i 3?3�1���(��o�) A����� A1A��N�U.
-	if (dwItemVnum == UNIQUE_ITEM_RING_OF_LANGUAGE)
-		return IsEquipUniqueItem(UNIQUE_ITEM_RING_OF_LANGUAGE_SAMPLE);
-
-	return false;
-}
-
 
 
 bool CHARACTER::UnEquipSpecialRideUniqueItem()
@@ -2078,21 +2048,6 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 }
 #endif
 
-#ifdef ENABLE_EXTRA_INVENTORY
-int CHARACTER::GetEmptyExtraInventory(uint8_t size, uint8_t category) const // needed for offline shop
-{
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-	for (int i = EXTRA_INVENTORY_CATEGORY_MAX_NUM * category; i < ExtraInventoryMaxSlots(category); ++i)
-#else
-	for (int i = EXTRA_INVENTORY_CATEGORY_MAX_NUM * category; i < EXTRA_INVENTORY_CATEGORY_MAX_NUM * (category + 1); ++i)
-#endif
-		if (InventorySystem::IsEmptyItemGrid(GetEntityHandle(), TItemPos(EXTRA_INVENTORY, i), size))
-			return i;
-
-	return -1;
-}
-#endif
-
 namespace ecs::PlayerRuntime {
 
 // The buff pools live in ecs::BuffOnAttrs. Reads tolerate a missing component -
@@ -2254,7 +2209,7 @@ void CHARACTER::AutoRecallProcess()
 			const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 			if (pItem != entt::null) {
 				if (ItemSystem::GetItemSocket(pItem, 2) == false) {
-					CPetSystem* petSystem = GetPetSystem();
+					CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(GetEntityHandle());
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
 							CPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
@@ -2278,7 +2233,7 @@ void CHARACTER::AutoRecallProcess()
 			const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 			if (pItem != entt::null) {
 				if (ItemSystem::GetItemSocket(pItem, 0) == false) {
-					CNewPetSystem* petSystem = GetNewPetSystem();
+					CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(GetEntityHandle());
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
 							CNewPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 0), pItem, "", false);

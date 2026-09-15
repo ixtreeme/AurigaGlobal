@@ -360,7 +360,7 @@ void CHARACTER::OnMove(bool) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t flag) {
     Check(flag == AFF_POISON, "recovery read unexpected affect"); return Recovery(e).poison;
 }
-bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
+bool ItemSystem::IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
 void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }
 CDungeon::CDungeon(IdType, int32_t, int32_t) : m_map_Area(recoveryAreas) {}

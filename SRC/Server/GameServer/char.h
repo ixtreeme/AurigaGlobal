@@ -908,9 +908,6 @@ public:
 
 	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);
 
-#ifdef ENABLE_EXTRA_INVENTORY
-	int				GetEmptyExtraInventory(uint8_t size, uint8_t category) const; // needed for offline shop
-#endif
 
 
 
@@ -920,7 +917,6 @@ public:
 	int				CountSpecifyTypeItem(uint8_t type) const;
 	void			RemoveSpecifyTypeItem(uint8_t type, int count = 1);
 
-	bool			IsEquipUniqueItem(uint32_t dwItemVnum) const;
 
 	// CHECK_UNIQUE_GROUP
 	// END_OF_CHECK_UNIQUE_GROUP
@@ -1260,8 +1256,6 @@ public:
 
 #ifdef __PET_SYSTEM__
 public:
-	CPetSystem* GetPetSystem() { return m_petSystem; }
-
 protected:
 	CPetSystem* m_petSystem;
 
@@ -1277,8 +1271,6 @@ protected:
 
 #ifdef __NEWPET_SYSTEM__
 public:
-	CNewPetSystem* GetNewPetSystem() { return m_newpetSystem; }
-
 protected:
 	CNewPetSystem* m_newpetSystem;
 

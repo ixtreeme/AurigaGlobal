@@ -1882,7 +1882,7 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
 
 bool CHARACTER::IsStaminaHalfConsume() const
 {
-    return IsEquipUniqueItem(UNIQUE_ITEM_HALF_STAMINA);
+    return ItemSystem::IsEquipUniqueItem(GetEntityHandle(), UNIQUE_ITEM_HALF_STAMINA);
 }
 
 namespace ecs::MovementSystem {
