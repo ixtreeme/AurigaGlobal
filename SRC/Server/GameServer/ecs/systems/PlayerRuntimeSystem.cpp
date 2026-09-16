@@ -2668,24 +2668,23 @@ bool CHARACTER::CanTakeInventoryItem(entt::entity item, TItemPos* cell)
 }
 
 #ifdef ENABLE_SOUL_SYSTEM
-int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoulType)
+int CombatSystem::GetSoulItemDamage(entt::entity attacker, entt::entity victim, int iDamage, uint8_t bSoulType)
 {
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkVictim)
+    if (!ecs::IsCharacter(victim))
         return 0;
 
-    if (!IsPC() || AffectSystem::IsPolymorphed(GetEntityHandle()) || pkVictim->IsPC())
+    if (!ecs::PlayerRuntime::GetDesc(attacker) || AffectSystem::IsPolymorphed(attacker) || ecs::PlayerRuntime::GetDesc(victim))
         return 0;
 
     if (bSoulType >= SOUL_MAX_NUM)
         return 0;
 
-    const CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SOUL_RED + bSoulType);
+    const CAffect* pAffect = AffectSystem::FindAffect(attacker, AFFECT_SOUL_RED + bSoulType);
     int iDamageAdd = 0;
     if (pAffect)
     {
         const entt::entity soulItem =
-            ItemSystem::FindItemByID(GetEntityHandle(), pAffect->lSPCost);
+            ItemSystem::FindItemByID(attacker, pAffect->lSPCost);
         if (ItemSystem::IsValidItem(soulItem))
         {
             int iCurrentMinutes = ItemSystem::GetItemSocket(soulItem, 2) / 10000;
@@ -2705,7 +2704,7 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
                 {
                     ItemSystem::UnlockItem(soulItem);
                     ItemSystem::SetItemSocket(soulItem, 1, false);
-                    AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
+                    AffectSystem::RemoveAffect(attacker, const_cast<CAffect*>(pAffect));
                 }
 
                 ItemSystem::SetItemSocket(soulItem, 2, 0);

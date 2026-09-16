@@ -2569,7 +2569,7 @@ struct FuncSplashDamage
 		}
 
 #ifdef ENABLE_SOUL_SYSTEM
-		iDam += m_pkChr->GetSoulItemDamage(victimEntity, iDam, BLUE_SOUL);
+		iDam += CombatSystem::GetSoulItemDamage(m_character, victimEntity, iDam, BLUE_SOUL);
 #endif
 
 

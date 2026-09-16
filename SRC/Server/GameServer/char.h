@@ -1489,11 +1489,6 @@ public:
 #endif
 
 
-#ifdef ENABLE_SOUL_SYSTEM
-public:
-	int 		GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoulType);
-#endif
-
 #ifdef ENABLE_BATTLE_PASS
 public:
 	void LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data);

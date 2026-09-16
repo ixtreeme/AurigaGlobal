@@ -473,7 +473,7 @@ void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Un
 int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool CHARACTER::UnEquipSpecialRideUniqueItem(void) { UnexpectedService(__func__); }
 void ecs::AcceSystem::Close(entt::entity) { UnexpectedService(__func__); }
-int CHARACTER::GetSoulItemDamage(entt::entity,int,unsigned char) { UnexpectedService(__func__); }
+int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, unsigned char) { UnexpectedService(__func__); }
 unsigned int CParty::GetLeaderPID(void) { UnexpectedService(__func__); }
 bool CParty::IsPositionNearLeader(entt::entity) { UnexpectedService(__func__); }

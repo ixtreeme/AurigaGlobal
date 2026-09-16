@@ -981,7 +981,7 @@ void CHARACTER::AttackedByFire(entt::entity,int,int) { Unexpected(); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpected(); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Unexpected(); }
 int ecs::PlayerRuntime::GetSkillPowerByLevel(entt::entity,int,bool) { Unexpected(); }
-int CHARACTER::GetSoulItemDamage(entt::entity,int,unsigned char) { Unexpected(); }
+int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { Unexpected(); }
 entt::entity CParty::GetNextOwnership(entt::entity,int,int) { Unexpected(); }
 bool SECTREE_MANAGER::GetRecallPositionByEmpire(int,unsigned char,pixel_position_s &) { Unexpected(); }
 bool MountSystem::IsRiding(entt::entity) { Unexpected(); }

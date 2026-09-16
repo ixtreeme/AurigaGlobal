@@ -6279,8 +6279,7 @@ public:
 	{
 	}
 
-	// ComputeSkill and GetSoulItemDamage have no entity form yet; each is its
-	// own migration and they share this one resolve.
+	// ComputeSkill has no entity form yet; it is its own migration.
 	LPCHARACTER Self() const { return ecs::LegacyCharOf(m_me); }
 
 	void operator () (uint32_t dwTargetVID)
@@ -6369,7 +6368,7 @@ public:
 			//iDam = (int)((int64_t)iDam * (100 - lValue) * 20 / 10000);
 
 #ifdef ENABLE_SOUL_SYSTEM // Arrow ninja
-			iDam += Self()->GetSoulItemDamage(victim, iDam, RED_SOUL);
+			iDam += CombatSystem::GetSoulItemDamage(m_me, victim, iDam, RED_SOUL);
 #endif
 
 			//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data(), iDam);
@@ -7000,8 +6999,8 @@ static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity vic
 	dam = dam * (100 - lValue) / 100;
 
 #ifdef ENABLE_SOUL_SYSTEM
-	if (LPCHARACTER souled = ecs::LegacyCharOf(attacker))
-		dam += souled->GetSoulItemDamage(victim, dam, RED_SOUL);
+	if (ecs::IsCharacter(attacker))
+		dam += CombatSystem::GetSoulItemDamage(attacker, victim, dam, RED_SOUL);
 #endif
 
 	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
@@ -7137,8 +7136,8 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 	dam = static_cast<int64_t>(CombatSystem::GetAttackMultiplier(attacker) * static_cast<double>(dam) + 0.5);
 
 #ifdef ENABLE_SOUL_SYSTEM
-	if (LPCHARACTER souled = ecs::LegacyCharOf(attacker))
-		dam += souled->GetSoulItemDamage(victim, dam, RED_SOUL);
+	if (ecs::IsCharacter(attacker))
+		dam += CombatSystem::GetSoulItemDamage(attacker, victim, dam, RED_SOUL);
 #endif
 
 	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))

@@ -942,15 +942,8 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 	iDam = attMul * tempIDam + 0.5f;
 
 #ifdef ENABLE_SOUL_SYSTEM
-    // Soul consumption is still a legacy operation. Resolve only at this
-    // boundary, never retain the pointer across affect callbacks.
     if (ecs::PlayerRuntime::IsPC(attacker))
-    {
-        auto* legacyAttacker = ecs::LegacyCharOf(attacker);
-        if (!legacyAttacker)
-            return BATTLE_NONE;
-        iDam += legacyAttacker->GetSoulItemDamage(victim, iDam, RED_SOUL);
-    }
+        iDam += CombatSystem::GetSoulItemDamage(attacker, victim, iDam, RED_SOUL);
 #endif
 
 	iRetDam = iDam;
