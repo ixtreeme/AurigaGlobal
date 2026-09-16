@@ -6,9 +6,6 @@
 #include "ecs/PIDRegistry.hpp"
 #include "ecs/CharacterAccessors.hpp"
 
-#ifdef M2_USE_POOL
-#include "pool.h"
-#endif
 
 #ifdef ENABLE_EVENT_MANAGER
 #include "buffer_manager.h"
@@ -195,9 +192,6 @@ protected:
 		std::unordered_set<entt::entity> m_set_pkChrPendingDestroy;
 		std::unordered_set<entt::entity> m_destroyingCharacters;
 
-#ifdef M2_USE_POOL
-		ObjectPool<CHARACTER> pool_;
-#endif
 };
 
 	template<class Func>

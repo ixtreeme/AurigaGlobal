@@ -9,9 +9,7 @@
 
 #include <boost/intrusive_ptr.hpp>
 
-#ifdef M2_USE_POOL
-#include "pool.h"
-#endif
+
 
 /**
  * Base class for all event info data
@@ -20,17 +18,6 @@ struct event_info_data
 {
 	event_info_data() {}
 	virtual ~event_info_data() {}
-
-#ifdef M2_USE_POOL
-	static void* operator new(size_t size) {
-		return pool_.Acquire(size);
-	}
-	static void operator delete(void* p, size_t size) {
-		pool_.Release(p, size);
-	}
-private:
-	static MemoryPool pool_;
-#endif
 };
 
 typedef struct event EVENT;
@@ -50,11 +37,9 @@ struct event
 
 	~event() {
 		if (info != nullptr) {
-#ifdef M2_USE_POOL
-			delete info;
-#else
+
 			M2_DELETE(info);
-#endif
+
 		}
 	}
 	TEVENTFUNC			func;
@@ -71,11 +56,7 @@ extern void intrusive_ptr_release(EVENT* p);
 
 template<class T> // T should be a subclass of event_info_data
 T* AllocEventInfo() {
-#ifdef M2_USE_POOL
-	return new T;
-#else
 	return M2_NEW T;
-#endif
 }
 
 extern void		event_destroy();

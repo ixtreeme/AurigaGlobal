@@ -30,11 +30,7 @@ void CEventQueue::Destroy()
 
 TQueueElement * CEventQueue::Enqueue(LPEVENT pvData, int duration, int pulse)
 {
-#ifdef M2_USE_POOL
-	TQueueElement * pElem = pool_.Construct();
-#else
 	TQueueElement * pElem = M2_NEW TQueueElement;
-#endif
 
 	pElem->pvData = pvData;
 	pElem->iStartTime = pulse;
@@ -62,11 +58,9 @@ void CEventQueue::Delete(TQueueElement * pElem)
 	// only our own backlink before releasing the entry and its event lease.
 	if (pElem->pvData && pElem->pvData->q_el == pElem)
 		pElem->pvData->q_el = nullptr;
-#ifdef M2_USE_POOL
-	pool_.Destroy(pElem);
-#else
+
 	M2_DELETE(pElem);
-#endif
+
 }
 
 int CEventQueue::GetTopKey()

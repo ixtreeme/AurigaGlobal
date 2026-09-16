@@ -1,7 +1,7 @@
 #ifndef __INC_SERVICE_H__
 #define __INC_SERVICE_H__
 
-//#define M2_USE_POOL
+
 //#define DEBUG_ALLOC
 
 

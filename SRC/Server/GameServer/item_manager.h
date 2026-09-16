@@ -3,9 +3,6 @@
 
 #include <entt/entity/entity.hpp>
 
-#ifdef M2_USE_POOL
-#include "pool.h"
-#endif
 #ifdef __INGAME_WIKI__
 #include <memory>
 #include <common/in_game_wiki.h>

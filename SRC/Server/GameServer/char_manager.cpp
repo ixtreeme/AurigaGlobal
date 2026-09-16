@@ -390,20 +390,15 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 {
 	uint32_t dwVID = AllocVID();
 
-#ifdef M2_USE_POOL
-	LPCHARACTER ch = pool_.Construct();
-#else
 	auto ch = new CHARACTER;
-#endif
+
 	ch->Create(dwVID);
 
 	if (EntityFactory::EnsureLegacyCharacterEntity(g_registry, ch, dwVID) == entt::null) {
 		--m_iVIDCount;
-#ifdef M2_USE_POOL
-		pool_.Destroy(ch);
-#else
+
 		M2_DELETE(ch);
-#endif
+
 		return nullptr;
 	}
 
@@ -538,15 +533,9 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* fil
 
 	// CHARACTER::Destroy releases inventory, mount and session state before
 	// calling EntityFactory::Destroy. Do not destroy the registry entry first.
-#ifdef M2_USE_POOL
-	pool_.Destroy(ch);
-#else
-#ifndef DEBUG_ALLOC
+
 	M2_DELETE(ch);
-#else
-	M2_DELETE_EX(ch, file, line);
-#endif
-#endif
+
 }
 
 LPCHARACTER CHARACTER_MANAGER::Find(uint32_t dwVID)
