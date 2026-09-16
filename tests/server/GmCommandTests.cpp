@@ -786,6 +786,7 @@ void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
 void CHARACTER::Save(void) { Unexpected(); }
 int64_t CHARACTER::GetSP(void)const { Unexpected(); }
 namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unexpected(); } }
+int ItemSystem::CountItem(entt::entity, uint32_t) { Unexpected(); }
 int CHARACTER::CountSpecifyItem(unsigned int)const { Unexpected(); }
 void CHARACTER::RemoveSpecifyItem(unsigned int,int,bool) { Unexpected(); }
 void CombatSystem::Dead(entt::entity,entt::entity,bool) { Unexpected(); }

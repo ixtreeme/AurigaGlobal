@@ -366,10 +366,7 @@ void OpenMyShop(entt::entity e, const char* c_pszSign, TShopItemTable* pTable, u
 		return;
 
 	auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-	// CountSpecifyItem, RemoveSpecifyItem, GetHorse and HorseSummon have no
-	// entity form yet; each is its own migration and they share this resolve.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
+	if (e == entt::null || !g_registry.valid(e))
 		return;
     if (!InventorySystem::CanHandleItems(e))
     {
@@ -512,9 +509,9 @@ void OpenMyShop(entt::entity e, const char* c_pszSign, TShopItemTable* pTable, u
         cont.insert((pTable + i)->pos);
     }
 
-    if (self->CountSpecifyItem(71049)
+    if (ItemSystem::CountItem(e, 71049)
 #ifdef KASMIR_PAKET_SYSTEM
-        || self->CountSpecifyItem(88901)
+        || ItemSystem::CountItem(e, 88901)
 #endif
         ) {
         TItemPriceListTable header;
@@ -533,8 +530,8 @@ void OpenMyShop(entt::entity e, const char* c_pszSign, TShopItemTable* pTable, u
 
         db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_UPDATE, ecs::PlayerRuntime::GetDesc(e)->GetHandle(), &header, sizeof(TItemPriceListTable));
     }
-    else if (self->CountSpecifyItem(50200))
-        self->RemoveSpecifyItem(50200, 1);
+    else if (ItemSystem::CountItem(e, 50200))
+        ItemSystem::RemoveSpecifyItemEcs(e, 50200, 1);
     else
         return;
 

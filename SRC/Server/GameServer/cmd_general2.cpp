@@ -8,6 +8,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <common/service.h>
 #include <common/CommonDefines.h>
@@ -227,8 +228,7 @@ ACMD(do_open_biologist) {
 }
 
 ACMD(do_delivery_biologist) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	char arg1[256], arg2[256];
@@ -258,7 +258,7 @@ ACMD(do_delivery_biologist) {
 	}
 
 	int vnum = biologistMissionInfo[stat][0];
-	if (ch->CountSpecifyItem(vnum) <= 0) {
+	if (ItemSystem::CountItem(character, vnum) <= 0) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 866, "");
 #endif
@@ -290,7 +290,7 @@ ACMD(do_delivery_biologist) {
 	}
 
 	if (item != 0) {
-		if (ch->CountSpecifyItem(item) <= 0) {
+		if (ItemSystem::CountItem(character, item) <= 0) {
 #ifdef TEXTS_IMPROVEMENT
 			if (item == 40143) {
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 863, "");
@@ -301,10 +301,10 @@ ACMD(do_delivery_biologist) {
 			return;
 		}
 
-		ch->RemoveSpecifyItem(item, 1);
+		ItemSystem::RemoveSpecifyItemEcs(character, item, 1);
 	}
 
-	ch->RemoveSpecifyItem(vnum, 1);
+	ItemSystem::RemoveSpecifyItemEcs(character, vnum, 1);
 
 	int success = potion == true ? 100 : biologistMissionInfo[stat][13];
 	int waittime = biologistMissionInfo[stat][2] + get_global_time();
@@ -456,8 +456,7 @@ ACMD(do_reward_biologist) {
 }
 
 ACMD(do_change_biologist) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	char arg1[256], arg2[256];
@@ -495,11 +494,11 @@ ACMD(do_change_biologist) {
 		return;
 	}
 	else {
-		if (ch->CountSpecifyItem(164401) <= 0) {
+		if (ItemSystem::CountItem(character, 164401) <= 0) {
 			return;
 		}
 
-		ch->RemoveSpecifyItem(164401, 1);
+		ItemSystem::RemoveSpecifyItemEcs(character, 164401, 1);
 		AffectSystem::RemoveAffect(character, idx);
 		AffectSystem::AddAffect(character, idx, type, biologistMissionInfo[iarg1][iarg2 + 1], 0, 315360000, 0, false);
 #ifdef TEXTS_IMPROVEMENT

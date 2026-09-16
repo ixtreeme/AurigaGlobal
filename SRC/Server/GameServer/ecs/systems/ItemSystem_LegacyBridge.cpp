@@ -2032,8 +2032,8 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 		return;
 
 	int needKeys = NeedKeysForExtraInventory[stage];
-	if (CountSpecifyItem(72320) >= needKeys) {
-		RemoveSpecifyItem(72320, needKeys);
+	if (ItemSystem::CountItem(GetEntityHandle(), 72320) >= needKeys) {
+		ItemSystem::RemoveSpecifyItemEcs(GetEntityHandle(), 72320, needKeys);
 
 		ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), stageName.c_str(), stage + 1);
 		PointChange(POINT_EXTRA_INVENTORY1 + category, stage + 1);
@@ -2043,7 +2043,7 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 #endif
 	}
 	else {
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "update_envanter_need %d", needKeys - CountSpecifyItem(72320));
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "update_envanter_need %d", needKeys - ItemSystem::CountItem(GetEntityHandle(), 72320));
 	}
 }
 #endif

@@ -3167,10 +3167,7 @@ void CInputMain::MountInventoryItemMove(entt::entity character, const char* data
 #ifdef ENABLE_MAP_TELEPORTER
 void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
-// TODO Phase 8: migrate MapTeleporter handler ECS
-// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3239,11 +3236,11 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 	ecs::PointSystem::Change(character, POINT_GOLD, -rConf.price);
 
 	for (auto itemVnum : rConf.items)
-		if (ch->CountSpecifyItem(itemVnum) == 0)
+		if (ItemSystem::CountItem(character, itemVnum) == 0)
 			return;
 
 	for(auto itemVnum : rConf.items)
-		ch->RemoveSpecifyItem(itemVnum);
+		ItemSystem::RemoveSpecifyItemEcs(character, itemVnum);
 
 	// int iMapIndex = 0;
 
@@ -5151,14 +5148,14 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 		{
 			static const uint32_t WHEEL_TICKET_VNUM = 70610;
 
-			if (ch->CountSpecifyItem(WHEEL_TICKET_VNUM) < 1)
+			if (ItemSystem::CountItem(character, WHEEL_TICKET_VNUM) < 1)
 			{
 
 				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You Dont have Battle Pass Ticket");
 				return;
 			}
 
-			ch->RemoveSpecifyItem(WHEEL_TICKET_VNUM, 1);
+			ItemSystem::RemoveSpecifyItemEcs(character, WHEEL_TICKET_VNUM, 1);
 
 			ch->GetWheelDestiny()->TurnWheel();
 		}

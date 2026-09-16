@@ -3098,7 +3098,6 @@ void block_chat(entt::entity executor, std::string_view arguments)
 // BUILD_BUILDING
 ACMD(do_build)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	using namespace building;
 
 	char arg1[256], arg2[256], arg3[256], arg4[256];
@@ -3230,7 +3229,7 @@ ACMD(do_build)
 						if (dwItemVnum == 0)
 							break;
 
-						if ((int) dwItemCount > ch->CountSpecifyItem(dwItemVnum))
+						if ((int) dwItemCount > ItemSystem::CountItem(character, dwItemVnum))
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 449, "");
@@ -3274,7 +3273,7 @@ ACMD(do_build)
 								break;
 
 							LOG_INFO("BUILD: material {} {} {}", i, dwItemVnum, dwItemCount);
-							ch->RemoveSpecifyItem(dwItemVnum, dwItemCount);
+							ItemSystem::RemoveSpecifyItemEcs(character, dwItemVnum, dwItemCount);
 						}
 					}
 				}
