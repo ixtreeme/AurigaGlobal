@@ -758,7 +758,6 @@ public:
 
 
 
-	bool			IsStaminaHalfConsume() const;
 
 
 protected:
@@ -1269,7 +1268,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Resists & Proofs
 public:
-	bool				CannotMoveByAffect() const;	// Ư�� ȿ���� ���� ������ �� ���� �����ΰ�?
 
 protected:
 	// End of Resists & Proofs

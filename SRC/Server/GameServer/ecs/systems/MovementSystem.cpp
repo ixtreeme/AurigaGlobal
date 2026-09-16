@@ -1502,11 +1502,6 @@ bool CanMove(entt::entity e)
 }
 } // namespace ecs::MovementSystem
 
-bool CHARACTER::CannotMoveByAffect() const
-{
-	return (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_STUN));
-}
-
 // 1����?x, y A��!�� AI? 1AA2�U.
 bool CHARACTER::Sync(int32_t x, int32_t y)
 {
@@ -1878,11 +1873,6 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
                 MonsterLog("�ڴU");
         }
     }
-}
-
-bool CHARACTER::IsStaminaHalfConsume() const
-{
-    return ItemSystem::IsEquipUniqueItem(GetEntityHandle(), UNIQUE_ITEM_HALF_STAMINA);
 }
 
 namespace ecs::MovementSystem {
