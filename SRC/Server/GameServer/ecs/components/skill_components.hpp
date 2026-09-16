@@ -40,6 +40,15 @@ struct SkillDamageBonus {
     std::map<int, TSkillUseInfo> useInfo;
 };
 
+// The eunhyung power an attack carried out of stealth. OnMove records it when
+// an attack breaks eunhyung and drops it on any other attack; the splash
+// damage formula reads it as "ek". No component means no eunhyung, so it can
+// never be read before it is written - the CHARACTER field it replaces was
+// left uninitialised.
+struct EunhyungStrike {
+    uint32_t power { 0 };
+};
+
 struct SkillColorChangeInProgress {};
 
 struct SkillColor {

@@ -1117,15 +1117,6 @@ private:
 	int					m_iChainLightingIndex;
 	TChainLightningExceptContainer m_setExceptChainLighting;
 
-	// for SKILL_EUNHYUNG
-public:
-	void				SetAffectedEunhyung();
-	void				ClearAffectedEunhyung() { m_dwAffectedEunhyungLevel = 0; }
-	uint32_t			GetAffectedEunhyung() const { return m_dwAffectedEunhyungLevel; }
-
-private:
-	uint32_t				m_dwAffectedEunhyungLevel;
-
 	//
 	// Skill levels
 	//

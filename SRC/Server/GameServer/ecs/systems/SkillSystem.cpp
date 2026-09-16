@@ -1631,9 +1631,28 @@ int SkillSystem::GetChainLightningMaxCount(entt::entity e)
 	return aiChainLightningCountBySkillLevel[MIN(SKILL_MAX_LEVEL, SkillSystem::GetSkillLevel(e, SKILL_CHAIN))];
 }
 
-void CHARACTER::SetAffectedEunhyung()
+void SkillSystem::SetAffectedEunhyung(entt::entity e)
 {
-	m_dwAffectedEunhyungLevel = SkillSystem::GetSkillPower(GetEntityHandle(), SKILL_EUNHYUNG);
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	g_registry.emplace_or_replace<ecs::EunhyungStrike>(e,
+		static_cast<uint32_t>(SkillSystem::GetSkillPower(e, SKILL_EUNHYUNG)));
+}
+
+void SkillSystem::ClearAffectedEunhyung(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e))
+		g_registry.remove<ecs::EunhyungStrike>(e);
+}
+
+uint32_t SkillSystem::GetAffectedEunhyung(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* strike = g_registry.try_get<ecs::EunhyungStrike>(e);
+	return strike ? strike->power : 0;
 }
 
 
@@ -2095,10 +2114,10 @@ struct FuncSplashDamage
 		m_pkSk->SetPointVar("chain", m_pkChr->GetChainLightningIndex());
 		m_pkChr->IncChainLightningIndex();
 
-		bool bUnderEunhyung = m_pkChr->GetAffectedEunhyung() > 0; // ŔĚ°Ç żÖ ż©±âĽ­ ÇĎÁö??
+		bool bUnderEunhyung = SkillSystem::GetAffectedEunhyung(m_character) > 0; // ŔĚ°Ç żÖ ż©±âĽ­ ÇĎÁö??
 
-		m_pkSk->SetPointVar("ek", m_pkChr->GetAffectedEunhyung()*1./100);
-		//m_pkChr->ClearAffectedEunhyung();
+		m_pkSk->SetPointVar("ek", SkillSystem::GetAffectedEunhyung(m_character)*1./100);
+		//SkillSystem::ClearAffectedEunhyung(m_character);
 		SetPolyVarForAttack(m_character, m_pkSk, m_pkWeapon);
 
 		int iAmount = 0;

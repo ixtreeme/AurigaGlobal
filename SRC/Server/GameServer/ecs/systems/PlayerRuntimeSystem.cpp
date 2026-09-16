@@ -3537,11 +3537,11 @@ void CHARACTER::OnMove(bool bIsAttack)
         if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_EUNHYUNG))
         {
             AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_EUNHYUNG);
-            SetAffectedEunhyung();
+            SkillSystem::SetAffectedEunhyung(GetEntityHandle());
         }
         else
         {
-            ClearAffectedEunhyung();
+            SkillSystem::ClearAffectedEunhyung(GetEntityHandle());
         }
 
         /*if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_JEONSIN))
