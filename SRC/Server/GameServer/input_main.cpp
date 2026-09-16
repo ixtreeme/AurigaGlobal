@@ -3233,11 +3233,11 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 		return;
 	}
 
-	ecs::PointSystem::Change(character, POINT_GOLD, -rConf.price);
-
 	for (auto itemVnum : rConf.items)
 		if (ItemSystem::CountItem(character, itemVnum) == 0)
 			return;
+
+	ecs::PointSystem::Change(character, POINT_GOLD, -rConf.price);
 
 	for(auto itemVnum : rConf.items)
 		ItemSystem::RemoveSpecifyItemEcs(character, itemVnum);
