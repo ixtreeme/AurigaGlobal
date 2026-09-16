@@ -412,7 +412,6 @@ EVENTFUNC(battle_pass_stay_online_event_session){
     if (!info || info->ch == entt::null)
         return 0;
 
-    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
 	const entt::entity character = info->ch;
 
     if (!ecs::PlayerRuntime::GetDesc(character))

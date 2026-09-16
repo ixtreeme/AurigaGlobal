@@ -3680,9 +3680,7 @@ teleport_area:
 	ALUA(pc_dc_direct0)
 	{
         // migrated from CHARACTER::Disconnect
-        // DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		ecs::SessionSystem::Disconnect(chEntity, lua_tostring(L, 1));
 		return 0;
 	}
