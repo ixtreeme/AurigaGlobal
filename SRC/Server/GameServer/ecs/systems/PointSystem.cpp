@@ -539,13 +539,13 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 #endif
 
 
-void CHARACTER::CheckMaximumPoints()
+void ecs::PointSystem::CheckMaximumPoints(entt::entity e)
 {
-	if (ecs::PointSystem::GetMaxHP(GetEntityHandle()) < ecs::PlayerRuntime::GetHP(GetEntityHandle()))
-		PointChange(POINT_HP, ecs::PointSystem::GetMaxHP(GetEntityHandle()) - ecs::PlayerRuntime::GetHP(GetEntityHandle()));
+	if (ecs::PointSystem::GetMaxHP(e) < ecs::PlayerRuntime::GetHP(e))
+		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::GetMaxHP(e) - ecs::PlayerRuntime::GetHP(e));
 
-	if (ecs::PointSystem::GetMaxSP(GetEntityHandle()) < ecs::PlayerRuntime::GetSP(GetEntityHandle()))
-		PointChange(POINT_SP, ecs::PointSystem::GetMaxSP(GetEntityHandle()) - ecs::PlayerRuntime::GetSP(GetEntityHandle()));
+	if (ecs::PointSystem::GetMaxSP(e) < ecs::PlayerRuntime::GetSP(e))
+		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::GetMaxSP(e) - ecs::PlayerRuntime::GetSP(e));
 }
 
 

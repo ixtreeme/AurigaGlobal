@@ -797,6 +797,7 @@ void event_cancel(LPEVENT* timer) {
 void ecs::ChatSystem::Send(entt::entity,unsigned char,char const *,...) { UnexpectedService(__func__); }
 void ecs::ChatSystem::SendNew(entt::entity,unsigned char,unsigned int,char const *,...) { ++chats; }
 int ecs::PointSystem::GetLevel(entt::entity) { UnexpectedService(__func__); }
+void ecs::PointSystem::CheckMaximumPoints(entt::entity) { UnexpectedService(__func__); }
 void ecs::PointSystem::ApplyPoint(entt::entity,unsigned char,int) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetPart(entt::entity e, unsigned char part, unsigned short value) {
     Check(part == PART_HAIR && value == 0, "expiry only resets hair appearance");
@@ -842,7 +843,6 @@ void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) { UnexpectedService(__func
 int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetMaxHP(entt::entity, int64_t) { UnexpectedService(__func__); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
-void CHARACTER::CheckMaximumPoints(void) { UnexpectedService(__func__); }
 unsigned int ecs::MovementSystem::GetStopTime(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::StartMuyeongEvent(void) { UnexpectedService(__func__); }
 void CHARACTER::StopMuyeongEvent(void) { UnexpectedService(__func__); }

@@ -12,6 +12,7 @@ int64_t GetGold(entt::entity e);
 int32_t GetMaxHP(entt::entity e);
 int GetLimitPoint(entt::entity e, uint8_t type);
 int32_t GetMaxSP(entt::entity e);
+void CheckMaximumPoints(entt::entity e);
 int32_t GetLevel(entt::entity e);
 bool Set(entt::entity e, uint8_t type, int64_t value);
 bool SetReal(entt::entity e, uint8_t type, int64_t value);

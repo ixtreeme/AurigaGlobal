@@ -1809,7 +1809,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, pos));
 #endif
 	}
-	ch->CheckMaximumPoints();
+	ecs::PointSystem::CheckMaximumPoints(ch->GetEntityHandle());
 	NetworkSyncSystem::PointsPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	ch->SetItemLoaded();

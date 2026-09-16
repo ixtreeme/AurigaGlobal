@@ -916,10 +916,7 @@ bool UpdateAffect(entt::entity e)
 // Dropping every affect, optionally keeping the ones that survive death.
 void ClearAffect(entt::entity e, bool bSave)
 {
-	// CheckMaximumPoints have no entity form yet;
-	// each is its own migration and they share this one resolve.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
+	if (e == entt::null || !g_registry.valid(e))
 		return;
 
     const auto entity = e;
@@ -1009,7 +1006,7 @@ void ClearAffect(entt::entity e, bool bSave)
 	if (!AffectState(entity))
 		return;
 
-	self->CheckMaximumPoints();
+	ecs::PointSystem::CheckMaximumPoints(entity);
 	if (!AffectState(entity))
 		return;
 

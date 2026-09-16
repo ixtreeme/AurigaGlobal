@@ -680,7 +680,6 @@ public:
 #endif
 	);
 
-	void			CheckMaximumPoints();	// HP, SP ���� ���� ���� �ִ밪 ���� ������ �˻��ϰ� ���ٸ� �����.
 
 
 
