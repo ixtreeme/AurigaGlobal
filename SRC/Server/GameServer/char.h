@@ -1125,7 +1125,7 @@ private:
 public:
 	void				SetAffectedEunhyung();
 	void				ClearAffectedEunhyung() { m_dwAffectedEunhyungLevel = 0; }
-	bool				GetAffectedEunhyung() const { return m_dwAffectedEunhyungLevel; }
+	uint32_t			GetAffectedEunhyung() const { return m_dwAffectedEunhyungLevel; }
 
 private:
 	uint32_t				m_dwAffectedEunhyungLevel;
