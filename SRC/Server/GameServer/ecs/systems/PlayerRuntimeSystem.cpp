@@ -3863,7 +3863,6 @@ void CHARACTER::Initialize()
 
 
 
-    ResetChainLightningIndex();
 
 
 #ifdef ENABLE_FAKE_SHOP_HEADER

@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <ctime>
+#include <unordered_set>
 
 #include <entt/entt.hpp>
 
@@ -88,6 +89,11 @@ void AddSkillPoint(entt::entity e, int amount);
 int GetSkillMasterType(entt::entity e, uint32_t skillId);
 int GetSkillPower(entt::entity e, uint32_t skillId, uint8_t level = 0);
 int GetChainLightningMaxCount(entt::entity e);
+int GetChainLightningIndex(entt::entity e);
+void IncChainLightningIndex(entt::entity e);
+void AddChainLightningExcept(entt::entity e, entt::entity target);
+void ResetChainLightningIndex(entt::entity e);
+const std::unordered_set<entt::entity>& GetChainLightningExcepts(entt::entity e);
 void SetAffectedEunhyung(entt::entity e);
 void ClearAffectedEunhyung(entt::entity e);
 uint32_t GetAffectedEunhyung(entt::entity e);

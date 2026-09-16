@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <common/tables.h>
 
@@ -47,6 +48,14 @@ struct SkillDamageBonus {
 // left uninitialised.
 struct EunhyungStrike {
     uint32_t power { 0 };
+};
+
+// One chain lightning cast in flight: how many jumps have landed and who has
+// been hit already. UseSkill removes it when a new cast starts, so an absent
+// component is a fresh cast.
+struct ChainLightningState {
+    int index { 0 };
+    std::unordered_set<entt::entity> excepts;
 };
 
 struct SkillColorChangeInProgress {};

@@ -1631,6 +1631,39 @@ int SkillSystem::GetChainLightningMaxCount(entt::entity e)
 	return aiChainLightningCountBySkillLevel[MIN(SKILL_MAX_LEVEL, SkillSystem::GetSkillLevel(e, SKILL_CHAIN))];
 }
 
+int SkillSystem::GetChainLightningIndex(entt::entity e)
+{
+	const auto* state = (e != entt::null && g_registry.valid(e)) ? g_registry.try_get<ecs::ChainLightningState>(e) : nullptr;
+	return state ? state->index : 0;
+}
+
+void SkillSystem::IncChainLightningIndex(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e))
+		++g_registry.get_or_emplace<ecs::ChainLightningState>(e).index;
+}
+
+void SkillSystem::AddChainLightningExcept(entt::entity e, entt::entity target)
+{
+	if (e != entt::null && g_registry.valid(e))
+		g_registry.get_or_emplace<ecs::ChainLightningState>(e).excepts.insert(target);
+}
+
+void SkillSystem::ResetChainLightningIndex(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e))
+		g_registry.remove<ecs::ChainLightningState>(e);
+}
+
+// FFindNearVictim keeps this reference for one sectree walk; nothing in that
+// walk adds or removes chain lightning state, so the storage does not move.
+const std::unordered_set<entt::entity>& SkillSystem::GetChainLightningExcepts(entt::entity e)
+{
+	static const std::unordered_set<entt::entity> none;
+	const auto* state = (e != entt::null && g_registry.valid(e)) ? g_registry.try_get<ecs::ChainLightningState>(e) : nullptr;
+	return state ? state->excepts : none;
+}
+
 void SkillSystem::SetAffectedEunhyung(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -1846,7 +1879,7 @@ void SkillSystem::SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod)
 struct FFindNearVictim
 {
 	FFindNearVictim(entt::entity center, entt::entity attacker,
-		const CHARACTER::TChainLightningExceptContainer& excepts_set = empty_set_)
+		const std::unordered_set<entt::entity>& excepts_set = empty_set_)
 		: m_center(center),
 	m_nextTarget(entt::null),
 	m_attacker(attacker),
@@ -1898,12 +1931,12 @@ struct FFindNearVictim
 	entt::entity m_nextTarget;
 	entt::entity m_attacker;
 	int		m_count;
-	const CHARACTER::TChainLightningExceptContainer & m_excepts_set;
+	const std::unordered_set<entt::entity>& m_excepts_set;
 private:
-	static CHARACTER::TChainLightningExceptContainer empty_set_;
+	static std::unordered_set<entt::entity> empty_set_;
 };
 
-CHARACTER::TChainLightningExceptContainer FFindNearVictim::empty_set_;
+std::unordered_set<entt::entity> FFindNearVictim::empty_set_;
 
 EVENTINFO(chain_lightning_event_info)
 {
@@ -1937,14 +1970,14 @@ EVENTFUNC(ChainLightningEvent)
 	if (ecs::SocialSystem::GetParty(victimEntity)) // ĆÄĆĽ ¸ŐŔú
 	{
 		target = ecs::SocialSystem::GetParty(victimEntity)->GetNextOwnership(entt::null, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
-		if (target == victimEntity || !number(0, 2) || pkChr->GetChainLightingExcept().find(target) != pkChr->GetChainLightingExcept().end())
+		if (target == victimEntity || !number(0, 2) || SkillSystem::GetChainLightningExcepts(character).count(target) != 0)
 			target = entt::null;
 	}
 
 	if (target == entt::null)
 	{
 		// 1. Find Next victim
-		FFindNearVictim f(victimEntity, character, pkChr->GetChainLightingExcept());
+		FFindNearVictim f(victimEntity, character, SkillSystem::GetChainLightningExcepts(character));
 
 		if (ecs::PlayerRuntime::GetSectree(victimEntity))
 		{
@@ -1960,7 +1993,7 @@ EVENTFUNC(ChainLightningEvent)
 		if (character != entt::null)
 			g_dispatcher.trigger(ecs::EvSkillUsed { character, SKILL_CHAIN });
 		pkChr->ComputeSkill(SKILL_CHAIN, target);
-		pkChr->AddChainLightningExcept(target);
+		SkillSystem::AddChainLightningExcept(character, target);
 	}
 	else
 	{
@@ -2111,8 +2144,8 @@ struct FuncSplashDamage
 		m_pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 		m_pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 
-		m_pkSk->SetPointVar("chain", m_pkChr->GetChainLightningIndex());
-		m_pkChr->IncChainLightningIndex();
+		m_pkSk->SetPointVar("chain", SkillSystem::GetChainLightningIndex(m_character));
+		SkillSystem::IncChainLightningIndex(m_character);
 
 		bool bUnderEunhyung = SkillSystem::GetAffectedEunhyung(m_character) > 0; // ŔĚ°Ç żÖ ż©±âĽ­ ÇĎÁö??
 
@@ -2387,7 +2420,7 @@ struct FuncSplashDamage
 			CombatSystem::BeginFight(victimEntity, (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN)
-			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(m_character).data(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
+			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(m_character).data(), SkillSystem::GetChainLightningIndex(m_character) - 1, iDam, static_cast<int>(dt));
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 		{
@@ -2676,7 +2709,7 @@ struct FuncSplashDamage
 			ecs::PointSystem::Change(m_character, POINT_SP, iDam * iPct / 100);
 		}
 
-		if (m_pkSk->dwVnum == SKILL_CHAIN && m_pkChr->GetChainLightningIndex() < SkillSystem::GetChainLightningMaxCount(m_character))
+		if (m_pkSk->dwVnum == SKILL_CHAIN && SkillSystem::GetChainLightningIndex(m_character) < SkillSystem::GetChainLightningMaxCount(m_character))
 		{
 			chain_lightning_event_info* info = AllocEventInfo<chain_lightning_event_info>();
 
@@ -3987,8 +4020,8 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 	if (dwVnum == SKILL_CHAIN)
 	{
-		ResetChainLightningIndex();
-		AddChainLightningExcept(victimEntity);
+		SkillSystem::ResetChainLightningIndex(GetEntityHandle());
+		SkillSystem::AddChainLightningExcept(GetEntityHandle(), victimEntity);
 	}
 
 #ifdef GROUP_BUFF
