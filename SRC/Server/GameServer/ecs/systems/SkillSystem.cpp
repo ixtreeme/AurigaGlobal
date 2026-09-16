@@ -1097,7 +1097,7 @@ bool ResetOneSkill(entt::entity e, uint32_t skillId)
 
 } // namespace SkillSystem
 
-void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
+void SkillSystem::SetSkillNextReadTimeCapped(entt::entity e, uint32_t dwVnum, time_t time)
 {
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
     if ((dwVnum >= SKILL_ANTI_PALBANG) && (dwVnum <= SKILL_ANTI_BYEURAK))
@@ -1106,10 +1106,10 @@ void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
         time = uint32_t(get_global_time() + (3600 * 2));
 #endif
 
-    if ((SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum) == SKILL_MASTER) && (dwVnum >= SKILL_SAMYEON) && (dwVnum <= SKILL_JEUNGRYEOK))
+    if ((SkillSystem::GetSkillMasterType(e, dwVnum) == SKILL_MASTER) && (dwVnum >= SKILL_SAMYEON) && (dwVnum <= SKILL_JEUNGRYEOK))
         time = uint32_t(get_global_time() + 3600);
 
-    SkillSystem::SetSkillNextReadTime(GetEntityHandle(), dwVnum, time);
+    SkillSystem::SetSkillNextReadTime(e, dwVnum, time);
 }
 
 int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
@@ -1213,7 +1213,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 		SkillLevelUp(dwSkillVnum, SKILL_UP_BY_QUEST);
 	}
 
-	SetSkillNextReadTime(dwSkillVnum, nextTime);
+	SkillSystem::SetSkillNextReadTimeCapped(GetEntityHandle(), dwSkillVnum, nextTime);
 
 	if (bLastLevel == GetSkillLevel(dwSkillVnum))
 	{

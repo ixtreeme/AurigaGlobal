@@ -1101,7 +1101,6 @@ public:
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 	int					GetSkillLevel(uint32_t dwVnum) const;
 
-	void				SetSkillNextReadTime(uint32_t dwVnum, time_t time);
 
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 	int					ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
