@@ -991,8 +991,7 @@ namespace offlineshop
 	//topatch
 	bool CShopManager::RecvShopEditItemClientPacket(entt::entity character, uint32_t dwItemID, const TPriceInfo& price)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
+		if(!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
 		if (!_IS_VALID_GM_LEVEL(character))
@@ -2011,8 +2010,7 @@ namespace offlineshop
 	//client packets exchanging
 	bool CShopManager::RecvShopCreateNewClientPacket(entt::entity character, TShopInfo& rShopInfo, std::vector<TShopItemInfo> & vec)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || ecs::OfflineShopSystem::GetOfflineShop(character))
+		if(!ecs::IsCharacter(character) || ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
 		if (!_IS_VALID_GM_LEVEL(character))
@@ -2164,8 +2162,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopChangeNameClientPacket(entt::entity character, const char* szName)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
+		if(!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
 		static char szNameChecked[OFFLINE_SHOP_NAME_MAX_LEN];
@@ -2189,8 +2186,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopForceCloseClientPacket(entt::entity character)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
+		if(!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
@@ -2559,8 +2555,7 @@ namespace offlineshop
 	//ITEMS
 	bool CShopManager::RecvShopAddItemClientPacket(entt::entity character, const TItemPos& pos, const TPriceInfo& price)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
+		if(!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
 		if (!_IS_VALID_GM_LEVEL(character))
@@ -2639,8 +2634,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopRemoveItemClientPacket(entt::entity character, uint32_t dwItemID)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
+		if(!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
 		if (!_IS_VALID_GM_LEVEL(character))
@@ -2688,8 +2682,7 @@ namespace offlineshop
 	//FILTER
 	bool CShopManager::RecvShopFilterRequestClientPacket(entt::entity character, const TFilterInfo& filter)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch)
+		if(!ecs::IsCharacter(character))
 			return false;
 
 		//offlineshop-updated 03/08/2019
@@ -2914,8 +2907,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopEditOfferClientPacket(entt::entity character, const TOfferInfo& offer)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch)
+		if(!ecs::IsCharacter(character))
 			return false;
 
 		if (!_IS_VALID_GM_LEVEL(character))
@@ -2928,8 +2920,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopAcceptOfferClientPacket(entt::entity character, uint32_t dwOfferID)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::OfflineShopSystem::GetOfflineShop(character))
+		if(!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetOfflineShop(character))
 			return false;
 
 		if (!_IS_VALID_GM_LEVEL(character))
@@ -2971,8 +2962,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopCancelOfferClientPacket(entt::entity character, uint32_t dwOfferID, uint32_t dwOwnerID)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch)
+		if(!ecs::IsCharacter(character))
 			return false;
 
 		if (!_IS_VALID_GM_LEVEL(character))
@@ -3196,8 +3186,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopSafeboxCloseClientPacket(entt::entity character)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::OfflineShopSystem::GetShopSafebox(character))
+		if(!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetShopSafebox(character))
 			return false;
 
 		ecs::OfflineShopSystem::SetShopSafebox(character, nullptr);
@@ -3207,11 +3196,10 @@ namespace offlineshop
 
 	void CShopManager::SendShopSafeboxRefresh(entt::entity character, const TValutesInfo& valute, const std::vector<CShopItem>& vec)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
-		if(!ch || !ecs::OfflineShopSystem::GetShopSafebox(character))
+		if(!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetShopSafebox(character))
 			return;
 
 		ecs::OfflineShopSystem::SetUseTime(character);
@@ -3324,9 +3312,8 @@ namespace offlineshop
 
 	bool CShopManager::RecvAuctionCreateClientPacket(entt::entity character, uint32_t dwDuration, const TPriceInfo& init_price, const TItemPos& pos)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		//checking about duplicate item :D
-		if(!ch || ecs::OfflineShopSystem::GetAuction(character))
+		if(!ecs::IsCharacter(character) || ecs::OfflineShopSystem::GetAuction(character))
 			return false;
 
 		if (!_IS_VALID_GM_LEVEL(character))
@@ -3599,8 +3586,7 @@ namespace offlineshop
 
 	void CShopManager::RecvCloseMyAuction(entt::entity character)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
+		if(!ecs::IsCharacter(character) || !ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		if (ecs::OfflineShopSystem::GetAuction(character))
