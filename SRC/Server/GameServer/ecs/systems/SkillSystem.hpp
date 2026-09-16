@@ -16,6 +16,20 @@ time_t GetSkillNextReadTime(entt::entity e, uint32_t skillId);
 void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when);
 void SetSkillNextReadTimeCapped(entt::entity e, uint32_t skillId, time_t when);
 
+// How a skill level went up. This was an unnamed enum inside CHARACTER;
+// it belongs to the level-up path, which lives here now.
+enum : uint8_t
+{
+    SKILL_UP_BY_POINT,
+    SKILL_UP_BY_BOOK,
+    SKILL_UP_BY_TRAIN,
+
+    // ADD_GRANDMASTER_SKILL
+    SKILL_UP_BY_QUEST,
+    // END_OF_ADD_GRANDMASTER_SKILL
+};
+
+void SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod = SKILL_UP_BY_POINT);
 bool SkillLevelDown(entt::entity e, uint32_t dwVnum);
 void SkillLearnWaitMoreTimeMessage(entt::entity e, uint32_t ms);
 int GetSkillLevel(entt::entity e, uint32_t skillId);

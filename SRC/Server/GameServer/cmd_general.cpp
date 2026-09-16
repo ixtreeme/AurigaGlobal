@@ -1943,7 +1943,6 @@ ACMD(do_guildskillup)
 
 ACMD(do_skillup)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -1955,7 +1954,7 @@ ACMD(do_skillup)
 
 	if (true == SkillSystem::CanUseSkill(character, vnum))
 	{
-		ch->SkillLevelUp(vnum);
+		SkillSystem::SkillLevelUp(character, vnum);
 	}
 	else
 	{
@@ -2004,7 +2003,7 @@ ACMD(do_skillup)
 			case SKILL_HELP_BYEURAK:
 #endif
 
-				ch->SkillLevelUp(vnum);
+				SkillSystem::SkillLevelUp(character, vnum);
 				break;
 		}
 	}

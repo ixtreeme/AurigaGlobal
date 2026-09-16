@@ -1210,7 +1210,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 
 	if (bSuccess)
 	{
-		SkillLevelUp(dwSkillVnum, SKILL_UP_BY_QUEST);
+		SkillSystem::SkillLevelUp(GetEntityHandle(), dwSkillVnum, SkillSystem::SKILL_UP_BY_QUEST);
 	}
 
 	SkillSystem::SetSkillNextReadTimeCapped(GetEntityHandle(), dwSkillVnum, nextTime);
@@ -1354,7 +1354,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			if (test_server)
 				LOG_INFO("LearnSkillByBook {} SUCC", dwSkillVnum);
 
-			SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
+			SkillSystem::SkillLevelUp(GetEntityHandle(), dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
 		}
 		else
 		{
@@ -1458,7 +1458,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #endif
 		if (number(1, 100) > percent) {
 			if (iReadCount >= needBookCount) {
-				SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
+				SkillSystem::SkillLevelUp(GetEntityHandle(), dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
@@ -1532,7 +1532,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 					if (read_count >= need_bookcount)
 #endif
 					{
-						SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
+						SkillSystem::SkillLevelUp(GetEntityHandle(), dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
 						pPC->SetFlag(flag, 0);
 
 #ifdef TEXTS_IMPROVEMENT
@@ -1715,30 +1715,30 @@ void CHARACTER::SetAffectedEunhyung()
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 #endif
 
-void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
+void SkillSystem::SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod)
 {
-	if (!SkillSystem::HasSkillLevels(GetEntityHandle()))
+	if (!SkillSystem::HasSkillLevels(e))
 		return;
 
 	if (g_bSkillDisable)
 		return;
 
-	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
+	if (AffectSystem::IsPolymorphed(e))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 313, "");
 #endif
 		return;
 	}
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-	if (!SkillSystem::CanIncreaseSkill(GetEntityHandle(), dwVnum))
+	if (!SkillSystem::CanIncreaseSkill(e, dwVnum))
 		return;
 #endif
 
 	if (SKILL_7_A_ANTI_TANHWAN <= dwVnum && dwVnum <= SKILL_8_D_ANTI_BYEURAK)
 	{
-		if (0 == GetSkillLevel(dwVnum))
+		if (0 == SkillSystem::GetSkillLevel(e, dwVnum))
 			return;
 	}
 
@@ -1756,13 +1756,13 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 		return;
 	}
 
-	if (!SkillSystem::IsLearnableSkill(GetEntityHandle(), dwVnum))
+	if (!SkillSystem::IsLearnableSkill(e, dwVnum))
 		return;
 
 	// ±×·Łµĺ ¸¶˝şĹÍ´Â Äů˝şĆ®·Î¸¸ ĽöÇŕ°ˇ´É
 	if (pkSk->dwType != 0)
 	{
-		switch (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum))
+		switch (SkillSystem::GetSkillMasterType(e, pkSk->dwVnum))
 		{
 			case SKILL_GRAND_MASTER:
 				if (bMethod != SKILL_UP_BY_QUEST)
@@ -1777,7 +1777,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	if (bMethod == SKILL_UP_BY_POINT)
 	{
 		// ¸¶˝şĹÍ°ˇ ľĆ´Ń »óĹÂżˇĽ­¸¸ Ľö·Ă°ˇ´É
-		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum) != SKILL_NORMAL)
+		if (SkillSystem::GetSkillMasterType(e, pkSk->dwVnum) != SKILL_NORMAL)
 			return;
 
 		if (IS_SET(pkSk->dwFlag, SKILL_FLAG_DISABLE_BY_POINT_UP))
@@ -1786,19 +1786,19 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	else if (bMethod == SKILL_UP_BY_BOOK)
 	{
 		if (pkSk->dwType != 0) // Á÷ľ÷żˇ ĽÓÇĎÁö ľĘľŇ°ĹłŞ Ć÷ŔÎĆ®·Î żĂ¸±Ľö ľř´Â ˝şĹłŔş ĂłŔ˝şÎĹÍ ĂĄŔ¸·Î ąčżď Ľö ŔÖ´Ů.
-			if (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum) != SKILL_MASTER)
+			if (SkillSystem::GetSkillMasterType(e, pkSk->dwVnum) != SKILL_MASTER)
 				return;
 	}
 
-	if (ecs::PointSystem::GetLevel(GetEntityHandle()) < pkSk->bLevelLimit)
+	if (ecs::PointSystem::GetLevel(e) < pkSk->bLevelLimit)
 		return;
 
 	if (pkSk->preSkillVnum)
-		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->preSkillVnum) == SKILL_NORMAL &&
-			GetSkillLevel(pkSk->preSkillVnum) < pkSk->preSkillLevel)
+		if (SkillSystem::GetSkillMasterType(e, pkSk->preSkillVnum) == SKILL_NORMAL &&
+			SkillSystem::GetSkillLevel(e, pkSk->preSkillVnum) < pkSk->preSkillLevel)
 			return;
 
-	if (!SkillSystem::GetSkillGroup(GetEntityHandle()))
+	if (!SkillSystem::GetSkillGroup(e))
 		return;
 
 	if (bMethod == SKILL_UP_BY_POINT)
@@ -1828,71 +1828,73 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 				return;
 		}
 
-		if (ecs::PointSystem::Get(GetEntityHandle(), idx) < 1)
+		if (ecs::PointSystem::Get(e, idx) < 1)
 			return;
 
-		PointChange(idx, -1);
+		ecs::PointSystem::Change(e, idx, -1);
 	}
 
-	int SkillPointBefore = GetSkillLevel(pkSk->dwVnum);
-	SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, static_cast<uint8_t>(GetSkillLevel(pkSk->dwVnum) + 1));
+	int SkillPointBefore = SkillSystem::GetSkillLevel(e, pkSk->dwVnum);
+	SkillSystem::SetSkillLevel(e, pkSk->dwVnum, static_cast<uint8_t>(SkillSystem::GetSkillLevel(e, pkSk->dwVnum) + 1));
 
 	if (pkSk->dwType != 0)
 	{
 		// °©ŔÚ±â ±×·ąŔĚµĺ ľ÷ÇĎ´Â ÄÚµů
-		switch (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum))
+		switch (SkillSystem::GetSkillMasterType(e, pkSk->dwVnum))
 		{
 			case SKILL_NORMAL:
 				// ąřĽ·Ŕş ˝şĹł ľ÷±×·ąŔĚµĺ 17~20 »çŔĚ ·Ł´ý ¸¶˝şĹÍ Ľö·Ă
-				if (GetSkillLevel(pkSk->dwVnum) >= 17)
+				if (SkillSystem::GetSkillLevel(e, pkSk->dwVnum) >= 17)
 				{
 #ifdef ENABLE_FORCE2MASTERSKILL
-					SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 20);
+					SkillSystem::SetSkillLevel(e, pkSk->dwVnum, 20);
 #else
-					if (ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "reset_scroll.force_to_master_skill") > 0)
+					if (ecs::PlayerRuntime::GetQuestFlag(e, "reset_scroll.force_to_master_skill") > 0)
 					{
-						SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 20);
-						ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "reset_scroll.force_to_master_skill", 0);
+						SkillSystem::SetSkillLevel(e, pkSk->dwVnum, 20);
+						ecs::PlayerRuntime::SetQuestFlag(e, "reset_scroll.force_to_master_skill", 0);
 					}
 					else
 					{
-						if (number(1, 21 - MIN(20, GetSkillLevel(pkSk->dwVnum))) == 1)
-							SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 20);
+						if (number(1, 21 - MIN(20, SkillSystem::GetSkillLevel(e, pkSk->dwVnum))) == 1)
+							SkillSystem::SetSkillLevel(e, pkSk->dwVnum, 20);
 					}
 #endif
 				}
 				break;
 
 			case SKILL_MASTER:
-				if (GetSkillLevel(pkSk->dwVnum) >= 30)
+				if (SkillSystem::GetSkillLevel(e, pkSk->dwVnum) >= 30)
 				{
-					if (number(1, 31 - MIN(30, GetSkillLevel(pkSk->dwVnum))) == 1)
-						SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 30);
+					if (number(1, 31 - MIN(30, SkillSystem::GetSkillLevel(e, pkSk->dwVnum))) == 1)
+						SkillSystem::SetSkillLevel(e, pkSk->dwVnum, 30);
 				}
 				break;
 
 			case SKILL_GRAND_MASTER:
-				if (GetSkillLevel(pkSk->dwVnum) >= 40)
+				if (SkillSystem::GetSkillLevel(e, pkSk->dwVnum) >= 40)
 				{
-					SkillSystem::SetSkillLevel(GetEntityHandle(), pkSk->dwVnum, 40);
+					SkillSystem::SetSkillLevel(e, pkSk->dwVnum, 40);
 				}
 				break;
 		}
 	}
 
 	char szSkillUp[1024];
+	const std::string_view name = ecs::PlayerRuntime::GetName(e);
 
-	snprintf(szSkillUp, sizeof(szSkillUp), "SkillUp: %s %u %d %d[Before:%d] type %u",
-			GetName(), pkSk->dwVnum, SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum),
-		SkillSystem::GetSkillLevel(GetEntityHandle(), pkSk->dwVnum), SkillPointBefore, pkSk->dwType);
+	snprintf(szSkillUp, sizeof(szSkillUp), "SkillUp: %.*s %u %d %d[Before:%d] type %u",
+			static_cast<int>(name.size()), name.data(), pkSk->dwVnum,
+			SkillSystem::GetSkillMasterType(e, pkSk->dwVnum),
+			SkillSystem::GetSkillLevel(e, pkSk->dwVnum), SkillPointBefore, pkSk->dwType);
 
 	LOG_INFO("{}", szSkillUp);
 
-	LogManager::instance().CharLog(GetEntityHandle(), pkSk->dwVnum, "SKILLUP", szSkillUp);
-	ecs::SessionSystem::Save(GetEntityHandle());
+	LogManager::instance().CharLog(e, pkSk->dwVnum, "SKILLUP", szSkillUp);
+	ecs::SessionSystem::Save(e);
 
-	ecs::PointSystem::Compute(GetEntityHandle());
-	SkillSystem::SendSkillLevelPacket(GetEntityHandle());
+	ecs::PointSystem::Compute(e);
+	SkillSystem::SendSkillLevelPacket(e);
 }
 
 

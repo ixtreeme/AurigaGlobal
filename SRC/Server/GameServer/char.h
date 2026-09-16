@@ -1076,21 +1076,9 @@ public:
 protected:
 #endif
 public:
-	enum
-	{
-		SKILL_UP_BY_POINT,
-		SKILL_UP_BY_BOOK,
-		SKILL_UP_BY_TRAIN,
-
-		// ADD_GRANDMASTER_SKILL
-		SKILL_UP_BY_QUEST,
-		// END_OF_ADD_GRANDMASTER_SKILL
-	};
-
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 #endif
 
-	void				SkillLevelUp(uint32_t dwVnum, uint8_t bMethod = SKILL_UP_BY_POINT);
 	// ADD_GRANDMASTER_SKILL
 	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
 
