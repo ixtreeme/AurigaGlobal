@@ -2040,10 +2040,10 @@ void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entit
 
 struct FuncSplashDamage
 {
-	FuncSplashDamage(int x, int y, CSkillProto * pkSk, LegacyCharHandle pkChr, int iAmount, int iAG, int iMaxHit, entt::entity pkWeapon, bool bDisableCooltime, uint8_t bUseSkillPower)
+	FuncSplashDamage(int x, int y, CSkillProto * pkSk, entt::entity character, int iAmount, int iAG, int iMaxHit, entt::entity pkWeapon, bool bDisableCooltime, uint8_t bUseSkillPower)
 		:
-		m_x(x), m_y(y), m_pkSk(pkSk), m_pkChr(pkChr),
-		m_character(pkChr ? pkChr->GetEntityHandle() : entt::null),
+		m_x(x), m_y(y), m_pkSk(pkSk),
+		m_character(character),
 		m_iAmount(iAmount), m_iAG(iAG), m_iCount(0), m_iMaxHit(iMaxHit), m_pkWeapon(pkWeapon), m_bDisableCooltime(bDisableCooltime), m_bUseSkillPower(bUseSkillPower)
 		{
 		}
@@ -2057,8 +2057,7 @@ struct FuncSplashDamage
 			return;
 		}
 
-		auto* pkChrVictim = static_cast<LegacyCharHandle>(ent);
-		const entt::entity chrVictim = pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null;
+		const entt::entity chrVictim = ent->GetEntityHandle();
 
 		const entt::entity victimEntity = chrVictim;
 
@@ -2132,7 +2131,7 @@ struct FuncSplashDamage
 		{
 			entt::entity pkBow = entt::null, pkArrow = entt::null;
 
-			if (1 == CombatSystem::GetArrowAndBow(m_pkChr->GetEntityHandle(), &pkBow, &pkArrow, 1))
+			if (1 == CombatSystem::GetArrowAndBow(m_character, &pkBow, &pkArrow, 1))
 				m_pkSk->SetPointVar("atk", CalcArrowDamage(chr, chrVictim, pkBow, pkArrow, true));
 			else
 				m_pkSk->SetPointVar("atk", 0);
@@ -2417,7 +2416,7 @@ struct FuncSplashDamage
 			dt = DAMAGE_TYPE_MAGIC;
 
 		if (CombatSystem::CanBeginFight(victimEntity))
-			CombatSystem::BeginFight(victimEntity, (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
+			CombatSystem::BeginFight(victimEntity, m_character);
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN)
 			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(m_character).data(), SkillSystem::GetChainLightningIndex(m_character) - 1, iDam, static_cast<int>(dt));
@@ -2628,13 +2627,13 @@ struct FuncSplashDamage
 
 					if (number(1, 100) <= iDur)
 					{
-						AffectSystem::ApplyFire(victimEntity, (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), iPct, 5);
+						AffectSystem::ApplyFire(victimEntity, m_character, iPct, 5);
 					}
 				}
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_POISON))
 				{
 					if (number(1, 100) <= iPct)
-						AffectSystem::ApplyPoison(victimEntity, (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
+						AffectSystem::ApplyPoison(victimEntity, m_character);
 				}
 			}
 
@@ -2741,7 +2740,6 @@ struct FuncSplashDamage
 	int		m_x;
 	int		m_y;
 	CSkillProto * m_pkSk;
-	LegacyCharHandle	m_pkChr;
 	entt::entity m_character;
 	int		m_iAmount;
 	int		m_iAG;
@@ -3001,7 +2999,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		{
 			int iAG = 0;
 
-			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, GetEntityHandle(), iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
@@ -3270,7 +3268,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 		// END_OF_ADD_GRANDMASTER_SKILL
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
-		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, -iAmount, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, GetEntityHandle(), -iAmount, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 		if (ecs::PlayerRuntime::GetSectree(victimEntity))
 			ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 		else
@@ -3472,7 +3470,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 			CombatSystem::SetSkillHit(GetEntityHandle(), true);
 #endif
 
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, GetEntityHandle(), iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
 				if (ecs::PlayerRuntime::GetSectree(victimEntity))
@@ -3724,7 +3722,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, GetEntityHandle(), -iAmount2, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 			if (ecs::PlayerRuntime::GetSectree(victimEntity))
 				ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 
