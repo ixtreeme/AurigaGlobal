@@ -535,12 +535,6 @@ bool IsLearnableSkill(entt::entity e, uint32_t dwSkillVnum)
 	return false;
 }
 
-bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->LearnSkillByBook(skillId, prob) : false;
-}
-
 // Mob skills are a property of the prototype, so this needs the table and
 // nothing else - the old pair walked m_pkMobData through the character.
 bool HasMobSkill(entt::entity e)
@@ -1225,35 +1219,35 @@ bool SkillSystem::LearnGrandMasterSkill(entt::entity e, uint32_t dwSkillVnum)
 	return true;
 }
 
-bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
+bool SkillSystem::LearnSkillByBook(entt::entity e, uint32_t dwSkillVnum, uint8_t bProb)
 {
 	const CSkillProto* pkSk = CSkillManager::instance().Get(dwSkillVnum);
 
 	if (!pkSk)
 		return false;
 
-	if (!SkillSystem::IsLearnableSkill(GetEntityHandle(), dwSkillVnum))
+	if (!SkillSystem::IsLearnableSkill(e, dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 398, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 398, "");
 #endif
 		return false;
 	}
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-	if (!SkillSystem::CanIncreaseSkill(GetEntityHandle(), dwSkillVnum, true))
+	if (!SkillSystem::CanIncreaseSkill(e, dwSkillVnum, true))
 		return false;
 #endif
 
 	int64_t need_exp = 0;
 #ifndef DISABLE_SKILL_BOOK_NEED_EXP
-	if (ShouldCheckSkillBookExp(GetEntityHandle()))
+	if (ShouldCheckSkillBookExp(e))
 	{
 		need_exp = 20000;
-		if (GetExp() < need_exp)
+		if (ecs::PlayerRuntime::GetExp(e) < need_exp)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 247, "");
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 247, "");
 #endif
 			return false;
 		}
@@ -1262,17 +1256,17 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	if (pkSk->dwType != 0)
 	{
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-		if ((SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) != SKILL_MASTER) && ((dwSkillVnum < SKILL_ANTI_PALBANG) || (dwSkillVnum > SKILL_ANTI_BYEURAK)))
+		if ((SkillSystem::GetSkillMasterType(e, dwSkillVnum) != SKILL_MASTER) && ((dwSkillVnum < SKILL_ANTI_PALBANG) || (dwSkillVnum > SKILL_ANTI_BYEURAK)))
 #else
-		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) != SKILL_MASTER)
+		if (SkillSystem::GetSkillMasterType(e, dwSkillVnum) != SKILL_MASTER)
 #endif
 		{
 #ifdef TEXTS_IMPROVEMENT
-			if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) > SKILL_MASTER) {
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 423, "");
+			if (SkillSystem::GetSkillMasterType(e, dwSkillVnum) > SKILL_MASTER) {
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 423, "");
 			}
 			else {
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 424, "");
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 424, "");
 			}
 #endif
 			return false;
@@ -1280,65 +1274,65 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	}
 
 #ifdef ENABLE_NEW_SECONDARY_SKILLS
-	if ((get_global_time() < SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum)) && ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP))) {
-		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY))
+	if ((get_global_time() < SkillSystem::GetSkillNextReadTime(e, dwSkillVnum)) && ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP))) {
+		if (AffectSystem::FindAffect(e, AFFECT_SKILL_NO_BOOK_DELAY))
 		{
-			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY);
+			AffectSystem::RemoveAffect(e, AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 465, "");
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 465, "");
 #endif
 		}
 		else
 		{
-			int iTime = SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum) - get_global_time();
+			int iTime = SkillSystem::GetSkillNextReadTime(e, dwSkillVnum) - get_global_time();
 			int iHours = iTime / 3600;
 			int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
 #endif
 			return false;
 		}
 	}
 
-	if ((get_global_time() < SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum)) && (dwSkillVnum != NEW_SUPPORT_SKILL_ATTACK) && (dwSkillVnum != NEW_SUPPORT_SKILL_YANG) && (dwSkillVnum != NEW_SUPPORT_SKILL_MONSTERS) && (dwSkillVnum != NEW_SUPPORT_SKILL_HP))
+	if ((get_global_time() < SkillSystem::GetSkillNextReadTime(e, dwSkillVnum)) && (dwSkillVnum != NEW_SUPPORT_SKILL_ATTACK) && (dwSkillVnum != NEW_SUPPORT_SKILL_YANG) && (dwSkillVnum != NEW_SUPPORT_SKILL_MONSTERS) && (dwSkillVnum != NEW_SUPPORT_SKILL_HP))
 #else
-	if (get_global_time() < SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum))
+	if (get_global_time() < SkillSystem::GetSkillNextReadTime(e, dwSkillVnum))
 #endif
 	{
 		if (!(test_server && quest::CQuestManager::instance().GetEventFlag("no_read_delay")))
 		{
-			if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY))
+			if (AffectSystem::FindAffect(e, AFFECT_SKILL_NO_BOOK_DELAY))
 			{
-				AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY);
+				AffectSystem::RemoveAffect(e, AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 465, "");
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 465, "");
 #endif
 			}
 			else
 			{
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-				int iTime = SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum) - get_global_time();
+				int iTime = SkillSystem::GetSkillNextReadTime(e, dwSkillVnum) - get_global_time();
 				int iHours = iTime / 3600;
 				int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
 #endif
 #else
-				SkillSystem::SkillLearnWaitMoreTimeMessage(GetEntityHandle(), SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum) - get_global_time());
+				SkillSystem::SkillLearnWaitMoreTimeMessage(e, SkillSystem::GetSkillNextReadTime(e, dwSkillVnum) - get_global_time());
 #endif
 				return false;
 			}
 		}
 	}
 
-	uint8_t bLastLevel = GetSkillLevel(dwSkillVnum);
+	uint8_t bLastLevel = SkillSystem::GetSkillLevel(e, dwSkillVnum);
 
 	if (bProb != 0)
 	{
-		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS))
+		if (AffectSystem::FindAffect(e, AFFECT_SKILL_BOOK_BONUS))
 		{
 			bProb += bProb / 2;
-			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
+			AffectSystem::RemoveAffect(e, AFFECT_SKILL_BOOK_BONUS);
 		}
 
 		LOG_INFO("LearnSkillByBook Pct {} prob {}", dwSkillVnum, bProb);
@@ -1348,7 +1342,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			if (test_server)
 				LOG_INFO("LearnSkillByBook {} SUCC", dwSkillVnum);
 
-			SkillSystem::SkillLevelUp(GetEntityHandle(), dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
+			SkillSystem::SkillLevelUp(e, dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
 		}
 		else
 		{
@@ -1360,7 +1354,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 	else if ((dwSkillVnum >= SKILL_ANTI_PALBANG) && (dwSkillVnum <= SKILL_ANTI_BYEURAK) && (bLastLevel < 30)) {
 		quest::CQuestManager& q = quest::CQuestManager::instance();
-		quest::PC* pPC = q.GetPC(GetPlayerID());
+		quest::PC* pPC = q.GetPC(ecs::PlayerRuntime::GetPlayerID(e));
 		if (!pPC)
 			return false;
 
@@ -1370,7 +1364,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 										4, 5, 6, 7, 8, 9, 10, 13, 15, 19
 		};
 
-		int needBookCount = aiSkillBookCount[GetSkillLevel(dwSkillVnum)];
+		int needBookCount = aiSkillBookCount[SkillSystem::GetSkillLevel(e, dwSkillVnum)];
 
 		char szFlag[128 + 1];
 		memset(szFlag, 0, sizeof(szFlag));
@@ -1379,24 +1373,24 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		int iReadCount = pPC->GetFlag(szFlag);
 		int percent = 30;
 
-		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS)) {
+		if (AffectSystem::FindAffect(e, AFFECT_SKILL_BOOK_BONUS)) {
 			percent = 20;
-			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
+			AffectSystem::RemoveAffect(e, AFFECT_SKILL_BOOK_BONUS);
 		}
 #ifndef DISABLE_SKILL_BOOK_NEED_EXP
-		if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
+		if (need_exp > 0) ecs::PointSystem::Change(e, POINT_EXP, -need_exp);
 #endif
 		if (number(1, 100) > percent) {
 			if (iReadCount >= needBookCount) {
-				SkillSystem::SetSkillLevel(GetEntityHandle(), dwSkillVnum, bLastLevel + 1);
+				SkillSystem::SetSkillLevel(e, dwSkillVnum, bLastLevel + 1);
 
-				ecs::PointSystem::Compute(GetEntityHandle());
-				SkillSystem::SendSkillLevelPacket(GetEntityHandle());
+				ecs::PointSystem::Compute(e);
+				SkillSystem::SendSkillLevelPacket(e);
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 304, "");
 #endif
-				LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_SUCCESS", "");
+				LogManager::instance().CharLog(e, dwSkillVnum, "READ_SUCCESS", "");
 				return true;
 			}
 			else {
@@ -1404,20 +1398,20 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 				switch (number(1, 3)) {
 				case 1:
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 319, "");
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 319, "");
 					break;
 				case 2:
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 318, "");
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 318, "");
 					break;
 				case 3:
 				default:
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 320, "");
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 320, "");
 					break;
 				}
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
 #endif
 				return true;
 			}
@@ -1428,12 +1422,12 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef ENABLE_NEW_SECONDARY_SKILLS
 	else if ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP)) {
 		quest::CQuestManager& q = quest::CQuestManager::instance();
-		quest::PC* pPC = q.GetPC(GetPlayerID());
+		quest::PC* pPC = q.GetPC(ecs::PlayerRuntime::GetPlayerID(e));
 		if (!pPC)
 			return false;
 
 		int aiSkillBookCount[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, };
-		int needBookCount = aiSkillBookCount[GetSkillLevel(dwSkillVnum)];
+		int needBookCount = aiSkillBookCount[SkillSystem::GetSkillLevel(e, dwSkillVnum)];
 
 		char szFlag[128 + 1];
 		memset(szFlag, 0, sizeof(szFlag));
@@ -1442,22 +1436,22 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		int iReadCount = pPC->GetFlag(szFlag);
 		int percent = 30;
 
-		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS)) {
+		if (AffectSystem::FindAffect(e, AFFECT_SKILL_BOOK_BONUS)) {
 			percent = 10;
-			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
+			AffectSystem::RemoveAffect(e, AFFECT_SKILL_BOOK_BONUS);
 		}
 
 #ifndef DISABLE_SKILL_BOOK_NEED_EXP
-		 if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
+		 if (need_exp > 0) ecs::PointSystem::Change(e, POINT_EXP, -need_exp);
 #endif
 		if (number(1, 100) > percent) {
 			if (iReadCount >= needBookCount) {
-				SkillSystem::SkillLevelUp(GetEntityHandle(), dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
+				SkillSystem::SkillLevelUp(e, dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 304, "");
 #endif
-				LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_SUCCESS", "");
+				LogManager::instance().CharLog(e, dwSkillVnum, "READ_SUCCESS", "");
 				return true;
 			}
 			else {
@@ -1465,20 +1459,20 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 				switch (number(1, 3)) {
 				case 1:
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 319, "");
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 319, "");
 					break;
 				case 2:
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 318, "");
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 318, "");
 					break;
 				case 3:
 				default:
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 320, "");
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 320, "");
 					break;
 				}
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
 #endif
 				return true;
 			}
@@ -1488,18 +1482,18 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 
 	else
 	{
-		int idx = MIN(9, GetSkillLevel(dwSkillVnum) - 20);
+		int idx = MIN(9, SkillSystem::GetSkillLevel(e, dwSkillVnum) - 20);
 
-		LOG_INFO("LearnSkillByBook {} table idx {} value {}", GetName(), idx, aiSkillBookCountForLevelUp[idx]);
+		LOG_INFO("LearnSkillByBook {} table idx {} value {}", ecs::PlayerRuntime::GetName(e), idx, aiSkillBookCountForLevelUp[idx]);
 
 		{
 			int need_bookcount = 0;
 
 #ifndef DISABLE_SKILL_BOOK_NEED_EXP
-			 if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
+			 if (need_exp > 0) ecs::PointSystem::Change(e, POINT_EXP, -need_exp);
 #endif
 			quest::CQuestManager& q = quest::CQuestManager::instance();
-			quest::PC* pPC = q.GetPC(GetPlayerID());
+			quest::PC* pPC = q.GetPC(ecs::PlayerRuntime::GetPlayerID(e));
 
 			if (pPC)
 			{
@@ -1509,13 +1503,13 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 
 				int read_count = pPC->GetFlag(flag);
 				int percent = 30;
-				if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS))
+				if (AffectSystem::FindAffect(e, AFFECT_SKILL_BOOK_BONUS))
 				{
 					percent = 0;
 					if ((dwSkillVnum >= SKILL_HELP_PALBANG) && (dwSkillVnum <= SKILL_HELP_BYEURAK))
 						percent = 20;
 
-					AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
+					AffectSystem::RemoveAffect(e, AFFECT_SKILL_BOOK_BONUS);
 				}
 
 				if (number(1, 100) > percent)
@@ -1526,13 +1520,13 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 					if (read_count >= need_bookcount)
 #endif
 					{
-						SkillSystem::SkillLevelUp(GetEntityHandle(), dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
+						SkillSystem::SkillLevelUp(e, dwSkillVnum, SkillSystem::SKILL_UP_BY_BOOK);
 						pPC->SetFlag(flag, 0);
 
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
+						ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 304, "");
 #endif
-						LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_SUCCESS", "");
+						LogManager::instance().CharLog(e, dwSkillVnum, "READ_SUCCESS", "");
 						return true;
 					}
 					else
@@ -1541,19 +1535,19 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 						switch (number(1, 3)) {
 						case 1:
-							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 319, "");
+							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 319, "");
 							break;
 						case 2:
-							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 318, "");
+							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 318, "");
 							break;
 						case 3:
 						default:
-							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 320, "");
+							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 320, "");
 							break;
 						}
 #endif
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 492, "%d", (need_bookcount - read_count));
+						ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 492, "%d", (need_bookcount - read_count));
 #endif
 						return true;
 					}
@@ -1562,19 +1556,19 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		}
 	}
 
-	if (bLastLevel != GetSkillLevel(dwSkillVnum))
+	if (bLastLevel != SkillSystem::GetSkillLevel(e, dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 304, "");
 #endif
-		LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_SUCCESS", "");
+		LogManager::instance().CharLog(e, dwSkillVnum, "READ_SUCCESS", "");
 	}
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 397, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 397, "");
 #endif
-		LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_FAIL", "");
+		LogManager::instance().CharLog(e, dwSkillVnum, "READ_FAIL", "");
 	}
 
 	return true;

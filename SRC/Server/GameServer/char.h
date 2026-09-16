@@ -1100,7 +1100,6 @@ public:
 
 
 
-	bool				LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb = 0);
 
 private:
 	// End of Skill
