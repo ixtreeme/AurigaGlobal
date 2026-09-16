@@ -1085,7 +1085,6 @@ public:
 	// END_OF_ADD_GRANDMASTER_SKILL
 
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
-	int					GetSkillLevel(uint32_t dwVnum) const;
 
 
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL

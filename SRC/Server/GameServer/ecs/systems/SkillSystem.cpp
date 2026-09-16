@@ -1100,22 +1100,6 @@ void SkillSystem::SetSkillNextReadTimeCapped(entt::entity e, uint32_t dwVnum, ti
     SkillSystem::SetSkillNextReadTime(e, dwVnum, time);
 }
 
-int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
-{
-    if (dwVnum >= SKILL_MAX_NUM)
-    {
-        LOG_ERROR("{} skill vnum overflow {}", GetName(), dwVnum);
-        LOG_INFO("{} skill vnum overflow {}", GetName(), dwVnum);
-        return 0;
-    }
-
-    const entt::entity e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-        return SkillSystem::GetSkillLevel(e, dwVnum);
-
-    return 0;
-}
-
 bool SkillSystem::LearnGrandMasterSkill(entt::entity e, uint32_t dwSkillVnum)
 {
 	CSkillProto * pkSk = CSkillManager::instance().Get(dwSkillVnum);
@@ -1644,7 +1628,7 @@ bool TSkillUseInfo::UseSkill(bool isGrandMaster, entt::entity vid, uint32_t dwCo
 
 int CHARACTER::GetChainLightningMaxCount() const
 {
-	return aiChainLightningCountBySkillLevel[MIN(SKILL_MAX_LEVEL, GetSkillLevel(SKILL_CHAIN))];
+	return aiChainLightningCountBySkillLevel[MIN(SKILL_MAX_LEVEL, SkillSystem::GetSkillLevel(GetEntityHandle(), SKILL_CHAIN))];
 }
 
 void CHARACTER::SetAffectedEunhyung()
@@ -2422,7 +2406,7 @@ struct FuncSplashDamage
 
 			if (HELP_SKILL_ID != 0)
 			{
-				uint8_t HELP_SKILL_LV = m_pkChr->GetSkillLevel(HELP_SKILL_ID);
+				uint8_t HELP_SKILL_LV = SkillSystem::GetSkillLevel(m_character, HELP_SKILL_ID);
 				if (HELP_SKILL_LV != 0)
 				{
 					CSkillProto* pkSk = CSkillManager::instance().Get(HELP_SKILL_ID);
@@ -2474,7 +2458,7 @@ struct FuncSplashDamage
 
 			if (ANTI_SKILL_ID != 0)
 			{
-				uint8_t ANTI_SKILL_LV = pkChrVictim->GetSkillLevel(ANTI_SKILL_ID);
+				uint8_t ANTI_SKILL_LV = SkillSystem::GetSkillLevel(victimEntity, ANTI_SKILL_ID);
 				if (ANTI_SKILL_LV != 0)
 				{
 					CSkillProto* pkSk = CSkillManager::instance().Get(ANTI_SKILL_ID);
@@ -2510,7 +2494,7 @@ struct FuncSplashDamage
 
 			if (0 != AntiSkillID)
 			{
-				uint8_t AntiSkillLevel = pkChrVictim->GetSkillLevel(AntiSkillID);
+				uint8_t AntiSkillLevel = SkillSystem::GetSkillLevel(victimEntity, AntiSkillID);
 
 				if (0 != AntiSkillLevel)
 				{
@@ -2870,7 +2854,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	if (0 == bSkillLevel)
 	{
-		if ((bSkillLevel = GetSkillLevel(pkSk->dwVnum)) == 0)
+		if ((bSkillLevel = SkillSystem::GetSkillLevel(GetEntityHandle(), pkSk->dwVnum)) == 0)
 		{
 			return BATTLE_NONE;
 		}
@@ -3192,7 +3176,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 
 	if (0 == bSkillLevel)
 	{
-		if ((bSkillLevel = GetSkillLevel(pkSk->dwVnum)) == 0)
+		if ((bSkillLevel = SkillSystem::GetSkillLevel(GetEntityHandle(), pkSk->dwVnum)) == 0)
 		{
 			if (test_server)
 				LOG_INFO("ComputeGyeongGongSkill: name:{} vnum:{}  skillLevelBySkill : {} ", GetName(), pkSk->dwVnum, bSkillLevel);
@@ -3320,7 +3304,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 	if (0 == bSkillLevel)
 	{
-		if ((bSkillLevel = GetSkillLevel(pkSk->dwVnum)) == 0)
+		if ((bSkillLevel = SkillSystem::GetSkillLevel(GetEntityHandle(), pkSk->dwVnum)) == 0)
 		{
 			if (test_server)
 				LOG_INFO("ComputeSkill : name:{} vnum:{}  skillLevelBySkill : {} ", GetName(), pkSk->dwVnum, bSkillLevel);
@@ -3776,7 +3760,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 	if (dwVnum == SKILL_HORSE_SUMMON)
 	{
-		if (GetSkillLevel(dwVnum) == 0)
+		if (SkillSystem::GetSkillLevel(GetEntityHandle(), dwVnum) == 0)
 			return false;
 
 		return true;
@@ -3798,7 +3782,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (!bCanUseHorseSkill && pkSk->dwType == SKILL_TYPE_HORSE)
 		return BATTLE_NONE;
 
-	if (GetSkillLevel(dwVnum) == 0)
+	if (SkillSystem::GetSkillLevel(GetEntityHandle(), dwVnum) == 0)
 		return false;
 
 
@@ -3840,7 +3824,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (dwVnum == SKILL_COMBO)
 	{
 		const uint8_t comboIndex = CombatSystem::ToggleComboIndex(
-			character, GetSkillLevel(SKILL_COMBO));
+			character, SkillSystem::GetSkillLevel(GetEntityHandle(), SKILL_COMBO));
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "combo %d", comboIndex);
 		return true;
 	}
@@ -4692,7 +4676,7 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 				}
 				else
 				{
-					eachSkillLevel = GetSkillLevel(eachSkillVNum);
+					eachSkillLevel = SkillSystem::GetSkillLevel(GetEntityHandle(), eachSkillVNum);
 				}
 
 				if (eachSkillLevel > 0)

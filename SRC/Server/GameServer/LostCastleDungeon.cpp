@@ -835,7 +835,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             skillList.reserve(32);
             for (uint32_t sv = 1; sv <= 255; ++sv)
             {
-                const int lvl = source->GetSkillLevel(sv);
+                const int lvl = SkillSystem::GetSkillLevel(sourceEntity, sv);
                 if (lvl <= 0)
                     continue;
 
@@ -1378,7 +1378,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         skillList.reserve(32);
         for (uint32_t sv = 1; sv <= 255; ++sv)
         {
-            const int lvl = pkSource->GetSkillLevel(sv);
+            const int lvl = SkillSystem::GetSkillLevel(source, sv);
             if (lvl <= 0)
                 continue;
 
