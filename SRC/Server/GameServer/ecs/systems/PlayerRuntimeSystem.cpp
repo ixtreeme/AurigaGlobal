@@ -96,7 +96,6 @@
 #include "../../DragonSoul.h"
 
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
-EVENTFUNC(destroy_when_idle_event);
 
 namespace {
 
@@ -394,24 +393,6 @@ void SetBlockMode(entt::entity e, uint8_t flag)
 	SetQuestFlag(e, "game_option.block_party_request", flag & BLOCK_PARTY_REQUEST ? 1 : 0);
 
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-}
-
-// A party member left behind with nobody around is retired after five
-// minutes. The timer was the last LPEVENT CHARACTER kept for itself.
-
-void StartDestroyWhenIdleEvent(entt::entity e)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-
-	if (GetCharEvent(e, CharEvent::DestroyWhenIdle))
-		return;
-
-	char_event_info* info = AllocEventInfo<char_event_info>();
-	info->ch = e;
-
-	SetCharEvent(e, CharEvent::DestroyWhenIdle,
-		event_create(destroy_when_idle_event, info, PASSES_PER_SEC(300)));
 }
 
 void SetBlockModeForce(entt::entity e, uint8_t blockMode)
@@ -1651,8 +1632,6 @@ bool SetVoteCoin(entt::entity e, int64_t amount)
 
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
 EVENTFUNC(drop_event);
-EVENTFUNC(destroy_when_idle_event);
-EVENTFUNC(kill_ore_load_event);
 
 namespace
 {
@@ -3506,15 +3485,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     CHARACTER_MANAGER::instance().RegisterRaceNumMap(GetEntityHandle());
 
-    if (mining::IsVeinOfOre(ecs::PlayerRuntime::GetRaceNum(GetEntityHandle())))
-    {
-        char_event_info* info = AllocEventInfo<char_event_info>();
-
-        info->ch = GetEntityHandle();
-
-        ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Mining,
-            event_create(kill_ore_load_event, info, PASSES_PER_SEC(number(7 * 60, 15 * 60))));
-    }
+    ecs::PlayerRuntime::StartOreDespawnEvent(GetEntityHandle());
 }
 
 void CHARACTER::MonsterLog(const char* format, ...)
@@ -4030,27 +4001,6 @@ CHARACTER::~CHARACTER()
     Destroy();
 }
 
-EVENTFUNC(kill_ore_load_event)
-{
-    char_event_info* info = dynamic_cast<char_event_info*>(event->info);
-    if (info == nullptr)
-    {
-        LOG_ERROR("kill_ore_load_even> <Factor> Null pointer");
-        return 0;
-    }
-
-    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-    if (ch == nullptr) {
-        return 0;
-    }
-
-
-    ecs::PlayerRuntime::SetCharEvent(
-        info->ch, ecs::PlayerRuntime::CharEvent::Mining, nullptr);
-    M2_DESTROY_CHARACTER(ch);
-    return 0;
-}
-
 ESex GET_SEX(LPCHARACTER ch)
 {
     switch (ecs::PlayerRuntime::GetRaceNum(ch->GetEntityHandle()))
@@ -4069,34 +4019,6 @@ ESex GET_SEX(LPCHARACTER ch)
     }
 
     return SEX_MALE;
-}
-
-EVENTFUNC(destroy_when_idle_event)
-{
-    const auto info = dynamic_cast<char_event_info*>(event->info);
-    if (info == nullptr)
-    {
-        LOG_ERROR("destroy_when_idle_event> <Factor> Null pointer");
-        return 0;
-    }
-
-    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-    if (ch == nullptr) {
-        return 0;
-    }
-
-
-    if (CombatSystem::GetVictim(info->ch) != entt::null)
-    {
-        return PASSES_PER_SEC(300);
-    }
-
-    LOG_INFO("DESTROY_WHEN_IDLE: {}", ch->GetName());
-
-    ecs::PlayerRuntime::SetCharEvent(
-        info->ch, ecs::PlayerRuntime::CharEvent::DestroyWhenIdle, nullptr);
-    M2_DESTROY_CHARACTER(ch);
-    return 0;
 }
 
 #ifdef ENABLE_BLOCK_MULTIFARM

@@ -1,5 +1,26 @@
 # Server ECS regression tests
 
+## Native ore and idle despawn timers
+
+The existing char_manager.cpp now owns ore-expiry and idle-retirement scheduling
+and callbacks. Their old bodies are removed from PlayerRuntimeSystem.cpp; the
+remaining CHARACTER prototype initializer calls the entity-native ore entry
+point. Timers retain versioned entities and check exact event-slot ownership.
+They detach before calling the manager's native destruction path. Replaced,
+cancelled, recycled or untyped owners are not retired by stale callbacks.
+Idle actors still defer while targeting an opponent; ore expiry is ignored if
+the prototype is no longer an ore vein. The 5-minute idle and 7-15-minute ore
+delays are preserved. Construction observers and throwing target lookups cannot
+strand an old slot or overwrite a newer event.
+
+CharacterManagerTests links the real scheduler and manager with controlled
+factory, target and ore-classification services. It checks normal expiry,
+reentrancy, index cleanup, cancellation/replacement, recycled generations,
+component removal, construction callbacks, combat deferral and race changes.
+This does not migrate the remaining CHARACTER prototype initializer or shell
+teardown. Verify live mining, ore respawn, combat/idle despawn and map cleanup
+before deployment; no live server was restarted by this change.
+
 ## Native HP recovery timer and SP distribution
 
 The existing MovementSystem.cpp recovery entry points no longer resolve a

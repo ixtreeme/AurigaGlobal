@@ -9,6 +9,9 @@
 #include "../../SRC/Server/GameServer/ecs/VIDRegistry.hpp"
 #include "../../SRC/Server/GameServer/ecs/PIDRegistry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/character_runtime_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/combat_components.hpp"
+#include "../../SRC/Server/GameServer/event_queue.h"
 #include "../../SRC/Server/GameServer/ecs/components/transform_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
@@ -29,6 +32,8 @@ int test_server = 0, passes_per_sec = 25;
 uint8_t g_bChannel = 1;
 
 namespace {
+HEART despawnHeart {};
+std::function<void(entt::entity)> onVictim;
 int checks = 0, destroys = 0, views = 0, resets = 0, updates = 0, creates = 0, saves = 0, frees = 0;
 bool rejectItem = false;
 std::function<void(entt::entity)> onView, onDestroy, onUpdate, onSave;
@@ -59,7 +64,8 @@ entt::entity Item(uint32_t vnum, uint32_t count = 1) {
     return e;
 }
 void Reset(CHARACTER_MANAGER& manager) {
-    onView = onDestroy = onUpdate = onSave = {};
+    onView = onDestroy = onUpdate = onSave = onVictim = {};
+    event_destroy(); despawnHeart.pulse = 0; despawnHeart.passes_per_sec = 25;
     manager.ClearEventData();
     manager.Destroy();
     g_registry.clear();
@@ -240,6 +246,9 @@ void DropChecks(CHARACTER_MANAGER& manager) {
 }
 }
 
+LPHEART thecore_heart = &despawnHeart;
+void ContinueOnFatalError() { Unexpected(); }
+
 std::shared_ptr<spdlog::logger> logging::GetErrorLogger() {
     static auto logger = std::make_shared<spdlog::logger>("character-manager-error-test"); return logger;
 }
@@ -290,6 +299,13 @@ void UpdateStateMachine(entt::entity e) { ++updates; if (onUpdate) onUpdate(e); 
 }
 namespace CombatSystem {
 void ResetChatCounter(entt::entity) { ++resets; }
+entt::entity GetVictim(entt::entity e) {
+    Check(g_registry.valid(e), "despawn queried stale character");
+    const auto* target = g_registry.try_get<ecs::CombatTarget>(e);
+    const auto victim = target && g_registry.valid(target->target) ? target->target : entt::entity(entt::null);
+    if (onVictim) { auto fn = onVictim; fn(e); }
+    return victim;
+}
 }
 namespace ItemSystem {
 bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ItemData>(e); }
@@ -367,7 +383,7 @@ void DESC::Packet(const void*, int) { Unexpected(); }
 LPSECTREE CEntity::GetSectree() const { Unexpected(); }
 void BroadcastNotice(const char*, bool) { Unexpected(); }
 void SendNoticeMap(const char*, int32_t, bool) { Unexpected(); }
-namespace mining { bool IsVeinOfOre(uint32_t) { Unexpected(); } }
+namespace mining { bool IsVeinOfOre(uint32_t race) { return race == 20047; } }
 CEntity::CEntity() = default;
 CEntity::~CEntity() = default;
 void AISystem::StateBattle(entt::entity) { Unexpected(); }
@@ -377,7 +393,6 @@ void SaveReal(entt::entity e) { ++saves; if (onSave) onSave(e); }
 void Save(entt::entity) {}
 void FlushDelayedSaveItem(entt::entity) {}
 }
-void intrusive_ptr_release(event*) { Unexpected(); }
 const DESC_MANAGER::DESC_SET& DESC_MANAGER::GetClientSet() { Unexpected(); }
 CHARACTER::CHARACTER() = default;
 CHARACTER::~CHARACTER() {
@@ -427,12 +442,112 @@ void CLIENT_DESC::DBPacketHeader(uint8_t, uint32_t, uint32_t) { Unexpected(); }
 void CLIENT_DESC::Packet(const void*, int) { Unexpected(); }
 
 
+
+namespace {
+LPEVENT DespawnTimer(entt::entity e, bool ore) {
+    const auto* events = g_registry.try_get<ecs::LegacyCharEvents>(e);
+    return events ? (ore ? events->mining : events->destroyWhenIdle) : nullptr;
+}
+void StartDespawn(entt::entity e, bool ore) {
+    if (ore) ecs::PlayerRuntime::StartOreDespawnEvent(e);
+    else ecs::PlayerRuntime::StartDestroyWhenIdleEvent(e);
+}
+void DespawnRun(int pulse) { despawnHeart.pulse = pulse; event_process(pulse); }
+void DespawnChecks(CHARACTER_MANAGER& manager) {
+    for (bool ore : {false, true}) {
+        const int delay = 25 * (ore ? 900 : 300);
+        const auto actor = [&] { auto e = Actor(manager, 100, false); g_registry.get<ActorData>(e).race = 20047; return e; };
+        Reset(manager); auto e = actor(); StartDespawn(e, ore); auto timer = DespawnTimer(e, ore);
+        Check(timer && event_time(timer) == delay, "native despawn cadence changed");
+        StartDespawn(e, ore);
+        Check(DespawnTimer(e, ore) == timer && event_count() == 1, "despawn start duplicated/reset timer");
+        onDestroy = [&](entt::entity current) {
+            Check(!DespawnTimer(current, ore), "timer not detached before destruction");
+            manager.DestroyCharacter(current);
+        };
+        DespawnRun(delay);
+        Check(!g_registry.valid(e) && !timer->q_el && destroys == 1 && manager.FindEntity(100) == entt::null,
+            "native despawn did not retire through manager");
+
+        Reset(manager); e = actor(); StartDespawn(e, ore); timer = DespawnTimer(e, ore);
+        manager.DestroyCharacter(e); const auto replacement = actor();
+        Check(replacement != e && entt::to_entity(replacement) == entt::to_entity(e), "fixture did not recycle generation");
+        DespawnRun(delay);
+        Check(g_registry.valid(replacement) && destroys == 1 && !timer->q_el, "old timer retired recycled character");
+
+        Reset(manager); e = actor(); StartDespawn(e, ore); timer = DespawnTimer(e, ore);
+        auto& slots = g_registry.get<ecs::LegacyCharEvents>(e);
+        (ore ? slots.mining : slots.destroyWhenIdle) = nullptr;
+        StartDespawn(e, ore); auto newer = DespawnTimer(e, ore);
+        Check(timer->func(timer, 0) == 0 && DespawnTimer(e, ore) == newer && g_registry.valid(e),
+            "stale callback cleared replacement slot");
+        event_cancel(&newer);
+        DespawnRun(delay); Check(g_registry.valid(e) && destroys == 0, "cancelled/superseded timer destroyed character");
+
+        for (bool removeSlot : {false, true}) {
+            Reset(manager); e = actor(); StartDespawn(e, ore); timer = DespawnTimer(e, ore);
+            if (removeSlot) g_registry.remove<ecs::LegacyCharEvents>(e);
+            else g_registry.remove<ecs::TagMonster>(e);
+            DespawnRun(delay);
+            Check(g_registry.valid(e) && !DespawnTimer(e, ore) && !timer->q_el,
+                "removed/untyped timer owner was recreated/retired");
+        }
+        for (int action = 0; action < 3; ++action) {
+            Reset(manager); e = actor();
+            struct Observer {
+                std::function<void(entt::registry&, entt::entity)> fn;
+                void Run(entt::registry& reg, entt::entity current) { fn(reg, current); }
+            } observer {[&](entt::registry& reg, entt::entity current) {
+                if (action == 0) manager.DestroyCharacter(current);
+                if (action == 1) reg.remove<ecs::LegacyCharEvents>(current);
+                if (action == 2) StartDespawn(current, ore);
+            }};
+            entt::scoped_connection connection = g_registry.on_construct<ecs::LegacyCharEvents>().connect<&Observer::Run>(observer);
+            StartDespawn(e, ore);
+            Check(event_count() == (action == 2 ? 1 : 0), "construction callback produced invalid/duplicate timer");
+        }
+    }
+    Reset(manager); auto e = Actor(manager, 110, false), enemy = Actor(manager, 111);
+    g_registry.emplace<ecs::CombatTarget>(e).target = enemy;
+    StartDespawn(e, false); auto timer = DespawnTimer(e, false); DespawnRun(7500);
+    Check(g_registry.valid(e) && event_time(timer) == 7500, "fighting character did not postpone despawn");
+    g_registry.remove<ecs::CombatTarget>(e); DespawnRun(15000);
+    Check(!g_registry.valid(e), "idle character was not retired on retry");
+
+    for (int action = 0; action < 4; ++action) {
+        Reset(manager); e = Actor(manager, 120, false); StartDespawn(e, false); timer = DespawnTimer(e, false);
+        LPEVENT newer;
+        onVictim = [&](entt::entity current) {
+            onVictim = {};
+            if (action == 0) manager.DestroyCharacter(current);
+            if (action == 1) g_registry.remove<ecs::LegacyCharEvents>(current);
+            if (action == 2) {
+                event_cancel(&g_registry.get<ecs::LegacyCharEvents>(current).destroyWhenIdle);
+                StartDespawn(current, false); newer = DespawnTimer(current, false);
+            }
+            if (action == 3) throw std::runtime_error("injected victim lookup failure");
+        };
+        bool caught = false; try { DespawnRun(7500); } catch (const std::runtime_error&) { caught = true; }
+        Check(!timer->q_el && destroys == (action == 0 ? 1 : 0), "victim callback caused stale/double destruction");
+        if (action == 2) Check(DespawnTimer(e, false) == newer, "victim callback replacement was cleared");
+        if (action == 3) Check(caught && !DespawnTimer(e, false), "throwing lookup stranded timer");
+    }
+    Reset(manager); e = Actor(manager, 130, false);
+    StartDespawn(e, true); Check(!DespawnTimer(e, true), "non-ore started ore timer");
+    g_registry.get<ActorData>(e).race = 20047; StartDespawn(e, true); timer = DespawnTimer(e, true);
+    g_registry.get<ActorData>(e).race = 0; DespawnRun(22500);
+    Check(g_registry.valid(e) && !DespawnTimer(e, true), "changed prototype retired by old ore timer");
+    Reset(manager); e = g_registry.create();
+    StartDespawn(e, false); StartDespawn(e, true); StartDespawn(entt::null, false);
+    Check(event_count() == 0, "invalid entity gained timer");
+}
+}
 int main() {
     try {
         CHARACTER_MANAGER manager;
         ITEM_MANAGER items;
         CShutdownManager shutdown;
-        LookupChecks(manager); DestroyChecks(manager); SaveChecks(manager); UpdateChecks(manager); DropChecks(manager);
+        DespawnChecks(manager); LookupChecks(manager); DestroyChecks(manager); SaveChecks(manager); UpdateChecks(manager); DropChecks(manager);
         Reset(manager);
         std::cout << "Character manager checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

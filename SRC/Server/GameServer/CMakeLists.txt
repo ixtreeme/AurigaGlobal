@@ -185,6 +185,8 @@ add_executable(CharacterManagerTests EXCLUDE_FROM_ALL
     char_manager.cpp
     ecs/VIDRegistry.cpp
     ecs/PIDRegistry.cpp
+    event.cpp
+    event_queue.cpp
 )
 target_link_libraries(CharacterManagerTests PRIVATE SERVER EnTT::EnTT LUA)
 if(WIN32)

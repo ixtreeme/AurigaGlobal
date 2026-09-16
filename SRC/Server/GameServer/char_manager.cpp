@@ -30,6 +30,7 @@
 #include "item_manager.h"
 
 #include <algorithm>
+#include <exception>
 #include <random>
 #include <limits>
 #include <utility>
@@ -46,6 +47,9 @@
 #include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/components/character_runtime_components.hpp"
+#include "ecs/EntityInvariants.hpp"
+#include "mining.h"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/identity_components.hpp"
 #include "ecs/systems/SessionSystem.hpp"
@@ -2499,3 +2503,105 @@ void CHARACTER_MANAGER::LoadItemShopData(const char* c_pData)
 }
 #endif
 
+
+// Deferred character retirement lives with the entity-native manager lifecycle.
+namespace {
+using DespawnSlot = LPEVENT ecs::LegacyCharEvents::*;
+
+LPEVENT* FindDespawnSlot(entt::entity e, DespawnSlot slot)
+{
+    if (!g_registry.valid(e)) return nullptr;
+    auto* events = g_registry.try_get<ecs::LegacyCharEvents>(e);
+    return events ? &(events->*slot) : nullptr;
+}
+
+bool OwnsDespawnEvent(entt::entity e, const LPEVENT& event, DespawnSlot slot)
+{
+    const auto* current = FindDespawnSlot(e, slot);
+    return ecs::Invariants::HasAnyTypeTag(g_registry, e) && current && *current == event && !event->is_force_to_end;
+}
+
+void ClearDespawnEvent(entt::entity e, const LPEVENT& event, DespawnSlot slot)
+{
+    // Removal/replacement must not create a new component or clear newer work.
+    if (auto* current = FindDespawnSlot(e, slot); current && *current == event)
+        *current = nullptr;
+}
+
+int ProcessDespawnEvent(const LPEVENT& event, bool idle)
+{
+    const auto* info = event ? dynamic_cast<char_event_info*>(event->info) : nullptr;
+    if (!info) return 0;
+    const auto character = info->ch;
+    const auto slot = idle ? &ecs::LegacyCharEvents::destroyWhenIdle : &ecs::LegacyCharEvents::mining;
+    struct FailureGuard {
+        entt::entity character;
+        const LPEVENT& event;
+        DespawnSlot slot;
+        int exceptions = std::uncaught_exceptions();
+        ~FailureGuard() {
+            if (std::uncaught_exceptions() > exceptions)
+                ClearDespawnEvent(character, event, slot);
+        }
+    } failure {character, event, slot};
+    if (!OwnsDespawnEvent(character, event, slot)) {
+        ClearDespawnEvent(character, event, slot);
+        return 0;
+    }
+    if (idle) {
+        const auto victim = CombatSystem::GetVictim(character);
+        if (!OwnsDespawnEvent(character, event, slot)) {
+            ClearDespawnEvent(character, event, slot);
+            return 0;
+        }
+        if (victim != entt::null) return PASSES_PER_SEC(300);
+        LOG_INFO("DESTROY_WHEN_IDLE: {}", ecs::PlayerRuntime::GetName(character));
+    } else if (!mining::IsVeinOfOre(ecs::PlayerRuntime::GetRaceNum(character))) {
+        ClearDespawnEvent(character, event, slot);
+        return 0;
+    }
+    if (!OwnsDespawnEvent(character, event, slot)) {
+        ClearDespawnEvent(character, event, slot);
+        return 0;
+    }
+    ClearDespawnEvent(character, event, slot);
+    M2_DESTROY_CHARACTER(character);
+    return 0;
+}
+
+EVENTFUNC(destroy_when_idle_event) { return ProcessDespawnEvent(event, true); }
+EVENTFUNC(kill_ore_load_event) { return ProcessDespawnEvent(event, false); }
+
+void StartDespawnEvent(entt::entity character, DespawnSlot slot, TEVENTFUNC callback, int delay)
+{
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, character)) return;
+    if (const auto* current = FindDespawnSlot(character, slot); current && *current) return;
+    if (!g_registry.all_of<ecs::LegacyCharEvents>(character))
+        g_registry.emplace<ecs::LegacyCharEvents>(character);
+    // Construction observers may retire the entity, remove the component or
+    // start a timer. Reacquire rather than using emplace's returned reference.
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, character)) return;
+    auto* current = FindDespawnSlot(character, slot);
+    if (!current || *current) return;
+    auto* info = AllocEventInfo<char_event_info>();
+    info->ch = character;
+    *current = event_create(callback, info, delay);
+}
+}
+
+namespace ecs::PlayerRuntime {
+void StartDestroyWhenIdleEvent(entt::entity e)
+{
+    StartDespawnEvent(e, &ecs::LegacyCharEvents::destroyWhenIdle, destroy_when_idle_event, PASSES_PER_SEC(300));
+}
+
+void StartOreDespawnEvent(entt::entity e)
+{
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e) || !mining::IsVeinOfOre(GetRaceNum(e)))
+        return;
+    if (const auto* current = FindDespawnSlot(e, &ecs::LegacyCharEvents::mining); current && *current)
+        return;
+    StartDespawnEvent(e, &ecs::LegacyCharEvents::mining, kill_ore_load_event,
+        PASSES_PER_SEC(number(7 * 60, 15 * 60)));
+}
+}

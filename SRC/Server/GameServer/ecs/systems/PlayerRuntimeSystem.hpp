@@ -40,6 +40,7 @@ uint8_t GetBlockMode(entt::entity e);
 bool IsBlockMode(entt::entity e, uint8_t flag);
 void SetBlockMode(entt::entity e, uint8_t flag);
 void StartDestroyWhenIdleEvent(entt::entity e);
+void StartOreDespawnEvent(entt::entity e);
 void SetBlockModeForce(entt::entity e, uint8_t flags);
 uint32_t GetPacketVID(entt::entity e);
 uint32_t GetRaceNum(entt::entity e);
