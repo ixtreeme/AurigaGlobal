@@ -808,7 +808,6 @@ public:
 protected:
 
 	
-	void			PartyJoin(entt::entity leader);
 
 
 	

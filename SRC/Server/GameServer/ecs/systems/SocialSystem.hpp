@@ -34,6 +34,7 @@ enum PartyJoinErrCode {
 // form is the one that can change between the invitation and the answer.
 PartyJoinErrCode IsPartyJoinableCondition(entt::entity leader, entt::entity guest);
 PartyJoinErrCode IsPartyJoinableMutableCondition(entt::entity leader, entt::entity guest);
+void PartyJoin(entt::entity guest, entt::entity leader);
 
 LPPARTY GetParty(entt::entity e);
 void SetParty(entt::entity e, LPPARTY party);
