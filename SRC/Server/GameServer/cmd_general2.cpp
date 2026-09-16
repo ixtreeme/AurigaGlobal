@@ -780,7 +780,6 @@ ACMD(do_save_savepoint) {
 
 #ifdef ENABLE_CHOOSE_DOCTRINE_GUI
 ACMD(do_doctrine_choose) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -835,7 +834,7 @@ ACMD(do_doctrine_choose) {
 		}
 
 		ecs::PointSystem::Compute(character);
-		ch->SkillLevelPacket();
+		SkillSystem::SendSkillLevelPacket(character);
 	}
 }
 #endif

@@ -1090,7 +1090,6 @@ public:
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 #endif
 
-	void				SkillLevelPacket();
 	void				SkillLevelUp(uint32_t dwVnum, uint8_t bMethod = SKILL_UP_BY_POINT);
 	// ADD_GRANDMASTER_SKILL
 	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);

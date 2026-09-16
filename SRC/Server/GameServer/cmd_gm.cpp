@@ -4163,7 +4163,6 @@ ACMD (do_full_set)
 
 ACMD (do_all_skill_master)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	MountSystem::SetHorseLevel(character, SKILL_MAX_LEVEL);
 	for (int i = 0; i < SKILL_MAX_NUM; i++)
 	{
@@ -4185,7 +4184,7 @@ ACMD (do_all_skill_master)
 		}
 	}
 	ecs::PointSystem::Compute(character);
-	ch->SkillLevelPacket();
+	SkillSystem::SendSkillLevelPacket(character);
 }
 
 ACMD (do_item_full_set)

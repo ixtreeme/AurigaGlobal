@@ -1397,7 +1397,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 				SkillSystem::SetSkillLevel(GetEntityHandle(), dwSkillVnum, bLastLevel + 1);
 
 				ecs::PointSystem::Compute(GetEntityHandle());
-				SkillLevelPacket();
+				SkillSystem::SendSkillLevelPacket(GetEntityHandle());
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
@@ -1711,18 +1711,6 @@ void CHARACTER::SetAffectedEunhyung()
 }
 
 
-void CHARACTER::SkillLevelPacket()
-{
-	if (!GetDesc())
-		return;
-
-	TPacketGCSkillLevel pack;
-
-	pack.bHeader = HEADER_GC_SKILL_LEVEL;
-	SkillSystem::StoreSkillLevels(GetEntityHandle(), pack.skills);
-	GetDesc()->Packet(&pack, sizeof(TPacketGCSkillLevel));
-}
-
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 #endif
@@ -1904,7 +1892,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	ecs::SessionSystem::Save(GetEntityHandle());
 
 	ecs::PointSystem::Compute(GetEntityHandle());
-	SkillLevelPacket();
+	SkillSystem::SendSkillLevelPacket(GetEntityHandle());
 }
 
 

@@ -611,7 +611,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	InventorySystem::SendQuickslots(chEntity);
 
 	NetworkSyncSystem::PointsPacket(chEntity);
-	ch->SkillLevelPacket();
+	SkillSystem::SendSkillLevelPacket(chEntity);
 
 	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ch->GetZ(), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
 
