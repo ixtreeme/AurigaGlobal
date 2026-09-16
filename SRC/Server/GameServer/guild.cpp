@@ -287,7 +287,6 @@ void CGuild::P2PLoginMember(uint32_t pid)
 
 void CGuild::LoginMember(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(character)) == m_member.end())
 	{
 		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character));
@@ -333,7 +332,6 @@ void CGuild::P2PLogoutMember(uint32_t pid)
 
 void CGuild::LogoutMember(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(character))==m_member.end())
 	{
 		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character));
@@ -1045,7 +1043,6 @@ void CGuild::Disband()
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
 		const entt::entity ch = *it;
-		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
 		ecs::SocialSystem::SetGuild(ch, nullptr);
 		SendOnlineRemoveOnePacket(ecs::PlayerRuntime::GetPlayerID(ch));
 		// @fixme401
@@ -1455,7 +1452,6 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 				for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 				{
 					const entt::entity victim = *it;
-					LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 					AffectSystem::RemoveAffect(victim, dwVnum);
 					ch->ComputeSkill(dwVnum, victim, m_data.abySkill[dwRealVnum]);
 				}
@@ -1683,7 +1679,6 @@ namespace
 
 		void operator()(entt::entity character)
 		{
-			LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef TEXTS_IMPROVEMENT
 			if (iRewardR > 0) {
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 760, "%d", iRewardR);
@@ -2206,7 +2201,6 @@ EVENTFUNC( GuildInviteEvent )
 
 void CGuild::Invite( entt::entity inviter, entt::entity invitee )
 {
-	LPCHARACTER pchInvitee = ecs::LegacyCharOf(invitee);
 	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(inviter))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT

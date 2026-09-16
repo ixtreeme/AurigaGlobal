@@ -1472,7 +1472,6 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 
 void CInputMain::ItemUse(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemUse handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -1782,7 +1781,6 @@ int CInputMain::BattlePass(entt::entity character, const char* data, size_t uiBy
 
 int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Shop handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -2299,7 +2297,6 @@ void CInputMain::Attack(entt::entity character, const uint8_t header, const char
 
 int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint64_t uiBytes)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate SyncPosition handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -2447,7 +2444,6 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 
 void CInputMain::FlyTarget(entt::entity character, const char * pcData, uint8_t bHeader)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate FlyTarget handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -2591,7 +2587,6 @@ void CInputMain::Target(entt::entity character, const char * pcData)
 
 void CInputMain::Warp(entt::entity character, const char * pcData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Warp handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -3304,7 +3299,6 @@ void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 
 void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyInviteAnswer handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -4233,7 +4227,6 @@ void CInputMain::Hack(entt::entity character, const char * c_pData)
 
 int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBytes)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate MyShop handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -4408,7 +4401,6 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 #ifdef ENABLE_ACCE_SYSTEM
 void CInputMain::Acce(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER pkChar = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Acce handler ECS
 // DUAL-PATH: legacy only during migration window
