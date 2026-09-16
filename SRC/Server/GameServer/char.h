@@ -1101,7 +1101,6 @@ public:
 
 
 	bool				LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb = 0);
-	bool				LearnGrandMasterSkill(uint32_t dwSkillVnum);
 
 private:
 	// End of Skill

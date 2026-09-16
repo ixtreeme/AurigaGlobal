@@ -535,12 +535,6 @@ bool IsLearnableSkill(entt::entity e, uint32_t dwSkillVnum)
 	return false;
 }
 
-bool LearnGrandMasterSkill(entt::entity e, uint32_t skillId)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->LearnGrandMasterSkill(skillId) : false;
-}
-
 bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob)
 {
     auto* ch = LegacyCharOf(e);
@@ -1128,37 +1122,37 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
     return 0;
 }
 
-bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
+bool SkillSystem::LearnGrandMasterSkill(entt::entity e, uint32_t dwSkillVnum)
 {
 	CSkillProto * pkSk = CSkillManager::instance().Get(dwSkillVnum);
 
 	if (!pkSk)
 		return false;
 
-	if (!SkillSystem::IsLearnableSkill(GetEntityHandle(), dwSkillVnum))
+	if (!SkillSystem::IsLearnableSkill(e, dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 398, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 398, "");
 #endif
 		return false;
 	}
 
-	LOG_INFO("learn grand master skill[{}] cur {}, next {}", dwSkillVnum, get_global_time(), SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum));
+	LOG_INFO("learn grand master skill[{}] cur {}, next {}", dwSkillVnum, get_global_time(), SkillSystem::GetSkillNextReadTime(e, dwSkillVnum));
 
 	if (pkSk->dwType == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 265, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 265, "");
 #endif
 		return false;
 	}
 
-	if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) != SKILL_GRAND_MASTER) {
+	if (SkillSystem::GetSkillMasterType(e, dwSkillVnum) != SKILL_GRAND_MASTER) {
 #ifdef TEXTS_IMPROVEMENT
-		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) > SKILL_GRAND_MASTER) {
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 422, "");
+		if (SkillSystem::GetSkillMasterType(e, dwSkillVnum) > SKILL_GRAND_MASTER) {
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 422, "");
 		} else {
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 421, "");
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 421, "");
 		}
 #endif
 		return false;
@@ -1171,27 +1165,27 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 		strTrainSkill = os.str();
 	}
 
-	uint8_t bLastLevel = GetSkillLevel(dwSkillVnum);
-	int idx = MIN(9, GetSkillLevel(dwSkillVnum) - 30);
+	uint8_t bLastLevel = SkillSystem::GetSkillLevel(e, dwSkillVnum);
+	int idx = MIN(9, SkillSystem::GetSkillLevel(e, dwSkillVnum) - 30);
 
-	LOG_INFO("LearnGrandMasterSkill {} table idx {} value {}", GetName(), idx, aiGrandMasterSkillBookCountForLevelUp[idx]);
+	LOG_INFO("LearnGrandMasterSkill {} table idx {} value {}", ecs::PlayerRuntime::GetName(e), idx, aiGrandMasterSkillBookCountForLevelUp[idx]);
 
-	int iTotalReadCount = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), strTrainSkill) + 1;
-	ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), strTrainSkill, iTotalReadCount);
+	int iTotalReadCount = ecs::PlayerRuntime::GetQuestFlag(e, strTrainSkill) + 1;
+	ecs::PlayerRuntime::SetQuestFlag(e, strTrainSkill, iTotalReadCount);
 
 	int iMinReadCount = aiGrandMasterSkillBookMinCount[idx];
 	int iMaxReadCount = aiGrandMasterSkillBookMaxCount[idx];
 
 	int iBookCount = aiGrandMasterSkillBookCountForLevelUp[idx];
 
-	if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS))
+	if (AffectSystem::FindAffect(e, AFFECT_SKILL_BOOK_BONUS))
 	{
 		if (iBookCount&1)
 			iBookCount = iBookCount / 2 + 1;
 		else
 			iBookCount = iBookCount / 2;
 
-		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
+		AffectSystem::RemoveAffect(e, AFFECT_SKILL_BOOK_BONUS);
 	}
 
 	int n = number(1, iBookCount);
@@ -1210,24 +1204,24 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 
 	if (bSuccess)
 	{
-		SkillSystem::SkillLevelUp(GetEntityHandle(), dwSkillVnum, SkillSystem::SKILL_UP_BY_QUEST);
+		SkillSystem::SkillLevelUp(e, dwSkillVnum, SkillSystem::SKILL_UP_BY_QUEST);
 	}
 
-	SkillSystem::SetSkillNextReadTimeCapped(GetEntityHandle(), dwSkillVnum, nextTime);
+	SkillSystem::SetSkillNextReadTimeCapped(e, dwSkillVnum, nextTime);
 
-	if (bLastLevel == GetSkillLevel(dwSkillVnum))
+	if (bLastLevel == SkillSystem::GetSkillLevel(e, dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 397, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 397, "");
 #endif
-		LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "GM_READ_FAIL", "");
+		LogManager::instance().CharLog(e, dwSkillVnum, "GM_READ_FAIL", "");
 		return false;
 	}
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
+	ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 304, "");
 #endif
-	LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "GM_READ_SUCCESS", "");
+	LogManager::instance().CharLog(e, dwSkillVnum, "GM_READ_SUCCESS", "");
 	return true;
 }
 
