@@ -198,11 +198,9 @@ uint8_t ToggleComboIndex(entt::entity e, uint8_t skillLevel)
 // Nearest of the attackers that have hurt this character. The damage map is
 // already keyed by entity, so the walk never leaves entity handles: the old
 // version resolved a character for every candidate and one more for the answer.
-// Resolving `self` stays, because the map is still a CHARACTER member.
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
 {
-    LPCHARACTER self = LegacyCharOf(attacker);
-    if (!self)
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker))
         return entt::null;
 
     const entt::entity origin = (from != entt::null && g_registry.valid(from)) ? from : attacker;
@@ -583,8 +581,7 @@ void ChangeVictimByAggro(entt::entity self, int newAggro, entt::entity newVictim
         return;
     }
 
-    LPCHARACTER owner = LegacyCharOf(self);
-    if (!owner)
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, self))
         return;
 
     const int32_t x = ecs::PlayerRuntime::GetX(self);
@@ -1485,9 +1482,7 @@ void Stun(entt::entity e)
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	// CloseMyShop has no entity form yet; it is its own migration.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
+	if (!ecs::Invariants::HasAnyTypeTag(g_registry, e))
 		return;
 
 	if (CombatSystem::IsStun(e))
@@ -2853,11 +2848,10 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 
         case BATTLE_TYPE_RANGE:
         case BATTLE_TYPE_MAGIC: {
-            // FlyTarget and Shoot are the projectile pipeline and still take a
-            // character; the shot type is the only thing that differs here.
+            // FlyTarget and Shoot are the projectile pipeline; the shot type
+            // is the only thing that differs here.
             const uint8_t shotType = GetMobBattleType(attacker) == BATTLE_TYPE_RANGE ? 0 : 1;
-            LPCHARACTER shooter = LegacyCharOf(attacker);
-            if (!shooter) {
+            if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker)) {
                 result = BATTLE_NONE;
                 break;
             }
@@ -4753,11 +4747,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
     const EDamageType type = static_cast<EDamageType>(damageType);
 
-    // The damage map that decides drops and experience is still a CHARACTER
-    // member, so the victim is resolved once here and nowhere else below. That
-    // map is its own migration.
-    LPCHARACTER book = LegacyCharOf(victim);
-    if (!book)
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, victim))
         return false;
 
 	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
@@ -6698,11 +6688,9 @@ EVENTFUNC(StunEvent)
 		return 0;
 	}
 
-	LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-
-	if (ch == nullptr) { // <Factor>
+	if (!ecs::Invariants::HasAnyTypeTag(g_registry, info->ch))
 		return 0;
-	}
+
 	const entt::entity e = info->ch;
 	ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::Stun, nullptr);
 	if (e != entt::null && g_registry.valid(e))
