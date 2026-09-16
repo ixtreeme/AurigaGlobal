@@ -87,6 +87,7 @@ int GetSkillPoint(entt::entity e);
 void AddSkillPoint(entt::entity e, int amount);
 int GetSkillMasterType(entt::entity e, uint32_t skillId);
 int GetSkillPower(entt::entity e, uint32_t skillId, uint8_t level = 0);
+int GetChainLightningMaxCount(entt::entity e);
 void ComputeSkillPoints(entt::entity e);
 void ResetSkill(entt::entity e);
 void ClearSkill(entt::entity e);

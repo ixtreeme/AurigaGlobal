@@ -1626,9 +1626,9 @@ bool TSkillUseInfo::UseSkill(bool isGrandMaster, entt::entity vid, uint32_t dwCo
 	return true;
 }
 
-int CHARACTER::GetChainLightningMaxCount() const
+int SkillSystem::GetChainLightningMaxCount(entt::entity e)
 {
-	return aiChainLightningCountBySkillLevel[MIN(SKILL_MAX_LEVEL, SkillSystem::GetSkillLevel(GetEntityHandle(), SKILL_CHAIN))];
+	return aiChainLightningCountBySkillLevel[MIN(SKILL_MAX_LEVEL, SkillSystem::GetSkillLevel(e, SKILL_CHAIN))];
 }
 
 void CHARACTER::SetAffectedEunhyung()
@@ -2658,7 +2658,7 @@ struct FuncSplashDamage
 			ecs::PointSystem::Change(m_character, POINT_SP, iDam * iPct / 100);
 		}
 
-		if (m_pkSk->dwVnum == SKILL_CHAIN && m_pkChr->GetChainLightningIndex() < m_pkChr->GetChainLightningMaxCount())
+		if (m_pkSk->dwVnum == SKILL_CHAIN && m_pkChr->GetChainLightningIndex() < SkillSystem::GetChainLightningMaxCount(m_character))
 		{
 			chain_lightning_event_info* info = AllocEventInfo<chain_lightning_event_info>();
 

@@ -1135,7 +1135,6 @@ public:
 	void				IncChainLightningIndex() { ++m_iChainLightingIndex; }
 	void				AddChainLightningExcept(entt::entity ch) { m_setExceptChainLighting.insert(ch); }
 	void				ResetChainLightningIndex() { m_iChainLightingIndex = 0; m_setExceptChainLighting.clear(); }
-	int					GetChainLightningMaxCount() const;
 	const TChainLightningExceptContainer& GetChainLightingExcept() const { return m_setExceptChainLighting; }
 
 private:
