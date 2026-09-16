@@ -587,15 +587,13 @@ ACMD(do_change_channel)
 #ifdef ENABLE_SORT_INVEN
 ACMD(do_item_check)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->EditMyInven();
+	// Disabled until the inventory sorter is rebuilt on the ECS inventory API.
 }
 
 
 ACMD(do_sort_extra_inventory)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->EditMyExtraInven();
+	// Disabled until the extra-inventory sorter is rebuilt on the ECS inventory API.
 }
 
 #endif

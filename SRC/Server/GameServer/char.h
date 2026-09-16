@@ -839,10 +839,6 @@ public:
 
 	void			ClearItem();
 
-#ifdef ENABLE_SORT_INVEN	
-	void			EditMyInven();
-	void			EditMyExtraInven();
-#endif
 
 	uint16_t			GetDragonSoulGrid(uint16_t wCell) const;
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY

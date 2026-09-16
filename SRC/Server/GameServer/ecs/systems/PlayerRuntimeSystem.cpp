@@ -2763,17 +2763,6 @@ void SetRegen(entt::entity e, LPREGEN regen)
 
 } // namespace ecs::PlayerRuntime
 
-#ifdef ENABLE_SORT_INVEN
-void CHARACTER::EditMyInven()
-{
-    // Disabled until the inventory sorter is rebuilt on the ECS inventory API.
-}
-
-void CHARACTER::EditMyExtraInven()
-{
-    // Disabled until the extra-inventory sorter is rebuilt on the ECS inventory API.
-}
-#endif
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 static int NeedKeys[] = { 2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7 };
 bool CHARACTER::Update_Inven()
