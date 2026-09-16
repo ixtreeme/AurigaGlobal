@@ -877,52 +877,52 @@ bool CHARACTER::RequestToParty(entt::entity leaderEntity)
     if (ecs::PlayerRuntime::IsBlockMode(leader, BLOCK_PARTY_REQUEST))
         return false;
 
-    PartyJoinErrCode errcode = IsPartyJoinableCondition(leaderEntity, GetEntityHandle());
+    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(leaderEntity, GetEntityHandle());
 
     switch (errcode)
     {
-    case PERR_NONE:
+    case ecs::SocialSystem::PERR_NONE:
         break;
 
-    case PERR_SERVER:
+    case ecs::SocialSystem::PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 208, "");
 #endif
         return false;
 
-    case PERR_DUNGEON:
+    case ecs::SocialSystem::PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 200, "");
 #endif
         return false;
-    case PERR_OBSERVER:
+    case ecs::SocialSystem::PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 195, "");
 #endif
         return false;
 
-    case PERR_LVBOUNDARY:
+    case ecs::SocialSystem::PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 194, "");
 #endif
         return false;
 
-    case PERR_LOWLEVEL:
+    case ecs::SocialSystem::PERR_LOWLEVEL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 214, "");
 #endif
         return false;
 
-    case PERR_HILEVEL:
+    case ecs::SocialSystem::PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 214, "");
 #endif
         return false;
 
-    case PERR_ALREADYJOIN:
+    case ecs::SocialSystem::PERR_ALREADYJOIN:
         return false;
 
-    case PERR_PARTYISFULL:
+    case ecs::SocialSystem::PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 199, "");
 #endif
@@ -1009,39 +1009,39 @@ void CHARACTER::AcceptToParty(entt::entity memberEntity)
         if (GetPlayerID() != ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID())
             return;
 
-        PartyJoinErrCode errcode = IsPartyJoinableCondition(GetEntityHandle(), memberEntity);
+        ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(GetEntityHandle(), memberEntity);
         switch (errcode)
         {
-        case PERR_NONE: member->PartyJoin(GetEntityHandle()); return;
-        case PERR_SERVER:
+        case ecs::SocialSystem::PERR_NONE: member->PartyJoin(GetEntityHandle()); return;
+        case ecs::SocialSystem::PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(memberEntity, CHAT_TYPE_INFO, 208, "");
 #endif
             break;
-        case PERR_DUNGEON:
+        case ecs::SocialSystem::PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(memberEntity, CHAT_TYPE_INFO, 200, "");
 #endif
             break;
-        case PERR_OBSERVER:
+        case ecs::SocialSystem::PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(memberEntity, CHAT_TYPE_INFO, 195, "");
 #endif
             break;
-        case PERR_LOWLEVEL:
-        case PERR_LVBOUNDARY:
+        case ecs::SocialSystem::PERR_LOWLEVEL:
+        case ecs::SocialSystem::PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(memberEntity, CHAT_TYPE_INFO, 194, "");
 #endif
             break;
-        case PERR_HILEVEL:
+        case ecs::SocialSystem::PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(memberEntity, CHAT_TYPE_INFO, 214, "");
 #endif
             break;
-        case PERR_ALREADYJOIN:
+        case ecs::SocialSystem::PERR_ALREADYJOIN:
             break;
-        case PERR_PARTYISFULL:
+        case ecs::SocialSystem::PERR_PARTYISFULL:
         {
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 199, "");
@@ -1115,49 +1115,49 @@ void CHARACTER::PartyInvite(entt::entity invitee)
     }
 #endif
 
-    PartyJoinErrCode errcode = IsPartyJoinableCondition(GetEntityHandle(), invitee);
+    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(GetEntityHandle(), invitee);
 
     switch (errcode)
     {
-    case PERR_NONE:
+    case ecs::SocialSystem::PERR_NONE:
         break;
 
-    case PERR_SERVER:
+    case ecs::SocialSystem::PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 208, "");
 #endif
         return;
-    case PERR_DUNGEON:
+    case ecs::SocialSystem::PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 200, "");
 #endif
         return;
-    case PERR_OBSERVER:
+    case ecs::SocialSystem::PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 195, "");
 #endif
         return;
-    case PERR_LVBOUNDARY:
+    case ecs::SocialSystem::PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 194, "");
 #endif
         return;
-    case PERR_LOWLEVEL:
+    case ecs::SocialSystem::PERR_LOWLEVEL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 214, "");
 #endif
         return;
-    case PERR_HILEVEL:
+    case ecs::SocialSystem::PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 214, "");
 #endif
         return;
-    case PERR_ALREADYJOIN:
+    case ecs::SocialSystem::PERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 210, "%s", ecs::PlayerRuntime::GetName(invitee).data());
 #endif
         return;
-    case PERR_PARTYISFULL:
+    case ecs::SocialSystem::PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 199, "");
 #endif
@@ -1205,48 +1205,48 @@ void CHARACTER::PartyInviteAccept(entt::entity invitee)
         return;
     }
 
-    PartyJoinErrCode errcode = IsPartyJoinableMutableCondition(GetEntityHandle(), invitee);
+    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableMutableCondition(GetEntityHandle(), invitee);
 
     switch (errcode)
     {
-    case PERR_NONE:
+    case ecs::SocialSystem::PERR_NONE:
         break;
-    case PERR_SERVER:
+    case ecs::SocialSystem::PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 208, "");
 #endif
         return;
-    case PERR_DUNGEON:
+    case ecs::SocialSystem::PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 201, "");
 #endif
         return;
-    case PERR_OBSERVER:
+    case ecs::SocialSystem::PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 195, "");
 #endif
         return;
-    case PERR_LVBOUNDARY:
+    case ecs::SocialSystem::PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 194, "");
 #endif
         return;
-    case PERR_LOWLEVEL:
+    case ecs::SocialSystem::PERR_LOWLEVEL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 214, "");
 #endif
         return;
-    case PERR_HILEVEL:
+    case ecs::SocialSystem::PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 214, "");
 #endif
         return;
-    case PERR_ALREADYJOIN:
+    case ecs::SocialSystem::PERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 212, "");
 #endif
         return;
-    case PERR_PARTYISFULL:
+    case ecs::SocialSystem::PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 199, "");
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 220, "");
@@ -1302,7 +1302,7 @@ void CHARACTER::PartyJoin(entt::entity leader)
     }
 }
 
-CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableCondition(const entt::entity leader, const entt::entity guest)
+ecs::SocialSystem::PartyJoinErrCode ecs::SocialSystem::IsPartyJoinableCondition(const entt::entity leader, const entt::entity guest)
 {
     return IsPartyJoinableMutableCondition(leader, guest);
 }
@@ -1313,10 +1313,8 @@ static bool __party_can_join_by_level(entt::entity leader, entt::entity guest)
     return (abs(ecs::PointSystem::GetLevel(leader) - ecs::PointSystem::GetLevel(guest)) <= level_limit);
 }
 
-CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const entt::entity leader, const entt::entity guest)
+ecs::SocialSystem::PartyJoinErrCode ecs::SocialSystem::IsPartyJoinableMutableCondition(const entt::entity leader, const entt::entity guest)
 {
-    LPCHARACTER pkLeader = ecs::LegacyCharOf(leader);
-    LPCHARACTER pkGuest = ecs::LegacyCharOf(guest);
     if (!CPartyManager::instance().IsEnablePCParty())
         return PERR_SERVER;
     else if (ecs::SocialSystem::GetDungeon(leader))

@@ -15,6 +15,26 @@ namespace ecs::SocialSystem {
 
 int GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool share = true);
 
+enum PartyJoinErrCode {
+    PERR_NONE = 0,
+    PERR_SERVER,
+    PERR_DUNGEON,
+    PERR_OBSERVER,
+    PERR_LVBOUNDARY,
+    PERR_LOWLEVEL,
+    PERR_HILEVEL,
+    PERR_ALREADYJOIN,
+    PERR_PARTYISFULL,
+    PERR_SEPARATOR,
+    PERR_DIFFEMPIRE,
+    PERR_MAX
+};
+
+// Whether a guest may join a leader's party, and why not. The mutable
+// form is the one that can change between the invitation and the answer.
+PartyJoinErrCode IsPartyJoinableCondition(entt::entity leader, entt::entity guest);
+PartyJoinErrCode IsPartyJoinableMutableCondition(entt::entity leader, entt::entity guest);
+
 LPPARTY GetParty(entt::entity e);
 void SetParty(entt::entity e, LPPARTY party);
 void SetGuild(entt::entity e, CGuild* guild);

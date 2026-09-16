@@ -811,24 +811,7 @@ protected:
 	void			PartyJoin(entt::entity leader);
 
 
-	enum PartyJoinErrCode {
-		PERR_NONE = 0,
-		PERR_SERVER,	
-		PERR_DUNGEON,	
-		PERR_OBSERVER,	
-		PERR_LVBOUNDARY,
-		PERR_LOWLEVEL,	
-		PERR_HILEVEL,	
-		PERR_ALREADYJOIN,
-		PERR_PARTYISFULL,
-		PERR_SEPARATOR,	
-		PERR_DIFFEMPIRE,
-		PERR_MAX		
-	};
-
 	
-	static PartyJoinErrCode	IsPartyJoinableCondition(entt::entity leader, entt::entity guest);
-	static PartyJoinErrCode	IsPartyJoinableMutableCondition(entt::entity leader, entt::entity guest);
 
 	LPEVENT			m_pkPartyRequestEvent;
 	typedef std::map< uint32_t, LPEVENT >	EventMap;
