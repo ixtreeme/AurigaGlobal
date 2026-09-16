@@ -3368,7 +3368,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     MountSystem::LoadHorseData(GetEntityHandle(), t->horse, t->logoff_interval);
 
-    memcpy(m_aiPremiumTimes, t->aiPremiumTimes, sizeof(t->aiPremiumTimes));
 	if (const entt::entity character = GetEntityHandle();
 		character != entt::null && g_registry.valid(character))
 	{
@@ -3378,7 +3377,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 	}
 
 
-    LOG_INFO("PLAYER_LOAD: {} PREMIUM {} {}, LOGGOFF_INTERVAL {} PTR: {}", t->name, m_aiPremiumTimes[0], m_aiPremiumTimes[1], t->logoff_interval, static_cast<const void*>(this));
+    LOG_INFO("PLAYER_LOAD: {} PREMIUM {} {}, LOGGOFF_INTERVAL {} PTR: {}", t->name, t->aiPremiumTimes[0], t->aiPremiumTimes[1], t->logoff_interval, static_cast<const void*>(this));
 
     if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) != GM_PLAYER)
     {

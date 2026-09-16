@@ -1276,10 +1276,6 @@ public:
 
 	// MINING
 	// END_OF_MINING
-#ifdef __NEWPET_SYSTEM__
-	LPEVENT				m_pkNewPetSystemUpdateEvent;
-	LPEVENT				m_pkNewPetSystemExpireEvent;
-#endif
 
 
 	const CMob* m_pkMobData;
@@ -1293,7 +1289,6 @@ public:
 public:
 
 private:
-	int				m_aiPremiumTimes[PREMIUM_MAX_NUM];
 
 	// CHANGE_ITEM_ATTRIBUTES
 	// static const uint32_t		msc_dwDefaultChangeItemAttrCycle;	///< ����Ʈ ������ �Ӽ����� ���� �ֱ�
