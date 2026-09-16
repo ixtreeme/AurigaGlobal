@@ -2682,7 +2682,7 @@ struct FuncSplashDamage
 				}
 #endif
 
-				pkChrVictim->Sync(tx, ty);
+				ecs::MovementSystem::Sync(victimEntity, tx, ty);
 				ecs::MovementSystem::Goto(victimEntity, tx, ty);
 				ecs::MovementSystem::CalculateMoveDuration(victimEntity);
 

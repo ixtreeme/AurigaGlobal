@@ -54,6 +54,8 @@ void ResetStopTime(entt::entity e);
 void OnMove(entt::entity e, bool isAttack = false);
 void SetRotationToXY(entt::entity e, int32_t x, int32_t y);
 bool CanMove(entt::entity e);
+// Moves the entity to (x, y) on its map at once, changing sector if needed.
+bool Sync(entt::entity e, int32_t x, int32_t y);
 bool Goto(entt::entity e, int32_t x, int32_t y);
 void Stop(entt::entity e);
 uint32_t GetMotionMode(entt::entity e);

@@ -2425,7 +2425,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 			return -1;
 		} else{
 			ecs::PlayerRuntime::SetLastSyncTime(victimEntity, tvCurTime);
-			victim->Sync(e->lX, e->lY);
+			ecs::MovementSystem::Sync(victimEntity, e->lX, e->lY);
 			buffer_write(lpBuf, e, sizeof(TPacketCGSyncPositionElement));
 		}
 	}

@@ -1500,33 +1500,33 @@ bool CanMove(entt::entity e)
 } // namespace ecs::MovementSystem
 
 // 1����?x, y A��!�� AI? 1AA2�U.
-bool CHARACTER::Sync(int32_t x, int32_t y)
+bool ecs::MovementSystem::Sync(entt::entity e, int32_t x, int32_t y)
 {
-	if (!GetSectree())
+	if (!ecs::PlayerRuntime::GetSectree(e))
 		return false;
 
-	LPSECTREE new_tree = ecs::SectorAt(GetMapIndex(), x, y);
+	LPSECTREE new_tree = ecs::SectorAt(ecs::PlayerRuntime::GetMapIndex(e), x, y);
 
 	if (!new_tree)
 	{
-		if (GetDesc())
+		if (ecs::PlayerRuntime::GetDesc(e))
 		{
-			LOG_ERROR("cannot find tree at {} {} (name: {})", x, y, GetName());
-			GetDesc()->SetPhase(PHASE_CLOSE);
+			LOG_ERROR("cannot find tree at {} {} (name: {})", x, y, ecs::PlayerRuntime::GetName(e));
+			ecs::PlayerRuntime::GetDesc(e)->SetPhase(PHASE_CLOSE);
 		}
 		else
 		{
-			LOG_ERROR("no tree: {} {} {} {}", GetName(), x, y, GetMapIndex());
-			CombatSystem::Dead(GetEntityHandle());
+			LOG_ERROR("no tree: {} {} {} {}", ecs::PlayerRuntime::GetName(e), x, y, ecs::PlayerRuntime::GetMapIndex(e));
+			CombatSystem::Dead(e);
 		}
 
 		return false;
 	}
 
-	ecs::MovementSystem::SetRotationToXY(GetEntityHandle(), x, y);
+	ecs::MovementSystem::SetRotationToXY(e, x, y);
 	// Phase C.1: legacy m_pos write removed - SyncPositionComponents below
 	// emplaces ECS Position as the sole source of truth.
-	ecs::SyncPositionComponents(g_registry, GetEntityHandle(), GetMapIndex(), x, y, GetZ());
+	ecs::SyncPositionComponents(g_registry, e, ecs::PlayerRuntime::GetMapIndex(e), x, y, ecs::PlayerRuntime::GetZ(e));
 
 	// LPENTITY.4 sync drift fix: peer-sync overrides whatever destination the
 	// previous Goto/Move had recorded. Without this, EncodeInsertPacket reads
@@ -1543,18 +1543,18 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	// removes ECS MovementDestination so GetCurrentDestX/Y falls back to
 	// GetX/GetY (current position via ECS Position) - same effective
 	// semantic as legacy destination = current_pos.
-	ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
+	ecs::MovementSystem::SyncDestinationClear(e);
 
-	if (ecs::SocialSystem::GetDungeon(GetEntityHandle()))
+	if (ecs::SocialSystem::GetDungeon(e))
 	{
 		// Sync quest event attr transitions when entering a new dungeon sector.
 		auto& membership =
-			g_registry.get_or_emplace<ecs::DungeonMembership>(GetEntityHandle());
+			g_registry.get_or_emplace<ecs::DungeonMembership>(e);
 		const int iLastEventAttr = membership.eventAttr;
 		membership.eventAttr = new_tree->GetEventAttribute(x, y);
 
 
-        const entt::entity character = GetEntityHandle();
+        const entt::entity character = e;
         const int currentEventAttr = membership.eventAttr;
         if (currentEventAttr != iLastEventAttr)
         {
@@ -1569,22 +1569,21 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
         }
 	}
 
-	if (GetSectree() != new_tree)
+	if (ecs::PlayerRuntime::GetSectree(e) != new_tree)
 	{
-		if (!IsNPC())
+		if (!ecs::PlayerRuntime::IsNPC(e))
 		{
 			SECTREEID id = new_tree->GetID();
-			SECTREEID old_id = GetSectree()->GetID();
+			SECTREEID old_id = ecs::PlayerRuntime::GetSectree(e)->GetID();
 
 			const float fDist = DISTANCE_SQRT(id.coord.x - old_id.coord.x, id.coord.y - old_id.coord.y);
 			const auto newX = id.coord.x;
 			const auto newY = id.coord.y;
 			const auto oldX = old_id.coord.x;
 			const auto oldY = old_id.coord.y;
-			LOG_INFO("SECTREE DIFFER: {} {}x{} was {}x{} dist {:.1f}m", GetName(), newX, newY, oldX, oldY, fDist);
+			LOG_INFO("SECTREE DIFFER: {} {}x{} was {}x{} dist {:.1f}m", ecs::PlayerRuntime::GetName(e), newX, newY, oldX, oldY, fDist);
 		}
 
-		const entt::entity e = GetEntityHandle();
 		new_tree->InsertEntity(e);
 		if (e != entt::null && g_registry.valid(e))
 			g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
@@ -1680,7 +1679,7 @@ bool CHARACTER::Move(int32_t x, int32_t y)
 			LOG_TRACE("{} position {} {}", GetName(), x, y);
 
 	OnMove();
-	return Sync(x, y);
+	return ecs::MovementSystem::Sync(GetEntityHandle(), x, y);
 }
 
 namespace ecs::MovementSystem {

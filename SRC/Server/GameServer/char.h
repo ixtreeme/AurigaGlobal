@@ -731,7 +731,6 @@ public:
 
 
 
-	bool			Sync(int32_t x, int32_t y);	// 
 	bool			Move(int32_t x, int32_t y);	// 
 	void			OnMove(bool bIsAttack = false);
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in

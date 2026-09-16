@@ -1275,7 +1275,7 @@ struct FuncPullMonster
 			int32_t tx = (int32_t)(ecs::PlayerRuntime::GetX(candidate) + fx);
 			int32_t ty = (int32_t)(ecs::PlayerRuntime::GetY(candidate) + fy);
 
-			ch->Sync(tx, ty);
+			ecs::MovementSystem::Sync(candidate, tx, ty);
 			ecs::MovementSystem::Goto(candidate, tx, ty);
 			ecs::MovementSystem::CalculateMoveDuration(candidate);
 
