@@ -141,7 +141,6 @@ ACMD(do_remove_affect)
 
 ACMD(do_stat2)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)

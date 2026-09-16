@@ -1913,7 +1913,6 @@ ACMD(do_set)
 
 ACMD(do_reset)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(character));
 	ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 	ecs::SessionSystem::Save(character);
@@ -1963,8 +1962,6 @@ ACMD(do_respawn)
 
 ACMD(do_safebox_size)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -4143,7 +4140,6 @@ ACMD(do_set_socket)
 
 ACMD (do_can_dead)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (subcmd)
 		CombatSystem::SetUndying(character, true);
 	else

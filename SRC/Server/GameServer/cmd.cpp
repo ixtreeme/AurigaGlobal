@@ -357,8 +357,6 @@ ACMD(do_unlock_extra)
 #endif
 ACMD(do_wheel_open)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-
 	if ((ecs::PlayerRuntime::IsObserverMode(character)) || (CombatSystem::IsDead(character)) || (CombatSystem::IsStun(character)))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You Can't do this now");
@@ -374,7 +372,6 @@ ACMD(do_wheel_open)
 #ifdef ENABLE_NEW_PET_EDITS
 ACMD(do_petenchant)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if ((ecs::PlayerRuntime::IsObserverMode(character)) || (CombatSystem::IsDead(character)) || (CombatSystem::IsStun(character)))
 		return;
 
