@@ -977,9 +977,7 @@ EVENTFUNC(warp_npc_event)
         return 0;
     }
 
-    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-
-    if (ch == nullptr) {
+    if (!ecs::IsCharacter(info->ch)) {
         return 0;
     }
 
@@ -1844,9 +1842,7 @@ EVENTFUNC(save_event)
 		return 0;
 	}
 
-	LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-
-	if (ch == nullptr) { // <Factor>
+	if (!ecs::IsCharacter(info->ch)) { // <Factor>
 		return 0;
 	}
 	const entt::entity saveEntity = info->ch;

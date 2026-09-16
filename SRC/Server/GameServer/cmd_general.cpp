@@ -281,8 +281,7 @@ ACMD(do_daily_reward_get_reward){
 }
 ACMD(do_user_horse_back)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 
 	CMountSystem* mountSystem = MountSystem::GetMountSystem(character);

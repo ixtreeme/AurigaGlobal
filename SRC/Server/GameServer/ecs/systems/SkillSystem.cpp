@@ -1904,11 +1904,10 @@ EVENTFUNC(ChainLightningEvent)
 	const entt::entity victimEntity = info->dwVictim;
 	const entt::entity character = info->dwChr;
 
-	auto* pkChrVictim = LegacyCharOf(victimEntity);
 	auto* pkChr = LegacyCharOf(character);
 	entt::entity target = entt::null;
 
-	if (!pkChr || !pkChrVictim)
+	if (!pkChr || !ecs::IsCharacter(victimEntity))
 	{
 		LOG_INFO("use chainlighting, but no character");
 		return 0;

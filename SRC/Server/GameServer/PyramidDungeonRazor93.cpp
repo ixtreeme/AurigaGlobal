@@ -339,8 +339,7 @@ void CPyramidDungeonRazor93::OnPlayerDisconnect(entt::entity character)
 
 void CPyramidDungeonRazor93::OnPlayerLogin(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::IsCharacter(character) || !ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(character);

@@ -737,8 +737,7 @@ void Grill(entt::entity owner, entt::entity itemEntity)
 	int count = ItemSystem::GetItemCount(itemEntity);
 
 #ifdef ENABLE_BATTLE_PASS
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch)
+	if (!ecs::IsCharacter(owner))
 		return;
 	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(owner);
 	if(bBattlePassId)

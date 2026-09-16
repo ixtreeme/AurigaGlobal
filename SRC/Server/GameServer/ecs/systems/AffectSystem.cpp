@@ -558,8 +558,7 @@ bool IsImmune(entt::entity e, uint32_t immuneFlag)
 
 void ApplyMobAttribute(entt::entity target, const TMobTable* table)
 {
-    auto* ch = LegacyCharOf(target);
-    if (!ch || !table) {
+    if (!ecs::IsCharacter(target) || !table) {
         return;
     }
 
@@ -1017,10 +1016,7 @@ void ClearAffect(entt::entity e, bool bSave)
 // Rebuilding the affect list a login handed back from the database.
 void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElements)
 {
-	// CheckMount, SetDropStatus have no entity form yet;
-	// each is its own migration and they share this one resolve.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
+	if (!ecs::IsCharacter(e))
 		return;
 
 	const auto entity = e;

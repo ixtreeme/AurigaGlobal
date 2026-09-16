@@ -1881,9 +1881,7 @@ ACMD(do_set)
 #ifdef ENABLE_GAYA_SYSTEM
 		case DoSetTypes::GAYA: //gaya
 		{
-			// Gaya storage and mutation are still owned by the legacy currency system.
-			const auto* target = ecs::LegacyCharOf(tch);
-			if (!target)
+			if (!ecs::IsCharacter(tch))
 				return;
 			int gaya = 0;
 			str_to_number(gaya, arg3);

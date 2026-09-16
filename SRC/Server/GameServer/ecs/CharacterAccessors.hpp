@@ -13,6 +13,7 @@
 #include "components/spatial_components.hpp"
 #include "components/transform_components.hpp"
 #include "components/vital_components.hpp"
+#include "EntityInvariants.hpp"
 #include "../char_interface.hpp"
 #include "../typedef.h"
 
@@ -29,6 +30,15 @@ inline auto LegacyCharOf(entt::entity e) -> decltype(std::declval<ecs::LegacyCha
     }
 
     return nullptr;
+}
+
+// A character is an entity carrying one of the four character type tags.
+// Every character CHARACTER_MANAGER builds gets its tag right after its
+// legacy pointer, and loses both in the same registry destroy, so this
+// answers `LegacyCharOf(e) != nullptr` without touching the pointer.
+inline bool IsCharacter(entt::entity e)
+{
+    return Invariants::HasAnyTypeTag(g_registry, e);
 }
 
 inline ecs::CharacterRuntimeFlagsComponent* TryGetRuntimeFlags(entt::entity e)

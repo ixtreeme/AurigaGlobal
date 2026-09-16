@@ -221,10 +221,7 @@ int64_t CShop::Buy(entt::entity ch, uint8_t pos
 )
 
 {
-	// Finding a free inventory slot and the save still go through CHARACTER;
-	// both are the inventory's own migration. One resolve, named.
-	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
-	if (!inventory)
+	if (!ecs::IsCharacter(ch))
 		return SHOP_SUBHEADER_GC_END;
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 	bool ismultiple = multiple;
@@ -704,9 +701,7 @@ int64_t CShop::Buy(entt::entity ch, uint8_t pos
 
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 uint8_t CShop::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
-	// As in Buy: the save is still CHARACTER work.
-	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
-	if (!inventory)
+	if (!ecs::IsCharacter(ch))
 		return SHOP_SUBHEADER_GC_END;
 	if (p < 0 || c <= 0 || c > MULTIPLE_BUY_LIMIT) {
 		return SHOP_SUBHEADER_GC_OK;

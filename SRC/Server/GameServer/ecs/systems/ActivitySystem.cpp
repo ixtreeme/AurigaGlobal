@@ -49,8 +49,7 @@ ecs::FishingState* GetFishingState(entt::entity e)
 #ifdef ENABLE_BATTLE_PASS
 void UpdateFishingBattlePassLegacyBoundary(entt::entity fisher)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(fisher);
-    if (!ch)
+    if (!ecs::IsCharacter(fisher))
         return;
 
     const uint8_t battlePassId = ecs::PlayerRuntime::GetBattlePassId(fisher);

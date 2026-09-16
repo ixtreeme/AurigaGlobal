@@ -2190,11 +2190,10 @@ void CInputMain::SetSkillColor(entt::entity character, const char* pcData)
 
 void CInputMain::Attack(entt::entity character, const uint8_t header, const char* data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Attack(LPCHARACTER");//INGAME_DEBUG_RAZOR93
 #endif
-	if (nullptr == ch)
+	if (!ecs::IsCharacter(character))
 		return;
 
 

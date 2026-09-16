@@ -958,9 +958,7 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 	//PROF_UNIT puDam("Dam");
     if (!IsBattlePair(attacker, victim))
         return BATTLE_NONE;
-    // The complete Damage pipeline has not yet been migrated.
-    auto* legacyVictim = ecs::LegacyCharOf(victim);
-    if (!legacyVictim)
+    if (!ecs::IsCharacter(victim))
         return BATTLE_NONE;
 	if (CombatSystem::Damage(victim, attacker, iDam, DAMAGE_TYPE_NORMAL))
 		return (BATTLE_DEAD);
