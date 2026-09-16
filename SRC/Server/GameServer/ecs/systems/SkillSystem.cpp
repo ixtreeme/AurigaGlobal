@@ -1574,52 +1574,6 @@ bool SkillSystem::LearnSkillByBook(entt::entity e, uint32_t dwSkillVnum, uint8_t
 	return true;
 }
 
-bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
-{
-	if (0 == dwSkillVnum) return false;
-
-	if (0 < SkillSystem::GetSkillGroup(GetEntityHandle()))
-	{
-		const uint32_t* pSkill = SkillListByJob[ ecs::PlayerRuntime::GetJob(GetEntityHandle()) ][ SkillSystem::GetSkillGroup(GetEntityHandle())-1 ];
-
-		for (int i=0 ; i < SKILL_LIST_COUNT ; ++i)
-		{
-			if (pSkill[i] == dwSkillVnum) return true;
-		}
-	}
-
-	if (true == MountSystem::IsRiding(GetEntityHandle()))
-	{
-#ifdef ENABLE_MOUNTSKILL_CHECK
-		eMountType eIsMount = GetMountLevelByVnum(MountSystem::GetMountVnum(GetEntityHandle()), false);
-		if (eIsMount != MOUNT_TYPE_MILITARY)
-		{
-			if (test_server)
-				LOG_INFO("CanUseSkill: Mount can't skill. vnum({}) type({})", MountSystem::GetMountVnum(GetEntityHandle()), static_cast<int>(eIsMount));
-			return false;
-		}
-#endif
-		switch(dwSkillVnum)
-		{
-			case SKILL_HORSE_WILDATTACK:
-			case SKILL_HORSE_CHARGE:
-			case SKILL_HORSE_ESCAPE:
-			case SKILL_HORSE_WILDATTACK_RANGE:
-				return true;
-		}
-	}
-
-	switch( dwSkillVnum )
-	{
-		case 121: case 122: case 124: case 126: case 127: case 128: case 129: case 130:
-		case 131:
-		case 151: case 152: case 153: case 154: case 155: case 156: case 157: case 158: case 159:
-			return true;
-	}
-
-	return false;
-}
-
 // char_skill.cpp slice E + remaining helpers migrated
 
 bool TSkillUseInfo::HitOnce(uint32_t dwVnum)
@@ -3792,7 +3746,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	}
 #endif
 
-	if (false == CanUseSkill(dwVnum))
+	if (false == SkillSystem::CanUseSkill(GetEntityHandle(), dwVnum))
 		return false;
 
 	// NO_GRANDMASTER

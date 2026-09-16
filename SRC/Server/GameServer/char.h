@@ -1084,7 +1084,6 @@ public:
 
 	// END_OF_ADD_GRANDMASTER_SKILL
 
-	bool				CanUseSkill(uint32_t dwSkillVnum) const;
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 	int					GetSkillLevel(uint32_t dwVnum) const;
 
