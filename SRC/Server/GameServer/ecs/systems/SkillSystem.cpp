@@ -1097,21 +1097,6 @@ bool ResetOneSkill(entt::entity e, uint32_t skillId)
 
 } // namespace SkillSystem
 
-time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
-{
-    if (dwVnum >= SKILL_MAX_NUM)
-    {
-        LOG_ERROR("vnum overflow (vnum: {})", dwVnum);
-        return 0;
-    }
-
-    const entt::entity e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-        return SkillSystem::GetSkillNextReadTime(e, dwVnum);
-
-    return 0;
-}
-
 void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
 {
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
@@ -1121,7 +1106,7 @@ void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
         time = uint32_t(get_global_time() + (3600 * 2));
 #endif
 
-    if ((GetSkillMasterType(dwVnum) == SKILL_MASTER) && (dwVnum >= SKILL_SAMYEON) && (dwVnum <= SKILL_JEUNGRYEOK))
+    if ((SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum) == SKILL_MASTER) && (dwVnum >= SKILL_SAMYEON) && (dwVnum <= SKILL_JEUNGRYEOK))
         time = uint32_t(get_global_time() + 3600);
 
     SkillSystem::SetSkillNextReadTime(GetEntityHandle(), dwVnum, time);
@@ -1158,7 +1143,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 		return false;
 	}
 
-	LOG_INFO("learn grand master skill[{}] cur {}, next {}", dwSkillVnum, get_global_time(), GetSkillNextReadTime(dwSkillVnum));
+	LOG_INFO("learn grand master skill[{}] cur {}, next {}", dwSkillVnum, get_global_time(), SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum));
 
 	if (pkSk->dwType == 0)
 	{
@@ -1168,9 +1153,9 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 		return false;
 	}
 
-	if (GetSkillMasterType(dwSkillVnum) != SKILL_GRAND_MASTER) {
+	if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) != SKILL_GRAND_MASTER) {
 #ifdef TEXTS_IMPROVEMENT
-		if (GetSkillMasterType(dwSkillVnum) > SKILL_GRAND_MASTER) {
+		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) > SKILL_GRAND_MASTER) {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 422, "");
 		} else {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 421, "");
@@ -1283,13 +1268,13 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	if (pkSk->dwType != 0)
 	{
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-		if ((GetSkillMasterType(dwSkillVnum) != SKILL_MASTER) && ((dwSkillVnum < SKILL_ANTI_PALBANG) || (dwSkillVnum > SKILL_ANTI_BYEURAK)))
+		if ((SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) != SKILL_MASTER) && ((dwSkillVnum < SKILL_ANTI_PALBANG) || (dwSkillVnum > SKILL_ANTI_BYEURAK)))
 #else
-		if (GetSkillMasterType(dwSkillVnum) != SKILL_MASTER)
+		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) != SKILL_MASTER)
 #endif
 		{
 #ifdef TEXTS_IMPROVEMENT
-			if (GetSkillMasterType(dwSkillVnum) > SKILL_MASTER) {
+			if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwSkillVnum) > SKILL_MASTER) {
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 423, "");
 			}
 			else {
@@ -1301,7 +1286,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	}
 
 #ifdef ENABLE_NEW_SECONDARY_SKILLS
-	if ((get_global_time() < GetSkillNextReadTime(dwSkillVnum)) && ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP))) {
+	if ((get_global_time() < SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum)) && ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP))) {
 		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY))
 		{
 			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY);
@@ -1311,7 +1296,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		}
 		else
 		{
-			int iTime = GetSkillNextReadTime(dwSkillVnum) - get_global_time();
+			int iTime = SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum) - get_global_time();
 			int iHours = iTime / 3600;
 			int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
@@ -1321,9 +1306,9 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		}
 	}
 
-	if ((get_global_time() < GetSkillNextReadTime(dwSkillVnum)) && (dwSkillVnum != NEW_SUPPORT_SKILL_ATTACK) && (dwSkillVnum != NEW_SUPPORT_SKILL_YANG) && (dwSkillVnum != NEW_SUPPORT_SKILL_MONSTERS) && (dwSkillVnum != NEW_SUPPORT_SKILL_HP))
+	if ((get_global_time() < SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum)) && (dwSkillVnum != NEW_SUPPORT_SKILL_ATTACK) && (dwSkillVnum != NEW_SUPPORT_SKILL_YANG) && (dwSkillVnum != NEW_SUPPORT_SKILL_MONSTERS) && (dwSkillVnum != NEW_SUPPORT_SKILL_HP))
 #else
-	if (get_global_time() < GetSkillNextReadTime(dwSkillVnum))
+	if (get_global_time() < SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum))
 #endif
 	{
 		if (!(test_server && quest::CQuestManager::instance().GetEventFlag("no_read_delay")))
@@ -1338,14 +1323,14 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			else
 			{
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-				int iTime = GetSkillNextReadTime(dwSkillVnum) - get_global_time();
+				int iTime = SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum) - get_global_time();
 				int iHours = iTime / 3600;
 				int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
 #endif
 #else
-				SkillSystem::SkillLearnWaitMoreTimeMessage(GetEntityHandle(), GetSkillNextReadTime(dwSkillVnum) - get_global_time());
+				SkillSystem::SkillLearnWaitMoreTimeMessage(GetEntityHandle(), SkillSystem::GetSkillNextReadTime(GetEntityHandle(), dwSkillVnum) - get_global_time());
 #endif
 				return false;
 			}
@@ -1789,7 +1774,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	// ±×·Łµĺ ¸¶˝şĹÍ´Â Äů˝şĆ®·Î¸¸ ĽöÇŕ°ˇ´É
 	if (pkSk->dwType != 0)
 	{
-		switch (GetSkillMasterType(pkSk->dwVnum))
+		switch (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum))
 		{
 			case SKILL_GRAND_MASTER:
 				if (bMethod != SKILL_UP_BY_QUEST)
@@ -1804,7 +1789,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	if (bMethod == SKILL_UP_BY_POINT)
 	{
 		// ¸¶˝şĹÍ°ˇ ľĆ´Ń »óĹÂżˇĽ­¸¸ Ľö·Ă°ˇ´É
-		if (GetSkillMasterType(pkSk->dwVnum) != SKILL_NORMAL)
+		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum) != SKILL_NORMAL)
 			return;
 
 		if (IS_SET(pkSk->dwFlag, SKILL_FLAG_DISABLE_BY_POINT_UP))
@@ -1813,7 +1798,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	else if (bMethod == SKILL_UP_BY_BOOK)
 	{
 		if (pkSk->dwType != 0) // Á÷ľ÷żˇ ĽÓÇĎÁö ľĘľŇ°ĹłŞ Ć÷ŔÎĆ®·Î żĂ¸±Ľö ľř´Â ˝şĹłŔş ĂłŔ˝şÎĹÍ ĂĄŔ¸·Î ąčżď Ľö ŔÖ´Ů.
-			if (GetSkillMasterType(pkSk->dwVnum) != SKILL_MASTER)
+			if (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum) != SKILL_MASTER)
 				return;
 	}
 
@@ -1821,7 +1806,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 		return;
 
 	if (pkSk->preSkillVnum)
-		if (GetSkillMasterType(pkSk->preSkillVnum) == SKILL_NORMAL &&
+		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->preSkillVnum) == SKILL_NORMAL &&
 			GetSkillLevel(pkSk->preSkillVnum) < pkSk->preSkillLevel)
 			return;
 
@@ -1867,7 +1852,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	if (pkSk->dwType != 0)
 	{
 		// °©ŔÚ±â ±×·ąŔĚµĺ ľ÷ÇĎ´Â ÄÚµů
-		switch (GetSkillMasterType(pkSk->dwVnum))
+		switch (SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum))
 		{
 			case SKILL_NORMAL:
 				// ąřĽ·Ŕş ˝şĹł ľ÷±×·ąŔĚµĺ 17~20 »çŔĚ ·Ł´ý ¸¶˝şĹÍ Ľö·Ă
@@ -3886,7 +3871,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 
 	// NO_GRANDMASTER
-	if (GetSkillMasterType(dwVnum) < SKILL_GRAND_MASTER)
+	if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum) < SKILL_GRAND_MASTER)
 		bUseGrandMaster = false;
 	// END_OF_NO_GRANDMASTER
 
@@ -3966,7 +3951,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		iNeededSP = (int) pkSk->kSPCostPoly.Eval();
 
 		// ADD_GRANDMASTER_SKILL
-		if (GetSkillMasterType(dwVnum) >= SKILL_GRAND_MASTER && bUseGrandMaster)
+		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum) >= SKILL_GRAND_MASTER && bUseGrandMaster)
 		{
 			iNeededSP = (int) pkSk->kGrandMasterAddSPCostPoly.Eval();
 		}
@@ -3986,7 +3971,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 		iNeededSP = (int) pkSk->kSPCostPoly.Eval();
 
-		if (GetSkillMasterType(dwVnum) >= SKILL_GRAND_MASTER && bUseGrandMaster)
+		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum) >= SKILL_GRAND_MASTER && bUseGrandMaster)
 		{
 			iNeededSP = (int) pkSk->kGrandMasterAddSPCostPoly.Eval();
 		}
@@ -4112,20 +4097,6 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	SkillSystem::SetLastSkillTime(character, get_dword_time());
 
 	return true;
-}
-
-int CHARACTER::GetSkillMasterType(uint32_t dwVnum) const
-{
-	if (!IsPC())
-		return 0;
-
-	if (dwVnum >= SKILL_MAX_NUM)
-	{
-		LOG_ERROR("{} skill vnum overflow {}", GetName(), dwVnum);
-		return 0;
-	}
-
-	return SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum);
 }
 
 EVENTFUNC(skill_muyoung_event)

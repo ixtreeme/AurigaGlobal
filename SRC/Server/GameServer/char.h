@@ -1100,9 +1100,7 @@ public:
 	bool				CanUseSkill(uint32_t dwSkillVnum) const;
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 	int					GetSkillLevel(uint32_t dwVnum) const;
-	int					GetSkillMasterType(uint32_t dwVnum) const;
 
-	time_t				GetSkillNextReadTime(uint32_t dwVnum) const;
 	void				SetSkillNextReadTime(uint32_t dwVnum, time_t time);
 
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
