@@ -69,6 +69,8 @@ void StopGyeongGongEvent(entt::entity e);
 #endif
 bool CanUseMobSkill(entt::entity e, unsigned int idx);
 bool CanUseSkill(entt::entity e, uint32_t skillId);
+// Whether a movement packet's motion index is a skill e has learned.
+bool IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex);
 // Uses a skill of e on victim: the checks, the HP or SP cost and the
 // cooldown, then the skill itself.
 bool UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);

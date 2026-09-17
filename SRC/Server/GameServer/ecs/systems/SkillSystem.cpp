@@ -4342,9 +4342,9 @@ bool UseMobSkill(entt::entity e, unsigned int idx)
 
 } // namespace SkillSystem
 
-bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
+bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 {
-	uint32_t selfJobGroup = (ecs::PlayerRuntime::GetJob(GetEntityHandle())+1) * 10 + SkillSystem::GetSkillGroup(GetEntityHandle());
+	uint32_t selfJobGroup = (ecs::PlayerRuntime::GetJob(e)+1) * 10 + SkillSystem::GetSkillGroup(e);
 	const uint32_t SKILL_NUM = 158;
 	static uint32_t s_anSkill2JobGroup[SKILL_NUM] = {
 		0, // common_skill 0
@@ -4697,7 +4697,7 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 
 	if (dwMotionIndex >= MOTION_MAX_NUM)
 	{
-		LOG_ERROR("OUT_OF_MOTION_VNUM: name={}, motion={}/{}", GetName(), dwMotionIndex, MOTION_MAX_NUM);
+		LOG_ERROR("OUT_OF_MOTION_VNUM: name={}, motion={}/{}", ecs::PlayerRuntime::GetName(e), dwMotionIndex, MOTION_MAX_NUM);
 		return false;
 	}
 
@@ -4706,7 +4706,7 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 	uint32_t skillCount = *skillVNums++;
 	if (skillCount >= SKILL_LIST_MAX_COUNT)
 	{
-		LOG_ERROR("OUT_OF_SKILL_LIST: name={}, count={}/{}", GetName(), skillCount, static_cast<int>(SKILL_LIST_MAX_COUNT));
+		LOG_ERROR("OUT_OF_SKILL_LIST: name={}, count={}/{}", ecs::PlayerRuntime::GetName(e), skillCount, static_cast<int>(SKILL_LIST_MAX_COUNT));
 		return false;
 	}
 
@@ -4714,7 +4714,7 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 	{
 		if (skillIndex >= SKILL_MAX_NUM)
 		{
-			LOG_ERROR("OUT_OF_SKILL_VNUM: name={}, skill={}/{}", GetName(), skillIndex, static_cast<int>(SKILL_MAX_NUM));
+			LOG_ERROR("OUT_OF_SKILL_VNUM: name={}, skill={}/{}", ecs::PlayerRuntime::GetName(e), skillIndex, static_cast<int>(SKILL_MAX_NUM));
 			return false;
 		}
 
@@ -4730,14 +4730,14 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 
 				if (eachSkillVNum >= GUILD_SKILL_START && eachSkillVNum <= GUILD_SKILL_END)
 				{
-					if (ecs::SocialSystem::GetGuild(GetEntityHandle()))
-						eachSkillLevel = ecs::SocialSystem::GetGuild(GetEntityHandle())->GetSkillLevel(eachSkillVNum);
+					if (ecs::SocialSystem::GetGuild(e))
+						eachSkillLevel = ecs::SocialSystem::GetGuild(e)->GetSkillLevel(eachSkillVNum);
 					else
 						eachSkillLevel = 0;
 				}
 				else
 				{
-					eachSkillLevel = SkillSystem::GetSkillLevel(GetEntityHandle(), eachSkillVNum);
+					eachSkillLevel = SkillSystem::GetSkillLevel(e, eachSkillVNum);
 				}
 
 				if (eachSkillLevel > 0)

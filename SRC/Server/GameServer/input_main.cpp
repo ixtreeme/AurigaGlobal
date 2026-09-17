@@ -11,6 +11,7 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
+#include "ecs/services/SpatialService.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
@@ -1975,11 +1976,10 @@ static const int ComboSequenceBySkillLevel[3][8] =
 
 void CInputMain::Move(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Move(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 
 	struct command_move * pinfo = (struct command_move *) data;
@@ -2025,7 +2025,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 		{
 			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(character).data(), fDist, fDistFromCurrent, MountSystem::IsRiding(character));
 
-			ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ch->GetZ());
+			ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetZ(character));
 			ecs::MovementSystem::Stop(character);
 // Phase 15E-final.LPENTITY.4-architect H fixup-4:
 			// Anti-cheat backport early-returns BEFORE the line ~2385
@@ -2049,7 +2049,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 #ifdef ENALBE_MOUNT_SECTREE_UPDATE_RAZOR93
 		if (true == MountSystem::IsRiding(character))
 		{
-			ch->UpdateSectree();
+			ecs::SpatialService::UpdateSectree(g_registry, character);
 		}
 #endif
 #ifdef ENABLE_CHECK_GHOSTMODE
@@ -2057,7 +2057,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 		{
 			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(character).data());
 
-			ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ch->GetZ());
+			ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetZ(character));
 			ecs::MovementSystem::Stop(character);
 			return;
 		}
@@ -2087,7 +2087,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 	}
 
 	// migrated from CHARACTER::Move
-	entt::entity e = (ch && ecs::PlayerRuntime::GetDesc(character)) ? ecs::PlayerRuntime::GetDesc(character)->GetEntity() : entt::null;
+	entt::entity e = (ecs::IsCharacter(character) && ecs::PlayerRuntime::GetDesc(character)) ? ecs::PlayerRuntime::GetDesc(character)->GetEntity() : entt::null;
 	if (e != entt::null && g_registry.valid(e))
 	{
 		g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(pinfo->lX), static_cast<int32_t>(pinfo->lY));
@@ -2115,7 +2115,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 			const int MASK_SKILL_MOTION = 0x7F;
 			unsigned int motion = pinfo->bFunc & MASK_SKILL_MOTION;
 
-			if (!ch->IsUsableSkillMotion(motion))
+			if (!SkillSystem::IsUsableSkillMotion(character, motion))
 			{
 				ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(number(150, 500));
 			}
@@ -2147,13 +2147,13 @@ void CInputMain::Move(entt::entity character, const char * data)
 	if (pinfo->dwTime == 10653691) // 디버거 발견
 	{
 		if (ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(number(15, 30)))
-			LogManager::instance().HackLog("Debugger", ch);
+			LogManager::instance().HackLog("Debugger", character);
 
 	}
 	else if (pinfo->dwTime == 10653971) // Softice 발견
 	{
 		if (ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(number(15, 30)))
-			LogManager::instance().HackLog("Softice", ch);
+			LogManager::instance().HackLog("Softice", character);
 	}
 */
 	/*

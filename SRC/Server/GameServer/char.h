@@ -993,7 +993,6 @@ public:
 #endif
 
 
-	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 
 
 
