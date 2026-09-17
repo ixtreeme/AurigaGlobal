@@ -1438,10 +1438,6 @@ public:
 #ifdef ENABLE_BIOLOGIST_UI
 	void CheckBiologistReward();
 #endif
-#ifdef ENABLE_ANTICHEAT
-	void ClearCheatChecks();
-	void ProcessCheatCheck(int32_t time);
-#endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 #endif
 
@@ -1453,9 +1449,6 @@ public:
 //#endif
 
 protected:
-#ifdef ENABLE_ANTICHEAT
-	int32_t m_firstReward, m_rewardCount, m_checkRepeated;
-#endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 #endif
 

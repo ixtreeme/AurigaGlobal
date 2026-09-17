@@ -625,7 +625,7 @@ CMob::~CMob() = default;
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 time_t get_global_time() { UnexpectedService(__func__); }
-void CHARACTER::ProcessCheatCheck(int) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::ProcessCheatCheck(entt::entity,int) { UnexpectedService(__func__); }
 const CMob* CMobManager::Get(uint32_t) { UnexpectedService(__func__); }
 int CHARACTER_MANAGER::GetMobDamageRate(entt::entity e) { AssertActor(e); return 100; }
 bool CPVPManager::CanAttack(entt::entity,entt::entity,bool) { UnexpectedService(__func__); }

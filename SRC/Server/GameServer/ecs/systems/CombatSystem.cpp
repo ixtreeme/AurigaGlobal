@@ -1463,7 +1463,7 @@ void UpdateAggrPoint(entt::entity e, entt::entity attacker, EDamageType type, in
 // char_battle.cpp slice BD2b moved into CombatSystem.cpp
 
 static uint32_t __GetPartyExpNP(const uint32_t level);
-static uint32_t AdjustExpByLevel_Combat(const LegacyCharHandle ch, const uint32_t exp);
+static uint32_t AdjustExpByLevel_Combat(entt::entity chEntity, const uint32_t exp);
 
 namespace CombatSystem {
 
@@ -1531,11 +1531,7 @@ void Stun(entt::entity e)
 typedef long double rate_t;
 static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 {
-	// The marriage bonus, the mount vnum, the pet system, the unique-group test
-	// and the PC-bang flag have no entity form yet; each is its own migration
-	// and they share this one resolve.
-	LPCHARACTER to = ecs::LegacyCharOf(toEntity);
-	if (!to)
+	if (!ecs::IsCharacter(toEntity))
 		return;
 	if (test_server && iExp < 0)
 	{
@@ -1626,7 +1622,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	// you can get at maximum only 10% of the total required exp at once (so, you need to kill at least 10 mobs to level up) (useless)
 	iExp = std::min(ecs::PlayerRuntime::GetNextExp(toEntity) / 10, (uint32_t)iExp);
 	// it recalculate the given exp if the player level is greater than the exp_table size (useless)
-	iExp = AdjustExpByLevel_Combat(to, iExp);
+	iExp = AdjustExpByLevel_Combat(toEntity, iExp);
 
 #ifdef __NEWPET_SYSTEM__
 	CNewPetSystem* petSystemNew = ecs::PlayerRuntime::GetNewPetSystem(toEntity);
@@ -1677,11 +1673,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 #else
 static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 {
-	// The marriage bonus, the mount vnum, the pet system, the unique-group test
-	// and the PC-bang flag have no entity form yet; each is its own migration
-	// and they share this one resolve.
-	LPCHARACTER to = ecs::LegacyCharOf(toEntity);
-	if (!to)
+	if (!ecs::IsCharacter(toEntity))
 		return;
 	//  ġ
 	iExp = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(toEntity), ecs::PointSystem::GetLevel(fromEntity), iExp);
@@ -1692,11 +1684,11 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 #ifdef ENABLE_EVENT_MANAGER
 	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(EXP_EVENT, ecs::PlayerRuntime::GetEmpire(toEntity));
 	if (event != 0)
-		iExp = iExp * (100 + (event->value[0] + CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT))) / 100;
+		iExp = iExp * (100 + (event->value[0] + CPrivManager::instance().GetPriv(toEntity, PRIV_EXP_PCT))) / 100;
 	else
-		iExp = iExp * (100 + CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT)) / 100;
+		iExp = iExp * (100 + CPrivManager::instance().GetPriv(toEntity, PRIV_EXP_PCT)) / 100;
 #else
-	iExp = iExp * (100 + CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT)) / 100;
+	iExp = iExp * (100 + CPrivManager::instance().GetPriv(toEntity, PRIV_EXP_PCT)) / 100;
 #endif
 
 	// ӳ ⺻ Ǵ ġ ʽ
@@ -1760,7 +1752,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		// PC  ġ ʽ
 		if (ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) > 0)
 		{
-			if (to->IsPCBang() == true)
+			if (ecs::PlayerRuntime::IsPCBang(toEntity) == true)
 				iExp += (iExp * ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) / 100);
 		}
 
@@ -1789,7 +1781,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp(%d) base_exp(%d)", iExp, iBaseExp);
 	}
 
-	iExp = AdjustExpByLevel_Combat(to, iExp);
+	iExp = AdjustExpByLevel_Combat(toEntity, iExp);
 
 #ifdef __NEWPET_SYSTEM__
 	CNewPetSystem* petSystemNew = ecs::PlayerRuntime::GetNewPetSystem(toEntity);
@@ -2948,9 +2940,8 @@ static uint32_t __GetPartyExpNP(const uint32_t level)
 }
 
 
-static uint32_t AdjustExpByLevel_Combat(const LegacyCharHandle ch, const uint32_t exp)
+static uint32_t AdjustExpByLevel_Combat(entt::entity chEntity, const uint32_t exp)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (PLAYER_MAX_LEVEL_CONST < ecs::PointSystem::GetLevel(chEntity))
 	{
 		double ret = 0.95;
@@ -4423,22 +4414,20 @@ void RewardGold(entt::entity e, entt::entity attacker)
 
 	// The mob table and the drop helpers still take the characters; each is
 	// its own migration and they share these two resolves.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 
-	if (!self || !pkAttacker || !ecs::PlayerRuntime::IsPC(attacker))
+	if (!ecs::IsCharacter(e) || !ecs::IsCharacter(attacker) || !ecs::PlayerRuntime::IsPC(attacker))
 		return;
 
-	if (!self->GetMobData())
+	if (const auto* mobData = g_registry.try_get<ecs::MobDataRef>(e); !mobData || !mobData->data)
 	{
-		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
+		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), ecs::PlayerRuntime::GetName(attacker));
 		return;
 	}
-	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker)) {
+	if (ecs::IsCharacter(attacker) && ecs::PlayerRuntime::IsPC(attacker)) {
 		if (ecs::PlayerRuntime::IsStone(e)) {
 #ifdef ENABLE_ANTICHEAT
 			if (ecs::PlayerRuntime::GetMapIndex(attacker) < 1000) {
-				pkAttacker->ProcessCheatCheck(get_global_time());
+				ecs::PlayerRuntime::ProcessCheatCheck(attacker, get_global_time());
 			}
 #endif
 #ifdef DISABLE_GOLD_DROP_FROM_TAKAKA
@@ -4512,7 +4501,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 			}
 #else
 			if (ecs::PlayerRuntime::IsPC(attacker))
-				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
+				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD_DROP)) / 100;
 #endif
 
 			iGoldPercent = iGoldPercent * CHARACTER_MANAGER::instance().GetMobGoldDropRate(attacker) / 100;
@@ -4566,7 +4555,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 			else
 				iGold10DropPct = (iGold10DropPct * 100) / (100 + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD10_DROP));
 #else
-			iGold10DropPct = (iGold10DropPct * 100) / (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD10_DROP));
+			iGold10DropPct = (iGold10DropPct * 100) / (100 + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD10_DROP));
 #endif
 
 			// MOB_RANK BOSS   ź

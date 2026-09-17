@@ -10,6 +10,14 @@
 
 namespace ecs {
 
+// ENABLE_ANTICHEAT: stone kills counted over time; seven within seven seconds
+// blocks the hardware id.
+struct CheatCheckState {
+    int32_t firstReward { 0 };
+    int32_t rewardCount { 0 };
+    int32_t checkRepeated { 0 };
+};
+
 struct DungeonDamage {
     std::unordered_map<int, int> highestByRace;
 };

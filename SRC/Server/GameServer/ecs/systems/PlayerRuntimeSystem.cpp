@@ -1832,39 +1832,44 @@ void CHARACTER::SetQuestDamage(int race, int dmg)
 #endif
 
 #ifdef ENABLE_ANTICHEAT
-void CHARACTER::ProcessCheatCheck(int32_t time)
+void ecs::PlayerRuntime::ProcessCheatCheck(entt::entity e, int32_t time)
 {
-    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) == GM_PLAYER)
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    if (ecs::PlayerRuntime::GetGMLevel(e) == GM_PLAYER)
     {
-        if (m_rewardCount == 0)
-            m_firstReward = time;
+        auto& check = g_registry.get_or_emplace<ecs::CheatCheckState>(e);
+        if (check.rewardCount == 0)
+            check.firstReward = time;
 
-        m_rewardCount++;
+        check.rewardCount++;
 
-        if (m_rewardCount >= 7)
+        if (check.rewardCount >= 7)
         {
-            const int32_t n = time - m_firstReward;
+            const int32_t n = time - check.firstReward;
             if (n <= 7)
             {
-                CHwidManager::Instance().SendBlockHwid("ANTICHEAT", GetName());
+                CHwidManager::Instance().SendBlockHwid("ANTICHEAT", std::string(ecs::PlayerRuntime::GetName(e)).c_str());
 
-                LPDESC desc = GetDesc();
+                LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
                 if (desc)
                     desc->DelayedDisconnect(5);
             }
             else
             {
-                m_rewardCount = 0;
+                // Re-read: the block and the disconnect above may run callbacks.
+                if (auto* current = g_registry.try_get<ecs::CheatCheckState>(e))
+                    current->rewardCount = 0;
             }
         }
     }
 }
 
-void CHARACTER::ClearCheatChecks()
+void ecs::PlayerRuntime::ClearCheatChecks(entt::entity e)
 {
-    m_firstReward = 0;
-    m_rewardCount = 0;
-    m_checkRepeated = 0;
+    if (e != entt::null && g_registry.valid(e))
+        g_registry.remove<ecs::CheatCheckState>(e);
 }
 #endif
 
@@ -3990,11 +3995,6 @@ void CHARACTER::Initialize()
 #endif
 #ifdef __DUNGEON_INFO_SYSTEM__
     dungeonDamage.clear();
-#endif
-#ifdef ENABLE_ANTICHEAT
-    m_firstReward = 0;
-    m_rewardCount = 0;
-    m_checkRepeated = 0;
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 #endif

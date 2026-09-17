@@ -928,7 +928,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #endif
 #ifdef ENABLE_ANTICHEAT
-	ch->ClearCheatChecks();
+	ecs::PlayerRuntime::ClearCheatChecks(ch->GetEntityHandle());
 #endif
 }
 
