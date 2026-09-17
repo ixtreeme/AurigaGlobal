@@ -677,7 +677,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	_send_bonus_info(ch);
 #if defined(BL_OFFLINE_MESSAGE)
-	ch->ReadOfflineMessages();
+	ecs::ChatSystem::ReadOfflineMessages(ch->GetEntityHandle());
 #endif
 
 	for (int i = 0; i <= PREMIUM_MAX_NUM; ++i)

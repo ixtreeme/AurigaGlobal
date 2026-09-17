@@ -131,6 +131,13 @@ struct SummonedHorse {
     entt::entity horse { entt::null };
 };
 
+#if defined(BL_OFFLINE_MESSAGE)
+// When the character last stored a message for an offline player.
+struct OfflineMessageState {
+    uint32_t lastSentTime { 0 };
+};
+#endif
+
 struct MountState {
     uint32_t mountVnum { 0 };
     uint32_t mountTime { 0 };

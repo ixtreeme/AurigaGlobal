@@ -397,7 +397,6 @@ static int ProcessTextTag(entt::entity character, const char * c_pszText, uint64
 
 int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBytes)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Whisper handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -427,7 +426,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
 
 
-	if (pkChr == ch)
+	if (chr == (ecs::IsCharacter(character) ? character : entt::null))
 		return (iExtraLen);
 
 	LPDESC pkDesc = nullptr;
@@ -484,7 +483,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 #if defined(BL_OFFLINE_MESSAGE)
 			const uint8_t bDelay = 10;
 			char msg[64];
-			if (get_dword_time() - ch->GetLastOfflinePMTime() > bDelay * 1000)
+			if (get_dword_time() - ecs::ChatSystem::GetLastOfflineMessageTime(character) > bDelay * 1000)
 			{
 				char buf[CHAT_MAX_LEN + 1];
 				strlcpy(buf, data + sizeof(TPacketCGWhisper), MIN(iExtraLen + 1, sizeof(buf)));
@@ -497,7 +496,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 					TItemTable* pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
 					if (pTable) {
 #ifdef ENABLE_MULTI_NAMES
-						int Lang = ch && ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetLanguage() : 0;
+						int Lang = ecs::IsCharacter(character) && ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetLanguage() : 0;
 #endif
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 823, "%s",
@@ -515,7 +514,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 
 				if (buflen > 0)
 				{
-					ch->SendOfflineMessage(pinfo->szNameTo, buf);
+					ecs::ChatSystem::SendOfflineMessage(character, pinfo->szNameTo, buf);
 					snprintf(msg, sizeof(msg), "An offline message has been sent.");
 				}
 				else
@@ -627,7 +626,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 					if (pTable)
 					{
 #ifdef ENABLE_MULTI_NAMES
-						int Lang = ch && ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetLanguage() : 0;
+						int Lang = ecs::IsCharacter(character) && ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetLanguage() : 0;
 #endif
 						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 823, "%s",
 #ifdef ENABLE_MULTI_NAMES

@@ -1377,15 +1377,6 @@ public:
 	// ��ȥ���� deactivate��Ű�� ĳ������ ��ȥ�� �� Ȱ�� ���´� �ǵ帮�� �ʴ´�.
 	// ��ȥ�� ��ȭâ
 public:
-#if defined(BL_OFFLINE_MESSAGE)
-protected:
-	uint32_t				dwLastOfflinePMTime;
-public:
-	uint32_t				GetLastOfflinePMTime() const { return dwLastOfflinePMTime; }
-	void				SetLastOfflinePMTime() { dwLastOfflinePMTime = get_dword_time(); }
-	void				SendOfflineMessage(const char* To, const char* Message);
-	void				ReadOfflineMessages();
-#endif
 	//���� ���� ��� ��Ŷ �ӽ� ����
 private:
 	//bool		 itemAward_flag;

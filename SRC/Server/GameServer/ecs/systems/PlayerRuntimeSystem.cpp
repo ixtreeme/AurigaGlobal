@@ -2558,31 +2558,40 @@ uint8_t GetBattlePassId(entt::entity e)
 #endif
 
 #if defined(BL_OFFLINE_MESSAGE)
-void CHARACTER::SendOfflineMessage(const char* To, const char* Message)
+uint32_t ecs::ChatSystem::GetLastOfflineMessageTime(entt::entity e)
 {
-    if (!GetDesc())
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* state = g_registry.try_get<ecs::OfflineMessageState>(e);
+    return state ? state->lastSentTime : 0;
+}
+
+void ecs::ChatSystem::SendOfflineMessage(entt::entity e, const char* To, const char* Message)
+{
+    if (!ecs::PlayerRuntime::GetDesc(e))
         return;
 
     if (strlen(To) < 1)
         return;
 
     TPacketGDSendOfflineMessage p;
-    strlcpy(p.szFrom, GetName(), sizeof(p.szFrom));
+    strlcpy(p.szFrom, std::string(ecs::PlayerRuntime::GetName(e)).c_str(), sizeof(p.szFrom));
     strlcpy(p.szTo, To, sizeof(p.szTo));
     strlcpy(p.szMessage, Message, sizeof(p.szMessage));
-    db_clientdesc->DBPacket(HEADER_GD_SEND_OFFLINE_MESSAGE, GetDesc()->GetHandle(), &p, sizeof(p));
+    db_clientdesc->DBPacket(HEADER_GD_SEND_OFFLINE_MESSAGE, ecs::PlayerRuntime::GetDesc(e)->GetHandle(), &p, sizeof(p));
 
-    SetLastOfflinePMTime();
+    g_registry.get_or_emplace<ecs::OfflineMessageState>(e).lastSentTime = get_dword_time();
 }
 
-void CHARACTER::ReadOfflineMessages()
+void ecs::ChatSystem::ReadOfflineMessages(entt::entity e)
 {
-    if (!GetDesc())
+    if (!ecs::PlayerRuntime::GetDesc(e))
         return;
 
     TPacketGDReadOfflineMessage p;
-    strlcpy(p.szName, GetName(), sizeof(p.szName));
-    db_clientdesc->DBPacket(HEADER_GD_REQUEST_OFFLINE_MESSAGES, GetDesc()->GetHandle(), &p, sizeof(p));
+    strlcpy(p.szName, std::string(ecs::PlayerRuntime::GetName(e)).c_str(), sizeof(p.szName));
+    db_clientdesc->DBPacket(HEADER_GD_REQUEST_OFFLINE_MESSAGES, ecs::PlayerRuntime::GetDesc(e)->GetHandle(), &p, sizeof(p));
 }
 #endif
 
@@ -3874,9 +3883,6 @@ void CHARACTER::Initialize()
     // Phase C.4: legacy m_bAddChrState zero-init removed (entity null at
     // this Initialize point - ECS StatusFlags created with default-zero
     // bits when this CHARACTER is later attached to an ECS entity).
-#if defined(BL_OFFLINE_MESSAGE)
-    dwLastOfflinePMTime = 0;
-#endif
 
     m_bMountInventoryLoaded = false;
 
