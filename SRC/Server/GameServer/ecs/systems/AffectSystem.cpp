@@ -179,16 +179,6 @@ int poison_level_adjust[9] = {
 };
 
 
-LegacyCharHandle LegacyCharOf(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e)) {
-        return nullptr;
-    }
-
-    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
-    return legacy ? legacy->ptr : nullptr;
-}
-
 void MarkPoison(entt::entity e, bool value)
 {
     if (e == entt::null || !g_registry.valid(e)) {
@@ -1848,11 +1838,6 @@ EVENTFUNC(affect_event)
     }
     // The outer recovery/item/recall tick is still legacy; it delegates expiry
     // to native ProcessAffect. Timer ownership no longer depends on CHARACTER.
-    auto* ch = LegacyCharOf(entity);
-    if (!ch) {
-        AffectSystem::StopAffectEvent(entity);
-        return 0;
-    }
     const bool repeat = AffectSystem::UpdateAffect(entity);
     if (!matches())
         return 0;

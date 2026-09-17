@@ -82,18 +82,15 @@ EVENTFUNC(pvp_check_disconnect)
 		return 0;
 	}
 
-	LPCHARACTER chA = ecs::LegacyCharOf(info->ch);
-	LPCHARACTER chB = ecs::LegacyCharOf(info->victim);
+	const entt::entity characterA = ecs::IsCharacter(info->ch) ? info->ch : entt::null;
+	const entt::entity characterB = ecs::IsCharacter(info->victim) ? info->victim : entt::null;
 
-	const entt::entity characterA = chA ? info->ch : entt::null;
-	const entt::entity characterB = chB ? info->victim : entt::null;
-
-	if (chA == nullptr && chB == nullptr)
+	if (characterA == entt::null && characterB == entt::null)
 	{
 		return 0;
 	}
 
-	if (chA == nullptr)
+	if (characterA == entt::null)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 
@@ -123,7 +120,7 @@ EVENTFUNC(pvp_check_disconnect)
 		return 0;
 	}
 
-	if (chB == nullptr)
+	if (characterB == entt::null)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 
@@ -173,19 +170,16 @@ EVENTFUNC(pvp_duel_counter)
 		return 0;
 	}
 
-	LPCHARACTER chA = ecs::LegacyCharOf(info->ch);
-	LPCHARACTER chB = ecs::LegacyCharOf(info->victim);
+	const entt::entity characterA = ecs::IsCharacter(info->ch) ? info->ch : entt::null;
+	const entt::entity characterB = ecs::IsCharacter(info->victim) ? info->victim : entt::null;
 
-	const entt::entity characterA = chA ? info->ch : entt::null;
-	const entt::entity characterB = chB ? info->victim : entt::null;
-
-	if (chA == nullptr)
+	if (characterA == entt::null)
 	{
 		LOG_ERROR("Duel: Duel start event info is null.");
 		return 0;
 	}
 
-	if (chB == nullptr)
+	if (characterB == entt::null)
 	{
 		LOG_ERROR("Duel: Duel start event info is null.");
 		return 0;
@@ -572,8 +566,7 @@ CPVPManager::~CPVPManager()
 #ifdef ENABLE_PVP_ADVANCED
 void RemoveStateFull(entt::entity character)
 {
-	LPCHARACTER pkChr = ecs::LegacyCharOf(character);
-	if (pkChr != nullptr)
+	if (ecs::IsCharacter(character))
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 
@@ -590,12 +583,10 @@ void RemoveStateFull(entt::entity character)
 
 void CPVPManager::Decline(entt::entity character, entt::entity victim)
 {
-	LPCHARACTER pkChr = ecs::LegacyCharOf(character);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	// Fake PC / desc n�lk�li entit�s ne menjen be pvp state-be
 	//if (pkChr->IsFakePlayer() || pkVictim->IsFakePlayer())
 	//	return;
-	if (pkChr && pkVictim)
+	if (ecs::IsCharacter(character) && ecs::IsCharacter(victim))
 	{
 		RemoveStateFull(character);
 		RemoveStateFull(victim);
