@@ -104,16 +104,6 @@ extern void Map1MassSpawnEvent_OnMobDead(uint32_t vid);
 
 using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
-static inline LegacyCharHandle LegacyCharOf(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e)) {
-        return nullptr;
-    }
-
-    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
-    return legacy ? legacy->ptr : nullptr;
-}
-
 static inline ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(entt::entity character)
 {
     return ecs::TryGetRuntimeFlags(character);
@@ -1978,7 +1968,7 @@ entt::entity DistributeExp(entt::entity e)
 
 
 		// NPC ⵵ ϳ? -.-;
-		if (!LegacyCharOf(eAttacker) || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(eAttacker), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
+		if (!ecs::IsCharacter(eAttacker) || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(eAttacker), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
 			continue;
 
 		iTotalDam += iDam;
@@ -2148,10 +2138,9 @@ EVENTFUNC(dead_event)
 		return 0;
 	}
 
-	auto* ch = LegacyCharOf(info->entity);
-	const entt::entity chEntity = ch ? info->entity : entt::null;
+	const entt::entity chEntity = ecs::IsCharacter(info->entity) ? info->entity : entt::null;
 
-	if (ch == nullptr)
+	if (chEntity == entt::null)
 	{
 		LOG_ERROR("DEAD_EVENT: cannot find char pointer with MOB entity({})", static_cast<uint32_t>(info->entity));
 		return 0;
@@ -2166,7 +2155,7 @@ EVENTFUNC(dead_event)
 
 	if (!ecs::PlayerRuntime::IsPC(chEntity))
 	{
-		if (ch->IsMonster() == true)
+		if (ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER)
 		{
 			if (CombatSystem::IsRevive(chEntity) == false && ecs::SocialSystem::HasReviverInParty(chEntity) == true)
 			{
@@ -2182,7 +2171,7 @@ EVENTFUNC(dead_event)
 			}
 		}
 
-		M2_DESTROY_CHARACTER(ch);
+		M2_DESTROY_CHARACTER(chEntity);
 	}
 
 	return 0;

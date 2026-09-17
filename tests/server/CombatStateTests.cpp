@@ -358,6 +358,7 @@ void ecs::PlayerRuntime::SetPosition(entt::entity e,int p) { AssertActor(e); g_r
 void ecs::PlayerRuntime::StartRecoveryEvent(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsStone(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsMonster(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagMonster>(e); }
+unsigned char ecs::PlayerRuntime::GetCharType(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetMobRank(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::SetQuestNPC(entt::entity,entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity,unsigned int,unsigned int,unsigned int,unsigned int,bool) { UnexpectedService(__func__); }
@@ -533,7 +534,7 @@ bool ItemSystem::IsItemVnumStackable(unsigned int) { UnexpectedService(__func__)
 bool ItemSystem::SetGroundOwnership(entt::entity,entt::entity,int) { UnexpectedService(__func__); }
 CPIDRegistry & CPIDRegistry::Instance(void) { UnexpectedService(__func__); }
 std::vector<entt::entity,std::allocator<entt::entity> > CPIDRegistry::Snapshot(void)const { UnexpectedService(__func__); }
-void CHARACTER_MANAGER::DestroyCharacter(CHARACTER *) { UnexpectedService(__func__); }
+void CHARACTER_MANAGER::DestroyCharacter(entt::entity) { UnexpectedService(__func__); }
 entt::entity CHARACTER_MANAGER::SpawnMobEntity(unsigned int,int,int,int,int,bool,int,bool) { UnexpectedService(__func__); }
 entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { UnexpectedService(__func__); }
 void CHARACTER_MANAGER::SelectStone(entt::entity) { UnexpectedService(__func__); }
