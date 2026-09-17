@@ -356,7 +356,7 @@ const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity e) {
     auto& data = Recovery(e); return data.missingMob ? nullptr : &data.mob;
 }
 void CHARACTER::PointChange(uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
-void CHARACTER::OnMove(bool) { Unexpected(); }
+void ecs::MovementSystem::OnMove(entt::entity, bool) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t flag) {
     Check(flag == AFF_POISON, "recovery read unexpected affect"); return Recovery(e).poison;
 }

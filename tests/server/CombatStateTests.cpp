@@ -433,7 +433,6 @@ bool ecs::MovementSystem::CanMove(entt::entity) { return canMove; }
 // CombatSystem asks the movement frame how recently this one moved.
 unsigned int ecs::MovementSystem::GetLastMoveTime(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).lastMove; }
 bool ecs::MovementSystem::Sync(entt::entity,int32_t,int32_t) { UnexpectedService(__func__); }
-void CHARACTER::OnMove(bool) { UnexpectedService(__func__); }
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }
 float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }

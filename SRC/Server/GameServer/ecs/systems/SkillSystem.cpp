@@ -2954,7 +2954,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
-		OnMove(true);
+		ecs::MovementSystem::OnMove(GetEntityHandle(), true);
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
@@ -3258,7 +3258,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
-		OnMove(true);
+		ecs::MovementSystem::OnMove(GetEntityHandle(), true);
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
@@ -3423,7 +3423,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
-		OnMove(true);
+		ecs::MovementSystem::OnMove(GetEntityHandle(), true);
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 

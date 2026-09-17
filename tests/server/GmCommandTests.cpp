@@ -967,7 +967,7 @@ void CombatSystem::SetUndying(entt::entity, bool) {}
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { Unexpected(); }
 bool ecs::MovementSystem::CanMove(entt::entity) { Unexpected(); }
 bool ecs::MovementSystem::Sync(entt::entity,int32_t,int32_t) { Unexpected(); }
-void CHARACTER::OnMove(bool) { Unexpected(); }
+void ecs::MovementSystem::OnMove(entt::entity, bool) { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { Unexpected(); }
 bool AffectSystem::IsGoodAffect(uint8_t) { Unexpected(); }
 void AffectSystem::RemoveGoodAffects(entt::entity) { Unexpected(); }

@@ -3519,38 +3519,41 @@ void CHARACTER::MonsterLog(const char* format, ...)
     CHARACTER_MANAGER::instance().PacketMonsterLog(GetEntityHandle(), buf.read_peek(), buf.size());
 }
 
-void CHARACTER::OnMove(bool bIsAttack)
+void ecs::MovementSystem::OnMove(entt::entity e, bool bIsAttack)
 {
+    if (!ecs::IsCharacter(e))
+        return;
+
     const uint32_t now = get_dword_time();
-    ecs::MovementSystem::SetLastMoveTime(GetEntityHandle(), now);
-    ecs::SyncPositionComponents(g_registry, GetEntityHandle(), GetMapIndex(), GetX(), GetY(), GetZ());
+    ecs::MovementSystem::SetLastMoveTime(e, now);
+    ecs::SyncPositionComponents(g_registry, e, ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), ecs::PlayerRuntime::GetZ(e));
 
     if (bIsAttack)
     {
-        CombatSystem::SetLastAttackTime(GetEntityHandle(), now);
+        CombatSystem::SetLastAttackTime(e, now);
 
-        if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_REVIVE_INVISIBLE))
-            AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_REVIVE_INVISIBLE);
+        if (AffectSystem::IsAffectFlag(e, AFF_REVIVE_INVISIBLE))
+            AffectSystem::RemoveAffect(e, AFFECT_REVIVE_INVISIBLE);
 
-        if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_EUNHYUNG))
+        if (AffectSystem::IsAffectFlag(e, AFF_EUNHYUNG))
         {
-            AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_EUNHYUNG);
-            SkillSystem::SetAffectedEunhyung(GetEntityHandle());
+            AffectSystem::RemoveAffect(e, SKILL_EUNHYUNG);
+            SkillSystem::SetAffectedEunhyung(e);
         }
         else
         {
-            SkillSystem::ClearAffectedEunhyung(GetEntityHandle());
+            SkillSystem::ClearAffectedEunhyung(e);
         }
 
-        /*if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_JEONSIN))
-          AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_JEONSINBANGEO);*/
+        /*if (AffectSystem::IsAffectFlag(e, AFF_JEONSIN))
+          AffectSystem::RemoveAffect(e, SKILL_JEONSINBANGEO);*/
     }
 
-    /*if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_GUNGON))
-      AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_GUNGON);*/
+    /*if (AffectSystem::IsAffectFlag(e, AFF_GUNGON))
+      AffectSystem::RemoveAffect(e, SKILL_GUNGON);*/
 
     // MINING
-    ActivitySystem::CancelMining(GetEntityHandle());
+    ActivitySystem::CancelMining(e);
     // END_OF_MINING
 }
 

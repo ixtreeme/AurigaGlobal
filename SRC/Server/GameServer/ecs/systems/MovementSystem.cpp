@@ -1115,18 +1115,6 @@ void ResetStopTime(entt::entity e)
 // writes both on every commit, which is the only thing that sees a monster
 // walking on its own; CHARACTER kept a second pair that only OnMove and
 // ResetStopTime touched, and every reader was asking those.
-void OnMove(entt::entity e, bool isAttack)
-{
-    if (!IsValid(e))
-        return;
-
-    auto* ch = CharacterOf(e);
-    if (!ch)
-        return;
-
-    ch->OnMove(isAttack);
-}
-
 bool Goto(entt::entity e, int32_t x, int32_t y)
 {
     if (!IsValid(e) || !g_registry.all_of<ecs::CharacterType, ecs::Position>(e))
@@ -1678,7 +1666,7 @@ bool CHARACTER::Move(int32_t x, int32_t y)
 		if (m_bDetailLog)
 			LOG_TRACE("{} position {} {}", GetName(), x, y);
 
-	OnMove();
+	ecs::MovementSystem::OnMove(GetEntityHandle());
 	return ecs::MovementSystem::Sync(GetEntityHandle(), x, y);
 }
 

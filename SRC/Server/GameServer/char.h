@@ -732,7 +732,6 @@ public:
 
 
 	bool			Move(int32_t x, int32_t y);	// 
-	void			OnMove(bool bIsAttack = false);
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in
 // CheckMovementDrift state_flags subsection deleted with the
 // m_bAddChrState write migration. CheckMovementDrift body is now empty;
