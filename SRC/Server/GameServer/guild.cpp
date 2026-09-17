@@ -1309,13 +1309,10 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 
 void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	auto* victim = static_cast<LPCHARACTER>(nullptr);
-
 	if (!GetMember(ecs::PlayerRuntime::GetPlayerID(character)) || !HasGradeAuth(GetMember(ecs::PlayerRuntime::GetPlayerID(character))->grade, GUILD_AUTH_USE_SKILL))
 		return;
 
-	LOG_INFO("GUILD_USE_SKILL : cname({}), skill({})", ch ? ecs::PlayerRuntime::GetName(character).data() : "", dwVnum);
+	LOG_INFO("GUILD_USE_SKILL : cname({}), skill({})", ecs::IsCharacter(character) ? ecs::PlayerRuntime::GetName(character).data() : "", dwVnum);
 
 	uint32_t dwRealVnum = dwVnum - GUILD_SKILL_START;
 
@@ -1341,8 +1338,6 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 		// ̹ ɷ Ƿ  .
 		if (AffectSystem::FindAffect(character, pkSk->dwVnum))
 			return;
-
-		victim = ch;
 	}
 
 	if (AffectSystem::IsAffectFlag(character, AFF_REVIVE_INVISIBLE))
@@ -1399,8 +1394,8 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 		case GUILD_SKILL_TELEPORT:
 			//   ִ   õ.
 			SendDBSkillUpdate(-iNeededSP);
-			if ((victim = (CHARACTER_MANAGER::instance().FindByPID(pid))))
-				ecs::MovementSystem::WarpSet(character, ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)));
+			if (const entt::entity victim = CHARACTER_MANAGER::instance().FindEntityByPID(pid); ecs::IsCharacter(victim))
+				ecs::MovementSystem::WarpSet(character, ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim));
 			else
 			{
 				if (m_memberP2POnline.find(pid) != m_memberP2POnline.end())
