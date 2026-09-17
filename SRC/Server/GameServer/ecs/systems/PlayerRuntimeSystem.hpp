@@ -270,6 +270,8 @@ int GetEggVID(entt::entity e);
 #endif
 #ifdef __DUNGEON_INFO_SYSTEM__
 uint64_t GetQuestDamage(entt::entity e, int race);
+// Keeps the highest hit e has dealt to a tracked dungeon boss race.
+void SetQuestDamage(entt::entity e, int race, int dmg);
 #endif
 #ifdef ENABLE_BATTLE_PASS
 uint8_t GetBattlePassID(entt::entity e);

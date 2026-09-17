@@ -879,13 +879,6 @@ public:
 protected:
 	// End of Exchange
 
-#ifdef __DUNGEON_INFO_SYSTEM__
-public:
-	void				SetQuestDamage(int race, int dmg);
-
-private:
-	std::map<int, int>	dungeonDamage;
-#endif
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Battle

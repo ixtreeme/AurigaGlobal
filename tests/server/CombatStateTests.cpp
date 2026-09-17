@@ -463,7 +463,7 @@ bool ItemSystem::IsEquipUniqueGroup(entt::entity,unsigned int) { UnexpectedServi
 void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }
 void ecs::SocialSystem::CloseMyShop(entt::entity) { UnexpectedService(__func__); }
 entt::entity ecs::SocialSystem::GetMarryPartner(entt::entity) { UnexpectedService(__func__); }
-void CHARACTER::SetQuestDamage(int,int) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::SetQuestDamage(entt::entity,int,int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsImmortal(entt::entity) { return false; }
 int SkillSystem::ComputeSkill(entt::entity,uint32_t,entt::entity,uint8_t) { UnexpectedService(__func__); }
 void CHARACTER::MonsterLog(char const *,...) { UnexpectedService(__func__); }

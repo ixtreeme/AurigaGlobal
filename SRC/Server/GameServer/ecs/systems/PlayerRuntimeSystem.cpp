@@ -1795,7 +1795,7 @@ inline void EnterIdleState(entt::entity e)
 
 
 #ifdef __DUNGEON_INFO_SYSTEM__
-void CHARACTER::SetQuestDamage(int race, int dmg)
+void ecs::PlayerRuntime::SetQuestDamage(entt::entity e, int race, int dmg)
 {
     if (race != 693 &&
         race != 768 &&
@@ -1813,13 +1813,7 @@ void CHARACTER::SetQuestDamage(int race, int dmg)
         race != 6393)
         return;
 
-    auto it = dungeonDamage.find(race);
-    if (it == dungeonDamage.end())
-        dungeonDamage.insert(dungeonDamage.begin(), std::pair(race, dmg));
-    else if (dmg > it->second)
-        it->second = dmg;
-
-    const entt::entity character = GetEntityHandle();
+    const entt::entity character = e;
     if (character != entt::null && g_registry.valid(character))
     {
         auto& damage = g_registry.get_or_emplace<ecs::DungeonDamage>(character);
@@ -3268,9 +3262,6 @@ void CHARACTER::Destroy()
 #endif
 
     SkillSystem::CancelAllMobSkillEvents(GetEntityHandle());
-#ifdef __DUNGEON_INFO_SYSTEM__
-    dungeonDamage.clear();
-#endif
     AffectSystem::ClearAffect(GetEntityHandle(), false);
 
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::DestroyWhenIdle);
@@ -4014,9 +4005,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_SORT_INVEN
 #endif
 #ifdef ENABLE_LIMIT_BUY_SPEED
-#endif
-#ifdef __DUNGEON_INFO_SYSTEM__
-    dungeonDamage.clear();
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 #endif
