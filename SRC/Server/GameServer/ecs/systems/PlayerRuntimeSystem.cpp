@@ -1034,7 +1034,10 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::Drop: return &events.drop;
     case ecs::PlayerRuntime::CharEvent::Mining: return &events.mining;
     case ecs::PlayerRuntime::CharEvent::DestroyWhenIdle: return &events.destroyWhenIdle;
+    case ecs::PlayerRuntime::CharEvent::Save: return &events.save;
     }
+    // An enumerator without a case above has nowhere to be stored or cancelled.
+    LOG_ERROR("CharEventSlot: no storage for event slot {}", static_cast<int>(slot));
     return nullptr;
 }
 

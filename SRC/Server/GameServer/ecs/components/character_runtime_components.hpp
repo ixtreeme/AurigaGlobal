@@ -44,6 +44,7 @@ struct LegacyCharEvents {
     LPEVENT drop { nullptr };
     LPEVENT mining { nullptr };
     LPEVENT destroyWhenIdle { nullptr };
+    LPEVENT save { nullptr };
 };
 
 struct CharacterRuntimeFlagsComponent {
