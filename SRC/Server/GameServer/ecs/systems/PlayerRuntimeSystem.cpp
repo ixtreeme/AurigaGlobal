@@ -1946,12 +1946,6 @@ bool IsNewPet(entt::entity e)
     return status && status->isNewPet;
 }
 
-void SetProto(entt::entity e, const CMob* pkMob)
-{
-    if (LPCHARACTER ch = ecs::LegacyCharOf(e))
-        ch->SetProto(pkMob);
-}
-
 void SetCoward(entt::entity e)
 {
     if (auto* flags = ecs::TryGetRuntimeFlags(e))
@@ -3485,13 +3479,12 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #endif
 }
 
-void CHARACTER::SetProto(const CMob* pkMob)
+void ecs::PlayerRuntime::SetProto(entt::entity e, const CMob* pkMob)
 {
-    // mob_manager.cpp reaches here through an IsPC() test, and IsPC(entt::null)
-    // is false - so a character with no entity yet passes the filter instead of
-    // being turned back. NDEBUG is set for Release and RelWithDebInfo, so there
-    // the invalid handle is not an assert but a write through entt::null.
-    if (const entt::entity self = GetEntityHandle(); ecs::diag::Check(self, "SetProto"))
+    if (!ecs::IsCharacter(e))
+        return;
+
+    if (const entt::entity self = e; ecs::diag::Check(self, "SetProto"))
     {
         g_registry.emplace_or_replace<ecs::MobDataRef>(self, pkMob);
         // The mob runtime state starts here, as the CMobInstance allocation
@@ -3505,44 +3498,44 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     // The factory fills CharacterType at spawn, but SetProto can change the
     // type afterwards and used to leave the component behind.
-    if (const entt::entity self = GetEntityHandle();
+    if (const entt::entity self = e;
         self != entt::null && g_registry.valid(self))
         g_registry.emplace_or_replace<ecs::CharacterType>(self, static_cast<uint8_t>(t->bType));
 
-    ecs::PlayerRuntime::SetLevel(GetEntityHandle(), t->bLevel);
-    ecs::PlayerRuntime::SetEmpire(GetEntityHandle(), t->bEmpire);
+    ecs::PlayerRuntime::SetLevel(e, t->bLevel);
+    ecs::PlayerRuntime::SetEmpire(e, t->bEmpire);
 
-    ecs::PlayerRuntime::SetExp(GetEntityHandle(), t->dwExp);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_ST, t->bStr);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_DX, t->bDex);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_HT, t->bCon);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_IQ, t->bInt);
+    ecs::PlayerRuntime::SetExp(e, t->dwExp);
+    ecs::PointSystem::SetReal(e, POINT_ST, t->bStr);
+    ecs::PointSystem::SetReal(e, POINT_DX, t->bDex);
+    ecs::PointSystem::SetReal(e, POINT_HT, t->bCon);
+    ecs::PointSystem::SetReal(e, POINT_IQ, t->bInt);
 
-    ecs::PointSystem::Compute(GetEntityHandle());
+    ecs::PointSystem::Compute(e);
 
-    ecs::PlayerRuntime::SetHP(GetEntityHandle(), ecs::PointSystem::GetMaxHP(GetEntityHandle()));
-    ecs::PlayerRuntime::SetSP(GetEntityHandle(), ecs::PointSystem::GetMaxSP(GetEntityHandle()));
-    if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
+    ecs::PlayerRuntime::SetHP(e, ecs::PointSystem::GetMaxHP(e));
+    ecs::PlayerRuntime::SetSP(e, ecs::PointSystem::GetMaxSP(e));
+    if (auto* flags = EnsureRuntimeFlagsComponent(e))
         flags->aiFlag = t->dwAIFlag;
-    ecs::PlayerRuntime::SetImmuneFlag(GetEntityHandle(), t->dwImmuneFlag);
+    ecs::PlayerRuntime::SetImmuneFlag(e, t->dwImmuneFlag);
 
-    ecs::PlayerRuntime::AssignClickTrigger(GetEntityHandle(), t->bOnClickType);
+    ecs::PlayerRuntime::AssignClickTrigger(e, t->bOnClickType);
 
-    AffectSystem::ApplyMobAttribute(GetEntityHandle(), t);
+    AffectSystem::ApplyMobAttribute(e, t);
 
     if (t->bType == CHAR_TYPE_STONE)
     {
-        CombatSystem::DetermineDropMetinStone(GetEntityHandle());
+        CombatSystem::DetermineDropMetinStone(e);
     }
 
-    if (ecs::PlayerRuntime::IsWarp(GetEntityHandle()) || ecs::PlayerRuntime::IsGoto(GetEntityHandle()))
+    if (ecs::PlayerRuntime::IsWarp(e) || ecs::PlayerRuntime::IsGoto(e))
     {
-        ecs::MovementSystem::StartWarpNPCEvent(GetEntityHandle());
+        ecs::MovementSystem::StartWarpNPCEvent(e);
     }
 
-    CHARACTER_MANAGER::instance().RegisterRaceNumMap(GetEntityHandle());
+    CHARACTER_MANAGER::instance().RegisterRaceNumMap(e);
 
-    ecs::PlayerRuntime::StartOreDespawnEvent(GetEntityHandle());
+    ecs::PlayerRuntime::StartOreDespawnEvent(e);
 }
 
 void CHARACTER::MonsterLog(const char* format, ...)

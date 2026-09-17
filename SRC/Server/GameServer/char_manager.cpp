@@ -674,7 +674,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t 
 	const entt::entity character = ch->GetEntityHandle();
 	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ch->GetLegacyVID());
 
-	ch->SetProto(pkMob);
+	ecs::PlayerRuntime::SetProto(character, pkMob);
 
 	// if mob is npc with no empire assigned, assign to empire of map
 	if (pkMob->m_table.bType == CHAR_TYPE_NPC)

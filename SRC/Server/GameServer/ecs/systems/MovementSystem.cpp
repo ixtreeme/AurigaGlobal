@@ -251,11 +251,6 @@ namespace ecs::MovementSystem {
 
 namespace {
 
-LPCHARACTER CharacterOf(entt::entity e)
-{
-    return ecs::LegacyCharOf(e);
-}
-
 bool IsValid(entt::entity e)
 {
     return e != entt::null && g_registry.valid(e);
@@ -1054,14 +1049,17 @@ void ExitToSavedLocation(entt::entity e)
 
 bool Move(entt::entity e, int32_t x, int32_t y)
 {
-    if (!IsValid(e))
+    if (!IsValid(e) || !ecs::IsCharacter(e))
         return false;
 
-    auto* ch = CharacterOf(e);
-    if (!ch)
-        return false;
+    if (ecs::PlayerRuntime::GetX(e) == x && ecs::PlayerRuntime::GetY(e) == y)
+        return true;
 
-    return ch->Move(x, y);
+    if (test_server && ecs::PlayerRuntime::IsDetailLog(e))
+        LOG_TRACE("{} position {} {}", ecs::PlayerRuntime::GetName(e).data(), x, y);
+
+    ecs::MovementSystem::OnMove(e);
+    return ecs::MovementSystem::Sync(e, x, y);
 }
 
 // When this character last moved and last came to a stop. The movement frame
@@ -1641,25 +1639,6 @@ void CalculateMoveDuration(entt::entity e)
 }
 
 } // namespace ecs::MovementSystem
-
-// x y A��!�� AI? ?�U. (AI?? 1?Aִ?? 3o�� ?�� E�A??�� Sync ?1O�a�� 1��?AI? ?�U)
-// 1?��?charA?x, y �aA?1U�� 1U2U����,
-// A��?!1??AIA?A��!?!1?1U2U x, y���� interpolation?�U.
-// �E�A3a �U�� ��Ao charA?m_bNowWalking?! ?��AִU.
-// Warp�� Aǵ��N ��AI��� Show�� ��?��O ��.
-bool CHARACTER::Move(int32_t x, int32_t y)
-{
-	// ��Ao A��!�� AI?? ???3oA1 (Aڵ? 1o�o)
-	if (GetX() == x && GetY() == y)
-		return true;
-
-	if (test_server)
-		if (ecs::PlayerRuntime::IsDetailLog(GetEntityHandle()))
-			LOG_TRACE("{} position {} {}", GetName(), x, y);
-
-	ecs::MovementSystem::OnMove(GetEntityHandle());
-	return ecs::MovementSystem::Sync(GetEntityHandle(), x, y);
-}
 
 namespace ecs::MovementSystem {
 

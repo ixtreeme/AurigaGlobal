@@ -603,7 +603,6 @@ public:
 
 	void			SetPlayerProto(const TPlayerTable* table);
 
-	void			SetProto(const CMob* c_pkMob);
 
 	void			Save();		// DelayedSave
 
@@ -709,7 +708,6 @@ public:
 
 
 
-	bool			Move(int32_t x, int32_t y);	// 
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in
 // CheckMovementDrift state_flags subsection deleted with the
 // m_bAddChrState write migration. CheckMovementDrift body is now empty;
