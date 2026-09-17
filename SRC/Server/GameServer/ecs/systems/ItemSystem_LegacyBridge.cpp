@@ -990,29 +990,32 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 	}
 }
 
-bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
+bool ItemSystem::GiveItem(entt::entity e, entt::entity victimEntity, TItemPos Cell)
 {
-	if (!InventorySystem::CanHandleItems(GetEntityHandle()))
+	if (!ecs::IsCharacter(e))
+		return false;
+
+	if (!InventorySystem::CanHandleItems(e))
 		return false;
 
 	// @fixme150 BEGIN
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(e))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 740, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 740, "");
 #endif
 		return false;
 	}
 	// @fixme150 END
 
-	const entt::entity item = ItemSystem::GetItem(GetEntityHandle(), Cell);
+	const entt::entity item = ItemSystem::GetItem(e, Cell);
 
 	if (item != entt::null && !ItemSystem::IsItemExchanging(item))
 	{
 		const entt::entity itemEntity =
 			item;
 		if (ItemSystem::ReceiveItemEcs(victimEntity,
-				GetEntityHandle(), itemEntity))
+				e, itemEntity))
 			return true;
 	}
 
@@ -1136,26 +1139,29 @@ bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity e, uint32_t dwGroupNu
 	return bSuccess;
 }
 
-bool CHARACTER::DestroyItem(TItemPos Cell)
+bool ItemSystem::DestroyItem(entt::entity e, TItemPos Cell)
 {
+	if (!ecs::IsCharacter(e))
+		return false;
+
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::DestroyItem(TItemPos Cell),");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::DestroyItem(TItemPos Cell),");//INGAME_DEBUG_RAZOR93
 #endif
 	entt::entity item = entt::null;
-	if (!InventorySystem::CanHandleItems(GetEntityHandle())) {
+	if (!InventorySystem::CanHandleItems(e)) {
 #ifdef TEXTS_IMPROVEMENT
-		if (DragonSoulSystem::CanRefine(GetEntityHandle())) {
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
+		if (DragonSoulSystem::CanRefine(e)) {
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 
 		return false;
 	}
 
-	if (CombatSystem::IsDead(GetEntityHandle()))
+	if (CombatSystem::IsDead(e))
 		return false;
 
-	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !ItemSystem::IsValidItem(item = ItemSystem::GetItem(GetEntityHandle(), Cell)))
+	if (!InventorySystem::IsValidItemPosition(e, Cell) || !ItemSystem::IsValidItem(item = ItemSystem::GetItem(e, Cell)))
 		return false;
 
 	if (ItemSystem::IsItemEquipped(item))
@@ -1167,7 +1173,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 	if (true == ItemSystem::IsItemLocked(item))
 		return false;
 
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(e))->IsRunning() == true)
 		return false;
 
 	if ((ItemSystem::GetItemVnum(item) >= 55701) && (ItemSystem::GetItemVnum(item) <= 55711)) {
@@ -1177,30 +1183,30 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	if (ItemSystem::IsExtraItem(item)) {
-		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
+		InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
 	}
 	else {
-		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+		InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 	}
 #else
-	InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+	InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle());
+	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
 	if (bBattlePassId)
 	{
 		uint32_t dwItemVnum, dwCnt;
 		if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, DESTROY_ITEM, &dwItemVnum, &dwCnt))
 		{
-			if (dwItemVnum == ItemSystem::GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), DESTROY_ITEM, bBattlePassId) < dwCnt)
-				ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), DESTROY_ITEM, bBattlePassId, ItemSystem::GetItemCount(item), dwCnt);
+			if (dwItemVnum == ItemSystem::GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, DESTROY_ITEM, bBattlePassId) < dwCnt)
+				ecs::PlayerRuntime::UpdateMissionProgress(e, DESTROY_ITEM, bBattlePassId, ItemSystem::GetItemCount(item), dwCnt);
 		}
 	}
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 47, "%s", ItemSystem::GetItemName(item));
+	ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 47, "%s", ItemSystem::GetItemName(item));
 #endif
 	ITEM_MANAGER::instance().RemoveItem(item, "DESTROY");
 	return true;

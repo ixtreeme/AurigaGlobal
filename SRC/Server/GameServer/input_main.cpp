@@ -4169,7 +4169,6 @@ void CInputMain::Fishing(entt::entity character, const char* c_pData)
 
 void CInputMain::ItemGive(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemGive handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -4187,7 +4186,7 @@ void CInputMain::ItemGive(entt::entity character, const char* c_pData)
 		}
 #endif
 
-		ch->GiveItem(to_chEntity, p->ItemPos);
+		ItemSystem::GiveItem(character, to_chEntity, p->ItemPos);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -5001,7 +5000,6 @@ int OfflineshopPacket(const char* data , entt::entity ch, int32_t iBufferLeft)
 
 void CInputMain::ItemDestroy(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDestroy handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -5009,13 +5007,13 @@ void CInputMain::ItemDestroy(entt::entity character, const char * data)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDestroy ");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_destroy * pinfo = (struct command_item_destroy *) data;
-	if (ch) {
+	if (ecs::IsCharacter(character)) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 		if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
 			return;
 		}
 #endif
-		ch->DestroyItem(pinfo->Cell);
+		ItemSystem::DestroyItem(character, pinfo->Cell);
 	}
 }
 

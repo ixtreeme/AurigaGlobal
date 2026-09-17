@@ -851,7 +851,6 @@ public:
 		uint8_t
 #endif
 		bCount = 0);
-	bool			DestroyItem(TItemPos Cell);
 
 	//	void			PotionPacket(int iPotionType);
 
@@ -860,7 +859,6 @@ public:
 
 
 
-	bool			GiveItem(entt::entity victim, TItemPos Cell);
 
 
 	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);

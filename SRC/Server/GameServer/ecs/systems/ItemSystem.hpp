@@ -147,6 +147,9 @@ StackMergeResult MergeItemStacksEcs(entt::entity owner, entt::entity source,
 entt::entity MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item);
 bool ConsumeItemEcs(entt::entity item, uint32_t amount = 1);
 bool DestroyItemEntityEcs(entt::entity item, const char* reason = nullptr);
+// The player destroys the item in a cell of their own, or hands it to victim.
+bool DestroyItem(entt::entity e, TItemPos Cell);
+bool GiveItem(entt::entity e, entt::entity victim, TItemPos Cell);
 void ModifyPoints(entt::entity item, bool bAdd);
 TItemExtraProto* GetItemExtraProto(entt::entity item);
 void SetItemExtraProto(entt::entity item, TItemExtraProto* proto);
