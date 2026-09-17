@@ -10,6 +10,8 @@
 #include "guild_renewal.h"
 
 #include "char_interface.hpp"
+#include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "desc.h"
 #include "desc_manager.h"
 #include "guild.h"
@@ -322,7 +324,7 @@ void CGuildRenewal::OnP2PRefresh(uint32_t guildId)
 	InvalidateCache(guildId);
 
 	// Refresh only if this guild has online members on this core.
-	std::vector<LPCHARACTER> members;
+	std::vector<entt::entity> members;
 	members.reserve(16);
 
 	const DESC_MANAGER::DESC_SET& set = DESC_MANAGER::instance().GetClientSet();
@@ -336,14 +338,14 @@ void CGuildRenewal::OnP2PRefresh(uint32_t guildId)
 		if (!member)
 			continue;
 
-		CGuild* g = ecs::SocialSystem::GetGuild(((member) ? (member)->GetEntityHandle() : entt::null));
+		CGuild* g = ecs::SocialSystem::GetGuild(member->GetEntityHandle());
 		if (!g)
 			continue;
 
 		if (g->GetID() != guildId)
 			continue;
 
-		members.push_back(member);
+		members.push_back(member->GetEntityHandle());
 	}
 
 	if (members.empty())
@@ -353,7 +355,7 @@ void CGuildRenewal::OnP2PRefresh(uint32_t guildId)
 	EnsureLoaded(guildId);
 	EnsureLevelReqLoaded();
 
-	for (LPCHARACTER m : members)
+	for (const entt::entity m : members)
 		SendFullStateTo(m);
 }
 
@@ -583,13 +585,12 @@ bool CGuildRenewal::Storage_Remove(uint32_t guildId, uint32_t vnum, uint32_t cou
 	return (need == 0);
 }
 
-uint64_t CGuildRenewal::CountItemVnum(CHARACTER* ch, uint32_t vnum) const
+uint64_t CGuildRenewal::CountItemVnum(entt::entity owner, uint32_t vnum) const
 {
-	if (!ch)
+	if (!ecs::IsCharacter(owner))
 		return 0;
 
 	uint64_t total = 0;
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM; i++)
 	{
 		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
@@ -610,12 +611,11 @@ uint64_t CGuildRenewal::CountItemVnum(CHARACTER* ch, uint32_t vnum) const
 }
 
 
-bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
+bool CGuildRenewal::RemoveItemVnum(entt::entity owner, uint32_t vnum, uint32_t count)
 {
-	if (!ch)
+	if (!ecs::IsCharacter(owner))
 		return false;
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	uint32_t need = count;
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM && need>0; i++)
 	{
@@ -649,10 +649,9 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 }
 
 
-void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
+void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch || !ecs::PlayerRuntime::GetDesc(chEntity))
+	if (!ecs::IsCharacter(chEntity) || !ecs::PlayerRuntime::GetDesc(chEntity))
 		return;
 
 	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
@@ -750,10 +749,9 @@ void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 }
 
 
-bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
+bool CGuildRenewal::DepositItem(entt::entity chEntity, uint16_t invCell, uint32_t count)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch)
+	if (!ecs::IsCharacter(chEntity))
 		return false;
 
 	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
@@ -868,20 +866,17 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	}
 
 	// Kliens frissites (legalabb a befizeto + cehvezeto kapjon azonnali infot)
-	SendFullStateTo(ch);
-	if (LPCHARACTER master = g->GetMasterCharacter())
-	{
-		if (master != ch)
-			SendFullStateTo(master);
-	}
+	SendFullStateTo(chEntity);
+	const entt::entity master = CHARACTER_MANAGER::instance().FindEntityByPID(g->GetMasterPID());
+	if (ecs::IsCharacter(master) && master != chEntity)
+		SendFullStateTo(master);
 
 	return true;
 }
 
-bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
+bool CGuildRenewal::DepositYang(entt::entity chEntity, int64_t yang)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch)
+	if (!ecs::IsCharacter(chEntity))
 		return false;
 
 	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
@@ -953,27 +948,24 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Csak %lld yangot tett be (ennyire hianyzott).", (long long)allowed);
 
 	// Kliens frissites (legalabb a befizeto + cehvezeto kapjon azonnali infot)
-	SendFullStateTo(ch);
-	if (LPCHARACTER master = g->GetMasterCharacter())
-	{
-		if (master != ch)
-			SendFullStateTo(master);
-	}
+	SendFullStateTo(chEntity);
+	const entt::entity master = CHARACTER_MANAGER::instance().FindEntityByPID(g->GetMasterPID());
+	if (ecs::IsCharacter(master) && master != chEntity)
+		SendFullStateTo(master);
 
 	return true;
 }
 
-bool CGuildRenewal::SetTaxRequest(CHARACTER* leader, int deadlineUnix, int64_t perMemberMoney,
+bool CGuildRenewal::SetTaxRequest(entt::entity leaderEntity, int deadlineUnix, int64_t perMemberMoney,
 	const std::array<uint32_t, 5>& vnums,
 	const std::array<uint32_t, 5>& counts)
 {
-	const entt::entity leaderEntity = leader ? leader->GetEntityHandle() : entt::null;
 	(void)deadlineUnix;
 	(void)perMemberMoney;
 	(void)vnums;
 	(void)counts;
 
-	if (!leader)
+	if (!ecs::IsCharacter(leaderEntity))
 		return false;
 
 	CGuild* g = ecs::SocialSystem::GetGuild(leaderEntity);
@@ -987,19 +979,18 @@ bool CGuildRenewal::SetTaxRequest(CHARACTER* leader, int deadlineUnix, int64_t p
 	return false;
 }
 
-bool CGuildRenewal::PayTax(CHARACTER* ch)
+bool CGuildRenewal::PayTax(entt::entity chEntity)
 {
-	if (!ch)
+	if (!ecs::IsCharacter(chEntity))
 		return false;
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ado rendszer ki van kapcsolva. Hasznald a Yang betesz / Targy betesz gombokat.");
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Ado rendszer ki van kapcsolva. Hasznald a Yang betesz / Targy betesz gombokat.");
 	return false;
 }
 
-bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint32_t,5>& vnums, const std::array<uint32_t,5>& counts)
+bool CGuildRenewal::PayCustom(entt::entity chEntity, int64_t yang, const std::array<uint32_t,5>& vnums, const std::array<uint32_t,5>& counts)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch)
+	if (!ecs::IsCharacter(chEntity))
 		return false;
 
 	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
@@ -1117,7 +1108,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 		if (allowed > remaining)
 			allowed = remaining;
 
-		const uint64_t havePlayer = CountItemVnum(ch, vnum);
+		const uint64_t havePlayer = CountItemVnum(chEntity, vnum);
 		if (allowed > havePlayer)
 			allowed = havePlayer;
 
@@ -1131,7 +1122,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 			continue;
 		}
 
-		if (!RemoveItemVnum(ch, vnum, (uint32_t)allowed))
+		if (!RemoveItemVnum(chEntity, vnum, (uint32_t)allowed))
 		{
 			// rollback
 			Storage_Remove(guildId, vnum, (uint32_t)allowed);
@@ -1163,21 +1154,18 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 
 	if (any)
 	{
-		SendFullStateTo(ch);
-		if (LPCHARACTER master = g->GetMasterCharacter())
-		{
-			if (master != ch)
-				SendFullStateTo(master);
-		}
+		SendFullStateTo(chEntity);
+		const entt::entity master = CHARACTER_MANAGER::instance().FindEntityByPID(g->GetMasterPID());
+		if (ecs::IsCharacter(master) && master != chEntity)
+			SendFullStateTo(master);
 	}
 
 	return any;
 }
 
-bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
+bool CGuildRenewal::TryLevelUp(entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch)
+	if (!ecs::IsCharacter(chEntity))
 		return false;
 
 	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
@@ -1316,12 +1304,10 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 
 
 	// Kliens frissites (legalabb a befizeto + cehvezeto kapjon azonnali infot)
-	SendFullStateTo(ch);
-	if (LPCHARACTER master = g->GetMasterCharacter())
-	{
-		if (master != ch)
-			SendFullStateTo(master);
-	}
+	SendFullStateTo(chEntity);
+	const entt::entity master = CHARACTER_MANAGER::instance().FindEntityByPID(g->GetMasterPID());
+	if (ecs::IsCharacter(master) && master != chEntity)
+		SendFullStateTo(master);
 
 	return true;
 }

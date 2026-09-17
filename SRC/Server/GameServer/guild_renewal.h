@@ -8,7 +8,8 @@
 #include <vector>
 #include <array>
 
-class CHARACTER;
+#include <entt/entity/fwd.hpp>
+
 class CGuild;
 
 class CGuildRenewal
@@ -17,9 +18,8 @@ public:
 	static CGuildRenewal& instance();
 
 
-	void NotifyUnpaidTaxOnLogin(CHARACTER* ch);
 	// Sends full storage/tax/contribution state to a character.
-	void SendFullStateTo(CHARACTER* ch);
+	void SendFullStateTo(entt::entity chEntity);
 
 	// P2P: notify other cores that renewal storage/money/contrib changed
 	void P2P_BroadcastRefresh(uint32_t guildId);
@@ -28,25 +28,25 @@ public:
 
 
 	// Deposit item from player's INVENTORY into guild storage.
-	bool DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count);
+	bool DepositItem(entt::entity chEntity, uint16_t invCell, uint32_t count);
 
 	// Deposit yang from player into guild money.
-	bool DepositYang(CHARACTER* ch, int64_t yang);
+	bool DepositYang(entt::entity chEntity, int64_t yang);
 
 	// Guild leader sets a tax request (deadline unix timestamp + per member requirements)
-	bool SetTaxRequest(CHARACTER* leader, int deadlineUnix,
+	bool SetTaxRequest(entt::entity leaderEntity, int deadlineUnix,
 		int64_t perMemberMoney,
 		const std::array<uint32_t,5>& vnums,
 		const std::array<uint32_t,5>& counts);
 
 	// Member pays current tax request (moves required items/yang into guild storage/money)
-	bool PayTax(CHARACTER* ch);
+	bool PayTax(entt::entity chEntity);
 
 	// Kis ado: member pays custom amounts (yang + up to 5 items)
-	bool PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint32_t,5>& vnums, const std::array<uint32_t,5>& counts);
+	bool PayCustom(entt::entity chEntity, int64_t yang, const std::array<uint32_t,5>& vnums, const std::array<uint32_t,5>& counts);
 
 	// Level-up guild using stored items+money (levels 21..60)
-	bool TryLevelUp(CHARACTER* ch);
+	bool TryLevelUp(entt::entity chEntity);
 
 private:
 	CGuildRenewal();
@@ -111,8 +111,8 @@ private:
 	uint64_t Storage_Count(uint32_t guildId, uint32_t vnum) const;
 
 	// Inventory helpers
-	uint64_t CountItemVnum(CHARACTER* ch, uint32_t vnum) const;
-	bool RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count);
+	uint64_t CountItemVnum(entt::entity owner, uint32_t vnum) const;
+	bool RemoveItemVnum(entt::entity owner, uint32_t vnum, uint32_t count);
 
 private:
 	std::unordered_map<uint32_t, GuildCache> m_cache;

@@ -56,35 +56,33 @@ namespace
 			if (!member)
 				continue;
 
-			CGuild* mg = ecs::SocialSystem::GetGuild(((member) ? (member)->GetEntityHandle() : entt::null));
+			CGuild* mg = ecs::SocialSystem::GetGuild(member->GetEntityHandle());
 			if (!mg)
 				continue;
 
 			if (mg->GetID() != guildId)
 				continue;
 
-			CGuildRenewal::instance().SendFullStateTo(member);
+			CGuildRenewal::instance().SendFullStateTo(member->GetEntityHandle());
 		}
 	}
 }
 
 ACMD(do_gr_open)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 	if (!ecs::SocialSystem::GetGuild(character))
 		return;
 
 	// UI side can hook this to open the window.
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "gr_open");
-	CGuildRenewal::instance().SendFullStateTo(ch);
+	CGuildRenewal::instance().SendFullStateTo(character);
 }
 
 ACMD(do_gr_deposit_item)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 	CGuild* g = ecs::SocialSystem::GetGuild(character);
 	if (!g)
@@ -101,7 +99,7 @@ ACMD(do_gr_deposit_item)
 	if (*arg2)
 		count = (uint32_t)atoi(arg2);
 
-	if (CGuildRenewal::instance().DepositItem(ch, invCell, count))
+	if (CGuildRenewal::instance().DepositItem(character, invCell, count))
 	{
 		BroadcastRenewalStateToGuild(g);
 		CGuildRenewal::instance().P2P_BroadcastRefresh(g->GetID());
@@ -110,8 +108,7 @@ ACMD(do_gr_deposit_item)
 
 ACMD(do_gr_deposit_yang)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 	CGuild* g = ecs::SocialSystem::GetGuild(character);
 	if (!g)
@@ -126,7 +123,7 @@ ACMD(do_gr_deposit_yang)
 	if (yang <= 0)
 		return;
 
-	if (CGuildRenewal::instance().DepositYang(ch, yang))
+	if (CGuildRenewal::instance().DepositYang(character, yang))
 	{
 		BroadcastRenewalStateToGuild(g);
 		CGuildRenewal::instance().P2P_BroadcastRefresh(g->GetID());
@@ -144,8 +141,7 @@ ACMD(do_gr_set_tax)
 
 ACMD(do_gr_pay_tax)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 
 	CGuild* g = ecs::SocialSystem::GetGuild(character);
@@ -218,7 +214,7 @@ ACMD(do_gr_pay_tax)
 		}
 	}
 
-	if (CGuildRenewal::instance().PayCustom(ch, yang, vnums, counts))
+	if (CGuildRenewal::instance().PayCustom(character, yang, vnums, counts))
 	{
 		BroadcastRenewalStateToGuild(g);
 		CGuildRenewal::instance().P2P_BroadcastRefresh(g->GetID());
@@ -227,14 +223,13 @@ ACMD(do_gr_pay_tax)
 
 ACMD(do_gr_levelup)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 	CGuild* g = ecs::SocialSystem::GetGuild(character);
 	if (!g)
 		return;
 
-	if (CGuildRenewal::instance().TryLevelUp(ch))	// itt a belso fuggveny ir ki okot is
+	if (CGuildRenewal::instance().TryLevelUp(character))	// itt a belso fuggveny ir ki okot is
 	{
 		BroadcastRenewalStateToGuild(g);
 		CGuildRenewal::instance().P2P_BroadcastRefresh(g->GetID());
