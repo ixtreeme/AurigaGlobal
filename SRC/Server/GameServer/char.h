@@ -1064,10 +1064,6 @@ public:
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 	int					ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #endif
-#ifdef GROUP_BUFF
-	int					ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
-#endif
-	int					ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel = 0);
 
 
 

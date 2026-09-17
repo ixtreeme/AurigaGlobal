@@ -90,6 +90,13 @@ int GetSkillMasterType(entt::entity e, uint32_t skillId);
 int GetSkillPower(entt::entity e, uint32_t skillId, uint8_t level = 0);
 // Applies a skill from e to victim: damage, affects, splash and party share.
 int ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
+// Applies a splash skill of e centred on a map position.
+int ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel = 0);
+#ifdef GROUP_BUFF
+// Runs ComputeSkill with victim as the caster on each near member of e's
+// party, or on e alone when it has none.
+int ComputeSkillParty(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
+#endif
 int GetChainLightningMaxCount(entt::entity e);
 int GetChainLightningIndex(entt::entity e);
 void IncChainLightningIndex(entt::entity e);

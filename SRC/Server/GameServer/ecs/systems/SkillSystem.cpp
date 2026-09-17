@@ -2873,9 +2873,12 @@ EVENTFUNC(skill_gwihwan_event)
 	return 0;
 }
 
-int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel)
+int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel)
 {
-	const auto character = GetEntityHandle();
+	if (!ecs::IsCharacter(e))
+		return BATTLE_NONE;
+
+	const auto character = e;
 	if (MountSystem::GetMountVnum(character))
 		return BATTLE_NONE;
 
@@ -2892,7 +2895,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	if (test_server)
 	{
-		LOG_INFO("ComputeSkillAtPosition {} vnum {} x {} y {} level {}", GetName(), dwVnum, posTarget.x, posTarget.y, bSkillLevel);
+		LOG_INFO("ComputeSkillAtPosition {} vnum {} x {} y {} level {}", ecs::PlayerRuntime::GetName(e), dwVnum, posTarget.x, posTarget.y, bSkillLevel);
 	}
 
 	// łŞżˇ°Ô ľ˛´Â ˝şĹłŔş ł» Ŕ§Äˇ¸¦ ľ´´Ů.
@@ -2905,7 +2908,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	if (0 == bSkillLevel)
 	{
-		if ((bSkillLevel = SkillSystem::GetSkillLevel(GetEntityHandle(), pkSk->dwVnum)) == 0)
+		if ((bSkillLevel = SkillSystem::GetSkillLevel(e, pkSk->dwVnum)) == 0)
 		{
 			return BATTLE_NONE;
 		}
@@ -2939,24 +2942,24 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	if (pkSk->bPointOn == POINT_MOV_SPEED)
 	{
-		pkSk->SetPointVar("maxv", ecs::PointSystem::GetLimitPoint(this->GetEntityHandle(), POINT_MOV_SPEED));
+		pkSk->SetPointVar("maxv", ecs::PointSystem::GetLimitPoint(e, POINT_MOV_SPEED));
 	}
 
-	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
-	pkSk->SetPointVar("iq", ecs::PointSystem::Get(GetEntityHandle(), POINT_IQ));
-	pkSk->SetPointVar("str", ecs::PointSystem::Get(GetEntityHandle(), POINT_ST));
-	pkSk->SetPointVar("dex", ecs::PointSystem::Get(GetEntityHandle(), POINT_DX));
-	pkSk->SetPointVar("con", ecs::PointSystem::Get(GetEntityHandle(), POINT_HT));
+	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
+	pkSk->SetPointVar("iq", ecs::PointSystem::Get(e, POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::Get(e, POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::Get(e, POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::Get(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(character));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(character));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, character));
-	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
-	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
+	pkSk->SetPointVar("def", ecs::PointSystem::Get(e, POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::Get(e, POINT_DEF_GRADE) - ecs::PointSystem::Get(e, POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(e));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
-		ecs::MovementSystem::OnMove(GetEntityHandle(), true);
+		ecs::MovementSystem::OnMove(e, true);
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
@@ -2985,7 +2988,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	{
 		if (number(1, 100) <= iAmount2)
 		{
-			AffectSystem::RemoveBadAffects(GetEntityHandle());
+			AffectSystem::RemoveBadAffects(e);
 		}
 	}
 	// END_OF_ADD_GRANDMASTER_SKILL
@@ -3001,45 +3004,45 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		{
 			int iAG = 0;
 
-			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, GetEntityHandle(), iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, e, iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
-				if (GetSectree())
-					GetSectree()->ForEachAround(f);
+				if (ecs::PlayerRuntime::GetSectree(e))
+					ecs::PlayerRuntime::GetSectree(e)->ForEachAround(f);
 			}
 			else
 			{
-				//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill call FuncSplashDamage %s", GetName());
-				f(this);
+				//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill call FuncSplashDamage %s", ecs::PlayerRuntime::GetName(e));
+				f(e);
 			}
 		}
 		else
 		{
-			//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill no damage %d %s", iAmount, GetName());
+			//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill no damage %d %s", iAmount, ecs::PlayerRuntime::GetName(e));
 			int iDur = (int) pkSk->kDurationPoly.Eval();
 
-			if (IsPC())
+			if (ecs::PlayerRuntime::GetDesc(character) != nullptr)
 				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END)) // ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
-					if (!SkillSystem::IsCooltimeDisabled(GetEntityHandle()) && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
+					if (!SkillSystem::IsCooltimeDisabled(e) && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
 					{
-						//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill cannot hit %s", GetName());
+						//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill cannot hit %s", ecs::PlayerRuntime::GetName(e));
 						return BATTLE_NONE;
 					}
 
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
+					AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
 				else
 				{
-					if (GetSectree())
+					if (ecs::PlayerRuntime::GetSectree(e))
 					{
 						FuncSplashAffect f(character, posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
-						GetSectree()->ForEachAround(f);
+						ecs::PlayerRuntime::GetSectree(e)->ForEachAround(f);
 					}
 				}
 				bAdded = true;
@@ -3054,23 +3057,23 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				else
 				{
-					if (GetSectree())
+					if (ecs::PlayerRuntime::GetSectree(e))
 					{
 						FuncSplashAffect f(character, posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
-						GetSectree()->ForEachAround(f);
+						ecs::PlayerRuntime::GetSectree(e)->ForEachAround(f);
 					}
 				}
 				bAdded = true;
 			}
 			else
 			{
-				PointChange(pkSk->bPointOn2, iAmount2);
+				ecs::PointSystem::Change(e, pkSk->bPointOn2, iAmount2);
 			}
 		}
 
@@ -3081,22 +3084,22 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
 				else
 				{
-					if (GetSectree())
+					if (ecs::PlayerRuntime::GetSectree(e))
 					{
 						FuncSplashAffect f(character, posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded, pkSk->lMaxHit);
-						GetSectree()->ForEachAround(f);
+						ecs::PlayerRuntime::GetSectree(e)->ForEachAround(f);
 					}
 				}
 			}
 			else
 			{
-				PointChange(pkSk->bPointOn3, iAmount3);
+				ecs::PointSystem::Change(e, pkSk->bPointOn3, iAmount3);
 			}
 		}
 		// END_OF_ADD_GRANDMASTER_SKILL
@@ -3110,11 +3113,11 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 		if (iDur > 0)
 		{
-			iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 			// AffectFlag°ˇ ľř°ĹłŞ, toggle ÇĎ´Â °ÍŔĚ ľĆ´Ď¶ó¸é..
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
-			AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum,
+			AffectSystem::AddAffect(e, pkSk->dwVnum,
 					  pkSk->bPointOn,
 					  iAmount,
 					  pkSk->dwAffectFlag,
@@ -3126,7 +3129,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		}
 		else
 		{
-			PointChange(pkSk->bPointOn, iAmount);
+			ecs::PointSystem::Change(e, pkSk->bPointOn, iAmount);
 		}
 
 		if (pkSk->bPointOn2 != POINT_NONE)
@@ -3135,13 +3138,13 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
-				AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				bAdded = true;
 			}
 			else
 			{
-				PointChange(pkSk->bPointOn2, iAmount2);
+				ecs::PointSystem::Change(e, pkSk->bPointOn2, iAmount2);
 			}
 		}
 
@@ -3152,12 +3155,12 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
-				AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
 			}
 			else
 			{
-				PointChange(pkSk->bPointOn3, iAmount3);
+				ecs::PointSystem::Change(e, pkSk->bPointOn3, iAmount3);
 			}
 		}
 		// END_OF_ADD_GRANDMASTER_SKILL
@@ -3184,13 +3187,13 @@ struct FComputeSkillParty
 	uint8_t m_bSkillLevel;
 };
 
-int CHARACTER::ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
+int SkillSystem::ComputeSkillParty(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
 	FComputeSkillParty f(dwVnum, victim, bSkillLevel);
-	if (ecs::SocialSystem::GetParty(GetEntityHandle()) && ecs::SocialSystem::GetParty(GetEntityHandle())->GetNearMemberCount())
-		ecs::SocialSystem::GetParty(GetEntityHandle())->ForEachNearMember(f);
+	if (ecs::SocialSystem::GetParty(e) && ecs::SocialSystem::GetParty(e)->GetNearMemberCount())
+		ecs::SocialSystem::GetParty(e)->ForEachNearMember(f);
 	else
-		f(GetEntityHandle());
+		f(e);
 
 	return BATTLE_NONE;
 }
@@ -4029,7 +4032,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		{
 			LPPARTY party = ecs::SocialSystem::GetParty(victimEntity);
 			if (party && ecs::SocialSystem::GetParty(GetEntityHandle())) {
-				ComputeSkillParty(dwVnum, character);
+				SkillSystem::ComputeSkillParty(character, dwVnum, character);
 			}
 		}
 	}
@@ -4047,7 +4050,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 		if (ecs::SocialSystem::GetParty(victimEntity)){
 			if (ecs::SocialSystem::GetParty(victimEntity) == ecs::SocialSystem::GetParty(GetEntityHandle())){
-				ComputeSkillParty(dwVnum, character);
+				SkillSystem::ComputeSkillParty(character, dwVnum, character);
 			}
 		}
 	}//------------------------------------------------------------------2024-12-30------------------------------------------------------------------------------
@@ -4195,15 +4198,14 @@ EVENTFUNC(mob_skill_hit_event)
 	}
 
 	// <Factor>
-	auto* ch = ecs::LegacyCharOf(info->ch);
-	if (ch == nullptr) {
+	if (!ecs::IsCharacter(info->ch)) {
 		return 0;
 	}
 
 	const entt::entity e = info->ch;
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvSkillUsed { e, info->vnum });
-	ch->ComputeSkillAtPosition(info->vnum, info->pos, info->level);
+	SkillSystem::ComputeSkillAtPosition(e, info->vnum, info->pos, info->level);
 	SkillSystem::ForgetMobSkillEvent(e, info->index);
 
 	return 0;
@@ -4232,9 +4234,8 @@ struct FHealerParty
 
 namespace SkillSystem {
 
-// The mob skill body. Cooldowns and pending hits are components now, so the one
-// thing still needing a character is ComputeSkillAtPosition - 293 lines of
-// skill maths that is its own migration, not the AI's.
+// The mob skill body: cooldowns and pending hits are components, and the hit
+// itself is ComputeSkillAtPosition.
 bool UseMobSkill(entt::entity e, unsigned int idx)
 {
     if (e == entt::null || !g_registry.valid(e) || ecs::PlayerRuntime::IsPC(e))
@@ -4320,9 +4321,7 @@ bool UseMobSkill(entt::entity e, unsigned int idx)
                 std::make_pair(static_cast<int>(i),
                     event_create(mob_skill_hit_event, event, PASSES_PER_SEC(splash.dwTiming) / 1000)));
         } else {
-            // The only character left: skill computation is a separate unit.
-            if (LPCHARACTER ch = ecs::LegacyCharOf(e))
-                ch->ComputeSkillAtPosition(vnum, pos, info->bSkillLevel);
+            SkillSystem::ComputeSkillAtPosition(e, vnum, pos, info->bSkillLevel);
         }
     }
 
