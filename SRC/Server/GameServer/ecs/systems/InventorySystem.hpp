@@ -24,6 +24,16 @@ bool MoveItem(entt::entity owner, TItemPos source, TItemPos destination, int cou
 bool SplitItemWithCommit(entt::entity owner, entt::entity item, int count, TItemPos destination,
     const std::function<bool(entt::entity)>& commit);
 int GetInventorySize(entt::entity owner);
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+// Spends the keys for the next inventory page and opens it.
+bool ExpandInventory(entt::entity e);
+#endif
+#ifdef ENABLE_SPAM_CHECK
+// Inventory unlocks are three seconds apart: when the next is allowed, and
+// the call that starts the wait.
+int32_t GetLastUnlock(entt::entity e);
+void SetLastUnlock(entt::entity e);
+#endif
 bool IsEmptyItemGrid(entt::entity owner, TItemPos cell, uint8_t size, int exceptionCell = -1);
 bool HasBeltItems(entt::entity owner);
 bool IsRefining(entt::entity owner);

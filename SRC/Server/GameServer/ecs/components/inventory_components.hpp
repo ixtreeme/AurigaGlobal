@@ -21,6 +21,12 @@ struct MainInventoryRuntimeComponent {
     MainInventoryRuntimeComponent() { items.fill(entt::null); }
 };
 
+// The key expansion and the extra inventory unlock share a cooldown: the
+// global time from which the next unlock is allowed.
+struct InventoryUnlockCooldown {
+    int32_t until { 0 };
+};
+
 #ifdef ENABLE_EXTRA_INVENTORY
 struct ExtraInventoryRuntimeComponent {
     std::array<entt::entity, EXTRA_INVENTORY_MAX_NUM> items;

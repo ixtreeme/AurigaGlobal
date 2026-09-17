@@ -2765,39 +2765,61 @@ void SetRegen(entt::entity e, LPREGEN regen)
 
 } // namespace ecs::PlayerRuntime
 
+#ifdef ENABLE_SPAM_CHECK
+int32_t InventorySystem::GetLastUnlock(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* cooldown = g_registry.try_get<ecs::InventoryUnlockCooldown>(e);
+    return cooldown ? cooldown->until : 0;
+}
+
+void InventorySystem::SetLastUnlock(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::InventoryUnlockCooldown>(e).until = get_global_time() + 3;
+}
+#endif
+
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 static int NeedKeys[] = { 2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7 };
-bool CHARACTER::Update_Inven()
+bool InventorySystem::ExpandInventory(entt::entity e)
 {
+    if (!ecs::IsCharacter(e))
+        return false;
+
 #ifdef ENABLE_SPAM_CHECK
-    int32_t time = GetLastUnlock() - get_global_time();
+    int32_t time = InventorySystem::GetLastUnlock(e) - get_global_time();
     if (time > 0) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", time);
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 234, "%d", time);
 #endif
         return false;
     }
 #endif
 
 #define key2 72320
-    const int expansion = ecs::PointSystem::GetInventoryExpansion(GetEntityHandle());
+    const int expansion = ecs::PointSystem::GetInventoryExpansion(e);
     if (expansion < 0 || expansion >= static_cast<int>(sizeof(NeedKeys) / sizeof(NeedKeys[0])))
         return false;
 
     int needkey = NeedKeys[expansion];
-    if (CountSpecifyItem(key2) >= needkey) {
-        RemoveSpecifyItem(key2, needkey);
-        ecs::PointSystem::Change(GetEntityHandle(), POINT_INVEN, 1, false);
-        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "refreshinven");
-        NetworkSyncSystem::UpdatePacket(GetEntityHandle());
+    if (ItemSystem::CountItem(e, key2) >= needkey) {
+        ItemSystem::RemoveSpecifyItemEcs(e, key2, needkey);
+        ecs::PointSystem::Change(e, POINT_INVEN, 1, false);
+        ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "refreshinven");
+        NetworkSyncSystem::UpdatePacket(e);
 #ifdef ENABLE_SPAM_CHECK
-        SetLastUnlock();
+        InventorySystem::SetLastUnlock(e);
 #endif
         return true;
     }
     else {
-        int need_key = needkey - CountSpecifyItem(key2);
-        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "update_envanter_need %d", need_key);
+        int need_key = needkey - ItemSystem::CountItem(e, key2);
+        ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "update_envanter_need %d", need_key);
         return false;
     }
 }
@@ -3960,9 +3982,6 @@ void CHARACTER::Initialize()
 #endif
 #ifdef __DUNGEON_INFO_SYSTEM__
     dungeonDamage.clear();
-#endif
-#ifdef ENABLE_SPAM_CHECK
-    m_iLastUnlock = 0;
 #endif
 #ifdef ENABLE_ANTICHEAT
     m_firstReward = 0;

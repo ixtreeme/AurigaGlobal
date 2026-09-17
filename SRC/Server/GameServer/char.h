@@ -870,10 +870,6 @@ public:
 
 
 
-	int				CountSpecifyItem(uint32_t vnum) const;
-	void			RemoveSpecifyItem(uint32_t vnum, int count = 1, bool cuberenewal = false);
-
-	int				CountSpecifyTypeItem(uint8_t type) const;
 	void			RemoveSpecifyTypeItem(uint8_t type, int count = 1);
 
 
@@ -893,9 +889,6 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Money related
 
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	bool			Update_Inven();
-#endif
 	bool			DropGold(int64_t gold);
 
 
@@ -1500,14 +1493,6 @@ public:
 protected:
 #endif
 
-#ifdef ENABLE_SPAM_CHECK
-public:
-	int32_t	GetLastUnlock() const { return m_iLastUnlock; }
-	void	SetLastUnlock() { m_iLastUnlock = get_global_time() + 3; }
-
-protected:
-	int32_t	m_iLastUnlock;
-#endif
 
 public:
 #ifdef ENABLE_BIOLOGIST_UI

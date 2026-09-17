@@ -392,124 +392,6 @@ uint16_t CHARACTER::GetDragonSoulGrid(uint16_t wCell) const
 
 #endif
 
-int CHARACTER::CountSpecifyItem(uint32_t vnum) const
-{
-	return ItemSystem::CountItem(GetEntityHandle(), vnum);
-}
-
-void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
-{
-	if (0 == count)
-		return;
-
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	if (ITEM_MANAGER::instance().IsExtraItem(vnum))
-	{
-		for (uint16_t i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetExtraInventoryItem(GetEntityHandle(), i);
-
-			if (item == entt::null)
-				continue;
-
-			if (ItemSystem::GetItemVnum(item) != vnum)
-				continue;
-
-			if (ecs::SocialSystem::GetMyShop(GetEntityHandle()))
-			{
-				if (ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(ItemSystem::GetItemID(item)))
-					continue;
-			}
-
-			if (cuberenewal) {
-				if (ItemSystem::GetItemLockedAttr(item) != -1) {
-					continue;
-				}
-			}
-
-			if (count >= ItemSystem::GetItemCount(item))
-			{
-				count -= ItemSystem::GetItemCount(item);
-				ItemSystem::ConsumeItemEcs(item, ItemSystem::GetItemCount(item));
-
-				if (0 == count)
-					return;
-			}
-			else
-			{
-				ItemSystem::ConsumeItemEcs(item, count);
-				return;
-			}
-		}
-	}
-	else
-#endif
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
-#else
-		for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-		{
-			const entt::entity item = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
-			if (item == entt::null)
-				continue;
-
-			if (ItemSystem::GetItemVnum(item) != vnum)
-				continue;
-
-			if (ecs::SocialSystem::GetMyShop(GetEntityHandle()) && ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(ItemSystem::GetItemID(item)))
-				continue;
-
-			if (cuberenewal && ItemSystem::GetItemLockedAttr(item) != -1)
-				continue;
-
-			if (vnum >= 80003 && vnum <= 80007)
-				LogManager::instance().GoldBarLog(GetPlayerID(), ItemSystem::GetItemID(item), QUEST, "RemoveSpecifyItem");
-
-			const int itemCount = ItemSystem::GetItemCount(item);
-			if (count >= itemCount)
-			{
-				count -= itemCount;
-				ItemSystem::ConsumeItemEcs(item, itemCount);
-
-				if (0 == count)
-					return;
-			}
-			else
-			{
-				ItemSystem::ConsumeItemEcs(item, count);
-				return;
-			}
-		}
-
-	// ?1?�A3���! 3a�I�U.
-	if (count)
-		LOG_INFO("CHARACTER::RemoveSpecifyItem cannot remove enough item vnum {}, still remain {}", vnum, count);
-}
-
-int CHARACTER::CountSpecifyTypeItem(uint8_t type) const
-{
-	int	count = 0;
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
-#else
-	for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-	{
-		const entt::entity pItem = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
-		if (pItem != entt::null && ItemSystem::GetItemType(pItem) == type)
-		{
-			count += ItemSystem::GetItemCount(pItem);
-		}
-	}
-
-	return count;
-}
-
-
 namespace ecs::PlayerRuntime {
 
 void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
@@ -1947,7 +1829,7 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 	}
 
 #ifdef ENABLE_SPAM_CHECK
-	int32_t time = GetLastUnlock() - get_global_time();
+	int32_t time = InventorySystem::GetLastUnlock(GetEntityHandle()) - get_global_time();
 	if (time > 0) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", time);
@@ -1990,7 +1872,7 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 		ecs::PointSystem::Change(GetEntityHandle(), POINT_EXTRA_INVENTORY1 + category, stage + 1);
 		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #ifdef ENABLE_SPAM_CHECK
-		SetLastUnlock();
+		InventorySystem::SetLastUnlock(GetEntityHandle());
 #endif
 	}
 	else {

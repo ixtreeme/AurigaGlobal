@@ -1558,15 +1558,13 @@ void CInputMain::ItemMove(entt::entity character, const char * data)
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 void CInputMain::InventoryExpansion(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate InventoryExpansion handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::InventoryExpansion");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch)
-		ch->Update_Inven();
+	InventorySystem::ExpandInventory(character);
 }
 #endif
 
