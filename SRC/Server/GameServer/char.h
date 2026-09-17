@@ -1220,8 +1220,6 @@ public:
 
 public:
 
-	// by mhh
-	bool CanDoCube() const;
 
 
 private:

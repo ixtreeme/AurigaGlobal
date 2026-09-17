@@ -1975,17 +1975,6 @@ void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, uint8_t bOldValue, ui
 // NEW_HAIR_STYLE_ADD
 // END_NEW_HAIR_STYLE_ADD
 
-bool CHARACTER::CanDoCube() const
-{
-	if (ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))	return false;
-	if (ecs::SocialSystem::GetShop(GetEntityHandle()))		return false;
-	if (ecs::SocialSystem::GetMyShop(GetEntityHandle()))	return false;
-	if (InventorySystem::IsRefining(GetEntityHandle()))	return false;
-	if (ecs::PlayerRuntime::IsWarping(GetEntityHandle()))	return false;
-
-	return true;
-}
-
 #ifdef ENABLE_RECALL
 void AffectSystem::AutoRecallProcess(entt::entity e)
 {
