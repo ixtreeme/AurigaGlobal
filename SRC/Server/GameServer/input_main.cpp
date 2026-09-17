@@ -4436,7 +4436,6 @@ void CInputMain::Acce(entt::entity character, const char* c_pData)
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
 void CInputMain::CubeRenewalSend(entt::entity character, const char* data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate CubeRenewalSend handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -4465,7 +4464,7 @@ void CInputMain::CubeRenewalSend(entt::entity character, const char* data)
 			}
 
 			Cube_Make(
-				ch,
+				character,
 				static_cast<int>(pinfo->index_item),
 				static_cast<int>(pinfo->count_item),
 				index_item_improve);
@@ -4474,7 +4473,7 @@ void CInputMain::CubeRenewalSend(entt::entity character, const char* data)
 
 		case CUBE_RENEWAL_SUB_HEADER_CLOSE:
 		{
-			Cube_close(ch);
+			Cube_close(character);
 		}
 		break;
 	}

@@ -404,7 +404,7 @@ int CEntity::GetZ(void)const { UnexpectedService(__func__); }
 pixel_position_s CEntity::GetXYZ(void)const { UnexpectedService(__func__); }
 SECTREE * CEntity::GetSectree(void)const { UnexpectedService(__func__); }
 void BroadcastNotice(char const *,bool) { UnexpectedService(__func__); }
-void Cube_close(CHARACTER *) { UnexpectedService(__func__); }
+void Cube_close(entt::entity) { UnexpectedService(__func__); }
 bool AttrTransfer_is_open(entt::entity) { UnexpectedService(__func__); }
 void AttrTransfer_close(entt::entity) { UnexpectedService(__func__); }
 char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__); }

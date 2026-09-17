@@ -3214,8 +3214,6 @@ ACMD(do_stonecraft)
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
 ACMD(do_cube)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-
 	const char *line;
 	char arg1[256], arg2[256], arg3[256];
 	line = two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -3229,7 +3227,7 @@ ACMD(do_cube)
 	switch (LOWER(arg1[0]))
 	{
 		case 'o':	// open
-			Cube_open(ch);
+			Cube_open(character);
 			break;
 
 		default:

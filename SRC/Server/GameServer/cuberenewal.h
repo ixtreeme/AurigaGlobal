@@ -42,9 +42,9 @@ struct CUBE_RENEWAL_DATA
 void Cube_init ();
 bool Cube_load (const char *file);
 bool Cube_InformationInitialize();
-void Cube_open (LPCHARACTER ch);
-void Cube_close(LPCHARACTER ch);
-void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve);
-void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcVNUM = 0);
+void Cube_open (entt::entity chEntity);
+void Cube_close(entt::entity chEntity);
+void Cube_Make(entt::entity chEntity, int index, int count_item, int index_item_improve);
+void SendDateCubeRenewalPackets(entt::entity chEntity, uint8_t subheader, uint32_t npcVNUM = 0);
 
 #endif

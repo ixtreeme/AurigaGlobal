@@ -374,11 +374,6 @@ EVENTFUNC(soul_item_event);
 // Remaining character-side item workflows. Items are native entities.
 
 #ifdef ENABLE_EXTRA_INVENTORY
-void CHARACTER::SetCubeNpc(entt::entity npcEntity)
-{
-    ecs::SessionSystem::SetCubeNPC(GetEntityHandle(), npcEntity);
-
-}
 
 
 #ifdef ENABLE_ACCE_SYSTEM

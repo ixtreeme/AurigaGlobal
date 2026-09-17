@@ -2994,15 +2994,12 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	// CloseAcce has no entity form yet; it is its own
-	// migration.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
+	if (!ecs::IsCharacter(e))
 		return;
 
 	LOG_INFO("DEATH_PERNALY_CHECK({}) town({})", ecs::PlayerRuntime::GetName(e).data(), bTown);
 
-	Cube_close(self);
+	Cube_close(e);
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	AttrTransfer_close(e);
 #endif

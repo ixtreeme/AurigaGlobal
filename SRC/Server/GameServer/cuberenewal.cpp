@@ -354,22 +354,20 @@ bool Cube_InformationInitialize()
 }
 
 
-void Cube_open (LPCHARACTER ch)
+void Cube_open (entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	LPCHARACTER	npc;
-	npc = ecs::LegacyCharOf(ecs::PlayerRuntime::GetQuestNPC(chEntity));
+	const entt::entity npc = ecs::PlayerRuntime::GetQuestNPC(chEntity);
 
 
 
-	if (nullptr ==npc)
+	if (!ecs::IsCharacter(npc))
 	{
 		if (test_server)
 			dev_log(LOG_DEB0, "cube_npc is NULL");
 		return;
 	}
 
-	uint32_t npcVNUM = ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null));
+	uint32_t npcVNUM = ecs::PlayerRuntime::GetRaceNum(npc);
 
 	if ( FN_check_valid_npc(npcVNUM) == false )
 	{
@@ -399,7 +397,7 @@ void Cube_open (LPCHARACTER ch)
 		return;
 	}
 
-	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(((npc) ? (npc)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(((npc) ? (npc)->GetEntityHandle() : entt::null)));
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(npc), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(npc));
 
 	if (distance >= CUBE_MAX_DISTANCE)
 	{
@@ -408,36 +406,36 @@ void Cube_open (LPCHARACTER ch)
 	}
 
 
-	SendDateCubeRenewalPackets(ch,CUBE_RENEWAL_SUB_HEADER_CLEAR_DATES_RECEIVE);
-	SendDateCubeRenewalPackets(ch,CUBE_RENEWAL_SUB_HEADER_DATES_RECEIVE,npcVNUM);
-	SendDateCubeRenewalPackets(ch,CUBE_RENEWAL_SUB_HEADER_DATES_LOADING);
-	SendDateCubeRenewalPackets(ch,CUBE_RENEWAL_SUB_HEADER_OPEN_RECEIVE);
+	SendDateCubeRenewalPackets(chEntity,CUBE_RENEWAL_SUB_HEADER_CLEAR_DATES_RECEIVE);
+	SendDateCubeRenewalPackets(chEntity,CUBE_RENEWAL_SUB_HEADER_DATES_RECEIVE,npcVNUM);
+	SendDateCubeRenewalPackets(chEntity,CUBE_RENEWAL_SUB_HEADER_DATES_LOADING);
+	SendDateCubeRenewalPackets(chEntity,CUBE_RENEWAL_SUB_HEADER_OPEN_RECEIVE);
 
-	ch->SetCubeNpc((npc ? npc->GetEntityHandle() : entt::null));
+	ecs::SessionSystem::SetCubeNPC(chEntity, npc);
 }
 
-void Cube_close(LPCHARACTER ch)
+void Cube_close(entt::entity chEntity)
 {
-	ch->SetCubeNpc(entt::null);
+	ecs::SessionSystem::SetCubeNPC(chEntity, entt::null);
 }
 
-void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve)
+void Cube_Make(entt::entity chEntity, int index, int count_item, int index_item_improve)
 {
-	if (!ch || !ecs::SessionSystem::IsCubeOpen(ch->GetEntityHandle()) || count_item <= 0 ||
+	if (!ecs::IsCharacter(chEntity) || !ecs::SessionSystem::IsCubeOpen(chEntity) || count_item <= 0 ||
 		count_item > static_cast<int>(g_bItemCountLimit))
 	{
 		return;
 	}
 
-	LPCHARACTER npc = ecs::LegacyCharOf(ecs::PlayerRuntime::GetQuestNPC(ch->GetEntityHandle()));
-	if (!npc)
+	const entt::entity npc = ecs::PlayerRuntime::GetQuestNPC(chEntity);
+	if (!ecs::IsCharacter(npc))
 		return;
 
-	const entt::entity ownerEntity = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity ownerEntity = chEntity;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
-	const auto resultIt = cube_info_map.find(ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)));
+	const auto resultIt = cube_info_map.find(ecs::PlayerRuntime::GetRaceNum(npc));
 	if (resultIt == cube_info_map.end() || index < 0 ||
 		static_cast<size_t>(index) >= resultIt->second.size())
 	{
@@ -498,7 +496,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 	const uint64_t requiredGaya =
 		static_cast<uint64_t>(materialInfo.gaya) * static_cast<uint64_t>(count_item);
 	if (requiredGaya > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) ||
-		static_cast<uint64_t>(ecs::PointSystem::GetGaya(ch->GetEntityHandle())) < requiredGaya)
+		static_cast<uint64_t>(ecs::PointSystem::GetGaya(chEntity)) < requiredGaya)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 524, "");
@@ -652,7 +650,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 	}
 
 #ifdef ENABLE_BATTLE_PASS
-	const uint8_t battlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
+	const uint8_t battlePassId = ecs::PlayerRuntime::GetBattlePassId(chEntity);
 	if (battlePassId)
 	{
 		uint32_t missionItemVnum = 0;
@@ -660,9 +658,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 		if (CBattlePass::instance().BattlePassMissionGetInfo(
 				battlePassId, CRAFT_ITEM, &missionItemVnum, &missionCount) &&
 			missionItemVnum == materialInfo.reward.vnum &&
-			ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), CRAFT_ITEM, battlePassId) < missionCount)
+			ecs::PlayerRuntime::GetMissionProgress(chEntity, CRAFT_ITEM, battlePassId) < missionCount)
 		{
-			ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), 
+			ecs::PlayerRuntime::UpdateMissionProgress(chEntity, 
 				CRAFT_ITEM, battlePassId, rewardCount, missionCount);
 		}
 	}
@@ -721,10 +719,8 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 	ItemSystem::AutoGiveItem(ownerEntity, rewardItem);
 }
 
-void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcVNUM)
+void SendDateCubeRenewalPackets(entt::entity chEntity, uint8_t subheader, uint32_t npcVNUM)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
 	TPacketGCCubeRenewalReceive pack;
 	pack.subheader = subheader;
 

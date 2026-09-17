@@ -1297,7 +1297,6 @@ public:
 public:
 
 	// by mhh
-	void SetCubeNpc(entt::entity npc);
 	bool CanDoCube() const;
 
 
