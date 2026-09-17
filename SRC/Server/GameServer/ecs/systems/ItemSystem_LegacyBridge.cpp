@@ -541,50 +541,6 @@ void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
 } // namespace ecs::PlayerRuntime
 
 
-bool CHARACTER::UnEquipSpecialRideUniqueItem()
-{
-	const entt::entity Unique1 = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE1);
-	const entt::entity Unique2 = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE2);
-	const entt::entity Unique3 = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	const entt::entity MountCostume = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
-#endif
-
-
-	if (Unique1 != entt::null)
-	{
-		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique1))
-		{
-			return ItemSystem::UnequipItemEcs(GetEntityHandle(), Unique1);
-		}
-	}
-
-	if (Unique2 != entt::null)
-	{
-		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique2))
-		{
-			return ItemSystem::UnequipItemEcs(GetEntityHandle(), Unique2);
-		}
-	}
-
-	if (Unique3 != entt::null)
-	{
-		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique3))
-		{
-			return ItemSystem::UnequipItemEcs(GetEntityHandle(), Unique3);
-		}
-	}
-
-	/*#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		if (MountCostume != entt::null)
-			return ItemSystem::UnequipItemEcs(GetEntityHandle(), MountCostume);
-	#endif*/
-
-	return true;
-}
-
-
 // char_item.cpp slice C1 moved into ItemSystem.cpp
 
 namespace NPartyPickupDistribute

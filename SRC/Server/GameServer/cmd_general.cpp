@@ -759,7 +759,6 @@ ACMD(do_console)
 
 ACMD(do_restart)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!(ecs::PlayerRuntime::IsPC(character)) || ecs::PlayerRuntime::GetPosition(character) != POS_DEAD)
 	{
 		return;
@@ -820,7 +819,7 @@ ACMD(do_restart)
 				case SCMD_RESTART_HERE:
 					{
 						LOG_INFO("do_restart: restart here");
-						ch->RestartAtSamePos();
+						ecs::PlayerRuntime::RestartAtSamePos(character);
 						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(character));
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 						CombatSystem::ReviveInvisible(character, 5);
@@ -1423,7 +1422,7 @@ ACMD(do_restart)
 			{
 				LOG_INFO("do_restart: restart here");
 
-				ch->RestartAtSamePos();
+				ecs::PlayerRuntime::RestartAtSamePos(character);
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
 				ecs::PointSystem::Change(character, POINT_HP, CombatSystem::GetDeadByMonster(character) ? (ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(character)) / 2 : 50 - ecs::PlayerRuntime::GetHP(character));
 #else
@@ -2496,8 +2495,6 @@ ACMD(do_setblockmode)
 
 ACMD(do_unmount)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	const entt::entity owner = character;
 	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
@@ -2534,7 +2531,7 @@ ACMD(do_unmount)
 	}
 #endif
 
-	if (true == ch->UnEquipSpecialRideUniqueItem())
+	if (true == ItemSystem::UnEquipSpecialRideUniqueItem(character))
 	{
 		AffectSystem::RemoveAffect(character, AFFECT_MOUNT);
 		AffectSystem::RemoveAffect(character, AFFECT_MOUNT_BONUS);

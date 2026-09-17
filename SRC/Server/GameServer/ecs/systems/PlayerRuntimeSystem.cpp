@@ -3613,12 +3613,12 @@ void CHARACTER::DestroyPvP()
     }
 }
 
-void CHARACTER::RestartAtSamePos()
+void ecs::PlayerRuntime::RestartAtSamePos(entt::entity e)
 {
-    if (ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
+    if (ecs::PlayerRuntime::IsObserverMode(e))
         return;
 
-    const entt::entity self = GetEntityHandle();
+    const entt::entity self = e;
     if (self == entt::null || !g_registry.valid(self))
         return;
 
@@ -3644,7 +3644,7 @@ void CHARACTER::RestartAtSamePos()
             continue;
 
         ecs::EntityNetworkDispatch::SendRemove(g_registry, self, other);
-        if (!ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
+        if (!ecs::PlayerRuntime::IsObserverMode(e))
             ecs::EntityNetworkDispatch::SendInsert(g_registry, self, other);
 
         // The original let every non-character through and filtered characters

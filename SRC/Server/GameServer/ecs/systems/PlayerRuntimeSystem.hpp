@@ -205,6 +205,8 @@ uint8_t GetBattlePassId(entt::entity e);
 bool IsPCBang(entt::entity e);
 bool IsObserverMode(entt::entity e);
 void SetObserverMode(entt::entity e, bool flag);
+// Resends the character to itself and to everyone who can see it, in place.
+void RestartAtSamePos(entt::entity e);
 bool IsArenaObserverMode(entt::entity e);
 void SetItemAwardVnum(entt::entity e, uint32_t vnum);
 uint32_t GetItemAwardVnum(entt::entity e);

@@ -568,8 +568,6 @@ public:
 
 	virtual void			EndStateEmpty() {}
 
-	void				RestartAtSamePos();
-
 protected:
 	//////////////////////////////////////////////////////////////////////////////////
 
@@ -1323,7 +1321,6 @@ private:
 public:
 
 public:
-	bool UnEquipSpecialRideUniqueItem();
 
 
 private:
