@@ -1453,9 +1453,6 @@ public:
 #endif
 #endif
 
-#ifdef ENABLE_WHISPER_ADMIN_SYSTEM
-	std::string GetLang();
-#endif
 #ifdef ENABLE_RUNE_SYSTEM
 public:
 #endif

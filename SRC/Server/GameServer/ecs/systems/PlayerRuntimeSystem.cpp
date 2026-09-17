@@ -2338,8 +2338,8 @@ int GetSkillPowerByLevel(entt::entity e, int level, bool bMob)
 } // namespace ecs::PlayerRuntime
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
-std::string CHARACTER::GetLang() {
-    auto language = GetDesc()->GetLanguage();
+std::string ecs::PlayerRuntime::GetLang(entt::entity e) {
+    auto language = ecs::PlayerRuntime::GetDesc(e)->GetLanguage();
     std::string langs[] = { "en","en","ro","it","tr","de","pl","pt","es","cz","hu" };
     if (language == 0)
         return langs[language + 1];

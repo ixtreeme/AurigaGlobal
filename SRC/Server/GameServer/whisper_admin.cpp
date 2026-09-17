@@ -140,7 +140,7 @@ struct whisper_packet_func
 		if (!d->GetCharacter())
 			return;
 
-		if (!d->GetCharacter()->GetLang().compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
+		if (!ecs::PlayerRuntime::GetLang(d->GetCharacter()->GetEntityHandle()).compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
 		{
 			ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
 		}

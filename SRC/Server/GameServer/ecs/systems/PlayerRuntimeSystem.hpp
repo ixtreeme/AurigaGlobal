@@ -1,6 +1,7 @@
 #pragma once
 
 #include <entt/entt.hpp>
+#include <string>
 #include <string_view>
 
 #include "../../typedef.h"
@@ -207,6 +208,10 @@ bool IsObserverMode(entt::entity e);
 void SetObserverMode(entt::entity e, bool flag);
 // Resends the character to itself and to everyone who can see it, in place.
 void RestartAtSamePos(entt::entity e);
+#ifdef ENABLE_WHISPER_ADMIN_SYSTEM
+// The two-letter code of the client's language.
+std::string GetLang(entt::entity e);
+#endif
 bool IsArenaObserverMode(entt::entity e);
 void SetItemAwardVnum(entt::entity e, uint32_t vnum);
 uint32_t GetItemAwardVnum(entt::entity e);

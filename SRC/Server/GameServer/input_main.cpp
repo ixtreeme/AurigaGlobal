@@ -868,7 +868,6 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 #endif
 int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Chat handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -1012,7 +1011,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 
 				char shoutbuf[CHAT_MAX_LEN + 1];
 #ifdef ENABLE_MULTI_LANGUAGE
-				std::string langName = ch->GetLang();
+				std::string langName = ecs::PlayerRuntime::GetLang(character);
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 				const std::string nameWithPrefix = MakeNameWithPrefix(character);
 
@@ -1094,7 +1093,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 		{
 #ifdef ENABLE_MULTI_NAMES
 			int lang = 0;
-			if (ch) {
+			if (ecs::IsCharacter(character)) {
 				LPDESC desc = ecs::PlayerRuntime::GetDesc(character);
 				lang = desc != nullptr ? desc->GetLanguage() : 0;
 			}
@@ -1116,7 +1115,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 	//static const char* colorbuf[] = {"|cFFffa200|H|h[Staff]|h|r", "|cFFff0000|H|h[Shinsoo]|h|r", "|cFFffc700|H|h[Chunjo]|h|r", "|cFF000bff|H|h[Jinno]|h|r"};
 #ifdef ENABLE_MULTI_LANGUAGE
 	int len;
-	std::string langName = ch->GetLang();
+	std::string langName = ecs::PlayerRuntime::GetLang(character);
 	if (pinfo->type == CHAT_TYPE_SHOUT) {
 
 #ifdef ENABLE_EVENT_QUIZ_RAZOR93
@@ -1483,7 +1482,6 @@ void CInputMain::ItemUse(entt::entity character, const char * data)
 
 void CInputMain::ItemToItem(entt::entity character, const char * pcData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemToItem handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -1491,7 +1489,7 @@ void CInputMain::ItemToItem(entt::entity character, const char * pcData)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemToItem(");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGItemUseToItem * p = (TPacketCGItemUseToItem *) pcData;
-	if (ch)
+	if (ecs::IsCharacter(character))
 		ItemSystem::UseItem(character, p->Cell, p->TargetCell);
 }
 
