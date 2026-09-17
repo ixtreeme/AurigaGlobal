@@ -33,5 +33,8 @@ struct TagStone {};
 struct TagPet {};
 struct TagMount {};
 struct TagHorse {};
+// Every entity CHARACTER_MANAGER::CreateCharacter built, from the moment
+// its LegacyCharPtr is attached until the registry destroy.
+struct TagCharacter {};
 
 } // namespace ecs

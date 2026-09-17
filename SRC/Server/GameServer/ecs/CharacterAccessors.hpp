@@ -32,13 +32,14 @@ inline auto LegacyCharOf(entt::entity e) -> decltype(std::declval<ecs::LegacyCha
     return nullptr;
 }
 
-// A character is an entity carrying one of the four character type tags.
-// Every character CHARACTER_MANAGER builds gets its tag right after its
-// legacy pointer, and loses both in the same registry destroy, so this
-// answers `LegacyCharOf(e) != nullptr` without touching the pointer.
+// A character is an entity CHARACTER_MANAGER::CreateCharacter built. It gets
+// TagCharacter where its legacy pointer is attached and loses both in the
+// same registry destroy, so this answers `LegacyCharOf(e) != nullptr`
+// without touching the pointer. The type tags do not: the LostCastle clones
+// are built there with none, and an entity typed with no shell has one.
 inline bool IsCharacter(entt::entity e)
 {
-    return Invariants::HasAnyTypeTag(g_registry, e);
+    return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagCharacter>(e);
 }
 
 inline ecs::CharacterRuntimeFlagsComponent* TryGetRuntimeFlags(entt::entity e)

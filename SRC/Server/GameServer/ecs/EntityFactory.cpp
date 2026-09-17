@@ -251,6 +251,7 @@ void SeedCharacterRuntimeDefaults(entt::registry& reg, entt::entity entity)
 void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 {
     reg.emplace_or_replace<ecs::LegacyCharPtr>(entity, ch);
+    reg.emplace_or_replace<ecs::TagCharacter>(entity);
     SeedCharacterRuntimeDefaults(reg, entity);
 
     if (ch) {
