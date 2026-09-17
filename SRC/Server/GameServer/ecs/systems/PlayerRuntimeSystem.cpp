@@ -3188,7 +3188,7 @@ void CHARACTER::Destroy()
     NetworkSyncSystem::ClearSync(GetEntityHandle());
     CombatSystem::ClearTarget(GetEntityHandle());
 
-    if (nullptr == m_pkMobData)
+    if (nullptr == ecs::PlayerRuntime::GetMobTable(GetEntityHandle()))
     {
         DragonSoulSystem::CleanUp(GetEntityHandle());
         ClearItem();
@@ -3215,8 +3215,6 @@ void CHARACTER::Destroy()
     // Mob runtime state goes with the entity; there is no allocation to free.
     if (g_registry.valid(GetEntityHandle()))
         g_registry.remove<ecs::MobInstanceState>(GetEntityHandle());
-
-    m_pkMobData = nullptr;
 
     SafeboxSystem::Close(GetEntityHandle(), SAFEBOX, false);
     SafeboxSystem::Close(GetEntityHandle(), MALL, false);
@@ -3490,8 +3488,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
 void CHARACTER::SetProto(const CMob* pkMob)
 {
-    m_pkMobData = pkMob;
-
     // mob_manager.cpp reaches here through an IsPC() test, and IsPC(entt::null)
     // is false - so a character with no entity yet passes the filter instead of
     // being turned back. NDEBUG is set for Release and RelWithDebInfo, so there
@@ -3506,7 +3502,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
         g_registry.get_or_emplace<ecs::CombatStats>(self).pkMode = PK_MODE_FREE;
     }
 
-    const TMobTable* t = &m_pkMobData->m_table;
+    const TMobTable* t = &pkMob->m_table;
 
     // The factory fills CharacterType at spawn, but SetProto can change the
     // type afterwards and used to leave the component behind.
@@ -3873,7 +3869,6 @@ void CHARACTER::Initialize()
     // Initialize point - ECS write would no-op anyway; new MovementDestination
     // is absent until Goto/Move emplaces).
 
-    m_pkMobData = nullptr;
 
 
 

@@ -1139,8 +1139,6 @@ public:
 	// END_OF_MINING
 
 
-	const CMob* m_pkMobData;
-	const CMob* GetMobData() const { return m_pkMobData; }
 
 
 	friend struct FuncSplashDamage;

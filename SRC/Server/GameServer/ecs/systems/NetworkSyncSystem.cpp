@@ -1138,7 +1138,8 @@ const char* CHARACTER::GetName(uint8_t lang) const
     if (!name.empty())
         return name.data();
 
-    return m_pkMobData ? m_pkMobData->m_table.szLocaleName[lang] : "";
+    const TMobTable* table = ecs::PlayerRuntime::GetMobTable(GetEntityHandle());
+    return table ? table->szLocaleName[lang] : "";
 }
 #else
 const char* CHARACTER::GetName() const
@@ -1150,6 +1151,7 @@ const char* CHARACTER::GetName() const
     if (!name.empty())
         return name.data();
 
-    return m_pkMobData ? m_pkMobData->m_table.szLocaleName : "";
+    const TMobTable* table = ecs::PlayerRuntime::GetMobTable(GetEntityHandle());
+    return table ? table->szLocaleName : "";
 }
 #endif

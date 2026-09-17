@@ -445,9 +445,9 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
     if (!IsValid(e))
         return false;
 
-    // SetMapIndex, RemoveEntity, UpdateSectree, ComputePoints and the mob
-    // table have no entity form yet; each is its own migration and they share
-    // this one resolve.
+    // SetMapIndex, RemoveEntity, UpdateSectree and ComputePoints have no
+    // entity form yet; each is its own migration and they share this one
+    // resolve.
     LPCHARACTER self = ecs::LegacyCharOf(e);
     if (!self)
         return false;
@@ -539,7 +539,7 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
         if (ecs::PlayerRuntime::GetStamina(e) < ecs::PlayerRuntime::GetMaxStamina(e))
             AffectSystem::StartAffectEvent(e);
     }
-    else if (self->GetMobData())
+    else if (ecs::PlayerRuntime::GetMobTable(e))
     {
         if (auto* mobState = CombatSystem::MobState(e)) {
             mobState->lastAttackedX = x;
