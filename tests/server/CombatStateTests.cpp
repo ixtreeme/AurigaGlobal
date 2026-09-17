@@ -550,7 +550,7 @@ int CHARACTER_MANAGER::GetMobExpRate(entt::entity) { UnexpectedService(__func__)
 int CHARACTER_MANAGER::GetUserDamageRate(entt::entity) { UnexpectedService(__func__); }
 event_struct_ const * CHARACTER_MANAGER::CheckEventIsActive(unsigned char,unsigned char) { UnexpectedService(__func__); }
 entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { UnexpectedService(__func__); }
-bool ITEM_MANAGER::CreateDropItem(CHARACTER *,CHARACTER *,std::vector<entt::entity,std::allocator<entt::entity> > &) { UnexpectedService(__func__); }
+bool ITEM_MANAGER::CreateDropItem(entt::entity,entt::entity,std::vector<entt::entity,std::allocator<entt::entity> > &) { UnexpectedService(__func__); }
 bool CPVPManager::Dead(entt::entity,unsigned int) { UnexpectedService(__func__); }
 void LogManager::ItemLogEntity(entt::entity,entt::entity,char const *,char const *) { UnexpectedService(__func__); }
 void LogManager::CharLog(entt::entity,unsigned int,char const *,char const *) { UnexpectedService(__func__); }

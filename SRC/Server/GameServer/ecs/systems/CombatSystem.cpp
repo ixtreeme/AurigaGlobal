@@ -3735,18 +3735,13 @@ void Reward(entt::entity e, bool bItemDrop)
 	if (attacker == entt::null)
 		return;
 
-	// CreateDropItem, MakeItemLink, __GiveRewardItemToCharacterOrDrop and the
-	// party dice roll still take the characters; each is its own migration and
-	// they share these two resolves.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	if (!self || !pkAttacker)
+	if (!ecs::IsCharacter(e) || !ecs::IsCharacter(attacker))
 		return;
 
 
-	if (!ecs::PlayerRuntime::IsPC(e) && !self->GetMobData())
+	if (const auto* mobData = g_registry.try_get<ecs::MobDataRef>(e); !ecs::PlayerRuntime::IsPC(e) && (!mobData || !mobData->data))
 	{
-		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
+		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), ecs::PlayerRuntime::GetName(attacker));
 		CombatSystem::ClearDamageLedger(e);
 		return;
 	}
@@ -3847,7 +3842,7 @@ void Reward(entt::entity e, bool bItemDrop)
 	std::vector<entt::entity> s_vec_item;
 	s_vec_item.clear();
 
-	if (ITEM_MANAGER::instance().CreateDropItem(self, pkAttacker, s_vec_item))
+	if (ITEM_MANAGER::instance().CreateDropItem(e, attacker, s_vec_item))
 	{
 
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
@@ -3873,7 +3868,7 @@ void Reward(entt::entity e, bool bItemDrop)
 		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
 		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
 
-		if (ecs::SocialSystem::GetDungeon(e) && pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && !s_vec_item.empty())
+		if (ecs::SocialSystem::GetDungeon(e) && ecs::IsCharacter(attacker) && ecs::PlayerRuntime::IsPC(attacker) && !s_vec_item.empty())
 		{
 			const long lMapIndex = ecs::PlayerRuntime::GetMapIndex(e); // a megolt mob mapindexe
 
@@ -4187,7 +4182,7 @@ void Reward(entt::entity e, bool bItemDrop)
 								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 							continue;
 
-						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
+						if (ecs::IsCharacter(attacker) && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
 							ItemSystem::SetGroundOwnership(
 								itemEntity, attacker);
 
@@ -4334,7 +4329,7 @@ void Reward(entt::entity e, bool bItemDrop)
 								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 							continue;
 
-						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
+						if (ecs::IsCharacter(attacker) && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
 							ItemSystem::SetGroundOwnership(
 								itemEntity, attacker);
 

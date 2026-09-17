@@ -1135,12 +1135,6 @@ int GetDropPerKillPct(int iMinimum, int iDefault, int iDeltaPercent, const char*
 	return (40000 * iDeltaPercent / iVal);
 }
 
-bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& iDeltaPercent, OUT int& iRandRange)
-{
-	return GetDropPct(pkChr ? pkChr->GetEntityHandle() : entt::null,
-		pkKiller ? pkKiller->GetEntityHandle() : entt::null, iDeltaPercent, iRandRange);
-}
-
 bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	OUT int& iDeltaPercent, OUT int& iRandRange)
 {
@@ -1214,12 +1208,10 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	return true;
 }
 #ifdef __SEND_TARGET_INFO__
-bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<TargetInfoItem>& items)
+bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, std::vector<TargetInfoItem>& items)
 {
-	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
-	const entt::entity killer = pkKiller ? pkKiller->GetEntityHandle() : entt::null;
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
-	if (pkChr && ecs::PlayerRuntime::IsStone(chr) &&
+	if (ecs::IsCharacter(chr) && ecs::PlayerRuntime::IsStone(chr) &&
 		!IsRegisteredDropMob(ecs::PlayerRuntime::GetRaceNum(chr)))
 	{
 		LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben - CreateDropItemVector megszakitva.",
@@ -1228,7 +1220,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		return false;
 	}
 #endif
-	if (!pkChr || !pkKiller || AffectSystem::IsPolymorphed(chr) || ecs::PlayerRuntime::IsPC(chr))
+	if (!ecs::IsCharacter(chr) || !ecs::IsCharacter(killer) || AffectSystem::IsPolymorphed(chr) || ecs::PlayerRuntime::IsPC(chr))
 		return false;
 
 	const int level = ecs::PointSystem::GetLevel(killer);
@@ -1250,7 +1242,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		const TItemTable* table = GetTable(info.m_dwVnum);
 		if (!table)
 			continue;
-		if (table->bType == ITEM_POLYMORPH && info.m_dwVnum != ecs::PlayerRuntime::GetPolymorphItemVnum(pkChr->GetEntityHandle()))
+		if (table->bType == ITEM_POLYMORPH && info.m_dwVnum != ecs::PlayerRuntime::GetPolymorphItemVnum(chr))
 			continue;
 		add(info.m_dwVnum, 1);
 	}
@@ -1299,21 +1291,19 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		}
 	}
 
-	if (ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()) && m_map_dwEtcItemDropProb.contains(ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle())))
-		add(ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()), 1);
+	if (ecs::PlayerRuntime::GetMobDropItemVnum(chr) && m_map_dwEtcItemDropProb.contains(ecs::PlayerRuntime::GetMobDropItemVnum(chr)))
+		add(ecs::PlayerRuntime::GetMobDropItemVnum(chr), 1);
 
 	if (isStone)
 	{
-		add(CombatSystem::GetDropMetinStoneVnum(pkChr->GetEntityHandle()), 1);
+		add(CombatSystem::GetDropMetinStoneVnum(chr), 1);
 	}
 
 	return !items.empty();
 }
 #endif
-bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item)
+bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::vector<entt::entity>& vec_item)
 {
-	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
-	const entt::entity killer = pkKiller ? pkKiller->GetEntityHandle() : entt::null;
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9d
 	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(ecs::PlayerRuntime::GetRaceNum(chr));
 	if (!pGroup || pGroup->IsEmpty())
@@ -1327,7 +1317,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	int iLevel = ecs::PointSystem::GetLevel(killer);
 
 	int iDeltaPercent, iRandRange;
-	if (!GetDropPct(pkChr, pkKiller, iDeltaPercent, iRandRange))
+	if (!GetDropPct(chr, killer, iDeltaPercent, iRandRange))
 		return false;
 
 	uint8_t bRank = ecs::PlayerRuntime::GetMobRank(chr);
@@ -1358,7 +1348,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 			if (table->bType == ITEM_POLYMORPH)
 			{
-				if (c_rInfo.m_dwVnum == ecs::PlayerRuntime::GetPolymorphItemVnum(pkChr->GetEntityHandle()))
+				if (c_rInfo.m_dwVnum == ecs::PlayerRuntime::GetPolymorphItemVnum(chr))
 				{
 					item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
@@ -1377,7 +1367,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	{
 		if (ecs::PlayerRuntime::GetRaceNum(chr) == 4815)
 		{
-			LOG_ERROR("VIKING DROP CHECK: killer_lv={} mob_lv={} delta={} rand={}", pkKiller ? ecs::PointSystem::GetLevel(killer) : 0, ecs::PointSystem::GetLevel(chr), iDeltaPercent, iRandRange);
+			LOG_ERROR("VIKING DROP CHECK: killer_lv={} mob_lv={} delta={} rand={}", ecs::IsCharacter(killer) ? ecs::PointSystem::GetLevel(killer) : 0, ecs::PointSystem::GetLevel(chr), iDeltaPercent, iRandRange);
 		}
 		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
 
@@ -1398,7 +1388,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					{
 						if (ItemSystem::GetItemType(item) == ITEM_POLYMORPH)
 						{
-							if (ItemSystem::GetItemVnum(item) == ecs::PlayerRuntime::GetPolymorphItemVnum(pkChr->GetEntityHandle()))
+							if (ItemSystem::GetItemVnum(item) == ecs::PlayerRuntime::GetPolymorphItemVnum(chr))
 							{
 								ItemSystem::SetItemSocket(item, 0, ecs::PlayerRuntime::GetRaceNum(chr));
 							}
@@ -1492,9 +1482,9 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	}
 
 	// ÀâÅÛ
-	if (ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()))
+	if (ecs::PlayerRuntime::GetMobDropItemVnum(chr))
 	{
-		auto it = m_map_dwEtcItemDropProb.find(ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()));
+		auto it = m_map_dwEtcItemDropProb.find(ecs::PlayerRuntime::GetMobDropItemVnum(chr));
 
 		if (it != m_map_dwEtcItemDropProb.end())
 		{
@@ -1502,7 +1492,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 			if (iPercent >= number(1, iRandRange))
 			{
-				item = CreateItem(ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()), 1, 0, true);
+				item = CreateItem(ecs::PlayerRuntime::GetMobDropItemVnum(chr), 1, 0, true);
 				if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
 			}
 		}
@@ -1510,16 +1500,16 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 	if (ecs::PlayerRuntime::IsStone(chr))
 	{
-		if (CombatSystem::GetDropMetinStoneVnum(pkChr->GetEntityHandle()))
+		if (CombatSystem::GetDropMetinStoneVnum(chr))
 		{
 			//if (ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) - ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) >= 30)
 			//{
 			//	return false;
 			//}
-			int iPercent = (CombatSystem::GetDropMetinStonePct(pkChr->GetEntityHandle()) * iDeltaPercent) * 400;
+			int iPercent = (CombatSystem::GetDropMetinStonePct(chr) * iDeltaPercent) * 400;
 			if (iPercent >= number(1, iRandRange))
 			{
-				item = CreateItem(CombatSystem::GetDropMetinStoneVnum(pkChr->GetEntityHandle()), 1, 0, true);
+				item = CreateItem(CombatSystem::GetDropMetinStoneVnum(chr), 1, 0, true);
 				if (ItemSystem::IsValidItem(item))
 					vec_item.push_back(item);
 			}
