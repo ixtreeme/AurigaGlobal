@@ -445,11 +445,7 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
     if (!IsValid(e))
         return false;
 
-    // SetMapIndex, RemoveEntity, UpdateSectree and ComputePoints have no
-    // entity form yet; each is its own migration and they share this one
-    // resolve.
-    LPCHARACTER self = ecs::LegacyCharOf(e);
-    if (!self)
+    if (!ecs::IsCharacter(e))
         return false;
 
     z = ResolveShowHeight(z, ecs::PlayerRuntime::GetZ(e));
@@ -495,8 +491,6 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
     }
 #endif
 
-    self->SetMapIndex(lMapIndex);
-
     bool bChangeTree = false;
 
     if (!ecs::PlayerRuntime::GetSectree(e) || ecs::PlayerRuntime::GetSectree(e) != sectree)
@@ -506,7 +500,7 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
     {
         if (ecs::PlayerRuntime::GetSectree(e))
         {
-            ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(self);
+            ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(e);
             const entt::entity oldEntity = e;
             if (oldEntity != entt::null && g_registry.valid(oldEntity))
             {
@@ -583,7 +577,7 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
 
-        self->UpdateSectree();
+        ecs::VisibilitySystem::Refresh(g_registry, e);
 
         // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-1:
         // Explicit spawn-shaped PositionChangedEvent for character entry to

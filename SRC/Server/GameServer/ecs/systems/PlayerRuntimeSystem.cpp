@@ -3399,7 +3399,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     ecs::PointSystem::SetInventoryExpansion(GetEntityHandle(), t->envanter);
 #endif
 
-    SetMapIndex(t->lMapIndex);
     // Phase C.1: legacy m_pos write removed - ECS Position via
     // SyncPositionComponents is the sole source.
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), t->lMapIndex, t->x, t->y, t->z);

@@ -784,7 +784,6 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(sourceEntity));
             clone->SetXYZ(gx, gy, 0);
-            clone->SetMapIndex(mapIndex);
 
             // kinézet (partok)
             ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(sourceEntity, PART_MAIN));
@@ -1340,7 +1339,6 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
 
         ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(source));
         clone->SetXYZ(gx, gy, 0);
-        clone->SetMapIndex(mapIndex);
 
         // look/parts
         ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(source, PART_MAIN));
