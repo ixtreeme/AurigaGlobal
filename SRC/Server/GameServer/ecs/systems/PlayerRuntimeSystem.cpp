@@ -2452,10 +2452,7 @@ bool UpdateMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBatt
 	if (e == entt::null || !g_registry.valid(e))
 		return false;
 
-	// BattlePassRewardMission still takes the character; that is its own
-	// migration.
-	LPCHARACTER self = LegacyCharOf(e);
-	if (!self)
+	if (!ecs::IsCharacter(e))
 		return false;
 
     if (!ecs::PlayerRuntime::IsBattlePassLoaded(e))
@@ -2493,7 +2490,7 @@ bool UpdateMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBatt
                     ecs::PlayerRuntime::CancelCharEvent(e,
                         ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
 #endif
-                CBattlePass::instance().BattlePassRewardMission(self, dwMissionID, dwBattlePassID);
+                CBattlePass::instance().BattlePassRewardMission(e, dwMissionID, dwBattlePassID);
             }
 
             dwSaveProgress = pkMission->dwExtraInfo;
@@ -2518,7 +2515,7 @@ bool UpdateMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBatt
                 ecs::PlayerRuntime::CancelCharEvent(e,
                         ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
 #endif
-            CBattlePass::instance().BattlePassRewardMission(self, dwMissionID, dwBattlePassID);
+            CBattlePass::instance().BattlePassRewardMission(e, dwMissionID, dwBattlePassID);
 
             dwSaveProgress = dwTotalValue;
         }

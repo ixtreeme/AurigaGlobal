@@ -1727,7 +1727,6 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 #ifdef ENABLE_BATTLE_PASS
 int CInputMain::BattlePass(entt::entity character, const char* data, size_t uiBytes)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate BattlePass handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -1745,11 +1744,11 @@ int CInputMain::BattlePass(entt::entity character, const char* data, size_t uiBy
 	switch(p->bAction)
 	{
 		case 1:
-			CBattlePass::instance().BattlePassRequestOpen(ch);
+			CBattlePass::instance().BattlePassRequestOpen(character);
 			break;
 
 		case 2:
-			CBattlePass::instance().BattlePassRequestReward(ch);
+			CBattlePass::instance().BattlePassRequestReward(character);
 			break;
 
 		case 3:

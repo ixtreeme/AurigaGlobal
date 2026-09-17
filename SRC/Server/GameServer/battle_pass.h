@@ -28,12 +28,12 @@ class CBattlePass : public singleton<CBattlePass>
 		
 		void GetMissionSearchName(uint8_t bMissionType, std::string*, std::string*);
 		
-		void BattlePassRequestOpen(LPCHARACTER pkChar);
+		void BattlePassRequestOpen(entt::entity charEntity);
 		bool BattlePassMissionGetInfo(uint8_t bBattlePassId, uint8_t bMissionType, uint32_t* dwFirstInfo, uint32_t* dwSecondInfo);
-		void BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionType, uint32_t bBattlePassId);
+		void BattlePassRewardMission(entt::entity charEntity, uint32_t bMissionType, uint32_t bBattlePassId);
 
-		void BattlePassRequestReward(LPCHARACTER pkChar);
-		void BattlePassReward(LPCHARACTER pkChar);
+		void BattlePassRequestReward(entt::entity charEntity);
+		void BattlePassReward(entt::entity charEntity);
 		
 #ifdef ENABLE_BATTLE_PASS_SECURITY_KILL
 		bool IsEligibleForPlayerKill(uint32_t dwKillerID, uint32_t dwPlayerID);

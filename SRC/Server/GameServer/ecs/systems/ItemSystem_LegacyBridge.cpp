@@ -5909,7 +5909,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				ecs::PlayerRuntime::ApplyBattlePassBoostRecalc(e, bBattlePassId);
 
 				 
-				CBattlePass::instance().BattlePassRequestOpen(self);
+				CBattlePass::instance().BattlePassRequestOpen(e);
 
 				ConsumeItemEcs(itemEntity);
 			}
