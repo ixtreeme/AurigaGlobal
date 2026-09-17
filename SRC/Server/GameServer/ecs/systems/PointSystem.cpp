@@ -1302,7 +1302,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_VOICE:
 	case POINT_EMPIRE_POINT:
-		//"CHARACTER::PointChange: %s: point cannot be changed. use SetPoint instead (type: %d)", ecs::PlayerRuntime::GetName(e).data(), type);
+		//"PointSystem::Change: %s: point cannot be changed. use SetPoint instead (type: %d)", ecs::PlayerRuntime::GetName(e).data(), type);
 		val = GetReal(e, type);
 		break;
 
@@ -1329,7 +1329,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	break;
 
 	default:
-		LOG_ERROR("CHARACTER::PointChange: {}: unknown point change type {}", ecs::PlayerRuntime::GetName(e).data(), type);
+		LOG_ERROR("PointSystem::Change: {}: unknown point change type {}", ecs::PlayerRuntime::GetName(e).data(), type);
 		return;
 	}
 
@@ -1371,24 +1371,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			ecs::ViewSystem::PacketView(e, &pack, sizeof(pack));
 	}
 }
-
-} // namespace ecs::PointSystem
-
-void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBroadcast
-#ifdef __ENABLE_BLOCK_EXP__
-	, bool bForceExp
-#endif
-)
-{
-	ecs::PointSystem::Change(GetEntityHandle(), type, amount, bAmount, bBroadcast
-#ifdef __ENABLE_BLOCK_EXP__
-		, bForceExp
-#endif
-	);
-}
-
-
-namespace ecs::PointSystem {
 
 int GetPolymorphPoint(entt::entity e, uint8_t type)
 {

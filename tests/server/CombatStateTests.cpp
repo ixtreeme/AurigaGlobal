@@ -426,7 +426,6 @@ uint32_t ecs::PlayerRuntime::GetExp(entt::entity) { UnexpectedService(__func__);
 void ecs::PlayerRuntime::SetExp(entt::entity,uint32_t) { UnexpectedService(__func__); }
 void AffectSystem::ClearAffect(entt::entity,bool) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetMonsterDrainSPPoint(entt::entity) { UnexpectedService(__func__); }
-void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SetRotationToXY(entt::entity, int, int) { UnexpectedService(__func__); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { UnexpectedService(__func__); }
 bool ecs::MovementSystem::CanMove(entt::entity) { return canMove; }

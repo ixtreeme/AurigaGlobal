@@ -831,7 +831,7 @@ bool CHARACTER::DropGold(int64_t gold)
 		if (ItemSystem::PlaceItemOnGround(item, GetMapIndex(), pos, goldDestroySeconds))
 		{
 			//Motion(MOTION_PICKUP);
-			PointChange(POINT_GOLD, -gold, true);
+			ecs::PointSystem::Change(GetEntityHandle(), POINT_GOLD, -gold, true);
 
 			if (gold > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
 				LogManager::instance().CharLog(GetEntityHandle(), gold, "DROP_GOLD", "");
@@ -2036,7 +2036,7 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 		ItemSystem::RemoveSpecifyItemEcs(GetEntityHandle(), 72320, needKeys);
 
 		ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), stageName.c_str(), stage + 1);
-		PointChange(POINT_EXTRA_INVENTORY1 + category, stage + 1);
+		ecs::PointSystem::Change(GetEntityHandle(), POINT_EXTRA_INVENTORY1 + category, stage + 1);
 		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #ifdef ENABLE_SPAM_CHECK
 		SetLastUnlock();

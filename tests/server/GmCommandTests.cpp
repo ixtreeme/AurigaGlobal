@@ -961,7 +961,6 @@ int ecs::PointSystem::GetGaya(entt::entity) { Unexpected(); }
 #endif
 unsigned int CombatSystem::GetMobDamageMin(entt::entity) { Unexpected(); }
 unsigned int CombatSystem::GetMobDamageMax(entt::entity) { Unexpected(); }
-void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { Unexpected(); }
 void CombatSystem::CreateFly(entt::entity, unsigned char, entt::entity) { Unexpected(); }
 void CombatSystem::SetUndying(entt::entity, bool) {}
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { Unexpected(); }

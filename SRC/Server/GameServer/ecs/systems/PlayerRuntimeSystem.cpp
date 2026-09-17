@@ -2787,7 +2787,7 @@ bool CHARACTER::Update_Inven()
     int needkey = NeedKeys[expansion];
     if (CountSpecifyItem(key2) >= needkey) {
         RemoveSpecifyItem(key2, needkey);
-        PointChange(POINT_INVEN, 1, false);
+        ecs::PointSystem::Change(GetEntityHandle(), POINT_INVEN, 1, false);
         ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "refreshinven");
         NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 #ifdef ENABLE_SPAM_CHECK
@@ -3573,7 +3573,7 @@ void CHARACTER::DestroyPvP()
         {
             if (moneyBet > 0)
             {
-                PointChange(POINT_GOLD, moneyBet, true);
+                ecs::PointSystem::Change(GetEntityHandle(), POINT_GOLD, moneyBet, true);
             }
 
             char szBuf[CHAT_MAX_LEN + 1];
