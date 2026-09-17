@@ -535,7 +535,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	if (ItemSystem::IsItemLocked(item) || ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemEquipped(item))
 		return false;
 
-	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))->IsRunning() == true)
 		return false;
 
 	if (IS_SET(ItemSystem::GetItemAntiFlag(item), ITEM_ANTIFLAG_DROP | ITEM_ANTIFLAG_GIVE))
@@ -996,7 +996,7 @@ bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
 		return false;
 
 	// @fixme150 BEGIN
-	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 740, "");
@@ -1167,7 +1167,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 	if (true == ItemSystem::IsItemLocked(item))
 		return false;
 
-	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))->IsRunning() == true)
 		return false;
 
 	if ((ItemSystem::GetItemVnum(item) >= 55701) && (ItemSystem::GetItemVnum(item) <= 55711)) {

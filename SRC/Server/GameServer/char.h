@@ -593,7 +593,6 @@ public:
 	void			SetLastTargetInfoPulse(uint32_t pulse) { dwLastTargetInfoPulse = pulse; }
 #endif
 public:
-	uint32_t			GetPlayerID() const { return m_dwPlayerID; }
 public:
 #ifdef ENABLE_FAKE_SHOP_HEADER
 #endif
@@ -691,7 +690,6 @@ public:
 
 
 protected:
-	uint32_t			m_dwPlayerID;
 	uint8_t			m_bCharType;
 #ifdef ENABLE_EVENT_MANAGER
 #endif

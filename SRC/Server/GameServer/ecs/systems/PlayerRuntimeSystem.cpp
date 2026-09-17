@@ -2202,7 +2202,7 @@ uint32_t CHARACTER::GetAID() const
     uint32_t dwAID = 0;
 
     snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player_index%s WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
-        get_table_postfix(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), ecs::PlayerRuntime::GetEmpire(GetEntityHandle()));
+        get_table_postfix(), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetEmpire(GetEntityHandle()));
 
     std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
     if (msg->Get()->uiNumRows == 0)
@@ -3329,7 +3329,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     m_bCharType = CHAR_TYPE_PC;
 
-    m_dwPlayerID = t->id;
 
     if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle())) {
         combat->alignment = std::min<uint32_t>(t->lAlignment, CombatSystem::MAX_ALIGNMENT);
@@ -3447,7 +3446,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) != GM_PLAYER)
     {
         LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()), "GM_LOGIN", "");
-        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(ecs::PlayerRuntime::GetGMLevel(GetEntityHandle())), GetName(), GetPlayerID(), GetX(), GetY());
+        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(ecs::PlayerRuntime::GetGMLevel(GetEntityHandle())), GetName(), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), GetX(), GetY());
     }
 
 #ifdef __PET_SYSTEM__
@@ -3855,7 +3854,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
-    m_dwPlayerID = 0;
 #ifdef __SEND_TARGET_INFO__
     dwLastTargetInfoPulse = 0;
 #endif

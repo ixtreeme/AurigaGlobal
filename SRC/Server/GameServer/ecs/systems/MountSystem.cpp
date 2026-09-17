@@ -91,7 +91,7 @@ void CHARACTER::QueryMountInventory()
         return;
 
     DBManager::instance().ReturnQuery(QID_MOUNT_INVENTORY_LOAD,
-        GetPlayerID(),
+        ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()),
         nullptr,
         "SELECT id, slot, vnum, count, socket0, socket1, socket2, "
         "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
