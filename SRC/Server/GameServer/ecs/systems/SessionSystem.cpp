@@ -683,8 +683,8 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    // DestroyPvP and CAuction::RemoveGuest take the character; each is its own
-    // migration and they share this one resolve.
+    // CAuction::RemoveGuest takes the character; the offline shop is its own
+    // rewrite.
     LPCHARACTER self = ecs::LegacyCharOf(e);
     if (!self)
         return;
@@ -747,7 +747,6 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     offlineshop::GetManager().RemoveSafeboxFromCache(ecs::PlayerRuntime::GetPlayerID(e));
     offlineshop::GetManager().RemoveGuestFromShops(e);
 
-    // CAuction::RemoveGuest takes the character; that is its own migration.
     if (auto* auctionGuest = ecs::OfflineShopSystem::GetAuctionGuest(e))
         auctionGuest->RemoveGuest(self);
 
@@ -764,7 +763,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     quest::CQuestManager::instance().LogoutPC(e);
 
 #ifdef ENABLE_PVP_ADVANCED
-    self->DestroyPvP();
+    ecs::PlayerRuntime::DestroyPvP(e);
 #endif
 
     if (ecs::SocialSystem::GetParty(e))

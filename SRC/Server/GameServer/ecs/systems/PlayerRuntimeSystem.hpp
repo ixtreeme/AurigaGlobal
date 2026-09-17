@@ -221,6 +221,10 @@ bool IsObserverMode(entt::entity e);
 void SetObserverMode(entt::entity e, bool flag);
 // Resends the character to itself and to everyone who can see it, in place.
 void RestartAtSamePos(entt::entity e);
+#ifdef ENABLE_PVP_ADVANCED
+// On logout: refunds an open duel bet and clears the duel flags.
+void DestroyPvP(entt::entity e);
+#endif
 // The last /gotoxy and savepoint pulses; the Set forms stamp the current pulse.
 int GetGoToXYTime(entt::entity e);
 void SetGoToXYTime(entt::entity e);

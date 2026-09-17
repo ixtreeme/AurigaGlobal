@@ -806,10 +806,7 @@ void CheckBiologistReward(entt::entity e) {
 // The per-tick affect work: stamina and the auto-recall.
 bool UpdateAffect(entt::entity e)
 {
-	// AutoRecallProcess, GetStopTime have no entity form yet;
-	// each is its own migration and they share this one resolve.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
+	if (!ecs::IsCharacter(e))
 		return false;
 
 #ifdef ENABLE_BUG_FIXES
@@ -871,7 +868,7 @@ bool UpdateAffect(entt::entity e)
 	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_SP_RECOVERY2);
 #endif
 #ifdef ENABLE_RECALL
-	self->AutoRecallProcess();
+	AffectSystem::AutoRecallProcess(e);
 #endif
 
 	// ���׹̳� ȸ��

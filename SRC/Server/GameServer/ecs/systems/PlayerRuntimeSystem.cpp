@@ -3640,29 +3640,29 @@ void ecs::MovementSystem::OnMove(entt::entity e, bool bIsAttack)
     // END_OF_MINING
 }
 
-void CHARACTER::DestroyPvP()
+void ecs::PlayerRuntime::DestroyPvP(entt::entity e)
 {
-    if (GetDesc() != nullptr)
+    if (ecs::PlayerRuntime::GetDesc(e) != nullptr)
     {
         const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
-        int moneyBet = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), szTableStaticPvP[8]);
-        int isDuel = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), szTableStaticPvP[9]);
+        int moneyBet = ecs::PlayerRuntime::GetQuestFlag(e, szTableStaticPvP[8]);
+        int isDuel = ecs::PlayerRuntime::GetQuestFlag(e, szTableStaticPvP[9]);
 
         if (isDuel != 0)
         {
             if (moneyBet > 0)
             {
-                ecs::PointSystem::Change(GetEntityHandle(), POINT_GOLD, moneyBet, true);
+                ecs::PointSystem::Change(e, POINT_GOLD, moneyBet, true);
             }
 
             char szBuf[CHAT_MAX_LEN + 1];
             snprintf(szBuf, sizeof(szBuf), "BINARY_Duel_Delete");
-            ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, szBuf);
+            ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, szBuf);
 
             for (size_t i = 0; i < _countof(szTableStaticPvP); i++)
             {
-                ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), szTableStaticPvP[i], 0);
+                ecs::PlayerRuntime::SetQuestFlag(e, szTableStaticPvP[i], 0);
             }
         }
     }

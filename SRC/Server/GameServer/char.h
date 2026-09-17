@@ -863,9 +863,6 @@ public:
 public:
 
 
-#ifdef ENABLE_PVP_ADVANCED
-	void			DestroyPvP();
-#endif
 
 protected:
 
@@ -1263,9 +1260,6 @@ private:
 public:
 #endif
 public:
-#ifdef ENABLE_RECALL
-	void AutoRecallProcess();
-#endif
 
 public:
 

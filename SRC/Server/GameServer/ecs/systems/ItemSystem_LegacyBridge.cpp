@@ -1987,56 +1987,56 @@ bool CHARACTER::CanDoCube() const
 }
 
 #ifdef ENABLE_RECALL
-void CHARACTER::AutoRecallProcess()
+void AffectSystem::AutoRecallProcess(entt::entity e)
 {
-	if (!IsPC())
+	if (ecs::PlayerRuntime::GetDesc(e) == nullptr)
 		return;
 
 #ifdef __PET_SYSTEM__
 	{
-		const CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_RECALL1);
+		const CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_RECALL1);
 		if (pAffect) {
-			const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
+			const entt::entity pItem = ItemSystem::FindItemByID(e, pAffect->dwFlag);
 			if (pItem != entt::null) {
 				if (ItemSystem::GetItemSocket(pItem, 2) == false) {
-					CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(GetEntityHandle());
+					CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(e);
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
 							CPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
 							if (!pPet)
-								AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
+								AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 						}
 					}
 					else
-						AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
+						AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 				}
 			}
 			else
-				AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
+				AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 		}
 	}
 #endif
 #ifdef __NEWPET_SYSTEM__
 	{
-		const CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_RECALL2);
+		const CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_RECALL2);
 		if (pAffect) {
-			const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
+			const entt::entity pItem = ItemSystem::FindItemByID(e, pAffect->dwFlag);
 			if (pItem != entt::null) {
 				if (ItemSystem::GetItemSocket(pItem, 0) == false) {
-					CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(GetEntityHandle());
+					CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(e);
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
 							CNewPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 0), pItem, "", false);
 							if (!pPet)
-								AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
+								AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 						}
 					}
 					else
-						AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
+						AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 				}
 			}
 			else
-				AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
+				AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 		}
 	}
 #endif
