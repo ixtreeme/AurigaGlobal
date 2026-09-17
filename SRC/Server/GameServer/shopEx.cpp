@@ -129,10 +129,7 @@ bool CShopEx::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire
 
 int64_t CShopEx::Buy(entt::entity ch, uint8_t pos)
 {
-	// Removing the coin, finding a free slot and saving are still CHARACTER
-	// work; the inventory is its own migration.
-	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
-	if (!inventory)
+	if (!ecs::IsCharacter(ch))
 		return SHOP_SUBHEADER_GC_END;
 	uint8_t tabIdx = pos / SHOP_HOST_ITEM_MAX_NUM;
 	uint8_t slotPos = pos % SHOP_HOST_ITEM_MAX_NUM;
@@ -223,7 +220,7 @@ int64_t CShopEx::Buy(entt::entity ch, uint8_t pos)
 		ecs::PointSystem::Change(ch, POINT_GOLD, -dwPrice, false);
 		break;
 	case SHOP_COIN_TYPE_SECONDARY_COIN:
-		inventory->RemoveSpecifyTypeItem(ITEM_SECONDARY_COIN, dwPrice);
+		ItemSystem::RemoveSpecifyTypeItem(ch, ITEM_SECONDARY_COIN, dwPrice);
 		break;
 	}
 

@@ -569,7 +569,7 @@ bool CArenaManager::OnDead(entt::entity,entt::entity) { UnexpectedService(__func
 void ExchangeSystem::Cancel(entt::entity) { UnexpectedService(__func__); }
 void CShopManager::StopShopping(entt::entity) { UnexpectedService(__func__); }
 bool CBattleArena::IsBattleArenaMap(int) { UnexpectedService(__func__); }
-void CGuildManager::Kill(CHARACTER *,CHARACTER *) { UnexpectedService(__func__); }
+void CGuildManager::Kill(entt::entity,entt::entity) { UnexpectedService(__func__); }
 void quest::CQuestManager::Kill(unsigned int,unsigned int) { UnexpectedService(__func__); }
 void quest::CQuestManager::Die(unsigned int,unsigned int) { UnexpectedService(__func__); }
 void quest::CQuestManager::QuestDamage(unsigned int,unsigned int) { UnexpectedService(__func__); }

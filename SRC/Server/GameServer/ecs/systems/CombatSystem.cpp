@@ -2328,13 +2328,8 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 			ecs::PlayerRuntime::SetQuestNPC(killer, victim);
 			quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(killer), quest::QUEST_NO_NPC);
-			// Guild kill bookkeeping is still pointer-shaped; CGuildManager is its
-			// own migration. One resolve, named.
-			if (LPCHARACTER legacyKiller = ecs::LegacyCharOf(killer))
-			{
-				if (LPCHARACTER legacyVictim = ecs::LegacyCharOf(victim))
-					CGuildManager::instance().Kill(legacyKiller, legacyVictim);
-			}
+			if (ecs::IsCharacter(killer) && ecs::IsCharacter(victim))
+				CGuildManager::instance().Kill(killer, victim);
 		}
 	}
 

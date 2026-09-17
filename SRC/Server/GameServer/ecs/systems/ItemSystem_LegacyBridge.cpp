@@ -958,18 +958,18 @@ void NotifyRefineFail(entt::entity ch, entt::entity item, const char* way, int s
 }
 
 
-void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
+void ItemSystem::RemoveSpecifyTypeItem(entt::entity e, uint8_t type, int count)
 {
 	if (0 == count)
 		return;
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
+	for (int i = 0; i < InventorySystem::GetInventorySize(e); ++i)
 #else
 	for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
 	{
-		const entt::entity item = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
+		const entt::entity item = ItemSystem::GetInventoryItem(e, i);
 		if (item == entt::null)
 			continue;
 
@@ -977,7 +977,7 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 			continue;
 
 
-		if (ecs::SocialSystem::GetMyShop(GetEntityHandle()) && ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(ItemSystem::GetItemID(item)))
+		if (ecs::SocialSystem::GetMyShop(e) && ecs::SocialSystem::GetMyShop(e)->IsSellingItem(ItemSystem::GetItemID(item)))
 			continue;
 
 		const int itemCount = ItemSystem::GetItemCount(item);

@@ -831,7 +831,6 @@ public:
 
 
 
-	void			RemoveSpecifyTypeItem(uint8_t type, int count = 1);
 
 
 	// CHECK_UNIQUE_GROUP

@@ -69,7 +69,7 @@ class CGuildManager : public singleton<CGuildManager>
 
 		void		StopAllGuildWar();
 
-		void		Kill(LPCHARACTER killer, LPCHARACTER victim);
+		void		Kill(entt::entity killerEntity, entt::entity victimEntity);
 
 		int		GetRank(CGuild* g);
 		//void		GetHighRankString(uint32_t dwMyGuild, char * buffer);

@@ -887,10 +887,8 @@ void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iB
 	LOG_INFO("SendGuildWarScore {} {} {}", dwGuild, dwGuildOpp, iDelta);
 }
 
-void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
+void CGuildManager::Kill(entt::entity killerEntity, entt::entity victimEntity)
 {
-	const entt::entity killerEntity = killer ? killer->GetEntityHandle() : entt::null;
-	const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
 	if (!ecs::PlayerRuntime::IsPC(killerEntity))
 		return;
 
