@@ -1812,17 +1812,18 @@ EVENTFUNC(save_event)
 }
 
 
-void CHARACTER::SetNowWalking(bool bWalkFlag)
+void ecs::MovementSystem::SetWalkingWithMonsterLog(entt::entity e, bool bWalkFlag)
 {
-    if (IsNowWalking() != bWalkFlag)
+    const auto* movement = IsValid(e) ? g_registry.try_get<ecs::MovementState>(e) : nullptr;
+    if ((movement && movement->isNowWalking) != bWalkFlag)
     {
-        ecs::MovementSystem::SetNowWalking(GetEntityHandle(), bWalkFlag);
-        if (ecs::PlayerRuntime::GetCharType(GetEntityHandle()) != CHAR_TYPE_PC)
+        ecs::MovementSystem::SetNowWalking(e, bWalkFlag);
+        if (ecs::PlayerRuntime::GetCharType(e) != CHAR_TYPE_PC)
         {
             if (bWalkFlag)
-                MonsterLog("�E�´U");
+                ecs::PlayerRuntime::MonsterLog(e, "�E�´U");
             else
-                MonsterLog("�ڴU");
+                ecs::PlayerRuntime::MonsterLog(e, "�ڴU");
         }
     }
 }

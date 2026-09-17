@@ -704,7 +704,6 @@ public:
 	// Bodies in MovementSystem.cpp.
 	bool			IsWalking() const;
 	bool			IsNowWalking() const;
-	void			SetNowWalking(bool bWalkFlag);
 
 
 
@@ -1083,7 +1082,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Detailed Log
 public:
-	void				MonsterLog(const char* format, ...);
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Empire

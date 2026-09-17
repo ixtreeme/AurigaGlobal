@@ -251,32 +251,6 @@ namespace
         );
     }
 
-    void SendAdditionalInfo(LPCHARACTER viewer, LPCHARACTER target, const char* name, const uint16_t parts[CHR_EQUIPPART_NUM])
-    {
-        const entt::entity viewerEntity = viewer ? viewer->GetEntityHandle() : entt::null;
-        const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
-        if (!viewer || !ecs::PlayerRuntime::GetDesc(viewerEntity) || !target)
-            return;
-
-        TPacketGCCharacterAdditionalInfo p;
-        memset(&p, 0, sizeof(p));
-        p.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
-			p.dwVID = ecs::PlayerRuntime::GetPacketVID(targetEntity);
-        strlcpy(p.name, name ? name : ecs::PlayerRuntime::GetName(targetEntity).data(), sizeof(p.name));
-        for (int i = 0; i < CHR_EQUIPPART_NUM; ++i)
-            p.awPart[i] = parts ? parts[i] : 0;
-
-        ecs::PlayerRuntime::GetDesc(viewerEntity)->Packet(&p, sizeof(p));
-    }
-
-    void SendAdditionalInfoToMap(int32_t mapIndex, LPCHARACTER target, const char* name, const uint16_t parts[CHR_EQUIPPART_NUM])
-    {
-        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            SendAdditionalInfo(pkPc, target, name, parts);
-            });
-    }
-
     // ---------------- LostCastle clone helpers (anim + move + timed hit) ----------------
     inline int64_t ClampMul10(int64_t v)
     {
@@ -287,23 +261,23 @@ namespace
         return v;
     }
 
-    inline void MulPoint10(LPCHARACTER ch, uint8_t pt)
+    inline void MulPoint10(entt::entity ch, uint8_t pt)
     {
-        if (!ch)
+        if (!ecs::IsCharacter(ch))
             return;
-        const int64_t v = ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), pt);
+        const int64_t v = ecs::PointSystem::Get(ch, pt);
         const int64_t nv = ClampMul10(v * STR_MULTIPLE);
-        ecs::PointSystem::SetReal(ch->GetEntityHandle(), pt, nv);
-        ecs::PointSystem::Set(ch->GetEntityHandle(), pt, nv);
+        ecs::PointSystem::SetReal(ch, pt, nv);
+        ecs::PointSystem::Set(ch, pt, nv);
     }
 
-    inline uint32_t CalcMeleeHitDelayMs(LPCHARACTER ch, uint16_t motionIndex)
+    inline uint32_t CalcMeleeHitDelayMs(entt::entity ch, uint16_t motionIndex)
     {
-        if (!ch)
+        if (!ecs::IsCharacter(ch))
             return 220;
 
-        const uint32_t mode = ecs::MovementSystem::GetMotionMode(ch->GetEntityHandle());
-        const float durSec = CMotionManager::instance().GetMotionDuration(ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null)), MAKE_MOTION_KEY(mode, motionIndex));
+        const uint32_t mode = ecs::MovementSystem::GetMotionMode(ch);
+        const float durSec = CMotionManager::instance().GetMotionDuration(ecs::PlayerRuntime::GetRaceNum(ch), MAKE_MOTION_KEY(mode, motionIndex));
         uint32_t durMs = (durSec > 0.01f) ? (uint32_t)(durSec * 1000.0f) : 650;
 
         // Hit generally lands early-mid swing
@@ -313,13 +287,13 @@ namespace
         return hit;
     }
 
-    inline uint32_t CalcAttackIntervalMs(LPCHARACTER ch)
+    inline uint32_t CalcAttackIntervalMs(entt::entity ch)
     {
-        if (!ch)
+        if (!ecs::IsCharacter(ch))
             return 700;
 
         // ATT_SPEED is typically 0..200
-        const int as = ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_ATT_SPEED);
+        const int as = ecs::PointSystem::GetLimitPoint(ch, POINT_ATT_SPEED);
         int interval = 900 - as * 3;
         if (interval < 350) interval = 350;
         if (interval > 900) interval = 900;
@@ -327,20 +301,20 @@ namespace
     }
 
 
-    inline void CloneEquipWeaponFromSource(LPCHARACTER clone, LPCHARACTER source)
+    inline void CloneEquipWeaponFromSource(entt::entity clone, entt::entity source)
     {
-        if (!clone || !source)
+        if (!ecs::IsCharacter(clone) || !ecs::IsCharacter(source))
             return;
 
         // A legtobb PvP skill ellenorzi a WEAR_WEAPON-t (es a weapon tipust),
         // ezert a klonnak is legyen valodi fegyver itemje, nem csak vizualis PART.
         const entt::entity sourceWeapon = ItemSystem::GetWearItem(
-            ((source) ? (source)->GetEntityHandle() : entt::null), WEAR_WEAPON);
+            source, WEAR_WEAPON);
         if (!ItemSystem::IsValidItem(sourceWeapon))
             return;
 
         if (ItemSystem::IsValidItem(
-                ItemSystem::GetWearItem(((clone) ? (clone)->GetEntityHandle() : entt::null), WEAR_WEAPON)))
+                ItemSystem::GetWearItem(clone, WEAR_WEAPON)))
             return;
 
 		// RefineLevel a legtobb forrasban a vnum-bol szamolodik, igy eleg a megfelelo vnum-ot klonozni.
@@ -359,20 +333,19 @@ namespace
 		ItemSystem::CopyItemAttributesEcs(sourceWeapon, cloneWeapon);
 
         // Equip without inventory (direct wear)
-        InventorySystem::EquipTo(cloneWeapon, clone->GetEntityHandle(), WEAR_WEAPON);
+        InventorySystem::EquipTo(cloneWeapon, clone, WEAR_WEAPON);
     }
 
-    inline void LostCastleCloneStartMove(LPCHARACTER clone, int32_t tx, int32_t ty, uint32_t now)
+    inline void LostCastleCloneStartMove(entt::entity cloneEntity, int32_t tx, int32_t ty, uint32_t now)
     {
-        const entt::entity cloneEntity = clone ? clone->GetEntityHandle() : entt::null;
-        if (!clone)
+        if (!ecs::IsCharacter(cloneEntity))
             return;
 
         if (ecs::PlayerRuntime::GetX(cloneEntity) == tx && ecs::PlayerRuntime::GetY(cloneEntity) == ty)
             return;
 
         AISystem::StartStateMachine(cloneEntity, 1);
-        clone->SetNowWalking(false);
+        ecs::MovementSystem::SetWalkingWithMonsterLog(cloneEntity, false);
         ecs::MovementSystem::SetRotationToXY(cloneEntity, tx, ty);
         ecs::MovementSystem::Goto(cloneEntity, tx, ty);
 
@@ -380,11 +353,9 @@ namespace
         ecs::MovementSystem::SendMovePacket(cloneEntity, FUNC_MOVE, 0, tx, ty, ecs::MovementSystem::GetCurrentMoveDuration(cloneEntity), now);
     }
 
-    inline void LostCastleCloneBroadcastMelee(LPCHARACTER clone, LPCHARACTER target, uint8_t motionIndex, uint32_t now)
+    inline void LostCastleCloneBroadcastMelee(entt::entity cloneEntity, entt::entity targetEntity, uint8_t motionIndex, uint32_t now)
     {
-        const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
-        const entt::entity cloneEntity = clone ? clone->GetEntityHandle() : entt::null;
-        if (!clone || !target)
+        if (!ecs::IsCharacter(cloneEntity) || !ecs::IsCharacter(targetEntity))
             return;
 
         ecs::MovementSystem::SetRotationToXY(cloneEntity,
@@ -396,11 +367,9 @@ namespace
         ecs::MovementSystem::OnMove(cloneEntity, true);
     }
 
-    inline void LostCastleCloneBroadcastSkill(LPCHARACTER clone, LPCHARACTER target, uint8_t skillVnum, uint32_t now)
+    inline void LostCastleCloneBroadcastSkill(entt::entity cloneEntity, entt::entity targetEntity, uint8_t skillVnum, uint32_t now)
     {
-        const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
-        const entt::entity cloneEntity = clone ? clone->GetEntityHandle() : entt::null;
-        if (!clone || !target)
+        if (!ecs::IsCharacter(cloneEntity) || !ecs::IsCharacter(targetEntity))
             return;
 
         ecs::MovementSystem::SetRotationToXY(cloneEntity,
@@ -521,7 +490,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 m_clonePending.erase(vid);
                 m_cloneNextAction.erase(vid);
                 m_cloneOffset.erase(vid);
-                if (LPCHARACTER c = CHARACTER_MANAGER::instance().Find(vid))
+                if (const entt::entity c = CHARACTER_MANAGER::instance().FindEntity(vid); ecs::IsCharacter(c))
                     M2_DESTROY_CHARACTER(c);
             }
         }
@@ -699,13 +668,13 @@ void ClearClonesOnMap(int32_t mapIndex)
         const int32_t baseCellX = map->m_setting.iBaseX / 100;
         const int32_t baseCellY = map->m_setting.iBaseY / 100;
 
-        std::vector<LPCHARACTER> members;
+        std::vector<entt::entity> members;
         members.reserve(8);
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc); if (pkPc) members.push_back(pkPc); });
+            if (ecs::IsCharacter(pc)) members.push_back(pc); });
 
-        std::sort(members.begin(), members.end(), [](LPCHARACTER a, LPCHARACTER b) {
-            return ecs::PlayerRuntime::GetPlayerID(((a) ? (a)->GetEntityHandle() : entt::null)) < ecs::PlayerRuntime::GetPlayerID(((b) ? (b)->GetEntityHandle() : entt::null));
+        std::sort(members.begin(), members.end(), [](entt::entity a, entt::entity b) {
+            return ecs::PlayerRuntime::GetPlayerID(a) < ecs::PlayerRuntime::GetPlayerID(b);
         });
 
         if (members.empty())
@@ -721,13 +690,10 @@ void ClearClonesOnMap(int32_t mapIndex)
 
         for (size_t i = 0; i < members.size(); ++i)
         {
-            LPCHARACTER owner  = members[i];
-            const entt::entity ownerEntity = owner ? owner->GetEntityHandle() : entt::null;
+            const entt::entity ownerEntity = members[i];
+            const entt::entity sourceEntity = members[(i + 1) % members.size()];
 
-            LPCHARACTER source = members[(i + 1) % members.size()];
-            const entt::entity sourceEntity = source ? source->GetEntityHandle() : entt::null;
-
-            if (!owner || !source)
+            if (!ecs::IsCharacter(ownerEntity) || !ecs::IsCharacter(sourceEntity))
                 continue;
 
             // owner GLOBAL cell -> LOCAL cell (private map uses LOCAL in many APIs)
@@ -783,7 +749,6 @@ void ClearClonesOnMap(int32_t mapIndex)
             SkillSystem::SetSkillGroup(cloneEntity, SkillSystem::GetSkillGroup(sourceEntity));
 
             ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(sourceEntity));
-            clone->SetXYZ(gx, gy, 0);
 
             // kinézet (partok)
             ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(sourceEntity, PART_MAIN));
@@ -801,7 +766,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetPart(sourceEntity, PART_EFFECT_WEAPON));
 #endif
 
-            CloneEquipWeaponFromSource(clone, source);
+            CloneEquipWeaponFromSource(cloneEntity, sourceEntity);
 
             // erő: pontok másolása
             for (int p = 0; p < POINT_MAX_NUM; ++p)
@@ -817,16 +782,16 @@ void ClearClonesOnMap(int32_t mapIndex)
             ecs::PlayerRuntime::SetHP(cloneEntity, (int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
             ecs::PlayerRuntime::SetSP(cloneEntity, (int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
 
-            MulPoint10(clone, POINT_ST);
-            MulPoint10(clone, POINT_HT);
-            MulPoint10(clone, POINT_DX);
-            MulPoint10(clone, POINT_IQ);
-            MulPoint10(clone, POINT_ATT_GRADE);
-            MulPoint10(clone, POINT_DEF_GRADE);
-            MulPoint10(clone, POINT_MAGIC_ATT_GRADE);
-            MulPoint10(clone, POINT_MAGIC_DEF_GRADE);
-            MulPoint10(clone, POINT_WEAPON_MIN);
-            MulPoint10(clone, POINT_WEAPON_MAX);
+            MulPoint10(cloneEntity, POINT_ST);
+            MulPoint10(cloneEntity, POINT_HT);
+            MulPoint10(cloneEntity, POINT_DX);
+            MulPoint10(cloneEntity, POINT_IQ);
+            MulPoint10(cloneEntity, POINT_ATT_GRADE);
+            MulPoint10(cloneEntity, POINT_DEF_GRADE);
+            MulPoint10(cloneEntity, POINT_MAGIC_ATT_GRADE);
+            MulPoint10(cloneEntity, POINT_MAGIC_DEF_GRADE);
+            MulPoint10(cloneEntity, POINT_WEAPON_MIN);
+            MulPoint10(cloneEntity, POINT_WEAPON_MAX);
             CombatSystem::SetKillerMode(cloneEntity, true);
 
             // Skillek: csak tamado skillek legyenek az AI listaban (<=127 a skill motion packet miatt)
@@ -857,7 +822,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             if (!ecs::MovementSystem::Show(cloneEntity, mapIndex, gx, gy, 0))
             {
-                M2_DESTROY_CHARACTER(clone);
+                M2_DESTROY_CHARACTER(cloneEntity);
                 continue;
             }
 
@@ -1067,20 +1032,18 @@ void ClearClonesOnMap(int32_t mapIndex)
             if (it->second != mapIndex)
                 continue;
 
-            LPCHARACTER clone = CHARACTER_MANAGER::instance().Find(cloneVid);
-            const entt::entity cloneEntity = clone ? clone->GetEntityHandle() : entt::null;
+            const entt::entity cloneEntity = CHARACTER_MANAGER::instance().FindEntity(cloneVid);
 
-            if (!clone || CombatSystem::IsDead(cloneEntity))
+            if (!ecs::IsCharacter(cloneEntity) || CombatSystem::IsDead(cloneEntity))
                 continue;
 
             auto tgtIt = s_lc.m_cloneTargetVid.find(cloneVid);
             if (tgtIt == s_lc.m_cloneTargetVid.end())
                 continue;
 
-            LPCHARACTER target = CHARACTER_MANAGER::instance().Find(tgtIt->second);
-            const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
+            const entt::entity targetEntity = CHARACTER_MANAGER::instance().FindEntity(tgtIt->second);
 
-            if (!target || !ecs::PlayerRuntime::IsPC(targetEntity) || CombatSystem::IsDead(targetEntity))
+            if (!ecs::IsCharacter(targetEntity) || !ecs::PlayerRuntime::IsPC(targetEntity) || CombatSystem::IsDead(targetEntity))
             {
                 s_lc.m_clonePending.erase(cloneVid);
                 continue;
@@ -1129,7 +1092,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     else
                     {
                         didAction = CombatSystem::Attack(cloneEntity,
-                            target ? targetEntity : entt::null, 0);
+                            targetEntity, 0);
                     }
 
                     if (didAction)
@@ -1168,7 +1131,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 int32_t ty = ecs::PlayerRuntime::GetY(targetEntity) + (int32_t)((dy / len) * desired) + oy;
 
                 if (SECTREE_MANAGER::instance().IsMovablePosition(mapIndex, tx, ty))
-                    LostCastleCloneStartMove(clone, tx, ty, now);
+                    LostCastleCloneStartMove(cloneEntity, tx, ty, now);
 
                 continue;
             }
@@ -1201,7 +1164,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     ty = ecs::PlayerRuntime::GetY(targetEntity);
                 }
 
-                LostCastleCloneStartMove(clone, tx, ty, now);
+                LostCastleCloneStartMove(cloneEntity, tx, ty, now);
                 continue;
             }
 
@@ -1230,7 +1193,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             if (chosenSkill)
             {
-                LostCastleCloneBroadcastSkill(clone, target, chosenSkill, now);
+                LostCastleCloneBroadcastSkill(cloneEntity, targetEntity, chosenSkill, now);
 
                 SClonePending p;
 	p.targetVid = ecs::PlayerRuntime::GetPacketVID(targetEntity);
@@ -1246,17 +1209,17 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             // 5) Melee swing
             const uint8_t motion = (uint8_t)number(MOTION_NORMAL_ATTACK, MOTION_COMBO_ATTACK_8);
-            LostCastleCloneBroadcastMelee(clone, target, motion, now);
+            LostCastleCloneBroadcastMelee(cloneEntity, targetEntity, motion, now);
 
             SClonePending p;
 	p.targetVid = ecs::PlayerRuntime::GetPacketVID(targetEntity);
             p.attackType = 0;
             p.motionArg = motion;
             p.isSkill = false;
-            p.executeTime = now + CalcMeleeHitDelayMs(clone, motion);
+            p.executeTime = now + CalcMeleeHitDelayMs(cloneEntity, motion);
             s_lc.m_clonePending[cloneVid] = p;
 
-            nextTime = now + CalcAttackIntervalMs(clone);
+            nextTime = now + CalcAttackIntervalMs(cloneEntity);
         }
 
         int tick = PASSES_PER_SEC(1) / 10;
@@ -1286,8 +1249,7 @@ bool CLostCastleDungeon::IsLostCastleMap(int32_t mapIndex) const
 
 bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity target, int32_t count)
 {
-    LPCHARACTER pkSource = ecs::LegacyCharOf(source);
-    if (!pkSource || !ecs::PlayerRuntime::IsValid(target))
+    if (!ecs::IsCharacter(source) || !ecs::PlayerRuntime::IsValid(target))
         return false;
     if (!ecs::PlayerRuntime::IsPC(source) || !ecs::PlayerRuntime::IsPC(target))
         return false;
@@ -1338,7 +1300,6 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         SkillSystem::SetSkillGroup(cloneEntity, SkillSystem::GetSkillGroup(source));
 
         ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(source));
-        clone->SetXYZ(gx, gy, 0);
 
         // look/parts
         ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(source, PART_MAIN));
@@ -1356,7 +1317,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetPart(source, PART_EFFECT_WEAPON));
 #endif
 
-        CloneEquipWeaponFromSource(clone, pkSource);
+        CloneEquipWeaponFromSource(cloneEntity, source);
 
         // copy points (NO 10x here - real PvP test)
         for (int p = 0; p < POINT_MAX_NUM; ++p)
@@ -1399,7 +1360,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
 
         if (!ecs::MovementSystem::Show(cloneEntity, mapIndex, gx, gy, 0))
         {
-            M2_DESTROY_CHARACTER(clone);
+            M2_DESTROY_CHARACTER(cloneEntity);
             continue;
         }
 
@@ -1465,7 +1426,7 @@ void CLostCastleDungeon::PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t
         s_lc.m_cloneNextAction.erase(vid);
         s_lc.m_cloneOffset.erase(vid);
 
-        if (LPCHARACTER c = CHARACTER_MANAGER::instance().Find(vid))
+        if (const entt::entity c = CHARACTER_MANAGER::instance().FindEntity(vid); ecs::IsCharacter(c))
             M2_DESTROY_CHARACTER(c);
 
         // if we cleared some clones, and map has none left, stop AI

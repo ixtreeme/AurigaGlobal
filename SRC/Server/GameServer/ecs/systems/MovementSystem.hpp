@@ -71,6 +71,8 @@ void CalculateMoveDuration(entt::entity e);
 uint32_t GetCurrentMoveDuration(entt::entity e);
 // Changes walking state/timestamp and broadcasts the walk/run mode.
 void SetNowWalking(entt::entity e, bool walking);
+// SetNowWalking, plus the test_server monster log line for a non-player.
+void SetWalkingWithMonsterLog(entt::entity e, bool walking);
 void SetWalkingPreference(entt::entity e, bool walking);
 bool GetWalkingPreference(entt::entity e);
 

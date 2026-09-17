@@ -363,7 +363,6 @@ bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t flag) {
 }
 bool ItemSystem::IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
-void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }
 CDungeon::CDungeon(IdType, int32_t, int32_t) : m_map_Area(recoveryAreas) {}
 CDungeon::~CDungeon() = default;
 int CDungeon::GetFlag(std::string key) { Check(key == "floor", "unexpected recovery dungeon flag"); return m_map_Flag[key]; }

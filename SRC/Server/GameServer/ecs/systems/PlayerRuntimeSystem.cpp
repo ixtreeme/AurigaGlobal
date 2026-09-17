@@ -3538,50 +3538,6 @@ void ecs::PlayerRuntime::SetProto(entt::entity e, const CMob* pkMob)
     ecs::PlayerRuntime::StartOreDespawnEvent(e);
 }
 
-void CHARACTER::MonsterLog(const char* format, ...)
-{
-    if (!test_server)
-        return;
-
-    if (IsPC())
-        return;
-
-    char chatbuf[CHAT_MAX_LEN + 1];
-    int len = snprintf(chatbuf, sizeof(chatbuf), "%lu)", static_cast<unsigned long>(GetPacketVID()));
-
-    if (len < 0 || len >= (int)sizeof(chatbuf))
-        len = sizeof(chatbuf) - 1;
-
-    va_list args;
-
-    va_start(args, format);
-
-    int len2 = vsnprintf(chatbuf + len, sizeof(chatbuf) - len, format, args);
-
-    if (len2 < 0 || len2 >= (int)sizeof(chatbuf) - len)
-        len += (sizeof(chatbuf) - len) - 1;
-    else
-        len += len2;
-
-    ++len;
-
-    va_end(args);
-
-    TPacketGCChat pack_chat;
-
-    pack_chat.header = HEADER_GC_CHAT;
-    pack_chat.size = sizeof(TPacketGCChat) + len;
-    pack_chat.type = CHAT_TYPE_TALKING;
-    pack_chat.id = GetPacketVID();
-    pack_chat.bEmpire = 0;
-
-    TEMP_BUFFER buf;
-    buf.write(&pack_chat, sizeof(TPacketGCChat));
-    buf.write(chatbuf, len);
-
-    CHARACTER_MANAGER::instance().PacketMonsterLog(GetEntityHandle(), buf.read_peek(), buf.size());
-}
-
 void ecs::MovementSystem::OnMove(entt::entity e, bool bIsAttack)
 {
     if (!ecs::IsCharacter(e))
