@@ -1956,10 +1956,9 @@ EVENTFUNC(ChainLightningEvent)
 	const entt::entity victimEntity = info->dwVictim;
 	const entt::entity character = info->dwChr;
 
-	auto* pkChr = LegacyCharOf(character);
 	entt::entity target = entt::null;
 
-	if (!pkChr || !ecs::IsCharacter(victimEntity))
+	if (!ecs::IsCharacter(character) || !ecs::IsCharacter(victimEntity))
 	{
 		LOG_INFO("use chainlighting, but no character");
 		return 0;
@@ -1992,7 +1991,7 @@ EVENTFUNC(ChainLightningEvent)
 		CombatSystem::CreateFly(victimEntity, FLY_CHAIN_LIGHTNING, target);
 		if (character != entt::null)
 			g_dispatcher.trigger(ecs::EvSkillUsed { character, SKILL_CHAIN });
-		pkChr->ComputeSkill(SKILL_CHAIN, target);
+		SkillSystem::ComputeSkill(character, SKILL_CHAIN, target);
 		SkillSystem::AddChainLightningExcept(character, target);
 	}
 	else
@@ -2050,16 +2049,19 @@ struct FuncSplashDamage
 
 	void operator () (LPENTITY ent)
 	{
-		const entt::entity chr = m_character;
 		if (!ent->IsType(ENTITY_CHARACTER))
 		{
 			//if (m_pkSk->dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN target not character %s", ecs::PlayerRuntime::GetName(m_character).data());
 			return;
 		}
 
-		const entt::entity chrVictim = ent->GetEntityHandle();
+		(*this)(ent->GetEntityHandle());
+	}
 
-		const entt::entity victimEntity = chrVictim;
+	void operator () (entt::entity victimEntity)
+	{
+		const entt::entity chr = m_character;
+		const entt::entity chrVictim = victimEntity;
 
 		if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(victimEntity), m_y - ecs::PlayerRuntime::GetY(victimEntity)) > m_pkSk->iSplashRange)
 		{
@@ -3167,25 +3169,24 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 #ifdef GROUP_BUFF
 struct FComputeSkillParty
 {
-	FComputeSkillParty(uint32_t dwVnum, LegacyCharHandle pkAttacker, uint8_t bSkillLevel = 0)
-		: m_dwVnum(dwVnum), m_pkAttacker(pkAttacker), m_bSkillLevel(bSkillLevel)
+	FComputeSkillParty(uint32_t dwVnum, entt::entity attacker, uint8_t bSkillLevel = 0)
+		: m_dwVnum(dwVnum), m_attacker(attacker), m_bSkillLevel(bSkillLevel)
 		{
 		}
 
 	void operator () (entt::entity member)
 	{
-		m_pkAttacker->ComputeSkill(m_dwVnum, member, m_bSkillLevel);
+		SkillSystem::ComputeSkill(m_attacker, m_dwVnum, member, m_bSkillLevel);
 	}
 
 	uint32_t m_dwVnum;
-	LegacyCharHandle m_pkAttacker;
+	entt::entity m_attacker;
 	uint8_t m_bSkillLevel;
 };
 
 int CHARACTER::ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-	FComputeSkillParty f(dwVnum, pkVictim, bSkillLevel);
+	FComputeSkillParty f(dwVnum, victim, bSkillLevel);
 	if (ecs::SocialSystem::GetParty(GetEntityHandle()) && ecs::SocialSystem::GetParty(GetEntityHandle())->GetNearMemberCount())
 		ecs::SocialSystem::GetParty(GetEntityHandle())->ForEachNearMember(f);
 	else
@@ -3283,21 +3284,23 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 
 // bSkillLevel ŔÎŔÚ°ˇ 0ŔĚ ľĆ´Ň °ćżěżˇ´Â m_abSkillLevels¸¦ »çżëÇĎÁö ľĘ°í °­Á¦·Î
 // bSkillLevel·Î °č»ęÇŃ´Ů.
-int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
+int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
-	const auto character = GetEntityHandle();
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+	if (!ecs::IsCharacter(e))
+		return BATTLE_NONE;
 
-	const bool bCanUseHorseSkill = MountSystem::CanUseHorseSkill(GetEntityHandle());
+	const auto character = e;
+
+	const bool bCanUseHorseSkill = MountSystem::CanUseHorseSkill(e);
 #ifdef ENABLE_BUG_FIXES
 	if(dwVnum != SKILL_MUYEONG) {
-		if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(GetEntityHandle())) {
+		if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(e)) {
 			return BATTLE_NONE;
 		}
 	}
 #else
 	// ¸»Ŕ» Ĺ¸°íŔÖÁö¸¸ ˝şĹłŔş »çżëÇŇ Ľö ľř´Â »óĹÂ¶ó¸é return
-	if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(GetEntityHandle()))
+	if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(e))
 		return BATTLE_NONE;
 #endif
 
@@ -3331,32 +3334,30 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 #endif
 
 	// »ó´ëąćżˇ°Ô ľ˛´Â °ÍŔĚ ľĆ´Ď¸é łŞżˇ°Ô ˝áľß ÇŃ´Ů.
-	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
-		pkVictim = this;
+	const entt::entity victimEntity = IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY) ? character : victim;
 
-	if (!pkVictim)
+	if (!ecs::IsCharacter(victimEntity))
 	{
 		if (test_server)
-			LOG_INFO("ComputeSkill: {} Victim == null, skill {}", GetName(), dwVnum);
+			LOG_INFO("ComputeSkill: {} Victim == null, skill {}", ecs::PlayerRuntime::GetName(character), dwVnum);
 
 		return BATTLE_NONE;
 	}
-	const entt::entity victimEntity = IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY) ? character : victim;
 
-	if (pkSk->dwTargetRange && DISTANCE_SQRT(GetX() - ecs::PlayerRuntime::GetX(victimEntity), GetY() - ecs::PlayerRuntime::GetY(victimEntity)) >= pkSk->dwTargetRange + 50)
+	if (pkSk->dwTargetRange && DISTANCE_SQRT(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(victimEntity)) >= pkSk->dwTargetRange + 50)
 	{
 		if (test_server)
-			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, GetName(), ecs::PlayerRuntime::GetName(victimEntity).data(), (int32_t)DISTANCE_SQRT(GetX() - ecs::PlayerRuntime::GetX(victimEntity), GetY() - ecs::PlayerRuntime::GetY(victimEntity)), pkSk->dwTargetRange);
+			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(victimEntity).data(), (int32_t)DISTANCE_SQRT(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(victimEntity)), pkSk->dwTargetRange);
 
 		return BATTLE_NONE;
 	}
 
 	if (0 == bSkillLevel)
 	{
-		if ((bSkillLevel = SkillSystem::GetSkillLevel(GetEntityHandle(), pkSk->dwVnum)) == 0)
+		if ((bSkillLevel = SkillSystem::GetSkillLevel(e, pkSk->dwVnum)) == 0)
 		{
 			if (test_server)
-				LOG_INFO("ComputeSkill : name:{} vnum:{}  skillLevelBySkill : {} ", GetName(), pkSk->dwVnum, bSkillLevel);
+				LOG_INFO("ComputeSkill : name:{} vnum:{}  skillLevelBySkill : {} ", ecs::PlayerRuntime::GetName(e), pkSk->dwVnum, bSkillLevel);
 			return BATTLE_NONE;
 		}
 	}
@@ -3406,24 +3407,24 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 	if (pkSk->bPointOn == POINT_MOV_SPEED)
 	{
-		pkSk->SetPointVar("maxv", ecs::PointSystem::GetLimitPoint(pkVictim->GetEntityHandle(), POINT_MOV_SPEED));
+		pkSk->SetPointVar("maxv", ecs::PointSystem::GetLimitPoint(victimEntity, POINT_MOV_SPEED));
 	}
 
-	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
-	pkSk->SetPointVar("iq", ecs::PointSystem::Get(GetEntityHandle(), POINT_IQ));
-	pkSk->SetPointVar("str", ecs::PointSystem::Get(GetEntityHandle(), POINT_ST));
-	pkSk->SetPointVar("dex", ecs::PointSystem::Get(GetEntityHandle(), POINT_DX));
-	pkSk->SetPointVar("con", ecs::PointSystem::Get(GetEntityHandle(), POINT_HT));
+	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
+	pkSk->SetPointVar("iq", ecs::PointSystem::Get(e, POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::Get(e, POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::Get(e, POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::Get(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, victim));
-	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
-	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
+	pkSk->SetPointVar("def", ecs::PointSystem::Get(e, POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::Get(e, POINT_DEF_GRADE) - ecs::PointSystem::Get(e, POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(e));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
-		ecs::MovementSystem::OnMove(GetEntityHandle(), true);
+		ecs::MovementSystem::OnMove(e, true);
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
@@ -3436,7 +3437,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	int iAmount2 = (int) pkSk->kPointPoly2.Eval();
 	int iAmount3 = (int) pkSk->kPointPoly3.Eval();
 
-	if (test_server && IsPC())
+	if (test_server && ecs::PlayerRuntime::GetDesc(character) != nullptr)
 		LOG_INFO("iAmount: {} {} {} , atk:{} skLevel:{} k:{} GetSkillPower({}) MaxLevel:{} Per:{}", iAmount, iAmount2, iAmount3, pkSk->kPointPoly.GetVar("atk"), pkSk->kPointPoly.GetVar("k"), k, SkillSystem::GetSkillPower(character, pkSk->dwVnum, bSkillLevel), pkSk->bMaxLevel, pkSk->bMaxLevel/100);
 
 	// ADD_GRANDMASTER_SKILL
@@ -3453,13 +3454,13 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	{
 		if (number(1, 100) <= iAmount2)
 		{
-			AffectSystem::RemoveBadAffects(pkVictim->GetEntityHandle());
+			AffectSystem::RemoveBadAffects(victimEntity);
 		}
 	}
 	// END_OF_REMOVE_BAD_AFFECT_BUG_FIX
 
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_ATTACK | SKILL_FLAG_USE_MELEE_DAMAGE | SKILL_FLAG_USE_MAGIC_DAMAGE) &&
-		!(pkSk->dwVnum == SKILL_MUYEONG && pkVictim == this) && !(pkSk->IsChargeSkill() && pkVictim == this))
+		!(pkSk->dwVnum == SKILL_MUYEONG && victimEntity == character) && !(pkSk->IsChargeSkill() && victimEntity == character))
 	{
 		bool bAdded = false;
 
@@ -3467,10 +3468,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 		{
 			int iAG = 0;
 #ifdef LEADERBOARD_RAZOR93
-			CombatSystem::SetSkillHit(GetEntityHandle(), true);
+			CombatSystem::SetSkillHit(e, true);
 #endif
 
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, GetEntityHandle(), iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
 				if (ecs::PlayerRuntime::GetSectree(victimEntity))
@@ -3478,10 +3479,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 			}
 			else
 			{
-				f(pkVictim);
+				f(victimEntity);
 			}
 #ifdef LEADERBOARD_RAZOR93
-			CombatSystem::SetSkillHit(GetEntityHandle(), false);
+			CombatSystem::SetSkillHit(e, false);
 #endif
 		}
 		else
@@ -3490,16 +3491,16 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 			int iDur = (int) pkSk->kDurationPoly.Eval();
 
 
-			if (IsPC())
+			if (ecs::PlayerRuntime::GetDesc(character) != nullptr)
 				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END)) // ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
-					if (!SkillSystem::IsCooltimeDisabled(GetEntityHandle()) && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
+					if (!SkillSystem::IsCooltimeDisabled(e) && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
 					{
 						return BATTLE_NONE;
 					}
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
@@ -3522,7 +3523,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
@@ -3552,7 +3553,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
@@ -3584,10 +3585,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
 			int iDur = (int32_t) pkSk->kDurationPoly.Eval();
-			iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
-			if (pkVictim == this)
-				AffectSystem::AddAffect(GetEntityHandle(), dwVnum,
+			if (victimEntity == character)
+				AffectSystem::AddAffect(e, dwVnum,
 						POINT_NONE, 0,
 						AFF_MUYEONG,
 						iDur,
@@ -3603,7 +3604,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 		if (iDur > 0)
 		{
-			iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 			// AffectFlag°ˇ ľř°ĹłŞ, toggle ÇĎ´Â °ÍŔĚ ľĆ´Ď¶ó¸é..
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
@@ -3616,9 +3617,9 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 				if (iDur2 > 0)
 				{
 					if (test_server)
-						LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", GetName(), pkSk->szName, iDur2, pkSk->bPointOn2, iAmount2);
+						LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", ecs::PlayerRuntime::GetName(e), pkSk->szName, iDur2, pkSk->bPointOn2, iAmount2);
 
-					iDur2 += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
 				}
 				else
@@ -3644,7 +3645,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 			else
 			{
 				if (test_server)
-					LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", GetName(), pkSk->szName, iDur, pkSk->bPointOn, iAmount);
+					LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", ecs::PlayerRuntime::GetName(e), pkSk->szName, iDur, pkSk->bPointOn, iAmount);
 
 				AffectSystem::AddAffect(victimEntity, pkSk->dwVnum,
 						pkSk->bPointOn,
@@ -3672,7 +3673,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 				if (iDur2 > 0)
 				{
-					iDur2 += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
 					if (pkSk->IsChargeSkill())
 						AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, AFF_TANHWAN_DASH, iDur2, 0, false);
@@ -3698,7 +3699,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(GetEntityHandle(), POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
@@ -3722,13 +3723,13 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, GetEntityHandle(), -iAmount2, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 			if (ecs::PlayerRuntime::GetSectree(victimEntity))
 				ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 
 			else
 			{
-				f(pkVictim);
+				f(victimEntity);
 			}
 		}
 #endif
@@ -3864,7 +3865,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 			SkillSystem::ResetSkillHitTargets(character, dwVnum);
 			SkillSystem::SetSkillMainTarget(character, dwVnum, victimEntity);
 			// DASH »óĹÂŔÇ ĹşČŻ°ÝŔş °ř°Ý±âĽú
-			ComputeSkill(dwVnum, victimEntity);
+			SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, victimEntity);
 			AffectSystem::RemoveAffect(GetEntityHandle(), dwVnum);
 			return true;
 		}
@@ -4051,13 +4052,13 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		}
 	}//------------------------------------------------------------------2024-12-30------------------------------------------------------------------------------
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
-		ComputeSkill(dwVnum, character);
+		SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, character);
 	else if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_ATTACK))
-		ComputeSkill(dwVnum, victimEntity);
+		SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, victimEntity);
 	else if (dwVnum == SKILL_BYEURAK)
-		ComputeSkill(dwVnum, victimEntity);
+		SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, victimEntity);
 	else if (dwVnum == SKILL_MUYEONG || pkSk->IsChargeSkill())
-		ComputeSkill(dwVnum, victimEntity);
+		SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, victimEntity);
 
 	SkillSystem::SetLastSkillTime(character, get_dword_time());
 
@@ -4096,7 +4097,7 @@ EVENTFUNC(skill_muyoung_event)
 		if (f.GetVictim() != entt::null)
 		{
 			CombatSystem::CreateFly(character, FLY_SKILL_MUYEONG, f.GetVictim());
-			ch->ComputeSkill(SKILL_MUYEONG, f.GetVictim());
+			SkillSystem::ComputeSkill(character, SKILL_MUYEONG, f.GetVictim());
 		}
 	}
 

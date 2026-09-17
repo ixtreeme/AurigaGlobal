@@ -1123,7 +1123,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                                 // Bizonyos attack skillek már a UseSkill-ben ComputeSkill-oznak (pl. charge, MUYEONG, BYEURAK),
                                 // ezeket ne duplázzuk.
                                 if (p.attackType != SKILL_BYEURAK && p.attackType != SKILL_MUYEONG && !sk->IsChargeSkill())
-                                    clone->ComputeSkill(p.attackType, targetEntity, 0);
+                                    SkillSystem::ComputeSkill(cloneEntity, p.attackType, targetEntity, 0);
                             }
                         }
                     }

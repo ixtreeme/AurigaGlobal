@@ -1064,7 +1064,6 @@ public:
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 	int					ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #endif
-	int					ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #ifdef GROUP_BUFF
 	int					ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #endif

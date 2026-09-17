@@ -88,6 +88,8 @@ int GetSkillPoint(entt::entity e);
 void AddSkillPoint(entt::entity e, int amount);
 int GetSkillMasterType(entt::entity e, uint32_t skillId);
 int GetSkillPower(entt::entity e, uint32_t skillId, uint8_t level = 0);
+// Applies a skill from e to victim: damage, affects, splash and party share.
+int ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 int GetChainLightningMaxCount(entt::entity e);
 int GetChainLightningIndex(entt::entity e);
 void IncChainLightningIndex(entt::entity e);

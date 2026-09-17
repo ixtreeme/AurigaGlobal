@@ -2879,9 +2879,7 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
         }
 
         LOG_TRACE("Attack call ComputeSkill {} {}", attackType, ecs::PlayerRuntime::GetName(victim));
-        // ComputeSkill is the skill pipeline and is its own migration.
-        LPCHARACTER caster = LegacyCharOf(attacker);
-        result = caster ? caster->ComputeSkill(attackType, victim) : BATTLE_NONE;
+        result = SkillSystem::ComputeSkill(attacker, attackType, victim);
     }
 
     if (result != BATTLE_DAMAGE && result != BATTLE_DEAD)
@@ -6279,9 +6277,6 @@ public:
 	{
 	}
 
-	// ComputeSkill has no entity form yet; it is its own migration.
-	LPCHARACTER Self() const { return ecs::LegacyCharOf(m_me); }
-
 	void operator () (uint32_t dwTargetVID)
 	{
 		const entt::entity me = m_me;
@@ -6434,7 +6429,7 @@ public:
 					if (CombatSystem::CanBeginFight(victim))
 						CombatSystem::BeginFight(victim, me);
 
-					Self()->ComputeSkill(m_bType, victim);
+					SkillSystem::ComputeSkill(m_me, m_bType, victim);
 					CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 
 					if (CombatSystem::IsDead(victim))
@@ -6461,7 +6456,7 @@ public:
 					CombatSystem::BeginFight(victim, me);
 
 				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				Self()->ComputeSkill(m_bType, victim);
+				SkillSystem::ComputeSkill(m_me, m_bType, victim);
 				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 			}
 		}
@@ -6479,7 +6474,7 @@ public:
 					CombatSystem::BeginFight(victim, me);
 
 				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				Self()->ComputeSkill(m_bType, victim);
+				SkillSystem::ComputeSkill(m_me, m_bType, victim);
 				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 			}
 		}
@@ -6497,7 +6492,7 @@ public:
 					CombatSystem::BeginFight(victim, me);
 
 				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				Self()->ComputeSkill(m_bType, victim);
+				SkillSystem::ComputeSkill(m_me, m_bType, victim);
 				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 			}
 		}
@@ -6516,7 +6511,7 @@ public:
 					CombatSystem::BeginFight(victim, me);
 
 				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				Self()->ComputeSkill(m_bType, victim);
+				SkillSystem::ComputeSkill(m_me, m_bType, victim);
 				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 			}
 		}
@@ -6545,7 +6540,7 @@ public:
 				CombatSystem::BeginFight(victim, me);
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-			Self()->ComputeSkill(m_bType, victim);
+			SkillSystem::ComputeSkill(m_me, m_bType, victim);
 		}
 		break;
 
@@ -6558,7 +6553,7 @@ public:
 				CombatSystem::BeginFight(victim, me);
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-			Self()->ComputeSkill(m_bType, victim);
+			SkillSystem::ComputeSkill(m_me, m_bType, victim);
 
 			// TODO     ϱ
 		}
@@ -6654,7 +6649,7 @@ public:
 						CombatSystem::BeginFight(victim, me);
 
 					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-					Self()->ComputeSkill(m_bType, victim);
+					SkillSystem::ComputeSkill(m_me, m_bType, victim);
 				}
 
 

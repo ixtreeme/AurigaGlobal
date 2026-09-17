@@ -4,6 +4,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
@@ -1453,7 +1454,7 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 				{
 					const entt::entity victim = *it;
 					AffectSystem::RemoveAffect(victim, dwVnum);
-					ch->ComputeSkill(dwVnum, victim, m_data.abySkill[dwRealVnum]);
+					SkillSystem::ComputeSkill(character, dwVnum, victim, m_data.abySkill[dwRealVnum]);
 				}
 			}
 			break;
