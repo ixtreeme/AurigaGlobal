@@ -738,10 +738,6 @@ public:
 
 
 
-#ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
-	bool			SwitchChannel(int32_t newAddr, uint16_t newPort);
-	bool			StartChannelSwitch(int32_t newAddr, uint16_t newPort);
-#endif
 
 
 

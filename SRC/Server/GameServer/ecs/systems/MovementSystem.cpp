@@ -730,9 +730,7 @@ bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
     if (!IsValid(e) || !ecs::PlayerRuntime::IsPC(e))
         return false;
 
-    // RemoveEntity still needs the LPENTITY the sectree was given.
-    LPCHARACTER self = ecs::LegacyCharOf(e);
-    if (!self)
+    if (!ecs::IsCharacter(e))
         return false;
 
     uint32_t lAddr;
@@ -778,7 +776,7 @@ bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
 
     if (ecs::PlayerRuntime::GetSectree(e))
     {
-        ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(self);
+        ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(e);
         if (g_registry.valid(e))
         {
             g_registry.remove<ecs::SectorPlacement>(e);

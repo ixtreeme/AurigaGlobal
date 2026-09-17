@@ -1553,8 +1553,7 @@ uint64_t GetQuestDamage(entt::entity e, int race)
 #ifdef ENABLE_BATTLE_PASS
 uint8_t GetBattlePassID(entt::entity e)
 {
-	LPCHARACTER character = LegacyCharOf(e);
-	return character ? ecs::PlayerRuntime::GetBattlePassId(e) : 0;
+	return ecs::IsCharacter(e) ? ecs::PlayerRuntime::GetBattlePassId(e) : 0;
 }
 
 #endif
@@ -3702,16 +3701,16 @@ void ecs::PlayerRuntime::RestartAtSamePos(entt::entity e)
 }
 
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
-bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
+bool ecs::MovementSystem::SwitchChannel(entt::entity e, int32_t newAddr, uint16_t newPort)
 {
-    if (!IsPC() || !GetDesc() || !ecs::PlayerRuntime::CanWarp(GetEntityHandle()))
+    if (!ecs::IsCharacter(e) || !ecs::PlayerRuntime::GetDesc(e) || !ecs::PlayerRuntime::CanWarp(e))
         return false;
 
-    int32_t x = GetX();
-    int32_t y = GetY();
+    int32_t x = ecs::PlayerRuntime::GetX(e);
+    int32_t y = ecs::PlayerRuntime::GetY(e);
 
     int32_t lAddr = newAddr;
-    int32_t lMapIndex = GetMapIndex();
+    int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(e);
     uint16_t wPort = newPort;
 
     if (lMapIndex >= 10000)
@@ -3722,17 +3721,16 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
 
     if (g_bChannel == 99)
     {
-        LOG_ERROR("{} attempted to change channel from CH99, ignoring req.", GetName());
+        LOG_ERROR("{} attempted to change channel from CH99, ignoring req.", ecs::PlayerRuntime::GetName(e));
         return false;
     }
 
-    ecs::MovementSystem::Stop(GetEntityHandle());
-    ecs::SessionSystem::Save(GetEntityHandle());
+    ecs::MovementSystem::Stop(e);
+    ecs::SessionSystem::Save(e);
 
-    if (GetSectree())
+    if (ecs::PlayerRuntime::GetSectree(e))
     {
-        GetSectree()->RemoveEntity(this);
-        const entt::entity e = GetEntityHandle();
+        ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(e);
         if (e != entt::null && g_registry.valid(e))
         {
             g_registry.remove<ecs::SectorPlacement>(e);
@@ -3742,9 +3740,9 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
         ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
     }
 
-    ecs::MovementSystem::SetWarpLocationRaw(GetEntityHandle(), lMapIndex, x, y);
+    ecs::MovementSystem::SetWarpLocationRaw(e, lMapIndex, x, y);
 
-    LOG_INFO("ChangeChannel {}, {} {} map {} to port {}", GetName(), x, y, GetMapIndex(), wPort);
+    LOG_INFO("ChangeChannel {}, {} {} map {} to port {}", ecs::PlayerRuntime::GetName(e), x, y, ecs::PlayerRuntime::GetMapIndex(e), wPort);
 
     TPacketGCWarp p;
 
@@ -3754,11 +3752,11 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
     p.lAddr = lAddr;
     p.wPort = wPort;
 
-    GetDesc()->Packet(&p, sizeof(p));
+    ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(p));
 
     char buf[256];
-    snprintf(buf, sizeof(buf), "%s Port%d Map%ld x%ld y%ld", GetName(), wPort, GetMapIndex(), x, y);
-    LogManager::instance().CharLog(GetEntityHandle(), 0, "CHANGE_CH", buf);
+    snprintf(buf, sizeof(buf), "%s Port%d Map%ld x%ld y%ld", std::string(ecs::PlayerRuntime::GetName(e)).c_str(), wPort, ecs::PlayerRuntime::GetMapIndex(e), x, y);
+    LogManager::instance().CharLog(e, 0, "CHANGE_CH", buf);
 
     return true;
 }
@@ -3787,8 +3785,7 @@ EVENTFUNC(switch_channel)
         return 0;
     }
 
-    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-    if (!ch)
+    if (!ecs::IsCharacter(info->ch))
     {
         LOG_ERROR("No char to work on for the switch.");
         return 0;
@@ -3811,22 +3808,25 @@ EVENTFUNC(switch_channel)
     }
 
     ecs::PlayerRuntime::SetCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed, nullptr);
-    ch->SwitchChannel(info->newAddr, info->newPort);
+    ecs::MovementSystem::SwitchChannel(character, info->newAddr, info->newPort);
     return 0;
 }
 
-bool CHARACTER::StartChannelSwitch(int32_t newAddr, uint16_t newPort)
+bool ecs::MovementSystem::StartChannelSwitch(entt::entity e, int32_t newAddr, uint16_t newPort)
 {
-    if (ecs::PlayerRuntime::IsHack(GetEntityHandle(), false, true, 10))
+    if (!ecs::IsCharacter(e))
+        return false;
+
+    if (ecs::PlayerRuntime::IsHack(e, false, true, 10))
         return false;
 
     switch_channel_info* info = AllocEventInfo<switch_channel_info>();
-    info->ch = GetEntityHandle();
-    info->secs = ecs::PlayerRuntime::CanWarp(GetEntityHandle()) && !IsPosition(POS_FIGHTING) ? 3 : 10;
+    info->ch = e;
+    info->secs = ecs::PlayerRuntime::CanWarp(e) && ecs::PlayerRuntime::GetPosition(e) != POS_FIGHTING ? 3 : 10;
     info->newAddr = newAddr;
     info->newPort = newPort;
 
-    ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Timed,
+    ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::Timed,
         event_create(switch_channel, info, 1));
     return true;
 }
@@ -4166,8 +4166,7 @@ EVENTFUNC(drop_event)
         return 0;
     }
 
-    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-    if (!ch) {
+    if (!ecs::IsCharacter(info->ch)) {
         LOG_ERROR("<drop_event> ch is null.");
         return 0;
     }
@@ -4175,7 +4174,7 @@ EVENTFUNC(drop_event)
 
     LPDESC d = ecs::PlayerRuntime::GetDesc(character);
     if (!d) {
-        LOG_ERROR("<drop_event> {} have no desc connector.", ch->GetName());
+        LOG_ERROR("<drop_event> {} have no desc connector.", ecs::PlayerRuntime::GetName(character));
         return 0;
     }
 

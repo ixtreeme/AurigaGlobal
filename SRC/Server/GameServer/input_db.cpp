@@ -3267,7 +3267,7 @@ void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
 	}
 
 	// Execute
-	d->GetCharacter()->StartChannelSwitch(p->lAddr, p->port);
+	ecs::MovementSystem::StartChannelSwitch(d->GetCharacter()->GetEntityHandle(), p->lAddr, p->port);
 }
 #endif
 
