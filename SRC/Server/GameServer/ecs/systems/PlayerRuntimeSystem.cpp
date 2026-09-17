@@ -2741,16 +2741,23 @@ int CombatSystem::GetSoulItemDamage(entt::entity attacker, entt::entity victim, 
 #endif
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-void CHARACTER::SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt)
+std::shared_ptr<CWheelDestiny> ecs::PlayerRuntime::GetWheelDestiny(entt::entity e)
 {
-    pWheelDestiny = std::move(pt);
-    const auto e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-        shop.wheelDestiny = pWheelDestiny;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    return shop ? shop->wheelDestiny : nullptr;
+}
+
+void ecs::PlayerRuntime::SetWheelDestiny(entt::entity e, std::shared_ptr<CWheelDestiny> pt)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+    shop.wheelDestiny = std::move(pt);
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 #endif
 

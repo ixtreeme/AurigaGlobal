@@ -35,18 +35,18 @@ static constexpr std::tuple<uint32_t, std::uint8_t, std::uint8_t> m_Data[WheelIt
 
 };
 
-CWheelDestiny::CWheelDestiny(LPCHARACTER m_ch)
-	: ch(m_ch), gift_vnum(0), gift_count(1), turn_count(0)
+CWheelDestiny::CWheelDestiny(entt::entity owner)
+	: m_owner(owner), gift_vnum(0), gift_count(1), turn_count(0)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = m_owner;
 	for (auto i = 0; i < WheelItemMax; i++)
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %lu %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ecs::PlayerRuntime::GetWheelFreeCount(ch->GetEntityHandle()));
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ecs::PlayerRuntime::GetWheelFreeCount(m_owner));
 }
 
 CWheelDestiny::~CWheelDestiny() {
 	if (GetGiftVnum())
-		LOG_INFO("<CWheelDestiny> player({}) didn't get his gift(vnum: {}({}.x))!!", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), GetGiftVnum(), GetGiftCount());
+		LOG_INFO("<CWheelDestiny> player({}) didn't get his gift(vnum: {}({}.x))!!", ecs::PlayerRuntime::GetName(m_owner), GetGiftVnum(), GetGiftCount());
 }
 
 template <typename T> std::string NumberToMoneyString(T val)
@@ -65,10 +65,10 @@ template <typename T> std::string NumberToMoneyString(T val)
 
 void CWheelDestiny::TurnWheel()
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = m_owner;
 	//if (m_bTurning)
 	//{
-	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Already spinning!");
+	//	ecs::ChatSystem::Send(m_owner, CHAT_TYPE_INFO, "Already spinning!");
 	//	return;
 	//}
 
@@ -83,7 +83,7 @@ void CWheelDestiny::TurnWheel()
 		return;
 	}
 
-	const auto WheelFreeCount = ecs::PlayerRuntime::GetWheelFreeCount(ch->GetEntityHandle());
+	const auto WheelFreeCount = ecs::PlayerRuntime::GetWheelFreeCount(m_owner);
 
 	if (WheelFreeCount < 1 && ecs::PointSystem::GetGold(chEntity) < WheelPrice) {
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You need %s yang for <Turning Wheel>", NumberToMoneyString(WheelPrice).c_str());
@@ -92,12 +92,12 @@ void CWheelDestiny::TurnWheel()
 
 	auto Rand = PickAGift();
 	if (Rand == -1) {
-		LOG_ERROR("CWheelDestiny::TurnWheel() Error Pick Gift ({})", ecs::PlayerRuntime::GetName(chEntity).data());
+		LOG_ERROR("CWheelDestiny::TurnWheel() Error Pick Gift ({})", ecs::PlayerRuntime::GetName(chEntity));
 		return;
 	}
 
 	if (WheelFreeCount > 0) {
-		ecs::PlayerRuntime::SetWheelFreeCount(ch->GetEntityHandle(), -1);
+		ecs::PlayerRuntime::SetWheelFreeCount(m_owner, -1);
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "FREE");
 	}
 	else
@@ -149,11 +149,11 @@ void CWheelDestiny::GiveMyFuckingGift()
 	const auto GiftVnum = GetGiftVnum();
 
 	if (GiftVnum) {
-		ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), GiftVnum, GetGiftCount());
+		ItemSystem::AutoGiveItemEcs(m_owner, GiftVnum, GetGiftCount());
 		SetGift(0, 1); // reset
 	}
 	else
-		LOG_ERROR("Dude, where is the gift_vnum? <player: {}>", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		LOG_ERROR("Dude, where is the gift_vnum? <player: {}>", ecs::PlayerRuntime::GetName(m_owner));
 }
 
 uint32_t CWheelDestiny::GetGiftVnum() const

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <entt/entt.hpp>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -10,6 +11,8 @@
 class CArena;
 class CPetSystem;
 class CNewPetSystem;
+
+class CWheelDestiny;
 
 namespace ecs::PlayerRuntime {
 
@@ -77,6 +80,11 @@ void SetAttackMob(entt::entity e);
 bool IsReviver(entt::entity e);
 int GetWheelFreeCount(entt::entity e);
 void SetWheelFreeCount(entt::entity e, int count);
+#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+// The wheel of destiny window the character has open, if any.
+std::shared_ptr<CWheelDestiny> GetWheelDestiny(entt::entity e);
+void SetWheelDestiny(entt::entity e, std::shared_ptr<CWheelDestiny> wheel);
+#endif
 uint32_t GetAIFlag(entt::entity e);
 void SetLastSyncTime(entt::entity e, const timeval& tv);
 int GetSyncHackCount(entt::entity e);

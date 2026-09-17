@@ -916,14 +916,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Exchange related
 public:
-#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-	public:
-		void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt);
-		std::shared_ptr<CWheelDestiny> GetWheelDestiny() const { return pWheelDestiny; }
-
-	private:
-		std::shared_ptr<CWheelDestiny> pWheelDestiny = nullptr;
-#endif
 protected:
 	// End of Exchange
 

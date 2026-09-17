@@ -5075,11 +5075,10 @@ void CInputMain::FishingNew(entt::entity character, const char* c_pData)
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 void CInputMain::WheelDestiny(entt::entity character, const char* data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate WheelDestiny handler ECS
 // DUAL-PATH: legacy only during migration window
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 	{
 		return;
 	}
@@ -5097,25 +5096,25 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 	case OPEN:
 	{
 
-		if (!ch->GetWheelDestiny())
+		if (!ecs::PlayerRuntime::GetWheelDestiny(character))
 		{
-			ch->SetWheelDestiny(std::make_shared<CWheelDestiny>(ch));
+			ecs::PlayerRuntime::SetWheelDestiny(character, std::make_shared<CWheelDestiny>(character));
 		}
 	}
 	break;
 	case CLOSE:
 
 	{
-		if (ch->GetWheelDestiny())
+		if (ecs::PlayerRuntime::GetWheelDestiny(character))
 		{
-			//if (ch->GetWheelDestiny()->IsTurning())
+			//if (ecs::PlayerRuntime::GetWheelDestiny(character)->IsTurning())
 			//{
 			//	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Do not close now!!");
 			//	return;
 			//}
 
 
-			if (ch->GetWheelDestiny()->GetGiftVnum())
+			if (ecs::PlayerRuntime::GetWheelDestiny(character)->GetGiftVnum())
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1307, "");
@@ -5123,7 +5122,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 			}
 			else
 			{
-				ch->SetWheelDestiny(nullptr);
+				ecs::PlayerRuntime::SetWheelDestiny(character, nullptr);
 				ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_WHEEL_CLOSE");
 			}
 		}
@@ -5136,7 +5135,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeonban nem tudsz pörgetni./You cannot in dungeon");
 			return;
 		}
-		if (ch->GetWheelDestiny())
+		if (ecs::PlayerRuntime::GetWheelDestiny(character))
 		{
 			static const uint32_t WHEEL_TICKET_VNUM = 70610;
 
@@ -5149,16 +5148,16 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 
 			ItemSystem::RemoveSpecifyItemEcs(character, WHEEL_TICKET_VNUM, 1);
 
-			ch->GetWheelDestiny()->TurnWheel();
+			ecs::PlayerRuntime::GetWheelDestiny(character)->TurnWheel();
 		}
 	}
 	break;
 
 	case GIVE:
 	{
-		if (ch->GetWheelDestiny())
+		if (ecs::PlayerRuntime::GetWheelDestiny(character))
 		{
-			ch->GetWheelDestiny()->GiveMyFuckingGift();
+			ecs::PlayerRuntime::GetWheelDestiny(character)->GiveMyFuckingGift();
 		}
 	}
 	break;

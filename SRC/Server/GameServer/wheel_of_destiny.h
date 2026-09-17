@@ -9,7 +9,7 @@
 class CWheelDestiny
 {
 public:
-	CWheelDestiny(LPCHARACTER ch);
+	CWheelDestiny(entt::entity owner);
 	~CWheelDestiny();
 	void TurnWheel();
 	void GiveMyFuckingGift();
@@ -24,7 +24,7 @@ private:
 	std::uint16_t GetTurnCount() const;
 	std::uint8_t GetChance() const;
 
-	LPCHARACTER ch;
+	entt::entity m_owner;
 	uint32_t gift_vnum;
 	std::uint8_t gift_count;
 	std::uint16_t turn_count;
