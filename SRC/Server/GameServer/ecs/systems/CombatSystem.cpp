@@ -3276,13 +3276,13 @@ void ItemDropPenalty(entt::entity e, entt::entity killer)
 // char_battle.cpp slice BC3a helper surface duplicated into CombatSystem.cpp
 
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
-static void __UpdateBattlePassCollectProgress(LegacyCharHandle ch, uint32_t dwItemVnum, uint32_t dwCount)
+static void __UpdateBattlePassCollectProgress(entt::entity owner, uint32_t dwItemVnum, uint32_t dwCount)
 {
 #ifdef ENABLE_BATTLE_PASS
-	if (!ch || !dwCount)
+	if (!ecs::IsCharacter(owner) || !dwCount)
 		return;
 
-	const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
+	const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(owner);
 	if (!bBattlePassId)
 		return;
 
@@ -3297,10 +3297,10 @@ static void __UpdateBattlePassCollectProgress(LegacyCharHandle ch, uint32_t dwIt
 			if (dwMissionItemVnum != dwItemVnum)
 				return;
 
-			if (ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), dwMissionType, bBattlePassId) >= dwNeedCount)
+			if (ecs::PlayerRuntime::GetMissionProgress(owner, dwMissionType, bBattlePassId) >= dwNeedCount)
 				return;
 
-			ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), dwMissionType, bBattlePassId, dwCount, dwNeedCount);
+			ecs::PlayerRuntime::UpdateMissionProgress(owner, dwMissionType, bBattlePassId, dwCount, dwNeedCount);
 		};
 
 	updateMission(COLLECT_ITEM);
@@ -3309,12 +3309,11 @@ static void __UpdateBattlePassCollectProgress(LegacyCharHandle ch, uint32_t dwIt
 #endif
 }
 
-static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity, uint32_t& dwGivenCount)
+static bool __TryAutoGiveRewardItem(entt::entity owner, entt::entity itemEntity, uint32_t& dwGivenCount)
 {
 	dwGivenCount = 0;
 
-	const entt::entity owner = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch || owner == entt::null || !g_registry.valid(owner) ||
+	if (!ecs::IsCharacter(owner) ||
 		!ItemSystem::IsValidItem(itemEntity))
 		return false;
 
@@ -3451,23 +3450,21 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity
 
 static void __GiveRewardItemToCharacterOrDrop(entt::entity chEntity, entt::entity victim, entt::entity itemEntity, const PIXEL_POSITION& pos, bool bTrackBattlePass)
 {
-	// The auto-give and the battle-pass progress still take the character.
-	LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
 	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
 
 	uint32_t dwGivenCount = 0;
 	const uint32_t dwItemVnum = ItemSystem::GetItemVnum(itemEntity);
 
-	if (ch && __TryAutoGiveRewardItem(ch, itemEntity, dwGivenCount))
+	if (ecs::IsCharacter(chEntity) && __TryAutoGiveRewardItem(chEntity, itemEntity, dwGivenCount))
 	{
 		if (bTrackBattlePass && dwGivenCount > 0)
-			__UpdateBattlePassCollectProgress(ch, dwItemVnum, dwGivenCount);
+			__UpdateBattlePassCollectProgress(chEntity, dwItemVnum, dwGivenCount);
 		return;
 	}
 
 	if (bTrackBattlePass && dwGivenCount > 0)
-		__UpdateBattlePassCollectProgress(ch, dwItemVnum, dwGivenCount);
+		__UpdateBattlePassCollectProgress(chEntity, dwItemVnum, dwGivenCount);
 
 	if (!ItemSystem::PlaceItemOnGround(
 			itemEntity,
@@ -3475,7 +3472,7 @@ static void __GiveRewardItemToCharacterOrDrop(entt::entity chEntity, entt::entit
 			pos, 300))
 		return;
 
-	if (ch && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(chEntity)) == false)
+	if (ecs::IsCharacter(chEntity) && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(chEntity)) == false)
 		ItemSystem::SetGroundOwnership(
 			itemEntity, chEntity, 60);
 
