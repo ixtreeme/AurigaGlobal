@@ -1913,11 +1913,6 @@ bool CHARACTER::ChangeSex()
     return true;
 }
 
-uint8_t CHARACTER::GetCharType() const
-{
-    return m_bCharType;
-}
-
 namespace ecs::PlayerRuntime {
 
 void SetDungeonTicketExtraMetin(entt::entity e, bool value)
@@ -3345,8 +3340,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     else
         ecs::PlayerRuntime::RefreshGMLevel(GetEntityHandle());
 
-    m_bCharType = CHAR_TYPE_PC;
-
 
     if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle())) {
         combat->alignment = std::min<uint32_t>(t->lAlignment, CombatSystem::MAX_ALIGNMENT);
@@ -3515,7 +3508,6 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     const TMobTable* t = &m_pkMobData->m_table;
 
-    m_bCharType = t->bType;
     // The factory fills CharacterType at spawn, but SetProto can change the
     // type afterwards and used to leave the component behind.
     if (const entt::entity self = GetEntityHandle();
@@ -3543,7 +3535,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     AffectSystem::ApplyMobAttribute(GetEntityHandle(), t);
 
-    if (IsStone())
+    if (t->bType == CHAR_TYPE_STONE)
     {
         CombatSystem::DetermineDropMetinStone(GetEntityHandle());
     }
@@ -3893,8 +3885,6 @@ void CHARACTER::Initialize()
 
 
 
-
-    m_bCharType = CHAR_TYPE_MONSTER;
 
     ecs::PlayerRuntime::SetPosition(GetEntityHandle(), POS_STANDING);
 

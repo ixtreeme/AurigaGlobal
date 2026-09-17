@@ -1157,7 +1157,7 @@ struct FuncAggregateMonster
 			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
-			if (!ch->IsMonster())
+			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
 				return;
 			if (CombatSystem::GetVictim(candidate) != entt::null)
 				return;
@@ -1183,7 +1183,7 @@ struct FuncAggregateMonsterPlus
 			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
-			if (!ch->IsMonster())
+			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
 				return;
 			if (CombatSystem::GetVictim(candidate) != entt::null)
 				return;
@@ -1211,7 +1211,7 @@ struct FuncAttractRanger
 			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
-			if (!ch->IsMonster())
+			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
 				return;
 			if (CombatSystem::GetVictim(candidate) != entt::null && CombatSystem::GetVictim(candidate) != m_character)
 				return;
@@ -1245,7 +1245,7 @@ struct FuncPullMonster
 			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
-			if (!ch->IsMonster())
+			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
 				return;
 			//if (ch->GetVictim() && ch->GetVictim() != m_ch)
 			//return;

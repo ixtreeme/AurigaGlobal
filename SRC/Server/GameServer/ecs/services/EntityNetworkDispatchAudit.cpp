@@ -76,9 +76,6 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     if (nativePack.dwVID != ch->GetPacketVID())
         LOG_WARN("[INSERT_PARITY] dwVID entity={} native={} legacy={}", entityIdx, nativePack.dwVID, ch->GetPacketVID());
 
-    if (nativePack.bType != ch->GetCharType())
-        LOG_WARN("[INSERT_PARITY] bType entity={} native={} legacy={}", entityIdx, static_cast<int>(nativePack.bType), static_cast<int>(ch->GetCharType()));
-
     if (nativePack.angle != ecs::PlayerRuntime::GetRotation(source))
         LOG_WARN("[INSERT_PARITY] angle entity={} native={} legacy={}", entityIdx, nativePack.angle, ecs::PlayerRuntime::GetRotation(source));
 

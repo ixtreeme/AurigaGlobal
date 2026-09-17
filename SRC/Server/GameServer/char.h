@@ -617,21 +617,11 @@ public:
 	uint32_t		GetPacketVID() const;
 	// char.h (public)
 
-	void			SetCharType(uint8_t bType) { m_bCharType = bType; }
-
 	bool			ChangeSex();
 
 	uint32_t			GetAID() const;
 
-	uint8_t			GetCharType() const;
-
 	bool			IsPC() const { return GetDesc() ? true : false; }
-	bool			IsNPC()	const { return m_bCharType != CHAR_TYPE_PC; }
-	bool			IsMonster()	const { return m_bCharType == CHAR_TYPE_MONSTER; }
-	bool			IsStone() const { return m_bCharType == CHAR_TYPE_STONE; }
-	bool			IsDoor() const { return m_bCharType == CHAR_TYPE_DOOR; }
-	bool			IsBuilding() const { return m_bCharType == CHAR_TYPE_BUILDING; }
-	//		bool			IsPet() const		{ return m_bCharType == CHAR_TYPE_PET; }
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
 #endif
@@ -690,7 +680,6 @@ public:
 
 
 protected:
-	uint8_t			m_bCharType;
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
@@ -704,7 +693,6 @@ public:
 	bool IsFakePlayer() const { return m_bFakePlayer; }
 
 	 
-	//void			SetCharType(uint8_t bType) { m_bCharType = bType; }
 private:
 	bool	m_bFakePlayer = false;
 public:

@@ -712,6 +712,7 @@ SECTREE * ecs::PlayerRuntime::GetSectree(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsNPC(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetGold(entt::entity,int64_t) { Unexpected(); }
 bool ecs::PlayerRuntime::IsStone(entt::entity) { Unexpected(); }
+unsigned char ecs::PlayerRuntime::GetCharType(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsObserverMode(entt::entity) { Unexpected(); }
 int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
 bool ecs::MovementSystem::Show(entt::entity,int,int,int,int,bool) { Unexpected(); }

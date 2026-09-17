@@ -1844,7 +1844,7 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
     if (IsNowWalking() != bWalkFlag)
     {
         ecs::MovementSystem::SetNowWalking(GetEntityHandle(), bWalkFlag);
-        if (IsNPC())
+        if (ecs::PlayerRuntime::GetCharType(GetEntityHandle()) != CHAR_TYPE_PC)
         {
             if (bWalkFlag)
                 MonsterLog("�E�´U");

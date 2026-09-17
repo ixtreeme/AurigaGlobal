@@ -275,6 +275,7 @@ uint32_t GetRaceNum(entt::entity) { Unexpected(); }
 bool IsValid(entt::entity owner) { Check(persistenceTest, "unexpected player validity check"); return IsPC(owner); }
 bool IsPC(entt::entity owner) { return g_registry.valid(owner) && g_registry.all_of<Player>(owner); }
 bool IsStone(entt::entity) { Unexpected(); }
+uint8_t GetCharType(entt::entity) { Unexpected(); }
 uint8_t GetMobRank(entt::entity) { Unexpected(); }
 int GetPremiumRemainSeconds(entt::entity, uint8_t) { Unexpected(); }
 bool IsPCBang(entt::entity) { Unexpected(); }

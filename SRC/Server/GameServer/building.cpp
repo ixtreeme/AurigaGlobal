@@ -483,7 +483,7 @@ struct FIsIn
 			LPCHARACTER ch = (LPCHARACTER) ent;
 			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-			if (ch->IsMonster())
+			if (ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER)
 			{
 				return;
 			}

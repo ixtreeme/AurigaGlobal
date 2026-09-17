@@ -1653,9 +1653,9 @@ static int __DropEvent_CharStone_GetDropPercent(int killer_level)
 static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim, ITEM_MANAGER& itemMgr, std::vector<entt::entity>& vec_item)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
-	if (victim.IsStone())
+	const auto victimEntity = victim.GetEntityHandle();
+	if (ecs::PlayerRuntime::GetCharType(victimEntity) == CHAR_TYPE_STONE)
 	{
-		const auto victimEntity = ((&victim) ? (&victim)->GetEntityHandle() : entt::null);
 		const uint32_t victimRace = ecs::PlayerRuntime::GetRaceNum(victimEntity);
 		if (!itemMgr.IsRegisteredDropMob(victimRace))
 		{

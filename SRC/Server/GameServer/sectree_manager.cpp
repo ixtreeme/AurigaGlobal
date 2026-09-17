@@ -1550,9 +1550,9 @@ struct FPurgeMonsters
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
 
 #ifdef __NEWPET_SYSTEM__
-			if (lpChar->IsMonster() == true && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(lpChar->GetEntityHandle()))
+			if (ecs::PlayerRuntime::GetCharType(lpChar->GetEntityHandle()) == CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(lpChar->GetEntityHandle()))
 #else
-			if ( lpChar->IsMonster() == true && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()))
+			if (ecs::PlayerRuntime::GetCharType(lpChar->GetEntityHandle()) == CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()))
 #endif
 			{
 				M2_DESTROY_CHARACTER(lpChar);
@@ -1645,7 +1645,7 @@ struct FCountMonsters
 		{
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
 
-			if ( lpChar->IsMonster() == true )
+			if (ecs::PlayerRuntime::GetCharType(lpChar->GetEntityHandle()) == CHAR_TYPE_MONSTER)
 			{
 				const entt::entity e = lpChar->GetEntityHandle(); if (e != entt::null) m_map_Monsters[e] = e;
 			}

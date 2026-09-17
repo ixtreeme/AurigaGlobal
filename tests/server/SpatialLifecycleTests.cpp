@@ -221,6 +221,7 @@ DESC* ecs::PlayerRuntime::GetDesc(entt::entity e) {
 uint32_t get_dword_time() { return 123456; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.all_of<ecs::TagPC>(e); }
 bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs::StoneAITag>(e); }
+unsigned char ecs::PlayerRuntime::GetCharType(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::MonsterLog(entt::entity e, const char*) {
     if (g_registry.all_of<RecoveryProbe>(e)) RecoveryCallback(e, 5);
 }

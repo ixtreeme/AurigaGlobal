@@ -201,7 +201,7 @@ namespace
             if (!ch)
                 return;
 
-            if (!(ch->IsMonster() || ecs::PlayerRuntime::IsStone(chEntity)))
+            if (!(ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(chEntity)))
                 return;
 
             if (ecs::PlayerRuntime::GetRaceNum(chEntity) == vnum)

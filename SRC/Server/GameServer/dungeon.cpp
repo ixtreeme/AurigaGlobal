@@ -597,7 +597,7 @@ namespace
 				LPCHARACTER ch = (LPCHARACTER) ent;
 				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-				if (!ecs::PlayerRuntime::IsPC(chEntity) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(chEntity)))
+				if (!ecs::PlayerRuntime::IsPC(chEntity) && (ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(chEntity)))
 				{
 					CombatSystem::Dead(ch->GetEntityHandle());
 				}
@@ -615,7 +615,7 @@ namespace
 				LPCHARACTER ch = (LPCHARACTER) ent;
 				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-				if (!ecs::PlayerRuntime::IsPC(chEntity) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(chEntity)))
+				if (!ecs::PlayerRuntime::IsPC(chEntity) && (ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(chEntity)))
 				{
 					int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(chEntity);
 					if (racevnum != 3963 && racevnum != 3964)
