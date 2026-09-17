@@ -785,7 +785,6 @@ int mining::RealRefinePick(entt::entity,entt::entity) { Unexpected(); }
 void mining::CHEAT_MAX_PICK(entt::entity,entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
 void CHARACTER::Save(void) { Unexpected(); }
-int64_t CHARACTER::GetSP(void)const { Unexpected(); }
 namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unexpected(); } }
 int ItemSystem::CountItem(entt::entity, uint32_t) { Unexpected(); }
 void CombatSystem::Dead(entt::entity,entt::entity,bool) { Unexpected(); }
@@ -974,7 +973,6 @@ bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }
 void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
 bool CombatSystem::IsStun(entt::entity) { Unexpected(); }
 int CombatSystem::GetArrowAndBow(entt::entity,entt::entity *,entt::entity *,int) { Unexpected(); }
-void CHARACTER::AttackedByFire(entt::entity,int,int) { Unexpected(); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpected(); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Unexpected(); }
 int ecs::PlayerRuntime::GetSkillPowerByLevel(entt::entity,int,bool) { Unexpected(); }

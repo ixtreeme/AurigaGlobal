@@ -1867,52 +1867,6 @@ void ecs::PlayerRuntime::ClearCheatChecks(entt::entity e)
 }
 #endif
 
-bool CHARACTER::ChangeSex()
-{
-	const entt::entity entity = GetEntityHandle();
-	if (entity != entt::null && g_registry.valid(entity))
-	{
-		const auto* source = g_registry.try_get<ecs::RaceComponent>(entity);
-		const uint16_t sourceRace = source ? source->value : 0;
-		if (!ecs::PlayerRuntime::ChangeSex(entity))
-		{
-			LOG_ERROR("CHANGE_SEX: {} unknown race {}", GetName(), static_cast<int>(sourceRace));
-			return false;
-		}
-
-		LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(sourceRace),
-			static_cast<int>(ecs::PlayerRuntime::GetRaceNum(entity)));
-		return true;
-	}
-
-    const int src_race = ecs::PlayerRuntime::GetRaceNum(GetEntityHandle());
-
-    // This branch used to assign m_points.job and nothing else. That field was
-    // the race for as long as it had readers; with the race living in
-    // RaceState, writing it here would have changed nothing at all, so the
-    // swap goes through SetRace like every other race change.
-    uint8_t dst_race = 0;
-    switch (src_race)
-    {
-    case MAIN_RACE_WARRIOR_M:  dst_race = MAIN_RACE_WARRIOR_W;  break;
-    case MAIN_RACE_WARRIOR_W:  dst_race = MAIN_RACE_WARRIOR_M;  break;
-    case MAIN_RACE_ASSASSIN_M: dst_race = MAIN_RACE_ASSASSIN_W; break;
-    case MAIN_RACE_ASSASSIN_W: dst_race = MAIN_RACE_ASSASSIN_M; break;
-    case MAIN_RACE_SURA_M:     dst_race = MAIN_RACE_SURA_W;     break;
-    case MAIN_RACE_SURA_W:     dst_race = MAIN_RACE_SURA_M;     break;
-    case MAIN_RACE_SHAMAN_M:   dst_race = MAIN_RACE_SHAMAN_W;   break;
-    case MAIN_RACE_SHAMAN_W:   dst_race = MAIN_RACE_SHAMAN_M;   break;
-    default:
-        LOG_ERROR("CHANGE_SEX: {} unknown race {}", GetName(), static_cast<int>(src_race));
-        return false;
-    }
-
-    ecs::PlayerRuntime::SetRace(GetEntityHandle(), dst_race);
-
-    LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(src_race), static_cast<int>(dst_race));
-    return true;
-}
-
 namespace ecs::PlayerRuntime {
 
 void SetDungeonTicketExtraMetin(entt::entity e, bool value)
@@ -2183,23 +2137,6 @@ bool ecs::PlayerRuntime::IsGM(entt::entity e)
     return test_server ? true : false;
 }
 
-uint32_t CHARACTER::GetAID() const
-{
-    char szQuery[1024 + 1];
-    uint32_t dwAID = 0;
-
-    snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player_index%s WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
-        get_table_postfix(), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), ecs::PlayerRuntime::GetEmpire(GetEntityHandle()));
-
-    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
-    if (msg->Get()->uiNumRows == 0)
-        return 0;
-
-    MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
-    str_to_number(dwAID, row[0]);
-    return dwAID;
-}
-
 // Pet/mount markers live only in StatusFlags; legacy readers use the same store.
 
 #ifdef ENABLE_VOTE4BUFF
@@ -2295,26 +2232,6 @@ int GetHPPct(entt::entity e)
 }
 
 } // namespace ecs::PlayerRuntime
-
-bool CHARACTER::SetPCBang(bool flag)
-{
-	const entt::entity character = GetEntityHandle();
-	if (character != entt::null && g_registry.valid(character))
-	{
-		auto& login = g_registry.get_or_emplace<ecs::LoginInfo>(character);
-		login.isPCBang = flag;
-		g_registry.emplace_or_replace<ecs::DirtyTag>(character);
-	}
-	return flag;
-}
-
-uint32_t CHARACTER::GetNextExp() const
-{
-    if (PLAYER_MAX_LEVEL_CONST < ecs::PointSystem::GetLevel(GetEntityHandle()))
-        return 2500000000u;
-    else
-        return exp_table[ecs::PointSystem::GetLevel(GetEntityHandle())];
-}
 
 
 namespace ecs::PlayerRuntime {
@@ -3807,10 +3724,6 @@ void CHARACTER::Initialize()
 
     ecs::SocialSystem::SetNoOpenedShop(GetEntityHandle(), true);
 #ifdef ENABLE_EVENT_MANAGER
-#endif
-
-#ifdef __SEND_TARGET_INFO__
-    dwLastTargetInfoPulse = 0;
 #endif
 
     // Phase C.3: legacy destination zero-init removed (entity null at this

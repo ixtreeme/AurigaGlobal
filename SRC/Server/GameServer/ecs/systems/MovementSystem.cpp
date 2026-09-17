@@ -1689,29 +1689,6 @@ uint32_t GetCurrentMoveDuration(entt::entity e)
 
 } // namespace ecs::MovementSystem
 
-// Phase 15E-final.LPENTITY.4-architect.B.1.3:
-// Walk-mode read flip. IsNowWalking returns the pure ECS
-// MovementState.isNowWalking flag; IsWalking adds the stamina-exhaustion
-// fallback that legacy callers depend on (forced walk when stamina <= 0).
-//
-// Bootstrap returns false (state absent) - matches legacy m_bNowWalking
-// zero-init in CHARACTER::Initialize. Stamina path reads via GetStamina
-// which still pulls from legacy point storage.
-bool CHARACTER::IsNowWalking() const
-{
-	const entt::entity e = GetEntityHandle();
-	if (e == entt::null || !g_registry.valid(e))
-		return false;
-	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
-		return state->isNowWalking;
-	return false;
-}
-
-bool CHARACTER::IsWalking() const
-{
-	return IsNowWalking() || ecs::PlayerRuntime::GetStamina(GetEntityHandle()) <= 0;
-}
-
 // Phase 15E-final.LPENTITY.4-architect.B.1.4:
 // Destination read flip. GetCurrentDestX / GetCurrentDestY now read the
 // ECS MovementDestination component as the authoritative source.
@@ -1752,43 +1729,6 @@ int32_t GetCurrentDestY(entt::entity e)
 }
 
 } // namespace ecs::MovementSystem
-
-// Phase 15E-final.LPENTITY.4-architect.B.1.5:
-// GetAddChrStateFlag composes the 4-bit bStateFlag byte from the ECS
-// StatusFlags component. The 4 bits map 1:1 onto separate bool fields:
-//   ADD_CHARACTER_STATE_DEAD   <-> StatusFlags.isDead
-//   ADD_CHARACTER_STATE_SPAWN  <-> StatusFlags.isSpawnState
-//   ADD_CHARACTER_STATE_KILLER <-> StatusFlags.isKillerMode
-//   ADD_CHARACTER_STATE_PARTY  <-> StatusFlags.isPartyState
-//
-// Bootstrap returns 0 (status absent) - matches legacy m_bAddChrState
-// zero-init in CHARACTER::Initialize.
-//
-// Dual-write status: per A.1 §"Field 7" all 4 bits keep both legacy and
-// ECS in sync. One known transient deviation: CombatSystem on-kill sets
-// ECS isDead = true but the legacy DEAD bit only follows via the
-// EvEntityDied -> SetPosition(POS_DEAD) chain. Documented in 4-fixup.2.f
-// as acceptable; resolves automatically at Phase G when m_bAddChrState
-// deletes.
-uint8_t CHARACTER::GetAddChrStateFlag() const
-{
-	const entt::entity e = GetEntityHandle();
-	if (e == entt::null || !g_registry.valid(e))
-		return 0;
-	const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
-	if (!status)
-		return 0;
-	uint8_t flag = 0;
-	if (status->isDead)
-		flag |= ADD_CHARACTER_STATE_DEAD;
-	if (status->isSpawnState)
-		flag |= ADD_CHARACTER_STATE_SPAWN;
-	if (status->isKillerMode)
-		flag |= ADD_CHARACTER_STATE_KILLER;
-	if (status->isPartyState)
-		flag |= ADD_CHARACTER_STATE_PARTY;
-	return flag;
-}
 
 EVENTFUNC(save_event)
 {
@@ -1906,11 +1846,6 @@ void SetPosition(entt::entity e, int pos)
 }
 
 } // namespace ecs::PlayerRuntime
-
-bool CHARACTER::IsPosition(int pos) const
-{
-	return ecs::PlayerRuntime::GetPosition(GetEntityHandle()) == pos;
-}
 
 namespace {
 int32_t RecoveryAmount(entt::entity e, int percent)

@@ -56,9 +56,9 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     //
     // Two things to know before trusting a clean run of this.
     //
-    // First, some of these comparisons cannot fail. GetRotation,
-    // GetAddChrStateFlag and GetCurrentDestX/Y are already component-backed,
-    // so those lines compare a component against itself. They are kept
+    // First, some of these comparisons cannot fail. GetRotation and
+    // GetCurrentDestX/Y are already component-backed, so those lines
+    // compare a component against itself. They are kept
     // because they will start meaning something again the moment either
     // side changes, but they are not evidence today.
     //
@@ -87,11 +87,6 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
 
     if (nativePack.bAttackSpeed != ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_ATT_SPEED))
         LOG_WARN("[INSERT_PARITY] bAttackSpeed entity={} native={} legacy={}", entityIdx, nativePack.bAttackSpeed, ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_ATT_SPEED));
-
-    if (nativePack.bStateFlag != ch->GetAddChrStateFlag())
-        LOG_WARN("[INSERT_PARITY] bStateFlag entity={} native={} legacy={}", entityIdx,
-            static_cast<int>(nativePack.bStateFlag),
-            static_cast<int>(ch->GetAddChrStateFlag()));
 
     // These four were never compared. bMovingSpeed and transname both branch
     // on the pet/mount/special-race test, which the two builders spell

@@ -238,7 +238,6 @@ uint32_t AffectSystem::GetPolymorphVnum(entt::entity) { return 0; }
 void CHARACTER::Save() { Unexpected(); }
 const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
 int64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
-int64_t CHARACTER::GetSP() const { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity e) {
     if (!onMovement) Unexpected();
     onMovement(e);

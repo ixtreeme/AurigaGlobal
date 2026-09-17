@@ -840,7 +840,6 @@ int CEntity::GetY(void)const { UnexpectedService(__func__); }
 int64_t get_global_time(void) { return nowSeconds; }
 char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) { UnexpectedService(__func__); }
-int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetMaxHP(entt::entity, int64_t) { UnexpectedService(__func__); }
 unsigned int ecs::MovementSystem::GetStopTime(entt::entity) { UnexpectedService(__func__); }
 void SkillSystem::StartMuyeongEvent(entt::entity) { UnexpectedService(__func__); }

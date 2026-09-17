@@ -584,14 +584,6 @@ protected:
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Basic Points
-#ifdef __SEND_TARGET_INFO__
-private:
-	uint32_t			dwLastTargetInfoPulse;
-
-public:
-	uint32_t			GetLastTargetInfoPulse() const { return dwLastTargetInfoPulse; }
-	void			SetLastTargetInfoPulse(uint32_t pulse) { dwLastTargetInfoPulse = pulse; }
-#endif
 public:
 public:
 #ifdef ENABLE_FAKE_SHOP_HEADER
@@ -616,10 +608,6 @@ public:
 	uint32_t		GetPacketVID() const;
 	// char.h (public)
 
-	bool			ChangeSex();
-
-	uint32_t			GetAID() const;
-
 	bool			IsPC() const { return GetDesc() ? true : false; }
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
@@ -630,14 +618,8 @@ public:
 #ifdef __ENABLE_BLOCK_EXP__
 	bool			Block_Exp;
 #endif
-	uint32_t			GetNextExp() const;
-
-	// ���� ���� ���� ����� �����Ѵ�.
-
-	bool			IsPosition(int pos) const;
 
 
-	int64_t				GetSP() const;
 
 
 
@@ -687,37 +669,9 @@ protected:
 	// Move & Synchronize Positions
 	//////////////////////////////////////////////////////////////////////////////////
 public:
-	 
-	void SetFakePlayer(bool b) { m_bFakePlayer = b; }
-	bool IsFakePlayer() const { return m_bFakePlayer; }
-
-	 
-private:
-	bool	m_bFakePlayer = false;
-public:
-	// Phase 15E-final.LPENTITY.4-architect.B.1.3:
-	// IsWalking is the composite that includes the stamina-exhaustion
-	// fallback; IsNowWalking is the pure walk-mode flag (used by the
-	// HEADER_GC_WALK_MODE packet emission). Both read the ECS
-	// MovementState component as the authoritative source. Per A.2 §2
-	// m_bNowWalking row.
-	// Bodies in MovementSystem.cpp.
-	bool			IsWalking() const;
-	bool			IsNowWalking() const;
 
 
 
-// Phase C.4: GetAddChrStateForAudit removed. Its consumer in
-// CheckMovementDrift state_flags subsection deleted with the
-// m_bAddChrState write migration. CheckMovementDrift body is now empty;
-// shim deletes in Phase G alongside the legacy field declarations.
-
-	// Phase 15E-final.LPENTITY.4-architect.B.1.5:
-	// GetAddChrStateFlag composes the 4-bit bStateFlag byte from the ECS
-	// StatusFlags component (isDead, isSpawnState, isKillerMode,
-	// isPartyState). Per A.2 §2 m_bAddChrState row.
-	// Body in MovementSystem.cpp.
-	uint8_t				GetAddChrStateFlag() const;
 
 
 
@@ -745,23 +699,12 @@ public:
 	// Affect
 public:
 
-	bool			UpdateAffect();	// called from EVENT
-
-	void			LoadAffect(uint32_t dwCount, TPacketAffectElement* pElements);
 
 
 
 
 
-	CAffect* FindAffect(uint32_t dwType, uint8_t bApply = APPLY_NONE) const;
-	TAffectFlag GetAffectFlags() const;
 
-#ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-public:
-	void						SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost);
-	void						LoadAffectSkills();
-
-#endif
 
 public:
 
@@ -787,7 +730,6 @@ public:
 	void			ClearItem();
 
 
-	uint16_t			GetDragonSoulGrid(uint16_t wCell) const;
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 #endif
 
@@ -896,7 +838,6 @@ public:
 #ifdef LEADERBOARD_RAZOR93
 
 #endif
-	void				AttackedByFire(entt::entity attacker, int amount, int count);
 
 
 
@@ -1125,7 +1066,6 @@ private:
 public:
 
 public:
-	void				StartSaveEvent();
 
 
 	//DELAYED_WARP
@@ -1156,7 +1096,6 @@ private:
 private:
 
 public:
-	bool SetPCBang(bool flag);
 	// END_PC_BANG_ITEM_ADD
 
 	// NEW_HAIR_STYLE_ADD
@@ -1179,8 +1118,6 @@ public:
 
 		//PREVENT_TRADE_WINDOW
 public:
-	bool	IsOpenSafebox() const;
-	void 	SetOpenSafebox(bool b);
 
 	//END_PREVENT_TRADE_WINDOW
 private:
@@ -1384,9 +1321,6 @@ protected:
 
 
 public:
-#ifdef ENABLE_BIOLOGIST_UI
-	void CheckBiologistReward();
-#endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 #endif
 

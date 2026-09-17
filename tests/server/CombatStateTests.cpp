@@ -411,7 +411,6 @@ char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__
 unsigned int CHARACTER::GetPacketVID(void)const { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetGMLevel(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetNextExp(entt::entity) { UnexpectedService(__func__); }
-int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
 bool ecs::PointSystem::Set(entt::entity,unsigned char,int64_t) { UnexpectedService(__func__); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool ecs::SocialSystem::HasReviverInParty(entt::entity) { UnexpectedService(__func__); }

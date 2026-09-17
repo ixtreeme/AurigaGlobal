@@ -583,8 +583,6 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 			LogManager::instance().LoginLog(true,
 					ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), (ecs::PointSystem::GetLevel(chEntity)), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::GetReal(chEntity, POINT_PLAYTIME));
 
-			if (0)
-				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName()));
 		}
 #endif
 	}

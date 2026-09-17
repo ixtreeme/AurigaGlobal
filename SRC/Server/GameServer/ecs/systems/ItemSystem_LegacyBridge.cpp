@@ -195,14 +195,6 @@ static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(ent
     return &g_registry.emplace<ecs::DragonSoulInventoryComponent>(character);
 }
 
-static const ecs::DragonSoulInventoryComponent* TryGetDragonSoulInventoryComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    return g_registry.try_get<ecs::DragonSoulInventoryComponent>(character);
-}
-
 
 static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity character)
 {
@@ -378,17 +370,6 @@ EVENTFUNC(soul_item_event);
 
 #ifdef ENABLE_ACCE_SYSTEM
 #endif
-
-uint16_t CHARACTER::GetDragonSoulGrid(uint16_t wCell) const
-{
-	if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-		return 0;
-
-	if (const auto* comp = TryGetDragonSoulInventoryComponent(GetEntityHandle()))
-		return comp->itemGrid[wCell];
-
-	return 0;
-}
 
 #endif
 
