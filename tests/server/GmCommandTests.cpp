@@ -837,7 +837,7 @@ void CLIENT_DESC::Packet(void const* data, int size) {
 void DESC_MANAGER::DestroyDesc(DESC *,bool) { Unexpected(); }
 DESC * DESC_MANAGER::FindByCharacterName(char const *) { Unexpected(); }
 void DESC_MANAGER::GetUserCount(int &,int * *,int &) { Unexpected(); }
-void CHARACTER_MANAGER::DestroyCharacter(CHARACTER *) { Unexpected(); }
+void CHARACTER_MANAGER::DestroyCharacter(entt::entity) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::SpawnMobEntity(unsigned int,int,int,int,int,bool,int,bool) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::SpawnMobRange(unsigned int,int,int,int,int,int,bool,bool,bool) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { Unexpected(); }

@@ -705,14 +705,12 @@ EVENTFUNC(kill_campfire_event)
 		return 0;
 	}
 
-	auto*	ch = ecs::LegacyCharOf(info->ch);
-
-	if (ch == nullptr) { // <Factor>
+	if (!ecs::IsCharacter(info->ch)) { // <Factor>
 		return 0;
 	}
 	ecs::PlayerRuntime::SetCharEvent(
 		info->ch, ecs::PlayerRuntime::CharEvent::Mining, nullptr);
-	M2_DESTROY_CHARACTER(ch);
+	M2_DESTROY_CHARACTER(info->ch);
 	return 0;
 }
 

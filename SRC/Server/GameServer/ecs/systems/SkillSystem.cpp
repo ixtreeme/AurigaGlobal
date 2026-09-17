@@ -67,15 +67,6 @@ namespace
 
 using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
-LegacyCharHandle LegacyCharOf(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
-    return legacy ? legacy->ptr : nullptr;
-}
-
 ecs::SkillLevels* TryGetSkillLevels(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -2027,8 +2018,7 @@ void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entit
 	}
 	else
 	{
-		auto* legacyCharacter = LegacyCharOf(character);
-		const int iWep = legacyCharacter
+		const int iWep = ecs::IsCharacter(character)
 			? number(CombatSystem::GetMobDamageMin(character), CombatSystem::GetMobDamageMax(character))
 			: 0;
 		pkSk->SetPointVar("wep", iWep);

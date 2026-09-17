@@ -115,15 +115,6 @@ const int ITEM_BROKEN_METIN_VNUM = 28960;
 using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 
-LegacyCharHandle LegacyCharOf(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
-    return legacy ? legacy->ptr : nullptr;
-}
-
 static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))

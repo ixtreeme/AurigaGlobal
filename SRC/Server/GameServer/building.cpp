@@ -372,8 +372,8 @@ void CLand::PutData(const TLand * data)
 					if (y > m_data.y + m_data.height || y < m_data.y)
 						continue;
 
-					if (LPCHARACTER ch = ecs::LegacyCharOf(chEntity))
-						M2_DESTROY_CHARACTER(ch);
+					if (ecs::IsCharacter(chEntity))
+						M2_DESTROY_CHARACTER(chEntity);
 				}
 			}
 		}

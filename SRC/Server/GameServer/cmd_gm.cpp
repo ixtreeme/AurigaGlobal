@@ -1046,21 +1046,20 @@ ACMD(do_mob_ld)
 
 struct FuncPurge
 {
-	LPCHARACTER m_pkGM;
+	entt::entity m_gm;
 	bool	m_bAll;
 
-	FuncPurge(LPCHARACTER ch) : m_pkGM(ch), m_bAll(false)
+	FuncPurge(entt::entity gm) : m_gm(gm), m_bAll(false)
 	{
 	}
 
 	void operator () (LPENTITY ent)
 	{
-		const entt::entity gM = m_pkGM ? m_pkGM->GetEntityHandle() : entt::null;
+		const entt::entity gM = m_gm;
 		if (!ent->IsType(ENTITY_CHARACTER))
 			return;
 
-		LPCHARACTER pkChr = (LPCHARACTER) ent;
-		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+		const entt::entity chr = ent->GetEntityHandle();
 
 
 		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - ecs::PlayerRuntime::GetX(gM), ecs::PlayerRuntime::GetY(chr) - ecs::PlayerRuntime::GetY(gM));
@@ -1077,18 +1076,17 @@ struct FuncPurge
 #endif
 		)
 		{
-			M2_DESTROY_CHARACTER(pkChr);
+			M2_DESTROY_CHARACTER(chr);
 		}
 	}
 };
 
 ACMD(do_purge)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
-	FuncPurge func(ch);
+	FuncPurge func(character);
 
 	if (*arg1 && !strcmp(arg1, "all"))
 		func.m_bAll = true;
@@ -2524,21 +2522,20 @@ ACMD(do_guild_state)
 
 struct FuncWeaken
 {
-	LPCHARACTER m_pkGM;
+	entt::entity m_gm;
 	bool	m_bAll;
 
-	FuncWeaken(LPCHARACTER ch) : m_pkGM(ch), m_bAll(false)
+	FuncWeaken(entt::entity gm) : m_gm(gm), m_bAll(false)
 	{
 	}
 
 	void operator () (LPENTITY ent)
 	{
-		const entt::entity gM = m_pkGM ? m_pkGM->GetEntityHandle() : entt::null;
+		const entt::entity gM = m_gm;
 		if (!ent->IsType(ENTITY_CHARACTER))
 			return;
 
-		LPCHARACTER pkChr = (LPCHARACTER) ent;
-		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+		const entt::entity chr = ent->GetEntityHandle();
 
 
 		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - ecs::PlayerRuntime::GetX(gM), ecs::PlayerRuntime::GetY(chr) - ecs::PlayerRuntime::GetY(gM));
@@ -2553,11 +2550,10 @@ struct FuncWeaken
 
 ACMD(do_weaken)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
-	FuncWeaken func(ch);
+	FuncWeaken func(character);
 
 	if (*arg1 && !strcmp(arg1, "all"))
 		func.m_bAll = true;
