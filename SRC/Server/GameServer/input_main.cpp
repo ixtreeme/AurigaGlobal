@@ -1494,7 +1494,6 @@ void CInputMain::ItemToItem(entt::entity character, const char * pcData)
 
 void CInputMain::ItemDrop(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDrop handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -1502,7 +1501,7 @@ void CInputMain::ItemDrop(entt::entity character, const char * data)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_drop * pinfo = (struct command_item_drop *) data;
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -1513,14 +1512,13 @@ void CInputMain::ItemDrop(entt::entity character, const char * data)
 
 	// 엘크가 0보다 크면 엘크를 버리는 것 이다.
 	if (pinfo->gold > 0)
-		ch->DropGold(pinfo->gold);
+		ItemSystem::DropGold(character, pinfo->gold);
 	else
-		ch->DropItem(pinfo->Cell);
+		ItemSystem::DropItem(character, pinfo->Cell);
 }
 
 void CInputMain::ItemDrop2(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDrop2 handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -1528,7 +1526,7 @@ void CInputMain::ItemDrop2(entt::entity character, const char * data)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop2");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGItemDrop2 * pinfo = (TPacketCGItemDrop2 *) data;
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -1538,9 +1536,9 @@ void CInputMain::ItemDrop2(entt::entity character, const char * data)
 #endif
 
 	if (pinfo->gold > 0)
-		ch->DropGold(pinfo->gold);
+		ItemSystem::DropGold(character, pinfo->gold);
 	else
-		ch->DropItem(pinfo->Cell, pinfo->count);
+		ItemSystem::DropItem(character, pinfo->Cell, pinfo->count);
 }
 
 void CInputMain::ItemMove(entt::entity character, const char * data)

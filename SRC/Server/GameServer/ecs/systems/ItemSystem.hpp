@@ -149,6 +149,15 @@ bool ConsumeItemEcs(entt::entity item, uint32_t amount = 1);
 bool DestroyItemEntityEcs(entt::entity item, const char* reason = nullptr);
 // The player destroys the item in a cell of their own, or hands it to victim.
 bool DestroyItem(entt::entity e, TItemPos Cell);
+// The player drops an inventory item (all of it when bCount is 0), or gold.
+bool DropItem(entt::entity e, TItemPos Cell,
+#ifdef ENABLE_NEW_STACK_LIMIT
+    int
+#else
+    uint8_t
+#endif
+    bCount = 0);
+bool DropGold(entt::entity e, int64_t gold);
 bool GiveItem(entt::entity e, entt::entity victim, TItemPos Cell);
 void ModifyPoints(entt::entity item, bool bAdd);
 TItemExtraProto* GetItemExtraProto(entt::entity item);

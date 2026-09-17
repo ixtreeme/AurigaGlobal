@@ -21,6 +21,14 @@ struct MainInventoryRuntimeComponent {
     MainInventoryRuntimeComponent() { items.fill(entt::null); }
 };
 
+// Drop rate limits: gold drops are g_GoldDropTimeLimitValue apart, and with
+// ENABLE_ANTICHEAT more than four item drops within 25 pulses disconnect.
+struct DropLimiter {
+    uint32_t lastGoldDropTime { 0 };
+    int32_t lastItemDropPulse { 0 };
+    int32_t itemDropCount { 0 };
+};
+
 // The key expansion and the extra inventory unlock share a cooldown: the
 // global time from which the next unlock is allowed.
 struct InventoryUnlockCooldown {

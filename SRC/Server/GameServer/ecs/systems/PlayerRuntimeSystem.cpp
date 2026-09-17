@@ -3944,7 +3944,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_dwLastGoldDropTime = 0;
 #ifdef ENABLE_NEWSTUFF
 #endif
 
@@ -3996,8 +3995,6 @@ void CHARACTER::Initialize()
     m_firstReward = 0;
     m_rewardCount = 0;
     m_checkRepeated = 0;
-    m_dropitemcount = 0;
-    m_lastdropitem = 0;
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 #endif

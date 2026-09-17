@@ -472,7 +472,7 @@ namespace NPartyPickupDistribute
 	};
 }
 
-bool CHARACTER::DropItem(TItemPos Cell,
+bool ItemSystem::DropItem(entt::entity e, TItemPos Cell,
 #ifdef ENABLE_NEW_STACK_LIMIT
 	int
 #else
@@ -480,26 +480,29 @@ bool CHARACTER::DropItem(TItemPos Cell,
 #endif
 	bCount)
 {
+	if (!ecs::IsCharacter(e))
+		return false;
+
 	bool stupid = false;
 	if (bCount < 0)
 	{
-		LOG_ERROR("I am a stupid hacker 1: {} {}", GetName(), bCount);
+		LOG_ERROR("I am a stupid hacker 1: {} {}", ecs::PlayerRuntime::GetName(e), bCount);
 		stupid = true;
 	}
 
 	if (stupid)
 	{
-		LOG_ERROR("I am a stupid hacker 2: {} {}", GetName(), bCount);
+		LOG_ERROR("I am a stupid hacker 2: {} {}", ecs::PlayerRuntime::GetName(e), bCount);
 		return false;
 	}
 
 	entt::entity item = entt::null;
 
-	if (!InventorySystem::CanHandleItems(GetEntityHandle()))
+	if (!InventorySystem::CanHandleItems(e))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (DragonSoulSystem::CanRefine(GetEntityHandle())) {
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
+		if (DragonSoulSystem::CanRefine(e)) {
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 
@@ -507,18 +510,19 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	}
 
 #ifdef ENABLE_ANTICHEAT
-	if (thecore_pulse() > m_lastdropitem + 25)
+	auto& limiter = g_registry.get_or_emplace<ecs::DropLimiter>(e);
+	if (thecore_pulse() > limiter.lastItemDropPulse + 25)
 	{
-		m_dropitemcount = 0;
+		limiter.itemDropCount = 0;
 	}
 
-	if (thecore_pulse() < m_lastdropitem + 25 && m_dropitemcount >= 4)
+	if (thecore_pulse() < limiter.lastItemDropPulse + 25 && limiter.itemDropCount >= 4)
 	{
-		m_dropitemcount = 0;
-		LPDESC desc = GetDesc();
+		limiter.itemDropCount = 0;
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
 		if (desc)
 		{
-			LogManager::instance().HackLog("DROP_HACK", GetEntityHandle());
+			LogManager::instance().HackLog("DROP_HACK", e);
 			desc->SetPhase(PHASE_CLOSE);
 		}
 
@@ -526,22 +530,22 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	}
 #endif
 
-	if (CombatSystem::IsDead(GetEntityHandle()))
+	if (CombatSystem::IsDead(e))
 		return false;
 
-	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !ItemSystem::IsValidItem(item = ItemSystem::GetItem(GetEntityHandle(), Cell)))
+	if (!InventorySystem::IsValidItemPosition(e, Cell) || !ItemSystem::IsValidItem(item = ItemSystem::GetItem(e, Cell)))
 		return false;
 
 	if (ItemSystem::IsItemLocked(item) || ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemEquipped(item))
 		return false;
 
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(e))->IsRunning() == true)
 		return false;
 
 	if (IS_SET(ItemSystem::GetItemAntiFlag(item), ITEM_ANTIFLAG_DROP | ITEM_ANTIFLAG_GIVE))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 353, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 353, "");
 #endif
 		return false;
 	}
@@ -552,18 +556,18 @@ bool CHARACTER::DropItem(TItemPos Cell,
 #ifdef ENABLE_EXTRA_INVENTORY
 	if (ItemSystem::IsExtraItem(item)) {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (ItemSystem::IsExtraItem(item)) {");//INGAME_DEBUG_RAZOR93
+		ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (ItemSystem::IsExtraItem(item)) {");//INGAME_DEBUG_RAZOR93
 
 		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line 8391 if (ItemSystem::IsExtraItem(item)) {{ ");
 
 #endif
-		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
+		InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
 	}
 	else {
-		InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+		InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 	}
 #else
-	InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+	InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 #endif
 
 	entt::entity pkItemToDrop = entt::null;
@@ -592,20 +596,20 @@ bool CHARACTER::DropItem(TItemPos Cell,
 
 		char szBuf[51 + 1];
 		snprintf(szBuf, sizeof(szBuf), "%u %u", ItemSystem::GetItemID(pkItemToDrop), ItemSystem::GetItemCount(pkItemToDrop));
-		LogManager::instance().ItemLogEntity(GetEntityHandle(), item, "ITEM_SPLIT", szBuf);
+		LogManager::instance().ItemLogEntity(e, item, "ITEM_SPLIT", szBuf);
 	}
 
-	PIXEL_POSITION pxPos = GetXYZ();
+	PIXEL_POSITION pxPos { ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), ecs::PlayerRuntime::GetZ(e) };
 
 #ifdef ENABLE_NEWSTUFF
 	const int dropDestroySeconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM];
 #else
 	const int dropDestroySeconds = 300;
 #endif
-	if (ItemSystem::PlaceItemOnGround(pkItemToDrop, GetMapIndex(), pxPos, dropDestroySeconds))
+	if (ItemSystem::PlaceItemOnGround(pkItemToDrop, ecs::PlayerRuntime::GetMapIndex(e), pxPos, dropDestroySeconds))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 321, "%d",
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 321, "%d",
 #ifdef ENABLE_NEWSTUFF
 			g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM]
 #else
@@ -618,63 +622,68 @@ bool CHARACTER::DropItem(TItemPos Cell,
 
 		char szHint[32 + 1];
 		snprintf(szHint, sizeof(szHint), "%s %u %u", ItemSystem::GetItemName(pkItemToDrop), ItemSystem::GetItemCount(pkItemToDrop), ItemSystem::GetItemOriginalVnum(pkItemToDrop));
-		LogManager::instance().ItemLogEntity(GetEntityHandle(), pkItemToDrop, "DROP", szHint);
+		LogManager::instance().ItemLogEntity(e, pkItemToDrop, "DROP", szHint);
 		//Motion(MOTION_PICKUP);
 #ifdef ENABLE_ANTICHEAT
-		m_lastdropitem = thecore_pulse();
-		m_dropitemcount++;
+		auto& dropped = g_registry.get_or_emplace<ecs::DropLimiter>(e);
+		dropped.lastItemDropPulse = thecore_pulse();
+		dropped.itemDropCount++;
 #endif
 	}
 
 	return true;
 }
 
-bool CHARACTER::DropGold(int64_t gold)
+bool ItemSystem::DropGold(entt::entity e, int64_t gold)
 {
-	if (gold <= 0 || gold > ecs::PointSystem::GetGold(GetEntityHandle()))
+	if (!ecs::IsCharacter(e))
 		return false;
 
-	if (!InventorySystem::CanHandleItems(GetEntityHandle()))
+	if (gold <= 0 || gold > ecs::PointSystem::GetGold(e))
+		return false;
+
+	if (!InventorySystem::CanHandleItems(e))
 		return false;
 
 	if (0 != g_GoldDropTimeLimitValue)
 	{
-		if (get_dword_time() < m_dwLastGoldDropTime + g_GoldDropTimeLimitValue)
+		const auto* limiter = g_registry.try_get<ecs::DropLimiter>(e);
+		if (get_dword_time() < (limiter ? limiter->lastGoldDropTime : 0) + g_GoldDropTimeLimitValue)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 510, "");
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 510, "");
 #endif
 			return false;
 		}
 	}
 
-	m_dwLastGoldDropTime = get_dword_time();
+	g_registry.get_or_emplace<ecs::DropLimiter>(e).lastGoldDropTime = get_dword_time();
 
 	const entt::entity item = ITEM_MANAGER::instance().CreateItem(1, gold);
 
 	if (ItemSystem::IsValidItem(item))
 	{
-		PIXEL_POSITION pos = GetXYZ();
+		PIXEL_POSITION pos { ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), ecs::PlayerRuntime::GetZ(e) };
 
 #ifdef ENABLE_NEWSTUFF
 		const int goldDestroySeconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD];
 #else
 		const int goldDestroySeconds = 300;
 #endif
-		if (ItemSystem::PlaceItemOnGround(item, GetMapIndex(), pos, goldDestroySeconds))
+		if (ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(e), pos, goldDestroySeconds))
 		{
 			//Motion(MOTION_PICKUP);
-			ecs::PointSystem::Change(GetEntityHandle(), POINT_GOLD, -gold, true);
+			ecs::PointSystem::Change(e, POINT_GOLD, -gold, true);
 
 			if (gold > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
-				LogManager::instance().CharLog(GetEntityHandle(), gold, "DROP_GOLD", "");
+				LogManager::instance().CharLog(e, gold, "DROP_GOLD", "");
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 321, "%d", (150 / 60));
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 321, "%d", (150 / 60));
 #endif
 		}
 
-		ecs::SessionSystem::Save(GetEntityHandle());
+		ecs::SessionSystem::Save(e);
 		return true;
 	}
 

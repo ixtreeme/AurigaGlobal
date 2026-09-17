@@ -822,13 +822,6 @@ public:
 	// ADD_REFINE_BUILDING
 	// END_OF_ADD_REFINE_BUILDING
 
-	bool			DropItem(TItemPos Cell,
-#ifdef ENABLE_NEW_STACK_LIMIT
-		int
-#else
-		uint8_t
-#endif
-		bCount = 0);
 
 	//	void			PotionPacket(int iPotionType);
 
@@ -863,7 +856,6 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Money related
 
-	bool			DropGold(int64_t gold);
 
 
 #ifdef ENABLE_PVP_ADVANCED
@@ -1283,7 +1275,6 @@ public:
 
 
 private:
-	uint32_t m_dwLastGoldDropTime;
 #ifdef ENABLE_NEWSTUFF
 public:
 #endif
@@ -1468,7 +1459,7 @@ public:
 
 protected:
 #ifdef ENABLE_ANTICHEAT
-	int32_t m_firstReward, m_rewardCount, m_checkRepeated, m_dropitemcount, m_lastdropitem;
+	int32_t m_firstReward, m_rewardCount, m_checkRepeated;
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 #endif
