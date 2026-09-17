@@ -235,6 +235,7 @@ void BroadcastNotice(const char*, bool) { Unexpected(); }
 std::string ecs::diag::Describe(entt::entity) { Unexpected(); }
 int32_t ecs::PlayerRuntime::GetZ(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsNPC(entt::entity) { Unexpected(); }
+bool ecs::PlayerRuntime::IsDetailLog(entt::entity) { Unexpected(); }
 int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity) { Unexpected(); }
 bool AffectSystem::StartAffectEvent(entt::entity) { Unexpected(); }
 void AffectSystem::SetFlag(entt::entity, uint32_t, bool) { Unexpected(); }

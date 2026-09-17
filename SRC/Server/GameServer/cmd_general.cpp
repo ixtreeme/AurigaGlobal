@@ -2418,14 +2418,12 @@ ACMD(do_nowar)
 
 ACMD(do_detaillog)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->DetailLog();
+	ecs::PlayerRuntime::ToggleDetailLog(character);
 }
 
 ACMD(do_monsterlog)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->ToggleMonsterLog();
+	ecs::PlayerRuntime::ToggleMonsterLog(character);
 }
 
 ACMD(do_pkmode)

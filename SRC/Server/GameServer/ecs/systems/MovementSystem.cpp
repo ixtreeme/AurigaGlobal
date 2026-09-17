@@ -1663,7 +1663,7 @@ bool CHARACTER::Move(int32_t x, int32_t y)
 		return true;
 
 	if (test_server)
-		if (m_bDetailLog)
+		if (ecs::PlayerRuntime::IsDetailLog(GetEntityHandle()))
 			LOG_TRACE("{} position {} {}", GetName(), x, y);
 
 	ecs::MovementSystem::OnMove(GetEntityHandle());

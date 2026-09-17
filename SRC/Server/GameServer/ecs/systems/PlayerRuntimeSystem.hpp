@@ -188,6 +188,11 @@ void SetDropStatus(entt::entity e);
 // Test-server monster diagnostics. Plain text, no varargs: the callers
 // that needed formatting are still CHARACTER::MonsterLog.
 void MonsterLog(entt::entity e, const char* text);
+// The detail log traces a character's moves on a test server; the monster log
+// sends a monster's AI chatter to whoever turned it on.
+bool IsDetailLog(entt::entity e);
+void ToggleDetailLog(entt::entity e);
+void ToggleMonsterLog(entt::entity e);
 
 void SetPosition(entt::entity e, int pos);
 void StartRecoveryEvent(entt::entity e);

@@ -3226,24 +3226,49 @@ void CHARACTER::Destroy()
         g_registry.remove<ecs::ViewActiveTag>(e);
     }
 
-	if (m_bMonsterLog)
-		CHARACTER_MANAGER::instance().UnregisterForMonsterLog(GetEntityHandle());
+	CHARACTER_MANAGER::instance().UnregisterForMonsterLog(GetEntityHandle());
 
 	if (entityToDestroy != entt::null && g_registry.valid(entityToDestroy))
 		EntityFactory::Destroy(g_registry, entityToDestroy);
 }
 
-void CHARACTER::ToggleMonsterLog()
+bool ecs::PlayerRuntime::IsDetailLog(entt::entity e)
 {
-    m_bMonsterLog = !m_bMonsterLog;
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
 
-    if (m_bMonsterLog)
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+    return status && status->detailLog;
+}
+
+void ecs::PlayerRuntime::ToggleDetailLog(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+        status->detailLog = !status->detailLog;
+}
+
+void ecs::PlayerRuntime::ToggleMonsterLog(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+    if (!status)
+        return;
+
+    status->monsterLog = !status->monsterLog;
+    const bool on = status->monsterLog;
+
+    if (on)
     {
-        CHARACTER_MANAGER::instance().RegisterForMonsterLog(GetEntityHandle());
+        CHARACTER_MANAGER::instance().RegisterForMonsterLog(e);
     }
     else
     {
-        CHARACTER_MANAGER::instance().UnregisterForMonsterLog(GetEntityHandle());
+        CHARACTER_MANAGER::instance().UnregisterForMonsterLog(e);
     }
 }
 
@@ -3855,8 +3880,6 @@ void CHARACTER::Initialize()
     // default-init handles isNowWalking=false and walkPreference=false).
     CombatSystem::ResetChangeAttackPositionTime(GetEntityHandle());
 
-    m_bDetailLog = false;
-    m_bMonsterLog = false;
 
 
 
