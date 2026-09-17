@@ -2188,9 +2188,9 @@ void SetLevel(entt::entity e, uint8_t level)
 
 } // namespace ecs::PlayerRuntime
 
-BOOL CHARACTER::IsGM() const
+bool ecs::PlayerRuntime::IsGM(entt::entity e)
 {
-    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) != GM_PLAYER)
+    if (ecs::PlayerRuntime::GetGMLevel(e) != GM_PLAYER)
         return true;
 
     return test_server ? true : false;

@@ -886,9 +886,8 @@ void double_dollar(const char *src, size_t src_len, char *dest, size_t dest_len)
 // #define ENABLE_BLOCK_CMD_SHORTCUT
 void interpret_command(entt::entity character, const char * argument, uint64_t len)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_ANTI_CMD_FLOOD
-	if (ch && !ch->IsGM())
+	if (ecs::IsCharacter(character) && !ecs::PlayerRuntime::IsGM(character))
 	{
 		if (thecore_pulse() > ecs::PlayerRuntime::GetCmdAntiFloodPulse(character) + PASSES_PER_SEC(1))
 		{
@@ -902,7 +901,7 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 		}
 	}
 #endif
-	if (nullptr == ch)
+	if (!ecs::IsCharacter(character))
 	{
 		LOG_ERROR("NULL CHRACTER");
 		return ;

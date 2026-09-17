@@ -77,7 +77,7 @@ class LogManager : public singleton<LogManager>
 		void		BootLog(const char * c_pszHostName, uint8_t bChannel);
 		void		FishLog(uint32_t dwPID, int prob_idx, int fish_id, int fish_level, uint32_t dwMiliseconds, uint32_t dwVnum = false, uint32_t dwValue = 0);
 		void		QuestRewardLog(const char * c_pszQuestName, uint32_t dwPID, uint32_t dwLevel, int iValue1, int iValue2);
-		void		DetailLoginLog(bool isLogin, LPCHARACTER ch);
+		void		DetailLoginLog(bool isLogin, entt::entity chEntity);
 		void		DragonSlayLog(uint32_t dwGuildID, uint32_t dwDragonVnum, uint32_t dwStartTime, uint32_t dwEndTime);
 		void		InvalidServerLog(enum eLocalization eLocaleType, const char* pcszIP, const char* pszRevision);
 		void		ChatLog(uint32_t where, uint32_t who_id, const char* who_name, uint32_t whom_id, const char* whom_name, const char* type, const char* msg, const char* ip);

@@ -640,7 +640,6 @@ public:
 #endif
 
 
-	BOOL 			IsGM() const;
 
 #ifdef __ENABLE_BLOCK_EXP__
 	bool			Block_Exp;

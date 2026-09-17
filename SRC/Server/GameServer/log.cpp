@@ -334,9 +334,8 @@ void LogManager::QuestRewardLog(const char * c_pszQuestName, uint32_t dwPID, uin
 			iValue2);
 }
 
-void LogManager::DetailLoginLog(bool isLogin, LPCHARACTER ch)
+void LogManager::DetailLoginLog(bool isLogin, entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MID);
 	if (nullptr == ecs::PlayerRuntime::GetDesc(chEntity))
 		return;
@@ -345,7 +344,7 @@ void LogManager::DetailLoginLog(bool isLogin, LPCHARACTER ch)
 	{
 		Query("INSERT INTO loginlog2(type, is_gm, login_time, channel, account_id, pid, ip, client_version) "
 				"VALUES('INVALID', %s, NOW(), %d, %u, %u, inet_aton('%s'), '%s')",
-				ch->IsGM() == true ? "'Y'" : "'N'",
+				ecs::PlayerRuntime::IsGM(chEntity) == true ? "'Y'" : "'N'",
 				g_bChannel,
 				ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id,
 				(ecs::PlayerRuntime::GetPlayerID(chEntity)),

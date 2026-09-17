@@ -20,7 +20,7 @@ namespace quest
 				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
 
-				if ( (ecs::PlayerRuntime::IsPC(chEntity)) == true && ch->IsGM() != true )
+				if ( (ecs::PlayerRuntime::IsPC(chEntity)) == true && ecs::PlayerRuntime::IsGM(chEntity) != true )
 				{
 					if ( ((ecs::PlayerRuntime::GetX(chEntity) >= 764503 && ecs::PlayerRuntime::GetX(chEntity) <= 772362) && (ecs::PlayerRuntime::GetY(chEntity) >= 22807 && ecs::PlayerRuntime::GetY(chEntity) <= 26499)) == false )
 					{

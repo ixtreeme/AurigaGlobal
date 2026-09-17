@@ -35,6 +35,8 @@ int ChangeEmpire(entt::entity e, uint8_t empire);
 int GetChangeEmpireCount(entt::entity e);
 void IncrementChangeEmpireCount(entt::entity e);
 uint8_t GetGMLevel(entt::entity e);
+// Above player level, or anyone at all on a test server.
+bool IsGM(entt::entity e);
 void RefreshGMLevel(entt::entity e);
 uint8_t GetBlockMode(entt::entity e);
 bool IsBlockMode(entt::entity e, uint8_t flag);

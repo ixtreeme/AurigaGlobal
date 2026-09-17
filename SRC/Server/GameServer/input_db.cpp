@@ -3200,11 +3200,11 @@ void CInputDB::GuildChangeMaster(TPacketChangeGuildMaster* p)
 
 void CInputDB::DetailLog(const TPacketNeedLoginLogInfo* info)
 {
-	auto* pChar = CHARACTER_MANAGER::instance().FindByPID( info->dwPlayerID );
+	const entt::entity character = CHARACTER_MANAGER::instance().FindEntityByPID( info->dwPlayerID );
 
-	if (nullptr != pChar)
+	if (ecs::IsCharacter(character))
 	{
-		LogManager::instance().DetailLoginLog(true, pChar);
+		LogManager::instance().DetailLoginLog(true, character);
 	}
 }
 

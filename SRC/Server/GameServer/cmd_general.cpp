@@ -623,9 +623,7 @@ EVENTFUNC(timed_event)
 	if (info->left_second <= 0)
 	{
 		ecs::PlayerRuntime::SetCharEvent(chEntity, ecs::PlayerRuntime::CharEvent::Timed, nullptr);
-		// Login logging and Disconnect still require the legacy session shell.
-		LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (!ecs::IsCharacter(chEntity))
 			return 0;
 
 		switch (info->subcmd)
@@ -639,7 +637,7 @@ EVENTFUNC(timed_event)
 
 					db_clientdesc->DBPacket( HEADER_GD_VALID_LOGOUT, 0, &acc_info, sizeof(acc_info) );
 
-					LogManager::instance().DetailLoginLog( false, ch );
+					LogManager::instance().DetailLoginLog( false, chEntity );
 				}
 				break;
 		}

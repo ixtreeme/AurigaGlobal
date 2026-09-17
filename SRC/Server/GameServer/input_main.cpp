@@ -644,7 +644,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				return (iExtraLen);
 			}
 
-			if (ch->IsGM())
+			if (ecs::PlayerRuntime::IsGM(character))
 				bType = (bType & 0xF0) | WHISPER_TYPE_GM;
 
 			if (buflen > 0)
@@ -667,7 +667,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				// @warme006
 				// LOG_INFO(0, "WHISPER: %s -> %s : %s", ecs::PlayerRuntime::GetName(character).data(), pinfo->szNameTo, buf);
 #ifdef ENABLE_CHAT_LOGGING
-				if (ch->IsGM())
+				if (ecs::PlayerRuntime::IsGM(character))
 				{
 					LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), buf, buflen);
 					LogManager::instance().EscapeString(__escape_string2, sizeof(__escape_string2), pinfo->szNameTo, sizeof(pack.szNameFrom));
@@ -1315,12 +1315,12 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 			langName.c_str(), ecs::PlayerRuntime::GetEmpire(character), nameWithPrefix.c_str(), buf);
 
 // else
-//		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l %s %s : %s", langName.c_str(), (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(character), 3)]), ecs::PlayerRuntime::GetName(character).data(), buf);
+//		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l %s %s : %s", langName.c_str(), (ecs::PlayerRuntime::IsGM(character)?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(character), 3)]), ecs::PlayerRuntime::GetName(character).data(), buf);
 		//len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s", langName.c_str(), ecs::PlayerRuntime::GetEmpire(character), ecs::PlayerRuntime::GetName(character).data(), buf);
 //#endif
 	}
 #else
-	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %s : %s", (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(character), 3)]), ecs::PlayerRuntime::GetName(character).data(),buf);
+	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %s : %s", (ecs::PlayerRuntime::IsGM(character)?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(character), 3)]), ecs::PlayerRuntime::GetName(character).data(),buf);
 #endif
 
 	if (CHAT_TYPE_SHOUT == pinfo->type)
@@ -1401,7 +1401,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 								 ItemSystem::IsEquipUniqueGroup(character, UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(character),
 								ecs::PlayerRuntime::GetMapIndex(character), strlen(ecs::PlayerRuntime::GetName(character).data())));
 #ifdef ENABLE_CHAT_LOGGING
-					if (ch->IsGM())
+					if (ecs::PlayerRuntime::IsGM(character))
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
 						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");
@@ -1427,7 +1427,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 					RawPacketToEntityFunc f(tbuf.read_peek(), tbuf.size());
 					ecs::SocialSystem::ForEachOnlinePartyMember(character, f);
 #ifdef ENABLE_CHAT_LOGGING
-					if (ch->IsGM())
+					if (ecs::PlayerRuntime::IsGM(character))
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
 						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), ecs::SocialSystem::GetParty(character)->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");
@@ -1447,7 +1447,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 				if (ecs::SocialSystem::GetGuild(character)) {
 					ecs::SocialSystem::GetGuild(character)->Chat(chatbuf);
 #ifdef ENABLE_CHAT_LOGGING
-					if (ch->IsGM())
+					if (ecs::PlayerRuntime::IsGM(character))
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
 						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), ecs::SocialSystem::GetGuild(character)->GetID(), ecs::SocialSystem::GetGuild(character)->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");

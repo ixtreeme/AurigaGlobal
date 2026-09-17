@@ -710,7 +710,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		LOG_INFO("VERSION : NO CHECK");
 	}
 
-	if (ch->IsGM() == true)
+	if (ecs::PlayerRuntime::IsGM(ch->GetEntityHandle()) == true)
 		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ConsoleEnable");
 
 	if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= 10000)
