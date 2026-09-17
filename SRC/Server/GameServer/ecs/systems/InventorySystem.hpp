@@ -24,6 +24,9 @@ bool MoveItem(entt::entity owner, TItemPos source, TItemPos destination, int cou
 bool SplitItemWithCommit(entt::entity owner, entt::entity item, int count, TItemPos destination,
     const std::function<bool(entt::entity)>& commit);
 int GetInventorySize(entt::entity owner);
+// Destroys every carried item without saving it: teardown of a character
+// with no mob proto.
+void ClearItem(entt::entity e);
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 // Spends the keys for the next inventory page and opens it.
 bool ExpandInventory(entt::entity e);

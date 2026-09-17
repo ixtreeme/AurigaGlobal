@@ -85,28 +85,28 @@ namespace MountSystem {
 
 } // namespace MountSystem
 
-void CHARACTER::QueryMountInventory()
+void MountSystem::QueryMountInventory(entt::entity e)
 {
-    if (m_bMountInventoryLoaded || !GetDesc())
+    if (MountSystem::GetMountInventory(e) || !ecs::PlayerRuntime::GetDesc(e))
         return;
 
     DBManager::instance().ReturnQuery(QID_MOUNT_INVENTORY_LOAD,
-        ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()),
+        ecs::PlayerRuntime::GetPlayerID(e),
         nullptr,
         "SELECT id, slot, vnum, count, socket0, socket1, socket2, "
         "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
         "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5 "
         "FROM account_mount_inventory WHERE account_id=%u ORDER BY slot",
-        GetDesc()->GetAccountTable().id);
+        ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id);
 }
 
-void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& items)
+void MountSystem::LoadMountInventory(entt::entity e, const std::vector<TMountInventoryItemTable>& items)
 {
-    if (m_bMountInventoryLoaded)
+    if (MountSystem::GetMountInventory(e))
         return;
 
     const int iHeight = 16;
-    MountSystem::SetMountInventory(GetEntityHandle(), M2_NEW CMountInventory(GetEntityHandle(), iHeight));
+    MountSystem::SetMountInventory(e, M2_NEW CMountInventory(e, iHeight));
 
     for (const auto& entry : items)
     {
@@ -123,13 +123,12 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
                 item, attribute, entry.aAttr[attribute].bType,
                 entry.aAttr[attribute].sValue);
 
-        if (!MountSystem::GetMountInventory(GetEntityHandle())->Add(entry.slot, item, true))
+        if (!MountSystem::GetMountInventory(e)->Add(entry.slot, item, true))
             ItemSystem::DestroyItemEntityEcs(item, "MOUNT_INVENTORY_LOAD_ADD_FAILED");
     }
 
-    m_bMountInventoryLoaded = true;
-    MountSystem::SendMountInventory(GetEntityHandle());
-    ecs::PointSystem::Compute(GetEntityHandle());
+    MountSystem::SendMountInventory(e);
+    ecs::PointSystem::Compute(e);
 }
 
 void MountSystem::SendMountInventory(entt::entity owner)

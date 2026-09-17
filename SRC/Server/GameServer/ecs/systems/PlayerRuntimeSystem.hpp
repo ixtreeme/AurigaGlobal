@@ -250,6 +250,14 @@ const ecs::MobileAuth& GetMobileAuth(entt::entity e);
 void SetMobilePhone(entt::entity e, const char* phone);
 bool IsBattlePassLoaded(entt::entity e);
 void SetBattlePassLoaded(entt::entity e, bool loaded);
+#ifdef ENABLE_BATTLE_PASS
+// Grants the free pass affect when none is running, and marks the pass loaded.
+void EnsureFreeBattlePassActive(entt::entity e);
+// Replaces the mission list with the loaded rows.
+void LoadBattlePass(entt::entity e, uint32_t dwCount, TPlayerBattlePassMission* data);
+#endif
+// Sends the configured login notices.
+void SendGreetMessage(entt::entity e);
 void SetArena(entt::entity e, CArena* arena);
 bool CanWarp(entt::entity e);
 bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner, int limitTime);

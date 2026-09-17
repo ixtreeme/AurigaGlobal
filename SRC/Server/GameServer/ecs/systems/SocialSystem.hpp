@@ -1,5 +1,6 @@
 #pragma once
 
+#include <common/tables.h>
 #include <entt/entt.hpp>
 #include <functional>
 
@@ -96,6 +97,9 @@ void SetNoOpenedShop(entt::entity e, bool value);
 bool GetKasmirPaket(entt::entity e);
 void SetKasmirPaket(entt::entity e, bool value);
 void OpenPrivateShop(entt::entity e, bool bKasmir);
+// The silk bundle: sends the saved price list, then opens the shop window.
+void UseSilkBotaryReal(entt::entity e, const TPacketMyshopPricelistHeader* p);
+void SendMyShopPriceListCmd(entt::entity e, uint32_t dwItemVnum, int64_t dwItemPrice);
 void UseSilkBotary(entt::entity e);
 entt::entity GetShopOwner(entt::entity e);
 void SetShop(entt::entity e, CShop* shop);

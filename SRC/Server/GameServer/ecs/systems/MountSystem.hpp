@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
+#include <common/tables.h>
 #include <entt/entt.hpp>
 
 #include "../components/social_components.hpp"
@@ -33,6 +35,9 @@ void MountSummon(entt::entity rider, entt::entity mountItem);
 CMountInventory* GetMountInventory(entt::entity rider);
 entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell);
 void SendMountInventory(entt::entity owner);
+// Asks the database for the account mount inventory, once.
+void QueryMountInventory(entt::entity e);
+void LoadMountInventory(entt::entity e, const std::vector<TMountInventoryItemTable>& items);
 void ComputeMountInventoryBonuses(entt::entity owner);
 void UpdateMountCountOverheadToViewers(entt::entity owner);
 void SetMountInventory(entt::entity rider, CMountInventory* inventory);

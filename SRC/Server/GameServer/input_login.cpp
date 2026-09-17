@@ -665,7 +665,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	p2.header = HEADER_GC_CHANNEL;
 	p2.channel = g_bChannel;
 	d->Packet(&p2, sizeof(p2));
-	ch->SendGreetMessage();
+	ecs::PlayerRuntime::SendGreetMessage(ch->GetEntityHandle());
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 	NetworkSyncSystem::UpdateItemOnTitleName(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null), true);
 #endif

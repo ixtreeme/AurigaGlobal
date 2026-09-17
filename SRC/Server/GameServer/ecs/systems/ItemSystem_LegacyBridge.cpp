@@ -865,11 +865,11 @@ std::set<uint32_t> allowedVnums = {
 
 // MYSHOP_PRICE_LIST
 
-void CHARACTER::SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice)
+void ecs::SocialSystem::SendMyShopPriceListCmd(entt::entity e, uint32_t dwItemVnum, int64_t dwItemPrice)
 {
 	char szLine[256];
 	snprintf(szLine, sizeof(szLine), "MyShopPriceList %u %lld", dwItemVnum, dwItemPrice);
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, szLine);
+	ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, szLine);
 	LOG_INFO("{}", szLine);
 }
 
@@ -879,23 +879,23 @@ void CHARACTER::SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice)
 // Í ¹ÞÀº ¸®½ºÆ®¸¦ User ¿¡°Ô Àü¼ÛÇÏ°í »óÁ¡À» ¿­¶ó´Â Ä¿¸Çµå¸¦ º¸³½´Ù.
 //
 
-void CHARACTER::UseSilkBotaryReal(const TPacketMyshopPricelistHeader * p)
+void ecs::SocialSystem::UseSilkBotaryReal(entt::entity e, const TPacketMyshopPricelistHeader* p)
 {
 	const TItemPriceInfo* pInfo = (const TItemPriceInfo*)(p + 1);
 
 	if (!p->byCount)
 		// °¡°Ý ¸®½ºÆ®°¡ ¾ø´Ù. dummy µ¥ÀÌ�
 // Í¸¦ ³ÖÀº Ä¿¸Çµå¸¦ º¸³»ÁØ´Ù.
-		SendMyShopPriceListCmd(1, 0);
+		ecs::SocialSystem::SendMyShopPriceListCmd(e, 1, 0);
 	else {
 		for (int idx = 0; idx < p->byCount; idx++)
-			SendMyShopPriceListCmd(pInfo[idx].dwVnum, pInfo[idx].dwPrice);
+			ecs::SocialSystem::SendMyShopPriceListCmd(e, pInfo[idx].dwVnum, pInfo[idx].dwPrice);
 	}
 
 #ifdef KASMIR_PAKET_SYSTEM
-	ecs::SocialSystem::OpenPrivateShop(GetEntityHandle(), ecs::SocialSystem::GetKasmirPaket(GetEntityHandle()));
+	ecs::SocialSystem::OpenPrivateShop(e, ecs::SocialSystem::GetKasmirPaket(e));
 #else
-	ecs::SocialSystem::OpenPrivateShop(GetEntityHandle(), false);
+	ecs::SocialSystem::OpenPrivateShop(e, false);
 #endif
 }
 
@@ -1662,17 +1662,17 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 
 
 } // namespace ecs::PlayerRuntime
-void CHARACTER::ClearItem()
+void InventorySystem::ClearItem(entt::entity e)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::ClearItem ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::ClearItem ");//INGAME_DEBUG_RAZOR93
 #endif
 	int		i;
 	entt::entity item;
 
 	for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
 	{
-		if (ItemSystem::IsValidItem(item = ItemSystem::GetInventoryItem(GetEntityHandle(), i)))
+		if (ItemSystem::IsValidItem(item = ItemSystem::GetInventoryItem(e, i)))
 		{
 			ItemSystem::SetItemSkipSave(item, true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item);
@@ -1682,12 +1682,12 @@ void CHARACTER::ClearItem()
 				item,
 				"CLEAR_ITEM_INVENTORY");
 
-			InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM, i, 255);
+			InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, i, 255);
 		}
 	}
 	for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
 	{
-		if (ItemSystem::IsValidItem(item = ItemSystem::GetItem(GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, i))))
+		if (ItemSystem::IsValidItem(item = ItemSystem::GetItem(e, TItemPos(DRAGON_SOUL_INVENTORY, i))))
 		{
 			ItemSystem::SetItemSkipSave(item, true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item);
@@ -1705,7 +1705,7 @@ void CHARACTER::ClearItem()
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :739: for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)");
 #endif
-		if (ItemSystem::IsValidItem(item = ItemSystem::GetExtraInventoryItem(GetEntityHandle(), i)))
+		if (ItemSystem::IsValidItem(item = ItemSystem::GetExtraInventoryItem(e, i)))
 		{
 			ItemSystem::SetItemSkipSave(item, true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item);
@@ -1715,7 +1715,7 @@ void CHARACTER::ClearItem()
 				item,
 				"CLEAR_ITEM_EXTRA_INVENTORY");
 
-			InventorySystem::SyncQuickslot(GetEntityHandle(), QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
+			InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
 		}
 	}
 #endif
@@ -1723,7 +1723,7 @@ void CHARACTER::ClearItem()
 #ifdef ENABLE_SWITCHBOT
 	for (i = 0; i < SWITCHBOT_SLOT_COUNT; ++i)
 	{
-		if (ItemSystem::IsValidItem(item = ItemSystem::GetItem(GetEntityHandle(), TItemPos(SWITCHBOT, i))))
+		if (ItemSystem::IsValidItem(item = ItemSystem::GetItem(e, TItemPos(SWITCHBOT, i))))
 		{
 			ItemSystem::SetItemSkipSave(item, true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item);

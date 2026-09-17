@@ -2254,53 +2254,53 @@ std::string ecs::PlayerRuntime::GetLang(entt::entity e) {
 
 #ifdef ENABLE_BATTLE_PASS
 
-void CHARACTER::EnsureFreeBattlePassActive()
+void ecs::PlayerRuntime::EnsureFreeBattlePassActive(entt::entity e)
 {
     const uint8_t kDefaultBattlePassId = 1;
 
     int remain = 0;
-    if (AffectSystem::GetBattlePassDeadline(GetEntityHandle()) > 0)
-        remain = AffectSystem::GetBattlePassRemainingSeconds(GetEntityHandle());
+    if (AffectSystem::GetBattlePassDeadline(e) > 0)
+        remain = AffectSystem::GetBattlePassRemainingSeconds(e);
 
     if (remain <= 0)
     {
         remain = ecs::PlayerRuntime::GetSecondsTillNextMonth();
-        AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + remain);
+        AffectSystem::SetBattlePassDeadline(e, get_global_time() + remain);
     }
 
-    if (!ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle()))
-        AffectSystem::AddAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
-    ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), true);
+    if (!ecs::PlayerRuntime::GetBattlePassId(e))
+        AffectSystem::AddAffect(e, AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
+    ecs::PlayerRuntime::SetBattlePassLoaded(e, true);
 }
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
+void ecs::PlayerRuntime::LoadBattlePass(entt::entity e, uint32_t dwCount, TPlayerBattlePassMission* data)
 {
-    ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), false);
+    ecs::PlayerRuntime::SetBattlePassLoaded(e, false);
 
-    for (auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin(); it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end(); ++it)
+    for (auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin(); it != ecs::PlayerRuntime::GetBattlePassMissions(e).end(); ++it)
         delete (*it);
-    ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).clear();
+    ecs::PlayerRuntime::GetBattlePassMissions(e).clear();
 
     const uint8_t kDefaultBattlePassId = 1;
 
     int remain = 0;
-    if (AffectSystem::GetBattlePassDeadline(GetEntityHandle()) > 0)
-        remain = AffectSystem::GetBattlePassRemainingSeconds(GetEntityHandle());
+    if (AffectSystem::GetBattlePassDeadline(e) > 0)
+        remain = AffectSystem::GetBattlePassRemainingSeconds(e);
 
     if (remain <= 0)
     {
         remain = ecs::PlayerRuntime::GetSecondsTillNextMonth();
-        AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + remain);
+        AffectSystem::SetBattlePassDeadline(e, get_global_time() + remain);
     }
 
-    if (!ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle()))
-        AffectSystem::AddAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
+    if (!ecs::PlayerRuntime::GetBattlePassId(e))
+        AffectSystem::AddAffect(e, AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
 
     if (dwCount == 0 || !data)
     {
-        ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), true);
+        ecs::PlayerRuntime::SetBattlePassLoaded(e, true);
         return;
     }
 
@@ -2314,10 +2314,10 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
         newMission->bCompleted = data->bCompleted;
         newMission->bIsUpdated = data->bIsUpdated;
 
-        ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).push_back(newMission);
+        ecs::PlayerRuntime::GetBattlePassMissions(e).push_back(newMission);
     }
 
-    ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), true);
+    ecs::PlayerRuntime::SetBattlePassLoaded(e, true);
 }
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
@@ -3102,7 +3102,7 @@ void CHARACTER::Destroy()
     if (nullptr == ecs::PlayerRuntime::GetMobTable(GetEntityHandle()))
     {
         DragonSoulSystem::CleanUp(GetEntityHandle());
-        ClearItem();
+        InventorySystem::ClearItem(GetEntityHandle());
     }
 
     LPPARTY party = ecs::SocialSystem::GetParty(GetEntityHandle());
@@ -3173,7 +3173,6 @@ void CHARACTER::Destroy()
         M2_DELETE(MountSystem::GetMountInventory(GetEntityHandle()));
         MountSystem::SetMountInventory(GetEntityHandle(), nullptr);
     }
-    m_bMountInventoryLoaded = false;
 
     CEntity::Destroy();
 
@@ -3232,13 +3231,13 @@ void ecs::PlayerRuntime::ToggleMonsterLog(entt::entity e)
     }
 }
 
-void CHARACTER::SendGreetMessage()
+void ecs::PlayerRuntime::SendGreetMessage(entt::entity e)
 {
     auto v = DBManager::instance().GetGreetMessage();
 
     for (auto it = v.begin(); it != v.end(); ++it)
     {
-        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_NOTICE, it->c_str());
+        ecs::ChatSystem::Send(e, CHAT_TYPE_NOTICE, it->c_str());
     }
 }
 
@@ -3752,7 +3751,6 @@ void CHARACTER::Initialize()
     // this Initialize point - ECS StatusFlags created with default-zero
     // bits when this CHARACTER is later attached to an ECS entity).
 
-    m_bMountInventoryLoaded = false;
 
 
 

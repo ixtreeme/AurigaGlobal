@@ -647,7 +647,6 @@ public:
 
 
 
-	void			SendGreetMessage();
 
 
 
@@ -727,7 +726,6 @@ public:
 	bool			IsItemLoaded() const { return m_bItemLoaded; }
 	void			SetItemLoaded() { m_bItemLoaded = true; }
 
-	void			ClearItem();
 
 
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
@@ -736,7 +734,6 @@ public:
 
 	// MYSHOP_PRICE_LIST
 
-	void			UseSilkBotaryReal(const TPacketMyshopPricelistHeader* p);
 	// END_OF_MYSHOP_PRICE_LIST
 
 
@@ -767,7 +764,6 @@ public:
 
 protected:
 
-	void			SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice);
 
 
 	bool			m_bItemLoaded;
@@ -953,8 +949,6 @@ public:
 public:
 
 
-	void				QueryMountInventory();
-	void				LoadMountInventory(const std::vector<TMountInventoryItemTable>& items);
 
 	/// â�� ���� ��û
 	/**
@@ -975,7 +969,6 @@ public:
 
 protected:
 
-	bool				 m_bMountInventoryLoaded;
 
 
 
@@ -1252,7 +1245,6 @@ public:
 #ifdef ENABLE_FREE_PASS_RAZOR93
 
 
-	void EnsureFreeBattlePassActive();
 
 #endif
 
@@ -1283,7 +1275,6 @@ public:
 
 #ifdef ENABLE_BATTLE_PASS
 public:
-	void LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data);
 
 private:
 

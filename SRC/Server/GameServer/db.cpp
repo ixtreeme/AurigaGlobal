@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <sstream>
 #include <vector>
@@ -490,8 +491,8 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 		case QID_MOUNT_INVENTORY_LOAD:
 		{
-			LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(qi->dwIdent);
-			if (ch)
+			const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
+			if (ecs::IsCharacter(ch))
 			{
 				SQLResult* res = pMsg->Get();
 				std::vector<TMountInventoryItemTable> items;
@@ -523,7 +524,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					items.push_back(entry);
 				}
 
-				ch->LoadMountInventory(items);
+				MountSystem::LoadMountInventory(ch, items);
 			}
 		}
 		break;

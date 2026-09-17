@@ -4,6 +4,7 @@
 #include "ecs/components/skill_components.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
@@ -614,7 +615,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ch->GetZ(), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
 
 	ecs::SessionSystem::QuerySafeboxSize(ch->GetEntityHandle());
-	ch->QueryMountInventory();
+	MountSystem::QueryMountInventory(ch->GetEntityHandle());
 }
 
 void CInputDB::Boot(const char* data)
@@ -1833,7 +1834,7 @@ void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
 	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != dwPID)
 		return;
 
-	ch->LoadBattlePass(dwCount, (TPlayerBattlePassMission *)c_pData);
+	ecs::PlayerRuntime::LoadBattlePass(ch->GetEntityHandle(), dwCount, (TPlayerBattlePassMission *)c_pData);
 }
 
 void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
@@ -1920,9 +1921,9 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 	AffectSystem::LoadAffect(ch->GetEntityHandle(), dwCount, (TPacketAffectElement *) c_pData);
 #ifdef ENABLE_BATTLE_PASS
 #ifdef ENABLE_FREE_PASS_RAZOR93
-	ch->EnsureFreeBattlePassActive();
+	ecs::PlayerRuntime::EnsureFreeBattlePassActive(ch->GetEntityHandle());
 	if (!ecs::PlayerRuntime::IsBattlePassLoaded(ch->GetEntityHandle()))
-		ch->LoadBattlePass(0, nullptr);
+		ecs::PlayerRuntime::LoadBattlePass(ch->GetEntityHandle(), 0, nullptr);
 #endif
 #endif
 
@@ -2232,7 +2233,7 @@ void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* 
 		return;
 
 	LOG_INFO("RecvMyshopPricelistRes name[{}]", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
-	ch->UseSilkBotaryReal(p );
+	ecs::SocialSystem::UseSilkBotaryReal(ch->GetEntityHandle(), p);
 
 }
 // END_OF_MYSHOP_PRICE_LIST
