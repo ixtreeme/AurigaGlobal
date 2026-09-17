@@ -36,6 +36,17 @@ PartyJoinErrCode IsPartyJoinableCondition(entt::entity leader, entt::entity gues
 PartyJoinErrCode IsPartyJoinableMutableCondition(entt::entity leader, entt::entity guest);
 void PartyJoin(entt::entity guest, entt::entity leader);
 
+// Asking a leader to join, and the leader's answer.
+bool RequestToParty(entt::entity e, entt::entity leader);
+void DenyToParty(entt::entity e, entt::entity member);
+void AcceptToParty(entt::entity e, entt::entity member);
+// Inviting someone into e's party, and the invitee's answer.
+void PartyInvite(entt::entity e, entt::entity invitee);
+void PartyInviteAccept(entt::entity e, entt::entity invitee);
+void PartyInviteDeny(entt::entity e, uint32_t dwPID);
+// Drops e's own pending join request (character teardown).
+void CancelPartyRequest(entt::entity e);
+
 LPPARTY GetParty(entt::entity e);
 void SetParty(entt::entity e, LPPARTY party);
 void SetGuild(entt::entity e, CGuild* guild);

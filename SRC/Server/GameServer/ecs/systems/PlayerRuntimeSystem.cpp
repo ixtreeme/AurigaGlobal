@@ -3220,7 +3220,7 @@ void CHARACTER::Destroy()
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing);
     AffectSystem::CancelDamageEvents(GetEntityHandle());
-    event_cancel(&m_pkPartyRequestEvent);
+    ecs::SocialSystem::CancelPartyRequest(GetEntityHandle());
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Warp);
 #ifdef ENABLE_NEW_FISHING_SYSTEM
     ActivitySystem::StopFishing(GetEntityHandle());
@@ -3863,8 +3863,6 @@ void CHARACTER::Initialize()
     // is absent until Goto/Move emplaces).
 
     m_pkMobData = nullptr;
-
-    m_pkPartyRequestEvent = nullptr;
 
 
 

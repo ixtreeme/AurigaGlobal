@@ -2,6 +2,7 @@
 #include "../../exchange.h"
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <string>
 
@@ -38,6 +39,14 @@ struct SocialRefs {
 // membership once it does.
 struct PartyMembership {
     uint32_t lastDeadTime;
+};
+
+// Party joins in flight. requestEvent times out the character's own request
+// to join a leader; inviteEvents time out the invitations it sent, keyed by
+// the invitee's PID.
+struct PartyInvitations {
+    LPEVENT requestEvent { nullptr };
+    std::map<uint32_t, LPEVENT> inviteEvents;
 };
 
 struct GuildMembership {

@@ -838,21 +838,24 @@ EVENTFUNC(party_request_event)
         return 0;
     }
 
-    LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(info->dwGuestPID);
+    const entt::entity guest = CHARACTER_MANAGER::instance().FindEntityByPID(info->dwGuestPID);
 
-    if (ch)
+    if (ecs::IsCharacter(guest))
     {
-		const entt::entity guest = ch->GetEntityHandle();
         LOG_INFO("PartyRequestEvent {}", ecs::PlayerRuntime::GetName(guest).data());
         ecs::ChatSystem::Send(guest, CHAT_TYPE_COMMAND, "PartyRequestDenied");
-        ch->SetPartyRequestEvent(nullptr);
+        if (auto* invitations = g_registry.try_get<ecs::PartyInvitations>(guest))
+            invitations->requestEvent = nullptr;
     }
 
     return 0;
 }
 
-bool CHARACTER::RequestToParty(entt::entity leaderEntity)
+bool ecs::SocialSystem::RequestToParty(entt::entity e, entt::entity leaderEntity)
 {
+    if (!ecs::IsCharacter(e))
+        return false;
+
     entt::entity leader = ecs::PlayerRuntime::IsValid(leaderEntity) ? leaderEntity : entt::null;
     if (ecs::SocialSystem::GetParty(leaderEntity))
         leader = ecs::SocialSystem::GetParty(leaderEntity)->GetLeader();
@@ -860,21 +863,21 @@ bool CHARACTER::RequestToParty(entt::entity leaderEntity)
     if (leader == entt::null)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 488, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 488, "");
 #endif
         return false;
     }
 
-    if (m_pkPartyRequestEvent)
+    if (const auto* invitations = g_registry.try_get<ecs::PartyInvitations>(e); invitations && invitations->requestEvent)
         return false;
 
-    if (!IsPC() || !ecs::PlayerRuntime::IsPC(leaderEntity))
+    if (!ecs::PlayerRuntime::GetDesc(e) || !ecs::PlayerRuntime::IsPC(leaderEntity))
         return false;
 
     if (ecs::PlayerRuntime::IsBlockMode(leader, BLOCK_PARTY_REQUEST))
         return false;
 
-    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(leaderEntity, GetEntityHandle());
+    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(leaderEntity, e);
 
     switch (errcode)
     {
@@ -883,36 +886,36 @@ bool CHARACTER::RequestToParty(entt::entity leaderEntity)
 
     case ecs::SocialSystem::PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 208, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 208, "");
 #endif
         return false;
 
     case ecs::SocialSystem::PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 200, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 200, "");
 #endif
         return false;
     case ecs::SocialSystem::PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 195, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 195, "");
 #endif
         return false;
 
     case ecs::SocialSystem::PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 194, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 194, "");
 #endif
         return false;
 
     case ecs::SocialSystem::PERR_LOWLEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 214, "");
 #endif
         return false;
 
     case ecs::SocialSystem::PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 214, "");
 #endif
         return false;
 
@@ -921,7 +924,7 @@ bool CHARACTER::RequestToParty(entt::entity leaderEntity)
 
     case ecs::SocialSystem::PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 199, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 199, "");
 #endif
         return false;
 
@@ -932,84 +935,86 @@ bool CHARACTER::RequestToParty(entt::entity leaderEntity)
 
     TPartyJoinEventInfo* info = AllocEventInfo<TPartyJoinEventInfo>();
 
-    info->dwGuestPID = ecs::PlayerRuntime::GetPlayerID(GetEntityHandle());
+    info->dwGuestPID = ecs::PlayerRuntime::GetPlayerID(e);
     info->dwLeaderPID = ecs::PlayerRuntime::GetPlayerID(leaderEntity);
 
-    SetPartyRequestEvent(event_create(party_request_event, info, PASSES_PER_SEC(10)));
+    g_registry.get_or_emplace<ecs::PartyInvitations>(e).requestEvent = event_create(party_request_event, info, PASSES_PER_SEC(10));
 
-    ecs::ChatSystem::Send(leaderEntity, CHAT_TYPE_COMMAND, "PartyRequest %u", GetPacketVID());
+    ecs::ChatSystem::Send(leaderEntity, CHAT_TYPE_COMMAND, "PartyRequest %u", ecs::PlayerRuntime::GetPacketVID(e));
 #ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 106, "%s", ecs::PlayerRuntime::GetName(leaderEntity).data());
+    ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 106, "%s", ecs::PlayerRuntime::GetName(leaderEntity).data());
 #endif
     return true;
 }
 
-void CHARACTER::DenyToParty(entt::entity memberEntity)
+void ecs::SocialSystem::DenyToParty(entt::entity e, entt::entity memberEntity)
 {
-    LPCHARACTER member = ecs::LegacyCharOf(memberEntity);
-    if (!member)
+    if (!ecs::IsCharacter(e) || !ecs::IsCharacter(memberEntity))
         return;
 
-    LOG_INFO("DenyToParty {} member {} {}", GetName(), ecs::PlayerRuntime::GetName(memberEntity).data(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
+    auto* memberInvitations = g_registry.try_get<ecs::PartyInvitations>(memberEntity);
 
-    if (!member->m_pkPartyRequestEvent)
+    LOG_INFO("DenyToParty {} member {} {}", ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(memberEntity), static_cast<const void*>(memberInvitations ? get_pointer(memberInvitations->requestEvent) : nullptr));
+
+    if (!memberInvitations || !memberInvitations->requestEvent)
         return;
 
-    TPartyJoinEventInfo* info = dynamic_cast<TPartyJoinEventInfo*>(member->m_pkPartyRequestEvent->info);
+    TPartyJoinEventInfo* info = dynamic_cast<TPartyJoinEventInfo*>(memberInvitations->requestEvent->info);
 
     if (!info)
     {
-        LOG_ERROR("CHARACTER::DenyToParty> <Factor> Null pointer");
+        LOG_ERROR("SocialSystem::DenyToParty> <Factor> Null pointer");
         return;
     }
 
     if (info->dwGuestPID != ecs::PlayerRuntime::GetPlayerID(memberEntity))
         return;
 
-    if (info->dwLeaderPID != ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))
+    if (info->dwLeaderPID != ecs::PlayerRuntime::GetPlayerID(e))
         return;
 
-    event_cancel(&member->m_pkPartyRequestEvent);
+    event_cancel(&memberInvitations->requestEvent);
 
     ecs::ChatSystem::Send(memberEntity, CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
-void CHARACTER::AcceptToParty(entt::entity memberEntity)
+void ecs::SocialSystem::AcceptToParty(entt::entity e, entt::entity memberEntity)
 {
-    LPCHARACTER member = ecs::LegacyCharOf(memberEntity);
-    if (!member)
+    if (!ecs::IsCharacter(e) || !ecs::IsCharacter(memberEntity))
         return;
 
-    LOG_INFO("AcceptToParty {} member {} {}", GetName(), ecs::PlayerRuntime::GetName(memberEntity).data(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
+    auto* memberInvitations = g_registry.try_get<ecs::PartyInvitations>(memberEntity);
 
-    if (!member->m_pkPartyRequestEvent)
+    LOG_INFO("AcceptToParty {} member {} {}", ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(memberEntity), static_cast<const void*>(memberInvitations ? get_pointer(memberInvitations->requestEvent) : nullptr));
+
+    if (!memberInvitations || !memberInvitations->requestEvent)
         return;
 
-    TPartyJoinEventInfo* info = dynamic_cast<TPartyJoinEventInfo*>(member->m_pkPartyRequestEvent->info);
+    TPartyJoinEventInfo* info = dynamic_cast<TPartyJoinEventInfo*>(memberInvitations->requestEvent->info);
 
     if (!info)
     {
-        LOG_ERROR("CHARACTER::AcceptToParty> <Factor> Null pointer");
+        LOG_ERROR("SocialSystem::AcceptToParty> <Factor> Null pointer");
         return;
     }
 
     if (info->dwGuestPID != ecs::PlayerRuntime::GetPlayerID(memberEntity))
         return;
 
-    if (info->dwLeaderPID != ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))
+    if (info->dwLeaderPID != ecs::PlayerRuntime::GetPlayerID(e))
         return;
 
-    event_cancel(&member->m_pkPartyRequestEvent);
+    event_cancel(&memberInvitations->requestEvent);
 
-    if (ecs::SocialSystem::GetParty(GetEntityHandle()))
+    if (ecs::SocialSystem::GetParty(e))
     {
-        if (ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()) != ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID())
+        if (ecs::PlayerRuntime::GetPlayerID(e) != ecs::SocialSystem::GetParty(e)->GetLeaderPID())
             return;
 
-        ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(GetEntityHandle(), memberEntity);
+        ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(e, memberEntity);
         switch (errcode)
         {
-        case ecs::SocialSystem::PERR_NONE: ecs::SocialSystem::PartyJoin(memberEntity, GetEntityHandle()); return;
+        case ecs::SocialSystem::PERR_NONE: ecs::SocialSystem::PartyJoin(memberEntity, e); return;
         case ecs::SocialSystem::PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(memberEntity, CHAT_TYPE_INFO, 208, "");
@@ -1041,7 +1046,7 @@ void CHARACTER::AcceptToParty(entt::entity memberEntity)
         case ecs::SocialSystem::PERR_PARTYISFULL:
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 199, "");
+            ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 199, "");
             ecs::ChatSystem::SendNew(memberEntity, CHAT_TYPE_INFO, 220, "");
 #endif
             break;
@@ -1064,40 +1069,42 @@ EVENTFUNC(party_invite_event)
         return 0;
     }
 
-    LPCHARACTER pchInviter = CHARACTER_MANAGER::instance().FindByPID(pInfo->dwLeaderPID);
+    const entt::entity inviter = CHARACTER_MANAGER::instance().FindEntityByPID(pInfo->dwLeaderPID);
 
-    if (pchInviter)
+    if (ecs::IsCharacter(inviter))
     {
-		const entt::entity inviter = pchInviter->GetEntityHandle();
         LOG_INFO("PartyInviteEvent {}", ecs::PlayerRuntime::GetName(inviter).data());
-        pchInviter->PartyInviteDeny(pInfo->dwGuestPID);
+        ecs::SocialSystem::PartyInviteDeny(inviter, pInfo->dwGuestPID);
     }
 
     return 0;
 }
 
-void CHARACTER::PartyInvite(entt::entity invitee)
+void ecs::SocialSystem::PartyInvite(entt::entity e, entt::entity invitee)
 {
-    if (ecs::SocialSystem::GetParty(GetEntityHandle()) && ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))
+    if (!ecs::IsCharacter(e))
+        return;
+
+    if (ecs::SocialSystem::GetParty(e) && ecs::SocialSystem::GetParty(e)->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(e))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 218, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 218, "");
 #endif
         return;
     }
     else if (ecs::PlayerRuntime::IsBlockMode(invitee, BLOCK_PARTY_INVITE))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(invitee).data());
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(invitee).data());
 #endif
         return;
     }
 
 #ifdef ENABLE_PVP_ADVANCED
-    else if ((ecs::PlayerRuntime::GetDuelOption(GetEntityHandle(), "BlockParty")))
+    else if ((ecs::PlayerRuntime::GetDuelOption(e, "BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 516, "");
 #endif
         return;
     }
@@ -1105,13 +1112,13 @@ void CHARACTER::PartyInvite(entt::entity invitee)
     else if ((ecs::PlayerRuntime::GetDuelOption(invitee, "BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 517, "%s", ecs::PlayerRuntime::GetName(invitee).data());
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 517, "%s", ecs::PlayerRuntime::GetName(invitee).data());
 #endif
         return;
     }
 #endif
 
-    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(GetEntityHandle(), invitee);
+    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(e, invitee);
 
     switch (errcode)
     {
@@ -1120,42 +1127,42 @@ void CHARACTER::PartyInvite(entt::entity invitee)
 
     case ecs::SocialSystem::PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 208, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 208, "");
 #endif
         return;
     case ecs::SocialSystem::PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 200, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 200, "");
 #endif
         return;
     case ecs::SocialSystem::PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 195, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 195, "");
 #endif
         return;
     case ecs::SocialSystem::PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 194, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 194, "");
 #endif
         return;
     case ecs::SocialSystem::PERR_LOWLEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 214, "");
 #endif
         return;
     case ecs::SocialSystem::PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 214, "");
 #endif
         return;
     case ecs::SocialSystem::PERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 210, "%s", ecs::PlayerRuntime::GetName(invitee).data());
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 210, "%s", ecs::PlayerRuntime::GetName(invitee).data());
 #endif
         return;
     case ecs::SocialSystem::PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 199, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 199, "");
 #endif
         return;
     default:
@@ -1163,44 +1170,48 @@ void CHARACTER::PartyInvite(entt::entity invitee)
         return;
     }
 
-    if (m_PartyInviteEventMap.contains(ecs::PlayerRuntime::GetPlayerID(invitee)))
+    if (const auto* invitations = g_registry.try_get<ecs::PartyInvitations>(e);
+        invitations && invitations->inviteEvents.contains(ecs::PlayerRuntime::GetPlayerID(invitee)))
         return;
 
     TPartyJoinEventInfo* info = AllocEventInfo<TPartyJoinEventInfo>();
 
     info->dwGuestPID = ecs::PlayerRuntime::GetPlayerID(invitee);
-    info->dwLeaderPID = ecs::PlayerRuntime::GetPlayerID(GetEntityHandle());
+    info->dwLeaderPID = ecs::PlayerRuntime::GetPlayerID(e);
 
-    m_PartyInviteEventMap.insert(EventMap::value_type(ecs::PlayerRuntime::GetPlayerID(invitee), event_create(party_invite_event, info, PASSES_PER_SEC(10))));
+    g_registry.get_or_emplace<ecs::PartyInvitations>(e).inviteEvents.emplace(ecs::PlayerRuntime::GetPlayerID(invitee), event_create(party_invite_event, info, PASSES_PER_SEC(10)));
 
     TPacketGCPartyInvite p;
     p.header = HEADER_GC_PARTY_INVITE;
-    p.leader_vid = GetPacketVID();
+    p.leader_vid = ecs::PlayerRuntime::GetPacketVID(e);
     ecs::PlayerRuntime::GetDesc(invitee)->Packet(&p, sizeof(p));
 }
 
-void CHARACTER::PartyInviteAccept(entt::entity invitee)
+void ecs::SocialSystem::PartyInviteAccept(entt::entity e, entt::entity invitee)
 {
-    const auto itFind = m_PartyInviteEventMap.find(ecs::PlayerRuntime::GetPlayerID(invitee));
+    if (!ecs::IsCharacter(e))
+        return;
 
-    if (itFind == m_PartyInviteEventMap.end())
+    auto* invitations = g_registry.try_get<ecs::PartyInvitations>(e);
+    if (!invitations || !invitations->inviteEvents.contains(ecs::PlayerRuntime::GetPlayerID(invitee)))
     {
         LOG_INFO("PartyInviteAccept from not invited character({})", ecs::PlayerRuntime::GetName(invitee).data());
         return;
     }
 
+    const auto itFind = invitations->inviteEvents.find(ecs::PlayerRuntime::GetPlayerID(invitee));
     event_cancel(&itFind->second);
-    m_PartyInviteEventMap.erase(itFind);
+    invitations->inviteEvents.erase(itFind);
 
-    if (ecs::SocialSystem::GetParty(GetEntityHandle()) && ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()))
+    if (ecs::SocialSystem::GetParty(e) && ecs::SocialSystem::GetParty(e)->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(e))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 218, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 218, "");
 #endif
         return;
     }
 
-    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableMutableCondition(GetEntityHandle(), invitee);
+    ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableMutableCondition(e, invitee);
 
     switch (errcode)
     {
@@ -1243,7 +1254,7 @@ void CHARACTER::PartyInviteAccept(entt::entity invitee)
         return;
     case ecs::SocialSystem::PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 199, "");
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 199, "");
         ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 220, "");
 #endif
         return;
@@ -1252,36 +1263,48 @@ void CHARACTER::PartyInviteAccept(entt::entity invitee)
         return;
     }
 
-    if (ecs::SocialSystem::GetParty(GetEntityHandle()))
-        ecs::SocialSystem::PartyJoin(invitee, GetEntityHandle());
+    if (ecs::SocialSystem::GetParty(e))
+        ecs::SocialSystem::PartyJoin(invitee, e);
     else
     {
-        LPPARTY pParty = CPartyManager::instance().CreateParty(GetEntityHandle());
+        LPPARTY pParty = CPartyManager::instance().CreateParty(e);
 
         pParty->Join(ecs::PlayerRuntime::GetPlayerID(invitee));
         pParty->Link(invitee);
-        pParty->SendPartyInfoAllToOne(GetEntityHandle());
+        pParty->SendPartyInfoAllToOne(e);
     }
 }
 
-void CHARACTER::PartyInviteDeny(uint32_t dwPID)
+void ecs::SocialSystem::PartyInviteDeny(entt::entity e, uint32_t dwPID)
 {
-    const auto itFind = m_PartyInviteEventMap.find(dwPID);
+    if (!ecs::IsCharacter(e))
+        return;
 
-    if (itFind == m_PartyInviteEventMap.end())
+    auto* invitations = g_registry.try_get<ecs::PartyInvitations>(e);
+    if (!invitations || !invitations->inviteEvents.contains(dwPID))
     {
-        LOG_INFO("PartyInviteDeny to not exist event(inviter PID: {}, invitee PID: {})", ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), dwPID);
+        LOG_INFO("PartyInviteDeny to not exist event(inviter PID: {}, invitee PID: {})", ecs::PlayerRuntime::GetPlayerID(e), dwPID);
         return;
     }
 
+    const auto itFind = invitations->inviteEvents.find(dwPID);
     event_cancel(&itFind->second);
-    m_PartyInviteEventMap.erase(itFind);
+    invitations->inviteEvents.erase(itFind);
 #ifdef TEXTS_IMPROVEMENT
     const entt::entity pchInvitee = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
     if (pchInvitee != entt::null) {
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(pchInvitee).data());
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(pchInvitee).data());
     }
 #endif
+}
+
+void ecs::SocialSystem::CancelPartyRequest(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    if (auto* invitations = g_registry.try_get<ecs::PartyInvitations>(e))
+        event_cancel(&invitations->requestEvent);
 }
 
 void ecs::SocialSystem::PartyJoin(entt::entity guest, entt::entity leader)

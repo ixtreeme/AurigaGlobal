@@ -783,28 +783,6 @@ public:
 #endif
 
 public:
-	// PARTY_JOIN_BUG_FIX
-
-	bool			RequestToParty(entt::entity leader);
-	void			DenyToParty(entt::entity member);
-	void			AcceptToParty(entt::entity member);
-	void			PartyInvite(entt::entity invitee);
-	void			PartyInviteAccept(entt::entity invitee);
-	void			PartyInviteDeny(uint32_t dwPID);
-	void			SetPartyRequestEvent(LPEVENT pkEvent) { m_pkPartyRequestEvent = pkEvent; }
-
-protected:
-
-	
-
-
-	
-
-	LPEVENT			m_pkPartyRequestEvent;
-	typedef std::map< uint32_t, LPEVENT >	EventMap;
-	EventMap		m_PartyInviteEventMap;
-
-	// END_OF_PARTY_JOIN_BUG_FIX
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Dungeon

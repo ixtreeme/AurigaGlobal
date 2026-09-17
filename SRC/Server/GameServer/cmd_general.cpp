@@ -2599,7 +2599,6 @@ ACMD(do_view_equip)
 
 ACMD(do_party_request)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -2627,13 +2626,12 @@ ACMD(do_party_request)
 	const entt::entity tch = CHARACTER_MANAGER::instance().FindEntity(vid);
 
 	if (tch != entt::null)
-		if (!ch->RequestToParty(tch))
+		if (!ecs::SocialSystem::RequestToParty(character, tch))
 			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
 ACMD(do_party_request_accept)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2645,12 +2643,11 @@ ACMD(do_party_request_accept)
 	const entt::entity tch = CHARACTER_MANAGER::instance().FindEntity(vid);
 
 	if (tch != entt::null)
-		ch->AcceptToParty(tch);
+		ecs::SocialSystem::AcceptToParty(character, tch);
 }
 
 ACMD(do_party_request_deny)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2662,7 +2659,7 @@ ACMD(do_party_request_deny)
 	const entt::entity tch = CHARACTER_MANAGER::instance().FindEntity(vid);
 
 	if (tch != entt::null)
-		ch->DenyToParty(tch);
+		ecs::SocialSystem::DenyToParty(character, tch);
 }
 
 // LUA_ADD_GOTO_INFO

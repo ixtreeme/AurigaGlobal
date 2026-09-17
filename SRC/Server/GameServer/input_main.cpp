@@ -3259,7 +3259,6 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 // PARTY_JOIN_BUG_FIX
 void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyInvite handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -3284,7 +3283,7 @@ void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 		return;
 	}
 
-	ch->PartyInvite(pInvitee);
+	ecs::SocialSystem::PartyInvite(character, pInvitee);
 }
 
 void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
@@ -3305,16 +3304,16 @@ void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
 
 	TPacketCGPartyInviteAnswer * p = (TPacketCGPartyInviteAnswer*) c_pData;
 
-	LPCHARACTER pInviter = CHARACTER_MANAGER::instance().Find(p->leader_vid);
-	if (!pInviter || !ecs::PlayerRuntime::GetDesc(((pInviter) ? (pInviter)->GetEntityHandle() : entt::null))) {
+	const entt::entity inviter = CHARACTER_MANAGER::instance().FindEntity(p->leader_vid);
+	if (!ecs::IsCharacter(inviter) || !ecs::PlayerRuntime::GetDesc(inviter)) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 217, "");
 #endif
 	}
 	else if (!p->accept) {
-		pInviter->PartyInviteDeny(ecs::PlayerRuntime::GetPlayerID(character));
+		ecs::SocialSystem::PartyInviteDeny(inviter, ecs::PlayerRuntime::GetPlayerID(character));
 	} else {
-		pInviter->PartyInviteAccept(character);
+		ecs::SocialSystem::PartyInviteAccept(inviter, character);
 	}
 }
 // END_OF_PARTY_JOIN_BUG_FIX
