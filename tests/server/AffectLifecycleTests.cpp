@@ -844,10 +844,10 @@ int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetMaxHP(entt::entity, int64_t) { UnexpectedService(__func__); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 unsigned int ecs::MovementSystem::GetStopTime(entt::entity) { UnexpectedService(__func__); }
-void CHARACTER::StartMuyeongEvent(void) { UnexpectedService(__func__); }
-void CHARACTER::StopMuyeongEvent(void) { UnexpectedService(__func__); }
-void CHARACTER::StartGyeongGongEvent(void) { UnexpectedService(__func__); }
-void CHARACTER::StopGyeongGongEvent(void) { UnexpectedService(__func__); }
+void SkillSystem::StartMuyeongEvent(entt::entity) { UnexpectedService(__func__); }
+void SkillSystem::StopMuyeongEvent(entt::entity) { UnexpectedService(__func__); }
+void SkillSystem::StartGyeongGongEvent(entt::entity) { UnexpectedService(__func__); }
+void SkillSystem::StopGyeongGongEvent(entt::entity) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ItemSystem::AutoRecoveryItemProcess(entt::entity, int) { UnexpectedService(__func__); }
 void CHARACTER::AutoRecallProcess(void) { UnexpectedService(__func__); }

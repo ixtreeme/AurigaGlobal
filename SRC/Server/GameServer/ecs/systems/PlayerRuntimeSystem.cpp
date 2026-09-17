@@ -3170,9 +3170,9 @@ void CHARACTER::Destroy()
     ecs::PlayerRuntime::BuffOnAttr_Destroy(GetEntityHandle());
 
 
-    StopMuyeongEvent();
+    SkillSystem::StopMuyeongEvent(GetEntityHandle());
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
-    StopGyeongGongEvent();
+    SkillSystem::StopGyeongGongEvent(GetEntityHandle());
 #endif
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::WarpNPC);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery);
@@ -3807,10 +3807,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_pkMuyeongEvent = nullptr;
-#ifdef ENABLE_NEW_GYEONGGONG_SKILL
-    m_pkGyeongGongEvent = nullptr;
-#endif
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
 #endif

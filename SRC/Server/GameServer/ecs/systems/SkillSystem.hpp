@@ -60,6 +60,13 @@ void SetMobSkillCooltime(entt::entity e, unsigned int idx, uint32_t when);
 void CancelMobSkillEvent(entt::entity e, int index);
 void ForgetMobSkillEvent(entt::entity e, int index);
 void CancelAllMobSkillEvents(entt::entity e);
+// The muyeong and gyeonggong pulses, run while their skill affect lasts.
+void StartMuyeongEvent(entt::entity e);
+void StopMuyeongEvent(entt::entity e);
+#ifdef ENABLE_NEW_GYEONGGONG_SKILL
+void StartGyeongGongEvent(entt::entity e);
+void StopGyeongGongEvent(entt::entity e);
+#endif
 bool CanUseMobSkill(entt::entity e, unsigned int idx);
 bool CanUseSkill(entt::entity e, uint32_t skillId);
 // Runtime skill state belongs to the entity, never to a CHARACTER mirror.
@@ -96,6 +103,10 @@ int ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const PIXEL_POSITION
 // Runs ComputeSkill with victim as the caster on each near member of e's
 // party, or on e alone when it has none.
 int ComputeSkillParty(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
+#endif
+#ifdef ENABLE_NEW_GYEONGGONG_SKILL
+// One gyeonggong pulse from e: splash damage around victim.
+int ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #endif
 int GetChainLightningMaxCount(entt::entity e);
 int GetChainLightningIndex(entt::entity e);

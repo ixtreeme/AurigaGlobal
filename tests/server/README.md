@@ -993,9 +993,10 @@ horse spawning, scheduler and packet transport are service doubles; unrelated
 legacy services fail if called. This
 does not execute the complete point/affect feedback cycle, live guild-war rules,
 socket/SQL I/O, the real event queue, login hydration, clear-on-death policy,
-outer recovery or skill timer callbacks. Load/clear/recovery and
-Muyeong/Gyeonggong timer internals still include legacy CHARACTER work, although
-they now use the same owning ECS storage. The disabled vote-for-bonus branch
+outer recovery or skill timer callbacks. Load/clear/recovery internals still
+include legacy CHARACTER work, although they now use the same owning ECS
+storage; the Muyeong/Gyeonggong timers are `ecs::SkillTimers` in `SkillSystem`.
+The disabled vote-for-bonus branch
 is retained but not runtime-tested. The player factory seeds the deadline
 component; legacy DB hydration/serialization call sites use the new deadline
 API, but complete login/save is not executed by these headless tests. Raw CAffect*

@@ -58,6 +58,13 @@ struct ChainLightningState {
     std::unordered_set<entt::entity> excepts;
 };
 
+// The muyeong and gyeonggong pulses, scheduled while their skill affect lasts.
+// CHARACTER::Destroy stops both; no component means neither is running.
+struct SkillTimers {
+    LPEVENT muyeong { nullptr };
+    LPEVENT gyeongGong { nullptr };
+};
+
 struct SkillColorChangeInProgress {};
 
 struct SkillColor {

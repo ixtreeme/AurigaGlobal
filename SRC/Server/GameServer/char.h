@@ -1061,9 +1061,6 @@ public:
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 
 
-#ifdef ENABLE_NEW_GYEONGGONG_SKILL
-	int					ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
-#endif
 
 
 
@@ -1077,21 +1074,6 @@ private:
 public:
 protected:
 	// END_OF_MOB_SKILL
-
-	// for SKILL_MUYEONG
-public:
-	void				StartMuyeongEvent();
-	void				StopMuyeongEvent();
-#ifdef ENABLE_NEW_GYEONGGONG_SKILL
-	void				StartGyeongGongEvent();
-	void				StopGyeongGongEvent();
-#endif
-
-private:
-	LPEVENT				m_pkMuyeongEvent;
-#ifdef ENABLE_NEW_GYEONGGONG_SKILL
-	LPEVENT				m_pkGyeongGongEvent;
-#endif
 
 	//
 	// Skill levels

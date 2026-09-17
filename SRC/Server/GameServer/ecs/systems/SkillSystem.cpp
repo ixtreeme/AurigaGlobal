@@ -3200,10 +3200,12 @@ int SkillSystem::ComputeSkillParty(entt::entity e, uint32_t dwVnum, entt::entity
 #endif
 
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
-int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
+int SkillSystem::ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
-	const auto character = GetEntityHandle();
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+	if (!ecs::IsCharacter(e))
+		return BATTLE_NONE;
+
+	const auto character = e;
 	if (AffectSystem::IsPolymorphed(character))
 		return BATTLE_NONE;
 
@@ -3215,24 +3217,22 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 	if (!pkSk)
 		return BATTLE_NONE;
 
-	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
-		pkVictim = this;
+	const entt::entity victimEntity = IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY) ? character : victim;
 
-	if (!pkVictim)
+	if (!ecs::IsCharacter(victimEntity))
 	{
 		if (test_server)
-			LOG_INFO("ComputeGyeongGongSkill: {} Victim == null, skill {}", GetName(), dwVnum);
+			LOG_INFO("ComputeGyeongGongSkill: {} Victim == null, skill {}", ecs::PlayerRuntime::GetName(character), dwVnum);
 
 		return BATTLE_NONE;
 	}
-	const entt::entity victimEntity = IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY) ? character : victim;
 
 	if (0 == bSkillLevel)
 	{
-		if ((bSkillLevel = SkillSystem::GetSkillLevel(GetEntityHandle(), pkSk->dwVnum)) == 0)
+		if ((bSkillLevel = SkillSystem::GetSkillLevel(e, pkSk->dwVnum)) == 0)
 		{
 			if (test_server)
-				LOG_INFO("ComputeGyeongGongSkill: name:{} vnum:{}  skillLevelBySkill : {} ", GetName(), pkSk->dwVnum, bSkillLevel);
+				LOG_INFO("ComputeGyeongGongSkill: name:{} vnum:{}  skillLevelBySkill : {} ", ecs::PlayerRuntime::GetName(e), pkSk->dwVnum, bSkillLevel);
 			return BATTLE_NONE;
 		}
 	}
@@ -3248,21 +3248,21 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 		pkSk->SetPointVar("atk", CalcMeleeDamage(character, victim, true, false));
 	}
 
-	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
-	pkSk->SetPointVar("iq", ecs::PointSystem::Get(GetEntityHandle(), POINT_IQ));
-	pkSk->SetPointVar("str", ecs::PointSystem::Get(GetEntityHandle(), POINT_ST));
-	pkSk->SetPointVar("dex", ecs::PointSystem::Get(GetEntityHandle(), POINT_DX));
-	pkSk->SetPointVar("con", ecs::PointSystem::Get(GetEntityHandle(), POINT_HT));
+	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
+	pkSk->SetPointVar("iq", ecs::PointSystem::Get(e, POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::Get(e, POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::Get(e, POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::Get(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, victim));
-	pkSk->SetPointVar("def", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE) - ecs::PointSystem::Get(GetEntityHandle(), POINT_DEF_GRADE_BONUS));
-	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(GetEntityHandle()));
+	pkSk->SetPointVar("def", ecs::PointSystem::Get(e, POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::Get(e, POINT_DEF_GRADE) - ecs::PointSystem::Get(e, POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(e));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
-		ecs::MovementSystem::OnMove(GetEntityHandle(), true);
+		ecs::MovementSystem::OnMove(e, true);
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
@@ -3272,12 +3272,12 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 		// END_OF_ADD_GRANDMASTER_SKILL
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
-		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, GetEntityHandle(), -iAmount, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(GetEntityHandle()), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, -iAmount, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 		if (ecs::PlayerRuntime::GetSectree(victimEntity))
 			ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 		else
 		{
-			f(pkVictim);
+			f(victimEntity);
 		}
 		return BATTLE_DAMAGE;
 	}
@@ -4078,16 +4078,14 @@ EVENTFUNC(skill_muyoung_event)
 		return 0;
 	}
 
-	auto*	ch = ecs::LegacyCharOf(info->ch);
-
-	if (ch == nullptr) { // <Factor>
+	if (!ecs::IsCharacter(info->ch)) { // <Factor>
 		return 0;
 	}
 	const entt::entity character = info->ch;
 
 	if (!AffectSystem::IsAffectFlag(character, AFF_MUYEONG))
 	{
-		ch->StopMuyeongEvent();
+		SkillSystem::StopMuyeongEvent(character);
 		return 0;
 	}
 
@@ -4107,20 +4105,28 @@ EVENTFUNC(skill_muyoung_event)
 	return PASSES_PER_SEC(3);
 }
 
-void CHARACTER::StartMuyeongEvent()
+void SkillSystem::StartMuyeongEvent(entt::entity e)
 {
-	if (m_pkMuyeongEvent)
+	if (!ecs::IsCharacter(e))
+		return;
+
+	auto& timers = g_registry.get_or_emplace<ecs::SkillTimers>(e);
+	if (timers.muyeong)
 		return;
 
 	char_event_info* info = AllocEventInfo<char_event_info>();
 
-	info->ch = GetEntityHandle();
-	m_pkMuyeongEvent = event_create(skill_muyoung_event, info, PASSES_PER_SEC(1));
+	info->ch = e;
+	timers.muyeong = event_create(skill_muyoung_event, info, PASSES_PER_SEC(1));
 }
 
-void CHARACTER::StopMuyeongEvent()
+void SkillSystem::StopMuyeongEvent(entt::entity e)
 {
-	event_cancel(&m_pkMuyeongEvent);
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	if (auto* timers = g_registry.try_get<ecs::SkillTimers>(e))
+		event_cancel(&timers->muyeong);
 }
 
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
@@ -4134,38 +4140,44 @@ EVENTFUNC(skill_gyeongGong_event)
 		return 0;
 	}
 
-	auto*	ch = ecs::LegacyCharOf(info->ch);
-
-	if (ch == nullptr) { // <Factor>
+	if (!ecs::IsCharacter(info->ch)) { // <Factor>
 		return 0;
 	}
 	const entt::entity character = info->ch;
 
 	if (!AffectSystem::IsAffectFlag(character, AFF_GYEONGGONG))
 	{
-		ch->StopGyeongGongEvent();
+		SkillSystem::StopGyeongGongEvent(character);
 		return 0;
 	}
 
-	ch->ComputeGyeongGongSkill(SKILL_GYEONGGONG, character);
+	SkillSystem::ComputeGyeongGongSkill(character, SKILL_GYEONGGONG, character);
 
 	return PASSES_PER_SEC(2);
 }
 
-void CHARACTER::StartGyeongGongEvent()
+void SkillSystem::StartGyeongGongEvent(entt::entity e)
 {
-	if (m_pkGyeongGongEvent)
+	if (!ecs::IsCharacter(e))
+		return;
+
+	auto& timers = g_registry.get_or_emplace<ecs::SkillTimers>(e);
+	if (timers.gyeongGong)
 		return;
 
 	char_event_info* info = AllocEventInfo<char_event_info>();
 
-	info->ch = GetEntityHandle();
-	m_pkGyeongGongEvent = event_create(skill_gyeongGong_event, info, PASSES_PER_SEC(1));
+	info->ch = e;
+	timers.gyeongGong = event_create(skill_gyeongGong_event, info, PASSES_PER_SEC(1));
 }
 
-void CHARACTER::StopGyeongGongEvent()
+void SkillSystem::StopGyeongGongEvent(entt::entity e)
 {
-	event_cancel(&m_pkGyeongGongEvent);
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	if (auto* timers = g_registry.try_get<ecs::SkillTimers>(e))
+		event_cancel(&timers->gyeongGong);
 }
 #endif
 

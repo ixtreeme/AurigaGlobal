@@ -669,20 +669,16 @@ void ComputeAffect(entt::entity e, CAffect affect, bool add)
     if (!AffectState(e))
         return;
 
-    // Only these unmigrated skill timers still need a CHARACTER leaf.
+    // The muyeong and gyeonggong skills pulse on a timer while their affect lasts.
     // No component references or borrowed affect pointers cross PointChange.
     if (affect.dwType == SKILL_MUYEONG) {
-        if (auto* ch = LegacyCharOf(e)) {
-            if (add) ch->StartMuyeongEvent();
-            else ch->StopMuyeongEvent();
-        }
+        if (add) SkillSystem::StartMuyeongEvent(e);
+        else SkillSystem::StopMuyeongEvent(e);
     }
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
     if (affect.dwType == SKILL_GYEONGGONG) {
-        if (auto* ch = LegacyCharOf(e)) {
-            if (add) ch->StartGyeongGongEvent();
-            else ch->StopGyeongGongEvent();
-        }
+        if (add) SkillSystem::StartGyeongGongEvent(e);
+        else SkillSystem::StopGyeongGongEvent(e);
     }
 #endif
 }
