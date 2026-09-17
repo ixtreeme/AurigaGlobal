@@ -2783,6 +2783,30 @@ void SetRegen(entt::entity e, LPREGEN regen)
 	g_registry.emplace_or_replace<ecs::RegenOrigin>(e, regen, static_cast<std::size_t>(regen->id));
 }
 
+int GetGoToXYTime(entt::entity e)
+{
+    const auto* cooldowns = (e != entt::null && g_registry.valid(e)) ? g_registry.try_get<ecs::CommandCooldowns>(e) : nullptr;
+    return cooldowns ? cooldowns->goToXYPulse : 0;
+}
+
+void SetGoToXYTime(entt::entity e)
+{
+    if (e != entt::null && g_registry.valid(e))
+        g_registry.get_or_emplace<ecs::CommandCooldowns>(e).goToXYPulse = thecore_pulse();
+}
+
+int GetSavePointTime(entt::entity e)
+{
+    const auto* cooldowns = (e != entt::null && g_registry.valid(e)) ? g_registry.try_get<ecs::CommandCooldowns>(e) : nullptr;
+    return cooldowns ? cooldowns->savePointPulse : 0;
+}
+
+void SetSavePointTime(entt::entity e)
+{
+    if (e != entt::null && g_registry.valid(e))
+        g_registry.get_or_emplace<ecs::CommandCooldowns>(e).savePointPulse = thecore_pulse();
+}
+
 } // namespace ecs::PlayerRuntime
 
 #ifdef ENABLE_SPAM_CHECK
@@ -2853,10 +2877,12 @@ bool InventorySystem::ExpandInventory(entt::entity e)
 #endif
 
 #ifdef ENABLE_RANKING
-void CHARACTER::RankingSubcategory(int iArg)
+void ecs::PlayerRuntime::RankingSubcategory(entt::entity e, int iArg)
 {
-    if (!GetDesc())
+    if (!ecs::IsCharacter(e) || !ecs::PlayerRuntime::GetDesc(e))
         return;
+
+    const std::string name(ecs::PlayerRuntime::GetName(e));
 
     if ((iArg < 0) || (iArg >= RANKING_MAX_CATEGORIES))
         return;
@@ -2892,11 +2918,11 @@ void CHARACTER::RankingSubcategory(int iArg)
     }
 
     char szQuery2[1024] = { 0 };
-    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) > GM_PLAYER) {
-        snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, GetName());
+    if (ecs::PlayerRuntime::GetGMLevel(e) > GM_PLAYER) {
+        snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, name.c_str());
     }
     else {
-        snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res WHERE name not in(SELECT mName FROM common.gmlist) ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, GetName());
+        snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res WHERE name not in(SELECT mName FROM common.gmlist) ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, name.c_str());
     }
     std::unique_ptr<SQLMsg> pRes2(DBManager::instance().DirectQuery(szQuery2));
     iRes = pRes2->Get()->uiNumRows;
@@ -2907,10 +2933,10 @@ void CHARACTER::RankingSubcategory(int iArg)
         p.list[j].iRealPosition = atoi(data[1]);
         p.list[j].iLevel = atoi(data[4]);
         p.list[j].iPoints = atoi(data[2]);
-        strlcpy(p.list[j].szName, GetName(), sizeof(p.list[j].szName));
+        strlcpy(p.list[j].szName, name.c_str(), sizeof(p.list[j].szName));
     }
 
-    GetDesc()->Packet(&p, sizeof(p));
+    ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(p));
 }
 #endif
 
@@ -3984,10 +4010,6 @@ void CHARACTER::Initialize()
 #endif
 #ifdef KASMIR_PAKET_SYSTEM
     ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), false);
-#endif
-    m_iGoToXYTime = 0;
-#ifdef ENABLE_SAVEPOINT_SYSTEM
-    m_iSavePointTime = 0;
 #endif
 #ifdef ENABLE_SORT_INVEN
 #endif

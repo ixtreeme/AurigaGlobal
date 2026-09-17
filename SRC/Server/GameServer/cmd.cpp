@@ -5,6 +5,7 @@
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/InventorySystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "utils.h"
@@ -319,13 +320,12 @@ ACMD(do_attrdialog_remove) {
 #ifdef ENABLE_RANKING
 ACMD(do_ranking_subcategory)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 		return;
 
-	ch->RankingSubcategory(atoi(arg1));
+	ecs::PlayerRuntime::RankingSubcategory(character, atoi(arg1));
 }
 #endif
 
@@ -346,13 +346,12 @@ ACMD(do_manage_exp)
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 ACMD(do_unlock_extra)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 		return;
 
-	ch->UnlockExtraInventory(atoi(arg1));
+	InventorySystem::UnlockExtraInventory(character, atoi(arg1));
 }
 #endif
 ACMD(do_wheel_open)

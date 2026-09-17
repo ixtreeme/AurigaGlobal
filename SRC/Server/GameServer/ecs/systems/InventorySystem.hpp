@@ -28,6 +28,10 @@ int GetInventorySize(entt::entity owner);
 // Spends the keys for the next inventory page and opens it.
 bool ExpandInventory(entt::entity e);
 #endif
+#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
+// Spends the keys for the next stage of an extra inventory category.
+void UnlockExtraInventory(entt::entity e, uint8_t category);
+#endif
 #ifdef ENABLE_SPAM_CHECK
 // Inventory unlocks are three seconds apart: when the next is allowed, and
 // the call that starts the wait.

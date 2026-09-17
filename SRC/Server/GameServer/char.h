@@ -804,8 +804,6 @@ public:
 
 	uint16_t			GetDragonSoulGrid(uint16_t wCell) const;
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-	int		ExtraInventoryMaxSlots(int iArg1, bool bAuto = false) const;
-	void	UnlockExtraInventory(uint8_t category);
 #endif
 
 
@@ -981,7 +979,6 @@ protected:
 public:
 #ifdef LEADERBOARD_RAZOR93
 #endif
-	void		RankingSubcategory(int iArg);
 #endif
 #ifdef ENABLE_NEW_PET_EDITS
 public:
@@ -1406,20 +1403,6 @@ public:
 public:
 #endif
 public:
-	int		GetGoToXYTime() const { return m_iGoToXYTime; }
-	void	SetGoToXYTime() { m_iGoToXYTime = thecore_pulse(); }
-
-protected:
-	int		m_iGoToXYTime;
-
-#ifdef ENABLE_SAVEPOINT_SYSTEM
-public:
-	int		GetSavePointTime() const { return m_iSavePointTime; }
-	void	SetSavePointTime() { m_iSavePointTime = thecore_pulse(); }
-
-protected:
-	int		m_iSavePointTime;
-#endif
 
 #ifdef ENABLE_LIMIT_BUY_SPEED
 public:

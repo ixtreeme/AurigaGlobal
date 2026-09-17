@@ -47,6 +47,13 @@ struct LegacyCharEvents {
     LPEVENT save { nullptr };
 };
 
+// The pulse of the last /gotoxy and the last savepoint write; each command
+// waits ten seconds after its own.
+struct CommandCooldowns {
+    int goToXYPulse { 0 };
+    int savePointPulse { 0 };
+};
+
 struct CharacterRuntimeFlagsComponent {
     uint32_t aiFlag = 0;
     int32_t instantFlag = 0;

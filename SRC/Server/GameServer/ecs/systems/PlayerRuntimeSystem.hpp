@@ -221,6 +221,15 @@ bool IsObserverMode(entt::entity e);
 void SetObserverMode(entt::entity e, bool flag);
 // Resends the character to itself and to everyone who can see it, in place.
 void RestartAtSamePos(entt::entity e);
+// The last /gotoxy and savepoint pulses; the Set forms stamp the current pulse.
+int GetGoToXYTime(entt::entity e);
+void SetGoToXYTime(entt::entity e);
+int GetSavePointTime(entt::entity e);
+void SetSavePointTime(entt::entity e);
+#ifdef ENABLE_RANKING
+// Sends the ranking table of one category, with the player's own place last.
+void RankingSubcategory(entt::entity e, int iArg);
+#endif
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 // The two-letter code of the client's language.
 std::string GetLang(entt::entity e);

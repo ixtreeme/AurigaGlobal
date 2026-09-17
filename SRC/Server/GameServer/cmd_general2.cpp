@@ -511,7 +511,6 @@ ACMD(do_change_biologist) {
 
 ACMD(do_gotoxy)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 	int x = 0, y = 0, z = 0;
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -524,7 +523,7 @@ ACMD(do_gotoxy)
 	}
 
 	int iPulse = thecore_pulse();
-	if (iPulse - ch->GetGoToXYTime() < PASSES_PER_SEC(10)) {
+	if (iPulse - ecs::PlayerRuntime::GetGoToXYTime(character) < PASSES_PER_SEC(10)) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1285, "");
 #endif
@@ -557,7 +556,7 @@ ACMD(do_gotoxy)
 		y *= 100;
 		ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), x, y, z);
 		ecs::MovementSystem::Stop(character);
-		ch->SetGoToXYTime();
+		ecs::PlayerRuntime::SetGoToXYTime(character);
 	}
 }
 
@@ -691,7 +690,6 @@ ACMD(do_go_savepoint) {
 }
 
 ACMD(do_save_savepoint) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::PlayerRuntime::IsObserverMode(character)) {
 		return;
 	}
@@ -719,7 +717,7 @@ ACMD(do_save_savepoint) {
 	}
 
 	int iPulse = thecore_pulse();
-	if (iPulse - ch->GetSavePointTime() < PASSES_PER_SEC(10)) {
+	if (iPulse - ecs::PlayerRuntime::GetSavePointTime(character) < PASSES_PER_SEC(10)) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1286, "");
 #endif
@@ -765,13 +763,13 @@ ACMD(do_save_savepoint) {
 
 		int x = (ecs::PlayerRuntime::GetX(character) - map->m_setting.iBaseX) / 100;
 		int y = (ecs::PlayerRuntime::GetY(character) - map->m_setting.iBaseY) / 100;
-		PIXEL_POSITION pos = ch->GetXYZ();
+		PIXEL_POSITION pos { ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetZ(character) };
 
 		char query2[512] = {0};
 		snprintf(query2, sizeof(query2), "INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(%u, %d, '%s', %d, %d, %d, %d, %d)", (ecs::PlayerRuntime::GetPlayerID(character)), slot, name.c_str(), mapIdx, x, y, pos.x, pos.y);
 		std::unique_ptr<SQLMsg> res2(DBManager::instance().DirectQuery(query2));
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, name.c_str(), mapIdx, x, y);
-		ch->SetSavePointTime();
+		ecs::PlayerRuntime::SetSavePointTime(character);
 	}
 }
 #endif

@@ -1760,65 +1760,6 @@ void CHARACTER::ClearItem()
 
 
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-int CHARACTER::ExtraInventoryMaxSlots(int iArg1, bool bAuto) const {
-
-	if (bAuto) {
-		if ((iArg1 >= 0) && (iArg1 < (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 1)))
-			iArg1 = 0;
-		else if ((iArg1 >= (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 1)) && (iArg1 < (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 2)))
-			iArg1 = 1;
-		else if ((iArg1 >= (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 2)) && (iArg1 < (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 3)))
-			iArg1 = 2;
-		else if ((iArg1 >= (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 3)) && (iArg1 < (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 4)))
-			iArg1 = 3;
-		else if ((iArg1 >= (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 4)) && (iArg1 < (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 5)))
-			iArg1 = 4;
-		else if ((iArg1 >= (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 5)) && (iArg1 < (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 6)))
-			iArg1 = 5;
-	}
-
-	if ((iArg1 < 0) || (iArg1 > 5))
-		return 0;
-
-	int iUnlock;
-	switch (iArg1) {
-	case 0: {
-		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat1") * 5;
-		break;
-	}
-	case 1: {
-		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat2") * 5;
-		break;
-	}
-	case 2: {
-		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat3") * 5;
-		break;
-	}
-	case 3: {
-		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat4") * 5;
-		break;
-	}
-	case 4: {
-		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat5") * 5;
-		break;
-	}
-	case 5: {
-		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat6") * 5;
-		break;
-	}
-	default: {
-		iUnlock = 0;
-		break;
-	}
-	}
-
-	//int iUnlock = GetPoint(POINT_EXTRA_INVENTORY1 + iArg1) * 5;
-	int iMaxUnlock = 25 + EXTRA_INVENTORY_PAGE_SIZE;
-	int iStart = EXTRA_INVENTORY_CATEGORY_MAX_NUM * iArg1;
-	int iFree = (EXTRA_INVENTORY_PAGE_SIZE * 2) + 20;
-	return iUnlock > iMaxUnlock ? iMaxUnlock + iStart + iFree : iUnlock + iStart + iFree;
-}
-
 static int NeedKeysForExtraInventory[] = {
 											1, // 20-25
 											1, // 25-30
@@ -1836,16 +1777,19 @@ static int NeedKeysForExtraInventory[] = {
 											6, // 90-95 : end page 4
 };
 
-void CHARACTER::UnlockExtraInventory(uint8_t category) {
+void InventorySystem::UnlockExtraInventory(entt::entity e, uint8_t category) {
+	if (!ecs::IsCharacter(e))
+		return;
+
 	if (category > 5) {
 		return;
 	}
 
 #ifdef ENABLE_SPAM_CHECK
-	int32_t time = InventorySystem::GetLastUnlock(GetEntityHandle()) - get_global_time();
+	int32_t time = InventorySystem::GetLastUnlock(e) - get_global_time();
 	if (time > 0) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", time);
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 234, "%d", time);
 #endif
 		return;
 	}
@@ -1873,23 +1817,23 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 	} break;
 	}
 
-	uint8_t stage = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), stageName.c_str());
+	uint8_t stage = ecs::PlayerRuntime::GetQuestFlag(e, stageName.c_str());
 	if (stage < 0 || stage >= 14)
 		return;
 
 	int needKeys = NeedKeysForExtraInventory[stage];
-	if (ItemSystem::CountItem(GetEntityHandle(), 72320) >= needKeys) {
-		ItemSystem::RemoveSpecifyItemEcs(GetEntityHandle(), 72320, needKeys);
+	if (ItemSystem::CountItem(e, 72320) >= needKeys) {
+		ItemSystem::RemoveSpecifyItemEcs(e, 72320, needKeys);
 
-		ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), stageName.c_str(), stage + 1);
-		ecs::PointSystem::Change(GetEntityHandle(), POINT_EXTRA_INVENTORY1 + category, stage + 1);
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
+		ecs::PlayerRuntime::SetQuestFlag(e, stageName.c_str(), stage + 1);
+		ecs::PointSystem::Change(e, POINT_EXTRA_INVENTORY1 + category, stage + 1);
+		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #ifdef ENABLE_SPAM_CHECK
-		InventorySystem::SetLastUnlock(GetEntityHandle());
+		InventorySystem::SetLastUnlock(e);
 #endif
 	}
 	else {
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "update_envanter_need %d", needKeys - ItemSystem::CountItem(GetEntityHandle(), 72320));
+		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "update_envanter_need %d", needKeys - ItemSystem::CountItem(e, 72320));
 	}
 }
 #endif
