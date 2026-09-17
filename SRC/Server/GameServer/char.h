@@ -1414,7 +1414,7 @@ public:
 
 };
 
-ESex GET_SEX(LPCHARACTER ch);
+ESex GET_SEX(entt::entity ch);
 
 #ifdef ENABLE_BLOCK_MULTIFARM
 EVENTINFO(drop_event_info) {

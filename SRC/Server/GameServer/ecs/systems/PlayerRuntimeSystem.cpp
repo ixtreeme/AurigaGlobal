@@ -4021,9 +4021,9 @@ CHARACTER::~CHARACTER()
     Destroy();
 }
 
-ESex GET_SEX(LPCHARACTER ch)
+ESex GET_SEX(entt::entity ch)
 {
-    switch (ecs::PlayerRuntime::GetRaceNum(ch->GetEntityHandle()))
+    switch (ecs::PlayerRuntime::GetRaceNum(ch))
     {
     case MAIN_RACE_WARRIOR_M:
     case MAIN_RACE_SURA_M:

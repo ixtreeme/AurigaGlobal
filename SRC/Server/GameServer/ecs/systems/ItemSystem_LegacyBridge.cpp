@@ -714,14 +714,13 @@ EVENTFUNC(kill_campfire_event)
 	return 0;
 }
 
-int CalculateConsume(LegacyCharHandle ch)
+int CalculateConsume(entt::entity chEntity)
 {
 	static const int WARP_NEED_LIFE_PERCENT = 30;
 	static const int WARP_MIN_LIFE_PERCENT = 10;
 	// CONSUME_LIFE_WHEN_USE_WARP_ITEM
 	int consumeLife = 0;
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		// CheckNeedLifeForWarp
 		const int curLife = ecs::PlayerRuntime::GetHP(chEntity);
 		const int needPercent = WARP_NEED_LIFE_PERCENT;
@@ -729,7 +728,7 @@ int CalculateConsume(LegacyCharHandle ch)
 		if (curLife < needLife)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			if (ch) {
+			if (ecs::IsCharacter(chEntity)) {
 				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 284, "");
 			}
 #endif
@@ -752,9 +751,8 @@ int CalculateConsume(LegacyCharHandle ch)
 	return consumeLife;
 }
 
-int CalculateConsumeSP(LegacyCharHandle lpChar)
+int CalculateConsumeSP(entt::entity lpCharEntity)
 {
-	const entt::entity lpCharEntity = lpChar ? lpChar->GetEntityHandle() : entt::null;
 	static const int NEED_WARP_SP_PERCENT = 30;
 
 	const int curSP = ecs::PlayerRuntime::GetSP(lpCharEntity);
@@ -763,7 +761,7 @@ int CalculateConsumeSP(LegacyCharHandle lpChar)
 	if (curSP < needSP)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (lpChar) {
+		if (ecs::IsCharacter(lpCharEntity)) {
 			ecs::ChatSystem::SendNew(lpCharEntity, CHAT_TYPE_INFO, 287, "");
 		}
 #endif
@@ -4162,12 +4160,7 @@ namespace ItemSystem {
 // character and the item come in as entities.
 bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 {
-	// A handful of the item types still reach APIs that speak in CHARACTER
-	// pointers - the stamina and SP consumption helpers, the battle pass
-	// open, the sex macro and the multi-argument special item group. Each
-	// is its own migration; they share one resolve here.
-	LPCHARACTER self = ecs::LegacyCharOf(e);
-	if (!self)
+	if (!ecs::IsCharacter(e))
 		return false;
 
 	entt::entity itemEntity = item;
@@ -5785,7 +5778,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 						}
 					}
 
-					int consumeSP = CalculateConsumeSP(self);
+					int consumeSP = CalculateConsumeSP(e);
 
 					if (consumeSP < 0)
 						return false;
@@ -6932,13 +6925,13 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				std::vector<entt::entity> item_gets;
 				int count = 0;
 
-				if (GetItemVnum(item) == ITEM_VALENTINE_ROSE && SEX_MALE == GET_SEX(self)) {
+				if (GetItemVnum(item) == ITEM_VALENTINE_ROSE && SEX_MALE == GET_SEX(e)) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 383, "");
 #endif
 					return false;
 				}
-				else if (GetItemVnum(item) == ITEM_VALENTINE_CHOCOLATE && SEX_FEMALE == GET_SEX(self)) {
+				else if (GetItemVnum(item) == ITEM_VALENTINE_CHOCOLATE && SEX_FEMALE == GET_SEX(e)) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 382, "");
 #endif
@@ -6959,13 +6952,13 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				std::vector<entt::entity> item_gets;
 				int count = 0;
 
-				if (GetItemVnum(item) == ITEM_WHITEDAY_ROSE && SEX_MALE == GET_SEX(self)) {
+				if (GetItemVnum(item) == ITEM_WHITEDAY_ROSE && SEX_MALE == GET_SEX(e)) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 383, "");
 #endif
 					return false;
 				}
-				else if (GetItemVnum(item) == ITEM_WHITEDAY_CANDY && SEX_FEMALE == GET_SEX(self)) {
+				else if (GetItemVnum(item) == ITEM_WHITEDAY_CANDY && SEX_FEMALE == GET_SEX(e)) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 382, "");
 #endif
@@ -7914,7 +7907,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 
 			// CONSUME_LIFE_WHEN_USE_WARP_ITEM
-			int consumeLife = CalculateConsume(self);
+			int consumeLife = CalculateConsume(e);
 
 			if (consumeLife < 0)
 				return false;
