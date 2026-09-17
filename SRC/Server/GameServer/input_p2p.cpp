@@ -69,18 +69,17 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 
 	LOG_TRACE("InputP2P::Relay : {} size {}", p->szName, p->lSize);
 
-	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindPC(p->szName);
-	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+	const entt::entity chr = CHARACTER_MANAGER::instance().FindPCEntity(p->szName);
 
 
 	const uint8_t* c_pbData = (const uint8_t *) (c_pData + sizeof(TPacketGGRelay));
 
-	if (!pkChr)
+	if (!ecs::IsCharacter(chr))
 		return p->lSize;
 
 	if (*c_pbData == HEADER_GC_WHISPER)
 	{
-		if (ecs::PlayerRuntime::IsBlockMode(pkChr->GetEntityHandle(), BLOCK_WHISPER))
+		if (ecs::PlayerRuntime::IsBlockMode(chr, BLOCK_WHISPER))
 		{
 			// ӼӸ ź ¿ ӼӸ ź.
 			return p->lSize;

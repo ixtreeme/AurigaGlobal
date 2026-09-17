@@ -114,16 +114,15 @@ bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 	return true;
 }
 
-void CMobManager::RebindMobProto(LPCHARACTER ch)
+void CMobManager::RebindMobProto(entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (ecs::PlayerRuntime::IsPC(chEntity))
 		return;
 
 	const CMob * pMob = Get(ecs::PlayerRuntime::GetRaceNum(chEntity));
 
 	if (pMob)
-		ch->SetProto(pMob);
+		ecs::PlayerRuntime::SetProto(chEntity, pMob);
 }
 
 const CMob * CMobManager::Get(uint32_t dwVnum)

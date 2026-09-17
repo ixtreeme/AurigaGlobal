@@ -5831,8 +5831,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			);
 			CheckLeaderboardSkillMobChanges();
 			if (ecs::PlayerRuntime::GetMapIndex(victim) == 41) {
-				CHARACTER_MANAGER::instance().for_each_pc([](LegacyCharHandle ch) {
-					CombatSystem::SendLeaderboardDataSkillMob(ch->GetEntityHandle(), (ch ? ch->GetEntityHandle() : entt::null));
+				CHARACTER_MANAGER::instance().for_each_pc([](entt::entity ch) {
+					CombatSystem::SendLeaderboardDataSkillMob(ch, ch);
 					});
 
 

@@ -86,7 +86,7 @@ void LookupChecks(CHARACTER_MANAGER& manager) {
     const auto first = Actor(manager, 1), second = Actor(manager, 2);
     Check(manager.FindEntity(1) == first && manager.FindEntityByPID(2) == second, "native numeric indices");
     Check(manager.FindPCEntity("PLAYER1") == first && manager.FindPCEntity(nullptr) == entt::null, "native name index");
-    Check(manager.Find(1) == nullptr && manager.FindPC("player1") == nullptr, "entity-only actor has no shell");
+    Check(manager.Find(1) == nullptr, "entity-only actor has no shell");
     const auto chosen = manager.FindSpecifyPC(0, 1);
     Check(chosen != entt::null && randomBounds == std::vector<int>{2}, "reservoir counts first candidate");
     Check(manager.FindSpecifyPC(0, 1, first) == second, "excluded PC");

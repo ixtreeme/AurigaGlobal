@@ -538,7 +538,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		return;
 	}
 
-	if (nullptr != CHARACTER_MANAGER::Instance().FindPC(pTab->name))
+	if (ecs::IsCharacter(CHARACTER_MANAGER::Instance().FindPCEntity(pTab->name)))
 	{
 		LOG_ERROR("InputDB: PlayerLoad : {} already exist in game", pTab->name);
 		return;
@@ -2033,7 +2033,7 @@ void CInputDB::ReloadProto(const char * c_pData)
 
 	CMotionManager::instance().Build();
 
-	CHARACTER_MANAGER::instance().for_each_pc([](LPCHARACTER ch) { ecs::PointSystem::Compute(ch->GetEntityHandle()); });
+	CHARACTER_MANAGER::instance().for_each_pc([](entt::entity ch) { ecs::PointSystem::Compute(ch); });
 }
 
 void CInputDB::GuildSkillUsableChange(const char* c_pData)

@@ -358,12 +358,11 @@ bool CheckAndHandleSameHwid(entt::entity character)
     int32_t normalizedMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(character));
     bool duplicateFound = false;
 
-    CHARACTER_MANAGER::instance().for_each_pc([&](LPCHARACTER other)
+    CHARACTER_MANAGER::instance().for_each_pc([&](entt::entity candidate)
         {
-            if (duplicateFound || !other)
+            if (duplicateFound)
                 return;
 
-			const entt::entity candidate = other->GetEntityHandle();
 			if (candidate == character)
 				return;
 

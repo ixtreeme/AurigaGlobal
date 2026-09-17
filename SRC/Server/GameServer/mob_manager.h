@@ -132,7 +132,7 @@ class CMobManager : public singleton<CMobManager>
 		const iterator	begin()	{ return m_map_pkMobByVnum.begin();	}
 		const iterator	end()	{ return m_map_pkMobByVnum.end();	}
 
-		void RebindMobProto(LPCHARACTER ch);
+		void RebindMobProto(entt::entity chEntity);
 #ifdef __INGAME_WIKI__
 		typedef std::vector<CommonWikiData::TWikiMobDropInfo> TMobWikiInfoVector;
 		typedef std::map<uint32_t, TMobWikiInfoVector> TMobWikiInfoMap;

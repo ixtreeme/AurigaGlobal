@@ -601,12 +601,6 @@ entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t dwPID)
 	return g_registry.valid(character) ? character : entt::null;
 }
 
-LPCHARACTER CHARACTER_MANAGER::FindPC(const char* name)
-{
-	// Pointer-returning compatibility API; the name index itself is native.
-	return ecs::LegacyCharOf(FindPCEntity(name));
-}
-
 entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t lMapIndex)
 {
 	const CMob* pkMob = CMobManager::instance().Get(dwVnum);

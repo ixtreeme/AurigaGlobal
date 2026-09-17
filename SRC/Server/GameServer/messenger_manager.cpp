@@ -231,9 +231,7 @@ void MessengerManager::__AddToList(MessengerManager::keyA account, MessengerMana
 		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 183, "%s", companion.c_str());
 	}
 #endif
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(companion.c_str());
-
-	if (tch)
+	if (ecs::IsCharacter(CHARACTER_MANAGER::instance().FindPCEntity(companion.c_str())))
 		SendLogin(account, companion);
 	else
 		SendLogout(account, companion);

@@ -421,8 +421,9 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 		return (iExtraLen);
 	}
 
-	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindPC(pinfo->szNameTo);
-	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+	entt::entity chr = CHARACTER_MANAGER::instance().FindPCEntity(pinfo->szNameTo);
+	if (!ecs::IsCharacter(chr))
+		chr = entt::null;
 
 
 	if (chr == (ecs::IsCharacter(character) ? character : entt::null))
@@ -434,7 +435,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 
 	if (test_server)
 	{
-		if (!pkChr)
+		if (chr == entt::null)
 			LOG_INFO("Whisper to {}({}) from {}", "Null", pinfo->szNameTo, ecs::PlayerRuntime::GetName(character).data());
 		else
 			LOG_INFO("Whisper to {}({}) from {}", ecs::PlayerRuntime::GetName(chr).data(), pinfo->szNameTo, ecs::PlayerRuntime::GetName(character).data());
@@ -455,7 +456,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 		return iExtraLen;
 	}
 
-	if (!pkChr)
+	if (chr == entt::null)
 	{
 		CCI * pkCCI = P2P_MANAGER::instance().Find(pinfo->szNameTo);
 
@@ -561,7 +562,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				ecs::PlayerRuntime::GetDesc(character)->Packet(&pack, sizeof(pack));
 			}
 		}
-		else if (pkChr && ecs::PlayerRuntime::IsBlockMode(chr, BLOCK_WHISPER))
+		else if (chr != entt::null && ecs::PlayerRuntime::IsBlockMode(chr, BLOCK_WHISPER))
 		{
 			if (ecs::PlayerRuntime::GetDesc(character))
 			{
@@ -583,7 +584,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 
 			if (true == SpamBlockCheck(character, buf, buflen))
 			{
-				if (!pkChr)
+				if (chr == entt::null)
 				{
 					CCI * pkCCI = P2P_MANAGER::instance().Find(pinfo->szNameTo);
 
@@ -604,7 +605,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 								&& ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER) // 둘다 일반 플레이어이면
 							// 이름 밖에 모르니 gm_get_level 함수를 사용
 						{
-							if (!pkChr)
+							if (chr == entt::null)
 							{
 								// 다른 서버에 있으니 제국 표시만 한다. bType의 상위 4비트를 Empire번호로 사용한다.
 								bType = ecs::PlayerRuntime::GetEmpire(character) << 4;

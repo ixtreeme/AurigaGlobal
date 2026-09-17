@@ -843,7 +843,6 @@ entt::entity CHARACTER_MANAGER::SpawnMobRange(unsigned int,int,int,int,int,int,b
 entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { Unexpected(); }
 bool CHARACTER_MANAGER::SpawnGroupGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(unsigned int,int) { Unexpected(); }
-CHARACTER * CHARACTER_MANAGER::FindPC(char const *) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindEntity(unsigned int) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindPCEntity(char const *) { Unexpected(); }
 entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { Unexpected(); }

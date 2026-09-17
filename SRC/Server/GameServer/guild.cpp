@@ -53,9 +53,9 @@ namespace
 #endif
 		}
 
-		void operator() (LPCHARACTER ch)
+		void operator() (entt::entity ch)
 		{
-			LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 
 			if (d)
 			{

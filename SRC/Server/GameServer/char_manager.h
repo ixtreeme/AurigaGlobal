@@ -72,7 +72,6 @@ protected:
 		NAME_MAP &		GetPCMap() { return m_map_pkPCChr; }
 
 		LPCHARACTER		Find(uint32_t dwVID);
-		LPCHARACTER		FindPC(const char * name);
 		LPCHARACTER		FindByPID(uint32_t dwPID);
 
 		// Native index lookups; these do not need a legacy CHARACTER shell.
@@ -198,8 +197,8 @@ protected:
 Func CHARACTER_MANAGER::for_each_pc(Func f)
 {
 	for (const entt::entity entity : CPIDRegistry::Instance().Snapshot())
-		if (LPCHARACTER ch = ecs::LegacyCharOf(entity))
-			f(ch);
+		if (ecs::IsCharacter(entity))
+			f(entity);
 
 	return f;
 }
