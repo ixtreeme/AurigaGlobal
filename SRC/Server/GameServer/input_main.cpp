@@ -2455,7 +2455,6 @@ void CInputMain::FlyTarget(entt::entity character, const char * pcData, uint8_t 
 
 void CInputMain::UseSkill(entt::entity character, const char * pcData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate UseSkill handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -2463,7 +2462,7 @@ void CInputMain::UseSkill(entt::entity character, const char * pcData)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::UseSkill");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGUseSkill * p = (TPacketCGUseSkill *) pcData;
-	ch->UseSkill(p->dwVnum, CHARACTER_MANAGER::instance().FindEntity(p->dwVID));
+	SkillSystem::UseSkill(character, p->dwVnum, CHARACTER_MANAGER::instance().FindEntity(p->dwVID));
 }
 
 void CInputMain::ScriptButton(entt::entity character, const void* c_pData)

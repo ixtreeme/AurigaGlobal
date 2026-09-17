@@ -1053,10 +1053,6 @@ public:
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 #endif
 
-	// ADD_GRANDMASTER_SKILL
-	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
-
-	// END_OF_ADD_GRANDMASTER_SKILL
 
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 

@@ -1113,7 +1113,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                         // NOTE: nálatok az attack skillek (SKILL_FLAG_ATTACK) a UseSkill-ben általában csak
                         // "arm / cooldown"-ot csinálnak, és a tényleges sebzés a kliens attack packetjéből jön.
                         // Mivel a klónnak nincs kliens inputja, itt kézzel lefuttatjuk a ComputeSkill-t.
-                        didAction = clone->UseSkill(p.attackType, targetEntity, true);
+                        didAction = SkillSystem::UseSkill(cloneEntity, p.attackType, targetEntity, true);
 
                         if (didAction)
                         {

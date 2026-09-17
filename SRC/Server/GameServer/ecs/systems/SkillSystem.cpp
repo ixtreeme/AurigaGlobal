@@ -3744,10 +3744,12 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 	}
 }
 
-bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster)
+bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster)
 {
-	const auto character = GetEntityHandle();
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+	if (!ecs::IsCharacter(e))
+		return false;
+
+	const auto character = e;
 	entt::entity victimEntity = victim;
 #ifdef ENABLE_BUG_FIXES
 	if ((dwVnum == SKILL_GEOMKYUNG || dwVnum == SKILL_GWIGEOM) &&
@@ -3765,9 +3767,9 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		case 110:
 		case 111:
 		{
-			if (pkVictim)
+			if (ecs::IsCharacter(victimEntity))
 			{
-				if (this != pkVictim && ecs::PlayerRuntime::GetDesc(character) && ecs::PlayerRuntime::GetDesc(victimEntity))
+				if (victimEntity != character && ecs::PlayerRuntime::GetDesc(character) && ecs::PlayerRuntime::GetDesc(victimEntity))
 				{
 					if (ecs::QuestSystem::GetFlag(victimEntity, BLOCK_BUFF))
 					{
@@ -3783,7 +3785,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	}
 #endif
 
-	if (false == SkillSystem::CanUseSkill(GetEntityHandle(), dwVnum))
+	if (false == SkillSystem::CanUseSkill(e, dwVnum))
 		return false;
 
 	// NO_GRANDMASTER
@@ -3799,32 +3801,32 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (g_bSkillDisable)
 		return false;
 
-	if (ecs::PlayerRuntime::IsObserverMode(GetEntityHandle()))
+	if (ecs::PlayerRuntime::IsObserverMode(e))
 		return false;
 
-	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))
+	if (!ecs::MovementSystem::CanMove(e))
 		return false;
 
 	if (AffectSystem::IsPolymorphed(character))
 		return false;
 
-	const bool bCanUseHorseSkill = MountSystem::CanUseHorseSkill(GetEntityHandle());
+	const bool bCanUseHorseSkill = MountSystem::CanUseHorseSkill(e);
 
 
 	if (dwVnum == SKILL_HORSE_SUMMON)
 	{
-		if (SkillSystem::GetSkillLevel(GetEntityHandle(), dwVnum) == 0)
+		if (SkillSystem::GetSkillLevel(e, dwVnum) == 0)
 			return false;
 
 		return true;
 	}
 
 	// ¸»Ŕ» Ĺ¸°íŔÖÁö¸¸ ˝şĹłŔş »çżëÇŇ Ľö ľř´Â »óĹÂ¶ó¸é return false
-	if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(GetEntityHandle()))
+	if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(e))
 		return false;
 
 	CSkillProto * pkSk = CSkillManager::instance().Get(dwVnum);
-	LOG_INFO("{}: USE_SKILL: {} pkVictim {}", GetName(), dwVnum, static_cast<const void*>(get_pointer(pkVictim)));
+	LOG_INFO("{}: USE_SKILL: {} victim {}", ecs::PlayerRuntime::GetName(character), dwVnum, static_cast<uint32_t>(victimEntity));
 
 	if (!pkSk)
 		return false;
@@ -3835,12 +3837,12 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (!bCanUseHorseSkill && pkSk->dwType == SKILL_TYPE_HORSE)
 		return BATTLE_NONE;
 
-	if (SkillSystem::GetSkillLevel(GetEntityHandle(), dwVnum) == 0)
+	if (SkillSystem::GetSkillLevel(e, dwVnum) == 0)
 		return false;
 
 
 	// NO_GRANDMASTER
-	if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum) < SKILL_GRAND_MASTER)
+	if (SkillSystem::GetSkillMasterType(e, dwVnum) < SKILL_GRAND_MASTER)
 		bUseGrandMaster = false;
 	// END_OF_NO_GRANDMASTER
 
@@ -3854,22 +3856,22 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 	if (pkSk->IsChargeSkill())
 	{
-		if ((AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_TANHWAN_DASH)) || (pkVictim && (pkVictim != this)))
+		if ((AffectSystem::IsAffectFlag(e, AFF_TANHWAN_DASH)) || (ecs::IsCharacter(victimEntity) && victimEntity != character))
 		{
-			if (!pkVictim)
+			if (!ecs::IsCharacter(victimEntity))
 				return false;
 
-			if (!AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_TANHWAN_DASH))
+			if (!AffectSystem::IsAffectFlag(e, AFF_TANHWAN_DASH))
 			{
-				if (!UseSkill(dwVnum, character))
+				if (!SkillSystem::UseSkill(character, dwVnum, character))
 					return false;
 			}
 
 			SkillSystem::ResetSkillHitTargets(character, dwVnum);
 			SkillSystem::SetSkillMainTarget(character, dwVnum, victimEntity);
 			// DASH »óĹÂŔÇ ĹşČŻ°ÝŔş °ř°Ý±âĽú
-			SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, victimEntity);
-			AffectSystem::RemoveAffect(GetEntityHandle(), dwVnum);
+			SkillSystem::ComputeSkill(e, dwVnum, victimEntity);
+			AffectSystem::RemoveAffect(e, dwVnum);
 			return true;
 		}
 	}
@@ -3877,19 +3879,19 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (dwVnum == SKILL_COMBO)
 	{
 		const uint8_t comboIndex = CombatSystem::ToggleComboIndex(
-			character, SkillSystem::GetSkillLevel(GetEntityHandle(), SKILL_COMBO));
+			character, SkillSystem::GetSkillLevel(e, SKILL_COMBO));
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "combo %d", comboIndex);
 		return true;
 	}
 
 	// Toggle ÇŇ ¶§´Â SP¸¦ ľ˛Áö ľĘŔ˝ (SelfOnly·Î ±¸şĐ)
-	if ((0 != pkSk->dwAffectFlag || pkSk->dwVnum == SKILL_MUYEONG) && (pkSk->dwFlag & SKILL_FLAG_TOGGLE) && AffectSystem::RemoveAffect(GetEntityHandle(), pkSk->dwVnum))
+	if ((0 != pkSk->dwAffectFlag || pkSk->dwVnum == SKILL_MUYEONG) && (pkSk->dwFlag & SKILL_FLAG_TOGGLE) && AffectSystem::RemoveAffect(e, pkSk->dwVnum))
 	{
 		return true;
 	}
 
-	if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_REVIVE_INVISIBLE))
-		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_REVIVE_INVISIBLE);
+	if (AffectSystem::IsAffectFlag(e, AFF_REVIVE_INVISIBLE))
+		AffectSystem::RemoveAffect(e, AFFECT_REVIVE_INVISIBLE);
 
 	const float k = 1.0 * SkillSystem::GetSkillPower(character, pkSk->dwVnum) * pkSk->bMaxLevel / 100;
 
@@ -3915,38 +3917,38 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_HP_AS_COST))
 	{
-		pkSk->SetSPCostVar("maxhp", ecs::PointSystem::GetMaxHP(GetEntityHandle()));
-		pkSk->SetSPCostVar("v", ecs::PlayerRuntime::GetHP(GetEntityHandle()));
+		pkSk->SetSPCostVar("maxhp", ecs::PointSystem::GetMaxHP(e));
+		pkSk->SetSPCostVar("v", ecs::PlayerRuntime::GetHP(e));
 		iNeededSP = (int) pkSk->kSPCostPoly.Eval();
 
 		// ADD_GRANDMASTER_SKILL
-		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum) >= SKILL_GRAND_MASTER && bUseGrandMaster)
+		if (SkillSystem::GetSkillMasterType(e, dwVnum) >= SKILL_GRAND_MASTER && bUseGrandMaster)
 		{
 			iNeededSP = (int) pkSk->kGrandMasterAddSPCostPoly.Eval();
 		}
 		// END_OF_ADD_GRANDMASTER_SKILL
 
-		if (ecs::PlayerRuntime::GetHP(GetEntityHandle()) < iNeededSP)
+		if (ecs::PlayerRuntime::GetHP(e) < iNeededSP)
 			return false;
 
-		PointChange(POINT_HP, -iNeededSP);
+		ecs::PointSystem::Change(e, POINT_HP, -iNeededSP);
 	}
 	else
 	{
 		// SKILL_FOMULA_REFACTORING
-		pkSk->SetSPCostVar("maxhp", ecs::PointSystem::GetMaxHP(GetEntityHandle()));
-		pkSk->SetSPCostVar("maxv", ecs::PointSystem::GetMaxSP(GetEntityHandle()));
-		pkSk->SetSPCostVar("v", ecs::PlayerRuntime::GetSP(GetEntityHandle()));
+		pkSk->SetSPCostVar("maxhp", ecs::PointSystem::GetMaxHP(e));
+		pkSk->SetSPCostVar("maxv", ecs::PointSystem::GetMaxSP(e));
+		pkSk->SetSPCostVar("v", ecs::PlayerRuntime::GetSP(e));
 
 		iNeededSP = (int) pkSk->kSPCostPoly.Eval();
 
-		if (SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum) >= SKILL_GRAND_MASTER && bUseGrandMaster)
+		if (SkillSystem::GetSkillMasterType(e, dwVnum) >= SKILL_GRAND_MASTER && bUseGrandMaster)
 		{
 			iNeededSP = (int) pkSk->kGrandMasterAddSPCostPoly.Eval();
 		}
 		// END_OF_SKILL_FOMULA_REFACTORING
 
-		if (ecs::PlayerRuntime::GetSP(GetEntityHandle()) < iNeededSP)
+		if (ecs::PlayerRuntime::GetSP(e) < iNeededSP)
 			return false;
 
 #ifdef TEXTS_IMPROVEMENT
@@ -3954,33 +3956,31 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 104, "%s#%d", pkSk->szName, iNeededSP);
 		}
 #endif
-		PointChange(POINT_SP, -iNeededSP);
+		ecs::PointSystem::Change(e, POINT_SP, -iNeededSP);
 	}
 
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
 	{
-		pkVictim = this;
 		victimEntity = character;
 	}
 
-	if ((pkSk->dwVnum == SKILL_MUYEONG) || (pkSk->IsChargeSkill() && !AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_TANHWAN_DASH) && !pkVictim))
+	if ((pkSk->dwVnum == SKILL_MUYEONG) || (pkSk->IsChargeSkill() && !AffectSystem::IsAffectFlag(e, AFF_TANHWAN_DASH) && !ecs::IsCharacter(victimEntity)))
 	{
 		// ĂłŔ˝ »çżëÇĎ´Â ą«żµÁřŔş ŔÚ˝Ĺżˇ°Ô Affect¸¦ şŮŔÎ´Ů.
-		pkVictim = this;
 		victimEntity = character;
 	}
 
 	int iSplashCount = 1;
-	if (SkillSystem::IsCooltimeDisabled(GetEntityHandle()))
+	if (SkillSystem::IsCooltimeDisabled(e))
 		SkillSystem::ResetSkillHitTargets(character, dwVnum);
-	if (false == SkillSystem::IsCooltimeDisabled(GetEntityHandle()))
+	if (false == SkillSystem::IsCooltimeDisabled(e))
 	{
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (dwVnum == SKILL_GYEONGGONG)
 		{
 			if (false ==
 					SkillSystem::RegisterSkillUse(character, dwVnum,
-						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null, SkillSystem::ComputeCooltime(character, iCooltime * 1000), iSplashCount, 25000))
+						bUseGrandMaster, (ecs::IsCharacter(victimEntity) && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null, SkillSystem::ComputeCooltime(character, iCooltime * 1000), iSplashCount, 25000))
 			{
 				if (test_server)
 					ecs::ChatSystem::Send(character, CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
@@ -3992,7 +3992,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 			if (false ==
 					SkillSystem::RegisterSkillUse(character, dwVnum,
 						bUseGrandMaster,
-						(nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null,
+						(ecs::IsCharacter(victimEntity) && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null,
 						SkillSystem::ComputeCooltime(character, iCooltime * 1000),
 				   		iSplashCount,
 				   		lMaxHit))
@@ -4007,8 +4007,8 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		if (false ==
 				SkillSystem::RegisterSkillUse(character, dwVnum,
 					bUseGrandMaster,
-					(NULL != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null,
-				   	ComputeCooltime(iCooltime * 1000),
+					(ecs::IsCharacter(victimEntity) && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null,
+				   	SkillSystem::ComputeCooltime(character, iCooltime * 1000),
 				   	iSplashCount,
 				   	lMaxHit))
 		{
@@ -4022,16 +4022,16 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 	if (dwVnum == SKILL_CHAIN)
 	{
-		SkillSystem::ResetChainLightningIndex(GetEntityHandle());
-		SkillSystem::AddChainLightningExcept(GetEntityHandle(), victimEntity);
+		SkillSystem::ResetChainLightningIndex(e);
+		SkillSystem::AddChainLightningExcept(e, victimEntity);
 	}
 
 #ifdef GROUP_BUFF
 	if (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111) {
-		if (ecs::SocialSystem::GetParty(GetEntityHandle()) && pkVictim)
+		if (ecs::SocialSystem::GetParty(e) && ecs::IsCharacter(victimEntity))
 		{
 			LPPARTY party = ecs::SocialSystem::GetParty(victimEntity);
-			if (party && ecs::SocialSystem::GetParty(GetEntityHandle())) {
+			if (party && ecs::SocialSystem::GetParty(e)) {
 				SkillSystem::ComputeSkillParty(character, dwVnum, character);
 			}
 		}
@@ -4041,7 +4041,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 #ifdef __SKILL_COLOR_SYSTEM__
     SkillSystem::CopyBuffSkillColor(character, victimEntity, dwVnum);
 #endif
-	if (pkVictim != nullptr && ecs::SocialSystem::GetParty(GetEntityHandle()) && (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111))//razor93---az egesz csoport buffolasa egyszerre------
+	if (ecs::IsCharacter(victimEntity) && ecs::SocialSystem::GetParty(e) && (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111))//razor93---az egesz csoport buffolasa egyszerre------
 	{
 		if (dwVnum == 66) // varázslat kioltás
 		{
@@ -4049,19 +4049,19 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		}
 
 		if (ecs::SocialSystem::GetParty(victimEntity)){
-			if (ecs::SocialSystem::GetParty(victimEntity) == ecs::SocialSystem::GetParty(GetEntityHandle())){
+			if (ecs::SocialSystem::GetParty(victimEntity) == ecs::SocialSystem::GetParty(e)){
 				SkillSystem::ComputeSkillParty(character, dwVnum, character);
 			}
 		}
 	}//------------------------------------------------------------------2024-12-30------------------------------------------------------------------------------
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
-		SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, character);
+		SkillSystem::ComputeSkill(e, dwVnum, character);
 	else if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_ATTACK))
-		SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, victimEntity);
+		SkillSystem::ComputeSkill(e, dwVnum, victimEntity);
 	else if (dwVnum == SKILL_BYEURAK)
-		SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, victimEntity);
+		SkillSystem::ComputeSkill(e, dwVnum, victimEntity);
 	else if (dwVnum == SKILL_MUYEONG || pkSk->IsChargeSkill())
-		SkillSystem::ComputeSkill(GetEntityHandle(), dwVnum, victimEntity);
+		SkillSystem::ComputeSkill(e, dwVnum, victimEntity);
 
 	SkillSystem::SetLastSkillTime(character, get_dword_time());
 

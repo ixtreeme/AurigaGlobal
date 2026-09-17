@@ -69,6 +69,9 @@ void StopGyeongGongEvent(entt::entity e);
 #endif
 bool CanUseMobSkill(entt::entity e, unsigned int idx);
 bool CanUseSkill(entt::entity e, uint32_t skillId);
+// Uses a skill of e on victim: the checks, the HP or SP cost and the
+// cooldown, then the skill itself.
+bool UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
 // Runtime skill state belongs to the entity, never to a CHARACTER mirror.
 bool RegisterSkillUse(entt::entity caster, uint32_t skillId, bool grandMaster,
     entt::entity target, uint32_t cooldown, int splashCount = 1, int hitCount = -1, int range = -1);
