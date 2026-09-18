@@ -91,13 +91,6 @@ int32_t CEntity::GetY() const
 	return 0;
 }
 
-int32_t CEntity::GetZ() const
-{
-	if (const auto* pos = TryGetPositionFor(this))
-		return pos->z;
-	return 0;
-}
-
 PIXEL_POSITION CEntity::GetXYZ() const
 {
 	PIXEL_POSITION result;
@@ -170,8 +163,3 @@ void PacketView(entt::entity self, const void* data, int bytes, entt::entity exc
 } // namespace ecs::ViewSystem
 
 
-void CEntity::UpdateSectree()
-{
-    const auto entity = ecs::SpatialService::EntityFromLPENTITY(this);
-    ecs::VisibilitySystem::Refresh(g_registry, entity);
-}

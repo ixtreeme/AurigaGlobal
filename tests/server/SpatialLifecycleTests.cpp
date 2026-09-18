@@ -247,7 +247,6 @@ void CombatSystem::SendLeaderboardDataGuild(entt::entity) { Unexpected(); }
 void CombatSystem::SendLeaderboardDataSkillMob(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdateMountInventoryCountOverhead(entt::entity, entt::entity) { Unexpected(); }
 void CombatSystem::UpdateKillerMode(entt::entity e) { RecoveryCallback(e, 1); }
-void CEntity::UpdateSectree() { Unexpected(); }
 uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, uint8_t) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { Unexpected(); }
@@ -338,7 +337,6 @@ bool CombatSystem::IsStun(entt::entity e) { return Recovery(e).stun; }
 bool CombatSystem::IsDead(entt::entity e) { return Recovery(e).dead; }
 int32_t CEntity::GetX() const { Unexpected(); }
 int32_t CEntity::GetY() const { Unexpected(); }
-int32_t CEntity::GetZ() const { Unexpected(); }
 LPSECTREE CEntity::GetSectree() const { Unexpected(); }
 int CalculateDuration(int, int) { Unexpected(); }
 namespace ecs::SessionSystem {

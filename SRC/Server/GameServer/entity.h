@@ -42,7 +42,6 @@ class CEntity
 		// caller paired with SyncPositionComponents.
 		int32_t				GetX() const;
 		int32_t				GetY() const;
-		int32_t				GetZ() const;
 		PIXEL_POSITION		GetXYZ() const;
 
 		void			SetXYZ(int32_t x, int32_t y, int32_t z)		{ m_pos.x = x, m_pos.y = y, m_pos.z = z; }
@@ -56,7 +55,6 @@ class CEntity
 		// (H.2), so no caller outside the SECTREE class needs a setter.
 		LPSECTREE		GetSectree() const;
 
-		void			UpdateSectree();
 
 		void			SetMapIndex(int32_t l)	{ m_lMapIndex = l; }
 		int32_t			GetMapIndex() const	{ return m_lMapIndex; }

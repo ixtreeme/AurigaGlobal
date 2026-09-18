@@ -274,11 +274,16 @@ void CObject::RegenNPC()
 	newX = (int)(( x * cosf(rot)) + ( y * sinf(rot)));
 	newY = (int)(( y * cosf(rot)) - ( x * sinf(rot)));
 
+	// Buildings are inserted with z=0; read it back from the component
+	// instead of the removed CEntity field mirror.
+	const entt::entity objectEntity = ecs::CBuildingRegistry::FindByID(GetID());
+	const auto* objectPos = (objectEntity != entt::null && g_registry.valid(objectEntity))
+		? g_registry.try_get<ecs::Position>(objectEntity) : nullptr;
 	m_npcEntity = CHARACTER_MANAGER::instance().SpawnMobEntity(m_pProto->dwNPCVnum,
 			GetMapIndex(),
 			GetX() + newX,
 			GetY() + newY,
-			GetZ(),
+			objectPos ? objectPos->z : 0,
 			false,
 			(int)m_data.zRot);
 
