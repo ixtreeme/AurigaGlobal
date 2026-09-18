@@ -3035,11 +3035,10 @@ void CHARACTER::Destroy()
     }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (m_mountSystem)
+    if (auto* mount = MountSystem::GetMountSystem(GetEntityHandle()))
     {
-        delete m_mountSystem;
+        delete mount;
 
-        m_mountSystem = nullptr;
         if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
             g_registry.get_or_emplace<ecs::MountRuntimeRefs>(GetEntityHandle()).mountSystem = nullptr;
     }
@@ -3052,22 +3051,20 @@ void CHARACTER::Destroy()
     MountSystem::SummonHorse(GetEntityHandle(), false);
 #endif
 #ifdef __PET_SYSTEM__
-    if (m_petSystem)
+    if (auto* pet = ecs::PlayerRuntime::GetPetSystem(GetEntityHandle()))
     {
-        delete m_petSystem;
+        delete pet;
 
-        m_petSystem = nullptr;
 		if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
 			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).petSystem = nullptr;
     }
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-    if (m_newpetSystem)
+    if (auto* newPet = ecs::PlayerRuntime::GetNewPetSystem(GetEntityHandle()))
     {
-        delete m_newpetSystem;
+        delete newPet;
 
-        m_newpetSystem = nullptr;
 		if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
 			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).newPetSystem = nullptr;
     }
@@ -3368,30 +3365,30 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     }
 
 #ifdef __PET_SYSTEM__
-    if (m_petSystem)
+    if (auto* previous = ecs::PlayerRuntime::GetPetSystem(GetEntityHandle()))
     {
-        delete m_petSystem;
+        delete previous;
     }
 
-    m_petSystem = M2_NEW CPetSystem(GetEntityHandle());
+    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).petSystem = M2_NEW CPetSystem(GetEntityHandle());
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (m_mountSystem)
+    if (auto* previous = MountSystem::GetMountSystem(GetEntityHandle()))
     {
-        delete m_mountSystem;
+        delete previous;
     }
 
-    m_mountSystem = M2_NEW CMountSystem(GetEntityHandle());
+    g_registry.get_or_emplace<ecs::MountRuntimeRefs>(GetEntityHandle()).mountSystem = M2_NEW CMountSystem(GetEntityHandle());
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-    if (m_newpetSystem)
+    if (auto* previous = ecs::PlayerRuntime::GetNewPetSystem(GetEntityHandle()))
     {
-        delete m_newpetSystem;
+        delete previous;
     }
 
-    m_newpetSystem = M2_NEW CNewPetSystem(GetEntityHandle());
+    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).newPetSystem = M2_NEW CNewPetSystem(GetEntityHandle());
 #endif
 }
 
@@ -3809,18 +3806,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_NEWSTUFF
 #endif
 
-
-#ifdef __PET_SYSTEM__
-    m_petSystem = nullptr;
-#endif
-
-#ifdef __NEWPET_SYSTEM__
-    m_newpetSystem = nullptr;
-#endif
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    m_mountSystem = nullptr;
-#endif
 
 #ifdef ENABLE_ANTI_CMD_FLOOD
 #endif

@@ -979,28 +979,6 @@ public:
 
 
 
-#ifdef __PET_SYSTEM__
-public:
-protected:
-	CPetSystem* m_petSystem;
-
-public:
-#endif
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-public:
-
-protected:
-	CMountSystem* m_mountSystem;
-#endif
-
-#ifdef __NEWPET_SYSTEM__
-public:
-protected:
-	CNewPetSystem* m_newpetSystem;
-
-public:
-#endif
 protected:
 
 

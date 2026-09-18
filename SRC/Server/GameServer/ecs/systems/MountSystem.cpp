@@ -667,7 +667,8 @@ void SetRider(entt::entity horse, entt::entity rider)
 
 // The costume mount subsystem, read from MountRuntimeRefs. CMountSystem's
 // constructor writes the component and Destroy clears it while it still
-// points at that system, so it agrees with CHARACTER::m_mountSystem.
+// points at that system, and SetPlayerProto - the only other place that makes
+// or frees one - writes it too.
 ::CMountSystem* GetMountSystem(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
