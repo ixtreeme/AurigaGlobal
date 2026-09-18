@@ -902,11 +902,10 @@ namespace offlineshop
 
 		OFFSHOP_DEBUG("checked %s" , "successful");
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwBuyerID);
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity chEntity = CHARACTER_MANAGER::instance().FindEntityByPID(dwBuyerID);
 
 
-		if (ch)
+		if (ecs::IsCharacter(chEntity))
 		{
 			OFFSHOP_DEBUG("buyer is online , name %s , item id %u ",ecs::PlayerRuntime::GetName(chEntity).data(), dwItemID);
 
@@ -918,7 +917,7 @@ namespace offlineshop
 			}
 
 			TItemPos pos;
-			if (!ch->CanTakeInventoryItem(pkItem, &pos))
+			if (!InventorySystem::CanTakeInventoryItem(chEntity, pkItem, &pos))
 			{
 				ItemSystem::DestroyItemEntityEcs(
 			pkItem,
@@ -3106,8 +3105,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopSafeboxGetItemClientPacket(entt::entity character, uint32_t dwItemID)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::OfflineShopSystem::GetShopSafebox(character))
+		if (!ecs::IsCharacter(character) || !ecs::OfflineShopSystem::GetShopSafebox(character))
 			return false;
 
 		CShopSafebox* pkSafebox = ecs::OfflineShopSystem::GetShopSafebox(character);
@@ -3122,7 +3120,7 @@ namespace offlineshop
 
 
 		TItemPos itemPos;
-		if (!ch->CanTakeInventoryItem(pkItem, &itemPos))
+		if (!InventorySystem::CanTakeInventoryItem(character, pkItem, &itemPos))
 		{
 			ItemSystem::DestroyItemEntityEcs(
 			pkItem,

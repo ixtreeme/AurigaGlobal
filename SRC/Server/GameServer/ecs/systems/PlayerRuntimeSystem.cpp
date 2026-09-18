@@ -2548,15 +2548,15 @@ uint16_t GetRuneEffect(entt::entity e)
 
 #endif
 
-bool CHARACTER::CanTakeInventoryItem(entt::entity item, TItemPos* cell)
+bool InventorySystem::CanTakeInventoryItem(entt::entity e, entt::entity item, TItemPos* cell)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
+    ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
 #endif
     if (!cell || !ItemSystem::IsValidItem(item))
         return false;
 
-    const int iEmpty = ItemSystem::GetEmptyInventoryPositionEcs(GetEntityHandle(), item);
+    const int iEmpty = ItemSystem::GetEmptyInventoryPositionEcs(e, item);
     if (iEmpty == -1)
         return false;
 

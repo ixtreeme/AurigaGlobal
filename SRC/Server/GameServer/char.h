@@ -632,7 +632,6 @@ public:
 	// ADD_MONSTER_REFINE
 	// END_OF_ADD_MONSTER_REFINE
 
-	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);
 
 	// CHECK_UNIQUE_GROUP
 	// END_OF_CHECK_UNIQUE_GROUP
