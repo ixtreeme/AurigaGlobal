@@ -66,13 +66,20 @@ namespace marriage
 		ecs::PlayerRuntime::GetDesc(ch)->Packet(&p, sizeof(p));
 	}
 
+	// The pair is online while both partners are still characters, which is
+	// what the two pointers answered.
+	bool TMarriage::IsOnline()
+	{
+		return ecs::IsCharacter(ch1) && ecs::IsCharacter(ch2);
+	}
+
 	TMarriage::~TMarriage()
 	{
 		StopNearCheckEvent();
 		if (IsOnline())
 		{
-			ecs::ChatSystem::Send(((ch1) ? (ch1)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_divorce");
-			ecs::ChatSystem::Send(((ch2) ? (ch2)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_divorce");
+			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_divorce");
+			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_divorce");
 		}
 		M2_DELETE(pWeddingInfo);
 		pWeddingInfo = nullptr;
@@ -140,22 +147,22 @@ namespace marriage
 		if (!IsOnline())
 			return false;
 
-		return ecs::PlayerRuntime::GetMapIndex(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) == ecs::PlayerRuntime::GetMapIndex(((ch2) ? (ch2)->GetEntityHandle() : entt::null));
+		return ecs::PlayerRuntime::GetMapIndex(ch1) == ecs::PlayerRuntime::GetMapIndex(ch2);
 
 		// ��Ƽ üũ�� �������
-		/*if (!ecs::SocialSystem::GetParty(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) != ecs::SocialSystem::GetParty(((ch2) ? (ch2)->GetEntityHandle() : entt::null)))
+		/*if (!ecs::SocialSystem::GetParty(ch1) || ecs::SocialSystem::GetParty(ch1) != ecs::SocialSystem::GetParty(ch2))
 		  return false;*/
 
 		// �Ÿ� üũ�� �������
 		/*const int DISTANCE = 5000;
 
-		  if (labs(ecs::PlayerRuntime::GetX(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((ch2) ? (ch2)->GetEntityHandle() : entt::null))) > DISTANCE)
+		  if (labs(ecs::PlayerRuntime::GetX(ch1) - ecs::PlayerRuntime::GetX(ch2)) > DISTANCE)
 		  return false;
 
-		  if (labs(ecs::PlayerRuntime::GetY(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((ch2) ? (ch2)->GetEntityHandle() : entt::null))) > DISTANCE)
+		  if (labs(ecs::PlayerRuntime::GetY(ch1) - ecs::PlayerRuntime::GetY(ch2)) > DISTANCE)
 		  return false;
 
-		  return (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((ch2) ? (ch2)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((ch2) ? (ch2)->GetEntityHandle() : entt::null))) < DISTANCE);*/
+		  return (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(ch1) - ecs::PlayerRuntime::GetX(ch2), ecs::PlayerRuntime::GetY(ch1) - ecs::PlayerRuntime::GetY(ch2)) < DISTANCE);*/
 	}
 
 	// �ݽ� ��ġ
@@ -264,29 +271,26 @@ namespace marriage
 		}
 	}
 
-	void TMarriage::Login(LPCHARACTER ch)
+	void TMarriage::Login(entt::entity ch)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-		if ((ecs::PlayerRuntime::GetPlayerID(chEntity)) == m_pid1)
+		if ((ecs::PlayerRuntime::GetPlayerID(ch)) == m_pid1)
 		{
 			ch1 = ch;
 			if (is_married)
-				SendLoverInfo(((ch1) ? (ch1)->GetEntityHandle() : entt::null), name2, GetMarriagePoint());
+				SendLoverInfo(ch1, name2, GetMarriagePoint());
 		}
-		else if ((ecs::PlayerRuntime::GetPlayerID(chEntity)) == m_pid2)
+		else if ((ecs::PlayerRuntime::GetPlayerID(ch)) == m_pid2)
 		{
 			ch2 = ch;
 			if (is_married)
-				SendLoverInfo(((ch2) ? (ch2)->GetEntityHandle() : entt::null), name1, GetMarriagePoint());
+				SendLoverInfo(ch2, name1, GetMarriagePoint());
 		}
 
 		// �� �� �� ���μ����� �α��� ���̸� �����͸� �����ϰ� �̺�Ʈ �߻�
 		if (IsOnline())
 		{
-			ecs::SocialSystem::SetMarryPartner(ch1->GetEntityHandle(),
-				ch2 ? ch2->GetEntityHandle() : entt::null);
-			ecs::SocialSystem::SetMarryPartner(ch2->GetEntityHandle(),
-				ch1 ? ch1->GetEntityHandle() : entt::null);
+			ecs::SocialSystem::SetMarryPartner(ch1, ch2);
+			ecs::SocialSystem::SetMarryPartner(ch2, ch1);
 
 			StartNearCheckEvent();
 		}
@@ -297,7 +301,7 @@ namespace marriage
 			LPDESC d1, d2;
 			CCI * pkCCI;
 
-			d1 = ch1 ? ecs::PlayerRuntime::GetDesc(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) : nullptr;
+			d1 = ecs::PlayerRuntime::GetDesc(ch1);
 
 			if (!d1)
 			{
@@ -310,7 +314,7 @@ namespace marriage
 				}
 			}
 
-			d2 = ch2 ? ecs::PlayerRuntime::GetDesc(((ch2) ? (ch2)->GetEntityHandle() : entt::null)) : nullptr;
+			d2 = ecs::PlayerRuntime::GetDesc(ch2);
 
 			if (!d2)
 			{
@@ -335,19 +339,19 @@ namespace marriage
 	void TMarriage::Logout(uint32_t pid)
 	{
 		if (pid == m_pid1)
-			ch1 = nullptr;
+			ch1 = entt::null;
 		else if (pid == m_pid2)
-			ch2 = nullptr;
+			ch2 = entt::null;
 
-		if (ch1 || ch2)
+		if (ecs::IsCharacter(ch1) || ecs::IsCharacter(ch2))
 		{
 			Save();
 
-			if (ch1)
-				ecs::SocialSystem::SetMarryPartner(ch1->GetEntityHandle(), entt::null);
+			if (ecs::IsCharacter(ch1))
+				ecs::SocialSystem::SetMarryPartner(ch1, entt::null);
 
-			if (ch2)
-				ecs::SocialSystem::SetMarryPartner(ch2->GetEntityHandle(), entt::null);
+			if (ecs::IsCharacter(ch2))
+				ecs::SocialSystem::SetMarryPartner(ch2, entt::null);
 
 			StopNearCheckEvent();
 		}
@@ -357,7 +361,7 @@ namespace marriage
 			LPDESC d1, d2;
 			CCI * pkCCI;
 
-			d1 = ch1 ? ecs::PlayerRuntime::GetDesc(((ch1) ? (ch1)->GetEntityHandle() : entt::null)) : nullptr;
+			d1 = ecs::PlayerRuntime::GetDesc(ch1);
 
 			if (!d1)
 			{
@@ -374,7 +378,7 @@ namespace marriage
 				d1->ChatPacket(CHAT_TYPE_COMMAND, "lover_logout");
 			}
 
-			d2 = ch2 ? ecs::PlayerRuntime::GetDesc(((ch2) ? (ch2)->GetEntityHandle() : entt::null)) : nullptr;
+			d2 = ecs::PlayerRuntime::GetDesc(ch2);
 
 			if (!d2)
 			{
@@ -395,8 +399,6 @@ namespace marriage
 
 	void TMarriage::NearCheck()
 	{
-		const entt::entity ch1Entity = ch1 ? ch1->GetEntityHandle() : entt::null;
-		const entt::entity ch2Entity = ch2 ? ch2->GetEntityHandle() : entt::null;
 		if (!is_married)
 			return;
 
@@ -410,14 +412,14 @@ namespace marriage
 		if (IsNear() && !isLastNear)
 		{
 			isLastNear = true;
-			ecs::ChatSystem::Send(ch1Entity, CHAT_TYPE_COMMAND, "lover_near");
-			ecs::ChatSystem::Send(ch2Entity, CHAT_TYPE_COMMAND, "lover_near");
+			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_near");
+			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_near");
 		}
 		else if (!IsNear() && isLastNear)
 		{
 			isLastNear = false;
-			ecs::ChatSystem::Send(ch1Entity, CHAT_TYPE_COMMAND, "lover_far");
-			ecs::ChatSystem::Send(ch2Entity, CHAT_TYPE_COMMAND, "lover_far");
+			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_far");
+			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_far");
 		}
 
 		if (byLastLovePoint != GetMarriagePoint())
@@ -427,8 +429,8 @@ namespace marriage
 			p.header = HEADER_GC_LOVE_POINT_UPDATE;
 			p.love_point = byLastLovePoint;
 
-			ecs::PlayerRuntime::GetDesc(ch1Entity)->Packet(&p, sizeof(p));
-			ecs::PlayerRuntime::GetDesc(ch2Entity)->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(ch1)->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(ch2)->Packet(&p, sizeof(p));
 		}
 	}
 
@@ -491,11 +493,11 @@ namespace marriage
 
 		if (IsOnline())
 		{
-			SendLoverInfo(((ch1) ? (ch1)->GetEntityHandle() : entt::null), name2, GetMarriagePoint());
-			SendLoverInfo(((ch2) ? (ch2)->GetEntityHandle() : entt::null), name1, GetMarriagePoint());
+			SendLoverInfo(ch1, name2, GetMarriagePoint());
+			SendLoverInfo(ch2, name1, GetMarriagePoint());
 
-			ecs::ChatSystem::Send(((ch1) ? (ch1)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_login");
-			ecs::ChatSystem::Send(((ch2) ? (ch2)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_login");
+			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_login");
+			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_login");
 		}
 	}
 
@@ -759,9 +761,9 @@ namespace marriage
 		M2_DELETE(pMarriage);
 	}
 
-	void CManager::Login(LPCHARACTER ch)
+	void CManager::Login(entt::entity ch)
 	{
-		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		uint32_t pid = ecs::PlayerRuntime::GetPlayerID(ch);
 
 		TMarriage* pMarriage = Get(pid);
 		if (!pMarriage)

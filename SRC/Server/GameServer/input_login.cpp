@@ -651,7 +651,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	building::CManager::instance().SendLandList(d, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
-	marriage::CManager::instance().Login(ch);
+	marriage::CManager::instance().Login(ch->GetEntityHandle());
 #ifdef ENABLE_EVENT_MANAGER
 	CHARACTER_MANAGER::Instance().SendDataPlayer(((ch) ? (ch)->GetEntityHandle() : entt::null));
 #endif

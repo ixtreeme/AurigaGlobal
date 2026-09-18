@@ -5738,9 +5738,9 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
 				if (pMarriage)
 				{
-					if (pMarriage->ch1 != nullptr)
+					if (ecs::IsCharacter(pMarriage->ch1))
 					{
-						if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(pMarriage->ch1->GetEntityHandle())) == true)
+						if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(pMarriage->ch1)) == true)
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 672, "");
@@ -5749,9 +5749,9 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 						}
 					}
 
-					if (pMarriage->ch2 != nullptr)
+					if (ecs::IsCharacter(pMarriage->ch2))
 					{
-						if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(pMarriage->ch2->GetEntityHandle())) == true)
+						if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(pMarriage->ch2)) == true)
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 672, "");

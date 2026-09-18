@@ -15,8 +15,8 @@ namespace marriage
 		uint32_t m_pid2;
 		int   love_point;
 		time_t marry_time;
-		LPCHARACTER ch1;
-		LPCHARACTER ch2;
+		entt::entity ch1;
+		entt::entity ch2;
 		bool bSave;
 		bool is_married;
 		std::string name1;
@@ -35,7 +35,7 @@ namespace marriage
 			pWeddingInfo(nullptr),
 			eventNearCheck(nullptr)
 		{
-			ch1 = ch2 = nullptr;
+			ch1 = ch2 = entt::null;
 			bSave = false;
 			isLastNear = false;
 			byLastLovePoint = 0;
@@ -43,13 +43,10 @@ namespace marriage
 
 		~TMarriage();
 
-		void Login(LPCHARACTER ch);
+		void Login(entt::entity ch);
 		void Logout(uint32_t pid);
 
-		bool IsOnline()
-		{
-			return ch1 && ch2;
-		}
+		bool IsOnline();
 
 		bool IsNear();
 
@@ -114,7 +111,7 @@ namespace marriage
 			//void	P2PLogin(uint32_t dwPID);
 			//void	P2PLogout(uint32_t dwPID);
 
-			void	Login(LPCHARACTER ch);
+			void	Login(entt::entity ch);
 
 			void	Logout(uint32_t pid);
 			void	Logout(entt::entity ch);
