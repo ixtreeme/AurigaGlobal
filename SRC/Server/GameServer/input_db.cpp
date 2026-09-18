@@ -544,14 +544,13 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		return;
 	}
 
-	auto* ch = CHARACTER_MANAGER::instance().CreateCharacter(pTab->name, pTab->id);
-	if (!ch || !g_registry.valid(ch->GetEntityHandle())) {
+	const entt::entity createdEntity = CHARACTER_MANAGER::instance().CreateCharacterEntity(pTab->name, pTab->id);
+	if (createdEntity == entt::null || !g_registry.valid(createdEntity)) {
 		LOG_ERROR("PlayerLoad: failed to create character for pid={}", pTab->id);
 		return;
 	}
-	ch->BindDesc(d);
 	// SetPlayerProto computes points: seed the ECS archetype before it runs.
-	const entt::entity chEntity = EntityFactory::CreatePC(g_registry, *pTab, d, ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle()));
+	const entt::entity chEntity = EntityFactory::CreatePC(g_registry, *pTab, d, ecs::PlayerRuntime::GetPacketVID(createdEntity));
 	ecs::PlayerRuntime::SetPlayerProto(chEntity, pTab);
 	ecs::PlayerRuntime::SetEmpire(chEntity, d->GetEmpire());
 	d->BindCharacter(chEntity);
@@ -575,7 +574,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		snprintf(buf, sizeof(buf), "%s %lld %d %d %u",
 
-				inet_ntoa(ecs::PlayerRuntime::GetDesc(chEntity)->GetAddr().sin_addr), ecs::PointSystem::GetGold(chEntity), g_bChannel, ecs::PlayerRuntime::GetMapIndex(chEntity), CombatSystem::GetAlignment(ch->GetEntityHandle()));
+				inet_ntoa(ecs::PlayerRuntime::GetDesc(chEntity)->GetAddr().sin_addr), ecs::PointSystem::GetGold(chEntity), g_bChannel, ecs::PlayerRuntime::GetMapIndex(chEntity), CombatSystem::GetAlignment(chEntity));
 		LogManager::instance().CharLog(chEntity, 0, "LOGIN", buf);
 
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
@@ -591,12 +590,12 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	NetworkSyncSystem::MainCharacterPacket(chEntity);
 
 	int32_t lPublicMapIndex = lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex;
-	//if (!map_allow_find(lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex) || !CheckEmpire(ch, lMapIndex))
+	//if (!map_allow_find(lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex) || !CheckEmpire(chEntity, lMapIndex))
 	if (!map_allow_find(lPublicMapIndex))
 	{
 		LOG_ERROR("InputDB::PlayerLoad : entering {} map is not allowed here (name: {}, empire {})", lMapIndex, pTab->name, d->GetEmpire());
 
-		ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), EMPIRE_START_MAP(d->GetEmpire()),
+		ecs::MovementSystem::SetWarpLocation(chEntity, EMPIRE_START_MAP(d->GetEmpire()),
 				EMPIRE_START_X(d->GetEmpire()) / 100,
 				EMPIRE_START_Y(d->GetEmpire()) / 100);
 
@@ -611,10 +610,10 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	NetworkSyncSystem::PointsPacket(chEntity);
 	SkillSystem::SendSkillLevelPacket(chEntity);
 
-	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ch->GetZ(), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ecs::PlayerRuntime::GetZ(chEntity), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
 
-	ecs::SessionSystem::QuerySafeboxSize(ch->GetEntityHandle());
-	MountSystem::QueryMountInventory(ch->GetEntityHandle());
+	ecs::SessionSystem::QuerySafeboxSize(chEntity);
+	MountSystem::QueryMountInventory(chEntity);
 }
 
 void CInputDB::Boot(const char* data)

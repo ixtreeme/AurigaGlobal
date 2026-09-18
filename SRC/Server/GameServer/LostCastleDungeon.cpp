@@ -733,14 +733,11 @@ void ClearClonesOnMap(int32_t mapIndex)
             snprintf(evilName, sizeof(evilName), "Gonosz%s", ecs::PlayerRuntime::GetName(sourceEntity).data());
 
             // FAKE PC (nem mob!) - PID=0, hogy ne keruljon bele PC name/PID map-ekbe
-            LPCHARACTER clone = CHARACTER_MANAGER::instance().CreateCharacter(evilName, 0);
-            const entt::entity cloneEntity = clone ? clone->GetEntityHandle() : entt::null;
+            const entt::entity cloneEntity = CHARACTER_MANAGER::instance().CreateCharacterEntity(evilName, 0);
 
-            if (!clone)
+            if (cloneEntity == entt::null)
                 continue;
 
-            //clone->SetCharType(CHAR_TYPE_PC);
-        //    clone->SetFakePlayer(true);
 
             // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
             ecs::PlayerRuntime::SetRace(cloneEntity, (uint8_t)ecs::PlayerRuntime::GetRaceNum(sourceEntity));
@@ -1285,14 +1282,11 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         // unique name to avoid collisions
         snprintf(cloneName, sizeof(cloneName), "Gonosz %s", ecs::PlayerRuntime::GetName(source).data());
 
-        LPCHARACTER clone = CHARACTER_MANAGER::instance().CreateCharacter(cloneName, 0);
-        const entt::entity cloneEntity = clone ? clone->GetEntityHandle() : entt::null;
+        const entt::entity cloneEntity = CHARACTER_MANAGER::instance().CreateCharacterEntity(cloneName, 0);
 
-        if (!clone)
+        if (cloneEntity == entt::null)
             continue;
 
-       // clone->SetCharType(CHAR_TYPE_PC);
-      //  clone->SetFakePlayer(true);
 
         ecs::PlayerRuntime::SetRace(cloneEntity, (uint8_t)ecs::PlayerRuntime::GetRaceNum(source));
         ecs::PlayerRuntime::SetEmpire(cloneEntity, ecs::PlayerRuntime::GetEmpire(source));

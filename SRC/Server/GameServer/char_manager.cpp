@@ -435,6 +435,12 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 	return ch;
 }
 
+entt::entity CHARACTER_MANAGER::CreateCharacterEntity(const char* name, uint32_t dwPID)
+{
+	LPCHARACTER ch = CreateCharacter(name, dwPID);
+	return ch ? ch->GetEntityHandle() : entt::null;
+}
+
 #ifndef DEBUG_ALLOC
 void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch)
 #else
@@ -658,19 +664,18 @@ entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t 
 	}
 
 #ifdef ENABLE_MULTI_NAMES
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().CreateCharacter(pkMob->m_table.szLocaleName[DEFAULT_LANGUAGE]);
+	const entt::entity character = CHARACTER_MANAGER::instance().CreateCharacterEntity(pkMob->m_table.szLocaleName[DEFAULT_LANGUAGE]);
 #else
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().CreateCharacter(pkMob->m_table.szLocaleName);
+	const entt::entity character = CHARACTER_MANAGER::instance().CreateCharacterEntity(pkMob->m_table.szLocaleName);
 #endif
 
-	if (!ch)
+	if (character == entt::null)
 	{
 		LOG_INFO("SpawnMobRandomPosition: cannot create new character");
 		return entt::null;
 	}
 
-	const entt::entity character = ch->GetEntityHandle();
-	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle()));
+	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ecs::PlayerRuntime::GetPacketVID(character));
 
 	ecs::PlayerRuntime::SetProto(character, pkMob);
 
@@ -683,7 +688,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t 
 
 	if (!ecs::MovementSystem::Show(character, lMapIndex, x, y, 0, false))
 	{
-		M2_DESTROY_CHARACTER(ch);
+		M2_DESTROY_CHARACTER(character);
 		LOG_ERROR("SpawnMobRandomPosition: cannot show monster");
 		return entt::null;
 	}
@@ -766,20 +771,19 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 	}
 
 #ifdef ENABLE_MULTI_NAMES
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().CreateCharacter(pkMob->m_table.szLocaleName[DEFAULT_LANGUAGE]);
+	const entt::entity character = CHARACTER_MANAGER::instance().CreateCharacterEntity(pkMob->m_table.szLocaleName[DEFAULT_LANGUAGE]);
 #else
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().CreateCharacter(pkMob->m_table.szLocaleName);
+	const entt::entity character = CHARACTER_MANAGER::instance().CreateCharacterEntity(pkMob->m_table.szLocaleName);
 #endif
 
-	if (!ch)
+	if (character == entt::null)
 	{
 		//"SpawnMob: cannot create new character");
 		LOG_INFO("SpawnMob: cannot create new character");
 		return entt::null;
 	}
 
-	const entt::entity character = ch->GetEntityHandle();
-	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle()));
+	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ecs::PlayerRuntime::GetPacketVID(character));
 
 	if (iRot == -1)
 		iRot = number(0, 360);
@@ -810,7 +814,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 	}
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT: minden metin kapjon +value1 extra metint (dungeon mapok kivve)
-	if (!g_bDungeonTicketExtraMetinSpawn && ch && pkMob->m_table.bType == CHAR_TYPE_STONE && !ecs::PlayerRuntime::IsDungeonTicketExtraMetin(character))
+	if (!g_bDungeonTicketExtraMetinSpawn && character != entt::null && pkMob->m_table.bType == CHAR_TYPE_STONE && !ecs::PlayerRuntime::IsDungeonTicketExtraMetin(character))
 	{
 		const TEventManagerData* ev = CheckEventIsActive(DUNGEON_TICKET_LOOT_EVENT, 0);
 		if (ev)
@@ -847,7 +851,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 
 
 	// Phase 8 diagnosis - REMOVE AFTER SPAWN PATH IS VERIFIED
-	if (bShow && ch)
+	if (bShow && character != entt::null)
 	{
 		const bool isNpcLike = (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO);
 		if (ecs::PlayerRuntime::IsStone(character) || isNpcLike)
@@ -1217,9 +1221,6 @@ void CHARACTER_MANAGER::DelayedSave(entt::entity character)
 
 bool CHARACTER_MANAGER::FlushDelayedSave(entt::entity character)
 {
-	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93d
-	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::FlushDelayedSave");//INGAME_DEBUG_RAZOR93
-	//#endif
 	if (m_set_pkChrForDelayedSave.erase(character) == 0)
 		return false;
 

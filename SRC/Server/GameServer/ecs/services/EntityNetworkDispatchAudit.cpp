@@ -134,7 +134,7 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
             legacySpeed = ecs::PlayerRuntime::IsMount(ch->GetEntityHandle())
                 ? static_cast<uint16_t>(ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED))
-                : static_cast<uint16_t>(ch->IsPC() ? ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED) : 150);
+                : static_cast<uint16_t>(ecs::PlayerRuntime::IsPC(source) ? ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED) : 150);
 #else
             legacySpeed = 150;
 #endif
