@@ -345,7 +345,6 @@ namespace ecs::SessionSystem {
 void FlushDelayedSaveItem(entt::entity) { Unexpected(); }
 void Save(entt::entity) { Unexpected(); }
 }
-void CHARACTER::Save() { Unexpected(); }
 const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
 uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
 void CombatSystem::DistributeSP(entt::entity e, entt::entity target, int) {

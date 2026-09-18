@@ -558,14 +558,6 @@ public:
 public:
 #endif
 
-public:
-
-
-
-
-
-
-
 protected:
 	//////////////////////////////////////////////////////////////////////////////////
 
@@ -576,22 +568,14 @@ public:
 	void			Create(uint32_t vid);
 	void			Destroy();
 
-
 protected:
 	void			Initialize();
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Basic Points
 public:
-public:
-#ifdef ENABLE_FAKE_SHOP_HEADER
-#endif
-
 
 	void			SetPlayerProto(const TPlayerTable* table);
-
-
-	void			Save();		// DelayedSave
 
 #ifdef ENABLE_MULTI_NAMES
 	const char* GetName(uint8_t lang = DEFAULT_LANGUAGE) const;
@@ -608,78 +592,20 @@ public:
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	// NEWAI
 
-
-
-
 	// NEWAI END
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	// MINING
 	// END_OF_MINING
 
-
-
-
-
 protected:
-#ifdef ENABLE_EVENT_MANAGER
-#endif
-
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Move & Synchronize Positions
 	//////////////////////////////////////////////////////////////////////////////////
-public:
-
-
-
-
-
-
-
-
-
-
-
-
 
 protected:
-
-
-
-
-
-
 
 	// End
 
@@ -688,26 +614,15 @@ public:
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Affect
-public:
-
-
-
-
-
-
-
 
 public:
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Dungeon
-public:
 protected:
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Guild
-public:
-
 
 protected:
 
@@ -715,97 +630,49 @@ protected:
 	// Item related
 public:
 
-
-
-
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-#endif
-
-
 	// MYSHOP_PRICE_LIST
 
 	// END_OF_MYSHOP_PRICE_LIST
 
-
 	// ADD_REFINE_BUILDING
 	// END_OF_ADD_REFINE_BUILDING
-
 
 	//	void			PotionPacket(int iPotionType);
 
 	// ADD_MONSTER_REFINE
 	// END_OF_ADD_MONSTER_REFINE
 
-
-
-
-
 	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);
-
-
-
-
-
 
 	// CHECK_UNIQUE_GROUP
 	// END_OF_CHECK_UNIQUE_GROUP
 
 	// End of Item
 
-protected:
-
-
-
-
 public:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Money related
-
-
-
-#ifdef ENABLE_PVP_ADVANCED
-#endif
-#ifdef ENABLE_GAYA_SYSTEM
-#endif
 
 	// End of Money
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Shop related
-public:
-
-
 
 protected:
 
 	// End of shop
 
-
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Exchange related
-public:
 protected:
 	// End of Exchange
-
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Battle
 public:
 
-#ifdef __ENABLE_BERAN_ADDONS__
-#endif
-
-
-
-
-
-
 #ifdef __NEWPET_SYSTEM__
 	//int GetBeltCount() const;//#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
-#endif
-
-
-#ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
 #endif
 
 #ifdef ENABLE_RANKING
@@ -814,37 +681,17 @@ public:
 	//void SendLeaderboardNews();
 	//static void LeaderboardLoop();
 #endif
-#ifdef LEADERBOARD_RAZOR93
-
-#endif
-
-
 
 	//int GetBeltCount() const;
 #ifdef ENABLE_FAKE_SHOP_HEADER
 	//void UpdateMountCountOverhead(LPCHARACTER ch);
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-
-
-#endif
 #endif
 	//����ġ ���
 	//void				ShowAlignment(bool bShow);
 
-
-
-
-
 	//
 	// HACK
 	//
-public:
-
-
-
-protected:
-
-protected:
 
 public:
 	// Read-only view for entity-native callers; the map is keyed by entity
@@ -853,50 +700,24 @@ public:
 private:
 	//		AttackLog			m_kAttackLog;
 
-
 	// Aggro
 
 	// End of Battle
 
 	// Stone
 public:
-#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-#else
-#endif
-#ifdef ENABLE_ITEMSHOP
-#endif
-
-
 
 #ifdef ENABLE_RANKING
-protected:
 public:
-#ifdef LEADERBOARD_RAZOR93
-#endif
 #endif
 #ifdef ENABLE_NEW_PET_EDITS
-public:
 
 protected:
 #endif
-public:
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-#endif
-
-
-
-
-
-
-
 
 private:
 	// End of Skill
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-
-#endif
 	// MOB_SKILL
-public:
 protected:
 	// END_OF_MOB_SKILL
 
@@ -907,31 +728,22 @@ protected:
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// AI related
-public:
-
-protected:
 
 public:
-
-
 
 	uint32_t		 m_dwLegacyVID { 0 };
-
 
 protected:
 	// End of AI
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Target
-protected:
 
 public:
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Safebox
 public:
-
-
 
 	/// â�� ���� ��û
 	/**
@@ -947,13 +759,7 @@ public:
 	 * â�������� ��û�� DB �������� ���������� �޾��� ��� �� �Լ��� ����ؼ� ��û�� �� �� �ְ� ���ش�.
 	 */
 
-
-
-
 protected:
-
-
-
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
@@ -961,18 +767,9 @@ protected:
 	// Mounting
 public:
 
-
 	// Horse
 
-
-
-
-
-
-
-
 protected:
-
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Detailed Log
@@ -981,13 +778,10 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Empire
 
-public:
-
 protected:
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Resists & Proofs
-public:
 
 protected:
 	// End of Resists & Proofs
@@ -995,11 +789,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// QUEST
 	//
-public:
-
-
-
-
 
 private:
 
@@ -1011,16 +800,12 @@ public:
 protected:
 
 	// Marriage
-public:
-
 
 private:
 
 	// Warp Character
-public:
 
 public:
-
 
 	//DELAYED_WARP
 	//END_DELAYED_WARP
@@ -1028,20 +813,9 @@ public:
 	// MINING
 	// END_OF_MINING
 
-
-
-
-	friend struct FuncSplashDamage;
-	friend struct FuncSplashAffect;
-	friend class CFuncShoot;
-
-public:
-
 private:
-
 
 	// PC_BANG_ITEM_ADD
-private:
 
 public:
 	// END_PC_BANG_ITEM_ADD
@@ -1055,12 +829,9 @@ public:
 	// RESET_ONE_SKILL
 	// END_RESET_ONE_SKILL
 
-
 	// ARENA
-private:
 
 public:
-
 
 	// END_ARENA
 
@@ -1068,7 +839,6 @@ public:
 public:
 
 	//END_PREVENT_TRADE_WINDOW
-private:
 
 public:
 
@@ -1081,84 +851,40 @@ public:
 	//PREVENT_PORTAL_AFTER_EXCHANGE
 	//END_PREVENT_PORTAL_AFTER_EXCHANGE
 
-
 	// Hack ������ ���� üũ.
-
-
-public:
-
-
-
-private:
-
-public:
-
-private:
-public:
-
-
-private:
-
-public:
-
-public:
-
-private:
-
-public:
-
-private:
-
-public:
-
-public:
-
 
 private:
 #ifdef ENABLE_NEWSTUFF
 public:
 #endif
-public:
 
-public:
-
-private:
 public:
 	// Driven by the point-change flow, which lives in ecs::PointSystem now.
 private:
 
 	// ���� : ��Ȱ�� �׽�Ʈ�� ���Ͽ�.
-public:
 private:
 #ifdef __PET_SYSTEM__
-private:
 public:
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-private:
 
 public:
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-private:
 public:
 
 #endif
 
 	//���� ������ ����.
-private:
-public:
-
-private:
 
 public:
 	//��ȥ��
 
 	// ĳ������ affect, quest�� load �Ǳ� ���� DragonSoul_Initialize�� ȣ���ϸ� �ȵȴ�.
 	// affect�� ���� �������� �ε�Ǿ� LoadAffect���� ȣ����.
-
 
 	// �ݵ�� ClearItem ���� �ҷ��� �Ѵ�.
 	// �ֳ��ϸ�....
@@ -1178,7 +904,6 @@ public:
 	//bool		 GetItemAward_flag() { return itemAward_flag; }
 	//void		 SetItemAward_flag(bool flag) { itemAward_flag = flag; }
 #ifdef ENABLE_ANTI_CMD_FLOOD
-private:
 public:
 #endif
 private:
@@ -1186,48 +911,22 @@ private:
 	// SyncPosition�� �Ͼ ���� ���.
 public:
 
-
-
 #ifdef __HIDE_COSTUME_SYSTEM__
-public:
-
-#ifdef ENABLE_FREE_PASS_RAZOR93
-
-
-
-#endif
-
-#ifdef ENABLE_ACCE_SYSTEM
-#endif
-
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-#endif
 
 private:
-#ifdef ENABLE_ACCE_SYSTEM
-#endif
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
 	//uint32_t m_dwBattlePassStayOnlineNextTick;
 
-
 #endif
 
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
 #endif
-#endif
-
 
 #ifdef ENABLE_GAYA_SYSTEM
 public:
 #endif
 
-
 #ifdef ENABLE_BATTLE_PASS
-public:
 
-private:
-
-public:
 protected:
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE		
@@ -1248,32 +947,23 @@ public:
 public:
 
 #ifdef ENABLE_LIMIT_BUY_SPEED
-public:
 
 protected:
 #endif
 
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-public:
 
 protected:
 #endif
 
-
 public:
-#ifdef ENABLE_BLOCK_MULTIFARM
-#endif
 
-#ifdef __DEFENSE_WAVE__
-#endif
 //#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 //	void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt) { pWheelDestiny = std::move(pt); };
 //	std::shared_ptr<CWheelDestiny> GetWheelDestiny() const { return pWheelDestiny; }
 //#endif
 
 protected:
-#ifdef ENABLE_BLOCK_MULTIFARM
-#endif
 
 #ifdef ENABLE_USEITEM_COOLDOWN
 private:
@@ -1282,8 +972,6 @@ private:
 //#endif
 public:
 #endif
-
-
 };
 
 ESex GET_SEX(entt::entity ch);

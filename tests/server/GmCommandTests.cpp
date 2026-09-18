@@ -784,7 +784,6 @@ int MountSystem::GetHorseMaxStamina(entt::entity) { Unexpected(); }
 int mining::RealRefinePick(entt::entity,entt::entity) { Unexpected(); }
 void mining::CHEAT_MAX_PICK(entt::entity,entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
-void CHARACTER::Save(void) { Unexpected(); }
 namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unexpected(); } }
 int ItemSystem::CountItem(entt::entity, uint32_t) { Unexpected(); }
 void CombatSystem::Dead(entt::entity,entt::entity,bool) { Unexpected(); }
