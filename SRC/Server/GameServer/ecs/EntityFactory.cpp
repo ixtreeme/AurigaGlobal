@@ -636,7 +636,7 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
 
     if (const auto* session = reg.try_get<ecs::NetworkSession>(e)) {
         if (session->desc) {
-            session->desc->BindCharacter(nullptr);
+            session->desc->BindCharacter(entt::null);
         }
     }
 

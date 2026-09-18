@@ -818,7 +818,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
 #endif
 
     if (ecs::PlayerRuntime::GetDesc(e))
-        ecs::PlayerRuntime::GetDesc(e)->BindCharacter(nullptr);
+        ecs::PlayerRuntime::GetDesc(e)->BindCharacter(entt::null);
 
     M2_DESTROY_CHARACTER(e);
 }

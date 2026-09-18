@@ -554,7 +554,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	const entt::entity chEntity = EntityFactory::CreatePC(g_registry, *pTab, d, ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle()));
 	ecs::PlayerRuntime::SetPlayerProto(chEntity, pTab);
 	ecs::PlayerRuntime::SetEmpire(chEntity, d->GetEmpire());
-	d->BindCharacter(ch);
+	d->BindCharacter(chEntity);
 	g_registry.get<ecs::Experience>(chEntity).next = ecs::PlayerRuntime::GetNextExp(chEntity);
 	LOG_INFO("ECS: PC entity created VID={} pid={}", ecs::PlayerRuntime::GetPacketVID(chEntity), ecs::PlayerRuntime::GetPlayerID(chEntity));
 
@@ -1308,9 +1308,6 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(chEntity, PREMIUM_SAFEBOX) > 0 || ItemSystem::IsEquipUniqueGroup(chEntity, UNIQUE_GROUP_LARGE_SAFEBOX))
 		bSize = 3;
 	// END_OF_ADD_PREMIUM
-
-	//if (d->GetCharacter()->IsEquipUniqueItem(UNIQUE_ITEM_SAFEBOX_EXPAND))
-	//bSize = 3; // â��Ȯ���
 
 	//ecs::SessionSystem::LoadSafebox(chEntity, p->bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
 	ecs::SessionSystem::LoadSafebox(chEntity, bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));

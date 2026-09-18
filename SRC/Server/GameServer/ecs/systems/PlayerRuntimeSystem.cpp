@@ -3079,7 +3079,7 @@ void CHARACTER::Destroy()
 
     if (GetDesc())
     {
-        GetDesc()->BindCharacter(nullptr);
+        GetDesc()->BindCharacter(entt::null);
     }
 
     ExchangeSystem::Cancel(GetEntityHandle());

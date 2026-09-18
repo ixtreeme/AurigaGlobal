@@ -76,14 +76,14 @@ class CLoginKey
 };
 
 
-// sequence ¹ö±× Ã£±â¿ë µ¥ÀÌÅ¸
+// sequence ï¿½ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Å¸
 struct seq_t
 {
 	uint8_t	hdr;
 	uint8_t	seq;
 };
 typedef std::vector<seq_t>	seq_vector_t;
-// sequence ¹ö±× Ã£±â¿ë µ¥ÀÌÅ¸
+// sequence ï¿½ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Å¸
 
 class DESC
 {
@@ -134,8 +134,7 @@ class DESC
 		void			BindAccountTable(TAccountTable * pTable);
 		TAccountTable &		GetAccountTable()	{ return m_accountTable; }
 
-		void			BindCharacter(LPCHARACTER ch);
-		LPCHARACTER		GetCharacter()		{ return m_lpCharacter; }
+		void			BindCharacter(entt::entity character);
         entt::entity        GetEntity() const      { return m_entity; }
         void                SetEntity(entt::entity e) { m_entity = e; }
 
@@ -148,7 +147,7 @@ class DESC
 
 		void			Log(const char * format, ...);
 
-		// ÇÚµå½¦ÀÌÅ© (½Ã°£ µ¿±âÈ­)
+		// ï¿½Úµå½¦ï¿½ï¿½Å© (ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½È­)
 		void			StartHandshake(uint32_t _dw);
 		void			SendHandshake(uint32_t dwCurTime, int32_t lNewDelta);
 		bool			HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry=false);
@@ -169,7 +168,7 @@ class DESC
 		const uint32_t *	GetDecryptionKey() const { return &m_adwDecryptionKey[0]; }
 #endif
 
-		// Á¦±¹
+		// ï¿½ï¿½ï¿½ï¿½
 		uint8_t			GetEmpire();
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -183,7 +182,7 @@ class DESC
 		void			DisconnectOfSameLogin();
 
 		void			SetAdminMode();
-		bool			IsAdminMode();		// Handshake ¿¡¼­ ¾îµå¹Î ¸í·ÉÀ» ¾µ¼öÀÖ³ª?
+		bool			IsAdminMode();		// Handshake ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ö³ï¿½?
 
 		void			SetPong(bool b);
 		bool			IsPong();
@@ -242,7 +241,7 @@ class DESC
 		LPBUFFER		m_lpOutputBuffer;
 
 		LPEVENT			m_pkPingEvent;
-		LPCHARACTER		m_lpCharacter;
+		entt::entity	m_lpCharacter{ entt::null };
         entt::entity        m_entity { entt::null };
 		TAccountTable		m_accountTable;
 
@@ -256,7 +255,7 @@ class DESC
 		uint16_t			m_wP2PPort;
 		uint8_t			m_bP2PChannel;
 
-		bool			m_bAdminMode; // Handshake ¿¡¼­ ¾îµå¹Î ¸í·ÉÀ» ¾µ¼öÀÖ³ª?
+		bool			m_bAdminMode; // Handshake ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ö³ï¿½?
 		bool			m_bPong;
 
 		int			m_iCurrentSequence;
@@ -303,7 +302,7 @@ class DESC
 		void RawPacket(const void * c_pvData, int iSize);
 		void ChatPacket(uint8_t type, const char * format, ...);
 
-		/* ½ÃÄö½º ¹ö±× Ã£±â¿ë ÄÚµå */
+		/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½ï¿½ ï¿½Úµï¿½ */
 	public:
 		seq_vector_t	m_seq_vector;
 		void			push_seq (uint8_t hdr, uint8_t seq);

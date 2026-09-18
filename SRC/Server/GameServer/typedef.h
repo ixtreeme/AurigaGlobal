@@ -24,10 +24,6 @@ typedef DebugPtr<DESC_P2P> LPDESC_P2P;
 typedef DESC_P2P* LPDESC_P2P;
 #endif
 
-typedef std::vector<LPCHARACTER> CHARACTER_VECTOR;
-typedef std::list<LPCHARACTER> CHARACTER_LIST;
-typedef std::unordered_set<LPCHARACTER> CHARACTER_SET;
-
 namespace building {
 class CObject;
 #ifdef USE_DEBUG_PTR
