@@ -588,9 +588,6 @@ public:
 public:
 #ifdef ENABLE_FAKE_SHOP_HEADER
 #endif
-#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
-	void CHARACTER::UpdateMountCountOverhead(LPCHARACTER ch, bool force)
-#endif
 
 
 	void			SetPlayerProto(const TPlayerTable* table);
@@ -615,9 +612,6 @@ public:
 
 
 
-#ifdef __ENABLE_BLOCK_EXP__
-	bool			Block_Exp;
-#endif
 
 
 
@@ -723,8 +717,6 @@ protected:
 	// Item related
 public:
 
-	bool			IsItemLoaded() const { return m_bItemLoaded; }
-	void			SetItemLoaded() { m_bItemLoaded = true; }
 
 
 
@@ -766,7 +758,6 @@ protected:
 
 
 
-	bool			m_bItemLoaded;
 
 public:
 	////////////////////////////////////////////////////////////////////////////////////////

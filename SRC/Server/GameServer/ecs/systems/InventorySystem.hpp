@@ -27,6 +27,9 @@ int GetInventorySize(entt::entity owner);
 // Destroys every carried item without saving it: teardown of a character
 // with no mob proto.
 void ClearItem(entt::entity e);
+// Whether the database item load has been applied; the load sets it once.
+bool IsItemLoaded(entt::entity e);
+void SetItemLoaded(entt::entity e);
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 // Spends the keys for the next inventory page and opens it.
 bool ExpandInventory(entt::entity e);

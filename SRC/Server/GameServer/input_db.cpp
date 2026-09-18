@@ -1658,7 +1658,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	if (!d || !(ch = d->GetCharacter()))
 		return;
 
-	if (ch->IsItemLoaded())
+	if (InventorySystem::IsItemLoaded(ch->GetEntityHandle()))
 		return;
 
 	uint32_t dwCount = decode_4bytes(c_pData);
@@ -1811,7 +1811,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	ecs::PointSystem::CheckMaximumPoints(ch->GetEntityHandle());
 	NetworkSyncSystem::PointsPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
-	ch->SetItemLoaded();
+	InventorySystem::SetItemLoaded(ch->GetEntityHandle());
 }
 
 #ifdef ENABLE_BATTLE_PASS

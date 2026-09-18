@@ -21,6 +21,11 @@ struct MainInventoryRuntimeComponent {
     MainInventoryRuntimeComponent() { items.fill(entt::null); }
 };
 
+// Set once the database item load for this player has been applied.
+struct ItemLoadState {
+    bool loaded { false };
+};
+
 // Drop rate limits: gold drops are g_GoldDropTimeLimitValue apart, and with
 // ENABLE_ANTICHEAT more than four item drops within 25 pulses disconnect.
 struct DropLimiter {

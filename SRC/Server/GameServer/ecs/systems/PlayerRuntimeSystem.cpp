@@ -3766,7 +3766,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_bItemLoaded = false;
 
 
 

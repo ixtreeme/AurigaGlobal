@@ -860,8 +860,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	//	ch->LoadStayActiveBattlePass();
 	//#endif
 #ifdef __ENABLE_BLOCK_EXP__
-	int expret = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "exp.stat");
-	ch->Block_Exp = expret == 1 ? true : false;
 	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "manage_exp_status %d", ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "exp.stat"));
 #endif
 

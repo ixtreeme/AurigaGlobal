@@ -311,6 +311,18 @@ bool CanHandleItems(entt::entity owner, bool skipRefine, bool skipObserver)
     return true;
 }
 
+bool IsItemLoaded(entt::entity e)
+{
+    const auto* state = g_registry.valid(e) ? g_registry.try_get<ecs::ItemLoadState>(e) : nullptr;
+    return state && state->loaded;
+}
+
+void SetItemLoaded(entt::entity e)
+{
+    if (g_registry.valid(e))
+        g_registry.get_or_emplace<ecs::ItemLoadState>(e).loaded = true;
+}
+
 int GetInventorySize(entt::entity owner)
 {
     if (!g_registry.valid(owner))
