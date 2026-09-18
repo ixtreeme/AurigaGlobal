@@ -58,9 +58,6 @@ class CEntity
 
 		void			UpdateSectree();
 
-		void			BindDesc(LPDESC _d)     { m_lpDesc = _d; }
-		LPDESC			GetDesc() const			{ return m_lpDesc; }
-
 		void			SetMapIndex(int32_t l)	{ m_lMapIndex = l; }
 		int32_t			GetMapIndex() const	{ return m_lMapIndex; }
 
@@ -78,8 +75,6 @@ class CEntity
 			int32_t			m_lMapIndex;
 
 	private:
-		LPDESC			m_lpDesc;
-
 		int			m_iType;
 		bool			m_bIsDestroyed;
 

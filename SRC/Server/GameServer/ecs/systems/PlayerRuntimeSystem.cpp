@@ -3077,9 +3077,9 @@ void CHARACTER::Destroy()
         MountSystem::ClearHorseInfo(rider);
     }
 
-    if (GetDesc())
+    if (ecs::PlayerRuntime::GetDesc(entityToDestroy))
     {
-        GetDesc()->BindCharacter(entt::null);
+        ecs::PlayerRuntime::GetDesc(entityToDestroy)->BindCharacter(entt::null);
     }
 
     ExchangeSystem::Cancel(GetEntityHandle());
@@ -3105,7 +3105,7 @@ void CHARACTER::Destroy()
     LPPARTY party = ecs::SocialSystem::GetParty(GetEntityHandle());
     if (party)
     {
-        if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPacketVID(GetEntityHandle()) && !IsPC())
+        if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPacketVID(GetEntityHandle()) && ecs::PlayerRuntime::GetDesc(GetEntityHandle()) == nullptr)
         {
             M2_DELETE(party);
         }
@@ -3113,7 +3113,7 @@ void CHARACTER::Destroy()
         {
             party->Unlink(GetEntityHandle());
 
-            if (!IsPC())
+            if (ecs::PlayerRuntime::GetDesc(GetEntityHandle()) == nullptr)
                 party->Quit(ecs::PlayerRuntime::GetPacketVID(GetEntityHandle()));
         }
 

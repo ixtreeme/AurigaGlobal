@@ -552,10 +552,9 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
     auto view = reg.view<ecs::VIDComponent>();
 
     for (auto entity : view) {
-        // "Has a legacy object and is not a PC" was the old gate. The first
-        // half is a component test now, not a character the loop goes on to use.
-        const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
-        if (!legacy || !legacy->ptr || ecs::PlayerRuntime::IsPC(entity)) {
+        // "Has a legacy object and is not a PC" was the old gate. The shell
+        // pointer is out of this test; TagCharacter is the authority.
+        if (!reg.all_of<ecs::TagCharacter>(entity) || ecs::PlayerRuntime::IsPC(entity)) {
             continue;
         }
 

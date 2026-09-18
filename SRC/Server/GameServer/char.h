@@ -577,7 +577,6 @@ public:
 
 	// char.h (public)
 
-	bool			IsPC() const { return GetDesc() ? true : false; }
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
 #endif

@@ -42,7 +42,8 @@ void CEntity::Initialize(int type)
 	// Phase 15E-final.LPENTITY.4-architect.H.3:
 	// m_pSectree was deleted - the ECS SectorPlacement component owned
 	// by SECTREE::InsertEntity / RemoveEntity (H.2) is the sole source.
-	m_lpDesc = nullptr;
+	// m_lpDesc went the same way: the NetworkSession component owns the
+	// descriptor, nobody binds the shell anymore.
 	m_lMapIndex = 0;
 }
 
