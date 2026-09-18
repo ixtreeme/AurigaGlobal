@@ -515,13 +515,12 @@ namespace marriage
 
 			if (test_server)
 			{
-				LPCHARACTER ch;
-				ch = CHARACTER_MANAGER::instance().FindByPID(m_pid1);
-				if (ch)
-					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
-				ch = CHARACTER_MANAGER::instance().FindByPID(m_pid2);
-				if (ch)
-					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
+				entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(m_pid1);
+				if (ecs::IsCharacter(ch))
+					ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
+				ch = CHARACTER_MANAGER::instance().FindEntityByPID(m_pid2);
+				if (ecs::IsCharacter(ch))
+					ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
 			}
 		}
 	}
@@ -531,8 +530,8 @@ namespace marriage
 		if (!pWeddingInfo)
 			return;
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
-		if (ch)
+		const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
+		if (ecs::IsCharacter(ch))
 		{
 			PIXEL_POSITION pos;
 			if (!SECTREE_MANAGER::instance().GetRecallPositionByEmpire(pWeddingInfo->dwMapIndex/10000, 0, pos))
@@ -540,8 +539,8 @@ namespace marriage
 				LOG_ERROR("cannot get warp position");
 				return;
 			}
-			ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
-			ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), pos.x, pos.y, pWeddingInfo->dwMapIndex);
+			ecs::MovementSystem::SaveExitLocation(ch);
+			ecs::MovementSystem::WarpSet(ch, pos.x, pos.y, pWeddingInfo->dwMapIndex);
 		}
 	}
 
@@ -652,10 +651,10 @@ namespace marriage
 		m_MarriageByPID.insert(make_pair(dwPID1, pMarriage));
 		m_MarriageByPID.insert(make_pair(dwPID2, pMarriage));
 		{
-			LPCHARACTER A = CHARACTER_MANAGER::instance().FindByPID(dwPID1);
-			LPCHARACTER B = CHARACTER_MANAGER::instance().FindByPID(dwPID2);
+			const entt::entity A = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID1);
+			const entt::entity B = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID2);
 
-			if (A && B)
+			if (ecs::IsCharacter(A) && ecs::IsCharacter(B))
 			{
 				// ���� �� ��û�� ������
 				TPacketWeddingRequest p;
@@ -713,12 +712,11 @@ namespace marriage
 
 #ifdef ENABLE_NEW_USE_POTION
 		uint32_t dwAffect = 0;
-		LPCHARACTER p1 = CHARACTER_MANAGER::instance().FindByPID(dwPID1);
-		const entt::entity p1Entity = p1 ? p1->GetEntityHandle() : entt::null;
+		const entt::entity p1Entity = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID1);
 
 		CAffect* pAffect = nullptr;
 		entt::entity pkItem = entt::null;
-		if (p1) {
+		if (ecs::IsCharacter(p1Entity)) {
 			for (int i = 0; i < 6; i++) {
 				dwAffect = AFFECT_NEW_POTION24 + i;
 				pAffect = AffectSystem::FindAffect(p1Entity, dwAffect);
@@ -734,10 +732,9 @@ namespace marriage
 			}
 		}
 
-		LPCHARACTER p2 = CHARACTER_MANAGER::instance().FindByPID(dwPID2);
-		const entt::entity p2Entity = p2 ? p2->GetEntityHandle() : entt::null;
+		const entt::entity p2Entity = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID2);
 
-		if (p2) {
+		if (ecs::IsCharacter(p2Entity)) {
 			for (int i = 0; i < 6; i++) {
 				dwAffect = AFFECT_NEW_POTION24 + i;
 				pAffect = AffectSystem::FindAffect(p2Entity, dwAffect);
