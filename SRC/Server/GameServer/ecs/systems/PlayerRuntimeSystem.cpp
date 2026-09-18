@@ -3238,116 +3238,116 @@ void ecs::PlayerRuntime::SendGreetMessage(entt::entity e)
     }
 }
 
-void CHARACTER::SetPlayerProto(const TPlayerTable* t)
+void ecs::PlayerRuntime::SetPlayerProto(entt::entity e, const TPlayerTable* t)
 {
-    if (!GetDesc() || !*GetDesc()->GetHostName())
+    if (!ecs::PlayerRuntime::GetDesc(e) || !*ecs::PlayerRuntime::GetDesc(e)->GetHostName())
         LOG_ERROR("cannot get desc or hostname");
     else
-        ecs::PlayerRuntime::RefreshGMLevel(GetEntityHandle());
+        ecs::PlayerRuntime::RefreshGMLevel(e);
 
 
-    if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle())) {
+    if (auto* combat = g_registry.try_get<ecs::CombatStats>(e)) {
         combat->alignment = std::min<uint32_t>(t->lAlignment, CombatSystem::MAX_ALIGNMENT);
         combat->realAlignment = combat->alignment;
     }
 
 
 
-    if (auto* appearance = EnsureAppearancePartsComponent(GetEntityHandle()))
+    if (auto* appearance = EnsureAppearancePartsComponent(e))
         appearance->basePart = t->part_base;
-    ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HAIR, t->parts[PART_HAIR]);
+    ecs::PlayerRuntime::SetPart(e, PART_HAIR, t->parts[PART_HAIR]);
 #ifdef ENABLE_ACCE_SYSTEM
-    ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_ACCE, t->parts[PART_ACCE]);
+    ecs::PlayerRuntime::SetPart(e, PART_ACCE, t->parts[PART_ACCE]);
 #endif
 
-    ecs::PointSystem::SetRandomHP(GetEntityHandle(), t->sRandomHP);
-    ecs::PointSystem::SetRandomSP(GetEntityHandle(), t->sRandomSP);
+    ecs::PointSystem::SetRandomHP(e, t->sRandomHP);
+    ecs::PointSystem::SetRandomSP(e, t->sRandomSP);
 
-    SkillSystem::LoadSkillLevels(GetEntityHandle(), t->skills, t->skill_group);
+    SkillSystem::LoadSkillLevels(e, t->skills, t->skill_group);
 #ifdef ENABLE_BATTLE_PASS
-    AffectSystem::SetBattlePassDeadline(GetEntityHandle(), t->dwBattlePassEndTime);
+    AffectSystem::SetBattlePassDeadline(e, t->dwBattlePassEndTime);
 #endif
 
     if (t->lMapIndex >= 10000)
     {
-        ecs::MovementSystem::SetWarpLocationRaw(GetEntityHandle(), t->lExitMapIndex, t->lExitX, t->lExitY);
+        ecs::MovementSystem::SetWarpLocationRaw(e, t->lExitMapIndex, t->lExitX, t->lExitY);
     }
 
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_PLAYTIME, t->playtime);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_ST, t->st);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_HT, t->ht);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_DX, t->dx);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_IQ, t->iq);
+    ecs::PointSystem::SetReal(e, POINT_PLAYTIME, t->playtime);
+    ecs::PointSystem::SetReal(e, POINT_ST, t->st);
+    ecs::PointSystem::SetReal(e, POINT_HT, t->ht);
+    ecs::PointSystem::SetReal(e, POINT_DX, t->dx);
+    ecs::PointSystem::SetReal(e, POINT_IQ, t->iq);
 
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_ST, t->st);
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_HT, t->ht);
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_DX, t->dx);
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_IQ, t->iq);
+    ecs::PointSystem::Set(e, POINT_ST, t->st);
+    ecs::PointSystem::Set(e, POINT_HT, t->ht);
+    ecs::PointSystem::Set(e, POINT_DX, t->dx);
+    ecs::PointSystem::Set(e, POINT_IQ, t->iq);
 
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_STAT, t->stat_point);
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_SKILL, t->skill_point);
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_SUB_SKILL, t->sub_skill_point);
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_HORSE_SKILL, t->horse_skill_point);
+    ecs::PointSystem::Set(e, POINT_STAT, t->stat_point);
+    ecs::PointSystem::Set(e, POINT_SKILL, t->skill_point);
+    ecs::PointSystem::Set(e, POINT_SUB_SKILL, t->sub_skill_point);
+    ecs::PointSystem::Set(e, POINT_HORSE_SKILL, t->horse_skill_point);
 
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_STAT_RESET_COUNT, t->stat_reset_count);
+    ecs::PointSystem::Set(e, POINT_STAT_RESET_COUNT, t->stat_reset_count);
 
-    ecs::PointSystem::Set(GetEntityHandle(), POINT_LEVEL_STEP, t->level_step);
-    ecs::PointSystem::SetReal(GetEntityHandle(), POINT_LEVEL_STEP, t->level_step);
+    ecs::PointSystem::Set(e, POINT_LEVEL_STEP, t->level_step);
+    ecs::PointSystem::SetReal(e, POINT_LEVEL_STEP, t->level_step);
 
-    ecs::PlayerRuntime::SetRace(GetEntityHandle(), t->job);
+    ecs::PlayerRuntime::SetRace(e, t->job);
 
-    ecs::PlayerRuntime::SetLevel(GetEntityHandle(), t->level);
-    ecs::PlayerRuntime::SetExp(GetEntityHandle(), t->exp);
-    ecs::PlayerRuntime::SetGold(GetEntityHandle(), t->gold);
+    ecs::PlayerRuntime::SetLevel(e, t->level);
+    ecs::PlayerRuntime::SetExp(e, t->exp);
+    ecs::PlayerRuntime::SetGold(e, t->gold);
 #ifdef ENABLE_GAYA_SYSTEM
-    ecs::PointSystem::SetGaya(GetEntityHandle(), t->gaya);
+    ecs::PointSystem::SetGaya(e, t->gaya);
 #endif
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    ecs::PointSystem::SetInventoryExpansion(GetEntityHandle(), t->envanter);
+    ecs::PointSystem::SetInventoryExpansion(e, t->envanter);
 #endif
 
     // Phase C.1: legacy m_pos write removed - ECS Position via
     // SyncPositionComponents is the sole source.
-    ecs::SyncPositionComponents(g_registry, GetEntityHandle(), t->lMapIndex, t->x, t->y, t->z);
+    ecs::SyncPositionComponents(g_registry, e, t->lMapIndex, t->x, t->y, t->z);
 
     // Phase C.3: legacy destination field write removed. SyncDestinationClear
     // drops ECS MovementDestination - GetCurrentDestX/Y now returns
     // GetX/Y (the loaded position) so EncodeInsertPacket emits the
     // correct values without legacy dest priming.
-    ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
+    ecs::MovementSystem::SyncDestinationClear(e);
 
-    ecs::PointSystem::Compute(GetEntityHandle());
+    ecs::PointSystem::Compute(e);
 
-    ecs::PlayerRuntime::SetHP(GetEntityHandle(), t->hp);
-    ecs::PlayerRuntime::SetSP(GetEntityHandle(), t->sp);
-    ecs::PlayerRuntime::SetStamina(GetEntityHandle(), t->stamina);
+    ecs::PlayerRuntime::SetHP(e, t->hp);
+    ecs::PlayerRuntime::SetSP(e, t->sp);
+    ecs::PlayerRuntime::SetStamina(e, t->stamina);
 
 #ifndef ENABLE_GM_FLAG_IF_TEST_SERVER
     if (!test_server)
 #endif
     {
 #ifdef ENABLE_GM_FLAG_FOR_LOW_WIZARD
-        if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) > GM_PLAYER)
+        if (ecs::PlayerRuntime::GetGMLevel(e) > GM_PLAYER)
 #else
-        if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) > GM_LOW_WIZARD)
+        if (ecs::PlayerRuntime::GetGMLevel(e) > GM_LOW_WIZARD)
 #endif
         {
-            AffectSystem::SetFlag(GetEntityHandle(), AFF_YMIR);
-            if (ecs::diag::Check(GetEntityHandle(), "SetPlayerProto/GM"))
-                g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
+            AffectSystem::SetFlag(e, AFF_YMIR);
+            if (ecs::diag::Check(e, "SetPlayerProto/GM"))
+                g_registry.get_or_emplace<ecs::CombatStats>(e).pkMode = PK_MODE_PROTECT;
         }
     }
 
-    if (ecs::PointSystem::GetLevel(GetEntityHandle()) < PK_PROTECT_LEVEL) {
-        if (ecs::diag::Check(GetEntityHandle(), "SetPlayerProto/lowLevel"))
-            g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
+    if (ecs::PointSystem::GetLevel(e) < PK_PROTECT_LEVEL) {
+        if (ecs::diag::Check(e, "SetPlayerProto/lowLevel"))
+            g_registry.get_or_emplace<ecs::CombatStats>(e).pkMode = PK_MODE_PROTECT;
     }
 
-    ecs::PlayerRuntime::SetMobilePhone(GetEntityHandle(), t->szMobile);
+    ecs::PlayerRuntime::SetMobilePhone(e, t->szMobile);
 
-    MountSystem::LoadHorseData(GetEntityHandle(), t->horse, t->logoff_interval);
+    MountSystem::LoadHorseData(e, t->horse, t->logoff_interval);
 
-	if (const entt::entity character = GetEntityHandle();
+	if (const entt::entity character = e;
 		character != entt::null && g_registry.valid(character))
 	{
 		auto& login = g_registry.get_or_emplace<ecs::LoginInfo>(character);
@@ -3356,39 +3356,39 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 	}
 
 
-    LOG_INFO("PLAYER_LOAD: {} PREMIUM {} {}, LOGGOFF_INTERVAL {} PTR: {}", t->name, t->aiPremiumTimes[0], t->aiPremiumTimes[1], t->logoff_interval, static_cast<const void*>(this));
+    LOG_INFO("PLAYER_LOAD: {} PREMIUM {} {}, LOGGOFF_INTERVAL {} ENTITY: {}", t->name, t->aiPremiumTimes[0], t->aiPremiumTimes[1], t->logoff_interval, entt::to_integral(e));
 
-    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) != GM_PLAYER)
+    if (ecs::PlayerRuntime::GetGMLevel(e) != GM_PLAYER)
     {
-        LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()), "GM_LOGIN", "");
-        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(ecs::PlayerRuntime::GetGMLevel(GetEntityHandle())), ecs::PlayerRuntime::GetName(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), GetX(), GetY());
+        LogManager::instance().CharLog(e, ecs::PlayerRuntime::GetGMLevel(e), "GM_LOGIN", "");
+        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(ecs::PlayerRuntime::GetGMLevel(e)), ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
     }
 
 #ifdef __PET_SYSTEM__
-    if (auto* previous = ecs::PlayerRuntime::GetPetSystem(GetEntityHandle()))
+    if (auto* previous = ecs::PlayerRuntime::GetPetSystem(e))
     {
         delete previous;
     }
 
-    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).petSystem = M2_NEW CPetSystem(GetEntityHandle());
+    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(e).petSystem = M2_NEW CPetSystem(e);
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (auto* previous = MountSystem::GetMountSystem(GetEntityHandle()))
+    if (auto* previous = MountSystem::GetMountSystem(e))
     {
         delete previous;
     }
 
-    g_registry.get_or_emplace<ecs::MountRuntimeRefs>(GetEntityHandle()).mountSystem = M2_NEW CMountSystem(GetEntityHandle());
+    g_registry.get_or_emplace<ecs::MountRuntimeRefs>(e).mountSystem = M2_NEW CMountSystem(e);
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-    if (auto* previous = ecs::PlayerRuntime::GetNewPetSystem(GetEntityHandle()))
+    if (auto* previous = ecs::PlayerRuntime::GetNewPetSystem(e))
     {
         delete previous;
     }
 
-    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).newPetSystem = M2_NEW CNewPetSystem(GetEntityHandle());
+    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(e).newPetSystem = M2_NEW CNewPetSystem(e);
 #endif
 }
 

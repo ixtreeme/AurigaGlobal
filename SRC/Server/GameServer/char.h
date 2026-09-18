@@ -574,7 +574,6 @@ protected:
 	// Basic Points
 public:
 
-	void			SetPlayerProto(const TPlayerTable* table);
 
 	// char.h (public)
 

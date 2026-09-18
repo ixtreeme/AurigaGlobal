@@ -258,6 +258,8 @@ void LoadBattlePass(entt::entity e, uint32_t dwCount, TPlayerBattlePassMission* 
 #endif
 // Sends the configured login notices.
 void SendGreetMessage(entt::entity e);
+// Reads the loaded player row into this character's components.
+void SetPlayerProto(entt::entity e, const TPlayerTable* t);
 void SetArena(entt::entity e, CArena* arena);
 bool CanWarp(entt::entity e);
 bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner, int limitTime);
