@@ -247,7 +247,6 @@ bool DragonSoulTable::GetDragonSoulExtValues(uint8_t, uint8_t, float& probabilit
     if (!extractionTest) UnexpectedSwitchbotService();
     probability = pullProbability; byproduct = byProductVnum; return dsPullOk;
 }
-void LogManager::ItemLogEntity(LPCHARACTER, entt::entity, const char*, const char*) { UnexpectedSwitchbotService(); }
 entt::entity ItemSystem::GetWearItem(entt::entity owner, uint8_t wear) {
     if (!extractionTest && !runeTest) UnexpectedSwitchbotService();
     return ItemSystem::GetItem(owner, TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wear));

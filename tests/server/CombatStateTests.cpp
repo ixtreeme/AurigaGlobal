@@ -533,7 +533,6 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity) { UnexpectedService(__fun
 entt::entity CHARACTER_MANAGER::SpawnMobEntity(unsigned int,int,int,int,int,bool,int,bool) { UnexpectedService(__func__); }
 entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { UnexpectedService(__func__); }
 void CHARACTER_MANAGER::SelectStone(entt::entity) { UnexpectedService(__func__); }
-CHARACTER * CHARACTER_MANAGER::Find(unsigned int) { UnexpectedService(__func__); }
 entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t) { UnexpectedService(__func__); }
 entt::entity CHARACTER_MANAGER::FindEntity(unsigned int vid) {
     const auto it = vids.find(vid);

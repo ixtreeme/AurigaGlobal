@@ -86,7 +86,6 @@ void LookupChecks(CHARACTER_MANAGER& manager) {
     const auto first = Actor(manager, 1), second = Actor(manager, 2);
     Check(manager.FindEntity(1) == first && manager.FindEntityByPID(2) == second, "native numeric indices");
     Check(manager.FindPCEntity("PLAYER1") == first && manager.FindPCEntity(nullptr) == entt::null, "native name index");
-    Check(manager.Find(1) == nullptr, "entity-only actor has no shell");
     const auto chosen = manager.FindSpecifyPC(0, 1);
     Check(chosen != entt::null && randomBounds == std::vector<int>{2}, "reservoir counts first candidate");
     Check(manager.FindSpecifyPC(0, 1, first) == second, "excluded PC");
@@ -386,6 +385,9 @@ void SendNoticeMap(const char*, int32_t, bool) { Unexpected(); }
 namespace mining { bool IsVeinOfOre(uint32_t race) { return race == 20047; } }
 CEntity::CEntity() = default;
 CEntity::~CEntity() = default;
+void CEntity::Destroy() {}
+void DestroyCharacterStatePre(entt::entity) {}
+void DestroyCharacterStatePost(entt::entity) {}
 void AISystem::StateBattle(entt::entity) { Unexpected(); }
 void AISystem::StateIdle(entt::entity) { Unexpected(); }
 namespace ecs::SessionSystem {
@@ -424,7 +426,7 @@ LPDUNGEON CDungeonManager::FindByMapIndex(int32_t) { Unexpected(); }
 void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t) { Unexpected(); }
 bool map_allow_find(int32_t) { Unexpected(); }
 int quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
-void quest::FSendPacket::operator()(LPENTITY) { Unexpected(); }
+void quest::FSendPacket::operator()(entt::entity) { Unexpected(); }
 entt::entity EntityFactory::EnsureLegacyCharacterEntity(entt::registry&, LPCHARACTER, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateMonster(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateNPC(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
