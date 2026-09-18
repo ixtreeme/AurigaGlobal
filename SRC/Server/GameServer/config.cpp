@@ -10,6 +10,7 @@
 #include "log.h"
 #include "desc.h"
 #include "desc_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "item_manager.h"
 #include "p2p.h"
 #include "char_interface.hpp"
@@ -1629,12 +1630,12 @@ void CheckClientVersion()
 	{
 		LPDESC d = *(it++);
 
-		if (!d->GetCharacter())
+		if (!ecs::IsCharacter(d->GetEntity()))
 			continue;
 
 		if (0 != g_stClientVersion.compare(d->GetClientVersion())) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 484, "");
+			ecs::ChatSystem::SendNew(d->GetEntity(), CHAT_TYPE_INFO, 484, "");
 #endif
 			d->DelayedDisconnect(3);
 		}

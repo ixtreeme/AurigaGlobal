@@ -52,18 +52,18 @@ namespace
 			if (!d)
 				continue;
 
-			LPCHARACTER member = d->GetCharacter();
-			if (!member)
+			const entt::entity member = d->GetEntity();
+			if (!ecs::IsCharacter(member))
 				continue;
 
-			CGuild* mg = ecs::SocialSystem::GetGuild(member->GetEntityHandle());
+			CGuild* mg = ecs::SocialSystem::GetGuild(member);
 			if (!mg)
 				continue;
 
 			if (mg->GetID() != guildId)
 				continue;
 
-			CGuildRenewal::instance().SendFullStateTo(member->GetEntityHandle());
+			CGuildRenewal::instance().SendFullStateTo(member);
 		}
 	}
 }

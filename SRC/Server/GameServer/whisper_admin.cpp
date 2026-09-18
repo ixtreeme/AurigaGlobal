@@ -137,12 +137,12 @@ struct whisper_packet_func
 
 	void operator () (LPDESC d)
 	{
-		if (!d->GetCharacter())
+		if (!ecs::IsCharacter(d->GetEntity()))
 			return;
 
-		if (!ecs::PlayerRuntime::GetLang(d->GetCharacter()->GetEntityHandle()).compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
+		if (!ecs::PlayerRuntime::GetLang(d->GetEntity()).compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
 		{
-			ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
+			ecs::ChatSystem::Send(d->GetEntity(), CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
 		}
 	}
 };

@@ -11,6 +11,7 @@
 #include "minilzo.h"
 #include "packet.h"
 #include "desc_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "item_manager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
@@ -228,10 +229,10 @@ namespace
 	{
 		void operator () (LPDESC d)
 		{
-			if (d->GetCharacter())
+			if (ecs::IsCharacter(d->GetEntity()))
 			{
-				if (ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == GM_PLAYER)
-					ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+				if (ecs::PlayerRuntime::GetGMLevel(d->GetEntity()) == GM_PLAYER)
+					ecs::ChatSystem::Send(d->GetEntity(), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 			}
 		}
 	};

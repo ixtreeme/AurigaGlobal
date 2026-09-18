@@ -737,10 +737,10 @@ void CManager::UpdateLand(TLand * pTable)
 	{
 		LPDESC d = *(it++);
 
-		if (d->GetCharacter() && ecs::PlayerRuntime::GetMapIndex(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == pTable->lMapIndex)
+		if (ecs::IsCharacter(d->GetEntity()) && ecs::PlayerRuntime::GetMapIndex(d->GetEntity()) == pTable->lMapIndex)
 		{
 			// we must send the guild name first
-			ecs::SocialSystem::SendGuildName(d->GetCharacter()->GetEntityHandle(), guild);
+			ecs::SocialSystem::SendGuildName(d->GetEntity(), guild);
 
 			d->BufferedPacket(&p, sizeof(TPacketGCLandList));
 			d->Packet(&e, sizeof(TLandPacketElement));
@@ -950,11 +950,10 @@ void CManager::SendLandList(LPDESC d, int32_t lMapIndex)
 			continue;
 
 		//
-		LPCHARACTER ch  = d->GetCharacter();
-		if (ch)
+		if (ecs::IsCharacter(d->GetEntity()))
 		{
 			CGuild *guild = CGuildManager::instance().FindGuild(r.dwGuildID);
-			ecs::SocialSystem::SendGuildName(ch->GetEntityHandle(), guild);
+			ecs::SocialSystem::SendGuildName(d->GetEntity(), guild);
 		}
 		//
 

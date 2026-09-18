@@ -397,7 +397,7 @@ void MessengerManager::SendTeamLogin(MessengerManager::keyA account, MessengerMa
 	if (!d)
 		return;
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 		return;
 
 	uint8_t bLen = companion.size();
@@ -569,7 +569,7 @@ void MessengerManager::SendHelperLogin(MessengerManager::keyA account, Messenger
 		return;
 	}
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 	{
 		return;
 	}
@@ -758,7 +758,7 @@ void MessengerManager::SendLogin(MessengerManager::keyA account, MessengerManage
 	if (!d)
 		return;
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 		return;
 
 	if (ecs::PlayerRuntime::GetGMLevel(ch) == GM_PLAYER && gm_get_level(companion.c_str()) != GM_PLAYER)

@@ -334,18 +334,18 @@ void CGuildRenewal::OnP2PRefresh(uint32_t guildId)
 		if (!d)
 			continue;
 
-		LPCHARACTER member = d->GetCharacter();
-		if (!member)
+		const entt::entity member = d->GetEntity();
+		if (!ecs::IsCharacter(member))
 			continue;
 
-		CGuild* g = ecs::SocialSystem::GetGuild(member->GetEntityHandle());
+		CGuild* g = ecs::SocialSystem::GetGuild(member);
 		if (!g)
 			continue;
 
 		if (g->GetID() != guildId)
 			continue;
 
-		members.push_back(member->GetEntityHandle());
+		members.push_back(member);
 	}
 
 	if (members.empty())

@@ -8,6 +8,7 @@
 #include "desc_p2p.h"
 #include "desc_client.h"
 #include "desc_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 
 #include <algorithm>
 #include "char_interface.hpp"
@@ -522,7 +523,7 @@ struct name_with_desc_func
 
 	bool operator () (LPDESC d)
 	{
-		if (d->GetCharacter() && !strcmp(ecs::PlayerRuntime::GetName(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)).data(), m_name))
+		if (ecs::IsCharacter(d->GetEntity()) && !strcmp(ecs::PlayerRuntime::GetName(d->GetEntity()).data(), m_name))
 			return true;
 
 		return false;
@@ -603,7 +604,7 @@ public:
 
 	void operator() (LPDESC d)
 	{
-		if (d->GetCharacter())
+		if (ecs::IsCharacter(d->GetEntity()))
 		{
 			++iTotalCount;
 			++aiEmpireUserCount[d->GetEmpire()];

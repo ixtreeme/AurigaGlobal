@@ -241,13 +241,13 @@ struct FuncShout
 	void operator () (LPDESC d)
 	{
 #ifdef ENABLE_NEWSTUFF
-		if (!d->GetCharacter() || (!g_bGlobalShoutEnable && ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+		if (!ecs::IsCharacter(d->GetEntity()) || (!g_bGlobalShoutEnable && ecs::PlayerRuntime::GetGMLevel(d->GetEntity()) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
 			return;
 #else
-		if (!d->GetCharacter() || (ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+		if (!ecs::IsCharacter(d->GetEntity()) || (ecs::PlayerRuntime::GetGMLevel(d->GetEntity()) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
 			return;
 #endif
-		ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_SHOUT, "%s", m_str);
+		ecs::ChatSystem::Send(d->GetEntity(), CHAT_TYPE_SHOUT, "%s", m_str);
 	}
 };
 
@@ -272,7 +272,7 @@ void CInputP2P::Disconnect(const char * c_pData)
 	if (!d)
 		return;
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 	{
 		d->SetPhase(PHASE_CLOSE);
 	}

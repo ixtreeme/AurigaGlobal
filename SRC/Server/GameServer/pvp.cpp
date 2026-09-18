@@ -1042,7 +1042,7 @@ void CPVPManager::SendList(LPDESC d)
 {
 	map<uint32_t, CPVP *>::iterator it = m_map_pkPVP.begin();
 
-	uint32_t dwVID = ecs::PlayerRuntime::GetPacketVID(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null));
+	uint32_t dwVID = ecs::PlayerRuntime::GetPacketVID(d->GetEntity());
 
 	TPacketGCPVP pack;
 

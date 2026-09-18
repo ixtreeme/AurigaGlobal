@@ -1626,15 +1626,15 @@ ACMD(do_kill)
 	}
 
 	LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
-	LPCHARACTER tch = d ? d->GetCharacter() : nullptr;
+	const entt::entity tch = d ? d->GetEntity() : entt::null;
 
-	if (!tch)
+	if (!ecs::IsCharacter(tch))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player", arg1);
 		return;
 	}
 
-	CombatSystem::Dead(tch->GetEntityHandle());
+	CombatSystem::Dead(tch);
 }
 
 #ifdef ENABLE_NEWSTUFF

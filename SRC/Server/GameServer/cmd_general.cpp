@@ -390,10 +390,10 @@ struct SendDisconnectFunc
 {
 	void operator () (LPDESC d)
 	{
-		if (d->GetCharacter())
+		if (ecs::IsCharacter(d->GetEntity()))
 		{
-			if ((ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null))) == GM_PLAYER)
-				ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+			if ((ecs::PlayerRuntime::GetGMLevel(d->GetEntity())) == GM_PLAYER)
+				ecs::ChatSystem::Send(d->GetEntity(), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 		}
 	}
 };
@@ -408,8 +408,8 @@ struct DisconnectFunc
 		if (d->IsPhase(PHASE_P2P))
 			return;
 
-		if (d->GetCharacter())
-			ecs::SessionSystem::Disconnect(d->GetCharacter()->GetEntityHandle(), "Shutdown(DisconnectFunc)");
+		if (ecs::IsCharacter(d->GetEntity()))
+			ecs::SessionSystem::Disconnect(d->GetEntity(), "Shutdown(DisconnectFunc)");
 
 		d->SetPhase(PHASE_CLOSE);
 	}
