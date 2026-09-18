@@ -4,15 +4,6 @@
 #define __INCLUDE_NEW_OFFLINESHOP_HEADER__
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-#define __USE_PID_AS_GUESTLIST__
-
-#ifdef __USE_PID_AS_GUESTLIST__
-#define AS_LPGUEST(some)  (CHARACTER_MANAGER::instance().FindByPID(some)) 
-#define AS_GUESTID(some)  (ecs::PlayerRuntime::GetPlayerID(((some) ? (some)->GetEntityHandle() : entt::null)))
-#else
-#define AS_LPGUEST(some) (some)
-#define AS_GUESTID(some) (some)
-#endif
 #include <common/service.h>
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
@@ -285,7 +276,7 @@ namespace offlineshop
 
 		uint32_t			GetID() const ;
 		void			SetOwnerID(uint32_t dwOwnerID);
-		bool			CanBuy(LPCHARACTER ch);
+		bool			CanBuy(entt::entity character);
 
 		void operator = (const CShopItem& rItem);
 
@@ -309,11 +300,8 @@ namespace offlineshop
 	public:
 		typedef std::vector<CShopItem>  VECSHOPITEM;
 		typedef std::vector<TOfferInfo>	VECSHOPOFFER;
-#ifdef __USE_PID_AS_GUESTLIST__
+		// Guests are PIDs; whoever needs the character looks it up as an entity.
 		typedef std::list<uint32_t>		LISTGUEST;
-#else
-		typedef std::list<LPCHARACTER>	LISTGUEST;
-#endif
 
 
 
@@ -342,8 +330,8 @@ namespace offlineshop
 		uint32_t				GetOwnerPID() const;
 
 		//guests
-		bool				AddGuest(LPCHARACTER ch);
-		bool				RemoveGuest(LPCHARACTER ch);
+		bool				AddGuest(entt::entity character);
+		bool				RemoveGuest(entt::entity character);
 
 		//items
 		void				SetItems(VECSHOPITEM* pVec);
@@ -358,9 +346,9 @@ namespace offlineshop
 		bool				AddOffer(const TOfferInfo* pOfferInfo);
 		bool				AcceptOffer(const TOfferInfo* pOfferInfo);
 
-		void				NotifyOffers(LPCHARACTER ch);
-		void				NotifyAcceptedOffers(LPCHARACTER ch);
-		LPCHARACTER			FindOwnerCharacter();
+		void				NotifyOffers(entt::entity character);
+		void				NotifyAcceptedOffers(entt::entity character);
+		entt::entity		FindOwnerCharacter();
 		void				Clear();
 
 
@@ -374,7 +362,7 @@ namespace offlineshop
 		uint32_t				GetRace() const;
 #endif
 	private:
-		void				__RefreshItems(LPCHARACTER ch= nullptr);
+		void				__RefreshItems(entt::entity character = entt::null);
 		void				__SendOfferNotify(entt::entity ch, TOfferInfo* pOffer);
 
 	private:
@@ -462,12 +450,12 @@ namespace offlineshop
 
 
 	public:
-		CShopSafebox(LPCHARACTER chOwner);
+		CShopSafebox(entt::entity owner);
 		CShopSafebox();
 		CShopSafebox(const CShopSafebox& rCopy);
 		~CShopSafebox();
 
-		void			SetOwner(LPCHARACTER ch);
+		void			SetOwner(entt::entity owner);
 		void			SetItems(VECITEM* pVec);
 		void			SetValuteAmount(SValuteAmount val);
 
@@ -481,16 +469,16 @@ namespace offlineshop
 		SValuteAmount	GetValutes();
 
 		bool			GetItem(uint32_t dwItemID, CShopItem** ppItem);
-		LPCHARACTER		GetOwner();
+		entt::entity	GetOwner();
 
 
-		bool			RefreshToOwner(LPCHARACTER ch= nullptr);
+		bool			RefreshToOwner(entt::entity character = entt::null);
 
 
 
 	private:
 		VECITEM			m_vecItems;
-		LPCHARACTER		m_pkOwner;
+		entt::entity	m_pkOwner;
 		SValuteAmount	m_valutes;
 
 	};
@@ -503,11 +491,7 @@ namespace offlineshop
 	{
 	public:
 		typedef std::vector<TAuctionOfferInfo> AUCTION_OFFERVEC;
-#ifdef __USE_PID_AS_GUESTLIST__
 		typedef std::list<uint32_t>		GUESTLIST;
-#else
-		typedef std::list<LPCHARACTER>	GUESTLIST;
-#endif
 
 	public:
 		CAuction();
@@ -518,8 +502,8 @@ namespace offlineshop
 		void SetOffers(const std::vector<TAuctionOfferInfo>& vec);
 
 		bool AddOffer(const TAuctionOfferInfo& offer);
-		bool AddGuest(LPCHARACTER ch);
-		bool RemoveGuest(LPCHARACTER ch);
+		bool AddGuest(entt::entity character);
+		bool RemoveGuest(entt::entity character);
 		void DecreaseDuration();
 		//adding 1 minute time when new offer is done in the last minute
 		void IncreaseDuration();

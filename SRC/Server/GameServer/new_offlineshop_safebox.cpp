@@ -47,17 +47,17 @@ namespace offlineshop
 
 
 
-	CShopSafebox::CShopSafebox(LPCHARACTER chOwner)
+	CShopSafebox::CShopSafebox(entt::entity owner)
 	{
 		ZeroObject(m_valutes);
-		m_pkOwner = chOwner;
+		m_pkOwner = owner;
 	}
 
 
 	CShopSafebox::CShopSafebox()
 	{
 		ZeroObject(m_valutes);
-		m_pkOwner = nullptr;
+		m_pkOwner = entt::null;
 	}
 
 
@@ -75,9 +75,9 @@ namespace offlineshop
 	}
 
 
-	void CShopSafebox::SetOwner(LPCHARACTER ch)
+	void CShopSafebox::SetOwner(entt::entity owner)
 	{
-		m_pkOwner = ch;
+		m_pkOwner = owner;
 	}
 
 
@@ -165,21 +165,21 @@ namespace offlineshop
 		return false;
 	}
 
-	LPCHARACTER CShopSafebox::GetOwner()
+	entt::entity CShopSafebox::GetOwner()
 	{
 		return m_pkOwner;
 	}
 
 
-	//if nullptr auto find via charmanager
-	bool CShopSafebox::RefreshToOwner(LPCHARACTER ch)
+	//if null auto find via charmanager
+	bool CShopSafebox::RefreshToOwner(entt::entity character)
 	{
-		if(!ch && !m_pkOwner)
+		if(character == entt::null && m_pkOwner == entt::null)
 			 return false;
 
-		if(!ch)
-			ch=m_pkOwner;
-		
+		if(character == entt::null)
+			character = m_pkOwner;
+
 		TValutesInfo valute;
 		valute.illYang = m_valutes.illYang;
 #ifdef __ENABLE_CHEQUE_SYSTEM__
@@ -188,7 +188,7 @@ namespace offlineshop
 
 		OFFSHOP_DEBUG("valute %lld , items count %u", valute.illYang, m_vecItems.size());
 
-		GetManager().SendShopSafeboxRefresh(((ch) ? (ch)->GetEntityHandle() : entt::null), valute, m_vecItems);
+		GetManager().SendShopSafeboxRefresh(character, valute, m_vecItems);
 		return true;
 	}
 

@@ -683,10 +683,8 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    // CAuction::RemoveGuest takes the character; the offline shop is its own
-    // rewrite.
-    LPCHARACTER self = ecs::LegacyCharOf(e);
-    if (!self)
+    // The offline shop is entity-native now; guests leave by handle.
+    if (!ecs::IsCharacter(e))
         return;
 
     assert(ecs::PlayerRuntime::GetDesc(e) != nullptr);
@@ -748,7 +746,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     offlineshop::GetManager().RemoveGuestFromShops(e);
 
     if (auto* auctionGuest = ecs::OfflineShopSystem::GetAuctionGuest(e))
-        auctionGuest->RemoveGuest(self);
+        auctionGuest->RemoveGuest(e);
 
     ecs::OfflineShopSystem::SetOfflineShop(e, nullptr);
     ecs::OfflineShopSystem::SetShopSafebox(e, nullptr);

@@ -81,14 +81,13 @@ void SetShopSafebox(entt::entity e, offlineshop::CShopSafebox* safebox)
     if (!state)
         return;
 
-    // CShopSafebox::SetOwner takes the character; that is its own migration.
-    LPCHARACTER self = ecs::LegacyCharOf(e);
-
+    // The safebox and its owner point at each other, so handing one over clears
+    // the old back pointer first. Both sides are entities now.
     if (state->shopSafebox && safebox == nullptr)
-        state->shopSafebox->SetOwner(nullptr);
+        state->shopSafebox->SetOwner(entt::null);
 
     else if (state->shopSafebox == nullptr && safebox)
-        safebox->SetOwner(self);
+        safebox->SetOwner(e);
 
     state->shopSafebox = safebox;
     Touch(e);
