@@ -10,6 +10,7 @@
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "constants.h"
 
@@ -553,80 +554,83 @@ void CInputLogin::CharacterDelete(LPDESC d, const char* data)
 
 void CInputLogin::Entergame(LPDESC d, const char* data)
 {
-	LPCHARACTER ch;
+	const entt::entity ch = d->GetEntity();
 
-	if (!(ch = d->GetCharacter()))
+	if (!ecs::IsCharacter(ch))
 	{
 		d->SetPhase(PHASE_CLOSE);
 		return;
 	}
 
-	PIXEL_POSITION pos = ch->GetXYZ();
+	PIXEL_POSITION pos;
+	pos.x = ecs::PlayerRuntime::GetX(ch);
+	pos.y = ecs::PlayerRuntime::GetY(ch);
+	pos.z = ecs::PlayerRuntime::GetZ(ch);
 
-	if (!SECTREE_MANAGER::instance().GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos.x, pos.y, pos))
+	if (!SECTREE_MANAGER::instance().GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(ch), pos.x, pos.y, pos))
 	{
 		PIXEL_POSITION pos2;
-		SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos2);
+		SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::PlayerRuntime::GetMapIndex(ch), ecs::PlayerRuntime::GetEmpire(ch), pos2);
 
-		LOG_ERROR("!GetMovablePosition (name {} {}x{} map {} changed to {}x{})", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), pos.x, pos.y, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos2.x, pos2.y);
+		LOG_ERROR("!GetMovablePosition (name {} {}x{} map {} changed to {}x{})", ecs::PlayerRuntime::GetName(ch).data(), pos.x, pos.y, ecs::PlayerRuntime::GetMapIndex(ch), pos2.x, pos2.y);
 		pos = pos2;
 	}
 
-	CGuildManager::instance().LoginMember(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CGuildManager::instance().LoginMember(ch);
 
 	// ?? ? ?
-	ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos.x, pos.y, pos.z);
-	CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
+	ecs::MovementSystem::Show(ch, ecs::PlayerRuntime::GetMapIndex(ch), pos.x, pos.y, pos.z);
+	CombatSystem::ReviveInvisible(ch, 5);
 	d->SetPhase(PHASE_GAME);
-	SECTREE_MANAGER::instance().SendNPCPosition(ch->GetEntityHandle());
+	SECTREE_MANAGER::instance().SendNPCPosition(ch);
 #ifdef ENABLE_ATLAS_BOSS
-	SECTREE_MANAGER::instance().SendBossPosition(ch->GetEntityHandle());
+	SECTREE_MANAGER::instance().SendBossPosition(ch);
 #endif
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 
-	COrcsDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	CTritonTempleDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	CValentineDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	CRuneDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	CPyramidDungeonRazor93::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	CNightmareDungeonRazor93::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	//CLostCastleDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	CHalloween2022Dungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	CVikingDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	CEasterDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	COrcsDungeon::instance().OnPlayerLogin(ch);
+	CTritonTempleDungeon::instance().OnPlayerLogin(ch);
+	CValentineDungeon::instance().OnPlayerLogin(ch);
+	CRuneDungeon::instance().OnPlayerLogin(ch);
+	CPyramidDungeonRazor93::instance().OnPlayerLogin(ch);
+	CNightmareDungeonRazor93::instance().OnPlayerLogin(ch);
+	//CLostCastleDungeon::instance().OnPlayerLogin(ch);
+	CHalloween2022Dungeon::instance().OnPlayerLogin(ch);
+	CVikingDungeon::instance().OnPlayerLogin(ch);
+	CEasterDungeon::instance().OnPlayerLogin(ch);
 #endif
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_body") != 0)
-		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 1, true);
+	if (ecs::QuestSystem::GetFlag(ch, "costume_option.hide_body") != 0)
+		ecs::PlayerRuntime::SetCostumeHidden(ch, 1, true);
 	else
-		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 1, false);
+		ecs::PlayerRuntime::SetCostumeHidden(ch, 1, false);
 
-	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_hair") != 0)
-		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 2, true);
+	if (ecs::QuestSystem::GetFlag(ch, "costume_option.hide_hair") != 0)
+		ecs::PlayerRuntime::SetCostumeHidden(ch, 2, true);
 	else
-		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 2, false);
+		ecs::PlayerRuntime::SetCostumeHidden(ch, 2, false);
 
 #ifdef ENABLE_ACCE_SYSTEM
-	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_acce") != 0)
-		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 3, true);
+	if (ecs::QuestSystem::GetFlag(ch, "costume_option.hide_acce") != 0)
+		ecs::PlayerRuntime::SetCostumeHidden(ch, 3, true);
 	else
-		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 3, false);
+		ecs::PlayerRuntime::SetCostumeHidden(ch, 3, false);
 #endif
 
 #ifdef __WEAPON_COSTUME_SYSTEM__
-	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_weapon") != 0)
-		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 4, true);
+	if (ecs::QuestSystem::GetFlag(ch, "costume_option.hide_weapon") != 0)
+		ecs::PlayerRuntime::SetCostumeHidden(ch, 4, true);
 	else
-		ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 4, false);
+		ecs::PlayerRuntime::SetCostumeHidden(ch, 4, false);
 #endif
 #endif
 
 
-	if (ecs::PlayerRuntime::GetItemAwardCommand(ch->GetEntityHandle()))																		// ?
-		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetItemAwardVnum(ch->GetEntityHandle()));	//questmanager ?
+	if (ecs::PlayerRuntime::GetItemAwardCommand(ch))																		// ?
+		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetItemAwardVnum(ch));	//questmanager ?
 
-	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetZ(), d->GetHostName(), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(ch).data(), ecs::PlayerRuntime::GetX(ch), ecs::PlayerRuntime::GetY(ch), ecs::PlayerRuntime::GetZ(ch), d->GetHostName(), ecs::PlayerRuntime::GetMapIndex(ch));
 
 	if (MountSystem::GetHorseLevel(d->GetEntity()) > 0)
 	{
@@ -634,25 +638,25 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	}
 
 	// ÷?? ?
-	ecs::PlayerRuntime::ResetPlayTime(ch->GetEntityHandle(), 0);
+	ecs::PlayerRuntime::ResetPlayTime(ch, 0);
 
 	// ?  ?T ?
-	ecs::SessionSystem::StartSaveEvent(ch->GetEntityHandle());
-	ecs::PlayerRuntime::StartRecoveryEvent(ch->GetEntityHandle());
+	ecs::SessionSystem::StartSaveEvent(ch);
+	ecs::PlayerRuntime::StartRecoveryEvent(ch);
 
-	CPVPManager::instance().Connect(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CPVPManager::instance().Connect(ch);
 	CPVPManager::instance().SendList(d);
 
-	MessengerManager::instance().Login(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+	MessengerManager::instance().Login(ecs::PlayerRuntime::GetName(ch).data());
 
-	CPartyManager::instance().SetParty(ch->GetEntityHandle());
+	CPartyManager::instance().SetParty(ch);
 	CGuildManager::instance().SendGuildWar(d->GetEntity());
 
-	building::CManager::instance().SendLandList(d, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	building::CManager::instance().SendLandList(d, ecs::PlayerRuntime::GetMapIndex(ch));
 
-	marriage::CManager::instance().Login(ch->GetEntityHandle());
+	marriage::CManager::instance().Login(ch);
 #ifdef ENABLE_EVENT_MANAGER
-	CHARACTER_MANAGER::Instance().SendDataPlayer(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CHARACTER_MANAGER::Instance().SendDataPlayer(ch);
 #endif
 
 	TPacketGCTime p;
@@ -664,30 +668,30 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	p2.header = HEADER_GC_CHANNEL;
 	p2.channel = g_bChannel;
 	d->Packet(&p2, sizeof(p2));
-	ecs::PlayerRuntime::SendGreetMessage(ch->GetEntityHandle());
+	ecs::PlayerRuntime::SendGreetMessage(ch);
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-	NetworkSyncSystem::UpdateItemOnTitleName(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null), true);
+	NetworkSyncSystem::UpdateItemOnTitleName(g_registry, ch, true);
 #endif
 #ifdef ENABLE_PVP_ADVANCED // If something is wrong and server is crashed or stopping when you was in duel.
-	int isDuel = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), CHECK_IS_FIGHT);
+	int isDuel = ecs::QuestSystem::GetFlag(ch, CHECK_IS_FIGHT);
 	if (isDuel)
-		ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), CHECK_IS_FIGHT, 0);
+		ecs::QuestSystem::SetFlag(ch, CHECK_IS_FIGHT, 0);
 #endif
 
-	_send_bonus_info(ch->GetEntityHandle());
+	_send_bonus_info(ch);
 #if defined(BL_OFFLINE_MESSAGE)
-	ecs::ChatSystem::ReadOfflineMessages(ch->GetEntityHandle());
+	ecs::ChatSystem::ReadOfflineMessages(ch);
 #endif
 
 	for (int i = 0; i <= PREMIUM_MAX_NUM; ++i)
 	{
-		int remain = ecs::PlayerRuntime::GetPremiumRemainSeconds(ch->GetEntityHandle(), i);
+		int remain = ecs::PlayerRuntime::GetPremiumRemainSeconds(ch, i);
 
 		if (remain <= 0)
 			continue;
 
-		AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_PREMIUM_START + i, POINT_NONE, 0, 0, remain, 0, true);
-		LOG_INFO("PREMIUM: {} type {} {}min", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), i, remain);
+		AffectSystem::AddAffect(ch, AFFECT_PREMIUM_START + i, POINT_NONE, 0, 0, remain, 0, true);
+		LOG_INFO("PREMIUM: {} type {} {}min", ecs::PlayerRuntime::GetName(ch).data(), i, remain);
 	}
 
 	if (g_bCheckClientVersion)
@@ -709,33 +713,33 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		LOG_INFO("VERSION : NO CHECK");
 	}
 
-	if (ecs::PlayerRuntime::IsGM(ch->GetEntityHandle()) == true)
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ConsoleEnable");
+	if (ecs::PlayerRuntime::IsGM(ch) == true)
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ConsoleEnable");
 
-	if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= 10000)
+	if (ecs::PlayerRuntime::GetMapIndex(ch) >= 10000)
 	{
-		if (CWarMapManager::instance().IsWarMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))))
-			ecs::SocialSystem::SetWarMap(ch->GetEntityHandle(), CWarMapManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
-		else if (marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))))
-			ecs::SocialSystem::SetWeddingMap(ch->GetEntityHandle(), marriage::WeddingManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		if (CWarMapManager::instance().IsWarMap(ecs::PlayerRuntime::GetMapIndex(ch)))
+			ecs::SocialSystem::SetWarMap(ch, CWarMapManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(ch)));
+		else if (marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(ch)))
+			ecs::SocialSystem::SetWeddingMap(ch, marriage::WeddingManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(ch)));
 		else {
-			ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			ecs::SocialSystem::SetDungeon(ch, CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(ch)));
 		}
 	}
-	else if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))) == true)
+	else if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(ch)) == true)
 	{
-		int memberFlag = CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		int memberFlag = CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(ch), ecs::PlayerRuntime::GetPlayerID(ch));
 		if (memberFlag == MEMBER_OBSERVER)
 		{
-			ecs::PlayerRuntime::SetObserverMode(ch->GetEntityHandle(), true);
-			ecs::PlayerRuntime::SetArenaObserverMode(ch->GetEntityHandle(), true);
-			const entt::entity character = ch->GetEntityHandle();
+			ecs::PlayerRuntime::SetObserverMode(ch, true);
+			ecs::PlayerRuntime::SetArenaObserverMode(ch, true);
+			const entt::entity character = ch;
 			if (CArenaManager::instance().RegisterObserverPtr(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character) / 100, ecs::PlayerRuntime::GetY(character) / 100))
 			{
 				LOG_INFO("ARENA : Observer add failed");
 			}
 
-			const entt::entity rider = ch->GetEntityHandle();
+			const entt::entity rider = ch;
 			if (MountSystem::IsHorseRiding(rider))
 			{
 				MountSystem::StopRiding(rider);
@@ -748,16 +752,16 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			duelStart.header = HEADER_GC_DUEL_START;
 			duelStart.wSize = sizeof(TPacketGCDuelStart);
 
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+			ecs::PlayerRuntime::GetDesc(ch)->Packet(&duelStart, sizeof(TPacketGCDuelStart));
 
-			const entt::entity rider = ch->GetEntityHandle();
+			const entt::entity rider = ch;
 			if (MountSystem::IsHorseRiding(rider))
 			{
 				MountSystem::StopRiding(rider);
 				MountSystem::SummonHorse(rider, false);
 			}
 
-			LPPARTY pParty = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			LPPARTY pParty = ecs::SocialSystem::GetParty(ch);
 			if (pParty != nullptr)
 			{
 				if (pParty->GetMemberCount() == 2)
@@ -766,60 +770,60 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 				}
 				else
 				{
-					pParty->Quit(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+					pParty->Quit(ecs::PlayerRuntime::GetPlayerID(ch));
 				}
 			}
 		}
 		else if (memberFlag == MEMBER_NO)
 		{
-			if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER)
-				ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			if (ecs::PlayerRuntime::GetGMLevel(ch) == GM_PLAYER)
+				ecs::MovementSystem::WarpSet(ch, EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(ch)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(ch)));
 		}
 		else
 		{
 			// wtf
 		}
 	}
-	else if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 113)
+	else if (ecs::PlayerRuntime::GetMapIndex(ch) == 113)
 	{
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		const entt::entity rider = ch->GetEntityHandle();
+		const entt::entity rider = ch;
 		if (MountSystem::IsHorseRiding(rider)) {
 			MountSystem::StopRiding(rider);
 			MountSystem::SummonHorse(rider, false);
 		}
 
 		CMountSystem* mountSystem = MountSystem::GetMountSystem(rider);
-		const entt::entity mount = ItemSystem::GetWearItem(ch ? ch->GetEntityHandle() : entt::null, WEAR_COSTUME_MOUNT);
-		if (mountSystem && MountSystem::GetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null)) && mount != entt::null) {
+		const entt::entity mount = ItemSystem::GetWearItem(ch, WEAR_COSTUME_MOUNT);
+		if (mountSystem && MountSystem::GetMountVnum(ch) && mount != entt::null) {
 			mountSystem->Unmount(ItemSystem::GetItemValue(mount, 1));
 		}
 		else {
-			AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_MOUNT);
-			AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS);
+			AffectSystem::RemoveAffect(ch, AFFECT_MOUNT);
+			AffectSystem::RemoveAffect(ch, AFFECT_MOUNT_BONUS);
 		}
 #endif
 		// ox ?T
 		if (COXEventManager::instance().Enter(d->GetEntity()) == false)
 		{
 			// ox   ?  . ÷?
-			if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER)
-				ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			if (ecs::PlayerRuntime::GetGMLevel(ch) == GM_PLAYER)
+				ecs::MovementSystem::WarpSet(ch, EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(ch)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(ch)));
 		}
 	}
 	else
 	{
-		if (CWarMapManager::instance().IsWarMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))) ||
-			marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+		if (CWarMapManager::instance().IsWarMap(ecs::PlayerRuntime::GetMapIndex(ch)) ||
+			marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(ch)))
 		{
 			if (!test_server)
-				ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+				ecs::MovementSystem::WarpSet(ch, EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(ch)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(ch)));
 		}
 	}
 
 	if (MountSystem::GetHorseLevel(d->GetEntity()) > 0)
 	{
-		uint32_t pid = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		uint32_t pid = ecs::PlayerRuntime::GetPlayerID(ch);
 		if (pid != 0 && CHorseNameManager::instance().GetHorseName(pid) == nullptr)
 			db_clientdesc->DBPacket(HEADER_GD_REQ_HORSE_NAME, 0, &pid, sizeof(uint32_t));
 
@@ -831,22 +835,22 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef TEXTS_IMPROVEMENT
 	if (g_noticeBattleZone) {
 		if (FN_is_battle_zone(d->GetEntity())) {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 637, "");
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 638, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 637, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 638, "");
 		}
 	}
 #endif
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-	if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (ecs::PlayerRuntime::IsPC(ch))
 	{
-		offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(ch));
 		if (pkShop)
-			ecs::OfflineShopSystem::SetOfflineShop(ch->GetEntityHandle(), pkShop);
+			ecs::OfflineShopSystem::SetOfflineShop(ch, pkShop);
 
-		offlineshop::CAuction* auction = offlineshop::GetManager().GetAuctionByOwnerID(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		offlineshop::CAuction* auction = offlineshop::GetManager().GetAuctionByOwnerID(ecs::PlayerRuntime::GetPlayerID(ch));
 		if (auction)
-			ecs::OfflineShopSystem::SetAuction(ch->GetEntityHandle(), auction);
+			ecs::OfflineShopSystem::SetAuction(ch, auction);
 	}
 #endif
 
@@ -859,73 +863,73 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	//	ch->LoadStayActiveBattlePass();
 	//#endif
 #ifdef __ENABLE_BLOCK_EXP__
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "manage_exp_status %d", ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "exp.stat"));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %d", ecs::QuestSystem::GetFlag(ch, "exp.stat"));
 #endif
 
 #ifdef ENABLE_MULTI_LANGUAGE
 	TPacketChangeLanguage packet;
 	packet.bHeader = HEADER_GC_REQUEST_CHANGE_LANGUAGE;
-	packet.bLanguage = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage();
-	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&packet, sizeof(TPacketChangeLanguage));
+	packet.bLanguage = ecs::PlayerRuntime::GetDesc(ch)->GetLanguage();
+	ecs::PlayerRuntime::GetDesc(ch)->Packet(&packet, sizeof(TPacketChangeLanguage));
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
-	ecs::PlayerRuntime::SetPart(ch->GetEntityHandle(), PART_RUNE, ecs::PlayerRuntime::GetRuneEffect(ch->GetEntityHandle()));
-	NetworkSyncSystem::UpdatePacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "rune_affect %d", ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "rune.hide_effect"));
+	ecs::PlayerRuntime::SetPart(ch, PART_RUNE, ecs::PlayerRuntime::GetRuneEffect(ch));
+	NetworkSyncSystem::UpdatePacket(ch);
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %d", ecs::QuestSystem::GetFlag(ch, "rune.hide_effect"));
 #endif
 #ifdef ENABLE_PVP_ADVANCED
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "equipview %d", ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), BLOCK_EQUIPMENT_));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview %d", ecs::QuestSystem::GetFlag(ch, BLOCK_EQUIPMENT_));
 #endif
 #ifdef BLOCK_RIDING_INSIDE_WAR
-	if (ecs::SocialSystem::GetWarMap(ch->GetEntityHandle())) {
-		const entt::entity rider = ch->GetEntityHandle();
+	if (ecs::SocialSystem::GetWarMap(ch)) {
+		const entt::entity rider = ch;
 		if (MountSystem::IsHorseRiding(rider)) {
 			MountSystem::StopRiding(rider);
 			MountSystem::SummonHorse(rider, false);
 		}
 
 		CMountSystem* mountSystem = MountSystem::GetMountSystem(rider);
-		const entt::entity mount = ItemSystem::GetWearItem(ch ? ch->GetEntityHandle() : entt::null, WEAR_COSTUME_MOUNT);
-		if (mountSystem && MountSystem::GetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null)) && mount != entt::null) {
+		const entt::entity mount = ItemSystem::GetWearItem(ch, WEAR_COSTUME_MOUNT);
+		if (mountSystem && MountSystem::GetMountVnum(ch) && mount != entt::null) {
 			mountSystem->Unmount(ItemSystem::GetItemValue(mount, 1));
 		}
 		else {
-			AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_MOUNT);
-			AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS);
+			AffectSystem::RemoveAffect(ch, AFFECT_MOUNT);
+			AffectSystem::RemoveAffect(ch, AFFECT_MOUNT_BONUS);
 		}
 	}
 #endif
 
 #ifdef ENABLE_BIOLOGIST_UI
-	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "biologist.stat") <= 15)
+	if (ecs::QuestSystem::GetFlag(ch, "biologist.stat") <= 15)
 	{
-		int biologisttime = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "biologist.time");
+		int biologisttime = ecs::QuestSystem::GetFlag(ch, "biologist.time");
 		biologisttime = biologisttime > 0 ? biologisttime : 1;
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "biologist_time %d", biologisttime);
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_time %d", biologisttime);
 	}
 #endif
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-	ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 1, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_body") == 1 ? true : false, true);
-	ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 2, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_hair") == 1 ? true : false, true);
+	ecs::PlayerRuntime::SetCostumeHidden(ch, 1, ecs::QuestSystem::GetFlag(ch, "costume_option.hide_body") == 1 ? true : false, true);
+	ecs::PlayerRuntime::SetCostumeHidden(ch, 2, ecs::QuestSystem::GetFlag(ch, "costume_option.hide_hair") == 1 ? true : false, true);
 #ifdef ENABLE_ACCE_SYSTEM
-	ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 3, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_acce") == 1 ? true : false, true);
+	ecs::PlayerRuntime::SetCostumeHidden(ch, 3, ecs::QuestSystem::GetFlag(ch, "costume_option.hide_acce") == 1 ? true : false, true);
 #endif
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-	ecs::PlayerRuntime::SetCostumeHidden(ch->GetEntityHandle(), 4, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "costume_option.hide_weapon") == 1 ? true : false, true);
+	ecs::PlayerRuntime::SetCostumeHidden(ch, 4, ecs::QuestSystem::GetFlag(ch, "costume_option.hide_weapon") == 1 ? true : false, true);
 #endif
 #endif
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY1, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "lock_extra.cat1"));
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY2, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "lock_extra.cat2"));
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY3, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "lock_extra.cat3"));
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY4, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "lock_extra.cat4"));
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY5, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "lock_extra.cat5"));
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY6, ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "lock_extra.cat6"));
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
+	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY1, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat1"));
+	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY2, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat2"));
+	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY3, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat3"));
+	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY4, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat4"));
+	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY5, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat5"));
+	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY6, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat6"));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #endif
 #ifdef ENABLE_ANTICHEAT
-	ecs::PlayerRuntime::ClearCheatChecks(ch->GetEntityHandle());
+	ecs::PlayerRuntime::ClearCheatChecks(ch);
 #endif
 }
 
