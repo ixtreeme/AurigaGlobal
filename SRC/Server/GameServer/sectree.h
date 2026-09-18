@@ -34,9 +34,7 @@ enum
 	ATTR_OBJECT = (1 << 7),
 };
 
-// Compatibility is confined to callbacks which have not migrated yet. The
-// sector and every snapshot store versioned handles, never CEntity pointers.
-LPENTITY SectreeLegacyEntity(entt::entity entity);
+// The sector and every snapshot store versioned handles, never CEntity pointers.
 bool SectreeMember(entt::entity entity, const SECTREE* tree);
 
 struct FCollectEntity {
@@ -48,8 +46,6 @@ struct FCollectEntity {
             if (!SectreeMember(entry.entity, entry.tree)) continue;
             if constexpr (std::is_invocable_v<F&, entt::entity>)
                 f(entry.entity);
-            else if (auto* legacy = SectreeLegacyEntity(entry.entity))
-                f(legacy);
         }
     }
 };

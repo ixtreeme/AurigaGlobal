@@ -112,7 +112,6 @@ namespace {
 
 const int ITEM_BROKEN_METIN_VNUM = 28960;
 
-using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 
 static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(entt::entity e)

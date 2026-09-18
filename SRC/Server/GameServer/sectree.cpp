@@ -35,9 +35,6 @@ void Wake(entt::entity e) {
 }
 }
 
-LPENTITY SectreeLegacyEntity(entt::entity e) {
-    return ecs::SpatialService::LPENTITYFromEntity(g_registry, e);
-}
 bool SectreeMember(entt::entity e, const SECTREE* tree) {
     return g_registry.valid(e) && ecs::SectorOf(g_registry, e) == tree && tree && tree->Contains(e);
 }

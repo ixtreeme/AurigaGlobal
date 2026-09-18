@@ -57,7 +57,6 @@ void SendAffectRemovePacket(LPDESC d, uint32_t pid, uint32_t type, uint8_t point
 
 namespace {
 
-using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 const int poison_damage_rate[MOB_RANK_MAX_NUM] = {
     80, 50, 40, 30, 25, 1
