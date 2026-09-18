@@ -106,11 +106,11 @@ namespace
         // Collect entities via a local functor, then filter PC characters.
         struct FEntityCollector
         {
-            typedef std::vector<LPENTITY> ListType;
+            typedef std::vector<entt::entity> ListType;
             ListType list;
-            void operator()(LPENTITY ent)
+            void operator()(entt::entity ent)
             {
-                if (ent)
+                if (ent != entt::null)
                     list.push_back(ent);
             }
         };
@@ -121,12 +121,8 @@ namespace
         const FEntityCollector::ListType& entities = collector.list;
         for (FEntityCollector::ListType::const_iterator it = entities.begin(); it != entities.end(); ++it)
         {
-            LPENTITY ent = *it;
-            if (!ent || !ent->IsType(ENTITY_CHARACTER))
-                continue;
-
-            const entt::entity c = ent->GetEntityHandle();
-            if (c == entt::null || !ecs::PlayerRuntime::IsPC(c))
+            const entt::entity c = *it;
+            if (!ecs::IsCharacter(c) || !ecs::PlayerRuntime::IsPC(c))
                 continue;
 
             fn(c);

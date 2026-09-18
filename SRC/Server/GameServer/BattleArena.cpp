@@ -8,6 +8,7 @@
 #include "start_position.h"
 #include "char_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "sectree_manager.h"
 #include "regen.h"
 #include "questmanager.h"
@@ -40,13 +41,10 @@ bool CBattleArena::IsBattleArenaMap(int nMapIndex)
 
 struct FWarpToHome
 {
-	void operator() (LPENTITY ent)
+	void operator() (entt::entity lpCharEntity)
 	{
-		if ( ent->IsType(ENTITY_CHARACTER) == true )
+		if ( ecs::IsCharacter(lpCharEntity) == true )
 		{
-			const entt::entity lpCharEntity = ent->GetEntityHandle();
-
-
 			if ( ecs::PlayerRuntime::IsPC(lpCharEntity) == true )
 			{
 				if ( !test_server )

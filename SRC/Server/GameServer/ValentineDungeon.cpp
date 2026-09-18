@@ -102,13 +102,11 @@ namespace
     struct FForEachPC
     {
         std::function<void(entt::entity)> fn;
-        void operator()(LPENTITY ent)
+        void operator()(entt::entity ch)
         {
-            if (!ent || !ent->IsType(ENTITY_CHARACTER))
+            if (!ecs::IsCharacter(ch) || !ecs::PlayerRuntime::IsPC(ch))
                 return;
-            const entt::entity ch = ent->GetEntityHandle();
-            if (ch != entt::null && ecs::PlayerRuntime::IsPC(ch))
-                fn(ch);
+            fn(ch);
         }
     };
 

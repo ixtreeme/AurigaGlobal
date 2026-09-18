@@ -223,12 +223,10 @@ namespace
         {
             FEach(F& f) : m_f(f) {}
             F& m_f;
-            void operator()(LPENTITY ent)
+            void operator()(entt::entity ch)
             {
-                if (!ent || ent->GetType() != ENTITY_CHARACTER)
+                if (!ecs::IsCharacter(ch) || !ecs::PlayerRuntime::IsPC(ch))
                     return;
-                const entt::entity ch = ent->GetEntityHandle();
-                if (ch != entt::null && ecs::PlayerRuntime::IsPC(ch))
                     m_f(ch);
             }
         } each(fn);
