@@ -1053,13 +1053,11 @@ struct FuncPurge
 	{
 	}
 
-	void operator () (LPENTITY ent)
+	void operator () (entt::entity chr)
 	{
 		const entt::entity gM = m_gm;
-		if (!ent->IsType(ENTITY_CHARACTER))
+		if (!ecs::IsCharacter(chr))
 			return;
-
-		const entt::entity chr = ent->GetEntityHandle();
 
 
 		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - ecs::PlayerRuntime::GetX(gM), ecs::PlayerRuntime::GetY(chr) - ecs::PlayerRuntime::GetY(gM));
@@ -2529,13 +2527,11 @@ struct FuncWeaken
 	{
 	}
 
-	void operator () (LPENTITY ent)
+	void operator () (entt::entity chr)
 	{
 		const entt::entity gM = m_gm;
-		if (!ent->IsType(ENTITY_CHARACTER))
+		if (!ecs::IsCharacter(chr))
 			return;
-
-		const entt::entity chr = ent->GetEntityHandle();
 
 
 		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - ecs::PlayerRuntime::GetX(gM), ecs::PlayerRuntime::GetY(chr) - ecs::PlayerRuntime::GetY(gM));
@@ -3864,13 +3860,11 @@ struct FCountInMap
 {
 	int m_Count[4];
 	FCountInMap() { memset(m_Count, 0, sizeof(int) * 4); }
-	void operator()(LPENTITY ent)
+	void operator()(entt::entity chEntity)
 	{
-		if (ent->IsType(ENTITY_CHARACTER))
+		if (ecs::IsCharacter(chEntity))
 		{
-			const entt::entity chEntity = ent->GetEntityHandle();
-
-			if (chEntity != entt::null && (ecs::PlayerRuntime::IsPC(chEntity)))
+			if (ecs::PlayerRuntime::IsPC(chEntity))
 				++m_Count[(ecs::PlayerRuntime::GetEmpire(chEntity))];
 		}
 	}
