@@ -3934,16 +3934,14 @@ struct FMobCounter
 {
 	int nCount;
 
-	void operator () (LPENTITY ent)
+	void operator () (entt::entity character)
 	{
-		if (ent->IsType(ENTITY_CHARACTER))
-		{
-			LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
+		if (!ecs::IsCharacter(character))
+			return;
 
-			if (const entt::entity charEntity = pChar->GetEntityHandle(); ecs::PlayerRuntime::GetCharType(charEntity) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(charEntity))
-			{
-				nCount++;
-			}
+		if (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character))
+		{
+			nCount++;
 		}
 	}
 };

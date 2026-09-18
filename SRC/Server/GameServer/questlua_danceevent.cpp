@@ -12,20 +12,16 @@ namespace quest
 {
 	struct FWarpToHome
 	{
-		void operator() ( LPENTITY ent )
+		void operator() ( entt::entity character )
 		{
-			if ( ent->IsType(ENTITY_CHARACTER) )
+			if (!ecs::IsCharacter(character))
+				return;
+
+			if ( (ecs::PlayerRuntime::IsPC(character)) == true && ecs::PlayerRuntime::IsGM(character) != true )
 			{
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-
-				if ( (ecs::PlayerRuntime::IsPC(chEntity)) == true && ecs::PlayerRuntime::IsGM(chEntity) != true )
+				if ( ((ecs::PlayerRuntime::GetX(character) >= 764503 && ecs::PlayerRuntime::GetX(character) <= 772362) && (ecs::PlayerRuntime::GetY(character) >= 22807 && ecs::PlayerRuntime::GetY(character) <= 26499)) == false )
 				{
-					if ( ((ecs::PlayerRuntime::GetX(chEntity) >= 764503 && ecs::PlayerRuntime::GetX(chEntity) <= 772362) && (ecs::PlayerRuntime::GetY(chEntity) >= 22807 && ecs::PlayerRuntime::GetY(chEntity) <= 26499)) == false )
-					{
-						ecs::MovementSystem::GoHome(chEntity);
-					}
+					ecs::MovementSystem::GoHome(character);
 				}
 			}
 		};

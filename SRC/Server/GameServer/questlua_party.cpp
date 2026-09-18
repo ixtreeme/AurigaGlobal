@@ -309,19 +309,17 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 
-		FSetQuestFlag f;
-
-		f.flagname = q.GetCurrentPC()->GetCurrentQuestName() + "." + lua_tostring(L, 1);
-		f.value = (int) rint(lua_tonumber(L, 2));
+		const std::string flagname = q.GetCurrentPC()->GetCurrentQuestName() + "." + lua_tostring(L, 1);
+		const int value = (int) rint(lua_tonumber(L, 2));
 
 		const entt::entity character = q.GetPCEntity(L);
 		if (ecs::SocialSystem::GetParty(character))
 			ecs::SocialSystem::ForEachOnlinePartyMember(character,
-				[&f](entt::entity member) {
-					ecs::QuestSystem::SetFlag(member, f.flagname, f.value);
+				[&flagname, value](entt::entity member) {
+					ecs::QuestSystem::SetFlag(member, flagname, value);
 				});
 		else
-			ecs::QuestSystem::SetFlag(character, f.flagname, f.value);
+			ecs::QuestSystem::SetFlag(character, flagname, value);
 
 		return 0;
 	}

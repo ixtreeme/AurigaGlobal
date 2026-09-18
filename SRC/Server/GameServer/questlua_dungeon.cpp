@@ -16,6 +16,7 @@
 #include "dungeon.h"
 #include "char_interface.hpp"
 #include "party.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "buffer_manager.h"
 #include "char_manager.h"
 #include "packet.h"
@@ -872,8 +873,8 @@ namespace quest
 
 		int32_t vid = (int32_t)lua_tonumber(L, 1);
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
-		if (ch)
+		const entt::entity ch = CHARACTER_MANAGER::instance().FindEntity(vid);
+		if (ecs::IsCharacter(ch))
 		{
 			M2_DESTROY_CHARACTER(ch);
 		}
@@ -1666,37 +1667,6 @@ namespace quest
 		int32_t cooldown = (int32_t)lua_tonumber(L, 2);
 		std::string m_questname = lua_tostring(L, 3);
 
-		// LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
-		// if (party)
-		// {
-			// FPartyPIDCollectorDungeon f;
-			// party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
-
-			// for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
-			// {
-				// LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				// if (tch && (ecs::PlayerRuntime::IsPC(((tch) ? (tch)->GetEntityHandle() : entt::null))))
-				// {
-					// if (vnum > 0)
-					// {
-						// int32_t count = tch->CountSpecifyItem(vnum);
-						// if (count > 0)
-						// {
-							// tch->RemoveSpecifyItem(vnum, count);
-						// }
-					// }
-
-					// ecs::QuestSystem::SetFlag(((tch) ? (tch)->GetEntityHandle() : entt::null), m_questname + ".enter_time", get_global_time());
-					// ecs::QuestSystem::SetFlag(((tch) ? (tch)->GetEntityHandle() : entt::null), m_questname + ".cooldown", get_global_time() + cooldown);
-				// }
-			// }
-
-			// if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(chEntity))))
-			// {
-				// "cannot return to leader.");
-			// }
-		// }
-		// else
 		{
 			if (vnum > 0)
 			{

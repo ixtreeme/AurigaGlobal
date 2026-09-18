@@ -34,26 +34,6 @@ namespace quest
 
 	extern void combine_lua_string(lua_State* L, std::ostringstream &s);
 
-	struct FSetWarpLocation
-	{
-		int32_t map_index;
-		int32_t x;
-		int32_t y;
-
-		FSetWarpLocation (int32_t _map_index, int32_t _x, int32_t _y) :
-			map_index (_map_index), x (_x), y (_y)
-		{}
-		void operator () (LPCHARACTER ch) const;
-	};
-
-	struct FSetQuestFlag
-	{
-		std::string flagname;
-		int value;
-
-		void operator () (LPCHARACTER ch) const;
-	};
-
 	struct FPartyCheckFlagLt
 	{
 		std::string flagname;
@@ -80,15 +60,7 @@ namespace quest
 	{
 		TEMP_BUFFER buf;
 
-		void operator() (LPENTITY ent);
-	};
-
-	struct FSendPacketToEmpire
-	{
-		TEMP_BUFFER buf;
-		uint8_t bEmpire;
-
-		void operator() (LPENTITY ent);
+		void operator() (entt::entity character);
 	};
 
 	struct FWarpEmpire
@@ -98,7 +70,7 @@ namespace quest
 		int32_t m_x;
 		int32_t m_y;
 
-		void operator() (LPENTITY ent) const;
+		void operator() (entt::entity character) const;
 	};
 
 	EVENTINFO(warp_all_to_map_my_empire_event_info)

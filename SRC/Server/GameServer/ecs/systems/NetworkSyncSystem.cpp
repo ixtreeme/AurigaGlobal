@@ -250,15 +250,6 @@ void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_
     pack.dwDuration = dwDuration;
 }
 
-struct FuncClearSync
-{
-    void operator()(LPCHARACTER ch)
-    {
-        assert(ch != NULL);
-        NetworkSyncSystem::SetSyncOwner(ch->GetEntityHandle(), entt::null, false);
-    }
-};
-
 int16_t AlignmentForPacket(entt::entity e, uint32_t legacyAlignment)
 {
     if (e != entt::null && g_registry.valid(e)) {

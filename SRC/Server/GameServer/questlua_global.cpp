@@ -8,6 +8,7 @@
 #include "constants.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "log.h"
 #include "questmanager.h"
 #include "questlua.h"
@@ -1082,23 +1083,21 @@ namespace quest
 	struct FWarpAllToVillage
 	{
 		FWarpAllToVillage() {};
-		void operator()(LPENTITY ent)
+		void operator()(entt::entity character)
 		{
-			if (ent->IsType(ENTITY_CHARACTER))
+			if (!ecs::IsCharacter(character))
+				return;
+
+			if ((ecs::PlayerRuntime::IsPC(character)))
 			{
-				const entt::entity chEntity = ent->GetEntityHandle();
-
-				if ((ecs::PlayerRuntime::IsPC(chEntity)))
+				uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(character);
+				if ( bEmpire == 0 )
 				{
-					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(chEntity);
-					if ( bEmpire == 0 )
-					{
-						sys_err("Unkonwn Empire {} {} ", ecs::PlayerRuntime::GetName(chEntity).data(), (ecs::PlayerRuntime::GetPlayerID(chEntity)));
-						return;
-					}
-
-					ecs::MovementSystem::WarpSet(chEntity,  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
+					sys_err("Unkonwn Empire {} {} ", ecs::PlayerRuntime::GetName(character).data(), (ecs::PlayerRuntime::GetPlayerID(character)));
+					return;
 				}
+
+				ecs::MovementSystem::WarpSet(character,  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
 			}
 		}
 	};
@@ -1189,20 +1188,17 @@ namespace quest
 
 	struct FKillSectree2
 	{
-		void operator () (LPENTITY ent)
+		void operator () (entt::entity character)
 		{
-			if (ent->IsType(ENTITY_CHARACTER))
-			{
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			if (!ecs::IsCharacter(character))
+				return;
 
 #ifdef __NEWPET_SYSTEM__
-				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(ch->GetEntityHandle()))
+			if (!(ecs::PlayerRuntime::IsPC(character)) && !ecs::PlayerRuntime::IsPet(character) && !ecs::PlayerRuntime::IsNewPet(character))
 #else
-				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle()))
+			if (!(ecs::PlayerRuntime::IsPC(character)) && !ecs::PlayerRuntime::IsPet(character))
 #endif
-					CombatSystem::Dead(ch->GetEntityHandle());
-			}
+				CombatSystem::Dead(character);
 		}
 	};
 
@@ -1548,21 +1544,18 @@ namespace quest
 			warpCount(0)
 		{}
 
-		void operator () (LPENTITY ent)
+		void operator () (entt::entity character)
 		{
-			if (true == ent->IsType(ENTITY_CHARACTER))
+			if (!ecs::IsCharacter(character))
+				return;
+
+			if (true == (ecs::PlayerRuntime::IsPC(character)))
 			{
-				const entt::entity charEntity = ent->GetEntityHandle();
-
-
-				if (true == (ecs::PlayerRuntime::IsPC(charEntity)))
+				if (from_x1 <= ecs::PlayerRuntime::GetX(character) && ecs::PlayerRuntime::GetX(character) <= from_x2 && from_y1 <= ecs::PlayerRuntime::GetY(character) && ecs::PlayerRuntime::GetY(character) <= from_y2)
 				{
-					if (from_x1 <= ecs::PlayerRuntime::GetX(charEntity) && ecs::PlayerRuntime::GetX(charEntity) <= from_x2 && from_y1 <= ecs::PlayerRuntime::GetY(charEntity) && ecs::PlayerRuntime::GetY(charEntity) <= from_y2)
-					{
-						++warpCount;
+					++warpCount;
 
-						ecs::MovementSystem::WarpSet(charEntity,  number(to_x1, to_x2), number(to_y1, to_y2) );
-					}
+					ecs::MovementSystem::WarpSet(character,  number(to_x1, to_x2), number(to_y1, to_y2) );
 				}
 			}
 		}

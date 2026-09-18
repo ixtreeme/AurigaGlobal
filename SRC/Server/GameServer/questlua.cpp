@@ -58,24 +58,24 @@ namespace quest
 		return retstr;
 	}
 
-	void FSetWarpLocation::operator() (LPCHARACTER ch) const
+	void FSendPacket::operator() (entt::entity character)
 	{
-		if ((ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+		if (!ecs::IsCharacter(character))
+			return;
+
+		if (ecs::PlayerRuntime::GetDesc(character))
 		{
-			ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), map_index, x, y);
+			ecs::PlayerRuntime::GetDesc(character)->Packet(buf.read_peek(), buf.size());
 		}
 	}
 
-	void FSetQuestFlag::operator() (LPCHARACTER ch) const
+	void FWarpEmpire::operator() (entt::entity character) const
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-		if (!(ecs::PlayerRuntime::IsPC(chEntity)))
-			return;
-
-		if (PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(chEntity))))
-			pPC->SetFlag(flagname, value);
+		if ((ecs::PlayerRuntime::IsPC(character)) && ecs::PlayerRuntime::GetEmpire(character) == m_bEmpire)
+		{
+			ecs::MovementSystem::WarpSet(character, m_x, m_y, m_lMapIndexTo);
+		}
 	}
-
 	bool FPartyCheckFlagLt::operator() (entt::entity chEntity) const
 	{
 		if (!(ecs::PlayerRuntime::IsPC(chEntity)))
@@ -107,46 +107,6 @@ namespace quest
 	void FPartyClearReady::operator() (entt::entity member) const
 	{
 		AffectSystem::RemoveAffect(member, AFFECT_DUNGEON_READY);
-	}
-
-	void FSendPacket::operator() (LPENTITY ent)
-	{
-		if (ent->IsType(ENTITY_CHARACTER))
-		{
-			const auto ch = dynamic_cast<LPCHARACTER>(ent);
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-			if (ecs::PlayerRuntime::GetDesc(chEntity))
-			{
-				ecs::PlayerRuntime::GetDesc(chEntity)->Packet(buf.read_peek(), buf.size());
-			}
-		}
-	}
-
-	void FSendPacketToEmpire::operator() (LPENTITY ent)
-	{
-		if (ent->IsType(ENTITY_CHARACTER))
-		{
-			const auto ch = dynamic_cast<LPCHARACTER>(ent);
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-			if (ecs::PlayerRuntime::GetDesc(chEntity))
-			{
-				if (ecs::PlayerRuntime::GetEmpire(chEntity) == bEmpire)
-					ecs::PlayerRuntime::GetDesc(chEntity)->Packet(buf.read_peek(), buf.size());
-			}
-		}
-	}
-
-	void FWarpEmpire::operator() (LPENTITY ent) const
-	{
-		if (ent->IsType(ENTITY_CHARACTER))
-		{
-			const auto ch = dynamic_cast<LPCHARACTER>(ent);
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-			if ((ecs::PlayerRuntime::IsPC(chEntity)) && ecs::PlayerRuntime::GetEmpire(chEntity) == m_bEmpire)
-			{
-				ecs::MovementSystem::WarpSet(chEntity, m_x, m_y, m_lMapIndexTo);
-			}
-		}
 	}
 
 	FBuildLuaGuildWarList::FBuildLuaGuildWarList(lua_State * lua_state) : L(lua_state), m_count(1)

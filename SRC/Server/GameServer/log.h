@@ -48,7 +48,6 @@ class LogManager : public singleton<LogManager>
 		bool		Connect(const char * host, const int port, const char * user, const char * pwd, const char * db);
 
 		void		ItemLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwItemID, const char * c_pszText, const char * c_pszHint, const char * c_pszIP, uint32_t dwVnum);
-		void		ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c_pszText, const char * c_pszHint);
 		void		ItemLogEntity(entt::entity character, entt::entity item, const char * c_pszText, const char * c_pszHint);
 		void		ItemLog(entt::entity ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint);
 
