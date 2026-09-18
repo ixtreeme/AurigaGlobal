@@ -760,10 +760,6 @@ namespace offlineshop
 				{
 					ecs::SpatialService::RemoveEntity(g_registry, shopEntity);
 				}
-				else
-				{
-					entity->GetSectree()->RemoveEntity(entity);
-				}
 			}
 
 			entity->Destroy();

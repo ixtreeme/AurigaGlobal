@@ -41,8 +41,6 @@ typedef DebugPtr<CEntity> LPENTITY;
 #else
 typedef CEntity* LPENTITY;
 #endif
-typedef std::vector<LPENTITY> ENTITY_VECTOR;
-typedef std::unordered_set<LPENTITY> ENTITY_SET;
 
 class SECTREE;
 #ifdef USE_DEBUG_PTR

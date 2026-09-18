@@ -134,12 +134,6 @@ void SECTREE::DecreasePC() {
         }
     }
 }
-bool SECTREE::InsertEntity(LPENTITY legacy) {
-    return InsertEntity(ecs::SpatialService::EntityFromLPENTITY(legacy));
-}
-void SECTREE::RemoveEntity(LPENTITY legacy) {
-    RemoveEntity(ecs::SpatialService::EntityFromLPENTITY(legacy));
-}
 bool SECTREE::InsertEntity(entt::entity e) {
     if (IsDestroying() || !g_registry.valid(e) || ecs::VisibilitySystem::IsRemoving(g_registry, e)) return false;
     Relocation action(e);

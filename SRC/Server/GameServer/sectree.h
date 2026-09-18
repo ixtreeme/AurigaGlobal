@@ -84,8 +84,6 @@ class SECTREE
         bool Contains(entt::entity entity) const;
         bool IsDestroying() const { return m_destroying || m_closed; }
         // Remaining character/building callers enter once at this boundary.
-        bool InsertEntity(LPENTITY entity);
-        void RemoveEntity(LPENTITY entity);
 
 		void				SetRegenEvent(LPEVENT event);
 		bool				Regen();

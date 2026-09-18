@@ -80,10 +80,6 @@ void CObject::Destroy()
 		ecs::SpatialService::RemoveEntity(g_registry, objectEntity);
 		g_registry.destroy(objectEntity);
 	}
-	else if (GetSectree())
-	{
-		GetSectree()->RemoveEntity(this);
-	}
 	ecs::CBuildingRegistry::Unregister(GetID());
 
 	// <Factor> NPC should be destroyed in CHARACTER_MANAGER
@@ -133,8 +129,6 @@ bool CObject::Show(int32_t lMapIndex, int32_t x, int32_t y)
 		const entt::entity existing = ecs::CBuildingRegistry::FindByID(GetID());
 		if (existing != entt::null && g_registry.valid(existing))
 			ecs::SpatialService::RemoveEntity(g_registry, existing);
-		else
-			GetSectree()->RemoveEntity(this);
 		ecs::ViewSystem::ViewCleanup(existing);
 	}
 
