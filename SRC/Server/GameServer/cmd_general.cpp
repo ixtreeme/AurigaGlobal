@@ -2343,7 +2343,7 @@ ACMD(do_war)
 
 	do
 	{
-		if (g->GetMasterCharacter() != nullptr)
+		if (ecs::IsCharacter(g->GetMasterCharacter()))
 			break;
 
 		CCI *pCCI = P2P_MANAGER::instance().FindByPID(g->GetMasterPID());
@@ -2361,7 +2361,7 @@ ACMD(do_war)
 
 	do
 	{
-		if (opp_g->GetMasterCharacter() != nullptr)
+		if (ecs::IsCharacter(opp_g->GetMasterCharacter()))
 			break;
 
 		CCI *pCCI = P2P_MANAGER::instance().FindByPID(opp_g->GetMasterPID());

@@ -31,8 +31,8 @@
 #include "ecs/events.hpp"
 #include "ecs/CharacterAccessors.hpp"
 
-	SGuildMember::SGuildMember(LPCHARACTER ch, uint8_t grade, uint32_t offer_exp)
-: pid(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), grade(grade), is_general(0), job(ecs::PlayerRuntime::GetJob(ch->GetEntityHandle())), level(ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))), offer_exp(offer_exp), name(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data())
+	SGuildMember::SGuildMember(entt::entity character, uint8_t grade, uint32_t offer_exp)
+: pid(ecs::PlayerRuntime::GetPlayerID(character)), grade(grade), is_general(0), job(ecs::PlayerRuntime::GetJob(character)), level(ecs::PointSystem::GetLevel(character)), offer_exp(offer_exp), name(ecs::PlayerRuntime::GetName(character).data())
 {}
 	SGuildMember::SGuildMember(uint32_t pid, uint8_t grade, uint8_t is_general, uint8_t job, uint8_t level, uint32_t offer_exp, char* name)
 : pid(pid), grade(grade), is_general(is_general), job(job), level(level), offer_exp(offer_exp), name(name)
@@ -196,13 +196,13 @@ void CGuild::AddMember(TPacketDGGuildMember * p)
 
 	SendListOneToAll(p->dwPID);
 
-	auto* ch = CHARACTER_MANAGER::instance().FindByPID(p->dwPID);
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(p->dwPID);
 
-	LOG_INFO("GUILD: AddMember PID {}, grade {}, job {}, level {}, offer {}, name {} ptr {}", p->dwPID, p->bGrade, p->bJob, p->bLevel, p->dwOffer, p->szName, static_cast<const void*>(get_pointer(ch)));
+	LOG_INFO("GUILD: AddMember PID {}, grade {}, job {}, level {}, offer {}, name {} valid {}", p->dwPID, p->bGrade, p->bJob, p->bLevel, p->dwOffer, p->szName, ecs::IsCharacter(ch));
 
-	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity character = ch;
 
-	if (ch)
+	if (ecs::IsCharacter(ch))
 		LoginMember(character),
 #ifdef ENABLE_GUILD_ATTRIBUTE
 		NetworkSyncSystem::UpdatePacket(character),
@@ -251,15 +251,15 @@ bool CGuild::RemoveMember(uint32_t pid)
 
 	CGuildManager::instance().Unlink(pid);
 
-	auto* ch = CHARACTER_MANAGER::instance().FindByPID(pid);
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
 
-	if (ch)
+	if (ecs::IsCharacter(ch))
 	{
 		//GuildRemoveAffect(ch);
-		m_memberOnline.erase(ch ? ch->GetEntityHandle() : entt::null);
-		ecs::SocialSystem::SetGuild(ch->GetEntityHandle(), nullptr);
+		m_memberOnline.erase(ch);
+		ecs::SocialSystem::SetGuild(ch, nullptr);
 #ifdef ENABLE_GUILD_ATTRIBUTE
-		RemoveGuildBuff(ch ? ch->GetEntityHandle() : entt::null);
+		RemoveGuildBuff(ch);
 #endif
 	}
 
@@ -1967,9 +1967,9 @@ void CGuild::Chat(const char* c_pszText)
 	P2P_MANAGER::instance().Send(&p2, sizeof(TPacketGGGuildChat));
 }
 
-LPCHARACTER CGuild::GetMasterCharacter()
+entt::entity CGuild::GetMasterCharacter()
 {
-	return CHARACTER_MANAGER::instance().FindByPID(GetMasterPID());
+	return CHARACTER_MANAGER::instance().FindEntityByPID(GetMasterPID());
 }
 
 void CGuild::Packet(const void* buf, int size)
@@ -2133,20 +2133,19 @@ void CGuild::RecvMoneyChange(int iGold)
 
 void CGuild::RecvWithdrawMoneyGive(int iChangeGold)
 {
-	auto* ch = GetMasterCharacter();
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity ch = GetMasterCharacter();
 
 
-	if (ch)
+	if (ecs::IsCharacter(ch))
 	{
-		ecs::PointSystem::Change(chEntity, POINT_GOLD, iChangeGold);
-		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(chEntity).data(), ecs::PlayerRuntime::GetPlayerID(chEntity), iChangeGold);
+		ecs::PointSystem::Change(ch, POINT_GOLD, iChangeGold);
+		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(ch).data(), ecs::PlayerRuntime::GetPlayerID(ch), iChangeGold);
 	}
 
 	TPacketGDGuildMoneyWithdrawGiveReply p;
 	p.dwGuild = GetID();
 	p.iChangeGold = iChangeGold;
-	p.bGiveSuccess = ch ? 1 : 0;
+	p.bGiveSuccess = ecs::IsCharacter(ch) ? 1 : 0;
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_WITHDRAW_MONEY_GIVE_REPLY, 0, &p, sizeof(p));
 }
 

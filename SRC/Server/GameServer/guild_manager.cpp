@@ -612,8 +612,9 @@ void CGuildManager::RefuseWar(uint32_t guild_id1, uint32_t guild_id2)
 #ifdef TEXTS_IMPROVEMENT
 	if (g1 && g2)
 	{
-		if (g2->GetMasterCharacter())
-			ecs::ChatSystem::SendNew(((g2->GetMasterCharacter()) ? (g2->GetMasterCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 124, "%s", g1->GetName());
+		const entt::entity master = g2->GetMasterCharacter();
+		if (ecs::IsCharacter(master))
+			ecs::ChatSystem::SendNew(master, CHAT_TYPE_INFO, 124, "%s", g1->GetName());
 	}
 #endif
 	if ( g1 != nullptr)
@@ -801,18 +802,18 @@ void CGuildManager::CancelWar(uint32_t guild_id1, uint32_t guild_id2)
 #ifdef TEXTS_IMPROVEMENT
 	if (g1)
 	{
-		LPCHARACTER master1 = g1->GetMasterCharacter();
-		if (master1) {
-			ecs::ChatSystem::SendNew(((master1) ? (master1)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 146, "");
+		const entt::entity master1 = g1->GetMasterCharacter();
+		if (ecs::IsCharacter(master1)) {
+			ecs::ChatSystem::SendNew(master1, CHAT_TYPE_INFO, 146, "");
 		}
 	}
 #endif
 #ifdef TEXTS_IMPROVEMENT
 	if (g2)
 	{
-		LPCHARACTER master2 = g2->GetMasterCharacter();
-		if (master2) {
-			ecs::ChatSystem::SendNew(((master2) ? (master2)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 146, "");
+		const entt::entity master2 = g2->GetMasterCharacter();
+		if (ecs::IsCharacter(master2)) {
+			ecs::ChatSystem::SendNew(master2, CHAT_TYPE_INFO, 146, "");
 		}
 	}
 

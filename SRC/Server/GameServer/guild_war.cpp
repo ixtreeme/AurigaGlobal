@@ -283,15 +283,15 @@ bool GuildWar_IsWarMap(unsigned type)
 
 #ifdef TEXTS_IMPROVEMENT
 void CGuild::NotifyGuildMaster(uint8_t type, uint32_t idx, const char * format, ...) {
-	LPCHARACTER ch = GetMasterCharacter();
-	if (ch) {
+	const entt::entity ch = GetMasterCharacter();
+	if (ecs::IsCharacter(ch)) {
 		char chatbuf[256];
 		va_list args;
 		va_start(args, format);
 		vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 		va_end(args);
 
-		ecs::ChatSystem::SendNew(ch->GetEntityHandle(), type, idx, chatbuf);
+		ecs::ChatSystem::SendNew(ch, type, idx, chatbuf);
 	}
 }
 #endif
