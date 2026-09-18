@@ -10,15 +10,14 @@ enum ETargetTypes
 EVENTINFO(TargetInfo)
 {
 	// <Factor> Removed unsafe copy of CHARACTER* here
-	//LPCHARACTER pkChr;
 
 	int         iID;
 
 	uint32_t       dwPID;
 	uint32_t       dwQuestIndex;
 
-	char        szTargetName[32+1]; // Äù½ºÆ®¿¡¼­ »ç¿ëÇÏ´Â ÀÌ¸§
-	char        szTargetDesc[32+1]; // ½ÇÁ¦ Å¬¶óÀÌ¾ðÆ®¿¡ Àü¼ÛµÇ´Â ÀÌ¸§
+	char        szTargetName[32+1]; // ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Ì¸ï¿½
+	char        szTargetDesc[32+1]; // ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ÛµÇ´ï¿½ ï¿½Ì¸ï¿½
 
 	int         iType;
 	int         iArg1;

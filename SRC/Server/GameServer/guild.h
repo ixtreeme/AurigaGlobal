@@ -272,9 +272,6 @@ void		Reset() { m_data.power = m_data.max_power; }
 
 		void		GuildPointChange( uint8_t type, int amount, bool save = false );
 
-		//void		GuildUpdateAffect(LPCHARACTER ch);
-		//void		GuildRemoveAffect(LPCHARACTER ch);
-
 		void		UpdateSkill(uint8_t grade, uint8_t* skill_levels);
 		void		SendDBSkillUpdate(int amount = 0);
 

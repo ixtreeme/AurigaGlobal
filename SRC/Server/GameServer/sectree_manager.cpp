@@ -1541,20 +1541,18 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 
 struct FPurgeMonsters
 {
-	void operator() (LPENTITY ent)
+	void operator() (entt::entity character)
 	{
-		if ( ent->IsType(ENTITY_CHARACTER) == true )
-		{
-			LPCHARACTER lpChar = (LPCHARACTER)ent;
+		if (!ecs::IsCharacter(character))
+			return;
 
 #ifdef __NEWPET_SYSTEM__
-			if (ecs::PlayerRuntime::GetCharType(lpChar->GetEntityHandle()) == CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(lpChar->GetEntityHandle()))
+		if (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsPet(character) && !ecs::PlayerRuntime::IsNewPet(character))
 #else
-			if (ecs::PlayerRuntime::GetCharType(lpChar->GetEntityHandle()) == CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()))
+		if (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsPet(character))
 #endif
-			{
-				M2_DESTROY_CHARACTER(lpChar);
-			}
+		{
+			M2_DESTROY_CHARACTER(character);
 		}
 	}
 };
@@ -1573,16 +1571,14 @@ void SECTREE_MANAGER::PurgeMonstersInMap(int32_t lMapIndex)
 
 struct FPurgeStones
 {
-	void operator() (LPENTITY ent)
+	void operator() (entt::entity character)
 	{
-		if ( ent->IsType(ENTITY_CHARACTER) == true )
-		{
-			LPCHARACTER lpChar = (LPCHARACTER)ent;
+		if (!ecs::IsCharacter(character))
+			return;
 
-			if ( ecs::PlayerRuntime::IsStone(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null)) == true )
-			{
-				M2_DESTROY_CHARACTER(lpChar);
-			}
+		if ( ecs::PlayerRuntime::IsStone(character) == true )
+		{
+			M2_DESTROY_CHARACTER(character);
 		}
 	}
 };
@@ -1601,22 +1597,19 @@ void SECTREE_MANAGER::PurgeStonesInMap(int32_t lMapIndex)
 
 struct FPurgeNPCs
 {
-	void operator() (LPENTITY ent)
+	void operator() (entt::entity character)
 	{
-		if ( ent->IsType(ENTITY_CHARACTER) == true )
-		{
-			LPCHARACTER lpChar = (LPCHARACTER)ent;
-			const entt::entity lpCharEntity = lpChar ? lpChar->GetEntityHandle() : entt::null;
+		if (!ecs::IsCharacter(character))
+			return;
 
 
 #ifdef __NEWPET_SYSTEM__
-			if (ecs::PlayerRuntime::IsNPC(lpCharEntity) == true && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(lpChar->GetEntityHandle()))
+		if (ecs::PlayerRuntime::IsNPC(character) == true && !ecs::PlayerRuntime::IsPet(character) && !ecs::PlayerRuntime::IsNewPet(character))
 #else
-			if ( ecs::PlayerRuntime::IsNPC(lpCharEntity) == true && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()))
+		if ( ecs::PlayerRuntime::IsNPC(character) == true && !ecs::PlayerRuntime::IsPet(character))
 #endif
-			{
-				M2_DESTROY_CHARACTER(lpChar);
-			}
+		{
+			M2_DESTROY_CHARACTER(character);
 		}
 	}
 };
@@ -1637,16 +1630,14 @@ struct FCountMonsters
 {
 	std::map<entt::entity, entt::entity> m_map_Monsters;
 
-	void operator() (LPENTITY ent)
+	void operator() (entt::entity character)
 	{
-		if ( ent->IsType(ENTITY_CHARACTER) == true )
-		{
-			LPCHARACTER lpChar = (LPCHARACTER)ent;
+		if (!ecs::IsCharacter(character))
+			return;
 
-			if (ecs::PlayerRuntime::GetCharType(lpChar->GetEntityHandle()) == CHAR_TYPE_MONSTER)
-			{
-				const entt::entity e = lpChar->GetEntityHandle(); if (e != entt::null) m_map_Monsters[e] = e;
-			}
+		if (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER)
+		{
+			if (character != entt::null) m_map_Monsters[character] = character;
 		}
 	}
 };
@@ -1716,18 +1707,17 @@ struct FCountSpecifiedMonster
 		: SpecifiedVnum(id), cnt(0)
 	{}
 
-	void operator() (LPENTITY ent)
+	void operator() (entt::entity character)
 	{
-		if (true == ent->IsType(ENTITY_CHARACTER))
+		if (!ecs::IsCharacter(character))
+			return;
+
+		if (true == ecs::PlayerRuntime::IsStone(character))
 		{
-			LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
-			if (true == ecs::PlayerRuntime::IsStone(((pChar) ? (pChar)->GetEntityHandle() : entt::null)))
-			{
-				const TMobTable* mobTable =
-					ecs::PlayerRuntime::GetMobTable(pChar->GetEntityHandle());
-				if (mobTable && mobTable->dwVnum == SpecifiedVnum)
-					cnt++;
-			}
+			const TMobTable* mobTable =
+				ecs::PlayerRuntime::GetMobTable(character);
+			if (mobTable && mobTable->dwVnum == SpecifiedVnum)
+				cnt++;
 		}
 	}
 };

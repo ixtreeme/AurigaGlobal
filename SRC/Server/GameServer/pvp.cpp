@@ -870,7 +870,7 @@ bool CPVPManager::Dead(entt::entity character, uint32_t dwKillerPID)
 	return found;
 }
 
-bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bIsFarmMap)//razor93.2024.12.30//CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim)
+bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bIsFarmMap)
 {
 	switch (ecs::PlayerRuntime::GetCharType(victim))
 	{

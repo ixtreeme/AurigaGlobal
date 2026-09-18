@@ -596,11 +596,11 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
             const float dmgMul = (float)std::floor((6.0f - (float)s) / 1.6f);
             const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
-            LPCHARACTER boss = CHARACTER_MANAGER::instance().Find(bossVid);
-            if (boss)
+            const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
+            if (ecs::IsCharacter(boss))
             {
-                CombatSystem::SetAttackMultiplier(boss->GetEntityHandle(), dmgMul);
-                CombatSystem::SetDamageMultiplier(boss->GetEntityHandle(), dmgMul);
+                CombatSystem::SetAttackMultiplier(boss, dmgMul);
+                CombatSystem::SetDamageMultiplier(boss, dmgMul);
             }
         }
 

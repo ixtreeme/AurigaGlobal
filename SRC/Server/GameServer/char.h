@@ -672,9 +672,6 @@ public:
 #endif
 
 	//int GetBeltCount() const;
-#ifdef ENABLE_FAKE_SHOP_HEADER
-	//void UpdateMountCountOverhead(LPCHARACTER ch);
-#endif
 	//����ġ ���
 	//void				ShowAlignment(bool bShow);
 

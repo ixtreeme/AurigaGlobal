@@ -476,22 +476,19 @@ struct FIsIn
 		: sx(sx_), sy(sy_), ex(ex_), ey(ey_), bIn(false)
 	{}
 
-	void operator () (LPENTITY ent)
+	void operator () (entt::entity character)
 	{
-		if (ent->IsType(ENTITY_CHARACTER))
-		{
-			LPCHARACTER ch = (LPCHARACTER) ent;
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		if (!ecs::IsCharacter(character))
+			return;
 
-			if (ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER)
-			{
-				return;
-			}
-			if (sx <= ecs::PlayerRuntime::GetX(chEntity) && ecs::PlayerRuntime::GetX(chEntity) <= ex
-				&& sy <= ecs::PlayerRuntime::GetY(chEntity) && ecs::PlayerRuntime::GetY(chEntity) <= ey)
-			{
-				bIn = true;
-			}
+		if (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER)
+		{
+			return;
+		}
+		if (sx <= ecs::PlayerRuntime::GetX(character) && ecs::PlayerRuntime::GetX(character) <= ex
+			&& sy <= ecs::PlayerRuntime::GetY(character) && ecs::PlayerRuntime::GetY(character) <= ey)
+		{
+			bIn = true;
 		}
 	}
 };

@@ -907,16 +907,13 @@ namespace {
             return !m_bInvalid;
         }
 
-        void operator()(LPENTITY ent)
+        void operator()(entt::entity character)
         {
             if (!Valid())
                 return;
 
-            if (!ent->IsType(ENTITY_CHARACTER))
+            if (!ecs::IsCharacter(character))
                 return;
-
-            LPCHARACTER pkChr = (LPCHARACTER)ent;
-			const entt::entity character = pkChr->GetEntityHandle();
 
             if (!ecs::PlayerRuntime::IsPC(character))
                 return;

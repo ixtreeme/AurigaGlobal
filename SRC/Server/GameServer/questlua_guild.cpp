@@ -469,14 +469,7 @@ namespace quest
         return 0;
     }
 
-	// ALUA(guild_set_war_data0)
-	// {
-
-		// CGuild* pGuild = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
-		// if (pGuild)
-			// pGuild->SetWarData(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3));
-		// return 0;
-	// }
+	// ALUA(guild_set_war_data0) removed; the guild takes entities now.
 
 	ALUA(guild_get_skill_level0)
 	{

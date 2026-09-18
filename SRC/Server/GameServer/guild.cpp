@@ -255,7 +255,6 @@ bool CGuild::RemoveMember(uint32_t pid)
 
 	if (ecs::IsCharacter(ch))
 	{
-		//GuildRemoveAffect(ch);
 		m_memberOnline.erase(ch);
 		ecs::SocialSystem::SetGuild(ch, nullptr);
 #ifdef ENABLE_GUILD_ATTRIBUTE
@@ -1496,24 +1495,6 @@ int CGuild::GetSkillLevel(uint32_t vnum)
 
 	return m_data.abySkill[dwRealVnum];
 }
-
-/*void CGuild::GuildUpdateAffect(LPCHARACTER ch)
-  {
-  if (GetSkillLevel(GUILD_SKILL_GAHO))
-  ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DEF_GRADE, GetSkillLevel(GUILD_SKILL_GAHO));
-
-  if (GetSkillLevel(GUILD_SKILL_HIM))
-  ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ATT_GRADE, GetSkillLevel(GUILD_SKILL_HIM));
-  }*/
-
-/*void CGuild::GuildRemoveAffect(LPCHARACTER ch)
-  {
-  if (GetSkillLevel(GUILD_SKILL_GAHO))
-  ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DEF_GRADE, -(int) GetSkillLevel(GUILD_SKILL_GAHO));
-
-  if (GetSkillLevel(GUILD_SKILL_HIM))
-  ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ATT_GRADE, -(int) GetSkillLevel(GUILD_SKILL_HIM));
-  }*/
 
 void CGuild::UpdateSkill(uint8_t skill_point, uint8_t* skill_levels)
 {

@@ -9,6 +9,7 @@
 #include "dungeon.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "party.h"
 #include "affect.h"
 #include "packet.h"
@@ -571,36 +572,32 @@ namespace
 {
 	struct FKillSectree
 	{
-		void operator () (LPENTITY ent)
+		void operator () (entt::entity character)
 		{
-			if (ent->IsType(ENTITY_CHARACTER))
-			{
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle()) && !ecs::PlayerRuntime::IsMount(ch->GetEntityHandle())
+			if (!ecs::IsCharacter(character))
+				return;
+
+			if (!ecs::PlayerRuntime::IsPC(character) && !ecs::PlayerRuntime::IsPet(character) && !ecs::PlayerRuntime::IsMount(character)
 #ifdef __NEWPET_SYSTEM__
-				 && !ecs::PlayerRuntime::IsNewPet(ch->GetEntityHandle())
+				 && !ecs::PlayerRuntime::IsNewPet(character)
 #endif
-				)
-				{
-					CombatSystem::Dead(ch->GetEntityHandle());
-				}
+			)
+			{
+				CombatSystem::Dead(character);
 			}
 		}
 	};
 
 	struct FKillMonstersSectree
 	{
-		void operator () (LPENTITY ent)
+		void operator () (entt::entity character)
 		{
-			if (ent->IsType(ENTITY_CHARACTER))
-			{
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			if (!ecs::IsCharacter(character))
+				return;
 
-				if (!ecs::PlayerRuntime::IsPC(chEntity) && (ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(chEntity)))
-				{
-					CombatSystem::Dead(ch->GetEntityHandle());
-				}
+			if (!ecs::PlayerRuntime::IsPC(character) && (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character)))
+			{
+				CombatSystem::Dead(character);
 			}
 		}
 	};
@@ -608,20 +605,17 @@ namespace
 #ifdef __DEFENSE_WAVE__
 	struct FKillMonstersHydraSectree
 	{
-		void operator () (LPENTITY ent)
+		void operator () (entt::entity character)
 		{
-			if (ent->IsType(ENTITY_CHARACTER))
-			{
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			if (!ecs::IsCharacter(character))
+				return;
 
-				if (!ecs::PlayerRuntime::IsPC(chEntity) && (ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(chEntity)))
+			if (!ecs::PlayerRuntime::IsPC(character) && (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character)))
+			{
+				int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(character);
+				if (racevnum != 3963 && racevnum != 3964)
 				{
-					int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(chEntity);
-					if (racevnum != 3963 && racevnum != 3964)
-					{
-						CombatSystem::Dead(ch->GetEntityHandle());
-					}
+					CombatSystem::Dead(character);
 				}
 			}
 		}
@@ -896,7 +890,7 @@ void CDungeon::JumpToEliminateLocation()
 	}
 	else
 	{
-		// ÀÏ¹Ý ¸ÊÀ¸·Î ¿öÇÁ
+		// ï¿½Ï¹ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 
 		if (!pMap)

@@ -681,15 +681,7 @@ namespace quest
 		return 0;
 	}
 
-	// ALUA(item_equip_to0)
-	// {
-		// CQuestManager& q = CQuestManager::instance();
-		// entt::entity item = q.GetCurrentItemEntity();
-
-		// lua_pushboolean((item && ch)?InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), lua_tonumber(L, 1)):false);
-
-		// return 1;
-	// }
+	// ALUA(item_equip_to0) removed; items and owners are entities now.
 
 	// ALUA(item_unequip0)
 	// {

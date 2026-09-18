@@ -371,14 +371,14 @@ namespace
         });
     }
 
-    LPCHARACTER FindUnique(LPDUNGEON d, const char* key)
+    entt::entity FindUnique(LPDUNGEON d, const char* key)
     {
         if (!d)
-            return nullptr;
+            return entt::null;
         const int32_t vid = d->GetUniqueVid(key);
         if (vid <= 0)
-            return nullptr;
-        return CHARACTER_MANAGER::instance().Find((uint32_t)vid);
+            return entt::null;
+        return CHARACTER_MANAGER::instance().FindEntity((uint32_t)vid);
     }
 
     void SetDungeonReady(LPDUNGEON d)
@@ -691,8 +691,8 @@ namespace
                 return 0;
             }
 
-            LPCHARACTER boss = FindUnique(d, "vk_main_boss");
-            if (!boss || CombatSystem::IsDead(((boss) ? (boss)->GetEntityHandle() : entt::null)))
+            const entt::entity boss = FindUnique(d, "vk_main_boss");
+            if (!ecs::IsCharacter(boss) || CombatSystem::IsDead(boss))
             {
                 evFloor1BossHp.erase(idx);
                 return 0;
@@ -702,7 +702,7 @@ namespace
             if (stage >= 3)
                 return PASSES_PER_SEC(1);
 
-            const int hpPct = ecs::PlayerRuntime::GetHPPct(boss->GetEntityHandle());
+            const int hpPct = ecs::PlayerRuntime::GetHPPct(boss);
             if (hpPct > kMainBossHpStages[stage])
                 return PASSES_PER_SEC(1);
 
@@ -721,7 +721,7 @@ namespace
             else if (stage == 2)
             {
                 d->SetFlag(kFlagMainBossStage, 3);
-                CombatSystem::SetDamageMultiplier(boss->GetEntityHandle(), 0.5f);
+                CombatSystem::SetDamageMultiplier(boss, 0.5f);
                 NoticeMap(idx, "<Frostbane Fortress> The boss reduced incoming damage by half.");
             }
 
@@ -821,8 +821,8 @@ namespace
                 return 0;
             }
 
-            LPCHARACTER boss = FindUnique(d, "vk_final_boss");
-            if (!boss || CombatSystem::IsDead(((boss) ? (boss)->GetEntityHandle() : entt::null)))
+            const entt::entity boss = FindUnique(d, "vk_final_boss");
+            if (!ecs::IsCharacter(boss) || CombatSystem::IsDead(boss))
             {
                 evFinalHp.erase(idx);
                 return 0;
@@ -832,7 +832,7 @@ namespace
             if (stage >= 3)
                 return PASSES_PER_SEC(1);
 
-            const int hpPct = ecs::PlayerRuntime::GetHPPct(boss->GetEntityHandle());
+            const int hpPct = ecs::PlayerRuntime::GetHPPct(boss);
             if (hpPct > kFinalBossHpStages[stage])
                 return PASSES_PER_SEC(1);
 
@@ -851,7 +851,7 @@ namespace
             else if (stage == 2)
             {
                 d->SetFlag(kFlagFinalBossStage, 3);
-                CombatSystem::SetDamageMultiplier(boss->GetEntityHandle(), 0.5f);
+                CombatSystem::SetDamageMultiplier(boss, 0.5f);
                 NoticeMap(idx, "<Frostbane Fortress> The final boss reduced incoming damage by half.");
             }
 
@@ -872,9 +872,9 @@ namespace
             });
 
             ClearDungeonNonPlayers(d);
-            //LPCHARACTER entryNpc = d->SpawnMob(kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
-            //if (entryNpc)
-            //    d->SetUnique("vk_entry_npc", entryNpc->GetVID());
+            //const entt::entity entryNpc = d->SpawnMob(kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
+            //if (ecs::IsCharacter(entryNpc))
+            //    d->SetUnique("vk_entry_npc", ecs::PlayerRuntime::GetPacketVID(entryNpc));
 
             BigNoticeMap(idx, "<Frostbane Fortress> Dungeon completed!");
             NoticeMap(idx, "<Frostbane Fortress> Click the entry NPC if you want to restart immediately.");

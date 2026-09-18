@@ -585,11 +585,11 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
                 mul = 1.0f;
 
             const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
-            LPCHARACTER boss = CHARACTER_MANAGER::instance().Find(bossVid);
-            if (boss)
+            const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
+            if (ecs::IsCharacter(boss))
             {
-                CombatSystem::SetAttackMultiplier(boss->GetEntityHandle(), mul);
-                CombatSystem::SetDamageMultiplier(boss->GetEntityHandle(), mul);
+                CombatSystem::SetAttackMultiplier(boss, mul);
+                CombatSystem::SetDamageMultiplier(boss, mul);
             }
         }
 

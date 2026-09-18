@@ -175,21 +175,15 @@ namespace
         int count;
         explicit FCountMobVnum(uint32_t v) : vnum(v), count(0) {}
 
-        void operator()(LPENTITY ent)
+        void operator()(entt::entity character)
         {
-            if (!ent || !ent->IsType(ENTITY_CHARACTER))
+            if (!ecs::IsCharacter(character))
                 return;
 
-            LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-            if (!ch)
+            if (!(ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character)))
                 return;
 
-            if (!(ecs::PlayerRuntime::GetCharType(chEntity) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(chEntity)))
-                return;
-
-            if (ecs::PlayerRuntime::GetRaceNum(chEntity) == vnum)
+            if (ecs::PlayerRuntime::GetRaceNum(character) == vnum)
                 ++count;
         }
     };

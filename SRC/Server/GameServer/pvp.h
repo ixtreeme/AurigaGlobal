@@ -5,8 +5,8 @@
 
 class CHARACTER;
 
-// CPVP¿¡´Â uint32_t ¾ÆÀÌµð µÎ°³¸¦ ¹Þ¾Æ¼­ m_dwCRC¸¦ ¸¸µé¾î¼­ °¡Áö°í ÀÖ´Â´Ù.
-// CPVPManager¿¡¼­ ÀÌ·¸°Ô ¸¸µç CRC¸¦ ÅëÇØ °Ë»öÇÑ´Ù.
+// CPVPï¿½ï¿½ï¿½ï¿½ uint32_t ï¿½ï¿½ï¿½Ìµï¿½ ï¿½Î°ï¿½ï¿½ï¿½ ï¿½Þ¾Æ¼ï¿½ m_dwCRCï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½î¼­ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´Â´ï¿½.
+// CPVPManagerï¿½ï¿½ï¿½ï¿½ ï¿½Ì·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ CRCï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ë»ï¿½ï¿½Ñ´ï¿½.
 class CPVP
 {
 	public:
@@ -28,8 +28,8 @@ class CPVP
 		CPVP(CPVP & v);
 		~CPVP();
 
-		void	Win(uint32_t dwPID); // dwPID°¡ ÀÌ°å´Ù!
-		bool	CanRevenge(uint32_t dwPID); // dwPID°¡ º¹¼öÇÒ ¼ö ÀÖ¾î?
+		void	Win(uint32_t dwPID); // dwPIDï¿½ï¿½ ï¿½Ì°ï¿½ï¿½!
+		bool	CanRevenge(uint32_t dwPID); // dwPIDï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö¾ï¿½?
 		bool	IsFight();
 		bool	Agree(uint32_t dwPID);
 
@@ -66,8 +66,8 @@ class CPVPManager : public singleton<CPVPManager>
 #endif
 
 	void			Insert(entt::entity character, entt::entity victim);
-	bool			CanAttack(entt::entity character, entt::entity victim, bool bIsFarmMap = false);//razor93-2024-12-30//CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim);
-	bool			Dead(entt::entity character, uint32_t dwKillerPID);	// PVP¿¡ ÀÖ¾ú³ª ¾ø¾ú³ª¸¦ ¸®ÅÏ
+	bool			CanAttack(entt::entity character, entt::entity victim, bool bIsFarmMap = false);
+	bool			Dead(entt::entity character, uint32_t dwKillerPID);	// PVPï¿½ï¿½ ï¿½Ö¾ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	void			GiveUp(entt::entity character, uint32_t dwKillerPID);
 	void			Connect(entt::entity character);
 #ifdef ENABLE_PVP_ADVANCED

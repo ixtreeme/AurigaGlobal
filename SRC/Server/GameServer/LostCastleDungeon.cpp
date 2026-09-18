@@ -597,11 +597,11 @@ void ClearClonesOnMap(int32_t mapIndex)
         //        const int32_t x = number(minX, maxX);
         //        const int32_t y = number(minY, maxY);
 
-        //        LPCHARACTER metin = d->SpawnMob((int32_t)kMetinVnum, x, y);
-        //        if (!metin)
+        //        const entt::entity metin = d->SpawnMob((int32_t)kMetinVnum, x, y);
+        //        if (!ecs::IsCharacter(metin))
         //            continue;
 
-        //        spawnedVids.push_back(metin->GetVID());
+        //        spawnedVids.push_back(ecs::PlayerRuntime::GetPacketVID(metin));
         //    }
 
         //    if (spawnedVids.empty())

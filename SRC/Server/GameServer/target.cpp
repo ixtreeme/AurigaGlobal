@@ -69,12 +69,13 @@ EVENTFUNC(target_event)
 	}
 
 // <Factor> Raplaced direct pointer reference with key searching.
-	//LPCHARACTER pkChr = info->pkChr;
 	const entt::entity pkChr = CHARACTER_MANAGER::instance().FindEntityByPID(info->dwPID);
 	if (pkChr == entt::null) {
 		return 0; // <Factor> need to be confirmed
 	}
-	LPCHARACTER tch = nullptr;
+	const entt::entity tch = (info->iType == TARGET_TYPE_VID)
+		? CHARACTER_MANAGER::instance().FindEntity(info->iArg1)
+		: entt::null;
 	int x = 0, y = 0;
 	int iDist = 5000;
 
@@ -91,12 +92,10 @@ EVENTFUNC(target_event)
 
 		case TARGET_TYPE_VID:
 			{
-				tch = CHARACTER_MANAGER::instance().Find(info->iArg1);
-
-				if (tch && ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)) == ecs::PlayerRuntime::GetMapIndex(pkChr))
+				if (ecs::IsCharacter(tch) && ecs::PlayerRuntime::GetMapIndex(tch) == ecs::PlayerRuntime::GetMapIndex(pkChr))
 				{
-					x = ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null));
-					y = ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null));
+					x = ecs::PlayerRuntime::GetX(tch);
+					y = ecs::PlayerRuntime::GetY(tch);
 					iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(pkChr) - x, ecs::PlayerRuntime::GetY(pkChr) - y);
 				}
 			}
@@ -108,7 +107,7 @@ EVENTFUNC(target_event)
 	if (iDist <= 500)
 		bRet = quest::CQuestManager::instance().Target((ecs::PlayerRuntime::GetPlayerID(pkChr)), info->dwQuestIndex, info->szTargetName, "arrive");
 
-	if (!tch && info->iType == TARGET_TYPE_VID)
+	if (tch == entt::null && info->iType == TARGET_TYPE_VID)
 	{
 		quest::CQuestManager::instance().Target((ecs::PlayerRuntime::GetPlayerID(pkChr)), info->dwQuestIndex, info->szTargetName, "die");
 		CTargetManager::instance().DeleteTarget((ecs::PlayerRuntime::GetPlayerID(pkChr)), info->dwQuestIndex, info->szTargetName);
