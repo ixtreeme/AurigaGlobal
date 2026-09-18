@@ -310,7 +310,6 @@ void MultiplierAndValidityChecks() {
 void ecs::SessionSystem::CloseSafebox(entt::entity) { UnexpectedService(__func__); }
 uint8_t SkillSystem::GetSkillGroup(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).skillGroup; }
 bool ecs::PlayerRuntime::IsPCBang(entt::entity) { UnexpectedService(__func__); }
-LPENTITY SectreeLegacyEntity(entt::entity) { UnexpectedService(__func__); }
 bool SectreeMember(entt::entity, const SECTREE*) { UnexpectedService(__func__); }
 FCollectEntity SECTREE::SnapshotAround(int) const { UnexpectedService(__func__); }
 int MAX(int a,int b) { return std::max(a,b); }

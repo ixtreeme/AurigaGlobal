@@ -318,6 +318,6 @@ bool SetRankPoints(entt::entity e, int category, int64_t value);
 
 // Transitional teardown entry points: the two halves of CHARACTER::Destroy as
 // free functions over entities, so CHARACTER_MANAGER can drive teardown by
-// handle. They go away with the shell allocation.
+// handle. They outlived the shell allocation: teardown runs through them now.
 void DestroyCharacterStatePre(entt::entity character);
 void DestroyCharacterStatePost(entt::entity character);

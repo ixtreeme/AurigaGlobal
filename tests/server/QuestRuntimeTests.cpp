@@ -404,7 +404,6 @@ bool AttrTransfer_is_open(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsSafeboxOpen(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsCubeOpen(entt::entity) {Unexpected();}
 void CShop::RemoveGuest(entt::entity) {Unexpected();}
-LPENTITY SectreeLegacyEntity(entt::entity) {Unexpected();}
 bool SectreeMember(entt::entity e,const SECTREE*) {
     if(onMember){auto fn=onMember;fn(e);}
     const auto* data=g_registry.valid(e)?g_registry.try_get<TargetData>(e):nullptr;

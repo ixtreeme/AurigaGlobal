@@ -231,7 +231,7 @@ void RegisterEntityVID(entt::registry& reg, entt::entity entity, uint32_t vid)
 // CHARACTER::Initialize set these, but it runs from the constructor - before
 // the entity exists - so every one of those writes went to entt::null. Two of
 // them asserted; the rest were silently dropped. They are seeded here instead,
-// and only when the component is absent, because AttachLegacyCharacter also
+// and only when the component is absent, because AttachCharacterTag also
 // runs when an existing entity is re-attached and must not reset live state.
 void SeedCharacterRuntimeDefaults(entt::registry& reg, entt::entity entity)
 {
@@ -248,17 +248,13 @@ void SeedCharacterRuntimeDefaults(entt::registry& reg, entt::entity entity)
         AISystem::GotoState(entity, ecs::AIFSMState::Idle);
 }
 
-void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
+void AttachCharacterTag(entt::registry& reg, entt::entity entity)
 {
-    reg.emplace_or_replace<ecs::LegacyCharPtr>(entity, ch);
     reg.emplace_or_replace<ecs::TagCharacter>(entity);
     SeedCharacterRuntimeDefaults(reg, entity);
 
-    if (ch) {
-        ch->SetEntityHandle(entity);
-        if (LPDESC desc = ecs::PlayerRuntime::GetDesc(entity)) {
-            desc->SetEntity(entity);
-        }
+    if (LPDESC desc = ecs::PlayerRuntime::GetDesc(entity)) {
+        desc->SetEntity(entity);
     }
 }
 
@@ -425,22 +421,18 @@ void RemoveFromLegacyMapSector(entt::registry& reg, entt::entity entity)
 
 } // namespace
 
-entt::entity EntityFactory::EnsureLegacyCharacterEntity(entt::registry& reg, LPCHARACTER ch, uint32_t legacyVID)
+entt::entity EntityFactory::EnsureCharacterEntity(entt::registry& reg, uint32_t legacyVID)
 {
-    if (!ch) {
-        return entt::null;
-    }
-
     const entt::entity existing = CVIDRegistry::Instance().Find(legacyVID);
     if (existing != entt::null && reg.valid(existing)) {
         RegisterEntityVID(reg, existing, legacyVID);
-        AttachLegacyCharacter(reg, existing, ch);
+        AttachCharacterTag(reg, existing);
         return existing;
     }
 
     const entt::entity entity = reg.create();
     RegisterEntityVID(reg, entity, legacyVID);
-    AttachLegacyCharacter(reg, entity, ch);
+    AttachCharacterTag(reg, entity);
     return entity;
 }
 
@@ -628,10 +620,6 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
     if (const auto* pid = reg.try_get<ecs::PlayerID>(e);
         pid && pid->pid && CPIDRegistry::Instance().Find(pid->pid) == e) {
         CPIDRegistry::Instance().Unregister(pid->pid);
-    }
-
-    if (const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr) {
-        legacy->ptr->SetEntityHandle(entt::null);
     }
 
     if (const auto* session = reg.try_get<ecs::NetworkSession>(e)) {

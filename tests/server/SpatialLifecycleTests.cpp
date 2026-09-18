@@ -652,7 +652,6 @@ entt::entity Moving(int x, int y, int targetX, int targetY, int speed = 200, boo
     g_registry.emplace<ecs::CharacterRuntimeFlagsComponent>(e);
     Check(Spawn(e, 1, x, y), "native mover spawn");
     g_registry.emplace<ecs::MovementDestination>(e, targetX, targetY);
-    Check(!g_registry.all_of<ecs::LegacyCharPtr>(e), "movement fixture acquired legacy character");
     return e;
 }
 void NativeMovement() {

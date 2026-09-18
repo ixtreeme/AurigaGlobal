@@ -801,7 +801,6 @@ void CPartyManager::DeleteParty(CParty *) { Unexpected(); }
 void CParty::Quit(unsigned int) { Unexpected(); }
 unsigned int CParty::GetMemberCount(void) { Unexpected(); }
 unsigned int SECTREE::GetAttribute(int,int) { Unexpected(); }
-LPENTITY SectreeLegacyEntity(entt::entity) { Unexpected(); }
 bool SectreeMember(entt::entity, const SECTREE*) { Unexpected(); }
 void SECTREE::Collect(FCollectEntity&) const { Unexpected(); }
 FCollectEntity SECTREE::SnapshotAround(int) const { Unexpected(); }

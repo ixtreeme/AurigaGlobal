@@ -406,7 +406,6 @@ void Lifecycle()
     auto* actor = system.GetByVnum(20110);
     Check(actor && actor->IsSummoned() && actor->GetOwner() == owner, "native summon failed");
     const auto mount = actor->GetCharacter();
-    Check(!g_registry.any_of<ecs::LegacyCharPtr>(mount), "mount fixture gained a legacy pointer");
     Check(g_registry.get<ecs::StatusFlags>(mount).isMount, "mount marker missing");
     Check(g_registry.get<ecs::PlayerName>(mount).value == "owner's Mount", "mount name missing");
     Check(actor->GetSummonItem() == item && system.CountSummoned() == 1, "summon item not retained");
@@ -572,7 +571,6 @@ void PetLifecycle()
     auto* actor = system.Summon(34001, item, "", false);
     Check(actor && actor->GetOwner() == owner && actor->IsSummoned(), "pet native summon failed");
     const auto pet = actor->GetCharacter();
-    Check(!g_registry.any_of<ecs::LegacyCharPtr>(pet), "pet fixture acquired legacy character");
     Check(g_registry.get<ecs::StatusFlags>(pet).isPet, "pet marker missing");
     Check(g_registry.get<ecs::PlayerName>(pet).value == "owner's Pet", "pet name missing");
     Check(State(owner).petBonus == 17 && modifications == 1, "pet bonuses not rebuilt on summon");
@@ -836,8 +834,8 @@ void GrowthLifecycleAndExpiry()
     auto* actor = system.Summon(34041, seal, nullptr, false);
     Check(actor && actor->HasValidSummon() && actor->GetOwner() == owner, "growth entity summon failed");
     const auto pet = actor->GetCharacter();
-    Check(!g_registry.any_of<ecs::LegacyCharPtr>(pet) && g_registry.get<ecs::StatusFlags>(pet).isNewPet,
-        "growth follower required a legacy character");
+        Check(g_registry.get<ecs::StatusFlags>(pet).isNewPet,
+            "growth follower is marked new pet");
     Check(g_registry.get<ecs::PlayerName>(pet).value == "grown pet"
         && g_registry.get<ecs::GrowthPetComponent>(pet).item == seal, "growth identity component mismatch");
     Check(g_registry.get<ItemState>(seal).locked && ItemSystem::GetItemSocket(seal, 0) == 1, "growth seal not locked");

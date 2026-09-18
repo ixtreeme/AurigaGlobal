@@ -475,8 +475,6 @@ void BattlePumpHonoursPulseDeadline()
     AISystem::UpdateStateMachine(mob);
     Check(g_rec.attacked.size() == 2 && AIHelpers::GetNextStatePulse(mob) == 200,
         "the deadline dispatches once, even with two updates in that pulse");
-    Check(!g_registry.any_of<ecs::LegacyCharPtr>(mob),
-        "scheduled attacks do not require a legacy character component");
 }
 
 void BattlePumpConvertsRemainingMillisecondsToPulses()

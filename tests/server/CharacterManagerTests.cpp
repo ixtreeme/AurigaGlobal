@@ -34,7 +34,7 @@ uint8_t g_bChannel = 1;
 namespace {
 HEART despawnHeart {};
 std::function<void(entt::entity)> onVictim;
-int checks = 0, destroys = 0, views = 0, resets = 0, updates = 0, creates = 0, saves = 0, frees = 0;
+int checks = 0, destroys = 0, views = 0, resets = 0, updates = 0, creates = 0, saves = 0;
 bool rejectItem = false;
 std::function<void(entt::entity)> onView, onDestroy, onUpdate, onSave;
 std::vector<int> randomBounds;
@@ -69,7 +69,7 @@ void Reset(CHARACTER_MANAGER& manager) {
     manager.ClearEventData();
     manager.Destroy();
     g_registry.clear();
-    destroys = views = resets = updates = creates = saves = frees = 0;
+    destroys = views = resets = updates = creates = saves = 0;
     rejectItem = false; randomBounds.clear();
 }
 void Event(CHARACTER_MANAGER& manager, std::initializer_list<uint8_t> types) {
@@ -140,9 +140,6 @@ void SaveChecks(CHARACTER_MANAGER& manager) {
     Reset(manager);
     const auto a = Actor(manager, 1), b = Actor(manager, 2);
     for (auto e : {a, b}) {
-        auto* shell = new CHARACTER;
-        shell->SetEntityHandle(e);
-        g_registry.emplace<ecs::LegacyCharPtr>(e, shell);
         manager.DelayedSave(e);
     }
     // Saving the first entry destroys the other entry in the same batch.
@@ -155,7 +152,7 @@ void SaveChecks(CHARACTER_MANAGER& manager) {
         }
     };
     manager.ProcessDelayedSave();
-    Check(saves == 2 && frees == 1, "nested save/destruction lost or duplicated a save");
+    Check(saves == 2 && destroys == 1, "nested save/destruction lost or duplicated a save");
     const auto survivor = g_registry.valid(a) ? a : b;
     onSave = [&](auto e) { manager.DelayedSave(e); };
     manager.DelayedSave(survivor); manager.ProcessDelayedSave();
@@ -164,7 +161,7 @@ void SaveChecks(CHARACTER_MANAGER& manager) {
     Check(manager.FlushDelayedSave(survivor) && saves == 4, "save callback requeue was lost");
     Check(!manager.FlushDelayedSave(survivor), "same save flushed twice");
     manager.DelayedSave(survivor); manager.DestroyCharacter(survivor);
-    Check(saves == 5 && frees == 2, "final save must precede shell teardown");
+    Check(saves == 5 && destroys == 2, "final save must precede shell teardown");
     manager.DelayedSave(survivor); manager.DelayedSave(entt::null);
     manager.ProcessDelayedSave();
     Check(saves == 5, "stale delayed save");
@@ -385,9 +382,8 @@ void SendNoticeMap(const char*, int32_t, bool) { Unexpected(); }
 namespace mining { bool IsVeinOfOre(uint32_t race) { return race == 20047; } }
 CEntity::CEntity() = default;
 CEntity::~CEntity() = default;
-void CEntity::Destroy() {}
 void DestroyCharacterStatePre(entt::entity) {}
-void DestroyCharacterStatePost(entt::entity) {}
+void DestroyCharacterStatePost(entt::entity e) { EntityFactory::Destroy(g_registry, e); }
 void AISystem::StateBattle(entt::entity) { Unexpected(); }
 void AISystem::StateIdle(entt::entity) { Unexpected(); }
 namespace ecs::SessionSystem {
@@ -396,11 +392,6 @@ void Save(entt::entity) {}
 void FlushDelayedSaveItem(entt::entity) {}
 }
 const DESC_MANAGER::DESC_SET& DESC_MANAGER::GetClientSet() { Unexpected(); }
-CHARACTER::CHARACTER() = default;
-CHARACTER::~CHARACTER() {
-    Check(g_registry.valid(GetEntityHandle()), "shell destroyed after its ECS state");
-    EntityFactory::Destroy(g_registry, GetEntityHandle()); ++frees;
-}
 void ecs::SessionSystem::Disconnect(entt::entity, const char*) { Unexpected(); }
 entt::entity MountSystem::GetRider(entt::entity) { return entt::null; }
 void ecs::PlayerRuntime::SetRegen(entt::entity, LPREGEN) { Unexpected(); }
@@ -412,7 +403,6 @@ int TEMP_BUFFER::size() { Unexpected(); }
 LPPARTY CPartyManager::CreateParty(entt::entity) { Unexpected(); }
 void CParty::Link(entt::entity) { Unexpected(); }
 uint32_t SECTREE::GetAttribute(int32_t, int32_t) { Unexpected(); }
-LPENTITY SectreeLegacyEntity(entt::entity) { Unexpected(); }
 bool SectreeMember(entt::entity, const SECTREE*) { Unexpected(); }
 void SECTREE::Collect(FCollectEntity&) const { Unexpected(); }
 LPSECTREE SECTREE_MAP::Find(uint32_t, uint32_t) { Unexpected(); }
@@ -427,7 +417,7 @@ void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t) { Unexpected(); }
 bool map_allow_find(int32_t) { Unexpected(); }
 int quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
 void quest::FSendPacket::operator()(entt::entity) { Unexpected(); }
-entt::entity EntityFactory::EnsureLegacyCharacterEntity(entt::registry&, LPCHARACTER, uint32_t) { Unexpected(); }
+entt::entity EntityFactory::EnsureCharacterEntity(entt::registry&, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateMonster(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateNPC(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateStone(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }

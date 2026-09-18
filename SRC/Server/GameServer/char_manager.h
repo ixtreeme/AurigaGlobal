@@ -49,7 +49,6 @@ protected:
 
 		uint32_t			AllocVID();
 
-		LPCHARACTER             CreateCharacter(const char * name, uint32_t dwPID = 0);
 		entt::entity            CreateCharacterEntity(const char * name, uint32_t dwPID = 0);
 #ifndef DEBUG_ALLOC
 		void DestroyCharacter(entt::entity character);

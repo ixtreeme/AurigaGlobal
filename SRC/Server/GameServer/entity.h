@@ -17,7 +17,6 @@ class CEntity
 	protected:
 		void			Initialize(int type = -1);
 		void			Destroy();
-		bool			IsDestroyed() const { return m_bIsDestroyed; }
 
 
 	public:
@@ -62,18 +61,8 @@ class CEntity
 		void			SetMapIndex(int32_t l)	{ m_lMapIndex = l; }
 		int32_t			GetMapIndex() const	{ return m_lMapIndex; }
 
-		// Every entity that reaches the registry carries its own handle.
-		// CHARACTER and CItem each kept a private copy of this, so anything
-		// holding an LPENTITY had to know which one it was and cast before it
-		// could ask. Objects and offline shops keep theirs in their own
-		// registries and read as null here.
-		entt::entity	GetEntityHandle() const noexcept { return m_entity; }
-		void			SetEntityHandle(entt::entity e) noexcept { m_entity = e; }
-
-
 	protected:
-		entt::entity	m_entity { entt::null };
-			int32_t			m_lMapIndex;
+		int32_t			m_lMapIndex;
 
 	private:
 		int			m_iType;

@@ -390,29 +390,26 @@ uint32_t CHARACTER_MANAGER::AllocVID()
 	return m_iVIDCount;
 }
 
-LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
+entt::entity CHARACTER_MANAGER::CreateCharacterEntity(const char* name, uint32_t dwPID)
 {
 	uint32_t dwVID = AllocVID();
 
-	auto ch = new CHARACTER;
-
-	if (EntityFactory::EnsureLegacyCharacterEntity(g_registry, ch, dwVID) == entt::null) {
+	const entt::entity character = EntityFactory::EnsureCharacterEntity(g_registry, dwVID);
+	if (character == entt::null) {
 		--m_iVIDCount;
 
-		M2_DELETE(ch);
-
-		return nullptr;
+		return entt::null;
 	}
 
-	// CHARACTER::Create held the name in m_stName because the entity did not
-	// exist yet; it does now, one line up.
-	ecs::PlayerRuntime::SetName(ch->GetEntityHandle(), name ? name : "");
+	// The name used to live in CHARACTER::m_stName because the entity did
+	// not exist yet; it does now, one line up.
+	ecs::PlayerRuntime::SetName(character, name ? name : "");
 
 #ifdef ENABLE_BUG_FIXES
-	if (dwVID != ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle())) {
+	if (dwVID != ecs::PlayerRuntime::GetPacketVID(character)) {
 		--m_iVIDCount;
-		M2_DESTROY_CHARACTER(ch->GetEntityHandle());
-		return nullptr;
+		M2_DESTROY_CHARACTER(character);
+		return entt::null;
 	}
 #endif
 
@@ -421,7 +418,7 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 		char szName[CHARACTER_NAME_MAX_LEN + 1];
 		str_lower(name, szName, sizeof(szName));
 
-		m_map_pkPCChr.insert(NAME_MAP::value_type(szName, ch->GetEntityHandle()));
+		m_map_pkPCChr.insert(NAME_MAP::value_type(szName, character));
 
 		// CPIDRegistry was only written by EntityFactory::CreatePC, which is
 		// the login path - a character given a PID here and not through that
@@ -429,16 +426,10 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 		// exactly the PID_DRIFT that FindEntityByPID logs. Registering here
 		// writes both indexes at the same point. Register overwrites, so
 		// CreatePC doing it again later costs nothing.
-		CPIDRegistry::Instance().Register(dwPID, ch->GetEntityHandle());
+		CPIDRegistry::Instance().Register(dwPID, character);
 	}
 
-	return ch;
-}
-
-entt::entity CHARACTER_MANAGER::CreateCharacterEntity(const char* name, uint32_t dwPID)
-{
-	LPCHARACTER ch = CreateCharacter(name, dwPID);
-	return ch ? ch->GetEntityHandle() : entt::null;
+	return character;
 }
 
 #ifndef DEBUG_ALLOC
@@ -480,11 +471,9 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* fil
 	} guard { m_destroyingCharacters, character };
 	m_set_pkChrPendingDestroy.erase(character);
 
-	// The shell destructor, rider and dungeon notification still belong to
-	// CHARACTER. Resolve once at this actual teardown boundary; never queue
-	// or snapshot this pointer. The components must outlive shell cleanup.
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch && !ecs::PlayerRuntime::IsPC(character) && !ecs::PlayerRuntime::IsPet(character)
+	// Rider and dungeon notification run on components; there is no shell left
+	// to resolve. The components must outlive state cleanup.
+	if (!ecs::PlayerRuntime::IsPC(character) && !ecs::PlayerRuntime::IsPet(character)
 #ifdef __NEWPET_SYSTEM__
 		&& !ecs::PlayerRuntime::IsNewPet(character)
 #endif
@@ -517,20 +506,10 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* fil
 
 	if (!g_registry.valid(character))
 		return;
-	if (!ch)
-	{
-		EntityFactory::Destroy(g_registry, character);
-		return;
-	}
-
-	// Manager-driven teardown by handle: the same three steps CHARACTER::Destroy
-	// runs. The destructor that follows sees the destroyed flag and no-ops,
-	// and the state functions release inventory, mount and session state before
-	// EntityFactory::Destroy. Do not destroy the registry entry first.
+	// The state functions release inventory, mount and session state, then
+	// retire the registry entry. Nothing here needs a shell anymore.
 	DestroyCharacterStatePre(character);
-	ch->DestroyShellBase();
 	DestroyCharacterStatePost(character);
-	M2_DELETE(ch);
 
 }
 

@@ -10,7 +10,6 @@ namespace ecs {
 
 struct VIDComponent { uint32_t value; };
 struct CharacterType { uint8_t value { 0 }; };
-struct LegacyCharPtr { LPCHARACTER ptr; };
 struct PlayerID { uint32_t pid; };
 struct AccountID { uint32_t aid; };
 struct EmpireComponent {
@@ -33,8 +32,8 @@ struct TagStone {};
 struct TagPet {};
 struct TagMount {};
 struct TagHorse {};
-// Every entity CHARACTER_MANAGER::CreateCharacter built, from the moment
-// its LegacyCharPtr is attached until the registry destroy.
+// Every entity CHARACTER_MANAGER::CreateCharacterEntity built, from creation
+// until the registry destroy.
 struct TagCharacter {};
 
 } // namespace ecs

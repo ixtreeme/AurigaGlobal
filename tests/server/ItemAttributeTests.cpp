@@ -747,7 +747,6 @@ struct AttributeItemFixture : PaidFixture {
         g_registry.emplace<ecs::ItemProtoRef>(material).proto = &materialProto;
         for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
             Attrs()[i] = {static_cast<uint8_t>(20 + i), static_cast<int16_t>(200 + i)};
-        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner), "attribute item owner must be entity-only");
         Watch();
     }
     void Unchanged()
@@ -1175,7 +1174,6 @@ struct CostumeFixture : PaidFixture {
         materialProto.bSubType = operation;
         g_registry.emplace<ecs::ItemProtoRef>(material).proto = &materialProto;
         g_registry.emplace<ecs::ItemSockets>(material).sockets = {40, 100};
-        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner), "costume owner must be entity-only");
         Watch();
     }
     auto Use() { return ItemSystem::UseCostumeAttributeItem(owner, item, material); }
@@ -1768,8 +1766,6 @@ struct TransferFixture : PaidFixture {
         npc = g_registry.create();
         g_registry.emplace<TransferActor>(npc);
         g_registry.emplace<TransferActor>(owner).npc = npc;
-        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner) && !g_registry.any_of<ecs::LegacyCharPtr>(npc),
-            "transfer fixture must have no legacy characters");
         Watch();
     }
     void Select()
@@ -2147,8 +2143,7 @@ struct ExtractionFixture : PaidFixture {
         Place(item, equipped ? EQUIPMENT : DRAGON_SOUL_INVENTORY,
             equipped ? INVENTORY_MAX_NUM + WEAR_MAX_NUM : emptyDSCell);
         g_registry.emplace<ecs::ItemEquipped>(item).equipped = equipped;
-        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner) &&
-            ItemSystem::IsValidItem(material), "extraction fixtures must be entity-only");
+        Check(ItemSystem::IsValidItem(material), "extraction material must be valid");
     }
     bool Run(bool equipped)
     {
@@ -3133,7 +3128,6 @@ struct RuneFixture : Fixture {
         rejectSoulTimer = false; soulStarts = 0; soulTimers.clear();
         owner = g_registry.create();
         g_registry.emplace<TestPlayer>(owner);
-        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner), "rune owner required CHARACTER");
         for (int index = 0; index < RUNE_SUBTYPES; ++index) {
             auto& table = protos[index];
             table.bType = ITEM_COSTUME; table.bSubType = RUNE_SLOT1 + index; table.alValues[0] = 10000;

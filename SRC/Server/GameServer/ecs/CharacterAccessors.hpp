@@ -19,24 +19,9 @@
 
 namespace ecs {
 
-inline auto LegacyCharOf(entt::entity e) -> decltype(std::declval<ecs::LegacyCharPtr>().ptr)
-{
-    if (e == entt::null || !g_registry.valid(e)) {
-        return nullptr;
-    }
-
-    if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e)) {
-        return legacy->ptr;
-    }
-
-    return nullptr;
-}
-
-// A character is an entity CHARACTER_MANAGER::CreateCharacter built. It gets
-// TagCharacter where its legacy pointer is attached and loses both in the
-// same registry destroy, so this answers `LegacyCharOf(e) != nullptr`
-// without touching the pointer. The type tags do not: the LostCastle clones
-// are built there with none, and an entity typed with no shell has one.
+// A character is an entity CHARACTER_MANAGER::CreateCharacterEntity built. It gets
+// TagCharacter at creation and loses it in the same registry destroy.
+// The type tags do not: the LostCastle clones are built there with none.
 inline bool IsCharacter(entt::entity e)
 {
     return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagCharacter>(e);
