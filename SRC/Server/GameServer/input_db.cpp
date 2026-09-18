@@ -532,10 +532,9 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	pTab->y = pos.y;
 	pTab->lMapIndex = lMapIndex;
 
-	if (d->GetCharacter() || d->IsPhase(PHASE_GAME))
+	if (ecs::IsCharacter(d->GetEntity()) || d->IsPhase(PHASE_GAME))
 	{
-		auto* p = d->GetCharacter();
-		LOG_ERROR("login state already has main state (character {} {})", ecs::PlayerRuntime::GetName(((p) ? (p)->GetEntityHandle() : entt::null)).data(), static_cast<const void*>(get_pointer(p)));
+		LOG_ERROR("login state already has main state (character {} {})", ecs::PlayerRuntime::GetName(d->GetEntity()), entt::to_integral(d->GetEntity()));
 		return;
 	}
 
@@ -1179,11 +1178,8 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 	if (nullptr == d)
 		return;
 
-	auto* ch = d->GetCharacter();
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-
-	if (nullptr == ch)
+	const entt::entity chEntity = d->GetEntity();
+	if (!ecs::IsCharacter(chEntity))
 		return;
 
 	const uint32_t dwCount = decode_4bytes(c_pData);
@@ -1278,13 +1274,12 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 		return;
 	}
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 		return;
 
 	uint8_t bSize = 1;
 
-	auto* ch = d->GetCharacter();
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = d->GetEntity();
 
 
 	//PREVENT_TRADE_WINDOW
@@ -1293,7 +1288,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");
 #endif
-		ecs::SessionSystem::SetSafeboxLoading(d->GetCharacter()->GetEntityHandle(), false);
+		ecs::SessionSystem::SetSafeboxLoading(chEntity, false);
 		return;
 	}
 
@@ -1303,7 +1298,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");
 #endif
-		ecs::SessionSystem::SetSafeboxLoading(d->GetCharacter()->GetEntityHandle(), false);
+		ecs::SessionSystem::SetSafeboxLoading(chEntity, false);
 		return;
 	}
 #endif
@@ -1317,8 +1312,8 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	//if (d->GetCharacter()->IsEquipUniqueItem(UNIQUE_ITEM_SAFEBOX_EXPAND))
 	//bSize = 3; // â��Ȯ���
 
-	//ecs::SessionSystem::LoadSafebox(d->GetCharacter()->GetEntityHandle(), p->bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
-	ecs::SessionSystem::LoadSafebox(d->GetCharacter()->GetEntityHandle(), bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+	//ecs::SessionSystem::LoadSafebox(chEntity, p->bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+	ecs::SessionSystem::LoadSafebox(chEntity, bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
 }
 
 void CInputDB::SafeboxChangeSize(LPDESC d, const char * c_pData)
@@ -1328,10 +1323,10 @@ void CInputDB::SafeboxChangeSize(LPDESC d, const char * c_pData)
 
 	uint8_t bSize = *(uint8_t *) c_pData;
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 		return;
 
-	ecs::SessionSystem::ChangeSafeboxSize(d->GetCharacter()->GetEntityHandle(), bSize);
+	ecs::SessionSystem::ChangeSafeboxSize(d->GetEntity(), bSize);
 }
 
 //
@@ -1342,14 +1337,14 @@ void CInputDB::SafeboxWrongPassword(LPDESC d)
 	if (!d)
 		return;
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 		return;
 
 	TPacketCGSafeboxWrongPassword p;
 	p.bHeader = HEADER_GC_SAFEBOX_WRONG_PASSWORD;
 	d->Packet(&p, sizeof(p));
 
-	ecs::SessionSystem::SetSafeboxLoading(d->GetCharacter()->GetEntityHandle(), false);
+	ecs::SessionSystem::SetSafeboxLoading(d->GetEntity(), false);
 }
 
 void CInputDB::SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData)
@@ -1357,16 +1352,16 @@ void CInputDB::SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData)
 	if (!d)
 		return;
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 		return;
 
 #ifdef TEXTS_IMPROVEMENT
 	TSafeboxChangePasswordPacketAnswer* p = (TSafeboxChangePasswordPacketAnswer*) c_pData;
 	if (p->flag) {
-		ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 187, "");
+		ecs::ChatSystem::SendNew(d->GetEntity(), CHAT_TYPE_INFO, 187, "");
 	}
 	else {
-		ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 186, "");
+		ecs::ChatSystem::SendNew(d->GetEntity(), CHAT_TYPE_INFO, 186, "");
 	}
 #endif
 }
@@ -1384,10 +1379,10 @@ void CInputDB::MallLoad(LPDESC d, const char * c_pData)
 		return;
 	}
 
-	if (!d->GetCharacter())
+	if (!ecs::IsCharacter(d->GetEntity()))
 		return;
 
-	ecs::SessionSystem::LoadMall(d->GetCharacter()->GetEntityHandle(), p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+	ecs::SessionSystem::LoadMall(d->GetEntity(), p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
 }
 
 void CInputDB::LoginAlready(LPDESC d, const char * c_pData)
@@ -1653,18 +1648,18 @@ void CInputDB::SkillColorLoad(LPDESC desc, const char* data)
 
 void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 {
-	auto* ch = static_cast<LPCHARACTER>(nullptr);
+	const entt::entity chEntity = d ? d->GetEntity() : entt::null;
 
-	if (!d || !(ch = d->GetCharacter()))
+	if (!ecs::IsCharacter(chEntity))
 		return;
 
-	if (InventorySystem::IsItemLoaded(ch->GetEntityHandle()))
+	if (InventorySystem::IsItemLoaded(chEntity))
 		return;
 
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	LOG_INFO("ITEM_LOAD: COUNT {} {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), dwCount);
+	LOG_INFO("ITEM_LOAD: COUNT {} {}", ecs::PlayerRuntime::GetName(chEntity).data(), dwCount);
 
 	std::vector<entt::entity> deferredItems;
 	TPlayerItem * p = (TPlayerItem *) c_pData;
@@ -1677,8 +1672,8 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		{
 			const entt::entity staleOwner = ItemSystem::GetItemOwner(staleItem);
 			const bool samePlayer =
-				(staleOwner == ((ch) ? (ch)->GetEntityHandle() : entt::null)) ||
-				(ItemSystem::GetItemLastOwnerPID(staleItem) == ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				(staleOwner == chEntity) ||
+				(ItemSystem::GetItemLastOwnerPID(staleItem) == ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 #ifdef ENABLE_EXTRA_INVENTORY
 			const bool extraInventoryWindow = (p->window == EXTRA_INVENTORY);
@@ -1690,10 +1685,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			{
 				++duplicatePurgeCount;
 				LOG_ERROR("DUP_ITEM_PURGE_BEGIN index={} id={} owner_pid={} window={} entity={}",
-					i, p->id, (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), p->window, static_cast<uint32_t>(staleItem));
+					i, p->id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), p->window, static_cast<uint32_t>(staleItem));
 				const bool destroyed = ItemSystem::DestroyLoadedDuplicateItem(staleItem);
 				LOG_ERROR("DUP_ITEM_PURGE_END index={} id={} owner_pid={} window={} destroyed={}",
-					i, p->id, (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), p->window, destroyed);
+					i, p->id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), p->window, destroyed);
 			}
 		}
 
@@ -1701,7 +1696,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 		if (!ItemSystem::IsValidItem(item))
 		{
-			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), p->id);
+			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ecs::PlayerRuntime::GetName(chEntity).data(), p->id);
 			continue;
 		}
 		const entt::entity itemEntity = item;
@@ -1725,10 +1720,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		}
 #endif
 
-		if ((p->window == INVENTORY && ItemSystem::IsValidItem(ItemSystem::GetInventoryItem(((ch) ? (ch)->GetEntityHandle() : entt::null), p->pos))) ||
-				(p->window == EQUIPMENT && ItemSystem::IsValidItem(ItemSystem::GetWearItem(((ch) ? (ch)->GetEntityHandle() : entt::null), p->pos))))
+		if ((p->window == INVENTORY && ItemSystem::IsValidItem(ItemSystem::GetInventoryItem(chEntity, p->pos))) ||
+				(p->window == EQUIPMENT && ItemSystem::IsValidItem(ItemSystem::GetWearItem(chEntity, p->pos))))
 		{
-			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ItemSystem::GetItemName(item));
+			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemName(item));
 			deferredItems.push_back(itemEntity);
 		}
 		else
@@ -1751,16 +1746,16 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 #else
 				case MOUNT_INVENTORY:
 #ifdef __HIGHLIGHT_SYSTEM__
-					InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(p->window, p->pos), false);
+					InventorySystem::AddToCharacter(item, chEntity, TItemPos(p->window, p->pos), false);
 #else
-					InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(p->window, p->pos));
+					InventorySystem::AddToCharacter(item, chEntity, TItemPos(p->window, p->pos));
 #endif
 					break;
 #endif
 				case EQUIPMENT:
-					if (ItemSystem::CheckItemUseLevel(item, (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)))) == true )
+					if (ItemSystem::CheckItemUseLevel(item, (ecs::PointSystem::GetLevel(chEntity))) == true )
 					{
-						if (InventorySystem::EquipTo(item, ch->GetEntityHandle(), p->pos) == false )
+						if (InventorySystem::EquipTo(item, chEntity, p->pos) == false )
 						{
 							deferredItems.push_back(itemEntity);
 						}
@@ -1782,7 +1777,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	if (duplicatePurgeCount > 0)
 	{
 		LOG_ERROR("DUP_ITEM_PURGE_SUMMARY owner_pid={} name={} count={} loaded_count={}",
-			(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), duplicatePurgeCount, dwCount);
+			(ecs::PlayerRuntime::GetPlayerID(chEntity)), ecs::PlayerRuntime::GetName(chEntity).data(), duplicatePurgeCount, dwCount);
 	}
 
 	for (const entt::entity itemEntity : deferredItems)
@@ -1791,38 +1786,35 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			continue;
 
 
-		const int pos = InventorySystem::GetEmptyInventory(ch->GetEntityHandle(), ItemSystem::GetItemSize(itemEntity));
+		const int pos = InventorySystem::GetEmptyInventory(chEntity, ItemSystem::GetItemSize(itemEntity));
 		if (pos < 0)
 		{
 			PIXEL_POSITION coord;
-			coord.x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null));
-			coord.y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			coord.x = ecs::PlayerRuntime::GetX(chEntity);
+			coord.y = ecs::PlayerRuntime::GetY(chEntity);
 
-			ItemSystem::PlaceItemOnGround(itemEntity, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), coord);
-			ItemSystem::SetGroundOwnership(itemEntity, ch->GetEntityHandle(), 180);
+			ItemSystem::PlaceItemOnGround(itemEntity, ecs::PlayerRuntime::GetMapIndex(chEntity), coord);
+			ItemSystem::SetGroundOwnership(itemEntity, chEntity, 180);
 		}
 		else
 #ifdef __HIGHLIGHT_SYSTEM__
-			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, pos), false);
+			InventorySystem::AddToCharacter(itemEntity, chEntity, TItemPos(INVENTORY, pos), false);
 #else
-			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, pos));
+			InventorySystem::AddToCharacter(itemEntity, chEntity, TItemPos(INVENTORY, pos));
 #endif
 	}
-	ecs::PointSystem::CheckMaximumPoints(ch->GetEntityHandle());
-	NetworkSyncSystem::PointsPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	ecs::PointSystem::CheckMaximumPoints(chEntity);
+	NetworkSyncSystem::PointsPacket(chEntity);
 
-	InventorySystem::SetItemLoaded(ch->GetEntityHandle());
+	InventorySystem::SetItemLoaded(chEntity);
 }
 
 #ifdef ENABLE_BATTLE_PASS
 void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
 {
 	//LOG_ERROR("BattlePassLoad");
-	if (!d || !d->GetCharacter())
-		return;
-
-	auto* ch = d->GetCharacter();
-	if (!ch)
+	const entt::entity chEntity = d ? d->GetEntity() : entt::null;
+	if (!ecs::IsCharacter(chEntity))
 		return;
 
 	uint32_t dwPID = decode_4bytes(c_pData);
@@ -1831,22 +1823,17 @@ void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(chEntity) != dwPID)
 		return;
 
-	ecs::PlayerRuntime::LoadBattlePass(ch->GetEntityHandle(), dwCount, (TPlayerBattlePassMission *)c_pData);
+	ecs::PlayerRuntime::LoadBattlePass(chEntity, dwCount, (TPlayerBattlePassMission *)c_pData);
 }
 
 void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 {
 	//LOG_ERROR("BattlePassLoadRanking");
-	if (!d || !d->GetCharacter())
-		return;
-
-	auto* ch = d->GetCharacter();
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-	if (!ch)
+	const entt::entity chEntity = d ? d->GetEntity() : entt::null;
+	if (!ecs::IsCharacter(chEntity))
 		return;
 
 	uint32_t dwPID = decode_4bytes(c_pData);
@@ -1904,10 +1891,9 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 	if (!d)
 		return;
 
-	if (!d->GetCharacter())
+	const entt::entity chEntity = d->GetEntity();
+	if (!ecs::IsCharacter(chEntity))
 		return;
-
-	auto* ch = d->GetCharacter();
 
 	uint32_t dwPID = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
@@ -1915,15 +1901,15 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(chEntity) != dwPID)
 		return;
 
-	AffectSystem::LoadAffect(ch->GetEntityHandle(), dwCount, (TPacketAffectElement *) c_pData);
+	AffectSystem::LoadAffect(chEntity, dwCount, (TPacketAffectElement *) c_pData);
 #ifdef ENABLE_BATTLE_PASS
 #ifdef ENABLE_FREE_PASS_RAZOR93
-	ecs::PlayerRuntime::EnsureFreeBattlePassActive(ch->GetEntityHandle());
-	if (!ecs::PlayerRuntime::IsBattlePassLoaded(ch->GetEntityHandle()))
-		ecs::PlayerRuntime::LoadBattlePass(ch->GetEntityHandle(), 0, nullptr);
+	ecs::PlayerRuntime::EnsureFreeBattlePassActive(chEntity);
+	if (!ecs::PlayerRuntime::IsBattlePassLoaded(chEntity))
+		ecs::PlayerRuntime::LoadBattlePass(chEntity, 0, nullptr);
 #endif
 #endif
 
@@ -2227,13 +2213,13 @@ void CInputDB::WeddingEnd(TPacketWeddingEnd* p)
 // MYSHOP_PRICE_LIST
 void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* p )
 {
-	auto* ch = static_cast<LPCHARACTER>(nullptr);
+	const entt::entity chEntity = d ? d->GetEntity() : entt::null;
 
-	if (!d || !(ch = d->GetCharacter()) )
+	if (!ecs::IsCharacter(chEntity))
 		return;
 
-	LOG_INFO("RecvMyshopPricelistRes name[{}]", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
-	ecs::SocialSystem::UseSilkBotaryReal(ch->GetEntityHandle(), p);
+	LOG_INFO("RecvMyshopPricelistRes name[{}]", ecs::PlayerRuntime::GetName(chEntity).data());
+	ecs::SocialSystem::UseSilkBotaryReal(chEntity, p);
 
 }
 // END_OF_MYSHOP_PRICE_LIST
@@ -3215,15 +3201,15 @@ void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
 		return;
 	else
 	{
-		if (d->GetCharacter())
+		const entt::entity chEntity = d->GetEntity();
+		if (ecs::IsCharacter(chEntity))
 		{
-			auto* ch = d->GetCharacter();
-			ecs::PlayerRuntime::SetItemAwardVnum(ch->GetEntityHandle(), data->vnum);	// ch �� �ӽ� �����س��ٰ� QuestLoad �Լ����� ó��
-			ecs::PlayerRuntime::SetItemAwardCommand(ch->GetEntityHandle(), data->command);
+			ecs::PlayerRuntime::SetItemAwardVnum(chEntity, data->vnum);	// ch �� �ӽ� �����س��ٰ� QuestLoad �Լ����� ó��
+			ecs::PlayerRuntime::SetItemAwardCommand(chEntity, data->command);
 
 			if(d->IsPhase(PHASE_GAME))			//�����������϶�
 			{
-				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))),ecs::PlayerRuntime::GetItemAwardVnum(ch->GetEntityHandle()));	//questmanager ȣ��
+				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(chEntity)),ecs::PlayerRuntime::GetItemAwardVnum(chEntity));	//questmanager ȣ��
 			}
 		}
 	}
@@ -3251,7 +3237,7 @@ void CInputDB::RespondChannelStatus(LPDESC desc, const char* pcData)
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
 void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
 {
-	if (!d || !d->GetCharacter())
+	if (!d || !ecs::IsCharacter(d->GetEntity()))
 	{
 		LOG_ERROR("Change channel request with empty or invalid description handle!");
 		return;
@@ -3260,13 +3246,13 @@ void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
 	TPacketReturnChannel* p = (TPacketReturnChannel*)pcData;
 	if (!p->lAddr || !p->port) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 636, "");
+		ecs::ChatSystem::SendNew(d->GetEntity(), CHAT_TYPE_INFO, 636, "");
 #endif
 		return;
 	}
 
 	// Execute
-	ecs::MovementSystem::StartChannelSwitch(d->GetCharacter()->GetEntityHandle(), p->lAddr, p->port);
+	ecs::MovementSystem::StartChannelSwitch(d->GetEntity(), p->lAddr, p->port);
 }
 #endif
 
@@ -3274,7 +3260,7 @@ void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
 #include "buffer_manager.h"
 void CInputDB::ReadOfflineMessages(LPDESC desc, const char* pcData)
 {
-	if (!desc || !desc->GetCharacter())
+	if (!desc || !ecs::IsCharacter(desc->GetEntity()))
 		return;
 
 	if (ecs::PlayerRuntime::IsBlockMode(desc->GetEntity(), BLOCK_WHISPER))
@@ -3359,13 +3345,13 @@ void CInputDB::ItemShop(LPDESC d, const char* c_pData)
 	{
 		if (!d)
 			return;
-		CHARACTER_MANAGER::Instance().LoadItemShopLogReal(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), c_pData);
+		CHARACTER_MANAGER::Instance().LoadItemShopLogReal(d->GetEntity(), c_pData);
 	}
 	else if (subIndex == ITEMSHOP_BUY)
 	{
 		if (!d)
 			return;
-		CHARACTER_MANAGER::Instance().LoadItemShopBuyReal(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), c_pData);
+		CHARACTER_MANAGER::Instance().LoadItemShopBuyReal(d->GetEntity(), c_pData);
 	}
 }
 #endif
