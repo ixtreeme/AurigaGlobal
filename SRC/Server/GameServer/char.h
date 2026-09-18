@@ -576,12 +576,6 @@ public:
 
 	void			SetPlayerProto(const TPlayerTable* table);
 
-#ifdef ENABLE_MULTI_NAMES
-	const char* GetName(uint8_t lang = DEFAULT_LANGUAGE) const;
-#else
-	const char* GetName() const;
-#endif
-
 	// char.h (public)
 
 	bool			IsPC() const { return GetDesc() ? true : false; }

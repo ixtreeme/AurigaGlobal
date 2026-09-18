@@ -945,7 +945,6 @@ int CGuild::GetSkillLevel(unsigned int) { return guildSkillLevel; }
 int CEntity::GetX(void)const { Unexpected(); }
 int CEntity::GetY(void)const { Unexpected(); }
 pixel_position_s CEntity::GetXYZ(void)const { Unexpected(); }
-char const * CHARACTER::GetName(unsigned char)const { Unexpected(); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { Unexpected(); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsMonster(entt::entity) { return false; }

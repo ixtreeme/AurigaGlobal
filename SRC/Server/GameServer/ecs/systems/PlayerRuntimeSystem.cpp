@@ -3361,7 +3361,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) != GM_PLAYER)
     {
         LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()), "GM_LOGIN", "");
-        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(ecs::PlayerRuntime::GetGMLevel(GetEntityHandle())), GetName(), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), GetX(), GetY());
+        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(ecs::PlayerRuntime::GetGMLevel(GetEntityHandle())), ecs::PlayerRuntime::GetName(GetEntityHandle()), ecs::PlayerRuntime::GetPlayerID(GetEntityHandle()), GetX(), GetY());
     }
 
 #ifdef __PET_SYSTEM__

@@ -1659,7 +1659,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 		const uint32_t victimRace = ecs::PlayerRuntime::GetRaceNum(victimEntity);
 		if (!itemMgr.IsRegisteredDropMob(victimRace))
 		{
-			LOG_INFO("[DROP-BLOKK-EVENT] Metinko {} ({}) nincs mob_drop_item.txt-ben   event drop letiltva.", victim.GetName(), victimRace);
+			LOG_INFO("[DROP-BLOKK-EVENT] Metinko {} ({}) nincs mob_drop_item.txt-ben   event drop letiltva.", ecs::PlayerRuntime::GetName(victim.GetEntityHandle()), victimRace);
 			return;
 		}
 	}
@@ -1680,7 +1680,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 
 		if (level_diff >= +gs_dropEvent_charStone.level_range || level_diff <= -gs_dropEvent_charStone.level_range)
 		{
-			LOG_INFO("dropevent.drop_char_stone.level_range_over: killer({}: lv{}), victim({}: lv:{}), level_diff({})", killer.GetName(), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), victim.GetName(), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), level_diff);
+			LOG_INFO("dropevent.drop_char_stone.level_range_over: killer({}: lv{}), victim({}: lv:{}), level_diff({})", ecs::PlayerRuntime::GetName(killer.GetEntityHandle()), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), ecs::PlayerRuntime::GetName(victim.GetEntityHandle()), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), level_diff);
 			return;
 		}
 
@@ -1693,7 +1693,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 		{
 			vec_item.push_back(p_item);
 
-			LOG_INFO("dropevent.drop_char_stone.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), victim.GetName(), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), ItemSystem::GetItemName(p_item));
+			LOG_INFO("dropevent.drop_char_stone.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", ecs::PlayerRuntime::GetName(killer.GetEntityHandle()), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), ecs::PlayerRuntime::GetName(victim.GetEntityHandle()), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), ItemSystem::GetItemName(p_item));
 		}
 	}
 }
@@ -1779,7 +1779,7 @@ static entt::entity __DropEvent_RefineBox_GetDropItem(CHARACTER& killer, CHARACT
 	//{
 	//	log_level,
 	//		"dropevent.drop_refine_box.level_range_over: killer(%s: lv%d), victim(%s: lv:%d), level_diff(%d)",
-	//		killer.GetName(), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), victim.GetName(), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), level_diff);
+	//		ecs::PlayerRuntime::GetName(killer.GetEntityHandle()), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), ecs::PlayerRuntime::GetName(victim.GetEntityHandle()), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), level_diff);
 	//	return NULL;
 	//}
 
@@ -1820,7 +1820,7 @@ static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim,
 	{
 		vec_item.push_back(p_item);
 
-		LOG_INFO("dropevent.drop_refine_box.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), victim.GetName(), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), ItemSystem::GetItemName(p_item));
+		LOG_INFO("dropevent.drop_refine_box.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", ecs::PlayerRuntime::GetName(killer.GetEntityHandle()), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), ecs::PlayerRuntime::GetName(victim.GetEntityHandle()), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), ItemSystem::GetItemName(p_item));
 	}
 }
 

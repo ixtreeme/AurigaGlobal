@@ -1128,30 +1128,4 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
     }
 }
 
-#ifdef ENABLE_MULTI_LANGUAGE
-const char* CHARACTER::GetName(uint8_t lang) const
-{
-    // The PlayerName component is the name. The spawn puts the proto name
-    // there, so the table below answers only for a character whose entity
-    // has no name at all.
-    const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
-    if (!name.empty())
-        return name.data();
 
-    const TMobTable* table = ecs::PlayerRuntime::GetMobTable(GetEntityHandle());
-    return table ? table->szLocaleName[lang] : "";
-}
-#else
-const char* CHARACTER::GetName() const
-{
-    // The PlayerName component is the name. The spawn puts the proto name
-    // there, so the table below answers only for a character whose entity
-    // has no name at all.
-    const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
-    if (!name.empty())
-        return name.data();
-
-    const TMobTable* table = ecs::PlayerRuntime::GetMobTable(GetEntityHandle());
-    return table ? table->szLocaleName : "";
-}
-#endif
