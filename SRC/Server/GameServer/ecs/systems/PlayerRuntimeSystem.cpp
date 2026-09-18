@@ -3003,7 +3003,7 @@ uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos)
 
 } // namespace ecs::PlayerRuntime
 
-static void DestroyCharacterStatePre(entt::entity character)
+void DestroyCharacterStatePre(entt::entity character)
 {
 	// Keep the ECS entity alive for the complete teardown. Inventory, session,
 	// shop and social state are ECS-owned now, so destroying the entity before
@@ -3173,7 +3173,7 @@ static void DestroyCharacterStatePre(entt::entity character)
 
 }
 
-static void DestroyCharacterStatePost(entt::entity character)
+void DestroyCharacterStatePost(entt::entity character)
 {
     const entt::entity e = character;
     if (ecs::PlayerRuntime::GetSectree(e))
@@ -3192,6 +3192,8 @@ static void DestroyCharacterStatePost(entt::entity character)
 
 void CHARACTER::Destroy()
 {
+	if (IsDestroyed())
+		return;
 	const entt::entity character = GetEntityHandle();
 	DestroyCharacterStatePre(character);
 	CEntity::Destroy();

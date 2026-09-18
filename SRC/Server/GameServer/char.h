@@ -566,6 +566,9 @@ public:
 	~CHARACTER() override;
 
 	void			Destroy();
+	// Transitional: runs the base half of Destroy so the manager can drive
+	// teardown by handle; the destructor that follows is a no-op.
+	void			DestroyShellBase() { CEntity::Destroy(); }
 
 protected:
 	void			Initialize();

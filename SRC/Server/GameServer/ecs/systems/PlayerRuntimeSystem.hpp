@@ -315,3 +315,9 @@ bool SetRankPoints(entt::entity e, int category, int64_t value);
 #endif
 
 } // namespace ecs::PlayerRuntime
+
+// Transitional teardown entry points: the two halves of CHARACTER::Destroy as
+// free functions over entities, so CHARACTER_MANAGER can drive teardown by
+// handle. They go away with the shell allocation.
+void DestroyCharacterStatePre(entt::entity character);
+void DestroyCharacterStatePost(entt::entity character);

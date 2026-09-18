@@ -17,6 +17,7 @@ class CEntity
 	protected:
 		void			Initialize(int type = -1);
 		void			Destroy();
+		bool			IsDestroyed() const { return m_bIsDestroyed; }
 
 
 	public:

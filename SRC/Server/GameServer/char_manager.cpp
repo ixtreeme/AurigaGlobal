@@ -523,9 +523,13 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* fil
 		return;
 	}
 
-	// CHARACTER::Destroy releases inventory, mount and session state before
-	// calling EntityFactory::Destroy. Do not destroy the registry entry first.
-
+	// Manager-driven teardown by handle: the same three steps CHARACTER::Destroy
+	// runs. The destructor that follows sees the destroyed flag and no-ops,
+	// and the state functions release inventory, mount and session state before
+	// EntityFactory::Destroy. Do not destroy the registry entry first.
+	DestroyCharacterStatePre(character);
+	ch->DestroyShellBase();
+	DestroyCharacterStatePost(character);
 	M2_DELETE(ch);
 
 }
