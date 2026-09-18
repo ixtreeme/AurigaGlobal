@@ -52,10 +52,8 @@ protected:
 		LPCHARACTER             CreateCharacter(const char * name, uint32_t dwPID = 0);
 		entt::entity            CreateCharacterEntity(const char * name, uint32_t dwPID = 0);
 #ifndef DEBUG_ALLOC
-		void DestroyCharacter(LPCHARACTER ch);
 		void DestroyCharacter(entt::entity character);
 #else
-		void DestroyCharacter(LPCHARACTER ch, const char* file, size_t line);
 		void DestroyCharacter(entt::entity character, const char* file, size_t line);
 #endif
 
@@ -71,9 +69,6 @@ protected:
 		void			SelectStone(entt::entity stone);
 
 		NAME_MAP &		GetPCMap() { return m_map_pkPCChr; }
-
-		LPCHARACTER		Find(uint32_t dwVID);
-		LPCHARACTER		FindByPID(uint32_t dwPID);
 
 		// Native index lookups; these do not need a legacy CHARACTER shell.
 		entt::entity		FindEntity(uint32_t dwVID);

@@ -411,7 +411,7 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 #ifdef ENABLE_BUG_FIXES
 	if (dwVID != ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle())) {
 		--m_iVIDCount;
-		M2_DESTROY_CHARACTER(ch);
+		M2_DESTROY_CHARACTER(ch->GetEntityHandle());
 		return nullptr;
 	}
 #endif
@@ -439,22 +439,6 @@ entt::entity CHARACTER_MANAGER::CreateCharacterEntity(const char* name, uint32_t
 {
 	LPCHARACTER ch = CreateCharacter(name, dwPID);
 	return ch ? ch->GetEntityHandle() : entt::null;
-}
-
-#ifndef DEBUG_ALLOC
-void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch)
-#else
-void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_t line)
-#endif
-{
-	// Compatibility for callers that still own a CHARACTER. All manager
-	// membership and deferred work use the generation-bearing handle.
-	if (ch)
-#ifndef DEBUG_ALLOC
-		DestroyCharacter(ch->GetEntityHandle());
-#else
-		DestroyCharacter(ch->GetEntityHandle(), file, line);
-#endif
 }
 
 #ifndef DEBUG_ALLOC
@@ -544,33 +528,6 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* fil
 
 	M2_DELETE(ch);
 
-}
-
-LPCHARACTER CHARACTER_MANAGER::Find(uint32_t dwVID)
-{
-	if (const entt::entity entity = CVIDRegistry::Instance().Find(dwVID);
-		entity != entt::null && g_registry.valid(entity))
-	{
-		if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(entity); legacy && legacy->ptr) {
-			return legacy->ptr;
-		}
-	}
-
-	return nullptr;
-}
-
-LPCHARACTER CHARACTER_MANAGER::FindByPID(uint32_t dwPID)
-{
-	// Registry first, as Find and FindEntityByPID already do. This was the one
-	// PID lookup that read the legacy map alone.
-	if (const entt::entity entity = CPIDRegistry::Instance().Find(dwPID);
-		entity != entt::null && g_registry.valid(entity))
-	{
-		if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(entity); legacy && legacy->ptr)
-			return legacy->ptr;
-	}
-
-	return nullptr;
 }
 
 entt::entity CHARACTER_MANAGER::FindEntity(uint32_t dwVID)

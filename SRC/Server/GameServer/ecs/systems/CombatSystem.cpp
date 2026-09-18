@@ -6251,11 +6251,10 @@ public:
 
 		}
 
-		auto* pkVictim = CHARACTER_MANAGER::instance().Find(dwTargetVID);
-		const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+		const entt::entity victim = CHARACTER_MANAGER::instance().FindEntity(dwTargetVID);
 
 
-		if (!pkVictim)
+		if (!ecs::IsCharacter(victim))
 			return;
 
 		if (m_bType > 1)

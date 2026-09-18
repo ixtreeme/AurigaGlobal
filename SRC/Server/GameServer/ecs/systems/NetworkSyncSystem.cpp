@@ -149,8 +149,7 @@ void UpdatePacket(entt::entity e)
         return;
 
     const auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    auto* ch = vid ? CHARACTER_MANAGER::instance().Find(vid->value) : nullptr;
-    if (!ch || !ecs::PlayerRuntime::GetSectree(e))
+    if (!vid || CHARACTER_MANAGER::instance().FindEntity(vid->value) == entt::null || !ecs::PlayerRuntime::GetSectree(e))
         return;
 
     ecs::NetworkService::BroadcastToView(g_registry, e, &packet, sizeof(packet), false);
