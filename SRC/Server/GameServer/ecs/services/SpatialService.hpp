@@ -11,7 +11,6 @@ using LPSECTREE = SECTREE*;
 
 namespace ecs::SpatialService {
 
-LPENTITY LPENTITYFromEntity(entt::registry& reg, entt::entity e);
 entt::entity EntityFromLPENTITY(LPENTITY entity);
 
 // Commit native membership; call UpdateSectree after installing spawn state.
@@ -26,11 +25,6 @@ void ForEachInMap(entt::registry& reg, uint32_t mapIndex, const std::function<vo
 }
 
 namespace ecs {
-inline LPENTITY LPENTITYFromEntity(entt::registry& reg, entt::entity e)
-{
-    return SpatialService::LPENTITYFromEntity(reg, e);
-}
-
 inline entt::entity EntityFromLPENTITY(LPENTITY entity)
 {
     return SpatialService::EntityFromLPENTITY(entity);

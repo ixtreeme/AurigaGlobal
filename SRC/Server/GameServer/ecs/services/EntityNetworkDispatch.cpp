@@ -27,9 +27,6 @@
 #include "../systems/SocialSystem.hpp"
 #include "SpatialService.hpp"
 #include "VisibilityService.hpp"
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-#include "EntityNetworkDispatchAudit.hpp"
-#endif
 
 namespace {
 
@@ -439,12 +436,6 @@ void SendShopRemove(entt::registry& reg, entt::entity shop, entt::entity viewer)
 
 namespace ecs::EntityNetworkDispatch {
 
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-bool BuildCharacterInsertForAudit(entt::registry& reg, entt::entity source, TPacketGCCharacterAdd& packet)
-{
-    return BuildCharacterInsert(reg, source, packet);
-}
-#endif
 
 void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
 {
@@ -473,11 +464,8 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
         //     where the native path tested isNowWalking alone and sent nothing;
         //   - the fake-shop overhead packet, which the native path never sent.
         //
-        // All three are closed. The audit stays, and still runs.
+        // All three are closed. The audit that watched them went with the legacy bodies it observed.
         SendCharacterInsert(reg, source, viewer);
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-        ecs::EntityNetworkDispatchAudit::CheckCharacterInsertParity(reg, source);
-#endif
         break;
     case ecs::SpatialKind::Item:
         SendItemInsert(reg, source, viewer);

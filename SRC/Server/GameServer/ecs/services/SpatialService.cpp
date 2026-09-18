@@ -33,25 +33,6 @@
 
 namespace ecs::SpatialService {
 
-LPENTITY LPENTITYFromEntity(entt::registry& reg, entt::entity e)
-{
-    if (e == entt::null || !reg.valid(e))
-        return nullptr;
-
-    if (const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(e))
-        return legacy->ptr;
-
-    if (auto* building = ecs::CBuildingRegistry::FindLegacyByEntity(e))
-        return static_cast<LPENTITY>(building);
-
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-    if (auto* shop = ecs::OfflineShopEntityRegistry::FindLegacyByEntity(e))
-        return static_cast<LPENTITY>(shop);
-#endif
-
-    return nullptr;
-}
-
 entt::entity EntityFromLPENTITY(LPENTITY entity)
 {
     if (!entity)
