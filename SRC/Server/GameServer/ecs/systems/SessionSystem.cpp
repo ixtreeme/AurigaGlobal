@@ -6,6 +6,7 @@
 #include "ViewSystem.hpp"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "../CharacterAccessors.hpp"
 
 #include "SessionSystem.hpp"
 #include "OfflineShopSystem.hpp"
@@ -118,10 +119,9 @@ namespace ecs::SessionSystem {
 // Summoning yourself to another player, if their map allows it.
 bool WarpToPID(entt::entity e, uint32_t dwPID)
 {
-    LPCHARACTER victim;
-    if ((victim = (CHARACTER_MANAGER::instance().FindByPID(dwPID))))
+    const entt::entity victimEntity = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
+    if (ecs::IsCharacter(victimEntity))
     {
-		const entt::entity victimEntity = victim->GetEntityHandle();
         int mapIdx = ecs::PlayerRuntime::GetMapIndex(victimEntity);
         if (IS_SUMMONABLE_ZONE(mapIdx))
         {

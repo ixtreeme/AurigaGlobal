@@ -853,7 +853,7 @@ void ecs::PlayerRuntime::SetDropStatus(entt::entity) { UnexpectedService(__func_
 bool MountSystem::StopRiding(entt::entity) { UnexpectedService(__func__); }
 void ecs::VisibilitySystem::Reencode(entt::registry &,entt::entity) { UnexpectedService(__func__); }
 int SkillSystem::GetSkillLevel(entt::entity,unsigned int) { UnexpectedService(__func__); }
-CHARACTER * CHARACTER_MANAGER::FindByPID(unsigned int) { UnexpectedService(__func__); }
+entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t) { UnexpectedService(__func__); }
 bool CArenaManager::IsArenaMap(unsigned int) { UnexpectedService(__func__); }
 void DESC::Packet(const void* data, int size) {
     const auto header = *static_cast<const uint8_t*>(data);

@@ -2831,11 +2831,10 @@ EVENTFUNC(skill_gwihwan_event)
 
 	uint32_t pid = info->pid;
 	uint8_t sklv= info->bsklv;
-	auto* ch = CHARACTER_MANAGER::instance().FindByPID(pid);
+	const entt::entity character = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
 
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 		return 0;
-	const entt::entity character = ch->GetEntityHandle();
 
 	int percent = 20 * sklv - 1;
 

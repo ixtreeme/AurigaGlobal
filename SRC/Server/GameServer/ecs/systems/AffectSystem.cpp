@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "../CharacterAccessors.hpp"
 
 #include "AffectSystem.hpp"
 #include "QuestSystem.hpp"
@@ -340,16 +341,15 @@ EVENTFUNC(load_affect_login_event)
 	}
 
 	uint32_t dwPID = info->pid;
-	auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+	const entt::entity character = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
 
-	if (!ch)
+	if (!ecs::IsCharacter(character))
 	{
 		M2_DELETE_ARRAY(info->data);
 		info->data = nullptr;
 		return 0;
 	}
 
-	const entt::entity character = ch->GetEntityHandle();
 	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 
 	if (!d)
@@ -376,9 +376,9 @@ EVENTFUNC(load_affect_login_event)
 	else if (d->IsPhase(PHASE_GAME))
 	{
 		LOG_INFO("Affect Load by Event");
-		LOG_ERROR("AFFECT_EVENT_LOAD_BEGIN pid={} name={} count={} data={} ch={}",
-			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
-		AffectSystem::LoadAffect(ch->GetEntityHandle(), info->count, (TPacketAffectElement*)info->data);
+		LOG_ERROR("AFFECT_EVENT_LOAD_BEGIN pid={} name={} count={} data={} entity={}",
+			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data), entt::to_integral(character));
+		AffectSystem::LoadAffect(character, info->count, (TPacketAffectElement*)info->data);
 		LOG_ERROR("AFFECT_EVENT_LOAD_END pid={} name={} count={} data={}",
 			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data));
 		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));

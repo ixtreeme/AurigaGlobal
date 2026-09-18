@@ -983,7 +983,7 @@ void NetworkSyncSystem::BroadcastSyncPacket(entt::basic_registry<entt::entity,st
 float GetDegreeFromPositionXY(int,int,int,int) { Unexpected(); }
 void GetDeltaByDegree(float,float,float *,float *) { Unexpected(); }
 float GetDegreeDelta(float,float) { Unexpected(); }
-CHARACTER * CHARACTER_MANAGER::FindByPID(unsigned int) { Unexpected(); }
+entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t) { Unexpected(); }
 int CalcAttBonus(entt::entity,entt::entity,int) { Unexpected(); }
 int CalcBattleDamage(int,int,int) { Unexpected(); }
 int CalcMeleeDamage(entt::entity,entt::entity,bool,bool) { Unexpected(); }

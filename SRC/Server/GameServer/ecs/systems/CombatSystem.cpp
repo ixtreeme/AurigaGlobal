@@ -2266,8 +2266,9 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	// as "no killer at all": no PvP bookkeeping, no guild war kill, no log.
 	if ((killer == entt::null || !g_registry.valid(killer)) && GetKillerPID(victim))
 	{
-		if (LPCHARACTER recovered = CHARACTER_MANAGER::instance().FindByPID(GetKillerPID(victim)))
-			killer = recovered->GetEntityHandle();
+		if (const entt::entity recovered = CHARACTER_MANAGER::instance().FindEntityByPID(GetKillerPID(victim));
+			ecs::IsCharacter(recovered))
+			killer = recovered;
 	}
 
 	const bool hasKiller = killer != entt::null && g_registry.valid(killer);
