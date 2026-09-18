@@ -1198,7 +1198,8 @@ bool ItemSystem::DestroyItem(entt::entity e, TItemPos Cell)
 	return true;
 }
 
-const char CHARACTER::msc_szLastChangeItemAttrFlag[] = "Item.LastChangeItemAttr";
+// The quest flag holding when this player last changed an item attribute.
+static const char kLastChangeItemAttrFlag[] = "Item.LastChangeItemAttr";
 // const char CHARACTER::msc_szChangeItemAttrCycleFlag[] = "change_itemattr_cycle";
 // END_OF_CHANGE_ITEM_ATTRIBUTES
 
@@ -8523,7 +8524,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					{
 						uint32_t dwNowSec = get_global_time();
 
-						uint32_t dwLastChangeItemAttrSec = pPC->GetFlag(CHARACTER::msc_szLastChangeItemAttrFlag);
+						uint32_t dwLastChangeItemAttrSec = pPC->GetFlag(kLastChangeItemAttrFlag);
 
 						if (dwLastChangeItemAttrSec + dwChangeItemAttrCycle > dwNowSec)
 						{
@@ -8533,7 +8534,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 							return false;
 						}
 
-						pPC->SetFlag(CHARACTER::msc_szLastChangeItemAttrFlag, dwNowSec);
+						pPC->SetFlag(kLastChangeItemAttrFlag, dwNowSec);
 					}
 				}
 

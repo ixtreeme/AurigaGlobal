@@ -566,8 +566,6 @@ public:
 
 
 
-	virtual void			EndStateEmpty() {}
-
 protected:
 	//////////////////////////////////////////////////////////////////////////////////
 
@@ -793,12 +791,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Battle
 public:
-	typedef struct SAttackLog
-	{
-		uint32_t	dwVID;
-		uint32_t	dwTime;
-	} AttackLog;
-
 
 #ifdef __ENABLE_BERAN_ADDONS__
 #endif
@@ -1047,12 +1039,6 @@ public:
 
 private:
 
-	// CHANGE_ITEM_ATTRIBUTES
-	// static const uint32_t		msc_dwDefaultChangeItemAttrCycle;	///< ����Ʈ ������ �Ӽ����� ���� �ֱ�
-	public:
-	static const char		msc_szLastChangeItemAttrFlag[];		///< �ֱ� ������ �Ӽ��� ������ �ð��� Quest Flag �̸�
-	// static const char		msc_szChangeItemAttrCycleFlag[];		///< ������ �Ӽ����� ���� �ֱ��� Quest Flag �̸�
-	// END_OF_CHANGE_ITEM_ATTRIBUTES
 
 	// PC_BANG_ITEM_ADD
 private:
@@ -1108,12 +1094,6 @@ private:
 public:
 
 private:
-	void	__OpenPrivateShop(
-#ifdef KASMIR_PAKET_SYSTEM
-		bool bKasmir = false
-#endif
-	);
-
 public:
 
 
