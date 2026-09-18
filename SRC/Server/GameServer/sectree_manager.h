@@ -183,7 +183,7 @@ class SECTREE_MANAGER : public singleton<SECTREE_MANAGER>
 		void		DestroyPrivateMap(int32_t lMapIndex);
 
 		TAreaMap&	GetDungeonArea(int32_t lMapIndex);
-		void		SendNPCPosition(LPCHARACTER ch);
+		void		SendNPCPosition(entt::entity ch);
 		void		InsertNPCPosition(int32_t lMapIndex, uint8_t bType,
 #ifdef ENABLE_MULTI_NAMES
 		uint32_t szName
@@ -192,7 +192,7 @@ class SECTREE_MANAGER : public singleton<SECTREE_MANAGER>
 #endif
 		, int32_t x, int32_t y);
 #ifdef ENABLE_ATLAS_BOSS
-		void		SendBossPosition(LPCHARACTER ch);
+		void		SendBossPosition(entt::entity ch);
 		void		InsertBossPosition(int32_t lMapIndex, uint8_t bType,
 #ifdef ENABLE_MULTI_NAMES
 		uint32_t szName

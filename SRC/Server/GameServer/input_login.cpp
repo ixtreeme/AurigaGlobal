@@ -68,30 +68,29 @@
 #include "ecs/systems/SessionSystem.hpp"
 #endif
 
-static void _send_bonus_info(LPCHARACTER ch)
+static void _send_bonus_info(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	int	item_drop_bonus = 0;
 	int gold_drop_bonus = 0;
 	int gold10_drop_bonus = 0;
 	int exp_bonus = 0;
 
-	item_drop_bonus = CPrivManager::instance().GetPriv(chEntity, PRIV_ITEM_DROP);
-	gold_drop_bonus = CPrivManager::instance().GetPriv(chEntity, PRIV_GOLD_DROP);
-	gold10_drop_bonus = CPrivManager::instance().GetPriv(chEntity, PRIV_GOLD10_DROP);
-	exp_bonus = CPrivManager::instance().GetPriv(chEntity, PRIV_EXP_PCT);
+	item_drop_bonus = CPrivManager::instance().GetPriv(ch, PRIV_ITEM_DROP);
+	gold_drop_bonus = CPrivManager::instance().GetPriv(ch, PRIV_GOLD_DROP);
+	gold10_drop_bonus = CPrivManager::instance().GetPriv(ch, PRIV_GOLD10_DROP);
+	exp_bonus = CPrivManager::instance().GetPriv(ch, PRIV_EXP_PCT);
 #ifdef TEXTS_IMPROVEMENT
 	if (item_drop_bonus) {
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);
 	}
 	if (gold_drop_bonus) {
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 244, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 244, "%d", item_drop_bonus);
 	}
 	if (gold10_drop_bonus) {
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 245, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 245, "%d", item_drop_bonus);
 	}
 	if (exp_bonus) {
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 246, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 246, "%d", item_drop_bonus);
 	}
 #endif
 }
@@ -579,9 +578,9 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos.x, pos.y, pos.z);
 	CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
 	d->SetPhase(PHASE_GAME);
-	SECTREE_MANAGER::instance().SendNPCPosition(ch);
+	SECTREE_MANAGER::instance().SendNPCPosition(ch->GetEntityHandle());
 #ifdef ENABLE_ATLAS_BOSS
-	SECTREE_MANAGER::instance().SendBossPosition(ch);
+	SECTREE_MANAGER::instance().SendBossPosition(ch->GetEntityHandle());
 #endif
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 
@@ -675,7 +674,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), CHECK_IS_FIGHT, 0);
 #endif
 
-	_send_bonus_info(ch);
+	_send_bonus_info(ch->GetEntityHandle());
 #if defined(BL_OFFLINE_MESSAGE)
 	ecs::ChatSystem::ReadOfflineMessages(ch->GetEntityHandle());
 #endif

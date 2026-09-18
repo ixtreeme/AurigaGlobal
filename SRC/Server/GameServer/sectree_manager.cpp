@@ -1080,14 +1080,13 @@ TAreaMap& SECTREE_MANAGER::GetDungeonArea(int32_t lMapIndex)
 	return it->second;
 }
 
-void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
+void SECTREE_MANAGER::SendNPCPosition(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 	if (!d)
 		return;
 
-	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(chEntity);
+	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(ch);
 
 	if (m_mapNPCPosition[lMapIndex].empty())
 		return;
@@ -1144,14 +1143,13 @@ const char* szName
 }
 
 #ifdef ENABLE_ATLAS_BOSS
-void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
+void SECTREE_MANAGER::SendBossPosition(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 	if (!d)
 		return;
 
-	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(chEntity);
+	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(ch);
 
 	TEMP_BUFFER buf;
 	TPacketGCBossPosition p;
