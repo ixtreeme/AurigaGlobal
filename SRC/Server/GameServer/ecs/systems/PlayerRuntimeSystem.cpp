@@ -3003,15 +3003,15 @@ uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos)
 
 } // namespace ecs::PlayerRuntime
 
-void CHARACTER::Destroy()
+static void DestroyCharacterStatePre(entt::entity character)
 {
 	// Keep the ECS entity alive for the complete teardown. Inventory, session,
 	// shop and social state are ECS-owned now, so destroying the entity before
 	// ClearItem()/ecs::SocialSystem::CloseMyShop(GetEntityHandle()) turns those cleanup calls into silent no-ops.
-	const entt::entity entityToDestroy = GetEntityHandle();
+	const entt::entity entityToDestroy = character;
     MountSystem::StopHorseTimers(entityToDestroy);
 
-    ecs::SocialSystem::CloseMyShop(GetEntityHandle());
+    ecs::SocialSystem::CloseMyShop(character);
 
     if (entityToDestroy != entt::null && g_registry.valid(entityToDestroy))
     {
@@ -3029,50 +3029,50 @@ void CHARACTER::Destroy()
         }
     }
 
-    if (ecs::SocialSystem::GetDungeon(GetEntityHandle()))
+    if (ecs::SocialSystem::GetDungeon(character))
     {
-        ecs::SocialSystem::SetDungeon(GetEntityHandle(), nullptr);
+        ecs::SocialSystem::SetDungeon(character, nullptr);
     }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (auto* mount = MountSystem::GetMountSystem(GetEntityHandle()))
+    if (auto* mount = MountSystem::GetMountSystem(character))
     {
         delete mount;
 
-        if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
-            g_registry.get_or_emplace<ecs::MountRuntimeRefs>(GetEntityHandle()).mountSystem = nullptr;
+        if (character != entt::null && g_registry.valid(character))
+            g_registry.get_or_emplace<ecs::MountRuntimeRefs>(character).mountSystem = nullptr;
     }
 
-    if (MountSystem::GetMountVnum(GetEntityHandle()))
+    if (MountSystem::GetMountVnum(character))
     {
-        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
-        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
+        AffectSystem::RemoveAffect(character, AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(character, AFFECT_MOUNT_BONUS);
     }
-    MountSystem::SummonHorse(GetEntityHandle(), false);
+    MountSystem::SummonHorse(character, false);
 #endif
 #ifdef __PET_SYSTEM__
-    if (auto* pet = ecs::PlayerRuntime::GetPetSystem(GetEntityHandle()))
+    if (auto* pet = ecs::PlayerRuntime::GetPetSystem(character))
     {
         delete pet;
 
-		if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
-			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).petSystem = nullptr;
+		if (character != entt::null && g_registry.valid(character))
+			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(character).petSystem = nullptr;
     }
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-    if (auto* newPet = ecs::PlayerRuntime::GetNewPetSystem(GetEntityHandle()))
+    if (auto* newPet = ecs::PlayerRuntime::GetNewPetSystem(character))
     {
         delete newPet;
 
-		if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
-			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).newPetSystem = nullptr;
+		if (character != entt::null && g_registry.valid(character))
+			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(character).newPetSystem = nullptr;
     }
 #endif
 
-    MountSystem::SummonHorse(GetEntityHandle(), false);
+    MountSystem::SummonHorse(character, false);
 
-    if (const entt::entity rider = MountSystem::GetRider(GetEntityHandle()); rider != entt::null)
+    if (const entt::entity rider = MountSystem::GetRider(character); rider != entt::null)
     {
         MountSystem::ClearHorseInfo(rider);
     }
@@ -3082,98 +3082,100 @@ void CHARACTER::Destroy()
         ecs::PlayerRuntime::GetDesc(entityToDestroy)->BindCharacter(entt::null);
     }
 
-    ExchangeSystem::Cancel(GetEntityHandle());
+    ExchangeSystem::Cancel(character);
 
-    CombatSystem::SetVictim(GetEntityHandle(), entt::null);
+    CombatSystem::SetVictim(character, entt::null);
 
-    if (CShop* shop = ecs::SocialSystem::GetShop(GetEntityHandle()))
+    if (CShop* shop = ecs::SocialSystem::GetShop(character))
     {
-        shop->RemoveGuest(GetEntityHandle());
-        ecs::SocialSystem::SetShop(GetEntityHandle(), nullptr);
+        shop->RemoveGuest(character);
+        ecs::SocialSystem::SetShop(character, nullptr);
     }
 
-    CombatSystem::ClearStone(GetEntityHandle());
-    NetworkSyncSystem::ClearSync(GetEntityHandle());
-    CombatSystem::ClearTarget(GetEntityHandle());
+    CombatSystem::ClearStone(character);
+    NetworkSyncSystem::ClearSync(character);
+    CombatSystem::ClearTarget(character);
 
-    if (nullptr == ecs::PlayerRuntime::GetMobTable(GetEntityHandle()))
+    if (nullptr == ecs::PlayerRuntime::GetMobTable(character))
     {
-        DragonSoulSystem::CleanUp(GetEntityHandle());
-        InventorySystem::ClearItem(GetEntityHandle());
+        DragonSoulSystem::CleanUp(character);
+        InventorySystem::ClearItem(character);
     }
 
-    LPPARTY party = ecs::SocialSystem::GetParty(GetEntityHandle());
+    LPPARTY party = ecs::SocialSystem::GetParty(character);
     if (party)
     {
-        if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPacketVID(GetEntityHandle()) && ecs::PlayerRuntime::GetDesc(GetEntityHandle()) == nullptr)
+        if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPacketVID(character) && ecs::PlayerRuntime::GetDesc(character) == nullptr)
         {
             M2_DELETE(party);
         }
         else
         {
-            party->Unlink(GetEntityHandle());
+            party->Unlink(character);
 
-            if (ecs::PlayerRuntime::GetDesc(GetEntityHandle()) == nullptr)
-                party->Quit(ecs::PlayerRuntime::GetPacketVID(GetEntityHandle()));
+            if (ecs::PlayerRuntime::GetDesc(character) == nullptr)
+                party->Quit(ecs::PlayerRuntime::GetPacketVID(character));
         }
 
-        ecs::SocialSystem::SetParty(GetEntityHandle(), nullptr);
+        ecs::SocialSystem::SetParty(character, nullptr);
     }
 
     // Mob runtime state goes with the entity; there is no allocation to free.
-    if (g_registry.valid(GetEntityHandle()))
-        g_registry.remove<ecs::MobInstanceState>(GetEntityHandle());
+    if (g_registry.valid(character))
+        g_registry.remove<ecs::MobInstanceState>(character);
 
-    SafeboxSystem::Close(GetEntityHandle(), SAFEBOX, false);
-    SafeboxSystem::Close(GetEntityHandle(), MALL, false);
+    SafeboxSystem::Close(character, SAFEBOX, false);
+    SafeboxSystem::Close(character, MALL, false);
 
-    ecs::PlayerRuntime::BuffOnAttr_Destroy(GetEntityHandle());
+    ecs::PlayerRuntime::BuffOnAttr_Destroy(character);
 
 
-    SkillSystem::StopMuyeongEvent(GetEntityHandle());
+    SkillSystem::StopMuyeongEvent(character);
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
-    SkillSystem::StopGyeongGongEvent(GetEntityHandle());
+    SkillSystem::StopGyeongGongEvent(character);
 #endif
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::WarpNPC);
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery);
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Save);
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Timed);
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun);
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing);
-    AffectSystem::CancelDamageEvents(GetEntityHandle());
-    ecs::SocialSystem::CancelPartyRequest(GetEntityHandle());
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Warp);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::WarpNPC);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Recovery);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Dead);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Save);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Stun);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Fishing);
+    AffectSystem::CancelDamageEvents(character);
+    ecs::SocialSystem::CancelPartyRequest(character);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Warp);
 #ifdef ENABLE_NEW_FISHING_SYSTEM
-    ActivitySystem::StopFishing(GetEntityHandle());
+    ActivitySystem::StopFishing(character);
 #endif
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-    if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
+    if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
     {
-        ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
+        ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
     }
 #endif
 
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Mining);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Mining);
 #ifdef ENABLE_BLOCK_MULTIFARM
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Drop);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Drop);
 #endif
 
-    SkillSystem::CancelAllMobSkillEvents(GetEntityHandle());
-    AffectSystem::ClearAffect(GetEntityHandle(), false);
+    SkillSystem::CancelAllMobSkillEvents(character);
+    AffectSystem::ClearAffect(character, false);
 
-    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::DestroyWhenIdle);
+    ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::DestroyWhenIdle);
 
 
-    if (MountSystem::GetMountInventory(GetEntityHandle()))
+    if (MountSystem::GetMountInventory(character))
     {
-        M2_DELETE(MountSystem::GetMountInventory(GetEntityHandle()));
-        MountSystem::SetMountInventory(GetEntityHandle(), nullptr);
+        M2_DELETE(MountSystem::GetMountInventory(character));
+        MountSystem::SetMountInventory(character, nullptr);
     }
 
-    CEntity::Destroy();
+}
 
-    const entt::entity e = GetEntityHandle();
+static void DestroyCharacterStatePost(entt::entity character)
+{
+    const entt::entity e = character;
     if (ecs::PlayerRuntime::GetSectree(e))
         ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(e);
     if (e != entt::null && g_registry.valid(e))
@@ -3182,10 +3184,18 @@ void CHARACTER::Destroy()
         g_registry.remove<ecs::ViewActiveTag>(e);
     }
 
-	CHARACTER_MANAGER::instance().UnregisterForMonsterLog(GetEntityHandle());
+	CHARACTER_MANAGER::instance().UnregisterForMonsterLog(character);
 
-	if (entityToDestroy != entt::null && g_registry.valid(entityToDestroy))
-		EntityFactory::Destroy(g_registry, entityToDestroy);
+	if (character != entt::null && g_registry.valid(character))
+		EntityFactory::Destroy(g_registry, character);
+}
+
+void CHARACTER::Destroy()
+{
+	const entt::entity character = GetEntityHandle();
+	DestroyCharacterStatePre(character);
+	CEntity::Destroy();
+	DestroyCharacterStatePost(GetEntityHandle());
 }
 
 bool ecs::PlayerRuntime::IsDetailLog(entt::entity e)
