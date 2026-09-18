@@ -464,14 +464,11 @@ bool CPVP::Agree(uint32_t dwPID)
 			event_cancel(&m_pCheckDisconnect);
 		}
 
-		LPCHARACTER chA = CHARACTER_MANAGER::Instance().FindByPID(dwPID);
-		LPCHARACTER chB = CHARACTER_MANAGER::Instance().FindByPID(m_players[m_players[0].dwPID != dwPID ? 0 : 1].dwPID);
-		if (!chA || !chB) {
+		const entt::entity characterA = CHARACTER_MANAGER::Instance().FindEntityByPID(dwPID);
+		const entt::entity characterB = CHARACTER_MANAGER::Instance().FindEntityByPID(m_players[m_players[0].dwPID != dwPID ? 0 : 1].dwPID);
+		if (!ecs::IsCharacter(characterA) || !ecs::IsCharacter(characterB)) {
 			return false;
 		}
-
-		const entt::entity characterA = chA->GetEntityHandle();
-		const entt::entity characterB = chB->GetEntityHandle();
 
 		ecs::QuestSystem::SetFlag(characterA, "pvp.timed", 0);
 		ecs::QuestSystem::SetFlag(characterB, "pvp.timed", 0);

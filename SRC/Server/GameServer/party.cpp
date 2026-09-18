@@ -409,15 +409,15 @@ void CParty::P2PJoin(uint32_t dwPID)
 
 		if (m_bPCParty)
 		{
-			auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+			const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
 
-			if (ch)
+			if (ecs::IsCharacter(ch))
 			{
-				LOG_INFO("PARTY: Join {} pid {} leader {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), dwPID, m_dwLeaderPID);
-				Member.strName = ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data();
+				LOG_INFO("PARTY: Join {} pid {} leader {}", ecs::PlayerRuntime::GetName(ch).data(), dwPID, m_dwLeaderPID);
+				Member.strName = ecs::PlayerRuntime::GetName(ch).data();
 
 				if (Member.bRole == PARTY_ROLE_LEADER)
-					m_iLeadership = SkillSystem::GetSkillLevel(ch->GetEntityHandle(), SKILL_LEADERSHIP);
+					m_iLeadership = SkillSystem::GetSkillLevel(ch, SKILL_LEADERSHIP);
 			}
 			else
 			{
@@ -443,10 +443,10 @@ void CParty::P2PJoin(uint32_t dwPID)
 			CPartyManager::instance().SetPartyMember(dwPID, this);
 			SendPartyJoinOneToAll(dwPID);
 
-			auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+			const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
 
-			if (ch)
-				SendParameter(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			if (ecs::IsCharacter(ch))
+				SendParameter(ch);
 		}
 	}
 

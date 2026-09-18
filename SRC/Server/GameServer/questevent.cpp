@@ -3,6 +3,7 @@
 #include "config.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "questmanager.h"
 #include "questevent.h"
 
@@ -58,7 +59,7 @@ namespace quest
 
 		CQuestManager & q = CQuestManager::instance();
 
-		if (CHARACTER_MANAGER::instance().FindByPID(info->player_id))
+		if (ecs::IsCharacter(CHARACTER_MANAGER::instance().FindEntityByPID(info->player_id)))
 		{
 			if (!CQuestManager::instance().Timer(info->player_id, info->npc_id))
 				return (passes_per_sec / 2 + 1);

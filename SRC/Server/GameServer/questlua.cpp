@@ -910,15 +910,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER chWait = CHARACTER_MANAGER::instance().FindByPID(info->dwWaitPID);
-		LPCHARACTER chReply = nullptr; //CHARACTER_MANAGER::info().FindByPID(info->dwReplyPID);
+		const entt::entity chWait = CHARACTER_MANAGER::instance().FindEntityByPID(info->dwWaitPID);
 
-		if (chReply)
-		{
-			// �ð� ������ �˾Ƽ� ����
-		}
-
-		if (chWait)
+		if (ecs::IsCharacter(chWait))
 		{
 			CQuestManager::instance().Confirm(info->dwWaitPID, CONFIRM_TIMEOUT);
 		}

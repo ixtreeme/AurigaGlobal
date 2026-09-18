@@ -532,16 +532,16 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 		case QID_SAFEBOX_SIZE:
 			{
-				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(qi->dwIdent);
+				const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
 
-				if (ch)
+				if (ecs::IsCharacter(ch))
 				{
 					if (pMsg->Get()->uiNumRows > 0)
 					{
 						MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
 						int	size = 0;
 						str_to_number(size, row[0]);
-						ecs::SessionSystem::SetSafeboxSize(ch->GetEntityHandle(), SAFEBOX_PAGE_SIZE * size);
+						ecs::SessionSystem::SetSafeboxSize(ch, SAFEBOX_PAGE_SIZE * size);
 					}
 				}
 			}
@@ -577,29 +577,29 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 		case QID_LOTTO:
 			{
-				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(qi->dwIdent);
+				const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
 				uint32_t * pdw = (uint32_t *) qi->pvData;
 
-				if (ch)
+				if (ecs::IsCharacter(ch))
 				{
 					if (pMsg->Get()->uiAffectedRows == 0 || pMsg->Get()->uiAffectedRows == (uint32_t)-1)
 					{
-						LOG_INFO("GIVE LOTTO FAIL TO pid {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+						LOG_INFO("GIVE LOTTO FAIL TO pid {}", (ecs::PlayerRuntime::GetPlayerID(ch)));
 					}
 					else
 					{
 						const entt::entity pkItem = static_cast<int>(pdw[1]) > 0
-							? ItemSystem::AutoGiveItemEcs(ch->GetEntityHandle(), pdw[0], pdw[1])
+							? ItemSystem::AutoGiveItemEcs(ch, pdw[0], pdw[1])
 							: entt::null;
 
 						if (ItemSystem::IsValidItem(pkItem))
 						{
-							LOG_INFO("GIVE LOTTO SUCCESS TO {} (pid {})", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), qi->dwIdent);
+							LOG_INFO("GIVE LOTTO SUCCESS TO {} (pid {})", ecs::PlayerRuntime::GetName(ch).data(), qi->dwIdent);
 							ItemSystem::SetItemSocket(pkItem, 0, pMsg->Get()->uiInsertID);
 							ItemSystem::SetItemSocket(pkItem, 1, pdw[2]);
 						}
 						else
-							LOG_INFO("GIVE LOTTO FAIL2 TO pid {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+							LOG_INFO("GIVE LOTTO FAIL2 TO pid {}", (ecs::PlayerRuntime::GetPlayerID(ch)));
 					}
 				}
 
