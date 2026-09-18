@@ -110,7 +110,6 @@ namespace {
 
 const int ITEM_BROKEN_METIN_VNUM = 28960;
 
-using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 struct FFindStone
 {
@@ -119,11 +118,10 @@ struct FFindStone
 	// does not.
 	std::map<uint32_t, entt::entity> m_mapStone;
 
-	void operator()(LPENTITY pEnt)
+	void operator()(entt::entity pChar)
 	{
-		if (pEnt->IsType(ENTITY_CHARACTER) == true)
+		if (ecs::IsCharacter(pChar) == true)
 		{
-			const entt::entity pChar = pEnt->GetEntityHandle();
 
 			if (ecs::PlayerRuntime::IsStone(pChar))
 			{
@@ -1208,7 +1206,6 @@ const uint8_t g_aBuffOnAttrPoints[] = { POINT_ENERGY, POINT_COSTUME_ATTR_BONUS }
 #ifdef ENABLE_PVP_ADVANCED
 #endif
 
-using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 
 

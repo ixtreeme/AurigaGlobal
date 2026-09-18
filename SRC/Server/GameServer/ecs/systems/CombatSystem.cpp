@@ -102,7 +102,6 @@
 extern void Map1MassSpawnEvent_OnMobDead(uint32_t vid);
 #endif
 
-using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 static inline ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(entt::entity character)
 {
@@ -1130,12 +1129,10 @@ struct FuncForgetMyAttacker
 	entt::entity m_character;
 	explicit FuncForgetMyAttacker(entt::entity character) : m_character(character) {}
 
-	void operator()(LPENTITY ent)
+	void operator()(entt::entity candidate)
 	{
-		if (ent->IsType(ENTITY_CHARACTER))
+		if (ecs::IsCharacter(candidate))
 		{
-			const entt::entity ch = ent->GetEntityHandle();
-			const entt::entity candidate = ch;
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
 			if (CombatSystem::GetVictim(candidate) == m_character)
@@ -1149,12 +1146,10 @@ struct FuncAggregateMonster
 	entt::entity m_character;
 	explicit FuncAggregateMonster(entt::entity character) : m_character(character) {}
 
-	void operator()(LPENTITY ent)
+	void operator()(entt::entity candidate)
 	{
-		if (ent->IsType(ENTITY_CHARACTER))
+		if (ecs::IsCharacter(candidate))
 		{
-			auto* ch = static_cast<LegacyCharHandle>(ent);
-			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
 			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
@@ -1175,12 +1170,10 @@ struct FuncAggregateMonsterPlus
 	entt::entity m_character;
 	explicit FuncAggregateMonsterPlus(entt::entity character) : m_character(character) {}
 
-	void operator()(LPENTITY ent)
+	void operator()(entt::entity candidate)
 	{
-		if (ent->IsType(ENTITY_CHARACTER))
+		if (ecs::IsCharacter(candidate))
 		{
-			auto* ch = static_cast<LegacyCharHandle>(ent);
-			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
 			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
@@ -1203,12 +1196,10 @@ struct FuncAttractRanger
 	entt::entity m_character;
 	explicit FuncAttractRanger(entt::entity character) : m_character(character) {}
 
-	void operator()(LPENTITY ent)
+	void operator()(entt::entity candidate)
 	{
-		if (ent->IsType(ENTITY_CHARACTER))
+		if (ecs::IsCharacter(candidate))
 		{
-			auto* ch = static_cast<LegacyCharHandle>(ent);
-			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
 			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
@@ -1237,12 +1228,10 @@ struct FuncPullMonster
 		m_iLength = iLength;
 	}
 
-	void operator()(LPENTITY ent)
+	void operator()(entt::entity candidate)
 	{
-		if (ent->IsType(ENTITY_CHARACTER))
+		if (ecs::IsCharacter(candidate))
 		{
-			auto* ch = static_cast<LegacyCharHandle>(ent);
-			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
 			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
@@ -6827,9 +6816,11 @@ struct FuncSetLastAttacked
 	{
 	}
 
-	void operator () (LegacyCharHandle ch)
+	void operator () (entt::entity character)
 	{
-		CombatSystem::SetLastAttacked(ch->GetEntityHandle(), m_dwTime);
+		if (!ecs::IsCharacter(character))
+			return;
+		CombatSystem::SetLastAttacked(character, m_dwTime);
 	}
 
 	uint32_t m_dwTime;

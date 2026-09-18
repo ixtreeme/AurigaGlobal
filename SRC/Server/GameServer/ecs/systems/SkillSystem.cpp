@@ -65,7 +65,6 @@ extern bool RaceToJob(unsigned race, unsigned* ret_job);
 namespace
 {
 
-using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 ecs::SkillLevels* TryGetSkillLevels(entt::entity e)
 {
@@ -1879,12 +1878,10 @@ struct FFindNearVictim
 	{
 	}
 
-	void operator ()(LPENTITY ent)
+	void operator ()(entt::entity candidate)
 	{
-		if (!ent->IsType(ENTITY_CHARACTER))
+		if (!ecs::IsCharacter(candidate))
 			return;
-
-		const entt::entity candidate = ent->GetEntityHandle();
 
 		if (!m_excepts_set.empty()) {
 			if (m_excepts_set.find(candidate) != m_excepts_set.end())
@@ -2037,16 +2034,6 @@ struct FuncSplashDamage
 		{
 		}
 
-	void operator () (LPENTITY ent)
-	{
-		if (!ent->IsType(ENTITY_CHARACTER))
-		{
-			//if (m_pkSk->dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN target not character %s", ecs::PlayerRuntime::GetName(m_character).data());
-			return;
-		}
-
-		(*this)(ent->GetEntityHandle());
-	}
 
 	void operator () (entt::entity victimEntity)
 	{
@@ -2763,14 +2750,13 @@ struct FuncSplashAffect
 		m_iCount = 0;
 	}
 
-	void operator () (LPENTITY ent)
+	void operator () (entt::entity target)
 	{
 		if (m_iMaxHit && m_iMaxHit <= m_iCount)
 			return;
 
-		if (ent->IsType(ENTITY_CHARACTER))
+		if (ecs::IsCharacter(target))
 		{
-			const entt::entity target = ent->GetEntityHandle();
 
 			if (test_server)
 				LOG_INFO("FuncSplashAffect step 1 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(target).data(), m_dwVnum, m_iDuration);
