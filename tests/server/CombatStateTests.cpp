@@ -408,7 +408,6 @@ void Cube_close(entt::entity) { UnexpectedService(__func__); }
 bool AttrTransfer_is_open(entt::entity) { UnexpectedService(__func__); }
 void AttrTransfer_close(entt::entity) { UnexpectedService(__func__); }
 char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__); }
-unsigned int CHARACTER::GetPacketVID(void)const { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetGMLevel(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetNextExp(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PointSystem::Set(entt::entity,unsigned char,int64_t) { UnexpectedService(__func__); }

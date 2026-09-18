@@ -565,7 +565,6 @@ public:
 	CHARACTER();
 	~CHARACTER() override;
 
-	void			Create(uint32_t vid);
 	void			Destroy();
 
 protected:
@@ -583,8 +582,6 @@ public:
 	const char* GetName() const;
 #endif
 
-	uint32_t		GetLegacyVID() const;
-	uint32_t		GetPacketVID() const;
 	// char.h (public)
 
 	bool			IsPC() const { return GetDesc() ? true : false; }
@@ -731,7 +728,6 @@ protected:
 
 public:
 
-	uint32_t		 m_dwLegacyVID { 0 };
 
 protected:
 	// End of AI

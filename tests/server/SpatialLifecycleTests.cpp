@@ -346,7 +346,6 @@ void FlushDelayedSaveItem(entt::entity) { Unexpected(); }
 void Save(entt::entity) { Unexpected(); }
 }
 const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
-uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
 void CombatSystem::DistributeSP(entt::entity e, entt::entity target, int) {
     Check(e == target, "recovery SP target mismatch"); RecoveryCallback(e, 2);
 }

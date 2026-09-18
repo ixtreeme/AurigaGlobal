@@ -3105,7 +3105,7 @@ void CHARACTER::Destroy()
     LPPARTY party = ecs::SocialSystem::GetParty(GetEntityHandle());
     if (party)
     {
-        if (party->GetLeaderPID() == GetLegacyVID() && !IsPC())
+        if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPacketVID(GetEntityHandle()) && !IsPC())
         {
             M2_DELETE(party);
         }
@@ -3114,7 +3114,7 @@ void CHARACTER::Destroy()
             party->Unlink(GetEntityHandle());
 
             if (!IsPC())
-                party->Quit(GetLegacyVID());
+                party->Quit(ecs::PlayerRuntime::GetPacketVID(GetEntityHandle()));
         }
 
         ecs::SocialSystem::SetParty(GetEntityHandle(), nullptr);
@@ -3715,7 +3715,6 @@ void CHARACTER::Initialize()
 {
     CEntity::Initialize(ENTITY_CHARACTER);
     m_entity = entt::null;
-    m_dwLegacyVID = 0;
 
 
     ecs::SocialSystem::SetNoOpenedShop(GetEntityHandle(), true);
@@ -3835,31 +3834,6 @@ void CHARACTER::Initialize()
 #endif
 }
 
-uint32_t CHARACTER::GetLegacyVID() const
-{
-    if (m_dwLegacyVID != 0) {
-        return m_dwLegacyVID;
-    }
-
-    const entt::entity e = m_entity != entt::null ? m_entity : GetEntityHandle();
-    if (e != entt::null) {
-        if (const auto* vid = g_registry.try_get<ecs::VIDComponent>(e)) {
-            return vid->value;
-        }
-    }
-
-    return 0;
-}
-
-uint32_t CHARACTER::GetPacketVID() const
-{
-    return GetLegacyVID();
-}
-
-void CHARACTER::Create(uint32_t vid)
-{
-    m_dwLegacyVID = vid;
-}
 
 
 CHARACTER::CHARACTER()

@@ -396,8 +396,6 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 
 	auto ch = new CHARACTER;
 
-	ch->Create(dwVID);
-
 	if (EntityFactory::EnsureLegacyCharacterEntity(g_registry, ch, dwVID) == entt::null) {
 		--m_iVIDCount;
 
@@ -411,7 +409,7 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 	ecs::PlayerRuntime::SetName(ch->GetEntityHandle(), name ? name : "");
 
 #ifdef ENABLE_BUG_FIXES
-	if (dwVID != ch->GetLegacyVID()) {
+	if (dwVID != ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle())) {
 		--m_iVIDCount;
 		M2_DESTROY_CHARACTER(ch);
 		return nullptr;
@@ -672,7 +670,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t 
 	}
 
 	const entt::entity character = ch->GetEntityHandle();
-	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ch->GetLegacyVID());
+	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle()));
 
 	ecs::PlayerRuntime::SetProto(character, pkMob);
 
@@ -781,7 +779,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 	}
 
 	const entt::entity character = ch->GetEntityHandle();
-	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ch->GetLegacyVID());
+	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle()));
 
 	if (iRot == -1)
 		iRot = number(0, 360);

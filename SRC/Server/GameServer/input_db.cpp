@@ -552,7 +552,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	}
 	ch->BindDesc(d);
 	// SetPlayerProto computes points: seed the ECS archetype before it runs.
-	const entt::entity chEntity = EntityFactory::CreatePC(g_registry, *pTab, d, ch->GetLegacyVID());
+	const entt::entity chEntity = EntityFactory::CreatePC(g_registry, *pTab, d, ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle()));
 	ch->SetPlayerProto(pTab);
 	ecs::PlayerRuntime::SetEmpire(chEntity, d->GetEmpire());
 	d->BindCharacter(ch);
