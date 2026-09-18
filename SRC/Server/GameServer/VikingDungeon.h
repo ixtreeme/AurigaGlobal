@@ -4,7 +4,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 /*
     Frostbane Fortress / Viking dungeon - Lua mentes C++ verzio

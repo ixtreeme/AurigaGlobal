@@ -17,7 +17,6 @@
 
 
 class CDungeon;
-class CHARACTER;
 
 class CHARACTER_MANAGER : public singleton<CHARACTER_MANAGER>
 {

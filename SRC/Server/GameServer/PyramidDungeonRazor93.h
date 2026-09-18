@@ -4,7 +4,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 // Pyramid Dungeon (map 357 private instances: 3570000..3580000)
 // Lua-free implementation of dungeonpyramid_razor93 (pyramide_zone.lua).

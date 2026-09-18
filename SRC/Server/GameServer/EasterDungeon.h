@@ -4,7 +4,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 // Easter Dungeon (map 366 private instances: 3660000..3670000)
 // Lua-free implementation.

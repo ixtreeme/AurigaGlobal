@@ -1,7 +1,6 @@
 #ifndef __INC_METIN_II_GAME_TYPEDEF_H__
 #define __INC_METIN_II_GAME_TYPEDEF_H__
 #include <unordered_set>
-#include "char_fwd.hpp"
 
 class DESC;
 #ifdef USE_DEBUG_PTR

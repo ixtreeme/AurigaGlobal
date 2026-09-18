@@ -4,7 +4,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 // Valentine Dungeon (map 377 private instances: 3770000..3780000)
 // Lua-free implementation.

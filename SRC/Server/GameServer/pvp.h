@@ -3,7 +3,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 // CPVP���� uint32_t ���̵� �ΰ��� �޾Ƽ� m_dwCRC�� ���� ������ �ִ´�.
 // CPVPManager���� �̷��� ���� CRC�� ���� �˻��Ѵ�.

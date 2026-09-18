@@ -4,7 +4,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 // Orc Dungeon (map 355 private instances: 3550000..3560000)
 // Lua-free implementation.

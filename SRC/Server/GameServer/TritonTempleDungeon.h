@@ -4,7 +4,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 // C++ replacement for quest: tritontemple_razor93
 class CTritonTempleDungeon

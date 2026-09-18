@@ -1,7 +1,6 @@
 #ifndef __METIN2_BUFF_ON_ATTRIBUTES_H
 #define __METIN2_BUFF_ON_ATTRIBUTES_H
 
-class CHARACTER;
 
 class CBuffOnAttributes
 {

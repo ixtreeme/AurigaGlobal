@@ -4,7 +4,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 /*
     Rune Dungeon (Lua-free C++ implementation based on rune_zone.lua)

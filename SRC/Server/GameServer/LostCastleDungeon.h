@@ -5,7 +5,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 /*
     Elveszett Kastely (LostCastle) - Lua mentes C++ dungeon

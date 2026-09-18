@@ -4,7 +4,6 @@
 
 #include <entt/entt.hpp>
 
-class CHARACTER;
 
 /*
     Bloody Cathedral / Halloween2022 dungeon - Lua mentes C++ verzio

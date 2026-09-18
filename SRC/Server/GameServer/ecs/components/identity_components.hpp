@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <string>
 
-#include "../../char_fwd.hpp"
 #include "spatial_components.hpp"
 
 namespace ecs {

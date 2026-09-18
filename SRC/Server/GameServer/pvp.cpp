@@ -708,14 +708,8 @@ void CPVPManager::Insert(entt::entity character, entt::entity victim)
 				NetworkSyncSystem::SendEquipmentToViewer(g_registry, character, victim);
 		}
 	}
-#else
-#ifdef TEXTS_IMPROVEMENT
-	if (pkVictimDesc) {
-		ecs::ChatSystem::SendNew(((pkVictimDesc) ? (pkVictimDesc)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 824, "%s", ecs::PlayerRuntime::GetName(character).data());
-	}
-#endif
-#endif
 }
+#endif
 
 #ifdef ENABLE_NEWSTUFF
 bool CPVPManager::IsFighting(uint32_t dwPID)

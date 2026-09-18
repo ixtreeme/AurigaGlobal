@@ -5,7 +5,6 @@
 
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 
-class CHARACTER;
 
 class CNightmareDungeonRazor93
 {
