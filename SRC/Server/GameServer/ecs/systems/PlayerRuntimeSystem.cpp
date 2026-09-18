@@ -3174,8 +3174,8 @@ void CHARACTER::Destroy()
     CEntity::Destroy();
 
     const entt::entity e = GetEntityHandle();
-    if (GetSectree())
-        GetSectree()->RemoveEntity(this);
+    if (ecs::PlayerRuntime::GetSectree(e))
+        ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(e);
     if (e != entt::null && g_registry.valid(e))
     {
         g_registry.remove<ecs::SectorPlacement>(e);
