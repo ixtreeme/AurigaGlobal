@@ -31,6 +31,7 @@
 #include "../../log.h"
 #include "../../db.h"
 #include "../../MountInventory.h"
+#include "../../safebox.h"
 #ifdef ENABLE_SWITCHBOT
 #include "../../new_switchbot.h"
 #endif
@@ -2063,9 +2064,9 @@ entt::entity RemoveFromCharacter(entt::entity item)
 
     if (oldPosition.window_type == SAFEBOX || oldPosition.window_type == MALL)
     {
-        auto container = SafeboxSystem::Get(owner, oldPosition.window_type);
-        if (container && container->Get(oldPosition.cell) == item)
-            return container->Remove(oldPosition.cell);
+        const auto container = SafeboxSystem::Get(owner, oldPosition.window_type);
+        if (container != entt::null && SafeboxSystem::GetItem(container, oldPosition.cell) == item)
+            return SafeboxSystem::Remove(container, oldPosition.cell);
         // Container Remove/Close unpublishes its slot before calling us back.
     }
 

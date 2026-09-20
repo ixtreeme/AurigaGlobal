@@ -203,7 +203,7 @@ entt::entity GetItem(entt::entity owner, TItemPos position) {
     Check(g_registry.valid(owner), "inventory lookup with stale owner");
     if (position.window_type == SAFEBOX || position.window_type == MALL) {
         const auto storage = SafeboxSystem::Get(owner, position.window_type);
-        return storage ? storage->Get(position.cell) : entt::null;
+        return storage != entt::null ? SafeboxSystem::GetItem(storage, position.cell) : entt::null;
     }
     const auto cell = static_cast<uint16_t>(position.window_type == EQUIPMENT ? INVENTORY_MAX_NUM + position.cell : position.cell);
     const auto it = inventory.find({owner, cell});
@@ -742,12 +742,12 @@ void StorageRemovalIntegration() {
     for (const uint8_t window : {SAFEBOX, MALL}) {
         for (int scenario = 0; scenario < 5; ++scenario) {
             Reset(); Manager manager; const auto owner = g_registry.create(); g_registry.emplace<Player>(owner);
-            auto storage = SafeboxSystem::Open(owner, window, 3);
-            std::weak_ptr<CSafebox> retired = storage;
+            const auto storage = SafeboxSystem::Open(owner, window, 3);
             const auto item = Item(manager);
-            Check(storage && storage->Add(0, item), "managed bank add failed");
-            storage.reset(); // Manager must acquire its own callback-safe lease.
-            if (scenario == 1) onDetach = [&](entt::entity) { SafeboxSystem::Close(owner, window, false); Check(!retired.expired(), "storage freed inside its Remove"); };
+            Check(storage != entt::null && SafeboxSystem::Add(storage, 0, item), "managed bank add failed");
+            // The storage entry points revalidate the entity after callbacks,
+            // so the manager does not need a separate container lease.
+            if (scenario == 1) onDetach = [&](entt::entity) { SafeboxSystem::Close(owner, window, false); };
             if (scenario == 2) onLog = [&](entt::entity) { SafeboxSystem::Close(owner, window, false); };
             if (scenario == 3) rejectDetach = true;
             if (scenario == 4) onDetach = [&](entt::entity current) { Owner(current, INVENTORY, 17); };
@@ -755,7 +755,7 @@ void StorageRemovalIntegration() {
             Check(quickslots == 0 && mountPackets == 0 && !manager.Busy(item), "bank removal ran unrelated effects/kept guard");
             if (scenario < 3) Check(!g_registry.valid(item) && !manager.Indexed(item) && factoryCalls == 1, "bank/close callback left orphan item");
             else Check(g_registry.valid(item) && manager.Indexed(item) && factoryCalls == 0, "failed/transferred bank item destroyed");
-            if (scenario == 1 || scenario == 2) Check(retired.expired() && !SafeboxSystem::Get(owner, window), "closed storage retained");
+            if (scenario == 1 || scenario == 2) Check(!g_registry.valid(storage) && SafeboxSystem::Get(owner, window) == entt::null, "closed storage retained");
             onLog = onDetach = {}; rejectDetach = false;
             if (g_registry.valid(item)) manager.RemoveItem(item);
             SafeboxSystem::Close(owner, window, false);

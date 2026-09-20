@@ -1,5 +1,6 @@
 #include "../../SRC/Server/GameServer/stdafx.h"
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
+#include "../../SRC/Server/GameServer/safebox.h"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
@@ -666,9 +667,9 @@ entt::entity ItemSystem::MergeItemIntoInventoryEcs(entt::entity owner, entt::ent
 }
 bool ItemSystem::SetItemSkipSave(entt::entity item, bool skip) { Meta(item); g_registry.get<ecs::ItemFlags>(item).skipSave = skip; return true; }
 bool ItemSystem::GetItemSkipSave(entt::entity item) { Meta(item); return g_registry.get<ecs::ItemFlags>(item).skipSave; }
-std::shared_ptr<CSafebox> SafeboxSystem::Get(entt::entity, uint8_t) { Unexpected(); }
-entt::entity CSafebox::Get(unsigned int) const { Unexpected(); }
-entt::entity CSafebox::Remove(unsigned int) { Unexpected(); }
+entt::entity SafeboxSystem::Get(entt::entity, uint8_t) { Unexpected(); }
+entt::entity SafeboxSystem::GetItem(entt::entity, uint32_t) { Unexpected(); }
+entt::entity SafeboxSystem::Remove(entt::entity, uint32_t) { Unexpected(); }
 uint8_t ItemSystem::GetItemSize(entt::entity e) { return Meta(e).proto.bSize; }
 uint8_t ItemSystem::GetItemExtraCategory(entt::entity e) { return Meta(e).category; }
 uint32_t ItemSystem::GetItemCount(entt::entity e) { return g_registry.get<ecs::ItemCount>(e).count; }

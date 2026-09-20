@@ -2661,7 +2661,7 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 
 	const auto safebox = SafeboxSystem::Get(character, SAFEBOX);
 	const entt::entity itemEntity = ItemSystem::GetItem(ownerEntity, p->ItemPos);
-	if (!safebox || !IsInputItemAt(character, itemEntity, p->ItemPos) || ItemSystem::IsItemExchanging(itemEntity))
+	if (safebox == entt::null || !IsInputItemAt(character, itemEntity, p->ItemPos) || ItemSystem::IsItemExchanging(itemEntity))
 		return;
 
 #ifdef ENABLE_BUG_FIXES
@@ -2693,7 +2693,7 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 		return;
 	}
 
-	if (!safebox->IsEmpty(p->bSafePos, ItemSystem::GetItemSize(itemEntity)))
+	if (!SafeboxSystem::IsEmpty(safebox, p->bSafePos, ItemSystem::GetItemSize(itemEntity)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 641, "");
@@ -2727,7 +2727,7 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 
 
 	if (SafeboxSystem::Get(character, SAFEBOX) != safebox || !IsDetachedInputItem(itemEntity) ||
-		!safebox->Add(p->bSafePos, itemEntity))
+		!SafeboxSystem::Add(safebox, p->bSafePos, itemEntity))
 	{
 		RestoreInputItem(character, itemEntity, originalPos);
 		return;
@@ -2769,10 +2769,10 @@ void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, b
 
 	const uint8_t window = bMall ? MALL : SAFEBOX;
 	const auto safebox = SafeboxSystem::Get(character, window);
-	if (!safebox)
+	if (safebox == entt::null)
 		return;
 
-	const entt::entity itemEntity = safebox->Get(p->bSafePos);
+	const entt::entity itemEntity = SafeboxSystem::GetItem(safebox, p->bSafePos);
 	if (!IsInputItemAt(character, itemEntity, TItemPos(window, p->bSafePos)) ||
 		ItemSystem::IsItemLocked(itemEntity) || ItemSystem::IsItemExchanging(itemEntity))
 		return;
@@ -2847,14 +2847,14 @@ void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, b
 	if (SafeboxSystem::Get(character, window) != safebox ||
 		!InventorySystem::IsEmptyItemGrid(character, destination, ItemSystem::GetItemSize(itemEntity)))
 		return;
-	const entt::entity removedItem = safebox->Remove(p->bSafePos);
+	const entt::entity removedItem = SafeboxSystem::Remove(safebox, p->bSafePos);
 	if (removedItem != itemEntity || !IsDetachedInputItem(itemEntity))
 		return;
 
 	if (!RestoreInputItem(ownerEntity, itemEntity, destination))
 	{
 		if (SafeboxSystem::Get(character, window) == safebox && IsDetachedInputItem(itemEntity))
-			safebox->Add(p->bSafePos, itemEntity);
+			SafeboxSystem::Add(safebox, p->bSafePos, itemEntity);
 		return;
 	}
 
@@ -2898,10 +2898,10 @@ void CInputMain::SafeboxItemMove(entt::entity character, const char * data)
 #endif
 
 	const auto safebox = SafeboxSystem::Get(character, SAFEBOX);
-	if (!safebox)
+	if (safebox == entt::null)
 		return;
 
-	safebox->MoveItem(pinfo->Cell.cell, pinfo->CellTo.cell, pinfo->count);
+	SafeboxSystem::MoveItem(safebox, pinfo->Cell.cell, pinfo->CellTo.cell, pinfo->count);
 }
 
 void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pData)

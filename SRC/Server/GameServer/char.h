@@ -512,7 +512,6 @@ class CDungeon;
 class CWarMap;
 class CAffect;
 class CGuild;
-class CSafebox;
 class CArena;
 
 

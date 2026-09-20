@@ -2064,7 +2064,7 @@ ACMD(do_mall_password)
 
 	int iPulse = thecore_pulse();
 
-	if (ecs::SessionSystem::GetMall(character))
+	if (ecs::SessionSystem::GetMall(character) != entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 189, "");
@@ -2092,7 +2092,7 @@ ACMD(do_mall_password)
 
 ACMD(do_mall_close)
 {
-	if (ecs::SessionSystem::GetMall(character))
+	if (ecs::SessionSystem::GetMall(character) != entt::null)
 	{
 		ecs::SessionSystem::SetMallLoadTime(character, thecore_pulse());
 		ecs::SessionSystem::CloseMall(character);

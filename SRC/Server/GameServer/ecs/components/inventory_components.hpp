@@ -6,7 +6,6 @@
 
 #include <common/tables.h>
 
-#include "../../safebox.h"
 #include "../../typedef.h"
 #include "../../cuberenewal.h"
 #include "../../attr_transfer.h"
@@ -132,9 +131,32 @@ struct MountInventoryComponent {
     MountInventoryComponent() { items.fill(entt::null); }
 };
 
+// Authoritative state for one open safebox or mall window. The storage is a
+// registry-owned entity published by SafeboxRef on its owner. Items are
+// entities, the occupancy array replaces the legacy CGrid, and destroying is
+// the reentrancy guard for teardown. Operations revalidate the entity after
+// callbacks instead of keeping a shared_ptr alive; the operation count defers
+// owner-driven retirement until an in-flight operation has finished.
+struct SafeboxStorageComponent {
+    static constexpr int Width = 16;
+    static constexpr int MaxHeight = SAFEBOX_MAX_NUM / Width;
+
+    entt::entity owner { entt::null };
+    uint8_t windowMode { SAFEBOX };
+    int size { 0 };
+    int32_t gold { 0 };
+    bool destroying { false };
+    bool retirePending { false };
+    int operations { 0 };
+    std::array<entt::entity, SAFEBOX_MAX_NUM> items;
+    std::array<uint8_t, SAFEBOX_MAX_NUM> occupied {};
+
+    SafeboxStorageComponent() { items.fill(entt::null); }
+};
+
 struct SafeboxRef {
-    std::shared_ptr<CSafebox> safebox;
-    std::shared_ptr<CSafebox> mall;
+    entt::entity safebox { entt::null };
+    entt::entity mall { entt::null };
     int safeboxSize { -1 };
     int safeboxLoadTime { 0 };
     int mallLoadTime { 0 };

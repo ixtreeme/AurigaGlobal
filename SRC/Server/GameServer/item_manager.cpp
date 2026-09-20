@@ -144,7 +144,7 @@ bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 		if (m_vec_prototype[i].dwRefinedVnum)
 			m_map_ItemRefineFrom.insert(std::make_pair(m_vec_prototype[i].dwRefinedVnum, m_vec_prototype[i].dwVnum));
 
-		// NOTE : QUEST_GIVE ÇÃ·¡±×´Â npc ÀÌº¥Æ®·Î ¹ß»ý.
+		// NOTE : QUEST_GIVE ï¿½Ã·ï¿½ï¿½×´ï¿½ npc ï¿½Ìºï¿½Æ®ï¿½ï¿½ ï¿½ß»ï¿½.
 		if (m_vec_prototype[i].bType == ITEM_QUEST || IS_SET(m_vec_prototype[i].dwFlags, ITEM_FLAG_QUEST_USE | ITEM_FLAG_QUEST_USE_MULTIPLE)
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 			|| (m_vec_prototype[i].bType == ITEM_COSTUME && m_vec_prototype[i].bSubType == COSTUME_MOUNT)
@@ -709,7 +709,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 			if (window == SAFEBOX || window == MALL)
 			{
 				const auto storage = SafeboxSystem::Get(owner, window);
-				return storage ? storage->Get(cell) : entt::null;
+				return storage != entt::null ? SafeboxSystem::GetItem(storage, cell) : entt::null;
 			}
 			if (window == MOUNT_INVENTORY) return MountSystem::GetMountInventoryItem(owner, cell);
 			return ItemSystem::GetItem(owner, position);
@@ -733,10 +733,11 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 
 		if (window == SAFEBOX || window == MALL)
 		{
-			// Keep the container alive if a removal callback closes its session.
+			// Each safebox entry point revalidates the storage entity, so a
+			// removal callback may close it without leaving a dangling handle.
 			const auto storage = SafeboxSystem::Get(owner, window);
-			if (!storage || storage->Get(cell) != itemEntity) return;
-			storage->Remove(cell);
+			if (storage == entt::null || SafeboxSystem::GetItem(storage, cell) != itemEntity) return;
+			SafeboxSystem::Remove(storage, cell);
 			// Close/replacement callbacks can suppress the result/packet even
 			// after a successful detach. Verify the entity's final state below.
 		}
@@ -1109,8 +1110,8 @@ public:
 extern std::vector<CItemDropInfo> g_vec_pkCommonDropItem[MOB_RANK_MAX_NUM];
 
 // 20050503.ipkn.
-// iMinimum º¸´Ù ÀÛÀ¸¸é iDefault ¼¼ÆÃ (´Ü, iMinimumÀº 0º¸´Ù Ä¿¾ßÇÔ)
-// 1, 0 ½ÄÀ¸·Î ON/OFF µÇ´Â ¹æ½ÄÀ» Áö¿øÇÏ±â À§ÇØ Á¸Àç
+// iMinimum ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ iDefault ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½, iMinimumï¿½ï¿½ 0ï¿½ï¿½ï¿½ï¿½ Ä¿ï¿½ï¿½ï¿½ï¿½)
+// 1, 0 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ON/OFF ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 int GetDropPerKillPct(int iMinimum, int iDefault, int iDeltaPercent, const char* c_pszFlag)
 {
 	int iVal = 0;
@@ -1130,8 +1131,8 @@ int GetDropPerKillPct(int iMinimum, int iDefault, int iDeltaPercent, const char*
 	if (iVal == 0)
 		return 0;
 
-	// ±âº» ¼¼ÆÃÀÏ¶§ (iDeltaPercent=100)
-	// 40000 iVal ¸¶¸®´ç ÇÏ³ª ´À³¦À» ÁÖ±â À§ÇÑ »ó¼öÀÓ
+	// ï¿½âº» ï¿½ï¿½ï¿½ï¿½ï¿½Ï¶ï¿½ (iDeltaPercent=100)
+	// 40000 iVal ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï³ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
 	return (40000 * iDeltaPercent / iVal);
 }
 
@@ -1413,7 +1414,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 			CMobItemGroup* pGroup = it->second;
 
 			// MOB_DROP_ITEM_BUG_FIX
-			// 20050805.myevan.MobDropItem ¿¡ ¾ÆÀÌÅÛÀÌ ¾øÀ» °æ¿ì CMobItemGroup::GetOne() Á¢±Ù½Ã ¹®Á¦ ¹ß»ý ¼öÁ¤
+			// 20050805.myevan.MobDropItem ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ CMobItemGroup::GetOne() ï¿½ï¿½ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½
 			if (pGroup && !pGroup->IsEmpty())
 			{
 				int iPercent = 40000 * iDeltaPercent / pGroup->GetKillPerDrop();
@@ -1481,7 +1482,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 		}
 	}
 
-	// ÀâÅÛ
+	// ï¿½ï¿½ï¿½ï¿½
 	if (ecs::PlayerRuntime::GetMobDropItemVnum(chr))
 	{
 		auto it = m_map_dwEtcItemDropProb.find(ecs::PlayerRuntime::GetMobDropItemVnum(chr));
@@ -1556,14 +1557,14 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 		pdw[1] = 1;
 		pdw[2] = quest::CQuestManager::instance().GetEventFlag("lotto_round");
 
-		// Çà¿îÀÇ ¼­´Â ¼ÒÄÏÀ» ¼³Á¤ÇÑ´Ù
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½
 		DBManager::instance().ReturnQuery(QID_LOTTO, ecs::PlayerRuntime::GetPlayerID(killer), pdw,
 			"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
 			get_table_postfix(), ecs::PlayerRuntime::GetPlayerID(killer));
 	}
 
 	//
-	// ½ºÆä¼È µå·Ó ¾ÆÀÌÅÛ
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	//
 	//CreateQuestDropItem(pkChr, pkKiller, vec_item, iDeltaPercent, iRandRange);
 #ifdef ENABLE_EVENT_MANAGER
@@ -1669,11 +1670,11 @@ bool DropEvent_CharStone_SetValue(const std::string& name, int value)
 // END_OF_DROPEVENT_CHARSTONE
 
 // fixme
-// À§ÀÇ °Í°ú ÇÔ²² quest·Î »¬°Í »©º¸ÀÚ.
-// ÀÌ°Å ³Ê¹« ´õ·´ÀÝ¾Æ...
-// ”?. ÇÏµåÄÚµù ½È´Ù ¤Ì¤Ð
-// °è·® ¾ÆÀÌÅÛ º¸»ó ½ÃÀÛ.
-// by rtsummit °íÄ¡ÀÚ ÁøÂ¥
+// ï¿½ï¿½ï¿½ï¿½ ï¿½Í°ï¿½ ï¿½Ô²ï¿½ questï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+// ï¿½Ì°ï¿½ ï¿½Ê¹ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ý¾ï¿½...
+// ï¿½?. ï¿½Ïµï¿½ï¿½Úµï¿½ ï¿½È´ï¿½ ï¿½Ì¤ï¿½
+// ï¿½è·® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
+// by rtsummit ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½Â¥
 static struct DropEvent_RefineBox
 {
 	int percent_low;
@@ -1728,7 +1729,7 @@ bool DropEvent_RefineBox_SetValue(const std::string& name, int value)
 
 	return true;
 }
-// °³·® ¾ÆÀÌÅÛ º¸»ó ³¡.
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½.
 
 
 uint32_t ITEM_MANAGER::GetRefineFromVnum(uint32_t dwVnum)

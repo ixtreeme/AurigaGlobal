@@ -270,9 +270,9 @@ void SaveReal(entt::entity e)
 }
 
 // The safebox this character has open, if any.
-CSafebox* GetSafebox(entt::entity e)
+entt::entity GetSafebox(entt::entity e)
 {
-    return SafeboxSystem::Get(e, SAFEBOX).get();
+    return SafeboxSystem::Get(e, SAFEBOX);
 }
 
 // The item mall storage, which is a safebox with its own window.
@@ -296,16 +296,16 @@ void SetMallLoadTime(entt::entity e, int pulse)
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-CSafebox* GetMall(entt::entity e)
+entt::entity GetMall(entt::entity e)
 {
-    return SafeboxSystem::Get(e, MALL).get();
+    return SafeboxSystem::Get(e, MALL);
 }
 
 // Closing the mall window.
 void CloseMall(entt::entity e)
 {
     const auto owner = e;
-    if (!SafeboxSystem::Get(owner, MALL)) return;
+    if (SafeboxSystem::Get(owner, MALL) == entt::null) return;
     SafeboxSystem::Close(owner, MALL);
     if (!g_registry.valid(owner)) return;
 
@@ -341,8 +341,8 @@ void ChangeSafeboxSize(entt::entity e, uint8_t bSize)
 
     ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketCGSafeboxSize));
 
-    if (auto storage = SafeboxSystem::Get(e, SAFEBOX))
-        storage->ChangeSize(bSize);
+    if (const auto storage = SafeboxSystem::Get(e, SAFEBOX); storage != entt::null)
+        SafeboxSystem::ChangeSize(storage, bSize);
 
     if (e != entt::null && g_registry.valid(e))
         g_registry.get_or_emplace<ecs::SafeboxRef>(e).safeboxSize = bSize;
@@ -358,7 +358,7 @@ void ReqSafeboxLoad(entt::entity e, const char* pszPassword)
 #endif
         return;
     }
-    else if (GetSafebox(e))
+    else if (GetSafebox(e) != entt::null)
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 189, "");
@@ -405,11 +405,11 @@ void ReqSafeboxLoad(entt::entity e, const char* pszPassword)
 void LoadSafebox(entt::entity e, int iSize, uint32_t dwGold, int iItemCount, TPlayerItem* pItems)
 {
     const auto owner = e;
-    const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, SAFEBOX));
-    auto storage = SafeboxSystem::Open(owner, SAFEBOX, iSize, dwGold);
-    if (!storage) return;
+    const bool bLoaded = SafeboxSystem::Get(owner, SAFEBOX) != entt::null;
+    const auto storage = SafeboxSystem::Open(owner, SAFEBOX, iSize, dwGold);
+    if (storage == entt::null) return;
     ecs::SessionSystem::SetSafeboxOpen(e, true);
-    if (bLoaded) storage->ChangeSize(iSize);
+    if (bLoaded) SafeboxSystem::ChangeSize(storage, iSize);
 
     g_registry.get_or_emplace<ecs::SafeboxRef>(owner).safeboxSize = iSize;
 
@@ -424,7 +424,7 @@ void LoadSafebox(entt::entity e, int iSize, uint32_t dwGold, int iItemCount, TPl
         for (int i = 0; i < iItemCount; ++i, ++pItems)
         {
             if (!g_registry.valid(owner) || SafeboxSystem::Get(owner, SAFEBOX) != storage) return;
-            if (!storage->IsValidPosition(pItems->pos))
+            if (!SafeboxSystem::IsValidPosition(storage, pItems->pos))
                 continue;
 
             const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
@@ -439,7 +439,7 @@ void LoadSafebox(entt::entity e, int iSize, uint32_t dwGold, int iItemCount, TPl
             ItemSystem::SetItemSockets(item, pItems->alSockets);
             ItemSystem::SetItemAttributes(item, pItems->aAttr);
 
-			if (!storage->Add(pItems->pos, item))
+			if (!SafeboxSystem::Add(storage, pItems->pos, item))
                 ItemSystem::DestroyItemEntityEcs(
                     item,
                     "SAFEBOX_LOAD_ADD_FAILED");
@@ -453,10 +453,10 @@ void LoadSafebox(entt::entity e, int iSize, uint32_t dwGold, int iItemCount, TPl
 void LoadMall(entt::entity e, int iItemCount, TPlayerItem* pItems)
 {
     const auto owner = e;
-    const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, MALL));
-    auto storage = SafeboxSystem::Open(owner, MALL, 3 * SAFEBOX_PAGE_SIZE);
-    if (!storage) return;
-    if (bLoaded) storage->ChangeSize(3 * SAFEBOX_PAGE_SIZE);
+    const bool bLoaded = SafeboxSystem::Get(owner, MALL) != entt::null;
+    const auto storage = SafeboxSystem::Open(owner, MALL, 3 * SAFEBOX_PAGE_SIZE);
+    if (storage == entt::null) return;
+    if (bLoaded) SafeboxSystem::ChangeSize(storage, 3 * SAFEBOX_PAGE_SIZE);
 
     TPacketCGSafeboxSize p;
     p.bHeader = HEADER_GC_MALL_OPEN;
@@ -469,7 +469,7 @@ void LoadMall(entt::entity e, int iItemCount, TPlayerItem* pItems)
         for (int i = 0; i < iItemCount; ++i, ++pItems)
         {
             if (!g_registry.valid(owner) || SafeboxSystem::Get(owner, MALL) != storage) return;
-            if (!storage->IsValidPosition(pItems->pos))
+            if (!SafeboxSystem::IsValidPosition(storage, pItems->pos))
                 continue;
 
             const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
@@ -484,7 +484,7 @@ void LoadMall(entt::entity e, int iItemCount, TPlayerItem* pItems)
             ItemSystem::SetItemSockets(item, pItems->alSockets);
             ItemSystem::SetItemAttributes(item, pItems->aAttr);
 
-			if (!storage->Add(pItems->pos, item))
+			if (!SafeboxSystem::Add(storage, pItems->pos, item))
                 ItemSystem::DestroyItemEntityEcs(
                     item,
                     "MALL_LOAD_ADD_FAILED");
@@ -498,7 +498,7 @@ void LoadMall(entt::entity e, int iItemCount, TPlayerItem* pItems)
 void CloseSafebox(entt::entity e)
 {
     const auto owner = e;
-    if (!SafeboxSystem::Get(owner, SAFEBOX)) return;
+    if (SafeboxSystem::Get(owner, SAFEBOX) == entt::null) return;
 
     if (!ecs::PlayerRuntime::IsPC(e) || !ecs::PlayerRuntime::GetDesc(e))
     {

@@ -531,7 +531,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 #endif
     reg.emplace_or_replace<ecs::GoldAmount>(entity, data.gold);
     reg.emplace_or_replace<ecs::QuickSlots>(entity, InventorySystem::MakeQuickSlots(data.quickslot));
-    reg.emplace_or_replace<ecs::SafeboxRef>(entity, nullptr, nullptr, -1, 0, 0, false);
+    reg.emplace_or_replace<ecs::SafeboxRef>(entity);
 
     // Assigned rather than emplaced from a value: the component is an
     // aggregate with an array member, which EnTT would try to brace-init.

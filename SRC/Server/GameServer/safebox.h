@@ -1,58 +1,40 @@
 #ifndef __INC_METIN_II_GAME_SAFEBOX_H__
 #define __INC_METIN_II_GAME_SAFEBOX_H__
 
-#include <array>
+// Safebox and mall storage are ECS state now: a SafeboxStorageComponent on a
+// registry-owned entity, published by SafeboxRef on the owner. There is no
+// shared_ptr<CSafebox> ownership layer; every entry point revalidates the
+// storage entity after callbacks, so a nested Close retires it safely.
+
 #include <cstdint>
-#include <memory>
-#include <common/tables.h>
-#include <entt/entity/entity.hpp>
 
-class CGrid;
+#include <entt/entt.hpp>
 
-class CSafebox
-{
-	public:
-		CSafebox(entt::entity owner, int iSize, uint32_t dwGold);
-		~CSafebox();
-		void Close() { __Destroy(); }
-		CSafebox(const CSafebox&) = delete;
-		CSafebox& operator=(const CSafebox&) = delete;
-
-		bool		Add(uint32_t dwPos, entt::entity item);
-		entt::entity Get(uint32_t dwPos) const;
-		entt::entity Remove(uint32_t dwPos);
-		void		ChangeSize(int iSize);
-
-		entt::entity GetItem(uint32_t bCell) const;
-
-		bool MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count);
-
-		void		Save();
-
-		bool		IsEmpty(uint32_t dwPos, uint8_t bSize);
-		bool		IsValidPosition(uint32_t dwPos);
-
-		void		SetWindowMode(uint8_t bWindowMode);
-
-	protected:
-		void		__Destroy();
-
-		bool OwnsItem(entt::entity item, uint32_t cell) const;
-		bool FitsGrid(uint32_t cell, uint8_t size) const;
-		entt::entity m_owner { entt::null };
-		std::array<entt::entity, SAFEBOX_MAX_NUM> m_items;
-		std::unique_ptr<CGrid> m_pkGrid;
-		bool m_destroying { false };
-		int		m_iSize;
-		int32_t		m_lGold;
-
-		uint8_t		m_bWindowMode;
-};
+#include "ecs/components/inventory_components.hpp"
 
 namespace SafeboxSystem {
-std::shared_ptr<CSafebox> Get(entt::entity owner, uint8_t window);
-std::shared_ptr<CSafebox> Open(entt::entity owner, uint8_t window, int height, uint32_t gold = 0);
+
+// The storage published for this owner and window, or null.
+entt::entity Get(entt::entity owner, uint8_t window);
+entt::entity Open(entt::entity owner, uint8_t window, int height, uint32_t gold = 0);
 void Close(entt::entity owner, uint8_t window, bool save = true);
-}
+
+// Storage operations. They take the storage entity, not the owner, so a
+// replacement container cannot silently receive an old operation's result.
+bool Add(entt::entity storage, uint32_t cell, entt::entity item);
+entt::entity GetItem(entt::entity storage, uint32_t cell);
+entt::entity Remove(entt::entity storage, uint32_t cell);
+bool MoveItem(entt::entity storage, uint32_t cell, uint32_t destCell, uint32_t count);
+bool IsEmpty(entt::entity storage, uint32_t cell, uint8_t size);
+bool IsValidPosition(entt::entity storage, uint32_t cell);
+void ChangeSize(entt::entity storage, int size);
+void SetWindowMode(entt::entity storage, uint8_t window);
+void Save(entt::entity storage);
+
+// Retires the storage and its contents without saving. Reentrant calls and
+// calls after retirement are no-ops.
+void Destroy(entt::entity storage);
+
+} // namespace SafeboxSystem
 
 #endif

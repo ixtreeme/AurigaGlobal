@@ -3660,14 +3660,14 @@ bool IsValidItemPosition(entt::entity owner, TItemPos Pos)
 		return cell < SWITCHBOT_SLOT_COUNT;
 #endif
 	case SAFEBOX:
-		if (const auto storage = SafeboxSystem::Get(owner, SAFEBOX))
-			return storage->IsValidPosition(cell);
+		if (const auto storage = SafeboxSystem::Get(owner, SAFEBOX); storage != entt::null)
+			return SafeboxSystem::IsValidPosition(storage, cell);
 		else
 			return false;
 
 	case MALL:
-		if (const auto storage = SafeboxSystem::Get(owner, MALL))
-			return storage->IsValidPosition(cell);
+		if (const auto storage = SafeboxSystem::Get(owner, MALL); storage != entt::null)
+			return SafeboxSystem::IsValidPosition(storage, cell);
 		else
 			return false;
 

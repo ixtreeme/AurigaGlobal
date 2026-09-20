@@ -3,15 +3,13 @@
 #include <entt/entt.hpp>
 #include "../components/transform_components.hpp"
 
-class CSafebox;
-
 namespace ecs::SessionSystem {
 
 bool WarpToPID(entt::entity e, uint32_t dwPID);
-CSafebox* GetSafebox(entt::entity e);
+entt::entity GetSafebox(entt::entity e);
 int GetMallLoadTime(entt::entity e);
 void SetMallLoadTime(entt::entity e, int pulse);
-CSafebox* GetMall(entt::entity e);
+entt::entity GetMall(entt::entity e);
 void CloseMall(entt::entity e);
 void QuerySafeboxSize(entt::entity e);
 void ChangeSafeboxSize(entt::entity e, uint8_t bSize);

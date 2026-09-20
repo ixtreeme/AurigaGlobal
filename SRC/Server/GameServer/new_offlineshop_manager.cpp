@@ -346,7 +346,7 @@ bool CheckCharacterActions(entt::entity character)
 	}
 
 
-	if(ecs::SessionSystem::GetSafebox(character))
+	if(ecs::SessionSystem::GetSafebox(character) != entt::null)
 	{
 		return false;
 	}
