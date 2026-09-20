@@ -33,12 +33,9 @@ namespace quest
 	// syntax in LUA: pet.summon(mob_vnum, pet's name, (bool)run to me from far away)
 	ALUA (newpet_summon)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
-		if (!petSystem || !ItemSystem::IsValidItem(item))
+		if (!ecs::PlayerRuntime::IsValid(chEntity) || !ItemSystem::IsValidItem(item))
 		{
 			lua_pushnumber(L, 0);
 			return 1;
@@ -55,26 +52,20 @@ namespace quest
 		}
 #endif
 
-		if (nullptr == petSystem)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		// ¼ÒÈ¯¼öÀÇ vnum
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ vnum
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		// ¼ÒÈ¯¼öÀÇ ÀÌ¸§		
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½		
 
 		const char* petName = lua_isstring(L, 2) ? lua_tostring(L, 2) : nullptr;
 
-		// ¼ÒÈ¯ÇÏ¸é ¸Ö¸®¼­ºÎÅÍ ´Þ·Á¿À´ÂÁö ¿©ºÎ
+		// ï¿½ï¿½È¯ï¿½Ï¸ï¿½ ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Þ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		bool bFromFar = lua_isboolean(L, 3) ? lua_toboolean(L, 3) : false;
 
-		CNewPetActor* pet = petSystem->Summon(mobVnum, item, petName, bFromFar);
+		ecs::NewPetActorState* pet = NewPetSystem::Summon(chEntity, mobVnum, item, petName, bFromFar);
 
 		if (pet != nullptr)
-			lua_pushnumber(L, pet->GetVID());
+			lua_pushnumber(L, pet->vid);
 		else
 			lua_pushnumber(L, 0);
 
@@ -84,18 +75,15 @@ namespace quest
 	// syntax: pet.unsummon(mob_vnum)
 	ALUA (newpet_unsummon)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
-		if (nullptr == petSystem)
+		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return 0;
 
-		// ¼ÒÈ¯¼öÀÇ vnum
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ vnum
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		petSystem->Unsummon(mobVnum);
+		NewPetSystem::Unsummon(chEntity, mobVnum);
 #ifdef ENABLE_RECALL
 		const CAffect* pAffect = AffectSystem::FindAffect(chEntity, AFFECT_RECALL2);
 		if (pAffect) {
@@ -108,15 +96,9 @@ namespace quest
 	// syntax: pet.unsummon(mob_vnum)
 	ALUA (newpet_count_summoned)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
-		lua_Number count = 0;
-
-		if (nullptr != petSystem)
-			count = static_cast<lua_Number>(petSystem->CountSummoned());
+		lua_Number count = static_cast<lua_Number>(NewPetSystem::CountSummoned(chEntity));
 
 		lua_pushnumber(L, count);
 
@@ -126,47 +108,34 @@ namespace quest
 	// syntax: pet.is_summon(mob_vnum)
 	ALUA (newpet_is_summon)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
-		if (nullptr == petSystem)
+		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return 0;
 
-		// ¼ÒÈ¯¼öÀÇ vnum
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ vnum
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		CNewPetActor* petActor = petSystem->GetByVnum(mobVnum);
+		ecs::NewPetActorState* petActor = NewPetSystem::FindActor(chEntity, mobVnum);
 
-		if (nullptr == petActor)
-			lua_pushboolean(L, false);
-		else
-			lua_pushboolean(L, petActor->IsSummoned());
+		lua_pushboolean(L, petActor != nullptr && NewPetSystem::IsSummoned(*petActor));
 
 		return 1;
 	}
 
 	ALUA (newpet_increaseskill)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
-		if (nullptr == petSystem)
+		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return 0;
 
-		// ¼ÒÈ¯¼öÀÇ vnum
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ vnum
 #ifdef ENABLE_NEW_PET_EDITS
 		lua_pushboolean(L, false);
 #else
 		uint32_t skill = lua_isnumber(L, 1) ? lua_tonumber(L, 1) : 0;
-		bool petActor = petSystem->IncreasePetSkill(skill);
-		if (!petActor)
-			lua_pushboolean(L, false);
-		else
-			lua_pushboolean(L, petActor);
+		lua_pushboolean(L, NewPetSystem::IncreasePetSkill(chEntity, skill));
 #endif
 		return 1;
 
@@ -174,38 +143,27 @@ namespace quest
 
 	ALUA (newpet_increaseevolution)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
-		if (nullptr == petSystem)
+		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return 0;
 
-		// ¼ÒÈ¯¼öÀÇ vnum		
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ vnum		
 
-		bool petActor = petSystem->IncreasePetEvolution();
-
-		if (!petActor)
-			lua_pushboolean(L, false);
-		else
-			lua_pushboolean(L, petActor);
+		lua_pushboolean(L, NewPetSystem::IncreasePetEvolution(chEntity));
 		return 1;
 
 	}
 
 	ALUA (newpet_get_level)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
-		if (nullptr == petSystem) {
+		if (!ecs::PlayerRuntime::IsValid(chEntity)) {
 			lua_pushnumber(L, -1);
 			return 0;
 		}
-		int pet_level = petSystem->GetLevel();
+		int pet_level = NewPetSystem::GetLevel(chEntity);
 
 		if (pet_level == 0)
 			lua_pushnumber(L, -1);
@@ -218,16 +176,13 @@ namespace quest
 
 	ALUA (newpet_get_evo)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
-		if (nullptr == petSystem) {
+		if (!ecs::PlayerRuntime::IsValid(chEntity)) {
 			lua_pushnumber(L, -1);
 			return 0;
 		}
-		int pet_evo = petSystem->GetEvolution();
+		int pet_evo = NewPetSystem::GetEvolution(chEntity);
 
 		if (0 == pet_evo)
 			lua_pushnumber(L, -1);
@@ -240,9 +195,6 @@ namespace quest
 
 	ALUA (newpet_restore_pet)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
-
 		uint32_t id = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 		if (id == 0){
 			lua_pushboolean(L, false);
@@ -271,20 +223,14 @@ namespace quest
 
 	ALUA (newpet_spawn_effect)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
-
-		if (nullptr == petSystem)
-			return 0;
 
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		CNewPetActor* petActor = petSystem->GetByVnum(mobVnum);
-		if (nullptr == petActor)
+		ecs::NewPetActorState* petActor = NewPetSystem::FindActor(chEntity, mobVnum);
+		if (petActor == nullptr || !NewPetSystem::IsSummoned(*petActor))
 			return 0;
-		const entt::entity pet = petActor->GetCharacter();
+		const entt::entity pet = petActor->character;
 		if (!ecs::PlayerRuntime::IsValid(pet))
 			return 0;
 
@@ -297,8 +243,6 @@ namespace quest
 
 	ALUA(newpet_eggrequest)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		int evid = lua_isnumber(L, 0) ? static_cast<int>(lua_tonumber(L, 0)) : 0;
 		ecs::PlayerRuntime::SetEggVID(chEntity, evid);
@@ -308,40 +252,22 @@ namespace quest
 #ifdef ENABLE_NEW_PET_EDITS
 	ALUA(newpet_reset_skills)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
-		if (!petSystem) {
-			lua_pushnumber(L, 2);
-			return 1;
-		}
-		
-		lua_pushnumber(L, petSystem->ResetSkills());
+		lua_pushnumber(L, NewPetSystem::ResetSkills(chEntity));
 		return 1;
 	}
 	
 	ALUA(newpet_reset_skill)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
-		if (!petSystem) {
-			lua_pushnumber(L, 2);
-			return 1;
-		}
-		
 		int iType = lua_isnumber(L, 1) ? static_cast<int>(lua_tonumber(L, 1)) : 0;
-		lua_pushnumber(L, petSystem->ResetSkill(iType));
+		lua_pushnumber(L, NewPetSystem::ResetSkill(chEntity, iType));
 		return 1;
 	}
 #endif
 
 	ALUA(newpet_change_name)
 	{
-		// migrated from CHARACTER CNewPetSystem
-		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		if (lua_isstring(L, 1) != true) {
@@ -355,8 +281,7 @@ namespace quest
 			return 1;
 		}
 
-		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
-		if (!petSystem) {
+		if (!ecs::PlayerRuntime::IsValid(chEntity)) {
 			lua_pushnumber(L, 3);
 			return 1;
 		}
@@ -368,7 +293,7 @@ namespace quest
 			lua_pushnumber(L, 2);
 			return 1;
 		} else {
-			petSystem->ChangeName(szName);
+			NewPetSystem::ChangeName(chEntity, szName);
 			lua_pushnumber(L, 1);
 			return 1;
 		}
@@ -402,5 +327,3 @@ namespace quest
 #endif
 
 }
-
-

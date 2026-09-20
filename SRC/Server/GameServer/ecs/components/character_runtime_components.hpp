@@ -8,8 +8,6 @@
 
 #include "../../event.h"
 
-class CNewPetSystem;
-
 #include "../../buff_on_attributes.h"
 
 namespace ecs {
@@ -92,13 +90,6 @@ struct MountInventoryRef {
 struct MountInventoryLoadState {
     uint32_t accountId { 0 };
     uint64_t requestId { 0 };
-};
-
-struct PetRuntimeRefs {
-#ifdef __NEWPET_SYSTEM__
-    CNewPetSystem* newPetSystem { nullptr };
-    int eggVID { 0 };
-#endif
 };
 
 } // namespace ecs

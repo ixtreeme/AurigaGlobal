@@ -251,11 +251,6 @@ void SetLevel(entt::entity e, uint8_t level) { State(e).level = level; }
 void SetExp(entt::entity e, uint32_t exp) { State(e).exp = exp; }
 const TMobTable* GetMobTable(entt::entity e) { ++mobQueries; static TMobTable table{}; return State(e).hasMob ? &table : nullptr; }
 void DestroyCharacter(entt::entity e) { State(e); ++destroyed; g_registry.destroy(e); }
-CNewPetSystem* GetNewPetSystem(entt::entity e) {
-    if (!IsValid(e)) return nullptr;
-    const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
-    return refs ? refs->newPetSystem : nullptr;
-}
 }
 namespace ItemSystem {
 bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ItemState>(e); }
@@ -681,11 +676,10 @@ void GrowthLifecycleAndExpiry()
 {
     Reset();
     const auto owner = Character(), seal = GrowthSeal(owner);
-    CNewPetSystem system(owner);
-    system.SetUpdatePeriod(0);
-    auto* actor = system.Summon(34041, seal, nullptr, false);
-    Check(actor && actor->HasValidSummon() && actor->GetOwner() == owner, "growth entity summon failed");
-    const auto pet = actor->GetCharacter();
+    NewPetSystem::SetUpdatePeriod(owner, 0);
+    auto* actor = NewPetSystem::Summon(owner, 34041, seal, nullptr, false);
+    Check(actor && NewPetSystem::HasValidSummon(owner, *actor), "growth entity summon failed");
+    const auto pet = actor->character;
         Check(g_registry.get<ecs::StatusFlags>(pet).isNewPet,
             "growth follower is marked new pet");
     Check(g_registry.get<ecs::PlayerName>(pet).value == "grown pet"
@@ -696,27 +690,27 @@ void GrowthLifecycleAndExpiry()
     Check(retainedEvents.size() == 2, "growth timers were not scheduled");
     const auto updateEvent = retainedEvents[0], expiryEvent = retainedEvents[1];
     Check(updateEvent->func(updateEvent, 0) != 0 && expiryEvent->func(expiryEvent, 0) != 0, "growth timers rejected live owner");
-    for (int i = 1; i < 59; ++i) system.UpdateTime();
+    for (int i = 1; i < 59; ++i) NewPetSystem::UpdateTime(owner);
     Check(ItemSystem::GetItemSocket(seal, 1) == 120, "growth duration decremented before 60 seconds");
-    system.UpdateTime();
+    NewPetSystem::UpdateTime(owner);
     Check(ItemSystem::GetItemSocket(seal, 1) == 119, "growth duration did not decrement");
     State(pet).map = 2;
-    Check(system.Update(0) && State(pet).map == State(owner).map, "growth cross-map follow failed");
-    onCompute = [&] { Check(!actor->IsSummoned() && actor->GetSummonItem() == entt::null, "growth teardown exposed handles to callback"); };
-    actor->Unsummon();
+    Check(NewPetSystem::Update(owner, 0) && State(pet).map == State(owner).map, "growth cross-map follow failed");
+    onCompute = [&] { Check(!NewPetSystem::IsSummoned(*actor) && actor->summonItem == entt::null, "growth teardown exposed handles to callback"); };
+    NewPetSystem::Unsummon(owner, 34041);
     onCompute = {};
     Check(!g_registry.valid(pet) && !g_registry.get<ItemState>(seal).locked, "growth teardown leaked follower/lock");
     Check(!growthBonusOwners.contains(owner) && databaseRow[15] == "119", "growth teardown lost persistence/bonus cleanup");
     const auto saves = queries.size();
-    system.Destroy();
-    Check(queries.size() == saves && !ecs::PlayerRuntime::GetNewPetSystem(owner), "growth destructor repeated save");
+    NewPetSystem::DestroyRuntime(owner);
+    Check(queries.size() == saves && !NewPetSystem::FindActor(owner, 34041), "growth destructor repeated save");
     Check(updateEvent->func(updateEvent, 0) == 0 && expiryEvent->func(expiryEvent, 0) == 0, "stale growth timer survived");
 
     databaseRow[15] = "1";
-    actor = system.Summon(34041, seal, "", false);
-    Check(actor && actor->IsSummoned(), "one-minute pet could not summon");
-    for (int i = 0; i < 60; ++i) system.UpdateTime();
-    Check(!actor->IsSummoned() && ItemSystem::GetItemSocket(seal, 1) == 0, "zero duration underflowed or stayed active");
+    actor = NewPetSystem::Summon(owner, 34041, seal, "", false);
+    Check(actor && NewPetSystem::IsSummoned(*actor), "one-minute pet could not summon");
+    for (int i = 0; i < 60; ++i) NewPetSystem::UpdateTime(owner);
+    Check(!NewPetSystem::IsSummoned(*actor) && ItemSystem::GetItemSocket(seal, 1) == 0, "zero duration underflowed or stayed active");
 }
 
 void GrowthDatabaseValidation()
@@ -725,7 +719,7 @@ void GrowthDatabaseValidation()
     {
         Reset();
         const auto owner = Character(), seal = GrowthSeal(owner);
-        CNewPetSystem system(owner);
+        NewPetSystem::SetUpdatePeriod(owner, 0);
         if (which == 0) failQuery = true;
         if (which == 1) databaseRows = 0;
         if (which == 2) databaseRows = 2;
@@ -739,85 +733,87 @@ void GrowthDatabaseValidation()
         if (which == 10) databaseRow[17] = "4";
         if (which == 11) databaseRow[2] = "12oops";
         if (which == 12) databaseRow[4] = "999999999999999999999";
-        Check(!system.Summon(34041, seal, nullptr, false), "malformed growth row accepted");
+        Check(!NewPetSystem::Summon(owner, 34041, seal, nullptr, false), "malformed growth row accepted");
         Check(spawned == 0 && retainedEvents.empty() && !g_registry.get<ItemState>(seal).locked,
             "malformed growth row had spawn/lock/timer side effects");
     }
     Reset();
     const auto owner = Character(), seal = GrowthSeal(owner);
-    CNewPetSystem system(owner);
+    NewPetSystem::SetUpdatePeriod(owner, 0);
     failSpawn = true;
-    Check(!system.Summon(34041, seal, "", false) && retainedEvents.empty(), "failed growth factory started timers");
+    Check(!NewPetSystem::Summon(owner, 34041, seal, "", false) && retainedEvents.empty(), "failed growth factory started timers");
     failSpawn = false; failShow = true;
-    Check(!system.Summon(34041, seal, "", false) && destroyed == 1, "failed growth show leaked follower");
+    Check(!NewPetSystem::Summon(owner, 34041, seal, "", false) && destroyed == 1, "failed growth show leaked follower");
     Check(!g_registry.get<ItemState>(seal).locked && !growthBonusOwners.contains(owner), "failed growth show applied side effects");
     failShow = false;
     databaseRow[1] = "40"; databaseRow[2] = "900";
-    auto* actor = system.Summon(34041, seal, "", false);
-    Check(actor && actor->GetLevel() == 40 && actor->GetEvolution() == 0, "DB hydration executed a level-up transition");
-    Check(actor->IncreasePetEvolution() && actor->GetLevel() == 41 && actor->GetEvolution() == 1,
+    auto* actor = NewPetSystem::Summon(owner, 34041, seal, "", false);
+    Check(actor && actor->level == 40 && actor->evolution == 0, "DB hydration executed a level-up transition");
+    Check(NewPetSystem::IncreasePetEvolution(owner) && actor->level == 41 && actor->evolution == 1,
         "native growth evolution failed");
     const auto skin = Item(owner);
     State(owner).skin = skin;
     g_registry.get<ItemState>(skin).proto.alValues[0] = 34500;
-    system.UpdatePetSkin();
-    Check(actor->GetVnum() == 34041 && spawnedVnum == 34500 && actor->GetLevel() == 41
+    NewPetSystem::UpdatePetSkin(owner);
+    actor = NewPetSystem::FindActor(owner, 34041);
+    Check(actor && actor->vnum == 34041 && spawnedVnum == 34500 && actor->level == 41
         && ItemSystem::GetItemSocket(seal, 1) == 120, "growth skin changed identity/progression/duration");
-    actor->ChangeName("O'Pet");
-    Check(g_registry.get<ecs::PlayerName>(actor->GetCharacter()).value == "O'Pet", "native rename did not publish name");
+    NewPetSystem::ChangeName(owner, "O'Pet");
+    Check(g_registry.get<ecs::PlayerName>(actor->character).value == "O'Pet", "native rename did not publish name");
     Check(queries.back().find("name='O\\'Pet' WHERE id=" + std::to_string(ItemSystem::GetItemID(seal))) != std::string::npos,
         "rename was not escaped and keyed by item ID");
-    system.Unsummon(34041);
+    NewPetSystem::Unsummon(owner, 34041);
 }
 
 void GrowthFeedAndSkillInputs()
 {
     Reset();
     const auto owner = Character(), seal = GrowthSeal(owner);
-    CNewPetSystem system(owner);
-    auto* actor = system.Summon(34041, seal, "", false);
+    NewPetSystem::SetUpdatePeriod(owner, 0);
+    auto* actor = NewPetSystem::Summon(owner, 34041, seal, "", false);
+    Check(actor != nullptr, "growth feed fixture summon failed");
     const auto food = Item(owner);
     g_registry.get<ItemState>(food).vnum = 55001;
     const auto cell = g_registry.get<ItemState>(food).cell;
-    for (int invalid : {-1,9,180,INT_MAX,INT_MIN}) actor->SetItemCube(invalid, cell);
-    actor->ItemCubeFeed(1);
+    for (int invalid : {-1,9,180,INT_MAX,INT_MIN}) NewPetSystem::SetItemCube(owner, invalid, cell);
+    NewPetSystem::ItemCubeFeed(owner, 1);
     Check(g_registry.valid(food) && removedItems == 0, "out-of-bounds feed selection accepted");
-    actor->SetItemCube(0, cell);
-    actor->SetItemCube(1, cell);
+    NewPetSystem::SetItemCube(owner, 0, cell);
+    NewPetSystem::SetItemCube(owner, 1, cell);
     failPayment = true;
-    actor->ItemCubeFeed(1);
+    NewPetSystem::ItemCubeFeed(owner, 1);
     Check(g_registry.valid(food) && ItemSystem::GetItemSocket(seal, 1) == 120, "failed feed awarded duration");
     failPayment = false;
-    actor->SetItemCube(0, cell);
+    NewPetSystem::SetItemCube(owner, 0, cell);
     g_registry.destroy(food);
     const auto replacement = Item(owner);
     g_registry.get<ItemState>(replacement).cell = cell;
     g_registry.get<ItemState>(replacement).vnum = 55001;
-    actor->ItemCubeFeed(1);
+    NewPetSystem::ItemCubeFeed(owner, 1);
     Check(g_registry.valid(replacement), "stale feed consumed a replacement entity");
-    actor->SetItemCube(0, cell);
-    actor->ItemCubeFeed(1);
-    actor->UpdateTime(true);
+    NewPetSystem::SetItemCube(owner, 0, cell);
+    NewPetSystem::ItemCubeFeed(owner, 1);
+    NewPetSystem::UpdateTime(owner, true);
     Check(!g_registry.valid(replacement) && removedItems == 1 && ItemSystem::GetItemSocket(seal, 1) == 200,
         "valid growth feeding did not cap duration");
     const auto book = Item(owner);
     auto& material = g_registry.get<ItemState>(book);
     material.proto.bType = ITEM_TYPE_PET; material.proto.alValues[0] = 1; material.count = 5;
     for (int invalid : {-1,4,INT_MAX,INT_MIN})
-        Check(!actor->IncreasePetSkill(invalid, material.cell), "invalid skill slot accepted");
+        Check(!NewPetSystem::IncreasePetSkill(owner, invalid, material.cell), "invalid skill slot accepted");
     failPayment = true;
-    Check(!actor->IncreasePetSkill(0, material.cell) && consumed == 0, "failed skill payment advanced skill");
+    Check(!NewPetSystem::IncreasePetSkill(owner, 0, material.cell) && consumed == 0, "failed skill payment advanced skill");
     failPayment = false;
-    Check(actor->IncreasePetSkill(0, material.cell) && consumed == 1, "native skill learning failed");
-    Check(!actor->IncreasePetSkill(1, material.cell) && consumed == 1, "duplicate growth skill accepted");
+    Check(NewPetSystem::IncreasePetSkill(owner, 0, material.cell) && consumed == 1, "native skill learning failed");
+    Check(!NewPetSystem::IncreasePetSkill(owner, 1, material.cell) && consumed == 1, "duplicate growth skill accepted");
     material.owner = Character();
-    Check(!actor->IncreasePetSkillByBook(book) && consumed == 1, "foreign owner's book consumed");
+    Check(!NewPetSystem::IncreasePetSkillByBook(owner, book) && consumed == 1, "foreign owner's book consumed");
     material.owner = owner;
     material.locked = true;
-    Check(!actor->IncreasePetSkillByBook(book) && consumed == 1, "locked skill book consumed");
-    actor->DoPetSkill(INT_MAX);
-    actor->DoPetSkill(-1);
-    system.Unsummon(34041);
+    Check(!NewPetSystem::IncreasePetSkillByBook(owner, book) && consumed == 1, "locked skill book consumed");
+    NewPetSystem::DoPetSkill(owner, INT_MAX);
+    NewPetSystem::DoPetSkill(owner, -1);
+    NewPetSystem::Unsummon(owner, 34041);
     Check(databaseRow[7] == "1" && databaseRow[8] == "1", "learned skill not persisted");
 }
 
@@ -827,58 +823,80 @@ void GrowthStaleAndMultiple()
     {
         Reset();
         const auto owner = Character(), seal = GrowthSeal(owner);
-        CNewPetSystem system(owner);
-        system.SetUpdatePeriod(0);
-        auto* actor = system.Summon(34041, seal, "", false);
-        const auto old = which == 0 ? owner : which == 1 ? seal : actor->GetCharacter();
-        if (which == 3) g_registry.get<ItemState>(seal).owner = Character();
-        else g_registry.destroy(old);
+        NewPetSystem::SetUpdatePeriod(owner, 0);
+        auto* actor = NewPetSystem::Summon(owner, 34041, seal, "", false);
+        Check(actor != nullptr, "growth stale fixture summon failed");
+        const auto pet = actor->character;
+        const auto old = which == 0 ? owner : which == 1 ? seal : pet;
+        if (which == 0)
+            NewPetSystem::DestroyRuntime(owner);
+        if (which == 3)
+            g_registry.get<ItemState>(seal).owner = Character();
+        else
+            g_registry.destroy(old);
         const auto replacement = Character();
-        Check(system.Update(0) && !actor->IsSummoned() && g_registry.valid(replacement), "growth stale handle cleanup failed");
-        if (which != 2) Check(queries.size() == 1, "stale owner/item saved another character's pet data");
+        Check(which == 3 || (entt::to_entity(old) == entt::to_entity(replacement) && old != replacement),
+            "growth fixture did not recycle an entity generation");
+        if (which == 0)
+        {
+            Check(!g_registry.valid(pet) && !g_registry.get<ItemState>(seal).locked,
+                "stale growth owner teardown not cleaned");
+        }
+        else
+        {
+            Check(NewPetSystem::Update(owner, 0) && !NewPetSystem::IsSummoned(*actor)
+                && actor->summonItem == entt::null, "growth stale handle cleanup failed");
+        }
+        Check(g_registry.valid(replacement), "growth cleanup destroyed recycled entity");
+        if (which == 1 || which == 3)
+            Check(queries.size() == 1, "stale growth handle saved another character's pet data");
+        NewPetSystem::DestroyRuntime(owner);
+        Check(g_registry.valid(replacement), "growth destructor destroyed recycled entity");
     }
     Reset();
     const auto owner = Character(), first = GrowthSeal(owner), second = GrowthSeal(owner);
-    CNewPetSystem system(owner);
-    Check(system.Summon(34041, first, "", false) && system.Summon(34045, second, "", false), "multiple growth pets failed");
-    Check(!system.Summon(34049, first, "", false), "growth seal bound to two actors");
-    system.UnsummonAll();
-    Check(system.CountSummoned() == 0 && !g_registry.get<ItemState>(first).locked
+    NewPetSystem::SetUpdatePeriod(owner, 0);
+    Check(NewPetSystem::Summon(owner, 34041, first, "", false)
+        && NewPetSystem::Summon(owner, 34045, second, "", false), "multiple growth pets failed");
+    Check(!NewPetSystem::Summon(owner, 34049, first, "", false), "growth seal bound to two actors");
+    NewPetSystem::UnsummonAll(owner);
+    Check(NewPetSystem::CountSummoned(owner) == 0 && !g_registry.get<ItemState>(first).locked
         && !g_registry.get<ItemState>(second).locked, "growth UnsummonAll stopped after first pet");
-    system.Summon(34041, first, "", false);
-    system.Summon(34045, second, "", false);
+    NewPetSystem::Summon(owner, 34041, first, "", false);
+    NewPetSystem::Summon(owner, 34045, second, "", false);
     int callbacks = 0;
     onCompute = [&] {
         ++callbacks;
-        Check(system.CountSummoned() == static_cast<size_t>(2 - callbacks), "growth destructor exposed dying actor");
-        system.Destroy();
+        Check(NewPetSystem::CountSummoned(owner) == static_cast<size_t>(2 - callbacks), "growth destructor exposed dying actor");
+        NewPetSystem::DestroyRuntime(owner); // Recursive teardown is harmless.
     };
     const auto oldUpdate = retainedEvents[retainedEvents.size()-2];
     const auto oldExpiry = retainedEvents.back();
-    system.Destroy();
+    NewPetSystem::DestroyRuntime(owner);
     onCompute = {};
-    CNewPetSystem replacement(owner);
-    replacement.Summon(34041, first, "", false);
+    NewPetSystem::Summon(owner, 34041, first, "", false);
     Check(oldUpdate->func(oldUpdate, 0) == 0 && oldExpiry->func(oldExpiry, 0) == 0, "old growth timer entered replacement");
-    system.Destroy();
-    Check(ecs::PlayerRuntime::GetNewPetSystem(owner) == &replacement, "old growth system cleared replacement reference");
+    Check(NewPetSystem::FindActor(owner, 34041) != nullptr, "replacement growth runtime lost its pet");
+    NewPetSystem::DestroyRuntime(owner);
 }
 
 void GrowthRecycledSealAndNullOwner()
 {
     Reset();
-    CNewPetActor orphan(entt::null, 34041);
-    orphan.SetName(nullptr);
-    orphan.SetItemCube(INT_MIN, INT_MAX);
-    orphan.ItemCubeFeed(1);
-    orphan.GiveBuff();
-    orphan.ClearBuff();
-    orphan.UpdatePetSkin();
-    Check(!orphan.Mount() && !orphan.Summon(nullptr, entt::null), "null-owner growth pet entered runtime services");
-    orphan.Unsummon();
+    NewPetSystem::SetUpdatePeriod(entt::null, 0);
+    NewPetSystem::ChangeName(entt::null, "Pet");
+    NewPetSystem::SetItemCube(entt::null, INT_MIN, INT_MAX);
+    NewPetSystem::ItemCubeFeed(entt::null, 1);
+    NewPetSystem::RefreshBuff(entt::null);
+    NewPetSystem::UpdatePetSkin(entt::null);
+    Check(!NewPetSystem::Mount(entt::null, 34041)
+        && !NewPetSystem::Summon(entt::null, 34041, entt::null, nullptr, false),
+        "null-owner growth pet entered runtime services");
+    NewPetSystem::Unsummon(entt::null, 34041);
+    NewPetSystem::DestroyRuntime(entt::null);
     const auto owner = Character(), seal = GrowthSeal(owner);
-    CNewPetSystem system(owner);
-    auto* actor = system.Summon(34041, seal, "", false);
+    auto* actor = NewPetSystem::Summon(owner, 34041, seal, "", false);
+    Check(actor != nullptr, "growth recycled fixture summon failed");
     const auto id = ItemSystem::GetItemID(seal), vid = ItemSystem::GetItemVID(seal);
     g_registry.destroy(seal);
     const auto replacement = GrowthSeal(owner);
@@ -886,7 +904,7 @@ void GrowthRecycledSealAndNullOwner()
     auto& item = g_registry.get<ItemState>(replacement);
     item.id = id; item.vid = vid; item.locked = true; item.sockets[0] = 7; item.attributes[0] = 99;
     const auto before = queries.size();
-    actor->Unsummon();
+    NewPetSystem::Unsummon(owner, actor->vnum);
     Check(queries.size() == before && item.locked && item.sockets[0] == 7 && item.attributes[0] == 99,
         "old growth actor modified/saved replacement seal with reused item ID/VID");
 }

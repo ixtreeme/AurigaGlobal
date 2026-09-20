@@ -88,7 +88,7 @@ entt::registry g_registry;
 namespace {
 int checks = 0, socketWrites = 0, packets = 0, computes = 0, dbPackets = 0;
 uint32_t nextPID = 0;
-bool hasPet = false, activePet = false, rejectDestroy = false;
+bool activePet = false, rejectDestroy = false;
 struct Player {
     std::string name;
     int level = 90, map = 1;
@@ -113,12 +113,11 @@ void Check(bool value, const char* message) { ++checks; if (!value) throw std::r
 uint32_t Key(TItemPos pos) { return (uint32_t(pos.window_type) << 16) | pos.cell; }
 // Opaque service tokens, never dereferenced by production code under test.
 LPDESC DescToken() { static int token; return reinterpret_cast<LPDESC>(&token); }
-CNewPetSystem* PetToken() { static int token; return reinterpret_cast<CNewPetSystem*>(&token); }
 void Reset() {
     for (auto e : CPIDRegistry::Instance().Snapshot()) CPIDRegistry::Instance().UnregisterEntity(e);
     g_registry.clear(); slots.clear(); messages.clear(); destroyed.clear(); quickslots.clear(); p2p.clear();
     onDestroy = onChat = onCompute = onPointChange = {}; onPacket = {};
-    hasPet = activePet = rejectDestroy = false; socketWrites = packets = computes = dbPackets = 0;
+    activePet = rejectDestroy = false; socketWrites = packets = computes = dbPackets = 0;
     onColorUpdate = onColorPayment = {};
     colorTokens = colorPayments = guildSkillLevel = 0;
     refuseColorPayment = hasGuild = false; savedColors.clear();
@@ -159,7 +158,7 @@ void PurgeChecks() {
         Check(quickslots.size() == (all ? 4 : mode == "ds" || mode == "dragonsoul" ? 0 : 1), "quickslot windows");
     }
     Reset(); auto owner = Actor(), item = Give(owner);
-    hasPet = activePet = true;
+    activePet = true;
     do_item_purge(owner, "all", 0, 0);
     Check(g_registry.valid(item) && destroyed.empty(), "active pet item destroyed");
     activePet = false; rejectDestroy = true;
@@ -587,7 +586,6 @@ namespace ecs::PlayerRuntime {
 bool IsPC(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<TagPC>(e); }
 bool IsValid(entt::entity e) { return g_registry.valid(e); }
 LPDESC GetDesc(entt::entity e) { const auto* p = g_registry.valid(e) ? g_registry.try_get<Player>(e) : nullptr; return p && p->online ? DescToken() : nullptr; }
-CNewPetSystem* GetNewPetSystem(entt::entity e) { Check(IsPC(e), "invalid pet owner"); return hasPet ? PetToken() : nullptr; }
 std::string_view GetName(entt::entity e) { return g_registry.get<Player>(e).name; }
 int32_t GetMapIndex(entt::entity e) { return g_registry.get<Player>(e).map; }
 uint8_t GetEmpire(entt::entity e) { return g_registry.get<Player>(e).empire; }
@@ -634,7 +632,9 @@ void SyncQuickslot(entt::entity owner, uint16_t type, uint16_t oldPos, uint16_t 
     quickslots.emplace_back(type, oldPos);
 }
 }
-size_t CNewPetSystem::CountSummoned() const { Check(this == PetToken(), "pet service token"); return activePet ? 1 : 0; }
+namespace NewPetSystem {
+size_t CountSummoned(entt::entity e) { Check(ecs::PlayerRuntime::IsPC(e), "invalid pet owner"); return activePet ? 1 : 0; }
+}
 namespace ecs {
 void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list args) {
     SendNewV(e, type, 0, format, args);

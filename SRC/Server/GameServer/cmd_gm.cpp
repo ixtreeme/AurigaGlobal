@@ -1121,7 +1121,7 @@ ACMD(do_item_purge)
         return;
     }
 #ifdef __NEWPET_SYSTEM__
-    if (auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character); pet && pet->CountSummoned() > 0)
+    if (NewPetSystem::CountSummoned(character) > 0)
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 807, "");

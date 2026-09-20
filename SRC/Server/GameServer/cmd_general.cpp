@@ -2735,9 +2735,6 @@ ACMD(do_gift)
 ACMD(do_CubePetAdd) {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
-	if (!pet)
-		return;
 
 	int pos = 0;
 	int invpos = 0;
@@ -2769,8 +2766,8 @@ ACMD(do_CubePetAdd) {
 		return;
 	}
 
-	if (pet->IsActivePet())
-		pet->SetItemCube(pos, invpos);
+	if (NewPetSystem::IsActivePet(character))
+		NewPetSystem::SetItemCube(character, pos, invpos);
 	else
 		return;
 
@@ -2778,9 +2775,6 @@ ACMD(do_CubePetAdd) {
 
 ACMD(do_PetSkill) {
 	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
-	if (!pet)
 		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
@@ -2791,8 +2785,8 @@ ACMD(do_PetSkill) {
 	if (!ParseCommandNumber(arg1, skillslot) || skillslot > 3)
 		return;
 
-	if (pet->IsActivePet()) {
-		pet->DoPetSkill(skillslot);
+	if (NewPetSystem::IsActivePet(character)) {
+		NewPetSystem::DoPetSkill(character, skillslot);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -2805,9 +2799,6 @@ ACMD(do_PetSkill) {
 ACMD(do_PetIncreaseSkill) {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
-	if (!pet)
-		return;
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
@@ -2818,16 +2809,13 @@ ACMD(do_PetIncreaseSkill) {
 	if (!ParseCommandNumber(arg1, iSlot) || !ParseCommandNumber(arg2, iType))
 		return;
 
-	if (pet->IsActivePet())
-		pet->IncreasePetSkill(iSlot, iType);
+	if (NewPetSystem::IsActivePet(character))
+		NewPetSystem::IncreasePetSkill(character, iSlot, iType);
 }
 #endif
 
 ACMD(do_FeedCubePet) {
 	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
-	if (!pet)
 		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
@@ -2837,8 +2825,8 @@ ACMD(do_FeedCubePet) {
 	uint32_t feedtype = 0;
 	if (!ParseCommandNumber(arg1, feedtype))
 		return;
-	if (pet->IsActivePet()) {
-		pet->ItemCubeFeed(feedtype);
+	if (NewPetSystem::IsActivePet(character)) {
+		NewPetSystem::ItemCubeFeed(character, feedtype);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -2850,9 +2838,6 @@ ACMD(do_FeedCubePet) {
 ACMD(do_PetEvo) {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
-	if (!pet)
-		return;
 
 	if (ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character)) {
 #ifdef TEXTS_IMPROVEMENT
@@ -2862,11 +2847,11 @@ ACMD(do_PetEvo) {
 	}
 	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
-	if (pet->IsActivePet()) {
-		int tmpevo = pet->GetEvolution();
-		if (((tmpevo == 0) && (pet->GetLevel() >= 40)) || ((tmpevo == 1) && (pet->GetLevel() >= 60)) || ((tmpevo == 2) && (pet->GetLevel() >= 80))) {
+	if (NewPetSystem::IsActivePet(character)) {
+		int tmpevo = NewPetSystem::GetEvolution(character);
+		if (((tmpevo == 0) && (NewPetSystem::GetLevel(character) >= 40)) || ((tmpevo == 1) && (NewPetSystem::GetLevel(character) >= 60)) || ((tmpevo == 2) && (NewPetSystem::GetLevel(character) >= 80))) {
 #ifdef ENABLE_NEW_PET_EDITS
-			if (pet->GetExp() < pet->GetNextExpFromMob()) {
+			if (NewPetSystem::GetExp(character) < NewPetSystem::GetNextExpFromMob(character)) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 59, "");
 #endif
@@ -2928,9 +2913,9 @@ ACMD(do_PetEvo) {
 				|| !ItemSystem::RemoveSpecifyItemEcs(character, dwItemVnum2, 10)
 				|| !ItemSystem::RemoveSpecifyItemEcs(character, dwItemVnum3, 3))
 				return;
-			// Consumption can run callbacks; do not reuse a deleted/replaced subsystem.
-			if (ecs::PlayerRuntime::GetNewPetSystem(character) == pet)
-				pet->IncreasePetEvolution();
+			// Consumption can run callbacks; the native entry point revalidates
+			// the live actor before it evolves.
+			NewPetSystem::IncreasePetEvolution(character);
 		}
 		else {
 #ifdef TEXTS_IMPROVEMENT

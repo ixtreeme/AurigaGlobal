@@ -1614,20 +1614,19 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	iExp = AdjustExpByLevel_Combat(toEntity, iExp);
 
 #ifdef __NEWPET_SYSTEM__
-	CNewPetSystem* petSystemNew = ecs::PlayerRuntime::GetNewPetSystem(toEntity);
-	if (petSystemNew)
+	if (NewPetSystem::IsActivePet(toEntity))
 	{
 #ifdef ENABLE_NEW_PET_EDITS
-		if (petSystemNew->GetLevel() < 100)
+		if (NewPetSystem::GetLevel(toEntity) < 100)
 #else
-		if (petSystemNew->GetLevel() < 120)
+		if (NewPetSystem::GetLevel(toEntity) < 120)
 #endif
 		{
-			if ((petSystemNew->IsActivePet()) && (petSystemNew->GetLevelStep() < 4))
+			if (NewPetSystem::GetLevelStep(toEntity) < 4)
 			{
 				int tmpexp = iExp * 9 / 20;
 				iExp = iExp - tmpexp;
-				petSystemNew->SetExp(tmpexp, 0);
+				NewPetSystem::SetExp(toEntity, tmpexp, 0);
 			}
 		}
 	}
@@ -1773,15 +1772,14 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	iExp = AdjustExpByLevel_Combat(toEntity, iExp);
 
 #ifdef __NEWPET_SYSTEM__
-	CNewPetSystem* petSystemNew = ecs::PlayerRuntime::GetNewPetSystem(toEntity);
-	if (petSystemNew) {
-		if (petSystemNew->GetLevel() < 120)
+	if (NewPetSystem::IsActivePet(toEntity)) {
+		if (NewPetSystem::GetLevel(toEntity) < 120)
 		{
-			if (petSystemNew->IsActivePet() && petSystemNew->GetLevelStep() < 4)
+			if (NewPetSystem::GetLevelStep(toEntity) < 4)
 			{
 				int tmpexp = iExp * 9 / 20;
 				iExp = iExp - tmpexp;
-				petSystemNew->SetExp(tmpexp, 0);
+				NewPetSystem::SetExp(toEntity, tmpexp, 0);
 			}
 		}
 	}

@@ -9,8 +9,6 @@
 #include "../components/session_components.hpp"
 
 class CArena;
-class CPetSystem;
-class CNewPetSystem;
 
 class CWheelDestiny;
 
@@ -275,7 +273,6 @@ uint32_t GetQuestBy(entt::entity e);
 bool SetQuestBy(entt::entity e, uint32_t questVnum);
 void DestroyCharacter(entt::entity e);
 #ifdef __NEWPET_SYSTEM__
-CNewPetSystem* GetNewPetSystem(entt::entity e);
 void SetEggVID(entt::entity e, int vid);
 int GetEggVID(entt::entity e);
 #endif

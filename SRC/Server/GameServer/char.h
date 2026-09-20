@@ -48,10 +48,6 @@ eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew);
 const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
 
 	
-#ifdef __NEWPET_SYSTEM__
-class CNewPetSystem;
-#endif
-
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 namespace offlineshop
 {

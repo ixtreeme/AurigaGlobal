@@ -422,7 +422,6 @@ bool ecs::MovementSystem::Sync(entt::entity,int32_t,int32_t) { UnexpectedService
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }
 float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
-CNewPetSystem* ecs::PlayerRuntime::GetNewPetSystem(entt::entity) { return nullptr; }
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
 // The fixture sets postures on the component, so this reads it rather than
 // answering POS_STANDING for everyone - which is also what production does.
@@ -557,10 +556,14 @@ void CGuildManager::Kill(entt::entity,entt::entity) { UnexpectedService(__func__
 void quest::CQuestManager::Kill(unsigned int,unsigned int) { UnexpectedService(__func__); }
 void quest::CQuestManager::Die(unsigned int,unsigned int) { UnexpectedService(__func__); }
 void quest::CQuestManager::QuestDamage(unsigned int,unsigned int) { UnexpectedService(__func__); }
-bool CNewPetSystem::IsActivePet(void) { UnexpectedService(__func__); }
-void CNewPetSystem::SetExp(int,int) { UnexpectedService(__func__); }
-int CNewPetSystem::GetLevel(void) { UnexpectedService(__func__); }
-int CNewPetSystem::GetLevelStep(void) { UnexpectedService(__func__); }
+// CombatSystem asks the growth-pet runtime for its progression bonus. These
+// tests never summon one; the getters below only run behind the active check.
+namespace NewPetSystem {
+bool IsActivePet(entt::entity) { return false; }
+void SetExp(entt::entity, int, int) { UnexpectedService(__func__); }
+int GetLevel(entt::entity) { UnexpectedService(__func__); }
+int GetLevelStep(entt::entity) { UnexpectedService(__func__); }
+}
 bool CBattlePass::BattlePassMissionGetInfo(unsigned char,unsigned char,unsigned int *,unsigned int *) { UnexpectedService(__func__); }
 bool CBattlePass::IsEligibleForPlayerKill(unsigned int,unsigned int) { UnexpectedService(__func__); }
 void CBattlePass::RegisterPlayerKill(unsigned int,unsigned int) { UnexpectedService(__func__); }

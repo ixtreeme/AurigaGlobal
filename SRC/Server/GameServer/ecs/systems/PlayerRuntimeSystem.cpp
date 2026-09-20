@@ -1499,28 +1499,19 @@ void DestroyCharacter(entt::entity e)
 }
 
 #ifdef __NEWPET_SYSTEM__
-CNewPetSystem* GetNewPetSystem(entt::entity e)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return nullptr;
-	const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
-	return refs ? refs->newPetSystem : nullptr;
-}
-
 void SetEggVID(entt::entity e, int vid)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return;
-	auto& refs = g_registry.get_or_emplace<ecs::PetRuntimeRefs>(e);
-	refs.eggVID = vid;
+	g_registry.get_or_emplace<ecs::NewPetEggVID>(e).vid = vid;
 }
 
 int GetEggVID(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return 0;
-	const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
-	return refs ? refs->eggVID : 0;
+	const auto* egg = g_registry.try_get<ecs::NewPetEggVID>(e);
+	return egg ? egg->vid : 0;
 }
 #endif
 
@@ -3038,13 +3029,7 @@ void DestroyCharacterStatePre(entt::entity character)
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-    if (auto* newPet = ecs::PlayerRuntime::GetNewPetSystem(character))
-    {
-        delete newPet;
-
-		if (character != entt::null && g_registry.valid(character))
-			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(character).newPetSystem = nullptr;
-    }
+    NewPetSystem::DestroyRuntime(character);
 #endif
 
     MountSystem::SummonHorse(character, false);
@@ -3348,12 +3333,7 @@ void ecs::PlayerRuntime::SetPlayerProto(entt::entity e, const TPlayerTable* t)
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-    if (auto* previous = ecs::PlayerRuntime::GetNewPetSystem(e))
-    {
-        delete previous;
-    }
-
-    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(e).newPetSystem = M2_NEW CNewPetSystem(e);
+    NewPetSystem::DestroyRuntime(e);
 #endif
 }
 

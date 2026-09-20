@@ -1856,16 +1856,12 @@ void AffectSystem::AutoRecallProcess(entt::entity e)
 			const entt::entity pItem = ItemSystem::FindItemByID(e, pAffect->dwFlag);
 			if (pItem != entt::null) {
 				if (ItemSystem::GetItemSocket(pItem, 0) == false) {
-					CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(e);
-					if (petSystem) {
-						if (petSystem->CountSummoned() < 1) {
-							CNewPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 0), pItem, "", false);
-							if (!pPet)
-								AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
-						}
+					if (NewPetSystem::CountSummoned(e) < 1) {
+						ecs::NewPetActorState* pPet = NewPetSystem::Summon(e,
+							ItemSystem::GetItemValue(pItem, 0), pItem, "", false);
+						if (!pPet)
+							AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 					}
-					else
-						AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 				}
 			}
 			else
@@ -4136,7 +4132,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 		if (pmsg2->Get()->uiNumRows > 0) {
 			MYSQL_ROW row = mysql_fetch_row(pmsg2->Get()->pSQLResult);
 			if (atoi(row[0]) > 0) {
-				if (ecs::PlayerRuntime::GetNewPetSystem(e)->IsActivePet()) {
+				if (NewPetSystem::IsActivePet(e)) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 787, "");
 #endif
@@ -4960,11 +4956,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #ifdef ENABLE_NEW_PET_EDITS
 	case ITEM_TYPE_PET:
 	{
-		if (!ecs::PlayerRuntime::GetNewPetSystem(e))
-			return false;
-
-		if (ecs::PlayerRuntime::GetNewPetSystem(e)->IsActivePet()) {
-			ecs::PlayerRuntime::GetNewPetSystem(e)->IncreasePetSkillByBook(itemEntity);
+		if (NewPetSystem::IsActivePet(e)) {
+			NewPetSystem::IncreasePetSkillByBook(e, itemEntity);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {

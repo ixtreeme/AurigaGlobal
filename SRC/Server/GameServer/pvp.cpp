@@ -225,13 +225,8 @@ EVENTFUNC(pvp_duel_counter)
 #endif
 #ifdef __NEWPET_SYSTEM__
 				{
-					CNewPetSystem* chPet = ecs::PlayerRuntime::GetNewPetSystem(characterA);
-					CNewPetSystem* victimPet = ecs::PlayerRuntime::GetNewPetSystem(characterB);
-					if (chPet)
-						chPet->UnsummonAll();
-
-					if (victimPet)
-						victimPet->UnsummonAll();
+					NewPetSystem::UnsummonAll(characterA);
+					NewPetSystem::UnsummonAll(characterB);
 				}
 #endif
 			}
