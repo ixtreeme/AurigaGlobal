@@ -70,7 +70,6 @@ bool ParseCommandNumber(std::string_view input, T& value)
 #include "New_PetSystem.h"
 #endif
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-#include "MountSystem.h"
 #include "ecs/systems/GayaSystem.hpp"
 #include "ecs/systems/DragonSoulSystem.hpp"
 #endif
@@ -284,9 +283,7 @@ ACMD(do_user_horse_back)
 	if (!ecs::IsCharacter(character))
 		return;
 
-	CMountSystem* mountSystem = MountSystem::GetMountSystem(character);
-	if (mountSystem) {
-		if ((mountSystem->CountSummoned() > 0) || MountSystem::GetMountVnum(character)) {
+	if (MountSystem::CountCostumeMounts(character) > 0 || MountSystem::GetMountVnum(character)) {
 			const entt::entity owner = character;
 			const entt::entity item = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
 			if (item != entt::null) {
@@ -294,7 +291,6 @@ ACMD(do_user_horse_back)
 				return;
 			}
 		}
-	}
 
 	if (MountSystem::GetSummonedHorse(character) != entt::null)
 	{
@@ -2500,33 +2496,8 @@ ACMD(do_unmount)
 	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
 	if (ItemSystem::IsValidItem(mount))
 	{
-		CMountSystem* mountSystem = MountSystem::GetMountSystem(character);
-		uint32_t mobVnum = 0;
-
-		if (!mountSystem)
-			return;
-
-#ifdef __CHANGELOOK_SYSTEM__
-		if (const uint32_t transmutation = ItemSystem::GetItemTransmutationVnum(mount))
-		{
-			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(transmutation);
-
-			if (itemTable)
-				mobVnum = itemTable->alValues[1];
-			else
-				mobVnum = ItemSystem::GetItemValue(mount, 1);
-		}
-		else
-			mobVnum = ItemSystem::GetItemValue(mount, 1);
-#else
-		if (ItemSystem::GetItemValue(mount, 1) != 0)
-			mobVnum = ItemSystem::GetItemValue(mount, 1);
-#endif
-
 		if (MountSystem::GetMountVnum(character))
-		{
-			mountSystem->Unmount(mobVnum);
-		}
+			MountSystem::UnmountCostume(character);
 		return;
 	}
 #endif
@@ -3447,35 +3418,10 @@ ACMD(do_ride)
 	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
 	if (ItemSystem::IsValidItem(mount))
 	{
-		CMountSystem* mountSystem = MountSystem::GetMountSystem(character);
-		uint32_t mobVnum = 0;
-
-		if (!mountSystem)
-			return;
-
-#ifdef __CHANGELOOK_SYSTEM__
-		if (const uint32_t transmutation = ItemSystem::GetItemTransmutationVnum(mount))
-		{
-			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(transmutation);
-
-			if (itemTable)
-				mobVnum = itemTable->alValues[1];
-			else
-				mobVnum = ItemSystem::GetItemValue(mount, 1);
-		}
-		else
-			mobVnum = ItemSystem::GetItemValue(mount, 1);
-#else
-		if (ItemSystem::GetItemValue(mount, 1) != 0)
-			mobVnum = ItemSystem::GetItemValue(mount, 1);
-#endif
-
 		if (MountSystem::GetMountVnum(character))
-		{
-			mountSystem->Unmount(mobVnum);
-		}
+			MountSystem::UnmountCostume(character);
 		else
-			mountSystem->Mount(mobVnum, mount);
+			MountSystem::MountCostume(character, mount);
 
 		return;
 	}

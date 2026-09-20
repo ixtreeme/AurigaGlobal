@@ -74,7 +74,6 @@
 #include "../../messenger_manager.h"
 #include "../../mining.h"
 #include "../../mob_manager.h"
-#include "../../MountSystem.h"
 #include "../../MountInventory.h"
 #include "../../new_offlineshop.h"
 #include "../../New_PetSystem.h"
@@ -3035,13 +3034,7 @@ void DestroyCharacterStatePre(entt::entity character)
     }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (auto* mount = MountSystem::GetMountSystem(character))
-    {
-        delete mount;
-
-        if (character != entt::null && g_registry.valid(character))
-            g_registry.get_or_emplace<ecs::MountRuntimeRefs>(character).mountSystem = nullptr;
-    }
+    MountSystem::DestroyCostumeMountRuntime(character);
 
     if (MountSystem::GetMountVnum(character))
     {
@@ -3372,12 +3365,7 @@ void ecs::PlayerRuntime::SetPlayerProto(entt::entity e, const TPlayerTable* t)
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (auto* previous = MountSystem::GetMountSystem(e))
-    {
-        delete previous;
-    }
-
-    g_registry.get_or_emplace<ecs::MountRuntimeRefs>(e).mountSystem = M2_NEW CMountSystem(e);
+    MountSystem::DestroyCostumeMountRuntime(e);
 #endif
 
 #ifdef __NEWPET_SYSTEM__

@@ -9,7 +9,6 @@
 #include "../../skill.h"
 #include "../../marriage.h"
 #include "../../questmanager.h"
-#include "../../MountSystem.h"
 #include "../../belt_inventory_helper.h"
 #include "../components/status_components.hpp"
 #include "../components/social_components.hpp"
@@ -2460,8 +2459,7 @@ void FinishEquip(entt::entity owner, entt::entity item) {
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     if (!unchanged()) return;
     if (type == ITEM_COSTUME && subtype == COSTUME_MOUNT)
-        if (const auto* refs = g_registry.try_get<ecs::MountRuntimeRefs>(owner); refs && refs->mountSystem)
-            refs->mountSystem->Mount(GetItemValue(item, 1), item);
+        MountSystem::MountCostume(owner, item);
 #endif
 }
 } // namespace

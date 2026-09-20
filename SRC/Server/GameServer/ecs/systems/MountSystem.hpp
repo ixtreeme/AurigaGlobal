@@ -9,8 +9,6 @@
 #include "../components/social_components.hpp"
 #include "../../horse_rider.h"
 
-class CMountSystem;
-
 struct MountInventoryLoadRequest {
     entt::entity character { entt::null };
     uint32_t accountId { 0 };
@@ -21,12 +19,8 @@ namespace MountSystem {
 
 bool IsRiding(entt::entity rider);
 
-// Skin and unsummon, reached from an entity. The subsystem pointers come
-// from MountRuntimeRefs / PetRuntimeRefs, not from CHARACTER members.
-
 void UpdateMountSkin(entt::entity e);
 void MountUnsummon(entt::entity e, entt::entity mountItem);
-CMountSystem* GetMountSystem(entt::entity e);
 void CheckMount(entt::entity e);
 void UpdatePetSkin(entt::entity e);
 bool IsSummoned(entt::entity rider);
@@ -37,6 +31,12 @@ void SummonHorse(entt::entity rider, bool summon, bool fromFar = false,
 uint32_t GetMountVnum(entt::entity rider);
 void SetMountVnum(entt::entity rider, uint32_t vnum);
 void MountSummon(entt::entity rider, entt::entity mountItem);
+bool IsCostumeMountSummoned(entt::entity rider);
+size_t CountCostumeMounts(entt::entity rider);
+void SummonCostumeMount(entt::entity rider, entt::entity mountItem, bool spawnFar);
+void MountCostume(entt::entity rider, entt::entity mountItem);
+void UnmountCostume(entt::entity rider);
+void DestroyCostumeMountRuntime(entt::entity rider);
 entt::entity GetMountInventory(entt::entity rider);
 entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell);
 bool IsMountInventoryPositionValid(entt::entity rider, uint32_t pos);

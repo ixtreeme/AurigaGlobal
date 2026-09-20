@@ -9,7 +9,6 @@
 #include "../../event.h"
 
 class CPetSystem;
-class CMountSystem;
 class CNewPetSystem;
 
 #include "../../buff_on_attributes.h"
@@ -94,10 +93,6 @@ struct MountInventoryRef {
 struct MountInventoryLoadState {
     uint32_t accountId { 0 };
     uint64_t requestId { 0 };
-};
-
-struct MountRuntimeRefs {
-    CMountSystem* mountSystem { nullptr };
 };
 
 struct PetRuntimeRefs {

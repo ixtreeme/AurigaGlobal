@@ -70,7 +70,6 @@ add_test(NAME horse_runtime COMMAND HorseRuntimeTests)
 
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
-    MountSystem.cpp
     PetSystem.cpp
     New_PetSystem.cpp
 )

@@ -20,7 +20,6 @@
 #include "../../questmanager.h"
 #include "../../item.h"
 #include "../../item_manager.h"
-#include "../../MountSystem.h"
 #include "../../MountInventory.h"
 #include "../../mount_inventory_helper.h"
 #include "../../horsename_manager.h"
@@ -38,14 +37,24 @@
 #include "../components/social_components.hpp"
 #include "../components/pet_mount_components.hpp"
 #include "../components/movement_components.hpp"
+#include "../components/status_components.hpp"
 
 #include <common/VnumHelper.h>
 #include <utility>
 #include <Core/Logging.hpp>
 #include "../CharacterAccessors.hpp"
 #include "../components/visibility_components.hpp"
+#include "../EventDispatcher.hpp"
+#include "../events.hpp"
 #include "../services/EntityNetworkDispatch.hpp"
 #include "MovementSystem.hpp"
+
+EVENTINFO(costume_mount_event_info)
+{
+    entt::entity owner { entt::null };
+};
+
+EVENTFUNC(costume_mount_update_event);
 
 namespace
 {
@@ -86,11 +95,290 @@ uint32_t GetMountMobVnum(entt::entity item)
     return ItemSystem::GetItemValue(item, 1);
 }
 
+uint32_t GetMountSkinVnum(entt::entity owner)
+{
+#ifdef ENABLE_COSTUME_MOUNT
+    const auto item = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT_SKIN);
+    if (ItemSystem::IsValidItem(item))
+        return ItemSystem::GetItemValue(item, 0);
+#endif
+    return 0;
+}
+
+bool IsOwnedMountItem(entt::entity owner, entt::entity item)
+{
+    return ecs::PlayerRuntime::IsValid(owner) && ItemSystem::IsValidItem(item)
+        && ItemSystem::GetItemOwner(item) == owner;
+}
+
+bool MountItemDuration(entt::entity owner, entt::entity item, int32_t& duration)
+{
+    if (!IsOwnedMountItem(owner, item))
+        return false;
+    const auto* proto = ItemSystem::GetItemProto(item);
+    if (!proto)
+        return false;
+    for (const auto& apply : proto->aApplies)
+        if (apply.bType >= MAX_APPLY_NUM)
+            return false;
+    const int64_t remaining = ItemSystem::IsUnlimitedTimeUnique(item) ? 86400
+        : static_cast<int64_t>(ItemSystem::GetItemSocket(item, 0)) - time(nullptr);
+    if (remaining <= 0)
+        return false;
+    duration = static_cast<int32_t>(std::min<int64_t>(remaining, std::numeric_limits<int32_t>::max()));
+    return true;
+}
+
+bool SnapFollowerToOwner(entt::entity follower, entt::entity owner, int32_t x, int32_t y, int32_t z)
+{
+    if (!ecs::PlayerRuntime::IsValid(follower) || !ecs::PlayerRuntime::IsValid(owner))
+        return false;
+    if (!ecs::MovementSystem::Show(follower, ecs::PlayerRuntime::GetMapIndex(owner), x, y, z))
+        return false;
+    ecs::MovementSystem::Stop(follower);
+    ecs::MovementSystem::SendMovePacket(follower, FUNC_WAIT, 0, 0, 0, 0);
+    return true;
+}
+
+ecs::CostumeMountRuntime* CostumeRuntime(entt::entity owner)
+{
+    if (owner == entt::null || !g_registry.valid(owner))
+        return nullptr;
+    return &g_registry.get_or_emplace<ecs::CostumeMountRuntime>(owner);
+}
+
+ecs::CostumeMountActorState* CostumeRecord(ecs::CostumeMountRuntime& runtime,
+    uint32_t vnum)
+{
+    for (auto& record : runtime.actors)
+        if (record.vnum == vnum)
+            return &record;
+    return nullptr;
+}
+
+ecs::CostumeMountActorState* CostumeRecordForItem(ecs::CostumeMountRuntime& runtime,
+    entt::entity item)
+{
+    for (auto& record : runtime.actors)
+        if (record.summonItem == item)
+            return &record;
+    return nullptr;
+}
+
+void SetMountComponent(entt::entity owner, entt::entity item, bool summoned)
+{
+    if (!g_registry.valid(owner))
+        return;
+
+    auto& state = g_registry.get_or_emplace<ecs::MountComponent>(owner);
+    if (!ItemSystem::IsValidItem(item))
+    {
+        state = {};
+        return;
+    }
+
+    state.owner = owner;
+    state.item = item;
+    state.itemID = ItemSystem::GetItemID(item);
+    state.itemVID = ItemSystem::GetItemVID(item);
+    state.itemVnum = ItemSystem::GetItemVnum(item);
+    state.state = summoned ? 1u : 0u;
+    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+        state.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(item, i));
+}
+
+void ClearCostumeMountEffects(entt::entity owner)
+{
+    if (!ecs::PlayerRuntime::IsValid(owner))
+        return;
+
+    AffectSystem::RemoveAffect(owner, AFFECT_MOUNT);
+    AffectSystem::RemoveAffect(owner, AFFECT_MOUNT_BONUS);
+    MountSystem::SetMountVnum(owner, 0);
+    for (const auto point : { POINT_ST, POINT_DX, POINT_HT, POINT_IQ })
+        ecs::PointSystem::Change(owner, point, 0);
+}
+
+void SendMountRemove(entt::entity mount, entt::entity viewer)
+{
+    if (!g_registry.valid(mount) || !g_registry.valid(viewer))
+        return;
+    const auto* vid = g_registry.try_get<ecs::VIDComponent>(mount);
+    auto* desc = ecs::PlayerRuntime::GetDesc(viewer);
+    if (!vid || !desc)
+        return;
+    TPacketGCCharacterDelete packet{};
+    packet.header = HEADER_GC_CHARACTER_DEL;
+    packet.id = vid->value;
+    desc->Packet(&packet, sizeof(packet));
+}
+
+void DestroyOrphanedMountEntities(entt::entity owner,
+    const ecs::CostumeMountRuntime& runtime)
+{
+    if (!ecs::PlayerRuntime::IsValid(owner))
+        return;
+
+    const std::string fallbackName = std::string(ecs::PlayerRuntime::GetName(owner)) + "'s Mount";
+    std::vector<entt::entity> orphans;
+    for (const entt::entity entity : g_registry.view<ecs::StatusFlags>())
+    {
+        const auto* status = g_registry.try_get<ecs::StatusFlags>(entity);
+        if (!status || !status->isMount)
+            continue;
+
+        bool tracked = false;
+        for (const auto& record : runtime.actors)
+            if (record.character == entity && ItemSystem::IsValidItem(record.summonItem))
+            {
+                tracked = true;
+                break;
+            }
+        if (tracked)
+            continue;
+
+        bool owned = false;
+        if (const auto* mountOwner = g_registry.try_get<ecs::MountOwner>(entity))
+            owned = mountOwner->owner == owner;
+        if (!owned)
+            if (const auto* name = g_registry.try_get<ecs::PlayerName>(entity))
+                owned = name->value == fallbackName;
+        if (owned)
+            orphans.push_back(entity);
+    }
+
+    for (const entt::entity orphan : orphans)
+    {
+        if (!g_registry.valid(orphan))
+            continue;
+        std::unordered_set<entt::entity> recipients { owner };
+        if (const auto* viewers = g_registry.try_get<ecs::ViewerMap>(orphan))
+            recipients.insert(viewers->viewers.begin(), viewers->viewers.end());
+        for (const entt::entity viewer : recipients)
+            SendMountRemove(orphan, viewer);
+        ecs::PlayerRuntime::DestroyCharacter(orphan);
+    }
+}
+
+void DestroyCostumeRecord(entt::entity owner, uint32_t vnum)
+{
+    auto* runtime = CostumeRuntime(owner);
+    if (!runtime)
+        return;
+
+    entt::entity character = entt::null;
+    entt::entity item = entt::null;
+    if (auto* record = CostumeRecord(*runtime, vnum))
+    {
+        character = record->character;
+        item = record->summonItem;
+        *record = { vnum, entt::null, entt::null, 0 };
+    }
+    if (item != entt::null && g_registry.valid(owner))
+    {
+        if (auto* state = g_registry.try_get<ecs::MountComponent>(owner);
+            state && state->item == item)
+            *state = {};
+    }
+    if (ecs::PlayerRuntime::IsValid(character))
+        ecs::PlayerRuntime::DestroyCharacter(character);
+}
+
+void EnsureCostumeMountEvent(entt::entity owner)
+{
+    auto* runtime = CostumeRuntime(owner);
+    if (!runtime || runtime->updateEvent)
+        return;
+    auto* info = AllocEventInfo<costume_mount_event_info>();
+    info->owner = owner;
+    runtime->updateEvent = event_create(costume_mount_update_event, info,
+        PASSES_PER_SEC(1) / 4);
+}
+
+void UpdateCostumeMounts(entt::entity owner)
+{
+    auto* runtime = CostumeRuntime(owner);
+    if (!runtime)
+        return;
+    const uint32_t now = get_dword_time();
+    if (runtime->updatePeriod > now - runtime->lastUpdateTime)
+        return;
+    std::vector<uint32_t> vnums;
+    for (const auto& record : runtime->actors)
+        vnums.push_back(record.vnum);
+
+    for (const uint32_t vnum : vnums)
+    {
+        runtime = CostumeRuntime(owner);
+        auto* record = runtime ? CostumeRecord(*runtime, vnum) : nullptr;
+        if (!record)
+            continue;
+        if (!ecs::PlayerRuntime::IsValid(record->character) ||
+            !ItemSystem::IsValidItem(record->summonItem) ||
+            ItemSystem::GetItemOwner(record->summonItem) != owner ||
+            CombatSystem::IsDead(owner) || CombatSystem::IsDead(record->character) ||
+            !ecs::PlayerRuntime::GetMobTable(record->character))
+        {
+            DestroyCostumeRecord(owner, vnum);
+            continue;
+        }
+
+        const auto ownerX = ecs::PlayerRuntime::GetX(owner);
+        const auto ownerY = ecs::PlayerRuntime::GetY(owner);
+        const auto charX = ecs::PlayerRuntime::GetX(record->character);
+        const auto charY = ecs::PlayerRuntime::GetY(record->character);
+        const float distance = DISTANCE_APPROX(charX - ownerX, charY - ownerY);
+        bool moved = false;
+        if (distance >= 4500.f ||
+            ecs::PlayerRuntime::GetMapIndex(record->character) != ecs::PlayerRuntime::GetMapIndex(owner))
+        {
+            const float rotation = ecs::PlayerRuntime::GetRotation(owner) * 3.141592f / 180.f;
+            moved = SnapFollowerToOwner(record->character, owner,
+                ownerX - static_cast<int32_t>(200 * cos(rotation)),
+                ownerY - static_cast<int32_t>(200 * sin(rotation)),
+                ecs::PlayerRuntime::GetZ(owner));
+        }
+        if (!moved && distance >= 300.f)
+        {
+            ecs::MovementSystem::SetNowWalking(record->character, false);
+            const auto rotation = GetDegreeFromPositionXY(charX, charY, ownerX, ownerY);
+            ecs::MovementSystem::SetRotation(record->character, rotation);
+            float dx, dy;
+            GetDeltaByDegree(rotation, distance - 200.f, &dx, &dy);
+            ecs::MovementSystem::Goto(record->character,
+                static_cast<int32_t>(charX + dx + 0.5f),
+                static_cast<int32_t>(charY + dy + 0.5f));
+            ecs::MovementSystem::SendMovePacket(record->character, FUNC_WAIT, 0, 0, 0, 0);
+            record->lastActionTime = now;
+            CombatSystem::SetLastAttacked(record->character, now);
+        }
+        else if (!moved)
+            ecs::MovementSystem::SendMovePacket(record->character, FUNC_WAIT, 0, 0, 0, 0);
+    }
+    if (auto* current = CostumeRuntime(owner))
+        current->lastUpdateTime = now;
+}
+
 } // namespace
 
 namespace MountSystem {
 
 } // namespace MountSystem
+
+EVENTFUNC(costume_mount_update_event)
+{
+    const auto* info = dynamic_cast<costume_mount_event_info*>(event->info);
+    if (!info || !ecs::PlayerRuntime::IsValid(info->owner))
+        return 0;
+    const auto owner = info->owner;
+    const auto* runtime = g_registry.try_get<ecs::CostumeMountRuntime>(owner);
+    if (!runtime || runtime->updateEvent != event)
+        return 0;
+    UpdateCostumeMounts(owner);
+    if (g_registry.valid(owner))
+        g_dispatcher.trigger(ecs::EvMountSystemUpdate { owner });
+    return PASSES_PER_SEC(1) / 4;
+}
 
 void MountSystem::QueryMountInventory(entt::entity e)
 {
@@ -348,12 +636,8 @@ void MountSummon(entt::entity rider, entt::entity mountItem)
 	if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(rider)) == true)
 		return;
 
-	CMountSystem* mountSystem = GetMountSystem(rider);
-
-	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
+	if (!ItemSystem::IsValidItem(mountItem))
 		return;
-
-	const uint32_t mobVnum = GetMountMobVnum(mountItem);
 
 	if (IsHorseRiding(rider))
 		StopRiding(rider);
@@ -361,7 +645,7 @@ void MountSummon(entt::entity rider, entt::entity mountItem)
 	if (GetSummonedHorse(rider) != entt::null)
 		SummonHorse(rider, false);
 
-	mountSystem->Summon(mobVnum, mountItem, false);
+	SummonCostumeMount(rider, mountItem, false);
 }
 
 void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
@@ -628,12 +912,217 @@ bool IsHorseRiding(entt::entity rider)
     return state && state->horseRiding;
 }
 
+bool IsCostumeMountSummoned(entt::entity rider)
+{
+    const auto* runtime = rider == entt::null || !g_registry.valid(rider)
+        ? nullptr : g_registry.try_get<ecs::CostumeMountRuntime>(rider);
+    if (!runtime)
+        return false;
+    for (const auto& record : runtime->actors)
+        if (g_registry.valid(record.character))
+            return true;
+    return false;
+}
+
+size_t CountCostumeMounts(entt::entity rider)
+{
+    const auto* runtime = rider == entt::null || !g_registry.valid(rider)
+        ? nullptr : g_registry.try_get<ecs::CostumeMountRuntime>(rider);
+    if (!runtime)
+        return 0;
+    return std::count_if(runtime->actors.begin(), runtime->actors.end(),
+        [](const auto& record) { return g_registry.valid(record.character); });
+}
+
+void SummonCostumeMount(entt::entity rider, entt::entity mountItem, bool spawnFar)
+{
+    if (rider == entt::null || !g_registry.valid(rider) ||
+        !ItemSystem::IsValidItem(mountItem) ||
+        ItemSystem::GetItemOwner(mountItem) != rider)
+        return;
+
+    const uint32_t vnum = GetMountMobVnum(mountItem);
+    if (vnum == 0)
+        return;
+    auto* runtime = CostumeRuntime(rider);
+    if (!runtime || runtime->destroying)
+        return;
+
+    auto* record = CostumeRecord(*runtime, vnum);
+    if (!record)
+    {
+        if (auto* byItem = CostumeRecordForItem(*runtime, mountItem))
+            record = byItem;
+        else
+        {
+            runtime->actors.push_back({});
+            record = &runtime->actors.back();
+            record->vnum = vnum;
+        }
+    }
+    const uint32_t recordVnum = record->vnum;
+
+    std::vector<uint32_t> duplicateVnums;
+    for (const auto& other : runtime->actors)
+        if (other.vnum != recordVnum && other.summonItem == mountItem)
+            duplicateVnums.push_back(other.vnum);
+    for (const uint32_t duplicate : duplicateVnums)
+        DestroyCostumeRecord(rider, duplicate);
+
+    runtime = CostumeRuntime(rider);
+    record = runtime ? CostumeRecord(*runtime, recordVnum) : nullptr;
+    if (!record)
+        return;
+
+    int32_t x = ecs::PlayerRuntime::GetX(rider);
+    int32_t y = ecs::PlayerRuntime::GetY(rider);
+    const int32_t z = ecs::PlayerRuntime::GetZ(rider);
+    x += spawnFar ? (number(0, 1) * 2 - 1) * number(2000, 2500) : number(-100, 100);
+    y += spawnFar ? (number(0, 1) * 2 - 1) * number(2000, 2500) : number(-100, 100);
+
+    if (g_registry.valid(record->character))
+    {
+        if (record->summonItem != mountItem ||
+            !SnapFollowerToOwner(record->character, rider, x, y, z))
+            return;
+        record->summonItem = mountItem;
+    }
+    else
+    {
+        record->character = CHARACTER_MANAGER::instance().SpawnMobEntity(
+            GetMountSkinVnum(rider) ? GetMountSkinVnum(rider) : recordVnum,
+            ecs::PlayerRuntime::GetMapIndex(rider), x, y, z, false,
+            static_cast<int>(ecs::PlayerRuntime::GetRotation(rider) + 180), false);
+        if (!g_registry.valid(record->character))
+            return;
+        g_registry.get_or_emplace<ecs::MountOwner>(record->character).owner = rider;
+        g_registry.get_or_emplace<ecs::StatusFlags>(record->character).isMount = true;
+        ecs::PlayerRuntime::SetEmpire(record->character, ecs::PlayerRuntime::GetEmpire(rider));
+        g_registry.emplace_or_replace<ecs::PlayerName>(record->character,
+            std::string(ecs::PlayerRuntime::GetName(rider)) + "'s Mount");
+        record->summonItem = mountItem;
+        if (!ecs::MovementSystem::Show(record->character,
+                ecs::PlayerRuntime::GetMapIndex(rider), x, y, z))
+        {
+            DestroyCostumeRecord(rider, recordVnum);
+            return;
+        }
+    }
+
+    SetMountComponent(rider, mountItem, true);
+    EnsureCostumeMountEvent(rider);
+    if (ItemSystem::GetItemSocket(mountItem, 2) == 1)
+        MountCostume(rider, mountItem);
+}
+
+void MountCostume(entt::entity rider, entt::entity mountItem)
+{
+    if (rider == entt::null || !g_registry.valid(rider) ||
+        !ItemSystem::IsValidItem(mountItem) ||
+        ItemSystem::GetItemOwner(mountItem) != rider)
+        return;
+
+    int32_t duration = 0;
+    if (!MountItemDuration(rider, mountItem, duration))
+        return;
+
+    const uint32_t mobVnum = GetMountMobVnum(mountItem);
+    auto* runtime = CostumeRuntime(rider);
+    if (!runtime)
+        return;
+    auto* record = CostumeRecordForItem(*runtime, mountItem);
+    if (!record)
+    {
+        SummonCostumeMount(rider, mountItem, false);
+        runtime = CostumeRuntime(rider);
+        record = runtime ? CostumeRecordForItem(*runtime, mountItem) : nullptr;
+    }
+    if (!record)
+        return;
+
+    const uint32_t ridingVnum = GetMountSkinVnum(rider) ? GetMountSkinVnum(rider) : record->vnum;
+    if (GetMountVnum(rider) != ridingVnum)
+        ClearCostumeMountEffects(rider);
+
+    if (const auto* proto = ItemSystem::GetItemProto(mountItem))
+    {
+#ifdef ENABLE_COSTUME_EFFECT_ATTR_BONUS_RAZOR93
+        if (!AffectSystem::FindAffect(rider, AFFECT_MOUNT_BONUS))
+#endif
+        {
+            for (const auto& apply : proto->aApplies)
+                if (apply.bType != APPLY_NONE)
+                    AffectSystem::AddAffect(rider, AFFECT_MOUNT_BONUS,
+                        aApplyInfo[apply.bType].bPointType, apply.lValue,
+                        AFF_NONE, duration, 0, false);
+            AffectSystem::AddAffect(rider, AFFECT_MOUNT_BONUS, POINT_MOV_SPEED,
+                50, AFF_NONE, duration, 0, false);
+        }
+    }
+    AffectSystem::AddAffect(rider, AFFECT_MOUNT, POINT_MOUNT, ridingVnum,
+        AFF_NONE, duration, 0, true);
+    if (GetMountVnum(rider) == ridingVnum)
+    {
+        ItemSystem::SetItemSocket(mountItem, 2, 1);
+        SetMountComponent(rider, mountItem, false);
+    }
+}
+
+void UnmountCostume(entt::entity rider)
+{
+    if (!ecs::PlayerRuntime::IsValid(rider) || GetMountVnum(rider) == 0)
+        return;
+
+    const entt::entity item = ItemSystem::GetWearItem(rider, WEAR_COSTUME_MOUNT);
+    auto* runtime = CostumeRuntime(rider);
+    uint32_t vnum = 0;
+    if (runtime)
+    {
+        if (auto* record = ItemSystem::IsValidItem(item)
+                ? CostumeRecordForItem(*runtime, item) : nullptr)
+            vnum = record->vnum;
+        else
+            for (const auto& record : runtime->actors)
+                if (record.summonItem != entt::null)
+                {
+                    vnum = record.vnum;
+                    break;
+                }
+    }
+
+    ClearCostumeMountEffects(rider);
+    if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == rider)
+        ItemSystem::SetItemSocket(item, 2, 0);
+    if (vnum != 0 && ItemSystem::IsValidItem(item))
+        SummonCostumeMount(rider, item, false);
+}
+
+void DestroyCostumeMountRuntime(entt::entity rider)
+{
+    auto* runtime = rider == entt::null || !g_registry.valid(rider)
+        ? nullptr : g_registry.try_get<ecs::CostumeMountRuntime>(rider);
+    if (!runtime)
+        return;
+    runtime->destroying = true;
+    event_cancel(&runtime->updateEvent);
+    ClearCostumeMountEffects(rider);
+    std::vector<uint32_t> vnums;
+    for (const auto& record : runtime->actors)
+        vnums.push_back(record.vnum);
+    for (const uint32_t vnum : vnums)
+        DestroyCostumeRecord(rider, vnum);
+    if (auto* current = g_registry.try_get<ecs::CostumeMountRuntime>(rider))
+        current->actors.clear();
+    if (g_registry.valid(rider))
+        g_registry.remove<ecs::CostumeMountRuntime>(rider);
+}
+
 void ForceClearRidingState(entt::entity rider)
 {
     if (!g_registry.valid(rider)) return;
     const auto vnum = GetMountVnum(rider);
-    if (auto* system = GetMountSystem(rider); system && vnum && system->GetByVnum(vnum))
-        system->Unsummon(vnum, false);
+    if (vnum && g_registry.try_get<ecs::CostumeMountRuntime>(rider))
+        DestroyCostumeMountRuntime(rider);
     if (!g_registry.valid(rider)) return;
     if (IsHorseRiding(rider)) StopRiding(rider);
     else SetMountVnum(rider, 0);
@@ -684,35 +1173,17 @@ void SetRider(entt::entity horse, entt::entity rider)
     if (g_registry.valid(horse) && GetRider(horse) == rider) SendHorseInfo(rider);
 }
 
-// The costume mount subsystem, read from MountRuntimeRefs. CMountSystem's
-// constructor writes the component and Destroy clears it while it still
-// points at that system, and SetPlayerProto - the only other place that makes
-// or frees one - writes it too.
-::CMountSystem* GetMountSystem(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    const auto* refs = g_registry.try_get<ecs::MountRuntimeRefs>(e);
-    return refs ? refs->mountSystem : nullptr;
-}
-
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 // Summons the worn costume mount when nothing is summoned yet.
 void CheckMount(entt::entity e)
 {
-	::CMountSystem* mountSystem = GetMountSystem(e);
 	const entt::entity mountItem = ItemSystem::GetWearItem(e, WEAR_COSTUME_MOUNT);
 
-	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
+	if (!ItemSystem::IsValidItem(mountItem))
 		return;
 
-	const uint32_t mobVnum = GetMountMobVnum(mountItem);
-
-	if (mountSystem->CountSummoned() == 0)
-	{
-		mountSystem->Summon(mobVnum, mountItem, false);
-	}
+	if (!IsCostumeMountSummoned(e))
+		SummonCostumeMount(e, mountItem, false);
 }
 #endif
 
@@ -721,45 +1192,38 @@ void CheckMount(entt::entity e)
 #ifdef ENABLE_COSTUME_PET
 namespace MountSystem {
 
-// The skin and unsummon paths, entity-native. The subsystem pointers come from
-// MountRuntimeRefs / PetRuntimeRefs rather than CHARACTER members, so CItem
-// can drive them without holding an owner pointer.
+// The skin and unsummon paths, entity-native. The costume mount runtime state
+// is the CostumeMountRuntime component; no subsystem pointer is retained.
 
 void UpdateMountSkin(entt::entity e)
 {
-    ::CMountSystem* mountSystem = GetMountSystem(e);
-    if (!mountSystem)
+    auto* runtime = CostumeRuntime(e);
+    if (!runtime)
         return;
 
-    mountSystem->UpdateMountSkin();
-
-    if (!IsRiding(e))
-        return;
-
-    const entt::entity item = ItemSystem::GetWearItem(e, WEAR_COSTUME_MOUNT);
-    if (!ItemSystem::IsValidItem(item))
-        return;
-
-    const uint32_t mobVnum = GetMountMobVnum(item);
-
-    mountSystem->Unmount(mobVnum);
-    mountSystem->Mount(mobVnum, item);
+    const bool riding = GetMountVnum(e) != 0;
+    std::vector<entt::entity> items;
+    for (const auto& record : runtime->actors)
+        if (ItemSystem::IsValidItem(record.summonItem))
+            items.push_back(record.summonItem);
+    if (riding)
+        ClearCostumeMountEffects(e);
+    for (const entt::entity item : items)
+    {
+        runtime = CostumeRuntime(e);
+        if (!runtime)
+            return;
+        if (auto* record = CostumeRecordForItem(*runtime, item))
+            DestroyCostumeRecord(e, record->vnum);
+        SummonCostumeMount(e, item, false);
+        if (riding)
+            MountCostume(e, item);
+    }
 }
 
 void MountUnsummon(entt::entity e, entt::entity)
 {
-    ::CMountSystem* mountSystem = GetMountSystem(e);
-    if (!mountSystem)
-        return;
-
-    // Unequip must remove every owned mount. It must not call Unmount(),
-    // because Unmount intentionally respawns a follower.
-    mountSystem->UnsummonAll();
-
-    // Fallback vnum-eltérésre (skin/transzmutáció): ha még mindig lovagol,
-    // riding vnum alapján takarítunk, ne maradjon se lovaglás, se follower.
-    if (GetMountVnum(e) != 0)
-        ForceClearRidingState(e);
+    DestroyCostumeMountRuntime(e);
 }
 
 void UpdatePetSkin(entt::entity e)

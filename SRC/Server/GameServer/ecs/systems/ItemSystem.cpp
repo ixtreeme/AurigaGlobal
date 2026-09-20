@@ -51,7 +51,6 @@
 #include "../../pcbang.h"
 #include "../../../common/VnumHelper.h"
 #include "../../belt_inventory_helper.h"
-#include "../../MountSystem.h"
 #include "../../MountInventory.h"
 #include "../../item.h"
 #include "../../item_manager.h"

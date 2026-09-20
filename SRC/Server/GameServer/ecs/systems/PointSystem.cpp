@@ -85,10 +85,6 @@
 #include "../../new_offlineshop_manager.h"
 #endif
 
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-#include "../../MountSystem.h"
-#endif
-
 #ifdef ENABLE_BATTLE_PASS
 #include "../../battle_pass.h"
 #endif
@@ -1435,7 +1431,7 @@ void ComputeBattlePoints(entt::entity e)
 		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
 
 		//
-		// ±âo» ATK = 2lev + 2str, Á÷3÷?! ¸¶´U 2strAo 1U2? 1ö AÖA1
+		// ï¿½ï¿½oï¿½ ATK = 2lev + 2str, ï¿½ï¿½3ï¿½?! ï¿½ï¿½ï¿½U 2strAo 1U2? 1ï¿½ Aï¿½A1
 		//
 		int iAtk = GetLevel(e) * 2;
 		int iStatAtk = 0;
@@ -1460,14 +1456,14 @@ void ComputeBattlePoints(entt::entity e)
 			break;
 		}
 
-		// ¸»A» A¸°í AÖ°í, 1oAEA¸·Î AÎÇN °o°Ý·ÂAI ST*2 o¸´U 3·A¸¸é ST*2·Î ÇN´U.
-		// 1oAEA» Aß¸o ÂiAo »ç¶÷ °o°Ý·ÂAI ´o 3·Áö 3E°Ô ÇI±â A§ÇO1­´U.
+		// ï¿½ï¿½Aï¿½ Aï¿½ï¿½ï¿½ AÖ°ï¿½, 1oAEAï¿½ï¿½ï¿½ Aï¿½ï¿½N ï¿½oï¿½Ý·ï¿½AI ST*2 oï¿½ï¿½U 3ï¿½Aï¿½ï¿½ï¿½ ST*2ï¿½ï¿½ ï¿½Nï¿½U.
+		// 1oAEAï¿½ Aß¸o ï¿½iAo ï¿½ï¿½ï¿½ ï¿½oï¿½Ý·ï¿½AI ï¿½o 3ï¿½ï¿½ï¿½ 3Eï¿½ï¿½ ï¿½Iï¿½ï¿½ Aï¿½ï¿½O1ï¿½ï¿½U.
 		if (MountSystem::GetMountVnum(e) && iStatAtk < 2 * Get(e, POINT_ST))
 			iStatAtk = (2 * Get(e, POINT_ST));
 
 		iAtk += iStatAtk;
 
-		// 1Â¸¶(¸») : °Ë1ö¶ó µY1IÁö °¨1O
+		// 1Â¸ï¿½(ï¿½ï¿½) : ï¿½ï¿½1ï¿½ï¿½ï¿½ ï¿½Y1Iï¿½ï¿½ ï¿½ï¿½1O
 		if (MountSystem::GetMountVnum(e))
 		{
 			if (ecs::PlayerRuntime::GetJob(e) == JOB_SURA && SkillSystem::GetSkillGroup(e) == 1)
@@ -1488,7 +1484,7 @@ void ComputeBattlePoints(entt::entity e)
 		Change(e, POINT_ATT_GRADE, iAtk);
 
 		// DEF = LEV + CON + ARMOR
-		int iShowDef = GetLevel(e) + Get(e, POINT_HT); // For Ymir(Aµ¸¶)
+		int iShowDef = GetLevel(e) + Get(e, POINT_HT); // For Ymir(Aï¿½ï¿½ï¿½)
 		int iDef = GetLevel(e) + (int)(Get(e, POINT_HT) / 1.25); // For Other
 		int iArmor = 0;
 
@@ -1509,7 +1505,7 @@ void ComputeBattlePoints(entt::entity e)
 			}
 		}
 
-		// ¸» A¸°í AÖA» ¶§ 1a3î·ÂAI ¸»AÇ ±âÁO 1a3î·Âo¸´U 3·A¸¸é ±âÁO 1a3î·ÂA¸·Î 13Á¤
+		// ï¿½ï¿½ Aï¿½ï¿½ï¿½ Aï¿½Aï¿½ ï¿½ï¿½ 1a3ï¿½ï¿½AI ï¿½ï¿½Aï¿½ ï¿½ï¿½ï¿½O 1a3ï¿½ï¿½oï¿½ï¿½U 3ï¿½Aï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½O 1a3ï¿½ï¿½Aï¿½ï¿½ï¿½ 13ï¿½ï¿½
 		if (true == MountSystem::IsHorseRiding(e))
 		{
 			if (iArmor < MountSystem::GetHorseArmor(e))

@@ -1,5 +1,4 @@
 #include "../../SRC/Server/GameServer/stdafx.h"
-#include "../../SRC/Server/GameServer/MountSystem.h"
 #include "../../SRC/Server/GameServer/PetSystem.h"
 #include "../../SRC/Server/GameServer/New_PetSystem.h"
 #include "../../SRC/Server/GameServer/db.h"
@@ -37,8 +36,10 @@ std::shared_ptr<spdlog::logger> logging::GetLogger() {
     return logging::GetErrorLogger();
 }
 
-// Compile the complete production MountSystem.cpp/PetSystem.cpp. External services are
-// doubled; no CHARACTER/CItem is created or attached to the entity fixtures.
+// Compile the complete production PetSystem.cpp/New_PetSystem.cpp. External
+// services are doubled; no CHARACTER/CItem is created or attached to the
+// entity fixtures. The costume mount runtime is covered by the GameServer
+// integration path instead of this harness.
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 int passes_per_sec = 25;
@@ -404,186 +405,6 @@ void ecs::ChatSystem::SendNew(entt::entity e, uint8_t, uint32_t, const char*, ..
 #endif
 
 namespace {
-void Lifecycle()
-{
-    Reset();
-    const auto owner = Character(), item = Item(owner);
-    CMountSystem system(owner);
-    system.SetUpdatePeriod(0);
-    system.Summon(20110, item, false);
-    auto* actor = system.GetByVnum(20110);
-    Check(actor && actor->IsSummoned() && actor->GetOwner() == owner, "native summon failed");
-    const auto mount = actor->GetCharacter();
-    Check(g_registry.get<ecs::StatusFlags>(mount).isMount, "mount marker missing");
-    Check(g_registry.get<ecs::PlayerName>(mount).value == "owner's Mount", "mount name missing");
-    Check(actor->GetSummonItem() == item && system.CountSummoned() == 1, "summon item not retained");
-    Check(system.GetByVID(actor->GetVID()) == actor && !system.GetByVID(0), "VID lookup mismatch");
-    State(mount).x += 1000;
-    Check(system.Update(0) && moves == 1, "follow did not run");
-    State(mount).map = 2;
-    Check(system.Update(0) && State(mount).map == State(owner).map, "cross-map follower not returned");
-    const auto timer = scheduled;
-    Check(timer->func(timer, 0) != 0, "native owner timer did not run");
-    system.Unsummon(20110);
-    Check(!g_registry.valid(mount) && destroyed == 1 && !actor->IsSummoned(), "unsummon did not destroy once");
-    Check(g_registry.get<ecs::MountComponent>(owner).itemVID == 0, "summon state was not cleared");
-    system.Unsummon(20110);
-    system.Destroy();
-    Check(destroyed == 1 && !g_registry.get<ecs::MountRuntimeRefs>(owner).mountSystem, "repeated destruction not idempotent");
-    Check(timer->func(timer, 0) == 0, "cancelled timer still called subsystem");
-}
-
-void StaleHandles()
-{
-    for (int which = 0; which < 4; ++which)
-    {
-        Reset();
-        const auto owner = Character(), item = Item(owner);
-        CMountSystem system(owner);
-        system.SetUpdatePeriod(0);
-        system.Summon(20110, item, false);
-        auto* actor = system.GetByVnum(20110);
-        const auto mount = actor->GetCharacter();
-        const auto old = which == 0 ? owner : which == 1 ? item : mount;
-        if (which == 3)
-            g_registry.get<ItemState>(item).owner = Character();
-        else
-            g_registry.destroy(old);
-        const auto replacement = Character();
-        Check(which == 3 || (entt::to_entity(old) == entt::to_entity(replacement) && old != replacement),
-            "fixture did not recycle entity with a new generation");
-        Check(system.Update(0) && !actor->IsSummoned(), "stale handle was not cleaned");
-        Check(g_registry.valid(replacement), "cleanup destroyed replacement entity");
-        Check(actor->GetSummonItem() == entt::null, "stale summon item retained");
-        system.Destroy();
-        Check(g_registry.valid(replacement), "destructor destroyed replacement entity");
-    }
-}
-
-void FailureAndMounting()
-{
-    Reset();
-    const auto owner = Character(), item = Item(owner), other = Character();
-    CMountSystem system(owner);
-    system.Summon(20110, entt::null, false);
-    g_registry.get<ItemState>(item).owner = other;
-    system.Summon(20110, item, false);
-    Check(spawned == 0 && !scheduled, "invalid summon entered factory");
-    g_registry.get<ItemState>(item).owner = owner;
-    failSpawn = true;
-    system.Summon(20110, item, false);
-    Check(!scheduled && system.CountSummoned() == 0, "failed spawn started timer");
-    failSpawn = false; failShow = true;
-    system.Summon(20110, item, false);
-    Check(destroyed == 1 && !scheduled && system.CountSummoned() == 0, "failed show leaked character/timer");
-    failShow = false;
-    system.Summon(20110, item, false);
-    auto* actor = system.GetByVnum(20110);
-    const auto mount = actor->GetCharacter();
-    auto& material = g_registry.get<ItemState>(item);
-    material.unlimited = false; material.sockets[0] = time(nullptr) - 1;
-    system.Mount(20110, item);
-    Check(actor->GetCharacter() == mount && affects == 0 && material.sockets[2] == 0, "expired item changed state");
-    material.unlimited = true; material.hasProto = false;
-    system.Mount(20110, item);
-    Check(actor->GetCharacter() == mount && affects == 0, "missing proto removed follower");
-    material.hasProto = true; material.proto.aApplies[0].bType = MAX_APPLY_NUM;
-    system.Mount(20110, item);
-    Check(affects == 0, "invalid apply type accepted");
-    material.proto.aApplies[0].bType = 0;
-    State(owner).war = true;
-    system.Mount(20110, item);
-    Check(actor->GetCharacter() == mount && affects == 0, "war restriction failed");
-    State(owner).war = false;
-    system.Mount(20110, item);
-    Check(!actor->IsSummoned() && State(owner).mount == 20110 && material.sockets[2] == 1, "mount did not complete");
-    Check(lastDuration == 86400, "unlimited duration changed");
-    system.Unmount(20110);
-    Check(actor->IsSummoned() && State(owner).mount == 0 && material.sockets[2] == 0, "unmount did not restore follower");
-    const auto skin = Item(owner);
-    State(owner).wear = item; State(owner).skin = skin;
-    g_registry.get<ItemState>(skin).proto.alValues[0] = 20200;
-    system.UpdateMountSkin();
-    Check(spawnedVnum == 20200 && actor->GetSummonItem() == item, "skin update lost item entity");
-    system.Mount(20110, item);
-    Check(State(owner).mount == 20200 && material.sockets[2] == 1, "skin riding return state wrong");
-    system.Destroy();
-    Check(State(owner).mount == 0 && !bonusOwners.contains(owner), "riding teardown left mount affects");
-}
-
-void OrphanMountCleanup()
-{
-    Reset();
-    const auto owner = Character(), item = Item(owner);
-    CMountSystem system(owner);
-    system.SetUpdatePeriod(0);
-    system.Summon(20110, item, false);
-    auto* actor = system.GetByVnum(20110);
-    Check(actor && actor->IsSummoned(), "orphan cleanup fixture summon failed");
-    const auto follower = actor->GetCharacter();
-
-    const auto orphan = Character();
-    g_registry.get_or_emplace<ecs::StatusFlags>(orphan).isMount = true;
-    g_registry.get_or_emplace<ecs::MountOwner>(orphan).owner = Character();
-    g_registry.get_or_emplace<ecs::PlayerName>(orphan).value = "owner's Mount";
-
-    system.Mount(20110, item);
-    Check(!g_registry.valid(follower) && !g_registry.valid(orphan),
-        "mounting did not remove all owned followers");
-    Check(State(owner).mount == 20110, "mounting failed after orphan cleanup");
-    system.Destroy();
-}
-
-void ReplacedRuntimeAndActor()
-{
-    Reset();
-    const auto owner = Character(), item = Item(owner);
-    CMountSystem oldSystem(owner);
-    oldSystem.Summon(20110, item, false);
-    const auto oldEvent = scheduled;
-    oldSystem.Destroy();
-    CMountSystem newSystem(owner);
-    newSystem.Summon(20110, item, false);
-    Check(oldEvent->func(oldEvent, 0) == 0, "old timer entered replacement system");
-    Check(scheduled->func(scheduled, 0) != 0, "replacement timer rejected");
-    oldSystem.Destroy();
-    Check(g_registry.get<ecs::MountRuntimeRefs>(owner).mountSystem == &newSystem,
-        "old system cleared replacement runtime reference");
-    newSystem.Destroy();
-
-    CMountActor oldActor(owner, 20110), newActor(owner, 20111);
-    Check(oldActor.Mount(item), "first actor failed to mount");
-    Check(newActor.Mount(item), "second actor failed to mount");
-    oldActor.Unsummon();
-    Check(State(owner).mount == 20111 && bonusOwners.contains(owner),
-        "old actor teardown removed another actor's mount");
-    newActor.Unsummon();
-    Check(State(owner).mount == 0, "current riding actor did not clean up");
-}
-
-void NullOwnerAndReusedItemState()
-{
-    Reset();
-    CMountActor orphan(entt::null, 20110);
-    orphan.SetName();
-    orphan.Unmount();
-    Check(!orphan.Mount(entt::null) && orphan.Summon(entt::null, false) == 0,
-        "null-owner actor entered services");
-    orphan.Unsummon();
-    const auto owner = Character(), item = Item(owner);
-    CMountActor actor(owner, 20110);
-    Check(actor.Summon(item, false) != 0, "fixture summon failed");
-    const auto oldVID = ItemSystem::GetItemVID(item);
-    g_registry.destroy(item);
-    const auto replacement = Item(owner);
-    g_registry.get<ItemState>(replacement).vid = oldVID;
-    auto& state = g_registry.get<ecs::MountComponent>(owner);
-    state.item = replacement;
-    actor.Unsummon();
-    Check(state.item == replacement && state.itemVID == oldVID,
-        "stale actor cleared a replacement item with the same VID");
-}
-
 entt::entity PetItem(entt::entity owner, int value = 10)
 {
     const auto item = Item(owner);
@@ -1076,13 +897,6 @@ int main()
     try {
         CHARACTER_MANAGER factory;
         DBManager database;
-        Lifecycle();
-        StaleHandles();
-        FailureAndMounting();
-        OrphanMountCleanup();
-        ReplacedRuntimeAndActor();
-        NullOwnerAndReusedItemState();
-        const auto mountChecks = checks;
         PetLifecycle();
         PetMultipleAndReentrantDeletion();
         PetStaleHandles();
@@ -1096,8 +910,7 @@ int main()
         GrowthStaleAndMultiple();
         GrowthRecycledSealAndNullOwner();
         Reset();
-        std::cout << "Mount/pet lifecycle checks passed: " << checks
-            << " (mount: " << mountChecks << ", pet: " << checks - mountChecks << ")\n";
+        std::cout << "Pet lifecycle checks passed: " << checks << "\n";
         return 0;
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';

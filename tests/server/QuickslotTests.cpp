@@ -5,7 +5,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/questmanager.h"
 #include "../../SRC/Server/GameServer/marriage.h"
-#include "../../SRC/Server/GameServer/MountSystem.h"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/dirty_components.hpp"
@@ -710,6 +709,7 @@ void MountSystem::UpdatePetSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountSummon(entt::entity, entt::entity) { Unexpected(); }
 entt::entity MountSystem::GetMountInventory(entt::entity) { Unexpected(); }
 bool MountSystem::RemoveMountInventoryItemByEntity(entt::entity, entt::entity, bool) { Unexpected(); }
+void MountSystem::MountCostume(entt::entity, entt::entity) { Unexpected(); }
 bool ItemSystem::IsDragonSoulItem(entt::entity e) { return Meta(e).dragon; }
 bool ItemSystem::IsExtraItem(entt::entity e) { return Meta(e).extra; }
 bool ItemSystem::IsRideItem(entt::entity e) { Meta(e); return false; }
@@ -1187,7 +1187,7 @@ quest::NPC::~NPC() = default;
 quest::PC::PC() : m_RunningQuestState(nullptr) {}
 quest::PC::~PC() = default;
 bool quest::CQuestManager::UseItem(unsigned int, entt::entity item, bool) { Meta(item); Service("quest-use"); return true; }
-void CMountSystem::Mount(uint32_t, entt::entity) { Unexpected(); }
+
 int ecs::PlayerRuntime::GetDuelOption(entt::entity e, const char*) { return Actor(e).duelBlock; }
 uint8_t ecs::PlayerRuntime::GetJob(entt::entity e) { return Actor(e).job; }
 uint8_t ecs::PlayerRuntime::GetSex(entt::entity e) { return Actor(e).sex; }

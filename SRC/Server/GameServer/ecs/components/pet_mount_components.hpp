@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 #include <common/length.h>
 #include "../../event.h"
@@ -60,6 +61,23 @@ struct MountComponent {
 // vnum, but cleanup must also work when skins or transmutations change it.
 struct MountOwner {
     entt::entity owner { entt::null };
+};
+
+// Authoritative runtime state for costume mounts. A record is keyed by the
+// stable mount vnum; the spawned creature and summon item are entity handles.
+struct CostumeMountActorState {
+    uint32_t vnum { 0 };
+    entt::entity character { entt::null };
+    entt::entity summonItem { entt::null };
+    uint32_t lastActionTime { 0 };
+};
+
+struct CostumeMountRuntime {
+    uint32_t updatePeriod { 400 };
+    uint32_t lastUpdateTime { 0 };
+    LPEVENT updateEvent;
+    bool destroying { false };
+    std::vector<CostumeMountActorState> actors;
 };
 
 // The rider on this horse. CHARACTER kept it as m_chRider, a pointer the

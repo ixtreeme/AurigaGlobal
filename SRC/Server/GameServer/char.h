@@ -29,11 +29,6 @@
 #include "wheel_of_destiny.h"
 #endif
 
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-class CMountSystem;
-#endif
-
-
 #ifdef ENABLE_BATTLE_PASS
 #include "utils.h"
 #endif
