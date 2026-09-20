@@ -1,4 +1,0 @@
-D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\RelWithDebInfo\libmariadb.dll
-D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\RelWithDebInfo\z.dll
-D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\RelWithDebInfo\lz4.dll
-D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\RelWithDebInfo\lzo2.dll
