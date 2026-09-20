@@ -1,6 +1,8 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "MountSystem.h"
 #include "char_manager.h"
+#include "desc.h"
 #include "constants.h"
 #include "config.h"
 #include "utils.h"
@@ -20,6 +22,7 @@
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/components/visibility_components.hpp"
 #include <limits>
 #include <utility>
 
@@ -57,6 +60,79 @@ bool MountDuration(entt::entity owner, entt::entity item, int32_t& duration)
         return false;
     duration = static_cast<int32_t>(std::min<int64_t>(remaining, std::numeric_limits<int32_t>::max()));
     return true;
+}
+
+bool IsTrackedMount(const CMountSystem* system, entt::entity mount)
+{
+    if (!system || !ecs::PlayerRuntime::IsValid(mount))
+        return false;
+
+    const auto* vid = g_registry.try_get<ecs::VIDComponent>(mount);
+    if (!vid)
+        return false;
+
+    const auto* actor = system->GetByVID(vid->value);
+    return actor && actor->GetCharacter() == mount
+        && ItemSystem::IsValidItem(actor->GetSummonItem());
+}
+
+void SendMountRemove(entt::entity mount, entt::entity viewer)
+{
+    if (!g_registry.valid(mount) || !g_registry.valid(viewer))
+        return;
+
+    const auto* vid = g_registry.try_get<ecs::VIDComponent>(mount);
+    auto* desc = ecs::PlayerRuntime::GetDesc(viewer);
+    if (!vid || !desc)
+        return;
+
+    TPacketGCCharacterDelete packet{};
+    packet.header = HEADER_GC_CHARACTER_DEL;
+    packet.id = vid->value;
+    desc->Packet(&packet, sizeof(packet));
+}
+
+void DestroyOwnedMountEntities(entt::entity owner, const CMountSystem* system)
+{
+    if (!ecs::PlayerRuntime::IsValid(owner))
+        return;
+
+    const std::string fallbackName = std::string(ecs::PlayerRuntime::GetName(owner)) + "'s Mount";
+    std::vector<entt::entity> mounts;
+
+    for (const entt::entity entity : g_registry.view<ecs::StatusFlags>())
+    {
+        const auto* status = g_registry.try_get<ecs::StatusFlags>(entity);
+        if (!status || !status->isMount || IsTrackedMount(system, entity))
+            continue;
+
+        bool owned = false;
+        if (const auto* mountOwner = g_registry.try_get<ecs::MountOwner>(entity))
+            owned = mountOwner->owner == owner;
+        if (!owned)
+            if (const auto* name = g_registry.try_get<ecs::PlayerName>(entity))
+                owned = name->value == fallbackName;
+
+        if (owned)
+            mounts.push_back(entity);
+    }
+
+    for (const entt::entity mount : mounts)
+    {
+        if (!ecs::PlayerRuntime::IsValid(mount))
+            continue;
+
+        std::unordered_set<entt::entity> recipients;
+        recipients.insert(owner);
+        if (const auto* viewers = g_registry.try_get<ecs::ViewerMap>(mount))
+            recipients.insert(viewers->viewers.begin(), viewers->viewers.end());
+
+        for (const entt::entity viewer : recipients)
+            if (g_registry.valid(viewer))
+                SendMountRemove(mount, viewer);
+
+        ecs::PlayerRuntime::DestroyCharacter(mount);
+    }
 }
 
 void ClearHorse(entt::entity owner)
@@ -223,6 +299,7 @@ uint32_t CMountActor::Summon(entt::entity item, bool spawnFar)
         static_cast<int>(ecs::PlayerRuntime::GetRotation(m_owner) + 180), false);
     if (!IsSummoned())
         return 0;
+    g_registry.get_or_emplace<ecs::MountOwner>(m_character).owner = m_owner;
     g_registry.get_or_emplace<ecs::StatusFlags>(m_character).isMount = true;
     ecs::PlayerRuntime::SetEmpire(m_character, ecs::PlayerRuntime::GetEmpire(m_owner));
     m_dwVID = ecs::PlayerRuntime::GetPacketVID(m_character);
@@ -342,6 +419,7 @@ void CMountSystem::Destroy()
 {
     event_cancel(&m_pkMountSystemUpdateEvent);
     m_mountActorMap.clear();
+    DestroyOwnedMountEntities(m_owner, this);
     if (ecs::PlayerRuntime::IsValid(m_owner))
         if (auto* refs = g_registry.try_get<ecs::MountRuntimeRefs>(m_owner); refs && refs->mountSystem == this)
             refs->mountSystem = nullptr;
@@ -394,6 +472,33 @@ void CMountSystem::Unsummon(CMountActor* actor, bool deleteFromList)
         Unsummon(actor->GetVnum(), deleteFromList);
 }
 
+void CMountSystem::UnsummonAll()
+{
+    for (auto& [key, owned] : m_mountActorMap)
+        if (owned)
+            owned->Unsummon();
+    DestroyOwnedMountEntities(m_owner, this);
+    if (CountSummoned() == 0)
+        event_cancel(&m_pkMountSystemUpdateEvent);
+}
+
+void CMountSystem::UnsummonByItem(entt::entity item)
+{
+    // Item alapján takarít, nem vnum alapján: skin/transzmutáció vagy
+    // elavult actor kulcs esetén is megtalálja a kóbor followert.
+    // A null item azt jelenti: mindenkit (biztonsági seprés lovaglás előtt).
+    for (auto& [key, owned] : m_mountActorMap)
+    {
+        if (!owned)
+            continue;
+        if (item == entt::null || owned->GetSummonItem() == item)
+            owned->Unsummon();
+    }
+    DestroyOwnedMountEntities(m_owner, this);
+    if (CountSummoned() == 0)
+        event_cancel(&m_pkMountSystemUpdateEvent);
+}
+
 void CMountSystem::Summon(uint32_t vnum, entt::entity item, bool spawnFar)
 {
     if (!IsOwnedSummonItem(m_owner, item))
@@ -402,10 +507,24 @@ void CMountSystem::Summon(uint32_t vnum, entt::entity item, bool spawnFar)
     auto* actor = GetByVnum(vnum);
     if (!actor)
     {
+        for (const auto& [key, owned] : m_mountActorMap)
+            if (owned && owned->GetSummonItem() == item)
+            {
+                actor = owned.get();
+                break;
+            }
+    }
+    if (!actor)
+    {
         auto fresh = std::make_unique<CMountActor>(m_owner, vnum);
         actor = fresh.get();
         m_mountActorMap.emplace(vnum, std::move(fresh));
     }
+    for (const auto& [key, owned] : m_mountActorMap)
+        if (owned && owned.get() != actor && owned->GetSummonItem() == item)
+            owned->Unsummon();
+
+    DestroyOwnedMountEntities(m_owner, this);
     if (!actor->Summon(item, spawnFar))
         return;
     if (!m_pkMountSystemUpdateEvent)
@@ -415,14 +534,26 @@ void CMountSystem::Summon(uint32_t vnum, entt::entity item, bool spawnFar)
         m_pkMountSystemUpdateEvent = event_create(mountsystem_update_event, info, PASSES_PER_SEC(1) / 4);
     }
     if (ItemSystem::GetItemSocket(item, 2) == 1)
-        Mount(vnum, item);
+        Mount(actor->GetVnum(), item);
 }
 
 void CMountSystem::Mount(uint32_t vnum, entt::entity item)
 {
     auto* actor = GetByVnum(vnum);
     if (!actor)
+    {
+        for (const auto& [key, owned] : m_mountActorMap)
+            if (owned && owned->GetSummonItem() == item)
+            {
+                actor = owned.get();
+                break;
+            }
+    }
+    if (!actor)
+    {
+        DestroyOwnedMountEntities(m_owner, this);
         return;
+    }
     int32_t duration;
     if (!MountDuration(m_owner, item, duration))
         return;
@@ -435,7 +566,8 @@ void CMountSystem::Mount(uint32_t vnum, entt::entity item)
         return;
     }
 #endif
-    Unsummon(vnum, false);
+    UnsummonByItem(item);
+    UnsummonAll();
     if (actor->Mount(item))
         ItemSystem::SetItemSocket(item, 2, 1);
 }
@@ -443,14 +575,32 @@ void CMountSystem::Mount(uint32_t vnum, entt::entity item)
 void CMountSystem::Unmount(uint32_t vnum)
 {
     auto* actor = GetByVnum(vnum);
-    if (!actor || !ecs::PlayerRuntime::IsValid(m_owner))
+    if (!actor)
+    {
+        for (const auto& [key, owned] : m_mountActorMap)
+            if (owned && owned->IsMounted())
+            {
+                actor = owned.get();
+                break;
+            }
+    }
+    if (!actor)
+    {
+        DestroyOwnedMountEntities(m_owner, this);
         return;
+    }
+    if (!ecs::PlayerRuntime::IsValid(m_owner))
+        return;
+    const bool wasRiding = (MountSystem::GetMountVnum(m_owner) != 0);
     actor->Unmount();
+    if (!wasRiding)
+        return;
     const auto item = ItemSystem::GetWearItem(m_owner, WEAR_COSTUME_MOUNT);
     if (IsOwnedSummonItem(m_owner, item))
     {
         ItemSystem::SetItemSocket(item, 2, 0);
-        Summon(vnum, item, false);
+        DestroyOwnedMountEntities(m_owner, this);
+        Summon(actor->GetVnum(), item, false);
     }
 }
 

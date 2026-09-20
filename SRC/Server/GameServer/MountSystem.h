@@ -26,6 +26,7 @@ public:
 	entt::entity		GetOwner() const { return m_owner; }
 	uint32_t			GetVID() const							{ return m_dwVID; }
 	uint32_t			GetVnum() const							{ return m_dwVnum; }
+	bool			IsMounted() const						{ return m_ridingVnum != 0; }
 	void			SetName();
 	bool			Mount(entt::entity mountItem);
 	void			Unmount();
@@ -79,6 +80,8 @@ public:
 
 	void		Unsummon(uint32_t mobVnum, bool bDeleteFromList = false);
 	void		Unsummon(CMountActor* mountActor, bool bDeleteFromList = false);
+	void		UnsummonAll();
+	void		UnsummonByItem(entt::entity item);
 	
 	void		Mount(uint32_t mobVnum, entt::entity mountItem);
 	void		Unmount(uint32_t mobVnum);

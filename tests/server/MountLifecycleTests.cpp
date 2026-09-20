@@ -6,7 +6,9 @@
 #include "../../SRC/Server/GameServer/ecs/systems/QuestSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
 #include "../../SRC/Server/GameServer/char_manager.h"
+#include "../../SRC/Server/GameServer/desc.h"
 #include "../../SRC/Server/GameServer/constants.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/EventDispatcher.hpp"
@@ -29,6 +31,10 @@
 std::shared_ptr<spdlog::logger> logging::GetErrorLogger() {
     static auto logger = std::make_shared<spdlog::logger>("growth-pet-test");
     return logger;
+}
+
+std::shared_ptr<spdlog::logger> logging::GetLogger() {
+    return logging::GetErrorLogger();
 }
 
 // Compile the complete production MountSystem.cpp/PetSystem.cpp. External services are
@@ -139,6 +145,7 @@ CAsyncSQL::CAsyncSQL() = default;
 CAsyncSQL::~CAsyncSQL() = default;
 DBManager::DBManager() = default;
 DBManager::~DBManager() = default;
+void DESC::Packet(const void*, int) {}
 namespace {
 struct FakeResult {
     std::vector<std::string> columns;
@@ -229,6 +236,7 @@ void GetDeltaByDegree(float, float distance, float* x, float* y) { *x = distance
 
 namespace ecs::PlayerRuntime {
 bool IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e); }
+LPDESC GetDesc(entt::entity) { return nullptr; }
 uint32_t GetPacketVID(entt::entity e) { return State(e).vid; }
 std::string_view GetName(entt::entity e) { return State(e).name; }
 int32_t GetX(entt::entity e) { return State(e).x; }
@@ -501,6 +509,29 @@ void FailureAndMounting()
     Check(State(owner).mount == 20200 && material.sockets[2] == 1, "skin riding return state wrong");
     system.Destroy();
     Check(State(owner).mount == 0 && !bonusOwners.contains(owner), "riding teardown left mount affects");
+}
+
+void OrphanMountCleanup()
+{
+    Reset();
+    const auto owner = Character(), item = Item(owner);
+    CMountSystem system(owner);
+    system.SetUpdatePeriod(0);
+    system.Summon(20110, item, false);
+    auto* actor = system.GetByVnum(20110);
+    Check(actor && actor->IsSummoned(), "orphan cleanup fixture summon failed");
+    const auto follower = actor->GetCharacter();
+
+    const auto orphan = Character();
+    g_registry.get_or_emplace<ecs::StatusFlags>(orphan).isMount = true;
+    g_registry.get_or_emplace<ecs::MountOwner>(orphan).owner = Character();
+    g_registry.get_or_emplace<ecs::PlayerName>(orphan).value = "owner's Mount";
+
+    system.Mount(20110, item);
+    Check(!g_registry.valid(follower) && !g_registry.valid(orphan),
+        "mounting did not remove all owned followers");
+    Check(State(owner).mount == 20110, "mounting failed after orphan cleanup");
+    system.Destroy();
 }
 
 void ReplacedRuntimeAndActor()
@@ -1048,6 +1079,7 @@ int main()
         Lifecycle();
         StaleHandles();
         FailureAndMounting();
+        OrphanMountCleanup();
         ReplacedRuntimeAndActor();
         NullOwnerAndReusedItemState();
         const auto mountChecks = checks;

@@ -56,6 +56,12 @@ struct MountComponent {
     uint32_t state { 0 };
 };
 
+// Creature-side ownership for costume mounts. The actor map is keyed by
+// vnum, but cleanup must also work when skins or transmutations change it.
+struct MountOwner {
+    entt::entity owner { entt::null };
+};
+
 // The rider on this horse. CHARACTER kept it as m_chRider, a pointer the
 // horse held to its rider, and SetRider/GetRider were the whole interface.
 struct HorseRider {

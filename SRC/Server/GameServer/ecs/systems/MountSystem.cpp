@@ -727,18 +727,20 @@ void UpdateMountSkin(entt::entity e)
     mountSystem->Mount(mobVnum, item);
 }
 
-void MountUnsummon(entt::entity e, entt::entity mountItem)
+void MountUnsummon(entt::entity e, entt::entity)
 {
     ::CMountSystem* mountSystem = GetMountSystem(e);
-    if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
+    if (!mountSystem)
         return;
 
-    const uint32_t mobVnum = GetMountMobVnum(mountItem);
+    // Unequip must remove every owned mount. It must not call Unmount(),
+    // because Unmount intentionally respawns a follower.
+    mountSystem->UnsummonAll();
 
-    if (GetMountVnum(e) == mobVnum)
-        mountSystem->Unmount(mobVnum);
-
-    mountSystem->Unsummon(mobVnum);
+    // Fallback vnum-eltérésre (skin/transzmutáció): ha még mindig lovagol,
+    // riding vnum alapján takarítunk, ne maradjon se lovaglás, se follower.
+    if (GetMountVnum(e) != 0)
+        ForceClearRidingState(e);
 }
 
 void UpdatePetSkin(entt::entity e)

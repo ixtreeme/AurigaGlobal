@@ -3475,12 +3475,7 @@ ACMD(do_ride)
 			mountSystem->Unmount(mobVnum);
 		}
 		else
-		{
-			if(mountSystem->CountSummoned() == 1)
-			{
-				mountSystem->Mount(mobVnum, mount);
-			}
-		}
+			mountSystem->Mount(mobVnum, mount);
 
 		return;
 	}
