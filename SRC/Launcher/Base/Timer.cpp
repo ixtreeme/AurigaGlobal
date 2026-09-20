@@ -25,13 +25,16 @@ VOID	ELTimer_SetServerMSec(uint32_t dwServerTime)
 	if (0 != dwServerTime)
 	{
 		gs_dwServerTime = dwServerTime;
-		gs_dwClientTime = CTimer::instance().GetCurrentMillisecond();
+		// Network timestamps and the render-frame timestamp share the real
+		// application clock. CTimer can use resettable custom animation time;
+		// mixing it with ELTimer_GetFrameMSec strands queued actor commands.
+		gs_dwClientTime = ELTimer_GetMSec();
 	}
 }
 
 uint32_t	ELTimer_GetServerMSec()
 {
-	return CTimer::instance().GetCurrentMillisecond() - gs_dwClientTime + gs_dwServerTime;
+	return ELTimer_GetMSec() - gs_dwClientTime + gs_dwServerTime;
 }
 
 uint32_t	ELTimer_GetFrameMSec()

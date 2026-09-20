@@ -1497,7 +1497,7 @@ void CInstanceBase::PushTCPState(uint32_t dwCmdTime, const TPixelPosition& c_rkP
 
 	int nNetworkGap=ELTimer_GetServerFrameMSec()-dwCmdTime;
 
-	m_nAverageNetworkGap=(m_nAverageNetworkGap*70+nNetworkGap*30)/100;
+	m_nAverageNetworkGap = ELTimer_AverageNetworkGap(m_nAverageNetworkGap, nNetworkGap);
 
 	/*
 	if (m_dwBaseCmdTime == 0)
@@ -1585,7 +1585,7 @@ void CInstanceBase::StateProcess()
 		uint32_t dwDstChkTime = m_kQue_kCmdNew.front().m_dwChkTime;
 		uint32_t dwCurChkTime = ELTimer_GetServerFrameMSec();
 
-		if (dwCurChkTime < dwDstChkTime)
+		if (ELTimer_IsTimeBefore(dwCurChkTime, dwDstChkTime))
 			return;
 
 		SCommand kCmdTop = m_kQue_kCmdNew.front();
