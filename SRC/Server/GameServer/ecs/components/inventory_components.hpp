@@ -10,6 +10,7 @@
 #include "../../typedef.h"
 #include "../../cuberenewal.h"
 #include "../../attr_transfer.h"
+#include "../../MountInventory.h"
 #include "item_components.hpp"
 
 namespace ecs {
@@ -109,6 +110,26 @@ struct CostumeAttributeSelection {
 struct QuickSlots {
     std::array<TQuickslot, QUICKSLOT_MAX_NUM> slots {};
     uint64_t revision { 0 };
+};
+
+// Account-scoped mount inventory state.  The character stores only the
+// registry handle (MountInventoryRef); all mutable inventory data lives on
+// this registry-owned entity so no heap inventory or raw owner pointer is
+// required.  The wire format and legacy grid are 12 columns by 16 rows.
+struct MountInventoryComponent {
+    static constexpr uint8_t Width = MOUNT_INVENTORY_WIDTH;
+    static constexpr uint8_t MaxHeight = MOUNT_INVENTORY_MAX_HEIGHT;
+    static constexpr uint16_t SlotCount = Width * MaxHeight;
+
+    entt::entity owner { entt::null };
+    uint32_t accountId { 0 };
+    uint8_t height { MaxHeight };
+    bool loaded { false };
+    bool destroying { false };
+    std::array<entt::entity, SlotCount> items;
+    std::array<uint8_t, SlotCount> occupied {};
+
+    MountInventoryComponent() { items.fill(entt::null); }
 };
 
 struct SafeboxRef {

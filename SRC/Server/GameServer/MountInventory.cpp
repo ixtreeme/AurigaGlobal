@@ -6,235 +6,156 @@
 #include "item_manager.h"
 #include "ecs/Registry.hpp"
 #include "ecs/components/identity_components.hpp"
+#include "ecs/components/inventory_components.hpp"
+#include "ecs/components/character_runtime_components.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 
 #include <array>
+#include <cstring>
+#include <vector>
+
 namespace
 {
-    bool StartMountExpireIfNeeded(entt::entity itemEntity)
+using Inventory = ecs::MountInventoryComponent;
+
+Inventory* FindInventory(entt::entity inventory)
+{
+    if (inventory == entt::null || !g_registry.valid(inventory))
+        return nullptr;
+
+    auto* state = g_registry.try_get<Inventory>(inventory);
+    if (!state || !state->loaded || state->destroying)
+        return nullptr;
+
+    return state;
+}
+
+const Inventory* FindInventory(entt::entity inventory, bool allowDestroying)
+{
+    if (inventory == entt::null || !g_registry.valid(inventory))
+        return nullptr;
+
+    const auto* state = g_registry.try_get<Inventory>(inventory);
+    if (!state || (!state->loaded && !allowDestroying) ||
+        (state->destroying && !allowDestroying))
+        return nullptr;
+
+    return state;
+}
+
+Inventory* FindInventoryForOwner(entt::entity owner)
+{
+    const entt::entity inventory = MountSystem::GetMountInventory(owner);
+    return FindInventory(inventory);
+}
+
+const Inventory* FindInventoryForOwner(entt::entity owner, bool allowDestroying)
+{
+    if (owner == entt::null || !g_registry.valid(owner))
+        return nullptr;
+
+    const auto* ref = g_registry.try_get<ecs::MountInventoryRef>(owner);
+    const auto* inventory = ref ? FindInventory(ref->inventory, allowDestroying) : nullptr;
+    if (!inventory || inventory->owner != owner)
+        return nullptr;
+
+    const uint32_t accountId = ecs::PlayerRuntime::GetAccountID(owner);
+    if (accountId == 0 || inventory->accountId != accountId)
+        return nullptr;
+    return inventory;
+}
+
+bool IsValidPosition(const Inventory& inventory, uint32_t pos)
+{
+    return inventory.height != 0 && inventory.height <= Inventory::MaxHeight &&
+        pos < static_cast<uint32_t>(Inventory::Width) * inventory.height;
+}
+
+bool IsEmpty(const Inventory& inventory, uint32_t pos, uint8_t size)
+{
+    if (!IsValidPosition(inventory, pos) || size == 0)
+        return false;
+
+    const uint32_t row = pos / Inventory::Width;
+    const uint32_t column = pos % Inventory::Width;
+    if (row + size > inventory.height || column >= Inventory::Width)
+        return false;
+
+    for (uint32_t y = 0; y < size; ++y)
     {
-        if (itemEntity == entt::null)
+        const uint32_t cell = pos + y * Inventory::Width;
+        if (cell >= inventory.occupied.size() || inventory.occupied[cell] != 0)
             return false;
+    }
 
-        const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
-        if (!itemProto)
-            return false;
+    return true;
+}
 
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-        const bool bIsMountLikeItem =
-            ItemSystem::IsRideItem(itemEntity) || ItemSystem::IsMountItem(itemEntity);
-#else
-        const bool bIsMountLikeItem = ItemSystem::IsRideItem(itemEntity);
-#endif
-        if (!bIsMountLikeItem)
-            return false;
+void Put(Inventory& inventory, uint32_t pos, uint8_t size)
+{
+    for (uint32_t y = 0; y < size; ++y)
+        inventory.occupied[pos + y * Inventory::Width] = 1;
+}
 
-        if (-1 == itemProto->cLimitRealTimeFirstUseIndex)
-            return false;
+void Get(Inventory& inventory, uint32_t pos, uint8_t size)
+{
+    if (!IsValidPosition(inventory, pos))
+        return;
 
-        bool bChanged = false;
-
-        if (ItemSystem::GetItemSocket(itemEntity, 1) == 0)
-        {
-            const uint8_t idx = static_cast<uint8_t>(itemProto->cLimitRealTimeFirstUseIndex);
-
-            int32_t duration = ItemSystem::GetItemSocket(itemEntity, 0);
-            if (duration == 0)
-                duration = itemProto->aLimits[idx].lValue;
-
-            if (duration == 0)
-                duration = 60 * 60 * 24 * 7;
-
-            ItemSystem::SetItemSocket(itemEntity, 0, time(nullptr) + duration);
-            ItemSystem::SetItemSocket(itemEntity, 1, 1); // innentol "aktivalt"
-            bChanged = true;
-        }
-
-        ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
-        return bChanged;
+    for (uint32_t y = 0; y < size; ++y)
+    {
+        const uint32_t cell = pos + y * Inventory::Width;
+        if (cell < inventory.occupied.size())
+            inventory.occupied[cell] = 0;
     }
 }
-CMountInventory::CMountInventory(entt::entity owner, int iHeight)
-    : m_owner(owner), m_iHeight(iHeight)
-{
-    m_items.assign(MOUNT_INVENTORY_WIDTH * m_iHeight, entt::null);
-    m_grid = std::make_unique<CGrid>(MOUNT_INVENTORY_WIDTH, m_iHeight);
-}
 
-CMountInventory::~CMountInventory()
-{
-    Destroy();
-}
-
-bool CMountInventory::IsValidPosition(uint32_t pos) const
-{
-    return m_grid && pos < m_grid->GetSize();
-}
-
-bool CMountInventory::IsEmpty(uint32_t pos, uint8_t size) const
-{
-    if (!m_grid)
-        return false;
-
-    return m_grid->IsEmpty(pos, 1, size);
-}
-
-entt::entity CMountInventory::Get(uint32_t pos) const
-{
-    if (!IsValidPosition(pos))
-        return entt::null;
-
-    return m_items[pos];
-}
-
-bool CMountInventory::Add(uint32_t pos, entt::entity itemEntity, bool skipSave)
-{
-    if (!ItemSystem::IsValidItem(itemEntity) || !IsValidPosition(pos))
-        return false;
-
-    if (!IsEmpty(pos, ItemSystem::GetItemSize(itemEntity)))
-        return false;
-
-    ItemSystem::SetItemSkipSave(itemEntity, true);
-    ItemSystem::SetItemWindow(itemEntity, MOUNT_INVENTORY);
-    ItemSystem::SetItemCell(itemEntity, m_owner, pos);
-
-    m_grid->Put(pos, 1, ItemSystem::GetItemSize(itemEntity));
-    m_items[pos] = itemEntity;
-
-    const bool bExpireStateChanged = StartMountExpireIfNeeded(itemEntity);
-
-    if (!skipSave || bExpireStateChanged)
-        SaveItem(pos, itemEntity);
-
-    return true;
-}
-
-
-
-bool CMountInventory::DetachSlot(uint32_t pos, entt::entity expectedItem, bool skipDbDelete)
-{
-    if (!IsValidPosition(pos))
-        return false;
-
-    const entt::entity item = m_items[pos];
-    if (!ItemSystem::IsValidItem(item))
-        return false;
-
-    if (expectedItem != entt::null && item != expectedItem)
-        return false;
-
-    if (m_grid)
-        m_grid->Get(pos, 1, ItemSystem::GetItemSize(item));
-
-    m_items[pos] = entt::null;
-
-    if (!skipDbDelete)
-        DeleteItem(pos, ItemSystem::GetItemID(item));
-
-    return true;
-}
-
-bool CMountInventory::RemoveByItem(entt::entity itemEntity, bool skipDbDelete)
+bool StartMountExpireIfNeeded(entt::entity itemEntity)
 {
     if (itemEntity == entt::null)
         return false;
 
-    for (uint32_t pos = 0; pos < m_items.size(); ++pos)
-    {
-        if (m_items[pos] == entt::null || m_items[pos] != itemEntity)
-            continue;
-
-        return DetachSlot(pos, itemEntity, skipDbDelete);
-    }
-
-    return false;
-}
-
-entt::entity CMountInventory::Remove(uint32_t pos, bool skipDbDelete)
-{
-    const entt::entity item = Get(pos);
-
-    if (!ItemSystem::IsValidItem(item))
-        return entt::null;
-
-    DetachSlot(pos, item, skipDbDelete);
-    ItemSystem::RemoveItemEcs(item);
-    return item;
-}
-
-bool CMountInventory::MoveItem(uint32_t from, uint32_t to)
-{
-    const entt::entity item = Get(from);
-
-    if (!ItemSystem::IsValidItem(item) || !IsValidPosition(to))
+    const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
+    if (!itemProto)
         return false;
 
-    if (!IsEmpty(to, ItemSystem::GetItemSize(item)))
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    const bool bIsMountLikeItem =
+        ItemSystem::IsRideItem(itemEntity) || ItemSystem::IsMountItem(itemEntity);
+#else
+    const bool bIsMountLikeItem = ItemSystem::IsRideItem(itemEntity);
+#endif
+    if (!bIsMountLikeItem || itemProto->cLimitRealTimeFirstUseIndex == -1)
         return false;
 
-    if (m_grid)
+    bool changed = false;
+    if (ItemSystem::GetItemSocket(itemEntity, 1) == 0)
     {
-        m_grid->Get(from, 1, ItemSystem::GetItemSize(item));
+        const uint8_t index = static_cast<uint8_t>(itemProto->cLimitRealTimeFirstUseIndex);
+        int32_t duration = ItemSystem::GetItemSocket(itemEntity, 0);
+        if (duration == 0)
+            duration = itemProto->aLimits[index].lValue;
+        if (duration == 0)
+            duration = 60 * 60 * 24 * 7;
 
-        if (!m_grid->Put(to, 1, ItemSystem::GetItemSize(item)))
-        {
-            m_grid->Put(from, 1, ItemSystem::GetItemSize(item));
-            return false;
-        }
+        ItemSystem::SetItemSocket(itemEntity, 0, time(nullptr) + duration);
+        ItemSystem::SetItemSocket(itemEntity, 1, 1);
+        changed = true;
     }
 
-    m_items[from] = entt::null;
-    m_items[to] = item;
-
-    ItemSystem::SetItemCell(item, m_owner, to);
-    SaveItem(to, item);
-    DeleteItem(from, 0);
-    return true;
+    ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
+    return changed;
 }
 
-uint32_t CMountInventory::GetAccountId() const
+uint32_t AccountId(const Inventory& inventory)
 {
-    if (m_owner == entt::null || !g_registry.valid(m_owner))
-        return 0;
-
-    const auto* account = g_registry.try_get<ecs::AccountID>(m_owner);
-    return account ? account->aid : 0;
+    return inventory.accountId;
 }
 
-void CMountInventory::CollectItems(std::vector<TMountInventoryItemTable>& out) const
+void SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
 {
-    out.clear();
-    out.reserve(m_items.size());
-
-    for (uint32_t pos = 0; pos < m_items.size(); ++pos)
-    {
-        const entt::entity item = m_items[pos];
-        if (!ItemSystem::IsValidItem(item))
-            continue;
-
-        TMountInventoryItemTable entry{};
-        entry.id = ItemSystem::GetItemID(item);
-        entry.slot = pos;
-        entry.vnum = ItemSystem::GetItemVnum(item);
-        entry.count = ItemSystem::GetItemCount(item);
-
-        for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-            entry.alSockets[i] = ItemSystem::GetItemSocket(item, i);
-        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-            entry.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
-
-        out.push_back(entry);
-    }
-}
-
-void CMountInventory::SaveItem(uint32_t pos, entt::entity itemEntity)
-{
-    if (!ItemSystem::IsValidItem(itemEntity))
-        return;
-
-    const uint32_t accountId = GetAccountId();
-    if (accountId == 0)
+    if (!ItemSystem::IsValidItem(itemEntity) || AccountId(inventory) == 0)
         return;
 
     char query[512];
@@ -252,13 +173,11 @@ void CMountInventory::SaveItem(uint32_t pos, entt::entity itemEntity)
         "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5) "
         "VALUES(%u, %u, %u, %u, %u, %ld, %ld, %ld, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
         ItemSystem::GetItemID(itemEntity),
-        accountId,
+        AccountId(inventory),
         pos,
         ItemSystem::GetItemVnum(itemEntity),
         ItemSystem::GetItemCount(itemEntity),
-        sockets[0],
-        sockets[1],
-        sockets[2],
+        sockets[0], sockets[1], sockets[2],
         attrs[0].bType, attrs[0].sValue,
         attrs[1].bType, attrs[1].sValue,
         attrs[2].bType, attrs[2].sValue,
@@ -269,37 +188,202 @@ void CMountInventory::SaveItem(uint32_t pos, entt::entity itemEntity)
     DBManager::instance().Query("%s", query);
 }
 
-void CMountInventory::DeleteItem(uint32_t pos, uint32_t id)
+void DeleteItem(const Inventory& inventory, uint32_t pos, uint32_t id)
 {
-    const uint32_t accountId = GetAccountId();
-    if (accountId == 0)
+    if (AccountId(inventory) == 0)
         return;
 
     DBManager::instance().Query(
         "DELETE FROM account_mount_inventory WHERE account_id=%u AND slot=%u",
-        accountId,
-        pos);
+        AccountId(inventory), pos);
 
     if (id != 0)
     {
         DBManager::instance().Query(
-            "DELETE FROM account_mount_inventory WHERE id=%u",
-            id);
+            "DELETE FROM account_mount_inventory WHERE id=%u", id);
     }
 }
 
-void CMountInventory::Destroy()
+bool AddToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
+    entt::entity itemEntity, bool skipSave)
 {
-    for (uint32_t pos = 0; pos < m_items.size(); ++pos)
+    if (inventory.owner != owner || inventory.destroying ||
+        !ItemSystem::IsValidItem(itemEntity) ||
+        ItemSystem::GetItemOwner(itemEntity) != entt::null ||
+        ItemSystem::IsItemEquipped(itemEntity) ||
+        ItemSystem::IsItemExchanging(itemEntity) ||
+        ItemSystem::IsItemLocked(itemEntity) ||
+        !IsValidPosition(inventory, pos))
+        return false;
+
+    if (!IsEmpty(inventory, pos, ItemSystem::GetItemSize(itemEntity)))
+        return false;
+
+    if (!ItemSystem::SetItemSkipSave(itemEntity, true) ||
+        !ItemSystem::SetItemWindow(itemEntity, MOUNT_INVENTORY) ||
+        !ItemSystem::SetItemCell(itemEntity, owner, pos))
     {
-        const entt::entity item = m_items[pos];
+        ItemSystem::SetItemSkipSave(itemEntity, false);
+        return false;
+    }
+
+    Put(inventory, pos, ItemSystem::GetItemSize(itemEntity));
+    inventory.items[pos] = itemEntity;
+
+    const bool expireStateChanged = StartMountExpireIfNeeded(itemEntity);
+    if (!skipSave || expireStateChanged)
+        SaveItem(inventory, pos, itemEntity);
+    return true;
+}
+
+bool RestoreToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
+    entt::entity itemEntity)
+{
+    if (inventory.owner != owner || inventory.destroying ||
+        !ItemSystem::IsValidItem(itemEntity) ||
+        !IsEmpty(inventory, pos, ItemSystem::GetItemSize(itemEntity)))
+        return false;
+
+    if (!ItemSystem::SetItemWindow(itemEntity, MOUNT_INVENTORY) ||
+        !ItemSystem::SetItemCell(itemEntity, owner, pos))
+        return false;
+
+    Put(inventory, pos, ItemSystem::GetItemSize(itemEntity));
+    inventory.items[pos] = itemEntity;
+    SaveItem(inventory, pos, itemEntity);
+    return true;
+}
+
+bool Detach(Inventory& inventory, uint32_t pos, entt::entity expectedItem,
+    bool skipDbDelete)
+{
+    if (!IsValidPosition(inventory, pos))
+        return false;
+
+    const entt::entity item = inventory.items[pos];
+    if (!ItemSystem::IsValidItem(item) ||
+        (expectedItem != entt::null && item != expectedItem))
+        return false;
+
+    Get(inventory, pos, ItemSystem::GetItemSize(item));
+    inventory.items[pos] = entt::null;
+    if (!skipDbDelete)
+        DeleteItem(inventory, pos, ItemSystem::GetItemID(item));
+    return true;
+}
+
+} // namespace
+
+namespace MountSystem
+{
+
+entt::entity GetMountInventory(entt::entity rider)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return entt::null;
+
+    const auto* ref = g_registry.try_get<ecs::MountInventoryRef>(rider);
+    if (!ref || ref->inventory == entt::null)
+        return entt::null;
+
+    const auto* inventory = FindInventory(ref->inventory, false);
+    if (!inventory || inventory->owner != rider ||
+        inventory->accountId != ecs::PlayerRuntime::GetAccountID(rider))
+        return entt::null;
+
+    return ref->inventory;
+}
+
+bool SetMountInventory(entt::entity rider, entt::entity inventory)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return false;
+
+    if (inventory != entt::null)
+    {
+        const auto* state = FindInventory(inventory, false);
+        if (!state || state->owner != rider ||
+            state->accountId != ecs::PlayerRuntime::GetAccountID(rider))
+            return false;
+    }
+
+    auto& ref = g_registry.get_or_emplace<ecs::MountInventoryRef>(rider);
+    if (ref.inventory != entt::null && ref.inventory != inventory)
+        return false;
+    ref.inventory = inventory;
+    return true;
+}
+
+entt::entity CreateMountInventory(entt::entity owner, uint32_t accountId,
+    uint8_t height)
+{
+    if (owner == entt::null || !g_registry.valid(owner) || accountId == 0 ||
+        height == 0 || height > ecs::MountInventoryComponent::MaxHeight)
+        return entt::null;
+
+    if (const entt::entity current = GetMountInventory(owner); current != entt::null)
+        return current;
+
+    if (auto* ref = g_registry.try_get<ecs::MountInventoryRef>(owner);
+        ref && ref->inventory != entt::null)
+    {
+        if (g_registry.valid(ref->inventory) &&
+            g_registry.try_get<ecs::MountInventoryComponent>(ref->inventory))
+            DestroyMountInventory(owner);
+        else if (g_registry.valid(ref->inventory))
+            g_registry.destroy(ref->inventory);
+        ref->inventory = entt::null;
+    }
+
+    const entt::entity inventory = g_registry.create();
+    auto& state = g_registry.emplace<ecs::MountInventoryComponent>(inventory);
+    state.owner = owner;
+    state.accountId = accountId;
+    state.height = height;
+    state.loaded = true;
+    if (!SetMountInventory(owner, inventory))
+    {
+        g_registry.destroy(inventory);
+        return entt::null;
+    }
+    return inventory;
+}
+
+void DestroyMountInventory(entt::entity rider)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return;
+
+    const auto* ref = g_registry.try_get<ecs::MountInventoryRef>(rider);
+    const entt::entity inventory = ref ? ref->inventory : entt::null;
+    g_registry.remove<ecs::MountInventoryLoadState>(rider);
+
+    if (ref)
+        g_registry.get<ecs::MountInventoryRef>(rider).inventory = entt::null;
+
+    if (inventory == entt::null || !g_registry.valid(inventory))
+        return;
+
+    auto* state = g_registry.try_get<ecs::MountInventoryComponent>(inventory);
+    if (!state || state->owner != rider)
+        return;
+
+    state->destroying = true;
+    std::vector<entt::entity> items;
+    items.reserve(state->items.size());
+    for (auto& item : state->items)
+    {
+        if (item != entt::null)
+            items.push_back(item);
+        item = entt::null;
+    }
+    state->occupied.fill(0);
+    state->loaded = false;
+
+    for (const entt::entity item : items)
+    {
         if (!ItemSystem::IsValidItem(item))
             continue;
-
-        if (m_grid)
-            m_grid->Get(pos, 1, ItemSystem::GetItemSize(item));
-
-        m_items[pos] = entt::null;
 
         ItemSystem::SetItemSkipSave(item, true);
         ItemSystem::FlushDelayedSaveEcs(item);
@@ -307,6 +391,157 @@ void CMountInventory::Destroy()
         ItemSystem::DestroyItemEntityEcs(item, "MOUNT_INVENTORY_DESTROY");
     }
 
-    m_items.clear();
-    m_grid.reset();
+    if (g_registry.valid(inventory))
+    {
+        const auto* current = g_registry.try_get<ecs::MountInventoryComponent>(inventory);
+        if (current && current->owner == rider && current->destroying)
+            g_registry.destroy(inventory);
+    }
 }
+
+bool IsMountInventoryPositionValid(entt::entity rider, uint32_t pos)
+{
+    const auto* inventory = FindInventoryForOwner(rider, false);
+    return inventory && IsValidPosition(*inventory, pos);
+}
+
+bool IsMountInventoryPositionEmpty(entt::entity rider, uint32_t pos, uint8_t size)
+{
+    const auto* inventory = FindInventoryForOwner(rider, false);
+    return inventory && IsEmpty(*inventory, pos, size);
+}
+
+int GetMountInventorySize(entt::entity rider)
+{
+    const auto* inventory = FindInventoryForOwner(rider, false);
+    return inventory ? inventory->height : 0;
+}
+
+int GetMountInventoryWidth(entt::entity rider)
+{
+    return GetMountInventory(rider) != entt::null ? Inventory::Width : 0;
+}
+
+entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell)
+{
+    const auto* inventory = FindInventoryForOwner(rider, false);
+    return inventory && IsValidPosition(*inventory, cell) ? inventory->items[cell] : entt::null;
+}
+
+bool AddMountInventoryItem(entt::entity rider, uint32_t pos,
+    entt::entity item, bool skipSave)
+{
+    const entt::entity inventoryHandle = GetMountInventory(rider);
+    auto* inventory = FindInventory(inventoryHandle);
+    return inventory && AddToInventory(*inventory, rider, pos, item, skipSave);
+}
+
+entt::entity RemoveMountInventoryItem(entt::entity rider, uint32_t pos,
+    bool skipDbDelete)
+{
+    auto* inventory = FindInventoryForOwner(rider);
+    if (!inventory || !IsValidPosition(*inventory, pos))
+        return entt::null;
+
+    const entt::entity item = inventory->items[pos];
+    if (!ItemSystem::IsValidItem(item) ||
+        ItemSystem::GetItemOwner(item) != rider ||
+        ItemSystem::GetItemWindow(item) != MOUNT_INVENTORY ||
+        ItemSystem::GetItemCell(item) != pos ||
+        !Detach(*inventory, pos, item, skipDbDelete))
+        return entt::null;
+
+    if (!ItemSystem::RemoveItemEcs(item))
+    {
+        RestoreToInventory(*inventory, rider, pos, item);
+        return entt::null;
+    }
+    return item;
+}
+
+bool RemoveMountInventoryItemByEntity(entt::entity rider, entt::entity item,
+    bool skipDbDelete)
+{
+    auto* inventory = FindInventoryForOwner(rider);
+    if (!inventory || item == entt::null)
+        return false;
+
+    for (uint32_t pos = 0; pos < inventory->items.size(); ++pos)
+    {
+        if (inventory->items[pos] == item)
+            return Detach(*inventory, pos, item, skipDbDelete);
+    }
+    return false;
+}
+
+bool MoveMountInventoryItem(entt::entity rider, uint32_t from, uint32_t to)
+{
+    auto* inventory = FindInventoryForOwner(rider);
+    if (!inventory || !IsValidPosition(*inventory, from) ||
+        !IsValidPosition(*inventory, to))
+        return false;
+
+    if (from == to)
+        return true;
+
+    const entt::entity item = inventory->items[from];
+    if (!ItemSystem::IsValidItem(item) ||
+        ItemSystem::GetItemOwner(item) != rider ||
+        ItemSystem::GetItemWindow(item) != MOUNT_INVENTORY ||
+        ItemSystem::GetItemCell(item) != from)
+        return false;
+
+    const uint8_t size = ItemSystem::GetItemSize(item);
+    if (!IsEmpty(*inventory, to, size))
+        return false;
+
+    Get(*inventory, from, size);
+    if (!IsEmpty(*inventory, to, size))
+    {
+        Put(*inventory, from, size);
+        return false;
+    }
+
+    Put(*inventory, to, size);
+    if (!ItemSystem::SetItemCell(item, rider, to))
+    {
+        Get(*inventory, to, size);
+        Put(*inventory, from, size);
+        return false;
+    }
+    inventory->items[from] = entt::null;
+    inventory->items[to] = item;
+    SaveItem(*inventory, to, item);
+    DeleteItem(*inventory, from, 0);
+    return true;
+}
+
+void CollectMountInventoryItems(entt::entity rider,
+    std::vector<TMountInventoryItemTable>& out)
+{
+    out.clear();
+    const auto* inventory = FindInventoryForOwner(rider, false);
+    if (!inventory)
+        return;
+
+    out.reserve(inventory->items.size());
+    for (uint32_t pos = 0; pos < inventory->items.size(); ++pos)
+    {
+        const entt::entity item = inventory->items[pos];
+        if (!ItemSystem::IsValidItem(item))
+            continue;
+
+        TMountInventoryItemTable entry{};
+        entry.id = ItemSystem::GetItemID(item);
+        entry.slot = pos;
+        entry.vnum = ItemSystem::GetItemVnum(item);
+        entry.count = ItemSystem::GetItemCount(item);
+        for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+            entry.alSockets[i] = ItemSystem::GetItemSocket(item, i);
+        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+            entry.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
+        out.push_back(entry);
+    }
+}
+
+} // namespace MountSystem

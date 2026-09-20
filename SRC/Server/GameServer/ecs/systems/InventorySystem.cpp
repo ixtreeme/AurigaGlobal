@@ -2130,7 +2130,7 @@ entt::entity RemoveFromCharacter(entt::entity item)
     // External containers have already unpublished their slot in normal Remove/
     // Close flows. Mount's item-based removal is idempotent when invoked here.
     if (oldPosition.window_type == MOUNT_INVENTORY && g_registry.valid(owner))
-        if (auto* mounts = MountSystem::GetMountInventory(owner)) mounts->RemoveByItem(item);
+        MountSystem::RemoveMountInventoryItemByEntity(owner, item);
 #ifdef ENABLE_SWITCHBOT
     for (const auto cell : switchSlots)
         if (g_registry.valid(owner))

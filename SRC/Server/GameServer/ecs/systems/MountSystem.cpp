@@ -33,6 +33,8 @@
 #include "../VIDRegistry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include "../components/inventory_components.hpp"
+#include "../components/character_runtime_components.hpp"
 #include "../components/social_components.hpp"
 #include "../components/pet_mount_components.hpp"
 #include "../components/movement_components.hpp"
@@ -47,6 +49,11 @@
 
 namespace
 {
+uint64_t NextMountInventoryRequestId()
+{
+    static uint64_t nextRequestId = 0;
+    return ++nextRequestId;
+}
 
 // Was SyncMountState, taking all six fields from CHARACTER members and copying
 // them in. Those members are gone - MountState is the only copy, and MountVnum
@@ -87,26 +94,59 @@ namespace MountSystem {
 
 void MountSystem::QueryMountInventory(entt::entity e)
 {
-    if (MountSystem::GetMountInventory(e) || !ecs::PlayerRuntime::GetDesc(e))
+    if (MountSystem::GetMountInventory(e) != entt::null || !ecs::PlayerRuntime::GetDesc(e) ||
+        !g_registry.valid(e))
         return;
+
+    const uint32_t accountId = ecs::PlayerRuntime::GetAccountID(e);
+    if (accountId == 0)
+        return;
+
+    if (const auto* pending = g_registry.try_get<ecs::MountInventoryLoadState>(e);
+        pending && pending->accountId == accountId)
+        return;
+
+    const uint64_t requestId = NextMountInventoryRequestId();
+    g_registry.emplace_or_replace<ecs::MountInventoryLoadState>(e, accountId, requestId);
+
+    auto* request = M2_NEW MountInventoryLoadRequest;
+    request->character = e;
+    request->accountId = accountId;
+    request->requestId = requestId;
 
     DBManager::instance().ReturnQuery(QID_MOUNT_INVENTORY_LOAD,
         ecs::PlayerRuntime::GetPlayerID(e),
-        nullptr,
+        request,
         "SELECT id, slot, vnum, count, socket0, socket1, socket2, "
         "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
         "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5 "
         "FROM account_mount_inventory WHERE account_id=%u ORDER BY slot",
-        ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id);
+        accountId);
 }
 
-void MountSystem::LoadMountInventory(entt::entity e, const std::vector<TMountInventoryItemTable>& items)
+void MountSystem::LoadMountInventory(entt::entity e, uint32_t accountId,
+    uint64_t requestId, const std::vector<TMountInventoryItemTable>& items)
 {
-    if (MountSystem::GetMountInventory(e))
+    if (e == entt::null || !g_registry.valid(e))
         return;
 
-    const int iHeight = 16;
-    MountSystem::SetMountInventory(e, M2_NEW CMountInventory(e, iHeight));
+    const auto* pending = g_registry.try_get<ecs::MountInventoryLoadState>(e);
+    if (accountId == 0 || !pending || pending->accountId != accountId ||
+        pending->requestId != requestId || ecs::PlayerRuntime::GetAccountID(e) != accountId)
+        return;
+
+    if (MountSystem::GetMountInventory(e) != entt::null)
+    {
+        g_registry.remove<ecs::MountInventoryLoadState>(e);
+        return;
+    }
+
+    const entt::entity inventory = MountSystem::CreateMountInventory(e, accountId, 16);
+    if (inventory == entt::null)
+    {
+        g_registry.remove<ecs::MountInventoryLoadState>(e);
+        return;
+    }
 
     for (const auto& entry : items)
     {
@@ -123,29 +163,34 @@ void MountSystem::LoadMountInventory(entt::entity e, const std::vector<TMountInv
                 item, attribute, entry.aAttr[attribute].bType,
                 entry.aAttr[attribute].sValue);
 
-        if (!MountSystem::GetMountInventory(e)->Add(entry.slot, item, true))
+        if (!MountSystem::AddMountInventoryItem(e, entry.slot, item, true))
             ItemSystem::DestroyItemEntityEcs(item, "MOUNT_INVENTORY_LOAD_ADD_FAILED");
     }
 
+    g_registry.remove<ecs::MountInventoryLoadState>(e);
+    if (!g_registry.valid(e) || MountSystem::GetMountInventory(e) != inventory)
+        return;
+
     MountSystem::SendMountInventory(e);
-    ecs::PointSystem::Compute(e);
+    if (g_registry.valid(e))
+        ecs::PointSystem::Compute(e);
 }
 
 void MountSystem::SendMountInventory(entt::entity owner)
 {
     if (!ecs::PlayerRuntime::GetDesc(owner))
         return;
-    auto* inventory = GetMountInventory(owner);
-    if (!inventory) return;
+    if (GetMountInventory(owner) == entt::null)
+        return;
 
     std::vector<TMountInventoryItemTable> items;
-    inventory->CollectItems(items);
+    CollectMountInventoryItems(owner, items);
 
     TPacketGCMountInventory header{};
     header.bHeader = HEADER_GC_MOUNT_INVENTORY;
     header.size = sizeof(TPacketGCMountInventory) + static_cast<uint16_t>(items.size() * sizeof(TMountInventoryItemData));
-    header.bWidth = inventory->GetWidth();
-    header.bHeight = inventory->GetSize();
+    header.bWidth = static_cast<uint8_t>(GetMountInventoryWidth(owner));
+    header.bHeight = static_cast<uint8_t>(GetMountInventorySize(owner));
     header.wCount = static_cast<uint16_t>(items.size());
 
     TEMP_BUFFER buf;
@@ -462,32 +507,6 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 	MarkMountDirty(rider);
 }
 
-// The packet-dedup counters and the pulse gate. They were four CHARACTER
-// members mirrored into MountState by every SyncMountState call; the component
-// is the only copy now, so the mirror argument list goes away with them.
-entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell)
-{
-    const auto* inventory = GetMountInventory(rider);
-    return inventory ? inventory->Get(cell) : entt::null;
-}
-
-CMountInventory* GetMountInventory(entt::entity rider)
-{
-    if (rider == entt::null || !g_registry.valid(rider))
-        return nullptr;
-
-    const auto* ref = g_registry.try_get<ecs::MountInventoryRef>(rider);
-    return ref ? ref->inventory : nullptr;
-}
-
-void SetMountInventory(entt::entity rider, CMountInventory* inventory)
-{
-    if (rider == entt::null || !g_registry.valid(rider))
-        return;
-
-    g_registry.get_or_emplace<ecs::MountInventoryRef>(rider).inventory = inventory;
-}
-
 ecs::MountState& GetMountStateRef(entt::entity rider)
 {
     static ecs::MountState detached;
@@ -538,12 +557,12 @@ int GetBeltCount(entt::entity e)
 int GetMountCount(entt::entity e)
 {
     int mountItemCount = 0;
-    if (CMountInventory* mi = GetMountInventory(e))
+    if (GetMountInventory(e) != entt::null)
     {
-        const int total = mi->GetWidth() * mi->GetSize();
+        const int total = GetMountInventoryWidth(e) * GetMountInventorySize(e);
         for (int pos = 0; pos < total; ++pos)
         {
-            if (mi->Get(pos) != entt::null)
+            if (GetMountInventoryItem(e, pos) != entt::null)
                 ++mountItemCount;
         }
     }
@@ -762,16 +781,15 @@ void UpdatePetSkin(entt::entity e)
 void MountSystem::ComputeMountInventoryBonuses(entt::entity owner)
 {
 	std::map<uint8_t, int64_t> mount_bonus_map;
-	CMountInventory* mi = GetMountInventory(owner);
-	if (!mi)
+	if (GetMountInventory(owner) == entt::null)
 		return;
 
 	const auto& valid_items = CMountInventoryHelper::GetAllowedItems();
-	const int total = mi->GetWidth() * mi->GetSize();
+	const int total = GetMountInventoryWidth(owner) * GetMountInventorySize(owner);
 
 	for (int pos = 0; pos < total; ++pos)
 	{
-		const entt::entity item = mi->Get(pos);
+		const entt::entity item = GetMountInventoryItem(owner, pos);
 		if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != owner)
 			continue;
 

@@ -9,8 +9,13 @@
 #include "../components/social_components.hpp"
 #include "../../horse_rider.h"
 
-class CMountInventory;
 class CMountSystem;
+
+struct MountInventoryLoadRequest {
+    entt::entity character { entt::null };
+    uint32_t accountId { 0 };
+    uint64_t requestId { 0 };
+};
 
 namespace MountSystem {
 
@@ -32,15 +37,32 @@ void SummonHorse(entt::entity rider, bool summon, bool fromFar = false,
 uint32_t GetMountVnum(entt::entity rider);
 void SetMountVnum(entt::entity rider, uint32_t vnum);
 void MountSummon(entt::entity rider, entt::entity mountItem);
-CMountInventory* GetMountInventory(entt::entity rider);
+entt::entity GetMountInventory(entt::entity rider);
 entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell);
+bool IsMountInventoryPositionValid(entt::entity rider, uint32_t pos);
+bool IsMountInventoryPositionEmpty(entt::entity rider, uint32_t pos, uint8_t size);
+int GetMountInventorySize(entt::entity rider);
+int GetMountInventoryWidth(entt::entity rider);
+bool AddMountInventoryItem(entt::entity rider, uint32_t pos, entt::entity item,
+    bool skipSave = false);
+entt::entity RemoveMountInventoryItem(entt::entity rider, uint32_t pos,
+    bool skipDbDelete = false);
+bool RemoveMountInventoryItemByEntity(entt::entity rider, entt::entity item,
+    bool skipDbDelete = false);
+bool MoveMountInventoryItem(entt::entity rider, uint32_t from, uint32_t to);
+void CollectMountInventoryItems(entt::entity rider,
+    std::vector<TMountInventoryItemTable>& out);
 void SendMountInventory(entt::entity owner);
 // Asks the database for the account mount inventory, once.
 void QueryMountInventory(entt::entity e);
-void LoadMountInventory(entt::entity e, const std::vector<TMountInventoryItemTable>& items);
+void LoadMountInventory(entt::entity e, uint32_t accountId, uint64_t requestId,
+    const std::vector<TMountInventoryItemTable>& items);
+entt::entity CreateMountInventory(entt::entity owner, uint32_t accountId,
+    uint8_t height = 16);
 void ComputeMountInventoryBonuses(entt::entity owner);
 void UpdateMountCountOverheadToViewers(entt::entity owner);
-void SetMountInventory(entt::entity rider, CMountInventory* inventory);
+bool SetMountInventory(entt::entity rider, entt::entity inventory);
+void DestroyMountInventory(entt::entity rider);
 ecs::MountState& GetMountStateRef(entt::entity rider);
 uint32_t GetLastMountTime(entt::entity rider);
 uint32_t GetMyHorseVnum(entt::entity rider);

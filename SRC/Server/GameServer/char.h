@@ -523,7 +523,6 @@ class CWarMap;
 class CAffect;
 class CGuild;
 class CSafebox;
-class CMountInventory;
 class CArena;
 
 

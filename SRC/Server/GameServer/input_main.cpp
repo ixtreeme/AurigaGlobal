@@ -2925,17 +2925,16 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 	}
 #endif
 
-	CMountInventory* mountInventory = MountSystem::GetMountInventory(character);
-	if (!mountInventory)
+	const entt::entity mountInventory = MountSystem::GetMountInventory(character);
+	if (mountInventory == entt::null)
 		return;
 
 	const entt::entity itemEntity = ItemSystem::GetItem(ownerEntity, p->ItemPos);
 	if (!IsInputItemAt(character, itemEntity, p->ItemPos))
 		return;
 
-	if (!mountInventory->IsValidPosition(p->wMountPos) ||
-		!mountInventory->IsEmpty(
-			p->wMountPos, ItemSystem::GetItemSize(itemEntity)))
+	if (!MountSystem::IsMountInventoryPositionEmpty(
+		character, p->wMountPos, ItemSystem::GetItemSize(itemEntity)))
 	{
 		return;
 	}
@@ -2964,10 +2963,11 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 
 	const uint32_t vnum = ItemSystem::GetItemVnum(itemEntity);
 	const int totalSlots =
-		mountInventory->GetWidth() * mountInventory->GetSize();
+		MountSystem::GetMountInventoryWidth(character) *
+		MountSystem::GetMountInventorySize(character);
 	for (int slot = 0; slot < totalSlots; ++slot)
 	{
-		const entt::entity storedItem = mountInventory->Get(slot);
+		const entt::entity storedItem = MountSystem::GetMountInventoryItem(character, slot);
 		if (!ItemSystem::IsValidItem(storedItem))
 			continue;
 
@@ -2986,7 +2986,7 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 		const uint32_t group = vnum / 10;
 		for (int slot = 0; slot < totalSlots; ++slot)
 		{
-			const entt::entity storedItem = mountInventory->Get(slot);
+			const entt::entity storedItem = MountSystem::GetMountInventoryItem(character, slot);
 			if (!ItemSystem::IsValidItem(storedItem))
 				continue;
 
@@ -3012,7 +3012,7 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 	if (IsDetachedInputItem(itemEntity))
 		ItemSystem::FlushDelayedSaveEcs(itemEntity);
 	if (MountSystem::GetMountInventory(character) != mountInventory || !IsDetachedInputItem(itemEntity) ||
-		!mountInventory->Add(p->wMountPos, itemEntity))
+		!MountSystem::AddMountInventoryItem(character, p->wMountPos, itemEntity))
 	{
 		if (IsDetachedInputItem(itemEntity))
 			ItemSystem::SetItemSkipSave(itemEntity, false);
@@ -3059,8 +3059,9 @@ void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pD
 	}
 #endif
 
-	CMountInventory* mountInventory = MountSystem::GetMountInventory(character);
-	if (!mountInventory || !mountInventory->IsValidPosition(p->wMountPos))
+	const entt::entity mountInventory = MountSystem::GetMountInventory(character);
+	if (mountInventory == entt::null ||
+		!MountSystem::IsMountInventoryPositionValid(character, p->wMountPos))
 		return;
 
 	if (p->ItemPos.window_type != INVENTORY ||
@@ -3069,7 +3070,7 @@ void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pD
 		return;
 	}
 
-	const entt::entity itemEntity = mountInventory->Get(p->wMountPos);
+	const entt::entity itemEntity = MountSystem::GetMountInventoryItem(character, p->wMountPos);
 	if (!IsInputItemAt(character, itemEntity, TItemPos(MOUNT_INVENTORY, p->wMountPos)) ||
 		ItemSystem::IsItemExchanging(itemEntity) ||
 		ItemSystem::IsItemLocked(itemEntity))
@@ -3080,14 +3081,15 @@ void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pD
 	if (!InventorySystem::IsEmptyItemGrid(character, p->ItemPos, ItemSystem::GetItemSize(itemEntity)))
 		return;
 
-	if (mountInventory->Remove(p->wMountPos) != itemEntity || !IsDetachedInputItem(itemEntity))
+	if (MountSystem::RemoveMountInventoryItem(character, p->wMountPos) != itemEntity ||
+		!IsDetachedInputItem(itemEntity))
 		return;
 
 	ItemSystem::SetItemSkipSave(itemEntity, false);
 	if (!RestoreInputItem(ownerEntity, itemEntity, p->ItemPos))
 	{
 		if (MountSystem::GetMountInventory(character) == mountInventory && IsDetachedInputItem(itemEntity))
-			mountInventory->Add(p->wMountPos, itemEntity);
+			MountSystem::AddMountInventoryItem(character, p->wMountPos, itemEntity);
 		return;
 	}
 
@@ -3131,11 +3133,10 @@ void CInputMain::MountInventoryItemMove(entt::entity character, const char* data
 		return;
 #endif
 
-	CMountInventory* mi = MountSystem::GetMountInventory(character);
-	if (!mi)
+	if (MountSystem::GetMountInventory(character) == entt::null)
 		return;
 
-	mi->MoveItem(p->wMountPos, p->wDestPos);
+	MountSystem::MoveMountInventoryItem(character, p->wMountPos, p->wDestPos);
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
 	MountSystem::SendMountInventory(character);

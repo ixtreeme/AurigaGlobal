@@ -708,7 +708,8 @@ void MountSystem::UpdateMountSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountUnsummon(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdatePetSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountSummon(entt::entity, entt::entity) { Unexpected(); }
-CMountInventory * MountSystem::GetMountInventory(entt::entity) { Unexpected(); }
+entt::entity MountSystem::GetMountInventory(entt::entity) { Unexpected(); }
+bool MountSystem::RemoveMountInventoryItemByEntity(entt::entity, entt::entity, bool) { Unexpected(); }
 bool ItemSystem::IsDragonSoulItem(entt::entity e) { return Meta(e).dragon; }
 bool ItemSystem::IsExtraItem(entt::entity e) { return Meta(e).extra; }
 bool ItemSystem::IsRideItem(entt::entity e) { Meta(e); return false; }
@@ -802,7 +803,6 @@ void ecs::ViewSystem::PacketView(entt::entity item, void const* data, int size, 
 SItemTable * ITEM_MANAGER::GetTable(uint32_t vnum) { Check(giving, "unexpected prototype lookup"); return vnum == rewardProto.dwVnum ? &rewardProto : nullptr; }
 CSpecialItemGroup const * ITEM_MANAGER::GetSpecialItemGroup(uint32_t) { Unexpected(); }
 CSpecialAttrGroup const * ITEM_MANAGER::GetSpecialAttrGroup(uint32_t) { Unexpected(); }
-bool CMountInventory::RemoveByItem(entt::entity, bool) { Unexpected(); }
 bool DSManager::ActivateDragonSoul(entt::entity e) { Meta(e); Service("ds-activate"); return true; }
 bool DSManager::DeactivateDragonSoul(entt::entity e, bool) { Meta(e); Service("ds-deactivate"); return true; }
 bool ecs::SpatialService::InsertEntity(entt::registry& reg, entt::entity item, uint32_t map, int x, int y, int z) {

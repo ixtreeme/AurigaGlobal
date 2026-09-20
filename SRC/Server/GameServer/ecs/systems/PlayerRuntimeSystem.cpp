@@ -3165,11 +3165,7 @@ void DestroyCharacterStatePre(entt::entity character)
     ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::DestroyWhenIdle);
 
 
-    if (MountSystem::GetMountInventory(character))
-    {
-        M2_DELETE(MountSystem::GetMountInventory(character));
-        MountSystem::SetMountInventory(character, nullptr);
-    }
+    MountSystem::DestroyMountInventory(character);
 
 }
 

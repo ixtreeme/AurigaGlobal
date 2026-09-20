@@ -491,8 +491,11 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 		case QID_MOUNT_INVENTORY_LOAD:
 		{
-			const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
-			if (ecs::IsCharacter(ch))
+			auto* request = static_cast<MountInventoryLoadRequest*>(qi->pvData);
+			const entt::entity ch = request ? request->character : entt::null;
+			const entt::entity current = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
+			if (request && ch == current && ecs::IsCharacter(ch) &&
+				ecs::PlayerRuntime::GetAccountID(ch) == request->accountId)
 			{
 				SQLResult* res = pMsg->Get();
 				std::vector<TMountInventoryItemTable> items;
@@ -524,8 +527,11 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					items.push_back(entry);
 				}
 
-				MountSystem::LoadMountInventory(ch, items);
+				MountSystem::LoadMountInventory(ch, request->accountId,
+					request->requestId, items);
 			}
+			if (request)
+				M2_DELETE(request);
 		}
 		break;
 
