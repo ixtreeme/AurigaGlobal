@@ -274,9 +274,6 @@ bool SetQuestNPCLockOwner(entt::entity npc, entt::entity owner);
 uint32_t GetQuestBy(entt::entity e);
 bool SetQuestBy(entt::entity e, uint32_t questVnum);
 void DestroyCharacter(entt::entity e);
-#ifdef __PET_SYSTEM__
-CPetSystem* GetPetSystem(entt::entity e);
-#endif
 #ifdef __NEWPET_SYSTEM__
 CNewPetSystem* GetNewPetSystem(entt::entity e);
 void SetEggVID(entt::entity e, int vid);

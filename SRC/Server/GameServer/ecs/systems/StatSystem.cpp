@@ -235,7 +235,7 @@ void Compute(entt::entity e)
     AffectSystem::RefreshAffect(e);
     if (!HasPointState(e)) return;
 #ifdef __PET_SYSTEM__
-    if (auto* pets = ecs::PlayerRuntime::GetPetSystem(e)) pets->RefreshBuff();
+    PetSystem::RefreshBuff(e);
     if (!HasPointState(e)) return;
 #endif
     ApplyAlignmentPoints(e);

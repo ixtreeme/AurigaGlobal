@@ -118,7 +118,7 @@ double CPoly::Eval() { Unexpected(); }
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 void CHARACTER_MANAGER::CheckBonusEvent(entt::entity) {}
-void CPetSystem::RefreshBuff() { Unexpected(); }
+void PetSystem::RefreshBuff(entt::entity) {}
 DSManager::DSManager() = default;
 DSManager::~DSManager() = default;
 DragonSoulTable::~DragonSoulTable() = default;
@@ -151,7 +151,7 @@ void SetImmuneFlag(entt::entity e, uint32_t value) { g_registry.get<Actor>(e).im
 uint32_t GetImmuneFlag(entt::entity e) { return g_registry.get<Actor>(e).immune; }
 void BuffOnAttr_ClearAll(entt::entity) {}
 void BuffOnAttr_ValueChange(entt::entity, uint8_t, uint8_t, uint8_t) {}
-CPetSystem* GetPetSystem(entt::entity) { return nullptr; }
+
 }
 namespace ItemSystem {
 bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Gear>(e); }

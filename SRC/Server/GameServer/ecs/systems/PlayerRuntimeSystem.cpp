@@ -1498,16 +1498,6 @@ void DestroyCharacter(entt::entity e)
     M2_DESTROY_CHARACTER(e);
 }
 
-#ifdef __PET_SYSTEM__
-CPetSystem* GetPetSystem(entt::entity e)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return nullptr;
-	const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
-	return refs ? refs->petSystem : nullptr;
-}
-#endif
-
 #ifdef __NEWPET_SYSTEM__
 CNewPetSystem* GetNewPetSystem(entt::entity e)
 {
@@ -3044,13 +3034,7 @@ void DestroyCharacterStatePre(entt::entity character)
     MountSystem::SummonHorse(character, false);
 #endif
 #ifdef __PET_SYSTEM__
-    if (auto* pet = ecs::PlayerRuntime::GetPetSystem(character))
-    {
-        delete pet;
-
-		if (character != entt::null && g_registry.valid(character))
-			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(character).petSystem = nullptr;
-    }
+    PetSystem::DestroyRuntime(character);
 #endif
 
 #ifdef __NEWPET_SYSTEM__
@@ -3356,12 +3340,7 @@ void ecs::PlayerRuntime::SetPlayerProto(entt::entity e, const TPlayerTable* t)
     }
 
 #ifdef __PET_SYSTEM__
-    if (auto* previous = ecs::PlayerRuntime::GetPetSystem(e))
-    {
-        delete previous;
-    }
-
-    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(e).petSystem = M2_NEW CPetSystem(e);
+    PetSystem::DestroyRuntime(e);
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM

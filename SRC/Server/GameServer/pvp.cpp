@@ -220,15 +220,8 @@ EVENTFUNC(pvp_duel_counter)
 			if ((ecs::PlayerRuntime::GetDuelOption(characterA, "BlockPet")) && (ecs::PlayerRuntime::GetDuelOption(characterB, "BlockPet")))
 			{
 #ifdef __PET_SYSTEM__
-				{
-					CPetSystem* chPet = ecs::PlayerRuntime::GetPetSystem(characterA);
-					CPetSystem* victimPet = ecs::PlayerRuntime::GetPetSystem(characterB);
-					if (chPet)
-						chPet->UnsummonAll();
-
-					if (victimPet)
-						victimPet->UnsummonAll();
-				}
+				PetSystem::UnsummonAll(characterA);
+				PetSystem::UnsummonAll(characterB);
 #endif
 #ifdef __NEWPET_SYSTEM__
 				{

@@ -31,9 +31,8 @@ namespace quest
 	ALUA(pet_summon)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
-		if (!petSystem || !ItemSystem::IsValidItem(item))
+		if (!ecs::PlayerRuntime::IsValid(chEntity) || !ItemSystem::IsValidItem(item))
 		{
 			lua_pushnumber (L, 0);
 			return 1;
@@ -50,20 +49,14 @@ namespace quest
 		}
 #endif
 
-		if (nullptr == petSystem)
-		{
-			lua_pushnumber (L, 0);
-			return 1;
-		}
-
-		// ¼ÒÈ¯¼öÀÇ vnum
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ vnum
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		// ¼ÒÈ¯¼öÀÇ ÀÌ¸§
-		CPetActor* pet = petSystem->Summon(mobVnum, item, "", false);
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½
+		ecs::PetActorState* pet = PetSystem::Summon(chEntity, mobVnum, item, "", false);
 
-		if (pet != nullptr)
-			lua_pushnumber (L, pet->GetVID());
+		if (pet != nullptr && ecs::PlayerRuntime::IsValid(pet->character))
+			lua_pushnumber (L, ecs::PlayerRuntime::GetPacketVID(pet->character));
 		else
 			lua_pushnumber (L, 0);
 
@@ -74,15 +67,11 @@ namespace quest
 	ALUA(pet_unsummon)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
-		if (nullptr == petSystem)
-			return 0;
-
-		// ¼ÒÈ¯¼öÀÇ vnum
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ vnum
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		petSystem->Unsummon(mobVnum);
+		PetSystem::Unsummon(chEntity, mobVnum);
 #ifdef ENABLE_RECALL
 		const CAffect* pAffect = AffectSystem::FindAffect(chEntity, AFFECT_RECALL1);
 		if (pAffect) {
@@ -96,12 +85,8 @@ namespace quest
 	ALUA(pet_count_summoned)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
-		lua_Number count = 0;
-
-		if (nullptr != petSystem)
-			count = static_cast<lua_Number>(petSystem->CountSummoned());
+		lua_Number count = static_cast<lua_Number>(PetSystem::CountSummoned(chEntity));
 
 		lua_pushnumber(L, count);
 
@@ -112,20 +97,11 @@ namespace quest
 	ALUA(pet_is_summon)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
-		if (nullptr == petSystem)
-			return 0;
-
-		// ¼ÒÈ¯¼öÀÇ vnum
+		// ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ vnum
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		CPetActor* petActor = petSystem->GetByVnum(mobVnum);
-
-		if (nullptr == petActor)
-			lua_pushboolean(L, false);
-		else
-			lua_pushboolean(L, petActor->IsSummoned());
+		lua_pushboolean(L, PetSystem::IsPetSummoned(chEntity, mobVnum));
 
 		return 1;
 	}
@@ -133,17 +109,13 @@ namespace quest
 	ALUA(pet_spawn_effect)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
-
-		if (nullptr == petSystem)
-			return 0;
 
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		CPetActor* petActor = petSystem->GetByVnum(mobVnum);
+		const ecs::PetActorState* petActor = PetSystem::FindActor(chEntity, mobVnum);
 		if (nullptr == petActor)
 			return 0;
-		const entt::entity pet = petActor->GetCharacter();
+		const entt::entity pet = petActor->character;
 		if (!ecs::PlayerRuntime::IsValid(pet))
 			return 0;
 

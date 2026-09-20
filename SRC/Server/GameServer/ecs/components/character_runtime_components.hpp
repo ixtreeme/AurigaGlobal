@@ -8,7 +8,6 @@
 
 #include "../../event.h"
 
-class CPetSystem;
 class CNewPetSystem;
 
 #include "../../buff_on_attributes.h"
@@ -96,9 +95,6 @@ struct MountInventoryLoadState {
 };
 
 struct PetRuntimeRefs {
-#ifdef __PET_SYSTEM__
-    CPetSystem* petSystem { nullptr };
-#endif
 #ifdef __NEWPET_SYSTEM__
     CNewPetSystem* newPetSystem { nullptr };
     int eggVID { 0 };

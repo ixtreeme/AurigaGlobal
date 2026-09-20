@@ -63,6 +63,26 @@ struct MountOwner {
     entt::entity owner { entt::null };
 };
 
+// Authoritative runtime state for regular pets. One record per stable vnum;
+// the spawned creature and the summon item are entity handles. The buff
+// snapshot is kept so removal survives an item prototype change.
+struct PetActorState {
+    uint32_t vnum { 0 };
+    uint32_t options { 0 };
+    entt::entity character { entt::null };
+    entt::entity summonItem { entt::null };
+    uint32_t ridingVnum { 0 };
+    std::array<TItemApply, ITEM_APPLY_MAX_NUM> buffApplies {};
+};
+
+struct PetRuntime {
+    uint32_t updatePeriod { 400 };
+    uint32_t lastUpdateTime { 0 };
+    LPEVENT updateEvent;
+    bool destroying { false };
+    std::vector<PetActorState> actors;
+};
+
 // Authoritative runtime state for costume mounts. A record is keyed by the
 // stable mount vnum; the spawned creature and summon item are entity handles.
 struct CostumeMountActorState {

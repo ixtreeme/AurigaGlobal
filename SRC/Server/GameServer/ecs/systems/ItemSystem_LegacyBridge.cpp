@@ -1836,16 +1836,12 @@ void AffectSystem::AutoRecallProcess(entt::entity e)
 			const entt::entity pItem = ItemSystem::FindItemByID(e, pAffect->dwFlag);
 			if (pItem != entt::null) {
 				if (ItemSystem::GetItemSocket(pItem, 2) == false) {
-					CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(e);
-					if (petSystem) {
-						if (petSystem->CountSummoned() < 1) {
-							CPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
-							if (!pPet)
-								AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
-						}
+					if (PetSystem::CountSummoned(e) < 1) {
+						ecs::PetActorState* pPet = PetSystem::Summon(e,
+							ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
+						if (!pPet)
+							AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 					}
-					else
-						AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
 				}
 			}
 			else

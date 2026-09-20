@@ -251,11 +251,6 @@ void SetLevel(entt::entity e, uint8_t level) { State(e).level = level; }
 void SetExp(entt::entity e, uint32_t exp) { State(e).exp = exp; }
 const TMobTable* GetMobTable(entt::entity e) { ++mobQueries; static TMobTable table{}; return State(e).hasMob ? &table : nullptr; }
 void DestroyCharacter(entt::entity e) { State(e); ++destroyed; g_registry.destroy(e); }
-CPetSystem* GetPetSystem(entt::entity e) {
-    if (!IsValid(e)) return nullptr;
-    const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
-    return refs ? refs->petSystem : nullptr;
-}
 CNewPetSystem* GetNewPetSystem(entt::entity e) {
     if (!IsValid(e)) return nullptr;
     const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
@@ -377,7 +372,7 @@ void ecs::PointSystem::Compute(entt::entity e) {
     State(e).petBonus = 0;
     ++computes;
     if (onCompute) onCompute();
-    if (auto* pets = ecs::PlayerRuntime::GetPetSystem(e)) pets->RefreshBuff();
+    PetSystem::RefreshBuff(e);
 }
 void ecs::PointSystem::ApplyPoint(entt::entity e, uint8_t, int value) {
     State(e).petBonus += value;
@@ -418,80 +413,79 @@ void PetLifecycle()
 {
     Reset();
     const auto owner = Character(), item = PetItem(owner);
-    CPetSystem system(owner);
-    system.SetUpdatePeriod(0);
-    auto* actor = system.Summon(34001, item, "", false);
-    Check(actor && actor->GetOwner() == owner && actor->IsSummoned(), "pet native summon failed");
-    const auto pet = actor->GetCharacter();
+    PetSystem::SetUpdatePeriod(owner, 0);
+    auto* actor = PetSystem::Summon(owner, 34001, item, "", false);
+    Check(actor && actor->character != entt::null, "pet native summon failed");
+    const auto pet = actor->character;
     Check(g_registry.get<ecs::StatusFlags>(pet).isPet, "pet marker missing");
     Check(g_registry.get<ecs::PlayerName>(pet).value == "owner's Pet", "pet name missing");
     Check(State(owner).petBonus == 17 && modifications == 1, "pet bonuses not rebuilt on summon");
     Check(g_registry.get<ItemState>(item).locked && ItemSystem::GetItemSocket(item, 2) == 1, "pet item not locked");
     Check(g_registry.get<ecs::PetComponent>(owner).item == item
         && g_registry.get<ecs::PetComponent>(owner).sockets[2] == 1, "pet component not synchronized");
-    Check(system.GetByVID(actor->GetVID()) == actor && !system.GetByVID(0), "pet VID lookup failed");
+    Check(PetSystem::FindActorByVID(owner, ecs::PlayerRuntime::GetPacketVID(pet)) == actor
+        && !PetSystem::FindActorByVID(owner, 0), "pet VID lookup failed");
     const auto timer = scheduled;
     State(pet).x = State(owner).x + 500;
-    Check(system.Update(0) && State(pet).walking && moves == 1, "near pet did not walk");
+    Check(PetSystem::Update(owner, 0) && State(pet).walking && moves == 1, "near pet did not walk");
     State(pet).x += 1000;
-    Check(system.Update(0) && !State(pet).walking && moves == 2, "far pet did not run");
+    Check(PetSystem::Update(owner, 0) && !State(pet).walking && moves == 2, "far pet did not run");
     State(pet).map = 2;
-    Check(system.Update(0) && State(pet).map == State(owner).map, "pet cross-map return failed");
+    Check(PetSystem::Update(owner, 0) && State(pet).map == State(owner).map, "pet cross-map return failed");
     State(owner).dead = true;
-    Check(system.Update(0) && actor->IsSummoned(), "owner death changed pet survival rule");
+    Check(PetSystem::Update(owner, 0) && actor->character != entt::null, "owner death changed pet survival rule");
     Check(timer->func(timer, 0) != 0, "pet owner-entity timer rejected");
-    onCompute = [&] { Check(!actor->IsSummoned() && actor->GetSummonItem() == entt::null,
+    onCompute = [&] { Check(actor->character == entt::null && actor->summonItem == entt::null,
         "unsummon reentered with still-published handles"); };
-    system.Unsummon(34001);
+    PetSystem::Unsummon(owner, 34001);
     onCompute = {};
     Check(!g_registry.valid(pet) && State(owner).petBonus == 0 && clearCalls == 1, "pet cleanup lost bonuses/character");
     Check(!g_registry.get<ItemState>(item).locked && ItemSystem::GetItemSocket(item, 2) == 0, "pet item remained locked");
     Check(g_registry.get<ecs::PetComponent>(owner).item == entt::null, "pet component not cleared");
     const auto computed = computes;
-    system.Unsummon(34001);
-    system.Destroy();
+    PetSystem::Unsummon(owner, 34001);
+    PetSystem::DestroyRuntime(owner);
     Check(computes == computed && destroyed == 1, "pet teardown repeated side effects");
-    Check(timer->func(timer, 0) == 0 && !ecs::PlayerRuntime::GetPetSystem(owner), "pet timer/runtime outlived system");
+    Check(timer->func(timer, 0) == 0 && !g_registry.try_get<ecs::PetRuntime>(owner), "pet timer/runtime outlived system");
 }
 
 void PetMultipleAndReentrantDeletion()
 {
     Reset();
     const auto owner = Character(), first = PetItem(owner), second = PetItem(owner, 20);
-    CPetSystem system(owner);
-    system.SetUpdatePeriod(0);
-    auto* a = system.Summon(34001, first, "", false);
-    auto* b = system.Summon(34002, second, "", false);
+    PetSystem::SetUpdatePeriod(owner, 0);
+    auto* a = PetSystem::Summon(owner, 34001, first, "", false);
+    auto* b = PetSystem::Summon(owner, 34002, second, "", false);
     Check(a && b && State(owner).petBonus == 44, "multiple-pet bonuses incorrect");
-    State(a->GetCharacter()).hasMob = State(b->GetCharacter()).hasMob = false;
+    State(a->character).hasMob = State(b->character).hasMob = false;
     mobQueries = 0;
-    Check(!system.Update(0) && mobQueries == 2, "failed pet AI skipped another pet");
-    onCompute = [&] { Check(!system.GetByVnum(34001), "deleting actor still visible during RefreshBuff"); };
-    system.DeletePet(a);
+    Check(!PetSystem::Update(owner, 0) && mobQueries == 2, "failed pet AI skipped another pet");
+    onCompute = [&] { Check(!PetSystem::FindActor(owner, 34001), "deleting actor still visible during RefreshBuff"); };
+    PetSystem::DeleteActor(owner, a->vnum);
     onCompute = {};
-    Check(system.CountSummoned() == 1 && State(owner).petBonus == 27, "single deletion removed remaining bonus");
+    Check(PetSystem::CountSummoned(owner) == 1 && State(owner).petBonus == 27, "single deletion removed remaining bonus");
     Check(!g_registry.get<ItemState>(first).locked && g_registry.get<ItemState>(second).locked, "single deletion unlocked wrong item");
-    a = system.Summon(34001, first, "", false);
-    Check(a && system.CountSummoned() == 2, "pet resummon failed");
-    system.UnsummonAll();
-    Check(system.CountSummoned() == 0 && State(owner).petBonus == 0, "UnsummonAll left a pet/bonus behind");
+    a = PetSystem::Summon(owner, 34001, first, "", false);
+    Check(a && PetSystem::CountSummoned(owner) == 2, "pet resummon failed");
+    PetSystem::UnsummonAll(owner);
+    Check(PetSystem::CountSummoned(owner) == 0 && State(owner).petBonus == 0, "UnsummonAll left a pet/bonus behind");
     Check(!g_registry.get<ItemState>(first).locked && !g_registry.get<ItemState>(second).locked, "UnsummonAll left item locks");
-    Check(system.GetByVnum(34001) && system.GetByVnum(34002), "UnsummonAll unexpectedly deleted actors");
+    Check(PetSystem::FindActor(owner, 34001) && PetSystem::FindActor(owner, 34002), "UnsummonAll unexpectedly deleted actors");
     Check(scheduled->func(scheduled, 0) == 0, "UnsummonAll left active timer");
-    a = system.Summon(34001, first, "", false);
-    b = system.Summon(34002, second, "", false);
+    a = PetSystem::Summon(owner, 34001, first, "", false);
+    b = PetSystem::Summon(owner, 34002, second, "", false);
     int callbacks = 0;
     onCompute = [&] {
         ++callbacks;
-        Check(system.CountSummoned() == static_cast<size_t>(2 - callbacks), "destructor published a dying actor");
-        Check(!system.Summon(34003, first, "", false), "summon reentered Destroy");
-        system.Destroy(); // Recursive teardown is harmless.
+        Check(PetSystem::CountSummoned(owner) == static_cast<size_t>(2 - callbacks), "destructor published a dying actor");
+        Check(!PetSystem::Summon(owner, 34003, first, "", false), "summon reentered Destroy");
+        PetSystem::DestroyRuntime(owner); // Recursive teardown is harmless.
     };
-    system.Destroy();
+    PetSystem::DestroyRuntime(owner);
     onCompute = {};
-    Check(callbacks == 2 && State(owner).petBonus == 0 && system.CountSummoned() == 0,
+    Check(callbacks == 2 && State(owner).petBonus == 0 && PetSystem::CountSummoned(owner) == 0,
         "multi-actor Destroy failed during reentrant point calculation");
-    Check(!system.GetByVnum(34001) && !system.GetByVnum(34002), "Destroy retained actors");
+    Check(!PetSystem::FindActor(owner, 34001) && !PetSystem::FindActor(owner, 34002), "Destroy retained actors");
 }
 
 void PetStaleHandles()
@@ -500,12 +494,13 @@ void PetStaleHandles()
     {
         Reset();
         const auto owner = Character(), item = PetItem(owner);
-        CPetSystem system(owner);
-        system.SetUpdatePeriod(0);
-        auto* actor = system.Summon(34001, item, "", false);
+        PetSystem::SetUpdatePeriod(owner, 0);
+        auto* actor = PetSystem::Summon(owner, 34001, item, "", false);
         const auto timer = scheduled;
-        const auto pet = actor->GetCharacter();
+        const auto pet = actor->character;
         const auto old = which == 0 ? owner : which == 1 ? item : pet;
+        if (which == 0)
+            PetSystem::DestroyRuntime(owner);
         if (which == 3)
             g_registry.get<ItemState>(item).owner = Character();
         else
@@ -514,9 +509,16 @@ void PetStaleHandles()
         Check(which == 3 || (entt::to_entity(old) == entt::to_entity(replacement) && old != replacement),
             "pet fixture did not recycle an entity generation");
         if (which == 0)
+        {
             Check(timer->func(timer, 0) == 0, "stale-owner timer reached recycled character");
-        Check(system.Update(0) && !actor->IsSummoned() && actor->GetSummonItem() == entt::null,
-            "stale pet owner/item/follower not cleaned");
+            Check(!g_registry.valid(pet) && !g_registry.get<ItemState>(item).locked
+                && ItemSystem::GetItemSocket(item, 2) == 0, "stale pet owner teardown not cleaned");
+        }
+        else
+        {
+            Check(PetSystem::Update(owner, 0) && actor->character == entt::null && actor->summonItem == entt::null,
+                "stale pet owner/item/follower not cleaned");
+        }
         Check(g_registry.valid(replacement), "pet cleanup destroyed recycled entity");
         if (which != 0)
             Check(State(owner).petBonus == 0, "stale pet retained owner bonus");
@@ -526,7 +528,7 @@ void PetStaleHandles()
             Check(State(newOwner).petBonus == 0 && g_registry.get<ItemState>(item).locked,
                 "pet cleanup modified transferred item's new owner or lock");
         }
-        system.Destroy();
+        PetSystem::DestroyRuntime(owner);
         Check(g_registry.valid(replacement), "pet destructor destroyed recycled entity");
     }
 }
@@ -535,77 +537,74 @@ void PetFailuresSkinsAndBonuses()
 {
     Reset();
     const auto owner = Character(), item = PetItem(owner), other = Character();
-    CPetSystem system(owner);
-    system.SetUpdatePeriod(0);
-    Check(!system.Summon(34004, entt::null, "", false), "null pet item accepted");
+    PetSystem::SetUpdatePeriod(owner, 0);
+    Check(!PetSystem::Summon(owner, 34004, entt::null, "", false), "null pet item accepted");
     g_registry.get<ItemState>(item).owner = other;
-    Check(!system.Summon(34004, item, "", false) && spawned == 0, "foreign pet item spawned");
+    Check(!PetSystem::Summon(owner, 34004, item, "", false) && spawned == 0, "foreign pet item spawned");
     g_registry.get<ItemState>(item).owner = owner;
     g_registry.get<ItemState>(item).hasProto = false;
-    Check(!system.Summon(34004, item, "", false) && spawned == 0, "pet missing proto accepted");
+    Check(!PetSystem::Summon(owner, 34004, item, "", false) && spawned == 0, "pet missing proto accepted");
     g_registry.get<ItemState>(item).hasProto = true;
     failSpawn = true;
-    Check(!system.Summon(34004, item, "", false) && !scheduled, "failed pet spawn started timer");
+    Check(!PetSystem::Summon(owner, 34004, item, "", false) && !scheduled, "failed pet spawn started timer");
     failSpawn = false; failShow = true;
-    Check(!system.Summon(34004, item, "", false) && destroyed == 1 && !scheduled,
+    Check(!PetSystem::Summon(owner, 34004, item, "", false) && destroyed == 1 && !scheduled,
         "failed pet show leaked follower or timer");
     Check(!g_registry.get<ItemState>(item).locked && State(owner).petBonus == 0, "failed pet show applied side effects");
     failShow = false;
     const auto skin = Item(owner);
     State(owner).skin = skin;
     g_registry.get<ItemState>(skin).proto.alValues[0] = 34500;
-    auto* actor = system.Summon(34004, item, "", false);
-    Check(actor && actor->GetVnum() == 34004 && spawnedVnum == 34500, "skin replaced pet's stable identity");
+    auto* actor = PetSystem::Summon(owner, 34004, item, "", false);
+    Check(actor && actor->vnum == 34004 && spawnedVnum == 34500, "skin replaced pet's stable identity");
     Check(State(owner).petBonus == 0, "skin bypassed dungeon-only pet bonus restriction");
     State(owner).dungeon = true;
     ecs::PointSystem::Compute(owner);
     Check(State(owner).petBonus == 17, "dungeon pet bonus missing");
     const auto second = PetItem(owner);
-    const auto pet = actor->GetCharacter();
-    Check(!system.Summon(34004, second, "", false) && actor->GetSummonItem() == item,
+    const auto pet = actor->character;
+    Check(!PetSystem::Summon(owner, 34004, second, "", false) && actor->summonItem == item,
         "active pet rebound to a different item");
-    Check(!system.Summon(34001, item, "", false), "one item became owned by two pet actors");
-    Check(system.Summon(34004, item, "", true) == actor && actor->GetCharacter() == pet,
+    Check(!PetSystem::Summon(owner, 34001, item, "", false), "one item became owned by two pet actors");
+    Check(PetSystem::Summon(owner, 34004, item, "", true) == actor && actor->character == pet,
         "repeat summon duplicated active follower");
     State(owner).skin = entt::null;
-    system.UpdatePetSkin();
-    Check(actor->GetVnum() == 34004 && spawnedVnum == 34004 && actor->GetSummonItem() == item,
+    PetSystem::UpdatePetSkin(owner);
+    actor = PetSystem::FindActor(owner, 34004);
+    Check(actor && actor->vnum == 34004 && spawnedVnum == 34004 && actor->summonItem == item,
         "removing pet skin lost base identity/item");
     State(owner).dungeon = false;
     const auto beforeClear = clearCalls;
-    system.Unsummon(actor, true);
-    Check(!system.GetByVnum(34004) && clearCalls == beforeClear + 1 && lastClearValue == -10,
+    PetSystem::Unsummon(owner, actor->vnum, true);
+    Check(!PetSystem::FindActor(owner, 34004) && clearCalls == beforeClear + 1 && lastClearValue == -10,
         "dungeon exit prevented removal of previously applied bonus");
     Check(State(owner).petBonus == 0, "pet attributes survived removal");
     auto& material = g_registry.get<ItemState>(item);
     material.proto.aApplies[0].bType = MAX_APPLY_NUM;
-    actor = system.Summon(34001, item, "", false);
+    actor = PetSystem::Summon(owner, 34001, item, "", false);
     Check(actor && State(owner).petBonus == 0, "malformed pet apply entered point system");
-    system.Unsummon(34001);
+    PetSystem::Unsummon(owner, 34001);
     material.proto.aApplies[0] = { APPLY_MOV_SPEED, std::numeric_limits<int>::min() };
-    actor = system.Summon(34001, item, "", false);
+    actor = PetSystem::Summon(owner, 34001, item, "", false);
     Check(actor && State(owner).petBonus == 0, "unnegatable pet bonus accepted");
-    system.Unsummon(34001);
+    PetSystem::Unsummon(owner, 34001);
     material.proto.aApplies[0] = { APPLY_SKILL, 0x00800020 };
-    system.Summon(34001, item, "", false);
-    system.Unsummon(34001);
+    PetSystem::Summon(owner, 34001, item, "", false);
+    PetSystem::Unsummon(owner, 34001);
     Check(lastClearValue == 0x20, "skill bonus removal did not toggle the add bit");
 }
 
-void PetReplacementTimerAndItem()
+void PetReplacementRuntimeAndItem()
 {
     Reset();
     const auto owner = Character(), item = PetItem(owner);
-    CPetSystem oldSystem(owner);
-    oldSystem.Summon(34001, item, "", false);
+    PetSystem::Summon(owner, 34001, item, "", false);
     const auto oldTimer = scheduled;
-    oldSystem.Destroy();
-    CPetSystem newSystem(owner);
-    auto* actor = newSystem.Summon(34001, item, "", false);
-    Check(oldTimer->func(oldTimer, 0) == 0, "old pet timer entered replacement subsystem");
-    Check(scheduled->func(scheduled, 0) != 0, "new pet timer rejected");
-    oldSystem.Destroy();
-    Check(ecs::PlayerRuntime::GetPetSystem(owner) == &newSystem, "old pet system cleared new runtime");
+    PetSystem::DestroyRuntime(owner);
+    PetSystem::DestroyRuntime(owner);
+    Check(oldTimer->func(oldTimer, 0) == 0, "old pet timer entered replacement runtime");
+    auto* actor = PetSystem::Summon(owner, 34001, item, "", false);
+    Check(actor && scheduled->func(scheduled, 0) != 0, "new pet timer rejected");
     const auto oldVID = ItemSystem::GetItemVID(item);
     g_registry.destroy(item);
     const auto replacement = PetItem(owner);
@@ -615,33 +614,35 @@ void PetReplacementTimerAndItem()
     g_registry.get<ItemState>(replacement).sockets[2] = 1;
     auto& state = g_registry.get<ecs::PetComponent>(owner);
     state.item = replacement;
-    actor->Unsummon();
+    state.itemVID = oldVID;
+    PetSystem::Unsummon(owner, actor->vnum);
     Check(g_registry.get<ItemState>(replacement).locked && ItemSystem::GetItemSocket(replacement, 2) == 1,
         "stale pet unlocked another item with same VID");
     Check(state.item == replacement && state.itemVID == oldVID, "pet cleared replacement ECS state");
-    newSystem.Destroy();
+    PetSystem::DestroyRuntime(owner);
 }
 
 void PetNullOwnerAndMounting()
 {
     Reset();
-    CPetActor orphan(entt::null, 34001);
-    orphan.SetName("");
-    orphan.Unmount();
-    orphan.ClearBuff();
-    orphan.GiveBuff();
-    orphan.UpdatePetSkin();
-    Check(!orphan.Mount() && !orphan.Summon("", entt::null), "null-owner pet entered services");
-    orphan.Unsummon();
+    PetSystem::UpdatePetSkin(entt::null);
+    PetSystem::Unmount(entt::null, 34001);
+    PetSystem::DestroyRuntime(entt::null);
+    Check(!PetSystem::Summon(entt::null, 34001, entt::null, "", false),
+        "null-owner pet entered services");
     const auto owner = Character();
-    CPetActor notMountable(owner, 34001);
-    Check(!notMountable.Mount(), "non-mountable pet mounted");
-    CPetActor first(owner, 34001, CPetActor::EPetOption_Mountable);
-    CPetActor second(owner, 34002, CPetActor::EPetOption_Mountable);
-    Check(first.Mount() && second.Mount(), "entity pet mounting failed");
-    first.Unsummon();
+    auto* first = PetSystem::Summon(owner, 34001, PetItem(owner), "", false);
+    Check(first && !PetSystem::Mount(owner, 34001), "non-mountable pet mounted");
+    auto* mountableFirst = PetSystem::Summon(owner, 34003, PetItem(owner), "", false,
+        PetSystem::EPetOption_Mountable);
+    auto* mountableSecond = PetSystem::Summon(owner, 34002, PetItem(owner), "", false,
+        PetSystem::EPetOption_Mountable);
+    PetSystem::Unsummon(owner, 34001);
+    Check(mountableFirst && mountableSecond, "entity pet fixture summon failed");
+    Check(PetSystem::Mount(owner, 34003) && PetSystem::Mount(owner, 34002), "entity pet mounting failed");
+    PetSystem::Unsummon(owner, 34003);
     Check(State(owner).mount == 34002, "old pet actor unmounted replacement");
-    second.Unsummon();
+    PetSystem::Unsummon(owner, 34002);
     Check(State(owner).mount == 0, "pet mount survived actor teardown");
 }
 
@@ -649,20 +650,19 @@ void PetDeathOptionsAndSkinFailure()
 {
     Reset();
     const auto owner = Character(), item = PetItem(owner);
-    CPetSystem system(owner);
-    system.SetUpdatePeriod(1000);
-    auto* actor = system.Summon(34001, item, "", false, CPetActor::EPetOption_Summonable);
-    Check(actor && system.Update(0) && mobQueries == 0, "non-followable pet ran follow AI");
-    State(actor->GetCharacter()).dead = true;
-    Check(system.Update(0) && actor->IsSummoned(), "update period was ignored");
+    PetSystem::SetUpdatePeriod(owner, 1000);
+    auto* actor = PetSystem::Summon(owner, 34001, item, "", false, PetSystem::EPetOption_Summonable);
+    Check(actor && PetSystem::Update(owner, 0) && mobQueries == 0, "non-followable pet ran follow AI");
+    State(actor->character).dead = true;
+    Check(PetSystem::Update(owner, 0) && actor->character != entt::null, "update period was ignored");
     tick += 1000;
-    Check(system.Update(0) && !actor->IsSummoned() && State(owner).petBonus == 0,
+    Check(PetSystem::Update(owner, 0) && actor->character == entt::null && State(owner).petBonus == 0,
         "dead pet was not detached or retained its bonuses");
     Check(!g_registry.get<ItemState>(item).locked, "dead pet left summon item locked");
-    Check(system.Summon(34001, item, "", false) == actor, "dead actor could not resummon");
+    Check(PetSystem::Summon(owner, 34001, item, "", false) == actor, "dead actor could not resummon");
     failShow = true;
-    system.UpdatePetSkin();
-    Check(!actor->IsSummoned() && !g_registry.get<ItemState>(item).locked && State(owner).petBonus == 0,
+    PetSystem::UpdatePetSkin(owner);
+    Check(actor->character == entt::null && !g_registry.get<ItemState>(item).locked && State(owner).petBonus == 0,
         "failed skin respawn leaked follower/item lock/bonus");
     Check(scheduled->func(scheduled, 0) == 0, "failed skin respawn retained timer");
 }
@@ -901,7 +901,7 @@ int main()
         PetMultipleAndReentrantDeletion();
         PetStaleHandles();
         PetFailuresSkinsAndBonuses();
-        PetReplacementTimerAndItem();
+        PetReplacementRuntimeAndItem();
         PetNullOwnerAndMounting();
         PetDeathOptionsAndSkinFailure();
         GrowthLifecycleAndExpiry();

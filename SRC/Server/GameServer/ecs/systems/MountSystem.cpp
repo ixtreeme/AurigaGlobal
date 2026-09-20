@@ -1229,12 +1229,7 @@ void MountUnsummon(entt::entity e, entt::entity)
 void UpdatePetSkin(entt::entity e)
 {
 #ifdef __PET_SYSTEM__
-    if (e == entt::null || !g_registry.valid(e))
-        return;
-
-    const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
-    if (refs && refs->petSystem)
-        refs->petSystem->UpdatePetSkin();
+    PetSystem::UpdatePetSkin(e);
 #endif
 }
 
