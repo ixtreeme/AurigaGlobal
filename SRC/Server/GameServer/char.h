@@ -53,7 +53,6 @@ eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew);
 const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
 
 	
-class CBuffOnAttributes;
 class CPetSystem;
 #ifdef __NEWPET_SYSTEM__
 class CNewPetSystem;

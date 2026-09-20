@@ -12,7 +12,7 @@ class CPetSystem;
 class CMountSystem;
 class CNewPetSystem;
 
-class CBuffOnAttributes;
+#include "../../buff_on_attributes.h"
 
 class CMountInventory;
 
@@ -63,15 +63,6 @@ struct CharacterRuntimeFlagsComponent {
     uint8_t gmLevel = 0;
     uint8_t blockMode = 0;
     float rotation = 0.0f;
-};
-
-// The mount subsystem, so the skin and unsummon paths can be reached from an
-// entity. Kept beside PetRuntimeRefs, which already does this for pets.
-// The per-attribute buff pools a character carries, keyed by point type. The
-// pointers are owned here: PlayerRuntime::BuffOnAttr_Destroy frees them when
-// the character is torn down, the same job CHARACTER's destructor used to do.
-struct BuffOnAttrs {
-    std::map<uint8_t, CBuffOnAttributes*> pools;
 };
 
 // Who currently owns this character's movement sync, and the reverse edge.

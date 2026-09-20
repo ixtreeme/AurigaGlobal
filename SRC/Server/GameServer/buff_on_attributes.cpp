@@ -1,192 +1,169 @@
 #include "stdafx.h"
-#include "ecs/AIHelpers.hpp"
-#include <Core/Logging.hpp>
-#include <common/tables.h>
-#include "item.h"
-#include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
-#include "ecs/EntityFactory.hpp"
+#include "buff_on_attributes.h"
+#include "char.h"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/ChatSystem.hpp"
-#include "buff_on_attributes.h"
 #include <algorithm>
+#include <vector>
 
-CBuffOnAttributes::CBuffOnAttributes(entt::entity owner, uint8_t point_type, std::vector <uint8_t>* p_vec_buff_wear_targets)
-:	m_buffOwner(owner), m_bPointType(point_type), m_p_vec_buff_wear_targets(p_vec_buff_wear_targets)
+namespace {
+bool Live(entt::entity e) { return e != entt::null && g_registry.valid(e); }
+
+std::vector<uint8_t> Slots(uint8_t type)
 {
-	Initialize();
+    switch (type) {
+    case POINT_ENERGY:
+        return { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST,
+            WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_SHIELD };
+    case POINT_COSTUME_ATTR_BONUS:
+        return { WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_COSTUME_MOUNT,
+#ifdef ENABLE_COSTUME_EFFECT_ATTR_BONUS_RAZOR93
+            WEAR_COSTUME_PET_SKIN, WEAR_COSTUME_EFFECT_BODY, WEAR_COSTUME_EFFECT_WEAPON,
+#endif
+#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
+            WEAR_COSTUME_WEAPON,
+#endif
+#ifdef ENABLE_STOLE_COSTUME
+            WEAR_COSTUME_ACCE,
+#endif
+            WEAR_COSTUME_ACCE_SLOT };
+    default: return {};
+    }
 }
 
-CBuffOnAttributes::~CBuffOnAttributes()
+// Nested point changes append to the queue. Reacquire after every callback:
+// a replacement component or recycled owner must not inherit an older drain.
+void Drain(entt::entity owner)
 {
+    auto* state = Live(owner) ? g_registry.try_get<ecs::BuffOnAttrs>(owner) : nullptr;
+    if (!state || state->dispatchToken) return;
+    static uint64_t nextToken = 0;
+    const auto token = ++nextToken;
+    state->dispatchToken = token;
+    try {
+        for (;;) {
+            state = Live(owner) ? g_registry.try_get<ecs::BuffOnAttrs>(owner) : nullptr;
+            if (!state || state->dispatchToken != token) return;
+            if (state->pending.empty()) { state->dispatchToken = 0; return; }
+            const auto [type, delta] = *state->pending.begin();
+            state->pending.erase(state->pending.begin());
+            if (delta) ecs::PointSystem::ApplyPoint(owner, type, delta);
+        }
+    } catch (...) {
+        state = Live(owner) ? g_registry.try_get<ecs::BuffOnAttrs>(owner) : nullptr;
+        if (state && state->dispatchToken == token) state->dispatchToken = 0;
+        throw;
+    }
 }
 
-void CBuffOnAttributes::Initialize()
+void ChangeItem(entt::entity owner, entt::entity item, int sign)
 {
-	m_bBuffValue = 0;
-	m_map_additional_attrs.clear();
+    if (!Live(owner) || !Live(item)) return;
+    const auto cell = ItemSystem::GetItemCell(item);
+    if (cell < INVENTORY_MAX_NUM) return;
+    std::vector<TPlayerItemAttribute> attributes;
+    for (int j = 0, n = ItemSystem::GetItemAttributeCount(item); j < n; ++j)
+        attributes.push_back(ItemSystem::GetItemAttribute(item, j));
+
+    auto* state = g_registry.try_get<ecs::BuffOnAttrs>(owner);
+    if (!state) return;
+    for (auto& [type, pool] : state->pools) {
+        if (!pool.value) continue;
+        const auto slots = Slots(type);
+        if (std::find(slots.begin(), slots.end(), cell - INVENTORY_MAX_NUM) == slots.end()) continue;
+        for (const auto& attr : attributes) {
+            auto it = pool.attributes.find(attr.bType);
+            if (sign < 0 && it == pool.attributes.end()) break;
+            const int oldSum = it == pool.attributes.end() ? 0 : it->second;
+            const int newSum = oldSum + sign * attr.sValue;
+            state->pending[attr.bType] += newSum * pool.value / 100 - oldSum * pool.value / 100;
+            pool.attributes[attr.bType] = newSum;
+        }
+    }
+    Drain(owner);
+}
 }
 
-void CBuffOnAttributes::RemoveBuffFromItem(entt::entity item)
-{
-	if (0 == m_bBuffValue)
-		return ;
-	if (entt::null != item)
-	{
-		if (ItemSystem::GetItemCell(item) < INVENTORY_MAX_NUM)
-			return;
-		std::vector <uint8_t>::iterator it = find (m_p_vec_buff_wear_targets->begin(), m_p_vec_buff_wear_targets->end(), ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM);
-		if (m_p_vec_buff_wear_targets->end() == it)
-			return;
+namespace ecs::PlayerRuntime {
+void BuffOnAttr_AddBuffsFromItem(entt::entity owner, entt::entity item) { ChangeItem(owner, item, 1); }
+void BuffOnAttr_RemoveBuffsFromItem(entt::entity owner, entt::entity item) { ChangeItem(owner, item, -1); }
 
-		const int m = ItemSystem::GetItemAttributeCount(item);
-		for (int j = 0; j < m; j++)
-		{
-			TPlayerItemAttribute attr = ItemSystem::GetItemAttribute(item, j);
-			TMapAttr::iterator it = m_map_additional_attrs.find(attr.bType);
-			// m_map_additional_attrs에서 해당 attribute type에 대한 값을 제거하고,
-			// 변경된 값의 (m_bBuffValue)%만큼의 버프 효과 감소
-			if (it != m_map_additional_attrs.end())
-			{
-				int& sum_of_attr_value = it->second;
-				int old_value = sum_of_attr_value * m_bBuffValue / 100;
-				int new_value = (sum_of_attr_value - attr.sValue) * m_bBuffValue / 100;
-				ecs::PointSystem::ApplyPoint(m_buffOwner, attr.bType, new_value - old_value);
-				sum_of_attr_value -= attr.sValue;
-			}
-			else
-			{
-				LOG_ERROR("Buff ERROR(type {}). This item({}) attr_type({}) was not in buff pool", m_bPointType, ItemSystem::GetItemVnum(item), attr.bType);
-				return;
-			}
-		}
-	}
+void BuffOnAttr_ClearAll(entt::entity owner)
+{
+    // Point recomputation resets the underlying points itself: do not subtract.
+    if (Live(owner)) (void)g_registry.remove<ecs::BuffOnAttrs>(owner);
 }
+void BuffOnAttr_Destroy(entt::entity owner) { BuffOnAttr_ClearAll(owner); }
 
-void CBuffOnAttributes::AddBuffFromItem(entt::entity item)
+void BuffOnAttr_ValueChange(entt::entity owner, uint8_t type, uint8_t oldValue, uint8_t newValue)
 {
-	if (0 == m_bBuffValue)
-		return ;
-	if (entt::null != item)
-	{
-		if (ItemSystem::GetItemCell(item) < INVENTORY_MAX_NUM)
-			return;
-		std::vector <uint8_t>::iterator it = find (m_p_vec_buff_wear_targets->begin(), m_p_vec_buff_wear_targets->end(), ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM);
-		if (m_p_vec_buff_wear_targets->end() == it)
-			return;
+    const auto slots = Slots(type);
+    if (!Live(owner) || slots.empty()) return;
+    auto* state = g_registry.try_get<ecs::BuffOnAttrs>(owner);
+    if (!newValue) {
+        if (!state) return;
+        const auto it = state->pools.find(type);
+        if (it == state->pools.end()) return;
+        for (const auto& [attr, sum] : it->second.attributes)
+            state->pending[attr] -= sum * it->second.value / 100;
+        it->second = {};
+        Drain(owner);
+        return;
+    }
 
-		const int m = ItemSystem::GetItemAttributeCount(item);
-		for (int j = 0; j < m; j++)
-		{
-			TPlayerItemAttribute attr = ItemSystem::GetItemAttribute(item, j);
-			TMapAttr::iterator it = m_map_additional_attrs.find(attr.bType);
+    auto* pool = state && state->pools.count(type) ? &state->pools.at(type) : nullptr;
+    if (pool && pool->value) {
+        if (!oldValue) return;
+        // Preserve the existing subtract-only percentage-change path.
+        for (const auto& [attr, sum] : pool->attributes)
+            state->pending[attr] -= sum * pool->value / 100;
+        pool->value = newValue;
+        Drain(owner);
+        return;
+    }
 
-			// m_map_additional_attrs에서 해당 attribute type에 대한 값이 없다면 추가.
-			// 추가된 값의 (m_bBuffValue)%만큼의 버프 효과 추가
-			if (it == m_map_additional_attrs.end())
-			{
-				ecs::PointSystem::ApplyPoint(m_buffOwner, attr.bType, attr.sValue * m_bBuffValue / 100);
-				m_map_additional_attrs.insert(TMapAttr::value_type(attr.bType, attr.sValue));
-			}
-			// m_map_additional_attrs에서 해당 attribute type에 대한 값이 있다면, 그 값을 증가시키고,
-			// 변경된 값의 (m_bBuffValue)%만큼의 버프 효과 추가
-			else
-			{
-				int& sum_of_attr_value = it->second;
-				int old_value = sum_of_attr_value * m_bBuffValue / 100;
-				int new_value = (sum_of_attr_value + attr.sValue) * m_bBuffValue / 100;
-				ecs::PointSystem::ApplyPoint(m_buffOwner, attr.bType, new_value - old_value);
-				sum_of_attr_value += attr.sValue;
-			}
-		}
-	}
-}
-
-void CBuffOnAttributes::ChangeBuffValue(uint8_t bNewValue)
-{
-	if (0 == m_bBuffValue)
-		On(bNewValue);
-	else if (0 == bNewValue)
-		Off();
-	else
-	{
-		// 기존에, m_map_additional_attrs의 값의 (m_bBuffValue)%만큼이 버프로 들어가 있었으므로,
-		// (bNewValue)%만큼으로 값을 변경함.
-		for (TMapAttr::iterator it = m_map_additional_attrs.begin(); it != m_map_additional_attrs.end(); it++)
-		{
-			int& sum_of_attr_value = it->second;
-			//int old_value = sum_of_attr_value * m_bBuffValue / 100;
-			//int new_value = sum_of_attr_value * bNewValue / 100;
-
-			ecs::PointSystem::ApplyPoint(m_buffOwner, it->first, -sum_of_attr_value * m_bBuffValue / 100);
-		}
-		m_bBuffValue = bNewValue;
-	}
-}
-
-bool CBuffOnAttributes::On(uint8_t bValue)
-{
-	if (0 != m_bBuffValue || 0 == bValue)
-		return false;
-
-	int n = m_p_vec_buff_wear_targets->size();
-	m_map_additional_attrs.clear();
-	for (int i = 0; i < n; i++)
-	{
-		const entt::entity item = ItemSystem::GetWearItem(m_buffOwner, m_p_vec_buff_wear_targets->at(i));
-		if (item != entt::null)
-		{
-			const int m = ItemSystem::GetItemAttributeCount(item);
-			for (int j = 0; j < m; j++)
-			{
+    AttributeBuffPool fresh;
+    fresh.value = newValue;
+    struct LockedNotice { entt::entity item; entt::entity owner; int index; };
+    std::vector<LockedNotice> notices;
+    for (const auto slot : slots) {
+        const auto item = ItemSystem::GetWearItem(owner, slot);
+        if (!Live(item)) continue;
+        for (int j = 0, n = ItemSystem::GetItemAttributeCount(item); j < n; ++j) {
 #ifdef ATTR_LOCK
-				if (ItemSystem::GetItemLockedAttributeIndex(item) == j)
-				{
+            if (ItemSystem::GetItemLockedAttributeIndex(item) == j) {
 #ifdef TEXTS_IMPROVEMENT
-					const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
-					if (ownerEntity != entt::null) {
-						ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 781, "%d#%s", j, ItemSystem::GetItemName(item));
-					}
+                notices.push_back({item, ItemSystem::GetItemOwnerEntity(item), j});
 #endif
-					continue;
-				}
+                continue;
+            }
 #endif
-				TPlayerItemAttribute attr = ItemSystem::GetItemAttribute(item, j);
-				TMapAttr::iterator it = m_map_additional_attrs.find(attr.bType);
-				if (it != m_map_additional_attrs.end())
-				{
-					it->second += attr.sValue;
-				}
-				else
-				{
-					m_map_additional_attrs.insert(TMapAttr::value_type(attr.bType, attr.sValue));
-				}
-			}
-		}
-	}
+            const auto attr = ItemSystem::GetItemAttribute(item, j);
+            fresh.attributes[attr.bType] += attr.sValue;
+        }
+    }
 
-	for (auto it = m_map_additional_attrs.begin(); it != m_map_additional_attrs.end(); ++it)
-	{
-		ecs::PointSystem::ApplyPoint(m_buffOwner, it->first, it->second * bValue / 100);
-	}
-
-	m_bBuffValue = bValue;
-
-	return true;
+    (void)g_registry.get_or_emplace<ecs::BuffOnAttrs>(owner);
+    // Component construction listeners may remove the owner or the component.
+    state = Live(owner) ? g_registry.try_get<ecs::BuffOnAttrs>(owner) : nullptr;
+    if (!state) return;
+    if (const auto it = state->pools.find(type); it != state->pools.end() && it->second.value) return;
+    state->pools[type] = std::move(fresh);
+    for (const auto& [attr, sum] : state->pools.at(type).attributes)
+        state->pending[attr] += sum * newValue / 100;
+    Drain(owner);
+#ifdef TEXTS_IMPROVEMENT
+    for (const auto& notice : notices) {
+        if (!Live(owner)) return;
+        if (Live(notice.owner) && Live(notice.item))
+            ecs::ChatSystem::SendNew(notice.owner, CHAT_TYPE_INFO, 781,
+                "%d#%s", notice.index, ItemSystem::GetItemName(notice.item));
+    }
+#endif
 }
-
-void CBuffOnAttributes::Off()
-{
-	if (0 == m_bBuffValue)
-		return ;
-
-	for (auto it = m_map_additional_attrs.begin(); it != m_map_additional_attrs.end(); ++it)
-	{
-		ecs::PointSystem::ApplyPoint(m_buffOwner, it->first, -it->second * m_bBuffValue / 100);
-	}
-	Initialize();
 }
 
 

@@ -144,6 +144,17 @@ if(MSVC)
 endif()
 add_test(NAME building_lifecycle COMMAND BuildingLifecycleTests)
 
+add_executable(BuffAttributeTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/BuffAttributeTests.cpp
+    buff_on_attributes.cpp
+)
+target_link_libraries(BuffAttributeTests PRIVATE SERVER EnTT::EnTT LUA)
+if(MSVC)
+    target_compile_options(BuffAttributeTests PRIVATE /Gy)
+    target_link_options(BuffAttributeTests PRIVATE /OPT:REF /OPT:NOICF)
+endif()
+add_test(NAME buff_attributes COMMAND BuffAttributeTests)
+
 add_executable(EntityNetworkDispatchTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/EntityNetworkDispatchTests.cpp
     entity.cpp
@@ -263,7 +274,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer OXEventTests QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
+    foreach(_asan_target GameServer OXEventTests QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
