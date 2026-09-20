@@ -376,12 +376,9 @@ size_t str_lower(const char* from, char* to, size_t size) {
     return i;
 }
 void DESC::Packet(const void*, int) { Unexpected(); }
-LPSECTREE CEntity::GetSectree() const { Unexpected(); }
 void BroadcastNotice(const char*, bool) { Unexpected(); }
 void SendNoticeMap(const char*, int32_t, bool) { Unexpected(); }
 namespace mining { bool IsVeinOfOre(uint32_t race) { return race == 20047; } }
-CEntity::CEntity() = default;
-CEntity::~CEntity() = default;
 void DestroyCharacterStatePre(entt::entity) {}
 void DestroyCharacterStatePost(entt::entity e) { EntityFactory::Destroy(g_registry, e); }
 void AISystem::StateBattle(entt::entity) { Unexpected(); }

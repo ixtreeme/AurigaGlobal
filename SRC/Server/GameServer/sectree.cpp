@@ -135,13 +135,14 @@ void SECTREE::DecreasePC() {
     }
 }
 bool SECTREE::InsertEntity(entt::entity e) {
-    if (IsDestroying() || !g_registry.valid(e) || ecs::VisibilitySystem::IsRemoving(g_registry, e)) return false;
+    if (IsDestroying() || !g_registry.valid(e) || g_registry.all_of<ecs::SpatialRetiring>(e) ||
+        ecs::VisibilitySystem::IsRemoving(g_registry, e)) return false;
     Relocation action(e);
     if (!action.entered) return false;
     auto* previous = ecs::SectorOf(g_registry, e);
     if (previous == this && Contains(e)) return false;
     const auto eligible = [&] {
-        if (IsDestroying() || !g_registry.valid(e)) return false;
+        if (IsDestroying() || !g_registry.valid(e) || g_registry.all_of<ecs::SpatialRetiring>(e)) return false;
         if (g_registry.all_of<ecs::ItemIdentity>(e)) {
             const auto* owner = g_registry.try_get<ecs::ItemOwner>(e);
             const auto* location = g_registry.try_get<ecs::ItemLocation>(e);

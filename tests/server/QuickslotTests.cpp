@@ -696,7 +696,6 @@ uint16_t ecs::PlayerRuntime::GetOriginalPart(entt::entity e, uint8_t) { Actor(e)
 uint16_t ecs::PlayerRuntime::GetRuneEffect(entt::entity) { Unexpected(); }
 void ecs::PointSystem::ComputeBattlePoints(entt::entity) { Service("battle-points"); }
 void ecs::PointSystem::ApplyPoint(entt::entity, uint8_t, int) { Unexpected(); }
-SECTREE * CEntity::GetSectree()const { Unexpected(); }
 SECTREE::SECTREE() {}
 SECTREE::~SECTREE() {}
 SECTREE_MANAGER::SECTREE_MANAGER() {}

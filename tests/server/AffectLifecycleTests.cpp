@@ -835,8 +835,6 @@ void CombatSystem::SetComboSequence(entt::entity,unsigned char) { UnexpectedServ
 void CombatSystem::SetValidComboInterval(entt::entity,int) { UnexpectedService(__func__); }
 unsigned int CGuild::UnderAnyWar(unsigned char) { UnexpectedService(__func__); }
 void CGuild::GiveGuildBuff(entt::entity) { UnexpectedService(__func__); }
-int CEntity::GetX(void)const { UnexpectedService(__func__); }
-int CEntity::GetY(void)const { UnexpectedService(__func__); }
 int64_t get_global_time(void) { return nowSeconds; }
 void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetMaxHP(entt::entity, int64_t) { UnexpectedService(__func__); }

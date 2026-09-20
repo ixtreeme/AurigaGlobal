@@ -529,45 +529,6 @@ namespace offlineshop
 
 
 
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	class ShopEntity : public CEntity
-	{
-	public:
-		ShopEntity();
-
-		//overriding virtual CEntity methods
-
-		
-		const char*			GetShopName() const;
-		void				SetShopName(const char* name);
-#ifdef KASMIR_PAKET_SYSTEM
-		void				SetShopRace(uint32_t dwRace);
-		uint32_t				GetShopRace();
-#endif
-		int					GetShopType();
-		void				SetShopType(int iType);
-		void				SetShop(offlineshop::CShop* pOfflineShop);
-
-		offlineshop::CShop* GetShop() {return m_pkShop;}
-
-		static uint32_t		AllocID(){
-			static uint32_t dwID=1;
-			return dwID++;
-		}
-
-		uint32_t				GetVID() const {return m_dwVID;}
-		void				Destroy() { CEntity::Destroy(); }
-	private:
-		char					m_szName[OFFLINE_SHOP_NAME_MAX_LEN];
-#ifdef KASMIR_PAKET_SYSTEM
-		uint32_t					m_Race;
-#endif
-		int						m_iType;
-		uint32_t					m_dwVID;
-		offlineshop::CShop*		m_pkShop;
-	};
-
-#endif
 
 
 

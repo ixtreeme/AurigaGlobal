@@ -1,5 +1,35 @@
 # Server ECS regression tests
 
+## Native buildings and offline-shop world objects
+
+Buildings and offline-shop avatars no longer allocate CObject/ShopEntity or
+inherit CEntity. Their state and relationships are components; land/manager and
+city indices hold versioned entities. The old entity.h, LPENTITY/LPOBJECT aliases
+and object-to-entity conversion are removed. Existing entity.cpp retains only
+the native view-packet operation, so no parallel implementation is introduced.
+
+BuildingLifecycleTests executes production building.cpp and its registry against
+controlled spatial, NPC and guild services. It covers stored boot coordinates,
+show/delete, DB-ID versus VID indices, collisions, invalid maps/prototypes,
+construction interruption, replacements during removal, guild bonus cleanup,
+NPC ownership and exceptions. It does not execute live terrain, guild storage,
+quests or DB transport.
+
+SpatialLifecycleTests links both production world registries and the real
+sectree/visibility path. Shop creation commits membership before publication;
+destruction retires identity before callbacks. Tests cover partial construction,
+recycled handles, rename visibility, final-retirement respawn rejection, failed
+removal retries and reentrant batch cleanup that retains unfinished ownership.
+EntityNetworkDispatchTests checks actual building/shop INSERT/REMOVE bytes at
+the descriptor boundary, including missing state/session and retired handles.
+
+Run building_lifecycle, spatial_lifecycle and entity_network_dispatch in normal
+and AddressSanitizer configurations, plus the full server regression suite after
+removing the shared CEntity header. In-game checks still need guild-building
+boot/construction/reconstruction/deletion, collision regions and NPCs, guild
+member bonuses, and offline-shop appearance/rename/click/closure in each city.
+No live server restart or binary deployment is part of these isolated tests.
+
 ## Mount visibility and packet-boundary coverage
 
 SpatialLifecycleTests exercises factory-shaped players and followers through the

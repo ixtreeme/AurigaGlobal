@@ -2,21 +2,16 @@
 
 #include "SpatialService.hpp"
 
-#include "../../entity.h"
-#include "../../building.h"
 #include "../../char.h"
 #include "../../config.h"
 #include "../../item.h"
 #include "../../item_manager.h"
-#include "../../new_offlineshop.h"
 #include "../../sectree.h"
 #include "../../sectree_manager.h"
 #include "../../utils.h"
-#include "../CBuildingRegistry.hpp"
 #include "../EntityInvariants.hpp"
 #include "../EventDispatcher.hpp"
 #include "../ItemRegistry.hpp"
-#include "../OfflineShopEntityRegistry.hpp"
 #include "../Registry.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../VIDRegistry.hpp"
@@ -33,26 +28,9 @@
 
 namespace ecs::SpatialService {
 
-entt::entity EntityFromLPENTITY(LPENTITY entity)
-{
-    if (!entity)
-        return entt::null;
-
-    switch (entity->GetType()) {
-    case ENTITY_OBJECT:
-        return ecs::CBuildingRegistry::FindByID(static_cast<building::CObject*>(entity)->GetID());
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-    case ENTITY_NEWSHOPS:
-        return ecs::OfflineShopEntityRegistry::FindByVID(static_cast<offlineshop::ShopEntity*>(entity)->GetVID());
-#endif
-    default:
-        return entt::null;
-    }
-}
-
 bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y, int32_t z)
 {
-    if (!reg.valid(e) || mapIndex == 0 || mapIndex > INT32_MAX ||
+    if (!reg.valid(e) || reg.all_of<ecs::SpatialRetiring>(e) || mapIndex == 0 || mapIndex > INT32_MAX ||
         ecs::VisibilitySystem::IsRemoving(reg, e)) return false;
     auto* tree = ecs::SectorAt(int32_t(mapIndex), x, y);
     if (!tree || tree->IsDestroying() || ecs::SectorOf(reg, e)) return false;
@@ -77,7 +55,7 @@ bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_
         ~Rollback() { fn(); }
     } undo {rollback};
     const auto eligible = [&] {
-        if (!reg.valid(e) || ecs::SectorOf(reg, e)) return false;
+        if (!reg.valid(e) || reg.all_of<ecs::SpatialRetiring>(e) || ecs::SectorOf(reg, e)) return false;
         const auto* version = reg.try_get<ecs::SpatialRevision>(e);
         if ((version ? version->value : 0) != revision) return false;
         if (reg.all_of<ecs::ItemIdentity>(e)) {
@@ -91,7 +69,7 @@ bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_
     };
     if (!eligible()) return false;
     // Preparation may publish on_construct signals, so never retain component
-    // references or a CEntity across it. Item identity needs no legacy object.
+    // references across it. World-object identity needs no C++ object shell.
     const auto prepare = [&]<class T>() {
         if (!reg.valid(e)) return false;
         if (!reg.all_of<T>(e)) reg.insert<T>(&e, &e + 1);

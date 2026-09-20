@@ -46,7 +46,6 @@ struct AntiFlood {
 
 struct DragonSoulState {
     int activeDeck { -1 };
-    LPENTITY refineWindowOpener { nullptr };
     int32_t lastRefineTime { 0 };
 };
 

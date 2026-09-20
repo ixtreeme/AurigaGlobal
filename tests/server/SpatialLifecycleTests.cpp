@@ -268,7 +268,6 @@ uint8_t g_bChannel = 1;
 uint16_t mother_port = 13000;
 bool map_allow_find(int) { Unexpected(); }
 int number_ex(int, int, const char*, int) { Unexpected(); }
-bool CEntity::IsType(int) const { Unexpected(); }
 bool InventorySystem::CanHandleItems(entt::entity, bool, bool) { Unexpected(); }
 bool ecs::PlayerRuntime::IsHack(entt::entity, bool, bool, int) { Unexpected(); }
 bool ecs::PlayerRuntime::IsHack(entt::entity, bool, bool) { Unexpected(); }
@@ -351,9 +350,6 @@ int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
 void CombatSystem::CheckTarget(entt::entity e) { RecoveryCallback(e, 0); }
 bool CombatSystem::IsStun(entt::entity e) { return Recovery(e).stun; }
 bool CombatSystem::IsDead(entt::entity e) { return Recovery(e).dead; }
-int32_t CEntity::GetX() const { Unexpected(); }
-int32_t CEntity::GetY() const { Unexpected(); }
-LPSECTREE CEntity::GetSectree() const { Unexpected(); }
 int CalculateDuration(int, int) { Unexpected(); }
 namespace ecs::SessionSystem {
 void FlushDelayedSaveItem(entt::entity) { Unexpected(); }
@@ -418,14 +414,9 @@ uint32_t g_start_position[4][2] {};
 int passes_per_sec = 25;
 int save_event_second_cycle = 60;
 int test_server = 0;
-int CEntity::GetType() const { Unexpected(); }
 CItemRegistry& CItemRegistry::Instance() { Unexpected(); }
 entt::entity CItemRegistry::Find(uint32_t) const { Unexpected(); }
 entt::entity CItemRegistry::FindByVID(uint32_t) const { Unexpected(); }
-entt::entity ecs::CBuildingRegistry::FindByID(uint32_t) { Unexpected(); }
-building::CObject* ecs::CBuildingRegistry::FindLegacyByEntity(entt::entity) { Unexpected(); }
-entt::entity ecs::OfflineShopEntityRegistry::FindByVID(uint32_t) { Unexpected(); }
-offlineshop::ShopEntity* ecs::OfflineShopEntityRegistry::FindLegacyByEntity(entt::entity) { Unexpected(); }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity e, const char*) {
     ++retired;
     if (onRetire) { auto callback = onRetire; callback(e); }
@@ -567,6 +558,243 @@ void LifetimeAndObservers() {
     ecs::VisibilitySystem::Refresh(g_registry, replacement);
     Check(g_registry.all_of<ecs::SpatialEntity, ecs::ViewActiveTag>(replacement) &&
         Visible(shop, replacement), "character reinsert did not restore visibility tags");
+}
+
+entt::entity BuildingIdentity(uint32_t id, uint32_t vid) {
+    const auto e = Entity(ecs::SpatialKind::Building);
+    g_registry.get<ecs::VIDComponent>(e).value = vid;
+    auto& state = g_registry.emplace<ecs::BuildingState>(e);
+    state.objectId = id; state.vnum = 14061; state.landId = 30;
+    return e;
+}
+void NativeBuildingIdentityAndPlacement() {
+    Reset(); MapFixture map;
+    const auto viewer = Entity(ecs::SpatialKind::Character);
+    Check(Spawn(viewer), "building viewer setup");
+    const auto first = BuildingIdentity(100, 200);
+    Check(!ecs::CBuildingRegistry::Register(0, 200, first) &&
+        !ecs::CBuildingRegistry::Register(100, 0, first) &&
+        !ecs::CBuildingRegistry::Register(101, 200, first) &&
+        !ecs::CBuildingRegistry::Register(100, 201, first), "building accepted inconsistent identity");
+    Check(ecs::CBuildingRegistry::Register(100, 200, first) &&
+        ecs::CBuildingRegistry::FindByID(100) == first &&
+        ecs::CBuildingRegistry::FindByVID(200) == first, "building identity not indexed");
+    const auto sameID = BuildingIdentity(100, 201), sameVID = BuildingIdentity(101, 200);
+    Check(!ecs::CBuildingRegistry::Register(100, 201, sameID) &&
+        !ecs::CBuildingRegistry::Register(101, 200, sameVID), "live building identity collision replaced owner");
+    ecs::CBuildingRegistry::Unregister(100, sameID);
+    Check(ecs::CBuildingRegistry::FindByID(100) == first, "unrelated building unregistered live owner");
+    Check(Spawn(first, 1, 12000) && Visible(first, viewer), "native building range/placement failed");
+    g_registry.get<ecs::BuildingState>(first).destroying = true;
+    Check(ecs::CBuildingRegistry::FindByID(100) == entt::null &&
+        ecs::CBuildingRegistry::FindByVID(200) == entt::null, "retiring building still resolves");
+    ecs::SpatialService::RemoveEntity(g_registry, first);
+    Check(!Visible(first, viewer) && !map.At(12000)->Contains(first), "building removal left view or sector entry");
+    g_registry.destroy(first);
+    const auto replacement = BuildingIdentity(100, 200);
+    Check(replacement != first && ecs::CBuildingRegistry::Register(100, 200, replacement),
+        "replacement building registration rejected retired generation");
+    ecs::CBuildingRegistry::Unregister(100, first);
+    Check(ecs::CBuildingRegistry::FindByID(100) == replacement &&
+        ecs::CBuildingRegistry::FindByVID(200) == replacement, "old building teardown erased replacement indices");
+    Check(Spawn(replacement) && Visible(replacement, viewer) && !Visible(first, viewer),
+        "replacement building inherited stale visibility identity");
+    ecs::SpatialService::RemoveEntity(g_registry, first);
+    Check(Visible(replacement, viewer), "old building removal affected replacement visibility");
+    g_registry.get<ecs::VIDComponent>(replacement).value = 202;
+    Check(ecs::CBuildingRegistry::FindByVID(200) == entt::null &&
+        ecs::CBuildingRegistry::Register(100, 202, replacement) &&
+        ecs::CBuildingRegistry::FindByVID(202) == replacement, "building VID rebinding retained stale index");
+    ecs::CBuildingRegistry::Unregister(100, replacement);
+    Check(ecs::CBuildingRegistry::FindByID(100) == entt::null &&
+        ecs::CBuildingRegistry::FindByVID(202) == entt::null, "building indices not cleared together");
+    g_registry.destroy(sameID); g_registry.destroy(sameVID);
+}
+
+void NativeShopAvatarLifecycle() {
+    Reset(); MapFixture map;
+    const auto viewer = Entity(ecs::SpatialKind::Character);
+    Check(Spawn(viewer), "shop viewer setup");
+    packets.clear();
+    auto shop = ecs::OfflineShopEntityRegistry::Create(77, "native shop", 30003, 2, 1, 200, 100);
+    Check(shop != entt::null && g_registry.valid(shop), "native shop create failed");
+    const auto state = g_registry.get<ecs::OfflineShopState>(shop);
+    Check(state.ownerPID == 77 && state.name == "native shop" && state.race == 30003 && state.shopType == 2 &&
+        state.vid != 0 && g_registry.get<ecs::VIDComponent>(shop).value == state.vid,
+        "native shop creation lost component identity or appearance");
+    Check(ecs::OfflineShopEntityRegistry::FindByVID(state.vid) == shop && map.At()->Contains(shop) &&
+        packets.empty() && !Visible(shop, viewer), "shop creation published before owner index could be installed");
+    ecs::SpatialService::UpdateSectree(g_registry, shop);
+    Check(Visible(shop, viewer), "committed shop failed to publish");
+    const auto beforeRename = packets.size();
+    g_registry.get<ecs::OfflineShopState>(shop).name = "renamed";
+    ecs::VisibilitySystem::Reencode(g_registry, shop);
+    Check(packets.size() == beforeRename + 2 && !packets[beforeRename].add && packets.back().add,
+        "shop rename did not remove/reinsert its current viewer");
+
+    entt::entity replacement = entt::null;
+    uint32_t replacementVID = 0;
+    int removeCallbacks = 0;
+    onPacket = [&](Packet packet) {
+        if (packet.add || packet.source != shop) return;
+        ++removeCallbacks;
+        Check(ecs::OfflineShopEntityRegistry::FindByVID(state.vid) == entt::null &&
+            g_registry.valid(shop) && g_registry.all_of<ecs::OfflineShopState, ecs::SpatialRetiring>(shop),
+            "shop REMOVE callback lost packet state or still exposed retired lookup");
+        Check(!Spawn(shop), "retiring shop resurrected from REMOVE callback");
+        ecs::OfflineShopEntityRegistry::Destroy(shop);
+        replacement = ecs::OfflineShopEntityRegistry::Create(88, "replacement", 30004, 1, 1, 200, 100);
+        Check(replacement != entt::null && replacement != shop, "shop callback replacement creation failed");
+        replacementVID = g_registry.get<ecs::OfflineShopState>(replacement).vid;
+        ecs::SpatialService::UpdateSectree(g_registry, replacement);
+    };
+    ecs::OfflineShopEntityRegistry::Destroy(shop);
+    onPacket = {};
+    Check(removeCallbacks == 1 && !g_registry.valid(shop) && !map.At()->Contains(shop) && !Visible(shop, viewer),
+        "shop final destruction left a ghost or repeated REMOVE");
+    Check(replacementVID != state.vid && ecs::OfflineShopEntityRegistry::FindByVID(replacementVID) == replacement &&
+        Visible(replacement, viewer), "old shop teardown damaged callback replacement");
+    const auto afterDestroy = packets.size();
+    ecs::OfflineShopEntityRegistry::Destroy(shop);
+    Check(packets.size() == afterDestroy && g_registry.valid(replacement), "repeated shop destroy changed replacement");
+    ecs::OfflineShopEntityRegistry::Destroy(replacement);
+    Check(ecs::OfflineShopEntityRegistry::FindByVID(replacementVID) == entt::null && !g_registry.valid(replacement),
+        "replacement shop teardown failed");
+
+    uint32_t failedVID = 0;
+    Callback capture {[&](entt::registry& reg, entt::entity e) { failedVID = reg.get<ecs::OfflineShopState>(e).vid; }};
+    entt::scoped_connection captureConnection =
+        g_registry.on_construct<ecs::OfflineShopState>().connect<&Callback::Run>(capture);
+    const auto invalid = ecs::OfflineShopEntityRegistry::Create(77, "missing sector", 30003, 0, 999, 100, 100);
+    Check(invalid == entt::null && failedVID != 0 && ecs::OfflineShopEntityRegistry::FindByVID(failedVID) == entt::null &&
+        g_registry.view<ecs::OfflineShopState>().size() == 0, "failed shop placement leaked entity or VID lookup");
+    captureConnection.release();
+    Check(ecs::OfflineShopEntityRegistry::Create(0, "invalid owner", 30003, 0, 1, 100, 100) == entt::null &&
+        ecs::OfflineShopEntityRegistry::Create(77, "invalid map", 30003, 0, 0, 100, 100) == entt::null,
+        "invalid shop identity accepted");
+}
+
+void NativeShopPreparationCallbacks() {
+    for (int action = 0; action != 5; ++action) {
+        Reset(); MapFixture map;
+        entt::entity prepared = entt::null;
+        uint32_t vid = 0;
+        Callback callback {[&](entt::registry& reg, entt::entity e) {
+            prepared = e; vid = reg.get<ecs::OfflineShopState>(e).vid;
+            if (action == 0) reg.destroy(e);
+            if (action == 1) reg.remove<ecs::OfflineShopState>(e);
+            if (action == 2) ++reg.get<ecs::OfflineShopState>(e).vid;
+            if (action == 3) ecs::OfflineShopEntityRegistry::Destroy(e);
+            if (action == 4) throw std::runtime_error("shop construction test exception");
+        }};
+        entt::scoped_connection connection =
+            g_registry.on_construct<ecs::OfflineShopState>().connect<&Callback::Run>(callback);
+        entt::entity result = entt::null;
+        bool threw = false;
+        try { result = ecs::OfflineShopEntityRegistry::Create(77, "interrupted", 30003, 0, 1, 100, 100); }
+        catch (const std::runtime_error&) { threw = true; }
+        Check(result == entt::null && threw == (action == 4), "shop construction callback mutation/exception was ignored");
+        Check(prepared != entt::null && !g_registry.valid(prepared) && !map.At()->Contains(prepared) &&
+            ecs::OfflineShopEntityRegistry::FindByVID(vid) == entt::null && packets.empty(),
+            "interrupted shop preparation leaked/published state");
+    }
+}
+
+void NativeShopExceptionalRetirement() {
+    Reset(); MapFixture map;
+    const auto viewer = Entity(ecs::SpatialKind::Character);
+    Check(Spawn(viewer), "exceptional shop viewer setup");
+    const auto shop = ecs::OfflineShopEntityRegistry::Create(77, "retry teardown", 30003, 0, 1, 100, 100);
+    Check(shop != entt::null, "exceptional shop creation failed");
+    const auto vid = g_registry.get<ecs::OfflineShopState>(shop).vid;
+    ecs::SpatialService::UpdateSectree(g_registry, shop);
+    bool throwOnce = true;
+    onPacket = [&](Packet packet) {
+        if (!packet.add && packet.source == shop && throwOnce) {
+            throwOnce = false;
+            throw std::runtime_error("shop REMOVE test exception");
+        }
+    };
+    bool threw = false;
+    try { ecs::OfflineShopEntityRegistry::Destroy(shop); }
+    catch (const std::runtime_error&) { threw = true; }
+    Check(threw && g_registry.valid(shop) && g_registry.all_of<ecs::SpatialRetiring>(shop) &&
+        ecs::OfflineShopEntityRegistry::FindByVID(vid) == entt::null && !Spawn(shop),
+        "exceptional shop teardown did not retain non-resurrectable retirement");
+    int destroyCallbacks = 0;
+    Callback callback {[&](entt::registry&, entt::entity e) {
+        if (e != shop) return;
+        ++destroyCallbacks;
+        ecs::OfflineShopEntityRegistry::Destroy(e);
+    }};
+    entt::scoped_connection connection =
+        g_registry.on_destroy<ecs::OfflineShopState>().connect<&Callback::Run>(callback);
+    ecs::OfflineShopEntityRegistry::Destroy(shop);
+    onPacket = {};
+    Check(destroyCallbacks == 1 && !g_registry.valid(shop) && !map.At()->Contains(shop) && !Visible(shop, viewer),
+        "shop teardown retry/recursive on_destroy did not retire exactly once");
+}
+
+void NativeShopPendingRetirementBatch() {
+    Reset(); MapFixture map;
+    const auto viewer = Entity(ecs::SpatialKind::Character);
+    Check(Spawn(viewer), "pending shop viewer setup");
+    const auto makeShop = [&](uint32_t owner) {
+        const auto e = ecs::OfflineShopEntityRegistry::Create(owner, "pending", 30003, 0, 1, 100, 100);
+        Check(e != entt::null, "pending shop creation failed");
+        ecs::SpatialService::UpdateSectree(g_registry, e);
+        return e;
+    };
+    const auto first = makeShop(77), second = makeShop(88), third = makeShop(99);
+    const auto firstVID = g_registry.get<ecs::OfflineShopState>(first).vid;
+    std::vector<entt::entity> pending {first, second, third};
+    bool throwOnce = true;
+    onPacket = [&](Packet packet) {
+        if (!packet.add && packet.source == first && throwOnce) {
+            throwOnce = false;
+            throw std::runtime_error("pending batch first REMOVE test exception");
+        }
+    };
+    bool threw = false;
+    try { ecs::OfflineShopEntityRegistry::DestroyPending(pending); }
+    catch (const std::runtime_error&) { threw = true; }
+    Check(threw && pending.size() == 1 && pending.front() == first && g_registry.valid(first),
+        "failed batch retirement lost exact retry ownership");
+    Check(!g_registry.valid(second) && !g_registry.valid(third) &&
+        !map.At()->Contains(second) && !map.At()->Contains(third) &&
+        !Visible(second, viewer) && !Visible(third, viewer),
+        "batch exception skipped later shop retirements");
+    Check(g_registry.all_of<ecs::SpatialRetiring>(first) &&
+        ecs::OfflineShopEntityRegistry::FindByVID(firstVID) == entt::null,
+        "failed pending avatar remained publicly addressable");
+    ecs::OfflineShopEntityRegistry::DestroyPending(pending);
+    onPacket = {};
+    Check(pending.empty() && !g_registry.valid(first) && !Visible(first, viewer),
+        "pending batch retry did not finish failed avatar");
+
+    const auto recursiveFirst = makeShop(101), recursiveSecond = makeShop(102);
+    pending = {recursiveFirst, recursiveSecond};
+    int firstRemoves = 0, secondRemoves = 0;
+    bool nested = false;
+    onPacket = [&](Packet packet) {
+        if (packet.add) return;
+        if (packet.source == recursiveSecond) ++secondRemoves;
+        if (packet.source != recursiveFirst) return;
+        ++firstRemoves;
+        if (nested) return;
+        nested = true;
+        ecs::OfflineShopEntityRegistry::DestroyPending(pending);
+        Check(g_registry.valid(recursiveFirst) && !g_registry.valid(recursiveSecond) &&
+            pending.size() == 1 && pending.front() == recursiveFirst,
+            "nested batch erased active retirement or retained completed sibling");
+    };
+    ecs::OfflineShopEntityRegistry::DestroyPending(pending);
+    onPacket = {};
+    Check(nested && firstRemoves == 1 && secondRemoves == 1 && pending.empty() &&
+        !g_registry.valid(recursiveFirst) && !g_registry.valid(recursiveSecond),
+        "reentrant pending batch duplicated teardown or corrupted ownership");
+    ecs::OfflineShopEntityRegistry::DestroyPending(pending);
+    Check(pending.empty(), "empty pending batch changed state");
 }
 
 void RemovalCallbacksAndTeardown() {
@@ -1464,6 +1692,9 @@ int main() {
         auto recoveryConnection = entt::scoped_connection(g_dispatcher.sink<ecs::EvRecovery>().connect<&Recovered>());
         MembershipAndSnapshots(); VisibilityRoundTrip(); ViewCallbacks(); PreparationAndPCs();
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
+        NativeBuildingIdentityAndPlacement(); NativeShopAvatarLifecycle(); NativeShopPreparationCallbacks();
+        NativeShopExceptionalRetirement();
+        NativeShopPendingRetirementBatch();
         NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();

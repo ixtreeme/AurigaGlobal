@@ -8,49 +8,22 @@ namespace building
 {
 	class CLand;
 
-	class CObject : public CEntity
+	namespace ObjectSystem
 	{
-		public:
-			CObject(TObject * pData, TObjectProto * pProto);
-			virtual ~CObject();
-
-			void	Destroy();
-
-
-			uint32_t	GetID() { return m_data.dwID; }
-
-			void	SetVID(uint32_t dwVID);
-			uint32_t	GetVID() { return m_dwVID; }
-
-			bool	Show(int32_t lMapIndex, int32_t x, int32_t y);
-
-			void	Save();
-
-			void	SetLand(CLand * pkLand) { m_pkLand = pkLand; }
-			CLand *	GetLand()		{ return m_pkLand; }
-
-			uint32_t	GetVnum()		{ return m_pProto ? m_pProto->dwVnum : 0; }
-			uint32_t	GetGroup()		{ return m_pProto ? m_pProto->dwGroupVnum : 0; }
-
-			void	RegenNPC();
-
-			// BUILDING_NPC
-			void	ApplySpecialEffect();
-			void	RemoveSpecialEffect();
-
-			void	Reconstruct(uint32_t dwVnum);
-
-			entt::entity GetNPCEntity() const { return m_npcEntity; }
-			// END_OF_BUILDING_NPC
-
-		protected:
-			TObjectProto *	m_pProto;
-			TObject		m_data;
-			uint32_t		m_dwVID;
-			CLand *		m_pkLand;
-
-			entt::entity		m_npcEntity;
-	};
+		entt::entity Create(const TObject& data, uint32_t vid);
+		bool IsValid(entt::entity object);
+		uint32_t GetID(entt::entity object);
+		uint32_t GetVID(entt::entity object);
+		uint32_t GetVnum(entt::entity object);
+		uint32_t GetGroup(entt::entity object);
+		CLand* GetLand(entt::entity object);
+		entt::entity GetNPCEntity(entt::entity object);
+		void Destroy(entt::entity object);
+		bool Show(entt::entity object, int32_t mapIndex, int32_t x, int32_t y);
+		void RegenNPC(entt::entity object);
+		void ApplySpecialEffect(entt::entity object);
+		void Reconstruct(entt::entity object, uint32_t vnum);
+	}
 
 	class CLand
 	{
@@ -59,6 +32,7 @@ namespace building
 			~CLand();
 
 			void	Destroy();
+			bool IsDestroying() const { return m_destroying; }
 
 			const TLand & GetData();
 			void	PutData(const TLand * data);
@@ -67,12 +41,13 @@ namespace building
 			void	SetOwner(uint32_t dwGID);
 			uint32_t	GetOwner() const { return m_data.dwGuildID; }
 
-			void	InsertObject(LPOBJECT pkObj);
-			LPOBJECT	FindObject(uint32_t dwID);
-			LPOBJECT	FindObjectByVID(uint32_t dwVID);
-			LPOBJECT	FindObjectByVnum(uint32_t dwVnum);
-			LPOBJECT	FindObjectByGroup(uint32_t dwGroupVnum);
-			LPOBJECT	FindObjectByNPC(entt::entity npc);
+			void	InsertObject(entt::entity object);
+			entt::entity FindObject(uint32_t dwID);
+			entt::entity FindObjectByVID(uint32_t dwVID);
+			entt::entity FindObjectByVnum(uint32_t dwVnum);
+			entt::entity FindObjectByGroup(uint32_t dwGroupVnum);
+			entt::entity FindObjectByNPC(entt::entity npc);
+			void UnregisterObject(entt::entity object);
 			void DeleteObject(uint32_t dwID);
 
 			bool	RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, float xRot, float yRot, float zRot, bool checkAnother);
@@ -97,8 +72,9 @@ namespace building
 
 		protected:
 			TLand			m_data;
-			std::map<uint32_t, LPOBJECT>	m_map_pkObject;
-			std::map<uint32_t, LPOBJECT>	m_map_pkObjectByVID;
+			bool m_destroying { false };
+			std::map<uint32_t, entt::entity> m_objectsByID;
+			std::map<uint32_t, entt::entity> m_objectsByVID;
 
 			// BUILD_WALL
 		private :
@@ -127,9 +103,9 @@ namespace building
 
 			bool	LoadObject(TObject * pTable, bool isBoot=false);
 			void	DeleteObject(uint32_t dwID);
-			void	UnregisterObject(LPOBJECT pkObj);
+			void	UnregisterObject(entt::entity object);
 
-			LPOBJECT	FindObjectByVID(uint32_t dwVID);
+			entt::entity FindObjectByVID(uint32_t dwVID);
 
 			void	SendLandList(LPDESC d, int32_t lMapIndex);
 
@@ -143,7 +119,7 @@ namespace building
 			std::map<uint32_t, TObjectProto *>	m_map_pkObjectProto;
 
 			std::map<uint32_t, CLand *>		m_map_pkLand;
-			std::map<uint32_t, LPOBJECT>		m_map_pkObjByID;
-			std::map<uint32_t, LPOBJECT>		m_map_pkObjByVID;
+			std::map<uint32_t, entt::entity> m_objectsByID;
+			std::map<uint32_t, entt::entity> m_objectsByVID;
 	};
 }

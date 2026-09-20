@@ -38,6 +38,7 @@ namespace {
 int checks = 0;
 uint32_t now = 1000;
 std::map<const DESC*, std::vector<std::vector<uint8_t>>> wire;
+std::map<const DESC*, std::vector<uint8_t>> bufferedWire;
 std::function<void(const DESC*)> onWire;
 SECTREE* updateSector = nullptr;
 std::vector<entt::entity> updateMembers;
@@ -78,6 +79,118 @@ entt::entity Character(uint32_t vid, bool pc, DESC* desc = nullptr) {
     }
     return e;
 }
+entt::entity WorldObject(ecs::SpatialKind kind, uint32_t vid) {
+    const auto e = g_registry.create();
+    g_registry.emplace<ecs::SpatialKindTag>(e, kind);
+    g_registry.emplace<ecs::VIDComponent>(e, vid);
+    g_registry.emplace<ecs::Position>(e, 12500, 678, 22);
+    return e;
+}
+void NativeBuildingPackets() {
+    DESC desc;
+    const auto viewer = Character(2000, true, &desc);
+    const auto building = WorldObject(ecs::SpatialKind::Building, 2001);
+    ecs::BuildingState state {};
+    state.vnum = 14061; state.landId = 33; state.guildId = 44;
+    state.rotationX = 10; state.rotationY = 20; state.rotationZ = 90;
+    g_registry.emplace<ecs::BuildingState>(building, state);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, building, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, building, viewer);
+    Check(wire.at(&desc).size() == 2, "building emitted extra character/mount frames");
+    const auto add = Packet<TPacketGCCharacterAdd>(desc, 0, HEADER_GC_CHARACTER_ADD);
+    const auto del = Packet<TPacketGCCharacterDelete>(desc, 1, HEADER_GC_CHARACTER_DEL);
+    Check(add.dwVID == 2001 && del.id == 2001 && add.bType == CHAR_TYPE_BUILDING && add.wRaceNum == 14061,
+        "building ADD/DEL identity or type mismatch");
+    Check(add.x == 12500 && add.y == 678 && add.z == 22 && add.angle == 90 &&
+        add.dwAffectFlag[0] == 10 && add.dwAffectFlag[1] == 20,
+        "building lost position or its three protocol rotation fields");
+#ifdef ENABLE_MULTI_NAMES
+    Check(add.transname, "building lost translated-name marker");
+#endif
+    wire.clear();
+    g_registry.remove<ecs::BuildingState>(building);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, building, viewer);
+    Check(wire.empty(), "building without state emitted ADD");
+    g_registry.emplace<ecs::BuildingState>(building, state);
+    g_registry.remove<ecs::VIDComponent>(building);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, building, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, building, viewer);
+    Check(wire.empty(), "building without identity emitted packets");
+    g_registry.destroy(building);
+    const auto replacement = WorldObject(ecs::SpatialKind::Building, 2002);
+    g_registry.emplace<ecs::BuildingState>(replacement, state);
+    Check(replacement != building, "building generation did not advance");
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, building, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, building, viewer);
+    Check(wire.empty(), "retired building emitted replacement generation packets");
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, replacement, viewer);
+    Check(Packet<TPacketGCCharacterAdd>(desc, 0, HEADER_GC_CHARACTER_ADD).dwVID == 2002,
+        "replacement building reused retired wire identity");
+    wire.clear(); g_registry.get<ecs::NetworkSession>(viewer).desc = nullptr;
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, replacement, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, replacement, viewer);
+    Check(wire.empty(), "building sent to missing viewer session");
+    g_registry.clear();
+}
+#ifdef ENABLE_NEW_SHOP_IN_CITIES
+template<class T> T ShopPayload(const DESC& desc, size_t index, uint8_t subheader) {
+    const auto& bytes = wire.at(&desc).at(index);
+    Check(bytes.size() == sizeof(TPacketGCNewOfflineshop) + sizeof(T), "wrong shop framed packet length");
+    TPacketGCNewOfflineshop header {};
+    std::memcpy(&header, bytes.data(), sizeof(header));
+    Check(header.bHeader == HEADER_GC_NEW_OFFLINESHOP && header.bSubHeader == subheader && header.wSize == bytes.size(),
+        "wrong shop main header, subheader or advertised length");
+    T result {};
+    std::memcpy(&result, bytes.data() + sizeof(header), sizeof(result));
+    return result;
+}
+void NativeShopPackets() {
+    DESC desc;
+    const auto viewer = Character(3000, true, &desc);
+    const auto shop = WorldObject(ecs::SpatialKind::OfflineShop, 3001);
+    ecs::OfflineShopState state {};
+    state.vid = 3001; state.race = 30003; state.shopType = 2;
+    state.name = std::string(200, 'n'); state.ownerPID = 77;
+    g_registry.emplace<ecs::OfflineShopState>(shop, state);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, shop, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, shop, viewer);
+    Check(wire.at(&desc).size() == 2 && bufferedWire.empty(), "shop header/payload pairing incomplete");
+    const auto add = ShopPayload<TSubPacketGCInsertShopEntity>(desc, 0, offlineshop::SUBHEADER_GC_INSERT_SHOP_ENTITY);
+    const auto del = ShopPayload<TSubPacketGCRemoveShopEntity>(desc, 1, offlineshop::SUBHEADER_GC_REMOVE_SHOP_ENTITY);
+    Check(add.dwVID == 3001 && del.dwVID == 3001 && add.iType == 2,
+        "shop ADD/DEL identity or type mismatch");
+    Check(add.x == 12500 && add.y == 678 && add.z == 22, "shop position mismatch");
+    Check(add.szName[sizeof(add.szName) - 1] == '\0' &&
+        std::string(add.szName) == std::string(sizeof(add.szName) - 1, 'n'), "shop name not safely truncated");
+#ifdef KASMIR_PAKET_SYSTEM
+    Check(add.dwKasmirNpc == 30003, "shop race lost on the wire");
+#endif
+    wire.clear();
+    g_registry.remove<ecs::Position>(shop);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, shop, viewer);
+    Check(wire.empty() && bufferedWire.empty(), "shop without position emitted partial ADD");
+    g_registry.emplace<ecs::Position>(shop, 12500, 678, 22);
+    g_registry.remove<ecs::OfflineShopState>(shop);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, shop, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, shop, viewer);
+    Check(wire.empty() && bufferedWire.empty(), "shop without state emitted packets");
+    g_registry.destroy(shop);
+    const auto replacement = WorldObject(ecs::SpatialKind::OfflineShop, 3002);
+    state.vid = 3002; g_registry.emplace<ecs::OfflineShopState>(replacement, state);
+    Check(replacement != shop, "shop generation did not advance");
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, shop, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, shop, viewer);
+    Check(wire.empty() && bufferedWire.empty(), "retired shop emitted replacement generation packets");
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, replacement, viewer);
+    Check(ShopPayload<TSubPacketGCInsertShopEntity>(desc, 0, offlineshop::SUBHEADER_GC_INSERT_SHOP_ENTITY).dwVID == 3002,
+        "replacement shop reused retired wire identity");
+    wire.clear(); g_registry.get<ecs::NetworkSession>(viewer).desc = nullptr;
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, replacement, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, replacement, viewer);
+    Check(wire.empty() && bufferedWire.empty(), "shop sent to missing viewer session");
+    g_registry.clear();
+}
+#endif
 void MountWireRoundTrip() {
     DESC ownerDesc, observerDesc;
     const auto owner = Character(500, true, &ownerDesc);
@@ -288,10 +401,22 @@ DESC::~DESC() = default;
 void DESC::Packet(const void* data, int size) {
     Check(data && size > 0, "invalid transport payload");
     const auto* bytes = static_cast<const uint8_t*>(data);
-    wire[this].emplace_back(bytes, bytes + size);
+    auto pending = bufferedWire.find(this);
+    if (pending == bufferedWire.end()) {
+        wire[this].emplace_back(bytes, bytes + size);
+    } else {
+        pending->second.insert(pending->second.end(), bytes, bytes + size);
+        wire[this].push_back(std::move(pending->second));
+        bufferedWire.erase(pending);
+    }
     if (onWire) onWire(this);
 }
-void DESC::BufferedPacket(const void*, int) { Unexpected(); }
+void DESC::BufferedPacket(const void* data, int size) {
+    Check(data && size > 0, "invalid buffered transport payload");
+    const auto* bytes = static_cast<const uint8_t*>(data);
+    auto& pending = bufferedWire[this];
+    pending.insert(pending.end(), bytes, bytes + size);
+}
 void DESC::Destroy() { Unexpected(); }
 void DESC::SetPhase(int) { Unexpected(); }
 CInputProcessor::CInputProcessor() = default;
@@ -343,7 +468,6 @@ void MountSystem::UpdateMountInventoryCountOverhead(entt::entity source, entt::e
 // Unrelated entry points in the complete production translation units remain
 // linked, but must never supply behavior to these direct encoding tests.
 int VIEW_RANGE = 5000, VIEW_BONUS_RANGE = 500;
-entt::entity ecs::SpatialService::EntityFromLPENTITY(LPENTITY) { Unexpected(); }
 void ecs::ViewSystem::ViewCleanup(entt::entity) { Unexpected(); }
 SECTREE::SECTREE() = default;
 SECTREE::~SECTREE() = default;
@@ -397,6 +521,10 @@ bool battle_is_attackable(entt::entity, entt::entity) { Unexpected(); }
 int main() {
     try {
         CHARACTER_MANAGER characters; SECTREE_MANAGER maps;
+        NativeBuildingPackets();
+#ifdef ENABLE_NEW_SHOP_IN_CITIES
+        NativeShopPackets();
+#endif
         MountWireRoundTrip(); ExpiredAndMissingSession();
         UpdateAfterVisibilityRemoval();
         NativeMoveBroadcastRouting();

@@ -392,11 +392,6 @@ void SkillSystem::SetSkillMainTarget(entt::entity,uint32_t,entt::entity) { Unexp
 CSkillProto * CSkillManager::Get(unsigned int) { UnexpectedService(__func__); }
 bool CGuild::UnderWar(unsigned int) { UnexpectedService(__func__); }
 unsigned int CGuild::UnderAnyWar(unsigned char) { UnexpectedService(__func__); }
-bool CEntity::IsType(int)const { UnexpectedService(__func__); }
-int CEntity::GetX(void)const { UnexpectedService(__func__); }
-int CEntity::GetY(void)const { UnexpectedService(__func__); }
-pixel_position_s CEntity::GetXYZ(void)const { UnexpectedService(__func__); }
-SECTREE * CEntity::GetSectree(void)const { UnexpectedService(__func__); }
 void BroadcastNotice(char const *,bool) { UnexpectedService(__func__); }
 void Cube_close(entt::entity) { UnexpectedService(__func__); }
 bool AttrTransfer_is_open(entt::entity) { UnexpectedService(__func__); }

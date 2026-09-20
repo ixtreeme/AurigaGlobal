@@ -399,7 +399,6 @@ LPSECTREE ecs::PlayerRuntime::GetSectree(entt::entity e) {CheckLive(e);return se
 bool ecs::PlayerRuntime::IsBuilding(entt::entity e) {CheckLive(e);return g_registry.get<ecs::CharacterType>(e).value==CHAR_TYPE_BUILDING;}
 bool ecs::PlayerRuntime::IsMonster(entt::entity e) {CheckLive(e);return g_registry.all_of<ecs::TagMonster>(e);}
 bool CombatSystem::IsDead(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).dead;}
-bool CEntity::IsType(int) const {Unexpected();}
 bool AttrTransfer_is_open(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsSafeboxOpen(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsCubeOpen(entt::entity) {Unexpected();}
@@ -414,7 +413,6 @@ SECTREE::~SECTREE()=default;
 FCollectEntity SECTREE::SnapshotAround(int) const {
     FCollectEntity result;for(const auto e:searchCandidates)result.Add(e,this);return result;
 }
-entt::entity ecs::SpatialService::EntityFromLPENTITY(LPENTITY) {Unexpected();}
 COrcsDungeon& COrcsDungeon::instance() {Unexpected();}
 bool COrcsDungeon::OnClickNpc(entt::entity) {Unexpected();}
 CTritonTempleDungeon& CTritonTempleDungeon::instance() {Unexpected();}

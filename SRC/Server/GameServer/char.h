@@ -9,7 +9,7 @@
 #include <common/tables.h>
 #include <common/CommonDefines.h>
 #include <common/stl.h>
-#include "entity.h"
+#include <entt/entity/entity.hpp>
 #include "horse_rider.h"
 #include "cmd.h"
 #include "constants.h"

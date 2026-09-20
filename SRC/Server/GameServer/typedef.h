@@ -23,24 +23,8 @@ typedef DebugPtr<DESC_P2P> LPDESC_P2P;
 typedef DESC_P2P* LPDESC_P2P;
 #endif
 
-namespace building {
-class CObject;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<CObject> LPOBJECT;
-#else
-typedef CObject* LPOBJECT;
-#endif
-}
-
 typedef struct regen* LPREGEN;
 typedef struct regen_exception* LPREGEN_EXCEPTION;
-
-class CEntity;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<CEntity> LPENTITY;
-#else
-typedef CEntity* LPENTITY;
-#endif
 
 class SECTREE;
 #ifdef USE_DEBUG_PTR
@@ -75,17 +59,6 @@ typedef struct pixel_position_s
 {
 	int32_t x, y, z;
 } PIXEL_POSITION;
-#define __ENABLE_NEW__
-enum EEntityTypes
-{
-	ENTITY_CHARACTER,
-	ENTITY_ITEM,
-	ENTITY_OBJECT,
-#ifdef __ENABLE_NEW__
-	ENTITY_NEWSHOPS,
-#endif
-};
-
 //#ifndef itertype
 //#define itertype(v) __typeof((v).begin())
 //#endif

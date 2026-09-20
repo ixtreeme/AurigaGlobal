@@ -13,7 +13,6 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
-#include "ecs/OfflineShopEntityRegistry.hpp"
 #include "ecs/services/EntityNetworkDispatch.hpp"
 #include "ecs/services/SpatialService.hpp"
 #include "ecs/systems/ItemSystem.hpp"
@@ -803,61 +802,6 @@ namespace offlineshop
 
 
 
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-
-	ShopEntity::ShopEntity()
-	{
-		m_dwVID	= AllocID();
-		m_pkShop= nullptr;
-		CEntity::Initialize(ENTITY_NEWSHOPS);
-	}
-
-
-	//NEW ENTITY
-
-
-
-
-	const char* ShopEntity::GetShopName() const
-	{
-		return m_szName;
-	}
-
-
-
-	void ShopEntity::SetShopName(const char* name)
-	{
-		strncpy(m_szName, name , sizeof(m_szName));
-	}
-
-#ifdef KASMIR_PAKET_SYSTEM
-	void ShopEntity::SetShopRace(uint32_t dwRace) {
-		m_Race = dwRace;
-	}
-	
-	uint32_t ShopEntity::GetShopRace() {
-		return m_Race;
-	}
-#endif
-
-	int ShopEntity::GetShopType()
-	{
-		return m_iType;
-	}
-
-
-	void ShopEntity::SetShopType(int iType)
-	{
-		m_iType=iType;
-	}
-
-
-	void ShopEntity::SetShop(offlineshop::CShop* pOfflineShop)
-	{
-		m_pkShop=pOfflineShop;
-	}
-
-#endif
 }
 
 

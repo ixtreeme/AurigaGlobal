@@ -765,8 +765,6 @@ CSkillProto * CSkillManager::Get(unsigned int vnum) {
 CSkillProto * CSkillManager::Get(char const* name) { return std::string_view(name) == "palbang" ? Get(1) : nullptr; }
 void CGuild::RequestDisband(unsigned int) { Unexpected(); }
 unsigned int CGuild::UnderAnyWar(unsigned char) { Unexpected(); }
-bool CEntity::IsType(int)const { Unexpected(); }
-SECTREE * CEntity::GetSectree(void)const { Unexpected(); }
 void ecs::PlayerRuntime::SetObserverMode(entt::entity, bool) { Unexpected(); }
 bool MountSystem::IsHorseRiding(entt::entity) { Unexpected(); }
 bool MountSystem::IsRidingCostume(entt::entity) { Unexpected(); }
@@ -882,7 +880,7 @@ int CPrivManager::GetPriv(entt::entity,unsigned char) { Unexpected(); }
 int CPrivManager::GetPrivByEmpire(unsigned char,unsigned char) { Unexpected(); }
 int CPrivManager::GetPrivByGuild(unsigned int,unsigned char) { Unexpected(); }
 int CPrivManager::GetPrivByCharacter(unsigned int,unsigned char) { Unexpected(); }
-building::CObject * building::CLand::FindObjectByGroup(unsigned int) { Unexpected(); }
+entt::entity building::CLand::FindObjectByGroup(unsigned int) { Unexpected(); }
 bool building::CLand::RequestCreateObject(unsigned int,int,int,int,float,float,float,bool) { Unexpected(); }
 void building::CLand::RequestDeleteObjectByVID(unsigned int) { Unexpected(); }
 bool building::CLand::RequestCreateWall(int,float) { Unexpected(); }
@@ -941,9 +939,6 @@ void CSkillProto::SetPointVar(std::string_view,double) { Unexpected(); }
 void CSkillProto::SetDurationVar(std::string_view,double) { Unexpected(); }
 void CSkillProto::SetSPCostVar(std::string_view,double) { Unexpected(); }
 int CGuild::GetSkillLevel(unsigned int) { return guildSkillLevel; }
-int CEntity::GetX(void)const { Unexpected(); }
-int CEntity::GetY(void)const { Unexpected(); }
-pixel_position_s CEntity::GetXYZ(void)const { Unexpected(); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { Unexpected(); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsMonster(entt::entity) { return false; }

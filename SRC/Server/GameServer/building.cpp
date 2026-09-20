@@ -26,7 +26,9 @@
 #include "ecs/services/SpatialService.hpp"
 #include "ecs/components/identity_components.hpp"
 #include "ecs/components/spatial_components.hpp"
+#include "ecs/components/transform_components.hpp"
 #include "ecs/components/visibility_components.hpp"
+#include <exception>
 
 enum
 {
@@ -45,269 +47,306 @@ enum
 
 using namespace building;
 
-CObject::CObject(TObject * pData, TObjectProto * pProto)
-	: m_pProto(pProto), m_dwVID(0), m_npcEntity(entt::null)
+namespace building::ObjectSystem
 {
-	CEntity::Initialize(ENTITY_OBJECT);
-
-	memcpy(&m_data, pData, sizeof(TObject));
+namespace
+{
+const ecs::BuildingState* State(entt::entity object)
+{
+    return g_registry.valid(object) ? g_registry.try_get<ecs::BuildingState>(object) : nullptr;
 }
 
-CObject::~CObject()
+void SetGuildBonus(uint32_t guildID, uint32_t landID, int bonus)
 {
-	Destroy();
+    auto* guild = CGuildManager::instance().FindGuild(guildID);
+    if (!guild)
+        return;
+    guild->SetMemberCountBonus(bonus);
+    auto* land = CManager::instance().FindLand(landID);
+    if (land && map_allow_find(land->GetData().lMapIndex))
+        guild->BroadcastMemberCountBonus();
 }
 
-void CObject::Destroy()
+int MemberBonus(uint32_t vnum)
 {
-	if (m_pProto)
-	{
-		SECTREE_MANAGER::instance().ForAttrRegion(GetMapIndex(),
-				GetX() + m_pProto->lRegion[0],
-				GetY() + m_pProto->lRegion[1],
-				GetX() + m_pProto->lRegion[2],
-				GetY() + m_pProto->lRegion[3],
-				(int32_t)m_data.zRot, // ADD_BUILDING_ROTATION
-				ATTR_OBJECT,
-				ATTR_REGION_MODE_REMOVE);
-	}
-
-	CEntity::Destroy();
-
-	const entt::entity objectEntity = ecs::CBuildingRegistry::FindByID(GetID());
-	if (objectEntity != entt::null && g_registry.valid(objectEntity))
-	{
-		ecs::SpatialService::RemoveEntity(g_registry, objectEntity);
-		g_registry.destroy(objectEntity);
-	}
-	ecs::CBuildingRegistry::Unregister(GetID());
-
-	// <Factor> NPC should be destroyed in CHARACTER_MANAGER
-	// BUILDING_NPC
-	/*
-	if (m_npcEntity != entt::null) {
-		M2_DESTROY_CHARACTER(m_npcEntity);
-	}
-	*/
-
-	RemoveSpecialEffect();
-	// END_OF_BUILDING_NPC
+    switch (vnum) {
+    case BUILDING_INCREASE_GUILD_MEMBER_COUNT_SMALL: return 6;
+    case BUILDING_INCREASE_GUILD_MEMBER_COUNT_MEDIUM: return 12;
+    case BUILDING_INCREASE_GUILD_MEMBER_COUNT_LARGE: return 18;
+    default: return 0;
+    }
 }
 
-// BUILDING_NPC
-void CObject::Reconstruct(uint32_t dwVnum)
+void RemoveAttributes(entt::entity object)
 {
-	const TMapRegion * r = SECTREE_MANAGER::instance().GetMapRegion(m_data.lMapIndex);
-	if (!r)
-		return;
-
-	CLand* pLand = GetLand();
-	pLand->RequestDeleteObject(GetID());
-	pLand->RequestCreateObject(dwVnum, m_data.lMapIndex, m_data.x - r->sx, m_data.y - r->sy, m_data.xRot, m_data.yRot, m_data.zRot, false);
+    const auto* state = State(object);
+    const auto* position = g_registry.valid(object) ? g_registry.try_get<ecs::Position>(object) : nullptr;
+    const auto* map = g_registry.valid(object) ? g_registry.try_get<ecs::MapIndex>(object) : nullptr;
+    if (!state || !state->attributesApplied || !position || !map)
+        return;
+    const auto* prototype = CManager::instance().GetObjectProto(state->vnum);
+    const auto snapshot = *state;
+    const auto location = *position;
+    const int32_t mapIndex = map->value;
+    g_registry.get<ecs::BuildingState>(object).attributesApplied = false;
+    if (prototype)
+        SECTREE_MANAGER::instance().ForAttrRegion(mapIndex,
+            location.x + prototype->lRegion[0], location.y + prototype->lRegion[1],
+            location.x + prototype->lRegion[2], location.y + prototype->lRegion[3],
+            static_cast<int32_t>(snapshot.rotationZ), ATTR_OBJECT, ATTR_REGION_MODE_REMOVE);
 }
-// END_OF_BUILDING_NPC
-
-
-
-void CObject::SetVID(uint32_t dwVID)
-{
-	m_dwVID = dwVID;
-}
-
-bool CObject::Show(int32_t lMapIndex, int32_t x, int32_t y)
-{
-	LPSECTREE tree = SECTREE_MANAGER::instance().Get(lMapIndex, x, y);
-
-	if (!tree)
-	{
-		LOG_ERROR("cannot find sectree by {}x{} mapindex {}", x, y, lMapIndex);
-		return false;
-	}
-
-	if (GetSectree())
-	{
-		const entt::entity existing = ecs::CBuildingRegistry::FindByID(GetID());
-		if (existing != entt::null && g_registry.valid(existing))
-			ecs::SpatialService::RemoveEntity(g_registry, existing);
-		ecs::ViewSystem::ViewCleanup(existing);
-	}
-
-	m_data.lMapIndex = lMapIndex;
-	m_data.x = x;
-	m_data.y = y;
-
-	Save();
-
-	SetMapIndex(lMapIndex);
-	SetXYZ(x, y, 0);
-
-	entt::entity objectEntity = ecs::CBuildingRegistry::FindByID(GetID());
-	if (objectEntity == entt::null || !g_registry.valid(objectEntity))
-		objectEntity = g_registry.create();
-
-	ecs::CBuildingRegistry::Register(GetID(), GetVID(), objectEntity, this);
-	g_registry.emplace_or_replace<ecs::VIDComponent>(objectEntity, GetVID());
-	(void)g_registry.get_or_emplace<ecs::ViewMap>(objectEntity);
-	(void)g_registry.get_or_emplace<ecs::ViewerMap>(objectEntity);
-	(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(objectEntity);
-	g_registry.emplace_or_replace<ecs::BuildingState>(
-		objectEntity,
-		ecs::BuildingState {
-			GetVnum(),
-			GetLand() ? GetLand()->GetID() : 0u,
-			GetLand() ? GetLand()->GetOwner() : 0u,
-			m_data.xRot,
-			m_data.yRot,
-			m_data.zRot,
-		});
-
-	if (!ecs::SpatialService::InsertEntity(g_registry, objectEntity, static_cast<uint32_t>(lMapIndex), x, y, 0))
-	{
-		LOG_ERROR("cannot insert building entity by {}x{} mapindex {}", x, y, lMapIndex);
-		return false;
-	}
-	ecs::SpatialService::UpdateSectree(g_registry, objectEntity);
-
-	SECTREE_MANAGER::instance().ForAttrRegion(lMapIndex,
-			x + m_pProto->lRegion[0],
-			y + m_pProto->lRegion[1],
-			x + m_pProto->lRegion[2],
-			y + m_pProto->lRegion[3],
-			(int32_t)m_data.zRot,
-			ATTR_OBJECT,
-			ATTR_REGION_MODE_SET);
-
-	return true;
 }
 
-void CObject::Save()
+bool IsValid(entt::entity object)
 {
+    const auto* state = State(object);
+    return state && !state->destroying && !g_registry.all_of<ecs::SpatialRetiring>(object);
 }
 
-void CObject::ApplySpecialEffect()
+uint32_t GetID(entt::entity object)
 {
-	if (m_pProto)
-	{
-		// ADD_SUPPLY_BUILDING
-		if (m_pProto->dwVnum == BUILDING_INCREASE_GUILD_MEMBER_COUNT_SMALL ||
-				m_pProto->dwVnum == BUILDING_INCREASE_GUILD_MEMBER_COUNT_MEDIUM ||
-				m_pProto->dwVnum == BUILDING_INCREASE_GUILD_MEMBER_COUNT_LARGE)
-		{
-			CLand* pLand = GetLand();
-			uint32_t guild_id = 0;
-			if (pLand)
-				guild_id = pLand->GetOwner();
-			CGuild* pGuild = CGuildManager::instance().FindGuild(guild_id);
-			if (pGuild)
-			{
-				switch (m_pProto->dwVnum)
-				{
-					case BUILDING_INCREASE_GUILD_MEMBER_COUNT_SMALL:
-						pGuild->SetMemberCountBonus(6);
-						break;
-					case BUILDING_INCREASE_GUILD_MEMBER_COUNT_MEDIUM:
-						pGuild->SetMemberCountBonus(12);
-						break;
-					case BUILDING_INCREASE_GUILD_MEMBER_COUNT_LARGE:
-						pGuild->SetMemberCountBonus(18);
-						break;
-				}
-				if (map_allow_find(pLand->GetMapIndex()))
-				{
-					pGuild->BroadcastMemberCountBonus();
-				}
-			}
-		}
-		// END_OF_ADD_SUPPLY_BUILDING
-	}
+    const auto* state = State(object);
+    return state ? state->objectId : 0;
 }
 
-void CObject::RemoveSpecialEffect()
+uint32_t GetVID(entt::entity object)
 {
-	if (m_pProto)
-	{
-		// ADD_SUPPLY_BUILDING
-		if (m_pProto->dwVnum == BUILDING_INCREASE_GUILD_MEMBER_COUNT_SMALL ||
-				m_pProto->dwVnum == BUILDING_INCREASE_GUILD_MEMBER_COUNT_MEDIUM ||
-				m_pProto->dwVnum == BUILDING_INCREASE_GUILD_MEMBER_COUNT_LARGE)
-		{
-			CLand* pLand = GetLand();
-			uint32_t guild_id = 0;
-			if (pLand)
-				guild_id = pLand->GetOwner();
-			CGuild* pGuild = CGuildManager::instance().FindGuild(guild_id);
-			if (pGuild)
-			{
-				pGuild->SetMemberCountBonus(0);
-				if (map_allow_find(pLand->GetMapIndex()))
-					pGuild->BroadcastMemberCountBonus();
-			}
-		}
-		// END_OF_ADD_SUPPLY_BUILDING
-	}
+    const auto* vid = g_registry.valid(object) ? g_registry.try_get<ecs::VIDComponent>(object) : nullptr;
+    return vid ? vid->value : 0;
 }
 
-// BUILDING_NPC
-void CObject::RegenNPC()
+uint32_t GetVnum(entt::entity object)
 {
-	if (!m_pProto)
-		return;
-
-	if (!m_pProto->dwNPCVnum)
-		return;
-
-	if (!m_pkLand)
-		return;
-
-	uint32_t dwGuildID = m_pkLand->GetOwner();
-	CGuild* pGuild = CGuildManager::instance().FindGuild(dwGuildID);
-
-	if (!pGuild)
-		return;
-
-	int x = m_pProto->lNPCX;
-	int y = m_pProto->lNPCY;
-	int newX, newY;
-
-	float rot = m_data.zRot * 2.0f * M_PI / 360.0f;
-
-	newX = (int)(( x * cosf(rot)) + ( y * sinf(rot)));
-	newY = (int)(( y * cosf(rot)) - ( x * sinf(rot)));
-
-	// Buildings are inserted with z=0; read it back from the component
-	// instead of the removed CEntity field mirror.
-	const entt::entity objectEntity = ecs::CBuildingRegistry::FindByID(GetID());
-	const auto* objectPos = (objectEntity != entt::null && g_registry.valid(objectEntity))
-		? g_registry.try_get<ecs::Position>(objectEntity) : nullptr;
-	m_npcEntity = CHARACTER_MANAGER::instance().SpawnMobEntity(m_pProto->dwNPCVnum,
-			GetMapIndex(),
-			GetX() + newX,
-			GetY() + newY,
-			objectPos ? objectPos->z : 0,
-			false,
-			(int)m_data.zRot);
-
-
-	if (m_npcEntity == entt::null)
-	{
-		LOG_ERROR("Cannot create guild npc");
-		return;
-	}
-
-	ecs::SocialSystem::SetGuild(m_npcEntity, pGuild);
-
-	// ���� ������ ��� ��� ������ �渶���� �����س��´�
-	if ( m_pProto->dwVnum == 14061 || m_pProto->dwVnum == 14062 || m_pProto->dwVnum == 14063 )
-	{
-		quest::PC* pPC = quest::CQuestManager::instance().GetPC(pGuild->GetMasterPID());
-
-		if ( pPC != nullptr)
-		{
-			pPC->SetFlag("alter_of_power.build_level", pGuild->GetLevel());
-		}
-	}
+    const auto* state = State(object);
+    return state ? state->vnum : 0;
 }
-// END_OF_BUILDING_NPC
+
+uint32_t GetGroup(entt::entity object)
+{
+    const auto* proto = CManager::instance().GetObjectProto(GetVnum(object));
+    return proto ? proto->dwGroupVnum : 0;
+}
+
+CLand* GetLand(entt::entity object)
+{
+    const auto* state = State(object);
+    return state ? CManager::instance().FindLand(state->landId) : nullptr;
+}
+
+entt::entity GetNPCEntity(entt::entity object)
+{
+    const auto* state = State(object);
+    return state && ecs::IsCharacter(state->npc) ? state->npc : entt::null;
+}
+
+entt::entity Create(const TObject& data, uint32_t vid)
+{
+    if (data.dwID == 0 || vid == 0 || ecs::CBuildingRegistry::FindByID(data.dwID) != entt::null ||
+        ecs::CBuildingRegistry::FindByVID(vid) != entt::null)
+        return entt::null;
+    const entt::entity object = g_registry.create();
+    const auto rollback = [&] {
+        ecs::CBuildingRegistry::Unregister(data.dwID, object);
+        if (g_registry.valid(object))
+            g_registry.destroy(object);
+    };
+    try {
+        const auto prepare = [&]<class T>() {
+            if (!g_registry.valid(object)) return false;
+            g_registry.insert<T>(&object, &object + 1);
+            return g_registry.valid(object) && g_registry.all_of<T>(object);
+        };
+        if (!prepare.template operator()<ecs::BuildingState>() ||
+            !prepare.template operator()<ecs::Position>() ||
+            !prepare.template operator()<ecs::MapIndex>() ||
+            !prepare.template operator()<ecs::VIDComponent>() ||
+            !IsValid(object) || !g_registry.all_of<ecs::BuildingState, ecs::Position,
+                ecs::MapIndex, ecs::VIDComponent>(object)) {
+            rollback();
+            return entt::null;
+        }
+        // All state belongs to this generation from construction through teardown.
+        auto& state = g_registry.get<ecs::BuildingState>(object);
+        state.vnum = data.dwVnum;
+        state.landId = data.dwLandID;
+        state.objectId = data.dwID;
+        state.life = data.lLife;
+        state.rotationX = data.xRot;
+        state.rotationY = data.yRot;
+        state.rotationZ = data.zRot;
+        if (const auto* land = CManager::instance().FindLand(data.dwLandID))
+            state.guildId = land->GetOwner();
+        g_registry.get<ecs::Position>(object) = {data.x, data.y, 0};
+        g_registry.get<ecs::MapIndex>(object).value = data.lMapIndex;
+        g_registry.get<ecs::VIDComponent>(object).value = vid;
+        if (!ecs::CBuildingRegistry::Register(data.dwID, vid, object)) {
+            rollback();
+            return entt::null;
+        }
+        return object;
+    } catch (...) {
+        rollback();
+        throw;
+    }
+}
+
+void Destroy(entt::entity object)
+{
+    if (!IsValid(object))
+        return;
+    const auto state = *State(object);
+    g_registry.get<ecs::BuildingState>(object).destroying = true;
+    g_registry.get<ecs::BuildingState>(object).effectGuildId = 0;
+    // Remove every lookup before DEL/NPC callbacks; a replacement with the same
+    // DB ID or VID is not owned by this generation's cleanup.
+    CManager::instance().UnregisterObject(object);
+    ecs::CBuildingRegistry::Unregister(state.objectId, object);
+    std::exception_ptr failure;
+    const auto finish = [&](auto&& cleanup) {
+        try { cleanup(); }
+        catch (...) { if (!failure) failure = std::current_exception(); }
+    };
+    // Clear external effects before DEL/on_construct callbacks can replace this
+    // building. Complete the remaining teardown even if a callback throws.
+    finish([&] { RemoveAttributes(object); });
+    if (state.effectGuildId)
+        finish([&] { SetGuildBonus(state.effectGuildId, state.landId, 0); });
+    finish([&] {
+        if (g_registry.valid(object) && !g_registry.all_of<ecs::SpatialRetiring>(object))
+            g_registry.insert<ecs::SpatialRetiring>(&object, &object + 1);
+    });
+    finish([&] { ecs::SpatialService::RemoveEntity(g_registry, object); });
+    finish([&] {
+        if (ecs::IsCharacter(state.npc))
+            M2_DESTROY_CHARACTER(state.npc);
+    });
+    finish([&] { if (g_registry.valid(object)) g_registry.destroy(object); });
+    if (failure)
+        std::rethrow_exception(failure);
+}
+
+bool Show(entt::entity object, int32_t mapIndex, int32_t x, int32_t y)
+{
+    if (!IsValid(object))
+        return false;
+    const auto* proto = CManager::instance().GetObjectProto(GetVnum(object));
+    if (!proto || !SECTREE_MANAGER::instance().Get(mapIndex, x, y)) {
+        LOG_ERROR("cannot find building prototype/sectree by {}x{} mapindex {}", x, y, mapIndex);
+        return false;
+    }
+    const TObjectProto prototype = *proto;
+    RemoveAttributes(object);
+    ecs::SpatialService::RemoveEntity(g_registry, object);
+    if (!IsValid(object) || ecs::SpatialService::GetSectree(g_registry, object))
+        return false;
+    if (const auto* land = GetLand(object))
+        g_registry.get<ecs::BuildingState>(object).guildId = land->GetOwner();
+    if (!ecs::SpatialService::InsertEntity(g_registry, object, static_cast<uint32_t>(mapIndex), x, y, 0))
+        return false;
+    if (!IsValid(object))
+        return false;
+    const auto* position = g_registry.try_get<ecs::Position>(object);
+    const auto* map = g_registry.try_get<ecs::MapIndex>(object);
+    if (!position || !map || position->x != x || position->y != y || map->value != mapIndex)
+        return false;
+    const float rotation = g_registry.get<ecs::BuildingState>(object).rotationZ;
+    SECTREE_MANAGER::instance().ForAttrRegion(mapIndex,
+        x + prototype.lRegion[0], y + prototype.lRegion[1],
+        x + prototype.lRegion[2], y + prototype.lRegion[3],
+        static_cast<int32_t>(rotation), ATTR_OBJECT, ATTR_REGION_MODE_SET);
+    g_registry.get<ecs::BuildingState>(object).attributesApplied = true;
+    ecs::SpatialService::UpdateSectree(g_registry, object);
+    return IsValid(object) && ecs::SpatialService::GetSectree(g_registry, object) != nullptr;
+}
+
+void Reconstruct(entt::entity object, uint32_t vnum)
+{
+    if (!IsValid(object))
+        return;
+    const auto state = *State(object);
+    const auto* position = g_registry.try_get<ecs::Position>(object);
+    const auto* map = g_registry.try_get<ecs::MapIndex>(object);
+    if (!position || !map)
+        return;
+    const auto location = *position;
+    const int32_t mapIndex = map->value;
+    const auto* region = SECTREE_MANAGER::instance().GetMapRegion(mapIndex);
+    auto* land = CManager::instance().FindLand(state.landId);
+    if (!region || !land)
+        return;
+    const int32_t relativeX = location.x - region->sx;
+    const int32_t relativeY = location.y - region->sy;
+    land->RequestDeleteObject(state.objectId);
+    land->RequestCreateObject(vnum, mapIndex, relativeX, relativeY,
+        state.rotationX, state.rotationY, state.rotationZ, false);
+}
+
+void ApplySpecialEffect(entt::entity object)
+{
+    if (!IsValid(object))
+        return;
+    const auto state = *State(object);
+    if (const int bonus = MemberBonus(state.vnum)) {
+        const auto* land = GetLand(object);
+        const uint32_t guildID = land ? land->GetOwner() : 0;
+        if (state.effectGuildId && state.effectGuildId != guildID) {
+            g_registry.get<ecs::BuildingState>(object).effectGuildId = 0;
+            SetGuildBonus(state.effectGuildId, state.landId, 0);
+            if (!IsValid(object)) return;
+        }
+        g_registry.get<ecs::BuildingState>(object).guildId = guildID;
+        g_registry.get<ecs::BuildingState>(object).effectGuildId = guildID;
+        SetGuildBonus(guildID, state.landId, bonus);
+    }
+}
+
+void RegenNPC(entt::entity object)
+{
+    if (!IsValid(object) || GetNPCEntity(object) != entt::null)
+        return;
+    const auto* land = GetLand(object);
+    if (!land)
+        return;
+    g_registry.get<ecs::BuildingState>(object).guildId = land->GetOwner();
+    const auto state = *State(object);
+    const auto* proto = CManager::instance().GetObjectProto(state.vnum);
+    const auto* position = g_registry.try_get<ecs::Position>(object);
+    const auto* map = g_registry.try_get<ecs::MapIndex>(object);
+    if (!proto || !proto->dwNPCVnum || !position || !map)
+        return;
+    const TObjectProto prototype = *proto;
+    const auto location = *position;
+    const int32_t mapIndex = map->value;
+    if (!CGuildManager::instance().FindGuild(state.guildId))
+        return;
+    const float rotation = state.rotationZ * 2.0f * M_PI / 360.0f;
+    const int npcX = int(prototype.lNPCX * cosf(rotation) + prototype.lNPCY * sinf(rotation));
+    const int npcY = int(prototype.lNPCY * cosf(rotation) - prototype.lNPCX * sinf(rotation));
+    const entt::entity npc = CHARACTER_MANAGER::instance().SpawnMobEntity(prototype.dwNPCVnum,
+        mapIndex, location.x + npcX, location.y + npcY, location.z, false, int(state.rotationZ));
+    if (!ecs::IsCharacter(npc)) {
+        LOG_ERROR("Cannot create guild npc");
+        return;
+    }
+    if (!IsValid(object) || GetNPCEntity(object) != entt::null) {
+        M2_DESTROY_CHARACTER(npc);
+        return;
+    }
+    g_registry.get<ecs::BuildingState>(object).npc = npc;
+    auto* guild = CGuildManager::instance().FindGuild(state.guildId);
+    if (!guild) {
+        g_registry.get<ecs::BuildingState>(object).npc = entt::null;
+        M2_DESTROY_CHARACTER(npc);
+        return;
+    }
+    ecs::SocialSystem::SetGuild(npc, guild);
+    guild = CGuildManager::instance().FindGuild(state.guildId);
+    if (guild && MemberBonus(state.vnum)) {
+        if (auto* pc = quest::CQuestManager::instance().GetPC(guild->GetMasterPID()))
+            pc->SetFlag("alter_of_power.build_level", guild->GetLevel());
+    }
+}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -318,22 +357,31 @@ CLand::CLand(TLand * pData)
 
 CLand::~CLand()
 {
-	Destroy();
+	try {
+		Destroy();
+	} catch (const std::exception& error) {
+		LOG_ERROR("Land {} teardown callback failed after cleanup: {}", GetID(), error.what());
+	} catch (...) {
+		LOG_ERROR("Land {} teardown callback failed after cleanup", GetID());
+	}
 }
 
 void CLand::Destroy()
 {
-	auto it = m_map_pkObject.begin();
-
-	while (it != m_map_pkObject.end())
-	{
-		LPOBJECT pkObj = (it++)->second;
-		CManager::instance().UnregisterObject(pkObj);
-		M2_DELETE(pkObj);
+	if (m_destroying)
+		return;
+	m_destroying = true;
+	// Detach land lookups before any teardown callback can revisit them.
+	const auto objects = std::move(m_objectsByID);
+	m_objectsByID.clear();
+	m_objectsByVID.clear();
+	std::exception_ptr failure;
+	for (const auto& [id, object] : objects) {
+		try { ObjectSystem::Destroy(object); }
+		catch (...) { if (!failure) failure = std::current_exception(); }
 	}
-
-	m_map_pkObject.clear();
-	m_map_pkObjectByVID.clear();
+	if (failure)
+		std::rethrow_exception(failure);
 }
 
 const TLand & CLand::GetData()
@@ -379,90 +427,84 @@ void CLand::PutData(const TLand * data)
 	}
 }
 
-void CLand::InsertObject(LPOBJECT pkObj)
+void CLand::InsertObject(entt::entity object)
 {
-	m_map_pkObject.insert(std::make_pair(pkObj->GetID(), pkObj));
-	m_map_pkObjectByVID.insert(std::make_pair(pkObj->GetVID(), pkObj));
-
-	pkObj->SetLand(this);
+	if (m_destroying || !ObjectSystem::IsValid(object))
+		return;
+	if (g_registry.get<ecs::BuildingState>(object).landId != GetID())
+		return;
+	m_objectsByID.emplace(ObjectSystem::GetID(object), object);
+	m_objectsByVID.emplace(ObjectSystem::GetVID(object), object);
 }
 
-LPOBJECT CLand::FindObject(uint32_t dwID)
+entt::entity CLand::FindObject(uint32_t dwID)
 {
-	std::map<uint32_t, LPOBJECT>::iterator it = m_map_pkObject.find(dwID);
-
-	if (it == m_map_pkObject.end())
-		return nullptr;
-
-	return it->second;
+	const auto it = m_objectsByID.find(dwID);
+	return it != m_objectsByID.end() && ObjectSystem::IsValid(it->second) ? it->second : entt::null;
 }
 
-LPOBJECT CLand::FindObjectByGroup(uint32_t dwGroupVnum)
+entt::entity CLand::FindObjectByGroup(uint32_t dwGroupVnum)
 {
-	for (auto it = m_map_pkObject.begin(); it != m_map_pkObject.end(); ++it)
+	for (const auto& [id, object] : m_objectsByID)
 	{
-		LPOBJECT pObj = it->second;
-		if (pObj->GetGroup() == dwGroupVnum)
-			return pObj;
+		if (ObjectSystem::IsValid(object) && ObjectSystem::GetGroup(object) == dwGroupVnum)
+			return object;
 	}
 
-	return nullptr;
+	return entt::null;
 }
 
-LPOBJECT CLand::FindObjectByVnum(uint32_t dwVnum)
+entt::entity CLand::FindObjectByVnum(uint32_t dwVnum)
 {
-	for (auto it = m_map_pkObject.begin(); it != m_map_pkObject.end(); ++it)
+	for (const auto& [id, object] : m_objectsByID)
 	{
-		LPOBJECT pObj = it->second;
-		if (pObj->GetVnum() == dwVnum)
-			return pObj;
+		if (ObjectSystem::IsValid(object) && ObjectSystem::GetVnum(object) == dwVnum)
+			return object;
 	}
 
-	return nullptr;
+	return entt::null;
 }
 
 // BUILDING_NPC
-LPOBJECT CLand::FindObjectByNPC(entt::entity npc)
+entt::entity CLand::FindObjectByNPC(entt::entity npc)
 {
 	if (npc == entt::null)
-		return nullptr;
+		return entt::null;
 
-	for (auto it = m_map_pkObject.begin(); it != m_map_pkObject.end(); ++it)
+	for (const auto& [id, object] : m_objectsByID)
 	{
-		LPOBJECT pObj = it->second;
-		if (pObj->GetNPCEntity() == npc)
-			return pObj;
+		if (ObjectSystem::IsValid(object) && ObjectSystem::GetNPCEntity(object) == npc)
+			return object;
 	}
 
-	return nullptr;
+	return entt::null;
 }
 // END_OF_BUILDING_NPC
 
-LPOBJECT CLand::FindObjectByVID(uint32_t dwVID)
+entt::entity CLand::FindObjectByVID(uint32_t dwVID)
 {
-	const auto it = m_map_pkObjectByVID.find(dwVID);
+	const auto it = m_objectsByVID.find(dwVID);
+	return it != m_objectsByVID.end() && ObjectSystem::IsValid(it->second) ? it->second : entt::null;
+}
 
-	if (it == m_map_pkObjectByVID.end())
-		return nullptr;
-
-	return it->second;
+void CLand::UnregisterObject(entt::entity object)
+{
+	const auto byID = m_objectsByID.find(ObjectSystem::GetID(object));
+	if (byID != m_objectsByID.end() && byID->second == object)
+		m_objectsByID.erase(byID);
+	const auto byVID = m_objectsByVID.find(ObjectSystem::GetVID(object));
+	if (byVID != m_objectsByVID.end() && byVID->second == object)
+		m_objectsByVID.erase(byVID);
 }
 
 void CLand::DeleteObject(uint32_t dwID)
 {
-	LPOBJECT pkObj;
-
-	if (!(pkObj = FindObject(dwID)))
+	const entt::entity object = FindObject(dwID);
+	if (object == entt::null)
 		return;
 
 	LOG_INFO("Land::DeleteObject {}", dwID);
-	CManager::instance().UnregisterObject(pkObj);
-	M2_DESTROY_CHARACTER(pkObj->GetNPCEntity());
-
-	m_map_pkObject.erase(dwID);
-	m_map_pkObjectByVID.erase(dwID);
-
-	M2_DELETE(pkObj);
+	ObjectSystem::Destroy(object);
 }
 
 struct FIsIn
@@ -571,7 +613,7 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 
 void CLand::RequestDeleteObject(uint32_t dwID)
 {
-	if (!FindObject(dwID))
+	if (FindObject(dwID) == entt::null)
 	{
 		LOG_ERROR("no object by id {}", dwID);
 		return;
@@ -583,15 +625,14 @@ void CLand::RequestDeleteObject(uint32_t dwID)
 
 void CLand::RequestDeleteObjectByVID(uint32_t dwVID)
 {
-	LPOBJECT pkObj;
-
-	if (!(pkObj = FindObjectByVID(dwVID)))
+	const entt::entity object = FindObjectByVID(dwVID);
+	if (object == entt::null)
 	{
 		LOG_ERROR("no object by vid {}", dwVID);
 		return;
 	}
 
-	uint32_t dwID = pkObj->GetID();
+	uint32_t dwID = ObjectSystem::GetID(object);
 	db_clientdesc->DBPacket(HEADER_GD_DELETE_OBJECT, 0, &dwID, sizeof(uint32_t));
 	LOG_INFO("RequestDeleteObject vid {} id {}", dwVID, dwID);
 }
@@ -634,6 +675,8 @@ void CManager::Destroy()
 		M2_DELETE(it->second);
 	}
 	m_map_pkLand.clear();
+	m_objectsByID.clear();
+	m_objectsByVID.clear();
 }
 
 bool CManager::LoadObjectProto(const TObjectProto * pProto, int size) // from DB
@@ -681,6 +724,8 @@ TObjectProto * CManager::GetObjectProto(uint32_t dwVnum)
 
 bool CManager::LoadLand(TLand * pTable) // from DB
 {
+	if (!pTable || m_map_pkLand.contains(pTable->dwID))
+		return false;
 	// MapAllow�� ���� ���� �������� load�� �ؾ��Ѵ�.
 	//	�ǹ�(object)�� ��� ��忡 ���� �ִ��� �˱� ���ؼ��� �ǹ��� ������ ���� ��� ��� �Ҽ����� �˾��Ѵ�.
 	//	���� ���� load�� ���� ������ ��� �ǹ��� ��� ��忡 �Ҽӵ� ���� ���� ���ؼ�
@@ -805,9 +850,11 @@ CLand * CManager::FindLandByGuild(uint32_t GID)
 
 bool CManager::LoadObject(TObject * pTable, bool isBoot) // from DB
 {
+	if (!pTable || !pTable->dwID || ecs::CBuildingRegistry::FindByID(pTable->dwID) != entt::null)
+		return false;
 	CLand * pkLand = FindLand(pTable->dwLandID);
 
-	if (!pkLand)
+	if (!pkLand || pkLand->IsDestroying())
 	{
 		LOG_INFO("Cannot find land by id {}", pTable->dwLandID);
 		return false;
@@ -823,50 +870,50 @@ bool CManager::LoadObject(TObject * pTable, bool isBoot) // from DB
 
 	LOG_TRACE("OBJ: id {} vnum {} map {} pos {}x{}", pTable->dwID, pTable->dwVnum, pTable->lMapIndex, pTable->x, pTable->y);
 
-	LPOBJECT pkObj = M2_NEW CObject(pTable, pkProto);
-
-	uint32_t dwVID = CHARACTER_MANAGER::instance().AllocVID();
-	pkObj->SetVID(dwVID);
-
-	m_map_pkObjByVID.insert(std::make_pair(dwVID, pkObj));
-	m_map_pkObjByID.insert(std::make_pair(pTable->dwID, pkObj));
-
-	pkLand->InsertObject(pkObj);
-
-	if (!isBoot)
-		pkObj->Show(pTable->lMapIndex, pTable->x, pTable->y);
-	else
-	{
-		pkObj->SetMapIndex(pTable->lMapIndex);
-		pkObj->SetXYZ(pTable->x, pTable->y, 0);
+	const uint32_t vid = CHARACTER_MANAGER::instance().AllocVID();
+	const entt::entity object = ObjectSystem::Create(*pTable, vid);
+	if (object == entt::null)
+		return false;
+	// Construction observers may have started land teardown.
+	pkLand = FindLand(pTable->dwLandID);
+	if (!pkLand || pkLand->IsDestroying()) {
+		ObjectSystem::Destroy(object);
+		return false;
 	}
+	m_objectsByVID.emplace(vid, object);
+	m_objectsByID.emplace(pTable->dwID, object);
+	pkLand->InsertObject(object);
 
 	// BUILDING_NPC
 	if (!isBoot)
 	{
-		if (pkProto->dwNPCVnum)
-			pkObj->RegenNPC();
-
-		pkObj->ApplySpecialEffect();
+		if (ObjectSystem::Show(object, pTable->lMapIndex, pTable->x, pTable->y))
+			ObjectSystem::RegenNPC(object);
+		ObjectSystem::ApplySpecialEffect(object);
 	}
 	// END_OF_BUILDING_NPC
 
-	return true;
+	return ObjectSystem::IsValid(object);
 }
 
 void CManager::FinalizeBoot()
 {
-	auto it = m_map_pkObjByID.begin();
-
-	while (it != m_map_pkObjByID.end())
+	// Visibility publication may run callbacks; do not keep map iterators or
+	// component references while showing an entity.
+	const auto objects = m_objectsByID;
+	for (const auto& [id, object] : objects)
 	{
-		LPOBJECT pkObj = (it++)->second;
-
-		pkObj->Show(pkObj->GetMapIndex(), pkObj->GetX(), pkObj->GetY());
-		// BUILDING_NPC
-		pkObj->RegenNPC();
-		pkObj->ApplySpecialEffect();
-		// END_OF_BUILDING_NPC
+		if (!ObjectSystem::IsValid(object))
+			continue;
+		const auto* position = g_registry.try_get<ecs::Position>(object);
+		const auto* map = g_registry.try_get<ecs::MapIndex>(object);
+		if (!position || !map)
+			continue;
+		const auto location = *position;
+		const int32_t mapIndex = map->value;
+		if (ObjectSystem::Show(object, mapIndex, location.x, location.y))
+			ObjectSystem::RegenNPC(object);
+		ObjectSystem::ApplySpecialEffect(object);
 	}
 
 	// BUILDING_NPC
@@ -903,28 +950,30 @@ void CManager::DeleteObject(uint32_t dwID) // from DB
 {
 	LOG_INFO("OBJ_DEL: {}", dwID);
 
-	auto it = m_map_pkObjByID.find(dwID);
+	auto it = m_objectsByID.find(dwID);
 
-	if (it == m_map_pkObjByID.end())
+	if (it == m_objectsByID.end())
 		return;
 
-	it->second->GetLand()->DeleteObject(dwID);
+	ObjectSystem::Destroy(it->second);
 }
 
-LPOBJECT CManager::FindObjectByVID(uint32_t dwVID)
+entt::entity CManager::FindObjectByVID(uint32_t dwVID)
 {
-	auto it = m_map_pkObjByVID.find(dwVID);
-
-	if (it == m_map_pkObjByVID.end())
-		return nullptr;
-
-	return it->second;
+	const auto it = m_objectsByVID.find(dwVID);
+	return it != m_objectsByVID.end() && ObjectSystem::IsValid(it->second) ? it->second : entt::null;
 }
 
-void CManager::UnregisterObject(LPOBJECT pkObj)
+void CManager::UnregisterObject(entt::entity object)
 {
-	m_map_pkObjByID.erase(pkObj->GetID());
-	m_map_pkObjByVID.erase(pkObj->GetVID());
+	if (auto* land = ObjectSystem::GetLand(object))
+		land->UnregisterObject(object);
+	const auto byID = m_objectsByID.find(ObjectSystem::GetID(object));
+	if (byID != m_objectsByID.end() && byID->second == object)
+		m_objectsByID.erase(byID);
+	const auto byVID = m_objectsByVID.find(ObjectSystem::GetVID(object));
+	if (byVID != m_objectsByVID.end() && byVID->second == object)
+		m_objectsByVID.erase(byVID);
 }
 
 void CManager::SendLandList(LPDESC d, int32_t lMapIndex)
@@ -1011,11 +1060,11 @@ void CManager::ClearLandByGuildID(uint32_t dwGuildID)
 
 void CLand::ClearLand()
 {
-	auto iter = m_map_pkObject.begin();
+	auto iter = m_objectsByID.begin();
 
-	while ( iter != m_map_pkObject.end() )
+	while ( iter != m_objectsByID.end() )
 	{
-		RequestDeleteObject(iter->second->GetID());
+		RequestDeleteObject(ObjectSystem::GetID(iter->second));
 		iter++;
 	}
 
@@ -1131,12 +1180,12 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 
 void CLand::RequestDeleteWall()
 {
-	auto iter = m_map_pkObject.begin();
+	auto iter = m_objectsByID.begin();
 
-	while (iter != m_map_pkObject.end())
+	while (iter != m_objectsByID.end())
 	{
-		unsigned id   = iter->second->GetID();
-		unsigned vnum = iter->second->GetVnum();
+		unsigned id   = ObjectSystem::GetID(iter->second);
+		unsigned vnum = ObjectSystem::GetVnum(iter->second);
 
 		switch (vnum)
 		{
@@ -1236,20 +1285,20 @@ bool CLand::RequestCreateWallBlocks(uint32_t dwVnum, int32_t nMapIndex, char wal
 
 void CLand::RequestDeleteWallBlocks(uint32_t dwID)
 {
-	auto iter = m_map_pkObject.begin();
+	auto iter = m_objectsByID.begin();
 
 	uint32_t corner = dwID - 4;
 	uint32_t wall = dwID - 3;
 	uint32_t door = dwID - 1;
 	uint32_t dwVnum = 0;
 
-	while ( iter != m_map_pkObject.end() )
+	while ( iter != m_objectsByID.end() )
 	{
-		dwVnum = iter->second->GetVnum();
+		dwVnum = ObjectSystem::GetVnum(iter->second);
 
 		if ( dwVnum == corner || dwVnum == wall || dwVnum == door )
 		{
-			RequestDeleteObject(iter->second->GetID());
+			RequestDeleteObject(ObjectSystem::GetID(iter->second));
 		}
 		iter++;
 	}

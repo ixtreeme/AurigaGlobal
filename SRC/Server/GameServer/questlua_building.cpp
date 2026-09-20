@@ -21,9 +21,6 @@ namespace quest
 	//
 	ALUA(building_get_land_id)
 	{
-		// migrated from NPC building system
-		// TODO Phase 8: building/construction component
-		// DUAL-PATH: legacy only during migration window
 		using namespace building;
 
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
@@ -40,9 +37,6 @@ namespace quest
 
 	ALUA(building_get_land_info)
 	{
-		// migrated from NPC building system
-		// TODO Phase 8: building/construction component
-		// DUAL-PATH: legacy only during migration window
 		int price = 1000000000;
 		int owner = 1000000000;
 		int level_limit = 1000000000;
@@ -73,9 +67,6 @@ namespace quest
 
 	ALUA(building_set_land_owner)
 	{
-		// migrated from NPC building system
-		// TODO Phase 8: building/construction component
-		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			sys_err("invalid argument");
@@ -97,9 +88,6 @@ namespace quest
 
 	ALUA(building_has_land)
 	{
-		// migrated from NPC building system
-		// TODO Phase 8: building/construction component
-		// DUAL-PATH: legacy only during migration window
 		using namespace building;
 
 		if (!lua_isnumber(L, 1))
@@ -144,9 +132,6 @@ namespace quest
 
 	ALUA(building_reconstruct)
 	{
-		// migrated from NPC building reconstruct
-		// TODO Phase 8: building/construction component
-		// DUAL-PATH: legacy only during migration window
 		using namespace building;
 
 		uint32_t dwNewBuilding = (uint32_t)lua_tonumber(L, 1);
@@ -166,11 +151,11 @@ namespace quest
 		if (!pLand)
 			return 0;
 
-		LPOBJECT pObject = pLand->FindObjectByNPC(npcEntity);
-		if (!pObject)
+		const entt::entity object = pLand->FindObjectByNPC(npcEntity);
+		if (object == entt::null)
 			return 0;
 
-		pObject->Reconstruct(dwNewBuilding);
+		ObjectSystem::Reconstruct(object, dwNewBuilding);
 
 		return 0;
 	}

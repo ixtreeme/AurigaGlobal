@@ -3161,7 +3161,7 @@ ACMD(do_build)
 
 				if (t->dwGroupVnum)
 				{
-					if (pkLand->FindObjectByGroup(t->dwGroupVnum))
+					if (pkLand->FindObjectByGroup(t->dwGroupVnum) != entt::null)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 231, "");
@@ -3177,7 +3177,7 @@ ACMD(do_build)
 					//		if (dependent)
 					{
 						// ִ°?
-						if (!pkLand->FindObjectByGroup(t->dwDependOnGroupVnum))
+						if (pkLand->FindObjectByGroup(t->dwDependOnGroupVnum) == entt::null)
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 239, "");

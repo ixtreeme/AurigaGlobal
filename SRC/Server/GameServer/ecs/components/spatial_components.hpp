@@ -2,13 +2,18 @@
 
 #include <cstdint>
 #include <string>
+#include <entt/entity/entity.hpp>
 
 namespace ecs {
 
 // Marker tag: entity participates in sectree visibility.
 struct SpatialEntity {};
 
-// ECS-side entity kind for future tag-based replacement of CEntity::m_iType.
+// Final retirement is distinct from a reversible sector detach/move. A remove
+// callback must not republish the world object whose lifetime is ending.
+struct SpatialRetiring {};
+
+// Runtime world-object kind. Identity and state live exclusively in components.
 enum class SpatialKind : uint8_t {
     Character = 0,
     Item = 1,
@@ -50,6 +55,12 @@ struct BuildingState {
     float rotationX { 0.0f };
     float rotationY { 0.0f };
     float rotationZ { 0.0f };
+    uint32_t objectId { 0 };
+    int32_t life { 0 };
+    entt::entity npc { entt::null };
+    bool destroying { false };
+    bool attributesApplied { false };
+    uint32_t effectGuildId { 0 };
 };
 
 struct OfflineShopState {
@@ -57,6 +68,7 @@ struct OfflineShopState {
     uint32_t race { 0 };
     int shopType { 0 };
     std::string name {};
+    uint32_t ownerPID { 0 };
 };
 
 } // namespace ecs

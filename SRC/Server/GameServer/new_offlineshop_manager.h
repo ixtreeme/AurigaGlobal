@@ -15,7 +15,7 @@ namespace offlineshop
 	public:
 
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
-		typedef std::map<uint32_t, ShopEntity*> SHOPENTITIES_MAP;
+		using SHOPENTITIES_MAP = std::map<uint32_t, entt::entity>;
 
 		typedef struct SCityShopInfo {
 			SHOPENTITIES_MAP	entitiesByPID;
@@ -82,9 +82,6 @@ namespace offlineshop
 	public:
 		void		CreateNewShopEntities(offlineshop::CShop& rShop);
 		void		DestroyNewShopEntities(const offlineshop::CShop& rShop);
-
-		void		EncodeInsertShopEntity(ShopEntity& shop, entt::entity character);
-		void		EncodeRemoveShopEntity(ShopEntity& shop, entt::entity character);
 
 	private:
 		bool		__CanUseCity(size_t index);
@@ -263,6 +260,8 @@ namespace offlineshop
 
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
 		CITIESVEC		m_vecCities;
+		// Retired avatars remain owned here if a visibility callback throws.
+		std::vector<entt::entity> m_retiringEntities;
 #endif
 	};
 

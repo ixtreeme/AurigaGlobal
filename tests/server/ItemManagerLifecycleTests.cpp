@@ -134,8 +134,6 @@ std::shared_ptr<spdlog::logger> logging::GetLogger() {
 }
 
 // Descriptor/character seams for unrelated engine services.
-CEntity::CEntity() = default;
-CEntity::~CEntity() = default;
 // Real descriptor objects with controlled packet sinks; no fabricated pointers
 // or live networking/crypto/parser services in persistence regression tests.
 DESC::DESC() { m_sock = 1; m_entity = entt::null; m_accountTable = {}; }

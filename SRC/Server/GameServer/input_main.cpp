@@ -2560,9 +2560,9 @@ void CInputMain::Target(entt::entity character, const char * pcData)
 #endif
 	TPacketCGTarget * p = (TPacketCGTarget *) pcData;
 
-	building::LPOBJECT pkObj = building::CManager::instance().FindObjectByVID(p->dwVID);
+	const entt::entity buildingEntity = building::CManager::instance().FindObjectByVID(p->dwVID);
 
-	if (pkObj)
+	if (buildingEntity != entt::null)
 	{
 		TPacketGCTarget pckTarget;
 		pckTarget.header = HEADER_GC_TARGET;

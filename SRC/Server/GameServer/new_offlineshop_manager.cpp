@@ -33,9 +33,8 @@
 #include "ecs/OfflineShopEntityRegistry.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/services/SpatialService.hpp"
-#include "ecs/components/identity_components.hpp"
 #include "ecs/components/spatial_components.hpp"
-#include "ecs/components/visibility_components.hpp"
+#include "ecs/components/transform_components.hpp"
 #include "new_offlineshop_manager.h"
 #include "ecs/systems/OfflineShopSystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
@@ -553,19 +552,17 @@ namespace offlineshop
 
 
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
-		//deleting entities
-		for (auto itCities = m_vecCities.begin(); itCities != m_vecCities.end(); ++itCities)
-		{
-			TCityShopInfo& city = *itCities;
-
-			for (auto it = city.entitiesByPID.begin(); it != city.entitiesByPID.end(); ++it)
-				delete(it->second);
-
-			city.entitiesByPID.clear();
-			city.entitiesByVID.clear();
-		}
-
+		// Stage ownership before draining any public index. A callback exception
+		// must not abandon the remaining city avatars or lose the failed handle.
+		size_t count = 0;
+		for (const auto& city : m_vecCities)
+			count += city.entitiesByPID.size();
+		m_retiringEntities.reserve(m_retiringEntities.size() + count);
+		for (const auto& city : m_vecCities)
+			for (const auto& [pid, entity] : city.entitiesByPID)
+				m_retiringEntities.push_back(entity);
 		m_vecCities.clear();
+		ecs::OfflineShopEntityRegistry::DestroyPending(m_retiringEntities);
 #endif
 
 	}
@@ -593,10 +590,10 @@ namespace offlineshop
 
 		for (auto it = entitiesMap.begin(); it != entitiesMap.end(); ++it)
 		{
-			const ShopEntity& entity = *(it->second);
-			const PIXEL_POSITION pos = entity.GetXYZ();
-
-			if(!Offlineshop_CheckPositionDistance(pos.x, pos.y, x, y))
+			if (!g_registry.valid(it->second))
+				continue;
+			const auto* pos = g_registry.try_get<ecs::Position>(it->second);
+			if (pos && !Offlineshop_CheckPositionDistance(pos->x, pos->y, x, y))
 				return false;
 		}
 
@@ -606,41 +603,37 @@ namespace offlineshop
 
 	void CShopManager::__UpdateEntity(const offlineshop::CShop& rShop)
 	{
-		auto it = m_vecCities.begin();
-		for (; it != m_vecCities.end(); it++)
+		const uint32_t ownerPID = rShop.GetOwnerPID();
+		const std::string name = rShop.GetName();
+#ifdef KASMIR_PAKET_SYSTEM
+		const uint32_t race = rShop.GetRace();
+#endif
+		std::vector<entt::entity> entities;
+		entities.reserve(m_vecCities.size());
+		for (const auto& city : m_vecCities)
 		{
-			auto itMap = it->entitiesByPID.find(rShop.GetOwnerPID());
-			if(itMap == it->entitiesByPID.end())
+			const auto it = city.entitiesByPID.find(ownerPID);
+			if (it != city.entitiesByPID.end())
+				entities.push_back(it->second);
+		}
+		for (const auto entity : entities)
+		{
+			if (!g_registry.valid(entity) || g_registry.all_of<ecs::SpatialRetiring>(entity))
 				continue;
-
-			ShopEntity& ent = *(itMap->second);
-			ent.SetShopName(rShop.GetName());
+			auto* state = g_registry.try_get<ecs::OfflineShopState>(entity);
+			if (!state || state->ownerPID != ownerPID ||
+				ecs::OfflineShopEntityRegistry::FindByVID(state->vid) != entity)
+				continue;
+			state->name = name;
 #ifdef KASMIR_PAKET_SYSTEM
-			ent.SetShopRace(rShop.GetRace());
+			state->race = race;
 #endif
-			const entt::entity shopEntity = ecs::OfflineShopEntityRegistry::FindByVID(ent.GetVID());
-			if (shopEntity != entt::null && g_registry.valid(shopEntity))
-			{
-				auto& state = g_registry.get_or_emplace<ecs::OfflineShopState>(shopEntity);
-				state.vid = ent.GetVID();
-				state.shopType = ent.GetShopType();
-				state.name = ent.GetShopName();
-#ifdef KASMIR_PAKET_SYSTEM
-				state.race = ent.GetShopRace();
-#else
-				state.race = 0u;
-#endif
-			}
-
-			if (ent.GetSectree())
-				ecs::ViewSystem::ViewReencode(
-					ecs::OfflineShopEntityRegistry::FindByVID(ent.GetVID()));
-
+			// No component pointer or commerce object is used after publication.
+			if (ecs::SpatialService::GetSectree(g_registry, entity))
+				ecs::ViewSystem::ViewReencode(entity);
 #ifdef ENABLE_OFFLINESHOP_DEBUG
 			else
-			{
-				LOG_ERROR("cant find sectree for entity : name {} , pid {} ", ent.GetShopName(), ent.GetShop()->GetOwnerPID());
-			}
+				LOG_ERROR("cant find sectree for entity : name {} , pid {} ", name, ownerPID);
 #endif
 		}
 	}
@@ -648,178 +641,94 @@ namespace offlineshop
 
 	void CShopManager::CreateNewShopEntities(offlineshop::CShop& rShop)
 	{
-#define PI 3.14159265
-#define RADIANS_PER_DEGREE (PI/180.0)
-#define TORAD(a)	((a)*RADIANS_PER_DEGREE)
-
-		int index=0;
-		auto it = m_vecCities.begin();
-		for (; it != m_vecCities.end(); it++, index++)
+		// Snapshot commerce data before any spatial callback can remove the shop.
+		const uint32_t ownerPID = rShop.GetOwnerPID();
+		const std::string name = rShop.GetName();
+#ifdef KASMIR_PAKET_SYSTEM
+		const uint32_t race = rShop.GetRace();
+#else
+		const uint32_t race = 0;
+#endif
+		for (size_t index = 0; index < m_vecCities.size(); ++index)
 		{
-			TCityShopInfo& city = *it;
-
+			if (!GetShopByOwnerID(ownerPID))
+				break;
+			// A repeated create must not replace the only handle to a live avatar.
+			if (m_vecCities[index].entitiesByPID.contains(ownerPID))
+				continue;
 			int32_t shop_pos_x = 0, shop_pos_y=0;
 			int iCheckCount =0;
-
 			int map_index =0;
 			Offlineshop_GetMapIndex(index, &map_index);
-
-			size_t ent_count = it->entitiesByPID.size();
-
+			const size_t ent_count = m_vecCities[index].entitiesByPID.size();
 			do {
 				Offlineshop_GetNewPos(index, ent_count, &shop_pos_x, &shop_pos_y);
+			} while (!__CheckEntitySpawnPos(shop_pos_x, shop_pos_y, m_vecCities[index]) && iCheckCount++ < 10);
 
-			} while(!__CheckEntitySpawnPos(shop_pos_x, shop_pos_y, city) &&  iCheckCount++ < 10);
-
-
-			LPSECTREE sectree = SECTREE_MANAGER::Instance().Get(map_index, shop_pos_x, shop_pos_y);
-
-			if (sectree)
+			const auto entity = ecs::OfflineShopEntityRegistry::Create(
+				ownerPID, name, race, 0, static_cast<uint32_t>(map_index), shop_pos_x, shop_pos_y);
+			if (entity == entt::null)
 			{
-				ShopEntity* pEntity = new ShopEntity();
-
-				pEntity->SetShopName(rShop.GetName());
-#ifdef KASMIR_PAKET_SYSTEM
-				pEntity->SetShopRace(rShop.GetRace());
-#endif
-				pEntity->SetShopType(0);//TODO: add differents shop skins
-				pEntity->SetMapIndex(map_index);
-				pEntity->SetXYZ(shop_pos_x, shop_pos_y, 0);
-				pEntity->SetShop(&rShop);
-
-				entt::entity shopEntity = ecs::OfflineShopEntityRegistry::FindByVID(pEntity->GetVID());
-				if (shopEntity == entt::null || !g_registry.valid(shopEntity))
-					shopEntity = g_registry.create();
-
-				ecs::OfflineShopEntityRegistry::Register(pEntity->GetVID(), pEntity->GetVID(), shopEntity, pEntity);
-				g_registry.emplace_or_replace<ecs::VIDComponent>(shopEntity, pEntity->GetVID());
-				(void)g_registry.get_or_emplace<ecs::ViewMap>(shopEntity);
-				(void)g_registry.get_or_emplace<ecs::ViewerMap>(shopEntity);
-				(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(shopEntity);
-				g_registry.emplace_or_replace<ecs::OfflineShopState>(
-					shopEntity,
-					ecs::OfflineShopState {
-						pEntity->GetVID(),
-#ifdef KASMIR_PAKET_SYSTEM
-						pEntity->GetShopRace(),
-#else
-						0u,
-#endif
-						pEntity->GetShopType(),
-						pEntity->GetShopName(),
-					});
-
-				if (!ecs::SpatialService::InsertEntity(g_registry, shopEntity, static_cast<uint32_t>(map_index), shop_pos_x, shop_pos_y, 0))
-				{
-					LOG_ERROR("cannot insert offline shop entity vid {} map {} pos {} {}",
-						pEntity->GetVID(), map_index, shop_pos_x, shop_pos_y);
-					ecs::OfflineShopEntityRegistry::Unregister(pEntity->GetVID());
-					if (shopEntity != entt::null && g_registry.valid(shopEntity))
-						g_registry.destroy(shopEntity);
-					pEntity->Destroy();
-					delete pEntity;
-					continue;
-				}
-				ecs::SpatialService::UpdateSectree(g_registry, shopEntity);
-
-				city.entitiesByPID.insert(std::make_pair(rShop.GetOwnerPID(),	pEntity));
-				city.entitiesByVID.insert(std::make_pair(pEntity->GetVID(),		pEntity));
+				LOG_ERROR("cannot insert offline shop owner {} map {} pos {} {}",
+					ownerPID, map_index, shop_pos_x, shop_pos_y);
+				continue;
 			}
+			// Keep rollback ownership until both city indexes are committed. If a
+			// cleanup callback throws, a later manager teardown can still retry it.
+			try
+			{
+				m_retiringEntities.push_back(entity);
+			}
+			catch (...)
+			{
+				ecs::OfflineShopEntityRegistry::Destroy(entity);
+				throw;
+			}
+			// Construction signals may have changed city ownership. Reacquire the
+			// container and install both lookup paths before publishing INSERT.
+			if (index >= m_vecCities.size() || !GetShopByOwnerID(ownerPID) ||
+				m_vecCities[index].entitiesByPID.contains(ownerPID))
+			{
+				ecs::OfflineShopEntityRegistry::DestroyPending(m_retiringEntities);
+				continue;
+			}
+			const auto vid = g_registry.get<ecs::OfflineShopState>(entity).vid;
+			try
+			{
+				m_vecCities[index].entitiesByPID.emplace(ownerPID, entity);
+				m_vecCities[index].entitiesByVID.emplace(vid, entity);
+			}
+			catch (...)
+			{
+				m_vecCities[index].entitiesByPID.erase(ownerPID);
+				m_vecCities[index].entitiesByVID.erase(vid);
+				ecs::OfflineShopEntityRegistry::DestroyPending(m_retiringEntities);
+				throw;
+			}
+			std::erase(m_retiringEntities, entity);
+			ecs::SpatialService::UpdateSectree(g_registry, entity);
 		}
-
 	}
 
 
 	void CShopManager::DestroyNewShopEntities(const offlineshop::CShop& rShop)
 	{
-		if (g_bAuthServer) {
+		if (g_bAuthServer)
 			return;
-		}
-
-		auto it = m_vecCities.begin();
-		for (; it != m_vecCities.end(); it++)
+		const uint32_t ownerPID = rShop.GetOwnerPID();
+		m_retiringEntities.reserve(m_retiringEntities.size() + m_vecCities.size());
+		for (auto& city : m_vecCities)
 		{
-			TCityShopInfo& city = *it;
-
-			auto iter = city.entitiesByPID.find(rShop.GetOwnerPID());
-
-			if (iter == city.entitiesByPID.end())
-			{
-				LOG_ERROR("CANNOT FOUND NEW SHOP ENTITY : {} ", rShop.GetOwnerPID());
+			const auto it = city.entitiesByPID.find(ownerPID);
+			if (it == city.entitiesByPID.end())
 				continue;
-			}
-
-			ShopEntity* entity = iter->second;
-			uint32_t dwVID = entity->GetVID();
-			const entt::entity shopEntity = ecs::OfflineShopEntityRegistry::FindByVID(dwVID);
-
-			if (entity->GetSectree())
-			{
-				ecs::ViewSystem::ViewCleanup(shopEntity);
-				if (shopEntity != entt::null && g_registry.valid(shopEntity))
-				{
-					ecs::SpatialService::RemoveEntity(g_registry, shopEntity);
-				}
-			}
-
-			entity->Destroy();
-			if (shopEntity != entt::null && g_registry.valid(shopEntity))
-				g_registry.destroy(shopEntity);
-			ecs::OfflineShopEntityRegistry::Unregister(dwVID);
-
-
-			delete(entity);
-			city.entitiesByPID.erase(iter);
-			city.entitiesByVID.erase(city.entitiesByVID.find(dwVID));
+			const auto entity = it->second;
+			m_retiringEntities.push_back(entity);
+			city.entitiesByPID.erase(it);
+			std::erase_if(city.entitiesByVID, [entity](const auto& entry) { return entry.second == entity; });
 		}
-	}
-
-
-	void CShopManager::EncodeInsertShopEntity(ShopEntity& shop, entt::entity character)
-	{
-		if (!ecs::PlayerRuntime::GetDesc(character))
-			return;
-
-		TPacketGCNewOfflineshop pack;
-		pack.bHeader	= HEADER_GC_NEW_OFFLINESHOP;
-		pack.bSubHeader	= SUBHEADER_GC_INSERT_SHOP_ENTITY;
-		pack.wSize		= sizeof(pack)+ sizeof(TSubPacketGCInsertShopEntity);
-
-		const PIXEL_POSITION pos = shop.GetXYZ();
-
-		TSubPacketGCInsertShopEntity subpack;
-		subpack.dwVID = shop.GetVID();
-		subpack.iType = shop.GetShopType();
-
-		subpack.x = pos.x;
-		subpack.y = pos.y;
-		subpack.z = pos.z;
-#ifdef KASMIR_PAKET_SYSTEM
-		subpack.dwKasmirNpc = shop.GetShopRace();
-#endif
-
-		strncpy(subpack.szName, shop.GetShopName(), sizeof(subpack.szName));
-
-		ecs::PlayerRuntime::GetDesc(character)->BufferedPacket(&pack, sizeof(pack));
-		ecs::PlayerRuntime::GetDesc(character)->Packet(&subpack, sizeof(subpack));
-	}
-
-
-	void CShopManager::EncodeRemoveShopEntity(ShopEntity& shop, entt::entity character)
-	{
-		if (!ecs::PlayerRuntime::GetDesc(character))
-			return;
-
-		TPacketGCNewOfflineshop pack;
-		pack.bHeader	= HEADER_GC_NEW_OFFLINESHOP;
-		pack.bSubHeader	= SUBHEADER_GC_REMOVE_SHOP_ENTITY;
-		pack.wSize		= sizeof(pack)+ sizeof(TSubPacketGCRemoveShopEntity);
-
-		TSubPacketGCRemoveShopEntity subpack;
-		subpack.dwVID = shop.GetVID();
-
-		ecs::PlayerRuntime::GetDesc(character)->BufferedPacket(&pack, sizeof(pack));
-		ecs::PlayerRuntime::GetDesc(character)->Packet(&subpack, sizeof(subpack));
+		// Every city index is retired before the first visibility callback.
+		ecs::OfflineShopEntityRegistry::DestroyPending(m_retiringEntities);
 	}
 
 
@@ -2295,20 +2204,24 @@ namespace offlineshop
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
 	bool CShopManager::RecvShopClickEntity(entt::entity character, uint32_t dwShopEntityVID)
 	{
-		for (auto it = m_vecCities.begin(); it != m_vecCities.end(); it++)
-		{
-
-			auto iterMap = it->entitiesByVID.find(dwShopEntityVID);
-			if(it->entitiesByVID.end() == iterMap)
-				continue;
-
-
-			uint32_t dwPID = iterMap->second->GetShop()->GetOwnerPID();
-
-
-			RecvShopOpenClientPacket(character, dwPID);
-			return true;
-		}
+		const auto entity = ecs::OfflineShopEntityRegistry::FindByVID(dwShopEntityVID);
+		if (entity != entt::null)
+			for (const auto& city : m_vecCities)
+			{
+				const auto it = city.entitiesByVID.find(dwShopEntityVID);
+				if (it == city.entitiesByVID.end() || it->second != entity)
+					continue;
+				const auto* state = g_registry.try_get<ecs::OfflineShopState>(entity);
+				if (!state)
+					break;
+				const auto ownerPID = state->ownerPID;
+				const auto owner = city.entitiesByPID.find(ownerPID);
+				if (owner == city.entitiesByPID.end() || owner->second != entity ||
+					!GetShopByOwnerID(ownerPID))
+					break;
+				RecvShopOpenClientPacket(character, ownerPID);
+				return true;
+			}
 
 		LOG_ERROR("cannot found clicked entity , {} vid {} ", ecs::PlayerRuntime::GetName(character).data(), dwShopEntityVID);
 		return false;

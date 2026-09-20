@@ -411,14 +411,6 @@ void CleanupCombatReferences(entt::registry& reg, entt::entity victim)
     }
 }
 
-void RemoveFromLegacyMapSector(entt::registry& reg, entt::entity entity)
-{
-    (void)reg;
-    (void)entity;
-    // The legacy sectree still stores LPENTITY/LPCHARACTER pointers.
-    // Actual entt::entity-backed map sector membership is introduced in Phase 4.
-}
-
 } // namespace
 
 entt::entity EntityFactory::EnsureCharacterEntity(entt::registry& reg, uint32_t legacyVID)
@@ -627,8 +619,6 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
             session->desc->BindCharacter(entt::null);
         }
     }
-
-    RemoveFromLegacyMapSector(reg, e);
 
     reg.destroy(e);
 }

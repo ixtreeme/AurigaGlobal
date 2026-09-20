@@ -1,7 +1,7 @@
 #ifndef __INC_SECTREE_H__
 #define __INC_SECTREE_H__
 
-#include "entity.h"
+#include <entt/entity/entity.hpp>
 #include <Core/Logging.hpp>
 #include "ecs/Registry.hpp"
 #include <unordered_map>
