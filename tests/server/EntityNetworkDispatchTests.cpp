@@ -35,6 +35,8 @@ namespace {
 int checks = 0;
 uint32_t now = 1000;
 std::map<const DESC*, std::vector<std::vector<uint8_t>>> wire;
+SECTREE* updateSector = nullptr;
+std::vector<entt::entity> updateMembers;
 void Check(bool value, const char* message) {
     ++checks;
     if (!value) throw std::runtime_error(message);
@@ -153,6 +155,54 @@ void ExpiredAndMissingSession() {
     Check(wire.empty(), "null session wrote packets");
     g_registry.clear();
 }
+void UpdateAfterVisibilityRemoval() {
+    DESC ownerDesc, observerDesc;
+    SECTREE tree;
+    updateSector = &tree;
+    const auto owner = Character(800, true, &ownerDesc);
+    const auto observer = Character(801, true, &observerDesc);
+    const auto follower = Character(802, false);
+    updateMembers = {owner, observer, follower};
+    for (const auto entity : updateMembers) {
+        g_registry.emplace<ecs::SectorPlacement>(entity, 3, 6200u, 100u);
+        g_registry.emplace<ecs::ViewActiveTag>(entity);
+    }
+    // Actual insert packets precede actual UpdatePacket, not a replacement
+    // implementation of either production builder or transport selection.
+    for (const auto viewer : {owner, observer})
+        ecs::EntityNetworkDispatch::SendInsert(g_registry, follower, viewer);
+    wire.clear();
+    NetworkSyncSystem::UpdatePacket(follower);
+    size_t activeAdditional = 0;
+    for (const auto* desc : {&ownerDesc, &observerDesc}) {
+        const auto update = Packet<TPacketGCCharacterUpdate>(*desc, 0, HEADER_GC_CHARACTER_UPDATE);
+        Check(update.dwVID == 802, "active update lost follower identity");
+        for (const auto& bytes : wire.at(desc))
+            activeAdditional += bytes.front() == HEADER_GC_CHAR_ADDITIONAL_INFO;
+    }
+    // Fixture boundary: this is the precise state left by real ViewCleanup
+    // (separately exercised by SpatialLifecycleTests) before DestroyStatePre
+    // calls ClearAffect: REMOVE sent, SpatialEntity/ViewActiveTag gone, but
+    // the entity, VID index and SectorPlacement still exist until StatePost.
+    for (const auto viewer : {owner, observer})
+        ecs::EntityNetworkDispatch::SendRemove(g_registry, follower, viewer);
+    g_registry.remove<ecs::SpatialEntity, ecs::ViewActiveTag>(follower);
+    Check(g_registry.valid(follower) && g_registry.all_of<ecs::VIDComponent, ecs::SectorPlacement>(follower),
+        "post-removal fixture prematurely retired identity or sector placement");
+    wire.clear();
+    NetworkSyncSystem::UpdatePacket(follower);
+    size_t afterRemoval = 0;
+    for (const auto& [desc, frames] : wire) {
+        afterRemoval += frames.size();
+        for (const auto& bytes : frames)
+            std::cerr << "post-REMOVE wire header=" << unsigned(bytes.front()) << " bytes=" << bytes.size() << '\n';
+    }
+    std::cerr << "active standalone AdditionalInfo=" << activeAdditional
+        << ", packets after visibility removal=" << afterRemoval << '\n';
+    updateMembers.clear(); updateSector = nullptr; g_registry.clear(); wire.clear();
+    Check(afterRemoval == 0, "UpdatePacket emitted packets after visibility removal (ghost mount resurrection)");
+    Check(activeAdditional == 0, "active UPDATE emitted append-only AdditionalInfo without ADD");
+}
 }
 
 uint32_t get_dword_time() { return now; }
@@ -219,9 +269,22 @@ void MountSystem::UpdateMountInventoryCountOverhead(entt::entity source, entt::e
 // Unrelated entry points in the complete production translation units remain
 // linked, but must never supply behavior to these direct encoding tests.
 int VIEW_RANGE = 5000, VIEW_BONUS_RANGE = 500;
-bool SectreeMember(entt::entity, const SECTREE*) { Unexpected(); }
-FCollectEntity SECTREE::SnapshotAround(int) const { Unexpected(); }
-SECTREE* SECTREE_MANAGER::Get(int32_t, int32_t, int32_t) { Unexpected(); }
+SECTREE::SECTREE() = default;
+SECTREE::~SECTREE() = default;
+bool SECTREE::Contains(entt::entity e) const {
+    return this == updateSector && g_registry.valid(e) && g_registry.all_of<ecs::SectorPlacement>(e) &&
+        std::find(updateMembers.begin(), updateMembers.end(), e) != updateMembers.end();
+}
+bool SectreeMember(entt::entity e, const SECTREE* tree) { return tree && tree->Contains(e); }
+FCollectEntity SECTREE::SnapshotAround(int) const {
+    Check(this == updateSector, "unexpected update broadcast sector");
+    FCollectEntity result;
+    for (const auto e : updateMembers) result.Add(e, this);
+    return result;
+}
+SECTREE_MANAGER::SECTREE_MANAGER() = default;
+SECTREE_MANAGER::~SECTREE_MANAGER() = default;
+SECTREE* SECTREE_MANAGER::Get(int32_t map, int32_t, int32_t) { return map == 3 ? updateSector : nullptr; }
 int MINMAX(int, int, int) { Unexpected(); }
 float get_float_time() { Unexpected(); }
 namespace ecs::PlayerRuntime {
@@ -231,7 +294,7 @@ uint32_t GetAIFlag(entt::entity) { Unexpected(); }
 void SetLastSyncTime(entt::entity, const timeval&) { Unexpected(); }
 int32_t GetX(entt::entity) { Unexpected(); }
 int32_t GetY(entt::entity) { Unexpected(); }
-LPSECTREE GetSectree(entt::entity) { Unexpected(); }
+LPSECTREE GetSectree(entt::entity e) { return ecs::SectorOf(g_registry, e); }
 bool IsNPC(entt::entity) { Unexpected(); }
 bool IsStone(entt::entity) { Unexpected(); }
 bool IsMonster(entt::entity) { Unexpected(); }
@@ -242,7 +305,13 @@ TEMP_BUFFER::~TEMP_BUFFER() = default;
 const void* TEMP_BUFFER::read_peek() { Unexpected(); }
 void TEMP_BUFFER::write(const void*, int) { Unexpected(); }
 int TEMP_BUFFER::size() { Unexpected(); }
-entt::entity CHARACTER_MANAGER::FindEntity(uint32_t) { Unexpected(); }
+CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
+CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
+entt::entity CHARACTER_MANAGER::FindEntity(uint32_t vid) {
+    for (const auto e : g_registry.view<ecs::VIDComponent>())
+        if (g_registry.get<ecs::VIDComponent>(e).value == vid) return e;
+    return entt::null;
+}
 entt::entity CParty::GetLeader() { Unexpected(); }
 uint8_t CParty::GetRole(uint32_t) { Unexpected(); }
 int ItemSystem::GetItemValue(entt::entity, uint32_t) { Unexpected(); }
@@ -251,7 +320,9 @@ bool battle_is_attackable(entt::entity, entt::entity) { Unexpected(); }
 
 int main() {
     try {
+        CHARACTER_MANAGER characters; SECTREE_MANAGER maps;
         MountWireRoundTrip(); ExpiredAndMissingSession();
+        UpdateAfterVisibilityRemoval();
         std::cout << "Entity wire checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

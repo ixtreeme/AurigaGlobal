@@ -21,8 +21,8 @@ void SendQuickslotAdd(entt::entity e, uint8_t pos, TQuickslot slot);
 void SendQuickslotDelete(entt::entity e, uint8_t pos);
 void SendQuickslotSwap(entt::entity e, uint8_t from, uint8_t to);
 bool BuildCharAdditionalInfo(entt::registry& reg, entt::entity source, TPacketGCCharacterAdditionalInfo& packet);
+// Only as the second half of CHARACTER_ADD, never as a standalone update.
 void SendCharAdditionalInfo(entt::registry& reg, entt::entity source, entt::entity recipient);
-void BroadcastCharAdditionalInfo(entt::registry& reg, entt::entity source);
 bool BuildCharacterUpdatePacket(entt::registry& reg, entt::entity source, TPacketGCCharacterUpdate& packet);
 bool BuildPointsPacket(entt::registry& reg, entt::entity source, TPacketGCPoints& packet);
 std::string GetItemOnTitlePrefix(entt::registry& reg, entt::entity source);

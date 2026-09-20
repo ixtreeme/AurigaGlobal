@@ -819,7 +819,7 @@ void UpdateAlignment(entt::entity e, int64_t amount)
     const auto* state = g_registry.try_get<ecs::CombatStats>(e);
     if (!state || state->alignmentRevision != revision) return;
     if (oldVisibleAlignment != state->alignment / 10)
-        NetworkSyncSystem::BroadcastCharAdditionalInfo(g_registry, e);
+        NetworkSyncSystem::UpdatePacket(e);
 }
 
 void SetKillerMode(entt::entity e, bool isOn)

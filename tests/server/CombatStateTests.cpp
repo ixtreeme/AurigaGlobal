@@ -116,7 +116,7 @@ struct WeaponFixture {
 };
 int poisonCalls = 0, bleedingCalls = 0, affectCalls = 0;
 std::function<void(entt::entity)> onPoison, onAffect;
-int checks = 0, computes = 0, packets = 0, alignmentPackets = 0;
+int checks = 0, computes = 0, packets = 0;
 // Registered targets and recorded view packets, for the fly-targeting checks.
 // A VID nobody registered resolves to entt::null, which is what the manager
 // answers for a target that has gone.
@@ -127,7 +127,7 @@ std::function<void()> onFly;
 bool canMove = false;
 uint32_t tick = 1000;
 bool guild = false;
-std::function<void(entt::entity)> onCompute, onPacket, onAlignment;
+std::function<void(entt::entity)> onCompute, onPacket;
 void Check(bool condition, const char* why) { ++checks; if (!condition) throw std::runtime_error(why); }
 entt::entity Actor() {
     auto e = g_registry.create();
@@ -141,8 +141,8 @@ entt::entity Actor() {
     return e;
 }
 void Reset() {
-    g_registry.clear(); computes = packets = alignmentPackets = 0; tick = 1000; guild = false;
-    onCompute = onPacket = onAlignment = {}; passes_per_sec = 25;
+    g_registry.clear(); computes = packets = 0; tick = 1000; guild = false;
+    onCompute = onPacket = {}; passes_per_sec = 25;
     onPoison = onAffect = {}; poisonCalls = bleedingCalls = affectCalls = 0;
     vids.clear(); viewPackets = spChanges = 0; lastFlyType = 0; onFly = {}; canMove = false;
 }
@@ -174,10 +174,6 @@ void NetworkSyncSystem::UpdatePacket(entt::entity e) {
     AssertActor(e); ++packets;
     const auto callback = onPacket; if (callback) callback(e);
 }
-void NetworkSyncSystem::BroadcastCharAdditionalInfo(entt::registry& reg, entt::entity e) {
-    Check(&reg == &g_registry, "wrong registry"); AssertActor(e); ++alignmentPackets;
-    const auto callback = onAlignment; if (callback) callback(e);
-}
 
 namespace {
 void AlignmentChecks() {
@@ -206,13 +202,13 @@ void AlignmentChecks() {
     }
     Reset(); const auto fine = Actor();
     C::UpdateAlignment(fine, 1);
-    Check(computes == 0 && alignmentPackets == 0, "sub-display change published");
+    Check(computes == 0 && packets == 0, "sub-display change published");
     C::UpdateAlignment(fine, 9);
-    Check(computes == 0 && alignmentPackets == 1, "same-grade change recomputed");
+    Check(computes == 0 && packets == 1, "same-grade change recomputed");
     C::UpdateAlignment(fine, 0);
-    Check(alignmentPackets == 1, "no-op update published");
+    Check(packets == 1, "no-op update published");
     C::UpdateAlignment(fine, 49990);
-    Check(computes == 1 && alignmentPackets == 2, "grade change did not compute/publish");
+    Check(computes == 1 && packets == 2, "grade change did not compute/publish");
     g_registry.get<ecs::CombatStats>(fine).realAlignment = UINT32_MAX;
     C::UpdateAlignment(fine, 0);
     Check(C::GetRealAlignment(fine) == C::MAX_ALIGNMENT, "corrupt stored alignment not normalized");
@@ -224,17 +220,17 @@ void CallbackChecks() {
         onCompute = {}; C::UpdateAlignment(current, -50000);
     };
     C::UpdateAlignment(e, 50000);
-    Check(C::GetRealAlignment(e) == 0 && computes == 2 && alignmentPackets == 1, "obsolete outer publication");
+    Check(C::GetRealAlignment(e) == 0 && computes == 2 && packets == 1, "obsolete outer publication");
     Reset(); const auto aba = Actor();
     onCompute = [&](entt::entity current) {
         onCompute = {}; C::UpdateAlignment(current, -50000); C::UpdateAlignment(current, 50000);
     };
     C::UpdateAlignment(aba, 50000);
-    Check(C::GetRealAlignment(aba) == 50000 && computes == 3 && alignmentPackets == 2, "ABA update republished");
+    Check(C::GetRealAlignment(aba) == 50000 && computes == 3 && packets == 2, "ABA update republished");
     Reset(); const auto old = Actor(); entt::entity replacement = entt::null;
     onCompute = [&](entt::entity current) { g_registry.destroy(current); replacement = Actor(); };
     C::UpdateAlignment(old, 50000);
-    Check(replacement != old && C::GetRealAlignment(replacement) == 0 && alignmentPackets == 0, "recycled alignment owner touched");
+    Check(replacement != old && C::GetRealAlignment(replacement) == 0 && packets == 0, "recycled alignment owner touched");
     for (bool killer : {false, true}) {
         Reset(); const auto actor = Actor(); replacement = entt::null;
         onPacket = [&](entt::entity current) { g_registry.destroy(current); replacement = Actor(); };
@@ -399,7 +395,6 @@ unsigned int CGuild::UnderAnyWar(unsigned char) { UnexpectedService(__func__); }
 bool CEntity::IsType(int)const { UnexpectedService(__func__); }
 int CEntity::GetX(void)const { UnexpectedService(__func__); }
 int CEntity::GetY(void)const { UnexpectedService(__func__); }
-int CEntity::GetZ(void)const { UnexpectedService(__func__); }
 pixel_position_s CEntity::GetXYZ(void)const { UnexpectedService(__func__); }
 SECTREE * CEntity::GetSectree(void)const { UnexpectedService(__func__); }
 void BroadcastNotice(char const *,bool) { UnexpectedService(__func__); }

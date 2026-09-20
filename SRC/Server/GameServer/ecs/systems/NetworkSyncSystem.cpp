@@ -35,6 +35,7 @@
 #include "../components/session_components.hpp"
 #include "../components/skill_components.hpp"
 #include "../components/social_components.hpp"
+#include "../components/spatial_components.hpp"
 #include "../components/status_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/vital_components.hpp"
@@ -144,16 +145,27 @@ namespace NetworkSyncSystem {
 
 void UpdatePacket(entt::entity e)
 {
+    // ViewCleanup retires visibility before affect/state teardown. The VID and
+    // sector membership can still exist then, but the actor has already been
+    // deleted on clients and must not receive any more appearance updates.
+    if (!g_registry.valid(e) || !g_registry.all_of<ecs::SpatialEntity>(e))
+        return;
+
+    const auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
+    if (!vid || CHARACTER_MANAGER::instance().FindEntity(vid->value) != e)
+        return;
+    const auto* tree = ecs::PlayerRuntime::GetSectree(e);
+    if (!tree || tree->IsDestroying() || !tree->Contains(e))
+        return;
+
     TPacketGCCharacterUpdate packet {};
     if (!BuildCharacterUpdatePacket(g_registry, e, packet))
         return;
 
-    const auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid || CHARACTER_MANAGER::instance().FindEntity(vid->value) == entt::null || !ecs::PlayerRuntime::GetSectree(e))
-        return;
-
+    // AdditionalInfo completes CHARACTER_ADD; it is not an update packet.
+    // Sending it alone replays the client's cached ADD (including its position)
+    // and can recreate a deleted follower or reset a moving one.
     ecs::NetworkService::BroadcastToView(g_registry, e, &packet, sizeof(packet), false);
-    BroadcastCharAdditionalInfo(g_registry, e);
 }
 
 void MainCharacterPacket(entt::entity e)
@@ -418,17 +430,6 @@ void NetworkSyncSystem::SendCharAdditionalInfo(entt::registry& reg, entt::entity
         return;
 
     ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
-}
-
-void NetworkSyncSystem::BroadcastCharAdditionalInfo(entt::registry& reg, entt::entity source)
-{
-    TPacketGCCharacterAdditionalInfo packet {};
-    if (!BuildCharAdditionalInfo(reg, source, packet))
-        return;
-
-    // AdditionalInfo is append-side payload on the client. Sending it
-    // standalone to the owner/main actor can clear dynamic actors.
-    ecs::NetworkService::BroadcastToView(reg, source, &packet, sizeof(packet), true);
 }
 
 bool NetworkSyncSystem::BuildCharacterUpdatePacket(entt::registry& reg, entt::entity source, TPacketGCCharacterUpdate& packet)
@@ -1117,5 +1118,3 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
         reg.remove<ecs::DirtyTag>(entity);
     }
 }
-
-

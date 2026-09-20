@@ -15,6 +15,16 @@ updates, expired movement and missing sessions. Socket delivery, encryption and
 the running client are outside these tests; passing them does not establish that
 a reported live ghost-mount problem is fixed.
 
+The packet fixture also exercises real UpdatePacket broadcasts to two clients.
+An active follower must send UPDATE only, not standalone AdditionalInfo (the
+client interprets that as completion of its cached ADD). After visibility removal,
+updates must send nothing even while the VID and sector membership still exist,
+as they do during DestroyCharacterStatePre -> ClearAffect. Before the fix this
+case captured UPDATE plus AdditionalInfo after DEL, which can recreate a ghost
+at the cached spawn position. Alignment changes also use UPDATE, never the
+append-only AdditionalInfo packet. Live follow/remount and monster AI still need
+in-game verification; these tests do not simulate the running renderer or AI.
+
 Build SpatialLifecycleTests and EntityNetworkDispatchTests, then run ctest with
 `-C RelWithDebInfo -R "spatial_lifecycle|entity_network_dispatch" --output-on-failure`
 in the normal and AddressSanitizer build trees.
