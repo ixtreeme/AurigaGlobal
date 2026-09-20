@@ -131,6 +131,7 @@ add_test(NAME spatial_lifecycle COMMAND SpatialLifecycleTests)
 
 add_executable(EntityNetworkDispatchTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/EntityNetworkDispatchTests.cpp
+    entity.cpp
     ecs/services/EntityNetworkDispatch.cpp
     ecs/systems/NetworkSyncSystem.cpp
 )

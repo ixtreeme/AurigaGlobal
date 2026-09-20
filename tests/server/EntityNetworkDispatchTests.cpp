@@ -8,7 +8,9 @@
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/NetworkService.hpp"
 #include "../../SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.hpp"
+#include "../../SRC/Server/GameServer/ecs/services/SpatialService.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
@@ -24,6 +26,7 @@
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/transform_components.hpp"
 #include <cstring>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <stdexcept>
@@ -35,6 +38,7 @@ namespace {
 int checks = 0;
 uint32_t now = 1000;
 std::map<const DESC*, std::vector<std::vector<uint8_t>>> wire;
+std::function<void(const DESC*)> onWire;
 SECTREE* updateSector = nullptr;
 std::vector<entt::entity> updateMembers;
 void Check(bool value, const char* message) {
@@ -203,6 +207,75 @@ void UpdateAfterVisibilityRemoval() {
     Check(afterRemoval == 0, "UpdatePacket emitted packets after visibility removal (ghost mount resurrection)");
     Check(activeAdditional == 0, "active UPDATE emitted append-only AdditionalInfo without ADD");
 }
+void NativeMoveBroadcastRouting() {
+    DESC ownerDesc, observerDesc, sourceDesc;
+    SECTREE tree;
+    updateSector = &tree;
+    const auto owner = Character(900, true, &ownerDesc);
+    const auto observer = Character(901, true, &observerDesc);
+    const auto follower = Character(902, false);
+    updateMembers = {owner, observer, follower};
+    for (const auto entity : updateMembers) {
+        g_registry.emplace<ecs::SectorPlacement>(entity, 3, 6200u, 100u);
+        g_registry.emplace<ecs::ViewActiveTag>(entity);
+        g_registry.emplace<ecs::SpatialRevision>(entity, 1u);
+    }
+    // Exercise entity.cpp's real PacketView and visibility recipient selection.
+    // This is a transport/routing fixture; MovementSystem's actual MOVE encoder
+    // is exercised separately by SpatialLifecycleTests.
+    TPacketGCMove move {};
+    move.bHeader = HEADER_GC_MOVE;
+    move.bFunc = FUNC_MOVE;
+    move.bRot = 18;
+    move.dwVID = 902;
+    move.lX = 6800;
+    move.lY = 100;
+    move.dwTime = now;
+    move.dwDuration = 900;
+    ecs::ViewSystem::PacketView(follower, &move, sizeof(move), follower);
+    Check(wire.size() == 2, "native NPC MOVE missed owner or observer");
+    for (const auto* desc : {&ownerDesc, &observerDesc}) {
+        Check(wire.at(desc).size() == 1, "native NPC MOVE sent duplicate packets");
+        const auto received = Packet<TPacketGCMove>(*desc, 0, HEADER_GC_MOVE);
+        Check(std::memcmp(&received, &move, sizeof(move)) == 0, "PacketView altered MOVE payload bytes");
+    }
+    // A source session makes the exclusion assertion meaningful: no packet
+    // may reach it even though the source is present in GetViewersOf.
+    g_registry.emplace<ecs::NetworkSession>(follower, &sourceDesc);
+    wire.clear();
+    ecs::ViewSystem::PacketView(follower, &move, sizeof(move), follower);
+    Check(wire.size() == 2 && wire.count(&sourceDesc) == 0, "MOVE source exclusion was ignored");
+    wire.clear();
+    ecs::ViewSystem::PacketView(follower, &move, sizeof(move));
+    Check(wire.size() == 3 && wire.at(&sourceDesc).size() == 1, "non-excluded source session did not receive MOVE");
+    g_registry.remove<ecs::NetworkSession>(follower);
+
+    g_registry.get<ecs::NetworkSession>(observer).desc = nullptr;
+    wire.clear();
+    ecs::ViewSystem::PacketView(follower, &move, sizeof(move), follower);
+    Check(wire.size() == 1 && wire.at(&ownerDesc).size() == 1, "null observer session blocked owner or emitted MOVE");
+    g_registry.get<ecs::NetworkSession>(observer).desc = &observerDesc;
+
+    // A transport callback can remove/reposition a source. Remaining recipients
+    // from the old snapshot must not receive its now-stale MOVE packet.
+    wire.clear();
+    onWire = [follower, &ownerDesc](const DESC* recipient) {
+        Check(recipient == &ownerDesc, "revision test did not send to first viewer first");
+        ++g_registry.get<ecs::SpatialRevision>(follower).value;
+    };
+    ecs::ViewSystem::PacketView(follower, &move, sizeof(move), follower);
+    onWire = {};
+    Check(wire.size() == 1 && wire.at(&ownerDesc).size() == 1, "spatial revision change leaked stale MOVE to later viewer");
+
+    wire.clear();
+    g_registry.remove<ecs::SectorPlacement>(follower);
+    ecs::ViewSystem::PacketView(follower, &move, sizeof(move), follower);
+    Check(wire.empty(), "detached source broadcast MOVE");
+    g_registry.destroy(follower);
+    ecs::ViewSystem::PacketView(follower, &move, sizeof(move), follower);
+    Check(wire.empty(), "retired source broadcast MOVE");
+    updateMembers.clear(); updateSector = nullptr; g_registry.clear(); wire.clear();
+}
 }
 
 uint32_t get_dword_time() { return now; }
@@ -216,6 +289,7 @@ void DESC::Packet(const void* data, int size) {
     Check(data && size > 0, "invalid transport payload");
     const auto* bytes = static_cast<const uint8_t*>(data);
     wire[this].emplace_back(bytes, bytes + size);
+    if (onWire) onWire(this);
 }
 void DESC::BufferedPacket(const void*, int) { Unexpected(); }
 void DESC::Destroy() { Unexpected(); }
@@ -269,6 +343,8 @@ void MountSystem::UpdateMountInventoryCountOverhead(entt::entity source, entt::e
 // Unrelated entry points in the complete production translation units remain
 // linked, but must never supply behavior to these direct encoding tests.
 int VIEW_RANGE = 5000, VIEW_BONUS_RANGE = 500;
+entt::entity ecs::SpatialService::EntityFromLPENTITY(LPENTITY) { Unexpected(); }
+void ecs::ViewSystem::ViewCleanup(entt::entity) { Unexpected(); }
 SECTREE::SECTREE() = default;
 SECTREE::~SECTREE() = default;
 bool SECTREE::Contains(entt::entity e) const {
@@ -323,6 +399,7 @@ int main() {
         CHARACTER_MANAGER characters; SECTREE_MANAGER maps;
         MountWireRoundTrip(); ExpiredAndMissingSession();
         UpdateAfterVisibilityRemoval();
+        NativeMoveBroadcastRouting();
         std::cout << "Entity wire checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

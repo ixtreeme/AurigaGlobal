@@ -29,6 +29,13 @@ Build SpatialLifecycleTests and EntityNetworkDispatchTests, then run ctest with
 `-C RelWithDebInfo -R "spatial_lifecycle|entity_network_dispatch" --output-on-failure`
 in the normal and AddressSanitizer build trees.
 
+EntityNetworkDispatchTests also links entity.cpp's real PacketView. A MOVE
+payload must reach owner and observer unchanged, exclude its source when asked,
+skip missing sessions and stop an old recipient snapshot after a spatial revision
+change. Detached/retired sources send nothing. This covers the actual routing
+seam alongside SpatialLifecycleTests' production movement encoder; it does not
+claim to exercise the client renderer or its command clock.
+
 ## Native ore and idle despawn timers
 
 The existing char_manager.cpp now owns ore-expiry and idle-retirement scheduling
