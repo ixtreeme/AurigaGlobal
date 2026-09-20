@@ -70,6 +70,12 @@ struct RecoveryProbe {
     bool dead = false, stun = false, poison = false, missingMob = false;
     int64_t bonus = 0;
 };
+// Only the real Show integration fixtures may reach its gameplay leaf seams.
+struct ShowProbe {};
+void CheckShow(entt::entity e) {
+    if (!g_registry.valid(e) || !g_registry.all_of<ShowProbe>(e))
+        throw std::runtime_error("Show service received unexpected entity");
+}
 std::function<void(entt::entity, int)> onRecovery;
 int recoveryChanges = 0, recoveryNotices = 0;
 RecoveryProbe& Recovery(entt::entity e) {
@@ -91,6 +97,7 @@ std::function<void(Packet)> onPacket;
 std::function<void(entt::entity)> onRetire;
 int retired = 0;
 std::vector<TPacketGCMove> movementPackets;
+std::vector<std::pair<entt::entity, entt::entity>> movementRecipients;
 std::vector<packet_motion> animationPackets;
 std::function<void(entt::entity)> onAnimation;
 std::vector<std::pair<entt::entity, ecs::AIFSMState>> transitions;
@@ -161,7 +168,7 @@ void Reset() {
     onRecovery = {}; recoveryChanges = recoveryNotices = 0;
     event_destroy(); recoveryHeart.pulse = 0; recoveryHeart.passes_per_sec = 25;
     onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
-    movementPackets.clear(); animationPackets.clear(); onAnimation = {};
+    movementPackets.clear(); movementRecipients.clear(); animationPackets.clear(); onAnimation = {};
     transitions.clear(); motionSettings.clear(); weaponProtos.clear();
     motions.clear(); motionRequests.clear(); placements.clear(); g_registry.clear();
 }
@@ -227,25 +234,23 @@ void ecs::PlayerRuntime::MonsterLog(entt::entity e, const char*) {
 }
 void ecs::PlayerRuntime::CancelCharEvent(entt::entity e, CharEvent) { Check(g_registry.valid(e), "cancel event on stale entity"); }
 
-// CHARACTER::Show moved into MovementSystem.cpp too, and brought the battle
-// pass, the leaderboards and the invariant logger with it. Nothing here calls
-// Show - it needs a sectree table, a descriptor and a character manager - so
-// every one of these must stay unreached.
+// Show runs real placement and visibility; unrelated gameplay leaves are
+// admitted only for its explicitly marked fixtures, never arbitrary callers.
 UINT g_start_map[4] = {};
 void BroadcastNotice(const char*, bool) { Unexpected(); }
 std::string ecs::diag::Describe(entt::entity) { Unexpected(); }
-int32_t ecs::PlayerRuntime::GetZ(entt::entity) { Unexpected(); }
+int32_t ecs::PlayerRuntime::GetZ(entt::entity e) { CheckShow(e); return g_registry.get<ecs::Position>(e).z; }
 bool ecs::PlayerRuntime::IsNPC(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsDetailLog(entt::entity) { Unexpected(); }
-int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity) { Unexpected(); }
+int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity e) { CheckShow(e); return motionSettings[e].stamina; }
 bool AffectSystem::StartAffectEvent(entt::entity) { Unexpected(); }
 void AffectSystem::SetFlag(entt::entity, uint32_t, bool) { Unexpected(); }
-ecs::MobInstanceState* CombatSystem::MobState(entt::entity) { Unexpected(); }
-void CombatSystem::SetValidComboInterval(entt::entity, int) { Unexpected(); }
+ecs::MobInstanceState* CombatSystem::MobState(entt::entity e) { CheckShow(e); return g_registry.try_get<ecs::MobInstanceState>(e); }
+void CombatSystem::SetValidComboInterval(entt::entity e, int value) { CheckShow(e); Check(value == 0, "Show combo reset"); }
 void CombatSystem::SendLeaderboardData(entt::entity) { Unexpected(); }
 void CombatSystem::SendLeaderboardDataGuild(entt::entity) { Unexpected(); }
 void CombatSystem::SendLeaderboardDataSkillMob(entt::entity, entt::entity) { Unexpected(); }
-void MountSystem::UpdateMountInventoryCountOverhead(entt::entity, entt::entity) { Unexpected(); }
+void MountSystem::UpdateMountInventoryCountOverhead(entt::entity e, entt::entity viewer) { CheckShow(e); CheckShow(viewer); }
 void CombatSystem::UpdateKillerMode(entt::entity e) { RecoveryCallback(e, 1); }
 uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, uint8_t) { Unexpected(); }
@@ -283,7 +288,7 @@ LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity e) { return Recovery(e).dun
 // MovementSystem asks for the party on a sector change now that CHARACTER
 // has no getter of its own.
 LPPARTY ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
-SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity) { Unexpected(); }
+SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity e) { CheckShow(e); return ecs::SectorOf(g_registry, e); }
 float ecs::PlayerRuntime::GetRotation(entt::entity e) {
     const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
     return runtime ? runtime->rotation : 0.0f;
@@ -306,6 +311,10 @@ void ecs::ViewSystem::PacketView(entt::entity e, const void* data, int size, ent
     }
     Check(g_registry.valid(e) && e == except && size == sizeof(TPacketGCMove), "invalid movement broadcast");
     movementPackets.push_back(*static_cast<const TPacketGCMove*>(data));
+    if (g_registry.all_of<ShowProbe>(e))
+        for (const auto viewer : ecs::VisibilityService::GetViewersOf(g_registry, e))
+            if (viewer != except && ecs::PlayerRuntime::GetDesc(viewer))
+                movementRecipients.emplace_back(e, viewer);
 }
 // Fail-fast link seams for the still-unmigrated functions in MovementSystem.cpp.
 // None may be reached by the native tick or packet tests.
@@ -316,8 +325,9 @@ uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity e) { return motionSettings[e].race; }
 int ecs::PlayerRuntime::GetStamina(entt::entity e) { return motionSettings[e].stamina; }
 uint32_t MountSystem::GetMountVnum(entt::entity e) { return motionSettings[e].mount; }
-std::string_view ecs::PlayerRuntime::GetName(entt::entity) { Unexpected(); }
+std::string_view ecs::PlayerRuntime::GetName(entt::entity e) { CheckShow(e); return g_registry.get<ecs::PlayerName>(e).value; }
 int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) {
+    if (g_registry.all_of<ShowProbe>(e)) return g_registry.get<ecs::MapIndex>(e).value;
     auto it = placements.find(e); if (it == placements.end()) Unexpected();
     return it->second.mapIndex;
 }
@@ -329,8 +339,14 @@ int32_t ecs::PlayerRuntime::GetY(entt::entity e) {
     auto it = placements.find(e); if (it == placements.end()) Unexpected();
     return it->second.y;
 }
-LPEVENT ecs::PlayerRuntime::GetCharEvent(entt::entity, CharEvent) { Unexpected(); }
-void ecs::PlayerRuntime::SetCharEvent(entt::entity, CharEvent, LPEVENT) { Unexpected(); }
+LPEVENT ecs::PlayerRuntime::GetCharEvent(entt::entity e, CharEvent type) {
+    CheckShow(e); Check(type == CharEvent::BattlePassStayOnline, "Show read unexpected timer");
+    return g_registry.get<ecs::LegacyCharEvents>(e).battlePassStayOnline;
+}
+void ecs::PlayerRuntime::SetCharEvent(entt::entity e, CharEvent type, LPEVENT event) {
+    CheckShow(e); Check(type == CharEvent::BattlePassStayOnline, "Show wrote unexpected timer");
+    g_registry.get<ecs::LegacyCharEvents>(e).battlePassStayOnline = event;
+}
 int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
 void CombatSystem::CheckTarget(entt::entity e) { RecoveryCallback(e, 0); }
 bool CombatSystem::IsStun(entt::entity e) { return Recovery(e).stun; }
@@ -348,7 +364,7 @@ void CombatSystem::DistributeSP(entt::entity e, entt::entity target, int) {
 }
 int64_t ecs::PlayerRuntime::GetHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).current; }
 int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }
-void ecs::PointSystem::Compute(entt::entity) { Unexpected(); }
+void ecs::PointSystem::Compute(entt::entity e) { CheckShow(e); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity e) {
     auto& data = Recovery(e); return data.missingMob ? nullptr : &data.mob;
 }
@@ -1151,6 +1167,88 @@ void ShowHeightSentinel() {
     static_assert(ecs::MovementSystem::ResolveShowHeight(LONG_MAX, 7) == 7);
 }
 
+void ShownMountFollowAndRemoval() {
+    Reset(); MapFixture map(3); // Avoid the unrelated map-1 HWID admission rule.
+    const auto character = [&](bool pc, int x) {
+        const auto e = Entity(ecs::SpatialKind::Character);
+        g_registry.emplace<ShowProbe>(e);
+        g_registry.emplace<ecs::TagCharacter>(e);
+        g_registry.emplace<ecs::PlayerName>(e, pc ? "viewer" : "owner's Mount");
+        g_registry.emplace<ecs::RaceComponent>(e, uint16_t(pc ? 0 : 20110));
+        g_registry.emplace<ecs::RaceState>(e, pc ? 0u : 20110u, 0u);
+        g_registry.emplace<ecs::SpatialEntity>(e);
+        // Match the factory: position exists before Show, but membership does not.
+        g_registry.emplace<ecs::Position>(e, x, 100, 0);
+        g_registry.emplace<ecs::PositionZ>(e, 0);
+        g_registry.emplace<ecs::MapIndex>(e, 3);
+        g_registry.emplace<ecs::ViewMap>(e);
+        g_registry.emplace<ecs::ViewerMap>(e);
+        g_registry.emplace<ecs::ViewAgeMap>(e);
+        g_registry.emplace<ecs::MovementState>(e);
+        g_registry.emplace<ecs::MovementSpeed>(e, 100, 200);
+        g_registry.emplace<ecs::CharacterRuntimeFlagsComponent>(e);
+        g_registry.emplace<ecs::LegacyCharEvents>(e);
+        auto& status = g_registry.emplace<ecs::StatusFlags>(e);
+        status.isMount = !pc;
+        motionSettings[e].attached = pc;
+        motionSettings[e].race = pc ? 0 : 20110;
+        if (pc) {
+            g_registry.emplace<ecs::PlayerID>(e, uint32_t(entt::to_integral(e) + 1));
+            g_registry.emplace<ecs::AccountID>(e);
+            g_registry.emplace<ecs::EmpireComponent>(e);
+            g_registry.emplace<ecs::GMLevel>(e);
+        } else {
+            g_registry.remove<ecs::TagPC>(e);
+            g_registry.emplace<ecs::TagNPC>(e);
+            g_registry.get<ecs::CharacterType>(e).value = CHAR_TYPE_NPC;
+            g_registry.emplace<RecoveryProbe>(e);
+            g_registry.emplace<ecs::MobInstanceState>(e);
+        }
+        Check(!g_registry.all_of<ecs::SectorPlacement>(e), "factory fixture already placed");
+        Check(ecs::MovementSystem::Show(e, 3, x, 100, 0), "real Show rejected factory-shaped actor");
+        Check(SectreeMember(e, map.At(x, 100)), "Show did not commit native membership");
+        return e;
+    };
+    const auto owner = character(true, 7000), observer = character(true, 6800);
+    entt::entity previous = entt::null;
+    for (int cycle = 0; cycle < 2; ++cycle) {
+        const auto follower = character(false, 6200);
+        Check(previous == entt::null || follower != previous, "follow cycle reused entity generation");
+        Check(awake.contains(follower), "shown follower did not join native state list");
+        const auto viewers = ecs::VisibilityService::GetViewersOf(g_registry, follower);
+        Check(std::find(viewers.begin(), viewers.end(), owner) != viewers.end() &&
+            std::find(viewers.begin(), viewers.end(), observer) != viewers.end(),
+            "shown follower omitted owner or observer from live recipients");
+        Check(Visible(follower, owner) && Visible(follower, observer), "Show did not publish follower");
+        Check(ecs::MovementSystem::Goto(follower, 6800, 100), "shown follower could not follow owner");
+        movementRecipients.clear();
+        ecs::MovementSystem::SendMovePacket(follower, FUNC_WAIT, 0, 0, 0, 0);
+        Check(std::count(movementRecipients.begin(), movementRecipients.end(), std::pair{follower, owner}) == 1 &&
+            std::count(movementRecipients.begin(), movementRecipients.end(), std::pair{follower, observer}) == 1,
+            "follow move omitted owner or observer");
+        Check(movementPackets.back().lX == 6800 && movementPackets.back().dwDuration > 0,
+            "follow move lost destination or duration");
+        MovementSystem_Update(g_registry, 123500);
+        Check(g_registry.get<ecs::Position>(follower).x == 6400 &&
+            SectreeMember(follower, map.At(6400, 100)), "shown follower did not advance across sector");
+        MovementSystem_Update(g_registry, 123540);
+        MovementSystem_Update(g_registry, 123580);
+        Check(g_registry.get<ecs::Position>(follower).x == 6800 &&
+            !g_registry.all_of<ecs::MovementDestination>(follower), "shown follower did not arrive");
+        packets.clear();
+        ecs::ViewSystem::ViewCleanup(follower);
+        for (const auto viewer : {owner, observer}) {
+            Check(std::count_if(packets.begin(), packets.end(), [&](const Packet& packet) {
+                return !packet.add && packet.source == follower && packet.viewer == viewer;
+            }) == 1, "mount teardown omitted or duplicated follower remove");
+            Check(!Visible(follower, viewer), "mount teardown left ghost visibility edge");
+        }
+        g_registry.destroy(follower);
+        Check(!map.At(6800, 100)->Contains(follower), "retired mount retained sector membership");
+        previous = follower;
+    }
+}
+
 void NativeAIScheduleStorage() {
     Reset();
     const auto e = Entity(ecs::SpatialKind::Character);
@@ -1370,6 +1468,7 @@ int main() {
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
         NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations(); ShowHeightSentinel();
+        ShownMountFollowAndRemoval();
         NativeRecoveryTimers();
         Reset(); ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;

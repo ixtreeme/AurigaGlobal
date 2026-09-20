@@ -1,5 +1,24 @@
 # Server ECS regression tests
 
+## Mount visibility and packet-boundary coverage
+
+SpatialLifecycleTests exercises factory-shaped players and followers through the
+real MovementSystem::Show, native sector membership, Goto, cross-sector movement
+ticks and ViewCleanup. Two successive follower generations must publish movement
+and removal to both the owner and a nearby player. Gameplay leaves and packet
+dispatch remain controlled seams in this fixture.
+
+EntityNetworkDispatchTests separately links the real EntityNetworkDispatch and
+NetworkSyncSystem packet builders, capturing bytes at DESC::Packet. It checks
+ADD/AdditionalInfo/MOVE/WALK/DEL identities and lengths, ridden-player mount
+updates, expired movement and missing sessions. Socket delivery, encryption and
+the running client are outside these tests; passing them does not establish that
+a reported live ghost-mount problem is fixed.
+
+Build SpatialLifecycleTests and EntityNetworkDispatchTests, then run ctest with
+`-C RelWithDebInfo -R "spatial_lifecycle|entity_network_dispatch" --output-on-failure`
+in the normal and AddressSanitizer build trees.
+
 ## Native ore and idle despawn timers
 
 The existing char_manager.cpp now owns ore-expiry and idle-retirement scheduling
