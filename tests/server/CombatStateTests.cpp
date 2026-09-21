@@ -604,7 +604,7 @@ void AffectSystem::ApplyPoison(entt::entity e,entt::entity a) {
 void AffectSystem::ApplyBleeding(entt::entity e,entt::entity a) { AssertActor(e); AssertActor(a); ++bleedingCalls; }
 bool MountSystem::IsRiding(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).riding; }
 int ecs::SocialSystem::GetMarriageBonus(entt::entity e,uint32_t,bool) { AssertActor(e); return 0; }
-LPSHOP ecs::SocialSystem::GetMyShop(entt::entity e) { AssertActor(e); return nullptr; }
+entt::entity ecs::SocialSystem::GetMyShop(entt::entity e) { AssertActor(e); return entt::null; }
 SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity e) { AssertActor(e); return nullptr; }
 void ecs::PlayerRuntime::SetMaxSP(entt::entity, int64_t) {}
 void ecs::MovementSystem::SetRotation(entt::entity e,float

@@ -387,10 +387,10 @@ bool exchanging=false;
 bool AffectSystem::IsImmune(entt::entity e,uint32_t) {CheckLive(e);return g_registry.get<TargetData>(e).immune;}
 bool AffectSystem::IsAffectFlag(entt::entity e,uint32_t flag) {CheckLive(e);return g_registry.get<TargetData>(e).affects.contains(flag);}
 bool ecs::SocialSystem::HasExchange(entt::entity e) {CheckLive(e);return exchanging;}
-CShop* ecs::SocialSystem::GetShop(entt::entity) {Unexpected();}
-CShop* ecs::SocialSystem::GetMyShop(entt::entity e) {CheckLive(e);return nullptr;}
+entt::entity ecs::SocialSystem::GetShop(entt::entity) {Unexpected();}
+entt::entity ecs::SocialSystem::GetMyShop(entt::entity e) {CheckLive(e);return entt::null;}
 entt::entity ecs::SocialSystem::GetShopOwner(entt::entity) {Unexpected();}
-void ecs::SocialSystem::SetShop(entt::entity,CShop*) {Unexpected();}
+void ecs::SocialSystem::SetShop(entt::entity,entt::entity) {Unexpected();}
 void ecs::SocialSystem::SetShopOwner(entt::entity,entt::entity) {Unexpected();}
 int64_t ecs::PlayerRuntime::GetHP(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).hp;}
 int32_t ecs::PlayerRuntime::GetX(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).x;}
@@ -402,7 +402,9 @@ bool CombatSystem::IsDead(entt::entity e) {CheckLive(e);return g_registry.get<Ta
 bool AttrTransfer_is_open(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsSafeboxOpen(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsCubeOpen(entt::entity) {Unexpected();}
-void CShop::RemoveGuest(entt::entity) {Unexpected();}
+void ShopSystem::RemoveGuest(entt::entity, entt::entity) {Unexpected();}
+bool ShopSystem::AddGuest(entt::entity, entt::entity, uint32_t, bool) {Unexpected();}
+bool ShopSystem::IsValid(entt::entity) {Unexpected();}
 bool SectreeMember(entt::entity e,const SECTREE*) {
     if(onMember){auto fn=onMember;fn(e);}
     const auto* data=g_registry.valid(e)?g_registry.try_get<TargetData>(e):nullptr;

@@ -106,7 +106,7 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 
 
 #ifdef ENABLE_BUG_FIXES
-	if (ecs::SocialSystem::GetMyShop(victim))
+	if (ecs::SocialSystem::GetMyShop(victim) != entt::null)
 	{
 		return false;
 	}

@@ -39,11 +39,12 @@ ArenaMembership::arena (CArena*)
   not to the character. Verdict: service with raw pointer relation; validate
   or move the arena object to a registry entity in a separate pass.
 
-ShopState::currentShop / myShop (LPSHOP)
+ShopState::currentShop / myShop (previously LPSHOP)
   CShop is character-owned game state (grid, price list, guests, sign) plus a
-  manager index by PID. It is the largest remaining migratable object in this
-  set, but the manager, packet and save paths are extensive.
-  Verdict: migratable, but only as a dedicated phase with its own tests.
+  manager index by PID. Verdict: migrated, the state is ecs::ShopData on a
+  registry-owned entity with ShopSystem free functions and the manager keeps
+  entity-handle indexes. The extended-shop packet overflow found during the
+  migration is fixed (phase21_shop_audit.txt).
 
 ShopState::offlineShop / offlineShopGuest / shopSafebox / auction / auctionGuest
   New-offline-shop objects live in CShopManager caches keyed by owner id and
@@ -124,12 +125,9 @@ Implemented in this phase: party
 
 Remaining work and recommended order
 ------------------------------------
-1. Shop (my shop) -> ECS. CShopState component plus ShopSystem functions;
-   shop_manager index stays a service keyed by PID. This touches the packet
-   and persistence paths and needs its own regression suite.
-2. Guild: the relation stays a service; only generation/lifetime validation is
+1. Guild: the relation stays a service; only generation/lifetime validation is
    missing if a guild is ever torn down while members hold the pointer.
-3. Offline shop: explicitly out of scope. Cache objects, async DB responses
+2. Offline shop: explicitly out of scope. Cache objects, async DB responses
    and P2P member identities stay as they are; only the already-native world
    object remains ECS.
 
@@ -139,6 +137,10 @@ Done after this audit
   (ecs::DungeonState) with DungeonSystem free functions, entity handles in
   DungeonMembership/PartyState and validated manager lookups. See
   phase20_dungeon_audit.txt for the bug list and the implemented unit.
+- Shop (my shop) is an ECS component too: ecs::ShopData with ShopSystem free
+  functions, entity handles in ShopState and entity indexes in CShopManager.
+  The extended-shop packet buffer overflow found on the way is fixed. See
+  phase21_shop_audit.txt. The offline shop stays a cache service.
 
 Acceptance notes
 ----------------

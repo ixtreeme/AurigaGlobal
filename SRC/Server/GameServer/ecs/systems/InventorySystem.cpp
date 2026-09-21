@@ -287,7 +287,7 @@ bool CanHandleItems(entt::entity owner, bool skipRefine, bool skipObserver)
     if (!skipObserver && status && status->isObserverMode)
         return false;
     const auto* shop = g_registry.try_get<ecs::ShopState>(owner);
-    if (shop && (shop->myShop || (!skipRefine && shop->underRefine)))
+    if (shop && (shop->myShop != entt::null || (!skipRefine && shop->underRefine)))
         return false;
     const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(owner);
     if (cube && g_registry.valid(cube->npc))

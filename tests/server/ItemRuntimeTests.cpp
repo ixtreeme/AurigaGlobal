@@ -229,6 +229,9 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { r
 bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity, uint32_t, std::vector<uint32_t>&,
     std::vector<uint32_t>&, std::vector<entt::entity>&, int&) { Unexpected(); }
 void PartySystem::ChatPacketToAllMemberNew(entt::entity, uint8_t, uint32_t, const char*, ...) { Unexpected(); }
+namespace ShopSystem {
+bool IsSellingItem(entt::entity, uint32_t) { Unexpected(); }
+}
 uint32_t PartySystem::GetNearMemberCount(entt::entity) { Unexpected(); }
 void MountSystem::ForceClearRidingState(entt::entity) { Unexpected(); }
 void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity item) {

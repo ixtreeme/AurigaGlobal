@@ -117,7 +117,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
     LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(target).data(), ecs::PlayerRuntime::GetRaceNum(target), vid, GetName(causer).data());
 
     {
-        if (ecs::SocialSystem::GetMyShop(causer) && causer != target)
+        if (ecs::SocialSystem::GetMyShop(causer) != entt::null && causer != target)
         {
             LOG_ERROR("OnClick Fail ({}->{}) - pc has shop", GetName(causer).data(), GetName(target).data());
             return;
@@ -136,7 +136,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
     {
         if (!CTargetManager::instance().GetTargetInfo(GetPlayerID(causer), TARGET_TYPE_VID, GetPacketVID(target)))
         {
-            if (ecs::SocialSystem::GetMyShop(target))
+            if (ecs::SocialSystem::GetMyShop(target) != entt::null)
             {
                 if (CombatSystem::IsDead(causer) == true)
                     return;
@@ -163,7 +163,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
                 }
                 else
                 {
-                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(causer) || ecs::SocialSystem::GetShopOwner(causer) != entt::null) || ecs::SessionSystem::IsCubeOpen(causer))
+                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(causer) != entt::null || ecs::SocialSystem::GetShopOwner(causer) != entt::null) || ecs::SessionSystem::IsCubeOpen(causer))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -200,18 +200,20 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
 #endif
                 }
 
-                if (CShop* shop = ecs::SocialSystem::GetShop(causer))
+                const entt::entity currentShop = ecs::SocialSystem::GetShop(causer);
+                if (currentShop != entt::null)
                 {
-                    shop->RemoveGuest(causer);
+                    ShopSystem::RemoveGuest(currentShop, causer);
                     if (!IsValid(target) || !IsPC(causer)) return;
-                    ecs::SocialSystem::SetShop(causer, nullptr);
+                    ecs::SocialSystem::SetShop(causer, entt::null);
                 }
 
                 if (!IsValid(target) || !IsPC(causer)) return;
-                if (auto* shop = ecs::SocialSystem::GetMyShop(target)) {
-                    shop->AddGuest(causer, GetPacketVID(target), false);
-                    if (IsValid(target) && IsPC(causer) && ecs::SocialSystem::GetShop(causer) == shop &&
-                        ecs::SocialSystem::GetMyShop(target) == shop)
+                const entt::entity myShop = ecs::SocialSystem::GetMyShop(target);
+                if (myShop != entt::null) {
+                    ShopSystem::AddGuest(myShop, causer, GetPacketVID(target), false);
+                    if (IsValid(target) && IsPC(causer) && ecs::SocialSystem::GetShop(causer) == myShop &&
+                        ecs::SocialSystem::GetMyShop(target) == myShop)
                         ecs::SocialSystem::SetShopOwner(causer, target);
                 }
                 return;
@@ -380,7 +382,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 		return 0;
 
 	if (ecs::SocialSystem::HasExchange(causer)
-		|| ecs::SocialSystem::GetMyShop(causer)
+		|| ecs::SocialSystem::GetMyShop(causer) != entt::null
 		|| ecs::SocialSystem::GetShopOwner(causer) != entt::null
 		|| ecs::SessionSystem::IsSafeboxOpen(causer)
 		|| ecs::SessionSystem::IsCubeOpen(causer))

@@ -513,6 +513,9 @@ entt::entity CHARACTER_MANAGER::FindEntity(uint32_t vid) {
     return entt::null;
 }
 entt::entity PartySystem::GetLeader(entt::entity) { Unexpected(); }
+namespace ShopSystem {
+bool IsValid(entt::entity) { return false; }
+}
 uint8_t PartySystem::GetRole(entt::entity, uint32_t) { Unexpected(); }
 int PartySystem::GetPartyBonusExpPercent(entt::entity) { Unexpected(); }
 int ItemSystem::GetItemValue(entt::entity, uint32_t) { Unexpected(); }

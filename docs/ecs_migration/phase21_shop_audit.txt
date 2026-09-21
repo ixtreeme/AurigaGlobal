@@ -1,0 +1,67 @@
+Phase 21 - Shop (my shop) -> ECS
+Date: 2026-09-21
+Mode: migration unit. The phase19 audit classified the relations; this phase
+implements the shop half and leaves the offline-shop caches untouched.
+
+Scope
+-----
+The game shops: the NPC shops from the shop table, the extended (tabbed) NPC
+shops and the personal ("my shop") shops of the players. CShop and its CShopEx
+subclass, CShopManager's raw-pointer indexes and the character-side
+ShopState::currentShop/myShop relations. The offline shop (offlineshop::CShop,
+its manager, safebox, auction) is explicitly out of scope: those stay cache
+services keyed by owner id, per the phase19 audit.
+
+Implemented
+-----------
+- New component ecs::ShopData on a registry-owned shop entity: the durable
+  vnums (shop vnum, NPC vnum), the grid, the item rows (with the item entity
+  handles for personal shops), the guest set and the extended tab list. The
+  personal shop is distinguished by owner != entt::null; the tabbed shop by
+  extended.
+- ShopSystem free functions replace CShop/CShopEx: Create/SetShopItems,
+  SetOwner/IsPCShop, guests (AddGuest/RemoveGuest), the buy paths (normal and
+  extended), MultipleBuy, BroadcastUpdateItem, GetNumberByVnum, IsSellingItem,
+  AddShopTable/GetTabCount and Destroy, all validating the shop entity.
+- CShopManager keeps three indexes of entity handles: shop vnum -> entity,
+  NPC vnum -> entity and the owner's packet VID -> entity for the personal
+  shops. Get/GetByNPCVnum/FindPCShop reject stale or recycled handles.
+- The character relation is a generation-checked entity in ecs::ShopState;
+  SocialSystem::GetShop/SetShop/GetMyShop read and write it and refuse a
+  handle that is not a live shop. OpenMyShop/CloseMyShop use entities.
+- shopEx.h/shopEx.cpp are gone; the tabbed behaviour is a branch in the same
+  component and the same free functions.
+- Call sites updated: the NPC click path (trigger.cpp), login cleanup, the
+  player runtime teardown, the GM and quest shop commands, the item/attribute
+  guards that ask whether an item is being sold, and the exchange/session busy
+  checks.
+
+Bug found and fixed
+-------------------
+B-1 [crash] The extended shop window was assembled into a fixed
+    `char temp[8096]` buffer sized for the old 40-slot shop
+    ("max 1728 * 3"). With ENABLE_120_SHOP_SLOT_RAZOR93 (120 slots) one
+    TSubPacketShopTab is far larger, so opening any tabbed shop wrote past the
+    stack buffer. The buffer is now a std::vector<char> sized from the tab
+    count and sizeof(TSubPacketShopTab). The regression test opens an
+    extended shop with a tab and would trip the stack canary on the old code.
+
+Regression test
+---------------
+tests/server/ShopLifecycleTests.cpp compiles the production shop.cpp and
+shop_manager.cpp with descriptor/DB/session/item doubles and covers:
+- NPC table load, vnum and NPC-vnum lookups, item counts, second initialize
+  refusal, teardown and stale-handle no-ops;
+- personal shop creation, duplicate refusal, VID lookup, guest window
+  open/close and destroy clearing the guest relation;
+- the buy guards (no window, invalid position, not enough money, full
+  inventory, stale personal-shop item) and that no gold moves on a refusal;
+- the extended shop: tab add/duplicate, tab count, EX window packet, invalid
+  tab and multiple-buy guards;
+- destroy with several guests releasing every relation.
+
+Remaining
+---------
+- Offline shop: out of scope, as before.
+- War map and arena relations: the remaining lifetime-validation item from the
+  phase19 audit.

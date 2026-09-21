@@ -1473,7 +1473,7 @@ bool CanMove(entt::entity e)
         return false;
     if (AffectSystem::IsAffectFlag(e, AFF_STUN))
         return false;
-    if (ecs::SocialSystem::GetMyShop(e))
+    if (ecs::SocialSystem::GetMyShop(e) != entt::null)
         return false;
     return true;
 }

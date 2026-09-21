@@ -106,9 +106,13 @@ struct WeddingMapState {
 };
 
 struct ShopState {
-    LPSHOP currentShop { nullptr };
+    // The shop this character is browsing, if any. The shop state is a
+    // component on a registry-owned shop entity; the handle is validated on
+    // every read.
+    entt::entity currentShop { entt::null };
     entt::entity shopOwner { entt::null };
-    LPSHOP myShop { nullptr };
+    // The personal shop this character owns, if any.
+    entt::entity myShop { entt::null };
 #ifdef __ENABLE_NEW_OFFLINESHOP__
     // The offline shop this character owns, and the one being browsed.
     offlineshop::CShop* offlineShop { nullptr };

@@ -922,7 +922,7 @@ int CountItemRenewal(entt::entity e, uint32_t vnum)
         if (!IsValidItem(item) || GetItemVnum(item) != vnum ||
             GetItemLockedAttributeIndex(item) != -1)
             return 0;
-        if (shop && shop->myShop && shop->myShop->IsSellingItem(GetItemID(item)))
+        if (shop && shop->myShop != entt::null && ShopSystem::IsSellingItem(shop->myShop, GetItemID(item)))
             return 0;
         return static_cast<int>(GetItemCount(item));
     };
@@ -953,7 +953,7 @@ int CountItem(entt::entity e, uint32_t vnum)
     const auto countItem = [vnum, shop](entt::entity item) -> int {
         if (!IsValidItem(item) || GetItemVnum(item) != vnum)
             return 0;
-        if (shop && shop->myShop && shop->myShop->IsSellingItem(GetItemID(item)))
+        if (shop && shop->myShop != entt::null && ShopSystem::IsSellingItem(shop->myShop, GetItemID(item)))
             return 0;
         return static_cast<int>(GetItemCount(item));
     };
@@ -1014,7 +1014,7 @@ bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count,
             return;
         if (cubeRenewal && GetItemLockedAttributeIndex(item) != -1)
             return;
-        if (shop && shop->myShop && shop->myShop->IsSellingItem(GetItemID(item)))
+        if (shop && shop->myShop != entt::null && ShopSystem::IsSellingItem(shop->myShop, GetItemID(item)))
             return;
 
         if (vnum >= 80003 && vnum <= 80007)

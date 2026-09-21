@@ -1148,7 +1148,7 @@ bool CanWarp(entt::entity e)
 		return false;
 
 	const auto* shop = g_registry.try_get<ecs::ShopState>(e);
-	if (shop && (shop->currentShop || shop->myShop || shop->shopOwner != entt::null || shop->underRefine))
+	if (shop && (shop->currentShop != entt::null || shop->myShop != entt::null || shop->shopOwner != entt::null || shop->underRefine))
 		return false;
 
 	if (const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e); safebox && safebox->isOpening)
@@ -1403,7 +1403,7 @@ bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner, int limitTime
 	const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e);
 
 	const bool activeWindow = ecs::SocialSystem::HasExchange(e) ||
-		(shop && (shop->myShop || (checkShopOwner && shop->shopOwner != entt::null))) ||
+		(shop && (shop->myShop != entt::null || (checkShopOwner && shop->shopOwner != entt::null))) ||
 		(safebox && safebox->isOpening) || ecs::SessionSystem::IsCubeOpen(e)
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 		|| (shop && shop->wheelDestiny)
@@ -2614,7 +2614,7 @@ int CombatSystem::GetSoulItemDamage(entt::entity attacker, entt::entity victim, 
 #endif
 
 
-// ShopState is the only copy. CShop::RemoveGuest clears it through
+// ShopState is the only copy. ShopSystem::RemoveGuest clears it through
 // normal close path and stayed pointing at the NPC. Eleven "is this
 // player busy" guards read this getter, so one closed shop left the
 // player unable to open anything at all.
@@ -3049,10 +3049,11 @@ void DestroyCharacterStatePre(entt::entity character)
 
     CombatSystem::SetVictim(character, entt::null);
 
-    if (CShop* shop = ecs::SocialSystem::GetShop(character))
+    const entt::entity currentShop = ecs::SocialSystem::GetShop(character);
+    if (currentShop != entt::null)
     {
-        shop->RemoveGuest(character);
-        ecs::SocialSystem::SetShop(character, nullptr);
+        ShopSystem::RemoveGuest(currentShop, character);
+        ecs::SocialSystem::SetShop(character, entt::null);
     }
 
     CombatSystem::ClearStone(character);

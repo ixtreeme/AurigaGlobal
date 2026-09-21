@@ -1201,7 +1201,7 @@ ACMD(do_state)
 	else
 		strlcat(buf, "Standing", sizeof(buf));
 
-	if (ecs::SocialSystem::GetShop(tch))
+	if (ecs::SocialSystem::GetShop(tch) != entt::null)
 		strlcat(buf, ", Shop", sizeof(buf));
 
 	if (ecs::SocialSystem::HasExchange(tch))

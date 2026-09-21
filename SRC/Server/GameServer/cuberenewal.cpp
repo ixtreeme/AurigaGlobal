@@ -379,7 +379,7 @@ void Cube_open (entt::entity chEntity)
 	}
 
 
-	if (ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) || ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SessionSystem::IsSafeboxOpen(chEntity) || ecs::SessionSystem::IsCubeOpen(chEntity)
+	if (ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) != entt::null || ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SessionSystem::IsSafeboxOpen(chEntity) || ecs::SessionSystem::IsCubeOpen(chEntity)
 #ifdef ENABLE_ACCE_SYSTEM
 		 || ecs::AcceSystem::IsOpen(chEntity)
 #endif

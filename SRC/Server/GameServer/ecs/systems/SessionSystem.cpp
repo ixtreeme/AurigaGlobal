@@ -701,10 +701,11 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     CVikingDungeon::instance().OnPlayerDisconnect(e);
     CEasterDungeon::instance().OnPlayerDisconnect(e);
 #endif
-    if (ecs::SocialSystem::GetShop(e))
+    const entt::entity currentShop = ecs::SocialSystem::GetShop(e);
+    if (currentShop != entt::null)
     {
-        ecs::SocialSystem::GetShop(e)->RemoveGuest(e);
-        ecs::SocialSystem::SetShop(e, nullptr);
+        ShopSystem::RemoveGuest(currentShop, e);
+        ecs::SocialSystem::SetShop(e, entt::null);
     }
 
     if (ecs::PlayerRuntime::GetArena(e) != nullptr)

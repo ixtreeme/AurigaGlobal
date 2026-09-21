@@ -184,7 +184,7 @@ bool CanTrade(entt::entity participant)
         ecs::SessionSystem::IsCubeOpen(participant))
         return false;
     if (const auto* shop = g_registry.try_get<ecs::ShopState>(participant);
-        shop && (shop->myShop || shop->currentShop || shop->shopOwner != entt::null
+        shop && (shop->myShop != entt::null || shop->currentShop != entt::null || shop->shopOwner != entt::null
 #ifdef __ENABLE_NEW_OFFLINESHOP__
             || shop->offlineShopGuest || shop->auctionGuest
 #endif

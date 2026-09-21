@@ -51,8 +51,7 @@ const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 namespace offlineshop
 {
-	class CShop;
-	class CShopSafebox;
+		class CShopSafebox;
 	class CAuction;
 }
 #endif
@@ -513,8 +512,6 @@ class CGuild;
 class CArena;
 
 
-class CShop;
-typedef class CShop* LPSHOP;
 
 class CMob;
 class CMobInstance;

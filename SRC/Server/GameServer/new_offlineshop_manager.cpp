@@ -352,7 +352,7 @@ bool CheckCharacterActions(entt::entity character)
 	}
 
 
-	if(ecs::SocialSystem::GetShop(character))
+	if (ecs::SocialSystem::GetShop(character) != entt::null)
 	{
 		return false;
 	}

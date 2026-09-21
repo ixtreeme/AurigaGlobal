@@ -437,15 +437,18 @@ void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char
 LPDESC ecs::PlayerRuntime::GetDesc(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e); }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return IsValid(e) && g_registry.all_of<TestPlayer>(e); }
-CShop* ecs::SocialSystem::GetMyShop(entt::entity e)
-{
-    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
-    return shop ? shop->myShop : nullptr;
+namespace ShopSystem {
+bool IsSellingItem(entt::entity, uint32_t) { return false; }
 }
-CShop* ecs::SocialSystem::GetShop(entt::entity e)
+entt::entity ecs::SocialSystem::GetMyShop(entt::entity e)
 {
     const auto* shop = g_registry.try_get<ecs::ShopState>(e);
-    return shop ? shop->currentShop : nullptr;
+    return shop ? shop->myShop : entt::null;
+}
+entt::entity ecs::SocialSystem::GetShop(entt::entity e)
+{
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    return shop ? shop->currentShop : entt::null;
 }
 entt::entity ecs::SocialSystem::GetShopOwner(entt::entity e)
 {
@@ -1846,7 +1849,7 @@ void TransferContextGuards()
             case 7: g_registry.emplace<ecs::SafeboxRef>(f.owner).isOpening = true; break;
             case 8: g_registry.emplace<ecs::ShopState>(f.owner).underRefine = true; break;
             case 9: g_registry.emplace<ecs::ShopState>(f.owner).shopOwner = f.npc; break;
-            case 10: g_registry.emplace<ecs::ShopState>(f.owner).currentShop = reinterpret_cast<CShop*>(1); break;
+            case 10: g_registry.emplace<ecs::ShopState>(f.owner).currentShop = static_cast<entt::entity>(1); break;
             case 11: {
                 const auto session = g_registry.create();
                 g_registry.emplace<ecs::ExchangeSession>(session).offers[0].owner = f.owner;
@@ -1855,7 +1858,7 @@ void TransferContextGuards()
             }
             case 12: g_registry.emplace<ecs::AcceWindowComponent>(f.owner).absorptionOpen = true; break;
             case 13: location.x = INT_MIN; g_registry.get<TransferActor>(f.npc).x = INT_MAX; break;
-            case 14: g_registry.emplace<ecs::ShopState>(f.owner).myShop = reinterpret_cast<CShop*>(1); break;
+            case 14: g_registry.emplace<ecs::ShopState>(f.owner).myShop = static_cast<entt::entity>(1); break;
             case 15: g_registry.emplace<ecs::CubeWindowComponent>(f.owner).npc = f.npc; break;
         }
         Check(!AttrTransfer_make(f.owner) && payments == 0, "blocked transfer context accepted");

@@ -559,7 +559,7 @@ uint8_t CanRefine(entt::entity e)
     if (ecs::OfflineShopSystem::GetOfflineShopGuest(e) || ecs::OfflineShopSystem::GetAuctionGuest(e))
         return 0;
 
-    if (ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e) || (ecs::SocialSystem::GetShopOwner(e) != entt::null) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e)
+    if (ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e) != entt::null || (ecs::SocialSystem::GetShopOwner(e) != entt::null) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e)
 #ifdef __ATTR_TRANSFER_SYSTEM__
         || AttrTransfer_is_open(e)
 #endif

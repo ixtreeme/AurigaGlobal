@@ -2756,7 +2756,7 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
         return false;
 
 #ifdef ENABLE_BUG_FIXES
-    if (ecs::SocialSystem::GetMyShop(victim))
+    if (ecs::SocialSystem::GetMyShop(victim) != entt::null)
         return false;
 #endif
 
@@ -3078,7 +3078,7 @@ void ItemDropPenalty(entt::entity e, entt::entity killer)
 	}
 #endif
 
-	if (ecs::SocialSystem::GetMyShop(e))
+	if (ecs::SocialSystem::GetMyShop(e) != entt::null)
 		return;
 
 	if (ecs::PointSystem::GetLevel(e) < 50)

@@ -260,12 +260,14 @@ void SetLastBuySellTime(entt::entity e, uint32_t when)
     g_registry.get_or_emplace<ecs::ShopTimers>(e).lastBuySellTime = when;
 }
 
-CShop* GetShop(entt::entity e)
+entt::entity GetShop(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
-		return nullptr;
+		return entt::null;
 	const auto* state = g_registry.try_get<ecs::ShopState>(e);
-	return state ? state->currentShop : nullptr;
+	if (!state || state->currentShop == entt::null)
+		return entt::null;
+	return ShopSystem::IsValid(state->currentShop) ? state->currentShop : entt::null;
 }
 
 bool GetNoOpenedShop(entt::entity e)
@@ -337,7 +339,7 @@ void OpenMyShop(entt::entity e, const char* c_pszSign, TShopItemTable* pTable, u
     }
 #endif
 
-    if (shop.myShop)
+    if (shop.myShop != entt::null)
     {
         CloseMyShop(e);
         return;
@@ -523,11 +525,11 @@ void CloseMyShop(entt::entity e)
 		return;
 
 	auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-    if (shop.myShop)
+    if (shop.myShop != entt::null)
     {
         g_registry.get_or_emplace<ecs::ShopState>(e).shopSign.clear();
         CShopManager::instance().DestroyPCShop(e);
-        shop.myShop = nullptr;
+        shop.myShop = entt::null;
         g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 #ifdef KASMIR_PAKET_SYSTEM
         shop.kasmirTitle = 0;
@@ -548,12 +550,14 @@ void CloseMyShop(entt::entity e)
     }
 }
 
-CShop* GetMyShop(entt::entity e)
+entt::entity GetMyShop(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
-		return nullptr;
+		return entt::null;
 	const auto* state = g_registry.try_get<ecs::ShopState>(e);
-	return state ? state->myShop : nullptr;
+	if (!state || state->myShop == entt::null)
+		return entt::null;
+	return ShopSystem::IsValid(state->myShop) ? state->myShop : entt::null;
 }
 
 entt::entity GetShopOwner(entt::entity e)
@@ -574,14 +578,16 @@ void SetShopOwner(entt::entity e, entt::entity owner)
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-void SetShop(entt::entity e, CShop* shop)
+void SetShop(entt::entity e, entt::entity shop)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return;
+	if (shop != entt::null && !ShopSystem::IsValid(shop))
+		shop = entt::null;
 	auto& state = g_registry.get_or_emplace<ecs::ShopState>(e);
 	state.currentShop = shop;
 	auto& flags = g_registry.get_or_emplace<ecs::CharacterRuntimeFlagsComponent>(e);
-	if (shop)
+	if (shop != entt::null)
 		SET_BIT(flags.instantFlag, INSTANT_FLAG_SHOP);
 	else
 	{

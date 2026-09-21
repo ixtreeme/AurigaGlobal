@@ -372,14 +372,14 @@ static int ProcessTextTag(entt::entity character, const char * c_pszText, uint64
 		return 1;
 
 
-	if (!ecs::SocialSystem::GetMyShop(character))
+	if (ecs::SocialSystem::GetMyShop(character) == entt::null)
 	{
 		if (hyperlinks > 0 && !ItemSystem::RemoveSpecifyItemEcs(character, ITEM_PRISM, hyperlinks))
 			return 1;
 		return 0;
 	} else
 	{
-		int sellingNumber = ecs::SocialSystem::GetMyShop(character)->GetNumberByVnum(ITEM_PRISM);
+		int sellingNumber = ShopSystem::GetNumberByVnum(ecs::SocialSystem::GetMyShop(character), ITEM_PRISM);
 		if(nPrismCount - sellingNumber < hyperlinks)
 		{
 			return 2;
@@ -3160,7 +3160,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character) || ecs::SocialSystem::GetShop(character) || ecs::SocialSystem::GetMyShop(character)
+	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character) || ecs::SocialSystem::GetShop(character) != entt::null || ecs::SocialSystem::GetMyShop(character) != entt::null
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ecs::AcceSystem::IsOpen(character)
 #endif
@@ -4285,7 +4285,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	}
 #endif
 
-	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsCubeOpen(character))
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SocialSystem::GetMyShop(character) != entt::null || ecs::SessionSystem::IsCubeOpen(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 502, "");
@@ -5312,9 +5312,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 						     (g_registry.get<ecs::ShopState>(character).offlineShopGuest || g_registry.get<ecs::ShopState>(character).auctionGuest))
 #endif
 					)) {
-						LPSHOP shop = CShopManager::instance().Get(p->shopid);
-						if (shop) {
-							shop->AddGuest(character, 0, false);
+						const entt::entity shop = CShopManager::instance().Get(p->shopid);
+						if (shop != entt::null) {
+							ShopSystem::AddGuest(shop, character, 0, false);
 							ecs::SocialSystem::SetShopOwner(character, entt::null);
 						}
 					}

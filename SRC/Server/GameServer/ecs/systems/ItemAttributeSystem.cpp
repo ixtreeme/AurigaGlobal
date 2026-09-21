@@ -781,7 +781,8 @@ bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amo
         return false;
     if (GetItem(owner, TItemPos(window, GetItemCell(material))) != material)
         return false;
-    if (auto* shop = ecs::SocialSystem::GetMyShop(owner); shop && shop->IsSellingItem(GetItemID(material)))
+    const entt::entity shop = ecs::SocialSystem::GetMyShop(owner);
+    if (shop != entt::null && ShopSystem::IsSellingItem(shop, GetItemID(material)))
         return false;
     return true;
 }

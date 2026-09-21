@@ -1282,7 +1282,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 
 
 	//PREVENT_TRADE_WINDOW
-	if (ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) || ecs::SessionSystem::IsCubeOpen(chEntity) )
+	if (ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) != entt::null || ecs::SessionSystem::IsCubeOpen(chEntity) )
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");

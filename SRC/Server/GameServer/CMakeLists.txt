@@ -89,6 +89,20 @@ add_executable(DungeonLifecycleTests EXCLUDE_FROM_ALL
 target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME dungeon_lifecycle COMMAND DungeonLifecycleTests)
 
+add_executable(ShopLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ShopLifecycleTests.cpp
+    shop.cpp
+    shop_manager.cpp
+    group_text_parse_tree.cpp
+    ../Base/grid.cpp
+    file_loader.cpp
+    buffer_manager.cpp
+    event.cpp
+    event_queue.cpp
+)
+target_link_libraries(ShopLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+add_test(NAME shop_lifecycle COMMAND ShopLifecycleTests)
+
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
     PetSystem.cpp

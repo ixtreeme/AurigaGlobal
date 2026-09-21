@@ -316,7 +316,7 @@ ACMD(do_user_horse_back)
 ACMD(do_user_horse_feed)
 {
 	// λ  ¿  ̸   .
-	if (ecs::SocialSystem::GetMyShop(character))
+	if (ecs::SocialSystem::GetMyShop(character) != entt::null)
 		return;
 
 	if (MountSystem::GetSummonedHorse(character) == entt::null)
@@ -2141,7 +2141,7 @@ ACMD(do_ungroup)
 
 ACMD(do_close_shop)
 {
-	if (ecs::SocialSystem::GetMyShop(character))
+	if (ecs::SocialSystem::GetMyShop(character) != entt::null)
 	{
 		ecs::SocialSystem::CloseMyShop(character);
 		return;
@@ -2839,7 +2839,7 @@ ACMD(do_PetEvo) {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
 
-	if (ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character)) {
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) != entt::null || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character)) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 730, "");
 #endif
@@ -3014,7 +3014,7 @@ namespace
 			return false;
 
 		if (ecs::SocialSystem::HasExchange(chEntity)
-			|| ecs::SocialSystem::GetMyShop(chEntity)
+			|| ecs::SocialSystem::GetMyShop(chEntity) != entt::null
 			|| ecs::SocialSystem::GetShopOwner(chEntity) != entt::null
 			|| ecs::SessionSystem::IsSafeboxOpen(chEntity)
 			|| ecs::SessionSystem::IsCubeOpen(chEntity))
@@ -3522,7 +3522,7 @@ ACMD(do_extend_range_npc)
 	if (CombatSystem::IsDead(character))
 		return;
 
-	if (CombatSystem::IsDead(character) || ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character))
+	if (CombatSystem::IsDead(character) || ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) != entt::null || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 735, "");
@@ -3530,13 +3530,13 @@ ACMD(do_extend_range_npc)
 		return;
 	}
 
-	LPSHOP shop = CShopManager::instance().Get(vnum);
+	const entt::entity shop = CShopManager::instance().Get(vnum);
 
-	if(!shop)
+	if(shop == entt::null)
 		return;
 
 	ecs::SocialSystem::SetShopOwner(character, character);
-	shop->AddGuest(character, 0, false);
+	ShopSystem::AddGuest(shop, character, 0, false);
 
 }
 #endif
@@ -3685,7 +3685,7 @@ ACMD(do_rune_shop)
 {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-	if (ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsCubeOpen(character))
+	if (ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) != entt::null || ecs::SessionSystem::IsCubeOpen(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 294, "");
@@ -3693,9 +3693,9 @@ ACMD(do_rune_shop)
 		return;
 	}
 
-	LPSHOP pkShop = CShopManager::instance().Get(RUNE_SHOP);
-	if (pkShop) {
-		pkShop->AddGuest(character, 0, false);
+	const entt::entity pkShop = CShopManager::instance().Get(RUNE_SHOP);
+	if (pkShop != entt::null) {
+		ShopSystem::AddGuest(pkShop, character, 0, false);
 		ecs::SocialSystem::SetShopOwner(character, entt::null);
 	}
 }

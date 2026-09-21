@@ -28,15 +28,15 @@
 #include "shop_manager.h"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/social_components.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "group_text_parse_tree.h"
-#include "shopEx.h"
 #include <boost/algorithm/string/predicate.hpp>
-#include "shop_manager.h"
 #include <cctype>
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
 #endif
+
 CShopManager::CShopManager()
 {
 }
@@ -55,11 +55,13 @@ bool CShopManager::Initialize(TShopTable * table, int size)
 
 	for (i = 0; i < size; ++i, ++table)
 	{
-		LPSHOP shop = M2_NEW CShop;
+		const entt::entity shop = g_registry.create();
+		g_registry.emplace<ecs::ShopData>(shop);
+		ShopSystem::Initialize(shop);
 
-		if (!shop->Create(table->dwVnum, table->dwNPCVnum, table->items))
+		if (!ShopSystem::Create(shop, table->dwVnum, table->dwNPCVnum, table->items))
 		{
-			M2_DELETE(shop);
+			g_registry.destroy(shop);
 			continue;
 		}
 
@@ -76,42 +78,42 @@ bool CShopManager::Initialize(TShopTable * table, int size)
 
 void CShopManager::Destroy()
 {
-	TShopMap::iterator it = m_map_pkShop.begin();
-
-	while (it != m_map_pkShop.end())
+	for (auto& row : m_map_pkShop)
 	{
-		M2_DELETE(it->second);
-		++it;
+		if (ShopSystem::IsValid(row.second))
+			ShopSystem::Destroy(row.second);
 	}
 
 	m_map_pkShop.clear();
+	m_map_pkShopByNPCVnum.clear();
+	m_map_pkShopByPC.clear();
 }
 
-LPSHOP CShopManager::Get(uint32_t dwVnum)
+entt::entity CShopManager::Get(uint32_t dwVnum)
 {
 	TShopMap::const_iterator it = m_map_pkShop.find(dwVnum);
 
 	if (it == m_map_pkShop.end())
-		return nullptr;
+		return entt::null;
 
-	return (it->second);
+	return ShopSystem::IsValid(it->second) ? it->second : entt::null;
 }
 
-LPSHOP CShopManager::GetByNPCVnum(uint32_t dwVnum)
+entt::entity CShopManager::GetByNPCVnum(uint32_t dwVnum)
 {
 	TShopMap::const_iterator it = m_map_pkShopByNPCVnum.find(dwVnum);
 
 	if (it == m_map_pkShopByNPCVnum.end())
-		return nullptr;
+		return entt::null;
 
-	return (it->second);
+	return ShopSystem::IsValid(it->second) ? it->second : entt::null;
 }
 
 /*
- * 인터페이스 함수들
+// The interface functions.
  */
 
-// 상점 거래를 시작
+// Start shopping.
 bool CShopManager::StartShopping(entt::entity pkChr, entt::entity pkChrShopKeeper, int iShopVnum)
 {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -128,7 +130,7 @@ bool CShopManager::StartShopping(entt::entity pkChr, entt::entity pkChrShopKeepe
 
 	//PREVENT_TRADE_WINDOW
 	if (ecs::SessionSystem::IsSafeboxOpen(pkChr) || ecs::SocialSystem::HasExchange(pkChr)
-		|| ecs::SocialSystem::GetMyShop(pkChr) || ecs::SessionSystem::IsCubeOpen(pkChr))
+		|| ecs::SocialSystem::GetMyShop(pkChr) != entt::null || ecs::SessionSystem::IsCubeOpen(pkChr))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(pkChr, CHAT_TYPE_INFO, 294, "");
@@ -145,14 +147,14 @@ bool CShopManager::StartShopping(entt::entity pkChr, entt::entity pkChrShopKeepe
 		return false;
 	}
 
-	LPSHOP pkShop;
+	entt::entity pkShop = entt::null;
 
 	if (iShopVnum)
 		pkShop = Get(iShopVnum);
 	else
 		pkShop = GetByNPCVnum(ecs::PlayerRuntime::GetRaceNum(pkChrShopKeeper));
 
-	if (!pkShop)
+	if (pkShop == entt::null)
 	{
 		LOG_INFO("SHOP: NO SHOP");
 		return false;
@@ -163,30 +165,32 @@ bool CShopManager::StartShopping(entt::entity pkChr, entt::entity pkChrShopKeepe
 	if (ecs::PlayerRuntime::GetEmpire(pkChr) != ecs::PlayerRuntime::GetEmpire(pkChrShopKeeper))
 		bOtherEmpire = true;
 
-	pkShop->AddGuest(pkChr, ecs::PlayerRuntime::GetPacketVID(pkChrShopKeeper), bOtherEmpire);
+	ShopSystem::AddGuest(pkShop, pkChr, ecs::PlayerRuntime::GetPacketVID(pkChrShopKeeper), bOtherEmpire);
 	ecs::SocialSystem::SetShopOwner(pkChr, pkChrShopKeeper);
 	LOG_INFO("SHOP: START: {}", ecs::PlayerRuntime::GetName(pkChr).data());
 	return true;
 }
 
-LPSHOP CShopManager::FindPCShop(uint32_t dwVID)
+entt::entity CShopManager::FindPCShop(uint32_t dwVID)
 {
 	TShopMap::iterator it = m_map_pkShopByPC.find(dwVID);
 
 	if (it == m_map_pkShopByPC.end())
-		return nullptr;
+		return entt::null;
 
-	return it->second;
+	return ShopSystem::IsValid(it->second) ? it->second : entt::null;
 }
 
-LPSHOP CShopManager::CreatePCShop(entt::entity ch, TShopItemTable * pTable, uint8_t bItemCount)
+entt::entity CShopManager::CreatePCShop(entt::entity ch, TShopItemTable * pTable, uint8_t bItemCount)
 {
-	if (FindPCShop(ecs::PlayerRuntime::GetPacketVID(ch)))
-		return nullptr;
+	if (FindPCShop(ecs::PlayerRuntime::GetPacketVID(ch)) != entt::null)
+		return entt::null;
 
-	LPSHOP pkShop = M2_NEW CShop;
-	pkShop->SetPCShop(ch);
-	pkShop->SetShopItems(pTable, bItemCount);
+	const entt::entity pkShop = g_registry.create();
+	g_registry.emplace<ecs::ShopData>(pkShop);
+	ShopSystem::Initialize(pkShop);
+	ShopSystem::SetOwner(pkShop, ch);
+	ShopSystem::SetShopItems(pkShop, pTable, bItemCount);
 
 	m_map_pkShopByPC.insert(TShopMap::value_type(ecs::PlayerRuntime::GetPacketVID(ch), pkShop));
 	return pkShop;
@@ -194,9 +198,9 @@ LPSHOP CShopManager::CreatePCShop(entt::entity ch, TShopItemTable * pTable, uint
 
 void CShopManager::DestroyPCShop(entt::entity ch)
 {
-	LPSHOP pkShop = FindPCShop(ecs::PlayerRuntime::GetPacketVID(ch));
+	entt::entity pkShop = FindPCShop(ecs::PlayerRuntime::GetPacketVID(ch));
 
-	if (!pkShop)
+	if (pkShop == entt::null)
 		return;
 
 	//PREVENT_ITEM_COPY;
@@ -204,26 +208,26 @@ void CShopManager::DestroyPCShop(entt::entity ch)
 	//END_PREVENT_ITEM_COPY
 
 	m_map_pkShopByPC.erase(ecs::PlayerRuntime::GetPacketVID(ch));
-	M2_DELETE(pkShop);
+	ShopSystem::Destroy(pkShop);
 }
 
-// 상점 거래를 종료
+// Stop shopping.
 void CShopManager::StopShopping(entt::entity ch)
 {
-	LPSHOP shop;
+	const entt::entity shop = ecs::SocialSystem::GetShop(ch);
 
-	if (!(shop = ecs::SocialSystem::GetShop(ch)))
+	if (shop == entt::null)
 		return;
 
 	//PREVENT_ITEM_COPY;
 	ecs::SocialSystem::SetMyShopTime(ch);
 	//END_PREVENT_ITEM_COPY
 
-	shop->RemoveGuest(ch);
+	ShopSystem::RemoveGuest(shop, ch);
 	LOG_INFO("SHOP: END: {}", ecs::PlayerRuntime::GetName(ch).data());
 }
 
-// 아이템 구입
+// Buy.
 void CShopManager::Buy(entt::entity ch, uint8_t pos)
 {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -245,7 +249,8 @@ void CShopManager::Buy(entt::entity ch, uint8_t pos)
 
 	ecs::SocialSystem::SetLastBuySellTime(ch, get_dword_time());
 #endif
-	if (!ecs::SocialSystem::GetShop(ch))
+	const entt::entity pkShop = ecs::SocialSystem::GetShop(ch);
+	if (pkShop == entt::null)
 		return;
 
 	if (const entt::entity owner = ecs::SocialSystem::GetShopOwner(ch); owner != entt::null)
@@ -259,14 +264,13 @@ void CShopManager::Buy(entt::entity ch, uint8_t pos)
 		}
 	}
 
-	CShop* pkShop = ecs::SocialSystem::GetShop(ch);
 	//PREVENT_ITEM_COPY
 	ecs::SocialSystem::SetMyShopTime(ch);
 	//END_PREVENT_ITEM_COPY
 
-	int ret = pkShop->Buy(ch, pos);
+	int ret = ShopSystem::Buy(pkShop, ch, pos);
 
-	if (SHOP_SUBHEADER_GC_OK != ret) // 문제가 있었으면 보낸다.
+	if (SHOP_SUBHEADER_GC_OK != ret) // Tell the buyer why it failed.
 	{
 		TPacketGCShop pack;
 
@@ -286,7 +290,8 @@ void CShopManager::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
 	}
 #endif
 
-	if (!ecs::SocialSystem::GetShop(ch)) {
+	const entt::entity pkShop = ecs::SocialSystem::GetShop(ch);
+	if (pkShop == entt::null) {
 		return;
 	}
 
@@ -299,12 +304,11 @@ void CShopManager::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
 		}
 	}
 
-	CShop* pkShop = ecs::SocialSystem::GetShop(ch);
 	//PREVENT_ITEM_COPY
 	ecs::SocialSystem::SetMyShopTime(ch);
 	//END_PREVENT_ITEM_COPY
 
-	int ret = pkShop->MultipleBuy(ch, p, c);
+	int ret = ShopSystem::MultipleBuy(pkShop, ch, p, c);
 	if (SHOP_SUBHEADER_GC_OK != ret) {
 		TPacketGCShop pack;
 		pack.header = HEADER_GC_SHOP;
@@ -354,7 +358,8 @@ uint8_t bCount
 
 	ecs::SocialSystem::SetLastBuySellTime(ch, get_dword_time());
 #endif
-	if (!ecs::SocialSystem::GetShop(ch))
+	const entt::entity pkShop = ecs::SocialSystem::GetShop(ch);
+	if (pkShop == entt::null)
 		return;
 
 	const entt::entity shopKeeper = ecs::SocialSystem::GetShopOwner(ch);
@@ -364,7 +369,7 @@ uint8_t bCount
 	if (!InventorySystem::CanHandleItems(ch))
 		return;
 
-	if (ecs::SocialSystem::GetShop(ch)->IsPCShop())
+	if (ShopSystem::IsPCShop(pkShop))
 		return;
 
 	/*
@@ -420,7 +425,7 @@ uint8_t bCount
 
 /* 	dwPrice /= 5;
 
-	//세금 계산
+	// Sale is disabled.
 	uint32_t dwTax = 0;
 	int iVal = 3;
 
@@ -599,8 +604,8 @@ bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
 
 bool CShopManager::ReadShopTableEx(const char* stFileName)
 {
-	// file 유무 체크.
-	// 없는 경우는 에러로 처리하지 않는다.
+	// The extended table is optional; a missing file is not an error.
+	// Nothing to read without the file.
 	FILE* fp = fopen(stFileName, "rb");
 	if (nullptr == fp)
 		return true;
@@ -664,38 +669,42 @@ bool CShopManager::ReadShopTableEx(const char* stFileName)
 		}
 		TShopMap::iterator shop_it = m_map_pkShopByNPCVnum.find(npcVnum);
 
-		LPSHOPEX pkShopEx = nullptr;
+		entt::entity pkShopEx = entt::null;
 		if (m_map_pkShopByNPCVnum.end() == shop_it)
 		{
-			pkShopEx = M2_NEW CShopEx;
-			pkShopEx->Create(0, npcVnum);
+			pkShopEx = g_registry.create();
+			auto& state = g_registry.emplace<ecs::ShopData>(pkShopEx);
+			ShopSystem::Initialize(pkShopEx);
+			state.vnum = 0;
+			state.npcVnum = npcVnum;
+			state.extended = true;
 			m_map_pkShopByNPCVnum.insert(TShopMap::value_type(npcVnum, pkShopEx));
 		}
 		else
 		{
-			pkShopEx = dynamic_cast <CShopEx*> (shop_it->second);
-			if (nullptr == pkShopEx)
+			pkShopEx = shop_it->second;
+			const auto* state = g_registry.try_get<ecs::ShopData>(pkShopEx);
+			if (!state || !state->extended)
 			{
 				LOG_ERROR("WTF!!! It can't be happend. NPC({}) Shop is not extended version.", shop_it->first);
 				return false;
 			}
 		}
 
-		if (pkShopEx->GetTabCount() >= SHOP_TAB_COUNT_MAX)
+		if (ShopSystem::GetTabCount(pkShopEx) >= SHOP_TAB_COUNT_MAX)
 		{
 			LOG_ERROR("ShopEx cannot have tab more than {}", SHOP_TAB_COUNT_MAX);
 			return false;
 		}
 
-		if (pkShopEx->GetVnum() != 0 && m_map_pkShop.find(pkShopEx->GetVnum()) != m_map_pkShop.end())
+		if (ShopSystem::GetVnum(pkShopEx) != 0 && m_map_pkShop.find(ShopSystem::GetVnum(pkShopEx)) != m_map_pkShop.end())
 		{
-			LOG_ERROR("Shop vnum({}) already exist.", pkShopEx->GetVnum());
+			LOG_ERROR("Shop vnum({}) already exist.", ShopSystem::GetVnum(pkShopEx));
 			return false;
 		}
-		m_map_pkShop.insert(TShopMap::value_type (pkShopEx->GetVnum(), pkShopEx));
-		pkShopEx->AddShopTable(table);
+		m_map_pkShop.insert(TShopMap::value_type (ShopSystem::GetVnum(pkShopEx), pkShopEx));
+		ShopSystem::AddShopTable(pkShopEx, table);
 	}
 
 	return true;
 }
-

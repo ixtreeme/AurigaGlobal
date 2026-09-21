@@ -316,7 +316,7 @@ void ecs::ViewSystem::PacketView(entt::entity e, const void* data, int size, ent
 // Fail-fast link seams for the still-unmigrated functions in MovementSystem.cpp.
 // None may be reached by the native tick or packet tests.
 void ecs::ChatSystem::Send(entt::entity, uint8_t, const char*, ...) { Unexpected(); }
-LPSHOP ecs::SocialSystem::GetMyShop(entt::entity) { Unexpected(); }
+entt::entity ecs::SocialSystem::GetMyShop(entt::entity) { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity e) { return motionSettings[e].polymorphed; }
 uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity e) { return motionSettings[e].race; }

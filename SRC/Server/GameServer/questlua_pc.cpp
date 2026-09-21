@@ -3691,7 +3691,7 @@ teleport_area:
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		if (const auto* shop = ECS_TryGet<ecs::ShopState>(e))
 		{
-			if (shop->currentShop || shop->myShop)
+			if (shop->currentShop != entt::null || shop->myShop != entt::null)
 			{
 				lua_pushboolean(L, 1);
 				return 1;
@@ -3712,7 +3712,7 @@ teleport_area:
 			const auto* safebox = ECS_TryGet<ecs::SafeboxRef>(e);
 			const auto* cube = ECS_TryGet<ecs::CubeWindowComponent>(e);
 			if (ecs::SocialSystem::HasExchange(e) ||
-				(shop && (shop->currentShop || shop->myShop || shop->shopOwner != entt::null || shop->underRefine)) ||
+				(shop && (shop->currentShop != entt::null || shop->myShop != entt::null || shop->shopOwner != entt::null || shop->underRefine)) ||
 				(safebox && safebox->isOpening) || (cube && g_registry.valid(cube->npc)))
 			{
 				lua_pushboolean(L, 1);
@@ -3836,10 +3836,10 @@ teleport_area:
 		}
 		//END_PREVENT_TRADE_WINDOW
 
-		LPSHOP sh = CShopManager::instance().Get(lua_tonumber(L, 1));
-		if (sh)
+		const entt::entity sh = CShopManager::instance().Get(lua_tonumber(L, 1));
+		if (sh != entt::null)
 		{
-			sh->AddGuest(chEntity, 0, false);
+			ShopSystem::AddGuest(sh, chEntity, 0, false);
 			ecs::SocialSystem::SetShopOwner(chEntity, entt::null);
 		}
 		return 0;

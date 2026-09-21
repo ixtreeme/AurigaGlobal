@@ -953,7 +953,8 @@ void ItemSystem::RemoveSpecifyTypeItem(entt::entity e, uint8_t type, int count)
 			continue;
 
 
-		if (ecs::SocialSystem::GetMyShop(e) && ecs::SocialSystem::GetMyShop(e)->IsSellingItem(ItemSystem::GetItemID(item)))
+		const entt::entity myShop = ecs::SocialSystem::GetMyShop(e);
+		if (myShop != entt::null && ShopSystem::IsSellingItem(myShop, ItemSystem::GetItemID(item)))
 			continue;
 
 		const int itemCount = ItemSystem::GetItemCount(item);
@@ -3829,7 +3830,7 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 		//°�
 // ·¡°ü·Ã Ã¢ Ã¼�
 // ©
-		if (ExchangeSystem::IsActive(e) || ecs::SocialSystem::GetMyShop(e) || ecs::SocialSystem::GetShopOwner(e) != entt::null || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))
+		if (ExchangeSystem::IsActive(e) || ecs::SocialSystem::GetMyShop(e) != entt::null || ecs::SocialSystem::GetShopOwner(e) != entt::null || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 235, "");
@@ -3943,7 +3944,7 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 #endif
 		)
 	{
-		if (ExchangeSystem::IsActive(e) || ecs::SocialSystem::GetMyShop(e) || ecs::SocialSystem::GetShopOwner(e) != entt::null || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))
+		if (ExchangeSystem::IsActive(e) || ecs::SocialSystem::GetMyShop(e) != entt::null || ecs::SocialSystem::GetShopOwner(e) != entt::null || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 237, "");

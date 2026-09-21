@@ -1,15 +1,17 @@
 #ifndef __INC_METIN_II_GAME_SHOP_MANAGER_H__
 #define __INC_METIN_II_GAME_SHOP_MANAGER_H__
 
-#include <entt/entity/entity.hpp>
+// The manager is the service index over the shop entities: the durable shop
+// vnum and NPC vnum for the table shops, and the owner's packet VID for the
+// personal shops. There are no CShop pointers any more.
 
-class CShop;
-typedef class CShop * LPSHOP;
+#include <entt/entity/entity.hpp>
+#include <map>
 
 class CShopManager : public singleton<CShopManager>
 {
 public:
-	typedef std::map<uint32_t, CShop *> TShopMap;
+	typedef std::map<uint32_t, entt::entity> TShopMap;
 
 public:
 	CShopManager();
@@ -18,15 +20,15 @@ public:
 	bool	Initialize(TShopTable * table, int size);
 	void	Destroy();
 
-	LPSHOP	Get(uint32_t dwVnum);
-	LPSHOP	GetByNPCVnum(uint32_t dwVnum);
+	entt::entity	Get(uint32_t dwVnum);
+	entt::entity	GetByNPCVnum(uint32_t dwVnum);
 
 	bool	StartShopping(entt::entity pkChr, entt::entity pkShopKeeper, int iShopVnum = 0);
 	void	StopShopping(entt::entity ch);
 
 	void	Buy(entt::entity ch, uint8_t pos);
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
-	void MultipleBuy(entt::entity ch, uint8_t p, uint8_t c);
+	void	MultipleBuy(entt::entity ch, uint8_t p, uint8_t c);
 #endif
 #ifdef ENABLE_EXTRA_INVENTORY
 	void	Sell(entt::entity ch, TItemPos Cell,
@@ -47,8 +49,8 @@ public:
 #endif
 
 
-	LPSHOP	CreatePCShop(entt::entity ch, TShopItemTable * pTable, uint8_t bItemCount);
-	LPSHOP	FindPCShop(uint32_t dwVID);
+	entt::entity	CreatePCShop(entt::entity ch, TShopItemTable * pTable, uint8_t bItemCount);
+	entt::entity	FindPCShop(uint32_t dwVID);
 	void	DestroyPCShop(entt::entity ch);
 
 private:

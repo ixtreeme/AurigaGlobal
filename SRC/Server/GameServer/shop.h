@@ -1,98 +1,129 @@
 #ifndef __INC_METIN_II_GAME_SHOP_H__
 #define __INC_METIN_II_GAME_SHOP_H__
 
-#include <entt/entity/entity.hpp>
+// Shops are ECS state now: ecs::ShopData on a registry-owned shop entity. The
+// NPC shop table and the personal shop of a player differ only by their owner
+// and their item source; the extended (tabbed) shops carry their tabs in the
+// same component. There is no heap CShop object and no raw shop pointer on the
+// character; ShopState holds generation-checked entity handles.
+
+#include <entt/entt.hpp>
+
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include <Base/grid.h>
+#include <common/tables.h>
+
+#include "ecs/Registry.hpp"
 
 enum
 {
 	SHOP_MAX_DISTANCE = 1000
 };
 
-class CGrid;
-
-/* ---------------------------------------------------------------------------------- */
-class CShop
+struct SShopTable;
+typedef struct SShopTableEx : SShopTable
 {
-	public:
-		typedef struct shop_item
-		{
-			uint32_t			vnum;
+	std::string name;
+	EShopCoinType coinType;
+} TShopTableEx;
 
-			int64_t		price;
-
+namespace ecs
+{
+	// One row of the shop window. For an NPC shop the item is a prototype
+	// description (vnum/count); for a personal shop it points at the player's
+	// own item entity.
+	struct ShopItem
+	{
+		uint32_t		vnum { 0 };
+		int64_t			price { 0 };
 #ifdef ENABLE_NEW_STACK_LIMIT
-			int				count;
+		int				count { 0 };
 #else
-			uint8_t			count;
+		uint8_t			count { 0 };
 #endif
-			entt::entity		pkItem;
-			int				itemid;
+		entt::entity	item { entt::null };
+		int				itemid { 0 };
 #ifdef ENABLE_BUY_WITH_ITEM
-			TShopItemPrice	itemprice[MAX_SHOP_PRICES];
+		TShopItemPrice	itemprice[MAX_SHOP_PRICES] {};
 #endif
-			shop_item()
-			{
-				vnum = 0;
-				price = 0;
-				count = 0;
-				itemid = 0;
-#ifdef ENABLE_BUY_WITH_ITEM
-				memset(itemprice, 0, sizeof(itemprice));
-#endif
-				pkItem = entt::null;
-			}
-		} SHOP_ITEM;
+	};
 
-		CShop();
-		virtual ~CShop(); // @fixme139 (+virtual)
+	// Authoritative state of one shop: an NPC shop from the table, an extended
+	// (tabbed) NPC shop, or a player's personal shop. The durable identity of
+	// the static shops is the shop vnum (and the NPC vnum); the personal shop
+	// is indexed by the owner's packet VID in CShopManager.
+	struct ShopData
+	{
+		ShopData();
+		~ShopData();
 
-		bool	Create(uint32_t dwVnum, uint32_t dwNPCVnum, TShopItemTable * pItemTable);
-		void	SetShopItems(TShopItemTable * pItemTable, uint8_t bItemCount);
+		uint32_t		vnum { 0 };
+		uint32_t		npcVnum { 0 };
 
-		virtual void	SetPCShop(entt::entity ch);
-		virtual bool	IsPCShop()	{ return m_pkPC != entt::null; }
-
-		// 게스트 추가/삭제
-		virtual bool	AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire);
-		void	RemoveGuest(entt::entity guest);
-
-
-		virtual int64_t	Buy(entt::entity ch, uint8_t pos
-#ifdef ENABLE_BUY_STACK_FROM_SHOP
-, bool multiple = false
-#endif
-);
-
-#ifdef ENABLE_BUY_STACK_FROM_SHOP
-		virtual uint8_t MultipleBuy(entt::entity ch, uint8_t p, uint8_t c);
-#endif
-		// 게스트에게 패킷을 보냄
-		void	BroadcastUpdateItem(uint8_t pos);
-
-		// 판매중인 아이템의 갯수를 알려준다.
-		int		GetNumberByVnum(uint32_t dwVnum);
-
-		// 아이템이 상점에 등록되어 있는지 알려준다.
-		virtual bool	IsSellingItem(uint32_t itemID);
-
-		uint32_t	GetVnum() { return m_dwVnum; }
-		uint32_t	GetNPCVnum() { return m_dwNPCVnum; }
-
-	protected:
-		void	Broadcast(const void * data, int bytes);
-
-	protected:
-		uint32_t				m_dwVnum;
-		uint32_t				m_dwNPCVnum;
-
-		CGrid *				m_pGrid;
-
-		typedef std::unordered_map<entt::entity, bool> GuestMapType;
-		GuestMapType m_map_guest;
-		std::vector<SHOP_ITEM>		m_itemVector;	// 이 상점에서 취급하는 물건들
+		std::unique_ptr<CGrid>	grid;
+		std::unordered_map<entt::entity, bool> guests;
+		std::vector<ShopItem>	items;
 
 		// The player whose personal shop this is, null for an NPC shop.
-		entt::entity			m_pkPC { entt::null };
-};
+		entt::entity	owner { entt::null };
+
+		// Extended (tabbed) NPC shop state.
+		bool			extended { false };
+		std::vector<TShopTableEx> tabs;
+	};
+}
+
+// Native API over ecs::ShopData. Every entry point validates the shop entity
+// before use, so a retired or recycled handle is a no-op. The shop is always
+// the first parameter.
+namespace ShopSystem
+{
+	// Defined here so the free functions below resolve the state inline.
+	inline ecs::ShopData* Find(entt::entity shop)
+	{
+		if (shop == entt::null || !g_registry.valid(shop))
+			return nullptr;
+
+		return g_registry.try_get<ecs::ShopData>(shop);
+	}
+
+	bool IsValid(entt::entity shop);
+
+	// Lifecycle. Destroy tells every guest the window closed and releases the
+	// guest relation before the entity goes.
+	void Initialize(entt::entity shop);
+	void Destroy(entt::entity shop);
+
+	bool Create(entt::entity shop, uint32_t dwVnum, uint32_t dwNPCVnum, TShopItemTable* pItemTable);
+	void SetShopItems(entt::entity shop, TShopItemTable* pItemTable, uint8_t bItemCount);
+	void SetOwner(entt::entity shop, entt::entity owner);
+	bool IsPCShop(entt::entity shop);
+	uint32_t GetVnum(entt::entity shop);
+	uint32_t GetNPCVnum(entt::entity shop);
+
+	bool AddShopTable(entt::entity shop, TShopTableEx& shopTable);
+	size_t GetTabCount(entt::entity shop);
+
+	// Guests (the players currently browsing this shop).
+	bool AddGuest(entt::entity shop, entt::entity guest, uint32_t owner_vid, bool bOtherEmpire);
+	void RemoveGuest(entt::entity shop, entt::entity guest);
+
+	int64_t Buy(entt::entity shop, entt::entity ch, uint8_t pos
+#ifdef ENABLE_BUY_STACK_FROM_SHOP
+		, bool multiple = false
+#endif
+	);
+#ifdef ENABLE_BUY_STACK_FROM_SHOP
+	uint8_t MultipleBuy(entt::entity shop, entt::entity ch, uint8_t p, uint8_t c);
+#endif
+
+	void BroadcastUpdateItem(entt::entity shop, uint8_t pos);
+	int GetNumberByVnum(entt::entity shop, uint32_t dwVnum);
+	bool IsSellingItem(entt::entity shop, uint32_t itemID);
+}
 
 #endif

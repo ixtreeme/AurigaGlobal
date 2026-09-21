@@ -255,7 +255,7 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
         }
     }
 
-    if (const auto* shop = reg.try_get<ecs::ShopState>(source); shop && shop->myShop && !shop->shopSign.empty()) {
+    if (const auto* shop = reg.try_get<ecs::ShopState>(source); shop && ShopSystem::IsValid(shop->myShop) && !shop->shopSign.empty()) {
         TPacketGCShopSign sign {};
         sign.bHeader = HEADER_GC_SHOP_SIGN;
         sign.dwVID = packet.dwVID;

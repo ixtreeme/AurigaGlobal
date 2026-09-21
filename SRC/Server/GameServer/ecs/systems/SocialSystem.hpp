@@ -8,7 +8,6 @@
 
 class CGuild;
 class CWarMap;
-class CShop;
 
 namespace ecs::SocialSystem {
 
@@ -73,7 +72,7 @@ void SetWeddingMap(entt::entity e, entt::entity map);
 entt::entity GetWeddingMap(entt::entity e);
 CWarMap* GetWarMap(entt::entity e);
 bool HasExchange(entt::entity e);
-CShop* GetShop(entt::entity e);
+entt::entity GetShop(entt::entity e);
 int GetMyShopTime(entt::entity e);
 void SetMyShopTime(entt::entity e);
 int GetSafeboxLoadTime(entt::entity e);
@@ -92,7 +91,7 @@ void OpenMyShop(entt::entity e, const char* sign, TShopItemTable* table, uint8_t
 #endif
     );
 void CloseMyShop(entt::entity e);
-CShop* GetMyShop(entt::entity e);
+entt::entity GetMyShop(entt::entity e);
 bool GetNoOpenedShop(entt::entity e);
 void SetNoOpenedShop(entt::entity e, bool value);
 bool GetKasmirPaket(entt::entity e);
@@ -103,7 +102,7 @@ void UseSilkBotaryReal(entt::entity e, const TPacketMyshopPricelistHeader* p);
 void SendMyShopPriceListCmd(entt::entity e, uint32_t dwItemVnum, int64_t dwItemPrice);
 void UseSilkBotary(entt::entity e);
 entt::entity GetShopOwner(entt::entity e);
-void SetShop(entt::entity e, CShop* shop);
+void SetShop(entt::entity e, entt::entity shop);
 void SetShopOwner(entt::entity e, entt::entity owner);
 bool CanDeposit(entt::entity e);
 void UpdateDepositPulse(entt::entity e);
