@@ -452,6 +452,7 @@ void PetMultipleAndReentrantDeletion()
     auto* a = PetSystem::Summon(owner, 34001, first, "", false);
     auto* b = PetSystem::Summon(owner, 34002, second, "", false);
     Check(a && b && State(owner).petBonus == 44, "multiple-pet bonuses incorrect");
+    Check(a->vnum == 34001 && b->vnum == 34002, "summoning another pet invalidated an actor pointer");
     State(a->character).hasMob = State(b->character).hasMob = false;
     mobQueries = 0;
     Check(!PetSystem::Update(owner, 0) && mobQueries == 2, "failed pet AI skipped another pet");
@@ -856,8 +857,11 @@ void GrowthStaleAndMultiple()
     Reset();
     const auto owner = Character(), first = GrowthSeal(owner), second = GrowthSeal(owner);
     NewPetSystem::SetUpdatePeriod(owner, 0);
-    Check(NewPetSystem::Summon(owner, 34041, first, "", false)
-        && NewPetSystem::Summon(owner, 34045, second, "", false), "multiple growth pets failed");
+    auto* growthFirst = NewPetSystem::Summon(owner, 34041, first, "", false);
+    auto* growthSecond = NewPetSystem::Summon(owner, 34045, second, "", false);
+    Check(growthFirst && growthSecond, "multiple growth pets failed");
+    Check(growthFirst->vnum == 34041 && growthSecond->vnum == 34045,
+        "summoning another growth pet invalidated an actor pointer");
     Check(!NewPetSystem::Summon(owner, 34049, first, "", false), "growth seal bound to two actors");
     NewPetSystem::UnsummonAll(owner);
     Check(NewPetSystem::CountSummoned(owner) == 0 && !g_registry.get<ItemState>(first).locked

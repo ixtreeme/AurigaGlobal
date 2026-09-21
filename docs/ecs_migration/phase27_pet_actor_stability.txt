@@ -1,0 +1,50 @@
+Phase 27 - ASAN gate and the pet actor pointer-use-after-free
+Date: 2026-09-21
+Mode: the ASAN configuration of the phase26 deployment gate, built and run
+against the whole suite. It found one real defect; this document records the
+run and the fix.
+
+ASAN configuration
+------------------
+- cmake -S . -B build-asan -DENABLE_ASAN=ON (x64-windows dynamic triplet, the
+  packages were already installed) and a full RelWithDebInfo build of
+  GameServer, all 26 server test targets and the client TimerTests.
+- ctest --test-dir build-asan -C RelWithDebInfo --output-on-failure.
+
+Finding
+-------
+mount_lifecycle failed with:
+  heap-use-after-free, READ of 4 at MountLifecycleTests.cpp:455
+  freed by std::vector<ecs::PetActorState>::_Emplace_reallocate
+  allocated by PetSystem::Summon (PetSystem.cpp:330)
+
+PetSystem::Summon returns a pointer into ecs::PetRuntime::actors, a
+std::vector<PetActorState>. Summoning another pet push_backs into that vector,
+which reallocates and invalidates every previously returned actor pointer; the
+test then dereferenced the first pointer. The same shape existed for
+NewPetSystem (growth pets) with NewPetRuntime::actors.
+
+Fix
+---
+- ecs::PetRuntime::actors and ecs::NewPetRuntime::actors are std::deque now.
+  A deque never moves its elements on push_back, so the pointer contract the
+  Summon/FindActor APIs already publish holds across further summons. No
+  iteration, clear, back or count site needed a change.
+- MountLifecycleTests makes the contract explicit: after a second summon the
+  first actor pointer is dereferenced (regular and growth pet), which is the
+  exact access ASAN used to reject.
+
+Verification
+------------
+- build-asan: GameServer, MountLifecycleTests and all test targets build; the
+  whole suite (27 targets) passes under AddressSanitizer.
+- Release: GameServer and all test targets build; the whole suite (27 targets)
+  passes.
+- The client TimerTests target builds and passes in both configurations.
+
+Remaining gate
+--------------
+In-game checks (login/logout, guild war, quest scripts, offline-shop
+expire/force-close, mob table reload, pet summon/mount on a live client) are
+still required before deployment; they need a running server and client that
+this environment does not provide.

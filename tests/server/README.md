@@ -1936,3 +1936,18 @@ CombatStateTests covers the manager-backed prototype read and stale-pointer
 rejection; SpatialLifecycleTests covers clone sharing, origin-first destruction
 and release with the last holder. Skill prototypes are not stored on entities
 anywhere, so their reload path had no stored pointer to invalidate.
+
+## Stable pet actor storage and the ASAN gate (2026-09-21)
+
+ecs::PetRuntime::actors and ecs::NewPetRuntime::actors are std::deque
+instead of std::vector. PetSystem::Summon/NewPetSystem::Summon return a
+pointer into those containers; summoning another pet reallocated the vector and
+invalidated every previously returned pointer, which AddressSanitizer caught as
+a heap-use-after-free in MountLifecycleTests. A deque never moves its elements,
+so the published pointer contract now holds. MountLifecycleTests dereferences
+the first actor pointer after a second summon for both the regular and the
+growth pet to keep the contract explicit.
+
+The uild-asan configuration now builds GameServer, all 26 server test
+targets and client TimerTests under MSVC AddressSanitizer and passes 27/27;
+the Release configuration passes the same suite.

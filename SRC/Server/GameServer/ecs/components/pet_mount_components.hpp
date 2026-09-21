@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <deque>
 #include <string>
 #include <vector>
 
@@ -81,7 +82,9 @@ struct PetRuntime {
     uint32_t lastUpdateTime { 0 };
     LPEVENT updateEvent;
     bool destroying { false };
-    std::vector<PetActorState> actors;
+    // Summon returns a pointer into this container, so records must keep their
+    // address when another pet is summoned; a deque never moves its elements.
+    std::deque<PetActorState> actors;
 };
 
 // Authoritative runtime state for costume mounts. A record is keyed by the
@@ -173,7 +176,9 @@ struct NewPetRuntime {
     LPEVENT updateEvent;
     LPEVENT expireEvent;
     bool destroying { false };
-    std::vector<NewPetActorState> actors;
+    // Same guarantee as PetRuntime::actors: Summon hands out pointers that
+    // must survive another growth pet being summoned.
+    std::deque<NewPetActorState> actors;
 };
 
 } // namespace ecs
