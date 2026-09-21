@@ -1,0 +1,58 @@
+Phase 25 - Prototype relation validation and shared sector attributes
+Date: 2026-09-21
+Mode: the remaining latent items of the phase23_legacy_audit (F9, F10) and the
+item 5 decision. No behavior change for a live prototype table or for a live
+map pair.
+
+F9 - the mob prototype relation is a validated key, not a trusted pointer
+------------------------------------------------------------------------
+- ecs::MobDataRef now stores the durable prototype vnum beside the CMob
+  pointer; both setters (EntityFactory spawn, PlayerRuntime::SetProto) write
+  them together.
+- ecs::PlayerRuntime::GetProto resolves the vnum through CMobManager and only
+  returns the pointer while the manager still answers that pointer for the
+  vnum. A replaced or freed table reads as no prototype instead of a dangling
+  one.
+- The readers use it: CombatSystem mob damage/range/battle-type/death-blow,
+  PlayerRuntime::GetMobRank/GetMobTable and SkillSystem::MobProtoOf.
+- CMobManager::Initialize now repoints every existing mob relation at the
+  freshly loaded table (the previous rebind loop iterated only PCs and
+  returned for them). Mobs keep their spawn-time runtime state; only the
+  prototype pointer follows the table.
+- Skill prototypes are not stored on entities anywhere: the only CSkillProto
+  pointers live in one splash call stack, and CSkillManager::Reload runs from
+  the command/DB handler between game ticks, so it cannot free a prototype
+  under an active iteration. No code change was needed there.
+
+F10 - private-map attributes are shared, not aliased
+----------------------------------------------------
+- SECTREE::m_pkAttribute is a std::shared_ptr<CAttribute>. BindAttribute takes
+  the initial reference with an M2_DELETE deleter (keeping the debug-allocator
+  pairing); CloneAttribute copies the shared pointer, so a private-map sector
+  can never outlive the origin sector's attribute.
+- Destroy releases this sector's reference for clones and origins alike; the
+  last holder frees the attribute. The old isClone-gated M2_DELETE is gone.
+- Attribute writes on private maps still reach the origin map's cells, exactly
+  as before; this unit changes ownership only.
+
+Item 5 - the guild member rows stay in the guild service
+--------------------------------------------------------
+Decision: TGuildMember rows (grade/general/job/level/offer_exp) stay inside
+the DB-backed CGuild object, indexed by pid. The reason is ownership, not
+convenience: a row is one player.guild row loaded and saved as a unit with the
+guild (LoadGuildMemberData/SaveMember), and guild iteration needs the rows of
+offline members too, which have no character entity to own a component. The
+character side stays what the phase22/23 work made it: SocialRefs with a
+validated guild id, and online membership as entity handles. A per-character
+copy would create a second authoritative source with a DB sync obligation and
+no lifetime benefit; the audit already found no crash risk here once F1/F4 are
+fixed.
+
+Verification
+------------
+- CombatStateTests: the mob prototype is read through the manager; replacing
+  the manager's instance for the same vnum makes the stored pointer read as
+  none (stale pointer rejected).
+- SpatialLifecycleTests: a clone shares the origin attribute, survives the
+  origin sector's destruction and frees it with the last holder.
+- GameServer Release builds; the whole suite (27 targets) passes in Release.

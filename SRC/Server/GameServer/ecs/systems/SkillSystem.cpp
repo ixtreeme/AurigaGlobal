@@ -863,10 +863,7 @@ void SetMobSkillCooltime(entt::entity e, unsigned int idx, uint32_t when)
 // The prototype a mob was spawned from, or null for anything that has none.
 const CMob* MobProtoOf(entt::entity e)
 {
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-    const auto* ref = g_registry.try_get<ecs::MobDataRef>(e);
-    return ref ? ref->data : nullptr;
+    return ecs::PlayerRuntime::GetProto(e);
 }
 
 // The skill slot lives on the CMob, gated by the table entry being filled -

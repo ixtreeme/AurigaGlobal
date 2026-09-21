@@ -656,50 +656,49 @@ void SetSkillHit(entt::entity e, bool value)
 }
 
 namespace {
-const ecs::MobDataRef* MobData(entt::entity e)
+const CMob* MobData(entt::entity e)
 {
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, e))
         return nullptr;
-    const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
-    return mob && mob->data ? mob : nullptr;
+    return ecs::PlayerRuntime::GetProto(e);
 }
 }
 
 uint32_t GetMobDamageMin(entt::entity e)
 {
-    const auto* mob = MobData(e);
-    return mob ? mob->data->m_table.dwDamageRange[0] : 0;
+    const CMob* mob = MobData(e);
+    return mob ? mob->m_table.dwDamageRange[0] : 0;
 }
 
 uint32_t GetMobDamageMax(entt::entity e)
 {
-    const auto* mob = MobData(e);
-    return mob ? mob->data->m_table.dwDamageRange[1] : 0;
+    const CMob* mob = MobData(e);
+    return mob ? mob->m_table.dwDamageRange[1] : 0;
 }
 
 float GetMobDamageMultiplier(entt::entity e)
 {
-    const auto* mob = MobData(e);
+    const CMob* mob = MobData(e);
     if (!mob)
         return 1.0f;
     // AIFlags may lag AI changes; MobInstanceState is what SetBerserk writes.
-    const float multiplier = mob->data->m_table.fDamMultiply *
+    const float multiplier = mob->m_table.fDamMultiply *
         (IsBerserk(e) ? 2.0f : 1.0f);
     return std::isfinite(multiplier) && multiplier >= 0 ? multiplier : 1.0f;
 }
 
 uint8_t GetMobBattleType(entt::entity e)
 {
-    const auto* mob = MobData(e);
-    return mob ? mob->data->m_table.bBattleType : BATTLE_TYPE_MELEE;
+    const CMob* mob = MobData(e);
+    return mob ? mob->m_table.bBattleType : BATTLE_TYPE_MELEE;
 }
 
 uint16_t GetMobAttackRange(entt::entity e)
 {
-    const auto* mob = MobData(e);
+    const CMob* mob = MobData(e);
     if (!mob)
         return 0;
-    const auto& table = mob->data->m_table;
+    const auto& table = mob->m_table;
     int64_t range = table.wAttackRange;
     if (table.bBattleType == BATTLE_TYPE_RANGE || table.bBattleType == BATTLE_TYPE_MAGIC)
     {
@@ -1098,11 +1097,11 @@ bool IsDeathBlow(entt::entity e)
     if (e == entt::null || !g_registry.valid(e))
         return false;
 
-    const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
-    if (!mob || !mob->data)
+    const CMob* mob = ecs::PlayerRuntime::GetProto(e);
+    if (!mob)
         return false;
 
-    return number(1, 100) <= mob->data->m_table.bDeathBlowPoint;
+    return number(1, 100) <= mob->m_table.bDeathBlowPoint;
 }
 
 bool IsDeathBlower(entt::entity e)
@@ -3722,7 +3721,7 @@ void Reward(entt::entity e, bool bItemDrop)
 		return;
 
 
-	if (const auto* mobData = g_registry.try_get<ecs::MobDataRef>(e); !ecs::PlayerRuntime::IsPC(e) && (!mobData || !mobData->data))
+	if (!ecs::PlayerRuntime::IsPC(e) && !ecs::PlayerRuntime::GetProto(e))
 	{
 		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), ecs::PlayerRuntime::GetName(attacker));
 		CombatSystem::ClearDamageLedger(e);
@@ -4398,7 +4397,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 	if (!ecs::IsCharacter(e) || !ecs::IsCharacter(attacker) || !ecs::PlayerRuntime::IsPC(attacker))
 		return;
 
-	if (const auto* mobData = g_registry.try_get<ecs::MobDataRef>(e); !mobData || !mobData->data)
+	if (!ecs::PlayerRuntime::GetProto(e))
 	{
 		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), ecs::PlayerRuntime::GetName(attacker));
 		return;

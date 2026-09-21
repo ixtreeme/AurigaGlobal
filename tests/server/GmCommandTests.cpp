@@ -693,6 +693,7 @@ namespace {
 
 CMob const * CMobManager::Get(unsigned int) { Unexpected(); }
 CMob const * CMobManager::Get(char const *,bool) { Unexpected(); }
+CMob const * ecs::PlayerRuntime::GetProto(entt::entity) { Unexpected(); }
 unsigned int CombatSystem::GetRealAlignment(entt::entity) { Unexpected(); }
 void CombatSystem::UpdateAlignment(entt::entity,int64_t) { Unexpected(); }
 void Cube_init(void) { Unexpected(); }

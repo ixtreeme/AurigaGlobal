@@ -68,6 +68,9 @@ bool IsDungeonTicketExtraMetin(entt::entity e);
 bool IsPet(entt::entity e);
 bool IsNewPet(entt::entity e);
 void SetProto(entt::entity e, const CMob* pkMob);
+// The prototype relation validated against CMobManager: a stale vnum or a
+// replaced prototype answers null instead of a possibly freed pointer.
+const CMob* GetProto(entt::entity e);
 void SetRegen(entt::entity e, LPREGEN regen);
 void SetCoward(entt::entity e);
 void SetNoAttackShinsu(entt::entity e);

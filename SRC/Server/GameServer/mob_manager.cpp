@@ -110,19 +110,33 @@ bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 	// END_OF_LOCALE_SERVICE
 
 	//exit(1);
-	CHARACTER_MANAGER::instance().for_each_pc(std::bind(&CMobManager::RebindMobProto,this, std::placeholders::_1));
+
+	// The table was replaced. Existing mob relations follow the freshly built
+	// prototypes; a later reload that frees the old table cannot leave a mob
+	// on a freed pointer.
+	for (const entt::entity entity : g_registry.view<ecs::MobDataRef>())
+	{
+		RebindMobProto(entity);
+	}
+
 	return true;
 }
 
 void CMobManager::RebindMobProto(entt::entity chEntity)
 {
-	if (ecs::PlayerRuntime::IsPC(chEntity))
+	if (chEntity == entt::null || !g_registry.valid(chEntity))
 		return;
 
-	const CMob * pMob = Get(ecs::PlayerRuntime::GetRaceNum(chEntity));
+	auto* ref = g_registry.try_get<ecs::MobDataRef>(chEntity);
 
-	if (pMob)
-		ecs::PlayerRuntime::SetProto(chEntity, pMob);
+	if (!ref || ref->vnum == 0)
+		return;
+
+	// Repoint only: the mob keeps the runtime state it had at spawn. A family
+	// that is gone from the new table reads as no prototype through
+	// PlayerRuntime::GetProto.
+	if (const CMob* pkMob = Get(ref->vnum))
+		ref->data = pkMob;
 }
 
 const CMob * CMobManager::Get(uint32_t dwVnum)

@@ -179,6 +179,20 @@ struct Callback {
 LPHEART thecore_heart = &recoveryHeart;
 void ContinueOnFatalError() { Unexpected(); }
 
+// A private-map sector shares the origin sector's attribute; the shared
+// ownership must keep it alive when the origin map goes first.
+void AttributeSharing() {
+    auto* origin = new SECTREE;
+    auto* clone = new SECTREE;
+    origin->BindAttribute(new CAttribute(nullptr, 0, 0));
+    clone->CloneAttribute(origin);
+    CAttribute* shared = origin->GetAttributePtr();
+    Check(shared && clone->GetAttributePtr() == shared, "private-map clone did not share the attribute");
+    delete origin;
+    Check(clone->GetAttributePtr() == shared, "attribute died with the origin sector");
+    delete clone;
+}
+
 std::shared_ptr<spdlog::logger> logging::GetLogger() {
     static auto log = std::make_shared<spdlog::logger>("spatial-test"); return log;
 }
@@ -206,6 +220,10 @@ void SECTREE_MAP::Build() {
     }
 }
 CAttribute::~CAttribute() {}
+// The constructor pair is only referenced by the attribute-sharing check; the
+// accessors stay fail-fast seams because production never reads them here.
+CAttribute::CAttribute(uint32_t*, uint32_t, uint32_t) {}
+CAttribute::CAttribute(uint32_t, uint32_t) {}
 uint32_t CAttribute::Get(uint32_t, uint32_t) { Unexpected(); }
 void CAttribute::Set(uint32_t, uint32_t, uint32_t) { Unexpected(); }
 void CAttribute::Remove(uint32_t, uint32_t, uint32_t) { Unexpected(); }
@@ -1694,6 +1712,7 @@ int main() {
         SECTREE_MANAGER maps; CHARACTER_MANAGER characters; DESC_MANAGER descriptors; CMotionManager motionManager;
         ecs::VisibilitySystem::Init(g_registry);
         auto recoveryConnection = entt::scoped_connection(g_dispatcher.sink<ecs::EvRecovery>().connect<&Recovered>());
+        AttributeSharing();
         MembershipAndSnapshots(); VisibilityRoundTrip(); ViewCallbacks(); PreparationAndPCs();
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
         NativeBuildingIdentityAndPlacement(); NativeShopAvatarLifecycle(); NativeShopPreparationCallbacks();

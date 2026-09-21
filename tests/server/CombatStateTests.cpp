@@ -128,6 +128,9 @@ bool canMove = false;
 uint32_t tick = 1000;
 bool guild = false;
 std::function<void(entt::entity)> onCompute, onPacket;
+// The mob prototypes the fixture's CMobManager lookup answers. A vnum outside
+// this table is an unexpected service call.
+std::map<uint32_t, const CMob*> mobProtoTable;
 void Check(bool condition, const char* why) { ++checks; if (!condition) throw std::runtime_error(why); }
 entt::entity Actor() {
     auto e = g_registry.create();
@@ -145,6 +148,7 @@ void Reset() {
     onCompute = onPacket = {}; passes_per_sec = 25;
     onPoison = onAffect = {}; poisonCalls = bleedingCalls = affectCalls = 0;
     vids.clear(); viewPackets = spChanges = 0; lastFlyType = 0; onFly = {}; canMove = false;
+    mobProtoTable.clear();
 }
 void AssertActor(entt::entity e) {
     Check(g_registry.valid(e) && g_registry.any_of<ecs::TagPC, ecs::TagNPC, ecs::TagMonster, ecs::TagStone>(e), "stale/non-character service call");
@@ -618,7 +622,25 @@ CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 time_t get_global_time() { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::ProcessCheatCheck(entt::entity,int) { UnexpectedService(__func__); }
-const CMob* CMobManager::Get(uint32_t) { UnexpectedService(__func__); }
+const CMob* FindTestMobProto(uint32_t vnum) {
+    const auto it = mobProtoTable.find(vnum);
+    if (it == mobProtoTable.end())
+        UnexpectedService("CMobManager::Get");
+    return it->second;
+}
+const CMob* CMobManager::Get(uint32_t vnum) { return FindTestMobProto(vnum); }
+// The production prototype validation without the manager singleton: the
+// stored pointer is only trusted while the table still answers it for the
+// vnum stored beside it.
+const CMob* ecs::PlayerRuntime::GetProto(entt::entity e) {
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+    const auto* ref = g_registry.try_get<ecs::MobDataRef>(e);
+    if (!ref || !ref->data || ref->vnum == 0)
+        return nullptr;
+    const CMob* live = FindTestMobProto(ref->vnum);
+    return live == ref->data ? live : nullptr;
+}
 int CHARACTER_MANAGER::GetMobDamageRate(entt::entity e) { AssertActor(e); return 100; }
 bool CPVPManager::CanAttack(entt::entity,entt::entity,bool) { UnexpectedService(__func__); }
 bool CArenaManager::CanAttack(entt::entity,entt::entity) { UnexpectedService(__func__); }
@@ -685,10 +707,17 @@ void BattleMathChecks() {
     g_registry.get<BattleFixture>(a).weapon=entt::null;
     g_registry.remove<ecs::TagPC>(a); g_registry.emplace<ecs::TagMonster>(a);
     CMob proto {};
+    proto.m_table.dwVnum=4711;
     proto.m_table.dwDamageRange[0]=10; proto.m_table.dwDamageRange[1]=20;
     proto.m_table.fDamMultiply=1.5f; proto.m_table.wAttackRange=200;
-    g_registry.emplace<ecs::MobDataRef>(a,&proto);
+    mobProtoTable[proto.m_table.dwVnum]=&proto;
+    g_registry.emplace<ecs::MobDataRef>(a,&proto,proto.m_table.dwVnum);
     Check(C::GetMobDamageMin(a)==10 && C::GetMobDamageMax(a)==20 && C::GetMobAttackRange(a)==200, "mob prototype not read");
+    CMob replacement {};
+    replacement.m_table.dwDamageRange[0]=30; replacement.m_table.dwDamageRange[1]=40;
+    mobProtoTable[proto.m_table.dwVnum]=&replacement;
+    Check(C::GetMobDamageMin(a)==0 && C::GetMobDamageMax(a)==0, "stale prototype pointer was trusted");
+    mobProtoTable[proto.m_table.dwVnum]=&proto;
     proto.m_table.bBattleType=BATTLE_TYPE_RANGE;
     g_registry.get<BattleFixture>(a).points[POINT_BOW_DISTANCE]=100;
 #ifdef __DEFENSE_WAVE__

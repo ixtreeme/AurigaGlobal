@@ -60,7 +60,7 @@ void SECTREE::OnPlacementDestroyed(entt::registry& reg, entt::entity e) {
 }
 SECTREE::~SECTREE() { Destroy(); }
 void SECTREE::Initialize() {
-    m_id.package = 0; m_pkAttribute = nullptr; m_iPCCount = 0; isClone = false;
+    m_id.package = 0; m_pkAttribute.reset(); m_iPCCount = 0; isClone = false;
     m_destroying = false;
 }
 bool SECTREE::Contains(entt::entity e) const { return m_entities.contains(e); }
@@ -103,7 +103,9 @@ void SECTREE::Destroy() {
         }
     }
     m_entities.clear();
-    if (!isClone && m_pkAttribute) { M2_DELETE(m_pkAttribute); m_pkAttribute = nullptr; }
+    // The attribute may still be referenced by a private-map clone; the
+    // shared pointer frees it when the last holder releases it.
+    m_pkAttribute.reset();
 }
 SECTREEID SECTREE::GetID() { return m_id; }
 void SECTREE::IncreasePC() {
@@ -200,30 +202,33 @@ void SECTREE::RemoveEntity(entt::entity e) {
 
 void SECTREE::BindAttribute(CAttribute * pkAttribute)
 {
-	m_pkAttribute = pkAttribute;
+    m_pkAttribute = std::shared_ptr<CAttribute>(pkAttribute, [](CAttribute* attr) { M2_DELETE(attr); });
+    isClone = false;
 }
 
 void SECTREE::CloneAttribute(LPSECTREE tree)
 {
-	m_pkAttribute = tree->m_pkAttribute;
-	isClone = true;
+    // A private-map sector shares the origin sector's attribute. The shared
+    // pointer keeps it alive independently of map teardown order.
+    m_pkAttribute = tree->m_pkAttribute;
+    isClone = true;
 }
 
 void SECTREE::SetAttribute(uint32_t x, uint32_t y, uint32_t dwAttr)
 {
-	assert(m_pkAttribute != NULL);
+	assert(m_pkAttribute);
 	m_pkAttribute->Set(x, y, dwAttr);
 }
 
 void SECTREE::RemoveAttribute(uint32_t x, uint32_t y, uint32_t dwAttr)
 {
-	assert(m_pkAttribute != NULL);
+	assert(m_pkAttribute);
 	m_pkAttribute->Remove(x, y, dwAttr);
 }
 
 uint32_t SECTREE::GetAttribute(int32_t x, int32_t y)
 {
-	assert(m_pkAttribute != NULL);
+	assert(m_pkAttribute);
 	return m_pkAttribute->Get((x % SECTREE_SIZE) / CELL_SIZE, (y % SECTREE_SIZE) / CELL_SIZE);
 }
 

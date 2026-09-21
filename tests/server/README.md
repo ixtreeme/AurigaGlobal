@@ -1916,3 +1916,23 @@ character, the stable server PC, offline pids returning none, disconnect
 removal and entity-destruction cleanup of the cached manager state. It does not
 cover live Lua script execution, DB flag persistence or login/logout with the
 running server; those remain in-game checks.
+
+## Validated mob prototypes and shared sector attributes (2026-09-21)
+
+ecs::MobDataRef now stores the prototype vnum beside the CMob pointer, and
+ecs::PlayerRuntime::GetProto only returns the pointer while CMobManager still
+answers it for that vnum. Combat, rank/table and skill readers go through it, so
+a reloaded or removed prototype table reads as no prototype instead of a stale
+pointer. CMobManager::Initialize repoints every existing mob relation at the
+freshly loaded table without rerunning spawn initialization; the previous rebind
+loop only walked PCs and did nothing.
+
+Private-map sector attributes are shared ownership now: SECTREE holds a
+shared_ptr<CAttribute>, a clone copies it and either map can go first without
+leaving the other on freed memory. Attribute writes still reach the origin
+map's cells exactly as before; only the ownership changed.
+
+CombatStateTests covers the manager-backed prototype read and stale-pointer
+rejection; SpatialLifecycleTests covers clone sharing, origin-first destruction
+and release with the last holder. Skill prototypes are not stored on entities
+anywhere, so their reload path had no stored pointer to invalidate.

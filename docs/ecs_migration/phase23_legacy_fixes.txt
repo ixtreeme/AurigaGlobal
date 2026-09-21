@@ -53,19 +53,19 @@ F12 - OfflineShopSystem::SetShopSafebox now clears the old back pointer on
   every handover, not only on the null transition, so a second safebox handed
   to the same character cannot keep the previous owner.
 
-Deferred (documented, no code change)
--------------------------------------
-F9 - prototype pointer stability (MobDataRef::data, skill-proto caches) is
-  still accidental; a prototype reload/clear would dangle every stored
-  pointer. This needs a generation check or an owning registry, not a local
-  fix.
-F10 - SECTREE::CloneAttribute still shares the origin sector's CAttribute
-  with private-map clones. The current manager never destroys an origin map
-  before its private maps, so this stays latent until map teardown order is
-  formalized (and CAttribute has no deep-copy support today).
-Item 5 of the audit (guild member rows) is unchanged; it is a design decision,
-not a defect. Item 4 (quest per-character state to ECS) is implemented in the
-separate phase24_quest_state.txt unit.
+Audit follow-up (F9/F10 and items 4-5)
+--------------------------------------
+F9 - prototype pointer stability (MobDataRef::data, skill-proto caches) was
+  accidental. Addressed in phase25_proto_attribute.txt: the mob relation keeps
+  a durable vnum and is validated through CMobManager, and the skill-proto
+  pointers were found to be call-stack locals that no reload can invalidate.
+F10 - SECTREE::CloneAttribute shared the origin sector's CAttribute. Addressed
+  in phase25_proto_attribute.txt: the attribute is now shared ownership, so a
+  private-map clone keeps it alive independently of map teardown order.
+Item 5 of the audit (guild member rows) is unchanged; the phase25 document
+records the keep-in-service decision and its rationale. Item 4 (quest
+per-character state to ECS) is implemented in the phase24_quest_state.txt
+unit.
 
 Verification
 ------------

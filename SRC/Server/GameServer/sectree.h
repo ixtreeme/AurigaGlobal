@@ -4,6 +4,7 @@
 #include <entt/entity/entity.hpp>
 #include <Core/Logging.hpp>
 #include "ecs/Registry.hpp"
+#include <memory>
 #include <unordered_map>
 #include <type_traits>
 
@@ -93,7 +94,7 @@ class SECTREE
 
 		void				BindAttribute(CAttribute * pkAttribute);
 
-		CAttribute *			GetAttributePtr() { return m_pkAttribute; }
+		CAttribute *			GetAttributePtr() { return m_pkAttribute.get(); }
 
 		uint32_t				GetAttribute(int32_t x, int32_t y);
 		bool				IsAttr(int32_t x, int32_t y, uint32_t dwFlag);
@@ -115,7 +116,9 @@ class SECTREE
 		int				m_iPCCount;
 		bool				isClone;
 
-		CAttribute *			m_pkAttribute;
+		// Shared with private-map clones: whichever map goes first, the
+		// attribute stays alive until the last sector releases it.
+		std::shared_ptr<CAttribute>	m_pkAttribute;
 };
 
 #endif

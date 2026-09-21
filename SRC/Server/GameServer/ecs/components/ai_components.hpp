@@ -83,7 +83,11 @@ struct RegenOrigin {
 };
 
 struct MobDataRef {
+    // The durable prototype key is stored beside the pointer: readers resolve
+    // the vnum through CMobManager instead of trusting a pointer that a
+    // mob-table reload can replace or free.
     const CMob* data { nullptr };
+    uint32_t vnum { 0 };
 };
 
 // What CMobInstance held: where and when this mob was last attacked, and

@@ -848,8 +848,8 @@ uint8_t GetMobRank(entt::entity e)
 	if (e == entt::null || !g_registry.valid(e))
 		return MOB_RANK_KNIGHT;
 
-	const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
-	return mob && mob->data ? mob->data->m_table.bRank : MOB_RANK_KNIGHT;
+	const TMobTable* table = GetMobTable(e);
+	return table ? table->bRank : MOB_RANK_KNIGHT;
 }
 
 int GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType)
@@ -2188,8 +2188,8 @@ const TMobTable* GetMobTable(entt::entity e)
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
-    return (mob && mob->data) ? &mob->data->m_table : nullptr;
+    const CMob* mob = GetProto(e);
+    return mob ? &mob->m_table : nullptr;
 }
 
 } // namespace ecs::PlayerRuntime
@@ -3354,7 +3354,7 @@ void ecs::PlayerRuntime::SetProto(entt::entity e, const CMob* pkMob)
 
     if (const entt::entity self = e; ecs::diag::Check(self, "SetProto"))
     {
-        g_registry.emplace_or_replace<ecs::MobDataRef>(self, pkMob);
+        g_registry.emplace_or_replace<ecs::MobDataRef>(self, pkMob, pkMob ? pkMob->m_table.dwVnum : 0);
         // The mob runtime state starts here, as the CMobInstance allocation
         // did: last-attacked at the origin, every mode switch off.
         auto& mobState = g_registry.emplace_or_replace<ecs::MobInstanceState>(self);
@@ -3404,6 +3404,20 @@ void ecs::PlayerRuntime::SetProto(entt::entity e, const CMob* pkMob)
     CHARACTER_MANAGER::instance().RegisterRaceNumMap(e);
 
     ecs::PlayerRuntime::StartOreDespawnEvent(e);
+}
+
+const CMob* ecs::PlayerRuntime::GetProto(entt::entity e)
+{
+    const auto* ref = g_registry.valid(e) ? g_registry.try_get<ecs::MobDataRef>(e) : nullptr;
+
+    if (!ref || !ref->data || ref->vnum == 0)
+        return nullptr;
+
+    // The stored pointer is only trusted while the manager still returns it
+    // for the vnum stored with it; a reloaded table answers the new pointer
+    // (the relation is repointed there) and a removed family answers null.
+    const CMob* live = CMobManager::instance().Get(ref->vnum);
+    return live == ref->data ? live : nullptr;
 }
 
 void ecs::MovementSystem::OnMove(entt::entity e, bool bIsAttack)
