@@ -216,8 +216,8 @@ namespace quest
 		}
 		if (pMarriage->pWeddingInfo)
 		{
-			marriage::WeddingMap* pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
-			pWedding->SetDark(lua_toboolean(L, 1));
+			const entt::entity pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
+			marriage::WeddingSystem::SetDark(pWedding, lua_toboolean(L, 1) != 0);
 		}
 
 		return 0;
@@ -244,8 +244,8 @@ namespace quest
 		}
 		if (pMarriage->pWeddingInfo)
 		{
-			marriage::WeddingMap* pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
-			pWedding->ShoutInMap(CHAT_TYPE_COMMAND, lua_tostring(L, 1));
+			const entt::entity pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
+			marriage::WeddingSystem::ShoutInMap(pWedding, CHAT_TYPE_COMMAND, lua_tostring(L, 1));
 		}
 		return 0;
 
@@ -265,9 +265,9 @@ namespace quest
 		}
 		if (pMarriage->pWeddingInfo)
 		{
-			marriage::WeddingMap* pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
-			if (pWedding)
-				lua_pushboolean(L, pWedding->IsPlayingMusic());
+			const entt::entity pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
+			if (pWedding != entt::null)
+				lua_pushboolean(L, marriage::WeddingSystem::IsPlayingMusic(pWedding));
 			else
 				lua_pushboolean(L, false);
 		}
@@ -301,9 +301,10 @@ namespace quest
 		}
 		if (pMarriage->pWeddingInfo)
 		{
-			marriage::WeddingMap* pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
-			pWedding->SetMusic(
-					lua_toboolean(L, 1),
+			const entt::entity pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
+			marriage::WeddingSystem::SetMusic(
+					pWedding,
+					lua_toboolean(L, 1) != 0,
 					lua_tostring(L, 2)
 					);
 		}
@@ -328,8 +329,8 @@ namespace quest
 		}
 		if (pMarriage->pWeddingInfo)
 		{
-			marriage::WeddingMap* pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
-			pWedding->SetSnow(lua_toboolean(L, 1));
+			const entt::entity pWedding = marriage::WeddingManager::instance().Find(pMarriage->pWeddingInfo->dwMapIndex);
+			marriage::WeddingSystem::SetSnow(pWedding, lua_toboolean(L, 1) != 0);
 		}
 		return 0;
 	}

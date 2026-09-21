@@ -68,6 +68,13 @@ add_executable(HorseRuntimeTests EXCLUDE_FROM_ALL
 target_link_libraries(HorseRuntimeTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME horse_runtime COMMAND HorseRuntimeTests)
 
+add_executable(WeddingLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/WeddingLifecycleTests.cpp
+    wedding.cpp
+)
+target_link_libraries(WeddingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+add_test(NAME wedding_lifecycle COMMAND WeddingLifecycleTests)
+
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
     PetSystem.cpp

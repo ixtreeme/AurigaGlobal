@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 
 #include "../../guild.h"
 #include "../../party.h"
@@ -12,10 +13,6 @@
 #include "../../war_map.h"
 #include "../../shop.h"
 #include "../../typedef.h"
-
-namespace marriage {
-class WeddingMap;
-}
 
 class CWheelDestiny;
 class CArena;
@@ -82,7 +79,25 @@ struct MarriageState {
     // two are engaged or married: marriage::CManager is keyed on the player id
     // and is the only thing that knows that.
     entt::entity partner { entt::null };
-    marriage::WeddingMap* weddingMap { nullptr };
+    // The wedding map this character is on. The map state is a component on a
+    // registry-owned entity, indexed by the durable private map index.
+    entt::entity weddingMap { entt::null };
+};
+
+// Authoritative state of one wedding ceremony map. The ceremony's durable
+// identifiers are the private map index and the two player ids; the member
+// set holds entities, and the end event is owned here so a stale callback
+// cannot act on a recycled map entity.
+struct WeddingMapState {
+    uint32_t mapIndex { 0 };
+    uint32_t pid1 { 0 };
+    uint32_t pid2 { 0 };
+    std::unordered_set<entt::entity> members;
+    LPEVENT endEvent { nullptr };
+    bool isDark { false };
+    bool isSnow { false };
+    bool isMusic { false };
+    std::string musicFileName;
 };
 
 struct ShopState {

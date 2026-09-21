@@ -526,11 +526,6 @@ typedef struct SMobSkillInfo TMobSkillInfo;
 extern int GetSkillPowerByLevelFromType(int job, int skillgroup, int skilllevel);
 //END_SKILL_POWER_BY_LEVEL
 
-namespace marriage
-{
-	class WeddingMap;
-}
-
 
 ESex GET_SEX(entt::entity ch);
 

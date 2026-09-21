@@ -1,59 +1,47 @@
 #ifndef __WEDDING_H
 #define __WEDDING_H
 
+// Wedding ceremony maps are ECS state now: WeddingMapState on a registry-owned
+// entity, indexed by the durable private map index in WeddingManager. There is
+// no heap WeddingMap object and no raw map pointer on the character.
+
+#include <cstdint>
+#include <map>
+
+#include <entt/entt.hpp>
+
 #include "marriage.h"
 
 namespace marriage
 {
 	const uint32_t WEDDING_MAP_INDEX = 81;
-	typedef std::unordered_set<entt::entity> charset_t;
 
-	class WeddingMap
+	// Native API over ecs::WeddingMapState. Every entry point validates the
+	// entity before use, so a retired or recycled map handle is a no-op.
+	namespace WeddingSystem
 	{
-		public:
-			WeddingMap(uint32_t dwMapIndex, uint32_t dwPID1, uint32_t dwPID2);
-			~WeddingMap();
-
-			uint32_t GetMapIndex() { return m_dwMapIndex; }
-
-			void WarpAll();
-			void DestroyAll();
+		uint32_t GetMapIndex(entt::entity map);
+		void SetEnded(entt::entity map);
+		void WarpAll(entt::entity map);
+		void DestroyAll(entt::entity map);
 #ifdef TEXTS_IMPROVEMENT
-			void Notice(uint8_t type, uint32_t idx, const char * format, ...);
+		void Notice(entt::entity map, uint8_t type, uint32_t idx, const char* format, ...);
 #endif
-			void SetEnded();
+		void IncMember(entt::entity map, entt::entity character);
+		void DecMember(entt::entity map, entt::entity character);
+		bool IsMember(entt::entity map, entt::entity character);
+		void SetDark(entt::entity map, bool set);
+		void SetSnow(entt::entity map, bool set);
+		void SetMusic(entt::entity map, bool set, const char* musicFileName);
+		bool IsPlayingMusic(entt::entity map);
+		void SendLocalEvent(entt::entity map, entt::entity character);
+		void ShoutInMap(entt::entity map, uint8_t type, const char* msg);
 
-			void IncMember(entt::entity character);
-			void DecMember(entt::entity character);
-			bool IsMember(entt::entity character);
-
-			void SetDark(bool bSet);
-			void SetSnow(bool bSet);
-			void SetMusic(bool bSet, const char* szMusicFileName);
-
-			bool IsPlayingMusic();
-
-			void SendLocalEvent(entt::entity ch);
-
-			void ShoutInMap(uint8_t type, const char* szMsg);
-		private:
-
-			const char* __BuildCommandPlayMusic(char* szCommand, size_t nCmdLen, uint8_t bSet, const char* c_szMusicFileName);
-
-		private:
-			uint32_t m_dwMapIndex;
-			LPEVENT m_pEndEvent;
-			charset_t m_setMember;
-
-			bool m_isDark;
-			bool m_isSnow;
-			bool m_isMusic;
-
-			uint32_t dwPID1;
-			uint32_t dwPID2;
-
-			std::string m_stMusicFileName;
-	};
+		// The character-side relation: the map the character is on. Both take
+		// the characters' side, not the map's.
+		void SetMemberMap(entt::entity character, entt::entity map);
+		entt::entity GetMemberMap(entt::entity character);
+	}
 
 	class WeddingManager : public singleton<WeddingManager>
 	{
@@ -66,16 +54,16 @@ namespace marriage
 			void Request(uint32_t dwPID1, uint32_t dwPID2);
 			bool End(uint32_t dwMapIndex);
 
-			void DestroyWeddingMap(WeddingMap* pMap);
+			void DestroyWeddingMap(entt::entity mapEntity);
 
-			WeddingMap* Find(uint32_t dwMapIndex);
+			entt::entity Find(uint32_t dwMapIndex);
 
 		private:
 			uint32_t __CreateWeddingMap(uint32_t dwPID1, uint32_t dwPID2);
 
 		private:
 
-			std::map<uint32_t, WeddingMap*> m_mapWedding;
+			std::map<uint32_t, entt::entity> m_mapWedding;
 	};
 }
 #endif

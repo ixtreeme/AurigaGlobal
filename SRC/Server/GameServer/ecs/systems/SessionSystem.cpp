@@ -738,8 +738,8 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     if (ecs::SocialSystem::GetWarMap(e))
         ecs::SocialSystem::SetWarMap(e, nullptr);
 
-    if (ecs::SocialSystem::GetWeddingMap(e))
-        ecs::SocialSystem::SetWeddingMap(e, nullptr);
+    if (ecs::SocialSystem::GetWeddingMap(e) != entt::null)
+        ecs::SocialSystem::SetWeddingMap(e, entt::null);
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
     offlineshop::GetManager().RemoveSafeboxFromCache(ecs::PlayerRuntime::GetPlayerID(e));

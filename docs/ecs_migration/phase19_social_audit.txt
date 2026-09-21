@@ -1,0 +1,118 @@
+Phase 19 - Social/party/guild/dungeon/shop relation audit
+Date: 2026-09-21
+Mode: audit and one implemented migration unit (wedding map).
+
+Scope
+-----
+Point 5 of the remaining ECS migration tasks. The question is not "are there
+pointers" but which long-lived object-pointer relations represent game state
+and therefore must become validated entity references, and which targets are
+services (DB, network, prototype, spatial index, manager caches) that the
+task explicitly allows to stay services.
+
+Inventory of the relations (ecs/components/social_components.hpp)
+------------------------------------------------------------------
+SocialRefs::party (LPPARTY), SocialRefs::guild (CGuild*)
+  Party is pure game state: members, leader PID, roles, bonuses, exp
+  distribution, party flags, one update event. Members already store
+  entt::entity handles; the container object itself is still heap-owned and
+  referenced by raw pointer from the character, from CPartyManager
+  (PID/PID/entity maps) and from dungeon code (TPartyMap, m_pParty).
+  Guild is a DB-backed service object: its identity is a guild id, membership
+  is keyed by player id, and wars/skills/deposits are persisted services.
+  Verdict: party migratable; guild stays a service, its relation needs only
+  generation/lifetime validation, not ECS ownership.
+
+DungeonMembership::dungeon (LPDUNGEON), DungeonMembership::warMap (CWarMap*)
+  CDungeon is a large base class with many subclasses (LostCastle, Rune,
+  Viking, Halloween, Easter, Valentine, Orcs, Triton, Pyramid, Nightmare,
+  Valentine, ...), a manager, timers, DB and prototype integration. CWarMap is
+  a guild-war service keyed by map index. Moving dungeon state to ECS is a
+  subsystem-scale project of its own, not part of the relation cleanup.
+  Verdict: both stay services for now; the relations are currently
+  unvalidated raw pointers and are the highest latent risk.
+
+ArenaMembership::arena (CArena*)
+  CArena objects are created by CArenaManager per arena map and hold match
+  state. The manager is the service; the arena lifetime is tied to the map,
+  not to the character. Verdict: service with raw pointer relation; validate
+  or move the arena object to a registry entity in a separate pass.
+
+ShopState::currentShop / myShop (LPSHOP)
+  CShop is character-owned game state (grid, price list, guests, sign) plus a
+  manager index by PID. It is the largest remaining migratable object in this
+  set, but the manager, packet and save paths are extensive.
+  Verdict: migratable, but only as a dedicated phase with its own tests.
+
+ShopState::offlineShop / offlineShopGuest / shopSafebox / auction / auctionGuest
+  New-offline-shop objects live in CShopManager caches keyed by owner id and
+  are driven by async DB packets. The relation to a character is transient
+  browsing/ownership state; the objects themselves are cache services.
+  Verdict: keep as services; the offline-shop world object is already ECS.
+  Do not convert the async DB/P2P identities to entity values.
+
+MarriageState::partner (entt::entity)
+  Already native and generation-checked.
+
+MarriageState::weddingMap (previously marriage::WeddingMap*)
+  Wedding ceremony map: members, PID pair, map index, dark/snow/music flags,
+  end event. The object was heap-owned by WeddingManager and referenced by raw
+  pointer from characters, and the end event held a raw map pointer.
+  Verdict: migratable game state; implemented in this phase (below).
+
+Implemented in this phase: wedding map
+--------------------------------------
+- New component ecs::WeddingMapState on a registry-owned entity. It owns the
+  member entity set, the durable identifiers (private map index, both player
+  ids), the presentation flags and the end event lease.
+- marriage::WeddingSystem free functions replace the WeddingMap class:
+  membership (SetMemberMap/GetMemberMap/IncMember/DecMember/IsMember), local
+  presentation (SetDark/SetSnow/SetMusic/IsPlayingMusic/SendLocalEvent/
+  Notice/ShoutInMap), lifecycle (SetEnded, WarpAll, DestroyAll), all
+  validating the map entity before use.
+- WeddingManager keeps only the map index -> entity index, plus
+  Request/End/Find/DestroyWeddingMap. A stale index entry is replaced on the
+  next request; an old entity handle never reaches a recycled map.
+- The end event stores the map entity and checks state->endEvent == event, so
+  a cancelled or replaced callback cannot act on a successor map.
+- DestroyAll erases each member before destroying it, so the disconnect
+  callback (SetWeddingMap(null) -> DecMember) cannot revisit or spin.
+- The character relation lives in WeddingSystem::SetMemberMap/GetMemberMap;
+  SocialSystem::SetWeddingMap/GetWeddingMap delegate to it.
+- Regression test: tests/server/WeddingLifecycleTests.cpp compiles the
+  production wedding.cpp with sectree/desc/DB doubles and covers creation
+  failure/recovery, stale index replacement, membership and observer flags,
+  local events and late joiners, warp scope, the end-event state machine and
+  stale callbacks, destroy-all reentrancy and manager-level destruction.
+
+Remaining work and recommended order
+------------------------------------
+1. Party -> ECS (next unit). PartyState component on a registry-owned party
+   entity, CPartyManager maps and dungeon TPartyMap keyed by entity, the
+   update event holding the leader PID as today (PID is durable), CParty
+   methods ported to PartySystem free functions. The member map stays keyed
+   by PID because offline members and P2P packets identify players by pid.
+   Estimated like the mount/pet migrations: one large commit plus a headless
+   lifecycle test with doubles for the party packets, skill and dungeon
+   services.
+2. Validate the dungeon/war/arena relations. Options, in increasing cost:
+   add generation-checked lookup helpers in the managers (Find returns the
+   live object or null and the character relation is re-resolved on every
+   use), or move CDungeon/CArena state to registry entities. The first is a
+   safety fix; the second is a subsystem migration with its subclasses.
+3. Shop (my shop) -> ECS. CShopState component plus ShopSystem functions;
+   shop_manager index stays a service keyed by PID. This touches the packet
+   and persistence paths and needs its own regression suite.
+4. Offline shop: explicitly out of scope. Cache objects, async DB responses
+   and P2P member identities stay as they are; only the already-native world
+   object remains ECS.
+
+Acceptance notes
+----------------
+- Durable identifiers (account ids, player ids, guild ids, map indices, item
+  ids) are not replaced by entity values in packets, DB rows or P2P messages.
+- A raw pointer that is only ever compared or passed to a manager remains a
+  service boundary, not a game-state relation.
+- Every migrated unit gets a headless regression test that runs the real
+  implementation and covers callback-time retirement, recycled handles and
+  nested teardown.

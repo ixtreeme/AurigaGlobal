@@ -172,33 +172,16 @@ entt::entity GetMarryPartner(entt::entity e)
     return marriageState->partner;
 }
 
-// The wedding map, in the same shape: the field was written and the component
-// beside it was only ever read, by two quest bindings that always saw nothing.
-void SetWeddingMap(entt::entity e, marriage::WeddingMap* pMap)
+// The wedding map relation is owned by the wedding system; this is the
+// existing session-facing entry point over it.
+void SetWeddingMap(entt::entity e, entt::entity pMap)
 {
-    if (e == entt::null || !g_registry.valid(e))
-        return;
-
-    auto& marriageState = g_registry.get_or_emplace<ecs::MarriageState>(e);
-
-    if (marriageState.weddingMap)
-        marriageState.weddingMap->DecMember(e);
-
-    marriageState.weddingMap = pMap;
-
-    if (marriageState.weddingMap)
-        marriageState.weddingMap->IncMember(e);
-
-    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    marriage::WeddingSystem::SetMemberMap(e, pMap);
 }
 
-marriage::WeddingMap* GetWeddingMap(entt::entity e)
+entt::entity GetWeddingMap(entt::entity e)
 {
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    const auto* marriageState = g_registry.try_get<ecs::MarriageState>(e);
-    return marriageState ? marriageState->weddingMap : nullptr;
+    return marriage::WeddingSystem::GetMemberMap(e);
 }
 
 CWarMap* GetWarMap(entt::entity e)
