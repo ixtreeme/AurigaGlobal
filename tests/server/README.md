@@ -1951,3 +1951,22 @@ growth pet to keep the contract explicit.
 The uild-asan configuration now builds GameServer, all 26 server test
 targets and client TimerTests under MSVC AddressSanitizer and passes 27/27;
 the Release configuration passes the same suite.
+
+## Focused relation-regression fixtures (2026-09-21)
+
+SocialRelationTests compiles the real SocialSystem.cpp and drives
+GetGuild/GetWarMap with manager registry doubles. It stores a sentinel
+guild/war-map pointer with no, stale or matching durable keys and asserts that
+only the matching live relation is returned; the pre-fix code dereferenced the
+sentinel to find its key, so the test is the regression guard for F1/F5.
+
+OfflineShopSafeboxTests compiles the real OfflineShopSystem.cpp and covers
+the safebox owner handover contract: a second safebox takes the back pointer
+from the first, the clear path SessionSystem uses before the cache erase
+reaches the live box, and null handles are rejected (F2 companion, F12).
+
+Both targets run in the normal and AddressSanitizer configurations; the suite
+is 29 tests in each. The remaining phase23 service fixes (F2 session ordering,
+F3 pvp, F4/F8 guild manager, F6/F7 war-map events, F11 arena) still rely on
+compilation and the existing suite; their focused fixtures would need the full
+session, pvp, guild and arena service doubles.

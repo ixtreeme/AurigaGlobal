@@ -1,0 +1,50 @@
+Phase 28 - Focused regression tests for the phase23 relation fixes
+Date: 2026-09-21
+Mode: the test-debt item of the phase26 close-out. The guild/war-map and
+offline-shop fixtures now execute the production code paths that the phase23
+fixes changed; both run in Release and under AddressSanitizer.
+
+SocialRelationTests (new target, 11 checks)
+-------------------------------------------
+- Executes the real ecs::SocialSystem::GetGuild/GetWarMap/SetWarMap from
+  SocialSystem.cpp with CGuildManager/CWarMapManager registry doubles.
+- F1 regression: a stored guild/war-map pointer is only trusted together with
+  its durable key. The test stores a freed-looking sentinel pointer with no or
+  a stale key and asserts GetGuild/GetWarMap answer null without ever
+  dereferencing it; a lookup miss (disbanded/destroyed), a matching pointer and
+  a replacement at the same key are all covered. The pre-fix code called
+  GetID()/GetMapIndex() on the sentinel and would crash here.
+- F5 shares this getter path; the quest binding change is covered by the same
+  validation.
+- Releasing through SetWarMap(e, nullptr) must not call into the stale map and
+  must reset the durable index with the pointer.
+- The target compiles SocialSystem.cpp, event.cpp and event_queue.cpp and
+  stubs the unrelated services as fail-fast leaves.
+
+OfflineShopSafeboxTests (new target, 8 checks)
+----------------------------------------------
+- Executes the real ecs::OfflineShopSystem::SetShopSafebox/GetShopSafebox and
+  the relation setters from OfflineShopSystem.cpp with a controlled
+  CShopSafebox double.
+- F12 regression: a second safebox handed to the same character clears the
+  first box's owner back pointer, the new box takes the owner, an identical
+  handover is a no-op, and a null transition clears the live box.
+- F2 companion: the clear path that SessionSystem runs before the cache erase
+  is exercised on the live object; reassignment to another character moves the
+  owner, and null handles are rejected.
+
+Remaining fixture gap
+---------------------
+F2 (SessionSystem logout ordering), F3 (pvp), F4/F8 (guild manager), F6/F7
+(war-map events) and F11 (arena) still have compile-level verification plus the
+existing suite only; their focused fixtures would need the full session, pvp,
+guild and arena service doubles. The two new targets cover the relation
+validation and the offline-shop back-pointer, which are the shared shapes of
+those defects.
+
+Verification
+------------
+- Release: GameServer, all 28 server test targets and TimerTests build; ctest
+  passes 29/29.
+- build-asan: the two new targets build and the whole suite passes 29/29 under
+  AddressSanitizer.

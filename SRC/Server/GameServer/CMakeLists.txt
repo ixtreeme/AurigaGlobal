@@ -111,6 +111,29 @@ add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
 target_link_libraries(MountLifecycleTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME mount_lifecycle COMMAND MountLifecycleTests)
 
+add_executable(OfflineShopSafeboxTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/OfflineShopSafeboxTests.cpp
+    ecs/systems/OfflineShopSystem.cpp
+)
+target_link_libraries(OfflineShopSafeboxTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME offline_shop_safebox COMMAND OfflineShopSafeboxTests)
+
+add_executable(SocialRelationTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/SocialRelationTests.cpp
+    ecs/systems/SocialSystem.cpp
+    event.cpp
+    event_queue.cpp
+)
+target_link_libraries(SocialRelationTests PRIVATE SERVER EnTT::EnTT LUA)
+if(MSVC)
+    target_compile_options(SocialRelationTests PRIVATE /Gy)
+    target_link_options(SocialRelationTests PRIVATE /OPT:REF /OPT:NOICF)
+endif()
+if(WIN32)
+    target_link_libraries(SocialRelationTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME social_relation COMMAND SocialRelationTests)
+
 add_executable(SafeboxLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/SafeboxLifecycleTests.cpp
     safebox.cpp
@@ -308,7 +331,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer OXEventTests QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
+    foreach(_asan_target GameServer OXEventTests QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests OfflineShopSafeboxTests SocialRelationTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
