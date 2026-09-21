@@ -57,10 +57,16 @@ CGuild* GetGuild(entt::entity e)
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    if (const auto* refs = g_registry.try_get<ecs::SocialRefs>(e))
-        return refs->guild;
+    const auto* refs = g_registry.try_get<ecs::SocialRefs>(e);
+    if (!refs || !refs->guild)
+        return nullptr;
 
-    return nullptr;
+    // A disbanded guild is deleted; the manager map is the liveness check, so
+    // a member that still holds the pointer cannot dereference freed memory.
+    if (CGuildManager::instance().FindGuild(refs->guild->GetID()) != refs->guild)
+        return nullptr;
+
+    return refs->guild;
 }
 
 // The dungeon this character is counted against. CHARACTER::m_pkDungeon held
@@ -95,7 +101,9 @@ void SetWarMap(entt::entity e, CWarMap* pWarMap)
 
     auto& membership = g_registry.get_or_emplace<ecs::DungeonMembership>(e);
 
-    if (membership.warMap)
+    // The previous relation may already point at a destroyed war map; only
+    // re-enter the live one.
+    if (membership.warMap && GetWarMap(e))
         membership.warMap->DecMember(e);
 
     membership.warMap = pWarMap;
@@ -152,7 +160,15 @@ CWarMap* GetWarMap(entt::entity e)
         return nullptr;
 
     const auto* membership = g_registry.try_get<ecs::DungeonMembership>(e);
-    return membership ? membership->warMap : nullptr;
+    if (!membership || !membership->warMap)
+        return nullptr;
+
+    // A destroyed war map is deleted; the manager map is the liveness check,
+    // so a stale relation reads as no war map.
+    if (CWarMapManager::instance().Find(membership->warMap->GetMapIndex()) != membership->warMap)
+        return nullptr;
+
+    return membership->warMap;
 }
 
 bool HasExchange(entt::entity e)

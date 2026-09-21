@@ -141,5 +141,9 @@ class CArenaManager : public singleton<CArenaManager>
 		bool IsArenaMap(uint32_t dwMapIndex);
 		MEMBER_IDENTITY IsMember(uint32_t dwMapIndex, uint32_t PID);
 
+		// Whether the arena object is still one of the live arenas; a relation
+		// that outlived its arena reads as no arena.
+		bool IsLiveArena(const CArena* arena);
+
 		bool IsLimitedItem(int32_t lMapIndex, uint32_t dwVnum );
 };

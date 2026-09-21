@@ -1,0 +1,47 @@
+Phase 22 - Guild / war map / arena relation validation
+Date: 2026-09-21
+Mode: the last lifetime item of the phase19 audit. The relations stay service
+pointers (the audit keeps guild, war map and arena as services); what changes
+is that every read proves the object is still alive.
+
+Why
+---
+- CGuildManager::DisbandGuild deletes the CGuild (M2_DELETE) and erases it from
+  its map, but a member character's SocialRefs::guild keeps pointing at the
+  freed object. Any guild read on that character (chat, packets, buffs) was a
+  use-after-free between the disband and the next relink.
+- CWarMapManager::DestroyWarMap deletes the CWarMap while DungeonMembership::
+  warMap on the participants still points at it; the potion paths dereference
+  it immediately after a null check (GetWarMap(e)->UsePotion(...)).
+- CArenaManager::Destroy deletes every CArenaMap and CArena; a stale
+  ArenaMembership::arena could be dereferenced afterwards.
+
+Implemented
+-----------
+- SocialSystem::GetGuild validates the stored pointer against the manager
+  (CGuildManager::FindGuild(guild->GetID()) == guild); a disbanded guild now
+  reads as no guild.
+- SocialSystem::GetWarMap validates against CWarMapManager::Find(mapIndex);
+  a destroyed war map reads as no war map. SetWarMap only re-enters the old
+  war map's DecMember when the old relation is still live, so the reassignment
+  path cannot call into a destroyed map either.
+- CArenaManager::IsLiveArena(const CArena*) walks the live arena maps and
+  lists; PlayerRuntime::GetArena returns null for a pooled pointer that is no
+  longer part of them.
+- The call sites keep their existing null handling: they already treated
+  "getter answered null" as "no guild/war/arena", so no behavior changes on
+  live objects.
+
+Notes
+-----
+- The validation is a lookup against the owning manager, so it costs one map
+  lookup for the guild and the war map and one bounded walk for the arena.
+- The pointer is not an entity handle because these objects stay services; the
+  manager map is their generation check.
+- The offline shop remains a cache service and was not touched.
+
+Verification
+------------
+- GameServer builds; the whole test suite (27 targets) passes. The relations
+  are exercised through the existing suites that compile the affected systems
+  with their own manager doubles.

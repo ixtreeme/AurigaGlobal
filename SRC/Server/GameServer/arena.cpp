@@ -543,6 +543,28 @@ void CArenaMap::EndAllDuel()
 	}
 }
 
+bool CArenaManager::IsLiveArena(const CArena* arena)
+{
+	if (arena == nullptr)
+		return false;
+
+	for (const auto& row : m_mapArenaMap)
+	{
+		const CArenaMap* pArenaMap = row.second;
+
+		if (pArenaMap == nullptr)
+			continue;
+
+		for (const CArena* pArena : pArenaMap->m_listArena)
+		{
+			if (pArena == arena)
+				return true;
+		}
+	}
+
+	return false;
+}
+
 void CArena::EndDuel()
 {
 	if (m_pEvent != nullptr) {

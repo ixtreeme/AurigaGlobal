@@ -21,8 +21,8 @@ SocialRefs::party (LPPARTY), SocialRefs::guild (CGuild*)
   Verdict: migratable; implemented in this phase (below).
   Guild is a DB-backed service object: its identity is a guild id, membership
   is keyed by player id, and wars/skills/deposits are persisted services.
-  Verdict: guild stays a service, its relation needs only generation/lifetime
-  validation, not ECS ownership.
+  Verdict: guild stays a service; the relation is validated against
+  CGuildManager on every read (phase22_relation_validation.txt).
 
 DungeonMembership::dungeon (previously LPDUNGEON), DungeonMembership::warMap (CWarMap*)
   CDungeon was a large object with per-content controllers on top (LostCastle,
@@ -36,8 +36,9 @@ DungeonMembership::dungeon (previously LPDUNGEON), DungeonMembership::warMap (CW
 ArenaMembership::arena (CArena*)
   CArena objects are created by CArenaManager per arena map and hold match
   state. The manager is the service; the arena lifetime is tied to the map,
-  not to the character. Verdict: service with raw pointer relation; validate
-  or move the arena object to a registry entity in a separate pass.
+  not to the character. Verdict: service with a raw pointer relation, now
+  validated against CArenaManager on every read
+  (phase22_relation_validation.txt).
 
 ShopState::currentShop / myShop (previously LPSHOP)
   CShop is character-owned game state (grid, price list, guests, sign) plus a
@@ -125,9 +126,7 @@ Implemented in this phase: party
 
 Remaining work and recommended order
 ------------------------------------
-1. Guild: the relation stays a service; only generation/lifetime validation is
-   missing if a guild is ever torn down while members hold the pointer.
-2. Offline shop: explicitly out of scope. Cache objects, async DB responses
+1. Offline shop: explicitly out of scope. Cache objects, async DB responses
    and P2P member identities stay as they are; only the already-native world
    object remains ECS.
 
@@ -141,6 +140,10 @@ Done after this audit
   functions, entity handles in ShopState and entity indexes in CShopManager.
   The extended-shop packet buffer overflow found on the way is fixed. See
   phase21_shop_audit.txt. The offline shop stays a cache service.
+- Guild, war map and arena keep their service pointers, but every read now
+  validates the object against its manager, so a disbanded guild, a destroyed
+  war map or a retired arena reads as null instead of dangling. See
+  phase22_relation_validation.txt. This closes the relation list.
 
 Acceptance notes
 ----------------

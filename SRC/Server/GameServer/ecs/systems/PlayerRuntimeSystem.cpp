@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "../../arena.h"
 #include "../components/activity_components.hpp"
 #include "../AIHelpers.hpp"
 #include <utility>
@@ -1010,7 +1011,14 @@ CArena* GetArena(entt::entity e)
 		return nullptr;
 
 	const auto* membership = g_registry.try_get<ecs::ArenaMembership>(e);
-	return membership ? membership->arena : nullptr;
+	if (!membership || membership->arena == nullptr)
+		return nullptr;
+
+	// A relation that outlived its arena reads as no arena.
+	if (!CArenaManager::instance().IsLiveArena(membership->arena))
+		return nullptr;
+
+	return membership->arena;
 }
 
 namespace {
