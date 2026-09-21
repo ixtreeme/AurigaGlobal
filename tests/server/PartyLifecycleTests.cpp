@@ -184,9 +184,13 @@ int MIN(int a, int b) { return a < b ? a : b; }
 uint32_t get_dword_time() { return 100000; }
 const int CHN_aiPartyBonusExpPercentByMemberCount[9] = { 0, 0, 12, 18, 26, 40, 53, 70, 100 };
 
-// Dungeon members only reach these on the services the doubles never set.
-void CDungeon::QuitParty(entt::entity) {}
-void CDungeon::SetPartyNull() {}
+// The party code never reaches DungeonSystem on these doubles; the stubs only
+// satisfy the linker.
+namespace DungeonSystem {
+bool IsValid(entt::entity) { return false; }
+int32_t GetMapIndex(entt::entity) { return 0; }
+void QuitParty(entt::entity, entt::entity) {}
+}
 
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
@@ -244,8 +248,8 @@ void SetParty(entt::entity e, entt::entity party) {
     if (onSetParty) onSetParty(e, party);
     if (party == entt::null && onTeardown) onTeardown(e);
 }
-LPDUNGEON GetDungeon(entt::entity) { return nullptr; }
-void SetDungeon(entt::entity, LPDUNGEON) {}
+entt::entity GetDungeon(entt::entity) { return entt::null; }
+void SetDungeon(entt::entity, entt::entity) {}
 }
 
 namespace ecs::PointSystem {

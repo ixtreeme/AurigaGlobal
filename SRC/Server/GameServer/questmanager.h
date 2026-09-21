@@ -11,7 +11,6 @@
 
 #include "questnpc.h"
 
-class CDungeon;
 
 #ifdef ENABLE_NEWSTUFF
 enum ETL { ETL_NIL, ETL_CFUN, ETL_LNUM, ETL_LSTR };

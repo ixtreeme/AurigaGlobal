@@ -65,58 +65,24 @@ CGuild* GetGuild(entt::entity e)
 
 // The dungeon this character is counted against. CHARACTER::m_pkDungeon held
 // it and DungeonMembership::dungeon was written by one quest binding alone, so
-// every reader of the component but that one saw nothing. One home now.
-void SetDungeon(entt::entity e, LPDUNGEON pkDungeon)
+// every reader of the component but that one saw nothing. One home now, as a
+// validated entity handle; the bookkeeping lives in DungeonSystem.
+void SetDungeon(entt::entity e, entt::entity pkDungeon)
 {
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-
-	auto& membership = g_registry.get_or_emplace<ecs::DungeonMembership>(e);
-
-	if (pkDungeon && membership.dungeon)
-    {
-        LOG_ERROR("{} is trying to reassigning dungeon (current {}, new party {})", ecs::PlayerRuntime::GetName(e).data(), static_cast<const void*>(get_pointer(membership.dungeon)), static_cast<const void*>(get_pointer(pkDungeon)));
-    }
-
-    if (membership.dungeon)
-    {
-        if (ecs::PlayerRuntime::IsPC(e))
-        {
-            const entt::entity party = ecs::SocialSystem::GetParty(e);
-            if (party != entt::null)
-                membership.dungeon->DecPartyMember(party, e);
-            else
-                membership.dungeon->DecMember(e);
-        }
-    }
-
-    membership.dungeon = pkDungeon;
-
-    if (pkDungeon)
-    {
-        if (ecs::PlayerRuntime::IsPC(e))
-        {
-            const entt::entity party = ecs::SocialSystem::GetParty(e);
-            if (party != entt::null)
-                membership.dungeon->IncPartyMember(party, e);
-            else
-                membership.dungeon->IncMember(e);
-        }
-        else if (ecs::PlayerRuntime::IsMonster(e) || ecs::PlayerRuntime::IsStone(e))
-        {
-            membership.dungeon->IncMonster();
-        }
-    }
-	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    DungeonSystem::SetMemberDungeon(e, pkDungeon);
 }
 
-LPDUNGEON GetDungeon(entt::entity e)
+entt::entity GetDungeon(entt::entity e)
 {
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
+    return DungeonSystem::GetMemberDungeon(e);
+}
 
-    const auto* membership = g_registry.try_get<ecs::DungeonMembership>(e);
-    return membership ? membership->dungeon : nullptr;
+// The membership is only valid while the character is on the dungeon's map.
+// Legacy cleared it at entity destruction alone, so an ex-member stayed counted
+// and a one-member set could destroy an instance under the rest of the party.
+void ClearDungeonIfOtherMap(entt::entity e, int32_t mapIndex)
+{
+    DungeonSystem::ClearMemberDungeonIfOtherMap(e, mapIndex);
 }
 
 // The guild war map this character is counted against. CHARACTER::m_pWarMap
@@ -756,8 +722,8 @@ void SetParty(entt::entity e, entt::entity pkParty)
     const bool isPC = ecs::PlayerRuntime::IsPC(e);
 
 #ifdef ENABLE_BUG_FIXES
-    if (GetDungeon(e) && isPC && pkParty == entt::null)
-        SetDungeon(e, nullptr);
+    if (GetDungeon(e) != entt::null && isPC && pkParty == entt::null)
+        SetDungeon(e, entt::null);
 #endif
 
 #ifdef ENABLE_NEW_USE_POTION
@@ -1335,7 +1301,7 @@ ecs::SocialSystem::PartyJoinErrCode ecs::SocialSystem::IsPartyJoinableMutableCon
 {
     if (!CPartyManager::instance().IsEnablePCParty())
         return PERR_SERVER;
-    else if (ecs::SocialSystem::GetDungeon(leader))
+    else if (ecs::SocialSystem::GetDungeon(leader) != entt::null)
         return PERR_DUNGEON;
     else if (ecs::PlayerRuntime::IsObserverMode(guest))
         return PERR_OBSERVER;

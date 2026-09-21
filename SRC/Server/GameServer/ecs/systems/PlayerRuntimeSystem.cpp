@@ -2997,8 +2997,9 @@ void DestroyCharacterStatePre(entt::entity character)
     {
         if (const auto* origin = g_registry.try_get<ecs::RegenOrigin>(entityToDestroy))
         {
-            if (LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(entityToDestroy)) {
-                if (dungeon->IsValidRegen(origin->regen, origin->id)) {
+            const entt::entity dungeon = ecs::SocialSystem::GetDungeon(entityToDestroy);
+            if (dungeon != entt::null) {
+                if (DungeonSystem::IsValidRegen(dungeon, origin->regen, origin->id)) {
                     --origin->regen->count;
                 }
             }
@@ -3009,9 +3010,9 @@ void DestroyCharacterStatePre(entt::entity character)
         }
     }
 
-    if (ecs::SocialSystem::GetDungeon(character))
+    if (ecs::SocialSystem::GetDungeon(character) != entt::null)
     {
-        ecs::SocialSystem::SetDungeon(character, nullptr);
+        ecs::SocialSystem::SetDungeon(character, entt::null);
     }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM

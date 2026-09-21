@@ -330,7 +330,7 @@ namespace quest
 	ALUA(party_is_in_dungeon)
 	{
 		const entt::entity party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L));
-		lua_pushboolean(L, party != entt::null && PartySystem::GetDungeon(party) != nullptr);
+		lua_pushboolean(L, party != entt::null && PartySystem::GetDungeon(party) != entt::null);
 		return 1;
 	}
 

@@ -507,7 +507,6 @@ struct TSkillUseInfo
 
 typedef struct packet_party_update TPacketGCPartyUpdate;
 class CSkillProto;
-class CDungeon;
 class CWarMap;
 class CAffect;
 class CGuild;

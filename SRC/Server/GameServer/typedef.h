@@ -41,13 +41,6 @@ typedef DebugPtr<SECTREE_MAP> LPSECTREE_MAP;
 typedef SECTREE_MAP* LPSECTREE_MAP;
 #endif
 
-class CDungeon;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<CDungeon> LPDUNGEON;
-#else
-typedef CDungeon* LPDUNGEON;
-#endif
-
 typedef struct pixel_position_s
 {
 	int32_t x, y, z;

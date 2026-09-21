@@ -479,8 +479,9 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* fil
 #endif
 		&& MountSystem::GetRider(character) == entt::null)
 	{
-		if (auto* dungeon = ecs::SocialSystem::GetDungeon(character))
-			dungeon->DeadCharacter(character);
+		const entt::entity dungeon = ecs::SocialSystem::GetDungeon(character);
+		if (dungeon != entt::null)
+			DungeonSystem::DeadCharacter(dungeon, character);
 	}
 
 	FlushDelayedSave(character);
@@ -769,7 +770,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 			// dungeon kizrs
 			const bool isDungeonMap =
 				(lMapIndex >= 10000) ||
-				(CDungeonManager::instance().FindByMapIndex(lMapIndex) != nullptr);
+				(CDungeonManager::instance().FindByMapIndex(lMapIndex) != entt::null);
 
 			if (!isDungeonMap && extraCount > 0)
 			{
@@ -867,7 +868,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 	if (m_selectedStone != entt::null)
 	{
 		bSpawnedByStone = true;
-		if (ecs::SocialSystem::GetDungeon(m_selectedStone))
+		if (ecs::SocialSystem::GetDungeon(m_selectedStone) != entt::null)
 			bAggressive = true;
 	}
 
@@ -912,7 +913,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 	return true;
 }
 
-bool CHARACTER_MANAGER::SpawnGroupGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen, bool bAggressive_, LPDUNGEON pDungeon)
+bool CHARACTER_MANAGER::SpawnGroupGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen, bool bAggressive_, entt::entity pDungeon)
 {
 	const uint32_t dwGroupID = CMobManager::Instance().GetGroupFromGroupGroup(dwVnum);
 
@@ -927,7 +928,7 @@ bool CHARACTER_MANAGER::SpawnGroupGroup(uint32_t dwVnum, int32_t lMapIndex, int 
 	}
 }
 
-entt::entity CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen, bool bAggressive_, LPDUNGEON pDungeon)
+entt::entity CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen, bool bAggressive_, entt::entity pDungeon)
 {
 
 	if (!dwVnum)
@@ -953,7 +954,7 @@ entt::entity CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, i
 	{
 		bSpawnedByStone = true;
 
-		if (ecs::SocialSystem::GetDungeon(m_selectedStone))
+		if (ecs::SocialSystem::GetDungeon(m_selectedStone) != entt::null)
 			bAggressive = true;
 	}
 
@@ -1047,7 +1048,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 
 				const bool isDungeonMap =
 					(mapIndex >= 10000) ||
-					(CDungeonManager::instance().FindByMapIndex(mapIndex) != nullptr);
+					(CDungeonManager::instance().FindByMapIndex(mapIndex) != entt::null);
 
 				if (isDungeonMap)
 					continue;

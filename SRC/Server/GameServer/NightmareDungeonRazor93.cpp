@@ -164,13 +164,13 @@ namespace
 
         void ClearDungeon(int32_t mapIndex, bool exitLobby)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d != entt::null)
             {
-                d->KillAll();
-                d->ClearRegen();
+                DungeonSystem::KillAll(d);
+                DungeonSystem::ClearRegen(d);
                 if (exitLobby)
-                    d->ExitAllLobby(1);
+                    DungeonSystem::ExitAllLobby(d, 1);
             }
             CancelAll(mapIndex);
         }
@@ -193,77 +193,77 @@ namespace
 
         void StartWave1(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            d->SetFlag(kFlagStep2, 6);
-            d->SetFlag(kFlagStep, 0);
-            d->SetFlag(kFlagStep1, 0);
+            DungeonSystem::SetFlag(d, kFlagStep2, 6);
+            DungeonSystem::SetFlag(d, kFlagStep, 0);
+            DungeonSystem::SetFlag(d, kFlagStep1, 0);
 
             for (int i = 0; i < 6; ++i)
-                d->SpawnMob(kWave1Vnum, kWavePos[i].x, kWavePos[i].y);
+                DungeonSystem::SpawnMob(d, kWave1Vnum, kWavePos[i].x, kWavePos[i].y);
 
             ChatToMap(mapIndex, "[Nightmare] Wave 1 started.");
         }
 
         void SpawnWave2(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            d->SetFlag(kFlagStep, 6);
+            DungeonSystem::SetFlag(d, kFlagStep, 6);
             for (int i = 0; i < 6; ++i)
-                d->SpawnMob(kWave2Vnum, kWavePos[i].x, kWavePos[i].y);
+                DungeonSystem::SpawnMob(d, kWave2Vnum, kWavePos[i].x, kWavePos[i].y);
 
             ChatToMap(mapIndex, "[Nightmare] Wave 2 started.");
         }
 
         void SpawnWave3(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            d->SetFlag(kFlagStep1, 6);
+            DungeonSystem::SetFlag(d, kFlagStep1, 6);
             for (int i = 0; i < 6; ++i)
-                d->SpawnMob(kWave3Vnum, kWavePos[i].x, kWavePos[i].y);
+                DungeonSystem::SpawnMob(d, kWave3Vnum, kWavePos[i].x, kWavePos[i].y);
 
             ChatToMap(mapIndex, "[Nightmare] Wave 3 started.");
         }
 
         void SpawnBoss(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            d->SpawnMob(kBossVnum, kBossX, kBossY);
+            DungeonSystem::SpawnMob(d, kBossVnum, kBossX, kBossY);
             ChatToMap(mapIndex, "[Nightmare] The boss has appeared!");
         }
 
         void Complete(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            if (d->GetFlag(kFlagWasCompleted) != 0)
+            if (DungeonSystem::GetFlag(d, kFlagWasCompleted) != 0)
                 return;
 
-            d->SetFlag(kFlagWasCompleted, 1);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
             CancelAll(mapIndex);
 
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
-            d->SpawnMob(kEntryNpcVnum, kExitNpcX, kExitNpcY);
+            DungeonSystem::SpawnMob(d, kEntryNpcVnum, kExitNpcX, kExitNpcY);
 
             const int32_t bonus = 10 + quest::CQuestManager::instance().GetEventFlag("dungeon_bonus");
             if (number(1, 100) <= bonus)
-                d->SpawnMob(kBonusMobVnum, kExitNpcX, kExitNpcY);
+                DungeonSystem::SpawnMob(d, kBonusMobVnum, kExitNpcX, kExitNpcY);
 
             ChatToMap(mapIndex, "[Nightmare] Completed!");
         }
@@ -381,14 +381,14 @@ void CNightmareDungeonRazor93::OnPlayerLogin(entt::entity character)
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
-    if (d->GetFlag(kFlagFloor) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
     {
-        d->SetFlag(kFlagFloor, 2);
-        d->SetFlag(kFlagWasCompleted, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 2);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
 
         s_nm.SchedulePrepare(idx, 1);
         s_nm.ScheduleEnd(idx, kTimeLimitSeconds);
@@ -404,8 +404,8 @@ void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity vic
     if (!IsNightmareDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d || d->GetFlag(kFlagFloor) != 2)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null || DungeonSystem::GetFlag(d, kFlagFloor) != 2)
         return;
 
     const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
@@ -418,10 +418,10 @@ void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity vic
 
     if (vnum == kWave1Vnum)
     {
-        int32_t s = d->GetFlag(kFlagStep2);
+        int32_t s = DungeonSystem::GetFlag(d, kFlagStep2);
         if (s > 0)
         {
-            d->SetFlag(kFlagStep2, --s);
+            DungeonSystem::SetFlag(d, kFlagStep2, --s);
             if (s == 0)
                 s_nm.SpawnWave2(idx);
         }
@@ -430,10 +430,10 @@ void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity vic
 
     if (vnum == kWave2Vnum)
     {
-        int32_t s = d->GetFlag(kFlagStep);
+        int32_t s = DungeonSystem::GetFlag(d, kFlagStep);
         if (s > 0)
         {
-            d->SetFlag(kFlagStep, --s);
+            DungeonSystem::SetFlag(d, kFlagStep, --s);
             if (s == 0)
                 s_nm.SpawnWave3(idx);
         }
@@ -442,10 +442,10 @@ void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity vic
 
     if (vnum == kWave3Vnum)
     {
-        int32_t s = d->GetFlag(kFlagStep1);
+        int32_t s = DungeonSystem::GetFlag(d, kFlagStep1);
         if (s > 0)
         {
-            d->SetFlag(kFlagStep1, --s);
+            DungeonSystem::SetFlag(d, kFlagStep1, --s);
             if (s == 0)
                 s_nm.SpawnBoss(idx);
         }
@@ -473,8 +473,8 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     // If clicked inside an active run, do nothing.
     if (IsNightmareDungeonMap(mapIdx))
     {
-        LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
-        if (cur && cur->GetFlag(kFlagWasCompleted) != 0)
+        const entt::entity cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
+        if (cur != entt::null && DungeonSystem::GetFlag(cur, kFlagWasCompleted) != 0)
         {
             fromCompletedInside = true;
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Restarting the dungeon...");
@@ -496,8 +496,8 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     {
         if (IsNightmareDungeonMap(rejoinIdx))
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
-            if (d && d->GetFlag(kFlagWasCompleted) == 0 && d->GetFlag(kFlagFloor) == 2)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+            if (d != entt::null && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0 && DungeonSystem::GetFlag(d, kFlagFloor) == 2)
             {
                 ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Rejoining...");
                 ecs::MovementSystem::WarpSet(character, kRejoinX, kRejoinY, rejoinIdx);
@@ -595,14 +595,14 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     }
 
     // Create dungeon instance
-    LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
+    if (d == entt::null)
         return true;
 
-    d->SetFlag(kFlagFloor, 0); // OnPlayerLogin will initialize to floor 2 and schedule waves/timer
-    d->SetFlag(kFlagWasCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagFloor, 0); // OnPlayerLogin will initialize to floor 2 and schedule waves/timer
+    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
 
-    const int32_t newMapIndex = d->GetMapIndex();
+    const int32_t newMapIndex = DungeonSystem::GetMapIndex(d);
 
     // Consume items + set cooldown + save return location BEFORE join
     auto applyMember = [&](entt::entity m){
@@ -621,12 +621,12 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     if (party == entt::null)
     {
         applyMember(character);
-        d->Join_Coords(character, 2113, 1729, kOriginalMap);
+        DungeonSystem::Join_Coords(d, character, 2113, 1729, kOriginalMap);
     }
     else
     {
         PartySystem::ForEachOnMapMember(party, applyMember, originMapForWarp);
-        d->JoinParty_Coords(party, 2113, 1729, originMapForWarp);
+        DungeonSystem::JoinParty_Coords(d, party, 2113, 1729, originMapForWarp);
     }
 
     // Clear rejoin flags for the leader (members will be set on logout if needed)

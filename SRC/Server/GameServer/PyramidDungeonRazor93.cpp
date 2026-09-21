@@ -144,14 +144,14 @@ namespace
         {
             CancelPrepare(mapIndex);
 
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            d->SetFlag(kFlagWasCompleted, 1);
-            d->KillAll();
-            d->ClearRegen();
-            d->ExitAllLobby(1);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
+            DungeonSystem::ExitAllLobby(d, 1);
         }
 
         void SchedulePrepare(int32_t mapIndex, int32_t delaySec)
@@ -176,21 +176,21 @@ namespace
 
         void StartPrepare(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            d->SetFlag(kFlagFloor, 2);
-            d->SetFlag(kFlagStep, 7);
-            d->SetFlag(kFlagBossSpawned, 0);
-            d->SetFlag(kFlagWasCompleted, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor, 2);
+            DungeonSystem::SetFlag(d, kFlagStep, 7);
+            DungeonSystem::SetFlag(d, kFlagBossSpawned, 0);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
 
             // Clean + spawn 7 metins
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
             for (int i = 0; i < 7; ++i)
-                d->SpawnMob(kMetinVnum, kMetinPos[i][0], kMetinPos[i][1]);
+                DungeonSystem::SpawnMob(d, kMetinVnum, kMetinPos[i][0], kMetinPos[i][1]);
 
             // English notice
             ForEachPcOnMap(mapIndex, [](entt::entity pc){
@@ -356,18 +356,18 @@ void CPyramidDungeonRazor93::OnPlayerLogin(entt::entity character)
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
     // Safety: if dungeon is uninitialized, initialize like Lua login does.
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIdx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIdx);
+    if (d == entt::null)
         return;
 
-    if (d->GetFlag(kFlagFloor) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
     {
         const entt::entity party = ecs::SocialSystem::GetParty(character);
         if (party == entt::null || PartySystem::GetLeaderPID(party) == ecs::PlayerRuntime::GetPlayerID(character))
         {
-            d->SetFlag(kFlagFloor, 2);
-            d->SetFlag(kFlagWasCompleted, 0);
-            d->SetFlag(kFlagBossSpawned, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor, 2);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+            DungeonSystem::SetFlag(d, kFlagBossSpawned, 0);
             s_pyr.SchedulePrepare(mapIdx, 1);
         }
     }
@@ -389,8 +389,8 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     const int32_t curMap = ecs::PlayerRuntime::GetMapIndex(character);
     if (IsPyramidDungeonMap(curMap))
     {
-        LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(curMap);
-        if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
+        const entt::entity cur = CDungeonManager::instance().FindByMapIndex(curMap);
+        if (cur != entt::null && DungeonSystem::GetFlag(cur, kFlagWasCompleted) == 0)
         {
             ecs::MovementSystem::WarpSet(character, kLobbyX * 100, kLobbyY * 100);
             return true;
@@ -413,10 +413,10 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
                 return true;
             }
 
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
-            if (d && d->GetFlag(kFlagWasCompleted) == 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+            if (d != entt::null && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0)
             {
-                const int32_t floor = d->GetFlag(kFlagFloor);
+                const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
                 if (floor == 2)
                 {
                     // Lua used pc.warp(218600, 348900, rejoinIDX)
@@ -533,30 +533,30 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
         ResetRejoinFlags(character);
 
     // Create + join
-    LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
+    if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon: failed to create dungeon.");
         return true;
     }
 
-    d->SetFlag(kFlagFloor, 2);
-    d->SetFlag(kFlagWasCompleted, 0);
-    d->SetFlag(kFlagBossSpawned, 0);
-    d->SetFlag(kFlagStep, 0);
+    DungeonSystem::SetFlag(d, kFlagFloor, 2);
+    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagBossSpawned, 0);
+    DungeonSystem::SetFlag(d, kFlagStep, 0);
 
     // Join party/solo at cords
     if (party != entt::null)
     {
-        d->JoinParty_Coords(party, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::JoinParty_Coords(d, party, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
-        d->Join_Coords(character, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::Join_Coords(d, character, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     // Prepare after 1 second (spawn metins etc.)
-    s_pyr.SchedulePrepare(d->GetMapIndex(), 1);
+    s_pyr.SchedulePrepare(DungeonSystem::GetMapIndex(d), 1);
 
     return true;
 }
@@ -570,11 +570,11 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
     if (!IsPyramidDungeonMap(mapIdx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIdx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIdx);
+    if (d == entt::null)
         return;
 
-    if (d->GetFlag(kFlagFloor) != 2)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) != 2)
         return;
 
     const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
@@ -582,12 +582,12 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
     // Metin killed -> decrement step and spawn stone when done
     if (vnum == kMetinVnum)
     {
-        int32_t s = d->GetFlag(kFlagStep);
+        int32_t s = DungeonSystem::GetFlag(d, kFlagStep);
         if (s <= 0)
             return;
 
         s -= 1;
-        d->SetFlag(kFlagStep, s);
+        DungeonSystem::SetFlag(d, kFlagStep, s);
 
         ForEachPcOnMap(mapIdx, [s](entt::entity pc){
             if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Metins remaining: %d", s);
@@ -595,7 +595,7 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
 
         if (s == 0)
         {
-            d->SpawnMob(kStoneVnum, kStoneX, kStoneY);
+            DungeonSystem::SpawnMob(d, kStoneVnum, kStoneX, kStoneY);
             ForEachPcOnMap(mapIdx, [](entt::entity pc){
                 if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] The stone has appeared!");
                 });
@@ -606,8 +606,8 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
     // Stone killed -> load regen3 (small mobs)
     if (vnum == kStoneVnum)
     {
-        d->SetFlag(kFlagBossSpawned, 0);
-        d->SpawnRegen(kRegen3, true);
+        DungeonSystem::SetFlag(d, kFlagBossSpawned, 0);
+        DungeonSystem::SpawnRegen(d, kRegen3, true);
 
         ForEachPcOnMap(mapIdx, [](entt::entity pc){
             if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Kill all monsters!");
@@ -618,16 +618,16 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
     // Small mobs killed -> if no monsters left, spawn boss (only once)
     if (vnum == 4621 || vnum == 4620 || vnum == 4618 || vnum == 4619)
     {
-        if (d->GetFlag(kFlagStep) != 0)
+        if (DungeonSystem::GetFlag(d, kFlagStep) != 0)
             return;
 
-        if (d->GetFlag(kFlagBossSpawned) == 1)
+        if (DungeonSystem::GetFlag(d, kFlagBossSpawned) == 1)
             return;
 
-        if (d->CountMonster() == 0)
+        if (DungeonSystem::CountMonster(d) == 0)
         {
-            d->SetFlag(kFlagBossSpawned, 1);
-            d->SpawnMob(kBossVnum, kBossX, kBossY);
+            DungeonSystem::SetFlag(d, kFlagBossSpawned, 1);
+            DungeonSystem::SpawnMob(d, kBossVnum, kBossX, kBossY);
             ForEachPcOnMap(mapIdx, [](entt::entity pc){
                 if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "-------- Kill the Boss! --------");
                 });
@@ -638,9 +638,9 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
     // Boss killed -> completion
     if (vnum == kBossVnum)
     {
-        if (d->GetFlag(kFlagStep) == 0 && d->GetFlag(kFlagWasCompleted) == 0)
+        if (DungeonSystem::GetFlag(d, kFlagStep) == 0 && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0)
         {
-            d->SetFlag(kFlagWasCompleted, 1);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
             // Global notice
             if (const entt::entity killerParty = ecs::SocialSystem::GetParty(killer); killerParty != entt::null)
@@ -653,15 +653,15 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
                 { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", ecs::PlayerRuntime::GetName(killer).data()); SendNotice(buf); }
             }
 
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
             // Spawn NPC + bonus mob chance
-            d->SpawnMob(kEntryNpcVnum, kStoneX, kStoneY);
+            DungeonSystem::SpawnMob(d, kEntryNpcVnum, kStoneX, kStoneY);
 
             const int32_t bonus = 10 + quest::CQuestManager::instance().GetEventFlag("dungeon_bonus");
             if (number(1, 100) <= bonus)
-                d->SpawnMob(kBonusMobVnum, kStoneX, kStoneY);
+                DungeonSystem::SpawnMob(d, kBonusMobVnum, kStoneX, kStoneY);
 
             ForEachPcOnMap(mapIdx, [](entt::entity pc){
                 if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Dungeon completed!");

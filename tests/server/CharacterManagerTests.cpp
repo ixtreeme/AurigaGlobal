@@ -352,7 +352,7 @@ int GetProtectTime(entt::entity, std::string_view) { Unexpected(); }
 void SetEmpire(entt::entity, uint8_t) { Unexpected(); }
 void SetDungeonTicketExtraMetin(entt::entity, bool) { Unexpected(); }
 void SetProto(entt::entity, const CMob*) { Unexpected(); }
-void SetDungeon(entt::entity, LPDUNGEON) { Unexpected(); }
+void SetDungeon(entt::entity, entt::entity) { Unexpected(); }
 int GetPremiumRemainSeconds(entt::entity, uint8_t) { Unexpected(); }
 void DestroyCharacter(entt::entity e) { CHARACTER_MANAGER::instance().DestroyCharacter(e); }
 }
@@ -409,8 +409,8 @@ LPSECTREE SECTREE_MANAGER::Get(int32_t, int32_t, int32_t) { Unexpected(); }
 bool SECTREE_MANAGER::GetMapBasePositionByMapIndex(int32_t, PIXEL_POSITION&) { Unexpected(); }
 bool SECTREE_MANAGER::GetMovablePosition(int32_t, int32_t, int32_t, PIXEL_POSITION&) { Unexpected(); }
 uint8_t SECTREE_MANAGER::GetEmpireFromMapIndex(int32_t) { Unexpected(); }
-void CDungeon::DeadCharacter(entt::entity) { Unexpected(); }
-LPDUNGEON CDungeonManager::FindByMapIndex(int32_t) { Unexpected(); }
+void DungeonSystem::DeadCharacter(entt::entity, entt::entity) { Unexpected(); }
+entt::entity CDungeonManager::FindByMapIndex(int32_t) { Unexpected(); }
 void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t) { Unexpected(); }
 bool map_allow_find(int32_t) { Unexpected(); }
 int quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
@@ -419,8 +419,8 @@ entt::entity EntityFactory::EnsureCharacterEntity(entt::registry&, uint32_t) { U
 entt::entity EntityFactory::CreateMonster(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateNPC(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateStone(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
-LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity) { return nullptr; }
-void ecs::SocialSystem::SetDungeon(entt::entity, CDungeon*) { Unexpected(); }
+entt::entity ecs::SocialSystem::GetDungeon(entt::entity) { return entt::null; }
+void ecs::SocialSystem::SetDungeon(entt::entity, entt::entity) { Unexpected(); }
 void ItemSystem::AutoGiveItem(entt::entity, entt::entity, bool, bool) { Unexpected(); }
 const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected(); }
 bool ItemSystem::SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected(); }

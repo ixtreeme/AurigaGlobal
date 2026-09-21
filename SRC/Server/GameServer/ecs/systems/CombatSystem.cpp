@@ -1341,7 +1341,7 @@ void DistributeHP(entt::entity victim, entt::entity killer)
 {
 	// The body below the dungeon test was removed long ago; what is left does
 	// nothing whichever way the test goes. Carried over as it stands.
-	if (ecs::SocialSystem::GetDungeon(killer)) //  ΰʴ´
+	if (ecs::SocialSystem::GetDungeon(killer) != entt::null) //  ΰʴ´
 		return;
 }
 
@@ -2205,7 +2205,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	//	if (auto* flags = RuntimeFlags(victim))
 	//		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
-	//	if (ecs::SocialSystem::GetDungeon(victim))
+	//	if (ecs::SocialSystem::GetDungeon(victim) != entt::null)
 	//		ecs::SocialSystem::GetDungeon(victim)->DeadCharacter(this);
 
 	//	if (m_pkDeadEvent)
@@ -2232,10 +2232,10 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 	if (ecs::PlayerRuntime::IsMonster(victim) || ecs::PlayerRuntime::IsStone(victim))
 	{
-		LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim);
-		if (dungeon)
+		const entt::entity dungeon = ecs::SocialSystem::GetDungeon(victim);
+		if (dungeon != entt::null)
 		{
-			dungeon->DecMonster();
+			DungeonSystem::RemoveMonster(victim);
 		}
 	}
 
@@ -2586,7 +2586,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 				{
 					// DUNGEON_MONSTER_REBIRTH_BUG_FIX
 					const entt::entity resurrected = CHARACTER_MANAGER::instance().SpawnMobEntity(mobTable->dwResurrectionVnum, ecs::PlayerRuntime::GetMapIndex(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ecs::PlayerRuntime::GetZ(victim), true, (int)ecs::PlayerRuntime::GetRotation(victim));
-					if (ecs::SocialSystem::GetDungeon(victim) && resurrected != entt::null)
+					if (ecs::SocialSystem::GetDungeon(victim) != entt::null && resurrected != entt::null)
 					{
 						ecs::SocialSystem::SetDungeon(resurrected, ecs::SocialSystem::GetDungeon(victim));
 					}
@@ -2678,9 +2678,9 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 		// The dungeon may destroy the character it is told about, so nothing
 		// below may touch the victim without asking again.
-		if (LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim))
+		if (const entt::entity dungeon = ecs::SocialSystem::GetDungeon(victim); dungeon != entt::null)
 		{
-			dungeon->DeadCharacter(victim);
+			DungeonSystem::DeadCharacter(dungeon, victim);
 
 			if (!g_registry.valid(victim))
 				return;
@@ -3851,7 +3851,7 @@ void Reward(entt::entity e, bool bItemDrop)
 		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
 		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
 
-		if (ecs::SocialSystem::GetDungeon(e) && ecs::IsCharacter(attacker) && ecs::PlayerRuntime::IsPC(attacker) && !s_vec_item.empty())
+		if (ecs::SocialSystem::GetDungeon(e) != entt::null && ecs::IsCharacter(attacker) && ecs::PlayerRuntime::IsPC(attacker) && !s_vec_item.empty())
 		{
 			const long lMapIndex = ecs::PlayerRuntime::GetMapIndex(e); // a megolt mob mapindexe
 
@@ -3880,7 +3880,7 @@ void Reward(entt::entity e, bool bItemDrop)
 			{
 				if (ecs::SocialSystem::GetParty(attacker) != entt::null) // CSAK partyra
 				{
-					CDungeon* pDungeon = ecs::SocialSystem::GetDungeon(e);
+					const entt::entity pDungeon = ecs::SocialSystem::GetDungeon(e);
 
 					// csak akkor, ha a killer ugyanebben a dungeon instance-ben van
 					if (ecs::SocialSystem::GetDungeon(attacker) == pDungeon)
@@ -3912,7 +3912,7 @@ void Reward(entt::entity e, bool bItemDrop)
 						std::unordered_map<std::string, entt::entity> mapWinnerByKey;
 						mapWinnerByKey.reserve(16);
 
-						pDungeon->ForEachMember([&](entt::entity mch)
+						DungeonSystem::ForEachMember(pDungeon, [&](entt::entity mch)
 							{
 								const entt::entity mchEntity = mch;
 								if (mch == entt::null || !ecs::PlayerRuntime::IsPC(mchEntity) || !ecs::PlayerRuntime::GetDesc(mchEntity))
@@ -5525,14 +5525,14 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		if (!ecs::PlayerRuntime::IsPC(victim) && attackerIsCharacter && ecs::PlayerRuntime::IsPC(attacker))
 		{
 			int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(victim);
-			LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim);
-			if (dungeon)
+			const entt::entity dungeon = ecs::SocialSystem::GetDungeon(victim);
+			if (dungeon != entt::null)
 			{
 #if defined(ENABLE_DS_RUNE)
 				if (racevnum == 3996 || racevnum == 3997 || racevnum == 3998 || racevnum == 4011 || racevnum == 4012 || racevnum == 4013)
 				{
-					int32_t type = dungeon->GetFlag("type");
-					int32_t step = dungeon->GetFlag("step");
+					int32_t type = DungeonSystem::GetFlag(dungeon, "type");
+					int32_t step = DungeonSystem::GetFlag(dungeon, "step");
 					if (type == 2)
 					{
 						if (step == 0)
@@ -5540,19 +5540,19 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 60;
 							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
-								dungeon->SetFlag("step", 1);
+								DungeonSystem::SetFlag(dungeon, "step", 1);
 								if (racevnum == 3997) {
-									dungeon->SpawnRegen("data/dungeon/rune/regen2_type3a.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen2_type3a.txt");
 								}
 								else if (racevnum == 3998) {
-									dungeon->SpawnRegen("data/dungeon/rune/regen3_type3a.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen3_type3a.txt");
 								}
 								else if (racevnum == 3996) {
-									dungeon->SpawnRegen("data/dungeon/rune/regen4_type3a.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen4_type3a.txt");
 								}
 
-								dungeon->Notice(905, "");
-								dungeon->Notice(906, "");
+								DungeonSystem::Notice(dungeon, 905, "");
+								DungeonSystem::Notice(dungeon, 906, "");
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
@@ -5572,19 +5572,19 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 20;
 							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
-								dungeon->SetFlag("step", 3);
+								DungeonSystem::SetFlag(dungeon, "step", 3);
 								if (racevnum == 3997) {
-									dungeon->SpawnRegen("data/dungeon/rune/regen2_type3b.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen2_type3b.txt");
 								}
 								else if (racevnum == 3998) {
-									dungeon->SpawnRegen("data/dungeon/rune/regen3_type3b.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen3_type3b.txt");
 								}
 								else if (racevnum == 3996) {
-									dungeon->SpawnRegen("data/dungeon/rune/regen4_type3b.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen4_type3b.txt");
 								}
 
-								dungeon->Notice(907, "");
-								dungeon->Notice(906, "");
+								DungeonSystem::Notice(dungeon, 907, "");
+								DungeonSystem::Notice(dungeon, 906, "");
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
@@ -5612,8 +5612,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 								int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 70;
 								if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 								{
-									dungeon->SetFlag("step", 1);
-									dungeon->Notice(908, "");
+									DungeonSystem::SetFlag(dungeon, "step", 1);
+									DungeonSystem::Notice(dungeon, 908, "");
 								}
 							}
 							else
@@ -5623,7 +5623,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 						}
 						else
 						{
-							dungeon->SetFlag("step", 1);
+							DungeonSystem::SetFlag(dungeon, "step", 1);
 						}
 					}
 					else if (type == 8)
@@ -5633,11 +5633,11 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 50;
 							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
-								dungeon->SetFlag("step", 1);
-								dungeon->SpawnRegen("data/dungeon/rune/regen8.txt");
+								DungeonSystem::SetFlag(dungeon, "step", 1);
+								DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen8.txt");
 
-								dungeon->Notice(907, "");
-								dungeon->Notice(906, "");
+								DungeonSystem::Notice(dungeon, 907, "");
+								DungeonSystem::Notice(dungeon, 906, "");
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
@@ -5658,11 +5658,11 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 10;
 							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
-								dungeon->SetFlag("step", 3);
-								dungeon->SpawnRegen("data/dungeon/rune/regen9.txt");
+								DungeonSystem::SetFlag(dungeon, "step", 3);
+								DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen9.txt");
 
-								dungeon->Notice(905, "");
-								dungeon->Notice(906, "");
+								DungeonSystem::Notice(dungeon, 905, "");
+								DungeonSystem::Notice(dungeon, 906, "");
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
@@ -5691,15 +5691,15 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				if (racevnum == 6118)
 				{
 					int32_t vid = ecs::PlayerRuntime::GetPacketVID(victim);
-					if (vid == dungeon->GetFlag("statue_vid1") || vid == dungeon->GetFlag("statue_vid2") || vid == dungeon->GetFlag("statue_vid3") || vid == dungeon->GetFlag("statue_vid4"))
+					if (vid == DungeonSystem::GetFlag(dungeon, "statue_vid1") || vid == DungeonSystem::GetFlag(dungeon, "statue_vid2") || vid == DungeonSystem::GetFlag(dungeon, "statue_vid3") || vid == DungeonSystem::GetFlag(dungeon, "statue_vid4"))
 					{
-						int32_t floor = dungeon->GetFlag("floor");
+						int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 						if (floor >= 1 && floor < 5)
 						{
 							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 75;
 							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
-								dungeon->SetFlag("floor", floor + 1);
+								DungeonSystem::SetFlag(dungeon, "floor", floor + 1);
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
@@ -5719,8 +5719,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 								if (floor == 4)
 								{
-									dungeon->KillAllMonsters();
-									dungeon->ClearRegen();
+									DungeonSystem::KillAllMonsters(dungeon);
+									DungeonSystem::ClearRegen(dungeon);
 								}
 
 								return false;
@@ -5731,7 +5731,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 50;
 							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
-								dungeon->SetFlag("floor", floor + 1);
+								DungeonSystem::SetFlag(dungeon, "floor", floor + 1);
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
@@ -5751,8 +5751,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 								if (floor == 10)
 								{
-									dungeon->KillAllMonsters();
-									dungeon->ClearRegen();
+									DungeonSystem::KillAllMonsters(dungeon);
+									DungeonSystem::ClearRegen(dungeon);
 								}
 
 								return false;
@@ -5763,7 +5763,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 5;
 							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
-								dungeon->SetFlag("floor", floor + 1);
+								DungeonSystem::SetFlag(dungeon, "floor", floor + 1);
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
@@ -5783,7 +5783,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 								if (floor == 17)
 								{
-									dungeon->KillAllMonsters();
+									DungeonSystem::KillAllMonsters(dungeon);
 								}
 
 								return false;
@@ -6039,20 +6039,20 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 #ifdef __DEFENSE_WAVE__
 	if (ecs::PlayerRuntime::GetRaceNum(victim) == 20434)
 	{
-		LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim);
-		if (dungeon)
+		const entt::entity dungeon = ecs::SocialSystem::GetDungeon(victim);
+		if (dungeon != entt::null)
 		{
-			dungeon->UpdateMastHP();
+			DungeonSystem::UpdateMastHP(dungeon);
 			// A dungeon with no registered mast dereferenced null here; a destroyed
 			// one reads no health and counts as fallen.
-			const entt::entity mast = dungeon->GetMast();
+			const entt::entity mast = DungeonSystem::GetMast(dungeon);
 			if (mast != entt::null && ecs::PlayerRuntime::GetHP(mast) <= 0)
 			{
-				dungeon->ClearRegen();
-				dungeon->KillAll();
-				dungeon->Notice(909, "");
-				dungeon->Notice(910, "");
-				dungeon->ExitAllLobby(2);
+				DungeonSystem::ClearRegen(dungeon);
+				DungeonSystem::KillAll(dungeon);
+				DungeonSystem::Notice(dungeon, 909, "");
+				DungeonSystem::Notice(dungeon, 910, "");
+				DungeonSystem::ExitAllLobby(dungeon, 2);
 			}
 		}
 	}

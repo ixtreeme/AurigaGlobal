@@ -143,35 +143,35 @@ public:
     {
         CancelAll(mapIndex);
 
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
             return;
 
-        d->SetFlag(kFlagWasCompleted, 1);
-        d->KillAll();
-        d->ClearRegen();
-        d->ExitAllLobby(1);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
+        DungeonSystem::KillAll(d);
+        DungeonSystem::ClearRegen(d);
+        DungeonSystem::ExitAllLobby(d, 1);
     }
 
     void StartPrepare(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
         {
             CancelAll(mapIndex);
             return;
         }
 
-        d->SetFlag(kFlagStep, 4);
+        DungeonSystem::SetFlag(d, kFlagStep, 4);
 
-        d->SpawnMob(kSealMobVnum, kSeal1X, kSeal1Y);
-        d->SpawnMob(kSealMobVnum, kSeal2X, kSeal2Y);
-        d->SpawnMob(kSealMobVnum, kSeal3X, kSeal3Y);
-        d->SpawnMob(kSealMobVnum, kSeal4X, kSeal4Y);
+        DungeonSystem::SpawnMob(d, kSealMobVnum, kSeal1X, kSeal1Y);
+        DungeonSystem::SpawnMob(d, kSealMobVnum, kSeal2X, kSeal2Y);
+        DungeonSystem::SpawnMob(d, kSealMobVnum, kSeal3X, kSeal3Y);
+        DungeonSystem::SpawnMob(d, kSealMobVnum, kSeal4X, kSeal4Y);
 
-        const entt::entity boss = d->SpawnMob(kBossVnum, kBossX, kBossY);
+        const entt::entity boss = DungeonSystem::SpawnMob(d, kBossVnum, kBossX, kBossY);
         const uint32_t bossVid = ecs::PlayerRuntime::GetPacketVID(boss);
-        d->SetFlag(kFlagBossVid, (int32_t)bossVid);
+        DungeonSystem::SetFlag(d, kFlagBossVid, (int32_t)bossVid);
 
         const bool ok = boss != entt::null;
         if (ok)
@@ -179,7 +179,7 @@ public:
 
         if (!ok)
         {
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1042,
 #endif
@@ -192,7 +192,7 @@ public:
             return;
         }
 
-        d->Notice(
+        DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
             1128,
 #endif
@@ -205,7 +205,7 @@ public:
         // schedule end
         ScheduleEnd(mapIndex, kEndSeconds);
 
-        d->Notice(
+        DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
             1046,
 #endif
@@ -218,10 +218,10 @@ public:
 
     void EndDungeon(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d != entt::null)
         {
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1040,
 #endif
@@ -230,7 +230,7 @@ public:
                 , true
 #endif
             );
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1041,
 #endif
@@ -282,7 +282,7 @@ EVENTFUNC(orcs_dungeon_prepare_event)
     const int32_t mapIndex = info->mapIndex;
     s_orc.m_evPrepare.erase(mapIndex);
     s_orc.StartPrepare(mapIndex);
-    g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { CDungeonManager::instance().FindByMapIndex(mapIndex) });
     return 0;
 }
 
@@ -294,7 +294,7 @@ EVENTFUNC(orcs_dungeon_end_event)
     const int32_t mapIndex = info->mapIndex;
     s_orc.m_evEnd.erase(mapIndex);
     s_orc.EndDungeon(mapIndex);
-    g_dispatcher.trigger(ecs::EvDungeonEnd { static_cast<uint32_t>(mapIndex) });
+    g_dispatcher.trigger(ecs::EvDungeonEnd { CDungeonManager::instance().FindByMapIndex(mapIndex) });
     return 0;
 }
 
@@ -359,8 +359,8 @@ void COrcsDungeon::OnPlayerLogin(entt::entity character)
         return;
 
     // If they logged in inside the private dungeon, ensure we have a dungeon pointer.
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
     {
         ecs::MovementSystem::WarpSet(character, 535400, 1428400);
         return;
@@ -369,10 +369,10 @@ void COrcsDungeon::OnPlayerLogin(entt::entity character)
     ecs::SocialSystem::SetDungeon(character, d);
 
     // If dungeon was never initialized (server restart mid-run), restart the flow.
-    if (d->GetFlag(kFlagFloor) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
     {
-        d->SetFlag(kFlagFloor, 2);
-        d->SetFlag(kFlagWasCompleted, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 2);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
         s_orc.SchedulePrepare(idx, 1);
     }
 }
@@ -467,18 +467,18 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     if (!IsOrcDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
-    const int32_t floorNum = d->GetFlag(kFlagFloor);
+    const int32_t floorNum = DungeonSystem::GetFlag(d, kFlagFloor);
 
     if (vnum == kBossVnum)
     {
-        if (floorNum == 2 && d->GetFlag(kFlagStep) == 0 && d->GetFlag(kFlagWasCompleted) == 0)
+        if (floorNum == 2 && DungeonSystem::GetFlag(d, kFlagStep) == 0 && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0)
         {
-            d->SetFlag(kFlagWasCompleted, 1);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
             OrcDungeon_CompleteRankingForMap(idx);
 
@@ -497,7 +497,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             SendNotice("Orc Dungeon completed!");
 #endif
 
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1054,
 #endif
@@ -507,15 +507,15 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 #endif
             );
 
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
-            d->SpawnMob(kEntryNpcVnum, kBossX, kBossY);
+            DungeonSystem::SpawnMob(d, kEntryNpcVnum, kBossX, kBossY);
 
             const int32_t bonus = 10 + quest::CQuestManager::instance().GetEventFlag("dungeon_bonus");
             if (number(1, 100) <= bonus)
             {
-                d->SpawnMob(kBonusMobVnum, kBossX, kBossY);
+                DungeonSystem::SpawnMob(d, kBonusMobVnum, kBossX, kBossY);
                 // mimic Lua syschat (send to all players in this dungeon map)
                 ForEachPcOnMap(idx, [&](entt::entity p){
                         if (ecs::PlayerRuntime::IsValid(p))
@@ -531,20 +531,20 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         if (floorNum != 2)
             return;
 
-        int32_t s = d->GetFlag(kFlagStep) - 1;
+        int32_t s = DungeonSystem::GetFlag(d, kFlagStep) - 1;
         if (s < 0)
             s = 0;
 
         if (s == 0)
         {
-            const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
+            const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
             const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
             const bool ok = boss != entt::null;
         if (ok)
             CombatSystem::SetInvincible(boss, false);
             if (!ok)
             {
-                d->Notice(
+                DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                     1050,
 #endif
@@ -557,7 +557,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             }
             else
             {
-                d->Notice(
+                DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                     1051,
 #endif
@@ -573,7 +573,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             char buf[32];
             snprintf(buf, sizeof(buf), "%d", s);
 
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1052,
 #endif
@@ -582,7 +582,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
                 , true
 #endif
             );
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1053,
 #endif
@@ -593,7 +593,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             );
 
             const float dmgMul = (float)std::floor((6.0f - (float)s) / 1.6f);
-            const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
+            const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
             const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
             if (ecs::IsCharacter(boss))
             {
@@ -602,7 +602,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             }
         }
 
-        d->SetFlag(kFlagStep, s);
+        DungeonSystem::SetFlag(d, kFlagStep, s);
     }
 }
 
@@ -622,8 +622,8 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     // - after completion (was_completed=1): allow starting a NEW run from the same NPC.
     if (IsOrcDungeonMap(mapIdx))
     {
-        LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
-        if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
+        const entt::entity cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
+        if (cur != entt::null && DungeonSystem::GetFlag(cur, kFlagWasCompleted) == 0)
         {
             ecs::MovementSystem::WarpSet(character, 535400, 1428400);
             return true;
@@ -648,8 +648,8 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
                 return true;
             }
 
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
-            if (d && d->GetFlag(kFlagWasCompleted) == 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+            if (d != entt::null && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0)
             {
                 ecs::MovementSystem::SaveExitLocation(character);
                 ecs::MovementSystem::WarpSet(character, kEnterX * 100, kEnterY * 100, rejoinIdx);
@@ -746,18 +746,18 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
         }
     }
 
-    LPDUNGEON d = CDungeonManager::instance().Create(kOrcOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kOrcOriginalMap);
+    if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Orc Dungeon: failed to create the dungeon.");
         return true;
     }
 
     // Initialize dungeon flags
-    d->SetFlag(kFlagFloor, 2);
-    d->SetFlag(kFlagWasCompleted, 0);
-    d->SetFlag(kFlagStep, 0);
-    d->SetFlag(kFlagBossVid, 0);
+    DungeonSystem::SetFlag(d, kFlagFloor, 2);
+    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagStep, 0);
+    DungeonSystem::SetFlag(d, kFlagBossVid, 0);
 
     // Consume items + set per-player flags
     auto applyMember = [&](entt::entity m){
@@ -770,7 +770,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
                 ItemSystem::RemoveSpecifyItemEcs(m, kRemoveAllItem, rmAll);
 
             ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(m, kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(m, kQfIdx, DungeonSystem::GetMapIndex(d));
             ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
             ecs::QuestSystem::SetFlag(m, kQfEnterTime, now);
             // cooldown is set on completion, just like original quest.
@@ -779,7 +779,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     if (party == entt::null)
     {
         applyMember(character);
-        d->Join_Coords(character, kEnterX, kEnterY, kOrcOriginalMap);
+        DungeonSystem::Join_Coords(d, character, kEnterX, kEnterY, kOrcOriginalMap);
     }
     else
     {
@@ -791,11 +791,11 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
         // IMPORTANT: the last parameter selects which map members are currently on.
         // If the party starts a new run from inside the completed instance, members are on the private map,
         // so we must pass the current map index (same as the one used above).
-        d->JoinParty_Coords(party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::JoinParty_Coords(d, party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     // Prepare after 1 second
-    s_orc.SchedulePrepare(d->GetMapIndex(), kPrepareDelay);
+    s_orc.SchedulePrepare(DungeonSystem::GetMapIndex(d), kPrepareDelay);
     return true;
 }
 

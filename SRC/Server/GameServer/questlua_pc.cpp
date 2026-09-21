@@ -347,7 +347,7 @@ namespace quest
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		if (const auto* dungeon = ECS_TryGet<ecs::DungeonMembership>(e))
 		{
-			lua_pushboolean(L, dungeon->dungeon ? 1 : 0);
+			lua_pushboolean(L, dungeon->dungeon != entt::null);
 			return 1;
 		}
 		lua_pushboolean(L, 0);

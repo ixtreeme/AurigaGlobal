@@ -260,7 +260,7 @@ bool is_regen_exception(int32_t x, int32_t y)
 	return false;
 }
 
-static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
+static void regen_spawn_dungeon(LPREGEN regen, entt::entity pDungeon, bool bOnce)
 {
 	uint32_t	num;
 	uint32_t	i;
@@ -328,9 +328,9 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 			ecs::PlayerRuntime::SetRegen(mob, regen);
 		
 #ifdef __DEFENSE_WAVE__
-		if (pDungeon)
+		if (pDungeon != entt::null)
 		{
-			const entt::entity mast = pDungeon->GetMast();
+			const entt::entity mast = DungeonSystem::GetMast(pDungeon);
 			// A group regen never sets mob, and a spawn that failed leaves it null.
 			if (mob != entt::null && ecs::PlayerRuntime::IsValid(mast))
 			{
@@ -411,8 +411,8 @@ EVENTFUNC(dungeon_regen_event)
 		return 0;
 	}
 
-	LPDUNGEON pDungeon = CDungeonManager::instance().Find(info->dungeon_id);
-	if (pDungeon == nullptr) {
+	const entt::entity pDungeon = info->dungeon;
+	if (!DungeonSystem::IsValid(pDungeon) || info->regen == nullptr) {
 		return 0;
 	}
 
@@ -426,7 +426,7 @@ EVENTFUNC(dungeon_regen_event)
 	return PASSES_PER_SEC(regen->time);
 }
 
-bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, LPDUNGEON pDungeon, bool bOnce)
+bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, entt::entity pDungeon, bool bOnce)
 {
 	if (g_bNoRegen)
 		return true;
@@ -463,7 +463,7 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, L
 			else
 				regen = &tmp;
 
-			if (pDungeon)
+			if (pDungeon != entt::null)
 				regen->is_aggressive = true;
 
 			regen->lMapIndex = lMapIndex;
@@ -503,16 +503,16 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, L
 				}
 			}
 
-			if (!bOnce && pDungeon != nullptr)
+			if (!bOnce && pDungeon != entt::null)
 			{
 				dungeon_regen_event_info* info = AllocEventInfo<dungeon_regen_event_info>();
 
 				info->regen = regen;
-				info->dungeon_id = pDungeon->GetId();
+				info->dungeon = pDungeon;
 
 				regen->event = event_create(dungeon_regen_event, info, PASSES_PER_SEC(number(0, 16)) + PASSES_PER_SEC(regen->time));
 
-				pDungeon->AddRegen(regen);
+				DungeonSystem::AddRegen(pDungeon, regen);
 				// regen_id should be determined at this point,
 				// before the call to ecs::PlayerRuntime::SetRegen()
 			}

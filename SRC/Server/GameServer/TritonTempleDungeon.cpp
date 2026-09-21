@@ -249,27 +249,27 @@ public:
     {
         CancelAll(mapIndex);
 
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
             return;
 
-        d->SetFlag(kFlagWasCompleted, 1);
-        d->KillAll();
-        d->ClearRegen();
-        d->ExitAllLobby(1);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
+        DungeonSystem::KillAll(d);
+        DungeonSystem::ClearRegen(d);
+        DungeonSystem::ExitAllLobby(d, 1);
     }
 
     void StartPrepare(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
         {
             CancelAll(mapIndex);
             return;
         }
 
         // as quest: d.setf(step, 35)
-        d->SetFlag(kFlagStep, 35);
+        DungeonSystem::SetFlag(d, kFlagStep, 35);
 
         // spawn seals (exact coords from quest)
         const int seals[][2] = {
@@ -280,19 +280,19 @@ public:
         };
 
         for (const auto& p : seals)
-            d->SpawnMob(kSealMobVnum, p[0], p[1]);
+            DungeonSystem::SpawnMob(d, kSealMobVnum, p[0], p[1]);
 
-        const entt::entity boss = d->SpawnMob(kBossVnum, kBossX, kBossY);
+        const entt::entity boss = DungeonSystem::SpawnMob(d, kBossVnum, kBossX, kBossY);
 
         const uint32_t bossVid = ecs::PlayerRuntime::GetPacketVID(boss);
-        d->SetFlag(kFlagBossVid, (int32_t)bossVid);
+        DungeonSystem::SetFlag(d, kFlagBossVid, (int32_t)bossVid);
 
         const bool ok = boss != entt::null && CombatSystem::SetInvincible(boss, true);
 
 
         if (!ok)
         {
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1042,
 #endif
@@ -305,7 +305,7 @@ public:
             return;
         }
 
-        d->Notice(
+        DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
             1128,
 #endif
@@ -317,7 +317,7 @@ public:
 
         ScheduleEnd(mapIndex, kEndSeconds);
 
-        d->Notice(
+        DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
             1046,
 #endif
@@ -330,10 +330,10 @@ public:
 
     void EndDungeon(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d != entt::null)
         {
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1040,
 #endif
@@ -342,7 +342,7 @@ public:
                 , true
 #endif
             );
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1041,
 #endif
@@ -369,7 +369,7 @@ EVENTFUNC(triton_temple_prepare_event)
     const int32_t mapIndex = info->mapIndex;
     s_triton.m_evPrepare.erase(mapIndex);
     s_triton.StartPrepare(mapIndex);
-    g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { CDungeonManager::instance().FindByMapIndex(mapIndex) });
     return 0;
 }
 
@@ -381,7 +381,7 @@ EVENTFUNC(triton_temple_end_event)
     const int32_t mapIndex = info->mapIndex;
     s_triton.m_evEnd.erase(mapIndex);
     s_triton.EndDungeon(mapIndex);
-    g_dispatcher.trigger(ecs::EvDungeonEnd { static_cast<uint32_t>(mapIndex) });
+    g_dispatcher.trigger(ecs::EvDungeonEnd { CDungeonManager::instance().FindByMapIndex(mapIndex) });
     return 0;
 }
 
@@ -437,8 +437,8 @@ void CTritonTempleDungeon::OnPlayerLogin(entt::entity character)
     if (!IsTritonTempleMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     ecs::SocialSystem::SetDungeon(character, d);
@@ -446,10 +446,10 @@ void CTritonTempleDungeon::OnPlayerLogin(entt::entity character)
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
     // Initialize if never started (after server restart)
-    if (d->GetFlag(kFlagFloor) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
     {
-        d->SetFlag(kFlagFloor, 2);
-        d->SetFlag(kFlagWasCompleted, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 2);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
         s_triton.SchedulePrepare(idx, 1);
     }
 }
@@ -469,18 +469,18 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     if (!IsTritonTempleMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
 
     if (vnum == kBossVnum)
     {
-        if (floor == 2 && d->GetFlag(kFlagStep) == 0 && d->GetFlag(kFlagWasCompleted) == 0)
+        if (floor == 2 && DungeonSystem::GetFlag(d, kFlagStep) == 0 && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0)
         {
-            d->SetFlag(kFlagWasCompleted, 1);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
             DungeonCompleteForMap(idx, kTritonOriginalMap, kBossVnum, kCooldownSeconds, kQfEnterTime, kQfCh, kQfCooldown);
 
@@ -496,7 +496,7 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             }
 #endif
 
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1054,
 #endif
@@ -506,15 +506,15 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 #endif
             );
 
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
-            d->SpawnMob(kEntryNpcVnum, kCompleteNpcX, kCompleteNpcY);
+            DungeonSystem::SpawnMob(d, kEntryNpcVnum, kCompleteNpcX, kCompleteNpcY);
 
             const int32_t bonus = 10 + quest::CQuestManager::instance().GetEventFlag("dungeon_bonus");
             if (number(1, 100) <= bonus)
             {
-                d->SpawnMob(kBonusMobVnum, kCompleteNpcX, kCompleteNpcY);
+                DungeonSystem::SpawnMob(d, kBonusMobVnum, kCompleteNpcX, kCompleteNpcY);
             }
         }
         return;
@@ -525,19 +525,19 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         if (floor != 2)
             return;
 
-        int32_t s = d->GetFlag(kFlagStep) - 1;
+        int32_t s = DungeonSystem::GetFlag(d, kFlagStep) - 1;
         if (s < 0)
             s = 0;
 
         if (s == 0)
         {
-            const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
+            const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
             const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
             const bool ok = boss != entt::null && CombatSystem::SetInvincible(boss, false);
 
             if (!ok)
             {
-                d->Notice(
+                DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                     1050,
 #endif
@@ -550,7 +550,7 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             }
             else
             {
-                d->Notice(
+                DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                     1051,
 #endif
@@ -566,7 +566,7 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             char buf[32];
             snprintf(buf, sizeof(buf), "%d", s);
 
-            d->Notice(
+            DungeonSystem::Notice(d, 
 #ifdef TEXTS_IMPROVEMENT
                 1052,
 #endif
@@ -582,7 +582,7 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             if (mul < 1.0f)
                 mul = 1.0f;
 
-            const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
+            const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
             const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
             if (ecs::IsCharacter(boss))
             {
@@ -591,7 +591,7 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             }
         }
 
-        d->SetFlag(kFlagStep, s);
+        DungeonSystem::SetFlag(d, kFlagStep, s);
     }
 }
 bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
@@ -609,8 +609,8 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
     // - after completion (was_completed=1): allow starting a NEW run from the same NPC.
     if (IsTritonTempleMap(mapIdx))
     {
-        LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
-        if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
+        const entt::entity cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
+        if (cur != entt::null && DungeonSystem::GetFlag(cur, kFlagWasCompleted) == 0)
         {
             ecs::MovementSystem::WarpSet(character, 535400, 1428400);
             return true;
@@ -635,8 +635,8 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
                 return true;
             }
 
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
-            if (d && d->GetFlag(kFlagWasCompleted) == 0 && d->GetFlag(kFlagFloor) == 2)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+            if (d != entt::null && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0 && DungeonSystem::GetFlag(d, kFlagFloor) == 2)
             {
                 ecs::MovementSystem::SaveExitLocation(character);
                 ecs::MovementSystem::WarpSet(character, kRejoinWarpX, kRejoinWarpY, rejoinIdx);
@@ -733,18 +733,18 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
         }
     }
 
-    LPDUNGEON d = CDungeonManager::instance().Create(kTritonOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kTritonOriginalMap);
+    if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: failed to create the dungeon.");
         return true;
     }
 
     // Initialize dungeon flags
-    d->SetFlag(kFlagFloor, 2);
-    d->SetFlag(kFlagWasCompleted, 0);
-    d->SetFlag(kFlagStep, 0);
-    d->SetFlag(kFlagBossVid, 0);
+    DungeonSystem::SetFlag(d, kFlagFloor, 2);
+    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagStep, 0);
+    DungeonSystem::SetFlag(d, kFlagBossVid, 0);
 
     auto applyMember = [&](entt::entity m){
             if (!ecs::PlayerRuntime::IsPC(m))
@@ -757,7 +757,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
                 ItemSystem::RemoveSpecifyItemEcs(m, kRemoveAllItem, rmAll);
 
             ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(m, kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(m, kQfIdx, DungeonSystem::GetMapIndex(d));
             ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
             ecs::QuestSystem::SetFlag(m, kQfEnterTime, now);
             // cooldown set on completion
@@ -766,7 +766,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
     if (party == entt::null)
     {
         applyMember(character);
-        d->Join_Coords(character, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::Join_Coords(d, character, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
@@ -774,10 +774,10 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
             applyMember(m); };
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
             if(ecs::PlayerRuntime::IsPC(m) && ecs::SocialSystem::GetParty(m)==party) fn(m); });
-d->JoinParty_Coords(party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
+DungeonSystem::JoinParty_Coords(d, party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
-    s_triton.SchedulePrepare(d->GetMapIndex(), kPrepareDelay);
+    s_triton.SchedulePrepare(DungeonSystem::GetMapIndex(d), kPrepareDelay);
     return true;
 }
 

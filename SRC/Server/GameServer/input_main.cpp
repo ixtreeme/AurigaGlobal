@@ -3184,7 +3184,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 
 	//Check DungeonMap Genezis
 	//Check if current map is a dungeon!
-//	if (ecs::SocialSystem::GetDungeon(character))
+//	if (ecs::SocialSystem::GetDungeon(character) != entt::null)
 //	{
 //#ifdef TEXTS_IMPROVEMENT
 //		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 48, "");
@@ -3406,7 +3406,7 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 		return;
 	}
 
-	if (ecs::SocialSystem::GetDungeon(character))
+	if (ecs::SocialSystem::GetDungeon(character) != entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 203, "");
@@ -3423,7 +3423,7 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 
 	if (PartySystem::GetLeaderPID(pParty) == ecs::PlayerRuntime::GetPlayerID(character))
 	{
-		if (!ecs::SocialSystem::GetDungeon(character)) {
+		if (ecs::SocialSystem::GetDungeon(character) == entt::null) {
 			// ���漺���� ��Ƽ���� ���� �ۿ��� ��Ƽ �ػ� ���ϰ� ����
 			if(PartySystem::IsPartyInDungeon(pParty, 351))
 			{
@@ -3463,7 +3463,7 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 	{
 		if (p->pid == ecs::PlayerRuntime::GetPlayerID(character))
 		{
-			if (!ecs::SocialSystem::GetDungeon(character)) {
+			if (ecs::SocialSystem::GetDungeon(character) == entt::null) {
 				if (PartySystem::GetMemberCount(pParty) == 2) {
 					CPartyManager::instance().DeleteParty(pParty);
 				} else {
@@ -5128,7 +5128,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 	break;
 	case TURN:
 	{
-		if (ecs::SocialSystem::GetDungeon(character) != nullptr || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
+		if (ecs::SocialSystem::GetDungeon(character) != entt::null || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeonban nem tudsz p�rgetni./You cannot in dungeon");
 			return;

@@ -1,0 +1,222 @@
+Phase 20 - Dungeon (legacy OOP) bug audit
+Date: 2026-09-21
+Mode: read-only audit of the CDungeon/CDungeonManager/controller code before the
+ECS migration. No code was changed for this document.
+
+Scope
+-----
+The dungeon subsystem as it exists today: CDungeon and CDungeonManager
+(dungeon.h/dungeon.cpp), the per-content controller singletons that drive them
+(Rune, Viking, LostCastle, Halloween2022, Easter, Valentine, Nightmare, Orcs,
+Triton, Pyramid), the regen integration (regen.cpp) and the relation readers
+(SocialSystem::GetDungeon, PartySystem::GetDungeon, PlayerRuntime destroy,
+CombatSystem death path).
+
+Severity legend: [crash] use-after-free or null dereference, [stuck] content
+cannot complete, [leak] lifetime never ends, [dead] unreachable/dangling API.
+
+Findings
+--------
+
+B1. [crash] Every stored LPDUNGEON is an unchecked raw pointer; the objects are
+    deleted by CDungeonManager::Destroy (dungeon.cpp:352-369, M2_DELETE at 368).
+    The handles that outlive the object:
+      - ecs::DungeonMembership::dungeon on characters and mobs
+        (social_components.hpp:58; written by SocialSystem::SetDungeon,
+        SocialSystem.cpp:81-107).
+      - PartyState::dungeon / dungeonForOnlyParty (party.h:100-101).
+    Concrete dereferences that can follow a delete:
+      - PartySystem::IsPartyInDungeon -> d->GetMapIndex() (party.cpp:2015-2020).
+      - PartySystem::Link -> GetDungeon(party)->GetMapIndex() (party.cpp:743).
+      - PartySystem::Destroy -> state->dungeonForOnlyParty->SetPartyNull()
+        (party.cpp:463). This one is unconditional; the legacy CParty::Destroy
+        had the same shape.
+      - CombatSystem: DecMonster on a monster death (CombatSystem.cpp:2235-2239),
+        DeadCharacter (2681), the Rune/DS script reads d->GetFlag (5528, 6042),
+        GetDungeon(victim)->GetMast/UpdateMastHP (6042-6053).
+      - regen: IsValidRegen (PlayerRuntimeSystem.cpp:3000-3004).
+    The ECS migration removes the class storage; a generation-checked entity per
+    dungeon plus validated accessors is the structural fix.
+
+B2. [leak] Dungeons whose players never call SocialSystem::SetDungeon are never
+    destroyed. m_setMember is populated only by IncMember/IncPartyMember, and
+    the only caller of those is SocialSystem::SetDungeon (SocialSystem.cpp:101-103,
+    dungeon.cpp:270-280). The only caller of CDungeonManager::Destroy is the
+    dead event armed by DecMember when the set becomes empty (dungeon.cpp:234).
+    For players, SetDungeon is called from:
+      - input_login.cpp:725 (logging in on the private map)
+      - party.cpp:745 (party link, only when the maps already match)
+      - EasterDungeon.cpp:655, OrcsDungeon.cpp:369, TritonTempleDungeon.cpp:444,
+        ValentineDungeon.cpp:640 (explicit per-member calls)
+    Rune, Viking, LostCastle, Halloween2022, Nightmare and Pyramid never set it,
+    neither on entry (Join_Coords/JoinParty_Coords do not IncMember) nor on the
+    warp. Those instances leak their private map and every regen/mob for the
+    life of the server, and new instances keep taking new map indices.
+    Fix direction: the warp/entry path must own membership, or completion must
+    destroy the instance explicitly.
+
+B3. [crash] "Empty" set destroys a dungeon under active players. Because of B2
+    the member set is usually empty while players are inside. If one player
+    logged in on the private map (input_login:725) or the content calls
+    SetDungeon (Easter/Orcs/Triton/Valentine), the set contains only that
+    player. When that player leaves, disconnects or is destroyed,
+    SocialSystem::SetDungeon(e, nullptr) (PlayerRuntimeSystem.cpp:3012,
+    SocialSystem.cpp:81-90) removes them and DecMember sees an empty set, so the
+    dead event arms and the instance is destroyed (3 s after ExitAllLobby, 300 s
+    otherwise) while the rest of the party is still on the map. The map, mobs,
+    regens and quest bindings are torn out from under them; anything that still
+    holds the dungeon handle then hits B1.
+    Related: leaving a dungeon by warp never clears DungeonMembership (there is
+    only the destroy-time call), so an ex-member keeps a stale membership that
+    MovementSystem's event-attribute code and CombatSystem still read
+    (MovementSystem.cpp:1522, CombatSystem.cpp:2235).
+
+B4. [stuck] Monster counter leaks; step gates never satisfy. IncMonster is
+    called when a monster enters (SocialSystem::SetDungeon, SocialSystem.cpp:103,
+    also from CDungeon::SpawnMob:515 and regen.cpp:284-312), but DecMonster only
+    runs on the combat death path (CombatSystem.cpp:2233-2240). CDungeon::Purge
+    (dungeon.cpp:624-641, 686-695) destroys monsters with M2_DESTROY_CHARACTER,
+    which routes through PlayerRuntime DestroyCharacter, and that path only
+    clears the membership (PlayerRuntimeSystem.cpp:3012); there is no DecMonster.
+    Any monster destroyed that way (or through map cleanup) leaves the count
+    high forever. Content that gates on the count: RuneDungeon.cpp:621 (==6),
+    655/720 (==1), 671 (==0), 700 (==1), PyramidDungeonRazor93.cpp:627 (==0),
+    VikingDungeon.cpp:652 (>0). A single leaked unit means the floor never
+    advances to the next step/boss.
+    Fix direction: one decrement point, driven by entity destruction or by the
+    dungeon's own membership set, not by the killer path.
+
+B5. [crash] Null dereference in dungeon_jump_to_event (dungeon.cpp:849-871):
+    LPDUNGEON pDungeon = CDungeonManager::instance().Find(info->dungeon_id);
+    pDungeon->jump_to_event_ = nullptr;      // <-- before the null check
+    if (pDungeon) { ... }
+    The event is currently never armed (SetExitAllAtEliminate is only declared,
+    dungeon.h:81, never defined), so this is latent; the whole jump path
+    (fields, event, JumpToEliminateLocation) is dead code.
+
+B6. [leak] Party membership counter never reaches zero for party-based entry.
+    JoinParty_Coords/JoinParty insert m_map_pkParty[party] = 0
+    (dungeon.cpp:102, 187) but never increment it in that flow; the one call
+    that would (IncPartyMember in FWarpToDungeon) is commented out
+    (dungeon.cpp:175). DecPartyMember (dungeon.cpp:282-297) then decrements
+    0 -> -1 and the "== 0" branch never fires, so QuitParty never runs and the
+    party keeps its dungeon pointer. That stale pointer feeds B1 and, on a
+    later link, PartySystem::Link dereferences it (party.cpp:743).
+
+B7. [dead] Unreachable API that invites wrong fixes:
+    - Declared in dungeon.h but never defined anywhere: GetKillMobCount (57),
+      GetKillStoneCount (58), CheckDestroy (97), SetWarpLocation (85),
+      ExitAllToStartPosition (79), SetExitAllAtEliminate (81).
+    - CDungeon::JoinParty has no caller; SetPartyNull (346-349) is only reached
+      through the dangling deref in B1.
+    - m_pParty (137) is only ever set to null; no setter assigns a party.
+    - m_map_Area (108) is bound in the constructor and never read.
+    - m_iWarpDelay, m_stRegenFile, m_lWarpMapIndex/X/Y, exit_all_event_ and
+      jump_to_event_ exist only for the dead jump/exit path (113-126).
+
+B8. [noise] CDungeon::GetUniqueVid (dungeon.cpp:456-467) logs an error and
+    returns false/0 for a missing key; a 0 VID is a plausible real value.
+    VikingDungeon::FindFloor3StoneSlotByVid (196-208) calls it three times per
+    slot lookup, so a missing key spams the log on every floor-3 check.
+
+B9. [crash] CDungeon::JoinParty_Coords links the party to the dungeon before
+    validating that the private map exists (dungeon.cpp:99-108). On the early
+    return the party points at a dungeon that the caller is about to discard,
+    which is exactly the B1 dangling pointer.
+
+B10. [latent] Dungeon events carry two different identities: the controllers
+    trigger ecs::EvDungeonPrepare with the private map index (Easter 500/541/576,
+    Orcs 285, Triton 372, Valentine 485/526/561), while dungeon.cpp triggers
+    EvDungeonDead/EvDungeonPrepare with the dungeon id (235, 865). There are no
+    listeners today, but the first listener to be added will misread one of
+    them.
+
+B11. [latent] dungeon_regen_event keeps a raw LPREGEN in its info and looks the
+    dungeon up by id (regen.cpp:404-427). ClearRegen cancels the event before
+    deleting the regen, and ClearRegen runs in the dungeon destructor, so the
+    current ordering is safe - but it relies on the cancel-before-delete order
+    and on the id lookup rejecting retired instances. The ECS migration should
+    keep the lease check explicit.
+
+Verified safe
+-------------
+- SECTREE_MAP::for_each snapshots the entities into FCollectEntity before it
+  invokes the callback (sectree_manager.h:108-119), so KillAll/Purge/Notice/
+  CmdChat destroying entities inside the walk do not invalidate the iteration.
+- Wedding and party end/update events validate their lease
+  (state->endEvent/updateEvent == event) before acting, so a cancelled or
+  replaced callback cannot touch a recycled owner.
+- The unique-mob map stores entity handles, so a dead unique cannot be
+  dereferenced through it (dungeon.cpp:426-501).
+
+Implemented in this phase: CDungeon -> ECS
+------------------------------------------
+- New component ecs::DungeonState on a registry-owned entity: the dungeon id,
+  the original and private map indices, the member entity set, the monster
+  handle set, flags, party counters, unique-mob handles, the regen list and the
+  dead event lease.
+- DungeonSystem free functions replace CDungeon: entry warps, membership,
+  monster registration, flags, spawns and regens, unique mobs, the map-wide
+  actions (kill/purge/notice/cmdchat/exit), the Defense Wave mast calls and
+  teardown, all validating the dungeon entity before use.
+- CDungeonManager keeps id -> entity and map index -> entity indexes; a stale
+  or recycled entry reads as null. Create hands out party-style entities and
+  Destroy clears the relations before it drains the private map, so the drain
+  cannot re-enter a half-dead instance.
+- The character relation is a generation-checked entity in DungeonMembership.
+  SocialSystem::SetDungeon/GetDungeon delegate to
+  DungeonSystem::SetMemberDungeon/GetMemberDungeon, and the movement warp hook
+  (ClearDungeonIfOtherMap) drops the membership when the character heads to a
+  different map.
+- Entering through Join_Coords/JoinParty_Coords registers the members (and
+  their parties) through SetDungeon, so an instance can actually retire and a
+  party's dungeon handle is released when its counter reaches zero.
+- The dead event stores the dungeon entity, validates its lease
+  (state->deadEvent == event) and refuses to tear the map down while any player
+  is still standing on it.
+- Monsters are counted as a handle set that CountMonster prunes; the only
+  removal points are the combat death path and reassignment, so a monster
+  destroyed outside the kill path cannot strand the count.
+- EvDungeonPrepare/EvDungeonEnd/EvDungeonDead carry the dungeon entity instead
+  of a mix of ids and map indices.
+- Regression test: tests/server/DungeonLifecycleTests.cpp compiles the
+  production dungeon.cpp with sectree/event/service doubles and covers manager
+  create/find/destroy with stale indexes, entry/leave membership and the dead
+  event including the live-player guard, monster count pruning and
+  reassignment, unique mobs and flags, spawn registration and teardown clearing
+  every relation.
+
+Bug status after the migration
+------------------------------
+  B1  fixed   entity handle + validated accessors everywhere
+  B2  fixed   entry registers members; leave hook releases them; the dead event
+              now retires the instance
+  B3  fixed   the dead event refuses to destroy while players are on the map,
+              and leaving the map clears the membership
+  B4  fixed   handle-set count with a single removal point and prune-on-read
+  B5  fixed   the dead jump path and its fields are gone
+  B6  fixed   the party counter increments per warped member and releases at
+              <= 0
+  B7  fixed   the never-defined declarations, JoinParty, SetPartyNull,
+              dungeonForOnlyParty, m_pParty, m_map_Area and the warp fields are
+              gone
+  B8  fixed   GetUniqueVid answers -1 and logs at trace level
+  B9  fixed   the party links after the map and the entity are validated
+  B10 fixed   the dungeon events carry the dungeon entity
+  B11 kept    the regen event validates the dungeon handle and its regen pointer
+
+Original mapping
+----------------
+Removed structurally by the CDungeon -> ECS migration:
+  - B1 (no raw LPDUNGEON anywhere; every reader validates the entity)
+  - B9 (party links only after the dungeon entity and map exist)
+  - B10 (a single identity: the dungeon entity; id/map index are lookups)
+  - the dead half of B7 (the jump/exit path and never-defined declarations go)
+Explicit fixes that must land with it:
+  - B2/B3: membership is owned by the dungeon entity and driven by the actual
+    entry/leave warps; Destroy clears the membership of every member and is
+    refused while live characters are still on the map.
+  - B4: the monster count has one decrement point on entity destruction.
+  - B5/B6: the stale party/dungeon relations become validated entity handles,
+    and the separate party counter is dropped in favour of the member set.
+  - B8: a missing unique reports null/negative explicitly instead of 0.

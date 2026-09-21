@@ -82,6 +82,13 @@ add_executable(PartyLifecycleTests EXCLUDE_FROM_ALL
 target_link_libraries(PartyLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME party_lifecycle COMMAND PartyLifecycleTests)
 
+add_executable(DungeonLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/DungeonLifecycleTests.cpp
+    dungeon.cpp
+)
+target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+add_test(NAME dungeon_lifecycle COMMAND DungeonLifecycleTests)
+
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
     PetSystem.cpp

@@ -115,7 +115,7 @@ void SECTREE_MANAGER::DestroyPrivateMap(int32_t index) { ++privateMapsDestroyed;
 LPSECTREE_MAP SECTREE_MANAGER::GetMap(int32_t) { return &testMap; }
 
 bool map_allow_find(int32_t) { return allowFind; }
-bool regen_do(const char*, int32_t, int, int, LPDUNGEON, bool) { return true; }
+bool regen_do(const char*, int32_t, int, int, entt::entity, bool) { return true; }
 const std::string& LocaleService_GetMapPath() { static const std::string path = "/never/read"; return path; }
 
 namespace ecs::PlayerRuntime {

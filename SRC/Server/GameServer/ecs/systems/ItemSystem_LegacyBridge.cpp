@@ -7756,7 +7756,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			{
 				if (GetItemSocket(item, 0) == 0)
 				{
-					if (!ecs::SocialSystem::GetDungeon(e))
+					if (ecs::SocialSystem::GetDungeon(e) == entt::null)
 						if (!GiveRecallItem(e, item))
 							return false;
 
@@ -7789,7 +7789,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			{
 				if (GetItemSocket(item, 0) == 0)
 				{
-					if (ecs::SocialSystem::GetDungeon(e))
+					if (ecs::SocialSystem::GetDungeon(e) != entt::null)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 310, "%s", GetItemName(item));

@@ -62,11 +62,9 @@ int VIEW_BONUS_RANGE = 500;
 namespace {
 int checks = 0;
 HEART recoveryHeart {};
-TAreaMap recoveryAreas;
-struct RecoveryDungeon : CDungeon { RecoveryDungeon() : CDungeon(1, 1, 1) {} };
 struct RecoveryProbe {
     TMobTable mob {};
-    CDungeon* dungeon = nullptr;
+    entt::entity dungeon { entt::null };
     bool dead = false, stun = false, poison = false, missingMob = false;
     int64_t bonus = 0;
 };
@@ -283,7 +281,7 @@ uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsGoto(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsWarp(entt::entity) { Unexpected(); }
-LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity e) { return Recovery(e).dungeon; }
+entt::entity ecs::SocialSystem::GetDungeon(entt::entity e) { return Recovery(e).dungeon; }
 // MovementSystem asks for the party on a sector change now that CHARACTER
 // has no getter of its own.
 entt::entity ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
@@ -370,10 +368,15 @@ bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t flag) {
 }
 bool ItemSystem::IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
-CDungeon::CDungeon(IdType, int32_t, int32_t) : m_map_Area(recoveryAreas) {}
-CDungeon::~CDungeon() = default;
-int CDungeon::GetFlag(std::string key) { Check(key == "floor", "unexpected recovery dungeon flag"); return m_map_Flag[key]; }
-void CDungeon::SetFlag(std::string key, int32_t value) { m_map_Flag[key] = value; }
+int DungeonSystem::GetFlag(entt::entity dungeon, std::string key) {
+    Check(key == "floor", "unexpected recovery dungeon flag");
+    const auto* state = g_registry.try_get<ecs::DungeonState>(dungeon);
+    if (!state) return 0;
+    const auto it = state->flags.find(key);
+    return it != state->flags.end() ? it->second : 0;
+}
+// The leave hook is exercised by the dungeon migration test, not here.
+void ecs::SocialSystem::ClearDungeonIfOtherMap(entt::entity, int32_t) {}
 CMotion::CMotion() {}
 CMotion::~CMotion() {}
 float CMotion::GetDuration() const { return m_fDuration; }
@@ -1621,18 +1624,19 @@ void NativeRecoveryTimers() {
     }
 
     for (auto race : {3996u, 8202u}) {
-        Reset(); RecoveryDungeon dungeon;
-        e = RecoveryActor(); Recovery(e).mob.dwVnum = race; Recovery(e).dungeon = &dungeon;
-        dungeon.SetFlag("floor", race == 3996 ? 5 : 1);
+        Reset();
+        const entt::entity dungeon = g_registry.create();
+        g_registry.emplace<ecs::DungeonState>(dungeon).flags["floor"] = (race == 3996 ? 5 : 1);
+        e = RecoveryActor(); Recovery(e).mob.dwVnum = race; Recovery(e).dungeon = dungeon;
         ecs::PlayerRuntime::StartRecoveryEvent(e); timer = RecoveryTimer(e); RecoveryRun(50);
         Check(g_registry.get<ecs::Health>(e).current == 535 && event_time(timer) == 250,
             "special dungeon HP/cadence changed");
         g_registry.get<ecs::Health>(e).current = 1000; RecoveryRun(300);
         Check(RecoveryTimer(e) == timer && event_time(timer) == 75, "full special dungeon maintenance changed");
-        g_registry.get<ecs::Health>(e).current = 500; dungeon.SetFlag("floor", 99); RecoveryRun(375);
+        g_registry.get<ecs::Health>(e).current = 500; g_registry.get<ecs::DungeonState>(dungeon).flags["floor"] = 99; RecoveryRun(375);
         Check(g_registry.get<ecs::Health>(e).current == 600 && event_time(timer) == 50,
             "wrong dungeon floor did not use normal NPC recovery");
-        dungeon.SetFlag("floor", race == 3996 ? 5 : 1);
+        g_registry.get<ecs::DungeonState>(dungeon).flags["floor"] = (race == 3996 ? 5 : 1);
         onRecovery = [&](entt::entity current, int stage) { if (stage == 2) g_registry.destroy(current); };
         RecoveryRun(425); Check(!g_registry.valid(e) && !timer->q_el, "special dungeon used retired SP recipient");
     }

@@ -121,7 +121,7 @@ void ClearBuff(entt::entity owner, PetRecord& actor)
 bool CanGiveBuff(entt::entity owner, const PetRecord& actor)
 {
     return PetSystem::IsSummoned(actor) && IsOwnedSummonItem(owner, actor.summonItem)
-        && ((actor.vnum != 34004 && actor.vnum != 34009) || ecs::SocialSystem::GetDungeon(owner));
+        && ((actor.vnum != 34004 && actor.vnum != 34009) || ecs::SocialSystem::GetDungeon(owner) != entt::null);
 }
 
 void GiveBuff(entt::entity owner, PetRecord& actor)

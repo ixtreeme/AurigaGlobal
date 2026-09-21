@@ -352,13 +352,13 @@ namespace
 
         void ClearDungeon(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d != entt::null)
             {
-                d->SetFlag(kFlagWasCompleted, 1);
-                d->KillAll();
-                d->ClearRegen();
-                d->ExitAllLobby(1);
+                DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
+                DungeonSystem::KillAll(d);
+                DungeonSystem::ClearRegen(d);
+                DungeonSystem::ExitAllLobby(d, 1);
             }
             CancelAll(mapIndex);
         }
@@ -412,22 +412,22 @@ namespace
 
         void StartPrepare(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
             {
                 CancelAll(mapIndex);
                 return;
             }
 
             // Reset state
-            d->SetFlag(kFlagWasCompleted, 0);
-            d->SetFlag(kFlagFloor, 1);
-            d->SetFlag(kFlagType, 0);
-            d->SetFlag(kFlagStep, 0);
-            d->SetFlag(kFlagBossVid, 0);
-            d->SetFlag(kFlagCount, 0);
-            d->SetFlag(kFlagOpened, 0);
-            d->SetFlag(kFlagF1Unlocked, 0);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor, 1);
+            DungeonSystem::SetFlag(d, kFlagType, 0);
+            DungeonSystem::SetFlag(d, kFlagStep, 0);
+            DungeonSystem::SetFlag(d, kFlagBossVid, 0);
+            DungeonSystem::SetFlag(d, kFlagCount, 0);
+            DungeonSystem::SetFlag(d, kFlagOpened, 0);
+            DungeonSystem::SetFlag(d, kFlagF1Unlocked, 0);
 
             for (int i = 1; i <= 6; ++i)
             {
@@ -435,18 +435,18 @@ namespace
                 char doneFlag[32];
                 snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i);
                 snprintf(doneFlag, sizeof(doneFlag), "done_vid%d", i);
-                d->SetFlag(vidFlag, 0);
-                d->SetFlag(doneFlag, 0);
+                DungeonSystem::SetFlag(d, vidFlag, 0);
+                DungeonSystem::SetFlag(d, doneFlag, 0);
             }
 
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
             // Global end timer (Lua: rune_zone_end)
             ScheduleEnd(mapIndex, kTotalTimeLimit);
 
             // Spawn floor 1
-            d->SpawnRegen(kRegenFloor1, true);
+            DungeonSystem::SpawnRegen(d, kRegenFloor1, true);
 
             // Shuffle stone positions to emulate table_shuffle
             std::vector<SPos> pos;
@@ -460,10 +460,10 @@ namespace
 
             for (int i = 0; i < 6; ++i)
             {
-                const entt::entity stone = d->SpawnMob(kFloor1StoneVnum, pos[i].x, pos[i].y);
+                const entt::entity stone = DungeonSystem::SpawnMob(d, kFloor1StoneVnum, pos[i].x, pos[i].y);
                 if (stone == entt::null)
                 {
-                    d->Notice(948, "", true);
+                    DungeonSystem::Notice(d, 948, "", true);
                     ClearDungeon(mapIndex);
                     return;
                 }
@@ -472,23 +472,23 @@ namespace
 
                 char vidFlag[32];
                 snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i + 1);
-		d->SetFlag(vidFlag, (int32_t)ecs::PlayerRuntime::GetPacketVID(stone));
+		DungeonSystem::SetFlag(d, vidFlag, (int32_t)ecs::PlayerRuntime::GetPacketVID(stone));
             }
 
-            d->SetFlag(kFlagCount, 0);
+            DungeonSystem::SetFlag(d, kFlagCount, 0);
 
             ScheduleStepLimit(mapIndex, kStoneTimeLimit);
             ScheduleCheck(mapIndex, 2);
 
-            d->Notice(949, "15", true);
-            d->Notice(950, "", true);
-            d->Notice(951, "", true);
+            DungeonSystem::Notice(d, 949, "15", true);
+            DungeonSystem::Notice(d, 950, "", true);
+            DungeonSystem::Notice(d, 951, "", true);
         }
 
         void CreateRandomFloor(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
             {
                 CancelAll(mapIndex);
                 return;
@@ -500,10 +500,10 @@ namespace
             CancelEvent(m_evWarp, mapIndex);
 
             // Clear current floor
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
-            const int32_t curFloor = d->GetFlag(kFlagFloor);
+            const int32_t curFloor = DungeonSystem::GetFlag(d, kFlagFloor);
             int32_t nextFloor = curFloor + 1;
             if (curFloor == 0)
                 nextFloor = 1;
@@ -511,18 +511,18 @@ namespace
             if (curFloor == 1)
             {
                 nextFloor = 2;
-                d->Notice(979, "", true);
-                d->Notice(980, "", true);
+                DungeonSystem::Notice(d, 979, "", true);
+                DungeonSystem::Notice(d, 980, "", true);
             }
             else if (curFloor == 2)
             {
                 nextFloor = 3;
-                d->Notice(952, "", true);
+                DungeonSystem::Notice(d, 952, "", true);
             }
             else if (curFloor == 3)
             {
                 nextFloor = 4;
-                d->Notice(953, "", true);
+                DungeonSystem::Notice(d, 953, "", true);
             }
             else if (curFloor == 4)
             {
@@ -534,43 +534,43 @@ namespace
                 return;
             }
 
-            d->SetFlag(kFlagFloor, nextFloor);
-            d->SetFlag(kFlagStep, 0);
-            d->SetFlag(kFlagBossVid, 0);
-            d->SetFlag(kFlagOpened, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor, nextFloor);
+            DungeonSystem::SetFlag(d, kFlagStep, 0);
+            DungeonSystem::SetFlag(d, kFlagBossVid, 0);
+            DungeonSystem::SetFlag(d, kFlagOpened, 0);
 
             // Floors 2-4: random type 1..3
             if (nextFloor >= 2 && nextFloor <= 4)
             {
                 const int32_t type = number(1, 3);
-                d->SetFlag(kFlagType, type);
+                DungeonSystem::SetFlag(d, kFlagType, type);
 
                 if (type == 1)
                 {
                     const char* regen = (nextFloor == 2) ? kRegenFloor2_Type1 : (nextFloor == 3) ? kRegenFloor3_Type1 : kRegenFloor4_Type1;
-                    d->SpawnRegen(regen, false); // set_regen_file
+                    DungeonSystem::SpawnRegen(d, regen, false); // set_regen_file
                 }
                 else if (type == 2)
                 {
                     uint32_t bossVnum = (nextFloor == 2) ? kBossFloor2 : (nextFloor == 3) ? kBossFloor3 : kBossFloor4;
                     SPos bossPos = (nextFloor == 2) ? kBossPosFloor2 : (nextFloor == 3) ? kBossPosFloor3 : kBossPosFloor4;
 
-                    const entt::entity boss = d->SpawnMob(bossVnum, bossPos.x, bossPos.y);
+                    const entt::entity boss = DungeonSystem::SpawnMob(d, bossVnum, bossPos.x, bossPos.y);
                     if (boss == entt::null)
                     {
-                        d->Notice(981, "", true);
+                        DungeonSystem::Notice(d, 981, "", true);
                         ClearDungeon(mapIndex);
                         return;
                     }
-	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
+	DungeonSystem::SetFlag(d, kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
                     ScheduleCheck(mapIndex, 2);
                 }
                 else // type == 3
                 {
                     const char* a = (nextFloor == 2) ? kRegenFloor2_Type3a : (nextFloor == 3) ? kRegenFloor3_Type3a : kRegenFloor4_Type3a;
                     const char* b = (nextFloor == 2) ? kRegenFloor2_Type3b : (nextFloor == 3) ? kRegenFloor3_Type3b : kRegenFloor4_Type3b;
-                    d->SpawnRegen(a, true);
-                    d->SpawnRegen(b, true);
+                    DungeonSystem::SpawnRegen(d, a, true);
+                    DungeonSystem::SpawnRegen(d, b, true);
                     ScheduleCheck(mapIndex, 2);
                 }
 
@@ -580,20 +580,20 @@ namespace
             else if (nextFloor == 5)
             {
                 // Floor 5 starts as type 4
-                d->SetFlag(kFlagType, 4);
+                DungeonSystem::SetFlag(d, kFlagType, 4);
 
-                const entt::entity boss = d->SpawnMob(kBossFloor5_First, kBossPosFloor5_First.x, kBossPosFloor5_First.y);
+                const entt::entity boss = DungeonSystem::SpawnMob(d, kBossFloor5_First, kBossPosFloor5_First.x, kBossPosFloor5_First.y);
                 if (boss == entt::null)
                 {
-                    d->Notice(982, "", true);
+                    DungeonSystem::Notice(d, 982, "", true);
                     ClearDungeon(mapIndex);
                     return;
                 }
                 CombatSystem::SetInvincible(boss, true);
 
-	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
+	DungeonSystem::SetFlag(d, kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
 
-                d->SpawnRegen(kRegenFloor5, true);
+                DungeonSystem::SpawnRegen(d, kRegenFloor5, true);
 
                 ScheduleCheck(mapIndex, 2);
                 ScheduleStepLimit(mapIndex, kFinalFloorTimeLimit);
@@ -603,22 +603,22 @@ namespace
 
         void CheckFloor(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
             {
                 CancelAll(mapIndex);
                 return;
             }
 
-            const int32_t floor = d->GetFlag(kFlagFloor);
-            const int32_t type = d->GetFlag(kFlagType);
+            const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
+            const int32_t type = DungeonSystem::GetFlag(d, kFlagType);
 
             if (floor == 1)
             {
-                if (d->GetFlag(kFlagF1Unlocked) != 0)
+                if (DungeonSystem::GetFlag(d, kFlagF1Unlocked) != 0)
                     return;
 
-                if (d->CountMonster() == 6)
+                if (DungeonSystem::CountMonster(d) == 6)
                 {
                     const int32_t n = number(1, 6);
                     char vidFlag[32];
@@ -626,22 +626,22 @@ namespace
                     snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", n);
                     snprintf(doneFlag, sizeof(doneFlag), "done_vid%d", n);
 
-                    const uint32_t vid = (uint32_t)d->GetFlag(vidFlag);
+                    const uint32_t vid = (uint32_t)DungeonSystem::GetFlag(d, vidFlag);
                     if (!SetVidInvincible(vid, false))
                     {
-                        d->Notice(977, "", true);
+                        DungeonSystem::Notice(d, 977, "", true);
                         ClearDungeon(mapIndex);
                         return;
                     }
 
-                    d->SetFlag(doneFlag, 1);
-                    d->SetFlag(kFlagF1Unlocked, 1);
+                    DungeonSystem::SetFlag(d, doneFlag, 1);
+                    DungeonSystem::SetFlag(d, kFlagF1Unlocked, 1);
 
                     // Lua clears rune_zone_check here
                     CancelEvent(m_evCheck, mapIndex);
 
-                    d->Notice(975, "", true);
-                    d->Notice(976, "", true);
+                    DungeonSystem::Notice(d, 975, "", true);
+                    DungeonSystem::Notice(d, 976, "", true);
                 }
                 return;
             }
@@ -651,24 +651,24 @@ namespace
             {
                 if (type == 2)
                 {
-                    const int32_t step = d->GetFlag(kFlagStep);
-                    if ((step == 1 || step == 3) && d->CountMonster() == 1)
+                    const int32_t step = DungeonSystem::GetFlag(d, kFlagStep);
+                    if ((step == 1 || step == 3) && DungeonSystem::CountMonster(d) == 1)
                     {
-                        const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
+                        const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
                         if (!SetVidInvincible(bossVid, false))
                         {
-                            d->Notice(981, "", true);
+                            DungeonSystem::Notice(d, 981, "", true);
                             ClearDungeon(mapIndex);
                             return;
                         }
 
-                        d->SetFlag(kFlagStep, (step == 1) ? 2 : 4);
-                        d->Notice(938, "", true);
+                        DungeonSystem::SetFlag(d, kFlagStep, (step == 1) ? 2 : 4);
+                        DungeonSystem::Notice(d, 938, "", true);
                     }
                 }
                 else if (type == 3)
                 {
-                    if (d->CountMonster() == 0)
+                    if (DungeonSystem::CountMonster(d) == 0)
                     {
                         // Lua clears check timer after spawning boss
                         CancelEvent(m_evCheck, mapIndex);
@@ -676,16 +676,16 @@ namespace
                         uint32_t bossVnum = (floor == 2) ? kBossFloor2 : (floor == 3) ? kBossFloor3 : kBossFloor4;
                         SPos bossPos = (floor == 2) ? kBossPosFloor2 : (floor == 3) ? kBossPosFloor3 : kBossPosFloor4;
 
-                        const entt::entity boss = d->SpawnMob(bossVnum, bossPos.x, bossPos.y);
+                        const entt::entity boss = DungeonSystem::SpawnMob(d, bossVnum, bossPos.x, bossPos.y);
                         if (boss == entt::null)
                         {
-                            d->Notice(981, "", true);
+                            DungeonSystem::Notice(d, 981, "", true);
                             ClearDungeon(mapIndex);
                             return;
                         }
 
-                        d->Notice(939, "", true);
-                        d->Notice(940, "", true);
+                        DungeonSystem::Notice(d, 939, "", true);
+                        DungeonSystem::Notice(d, 940, "", true);
                     }
                 }
 
@@ -697,38 +697,38 @@ namespace
             {
                 if (type == 4)
                 {
-                    if (d->CountMonster() == 1)
+                    if (DungeonSystem::CountMonster(d) == 1)
                     {
                         CancelEvent(m_evCheck, mapIndex);
 
-                        d->SetFlag(kFlagType, 5);
+                        DungeonSystem::SetFlag(d, kFlagType, 5);
 
-                        const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
+                        const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
                         if (!SetVidInvincible(bossVid, false))
                         {
-                            d->Notice(983, "", true);
+                            DungeonSystem::Notice(d, 983, "", true);
                             ClearDungeon(mapIndex);
                             return;
                         }
 
-                        d->Notice(938, "", true);
+                        DungeonSystem::Notice(d, 938, "", true);
                     }
                 }
                 else if (type == 8)
                 {
-                    const int32_t step = d->GetFlag(kFlagStep);
-                    if ((step == 1 || step == 3) && d->CountMonster() == 1)
+                    const int32_t step = DungeonSystem::GetFlag(d, kFlagStep);
+                    if ((step == 1 || step == 3) && DungeonSystem::CountMonster(d) == 1)
                     {
-                        const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
+                        const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
                         if (!SetVidInvincible(bossVid, false))
                         {
-                            d->Notice(983, "", true);
+                            DungeonSystem::Notice(d, 983, "", true);
                             ClearDungeon(mapIndex);
                             return;
                         }
 
-                        d->SetFlag(kFlagStep, (step == 1) ? 2 : 4);
-                        d->Notice(938, "", true);
+                        DungeonSystem::SetFlag(d, kFlagStep, (step == 1) ? 2 : 4);
+                        DungeonSystem::Notice(d, 938, "", true);
                     }
                 }
             }
@@ -736,74 +736,74 @@ namespace
 
         void WarpToNextFloor(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            const int32_t floor = d->GetFlag(kFlagFloor);
+            const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
 
             bool showTypeNotices = false;
 
             if (floor == 2)
             {
-                d->JumpAll(mapIndex, kEnterFloor2X, kEnterFloor2Y);
+                DungeonSystem::JumpAll(d, mapIndex, kEnterFloor2X, kEnterFloor2Y);
                 showTypeNotices = true;
             }
             else if (floor == 3)
             {
-                d->JumpAll(mapIndex, kEnterFloor3X, kEnterFloor3Y);
+                DungeonSystem::JumpAll(d, mapIndex, kEnterFloor3X, kEnterFloor3Y);
                 showTypeNotices = true;
             }
             else if (floor == 4)
             {
-                d->JumpAll(mapIndex, kEnterFloor4X, kEnterFloor4Y);
+                DungeonSystem::JumpAll(d, mapIndex, kEnterFloor4X, kEnterFloor4Y);
                 showTypeNotices = true;
             }
             else if (floor == 5)
             {
-                d->JumpAll(mapIndex, kEnterFloor5X, kEnterFloor5Y);
-                d->Notice(961, "30", true);
-                d->Notice(962, "", true);
+                DungeonSystem::JumpAll(d, mapIndex, kEnterFloor5X, kEnterFloor5Y);
+                DungeonSystem::Notice(d, 961, "30", true);
+                DungeonSystem::Notice(d, 962, "", true);
             }
 
             if (showTypeNotices)
             {
-                const int32_t type = d->GetFlag(kFlagType);
+                const int32_t type = DungeonSystem::GetFlag(d, kFlagType);
                 if (type == 1)
                 {
-                    d->Notice(957, "20", true);
-                    d->Notice(958, "", true);
+                    DungeonSystem::Notice(d, 957, "20", true);
+                    DungeonSystem::Notice(d, 958, "", true);
                 }
                 else if (type == 2)
                 {
-                    d->Notice(959, "20", true);
+                    DungeonSystem::Notice(d, 959, "20", true);
                 }
                 else if (type == 3)
                 {
-                    d->Notice(959, "20", true);
-                    d->Notice(960, "", true);
+                    DungeonSystem::Notice(d, 959, "20", true);
+                    DungeonSystem::Notice(d, 960, "", true);
                 }
             }
         }
 
         void StepLimitExpired(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d != entt::null)
             {
-                d->Notice(1040, "", true);
-                d->Notice(1041, "", true);
+                DungeonSystem::Notice(d, 1040, "", true);
+                DungeonSystem::Notice(d, 1041, "", true);
             }
             ClearDungeon(mapIndex);
         }
 
         void EndDungeon(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d != entt::null)
             {
-                d->Notice(1040, "", true);
-                d->Notice(1041, "", true);
+                DungeonSystem::Notice(d, 1040, "", true);
+                DungeonSystem::Notice(d, 1041, "", true);
             }
             ClearDungeon(mapIndex);
         }
@@ -922,12 +922,12 @@ void CRuneDungeon::OnPlayerLogin(entt::entity character)
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     // Start only once, only by leader / solo.
-    if (d->GetFlag(kFlagFloor) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
     {
         bool isLeader = true;
         if (const entt::entity party = ecs::SocialSystem::GetParty(character); party != entt::null)
@@ -938,8 +938,8 @@ void CRuneDungeon::OnPlayerLogin(entt::entity character)
 
         if (isLeader)
         {
-            d->SetFlag(kFlagFloor, 1);
-            d->SetFlag(kFlagWasCompleted, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor, 1);
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
             s_rune.SchedulePrepare(idx, kPrepareDelay);
         }
     }
@@ -954,13 +954,13 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     if (!IsRuneDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
-    const int32_t floor = d->GetFlag(kFlagFloor);
-    const int32_t type = d->GetFlag(kFlagType);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
+    const int32_t type = DungeonSystem::GetFlag(d, kFlagType);
 
     // Floor 1: 6 invincible stones, unlock one at a time.
     if (floor == 1 && vnum == kFloor1StoneVnum)
@@ -973,15 +973,15 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i);
             snprintf(doneFlag, sizeof(doneFlag), "done_vid%d", i);
 
-	if ((uint32_t)d->GetFlag(vidFlag) == ecs::PlayerRuntime::GetPacketVID(victim))
+	if ((uint32_t)DungeonSystem::GetFlag(d, vidFlag) == ecs::PlayerRuntime::GetPacketVID(victim))
             {
-                d->SetFlag(doneFlag, 1);
+                DungeonSystem::SetFlag(d, doneFlag, 1);
                 break;
             }
         }
 
-        const int32_t c = d->GetFlag(kFlagCount) + 1;
-        d->SetFlag(kFlagCount, c);
+        const int32_t c = DungeonSystem::GetFlag(d, kFlagCount) + 1;
+        DungeonSystem::SetFlag(d, kFlagCount, c);
 
         if (c >= 6)
         {
@@ -997,23 +997,23 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i);
             snprintf(doneFlag, sizeof(doneFlag), "done_vid%d", i);
 
-            if (d->GetFlag(doneFlag) == 0)
+            if (DungeonSystem::GetFlag(d, doneFlag) == 0)
             {
-                const uint32_t vid = (uint32_t)d->GetFlag(vidFlag);
+                const uint32_t vid = (uint32_t)DungeonSystem::GetFlag(d, vidFlag);
                 if (!SetVidInvincible(vid, false))
                 {
-                    d->Notice(977, "", true);
+                    DungeonSystem::Notice(d, 977, "", true);
                     s_rune.ClearDungeon(idx);
                     return;
                 }
-                d->SetFlag(doneFlag, 1);
+                DungeonSystem::SetFlag(d, doneFlag, 1);
                 break;
             }
         }
 
         char buf[16];
         snprintf(buf, sizeof(buf), "%d", 6 - c);
-        d->Notice(978, buf, true);
+        DungeonSystem::Notice(d, 978, buf, true);
         return;
     }
 
@@ -1062,26 +1062,26 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     // Floor 5: first boss died (must be type 5)
     if (floor == 5 && vnum == kBossFloor5_First && type == 5)
     {
-        d->SetFlag(kFlagType, 6);
+        DungeonSystem::SetFlag(d, kFlagType, 6);
 
-        const entt::entity gate = d->SpawnMob(kBossFloor5_Gate, kBossPosFloor5_Gate.x, kBossPosFloor5_Gate.y);
+        const entt::entity gate = DungeonSystem::SpawnMob(d, kBossFloor5_Gate, kBossPosFloor5_Gate.x, kBossPosFloor5_Gate.y);
         if (gate == entt::null)
         {
-            d->Notice(983, "", true);
+            DungeonSystem::Notice(d, 983, "", true);
             s_rune.ClearDungeon(idx);
             return;
         }
         CombatSystem::SetInvincible(gate, true);
 
-	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(gate));
-        d->SetFlag(kFlagOpened, 0);
+	DungeonSystem::SetFlag(d, kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(gate));
+        DungeonSystem::SetFlag(d, kFlagOpened, 0);
 
-        d->SpawnRegen(kRegenFloor6, true);
-        d->SpawnRegen(kRegenFloor7, false); // set_regen_file
+        DungeonSystem::SpawnRegen(d, kRegenFloor6, true);
+        DungeonSystem::SpawnRegen(d, kRegenFloor7, false); // set_regen_file
 
-        d->Notice(969, "", true);
-        d->Notice(970, "", true);
-        d->Notice(971, "", true);
+        DungeonSystem::Notice(d, 969, "", true);
+        DungeonSystem::Notice(d, 970, "", true);
+        DungeonSystem::Notice(d, 971, "", true);
         return;
     }
 
@@ -1096,51 +1096,51 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     // Floor 5 type 7: gate boss killed -> final boss stage (type 8)
     if (floor == 5 && vnum == kBossFloor5_Gate && type == 7)
     {
-        d->SetFlag(kFlagStep, 0);
-        d->SetFlag(kFlagType, 8);
+        DungeonSystem::SetFlag(d, kFlagStep, 0);
+        DungeonSystem::SetFlag(d, kFlagType, 8);
 
-        const entt::entity boss = d->SpawnMob(kBossFloor5_Final, kBossPosFloor5_Final.x, kBossPosFloor5_Final.y);
+        const entt::entity boss = DungeonSystem::SpawnMob(d, kBossFloor5_Final, kBossPosFloor5_Final.x, kBossPosFloor5_Final.y);
         if (boss == entt::null)
         {
-            d->Notice(983, "", true);
+            DungeonSystem::Notice(d, 983, "", true);
             s_rune.ClearDungeon(idx);
             return;
         }
 
-	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
+	DungeonSystem::SetFlag(d, kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
         s_rune.ScheduleCheck(idx, 2);
 
-        d->Notice(965, "", true);
-        d->Notice(966, "", true);
+        DungeonSystem::Notice(d, 965, "", true);
+        DungeonSystem::Notice(d, 966, "", true);
         return;
     }
 
     // Floor 5: final boss killed (type 8) -> completion
     if (floor == 5 && vnum == kBossFloor5_Final && type == 8)
     {
-        if (d->GetFlag(kFlagWasCompleted) != 0)
+        if (DungeonSystem::GetFlag(d, kFlagWasCompleted) != 0)
             return;
 
         // Lua: clear_server_timer("rune_step_limit")
         s_rune.CancelEvent(s_rune.m_evStepLimit, idx);
         s_rune.CancelEvent(s_rune.m_evCheck, idx);
 
-        d->SetFlag(kFlagWasCompleted, 1);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
         RuneDungeon_CompleteRankingForMap(idx);
 
         // Notices
-        d->Notice(963, "", true);
+        DungeonSystem::Notice(d, 963, "", true);
 
         // Clear remaining mobs and regen, spawn exit npc(s)
-        d->KillAll();
-        d->ClearRegen();
-       // d->SpawnMob(kExitNpcVnum, kExitNpcPos.x, kExitNpcPos.y);
+        DungeonSystem::KillAll(d);
+        DungeonSystem::ClearRegen(d);
+       // DungeonSystem::SpawnMob(d, kExitNpcVnum, kExitNpcPos.x, kExitNpcPos.y);
 
         // Bonus spawn chance (Lua: 10 + dungeon_bonus)
         const int32_t bonus = 10 + quest::CQuestManager::instance().GetEventFlag("dungeon_bonus");
         if (number(1, 100) <= bonus)
-            d->SpawnMob(kExitNpcVnum, kExitNpcPos.x, kExitNpcPos.y);
+            DungeonSystem::SpawnMob(d, kExitNpcVnum, kExitNpcPos.x, kExitNpcPos.y);
 
         // Global broadcast
         if (const entt::entity party = ecs::SocialSystem::GetParty(killer); party != entt::null)
@@ -1168,11 +1168,11 @@ bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::enti
     if (!IsRuneDungeonMap(idx))
         return false;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return false;
 
-    if (d->GetFlag(kFlagFloor) != 5 || d->GetFlag(kFlagType) != 6)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) != 5 || DungeonSystem::GetFlag(d, kFlagType) != 6)
         return false;
 
     if (ItemSystem::GetItemVnum(item) != kFloorKey)
@@ -1187,34 +1187,34 @@ bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::enti
     // Purge the NPC (Lua: npc.purge())
     M2_DESTROY_CHARACTER(npc);
 
-    int32_t opened = d->GetFlag(kFlagOpened) + 1;
-    d->SetFlag(kFlagOpened, opened);
+    int32_t opened = DungeonSystem::GetFlag(d, kFlagOpened) + 1;
+    DungeonSystem::SetFlag(d, kFlagOpened, opened);
 
     if (opened >= 5)
     {
-        d->SetFlag(kFlagType, 7);
+        DungeonSystem::SetFlag(d, kFlagType, 7);
 
         // Remove all floor keys from everyone in the dungeon (Lua)
         RemoveAllItemOnMap(idx, kFloorKey);
 
         // Stop regen, make gate boss vulnerable
-        d->ClearRegen();
+        DungeonSystem::ClearRegen(d);
 
-        const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
+        const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
         if (!SetVidInvincible(bossVid, false))
         {
-            d->Notice(983, "", true);
+            DungeonSystem::Notice(d, 983, "", true);
             s_rune.ClearDungeon(idx);
             return true;
         }
 
-        d->Notice(967, "", true);
+        DungeonSystem::Notice(d, 967, "", true);
     }
     else
     {
         char buf[16];
         snprintf(buf, sizeof(buf), "%d", 5 - opened);
-        d->Notice(968, buf, true);
+        DungeonSystem::Notice(d, 968, buf, true);
     }
 
     return true;
@@ -1236,10 +1236,10 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     {
         if (IsRuneDungeonMap(rejoinIdx))
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
-            if (d && d->GetFlag(kFlagWasCompleted) == 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+            if (d != entt::null && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0)
             {
-                const int32_t floor = d->GetFlag(kFlagFloor);
+                const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
                 if (floor == 1)
                     ecs::MovementSystem::WarpSet(character, kEnterFloor1X * 100, kEnterFloor1Y * 100, rejoinIdx);
                 else if (floor == 2)
@@ -1367,14 +1367,14 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     }
 
     // Create dungeon instance
-    LPDUNGEON d = CDungeonManager::instance().Create(kRuneOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kRuneOriginalMap);
+    if (d == entt::null)
         return false;
 
-    d->SetFlag(kFlagFloor, 0);
-    d->SetFlag(kFlagWasCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagFloor, 0);
+    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
 
-    const int32_t dungeonMapIdx = d->GetMapIndex();
+    const int32_t dungeonMapIdx = DungeonSystem::GetMapIndex(d);
 
     auto setupMember = [&](entt::entity pc){
             if (!ecs::PlayerRuntime::IsPC(pc))
@@ -1400,12 +1400,12 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
             setupMember(pc);
             });
 
-        d->JoinParty_Coords(party, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::JoinParty_Coords(d, party, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
         setupMember(character);
-        d->Join_Coords(character, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::Join_Coords(d, character, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     return true;
@@ -1420,15 +1420,15 @@ bool CRuneDungeon::OnUseItem89103(entt::entity character)
     if (!IsRuneDungeonMap(idx))
         return false;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return false;
 
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
     if (floor != 2 && floor != 3 && floor != 4)
         return false;
 
-    if (d->GetFlag(kFlagType) != 1)
+    if (DungeonSystem::GetFlag(d, kFlagType) != 1)
         return false;
 
     // Only leader (or solo) can progress
@@ -1452,15 +1452,15 @@ bool CRuneDungeon::OnUseItem89102(entt::entity character)
     if (!IsRuneDungeonMap(idx))
         return false;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return false;
 
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
     if (floor != 2 && floor != 3 && floor != 4)
         return false;
 
-    if (d->GetFlag(kFlagType) != 1)
+    if (DungeonSystem::GetFlag(d, kFlagType) != 1)
         return false;
 
     if (ItemSystem::CountItem(character, kKeyFragment) < 10)

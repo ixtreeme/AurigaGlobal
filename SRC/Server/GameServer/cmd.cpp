@@ -361,7 +361,7 @@ ACMD(do_wheel_open)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You Can't do this now");
 		return;
 
-		if (ecs::SocialSystem::GetDungeon(character))
+		if (ecs::SocialSystem::GetDungeon(character) != entt::null)
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You cannot open in dungeon");
 		return;
 	}

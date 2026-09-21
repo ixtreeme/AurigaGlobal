@@ -499,18 +499,18 @@ void ClearClonesOnMap(int32_t mapIndex)
             CancelCloneAI(mapIndex);
             ClearClonesOnMap(mapIndex);
 
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            d->SetFlag(kFlagWasCompleted, 1);
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
             for (int i = 0; i < kTileStages; ++i)
                 ApplyBlockRect(mapIndex, kBlockRects[i], false);
 
-            d->ExitAllLobby(1);
+            DungeonSystem::ExitAllLobby(d, 1);
         }
 
         void ScheduleTimer(int32_t mapIndex, int32_t remainSec, int32_t floor)
@@ -528,12 +528,12 @@ void ClearClonesOnMap(int32_t mapIndex)
 
         void StartFloor1(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            d->SetFlag(kFlagFloor, 1);
-            d->SetFlag(kFlagCorrectMetin, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor, 1);
+            DungeonSystem::SetFlag(d, kFlagCorrectMetin, 0);
 
             std::vector<uint32_t> spawnedVids;
             spawnedVids.reserve(kFloor1MetinCount);
@@ -545,7 +545,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 const int32_t x = kMetinPos[idx][0];
                 const int32_t y = kMetinPos[idx][1];
 
-                const entt::entity metin = d->SpawnMob((int32_t)kMetinVnum, x, y);
+                const entt::entity metin = DungeonSystem::SpawnMob(d, (int32_t)kMetinVnum, x, y);
                 if (metin == entt::null)
                 {
                     LOG_ERROR("[LostCastle] metin spawn fail: vnum={} map={} x={} y={} (i={} idx={})", (unsigned)kMetinVnum, mapIndex, x, y, i, idx);
@@ -562,7 +562,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             }
 
             const uint32_t correctVid = spawnedVids[number(0, (int)spawnedVids.size() - 1)];
-            d->SetFlag(kFlagCorrectMetin, (int32_t)correctVid);
+            DungeonSystem::SetFlag(d, kFlagCorrectMetin, (int32_t)correctVid);
 
             BigNoticeMap(mapIndex, "Elveszett Kastely: %d mp marad meg a megfelelõ metinkõ megtalalasara!", kFloor1TimeSec);
             ScheduleTimer(mapIndex, kFloor1TimeSec, 1);
@@ -571,12 +571,12 @@ void ClearClonesOnMap(int32_t mapIndex)
 
         //void StartFloor1(int32_t mapIndex)
         //{
-        //    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        //    if (!d)
+        //    const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        //    if (d == entt::null)
         //        return;
 
-        //    d->SetFlag(kFlagFloor, 1);
-        //    d->SetFlag(kFlagCorrectMetin, 0);
+        //    DungeonSystem::SetFlag(d, kFlagFloor, 1);
+        //    DungeonSystem::SetFlag(d, kFlagCorrectMetin, 0);
 
         //    std::vector<uint32_t> spawnedVids;
         //    spawnedVids.reserve(kFloor1MetinCount);
@@ -595,7 +595,7 @@ void ClearClonesOnMap(int32_t mapIndex)
         //        const int32_t x = number(minX, maxX);
         //        const int32_t y = number(minY, maxY);
 
-        //        const entt::entity metin = d->SpawnMob((int32_t)kMetinVnum, x, y);
+        //        const entt::entity metin = DungeonSystem::SpawnMob(d, (int32_t)kMetinVnum, x, y);
         //        if (!ecs::IsCharacter(metin))
         //            continue;
 
@@ -609,7 +609,7 @@ void ClearClonesOnMap(int32_t mapIndex)
         //    }
 
         //    const uint32_t correctVid = spawnedVids[number(0, (int)spawnedVids.size() - 1)];
-        //    d->SetFlag(kFlagCorrectMetin, (int32_t)correctVid);
+        //    DungeonSystem::SetFlag(d, kFlagCorrectMetin, (int32_t)correctVid);
 
         //    BigNoticeMap(mapIndex, "Elveszett Kastely: %d mp marad meg a megfelelõ metinkõ megtalalasara!", kFloor1TimeSec);
         //    ScheduleTimer(mapIndex, kFloor1TimeSec, 1);
@@ -617,47 +617,47 @@ void ClearClonesOnMap(int32_t mapIndex)
 
         void StartFloor2(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
             CancelTimer(mapIndex);
             CancelCloneAI(mapIndex);
             ClearClonesOnMap(mapIndex);
 
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
-            d->SetFlag(kFlagFloor, 2);
-            d->SetFlag(kFlagKeyMask, 0);
-            d->SetFlag(kFlagStatueVid, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor, 2);
+            DungeonSystem::SetFlag(d, kFlagKeyMask, 0);
+            DungeonSystem::SetFlag(d, kFlagStatueVid, 0);
 
-            d->JumpAll(mapIndex, kFloor2CenterX, kFloor2CenterY);
+            DungeonSystem::JumpAll(d, mapIndex, kFloor2CenterX, kFloor2CenterY);
 
-            const entt::entity statue = d->SpawnMob((int32_t)kStatueVnum, kFloor2CenterX, kFloor2CenterY);
+            const entt::entity statue = DungeonSystem::SpawnMob(d, (int32_t)kStatueVnum, kFloor2CenterX, kFloor2CenterY);
             if (statue != entt::null)
-	d->SetFlag(kFlagStatueVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(statue));
+	DungeonSystem::SetFlag(d, kFlagStatueVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(statue));
 
-            d->SpawnRegen(kFloor2Regen, true);
+            DungeonSystem::SpawnRegen(d, kFloor2Regen, true);
 
             BigNoticeMap(mapIndex, "Elveszett Kastely: %d mp van a szobor aktivitasara (5 kulcs)!", kFloor2TimeSec);
             ScheduleTimer(mapIndex, kFloor2TimeSec, 2);
         }
     void StartFloor3(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
             return;
 
         CancelTimer(mapIndex);
 
-        d->KillAll();
-        d->ClearRegen();
+        DungeonSystem::KillAll(d);
+        DungeonSystem::ClearRegen(d);
 
-        d->SetFlag(kFlagFloor, 3);
-        d->SetFlag(kFlagClonesRemain, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 3);
+        DungeonSystem::SetFlag(d, kFlagClonesRemain, 0);
 
-        d->JumpAll(mapIndex, kFloor3CenterX, kFloor3CenterY);
+        DungeonSystem::JumpAll(d, mapIndex, kFloor3CenterX, kFloor3CenterY);
 
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
         if (!map)
@@ -834,7 +834,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             ++remain;
         }
 
-        d->SetFlag(kFlagClonesRemain, remain);
+        DungeonSystem::SetFlag(d, kFlagClonesRemain, remain);
 
         BigNoticeMap(mapIndex, "Elveszett Kastely: Mindenki olje meg a sajat klonjat!");
 
@@ -846,30 +846,30 @@ void ClearClonesOnMap(int32_t mapIndex)
 
         void StartFloor4(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
             CancelTimer(mapIndex);
             CancelCloneAI(mapIndex);
             ClearClonesOnMap(mapIndex);
 
-            d->KillAll();
-            d->ClearRegen();
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
 
-            d->SetFlag(kFlagFloor, 4);
-            d->SetFlag(kFlagTileStage, 0);
-            d->SetFlag(kFlagTotemVid, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor, 4);
+            DungeonSystem::SetFlag(d, kFlagTileStage, 0);
+            DungeonSystem::SetFlag(d, kFlagTotemVid, 0);
 
             for (int i = 0; i < kTileStages; ++i)
                 ApplyBlockRect(mapIndex, kBlockRects[i], true);
 
-            d->JumpAll(mapIndex, kFloor4CenterX, kFloor4CenterY);
-            d->SpawnRegen(kFloor4Regen, true);
+            DungeonSystem::JumpAll(d, mapIndex, kFloor4CenterX, kFloor4CenterY);
+            DungeonSystem::SpawnRegen(d, kFloor4Regen, true);
 
-            const entt::entity totem = d->SpawnMob((int32_t)kTotemVnum, kFloor4CenterX, kFloor4CenterY);
+            const entt::entity totem = DungeonSystem::SpawnMob(d, (int32_t)kTotemVnum, kFloor4CenterX, kFloor4CenterY);
             if (totem != entt::null)
-	d->SetFlag(kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(totem));
+	DungeonSystem::SetFlag(d, kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(totem));
 
             SendCommandMap(mapIndex, "lostcastle_tile 0");
             BigNoticeMap(mapIndex, "Elveszett Kastely: Mobokbol eshet %u (3%%). Huzd a totemre, hogy csempet tegyel le!", kTileItemVnum);
@@ -889,13 +889,13 @@ void ClearClonesOnMap(int32_t mapIndex)
             m_cloneNextAction.erase(cloneVid);
             m_cloneOffset.erase(cloneVid);
 
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return;
 
-            int32_t remain = d->GetFlag(kFlagClonesRemain);
+            int32_t remain = DungeonSystem::GetFlag(d, kFlagClonesRemain);
             if (remain > 0) remain -= 1;
-            d->SetFlag(kFlagClonesRemain, remain);
+            DungeonSystem::SetFlag(d, kFlagClonesRemain, remain);
 
             if (remain <= 0)
             {
@@ -906,18 +906,18 @@ void ClearClonesOnMap(int32_t mapIndex)
 
         bool UnlockNextTile(int32_t mapIndex)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null)
                 return false;
 
-            int32_t stage = d->GetFlag(kFlagTileStage);
+            int32_t stage = DungeonSystem::GetFlag(d, kFlagTileStage);
             if (stage >= kTileStages)
                 return false;
 
             ApplyBlockRect(mapIndex, kBlockRects[stage], false);
 
             stage += 1;
-            d->SetFlag(kFlagTileStage, stage);
+            DungeonSystem::SetFlag(d, kFlagTileStage, stage);
 
             SendCommandMap(mapIndex, "lostcastle_tile %d", stage);
             BigNoticeMap(mapIndex, "Elveszett Kastely: Letettel egy csempet (%d/%d)!", stage, kTileStages);
@@ -950,20 +950,20 @@ void ClearClonesOnMap(int32_t mapIndex)
         const int32_t mapIndex = info->mapIndex;
         const int32_t floor = info->floor;
 
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
         {
             s_lc.CancelTimer(mapIndex);
             return 0;
         }
 
-        if (d->GetFlag(kFlagWasCompleted) != 0)
+        if (DungeonSystem::GetFlag(d, kFlagWasCompleted) != 0)
         {
             s_lc.CancelTimer(mapIndex);
             return 0;
         }
 
-        if (d->GetFlag(kFlagFloor) != floor)
+        if (DungeonSystem::GetFlag(d, kFlagFloor) != floor)
         {
             s_lc.CancelTimer(mapIndex);
             return 0;
@@ -1010,8 +1010,8 @@ void ClearClonesOnMap(int32_t mapIndex)
         // LostCastle private maps: only run on Floor3 while dungeon is active
         if (IsInRange(mapIndex, kPrivateMin, kPrivateMax))
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-            if (!d || d->GetFlag(kFlagWasCompleted) != 0 || d->GetFlag(kFlagFloor) != 3)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+            if (d == entt::null || DungeonSystem::GetFlag(d, kFlagWasCompleted) != 0 || DungeonSystem::GetFlag(d, kFlagFloor) != 3)
             {
                 s_lc.CancelCloneAI(mapIndex);
                 return 0;
@@ -1551,21 +1551,21 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     }
 
     // Create + join (Pyramid style)
-    LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
+    if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Elveszett Kastely: nem sikerult letrehozni a dungeont.");
         return true;
     }
 
-    d->SetFlag(kFlagFloor, 1);
-    d->SetFlag(kFlagWasCompleted, 0);
-    d->SetFlag(kFlagCorrectMetin, 0);
-    d->SetFlag(kFlagKeyMask, 0);
-    d->SetFlag(kFlagStatueVid, 0);
-    d->SetFlag(kFlagTotemVid, 0);
-    d->SetFlag(kFlagTileStage, 0);
-    d->SetFlag(kFlagClonesRemain, 0);
+    DungeonSystem::SetFlag(d, kFlagFloor, 1);
+    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagCorrectMetin, 0);
+    DungeonSystem::SetFlag(d, kFlagKeyMask, 0);
+    DungeonSystem::SetFlag(d, kFlagStatueVid, 0);
+    DungeonSystem::SetFlag(d, kFlagTotemVid, 0);
+    DungeonSystem::SetFlag(d, kFlagTileStage, 0);
+    DungeonSystem::SetFlag(d, kFlagClonesRemain, 0);
 
     auto applyMember = [&](entt::entity m){
             if (!ecs::PlayerRuntime::IsPC(m))
@@ -1575,7 +1575,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
 
             // rejoin flags reset
             ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(m, kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(m, kQfIdx, DungeonSystem::GetMapIndex(d));
             ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
 
             // exit/lobby
@@ -1587,17 +1587,17 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
         applyMember(character);
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->Join_Coords(character, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::Join_Coords(d, character, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
         PartySystem::ForEachOnMapMember(party, applyMember, ecs::PlayerRuntime::GetMapIndex(character));
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::JoinParty_Coords(d, party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
-    s_lc.StartFloor1(d->GetMapIndex());
+    s_lc.StartFloor1(DungeonSystem::GetMapIndex(d));
     return true;
 }
 
@@ -1610,15 +1610,15 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
 
     if (floor == 1 && ecs::PlayerRuntime::GetRaceNum(victim) == kMetinVnum)
     {
-        const uint32_t correctVid = (uint32_t)d->GetFlag(kFlagCorrectMetin);
+        const uint32_t correctVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagCorrectMetin);
 	if (correctVid && ecs::PlayerRuntime::GetPacketVID(victim) == correctVid)
         {
             BigNoticeMap(idx, "Elveszett Kastely: Megtalaltatok a megfelelõ metinkõvet! Floor2 kovetkezik.");
@@ -1659,15 +1659,15 @@ bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return false;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return false;
 
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
 
     if (floor == 2)
     {
-        const uint32_t statueVid = (uint32_t)d->GetFlag(kFlagStatueVid);
+        const uint32_t statueVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagStatueVid);
 	if (statueVid && ecs::PlayerRuntime::GetPacketVID(npc) != statueVid)
             return false;
 
@@ -1680,7 +1680,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt
         if (keyIndex < 0)
             return false;
 
-        int32_t mask = d->GetFlag(kFlagKeyMask);
+        int32_t mask = DungeonSystem::GetFlag(d, kFlagKeyMask);
         const int32_t bit = 1 << keyIndex;
         if (mask & bit)
         {
@@ -1690,7 +1690,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt
 
         ConsumeOneGivenItem(itemEntity, "LOSTCASTLE_KEY");
         mask |= bit;
-        d->SetFlag(kFlagKeyMask, mask);
+        DungeonSystem::SetFlag(d, kFlagKeyMask, mask);
 
         BigNoticeMap(idx, "Elveszett Kastely: %s megtalalta az egyik kulcsot!", ecs::PlayerRuntime::GetName(from).data());
 
@@ -1716,7 +1716,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt
 
     if (floor == 4)
     {
-        const uint32_t totemVid = (uint32_t)d->GetFlag(kFlagTotemVid);
+        const uint32_t totemVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagTotemVid);
 	if (totemVid && ecs::PlayerRuntime::GetPacketVID(npc) != totemVid)
             return false;
 

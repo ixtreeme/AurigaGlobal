@@ -24,195 +24,39 @@
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/social_components.hpp"
+#include "ecs/components/dirty_components.hpp"
 #include "ecs/components/spatial_components.hpp"
 #include "ecs/events.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
-CDungeon::CDungeon(IdType id, int32_t lOriginalMapIndex, int32_t lMapIndex)
-	: m_id(id),
-	m_lOrigMapIndex(lOriginalMapIndex),
-	m_lMapIndex(lMapIndex),
-	m_map_Area(SECTREE_MANAGER::instance().GetDungeonArea(lOriginalMapIndex))
-{
-	Initialize();
-	//0,"DUNGEON create orig %d real %d", lOriginalMapIndex, lMapIndex);
-}
-
-CDungeon::~CDungeon()
-{
-#ifdef __DEFENSE_WAVE__
-	m_Mast = entt::null;
-#endif
-
-	if (m_pParty != entt::null) {
-		PartySystem::SetDungeon_for_Only_party(m_pParty, nullptr);
-	}
-
-	//0,"DUNGEON destroy orig %d real %d", m_lOrigMapIndex, m_lMapIndex	);
-
-	ClearRegen();
-
-	if (deadEvent) {
-		event_cancel(&deadEvent);
-	}
-
-	if (exit_all_event_) {
-		event_cancel(&exit_all_event_);
-	}
-
-	if (jump_to_event_) {
-		event_cancel(&jump_to_event_);
-	}
-}
-
-struct FWarpToDungeonCoords
-{
-	FWarpToDungeonCoords(int32_t lMapIndex, int32_t X, int32_t Y, LPDUNGEON d)
-	: m_lMapIndex(lMapIndex), m_x(X), m_y(Y), m_pkDungeon(d)
-	{
-	}
-
-	void operator () (entt::entity member)
-	{
-		ecs::MovementSystem::SaveExitLocation(member);
-		ecs::MovementSystem::WarpSet(member, m_x, m_y, m_lMapIndex);
-	}
-
-	int32_t m_lMapIndex;
-	int32_t m_x;
-	int32_t m_y;
-	LPDUNGEON m_pkDungeon;
-};
-
-void CDungeon::Join_Coords(entt::entity character, int32_t X, int32_t Y, int32_t index)
-{
-	if (character == entt::null || !g_registry.valid(character) ||
-		SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr)
-	{
-		LOG_ERROR("CDungeon: invalid entity or missing SECTREE_MAP for #{}", m_lMapIndex);
-		return;
-	}
-
-	ecs::MovementSystem::SaveExitLocation(character);
-	ecs::MovementSystem::WarpSet(character, X * 100, Y * 100, m_lMapIndex);
-}
-void CDungeon::JoinParty_Coords(entt::entity pParty, int32_t X, int32_t Y, int32_t index)
-{
-	PartySystem::SetDungeon(pParty, this);
-	m_map_pkParty.insert(std::make_pair(pParty,0));
-
-	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr)
-	{
-		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
-		return;
-	}
-	X*=100;
-	Y*=100;
-	FWarpToDungeonCoords f(m_lMapIndex, X, Y, this);
-	PartySystem::ForEachOnMapMember(pParty, f, index);
-}
-
-void CDungeon::Initialize()
-{
-	m_completed = false;
-	deadEvent = nullptr;
-	// <Factor>
-	exit_all_event_ = nullptr;
-	jump_to_event_ = nullptr;
-	regen_id_ = 0;
-
-	m_monstercount = 0;
-
-	m_iWarpDelay = 0;
-	m_lWarpMapIndex = 0;
-	m_lWarpX = 0;
-	m_lWarpY = 0;
-
-	m_stRegenFile = "";
-
-	m_pParty = entt::null;
-#ifdef __DEFENSE_WAVE__
-	m_Mast = entt::null;
-#endif
-}
-
-void CDungeon::SetFlag(std::string name, int32_t value)
-{
-	auto it = m_map_Flag.find(name);
-	if (it != m_map_Flag.end())
-	{
-		it->second = value;
-	}
-	else
-	{
-		m_map_Flag.insert(make_pair(name, value));
-	}
-}
-
-int CDungeon::GetFlag(std::string name)
-{
-	auto it =  m_map_Flag.find(name);
-	if (it != m_map_Flag.end())
-		return it->second;
-	else
-		return 0;
-}
-
-struct FWarpToDungeon
-{
-	FWarpToDungeon(int32_t lMapIndex, LPDUNGEON d)
-		: m_lMapIndex(lMapIndex), m_pkDungeon(d)
-		{
-			LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(lMapIndex);
-			m_x = pkSectreeMap->m_setting.posSpawn.x;
-			m_y = pkSectreeMap->m_setting.posSpawn.y;
-		}
-
-	void operator () (entt::entity member)
-	{
-		ecs::MovementSystem::SaveExitLocation(member);
-		ecs::MovementSystem::WarpSet(member, m_x, m_y, m_lMapIndex);
-		//m_pkDungeon->IncPartyMember(ecs::SocialSystem::GetParty(member));
-	}
-
-	int32_t m_lMapIndex;
-	int32_t m_x;
-	int32_t m_y;
-	LPDUNGEON m_pkDungeon;
-};
-
-void CDungeon::JoinParty(entt::entity pParty)
-{
-	PartySystem::SetDungeon(pParty, this); // @warme011 the begin of the nightmare
-	m_map_pkParty.insert(std::make_pair(pParty,0));
-
-	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) {
-		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
-		return;
-	}
-	FWarpToDungeon f(m_lMapIndex, this);
-	PartySystem::ForEachOnlineMember(pParty, f);
-	//0, "DUNGEON-PARTY join %p %p", this, pParty);
-}
-
-void CDungeon::QuitParty(entt::entity pParty)
-{
-	PartySystem::SetDungeon(pParty, nullptr);
-	//0, "DUNGEON-PARTY quit %p %p", this, pParty);
-	TPartyMap::iterator it = m_map_pkParty.find(pParty); // @warme011 boom! crash!
-	if (it != m_map_pkParty.end())
-		m_map_pkParty.erase(it);
-}
-
 EVENTINFO(dungeon_id_info)
 {
-	CDungeon::IdType dungeon_id;
+	entt::entity dungeon { entt::null };
 
 	dungeon_id_info()
-	: dungeon_id(0)
 	{
 	}
 };
+
+EVENTFUNC(dungeon_dead_event);
+
+namespace
+{
+	// The retired instance's relations are cleared by the system, so the only
+	// thing the death callback needs is a re-arm while players still stand on
+	// the private map.
+	void ArmDeadEvent(entt::entity dungeon, ecs::DungeonState& state)
+	{
+		dungeon_id_info* info = AllocEventInfo<dungeon_id_info>();
+		info->dungeon = dungeon;
+
+		event_cancel(&state.deadEvent);
+
+		const int iSec = state.completed ? 3 : 300;
+		state.deadEvent = event_create(dungeon_dead_event, info, PASSES_PER_SEC(iSec));
+	}
+}
 
 EVENTFUNC(dungeon_dead_event)
 {
@@ -224,194 +68,1190 @@ EVENTFUNC(dungeon_dead_event)
 		return 0;
 	}
 
-	LPDUNGEON pDungeon = CDungeonManager::instance().Find(info->dungeon_id);
-	if (pDungeon == nullptr) {
+	ecs::DungeonState* state = DungeonSystem::Find(info->dungeon);
+
+	// A cancelled or replaced callback cannot act on a recycled instance.
+	if (!state || state->deadEvent != event)
 		return 0;
-	}
 
-	pDungeon->deadEvent = nullptr;
+	// The member set can be wrong (a member never tracked, a stale handle); the
+	// map is the source of truth. Never tear it down under live players.
+	if (DungeonSystem::HasLivePlayers(info->dungeon))
+		return PASSES_PER_SEC(3);
 
-	CDungeonManager::instance().Destroy(info->dungeon_id);
-	g_dispatcher.trigger(ecs::EvDungeonDead { info->dungeon_id });
+	state->deadEvent = nullptr;
+
+	const uint32_t id = state->id;
+	CDungeonManager::instance().Destroy(id);
+	g_dispatcher.trigger(ecs::EvDungeonDead { info->dungeon });
 	return 0;
 }
 
-// The characters standing in this dungeon. They were held as pointers, which
-// is why SocialSystem::SetDungeon had to resolve a character just to count it
-// in and out.
-void CDungeon::IncMember(entt::entity character)
+namespace DungeonSystem
 {
-	m_setMember.insert(character);
-
-	event_cancel(&deadEvent);
-}
-
-void CDungeon::DecMember(entt::entity character)
-{
-	auto it = m_setMember.find(character);
-
-	if (it == m_setMember.end()) {
-		return;
+	bool IsValid(entt::entity dungeon)
+	{
+		return Find(dungeon) != nullptr;
 	}
 
-	m_setMember.erase(it);
-
-	if (m_setMember.empty())
+	IdType GetId(entt::entity dungeon)
 	{
-		dungeon_id_info* info = AllocEventInfo<dungeon_id_info>();
-		info->dungeon_id = m_id;
-
-		event_cancel(&deadEvent);
-		int iSec = m_completed ? 3 : 300;
-		deadEvent = event_create(dungeon_dead_event, info, PASSES_PER_SEC(iSec));
-	}
-}
-
-void CDungeon::IncPartyMember(entt::entity pParty, entt::entity character)
-{
-	TPartyMap::iterator it = m_map_pkParty.find(pParty);
-
-	if (it != m_map_pkParty.end())
-		it->second++;
-	else
-		m_map_pkParty.insert(std::make_pair(pParty,1));
-
-	IncMember(character);
-}
-
-void CDungeon::DecPartyMember(entt::entity pParty, entt::entity character)
-{
-	TPartyMap::iterator it = m_map_pkParty.find(pParty);
-
-	if (it == m_map_pkParty.end())
-		LOG_ERROR("cannot find party");
-	else
-	{
-		it->second--;
-
-		if (it->second == 0)
-			QuitParty(pParty);
+		ecs::DungeonState* state = Find(dungeon);
+		return state ? state->id : 0;
 	}
 
-	DecMember(character);
-}
-
-struct FWarpToPosition
-{
-	int32_t lMapIndex;
-	int32_t x;
-	int32_t y;
-	FWarpToPosition(int32_t lMapIndex, int32_t x, int32_t y)
-		: lMapIndex(lMapIndex), x(x), y(y)
-		{}
-
-	void operator()(entt::entity chEntity)
+	int32_t GetMapIndex(entt::entity dungeon)
 	{
-		if (!ecs::IsCharacter(chEntity)) {
+		ecs::DungeonState* state = Find(dungeon);
+		return state ? state->mapIndex : 0;
+	}
+
+	void Initialize(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
 			return;
-		}
 
-		if (!ecs::PlayerRuntime::IsPC(chEntity)) {
+		state->completed = false;
+		state->deadEvent = nullptr;
+		state->regenId = 0;
+	}
+
+	void Destroy(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
 			return;
-		}
-		if (ecs::PlayerRuntime::GetMapIndex(chEntity) == lMapIndex)
+
+		// Drop the party handles first: the members' own cleanup below must not
+		// walk a dying instance's party counters.
+		std::vector<entt::entity> parties;
+		parties.reserve(state->partyCounts.size());
+		for (const auto& row : state->partyCounts)
+			parties.push_back(row.first);
+
+		state->partyCounts.clear();
+
+		for (const entt::entity party : parties)
 		{
-			ecs::MovementSystem::Show(chEntity, lMapIndex, x, y, 0);
-			ecs::MovementSystem::Stop(chEntity);
+			if (party != entt::null && g_registry.valid(party))
+				PartySystem::SetDungeon(party, entt::null);
+		}
+
+		// Members and monsters: clear the membership directly. The dec
+		// bookkeeping of a dying instance is meaningless and would re-enter
+		// the teardown.
+		auto clearMembership = [](entt::entity e)
+		{
+			if (e == entt::null || !g_registry.valid(e))
+				return;
+
+			if (auto* membership = g_registry.try_get<ecs::DungeonMembership>(e))
+			{
+				membership->dungeon = entt::null;
+				g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+			}
+		};
+
+		for (const entt::entity member : state->members)
+			clearMembership(member);
+
+		for (const entt::entity monster : state->monsters)
+			clearMembership(monster);
+
+		state->members.clear();
+		state->monsters.clear();
+
+		ClearRegen(dungeon);
+
+		state = Find(dungeon);
+		if (!state)
+			return;
+
+		event_cancel(&state->deadEvent);
+
+		g_registry.destroy(dungeon);
+	}
+
+	bool HasLivePlayers(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return false;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (!map)
+			return false;
+
+		struct FFindPlayer
+		{
+			bool found { false };
+
+			void operator()(entt::entity e)
+			{
+				if (!found && ecs::IsCharacter(e) && ecs::PlayerRuntime::IsPC(e))
+					found = true;
+			}
+		} f;
+
+		map->for_each(f);
+		return f.found;
+	}
+
+	void IncMember(entt::entity dungeon, entt::entity character)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state || character == entt::null)
+			return;
+
+		state->members.insert(character);
+
+		event_cancel(&state->deadEvent);
+	}
+
+	void DecMember(entt::entity dungeon, entt::entity character)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		auto it = state->members.find(character);
+
+		if (it == state->members.end())
+			return;
+
+		state->members.erase(it);
+
+		if (state->members.empty())
+			ArmDeadEvent(dungeon, *state);
+	}
+
+	void IncPartyMember(entt::entity dungeon, entt::entity pParty, entt::entity character)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		auto it = state->partyCounts.find(pParty);
+
+		if (it != state->partyCounts.end())
+			it->second++;
+		else
+			state->partyCounts.emplace(pParty, 1);
+
+		IncMember(dungeon, character);
+	}
+
+	void DecPartyMember(entt::entity dungeon, entt::entity pParty, entt::entity character)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		auto it = state->partyCounts.find(pParty);
+
+		if (it == state->partyCounts.end())
+			LOG_ERROR("cannot find party");
+		else
+		{
+			it->second--;
+
+			// Defensive: a counter that was never armed must still release.
+			if (it->second <= 0)
+				QuitParty(dungeon, pParty);
+		}
+
+		DecMember(dungeon, character);
+	}
+
+	void AddMonster(entt::entity dungeon, entt::entity monster)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state || monster == entt::null)
+			return;
+
+		state->monsters.insert(monster);
+	}
+
+	void RemoveMonster(entt::entity monster)
+	{
+		if (monster == entt::null || !g_registry.valid(monster))
+			return;
+
+		const auto* membership = g_registry.try_get<ecs::DungeonMembership>(monster);
+		if (!membership || membership->dungeon == entt::null)
+			return;
+
+		ecs::DungeonState* state = Find(membership->dungeon);
+		if (state)
+			state->monsters.erase(monster);
+	}
+
+	int32_t CountMonster(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return 0;
+
+		// Handles whose entity is gone are dropped here, so a monster destroyed
+		// outside the kill path cannot leave the count behind.
+		int32_t count = 0;
+
+		for (auto it = state->monsters.begin(); it != state->monsters.end(); )
+		{
+			const entt::entity monster = *it;
+
+			if (monster == entt::null || !g_registry.valid(monster))
+				it = state->monsters.erase(it);
+			else
+			{
+				++count;
+				++it;
+			}
+		}
+
+		return count;
+	}
+
+	entt::entity GetMemberDungeon(entt::entity e)
+	{
+		if (e == entt::null || !g_registry.valid(e))
+			return entt::null;
+
+		const auto* membership = g_registry.try_get<ecs::DungeonMembership>(e);
+		if (!membership || membership->dungeon == entt::null)
+			return entt::null;
+
+		return IsValid(membership->dungeon) ? membership->dungeon : entt::null;
+	}
+
+	void SetMemberDungeon(entt::entity e, entt::entity pkDungeon)
+	{
+		if (e == entt::null || !g_registry.valid(e))
+			return;
+
+		if (pkDungeon != entt::null && !IsValid(pkDungeon))
+			pkDungeon = entt::null;
+
+		auto& membership = g_registry.get_or_emplace<ecs::DungeonMembership>(e);
+		const entt::entity previous = membership.dungeon;
+
+		if (previous == pkDungeon)
+		{
+			if (pkDungeon != entt::null)
+				g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+			return;
+		}
+
+		if (pkDungeon != entt::null && previous != entt::null)
+		{
+			LOG_ERROR("{} is trying to reassigning dungeon (current {}, new dungeon {})", ecs::PlayerRuntime::GetName(e).data(), static_cast<uint32_t>(previous), static_cast<uint32_t>(pkDungeon));
+		}
+
+		if (previous != entt::null)
+		{
+			if (ecs::PlayerRuntime::IsPC(e))
+			{
+				const entt::entity party = ecs::SocialSystem::GetParty(e);
+				if (party != entt::null)
+					DecPartyMember(previous, party, e);
+				else
+					DecMember(previous, e);
+			}
+			else if (ecs::PlayerRuntime::IsMonster(e) || ecs::PlayerRuntime::IsStone(e))
+			{
+				RemoveMonster(e);
+			}
+		}
+
+		membership.dungeon = pkDungeon;
+
+		if (pkDungeon != entt::null)
+		{
+			if (ecs::PlayerRuntime::IsPC(e))
+			{
+				const entt::entity party = ecs::SocialSystem::GetParty(e);
+				if (party != entt::null)
+					IncPartyMember(pkDungeon, party, e);
+				else
+					IncMember(pkDungeon, e);
+			}
+			else if (ecs::PlayerRuntime::IsMonster(e) || ecs::PlayerRuntime::IsStone(e))
+			{
+				AddMonster(pkDungeon, e);
+			}
+		}
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	}
+
+	// The membership is only valid while the character is on the dungeon's map.
+	// Legacy cleared it at entity destruction alone, so an ex-member stayed
+	// counted and a one-member set could destroy an instance under the rest of
+	// the party.
+	void ClearMemberDungeonIfOtherMap(entt::entity e, int32_t mapIndex)
+	{
+		if (e == entt::null || !g_registry.valid(e))
+			return;
+
+		const auto* membership = g_registry.try_get<ecs::DungeonMembership>(e);
+		if (!membership || membership->dungeon == entt::null)
+			return;
+
+		if (GetMapIndex(membership->dungeon) != mapIndex)
+			SetMemberDungeon(e, entt::null);
+	}
+
+	namespace
+	{
+		struct FWarpToDungeonCoords		{
+			entt::entity dungeon { entt::null };
+			entt::entity party { entt::null };
+			int32_t mapIndex { 0 };
+			int32_t x { 0 };
+			int32_t y { 0 };
+
+			void operator () (entt::entity member)
+			{
+				// The membership carries the counting: SetDungeon registers the
+				// member (and its party) so a warp out can release it again.
+				ecs::SocialSystem::SetDungeon(member, dungeon);
+				ecs::MovementSystem::SaveExitLocation(member);
+				ecs::MovementSystem::WarpSet(member, x, y, mapIndex);
+			}
+		};
+
+		struct FWarpToDungeon
+		{
+			entt::entity dungeon { entt::null };
+			entt::entity party { entt::null };
+			int32_t mapIndex { 0 };
+			int32_t x { 0 };
+			int32_t y { 0 };
+
+			void operator () (entt::entity member)
+			{
+				ecs::SocialSystem::SetDungeon(member, dungeon);
+				ecs::MovementSystem::SaveExitLocation(member);
+				ecs::MovementSystem::WarpSet(member, x, y, mapIndex);
+			}
+		};
+
+		struct FWarpToPosition
+		{
+			int32_t lMapIndex;
+			int32_t x;
+			int32_t y;
+			FWarpToPosition(int32_t lMapIndex, int32_t x, int32_t y)
+				: lMapIndex(lMapIndex), x(x), y(y)
+				{}
+
+			void operator()(entt::entity chEntity)
+			{
+				if (!ecs::IsCharacter(chEntity)) {
+					return;
+				}
+
+				if (!ecs::PlayerRuntime::IsPC(chEntity)) {
+					return;
+				}
+				if (ecs::PlayerRuntime::GetMapIndex(chEntity) == lMapIndex)
+				{
+					ecs::MovementSystem::Show(chEntity, lMapIndex, x, y, 0);
+					ecs::MovementSystem::Stop(chEntity);
+				}
+				else
+				{
+					ecs::MovementSystem::WarpSet(chEntity, x,y,lMapIndex);
+				}
+			}
+		};
+
+		struct FExitDungeonLobby
+		{
+			uint8_t lobby;
+			FExitDungeonLobby() : lobby(0) {};
+
+			void operator()(entt::entity chEntity)
+			{
+				if (ecs::IsCharacter(chEntity))
+				{
+
+					if (ecs::PlayerRuntime::IsPC(chEntity))
+					{
+						if (lobby == 1)
+						{
+							ecs::MovementSystem::WarpSet(chEntity, 535400, 1428400);
+						}
+						else if (lobby == 2)
+						{
+							ecs::MovementSystem::WarpSet(chEntity, 536900, 1331400);
+						}
+						else if (lobby == 3)
+						{
+							ecs::MovementSystem::WarpSet(chEntity, 645800, 351400);
+						}
+					}
+				}
+			}
+		};
+
+		struct FCmdChat
+		{
+			FCmdChat(const char * psz) : m_psz(psz)
+			{
+			}
+
+			void operator() (entt::entity chEntity)
+			{
+				if (ecs::IsCharacter(chEntity))
+				{
+
+					if (ecs::PlayerRuntime::IsPC(chEntity))
+					{
+						ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "%s", m_psz);
+					}
+				}
+			}
+
+			const char * m_psz;
+		};
+
+		struct FNotice
+		{
+			FNotice(
+#ifdef TEXTS_IMPROVEMENT
+			uint32_t idx, bool big,
+#endif
+			const char * psz):
+#ifdef TEXTS_IMPROVEMENT
+			m_idx(idx), m_big(big),
+#endif
+			m_psz(psz)
+			{
+			}
+
+			void operator() (entt::entity chEntity) {
+				if (ecs::IsCharacter(chEntity)) {
+
+					if (ecs::PlayerRuntime::IsPC(chEntity)) {
+#ifdef TEXTS_IMPROVEMENT
+						if (m_big == true)
+						{
+							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_BIG_NOTICE, m_idx, m_psz);
+						}
+						else
+						{
+							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_NOTICE, m_idx, m_psz);
+						}
+#else
+						ecs::ChatSystem::Send(chEntity, CHAT_TYPE_NOTICE, "%s", m_psz);
+#endif
+					}
+				}
+			}
+
+#ifdef TEXTS_IMPROVEMENT
+			uint32_t m_idx;
+			bool m_big;
+#endif
+			const char * m_psz;
+		};
+
+		struct FKillSectree
+		{
+			void operator () (entt::entity character)
+			{
+				if (!ecs::IsCharacter(character))
+					return;
+
+				if (!ecs::PlayerRuntime::IsPC(character) && !ecs::PlayerRuntime::IsPet(character) && !ecs::PlayerRuntime::IsMount(character)
+#ifdef __NEWPET_SYSTEM__
+					 && !ecs::PlayerRuntime::IsNewPet(character)
+#endif
+				)
+				{
+					CombatSystem::Dead(character);
+				}
+			}
+		};
+
+		struct FKillMonstersSectree
+		{
+			void operator () (entt::entity character)
+			{
+				if (!ecs::IsCharacter(character))
+					return;
+
+				if (!ecs::PlayerRuntime::IsPC(character) && (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character)))
+				{
+					CombatSystem::Dead(character);
+				}
+			}
+		};
+
+#ifdef __DEFENSE_WAVE__
+		struct FKillMonstersHydraSectree
+		{
+			void operator () (entt::entity character)
+			{
+				if (!ecs::IsCharacter(character))
+					return;
+
+				if (!ecs::PlayerRuntime::IsPC(character) && (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character)))
+				{
+					int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(character);
+					if (racevnum != 3963 && racevnum != 3964)
+					{
+						CombatSystem::Dead(character);
+					}
+				}
+			}
+		};
+#endif
+
+		struct FPurgeSectree
+		{
+			void operator () (entt::entity entity)
+			{
+				if (ItemSystem::IsValidItem(entity)) {
+					ItemSystem::DestroyItemEntityEcs(entity, "DUNGEON_ENTITY_CLEANUP");
+					return;
+				}
+				const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(entity);
+				if (!kind || kind->kind != ecs::SpatialKind::Character) return;
+				if (!ecs::PlayerRuntime::IsPC(entity) && !ecs::PlayerRuntime::IsPet(entity)
+#ifdef __NEWPET_SYSTEM__
+					&& !ecs::PlayerRuntime::IsNewPet(entity)
+#endif
+				)
+					M2_DESTROY_CHARACTER(entity);
+			}
+		};
+	}
+
+	void Join_Coords(entt::entity dungeon, entt::entity character, int32_t X, int32_t Y, int32_t index)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		if (character == entt::null || !g_registry.valid(character) ||
+			SECTREE_MANAGER::instance().GetMap(state->mapIndex) == nullptr)
+		{
+			LOG_ERROR("CDungeon: invalid entity or missing SECTREE_MAP for #{}", state->mapIndex);
+			return;
+		}
+
+		// Entering is what registers the member: without this the instance
+		// could never retire. The relation also drives the leave bookkeeping.
+		ecs::SocialSystem::SetDungeon(character, dungeon);
+
+		ecs::MovementSystem::SaveExitLocation(character);
+		ecs::MovementSystem::WarpSet(character, X * 100, Y * 100, state->mapIndex);
+	}
+
+	void JoinParty_Coords(entt::entity dungeon, entt::entity pParty, int32_t X, int32_t Y, int32_t index)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		if (SECTREE_MANAGER::instance().GetMap(state->mapIndex) == nullptr)
+		{
+			LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", state->mapIndex);
+			return;
+		}
+
+		PartySystem::SetDungeon(pParty, dungeon);
+
+		FWarpToDungeonCoords f;
+		f.dungeon = dungeon;
+		f.party = pParty;
+		f.mapIndex = state->mapIndex;
+		f.x = X * 100;
+		f.y = Y * 100;
+
+		PartySystem::ForEachOnMapMember(pParty, f, index);
+	}
+
+	void JoinParty(entt::entity dungeon, entt::entity pParty)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (pkSectreeMap == nullptr) {
+			LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", state->mapIndex);
+			return;
+		}
+
+		PartySystem::SetDungeon(pParty, dungeon); // @warme011 the begin of the nightmare
+
+		FWarpToDungeon f;
+		f.dungeon = dungeon;
+		f.party = pParty;
+		f.mapIndex = state->mapIndex;
+		f.x = pkSectreeMap->m_setting.posSpawn.x;
+		f.y = pkSectreeMap->m_setting.posSpawn.y;
+
+		PartySystem::ForEachOnlineMember(pParty, f);
+	}
+
+	void QuitParty(entt::entity dungeon, entt::entity pParty)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		PartySystem::SetDungeon(pParty, entt::null);
+
+		auto it = state->partyCounts.find(pParty); // @warme011 boom! crash!
+		if (it != state->partyCounts.end())
+			state->partyCounts.erase(it);
+	}
+
+	void SetFlag(entt::entity dungeon, std::string name, int32_t value)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		auto it = state->flags.find(name);
+		if (it != state->flags.end())
+		{
+			it->second = value;
 		}
 		else
 		{
-			ecs::MovementSystem::WarpSet(chEntity, x,y,lMapIndex);
+			state->flags.insert(make_pair(name, value));
 		}
 	}
-};
 
-void CDungeon::JumpAll(int32_t idx, int32_t x, int32_t y)
-{
-	x *= 100;
-	y *= 100;
-
-	LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(idx);
-	if (!pMap)
+	int GetFlag(entt::entity dungeon, std::string name)
 	{
-		LOG_ERROR("cannot find map by index {}", idx);
-		return;
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return 0;
+
+		auto it = state->flags.find(name);
+		if (it != state->flags.end())
+			return it->second;
+		else
+			return 0;
 	}
 
-	FWarpToPosition f(m_lMapIndex, x, y);
+	// Unique mobs are held by entity. A pointer outlived its mob whenever the mob
+	// was destroyed without DeadCharacter hearing about it, and the next read went
+	// through freed memory; a stale handle just stops being valid.
+	void SetUnique(entt::entity dungeon, const char* key, uint32_t vid)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
 
-	pMap->for_each(f);
-}
+		const entt::entity mob = ecs::PlayerRuntime::FindByVID(vid);
+		if (mob == entt::null) {
+			LOG_ERROR("Unknown monster: {} for dungeon {}.", vid, state->mapIndex);
+			return;
+		}
 
-void CDungeon::SetPartyNull()
-{
-	m_pParty = entt::null;
-}
-
-
-void CDungeonManager::Destroy(CDungeon::IdType dungeon_id)
-{
-	LOG_INFO("DUNGEON destroy : map index {}", dungeon_id);
-	LPDUNGEON pDungeon = Find(dungeon_id);
-	if (pDungeon == nullptr) {
-		return;
+		state->uniqueMobs.insert(std::make_pair(std::string(key), mob));
+		AffectSystem::AddAffect(mob, AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
 	}
-	m_map_pkDungeon.erase(dungeon_id);
 
-	int32_t lMapIndex = pDungeon->m_lMapIndex;
-	m_map_pkMapDungeon.erase(lMapIndex);
+	void KillUnique(entt::entity dungeon, std::string_view key)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
 
-	uint32_t server_timer_arg = lMapIndex;
-	quest::CQuestManager::instance().CancelServerTimers(server_timer_arg);
+		const std::string keyString(key);
+		auto it = state->uniqueMobs.find(keyString);
+		if (it == state->uniqueMobs.end())
+		{
+			LOG_ERROR("Unknown get unique: {} for dungeon {}.", keyString.c_str(), state->mapIndex);
+			return;
+		}
 
-	SECTREE_MANAGER::instance().DestroyPrivateMap(lMapIndex);
-	M2_DELETE(pDungeon);
-}
-
-LPDUNGEON CDungeonManager::Find(CDungeon::IdType dungeon_id)
-{
-	auto it = m_map_pkDungeon.find(dungeon_id);
-	if (it != m_map_pkDungeon.end())
-		return it->second;
-	return nullptr;
-}
-
-LPDUNGEON CDungeonManager::FindByMapIndex(int32_t lMapIndex)
-{
-	auto it = m_map_pkMapDungeon.find(lMapIndex);
-	if (it != m_map_pkMapDungeon.end()) {
-		return it->second;
+		const entt::entity mob = it->second;
+		state->uniqueMobs.erase(it);
+		CombatSystem::Dead(mob);
 	}
-	return nullptr;
+
+	int32_t GetUniqueVid(entt::entity dungeon, std::string_view key)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return -1;
+
+		const std::string keyString(key);
+		auto it = state->uniqueMobs.find(keyString);
+		if (it == state->uniqueMobs.end())
+		{
+			LOG_TRACE("Unknown get unique: {} for dungeon {}.", keyString.c_str(), state->mapIndex);
+			return -1;
+		}
+
+		if (it->second == entt::null || !g_registry.valid(it->second))
+			return -1;
+
+		return static_cast<int32_t>(ecs::PlayerRuntime::GetPacketVID(it->second));
+	}
+
+	void DeadCharacter(entt::entity dungeon, entt::entity character)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		if (!ecs::PlayerRuntime::IsPC(character))
+		{
+			if (AffectSystem::FindAffect(character, AFFECT_DUNGEON_UNIQUE)) {
+				auto it = state->uniqueMobs.begin();
+				for ( ; it != state->uniqueMobs.end(); ) {
+					if (it->second == character)
+					{
+						it = state->uniqueMobs.erase(it);
+						break;
+					}
+					else
+					{
+						++it;
+					}
+				}
+			}
+		}
+	}
+
+	bool IsUniqueDead(entt::entity dungeon, std::string_view key)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return false;
+
+		const std::string keyString(key);
+		auto it = state->uniqueMobs.find(keyString);
+		if (it == state->uniqueMobs.end())
+		{
+			LOG_ERROR("Unknown unique: {} for dungeon {}.", keyString.c_str(), state->mapIndex);
+			return false;
+		}
+
+		return CombatSystem::IsDead(it->second);
+	}
+
+	entt::entity SpawnMob(entt::entity dungeon, int32_t vnum, int32_t x, int32_t y, int32_t dir)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return entt::null;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (!map) {
+			LOG_ERROR("cannot find map by index {}", state->mapIndex);
+			return entt::null;
+		}
+
+		const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobEntity(vnum, state->mapIndex, map->m_setting.iBaseX+x*100, map->m_setting.iBaseY+y*100, 0, false, dir == 0 ? -1 : dir);
+
+		if (mob != entt::null)
+		{
+			ecs::SocialSystem::SetDungeon(mob, dungeon);
+		}
+		else
+		{
+			LOG_ERROR("cannot spawn: vnum({}), x({}), y({}), dir({}) inside the map {}", vnum, x, y, dir, state->mapIndex);
+		}
+
+		return mob;
+	}
+
+	void SpawnRegen(entt::entity dungeon, const char* filename, bool once)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		if (!filename)
+		{
+			LOG_ERROR("CDungeon::SpawnRegen(filename=NULL, once={}) - m_lMapIndex[{}]", once, state->mapIndex);
+			return;
+		}
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (!map)
+		{
+			LOG_ERROR("CDungeon::SpawnRegen(filename={}, once={}) - m_lMapIndex[{}]", filename, once, state->mapIndex);
+			return;
+		}
+
+		regen_do(filename, state->mapIndex, map->m_setting.iBaseX, map->m_setting.iBaseY, dungeon, once);
+	}
+
+	void AddRegen(entt::entity dungeon, LPREGEN regen)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state || !regen)
+			return;
+
+		regen->id = state->regenId++;
+		state->regens.push_back(regen);
+	}
+
+	void ClearRegen(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		for (auto it = state->regens.begin(); it != state->regens.end(); ++it)
+		{
+			LPREGEN regen = *it;
+
+			event_cancel(&regen->event);
+			M2_DELETE(regen);
+		}
+		state->regens.clear();
+	}
+
+	bool IsValidRegen(entt::entity dungeon, LPREGEN regen, size_t regen_id) {
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return false;
+
+		auto it = std::find(state->regens.begin(), state->regens.end(), regen);
+		if (it == state->regens.end()) {
+			return false;
+		}
+		LPREGEN found = *it;
+		return (found->id == regen_id);
+	}
+
+	void KillAll(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (map == nullptr)
+		{
+			LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", state->mapIndex);
+			return;
+		}
+
+		FKillSectree f;
+		map->for_each(f);
+	}
+
+	void KillAllMonsters(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (map == nullptr)
+		{
+			LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", state->mapIndex);
+			return;
+		}
+
+		FKillMonstersSectree f;
+		map->for_each(f);
+	}
+
+#ifdef __DEFENSE_WAVE__
+	void KillAllMonstersHydra(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (map == nullptr)
+		{
+			LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", state->mapIndex);
+			return;
+		}
+
+		FKillMonstersHydraSectree f;
+		map->for_each(f);
+	}
+#endif
+
+	void Purge(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP pkMap = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (pkMap == nullptr) {
+			LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", state->mapIndex);
+			return;
+		}
+		FPurgeSectree f;
+		pkMap->for_each(f);
+	}
+
+	void ExitAllLobby(entt::entity dungeon, uint8_t lobby)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (!map)
+		{
+			LOG_ERROR("cannot find map by index {}", state->mapIndex);
+			return;
+		}
+
+		FExitDungeonLobby f;
+		f.lobby = lobby;
+
+		map->for_each(f);
+		state->completed = true;
+	}
+
+	void CmdChat(entt::entity dungeon, const char* msg)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (!map)
+		{
+			LOG_ERROR("cannot find map by index {}", state->mapIndex);
+			return;
+		}
+
+		FCmdChat f(msg);
+		map->for_each(f);
+	}
+
+	void Notice(
+		entt::entity dungeon,
+#ifdef TEXTS_IMPROVEMENT
+		uint32_t idx,
+#endif
+		const char* msg
+#ifdef TEXTS_IMPROVEMENT
+		, bool big
+#endif
+	)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LOG_INFO("XXX Dungeon Notice {} {}", static_cast<uint32_t>(dungeon), msg);
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (!pMap)
+		{
+			LOG_ERROR("cannot find map by index {}", state->mapIndex);
+			return;
+		}
+
+		FNotice f(
+#ifdef TEXTS_IMPROVEMENT
+		idx, big,
+#endif
+		msg);
+		pMap->for_each(f);
+	}
+
+	void JumpAll(entt::entity dungeon, int32_t idx, int32_t x, int32_t y)
+	{
+		x *= 100;
+		y *= 100;
+
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(idx);
+		if (!pMap)
+		{
+			LOG_ERROR("cannot find map by index {}", idx);
+			return;
+		}
+
+		FWarpToPosition f(idx, x, y);
+
+		pMap->for_each(f);
+	}
+
+#ifdef __DEFENSE_WAVE__
+	struct SUpdateMastHp
+	{
+		SUpdateMastHp(int64_t value) : m_value(value) {}
+
+		void operator () (entt::entity chEntity)
+		{
+			if (ecs::IsCharacter(chEntity))
+			{
+
+				if (ecs::PlayerRuntime::IsPC(chEntity))
+				{
+					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %d", m_value);
+				}
+			}
+		}
+
+		int64_t m_value;
+	};
+
+	entt::entity GetMast(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		return state ? state->mast : entt::null;
+	}
+
+	void SetMast(entt::entity dungeon, entt::entity mast)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (state)
+			state->mast = mast;
+	}
+
+	void UpdateMastHP(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (!map)
+		{
+			LOG_ERROR("cannot find map by index {}", state->mapIndex);
+			return;
+		}
+
+		const entt::entity mast = GetMast(dungeon);
+		if (ecs::PlayerRuntime::IsValid(mast))
+		{
+			SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast));
+			map->for_each(f);
+		}
+	}
+
+	void RestoreMastPartialHP(entt::entity dungeon)
+	{
+		ecs::DungeonState* state = Find(dungeon);
+		if (!state)
+			return;
+
+		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
+		if (!map)
+		{
+			LOG_ERROR("cannot find map by index {}", state->mapIndex);
+			return;
+		}
+
+		const entt::entity mast = GetMast(dungeon);
+		if (ecs::PlayerRuntime::IsValid(mast))
+		{
+			int64_t hp = ecs::PlayerRuntime::GetHP(mast);
+			int32_t add = 600000;
+			if (hp + add >= 12000000)
+			{
+				ecs::PlayerRuntime::SetHP(mast, 12000000);
+			}
+			else
+			{
+				ecs::PlayerRuntime::SetHP(mast, hp + add);
+			}
+
+			SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast));
+			map->for_each(f);
+		}
+	}
+#endif
 }
 
-LPDUNGEON CDungeonManager::Create(int32_t lOriginalMapIndex)
+entt::entity CDungeonManager::Create(int32_t lOriginalMapIndex)
 {
 	uint32_t lMapIndex = SECTREE_MANAGER::instance().CreatePrivateMap(lOriginalMapIndex);
 
 	if (!lMapIndex)
 	{
 		LOG_INFO("Fail to Create Dungeon : OrginalMapindex {} NewMapindex {}", lOriginalMapIndex, lMapIndex);
-		return nullptr;
+		return entt::null;
 	}
 
 	// <Factor> TODO: Change id assignment, or drop it
-	CDungeon::IdType id = next_id_++;
-	while (Find(id) != nullptr) {
+	DungeonSystem::IdType id = next_id_++;
+	while (Find(id) != entt::null) {
 		id = next_id_++;
 	}
 
-	LPDUNGEON pDungeon = M2_NEW CDungeon(id, lOriginalMapIndex, lMapIndex);
-	if (!pDungeon)
-	{
-		LOG_ERROR("M2_NEW CDungeon failed");
-		return nullptr;
+	const entt::entity dungeon = g_registry.create();
+	auto& state = g_registry.emplace<ecs::DungeonState>(dungeon);
+
+	state.id = id;
+	state.originalMapIndex = lOriginalMapIndex;
+	state.mapIndex = lMapIndex;
+
+	DungeonSystem::Initialize(dungeon);
+
+	m_map_pkDungeon.insert(std::make_pair(id, dungeon));
+	m_map_pkMapDungeon.insert(std::make_pair(lMapIndex, dungeon));
+
+	return dungeon;
+}
+
+void CDungeonManager::Destroy(DungeonSystem::IdType dungeon_id)
+{
+	LOG_INFO("DUNGEON destroy : map index {}", dungeon_id);
+
+	const entt::entity dungeon = Find(dungeon_id);
+	if (dungeon == entt::null) {
+		return;
 	}
 
-	m_map_pkDungeon.insert(std::make_pair(id, pDungeon));
-	m_map_pkMapDungeon.insert(std::make_pair(lMapIndex, pDungeon));
+	ecs::DungeonState* state = DungeonSystem::Find(dungeon);
+	const int32_t lMapIndex = state ? state->mapIndex : 0;
 
-	return pDungeon;
+	m_map_pkDungeon.erase(dungeon_id);
+
+	if (lMapIndex)
+		m_map_pkMapDungeon.erase(lMapIndex);
+
+	// The state and its relations go first: the map drain below would
+	// otherwise re-enter a half-dead instance through the memberships.
+	DungeonSystem::Destroy(dungeon);
+
+	uint32_t server_timer_arg = lMapIndex;
+	quest::CQuestManager::instance().CancelServerTimers(server_timer_arg);
+
+	SECTREE_MANAGER::instance().DestroyPrivateMap(lMapIndex);
+}
+
+entt::entity CDungeonManager::Find(DungeonSystem::IdType dungeon_id)
+{
+	auto it = m_map_pkDungeon.find(dungeon_id);
+	if (it == m_map_pkDungeon.end())
+		return entt::null;
+
+	ecs::DungeonState* state = DungeonSystem::Find(it->second);
+	if (!state || state->id != dungeon_id)
+		return entt::null;
+
+	return it->second;
+}
+
+entt::entity CDungeonManager::FindByMapIndex(int32_t lMapIndex)
+{
+	auto it = m_map_pkMapDungeon.find(lMapIndex);
+	if (it == m_map_pkMapDungeon.end()) {
+		return entt::null;
+	}
+
+	ecs::DungeonState* state = DungeonSystem::Find(it->second);
+	if (!state || state->mapIndex != lMapIndex)
+		return entt::null;
+
+	return it->second;
 }
 
 CDungeonManager::CDungeonManager()
@@ -422,550 +1262,3 @@ CDungeonManager::CDungeonManager()
 CDungeonManager::~CDungeonManager()
 {
 }
-
-// Unique mobs are held by entity. A pointer outlived its mob whenever the mob
-// was destroyed without DeadCharacter hearing about it, and the next read went
-// through freed memory; a stale handle just stops being valid.
-void CDungeon::SetUnique(const char* key, uint32_t vid)
-{
-	const entt::entity mob = ecs::PlayerRuntime::FindByVID(vid);
-	if (mob == entt::null) {
-		LOG_ERROR("Unknown monster: {} for dungeon {}.", vid, m_lMapIndex);
-		return;
-	}
-
-	m_map_UniqueMob.insert(std::make_pair(std::string(key), mob));
-	AffectSystem::AddAffect(mob, AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
-}
-
-void CDungeon::KillUnique(std::string_view key)
-{
-	const std::string keyString(key);
-	auto it = m_map_UniqueMob.find(keyString);
-	if (it == m_map_UniqueMob.end())
-	{
-		LOG_ERROR("Unknown get unique: {} for dungeon {}.", keyString.c_str(), m_lMapIndex);
-		return;
-	}
-
-	const entt::entity mob = it->second;
-	m_map_UniqueMob.erase(it);
-	CombatSystem::Dead(mob);
-}
-
-int32_t CDungeon::GetUniqueVid(std::string_view key)
-{
-	const std::string keyString(key);
-	auto it = m_map_UniqueMob.find(keyString);
-	if (it == m_map_UniqueMob.end())
-	{
-		LOG_ERROR("Unknown get unique: {} for dungeon {}.", keyString.c_str(), m_lMapIndex);
-		return false;
-	}
-
-	return ecs::PlayerRuntime::GetPacketVID(it->second);
-}
-
-void CDungeon::DeadCharacter(entt::entity character)
-{
-	if (!ecs::PlayerRuntime::IsPC(character))
-	{
-		if (AffectSystem::FindAffect(character, AFFECT_DUNGEON_UNIQUE)) {
-			auto it = m_map_UniqueMob.begin();
-			for ( ; it != m_map_UniqueMob.end(); ) {
-				if (it->second == character)
-				{
-					it = m_map_UniqueMob.erase(it);
-					break;
-				}
-				else
-				{
-					++it;
-				}
-			}
-		}
-	}
-}
-
-bool CDungeon::IsUniqueDead(std::string_view key)
-{
-	const std::string keyString(key);
-	auto it = m_map_UniqueMob.find(keyString);
-	if (it == m_map_UniqueMob.end())
-	{
-		LOG_ERROR("Unknown unique: {} for dungeon {}.", keyString.c_str(), m_lMapIndex);
-		return false;
-	}
-
-	return CombatSystem::IsDead(it->second);
-}
-
-entt::entity CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)
-{
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (!map) {
-		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
-		return entt::null;
-	}
-
-	const entt::entity mob = CHARACTER_MANAGER::instance().SpawnMobEntity(vnum, m_lMapIndex, map->m_setting.iBaseX+x*100, map->m_setting.iBaseY+y*100, 0, false, dir == 0 ? -1 : dir);
-
-	if (mob != entt::null)
-	{
-		ecs::SocialSystem::SetDungeon(mob, this);
-	}
-	else
-	{
-		LOG_ERROR("cannot spawn: vnum({}), x({}), y({}), dir({}) inside the map {}", vnum, x, y, dir, m_lMapIndex);
-	}
-
-	return mob;
-}
-
-void CDungeon::SpawnRegen(const char* filename, bool once)
-{
-	if (!filename)
-	{
-		LOG_ERROR("CDungeon::SpawnRegen(filename=NULL, once={}) - m_lMapIndex[{}]", once, m_lMapIndex);
-		return;
-	}
-
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (!map)
-	{
-		LOG_ERROR("CDungeon::SpawnRegen(filename={}, once={}) - m_lMapIndex[{}]", filename, once, m_lMapIndex);
-		return;
-	}
-
-	regen_do(filename, m_lMapIndex, map->m_setting.iBaseX, map->m_setting.iBaseY, this, once);
-}
-
-void CDungeon::AddRegen(LPREGEN regen)
-{
-	regen->id = regen_id_++;
-	m_regen.push_back(regen);
-}
-
-void CDungeon::ClearRegen()
-{
-	for (auto it = m_regen.begin(); it != m_regen.end(); ++it)
-	{
-		LPREGEN regen = *it;
-
-		event_cancel(&regen->event);
-		M2_DELETE(regen);
-	}
-	m_regen.clear();
-}
-
-bool CDungeon::IsValidRegen(LPREGEN regen, size_t regen_id) {
-	auto it = std::find(m_regen.begin(), m_regen.end(), regen);
-	if (it == m_regen.end()) {
-		return false;
-	}
-	LPREGEN found = *it;
-	return (found->id == regen_id);
-}
-
-namespace
-{
-	struct FKillSectree
-	{
-		void operator () (entt::entity character)
-		{
-			if (!ecs::IsCharacter(character))
-				return;
-
-			if (!ecs::PlayerRuntime::IsPC(character) && !ecs::PlayerRuntime::IsPet(character) && !ecs::PlayerRuntime::IsMount(character)
-#ifdef __NEWPET_SYSTEM__
-				 && !ecs::PlayerRuntime::IsNewPet(character)
-#endif
-			)
-			{
-				CombatSystem::Dead(character);
-			}
-		}
-	};
-
-	struct FKillMonstersSectree
-	{
-		void operator () (entt::entity character)
-		{
-			if (!ecs::IsCharacter(character))
-				return;
-
-			if (!ecs::PlayerRuntime::IsPC(character) && (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character)))
-			{
-				CombatSystem::Dead(character);
-			}
-		}
-	};
-
-#ifdef __DEFENSE_WAVE__
-	struct FKillMonstersHydraSectree
-	{
-		void operator () (entt::entity character)
-		{
-			if (!ecs::IsCharacter(character))
-				return;
-
-			if (!ecs::PlayerRuntime::IsPC(character) && (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character)))
-			{
-				int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(character);
-				if (racevnum != 3963 && racevnum != 3964)
-				{
-					CombatSystem::Dead(character);
-				}
-			}
-		}
-	};
-#endif
-
-    struct FPurgeSectree
-    {
-        void operator () (entt::entity entity)
-        {
-            if (ItemSystem::IsValidItem(entity)) {
-                ItemSystem::DestroyItemEntityEcs(entity, "DUNGEON_ENTITY_CLEANUP");
-                return;
-            }
-            const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(entity);
-            if (!kind || kind->kind != ecs::SpatialKind::Character) return;
-            if (!ecs::PlayerRuntime::IsPC(entity) && !ecs::PlayerRuntime::IsPet(entity)
-#ifdef __NEWPET_SYSTEM__
-                && !ecs::PlayerRuntime::IsNewPet(entity)
-#endif
-            )
-                M2_DESTROY_CHARACTER(entity);
-        }
-    };
-
-}
-
-void CDungeon::KillAll()
-{
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (map == nullptr)
-	{
-		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
-		return;
-	}
-
-	FKillSectree f;
-	map->for_each(f);
-}
-
-void CDungeon::KillAllMonsters()
-{
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (map == nullptr)
-	{
-		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
-		return;
-	}
-
-	FKillMonstersSectree f;
-	map->for_each(f);
-}
-
-#ifdef __DEFENSE_WAVE__
-void CDungeon::KillAllMonstersHydra()
-{
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (map == nullptr)
-	{
-		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
-		return;
-	}
-
-	FKillMonstersHydraSectree f;
-	map->for_each(f);
-}
-#endif
-
-void CDungeon::Purge()
-{
-	LPSECTREE_MAP pkMap = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (pkMap == nullptr) {
-		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
-		return;
-	}
-	FPurgeSectree f;
-	pkMap->for_each(f);
-}
-
-struct FExitDungeonLobby
-{
-	uint8_t lobby;
-	FExitDungeonLobby() : lobby(0) {};
-
-	void operator()(entt::entity chEntity)
-	{
-		if (ecs::IsCharacter(chEntity))
-		{
-
-			if (ecs::PlayerRuntime::IsPC(chEntity))
-			{
-				if (lobby == 1)
-				{
-					ecs::MovementSystem::WarpSet(chEntity, 535400, 1428400);
-				}
-				else if (lobby == 2)
-				{
-					ecs::MovementSystem::WarpSet(chEntity, 536900, 1331400);
-				}
-				else if (lobby == 3)
-				{
-					ecs::MovementSystem::WarpSet(chEntity, 645800, 351400);
-				}
-			}
-		}
-	}
-};
-
-void CDungeon::ExitAllLobby(uint8_t lobby)
-{
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (!map)
-	{
-		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
-		return;
-	}
-
-	FExitDungeonLobby f;
-	f.lobby = lobby;
-
-	map->for_each(f);
-	m_completed = true;
-}
-
-namespace
-{
-	struct FCmdChat
-	{
-		FCmdChat(const char * psz) : m_psz(psz)
-		{
-		}
-
-		void operator() (entt::entity chEntity)
-		{
-			if (ecs::IsCharacter(chEntity))
-			{
-
-				if (ecs::PlayerRuntime::IsPC(chEntity))
-				{
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "%s", m_psz);
-				}
-			}
-		}
-
-		const char * m_psz;
-	};
-}
-
-void CDungeon::CmdChat(const char* msg)
-{
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (!map)
-	{
-		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
-		return;
-	}
-
-	FCmdChat f(msg);
-	map->for_each(f);
-}
-
-namespace
-{
-	struct FNotice
-	{
-		FNotice(
-#ifdef TEXTS_IMPROVEMENT
-		uint32_t idx, bool big,
-#endif
-		const char * psz):
-#ifdef TEXTS_IMPROVEMENT
-		m_idx(idx), m_big(big),
-#endif
-		m_psz(psz)
-		{
-		}
-
-		void operator() (entt::entity chEntity) {
-			if (ecs::IsCharacter(chEntity)) {
-
-				if (ecs::PlayerRuntime::IsPC(chEntity)) {
-#ifdef TEXTS_IMPROVEMENT
-					if (m_big == true)
-					{
-						ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_BIG_NOTICE, m_idx, m_psz);
-					}
-					else
-					{
-						ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_NOTICE, m_idx, m_psz);
-					}
-#else
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_NOTICE, "%s", m_psz);
-#endif
-				}
-			}
-		}
-
-#ifdef TEXTS_IMPROVEMENT
-		uint32_t m_idx;
-		bool m_big;
-#endif
-		const char * m_psz;
-	};
-}
-
-void CDungeon::Notice(
-#ifdef TEXTS_IMPROVEMENT
-uint32_t idx,
-#endif
-const char* msg
-#ifdef TEXTS_IMPROVEMENT
-, bool big
-#endif
-)
-{
-	LOG_INFO("XXX Dungeon Notice {} {}", static_cast<const void*>(this), msg);
-	LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (!pMap)
-	{
-		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
-		return;
-	}
-
-	FNotice f(
-#ifdef TEXTS_IMPROVEMENT
-	idx, big,
-#endif
-	msg);
-	pMap->for_each(f);
-}
-
-EVENTFUNC(dungeon_jump_to_event)
-{
-	dungeon_id_info * info = dynamic_cast<dungeon_id_info *>(event->info);
-
-	if ( info == nullptr)
-	{
-		LOG_ERROR("dungeon_jump_to_event> <Factor> Null pointer");
-		return 0;
-	}
-
-	LPDUNGEON pDungeon = CDungeonManager::instance().Find(info->dungeon_id);
-	pDungeon->jump_to_event_ = nullptr;
-
-	if (pDungeon)
-	{
-		pDungeon->JumpToEliminateLocation();
-		g_dispatcher.trigger(ecs::EvDungeonPrepare { info->dungeon_id });
-	}
-	else
-		LOG_ERROR("cannot find dungeon with map index {}", info->dungeon_id);
-
-	return 0;
-}
-
-void CDungeon::JumpToEliminateLocation()
-{
-	LPDUNGEON pDungeon = CDungeonManager::instance().FindByMapIndex(m_lWarpMapIndex);
-
-	if (pDungeon)
-	{
-		pDungeon->JumpAll(m_lMapIndex, m_lWarpX, m_lWarpY);
-
-		if (!m_stRegenFile.empty())
-		{
-			pDungeon->SpawnRegen(m_stRegenFile.c_str());
-			m_stRegenFile.clear();
-		}
-	}
-	else
-	{
-		// �Ϲ� ������ ����
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-
-		if (!pMap)
-		{
-			LOG_ERROR("no map by index {}", m_lMapIndex);
-			return;
-		}
-
-		FWarpToPosition f(m_lWarpMapIndex, m_lWarpX * 100, m_lWarpY * 100);
-
-		// <Factor> SECTREE::for_each -> SECTREE::for_each_entity
-		pMap->for_each(f);
-	}
-}
-
-#ifdef __DEFENSE_WAVE__
-struct SUpdateMastHp
-{
-	SUpdateMastHp(int64_t value) : m_value(value) {}
-
-	void operator () (entt::entity chEntity)
-	{
-		if (ecs::IsCharacter(chEntity))
-		{
-
-			if (ecs::PlayerRuntime::IsPC(chEntity))
-			{
-				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %d", m_value);
-			}
-		}
-	}
-
-	int64_t m_value;
-};
-
-void CDungeon::UpdateMastHP()
-{
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (!map)
-	{
-		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
-		return;
-	}
-
-	const entt::entity mast = GetMast();
-	if (ecs::PlayerRuntime::IsValid(mast))
-	{
-		SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast));
-		map->for_each(f);
-	}
-}
-
-void CDungeon::RestoreMastPartialHP()
-{
-	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
-	if (!map)
-	{
-		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
-		return;
-	}
-
-	const entt::entity mast = GetMast();
-	if (ecs::PlayerRuntime::IsValid(mast))
-	{
-		int64_t hp = ecs::PlayerRuntime::GetHP(mast);
-		int32_t add = 600000;
-		if (hp + add >= 12000000)
-		{
-			ecs::PlayerRuntime::SetHP(mast, 12000000);
-		}
-		else
-		{
-			ecs::PlayerRuntime::SetHP(mast, hp + add);
-		}
-
-		SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast));
-		map->for_each(f);
-	}
-}
-#endif
-
-

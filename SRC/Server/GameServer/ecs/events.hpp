@@ -107,17 +107,19 @@ struct EvWarTimeout {
     uint32_t warId { 0 };
 };
 
-// Dungeon lifecycle
+// Dungeon lifecycle. The instance is a registry entity; the durable id and the
+// private map index are lookups, not identities, so no listener has to guess
+// which one it was handed.
 struct EvDungeonPrepare {
-    uint32_t dungeonId { 0 };
+    entt::entity dungeon { entt::null };
 };
 
 struct EvDungeonEnd {
-    uint32_t dungeonId { 0 };
+    entt::entity dungeon { entt::null };
 };
 
 struct EvDungeonDead {
-    uint32_t dungeonId { 0 };
+    entt::entity dungeon { entt::null };
 };
 
 // Session

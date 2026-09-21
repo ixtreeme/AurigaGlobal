@@ -365,80 +365,80 @@ namespace
         return count;
     }
 
-    void SetDungeonReady(LPDUNGEON d)
+    void SetDungeonReady(entt::entity d)
     {
-        if (!d)
+        if (d == entt::null)
             return;
 
-        d->SetFlag(kFlagInitialized, 1);
-        d->SetFlag(kFlagCompleted, 0);
-        d->SetFlag(kFlagFloor, 1);
-        d->SetFlag(kFlagTimeLimit, get_global_time() + kTimeOutSec);
+        DungeonSystem::SetFlag(d, kFlagInitialized, 1);
+        DungeonSystem::SetFlag(d, kFlagCompleted, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 1);
+        DungeonSystem::SetFlag(d, kFlagTimeLimit, get_global_time() + kTimeOutSec);
 
-        d->SetFlag(kFlagCanDestroyFirstStone, 1);
-        d->SetFlag(kFlagKillFirstBoss, 0);
-        d->SetFlag(kFlagCanDestroyStatue, 0);
-        d->SetFlag(kFlagCanDestroySecondStone, 0);
-        d->SetFlag(kFlagCanActivateSeal, 0);
+        DungeonSystem::SetFlag(d, kFlagCanDestroyFirstStone, 1);
+        DungeonSystem::SetFlag(d, kFlagKillFirstBoss, 0);
+        DungeonSystem::SetFlag(d, kFlagCanDestroyStatue, 0);
+        DungeonSystem::SetFlag(d, kFlagCanDestroySecondStone, 0);
+        DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
 
-        d->SetFlag(kFlagFirstStoneDamaged, 0);
-        d->SetFlag(kFlagFirstStoneDestroyed, 0);
-        d->SetFlag(kFlagFirstBossCount, 0);
-        d->SetFlag(kFlagAngelStatueCount, 0);
-        d->SetFlag(kFlagSealState, 0);
-        d->SetFlag(kFlagFloor1Monsters, 0);
-        d->SetFlag(kFlagFloor1Killed, 0);
-        d->SetFlag(kFlagFloor1WavesKilled, 0);
+        DungeonSystem::SetFlag(d, kFlagFirstStoneDamaged, 0);
+        DungeonSystem::SetFlag(d, kFlagFirstStoneDestroyed, 0);
+        DungeonSystem::SetFlag(d, kFlagFirstBossCount, 0);
+        DungeonSystem::SetFlag(d, kFlagAngelStatueCount, 0);
+        DungeonSystem::SetFlag(d, kFlagSealState, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor1Monsters, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor1Killed, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor1WavesKilled, 0);
 
-        d->SetFlag(kFlagCanKillSecondBoss, 0);
-        d->SetFlag(kFlagCanFillCalyx, 0);
-        d->SetFlag(kFlagCalyxFilled, 0);
-        d->SetFlag(kFlagCanDestroySecondFloorStone, 0);
-        d->SetFlag(kFlagSecondFloorStoneCount, 0);
-        d->SetFlag(kFlagSecondFloorMonsters, 0);
-        d->SetFlag(kFlagSecondFloorKilled, 0);
-        d->SetFlag(kFlagFinalBossActive, 0);
+        DungeonSystem::SetFlag(d, kFlagCanKillSecondBoss, 0);
+        DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 0);
+        DungeonSystem::SetFlag(d, kFlagCalyxFilled, 0);
+        DungeonSystem::SetFlag(d, kFlagCanDestroySecondFloorStone, 0);
+        DungeonSystem::SetFlag(d, kFlagSecondFloorStoneCount, 0);
+        DungeonSystem::SetFlag(d, kFlagSecondFloorMonsters, 0);
+        DungeonSystem::SetFlag(d, kFlagSecondFloorKilled, 0);
+        DungeonSystem::SetFlag(d, kFlagFinalBossActive, 0);
 
         for (int i = 0; i < 5; ++i)
         {
-            const entt::entity stone = d->SpawnMob(kStoneFullVnum, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
+            const entt::entity stone = DungeonSystem::SpawnMob(d, kStoneFullVnum, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
             if (stone != entt::null)
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_stone_%d", i + 1);
-		d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(stone));
+		DungeonSystem::SetUnique(d, key, ecs::PlayerRuntime::GetPacketVID(stone));
             }
         }
 
-        d->SpawnMob(kDoorNpc, kDoorPos.x, kDoorPos.y, kDoorPos.dir);
-        d->SpawnMob(kSealSmallNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
-        d->SpawnRegen(kFloor1StatuesRegen);
+        DungeonSystem::SpawnMob(d, kDoorNpc, kDoorPos.x, kDoorPos.y, kDoorPos.dir);
+        DungeonSystem::SpawnMob(d, kSealSmallNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
+        DungeonSystem::SpawnRegen(d, kFloor1StatuesRegen);
     }
 
     void SpawnFirstBoss(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
             return;
 
-        d->SpawnMob(kFirstBossVnum, kFirstBossPos.x, kFirstBossPos.y);
+        DungeonSystem::SpawnMob(d, kFirstBossVnum, kFirstBossPos.x, kFirstBossPos.y);
         NoticeMap(mapIndex, "<Bloody cathedral> You have damaged all cursed stones.");
         NoticeMap(mapIndex, "<Bloody cathedral> Kill the first boss to obtain the required item.");
     }
 
-    void ReplaceUniqueCalyx(LPDUNGEON d, entt::entity npc)
+    void ReplaceUniqueCalyx(entt::entity d, entt::entity npc)
     {
-        if (!d || !ecs::PlayerRuntime::IsValid(npc))
+        if (d == entt::null || !ecs::PlayerRuntime::IsValid(npc))
             return;
 
         for (int i = 0; i < 4; ++i)
         {
             char key[32];
             snprintf(key, sizeof(key), "hw22_calyx_%d", i + 1);
-		if (ecs::PlayerRuntime::GetPacketVID(npc) == (uint32_t)d->GetUniqueVid(key))
+		if (ecs::PlayerRuntime::GetPacketVID(npc) == (uint32_t)DungeonSystem::GetUniqueVid(d, key))
             {
-                d->SpawnMob(kCalyxFullNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
-                d->KillUnique(key);
+                DungeonSystem::SpawnMob(d, kCalyxFullNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
+                DungeonSystem::KillUnique(d, key);
                 return;
             }
         }
@@ -504,21 +504,21 @@ namespace
 
         long OnTimeout(int32_t idx)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
             {
                 m_evTimeout.erase(idx);
                 return 0;
             }
 
-            if (d->GetFlag(kFlagCompleted) != 0)
+            if (DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
             {
                 m_evTimeout.erase(idx);
                 return 0;
             }
 
             const int32_t now = get_global_time();
-            const int32_t limit = d->GetFlag(kFlagTimeLimit);
+            const int32_t limit = DungeonSystem::GetFlag(d, kFlagTimeLimit);
             if (limit <= 0)
             {
                 m_evTimeout.erase(idx);
@@ -544,16 +544,16 @@ namespace
         long OnFinalBossSpawn(int32_t idx)
         {
             m_evFinalBoss.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
                 return 0;
-            if (d->GetFlag(kFlagCompleted) != 0)
+            if (DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
                 return 0;
 
-            d->SetFlag(kFlagFinalBossActive, 1);
-            const entt::entity boss = d->SpawnMob(kFinalBossVnum, kFinalBossPos.x, kFinalBossPos.y, kFinalBossPos.dir);
+            DungeonSystem::SetFlag(d, kFlagFinalBossActive, 1);
+            const entt::entity boss = DungeonSystem::SpawnMob(d, kFinalBossVnum, kFinalBossPos.x, kFinalBossPos.y, kFinalBossPos.dir);
             if (boss != entt::null)
-		d->SetUnique("hw22_final_boss", ecs::PlayerRuntime::GetPacketVID(boss));
+		DungeonSystem::SetUnique(d, "hw22_final_boss", ecs::PlayerRuntime::GetPacketVID(boss));
 
             BigNoticeMap(idx, "<Bloody cathedral> The final boss has appeared!");
             return 0;
@@ -615,8 +615,8 @@ void CHalloween2022Dungeon::OnPlayerDisconnect(entt::entity character)
     if (!IsHalloweenDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d || d->GetFlag(kFlagCompleted) != 0)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null || DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
         return;
 
     SetRejoinFlags(character, idx);
@@ -631,8 +631,8 @@ void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
 
     if (IsHalloweenDungeonMap(idx))
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+        if (d == entt::null)
         {
             WarpOut(character);
             return;
@@ -662,8 +662,8 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
     if (IsHalloweenDungeonMap(currentIdx))
     {
-        LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(currentIdx);
-        if (cur && cur->GetFlag(kFlagCompleted) != 0)
+        const entt::entity cur = CDungeonManager::instance().FindByMapIndex(currentIdx);
+        if (cur != entt::null && DungeonSystem::GetFlag(cur, kFlagCompleted) != 0)
         {
             fromCompletedInside = true;
             originMapForWarp = currentIdx;
@@ -681,19 +681,19 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         if (!IsHalloweenDungeonMap(idx))
             return false;
 
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-        if (!d || d->GetFlag(kFlagCompleted) == 0)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+        if (d == entt::null || DungeonSystem::GetFlag(d, kFlagCompleted) == 0)
             return false;
 
         char rewardFlag[64];
         snprintf(rewardFlag, sizeof(rewardFlag), "hw22_reward_%u", ecs::PlayerRuntime::GetPlayerID(character));
-        if (d->GetFlag(rewardFlag) != 0)
+        if (DungeonSystem::GetFlag(d, rewardFlag) != 0)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You already took your reward.");
             return true;
         }
 
-        d->SetFlag(rewardFlag, 1);
+        DungeonSystem::SetFlag(d, rewardFlag, 1);
         return true;
     }
 
@@ -708,10 +708,10 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
         if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel && IsHalloweenDungeonMap(rejoinIdx))
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
-            if (d && d->GetFlag(kFlagCompleted) == 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+            if (d != entt::null && DungeonSystem::GetFlag(d, kFlagCompleted) == 0)
             {
-                const int32_t floor = std::max(1, d->GetFlag(kFlagFloor));
+                const int32_t floor = std::max(1, DungeonSystem::GetFlag(d, kFlagFloor));
                 if (floor == 1)
                     ecs::MovementSystem::WarpSet(character, kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
                 else
@@ -832,14 +832,14 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         return true;
     }
 
-    LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
+    if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Failed to create dungeon instance.");
         return true;
     }
 
-    const int32_t dungeonMapIdx = d->GetMapIndex();
+    const int32_t dungeonMapIdx = DungeonSystem::GetMapIndex(d);
 
     auto prepareMember = [&](entt::entity m){
         if (!ecs::PlayerRuntime::IsPC(m))
@@ -864,9 +864,9 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
     s_hw22.ScheduleTimeout(dungeonMapIdx);
 
     if (party != entt::null)
-        d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, originMapForWarp);
+        DungeonSystem::JoinParty_Coords(d, party, kEnterGlobalX, kEnterGlobalY, originMapForWarp);
     else
-        d->Join_Coords(character, kEnterGlobalX, kEnterGlobalY, kOriginalMap);
+        DungeonSystem::Join_Coords(d, character, kEnterGlobalX, kEnterGlobalY, kOriginalMap);
 
     BigNoticeMap(dungeonMapIdx, "<Bloody cathedral> You have 30 minutes to complete the dungeon.");
     return true;
@@ -881,32 +881,32 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     if (!IsHalloweenDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
 
     // Floor 1 - full stones
-    if (floor == 1 && d->GetFlag(kFlagCanDestroyFirstStone) == 1 && vnum == kStoneFullVnum)
+    if (floor == 1 && DungeonSystem::GetFlag(d, kFlagCanDestroyFirstStone) == 1 && vnum == kStoneFullVnum)
     {
-        const int32_t damaged = d->GetFlag(kFlagFirstStoneDamaged) + 1;
-        d->SetFlag(kFlagFirstStoneDamaged, damaged);
+        const int32_t damaged = DungeonSystem::GetFlag(d, kFlagFirstStoneDamaged) + 1;
+        DungeonSystem::SetFlag(d, kFlagFirstStoneDamaged, damaged);
         NoticeMap(idx, "<Bloody cathedral> This stone is under a spell now!");
 
         for (int i = 0; i < 5; ++i)
         {
             char key[32];
             snprintf(key, sizeof(key), "hw22_stone_%d", i + 1);
-	if (ecs::PlayerRuntime::GetPacketVID(victim) == (uint32_t)d->GetUniqueVid(key))
+	if (ecs::PlayerRuntime::GetPacketVID(victim) == (uint32_t)DungeonSystem::GetUniqueVid(d, key))
             {
-                const entt::entity stoneNpc = d->SpawnMob(kStoneNpc, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
+                const entt::entity stoneNpc = DungeonSystem::SpawnMob(d, kStoneNpc, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
                 if (stoneNpc != entt::null)
                 {
                     char u[32];
                     snprintf(u, sizeof(u), "hw22_spellstone_%d", i + 1);
-		d->SetUnique(u, ecs::PlayerRuntime::GetPacketVID(stoneNpc));
+		DungeonSystem::SetUnique(d, u, ecs::PlayerRuntime::GetPacketVID(stoneNpc));
                 }
                 break;
             }
@@ -914,29 +914,29 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
 
         if (damaged >= 5)
         {
-            d->SetFlag(kFlagCanDestroyFirstStone, 0);
-            d->SetFlag(kFlagKillFirstBoss, 1);
+            DungeonSystem::SetFlag(d, kFlagCanDestroyFirstStone, 0);
+            DungeonSystem::SetFlag(d, kFlagKillFirstBoss, 1);
             SpawnFirstBoss(idx);
         }
         return;
     }
 
     // Floor 1 - first boss
-    if (floor == 1 && d->GetFlag(kFlagKillFirstBoss) == 1 && vnum == kFirstBossVnum)
+    if (floor == 1 && DungeonSystem::GetFlag(d, kFlagKillFirstBoss) == 1 && vnum == kFirstBossVnum)
     {
-        d->SetFlag(kFlagKillFirstBoss, 0);
-        const int32_t bossCount = d->GetFlag(kFlagFirstBossCount) + 1;
-        d->SetFlag(kFlagFirstBossCount, bossCount);
+        DungeonSystem::SetFlag(d, kFlagKillFirstBoss, 0);
+        const int32_t bossCount = DungeonSystem::GetFlag(d, kFlagFirstBossCount) + 1;
+        DungeonSystem::SetFlag(d, kFlagFirstBossCount, bossCount);
 
         if (bossCount <= 2)
         {
-            d->SetFlag(kFlagCanDestroyStatue, 1);
+            DungeonSystem::SetFlag(d, kFlagCanDestroyStatue, 1);
             DropItemOnGround(victim, killer, kStatueItemVnum, 1);
             NoticeMap(idx, "<Bloody cathedral> Use the dropped item on an Angel Statue.");
         }
         else
         {
-            d->SetFlag(kFlagCanActivateSeal, 1);
+            DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 1);
             DropItemOnGround(victim, killer, kActivateItemVnum, 1);
             NoticeMap(idx, "<Bloody cathedral> Use the dropped item on the next seal.");
         }
@@ -944,44 +944,44 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     }
 
     // Floor 1 - half stones
-    if (floor == 1 && d->GetFlag(kFlagCanDestroySecondStone) == 1 && vnum == kStoneHalfVnum)
+    if (floor == 1 && DungeonSystem::GetFlag(d, kFlagCanDestroySecondStone) == 1 && vnum == kStoneHalfVnum)
     {
-        const int32_t destroyed = d->GetFlag(kFlagFirstStoneDestroyed) + 1;
-        d->SetFlag(kFlagFirstStoneDestroyed, destroyed);
+        const int32_t destroyed = DungeonSystem::GetFlag(d, kFlagFirstStoneDestroyed) + 1;
+        DungeonSystem::SetFlag(d, kFlagFirstStoneDestroyed, destroyed);
         if (destroyed >= 5)
         {
-            d->SetFlag(kFlagCanDestroySecondStone, 0);
-            d->SetFlag(kFlagKillFirstBoss, 1);
+            DungeonSystem::SetFlag(d, kFlagCanDestroySecondStone, 0);
+            DungeonSystem::SetFlag(d, kFlagKillFirstBoss, 1);
             SpawnFirstBoss(idx);
         }
         return;
     }
 
     // Floor 1 - monster waves
-    if (floor == 1 && d->GetFlag(kFlagFloor1Monsters) == 1 && !ecs::PlayerRuntime::IsPC(victim))
+    if (floor == 1 && DungeonSystem::GetFlag(d, kFlagFloor1Monsters) == 1 && !ecs::PlayerRuntime::IsPC(victim))
     {
-        const int32_t killed = d->GetFlag(kFlagFloor1Killed) + 1;
-        d->SetFlag(kFlagFloor1Killed, killed);
+        const int32_t killed = DungeonSystem::GetFlag(d, kFlagFloor1Killed) + 1;
+        DungeonSystem::SetFlag(d, kFlagFloor1Killed, killed);
 
-        const int32_t waveNum = d->GetFlag(kFlagFloor1WavesKilled) + 1;
+        const int32_t waveNum = DungeonSystem::GetFlag(d, kFlagFloor1WavesKilled) + 1;
         const int32_t need = (waveNum == 1) ? kFloor1Wave1Kills : kFloor1Wave2Kills;
         if (killed >= need)
         {
-            d->SetFlag(kFlagFloor1Killed, 0);
-            d->SetFlag(kFlagFloor1Monsters, 0);
-            d->SetFlag(kFlagFloor1WavesKilled, d->GetFlag(kFlagFloor1WavesKilled) + 1);
-            d->ClearRegen();
-            d->KillAllMonsters();
+            DungeonSystem::SetFlag(d, kFlagFloor1Killed, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor1Monsters, 0);
+            DungeonSystem::SetFlag(d, kFlagFloor1WavesKilled, DungeonSystem::GetFlag(d, kFlagFloor1WavesKilled) + 1);
+            DungeonSystem::ClearRegen(d);
+            DungeonSystem::KillAllMonsters(d);
 
             NoticeMap(idx, "<Bloody cathedral> Wave %d vanquished.", waveNum);
-            if (d->GetFlag(kFlagFloor1WavesKilled) == 1)
+            if (DungeonSystem::GetFlag(d, kFlagFloor1WavesKilled) == 1)
             {
-                d->SetFlag(kFlagFloor1Monsters, 1);
-                d->SpawnRegen(kFloor1Monsters2Regen);
+                DungeonSystem::SetFlag(d, kFlagFloor1Monsters, 1);
+                DungeonSystem::SpawnRegen(d, kFloor1Monsters2Regen);
             }
             else
             {
-                d->SetFlag(kFlagCanActivateSeal, 1);
+                DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 1);
                 DropItemOnGround(victim, killer, kActivateItemVnum, 1);
                 NoticeMap(idx, "<Bloody cathedral> Use the dropped item on the next seal.");
             }
@@ -990,10 +990,10 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     }
 
     // Floor 2 - second boss
-    if (floor == 2 && d->GetFlag(kFlagCanKillSecondBoss) == 1 && vnum == kSecondBossVnum)
+    if (floor == 2 && DungeonSystem::GetFlag(d, kFlagCanKillSecondBoss) == 1 && vnum == kSecondBossVnum)
     {
-        d->SetFlag(kFlagCanKillSecondBoss, 0);
-        d->SetFlag(kFlagCanFillCalyx, 1);
+        DungeonSystem::SetFlag(d, kFlagCanKillSecondBoss, 0);
+        DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 1);
         DropItemOnGround(victim, killer, kSecondFloorItem, 1);
         NoticeMap(idx, "<Bloody cathedral> You got the required item. Fill a calyx now.");
         return;
@@ -1002,24 +1002,24 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     // Floor 2 - stones
     if (floor == 2 && vnum == kSecondStoneVnum)
     {
-        const int32_t stoneMode = d->GetFlag(kFlagCanDestroySecondFloorStone);
+        const int32_t stoneMode = DungeonSystem::GetFlag(d, kFlagCanDestroySecondFloorStone);
         if (stoneMode == 1)
         {
-            d->SetFlag(kFlagCanDestroySecondFloorStone, 0);
-            d->SetFlag(kFlagCanFillCalyx, 1);
+            DungeonSystem::SetFlag(d, kFlagCanDestroySecondFloorStone, 0);
+            DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 1);
             DropItemOnGround(victim, killer, kSecondFloorItem, 1);
             NoticeMap(idx, "<Bloody cathedral> You may fill another calyx now.");
             return;
         }
         else if (stoneMode == 2)
         {
-            const int32_t cnt = d->GetFlag(kFlagSecondFloorStoneCount) + 1;
-            d->SetFlag(kFlagSecondFloorStoneCount, cnt);
+            const int32_t cnt = DungeonSystem::GetFlag(d, kFlagSecondFloorStoneCount) + 1;
+            DungeonSystem::SetFlag(d, kFlagSecondFloorStoneCount, cnt);
             if (cnt >= kSecondStoneCountNeeded)
             {
-                d->SetFlag(kFlagCanDestroySecondFloorStone, 0);
-                d->SetFlag(kFlagCanFillCalyx, 1);
-                d->ClearRegen();
+                DungeonSystem::SetFlag(d, kFlagCanDestroySecondFloorStone, 0);
+                DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 1);
+                DungeonSystem::ClearRegen(d);
                 DropItemOnGround(victim, killer, kSecondFloorItem, 1);
                 NoticeMap(idx, "<Bloody cathedral> You destroyed all required stones. Fill another calyx.");
             }
@@ -1028,17 +1028,17 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     }
 
     // Floor 2 - monster room
-    if (floor == 2 && d->GetFlag(kFlagSecondFloorMonsters) == 1 && !ecs::PlayerRuntime::IsPC(victim))
+    if (floor == 2 && DungeonSystem::GetFlag(d, kFlagSecondFloorMonsters) == 1 && !ecs::PlayerRuntime::IsPC(victim))
     {
-        const int32_t killed = d->GetFlag(kFlagSecondFloorKilled) + 1;
-        d->SetFlag(kFlagSecondFloorKilled, killed);
+        const int32_t killed = DungeonSystem::GetFlag(d, kFlagSecondFloorKilled) + 1;
+        DungeonSystem::SetFlag(d, kFlagSecondFloorKilled, killed);
         if (killed >= kFloor2KillsNeeded)
         {
-            d->SetFlag(kFlagSecondFloorKilled, 0);
-            d->SetFlag(kFlagSecondFloorMonsters, 0);
-            d->SetFlag(kFlagCanFillCalyx, 1);
-            d->ClearRegen();
-            d->KillAllMonsters();
+            DungeonSystem::SetFlag(d, kFlagSecondFloorKilled, 0);
+            DungeonSystem::SetFlag(d, kFlagSecondFloorMonsters, 0);
+            DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 1);
+            DungeonSystem::ClearRegen(d);
+            DungeonSystem::KillAllMonsters(d);
             DropItemOnGround(victim, killer, kSecondFloorItem, 1);
             NoticeMap(idx, "<Bloody cathedral> You killed all monsters. Fill another calyx.");
         }
@@ -1046,12 +1046,12 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     }
 
     // Floor 2 - final boss
-    if (floor == 2 && d->GetFlag(kFlagFinalBossActive) == 1 && vnum == kFinalBossVnum)
+    if (floor == 2 && DungeonSystem::GetFlag(d, kFlagFinalBossActive) == 1 && vnum == kFinalBossVnum)
     {
-        d->SetFlag(kFlagFinalBossActive, 0);
-        d->SetFlag(kFlagCompleted, 1);
-        d->ClearRegen();
-        d->KillAllMonsters();
+        DungeonSystem::SetFlag(d, kFlagFinalBossActive, 0);
+        DungeonSystem::SetFlag(d, kFlagCompleted, 1);
+        DungeonSystem::ClearRegen(d);
+        DungeonSystem::KillAllMonsters(d);
 
         s_hw22.Cancel(s_hw22.m_evTimeout, idx);
 
@@ -1060,7 +1060,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
             ClearRejoinFlags(pc);
         });
 
-        d->SpawnMob(kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
+        DungeonSystem::SpawnMob(d, kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
        // NoticeMap(idx, "<Bloody cathedral> You can now take your reward from the chest.");
 
         char tmp[64];
@@ -1080,38 +1080,38 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
     if (!IsHalloweenDungeonMap(idx))
         return false;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return false;
 
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
     const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(npc);
     const uint32_t itemVnum = ItemSystem::GetItemVnum(item);
 
     // Angel statue
-    if (floor == 1 && npcVnum == kAngelStatueNpc && d->GetFlag(kFlagCanDestroyStatue) == 1 && itemVnum == kStatueItemVnum)
+    if (floor == 1 && npcVnum == kAngelStatueNpc && DungeonSystem::GetFlag(d, kFlagCanDestroyStatue) == 1 && itemVnum == kStatueItemVnum)
     {
         if (!RemoveOneGivenItem(from, item))
             return true;
-        d->SetFlag(kFlagCanDestroyStatue, 0);
-        d->SetFlag(kFlagAngelStatueCount, d->GetFlag(kFlagAngelStatueCount) + 1);
+        DungeonSystem::SetFlag(d, kFlagCanDestroyStatue, 0);
+        DungeonSystem::SetFlag(d, kFlagAngelStatueCount, DungeonSystem::GetFlag(d, kFlagAngelStatueCount) + 1);
         M2_DESTROY_CHARACTER(npc);
 
-        if (d->GetFlag(kFlagAngelStatueCount) == 1)
+        if (DungeonSystem::GetFlag(d, kFlagAngelStatueCount) == 1)
         {
-            d->SetFlag(kFlagCanDestroySecondStone, 1);
+            DungeonSystem::SetFlag(d, kFlagCanDestroySecondStone, 1);
             for (int i = 0; i < 5; ++i)
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_spellstone_%d", i + 1);
-                d->KillUnique(key);
-                d->SpawnMob(kStoneHalfVnum, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
+                DungeonSystem::KillUnique(d, key);
+                DungeonSystem::SpawnMob(d, kStoneHalfVnum, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
             }
             NoticeMap(idx, "<Bloody cathedral> You broke the spell! Destroy the stones!");
         }
         else
         {
-            d->SetFlag(kFlagCanActivateSeal, 1);
+            DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 1);
             ItemSystem::AutoGiveItemEcs(from, kActivateItemVnum, 1);
             NoticeMap(idx, "<Bloody cathedral> Use the item on the first seal.");
         }
@@ -1119,57 +1119,57 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
     }
 
     // Small seal -> starts wave 1
-    if (floor == 1 && npcVnum == kSealSmallNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
+    if (floor == 1 && npcVnum == kSealSmallNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
         if (!RemoveOneGivenItem(from, item))
             return true;
-        d->SetFlag(kFlagCanActivateSeal, 0);
-        d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
-        d->SetFlag(kFlagFloor1Monsters, 1);
-        d->SpawnMob(kSealMiddleNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
+        DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
+        DungeonSystem::SetFlag(d, kFlagSealState, DungeonSystem::GetFlag(d, kFlagSealState) + 1);
+        DungeonSystem::SetFlag(d, kFlagFloor1Monsters, 1);
+        DungeonSystem::SpawnMob(d, kSealMiddleNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
         M2_DESTROY_CHARACTER(npc);
-        d->SpawnRegen(kFloor1Monsters1Regen);
+        DungeonSystem::SpawnRegen(d, kFloor1Monsters1Regen);
         NoticeMap(idx, "<Bloody cathedral> The first wave has begun.");
         return true;
     }
 
     // Middle seal -> spawn boss again
-    if (floor == 1 && npcVnum == kSealMiddleNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
+    if (floor == 1 && npcVnum == kSealMiddleNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
         if (!RemoveOneGivenItem(from, item))
             return true;
-        d->SetFlag(kFlagCanActivateSeal, 0);
-        d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
-        d->SetFlag(kFlagKillFirstBoss, 1);
-        d->SpawnMob(kSealFullNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
+        DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
+        DungeonSystem::SetFlag(d, kFlagSealState, DungeonSystem::GetFlag(d, kFlagSealState) + 1);
+        DungeonSystem::SetFlag(d, kFlagKillFirstBoss, 1);
+        DungeonSystem::SpawnMob(d, kSealFullNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
         M2_DESTROY_CHARACTER(npc);
-        d->SpawnMob(kFirstBossVnum, kFirstBossPos.x, kFirstBossPos.y);
+        DungeonSystem::SpawnMob(d, kFirstBossVnum, kFirstBossPos.x, kFirstBossPos.y);
         return true;
     }
 
     // Full seal -> transition to floor 2
-    if (floor == 1 && npcVnum == kSealFullNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
+    if (floor == 1 && npcVnum == kSealFullNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
         if (!RemoveOneGivenItem(from, item))
             return true;
-        d->SetFlag(kFlagCanActivateSeal, 0);
-        d->SetFlag(kFlagFloor, 2);
-        d->KillAll();
-        d->ClearRegen();
+        DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 2);
+        DungeonSystem::KillAll(d);
+        DungeonSystem::ClearRegen(d);
 
         for (int i = 0; i < 4; ++i)
         {
-            const entt::entity calyx = d->SpawnMob(kCalyxEmptyNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
+            const entt::entity calyx = DungeonSystem::SpawnMob(d, kCalyxEmptyNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
             if (calyx != entt::null)
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_calyx_%d", i + 1);
-	d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(calyx));
+	DungeonSystem::SetUnique(d, key, ecs::PlayerRuntime::GetPacketVID(calyx));
             }
         }
 
-        d->SpawnMob(kSecondBossVnum, kSecondBossPos.x, kSecondBossPos.y, kSecondBossPos.dir);
-        d->SetFlag(kFlagCanKillSecondBoss, 1);
+        DungeonSystem::SpawnMob(d, kSecondBossVnum, kSecondBossPos.x, kSecondBossPos.y, kSecondBossPos.dir);
+        DungeonSystem::SetFlag(d, kFlagCanKillSecondBoss, 1);
 
         NoticeMap(idx, "<Bloody cathedral> Fill all calyxes with blood to summon the final enemy.");
         //NoticeMap(idx, "<Bloody cathedral> Note: the original Lua quest text mentions an order, but the provided script does not actually enforce any order.");
@@ -1177,41 +1177,41 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
     }
 
     // Empty calyx -> floor 2 progression
-    if (floor == 2 && npcVnum == kCalyxEmptyNpc && d->GetFlag(kFlagCanFillCalyx) == 1 && itemVnum == kSecondFloorItem)
+    if (floor == 2 && npcVnum == kCalyxEmptyNpc && DungeonSystem::GetFlag(d, kFlagCanFillCalyx) == 1 && itemVnum == kSecondFloorItem)
     {
         if (!RemoveOneGivenItem(from, item))
             return true;
-        d->SetFlag(kFlagCanFillCalyx, 0);
-        d->SetFlag(kFlagCalyxFilled, d->GetFlag(kFlagCalyxFilled) + 1);
+        DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 0);
+        DungeonSystem::SetFlag(d, kFlagCalyxFilled, DungeonSystem::GetFlag(d, kFlagCalyxFilled) + 1);
         ReplaceUniqueCalyx(d, npc);
 
-        const int32_t filled = d->GetFlag(kFlagCalyxFilled);
+        const int32_t filled = DungeonSystem::GetFlag(d, kFlagCalyxFilled);
         if (filled == 1)
         {
-            d->SetFlag(kFlagCanDestroySecondFloorStone, 1);
-            d->SetFlag(kFlagSecondFloorStoneCount, 0);
-            d->SpawnMob(kSecondStoneVnum, kSecondStonePos.x, kSecondStonePos.y, kSecondStonePos.dir);
+            DungeonSystem::SetFlag(d, kFlagCanDestroySecondFloorStone, 1);
+            DungeonSystem::SetFlag(d, kFlagSecondFloorStoneCount, 0);
+            DungeonSystem::SpawnMob(d, kSecondStoneVnum, kSecondStonePos.x, kSecondStonePos.y, kSecondStonePos.dir);
             NoticeMap(idx, "<Bloody cathedral> Correct. Destroy the spawned stone now.");
         }
         else if (filled == 2)
         {
-            d->SetFlag(kFlagSecondFloorMonsters, 1);
-            d->SetFlag(kFlagSecondFloorKilled, 0);
-            d->SpawnRegen(kFloor2MonstersRegen);
+            DungeonSystem::SetFlag(d, kFlagSecondFloorMonsters, 1);
+            DungeonSystem::SetFlag(d, kFlagSecondFloorKilled, 0);
+            DungeonSystem::SpawnRegen(d, kFloor2MonstersRegen);
             NoticeMap(idx, "<Bloody cathedral> Kill all monsters to proceed.");
         }
         else if (filled == 3)
         {
-            d->SetFlag(kFlagCanDestroySecondFloorStone, 2);
-            d->SetFlag(kFlagSecondFloorStoneCount, 0);
-            d->ClearRegen();
-            d->SpawnRegen(kFloor2StonesRegen);
+            DungeonSystem::SetFlag(d, kFlagCanDestroySecondFloorStone, 2);
+            DungeonSystem::SetFlag(d, kFlagSecondFloorStoneCount, 0);
+            DungeonSystem::ClearRegen(d);
+            DungeonSystem::SpawnRegen(d, kFloor2StonesRegen);
             NoticeMap(idx, "<Bloody cathedral> Destroy all required stones to proceed.");
         }
         else if (filled >= 4)
         {
-            d->KillAllMonsters();
-            d->ClearRegen();
+            DungeonSystem::KillAllMonsters(d);
+            DungeonSystem::ClearRegen(d);
             NoticeMap(idx, "<Bloody cathedral> You filled all calyxes. The final boss is coming!");
             s_hw22.ScheduleFinalBoss(idx, kFinalBossSpawnDelaySec);
         }

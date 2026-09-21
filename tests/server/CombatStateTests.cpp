@@ -431,7 +431,7 @@ int ecs::PlayerRuntime::GetPosition(entt::entity e) {
 }
 int64_t ecs::PlayerRuntime::GetSP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).sp; }
 void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) {}
-CDungeon* ecs::SocialSystem::GetDungeon(entt::entity) { return nullptr; }
+entt::entity ecs::SocialSystem::GetDungeon(entt::entity) { return entt::null; }
 int SkillSystem::GetSkillPower(entt::entity, uint32_t, uint8_t) { return 0; }
 uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { return 0; }
 uint32_t SkillSystem::GetLastSkillTime(entt::entity) { return 0; }
@@ -442,7 +442,7 @@ void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedServic
 void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
 void InventorySystem::SyncQuickslot(entt::entity,uint16_t,uint16_t,uint16_t) { UnexpectedService(__func__); }
 void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__); }
-void ecs::SocialSystem::SetDungeon(entt::entity, CDungeon *) { UnexpectedService(__func__); }
+void ecs::SocialSystem::SetDungeon(entt::entity, entt::entity) { UnexpectedService(__func__); }
 bool ItemSystem::IsEquipUniqueItem(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool ItemSystem::IsEquipUniqueGroup(entt::entity,unsigned int) { UnexpectedService(__func__); }
 void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }
@@ -469,16 +469,21 @@ SECTREE * SECTREE_MANAGER::Get(int,int,int) { UnexpectedService(__func__); }
 bool SECTREE_MANAGER::GetMovablePosition(int,int,int,pixel_position_s &) { UnexpectedService(__func__); }
 bool SECTREE_MANAGER::IsMovablePosition(int,int,int) { UnexpectedService(__func__); }
 unsigned char SECTREE_MANAGER::GetEmpireFromMapIndex(int) { UnexpectedService(__func__); }
-void CDungeon::Notice(unsigned int,char const *,bool) { UnexpectedService(__func__); }
-void CDungeon::KillAll(void) { UnexpectedService(__func__); }
-void CDungeon::KillAllMonsters(void) { UnexpectedService(__func__); }
-void CDungeon::SpawnRegen(char const *,bool) { UnexpectedService(__func__); }
-void CDungeon::ClearRegen(void) { UnexpectedService(__func__); }
-void CDungeon::DeadCharacter(entt::entity) { UnexpectedService(__func__); }
-void CDungeon::ExitAllLobby(unsigned char) { UnexpectedService(__func__); }
-int CDungeon::GetFlag(std::string) { UnexpectedService(__func__); }
-void CDungeon::SetFlag(std::string,int) { UnexpectedService(__func__); }
-void CDungeon::UpdateMastHP(void) { UnexpectedService(__func__); }
+void DungeonSystem::Notice(entt::entity, unsigned int,char const *,bool) { UnexpectedService(__func__); }
+void DungeonSystem::KillAll(entt::entity) { UnexpectedService(__func__); }
+void DungeonSystem::KillAllMonsters(entt::entity) { UnexpectedService(__func__); }
+void DungeonSystem::SpawnRegen(entt::entity, char const *,bool) { UnexpectedService(__func__); }
+void DungeonSystem::ClearRegen(entt::entity) { UnexpectedService(__func__); }
+void DungeonSystem::DeadCharacter(entt::entity, entt::entity) { UnexpectedService(__func__); }
+void DungeonSystem::ExitAllLobby(entt::entity, unsigned char) { UnexpectedService(__func__); }
+int DungeonSystem::GetFlag(entt::entity, std::string) { UnexpectedService(__func__); }
+void DungeonSystem::SetFlag(entt::entity, std::string,int) { UnexpectedService(__func__); }
+entt::entity DungeonSystem::GetMast(entt::entity) { UnexpectedService(__func__); }
+void DungeonSystem::SetMast(entt::entity, entt::entity) { UnexpectedService(__func__); }
+void DungeonSystem::RemoveMonster(entt::entity) { UnexpectedService(__func__); }
+void DungeonSystem::RestoreMastPartialHP(entt::entity) { UnexpectedService(__func__); }
+int32_t DungeonSystem::CountMonster(entt::entity) { UnexpectedService(__func__); }
+void DungeonSystem::UpdateMastHP(entt::entity) { UnexpectedService(__func__); }
 int MountSystem::GetHorseHealth(entt::entity) { UnexpectedService(__func__); }
 int MountSystem::GetHorseMaxHealth(entt::entity) { UnexpectedService(__func__); }
 void DESC::Packet(void const *,int) { UnexpectedService(__func__); }
@@ -519,7 +524,7 @@ CPIDRegistry & CPIDRegistry::Instance(void) { UnexpectedService(__func__); }
 std::vector<entt::entity,std::allocator<entt::entity> > CPIDRegistry::Snapshot(void)const { UnexpectedService(__func__); }
 void CHARACTER_MANAGER::DestroyCharacter(entt::entity) { UnexpectedService(__func__); }
 entt::entity CHARACTER_MANAGER::SpawnMobEntity(unsigned int,int,int,int,int,bool,int,bool) { UnexpectedService(__func__); }
-entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { UnexpectedService(__func__); }
+entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,entt::entity) { UnexpectedService(__func__); }
 void CHARACTER_MANAGER::SelectStone(entt::entity) { UnexpectedService(__func__); }
 entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t) { UnexpectedService(__func__); }
 entt::entity CHARACTER_MANAGER::FindEntity(unsigned int vid) {

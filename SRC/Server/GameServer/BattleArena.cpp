@@ -133,7 +133,7 @@ EVENTFUNC(battle_arena_event)
 						{
 							strMap += strRegen[pInfo->nEmpire];
 
-							regen_do(strMap.c_str(), pInfo->nMapIndex, sectree->m_setting.iBaseX, sectree->m_setting.iBaseY, nullptr, false);
+							regen_do(strMap.c_str(), pInfo->nMapIndex, sectree->m_setting.iBaseX, sectree->m_setting.iBaseY, entt::null, false);
 						}
 					}
 				}

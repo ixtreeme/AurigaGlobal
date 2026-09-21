@@ -429,7 +429,7 @@ namespace marriage
 		st_weddingMapRegenFileName  = LocaleService_GetMapPath();
 		st_weddingMapRegenFileName += "/metin2_map_wedding_01/npc.txt";
 
-		if (!regen_do(st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY, nullptr, true))
+		if (!regen_do(st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY, entt::null, true))
 		{
 			LOG_ERROR("CreateWeddingMap(pid1={}, pid2={}) / regen_do(fileName={}, mapIndex={}, basePos=({}, {})) FAILED", dwPID1, dwPID2, st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY);
 		}

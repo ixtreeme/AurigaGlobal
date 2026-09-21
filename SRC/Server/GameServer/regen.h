@@ -71,16 +71,14 @@ typedef struct regen_exception
 	uint8_t	z_section;
 } REGEN_EXCEPTION;
 
-class CDungeon;
 
 EVENTINFO(dungeon_regen_event_info)
 {
 	LPREGEN 	regen;
-	CDungeon::IdType dungeon_id;
+	entt::entity dungeon { entt::null };
 
 	dungeon_regen_event_info()
 	: regen( nullptr )
-	, dungeon_id( 0 )
 	{
 	}
 };
@@ -90,7 +88,7 @@ extern bool	regen_load(const char *filename, int32_t lMapIndex, int base_x, int 
 #else
 extern bool	regen_load(const char *filename, int32_t lMapIndex, int base_x, int base_y);
 #endif
-extern bool	regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, LPDUNGEON pDungeon, bool bOnce = true );
+extern bool	regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, entt::entity pDungeon = entt::null, bool bOnce = true );
 extern bool	regen_load_in_file(const char* filename, int32_t lMapIndex, int base_x, int base_y );
 extern void	regen_free();
 

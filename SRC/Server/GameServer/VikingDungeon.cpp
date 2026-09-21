@@ -173,34 +173,34 @@ namespace
         return std::string(buf);
     }
 
-    void ResetFloor3Progress(LPDUNGEON d)
+    void ResetFloor3Progress(entt::entity d)
     {
-        if (!d)
+        if (d == entt::null)
             return;
 
         for (int i = 0; i < 3; ++i)
-            d->SetFlag(GetFloor3ClearedFlag(i), 0);
+            DungeonSystem::SetFlag(d, GetFloor3ClearedFlag(i), 0);
     }
 
-    inline bool IsFloor3SlotCleared(LPDUNGEON d, int idx)
+    inline bool IsFloor3SlotCleared(entt::entity d, int idx)
     {
-        return d && d->GetFlag(GetFloor3ClearedFlag(idx)) != 0;
+        return d != entt::null && DungeonSystem::GetFlag(d, GetFloor3ClearedFlag(idx)) != 0;
     }
 
-    inline void SetFloor3SlotCleared(LPDUNGEON d, int idx, bool value)
+    inline void SetFloor3SlotCleared(entt::entity d, int idx, bool value)
     {
-        if (d)
-            d->SetFlag(GetFloor3ClearedFlag(idx), value ? 1 : 0);
+        if (d != entt::null)
+            DungeonSystem::SetFlag(d, GetFloor3ClearedFlag(idx), value ? 1 : 0);
     }
 
-    inline int FindFloor3StoneSlotByVid(LPDUNGEON d, uint32_t vid)
+    inline int FindFloor3StoneSlotByVid(entt::entity d, uint32_t vid)
     {
-        if (!d || vid == 0)
+        if (d == entt::null || vid == 0)
             return -1;
 
         for (int i = 0; i < 3; ++i)
         {
-            if (d->GetUniqueVid(GetFloor3StoneKey(i)) == (int32_t)vid)
+            if (DungeonSystem::GetUniqueVid(d, GetFloor3StoneKey(i)) == (int32_t)vid)
                 return i;
         }
 
@@ -341,13 +341,13 @@ namespace
         ecs::QuestSystem::SetFlag(ch, kQfDisconnect, 0);
     }
 
-    void ClearDungeonNonPlayers(LPDUNGEON d)
+    void ClearDungeonNonPlayers(entt::entity d)
     {
-        if (!d)
+        if (d == entt::null)
             return;
 
-        d->ClearRegen();
-        d->KillAllMonsters();
+        DungeonSystem::ClearRegen(d);
+        DungeonSystem::KillAllMonsters(d);
     }
 
     void ApplyMapHpPctDamage(int32_t mapIndex, int pct)
@@ -369,119 +369,119 @@ namespace
         });
     }
 
-    entt::entity FindUnique(LPDUNGEON d, const char* key)
+    entt::entity FindUnique(entt::entity d, const char* key)
     {
-        if (!d)
+        if (d == entt::null)
             return entt::null;
-        const int32_t vid = d->GetUniqueVid(key);
+        const int32_t vid = DungeonSystem::GetUniqueVid(d, key);
         if (vid <= 0)
             return entt::null;
         return CHARACTER_MANAGER::instance().FindEntity((uint32_t)vid);
     }
 
-    void SetDungeonReady(LPDUNGEON d)
+    void SetDungeonReady(entt::entity d)
     {
-        if (!d)
+        if (d == entt::null)
             return;
 
-        d->SetFlag(kFlagInitialized, 0);
-        d->SetFlag(kFlagBlockRejoin, 0);
-        d->SetFlag(kFlagCompleted, 0);
-        d->SetFlag(kFlagFloor, 0);
-        d->SetFlag(kFlagStartTime, 0);
-        d->SetFlag(kFlagTimeLimit, 0);
-        d->SetFlag(kFlagCompassState, 0);
-        d->SetFlag(kFlagMainBossStage, 0);
-        d->SetFlag(kFlagFloor2Remain, 0);
-        d->SetFlag(kFlagFinalPenalty, 0);
-        d->SetFlag(kFlagFloor3NpcStage, 0);
-        d->SetFlag(kFlagFloor3NpcVnum, kMemorialNpc1);
-        d->SetFlag(kFlagCanKillFloor3Boss, 0);
-        d->SetFlag(kFlagCanUseRune, 0);
-        d->SetFlag(kFlagFinalBossStage, 0);
+        DungeonSystem::SetFlag(d, kFlagInitialized, 0);
+        DungeonSystem::SetFlag(d, kFlagBlockRejoin, 0);
+        DungeonSystem::SetFlag(d, kFlagCompleted, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 0);
+        DungeonSystem::SetFlag(d, kFlagStartTime, 0);
+        DungeonSystem::SetFlag(d, kFlagTimeLimit, 0);
+        DungeonSystem::SetFlag(d, kFlagCompassState, 0);
+        DungeonSystem::SetFlag(d, kFlagMainBossStage, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor2Remain, 0);
+        DungeonSystem::SetFlag(d, kFlagFinalPenalty, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor3NpcStage, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor3NpcVnum, kMemorialNpc1);
+        DungeonSystem::SetFlag(d, kFlagCanKillFloor3Boss, 0);
+        DungeonSystem::SetFlag(d, kFlagCanUseRune, 0);
+        DungeonSystem::SetFlag(d, kFlagFinalBossStage, 0);
         ResetFloor3Progress(d);
     }
 
-    void SpawnFloor4Setup(LPDUNGEON d)
+    void SpawnFloor4Setup(entt::entity d)
     {
-        if (!d)
+        if (d == entt::null)
             return;
 
-        d->SetFlag(kFlagFloor, 4);
-        d->SetFlag(kFlagCanKillFloor3Boss, 0);
-        d->SetFlag(kFlagCanUseRune, 0);
-        d->SetFlag(kFlagFloor3NpcStage, 0);
-        d->SetFlag(kFlagFloor3NpcVnum, kMemorialNpc1);
+        DungeonSystem::SetFlag(d, kFlagFloor, 4);
+        DungeonSystem::SetFlag(d, kFlagCanKillFloor3Boss, 0);
+        DungeonSystem::SetFlag(d, kFlagCanUseRune, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor3NpcStage, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor3NpcVnum, kMemorialNpc1);
         ResetFloor3Progress(d);
 
-        const entt::entity memorial = d->SpawnMob(kMemorialNpc1, kMemorialPos.x, kMemorialPos.y, kMemorialPos.dir);
+        const entt::entity memorial = DungeonSystem::SpawnMob(d, kMemorialNpc1, kMemorialPos.x, kMemorialPos.y, kMemorialPos.dir);
         if (memorial != entt::null)
-		d->SetUnique("vk_memorial", ecs::PlayerRuntime::GetPacketVID(memorial));
+		DungeonSystem::SetUnique(d, "vk_memorial", ecs::PlayerRuntime::GetPacketVID(memorial));
 
         for (int i = 0; i < 3; ++i)
         {
-            const entt::entity stone = d->SpawnMob(kFloor3StoneVnum, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
+            const entt::entity stone = DungeonSystem::SpawnMob(d, kFloor3StoneVnum, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (stone != entt::null)
-				d->SetUnique(GetFloor3StoneKey(i), ecs::PlayerRuntime::GetPacketVID(stone));
+				DungeonSystem::SetUnique(d, GetFloor3StoneKey(i), ecs::PlayerRuntime::GetPacketVID(stone));
         }
     }
 
-    void RespawnFloor3StonesFromProtectors(LPDUNGEON d)
+    void RespawnFloor3StonesFromProtectors(entt::entity d)
     {
-        if (!d)
+        if (d == entt::null)
             return;
 
         for (int i = 0; i < 3; ++i)
         {
-            if (d->GetUniqueVid(GetFloor3ProtectorKey(i)) > 0)
-                d->KillUnique(GetFloor3ProtectorKey(i));
+            if (DungeonSystem::GetUniqueVid(d, GetFloor3ProtectorKey(i)) > 0)
+                DungeonSystem::KillUnique(d, GetFloor3ProtectorKey(i));
 
-            if (d->GetUniqueVid(GetFloor3StoneKey(i)) > 0)
-                d->KillUnique(GetFloor3StoneKey(i));
+            if (DungeonSystem::GetUniqueVid(d, GetFloor3StoneKey(i)) > 0)
+                DungeonSystem::KillUnique(d, GetFloor3StoneKey(i));
 
             if (IsFloor3SlotCleared(d, i))
                 continue;
 
-            const entt::entity stone = d->SpawnMob(kFloor3StoneVnum, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
+            const entt::entity stone = DungeonSystem::SpawnMob(d, kFloor3StoneVnum, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (stone != entt::null)
-				d->SetUnique(GetFloor3StoneKey(i), ecs::PlayerRuntime::GetPacketVID(stone));
+				DungeonSystem::SetUnique(d, GetFloor3StoneKey(i), ecs::PlayerRuntime::GetPacketVID(stone));
         }
     }
 
-    void SpawnFloor3ProtectorsForRemainingSlots(LPDUNGEON d)
+    void SpawnFloor3ProtectorsForRemainingSlots(entt::entity d)
     {
-        if (!d)
+        if (d == entt::null)
             return;
 
         for (int i = 0; i < 3; ++i)
         {
-            if (d->GetUniqueVid(GetFloor3StoneKey(i)) > 0)
-                d->KillUnique(GetFloor3StoneKey(i));
+            if (DungeonSystem::GetUniqueVid(d, GetFloor3StoneKey(i)) > 0)
+                DungeonSystem::KillUnique(d, GetFloor3StoneKey(i));
 
-            if (d->GetUniqueVid(GetFloor3ProtectorKey(i)) > 0)
-                d->KillUnique(GetFloor3ProtectorKey(i));
+            if (DungeonSystem::GetUniqueVid(d, GetFloor3ProtectorKey(i)) > 0)
+                DungeonSystem::KillUnique(d, GetFloor3ProtectorKey(i));
 
             if (IsFloor3SlotCleared(d, i))
                 continue;
 
-            const entt::entity protector = d->SpawnMob(kStoneProtectorNpc, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
+            const entt::entity protector = DungeonSystem::SpawnMob(d, kStoneProtectorNpc, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (protector != entt::null)
-			d->SetUnique(GetFloor3ProtectorKey(i), ecs::PlayerRuntime::GetPacketVID(protector));
+			DungeonSystem::SetUnique(d, GetFloor3ProtectorKey(i), ecs::PlayerRuntime::GetPacketVID(protector));
         }
     }
 
 
-    void ReplaceCompass(LPDUNGEON d, entt::entity npc, uint32_t newVnum)
+    void ReplaceCompass(entt::entity d, entt::entity npc, uint32_t newVnum)
     {
-        if (!d || !ecs::PlayerRuntime::IsValid(npc))
+        if (d == entt::null || !ecs::PlayerRuntime::IsValid(npc))
             return;
 
-        if (d->GetUniqueVid("vk_compass") > 0)
-            d->KillUnique("vk_compass");
+        if (DungeonSystem::GetUniqueVid(d, "vk_compass") > 0)
+            DungeonSystem::KillUnique(d, "vk_compass");
 
-        const entt::entity spawned = d->SpawnMob(newVnum, kCompassPos.x, kCompassPos.y, kCompassPos.dir);
+        const entt::entity spawned = DungeonSystem::SpawnMob(d, newVnum, kCompassPos.x, kCompassPos.y, kCompassPos.dir);
         if (spawned != entt::null)
-		d->SetUnique("vk_compass", ecs::PlayerRuntime::GetPacketVID(spawned));
+		DungeonSystem::SetUnique(d, "vk_compass", ecs::PlayerRuntime::GetPacketVID(spawned));
 
         CombatSystem::Dead(npc, entt::null, true);
     }
@@ -579,16 +579,16 @@ namespace
         long OnStart(int32_t idx)
         {
             evStart.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d || d->GetFlag(kFlagCompleted) != 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null || DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
                 return 0;
 
-            d->SetFlag(kFlagFloor, 1);
-            d->SetFlag(kFlagStartTime, get_global_time());
-            d->SetFlag(kFlagTimeLimit, get_global_time() + kTimeOutSec);
+            DungeonSystem::SetFlag(d, kFlagFloor, 1);
+            DungeonSystem::SetFlag(d, kFlagStartTime, get_global_time());
+            DungeonSystem::SetFlag(d, kFlagTimeLimit, get_global_time() + kTimeOutSec);
             ScheduleTimeout(idx);
             ScheduleFloor1Check(idx);
-            d->SpawnRegen(kRegen1FloorA, true);
+            DungeonSystem::SpawnRegen(d, kRegen1FloorA, true);
 
             NoticeMap(idx, "<Frostbane Fortress> You have 20 minutes to complete the dungeon.");
             NoticeMap(idx, "<Frostbane Fortress> Eliminate all monsters to summon the low boss.");
@@ -597,21 +597,21 @@ namespace
 
         long OnTimeout(int32_t idx)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
             {
                 evTimeout.erase(idx);
                 return 0;
             }
 
-            if (d->GetFlag(kFlagCompleted) != 0)
+            if (DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
             {
                 evTimeout.erase(idx);
                 return 0;
             }
 
             const int32_t now = get_global_time();
-            const int32_t limit = d->GetFlag(kFlagTimeLimit);
+            const int32_t limit = DungeonSystem::GetFlag(d, kFlagTimeLimit);
             if (limit <= 0)
             {
                 evTimeout.erase(idx);
@@ -621,7 +621,7 @@ namespace
             if (now >= limit)
             {
                 evTimeout.erase(idx);
-                d->SetFlag(kFlagBlockRejoin, 1);
+                DungeonSystem::SetFlag(d, kFlagBlockRejoin, 1);
                 NoticeMap(idx, "<Frostbane Fortress> Time expired.");
                 NoticeMap(idx, "<Frostbane Fortress> You will be teleported out of the dungeon.");
                 CancelAll(idx);
@@ -637,23 +637,23 @@ namespace
 
         long OnFloor1Check(int32_t idx)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
             {
                 evFloor1Check.erase(idx);
                 return 0;
             }
-            if (d->GetFlag(kFlagFloor) != 1)
+            if (DungeonSystem::GetFlag(d, kFlagFloor) != 1)
             {
                 evFloor1Check.erase(idx);
                 return 0;
             }
 
-            if (d->CountMonster() > 0)
+            if (DungeonSystem::CountMonster(d) > 0)
                 return PASSES_PER_SEC(kPhaseCheckIntervalSec);
 
             evFloor1Check.erase(idx);
-            d->SpawnMob(kFloor1LowBossVnum, kFloor1LowBossPos.x, kFloor1LowBossPos.y, kFloor1LowBossPos.dir);
+            DungeonSystem::SpawnMob(d, kFloor1LowBossVnum, kFloor1LowBossPos.x, kFloor1LowBossPos.y, kFloor1LowBossPos.dir);
             NoticeMap(idx, "<Frostbane Fortress> The low boss has been summoned. Kill him to proceed.");
             return 0;
         }
@@ -661,15 +661,15 @@ namespace
         long OnFloor1MainBoss(int32_t idx)
         {
             evFloor1Boss.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
                 return 0;
 
-            d->SetFlag(kFlagFloor, 2);
-            d->SetFlag(kFlagMainBossStage, 0);
-            const entt::entity boss = d->SpawnMob(kFloor1MainBossVnum, kFloor1MainBossPos.x, kFloor1MainBossPos.y, kFloor1MainBossPos.dir);
+            DungeonSystem::SetFlag(d, kFlagFloor, 2);
+            DungeonSystem::SetFlag(d, kFlagMainBossStage, 0);
+            const entt::entity boss = DungeonSystem::SpawnMob(d, kFloor1MainBossVnum, kFloor1MainBossPos.x, kFloor1MainBossPos.y, kFloor1MainBossPos.dir);
             if (boss != entt::null)
-	d->SetUnique("vk_main_boss", ecs::PlayerRuntime::GetPacketVID(boss));
+	DungeonSystem::SetUnique(d, "vk_main_boss", ecs::PlayerRuntime::GetPacketVID(boss));
             ScheduleFloor1BossHp(idx);
             BigNoticeMap(idx, "<Frostbane Fortress> The first main boss has appeared!");
             return 0;
@@ -677,13 +677,13 @@ namespace
 
         long OnFloor1BossHp(int32_t idx)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
             {
                 evFloor1BossHp.erase(idx);
                 return 0;
             }
-            if (d->GetFlag(kFlagFloor) != 2)
+            if (DungeonSystem::GetFlag(d, kFlagFloor) != 2)
             {
                 evFloor1BossHp.erase(idx);
                 return 0;
@@ -696,7 +696,7 @@ namespace
                 return 0;
             }
 
-            const int stage = d->GetFlag(kFlagMainBossStage);
+            const int stage = DungeonSystem::GetFlag(d, kFlagMainBossStage);
             if (stage >= 3)
                 return PASSES_PER_SEC(1);
 
@@ -706,19 +706,19 @@ namespace
 
             if (stage == 0)
             {
-                d->SetFlag(kFlagMainBossStage, 1);
-                d->SpawnRegen(kRegen1FloorB, true);
+                DungeonSystem::SetFlag(d, kFlagMainBossStage, 1);
+                DungeonSystem::SpawnRegen(d, kRegen1FloorB, true);
                 NoticeMap(idx, "<Frostbane Fortress> The boss summoned many monsters. Be careful.");
             }
             else if (stage == 1)
             {
-                d->SetFlag(kFlagMainBossStage, 2);
+                DungeonSystem::SetFlag(d, kFlagMainBossStage, 2);
                 ApplyMapHpPctDamage(idx, 35);
                 NoticeMap(idx, "<Frostbane Fortress> The boss cast a dungeon-wide damage spell.");
             }
             else if (stage == 2)
             {
-                d->SetFlag(kFlagMainBossStage, 3);
+                DungeonSystem::SetFlag(d, kFlagMainBossStage, 3);
                 CombatSystem::SetDamageMultiplier(boss, 0.5f);
                 NoticeMap(idx, "<Frostbane Fortress> The boss reduced incoming damage by half.");
             }
@@ -729,14 +729,14 @@ namespace
         long OnFloor2Timer(int32_t idx)
         {
             evFloor2Timer.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
                 return 0;
-            if (d->GetFlag(kFlagFloor) != 3)
+            if (DungeonSystem::GetFlag(d, kFlagFloor) != 3)
                 return 0;
 
-            if (d->GetFlag(kFlagFloor2Remain) > 0)
-                d->SetFlag(kFlagFinalPenalty, 1);
+            if (DungeonSystem::GetFlag(d, kFlagFloor2Remain) > 0)
+                DungeonSystem::SetFlag(d, kFlagFinalPenalty, 1);
 
             NoticeMap(idx, "<Frostbane Fortress> You didn't destroy all stones in time.");
             NoticeMap(idx, "<Frostbane Fortress> Final boss will get double HP.");
@@ -746,22 +746,22 @@ namespace
         long OnFloor2Transition(int32_t idx)
         {
             evFloor2Transition.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d || d->GetFlag(kFlagCompleted) != 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null || DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
                 return 0;
 
             Cancel(evFloor1BossHp, idx);
             ClearDungeonNonPlayers(d);
 
-            d->SetFlag(kFlagFloor, 3);
-            d->SetFlag(kFlagFloor2Remain, 4);
+            DungeonSystem::SetFlag(d, kFlagFloor, 3);
+            DungeonSystem::SetFlag(d, kFlagFloor2Remain, 4);
 
             for (int i = 0; i < 4; ++i)
-                d->SpawnMob(kFloor2StoneVnum, kFloor2Stones[i].x, kFloor2Stones[i].y, kFloor2Stones[i].dir);
+                DungeonSystem::SpawnMob(d, kFloor2StoneVnum, kFloor2Stones[i].x, kFloor2Stones[i].y, kFloor2Stones[i].dir);
 
-            const entt::entity gate = d->SpawnMob(kGateNpc, kGatePos2.x, kGatePos2.y, kGatePos2.dir);
+            const entt::entity gate = DungeonSystem::SpawnMob(d, kGateNpc, kGatePos2.x, kGatePos2.y, kGatePos2.dir);
             if (gate != entt::null)
-		d->SetUnique("vk_gate_2", ecs::PlayerRuntime::GetPacketVID(gate));
+		DungeonSystem::SetUnique(d, "vk_gate_2", ecs::PlayerRuntime::GetPacketVID(gate));
 
             ScheduleFloor2Timer(idx);
             NoticeMap(idx, "<Frostbane Fortress> Destroy all second-floor stones within 4 minutes.");
@@ -771,8 +771,8 @@ namespace
         long OnFloor4Transition(int32_t idx)
         {
             evFloor4Transition.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d || d->GetFlag(kFlagCompleted) != 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null || DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
                 return 0;
 
             Cancel(evFloor2Timer, idx);
@@ -786,19 +786,19 @@ namespace
         long OnFinalSpawn(int32_t idx)
         {
             evFinalSpawn.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d || d->GetFlag(kFlagCompleted) != 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null || DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
                 return 0;
 
-            d->SetFlag(kFlagFloor, 5);
-            d->SetFlag(kFlagFinalBossStage, 0);
-            const entt::entity boss = d->SpawnMob(kFinalBossVnum, kFinalBossPos.x, kFinalBossPos.y, kFinalBossPos.dir);
+            DungeonSystem::SetFlag(d, kFlagFloor, 5);
+            DungeonSystem::SetFlag(d, kFlagFinalBossStage, 0);
+            const entt::entity boss = DungeonSystem::SpawnMob(d, kFinalBossVnum, kFinalBossPos.x, kFinalBossPos.y, kFinalBossPos.dir);
             if (boss != entt::null)
             {
-                const int64_t hp = d->GetFlag(kFlagFinalPenalty) ? kFinalBossPenaltyHP : kFinalBossNormalHP;
+                const int64_t hp = DungeonSystem::GetFlag(d, kFlagFinalPenalty) ? kFinalBossPenaltyHP : kFinalBossNormalHP;
                 ecs::PlayerRuntime::SetMaxHP(boss, hp);
                 ecs::PlayerRuntime::SetHP(boss, hp);
-	d->SetUnique("vk_final_boss", ecs::PlayerRuntime::GetPacketVID(boss));
+	DungeonSystem::SetUnique(d, "vk_final_boss", ecs::PlayerRuntime::GetPacketVID(boss));
             }
             ScheduleFinalHp(idx);
             BigNoticeMap(idx, "<Frostbane Fortress> The final boss has appeared!");
@@ -807,13 +807,13 @@ namespace
 
         long OnFinalHp(int32_t idx)
         {
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
             {
                 evFinalHp.erase(idx);
                 return 0;
             }
-            if (d->GetFlag(kFlagFloor) != 5)
+            if (DungeonSystem::GetFlag(d, kFlagFloor) != 5)
             {
                 evFinalHp.erase(idx);
                 return 0;
@@ -826,7 +826,7 @@ namespace
                 return 0;
             }
 
-            const int stage = d->GetFlag(kFlagFinalBossStage);
+            const int stage = DungeonSystem::GetFlag(d, kFlagFinalBossStage);
             if (stage >= 3)
                 return PASSES_PER_SEC(1);
 
@@ -836,19 +836,19 @@ namespace
 
             if (stage == 0)
             {
-                d->SetFlag(kFlagFinalBossStage, 1);
-                d->SpawnRegen(kRegen2FloorA, true);
+                DungeonSystem::SetFlag(d, kFlagFinalBossStage, 1);
+                DungeonSystem::SpawnRegen(d, kRegen2FloorA, true);
                 NoticeMap(idx, "<Frostbane Fortress> The final boss summoned many monsters. Be careful.");
             }
             else if (stage == 1)
             {
-                d->SetFlag(kFlagFinalBossStage, 2);
+                DungeonSystem::SetFlag(d, kFlagFinalBossStage, 2);
                 ApplyMapHpPctDamage(idx, 40);
                 NoticeMap(idx, "<Frostbane Fortress> The final boss cast a dungeon-wide damage spell.");
             }
             else if (stage == 2)
             {
-                d->SetFlag(kFlagFinalBossStage, 3);
+                DungeonSystem::SetFlag(d, kFlagFinalBossStage, 3);
                 CombatSystem::SetDamageMultiplier(boss, 0.5f);
                 NoticeMap(idx, "<Frostbane Fortress> The final boss reduced incoming damage by half.");
             }
@@ -859,8 +859,8 @@ namespace
         long OnComplete(int32_t idx)
         {
             evComplete.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (!d)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d == entt::null)
                 return 0;
 
             CancelAll(idx);
@@ -870,9 +870,9 @@ namespace
             });
 
             ClearDungeonNonPlayers(d);
-            //const entt::entity entryNpc = d->SpawnMob(kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
+            //const entt::entity entryNpc = DungeonSystem::SpawnMob(d, kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
             //if (ecs::IsCharacter(entryNpc))
-            //    d->SetUnique("vk_entry_npc", ecs::PlayerRuntime::GetPacketVID(entryNpc));
+            //    DungeonSystem::SetUnique(d, "vk_entry_npc", ecs::PlayerRuntime::GetPacketVID(entryNpc));
 
             BigNoticeMap(idx, "<Frostbane Fortress> Dungeon completed!");
             NoticeMap(idx, "<Frostbane Fortress> Click the entry NPC if you want to restart immediately.");
@@ -884,9 +884,9 @@ namespace
         long OnOut(int32_t idx)
         {
             evOut.erase(idx);
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-            if (d)
-                d->SetFlag(kFlagBlockRejoin, 1);
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+            if (d != entt::null)
+                DungeonSystem::SetFlag(d, kFlagBlockRejoin, 1);
             NoticeMap(idx, "<Frostbane Fortress> You are getting teleported out of the dungeon.");
             WarpAllOut(idx);
             return 0;
@@ -1012,12 +1012,12 @@ void CVikingDungeon::OnPlayerDisconnect(entt::entity character)
     if (!IsVikingDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     SetOutsideWarpLocation(character);
-    if (d->GetFlag(kFlagCompleted) == 0 && d->GetFlag(kFlagBlockRejoin) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagCompleted) == 0 && DungeonSystem::GetFlag(d, kFlagBlockRejoin) == 0)
         SetRejoinFlags(character, idx);
 }
 
@@ -1037,8 +1037,8 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
     if (!IsVikingDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
     {
         WarpOut(character);
         return;
@@ -1048,22 +1048,22 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
-    if (d->GetFlag(kFlagBlockRejoin) != 0)
+    if (DungeonSystem::GetFlag(d, kFlagBlockRejoin) != 0)
     {
         WarpOut(character);
         return;
     }
 
-    if (d->GetFlag(kFlagInitialized) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagInitialized) == 0)
     {
-        d->SetFlag(kFlagInitialized, 1);
-        const entt::entity gate = d->SpawnMob(kGateNpc, kGatePos1.x, kGatePos1.y, kGatePos1.dir);
+        DungeonSystem::SetFlag(d, kFlagInitialized, 1);
+        const entt::entity gate = DungeonSystem::SpawnMob(d, kGateNpc, kGatePos1.x, kGatePos1.y, kGatePos1.dir);
         if (gate != entt::null)
-	d->SetUnique("vk_gate_1", ecs::PlayerRuntime::GetPacketVID(gate));
+	DungeonSystem::SetUnique(d, "vk_gate_1", ecs::PlayerRuntime::GetPacketVID(gate));
 
-        const entt::entity compass = d->SpawnMob(kCompassEmptyNpc, kCompassPos.x, kCompassPos.y, kCompassPos.dir);
+        const entt::entity compass = DungeonSystem::SpawnMob(d, kCompassEmptyNpc, kCompassPos.x, kCompassPos.y, kCompassPos.dir);
         if (compass != entt::null)
-	d->SetUnique("vk_compass", ecs::PlayerRuntime::GetPacketVID(compass));
+	DungeonSystem::SetUnique(d, "vk_compass", ecs::PlayerRuntime::GetPacketVID(compass));
 
         NoticeMap(idx, "<Frostbane Fortress> Starting in 10 seconds. Get ready.");
         s_viking.ScheduleStart(idx);
@@ -1074,8 +1074,8 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
         ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
         ecs::ChatSystem::Send(character, CHAT_TYPE_BIG_NOTICE, "Welcome back.");
 
-        const int32_t limit = d->GetFlag(kFlagTimeLimit);
-        if (d->GetFlag(kFlagCompleted) != 0)
+        const int32_t limit = DungeonSystem::GetFlag(d, kFlagTimeLimit);
+        if (DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_BIG_NOTICE, "This instance will close soon. Pick up your drops quickly.");
         }
@@ -1129,8 +1129,8 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
     const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(character);
     const bool isInsideViking = IsVikingDungeonMap(currentIdx);
-    LPDUNGEON currentDungeon = isInsideViking ? CDungeonManager::instance().FindByMapIndex(currentIdx) : nullptr;
-    const bool quickRestart = (race == kEntryNpcVnum && currentDungeon && currentDungeon->GetFlag(kFlagCompleted) != 0);
+    const entt::entity currentDungeon = isInsideViking ? CDungeonManager::instance().FindByMapIndex(currentIdx)  : entt::null;
+    const bool quickRestart = (race == kEntryNpcVnum && currentDungeon != entt::null && DungeonSystem::GetFlag(currentDungeon, kFlagCompleted) != 0);
 
     if (race == kRewardChestVnum)
     {
@@ -1138,19 +1138,19 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         if (!IsVikingDungeonMap(idx))
             return false;
 
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-        if (!d || d->GetFlag(kFlagCompleted) == 0)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+        if (d == entt::null || DungeonSystem::GetFlag(d, kFlagCompleted) == 0)
             return false;
 
         char rewardFlag[64];
         snprintf(rewardFlag, sizeof(rewardFlag), "vk_reward_%u", ecs::PlayerRuntime::GetPlayerID(character));
-        if (d->GetFlag(rewardFlag) != 0)
+        if (DungeonSystem::GetFlag(d, rewardFlag) != 0)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You already took your reward.");
             return true;
         }
 
-        d->SetFlag(rewardFlag, 1);
+        DungeonSystem::SetFlag(d, rewardFlag, 1);
         ItemSystem::AutoGiveItemEcs(character, kRewardItemVnum, kRewardItemCount);
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reward received.");
         return true;
@@ -1165,8 +1165,8 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
     if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel && IsVikingDungeonMap(rejoinIdx))
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
-        if (d && d->GetFlag(kFlagCompleted) == 0 && d->GetFlag(kFlagBlockRejoin) == 0)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+        if (d != entt::null && DungeonSystem::GetFlag(d, kFlagCompleted) == 0 && DungeonSystem::GetFlag(d, kFlagBlockRejoin) == 0)
         {
             ecs::MovementSystem::WarpSet(character, kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
             ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
@@ -1310,14 +1310,14 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         return true;
     }
 
-    LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
+    if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Failed to create dungeon instance.");
         return true;
     }
 
-    const int32_t dungeonMapIdx = d->GetMapIndex();
+    const int32_t dungeonMapIdx = DungeonSystem::GetMapIndex(d);
 
     auto prepareMember = [&](entt::entity m){
         if (!ecs::PlayerRuntime::IsPC(m))
@@ -1343,9 +1343,9 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     SetDungeonReady(d);
 
     if (party != entt::null)
-        d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::JoinParty_Coords(d, party, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     else
-        d->Join_Coords(character, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::Join_Coords(d, character, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
 
     BigNoticeMap(dungeonMapIdx, "<Frostbane Fortress> Dungeon instance created.");
     return true;
@@ -1360,48 +1360,48 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::en
     if (!IsVikingDungeonMap(idx))
         return false;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return false;
 
     const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(npc);
     const uint32_t itemVnum = ItemSystem::GetItemVnum(item);
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
 
     if (floor == 1 && itemVnum == kFloor1ItemVnum)
     {
-        if (npcVnum == kCompassEmptyNpc && d->GetFlag(kFlagCompassState) == 0)
+        if (npcVnum == kCompassEmptyNpc && DungeonSystem::GetFlag(d, kFlagCompassState) == 0)
         {
             const ItemSystem::ItemCost cost {item, 1};
             if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
                 return true;
-            d->SetFlag(kFlagCompassState, 1);
+            DungeonSystem::SetFlag(d, kFlagCompassState, 1);
             ReplaceCompass(d, npc, kCompassSmallNpc);
-            d->SpawnRegen(kRegen1FloorA, true);
+            DungeonSystem::SpawnRegen(d, kRegen1FloorA, true);
             s_viking.ScheduleFloor1Check(idx);
             NoticeMap(idx, "<Frostbane Fortress> Compass activated. Clear the monsters again.");
             return true;
         }
 
-        if (npcVnum == kCompassSmallNpc && d->GetFlag(kFlagCompassState) == 1)
+        if (npcVnum == kCompassSmallNpc && DungeonSystem::GetFlag(d, kFlagCompassState) == 1)
         {
             const ItemSystem::ItemCost cost {item, 1};
             if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
                 return true;
-            d->SetFlag(kFlagCompassState, 2);
+            DungeonSystem::SetFlag(d, kFlagCompassState, 2);
             ReplaceCompass(d, npc, kCompassMediumNpc);
-            d->SpawnRegen(kRegen1FloorA, true);
+            DungeonSystem::SpawnRegen(d, kRegen1FloorA, true);
             s_viking.ScheduleFloor1Check(idx);
             NoticeMap(idx, "<Frostbane Fortress> Compass empowered further. Clear the monsters again.");
             return true;
         }
 
-        if (npcVnum == kCompassMediumNpc && d->GetFlag(kFlagCompassState) == 2)
+        if (npcVnum == kCompassMediumNpc && DungeonSystem::GetFlag(d, kFlagCompassState) == 2)
         {
             const ItemSystem::ItemCost cost {item, 1};
             if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
                 return true;
-            d->SetFlag(kFlagCompassState, 3);
+            DungeonSystem::SetFlag(d, kFlagCompassState, 3);
             ReplaceCompass(d, npc, kCompassLargeNpc);
             NoticeMap(idx, "<Frostbane Fortress> The compass was ignited successfully.");
             NoticeMap(idx, "<Frostbane Fortress> The first main boss will appear soon.");
@@ -1410,7 +1410,7 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::en
         }
     }
 
-    if (floor == 4 && itemVnum == kFloor3ItemVnum && d->GetFlag(kFlagCanUseRune) == 1)
+    if (floor == 4 && itemVnum == kFloor3ItemVnum && DungeonSystem::GetFlag(d, kFlagCanUseRune) == 1)
     {
         if (npcVnum != kMemorialNpc1 && npcVnum != kMemorialNpc2 && npcVnum != kMemorialNpc3)
             return false;
@@ -1420,10 +1420,10 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::en
         if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
 
             return true;
-        d->SetFlag(kFlagCanUseRune, 0);
+        DungeonSystem::SetFlag(d, kFlagCanUseRune, 0);
 
-        int32_t stage = d->GetFlag(kFlagFloor3NpcStage) + 1;
-        d->SetFlag(kFlagFloor3NpcStage, stage);
+        int32_t stage = DungeonSystem::GetFlag(d, kFlagFloor3NpcStage) + 1;
+        DungeonSystem::SetFlag(d, kFlagFloor3NpcStage, stage);
 
         CombatSystem::Dead(npc, entt::null, true);
 
@@ -1435,10 +1435,10 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::en
         else if (stage >= 3)
             newNpc = kMemorialNpc4;
 
-        d->SetFlag(kFlagFloor3NpcVnum, newNpc);
-        const entt::entity memorial = d->SpawnMob(newNpc, kMemorialPos.x, kMemorialPos.y, kMemorialPos.dir);
+        DungeonSystem::SetFlag(d, kFlagFloor3NpcVnum, newNpc);
+        const entt::entity memorial = DungeonSystem::SpawnMob(d, newNpc, kMemorialPos.x, kMemorialPos.y, kMemorialPos.dir);
         if (memorial != entt::null)
-		d->SetUnique("vk_memorial", ecs::PlayerRuntime::GetPacketVID(memorial));
+		DungeonSystem::SetUnique(d, "vk_memorial", ecs::PlayerRuntime::GetPacketVID(memorial));
 
         if (stage < 3)
         {
@@ -1466,12 +1466,12 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     if (!IsVikingDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
 
     if (floor == 1 && vnum == kFloor1LowBossVnum)
     {
@@ -1490,8 +1490,8 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
     if (floor == 3 && vnum == kFloor2StoneVnum)
     {
-        const int32_t remain = std::max(0, d->GetFlag(kFlagFloor2Remain) - 1);
-        d->SetFlag(kFlagFloor2Remain, remain);
+        const int32_t remain = std::max(0, DungeonSystem::GetFlag(d, kFlagFloor2Remain) - 1);
+        DungeonSystem::SetFlag(d, kFlagFloor2Remain, remain);
         if (remain > 0)
         {
             NoticeMap(idx, "<Frostbane Fortress> Remaining stones: %d.", remain);
@@ -1512,27 +1512,27 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
         const int32_t bossLocalX = std::max<int32_t>(1, ecs::PlayerRuntime::GetX(killer) / 100 - kBaseCellX);
         const int32_t bossLocalY = std::max<int32_t>(1, ecs::PlayerRuntime::GetY(killer) / 100 - kBaseCellY);
-        const entt::entity boss = d->SpawnMob(kFloor3BossVnum, bossLocalX, bossLocalY, 0);
+        const entt::entity boss = DungeonSystem::SpawnMob(d, kFloor3BossVnum, bossLocalX, bossLocalY, 0);
         if (boss != entt::null)
-		d->SetUnique("vk_floor3_boss", ecs::PlayerRuntime::GetPacketVID(boss));
-        d->SetFlag(kFlagCanKillFloor3Boss, 1);
+		DungeonSystem::SetUnique(d, "vk_floor3_boss", ecs::PlayerRuntime::GetPacketVID(boss));
+        DungeonSystem::SetFlag(d, kFlagCanKillFloor3Boss, 1);
         NoticeMap(idx, "<Frostbane Fortress> The protecting boss appeared. Kill it to proceed.");
         return;
     }
 
     if (floor == 4 && vnum == kFloor3BossVnum)
     {
-        if (d->GetFlag(kFlagCanKillFloor3Boss) == 1)
+        if (DungeonSystem::GetFlag(d, kFlagCanKillFloor3Boss) == 1)
         {
-            d->SetFlag(kFlagCanKillFloor3Boss, 0);
-            d->SetFlag(kFlagCanUseRune, 1);
+            DungeonSystem::SetFlag(d, kFlagCanKillFloor3Boss, 0);
+            DungeonSystem::SetFlag(d, kFlagCanUseRune, 1);
             ItemSystem::AutoGiveItemEcs(killer, kFloor3ItemVnum, 1);
             NoticeMap(idx, "<Frostbane Fortress> %s received the rune item. Use it on the memorial.", ecs::PlayerRuntime::GetName(killer).data());
         }
         return;
     }
 
-    if (floor == 5 && vnum == kFinalBossVnum && d->GetFlag(kFlagCompleted) == 0)
+    if (floor == 5 && vnum == kFinalBossVnum && DungeonSystem::GetFlag(d, kFlagCompleted) == 0)
     {
         const char* leaderName = ecs::PlayerRuntime::GetName(killer).data();
 
@@ -1553,8 +1553,8 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
         BroadcastNotice(notice);
 
-        d->SetFlag(kFlagCompleted, 1);
-        d->SetFlag(kFlagBlockRejoin, 1);
+        DungeonSystem::SetFlag(d, kFlagCompleted, 1);
+        DungeonSystem::SetFlag(d, kFlagBlockRejoin, 1);
         s_viking.ScheduleComplete(idx);
         return;
     }

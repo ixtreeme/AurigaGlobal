@@ -57,7 +57,10 @@ struct GuildDepositState {
 };
 
 struct DungeonMembership {
-    LPDUNGEON dungeon { nullptr };
+    // The dungeon instance the character is counted against. The dungeon state
+    // is a component on a registry-owned entity; the handle is validated on
+    // every read, so a retired instance reads as null.
+    entt::entity dungeon { entt::null };
     // The sector attribute the quest scripts are told about on the way in and
     // out. CHARACTER::m_iEventAttr held it and this was written by nothing.
     int eventAttr { 0 };

@@ -24,14 +24,14 @@ SocialRefs::party (LPPARTY), SocialRefs::guild (CGuild*)
   Verdict: guild stays a service, its relation needs only generation/lifetime
   validation, not ECS ownership.
 
-DungeonMembership::dungeon (LPDUNGEON), DungeonMembership::warMap (CWarMap*)
-  CDungeon is a large base class with many subclasses (LostCastle, Rune,
-  Viking, Halloween, Easter, Valentine, Orcs, Triton, Pyramid, Nightmare,
-  Valentine, ...), a manager, timers, DB and prototype integration. CWarMap is
-  a guild-war service keyed by map index. Moving dungeon state to ECS is a
-  subsystem-scale project of its own, not part of the relation cleanup.
-  Verdict: both stay services for now; the relations are currently
-  unvalidated raw pointers and are the highest latent risk.
+DungeonMembership::dungeon (previously LPDUNGEON), DungeonMembership::warMap (CWarMap*)
+  CDungeon was a large object with per-content controllers on top (LostCastle,
+  Rune, Viking, Halloween, Easter, Valentine, Nightmare, Orcs, Triton,
+  Pyramid), a manager, timers, DB and prototype integration - and a pile of
+  lifetime bugs (see phase20_dungeon_audit.txt). Verdict: migrated, the state
+  is now ecs::DungeonState on a registry-owned entity with validated handles.
+  CWarMap stays a guild-war service keyed by map index; its relation still
+  needs generation/lifetime validation in a separate pass.
 
 ArenaMembership::arena (CArena*)
   CArena objects are created by CArenaManager per arena map and hold match
@@ -124,17 +124,21 @@ Implemented in this phase: party
 
 Remaining work and recommended order
 ------------------------------------
-1. Validate the dungeon/war/arena relations. Options, in increasing cost:
-   add generation-checked lookup helpers in the managers (Find returns the
-   live object or null and the character relation is re-resolved on every
-   use), or move CDungeon/CArena state to registry entities. The first is a
-   safety fix; the second is a subsystem migration with its subclasses.
-2. Shop (my shop) -> ECS. CShopState component plus ShopSystem functions;
+1. Shop (my shop) -> ECS. CShopState component plus ShopSystem functions;
    shop_manager index stays a service keyed by PID. This touches the packet
    and persistence paths and needs its own regression suite.
+2. Guild: the relation stays a service; only generation/lifetime validation is
+   missing if a guild is ever torn down while members hold the pointer.
 3. Offline shop: explicitly out of scope. Cache objects, async DB responses
    and P2P member identities stay as they are; only the already-native world
    object remains ECS.
+
+Done after this audit
+---------------------
+- Dungeon relations are no longer a latent risk: CDungeon is an ECS component
+  (ecs::DungeonState) with DungeonSystem free functions, entity handles in
+  DungeonMembership/PartyState and validated manager lookups. See
+  phase20_dungeon_audit.txt for the bug list and the implemented unit.
 
 Acceptance notes
 ----------------

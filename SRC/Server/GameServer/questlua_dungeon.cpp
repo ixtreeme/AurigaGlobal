@@ -36,21 +36,6 @@
 #else
 #define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
-#ifndef ENABLE_DUNGEON_SHARED_DROP_HWID
-
-
-template <class Func> Func CDungeon::ForEachMember(Func f)
-{
-	for (auto it = m_setMember.begin(); it != m_setMember.end(); ++it)
-	{
-		LOG_INFO("Dungeon ForEachMember {}", ecs::PlayerRuntime::GetName(*it).data());
-		f(*it);
-	}
-	return f;
-}
-#endif //ENABLE_DUNGEON_SHARED_DROP_HWID
-
-
 namespace quest
 {
 #if defined(__DUNGEON_INFO_SYSTEM__)
@@ -276,8 +261,8 @@ namespace quest
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		auto* dm = ECS_TryGet<ecs::DungeonMembership>(e);
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
-		LPDUNGEON pDungeon = CDungeonManager::instance().Create(mapidx);
-		if (!pDungeon) {
+		const entt::entity pDungeon = CDungeonManager::instance().Create(mapidx);
+		if (pDungeon == entt::null) {
 			sys_err("dungeon {} cannot be started.", mapidx);
 			return 0;
 		}
@@ -295,11 +280,11 @@ namespace quest
 			const entt::entity party = ecs::SocialSystem::GetParty(chEntity);
 			if (party == entt::null)
 			{
-				pDungeon->Join_Coords(chEntity, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
+				DungeonSystem::Join_Coords(pDungeon, chEntity, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
 			else if (PartySystem::GetLeaderPID(party) == (ecs::PlayerRuntime::GetPlayerID(chEntity)))
 			{
-				pDungeon->JoinParty_Coords(party, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
+				DungeonSystem::JoinParty_Coords(pDungeon, party, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
 		}
 
@@ -320,8 +305,8 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			lua_pushboolean(L, 0);
 			return 1;
@@ -344,14 +329,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->JumpAll(mapidx, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3));
+		DungeonSystem::JumpAll(dungeon, mapidx, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3));
 		return 0;
 	}
 
@@ -368,14 +353,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->SetUnique(lua_tostring(L, 2), (int32_t)lua_tonumber(L, 3));
+		DungeonSystem::SetUnique(dungeon, lua_tostring(L, 2), (int32_t)lua_tonumber(L, 3));
 		return 0;
 	}
 
@@ -393,15 +378,15 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushboolean(L, 0);
 			return 1;
 		}
 
-		lua_pushboolean(L, dungeon->IsUniqueDead(lua_tostring(L, 1)) ? 1 : 0);
+		lua_pushboolean(L, DungeonSystem::IsUniqueDead(dungeon, lua_tostring(L, 1)) ? 1 : 0);
 		return 1;
 	}
 
@@ -419,15 +404,15 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		lua_pushnumber(L, dungeon->GetUniqueVid(lua_tostring(L,1)));
+		lua_pushnumber(L, DungeonSystem::GetUniqueVid(dungeon, lua_tostring(L,1)));
 		return 1;
 	}
 
@@ -444,14 +429,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->KillUnique(lua_tostring(L, 2));
+		DungeonSystem::KillUnique(dungeon, lua_tostring(L, 2));
 		return 0;
 	}
 
@@ -468,14 +453,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->SetFlag(lua_tostring(L, 2), (int32_t)lua_tonumber(L, 3));
+		DungeonSystem::SetFlag(dungeon, lua_tostring(L, 2), (int32_t)lua_tonumber(L, 3));
 		return 0;
 	}
 
@@ -493,15 +478,15 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		lua_pushnumber(L, dungeon->GetFlag(lua_tostring(L, 2)));
+		lua_pushnumber(L, DungeonSystem::GetFlag(dungeon, lua_tostring(L, 2)));
 		return 1;
 	}
 
@@ -523,8 +508,8 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
@@ -533,14 +518,14 @@ namespace quest
 #ifdef TEXTS_IMPROVEMENT
 		if (lua_isboolean(L, 4))
 		{
-			dungeon->Notice((int32_t)lua_tonumber(L, 2), lua_tostring(L, 3), lua_toboolean(L, 4));
+			DungeonSystem::Notice(dungeon, (int32_t)lua_tonumber(L, 2), lua_tostring(L, 3), lua_toboolean(L, 4));
 		}
 		else
 		{
-			dungeon->Notice((int32_t)lua_tonumber(L, 2), lua_tostring(L, 3));
+			DungeonSystem::Notice(dungeon, (int32_t)lua_tonumber(L, 2), lua_tostring(L, 3));
 		}
 #else
-		dungeon->Notice(lua_tostring(L, 2));
+		DungeonSystem::Notice(dungeon, lua_tostring(L, 2));
 #endif
 		return 0;
 	}
@@ -559,8 +544,8 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushnumber(L, 0);
@@ -572,11 +557,11 @@ namespace quest
 		entt::entity mob = entt::null;
 		if (lua_isnumber(L, 5))
 		{
-			mob = dungeon->SpawnMob(vnum, (int32_t)lua_tonumber(L, 3), (int32_t)lua_tonumber(L, 4), (int32_t)lua_tonumber(L, 5));
+			mob = DungeonSystem::SpawnMob(dungeon, vnum, (int32_t)lua_tonumber(L, 3), (int32_t)lua_tonumber(L, 4), (int32_t)lua_tonumber(L, 5));
 		}
 		else
 		{
-			mob = dungeon->SpawnMob(vnum, (int32_t)lua_tonumber(L, 3), (int32_t)lua_tonumber(L, 4));
+			mob = DungeonSystem::SpawnMob(dungeon, vnum, (int32_t)lua_tonumber(L, 3), (int32_t)lua_tonumber(L, 4));
 		}
 
 		if (mob == entt::null)
@@ -588,11 +573,11 @@ namespace quest
 #ifdef __DEFENSE_WAVE__
 		if (vnum == 20434)
 		{
-			dungeon->SetMast(mob);
+			DungeonSystem::SetMast(dungeon, mob);
 		}
 		else if (vnum == 3956)
 		{
-			const entt::entity mast = dungeon->GetMast();
+			const entt::entity mast = DungeonSystem::GetMast(dungeon);
 			if (ecs::PlayerRuntime::IsValid(mast))
 			{
 				CombatSystem::SetVictim(mob, mast);
@@ -624,14 +609,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->SpawnRegen(lua_tostring(L, 2), false);
+		DungeonSystem::SpawnRegen(dungeon, lua_tostring(L, 2), false);
 		return 0;
 	}
 
@@ -648,14 +633,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->SpawnRegen(lua_tostring(L, 2));
+		DungeonSystem::SpawnRegen(dungeon, lua_tostring(L, 2));
 		return 0;
 	}
 
@@ -672,14 +657,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->ClearRegen();
+		DungeonSystem::ClearRegen(dungeon);
 		return 0;
 	}
 
@@ -751,14 +736,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->ExitAllLobby((uint8_t)lua_tonumber(L, 2));
+		DungeonSystem::ExitAllLobby(dungeon, (uint8_t)lua_tonumber(L, 2));
 		return 0;
 	}
 
@@ -776,15 +761,15 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		lua_pushnumber(L, dungeon->CountMonster());
+		lua_pushnumber(L, DungeonSystem::CountMonster(dungeon));
 		return 1;
 	}
 
@@ -801,14 +786,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->KillAll();
+		DungeonSystem::KillAll(dungeon);
 		return 0;
 	}
 
@@ -825,14 +810,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->KillAllMonsters();
+		DungeonSystem::KillAllMonsters(dungeon);
 		return 0;
 	}
 
@@ -849,14 +834,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->CmdChat(lua_tostring(L, 2));
+		DungeonSystem::CmdChat(dungeon, lua_tostring(L, 2));
 		return 0;
 	}
 
@@ -896,14 +881,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->KillAllMonstersHydra();
+		DungeonSystem::KillAllMonstersHydra(dungeon);
 		return 0;
 	}
 
@@ -920,14 +905,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		dungeon->RestoreMastPartialHP();
+		DungeonSystem::RestoreMastPartialHP(dungeon);
 		return 0;
 	}
 #endif
@@ -1337,7 +1322,7 @@ namespace quest
 		const entt::entity party = ecs::SocialSystem::GetParty(chEntity);
 		if (party != entt::null)
 		{
-			LPDUNGEON currentDungeon = ecs::SocialSystem::GetDungeon(chEntity);
+			const entt::entity currentDungeon = ecs::SocialSystem::GetDungeon(chEntity);
 			FPartyPIDCollectorDungeon f;
 			PartySystem::ForEachOnlineMember(party, f);
 			//party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
@@ -1348,10 +1333,10 @@ namespace quest
 				if (ecs::PlayerRuntime::IsPC(member))
 				{
 
-					if (currentDungeon)
+					if (currentDungeon != entt::null)
 					{
-						LPDUNGEON memberDungeon = ecs::SocialSystem::GetDungeon(member);
-						if (memberDungeon && memberDungeon != currentDungeon && ecs::PlayerRuntime::GetMapIndex(member) != ecs::PlayerRuntime::GetMapIndex(chEntity))
+						const entt::entity memberDungeon = ecs::SocialSystem::GetDungeon(member);
+						if (memberDungeon != entt::null && memberDungeon != currentDungeon && ecs::PlayerRuntime::GetMapIndex(member) != ecs::PlayerRuntime::GetMapIndex(chEntity))
 						{
 							continue;
 						}
@@ -1696,14 +1681,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		int32_t statue_vid1 = dungeon->GetFlag("statue_vid1"), statue_vid2 = dungeon->GetFlag("statue_vid2"), statue_vid3 = dungeon->GetFlag("statue_vid3"), statue_vid4 = dungeon->GetFlag("statue_vid4");
+		int32_t statue_vid1 = DungeonSystem::GetFlag(dungeon, "statue_vid1"), statue_vid2 = DungeonSystem::GetFlag(dungeon, "statue_vid2"), statue_vid3 = DungeonSystem::GetFlag(dungeon, "statue_vid3"), statue_vid4 = DungeonSystem::GetFlag(dungeon, "statue_vid4");
 
 		const entt::entity statue1Entity = CHARACTER_MANAGER::instance().FindEntity(statue_vid1);
 
@@ -1764,8 +1749,8 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
@@ -1805,14 +1790,14 @@ namespace quest
 
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 
-		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-		if (!dungeon)
+		const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+		if (dungeon == entt::null)
 		{
 			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
-		int32_t bossvid = dungeon->GetFlag("boss");
+		int32_t bossvid = DungeonSystem::GetFlag(dungeon, "boss");
 
 		const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossvid);
 		if (boss == entt::null)
@@ -1821,7 +1806,7 @@ namespace quest
 			return 0;
 		}
 
-		int32_t statue_vid1 = dungeon->GetFlag("statue_vid1"), statue_vid2 = dungeon->GetFlag("statue_vid2"), statue_vid3 = dungeon->GetFlag("statue_vid3"), statue_vid4 = dungeon->GetFlag("statue_vid4");
+		int32_t statue_vid1 = DungeonSystem::GetFlag(dungeon, "statue_vid1"), statue_vid2 = DungeonSystem::GetFlag(dungeon, "statue_vid2"), statue_vid3 = DungeonSystem::GetFlag(dungeon, "statue_vid3"), statue_vid4 = DungeonSystem::GetFlag(dungeon, "statue_vid4");
 
 		const entt::entity statue1 = CHARACTER_MANAGER::instance().FindEntity(statue_vid1);
 		if (statue1 == entt::null)

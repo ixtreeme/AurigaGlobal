@@ -167,18 +167,18 @@ namespace
     }
 
     // CDungeon::SpawnMob() expects LOCAL tile coords, but we only know GLOBAL coords.
-    inline entt::entity SpawnMobGlobal(LPDUNGEON d, uint32_t vnum, int32_t gx, int32_t gy, int32_t dir = 0)
+    inline entt::entity SpawnMobGlobal(entt::entity d, uint32_t vnum, int32_t gx, int32_t gy, int32_t dir = 0)
     {
-        if (!d)
+        if (d == entt::null)
             return entt::null;
 
         int32_t baseX = 0, baseY = 0;
-        if (!GetMapBaseTiles(d->GetMapIndex(), baseX, baseY))
+        if (!GetMapBaseTiles(DungeonSystem::GetMapIndex(d), baseX, baseY))
             return entt::null;
 
         const int32_t lx = gx - baseX;
         const int32_t ly = gy - baseY;
-        return d->SpawnMob((int32_t)vnum, lx, ly, dir);
+        return DungeonSystem::SpawnMob(d, (int32_t)vnum, lx, ly, dir);
     }
 
     // ---- Count helper: how many mobs/metins remain on map (by vnum) ----
@@ -298,32 +298,32 @@ public:
     {
         CancelAll(mapIndex);
 
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
             return;
 
-        d->SetFlag(kFlagCompleted, 1);
-        d->KillAll();
-        d->ClearRegen();
-        d->ExitAllLobby(1);
+        DungeonSystem::SetFlag(d, kFlagCompleted, 1);
+        DungeonSystem::KillAll(d);
+        DungeonSystem::ClearRegen(d);
+        DungeonSystem::ExitAllLobby(d, 1);
     }
 
     void StartFloor1(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
         {
             CancelAll(mapIndex);
             return;
         }
 
-        d->SetFlag(kFlagFloor, 1);
-        d->SetFlag(kFlagStep, 11);
-        d->SetFlag(kFlagCompleted, 0);
-        d->SetFlag(kFlagBossVid, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 1);
+        DungeonSystem::SetFlag(d, kFlagStep, 11);
+        DungeonSystem::SetFlag(d, kFlagCompleted, 0);
+        DungeonSystem::SetFlag(d, kFlagBossVid, 0);
 
-        d->SetFlag(kFlagF2Retry, 0);
-        d->SetFlag(kFlagF1ToF2, 0);
+        DungeonSystem::SetFlag(d, kFlagF2Retry, 0);
+        DungeonSystem::SetFlag(d, kFlagF1ToF2, 0);
 
         // Stones around the entry position (11 db)
         SpawnMobGlobal(d, kFloor1StoneVnum, 7291, 329);
@@ -347,19 +347,19 @@ public:
 
     void StartFloor2(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
             return;
 
-        d->KillAll();
-        d->ClearRegen();
+        DungeonSystem::KillAll(d);
+        DungeonSystem::ClearRegen(d);
 
-        d->SetFlag(kFlagFloor, 2);
-        d->SetFlag(kFlagStep, 0); // floor2-n nem szamolunk, maradekot nezunk
-        d->SetFlag(kFlagF2Retry, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 2);
+        DungeonSystem::SetFlag(d, kFlagStep, 0); // floor2-n nem szamolunk, maradekot nezunk
+        DungeonSystem::SetFlag(d, kFlagF2Retry, 0);
 
         // Teleport everyone inside the instance to floor2 location
-        d->JumpAll(d->GetMapIndex(), kFloor2X, kFloor2Y);
+        DungeonSystem::JumpAll(d, DungeonSystem::GetMapIndex(d), kFloor2X, kFloor2Y);
 
         // Metins around floor2 center
         SpawnMobGlobal(d, kFloor2MetinVnum, 7476, 625);
@@ -395,37 +395,37 @@ public:
 
     void SpawnBoss(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
             return;
 
         // dupla spawn vedelem
-        if (d->GetFlag(kFlagFloor) != 2)
+        if (DungeonSystem::GetFlag(d, kFlagFloor) != 2)
             return;
 
         // ha mar valamiert be van allitva boss vid, ne spawnolj ujra
-        if (d->GetFlag(kFlagBossVid) != 0)
+        if (DungeonSystem::GetFlag(d, kFlagBossVid) != 0)
             return;
 
-        d->SetFlag(kFlagFloor, 3);
-        d->SetFlag(kFlagStep, 0);
+        DungeonSystem::SetFlag(d, kFlagFloor, 3);
+        DungeonSystem::SetFlag(d, kFlagStep, 0);
 
         const entt::entity boss = SpawnMobGlobal(d, kBossVnum, kBossX, kBossY);
-        d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
+        DungeonSystem::SetFlag(d, kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(boss));
 
         ChatToMap(mapIndex, "Husvet: A boss megjelent! Feladat #3: Oljtek meg a bosst.");
     }
 
     void Complete(int32_t mapIndex)
     {
-        LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        if (!d)
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
             return;
 
-        if (d->GetFlag(kFlagCompleted) != 0)
+        if (DungeonSystem::GetFlag(d, kFlagCompleted) != 0)
             return;
 
-        d->SetFlag(kFlagCompleted, 1);
+        DungeonSystem::SetFlag(d, kFlagCompleted, 1);
 
         // eventek stop (exit-et nem cancel-elj�k, mert most allitjuk be)
         CancelEvent(m_evCheck, mapIndex);
@@ -444,8 +444,8 @@ public:
             });
 
         // --- Broadcast: solo vs party ---
-        const bool isPartyRun = (d->GetFlag(kFlagIsParty) != 0);
-        const int32_t leaderPid = d->GetFlag(kFlagLeaderPid);
+        const bool isPartyRun = (DungeonSystem::GetFlag(d, kFlagIsParty) != 0);
+        const int32_t leaderPid = DungeonSystem::GetFlag(d, kFlagLeaderPid);
 
         const char* leaderName = nullptr;
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
@@ -497,7 +497,7 @@ EVENTFUNC(easter_dungeon_prepare_event)
     const int32_t mapIndex = info->mapIndex;
     s_easter.m_evPrepare.erase(mapIndex);
     s_easter.StartFloor1(mapIndex);
-    g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { CDungeonManager::instance().FindByMapIndex(mapIndex) });
     return 0;
 }
 
@@ -510,7 +510,7 @@ EVENTFUNC(easter_dungeon_exit_event)
     const int32_t mapIndex = info->mapIndex;
     s_easter.m_evExit.erase(mapIndex);
     s_easter.ClearDungeon(mapIndex);
-    g_dispatcher.trigger(ecs::EvDungeonEnd { static_cast<uint32_t>(mapIndex) });
+    g_dispatcher.trigger(ecs::EvDungeonEnd { CDungeonManager::instance().FindByMapIndex(mapIndex) });
     return 0;
 }
 
@@ -524,11 +524,11 @@ EVENTFUNC(easter_dungeon_check_event)
     const int32_t mapIndex = info->mapIndex;
     s_easter.m_evCheck.erase(mapIndex);
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+    if (d == entt::null)
         return 0;
 
-    if (d->GetFlag("easter_floor") != 2)
+    if (DungeonSystem::GetFlag(d, "easter_floor") != 2)
         return 0;
 
     const int metins = CountMobVnumOnMap(mapIndex, kFloor2MetinVnum);
@@ -536,16 +536,16 @@ EVENTFUNC(easter_dungeon_check_event)
 
     if (metins == 0 && mobs == 0)
     {
-        d->SetFlag("easter_f2_retry", 0);
+        DungeonSystem::SetFlag(d, "easter_f2_retry", 0);
         s_easter.SpawnBoss(mapIndex);
-        g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
+        g_dispatcher.trigger(ecs::EvDungeonPrepare { CDungeonManager::instance().FindByMapIndex(mapIndex) });
         return 0;
     }
 
-    int retry = d->GetFlag("easter_f2_retry");
+    int retry = DungeonSystem::GetFlag(d, "easter_f2_retry");
     if (retry < 10)
     {
-        d->SetFlag("easter_f2_retry", retry + 1);
+        DungeonSystem::SetFlag(d, "easter_f2_retry", retry + 1);
         s_easter.ScheduleCheckFloor2(mapIndex, 1);
     }
 
@@ -562,18 +562,18 @@ EVENTFUNC(easter_dungeon_to_floor2_event)
     const int32_t mapIndex = info->mapIndex;
     s_easter.m_evToF2.erase(mapIndex);
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+    if (d == entt::null)
         return 0;
 
-    if (d->GetFlag("easter_done") != 0)
+    if (DungeonSystem::GetFlag(d, "easter_done") != 0)
         return 0;
 
-    if (d->GetFlag("easter_floor") != 1)
+    if (DungeonSystem::GetFlag(d, "easter_floor") != 1)
         return 0;
 
     s_easter.StartFloor2(mapIndex);
-    g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { CDungeonManager::instance().FindByMapIndex(mapIndex) });
     return 0;
 }
 
@@ -645,8 +645,8 @@ void CEasterDungeon::OnPlayerLogin(entt::entity character)
     if (!IsEasterDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
     {
         ecs::MovementSystem::ExitToSavedLocation(character);
         return;
@@ -655,12 +655,12 @@ void CEasterDungeon::OnPlayerLogin(entt::entity character)
     ecs::SocialSystem::SetDungeon(character, d);
 
     // Task reminder on login (rejoin)
-    if (d->GetFlag(kFlagCompleted) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagCompleted) == 0)
     {
-        const int floor = d->GetFlag(kFlagFloor);
+        const int floor = DungeonSystem::GetFlag(d, kFlagFloor);
         if (floor == 1)
         {
-            ChatToChar(character, "Easter: Task #1: Destroy all stones. Remaining: %d", d->GetFlag(kFlagStep));
+            ChatToChar(character, "Easter: Task #1: Destroy all stones. Remaining: %d", DungeonSystem::GetFlag(d, kFlagStep));
         }
         else if (floor == 2)
         {
@@ -678,7 +678,7 @@ void CEasterDungeon::OnPlayerLogin(entt::entity character)
         ChatToChar(character, "Easter: Dungeon complete. Click the NPC to start again.");
     }
 
-    if (d->GetFlag(kFlagFloor) == 0)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
         s_easter.SchedulePrepare(idx, 1);
 }
 
@@ -696,28 +696,28 @@ void CEasterDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     if (!IsEasterDungeonMap(idx))
         return;
 
-    LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
         return;
 
     const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
-    const int32_t floor = d->GetFlag(kFlagFloor);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
 
     // ---------------- Floor 1: stones countdown -> floor2 10 mp kesleltetessel ----------------
     if (vnum == kFloor1StoneVnum && floor == 1)
     {
-        int32_t s = d->GetFlag(kFlagStep) - 1;
+        int32_t s = DungeonSystem::GetFlag(d, kFlagStep) - 1;
         if (s < 0)
             s = 0;
-        d->SetFlag(kFlagStep, s);
+        DungeonSystem::SetFlag(d, kFlagStep, s);
 
         ChatToMap(idx, "Husvet: Hatralevo kov: %d", s);
 
         if (s == 0)
         {
-            if (d->GetFlag(kFlagF1ToF2) == 0)
+            if (DungeonSystem::GetFlag(d, kFlagF1ToF2) == 0)
             {
-                d->SetFlag(kFlagF1ToF2, 1);
+                DungeonSystem::SetFlag(d, kFlagF1ToF2, 1);
                 ChatToMap(idx, "Husvet: Kesz! 10 mp mulva indul a 2. emelet.");
                 s_easter.ScheduleToFloor2(idx, 10);
             }
@@ -738,7 +738,7 @@ void CEasterDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
         //ChatToChar(killer, "Easter: Metins left: %d, monsters left: %d", metins, mobs);
 
-        d->SetFlag(kFlagF2Retry, 0);
+        DungeonSystem::SetFlag(d, kFlagF2Retry, 0);
         s_easter.ScheduleCheckFloor2(idx, 1);
         return;
     }
@@ -764,8 +764,8 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
     // If clicked inside the dungeon while run is active -> exit to saved location.
     if (IsEasterDungeonMap(mapIdx))
     {
-        LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
-        if (cur && cur->GetFlag(kFlagCompleted) == 0)
+        const entt::entity cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
+        if (cur != entt::null && DungeonSystem::GetFlag(cur, kFlagCompleted) == 0)
         {
             ecs::MovementSystem::ExitToSavedLocation(character);
             return true;
@@ -790,8 +790,8 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
                 return true;
             }
 
-            LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
-            if (d && d->GetFlag(kFlagCompleted) == 0)
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+            if (d != entt::null && DungeonSystem::GetFlag(d, kFlagCompleted) == 0)
             {
                 ecs::MovementSystem::SaveExitLocation(character);
                 ecs::MovementSystem::WarpSet(character, kEnterX * 100, kEnterY * 100, rejoinIdx);
@@ -901,22 +901,22 @@ if (!it.ok)
     }
 
     // Create dungeon instance
-    LPDUNGEON d = CDungeonManager::instance().Create(kEasterOriginalMap);
-    if (!d)
+    const entt::entity d = CDungeonManager::instance().Create(kEasterOriginalMap);
+    if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Easter: failed to create the dungeon.");
         return true;
     }
 
     // Initialize dungeon flags
-    d->SetFlag(kFlagFloor, 0);
-    d->SetFlag(kFlagCompleted, 0);
-    d->SetFlag(kFlagStep, 0);
-    d->SetFlag(kFlagBossVid, 0);
-    d->SetFlag(kFlagIsParty, party != entt::null ? 1 : 0);
-    d->SetFlag(kFlagLeaderPid, (int32_t)ecs::PlayerRuntime::GetPlayerID(character));
-    d->SetFlag(kFlagF2Retry, 0);
-    d->SetFlag(kFlagF1ToF2, 0);
+    DungeonSystem::SetFlag(d, kFlagFloor, 0);
+    DungeonSystem::SetFlag(d, kFlagCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagStep, 0);
+    DungeonSystem::SetFlag(d, kFlagBossVid, 0);
+    DungeonSystem::SetFlag(d, kFlagIsParty, party != entt::null ? 1 : 0);
+    DungeonSystem::SetFlag(d, kFlagLeaderPid, (int32_t)ecs::PlayerRuntime::GetPlayerID(character));
+    DungeonSystem::SetFlag(d, kFlagF2Retry, 0);
+    DungeonSystem::SetFlag(d, kFlagF1ToF2, 0);
 
     // Set per-player rejoin flags + consume entry item
     auto applyMember = [&](entt::entity m){
@@ -927,7 +927,7 @@ if (!it.ok)
             ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
 
             ecs::QuestSystem::SetFlag(m, "easter_dungeon.disconnect", 0);
-            ecs::QuestSystem::SetFlag(m, "easter_dungeon.idx", d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(m, "easter_dungeon.idx", DungeonSystem::GetMapIndex(d));
             ecs::QuestSystem::SetFlag(m, "easter_dungeon.ch", (int32_t)g_bChannel);
             ecs::QuestSystem::SetFlag(m, "easter_dungeon.enter_time", now);
         };
@@ -935,7 +935,7 @@ if (!it.ok)
     if (party == entt::null)
     {
         applyMember(character);
-        d->Join_Coords(character, kEnterX, kEnterY, kEasterOriginalMap);
+        DungeonSystem::Join_Coords(d, character, kEnterX, kEnterY, kEasterOriginalMap);
     }
     else
     {
@@ -944,14 +944,14 @@ if (!it.ok)
                 return;
             applyMember(m);
         });
-        d->JoinParty_Coords(party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::JoinParty_Coords(d, party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     // Small hint right after enter
     ChatToChar(character, "Easter: The dungeon is starting. Please wait 1 second...");
 
     // Start floor1 after short delay
-    s_easter.SchedulePrepare(d->GetMapIndex(), kPrepareDelay);
+    s_easter.SchedulePrepare(DungeonSystem::GetMapIndex(d), kPrepareDelay);
     return true;
 }
 

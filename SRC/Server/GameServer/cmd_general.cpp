@@ -564,7 +564,7 @@ ACMD(do_change_channel)
 		return;
 	}
 
-	if (ecs::SocialSystem::GetDungeon(character))
+	if (ecs::SocialSystem::GetDungeon(character) != entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 720, "");
@@ -848,13 +848,13 @@ ACMD(do_restart)
 				bool showed = false;
 				if (mapidx >= 10000)
 				{
-					LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
-					if (dungeon)
+					const entt::entity dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
+					if (dungeon != entt::null)
 					{
 						if (mapidx >= 2160000 && mapidx < 2170000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -891,7 +891,7 @@ ACMD(do_restart)
 						else if (mapidx >= 2080000 && mapidx < 2090000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							if (floor != 0)
 							{
 								ecs::MovementSystem::Show(character, mapidx, 843500, 1066800);
@@ -905,7 +905,7 @@ ACMD(do_restart)
 						else if (mapidx >= 2170000 && mapidx < 2180000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							if (floor != 0)
 							{
 								ecs::MovementSystem::Show(character, mapidx, 87900, 614700);
@@ -919,7 +919,7 @@ ACMD(do_restart)
 						else if (mapidx >= 3550000 && mapidx < 3560000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -944,7 +944,7 @@ ACMD(do_restart)
 						else if (mapidx >= 3530000 && mapidx < 3540000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							if (floor != 0)
 							{
 								ecs::MovementSystem::Show(character, mapidx, 166500, 522100);
@@ -958,7 +958,7 @@ ACMD(do_restart)
 						else if (mapidx >= 3520000 && mapidx < 3530000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -1010,7 +1010,7 @@ ACMD(do_restart)
 						else if (mapidx >= 3570000 && mapidx < 3580000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -1055,7 +1055,7 @@ ACMD(do_restart)
 						else if (mapidx >= 3510000 && mapidx < 3520000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -1086,7 +1086,7 @@ ACMD(do_restart)
 						else if (mapidx >= 2180000 && mapidx < 2190000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -1129,7 +1129,7 @@ ACMD(do_restart)
 						else if (mapidx >= 270000 && mapidx < 280000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							if (floor != 0)
 							{
 								ecs::MovementSystem::Show(character, mapidx, 942000, 127700);
@@ -1143,7 +1143,7 @@ ACMD(do_restart)
 						else if (mapidx >= 2090000 && mapidx < 2100000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							if (floor != 0)
 							{
 								ecs::MovementSystem::Show(character, mapidx, 853700, 1416400);
@@ -1157,7 +1157,7 @@ ACMD(do_restart)
 						else if (mapidx >= 2100000 && mapidx < 2110000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							if (floor != 0)
 							{
 								ecs::MovementSystem::Show(character, mapidx, 782400, 1502100);
@@ -1171,7 +1171,7 @@ ACMD(do_restart)
 						else if (mapidx >= 660000 && mapidx < 670000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -1237,7 +1237,7 @@ ACMD(do_restart)
 						else if (mapidx >= 670000 && mapidx < 680000)//under_water_zone
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -1303,7 +1303,7 @@ ACMD(do_restart)
 						else if (mapidx >= 3560000 && mapidx < 3570000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							if (floor != 0)
 							{
 								ecs::MovementSystem::Show(character, mapidx, 1528200, 2318700);
@@ -1317,7 +1317,7 @@ ACMD(do_restart)
 						else if (mapidx >= 2120000 && mapidx < 2130000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							if (floor != 0)
 							{
 								ecs::MovementSystem::Show(character, mapidx, 320000, 1529000);
@@ -1331,7 +1331,7 @@ ACMD(do_restart)
 						else if (mapidx >= 260000 && mapidx < 270000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -1362,7 +1362,7 @@ ACMD(do_restart)
 						else if (mapidx >= 250000 && mapidx < 260000)
 						{
 							wasDungeon = true;
-							int32_t floor = dungeon->GetFlag("floor");
+							int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 							switch (floor)
 							{
 								case 1:
@@ -2115,7 +2115,7 @@ ACMD(do_ungroup)
 		return;
 	}
 
-	if (ecs::SocialSystem::GetDungeon(character))
+	if (ecs::SocialSystem::GetDungeon(character) != entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 202, "");
@@ -3352,7 +3352,7 @@ ACMD(do_click_safebox)
 {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-	if (ecs::SocialSystem::GetDungeon(character) || ecs::SocialSystem::GetWarMap(character))
+	if (ecs::SocialSystem::GetDungeon(character) != entt::null || ecs::SocialSystem::GetWarMap(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 731, "");

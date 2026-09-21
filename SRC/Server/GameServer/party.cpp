@@ -332,8 +332,7 @@ namespace PartySystem
 		state->nearMemberCount = 0;
 
 		state->isPCParty = false;
-		state->dungeon = nullptr;
-		state->dungeonForOnlyParty = nullptr;
+		state->dungeon = entt::null;
 	}
 
 	namespace
@@ -458,12 +457,6 @@ namespace PartySystem
 		state->members.clear();
 		state->nextOwnerPID = 0;
 
-		if (state->dungeonForOnlyParty != nullptr)
-		{
-			state->dungeonForOnlyParty->SetPartyNull();
-			state->dungeonForOnlyParty = nullptr;
-		}
-
 		g_registry.destroy(party);
 	}
 
@@ -587,9 +580,9 @@ namespace PartySystem
 			}
 		}
 
-		if (state->dungeon)
+		if (state->dungeon != entt::null)
 		{
-			state->dungeon->QuitParty(party);
+			DungeonSystem::QuitParty(state->dungeon, party);
 		}
 	}
 
@@ -740,9 +733,11 @@ namespace PartySystem
 			SendParameter(party, character);
 
 			//LOG_INFO("PARTY-DUNGEON connect {} {}", static_cast<const void*>(this), static_cast<const void*>(GetDungeon()));
-			if (GetDungeon(party) && GetDungeon(party)->GetMapIndex() == ecs::PlayerRuntime::GetMapIndex(character))
+			const entt::entity partyDungeon = GetDungeon(party);
+
+			if (partyDungeon != entt::null && DungeonSystem::GetMapIndex(partyDungeon) == ecs::PlayerRuntime::GetMapIndex(character))
 			{
-				ecs::SocialSystem::SetDungeon(character, GetDungeon(party));
+				ecs::SocialSystem::SetDungeon(character, partyDungeon);
 			}
 
 			RequestSetMemberLevel(party, (ecs::PlayerRuntime::GetPlayerID(character)), (ecs::PointSystem::GetLevel(character)));
@@ -813,7 +808,7 @@ namespace PartySystem
 			{
 				RemoveBonus(*state, party);
 
-				if (ecs::SocialSystem::GetDungeon(it->second.member))
+				if (ecs::SocialSystem::GetDungeon(it->second.member) != entt::null)
 				{
 					// TODO: ������ ������ �������� ������
 					FExitDungeon f;
@@ -1507,7 +1502,7 @@ namespace PartySystem
 			if (!IsLinked(member))
 				continue;
 
-			if (ecs::SocialSystem::GetDungeon(lEntity))
+			if (ecs::SocialSystem::GetDungeon(lEntity) != entt::null)
 				row.second.bNear = ecs::SocialSystem::GetDungeon(lEntity) == ecs::SocialSystem::GetDungeon(member);
 			else
 				row.second.bNear = (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(member), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(member)) < PARTY_DEFAULT_RANGE);
@@ -1519,7 +1514,7 @@ namespace PartySystem
 			}
 		}
 
-		if (iNearMember <= 1 && !ecs::SocialSystem::GetDungeon(lEntity))
+		if (iNearMember <= 1 && ecs::SocialSystem::GetDungeon(lEntity) == entt::null)
 		{
 			for (auto& row : state->members)
 				row.second.bNear = false;
@@ -1704,35 +1699,25 @@ namespace PartySystem
 		}
 	}
 
-	void SetDungeon(entt::entity party, LPDUNGEON pDungeon)
+	void SetDungeon(entt::entity party, entt::entity pDungeon)
 	{
 		ecs::PartyState* state = Find(party);
 		if (!state)
 			return;
 
-		state->dungeon = pDungeon;
+		state->dungeon = pDungeon != entt::null && DungeonSystem::IsValid(pDungeon)
+			? pDungeon
+			: entt::null;
 		state->flags.clear();
 	}
 
-	LPDUNGEON GetDungeon(entt::entity party)
+	entt::entity GetDungeon(entt::entity party)
 	{
 		ecs::PartyState* state = Find(party);
-		return state ? state->dungeon : nullptr;
-	}
+		if (!state || state->dungeon == entt::null)
+			return entt::null;
 
-	void SetDungeon_for_Only_party(entt::entity party, LPDUNGEON pDungeon)
-	{
-		ecs::PartyState* state = Find(party);
-		if (!state)
-			return;
-
-		state->dungeonForOnlyParty = pDungeon;
-	}
-
-	LPDUNGEON GetDungeon_for_Only_party(entt::entity party)
-	{
-		ecs::PartyState* state = Find(party);
-		return state ? state->dungeonForOnlyParty : nullptr;
+		return DungeonSystem::IsValid(state->dungeon) ? state->dungeon : entt::null;
 	}
 
 
@@ -2014,15 +1999,15 @@ namespace PartySystem
 				continue;
 			}
 
-			LPDUNGEON d = ecs::SocialSystem::GetDungeon(member);
+			const entt::entity d = ecs::SocialSystem::GetDungeon(member);
 
-			if(nullptr == d)
+			if(d == entt::null)
 			{
 				LOG_TRACE("not in dungeon");
 				continue;
 			}
 
-			if( mapIndex == (d->GetMapIndex())/10000 )
+			if( mapIndex == (DungeonSystem::GetMapIndex(d))/10000 )
 			{
 				return true;
 			}

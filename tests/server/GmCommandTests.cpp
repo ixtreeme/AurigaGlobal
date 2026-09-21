@@ -837,8 +837,8 @@ void DESC_MANAGER::GetUserCount(int &,int * *,int &) { Unexpected(); }
 void CHARACTER_MANAGER::DestroyCharacter(entt::entity) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::SpawnMobEntity(unsigned int,int,int,int,int,bool,int,bool) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::SpawnMobRange(unsigned int,int,int,int,int,int,bool,bool,bool) { Unexpected(); }
-entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { Unexpected(); }
-bool CHARACTER_MANAGER::SpawnGroupGroup(unsigned int,int,int,int,int,int,regen *,bool,CDungeon *) { Unexpected(); }
+entt::entity CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen *,bool,entt::entity) { Unexpected(); }
+bool CHARACTER_MANAGER::SpawnGroupGroup(unsigned int,int,int,int,int,int,regen *,bool,entt::entity) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(unsigned int,int) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindEntity(unsigned int) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindPCEntity(char const *) { Unexpected(); }

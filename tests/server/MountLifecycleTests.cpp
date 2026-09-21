@@ -378,9 +378,9 @@ CWarMap* ecs::SocialSystem::GetWarMap(entt::entity e) {
     static int marker;
     return State(e).war ? reinterpret_cast<CWarMap*>(&marker) : nullptr;
 }
-LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity e) {
-    static int marker;
-    return State(e).dungeon ? reinterpret_cast<LPDUNGEON>(&marker) : nullptr;
+entt::entity ecs::SocialSystem::GetDungeon(entt::entity e) {
+    // A live stand-in handle; the pet code only compares it against null.
+    return State(e).dungeon ? static_cast<entt::entity>(0x1234u) : entt::null;
 }
 bool ecs::SocialSystem::HasExchange(entt::entity e) { State(e); return false; }
 CShop* ecs::SocialSystem::GetMyShop(entt::entity e) { State(e); return nullptr; }

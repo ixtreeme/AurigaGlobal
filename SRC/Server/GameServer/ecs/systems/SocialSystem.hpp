@@ -61,8 +61,11 @@ CGuild* GetGuild(entt::entity e);
 // with this; the native character-insert path has to as well, or the
 // viewer renders the character with no guild name.
 void SendGuildName(entt::entity viewer, CGuild* pGuild);
-void SetDungeon(entt::entity e, LPDUNGEON dungeon);
-LPDUNGEON GetDungeon(entt::entity e);
+void SetDungeon(entt::entity e, entt::entity dungeon);
+entt::entity GetDungeon(entt::entity e);
+// Drops the dungeon membership when the character is no longer headed to the
+// dungeon's map, so an ex-member stops being counted.
+void ClearDungeonIfOtherMap(entt::entity e, int32_t mapIndex);
 void SetWarMap(entt::entity e, CWarMap* warMap);
 void SetMarryPartner(entt::entity e, entt::entity partner);
 entt::entity GetMarryPartner(entt::entity e);

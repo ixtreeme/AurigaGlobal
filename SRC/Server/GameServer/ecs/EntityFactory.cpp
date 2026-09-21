@@ -542,7 +542,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 
     reg.emplace_or_replace<ecs::PartyMembership>(entity, now > 180000 ? now - 180000 : 0);
     reg.emplace_or_replace<ecs::GuildMembership>(entity, now > 60000 ? now - 60000 : 0);
-    reg.emplace_or_replace<ecs::DungeonMembership>(entity, nullptr, 0, nullptr);
+    reg.emplace_or_replace<ecs::DungeonMembership>(entity, entt::null, 0, nullptr);
     reg.emplace_or_replace<ecs::MarriageState>(entity);
     reg.emplace_or_replace<ecs::ShopState>(entity, ecs::ShopState {});
     reg.emplace_or_replace<ecs::WarpBlockState>(entity, ecs::WarpBlockState {});

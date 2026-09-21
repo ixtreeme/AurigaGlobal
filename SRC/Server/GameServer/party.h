@@ -49,7 +49,6 @@ enum EPartyExpDistributionModes
 	PARTY_EXP_DISTRIBUTION_MAX_NUM
 };
 
-class CDungeon;
 
 namespace ecs
 {
@@ -97,8 +96,8 @@ namespace ecs
 		bool isPCParty { false };
 
 		std::map<std::string, int> flags;
-		LPDUNGEON dungeon { nullptr };
-		LPDUNGEON dungeonForOnlyParty { nullptr };
+		// The dungeon instance this party joined, validated on every read.
+		entt::entity dungeon { entt::null };
 	};
 }
 
@@ -178,10 +177,8 @@ namespace PartySystem
 	void HealParty(entt::entity party);
 	void SummonToLeader(entt::entity party, uint32_t pid);
 	void Update(entt::entity party);
-	void SetDungeon(entt::entity party, LPDUNGEON pDungeon);
-	LPDUNGEON GetDungeon(entt::entity party);
-	void SetDungeon_for_Only_party(entt::entity party, LPDUNGEON pDungeon);
-	LPDUNGEON GetDungeon_for_Only_party(entt::entity party);
+	void SetDungeon(entt::entity party, entt::entity dungeon);
+	entt::entity GetDungeon(entt::entity party);
 
 	// Packet senders.
 	void SendPartyJoinOneToAll(entt::entity party, uint32_t dwPID);

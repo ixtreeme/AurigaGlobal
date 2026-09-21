@@ -282,6 +282,12 @@ void SetWarpLocationRaw(entt::entity e, int32_t mapIndex, int32_t x, int32_t y)
     if (!IsValid(e))
         return;
 
+    // The dungeon membership only lives while the character is on the
+    // dungeon's map. Without this an ex-member stayed counted, and a set that
+    // looked empty tore the instance down under the rest of the party.
+    if (ecs::PlayerRuntime::IsPC(e))
+        ecs::SocialSystem::ClearDungeonIfOtherMap(e, mapIndex);
+
     auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(e);
     warp.x = x;
     warp.y = y;
@@ -1519,7 +1525,7 @@ bool ecs::MovementSystem::Sync(entt::entity e, int32_t x, int32_t y)
 	// semantic as legacy destination = current_pos.
 	ecs::MovementSystem::SyncDestinationClear(e);
 
-	if (ecs::SocialSystem::GetDungeon(e))
+	if (ecs::SocialSystem::GetDungeon(e) != entt::null)
 	{
 		// Sync quest event attr transitions when entering a new dungeon sector.
 		auto& membership =
@@ -1897,8 +1903,8 @@ EVENTFUNC(recovery_event)
         if (AffectSystem::IsAffectFlag(character, AFF_POISON)) return cycle;
 #ifdef ENABLE_DS_RUNE
         if (race == 3996 || race == 8202) {
-            auto* dungeon = ecs::SocialSystem::GetDungeon(character);
-            const int floor = dungeon ? dungeon->GetFlag("floor") : 0;
+            const entt::entity dungeon = ecs::SocialSystem::GetDungeon(character);
+            const int floor = dungeon != entt::null ? DungeonSystem::GetFlag(dungeon, "floor") : 0;
             if (floor == (race == 3996 ? 5 : 1)) {
                 CombatSystem::DistributeSP(character, character);
                 if (!current()) return stop();
