@@ -540,6 +540,27 @@ void NativeClick() {
     onConstruct={};
     Check(!g_registry.valid(pc) && triggerCalls==1,"click continued after context construction deleted causer");
 }
+void QuestPCOwnership() {
+    Reset();quest::CQuestManager q;
+    const auto pc=Character(1),other=Character(2);
+    auto* first=q.GetPC(pc);
+    const auto* state=g_registry.try_get<ecs::QuestPCState>(pc);
+    Check(first && state && state->pc.get()==first,"quest PC was not attached to its character entity");
+    Check(q.GetPC(pc)==first,"quest PC identity changed between reads");
+    Check(q.GetPC(other) && q.GetPC(other)!=first,"two characters shared one quest PC");
+    Check(!g_registry.try_get<ecs::QuestPCState>(other)->pc->IsRunning(),"fresh quest PC started a quest");
+    quest::PC* server=q.GetPCForce(0);
+    Check(server && server==q.GetPCForce(0),"server timer PC was not manager-owned");
+    Check(!q.GetPCForce(999),"offline pid received a quest PC");
+    q.GetPC(pc);
+    q.DisconnectPC(pc);
+    Check(!g_registry.all_of<ecs::QuestPCState>(pc) && !q.GetCurrentPC() && q.GetCurrentCharacter()==entt::null,
+        "disconnect retained the quest PC component");
+    q.GetPC(pc);
+    g_registry.destroy(pc);
+    Check(!q.GetCurrentPC() && q.GetCurrentCharacter()==entt::null,
+        "entity destruction left the manager on a freed quest PC");
+}
 void TriggerConstructed(entt::registry&,entt::entity e) {if(onConstruct){auto fn=onConstruct;fn(e);}}
 void TriggerConstruction() {
     for(int mode=0;mode<3;++mode) {
@@ -566,7 +587,7 @@ int main() {
     g_registry.on_construct<ecs::ClickTrigger>().connect<&TriggerConstructed>();
     auto* L=lua_open();
     try {
-        References();OtherPCBlocks();LuaAndDispatch(L);RewardBatches();RewardCompletion();ConstructionCallbacks();
+        References();OtherPCBlocks();QuestPCOwnership();LuaAndDispatch(L);RewardBatches();RewardCompletion();ConstructionCallbacks();
         NativeClick();TriggerConstruction();NativeVictimSearch();Reset();
         lua_close(L);std::cout<<"Quest runtime: "<<checks<<" checks passed\n";
     } catch(const std::exception& error) {

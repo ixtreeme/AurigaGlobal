@@ -67,7 +67,6 @@ namespace quest
 		};
 
 		typedef std::map<std::string, int>		TEventNameMap;
-		typedef std::map<unsigned int, PC>	PCMap;
 
 	public:
 		CQuestManager();
@@ -257,11 +256,16 @@ namespace quest
 
 		QuestState* m_CurrentRunningState;
 
-		PCMap			m_mapPC;
-
 		entt::entity		m_currentCharacter;
 		entt::entity		m_currentPartyMember;
 		PC* m_pCurrentPC;
+
+		// The quest runtime lives in ecs::QuestPCState on the character entity;
+		// this resolves (and lazily creates) the PC for a live PC entity.
+		PC*			GetPCForEntity(entt::entity character, uint32_t pid);
+		// A PC component destroyed (with its entity) while the manager still
+		// held it as current has to clear those cached pointers.
+		static void	OnQuestPCStateDestroyed(entt::registry& registry, entt::entity entity);
 
 		std::string			m_strScript;
 		int				m_iCurrentSkin;

@@ -1,11 +1,13 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <entt/entity/entity.hpp>
 
 #include "../../char.h"
 #include "../../typedef.h"
+#include "../../questpc.h"
 
 namespace ecs {
 
@@ -20,6 +22,14 @@ struct QuestContext {
     entt::entity lockOwner { entt::null };
     uint32_t byVnum { 0 };
     entt::entity questItem { entt::null };
+};
+
+// The quest runtime this character owns (flags, quest states and timers). The
+// PC keeps its heap address while the entity lives, so the running-state and
+// timer pointers stay stable; this component is the single owner and is
+// destroyed with the character entity, which also cancels the PC's timers.
+struct QuestPCState {
+    std::unique_ptr<quest::PC> pc;
 };
 
 struct ItemAward {

@@ -1,0 +1,60 @@
+Phase 24 - Quest per-character state is entity-owned
+Date: 2026-09-21
+Mode: item 4 of the phase23_legacy_audit recommended order. The quest PC
+payload (flags, quest states, LPEVENT timers) leaves the manager's PID-keyed
+map and becomes a component on the character entity; the pid index is the
+same CPIDRegistry every other PID lookup already uses.
+
+Why
+---
+- CQuestManager owned `PCMap m_mapPC` (std::map<pid, quest::PC>), created
+  lazily by GetPCForce and erased by DisconnectPC. Nothing tied the PC to the
+  character entity: a destroyed character that missed DisconnectPC left a
+  stale PC in the manager, and the current-PC pointers were the only guard
+  against its raw pointers.
+- The PC object holds the running QuestState pointer, the per-quest state map,
+  the flag maps and the quest timer map, so it is the last large piece of
+  character-owned heap state.
+
+Implemented
+-----------
+- ecs::QuestPCState { std::unique_ptr<quest::PC> pc; } in
+  quest_components.hpp. The PC keeps its heap address while the entity lives,
+  so the running-state and timer pointers stay stable; the component is the
+  single owner and is destroyed with the character entity (which also cancels
+  the PC's timers through ~PC::ClearTimer).
+- CQuestManager drops the `PCMap m_mapPC` member and the PCMap typedef.
+- GetPCForEntity(entity, pid) attaches and returns the PC; GetPC(entity) binds
+  the current context through it, GetPCForce(pid) resolves the entity with
+  CHARACTER_MANAGER::FindEntityByPID and then calls the same helper. The pid
+  index is CPIDRegistry, the registry index already used for PID lookups.
+- The server_timer PC (pid 0) has no character, so GetPCForce(0) keeps a
+  function-local synthetic PC owned by the process.
+- DisconnectPC clears the manager's cached pointers (current PC, party member,
+  other-PC-block root) and removes the component, which destroys the PC.
+- A process-wide on_destroy<ecs::QuestPCState> hook clears the cached manager
+  pointers when the component is destroyed with its entity instead of through
+  DisconnectPC; it uses instance_ptr() so a missing manager is a no-op.
+
+Notes
+-----
+- GetPC(pid) already required a live entity (it resolved the PID first), so
+  the offline behavior is unchanged; only GetPCForce was previously able to
+  create a PC without an entity, and its remaining such case is pid 0.
+- Reload still keeps the per-character state; it only rebuilds Lua and the NPC
+  map, exactly as before.
+- The PC internals (QuestInfo/FlagMap/TimerMap) are unchanged: the phase moves
+  the ownership and the index, not the class. Flattening the PC fields into
+  finer components would touch every quest Lua binding and the script state
+  machine, and is not needed for the lifetime fix.
+- Item 5 of the audit (guild member rows) stays a design decision; F1/F4
+  already removed its crash risk.
+
+Verification
+------------
+- GameServer Release builds.
+- QuestRuntimeTests covers the new ownership: the PC attaches to the character
+  entity, two characters do not share one PC, GetPCForce(0) is stable and
+  offline pids get none, DisconnectPC removes the component and the context,
+  and destroying the entity clears the manager's cached pointers.
+- The whole suite (27 targets) passes in Release.

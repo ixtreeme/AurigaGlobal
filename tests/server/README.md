@@ -1893,3 +1893,26 @@ migration work; this is not complete LPCHARACTER removal.
 Before deployment, test login while mounted, logout/relog, horse feeding and
 revival, zero-stamina dismount, horse skills, GM horse level/stat changes,
 costume mount switching and two-player emotions on a test server.
+
+## Entity-owned quest runtime (2026-09-21)
+
+The quest PC payload (flags, quest state map, running state and quest timers) is
+no longer a PID-keyed manager map. It lives in ecs::QuestPCState on the
+character entity; the component owns the PC through a unique pointer so the
+running-state and timer addresses stay stable while the entity lives, and its
+destruction cancels the PC timers. GetPC(pid)/GetPCForce(pid) resolve the
+character through the existing PID registry; the pid-0 server timer keeps a
+process-owned synthetic PC because it has no character.
+
+DisconnectPC clears the manager's cached current-PC/party-member/other-block
+pointers and removes the component. A process-wide on_destroy<QuestPCState>
+hook clears those pointers when an entity is destroyed without an explicit
+disconnect, so the manager never keeps a pointer into a freed PC. The PC class
+internals and the quest Lua surface are unchanged; this phase moves ownership
+and indexing only.
+
+QuestRuntimeTests adds ownership checks: PC attachment and identity, one PC per
+character, the stable server PC, offline pids returning none, disconnect
+removal and entity-destruction cleanup of the cached manager state. It does not
+cover live Lua script execution, DB flag persistence or login/logout with the
+running server; those remain in-game checks.

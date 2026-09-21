@@ -12,6 +12,7 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "questmanager.h"
+#include "ecs/components/quest_components.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
@@ -62,6 +63,17 @@ namespace quest
 		m_CurrentRunningState(nullptr), m_currentCharacter(entt::null), m_currentPartyMember(entt::null),
 		m_pCurrentPC(nullptr),  m_iCurrentSkin(0), m_bError(false), m_pOtherPCBlockRootPC(nullptr)
 	{
+		// A character entity destroyed while its PC is the current one (or the
+		// other-PC-block root) frees the PC through the component. Clear the
+		// cached pointers before that happens; the connection is process-wide
+		// and independent of a specific manager instance.
+		static bool s_questPCStateHook = false;
+
+		if (!s_questPCStateHook)
+		{
+			g_registry.on_destroy<ecs::QuestPCState>().connect<&CQuestManager::OnQuestPCStateDestroyed>();
+			s_questPCStateHook = true;
+		}
 	}
 
 	CQuestManager::~CQuestManager()
@@ -1090,29 +1102,79 @@ namespace quest
 	{
         if (!ecs::PlayerRuntime::IsPC(ch)) return;
 
-        const auto it = m_mapPC.find(ecs::PlayerRuntime::GetPlayerID(ch));
-        if (it == m_mapPC.end()) return;
-        if (m_pCurrentPC == &it->second) {
+        const auto* state = g_registry.try_get<ecs::QuestPCState>(ch);
+        if (!state || !state->pc) return;
+
+        quest::PC* pPC = state->pc.get();
+        if (m_pCurrentPC == pPC) {
             m_pCurrentPC = nullptr;
             m_currentCharacter = entt::null;
         }
         if (m_currentPartyMember == ch) m_currentPartyMember = entt::null;
-        if (m_pOtherPCBlockRootPC == &it->second) m_pOtherPCBlockRootPC = nullptr;
-        m_mapPC.erase(it);
+        if (m_pOtherPCBlockRootPC == pPC) m_pOtherPCBlockRootPC = nullptr;
+
+        // Dropping the component destroys the PC and cancels its timers.
+        g_registry.remove<ecs::QuestPCState>(ch);
+	}
+
+	void CQuestManager::OnQuestPCStateDestroyed(entt::registry& registry, entt::entity entity)
+	{
+		CQuestManager* manager = CQuestManager::instance_ptr();
+
+		if (!manager)
+			return;
+
+		const auto* state = registry.try_get<ecs::QuestPCState>(entity);
+		quest::PC* pPC = state ? state->pc.get() : nullptr;
+
+		if (!pPC)
+			return;
+
+		if (manager->m_pCurrentPC == pPC)
+		{
+			manager->m_pCurrentPC = nullptr;
+			manager->m_currentCharacter = entt::null;
+		}
+
+		if (manager->m_pOtherPCBlockRootPC == pPC)
+			manager->m_pOtherPCBlockRootPC = nullptr;
+
+		if (manager->m_currentPartyMember == entity)
+			manager->m_currentPartyMember = entt::null;
+	}
+
+	PC* CQuestManager::GetPCForEntity(entt::entity character, uint32_t pid)
+	{
+		if (character == entt::null || !g_registry.valid(character))
+			return nullptr;
+
+		auto& state = g_registry.get_or_emplace<ecs::QuestPCState>(character);
+
+		if (!state.pc)
+		{
+			state.pc = std::make_unique<PC>();
+			state.pc->SetID(pid);
+		}
+
+		return state.pc.get();
 	}
 
 	PC * CQuestManager::GetPCForce(unsigned int pc)
 	{
-		PCMap::iterator it;
-
-		if ((it = m_mapPC.find(pc)) == m_mapPC.end())
+		// The server timer runs without a character, so it keeps a synthetic
+		// PC that is not tied to any entity. Its lifetime is process-wide.
+		if (pc == 0)
 		{
-			PC * pPC = &m_mapPC[pc];
-			pPC->SetID(pc);
-			return pPC;
+			static PC s_serverPC;
+			return &s_serverPC;
 		}
 
-		return &it->second;
+		const entt::entity character = CHARACTER_MANAGER::instance().FindEntityByPID(pc);
+
+		if (character == entt::null || !ecs::PlayerRuntime::IsPC(character))
+			return nullptr;
+
+		return GetPCForEntity(character, pc);
 	}
 
 
@@ -1128,7 +1190,7 @@ namespace quest
             m_pCurrentPC = nullptr;
             return nullptr;
         }
-        m_pCurrentPC = GetPCForce(ecs::PlayerRuntime::GetPlayerID(character));
+        m_pCurrentPC = GetPCForEntity(character, ecs::PlayerRuntime::GetPlayerID(character));
         m_currentCharacter = character;
         return m_pCurrentPC;
     }
