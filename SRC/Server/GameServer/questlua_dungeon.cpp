@@ -292,12 +292,12 @@ namespace quest
 
 		int32_t index = chEntity != entt::null && g_registry.valid(chEntity) ? ecs::PlayerRuntime::GetMapIndex(chEntity) : -1;
 		if (index != -1) {
-			LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
-			if (!party)
+			const entt::entity party = ecs::SocialSystem::GetParty(chEntity);
+			if (party == entt::null)
 			{
 				pDungeon->Join_Coords(chEntity, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
-			else if (party->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(chEntity)))
+			else if (PartySystem::GetLeaderPID(party) == (ecs::PlayerRuntime::GetPlayerID(chEntity)))
 			{
 				pDungeon->JoinParty_Coords(party, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
@@ -983,10 +983,10 @@ namespace quest
 		int32_t m_resulttime = 0;
 		std::string m_resultname = "";
 
-		LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
-		if (party)
+		const entt::entity party = ecs::SocialSystem::GetParty(chEntity);
+		if (party != entt::null)
 		{
-			if (party->GetLeaderPID() != (ecs::PlayerRuntime::GetPlayerID(chEntity)))
+			if (PartySystem::GetLeaderPID(party) != (ecs::PlayerRuntime::GetPlayerID(chEntity)))
 			{
 				lua_pushnumber(L, 2);
 				lua_pushnumber(L, 0);
@@ -995,7 +995,7 @@ namespace quest
 			}
 
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
+			PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
@@ -1130,11 +1130,11 @@ namespace quest
 		int32_t cooldown = (int32_t)lua_tonumber(L, 17);
 		std::string m_questname = lua_tostring(L, 18);
 
-		LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
-		if (party)
+		const entt::entity party = ecs::SocialSystem::GetParty(chEntity);
+		if (party != entt::null)
 		{
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
+			PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
@@ -1334,12 +1334,12 @@ namespace quest
 		const int32_t idx = (int32_t)lua_tonumber(L, 3);
 		const std::string questname = lua_tostring(L, 4);
 
-		LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
-		if (party)
+		const entt::entity party = ecs::SocialSystem::GetParty(chEntity);
+		if (party != entt::null)
 		{
 			LPDUNGEON currentDungeon = ecs::SocialSystem::GetDungeon(chEntity);
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnlineMember(f);
+			PartySystem::ForEachOnlineMember(party, f);
 			//party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
@@ -1557,10 +1557,10 @@ namespace quest
 			return 3;
 		}
 
-		LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
-		if (party)
+		const entt::entity party = ecs::SocialSystem::GetParty(chEntity);
+		if (party != entt::null)
 		{
-			if (party->GetLeaderPID() != (ecs::PlayerRuntime::GetPlayerID(chEntity)))
+			if (PartySystem::GetLeaderPID(party) != (ecs::PlayerRuntime::GetPlayerID(chEntity)))
 			{
 				lua_pushnumber(L, 6);
 				lua_pushnumber(L, 0);
@@ -1571,7 +1571,7 @@ namespace quest
 			FPartyPIDCollectorDungeonGuild f;
 			f.guildid = guild->GetID();
 			f.name = "";
-			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
+			PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			if (f.vecPIDs.size() < m_partycount)
 			{

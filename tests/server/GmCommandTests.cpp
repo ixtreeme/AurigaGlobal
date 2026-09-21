@@ -732,7 +732,7 @@ bool AffectSystem::RemoveAffect(entt::entity,CAffect *) { Unexpected(); }
 void AffectSystem::ClearAffect(entt::entity,bool) { Unexpected(); }
 void AffectSystem::SetPolymorph(entt::entity,unsigned int,bool) { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity) { Unexpected(); }
-CParty * ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
+entt::entity ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
 CGuild * ecs::SocialSystem::GetGuild(entt::entity e) {
     Check(ecs::PlayerRuntime::IsPC(e), "guild lookup entity");
     static int token;
@@ -795,9 +795,10 @@ entt::entity MountSystem::GetRider(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsPet(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsMount(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsNewPet(entt::entity) { Unexpected(); }
-void CPartyManager::DeleteParty(CParty *) { Unexpected(); }
-void CParty::Quit(unsigned int) { Unexpected(); }
-unsigned int CParty::GetMemberCount(void) { Unexpected(); }
+void CPartyManager::DeleteParty(entt::entity) { Unexpected(); }
+void PartySystem::Quit(entt::entity, unsigned int) { Unexpected(); }
+unsigned int PartySystem::GetMemberCount(entt::entity) { Unexpected(); }
+unsigned int PartySystem::GetNearMemberCount(entt::entity) { Unexpected(); }
 unsigned int SECTREE::GetAttribute(int,int) { Unexpected(); }
 bool SectreeMember(entt::entity, const SECTREE*) { Unexpected(); }
 void SECTREE::Collect(FCollectEntity&) const { Unexpected(); }
@@ -969,7 +970,7 @@ int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpec
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Unexpected(); }
 int ecs::PlayerRuntime::GetSkillPowerByLevel(entt::entity,int,bool) { Unexpected(); }
 int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { Unexpected(); }
-entt::entity CParty::GetNextOwnership(entt::entity,int,int) { Unexpected(); }
+entt::entity PartySystem::GetNextOwnership(entt::entity, entt::entity, int, int) { Unexpected(); }
 bool SECTREE_MANAGER::GetRecallPositionByEmpire(int,unsigned char,pixel_position_s &) { Unexpected(); }
 bool MountSystem::IsRiding(entt::entity) { Unexpected(); }
 unsigned int MountSystem::GetMountVnum(entt::entity) { Unexpected(); }

@@ -599,8 +599,8 @@ namespace quest
 #ifdef ENABLE_PARTYKILL
 			// party_kill call script
 			if (!ecs::PlayerRuntime::IsPC(ch)) return;
-			LPPARTY pParty = ecs::SocialSystem::GetParty(ch);
-			const entt::entity leaderEntity = pParty ? pParty->GetLeader() : ch;
+			const entt::entity pParty = ecs::SocialSystem::GetParty(ch);
+			const entt::entity leaderEntity = pParty != entt::null ? PartySystem::GetLeader(pParty) : ch;
 
 			if (ecs::PlayerRuntime::IsPC(leaderEntity))
 			{

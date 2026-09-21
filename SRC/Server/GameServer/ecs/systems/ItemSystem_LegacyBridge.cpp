@@ -5376,8 +5376,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 
 			if (dwType == AFFECT_NEW_POTION31) {
-				LPPARTY party = ecs::SocialSystem::GetParty(e);
-				if ((!party) || (party && ecs::PlayerRuntime::GetPlayerID(e) != party->GetLeaderPID())) {
+				const entt::entity party = ecs::SocialSystem::GetParty(e);
+				if ((party == entt::null) || (ecs::PlayerRuntime::GetPlayerID(e) != PartySystem::GetLeaderPID(party))) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 902, "");
 #endif

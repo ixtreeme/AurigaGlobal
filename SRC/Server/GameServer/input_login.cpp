@@ -760,16 +760,16 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 				MountSystem::SummonHorse(rider, false);
 			}
 
-			LPPARTY pParty = ecs::SocialSystem::GetParty(ch);
-			if (pParty != nullptr)
+			const entt::entity pParty = ecs::SocialSystem::GetParty(ch);
+			if (pParty != entt::null)
 			{
-				if (pParty->GetMemberCount() == 2)
+				if (PartySystem::GetMemberCount(pParty) == 2)
 				{
 					CPartyManager::instance().DeleteParty(pParty);
 				}
 				else
 				{
-					pParty->Quit(ecs::PlayerRuntime::GetPlayerID(ch));
+					PartySystem::Quit(pParty, ecs::PlayerRuntime::GetPlayerID(ch));
 				}
 			}
 		}

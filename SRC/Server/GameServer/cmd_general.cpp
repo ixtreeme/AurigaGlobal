@@ -2104,7 +2104,7 @@ ACMD(do_ungroup)
 {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-	if (!ecs::SocialSystem::GetParty(character))
+	if (ecs::SocialSystem::GetParty(character) == entt::null)
 		return;
 
 	if (!CPartyManager::instance().IsEnablePCParty())
@@ -2123,9 +2123,9 @@ ACMD(do_ungroup)
 		return;
 	}
 
-	LPPARTY pParty = ecs::SocialSystem::GetParty(character);
+	const entt::entity pParty = ecs::SocialSystem::GetParty(character);
 
-	if (pParty->GetMemberCount() == 2)
+	if (PartySystem::GetMemberCount(pParty) == 2)
 	{
 		// party disband
 		CPartyManager::instance().DeleteParty(pParty);
@@ -2135,7 +2135,7 @@ ACMD(do_ungroup)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 215, "");
 #endif
-		pParty->Quit((ecs::PlayerRuntime::GetPlayerID(character)));
+		PartySystem::Quit(pParty, (ecs::PlayerRuntime::GetPlayerID(character)));
 	}
 }
 
@@ -2578,7 +2578,7 @@ ACMD(do_party_request)
 		return;
 	}
 
-	if (ecs::SocialSystem::GetParty(character))
+	if (ecs::SocialSystem::GetParty(character) != entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 441, "");
@@ -3326,8 +3326,9 @@ ACMD(do_dice)
 	start = MIN(start, end);
 
 	int n = number(start, end);
-	if (ecs::SocialSystem::GetParty(character)) {
-		ecs::SocialSystem::GetParty(character)->ChatPacketToAllMemberNew(
+	const entt::entity pParty = ecs::SocialSystem::GetParty(character);
+	if (pParty != entt::null) {
+		PartySystem::ChatPacketToAllMemberNew(pParty,
 #ifdef ENABLE_DICE_SYSTEM
 		CHAT_TYPE_DICE_INFO
 #else

@@ -930,9 +930,9 @@ void CRuneDungeon::OnPlayerLogin(entt::entity character)
     if (d->GetFlag(kFlagFloor) == 0)
     {
         bool isLeader = true;
-        if (LPPARTY party = ecs::SocialSystem::GetParty(character))
+        if (const entt::entity party = ecs::SocialSystem::GetParty(character); party != entt::null)
         {
-            if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+            if (PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
                 isLeader = false;
         }
 
@@ -1032,15 +1032,15 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
         if (isType1Mob && number(1, 100) <= 5)
         {
-            LPPARTY party = ecs::SocialSystem::GetParty(killer);
-            if (!party)
+            const entt::entity party = ecs::SocialSystem::GetParty(killer);
+            if (party == entt::null)
             {
                 if (ItemSystem::CountItem(killer, kKeyFragment) < 10 && ItemSystem::CountItem(killer, kFloorKey) < 1)
                     ItemSystem::AutoGiveItemEcs(killer, kKeyFragment, 1);
             }
             else
             {
-                if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(killer))
+                if (PartySystem::GetLeaderPID(party) == ecs::PlayerRuntime::GetPlayerID(killer))
                 {
                     if (ItemSystem::CountItem(killer, kKeyFragment) < 10 && ItemSystem::CountItem(killer, kFloorKey) < 1)
                         ItemSystem::AutoGiveItemEcs(killer, kKeyFragment, 1);
@@ -1143,10 +1143,10 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             d->SpawnMob(kExitNpcVnum, kExitNpcPos.x, kExitNpcPos.y);
 
         // Global broadcast
-        if (LPPARTY party = ecs::SocialSystem::GetParty(killer))
+        if (const entt::entity party = ecs::SocialSystem::GetParty(killer); party != entt::null)
         {
             const char* leaderName = ecs::PlayerRuntime::GetName(killer).data();
-            if (const entt::entity leader = party->GetLeader(); leader != entt::null)
+            if (const entt::entity leader = PartySystem::GetLeader(party); leader != entt::null)
                 leaderName = ecs::PlayerRuntime::GetName(leader).data();
             BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1283, "%s", leaderName);
         }
@@ -1298,13 +1298,13 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
             ItemSystem::RemoveSpecifyItemEcs(pc, kFloorKey, k);
         };
 
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
 
     // --- Validate party / solo requirements BEFORE creating the dungeon ---
-    if (party)
+    if (party != entt::null)
     {
         // Only leader can start
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+        if (PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can enter.");
             return false;
@@ -1392,7 +1392,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
         };
 
     // Consume entry items + clear leftovers BEFORE warping, and set rejoin/ranking timers
-    if (party)
+    if (party != entt::null)
     {
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity pc){
             if (!ecs::PlayerRuntime::IsPC(pc) || ecs::SocialSystem::GetParty(pc) != party)
@@ -1432,9 +1432,9 @@ bool CRuneDungeon::OnUseItem89103(entt::entity character)
         return false;
 
     // Only leader (or solo) can progress
-    if (LPPARTY party = ecs::SocialSystem::GetParty(character))
+    if (const entt::entity party = ecs::SocialSystem::GetParty(character); party != entt::null)
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+        if (PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
             return false;
     }
 
@@ -1466,9 +1466,9 @@ bool CRuneDungeon::OnUseItem89102(entt::entity character)
     if (ItemSystem::CountItem(character, kKeyFragment) < 10)
         return false;
 
-    if (LPPARTY party = ecs::SocialSystem::GetParty(character))
+    if (const entt::entity party = ecs::SocialSystem::GetParty(character); party != entt::null)
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+        if (PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
             return false;
     }
 

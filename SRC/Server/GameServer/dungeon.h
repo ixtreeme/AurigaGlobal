@@ -3,11 +3,9 @@
 
 #include "sectree_manager.h"
 
-class CParty;
-
 class CDungeon
 {
-	typedef std::unordered_map<LPPARTY, int> TPartyMap;
+	typedef std::unordered_map<entt::entity, int> TPartyMap;
 	typedef std::map<std::string, entt::entity> TUniqueMobMap;
 
 	public:
@@ -31,13 +29,13 @@ class CDungeon
 
 	void CmdChat(const char* msg);
 
-	void	JoinParty(LPPARTY pParty);
-	void	QuitParty(LPPARTY pParty);
+	void	JoinParty(entt::entity pParty);
+	void	QuitParty(entt::entity pParty);
 
 
 	void	IncMember(entt::entity character);
 	void	DecMember(entt::entity character);
-	void	JoinParty_Coords(LPPARTY pParty, int32_t X, int32_t Y, int32_t index);
+	void	JoinParty_Coords(entt::entity pParty, int32_t X, int32_t Y, int32_t index);
 	void	Join_Coords(entt::entity character, int32_t X, int32_t Y, int32_t index);
 
 	// DUNGEON_KILL_ALL_BUG_FIX
@@ -53,8 +51,8 @@ class CDungeon
 	void DecMonster() { if (m_monstercount == 0) { return; } m_monstercount--; }
 	int32_t CountMonster() { return m_monstercount; }
 
-	void	IncPartyMember(LPPARTY pParty, entt::entity character);
-	void	DecPartyMember(LPPARTY pParty, entt::entity character);
+	void	IncPartyMember(entt::entity pParty, entt::entity character);
+	void	DecPartyMember(entt::entity pParty, entt::entity character);
 
 	int	GetKillMobCount();
 	int	GetKillStoneCount();
@@ -136,7 +134,7 @@ class CDungeon
 	// m_map_pkParty는 관리가 부실하여 사용할 수 없다고 판단하여,
 	// 임시로 한 파티에 대한 관리를 하는 변수 생성.
 
-	LPPARTY m_pParty;
+	entt::entity m_pParty;
 
 	public :
 	void SetPartyNull();

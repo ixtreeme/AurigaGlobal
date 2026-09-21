@@ -582,11 +582,11 @@ bool PickupItem(entt::entity character, uint32_t vid)
     entt::entity owner = character;
     if (!IsOwnership(item, owner)) {
         if (GetItemAntiFlags(item) & (ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_DROP)) return false;
-        auto* party = ecs::SocialSystem::GetParty(character);
-        if (!party) return false;
+        const entt::entity party = ecs::SocialSystem::GetParty(character);
+        if (party == entt::null) return false;
         owner = entt::null;
         const auto findOwner = [&](entt::entity member) { if (IsOwnership(item, member)) owner = member; };
-        party->ForEachOnlineMember(findOwner);
+        PartySystem::ForEachOnlineMember(party, findOwner);
         if (!ecs::PlayerRuntime::IsPC(owner)) return false;
     }
     if (!ground()) return false;
@@ -1907,15 +1907,15 @@ entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner
     if (!IsValidItem(item) || initialOwner == entt::null || !g_registry.valid(initialOwner))
         return entt::null;
 
-    LPPARTY party = ecs::SocialSystem::GetParty(initialOwner);
-    if (!party || party->GetNearMemberCount() <= 1)
+    const entt::entity party = ecs::SocialSystem::GetParty(initialOwner);
+    if (party == entt::null || PartySystem::GetNearMemberCount(party) <= 1)
     {
         SetGroundOwnership(item, initialOwner);
         return initialOwner;
     }
 
 #ifdef TEXTS_IMPROVEMENT
-    party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 542, "%s", GetItemName(item));
+    PartySystem::ChatPacketToAllMemberNew(party, CHAT_TYPE_DICE_INFO, 542, "%s", GetItemName(item));
 #endif
 
     entt::entity selected = initialOwner;
@@ -1937,15 +1937,15 @@ entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner
             selected = memberEntity;
         }
 #ifdef TEXTS_IMPROVEMENT
-        party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 543, "%s#%d",
+        PartySystem::ChatPacketToAllMemberNew(party, CHAT_TYPE_DICE_INFO, 543, "%s#%d",
             ecs::PlayerRuntime::GetName(memberEntity).data(), pickedNumber);
 #endif
     };
-    party->ForEachNearMember(roll);
+    PartySystem::ForEachNearMember(party, roll);
 
     SetGroundOwnership(item, selected);
 #ifdef TEXTS_IMPROVEMENT
-    party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s",
+    PartySystem::ChatPacketToAllMemberNew(party, CHAT_TYPE_DICE_INFO, 903, "%s#%s",
         ecs::PlayerRuntime::GetName(selected).data(), GetItemName(item));
 #endif
     return selected;

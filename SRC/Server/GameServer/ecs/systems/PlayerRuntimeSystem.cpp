@@ -3064,22 +3064,22 @@ void DestroyCharacterStatePre(entt::entity character)
         InventorySystem::ClearItem(character);
     }
 
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
-    if (party)
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
+    if (party != entt::null)
     {
-        if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPacketVID(character) && ecs::PlayerRuntime::GetDesc(character) == nullptr)
+        if (PartySystem::GetLeaderPID(party) == ecs::PlayerRuntime::GetPacketVID(character) && ecs::PlayerRuntime::GetDesc(character) == nullptr)
         {
-            M2_DELETE(party);
+            CPartyManager::instance().DeleteParty(party);
         }
         else
         {
-            party->Unlink(character);
+            PartySystem::Unlink(party, character);
 
             if (ecs::PlayerRuntime::GetDesc(character) == nullptr)
-                party->Quit(ecs::PlayerRuntime::GetPacketVID(character));
+                PartySystem::Quit(party, ecs::PlayerRuntime::GetPacketVID(character));
         }
 
-        ecs::SocialSystem::SetParty(character, nullptr);
+        ecs::SocialSystem::SetParty(character, entt::null);
     }
 
     // Mob runtime state goes with the entity; there is no allocation to free.

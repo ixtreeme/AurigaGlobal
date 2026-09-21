@@ -46,8 +46,8 @@ void PartyInviteDeny(entt::entity e, uint32_t dwPID);
 // Drops e's own pending join request (character teardown).
 void CancelPartyRequest(entt::entity e);
 
-LPPARTY GetParty(entt::entity e);
-void SetParty(entt::entity e, LPPARTY party);
+entt::entity GetParty(entt::entity e);
+void SetParty(entt::entity e, entt::entity party);
 void SetGuild(entt::entity e, CGuild* guild);
 bool HasReviverInParty(entt::entity e);
 entt::entity GetPartyLeader(entt::entity e);

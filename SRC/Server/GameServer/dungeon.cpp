@@ -44,8 +44,8 @@ CDungeon::~CDungeon()
 	m_Mast = entt::null;
 #endif
 
-	if (m_pParty != nullptr) {
-		m_pParty->SetDungeon_for_Only_party (nullptr);
+	if (m_pParty != entt::null) {
+		PartySystem::SetDungeon_for_Only_party(m_pParty, nullptr);
 	}
 
 	//0,"DUNGEON destroy orig %d real %d", m_lOrigMapIndex, m_lMapIndex	);
@@ -96,9 +96,9 @@ void CDungeon::Join_Coords(entt::entity character, int32_t X, int32_t Y, int32_t
 	ecs::MovementSystem::SaveExitLocation(character);
 	ecs::MovementSystem::WarpSet(character, X * 100, Y * 100, m_lMapIndex);
 }
-void CDungeon::JoinParty_Coords(LPPARTY pParty, int32_t X, int32_t Y, int32_t index)
+void CDungeon::JoinParty_Coords(entt::entity pParty, int32_t X, int32_t Y, int32_t index)
 {
-	pParty->SetDungeon(this);
+	PartySystem::SetDungeon(pParty, this);
 	m_map_pkParty.insert(std::make_pair(pParty,0));
 
 	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr)
@@ -109,7 +109,7 @@ void CDungeon::JoinParty_Coords(LPPARTY pParty, int32_t X, int32_t Y, int32_t in
 	X*=100;
 	Y*=100;
 	FWarpToDungeonCoords f(m_lMapIndex, X, Y, this);
-	pParty->ForEachOnMapMember(f,index);
+	PartySystem::ForEachOnMapMember(pParty, f, index);
 }
 
 void CDungeon::Initialize()
@@ -130,7 +130,7 @@ void CDungeon::Initialize()
 
 	m_stRegenFile = "";
 
-	m_pParty = nullptr;
+	m_pParty = entt::null;
 #ifdef __DEFENSE_WAVE__
 	m_Mast = entt::null;
 #endif
@@ -181,9 +181,9 @@ struct FWarpToDungeon
 	LPDUNGEON m_pkDungeon;
 };
 
-void CDungeon::JoinParty(LPPARTY pParty)
+void CDungeon::JoinParty(entt::entity pParty)
 {
-	pParty->SetDungeon(this); // @warme011 the begin of the nightmare
+	PartySystem::SetDungeon(pParty, this); // @warme011 the begin of the nightmare
 	m_map_pkParty.insert(std::make_pair(pParty,0));
 
 	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) {
@@ -191,13 +191,13 @@ void CDungeon::JoinParty(LPPARTY pParty)
 		return;
 	}
 	FWarpToDungeon f(m_lMapIndex, this);
-	pParty->ForEachOnlineMember(f);
+	PartySystem::ForEachOnlineMember(pParty, f);
 	//0, "DUNGEON-PARTY join %p %p", this, pParty);
 }
 
-void CDungeon::QuitParty(LPPARTY pParty)
+void CDungeon::QuitParty(entt::entity pParty)
 {
-	pParty->SetDungeon(nullptr);
+	PartySystem::SetDungeon(pParty, nullptr);
 	//0, "DUNGEON-PARTY quit %p %p", this, pParty);
 	TPartyMap::iterator it = m_map_pkParty.find(pParty); // @warme011 boom! crash!
 	if (it != m_map_pkParty.end())
@@ -267,7 +267,7 @@ void CDungeon::DecMember(entt::entity character)
 	}
 }
 
-void CDungeon::IncPartyMember(LPPARTY pParty, entt::entity character)
+void CDungeon::IncPartyMember(entt::entity pParty, entt::entity character)
 {
 	TPartyMap::iterator it = m_map_pkParty.find(pParty);
 
@@ -279,7 +279,7 @@ void CDungeon::IncPartyMember(LPPARTY pParty, entt::entity character)
 	IncMember(character);
 }
 
-void CDungeon::DecPartyMember(LPPARTY pParty, entt::entity character)
+void CDungeon::DecPartyMember(entt::entity pParty, entt::entity character)
 {
 	TPartyMap::iterator it = m_map_pkParty.find(pParty);
 
@@ -345,7 +345,7 @@ void CDungeon::JumpAll(int32_t idx, int32_t x, int32_t y)
 
 void CDungeon::SetPartyNull()
 {
-	m_pParty = nullptr;
+	m_pParty = entt::null;
 }
 
 

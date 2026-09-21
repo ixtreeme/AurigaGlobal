@@ -48,13 +48,6 @@ typedef DebugPtr<CDungeon> LPDUNGEON;
 typedef CDungeon* LPDUNGEON;
 #endif
 
-class CParty;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<CParty> LPPARTY;
-#else
-typedef CParty* LPPARTY;
-#endif
-
 typedef struct pixel_position_s
 {
 	int32_t x, y, z;

@@ -344,7 +344,7 @@ uint8_t GetPacketStateFlags(entt::registry& reg, entt::entity e)
             SET_BIT(state, ADD_CHARACTER_STATE_PARTY);
     }
 
-    if (ecs::SocialSystem::GetParty(e))
+    if (ecs::SocialSystem::GetParty(e) != entt::null)
         SET_BIT(state, ADD_CHARACTER_STATE_PARTY);
 
     return state;
@@ -690,8 +690,8 @@ bool NetworkSyncSystem::BuildPartyUpdatePacket(entt::registry& reg, entt::entity
     if (member == entt::null || !reg.valid(member))
         return false;
 
-    LPPARTY party = ecs::SocialSystem::GetParty(member);
-    if (!party)
+    const entt::entity party = ecs::SocialSystem::GetParty(member);
+    if (party == entt::null)
         return false;
 
     const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(member);
@@ -705,15 +705,15 @@ bool NetworkSyncSystem::BuildPartyUpdatePacket(entt::registry& reg, entt::entity
     else
         packet.percent_hp = MINMAX((int64_t)0, ecs::PointSystem::Get(member, POINT_HP) * 100 / maxHP, (int64_t)100);
 
-    packet.role = party->GetRole(playerID);
+    packet.role = PartySystem::GetRole(party, playerID);
     LOG_INFO("PARTY {} role is {}", ecs::PlayerRuntime::GetName(member), packet.role);
 
-    const entt::entity leaderEntity = party->GetLeader();
+    const entt::entity leaderEntity = PartySystem::GetLeader(party);
     if (leaderEntity != entt::null && reg.valid(leaderEntity)) {
         const auto* memberPos = reg.try_get<ecs::Position>(member);
         const auto* leaderPos = reg.try_get<ecs::Position>(leaderEntity);
         if (memberPos && leaderPos && DISTANCE_APPROX(memberPos->x - leaderPos->x, memberPos->y - leaderPos->y) < PARTY_DEFAULT_RANGE) {
-            packet.affects[0] = party->GetPartyBonusExpPercent();
+            packet.affects[0] = PartySystem::GetPartyBonusExpPercent(party);
             packet.affects[1] = ecs::PointSystem::Get(member, POINT_PARTY_ATTACKER_BONUS);
             packet.affects[2] = ecs::PointSystem::Get(member, POINT_PARTY_TANKER_BONUS);
             packet.affects[3] = ecs::PointSystem::Get(member, POINT_PARTY_BUFFER_BONUS);

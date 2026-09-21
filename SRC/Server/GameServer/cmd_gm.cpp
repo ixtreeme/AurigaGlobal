@@ -3675,10 +3675,10 @@ ACMD(do_duel)
 		AffectSystem::RemoveBadAffects(char1);
 		AffectSystem::RemoveBadAffects(char2);
 
-		LPPARTY pParty = ecs::SocialSystem::GetParty(char1);
-		if (pParty != nullptr)
+		entt::entity pParty = ecs::SocialSystem::GetParty(char1);
+		if (pParty != entt::null)
 		{
-			if (pParty->GetMemberCount() == 2)
+			if (PartySystem::GetMemberCount(pParty) == 2)
 			{
 				CPartyManager::instance().DeleteParty(pParty);
 			}
@@ -3687,14 +3687,14 @@ ACMD(do_duel)
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(char1, CHAT_TYPE_INFO, 215, "");
 #endif
-				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(char1));
+				PartySystem::Quit(pParty, ecs::PlayerRuntime::GetPlayerID(char1));
 			}
 		}
 
 		pParty = ecs::SocialSystem::GetParty(char2);
-		if (pParty != nullptr)
+		if (pParty != entt::null)
 		{
-			if (pParty->GetMemberCount() == 2)
+			if (PartySystem::GetMemberCount(pParty) == 2)
 			{
 				CPartyManager::instance().DeleteParty(pParty);
 			}
@@ -3703,7 +3703,7 @@ ACMD(do_duel)
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(char2, CHAT_TYPE_INFO, 215, "");
 #endif
-				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(char2));
+				PartySystem::Quit(pParty, ecs::PlayerRuntime::GetPlayerID(char2));
 			}
 		}
 

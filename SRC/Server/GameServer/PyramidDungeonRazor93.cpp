@@ -362,8 +362,8 @@ void CPyramidDungeonRazor93::OnPlayerLogin(entt::entity character)
 
     if (d->GetFlag(kFlagFloor) == 0)
     {
-        LPPARTY party = ecs::SocialSystem::GetParty(character);
-        if (!party || party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(character))
+        const entt::entity party = ecs::SocialSystem::GetParty(character);
+        if (party == entt::null || PartySystem::GetLeaderPID(party) == ecs::PlayerRuntime::GetPlayerID(character))
         {
             d->SetFlag(kFlagFloor, 2);
             d->SetFlag(kFlagWasCompleted, 0);
@@ -441,15 +441,15 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     quest::CQuestManager::instance().SetEventFlag(flagName, now + kAntiSpamSeconds);
 
     // Leader-only if party
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
+    if (party != entt::null && PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can start the Pyramid Dungeon.");
         return true;
     }
 
     // Level check
-    if (!party)
+    if (party == entt::null)
     {
         const int32_t lv = ecs::PointSystem::GetLevel(character);
         if (lv < kMinLevel || lv > kMaxLevel)
@@ -461,7 +461,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     else
     {
         FLevelCheck f;
-        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
+        PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(character));
         if (!f.ok)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon: %s has an invalid level (Lv%d). Required: %d-%d.",
@@ -471,7 +471,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     }
 
     // Cooldown
-    if (!party)
+    if (party == entt::null)
     {
         const int32_t cdUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
         if (cdUntil > now)
@@ -483,7 +483,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     else
     {
         FCooldownCheck f(now);
-        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
+        PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(character));
         if (!f.ok)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon: %s is on cooldown (%d seconds).",
@@ -493,7 +493,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     }
 
     // Entry item (must exist for everyone who will enter)
-    if (!party)
+    if (party == entt::null)
     {
         if (ItemSystem::CountItem(character, kEntryItemVnum) < 1)
         {
@@ -504,7 +504,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     else
     {
         FEntryItemCheck f;
-        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
+        PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(character));
         if (!f.ok)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s doesn't have the entry item.", f.name ? f.name : "Someone");
@@ -513,10 +513,10 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     }
 
     // Passed checks: consume items + set cooldown (BEFORE warping)
-    if (party)
+    if (party != entt::null)
     {
         FConsumeEntryItems f;
-        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
+        PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
@@ -525,9 +525,9 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     }
 
     // Reset rejoin flags for new run
-    if (party)
+    if (party != entt::null)
     {
-        struct FResetRejoin { void operator()(entt::entity m) { ResetRejoinFlags(m); } } f; party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
+        struct FResetRejoin { void operator()(entt::entity m) { ResetRejoinFlags(m); } } f; PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
         ResetRejoinFlags(character);
@@ -546,7 +546,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     d->SetFlag(kFlagStep, 0);
 
     // Join party/solo at cords
-    if (party)
+    if (party != entt::null)
     {
         d->JoinParty_Coords(party, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
     }
@@ -643,9 +643,9 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
             d->SetFlag(kFlagWasCompleted, 1);
 
             // Global notice
-            if (ecs::SocialSystem::GetParty(killer))
+            if (const entt::entity killerParty = ecs::SocialSystem::GetParty(killer); killerParty != entt::null)
             {
-                const entt::entity leader = ecs::SocialSystem::GetParty(killer)->GetLeader();
+                const entt::entity leader = PartySystem::GetLeader(killerParty);
                 { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", (leader != entt::null ? ecs::PlayerRuntime::GetName(leader).data() : ecs::PlayerRuntime::GetName(killer).data())); SendNotice(buf); }
             }
             else

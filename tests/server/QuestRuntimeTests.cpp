@@ -273,9 +273,9 @@ bool NPC::OnChat(PC&) {++chats;if(onChat){auto fn=onChat;fn();}return false;}
 bool NPC::OnClick(PC&) {++clicks;return false;}
 void CancelTimerEvent(LPEVENT*) {throw std::runtime_error("unexpected timer");}
 }
-LPPARTY ecs::SocialSystem::GetParty(entt::entity) {return nullptr;}
-uint32_t CParty::GetLeaderPID() {throw std::runtime_error("unexpected party");}
-entt::entity CParty::GetLeader() {throw std::runtime_error("unexpected party");}
+entt::entity ecs::SocialSystem::GetParty(entt::entity) {return entt::null;}
+uint32_t PartySystem::GetLeaderPID(entt::entity) {throw std::runtime_error("unexpected party");}
+entt::entity PartySystem::GetLeader(entt::entity) {throw std::runtime_error("unexpected party");}
 int32_t ecs::PointSystem::GetLevel(entt::entity e) {
     CheckLive(e);const auto* data=g_registry.try_get<TargetData>(e);return data?data->level:1;
 }

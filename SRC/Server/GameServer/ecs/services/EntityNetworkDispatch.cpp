@@ -114,7 +114,7 @@ uint8_t StateFlagsFor(entt::registry& reg, entt::entity e)
         if (status->isPartyState)
             SET_BIT(state, ADD_CHARACTER_STATE_PARTY);
     }
-    if (ecs::SocialSystem::GetParty(e))
+    if (ecs::SocialSystem::GetParty(e) != entt::null)
         SET_BIT(state, ADD_CHARACTER_STATE_PARTY);
     return state;
 }

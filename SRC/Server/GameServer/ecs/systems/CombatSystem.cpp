@@ -1401,19 +1401,19 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
 		info.aggro = 0;
 
 	//LOG_INFO(0, "UpdateAggrPointEx for %s by %s dam %d total %d", ecs::PlayerRuntime::GetName(self), ecs::PlayerRuntime::GetName(eAttacker).data(), dam, total);
-	if (ecs::SocialSystem::GetParty(self) && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
-	{
-		LPPARTY pParty = ecs::SocialSystem::GetParty(self);
+	const entt::entity pParty = ecs::SocialSystem::GetParty(self);
 
+	if (pParty != entt::null && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
+	{
 		//     ϴ
 		int iPartyAggroDist = dam;
 
-		if (pParty->GetLeaderPID() == ecs::PlayerRuntime::GetPacketVID(self))
+		if (PartySystem::GetLeaderPID(pParty) == ecs::PlayerRuntime::GetPacketVID(self))
 			iPartyAggroDist /= 2;
 		else
 			iPartyAggroDist /= 3;
 
-		pParty->SendMessage(self, PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID(attacker));
+		PartySystem::SendMessage(pParty, self, PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID(attacker));
 	}
 
 	CombatSystem::ChangeVictimByAggro(self, info.aggro, attacker);
@@ -1472,8 +1472,9 @@ void Stun(entt::entity e)
 
 	if (!ecs::PlayerRuntime::IsPC(e))
 	{
-		if (LPPARTY party = ecs::SocialSystem::GetParty(e))
-			party->SendMessage(e, PM_ATTACKED_BY, 0, 0);
+		const entt::entity party = ecs::SocialSystem::GetParty(e);
+		if (party != entt::null)
+			PartySystem::SendMessage(party, e, PM_ATTACKED_BY, 0, 0);
 	}
 
 	LOG_INFO("{}: Stun {}", ecs::PlayerRuntime::GetName(e).data(), static_cast<uint32_t>(e));
@@ -1885,28 +1886,28 @@ typedef struct SDamageInfo
 {
 	int iDam;
 	entt::entity pAttacker;
-	LPPARTY pParty;
+	entt::entity pParty { entt::null };
 
 	void Clear()
 	{
 		pAttacker = entt::null;
-		pParty = nullptr;
+		pParty = entt::null;
 	}
 
 	inline void Distribute(entt::entity chEntity, int iExp)
 	{
 		if (pAttacker != entt::null)
 			GiveExp(chEntity, pAttacker, iExp);
-		else if (pParty)
+		else if (pParty != entt::null)
 		{
 			NPartyExpDistribute::FPartyTotaler f(chEntity);
-			pParty->ForEachOnlineMember(f);
+			PartySystem::ForEachOnlineMember(pParty, f);
 
-			if (pParty->IsPositionNearLeader(chEntity))
-				iExp = iExp * (100 + pParty->GetExpBonusPercent()) / 100;
+			if (PartySystem::IsPositionNearLeader(pParty, chEntity))
+				iExp = iExp * (100 + PartySystem::GetExpBonusPercent(pParty)) / 100;
 
-			NPartyExpDistribute::FPartyDistributor fDist(chEntity, f.member_count, f.total, iExp, pParty->GetExpDistributionMode());
-			pParty->ForEachOnlineMember(fDist);
+			NPartyExpDistribute::FPartyDistributor fDist(chEntity, f.member_count, f.total, iExp, PartySystem::GetExpDistributionMode(pParty));
+			PartySystem::ForEachOnlineMember(pParty, fDist);
 		}
 	}
 } TDamageInfo;
@@ -1931,7 +1932,7 @@ entt::entity DistributeExp(entt::entity e)
 
 	typedef std::vector<TDamageInfo> TDamageInfoTable;
 	TDamageInfoTable damage_info_table;
-	std::map<LPPARTY, TDamageInfo> map_party_damage;
+	std::map<entt::entity, TDamageInfo> map_party_damage;
 
 	damage_info_table.reserve(CombatSystem::DamageLedgerOf(e).entries.size());
 
@@ -1957,15 +1958,17 @@ entt::entity DistributeExp(entt::entity e)
 			iMostDam = iDam;
 		}
 
-		if (ecs::SocialSystem::GetParty(eAttacker))
+		const entt::entity attackParty = ecs::SocialSystem::GetParty(eAttacker);
+
+		if (attackParty != entt::null)
 		{
-			std::map<LPPARTY, TDamageInfo>::iterator it = map_party_damage.find(ecs::SocialSystem::GetParty(eAttacker));
+			std::map<entt::entity, TDamageInfo>::iterator it = map_party_damage.find(attackParty);
 			if (it == map_party_damage.end())
 			{
 				TDamageInfo di;
 				di.iDam = iDam;
 				di.pAttacker = entt::null;
-				di.pParty = ecs::SocialSystem::GetParty(eAttacker);
+				di.pParty = attackParty;
 				map_party_damage.insert(std::make_pair(di.pParty, di));
 			}
 			else
@@ -1979,7 +1982,7 @@ entt::entity DistributeExp(entt::entity e)
 
 			di.iDam = iDam;
 			di.pAttacker = eAttacker;
-			di.pParty = nullptr;
+			di.pParty = entt::null;
 
 			//LOG_INFO(0, "__ pq_damage %s %d", ecs::PlayerRuntime::GetName(eAttacker).data(), iDam);
 			//pq_damage.push(di);
@@ -1987,7 +1990,7 @@ entt::entity DistributeExp(entt::entity e)
 		}
 	}
 
-	for (std::map<LPPARTY, TDamageInfo>::iterator it = map_party_damage.begin(); it != map_party_damage.end(); ++it)
+	for (std::map<entt::entity, TDamageInfo>::iterator it = map_party_damage.begin(); it != map_party_damage.end(); ++it)
 	{
 		damage_info_table.push_back(it->second);
 		//LOG_INFO(0, "__ pq_damage_party [%u] %d", it->second.pParty->GetLeaderPID(), it->second.iDam);
@@ -3875,7 +3878,7 @@ void Reward(entt::entity e, bool bItemDrop)
 				|| (lMapIndex >= 1790000 && lMapIndex < 1800000)  // viking
 				)
 			{
-				if (ecs::SocialSystem::GetParty(attacker)) // CSAK partyra
+				if (ecs::SocialSystem::GetParty(attacker) != entt::null) // CSAK partyra
 				{
 					CDungeon* pDungeon = ecs::SocialSystem::GetDungeon(e);
 
@@ -4191,8 +4194,9 @@ void Reward(entt::entity e, bool bItemDrop)
 
 						entt::entity owner = *it;
 
-						if (LPPARTY ownerParty = ecs::SocialSystem::GetParty(owner))
-							owner = ownerParty->GetNextOwnership(owner, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
+						const entt::entity ownerParty = ecs::SocialSystem::GetParty(owner);
+						if (ownerParty != entt::null)
+							owner = PartySystem::GetNextOwnership(ownerParty, owner, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
 
 						++it;
 
@@ -4342,8 +4346,9 @@ void Reward(entt::entity e, bool bItemDrop)
 
 						entt::entity owner = *it;
 
-						if (LPPARTY ownerParty = ecs::SocialSystem::GetParty(owner))
-							owner = ownerParty->GetNextOwnership(owner, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
+						const entt::entity ownerParty = ecs::SocialSystem::GetParty(owner);
+						if (ownerParty != entt::null)
+							owner = PartySystem::GetNextOwnership(ownerParty, owner, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
 
 						++it;
 
@@ -5599,10 +5604,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					}
 					else if (type == 3 && step == 0)
 					{
-						LPPARTY party = ecs::SocialSystem::GetParty(attacker);
-						if (party)
+						const entt::entity party = ecs::SocialSystem::GetParty(attacker);
+						if (party != entt::null)
 						{
-							if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(attacker))
+							if (PartySystem::GetLeaderPID(party) == ecs::PlayerRuntime::GetPlayerID(attacker))
 							{
 								int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 70;
 								if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
@@ -7587,8 +7592,9 @@ bool Return(entt::entity e)
     if (test_server)
         LOG_INFO("{} returning to {} {}", ecs::PlayerRuntime::GetName(e), x, y);
 
-    if (LPPARTY party = ecs::SocialSystem::GetParty(e))
-        party->SendMessage(e, PM_RETURN, x, y);
+    const entt::entity party = ecs::SocialSystem::GetParty(e);
+    if (party != entt::null)
+        PartySystem::SendMessage(party, e, PM_RETURN, x, y);
 
     return true;
 }

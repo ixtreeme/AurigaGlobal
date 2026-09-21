@@ -1494,11 +1494,11 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     const int32_t lobbyX = ecs::PlayerRuntime::GetX(character) / 100;
     const int32_t lobbyY = ecs::PlayerRuntime::GetY(character) / 100;
 
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
 
-    if (party)
+    if (party != entt::null)
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+        if (PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Csak a party leader indithatja!");
             return true;
@@ -1528,7 +1528,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
                 }
             };
 
-        party->ForEachOnlineMember(check);
+        PartySystem::ForEachOnlineMember(party, check);
 
         if (!ok)
         {
@@ -1582,7 +1582,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
             ecs::MovementSystem::SetWarpLocation(m, lobbyMap, lobbyX, lobbyY);
         };
 
-    if (!party)
+    if (party == entt::null)
     {
         applyMember(character);
 
@@ -1591,7 +1591,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     }
     else
     {
-        party->ForEachOnMapMember(applyMember, ecs::PlayerRuntime::GetMapIndex(character));
+        PartySystem::ForEachOnMapMember(party, applyMember, ecs::PlayerRuntime::GetMapIndex(character));
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
         d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));

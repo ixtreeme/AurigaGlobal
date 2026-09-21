@@ -857,7 +857,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 	}
 
 	entt::entity master = entt::null;
-	LPPARTY pkParty = nullptr;
+	entt::entity pkParty = entt::null;
 
 	const std::vector<uint32_t>& c_rdwMembers = pkGroup->GetMemberVector();
 
@@ -890,10 +890,10 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 
 		if (m_selectedStone != entt::null)
 			CombatSystem::SetStone(spawned, m_selectedStone);
-		else if (pkParty)
+		else if (pkParty != entt::null)
 		{
-			pkParty->Join(ecs::PlayerRuntime::GetPacketVID(spawned));
-			pkParty->Link(spawned);
+			PartySystem::Join(pkParty, ecs::PlayerRuntime::GetPacketVID(spawned));
+			PartySystem::Link(pkParty, spawned);
 		}
 		else if (master == entt::null)
 		{
@@ -942,7 +942,7 @@ entt::entity CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, i
 	}
 
 	entt::entity master = entt::null;
-	LPPARTY pkParty = nullptr;
+	entt::entity pkParty = entt::null;
 
 	const std::vector<uint32_t>& c_rdwMembers = pkGroup->GetMemberVector();
 
@@ -983,10 +983,10 @@ entt::entity CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, i
 
 		if (m_selectedStone != entt::null)
 			CombatSystem::SetStone(spawned, m_selectedStone);
-		else if (pkParty)
+		else if (pkParty != entt::null)
 		{
-			pkParty->Join(ecs::PlayerRuntime::GetPacketVID(spawned));
-			pkParty->Link(spawned);
+			PartySystem::Join(pkParty, ecs::PlayerRuntime::GetPacketVID(spawned));
+			PartySystem::Link(pkParty, spawned);
 		}
 		else if (master == entt::null)
 		{

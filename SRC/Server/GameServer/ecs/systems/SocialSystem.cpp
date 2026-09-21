@@ -47,15 +47,9 @@
 
 namespace ecs::SocialSystem {
 
-LPPARTY GetParty(entt::entity e)
+entt::entity GetParty(entt::entity e)
 {
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (const auto* refs = g_registry.try_get<ecs::SocialRefs>(e))
-        return refs->party;
-
-    return nullptr;
+    return PartySystem::GetCharacterParty(e);
 }
 
 CGuild* GetGuild(entt::entity e)
@@ -88,8 +82,9 @@ void SetDungeon(entt::entity e, LPDUNGEON pkDungeon)
     {
         if (ecs::PlayerRuntime::IsPC(e))
         {
-            if (ecs::SocialSystem::GetParty(e))
-                membership.dungeon->DecPartyMember(ecs::SocialSystem::GetParty(e), e);
+            const entt::entity party = ecs::SocialSystem::GetParty(e);
+            if (party != entt::null)
+                membership.dungeon->DecPartyMember(party, e);
             else
                 membership.dungeon->DecMember(e);
         }
@@ -101,8 +96,9 @@ void SetDungeon(entt::entity e, LPDUNGEON pkDungeon)
     {
         if (ecs::PlayerRuntime::IsPC(e))
         {
-            if (ecs::SocialSystem::GetParty(e))
-                membership.dungeon->IncPartyMember(ecs::SocialSystem::GetParty(e), e);
+            const entt::entity party = ecs::SocialSystem::GetParty(e);
+            if (party != entt::null)
+                membership.dungeon->IncPartyMember(party, e);
             else
                 membership.dungeon->IncMember(e);
         }
@@ -631,32 +627,41 @@ void SetShop(entt::entity e, CShop* shop)
 
 entt::entity GetPartyLeader(entt::entity e)
 {
-    LPPARTY party = GetParty(e);
-    return party ? party->GetLeader() : entt::null;
+    const entt::entity party = GetParty(e);
+    return party != entt::null ? PartySystem::GetLeader(party) : entt::null;
 }
 
 void ForEachNearPartyMember(entt::entity e, const std::function<void(entt::entity)>& visitor)
 {
-    if (LPPARTY party = GetParty(e))
+    const entt::entity party = GetParty(e);
+
+    if (party != entt::null)
     {
-        party->ForEachNearMember(visitor);
+        auto walk = [&visitor](entt::entity member) { visitor(member); };
+        PartySystem::ForEachNearMember(party, walk);
     }
 }
 
 void ForEachOnlinePartyMember(entt::entity e, const std::function<void(entt::entity)>& visitor)
 {
-    if (LPPARTY party = GetParty(e))
+    const entt::entity party = GetParty(e);
+
+    if (party != entt::null)
     {
-        party->ForEachOnlineMember(visitor);
+        auto walk = [&visitor](entt::entity member) { visitor(member); };
+        PartySystem::ForEachOnlineMember(party, walk);
     }
 }
 
 void ForEachPartyMemberOnMap(entt::entity e, int32_t mapIndex,
     const std::function<void(entt::entity)>& visitor)
 {
-    if (LPPARTY party = GetParty(e))
+    const entt::entity party = GetParty(e);
+
+    if (party != entt::null)
     {
-        party->ForEachOnMapMember(visitor, mapIndex);
+        auto walk = [&visitor](entt::entity member) { visitor(member); };
+        PartySystem::ForEachOnMapMember(party, walk, mapIndex);
     }
 }
 
@@ -724,36 +729,40 @@ namespace ecs::SocialSystem {
 
 // The party this character belongs to. CHARACTER::m_pkParty, SocialRefs::party
 // and PartyMembership::party were three copies of it, kept level only because
-// this one setter wrote all three.
-void SetParty(entt::entity e, LPPARTY pkParty)
+// this one setter wrote all three. The party itself is now an entity; a stale
+// handle reads as null.
+void SetParty(entt::entity e, entt::entity pkParty)
 {
     if (e == entt::null || !g_registry.valid(e))
         return;
 
+    if (pkParty != entt::null && !PartySystem::IsValid(pkParty))
+        pkParty = entt::null;
+
     auto& refs = g_registry.get_or_emplace<ecs::SocialRefs>(e);
-    LPPARTY previous = refs.party;
+    const entt::entity previous = refs.party;
 
     if (pkParty == previous)
         return;
 
-    if (pkParty && previous)
+    if (pkParty != entt::null && previous != entt::null)
         LOG_ERROR("{} is trying to reassigning party (current {}, new party {})",
             ecs::PlayerRuntime::GetName(e).data(),
-            static_cast<const void*>(get_pointer(previous)),
-            static_cast<const void*>(get_pointer(pkParty)));
+            static_cast<uint32_t>(previous),
+            static_cast<uint32_t>(pkParty));
 
-    LOG_TRACE("PARTY set to {}", static_cast<const void*>(get_pointer(pkParty)));
+    LOG_TRACE("PARTY set to {}", static_cast<uint32_t>(pkParty));
 
     const bool isPC = ecs::PlayerRuntime::IsPC(e);
 
 #ifdef ENABLE_BUG_FIXES
-    if (GetDungeon(e) && isPC && !pkParty)
+    if (GetDungeon(e) && isPC && pkParty == entt::null)
         SetDungeon(e, nullptr);
 #endif
 
 #ifdef ENABLE_NEW_USE_POTION
-    if (isPC && previous && pkParty == nullptr &&
-        previous->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(e))
+    if (isPC && previous != entt::null && pkParty == entt::null &&
+        PartySystem::GetLeaderPID(previous) == ecs::PlayerRuntime::GetPlayerID(e))
     {
         if (CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_NEW_POTION31))
         {
@@ -775,7 +784,7 @@ void SetParty(entt::entity e, LPPARTY pkParty)
     {
         if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
         {
-            status->isPartyState = (pkParty != nullptr);
+            status->isPartyState = (pkParty != entt::null);
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
 
@@ -840,8 +849,9 @@ bool ecs::SocialSystem::RequestToParty(entt::entity e, entt::entity leaderEntity
         return false;
 
     entt::entity leader = ecs::PlayerRuntime::IsValid(leaderEntity) ? leaderEntity : entt::null;
-    if (ecs::SocialSystem::GetParty(leaderEntity))
-        leader = ecs::SocialSystem::GetParty(leaderEntity)->GetLeader();
+    const entt::entity leaderParty = ecs::SocialSystem::GetParty(leaderEntity);
+    if (leaderParty != entt::null)
+        leader = PartySystem::GetLeader(leaderParty);
 
     if (leader == entt::null)
     {
@@ -989,9 +999,11 @@ void ecs::SocialSystem::AcceptToParty(entt::entity e, entt::entity memberEntity)
 
     event_cancel(&memberInvitations->requestEvent);
 
-    if (ecs::SocialSystem::GetParty(e))
+    const entt::entity party = ecs::SocialSystem::GetParty(e);
+
+    if (party != entt::null)
     {
-        if (ecs::PlayerRuntime::GetPlayerID(e) != ecs::SocialSystem::GetParty(e)->GetLeaderPID())
+        if (ecs::PlayerRuntime::GetPlayerID(e) != PartySystem::GetLeaderPID(party))
             return;
 
         ecs::SocialSystem::PartyJoinErrCode errcode = ecs::SocialSystem::IsPartyJoinableCondition(e, memberEntity);
@@ -1068,7 +1080,9 @@ void ecs::SocialSystem::PartyInvite(entt::entity e, entt::entity invitee)
     if (!ecs::IsCharacter(e))
         return;
 
-    if (ecs::SocialSystem::GetParty(e) && ecs::SocialSystem::GetParty(e)->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(e))
+    const entt::entity inviteParty = ecs::SocialSystem::GetParty(e);
+
+    if (inviteParty != entt::null && PartySystem::GetLeaderPID(inviteParty) != ecs::PlayerRuntime::GetPlayerID(e))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 218, "");
@@ -1186,7 +1200,9 @@ void ecs::SocialSystem::PartyInviteAccept(entt::entity e, entt::entity invitee)
     event_cancel(&itFind->second);
     invitations->inviteEvents.erase(itFind);
 
-    if (ecs::SocialSystem::GetParty(e) && ecs::SocialSystem::GetParty(e)->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(e))
+    const entt::entity acceptParty = ecs::SocialSystem::GetParty(e);
+
+    if (acceptParty != entt::null && PartySystem::GetLeaderPID(acceptParty) != ecs::PlayerRuntime::GetPlayerID(e))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 218, "");
@@ -1246,15 +1262,15 @@ void ecs::SocialSystem::PartyInviteAccept(entt::entity e, entt::entity invitee)
         return;
     }
 
-    if (ecs::SocialSystem::GetParty(e))
+    if (ecs::SocialSystem::GetParty(e) != entt::null)
         ecs::SocialSystem::PartyJoin(invitee, e);
     else
     {
-        LPPARTY pParty = CPartyManager::instance().CreateParty(e);
+        const entt::entity pParty = CPartyManager::instance().CreateParty(e);
 
-        pParty->Join(ecs::PlayerRuntime::GetPlayerID(invitee));
-        pParty->Link(invitee);
-        pParty->SendPartyInfoAllToOne(e);
+        PartySystem::Join(pParty, ecs::PlayerRuntime::GetPlayerID(invitee));
+        PartySystem::Link(pParty, invitee);
+        PartySystem::SendPartyInfoAllToOne(pParty, e);
     }
 }
 
@@ -1292,13 +1308,15 @@ void ecs::SocialSystem::CancelPartyRequest(entt::entity e)
 
 void ecs::SocialSystem::PartyJoin(entt::entity guest, entt::entity leader)
 {
-    if (ecs::SocialSystem::GetParty(leader)) {
+    const entt::entity party = ecs::SocialSystem::GetParty(leader);
+
+    if (party != entt::null) {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(leader, CHAT_TYPE_INFO, 1249, "%s", ecs::PlayerRuntime::GetName(guest).data());
         ecs::ChatSystem::SendNew(guest, CHAT_TYPE_INFO, 193, "%s", ecs::PlayerRuntime::GetName(leader).data());
 #endif
-        ecs::SocialSystem::GetParty(leader)->Join(ecs::PlayerRuntime::GetPlayerID(guest));
-        ecs::SocialSystem::GetParty(leader)->Link(guest);
+        PartySystem::Join(party, ecs::PlayerRuntime::GetPlayerID(guest));
+        PartySystem::Link(party, guest);
     }
 }
 
@@ -1324,11 +1342,11 @@ ecs::SocialSystem::PartyJoinErrCode ecs::SocialSystem::IsPartyJoinableMutableCon
     else if (false == __party_can_join_by_level(
 		leader, guest))
         return PERR_LVBOUNDARY;
-    else if (ecs::SocialSystem::GetParty(guest))
+    else if (ecs::SocialSystem::GetParty(guest) != entt::null)
         return PERR_ALREADYJOIN;
-    else if (ecs::SocialSystem::GetParty(leader))
+    else if (ecs::SocialSystem::GetParty(leader) != entt::null)
     {
-        if (ecs::SocialSystem::GetParty(leader)->GetMemberCount() == PARTY_MAX_MEMBER)
+        if (PartySystem::GetMemberCount(ecs::SocialSystem::GetParty(leader)) == PARTY_MAX_MEMBER)
             return PERR_PARTYISFULL;
     }
 
@@ -1372,15 +1390,15 @@ namespace ecs::SocialSystem {
 // Whether a reviver mob stands in this one's party.
 bool HasReviverInParty(entt::entity e)
 {
-    LPPARTY party = GetParty(e);
-    if (party == nullptr)
+    const entt::entity party = GetParty(e);
+    if (party == entt::null)
         return false;
 
-    if (party->GetMemberCount() == 1)
+    if (PartySystem::GetMemberCount(party) == 1)
         return false;
 
     FFindReviver f;
-    party->ForEachOnlineMember(f);
+    PartySystem::ForEachOnlineMember(party, f);
     return f.HasReviver;
 }
 

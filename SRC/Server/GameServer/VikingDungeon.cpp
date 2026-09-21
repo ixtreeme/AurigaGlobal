@@ -1202,22 +1202,22 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
 
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
-    if (party)
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
+    if (party != entt::null)
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+        if (PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can start the dungeon.");
             return true;
         }
 
-        if (party->GetNearMemberCount() != party->GetMemberCount())
+        if (PartySystem::GetNearMemberCount(party) != PartySystem::GetMemberCount(party))
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Every party member must be online and near the NPC.");
             return true;
         }
 
-        if ((int32_t)party->GetMemberCount() < kMinMembers)
+        if ((int32_t)PartySystem::GetMemberCount(party) < kMinMembers)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Your party needs at least %d members.", kMinMembers);
             return true;
@@ -1281,8 +1281,8 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         }
     };
 
-    if (party)
-        party->ForEachOnMapMember(checkMember, ecs::PlayerRuntime::GetMapIndex(character));
+    if (party != entt::null)
+        PartySystem::ForEachOnMapMember(party, checkMember, ecs::PlayerRuntime::GetMapIndex(character));
     else
         checkMember(character);
 
@@ -1335,14 +1335,14 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         }
     };
 
-    if (party)
-        party->ForEachOnMapMember(prepareMember, ecs::PlayerRuntime::GetMapIndex(character));
+    if (party != entt::null)
+        PartySystem::ForEachOnMapMember(party, prepareMember, ecs::PlayerRuntime::GetMapIndex(character));
     else
         prepareMember(character);
 
     SetDungeonReady(d);
 
-    if (party)
+    if (party != entt::null)
         d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     else
         d->Join_Coords(character, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
@@ -1536,15 +1536,17 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     {
         const char* leaderName = ecs::PlayerRuntime::GetName(killer).data();
 
-        if (ecs::SocialSystem::GetParty(killer))
+        const entt::entity killerParty = ecs::SocialSystem::GetParty(killer);
+
+        if (killerParty != entt::null)
         {
-            const entt::entity leader = ecs::SocialSystem::GetParty(killer)->GetLeader();
+            const entt::entity leader = PartySystem::GetLeader(killerParty);
             if (leader != entt::null)
                 leaderName = ecs::PlayerRuntime::GetName(leader).data();
         }
 
         char notice[256];
-        if (ecs::SocialSystem::GetParty(killer))
+        if (killerParty != entt::null)
             std::snprintf(notice, sizeof(notice), "%s es csoportja teljesitette a Fagyos dungeont!", leaderName);
         else
             std::snprintf(notice, sizeof(notice), "%s befejezte a Fagyos dungeont!", ecs::PlayerRuntime::GetName(killer).data());

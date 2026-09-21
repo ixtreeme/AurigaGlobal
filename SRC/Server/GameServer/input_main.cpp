@@ -1411,11 +1411,16 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 
 		case CHAT_TYPE_PARTY:
 			{
-				if (!ecs::SocialSystem::GetParty(character))
+				const entt::entity chatParty = ecs::SocialSystem::GetParty(character);
+
+				if (chatParty == entt::null)
+				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 485, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 486, "");
 #endif
-				if (ecs::SocialSystem::GetParty(character))
+				}
+				else
 				{
 					TEMP_BUFFER tbuf;
 
@@ -1428,15 +1433,10 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 					if (ecs::PlayerRuntime::IsGM(character))
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), ecs::SocialSystem::GetParty(character)->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");
+						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), PartySystem::GetLeaderPID(chatParty), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");
 					}
 #endif
 				}
-#ifdef TEXTS_IMPROVEMENT
-				else {
-					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 486, "");
-				}
-#endif
 			}
 			break;
 
@@ -3332,10 +3332,12 @@ void CInputMain::PartySetState(entt::entity character, const char* c_pData)
 
 	TPacketCGPartySetState* p = (TPacketCGPartySetState*) c_pData;
 
-	if (!ecs::SocialSystem::GetParty(character))
+	const entt::entity party = ecs::SocialSystem::GetParty(character);
+
+	if (party == entt::null)
 		return;
 
-	if (ecs::SocialSystem::GetParty(character)->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+	if (PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 206, "");
@@ -3343,7 +3345,7 @@ void CInputMain::PartySetState(entt::entity character, const char* c_pData)
 		return;
 	}
 
-	if (!ecs::SocialSystem::GetParty(character)->IsMember(p->pid))
+	if (!PartySystem::IsMember(party, p->pid))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 207, "");
@@ -3365,7 +3367,7 @@ void CInputMain::PartySetState(entt::entity character, const char* c_pData)
 		case PARTY_ROLE_SKILL_MASTER:
 		case PARTY_ROLE_HASTE:
 		case PARTY_ROLE_DEFENDER:
-			if (ecs::SocialSystem::GetParty(character)->SetRole(pid, p->byRole, p->flag))
+			if (PartySystem::SetRole(party, pid, p->byRole, p->flag))
 			{
 				TPacketPartyStateChange pack;
 				pack.dwLeaderPID = ecs::PlayerRuntime::GetPlayerID(character);
@@ -3414,15 +3416,16 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 
 	TPacketCGPartyRemove* p = (TPacketCGPartyRemove*) c_pData;
 
-	if (!ecs::SocialSystem::GetParty(character))
+	const entt::entity pParty = ecs::SocialSystem::GetParty(character);
+
+	if (pParty == entt::null)
 		return;
 
-	LPPARTY pParty = ecs::SocialSystem::GetParty(character);
-	if (pParty->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(character))
+	if (PartySystem::GetLeaderPID(pParty) == ecs::PlayerRuntime::GetPlayerID(character))
 	{
 		if (!ecs::SocialSystem::GetDungeon(character)) {
 			// ���漺���� ��Ƽ���� ���� �ۿ��� ��Ƽ �ػ� ���ϰ� ����
-			if(pParty->IsPartyInDungeon(351))
+			if(PartySystem::IsPartyInDungeon(pParty, 351))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 648, "");
@@ -3431,7 +3434,7 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 			}
 
 			// leader can remove any member
-			if (p->pid == ecs::PlayerRuntime::GetPlayerID(character) || pParty->GetMemberCount() == 2)
+			if (p->pid == ecs::PlayerRuntime::GetPlayerID(character) || PartySystem::GetMemberCount(pParty) == 2)
 			{
 				// party disband
 				CPartyManager::instance().DeleteParty(pParty);
@@ -3447,7 +3450,7 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 					//CPartyManager::instance().SetPartyMember(ecs::PlayerRuntime::GetPlayerID(B), NULL);
 				}
 #endif
-				pParty->Quit(p->pid);
+				PartySystem::Quit(pParty, p->pid);
 			}
 		}
 #ifdef TEXTS_IMPROVEMENT
@@ -3461,14 +3464,14 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 		if (p->pid == ecs::PlayerRuntime::GetPlayerID(character))
 		{
 			if (!ecs::SocialSystem::GetDungeon(character)) {
-				if (pParty->GetMemberCount() == 2) {
+				if (PartySystem::GetMemberCount(pParty) == 2) {
 					CPartyManager::instance().DeleteParty(pParty);
 				} else {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 215, "");
 #endif
 					//pParty->SendPartyRemoveOneToAll(ch);
-					pParty->Quit(ecs::PlayerRuntime::GetPlayerID(character));
+					PartySystem::Quit(pParty, ecs::PlayerRuntime::GetPlayerID(character));
 					//pParty->SendPartyRemoveAllToOne(ch);
 					//CPartyManager::instance().SetPartyMember(ecs::PlayerRuntime::GetPlayerID(character), NULL);
 				}
@@ -3574,10 +3577,11 @@ void CInputMain::PartyUseSkill(entt::entity character, const char* c_pData)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyUseSkill");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGPartyUseSkill* p = (TPacketCGPartyUseSkill*) c_pData;
-	if (!ecs::SocialSystem::GetParty(character))
+	const entt::entity pParty = ecs::SocialSystem::GetParty(character);
+	if (pParty == entt::null)
 		return;
 
-	if (ecs::PlayerRuntime::GetPlayerID(character) != ecs::SocialSystem::GetParty(character)->GetLeaderPID())
+	if (ecs::PlayerRuntime::GetPlayerID(character) != PartySystem::GetLeaderPID(pParty))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 211, "");
@@ -3588,13 +3592,13 @@ void CInputMain::PartyUseSkill(entt::entity character, const char* c_pData)
 	switch (p->bySkillIndex)
 	{
 		case PARTY_SKILL_HEAL:
-			ecs::SocialSystem::GetParty(character)->HealParty();
+			PartySystem::HealParty(pParty);
 			break;
 		case PARTY_SKILL_WARP:
 			{
 				const entt::entity pch = CHARACTER_MANAGER::instance().FindEntity(p->vid);
 				if (pch != entt::null) {
-					ecs::SocialSystem::GetParty(character)->SummonToLeader(ecs::PlayerRuntime::GetPlayerID(pch));
+					PartySystem::SummonToLeader(pParty, ecs::PlayerRuntime::GetPlayerID(pch));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -3613,8 +3617,9 @@ void CInputMain::PartyParameter(entt::entity character, const char * c_pData)
 // DUAL-PATH: legacy only during migration window
 	TPacketCGPartyParameter * p = (TPacketCGPartyParameter *) c_pData;
 
-	if (ecs::SocialSystem::GetParty(character))
-		ecs::SocialSystem::GetParty(character)->SetParameter(p->bDistributeMode);
+	const entt::entity pParty = ecs::SocialSystem::GetParty(character);
+	if (pParty != entt::null)
+		PartySystem::SetParameter(pParty, p->bDistributeMode);
 }
 
 #ifdef __INGAME_WIKI__

@@ -286,7 +286,7 @@ bool ecs::PlayerRuntime::IsWarp(entt::entity) { Unexpected(); }
 LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity e) { return Recovery(e).dungeon; }
 // MovementSystem asks for the party on a sector change now that CHARACTER
 // has no getter of its own.
-LPPARTY ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
+entt::entity ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
 SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity e) { CheckShow(e); return ecs::SectorOf(g_registry, e); }
 float ecs::PlayerRuntime::GetRotation(entt::entity e) {
     const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
@@ -394,8 +394,8 @@ bool ItemSystem::IsValidItem(entt::entity e) { return g_registry.valid(e) && g_r
 const TItemTable* ItemSystem::GetItemProto(entt::entity e) {
     auto it = weaponProtos.find(e); return it == weaponProtos.end() ? nullptr : &it->second;
 }
-uint32_t CParty::GetLeaderPID() { Unexpected(); }
-entt::entity CParty::GetLeader() { Unexpected(); }
+uint32_t PartySystem::GetLeaderPID(entt::entity) { Unexpected(); }
+entt::entity PartySystem::GetLeader(entt::entity) { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity e, uint8_t point) {
     if (point == POINT_MOV_SPEED) return motionSettings[e].movePoint;
     Recovery(e);

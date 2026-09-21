@@ -821,15 +821,15 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
         return true;
     }
 
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
+    if (party != entt::null && PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can start Easter Dungeon.");
         return true;
     }
 
     // Party level check: everyone who will enter must meet level requirement (same map as leader)
-    if (party)
+    if (party != entt::null)
     {
         bool ok = true;
         const char* badName = nullptr;
@@ -856,7 +856,7 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
     }
 
     // Party cooldown: everyone must be off cooldown
-    if (party)
+    if (party != entt::null)
     {
         FCooldownCheck f(now, "easter_dungeon.cooldown");
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
@@ -876,7 +876,7 @@ if (!f.ok)
         entryItemName = "Entry item";
 
     // Entry item check (NAME not VNUM)
-    if (!party)
+    if (party == entt::null)
     {
         if (ItemSystem::CountItem(character, kEntryItemVnum) < 1)
         {
@@ -913,7 +913,7 @@ if (!it.ok)
     d->SetFlag(kFlagCompleted, 0);
     d->SetFlag(kFlagStep, 0);
     d->SetFlag(kFlagBossVid, 0);
-    d->SetFlag(kFlagIsParty, party ? 1 : 0);
+    d->SetFlag(kFlagIsParty, party != entt::null ? 1 : 0);
     d->SetFlag(kFlagLeaderPid, (int32_t)ecs::PlayerRuntime::GetPlayerID(character));
     d->SetFlag(kFlagF2Retry, 0);
     d->SetFlag(kFlagF1ToF2, 0);
@@ -932,7 +932,7 @@ if (!it.ok)
             ecs::QuestSystem::SetFlag(m, "easter_dungeon.enter_time", now);
         };
 
-    if (!party)
+    if (party == entt::null)
     {
         applyMember(character);
         d->Join_Coords(character, kEnterX, kEnterY, kEasterOriginalMap);

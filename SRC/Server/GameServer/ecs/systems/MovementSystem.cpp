@@ -1532,8 +1532,8 @@ bool ecs::MovementSystem::Sync(entt::entity e, int32_t x, int32_t y)
         const int currentEventAttr = membership.eventAttr;
         if (currentEventAttr != iLastEventAttr)
         {
-            auto* party = ecs::SocialSystem::GetParty(character);
-            const entt::entity questPlayer = party ? party->GetLeader() : character;
+            const entt::entity party = ecs::SocialSystem::GetParty(character);
+            const entt::entity questPlayer = party != entt::null ? PartySystem::GetLeader(party) : character;
             quest::CQuestManager::instance().AttrOut(questPlayer, character, iLastEventAttr);
             if (!ecs::PlayerRuntime::IsPC(character)) return false;
             const auto* current = g_registry.try_get<ecs::DungeonMembership>(character);

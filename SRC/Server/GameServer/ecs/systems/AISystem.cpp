@@ -425,8 +425,9 @@ void StateBattle(entt::entity e)
         return;
     }
 
-    if (LPPARTY party = ecs::SocialSystem::GetParty(e))
-        party->SendMessage(e, PM_ATTACKED_BY, 0, 0);
+    const entt::entity party = ecs::SocialSystem::GetParty(e);
+    if (party != entt::null)
+        PartySystem::SendMessage(party, e, PM_ATTACKED_BY, 0, 0);
 
     const uint32_t curTime = get_dword_time();
     const uint32_t duration = CalculateDuration(

@@ -188,7 +188,7 @@ bool UseMobSkill(entt::entity, unsigned int) { return false; }
 } // namespace SkillSystem
 
 namespace ecs::SocialSystem {
-CParty* GetParty(entt::entity) { return nullptr; }
+entt::entity GetParty(entt::entity) { return entt::null; }
 entt::entity GetPartyLeader(entt::entity) { return entt::null; }
 } // namespace ecs::SocialSystem
 
@@ -220,7 +220,7 @@ bool SECTREE_MANAGER::IsMovablePosition(int, int, int) { return true; }
 
 // Motion, party and attack-speed services are controlled at the AI boundary.
 float CMotionManager::GetMotionDuration(uint32_t, uint32_t) { return 0.0f; }
-void CParty::SendMessage(entt::entity, uint8_t, uint32_t, uint32_t) {}
+void PartySystem::SendMessage(entt::entity, entt::entity, uint8_t, uint32_t, uint32_t) {}
 int CalculateDuration(int, int) { return g_rec.attackPeriodMs; }
 int MAX(int a, int b) { return a > b ? a : b; }
 

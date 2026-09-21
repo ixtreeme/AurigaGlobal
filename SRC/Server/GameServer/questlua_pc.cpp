@@ -659,7 +659,7 @@ namespace quest
 		}
 
 		entt::entity recipient = chEntity;
-		if (ecs::SocialSystem::GetParty(chEntity))
+		if (ecs::SocialSystem::GetParty(chEntity) != entt::null)
 			recipient = ItemSystem::RollPartyDropOwnership(item, chEntity);
 		ItemSystem::AutoGiveItem(recipient, item);
 
@@ -2511,7 +2511,7 @@ teleport_area:
 #ifdef ENABLE_BUG_FIXES
 		if (chEntity == entt::null || !g_registry.valid(chEntity)) {
             return 0;
-		} else if (ecs::SocialSystem::GetParty(chEntity)) {
+		} else if (ecs::SocialSystem::GetParty(chEntity) != entt::null) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 1245, "");
 #endif

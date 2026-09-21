@@ -1941,23 +1941,23 @@ void CInputDB::PartyRemove(const char* c_pData)
 void CInputDB::PartyStateChange(const char* c_pData)
 {
 	TPacketPartyStateChange * p = (TPacketPartyStateChange *) c_pData;
-	LPPARTY pParty = CPartyManager::instance().P2PCreateParty(p->dwLeaderPID);
+	const entt::entity pParty = CPartyManager::instance().P2PCreateParty(p->dwLeaderPID);
 
-	if (!pParty)
+	if (pParty == entt::null)
 		return;
 
-	pParty->SetRole(p->dwPID, p->bRole, p->bFlag);
+	PartySystem::SetRole(pParty, p->dwPID, p->bRole, p->bFlag);
 }
 
 void CInputDB::PartySetMemberLevel(const char* c_pData)
 {
 	TPacketPartySetMemberLevel* p = (TPacketPartySetMemberLevel*) c_pData;
-	LPPARTY pParty = CPartyManager::instance().P2PCreateParty(p->dwLeaderPID);
+	const entt::entity pParty = CPartyManager::instance().P2PCreateParty(p->dwLeaderPID);
 
-	if (!pParty)
+	if (pParty == entt::null)
 		return;
 
-	pParty->P2PSetMemberLevel(p->dwPID, p->bLevel);
+	PartySystem::P2PSetMemberLevel(pParty, p->dwPID, p->bLevel);
 }
 
 void CInputDB::Time(const char * c_pData)

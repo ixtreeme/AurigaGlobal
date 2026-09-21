@@ -1,6 +1,6 @@
 Phase 19 - Social/party/guild/dungeon/shop relation audit
 Date: 2026-09-21
-Mode: audit and one implemented migration unit (wedding map).
+Mode: audit and two implemented migration units (wedding map, party).
 
 Scope
 -----
@@ -15,13 +15,14 @@ Inventory of the relations (ecs/components/social_components.hpp)
 SocialRefs::party (LPPARTY), SocialRefs::guild (CGuild*)
   Party is pure game state: members, leader PID, roles, bonuses, exp
   distribution, party flags, one update event. Members already store
-  entt::entity handles; the container object itself is still heap-owned and
+  entt::entity handles; the container object itself was still heap-owned and
   referenced by raw pointer from the character, from CPartyManager
   (PID/PID/entity maps) and from dungeon code (TPartyMap, m_pParty).
+  Verdict: migratable; implemented in this phase (below).
   Guild is a DB-backed service object: its identity is a guild id, membership
   is keyed by player id, and wars/skills/deposits are persisted services.
-  Verdict: party migratable; guild stays a service, its relation needs only
-  generation/lifetime validation, not ECS ownership.
+  Verdict: guild stays a service, its relation needs only generation/lifetime
+  validation, not ECS ownership.
 
 DungeonMembership::dungeon (LPDUNGEON), DungeonMembership::warMap (CWarMap*)
   CDungeon is a large base class with many subclasses (LostCastle, Rune,
@@ -85,25 +86,53 @@ Implemented in this phase: wedding map
   local events and late joiners, warp scope, the end-event state machine and
   stale callbacks, destroy-all reentrancy and manager-level destruction.
 
+Implemented in this phase: party
+-------------------------------
+- New component ecs::PartyState on a registry-owned party entity. It owns the
+  member rows (keyed by the durable player id, or the packet VID for mob
+  parties), the leader pid, the round-robin loot ownership pid, the update
+  event lease, the role counters, exp distribution and flags, and the dungeon
+  pointers.
+- PartySystem free functions replace the CParty class: membership
+  (P2PJoin/P2PQuit/Join/Quit/Link/Unlink, online and offline state), queries
+  (leader, member counts, roles, levels, flags, exp bonus, ownership), the
+  packet senders, the member walks, Update and Destroy, all validating the
+  party entity before use. The walks are templates so functors that
+  accumulate state stay the caller's own object.
+- CPartyManager keeps only the pid -> entity index and the PC party set;
+  CreateParty/P2PCreateParty hand out party entities, DeleteParty retires
+  them, and a stale index entry is replaced on the next create.
+- The character relation is a generation-checked entity handle in
+  ecs::SocialRefs; ecs::SocialSystem::GetParty/SetParty read and write it and
+  refuse a handle that is not a live party.
+- The update event stores the party entity and checks
+  state->updateEvent == event, so a cancelled or replaced callback cannot act
+  on a successor party.
+- PartySystem::Destroy snapshots the member pids and re-resolves each row, so
+  a disconnect callback that quits a member - or deletes the party through
+  the leader - during teardown cannot invalidate the walk.
+- The dungeon party map, the combat damage ledger's party map and every
+  LPPARTY call site (commands, quest lua, dungeons, chat, point, session and
+  player runtime paths) take entity handles. typedef.h loses LPPARTY and
+  CParty is gone.
+- Regression test: tests/server/PartyLifecycleTests.cpp compiles the
+  production party.cpp with event/desc/DB doubles and covers manager
+  create/replace/delete, relog linking through the index, join/quit/roles/
+  levels, mob parties and vnum counts, the update event lease, ownership
+  round-robin with stale members, destroy reentrancy including a leader quit
+  during teardown, and the offline-member destroy notification.
+
 Remaining work and recommended order
 ------------------------------------
-1. Party -> ECS (next unit). PartyState component on a registry-owned party
-   entity, CPartyManager maps and dungeon TPartyMap keyed by entity, the
-   update event holding the leader PID as today (PID is durable), CParty
-   methods ported to PartySystem free functions. The member map stays keyed
-   by PID because offline members and P2P packets identify players by pid.
-   Estimated like the mount/pet migrations: one large commit plus a headless
-   lifecycle test with doubles for the party packets, skill and dungeon
-   services.
-2. Validate the dungeon/war/arena relations. Options, in increasing cost:
+1. Validate the dungeon/war/arena relations. Options, in increasing cost:
    add generation-checked lookup helpers in the managers (Find returns the
    live object or null and the character relation is re-resolved on every
    use), or move CDungeon/CArena state to registry entities. The first is a
    safety fix; the second is a subsystem migration with its subclasses.
-3. Shop (my shop) -> ECS. CShopState component plus ShopSystem functions;
+2. Shop (my shop) -> ECS. CShopState component plus ShopSystem functions;
    shop_manager index stays a service keyed by PID. This touches the packet
    and persistence paths and needs its own regression suite.
-4. Offline shop: explicitly out of scope. Cache objects, async DB responses
+3. Offline shop: explicitly out of scope. Cache objects, async DB responses
    and P2P member identities stay as they are; only the already-native world
    object remains ECS.
 

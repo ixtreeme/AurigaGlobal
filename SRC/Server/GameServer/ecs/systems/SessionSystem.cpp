@@ -712,9 +712,11 @@ void Disconnect(entt::entity e, const char* c_pszReason)
         ecs::PlayerRuntime::GetArena(e)->OnDisconnect(ecs::PlayerRuntime::GetPlayerID(e));
     }
 
-    if (ecs::SocialSystem::GetParty(e) != nullptr)
+    const entt::entity party = ecs::SocialSystem::GetParty(e);
+
+    if (party != entt::null)
     {
-        ecs::SocialSystem::GetParty(e)->UpdateOfflineState(ecs::PlayerRuntime::GetPlayerID(e));
+        PartySystem::UpdateOfflineState(party, ecs::PlayerRuntime::GetPlayerID(e));
     }
 
     marriage::CManager::instance().Logout(e);
@@ -764,8 +766,10 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     ecs::PlayerRuntime::DestroyPvP(e);
 #endif
 
-    if (ecs::SocialSystem::GetParty(e))
-        ecs::SocialSystem::GetParty(e)->Unlink(e);
+    const entt::entity logoutParty = ecs::SocialSystem::GetParty(e);
+
+    if (logoutParty != entt::null)
+        PartySystem::Unlink(logoutParty, e);
 
     if (CombatSystem::IsStun(e) || CombatSystem::IsDead(e))
     {

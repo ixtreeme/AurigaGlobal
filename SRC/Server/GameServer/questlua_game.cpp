@@ -246,7 +246,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		entt::entity owner = chEntity;
-		if (ecs::SocialSystem::GetParty(chEntity))
+		if (ecs::SocialSystem::GetParty(chEntity) != entt::null)
 			owner = ItemSystem::RollPartyDropOwnership(item, chEntity);
 
 		if (lua_isnumber(L, 3))

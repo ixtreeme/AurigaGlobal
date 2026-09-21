@@ -519,8 +519,8 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamDelay);
 
     // Party rules
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
+    if (party != entt::null && PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Only the party leader can enter.");
         return true;
@@ -564,10 +564,10 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
             }
         };
 
-    if (!party)
+    if (party == entt::null)
         checkMember(character);
     else
-        party->ForEachOnMapMember(checkMember, originMapForWarp);
+        PartySystem::ForEachOnMapMember(party, checkMember, originMapForWarp);
 
     if (!ok)
     {
@@ -618,14 +618,14 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
                 ecs::MovementSystem::SetWarpLocation(m, ecs::PlayerRuntime::GetMapIndex(m), (int32_t)(ecs::PlayerRuntime::GetX(m) / 100), (int32_t)(ecs::PlayerRuntime::GetY(m) / 100));
         };
 
-    if (!party)
+    if (party == entt::null)
     {
         applyMember(character);
         d->Join_Coords(character, 2113, 1729, kOriginalMap);
     }
     else
     {
-        party->ForEachOnMapMember(applyMember, originMapForWarp);
+        PartySystem::ForEachOnMapMember(party, applyMember, originMapForWarp);
         d->JoinParty_Coords(party, 2113, 1729, originMapForWarp);
     }
 

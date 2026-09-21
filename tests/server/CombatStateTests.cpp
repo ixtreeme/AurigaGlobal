@@ -378,7 +378,7 @@ void ecs::PointSystem::Change(entt::entity e,unsigned char point,int64_t amount,
     auto& data = g_registry.get<BattleFixture>(e); ++spChanges;
     data.sp = static_cast<int32_t>(std::clamp<int64_t>(int64_t(data.sp) + amount, 0, data.maxSP));
 }
-CParty * ecs::SocialSystem::GetParty(entt::entity) { UnexpectedService(__func__); }
+entt::entity ecs::SocialSystem::GetParty(entt::entity) { UnexpectedService(__func__); }
 entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) { UnexpectedService(__func__); }
 int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
 void ecs::QuestSystem::SetFlag(entt::entity,std::string_view,int) { UnexpectedService(__func__); }
@@ -457,12 +457,12 @@ int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { U
 void ecs::AcceSystem::Close(entt::entity) { UnexpectedService(__func__); }
 int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, unsigned char) { UnexpectedService(__func__); }
-unsigned int CParty::GetLeaderPID(void) { UnexpectedService(__func__); }
-bool CParty::IsPositionNearLeader(entt::entity) { UnexpectedService(__func__); }
-void CParty::SendMessageA(entt::entity,unsigned char,unsigned int,unsigned int) { UnexpectedService(__func__); }
-int CParty::GetExpBonusPercent(void) { UnexpectedService(__func__); }
-entt::entity CParty::GetNextOwnership(entt::entity,int,int) { UnexpectedService(__func__); }
-int CParty::GetExpDistributionMode(void) { UnexpectedService(__func__); }
+unsigned int PartySystem::GetLeaderPID(entt::entity) { UnexpectedService(__func__); }
+bool PartySystem::IsPositionNearLeader(entt::entity, entt::entity) { UnexpectedService(__func__); }
+void PartySystem::SendMessage(entt::entity, entt::entity, unsigned char, unsigned int, unsigned int) { UnexpectedService(__func__); }
+int PartySystem::GetExpBonusPercent(entt::entity) { UnexpectedService(__func__); }
+entt::entity PartySystem::GetNextOwnership(entt::entity, entt::entity, int, int) { UnexpectedService(__func__); }
+int PartySystem::GetExpDistributionMode(entt::entity) { UnexpectedService(__func__); }
 unsigned int SECTREE::GetAttribute(int,int) { UnexpectedService(__func__); }
 bool SECTREE::IsAttr(int,int,unsigned int) { UnexpectedService(__func__); }
 SECTREE * SECTREE_MANAGER::Get(int,int,int) { UnexpectedService(__func__); }

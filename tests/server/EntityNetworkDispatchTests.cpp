@@ -454,7 +454,7 @@ uint8_t GetEmpire(entt::entity e) { Live(e); return 1; }
 int GetStamina(entt::entity e) { Live(e); return 100; }
 }
 namespace ecs::SocialSystem {
-LPPARTY GetParty(entt::entity e) { Live(e); return nullptr; }
+entt::entity GetParty(entt::entity e) { Live(e); return entt::null; }
 CGuild* GetGuild(entt::entity e) { Live(e); return nullptr; }
 void SendGuildName(entt::entity e, CGuild*) { Live(e); }
 }
@@ -512,8 +512,9 @@ entt::entity CHARACTER_MANAGER::FindEntity(uint32_t vid) {
         if (g_registry.get<ecs::VIDComponent>(e).value == vid) return e;
     return entt::null;
 }
-entt::entity CParty::GetLeader() { Unexpected(); }
-uint8_t CParty::GetRole(uint32_t) { Unexpected(); }
+entt::entity PartySystem::GetLeader(entt::entity) { Unexpected(); }
+uint8_t PartySystem::GetRole(entt::entity, uint32_t) { Unexpected(); }
+int PartySystem::GetPartyBonusExpPercent(entt::entity) { Unexpected(); }
 int ItemSystem::GetItemValue(entt::entity, uint32_t) { Unexpected(); }
 const char* ItemSystem::GetItemName(entt::entity) { Unexpected(); }
 bool battle_is_attackable(entt::entity, entt::entity) { Unexpected(); }

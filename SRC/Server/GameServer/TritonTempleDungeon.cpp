@@ -485,9 +485,9 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             DungeonCompleteForMap(idx, kTritonOriginalMap, kBossVnum, kCooldownSeconds, kQfEnterTime, kQfCh, kQfCooldown);
 
 #ifdef TEXTS_IMPROVEMENT
-            if (ecs::SocialSystem::GetParty(killer))
+            if (const entt::entity killerParty = ecs::SocialSystem::GetParty(killer); killerParty != entt::null)
             {
-                const entt::entity leader = ecs::SocialSystem::GetParty(killer)->GetLeader();
+                const entt::entity leader = PartySystem::GetLeader(killerParty);
                 BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 2173, "%s", leader != entt::null ? ecs::PlayerRuntime::GetName(leader).data() : ecs::PlayerRuntime::GetName(killer).data());
             }
             else
@@ -661,15 +661,15 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
         return true;
     }
 
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
+    if (party != entt::null && PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can start Triton Temple.");
         return true;
     }
 
     // Party cooldown: everyone must be off cooldown (leader cannot bypass others)
-    if (party)
+    if (party != entt::null)
     {
         FCooldownCheck f(now, kQfCooldown);
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
@@ -685,7 +685,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
     }
 
     // Check level + entry item for everyone who will enter (same map as leader)
-    if (!party)
+    if (party == entt::null)
     {
         if (ItemSystem::CountItem(character, kRequiredItem) < 1)
         {
@@ -763,7 +763,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
             // cooldown set on completion
         };
 
-    if (!party)
+    if (party == entt::null)
     {
         applyMember(character);
         d->Join_Coords(character, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));

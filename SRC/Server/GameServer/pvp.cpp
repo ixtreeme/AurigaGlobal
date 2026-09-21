@@ -207,14 +207,14 @@ EVENTFUNC(pvp_duel_counter)
 		{
 			if ((ecs::PlayerRuntime::GetDuelOption(characterA, "BlockParty")) && (ecs::PlayerRuntime::GetDuelOption(characterB, "BlockParty")))
 			{
-				LPPARTY chParty = ecs::SocialSystem::GetParty(characterA);
-				LPPARTY victimParty = ecs::SocialSystem::GetParty(characterB);
+				const entt::entity chParty = ecs::SocialSystem::GetParty(characterA);
+				const entt::entity victimParty = ecs::SocialSystem::GetParty(characterB);
 
-				if (ecs::SocialSystem::GetParty(characterA))
-					chParty->Quit((ecs::PlayerRuntime::GetPlayerID(characterA)));
+				if (chParty != entt::null)
+					PartySystem::Quit(chParty, (ecs::PlayerRuntime::GetPlayerID(characterA)));
 
-				if (ecs::SocialSystem::GetParty(characterB))
-					victimParty->Quit((ecs::PlayerRuntime::GetPlayerID(characterB)));
+				if (victimParty != entt::null)
+					PartySystem::Quit(victimParty, (ecs::PlayerRuntime::GetPlayerID(characterB)));
 			}
 
 			if ((ecs::PlayerRuntime::GetDuelOption(characterA, "BlockPet")) && (ecs::PlayerRuntime::GetDuelOption(characterB, "BlockPet")))
@@ -927,7 +927,7 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 
 	bool beKillerMode = false;
 
-	if (ecs::SocialSystem::GetParty(victim) && ecs::SocialSystem::GetParty(victim) == ecs::SocialSystem::GetParty(character))
+	if (ecs::SocialSystem::GetParty(victim) != entt::null && ecs::SocialSystem::GetParty(victim) == ecs::SocialSystem::GetParty(character))
 	{
 		return false;
 		// Cannot attack same party on any pvp model

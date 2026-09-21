@@ -397,8 +397,9 @@ TEMP_BUFFER::~TEMP_BUFFER() = default;
 const void* TEMP_BUFFER::read_peek() { Unexpected(); }
 void TEMP_BUFFER::write(const void*, int) { Unexpected(); }
 int TEMP_BUFFER::size() { Unexpected(); }
-LPPARTY CPartyManager::CreateParty(entt::entity) { Unexpected(); }
-void CParty::Link(entt::entity) { Unexpected(); }
+entt::entity CPartyManager::CreateParty(entt::entity) { Unexpected(); }
+void PartySystem::Join(entt::entity, uint32_t) { Unexpected(); }
+void PartySystem::Link(entt::entity, entt::entity) { Unexpected(); }
 uint32_t SECTREE::GetAttribute(int32_t, int32_t) { Unexpected(); }
 bool SectreeMember(entt::entity, const SECTREE*) { Unexpected(); }
 void SECTREE::Collect(FCollectEntity&) const { Unexpected(); }

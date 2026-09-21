@@ -352,16 +352,16 @@ namespace
         ecs::QuestSystem::SetFlag(ch, kQfCh, 0);
     }
 
-    int32_t GetPartyOnlineCountOnMap(LPPARTY party, int32_t mapIndex)
+    int32_t GetPartyOnlineCountOnMap(entt::entity party, int32_t mapIndex)
     {
         int32_t count = 0;
-        if (!party)
+        if (party == entt::null)
             return 0;
         auto fn = [&](entt::entity pc){
             if (ecs::PlayerRuntime::IsValid(pc) && ecs::SocialSystem::GetParty(pc) == party)
                 ++count;
         };
-        party->ForEachOnMapMember(fn, mapIndex);
+        PartySystem::ForEachOnMapMember(party, fn, mapIndex);
         return count;
     }
 
@@ -750,8 +750,8 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
 
-    LPPARTY party = ecs::SocialSystem::GetParty(character);
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
+    if (party != entt::null && PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can enter.");
         return true;
@@ -803,10 +803,10 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         }
     };
 
-    if (!party)
+    if (party == entt::null)
         checkMember(character);
     else
-        party->ForEachOnMapMember(checkMember, originMapForWarp);
+        PartySystem::ForEachOnMapMember(party, checkMember, originMapForWarp);
 
     if (!ok)
     {
@@ -855,15 +855,15 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
     };
 
-    if (!party)
+    if (party == entt::null)
         prepareMember(character);
     else
-        party->ForEachOnMapMember(prepareMember, originMapForWarp);
+        PartySystem::ForEachOnMapMember(party, prepareMember, originMapForWarp);
 
     SetDungeonReady(d);
     s_hw22.ScheduleTimeout(dungeonMapIdx);
 
-    if (party)
+    if (party != entt::null)
         d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, originMapForWarp);
     else
         d->Join_Coords(character, kEnterGlobalX, kEnterGlobalY, kOriginalMap);

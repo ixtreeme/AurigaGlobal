@@ -214,7 +214,7 @@ bool IsStun(entt::entity) { return false; }
 void BroadcastTargetPacket(entt::entity e) { Check(g_registry.valid(e), "stale target packet"); }
 }
 namespace ecs::SocialSystem {
-LPPARTY GetParty(entt::entity) { return nullptr; }
+entt::entity GetParty(entt::entity) { return entt::null; }
 CGuild* GetGuild(entt::entity) { return nullptr; }
 }
 void NetworkSyncSystem::UpdatePacket(entt::entity e) {
@@ -252,8 +252,8 @@ int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 void SkillSystem::SendSkillLevelPacket(entt::entity) { Unexpected(); }
 void NetworkSyncSystem::PointsPacket(entt::entity) { Unexpected(); }
 void CGuild::LevelChange(uint32_t, uint8_t) { Unexpected(); }
-void CParty::SendPartyInfoOneToAll(entt::entity) { Unexpected(); }
-void CParty::RequestSetMemberLevel(uint32_t, uint8_t) { Unexpected(); }
+void PartySystem::SendPartyInfoOneToAll(entt::entity, entt::entity) { Unexpected(); }
+void PartySystem::RequestSetMemberLevel(entt::entity, uint32_t, uint8_t) { Unexpected(); }
 void ecs::MovementSystem::SetNowWalking(entt::entity e, bool walking) {
     g_registry.get<ecs::MovementState>(e).isNowWalking = walking;
 }

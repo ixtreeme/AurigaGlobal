@@ -28,12 +28,14 @@ class CShopSafebox;
 namespace ecs {
 
 struct SocialRefs {
-    LPPARTY party { nullptr };
+    // The party this character belongs to. The party state is a component on a
+    // registry-owned party entity; the handle is generation-checked on read.
+    entt::entity party { entt::null };
     CGuild* guild { nullptr };
 };
 
-// The party pointer itself lives in SocialRefs; this is what is left of the
-// membership once it does.
+// The per-character part of the party relation. The party state itself is
+// ecs::PartyState on the party entity.
 struct PartyMembership {
     uint32_t lastDeadTime;
 };

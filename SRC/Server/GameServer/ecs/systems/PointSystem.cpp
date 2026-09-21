@@ -623,9 +623,11 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 				guild->LevelChange(ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
 			}
 
-			if (::ecs::SocialSystem::GetParty(e))
+			const entt::entity party = ::ecs::SocialSystem::GetParty(e);
+
+			if (party != entt::null)
 			{
-				::ecs::SocialSystem::GetParty(e)->RequestSetMemberLevel(ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
+				PartySystem::RequestSetMemberLevel(party, ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
 			}
 		}
 		break;
@@ -815,8 +817,10 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		CombatSystem::BroadcastTargetPacket(e);
 		if (!IsReadableEntity(e)) return;
 
-		if (::ecs::SocialSystem::GetParty(e) && (ecs::PlayerRuntime::GetDesc(e) != nullptr) && val != prev_hp)
-			::ecs::SocialSystem::GetParty(e)->SendPartyInfoOneToAll(e);
+		const entt::entity party = ::ecs::SocialSystem::GetParty(e);
+
+		if (party != entt::null && (ecs::PlayerRuntime::GetDesc(e) != nullptr) && val != prev_hp)
+			PartySystem::SendPartyInfoOneToAll(party, e);
 	}
 	break;
 

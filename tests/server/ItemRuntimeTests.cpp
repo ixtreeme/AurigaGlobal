@@ -182,7 +182,7 @@ LPSECTREE GetSectree(entt::entity e) {
 }
 bool IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e) && g_registry.all_of<Actor>(e); }
 }
-CParty* ecs::SocialSystem::GetParty(entt::entity) { if (pickupTest) return nullptr; Unexpected(); }
+entt::entity ecs::SocialSystem::GetParty(entt::entity) { if (pickupTest) return entt::null; Unexpected(); }
 entt::entity InventorySystem::RemoveFromCharacter(entt::entity) { Unexpected(); }
 namespace ItemSystem {
 entt::entity GetWearItem(entt::entity, uint8_t) { Unexpected(); }
@@ -228,7 +228,8 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::enti
 bool CVikingDungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
 bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity, uint32_t, std::vector<uint32_t>&,
     std::vector<uint32_t>&, std::vector<entt::entity>&, int&) { Unexpected(); }
-void CParty::ChatPacketToAllMemberNew(uint8_t, uint32_t, const char*, ...) { Unexpected(); }
+void PartySystem::ChatPacketToAllMemberNew(entt::entity, uint8_t, uint32_t, const char*, ...) { Unexpected(); }
+uint32_t PartySystem::GetNearMemberCount(entt::entity) { Unexpected(); }
 void MountSystem::ForceClearRidingState(entt::entity) { Unexpected(); }
 void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity item) {
     Check(wearStopTest && ItemSystem::IsValidItem(item), "wear stop published a stale item");

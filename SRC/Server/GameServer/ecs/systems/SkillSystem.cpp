@@ -1954,9 +1954,11 @@ EVENTFUNC(ChainLightningEvent)
 
 	LOG_INFO("chainlighting event {}", ecs::PlayerRuntime::GetName(character).data());
 
-	if (ecs::SocialSystem::GetParty(victimEntity)) // ĆÄĆĽ ¸ŐŔú
+	const entt::entity victimParty = ecs::SocialSystem::GetParty(victimEntity);
+
+	if (victimParty != entt::null) // ĆÄĆĽ ¸ŐŔú
 	{
-		target = ecs::SocialSystem::GetParty(victimEntity)->GetNextOwnership(entt::null, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
+		target = PartySystem::GetNextOwnership(victimParty, entt::null, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
 		if (target == victimEntity || !number(0, 2) || SkillSystem::GetChainLightningExcepts(character).count(target) != 0)
 			target = entt::null;
 	}
@@ -3165,8 +3167,10 @@ struct FComputeSkillParty
 int SkillSystem::ComputeSkillParty(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
 	FComputeSkillParty f(dwVnum, victim, bSkillLevel);
-	if (ecs::SocialSystem::GetParty(e) && ecs::SocialSystem::GetParty(e)->GetNearMemberCount())
-		ecs::SocialSystem::GetParty(e)->ForEachNearMember(f);
+	const entt::entity party = ecs::SocialSystem::GetParty(e);
+
+	if (party != entt::null && PartySystem::GetNearMemberCount(party))
+		PartySystem::ForEachNearMember(party, f);
 	else
 		f(e);
 
@@ -4003,10 +4007,10 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 
 #ifdef GROUP_BUFF
 	if (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111) {
-		if (ecs::SocialSystem::GetParty(e) && ecs::IsCharacter(victimEntity))
+		if (ecs::SocialSystem::GetParty(e) != entt::null && ecs::IsCharacter(victimEntity))
 		{
-			LPPARTY party = ecs::SocialSystem::GetParty(victimEntity);
-			if (party && ecs::SocialSystem::GetParty(e)) {
+			const entt::entity party = ecs::SocialSystem::GetParty(victimEntity);
+			if (party != entt::null && ecs::SocialSystem::GetParty(e) != entt::null) {
 				SkillSystem::ComputeSkillParty(character, dwVnum, character);
 			}
 		}
@@ -4016,14 +4020,14 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 #ifdef __SKILL_COLOR_SYSTEM__
     SkillSystem::CopyBuffSkillColor(character, victimEntity, dwVnum);
 #endif
-	if (ecs::IsCharacter(victimEntity) && ecs::SocialSystem::GetParty(e) && (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111))//razor93---az egesz csoport buffolasa egyszerre------
+	if (ecs::IsCharacter(victimEntity) && ecs::SocialSystem::GetParty(e) != entt::null && (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111))//razor93---az egesz csoport buffolasa egyszerre------
 	{
 		if (dwVnum == 66) // varázslat kioltás
 		{
 			return false;
 		}
 
-		if (ecs::SocialSystem::GetParty(victimEntity)){
+		if (ecs::SocialSystem::GetParty(victimEntity) != entt::null){
 			if (ecs::SocialSystem::GetParty(victimEntity) == ecs::SocialSystem::GetParty(e)){
 				SkillSystem::ComputeSkillParty(character, dwVnum, character);
 			}
@@ -4249,10 +4253,10 @@ bool UseMobSkill(entt::entity e, unsigned int idx)
 
 #ifdef __VERSION_162__
     if (ecs::PlayerRuntime::IsMonster(e) && proto->dwVnum == HEALING_SKILL_VNUM) {
-        LPPARTY party = ecs::SocialSystem::GetParty(e);
-        if (party && IS_SET(proto->dwFlag, SKILL_FLAG_PARTY)) {
+        const entt::entity party = ecs::SocialSystem::GetParty(e);
+        if (party != entt::null && IS_SET(proto->dwFlag, SKILL_FLAG_PARTY)) {
             FHealerParty heal(e);
-            party->ForEachOnlineMember(heal);
+            PartySystem::ForEachOnlineMember(party, heal);
         } else {
             // Heal fifteen percent of the maximum, capped at full.
             const int64_t maxHP = ecs::PointSystem::GetMaxHP(e);

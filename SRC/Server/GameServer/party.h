@@ -1,3 +1,8 @@
+// Parties are ECS state now: ecs::PartyState on a registry-owned party entity,
+// indexed by CPartyManager through the durable player id (and the packet VID
+// for mob parties). There is no heap CParty object and no raw party pointer on
+// the character; the character relation is a generation-checked entity handle
+// in ecs::SocialRefs. PartySystem free functions below replace the old class.
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
@@ -7,11 +12,17 @@
 #include "char_interface.hpp"
 #include <Core/Logging.hpp>
 #include <entt/entt.hpp>
+#include <array>
+#include <functional>
+#include <map>
+#include <set>
+#include <string>
 #include <string_view>
+#include <vector>
 
 enum // unit : minute
 {
-	PARTY_ENOUGH_MINUTE_FOR_EXP_BONUS = 60, // 파티 결성 후 60분 후 부터 추가 경험치 보너스
+	PARTY_ENOUGH_MINUTE_FOR_EXP_BONUS = 60, // the long-party exp bonus unlocks after this many minutes
 	PARTY_HEAL_COOLTIME_LONG = 60,
 	PARTY_HEAL_COOLTIME_SHORT = 30,
 	PARTY_MAX_MEMBER = 30,//rarzor93 csoport tagok szama 2024-12-30
@@ -38,14 +49,255 @@ enum EPartyExpDistributionModes
 	PARTY_EXP_DISTRIBUTION_MAX_NUM
 };
 
-class CParty;
 class CDungeon;
+
+namespace ecs
+{
+	// One membership row. The map is keyed by the member's durable player id
+	// (offline members and P2P packets identify players by pid); for mob
+	// parties the packet VID is the key. A row holds an entity handle while its
+	// character is linked; a handle whose entity is gone counts as not linked.
+	struct PartyMember
+	{
+		entt::entity member { entt::null };
+		bool bNear { false };
+		uint8_t bRole { PARTY_ROLE_NORMAL };
+		uint8_t bLevel { 0 };
+		std::string strName;
+	};
+
+	// Authoritative state of one party. The durable identifier is the leader
+	// player id; the member rows hold entity handles and the update event is
+	// owned here so a stale callback cannot act on a recycled party entity.
+	struct PartyState
+	{
+		std::map<uint32_t, PartyMember> members;
+		uint32_t leaderPID { 0 };
+		// The round-robin loot ownership position, kept as a member pid so
+		// membership changes cannot dangle it the way an iterator would.
+		uint32_t nextOwnerPID { 0 };
+		LPEVENT updateEvent { nullptr };
+
+		int expDistributionMode { PARTY_EXP_DISTRIBUTION_NON_PARITY };
+		uint32_t startTime { 0 };
+		uint32_t healTime { 0 };
+		bool healReady { false };
+		bool canUsePartyHeal { false };
+		int roleCount[PARTY_ROLE_MAX_NUM] {};
+		int maxRole[PARTY_ROLE_MAX_NUM] {};
+		int longTimeExpBonus { 0 };
+
+		// Used by Update.
+		int leadership { 0 };
+		int expBonus { 0 };
+		int attBonus { 0 };
+		int defBonus { 0 };
+		int nearMemberCount { 0 };
+
+		bool isPCParty { false };
+
+		std::map<std::string, int> flags;
+		LPDUNGEON dungeon { nullptr };
+		LPDUNGEON dungeonForOnlyParty { nullptr };
+	};
+}
+
+// Native API over ecs::PartyState. Every entry point validates the party
+// entity before use, so a retired or recycled handle is a no-op. The party
+// side is always the first parameter; character parameters are the characters'
+// own side.
+namespace PartySystem
+{
+	// Defined here because the member walks below resolve the state inline.
+	inline ecs::PartyState* Find(entt::entity party)
+	{
+		if (party == entt::null || !g_registry.valid(party))
+			return nullptr;
+
+		return g_registry.try_get<ecs::PartyState>(party);
+	}
+
+	bool IsValid(entt::entity party);
+
+	// A row holds a handle while its character is linked; a handle whose entity
+	// is gone counts as not linked.
+	inline bool IsLinked(entt::entity member) { return member != entt::null && g_registry.valid(member); }
+
+	// The character-side relation: the party the character belongs to.
+	entt::entity GetCharacterParty(entt::entity character);
+	void SetCharacterParty(entt::entity character, entt::entity party);
+
+	// Lifecycle.
+	void Initialize(entt::entity party);
+	void Destroy(entt::entity party);
+
+	// Membership.
+	void P2PJoin(entt::entity party, uint32_t dwPID);
+	void P2PQuit(entt::entity party, uint32_t dwPID);
+	void Join(entt::entity party, uint32_t dwPID);
+	void Quit(entt::entity party, uint32_t dwPID);
+	void Link(entt::entity party, entt::entity character);
+	void Unlink(entt::entity party, entt::entity character);
+	void UpdateOnlineState(entt::entity party, uint32_t dwPID, const char* name);
+	void UpdateOfflineState(entt::entity party, uint32_t dwPID);
+	void RequestSetMemberLevel(entt::entity party, uint32_t pid, uint8_t level);
+	void P2PSetMemberLevel(entt::entity party, uint32_t pid, uint8_t level);
+
+	// Queries.
+	uint32_t GetLeaderPID(entt::entity party);
+	entt::entity GetLeader(entt::entity party);
+	uint32_t GetMemberCount(entt::entity party);
+	uint32_t GetNearMemberCount(entt::entity party);
+	bool IsMember(entt::entity party, uint32_t pid);
+	bool IsNearLeader(entt::entity party, uint32_t pid);
+	bool IsPositionNearLeader(entt::entity party, entt::entity character);
+	int GetPartyBonusExpPercent(entt::entity party);
+	int GetPartyBonusAttackGrade(entt::entity party);
+	int GetPartyBonusDefenseGrade(entt::entity party);
+	int ComputePartyBonusExpPercent(entt::entity party);
+	int ComputePartyBonusAttackGrade(entt::entity party);
+	int ComputePartyBonusDefenseGrade(entt::entity party);
+	int GetExpBonusPercent(entt::entity party);
+	int GetExpDistributionMode(entt::entity party);
+	uint8_t GetRole(entt::entity party, uint32_t pid);
+	bool IsRole(entt::entity party, uint32_t pid, uint8_t bRole);
+	uint8_t GetMemberMaxLevel(entt::entity party);
+	uint8_t GetMemberMinLevel(entt::entity party);
+	uint8_t CountMemberByVnum(entt::entity party, uint32_t dwVnum);
+	bool IsPartyInDungeon(entt::entity party, int mapIndex);
+	void SetFlag(entt::entity party, std::string_view name, int value);
+	int GetFlag(entt::entity party, std::string_view name);
+	entt::entity GetNextOwnership(entt::entity party, entt::entity fallback, int32_t x, int32_t y);
+
+	// Mutations.
+	void SetPCParty(entt::entity party, bool b);
+	bool SetRole(entt::entity party, uint32_t pid, uint8_t bRole, bool on);
+	void SetParameter(entt::entity party, int iMode);
+	void ComputeRolePoint(entt::entity party, entt::entity character, uint8_t bRole, bool bAdd);
+	void SendMessage(entt::entity party, entt::entity character, uint8_t bMsg, uint32_t dwArg1, uint32_t dwArg2);
+	void HealParty(entt::entity party);
+	void SummonToLeader(entt::entity party, uint32_t pid);
+	void Update(entt::entity party);
+	void SetDungeon(entt::entity party, LPDUNGEON pDungeon);
+	LPDUNGEON GetDungeon(entt::entity party);
+	void SetDungeon_for_Only_party(entt::entity party, LPDUNGEON pDungeon);
+	LPDUNGEON GetDungeon_for_Only_party(entt::entity party);
+
+	// Packet senders.
+	void SendPartyJoinOneToAll(entt::entity party, uint32_t dwPID);
+	void SendPartyJoinAllToOne(entt::entity party, entt::entity character);
+	void SendPartyRemoveOneToAll(entt::entity party, uint32_t pid);
+	void SendPartyInfoOneToAll(entt::entity party, uint32_t pid);
+	void SendPartyInfoOneToAll(entt::entity party, entt::entity character);
+	void SendPartyInfoAllToOne(entt::entity party, entt::entity character);
+	void SendPartyLinkOneToAll(entt::entity party, entt::entity character);
+	void SendPartyLinkAllToOne(entt::entity party, entt::entity character);
+	void SendPartyUnlinkOneToAll(entt::entity party, entt::entity character);
+	void SendParameter(entt::entity party, entt::entity character);
+	void SendParameterToAll(entt::entity party);
+#ifdef TEXTS_IMPROVEMENT
+	void ChatPacketToAllMemberNew(entt::entity party, uint8_t type, uint32_t idx, const char* format, ...);
+#endif
+
+	// Member walks. These are templates so functors that accumulate state stay
+	// the caller's own object; the entity walk validates the member handle.
+	template <class Func>
+	void ForEachMember(entt::entity party, Func& f)
+	{
+		ecs::PartyState* state = Find(party);
+		if (!state)
+			return;
+
+		for (auto& row : state->members)
+		{
+			f(row.first);
+			if (!g_registry.valid(party))
+				return;
+		}
+	}
+
+	template <class Func>
+	void ForEachOnlineMember(entt::entity party, Func& f)
+	{
+		ecs::PartyState* state = Find(party);
+		if (!state)
+			return;
+
+		for (auto& row : state->members)
+		{
+			if (!IsLinked(row.second.member))
+				continue;
+
+			f(row.second.member);
+			if (!g_registry.valid(party))
+				return;
+		}
+	}
+
+	template <class Func>
+	void ForEachNearMember(entt::entity party, Func& f)
+	{
+		ecs::PartyState* state = Find(party);
+		if (!state)
+			return;
+
+		for (auto& row : state->members)
+		{
+			if (!row.second.bNear || !IsLinked(row.second.member))
+				continue;
+
+			f(row.second.member);
+			if (!g_registry.valid(party))
+				return;
+		}
+	}
+
+	template <class Func>
+	void ForEachOnMapMember(entt::entity party, Func& f, int32_t lMapIndex)
+	{
+		ecs::PartyState* state = Find(party);
+		if (!state)
+			return;
+
+		for (auto& row : state->members)
+		{
+			const entt::entity member = row.second.member;
+			if (!IsLinked(member) || ecs::PlayerRuntime::GetMapIndex(member) != lMapIndex)
+				continue;
+
+			f(member);
+			if (!g_registry.valid(party))
+				return;
+		}
+	}
+
+	template <class Func>
+	bool ForEachOnMapMemberBool(entt::entity party, Func& f, int32_t lMapIndex)
+	{
+		ecs::PartyState* state = Find(party);
+		if (!state)
+			return true;
+
+		for (auto& row : state->members)
+		{
+			const entt::entity member = row.second.member;
+			if (IsLinked(member) && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex && !f(member))
+				return false;
+
+			if (!g_registry.valid(party))
+				return true;
+		}
+
+		return true;
+	}
+}
 
 class CPartyManager : public singleton<CPartyManager>
 {
 	public:
-		typedef std::map<uint32_t, LPPARTY> TPartyMap;
-		typedef std::set<LPPARTY> TPCPartySet;
+		// The index is service state: pid (or mob packet VID) to party entity.
+		typedef std::map<uint32_t, entt::entity> TPartyMap;
+		typedef std::set<entt::entity> TPCPartySet;
 
 	public:
 		CPartyManager();
@@ -53,34 +305,31 @@ class CPartyManager : public singleton<CPartyManager>
 
 		void		Initialize();
 
-		//void		SendPartyToDB();
-
 		void		EnablePCParty() { m_bEnablePCParty = true; LOG_INFO("PARTY Enable"); }
 		void		DisablePCParty() { m_bEnablePCParty = false; LOG_INFO("PARTY Disable"); }
 		bool		IsEnablePCParty() { return m_bEnablePCParty; }
 
-		LPPARTY		CreateParty(entt::entity leader);
-		void		DeleteParty(LPPARTY pParty);
+		entt::entity	CreateParty(entt::entity leader);
+		void		DeleteParty(entt::entity party);
 		void		DeleteAllParty();
 		bool		SetParty(entt::entity character);
 
-		void		SetPartyMember(uint32_t dwPID, LPPARTY pParty);
+		void		SetPartyMember(uint32_t dwPID, entt::entity party);
 
 		void		P2PLogin(uint32_t pid, const char* name);
 		void		P2PLogout(uint32_t pid);
 
-		LPPARTY		P2PCreateParty(uint32_t pid);
+		entt::entity	P2PCreateParty(uint32_t pid);
 		void		P2PDeleteParty(uint32_t pid);
 		void		P2PJoinParty(uint32_t leader, uint32_t pid, uint8_t role = 0);
 		void		P2PQuitParty(uint32_t pid);
 
 	private:
-		TPartyMap	m_map_pkParty;		// PID로 어느 파티에 있나 검색하기 위한 컨테이너
-		TPartyMap	m_map_pkMobParty;	// Mob 파티는 PID 대신 VID 로 따로 관리한다.
+		TPartyMap	m_map_pkParty;		// pid (or mob packet vid) to party entity
 
-		TPCPartySet	m_set_pkPCParty;	// 사람들의 파티 전체 집합
+		TPCPartySet	m_set_pkPCParty;	// every PC party the manager owns
 
-		bool		m_bEnablePCParty;	// 디비가 켜져있지 않으면 사람들의 파티 상태가 변경불가
+		bool		m_bEnablePCParty;	// whether PC parties are enabled on this channel
 };
 
 enum EPartyMessages
@@ -90,261 +339,5 @@ enum EPartyMessages
 	PM_ATTACKED_BY,	// I was attacked by someone
 	PM_AGGRO_INCREASE,	// My aggro is increased
 };
-
-class CParty
-{
-	public:
-		typedef struct SMember
-		{
-			entt::entity	member { entt::null };
-			bool	bNear;
-			uint8_t	bRole;
-			uint8_t	bLevel;
-			std::string strName;
-		} TMember;
-
-		typedef std::map<uint32_t, TMember> TMemberMap;
-
-		// A member row holds a handle while its character is linked; a handle whose
-		// entity is gone counts as not linked.
-		static bool IsLinked(entt::entity member) { return member != entt::null && g_registry.valid(member); }
-
-		typedef std::map<std::string, int> TFlagMap;
-
-	public:
-		CParty();
-		virtual ~CParty();
-
-		void		P2PJoin(uint32_t dwPID);
-		void		P2PQuit(uint32_t dwPID);
-		virtual void	Join(uint32_t dwPID);
-		void		Quit(uint32_t dwPID);
-		void		Link(entt::entity character);
-		void		Unlink(entt::entity character);
-#ifdef TEXTS_IMPROVEMENT
-		void	ChatPacketToAllMemberNew(uint8_t type, uint32_t idx, const char * format, ...);
-#endif
-		void		UpdateOnlineState(uint32_t dwPID, const char* name);
-		void		UpdateOfflineState(uint32_t dwPID);
-
-		uint32_t		GetLeaderPID();
-		entt::entity	GetLeader();
-
-		uint32_t		GetMemberCount();
-		uint32_t		GetNearMemberCount()	{ return m_iCountNearPartyMember; }
-
-		bool		IsMember(uint32_t pid) { return m_memberMap.find(pid) != m_memberMap.end(); }
-
-		bool		IsNearLeader(uint32_t pid);
-
-		bool		IsPositionNearLeader(entt::entity character);
-
-		void		SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, uint32_t dwArg2);
-
-		void		SendPartyJoinOneToAll(uint32_t dwPID);
-		void		SendPartyJoinAllToOne(entt::entity character);
-		void		SendPartyRemoveOneToAll(uint32_t dwPID);
-
-		void		SendPartyInfoOneToAll(uint32_t pid);
-		void		SendPartyInfoOneToAll(entt::entity character);
-		void		SendPartyInfoAllToOne(entt::entity character);
-
-		void		SendPartyLinkOneToAll(entt::entity character);
-		void		SendPartyLinkAllToOne(entt::entity character);
-		void		SendPartyUnlinkOneToAll(entt::entity character);
-
-		int		GetPartyBonusExpPercent()	{ return m_iExpBonus; }
-		int		GetPartyBonusAttackGrade()	{ return m_iAttBonus; }
-		int		GetPartyBonusDefenseGrade()	{ return m_iDefBonus; }
-
-		int	ComputePartyBonusExpPercent();
-		inline int	ComputePartyBonusAttackGrade();
-		inline int	ComputePartyBonusDefenseGrade();
-
-		template <class Func> void ForEachMember(Func & f);
-		template <class Func> void ForEachOnlineMember(Func & f);
-		template <class Func> void ForEachNearMember(Func & f);
-		template <class Func> void ForEachOnMapMember (Func & f, int32_t lMapIndex);
-		template <class Func> bool ForEachOnMapMemberBool (Func & f, int32_t lMapIndex);
-
-		void		Update();
-
-		int		GetExpBonusPercent();
-
-		bool		SetRole(uint32_t pid, uint8_t bRole, bool on);
-		uint8_t		GetRole(uint32_t pid);
-		bool		IsRole(uint32_t pid, uint8_t bRole);
-
-		uint8_t		GetMemberMaxLevel();
-		uint8_t		GetMemberMinLevel();
-
-		void		ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd);
-
-		void		HealParty();
-		void		SummonToLeader(uint32_t pid);
-
-		void		SetPCParty(bool b) { m_bPCParty = b; }
-
-		entt::entity	GetNextOwnership(entt::entity fallback, int32_t x, int32_t y);
-
-		void		SetFlag(std::string_view name, int value);
-		int		GetFlag(std::string_view name);
-
-		void		SetDungeon(LPDUNGEON pDungeon);
-		LPDUNGEON	GetDungeon();
-
-		uint8_t		CountMemberByVnum(uint32_t dwVnum);
-
-		void		SetParameter(int iMode);
-		int		GetExpDistributionMode();
-
-		void		RequestSetMemberLevel(uint32_t pid, uint8_t level);
-		void		P2PSetMemberLevel(uint32_t pid, uint8_t level);
-
-		bool		IsPartyInDungeon(int mapIndex);
-
-	protected:
-		void		IncreaseOwnership();
-
-		virtual void	Initialize();
-		void		Destroy();
-		void		RemovePartyBonus();
-
-		void		RemoveBonus();
-		void		RemoveBonusForOne(uint32_t pid);
-
-		void		SendParameter(entt::entity character);
-		void		SendParameterToAll();
-
-		TMemberMap	m_memberMap;
-		uint32_t		m_dwLeaderPID;
-
-		LPEVENT		m_eventUpdate;
-
-		TMemberMap::iterator m_itNextOwner;
-
-	private:
-		int		m_iExpDistributionMode;
-
-		uint32_t		m_dwPartyStartTime;
-
-		uint32_t		m_dwPartyHealTime;
-		bool		m_bPartyHealReady;
-		bool		m_bCanUsePartyHeal;
-
-		int		m_anRoleCount[PARTY_ROLE_MAX_NUM];
-		int		m_anMaxRole[PARTY_ROLE_MAX_NUM];
-
-		int		m_iLongTimeExpBonus;
-
-		// used in Update
-		int		m_iLeadership;
-		int		m_iExpBonus;
-		int		m_iAttBonus;
-		int		m_iDefBonus;
-
-		// changed only in Update
-		int		m_iCountNearPartyMember;
-
-		bool		m_bPCParty;
-
-		TFlagMap	m_map_iFlag;
-
-		LPDUNGEON	m_pkDungeon;
-		// 아귀 동굴용 dungeon 멤버 변수.
-		// 정말 이렇게까지 하고 싶진 않았는데, 던전에서 party 관리가 정말로 개판이라
-		// 그거 고치기 전까지는 이렇게 임시로 해놓는다.
-		LPDUNGEON	m_pkDungeon_for_Only_party;
-	public:
-		void SetDungeon_for_Only_party(LPDUNGEON pDungeon);
-		LPDUNGEON GetDungeon_for_Only_party();
-};
-
-template <class Func> void CParty::ForEachMember(Func & f)
-{
-	TMemberMap::iterator it;
-
-	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-		f(it->first);
-}
-
-template <class Func> void CParty::ForEachOnlineMember(Func & f)
-{
-	TMemberMap::iterator it;
-
-	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-		if (IsLinked(it->second.member))
-			f(it->second.member);
-}
-
-template <class Func> void CParty::ForEachNearMember(Func & f)
-{
-	TMemberMap::iterator it;
-
-	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-		if (it->second.bNear && IsLinked(it->second.member))
-			f(it->second.member);
-}
-
-template <class Func> void CParty::ForEachOnMapMember (Func & f, int32_t lMapIndex)
-{
-	TMemberMap::iterator it;
-
-	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-	{
-		const entt::entity member = it->second.member;
-		if (IsLinked(member) && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex)
-			f(member);
-	}
-}
-
-template <class Func> bool CParty::ForEachOnMapMemberBool(Func & f, int32_t lMapIndex)
-{
-	TMemberMap::iterator it;
-
-	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
-	{
-		const entt::entity member = it->second.member;
-		if (IsLinked(member) && ecs::PlayerRuntime::GetMapIndex(member) == lMapIndex && !f(member))
-			return false;
-	}
-	return true;
-}
-
-inline int CParty::ComputePartyBonusAttackGrade()
-{
-	/*
-	   if (GetNearMemberCount() <= 1)
-	   return 0;
-
-	   int leadership = SkillSystem::GetSkillLevel(GetLeader(), SKILL_LEADERSHIP);
-	   int n = GetNearMemberCount();
-
-	   if (n >= 3 && leadership >= 10)
-	   return 2;
-
-	   if (n >= 2 && leadership >= 4)
-	   return 1;
-	 */
-	return 0;
-}
-
-inline int CParty::ComputePartyBonusDefenseGrade()
-{
-	/*
-	   if (GetNearMemberCount() <= 1)
-	   return 0;
-
-	   int leadership = SkillSystem::GetSkillLevel(GetLeader(), SKILL_LEADERSHIP);
-	   int n = GetNearMemberCount();
-
-	   if (n >= 5 && leadership >= 24)
-	   return 2;
-
-	   if (n >= 4 && leadership >= 16)
-	   return 1;
-	 */
-	return 0;
-}
 
 #endif
