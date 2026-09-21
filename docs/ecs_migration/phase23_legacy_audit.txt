@@ -1,0 +1,139 @@
+Phase 23 - Remaining legacy (non-ECS) inventory and risk audit
+Date: 2026-09-21
+Mode: read-only audit across the GameServer tree after the party, dungeon,
+shop and relation-validation units. No code was changed for this document.
+
+Scope and method
+----------------
+Every class/object that is still heap-owned, every remaining raw pointer in a
+component, every service singleton and every data prototype was classified as
+  SERVICE     - manager/prototype/DB-backed infrastructure; allowed to stay OOP
+  MIGRATABLE  - game state that an entity could own
+  DEAD        - unreachable or unused
+and every relation as
+  DANGLING    - dereferenced after its target can be deleted
+  DUAL-WRITE  - two copies of the same state kept in step by hand
+  NONE        - no lifetime risk
+Findings marked [verified] were re-checked line by line; the rest come from the
+subsystem sweeps.
+
+Metrics at this tip
+-------------------
+  LPCHARACTER live uses: 14 (comments and the DESC::m_lpCharacter entity field)
+  LPITEM: 0
+  CItem*: 2 (item manager internals)
+  M2_NEW: 75 sites; the game-state ones are CGuild (3), CWarMap (1),
+          CArenaMap/CArena (2), CLoginData/DESC (session), CPVP (1), CLand (1)
+  M2_DELETE: 96 sites; mostly prototypes, events, sectors and session state
+  Raw game-state pointers in components: SocialRefs::guild,
+          DungeonMembership::warMap, ArenaMembership::arena,
+          ShopState::offlineShop/offlineShopGuest/shopSafebox/auction/
+          auctionGuest, MobDataRef::data (const CMob*)
+
+A. Concrete defects found (ordered by severity)
+-----------------------------------------------
+F1 [verified] The relation validation itself reads freed memory.
+   SocialSystem.cpp:66 `CGuildManager::FindGuild(refs->guild->GetID())` and
+   SocialSystem.cpp:168 `CWarMapManager::Find(membership->warMap->GetMapIndex())`
+   dereference the stored pointer to obtain the lookup key. After DisbandGuild
+   (guild_manager.cpp:320 M2_DELETE) or DestroyWarMap (war_map.cpp:1093) that
+   is a use-after-free read; it usually "works" only because the freed block
+   still holds the old id. The durable id must be stored beside the pointer at
+   Set time (guild id, war map index), so the validation touches no freed
+   object.
+F2 [verified] Logout order use-after-free in the offline-shop cache.
+   SessionSystem.cpp:748 erases the value-stored safebox
+   (`std::map<uint32_t, CShopSafebox>`, new_offlineshop_manager.h:48), which
+   destroys the object, and SessionSystem.cpp:755 then calls
+   OfflineShopSystem::SetShopSafebox(e, nullptr), which at
+   OfflineShopSystem.cpp:86-87 does `state->shopSafebox->SetOwner(entt::null)`
+   on the destroyed safebox. Every logout with an offline-shop safebox writes
+   into freed memory. The component must be cleared before the cache erase, or
+   the cache must store shared pointers.
+F3 [verified] Use-after-free in the PVP delete path.
+   pvp.cpp:609 `Delete(pkPVP)` M2_DELETEs the object (pvp.cpp:653) and
+   pvp.cpp:610 then calls `pkPVP->SetLastFightTime()`. The call must happen
+   before the delete (or on a copy of the value).
+F4 [verified] CGuildManager::ChangeMaster dereferences a missing guild.
+   guild_manager.cpp:1018 evaluates `iter->second` unconditionally, so an
+   unknown guild id dereferences `end()`; it also binds the raw `this` of the
+   guild into a DB callback that can fire after DisbandGuild. Resolve the guild
+   by id inside the callback.
+F5 [verified] questlua_pc bypasses the validated war-map getter.
+   questlua_pc.cpp:1819 `dungeon->warMap->GetMapIndex()` and
+   questlua_pc.cpp:3732 test the raw field. Both must use
+   SocialSystem::GetWarMap so the F1 fix reaches them.
+F6 [verified-risk] War-map events keep the raw CWarMap*.
+   war_map_info (war_map.cpp:31-41) is used by the begin/timeout/end/reset
+   events; war_end_event destroys the map at war_map.cpp:81 while its own info
+   still points at it and other armed events may outlive that destruction. The
+   events should resolve the map by map index per callback (like the regen and
+   dungeon events do).
+F7 [risk] War-map flag mobs keep the relation after the map is gone.
+   war_map.cpp:868/893 assign warMap=this to flag/flagBase mobs and nothing
+   clears them in RemoveFlag/SetEnded; their membership then feeds F1.
+F8 [risk] Ghost guilds can be resurrected.
+   TouchGuild (guild_manager.cpp:204) recreates a guild from a late DB/P2P
+   packet after DisbandGuild, and guild_renewal.cpp:178/64 caches
+   (m_cache, s_kisAdoItemContrib) plus guild_manager.cpp:99-100 reserve wars
+   are never invalidated on disband.
+F9 [risk] Prototype pointer stability is accidental.
+   MobDataRef::data (ai_components.hpp:85) and the skill-proto caches
+   (SkillSystem.cpp:2033/2723, reload deletes the old set at skill.cpp:297)
+   are safe only while the managers never free. A future reload/clear would
+   leave every entity holding a freed pointer.
+F10 [risk] CAttribute clones alias the origin sector's attribute.
+   sectree.cpp:206-208 CloneAttribute shares the pointer; the clone dangles if
+   the origin sector is destroyed first (order not enforced).
+F11 [gameplay] Arena observers keep stale state.
+   EndDuel clears the duelists but not the observers' ArenaMembership or the
+   isArenaObserver flag (arena.cpp:590-603, PlayerRuntimeSystem.cpp:952).
+F12 [gameplay] Offline-shop safebox owner back-pointer.
+   OfflineShopSystem.cpp:86-90 updates the back pointer only on a null
+   transition, so a second safebox handed to the same character keeps the old
+   owner.
+
+B. MIGRATABLE legacy game state still heap-owned
+------------------------------------------------
+- Quest per-character state: questmanager.h:70-264 `m_mapPC` (PID-keyed
+  PC objects with flags, quest states, LPEVENT timers) and the current-PC
+  pointer; questpc.h:164-175 QuestInfo/FlagMap/TimerMap. This is the largest
+  remaining character-owned heap state. Timers already resolve the PC by id;
+  Reload (questmanager.cpp:1640) closes Lua and clears NPCs while the PC map
+  survives. Migration target: per-character components plus a pid index.
+- Guild member rows: guild.h:389-390 `m_member` (grade/general/job/level/
+  offer_exp per pid) live inside the service object; `m_memberOnline` is
+  already a set of entity handles. A per-character component with a guild-side
+  pid index would follow the PartyState pattern, but guild is DB-backed state,
+  so this is a design decision rather than a bug.
+- CPVP per-duel object: pvp.h:57-88 owns CPVP objects keyed by CRC/PID; the
+  character relation is transient. Leave as a service, but fix F3.
+- CWarMap/CArena remain services per the phase19 audit (validated reads); their
+  member rosters are already entity-based.
+
+C. Services and prototypes that stay OOP (spot-checked, no action)
+------------------------------------------------------------------
+- Item/mob/skill/motion prototypes and drop tables (item_manager.h:441-486,
+  item_manager_read_tables.cpp, mob_manager.h, skill.cpp, motion.cpp,
+  constants.cpp) - boot-time read-only data.
+- SECTREE/SECTREE_MAP (sectree_manager.cpp) - spatial service; entities and
+  attribute pointers are stored, resolved through the manager.
+- Event queue (event.cpp/event_queue.cpp) - refcounted scheduler.
+- DESC/DESC_P2P/CLIENT_DESC/CLoginData (desc_manager.cpp, db.cpp) - session
+  service; DESC::m_lpCharacter is already an entity.
+- P2P manager/CCI, priv manager, target manager, battle pass, switchbot,
+  offline-shop caches - services keyed by pid/CRC, no character ownership.
+- Building land (CLand), arena map objects, guild marks - service-owned data.
+
+D. Recommended order
+--------------------
+1. F1-F5: the verified use-after-frees and the unvalidated getter bypasses.
+   F1 and F5 are the direct completion of the phase22 validation.
+2. F6-F8: war-map event lifetime, flag-mob relation clearing, guild ghost
+   resurrection and cache invalidation on disband.
+3. F9-F12: latent prototype/attribute lifetime and the arena/offline-shop
+   state leftovers.
+4. Quest per-character state -> ECS (the last large migratable subsystem).
+5. Guild member rows: decide between per-character components and the service
+   object with per-field DB sync audit; either way the current arrangement is
+   not a crash risk once F1/F4 are fixed.
