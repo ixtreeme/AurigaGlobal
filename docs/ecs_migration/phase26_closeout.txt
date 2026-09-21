@@ -1,0 +1,61 @@
+Phase 26 - Migration close-out verification
+Date: 2026-09-21
+Mode: read-only sweep after the phase23-25 fixes, to confirm that every item of
+the phase23_legacy_audit is closed and that the new ownership units did not
+leave a dangling relation behind. No code changed for this document.
+
+Closed items
+------------
+Phase 23 fixes (phase23_legacy_fixes.txt):
+- F1 durable guild id / war-map index in SocialRefs and DungeonMembership;
+  no validation reads a freed object to find its key.
+- F2 the logout safebox clear happens before the cache erase destroys the box.
+- F3 the PVP timestamp write precedes Delete.
+- F4 ChangeMaster returns for an unknown guild and the DB callback resolves
+  the guild by id.
+- F5 questlua_pc uses the validated war-map getter.
+- F6 war-map events resolve the live map by index per callback.
+- F7 flag/flag-base mobs drop the war-map relation in RemoveFlag and SetEnded.
+- F8 disbanded guild ids are tombstoned; reserve wars and renewal caches are
+  invalidated; TouchGuild call sites handle the refusal.
+- F11 arena observers lose the relation and the observer flag at EndDuel.
+- F12 the safebox owner back pointer is cleared on every handover.
+
+Phase 24 (phase24_quest_state.txt): the quest PC is an entity-owned component
+(ecs::QuestPCState) with CPIDRegistry as the PID index; the manager keeps no
+PID-keyed PC map.
+
+Phase 25 (phase25_proto_attribute.txt): MobDataRef carries a durable vnum and
+GetProto validates against CMobManager; private-map sector attributes are
+shared ownership. The guild member row decision is recorded there as well.
+
+Sweep result
+------------
+- The remaining M2_NEW sites are services, prototypes, events and session
+  state, matching the phase23 section C allowlist: item/mob/skill/motion
+  prototypes and drop tables, SECTREE/SECTREE_MAP, the event queue, DESC and
+  CLoginData, P2P/CCI, priv/target managers, battle pass, switchbot, offline
+  shop caches, CLand, arena maps and guild marks.
+- The offline-shop shop/auction erase paths were re-checked because F2 was a
+  logout-ordering defect in the same subsystem. Every erase of m_mapShops
+  (RecvShopForceCloseDBPacket, RecvShopExpiredDBPacket) and m_mapAuctions
+  (RecvAuctionExpiredDBPacket) clears the affected owner and guest component
+  pointers without dereferencing the erased object; CShopManager::Destroy only
+  runs at shutdown.
+- No live LPCHARACTER use remains outside comments/debug text and the
+  DESC::m_lpCharacter entity field; LegacyCharOf is a comment only.
+- QuestRuntimeTests, CombatStateTests and SpatialLifecycleTests carry the
+  regression coverage added by the phase24/25 units.
+- GameServer Release builds; the whole suite (27 targets) passes in Release.
+
+Residual risks and open decisions
+---------------------------------
+- CPVP, TMarriage and the guild member rows remain service-owned, DB-backed
+  state by decision (phase23 item 5, phase25). The character-side relations
+  are validated or entity-based.
+- ASAN runs and in-game checks (login/logout, guild war, quest scripts,
+  offline-shop expire/force-close, mob table reload) are still the deployment
+  gate; the headless suites do not execute the real DB, sockets or client.
+- The test fixtures stub the guild, war-map, arena and offline-shop services,
+  so the phase23 defect fixes there are compile-verified plus covered by the
+  existing suite, not by new focused regression tests.
