@@ -74,19 +74,22 @@ offlineshop::CShopSafebox* GetShopSafebox(entt::entity e)
 }
 
 // The safebox and its owner point at each other, so handing one over clears
-// the old back pointer first.
+// the old back pointer first, whatever the old state was. The old condition
+// pair only handled the null transitions, so a second safebox handed to the
+// same character kept the previous owner.
 void SetShopSafebox(entt::entity e, offlineshop::CShopSafebox* safebox)
 {
     auto* state = StateOf(e);
     if (!state)
         return;
 
-    // The safebox and its owner point at each other, so handing one over clears
-    // the old back pointer first. Both sides are entities now.
-    if (state->shopSafebox && safebox == nullptr)
+    if (state->shopSafebox == safebox)
+        return;
+
+    if (state->shopSafebox)
         state->shopSafebox->SetOwner(entt::null);
 
-    else if (state->shopSafebox == nullptr && safebox)
+    if (safebox)
         safebox->SetOwner(e);
 
     state->shopSafebox = safebox;

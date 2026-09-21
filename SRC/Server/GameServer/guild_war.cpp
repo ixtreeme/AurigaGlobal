@@ -109,7 +109,10 @@ void CGuild::SendEnemyGuild(entt::entity character)
 			d->BufferedPacket(&pack2.dwGuildOpp, sizeof(uint32_t));
 			d->Packet(&lScore, sizeof(int32_t));
 
-			lScore = CGuildManager::instance().TouchGuild(pack2.dwGuildOpp)->GetWarScoreAgainstTo(pack2.dwGuildSelf);
+			lScore = 0;
+
+			if (CGuild* gOpp = CGuildManager::instance().TouchGuild(pack2.dwGuildOpp))
+				lScore = gOpp->GetWarScoreAgainstTo(pack2.dwGuildSelf);
 
 			d->BufferedPacket(&p, sizeof(p));
 			d->BufferedPacket(&pack2.dwGuildOpp, sizeof(uint32_t));
@@ -203,7 +206,7 @@ void CGuild::SetWarScoreAgainstTo(uint32_t dwOppGID, int iScore)
 			CGuild * gOpp = CGuildManager::instance().TouchGuild(dwOppGID);
 			CWarMap * pMap = CWarMapManager::instance().Find(it->second.map_index);
 
-			if (pMap)
+			if (pMap && gOpp)
 				pMap->UpdateScore(dwSelfGID, iScore, dwOppGID, gOpp->GetWarScoreAgainstTo(dwSelfGID));
 		}
 		else

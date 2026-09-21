@@ -58,12 +58,13 @@ CGuild* GetGuild(entt::entity e)
         return nullptr;
 
     const auto* refs = g_registry.try_get<ecs::SocialRefs>(e);
-    if (!refs || !refs->guild)
+    if (!refs || !refs->guild || refs->guildId == 0)
         return nullptr;
 
-    // A disbanded guild is deleted; the manager map is the liveness check, so
-    // a member that still holds the pointer cannot dereference freed memory.
-    if (CGuildManager::instance().FindGuild(refs->guild->GetID()) != refs->guild)
+    // A disbanded guild is deleted; the manager map is the liveness check. The
+    // lookup uses the id stored at Set time, so a member that still holds the
+    // pointer never dereferences freed memory to find its key.
+    if (CGuildManager::instance().FindGuild(refs->guildId) != refs->guild)
         return nullptr;
 
     return refs->guild;
@@ -107,6 +108,7 @@ void SetWarMap(entt::entity e, CWarMap* pWarMap)
         membership.warMap->DecMember(e);
 
     membership.warMap = pWarMap;
+    membership.warMapIndex = pWarMap ? pWarMap->GetMapIndex() : 0;
 
     if (membership.warMap)
         membership.warMap->IncMember(e);
@@ -160,12 +162,13 @@ CWarMap* GetWarMap(entt::entity e)
         return nullptr;
 
     const auto* membership = g_registry.try_get<ecs::DungeonMembership>(e);
-    if (!membership || !membership->warMap)
+    if (!membership || !membership->warMap || membership->warMapIndex == 0)
         return nullptr;
 
-    // A destroyed war map is deleted; the manager map is the liveness check,
-    // so a stale relation reads as no war map.
-    if (CWarMapManager::instance().Find(membership->warMap->GetMapIndex()) != membership->warMap)
+    // A destroyed war map is deleted; the manager map is the liveness check.
+    // The lookup uses the index stored at Set time, so a stale relation never
+    // dereferences freed memory to find its key.
+    if (CWarMapManager::instance().Find(membership->warMapIndex) != membership->warMap)
         return nullptr;
 
     return membership->warMap;
@@ -787,10 +790,11 @@ void SetGuild(entt::entity e, CGuild* pGuild)
         return;
 
     auto& refs = g_registry.get_or_emplace<ecs::SocialRefs>(e);
-    if (refs.guild == pGuild)
+    if (refs.guild == pGuild && refs.guildId == (pGuild ? pGuild->GetID() : 0))
         return;
 
     refs.guild = pGuild;
+    refs.guildId = pGuild ? pGuild->GetID() : 0;
     NetworkSyncSystem::UpdatePacket(e);
 }
 

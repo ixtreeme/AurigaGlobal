@@ -610,6 +610,11 @@ void CArena::EndDuel()
 		const entt::entity observer = ecs::PlayerRuntime::FindByPlayerID(iter->first);
 		if (observer != entt::null)
 		{
+			// The duel is over for the observers too; a stale relation or
+			// arena-observer flag would survive the warp otherwise.
+			ecs::PlayerRuntime::SetArena(observer, nullptr);
+			ecs::PlayerRuntime::SetArenaObserverMode(observer, false);
+
 			ecs::MovementSystem::WarpSet(observer,
 				ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(observer)),
 				ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(observer)));

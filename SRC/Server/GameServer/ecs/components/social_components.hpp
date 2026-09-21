@@ -31,7 +31,11 @@ struct SocialRefs {
     // The party this character belongs to. The party state is a component on a
     // registry-owned party entity; the handle is generation-checked on read.
     entt::entity party { entt::null };
+    // The guild this character belongs to. The guild stays a service object,
+    // so the durable id is kept beside the pointer: the liveness check looks
+    // the guild up by id and never dereferences the pointer first.
     CGuild* guild { nullptr };
+    uint32_t guildId { 0 };
 };
 
 // The per-character part of the party relation. The party state itself is
@@ -64,7 +68,12 @@ struct DungeonMembership {
     // The sector attribute the quest scripts are told about on the way in and
     // out. CHARACTER::m_iEventAttr held it and this was written by nothing.
     int eventAttr { 0 };
+    // The guild war map this character is counted against. The war map stays a
+    // service object, so the durable map index is kept beside the pointer: the
+    // liveness check looks the map up by index and never dereferences the
+    // pointer first.
     CWarMap* warMap { nullptr };
+    int32_t warMapIndex { 0 };
 };
 
 // Guild ids whose name this viewer has already been sent. The client only

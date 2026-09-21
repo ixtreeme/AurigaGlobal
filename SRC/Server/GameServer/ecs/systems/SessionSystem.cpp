@@ -745,6 +745,10 @@ void Disconnect(entt::entity e, const char* c_pszReason)
         ecs::SocialSystem::SetWeddingMap(e, entt::null);
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
+    // The cached safebox is value-stored in the manager map, so the erase
+    // destroys it. The component points at it and clearing the component writes
+    // the safebox back pointer, so the clear must come first.
+    ecs::OfflineShopSystem::SetShopSafebox(e, nullptr);
     offlineshop::GetManager().RemoveSafeboxFromCache(ecs::PlayerRuntime::GetPlayerID(e));
     offlineshop::GetManager().RemoveGuestFromShops(e);
 
@@ -752,7 +756,6 @@ void Disconnect(entt::entity e, const char* c_pszReason)
         auctionGuest->RemoveGuest(e);
 
     ecs::OfflineShopSystem::SetOfflineShop(e, nullptr);
-    ecs::OfflineShopSystem::SetShopSafebox(e, nullptr);
     ecs::OfflineShopSystem::SetAuction(e, nullptr);
     ecs::OfflineShopSystem::SetAuctionGuest(e, nullptr);
     ecs::OfflineShopSystem::SetLookingOfferList(e, false);

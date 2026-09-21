@@ -1,0 +1,73 @@
+Phase 23 fix pass - the legacy-audit defects F1-F8, F11, F12
+Date: 2026-09-21
+Mode: the implementation of the phase23_legacy_audit findings. The audit
+itself is unchanged; this document records what was fixed, what was left as
+a design decision, and the verification.
+
+Implemented
+-----------
+F1 - the relation validation no longer reads freed memory.
+- ecs::SocialRefs has a durable guildId next to the CGuild*; SetGuild stores
+  both, GetGuild looks the id up in CGuildManager and never dereferences the
+  pointer to obtain its key.
+- ecs::DungeonMembership has a durable warMapIndex next to the CWarMap*;
+  SetWarMap stores both, GetWarMap resolves by index. A stale relation now
+  reads as "no guild" / "no war map" without touching the deleted object.
+
+F2 - the logout ordering use-after-free is gone.
+- SessionSystem::Disconnect clears ShopState::shopSafebox (which writes the
+  safebox back pointer) before RemoveSafeboxFromCache erases the value-stored
+  cache entry that destroys it.
+
+F3 - the PVP delete path writes the timestamp before Delete frees the object.
+
+F4 - CGuildManager::ChangeMaster returns for an unknown guild id, and its DB
+  callback resolves the guild by id inside the callback so a disband while
+  the query is in flight cannot leave a raw `this` behind.
+
+F5 - questlua_pc pc_get_war_map / pc_is_arena0 use the validated
+  SocialSystem::GetWarMap instead of testing the raw membership field.
+
+F6 - the war-map events keep the durable map index instead of the raw
+  CWarMap*; war_begin/war_end/war_timeout/war_reset_flag resolve the live map
+  through CWarMapManager per callback and give up when it is already gone.
+
+F7 - flag and flag-base mobs drop their war-map relation in RemoveFlag and in
+  SetEnded before the entity is destroyed.
+
+F8 - guild ghost resurrection and disband leftovers.
+- CGuildManager keeps a disbanded-id set; DisbandGuild inserts, TouchGuild
+  and LoadGuild refuse the id, so a late DB/P2P packet cannot recreate the
+  guild. The TouchGuild call sites that dereferenced without a check
+  (RequestWarOver, StopAllGuildWar, guild_war.cpp, war_map.cpp SendWarPacket,
+  input_db.cpp) now handle the refusal.
+- DisbandGuild removes restore-war entries that mention the guild from both
+  manager containers and frees them.
+- CGuildRenewal::InvalidateGuild drops both the renewal cache and the
+  contribution map of the disbanded guild.
+
+F11 - CArena::EndDuel clears the observers' arena relation and the
+  isArenaObserver flag while warping them out.
+
+F12 - OfflineShopSystem::SetShopSafebox now clears the old back pointer on
+  every handover, not only on the null transition, so a second safebox handed
+  to the same character cannot keep the previous owner.
+
+Deferred (documented, no code change)
+-------------------------------------
+F9 - prototype pointer stability (MobDataRef::data, skill-proto caches) is
+  still accidental; a prototype reload/clear would dangle every stored
+  pointer. This needs a generation check or an owning registry, not a local
+  fix.
+F10 - SECTREE::CloneAttribute still shares the origin sector's CAttribute
+  with private-map clones. The current manager never destroys an origin map
+  before its private maps, so this stays latent until map teardown order is
+  formalized (and CAttribute has no deep-copy support today).
+Item 5 of the audit (guild member rows) is unchanged; it is a design decision,
+not a defect. Item 4 (quest per-character state to ECS) is implemented in the
+separate phase24_quest_state.txt unit.
+
+Verification
+------------
+- GameServer Release builds.
+- The whole suite (27 targets) passes in Release, including client_timer.

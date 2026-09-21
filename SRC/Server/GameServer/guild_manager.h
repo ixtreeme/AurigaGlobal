@@ -1,6 +1,8 @@
 #ifndef __GUILD_MANAGER_H
 #define __GUILD_MANAGER_H
 
+#include <set>
+
 class CGuild;
 struct TGuildCreateParameter;
 
@@ -25,6 +27,7 @@ class CGuildManager : public singleton<CGuildManager>
 		void		LoadGuild(uint32_t guild_id);
 		CGuild *	TouchGuild(uint32_t guild_id);
 		void		DisbandGuild(uint32_t guild_id);
+		bool		IsDisbanded(uint32_t guild_id) const;
 
 		void		Initialize();
 
@@ -87,6 +90,10 @@ class CGuildManager : public singleton<CGuildManager>
 	private:
 		typedef std::map<uint32_t, CGuild*> TGuildMap;
 		TGuildMap m_mapGuild;
+
+		// Guild ids deleted by DisbandGuild. The ids are never reused, so a
+		// late DB/P2P packet cannot resurrect one through TouchGuild/LoadGuild.
+		std::set<uint32_t> m_disbandedGuilds;
 
 		typedef std::set<std::pair<uint32_t, uint32_t> > TGuildWarContainer;
 		TGuildWarContainer m_GuildWar;

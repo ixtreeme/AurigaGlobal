@@ -26,6 +26,9 @@ public:
 	// P2P: called on other cores to reload cache + refresh online members
 	void OnP2PRefresh(uint32_t guildId);
 
+	// A disbanded guild's caches must not survive it.
+	void InvalidateGuild(uint32_t guildId);
+
 
 	// Deposit item from player's INVENTORY into guild storage.
 	bool DepositItem(entt::entity chEntity, uint16_t invCell, uint32_t count);

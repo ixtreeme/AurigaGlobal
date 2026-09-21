@@ -308,6 +308,12 @@ void CGuildRenewal::InvalidateCache(uint32_t guildId)
 	KisAdo_ClearGuild(guildId);
 }
 
+void CGuildRenewal::InvalidateGuild(uint32_t guildId)
+{
+	m_cache.erase(guildId);
+	KisAdo_ClearGuild(guildId);
+}
+
 void CGuildRenewal::P2P_BroadcastRefresh(uint32_t guildId)
 {
 	TPacketGGGuild p;

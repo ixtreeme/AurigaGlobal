@@ -606,8 +606,9 @@ void CPVPManager::Decline(entt::entity character, entt::entity victim)
 			}
 
 			pkPVP->Packet(true);
-			Delete(pkPVP);
+			// Delete frees pkPVP, so the timestamp write must happen first.
 			pkPVP->SetLastFightTime();
+			Delete(pkPVP);
 			//found = true;
 
 			RemoveStateFull(character);

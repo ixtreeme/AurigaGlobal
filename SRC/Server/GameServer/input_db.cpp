@@ -1556,6 +1556,10 @@ void CInputDB::GuildWarScore(const char* c_pData)
 {
 	TPacketGuildWarScore* p = (TPacketGuildWarScore*) c_pData;
 	CGuild * g = CGuildManager::instance().TouchGuild(p->dwGuildGainPoint);
+
+	if (!g)
+		return;
+
 	g->SetWarScoreAgainstTo(p->dwGuildOpponent, p->lScore);
 }
 
@@ -1623,6 +1627,9 @@ void CInputDB::GuildLadder(const char* c_pData)
 	TPacketGuildLadder* p = (TPacketGuildLadder*) c_pData;
 	LOG_INFO("Recv GuildLadder {} {} / w {} d {} l {}", p->dwGuild, p->lLadderPoint, p->lWin, p->lDraw, p->lLoss);
 	CGuild * g = CGuildManager::instance().TouchGuild(p->dwGuild);
+
+	if (!g)
+		return;
 
 	g->SetLadderPoint(p->lLadderPoint);
 	g->SetWarData(p->lWin, p->lDraw, p->lLoss);
@@ -2022,6 +2029,9 @@ void CInputDB::GuildSkillUsableChange(const char* c_pData)
 	TPacketGuildSkillUsableChange* p = (TPacketGuildSkillUsableChange*) c_pData;
 
 	CGuild* g = CGuildManager::instance().TouchGuild(p->dwGuild);
+
+	if (!g)
+		return;
 
 	g->SkillUsableChange(p->dwSkillVnum, p->bUsable?true:false);
 }

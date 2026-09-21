@@ -28,14 +28,17 @@
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 
+// The events outlive neither the map nor its index, but an armed event can
+// still fire after the map was destroyed. The info carries only the durable
+// map index; every callback resolves the live map through the manager.
 EVENTINFO(war_map_info)
 {
 	int iStep;
-	CWarMap * pWarMap;
+	int32_t lMapIndex;
 
 	war_map_info()
 	: iStep( 0 )
-	, pWarMap( nullptr )
+	, lMapIndex( 0 )
 	{
 	}
 };
@@ -50,9 +53,13 @@ EVENTFUNC(war_begin_event)
 		return 0;
 	}
 
-	CWarMap * pMap = info->pWarMap;
+	CWarMap* pMap = CWarMapManager::instance().Find(info->lMapIndex);
+
+	if (pMap == nullptr)
+		return 0;
+
 	pMap->CheckWarEnd();
-	g_dispatcher.trigger(ecs::EvWarBegin { static_cast<uint32_t>(pMap->GetMapIndex()) });
+	g_dispatcher.trigger(ecs::EvWarBegin { static_cast<uint32_t>(info->lMapIndex) });
 	return PASSES_PER_SEC(10);
 }
 
@@ -66,7 +73,10 @@ EVENTFUNC(war_end_event)
 		return 0;
 	}
 
-	CWarMap * pMap = info->pWarMap;
+	CWarMap* pMap = CWarMapManager::instance().Find(info->lMapIndex);
+
+	if (pMap == nullptr)
+		return 0;
 
 	if (info->iStep == 0)
 	{
@@ -77,7 +87,7 @@ EVENTFUNC(war_end_event)
 	else
 	{
 		pMap->SetEndEvent(nullptr);
-		g_dispatcher.trigger(ecs::EvWarEnd { static_cast<uint32_t>(pMap->GetMapIndex()) });
+		g_dispatcher.trigger(ecs::EvWarEnd { static_cast<uint32_t>(info->lMapIndex) });
 		CWarMapManager::instance().DestroyWarMap(pMap);
 		return 0;
 	}
@@ -93,9 +103,13 @@ EVENTFUNC(war_timeout_event)
 		return 0;
 	}
 
-	CWarMap * pMap = info->pWarMap;
+	CWarMap* pMap = CWarMapManager::instance().Find(info->lMapIndex);
+
+	if (pMap == nullptr)
+		return 0;
+
 	pMap->Timeout();
-	g_dispatcher.trigger(ecs::EvWarTimeout { static_cast<uint32_t>(pMap->GetMapIndex()) });
+	g_dispatcher.trigger(ecs::EvWarTimeout { static_cast<uint32_t>(info->lMapIndex) });
 	return 0;
 }
 
@@ -129,7 +143,7 @@ CWarMap::CWarMap(int32_t lMapIndex, const TGuildWarInfo & r_info, TWarMapInfo * 
 	m_iObserverCount = 0;
 
 	war_map_info* info = AllocEventInfo<war_map_info>();
-	info->pWarMap = this;
+	info->lMapIndex = GetMapIndex();
 
 	SetBeginEvent(event_create(war_begin_event, info, PASSES_PER_SEC(60)));
 	m_pkEndEvent = nullptr;
@@ -502,7 +516,7 @@ void CWarMap::CheckWarEnd()
 		Notice(CHAT_TYPE_NOTICE, 702, "");
 #endif
 		war_map_info* info = AllocEventInfo<war_map_info>();
-		info->pWarMap = this;
+		info->lMapIndex = GetMapIndex();
 
 		SetTimeoutEvent(event_create(war_timeout_event, info, PASSES_PER_SEC(60)));
 	}
@@ -644,6 +658,16 @@ void CWarMap::Packet(const void * p, int size)
 
 void CWarMap::SendWarPacket(LPDESC d)
 {
+	if (!d)
+		return;
+
+	// A disbanded guild has no live object; the manager lookup must not
+	// recreate one for a war packet.
+	CGuild* pkGuild = CGuildManager::instance().FindGuild(m_TeamData[0].dwID);
+
+	if (!pkGuild)
+		return;
+
 	TPacketGCGuild pack;
 	TPacketGCGuildWar pack2;
 
@@ -653,8 +677,8 @@ void CWarMap::SendWarPacket(LPDESC d)
 
 	pack2.dwGuildSelf	= m_TeamData[0].dwID;
 	pack2.dwGuildOpp	= m_TeamData[1].dwID;
-	pack2.bType		= CGuildManager::instance().TouchGuild(m_TeamData[0].dwID)->GetGuildWarType(m_TeamData[1].dwID);
-	pack2.bWarState	= CGuildManager::instance().TouchGuild(m_TeamData[0].dwID)->GetGuildWarState(m_TeamData[1].dwID);
+	pack2.bType		= pkGuild->GetGuildWarType(m_TeamData[1].dwID);
+	pack2.bWarState	= pkGuild->GetGuildWarState(m_TeamData[1].dwID);
 
 	d->BufferedPacket(&pack, sizeof(pack));
 	d->Packet(&pack2, sizeof(pack2));
@@ -760,24 +784,28 @@ bool CWarMap::SetEnded()
 
 	if (m_TeamData[0].flag != entt::null)
 	{
+		ecs::SocialSystem::SetWarMap(m_TeamData[0].flag, nullptr);
 		ecs::PlayerRuntime::DestroyCharacter(m_TeamData[0].flag);
 		m_TeamData[0].flag = entt::null;
 	}
 
 	if (m_TeamData[0].flagBase != entt::null)
 	{
+		ecs::SocialSystem::SetWarMap(m_TeamData[0].flagBase, nullptr);
 		ecs::PlayerRuntime::DestroyCharacter(m_TeamData[0].flagBase);
 		m_TeamData[0].flagBase = entt::null;
 	}
 
 	if (m_TeamData[1].flag != entt::null)
 	{
+		ecs::SocialSystem::SetWarMap(m_TeamData[1].flag, nullptr);
 		ecs::PlayerRuntime::DestroyCharacter(m_TeamData[1].flag);
 		m_TeamData[1].flag = entt::null;
 	}
 
 	if (m_TeamData[1].flagBase != entt::null)
 	{
+		ecs::SocialSystem::SetWarMap(m_TeamData[1].flagBase, nullptr);
 		ecs::PlayerRuntime::DestroyCharacter(m_TeamData[1].flagBase);
 		m_TeamData[1].flagBase = entt::null;
 	}
@@ -787,7 +815,7 @@ bool CWarMap::SetEnded()
 
 	war_map_info* info = AllocEventInfo<war_map_info>();
 
-	info->pWarMap = this;
+	info->lMapIndex = GetMapIndex();
 	info->iStep = 0;
 	SetEndEvent(event_create(war_end_event, info, PASSES_PER_SEC(10)));
 	return true;
@@ -904,6 +932,9 @@ void CWarMap::RemoveFlag(uint8_t bIdx)
 
 	LOG_INFO("WarMap::RemoveFlag {} {}", static_cast<int>(bIdx), static_cast<uint32_t>(r.flag));
 
+	// The flag mob must not keep the war map relation after it leaves the war.
+	ecs::SocialSystem::SetWarMap(r.flag, nullptr);
+
 	CombatSystem::Dead(r.flag, entt::null, true);
 	r.flag = entt::null;
 }
@@ -933,7 +964,10 @@ EVENTFUNC(war_reset_flag_event)
 		return 0;
 	}
 
-	CWarMap * pMap = info->pWarMap;
+	CWarMap* pMap = CWarMapManager::instance().Find(info->lMapIndex);
+
+	if (pMap == nullptr)
+		return 0;
 
 	pMap->AddFlag(0);
 	pMap->AddFlag(1);
@@ -970,7 +1004,7 @@ void CWarMap::ResetFlag()
 
 	war_map_info* info = AllocEventInfo<war_map_info>();
 
-	info->pWarMap = this;
+	info->lMapIndex = GetMapIndex();
 	info->iStep = 0;
 	SetResetFlagEvent(event_create(war_reset_flag_event, info, PASSES_PER_SEC(10)));
 }

@@ -1813,15 +1813,9 @@ namespace quest
 	ALUA(pc_get_war_map)
 	{
 		// migrated from CHARACTER::GetWarMap
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* dungeon = ECS_TryGet<ecs::DungeonMembership>(e))
-		{
-			lua_pushnumber(L, dungeon->warMap ? dungeon->warMap->GetMapIndex() : 0);
-			return 1;
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		lua_pushnumber(L, ecs::SocialSystem::GetWarMap(chEntity) ? ecs::SocialSystem::GetWarMap(chEntity)->GetMapIndex() : 0);
+		const entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		CWarMap* pWarMap = ecs::SocialSystem::GetWarMap(e);
+		lua_pushnumber(L, pWarMap ? pWarMap->GetMapIndex() : 0);
 		return 1;
 	}
 
@@ -3726,16 +3720,8 @@ teleport_area:
 	ALUA(pc_is_arena0)
 	{
 		// migrated from CHARACTER::GetArena
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* dungeon = ECS_TryGet<ecs::DungeonMembership>(e))
-		{
-			if (dungeon->warMap != nullptr)
-			{
-				lua_pushboolean(L, 1);
-				return 1;
-			}
-		}
-		lua_pushboolean(L, 0);
+		const entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		lua_pushboolean(L, ecs::SocialSystem::GetWarMap(e) != nullptr ? 1 : 0);
 		return 1;
 	}
 

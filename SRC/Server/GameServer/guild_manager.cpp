@@ -22,6 +22,10 @@
 #include "locale_service.h"
 #include "guild_manager.h"
 #include "MarkManager.h"
+#ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
+#include "guild_renewal.h"
+#endif
+#include <algorithm>
 
 namespace
 {
@@ -203,6 +207,14 @@ void CGuildManager::LoginMember(entt::entity character)
 
 CGuild* CGuildManager::TouchGuild(uint32_t guild_id)
 {
+	// A disbanded id must not come back from a late DB/P2P packet; the id is
+	// never reused, so the tombstone stays for the session.
+	if (m_disbandedGuilds.contains(guild_id))
+	{
+		LOG_INFO("GuildManager::TouchGuild refused disbanded guild {}", guild_id);
+		return nullptr;
+	}
+
 	TGuildMap::iterator it = m_mapGuild.find(guild_id);
 
 	if (it == m_mapGuild.end())
@@ -228,6 +240,11 @@ CGuild* CGuildManager::FindGuild(uint32_t guild_id)
 		return nullptr;
 	}
 	return it->second;
+}
+
+bool CGuildManager::IsDisbanded(uint32_t guild_id) const
+{
+	return m_disbandedGuilds.contains(guild_id);
 }
 
 #ifdef ADVANCED_GUILD_INFO
@@ -296,6 +313,10 @@ void CGuildManager::Initialize()
 
 void CGuildManager::LoadGuild(uint32_t guild_id)
 {
+	// A late load packet must not recreate a disbanded guild.
+	if (m_disbandedGuilds.contains(guild_id))
+		return;
+
 	TGuildMap::iterator it = m_mapGuild.find(guild_id);
 
 	if (it == m_mapGuild.end())
@@ -310,6 +331,10 @@ void CGuildManager::LoadGuild(uint32_t guild_id)
 
 void CGuildManager::DisbandGuild(uint32_t guild_id)
 {
+	// A disbanded id is never reused, so remember it: a late DB/P2P packet
+	// must not recreate the guild through TouchGuild or LoadGuild.
+	m_disbandedGuilds.insert(guild_id);
+
 	TGuildMap::iterator it = m_mapGuild.find(guild_id);
 
 	if (it == m_mapGuild.end())
@@ -319,6 +344,35 @@ void CGuildManager::DisbandGuild(uint32_t guild_id)
 
 	M2_DELETE(it->second);
 	m_mapGuild.erase(it);
+
+	// Reserve wars that mention the guild must not outlive it.
+	for (auto rit = m_map_kReserveWar.begin(); rit != m_map_kReserveWar.end(); )
+	{
+		CGuildWarReserveForGame* pkReserve = rit->second;
+
+		if (pkReserve->data.dwGuildFrom != guild_id && pkReserve->data.dwGuildTo != guild_id)
+		{
+			++rit;
+			continue;
+		}
+
+		const uint32_t dwReserveID = rit->first;
+		rit = m_map_kReserveWar.erase(rit);
+
+		m_vec_kReserveWar.erase(
+			std::remove(m_vec_kReserveWar.begin(), m_vec_kReserveWar.end(), pkReserve),
+			m_vec_kReserveWar.end());
+
+		M2_DELETE(pkReserve);
+
+		LOG_INFO("GuildManager::DisbandGuild removed reserve war {} of guild {}", dwReserveID, guild_id);
+	}
+
+#ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
+	// The renewal cache and the per-member contribution map are keyed by id
+	// and would otherwise keep serving a disbanded guild.
+	CGuildRenewal::instance().InvalidateGuild(guild_id);
+#endif
 
 	CGuildMarkManager::instance().DeleteMark(guild_id);
 }
@@ -556,6 +610,12 @@ void CGuildManager::RequestWarOver(uint32_t dwGuild1, uint32_t dwGuild2, uint32_
 {
 	CGuild * g1 = TouchGuild(dwGuild1);
 	CGuild * g2 = TouchGuild(dwGuild2);
+
+	if (!g1 || !g2)
+	{
+		LOG_INFO("RequestWarOver : a guild was already disbanded {} {}", dwGuild1, dwGuild2);
+		return;
+	}
 
 	if (g1->GetGuildWarState(g2->GetID()) != GUILD_WAR_ON_WAR)
 	{
@@ -923,6 +983,10 @@ void CGuildManager::StopAllGuildWar()
 	{
 		CGuild * g = CGuildManager::instance().TouchGuild(it->first);
 		CGuild * pg = CGuildManager::instance().TouchGuild(it->second);
+
+		if (!g || !pg)
+			continue;
+
 		g->EndWar(it->second);
 		pg->EndWar(it->first);
 	}
@@ -1009,14 +1073,20 @@ void CGuildManager::ChangeMaster(uint32_t dwGID)
 {
 	TGuildMap::iterator iter = m_mapGuild.find(dwGID);
 
-	if ( iter != m_mapGuild.end() )
-	{
-		iter->second->Load(dwGID);
-	}
+	if (iter == m_mapGuild.end())
+		return;
 
-	// Ʈ  ֱ
-	DBManager::instance().FuncQuery(std::bind(&CGuild::SendGuildDataUpdateToAllMember, iter->second, std::placeholders::_1),"SELECT 1");
+	iter->second->Load(dwGID);
 
+	// The callback can fire after a disband, so it resolves the guild by id
+	// instead of holding the raw pointer that DisbandGuild deletes.
+	DBManager::instance().FuncQuery(
+		[dwGID](SQLMsg* pmsg)
+		{
+			if (CGuild* pkGuild = CGuildManager::instance().FindGuild(dwGID))
+				pkGuild->SendGuildDataUpdateToAllMember(pmsg);
+		},
+		"SELECT 1");
 }
 
 
