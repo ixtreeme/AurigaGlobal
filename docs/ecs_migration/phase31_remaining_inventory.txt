@@ -1,0 +1,132 @@
+Phase 31 - Remaining non-ECS inventory and migration candidates
+Date: 2026-09-22
+Mode: read-only sweep across the GameServer tree after the phase23-30 units
+(mount follower, walk mode). No code was changed for this document. The
+Database server and the Launcher client are separate binaries and stay out of
+scope.
+
+Metrics at this tip
+-------------------
+  Files: 396 in GameServer (~164k lines); 152 top-level .cpp, 137 top-level
+  .h, 36 .cpp under ecs/ (48 system files, 22 component headers).
+  LPCHARACTER live uses: 0 (14 textual, all comments/debug strings and the
+          DESC::m_lpCharacter entity member name)
+  LPITEM: 0. LPENTITY: comments only. LegacyCharOf: 1 comment. EcsOf: 0.
+  GetEntityHandle: 45 textual, 0 live (the guild.cpp hits are inside a block
+          comment). LegacyCharPtr: 1 comment.
+  class CHARACTER: removed. class CItem: removed (item.h is typedefs only).
+  class CParty / CDungeon / CExchange: removed.
+  M2_NEW: 70 sites; none is per-character game state.
+  Component raw pointers: 9 (two social, one arena, five offline-shop, one
+          item extra proto).
+
+A. Migrated at this tip (for context)
+-------------------------------------
+Items are entities (CItem and its indexes gone); party, dungeon, shop, arena
+map, war map, wedding map, exchange, quest PC, pets/growth pets, costume
+mounts, horses, buildings and offline-shop avatars are entity state. The
+character itself is entity state; CHARACTER_MANAGER, its maps and sets hold
+entities only and allocate nothing.
+
+B. Remaining classes by classification
+--------------------------------------
+SERVICE / PROTOTYPE - allowed to stay OOP, no character ownership:
+- Prototypes: CMob/CMobGroup (mob_manager.h), CSkillProto (skill.h),
+  CMotion/CMotionSet (motion.h), drop/special/level/glove groups
+  (item_manager.h), TItemTable (item_manager), TItemExtraProto
+  (item_manager.h:454, value map).
+- Spatial: SECTREE/SECTREE_MAP/CAttribute (owned by SECTREE_MANAGER); the
+  attribute is shared ownership since phase25.
+- Scheduler: event/event_queue; TargetInfo lives inside event infos.
+- Session/DB: DESC/DESC_P2P/CLIENT_DESC, CLoginData, CLoginKey, CReturnQueryInfo.
+- Services: CCI (p2p.h), CPrivManager, MessengerManager (account-keyed),
+  CPCBangManager, CBanwordManager, LogManager, DBManager.
+- World services: REGEN/REGEN_EXCEPTION (regen.h), CLand/TObjectProto
+  (building.h), CArenaMap/CArena (arena.h), CWarMap (war_map.h), CGuild and
+  its member rows (guild.h), CGuildWarReserveForGame, guild marks.
+- Offline shop service caches: CShop/CAuction/CShopSafebox/CShopItem
+  (new_offlineshop*.h), keyed by owner id.
+- Quest: NPC script objects and CQuestManager::m_mapNPC (race-keyed), quest
+  server timers; quest::PC is only the payload API, the object is owned by the
+  ecs::QuestPCState component (phase24).
+- CUBE_RENEWAL_DATA prototypes (cuberenewal.cpp), battle pass config loader.
+
+MIGRATABLE - character/couple state that an entity could own:
+- CSwitchbot (new_switchbot.h:20): per-player heap object in
+  CSwitchbotManager::m_map_Switchbots keyed by player id. It holds the switchbot
+  table, an event and a warping flag; it keeps no entity handle, is erased only
+  by the P2P transfer or the manager destructor, and survives logout (the map
+  entry is reused on relog). This is the last small piece of character-owned
+  heap state with a pid index; a component with a pid index would retire it.
+- TMarriage (marriage.h:12): per-couple heap object keyed by both pids in
+  CManager. It holds the two entity handles, and IsOnline() validates them with
+  ecs::IsCharacter, so there is no dangling read; the lifecycle is DB-backed
+  couple state, the same design question as the guild member rows.
+- CPVP (pvp.h:9): per-duel heap object keyed by CRC in CPVPManager. Players are
+  pids, the relation is transient; the phase23 audit already chose to keep it a
+  service (F3 fixed the delete path).
+- ecs::AffectList stores std::list<std::shared_ptr<CAffect>>: component-owned,
+  so lifetimes are safe, but the affects are still heap objects with shared
+  ownership instead of plain values.
+
+DEAD / CLEANUP:
+- char.h:448-468 CHARACTER_POINT is unused (the packet headers that matched a
+  name search are unrelated).
+- The commented-out CHARACTER-era blocks that still mention LPCHARACTER,
+  GetEntityHandle or old members (guild.cpp:1283-1301/1505-1521,
+  CombatSystem.cpp:2196-2468/5311, cmd_gm.cpp:159-281, input_main.cpp:1183).
+- Debug chat lines that only print the legacy signature
+  (input_main.cpp:1947/1978/2185, INGAME_DEBUG_RAZOR93).
+- MountSystem's DestroyOrphanedMountEntities is defined but never called, and
+  MountCostume keeps an unused mobVnum local.
+
+COMPAT - entity-native but legacy-named:
+- ItemSystem_LegacyBridge.cpp: 10k lines, 0 LPCHARACTER/LegacyCharOf and only
+  comment CItem mentions; it is the entity-native body of the legacy item API
+  (DropItem, GiveItem, DestroyItem, ClearItem, AutoRecallProcess...). Splitting
+  or renaming it would remove the "legacy bridge" impression, not a migration
+  gap.
+- char_manager type/member names (CHARACTER_MANAGER, m_map_pkPCChr,
+  m_set_pkChrState) map to entities; DESC::m_lpCharacter is an entity.
+- quest::PC/quest::NPC method surfaces; quest Lua entry points already operate
+  on entities.
+- Offline-shop CShopItem value objects inside the service caches.
+
+C. Raw pointer relations in components and their guards
+-------------------------------------------------------
+  SocialRefs::guild          durable guild id, CGuildManager lookup (F1)
+  DungeonMembership::warMap  durable map index, CWarMapManager lookup (F1)
+  ArenaMembership::arena     CArenaManager::IsLiveArena walk (phase22)
+  ShopState::offlineShop*    cleared by the manager on every shop/auction
+                             erase (force close, expire, disconnect); no
+                             liveness check on read
+  ShopState::shopSafebox     clear-before-cache-erase ordering (F2/F12)
+  ItemExtraProtoRef::proto   value map cleared on reload and every live item
+                             is repointed in the same call
+  ItemProtoRef::proto        base table is swapped and every item is rebound
+                             before the old storage is freed
+  MobDataRef::data           durable vnum, CMobManager lookup (phase25)
+No other component stores a raw game-state pointer.
+
+D. Recommended order
+--------------------
+1. CSwitchbot -> component plus pid index. It is the last pid-keyed
+   character-owned heap object; the P2P transfer packet already carries the
+   table, so the receiving core can rebuild the component.
+2. Decide TMarriage and the guild member rows together: both are DB-backed
+   state that a service owns today; either keep both with a documented
+   per-field sync audit, or move both to per-character components. Neither is
+   a crash risk today.
+3. Optional hardening: give the offline-shop component pointers the same
+   durable-key validation as the guild/war-map/mob relations, so a future
+   erase path that forgets to clear them reads as no shop instead of a freed
+   one.
+4. Cleanup pass: drop CHARACTER_POINT, the dead mount sweep and the unused
+   local, remove the commented CHARACTER-era blocks and the INGAME_DEBUG chat
+   lines, and consider splitting ItemSystem_LegacyBridge.cpp by item area.
+5. Optional: replace the CAffect shared_ptr list with value storage; the
+   lifecycle is already component-owned.
+
+The item/mob/skill/motion prototypes, the scheduler, the session layer and the
+world services are the intended OOP boundary; migrating them would not remove
+character-owned state and is not recommended.
