@@ -26,7 +26,6 @@
 #include <Core/Logging.hpp>
 #include "locale_service.h"
 #include "questmanager.h"
-#include "pcbang.h"
 #include "skill.h"
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 	#include "whisper_admin.h"
@@ -408,13 +407,6 @@ void CInputP2P::BlockChat(const char * c_pData)
 // END_OF_BLOCK_CHAT
 //
 
-void CInputP2P::PCBangUpdate(const char* c_pData)
-{
-	TPacketPCBangUpdate* p = (TPacketPCBangUpdate*)c_pData;
-
-	CPCBangManager::instance().RequestUpdateIPList(p->ulPCBangID);
-}
-
 void CInputP2P::IamAwake(LPDESC d, const char * c_pData)
 {
 	std::string hostNames;
@@ -522,10 +514,6 @@ int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				return -1;
 			break;
 #endif
-		case HEADER_GG_PCBANG_UPDATE :
-			PCBangUpdate(c_pData);
-			break;
-
 		case HEADER_GG_CHECK_AWAKENESS:
 			IamAwake(d, c_pData);
 			break;

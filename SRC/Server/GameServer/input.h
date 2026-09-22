@@ -417,7 +417,6 @@ class CInputP2P : public CInputProcessor
 		void		Transfer(const char * c_pData);
 		void		LoginPing(LPDESC d, const char * c_pData);
 		void		BlockChat(const char * c_pData);
-		void		PCBangUpdate(const char* c_pData);
 		void		IamAwake(LPDESC d, const char * c_pData);
 #ifdef ENABLE_SWITCHBOT
 		void		Switchbot(LPDESC d, const char* c_pData);

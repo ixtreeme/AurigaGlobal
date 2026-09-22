@@ -360,12 +360,6 @@ typedef struct
 	uint32_t	dwGuildID;
 } TLandPacketElement;
 
-typedef struct SPacketGGPCBangUpdate
-{
-	uint8_t bHeader;
-	unsigned long ulPCBangID;
-} TPacketPCBangUpdate;
-
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 struct TPacketKeyAgreement
 {

@@ -58,7 +58,6 @@
 #include "../../SRC/Server/GameServer/party.h"
 #include "../../SRC/Server/GameServer/BattleArena.h"
 #include "../../SRC/Server/GameServer/log.h"
-#include "../../SRC/Server/GameServer/pcbang.h"
 #include "../../SRC/Server/GameServer/unique_item.h"
 #include "../../SRC/Server/GameServer/DragonSoul.h"
 #include "../../SRC/Server/GameServer/ecs/AIHelpers.hpp"
@@ -898,8 +897,6 @@ void CArenaManager::EndAllDuel(void) { Unexpected(); }
 bool CArenaManager::EndDuel(unsigned int) { Unexpected(); }
 void LogManager::ItemLogEntity(entt::entity,entt::entity,char const *,char const *) { Unexpected(); }
 void LogManager::CharLog(entt::entity,unsigned int,char const *,char const *) { Unexpected(); }
-void CPCBangManager::RequestUpdateIPList(unsigned long) { Unexpected(); }
-bool CPCBangManager::IsPCBangIP(char const *) { Unexpected(); }
 entt::entity ItemSystem::GetInventoryItem(entt::entity,unsigned short) { Unexpected(); }
 entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { Unexpected(); }
 bool ItemSystem::UnequipItemEcs(entt::entity,entt::entity) { Unexpected(); }

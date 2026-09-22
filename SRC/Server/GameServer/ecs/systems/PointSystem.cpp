@@ -74,7 +74,6 @@
 #include "../../arena.h"
 #include "../../dev_log.h"
 #include "../../horsename_manager.h"
-#include "../../pcbang.h"
 #include "../../gm.h"
 #include "../../map_location.h"
 #include "../../skill_power.h"
@@ -1192,8 +1191,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		break;
 
 		// PC_BANG_ITEM_ADD
-	case POINT_PC_BANG_EXP_BONUS:
-	case POINT_PC_BANG_DROP_BONUS:
 	case POINT_RAMADAN_CANDY_BONUS_EXP:
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 	case POINT_EXTRA_INVENTORY1:

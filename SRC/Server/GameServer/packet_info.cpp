@@ -307,7 +307,6 @@ CPacketInfoGG::CPacketInfoGG()
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 	Set(HEADER_GG_WHISPER_SYSTEM,		sizeof(TPacketGGWhisperSystem),	"TPacketGGWhisperSystem", false);
 #endif
-	Set(HEADER_GG_PCBANG_UPDATE,		sizeof(TPacketPCBangUpdate),		"PCBangUpdate",		false);
 	Set(HEADER_GG_CHECK_AWAKENESS,		sizeof(TPacketGGCheckAwakeness),	"CheckAwakeness",		false);
 #ifdef ENABLE_SWITCHBOT
 	Set(HEADER_GG_SWITCHBOT, sizeof(TPacketGGSwitchbot), "Switchbot", false);

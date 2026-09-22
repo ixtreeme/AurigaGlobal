@@ -34,7 +34,6 @@ struct LoginInfo {
     std::string mobile;
     uint32_t logOffInterval;
     std::array<int, PREMIUM_MAX_NUM> premiumTimes {};
-    bool isPCBang { false };
 };
 
 struct AntiFlood {

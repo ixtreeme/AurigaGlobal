@@ -211,7 +211,6 @@ bool IsMonster(entt::entity e);
 uint8_t GetMobRank(entt::entity e);
 int GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType);
 uint8_t GetBattlePassId(entt::entity e);
-bool IsPCBang(entt::entity e);
 #ifdef ENABLE_ANTICHEAT
 // Counts a stone kill toward the reward flood check; ClearCheatChecks resets it.
 void ProcessCheatCheck(entt::entity e, int32_t time);

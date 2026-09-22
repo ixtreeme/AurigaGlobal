@@ -276,7 +276,6 @@ bool IsStone(entt::entity) { Unexpected(); }
 uint8_t GetCharType(entt::entity) { Unexpected(); }
 uint8_t GetMobRank(entt::entity) { Unexpected(); }
 int GetPremiumRemainSeconds(entt::entity, uint8_t) { Unexpected(); }
-bool IsPCBang(entt::entity) { Unexpected(); }
 }
 void NetworkSyncSystem::PointsPacket(entt::entity owner) { Check(g_registry.valid(owner), "stale points packet"); ++points; }
 void ecs::PointSystem::Compute(entt::entity owner) {

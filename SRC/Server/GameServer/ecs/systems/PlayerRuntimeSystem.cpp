@@ -861,15 +861,6 @@ int GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType)
 	return login ? login->premiumTimes[premiumType] - get_global_time() : 0;
 }
 
-bool IsPCBang(entt::entity e)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return false;
-
-	const auto* login = g_registry.try_get<ecs::LoginInfo>(e);
-	return login && login->isPCBang;
-}
-
 bool IsObserverMode(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))

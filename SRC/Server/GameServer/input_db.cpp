@@ -50,7 +50,6 @@
 #include "log.h"
 
 #include "horsename_manager.h"
-#include "pcbang.h"
 #include "ecs/CharacterAccessors.hpp"
 #include "gm.h"
 #include "map_location.h"
@@ -577,13 +576,6 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 				inet_ntoa(ecs::PlayerRuntime::GetDesc(chEntity)->GetAddr().sin_addr), ecs::PointSystem::GetGold(chEntity), g_bChannel, ecs::PlayerRuntime::GetMapIndex(chEntity), CombatSystem::GetAlignment(chEntity));
 		LogManager::instance().CharLog(chEntity, 0, "LOGIN", buf);
 
-#ifdef ENABLE_PCBANG_FEATURE // @warme006
-		{
-			LogManager::instance().LoginLog(true,
-					ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), (ecs::PointSystem::GetLevel(chEntity)), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::GetReal(chEntity, POINT_PLAYTIME));
-
-		}
-#endif
 	}
 
 	d->SetPhase(PHASE_LOADING);
@@ -1112,7 +1104,6 @@ void CInputDB::Boot(const char* data)
 		CMobManager::instance().DumpRegenCount("mob_count");
 	}
 
-	CPCBangManager::instance().RequestUpdateIPList(0);
 }
 
 EVENTINFO(quest_login_event_info)

@@ -24,8 +24,6 @@ ACMD(do_stonecraft);
 #endif
 
 
-ACMD(do_pcbang_update);
-ACMD(do_pcbang_check);
 #ifdef __NEWPET_SYSTEM__
 ACMD(do_CubePetAdd);
 ACMD(do_FeedCubePet);
@@ -630,8 +628,6 @@ struct command_info cmd_info[] =
 	{ "horse_unsummon",	do_horse_unsummon,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "horse_set_stat", do_horse_set_stat,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
 
-	{ "pcbang_update", 	do_pcbang_update,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
-	{ "pcbang_check", 	do_pcbang_check,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
 
 	{ "emotion_allow",	do_emotion_allow,	0,			POS_FIGHTING,	GM_PLAYER	},
 	{ "kiss",		do_emotion,		0,			POS_FIGHTING,	GM_PLAYER	},

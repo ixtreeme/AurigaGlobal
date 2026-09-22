@@ -48,7 +48,6 @@
 #include "../../BattleArena.h"
 #include "../../arena.h"
 #include "../../dev_log.h"
-#include "../../pcbang.h"
 #include "../../../common/VnumHelper.h"
 #include "../../belt_inventory_helper.h"
 #include "../../MountInventory.h"
@@ -2588,17 +2587,6 @@ int32_t GetItemApplyValue(entt::entity item, uint32_t idx)
 {
     const TItemTable* proto = GetItemProto(item);
     return proto ? proto->aApplies[idx].lValue : 0;
-}
-
-bool IsItemPCBangItem(entt::entity item)
-{
-    const TItemTable* proto = GetItemProto(item);
-    if (!proto)
-        return false;
-    for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
-        if (proto->aLimits[i].bType == LIMIT_PCBANG)
-            return true;
-    return false;
 }
 
 // How many sockets are filled, counting up to the first empty one.

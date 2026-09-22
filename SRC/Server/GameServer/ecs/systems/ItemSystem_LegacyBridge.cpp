@@ -51,7 +51,6 @@
 #include "../../arena.h"
 #include "../../dev_log.h"
 #include <Core/Logging.hpp>
-#include "../../pcbang.h"
 #include "../../../common/VnumHelper.h"
 #include "../../belt_inventory_helper.h"
 #include "../../MountInventory.h"
@@ -5031,22 +5030,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				}
 				else
 				{
-					// PC_BANG_ITEM_ADD
-					if (IsItemPCBangItem(item) == true)
-					{
-						// PC¹æÀÎÁö Ã¼�
-// ©ÇØ¼­ Ã³¸®
-						if (CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(e)->GetHostName()) == false)
-						{
-#ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 426, "");
-#endif
-							return false;
-						}
-					}
-					// END_PC_BANG_ITEM_ADD
-
-					AffectSystem::AddAffect(e, AFFECT_EXP_BONUS_EURO_FREE, aApplyInfo[GetItemValue(item, 1)].bPointType, GetItemValue(item, 2), 0, GetItemValue(item, 3), 0, false, true);
+										AffectSystem::AddAffect(e, AFFECT_EXP_BONUS_EURO_FREE, aApplyInfo[GetItemValue(item, 1)].bPointType, GetItemValue(item, 2), 0, GetItemValue(item, 3), 0, false, true);
 					ConsumeItemEcs(itemEntity);
 				}
 			}
@@ -9087,22 +9071,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			else
 			{
-				// PC_BANG_ITEM_ADD
-				if (IsItemPCBangItem(item) == true)
-				{
-					// PC¹æÀÎÁö Ã¼�
-// ©ÇØ¼­ Ã³¸®
-					if (CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(e)->GetHostName()) == false)
-					{
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 426, "");
-#endif
-						return false;
-					}
-				}
-				// END_PC_BANG_ITEM_ADD
-
-				AffectSystem::AddAffect(e, GetItemValue(item, 0), aApplyInfo[GetItemValue(item, 1)].bPointType, GetItemValue(item, 2), 0, GetItemValue(item, 3), 0, false);
+								AffectSystem::AddAffect(e, GetItemValue(item, 0), aApplyInfo[GetItemValue(item, 1)].bPointType, GetItemValue(item, 2), 0, GetItemValue(item, 3), 0, false);
 				ConsumeItemEcs(itemEntity);
 			}
 		}

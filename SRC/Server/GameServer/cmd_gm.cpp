@@ -42,7 +42,6 @@
 #include <string_view>
 #include "BattleArena.h"
 #include "log.h"
-#include "pcbang.h"
 #include "unique_item.h"
 #include "DragonSoul.h"
 #include "ecs/AIHelpers.hpp"
@@ -245,48 +244,6 @@ void Command_ApplyAffect(entt::entity chEntity, const char* argument, const char
 //    ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Klonok torolve (target: %s, map: %d)", ecs::PlayerRuntime::GetName(((target) ? (target)->GetEntityHandle() : entt::null)).data(), mapIndex);
 //}
 
-
-ACMD(do_pcbang_update)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-
-	unsigned long PCBangID = 0;
-
-	if (*arg1 == '\0')
-		PCBangID = 0;
-	else
-		str_to_number(PCBangID, arg1);
-
-	if (PCBangID == 0)
-	{
-		CPCBangManager::instance().RequestUpdateIPList(0);
-	}
-	else
-	{
-		CPCBangManager::instance().RequestUpdateIPList(PCBangID);
-	}
-
-	TPacketPCBangUpdate packet;
-	packet.bHeader = HEADER_GG_PCBANG_UPDATE;
-	packet.ulPCBangID = PCBangID;
-
-	P2P_MANAGER::instance().Send(&packet, sizeof(TPacketPCBangUpdate));
-
-}
-
-ACMD(do_pcbang_check)
-{
-#ifdef TEXTS_IMPROVEMENT
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-	if (CPCBangManager::instance().IsPCBangIP(arg1) == true) {
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 801, "%s", arg1);
-	} else {
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 802, "%s", arg1);
-	}
-#endif
-}
 
 ACMD(do_stun)
 {

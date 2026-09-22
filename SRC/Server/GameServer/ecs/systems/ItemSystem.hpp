@@ -298,7 +298,6 @@ bool AttrLogEcs(entt::entity item);
 bool SetItemExchanging(entt::entity item, bool flag);
 uint8_t GetItemApplyType(entt::entity item, uint32_t idx);
 int32_t GetItemApplyValue(entt::entity item, uint32_t idx);
-bool IsItemPCBangItem(entt::entity item);
 int GetItemSocketCount(entt::entity item);
 bool IsItemExchanging(entt::entity item);
 bool IsItemLocked(entt::entity item);

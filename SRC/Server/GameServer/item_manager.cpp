@@ -1184,13 +1184,6 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 		iDeltaPercent *= 2;
 	}
 
-	if (ecs::PointSystem::Get(killer, POINT_PC_BANG_DROP_BONUS) > 0 &&
-		ecs::PlayerRuntime::IsPCBang(killer))
-	{
-		iDeltaPercent += iDeltaPercent *
-			ecs::PointSystem::Get(killer, POINT_PC_BANG_DROP_BONUS) / 100;
-	}
-
 	iRandRange = 4000000;
 #ifdef ENABLE_EVENT_MANAGER
 	int extraDrop = CPrivManager::instance().GetPriv(killer, PRIV_ITEM_DROP) +

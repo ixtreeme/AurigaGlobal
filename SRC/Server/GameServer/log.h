@@ -62,7 +62,6 @@ class LogManager : public singleton<LogManager>
 		void		HackLog(const char * c_pszHackName, entt::entity ch);
 		void		HackCRCLog(const char * c_pszHackName, const char * c_pszLogin, const char * c_pszName, const char * c_pszIP, uint32_t dwCRC);
 		void		GoldBarLog(uint32_t dwPID, uint32_t dwItemID, GOLDBAR_HOW eHow, const char * c_pszHint);
-		void		PCBangLoginLog(uint32_t dwPCBangID, const char * c_szPCBangIP, uint32_t dwPlayerID, uint32_t dwPlayTime);
 #ifdef __ATTR_TRANSFER_SYSTEM__
 		void	AttrTransferLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t item_vnum);
 #endif

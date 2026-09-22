@@ -1594,11 +1594,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		rateFactor += 50;
 	if (ItemSystem::IsEquipUniqueGroup(toEntity, UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
-	if (ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) > 0)
-	{
-		if (ecs::PlayerRuntime::IsPCBang(toEntity))
-			rateFactor += ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS);
-	}
 	rateFactor += ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
 	rateFactor += ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP);
 	rateFactor += ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS);
@@ -1737,12 +1732,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 			iExp += (iExp * 50 / 100);
 		}
 
-		// PC  ġ ʽ
-		if (ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) > 0)
-		{
-			if (ecs::PlayerRuntime::IsPCBang(toEntity) == true)
-				iExp += (iExp * ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) / 100);
-		}
 
 		// ȥ ʽ
 		iExp += iExp * ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;

@@ -168,13 +168,6 @@ void LogManager::HackCRCLog(const char * c_pszHackName, const char * c_pszLogin,
 	Query("INSERT INTO hack_crc_log (time, login, name, ip, server, why, crc) VALUES(NOW(), '%s', '%s', '%s', '%s', '%s', %u)", c_pszLogin, c_pszName, c_pszIP, g_stHostname.c_str(), c_pszHackName, dwCRC);
 }
 
-void LogManager::PCBangLoginLog(uint32_t dwPCBangID, const char* c_szPCBangIP, uint32_t dwPlayerID, uint32_t dwPlayTime)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MAX);
-	Query("INSERT INTO pcbang_loginlog (time, pcbang_id, ip, pid, play_time) VALUES (NOW(), %u, '%s', %u, %u)",
-			dwPCBangID, c_szPCBangIP, dwPlayerID, dwPlayTime);
-}
-
 void LogManager::GoldBarLog(uint32_t dwPID, uint32_t dwItemID, GOLDBAR_HOW eHow, const char* c_pszHint)
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);

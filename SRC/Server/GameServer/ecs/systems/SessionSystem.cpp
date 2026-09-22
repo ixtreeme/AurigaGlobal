@@ -33,7 +33,6 @@
 #include "../../messenger_manager.h"
 #include "../../mob_manager.h"
 #include "../../packet.h"
-#include "../../pcbang.h"
 #include "../../p2p.h"
 #include "../../party.h"
 #include "../../pvp.h"
@@ -727,16 +726,6 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     strlcpy(p.szName, ecs::PlayerRuntime::GetName(e).data(), sizeof(p.szName));
     P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogout));
     LogManager::instance().CharLog(e, 0, "LOGOUT", "");
-
-#ifdef ENABLE_PCBANG_FEATURE
-    {
-        int32_t playTime = ecs::PointSystem::GetReal(e, POINT_PLAYTIME) - ecs::PlayerRuntime::GetLoginPlayTime(e);
-        LogManager::instance().LoginLog(false, ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id, ecs::PlayerRuntime::GetPlayerID(e), ecs::PointSystem::GetLevel(e), ecs::PlayerRuntime::GetJob(e), playTime);
-
-        if (0)
-            CPCBangManager::instance().Log(ecs::PlayerRuntime::GetDesc(e)->GetHostName(), ecs::PlayerRuntime::GetPlayerID(e), playTime);
-    }
-#endif
 
     if (ecs::SocialSystem::GetWarMap(e))
         ecs::SocialSystem::SetWarMap(e, nullptr);
