@@ -10,7 +10,7 @@
 #include <entt/entt.hpp>
 
 #include "../../../common/length.h"
-#include "../../tables.h"
+#include <common/tables.h>
 #include "../../typedef.h"
 
 namespace ItemSystem {
