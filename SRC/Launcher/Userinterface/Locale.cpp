@@ -244,7 +244,6 @@ void LocaleService_ForceSetLocale(const char* name, const char* localePath)
 	strcpy(MULTI_LOCALE_NAME, name);
 	strcpy(MULTI_LOCALE_PATH, localePath);
 
-	// 기존 천마 서버로 접속시에는 security key 변경 (WE 버전 클라로 천마서버 접속하기 위함)
 	if (0 == stricmp(name, "ymir"))
 		__SECURITY_KEY_STRING__ = "testtesttesttest";
 	if (0 == stricmp(name, "we_korea"))

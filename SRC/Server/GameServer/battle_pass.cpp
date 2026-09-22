@@ -619,7 +619,6 @@ void CBattlePass::BattlePassRequestOpen(entt::entity charEntity)
 	{
 		missionInfo[i].dwMissionInfo[2] = ecs::PlayerRuntime::GetMissionProgress(charEntity, missionInfo[i].bMissionType, bBattlePassId);
 
-		// BOOST: a kliens fel� is felezett total menjen
 		missionInfo[i].dwMissionInfo[1] = ecs::PlayerRuntime::GetBattlePassAdjustedTotal(charEntity, 
 			missionInfo[i].bMissionType, bBattlePassId, missionInfo[i].dwMissionInfo[1]
 		);

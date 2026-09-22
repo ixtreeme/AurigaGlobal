@@ -99,7 +99,6 @@ void CSpeedTreeWrapper::OnRenderPCBlocker()
 
 	CSpeedTreeForestDirectX8::Instance().UpdateSystem(ELTimer_GetMSec() / 1000.0f);
 
-	// 하나만 렌더링 할 때는 LOD 사용하지 않음
 	m_pSpeedTree->SetLodLevel(1.0f);
 	//Advance();
 
@@ -242,7 +241,6 @@ void CSpeedTreeWrapper::OnRender()
 
 	CSpeedTreeForestDirectX8::Instance().UpdateSystem(ELTimer_GetMSec() / 1000.0f);
 
-	// 하나만 렌더링 할 때는 LOD 사용하지 않음
 	m_pSpeedTree->SetLodLevel(1.0f);
 	//Advance();
 

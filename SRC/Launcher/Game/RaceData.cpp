@@ -324,17 +324,13 @@ CGraphicThing* CRaceData::RegisterMotionData(WORD wMotionMode, WORD wMotionIndex
 		return nullptr;
 	}
 
-	// 2004. 3. 15. myevan. 원래는 모션내 인덱스 정보가 있어야 한다.
 	pRaceMotionData->SetName(wMotionIndex);
 
 	/////
 
-	// FIXME : 이미 GR2가 로드 되어 있을 경우에는 어떻게 해야 하는가?
-	//         현재는 똑같은 것이 하나 더 추가 되어 버린다. - [levites]
 
 	return NEW_RegisterMotion(pRaceMotionData, wMotionMode, wMotionIndex, pRaceMotionData->GetMotionFileName(), byPercentage);
 
-	// 2004.09.03.myevan.새로운함수로 대처
 	//TMotion	Motion;
 	//Motion.byPercentage	= byPercentage;
 	//Motion.pMotion = (CGraphicThing *)CResourceManager::Instance().GetResourcePointer(pRaceMotionData->GetMotionFileName());

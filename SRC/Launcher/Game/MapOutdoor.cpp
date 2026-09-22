@@ -224,8 +224,8 @@ bool CMapOutdoor::Destroy()
 void CMapOutdoor::Clear()
 {
 	UnloadWaterTexture();
-	Destroy();		// 해제
-	Initialize();	// 초기화
+	Destroy();
+	Initialize();
 }
 
 bool CMapOutdoor::SetTerrainCount(short sTerrainCountX, short sTerrainCountY)

@@ -68,7 +68,7 @@ class CWarMap
 		uint32_t	GetWinnerGuild();
 		void	UsePotion(entt::entity ch, entt::entity item);
 
-		void	Draw();	// 강제 무승부 처리
+		void	Draw();
 		void	Timeout();
 		void	CheckWarEnd();
 		bool	SetEnded();
@@ -127,8 +127,8 @@ class CWarMap
 
 			void Initialize();
 
-			int GetAccumulatedJoinerCount(); // 누적된 참가자 수
-			int GetCurJointerCount(); // 현재 참가자 수
+			int GetAccumulatedJoinerCount();
+			int GetCurJointerCount();
 
 			void AppendMember(entt::entity ch);
 			void RemoveMember(entt::entity ch);

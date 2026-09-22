@@ -67,7 +67,6 @@ const char* FN_weapon_type(int weapon)
 class ANI
 {
 	protected:
-		// [����][�Ϲ�0Ż��1][����][�޺�]
 		uint32_t m_speed[MAIN_RACE_MAX_NUM][2][WEAPON_NUM_TYPES][9];
 
 	public:
@@ -135,14 +134,14 @@ ANI::ANI()
 bool ANI::load()
 {
 	const char*	dir_name[MAIN_RACE_MAX_NUM] = {
-		"data/pc/warrior",		// ����(��)
-		"data/pc/assassin",		// �ڰ�(��)
-		"data/pc/sura",			// ����(��)
-		"data/pc/shaman",		// ����(��)
-		"data/pc2/warrior",		// ����(��)
-		"data/pc2/assassin",	// �ڰ�(��)
-		"data/pc2/sura",		// ����(��)
-		"data/pc2/shaman",		// ����(��)
+		"data/pc/warrior",
+		"data/pc/assassin",
+		"data/pc/sura",
+		"data/pc/shaman",
+		"data/pc2/warrior",
+		"data/pc2/assassin",
+		"data/pc2/sura",
+		"data/pc2/shaman",
 	};
 
 	for (int race = 0; race <MAIN_RACE_MAX_NUM; ++race)
@@ -213,13 +212,11 @@ bool ANI::load_one_race(int race, const char *dir_name)
 
 		for (uint8_t combo = 1; combo <= 8; ++combo)
 		{
-			// �� ������ ��
 			m_speed[race][0][weapon][combo] = load_one_weapon(dir_name, weapon, combo, false);
-			m_speed[race][0][weapon][0] = MIN(m_speed[race][0][weapon][0], m_speed[race][0][weapon][combo]); // �ּҰ�
+			m_speed[race][0][weapon][0] = MIN(m_speed[race][0][weapon][0], m_speed[race][0][weapon][combo]);
 
-			// �� ���� ��
 			m_speed[race][1][weapon][combo] = load_one_weapon(dir_name, weapon, combo, true);
-			m_speed[race][1][weapon][0] = MIN(m_speed[race][1][weapon][0], m_speed[race][1][weapon][combo]); // �ּҰ�
+			m_speed[race][1][weapon][0] = MIN(m_speed[race][1][weapon][0], m_speed[race][1][weapon][combo]);
 
 			dev_log(LOG_DEB0, "combo%02d speed=%d horse=%d",
 					combo, m_speed[race][0][weapon][combo], m_speed[race][1][weapon][combo]);
@@ -344,8 +341,6 @@ uint32_t ani_attack_speed(entt::entity character)
 			ecs::PointSystem::Get(character, POINT_ATT_SPEED));
 	*/
 
-	/* ���ڵ�� �ҵ��� ��� �￬�����ݰ� �¸��� */
-	/* ������ ���� �Ѽհ� �ӵ��� ��������       */
 	if (weapon == WEAPON_TWO_HANDED)
 		weapon = WEAPON_SWORD;
 

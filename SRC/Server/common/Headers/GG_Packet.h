@@ -98,8 +98,8 @@ typedef struct SPacketGGMessengerMobile
 typedef struct SPacketGGFindPosition
 {
 	uint8_t header;
-	uint32_t dwFromPID; // 저 위치로 워프하려는 사람
-	uint32_t dwTargetPID; // 찾는 사람
+	uint32_t dwFromPID;
+	uint32_t dwTargetPID;
 } TPacketGGFindPosition;
 
 typedef struct SPacketGGWarpCharacter

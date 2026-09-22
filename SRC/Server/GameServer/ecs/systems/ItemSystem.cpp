@@ -358,7 +358,6 @@ ecs::ItemProtoRef MakeItemPrototype(const TItemTable* proto, uint32_t displayVnu
 
 
 
-// item socket º¹»ç -- by mhh
 
 } // namespace
 
@@ -2177,7 +2176,7 @@ bool CanPutInto(entt::entity item, entt::entity container)
 
 	if (GetItemVnum(item) == 50646) //limites koho isteni
 	{
-		return (vnum >= 8730 && vnum <= 8739) || (vnum >= 8700 && vnum <= 8709) || (vnum >= 8780 && vnum <= 8789) ? true : false;//véres zodiák itemek
+		return (vnum >= 8730 && vnum <= 8739) || (vnum >= 8700 && vnum <= 8709) || (vnum >= 8780 && vnum <= 8789) ? true : false;
 	}
 
 
@@ -3189,7 +3188,6 @@ bool CanReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::ent
 	case 20101:
 	case 20102:
 	case 20103:
-		// ÃÃÂ±Ã Â¸Â»
 		if (GetItemVnum(item) == ITEM_REVIVE_HORSE_1)
 		{
 			if (!CombatSystem::IsDead(receiver))
@@ -3220,7 +3218,6 @@ bool CanReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::ent
 	case 20104:
 	case 20105:
 	case 20106:
-		// ÃÃÂ±Ã Â¸Â»
 		if (GetItemVnum(item) == ITEM_REVIVE_HORSE_2)
 		{
 			if (!CombatSystem::IsDead(receiver))
@@ -3251,7 +3248,6 @@ bool CanReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::ent
 	case 20107:
 	case 20108:
 	case 20109:
-		// Â°Ã­Â±Ã Â¸Â»
 		if (GetItemVnum(item) == ITEM_REVIVE_HORSE_3)
 		{
 			if (!CombatSystem::IsDead(receiver))

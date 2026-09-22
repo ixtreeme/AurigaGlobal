@@ -22,9 +22,6 @@ struct TPrivEmpireData
 	// END_OF_ADD_EMPIRE_PRIV_TIME
 };
 
-/**
- * @version 05/06/08	Bang2ni - 지속시간 추가
- */
 struct TPrivGuildData
 {
     uint8_t type;
@@ -33,7 +30,7 @@ struct TPrivGuildData
     uint32_t guild_id;
 
 	// ADD_GUILD_PRIV_TIME
-    time_t end_time_sec;	///< 지속시간
+    time_t end_time_sec;
 
     TPrivGuildData(uint8_t type, int value, uint32_t guild_id, time_t _end_time_sec)
 	: type(type), value(value), bRemoved(false), guild_id(guild_id), end_time_sec(_end_time_sec )
@@ -52,9 +49,6 @@ struct TPrivCharData
     {}
 };
 
-/**
- * @version 05/06/08	Bang2ni - Guild privilege 관련 함수 지속 시간 추가
- */
 class CPrivManager : public singleton<CPrivManager>
 {
     public:

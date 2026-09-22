@@ -315,7 +315,6 @@ ACMD(do_user_horse_back)
 
 ACMD(do_user_horse_feed)
 {
-	// λ  ¿  ̸   .
 	if (ecs::SocialSystem::GetMyShop(character) != entt::null)
 		return;
 
@@ -2000,7 +1999,6 @@ ACMD(do_skillup)
 }
 
 //
-// @version	05/06/20 Bang2ni - Ŀǵ ó Delegate to CHARACTER class
 //
 ACMD(do_safebox_close)
 {
@@ -2008,7 +2006,6 @@ ACMD(do_safebox_close)
 }
 
 //
-// @version	05/06/20 Bang2ni - Ŀǵ ó Delegate to CHARACTER class
 //
 ACMD(do_safebox_password)
 {
@@ -2072,7 +2069,7 @@ ACMD(do_mall_password)
 		return;
 	}
 
-	if (iPulse - ecs::SessionSystem::GetMallLoadTime(character) < passes_per_sec * 10) // 10ʿ ѹ û
+	if (iPulse - ecs::SessionSystem::GetMallLoadTime(character) < passes_per_sec * 10)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 190, "");
@@ -2172,7 +2169,6 @@ ACMD(do_war)
 	if (!g)
 		return;
 
-	// üũѹ!
 	if (g->UnderAnyWar())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -2181,7 +2177,6 @@ ACMD(do_war)
 		return;
 	}
 
-	//Ķ͸ ι
 	char arg1[256], arg2[256];
 	uint32_t type = GUILD_WAR_TYPE_FIELD; //fixme102 base int modded uint
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -2202,10 +2197,8 @@ ACMD(do_war)
 			type = GUILD_WAR_TYPE_FIELD;
 	}
 
-	//  ̵ µ
 	uint32_t gm_pid = g->GetMasterPID();
 
-	// üũ( 常 )
 	if (gm_pid != (ecs::PlayerRuntime::GetPlayerID(character)))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -2214,7 +2207,6 @@ ACMD(do_war)
 		return;
 	}
 
-	// 带
 	CGuild * opp_g = CGuildManager::instance().FindGuildByName(arg1);
 
 	if (!opp_g)
@@ -2225,7 +2217,6 @@ ACMD(do_war)
 		return;
 	}
 
-	//  üũ
 	switch (g->GetGuildWarState(opp_g->GetID()))
 	{
 		case GUILD_WAR_NONE:
@@ -2302,7 +2293,6 @@ ACMD(do_war)
 
 	if (!g->CanStartWar(type))
 	{
-		//    ִ  ʴ´.
 		if (g->GetLadderPoint() == 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
@@ -2324,7 +2314,6 @@ ACMD(do_war)
 		return;
 	}
 
-	// ʵ üũ ϰ  üũ  ³Ҷ Ѵ.
 	if (!opp_g->CanStartWar(GUILD_WAR_TYPE_FIELD))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3255,7 +3244,6 @@ ACMD(do_in_game_mall)
 	open_in_game_mall(character);
 }
 
-// ֻ
 ACMD(do_dice)
 {
 #ifdef TEXTS_IMPROVEMENT

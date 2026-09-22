@@ -34,10 +34,10 @@ class MessengerManager : public singleton<MessengerManager>
 		void	RequestToAdd(entt::entity chEntity, entt::entity targetEntity);
 		bool	AuthToAdd(keyA account, keyA companion, bool bDeny); // @fixme130 void -> bool
 
-		void	__AddToList(keyA account, keyA companion);	// 실제 m_Relation, m_InverseRelation 수정하는 메소드
+		void	__AddToList(keyA account, keyA companion);
 		void	AddToList(keyA account, keyA companion);
 
-		void	__RemoveFromList(keyA account, keyA companion); // 실제 m_Relation, m_InverseRelation 수정하는 메소드
+		void	__RemoveFromList(keyA account, keyA companion);
 		void	RemoveFromList(keyA account, keyA companion);
 
 		void	RemoveAllList(keyA account);

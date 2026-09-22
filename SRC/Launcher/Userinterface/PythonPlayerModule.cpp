@@ -25,7 +25,7 @@ enum
 	EMOTION_DANCE_3,
 	EMOTION_DANCE_4,
 	EMOTION_DANCE_5,
-	EMOTION_DANCE_6,		// 강남스타일
+	EMOTION_DANCE_6,
 	EMOTION_CONGRATULATION,
 	EMOTION_FORGIVE,
 	EMOTION_ANGRY,
@@ -76,7 +76,7 @@ public:
 	{
 		static TGradeUnit beltGradeByLevelTable[] =
 		{
-			0,			// 벨트+0
+			0,
 			1,			// +1
 			1,			// +2
 			2,			// +3
@@ -91,21 +91,8 @@ public:
 		return beltGradeByLevelTable[refineLevel];
 	}
 
-	// 현재 벨트 레벨을 기준으로, 어떤 셀들을 이용할 수 있는지 리턴
 	static const TGradeUnit* GetAvailableRuleTableByGrade()
 	{
-		/**
-			벨트는 총 +0 ~ +9 레벨을 가질 수 있으며, 레벨에 따라 7단계 등급으로 구분되어 인벤토리가 활성 화 된다.
-			벨트 레벨에 따른 사용 가능한 셀은 아래 그림과 같음. 현재 등급 >= 활성가능 등급이면 사용 가능.
-			(단, 현재 레벨이 0이면 무조건 사용 불가, 괄호 안의 숫자는 등급)
-
-				2(1)  4(2)  6(4)  8(6)
-				5(3)  5(3)  6(4)  8(6)
-				7(5)  7(5)  7(5)  8(6)
-				9(7)  9(7)  9(7)  9(7)
-
-			벨트 인벤토리의 크기는 4x4 (16칸)
-		*/
 
 		static TGradeUnit availableRuleByGrade[c_Belt_Inventory_Slot_Count] = {
 			100, 100, 100, 100,
@@ -2208,7 +2195,6 @@ PyObject* playerSlotTypeToInvenType(PyObject* poSelf, PyObject* poArgs)
 }
 
 #ifdef ENABLE_NEW_EQUIPMENT_SYSTEM
-// 플레이어가 벨트를 착용 중인지?
 PyObject* playerIsEquippingBelt(PyObject* poSelf, PyObject* poArgs)
 {
 	const CPythonPlayer* player = CPythonPlayer::InstancePtr();
@@ -2223,7 +2209,6 @@ PyObject* playerIsEquippingBelt(PyObject* poSelf, PyObject* poArgs)
 
 }
 
-// 검사하려는 벨트 인벤토리 Cell이 사용 가능한 칸인지? (사용가능 여부는 착용 중인 벨트의 강화 정도에 따라 달라짐)
 PyObject* playerIsAvailableBeltInventoryCell(PyObject* poSelf, PyObject* poArgs)
 {
 	const CPythonPlayer* player = CPythonPlayer::InstancePtr();
@@ -2247,7 +2232,6 @@ PyObject* playerIsAvailableBeltInventoryCell(PyObject* poSelf, PyObject* poArgs)
 #endif
 
 
-// 용혼석 강화
 PyObject* playerSendDragonSoulRefine(PyObject* poSelf, PyObject* poArgs)
 {
 	uint8_t bSubHeader;
@@ -3007,7 +2991,7 @@ void initPlayer()
 	PyModule_AddIntConstant(poModule, "EMOTION_DANCE_3", EMOTION_DANCE_3);
 	PyModule_AddIntConstant(poModule, "EMOTION_DANCE_4", EMOTION_DANCE_4);
 	PyModule_AddIntConstant(poModule, "EMOTION_DANCE_5", EMOTION_DANCE_5);
-	PyModule_AddIntConstant(poModule, "EMOTION_DANCE_6", EMOTION_DANCE_6);				// PSY 강남스타일
+	PyModule_AddIntConstant(poModule, "EMOTION_DANCE_6", EMOTION_DANCE_6);
 	PyModule_AddIntConstant(poModule, "EMOTION_CONGRATULATION", EMOTION_CONGRATULATION);
 	PyModule_AddIntConstant(poModule, "EMOTION_FORGIVE", EMOTION_FORGIVE);
 	PyModule_AddIntConstant(poModule, "EMOTION_ANGRY", EMOTION_ANGRY);
@@ -3028,11 +3012,9 @@ void initPlayer()
 	PyModule_AddIntConstant(poModule, "EMOTION_EXERCISE", EMOTION_EXERCISE);
 	PyModule_AddIntConstant(poModule, "EMOTION_PUSHUP", EMOTION_PUSHUP);
 
-	//// 자동물약 타입
 	PyModule_AddIntConstant(poModule, "AUTO_POTION_TYPE_HP", CPythonPlayer::AUTO_POTION_TYPE_HP);
 	PyModule_AddIntConstant(poModule, "AUTO_POTION_TYPE_SP", CPythonPlayer::AUTO_POTION_TYPE_SP);
 
-	// 용혼석
 	PyModule_AddIntConstant(poModule, "DRAGON_SOUL_PAGE_SIZE", c_DragonSoul_Inventory_Box_Size);
 	PyModule_AddIntConstant(poModule, "DRAGON_SOUL_PAGE_COUNT", DRAGON_SOUL_GRADE_MAX);
 	PyModule_AddIntConstant(poModule, "DRAGON_SOUL_SLOT_COUNT", c_DragonSoul_Inventory_Count);
@@ -3040,7 +3022,6 @@ void initPlayer()
 	PyModule_AddIntConstant(poModule, "DRAGON_SOUL_EQUIPMENT_PAGE_COUNT", DS_DECK_MAX_NUM);
 	PyModule_AddIntConstant(poModule, "DRAGON_SOUL_EQUIPMENT_FIRST_SIZE", c_DragonSoul_Equip_Slot_Max);
 
-	// 용혼석 개량창
 	PyModule_AddIntConstant(poModule, "DRAGON_SOUL_REFINE_CLOSE", DS_SUB_HEADER_CLOSE);
 	PyModule_AddIntConstant(poModule, "DS_SUB_HEADER_DO_UPGRADE", DS_SUB_HEADER_DO_UPGRADE);
 	PyModule_AddIntConstant(poModule, "DS_SUB_HEADER_DO_IMPROVEMENT", DS_SUB_HEADER_DO_IMPROVEMENT);

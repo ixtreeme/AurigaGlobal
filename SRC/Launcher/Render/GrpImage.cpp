@@ -68,7 +68,6 @@ bool CGraphicImage::OnLoad(int iSize, const void * c_pvBuf)
 
 	m_imageTexture.SetFileName(CResource::GetFileName());
 
-	// 특정 컴퓨터에서 Unknown으로 '안'하면 튕기는 현상이 있음-_-; -비엽
 	//@fixme002
 	if (!m_imageTexture.CreateFromMemoryFile(iSize, c_pvBuf, D3DFMT_UNKNOWN, m_dwFilter))
 	{

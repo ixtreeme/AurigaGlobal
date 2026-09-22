@@ -120,7 +120,6 @@ void CFlyingInstance::__SetTargetDirection(const CFlyTarget& c_rkTarget)
 {
 	D3DXVECTOR3 v3TargetPos=c_rkTarget.GetFlyTargetPosition();
 
-	// 임시 코드
 	if (m_pData->m_bMaintainParallel)
 	{
 		v3TargetPos.z += 50.0f;
@@ -140,7 +139,6 @@ void CFlyingInstance::__SetTargetNormalizedDirection(const D3DXVECTOR3 & v3Nomal
 	Vec3TransformQuaternion(&m_v3Accel, &m_pData->m_v3Accel, &m_qRot);
 }
 
-// 2004. 3. 26. myevan. 기능을 몰라 일단 주석 처리. 적절한 네이밍이 필요. 게임에서 사용하지 않는다면 툴에서 툴 전용으로 상속받아 만들도록 하자
 void CFlyingInstance::SetFlyTarget(const CFlyTarget & cr_Target)
 {
 	//m_pFlyTarget = pTarget;
@@ -471,7 +469,6 @@ bool CFlyingInstance::Update()
 
 	if (m_pData->m_bHitOnBackground)
 	{
-		// 지형 충돌
 
 		if (CFlyingManager::Instance().GetMapManagerPtr())
 		{
@@ -486,7 +483,6 @@ bool CFlyingInstance::Update()
 			}
 		}
 
-		// 건물+나무 충돌
 
 		FCheckBackgroundDuringFlying kCheckBackgroundDuringFlying(v3LastPosition,m_v3Position);
 		rkCullingMgr.ForInRange(vecStart,fCollisionSphereRadius, &kCheckBackgroundDuringFlying);

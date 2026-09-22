@@ -11,7 +11,6 @@
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #endif
 
-// Ha nálad már definiálva van, ez nem fog újradefiniálódni
 #ifndef SystemExtendedHandleInformation
 #define SystemExtendedHandleInformation (SYSTEM_INFORMATION_CLASS)64
 #endif
@@ -25,12 +24,11 @@ namespace
     using AntiHook::Core::ResolveNt;
     using AntiHook::Core::GetNtQuerySystemInformation;
 
-    // Saját structok, hogy ne ütközzenek más definíciókkal
     struct MY_SYSTEM_HANDLE_TABLE_ENTRY_INFO
     {
         PVOID       Object;
         ULONG_PTR   UniqueProcessId;   // a HANDLE tulajdonosa (attacker PID)
-        ULONG_PTR   HandleValue;       // HANDLE érték
+        ULONG_PTR   HandleValue;
         ULONG       GrantedAccess;
         USHORT      CreatorBackTraceIndex;
         USHORT      ObjectTypeIndex;
@@ -89,7 +87,6 @@ namespace AntiHook::NoImageTargetingGuard
         const DWORD gamePid = GetCurrentProcessId();
         const HANDLE hSelf = GetCurrentProcess();
 
-        // Handle-table lekérése
         ULONG bufSize = 0x40000;
         auto* info = static_cast<MY_SYSTEM_HANDLE_INFORMATION_EX*>(std::malloc(bufSize));
         if (!info)
@@ -129,7 +126,6 @@ namespace AntiHook::NoImageTargetingGuard
             return;
         }
 
-        // támadó PID -> veszélyes handle-ek száma, amelyek TÉNYLEG a játékprocesszre mutatnak
         std::map<DWORD, unsigned> attackerDangerCount;
 
         // cache: attacker PID -> OpenProcess(PROCESS_DUP_HANDLE) handle
@@ -143,14 +139,12 @@ namespace AntiHook::NoImageTargetingGuard
 
             DWORD attackerPid = static_cast<DWORD>(h.UniqueProcessId);
 
-            // A saját folyamatunk handle-jei nem érdekelnek
             if (attackerPid == gamePid)
                 continue;
 
             if (!IsDangerous(h.GrantedAccess))
                 continue;
 
-            // Nyissuk meg az attacker folyamatot (ha még nem)
             HANDLE hAttackerProc = nullptr;
             auto it = attackerProcHandles.find(attackerPid);
             if (it == attackerProcHandles.end())
@@ -166,7 +160,6 @@ namespace AntiHook::NoImageTargetingGuard
             if (!hAttackerProc)
                 continue;
 
-            // Másoljuk át a handle-t magunkba, hogy meg tudjuk nézni mire mutat
             HANDLE hDup = nullptr;
             if (!DuplicateHandle(hAttackerProc,
                 reinterpret_cast<HANDLE>(h.HandleValue),
@@ -179,14 +172,12 @@ namespace AntiHook::NoImageTargetingGuard
                 continue;
             }
 
-            // Ha ez valójában process-handle, akkor GetProcessId működni fog
             DWORD targetPid = GetProcessId(hDup);
             CloseHandle(hDup);
 
             if (targetPid == 0 || targetPid == (DWORD)-1)
                 continue; // nem process handle
 
-            // Csak az számít, amely a JÁTÉK folyamatára mutat
             if (targetPid != gamePid)
                 continue;
 
@@ -230,7 +221,6 @@ namespace AntiHook::NoImageTargetingGuard
 
         std::fclose(f);
 
-        // Zárjuk az attacker process-handle-eket
         for (auto& kv : attackerProcHandles)
         {
             if (kv.second)
@@ -241,7 +231,6 @@ namespace AntiHook::NoImageTargetingGuard
 
         if (cheatDetected)
         {
-            // Itt már 100%, hogy egy no-image folyamat több erős handle-t tart KIZÁRÓLAG a játékodra.
             FILE* fx = std::fopen(logFile, "a");
             if (fx)
             {

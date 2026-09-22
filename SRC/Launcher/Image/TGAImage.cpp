@@ -33,7 +33,7 @@ void CTGAImage::Create(int width, int height)
 	m_Header.width		= (short) width;
 	m_Header.height		= (short) height;
 	m_Header.colorBits	= 32;
-	m_Header.desc		= 0x08;	// alpha channel 있음
+	m_Header.desc		= 0x08;
 
 	CImage::Create(width, height);
 }
@@ -54,7 +54,7 @@ bool CTGAImage::LoadFromMemory(int iSize, const uint8_t* c_pbMem)
 
 	switch (m_Header.imgType)
 	{
-		case 3:	// 알파만 있는 것 (1bytes per pixel, 거의 안쓰임)
+		case 3:
 			{
 				for (i = 0; i < hxw; ++i)
 				{
@@ -64,7 +64,7 @@ bool CTGAImage::LoadFromMemory(int iSize, const uint8_t* c_pbMem)
 			}
 			break;
 
-		case 2:	// 압축 안된 TGA
+		case 2:
 			{
 				if (m_Header.colorBits == 16)	// 16bit
 				{
@@ -112,7 +112,7 @@ bool CTGAImage::LoadFromMemory(int iSize, const uint8_t* c_pbMem)
 			}
 			break;
 
-		case 10: // 압축 된 TGA (RLE)
+		case 10:
 			{
 			uint8_t rle;
 
@@ -123,7 +123,7 @@ bool CTGAImage::LoadFromMemory(int iSize, const uint8_t* c_pbMem)
 					{
 						rle = (uint8_t) *(c_pbMem++); --iSize;
 
-						if (rle < 0x80)	// 압축 안된 곳
+						if (rle < 0x80)
 						{
 							rle++;
 
@@ -146,7 +146,6 @@ bool CTGAImage::LoadFromMemory(int iSize, const uint8_t* c_pbMem)
 						}
 						else
 						{
-							// 압축 된 곳
 							rle -= 127;
 
 							b = (uint8_t) *(c_pbMem++); --iSize;
@@ -315,7 +314,7 @@ bool CTGAImage::SaveToDiskFile(const char* c_szFileName)
 
 	fwrite(&m_Header, 18, 1, fp);
 
-	if (m_Header.imgType == 10)	// RLE 압축으로 저장
+	if (m_Header.imgType == 10)
 	{
 		uint32_t * data = GetBasePointer();
 

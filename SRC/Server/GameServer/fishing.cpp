@@ -144,7 +144,6 @@ void Initialize()
 	{
 		SendLog("error! cannot open fishing.txt");
 
-		// 1é3÷?! AI¸§AI AÖA¸¸é ¸®1oAä3î ÇN´U.
 		if (*fish_info_bak[0].name)
 		{
 			memcpy(fish_info, fish_info_bak, sizeof(fish_info));
@@ -243,7 +242,6 @@ void Initialize()
 		LOG_TRACE("FISH: {:<24} vnum {:5} prob {:4} {:4} {:4} {:4} len {} {} {}", fish_info[i].name, fish_info[i].vnum, fish_info[i].prob[0], fish_info[i].prob[1], fish_info[i].prob[2], fish_info[i].prob[3], fish_info[i].length_range[0], fish_info[i].length_range[1], fish_info[i].length_range[2]);
 	}
 
-	// E®·ü °e»e
 	for (int j = 0; j < MAX_PROB; ++j)
 	{
 		g_prob_accumulate[j][0] = fish_info[0].prob[j];
@@ -315,7 +313,6 @@ int DetermineFish(entt::entity ch) {
 
 	int * p = std::lower_bound(g_prob_accumulate[prob_idx], g_prob_accumulate[prob_idx] + MAX_FISH, rv);
 	int fish_idx = p - g_prob_accumulate[prob_idx];
-	// Áß±1?!1­´Â ±Ýµc3î¸®, ±Ý?­1e, Ao?­1e 3a?AÁö 3E°Ô ÇÔ
 	{
 		uint32_t vnum = fish_info[fish_idx].vnum;
 
@@ -361,7 +358,6 @@ void FishingPractice(entt::entity ch)
 	const entt::entity rod = ItemSystem::GetWearItem(ch, WEAR_WEAPON);
 	if (rod != entt::null && ItemSystem::GetItemType(rod) == ITEM_ROD)
 	{
-		// AÖ´ë 1ö·Aµµ°! 3A´N °a?i 3¬1A´ë 1ö·A
 		if ( ItemSystem::GetItemRefineVnum(rod)>0 && ItemSystem::GetItemSocket(rod, 0) < ItemSystem::GetItemValue(rod, 2) && number(1,ItemSystem::GetItemValue(rod, 1))==1 )
 		{
 			ItemSystem::SetItemSocket(rod, 0, ItemSystem::GetItemSocket(rod, 0) + 1);
@@ -376,14 +372,12 @@ void FishingPractice(entt::entity ch)
 			}
 		}
 	}
-	// 1I3c¸¦ »«´U
 	ItemSystem::SetItemSocket(rod, 2, 0);
 }
 
 bool PredictFish(entt::entity ch)
 {
 	// ADD_PREMIUM
-	// 3î1ÉE—
 	if (AffectSystem::FindAffect(ch, AFFECT_FISH_MIND_PILL) ||
 			ecs::PlayerRuntime::GetPremiumRemainSeconds(ch, PREMIUM_FISH_MIND) > 0 ||
 			ItemSystem::IsEquipUniqueGroup(ch, UNIQUE_GROUP_FISH_MIND))
@@ -419,7 +413,7 @@ EVENTFUNC(fishing_event)
 
 	switch (info->step)
 	{
-		case 0:	// Eçµé¸®±â ¶Ç´Â ¶±1ä¸¸ 3—3A°¨
+		case 0:
 			++info->step;
 
 			//info->ch->Motion(MOTION_FISHING_SIGN);
@@ -509,16 +503,16 @@ int Compute(uint32_t fish_id, uint32_t ms, uint32_t* item, int level) {
 
 void Take(fishing_event_info* info, entt::entity ch)
 {
-	if (info->step == 1)	// °í±â°! °É¸° »óAÂ¸é..
+	if (info->step == 1)
 	{
 		int32_t ms = (int32_t) ((get_dword_time() - info->hang_time));
 		uint32_t item_vnum = 0;
 		int ret = Compute(info->fish_id, ms, &item_vnum, GetFishingLevel(ch));
 		switch (ret)
 		{
-			case -2: // AâE÷Áö 3EAo °a?i
-			case -3: // 3­AIµµ ¶§1®?! 1ÇA?
-			case -1: // 1A°L E®·ü ¶§1®?! 1ÇA?
+			case -2:
+			case -3:
+			case -1:
 				{
 					int map_idx = ecs::PlayerRuntime::GetMapIndex(ch);
 					int prob_idx = GetProbIndexByMapIndex(map_idx);
@@ -574,7 +568,6 @@ void Take(fishing_event_info* info, entt::entity ch)
 #endif
 						if (quest::CQuestManager::instance().GetEventFlag("fishevent") > 0 && (info->fish_id == 5 || info->fish_id == 6))
 						{
-							// AIoYA® ÁßAI1Ç·Î ±â·IÇN´U.
 
 							TPacketGDHighscore p;
 							p.dwPID = ecs::PlayerRuntime::GetPlayerID(ch);
@@ -678,7 +671,6 @@ void UseFish(entt::entity owner, entt::entity itemEntity)
 {
 	int idx = ItemSystem::GetItemVnum(itemEntity) - fish_info[2].vnum+2;
 
-	// ÇÇ¶ó1I »ç?ëoO°!, »i3AAÖ´Â°Ô 3A´N°Ç »ç?ëoO°!
 
 	if (idx<=1 || idx >= MAX_FISH)
 		return;
@@ -888,30 +880,30 @@ int main(int argc, char **argv)
 namespace fishingnew
 {
 	int aFishFirstTableNormal[26] = {
-									27803, //Süllo
-									27803, //Süllo
-									27803, //Süllo
-									27803, //Süllo
-									27803, //Süllo
-									27803, //Süllo
+									27803,
+									27803,
+									27803,
+									27803,
+									27803,
+									27803,
 									27806, //Ponty
 									27816, //Harcsa
 									27807, //Lazac
-									27818, //Lótuszhal
-									71136,	//Hatalmas nyalóka (1h)
-									39065,//Utalvány (1 SÉ)
-									2870,	//Birodalom Rúna
-									2871,	//Ork Rúna
-									2873,	//Jég Birodalom Rúna
+									27818,
+									71136,
+									39065,
+									2870,
+									2871,
+									2873,
 									99998,	// Boss Pont
 									39066,	// Gaya
 									39068,	// Auriga Coin (10m Yang)
-									80003,// Ezüst rúd (50.000 Yang)
-									80004,// Ezüst rúd (100.000 Yang)
-									80005,// Aranyrúd (500.000 Yang)
-									80006,// Arany rúd (1 millió Yang)
-									80007,// Arany rúd (2 millió Yang)
-									89106,// Ork Run Belépö
+									80003,
+									80004,
+									80005,
+									80006,
+									80007,
+									89106,
 									71175,// Nemere jegy
 									30625,// Egy Darab menhir iszap
 
@@ -925,45 +917,45 @@ namespace fishingnew
 
 	int aFishFirstTableRare[41] = {
 									27804,	//Mandarinhal
-									27811,	//Szivárványos pisztráng
+									27811,
 									27810,	//Angolna
-									27809,	//Pisztráng
-									27814,	//Sügér
-									27812,	//Sebes pisztráng
+									27809,
+									27814,
+									27812,
 									27808,	//Amur
-									2872,//Nefrit Rúna 5x
-									2874,	//Sivatagi Rúna 15x
+									2872,
+									2874,
 									30179,	// Csavart kulcs
 									76019,	// Tritontemplom kulcs
 									30713,	// Owl jegy
 									30798,	// Ankh kereszt
-									71095,	// Belépési engedély
-									30320,	// Sárga Zsugorított f
+									71095,
+									30320,
 									76025,	// Ochao jegy
-									30613,	// Tündérek köve
+									30613,
 									71174,//Razador jegy
 									30325,//pok kulcs
-									89101,//Rúna jegy
+									89101,
 									27804,	//Mandarinhal
-									27811,	//Szivárványos pisztráng
+									27811,
 									27810,	//Angolna
-									27809,	//Pisztráng
-									27814,	//Sügér
-									27812,	//Sebes pisztráng
+									27809,
+									27814,
+									27812,
 									27808,	//Amur
 									27804,	//Mandarinhal
-									27811,	//Szivárványos pisztráng
+									27811,
 									27810,	//Angolna
-									27809,	//Pisztráng
-									27814,	//Sügér
-									27812,	//Sebes pisztráng
+									27809,
+									27814,
+									27812,
 									27808,	//Amur
 									27804,	//Mandarinhal
-									27811,	//Szivárványos pisztráng
+									27811,
 									27810,	//Angolna
-									27809,	//Pisztráng
-									27814,	//Sügér
-									27812,	//Sebes pisztráng
+									27809,
+									27814,
+									27812,
 									27808,	//Amur
 
 
@@ -972,105 +964,105 @@ namespace fishingnew
 
 	int aFishSecondTableNormal[37] = {
 									27805,//Fogas
-									27822,//Tükörponty
+									27822,
 									27823,//Aranyhal
-									27824,//Kígyófeju hal
-									27825,//Ragadozó ponty
-									2875,//Rémálom Rúna 5x
-									2876,//Sötét erdõ Rúna 5x//
+									27824,
+									27825,
+									2875,
+									2876,
 									99998,//bosspont
-									70606,//Felolvasztási bónusz
-									70605,//fagyasztási bónusz csere
-									30617,//Legendás Bónuszoló
-									30618,//Legendás Megváltoztató
-									86052,//Talizmánerösíto
-									86051,//Talizmán büvölo
-									71123,// Sárkány pikkely
-									71129,// Sárkány karom
-									71136,// Hatalmas Nyalóka (2h)
+									70606,
+									70605,
+									30617,
+									30618,
+									86052,
+									86051,
+									71123,
+									71129,
+									71136,
 																		27805,//Fogas
-									27822,//Tükörponty
+									27822,
 									27823,//Aranyhal
-									27824,//Kígyófeju hal
-									27825,//Ragadozó ponty
+									27824,
+									27825,
 																		27805,//Fogas
-									27822,//Tükörponty
+									27822,
 									27823,//Aranyhal
-									27824,//Kígyófeju hal
-									27825,//Ragadozó ponty
+									27824,
+									27825,
 																		27805,//Fogas
-									27822,//Tükörponty
+									27822,
 									27823,//Aranyhal
-									27824,//Kígyófeju hal
-									27825,//Ragadozó ponty
+									27824,
+									27825,
 																		27805,//Fogas
-									27822,//Tükörponty
+									27822,
 									27823,//Aranyhal
-									27824,//Kígyófeju hal
-									27825,//Ragadozó ponty
+									27824,
+									27825,
 
 	};
 
 	int aFishSecondTableRare[63] = {
-									27826, //Vörös királyrák
-									27827, //Ausztrál kék rák
-									27813, //Vörösszárnyú keszeg
+									27826,
+									27827,
+									27813,
 									27815, //Tenchi
 									27819, //Ayu
 									27820, //Viaszlazac
 									27821, //Shiri
-									2877,	//Tûz Rúna 5x
-									2878,	//SD5 Rúna 5x
-									60011,	//Paranoia Köve +6
+									2877,
+									2878,
+									60011,
 									60031,	//Metin elleni ko+6
 									60041,	//Stone of Boss+6
 									2858	,	//Profiq Pepsi-je
 									53251	,	//Frank (15d)
-									18090	,	//Turmalin öv+0
+									18090	,
 									55706	,	//Mini Meley
-									71123	,	//Sárkány pikkely
-									71129	,	//Sárkány karom
-									60010	,	//Paranoia Köve +5
-									60020	,	//Háború Köve +5
+									71123	,
+									71129	,
+									60010	,
+									60020	,
 									60030	,	//Metin elleni ko+5
-									60040	,	//Boss Elleni  Kö+5
-									60050	,	//Inteligencia Köve +
-									60060	,	//Állatok Köve +5
-									60070	,	//Ügyesség Köve +5
-									60080	,	//Erö Köve+5
-									72726	,	//Nap elixír (E)
-									72730	,	//Hold elixír (E)
-									50525	,	//Tökéletes lélekko
+									60040	,
+									60050	,
+									60060	,
+									60070	,
+									60080	,
+									72726	,
+									72730	,
+									50525	,
 									611516	,//szoposszaju hal mount
 									611516	,//szoposszaju hal mount
 									611516	,//szoposszaju hal mount
 									611516	,//szoposszaju hal mount
 									611516	,//szoposszaju hal mount
 									611516	,//szoposszaju hal mount
-															27826, //Vörös királyrák
-									27827, //Ausztrál kék rák
-									27813, //Vörösszárnyú keszeg
+															27826,
+									27827,
+									27813,
 									27815, //Tenchi
 									27819, //Ayu
 									27820, //Viaszlazac
 									27821, //Shiri
-															27826, //Vörös királyrák
-									27827, //Ausztrál kék rák
-									27813, //Vörösszárnyú keszeg
+															27826,
+									27827,
+									27813,
 									27815, //Tenchi
 									27819, //Ayu
 									27820, //Viaszlazac
 									27821, //Shiri
-															27826, //Vörös királyrák
-									27827, //Ausztrál kék rák
-									27813, //Vörösszárnyú keszeg
+															27826,
+									27827,
+									27813,
 									27815, //Tenchi
 									27819, //Ayu
 									27820, //Viaszlazac
 									27821, //Shiri
-															27826, //Vörös királyrák
-									27827, //Ausztrál kék rák
-									27813, //Vörösszárnyú keszeg
+															27826,
+									27827,
+									27813,
 									27815, //Tenchi
 									27819, //Ayu
 									27820, //Viaszlazac
@@ -1089,7 +1081,6 @@ namespace fishingnew
 		const int secondNormalN = (int)(sizeof(aFishSecondTableNormal) / sizeof(aFishSecondTableNormal[17]));
 		const int secondRareN = (int)(sizeof(aFishSecondTableRare) / sizeof(aFishSecondTableRare[30]));
 
-		// Rare dobás logika: rare_chance% eséllyel rare
 		const bool isRare = (number(1, 100) <= rare_chance);
 
 		if (isRare)

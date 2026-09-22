@@ -1,9 +1,3 @@
-/*
- *    Filename: main.c
- * Description: 라이브러리 초기화/삭제 등
- *
- *      Author: 비엽 aka. Cronan
- */
 #define __LIBTHECORE__
 #include "stdafx.h"
 #include "memory.h"

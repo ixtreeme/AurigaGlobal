@@ -10,11 +10,9 @@ namespace AntiHook::Heuristics
     struct SuspiciousModule
     {
         Core::ModuleInfo mod;
-        int              score;   // veszélyességi pont
-        std::string      reason;  // rövid magyarázat lognak
+        int              score;
+        std::string      reason;
     };
 
-    // Heurisztikusan gyanús modulok a JELENLEGI processben.
-    // scoreThreshold: pl. 7 a COM2-szerû dolgokra.
     std::vector<SuspiciousModule> ScanModulesHeuristic(int scoreThreshold);
 }

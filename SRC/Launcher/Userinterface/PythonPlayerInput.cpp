@@ -163,7 +163,6 @@ void CPythonPlayer::SetTarget(uint32_t dwVID, bool bForceChange)
 	if (!pkInstMain)
 		return;
 
-	// 2004. 07. 07. [levites] - 스킬 사용중 타겟이 바뀌는 문제 해결을 위한 코드
 	if (!pkInstMain->CanChangeTarget())
 	{
 		return;
@@ -307,15 +306,12 @@ void CPythonPlayer::__OnClickItem(CInstanceBase& rkInstMain, uint32_t dwItemID)
 
 void CPythonPlayer::__OnClickActor(CInstanceBase& rkInstMain, uint32_t dwPickedActorID, bool isAuto)
 {
-	// 만약 스킬을 써서 접근중이라면..
 	if (MODE_USE_SKILL == m_eReservedMode)
 	{
-		// 같은 캐릭터를 클릭 했으면 리턴
 		if (__GetTargetVID() == dwPickedActorID)
 			return;
 
 		// 2005.03.25.levites
-		// 탄환격을 쓰고 달려가는중 공격할 수 있는 다른 타겟을 클릭하면
 		if (__CheckDashAffect(rkInstMain))
 		{
 			m_dwVIDReserved = dwPickedActorID;
@@ -331,7 +327,6 @@ void CPythonPlayer::__OnClickActor(CInstanceBase& rkInstMain, uint32_t dwPickedA
 		return;
 
 	// 2005.01.28.myevan
-	// 초급말 상태에서는 공격이 안되나 NPC 클릭이되어야함
 	if (rkInstMain.IsAttackableInstance(*pkInstVictim))
 		if (!__CanAttack())
 			return;
@@ -823,10 +818,6 @@ bool CPythonPlayer::__CanAttack()
 		return false;
 
 	// Fix me
-	// 뉴마운트 25레벨 이상 35레벨 미만인 경우 중급 마운트를 타고 공격못하도록 하드 코딩...
-	// 나중에 시간 나면 can attack 체크를 서버에서 해주자...
-	// ㅡ_ㅡ unique 슬롯에 차는 탈것은 이 조건이랑 관계없이 공격할 수 있어야 한다 ㅡ_ㅡ
-	// ㅡ_ㅡ 뉴마운트만 이 체크를 하게 함... ㅡ_ㅡ_ㅡ_ㅡ_ㅡ
 	if (pkInstMain->IsMountingHorse() && pkInstMain->IsNewMount() && (GetSkillGrade(109) < 1 && GetSkillLevel(109) < 11))
 	{
 		return false;
@@ -929,7 +920,6 @@ void CPythonPlayer::__ReserveUseSkill(uint32_t dwActorID, uint32_t dwSkillSlotIn
 	m_dwSkillSlotIndexReserved=dwSkillSlotIndex;
 	m_dwSkillRangeReserved=dwRange;
 
-	// NOTE : 아슬아슬하게 거리가 꼬이는 문제가 있어서 약간 느슨하게..
 	if (m_dwSkillRangeReserved > 100)
 		m_dwSkillRangeReserved -= 10;
 }
@@ -997,7 +987,6 @@ void CPythonPlayer::__ReserveProcess_ClickActor()
 		return;
 	}
 
-	// 탄환격 쓰고 달려가는 도중에는 공격하지 않는다.
 	if (__CheckDashAffect(*pkInstMain))
 	{
 		return;

@@ -232,7 +232,7 @@ protected:
 protected:
 	void		MapLocations(const char * c_pData);
 	void		LoginSuccess(uint32_t dwHandle, const char *data);
-	void		PlayerCreateFailure(LPDESC d, uint8_t bType);	// 0 = 일반 실패 1 = 이미 있음
+	void		PlayerCreateFailure(LPDESC d, uint8_t bType);
 	void		PlayerDeleteSuccess(LPDESC d, const char * data);
 	void		PlayerDeleteFail(LPDESC d);
 	void		PlayerLoad(LPDESC d, const char* data);
@@ -331,11 +331,6 @@ protected:
 
 
 	// MYSHOP_PRICE_LIST
-	/// 아이템 가격정보 리스트 요청에 대한 응답 패킷(HEADER_DG_MYSHOP_PRICELIST_RES) 처리함수
-	/**
-	* @param	d 아이템 가격정보 리스트를 요청한 플레이어의 descriptor
-	* @param	p 패킷데이터의 포인터
-	*/
 	void		MyshopPricelistRes( LPDESC d, const TPacketMyshopPricelistHeader* p );
 	// END_OF_MYSHOP_PRICE_LIST
 	//
@@ -347,7 +342,6 @@ protected:
 #endif
 
 	void		DetailLog(const TPacketNeedLoginLogInfo* info);
-	// 독일 선물 기능 테스트
 	void		ItemAwardInformer(TPacketItemAwardInfromer* data);
 #if defined(BL_OFFLINE_MESSAGE)
 	void		ReadOfflineMessages(LPDESC desc, const char* pcData);
@@ -438,7 +432,7 @@ class CInputAuth : public CInputProcessor
 
 	public:
 		void		Login(LPDESC d, const char * c_pData);
-		void		LoginOpenID(LPDESC d, const char * c_pData);		//2012.07.19 OpenID : 김용욱
+		void		LoginOpenID(LPDESC d, const char * c_pData);
 };
 
 #endif /* __INC_METIN_II_GAME_INPUT_PROCESSOR__ */

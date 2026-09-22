@@ -38,7 +38,6 @@ void CPythonPlayer::SetAffect(uint32_t uAffect)
 
 void CPythonPlayer::ResetAffect(uint32_t uAffect)
 {
-	// 2004.07.17.myevan.스킬 아닌 이펙트가 안 사라지는 문제
 	PyCallClassMemberFunc(m_ppyGameWindow, "ResetAffect", Py_BuildValue("(i)", uAffect));
 
 	uint32_t dwSkillIndex;
@@ -196,8 +195,6 @@ bool CPythonPlayer::__CheckSkillUsable(uint32_t dwSlotIndex)
 		}
 	}
 
-	// 2004.07.26.levites - 안전지대에서 공격 못하도록 수정
-	// NOTE : 공격 스킬은 안전지대에서 사용하지 못합니다 - [levites]
 	if (pSkillData->IsAttackSkill())
 	{
 		if (pkInstMain->IsInSafe())
@@ -208,13 +205,11 @@ bool CPythonPlayer::__CheckSkillUsable(uint32_t dwSlotIndex)
 		}
 	}
 
-	// NOTE : 패시브 스킬은 사용하지 못합니다 - [levites]
 	if (!pSkillData->IsCanUseSkill())
 		return false;
 //	if (CPythonSkill::SKILL_TYPE_PASSIVE == pSkillData->byType)
 //		return false;
 
-	// NOTE : [Only Assassin] 빈병이 있는지 체크 합니다.
 	if (pSkillData->IsNeedEmptyBottle())
 	{
 		if (!__HasItem(27995))
@@ -224,7 +219,6 @@ bool CPythonPlayer::__CheckSkillUsable(uint32_t dwSlotIndex)
 		}
 	}
 
-	// NOTE : [Only Assassin] 독병이 있는지 체크 합니다.
 	if (pSkillData->IsNeedPoisonBottle())
 	{
 		if (!__HasItem(27996))
@@ -234,14 +228,12 @@ bool CPythonPlayer::__CheckSkillUsable(uint32_t dwSlotIndex)
 		}
 	}
 
-	// NOTE : 낚시 중일때는 스킬을 사용하지 못합니다.
 	if (pkInstMain->IsFishingMode())
 	{
 		PyCallClassMemberFunc(m_ppyGameWindow, "OnCannotUseSkill", Py_BuildValue("(is)", GetMainCharacterIndex(), "REMOVE_FISHING_ROD"));
 		return false;
 	}
 
-	// NOTE : 레벨 체크
 	if (m_sysIsLevelLimit)
 	{
 		if (rkSkillInst.iLevel <= 0)
@@ -251,19 +243,17 @@ bool CPythonPlayer::__CheckSkillUsable(uint32_t dwSlotIndex)
 		}
 	}
 
-	// NOTE : 들고 있는 무기 체크
 	if (!pSkillData->CanUseWeaponType(pkInstMain->GetWeaponType()))
 	{
 		PyCallClassMemberFunc(m_ppyGameWindow, "OnCannotUseSkill", Py_BuildValue("(is)", GetMainCharacterIndex(), "NOT_MATCHABLE_WEAPON"));
 		return false;
 	}
 
-	if (!pSkillData->IsHorseSkill()) // HORSE 스킬 중에 화살을 쓰지 않는 스킬이 있기 때문에
+	if (!pSkillData->IsHorseSkill())
 	{
 		if (__CheckShortArrow(rkSkillInst, *pSkillData))
 			return false;
 
-		// NOTE : 활이 필요할 경우 화살 개수 체크
 		if (pSkillData->IsNeedBow())
 		{
 			if (!__HasEnoughArrow())
@@ -326,7 +316,6 @@ bool CPythonPlayer::__CheckShortMana(TSkillInstance& rkSkillInst, CPythonSkill::
 	int iNeedSP = rkSkillData.GetNeedSP(rkSkillInst.fcurEfficientPercentage);
 	int icurSP = GetStatus(POINT_SP);
 
-	// NOTE : ToggleSkill 이 아닌데 소모 SP 가 0 이다.
 	if (!rkSkillData.IsToggleSkill())
 	{
 		if (iNeedSP == 0)
@@ -400,13 +389,12 @@ bool CPythonPlayer::__ProcessEnemySkillTargetRange(CInstanceBase& rkInstMain, CI
 	if (fSkillTargetRange <= 0.0f)
 		return true;
 
-	// #0000806: [M2EU] 수룡에게 무사(나한군) 탄환격 스킬 사용 안됨
 	float fTargetDistance = rkInstMain.GetDistance(&rkInstTarget);
 
 	extern bool IS_HUGE_RACE(unsigned int vnum);
 	if (IS_HUGE_RACE(rkInstTarget.GetRace()))
 	{
-		fTargetDistance -= 200.0f; // TEMP: 일단 하드 코딩 처리. 정석적으로는 바운드 스피어를 고려해야함
+		fTargetDistance -= 200.0f;
 	}
 
 	if (fTargetDistance >= fSkillTargetRange)
@@ -422,7 +410,6 @@ bool CPythonPlayer::__ProcessEnemySkillTargetRange(CInstanceBase& rkInstMain, CI
 		return false;
 	}
 
-	// 2004.07.05.myevan. 궁신탄영 사용시 맵에 끼임. 사용하기전 갈수 있는곳 체크
 	TPixelPosition kPPosTarget;
 	rkInstTarget.NEW_GetPixelPosition(&kPPosTarget);
 
@@ -513,7 +500,6 @@ bool CPythonPlayer::__UseSkill(uint32_t dwSlotIndex)
 
 	CInstanceBase * pkInstTarget = nullptr;
 
-	// NOTE : 타겟이 필요한 경우
 	if (pSkillData->IsNeedTarget() ||
 		pSkillData->CanChangeDirection() ||
 		pSkillData->IsAutoSearchTarget())
@@ -523,13 +509,10 @@ bool CPythonPlayer::__UseSkill(uint32_t dwSlotIndex)
 		else
 			pkInstTarget=__GetAliveTargetInstancePtr();
 
-		// 현재 타겟이 없으면..
 		if (!pkInstTarget)
 		{
-			// 업데이트하고..
 			__ChangeTargetToPickedInstance();
 
-			// 다시 얻어낸다.
 			if (pSkillData->IsNeedCorpse())
 				pkInstTarget=__GetDeadTargetInstancePtr();
 			else
@@ -734,7 +717,6 @@ bool CPythonPlayer::__UseSkill(uint32_t dwSlotIndex)
 #endif
 	}
 
-	// 관격술 처리
 	uint32_t dwTargetMaxCount = pSkillData->GetTargetCount(rkSkillInst.fcurEfficientPercentage);
 	uint32_t dwRange = __GetSkillTargetRange(*pSkillData);
 	if (dwTargetMaxCount>0 && pkInstTarget)
@@ -806,7 +788,6 @@ bool CPythonPlayer::__UseSkill(uint32_t dwSlotIndex)
 	}
 
 	/////
-	// NOTE : 멀리서 적을 클릭해놓고 스킬을 쓰면 스킬을 쓴뒤 바로 적을 공격하는 문제를 수정하기 위한 코드 - [levites]
 	__ClearReservedAction();
 	/////
 

@@ -567,7 +567,7 @@ namespace quest
 
 		uint32_t dwVnum;
 
-		if (lua_isnumber(L, 1)) // ��ȣ�ΰ�� ��ȣ�� �ش�.
+		if (lua_isnumber(L, 1))
 		{
 			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
 		}
@@ -624,7 +624,7 @@ namespace quest
 
 		uint32_t dwVnum;
 
-		if (lua_isnumber(L, 1)) // ��ȣ�ΰ�� ��ȣ�� �ش�.
+		if (lua_isnumber(L, 1))
 		{
 			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
 		}
@@ -683,7 +683,7 @@ namespace quest
 
 		uint32_t dwVnum;
 
-		if (lua_isnumber(L, 1)) // ��ȣ�ΰ�� ��ȣ�� �ش�.
+		if (lua_isnumber(L, 1))
 		{
 			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
 		}
@@ -2007,7 +2007,6 @@ namespace quest
 		pdw[1] = 1;
 		pdw[2] = q.GetEventFlag("lotto_round");
 
-		// ��÷���� ������ �����Ѵ�
 		DBManager::instance().ReturnQuery(QID_LOTTO, playerID, pdw,
 				"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
 				get_table_postfix(), playerID);
@@ -2301,7 +2300,6 @@ namespace quest
 		return 0;
     }
 
-	//�ڷ���Ʈ
 	ALUA(pc_teleport)
 	{
 		// migrated from CHARACTER::WarpSet
@@ -2315,7 +2313,6 @@ namespace quest
 		int x=0,y=0;
 		if ( lua_isnumber(L, 1) )
 		{
-			// ������ ����
 			const int TOWN_NUM = 10;
 			struct warp_by_town_name
 			{
@@ -3112,7 +3109,7 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_get_informer_type)	//���� ���� ���
+	ALUA(pc_get_informer_type)
 	{
 		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
 		const auto* award = ECS_TryGet<ecs::ItemAward>(character);
@@ -4486,18 +4483,13 @@ teleport_area:
 
 			{ "charge_cash",		pc_charge_cash		},
 
-			{ "get_informer_type",	pc_get_informer_type	},	//���� ���� ���
+			{ "get_informer_type",	pc_get_informer_type	},
 			{ "get_informer_item",  pc_get_informer_item	},
 
-			{ "give_award",			pc_give_award			},	//�Ϻ� ������ �ѹ��� �ݱ� ����
-			{ "give_award_socket",	pc_give_award_socket	},	//�� �κ��丮�� ������ ����. ���� ������ ���� �Լ�.
+			{ "give_award",			pc_give_award			},
+			{ "give_award_socket",	pc_give_award_socket	},
 
-			{ "get_killee_drop_pct",	pc_get_killee_drop_pct	}, /* mob_vnum.kill �̺�Ʈ���� killee�� pc���� level ����, pc�� �����̾� ����� ����� ����� ������ ��� Ȯ��.
-																    * return ���� (����, �и�).
-																    * (���� �����ѵ�, CreateDropItem�� GetDropPct�� iDeltaPercent, iRandRange�� return�Ѵٰ� ���� ��.)
-																	* (�� ���� �� ������ �Ф�)
-																	* ���ǻ��� : kill event������ ����� ��!
-																	*/
+			{ "get_killee_drop_pct",	pc_get_killee_drop_pct	},
 
 #ifdef ENABLE_NEWSTUFF
 			//pc.set_race0(race=[0. Warrior, 1. Ninja, 2. Sura, 3. Shaman, 4. Lycan])

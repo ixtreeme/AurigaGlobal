@@ -21,7 +21,6 @@ namespace
         if (!addr)
             return 0;
 
-        // első 32 byte-ot hash-eljük
         static const size_t STUB_LEN = 32;
         return AntiHook::Core::Fnv1a(static_cast<uint8_t*>(addr), STUB_LEN);
     }

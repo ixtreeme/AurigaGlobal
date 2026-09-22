@@ -73,7 +73,6 @@ bool CRaceData::LoadRaceData(const char * c_szFileName)
 				}
 
 				/////////////////////////
-				// Temporary - 이벤트를 위한 임시 기능
 				TextFileLoader.GetTokenString("specialpath", &strPathName);
 				/////////////////////////
 
@@ -160,7 +159,6 @@ bool CRaceData::LoadRaceData(const char * c_szFileName)
 				}
 
 				/////////////////////////
-				// Temporary - 이벤트를 위한 임시 기능
 				TextFileLoader.GetTokenString("specialpath", &strPathName);
 				/////////////////////////
 

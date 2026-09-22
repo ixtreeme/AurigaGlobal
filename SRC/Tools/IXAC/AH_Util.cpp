@@ -17,7 +17,6 @@ static bool QueryVersionField(const BYTE* verData, const wchar_t* field, std::ws
     LANGANDCODEPAGE* translate = nullptr;
     UINT cbTranslate = 0;
 
-    // Nyelvi információk lekérése
     if (!VerQueryValueW((LPVOID)verData, AY_OBFUSCATE(L"\\VarFileInfo\\Translation"),
         (LPVOID*)&translate, &cbTranslate) || cbTranslate < sizeof(LANGANDCODEPAGE))
         return false;
@@ -56,9 +55,8 @@ DWORD FindExternalThreadOwner()
     {
         do
         {
-            if (te.th32OwnerProcessID != myPid) // külső folyamat
+            if (te.th32OwnerProcessID != myPid)
             {
-                // Ez a cheat által létrehozott vagy hijackelt thread
                 CloseHandle(hSnap);
                 return te.th32OwnerProcessID;
             }
@@ -93,7 +91,7 @@ DWORD FindWhoOpenedMyProcess()
             {
                 CloseHandle(hProc);
                 CloseHandle(hSnap);
-                return pe.th32ProcessID; // megtaláltuk a cheat processzt
+                return pe.th32ProcessID;
             }
 
             CloseHandle(hProc);
@@ -208,7 +206,6 @@ bool FindSuspiciousModuleInside(DWORD pid, std::string& outPath)
             {
                 std::wstring wpath(path);
 
-                // Ha NEM Microsoft modul → valószínű cheat
                 if (wpath.find(AY_OBFUSCATE(L"Microsoft")) == std::wstring::npos &&
                     wpath.find(AY_OBFUSCATE(L"Windows")) == std::wstring::npos)
                 {
@@ -268,7 +265,6 @@ void LogCheatFingerprint(DWORD pid)
     DWORD size = MAX_PATH;
     QueryFullProcessImageNameW(hProc, 0, path, &size);
 
-    // Verzióinfók
     DWORD dummy = 0;
     DWORD verSize = GetFileVersionInfoSizeW(path, &dummy);
 

@@ -18,7 +18,6 @@ TJobInitialPoints JobInitialPoints[JOB_MAX_NUM] =
    }
  */
 {
-	// str con dex int ʱHP ʱSP  CON/HP INT/SP  HP/lv   MP/lv  ʱstam  stam/con stam/lv
 	{   6,  4,  3,  3,  600,   200,     40,    20,    36, 44,     18, 22,     800,      5,      1, 3  }, // JOB_WARRIOR  16
 	{   4,  3,  6,  3,  650,   200,     40,    20,    36, 44,     18, 22,     800,      5,      1, 3  }, // JOB_ASSASSIN 16
 	{   5,  3,  3,  5,  650,   200,     40,    20,    36, 44,     18, 22,     800,      5,      1, 3  }, // JOB_SURA	 16
@@ -208,7 +207,7 @@ const uint32_t exp_table_common[PLAYER_MAX_LEVEL_CONST + 1] =
 	1676898443,
 	1844588288,
 	2029047116,
-	2050000000,	//	99   ʿġ (100 Ǳ )
+	2050000000,
 	2150000000u,	//	100
 	2210000000u,
 	2250000000u,
@@ -249,7 +248,6 @@ const uint32_t exp_table_common[PLAYER_MAX_LEVEL_CONST + 1] =
 const int * aiPercentByDeltaLev = nullptr;
 const int * aiPercentByDeltaLevForBoss = nullptr;
 
-//   ̿  꿡 Ǵ ̺
 // MIN(MAX_EXP_DELTA_OF_LEV - 1, ( + 15) - ))
 const int aiPercentByDeltaLevForBoss_euckr[MAX_EXP_DELTA_OF_LEV] =
 {
@@ -579,7 +577,6 @@ const uint32_t guild_exp_table[GUILD_MAX_LEVEL+1] =
 #endif
 
 
-// INTERNATIONAL_VERSION ġ
 #ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
 // INTERNATIONAL_VERSION guild exp table (extended to 60; 21..60 unused)
 const uint32_t guild_exp_table2[GUILD_MAX_LEVEL+1] =
@@ -643,7 +640,6 @@ const uint32_t guild_exp_table2[GUILD_MAX_LEVEL+1] =
 };
 #endif
 
-// END_OF_INTERNATIONAL_VERSION ġ
 
 const int aiMobEnchantApplyIdx[MOB_ENCHANTS_MAX_NUM] =
 {
@@ -796,16 +792,16 @@ const TApplyInfo aApplyInfo[MAX_APPLY_NUM] =
 	{ POINT_PC_BANG_DROP_BONUS	},		// 76
 	// END_PC_BANG_ITEM_ADD
 
-	{ POINT_NONE,		},				// 77  HP Ҹ APPLY_EXTRACT_HP_PCT
+	{ POINT_NONE,		},
 
-	{ POINT_RESIST_WARRIOR,		},		// 78 翡  APPLY_RESIST_WARRIOR
-	{ POINT_RESIST_ASSASSIN,	},		// 79 ڰ  APPLY_RESIST_ASSASSIN
-	{ POINT_RESIST_SURA,		},		// 80 󿡰  APPLY_RESIST_SURA
-	{ POINT_RESIST_SHAMAN,		},		// 81 翡  APPLY_RESIST_SHAMAN
+	{ POINT_RESIST_WARRIOR,		},
+	{ POINT_RESIST_ASSASSIN,	},
+	{ POINT_RESIST_SURA,		},
+	{ POINT_RESIST_SHAMAN,		},
 	{ POINT_ENERGY				},		// 82 
-	{ POINT_DEF_GRADE			},		// 83 . DEF_GRADE_BONUS Ŭ󿡼 ι  ǵ (...) ִ.
-	{ POINT_COSTUME_ATTR_BONUS	},		// 84 ڽƬ  Ӽ ؼ ʽ ִ 
-	{ POINT_MAGIC_ATT_BONUS_PER },			// 85  ݷ +x%
+	{ POINT_DEF_GRADE			},
+	{ POINT_COSTUME_ATTR_BONUS	},
+	{ POINT_MAGIC_ATT_BONUS_PER },
 	{ POINT_MELEE_MAGIC_ATT_BONUS_PER		},			// 86 APPLY_MELEE_MAGIC_ATTBONUS_PER
 	{ POINT_RESIST_ICE,			},   // APPLY_RESIST_ICE,	87
 	{ POINT_RESIST_EARTH,		},   // APPLY_RESIST_EARTH,	88
@@ -1716,7 +1712,6 @@ TValueName c_aApplyTypeNames[] =
     { "RESIST_ASSASSIN",	APPLY_RESIST_ASSASSIN},
     { "RESIST_SURA",		APPLY_RESIST_SURA},
     { "RESIST_SHAMAN",	APPLY_RESIST_SHAMAN},
-    // by mhh game/affect.h ǵǾ. INFINITE_AFFECT_DURATION = 0x1FFFFFFF
     { "INFINITE_AFFECT_DURATION", 0x1FFFFFFF	},
 	{ "ENERGY", APPLY_ENERGY },		//	
 	{ "COSTUME_ATTR_BONUS", APPLY_COSTUME_ATTR_BONUS },		//	

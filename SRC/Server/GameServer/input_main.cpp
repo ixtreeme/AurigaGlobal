@@ -129,7 +129,7 @@ static char	__escape_string2[1024];
 #endif
 static int __deposit_limit()
 {
-	return (1000*10000); // 1õ��
+	return (1000*10000);
 }
 #ifdef __SEND_TARGET_INFO__
 void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
@@ -292,7 +292,7 @@ int GetTextTag(const char * src, int maxLen, int & tagLen, std::string & extraIn
 
 	const char * cur = ++src;
 
-	if (*cur == '|') // ||�� |�� ǥ���Ѵ�.
+	if (*cur == '|')
 	{
 		tagLen = 2;
 		return TEXT_TAG_TAG;
@@ -302,7 +302,7 @@ int GetTextTag(const char * src, int maxLen, int & tagLen, std::string & extraIn
 		tagLen = 2;
 		return TEXT_TAG_COLOR;
 	}
-	else if (*cur == 'H') // hyperlink |Hitem:10000:0:0:0:0|h[�̸�]|h
+	else if (*cur == 'H')
 	{
 		tagLen = 2;
 		return TEXT_TAG_HYPERLINK_START;
@@ -342,12 +342,6 @@ static int ProcessTextTag(entt::entity character, const char * c_pszText, uint64
 {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return 4;
-	//���λ����߿� �ݰ����� ����� ���
-	//0 : ���������� ���
-	//1 : �ݰ��� ����
-	//2 : �ݰ����� ������, ���λ������� �����
-	//3 : ��Ÿ
-	//4 : ����
 	int hyperlinks;
 	bool colored;
 
@@ -595,18 +589,16 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 			if (g_bEmpireWhisper)
 				if (!ItemSystem::IsEquipUniqueGroup(character, UNIQUE_GROUP_RING_OF_LANGUAGE))
 					if (!ItemSystem::IsEquipUniqueGroup(chr, UNIQUE_GROUP_RING_OF_LANGUAGE))
-						if (bOpponentEmpire != ecs::PlayerRuntime::GetEmpire(character) && ecs::PlayerRuntime::GetEmpire(character) && bOpponentEmpire // ���� ������ �ٸ��鼭
-								&& ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER) // �Ѵ� �Ϲ� �÷��̾��̸�
-							// �̸� �ۿ� �𸣴� gm_get_level �Լ��� ���
+						if (bOpponentEmpire != ecs::PlayerRuntime::GetEmpire(character) && ecs::PlayerRuntime::GetEmpire(character) && bOpponentEmpire
+								&& ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER)
 						{
 							if (chr == entt::null)
 							{
-								// �ٸ� ������ ������ ���� ǥ�ø� �Ѵ�. bType�� ���� 4��Ʈ�� Empire��ȣ�� ����Ѵ�.
 								bType = ecs::PlayerRuntime::GetEmpire(character) << 4;
 							}
 							else
 							{
-								ConvertEmpireText(ecs::PlayerRuntime::GetEmpire(character), buf, buflen, 10 + 2 * SkillSystem::GetSkillPower(chr, SKILL_LANGUAGE1 + ecs::PlayerRuntime::GetEmpire(character) - 1)/*��ȯȮ��*/);
+								ConvertEmpireText(ecs::PlayerRuntime::GetEmpire(character), buf, buflen, 10 + 2 * SkillSystem::GetSkillPower(chr, SKILL_LANGUAGE1 + ecs::PlayerRuntime::GetEmpire(character) - 1));
 							}
 						}
 
@@ -632,7 +624,6 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 					}
 				}
 
-				// ������ ������ �� �����Ƿ� �����̸� Ǯ���ش�.
 				pkDesc->SetRelay("");
 				return (iExtraLen);
 			}
@@ -648,8 +639,6 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				pack.wSize = sizeof(TPacketGCWhisper) + buflen;
 				pack.bType = bType;
 				strlcpy(pack.szNameFrom, ecs::PlayerRuntime::GetName(character).data(), sizeof(pack.szNameFrom));
-				// desc->BufferedPacket�� ���� �ʰ� ���ۿ� ����ϴ� ������
-				// P2P relay�Ǿ� ��Ŷ�� ĸ��ȭ �� �� �ֱ� �����̴�.
 				TEMP_BUFFER tmpbuf;
 
 				tmpbuf.write(&pack, sizeof(pack));
@@ -1058,7 +1047,6 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 		return iExtraLen;
 	} */
 
-	// ä�� ���� Affect ó��
 	const CAffect* pAffect = AffectSystem::FindAffect(character, AFFECT_BLOCK_CHAT);
 
 	if (pAffect != nullptr)
@@ -1229,7 +1217,6 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 		char mountTitleWithCount[64];
 		int count = MountSystem::GetMountCount(character);
 
-		// 80 f�l�tt arany
 		if (count >= 80)
 		{
 			mountColor = "|cFFFFFF00";  // arany
@@ -1486,7 +1473,6 @@ void CInputMain::ItemDrop(entt::entity character, const char * data)
 	}
 #endif
 
-	// ��ũ�� 0���� ũ�� ��ũ�� ������ �� �̴�.
 	if (pinfo->gold > 0)
 		ItemSystem::DropGold(character, pinfo->gold);
 	else
@@ -1619,7 +1605,7 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
 
-				if (ecs::PlayerRuntime::GetDesc(character) == d) // �ڽ��� �߰��� �� ����.
+				if (ecs::PlayerRuntime::GetDesc(character) == d)
 					return sizeof(TPacketCGMessengerAddByVID);
 
 				MessengerManager::instance().RequestToAdd(character, ch_companionEntity);
@@ -1646,7 +1632,7 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 				const entt::entity tch = CHARACTER_MANAGER::instance().FindPCEntity(name);
 				if (ecs::PlayerRuntime::IsPC(tch))
 				{
-					if (tch == character) // �ڽ��� �߰��� �� ����.
+					if (tch == character)
 						return CHARACTER_NAME_MAX_LEN;
 
 					if (ecs::PlayerRuntime::IsBlockMode(tch, BLOCK_MESSENGER_INVITE) == true)
@@ -1657,7 +1643,6 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 					}
 					else
 					{
-						// �޽����� ĳ���ʹ����� �Ǹ鼭 ����
 						MessengerManager::instance().RequestToAdd(character, tch);
 					}
 				}
@@ -1957,7 +1942,6 @@ void CInputMain::Move(entt::entity character, const char * data)
 	//	FUNC_SKILL = 0x80,
 	//};
 
-	// �ڷ���Ʈ �� üũ
 
 //	if (!test_server)
 	{
@@ -2034,7 +2018,6 @@ void CInputMain::Move(entt::entity character, const char * data)
 
 			//if (pinfo->bFunc == FUNC_COMBO && g_bCheckMultiHack)
 			//{
-			//	CheckComboHack(ch, pinfo->bArg, pinfo->dwTime, CheckSpeedHack); // �޺� üũ
 			//}
 		}
 	}
@@ -2096,19 +2079,6 @@ void CInputMain::Move(entt::entity character, const char * data)
 	pack.dwDuration   = (pinfo->bFunc == FUNC_MOVE) ? ecs::MovementSystem::GetCurrentMoveDuration(character) : 0;
 
 	ecs::ViewSystem::PacketView(character, &pack, sizeof(TPacketGCMove), character);
-/*
-	if (pinfo->dwTime == 10653691) // ����� �߰�
-	{
-		if (ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(number(15, 30)))
-			LogManager::instance().HackLog("Debugger", character);
-
-	}
-	else if (pinfo->dwTime == 10653971) // Softice �߰�
-	{
-		if (ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(number(15, 30)))
-			LogManager::instance().HackLog("Softice", character);
-	}
-*/
 	/*
 	LOG_INFO(
 			"MOVE: {} Func:{} Arg:{} Pos:{}x{} Time:{} Dist:{:.1f}",
@@ -2411,7 +2381,6 @@ void CInputMain::ScriptButton(entt::entity character, const void* c_pData)
 	}
 	else if (p->idx & 0x80000000)
 	{
-		//����Ʈ â���� Ŭ����(__SelectQuest) �����
 		quest::CQuestManager::Instance().QuestInfo(ecs::PlayerRuntime::GetPlayerID(character), p->idx & 0x7fffffff);
 	}
 	else
@@ -2428,11 +2397,11 @@ void CInputMain::ScriptAnswer(entt::entity character, const void* c_pData)
 	TPacketCGScriptAnswer * p = (TPacketCGScriptAnswer *) c_pData;
 	LOG_INFO("QUEST ScriptAnswer pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(character), p->answer);
 
-	if (p->answer > 250) // ���� ��ư�� ���� �������� �� ��Ŷ�� ���
+	if (p->answer > 250)
 	{
 		quest::CQuestManager::Instance().Resume(ecs::PlayerRuntime::GetPlayerID(character));
 	}
-	else // ���� ��ư�� ��� �� ��Ŷ�� ���
+	else
 	{
 		quest::CQuestManager::Instance().Select(ecs::PlayerRuntime::GetPlayerID(character),  p->answer);
 	}
@@ -3058,7 +3027,6 @@ void CInputMain::MountInventoryItemMove(entt::entity character, const char* data
 		return;
 	MountSystem::SendMountInventory(character);
 
-	// (count nem v�ltozik, de egys�ges)
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
 	ecs::PointSystem::Compute(character);
@@ -3317,7 +3285,6 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 	if (PartySystem::GetLeaderPID(pParty) == ecs::PlayerRuntime::GetPlayerID(character))
 	{
 		if (ecs::SocialSystem::GetDungeon(character) == entt::null) {
-			// ���漺���� ��Ƽ���� ���� �ۿ��� ��Ƽ �ػ� ���ϰ� ����
 			if(PartySystem::IsPartyInDungeon(pParty, 351))
 			{
 #ifdef TEXTS_IMPROVEMENT
@@ -3687,7 +3654,6 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 	{
 		case GUILD_SUBHEADER_CG_DEPOSIT_MONEY:
 			{
-				// by mhh : ����ڱ��� ��а� ���� �� ����.
 				return SubPacketLen;
 
 				const int gold = MIN(*reinterpret_cast<const int*>(c_pData), __deposit_limit());
@@ -3714,7 +3680,6 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 
 		case GUILD_SUBHEADER_CG_WITHDRAW_MONEY:
 			{
-				// by mhh : ����ڱ��� ��а� �� �� ����.
 				return SubPacketLen;
 
 				const int gold = MIN(*reinterpret_cast<const int*>(c_pData), 500000);
@@ -3920,7 +3885,6 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 
 				if (length > GUILD_COMMENT_MAX_LEN)
 				{
-					// �߸��� ����.. ��������.
 					LOG_ERROR("POST_COMMENT: {} comment too long (length: {})", ecs::PlayerRuntime::GetName(character).data(), length);
 					ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 					return -1;
@@ -4082,7 +4046,6 @@ void CInputMain::Hack(entt::entity character, const char * c_pData)
 
 	LOG_ERROR("HACK_DETECT: {} {}", ecs::PlayerRuntime::GetName(character).data(), buf);
 
-	// ���� Ŭ���̾�Ʈ���� �� ��Ŷ�� ������ ��찡 �����Ƿ� ������ ������ �Ѵ�
 	ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 }
 

@@ -91,7 +91,6 @@ int check_name_independent(const char * str)
 	if (CBanwordManager::instance().CheckString(str, strlen(str)))
 		return 0;
 
-	// 몬스터 이름으로는 만들 수 없다.
 	char szTmp[256];
 	str_lower(str, szTmp, sizeof(szTmp));
 
@@ -132,12 +131,9 @@ int check_name_gb2312(const char * str)
 			b1 = str[i++];
 			b2 = str[i++];
 
-			// 중국 간체는 첫번째 바이트 범위가 b0 -> f7 까지고
-			// 두번째 바이트 범위가 a1 -> fe 다.
 			if (b1 < 0xb0 || b1 > 0xf7 || b2 < 0xa1 || b2 > 0xfe)
 				return 0;
 
-			// 예외가 있다.
 			for (j = 0; j < 5; j++)
 				if (b1 == exceptions[j][0] && b2 == exceptions[j][1])
 					return 0;
@@ -184,8 +180,6 @@ int check_name_big5(const char * str )
 			b[0] = b2;
 			b[1] = b1;
 
-			// 중국 번체 ( big5 : 홍콩 )
-			// 범위는 다음과 같다.
 			//  big5: 0xA140--0xF9D5
 			//  extended big5: 0x40--0x7E and 0xA1--0xFE
 
@@ -244,15 +238,12 @@ int check_name_euckr(const char * str)
 
 	for (tmp = str; *tmp; ++tmp)
 	{
-		// 한글이 아니고 빈칸이면 잘못된 것
 		if (isnhspace(*tmp))
 			return 0;
 
-		// 한글이 아니고 숫자라면 적합하다.
 		if (isnhdigit(*tmp))
 			continue;
 
-		// 한글이 아니고 영문이라면 적합하다.
 		if (!ishan(*tmp) && isalpha(*tmp))
 			continue;
 
@@ -284,15 +275,12 @@ int check_name_latin1(const char * str)
 
 	for (tmp = str; *tmp; ++tmp)
 	{
-		// 한글이 아니고 빈칸이면 잘못된 것
 		if (isnhspace(*tmp))
 			return 0;
 
-		// 한글이 아니고 숫자라면 적합하다.
 		if (isnhdigit(*tmp))
 			continue;
 
-		// 한글이 아니고 영문이라면 적합하다.
 		if (!ishan(*tmp) && isalpha(*tmp))
 			continue;
 
@@ -329,7 +317,6 @@ int check_name_alphabet(const char * str)
 
 	for (tmp = str; *tmp; ++tmp)
 	{
-		// 알파벳과 수자만 허용
 		if (isdigit(*tmp) || isalpha(*tmp))
 			continue;
 		else
@@ -378,7 +365,6 @@ int check_name_sjis(const char *str)
 	const char	*p = str;
 	const char	*e = str + strlen(str);	// NULL position
 
-	// 일본은 캐릭터 이름길이 16byte 까지
 	if ( strlen(str) < 2 || strlen(str) > 16 )
 		return 0;
 
@@ -391,7 +377,6 @@ int check_name_sjis(const char *str)
 				return false;
 
 			// END_OF_DISABLE_SPECIAL_CHAR_NAMING
-			// 이문자는 허용되지 않는다.
 			if ((uint8_t)p[0]==0x81 && (uint8_t)p[1]==0x40) return false;
 
 			p += 2;
@@ -399,7 +384,6 @@ int check_name_sjis(const char *str)
 		}
 		else
 		{
-			// 영문이나 수자는 허용한다.
 			if (isalpha(*p) || isdigit(*p))
 			{
 				p += 1;
@@ -1319,18 +1303,18 @@ bool LC_IsEurope()
 		case LC_DENMARK:
 		case LC_BULGARIA:
 		case LC_CROATIA:
-		case LC_MEXICO: // 남미지만 GF에서 서비스 하므로 여기 넣음
-		case LC_ARABIA: // 중동이지만 GF에서 서비스 하므로 여기 넣음
+		case LC_MEXICO:
+		case LC_ARABIA:
 		case LC_CZECH:
 		case LC_ROMANIA:
 		case LC_HUNGARY:
 		case LC_NETHERLANDS:
 		case LC_USA:
-		case LC_WE_KOREA:	// 한국이지만 UK 버전 기반이므로 여기 넣음
-		case LC_TAIWAN:		// 대만이지만 WE_KOREA 버전 기반이므로 여기 넣음
-		case LC_JAPAN:		// 일본이지만 WE(World Edition -_-) 버전이므로 여기 넣음
+		case LC_WE_KOREA:
+		case LC_TAIWAN:
+		case LC_JAPAN:
 		case LC_NEWCIBN:
-		case LC_CANADA:	// 캐나다 GF에서 서비스 시작
+		case LC_CANADA:
 			return true;
 	}
 

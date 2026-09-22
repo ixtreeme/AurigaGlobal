@@ -18,7 +18,6 @@ namespace
     std::atomic<bool> g_Initialized{ false };
     PVOID             g_VehHandle = nullptr;
 
-    // Log helper – próbál mindig ugyanabba az AC mappába írni.
     void LogException(const char* fmt, ...)
     {
         FILE* f = std::fopen(LOG_FILE, "a");
@@ -65,13 +64,11 @@ namespace
         DWORD code = info->ExceptionRecord->ExceptionCode;
         void* addr = info->ExceptionRecord->ExceptionAddress;
 
-        // Csak egyszer dolgozzuk fel, hogy ne legyen rekurzív káosz:
         static thread_local bool inHandler = false;
         if (inHandler)
             return EXCEPTION_CONTINUE_SEARCH;
         inHandler = true;
 
-        // Alap modul-map az aktuális processre
         std::vector<ModuleInfo> mods = BuildModuleMap();
         const ModuleInfo* owner = nullptr;
 
@@ -80,7 +77,6 @@ namespace
             owner = FindModuleForAddress(mods, reinterpret_cast<uintptr_t>(addr));
         }
 
-        // Alap log infó
         const wchar_t* modName = AY_OBFUSCATE(L"(no module)");
         const wchar_t* modPath = AY_OBFUSCATE(L"");
         if (owner)
@@ -89,13 +85,11 @@ namespace
             modPath = owner->path.c_str();
         }
 
-        // Döntés, hogy mikor tekintjük cheat-gyanúnak
         bool suspicious = false;
 
         switch (code)
         {
         case STATUS_DATATYPE_MISALIGNMENT:
-            // Ez tipikusan hibás shellcode / detour / trampoline injekció.
             suspicious = true;
             LogException(
                 AY_OBFUSCATE("[ANTIHOOK][EXC] STATUS_DATATYPE_MISALIGNMENT at %p (module: %S, path: %S)"),
@@ -104,7 +98,6 @@ namespace
 
         case STATUS_ILLEGAL_INSTRUCTION:
         case STATUS_PRIVILEGED_INSTRUCTION:
-            // CPU utasítás, amit normál kód soha nem használ itt.
             suspicious = true;
             LogException(
                 AY_OBFUSCATE("[ANTIHOOK][EXC] ILLEGAL/PRIVILEGED INSTRUCTION at %p (module: %S, path: %S)"),
@@ -113,7 +106,6 @@ namespace
 
         case STATUS_ACCESS_VIOLATION:
         {
-            // Nézzük meg, hogy az IP egy privát RWX régióban van-e (shellcode thread/yield).
             MEMORY_BASIC_INFORMATION mbi{};
             if (VirtualQuery(addr, &mbi, sizeof(mbi)))
             {
@@ -131,16 +123,11 @@ namespace
         }
 
         default:
-            // Egyéb kivételeket hagyjuk a normál handlernek
             break;
         }
 
-        // Ha modulhoz tartozik, és nem whitelistes modul → még egy plusz gyanújel.
-        // (Pl. valami idegen DLL, ami hibás trampoline-t futtat.)
         if (!suspicious && owner && !IsModuleWhitelisted(owner->name))
         {
-            // Nem akarjuk minden 3rd party overlay-t instant lelőni,
-            // ezért ezt inkább csak logoljuk, nem lövünk azonnal.
             LogException(
                 AY_OBFUSCATE("[ANTIHOOK][EXC] Exception 0x%08X at %p in non-whitelisted module %S (%S) – ignoring for now"),
                 code, addr, modName, modPath);
@@ -149,11 +136,10 @@ namespace
 
         if (suspicious)
         {
-            // Ha ide jutottunk, nagyon valószínű, hogy injektált shellcode/cheat kód okozta a kivételt.
             IXAC_ReportCheat();
-            inHandler = false; // mielőtt kilőjük, engedjük el a flaget
-            TerminateProcess(GetCurrentProcess(), 0xE0E0); // külön exit code az ExceptionGuard-nak
-            return EXCEPTION_EXECUTE_HANDLER; // elvileg már nem jut ide
+            inHandler = false;
+            TerminateProcess(GetCurrentProcess(), 0xE0E0);
+            return EXCEPTION_EXECUTE_HANDLER;
         }
 
         inHandler = false;

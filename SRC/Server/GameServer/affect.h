@@ -276,8 +276,8 @@ enum EAffectBits
 	AFF_SLOW,
 	AFF_STUN,
 
-	AFF_DUNGEON_READY,		// 던전에서 준비 상태
-	AFF_DUNGEON_UNIQUE,		// 던전 유니크 (클라이언트에서 컬링되지않음)
+	AFF_DUNGEON_READY,
+	AFF_DUNGEON_UNIQUE,
 
 	AFF_BUILDING_CONSTRUCTION_SMALL,
 	AFF_BUILDING_CONSTRUCTION_LARGE,
@@ -288,34 +288,34 @@ enum EAffectBits
 
 	AFF_FISH_MIND,
 
-	AFF_JEONGWIHON,		// 전귀혼
-	AFF_GEOMGYEONG,		// 검경
-	AFF_CHEONGEUN,		// 천근추
-	AFF_GYEONGGONG,		// 경공술
-	AFF_EUNHYUNG,		// 은형법
-	AFF_GWIGUM,			// 귀검
-	AFF_TERROR,			// 공포
-	AFF_JUMAGAP,		// 주마갑
-	AFF_HOSIN,			// 호신
-	AFF_BOHO,			// 보호
-	AFF_KWAESOK,		// 쾌속
-	AFF_MANASHIELD,		// 마나쉴드
-	AFF_MUYEONG,		// 무영진 affect
-	AFF_REVIVE_INVISIBLE,	// 부활시 잠시동안 무적
-	AFF_FIRE,			// 지속 불 데미지
-	AFF_GICHEON,		// 기천대공
-	AFF_JEUNGRYEOK,		// 증력술
-	AFF_TANHWAN_DASH,		// 탄환격용 달리기어펙트
-	AFF_PABEOP,			// 파법술
-	AFF_CHEONGEUN_WITH_FALL,	// 천근추
+	AFF_JEONGWIHON,
+	AFF_GEOMGYEONG,
+	AFF_CHEONGEUN,
+	AFF_GYEONGGONG,
+	AFF_EUNHYUNG,
+	AFF_GWIGUM,
+	AFF_TERROR,
+	AFF_JUMAGAP,
+	AFF_HOSIN,
+	AFF_BOHO,
+	AFF_KWAESOK,
+	AFF_MANASHIELD,
+	AFF_MUYEONG,
+	AFF_REVIVE_INVISIBLE,
+	AFF_FIRE,
+	AFF_GICHEON,
+	AFF_JEUNGRYEOK,
+	AFF_TANHWAN_DASH,
+	AFF_PABEOP,
+	AFF_CHEONGEUN_WITH_FALL,
 	AFF_POLYMORPH,
 	AFF_WAR_FLAG1,
 	AFF_WAR_FLAG2,
 	AFF_WAR_FLAG3,
 
 	AFF_CHINA_FIREWORK,
-	AFF_HAIR,	// 헤어
-	AFF_GERMANY, // 독일
+	AFF_HAIR,
+	AFF_GERMANY,
 	AFF_RAMADAN_RING,
 
 #ifdef ENABLE_GUILD_ATTRIBUTE
@@ -342,11 +342,6 @@ extern void SendAffectAddPacket(LPDESC d, CAffect * pkAff);
 // AFFECT_DURATION_BUG_FIX
 enum AffectVariable
 {
-	// Affect가 무한대로 들어가 있어야 할 경우 사용.
-	// 시간을 계속 줄이기 때문에 매우 큰값으로 무한대를 에뮬레이션함.
-	//// 24비트는 적으므로 25비트를 사용.
-	// ... 25비트 사용한다고 해놓고선 29bit 사용하고 있는 엄청난 주석이란...
-	// collect quest에서 무한 시간을 60년으로 사용하고 있으므로, 여기도 60년으로 하자.
 
 	INFINITE_AFFECT_DURATION = 60 * 365 * 24 * 60 * 60
 };

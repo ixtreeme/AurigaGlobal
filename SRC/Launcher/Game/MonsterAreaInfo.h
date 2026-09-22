@@ -89,17 +89,14 @@ protected:
 protected:
 	EMonsterAreaInfoType	m_eMonsterAreaInfoType;
 
-	// Group Type 정보
 	uint32_t			m_dwGroupID;
 	std::string		m_strGroupName;
 	std::string		m_strLeaderName;
 	uint32_t			m_dwFollowerCount;
 
-	// Monster Type 정보
 	uint32_t			m_dwVID;
 	std::string		m_strMonsterName;
 
-	// 공통 정보
 	uint32_t			m_dwMonsterCount;
 	EMonsterDir		m_eMonsterDir;
 	D3DXVECTOR2		m_v2Monsterdirection;

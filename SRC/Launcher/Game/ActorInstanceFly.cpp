@@ -110,7 +110,6 @@ void CActorInstance::SetFlyEventHandler(IFlyEventHandler * pHandler)
 	m_pFlyEventHandler = pHandler;
 }
 
-// 2004. 07. 07. [levites] - 스킬 사용중 타겟이 바뀌는 문제 해결을 위한 코드
 bool CActorInstance::CanChangeTarget()
 {
 	if (__IsNeedFlyTargetMotion())

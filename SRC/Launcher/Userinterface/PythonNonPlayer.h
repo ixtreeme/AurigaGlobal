@@ -5,9 +5,6 @@
 // #define ENABLE_NEW_MOB_PROTO_STRUCT_20141125	// bleeding resistance 2014/11/25
 // #define ENABLE_NEW_MOB_PROTO_STRUCT_20151020	// claw resistance 2015/10/20
 
-/*
- *	NPC 데이터 프로토 타잎을 관리 한다.
- */
 class CPythonNonPlayer : public CSingleton<CPythonNonPlayer>
 {
 	public:

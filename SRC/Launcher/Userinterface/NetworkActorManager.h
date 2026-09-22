@@ -122,7 +122,7 @@ struct SNetworkUpdateActorData
 	uint32_t m_dwSkillColor[ESkillColorLength::MAX_SKILL_COUNT + MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
 #endif
 
-	uint32_t m_dwStateFlags; // 본래 Create 때만 쓰이는 변수임
+	uint32_t m_dwStateFlags;
 	CAffectFlagContainer m_kAffectFlags;
 
 	SNetworkUpdateActorData(): m_bLanguage(0)

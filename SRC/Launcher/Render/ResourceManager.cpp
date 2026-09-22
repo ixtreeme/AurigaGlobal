@@ -59,7 +59,6 @@ void CResourceManager::ProcessBackgroundLoading()
 		ms_loadingThread.Request(stFileName);
 		m_WaitingMap.insert(TResourceRequestMap::value_type(dwFileCRC, stFileName));
 		itor = m_RequestMap.erase(itor);
-		//break; // NOTE: 여기서 break 하면 천천히 로딩 된다.
 	}
 
 	uint32_t dwCurrentTime = ELTimer_GetMSec();
@@ -77,7 +76,6 @@ void CResourceManager::ProcessBackgroundLoading()
 				pResource->OnLoad(pData->dwSize, pData->pvBuf);
 				pResource->AddReferenceOnly();
 
-				// 여기서 올라간 레퍼런스 카운트를 일정 시간이 지난 뒤에 풀어주기 위하여
 				m_pResRefDecreaseWaitingMap.insert(TResourceRefDecreaseWaitingMap::value_type(dwCurrentTime, pResource));
 			}
 		}
@@ -88,7 +86,6 @@ void CResourceManager::ProcessBackgroundLoading()
 		delete pData;
 	}
 
-	// DO : 일정 시간이 지나고 난뒤 미리 로딩해 두었던 리소스의 레퍼런스 카운트를 감소 시킨다 - [levites]
 	int32_t lCurrentTime = ELTimer_GetMSec();
 
 	TResourceRefDecreaseWaitingMap::iterator itorRef = m_pResRefDecreaseWaitingMap.begin();
@@ -242,7 +239,7 @@ CResource * CResourceManager::GetTypeResourcePointer(const char * c_szFileName, 
 	uint32_t dwFileCRC = __GetFileCRC(c_szFileName, &c_pszFile);
 	CResource * pResource = FindResourcePointer(dwFileCRC);
 
-	if (pResource)	// 이미 리소스가 있으면 리턴 한다.
+	if (pResource)
 		return pResource;
 
 	CResource *	(*newFunc) (const char *) = nullptr;
@@ -292,7 +289,7 @@ CResource * CResourceManager::GetResourcePointer(const char * c_szFileName)
 	uint32_t dwFileCRC = __GetFileCRC(c_szFileName, &c_pszFile);
 	CResource * pResource = FindResourcePointer(dwFileCRC);
 
-	if (pResource)	// 이미 리소스가 있으면 리턴 한다.
+	if (pResource)
 		return pResource;
 
 	const char * pcFileExt = strrchr(c_pszFile, '.');

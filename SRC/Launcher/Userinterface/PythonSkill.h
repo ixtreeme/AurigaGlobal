@@ -104,7 +104,7 @@ class CPythonSkill : public CSingleton<CPythonSkill>
 			SKILL_ATTRIBUTE_NEED_EMPTY_BOTTLE		= (1 << 12),
 			SKILL_ATTRIBUTE_NEED_POISON_BOTTLE		= (1 << 13),
 			SKILL_ATTRIBUTE_ATTACK_SKILL			= (1 << 14),
-			SKILL_ATTRIBUTE_TIME_INCREASE_SKILL		= (1 << 15), // 증지술 전용 attribute
+			SKILL_ATTRIBUTE_TIME_INCREASE_SKILL		= (1 << 15),
 			SKILL_ATTRIBUTE_CHARGE_ATTACK			= (1 << 16),
 			SKILL_ATTRIBUTE_PASSIVE					= (1 << 17),
 			SKILL_ATTRIBUTE_CANNOT_LEVEL_UP			= (1 << 18),
@@ -140,7 +140,7 @@ class CPythonSkill : public CSingleton<CPythonSkill>
 		enum
 		{
 			SKILL_GRADE_COUNT = 3,
-			SKILL_EFFECT_COUNT = 4,	//스킬은 초,중,고급 이외에 마스터일때 이펙트 추가.
+			SKILL_EFFECT_COUNT = 4,
 			SKILL_GRADE_STEP_COUNT = 20,
 			SKILL_GRADEGAP = 25,
 		};

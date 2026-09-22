@@ -152,8 +152,6 @@ bool CPropertyManager::Initialize(const char * c_pszPackFileName)
 	else
 	{
 		m_isFileMode = true;
-		// NOTE : 여기서 Property를 등록시키면 WorldEditor에서 이상이 생김 ;
-		//        또한, Property Tree List에도 등록을 시켜야 되기 때문에 바깥쪽에서.. - [levites]
 	}
 
 	return true;
@@ -295,7 +293,7 @@ bool CPropertyManager::Put(const char * c_pszFileName, const char * c_pszSourceF
 	if (!CopyFile(c_pszSourceFileName, c_pszFileName, FALSE))
 		return false;
 
-	if (!m_isFileMode)	// 팩 파일에도 넣음
+	if (!m_isFileMode)
 	{
 		if (!m_pack.Put(c_pszFileName, NULL, COMPRESSED_TYPE_NONE,""))
 		{
@@ -321,7 +319,7 @@ bool CPropertyManager::Erase(uint32_t dwCRC)
 	DeleteFile(pProperty->GetFileName());
 	ReserveCRC(pProperty->GetCRC());
 
-	if (!m_isFileMode)	// 파일 모드가 아니면 팩에서도 지움
+	if (!m_isFileMode)
 		m_pack.Delete(pProperty->GetFileName());
 
 	FILE * fp = fopen("property/reserve", "a+");

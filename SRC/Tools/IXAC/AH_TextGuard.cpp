@@ -62,7 +62,7 @@ namespace AntiHook::TextGuard
 
         const SectionInfo& s = GetTextSection();
         if (!s.base || !s.size)
-            return true; // nincs baseline → inkább ne lőjük ki
+            return true;
         const uint32_t expected = GetTextExpectedHash();
         const uint32_t now = Fnv1a(s.base, s.size);
         if (now == expected)

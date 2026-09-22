@@ -209,17 +209,6 @@ class SECTREE_MANAGER : public singleton<SECTREE_MANAGER>
 		size_t		GetMonsterCountInMap(int32_t lMapIndex);
 		size_t	GetMonsterCountInMap(int32_t lMapIndex, uint32_t dwVnum);
 
-		/// 영역에 대해 Sectree 의 Attribute 에 대해 특정한 처리를 수행한다.
-		/**
-		 * @param [in]	lMapIndex 적용할 Map index
-		 * @param [in]	lStartX 사각형 영역의 가장 왼쪽 좌표
-		 * @param [in]	lStartY 사각형 영역의 가장 위쪽 좌표
-		 * @param [in]	lEndX 사각형 영역의 가장 오른쪽 좌표
-		 * @param [in]	lEndY 사각형 영역의 가장 아랫쪽 좌표
-		 * @param [in]	lRotate 영역에 대해 회전할 각
-		 * @param [in]	dwAttr 적용할 Attribute
-		 * @param [in]	mode Attribute 에 대해 처리할 type
-		 */
 		bool		ForAttrRegion(int32_t lMapIndex, int32_t lStartX, int32_t lStartY, int32_t lEndX, int32_t lEndY, int32_t lRotate, uint32_t dwAttr, EAttrRegionMode mode);
 
 		bool		SaveAttributeToImage(int32_t lMapIndex, const char * c_pszFileName, LPSECTREE_MAP pMapSrc = nullptr);
@@ -229,40 +218,10 @@ class SECTREE_MANAGER : public singleton<SECTREE_MANAGER>
 #endif
 	private:
 
-		/// 직각의 사각형 영역에 대해 Sectree 의 Attribute 에 대해 특정한 처리를 수행한다.
-		/**
-		 * @param [in]	lMapIndex 적용할 Map index
-		 * @param [in]	lCX 사각형 영역의 가장 왼쪽 Cell 의 좌표
-		 * @param [in]	lCY 사각형 영역의 가장 위쪽 Cell 의 좌표
-		 * @param [in]	lCW 사각형 영역의 Cell 단위 폭
-		 * @param [in]	lCH 사각형 영역의 Cell 단위 높이
-		 * @param [in]	lRotate 회전할 각(직각)
-		 * @param [in]	dwAttr 적용할 Attribute
-		 * @param [in]	mode Attribute 에 대해 처리할 type
-		 */
 		bool		ForAttrRegionRightAngle(int32_t lMapIndex, int32_t lCX, int32_t lCY, int32_t lCW, int32_t lCH, int32_t lRotate, uint32_t dwAttr, EAttrRegionMode mode );
 
-		/// 직각 이외의 사각형 영역에 대해 Sectree 의 Attribute 에 대해 특정한 처리를 수행한다.
-		/**
-		 * @param [in]	lMapIndex 적용할 Map index
-		 * @param [in]	lCX 사각형 영역의 가장 왼쪽 Cell 의 좌표
-		 * @param [in]	lCY 사각형 영역의 가장 위쪽 Cell 의 좌표
-		 * @param [in]	lCW 사각형 영역의 Cell 단위 폭
-		 * @param [in]	lCH 사각형 영역의 Cell 단위 높이
-		 * @param [in]	lRotate 회전할 각(직각 이외의 각)
-		 * @param [in]	dwAttr 적용할 Attribute
-		 * @param [in]	mode Attribute 에 대해 처리할 type
-		 */
 		bool		ForAttrRegionFreeAngle(int32_t lMapIndex, int32_t lCX, int32_t lCY, int32_t lCW, int32_t lCH, int32_t lRotate, uint32_t dwAttr, EAttrRegionMode mode );
 
-		/// 한 Cell 의 Attribute 에 대해 특정한 처리를 수행한다.
-		/**
-		 * @param [in]	lMapIndex 적용할 Map index
-		 * @param [in]	lCX 적용할 Cell 의 X 좌표
-		 * @param [in]	lCY 적용할 Cell 의 Y 좌표
-		 * @param [in]	dwAttr 적용할 Attribute
-		 * @param [in]	mode Attribute 에 대해 처리할 type
-		 */
 		bool		ForAttrRegionCell(int32_t lMapIndex, int32_t lCX, int32_t lCY, uint32_t dwAttr, EAttrRegionMode mode );
 
 		static uint16_t			current_sectree_version;

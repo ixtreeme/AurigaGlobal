@@ -100,7 +100,6 @@ void CItemCache::Delete()
 	OnFlush();
 
 	//m_bNeedQuery = false;
-	//m_lastUpdateTime = time(0) - m_expireTime; // 바로 타임아웃 되도록 하자.
 }
 
 void CItemCache::OnFlush()

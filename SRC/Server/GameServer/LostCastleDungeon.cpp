@@ -120,11 +120,9 @@ namespace
 
     inline bool IsInRange(int32_t v, int32_t lo, int32_t hi) { return v >= lo && v < hi; }
 
-    // FIX metin pozíciók (CELL koordináta a mapen belül)
     constexpr int32_t kMetinPos[][2] = {
         { 300, 120 }, { 320, 150 }, { 340, 180 }, { 360, 210 },
         { 380, 240 }, { 400, 270 }, { 420, 300 }, { 440, 330 },
-        // ... ide írsz annyit, amennyit akarsz
     };
 
     constexpr int32_t kMetinPosCount = (int32_t)(sizeof(kMetinPos) / sizeof(kMetinPos[0]));
@@ -538,7 +536,6 @@ void ClearClonesOnMap(int32_t mapIndex)
             std::vector<uint32_t> spawnedVids;
             spawnedVids.reserve(kFloor1MetinCount);
 
-            // ha kevesebb fix pontod van, mint 200, akkor körbe ismétli
             for (int i = 0; i < kFloor1MetinCount; ++i)
             {
                 const int idx = i % kMetinPosCount;
@@ -584,7 +581,6 @@ void ClearClonesOnMap(int32_t mapIndex)
         //        "[LostCastle] failed to spawn any metins map=%d localRect=(%d,%d)-(%d,%d)", mapIndex, minX, minY, maxX, maxY);
         //    DungeonSystem::SetFlag(d, kFlagCorrectMetin, (int32_t)correctVid);
 
-        //    BigNoticeMap(mapIndex, "Elveszett Kastely: %d mp marad meg a megfelelõ metinkõ megtalalasara!", kFloor1TimeSec);
         //    ScheduleTimer(mapIndex, kFloor1TimeSec, 1);
         //}
 
@@ -718,7 +714,6 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(sourceEntity));
 
-            // kinézet (partok)
             ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(sourceEntity, PART_MAIN));
             ecs::PlayerRuntime::SetPart(cloneEntity, PART_WEAPON, ecs::PlayerRuntime::GetPart(sourceEntity, PART_WEAPON));
             ecs::PlayerRuntime::SetPart(cloneEntity, PART_HEAD, ecs::PlayerRuntime::GetPart(sourceEntity, PART_HEAD));
@@ -736,7 +731,6 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             CloneEquipWeaponFromSource(cloneEntity, sourceEntity);
 
-            // erő: pontok másolása
             for (int p = 0; p < POINT_MAX_NUM; ++p)
             {
                 ecs::PointSystem::SetReal(cloneEntity, (uint8_t)p, ecs::PointSystem::Get(sourceEntity, (uint8_t)p));
@@ -1040,9 +1034,6 @@ void ClearClonesOnMap(int32_t mapIndex)
                     bool didAction = false;
                     if (p.isSkill)
                     {
-                        // NOTE: nálatok az attack skillek (SKILL_FLAG_ATTACK) a UseSkill-ben általában csak
-                        // "arm / cooldown"-ot csinálnak, és a tényleges sebzés a kliens attack packetjéből jön.
-                        // Mivel a klónnak nincs kliens inputja, itt kézzel lefuttatjuk a ComputeSkill-t.
                         didAction = SkillSystem::UseSkill(cloneEntity, p.attackType, targetEntity, true);
 
                         if (didAction)
@@ -1050,8 +1041,6 @@ void ClearClonesOnMap(int32_t mapIndex)
                             CSkillProto* sk = CSkillManager::instance().Get(p.attackType);
                             if (sk && IS_SET(sk->dwFlag, SKILL_FLAG_ATTACK))
                             {
-                                // Bizonyos attack skillek már a UseSkill-ben ComputeSkill-oznak (pl. charge, MUYEONG, BYEURAK),
-                                // ezeket ne duplázzuk.
                                 if (p.attackType != SKILL_BYEURAK && p.attackType != SKILL_MUYEONG && !sk->IsChargeSkill())
                                     SkillSystem::ComputeSkill(cloneEntity, p.attackType, targetEntity, 0);
                             }
@@ -1079,7 +1068,6 @@ void ClearClonesOnMap(int32_t mapIndex)
             // 2) Chase: tartsunk egy stabil melee tavolsagot, ne fusson at rajtad es ne jittereljen
             const int32_t desired = 60; // kb. 1.7m
 
-            // ha túl közel van, lépjen hátra kicsit (különben "átfut" és köröz)
             if (dist < desired - 40)
             {
                 const int32_t dx = ecs::PlayerRuntime::GetX(cloneEntity) - ecs::PlayerRuntime::GetX(targetEntity);

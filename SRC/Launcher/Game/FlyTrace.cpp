@@ -83,8 +83,6 @@ void CFlyTrace::Update()
 
 }
 
-//1. 알파를 쓰려면 색깔만 줄수있다.
-//2. 텍스쳐를 쓰려면 알파 없다-_-
 
 
 struct TFlyVertex

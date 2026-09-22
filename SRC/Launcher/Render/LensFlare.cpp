@@ -205,19 +205,6 @@ void CLensFlare::DrawBeforeFlare()
     STATEMANAGER.SaveRenderState(D3DRS_ALPHABLENDENABLE, TRUE);			// glEnable(GL_BLEND);
 	STATEMANAGER.SaveRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 	STATEMANAGER.SaveRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-	/*
-	if (m_fBeforeBright != 0.0f && m_bDrawFlare && m_bDrawBrightScreen && false)	// ¿Ø false?
-	{
-		glColor4f(1.0f, 1.0f, 1.0f, m_fBeforeBright);
-		glDisable(GL_TEXTURE_2D);
-		glBegin(GL_TRIANGLE_STRIP);
-			glVertex2f(0.0f, 0.0f);
-			glVertex2f(0.0f, 1.0f);
-			glVertex2f(1.0f, 0.0f);
-			glVertex2f(1.0f, 1.0f);
-		glEnd();
-	}
-	*/
 	float fAspectRatio = ms_Viewport.Width / float(ms_Viewport.Height);
 	float fHeight = m_fSunSize * fAspectRatio;
 	D3DXCOLOR color(1.0f, 1.0f, 1.0f, 1.0f);

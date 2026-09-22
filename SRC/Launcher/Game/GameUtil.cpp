@@ -52,66 +52,6 @@ bool DetectCollisionDynamicSphereVSDynamicSphere(const CDynamicSphereInstance & 
 	if (D3DXVec3LengthSq(&(c_rSphere1.v3LastPosition	-c_rSphere2.v3Position		))<=rsq) return true;
 	if (D3DXVec3LengthSq(&(c_rSphere1.v3LastPosition	-c_rSphere2.v3LastPosition	))<=rsq) return true;*/
 
-	/*
-	if (square_distance_between_linesegment_and_point(
-		c_rSphere1.v3Position,
-		c_rSphere1.v3LastPosition,
-		c_rSphere2.v3Position
-		)<=rsq) return true;
-	if (square_distance_between_linesegment_and_point(
-		c_rSphere1.v3Position,
-		c_rSphere1.v3LastPosition,
-		c_rSphere2.v3LastPosition
-		)<=rsq) return true;
-	if (square_distance_between_linesegment_and_point(
-		c_rSphere2.v3Position,
-		c_rSphere2.v3LastPosition,
-		c_rSphere1.v3Position
-		)<=rsq) return true;
-	if (square_distance_between_linesegment_and_point(
-		c_rSphere2.v3Position,
-		c_rSphere2.v3LastPosition,
-		c_rSphere1.v3LastPosition
-		)<=rsq) return true;
-
-	D3DXVECTOR3 da=c_rSphere1.v3Position-c_rSphere1.v3LastPosition;
-	D3DXVECTOR3 db=c_rSphere2.v3Position-c_rSphere2.v3LastPosition;
-	D3DXVECTOR3 n;
-	float la = D3DXVec3Length(&da);
-	float lb = D3DXVec3Length(&db);
-	if (la==0||lb==0)
-	{
-		D3DXVECTOR3 vA, vB;
-		IntersectLineSegments(
-			c_rSphere1.v3LastPosition.x,c_rSphere1.v3LastPosition.y,c_rSphere1.v3LastPosition.z,
-			c_rSphere1.v3Position.x,	c_rSphere1.v3Position.y,	c_rSphere1.v3Position.z,
-			c_rSphere2.v3LastPosition.x,c_rSphere2.v3LastPosition.y,c_rSphere2.v3LastPosition.z,
-			c_rSphere2.v3Position.x,	c_rSphere2.v3Position.y,	c_rSphere2.v3Position.z,
-			false, 1.e-5f, vA.x, vA.y, vA.z, vB.x, vB.y, vB.z);
-		return (D3DXVec3LengthSq(&(vA-vB))<=r*r);
-	}
-	D3DXVECTOR3 p=c_rSphere2.v3Position - c_rSphere1.v3LastPosition;
-	D3DXVec3Cross(&n, &da, &db);
-	float from_plane = D3DXVec3Dot(&n,&p)/la/lb;
-	if (from_plane>r || from_plane<-r)
-		return false;
-	p-=(from_plane/la/lb)*n;
-	float ta = D3DXVec3Dot(&p,&da)/la/la;
-	float tb = D3DXVec3Dot(&p,&db)/lb/lb;
-
-	// FIXME 구 체크가 아니다
-
-	if (ta<0)
-		return false;
-	if (tb<0)
-		return false;
-	if (ta>1)
-		return false;
-	if (tb>1)
-		return false;
-	return true;
-
-  */
 	//*/
 	// using gpg line-collision
 
@@ -147,37 +87,6 @@ bool DetectCollisionDynamicSphereVSDynamicSphere(const CDynamicSphereInstance & 
 	return (D3DXVec3LengthSq(&ixab) <= rsq);
 	//*/
 
-	/*
-	// NOTE : AABB 체크 할 것
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	D3DXVECTOR3 v3Distance = c_rSphere1.v3Position - c_rSphere2.v3Position;
-	float fDistance = D3DXVec3Length(&v3Distance);
-	float fRadiusSummary = c_rSphere1.fRadius + c_rSphere2.fRadius;
-
-	if (fDistance < fRadiusSummary)
-		return true;
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	D3DXVECTOR3 v3LastDistance = c_rSphere1.v3LastPosition - c_rSphere2.v3LastPosition; // A
-	D3DXVECTOR3 v3Advance = c_rSphere1.v3Advance - c_rSphere2.v3Advance;                // B
-
-	float fdotAdvanceAdvance = D3DXVec3Dot(&v3Advance, &v3Advance);
-	if (0.0f == fdotAdvanceAdvance)
-		return false;
-
-	float fdotDistanceAdvance = D3DXVec3Dot(&v3LastDistance, &v3Advance);
-	float fdotDistanceDistance = D3DXVec3Dot(&v3LastDistance, &v3LastDistance);
-	float Value1 = fdotDistanceAdvance - fdotAdvanceAdvance * (fdotDistanceDistance - (fRadiusSummary * fRadiusSummary));
-	if (Value1 < 0.0f)
-		return false;
-
-	float Value2 = (-fdotDistanceAdvance - sqrtf(Value1)) / fdotAdvanceAdvance;
-	if (Value2 < 0.0f)
-		return false;
-	if (Value2 >= 1.0f)
-		return false;
-
-	return true;*/
 }
 
 /*
@@ -275,15 +184,11 @@ bool DetectCollisionStaticSphereVSStaticCylinder(const TSphereData & c_rSphere, 
 
 bool IsCWAcuteAngle(float begin, float end)
 {
-	// 360 - src + dest		// 시계 반대 방향
-	// src - dest			// 시계 방향
 	return ((360.0f - begin + end) > (begin - end));
 }
 
 bool IsCCWAcuteAngle(float begin, float end)
 {
-	// abs(360 - dest + src) 	// 시계 방향
-	// dest - src				// 시계 반대 방향
 	int fValue = abs((int) (360.0f - end + begin));
 	return fValue >= (end - begin) ? true : false;
 }
@@ -299,7 +204,6 @@ bool IsCCWRotation(float begin, float end)
 	// 270      90
 	//      0
 	//
-	// 시계 반대
 	return (begin - end < 0);
 }
 

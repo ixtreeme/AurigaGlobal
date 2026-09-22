@@ -118,13 +118,13 @@ typedef struct command_sync_position_element
 	int32_t	lY;
 } TPacketCGSyncPositionElement;
 
-typedef struct command_sync_position	// 가변 패킷
+typedef struct command_sync_position
 {
 	uint8_t	bHeader;
 	uint16_t	wSize;
 } TPacketCGSyncPosition;
 
-typedef struct command_chat	// 가변 패킷
+typedef struct command_chat
 {
 	uint8_t	header;
 	uint16_t	size;

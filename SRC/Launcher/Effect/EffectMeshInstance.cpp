@@ -59,7 +59,6 @@ bool CEffectMeshInstance::OnUpdate(float fElapsedTime)
 }
 bool CreateVertexBuffers(CEffectMesh::TEffectFrameData& frameData)
 {
-	// Ha már létezik mindkettõ, nem hozunk létre újat
 	if (frameData.pVB && frameData.pIB)
 		return false;
 
@@ -93,7 +92,6 @@ bool CreateVertexBuffers(CEffectMesh::TEffectFrameData& frameData)
 
 	frameData.dwVertexCount = static_cast<DWORD>(vtxCount);
 
-	// Indexek, ha még nem voltak (minimum: vertex count)
 	if (frameData.IndexVector.empty())
 	{
 		frameData.dwIndexCount = frameData.dwVertexCount;

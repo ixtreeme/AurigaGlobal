@@ -55,7 +55,6 @@ void CMovieMan::FillRect( RECT& fillRect, uint32_t fillColor )
 
 	if (fillRect.bottom == fillRect.top || fillRect.left == fillRect.right)
 	{
-		// 채울 필요 없음
 		return;
 	}
 
@@ -83,7 +82,6 @@ inline void CMovieMan::GDIFillRect( RECT& fillRect, uint32_t fillColor )
 }
 
 //----------------------------------------------------------------------------------------------------
-// 특정 서피스를 GDI로 바탕화면에 뿌린다
 //
 inline void CMovieMan::GDIBlt(IDirectDrawSurface *pSrcSurface, RECT *pDestRect)
 {
@@ -105,7 +103,6 @@ void CMovieMan::PlayLogo(const char *pcszName)
 
 void CMovieMan::PlayIntro()
 {
-	// 인트로 영상은 키보드 입력이나 마우스 클릭으로 스킵 가능
 	PlayMovie( INTRO_FILE, MOVIEMAN_SKIPPABLE_YES, MOVIEMAN_POSTEFFECT_FADEOUT, 0xFFFFFF );
 }
 
@@ -146,7 +143,6 @@ bool CMovieMan::PlayMovie( const char *cpFileName, const bool bSkipAllowed, cons
 		return FALSE;
 	}
 
-	// 32비트인지 알아본다
 	ZeroMemory(&ddsd, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 	ddsd.dwFlags = DDSD_PIXELFORMAT;
@@ -178,12 +174,9 @@ bool CMovieMan::PlayMovie( const char *cpFileName, const bool bSkipAllowed, cons
 			hr = pDDStream->GetFormat(&ddsd, nullptr, nullptr, nullptr);
 			if (SUCCEEDED(hr))
 			{
-				// 동영상 크기와 윈도우 크기를 기준으로 동영상 재생될 적당한 영역을 설정
 				m_movieWidth = ddsd.dwWidth;
 				m_movieHeight = ddsd.dwHeight;
 
-				// 백버퍼는 무조건 RGB32로 만들고 PrimarySurface와 형식이 다르면
-				// GDI fallback 해서 StretchBlt 한다
 				DDSURFACEDESC ddsdBackSurface;
 				ZeroMemory(&ddsdBackSurface, sizeof(ddsdBackSurface));
 				ddsdBackSurface.ddpfPixelFormat.dwSize = sizeof(ddsdBackSurface.ddpfPixelFormat);
@@ -228,7 +221,6 @@ bool CMovieMan::PlayMovie( const char *cpFileName, const bool bSkipAllowed, cons
 
 	pDD->Release();
 
-	// 키보드, 마우스 버퍼 비우기
 	MSG msg;
 	while (PeekMessage(&msg, hWnd, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE));
 	while (PeekMessage(&msg, hWnd, WM_MOUSEFIRST, WM_MOUSELAST, PM_REMOVE));
@@ -237,7 +229,6 @@ bool CMovieMan::PlayMovie( const char *cpFileName, const bool bSkipAllowed, cons
 }
 
 //----------------------------------------------------------------------------------------------------
-// 메인 윈도우의 Screen 좌표를 반환
 //
 void CMovieMan::GetWindowRect(RECT& windowRect)
 {
@@ -256,12 +247,10 @@ void CMovieMan::GetWindowRect(RECT& windowRect)
 	//
 	GetClientRect( hWnd, &windowRect );
 
-	// clientRect를 ClientToScreen 하는 것과 같음
 	OffsetRect( &windowRect, p.x, p.y );
 }
 
 //----------------------------------------------------------------------------------------------------
-// 메인 윈도우에 동영상을 꽉채우는 RECT 반환(가로/세로 비율 유지)
 //
 void CMovieMan::CalcMovieRect(int srcWidth, int srcHeight, RECT& movieRect)
 {
@@ -290,7 +279,6 @@ void CMovieMan::CalcMovieRect(int srcWidth, int srcHeight, RECT& movieRect)
 }
 
 //----------------------------------------------------------------------------------------------------
-// 화면 위에서 동영상이 아닌 검은색 영역, 항상 2개의 RECT로 표현 가능
 //
 void CMovieMan::CalcBackgroundRect(const RECT& movieRect, RECT& upperRect, RECT& lowerRect)
 {
@@ -299,20 +287,17 @@ void CMovieMan::CalcBackgroundRect(const RECT& movieRect, RECT& upperRect, RECT&
 
 	if (m_movieWidth > m_movieHeight)
 	{
-		// 위아래 두개
 		SetRect(&upperRect, windowRect.left, windowRect.top, windowRect.right, movieRect.top);
 		SetRect(&lowerRect, windowRect.left, movieRect.bottom, windowRect.right, windowRect.bottom);
 	}
 	else
 	{
-		// 좌우 두개
 		SetRect(&upperRect, windowRect.left, windowRect.top, movieRect.left, windowRect.bottom);
 		SetRect(&lowerRect, movieRect.right, windowRect.top, windowRect.right, windowRect.bottom);
 	}
 }
 
 //----------------------------------------------------------------------------------------------------
-// 특정 서피스에 Blocking으로 동영상을 그린다
 //
 HRESULT CMovieMan::RenderStreamToSurface(IDirectDrawSurface *pSurface, IDirectDrawMediaStream *pDDStream, IMultiMediaStream *pMMStream, bool bSkipAllowed, int nPostEffectID, uint32_t dwPostEffectData)
 {
@@ -322,7 +307,6 @@ HRESULT CMovieMan::RenderStreamToSurface(IDirectDrawSurface *pSurface, IDirectDr
 	HRESULT hr = pDDStream->CreateSample(pSurface, nullptr, 0, &pSample);
 	if (SUCCEEDED(hr))
 	{
-		// 최초 한번 검은색으로 배경을 칠해준다
 		RECT movieRect;
 		RECT upperRect, lowerRect;
 		CalcMovieRect(m_movieWidth, m_movieHeight, movieRect);
@@ -333,21 +317,18 @@ HRESULT CMovieMan::RenderStreamToSurface(IDirectDrawSurface *pSurface, IDirectDr
 		pMMStream->SetState(STREAMSTATE_RUN);
 		while (pSample->Update(0, nullptr, nullptr, NULL) == S_OK)
 		{
-			// 윈도우 중앙을 기준으로 꽉차게 그린다
 			CalcMovieRect(m_movieWidth, m_movieHeight, movieRect);
 			if (FAILED(m_pPrimarySurface->Blt(&movieRect, pSurface, NULL, DDBLT_WAIT, NULL)))
 			{
 				GDIBlt(pSurface, &movieRect);
 			}
 
-			// 중간에 스킵 가능하면 키보드ESC/마우스 입력시 탈출
 			if (bSkipAllowed && (KEY_DOWN(VK_LBUTTON) || KEY_DOWN(VK_ESCAPE) || KEY_DOWN(VK_SPACE)))
 			{
 				break;
 			}
 		}
 
-		// 동영상 재생 종료시에 2초 동안 페이드아웃
 		switch(nPostEffectID)
 		{
 		case MOVIEMAN_POSTEFFECT_FADEOUT:
@@ -393,15 +374,11 @@ HRESULT CMovieMan::RenderFileToMMStream(const char *cpFilename, IMultiMediaStrea
 	if (ext == "mpg")
 	{
 		// 2007-08-01, nuclei
-		// MPG만 재생한다고 가정하고 매뉴얼로 각종 코덱을 연결해
-		// 외부 코덱(ffdshow 등)에 영향을 받지 않도록 한다
-		// (기타 파일도 재생은 되지만 코덱에 영향을 받을 수 있음)
 		hr = BuildFilterGraphManually(wPath, pAMStream, CLSID_MPEG1Splitter, CLSID_CMpegVideoCodec, CLSID_CMpegAudioCodec);
 	}
 	else if (ext == "mp43")
 	{
 		// 2007-08-12, nuclei
-		// MPEG-4, MP3 코덱을 이용한 AVI의 재생 추가(확장자는 .mp43으로 해야함)
 		hr = BuildFilterGraphManually(wPath, pAMStream, CLSID_AviSplitter, CLSID_MP4VideoCodec, CLSID_MP3AudioCodec);
 	}
 	else
@@ -409,7 +386,6 @@ HRESULT CMovieMan::RenderFileToMMStream(const char *cpFilename, IMultiMediaStrea
 		hr = pAMStream->OpenFile(wPath, 0);
 	}
 
-	// 재생 성공시 hr은 S_OK
 	if (SUCCEEDED(hr))
 	{
 		pAMStream->QueryInterface(IID_IMultiMediaStream, (void**) ppMMStream);
@@ -421,11 +397,9 @@ HRESULT CMovieMan::RenderFileToMMStream(const char *cpFilename, IMultiMediaStrea
 }
 
 //----------------------------------------------------------------------------------------------------
-// 특정색으로 화면이 밝아지거나 어두워짐
 //
 HRESULT CMovieMan::RenderPostEffectFadeOut(IDirectDrawSurface *pSurface, int fadeOutDuration, uint32_t fadeOutColor)
 {
-	// Lock 걸기 위해 초기화
 	DDSURFACEDESC lockedSurfaceDesc;
 
 	int *pCopiedSrcSurBuf = nullptr;
@@ -441,7 +415,6 @@ HRESULT CMovieMan::RenderPostEffectFadeOut(IDirectDrawSurface *pSurface, int fad
 			return hr;
 		}
 
-		// 최초 1회에 서피스 복사하고 복사본에 FadeOut 처리한다
 		if (!pCopiedSrcSurBuf)
 		{
 			if (!(pCopiedSrcSurBuf = (int*)malloc((LONG)lockedSurfaceDesc.lPitch * m_movieHeight)))
@@ -452,7 +425,6 @@ HRESULT CMovieMan::RenderPostEffectFadeOut(IDirectDrawSurface *pSurface, int fad
 			CopyMemory(pCopiedSrcSurBuf, lockedSurfaceDesc.lpSurface, (LONG)lockedSurfaceDesc.lPitch * m_movieHeight);
 		}
 
-		// 픽셀 플랏팅(32비트)
 		int *pSrcSurfaceBuf = pCopiedSrcSurBuf;
 		int *pDestSurfaceBuf = (int*)lockedSurfaceDesc.lpSurface;
 
@@ -476,7 +448,6 @@ HRESULT CMovieMan::RenderPostEffectFadeOut(IDirectDrawSurface *pSurface, int fad
 		}
 		pSurface->Unlock(lockedSurfaceDesc.lpSurface);
 
-		// 색상이 바뀐 동영상 이미지 그리기
 		RECT movieRect;
 		CalcMovieRect(m_movieWidth, m_movieHeight, movieRect);
 		if (FAILED(m_pPrimarySurface->Blt(&movieRect, pSurface, NULL, DDBLT_WAIT, NULL)))
@@ -484,23 +455,19 @@ HRESULT CMovieMan::RenderPostEffectFadeOut(IDirectDrawSurface *pSurface, int fad
 			GDIBlt(pSurface, &movieRect);
 		}
 
-		// 위 또는 좌측 빈칸 색채우기
 		RECT upperRect, lowerRect;
 		CalcBackgroundRect(movieRect, upperRect, lowerRect);
 		FillRect(upperRect, (fadeOutColorRed << 16) | (fadeOutColorGreen << 8) | fadeOutColorBlue);
 		FillRect(lowerRect, (fadeOutColorRed << 16) | (fadeOutColorGreen << 8) | fadeOutColorBlue);
 
-		// 음량 조절
 		if (m_pBasicAudio)
 		{
 			m_pBasicAudio->put_Volume((long)(-10000 * fadeProgress));
 		}
 	}
 
-	// 메모리 해제
 	free(pCopiedSrcSurBuf);
 
-	// 마지막엔 1.0을 기준으로 완전히 FadeOut된 화면 그리기
 	RECT windowRect;
 	GetWindowRect(windowRect);
 	FillRect(windowRect, fadeOutColor);
@@ -509,7 +476,6 @@ HRESULT CMovieMan::RenderPostEffectFadeOut(IDirectDrawSurface *pSurface, int fad
 }
 
 //----------------------------------------------------------------------------------------------------
-// MPEG-1 비디오 파일을 외부 코덱 간섭없이 렌더링하는 함수
 //
 HRESULT CMovieMan::BuildFilterGraphManually(
 	WCHAR* wpFilename,
@@ -537,8 +503,6 @@ HRESULT CMovieMan::BuildFilterGraphManually(
 	CoCreateInstance(clsidVideoCodec, nullptr, CLSCTX_INPROC_SERVER, IID_IBaseFilter, (void **) &pVideoFilter);
 	CoCreateInstance(clsidAudioCodec, nullptr, CLSCTX_INPROC_SERVER, IID_IBaseFilter, (void **) &pAudioFilter);
 
-	// 만약 MP43 디코더가 없다면 DMO 코덱을 대신 넣어준다
-	// MONSTER팀에서 발견된 케이스(코덱을 누군가 강제로 삭제)
 	if (!pVideoFilter && IsEqualGUID(clsidVideoCodec, CLSID_MP4VideoCodec))
 	{
 		// Create the DMO Wrapper filter.
@@ -580,7 +544,6 @@ HRESULT CMovieMan::BuildFilterGraphManually(
 	pOutPin->Release();
 	if (SUCCEEDED(hr))
 	{
-		// 연결후에만 Output 핀들이 나타난다
 		pSplitterFilter->EnumPins(&pEnumPins);
 		PIN_INFO pinInfo;
 		while( SUCCEEDED(pEnumPins->Next(1, &pInPin, NULL)) )
@@ -589,7 +552,6 @@ HRESULT CMovieMan::BuildFilterGraphManually(
 			pinInfo.pFilter->Release();
 			if (pinInfo.dir == PINDIR_OUTPUT)
 			{
-				// Pin의 순서를 비디오-오디오로 가정
 				pSplitterVideoOutPin = pInPin;
 				pEnumPins->Next(1, &pSplitterAudioOutPin, nullptr);
 				break;
@@ -606,12 +568,10 @@ HRESULT CMovieMan::BuildFilterGraphManually(
 		hr = pGraphBuilder->Connect(pSplitterVideoOutPin, pInPin);
 		if (SUCCEEDED(hr))
 		{
-			// 비디오 렌더
 			hr = pGraphBuilder->Render(pOutPin);
 			pInPin->Release();
 			pOutPin->Release();
 
-			// 오디오는 파일에 따라 없을 수도 있다
 			if (pSplitterAudioOutPin && pAudioFilter)
 			{
 				pAudioFilter->EnumPins(&pEnumPins);
@@ -619,7 +579,6 @@ HRESULT CMovieMan::BuildFilterGraphManually(
 				pEnumPins->Next(1, &pOutPin, nullptr);
 				pEnumPins->Release();
 				pGraphBuilder->Connect(pSplitterAudioOutPin, pInPin);
-				// 오디오 렌더는 실패해도 넘어갈 수 있음
 				pGraphBuilder->Render(pOutPin);
 				pInPin->Release();
 				pOutPin->Release();
@@ -627,7 +586,6 @@ HRESULT CMovieMan::BuildFilterGraphManually(
 		}
 	}
 
-	// 해제
 //#ifdef _DEBUG
 //	RemoveFromRot(dwRegister);
 //#endif

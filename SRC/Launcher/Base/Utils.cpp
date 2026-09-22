@@ -431,7 +431,7 @@ void MyCreateDirectory(const char* path)
 
 	if (strlen(path) >= 3)
 	{
-		if (*(path + 1) == ':')	// C:, D: °°Àº °æ¿ì¸¦ Ã¼Å©
+		if (*(path + 1) == ':')
 			path += 3;
 	}
 
@@ -580,22 +580,21 @@ void GetExecutedFileName(std::string& r_str)
 	{
 		size = GetModuleFileNameW(nullptr, buffer.data(), static_cast<uint32_t>(buffer.size()));
 
-		if (size == 0) // Hiba esetén
+		if (size == 0)
 		{
 			r_str.clear();
 			return;
 		}
 
-		if (size < buffer.size()) // Ha a buffer elég volt
+		if (size < buffer.size())
 		{
 			r_str.assign(buffer.begin(), buffer.begin() + size);
 			return;
 		}
 
-		// Ha a buffer kicsi volt, növeljük a méretét
 		buffer.resize(buffer.size() * 2);
 
-	} while (size >= buffer.size()); // Biztonsági ellenõrzés
+	} while (size >= buffer.size());
 }
 
 const char * _getf(const char* c_szFormat, ...)

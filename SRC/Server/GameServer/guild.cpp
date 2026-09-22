@@ -442,18 +442,6 @@ void CGuild::SendListOneToAll(uint32_t pid)
 
 void CGuild::SendListPacket(entt::entity character)
 {
-	/*
-	   List Packet
-
-	   Header
-	   Count (byte)
-	   [
-	   ...
-	   name_flag 1 - ̸  Ⱥ
-	   name CHARACTER_NAME_MAX_LEN+1
-	   ] * Count
-
-	 */
 	LPDESC d;
 	if (!(d=ecs::PlayerRuntime::GetDesc(character)))
 		return;
@@ -591,14 +579,6 @@ void CGuild::LoadGuildMemberData(SQLMsg* pmsg)
 
 void CGuild::LoadGuildGradeData(SQLMsg* pmsg)
 {
-	/*
-    // 15 ƴ ɼ
-	if (pmsg->Get()->iNumRows != 15)
-	{
-		LOG_ERROR("Query failed: getting guild grade data. GuildID({})", GetID());
-		return;
-	}
-	*/
 	for (uint64_t i = 0; i < pmsg->Get()->uiNumRows; ++i)
 	{
 		MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
@@ -746,7 +726,6 @@ void CGuild::__P2PUpdateGrade(SQLMsg* pmsg)
 
 		grade--;
 
-		//  Ī  ٸٸ Ʈ
 		if (0 != strcmp(m_data.grade_array[grade].grade_name, name))
 		{
 			strlcpy(m_data.grade_array[grade].grade_name, name, sizeof(m_data.grade_array[grade].grade_name));
@@ -1154,7 +1133,7 @@ void CGuild::RefreshCommentForce(uint32_t player_id)
 		d->BufferedPacket(szName, sizeof(szName));
 
 		if (i == pmsg->Get()->uiNumRows - 1)
-			d->Packet(szContent, sizeof(szContent)); //  ̸
+			d->Packet(szContent, sizeof(szContent));
 		else
 			d->BufferedPacket(szContent, sizeof(szContent));
 	}
@@ -1315,7 +1294,6 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 
 	if ((pkSk->dwFlag & SKILL_FLAG_SELFONLY))
 	{
-		// ̹ ɷ Ƿ  .
 		if (AffectSystem::FindAffect(character, pkSk->dwVnum))
 			return;
 	}
@@ -1372,7 +1350,6 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 	switch (dwVnum)
 	{
 		case GUILD_SKILL_TELEPORT:
-			//   ִ   õ.
 			SendDBSkillUpdate(-iNeededSP);
 			if (const entt::entity victim = CHARACTER_MANAGER::instance().FindEntityByPID(pid); ecs::IsCharacter(victim))
 				ecs::MovementSystem::WarpSet(character, ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim));
@@ -2097,11 +2074,10 @@ bool CGuild::HasLand()
 }
 
 // GUILD_JOIN_BUG_FIX
-///  ʴ event
 EVENTINFO(TInviteGuildEventInfo)
 {
-	uint32_t	dwInviteePID;		///< ʴ character  PID
-	uint32_t	dwGuildID;		///< ʴ Guild  ID
+	uint32_t	dwInviteePID;
+	uint32_t	dwGuildID;
 
 	TInviteGuildEventInfo()
 	: dwInviteePID( 0 )
@@ -2110,10 +2086,6 @@ EVENTINFO(TInviteGuildEventInfo)
 	}
 };
 
-/**
- *  ʴ event callback Լ.
- * event  ߵϸ ʴ  óѴ.
- */
 EVENTFUNC( GuildInviteEvent )
 {
 	TInviteGuildEventInfo *pInfo = dynamic_cast<TInviteGuildEventInfo*>( event->info );
@@ -2216,7 +2188,6 @@ void CGuild::Invite( entt::entity inviter, entt::entity invitee )
 		return;
 
 	//
-	// ̺Ʈ
 	//
 	TInviteGuildEventInfo* pInfo = AllocEventInfo<TInviteGuildEventInfo>();
 	pInfo->dwInviteePID = ecs::PlayerRuntime::GetPlayerID(invitee);
@@ -2225,7 +2196,6 @@ void CGuild::Invite( entt::entity inviter, entt::entity invitee )
 	m_GuildInviteEventMap.insert(EventMap::value_type(ecs::PlayerRuntime::GetPlayerID(invitee), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
 
 	//
-	// ʴ ޴ character  ʴ Ŷ
 	//
 
 	uint32_t gid = GetID();

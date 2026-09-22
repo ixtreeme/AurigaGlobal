@@ -57,19 +57,14 @@ bool LoadSplashImageFromResource(std::vector<unsigned char>& outData)
 }
 
 
-// Splash megjelenítése közvetlenül memóriából – soha nem ír temp fájlt,
-// ezzel elkerüljük a "Dropper" AV detektálást.
 void ShowEmbeddedSplash(int delayMS)
 {
     using namespace Gdiplus;
 
-    // 1. Kép betöltése az erőforrásból
     std::vector<unsigned char> img;
     if (!LoadSplashImageFromResource(img))
         return;
 
-    // 2. IStream létrehozása közvetlenül a memória bufferből
-    //    – SHCreateMemStream nem igényel fájlt, csak egy byte tömböt
     IStream* pStream = SHCreateMemStream(
         reinterpret_cast<const BYTE*>(img.data()),
         static_cast<UINT>(img.size()));
@@ -77,7 +72,6 @@ void ShowEmbeddedSplash(int delayMS)
     if (!pStream)
         return;
 
-    // 3. GDI+ Bitmap betöltése az IStream-ből (soha nem érinti a lemezt)
     Bitmap* bmp = Bitmap::FromStream(pStream);
     pStream->Release();
 
@@ -96,7 +90,6 @@ void ShowEmbeddedSplash(int delayMS)
         return;
     }
 
-    // 4. Ablak létrehozása és megjelenítése
     HWND hwnd = CreateWindowExW(
         WS_EX_LAYERED | WS_EX_TOPMOST,
         AY_OBFUSCATE(L"STATIC"),
@@ -280,8 +273,7 @@ namespace AntiHook
 
 
 
-            // 🔥 ÚJ: heurisztikus COM2 / injektor detektálás
-            if (counter % 5 == 0) // pl. minden 3. körben
+            if (counter % 5 == 0)
             {
                 using AntiHook::Heuristics::SuspiciousModule;
 
@@ -296,11 +288,9 @@ namespace AntiHook
                         s.mod.name.c_str(), s.score, s.reason.c_str());
                     AppendLog(buf);
 
-                    // IXAC report – ide te raksz saját event nevet / kódot
                     IXAC_ReportCheat(); // vagy IXAC_ReportCheatWithReason("HEURISTIC_MOD", ...)
                     Sleep(2500);
-                    // Választható: azonnali terminálás
-                    TerminateProcess(GetCurrentProcess(), 0xC02); // saját error code
+                    TerminateProcess(GetCurrentProcess(), 0xC02);
                     return;
                 }
             }
@@ -319,7 +309,6 @@ namespace AntiHook
             if (counter % 5 == 0)
                 AntiTamper::Scan(LOG_FILE);
 
-            // Themida / VMProtect / WinLicense packer detektálás futó processzekben
             if (counter % 5 == 0)
                 AntiHook::PackerGuard::ScanProcessesForPackers(LOG_FILE);
 
@@ -357,10 +346,6 @@ namespace AntiHook
 
         try
         {
-            /*SignerGuard::SetBlockedSigner(
-                L"BOOST - NET KRZYSZTOF ZAGÓRSKI"
-            );*/
-            // Baseline inicializálás
             ExceptionGuard::Init();
             TextGuard::Init();
             SyscallScanner::InitSyscallBaseline();

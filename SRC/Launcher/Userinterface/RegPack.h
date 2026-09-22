@@ -23,7 +23,6 @@ inline bool PackInitialize(const char* c_pszFolder)
 	CEterPackManager::Instance().SetSearchMode(CEterPackManager::SEARCH_PACK);
 
 	//PackMode::Instance().SetPackMode();
-	//CEterPackManager::Instance().RegisterPack("pack/bgm.AG", ""); Nem innen olvassuk már.
 	CEterPackManager::Instance().RegisterPack("pack/building.AG", "");
 	CEterPackManager::Instance().RegisterPack("pack/effect.AG", "");
 	CEterPackManager::Instance().RegisterPack("pack/etc.AG", "");

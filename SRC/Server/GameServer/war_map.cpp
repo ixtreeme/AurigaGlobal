@@ -337,7 +337,6 @@ void CWarMap::STeamData::AppendMember(entt::entity ch)
 
 void CWarMap::STeamData::RemoveMember(entt::entity ch)
 {
-	// set_pidJoiner 는 누적 인원을 계산하기 때문에 제거하지 않는다
 	--iMemberCount;
 }
 
@@ -734,11 +733,9 @@ bool CWarMap::CheckScore()
 	if (m_bEnded)
 		return true;
 
-	// 30초 이후 부터 확인한다.
 	if (get_dword_time() - m_dwStartTime < 30000)
 		return false;
 
-	// 점수가 같으면 체크하지 않는다.
 	if (m_TeamData[0].iScore == m_TeamData[1].iScore)
 		return false;
 

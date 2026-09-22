@@ -147,7 +147,7 @@ void CActorInstance::ReservingMotionProcess()
 
 void CActorInstance::CurrentMotionProcess()
 {
-	if (MOTION_TYPE_LOOP == m_kCurMotNode.iMotionType) // 임시다. 최종적인 목표는 Once도 절대로 넘어가선 안된다. - [levites]
+	if (MOTION_TYPE_LOOP == m_kCurMotNode.iMotionType)
 		if (m_kCurMotNode.dwcurFrame >= m_kCurMotNode.dwFrameCount)
 			m_kCurMotNode.dwcurFrame = 0;
 
@@ -163,7 +163,6 @@ void CActorInstance::CurrentMotionProcess()
 
 	bool isLooping=false;
 
-	// 끝났다면 Playing Flag를 끈다
 	if (m_pkCurRaceMotionData && m_pkCurRaceMotionData->IsLoopMotion())
 	{
 		if (m_kCurMotNode.iLoopCount > 1 || m_kCurMotNode.iLoopCount == -1)

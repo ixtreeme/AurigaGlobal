@@ -123,9 +123,9 @@ bool CPythonApplication::SetCursorNum(int iCursorNum)
 	}
 	else
 	{
-		if (__IsContinuousChangeTypeCursor(m_iCursorNum))		// 현재 커서가 지속 커서일때만
+		if (__IsContinuousChangeTypeCursor(m_iCursorNum))
 		{
-			m_iContinuousCursorNum = m_iCursorNum;			// 현재의 커서를 저장한다.
+			m_iContinuousCursorNum = m_iCursorNum;
 		}
 	}
 

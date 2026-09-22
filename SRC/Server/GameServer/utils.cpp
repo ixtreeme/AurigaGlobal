@@ -66,12 +66,11 @@ size_t str_lower(const char * src, char * dest, size_t dest_size)
 		return len;
 	}
 
-	// \0 자리 확보
 	--dest_size;
 
 	while (*src && len < dest_size)
 	{
-		*dest = LOWER(*src); // LOWER 매크로에서 ++나 --하면 안됨!!
+		*dest = LOWER(*src);
 
 		++src;
 		++dest;
@@ -99,7 +98,6 @@ const char *one_argument(const char *argument, char *first_arg, size_t first_siz
 		return nullptr;
 	}
 
-	// \0 자리 확보
 	--first_size;
 
 	skip_spaces(&argument);
@@ -149,7 +147,6 @@ const char *first_cmd(const char *argument, char *first_arg, size_t first_arg_si
 	size_t cur_len = 0;
 	skip_spaces(&argument);
 
-	// \0 자리 확보
 	first_arg_size -= 1;
 
 	while (*argument && !isnhspace(*argument) && cur_len < first_arg_size)

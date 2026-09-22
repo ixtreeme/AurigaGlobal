@@ -159,7 +159,6 @@ bool CPythonNetworkStream::RecvKeyAgreementPacket()
 	size_t agreedLength = Prepare(packetToSend.data, &dataLength);
 	if (agreedLength == 0)
 	{
-		// 초기화 실패
 		Disconnect();
 		return false;
 	}
@@ -167,7 +166,6 @@ bool CPythonNetworkStream::RecvKeyAgreementPacket()
 
 	if (Activate(packet.wAgreedLength, packet.data, packet.wDataLength))
 	{
-		// Key agreement 성공, 응답 전송
 		packetToSend.bHeader = HEADER_CG_KEY_AGREEMENT;
 		packetToSend.wAgreedLength = (WORD)agreedLength;
 		packetToSend.wDataLength = (WORD)dataLength;
@@ -181,7 +179,6 @@ bool CPythonNetworkStream::RecvKeyAgreementPacket()
 	}
 	else
 	{
-		// 키 협상 실패
 		Disconnect();
 		return false;
 	}

@@ -171,7 +171,6 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char * c_pszFileName)
 
 			if (!ITEM_MANAGER::instance().GetVnumByOriginalName(d[i].szItemName, dwItemVnum))
 			{
-				// 이름으로 못찾으면 번호로 검색
 				str_to_number(dwItemVnum, d[i].szItemName);
 				if (!ITEM_MANAGER::instance().GetTable(dwItemVnum))
 				{
@@ -544,7 +543,6 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 				// @fixme148 END
 				else
 				{
-					//    1   "기술 수련서"   1   100
 					if (0 == dwVnum)
 						fprintf(fp, "	%d	%s	%d	%d\n", k, name.c_str(), iCount, iProb);
 					else

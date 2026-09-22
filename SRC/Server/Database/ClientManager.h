@@ -52,11 +52,6 @@ public:
 #endif
 
 	// MYSHOP_PRICE_LIST
-	/// 아이템 가격정보 리스트 요청 정보
-	/**
-	 * first: Peer handle
-	 * second: 요청한 플레이어의 ID
-	 */
 	typedef std::pair< uint32_t, uint32_t >		TItemPricelistReqInfo;
 	// END_OF_MYSHOP_PRICE_LIST
 
@@ -83,7 +78,6 @@ public:
 			player_id = dwPID;
 		}
 		;
-		//독일선물기능용 생성자
 		ClientHandleInfo(uint32_t argHandle, uint32_t dwPID, uint32_t accountId): account_index(0), login{}, safebox_password{},
 		                                                                 ip{}
 		{
@@ -136,7 +130,7 @@ public:
 
 	//int	GetPlayerDeleteLevelLimit() { return m_iPlayerDeleteLevelLimit; }
 
-	uint32_t	GetUserCount();	// 접속된 사용자 수를 리턴 한다.
+	uint32_t	GetUserCount();
 
 	void	SendAllGuildSkillRechargePacket();
 	void	SendTime();
@@ -162,23 +156,11 @@ public:
 	void			UpdateItemCache();
 
 	// MYSHOP_PRICE_LIST
-	/// 가격정보 리스트 캐시를 가져온다.
-	/**
-	 * @param [in]	dwID 가격정보 리스트의 소유자.(플레이어 ID)
-	 * @return	가격정보 리스트 캐시의 포인터
-	 */
 	CItemPriceListTableCache* GetItemPriceListCache(uint32_t dwID);
 
-	/// 가격정보 리스트 캐시를 넣는다.
-	/**
-	 * @param [in]	pItemPriceList 캐시에 넣을 아이템 가격정보 리스트
-	 *
-	 * 캐시가 이미 있으면 Update 가 아닌 replace 한다.
-	 */
 	void			PutItemPriceListCache(const TItemPriceListTable* pItemPriceList);
 
 
-	/// Flush 시간이 만료된 아이템 가격정보 리스트 캐시를 Flush 해주고 캐시에서 삭제한다.
 	void			UpdateItemPriceListCache(void);
 	// END_OF_MYSHOP_PRICE_LIST
 
@@ -197,8 +179,8 @@ public:
 	void			SendNotice(const char* c_pszFormat, ...);
 
 	// @fixme203 directly GetCommand instead of strcpy
-	char* GetCommand(char* str, char* command);		//독일선물기능에서 명령어 얻는 함수
-	void			ItemAward(CPeer* peer, char* login);	//독일 선물 기능
+	char* GetCommand(char* str, char* command);
+	void			ItemAward(CPeer* peer, char* login);
 
 protected:
 	void	Destroy();
@@ -231,9 +213,6 @@ protected:
 	void		SendItemExtraProtoTable(CPeer* peer);
 #endif
 
-	// mob_proto.txt, item_proto.txt에서 읽은 mob_proto, item_proto를 real db에 반영.
-	//	item_proto, mob_proto를 db에 반영하지 않아도, 게임 돌아가는데는 문제가 없지만,
-	//	운영툴 등에서 db의 item_proto, mob_proto를 읽어 쓰기 때문에 문제가 발생한다.
 	bool		MirrorMobTableIntoDB();
 	bool		MirrorItemTableIntoDB();
 
@@ -318,21 +297,8 @@ protected:
 	// END_PLAYER_INDEX_CREATE_BUG_FIX
 
 	// MYSHOP_PRICE_LIST
-	/// 가격정보 로드 쿼리에 대한 Result 처리
-	/**
-	 * @param	peer 가격정보를 요청한 Game server 의 peer 객체 포인터
-	 * @param	pMsg 쿼리의 Result 로 받은 객체의 포인터
-	 *
-	 * 로드된 가격정보 리스트를 캐시에 저장하고 peer 에게 리스트를 보내준다.
-	 */
 	void		RESULT_PRICELIST_LOAD(CPeer* peer, SQLMsg* pMsg);
 
-	/// 가격정보 업데이트를 위한 로드 쿼리에 대한 Result 처리
-	/**
-	 * @param	pMsg 쿼리의 Result 로 받은 객체의 포인터
-	 *
-	 * 로드된 정보로 가격정보 리스트 캐시를 만들고 업데이트 받은 가격정보로 업데이트 한다.
-	 */
 	void		RESULT_PRICELIST_LOAD_FOR_UPDATE(SQLMsg* pMsg);
 	// END_OF_MYSHOP_PRICE_LIST
 
@@ -415,7 +381,6 @@ protected:
 
 
 
-	// 결혼
 	void		MarriageAdd(TPacketMarriageAdd* p);
 	void		MarriageUpdate(TPacketMarriageUpdate* p);
 	void		MarriageRemove(TPacketMarriageRemove* p);
@@ -433,20 +398,9 @@ protected:
 #endif
 
 	// MYSHOP_PRICE_LIST
-	// 개인상점 가격정보
 
-	/// 아이템 가격정보 리스트 업데이트 패킷(HEADER_GD_MYSHOP_PRICELIST_UPDATE) 처리함수
-	/**
-	 * @param [in]	pPacket 패킷 데이터의 포인터
-	 */
 	void		MyshopPricelistUpdate(const TItemPriceListTable* pPacket); // @fixme403 (TPacketMyshopPricelistHeader to TItemPriceListTable)
 
-	/// 아이템 가격정보 리스트 요청 패킷(HEADER_GD_MYSHOP_PRICELIST_REQ) 처리함수
-	/**
-	 * @param	peer 패킷을 보낸 Game server 의 peer 객체의 포인터
-	 * @param [in]	dwHandle 가격정보를 요청한 peer 의 핸들
-	 * @param [in]	dwPlayerID 가격정보 리스트를 요청한 플레이어의 ID
-	 */
 	void		MyshopPricelistRequest(CPeer* peer, uint32_t dwHandle, uint32_t dwPlayerID);
 	// END_OF_MYSHOP_PRICE_LIST
 
@@ -467,7 +421,7 @@ protected:
 
 private:
 	int					m_looping;
-	socket_t				m_fdAccept;	// 접속 받는 소켓
+	socket_t				m_fdAccept;
 	TPeerList				m_peerList;
 
 	CPeer* m_pkAuthPeer;
@@ -484,7 +438,6 @@ private:
 	typedef std::unordered_map<uint32_t, CLoginData*> TLoginDataByAID;
 	TLoginDataByAID				m_map_pkLoginDataByAID;
 
-	// Login LoginData pair (실제 로그인 되어있는 계정)
 	typedef std::unordered_map<std::string, CLoginData*> TLogonAccountMap;
 	TLogonAccountMap			m_map_kLogonAccount;
 
@@ -519,10 +472,10 @@ private:
 
 	bool					m_bShutdowned;
 
-	TPlayerTableCacheMap			m_map_playerCache;  // 플레이어 id가 key
+	TPlayerTableCacheMap			m_map_playerCache;
 
-	TItemCacheMap				m_map_itemCache;  // 아이템 id가 key
-	TItemCacheSetPtrMap			m_map_pkItemCacheSetPtr;  // 플레이어 id가 key, 이 플레이어가 어떤 아이템 캐쉬를 가지고 있나?
+	TItemCacheMap				m_map_itemCache;
+	TItemCacheSetPtrMap			m_map_pkItemCacheSetPtr;
 
 #ifdef ENABLE_BATTLE_PASS
 	std::vector<TBattlePassRanking*> m_vec_battlePassRanking;
@@ -533,8 +486,7 @@ private:
 #endif
 
 	// MYSHOP_PRICE_LIST
-	/// 플레이어별 아이템 가격정보 리스트 map. key: 플레이어 ID, value: 가격정보 리스트 캐시
-	TItemPriceListCacheMap m_mapItemPriceListCache;  ///< 플레이어별 아이템 가격정보 리스트
+	TItemPriceListCacheMap m_mapItemPriceListCache;
 	// END_OF_MYSHOP_PRICE_LIST
 
 	TChannelStatusMap m_mChannelStatus;
@@ -679,8 +631,6 @@ private:
 
 	//BOOT_LOCALIZATION
 public:
-	/* 로컬 정보 초기화
-	 **/
 	bool InitializeLocalization();
 
 private:

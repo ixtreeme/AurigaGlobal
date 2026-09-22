@@ -6,8 +6,8 @@
 
 typedef struct SMobSplashAttackInfo
 {
-	uint32_t	dwTiming; // 스킬 사용 후 실제로 데미지 먹힐때까지 기다리는 시간 (ms)
-	uint32_t	dwHitDistance; // 스킬 사용시 실제로 스킬 계산이 되는 거리 (전방 몇cm)
+	uint32_t	dwTiming;
+	uint32_t	dwHitDistance;
 
 	SMobSplashAttackInfo(uint32_t dwTiming, uint32_t dwHitDistance)
 		: dwTiming(dwTiming)

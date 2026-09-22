@@ -6,7 +6,7 @@
 
 typedef struct SMobRankStat
 {
-	int iGoldPercent;   // µ·ÀÌ ³ª¿Ã È®·ü
+	int iGoldPercent;
 } TMobRankStat;
 
 typedef struct SMobStat
@@ -170,7 +170,7 @@ extern const int		aiMobResistsApplyIdx[MOB_RESISTS_MAX_NUM];
 
 extern const int		aSkillAttackAffectProbByRank[MOB_RANK_MAX_NUM];
 
-extern const int aiItemMagicAttributePercentHigh[ITEM_ATTRIBUTE_MAX_LEVEL]; // 1°³±îÁö
+extern const int aiItemMagicAttributePercentHigh[ITEM_ATTRIBUTE_MAX_LEVEL];
 extern const int aiItemMagicAttributePercentLow[ITEM_ATTRIBUTE_MAX_LEVEL];
 
 extern const int aiItemAttributeAddPercent[ITEM_ATTRIBUTE_MAX_NUM];

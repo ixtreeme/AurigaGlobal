@@ -605,9 +605,6 @@ namespace quest
 		lua_settop(L, x);
 	}
 
-	/**
-	 * @version 05/06/08	Bang2ni - __get_guildid_byname ��ũ��Ʈ �Լ� ���
-	 */
 	bool CQuestManager::InitializeLua()
 	{
 //#if LUA_V == 503

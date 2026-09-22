@@ -110,7 +110,6 @@ void CPythonTextTail::UpdateAllTextTail()
 		{
 			UpdateDistance(pixelPos, itorChat->second);
 
-			// NOTE : Chat TextTailÀÌ ÀÖÀ¸¸é Ä³¸¯�
 			if (itorChat->second->bNameFlag)
 			{
 				uint32_t dwVID = itorChat->first;
@@ -147,7 +146,6 @@ void CPythonTextTail::UpdateShowingTextTail()
 		TTextTail* pTextTail = *itor;
 		UpdateTextTail(pTextTail);
 
-		// NOTE : Chat TextTailÀÌ ÀÖÀ» °æ¿ì À§Ä¡¸¦ ¹Ù²Û´Ù.
 		TChatTailMap::iterator itor = m_ChatTailMap.find(pTextTail->dwVirtualID);
 		if (m_ChatTailMap.end() != itor)
 		{
@@ -181,7 +179,6 @@ void CPythonTextTail::UpdateTextTail(TTextTail* pTextTail)
 	pTextTail->x = floorf(pTextTail->x);
 	pTextTail->y = floorf(pTextTail->y);
 
-	// NOTE : 13m ¹Û¿¡ ÀÖÀ»¶§¸¸ ±íÀÌ¸¦ ³Ö½À´Ï´Ù - [levites]
 	if (pTextTail->fDistanceFromPlayer < 1300.0f)
 	{
 		pTextTail->z = 0.0f;
@@ -335,7 +332,6 @@ void CPythonTextTail::ArrangeTextTail()
 
 		float fxAdd = 0.0f;
 
-		// Mark À§Ä¡ ¾÷µ¥ÀÌÆ®
 		CGraphicMarkInstance* pMarkInstance = pTextTail->pMarkInstance;
 		CGraphicTextInstance* pGuildNameInstance = pTextTail->pGuildNameTextInstance;
 		if (pMarkInstance && pGuildNameInstance)
@@ -361,7 +357,6 @@ void CPythonTextTail::ArrangeTextTail()
 			int nameWidth, nameHeight;
 			pTextTail->pTextInstance->GetTextSize(&nameWidth, &nameHeight);
 
-			// Név magassága alapján menj feljebb
 			float offsetY = -(float)nameHeight - 25.0f;
 
 			pTextTail->pMountCountInstance->SetHorizonalAlign(CGraphicTextInstance::HORIZONTAL_ALIGN_CENTER);
@@ -390,8 +385,6 @@ void CPythonTextTail::ArrangeTextTail()
 //			const float offsetY = 12.0f; // 
 //
 //			pTextTail->pMountCountInstance->SetPosition(
-//				pTextTail->x,             // középpont
-//				pTextTail->y + offsetY,   // függőleges eltolás
 //				pTextTail->z
 //			);
 //			pTextTail->pMountCountInstance->Update();
@@ -423,7 +416,7 @@ void CPythonTextTail::ArrangeTextTail()
 				int iLevelWidth, iLevelHeight;
 				pLevel->GetTextSize(&iLevelWidth, &iLevelHeight);
 
-				if (LocaleService_IsEUROPE()) // µ¶ÀÏ¾î´Â ¸íÄªÀÌ ±æ¾î ¿À¸¥Á¤·Ä
+				if (LocaleService_IsEUROPE())
 				{
 					pLevel->SetPosition(pTextTail->x - (iNameWidth / 2) - iTitleWidth, pTextTail->y, pTextTail->z);
 				}
@@ -578,12 +571,10 @@ void CPythonTextTail::Render()
 
 void CPythonTextTail::RenderTextTailBox(TTextTail* pTextTail)
 {
-	// °ËÀº»ö �
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
 	if (pTextTail->bIsShop)
 	{
-		// °ËÀº»ö �
 		CPythonGraphic::Instance().SetDiffuseColor(0.0f, 0.0f, 0.0f, 1.0f);
 		CPythonGraphic::Instance().RenderBox2d(pTextTail->x + pTextTail->xStart - 10.f,
 			pTextTail->y + pTextTail->yStart - 10.f,
@@ -610,7 +601,6 @@ void CPythonTextTail::RenderTextTailBox(TTextTail* pTextTail)
 		pTextTail->y + pTextTail->yEnd,
 		pTextTail->z);
 
-	// °ËÀº»ö �
 	CPythonGraphic::Instance().SetDiffuseColor(0.0f, 0.0f, 0.0f, 0.3f);
 	CPythonGraphic::Instance().RenderBar2d(pTextTail->x + pTextTail->xStart,
 		pTextTail->y + pTextTail->yStart,
@@ -641,8 +631,6 @@ void CPythonTextTail::RenderTextTailName(TTextTail* pTextTail)
 #endif
 void CPythonTextTail::HideAllTextTail()
 {
-	// NOTE : Show AllÀ» ÇØÁØµÚ Hide AllÀ» ÇØÁÖÁö ¾ÊÀ¸¸é ¹®Á¦ ¹ß»ý °¡´É¼º ÀÖÀ½
-	//        µðÀÚÀÎ ÀÚÃ¼°¡ ±×·¸°Ô ±ò²ûÇÏ°Ô µÇÁö ¾Ê¾ÒÀ½ - [levites]
 	m_CharacterTextTailList.clear();
 	m_ItemTextTailList.clear();
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
@@ -717,7 +705,6 @@ void CPythonTextTail::ShowCharacterTextTail(uint32_t VirtualID)
 	}
 #endif
 
-	// Ha már a listában van, nem tesszük be újra
 	if (std::find(m_CharacterTextTailList.begin(), m_CharacterTextTailList.end(), pTextTail) != m_CharacterTextTailList.end())
 		return;
 
@@ -772,7 +759,6 @@ void CPythonTextTail::ShowItemTextTail(uint32_t VirtualID)
 
 	if (m_ItemTextTailList.end() != std::find(m_ItemTextTailList.begin(), m_ItemTextTailList.end(), pTextTail))
 	{
-		//Tracef("ÀÌ¹Ì ¸®½ºÆ®¿¡ ÀÖÀ½ : %d\n", VirtualID);
 		return;
 	}
 
@@ -975,7 +961,6 @@ void CPythonTextTail::RegisterMountCountTextTail(uint32_t dwVID, const std::stri
 	if (!pInstance->IsPC())
 		return;
 
-	// Keressünk rá a létező MountCount TextTail-re CSAK a listában!
 	TTextTail* pTextTail = nullptr;
 
 	for (auto it = m_CharacterTextTailList.begin(); it != m_CharacterTextTailList.end(); ++it)
@@ -989,7 +974,6 @@ void CPythonTextTail::RegisterMountCountTextTail(uint32_t dwVID, const std::stri
 
 	if (!pTextTail)
 	{
-		// Új Tail csak a MountCount-hoz
 		pTextTail = m_TextTailPool.Alloc();
 		memset(pTextTail, 0, sizeof(TTextTail));
 		pTextTail->dwVirtualID = dwVID;
@@ -1006,11 +990,9 @@ void CPythonTextTail::RegisterMountCountTextTail(uint32_t dwVID, const std::stri
 
 		m_CharacterTextTailList.push_back(pTextTail);
 
-		// ⚠️ NINCS insert a m_CharacterTextTailMap-be!
 	}
 	else
 	{
-		// Már létezik → csak frissítjük a szöveget
 		pTextTail->pMountCountInstance->SetValue(mountText.c_str());
 		pTextTail->pMountCountInstance->SetColor(255, 204, 0);
 		pTextTail->pMountCountInstance->Update();
@@ -1644,7 +1626,6 @@ void CPythonTextTail::AttachMountCount(uint32_t dwVID, const char* szText, const
 //		pTextTail->pMountCountIconInstance = nullptr;
 //	}
 //#endif
-	// Létrehozás vagy újrainicializálás, ha invalid
 	if (!pTextTail->pMountCountInstance || (uintptr_t)pTextTail->pMountCountInstance < 0x10000)
 	{
 		if (pTextTail->pMountCountInstance)
@@ -1664,7 +1645,6 @@ void CPythonTextTail::AttachMountCount(uint32_t dwVID, const char* szText, const
 	}
 	else
 	{
-		// Már létezik → új érték, új szín
 		pTextTail->pMountCountInstance->SetTextPointer(ms_pFont);
 		
 	}
@@ -1693,12 +1673,10 @@ void CPythonTextTail::AttachMountCountWithIcon(uint32_t dwVID, const char* szTex
 	if (!pTextTail)
 		return;
 
-	// 🔒 Elmentjük a self-heal adatokat
 	pTextTail->MountCountText = szText;
 	pTextTail->MountCountColor = color;
 	pTextTail->MountCountIconPath = szIconPath;
 
-	// Szöveg
 	if (!pTextTail->pMountCountInstance)
 	{
 		pTextTail->pMountCountInstance = CGraphicTextInstance::New();

@@ -307,7 +307,7 @@ EVENTFUNC(ready_to_start_event)
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart) + 4;
 
-				uint32_t dwOppList[8]; // �ִ� ��Ƽ�� 8�� �̹Ƿ�..
+				uint32_t dwOppList[8];
 
 				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(chBEntity);
 				TEMP_BUFFER buf;
@@ -356,7 +356,7 @@ EVENTFUNC(ready_to_start_event)
 
 				TEMP_BUFFER buf;
 				TEMP_BUFFER buf2;
-				uint32_t dwOppList[8]; // �ִ� ��Ƽ�� 8�� �̹Ƿ�..
+				uint32_t dwOppList[8];
 				TPacketGCDuelStart duelStart;
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart) + 4;
@@ -720,7 +720,6 @@ bool CArenaMap::CanAttack(entt::entity attacker, entt::entity victim)
 
 bool CArena::CanAttack(uint32_t dwPIDA, uint32_t dwPIDB)
 {
-	// 1:1 ���� �ٴ�� �� ��� ���� �ʿ�
 	if (m_dwPIDA == dwPIDA && m_dwPIDB == dwPIDB) return true;
 	if (m_dwPIDA == dwPIDB && m_dwPIDB == dwPIDA) return true;
 
@@ -856,7 +855,6 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	}
 	else
 	{
-		// ���� �ȵȴ� ?!
 	}
 
 	if (restart == false)

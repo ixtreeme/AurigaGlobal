@@ -137,7 +137,6 @@ namespace quest
 			//
 
 			///////////////////////////////////////////////////////////////////////////
-			// 순서 Index (여러개 있을 수 있으므로 있는 것임, 실제 index 값은 쓰지 않음)
 			j = i;
 			i = s.find('.', i + 1);
 
@@ -433,7 +432,6 @@ namespace quest
 
 		void operator()(PC::QuestInfoIterator& itPCQuest, NPC::QuestMapType::iterator& itQuestMap)
 		{
-			// 없으니 새로 시작
 			uint32_t dwQuestIndex = itQuestMap->first;
 
 			if (NPC::HasStartState(itQuestMap->second) && CQuestManager::instance().CanStartQuest(dwQuestIndex))
@@ -511,8 +509,6 @@ namespace quest
 			for (int i = 0; i < fMatch.size; i++)
 			{
 				if ( i != 0 ) {
-					//2012.05.14 <김용욱> : 퀘스트 매니저의 m_pCurrentPC가 바뀌는 경우가 발생하여,
-					//두개 이상의 스크립트를 실행시, 두번째 부터는 퀘스트 매니저의 PC 값을 새로 셋팅한다.
 					//PC * pPC = CQuestManager::instance().GetPC(pc.GetID());
 				}
 
@@ -812,7 +808,6 @@ namespace quest
 		QuestMapType & rmapEventOwnQuest = m_mapOwnQuest[EventIndex];
 		QuestMapType::iterator itQuestMap = rmapEventOwnQuest.find(quest_index);
 
-		// 그런 퀘스트가 없음
 		if (itQuestMap == rmapEventOwnQuest.end())
 			return false;
 
@@ -824,7 +819,6 @@ namespace quest
 		}
 		else
 		{
-			// 새로 시작할까요?
 			if (CQuestManager::instance().CanStartQuest(itQuestMap->first, pc) && HasStartState(itQuestMap->second))
 				iState = 0;
 			else

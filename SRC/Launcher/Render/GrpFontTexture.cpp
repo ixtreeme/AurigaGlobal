@@ -210,7 +210,7 @@ CGraphicFontTexture::TCharacterInfomation* CGraphicFontTexture::UpdateCharacterI
 	wchar_t keyValue = code.second;
 
 	if (keyValue == 0x08)
-		keyValue = L' '; // 탭은 공백으로 바꾼다 (아랍 출력시 탭 사용: NAME:\tTEXT -> TEXT\t:NAME 로 전환됨 )
+		keyValue = L' ';
 
 	ABCFLOAT	stABC;
 	SIZE		size;

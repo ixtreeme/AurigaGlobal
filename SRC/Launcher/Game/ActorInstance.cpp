@@ -123,7 +123,6 @@ void CActorInstance::OnUpdate()
 }
 
 
-// 2004.07.05.myevan. 궁신탄영 맵에 끼이는 문제해결
 IBackground& CActorInstance::GetBackground()
 {
 	return IBackground::Instance();
@@ -213,7 +212,6 @@ void CActorInstance::SetFishingPosition(D3DXVECTOR3 & rv3Position)
 	m_v3FishingPosition = rv3Position;
 }
 
-// ActorInstanceMotion.cpp 에 넣도록 하자
 void  CActorInstance::Move()
 {
 	if (m_isWalking)
@@ -796,9 +794,6 @@ void CActorInstance::AdjustDynamicCollisionMovement(const CActorInstance * c_pAc
 		return;
 	}
 
-	// NOTE : 기존의 Sphere Overlap됬을경�?처리가 비비기를 하면은 Penetration될 위험이 많아서 ( 실제로도 나왔고 --)
-	// Sphere간 Collision이 생겼을 경우 이전위치로 RollBack하는 방식으로 바꿨다.
-	// 단 BGObject에 대해서만.
 
 	if (isAttacking() )
 		return;
@@ -808,7 +803,6 @@ void CActorInstance::AdjustDynamicCollisionMovement(const CActorInstance * c_pAc
 	{
 		BlockMovement();
 
-		//Movement초기화
 	/*	m_v3Movement = D3DXVECTOR3(0.f,0.f,0.f);
 
 		TCollisionPointInstanceListIterator itMain = m_BodyPointInstanceList.begin();
@@ -872,7 +866,6 @@ void CActorInstance::__AdjustCollisionMovement(const CGraphicObjectInstance * c_
 		return;
 	}
 
-	// Body는 하나임을 가정합니다.
 
 	if (m_v3Movement.x == 0.0f && m_v3Movement.y == 0.0f && m_v3Movement.z == 0.0f)
 		return;

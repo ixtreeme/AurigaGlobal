@@ -169,28 +169,24 @@
 //Razor93 defines//
 #define ENABLE_TARGET_DAMAGE_RAZOR93//Razor93
 #define ENABLE_MONKEY_DUNGI_BY_RAZOR93 ////Razor93 majom run mob SetHP logika
-#define ENABLE_UPGRADE_NOTICE_BY_RAZOR93 //Razor93 +7 fölött sikeres fejlesztes ingame akkor hyperlinket kuld chatre
-#define ENABLE_RARE_DROP_NOTICE_RAZOR93 // Cahr_battle.cpp ben listázott itemeket ha dropol ingame akkor hyperlinket kuld chatre
-#define ENABLE_APPLY_NORMAL_HIT_DAMAGE_BONUS_50_NOTICE_RAZOR93 //50 fölött ak t forgat a player ingame akkor hyperlinket kuld chatre
+#define ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+#define ENABLE_RARE_DROP_NOTICE_RAZOR93
+#define ENABLE_APPLY_NORMAL_HIT_DAMAGE_BONUS_50_NOTICE_RAZOR93
 #ifdef ENABLE_APPLY_NORMAL_HIT_DAMAGE_BONUS_50_NOTICE_RAZOR93
-#define BONUSZ 50 // ertek fölött küldi a BroadcastNotice-t
-#define BONUSZ_TIME 30 //spam védelem
+#define BONUSZ 50
+#define BONUSZ_TIME 30
 
 #endif
-#define ENABLE_GUILD_ATTRIBUTE					// Céh bónusz rendszer
+#define ENABLE_GUILD_ATTRIBUTE
 //#define ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 #define ENABLE_FAKE_SHOP_HEADER
 #define ENABLE_SHARED_MOUNT_INVENTORY_RAZOR93
-//#define DISABLE_EXP_FROM_STONES_RAZOR93 //metinkövek nem adnak exp-t
-#define ENABLE_COSTUME_EFFECT_ATTR_BONUS_RAZOR93 //fegyver,vért effect bónuszok olvasása proto apply_type
-//#define DISABLE_CORE_PULSE_RAZOR93 // mountra fel le szállást nem tudják spamelni
-//#define MOUNT_COUNT_UPDATE_TIME_RAZOR93 5 //eltarolja a mount countot,ha  valtozik a csak akkor küldi a packetet a kliensnek PASSES_PER_SEC
+#define ENABLE_COSTUME_EFFECT_ATTR_BONUS_RAZOR93
 #define ENABLE_120_SHOP_SLOT_RAZOR93 // 3x nagyobb npc shop
 #define ENABLE_MAX_100K_DMG_ON_EVENT_MAP_RAZOR93 // 1 es mapindexen mindenki 100k sebez 
-#define DISABLE_PC_ATTACK_PC_ON_MAPIDEX1 // 1 es map indexen játékos nem sebez játékost
-//#define DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP // event mapon nem sebez normál távolsági támadás
-#define NAGYFASZU_MINING_CHANCE 60 // sikeres bányászat esélye
-#define ENABLE_NINJA_SANGONG_X30_RAZOR93 //ninja köpés átlagos sebzés szorozva SKILLX értékkel
+#define DISABLE_PC_ATTACK_PC_ON_MAPIDEX1
+#define NAGYFASZU_MINING_CHANCE 60
+#define ENABLE_NINJA_SANGONG_X30_RAZOR93
 #ifdef ENABLE_NINJA_SANGONG_X30_RAZOR93
 #define SKILLX 36 //
 #endif
@@ -201,47 +197,47 @@
 
 #define LEADERBOARD_RAZOR93
 
-#define ENABLE_EVENT_QUIZ_RAZOR93 //kvíz event
+#define ENABLE_EVENT_QUIZ_RAZOR93
 //#define ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9// ez lufasz
 #define SPAWN_COUNT 100 // /m valami 100 
 //#define PET_EXPTABLE /home/Server/srv1/share/locale/germany/exppettable.txt
 
 
-#define SSTONE_DROP_INFO_PTC 5 //constatts.cpp ben   érték szorzója //Razo93
+#define SSTONE_DROP_INFO_PTC 5
 #define LEADERBOARD_RAZOR93
 #define ENABLE_MAP1_SKILL_MOB
-#define ENABLE_APPLYTYPE5_RAZOR93 //applytype5 bónuszok
+#define ENABLE_APPLYTYPE5_RAZOR93
 #ifndef ENABLE_APPLYTYPE5_RAZOR93
 	#define APPLY_MAX_NUM_ 3 
 #else
-	#define APPLY_MAX_NUM_ 5 //applytype5 bónuszok miatt 5-re
+	#define APPLY_MAX_NUM_ 5
 #endif
-#define ENABLE_NEWEXP_CALCULATION_RAZOR93	//új exp számítási mód Razor93
+#define ENABLE_NEWEXP_CALCULATION_RAZOR93
 #define AFFECT_EXP_ITEM_RAZOR93 
-#define DISABLE_USE_STAMINA_RAZOR93 //staminát nem von le
+#define DISABLE_USE_STAMINA_RAZOR93
 #define DISABLE_GOLD_DROP_FROM_TAKAKA	// takaka nem dob aranyat
 	#ifdef DISABLE_GOLD_DROP_FROM_TAKAKA
 #define TANAKA 5000 // takaka vnum
 #endif
-#define ENABLE_MINUS_COUNT_FIX_RAZOR93	// item count mínuszba nem mehet
+#define ENABLE_MINUS_COUNT_FIX_RAZOR93
 #define ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93 
-#define NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93 // új pont exp dupla bónusz
-#define ENABLE_MUSIN_SCROLL_REFINE_100_SUCCESS_RAZOR93 // musin scrollal 100% sikeres fejlesztés	
+#define NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
+#define ENABLE_MUSIN_SCROLL_REFINE_100_SUCCESS_RAZOR93
 
-#define ENABLE_QUEST_SYSTEM_BUGFIXES // quest rendszer hibajavítások Razor93
-#define ENABLE_FREE_PASS_RAZOR93 // ingame free pass item használat 
-#define ENABLE_CHRISTMAS_WHEEL_OF_DESTINY //  sorskerék event battlepasshoz
+#define ENABLE_QUEST_SYSTEM_BUGFIXES
+#define ENABLE_FREE_PASS_RAZOR93
+#define ENABLE_CHRISTMAS_WHEEL_OF_DESTINY
 #define ENABLE_MOUNT_INVENTORY_FIX_RAZOR93
 #define HEADER_GD_PLAYER_SAVE_SIZE_CHECK
 #define ENABLE_GIRD_BUG_FIX
 #define ENABLE_DUNGEON_SHARED_DROP_HWID
-#define ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93 // metinkövekböl kijön az összes mob ha 1 hitel ölik a követ 
+#define ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 #define ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93 // napi jutalom hwid limit
 #define ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
 #define KET_BONUSZOS_KOVEK
 #define ENABLE_ITEM_ON_TITLE_RAZOR93				// Item on title system (equip title item shows as "[tag]Name")
 #define DISABLE_SKILL_BOOK_NEED_EXP
 #define ENABLE_DROP_INSTANT_INVENTORY
-#define ENABLE_OFFLINESHOP_CLEAR_CHACHE //napi 1 x éjjel törli az offline shop cache-t, hogy ne legyenek benne olyan itemek amik már sold
+#define ENABLE_OFFLINESHOP_CLEAR_CHACHE
 #define ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
 #endif

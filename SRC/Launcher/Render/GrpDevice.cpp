@@ -274,7 +274,6 @@ static uint32_t   s_MaxTextureWidth, s_MaxTextureHeight;
 
 bool EL3D_ConfirmDevice(D3DCAPS9 & rkD3DCaps, UINT uBehavior)
 {
-	// PUREDEVICE는 GetTransform / GetViewport 등이 되지 않는다.
 	if (uBehavior & D3DCREATE_PUREDEVICE)
 		return FALSE;
 
@@ -463,7 +462,6 @@ RETRY:
 		if (ErrorCorrection)
 			return CREATE_DEVICE;
 
-		// 2004. 1. 9 myevan 큰의미 없는 코드인듯.. 에러나면 표시하고 종료하자
 		iReflashRate = 0;
 		++ErrorCorrection;
 		iRet = CREATE_REFRESHRATE;

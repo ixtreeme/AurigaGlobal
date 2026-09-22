@@ -38,8 +38,6 @@ void CActorInstance::OnRender()
 	kMtrl.Diffuse=D3DXCOLOR(m_dwMtrlColor);
 	STATEMANAGER.SetMaterial(&kMtrl);
 
-	// 현재는 이렇게.. 최종적인 형태는 Diffuse와 Blend의 분리로..
-	// 아니면 이런 형태로 가되 Texture & State Sorting 지원으로.. - [levites]
 	STATEMANAGER.SaveRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
 	switch(m_iRenderMode)

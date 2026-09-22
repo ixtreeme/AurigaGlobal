@@ -212,7 +212,6 @@ int CPrivManager::GetPriv(entt::entity character, uint8_t type)
 {
 	if (character == entt::null || !g_registry.valid(character))
 		return 0;
-	// ĳ������ ���� ��ġ�� -��� ������ -�� ����ǰ�
 	int val_ch = GetPrivByCharacter(ecs::PlayerRuntime::GetPlayerID(character), type);
 
 	if (val_ch < 0 && !ItemSystem::IsEquipUniqueItem(character, UNIQUE_ITEM_NO_BAD_LUCK_EFFECT))
@@ -221,7 +220,6 @@ int CPrivManager::GetPriv(entt::entity character, uint8_t type)
 	{
 		int val;
 
-		// ����, ����, ���, ��ü �� ū ���� ���Ѵ�.
 		val = MAX(val_ch, GetPrivByEmpire(0, type));
 		val = MAX(val, GetPrivByEmpire(ecs::PlayerRuntime::GetEmpire(character), type));
 

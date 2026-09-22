@@ -99,8 +99,6 @@ LPSECTREE SECTREE_MAP::Find(uint32_t x, uint32_t y)
 
 void SECTREE_MAP::Build()
 {
-    // Ŭ���̾�Ʈ���� �ݰ� 150m ĳ������ ������ �ֱ�����
-    // 3x3ĭ -> 5x5 ĭ���� �ֺ�sectree Ȯ��(�ѱ�)
 	struct neighbor_coord_s
 	{
 		int x;
@@ -117,7 +115,6 @@ void SECTREE_MAP::Build()
 	};
 
 	//
-	// ��� sectree�� ���� ���� sectree�� ����Ʈ�� �����.
 	//
 	MapType::iterator it = map_.begin();
 
@@ -126,7 +123,7 @@ void SECTREE_MAP::Build()
 		LPSECTREE tree = it->second;
 		tree->m_neighbor_list.clear();
 
-		tree->m_neighbor_list.push_back(tree); // �ڽ��� �ִ´�.
+		tree->m_neighbor_list.push_back(tree);
 
 		LOG_TRACE("{}x{}", static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y));
 
@@ -194,7 +191,6 @@ LPSECTREE SECTREE_MANAGER::Get(int32_t dwIndex, int32_t x, int32_t y)
 }
 
 // -----------------------------------------------------------------------------
-// Setting.txt �� ���� SECTREE �����
 // -----------------------------------------------------------------------------
 int SECTREE_MANAGER::LoadSettingFile(int32_t lMapIndex, const char * c_pszSettingFileName, TMapSetting & r_setting)
 {
@@ -425,7 +421,6 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 	for (int y = 0; y < iHeight; ++y)
 		for (int x = 0; x < iWidth; ++x)
 		{
-			// UNION ���� ��ǥ�� ���ĸ��� uint32_t���� ���̵�� ����Ѵ�.
 			SECTREEID id;
 			id.coord.x = (r_setting.iBaseX / SECTREE_SIZE) + x;
 			id.coord.y = (r_setting.iBaseY / SECTREE_SIZE) + y;
@@ -497,7 +492,6 @@ bool SECTREE_MANAGER::GetRecallPositionByEmpire(int32_t iMapIndex, uint8_t bEmpi
 {
 	auto it = m_vec_mapRegion.begin();
 
-	// 10000�� �Ѵ� ���� �ν��Ͻ� �������� �����Ǿ��ִ�.
 	if (iMapIndex >= 10000)
 	{
 		iMapIndex /= 10000;
@@ -642,7 +636,7 @@ const TMapRegion * SECTREE_MANAGER::FindRegionByPartialName(const char* szMapNam
 		TMapRegion & rRegion = *(it++);
 
 		if (rRegion.strMapName.find(szMapName))
-			return &rRegion; // ĳ�� �ؼ� ������ ����
+			return &rRegion;
 	}
 
 	return nullptr;
@@ -742,7 +736,6 @@ int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapB
 		if (true == test_server)
 			LOG_INFO("[BUILD] Build {} {} {} ", c_pszMapBasePath, szMapName, iIndex);
 
-		// ���� �� �������� �� ���� ���͸� �����ؾ� �ϴ°� Ȯ�� �Ѵ�.
 		if (map_allow_find(iIndex))
 		{
 			LPSECTREE_MAP pkMapSectree = BuildSectreeFromSetting(setting);
@@ -946,7 +939,7 @@ bool SECTREE_MANAGER::GetRandomLocation(int32_t lMapIndex, PIXEL_POSITION & r_po
 
 int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 {
-	if (lMapIndex >= 10000) // 10000�� �̻��� ���� ����. (Ȥ�� �̹� private �̴�)
+	if (lMapIndex >= 10000)
 		return 0;
 
 	LPSECTREE_MAP pkMapSectree = GetMap(lMapIndex);
@@ -1031,7 +1024,7 @@ int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 
 void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 {
-	if (lMapIndex < 10000) // private map �� �ε����� 10000 �̻� �̴�.
+	if (lMapIndex < 10000)
 		return;
 
 	LPSECTREE_MAP pkMapSectree = GetMap(lMapIndex);
@@ -1039,11 +1032,7 @@ void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 	if (!pkMapSectree || pkMapSectree->IsDraining())
 		return;
 
-	// �� �� ���� ���� �����ϴ� �͵��� ���� ���ش�.
 	// WARNING:
-	// �� �ʿ� ������ � Sectree���� �������� ���� �� ����
-	// ���� ���⼭ delete �� �� �����Ƿ� �����Ͱ� ���� �� ������
-	// ���� ó���� �ؾ���
 	pkMapSectree->DrainEntities();
 
 	m_map_pkSectree.erase(lMapIndex);
@@ -1070,7 +1059,7 @@ TAreaMap& SECTREE_MANAGER::GetDungeonArea(int32_t lMapIndex)
 
 	if (it == m_map_pkArea.end())
 	{
-		return m_map_pkArea[-1]; // �ӽ÷� �� Area�� ����
+		return m_map_pkArea[-1];
 	}
 	return it->second;
 }
@@ -1093,7 +1082,6 @@ void SECTREE_MANAGER::SendNPCPosition(entt::entity ch)
 
 	TNPCPosition np = {};
 
-	// TODO m_mapNPCPosition[lMapIndex] �� �����ּ���
 
 
 	for (auto it = m_mapNPCPosition[lMapIndex].begin(); it != m_mapNPCPosition[lMapIndex].end(); ++it)
@@ -1402,7 +1390,6 @@ bool SECTREE_MANAGER::ForAttrRegion(int32_t lMapIndex, int32_t lStartX, int32_t 
 	}
 
 	//
-	// ������ ��ǥ�� Cell �� ũ�⿡ ���� Ȯ���Ѵ�.
 	//
 
 	lStartX	-= lStartX % CELL_SIZE;
@@ -1411,7 +1398,6 @@ bool SECTREE_MANAGER::ForAttrRegion(int32_t lMapIndex, int32_t lStartX, int32_t 
 	lEndY	+= lEndY % CELL_SIZE;
 
 	//
-	// Cell ��ǥ�� ���Ѵ�.
 	//
 
 	int32_t lCX = lStartX / CELL_SIZE;

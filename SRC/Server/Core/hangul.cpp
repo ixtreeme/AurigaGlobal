@@ -1,9 +1,3 @@
-/*
- *    Filename: hangul.c
- * Description: 한글 관련 구현 소스
- *
- *      Author: 비엽 aka. Cronan
- */
 #define __LIBTHECORE__
 #include "stdafx.h"
 

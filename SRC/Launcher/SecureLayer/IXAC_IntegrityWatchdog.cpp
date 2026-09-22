@@ -1,4 +1,3 @@
-// IXAC_IntegrityWatchdog.cpp – UserInterface.exe / AurigaGlobal.exe oldal
 #include <windows.h>
 #include <cstdint>
 #include <cstdio>
@@ -26,7 +25,6 @@ static uint32_t Fnv1a32(const uint8_t* data, size_t size)
     return hash;
 }
 
-// PE header (DOS + NT + section headerek) hash-elése
 static bool ComputePeHeaderHash(HMODULE hMod, size_t& outSize, uint32_t& outHash)
 {
     if (!hMod)
@@ -43,11 +41,10 @@ static bool ComputePeHeaderHash(HMODULE hMod, size_t& outSize, uint32_t& outHash
 
     // section headerek kezdete
     auto* firstSection = IMAGE_FIRST_SECTION(nt);
-    // utolsó section header utáni cím
     auto* endSection = firstSection + nt->FileHeader.NumberOfSections;
 
     uint8_t* start = reinterpret_cast<uint8_t*>(hMod);          // modul eleje (DOS header kezdete)
-    uint8_t* end = reinterpret_cast<uint8_t*>(endSection);    // section headerek vége
+    uint8_t* end = reinterpret_cast<uint8_t*>(endSection);
 
     if (end <= start)
         return false;
@@ -89,10 +86,6 @@ static bool GetModuleTextRegion(HMODULE hMod, uint8_t*& outBase, size_t& outSize
 
 static void OnIxacTampered()
 {
-    // Itt már azt csinálsz, amit akarsz:
-    // - IXAC log szerverre küldés
-    // - msgbox / csendes kilépés
-    // - ban jelzés stb.
     MessageBoxA(nullptr,
         AY_OBFUSCATE("IXAC integrity check FAILED.\n"),
         AY_OBFUSCATE("IXAC Anti-Cheat"),
@@ -112,14 +105,12 @@ static DWORD WINAPI IxacIntegrityThread(LPVOID)
             return 0;
         }
 
-        // 1) cím ellenõrzése – ha a cheat újratölti máshova, ez is bukik
         if (reinterpret_cast<uintptr_t>(hIxac) != g_IxacModuleBase)
         {
             OnIxacTampered();
             return 0;
         }
 
-        // 2) .text szekció kikeresése (EGYSZER, és ezt használjuk mindenhez)
         uint8_t* textBase = nullptr;
         size_t   textSize = 0;
         if (!GetModuleTextRegion(hIxac, textBase, textSize))
@@ -128,14 +119,12 @@ static DWORD WINAPI IxacIntegrityThread(LPVOID)
             return 0;
         }
 
-        // opcionális: ha a loader valamiért átírná a méretet, ez is jelez
         if (textSize != g_IxacTextSize)
         {
             OnIxacTampered();
             return 0;
         }
 
-        // 3) memória jogok ellenõrzése a .text elején
         MEMORY_BASIC_INFORMATION mbiText{};
         if (!VirtualQuery(textBase, &mbiText, sizeof(mbiText)))
         {
@@ -143,24 +132,20 @@ static DWORD WINAPI IxacIntegrityThread(LPVOID)
             return 0;
         }
 
-        // A Protect-ben vannak extra bitek (PAGE_GUARD stb.), ezeket levágjuk
         DWORD prot = mbiText.Protect & 0xFF;
 
-        // Ha a .text RWX, az nagyon gyanús (normál esetben csak EXECUTE_READ)
         if (prot == PAGE_EXECUTE_READWRITE || prot == PAGE_EXECUTE_WRITECOPY)
         {
             OnIxacTampered();
             return 0;
         }
 
-        // .text-nek végrehajthatónak kell lennie
         if (!(prot & (PAGE_EXECUTE | PAGE_EXECUTE_READ)))
         {
             OnIxacTampered();
             return 0;
         }
 
-        // 4) PE header integritás ellenõrzése (ahogy eddig)
         {
             size_t   curPeSize = 0;
             uint32_t curPeHash = 0;
@@ -177,7 +162,6 @@ static DWORD WINAPI IxacIntegrityThread(LPVOID)
             }
         }
 
-        // 5) .text hash ellenõrzés (ugyanarra a textBase/textSize-re)
         uint32_t currentHash = Fnv1a32(textBase, textSize);
         if (currentHash != g_IxacTextHash)
         {
@@ -185,12 +169,11 @@ static DWORD WINAPI IxacIntegrityThread(LPVOID)
             return 0;
         }
 
-        Sleep(1500); // 1.5s-enként elég ellenõrizni
+        Sleep(1500);
     }
 }
 
 
-// Ezt hívd meg valahol a kliens indításakor, miután betöltötted az IXAC.dll-t
 bool InitIxacIntegrityWatchdog()
 {
     HMODULE hIxac = LoadLibraryW(AY_OBFUSCATE(L"IXAC.dll"));
@@ -208,11 +191,9 @@ bool InitIxacIntegrityWatchdog()
     if (!pFn(&g_IxacModuleBase, &g_IxacTextSize, &g_IxacTextHash))
         return false;
 
-    // ÚJ: PE header baseline a kliens oldalon számolva
     if (!ComputePeHeaderHash(hIxac, g_IxacPeHeaderSize, g_IxacPeHeaderHash))
         return false;
 
-    // Watchdog szál indítása
     HANDLE hThread = CreateThread(nullptr, 0, IxacIntegrityThread, nullptr, 0, nullptr);
     if (!hThread)
         return false;

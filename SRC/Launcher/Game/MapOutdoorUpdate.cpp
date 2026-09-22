@@ -8,7 +8,6 @@
 #include "TerrainQuadtree.h"
 #include "ActorInstance.h"
 
-// 2004.08.17.myevan.std::vector 를 사용할 경우 메모리 접근에 오래걸려 스택쪽으로 계산하도록 수정
 class PCBlocker_CDynamicSphereInstanceVector
 {
 public:
@@ -255,7 +254,7 @@ void CMapOutdoor::__Game_UpdateArea(D3DXVECTOR3& v3Player)
 	D3DXVECTOR3 v3Target = pCamera->GetTarget();
 	D3DXVECTOR3 v3Eye = pCamera->GetEye();
 
-	D3DXVECTOR3 v3Light = D3DXVECTOR3(1.732f, 1.0f, -3.464f); // 빛의 방향
+	D3DXVECTOR3 v3Light = D3DXVECTOR3(1.732f, 1.0f, -3.464f);
 	v3Light *= 50.0f / D3DXVec3Length(&v3Light);
 
 	/*
@@ -751,7 +750,6 @@ void CMapOutdoor::UpdateTerrain(float fX, float fY)
 #ifndef ENABLE_MAP_PERFORMANCE
 		UpdateAreaList(lRealCenterX, lRealCenterY);
 #endif
-		//Tracef("사용하는 Area, Terrain : (%d, %d), 지울 Area, Terrain : (%d, %d)\n",
 		//	m_AreaVector.size(), m_TerrainVector.size(), m_AreaDeleteVector.size(), m_TerrainDeleteVector.size());
 	}
 }

@@ -59,41 +59,6 @@ struct emotion_type_s
 	{ "����",	"exercise",				0,				1.0f	},
 	{ "����",	"pushup",				0,				1.0f	},
 	{ "\n",	"\n",		0,						0.0f },
-	/*
-	//{ "Ű��",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_FRENCH_KISS,	 1.0f },
-	{ "�ǻ�",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_KISS,		 1.0f },
-	{ "���ȱ�",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_SHORT_HUG,	 1.0f },
-	{ "����",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_LONG_HUG,		 1.0f },
-	{ "�������",	NEED_PC | SELF_DISARM,				MOTION_ACTION_PUT_ARMS_SHOULDER, 0.0f },
-	{ "��¯",		NEED_PC	| WOMAN_ONLY | SELF_DISARM,		MOTION_ACTION_FOLD_ARM,		 0.0f },
-	{ "����",		NEED_PC | SELF_DISARM,				MOTION_ACTION_SLAP,		 1.5f },
-
-	{ "���Ķ�",		0,						MOTION_ACTION_CHEER_01,		 0.0f },
-	{ "����",		0,						MOTION_ACTION_CHEER_02,		 0.0f },
-	{ "�ڼ�",		0,						MOTION_ACTION_CHEER_03,		 0.0f },
-
-	{ "ȣȣ",		0,						MOTION_ACTION_LAUGH_01,		 0.0f },
-	{ "űű",		0,						MOTION_ACTION_LAUGH_02,		 0.0f },
-	{ "������",		0,						MOTION_ACTION_LAUGH_03,		 0.0f },
-
-	{ "����",		0,						MOTION_ACTION_CRY_01,		 0.0f },
-	{ "����",		0,						MOTION_ACTION_CRY_02,		 0.0f },
-
-	{ "�λ�",		0,						MOTION_ACTION_GREETING_01,	0.0f },
-	{ "����",		0,						MOTION_ACTION_GREETING_02,	0.0f },
-	{ "�����λ�",	0,						MOTION_ACTION_GREETING_03,	0.0f },
-
-	{ "��",		0,						MOTION_ACTION_INSULT_01,	0.0f },
-	{ "���",		SELF_DISARM,					MOTION_ACTION_INSULT_02,	0.0f },
-	{ "����",		0,						MOTION_ACTION_INSULT_03,	0.0f },
-
-	{ "�����",		0,						MOTION_ACTION_ETC_01,		0.0f },
-	{ "������",	0,						MOTION_ACTION_ETC_02,		0.0f },
-	{ "��������",	0,						MOTION_ACTION_ETC_03,		0.0f },
-	{ "��������",	0,						MOTION_ACTION_ETC_04,		0.0f },
-	{ "ơ",		0,						MOTION_ACTION_ETC_05,		0.0f },
-	{ "��",		0,						MOTION_ACTION_ETC_06,		0.0f },
-	 */
 };
 
 
@@ -130,11 +95,9 @@ static bool CanEmotion(entt::entity character)
 	if (g_bDisableEmotionMask)
 		return true;
 #endif
-	// ��ȥ�� �ʿ����� ����� �� �ִ�.
 	if (marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(character)))
 		return true;
 
-	// ������ ���� ����� ����� �� �ִ�.
 	if (ItemSystem::IsEquipUniqueItem(character, UNIQUE_ITEM_EMOTION_MASK))
 		return true;
 
@@ -290,7 +253,7 @@ ACMD(do_emotion)
 	if (len < 0 || len >= (int) sizeof(chatbuf))
 		len = sizeof(chatbuf) - 1;
 
-	++len;  // \0 ���� ����
+	++len;
 
 	TPacketGCChat pack_chat;
 	pack_chat.header = HEADER_GC_CHAT;

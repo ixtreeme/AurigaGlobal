@@ -390,7 +390,6 @@ void CPythonApplication::UpdateGame()
 
 	uint32_t t2 = ELTimer_GetMSec();
 
-	//!@# Alt+Tab 중 SetTransfor 에서 튕김 현상 해결을 위해 - [levites]
 	//if (m_isActivateWnd)
 	{
 		CScreen s;
@@ -441,8 +440,6 @@ void CPythonApplication::UpdateGame()
 	m_pyPlayer.Update();
 	uint32_t t11 = ELTimer_GetMSec();
 
-	// NOTE : Update 동안 위치 값이 바뀌므로 다시 얻어 옵니다 - [levites]
-	//        이 부분 때문에 메인 케릭터의 Sound가 이전 위치에서 플레이 되는 현상이 있었음.
 	m_pyPlayer.NEW_GetMainActorPosition(&kPPosMainActor);
 	SetCenterPosition(kPPosMainActor.x, kPPosMainActor.y, kPPosMainActor.z);
 	uint32_t t12 = ELTimer_GetMSec();
@@ -1282,14 +1279,12 @@ bool CPythonApplication::Create(PyObject* poSelf, const char* c_szName, int widt
 
 	CGraphicImageInstance::CreateSystem(32);
 
-	// 백업
 	STICKYKEYS sStickKeys;
 	memset(&sStickKeys, 0, sizeof(sStickKeys));
 	sStickKeys.cbSize = sizeof(sStickKeys);
 	SystemParametersInfo(SPI_GETSTICKYKEYS, sizeof(sStickKeys), &sStickKeys, 0);
 	m_dwStickyKeysFlag = sStickKeys.dwFlags;
 
-	// 설정
 	sStickKeys.dwFlags &= ~(SKF_AVAILABLE | SKF_HOTKEYACTIVE);
 	SystemParametersInfo(SPI_SETSTICKYKEYS, sizeof(sStickKeys), &sStickKeys, 0);
 
@@ -1336,8 +1331,6 @@ time_t CPythonApplication::GetServerTime()
 	return (ELTimer_GetMSec() - m_dwStartLocalTime) + m_tServerTime;
 }
 
-// 2005.03.28 - MALL 아이템에 들어있는 시간의 단위가 서버에서 time(0) 으로 만들어지는
-//              값이기 때문에 단위를 맞추기 위해 시간 관련 처리를 별도로 추가
 time_t CPythonApplication::GetServerTimeStamp()
 {
 	return (time(nullptr) - m_tLocalStartTime) + m_tServerTime;
@@ -1460,7 +1453,6 @@ void CPythonApplication::Destroy()
 	//m_SoundManager.Destroy();
 	m_grpDevice.Destroy();
 
-	// FIXME : 만들어져 있지 않음 - [levites]
 	//CSpeedTreeForestDirectX8::Instance().Clear();
 
 	CAttributeInstance::DestroySystem();

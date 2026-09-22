@@ -31,16 +31,16 @@ namespace UI
 
 			enum EFlags
 			{
-				FLAG_MOVABLE			= (1 <<  0),	// 움직일 수 있는 창
-				FLAG_LIMIT				= (1 <<  1),	// 창이 화면을 벗어나지 않음
-				FLAG_SNAP				= (1 <<  2),	// 스냅 될 수 있는 창
+				FLAG_MOVABLE			= (1 <<  0),
+				FLAG_LIMIT				= (1 <<  1),
+				FLAG_SNAP				= (1 <<  2),
 				FLAG_DRAGABLE			= (1 <<  3),
-				FLAG_ATTACH				= (1 <<  4),	// 완전히 부모에 붙어 있는 창 (For Drag / ex. ScriptWindow)
-				FLAG_RESTRICT_X			= (1 <<  5),	// 좌우 이동 제한
-				FLAG_RESTRICT_Y			= (1 <<  6),	// 상하 이동 제한
+				FLAG_ATTACH				= (1 <<  4),
+				FLAG_RESTRICT_X			= (1 <<  5),
+				FLAG_RESTRICT_Y			= (1 <<  6),
 				FLAG_NOT_CAPTURE		= (1 <<  7),
-				FLAG_FLOAT				= (1 <<  8),	// 공중에 떠있어서 순서 재배치가 되는 창
-				FLAG_NOT_PICK			= (1 <<  9),	// 마우스에 의해 Pick되지 않는 창
+				FLAG_FLOAT				= (1 <<  8),
+				FLAG_NOT_PICK			= (1 <<  9),
 				FLAG_IGNORE_SIZE		= (1 << 10),
 				FLAG_RTL				= (1 << 11),	// Right-to-left
 			};
@@ -101,8 +101,7 @@ namespace UI
 			bool			IsIn(int32_t x, int32_t y);
 			bool			IsIn();
 			CWindow *		PickWindow(int32_t x, int32_t y);
-			CWindow *		PickTopWindow(int32_t x, int32_t y);	// NOTE : Children으로 내려가지 않고 상위에서만
-															//        체크 하는 특화된 함수
+			CWindow *		PickTopWindow(int32_t x, int32_t y);
 
 			void			__RemoveReserveChildren();
 

@@ -309,7 +309,6 @@ static bool IS_SUMMON_ITEM(int vnum)
 
 
 
-// item socket º¹»ç -- by mhh
 
 
 
@@ -335,7 +334,6 @@ namespace ecs::PlayerRuntime {
 
 void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
 {
-	// > WEAR_MAX_NUM : ?¡EY1¢ 11µÐµµ.
 	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
 	{
 		LOG_ERROR("SetWear: invalid item cell {}", bCell);
@@ -402,7 +400,7 @@ namespace NPartyPickupDistribute
 				{
 					ecs::PointSystem::Change(member, POINT_GOLD, iMoney, true);
 
-					if (iMoney > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
+					if (iMoney > 1000)
 					{
 						LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(member, iMoney, "GET_GOLD", ""));
 					}
@@ -608,7 +606,7 @@ bool ItemSystem::DropGold(entt::entity e, int64_t gold)
 			//Motion(MOTION_PICKUP);
 			ecs::PointSystem::Change(e, POINT_GOLD, -gold, true);
 
-			if (gold > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
+			if (gold > 1000)
 				LogManager::instance().CharLog(e, gold, "DROP_GOLD", "");
 
 #ifdef TEXTS_IMPROVEMENT
@@ -671,7 +669,6 @@ int CalculateConsume(entt::entity chEntity)
 		consumeLife = needLife;
 
 
-		// CheckMinLifeForWarp: µ¶¿¡ ÀÇÇØ¼­ Á×À¸¸é ¾ÈµÇ¹Ç·Î »ý¸í·Â ÃÖ¼Ò·®´Â ³²°ÜÁØ´Ù
 		const int minPercent = WARP_MIN_LIFE_PERCENT;
 		const int minLife = ecs::PointSystem::GetMaxHP(chEntity) * minPercent / 100;
 		if (curLife - needLife < minLife)
@@ -715,7 +712,7 @@ void NotifyRefineFail(entt::entity ch, entt::entity item, const char* way, int s
 enum enum_RefineScrolls
 {
 	CHUKBOK_SCROLL = 0,
-	HYUNIRON_CHN = 1, // Áß±¹¿¡¼­¸¸ »ç¿ë
+	HYUNIRON_CHN = 1,
 	YONGSIN_SCROLL = 2,
 	MUSIN_SCROLL = 3,
 	YAGONG_SCROLL = 4,
@@ -827,8 +824,6 @@ void ecs::SocialSystem::SendMyShopPriceListCmd(entt::entity e, uint32_t dwItemVn
 
 
 //
-// DB Ä³½Ã·Î ºÎ�
-// Í ¹ÞÀº ¸®½ºÆ®¸¦ User ¿¡°Ô Àü¼ÛÇÏ°í »óÁ¡À» ¿­¶ó´Â Ä¿¸Çµå¸¦ º¸³½´Ù.
 //
 
 void ecs::SocialSystem::UseSilkBotaryReal(entt::entity e, const TPacketMyshopPricelistHeader* p)
@@ -836,8 +831,6 @@ void ecs::SocialSystem::UseSilkBotaryReal(entt::entity e, const TPacketMyshopPri
 	const TItemPriceInfo* pInfo = (const TItemPriceInfo*)(p + 1);
 
 	if (!p->byCount)
-		// °¡°Ý ¸®½ºÆ®°¡ ¾ø´Ù. dummy µ¥ÀÌ�
-// Í¸¦ ³ÖÀº Ä¿¸Çµå¸¦ º¸³»ÁØ´Ù.
 		ecs::SocialSystem::SendMyShopPriceListCmd(e, 1, 0);
 	else {
 		for (int idx = 0; idx < p->byCount; idx++)
@@ -852,10 +845,6 @@ void ecs::SocialSystem::UseSilkBotaryReal(entt::entity e, const TPacketMyshopPri
 }
 
 //
-// ÀÌ¹ø Á¢¼Ó ÈÄ Ã³À½ »óÁ¡À» Open ÇÏ´Â °æ¿ì ¸®½ºÆ®¸¦ Load ÇÏ±â À§ÇØ DB Ä³½Ã¿¡ °¡°ÝÁ¤º¸ ¸®½ºÆ® ¿äÃ» ÆÐ�
-// ¶À» º¸³½´Ù.
-// ÀÌÈÄºÎ�
-// Í´Â ¹Ù·Î »óÁ¡À» ¿­¶ó´Â ÀÀ´äÀ» º¸³½´Ù.
 //
 
 // END_OF_MYSHOP_PRICE_LIST
@@ -1155,32 +1144,25 @@ const uint8_t g_aBuffOnAttrPoints[] = { POINT_ENERGY, POINT_COSTUME_ATTR_BONUS }
 
 
 
-//±ÍÈ¯ºÎ, ±ÍÈ¯±â¾ïºÎ, °áÈ¥¹ÝÁö
 bool IS_SUMMONABLE_ZONE(int map_index)
 {
 	switch (map_index)
 	{
-	case 66: // »ç±Í�
-// ¸¿ö
-	case 71: // °�
-// ¹Ì ´øÀü 2Ãþ
-	case 72: // ÃµÀÇ µ¿±¼
-	case 73: // ÃµÀÇ µ¿±¼ 2Ãþ
-	case 193: // °�
-// ¹Ì ´øÀü 2-1Ãþ
-		//		case 206 : // ¾Æ±Íµ¿±¼
-	case 216: // ¾Æ±Íµ¿±¼
-	case 217: // °�
-// ¹Ì ´øÀü 3Ãþ
-	case 208: // ÃµÀÇ µ¿±¼ (¿ë¹æ)
+	case 66:
+	case 71:
+	case 72:
+	case 73:
+	case 193:
+	case 216:
+	case 217:
+	case 208:
 
-	case 113: // OX Event ¸Ê
+	case 113:
 		return false;
 	}
 
 	if (CBattleArena::IsBattleArenaMap(map_index)) return false;
 
-	// ¸ðµç private ¸ÊÀ¸·Ð ¿öÇÁ ºÒ°¡´É
 	if (map_index > 10000) return false;
 
 	return true;
@@ -1204,10 +1186,6 @@ bool IS_BOTARYABLE_ZONE(int nMapIndex)
 	return false;
 }
 
-// item socket ÀÌ ÇÁ·Î�
-// ä�
-// ¸ÀÔ°ú °°ÀºÁö Ã¼�
-// © -- by mhh
 
 
 
@@ -1244,7 +1222,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 		assert(!"GetOwner exist");
 		return;
 	}
-	// ��o� A�oYA丮
 	switch (window_type)
 	{
 	case INVENTORY:
@@ -1334,7 +1311,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 		pMainInventory->items[storageCell] = itemEntity;
 	}
 	break;
-	// ?�EY1� A�oYA丮
 	case DRAGON_SOUL_INVENTORY:
 	{
 		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
@@ -1487,7 +1463,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 
 	if (ecs::PlayerRuntime::GetDesc(e))
 	{
-		// E�Aa 3AAIAU: 1�1�?!1� 3AAIAU �A�!�� ��o��� o�31�U
 		if (hasItem)
 		{
 			TPacketGCItemSet pack;
@@ -1788,18 +1763,8 @@ void AffectSystem::AutoRecallProcess(entt::entity e)
 }
 #endif
 
-/// ÇöÀç Ä³¸¯�
-// ÍÀÇ »ó�
-// Â¸¦ ¹Ù�
-// ÁÀ¸·Î ÁÖ¾îÁø itemÀ» Âø¿ëÇÒ ¼ö ÀÖ´Â Áö È®ÀÎÇÏ°í, ºÒ°¡´É ÇÏ´Ù¸é Ä³¸¯�
-// Í¿¡°Ô ÀÌÀ¯¸¦ ¾Ë·ÁÁÖ´Â ÇÔ¼ö
 #
 
-/// ÇöÀç Ä³¸¯�
-// ÍÀÇ »ó�
-// Â¸¦ ¹Ù�
-// ÁÀ¸·Î Âø¿ë ÁßÀÎ itemÀ» ¹þÀ» ¼ö ÀÖ´Â Áö È®ÀÎÇÏ°í, ºÒ°¡´É ÇÏ´Ù¸é Ä³¸¯�
-// Í¿¡°Ô ÀÌÀ¯¸¦ ¾Ë·ÁÁÖ´Â ÇÔ¼ö
 namespace ItemSystem {
 
 int GiveMoreTime_Per(entt::entity item, float fPercent)
@@ -1822,7 +1787,6 @@ int GiveMoreTime_Per(entt::entity item, float fPercent)
 			return given_time;
 		}
 	}
-	// ¿ì¼± ¿ëÈ¥¼®¿¡ °üÇØ¼­¸¸ ÇÏµµ·Ï ÇÑ´Ù.
 	else
 		return 0;
 }
@@ -1846,7 +1810,6 @@ int GiveMoreTime_Fix(entt::entity item, uint32_t dwTime)
 			return dwTime;
 		}
 	}
-	// ¿ì¼± ¿ëÈ¥¼®¿¡ °üÇØ¼­¸¸ ÇÏµµ·Ï ÇÑ´Ù.
 	else
 		return 0;
 }
@@ -2137,8 +2100,6 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 		return false;
 	}
 
-	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
-	//ÁøÇàÇÒ¼ö ¾øÀ½
 	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
 	{
 		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
@@ -2229,9 +2190,6 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 	if (prob <= prt->prob)
 #endif
 	{
-		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
-// Û È¹µæ
 		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
 
 		if (IsValidItem(pkNewItem))
@@ -2277,8 +2235,6 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 		else
 		{
 			// DETAIL_REFINE_LOG
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_vnum);
 			NotifyRefineFail(e, item, ecs::SocialSystem::IsRefineThroughGuild(e) ? "GUILD" : "POWER");
 			// END_OF_DETAIL_REFINE_LOG
@@ -2286,8 +2242,6 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 	}
 	else
 	{
-		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁü.
 		DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -cost);
 		NotifyRefineFail(e, item, ecs::SocialSystem::IsRefineThroughGuild(e) ? "GUILD" : "POWER");
 		AttrLog(item);
@@ -2317,8 +2271,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 
 	InventorySystem::ClearRefineMode(e);
 
-	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
-		//ÁøÇàÇÒ¼ö ¾øÀ½
 	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
 	{
 		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
@@ -2334,8 +2286,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 		return false;
 
 
-	// °³·®¼­ Ã¼�
-// ©
 	if (InventorySystem::GetRefineScrollCell(e) < 0)
 		return false;
 
@@ -2432,8 +2382,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 
 	if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN ||
 		GetItemValue(pkItemScroll, 0) == YONGSIN_SCROLL ||
-		GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL) // ÇöÃ¶, ¿ë½�
-// ÀÇ Ãàº¹¼­, ¾ß°øÀÇ ºñÀü¼­  Ã³¸®
+		GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL)
 	{
 		const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
 		const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
@@ -2452,8 +2401,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 			LOG_ERROR("REFINE : Unknown refine scroll item. Value0: {}", GetItemValue(pkItemScroll, 0));
 		}
 
-		if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌ�
-// ÛÀÌ ºÎ¼­Á®¾ß ÇÑ´Ù.
+		if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN)
 			bDestroyWhenFail = true;
 
 		// DETAIL_REFINE_LOG
@@ -2475,7 +2423,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL)
 	{
 		
-		success_prob += 100; // Musin izé mindig sikeres 
+		success_prob += 100;
 		if (success_prob > 100)
 			success_prob = 100;
 
@@ -2501,9 +2449,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 
 	if (prob <= success_prob)
 	{
-		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
-// Û È¹µæ
 		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
 
 		if (IsValidItem(pkNewItem))
@@ -2557,7 +2502,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 					0  // transmute2 
 				);
 
-				// Bónuszok
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					uint8_t type = GetItemAttributeType(pkNewItem, i);
@@ -2619,8 +2563,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 		}
 		else
 		{
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_vnum);
 			NotifyRefineFail(e, item, szRefineType);
 		}
@@ -2628,9 +2570,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 	}
 	else if (!bDestroyWhenFail && result_fail_vnum)
 	{
-		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌ�
-// Û È¹µæ
 		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
 
 		if (IsValidItem(pkNewItem))
@@ -2671,16 +2610,13 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 		}
 		else
 		{
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_fail_vnum);
 			NotifyRefineFail(e, item, szRefineType);
 		}
 	}
 	else
 	{
-		NotifyRefineFail(e, item, szRefineType); // °³·®½Ã ¾ÆÀÌ�
-// Û »ç¶óÁöÁö ¾ÊÀ½
+		NotifyRefineFail(e, item, szRefineType);
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 		CRefineManager::instance().Reset(e);
@@ -2703,8 +2639,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 
 	InventorySystem::ClearRefineMode(e);
 
-	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
-	//ÁøÇàÇÒ¼ö ¾øÀ½
 	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
 	{
 		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
@@ -2720,8 +2654,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 		return false;
 
 
-	// °³·®¼­ Ã¼�
-// ©
 	if (InventorySystem::GetRefineScrollCell(e) < 0)
 		return false;
 
@@ -2824,8 +2756,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 
 	if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN ||
 		GetItemValue(pkItemScroll, 0) == YONGSIN_SCROLL ||
-		GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL) // ÇöÃ¶, ¿ë½�
-// ÀÇ Ãàº¹¼­, ¾ß°øÀÇ ºñÀü¼­  Ã³¸®
+		GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL)
 	{
 		const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
 		const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
@@ -2844,8 +2775,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 			LOG_ERROR("REFINE : Unknown refine scroll item. Value0: {}", GetItemValue(pkItemScroll, 0));
 		}
 
-		if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌ�
-// ÛÀÌ ºÎ¼­Á®¾ß ÇÑ´Ù.
+		if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN)
 			bDestroyWhenFail = true;
 
 		// DETAIL_REFINE_LOG
@@ -2865,8 +2795,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 	}
 
 	// DETAIL_REFINE_LOG
-	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL) // ¹«½�
-// ÀÇ Ãàº¹¼­´Â 100% ¼º°ø (+4±îÁö¸¸)
+	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL)
 	{
 		success_prob = 100;
 
@@ -2892,9 +2821,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 
 	if (prob <= success_prob)
 	{
-		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
-// Û È¹µæ
 		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
 
 		if (pkNewItem != entt::null)
@@ -2948,7 +2874,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 					0  // transmute2 
 				);
 
-				// Bónuszok
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					uint8_t type = GetItemAttributeType(pkNewItem, i);
@@ -3010,8 +2935,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 		}
 		else
 		{
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_vnum);
 			NotifyRefineFail(e, item, szRefineType);
 		}
@@ -3019,9 +2942,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 	}
 	else if (!bDestroyWhenFail && result_fail_vnum)
 	{
-		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌ�
-// Û È¹µæ
 		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
 
 		if (pkNewItem != entt::null)
@@ -3062,16 +2982,13 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 		}
 		else
 		{
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_fail_vnum);
 			NotifyRefineFail(e, item, szRefineType);
 		}
 	}
 	else
 	{
-		NotifyRefineFail(e, item, szRefineType); // °³·®½Ã ¾ÆÀÌ�
-// Û »ç¶óÁöÁö ¾ÊÀ½
+		NotifyRefineFail(e, item, szRefineType);
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 		CRefineManager::instance().Reset(e);
@@ -3267,7 +3184,6 @@ bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditi
 #ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
 	int success_prob = prt->prob;
 
-	// Kijelzett esély igazítása scroll típus alapján (hogy a kliens ugyanazt lássa, mint amit a szerver használ)
 	if (bType != REFINE_TYPE_MONEY_ONLY)
 	{
 		const entt::entity pkScroll = GetInventoryItem(e, iAdditionalCell);
@@ -3352,8 +3268,6 @@ bool RefineItem(entt::entity e, entt::entity pkItem, entt::entity pkTarget)
 
 	if (GetItemSubType(pkItem) == USE_TUNING)
 	{
-		// XXX ¼º´É, ¼ÒÄÏ °³·®¼­´Â »ç¶óÁ³½À´Ï´Ù...
-		// XXX ¼º´É°³·®¼­´Â Ãàº¹ÀÇ ¼­°¡ µÇ¾ú´Ù!
 		// MUSIN_SCROLL
 		if (GetItemValue(pkItem, 0) == MUSIN_SCROLL)
 			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_MUSIN, GetItemCell(pkItem));
@@ -3403,7 +3317,6 @@ bool RefineItem(entt::entity e, entt::entity pkItem, entt::entity pkTarget)
 					AutoGiveItemEcs(e, socket);
 					//TItemTable* pTable = ITEM_MANAGER::instance().GetTable(GetItemSocket(pkTarget, i));
 					//SetItemSocket(pkTarget, i, pTable->alValues[2]);
-					// ±úÁøµ¹·Î ´ëÃ¼ÇØÁØ´Ù
 					SetItemSocketEcs(pkTarget, i, ITEM_BROKEN_METIN_VNUM);
 				}
 			}
@@ -3438,7 +3351,6 @@ void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem)
 	// END_OF_ACCESSORY_REFINE
 	else
 	{
-		// ¿©±â¼­ ±úÁø¼®ÀÌ ÀÚµ¿ÀûÀ¸·Î Ã»¼Ò µÊ
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 		{
 			if (!GetItemSocket(pkOldItem, i))
@@ -3447,7 +3359,6 @@ void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem)
 				SetItemSocket(pkNewItem, i, 1);
 		}
 
-		// ¼ÒÄÏ ¼³Á¤
 		int slot = 0;
 
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
@@ -3460,9 +3371,6 @@ void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem)
 
 	}
 
-	// ¸�
-// Á÷ ¾ÆÀÌ�
-// Û ¼³Á¤
 	CopyItemAttributesEcs(pkOldItem, pkNewItem);
 }
 
@@ -3504,13 +3412,6 @@ namespace InventorySystem {
 // is a special inventory and is deliberately not searched.
 int GetEmptyInventory(entt::entity e, uint8_t size)
 {
-	// NOTE: ÇöÀç ÀÌ ÇÔ¼ö´Â ¾ÆÀÌ�
-// Û Áö±Þ, È¹µæ µîÀÇ ÇàÀ§¸¦ ÇÒ ¶§ ÀÎº¥�
-// ä¸®ÀÇ ºó Ä­À» Ã£±â À§ÇØ »ç¿ëµÇ°í ÀÖ´Âµ¥,
-	//		º§Æ® ÀÎº¥�
-// ä¸®´Â Æ¯¼ö ÀÎº¥�
-// ä¸®ÀÌ¹Ç·Î °Ë»çÇÏÁö ¾Êµµ·Ï ÇÑ´Ù. (±âº» ÀÎº¥�
-// ä¸®: INVENTORY_MAX_NUM ±îÁö¸¸ °Ë»ç)
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 	const int inventoryLimit = std::min(GetInventorySize(e), (int)INVENTORY_MAX_NUM);
 	for (int i = 0; i < inventoryLimit; ++i)
@@ -3702,8 +3603,6 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 
 		int iPulse = thecore_pulse();
 
-		//Ã¢°í ¿¬ÈÄ Ã¼�
-// ©
 		if (iPulse - ecs::SocialSystem::GetSafeboxLoadTime(e) < PASSES_PER_SEC(g_nPortalLimitTime))
 		{
 #ifdef TEXTS_IMPROVEMENT
@@ -3712,9 +3611,6 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 			return false;
 		}
 
-		//°�
-// ·¡°ü·Ã Ã¢ Ã¼�
-// ©
 		if (ExchangeSystem::IsActive(e) || ecs::SocialSystem::GetMyShop(e) != entt::null || ecs::SocialSystem::GetShopOwner(e) != entt::null || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))
 		{
 #ifdef TEXTS_IMPROVEMENT
@@ -3734,8 +3630,6 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 #endif
 
 		//PREVENT_REFINE_HACK
-		//°³·®ÈÄ ½Ã°£Ã¼�
-// ©
 		{
 			if (iPulse - ecs::SocialSystem::GetRefineTime(e) < PASSES_PER_SEC(g_nPortalLimitTime))
 			{
@@ -3762,9 +3656,6 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 		//END_PREVENT_ITEM_COPY
 
 
-		//±ÍÈ¯ºÎ °�
-// ¸®Ã¼�
-// ©
 		if (GetItemVnum(item) != 70302)
 		{
 			PIXEL_POSITION posWarp;
@@ -3774,13 +3665,11 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 
 			double nDist = 0;
 			const double nDistant = 5000.0;
-			//±ÍÈ¯±â¾ïºÎ
 			if (GetItemVnum(item) == 22010)
 			{
 				x = GetItemSocket(item, 0) - ecs::PlayerRuntime::GetX(e);
 				y = GetItemSocket(item, 1) - ecs::PlayerRuntime::GetY(e);
 			}
-			//±ÍÈ¯ºÎ
 			else if (GetItemVnum(item) == 22000)
 			{
 				ecs::GetRecallPosition(ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetEmpire(e), posWarp);
@@ -3807,8 +3696,6 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 		}
 
 		//PREVENT_PORTAL_AFTER_EXCHANGE
-		//±³È¯ ÈÄ ½Ã°£Ã¼�
-// ©
 		if (iPulse - ExchangeSystem::GetLastExchangePulse(e) < PASSES_PER_SEC(g_nPortalLimitTime))
 		{
 #ifdef TEXTS_IMPROVEMENT
@@ -3820,9 +3707,6 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 
 	}
 
-	//º¸µû¸® ºñ´Ü »ç¿ë½Ã °�
-// ·¡Ã¢ Á¦ÇÑ Ã¼�
-// ©
 	if ((GetItemVnum(item) == 50200) || (GetItemVnum(item) == 71049)
 #ifdef KASMIR_PAKET_SYSTEM
 		|| (GetItemVnum(item) == 88901)
@@ -3849,8 +3733,7 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 	}
 	//END_PREVENT_TRADE_WINDOW
 
-	if (IS_SET(GetItemFlags(item), ITEM_FLAG_LOG)) // »ç¿ë ·Î±×¸¦ ³²±â´Â ¾ÆÀÌ�
-// Û Ã³¸®
+	if (IS_SET(GetItemFlags(item), ITEM_FLAG_LOG))
 	{
 		uint32_t vid = GetItemVID(item);
 		int oldCount = GetItemCount(item);
@@ -3864,8 +3747,7 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 
 		bool ret = UseItemEx(e, item, DestCell);
 
-		if (!IsValidItem(item)) // UseItemEx¿¡¼­ ¾ÆÀÌ�
-// ÛÀÌ »èÁ¦ µÇ¾ú´Ù. »èÁ¦ ·Î±×¸¦ ³²±è
+		if (!IsValidItem(item))
 		{
 			LogManager::instance().ItemLog(e, vid, vnum, "REMOVE", hint);
 		}
@@ -3973,16 +3855,10 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 	} */
 	// @fixme141 END
 
-	// ¾ÆÀÌ�
-// Û ÃÖÃÊ »ç¿ë ÀÌÈÄºÎ�
-// Í´Â »ç¿ëÇÏÁö ¾Ê¾Æµµ ½Ã°£ÀÌ Â÷°¨µÇ´Â ¹æ½Ä Ã³¸®.
 	if (-1 != iLimitRealtimeStartFirstUseFlagIndex)
 	{
-		// ÇÑ ¹øÀÌ¶óµµ »ç¿ëÇÑ ¾ÆÀÌ�
-// ÛÀÎÁö ¿©ºÎ´Â Socket1À» º¸°í ÆÇ´ÜÇÑ´Ù. (Socket1¿¡ »ç¿ëÈ½¼ö ±â·Ï)
 		if (0 == GetItemSocket(item, 1))
 		{
-			// »ç¿ë°¡´É½Ã°£Àº Default °ªÀ¸·Î Limit Value °ªÀ» »ç¿ëÇÏµÇ, Socket0¿¡ °ªÀÌ ÀÖÀ¸¸é ±× °ªÀ» »ç¿ëÇÏµµ·Ï ÇÑ´Ù. (´ÜÀ§´Â ÃÊ)
 			int32_t duration = (0 != GetItemSocket(item, 0)) ? GetItemSocket(item, 0) : GetItemProto(item)->aLimits[iLimitRealtimeStartFirstUseFlagIndex].lValue;
 
 			if (0 == duration)
@@ -4455,7 +4331,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 				switch (GetItemVnum(item))
 				{
-				case 71049: // ºñ´Üº¸µû¸®
+				case 71049:
 #ifdef KASMIR_PAKET_SYSTEM
 				case 88901:
 #endif
@@ -4503,12 +4379,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 	case ITEM_WEAPON:
 	case ITEM_ARMOR:
 	case ITEM_ROD:
-	case ITEM_RING:		// ½�
-// ±Ô ¹ÝÁö ¾ÆÀÌ�
-// Û
-	case ITEM_BELT:		// ½�
-// ±Ô º§Æ® ¾ÆÀÌ�
-// Û
+	case ITEM_RING:
+	case ITEM_BELT:
 		//ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "You can put in your Mount inventory");
 		// MINING
 	case ITEM_PICK:
@@ -4518,13 +4390,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 		else
 			UnequipItemEcs(e, item);
 		break;
-		// Âø¿ëÇÏÁö ¾ÊÀº ¿ëÈ¥¼®Àº »ç¿ëÇÒ ¼ö ¾ø´Ù.
-		// Á¤»óÀûÀÎ �
-// ¬¶ó¶ó¸é, ¿ëÈ¥¼®¿¡ °üÇÏ¿© item use ÆÐ�
-// ¶À» º¸³¾ ¼ö ¾ø´Ù.
-		// ¿ëÈ¥¼® Âø¿ëÀº item move ÆÐ�
-// ¶À¸·Î ÇÑ´Ù.
-		// Âø¿ëÇÑ ¿ëÈ¥¼®Àº ÃßÃâÇÑ´Ù.
 	case ITEM_DS:
 	{
 		if (!IsItemEquipped(item))
@@ -4950,7 +4815,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 				bool used = false;
 
-				if (GetItemValue(item, 0) != 0) // HP Àý´ë°ª È¸º¹
+				if (GetItemValue(item, 0) != 0)
 				{
 					if (ecs::PlayerRuntime::GetHP(e) < ecs::PointSystem::GetMaxHP(e))
 					{
@@ -4960,7 +4825,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					}
 				}
 
-				if (GetItemValue(item, 1) != 0)	// SP Àý´ë°ª È¸º¹
+				if (GetItemValue(item, 1) != 0)
 				{
 					if (ecs::PlayerRuntime::GetSP(e) < ecs::PointSystem::GetMaxSP(e))
 					{
@@ -4970,7 +4835,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					}
 				}
 
-				if (GetItemValue(item, 3) != 0) // HP % È¸º¹
+				if (GetItemValue(item, 3) != 0)
 				{
 					if (ecs::PlayerRuntime::GetHP(e) < ecs::PointSystem::GetMaxHP(e))
 					{
@@ -4980,7 +4845,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					}
 				}
 
-				if (GetItemValue(item, 4) != 0) // SP % È¸º¹
+				if (GetItemValue(item, 4) != 0)
 				{
 					if (ecs::PlayerRuntime::GetSP(e) < ecs::PointSystem::GetMaxSP(e))
 					{
@@ -5076,7 +4941,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			{
 				return false;
 			}
-			// ¿ì¼± ¿ëÈ¥¼®¿¡ °üÇØ¼­¸¸ ÇÏµµ·Ï ÇÑ´Ù.
 			if (IsDragonSoulItem(pDestItem))
 			{
 #ifdef ENABLE_DS_POTION_DIFFRENT
@@ -5186,7 +5050,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			{
 				return false;
 			}
-			// ¿ì¼± ¿ëÈ¥¼®¿¡ °üÇØ¼­¸¸ ÇÏµµ·Ï ÇÑ´Ù.
 			if (IsDragonSoulItem(pDestItem))
 			{
 				int ret = GiveMoreTime_Fix(pDestItem, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
@@ -5378,18 +5241,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 			switch (GetItemVnum(item))
 			{
-				//�
-// ©¸®½º¸¶½º ¶õÁÖ
 			case ITEM_NOG_POCKET:
 			{
-				/*
-				// ¶õÁÖ´É·ÂÄ¡ : item_proto value ÀÇ¹Ì
-					// ÀÌµ¿¼Óµµ  value 1
-					// °ø°Ý·Â	  value 2
-					// °æÇèÄ¡    value 3
-					// Áö¼Ó½Ã°£  value 0 (´ÜÀ§ ÃÊ)
-
-				*/
 				if (AffectSystem::FindAffect(e, AFFECT_NOG_ABILITY))
 				{
 #ifdef TEXTS_IMPROVEMENT
@@ -5408,19 +5261,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			//¶ó¸¶´Ü¿ë »ç�
-// Á
 			case ITEM_RAMADAN_CANDY:
 			{
-				/*
-				// »ç�
-// Á´É·ÂÄ¡ : item_proto value ÀÇ¹Ì
-					// ÀÌµ¿¼Óµµ  value 1
-					// °ø°Ý·Â	  value 2
-					// °æÇèÄ¡    value 3
-					// Áö¼Ó½Ã°£  value 0 (´ÜÀ§ ÃÊ)
-
-				*/
 				// @fixme147 BEGIN
 				if (AffectSystem::FindAffect(e, AFFECT_RAMADAN_ABILITY))
 				{
@@ -5484,8 +5326,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			//±âÁ¸ ¿ë±âÀÇ ¸Á�
-// ä
 			case UNIQUE_ITEM_CAPE_OF_COURAGE:
 
 
@@ -5615,8 +5455,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			break;
 #endif
 #endif
-			case 27989: // ¿µ¼®°¨Áö±â
-			case 76006: // ¼±¹°¿ë ¿µ¼®°¨Áö±â
+			case 27989:
+			case 76006:
 			{
 				LPSECTREE_MAP pMap = ecs::GetMap(ecs::PlayerRuntime::GetMapIndex(e));
 
@@ -5683,17 +5523,12 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 27996: // µ¶º´
+			case 27996:
 				ConsumeItemEcs(itemEntity);
 				AffectSystem::ApplyPoison(e, entt::null); // @warme008
 				break;
 
-			case 27987: // Á¶°³
-				// 50  µ¹Á¶°¢ 47990
-				// 30  ²Î
-				// 10  ¹éÁøÁÖ 47992
-				// 7   Ã»ÁøÁÖ 47993
-				// 3   ÇÇÁøÁÖ 47994
+			case 27987:
 			{
 				ConsumeItemEcs(itemEntity);
 
@@ -5745,12 +5580,12 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 71013: // ÃàÁ¦¿ëÆøÁ×
+			case 71013:
 				CombatSystem::CreateFly(e, number(FLY_FIREWORK1, FLY_FIREWORK6), e);
 				ConsumeItemEcs(itemEntity);
 				break;
 
-			case 50100: // ÆøÁ×
+			case 50100:
 			case 50101:
 			case 50102:
 			case 50103:
@@ -5761,7 +5596,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				ConsumeItemEcs(itemEntity);
 				break;
 
-			case 50200: // º¸µû¸®
+			case 50200:
 				if (g_bEnableBootaryCheck)
 				{
 					if (IS_BOTARYABLE_ZONE(ecs::PlayerRuntime::GetMapIndex(e)) == true)
@@ -5802,7 +5637,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 50304: // ¿¬°è±â ¼ö·Ã¼­
+			case 50304:
 			case 50305:
 			case 50306:
 			{
@@ -5883,7 +5718,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					  break;
 #endif
 
-			case 50311: // ¾ð¾î ¼ö·Ã¼­
+			case 50311:
 			case 50312:
 			case 50313:
 			{
@@ -5919,8 +5754,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 50061: // ÀÏº» ¸» ¼ÒÈ¯ ½º�
-// ³ ¼ö·Ã¼­
+			case 50061:
 			{
 				if (AffectSystem::IsPolymorphed(e))
 				{
@@ -5955,11 +5789,9 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 50314: case 50315: case 50316: // º¯½�
- // ¼ö·Ã¼­
-			case 50323: case 50324: // ÁõÇ÷ ¼ö·Ã¼­
-			case 50325: case 50326: // Ã¶�
-// ë ¼ö·Ã¼­
+			case 50314: case 50315: case 50316:
+			case 50323: case 50324:
+			case 50325: case 50326:
 			{
 				if (AffectSystem::IsPolymorphed(e) == true)
 				{
@@ -6140,7 +5972,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				{
 					if (AffectSystem::FindAffect(e, AFFECT_SKILL_NO_BOOK_DELAY))
 					{
-						// ÁÖ¾È¼ú¼­ »ç¿ëÁß¿¡´Â ½Ã°£ Á¦ÇÑ ¹«½Ã
 						AffectSystem::RemoveAffect(e, AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 465, "");
@@ -6237,12 +6068,12 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			// --------------------------------------------------------------
 			// 80008: ShopBuyPrice alapjan Dragon Coin (account.coins) jovairas
 			// --------------------------------------------------------------
-			case 39065://sé 1
-			case 89003://sé 3
-			case 89004://sé 50
-			case 89005://sé 100
-			case 89006://sé 500
-			case 89007://sé 1000
+			case 39065:
+			case 89003:
+			case 89004:
+			case 89005:
+			case 89006:
+			case 89007:
 
 			{
 #ifdef ENABLE_ITEMSHOP
@@ -6280,7 +6111,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			break;
 
 			// --------------------------------------------------------------
-			// Gyümölcs – +2000 RP (1 óránként használható)
 			// --------------------------------------------------------------
 			case 71107:
 			case 39032:
@@ -6333,7 +6163,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 			// --------------------------------------------------------------
-			// Arany Gyümölcs – +10000 RP (1 óránként használható)
 			// --------------------------------------------------------------
 			case 72100:
 			{
@@ -6406,8 +6235,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 //
 //				snprintf(buf, sizeof(buf), "%u %u", old_alignment, CombatSystem::GetAlignment(e) / 10);
 
-			case 71109: // �
-// »¼®¼­
+			case 71109:
 			case 72719:
 			{
 				entt::entity item2 = entt::null;
@@ -6487,13 +6315,12 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 70201:   // �
-// »»öÁ¦
-			case 70202:   // ¿°»ö¾à(Èò»ö)
-			case 70203:   // ¿°»ö¾à(±Ý»ö)
-			case 70204:   // ¿°»ö¾à(»¡°£»ö)
-			case 70205:   // ¿°»ö¾à(°¥»ö)
-			case 70206:   // ¿°»ö¾à(°ËÀº»ö)
+			case 70201:
+			case 70202:
+			case 70203:
+			case 70204:
+			case 70205:
+			case 70206:
 			{
 				if (ecs::PlayerRuntime::GetPart(e, PART_HAIR) < 1001)
 				{
@@ -6609,7 +6436,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 50011: // ¿ù±¤º¸ÇÕ
+			case 50011:
 			{
 				uint32_t dwBoxVnum = 50011;
 				std::vector <uint32_t> dwVnums;
@@ -6708,8 +6535,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 				NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_CHINA_FIREWORK);
 #ifdef ENABLE_FIREWORK_STUN
-				// ½º�
-// Ï °ø°ÝÀ» ¿Ã·ÁÁØ´Ù
 				AffectSystem::AddAffect(e, AFFECT_CHINA_FIREWORK, POINT_STUN_PCT, 30, AFF_CHINA_FIREWORK, 5 * 60, 0, true);
 #endif
 				ConsumeItemEcs(itemEntity);
@@ -6737,8 +6562,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 				NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_SPIN_TOP);
 #ifdef ENABLE_FIREWORK_STUN
-				// ½º�
-// Ï °ø°ÝÀ» ¿Ã·ÁÁØ´Ù
 				AffectSystem::AddAffect(e, AFFECT_CHINA_FIREWORK, POINT_STUN_PCT, 30, AFF_CHINA_FIREWORK, 5 * 60, 0, true);
 #endif
 				ConsumeItemEcs(itemEntity);
@@ -6760,7 +6583,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				ConsumeItemEcs(itemEntity);
 				break;
 
-			case ITEM_ELK_VNUM: // µ·²Ù·¯¹Ì
+			case ITEM_ELK_VNUM:
 			{
 				int iGold = GetItemSocket(item, 0);
 				ITEM_MANAGER::instance().RemoveItem(itemEntity);
@@ -6772,8 +6595,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 71092: // º¯½�
- // ÇØÃ¼ºÎ ÀÓ½Ã
+			case 71092:
 			{
 				const entt::entity selectedTarget =
 					CombatSystem::GetSelectedTarget(e);
@@ -6796,9 +6618,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 30617: // ÁøÀç°¡
+			case 30617:
 			{
-				// À¯·´, ½Ì°¡Æú, º£Æ®³² ÁøÀç°¡ »ç¿ë±ÝÁö
 				const entt::entity item2 = GetItem(e, DestCell);
 
 				if (!InventorySystem::IsValidItemPosition(e, DestCell) || !IsValidItem(item2))
@@ -6852,9 +6673,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			case 30618: // ÁøÀç°æ
+			case 30618:
 			{
-				// À¯·´, ½Ì°¡Æú, º£Æ®³² ÁøÀç°¡ »ç¿ë±ÝÁö
 				const entt::entity item2 = GetItem(e, DestCell);
 
 				if (!InventorySystem::IsValidItemPosition(e, DestCell) || !IsValidItem(item2))
@@ -6895,9 +6715,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 #ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
-			case 70251: // ÁøÀç°æ
+			case 70251:
 			{
-				// À¯·´, ½Ì°¡Æú, º£Æ®³² ÁøÀç°¡ »ç¿ë±ÝÁö
 				entt::entity item2 = entt::null;
 
 				if (!InventorySystem::IsValidItemPosition(e, DestCell) || (item2 = GetItem(e, DestCell)) == entt::null)
@@ -6945,9 +6764,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			case ITEM_AUTO_SP_RECOVERY_M:
 			case ITEM_AUTO_SP_RECOVERY_L:
 			case ITEM_AUTO_SP_RECOVERY_X:
-				// ¹«½Ã¹«½ÃÇÏÁö¸¸ ÀÌÀü¿¡ ÇÏ´ø °É °íÄ¡±â´Â ¹«¼·°í...
-				// ±×·¡¼­ ±×³É ÇÏµå ÄÚµù. ¼±¹° »óÀÚ¿ë ÀÚµ¿¹°¾à ¾ÆÀÌ�
-// Ûµé.
 			case REWARD_BOX_ITEM_AUTO_SP_RECOVERY_XS:
 			case REWARD_BOX_ITEM_AUTO_SP_RECOVERY_S:
 			case REWARD_BOX_ITEM_AUTO_HP_RECOVERY_XS:
@@ -7310,7 +7126,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 			bool used = false;
 
-			if (GetItemValue(item, 0) != 0) // HP Àý´ë°ª È¸º¹
+			if (GetItemValue(item, 0) != 0)
 			{
 				if (ecs::PlayerRuntime::GetHP(e) < ecs::PointSystem::GetMaxHP(e))
 				{
@@ -7320,7 +7136,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				}
 			}
 
-			if (GetItemValue(item, 1) != 0)	// SP Àý´ë°ª È¸º¹
+			if (GetItemValue(item, 1) != 0)
 			{
 				if (ecs::PlayerRuntime::GetSP(e) < ecs::PointSystem::GetMaxSP(e))
 				{
@@ -7330,7 +7146,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				}
 			}
 
-			if (GetItemValue(item, 3) != 0) // HP % È¸º¹
+			if (GetItemValue(item, 3) != 0)
 			{
 				if (ecs::PlayerRuntime::GetHP(e) < ecs::PointSystem::GetMaxHP(e))
 				{
@@ -7340,7 +7156,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				}
 			}
 
-			if (GetItemValue(item, 4) != 0) // SP % È¸º¹
+			if (GetItemValue(item, 4) != 0)
 			{
 				if (ecs::PlayerRuntime::GetSP(e) < ecs::PointSystem::GetMaxSP(e))
 				{
@@ -7502,7 +7318,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			const int MEMORY_PORTAL = 2;
 
 
-			// gm_guild_build, oxevent ¸Ê¿¡¼­ ±ÍÈ¯ºÎ ±ÍÈ¯±â¾ïºÎ ¸¦ »ç¿ë¸øÇÏ°Ô ¸·À½
 			if (ecs::PlayerRuntime::GetMapIndex(e) == 200 || ecs::PlayerRuntime::GetMapIndex(e) == 113)
 			{
 #ifdef TEXTS_IMPROVEMENT
@@ -7543,7 +7358,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				return false;
 			// END_OF_CONSUME_LIFE_WHEN_USE_WARP_ITEM
 
-			if (GetItemValue(item, 0) == TOWN_PORTAL) // ±ÍÈ¯ºÎ
+			if (GetItemValue(item, 0) == TOWN_PORTAL)
 			{
 				if (GetItemSocket(item, 0) == 0)
 				{
@@ -7576,7 +7391,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					ProcessRecallItem(e, item);
 				}
 			}
-			else if (GetItemValue(item, 0) == MEMORY_PORTAL) // ±ÍÈ¯±â¾ïºÎ
+			else if (GetItemValue(item, 0) == MEMORY_PORTAL)
 			{
 				if (GetItemSocket(item, 0) == 0)
 				{
@@ -7904,7 +7719,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			if (IsItemExchanging(item2) || IsItemEquipped(item2)) // @fixme114
 				return false;
 
-			if (GetItemVnum(item2) >= 28330 && GetItemVnum(item2) <= 28343) // ¿µ¼®+3
+			if (GetItemVnum(item2) >= 28330 && GetItemVnum(item2) <= 28343)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 678, "%s", GetItemName(item));
@@ -7926,9 +7741,9 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				return true;
 			}
 #endif
-			if (GetItemVnum(item2) >= 28430 && GetItemVnum(item2) <= 28443)  // ¿µ¼®+4
+			if (GetItemVnum(item2) >= 28430 && GetItemVnum(item2) <= 28443)
 			{
-				if (GetItemVnum(item) == 71056) // Ã»·æÀÇ¼û°á
+				if (GetItemVnum(item) == 71056)
 				{
 					RefineItem(e, item, item2);
 				}
@@ -8071,13 +7886,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				return false;
 
 
-			// [NOTE] ÄÚ½ºÆ¬ ¾ÆÀÌ�
-// Û¿¡´Â ¾ÆÀÌ�
-// Û ÃÖÃÊ »ý¼º½Ã ·£´ý ¼Ó¼ºÀ» ºÎ¿©ÇÏµÇ, Àç°æÀç°¡ µîµîÀº ¸·¾Æ´Þ¶ó´Â ¿äÃ»ÀÌ ÀÖ¾úÀ½.
-			// ¿ø·¡ ANTI_CHANGE_ATTRIBUTE °°Àº ¾ÆÀÌ�
-// Û Flag¸¦ Ãß°¡ÇÏ¿© ±âÈ¹ ·¹º§¿¡¼­ À¯¿¬ÇÏ°Ô ÄÁÆ®·Ñ ÇÒ ¼ö ÀÖµµ·Ï ÇÒ ¿¹Á¤ÀÌ¾úÀ¸³ª
-			// ±×µý°�
- // ÇÊ¿ä¾øÀ¸´Ï ´ÚÄ¡°í »¡¸® ÇØ´Þ·¡¼­ ±×³É ¿©±â¼­ ¸·À½... -_-
 			if (ITEM_COSTUME == GetItemType(item2))
 			{
 #ifdef TEXTS_IMPROVEMENT
@@ -8154,11 +7962,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				if ((GM_PLAYER == ecs::PlayerRuntime::GetGMLevel(e)) && (false == test_server) && (g_dwItemBonusChangeTime > 0))
 				{
 					//
-					// Event Flag ¸¦ �
-// ëÇØ ÀÌÀü¿¡ ¾ÆÀÌ�
-// Û ¼Ó¼º º¯°æÀ» ÇÑ ½Ã°£À¸·Î ºÎ�
-// Í ÃæºÐÇÑ ½Ã°£ÀÌ Èê·¶´ÂÁö °Ë»çÇÏ°í
-					// ½Ã°£ÀÌ ÃæºÐÈ÷ Èê·¶´Ù¸é ÇöÀç ¼Ó¼ºº¯°æ¿¡ ´ëÇÑ ½Ã°£À» ¼³Á¤ÇØ ÁØ´Ù.
 					//
 
 						// dwChangeItemAttrCycle = msc_dwDefaultChangeItemAttrCycle;
@@ -8310,9 +8113,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				}
 				else
 				{
-					// ¿¬Àç°æ Æ¯¼öÃ³¸®
-					// Àý´ë·Î ¿¬Àç°¡ Ãß°¡ ¾ÈµÉ°�
-// ¶ó ÇÏ¿© ÇÏµå ÄÚµùÇÔ.
 
 					if (GetItemVnum(itemEntity) == 71151 || GetItemVnum(itemEntity) == 76023)
 					{
@@ -8457,9 +8257,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					}
 #endif
 
-					// ¿¬Àç°¡ Æ¯¼öÃ³¸®
-					// Àý´ë·Î ¿¬Àç°¡ Ãß°¡ ¾ÈµÉ°�
-// ¶ó ÇÏ¿© ÇÏµå ÄÚµùÇÔ.
 					if (GetItemVnum(itemEntity) == 71152 || GetItemVnum(itemEntity) == 76024)
 					{
 						if ((GetItemType(item2) == ITEM_WEAPON)
@@ -8556,11 +8353,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				break;
 
 			case USE_ADD_ATTRIBUTE2:
-				// Ãàº¹ÀÇ ±¸½½
-				// Àç°¡ºñ¼­¸¦ �
-// ëÇØ ¼Ó¼ºÀ» 4°³ Ãß°¡ ½Ã�
-// ² ¾ÆÀÌ�
-// Û¿¡ ´ëÇØ¼­ ÇÏ³ªÀÇ ¼Ó¼ºÀ» ´õ ºÙ¿©ÁØ´Ù.
 				if (GetItemAttributeSetIndex(item2) == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
@@ -8569,7 +8361,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					return false;
 				}
 
-				// ¼Ó¼ºÀÌ ÀÌ¹Ì 4°³ Ãß°¡ µÇ¾úÀ» ¶§¸¸ ¼Ó¼ºÀ» Ãß°¡ °¡´ÉÇÏ´Ù.
 				if (GetItemAttributeCount(item2) == 4)
 				{
 #ifdef ENABLE_TALISMAN_ATTR
@@ -8876,8 +8667,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			ConsumeItemEcs(itemEntity);
 			break;
 
-			// ¹°¾à Á¦Á¶ ½º�
-// ³¿ë ·¹½ÃÇÇ Ã³¸®
 		case USE_RECIPE:
 		{
 			const entt::entity pSource1 = FindSpecifyItem(e, GetItemValue(item, 1)
@@ -9059,7 +8848,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 		for (i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 			if (GetItemSocket(item2, i) >= 1 && GetItemSocket(item2, i) <= 2 && GetItemSocket(item2, i) >= GetItemValue(item, 2))
 			{
-				// ¼® È®·ü
 #ifdef ENABLE_ADDSTONE_FAILURE
 				if (number(1, 100) <= stone_chance) // Erfolgreich
 #else
@@ -9112,7 +8900,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 	break;
 
 	case ITEM_BLEND:
-		// »õ·Î¿î ¾àÃÊµé
 		LOG_INFO("ITEM_BLEND!!");
 		if (Blend_Item_find(GetItemVnum(item)))
 		{
@@ -9267,8 +9054,7 @@ bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell)
 	switch (ecs::PlayerRuntime::GetJob(e))
 	{
 	case JOB_WARRIOR:
-		hair -= 72000; // 73001 - 72000 = 1001 ºÎ�
-// Í Çì¾î ¹øÈ£ ½ÃÀÛ
+		hair -= 72000;
 		break;
 
 	case JOB_ASSASSIN:
@@ -9361,11 +9147,8 @@ bool ItemProcess_Polymorph(entt::entity e, entt::entity item)
 	case 70107:
 	case 71093:
 	{
-		// µÐ°©±¸ Ã³¸®
 		LOG_INFO("USE_POLYMORPH_BALL PID({}) vnum({})", ecs::PlayerRuntime::GetPlayerID(e), dwVnum);
 
-		// ·¹º§ Á¦ÇÑ Ã¼�
-// ©
 		int iPolymorphLevelLimit = std::max(0, 20 - ecs::PointSystem::GetLevel(e) * 3 / 10);
 		if (pMob->m_table.bLevel >= ecs::PointSystem::GetLevel(e) + iPolymorphLevelLimit)
 		{
@@ -9391,12 +9174,7 @@ bool ItemProcess_Polymorph(entt::entity e, entt::entity item)
 
 	case 50322:
 	{
-		// º¸·ù
 
-		// µÐ°©¼­ Ã³¸®
-		// ¼ÒÄÏ0                ¼ÒÄÏ1           ¼ÒÄÏ2
-		// µÐ°©ÇÒ ¸ó½º�
-// Í ¹øÈ£   ¼ö·ÃÁ¤µµ        µÐ°©¼­ ·¹º§
 		LOG_INFO("USE_POLYMORPH_BOOK: {}({}) vnum({})", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetPlayerID(e), dwVnum);
 
 		const entt::entity polymorphItem = item;
@@ -9455,14 +9233,12 @@ bool GiveRecallItem(entt::entity e, entt::entity item)
 
 	int pos;
 
-	if (GetItemCount(item) == 1)	// ¾ÆÀÌ�
-// ÛÀÌ ÇÏ³ª¶ó¸é ±×³É ¼ÂÆÃ.
+	if (GetItemCount(item) == 1)
 	{
 		SetItemSocket(item, 0, ecs::PlayerRuntime::GetX(e));
 		SetItemSocket(item, 1, ecs::PlayerRuntime::GetY(e));
 	}
-	else if ((pos = InventorySystem::GetEmptyInventory(e, GetItemSize(item))) != -1) // ±×·¸Áö ¾Ê´Ù¸é ´Ù¸¥ ÀÎº¥�
-// ä¸® ½½·ÔÀ» Ã£´Â´Ù.
+	else if ((pos = InventorySystem::GetEmptyInventory(e, GetItemSize(item))) != -1)
 	{
 		const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(GetItemVnum(item), 1);
 
@@ -9511,7 +9287,6 @@ void ProcessRecallItem(entt::entity e, entt::entity item)
 	case 216:
 		iEmpireByMapIndex = -1;
 		break;
-		// ¾Ç·æ±ºµµ ÀÏ¶§
 	case 301:
 	case 302:
 	case 303:
@@ -9704,8 +9479,6 @@ void AutoRecoveryItemProcess(entt::entity e, int type)
 						const int pct_of_will_used = (amount_of_used + amount) * 100 / amount_of_full;
 
 						bool bLog = false;
-						// »ç¿ë·®ÀÇ 10% ´ÜÀ§·Î ·Î±×¸¦ ³²±è
-						// (»ç¿ë·®ÀÇ %¿¡¼­, ½ÊÀÇ ÀÚ¸®°¡ ¹Ù²ð ¶§¸¶´Ù ·Î±×¸¦ ³²±è.)
 						if ((pct_of_will_used / 10) - (pct_of_used / 10) >= 1)
 							bLog = true;
 

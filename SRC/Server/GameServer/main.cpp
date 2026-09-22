@@ -102,7 +102,6 @@
 #ifdef ENABLE_SWITCHBOT
 #include "new_switchbot.h"
 #endif
-//// �����쿡�� �׽�Ʈ�� ���� �׻� ����Ű üũ
 #ifdef _WIN32
 	#define _USE_SERVER_KEY_
 #endif
@@ -134,7 +133,6 @@ extern void WriteVersion();
 //	::fprintf(fp, "%s %s %s %s\n", p1, p2, p3, p4);
 //	::fclose(fp);
 
-// ���Ӱ� ����Ǵ� ����
 volatile int	num_events_called = 0;
 int             max_bytes_written = 0;
 int             current_bytes_written = 0;
@@ -261,7 +259,6 @@ void heartbeat(LPHEART ht, int pulse)
 
 	t = get_dword_time();
 
-	// 1�ʸ���
 	if (!(pulse % ht->passes_per_sec))
 	{
 		if (!g_bAuthServer)
@@ -311,14 +308,11 @@ void heartbeat(LPHEART ht, int pulse)
 	}
 
 	//
-	// 25 PPS(Pulse per second) ��� ������ ��
 	//
 
-	// �� 1.16�ʸ���
 	if (!(pulse % (passes_per_sec + 4)))
 		CHARACTER_MANAGER::instance().ProcessDelayedSave();
 
-	//4�� ����
 #if defined (__FreeBSD__) && defined(__FILEMONITOR__)
 	if (!(pulse % (passes_per_sec * 5)))
 	{
@@ -326,7 +320,6 @@ void heartbeat(LPHEART ht, int pulse)
 	}
 #endif
 
-	// �� 5.08�ʸ���
 	if (!(pulse % (passes_per_sec * 5 + 2)))
 	{
 		ITEM_MANAGER::instance().Update();
@@ -920,7 +913,7 @@ int io_loop(LPFDWATCH fdw)
 	LPDESC	d;
 	int		num_events, event_idx;
 
-	DESC_MANAGER::instance().DestroyClosed(); // PHASE_CLOSE�� ���ӵ��� �����ش�.
+	DESC_MANAGER::instance().DestroyClosed();
 	DESC_MANAGER::instance().TryConnect();
 
 	if ((num_events = fdwatch(fdw, nullptr)) < 0)

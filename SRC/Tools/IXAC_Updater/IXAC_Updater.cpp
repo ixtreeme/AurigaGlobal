@@ -72,17 +72,14 @@ int wmain(int argc, wchar_t* argv[])
 		Log((std::string(AY_OBFUSCATE("restartExe = ")) + s).c_str());
 	}
 
-	// Kis késleltetés, hogy az AC / kliens biztosan kilépjen
 	Sleep(1500);
 
-	// Biztos ami biztos: ha a target létezik, megpróbálhatod elõtte átnevezni .bak-ra
 	std::wstring backup = targetDll + OBF_W(L".bak");
 	MoveFileExW(targetDll.c_str(), backup.c_str(),
 		MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
 
 	bool replaced = false;
 
-	// Többszöri próbálkozás, ha valami még fogja a fájlt
 	for (int i = 0; i < 20; ++i)
 	{
 		if (MoveFileExW(newDll.c_str(), targetDll.c_str(),
@@ -92,7 +89,6 @@ int wmain(int argc, wchar_t* argv[])
 			break;
 		}
 
-		// Ha nem sikerült, várunk kicsit és újra próbáljuk
 		Sleep(500);
 	}
 
@@ -102,16 +98,13 @@ int wmain(int argc, wchar_t* argv[])
 		return 2;
 	}
 
-	// Ha nem kell backup, törölheted:
 	DeleteFileW(backup.c_str());
 
-	// Opcionális: kliens újraindítása
 	if (!restartExe.empty())
 	{
 		ShellExecuteW(NULL, AY_OBFUSCATE(L"runas"), restartExe.c_str(), NULL,NULL,SW_SHOWNORMAL);
 	}
 
-	// SELF-DELETE: saját exe törlése egy háttér CMD-vel
 	wchar_t myPath[MAX_PATH];
 	GetModuleFileNameW(NULL, myPath, MAX_PATH);
 

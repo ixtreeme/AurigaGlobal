@@ -94,10 +94,6 @@ namespace UI
 
 	void CWindow::Clear()
 	{
-		// FIXME : Children을 즉시 Delete하지는 않는다.
-		//         어차피 Python쪽에서 Destroy가 하나씩 다시 호출 될 것이므로..
-		//         하지만 만약을 위해 링크는 끊어 놓는다.
-		//         더 좋은 형태는 있는가? - [levites]
 		std::ranges::for_each(m_pChildList, FClear());
 		m_pChildList.clear();
 
@@ -741,7 +737,7 @@ namespace UI
 	bool CWindow::OnMouseLeftButtonUp()
 	{
 		PyCallClassMemberFunc(m_poHandler, "OnMouseLeftButtonUp", BuildEmptyTuple());
-		return TRUE; // NOTE : ButtonUp은 예외로 무조건 TRUE
+		return TRUE;
 	}
 
 	bool CWindow::OnMouseLeftButtonDoubleClick()
@@ -1640,7 +1636,6 @@ namespace UI
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
-	// MarkBox - 마크 출력용 UI 윈도우
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	CMarkBox::CMarkBox(PyObject* ppyObject) : CWindow(ppyObject)
 	{

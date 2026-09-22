@@ -9,7 +9,7 @@
 #include "ecs/EntityInvariants.hpp"
 #include <entt/entt.hpp>
 
-enum EBattleTypes       // 상대방 기준
+enum EBattleTypes
 {
 	BATTLE_NONE,
 	BATTLE_DAMAGE,
@@ -33,7 +33,6 @@ extern bool	battle_distance_valid(entt::entity character, entt::entity victim);
 
 extern void	NormalAttackAffect(entt::entity attacker, entt::entity victim);
 
-// 특성 공격
 inline void AttackAffect(entt::entity attacker,
 		entt::entity victim,
 		uint8_t att_point,

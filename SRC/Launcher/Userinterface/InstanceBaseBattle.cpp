@@ -49,7 +49,6 @@ void CInstanceBase::ClearFlyTargetInstance()
 
 void CInstanceBase::SetFlyTargetInstance(CInstanceBase& rkInstDst)
 {
-// NOTE : NEW_Attack 때 Target을 바꿀때 여기서 리턴 되어버림 - [levites]
 //	if (isLock())
 //		return;
 
@@ -188,7 +187,6 @@ bool CInstanceBase::NEW_GetFrontInstance(CInstanceBase ** ppoutTargetInstance, f
 	return true;
 }
 
-// 2004.07.21.levites - 비파부 다중 타겟 지원
 bool CInstanceBase::NEW_GetInstanceVectorInFanRange(float fSkillDistance, CInstanceBase& rkInstTarget, std::vector<CInstanceBase*>* pkVct_pkInst)
 {
 	const float HALF_FAN_ROT_MIN = 20.0f;
@@ -198,7 +196,6 @@ bool CInstanceBase::NEW_GetInstanceVectorInFanRange(float fSkillDistance, CInsta
 
 	float fDstDirRot=NEW_GetRotationFromDestInstance(rkInstTarget);
 
-	// 2004.07.24.myevan - 비파부 가까이 있는 적부터 공격
 	std::multimap<float, CInstanceBase*> kMap_pkInstNear;
 	{
 		CPythonCharacterManager& rkChrMgr=CPythonCharacterManager::Instance();
@@ -209,11 +206,9 @@ bool CInstanceBase::NEW_GetInstanceVectorInFanRange(float fSkillDistance, CInsta
 			if (pkInstEach==this)
 				continue;
 
-			// 2004.07.25.myevan - 적인 경우만 추가한다
 			if (!IsAttackableInstance(*pkInstEach))
 				continue;
 
-			// 2004.07.21.levites - 비파부 다중 타겟 지원
 			if (m_GraphicThingInstance.IsClickableDistanceDestInstance(pkInstEach->m_GraphicThingInstance, fSkillDistance))
 			{
 				float fEachInstDistance=min(NEW_GetDistanceFromDestInstance(*pkInstEach), HALF_FAN_ROT_MIN_DISTANCE);
@@ -253,11 +248,9 @@ bool CInstanceBase::NEW_GetInstanceVectorInCircleRange(float fSkillDistance, std
 		{
 			CInstanceBase* pkInstEach=*i;
 
-			// 자신인 경우 추가하지 않는다
 			if (pkInstEach==this)
 				continue;
 
-			// 적인 경우만 추가한다
 			if (!IsAttackableInstance(*pkInstEach))
 				continue;
 
@@ -423,7 +416,6 @@ void CInstanceBase::AttackProcess()
 		CInstanceBase* pkInstEach=*i;
 		++i;
 
-		// 서로간의 InstanceType 비교
 		if (!IsAttackableInstance(*pkInstEach))
 			continue;
 
@@ -465,7 +457,6 @@ void CInstanceBase::RunComboAttack(float fAtkDirRot, uint32_t wMotionIndex)
 	m_GraphicThingInstance.ComboAttack(wMotionIndex, fAtkDirRot);
 }
 
-// 리턴값 TRUE가 무엇인가가 있다
 bool CInstanceBase::CheckAdvancing()
 {
 #ifdef __MOVIE_MODE__
@@ -502,7 +493,6 @@ bool CInstanceBase::CheckAdvancing()
 
 	if (m_GraphicThingInstance.CanSkipCollision())
 	{
-		//Tracenf("%x VID %d 충돌 스킵", ELTimer_GetMSec(), GetVirtualID());
 		return false;
 	}
 
@@ -522,11 +512,9 @@ bool CInstanceBase::CheckAdvancing()
 		CActorInstance& rkActorSelf=m_GraphicThingInstance;
 		CActorInstance& rkActorEach=pkInstEach->GetGraphicThingInstanceRef();
 
-		//NOTE : Skil을 쓰더라도 Door Type과는 Collision체크 한다.
 		if( bUsingSkill && !rkActorEach.IsDoor() )
 			continue;
 
-		// 앞으로 전진할수 있는가?
 		if (rkActorSelf.TestActorCollision(rkActorEach
 #ifdef ENABLE_NO_COLLISION
 		, pkInstEach->__EffectContainer_IsEffect(EFFECT_TARGET)
@@ -557,13 +545,10 @@ bool CInstanceBase::CheckAdvancing()
 		}
 	}
 
-	// 맵속성 체크
 	CPythonBackground& rkBG=CPythonBackground::Instance();
 	const D3DXVECTOR3 & rv3Position = m_GraphicThingInstance.GetPosition();
 	const D3DXVECTOR3 & rv3MoveDirection = m_GraphicThingInstance.GetMovementVectorRef();
 
-	// NOTE : 만약 이동 거리가 크다면 쪼개서 구간 별로 속성을 체크해 본다
-	//        현재 설정해 놓은 10.0f는 임의의 거리 - [levites]
 	int iStep = int(D3DXVec3Length(&rv3MoveDirection) / 10.0f);
 	D3DXVECTOR3 v3CheckStep = rv3MoveDirection / float(iStep);
 	D3DXVECTOR3 v3CheckPosition = rv3Position;
@@ -708,7 +693,6 @@ void CInstanceBase::Die()
 	if (IsAffect(AFFECT_SPAWN))
 		__AttachEffect(EFFECT_SPAWN_DISAPPEAR);
 
-	// 2004.07.25.이펙트 안붙는 문제해결
 	////////////////////////////////////////
 	__ClearAffects();
 	////////////////////////////////////////

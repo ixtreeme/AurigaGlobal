@@ -88,7 +88,6 @@ void __GetRaceResourcePathes(unsigned race, std::vector <std::string> & vec_stPa
 			vec_stPathes.emplace_back("d:/ymir work/guild/");
 		}
 	}
-	// 만우절 이벤트용 예외 몬스터
 	else if (8507 == race || 8510 == race)
 	{
 		vec_stPathes.emplace_back("d:/ymir work/monster2/");
@@ -322,8 +321,6 @@ bool CRaceManager::__LoadRaceMotionList(CRaceData & rkRaceData, const char * pat
 
 		if (s_kMap_stType_dwIndex.end() == fTypeIndex)
 		{
-			// 모션 목록에 WAIT, WAIT4, WAIT20  이런 식으로 등록되어 있을 때,
-			// WAIT4, WAIT20을 WAIT로 인식할 수 있도록 처리
 			const size_t c_cutLengthLimit = 2;
 			bool bFound = false;
 

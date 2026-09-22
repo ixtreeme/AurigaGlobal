@@ -323,7 +323,6 @@ bool CInstanceBase::SHORSE::IsNewMount()
 }
 bool CInstanceBase::SHORSE::CanUseSkill()
 {
-	// ¸¶»ó½ºÅ³Àº ¸»ÀÇ ·¹º§ÀÌ 3 ÀÌ»óÀÌ¾î¾ß¸¸ ÇÔ.
 	if (IsMounting())
 		return 2 < GetLevel();
 
@@ -422,7 +421,6 @@ bool __ArmorVnumToShape(int iVnum, uint32_t * pdwShape)
 	return true;
 }
 
-// 2004.07.05.myevan.±Ã½ÅÅº¿µ ³¢ÀÌ´Â ¹®Á¦
 class CActorInstanceBackground : public IBackground
 {
 	public:
@@ -827,7 +825,6 @@ void CInstanceBase::__ClearMainInstance()
 	rkChrMgr.ClearMainInstance();
 }
 
-/* ½ÇÁ¦ ÇÃ·¹ÀÌ¾î Ä³¸¯ÅÍÀÎÁö Á¶»ç.*/
 bool CInstanceBase::__IsMainInstance()
 {
 	if (this==__GetMainInstancePtr())
@@ -983,10 +980,8 @@ bool CInstanceBase::Create(const SCreateData& c_rkCreateData, bool wikiPreview)
 		m_GraphicThingInstance.SetScaleNew(fScale, fScale, fScale);
 	}
 
-	// NOTE : Dress ¸¦ ÀÔ°í ÀÖÀ¸¸é Alpha ¸¦ ³ÖÁö ¾Ê´Â´Ù.
 	if (!IsWearingDress())
 	{
-		// NOTE : ¹Ýµå½Ã Affect ¼ÂÆÃ À­ÂÊ¿¡ ÀÖ¾î¾ß ÇÔ
 		m_GraphicThingInstance.SetAlphaValue(0.0f);
 		m_GraphicThingInstance.BlendAlphaValue(1.0f, 0.5f);
 	}
@@ -996,7 +991,6 @@ bool CInstanceBase::Create(const SCreateData& c_rkCreateData, bool wikiPreview)
 		SetAffectFlagContainer(c_rkCreateData.m_kAffectFlags);
 	}
 
-	// NOTE : ¹Ýµå½Ã Affect ¼ÂÆÃ ÈÄ¿¡ ÇØ¾ß ÇÔ
 	AttachTextTail();
 	RefreshTextTail();
 
@@ -1042,7 +1036,6 @@ bool CInstanceBase::Create(const SCreateData& c_rkCreateData, bool wikiPreview)
 
 	__AttachHorseSaddle();
 
-	// ±æµå ½Éº¼À» À§ÇÑ ÀÓ½Ã ÄÚµå, ÀûÁ¤ À§Ä¡¸¦ Ã£´Â Áß
 	const int c_iGuildSymbolRace = 14200;
 	if (c_iGuildSymbolRace == GetRace())
 	{
@@ -1069,7 +1062,7 @@ void CInstanceBase::SetMountCountOverhead(const char* szText)
 {
 	TraceError("SetMountCountOverhead: %s\n", szText);
 
-	D3DXCOLOR color = D3DXCOLOR(0.9f, 0.9f, 0.1f, 1.0f); // sárga
+	D3DXCOLOR color = D3DXCOLOR(0.9f, 0.9f, 0.1f, 1.0f);
 	CPythonTextTail::Instance().AttachMountCount(GetVirtualID(), szText, color);
 }
 #endif
@@ -1199,7 +1192,6 @@ bool CInstanceBase::SetRace(uint32_t eRace)
 
 bool CInstanceBase::__IsChangableWeapon(uint32_t iWeaponID)
 {
-	// µå·¹½º ÀÔ°í ÀÖÀ»¶§´Â ºÎÄÉ¿ÜÀÇ Àåºñ´Â ³ª¿ÀÁö ¾Ê°Ô..
 	if (IsWearingDress())
 	{
 		const int c_iBouquets[] =
@@ -1208,7 +1200,7 @@ bool CInstanceBase::__IsChangableWeapon(uint32_t iWeaponID)
 			50202,	// Bouquet for Shaman
 			50203,
 			50204,
-			0, // #0000545: [M2CN] ¿þµù µå·¹½º¿Í Àåºñ Âø¿ë ¹®Á¦
+			0,
 		};
 
 		for (int i = 0; c_iBouquets[i] != 0; ++i)
@@ -1490,7 +1482,6 @@ void CInstanceBase::PushTCPState(uint32_t dwCmdTime, const TPixelPosition& c_rkP
 {
 	if (__IsMainInstance())
 	{
-		//assert(!"CInstanceBase::PushTCPState ÇÃ·¹ÀÌ¾î ÀÚ½Å¿¡°Ô ÀÌµ¿ÆÐÅ¶Àº ¿À¸é ¾ÈµÈ´Ù!");
 		//TraceError("CInstanceBase::PushTCPState You can't send move packets to yourself!");
 		return;
 	}
@@ -1499,15 +1490,6 @@ void CInstanceBase::PushTCPState(uint32_t dwCmdTime, const TPixelPosition& c_rkP
 
 	m_nAverageNetworkGap = ELTimer_AverageNetworkGap(m_nAverageNetworkGap, nNetworkGap);
 
-	/*
-	if (m_dwBaseCmdTime == 0)
-	{
-		m_dwBaseChkTime = ELTimer_GetFrameMSec()-nNetworkGap;
-		m_dwBaseCmdTime = dwCmdTime;
-
-		Tracenf("VID[%d] ³×Æ®¿÷°¸ [%d]", GetVirtualID(), nNetworkGap);
-	}
-	*/
 
 	//m_dwBaseChkTime-m_dwBaseCmdTime+ELTimer_GetServerMSec();
 
@@ -1523,7 +1505,6 @@ void CInstanceBase::PushTCPState(uint32_t dwCmdTime, const TPixelPosition& c_rkP
 	//int nApplyGap=kCmdNew.m_dwChkTime-ELTimer_GetServerFrameMSec();
 
 	//if (nApplyGap<-500 || nApplyGap>500)
-	//	Tracenf("VID[%d] NAME[%s] ³×Æ®¿÷°¸ [cur:%d ave:%d] ÀÛµ¿½Ã°£ (%d)", GetVirtualID(), GetNameString(), nNetworkGap, m_nAverageNetworkGap, nApplyGap);
 }
 
 /*
@@ -1614,7 +1595,6 @@ void CInstanceBase::StateProcess()
 		TPixelPosition kPPosDir = kPPosDst - kPPosCur;
 		float fDirLen = sqrt(kPPosDir.x * kPPosDir.x + kPPosDir.y * kPPosDir.y);
 
-		//Tracenf("°Å¸® %f", fDirLen);
 
 		if (!__CanProcessNetworkStatePacket())
 		{
@@ -1631,7 +1611,6 @@ void CInstanceBase::StateProcess()
 		{
 			case FUNC_WAIT:
 			{
-				//Tracenf("%s (%f, %f) -> (%f, %f) ³²Àº°Å¸® %f", GetNameString(), kPPosCur.x, kPPosCur.y, kPPosDst.x, kPPosDst.y, fDirLen);
 				if (fDirLen > 1.0f)
 				{
 					//NEW_GetSrcPixelPositionRef() = kPPosCur;
@@ -1649,11 +1628,9 @@ void CInstanceBase::StateProcess()
 					if (!IsWalking())
 						StartWalking();
 
-					//Tracen("¸ñÇ¥Á¤Áö");
 				}
 				else
 				{
-					//Tracen("ÇöÀç Á¤Áö");
 
 					m_isGoing = false;
 
@@ -1682,12 +1659,10 @@ void CInstanceBase::StateProcess()
 
 				if (!IsWalking())
 				{
-					//Tracen("°È°í ÀÖÁö ¾Ê¾Æ °È±â ½ÃÀÛ");
 					StartWalking();
 				}
 				else
 				{
-					//Tracen("ÀÌ¹Ì °È´ÂÁß ");
 				}
 				break;
 			}
@@ -1710,7 +1685,6 @@ void CInstanceBase::StateProcess()
 				}
 				else
 				{
-					//Tracen("´ë±â °ø°Ý Á¤Áö");
 
 					m_isGoing = false;
 
@@ -1741,11 +1715,9 @@ void CInstanceBase::StateProcess()
 					if (!IsWalking())
 						StartWalking();
 
-					//Tracen("³Ê¹« ¸Ö¾î¼­ ÀÌµ¿ ÈÄ °ø°Ý");
 				}
 				else
 				{
-					//Tracen("³ë¸» °ø°Ý Á¤Áö");
 
 					m_isGoing = false;
 
@@ -1757,7 +1729,6 @@ void CInstanceBase::StateProcess()
 
 					RunNormalAttack(fRotDst);
 
-					//Tracen("°¡±õ±â ¶§¹®¿¡ ¿öÇÁ °ø°Ý");
 				}
 				break;
 			}
@@ -1841,11 +1812,9 @@ void CInstanceBase::StateProcess()
 						if (!IsWalking())
 							StartWalking();
 
-						//Tracen("³Ê¹« ¸Ö¾î¼­ ÀÌµ¿ ÈÄ °ø°Ý");
 					}
 					else
 					{
-						//Tracen("½ºÅ³ Á¤Áö");
 
 						m_isGoing = false;
 
@@ -1857,7 +1826,6 @@ void CInstanceBase::StateProcess()
 						SetRotation(fRotDst);
 
 						NEW_UseSkill(0, eFunc & 0x7f, uArg&0x0f, (uArg>>4) ? true : false);
-						//Tracen("°¡±õ±â ¶§¹®¿¡ ¿öÇÁ °ø°Ý");
 					}
 				}
 				break;
@@ -1872,7 +1840,6 @@ void CInstanceBase::MovementProcess()
 	TPixelPosition kPPosCur;
 	NEW_GetPixelPosition(&kPPosCur);
 
-	// ·»´õ¸µ ÁÂÇ¥°èÀÌ¹Ç·Î y¸¦ -È­ÇØ¼­ ´õÇÑ´Ù.
 
 	TPixelPosition kPPosNext;
 	{
@@ -1905,7 +1872,6 @@ void CInstanceBase::MovementProcess()
 				if (IsWalking())
 					EndWalking();
 
-				//Tracen("¸ñÇ¥ µµ´Þ Á¤Áö");
 
 				m_isGoing = false;
 
@@ -1930,33 +1896,27 @@ void CInstanceBase::MovementProcess()
 
 			SetAdvancingRotation(fDstRot);
 
-			// ¸¸¾à ·»ÅÏ½Ã°¡ ´Ê¾î ³Ê¹« ¸¹ÀÌ ÀÌµ¿Çß´Ù¸é..
 			if (fRestLen < -100.0f)
 			{
 				NEW_SetSrcPixelPosition(kPPosCur);
 
 				float fDstRot = NEW_GetAdvancingRotationFromPixelPosition(kPPosCur, NEW_GetDstPixelPositionRef());
 				SetAdvancingRotation(fDstRot);
-				//Tracenf("VID %d ¿À¹ö ¹æÇâ¼³Á¤ (%f, %f) %f rest %f", GetVirtualID(), kPPosCur.x, kPPosCur.y, fDstRot, fRestLen);
 
-				// ÀÌµ¿ÁßÀÌ¶ó¸é ´ÙÀ½¹ø¿¡ ¸ØÃß°Ô ÇÑ´Ù
 				if (FUNC_MOVE == m_kMovAfterFunc.eFunc)
 				{
 					m_kMovAfterFunc.eFunc = FUNC_WAIT;
 				}
 			}
-			// µµÂøÇß´Ù¸é...
 			else if (fCurLen <= fTotalLen && fTotalLen <= fNextLen)
 			{
 				if (m_GraphicThingInstance.IsDead() || m_GraphicThingInstance.IsKnockDown())
 				{
 					__DisableSkipCollision();
 
-					//Tracen("»ç¸Á »óÅÂ¶ó µ¿ÀÛ ½ºÅµ");
 
 					m_isGoing = false;
 
-					//Tracen("Çàµ¿ ºÒ´É »óÅÂ¶ó ÀÌÈÄ µ¿ÀÛ ½ºÅµ");
 				}
 				else
 				{
@@ -2038,7 +1998,6 @@ void CInstanceBase::MovementProcess()
 							}
 							else
 							{
-								//Tracenf("VID %d ½ºÅ³ °ø°Ý (%f, %f) rot %f", GetVirtualID(), NEW_GetDstPixelPositionRef().x, NEW_GetDstPixelPositionRef().y, m_fDstRot);
 
 								__DisableSkipCollision();
 								m_isGoing = FALSE;
@@ -2052,7 +2011,6 @@ void CInstanceBase::MovementProcess()
 									EndWalking();
 								}
 
-								//Tracenf("VID %d Á¤Áö (%f, %f) rot %f IsWalking %d", GetVirtualID(), NEW_GetDstPixelPositionRef().x, NEW_GetDstPixelPositionRef().y, m_fDstRot, IsWalking());
 							}
 							break;
 						}
@@ -2277,7 +2235,6 @@ void CInstanceBase::Transform()
 
 void CInstanceBase::Deform()
 {
-	// 2004.07.17.levites.isShow¸¦ ViewFrustumCheck·Î º¯°æ
 	if (!__CanRender())
 		return;
 
@@ -2301,7 +2258,6 @@ void CInstanceBase::RenderTrace()
 
 void CInstanceBase::Render()
 {
-	// 2004.07.17.levites.isShow¸¦ ViewFrustumCheck·Î º¯°æ
 	if (!__CanRender())
 		return;
 
@@ -2652,13 +2608,11 @@ bool CInstanceBase::IsTargetableInstance(CInstanceBase& rkInstVictim)
 	return rkInstVictim.CanPickInstance();
 }
 
-// 2004. 07. 07. [levites] - ½ºÅ³ »ç¿ëÁß Å¸°ÙÀÌ ¹Ù²î´Â ¹®Á¦ ÇØ°áÀ» À§ÇÑ ÄÚµå
 bool CInstanceBase::CanChangeTarget()
 {
 	return m_GraphicThingInstance.CanChangeTarget();
 }
 
-// 2004.07.17.levites.isShow¸¦ ViewFrustumCheck·Î º¯°æ
 bool CInstanceBase::CanPickInstance()
 {
 	if (!__IsInViewFrustum())
@@ -2749,7 +2703,7 @@ bool CInstanceBase::IsStone()
 }
 
 
-bool CInstanceBase::IsGuildWall()	//IsBuilding ±æµå°Ç¹°ÀüÃ¼ IsGuildWallÀº ´ãÀåº®¸¸(¹®Àº Á¦¿Ü)
+bool CInstanceBase::IsGuildWall()
 {
 	return IsWall(m_dwRace);
 }
@@ -2814,9 +2768,9 @@ bool CInstanceBase::IsWoodenDoor()
 	if (m_GraphicThingInstance.IsDoor())
 	{
 		int vnum = GetVirtualNumber();
-		if (vnum == 13000) // ³ª¹«¹®
+		if (vnum == 13000)
 			return true;
-		else if (vnum >= 30111 && vnum <= 30119) // »ç±Í¹®
+		else if (vnum >= 30111 && vnum <= 30119)
 			return true;
 		else
 			return false;
@@ -2870,7 +2824,6 @@ uint32_t CInstanceBase::GetVirtualNumber()
 	return m_dwVirtualNumber;
 }
 
-// 2004.07.17.levites.isShow¸¦ ViewFrustumCheck·Î º¯°æ
 bool CInstanceBase::__IsInViewFrustum()
 {
 	return m_GraphicThingInstance.isShow();
@@ -3592,7 +3545,7 @@ UINT CInstanceBase::__GetRefinedEffect(CItemData* pItem)
 		__ClearWeaponRefineEffect();
 		
 
-		if (refine < 7)	//ÇöÀç Á¦·Ãµµ 7 ÀÌ»ó¸¸ ÀÌÆåÆ®°¡ ÀÖ½À´Ï´Ù.
+		if (refine < 7)
 			return 0;
 
 
@@ -3991,7 +3944,6 @@ UINT CInstanceBase::__GetRefinedEffect(CItemData* pItem)
 	case CItemData::ITEM_TYPE_ARMOR:
 		__ClearArmorRefineEffect();
 
-		// °©¿Ê Æ¯È­ ÀÌÆåÆ®
 		if (pItem->GetSubType() == CItemData::ARMOR_BODY)
 		{
 			uint32_t vnum = pItem->GetIndex();
@@ -4049,7 +4001,7 @@ UINT CInstanceBase::__GetRefinedEffect(CItemData* pItem)
 
 		}
 
-		if (refine < 7)	//ÇöÀç Á¦·Ãµµ 7 ÀÌ»ó¸¸ ÀÌÆåÆ®°¡ ÀÖ½À´Ï´Ù.
+		if (refine < 7)
 			return 0;
 
 		if (pItem->GetSubType() == CItemData::ARMOR_BODY)
@@ -4514,7 +4466,6 @@ bool CInstanceBase::ChangeArmor(uint32_t dwArmor)
 	if (IsWalking())
 		EndWalking();
 
-	// 2004.07.25.myevan.ÀÌÆåÆ® ¾È ºÙ´Â ¹®Á¦
 	//////////////////////////////////////////////////////
 	__ClearAffects();
 	//////////////////////////////////////////////////////
@@ -4545,7 +4496,6 @@ bool CInstanceBase::ChangeArmor(uint32_t dwArmor)
 
 	RefreshState(CRaceMotionData::NAME_WAIT, TRUE);
 
-	// 2004.07.25.myevan.ÀÌÆåÆ® ¾È ºÙ´Â ¹®Á¦
 	/////////////////////////////////////////////////
 	SetAffectFlagContainer(kAffectFlagContainer);
 	/////////////////////////////////////////////////

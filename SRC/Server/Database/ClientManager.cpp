@@ -419,7 +419,7 @@ void CClientManager::Quit()
 
 void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 {
-	const uint8_t bPacketVersion = 6; // BOOT 패킷이 바뀔때마다 번호를 올리도록 한다.
+	const uint8_t bPacketVersion = 6;
 
 	std::vector<tAdminInfo> vAdmin;
 	std::vector<std::string> vHost;
@@ -660,9 +660,6 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 	ClientHandleInfo * pi = (ClientHandleInfo *) qi->pvData;
 	uint32_t dwHandle = pi->dwHandle;
 
-	// 여기에서 사용하는 account_index는 쿼리 순서를 말한다.
-	// 첫번째 패스워드 알아내기 위해 하는 쿼리가 0
-	// 두번째 실제 데이터를 얻어놓는 쿼리가 1
 
 	if (pi->account_index == 0)
 	{
@@ -690,7 +687,6 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 		{
 			MYSQL_ROW row = mysql_fetch_row(res->pSQLResult);
 
-			// 비밀번호가 틀리면..
 			if (((!row[2] || !*row[2]) && strcmp("000000", szSafeboxPassword)) ||
 				(row[2] && *row[2] && strcmp(row[2], szSafeboxPassword)))
 			{
@@ -763,8 +759,6 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 		}
 
 
-		// 쿼리에 에러가 있었으므로 응답할 경우 창고가 비어있는 것 처럼
-		// 보이기 때문에 창고가 아얘 안열리는게 나음
 		if (!msg->Get()->pSQLResult)
 		{
 			LOG_ERROR("null safebox result");
@@ -877,8 +871,6 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 						{
 							case 72723: case 72724: case 72725: case 72726:
 							case 72727: case 72728: case 72729: case 72730:
-							// 무시무시하지만 이전에 하던 걸 고치기는 무섭고...
-							// 그래서 그냥 하드 코딩. 선물 상자용 자동물약 아이템들.
 							case 76004: case 76005: case 76021: case 76022:
 							case 79012: case 79013:
 								if (pItemAward->dwSocket2 == 0)
@@ -1020,7 +1012,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 void CClientManager::QUERY_SAFEBOX_CHANGE_SIZE(CPeer * pkPeer, uint32_t dwHandle, TSafeboxChangeSizePacket * p)
 {
 	ClientHandleInfo * pi = new ClientHandleInfo(dwHandle);
-	pi->account_index = p->bSize;	// account_index를 사이즈로 임시로 사용
+	pi->account_index = p->bSize;
 
 	char szQuery[QUERY_MAX_LEN];
 
@@ -1108,7 +1100,6 @@ void CClientManager::RESULT_PRICELIST_LOAD(CPeer* peer, SQLMsg* pMsg)
 	TItemPricelistReqInfo* pReqInfo = (TItemPricelistReqInfo*)static_cast<CQueryInfo*>(pMsg->pvUserData)->pvData;
 
 	//
-	// DB 에서 로드한 정보를 Cache 에 저장
 	//
 
 	TItemPriceListTable table;
@@ -1127,7 +1118,6 @@ void CClientManager::RESULT_PRICELIST_LOAD(CPeer* peer, SQLMsg* pMsg)
 	PutItemPriceListCache(&table);
 
 	//
-	// 로드한 데이터를 Game server 에 전송
 	//
 
 	TPacketMyshopPricelistHeader header;
@@ -1151,7 +1141,6 @@ void CClientManager::RESULT_PRICELIST_LOAD_FOR_UPDATE(SQLMsg* pMsg)
 	TItemPriceListTable* pUpdateTable = (TItemPriceListTable*)static_cast<CQueryInfo*>(pMsg->pvUserData)->pvData;
 
 	//
-	// DB 에서 로드한 정보를 Cache 에 저장
 	//
 
 	TItemPriceListTable table;
@@ -1274,7 +1263,6 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 	peer->SetMaps(p->alMaps);
 
 	//
-	// 어떤 맵이 어떤 서버에 있는지 보내기
 	//
 	TMapLocation kMapLocations;
 
@@ -1406,7 +1394,6 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 	peer->Encode(vec_kMapLocations.data(), sizeof(TMapLocation) * (uint32_t)vec_kMapLocations.size());
 
 	//
-	// 셋업 : 접속한 피어에 다른 피어들이 접속하게 만든다. (P2P 컨넥션 생성)
 	//
 	LOG_INFO("SETUP: channel {} listen {} p2p {} count {}", peer->GetChannel(), p->wListenPort, p->wP2PPort, bMapCount);
 
@@ -1422,7 +1409,6 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 		if (tmp == peer)
 			continue;
 
-		// 채널이 0이라면 아직 SETUP 패킷이 오지 않은 피어 또는 auth라고 간주할 수 있음
 		if (0 == tmp->GetChannel())
 			continue;
 
@@ -1431,7 +1417,6 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 	}
 
 	//
-	// 로그인 및 빌링정보 보내기
 	//
 	TPacketLoginOnSetup * pck = (TPacketLoginOnSetup *) c_pData;
 
@@ -1501,8 +1486,6 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 {
 	TPlayerItem * p = (TPlayerItem *) c_pData;
 
-	// 창고면 캐쉬하지 않고, 캐쉬에 있던 것도 빼버려야 한다.
-	// auction은 이 루트를 타지 않아야 한다. EnrollInAuction을 타야한다.
 
 	if (p->window == SAFEBOX || p->window == MALL)
 	{
@@ -1641,7 +1624,6 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 {
 	CItemCache* c = GetItemCache(pNew->id);
 
-	// 아이템 새로 생성
 	if (!c)
 	{
 		if (g_log)
@@ -1650,15 +1632,12 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 		c = new CItemCache;
 		m_map_itemCache.insert(TItemCacheMap::value_type(pNew->id, c));
 	}
-	// 있을시
 	else
 	{
 		if (g_log)
 			LOG_INFO("ITEM_CACHE: PutItemCache ==> Have Cache");
-		// 소유자가 틀리면
 		if (pNew->owner != c->Get()->owner)
 		{
-			// 이미 이 아이템을 가지고 있었던 유저로 부터 아이템을 삭제한다.
 			TItemCacheSetPtrMap::iterator it = m_map_pkItemCacheSetPtr.find(c->Get()->owner);
 
 			if (it != m_map_pkItemCacheSetPtr.end())
@@ -1670,7 +1649,6 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 		}
 	}
 
-	// 새로운 정보 업데이트
 	c->Put(pNew, bSkipQuery);
 
 	if (const auto it = m_map_pkItemCacheSetPtr.find(c->Get()->owner); it != m_map_pkItemCacheSetPtr.end())
@@ -1683,8 +1661,6 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 	}
 	else
 	{
-		// 현재 소유자가 없으므로 바로 저장해야 다음 접속이 올 때 SQL에 쿼리하여
-		// 받을 수 있으므로 바로 저장한다.
 		if (g_log)
 			LOG_INFO("ITEM_CACHE: direct save {} id {}", c->Get()->owner, c->Get()->id);
 		else
@@ -1744,7 +1720,6 @@ void CClientManager::UpdatePlayerCache()
 
 			c->Flush();
 
-			// Item Cache도 업데이트
 			UpdateItemCacheSet(c->Get()->id);
 		}
 		else if (c->CheckFlushTimeout())
@@ -1813,7 +1788,6 @@ void CClientManager::UpdateItemCache()
 	{
 		CItemCache * c = it++->second;
 
-		// 아이템은 Flush만 한다.
 		if (c->CheckFlushTimeout())
 		{
 			if (g_test_server)
@@ -1860,7 +1834,7 @@ void CClientManager::QUERY_ITEM_DESTROY(CPeer * pkPeer, const char * c_pData)
 		if (g_log)
 			LOG_INFO("HEADER_GD_ITEM_DESTROY: PID {} ID {}", dwPID, dwID);
 
-		if (dwPID == 0) // 아무도 가진 사람이 없었다면, 비동기 쿼리
+		if (dwPID == 0)
 			CDBManager::instance().AsyncQuery(szQuery);
 		else
 			CDBManager::instance().ReturnQuery(szQuery, QID_ITEM_DESTROY, pkPeer->GetHandle(), nullptr);
@@ -1937,9 +1911,6 @@ void CClientManager::QUERY_RELOAD_PROTO()
 }
 
 // ADD_GUILD_PRIV_TIME
-/**
- * @version	05/06/08 Bang2ni - 지속시간 추가
- */
 void CClientManager::AddGuildPriv(TPacketGiveGuildPriv* p)
 {
 	CPrivManager::instance().AddGuildPriv(p->guild_id, p->type, p->value, p->duration_sec);
@@ -2257,8 +2228,6 @@ void CClientManager::WeddingEnd(TPacketWeddingEnd * p)
 }
 
 //
-// 캐시에 가격정보가 있으면 캐시를 업데이트 하고 캐시에 가격정보가 없다면
-// 우선 기존의 데이터를 로드한 뒤에 기존의 정보로 캐시를 만들고 새로 받은 가격정보를 업데이트 한다.
 //
 void CClientManager::MyshopPricelistUpdate(const TItemPriceListTable* pPacket) // @fixme403 (TPacketMyshopPricelistHeader to TItemPriceListTable)
 {
@@ -2297,7 +2266,6 @@ void CClientManager::MyshopPricelistUpdate(const TItemPriceListTable* pPacket) /
 }
 
 // MYSHOP_PRICE_LIST
-// 캐시된 가격정보가 있으면 캐시를 읽어 바로 전송하고 캐시에 정보가 없으면 DB 에 쿼리를 한다.
 //
 void CClientManager::MyshopPricelistRequest(CPeer* peer, uint32_t dwHandle, uint32_t dwPlayerID)
 {
@@ -2859,9 +2827,7 @@ CPeer * CClientManager::GetAnyPeer()
 	return m_peerList.front();
 }
 
-// DB 매니저로 부터 받은 결과를 처리한다.
 //
-// @version	05/06/10 Bang2ni - 가격정보 관련 쿼리(QID_ITEMPRICE_XXX) 추가
 int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 {
 	CQueryInfo * qi = (CQueryInfo *) msg->pvUserData;
@@ -3054,7 +3020,7 @@ void UsageLog()
 	char        *time_s;
 	struct tm   lt;
 
-	int         avg = g_dwUsageAvg / 3600; // 60 초 * 60 분
+	int         avg = g_dwUsageAvg / 3600;
 
 	fp = fopen("usage.txt", "a+");
 
@@ -3087,15 +3053,6 @@ int CClientManager::Process()
 	{
 		++thecore_heart->pulse;
 
-		/*
-		//30분마다 변경
-		if (((thecore_pulse() % (60 * 30 * 10)) == 0))
-		{
-			g_iPlayerCacheFlushSeconds = MAX(60, rand() % 180);
-			g_iItemCacheFlushSeconds = MAX(60, rand() % 180);
-			LOG_INFO("[SAVE_TIME]Change saving time item {} player {}", g_iPlayerCacheFlushSeconds, g_iItemCacheFlushSeconds);
-		}
-		*/
 
 		if (!(thecore_heart->pulse % thecore_heart->passes_per_sec))
 		{
@@ -3157,11 +3114,8 @@ int CClientManager::Process()
 #endif
 
 
-			//플레이어 플러쉬
 			UpdatePlayerCache();
-			//아이템 플러쉬
 			UpdateItemCache();
-			//로그아웃시 처리- 캐쉬셋 플러쉬
 			UpdateLogoutPlayer();
 
 			// MYSHOP_PRICE_LIST
@@ -3238,7 +3192,7 @@ int CClientManager::Process()
 			/////////////////////////////////////////////////////////////////
 		}
 
-		if (!(thecore_heart->pulse % (thecore_heart->passes_per_sec * 60)))	// 60초에 한번
+		if (!(thecore_heart->pulse % (thecore_heart->passes_per_sec * 60)))
 
 #ifdef ENABLE_BATTLE_PASS
 		if (!(thecore_heart->pulse % (thecore_heart->passes_per_sec * 3600)))	// Refresh ranking cache every hour
@@ -3248,7 +3202,6 @@ int CClientManager::Process()
 #endif
 
 		{
-			// 유니크 아이템을 위한 시간을 보낸다.
 			CClientManager::instance().SendTime();
 #ifndef ENABLE_25082021
 			std::string st;
@@ -3257,7 +3210,7 @@ int CClientManager::Process()
 #endif
 		}
 
-		if (!(thecore_heart->pulse % (thecore_heart->passes_per_sec * 3600)))	// 한시간에 한번
+		if (!(thecore_heart->pulse % (thecore_heart->passes_per_sec * 3600)))
 		{
 			CMoneyLog::instance().Save();
 		}
@@ -3274,7 +3227,7 @@ int CClientManager::Process()
 	int idx;
 	CPeer * peer;
 
-	for (idx = 0; idx < num_events; ++idx) // 인풋
+	for (idx = 0; idx < num_events; ++idx)
 	{
 		peer = (CPeer *) fdwatch_get_client_data(m_fdWatcher, idx);
 
@@ -3353,7 +3306,6 @@ int CClientManager::Process()
 
 uint32_t CClientManager::GetUserCount()
 {
-	// 단순히 로그인 카운트를 센다.. --;
 	return m_map_kLogonAccount.size();
 }
 
@@ -3413,7 +3365,6 @@ bool CClientManager::InitializeNowItemID()
 {
 	uint32_t dwMin, dwMax;
 
-	//아이템 ID를 초기화 한다.
 	if (!CConfig::instance().GetTwoValue("ITEM_ID_RANGE", &dwMin, &dwMax))
 	{
 		LOG_ERROR("conf.txt: Cannot find ITEM_ID_RANGE [start_item_id] [end_item_id]");
@@ -3835,7 +3786,6 @@ bool CClientManager::InitializeLocalization()
 
 bool CClientManager::__GetAdminInfo(const char *szIP, std::vector<tAdminInfo> & rAdminVec)
 {
-	//szIP == NULL 일경우  모든서버에 운영자 권한을 갖는다.
 	char szQuery[512];
 	snprintf(szQuery, sizeof(szQuery),
 			"SELECT mID,mAccount,mName,mContactIP,mServerIP,mAuthority FROM gmlist WHERE mServerIP='ALL' or mServerIP='%s'",
@@ -4001,7 +3951,6 @@ void CClientManager::SendSpareItemIDRange(CPeer* peer)
 }
 
 //
-// Login Key만 맵에서 지운다.
 //
 void CClientManager::DeleteLoginKey(TPacketDC *data)
 {

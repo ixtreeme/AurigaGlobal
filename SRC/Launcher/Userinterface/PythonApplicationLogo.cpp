@@ -23,7 +23,6 @@ int CPythonApplication::OnLogoOpen(char* szName)
 	//m_nLeft = 0; m_nRight = 0; m_nTop = 0; m_nBottom = 0;
 
 
-	//// 처음에는 1/1 크기의 텍스쳐를 생성해둔다.
 	//if(!m_pLogoTex->Create(1, 1, D3DFMT_A8R8G8B8)) { return 0; }
 
 	//// Set GraphBuilder / SampleGrabber
@@ -60,7 +59,6 @@ int CPythonApplication::OnLogoOpen(char* szName)
 	//// Media Event
 	//if(FAILED(m_pGraphBuilder->QueryInterface(IID_IMediaEventEx, (VOID**) &m_pMediaEvent))) { return 0; }
 
-	//// Window 안보이게
 	//m_pVideoWnd->SetWindowPosition( 3000, 3000, 0, 0 );
 	//m_pVideoWnd->put_Visible(0);
 	//m_pSampleGrabber->SetBufferSamples(TRUE);
@@ -80,8 +78,6 @@ int CPythonApplication::OnLogoUpdate()
 	//osvi.dwOSVersionInfoSize = sizeof(osvi);
 	//GetVersionEx(&osvi);
 
-	//// windows xp 이하인 버전은 logo skip.
-	////	m_pSampleGrabber->GetCurrentBuffer(&m_lBufferSize,  (LONG*)m_pCaptureBuffer) fail 나기 때문.
 	//if (osvi.dwMajorVersion <= 5)
 	//{
 	//	return 0;
@@ -94,10 +90,8 @@ int CPythonApplication::OnLogoUpdate()
 
 	//BYTE* pBuffer = m_pCaptureBuffer; LONG lBufferSize = m_lBufferSize;
 
-	//// 재생이 안됬을 경우 재생.
 	//if(!m_bLogoPlay) { m_pMediaCtrl->Run(); m_bLogoPlay = true; }
 
-	//// 읽어온 버퍼가 0인경우 버퍼를 재할당.
 	//if( lBufferSize == 0  ) {
 	//	m_pSampleGrabber->GetCurrentBuffer(&m_lBufferSize, NULL);
 
@@ -107,8 +101,6 @@ int CPythonApplication::OnLogoUpdate()
 	//	lBufferSize = m_lBufferSize;
 	//}
 
-	//// 영상 로딩중에 Update되는 경우, 버퍼 얻기에 실패하는 경우가 많다.
-	//// 실패하더라도 완전히 종료되는 경우는 아니므로, 실행을 중단하지는 않는다.
 	//if(FAILED(m_pSampleGrabber->GetCurrentBuffer(&m_lBufferSize,  (LONG*)m_pCaptureBuffer)))
 	//{
 	//	m_bLogoError = true;
@@ -117,7 +109,6 @@ int CPythonApplication::OnLogoUpdate()
 	//	D3DLOCKED_RECT rt;
 	//	ZeroMemory(&rt, sizeof(rt));
 
-	//	// 실패한 경우에는 텍스쳐를 까맣게 비운다.
 	//	tex->LockRect(0, &rt, nullptr, 0);
 	//	BYTE* destb = static_cast<byte*>(rt.pBits);
 	//	for(int a = 0; a < 4; a+= 4)
@@ -150,14 +141,12 @@ int CPythonApplication::OnLogoUpdate()
 
 
 
-	//// 크기가 1, 즉 텍스쳐 공간이 제대로 준비 안된경우 다시 만든다.
 	//if(m_pLogoTex->GetWidth() == 1)
 	//{
 	//	m_pLogoTex->Destroy(); m_pLogoTex->Create(lWidth, lHeight, D3DFMT_A8R8G8B8);
 
 	//}
 
-	//// 준비됬으면 버퍼에서 텍스쳐로 복사해온다.
 	//LPDIRECT3DTEXTURE9 tex = m_pLogoTex->GetD3DTexture();
 	//D3DLOCKED_RECT rt;
 	//ZeroMemory(&rt, sizeof(rt));
@@ -171,7 +160,6 @@ int CPythonApplication::OnLogoUpdate()
 	//}
 	//tex->UnlockRect(0);
 
-	//// 영상의 상태 체크 (종료되었는지)
 	//long evCode;
 	//LONG_PTR param1, param2;
 	//while(SUCCEEDED(m_pMediaEvent->GetEvent(&evCode, &param1, &param2, 0)))
@@ -207,7 +195,6 @@ void CPythonApplication::OnLogoRender()
 
 void CPythonApplication::OnLogoClose()
 {
-	// NOTE: LOGO 동영상이 한 번도 안 불렸을 경우에는 OnLogoClose 과정에서 크래시가 나는 문제 수정
 	/*if (false == bInitializedLogo)
 		return;
 

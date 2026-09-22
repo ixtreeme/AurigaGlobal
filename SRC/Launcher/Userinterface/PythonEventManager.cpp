@@ -151,7 +151,6 @@ int CPythonEventManager::RegisterEventSetFromString(const std::string& strScript
 	if (!pEventSet)
 		return -1;
 
-	// SCRIPT_PARSING_FAILURE_CLEAR_BUG 스크립트 파싱 실패시 __ClearEventSetp 에서 에러 발생
 	pEventSet->pCurrentTextLine = nullptr;
 	// END_OF_SCRIPT_PARSING_FAILURE_CLEAR_BUG
 
@@ -165,7 +164,6 @@ int CPythonEventManager::RegisterEventSetFromString(const std::string& strScript
 	pEventSet->poEventHandler = nullptr;
 	__InitEventSet(*pEventSet);
 
-	// NOTE : 만약 단순한 스크립트 이벤트 실행 커맨드라면 다시 만든다.
 	script::TCmd ScriptCommand;
 	int pEventPosition;
 	int iEventType;
@@ -473,7 +471,6 @@ void CPythonEventManager::ProcessEventSet(TEventSet* pEventSet)
 
 	case EVENT_TYPE_WAIT:
 	{
-		//캐틱터 만들기 제국 설명등에서 설명 밑으로 쳐지는 버그 수정/EVENT_TYPE_WAIT 관련해서 테스트 필요.
 		pEventSet->iyLocal = 0;
 		pEventSet->isLock = true;
 		break;
@@ -588,7 +585,6 @@ void CPythonEventManager::ProcessEventSet(TEventSet* pEventSet)
 		int idx = atoi(GetArgument("idx", ScriptCommand.argList));
 		const char* name = GetArgument("name", ScriptCommand.argList);
 
-		// 퀘스트 UI 리뉴얼이 되면 해결 되므로 일단 용혼석만 땜빵 by chrislee
 		if (!strcmp(name, "조각난 용혼석?....")) {
 			PyCallClassMemberFunc(m_poInterface, "BINARY_RecvQuest", Py_BuildValue("(isss)", idx, name, "highlight", ""));
 		}

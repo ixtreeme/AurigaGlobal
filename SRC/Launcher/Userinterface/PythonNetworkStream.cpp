@@ -302,7 +302,6 @@ void CPythonNetworkStream::ExitGame()
 //	if (!Recv(sizeof(TPacketGCFakeShopSign), &p))
 //		return false;
 //
-//	// Küldd át Pythonnak a VID-et és a mount countot, például stringben:
 //	PyCallClassMemberFunc(m_apoPhaseWnd[PHASE_WINDOW_GAME],
 //		"BINARY_FakeSign_Appear",
 //		Py_BuildValue("(ii)", p.dwVID, p.iMountCount));
@@ -344,7 +343,6 @@ void CPythonNetworkStream::AbsoluteExitApplication()
 
 bool CPythonNetworkStream::__IsNotPing()
 {
-	// ¿ø·¡´Â ÇÎÀÌ ¾È¿Ã¶§ Ã¼Å©ÀÌ³ª ¼­¹ö¶û Á¤È®È÷ ¸ÂÃß¾î¾ß ÇÑ´Ù.
 	return false;
 }
 
@@ -356,7 +354,6 @@ uint32_t CPythonNetworkStream::GetGuildID()
 UINT CPythonNetworkStream::UploadMark(const char * c_szImageFileName)
 {
 	// MARK_BUG_FIX
-	// ±æµå¸¦ ¸¸µç Á÷ÈÄ´Â ±æµå ¾ÆÀÌµð°¡ 0ÀÌ´Ù.
 	if (0 == m_dwGuildID)
 		return ERROR_MARK_UPLOAD_NEED_RECONNECT;
 
@@ -426,13 +423,12 @@ UINT CPythonNetworkStream::UploadSymbol(const char* c_szImageFileName)
 
 void CPythonNetworkStream::__DownloadMark()
 {
-	// 3ºÐ ¾È¿¡´Â ´Ù½Ã Á¢¼ÓÇÏÁö ¾Ê´Â´Ù.
 	uint32_t curTime = ELTimer_GetMSec();
 
 	if (curTime < gs_nextDownloadMarkTime)
 		return;
 
-	gs_nextDownloadMarkTime = curTime + 60000 * 3; // 3ºÐ
+	gs_nextDownloadMarkTime = curTime + 60000 * 3;
 
 	CGuildMarkDownloader& rkGuildMarkDownloader = CGuildMarkDownloader::Instance();
 	rkGuildMarkDownloader.Connect(m_kMarkAuth.m_kNetAddr, m_kMarkAuth.m_dwHandle, m_kMarkAuth.m_dwRandomKey);

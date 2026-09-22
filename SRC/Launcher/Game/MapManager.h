@@ -27,13 +27,12 @@ class CMapManager : public CScreen, public IPhysicsWorld
 		void					Initialize();
 		void					Destroy();
 
-		void					Create();		// AllocMap 호출 해서 m_pMap 을 만듬
+		void					Create();
 
 		virtual void			Clear();
 		virtual CMapBase *		AllocMap();
 
 		//////////////////////////////////////////////////////////////////////////
-		// Map 관리 함수
 		//////////////////////////////////////////////////////////////////////////
 		bool					IsMapReady();
 
@@ -51,9 +50,6 @@ class CMapManager : public CScreen, public IPhysicsWorld
 		//////////////////////////////////////////////////////////////////////////
 		// Environment
 		///
-		// NOTE : 다음 Environment로 서서히 블렌딩 시킨다
-		//        아직 세부 구현은 되어있지 않음. 이 함수들은 Protected로 넣고,
-		//        MapManager에 TimeControl 부분을 구현하도록 한다. - [levites]
 		void					SetEnvironmentDataPtr(const TEnvironmentData * c_pEnvironmentData);
 		void					ResetEnvironmentDataPtr(const TEnvironmentData * c_pEnvironmentData);
 		void					SetEnvironmentData(int nEnvDataIndex);

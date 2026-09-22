@@ -65,9 +65,9 @@ class CPeer : public CPeerBase
 	uint8_t	m_bChannel;
 	uint32_t	m_dwHandle;
 	uint32_t	m_dwUserCount;
-	uint16_t	m_wListenPort;	// 게임서버가 클라이언트를 위해 listen 하는 포트
-	uint16_t	m_wP2PPort;	// 게임서버가 게임서버 P2P 접속을 위해 listen 하는 포트
-	int32_t	m_alMaps[MAP_ALLOW_LIMIT];	// 어떤 맵을 관장하고 있는가?
+	uint16_t	m_wListenPort;
+	uint16_t	m_wP2PPort;
+	int32_t	m_alMaps[MAP_ALLOW_LIMIT];
 
 	TItemIDRangeTable m_itemRange;
 	TItemIDRangeTable m_itemSpareRange;

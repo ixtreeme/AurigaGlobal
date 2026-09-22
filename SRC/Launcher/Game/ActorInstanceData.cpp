@@ -84,7 +84,6 @@ bool CActorInstance::SetRace(uint32_t eRace)
 
 	Clear();
 
-	//NOTE : PC만 Part별로 다 생성하게 해준다.
 	if( IsPC())
 	{
 		ReserveModelThing(CRaceData::PART_MAX_NUM);

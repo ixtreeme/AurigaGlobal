@@ -19,7 +19,6 @@
 extern HMODULE g_hDll;
 
 // -----------------------------------------------------------------------
-// Segédfüggvények
 // -----------------------------------------------------------------------
 
 static std::wstring GetDllDir()
@@ -42,7 +41,6 @@ static std::string TrimCopy(std::string s)
 }
 
 // -----------------------------------------------------------------------
-// SHA256 – saját implementáció, nem hív semmilyen kriptográfiai API-t
 // -----------------------------------------------------------------------
 
 static const uint32_t kShaK[64] = {
@@ -168,7 +166,6 @@ static void Sha256Final(Sha256Ctx& ctx, uint8_t digest[32])
     }
 }
 
-// Fájl SHA256 hash kiszámítása – csak ReadFile, semmi CryptoAPI
 static std::string Sha256OfFile(const std::wstring& filePath)
 {
     HANDLE hFile = CreateFileW(filePath.c_str(), GENERIC_READ,
@@ -317,7 +314,6 @@ static bool DownloadFile(const std::wstring& host, const std::wstring& path,
 }
 
 // -----------------------------------------------------------------------
-// Verzió lekérés
 // -----------------------------------------------------------------------
 
 static std::string GetLocalVersion()
@@ -342,7 +338,6 @@ static std::string GetServerHash()
 }
 
 // -----------------------------------------------------------------------
-// Updater kicsomagolás és futtatás
 // -----------------------------------------------------------------------
 
 static bool ExtractUpdaterExe(std::wstring& outPath)
@@ -402,7 +397,6 @@ void PerformSelfUpdate(const std::wstring& newDllPath)
 }
 
 // -----------------------------------------------------------------------
-// Fő update folyamat
 // -----------------------------------------------------------------------
 
 bool CheckForUpdate()

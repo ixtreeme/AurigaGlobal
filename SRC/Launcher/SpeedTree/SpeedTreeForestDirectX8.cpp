@@ -330,8 +330,6 @@ void CSpeedTreeForestDirectX8::Render(unsigned long ulRenderBitVector)
 	STATEMANAGER.SetRenderState(D3DRS_COLORVERTEX, dwColorVertexState);
 	STATEMANAGER.SetRenderState(D3DRS_FOGVERTEXMODE, dwFogVertexMode);
 
-	// 셀프섀도우로 쓰는 TextureStage 1의 COLOROP와 ALPHAOP를 꺼줘야 다음 렌더링 할 놈들이
-	// 제대로 나온다. (안그러면 검게 나올 가능성이..)
 	if (!(ulRenderBitVector & Forest_RenderToShadow))
 	{
 		STATEMANAGER.SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);

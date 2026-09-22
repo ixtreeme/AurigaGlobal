@@ -17,9 +17,9 @@ char g_nation_name[4][32] =
 UINT g_start_map[4] =
 {
 	0,	// reserved
-	1,	// 신수국
-	21,	// 천조국
-	41	// 진노국
+	1,
+	21,
+	41
 };
 
 uint32_t g_start_position[4][2] =
@@ -60,9 +60,9 @@ uint32_t g_create_position_canada[4][2] =
 int32_t g_start_map[4] =
 {
 	0,	// reserved
-	1,	// 신수국
-	21,	// 천조국
-	41	// 진노국
+	1,
+	21,
+	41
 };
 
 uint32_t g_start_position[4][2] =

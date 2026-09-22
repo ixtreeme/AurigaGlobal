@@ -78,7 +78,6 @@ bool CPolymorphUtils::PolymorphCharacter(
 
 	// dwDuration *= 60;
 
-	// ���� Ȯ�� = ĳ���� ���� - �� ���� + �а��� ���� + 29 + �а� ��ų ����
 	iPolyPercent = ecs::PointSystem::GetLevel(character) - pMob->m_table.bLevel +
 		ItemSystem::GetItemSocket(item, 2) + (29 + bySkillLevel);
 
@@ -102,7 +101,6 @@ bool CPolymorphUtils::PolymorphCharacter(
 
 	AffectSystem::AddAffect(character, AFFECT_POLYMORPH, POINT_POLYMORPH, pMob->m_table.dwVnum, AFF_POLYMORPH, dwDuration, 0, true);
 
-	// ���� ���ʽ� = �а� ��ų ���� + �а��� ����
 	dwBonusPercent = bySkillLevel + ItemSystem::GetItemSocket(item, 2);
 
 	switch (GetBonusType(pMob->m_table.dwVnum))
@@ -146,8 +144,6 @@ bool CPolymorphUtils::UpdateBookPracticeGrade(entt::entity character, entt::enti
 
 bool CPolymorphUtils::GiveBook(entt::entity character, uint32_t dwMobVnum, uint32_t dwPracticeCount, uint8_t BookLevel, uint8_t LevelLimit)
 {
-	// ����0                ����1       ����2
-	// �а��� ���� ��ȣ   ��������    �а��� ����
 	if (character == entt::null || !g_registry.valid(character))
 		return false;
 

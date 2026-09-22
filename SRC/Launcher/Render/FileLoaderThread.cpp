@@ -42,7 +42,7 @@ void CFileLoaderThread::Request(const std::string& filename)
         m_requestDeque.push_back(pData);
     }
 
-    m_cv.notify_one(); // Értesíti a háttér threadet, hogy új munka van
+    m_cv.notify_one();
 }
 
 bool CFileLoaderThread::Fetch(TData** ppData)
@@ -63,7 +63,6 @@ void CFileLoaderThread::ThreadMain()
     {
         TData* pData = nullptr;
 
-        // Várakozás, amíg van munka vagy shutdown
         {
             std::unique_lock<std::mutex> lock(m_requestMutex);
             m_cv.wait(lock, [this] {
@@ -77,7 +76,6 @@ void CFileLoaderThread::ThreadMain()
             m_requestDeque.pop_front();
         }
 
-        // Dolgozás (Process)
         const void* pvBuf = nullptr;
         if (CEterPackManager::Instance().Get(pData->File, pData->stFileName.c_str(), &pvBuf))
         {
@@ -86,7 +84,6 @@ void CFileLoaderThread::ThreadMain()
             memcpy(pData->pvBuf, pvBuf, pData->dwSize);
         }
 
-        // Áthelyezés a complete listába
         {
             std::lock_guard<std::mutex> lock(m_completeMutex);
             m_completeDeque.push_back(pData);

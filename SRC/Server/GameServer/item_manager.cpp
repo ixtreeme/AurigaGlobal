@@ -144,7 +144,6 @@ bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 		if (m_vec_prototype[i].dwRefinedVnum)
 			m_map_ItemRefineFrom.insert(std::make_pair(m_vec_prototype[i].dwRefinedVnum, m_vec_prototype[i].dwVnum));
 
-		// NOTE : QUEST_GIVE �÷��״� npc �̺�Ʈ�� �߻�.
 		if (m_vec_prototype[i].bType == ITEM_QUEST || IS_SET(m_vec_prototype[i].dwFlags, ITEM_FLAG_QUEST_USE | ITEM_FLAG_QUEST_USE_MULTIPLE)
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 			|| (m_vec_prototype[i].bType == ITEM_COSTUME && m_vec_prototype[i].bSubType == COSTUME_MOUNT)
@@ -1110,8 +1109,6 @@ public:
 extern std::vector<CItemDropInfo> g_vec_pkCommonDropItem[MOB_RANK_MAX_NUM];
 
 // 20050503.ipkn.
-// iMinimum ���� ������ iDefault ���� (��, iMinimum�� 0���� Ŀ����)
-// 1, 0 ������ ON/OFF �Ǵ� ����� �����ϱ� ���� ����
 int GetDropPerKillPct(int iMinimum, int iDefault, int iDeltaPercent, const char* c_pszFlag)
 {
 	int iVal = 0;
@@ -1131,8 +1128,6 @@ int GetDropPerKillPct(int iMinimum, int iDefault, int iDeltaPercent, const char*
 	if (iVal == 0)
 		return 0;
 
-	// �⺻ �����϶� (iDeltaPercent=100)
-	// 40000 iVal ������ �ϳ� ������ �ֱ� ���� �����
 	return (40000 * iDeltaPercent / iVal);
 }
 
@@ -1407,7 +1402,6 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 			CMobItemGroup* pGroup = it->second;
 
 			// MOB_DROP_ITEM_BUG_FIX
-			// 20050805.myevan.MobDropItem �� �������� ���� ��� CMobItemGroup::GetOne() ���ٽ� ���� �߻� ����
 			if (pGroup && !pGroup->IsEmpty())
 			{
 				int iPercent = 40000 * iDeltaPercent / pGroup->GetKillPerDrop();
@@ -1475,7 +1469,6 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 		}
 	}
 
-	// ����
 	if (ecs::PlayerRuntime::GetMobDropItemVnum(chr))
 	{
 		auto it = m_map_dwEtcItemDropProb.find(ecs::PlayerRuntime::GetMobDropItemVnum(chr));
@@ -1531,14 +1524,12 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 		pdw[1] = 1;
 		pdw[2] = quest::CQuestManager::instance().GetEventFlag("lotto_round");
 
-		// ����� ���� ������ �����Ѵ�
 		DBManager::instance().ReturnQuery(QID_LOTTO, ecs::PlayerRuntime::GetPlayerID(killer), pdw,
 			"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
 			get_table_postfix(), ecs::PlayerRuntime::GetPlayerID(killer));
 	}
 
 	//
-	// ����� ��� ������
 	//
 	//CreateQuestDropItem(pkChr, pkKiller, vec_item, iDeltaPercent, iRandRange);
 #ifdef ENABLE_EVENT_MANAGER
@@ -1644,11 +1635,6 @@ bool DropEvent_CharStone_SetValue(const std::string& name, int value)
 // END_OF_DROPEVENT_CHARSTONE
 
 // fixme
-// ���� �Ͱ� �Բ� quest�� ���� ������.
-// �̰� �ʹ� �����ݾ�...
-// �?. �ϵ��ڵ� �ȴ� �̤�
-// �跮 ������ ���� ����.
-// by rtsummit ��ġ�� ��¥
 static struct DropEvent_RefineBox
 {
 	int percent_low;
@@ -1703,7 +1689,6 @@ bool DropEvent_RefineBox_SetValue(const std::string& name, int value)
 
 	return true;
 }
-// ���� ������ ���� ��.
 
 
 uint32_t ITEM_MANAGER::GetRefineFromVnum(uint32_t dwVnum)

@@ -160,8 +160,6 @@ bool CInstanceBase::__ProcessSingleDamage(const SEffectDamage& sDamage)
 		strDamageType = "nontarget_";
 		rdwCRCEft = EFFECT_DAMAGE_NOT_TARGET;
 
-		// Meghagyom az eredeti viselkedést:
-		// nontarget esetén ne rajzoljon számot.
 		return true;
 	}
 	else
@@ -240,13 +238,10 @@ bool CInstanceBase::__ProcessSingleDamage(const SEffectDamage& sDamage)
 
 	uint32_t index = 0;
 
-	// Jobbról balra renderelünk:
-	// maradék -> k -> m
 	for (auto it = segments.rbegin(); it != segments.rend(); ++it)
 	{
 		const DamageSegment& seg = *it;
 
-		// pl. 2,000,000 esetén ne jelenjen meg 0k
 		if (seg.value == 0 && seg.suffix[0] != '\0')
 			continue;
 
@@ -294,8 +289,6 @@ bool CInstanceBase::ProcessDamage()
 
 	bool bProcessed = false;
 
-	// Régi hiba: csak 1 elemet dolgozott fel / hívás.
-	// Új: batch-ben több elemet kezelünk ugyanabban a frame-ben.
 	static constexpr size_t kMaxDamageProcessPerFrame = 20;
 
 	size_t processedCount = 0;
@@ -362,7 +355,6 @@ CInstanceBase::SEffectContainer::Dict& CInstanceBase::__EffectContainer_GetDict(
 	return m_kEffectContainer.m_kDct_dwEftID;
 }
 
-// Return value ¸¦ boolean żˇĽ­ ID ·Î ąŮ˛ß´Ď´Ů
 uint32_t CInstanceBase::__EffectContainer_AttachEffect(uint32_t dwEftKey)
 {
 	SEffectContainer::Dict& rkDctEftID=__EffectContainer_GetDict();
@@ -598,7 +590,6 @@ bool CInstanceBase::__FindPVPReadyKey(uint32_t dwVIDSrc, uint32_t dwVIDDst)
 
 	return true;
 }
-//±ćµĺŔü˝Ă »ó´ë ±ćµĺŔÎÁö Č®ŔÎÇŇ¶§.
 bool CInstanceBase::__FindGVGKey(uint32_t dwSrcGuildID, uint32_t dwDstGuildID)
 {
 	uint32_t dwGVGKey=__GetPVPKey(dwSrcGuildID, dwDstGuildID);
@@ -608,7 +599,6 @@ bool CInstanceBase::__FindGVGKey(uint32_t dwSrcGuildID, uint32_t dwDstGuildID)
 
 	return true;
 }
-//´ë·Ă ¸đµĺżˇĽ­´Â ´ë·Ă »ó´ë¸¸ °ř°ÝÇŇ Ľö ŔÖ´Ů.
 bool CInstanceBase::__FindDUELKey(uint32_t dwVIDSrc, uint32_t dwVIDDst)
 {
 	uint32_t dwDUELKey=__GetPVPKey(dwVIDSrc, dwVIDDst);
@@ -627,7 +617,7 @@ bool CInstanceBase::IsPVPInstance(CInstanceBase& rkInstSel)
 	uint32_t dwGuildIDSrc=GetGuildID();
 	uint32_t dwGuildIDDst=rkInstSel.GetGuildID();
 
-	if (GetDuelMode())	//´ë·Ă ¸đµĺŔĎ¶§´Â ~_~
+	if (GetDuelMode())
 		return true;
 
 	return __FindPVPKey(dwVIDSrc, dwVIDDst) || __FindGVGKey(dwGuildIDSrc, dwGuildIDDst);
@@ -828,7 +818,6 @@ void CInstanceBase::RefreshTextTailTitle()
 	RefreshTextTail();
 }
 
-// 2004.07.25.myevan.ŔĚĆĺĆ® ľČ şŮ´Â ą®Á¦ ÇŘ°á
 /////////////////////////////////////////////////
 void CInstanceBase::__ClearAffectFlagContainer()
 {
@@ -938,7 +927,6 @@ void CInstanceBase::__SetReviveInvisibilityAffect(bool isVisible)
 {
 	if (isVisible)
 	{
-		// NOTE : Dress ¸¦ ŔÔ°í ŔÖŔ¸¸é Alpha ¸¦ łÖÁö ľĘ´Â´Ů.
 		if (IsWearingDress())
 			return;
 
@@ -954,7 +942,6 @@ void CInstanceBase::__Assassin_SetEunhyeongAffect(bool isVisible)
 {
 	if (isVisible)
 	{
-		// NOTE : Dress ¸¦ ŔÔ°í ŔÖŔ¸¸é Alpha ¸¦ łÖÁö ľĘ´Â´Ů.
 		if (IsWearingDress())
 			return;
 
@@ -964,7 +951,6 @@ void CInstanceBase::__Assassin_SetEunhyeongAffect(bool isVisible)
 		}
 		else
 		{
-			// 2004.10.16.myevan.ŔşÇüąý żĎŔü Ĺő¸í
 			m_GraphicThingInstance.BlendAlphaValue(0.0f, 1.0f);
 			m_GraphicThingInstance.HideAllAttachingEffect();
 		}
@@ -1049,35 +1035,6 @@ void CInstanceBase::__SetAffect(UINT eAffect, bool isVisible)
 				return;
 #endif
 			break;
-/*
-		case AFFECT_GWIGEOM: // Ŕü±â ĽÓĽş °ř°ÝŔ¸·Î ąŮ˛đ żąÁ¤
-			if (isVisible)
-			{
-				m_GraphicThingInstance.SetBattleHitEffect(ms_adwCRCAffectEffect[EFFECT_ELECTRIC_HIT]);
-				m_GraphicThingInstance.SetBattleAttachEffect(ms_adwCRCAffectEffect[EFFECT_ELECTRIC_ATTACH]);
-			}
-			else
-			{
-				m_GraphicThingInstance.SetBattleHitEffect(ms_adwCRCAffectEffect[EFFECT_HIT]);
-				m_GraphicThingInstance.SetBattleAttachEffect(0);
-			}
-			return;
-			break;
-		case AFFECT_HWAYEOM: // Č­ż° ĽÓĽş °ř°ÝŔ¸·Î ąŮ˛đ żąÁ¤
-			if (isVisible)
-			{
-				m_GraphicThingInstance.SetBattleHitEffect(ms_adwCRCAffectEffect[EFFECT_FLAME_HIT]);
-				m_GraphicThingInstance.SetBattleAttachEffect(ms_adwCRCAffectEffect[EFFECT_FLAME_ATTACH]);
-			}
-			else
-			{
-				m_GraphicThingInstance.SetBattleHitEffect(ms_adwCRCAffectEffect[EFFECT_HIT]);
-				m_GraphicThingInstance.SetBattleAttachEffect(0);
-			}
-			// Č­ż°ÂüŔş °ř°ÝÇŇ ¶§¸¸ ŔĎ˝ĂŔűŔ¸·Î Visible ÇŐ´Ď´Ů.
-			return;
-			break;
-*/
 		case AFFECT_CHEONGEUN:
 			m_GraphicThingInstance.SetResistFallen(isVisible);
 			break;
@@ -1101,7 +1058,6 @@ void CInstanceBase::__SetAffect(UINT eAffect, bool isVisible)
 			}
 			break;
 		case AFFECT_KWAESOK:
-			// °ć°řĽú, ÄčĽÓŔş ¶Ű¶§¸¸ Attaching ˝ĂĹµ´Ď´Ů. - [levites]
 			if (isVisible)
 				if (!IsWalking())
 					return;
@@ -1109,7 +1065,6 @@ void CInstanceBase::__SetAffect(UINT eAffect, bool isVisible)
 #else
 		case AFFECT_GYEONGGONG:
 		case AFFECT_KWAESOK:
-			// °ć°řĽú, ÄčĽÓŔş ¶Ű¶§¸¸ Attaching ˝ĂĹµ´Ď´Ů. - [levites]
 			if (isVisible)
 				if (!IsWalking())
 					return;
@@ -1126,7 +1081,6 @@ void CInstanceBase::__SetAffect(UINT eAffect, bool isVisible)
 				break;
 			}
 #endif
-			// 2004.07.17.levites.isShow¸¦ ViewFrustumCheck·Î şŻ°ć
 			if (isVisible)
 			{
 #ifdef ENABLE_NEW_BUGFIXES
@@ -1316,7 +1270,6 @@ uint32_t CInstanceBase::__AttachEffect(UINT eEftType)
 	}
 #endif
 
-	// 2004.07.17.levites.isShow¸¦ ViewFrustumCheck·Î şŻ°ć
 #ifdef ENABLE_CANSEEHIDDENTHING_FOR_GM
 	if (IsAffect(AFFECT_INVISIBILITY) && !__MainCanSeeHiddenThing())
 		return 0;
@@ -1361,8 +1314,6 @@ uint32_t CInstanceBase::__AttachEffect(UINT eEftType)
 	{
 		std::string & rstrBoneName = ms_astAffectEffectAttachBone[eEftType];
 		const char * c_szBoneName;
-		// ľçĽŐżˇ şŮŔĎ ¶§ »çżëÇŃ´Ů.
-		// ŔĚ·± ˝ÄŔÇ żążÜ Ăł¸®¸¦ ÇŘłőŔş °ÍŔş Äł¸ŻĹÍ ¸¶´Ů Equip ŔÇ Bone Name ŔĚ ´Ů¸Ł±â ¶§ą®.
 		if (0 == rstrBoneName.compare("PART_WEAPON"))
 		{
 			if (m_GraphicThingInstance.GetAttachingBoneName(CRaceData::PART_WEAPON, &c_szBoneName))

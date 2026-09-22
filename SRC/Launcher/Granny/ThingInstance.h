@@ -34,7 +34,7 @@ class CGraphicThingInstance : public CGraphicObjectInstance
 
 		void		UpdateLODLevel();
 		void		UpdateTime();
-		void		DeformAll(); // ¸ðµç LOD µðÆû
+		void		DeformAll();
 
 		bool		LessRenderOrder(CGraphicThingInstance* pkThingInst);
 

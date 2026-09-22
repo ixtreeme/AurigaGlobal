@@ -3,7 +3,6 @@
 #include "../Render/Camera.h"
 
 //////////////////////////////////////////////////////////////////////////
-// ¸ŢĽĽÁö
 
 extern void SetHeightLog(bool isLog);
 
@@ -130,9 +129,6 @@ struct CameraCollisionChecker
 //{
 //	constexpr float fMoveAmountSmall = 2.0f;
 //	constexpr float fMoveAmountLarge = 4.0f;
-//	constexpr float frictionFactor = 0.85f;  // Súrlódási tényező
-//	constexpr float bounceDamping = 0.5f;     // Visszapattanás csillapítása
-//	constexpr float steepAngleLimit = 0.7f;   // Ha a normál túl meredek, nem csúszunk felfelé (1.0 = teljesen felfelé)
 //
 //	CDynamicSphereInstance s;
 //	s.fRadius = m_fObjectCollisionRadius;
@@ -143,7 +139,6 @@ struct CameraCollisionChecker
 //
 //	CCullingManager& rkCullingMgr = CCullingManager::Instance();
 //
-//	// Segédfüggvény az ütközések kezelésére (jobb csúszással és stabilizálással)
 //	auto CheckCollisionAndAdjustVelocity = [&](const D3DXVECTOR3& direction, float moveAmount, char axis) {
 //		D3DXVECTOR3 checkPos;
 //		auto ix = D3DXVECTOR3(direction * m_fObjectCollisionRadius);
@@ -159,40 +154,29 @@ struct CameraCollisionChecker
 //			D3DXVECTOR3 surfaceNormal = kVct_kPosition[0] - m_v3Eye;
 //			D3DXVec3Normalize(&surfaceNormal, &surfaceNormal);
 //
-//			// 📌 **Ne csússzon fel meredek normálokon**
 //			if (surfaceNormal.y > steepAngleLimit) {
-//				return; // Ha a normál túl meredek, akkor ne csúszunk felfelé.
 //			}
 //
-//			// 📌 **Ne pattanjon vissza túl erősen**
 //			if (axis == 'x') m_v3AngularVelocity.x = -m_v3AngularVelocity.x * bounceDamping;
 //			if (axis == 'y') m_v3AngularVelocity.y = -m_v3AngularVelocity.y * bounceDamping;
 //			if (axis == 'z') m_v3AngularVelocity.z = -m_v3AngularVelocity.z * bounceDamping;
 //
-//			// 📌 **Jobb csúszási irány kiszámítása**
 //			D3DXVECTOR3 slideVector;
 //			D3DXVec3Cross(&slideVector, &surfaceNormal, &direction);
 //			D3DXVec3Normalize(&slideVector, &slideVector);
 //
-//			// Finom csúsztatás az akadály mentén
 //			if (axis == 'x') m_v3AngularVelocity.x += moveAmount * slideVector.x;
 //			if (axis == 'y') m_v3AngularVelocity.y += moveAmount * slideVector.y;
 //			if (axis == 'z') m_v3AngularVelocity.z += moveAmount * slideVector.z;
 //
-//			// 📌 **Csillapítás, hogy ne remegjen a kamera**
 //			m_v3AngularVelocity.x *= frictionFactor;
 //			m_v3AngularVelocity.y *= frictionFactor;
 //			m_v3AngularVelocity.z *= frictionFactor;
 //		}
 //		};
 //
-//	// 🔄 **Ütközések ellenőrzése különböző irányokban**
-//	CheckCollisionAndAdjustVelocity(-m_v3View, fMoveAmountLarge, 'y');  // Előre
-//	CheckCollisionAndAdjustVelocity(m_v3Up * 2.0f, -fMoveAmountSmall, 'z');    // Felfelé
 //	CheckCollisionAndAdjustVelocity(m_v3Cross * 3.0f, fMoveAmountLarge, 'y');  // Oldalra (jobbra)
 //	CheckCollisionAndAdjustVelocity(m_v3Cross * -3.0f, fMoveAmountLarge, 'y'); // Oldalra (balra)
-//	CheckCollisionAndAdjustVelocity(m_v3Up * -2.0f, fMoveAmountLarge, 'y');    // Lefelé
-//	CheckCollisionAndAdjustVelocity(m_v3View * 4.0f, fMoveAmountLarge, 'z');   // Hátra
 //}
 
 
@@ -201,22 +185,17 @@ struct CameraCollisionChecker
 
 void CCamera::Update()
 {
-	// 🛠️ **1. Ütközésdetektálás (épületek és terep)**
 	//ProcessBuildingCollision();
 
-	// 🛠️ **2. Kamera forgatás (x és z tengelyek helyes cseréje)**
 	RotateEyeAroundTarget(m_v3AngularVelocity.z, m_v3AngularVelocity.x);
 
-	// 🛠️ **3. Kamera távolságának beállítása, hogy ne lépje túl a korlátokat**
 	float fNewDistance = fMAX(CAMERA_MIN_DISTANCE, fMIN(CAMERA_MAX_DISTANCE, GetDistance() - m_v3AngularVelocity.y));
 	SetDistance(fNewDistance);
 
-	// 🛠️ **4. Terep ütközés ellenőrzése (ha be van kapcsolva)**
 	if (m_bProcessTerrainCollision)
 		ProcessTerrainCollision();
 
-	// 🛠️ **5. Finomabb sebességcsillapítás (exponenciális helyett lineáris lassítás)**
-	constexpr float frictionFactor = 0.85f; // Kevésbé drasztikus csillapítás
+	constexpr float frictionFactor = 0.85f;
 	m_v3AngularVelocity *= frictionFactor;
 
 	if (fabs(m_v3AngularVelocity.x) < 0.5f)
@@ -226,16 +205,14 @@ void CCamera::Update()
 	if (fabs(m_v3AngularVelocity.z) < 0.5f)
 		m_v3AngularVelocity.z = 0.0f;
 
-	// 🛠️ **6. Kamera célpont magasságának finomabb interpolációja**
 	const float CAMERA_MOVABLE_DISTANCE = CAMERA_MAX_DISTANCE - CAMERA_MIN_DISTANCE;
 	const float CAMERA_TARGET_DELTA = CAMERA_TARGET_FACE - CAMERA_TARGET_STANDARD;
 
 	float fCameraCurMovableDistance = CAMERA_MAX_DISTANCE - GetDistance();
 	float fTargetHeight = CAMERA_TARGET_STANDARD + CAMERA_TARGET_DELTA * (fCameraCurMovableDistance / CAMERA_MOVABLE_DISTANCE);
 
-	// **Simított átmenet a kamera célpont magasságára**
 	float fCurrentHeight = GetTargetHeight();
-	float fNewTargetHeight = fCurrentHeight + (fTargetHeight - fCurrentHeight) * 0.1f; // Lágy átmenet
+	float fNewTargetHeight = fCurrentHeight + (fTargetHeight - fCurrentHeight) * 0.1f;
 	SetTargetHeight(fNewTargetHeight);
 }
 

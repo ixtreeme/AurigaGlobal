@@ -184,7 +184,6 @@ bool CEffectManager::IsAliveEffect(uint32_t dwInstanceIndex)
 void CEffectManager::Update()
 {
 
-	// 2004. 3. 1. myevan. 이펙트 모니터링 하는 코드
 	/*
 	if (GetAsyncKeyState(VK_F9))
 	{

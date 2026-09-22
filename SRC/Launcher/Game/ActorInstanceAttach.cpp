@@ -179,7 +179,6 @@ void CActorInstance::AttachWeapon(uint32_t dwItemIndex, uint32_t dwParentPartInd
 	}
 
 	__DestroyWeaponTrace();
-	//양손무기(자객 이도류) 왼손,오른손 모두에 장착.
 	if (__IsRightHandWeapon(pItemData->GetWeaponType()))
 		AttachWeapon(dwParentPartIndex, CRaceData::PART_WEAPON, pItemData);
 	if (__IsLeftHandWeapon(pItemData->GetWeaponType()))

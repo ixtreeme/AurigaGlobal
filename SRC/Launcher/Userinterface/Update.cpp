@@ -10,7 +10,6 @@
 
 #pragma comment(lib, "winhttp.lib")
 
-// ===================== Segédfüggvények =====================
 
 std::wstring GetLauncherDir()
 {
@@ -183,7 +182,6 @@ bool DownloadFile(const std::wstring& host, const std::wstring& path, const std:
     return true;
 }
 
-// Futó Patcher.exe lelövése (ha fut)
 void KillProcessByName(const std::wstring& exeName)
 {
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -254,7 +252,6 @@ std::wstring AnsiToWstring(const std::string& str)
     return wstr;
 }
 
-// ===================== FŐ FUNKCIÓ: PATCHER FRISSÍTÉS =====================
 
 bool CheckAndUpdatePatcher()
 {
@@ -264,9 +261,8 @@ bool CheckAndUpdatePatcher()
 
 
 
-    // --- konfiguráció ---
     const std::wstring host = L"bwmt2global.eu";        // <-- IDE a domain
-    const std::wstring versionRemote = L"/PATCHER/SelfUpdate/Version.txt";  // szerver oldali verzió
+    const std::wstring versionRemote = L"/PATCHER/SelfUpdate/Version.txt";
     const std::wstring patcherRemote = L"/PATCHER/SelfUpdate/AurigaPatcher.exe";  // szerver oldali patcher exe
     const std::wstring patcherExeName = L"AurigaPatcher.exe";
     const std::wstring patcherNewName = L"Patcher_new.exe";
@@ -280,11 +276,9 @@ bool CheckAndUpdatePatcher()
     const std::wstring patcherNewPath = baseDir + L"\\" + patcherNewName;
     const std::wstring patcherOldPath = baseDir + L"\\" + patcherOldName;
 
-    // Lokális verzió beolvasása (ha nincs, akkor "0")
     std::string localVersion = "0";
     ReadAllText(localVersionPath, localVersion);
 
-    // Szerver verzió lekérdezése
     std::string serverVersion = DownloadString(host, versionRemote);
     if (serverVersion.empty())
     {
@@ -292,7 +286,6 @@ bool CheckAndUpdatePatcher()
         return false;
     }
 
-    // whitespace lecsupaszítása (CR/LF, space)
     auto trim = [](std::string& s)
         {
             while (!s.empty() && (s.back() == '\r' || s.back() == '\n' || s.back() == ' '))
@@ -307,26 +300,21 @@ bool CheckAndUpdatePatcher()
 
     if (localVersion == serverVersion)
     {
-        // nincs frissítés, mehet tovább
         return true;
     }
 
-    // Ha idáig jutottunk: FRISSÍTENI KELL
     std::string msg = "Új patcher verzió elérhető!\nJelenlegi: " + localVersion +
         "\nÚj: " + serverVersion + "\nLetöltés...";
     MessageBoxA(NULL, msg.c_str(), "Launcher", MB_OK);
 
-    // Biztonságból lelőjük a futó patchert (ha fut)
     KillProcessByName(patcherExeName);
 
-    // Új patcher letöltése
     if (!DownloadFile(host, patcherRemote, patcherNewPath))
     {
         MessageBoxA(NULL, "Nem sikerült letölteni az új patchert.", "Launcher", MB_ICONERROR);
         return false;
     }
 
-    // Régi patcher átnevezése (ha létezik)
     try
     {
         if (std::filesystem::exists(patcherOldPath))
@@ -350,7 +338,6 @@ bool CheckAndUpdatePatcher()
         return false;
     }
 
-    // Verziófájl frissítése
     WriteAllText(localVersionPath, serverVersion);
 
     MessageBoxA(NULL, "Patcher sikeresen frissítve.", "Launcher", MB_OK);

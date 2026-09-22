@@ -190,7 +190,6 @@ namespace quest
 		}
 		if (pMarriage && pMarriage->pWeddingInfo)
 		{
-			// ��ȥ�� ������ ��û
 			pMarriage->RequestEndWedding();
 		}
 		return 0;

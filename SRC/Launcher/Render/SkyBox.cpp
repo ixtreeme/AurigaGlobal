@@ -280,7 +280,6 @@ void CSkyBox::SetCloudTexture(const char * c_szFileName)
 	CGraphicImageInstance * pGraphicImageInstance = GenerateTexture(c_szFileName);
 	m_GraphicImageInstanceMap.insert(TGraphicImageInstanceMap::value_type(m_FaceCloud.m_strfacename, pGraphicImageInstance));
 
-	// 이거 안쓰는거 같은데요? [cronan]
 //	CGraphicImage * pImage = (CGraphicImage *) CResourceManager::Instance().GetResourcePointer("D:\\Ymir Work\\special/cloudalpha.tga");
 //	m_CloudAlphaImageInstance.SetImagePointer(pImage);
 }
@@ -816,7 +815,6 @@ void CSkyBox::Update()
 
 void CSkyBox::Render()
 {
-	// 2004.01.25 myevan 처리를 렌더링 후반으로 옮기고, DepthTest 처리
 	STATEMANAGER.SaveRenderState(D3DRS_ZENABLE,	TRUE);
 	STATEMANAGER.SaveRenderState(D3DRS_ZWRITEENABLE, FALSE);
 	STATEMANAGER.SaveRenderState(D3DRS_LIGHTING, FALSE);
@@ -885,7 +883,6 @@ void CSkyBox::RenderCloud()
 	if (!pCloudGraphicImageInstance)
 		return;
 
-	// 2004.01.25 myevan 처리를 렌더링 후반으로 옮기고, DepthTest 처리
 	STATEMANAGER.SaveRenderState(D3DRS_ZENABLE,	TRUE);
 	STATEMANAGER.SaveRenderState(D3DRS_ZWRITEENABLE, FALSE);
 	STATEMANAGER.SaveRenderState(D3DRS_LIGHTING, FALSE);

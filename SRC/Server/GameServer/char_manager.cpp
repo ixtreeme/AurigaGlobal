@@ -810,7 +810,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex
 	if (!pkMob)
 		return entt::null;
 
-	if (pkMob->m_table.bType == CHAR_TYPE_STONE)	//   SPAWN  ִ.
+	if (pkMob->m_table.bType == CHAR_TYPE_STONE)
 		bSpawnMotion = true;
 
 	int i = 16;
@@ -878,7 +878,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 
 		if (spawned == entt::null)
 		{
-			if (i == 0)	//  Ͱ  쿡 ׳
+			if (i == 0)
 				return false;
 
 			continue;
@@ -966,7 +966,7 @@ entt::entity CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, i
 
 		if (spawned == entt::null)
 		{
-			if (i == 0)	//  Ͱ  쿡 ׳
+			if (i == 0)
 				return entt::null;
 
 			continue;
@@ -1090,7 +1090,6 @@ void CHARACTER_MANAGER::Update(int iPulse)
 			AISystem::UpdateStateMachine(character);
 	}
 
-	//  Ʈ
 	{
 		if (!m_set_pkChrState.empty())
 		{
@@ -1105,7 +1104,6 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		}
 	}
 
-	// 1ð ѹ
 	if (0 == iPulse % PASSES_PER_SEC(3600))
 	{
 		for (auto it = m_map_dwMobKillCount.begin(); it != m_map_dwMobKillCount.end(); ++it)
@@ -1114,12 +1112,10 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		m_map_dwMobKillCount.clear();
 	}
 
-	// ׽Ʈ  60ʸ ĳ
 	if (test_server && 0 == iPulse % PASSES_PER_SEC(60))
 		LOG_INFO("CHARACTER COUNT vid {} pid {}", CVIDRegistry::Instance().Snapshot().size(),
 			CPIDRegistry::Instance().Snapshot().size());
 
-	//  DestroyCharacter ϱ
 	if (ownsPendingDestroy)
 		FlushPendingDestroy();
 
@@ -1217,7 +1213,7 @@ void CHARACTER_MANAGER::RegisterRaceNumMap(entt::entity character)
 {
 	const uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(character);
 
-	if (m_set_dwRegisteredRaceNum.contains(dwVnum)) // ϵ ȣ ̸
+	if (m_set_dwRegisteredRaceNum.contains(dwVnum))
 	{
 		LOG_INFO("RegisterRaceNumMap {} {}", ecs::PlayerRuntime::GetName(character), dwVnum);
 		m_map_pkChrByRaceNum[dwVnum].insert(character);
@@ -1378,8 +1374,6 @@ void CHARACTER_MANAGER::SendScriptToMap(int32_t lMapIndex, std::string_view s)
 
 bool CHARACTER_MANAGER::BeginPendingDestroy()
 {
-	// Begin  Ŀ Begin  ϴ 쿡 Flush  ʴ
-	// ̹ ۵Ǿ false  ó
 	if (m_bUsePendingDestroy)
 		return false;
 
@@ -1494,7 +1488,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 		|| ecs::PlayerRuntime::GetRaceNum(character) == 6191//Nemere
 		|| ecs::PlayerRuntime::GetRaceNum(character) == 6091//Razador
 		|| ecs::PlayerRuntime::GetRaceNum(character) == 2092//Pk-brn
-		|| ecs::PlayerRuntime::GetRaceNum(character) == 4815//	Fagyvész zsarnok óriás
+		|| ecs::PlayerRuntime::GetRaceNum(character) == 4815
 		|| ecs::PlayerRuntime::GetRaceNum(character) == 4584//Fandalia nover
 		|| ecs::PlayerRuntime::GetRaceNum(character) == 4011//Eien (BOSS)
 		|| ecs::PlayerRuntime::GetRaceNum(character) == 3910//Skeletos
@@ -1674,7 +1668,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 
 		if (RollEventChance(easterEvent.value[2]))
 		{
-			const entt::entity item = ITEM_MANAGER::instance().CreateItem(50181, 1, 0, true);//egy néger kosár fasz
+			const entt::entity item = ITEM_MANAGER::instance().CreateItem(50181, 1, 0, true);
 			if (ItemSystem::IsValidItem(item))
 				vec_item.emplace_back(item);
 		}

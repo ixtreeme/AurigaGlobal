@@ -341,7 +341,7 @@ bool CClientManager::InitializeShopTable()
 
 		str_to_number(shop_table->dwNPCVnum, data[col++]);
 
-		if (!data[col])	// 아이템이 하나도 없으면 NULL이 리턴 되므로..
+		if (!data[col])
 			continue;
 
 		TShopItemTable* pItem = &shop_table->items[shop_table->byItemCount];
@@ -429,7 +429,7 @@ bool CClientManager::InitializeQuestItemTable()
 			continue;
 		}
 
-		tbl.bType = ITEM_QUEST; // quest_item_proto 테이블에 있는 것들은 모두 ITEM_QUEST 유형
+		tbl.bType = ITEM_QUEST;
 		tbl.bSize = 1;
 
 		m_vec_itemTable.push_back(tbl);

@@ -380,7 +380,6 @@ struct TPacketKeyAgreementCompleted
 
 
 
-// ȥ
 enum EDragonSoulRefineWindowRefineType
 {
 	DragonSoulRefineWindow_UPGRADE,

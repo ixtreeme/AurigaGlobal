@@ -150,7 +150,7 @@ class CGuildWarReserve
 	void	SetLastNoticeMin(int iMin) { m_iLastNoticeMin = iMin; }
 
     private:
-	CGuildWarReserve();  // 기본 생성자를 사용하지 못하도록 의도적으로 구현하지 않음
+	CGuildWarReserve();
 
 	TGuildWarReserve				m_data;
 	// <login, <guild, gold>>
@@ -239,7 +239,7 @@ class CGuildManager : public singleton<CGuildManager>
 	std::map<uint32_t, TGuild>					m_map_kGuild;
 	std::map<uint32_t, std::map<uint32_t, time_t> >		m_mapGuildWarEndTime;
 
-	std::set<TGuildDeclareInfo>				m_DeclareMap; // 선전 포고 상태를 저장
+	std::set<TGuildDeclareInfo>				m_DeclareMap;
 	std::map<uint32_t, std::map<uint32_t, TGuildWarInfo> >	m_WarMap;
 
 	typedef std::pair<time_t, TGuildWarPQElement *>	stPairGuildWar;

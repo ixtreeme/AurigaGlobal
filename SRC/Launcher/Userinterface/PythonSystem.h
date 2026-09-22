@@ -119,7 +119,7 @@ class CPythonSystem : public CSingleton<CPythonSystem>
 			bool bHide4Mode2 = false;
 
 
-			SConfig() = default; // üres konstruktor, minden mezõ a fenti alapérték
+			SConfig() = default;
 		} TConfig;
 #if defined(__BL_PICK_FILTER__)
 		class CPickUpFilter final

@@ -836,7 +836,6 @@ void CIME::SetCurPos(int offset)
 	}
 	else
 	{
-		// offset은 보여지는 텍스트의 위치로 온다. 따라서 새로 계산해야함.
 		//ms_curpos = min(ms_lastpos, offset);
 		ms_curpos = min(ms_lastpos, GetTextTagInternalPosFromRenderPos(m_wText, ms_lastpos, offset));
 	}
@@ -1501,8 +1500,6 @@ void CIME::CheckInputLocale()
         ms_wszCurrentIndicator[1] = towlower(szLang[1]);
     }
 
-	// 아랍어에서 영어로 변경시 코드 페이지를 바꾸지 않는다
-	// 내용도 지우지 않는다.
 	if(ms_uOutputCodePage != 1256) {
 		ms_uOutputCodePage = ms_uInputCodePage;
 		Clear();
@@ -2141,7 +2138,7 @@ LRESULT CIME::WMComposition(HWND hWnd, UINT /*uiMsg*/, WPARAM /*wParam*/, LPARAM
 		AttributeProcess(hImc);
 	if(lParam&GCS_COMPSTR)
 	{
-		if (ms_uOutputCodePage == 950) // 대만 주음 입력 처리
+		if (ms_uOutputCodePage == 950)
 		{
 			if (lParam&GCS_COMPATTR)
 				CompositionProcessBuilding(hImc);

@@ -261,7 +261,7 @@
 //RAZOR93 DEFINES------------------------------------------------------------------
 #define MEMORY_LEAK_FIX_RAZRO93
 #define ENABLE_TARGET_DAMAGE_RAZOR93
-#define ENABLE_GUILD_ATTRIBUTE						// Céh bónusz rendszer
+#define ENABLE_GUILD_ATTRIBUTE
 //#define __BL_PICK_FILTER__
 
 #define ENABLE_FAKE_SHOP_HEADER
@@ -278,19 +278,13 @@
 #ifdef __AUTO_QUQUE_ATTACK__
 	#define AUTO_QUQUE_ATTACK_MAX_TARGET 5
 #endif
-#define ENABLE_APPLYTYPE5_RAZOR93 //applytype5 bónuszok
+#define ENABLE_APPLYTYPE5_RAZOR93
 #ifndef ENABLE_APPLYTYPE5_RAZOR93
 #define APPLY_MAX_NUM_ 3 
 #else
-#define APPLY_MAX_NUM_ 5 //applytype5 bónuszok miatt 5-re
+#define APPLY_MAX_NUM_ 5
 #endif
 #define AFFECT_EXP_ITEM_RAZOR93
-/* unused
-//#define ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
-//#define ENABLE_GUILD_LV_SHOW_ABOVE_CHAR_RAZOR93 nincs kész packet funkcioja. csak te látod
-//#define __PERFORMANCE_CHECKER__
-//#define _PACKETDUMP
-*/
 #define ENABLE_FREE_PASS_RAZOR93
 #define AUTO_SHOUT
 
@@ -298,7 +292,6 @@
 #define MAX_HIT_COUNT 100
 #define ENABLE_RENEWAL_AFFECT_SHOWER // improve affect shower
 
-//NsBácsi includes
 
 //#define ENABLE_LOADING_DELAY
 // Guild Renewal Razor93

@@ -1,11 +1,9 @@
 #pragma once
 
-// 페이드아웃 길이(초)
 #define		MOVIEMAN_FADE_DURATION		1300
 #define		MOVIEMAN_SKIPPABLE_YES		true
 #define		MOVIEMAN_POSTEFFECT_FADEOUT	1
 
-// 동영상 재생에 DX 7.0 사용
 struct IDirectDraw;
 struct IDirectDrawSurface;
 struct IDirectDrawMediaStream;

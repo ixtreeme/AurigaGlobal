@@ -25,7 +25,7 @@ typedef struct STerrainTexture
 	float						UOffset;
 	float						VOffset;
 	bool						bSplat;
-	uint16_t				Begin, End;	// 0 ~ 65535 의 16bit heightfield 높이값.
+	uint16_t				Begin, End;
 	D3DXMATRIX					m_matTransform;
 } TTerrainTexture;
 

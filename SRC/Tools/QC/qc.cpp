@@ -855,7 +855,6 @@ void parse(char * filename)
 			}
 		}
 
-		// quest function들을 기록
 		ouf << all_functions;
 
 		ouf << "}";

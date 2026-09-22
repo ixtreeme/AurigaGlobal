@@ -726,10 +726,6 @@ bool CManager::LoadLand(TLand * pTable) // from DB
 {
 	if (!pTable || m_map_pkLand.contains(pTable->dwID))
 		return false;
-	// MapAllow�� ���� ���� �������� load�� �ؾ��Ѵ�.
-	//	�ǹ�(object)�� ��� ��忡 ���� �ִ��� �˱� ���ؼ��� �ǹ��� ������ ���� ��� ��� �Ҽ����� �˾��Ѵ�.
-	//	���� ���� load�� ���� ������ ��� �ǹ��� ��� ��忡 �Ҽӵ� ���� ���� ���ؼ�
-	//	��� �ǹ��� ���� ��� ������ ���� ���Ѵ�.
 
 	CLand * pkLand = M2_NEW CLand(pTable);
 	m_map_pkLand.insert(std::make_pair(pkLand->GetID(), pkLand));
@@ -1129,7 +1125,7 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 	int wall_half_w = 1000;
 	int wall_half_h = 1362;
 
-	if (rot == 0.0f) 		// ���� ��
+	if (rot == 0.0f)
 	{
 		int door_x = wall_x;
 		int door_y = wall_y + wall_half_h;
@@ -1138,7 +1134,7 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 		RequestCreateObject(WALL_LEFT_VNUM,	nMapIndex, wall_x - wall_half_w, wall_y, door_x, door_y,   0.0f, WALL_ANOTHER_CHECKING_ENABLE);
 		RequestCreateObject(WALL_RIGHT_VNUM,	nMapIndex, wall_x + wall_half_w, wall_y, door_x, door_y,   0.0f, WALL_ANOTHER_CHECKING_ENABLE);
 	}
-	else if (rot == 180.0f)		// ���� ��
+	else if (rot == 180.0f)
 	{
 		int door_x = wall_x;
 		int door_y = wall_y - wall_half_h;
@@ -1147,7 +1143,7 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 		RequestCreateObject(WALL_LEFT_VNUM,	nMapIndex, wall_x - wall_half_w, wall_y, door_x, door_y,   0.0f, WALL_ANOTHER_CHECKING_ENABLE);
 		RequestCreateObject(WALL_RIGHT_VNUM,	nMapIndex, wall_x + wall_half_w, wall_y, door_x, door_y,   0.0f, WALL_ANOTHER_CHECKING_ENABLE);
 	}
-	else if (rot == 90.0f)		// ���� ��
+	else if (rot == 90.0f)
 	{
 		int door_x = wall_x + wall_half_h;
 		int door_y = wall_y;
@@ -1156,7 +1152,7 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 		RequestCreateObject(WALL_LEFT_VNUM,	nMapIndex, wall_x, wall_y - wall_half_w, door_x, door_y,  90.0f, WALL_ANOTHER_CHECKING_ENABLE);
 		RequestCreateObject(WALL_RIGHT_VNUM,	nMapIndex, wall_x, wall_y + wall_half_w, door_x, door_y,  90.0f, WALL_ANOTHER_CHECKING_ENABLE);
 	}
-	else if (rot == 270.0f)		// ���� ��
+	else if (rot == 270.0f)
 	{
 		int door_x = wall_x - wall_half_h;
 		int door_y = wall_y;

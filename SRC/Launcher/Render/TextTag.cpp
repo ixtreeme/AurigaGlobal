@@ -20,7 +20,7 @@ int GetTextTag(const wchar_t * src, int maxLen, int & tagLen, std::wstring & ext
         extraInfo.assign(++cur, 8);
         return TEXT_TAG_COLOR;
     }
-    else if (*cur == L'|') // ||는 |로 표시한다.
+    else if (*cur == L'|')
     {
         tagLen = 2;
         return TEXT_TAG_TAG;
@@ -30,7 +30,7 @@ int GetTextTag(const wchar_t * src, int maxLen, int & tagLen, std::wstring & ext
         tagLen = 2;
         return TEXT_TAG_RESTORE_COLOR;
     }
-    else if (*cur == L'H') // hyperlink |Hitem:10000:0:0:0:0|h[이름]|h
+    else if (*cur == L'H')
     {
         tagLen = 2;
         return TEXT_TAG_HYPERLINK_START;
@@ -190,20 +190,17 @@ int FindColorTagStartPosition(const wchar_t * src, int src_len)
 	wchar_t wcEnds = L'r';
 
 
-    // |r의 경우
     if (*cur == wcEnds && *(cur - 1) == L'|')
     {
 	    int len = src_len;
 
-        // ||r은 무시
         if (len >= 2 && *(cur - 2) == L'|')
             return 1;
 
         cur -= 2;
         len -= 2;
 
-        // |c까지 찾아서 |위치까지 리턴한다.
-        while (len > 1) // 최소 2자를 검사해야 된다.
+        while (len > 1)
         {
             if (*cur == wcStarts && *(cur - 1) == L'|')
                 return (src - cur) + 1;
@@ -211,9 +208,8 @@ int FindColorTagStartPosition(const wchar_t * src, int src_len)
             --cur;
             --len;
         }
-        return (src_len); // 못찾으면 전부;;
+        return (src_len);
     }
-	// ||의 경우
 	else if (*cur == L'|' && *(cur - 1) == L'|')
 		return 1;
 

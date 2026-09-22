@@ -128,7 +128,7 @@ namespace marriage
 			if (ecs::PlayerRuntime::GetPlayerID(chEntity) == pid1 || ecs::PlayerRuntime::GetPlayerID(chEntity) == pid2)
 				continue;
 
-			if (ecs::PointSystem::GetLevel(chEntity) < 10) // 10 �������ϴ� �����ʴ´�.
+			if (ecs::PointSystem::GetLevel(chEntity) < 10)
 				continue;
 
 			//ch->AutoGiveItem(27003, 5);
@@ -178,9 +178,6 @@ namespace marriage
 		{
 			if (ecs::PlayerRuntime::IsPC(chEntity))
 			{
-				// ExitToSavedLocation�� WarpSet�� �θ��µ� �� �Լ�����
-				// Sectree�� NULL�� �ȴ�. �� �� SectreeManager�� ���ʹ�
-				// �� ĳ���͸� ã�� �� �����Ƿ� �Ʒ� DestroyAll���� ���� ó����
 				ecs::MovementSystem::ExitToSavedLocation(chEntity);
 			}
 		}

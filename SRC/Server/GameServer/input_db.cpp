@@ -149,7 +149,7 @@ void CInputDB::LoginSuccess(uint32_t dwHandle, const char *data)
 		return;
 	}
 
-	if (strcmp(pTab->status, "OK")) // OK�� �ƴϸ�
+	if (strcmp(pTab->status, "OK"))
 	{
 		LOG_INFO("CInputDB::LoginSuccess - status[{}] is not OK [{}]", pTab->status, pTab->login);
 
@@ -177,7 +177,7 @@ void CInputDB::LoginSuccess(uint32_t dwHandle, const char *data)
 	d->BindAccountTable(pTab);
 
 
-	if (!bFound) // ĳ���Ͱ� ������ ������ �������� ������.. -_-
+	if (!bFound)
 	{
 		TPacketGCEmpire pe;
 		pe.bHeader = HEADER_GC_EMPIRE;
@@ -494,7 +494,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	{
 		lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(pTab->x, pTab->y);
 
-		if (lMapIndex == 0) // ��ǥ�� ã�� �� ����.
+		if (lMapIndex == 0)
 		{
 			lMapIndex = EMPIRE_START_MAP(d->GetAccountTable().bEmpire);
 			pos.x = EMPIRE_START_X(d->GetAccountTable().bEmpire);
@@ -508,11 +508,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	}
 	pTab->lMapIndex = lMapIndex;
 
-	// Private �ʿ� �־��µ�, Private ���� ����� ���¶�� �ⱸ�� ���ư��� �Ѵ�.
 	// ----
-	// �ٵ� �ⱸ�� ���ư��� �Ѵٸ鼭... �� �ⱸ�� �ƴ϶� private map �� �����Ǵ� pulic map�� ��ġ�� ã�İ�...
-	// ���縦 �𸣴�... �� �ϵ��ڵ� �Ѵ�.
-	// �Ʊ͵����̸�, �ⱸ��...
 	// by rtsummit
 	if (!SECTREE_MANAGER::instance().GetValidLocation(pTab->lMapIndex, pTab->x, pTab->y, lMapIndex, pos, d->GetEmpire()))
 	{
@@ -612,11 +608,9 @@ void CInputDB::Boot(const char* data)
 {
 	signal_timer_disable();
 
-	// ��Ŷ ������ üũ
 	uint32_t dwPacketSize = decode_4bytes(data);
 	data += 4;
 
-	// ��Ŷ ���� üũ
 	uint8_t bVersion = decode_byte(data);
 	data += 1;
 
@@ -934,7 +928,6 @@ void CInputDB::Boot(const char* data)
 	data += size * sizeof(TItemIDRangeTable);
 
 	//ADMIN_MANAGER
-	//������ ���
 	int ChunkSize = decode_2bytes(data );
 	data += 2;
 	int HostSize = decode_2bytes(data );
@@ -1210,11 +1203,9 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 			LOG_INFO("            {} {}", st.c_str(), pQuestTable[i].lValue);
 #ifdef ENABLE_QUEST_SYSTEM_BUGFIXES
 			int val = pQuestTable[i].lValue;
-			bool skipSave = true; // load-n�l ne spameld a DB-t
+			bool skipSave = true;
 
 
-				               // __status: ha a DB-ben r�gi state CRC maradt, de a Lua-ban m�r nincs,
-				               // akkor reset start-ra, k�l�nben "meghal" a quest (NPC nem reag�l, stb.)
 				if (!strcmp(pQuestTable[i].szState, "__status"))
 				 {
 				const char* stateName = quest::CQuestManager::instance().GetQuestStateName(pQuestTable[i].szName, val);
@@ -1223,7 +1214,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 					const int startIdx = quest::CQuestManager::instance().GetQuestStateIndex(pQuestTable[i].szName, "start");
 					LOG_ERROR("QUEST __status invalid: pid={} quest={} val={} -> start={}", +pQuestTable[i].dwPID, pQuestTable[i].szName, val, startIdx);
 					val = startIdx ? startIdx : 0; // 0 -> DeleteFlag
-					skipSave = false; // ezt ments�k is vissza, hogy a DB kijavuljon
+					skipSave = false;
 					}
 				 }
 
@@ -1317,7 +1308,6 @@ void CInputDB::SafeboxChangeSize(LPDESC d, const char * c_pData)
 }
 
 //
-// @version	05/06/20 Bang2ni - ReqSafeboxLoad �� ���
 //
 void CInputDB::SafeboxWrongPassword(LPDESC d)
 {
@@ -1377,7 +1367,6 @@ void CInputDB::LoginAlready(LPDESC d, const char * c_pData)
 	if (!d)
 		return;
 
-	// INTERNATIONAL_VERSION �̹� �������̸� ���� ����
 	{
 		TPacketDGLoginAlready * p = (TPacketDGLoginAlready *) c_pData;
 
@@ -2063,9 +2052,6 @@ void CInputDB::ChangeEmpirePriv(const char* c_pData)
 	// END_OF_ADD_EMPIRE_PRIV_TIME
 }
 
-/**
- * @version 05/06/08	Bang2ni - ���ӽð� �߰�
- */
 void CInputDB::ChangeGuildPriv(const char* c_pData)
 {
 	TPacketDGChangeGuildPriv* p = (TPacketDGChangeGuildPriv*) c_pData;
@@ -2743,7 +2729,6 @@ void LoadItemExtraProto(const char* data)
 
 ////////////////////////////////////////////////////////////////////
 // Analyze
-// @version	05/06/10 Bang2ni - ������ �������� ����Ʈ ��Ŷ(HEADER_DG_MYSHOP_PRICELIST_RES) ó����ƾ �߰�.
 ////////////////////////////////////////////////////////////////////
 int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 {
@@ -3073,7 +3058,6 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 	case HEADER_DG_NEED_LOGIN_LOG:
 		DetailLog( (TPacketNeedLoginLogInfo*) c_pData );
 		break;
-	// ���� ���� ��� �׽�Ʈ
 	case HEADER_DG_ITEMAWARD_INFORMER:
 		ItemAwardInformer((TPacketItemAwardInfromer*) c_pData);
 		break;
@@ -3192,7 +3176,7 @@ void CInputDB::DetailLog(const TPacketNeedLoginLogInfo* info)
 
 void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
 {
-	LPDESC d = DESC_MANAGER::instance().FindByLoginName(data->login);	//login����
+	LPDESC d = DESC_MANAGER::instance().FindByLoginName(data->login);
 
 	if(d == nullptr)
 		return;
@@ -3201,12 +3185,12 @@ void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
 		const entt::entity chEntity = d->GetEntity();
 		if (ecs::IsCharacter(chEntity))
 		{
-			ecs::PlayerRuntime::SetItemAwardVnum(chEntity, data->vnum);	// ch �� �ӽ� �����س��ٰ� QuestLoad �Լ����� ó��
+			ecs::PlayerRuntime::SetItemAwardVnum(chEntity, data->vnum);
 			ecs::PlayerRuntime::SetItemAwardCommand(chEntity, data->command);
 
-			if(d->IsPhase(PHASE_GAME))			//�����������϶�
+			if(d->IsPhase(PHASE_GAME))
 			{
-				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(chEntity)),ecs::PlayerRuntime::GetItemAwardVnum(chEntity));	//questmanager ȣ��
+				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(chEntity)),ecs::PlayerRuntime::GetItemAwardVnum(chEntity));
 			}
 		}
 	}

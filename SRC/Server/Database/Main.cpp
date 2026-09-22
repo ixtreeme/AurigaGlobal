@@ -32,7 +32,6 @@ std::string g_stPlayerDBName = "";
 
 BOOL g_test_server = false;
 
-//단위 초
 int g_iPlayerCacheFlushSeconds = 60*5;
 int g_iItemCacheFlushSeconds = 60*5;
 
@@ -45,7 +44,6 @@ int g_iCurrentBattlePassId = 1;
 #endif
 
 
-//g_iLogoutSeconds 수치는 g_iPlayerCacheFlushSeconds 와 g_iItemCacheFlushSeconds 보다 길어야 한다.
 int g_iLogoutSeconds = 60*10;
 
 int g_log = 1;
@@ -124,13 +122,12 @@ int main()
 
 void emptybeat(LPHEART heart, int pulse)
 {
-	if (!(pulse % heart->passes_per_sec))	// 1초에 한번
+	if (!(pulse % heart->passes_per_sec))
 	{
 	}
 }
 
 //
-// @version	05/06/13 Bang2ni - 아이템 가격정보 캐시 flush timeout 설정 추가.
 //
 int Start()
 {

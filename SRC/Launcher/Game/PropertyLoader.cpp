@@ -33,10 +33,8 @@ uint32_t CPropertyLoader::RegisterFile(const char * c_szPathName, const char * c
 	stl_lowers(stExt);
 	stl_lowers(strFileName);
 
-	// 패스를 소문자로 만들고 \\ 는 / 로 바꾼다.
 	StringPath(strFileName);
 
-	// 예약된 CRC 처리 (지워진 CRC)
 	if (0 == strFileName.compare("property/reserve"))
 	{
 		m_pPropertyManager->LoadReservedCRC(strFileName.c_str());

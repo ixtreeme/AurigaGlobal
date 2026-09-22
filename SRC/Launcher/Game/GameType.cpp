@@ -82,8 +82,6 @@ bool NRaceData::LoadMotionAttackData(CTextFileLoader & rTextFileLoader, TMotionA
 	if (!LoadAttackData(rTextFileLoader, pData))
 		return FALSE;
 
-	// NOTE : 기존의 AttackingType이 MotionType으로 바뀌었음
-	//        기존 데이타의 경우 없으면 기존 것으로 읽게끔..
 	if (!rTextFileLoader.GetTokenInteger("motiontype", &pData->iMotionType))
 	{
 		if (!rTextFileLoader.GetTokenInteger("attackingtype", &pData->iMotionType))

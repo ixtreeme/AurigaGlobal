@@ -103,7 +103,6 @@ namespace quest
 		return 1;
 	}
 
-	// 현재 캐릭터가 AFFECT_TYPE affect를 갖고있으면 bApplyOn 값을 반환하고 없으면 nil을 반환하는 함수.
 	// usage :	applyOn = affect.get_apply(AFFECT_TYPE)
 	ALUA(affect_get_apply_on)
 	{

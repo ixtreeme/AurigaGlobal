@@ -78,8 +78,8 @@ enum
     HEADER_CG_MESSENGER                         = 67,
 	//HEADER_BLANK68								= 68,
     HEADER_CG_MALL_CHECKOUT                     = 69,
-    HEADER_CG_SAFEBOX_CHECKIN                   = 70,   // 아이템을 창고에 넣는다.
-    HEADER_CG_SAFEBOX_CHECKOUT                  = 71,   // 아이템을 창고로 부터 빼온다.
+    HEADER_CG_SAFEBOX_CHECKIN                   = 70,
+    HEADER_CG_SAFEBOX_CHECKOUT                  = 71,
     HEADER_CG_PARTY_INVITE                      = 72,
     HEADER_CG_PARTY_INVITE_ANSWER               = 73,
     HEADER_CG_PARTY_REMOVE                      = 74,
@@ -202,14 +202,14 @@ enum
 	HEADER_GC_CHANGE_SPEED						= 18,
 	HEADER_GC_CHARACTER_UPDATE                  = 19,
 
-	HEADER_GC_ITEM_SET							= 20, // 아이템 창에 추가
-	HEADER_GC_ITEM_SET2							= 21, // 아이템 창에 추가
+	HEADER_GC_ITEM_SET							= 20,
+	HEADER_GC_ITEM_SET2							= 21,
 
-	HEADER_GC_ITEM_USE							= 22, // 아이템 사용 (주위 사람들에게 보여주기 위해)
-	HEADER_GC_ITEM_DROP							= 23, // 아이템 버리기
-	HEADER_GC_ITEM_UPDATE						= 25, // 아이템 수치 업데이트
-	HEADER_GC_ITEM_GROUND_ADD					= 26, // 바닥에 아이템 추가
-	HEADER_GC_ITEM_GROUND_DEL					= 27, // 바닥에서 아이템 삭제
+	HEADER_GC_ITEM_USE							= 22,
+	HEADER_GC_ITEM_DROP							= 23,
+	HEADER_GC_ITEM_UPDATE						= 25,
+	HEADER_GC_ITEM_GROUND_ADD					= 26,
+	HEADER_GC_ITEM_GROUND_DEL					= 27,
 	HEADER_GC_QUICKSLOT_ADD                     = 28,
 	HEADER_GC_QUICKSLOT_DEL                     = 29,
 	HEADER_GC_QUICKSLOT_SWAP                    = 30,
@@ -406,13 +406,13 @@ enum
 	PLAYER_PER_ACCOUNT5 = 5,
 #endif
 
-	PLAYER_ITEM_SLOT_MAX_NUM = 20,		// 플래이어의 슬롯당 들어가는 갯수.
+	PLAYER_ITEM_SLOT_MAX_NUM = 20,
 
 	QUICKSLOT_MAX_LINE = 4,
-	QUICKSLOT_MAX_COUNT_PER_LINE = 8, // 클라이언트 임의 결정값
+	QUICKSLOT_MAX_COUNT_PER_LINE = 8,
 	QUICKSLOT_MAX_COUNT = QUICKSLOT_MAX_LINE * QUICKSLOT_MAX_COUNT_PER_LINE,
 
-	QUICKSLOT_MAX_NUM = 36, // 서버와 맞춰져 있는 값
+	QUICKSLOT_MAX_NUM = 36,
 #ifdef ENABLE_120_SHOP_SLOT_RAZOR93
 	SHOP_HOST_ITEM_MAX_NUM = 120,
 #else
@@ -506,7 +506,6 @@ typedef struct packet_mark_idxlist
 	uint8_t    header;
 	uint32_t	bufSize;
 	uint16_t    count;
-    //뒤에 size * (uint16_t + uint16_t)만큼 데이터 붙음
 } TPacketGCMarkIDXList;
 
 typedef struct packet_mark_block
@@ -515,7 +514,6 @@ typedef struct packet_mark_block
     uint32_t   bufSize;
 	uint8_t	imgIdx;
     uint32_t   count;
-    // 뒤에 64 x 48 x 픽셀크기(4바이트) = 12288만큼 데이터 붙음
 } TPacketGCMarkBlock;
 
 typedef struct command_symbol_upload
@@ -584,7 +582,6 @@ typedef struct command_login
     char pwd[PASS_MAX_NUM + 1];
 } TPacketCGLogin;
 
-// start - 권한 서버 접속을 위한 패킷들
 typedef struct command_login2
 {
 	uint8_t	header;
@@ -628,8 +625,8 @@ typedef struct command_player_select
 typedef struct command_attack
 {
 	uint8_t	header;
-	uint8_t	bType;			// 공격 유형
-	uint32_t	dwVictimVID;	// 적 VID
+	uint8_t	bType;
+	uint32_t	dwVictimVID;
 	uint8_t	bCRCMagicCubeProcPiece;
 	uint8_t	bCRCMagicCubeFilePiece;
 } TPacketCGAttack;
@@ -1240,18 +1237,18 @@ typedef struct command_script_select_item
 // From Server
 enum EPhase
 {
-    PHASE_CLOSE,				// 끊기는 상태 (또는 끊기 전 상태)
-    PHASE_HANDSHAKE,			// 악수..;;
-    PHASE_LOGIN,				// 로그인 중
-    PHASE_SELECT,				// 캐릭터 선택 화면
-    PHASE_LOADING,				// 선택 후 로딩 화면
-    PHASE_GAME,					// 게임 화면
-    PHASE_DEAD,					// 죽었을 때.. (게임 안에 있는 것일 수도..)
+    PHASE_CLOSE,
+    PHASE_HANDSHAKE,
+    PHASE_LOGIN,
+    PHASE_SELECT,
+    PHASE_LOADING,
+    PHASE_GAME,
+    PHASE_DEAD,
 
-	PHASE_DBCLIENT_CONNECTING,	// 서버용
-    PHASE_DBCLIENT,				// 서버용
-    PHASE_P2P,					// 서버용
-    PHASE_AUTH,					// 로그인 인증 용
+	PHASE_DBCLIENT_CONNECTING,
+    PHASE_DBCLIENT,
+    PHASE_P2P,
+    PHASE_AUTH,
 };
 
 typedef struct packet_phase
@@ -1260,7 +1257,7 @@ typedef struct packet_phase
 	uint8_t        phase;
 } TPacketGCPhase;
 
-typedef struct packet_blank		// 공백패킷.
+typedef struct packet_blank
 {
 	uint8_t		header;
 } TPacketGCBlank;
@@ -1424,7 +1421,6 @@ enum EPKModes
 	PK_MODE_MAX_NUM,
 };
 
-// 2004.11.20.myevan.CRaceData::PART_MAX_NUM 사용안하게 수정 - 서버에서 사용하는것과 일치하지 않음
 enum ECharacterEquipmentPart
 {
 	CHR_EQUIPPART_ARMOR,
@@ -1453,7 +1449,7 @@ typedef struct packet_char_additional_info
 	uint8_t	bEmpire;
 	uint32_t   dwGuildID;
 	uint32_t   dwLevel;
-	uint32_t   sAlignment; //선악치
+	uint32_t   sAlignment;
 	uint8_t    bPKMode;
 	uint32_t   dwMountVnum;
 #ifdef ENABLE_SKILL_COLOR_SYSTEM
@@ -1574,14 +1570,14 @@ typedef struct packet_GlobalTime
 
 enum EChatType
 {
-	CHAT_TYPE_TALKING,  /* 그냥 채팅 */
-	CHAT_TYPE_INFO,     /* 정보 (아이템을 집었다, 경험치를 얻었다. 등) */
-	CHAT_TYPE_NOTICE,   /* 공지사항 */
-	CHAT_TYPE_PARTY,    /* 파티말 */
-	CHAT_TYPE_GUILD,    /* 길드말 */
-	CHAT_TYPE_COMMAND,	/* 명령 */
-	CHAT_TYPE_SHOUT,	/* 외치기 */
-	CHAT_TYPE_WHISPER,	// 서버와는 연동되지 않는 Only Client Enum
+	CHAT_TYPE_TALKING,
+	CHAT_TYPE_INFO,
+	CHAT_TYPE_NOTICE,
+	CHAT_TYPE_PARTY,
+	CHAT_TYPE_GUILD,
+	CHAT_TYPE_COMMAND,
+	CHAT_TYPE_SHOUT,
+	CHAT_TYPE_WHISPER,
 	CHAT_TYPE_BIG_NOTICE,
 #ifdef ENABLE_DICE_SYSTEM
 	CHAT_TYPE_DICE_INFO, //11
@@ -1604,7 +1600,7 @@ typedef struct packet_chatting
 	uint8_t	bEmpire;
 } TPacketGCChat;
 
-typedef struct packet_whisper   // 가변 패킷
+typedef struct packet_whisper
 {
 	uint8_t	bHeader;
 	uint16_t	wSize;
@@ -1997,7 +1993,7 @@ typedef struct packet_shop_start
 	struct packet_shop_item		items[SHOP_HOST_ITEM_MAX_NUM];
 } TPacketGCShopStart;
 
-typedef struct packet_shop_start_ex // 다음에 TSubPacketShopTab* shop_tabs 이 따라옴.
+typedef struct packet_shop_start_ex
 {
 	typedef struct sub_packet_shop_tab
 	{
@@ -2168,12 +2164,12 @@ typedef struct packet_move
 enum
 {
 	QUEST_SEND_IS_BEGIN         = 1 << 0,
-    QUEST_SEND_TITLE            = 1 << 1,  // 28자 까지
-    QUEST_SEND_CLOCK_NAME       = 1 << 2,  // 16자 까지
+    QUEST_SEND_TITLE            = 1 << 1,
+    QUEST_SEND_CLOCK_NAME       = 1 << 2,
     QUEST_SEND_CLOCK_VALUE      = 1 << 3,
-    QUEST_SEND_COUNTER_NAME     = 1 << 4,  // 16자 까지
+    QUEST_SEND_COUNTER_NAME     = 1 << 4,
     QUEST_SEND_COUNTER_VALUE    = 1 << 5,
-	QUEST_SEND_ICON_FILE		= 1 << 6,  // 24자 까지
+	QUEST_SEND_ICON_FILE		= 1 << 6,
 };
 
 typedef struct packet_quest_info
@@ -2208,8 +2204,8 @@ typedef struct packet_attack
 {
 	uint8_t        header;
     uint32_t       dwVID;
-    uint32_t       dwVictimVID;    // 적 VID
-	uint8_t        bType;          // 공격 유형
+    uint32_t       dwVictimVID;
+	uint8_t        bType;
 } TPacketGCAttack;
 
 typedef struct packet_c2c
@@ -2279,7 +2275,7 @@ enum EPVPModes
 typedef struct packet_duel_start
 {
 	uint8_t	header ;
-	uint16_t	wSize ;	// uint32_t가 몇개? 개수 = (wSize - sizeof(TPacketGCPVPList)) / 4
+	uint16_t	wSize ;
 } TPacketGCDuelStart ;
 
 typedef struct packet_pvp
@@ -2480,7 +2476,7 @@ enum
 
 typedef struct packet_guild_sub_grade
 {
-	char grade_name[GUILD_GRADE_NAME_MAX_LEN+1]; // 8+1 길드장, 길드원 등의 이름
+	char grade_name[GUILD_GRADE_NAME_MAX_LEN+1];
 	uint8_t auth_flag;
 } TPacketGCGuildSubGrade;
 
@@ -2527,7 +2523,7 @@ enum EGuildWarState
     GUILD_WAR_ON_WAR,
     GUILD_WAR_END,
 
-    GUILD_WAR_DURATION = 2*60*60, // 2시간
+    GUILD_WAR_DURATION = 2*60*60,
 };
 
 typedef struct packet_guild_war
@@ -2630,8 +2626,8 @@ typedef struct SRefineTable
     uint32_t src_vnum;
     uint32_t result_vnum;
 	uint8_t material_count;
-    int64_t cost; // 소요 비용
-    int prob; // 확률
+    int64_t cost;
+    int prob;
     TMaterial materials[REFINE_MATERIAL_MAX_NUM];
 } TRefineTable;
 
@@ -2666,17 +2662,17 @@ enum SPECIAL_EFFECT
 	SE_SUCCESS,
 	SE_FAIL,
 	SE_FR_SUCCESS,
-    SE_LEVELUP_ON_14_FOR_GERMANY,	//레벨업 14일때 ( 독일전용 )
-    SE_LEVELUP_UNDER_15_FOR_GERMANY,//레벨업 15일때 ( 독일전용 )
+    SE_LEVELUP_ON_14_FOR_GERMANY,
+    SE_LEVELUP_UNDER_15_FOR_GERMANY,
     SE_PERCENT_DAMAGE1,
     SE_PERCENT_DAMAGE2,
     SE_PERCENT_DAMAGE3,
 	SE_AUTO_HPUP,
 	SE_AUTO_SPUP,
-	SE_EQUIP_RAMADAN_RING,			// 초승달의 반지를 착용하는 순간에 발동하는 이펙트
-	SE_EQUIP_HALLOWEEN_CANDY,		// 할로윈 사탕을 착용(-_-;)한 순간에 발동하는 이펙트
-	SE_EQUIP_HAPPINESS_RING,		// 크리스마스 행복의 반지를 착용하는 순간에 발동하는 이펙트
-	SE_EQUIP_LOVE_PENDANT,		// 발렌타인 사랑의 팬던트(71145) 착용할 때 이펙트 (발동이펙트임, 지속이펙트 아님)
+	SE_EQUIP_RAMADAN_RING,
+	SE_EQUIP_HALLOWEEN_CANDY,
+	SE_EQUIP_HAPPINESS_RING,
+	SE_EQUIP_LOVE_PENDANT,
 #ifdef ENABLE_ACCE_SYSTEM
 	SE_EFFECT_ACCE_SUCCEDED,
 	SE_EFFECT_ACCE_EQUIP,
@@ -2938,7 +2934,6 @@ typedef struct SPacketGCSpecificEffect
 	char effect_file[128];
 } TPacketGCSpecificEffect;
 
-// 용혼석
 enum EDragonSoulRefineWindowRefineType
 {
 	DragonSoulRefineWindow_UPGRADE,

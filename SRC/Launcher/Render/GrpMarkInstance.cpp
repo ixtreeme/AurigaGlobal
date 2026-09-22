@@ -241,7 +241,7 @@ void CGraphicMarkInstance::Initialize()
 
 void CGraphicMarkInstance::Destroy()
 {
-	m_roImage.SetPointer(nullptr); // CRef 에서 레퍼런스 카운트가 떨어져야 함.
+	m_roImage.SetPointer(nullptr);
 	Initialize();
 }
 

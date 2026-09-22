@@ -1125,7 +1125,6 @@ void CPythonOfflineshop::InsertEntity(uint32_t dwVID, int iType, const char* szN
 #endif
 )
 {
-	// 1) Ha már létezik ilyen VID, akkor csak frissítünk (NE hozzunk létre újat)
 	for (auto it = m_vecShopInstance.begin(); it != m_vecShopInstance.end(); ++it)
 	{
 		offlineshop::ShopInstance* pInst = *it;
@@ -1143,14 +1142,12 @@ void CPythonOfflineshop::InsertEntity(uint32_t dwVID, int iType, const char* szN
 
 			z = CPythonBackground::Instance().GetHeight(x, y) + 0.0f;
 
-			// újrapozicionalás / modell frissités (ugyanaz az instance marad!)
 			pInst->Show((float)x, (float)y, (float)z
 #ifdef KASMIR_PAKET_SYSTEM
 				, dwKasmirNpc
 #endif
 			);
 
-			// texttail frissités
 			std::string shopname = szName;
 			size_t pos = 0;
 			if ((pos = shopname.find('@')) != std::string::npos && ++pos != shopname.length())
@@ -1167,7 +1164,6 @@ void CPythonOfflineshop::InsertEntity(uint32_t dwVID, int iType, const char* szN
 		}
 	}
 
-	// 2) Ha nincs még ilyen VID, akkor hozzuk létre
 	offlineshop::ShopInstance& shop = *(new offlineshop::ShopInstance());
 	shop.SetVID(dwVID);
 	shop.SetShopType(iType);

@@ -41,8 +41,8 @@ namespace building
 		int32_t	lNPCX;
 		int32_t	lNPCY;
 
-		uint32_t	dwGroupVnum; // 같은 그룹은 하나만 건설가능
-		uint32_t	dwDependOnGroupVnum; // 지어져 있어야하는 그룹
+		uint32_t	dwGroupVnum;
+		uint32_t	dwDependOnGroupVnum;
 	} TObjectProto;
 
 	typedef struct SObject

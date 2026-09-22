@@ -44,7 +44,6 @@ HWND ShowUpdatePopup()
     if (!g_hPopup)
         return NULL;
 
-    // A szöveg
     CreateWindowExW(
         0, L"STATIC",
         L"Update started...\nPlease wait...",
@@ -52,7 +51,6 @@ HWND ShowUpdatePopup()
         0, 10, 320, 60,
         g_hPopup, NULL, hInst, NULL);
 
-    // Középre helyezés
     RECT rc{};
     SystemParametersInfo(SPI_GETWORKAREA, 0, &rc, 0);
 

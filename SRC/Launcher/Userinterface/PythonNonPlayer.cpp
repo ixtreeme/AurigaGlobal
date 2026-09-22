@@ -99,7 +99,6 @@ bool CPythonNonPlayer::GetInstanceType(uint32_t dwVnum, uint8_t* pbType)
 {
 	const TMobTable * p = GetTable(dwVnum);
 
-	// dwVnum를 찾을 수 없으면 플레이어 캐릭터로 간주 한다. 문제성 코드 -_- [cronan]
 	if (!p)
 		return false;
 

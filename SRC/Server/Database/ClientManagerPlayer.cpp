@@ -36,7 +36,7 @@ bool CreateItemTableFromRes(MYSQL_RES * res, std::vector<TPlayerItem> * pVec, ui
 
 	uint64_t rows;
 
-	if ((rows = mysql_num_rows(res)) <= 0)	// 데이터 없음
+	if ((rows = mysql_num_rows(res)) <= 0)
 	{
 		pVec->clear();
 		return true;
@@ -772,13 +772,11 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 			{
 				LOG_INFO("QID_QUEST {}", info->dwHandle);
 				RESULT_QUEST_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
-				//aid얻기
 				ClientHandleInfo*  temp1 = info.get();
 				if (temp1 == nullptr)
 					break;
 
 				CLoginData* pLoginData1 = GetLoginDataByAID(temp1->account_id);	//
-				//독일 선물 기능
 				if( pLoginData1 == nullptr)
 					break;
 
@@ -873,14 +871,12 @@ void CClientManager::RESULT_PLAYER_LOAD(CPeer * peer, MYSQL_RES * pRes, ClientHa
 void CClientManager::RESULT_ITEM_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t dwHandle, uint32_t dwPID)
 {
 	std::vector<TPlayerItem> s_items;
-	//DB에서 아이템 정보를 읽어온다.
 	CreateItemTableFromRes(pRes, &s_items, dwPID);
 	uint32_t dwCount = (uint32_t)s_items.size();
 
 	peer->EncodeHeader(HEADER_DG_ITEM_LOAD, dwHandle, sizeof(uint32_t) + sizeof(TPlayerItem) * dwCount);
 	peer->EncodeDWORD(dwCount);
 
-	//CacheSet을 만든다
 	CreateItemCacheSet(dwPID);
 
 	// ITEM_LOAD_LOG_ATTACH_PID
@@ -892,7 +888,7 @@ void CClientManager::RESULT_ITEM_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t d
 		peer->Encode(s_items.data(), sizeof(TPlayerItem) * dwCount);
 
 		for (uint32_t i = 0; i < dwCount; ++i)
-			PutItemCache(&s_items[i], true); // 로드한 것은 따로 저장할 필요 없으므로, 인자 bSkipQuery에 true를 넣는다.
+			PutItemCache(&s_items[i], true);
 	}
 }
 
@@ -914,7 +910,7 @@ void CClientManager::RESULT_AFFECT_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t
 {
 	uint64_t iNumRows;
 
-	if ((iNumRows = mysql_num_rows(pRes)) == 0) // 데이터 없음
+	if ((iNumRows = mysql_num_rows(pRes)) == 0)
 	{
 		// @fixme402 begin
 		//static uint32_t dwPID;
@@ -1182,7 +1178,6 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 	int queryLen;
 	uint32_t		player_id;
 
-	// 한 계정에 X초 내로 캐릭터 생성을 할 수 없다.
 
 	if (auto it = s_createTimeByAccountID.find(packet->account_id); it != s_createTimeByAccountID.end())
 	{
@@ -1444,7 +1439,6 @@ void CClientManager::__QUERY_PLAYER_DELETE(CPeer* peer, uint32_t dwHandle, TPlay
 }
 
 //
-// @version	05/06/10 Bang2ni - 플레이어 삭제시 가격정보 리스트 삭제 추가.
 //
 void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 {
@@ -1495,14 +1489,12 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 			return;
 		}
 
-		// 삭제 성공
 		LOG_INFO("PLAYER_DELETE SUCCESS {}", dwPID);
 
 		char account_index_string[16];
 
 		snprintf(account_index_string, sizeof(account_index_string), "player_id%d", m_iPlayerIDStart + pi->account_index);
 
-		// 플레이어 테이블을 캐쉬에서 삭제한다.
 		CPlayerTableCache * pkPlayerCache = GetPlayerCache(pi->player_id);
 
 		if (pkPlayerCache)
@@ -1511,7 +1503,6 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 			delete pkPlayerCache;
 		}
 
-		// 아이템들을 캐쉬에서 삭제한다.
 		TItemCacheSet * pSet = GetItemCacheSet(pi->player_id);
 
 		if (pSet)
@@ -1588,7 +1579,6 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 	}
 	else
 	{
-		// 삭제 실패
 		LOG_INFO("PLAYER_DELETE FAIL NO ROW");
 		peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, pi->dwHandle, 1);
 		peer->EncodeBYTE(pi->account_index);
@@ -1673,7 +1663,6 @@ void CClientManager::RESULT_HIGHSCORE_REGISTER(CPeer * pkPeer, SQLMsg * msg)
 
 	if (res->uiNumRows == 0)
 	{
-		// 새로운 하이스코어를 삽입
 		char buf[256];
 		snprintf(buf, sizeof(buf), "INSERT INTO highscore%s VALUES('%s', %u, %d)", GetTablePostfix(), szBoard, pi->player_id, value);
 		CDBManager::instance().AsyncQuery(buf);
@@ -1708,7 +1697,6 @@ void CClientManager::RESULT_HIGHSCORE_REGISTER(CPeer * pkPeer, SQLMsg * msg)
 			CDBManager::instance().AsyncQuery(buf);
 		}
 	}
-	// TODO: 이곳에서 하이스코어가 업데이트 되었는지 체크하여 공지를 뿌려야한다.
 	delete pi;
 }
 

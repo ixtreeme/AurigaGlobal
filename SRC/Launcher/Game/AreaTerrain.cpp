@@ -130,7 +130,6 @@ bool CTerrain::LoadShadowMap(const char* c_pszFileName)
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Seamless용 새로운 함수들...
 //////////////////////////////////////////////////////////////////////////
 
 void CTerrain::CopySettingFromGlobalSetting()
@@ -892,7 +891,6 @@ void CTerrain::PutImage16(uint8_t* src, uint8_t* dst, int32_t src_pitch, int32_t
 		for (int x = 0; x < texturewidth; ++x)
 		{
 			WORD packed_pixel = src[x] << 8;
-			//& 연산 한번이 아깝다
 			//WORD packed_pixel = (src[x]&0xF0) << 8;
 			*((WORD*)(dst + x * 2)) = packed_pixel;
 		}
@@ -999,11 +997,11 @@ void CTerrain::_CalculateTerrainPatch(uint8_t byPatchNumX, uint8_t byPatchNumY)
 			lpTerrainVertex->kPosition = kPosition;
 			lpTerrainVertex->kNormal = kNormal;
 
-			if (0.5f > kNormal.z)				// 수평으로 부터 30도 이하 각으로  기울어져 있다. Cliff type으로 정의
+			if (0.5f > kNormal.z)
 				++wNumCliffType;
-			else if (0.8660254f > kNormal.z)	// 수평으로 부터 60도 이하 각으로  기울어져 있다. Hill type으로 정의
+			else if (0.8660254f > kNormal.z)
 				++wNumHillType;
-			else										// 그 이상은 plain 타입
+			else
 				++wNumPlainType;
 
 			if (kPosition.z > fMaxZ)

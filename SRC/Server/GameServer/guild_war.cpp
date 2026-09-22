@@ -154,12 +154,11 @@ uint32_t CGuild::GetGuildWarMapIndex(uint32_t dwOppGID)
 	return git->second.map_index;
 }
 
-bool CGuild::CanStartWar(uint8_t bGuildWarType) // Ÿ�Կ� ���� �ٸ� ������ ���� ���� ����
+bool CGuild::CanStartWar(uint8_t bGuildWarType)
 {
 	if (bGuildWarType >= GUILD_WAR_TYPE_MAX_NUM)
 		return false;
 
-	// �׽�Ʈ�ÿ��� �ο����� Ȯ������ �ʴ´�.
 	if (test_server || quest::CQuestManager::instance().GetEventFlag("guild_war_test") != 0)
 		return GetLadderPoint() > 0;
 
@@ -338,7 +337,6 @@ void CGuild::RequestDeclareWar(uint32_t dwOppGID, uint8_t type)
 			return;
 		}
 
-		// ��Ŷ ������ to another server
 		TPacketGuildWar p;
 		p.bType = type;
 		p.bWar = GUILD_WAR_SEND_DECLARE;
@@ -357,7 +355,6 @@ void CGuild::RequestDeclareWar(uint32_t dwOppGID, uint8_t type)
 
 				if (saved_type == GUILD_WAR_TYPE_FIELD)
 				{
-					// �������� �Ѱ��� �޾Ƶ鿴��.
 					TPacketGuildWar p;
 					p.bType = saved_type;
 					p.bWar = GUILD_WAR_ON_WAR;
@@ -463,14 +460,12 @@ void CGuild::StartWar(uint32_t dwOppGID)
 
 bool CGuild::WaitStartWar(uint32_t dwOppGID)
 {
-	//�ڱ��ڽ��̸�
 	if (dwOppGID == GetID())
 	{
 		LOG_INFO("GuildWar.WaitStartWar.DECLARE_WAR_SELF id({} -> {})", GetID(), dwOppGID);
 		return false;
 	}
 
-	//���� ��� TGuildWar �� ���´�.
 	auto it = m_EnemyGuild.find(dwOppGID);
 	if (it == m_EnemyGuild.end())
 	{
@@ -478,7 +473,6 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 		return false;
 	}
 
-	//���۷����� ����ϰ�
 	TGuildWar & gw(it->second);
 
 	if (gw.state == GUILD_WAR_WAIT_START)
@@ -487,10 +481,8 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 		return false;
 	}
 
-	//���¸� �����Ѵ�.
 	gw.state = GUILD_WAR_WAIT_START;
 
-	//������� ��� Ŭ���� �����͸� ������
 	CGuild* g = CGuildManager::instance().FindGuild(dwOppGID);
 	if (!g)
 	{
@@ -503,14 +495,12 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 	// END_OF_GUILDWAR_INFO
 
 
-	// �ʵ����̸� �ʻ��� ����
 	if (gw.type == GUILD_WAR_TYPE_FIELD)
 	{
 		LOG_INFO("GuildWar.WaitStartWar.FIELD_TYPE id({} -> {})", GetID(), dwOppGID);
 		return true;
 	}
 
-	// ���� ���� ���� Ȯ��
 	LOG_INFO("GuildWar.WaitStartWar.CheckWarServer id({} -> {}), type({}), map({})", GetID(), dwOppGID, static_cast<int>(gw.type), rkGuildWarInfo.lMapIndex);
 
 	if (!map_allow_find(rkGuildWarInfo.lMapIndex))
@@ -526,7 +516,6 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 	if (id1 > id2)
 		std::swap(id1, id2);
 
-	//���� ���� ����
 	uint32_t lMapIndex = CWarMapManager::instance().CreateWarMap(rkGuildWarInfo, id1, id2);
 	if (!lMapIndex)
 	{
@@ -537,10 +526,8 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 
 	LOG_INFO("GuildWar.WaitStartWar.CreateMap id({} vs {}), type({}), map({}) -> map_inst({})", id1, id2, static_cast<int>(gw.type), rkGuildWarInfo.lMapIndex, lMapIndex);
 
-	//����� ������ ���ε����� ����
 	gw.map_index = lMapIndex;
 
-	//���ʿ� ���(?)
 	SetGuildWarMapIndex(dwOppGID, lMapIndex);
 	g->SetGuildWarMapIndex(GetID(), lMapIndex);
 
@@ -567,7 +554,6 @@ void CGuild::RequestRefuseWar(uint32_t dwOppGID)
 
 	if (it != m_EnemyGuild.end() && it->second.state == GUILD_WAR_RECV_DECLARE)
 	{
-		// ��������� �����ߴ�.
 		TPacketGuildWar p;
 		p.bWar = GUILD_WAR_REFUSE;
 		p.dwGuildFrom = GetID();

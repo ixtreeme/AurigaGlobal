@@ -139,23 +139,6 @@ bool CPythonQuest::__GetQuestInstancePtr(uint32_t dwQuestIndex, SQuestInstance *
 
 void CPythonQuest::__Initialize()
 {
-/*
-#ifdef _DEBUG
-	for (int i = 0; i < 7; ++i)
-	{
-		SQuestInstance test;
-		test.dwIndex = i;
-		test.strIconFileName = "";
-		test.strTitle = _getf("test%d", i);
-		test.strClockName = "남은 시간";
-		test.strCounterName = "남은 마리수";
-		test.iClockValue = 1000;
-		test.iCounterValue = 1000;
-		test.iStartTime = 0;
-		RegisterQuestInstance(test);
-	}
-#endif
-*/
 }
 
 void CPythonQuest::Clear()
@@ -203,7 +186,6 @@ PyObject * questGetQuestData(PyObject * poSelf, PyObject * poArgs)
 	else
 	{
 		{
-			// 비어있을 경우 디폴트 이미지를 넣는다.
 			std::string strIconFileName = "season1/icon/scroll_open.tga";
 			pImage = (CGraphicImage *)CResourceManager::Instance().GetResourcePointer(strIconFileName.c_str());
 		}
@@ -257,7 +239,6 @@ PyObject * questGetQuestLastTime(PyObject * poSelf, PyObject * poArgs)
 		iLastTime = (pQuestInstance->iStartTime + pQuestInstance->iClockValue) - int(CTimer::Instance().GetCurrentSecond());
 	}
 
-	// 시간 증가 처리 코드
 //	else
 //	{
 //		iLastTime = int(CTimer::Instance().GetCurrentSecond()) - pQuestInstance->iStartTime;

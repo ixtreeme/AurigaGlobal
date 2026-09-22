@@ -359,8 +359,6 @@ bool CGraphicThingInstance::GetBonePosition(int iModelIndex, int iBoneIndex, flo
 	*pfz = pfMatrix[14];
 	return true;
 }
-//iSkelInstance 가 있으면 기본 본에 Link(본이 붙는것)시키고,
-//없으면 기본 본에 attach(좌표만 가져다 쓰는것) 됩니다.
 bool CGraphicThingInstance::SetModelInstance(int iDstModelInstance, int iSrcModelThing, int iSrcModel,int iSkelInstance)
 {
 	if (!CheckModelInstanceIndex(iDstModelInstance))
@@ -789,7 +787,6 @@ void CGraphicThingInstance::UpdateLODLevel()
 	const D3DXVECTOR3 & c_rv3CameraPosition = pcurCamera->GetEye();
 	const D3DXVECTOR3 & c_v3Position = GetPosition();
 
-	// NOTE : 중심으로부터의 거리 계산에 z값 차이는 사용하지 않는다. - [levites]
 	CGrannyLODController::FUpdateLODLevel update;
 	update.fDistanceFromCenter = sqrtf((c_rv3TargetPosition.x - c_v3Position.x) * (c_rv3TargetPosition.x - c_v3Position.x) +
 									   (c_rv3TargetPosition.y - c_v3Position.y) * (c_rv3TargetPosition.y - c_v3Position.y));

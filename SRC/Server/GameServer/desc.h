@@ -76,14 +76,12 @@ class CLoginKey
 };
 
 
-// sequence ���� ã��� ����Ÿ
 struct seq_t
 {
 	uint8_t	hdr;
 	uint8_t	seq;
 };
 typedef std::vector<seq_t>	seq_vector_t;
-// sequence ���� ã��� ����Ÿ
 
 class DESC
 {
@@ -147,7 +145,6 @@ class DESC
 
 		void			Log(const char * format, ...);
 
-		// �ڵ彦��ũ (�ð� ����ȭ)
 		void			StartHandshake(uint32_t _dw);
 		void			SendHandshake(uint32_t dwCurTime, int32_t lNewDelta);
 		bool			HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry=false);
@@ -168,7 +165,6 @@ class DESC
 		const uint32_t *	GetDecryptionKey() const { return &m_adwDecryptionKey[0]; }
 #endif
 
-		// ����
 		uint8_t			GetEmpire();
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -182,7 +178,7 @@ class DESC
 		void			DisconnectOfSameLogin();
 
 		void			SetAdminMode();
-		bool			IsAdminMode();		// Handshake ���� ���� ������ �����ֳ�?
+		bool			IsAdminMode();
 
 		void			SetPong(bool b);
 		bool			IsPong();
@@ -255,7 +251,7 @@ class DESC
 		uint16_t			m_wP2PPort;
 		uint8_t			m_bP2PChannel;
 
-		bool			m_bAdminMode; // Handshake ���� ���� ������ �����ֳ�?
+		bool			m_bAdminMode;
 		bool			m_bPong;
 
 		int			m_iCurrentSequence;
@@ -302,7 +298,6 @@ class DESC
 		void RawPacket(const void * c_pvData, int iSize);
 		void ChatPacket(uint8_t type, const char * format, ...);
 
-		/* ������ ���� ã��� �ڵ� */
 	public:
 		seq_vector_t	m_seq_vector;
 		void			push_seq (uint8_t hdr, uint8_t seq);

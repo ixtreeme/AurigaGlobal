@@ -64,7 +64,6 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 				virtual void OnChangeShape() = 0;
 		};
 
-	// 2004.07.05.myevan.궁신탄영 맵에 끼이는 문제해결
 	private:
 		static IBackground& GetBackground();
 
@@ -217,7 +216,6 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 		CActorInstance();
 		virtual ~CActorInstance();
 
-		// 20041201.myevan.인스턴스베이스용 함수
 		void INSTANCEBASE_Transform();
 		void INSTANCEBASE_Deform();
 
@@ -315,13 +313,13 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 
 		/////////////////////////////////////////////////////////////////////////////////////
 		// Motion Queueing System
-		void SetMotionMode(int iMotionMode); // FIXME : 모드의 시간차 적용이 가능하게끔 한다.
+		void SetMotionMode(int iMotionMode);
 		int GetMotionMode();
 		void SetLoopMotion(uint32_t dwMotion, float fBlendTime = 0.1f, float fSpeedRatio=1.0f);
 		bool InterceptOnceMotion(uint32_t dwMotion, float fBlendTime = 0.1f, UINT uSkill=0, float fSpeedRatio=1.0f);
 		bool InterceptLoopMotion(uint32_t dwMotion, float fBlendTime = 0.1f);
-		bool PushOnceMotion(uint32_t dwMotion, float fBlendTime = 0.1f, float fSpeedRatio=1.0f); // FIXME : 모드의 시간차 적용이 가능하게끔 한다.
-		bool PushLoopMotion(uint32_t dwMotion, float fBlendTime = 0.1f, float fSpeedRatio=1.0f); // FIXME : 모드의 시간차 적용이 가능하게끔 한다.
+		bool PushOnceMotion(uint32_t dwMotion, float fBlendTime = 0.1f, float fSpeedRatio=1.0f);
+		bool PushLoopMotion(uint32_t dwMotion, float fBlendTime = 0.1f, float fSpeedRatio=1.0f);
 		void SetMotionLoopCount(int iCount);
 
 		bool IsPushing();
@@ -375,9 +373,6 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 		/////////////////////////////////////////////////////////////////////////////////////
 		// Battle
 		// Input
-		// 하위로 옮길 가능성이 있는 코드들
-		// 네트웍 연동시 전투 관련은 플레이어를 제외하곤 단순히 Showing Type이기 때문에
-		// 조건 검사가 필요 없다.
 		void		InputNormalAttackCommand(float fDirRot);	// Process input - Only used by player's character
 		bool		InputComboAttackCommand(float fDirRot);	// Process input - Only used by player's character
 
@@ -560,7 +555,6 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 		void ClearFlyEventHandler();
 		void SetFlyEventHandler(IFlyEventHandler * pHandler);
 
-		// 2004. 07. 07. [levites] - 스킬 사용중 타겟이 바뀌는 문제 해결을 위한 코드
 		bool CanChangeTarget();
 
 	protected:
@@ -603,7 +597,7 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 		void		CurrentMotionProcess();
 		MOTION_KEY	GetRandomMotionKey(MOTION_KEY dwMotionKey);
 
-		float GetLastMotionTime(float fBlendTime); // NOTE : 자동으로 BlendTime만큼을 앞당긴 시간을 리턴
+		float GetLastMotionTime(float fBlendTime);
 		float GetMotionDuration(uint32_t dwMotionKey);
 
 		bool InterceptMotion(EMotionPushType iMotionType, WORD wMotion, float fBlendTime = 0.1f, UINT uSkill=0, float fSpeedRatio=1.0f);
@@ -685,31 +679,31 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 
 	protected:
 		float		__GetAttackSpeed();
-		uint32_t		__SetMotion(const SSetMotionData& c_rkSetMotData, uint32_t dwRandMotKey=0); // 모션 데이터 설정
+		uint32_t		__SetMotion(const SSetMotionData& c_rkSetMotData, uint32_t dwRandMotKey=0);
 		void		__ClearMotion();
 
-		bool		__BindMotionData(uint32_t dwMotionKey);	// 모션 데이터를 바인딩
-		void		__ClearHittedActorInstanceMap();		// 때려진 액터 인스턴스 맵을 지운다
+		bool		__BindMotionData(uint32_t dwMotionKey);
+		void		__ClearHittedActorInstanceMap();
 
-		UINT		__GetMotionType();			// 모션 타입 얻기
+		UINT		__GetMotionType();
 
-		bool		__IsNeedFlyTargetMotion();	// FlyTarget 이 필요한 모션인가?
-		bool		__HasMotionFlyEvent();		// 무언가를 쏘는가?
-		bool		__IsWaitMotion();			// 대기 모션 인가?
-		bool		__IsMoveMotion();			// 이동 모션 인가?
-		bool		__IsAttackMotion();			// 공격 모션 인가?
-		bool		__IsComboAttackMotion();	// 콤보 공격 모션 인가?
-		bool		__IsDamageMotion();			// 데미지 모션인가?
-		bool		__IsKnockDownMotion();		// 넉다운 모션인가?
-		bool		__IsDieMotion();			// 사망 모션 인가?
-		bool		__IsStandUpMotion();		// 일어서기 모션인가?
+		bool		__IsNeedFlyTargetMotion();
+		bool		__HasMotionFlyEvent();
+		bool		__IsWaitMotion();
+		bool		__IsMoveMotion();
+		bool		__IsAttackMotion();
+		bool		__IsComboAttackMotion();
+		bool		__IsDamageMotion();
+		bool		__IsKnockDownMotion();
+		bool		__IsDieMotion();
+		bool		__IsStandUpMotion();
 		bool		__IsMountingHorse();
 
-		bool		__CanAttack();				// 공격 할수 있는가?
-		bool		__CanNextComboAttack();		// 다음 콤보 어택이 가능한가?
+		bool		__CanAttack();
+		bool		__CanNextComboAttack();
 
-		bool		__IsComboAttacking();	// 콤보 공격중인가?
-		void		__CancelComboAttack();	// 콤보 공격 취소
+		bool		__IsComboAttacking();
+		void		__CancelComboAttack();
 
 		WORD		__GetCurrentMotionIndex();
 		uint32_t		__GetCurrentMotionKey();
@@ -731,9 +725,9 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 		D3DXVECTOR3	__GetFlyTargetPosition();
 
 	protected:
-		void		__DestroyWeaponTrace();	// 무기 잔상을 제거한다
-		void		__ShowWeaponTrace();	// 무기 잔상을 보인다
-		void		__HideWeaponTrace();	// 무기 잔상을 감춘다
+		void		__DestroyWeaponTrace();
+		void		__ShowWeaponTrace();
+		void		__HideWeaponTrace();
 
 	protected:
 		// collision data
@@ -753,7 +747,7 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 		// For Collision Detection
 		TCollisionPointInstanceList		m_BodyPointInstanceList;
 		TCollisionPointInstanceList		m_DefendingPointInstanceList;
-		SSplashArea						m_kSplashArea; // TODO : 복수에 대한 고려를 해야한다 - [levites]
+		SSplashArea						m_kSplashArea;
 		CAttributeInstance *			m_pAttributeInstance;
 		/////////////////////////////////////////////////////////////////////////////////////
 
@@ -784,7 +778,6 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 		float						m_fInvisibleTime;
 		bool						m_isHiding;
 
-		// TODO : State로 통합 시킬 수 있는지 고려해 볼것
 		bool						m_isResistFallen;
 		bool						m_isSleep;
 		bool						m_isFaint;
@@ -870,7 +863,7 @@ class CActorInstance : public IActorInstance, public IFlyTargetableObject
 		void __InitializeRotationData();
 		void __InitializePositionData();
 
-	public: // InstanceBase 통합전 임시로 public
+	public:
 		IEventHandler* __GetEventHandlerPtr();
 		IEventHandler& __GetEventHandlerRef();
 

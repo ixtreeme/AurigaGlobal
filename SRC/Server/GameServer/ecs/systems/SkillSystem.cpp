@@ -1549,7 +1549,6 @@ bool SkillSystem::LearnSkillByBook(entt::entity e, uint32_t dwSkillVnum, uint8_t
 
 bool TSkillUseInfo::HitOnce(uint32_t dwVnum)
 {
-	// ľ˛ÁöµµľĘľŇŔ¸¸é ¶§¸®Áöµµ ¸řÇŃ´Ů.
 	if (!bUsed)
 		return false;
 
@@ -1586,7 +1585,6 @@ bool TSkillUseInfo::UseSkill(bool isGrandMaster, entt::entity vid, uint32_t dwCo
 {
 	uint32_t dwCur = get_dword_time();
 
-	// ľĆÁ÷ ÄđĹ¸ŔÓŔĚ łˇłŞÁö ľĘľŇ´Ů.
 	if (bUsed && dwNextSkillUsableTime > dwCur)
 	{
 		LOG_INFO("cooltime is not over delta {}", dwNextSkillUsableTime - dwCur);
@@ -1724,7 +1722,6 @@ void SkillSystem::SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod)
 	if (!SkillSystem::IsLearnableSkill(e, dwVnum))
 		return;
 
-	// ±×·Łµĺ ¸¶˝şĹÍ´Â Äů˝şĆ®·Î¸¸ ĽöÇŕ°ˇ´É
 	if (pkSk->dwType != 0)
 	{
 		switch (SkillSystem::GetSkillMasterType(e, pkSk->dwVnum))
@@ -1741,7 +1738,6 @@ void SkillSystem::SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod)
 
 	if (bMethod == SKILL_UP_BY_POINT)
 	{
-		// ¸¶˝şĹÍ°ˇ ľĆ´Ń »óĹÂżˇĽ­¸¸ Ľö·Ă°ˇ´É
 		if (SkillSystem::GetSkillMasterType(e, pkSk->dwVnum) != SKILL_NORMAL)
 			return;
 
@@ -1750,7 +1746,7 @@ void SkillSystem::SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod)
 	}
 	else if (bMethod == SKILL_UP_BY_BOOK)
 	{
-		if (pkSk->dwType != 0) // Á÷ľ÷żˇ ĽÓÇĎÁö ľĘľŇ°ĹłŞ Ć÷ŔÎĆ®·Î żĂ¸±Ľö ľř´Â ˝şĹłŔş ĂłŔ˝şÎĹÍ ĂĄŔ¸·Î ąčżď Ľö ŔÖ´Ů.
+		if (pkSk->dwType != 0)
 			if (SkillSystem::GetSkillMasterType(e, pkSk->dwVnum) != SKILL_MASTER)
 				return;
 	}
@@ -1804,11 +1800,9 @@ void SkillSystem::SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod)
 
 	if (pkSk->dwType != 0)
 	{
-		// °©ŔÚ±â ±×·ąŔĚµĺ ľ÷ÇĎ´Â ÄÚµů
 		switch (SkillSystem::GetSkillMasterType(e, pkSk->dwVnum))
 		{
 			case SKILL_NORMAL:
-				// ąřĽ·Ŕş ˝şĹł ľ÷±×·ąŔĚµĺ 17~20 »çŔĚ ·Ł´ý ¸¶˝şĹÍ Ľö·Ă
 				if (SkillSystem::GetSkillLevel(e, pkSk->dwVnum) >= 17)
 				{
 #ifdef ENABLE_FORCE2MASTERSKILL
@@ -1953,7 +1947,7 @@ EVENTFUNC(ChainLightningEvent)
 
 	const entt::entity victimParty = ecs::SocialSystem::GetParty(victimEntity);
 
-	if (victimParty != entt::null) // ĆÄĆĽ ¸ŐŔú
+	if (victimParty != entt::null)
 	{
 		target = PartySystem::GetNextOwnership(victimParty, entt::null, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
 		if (target == victimEntity || !number(0, 2) || SkillSystem::GetChainLightningExcepts(character).count(target) != 0)
@@ -2054,7 +2048,6 @@ struct FuncSplashDamage
 		}
 
 		if (ecs::PlayerRuntime::IsPC(m_character))
-			// ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
 			if (!(m_pkSk->dwVnum >= GUILD_SKILL_START && m_pkSk->dwVnum <= GUILD_SKILL_END))
 				if (!m_bDisableCooltime && !SkillSystem::ConsumeSkillHit(m_character, m_pkSk->dwVnum) && m_pkSk->dwVnum != SKILL_MUYEONG)
 				{
@@ -2124,7 +2117,7 @@ struct FuncSplashDamage
 		m_pkSk->SetPointVar("chain", SkillSystem::GetChainLightningIndex(m_character));
 		SkillSystem::IncChainLightningIndex(m_character);
 
-		bool bUnderEunhyung = SkillSystem::GetAffectedEunhyung(m_character) > 0; // ŔĚ°Ç żÖ ż©±âĽ­ ÇĎÁö??
+		bool bUnderEunhyung = SkillSystem::GetAffectedEunhyung(m_character) > 0;
 
 		m_pkSk->SetPointVar("ek", SkillSystem::GetAffectedEunhyung(m_character)*1./100);
 		//SkillSystem::ClearAffectedEunhyung(m_character);
@@ -2212,7 +2205,6 @@ struct FuncSplashDamage
 		iDam = CalcBattleDamage(iAmount, ecs::PointSystem::GetLevel(m_character), ecs::PointSystem::GetLevel(victimEntity));
 		if (ecs::PlayerRuntime::IsPC(m_character) && SkillSystem::GetSkillMainTarget(m_character, m_pkSk->dwVnum) != victimEntity)
 		{
-			// µĄąĚÁö °¨ĽŇ
 			iDam = (int) (iDam * m_pkSk->kSplashAroundDamageAdjustPoly.Eval());
 		}
 
@@ -2222,7 +2214,6 @@ struct FuncSplashDamage
 		}
 #endif
 
-		// TODO ˝şĹłżˇ µű¸Ą µĄąĚÁö Ĺ¸ŔÔ ±â·ĎÇŘľßÇŃ´Ů.
 		EDamageType dt = DAMAGE_TYPE_NONE;
 
 		switch (m_pkSk->bSkillAttrType)
@@ -2343,8 +2334,6 @@ struct FuncSplashDamage
 			case SKILL_ATTR_TYPE_MAGIC:
 				dt = DAMAGE_TYPE_MAGIC;
 				iDam = CalcAttBonus(chr, chrVictim, iDam);
-				// Ŕ¸ľĆľĆľĆľÇ
-				// żąŔüżˇ ŔűżëľČÇß´ř ąö±×°ˇ ŔÖľîĽ­ ąćľî·Â °č»ęŔ» ´Ů˝ĂÇĎ¸é ŔŻŔú°ˇ ł­¸®ł˛
 				//iDam -= ecs::PointSystem::Get(victimEntity, POINT_MAGIC_DEF_GRADE);
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
 //				{
@@ -2362,13 +2351,7 @@ struct FuncSplashDamage
 		}
 
 		//
-		// 20091109 µ¶ŔĎ ˝şĹł ĽÓĽş żäĂ» ŔŰľ÷
-		// ±âÁ¸ ˝şĹł Ĺ×ŔĚşíżˇ SKILL_FLAG_WIND, SKILL_FLAG_ELEC, SKILL_FLAG_FIRE¸¦ °ˇÁř ˝şĹłŔĚ
-		// ŔüÇô ľřľúŔ¸ąÇ·Î ¸ó˝şĹÍŔÇ RESIST_WIND, RESIST_ELEC, RESIST_FIREµµ »çżëµÇÁö ľĘ°í ŔÖľú´Ů.
 		//
-		// PvPżÍ PvEąë·±˝ş şĐ¸®¸¦ Ŕ§ÇŘ ŔÇµµŔűŔ¸·Î NPC¸¸ ŔűżëÇĎµµ·Ď ÇßŔ¸¸ç ±âÁ¸ ąë·±˝şżÍ Â÷ŔĚÁˇŔ»
-		// ´Ŕł˘Áö ¸řÇĎ±â Ŕ§ÇŘ mob_protoŔÇ RESIST_MAGICŔ» RESIST_WIND, RESIST_ELEC, RESIST_FIRE·Î
-		// şą»çÇĎż´´Ů.
 		//
 		if (ecs::PlayerRuntime::IsNPC(victimEntity))
 		{
@@ -2696,14 +2679,12 @@ struct FuncSplashDamage
 		if(test_server)
 			LOG_INFO("FuncSplashDamage End :{} ", ecs::PlayerRuntime::GetName(m_character).data());
 //#ifdef ENABLE_MAP1_SKILL_MOB
-//		// csak PC -> 136-os mob esetén mentsünk
 //			DBManager::instance().DirectQuery(
 //				"UPDATE player.player "
 //				"SET map1_skillmob = GREATEST(map1_skillmob, %d) "
 //				"WHERE id=%u",
 //				iAmount, ecs::PlayerRuntime::GetPlayerID(m_character));
 //
-//			// (opcionális) debug üzenet a játékosnak
 	}
 
 	int		m_x;
@@ -2818,7 +2799,6 @@ EVENTFUNC(skill_gwihwan_event)
 	{
 		PIXEL_POSITION pos;
 
-		// Ľş°ř
 		if (ecs::GetRecallPosition(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetEmpire(character), pos))
 		{
 			LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), pos.x, pos.y);
@@ -2863,11 +2843,9 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 		LOG_INFO("ComputeSkillAtPosition {} vnum {} x {} y {} level {}", ecs::PlayerRuntime::GetName(e), dwVnum, posTarget.x, posTarget.y, bSkillLevel);
 	}
 
-	// łŞżˇ°Ô ľ˛´Â ˝şĹłŔş ł» Ŕ§Äˇ¸¦ ľ´´Ů.
 	//if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
 	//	posTarget = GetXYZ();
 
-	// ˝şÇĂ·ˇ˝¬°ˇ ľĆ´Ń ˝şĹłŔş ÁÖŔ§ŔĚ¸é ŔĚ»óÇĎ´Ů
 	if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 		return BATTLE_NONE;
 
@@ -2961,7 +2939,6 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_ATTACK | SKILL_FLAG_USE_MELEE_DAMAGE | SKILL_FLAG_USE_MAGIC_DAMAGE))
 	{
 		//
-		// °ř°Ý ˝şĹłŔĎ °ćżě
 		//
 		bool bAdded = false;
 
@@ -2988,7 +2965,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 			int iDur = (int) pkSk->kDurationPoly.Eval();
 
 			if (ecs::PlayerRuntime::GetDesc(character) != nullptr)
-				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END)) // ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
+				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END))
 					if (!SkillSystem::IsCooltimeDisabled(e) && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
 					{
 						//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill cannot hit %s", ecs::PlayerRuntime::GetName(e));
@@ -3079,7 +3056,6 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 		if (iDur > 0)
 		{
 			iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
-			// AffectFlag°ˇ ľř°ĹłŞ, toggle ÇĎ´Â °ÍŔĚ ľĆ´Ď¶ó¸é..
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
 			AffectSystem::AddAffect(e, pkSk->dwVnum,
@@ -3252,8 +3228,6 @@ int SkillSystem::ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::e
 }
 #endif
 
-// bSkillLevel ŔÎŔÚ°ˇ 0ŔĚ ľĆ´Ň °ćżěżˇ´Â m_abSkillLevels¸¦ »çżëÇĎÁö ľĘ°í °­Á¦·Î
-// bSkillLevel·Î °č»ęÇŃ´Ů.
 int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
 	if (!ecs::IsCharacter(e))
@@ -3269,7 +3243,6 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 		}
 	}
 #else
-	// ¸»Ŕ» Ĺ¸°íŔÖÁö¸¸ ˝şĹłŔş »çżëÇŇ Ľö ľř´Â »óĹÂ¶ó¸é return
 	if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(e))
 		return BATTLE_NONE;
 #endif
@@ -3303,7 +3276,6 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 		return BATTLE_NONE;
 #endif
 
-	// »ó´ëąćżˇ°Ô ľ˛´Â °ÍŔĚ ľĆ´Ď¸é łŞżˇ°Ô ˝áľß ÇŃ´Ů.
 	const entt::entity victimEntity = IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY) ? character : victim;
 
 	if (!ecs::IsCharacter(victimEntity))
@@ -3462,7 +3434,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 
 			if (ecs::PlayerRuntime::GetDesc(character) != nullptr)
-				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END)) // ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
+				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END))
 					if (!SkillSystem::IsCooltimeDisabled(e) && !SkillSystem::ConsumeSkillHit(character, dwVnum) && dwVnum != SKILL_MUYEONG)
 					{
 						return BATTLE_NONE;
@@ -3575,7 +3547,6 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 		if (iDur > 0)
 		{
 			iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
-			// AffectFlag°ˇ ľř°ĹłŞ, toggle ÇĎ´Â °ÍŔĚ ľĆ´Ď¶ó¸é..
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
 			if (pkSk->bPointOn2 != POINT_NONE)
@@ -3788,7 +3759,6 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 		return true;
 	}
 
-	// ¸»Ŕ» Ĺ¸°íŔÖÁö¸¸ ˝şĹłŔş »çżëÇŇ Ľö ľř´Â »óĹÂ¶ó¸é return false
 	if (false == bCanUseHorseSkill && true == MountSystem::IsRiding(e))
 		return false;
 
@@ -3836,7 +3806,6 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 
 			SkillSystem::ResetSkillHitTargets(character, dwVnum);
 			SkillSystem::SetSkillMainTarget(character, dwVnum, victimEntity);
-			// DASH »óĹÂŔÇ ĹşČŻ°ÝŔş °ř°Ý±âĽú
 			SkillSystem::ComputeSkill(e, dwVnum, victimEntity);
 			AffectSystem::RemoveAffect(e, dwVnum);
 			return true;
@@ -3851,7 +3820,6 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 		return true;
 	}
 
-	// Toggle ÇŇ ¶§´Â SP¸¦ ľ˛Áö ľĘŔ˝ (SelfOnly·Î ±¸şĐ)
 	if ((0 != pkSk->dwAffectFlag || pkSk->dwVnum == SKILL_MUYEONG) && (pkSk->dwFlag & SKILL_FLAG_TOGGLE) && AffectSystem::RemoveAffect(e, pkSk->dwVnum))
 	{
 		return true;
@@ -3865,7 +3833,6 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 	pkSk->SetPointVar("k", k);
 	pkSk->kSplashAroundDamageAdjustPoly.SetVar("k", k);
 
-	// ÄđĹ¸ŔÓ ĂĽĹ©
 	pkSk->kCooldownPoly.SetVar("k", k);
 	int iCooltime = (int) pkSk->kCooldownPoly.Eval();
 	int lMaxHit = pkSk->lMaxHit ? pkSk->lMaxHit : -1;
@@ -3933,7 +3900,6 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 
 	if ((pkSk->dwVnum == SKILL_MUYEONG) || (pkSk->IsChargeSkill() && !AffectSystem::IsAffectFlag(e, AFF_TANHWAN_DASH) && !ecs::IsCharacter(victimEntity)))
 	{
-		// ĂłŔ˝ »çżëÇĎ´Â ą«żµÁřŔş ŔÚ˝Ĺżˇ°Ô Affect¸¦ şŮŔÎ´Ů.
 		victimEntity = character;
 	}
 
@@ -4010,7 +3976,7 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 #endif
 	if (ecs::IsCharacter(victimEntity) && ecs::SocialSystem::GetParty(e) != entt::null && (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111))//razor93---az egesz csoport buffolasa egyszerre------
 	{
-		if (dwVnum == 66) // varázslat kioltás
+		if (dwVnum == 66)
 		{
 			return false;
 		}
@@ -4478,10 +4444,8 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 	const uint32_t SKILL_LIST_MAX_COUNT	= 5;
 	static uint32_t s_anMotion2SkillVnumList[MOTION_MAX_NUM][SKILL_LIST_MAX_COUNT] =
 	{
-		// ˝şĹłĽö   ą«»ç˝şĹłID  ŔÚ°´˝şĹłID  Ľö¶ó˝şĹłID  ą«´ç˝şĹłID	ĽöŔÎÁ·(WOLFMAN) ˝şĹłID
 		{   0,		0,			0,			0,			0		}, //  0
 
-		// 1ąř Á÷±ş ±âş» ˝şĹł
 		{   4,		1,			31,			61,			91		}, //  1
 		{   4,		2,			32,			62,			92		}, //  2
 		{   4,		3,			33,			63,			93		}, //  3
@@ -4490,9 +4454,7 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   4,		6,			36,			66,			96		}, //  6
 		{   0,		0,			0,			0,			0		}, //  7
 		{   0,		0,			0,			0,			0		}, //  8
-		// 1ąř Á÷±ş ±âş» ˝şĹł łˇ
 
-		// ż©ŔŻşĐ
 		{   0,		0,			0,			0,			0		}, //  9
 		{   0,		0,			0,			0,			0		}, //  10
 		{   0,		0,			0,			0,			0		}, //  11
@@ -4500,9 +4462,7 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   0,		0,			0,			0,			0		}, //  13
 		{   0,		0,			0,			0,			0		}, //  14
 		{   0,		0,			0,			0,			0		}, //  15
-		// ż©ŔŻşĐ łˇ
 
-		// 2ąř Á÷±ş ±âş» ˝şĹł
 		{   4,		16,			46,			76,			106		}, //  16
 		{   4,		17,			47,			77,			107		}, //  17
 		{   4,		18,			48,			78,			108		}, //  18
@@ -4511,14 +4471,10 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   4,		21,			51,			81,			111		}, //  21
 		{   0,		0,			0,			0,			0		}, //  22
 		{   0,		0,			0,			0,			0		}, //  23
-		// 2ąř Á÷±ş ±âş» ˝şĹł łˇ
 
-		// ż©ŔŻşĐ
 		{   0,		0,			0,			0,			0		}, //  24
 		{   0,		0,			0,			0,			0		}, //  25
-		// ż©ŔŻşĐ łˇ
 
-		// 1ąř Á÷±ş ¸¶˝şĹÍ ˝şĹł
 		{   4,		1,			31,			61,			91		}, //  26
 		{   4,		2,			32,			62,			92		}, //  27
 		{   4,		3,			33,			63,			93		}, //  28
@@ -4527,9 +4483,7 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   4,		6,			36,			66,			96		}, //  31
 		{   0,		0,			0,			0,			0		}, //  32
 		{   0,		0,			0,			0,			0		}, //  33
-		// 1ąř Á÷±ş ¸¶˝şĹÍ ˝şĹł łˇ
 
-		// ż©ŔŻşĐ
 		{   0,		0,			0,			0,			0		}, //  34
 		{   0,		0,			0,			0,			0		}, //  35
 		{   0,		0,			0,			0,			0		}, //  36
@@ -4537,9 +4491,7 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   0,		0,			0,			0,			0		}, //  38
 		{   0,		0,			0,			0,			0		}, //  39
 		{   0,		0,			0,			0,			0		}, //  40
-		// ż©ŔŻşĐ łˇ
 
-		// 2ąř Á÷±ş ¸¶˝şĹÍ ˝şĹł
 		{   4,		16,			46,			76,			106		}, //  41
 		{   4,		17,			47,			77,			107		}, //  42
 		{   4,		18,			48,			78,			108		}, //  43
@@ -4548,14 +4500,10 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   4,		21,			51,			81,			111		}, //  46
 		{   0,		0,			0,			0,			0		}, //  47
 		{   0,		0,			0,			0,			0		}, //  48
-		// 2ąř Á÷±ş ¸¶˝şĹÍ ˝şĹł łˇ
 
-		// ż©ŔŻşĐ
 		{   0,		0,			0,			0,			0		}, //  49
 		{   0,		0,			0,			0,			0		}, //  50
-		// ż©ŔŻşĐ łˇ
 
-		// 1ąř Á÷±ş ±×·Łµĺ ¸¶˝şĹÍ ˝şĹł
 		{   4,		1,			31,			61,			91		}, //  51
 		{   4,		2,			32,			62,			92		}, //  52
 		{   4,		3,			33,			63,			93		}, //  53
@@ -4564,9 +4512,7 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   4,		6,			36,			66,			96		}, //  56
 		{   0,		0,			0,			0,			0		}, //  57
 		{   0,		0,			0,			0,			0		}, //  58
-		// 1ąř Á÷±ş ±×·Łµĺ ¸¶˝şĹÍ ˝şĹł łˇ
 
-		// ż©ŔŻşĐ
 		{   0,		0,			0,			0,			0		}, //  59
 		{   0,		0,			0,			0,			0		}, //  60
 		{   0,		0,			0,			0,			0		}, //  61
@@ -4574,9 +4520,7 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   0,		0,			0,			0,			0		}, //  63
 		{   0,		0,			0,			0,			0		}, //  64
 		{   0,		0,			0,			0,			0		}, //  65
-		// ż©ŔŻşĐ łˇ
 
-		// 2ąř Á÷±ş ±×·Łµĺ ¸¶˝şĹÍ ˝şĹł
 		{   4,		16,			46,			76,			106		}, //  66
 		{   4,		17,			47,			77,			107		}, //  67
 		{   4,		18,			48,			78,			108		}, //  68
@@ -4585,14 +4529,10 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   4,		21,			51,			81,			111		}, //  71
 		{   0,		0,			0,			0,			0		}, //  72
 		{   0,		0,			0,			0,			0		}, //  73
-		// 2ąř Á÷±ş ±×·Łµĺ ¸¶˝şĹÍ ˝şĹł łˇ
 
-		//ż©ŔŻşĐ
 		{   0,		0,			0,			0,			0		}, //  74
 		{   0,		0,			0,			0,			0		}, //  75
-		// ż©ŔŻşĐ łˇ
 
-		// 1ąř Á÷±ş ĆŰĆĺĆ® ¸¶˝şĹÍ ˝şĹł
 		{   4,		1,			31,			61,			91		}, //  76
 		{   4,		2,			32,			62,			92		}, //  77
 		{   4,		3,			33,			63,			93		}, //  78
@@ -4601,9 +4541,7 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   4,		6,			36,			66,			96		}, //  81
 		{   0,		0,			0,			0,			0		}, //  82
 		{   0,		0,			0,			0,			0		}, //  83
-		// 1ąř Á÷±ş ĆŰĆĺĆ® ¸¶˝şĹÍ ˝şĹł łˇ
 
-		// ż©ŔŻşĐ
 		{   0,		0,			0,			0,			0		}, //  84
 		{   0,		0,			0,			0,			0		}, //  85
 		{   0,		0,			0,			0,			0		}, //  86
@@ -4611,9 +4549,7 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   0,		0,			0,			0,			0		}, //  88
 		{   0,		0,			0,			0,			0		}, //  89
 		{   0,		0,			0,			0,			0		}, //  90
-		// ż©ŔŻşĐ łˇ
 
-		// 2ąř Á÷±ş ĆŰĆĺĆ® ¸¶˝şĹÍ ˝şĹł
 		{   4,		16,			46,			76,			106		}, //  91
 		{   4,		17,			47,			77,			107		}, //  92
 		{   4,		18,			48,			78,			108		}, //  93
@@ -4622,23 +4558,17 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   4,		21,			51,			81,			111		}, //  96
 		{   0,		0,			0,			0,			0		}, //  97
 		{   0,		0,			0,			0,			0		}, //  98
-		// 2ąř Á÷±ş ĆŰĆĺĆ® ¸¶˝şĹÍ ˝şĹł łˇ
 
-		// ż©ŔŻşĐ
 		{   0,		0,			0,			0,			0		}, //  99
 		{   0,		0,			0,			0,			0		}, //  100
-		// ż©ŔŻşĐ łˇ
 
-		// ±ćµĺ ˝şĹł
 		{   1,  152,    0,    0,    0}, //  101
 		{   1,  153,    0,    0,    0}, //  102
 		{   1,  154,    0,    0,    0}, //  103
 		{   1,  155,    0,    0,    0}, //  104
 		{   1,  156,    0,    0,    0}, //  105
 		{   1,  157,    0,    0,    0}, //  106
-		// ±ćµĺ ˝şĹł łˇ
 
-		// ż©ŔŻşĐ
 		{   0,    0,    0,    0,    0}, //  107
 		{   0,    0,    0,    0,    0}, //  108
 		{   0,    0,    0,    0,    0}, //  109
@@ -4653,13 +4583,10 @@ bool SkillSystem::IsUsableSkillMotion(entt::entity e, uint32_t dwMotionIndex)
 		{   0,    0,    0,    0,    0}, //  118
 		{   0,    0,    0,    0,    0}, //  119
 		{   0,    0,    0,    0,    0}, //  120
-		// ż©ŔŻşĐ łˇ
 
-		// ˝Â¸¶ ˝şĹł
 		{   2,  137,  140,    0,    0}, //  121
 		{   1,  138,    0,    0,    0}, //  122
 		{   1,  139,    0,    0,    0}, //  123
-		// ˝Â¸¶ ˝şĹł łˇ
 	};
 
 	if (dwMotionIndex >= MOTION_MAX_NUM)

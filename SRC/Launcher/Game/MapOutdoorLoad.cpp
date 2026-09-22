@@ -36,7 +36,6 @@ bool CMapOutdoor::Load(float x, float y, float z)
 
 	m_lOldReadX = -1;
 
-	// TODO: SetRenderingDevice에서 Environment로 부터 라이트 속성을 넘겨줘야 스태틱 라이트가 제대로 작동한다.
 	CSpeedTreeForestDirectX8::Instance().SetRenderingDevice(ms_lpd3dDevice);
 
 	Update(x, y, z);
@@ -106,13 +105,8 @@ bool CMapOutdoor::isAreaLoaded(WORD wX, WORD wY)
 }
 
 
-// 현재 좌표를 기반으로 주위(ex. 3x3)에 있는 Terrain과 Area포인터를
-// m_pTerrain과 m_pArea에 연결한다.
 void CMapOutdoor::AssignTerrainPtr()
 {
-	// 월드에디터에서 화면을 죽죽죽 넘길 때 터레인을 저장해야 하기
-	// 때문에 이 virtual method를 호출 한다. 이 메소드는 CMapOutDoor에서는 아무 행동도
-	// 하지 않는다.
 	OnPreAssignTerrainPtr();
 
 	short sReferenceCoordMinX, sReferenceCoordMaxX, sReferenceCoordMinY, sReferenceCoordMaxY;
@@ -419,7 +413,6 @@ bool CMapOutdoor::LoadSetting(const char * c_szFileName)
 
 	std::string stTextureSetFileName = strTextureSet;
 
-	// TextureSet 이 이미 붙어 있을 경우 안붙인다.
 	if (0 != stTextureSetFileName.find_first_of("textureset", 0))
 		stTextureSetFileName = "textureset\\"+strTextureSet;
 

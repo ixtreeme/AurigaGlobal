@@ -29,8 +29,6 @@ private:
 };
 
 class CActorInstance;
-//NOTE : 맘에 안들지만 Dependency Inversion을 막고 이전과 동일한 interface를 유지하기 위해서 이방식대로 간다
-//하지만 제대로 설계를 한다면 world와 live object들의 관리는 조금더 base project에서 (gamelib이나 더 base project에서 해야 한다 )
 class IObjectManager
 {
 public:

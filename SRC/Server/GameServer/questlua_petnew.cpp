@@ -52,14 +52,11 @@ namespace quest
 		}
 #endif
 
-		// ��ȯ���� vnum
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		// ��ȯ���� �̸�		
 
 		const char* petName = lua_isstring(L, 2) ? lua_tostring(L, 2) : nullptr;
 
-		// ��ȯ�ϸ� �ָ������� �޷������� ����
 		bool bFromFar = lua_isboolean(L, 3) ? lua_toboolean(L, 3) : false;
 
 		ecs::NewPetActorState* pet = NewPetSystem::Summon(chEntity, mobVnum, item, petName, bFromFar);
@@ -80,7 +77,6 @@ namespace quest
 		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return 0;
 
-		// ��ȯ���� vnum
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
 		NewPetSystem::Unsummon(chEntity, mobVnum);
@@ -113,7 +109,6 @@ namespace quest
 		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return 0;
 
-		// ��ȯ���� vnum
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
 		ecs::NewPetActorState* petActor = NewPetSystem::FindActor(chEntity, mobVnum);
@@ -130,7 +125,6 @@ namespace quest
 		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return 0;
 
-		// ��ȯ���� vnum
 #ifdef ENABLE_NEW_PET_EDITS
 		lua_pushboolean(L, false);
 #else
@@ -148,7 +142,6 @@ namespace quest
 		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return 0;
 
-		// ��ȯ���� vnum		
 
 		lua_pushboolean(L, NewPetSystem::IncreasePetEvolution(chEntity));
 		return 1;

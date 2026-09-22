@@ -211,17 +211,17 @@ enum EWearPositions
 	WEAR_COSTUME_BODY,	// 19
 	WEAR_COSTUME_HAIR,	// 20
 
-	WEAR_RING1,			// 21	: 신규 반지슬롯1 (왼쪽)
+	WEAR_RING1,
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	WEAR_COSTUME_MOUNT = WEAR_RING1, // costume_mount == ring1
 #endif
 
-	WEAR_RING2,			// 22	: 신규 반지슬롯2 (오른쪽)
+	WEAR_RING2,
 #ifdef ENABLE_ACCE_SYSTEM
 	WEAR_COSTUME_ACCE = WEAR_RING2, // costume_acce == ring2
 #endif
 
-	WEAR_BELT,			// 23	: 신규 벨트슬롯
+	WEAR_BELT,
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
 	WEAR_COSTUME_WEAPON,
@@ -260,7 +260,7 @@ enum EDragonSoulDeckType
 	DRAGON_SOUL_DECK_1,
 	DRAGON_SOUL_DECK_MAX_NUM = 2,
 
-	DRAGON_SOUL_DECK_RESERVED_MAX_NUM = 3,	// NOTE: 중요! 아직 사용중이진 않지만, 3페이지 분량을 예약 해 둠. DS DECK을 늘릴 경우 반드시 그 수만큼 RESERVED에서 차감해야 함!
+	DRAGON_SOUL_DECK_RESERVED_MAX_NUM = 3,
 };
 
 enum ESex
@@ -282,7 +282,7 @@ enum EDirection
 	DIR_MAX_NUM
 };
 
-#define ABILITY_MAX_LEVEL	10  /* 기술 최대 레벨 */
+#define ABILITY_MAX_LEVEL	10
 
 enum EAbilityDifficulty
 {
@@ -295,9 +295,9 @@ enum EAbilityDifficulty
 
 enum EAbilityCategory
 {
-	CATEGORY_PHYSICAL,	/* 신체적 어빌리티 */
-	CATEGORY_MENTAL,	/* 정신적 어빌리티 */
-	CATEGORY_ATTRIBUTE,	/* 능력 어빌리티 */
+	CATEGORY_PHYSICAL,
+	CATEGORY_MENTAL,
+	CATEGORY_ATTRIBUTE,
 	CATEGORY_NUM_TYPES
 };
 
@@ -385,13 +385,13 @@ enum EParts
 
 enum EChatType
 {
-	CHAT_TYPE_TALKING,	/* 그냥 채팅 */
-	CHAT_TYPE_INFO,	/* 정보 (아이템을 집었다, 경험치를 얻었다. 등) */
-	CHAT_TYPE_NOTICE,	/* 공지사항 */
-	CHAT_TYPE_PARTY,	/* 파티말 */
-	CHAT_TYPE_GUILD,	/* 길드말 */
-	CHAT_TYPE_COMMAND,	/* 일반 명령 */
-	CHAT_TYPE_SHOUT,	/* 외치기 */
+	CHAT_TYPE_TALKING,
+	CHAT_TYPE_INFO,
+	CHAT_TYPE_NOTICE,
+	CHAT_TYPE_PARTY,
+	CHAT_TYPE_GUILD,
+	CHAT_TYPE_COMMAND,
+	CHAT_TYPE_SHOUT,
 	CHAT_TYPE_WHISPER,
 	CHAT_TYPE_BIG_NOTICE,
 #ifdef ENABLE_DICE_SYSTEM
@@ -546,38 +546,38 @@ enum EApplyTypes
 	APPLY_ATTBONUS_SURA,	// 61
 	APPLY_ATTBONUS_SHAMAN,	// 62
 	APPLY_ATTBONUS_MONSTER,	// 63
-	APPLY_MALL_ATTBONUS,			// 64 공격력 +x%
-	APPLY_MALL_DEFBONUS,			// 65 방어력 +x%
-	APPLY_MALL_EXPBONUS,			// 66 경험치 +x%
-	APPLY_MALL_ITEMBONUS,			// 67 아이템 드롭율 x/10배
-	APPLY_MALL_GOLDBONUS,			// 68 돈 드롭율 x/10배
-	APPLY_MAX_HP_PCT,				// 69 최대 생명력 +x%
-	APPLY_MAX_SP_PCT,				// 70 최대 정신력 +x%
-	APPLY_SKILL_DAMAGE_BONUS,		// 71 스킬 데미지 * (100+x)%
-	APPLY_NORMAL_HIT_DAMAGE_BONUS,	// 72 평타 데미지 * (100+x)%
-	APPLY_SKILL_DEFEND_BONUS,		// 73 스킬 데미지 방어 * (100-x)%
-	APPLY_NORMAL_HIT_DEFEND_BONUS,	// 74 평타 데미지 방어 * (100-x)%
-	APPLY_PC_BANG_EXP_BONUS,		// 75 PC방 아이템 EXP 보너스
-	APPLY_PC_BANG_DROP_BONUS,		// 76 PC방 아이템 드롭율 보너스
+	APPLY_MALL_ATTBONUS,
+	APPLY_MALL_DEFBONUS,
+	APPLY_MALL_EXPBONUS,
+	APPLY_MALL_ITEMBONUS,
+	APPLY_MALL_GOLDBONUS,
+	APPLY_MAX_HP_PCT,
+	APPLY_MAX_SP_PCT,
+	APPLY_SKILL_DAMAGE_BONUS,
+	APPLY_NORMAL_HIT_DAMAGE_BONUS,
+	APPLY_SKILL_DEFEND_BONUS,
+	APPLY_NORMAL_HIT_DEFEND_BONUS,
+	APPLY_PC_BANG_EXP_BONUS,
+	APPLY_PC_BANG_DROP_BONUS,
 
-	APPLY_EXTRACT_HP_PCT,			// 77 사용시 HP 소모
+	APPLY_EXTRACT_HP_PCT,
 
-	APPLY_RESIST_WARRIOR,			// 78 무사에게 저항
-	APPLY_RESIST_ASSASSIN,			// 79 자객에게 저항
-	APPLY_RESIST_SURA,				// 80 수라에게 저항
-	APPLY_RESIST_SHAMAN,			// 81 무당에게 저항
-	APPLY_ENERGY,					// 82 기력
-	APPLY_DEF_GRADE,				// 83 방어력. DEF_GRADE_BONUS는 클라에서 두배로 보여지는 의도된 버그(...)가 있다.
-	APPLY_COSTUME_ATTR_BONUS,		// 84 코스튬 아이템에 붙은 속성치 보너스
-	APPLY_MAGIC_ATTBONUS_PER,		// 85 마법 공격력 +x%
-	APPLY_MELEE_MAGIC_ATTBONUS_PER,			// 86 마법 + 밀리 공격력 +x%
+	APPLY_RESIST_WARRIOR,
+	APPLY_RESIST_ASSASSIN,
+	APPLY_RESIST_SURA,
+	APPLY_RESIST_SHAMAN,
+	APPLY_ENERGY,
+	APPLY_DEF_GRADE,
+	APPLY_COSTUME_ATTR_BONUS,
+	APPLY_MAGIC_ATTBONUS_PER,
+	APPLY_MELEE_MAGIC_ATTBONUS_PER,
 
-	APPLY_RESIST_ICE,		// 87 냉기 저항
-	APPLY_RESIST_EARTH,		// 88 대지 저항
-	APPLY_RESIST_DARK,		// 89 어둠 저항
+	APPLY_RESIST_ICE,
+	APPLY_RESIST_EARTH,
+	APPLY_RESIST_DARK,
 
-	APPLY_ANTI_CRITICAL_PCT,	//90 크리티컬 저항
-	APPLY_ANTI_PENETRATE_PCT,	//91 관통타격 저항
+	APPLY_ANTI_CRITICAL_PCT,
+	APPLY_ANTI_PENETRATE_PCT,
 
 
 #ifdef ELEMENT_NEW_BONUSES
@@ -807,7 +807,7 @@ enum EGuildWarState
 	GUILD_WAR_OVER,
 	GUILD_WAR_RESERVE,
 
-	GUILD_WAR_DURATION = 30*60, // 1시간
+	GUILD_WAR_DURATION = 30*60,
 	GUILD_WAR_WIN_POINT = 1000,
 	GUILD_WAR_LADDER_HALF_PENALTY_TIME = 12*60*60,
 };
@@ -862,13 +862,13 @@ enum EMoneyLogType
 
 enum EPremiumTypes
 {
-	PREMIUM_EXP,		// 경험치가 1.2배
-	PREMIUM_ITEM,		// 아이템 드롭율이 2배
-	PREMIUM_SAFEBOX,		// 창고가 1칸에서 3칸
-	PREMIUM_AUTOLOOT,		// 돈 자동 줍기
-	PREMIUM_FISH_MIND,		// 고급 물고기 낚일 확률 상승
-	PREMIUM_MARRIAGE_FAST,	// 금실 증가 양을 빠르게합니다.
-	PREMIUM_GOLD,		// 돈 드롭율이 1.5배
+	PREMIUM_EXP,
+	PREMIUM_ITEM,
+	PREMIUM_SAFEBOX,
+	PREMIUM_AUTOLOOT,
+	PREMIUM_FISH_MIND,
+	PREMIUM_MARRIAGE_FAST,
+	PREMIUM_GOLD,
 	PREMIUM_MAX_NUM = 9
 };
 
@@ -898,10 +898,10 @@ enum SPECIAL_EFFECT
 	SE_AUTO_HPUP,
 	SE_AUTO_SPUP,
 
-	SE_EQUIP_RAMADAN_RING,		// 라마단 초승달의 반지(71135) 착용할 때 이펙트 (발동이펙트임, 지속이펙트 아님)
-	SE_EQUIP_HALLOWEEN_CANDY,		// 할로윈 사탕을 착용(-_-;)한 순간에 발동하는 이펙트
-	SE_EQUIP_HAPPINESS_RING,		// 크리스마스 행복의 반지(71143) 착용할 때 이펙트 (발동이펙트임, 지속이펙트 아님)
-	SE_EQUIP_LOVE_PENDANT,		// 발렌타인 사랑의 팬던트(71145) 착용할 때 이펙트 (발동이펙트임, 지속이펙트 아님)
+	SE_EQUIP_RAMADAN_RING,
+	SE_EQUIP_HALLOWEEN_CANDY,
+	SE_EQUIP_HAPPINESS_RING,
+	SE_EQUIP_LOVE_PENDANT,
 
 #ifdef ENABLE_ACCE_SYSTEM
 	SE_EFFECT_ACCE_SUCCEDED,
@@ -929,10 +929,6 @@ enum SPECIAL_EFFECT
 
 #include "item_length.h"
 
-// inventory의 position을 나타내는 구조체
-// int와의 암시적 형변환이 있는 이유는,
-// 인벤 관련된 모든 함수가 window_type은 받지 않고, cell 하나만 받았기 때문에,(기존에는 인벤이 하나 뿐이어서 inventory type이란게 필요없었기 때문에,)
-// 인벤 관련 모든 함수 호출부분을 수정하는 것이 난감하기 떄문이다.
 
 enum EDragonSoulRefineWindowSize
 {
@@ -981,7 +977,6 @@ typedef struct SItemPos
 			return cell < INVENTORY_AND_EQUIP_SLOT_MAX;
 		case DRAGON_SOUL_INVENTORY:
 			return cell < (DRAGON_SOUL_INVENTORY_MAX_NUM);
-		// 동적으로 크기가 정해지는 window는 valid 체크를 할 수가 없다.
 		case SAFEBOX:
 		case MALL:
 			return false;

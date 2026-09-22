@@ -25,23 +25,22 @@ string trim(const string& str){return trim_left(trim_right(str));}
 
 static string* StringSplit(string strOrigin, string strTok)
 {
-    unsigned int cutAt;                       //자르는위치
-    int index = 0;                            //문자열인덱스
-    string* strResult = new string[30];		  //결과return 할변수
+    unsigned int cutAt;
+    int index = 0;
+    string* strResult = new string[30];
 
-    //strTok을찾을때까지반복
     while ((cutAt = strOrigin.find_first_of(strTok)) != strOrigin.npos)
     {
-       if (cutAt > 0)  //자르는위치가0보다크면(성공시)
+       if (cutAt > 0)
        {
-            strResult[index++] = strOrigin.substr(0, cutAt);  //결과배열에추가
+            strResult[index++] = strOrigin.substr(0, cutAt);
        }
-       strOrigin = strOrigin.substr(cutAt+1);  //원본은자른부분제외한나머지
+       strOrigin = strOrigin.substr(cutAt+1);
     }
 
-    if(strOrigin.length() > 0)  //원본이아직남았으면
+    if(strOrigin.length() > 0)
     {
-        strResult[index++] = strOrigin.substr(0, cutAt);  //나머지를결과배열에추가
+        strResult[index++] = strOrigin.substr(0, cutAt);
     }
 
 	for( int i=0;i<index;i++)
@@ -49,7 +48,7 @@ static string* StringSplit(string strOrigin, string strTok)
 		strResult[i] = trim(strResult[i]);
 	}
 
-    return strResult;  //결과return
+    return strResult;
 }
 
 
@@ -60,25 +59,25 @@ int get_Item_Type_Value(string inputString)
 		"ITEM_ARMOR", "ITEM_USE",
 		"ITEM_AUTOUSE", "ITEM_MATERIAL",
 		"ITEM_SPECIAL", "ITEM_TOOL",
-		"ITEM_LOTTERY", "ITEM_ELK",					//10개
+		"ITEM_LOTTERY", "ITEM_ELK",
 
 		"ITEM_METIN", "ITEM_CONTAINER",
 		"ITEM_FISH", "ITEM_ROD",
 		"ITEM_RESOURCE", "ITEM_CAMPFIRE",
 		"ITEM_UNIQUE", "ITEM_SKILLBOOK",
-		"ITEM_QUEST", "ITEM_POLYMORPH",				//20개
+		"ITEM_QUEST", "ITEM_POLYMORPH",
 
 		"ITEM_TREASURE_BOX", "ITEM_TREASURE_KEY",
 		"ITEM_SKILLFORGET", "ITEM_GIFTBOX",
 		"ITEM_PICK", "ITEM_HAIR",
 		"ITEM_TOTEM", "ITEM_BLEND",
-		"ITEM_COSTUME", "ITEM_DS",					//30개
+		"ITEM_COSTUME", "ITEM_DS",
 
 		"ITEM_SPECIAL_DS",	"ITEM_EXTRACT",
-		"ITEM_SECONDARY_COIN",						//33개
+		"ITEM_SECONDARY_COIN",
 
 		"ITEM_RING",
-		"ITEM_BELT",								//35개 (EItemTypes 값으로 치면 34)
+		"ITEM_BELT",
 		"ITEM_SOUL", 
 #ifdef __ATTR_TRANSFER_SYSTEM__
 		"ITEM_TRANSFER_SCROLL",
@@ -238,8 +237,8 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 		arSub29,	//30
 		arSub31,	//31
 		nullptr,			//32
-		nullptr,			//33 반지
-		nullptr,			//34 벨트
+		nullptr,
+		nullptr,
 		nullptr,			//35
 		nullptr,			//36
 		nullptr,			//37
@@ -280,8 +279,8 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 		sizeof(arSub29)/sizeof(arSub29[0]),
 		sizeof(arSub31)/sizeof(arSub31[0]),
 		0, // 32
-		0, // 33 반지
-		0, // 34 벨트
+		0,
+		0,
 		0, // 35
 		0, // 36
 		0, // 37
@@ -292,14 +291,12 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 
 	assert(_countof(arSubType) > type_value && "Subtype rule: Out of range!!");
 
-	// assert 안 먹히는 듯..
 	if (_countof(arSubType) <= type_value)
 	{
 		LOG_ERROR("SubType : Out of range!! (type_value: {}, count of registered subtype: {}", type_value, _countof(arSubType));
 		return -1;
 	}
 
-	//아이템 타입의 서브타입 어레이가 존재하는지 알아보고, 없으면 0 리턴
 	if (arSubType[type_value]==nullptr) {
 		return 0;
 	}
@@ -336,13 +333,13 @@ int get_Item_AntiFlag_Value(string inputString)
 
 
 	int retValue = 0;
-	string* arInputString = StringSplit(inputString, "|");				//프로토 정보 내용을 단어별로 쪼갠 배열.
+	string* arInputString = StringSplit(inputString, "|");
 	for(unsigned int i =0;i<sizeof(arAntiFlag)/sizeof(arAntiFlag[0]);i++) {
 		string tempString = arAntiFlag[i];
-		for (unsigned int j=0; j<30 ; j++)		//최대 30개 단어까지. (하드코딩)
+		for (unsigned int j=0; j<30 ; j++)
 		{
 			string tempString2 = arInputString[j];
-			if (tempString2.compare(tempString)==0) {				//일치하는지 확인.
+			if (tempString2.compare(tempString)==0) {
 				retValue = retValue + pow((float)2,(float)i);
 			}
 
@@ -365,13 +362,13 @@ int get_Item_Flag_Value(string inputString)
 
 
 	int retValue = 0;
-	string* arInputString = StringSplit(inputString, "|");				//프로토 정보 내용을 단어별로 쪼갠 배열.
+	string* arInputString = StringSplit(inputString, "|");
 	for(unsigned int i =0;i<sizeof(arFlag)/sizeof(arFlag[0]);i++) {
 		string tempString = arFlag[i];
-		for (unsigned int j=0; j<30 ; j++)		//최대 30개 단어까지. (하드코딩)
+		for (unsigned int j=0; j<30 ; j++)
 		{
 			string tempString2 = arInputString[j];
-			if (tempString2.compare(tempString)==0) {				//일치하는지 확인.
+			if (tempString2.compare(tempString)==0) {
 				retValue = retValue + pow((float)2,(float)i);
 			}
 
@@ -397,13 +394,13 @@ int get_Item_WearFlag_Value(string inputString)
 
 
 	int retValue = 0;
-	string* arInputString = StringSplit(inputString, "|");				//프로토 정보 내용을 단어별로 쪼갠 배열.
+	string* arInputString = StringSplit(inputString, "|");
 	for(unsigned int i =0;i<sizeof(arWearrFlag)/sizeof(arWearrFlag[0]);i++) {
 		string tempString = arWearrFlag[i];
-		for (unsigned int j=0; j<30 ; j++)		//최대 30개 단어까지. (하드코딩)
+		for (unsigned int j=0; j<30 ; j++)
 		{
 			string tempString2 = arInputString[j];
-			if (tempString2.compare(tempString)==0) {				//일치하는지 확인.
+			if (tempString2.compare(tempString)==0) {
 				retValue = retValue + pow((float)2,(float)i);
 			}
 
@@ -423,13 +420,13 @@ int get_Item_Immune_Value(string inputString)
 	string arImmune[] = {"PARA","CURSE","STUN","SLEEP","SLOW","POISON","TERROR"};
 
 	int retValue = 0;
-	string* arInputString = StringSplit(inputString, "|");				//프로토 정보 내용을 단어별로 쪼갠 배열.
+	string* arInputString = StringSplit(inputString, "|");
 	for(unsigned int i =0;i<sizeof(arImmune)/sizeof(arImmune[0]);i++) {
 		string tempString = arImmune[i];
-		for (unsigned int j=0; j<30 ; j++)		//최대 30개 단어까지. (하드코딩)
+		for (unsigned int j=0; j<30 ; j++)
 		{
 			string tempString2 = arInputString[j];
-			if (tempString2.compare(tempString)==0) {				//일치하는지 확인.
+			if (tempString2.compare(tempString)==0) {
 				retValue = retValue + pow((float)2,(float)i);
 			}
 
@@ -510,7 +507,6 @@ int get_Item_ApplyType_Value(string inputString)
 }
 
 
-//몬스터 프로토도 읽는다.
 
 
 int get_Mob_Rank_Value(string inputString)
@@ -605,13 +601,13 @@ int get_Mob_AIFlag_Value(string inputString)
 	};
 
 	int retValue = 0;
-	string* arInputString = StringSplit(inputString, ",");				//프로토 정보 내용을 단어별로 쪼갠 배열.
+	string* arInputString = StringSplit(inputString, ",");
 	for(unsigned int i =0;i<sizeof(arAIFlag)/sizeof(arAIFlag[0]);i++) {
 		string tempString = arAIFlag[i];
-		for (unsigned int j=0; j<30 ; j++)		//최대 30개 단어까지. (하드코딩)
+		for (unsigned int j=0; j<30 ; j++)
 		{
 			string tempString2 = arInputString[j];
-			if (tempString2.compare(tempString)==0) {				//일치하는지 확인.
+			if (tempString2.compare(tempString)==0) {
 				retValue = retValue + pow((float)2,(float)i);
 			}
 
@@ -652,13 +648,13 @@ int get_Mob_RaceFlag_Value(string inputString)
 	};
 
 	int retValue = 0;
-	string* arInputString = StringSplit(inputString, ",");				//프로토 정보 내용을 단어별로 쪼갠 배열.
+	string* arInputString = StringSplit(inputString, ",");
 	for(unsigned int i =0;i<sizeof(arRaceFlag)/sizeof(arRaceFlag[0]);i++) {
 		string tempString = arRaceFlag[i];
-		for (unsigned int j=0; j<30 ; j++)		//최대 30개 단어까지. (하드코딩)
+		for (unsigned int j=0; j<30 ; j++)
 		{
 			string tempString2 = arInputString[j];
-			if (tempString2.compare(tempString)==0) {				//일치하는지 확인.
+			if (tempString2.compare(tempString)==0) {
 				retValue = retValue + pow((float)2,(float)i);
 			}
 
@@ -676,13 +672,13 @@ int get_Mob_ImmuneFlag_Value(string inputString)
 	string arImmuneFlag[] = {"STUN","SLOW","FALL","CURSE","POISON","TERROR", "REFLECT"};
 
 	int retValue = 0;
-	string* arInputString = StringSplit(inputString, ",");				//프로토 정보 내용을 단어별로 쪼갠 배열.
+	string* arInputString = StringSplit(inputString, ",");
 	for(unsigned int i =0;i<sizeof(arImmuneFlag)/sizeof(arImmuneFlag[0]);i++) {
 		string tempString = arImmuneFlag[i];
-		for (unsigned int j=0; j<30 ; j++)		//최대 30개 단어까지. (하드코딩)
+		for (unsigned int j=0; j<30 ; j++)
 		{
 			string tempString2 = arInputString[j];
-			if (tempString2.compare(tempString)==0) {				//일치하는지 확인.
+			if (tempString2.compare(tempString)==0) {
 				retValue = retValue + pow((float)2,(float)i);
 			}
 
@@ -700,14 +696,12 @@ int get_Mob_ImmuneFlag_Value(string inputString)
 
 #ifndef __DUMP_PROTO__
 
-//몹 테이블을 셋팅해준다.
 bool Set_Proto_Mob_Table(TMobTable *mobTable, cCsvTable &csvTable,std::map<int,const char*> &nameMap)
 {
 	int col = 0;
 	str_to_number(mobTable->dwVnum, csvTable.AsStringByIndex(col++));
 	strlcpy(mobTable->szName, csvTable.AsStringByIndex(col++), sizeof(mobTable->szName));
 
-	//3. 지역별 이름 넣어주기.
 	map<int,const char*>::iterator it;
 #ifdef ENABLE_MULTI_NAMES
 	if (it != nameMap.end()) {
@@ -880,11 +874,9 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 		col = col + 1;
 	}
 
-	// vnum 및 vnum range 읽기.
 	{
 		std::string s(csvTable.AsStringByIndex(0));
 		unsigned int pos = s.find("~");
-		// vnum 필드에 '~'가 없다면 패스
 		if (std::string::npos == pos)
 		{
 			itemTable->dwVnum = dataArray[0];
@@ -908,7 +900,6 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 	}
 
 	strlcpy(itemTable->szName, csvTable.AsStringByIndex(1), sizeof(itemTable->szName));
-	//지역별 이름 넣어주기.
 	map<int,const char*>::iterator it;
 #ifdef ENABLE_MULTI_NAMES
 	if (it != nameMap.end()) {

@@ -8,9 +8,6 @@
 
 typedef	uint32_t IDENT;
 
-/**
- * @version 05/06/10	Bang2ni - Myshop Pricelist 관련 패킷 HEADER_XX_MYSHOP_PRICELIST_XXX 추가
- */
 enum
 {
 	HEADER_GD_LOGIN				= 1,
@@ -117,14 +114,14 @@ enum
 	HEADER_GD_LOGIN_BY_KEY		= 101,
 	HEADER_GD_MALL_LOAD			= 107,
 
-	HEADER_GD_MYSHOP_PRICELIST_UPDATE	= 108,		///< 가격정보 갱신 요청
-	HEADER_GD_MYSHOP_PRICELIST_REQ		= 109,		///< 가격정보 리스트 요청
+	HEADER_GD_MYSHOP_PRICELIST_UPDATE	= 108,
+	HEADER_GD_MYSHOP_PRICELIST_REQ		= 109,
 
 	HEADER_GD_BLOCK_CHAT				= 110,
 
 		HEADER_GD_HAMMER_OF_TOR			= 114,
-	HEADER_GD_RELOAD_ADMIN			= 115,			///<운영자 정보 요청
-	HEADER_GD_BREAK_MARRIAGE		= 116,			///< 결혼 파기
+	HEADER_GD_RELOAD_ADMIN			= 115,
+	HEADER_GD_BREAK_MARRIAGE		= 116,
 
 	HEADER_GD_REQ_CHANGE_GUILD_MASTER	= 129,
 
@@ -133,7 +130,7 @@ enum
 	HEADER_GD_UPDATE_HORSE_NAME		= 131,
 	HEADER_GD_REQ_HORSE_NAME		= 132,
 
-	HEADER_GD_DC					= 133,		// Login Key를 지움
+	HEADER_GD_DC					= 133,
 
 	HEADER_GD_VALID_LOGOUT			= 134,
 	HEADER_GD_REQUEST_CHARGE_CASH	= 137,
@@ -272,12 +269,12 @@ enum
 	HEADER_DG_WEDDING_START		= 155,
 	HEADER_DG_WEDDING_END		= 156,
 
-	HEADER_DG_MYSHOP_PRICELIST_RES	= 157,		///< 가격정보 리스트 응답
-	HEADER_DG_RELOAD_ADMIN = 158, 				///< 운영자 정보 리로드
-	HEADER_DG_BREAK_MARRIAGE = 159,				///< 결혼 파기
+	HEADER_DG_MYSHOP_PRICELIST_RES	= 157,
+	HEADER_DG_RELOAD_ADMIN = 158,
+	HEADER_DG_BREAK_MARRIAGE = 159,
 
-	HEADER_DG_BLOCK_COUNTRY_IP		= 171,		// 광대역 IP-Block
-	HEADER_DG_BLOCK_EXCEPTION		= 172,		// 광대역 IP-Block 예외 account
+	HEADER_DG_BLOCK_COUNTRY_IP		= 171,
+	HEADER_DG_BLOCK_EXCEPTION		= 172,
 
 	HEADER_DG_ACK_CHANGE_GUILD_MASTER = 173,
 
@@ -398,7 +395,7 @@ typedef struct SPlayerItem
 	uint32_t	count;
 
 	uint32_t	vnum;
-	int32_t	alSockets[ITEM_SOCKET_MAX_NUM];	// 소켓번호
+	int32_t	alSockets[ITEM_SOCKET_MAX_NUM];
 
 	TPlayerItemAttribute    aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 
@@ -759,7 +756,7 @@ typedef struct SPlayerLoadPacket
 {
 	uint32_t	account_id;
 	uint32_t	player_id;
-	uint8_t	account_index;	/* account 에서의 위치 */
+	uint8_t	account_index;
 } TPlayerLoadPacket;
 
 typedef struct SPlayerCreatePacket
@@ -852,9 +849,9 @@ typedef struct SMountInventoryItemTable
 typedef struct SPacketGDSetup
 {
 	char	szPublicIP[16];	// Public IP which listen to users
-	uint8_t	bChannel;	// 채널
-	uint16_t	wListenPort;	// 클라이언트가 접속하는 포트 번호
-	uint16_t	wP2PPort;	// 서버끼리 연결 시키는 P2P 포트 번호
+	uint8_t	bChannel;
+	uint16_t	wListenPort;
+	uint16_t	wP2PPort;
 	int32_t	alMaps[MAP_ALLOW_LIMIT];
 	uint32_t	dwLoginCount;
 	uint8_t	bAuthServer;
@@ -1035,8 +1032,6 @@ typedef struct SPacketGuildWar
 	int32_t	lInitialScore;
 } TPacketGuildWar;
 
-// Game -> DB : 상대적 변화값
-// DB -> Game : 토탈된 최종값
 typedef struct SPacketGuildWarScore
 {
 	uint32_t dwGuildGainPoint;
@@ -1064,8 +1059,8 @@ typedef struct SRefineTable
 	//uint32_t result_vnum;
 	uint32_t id;
 	uint8_t material_count;
-	int64_t cost; // 소요 비용
-	int prob; // 확률
+	int64_t cost;
+	int prob;
 	TRefineMaterial materials[REFINE_MATERIAL_MAX_NUM];
 } TRefineTable;
 
@@ -1156,15 +1151,12 @@ typedef struct SPacketGDLoginByKey
 	char	szIP[MAX_HOST_LENGTH + 1];
 } TPacketGDLoginByKey;
 
-/**
- * @version 05/06/08	Bang2ni - 지속시간 추가
- */
 typedef struct SPacketGiveGuildPriv
 {
 	uint8_t type;
 	int value;
 	uint32_t guild_id;
-	time_t duration_sec;	///< 지속시간
+	time_t duration_sec;
 } TPacketGiveGuildPriv;
 typedef struct SPacketGiveEmpirePriv
 {
@@ -1198,16 +1190,13 @@ typedef struct SPacketDGChangeCharacterPriv
 	uint8_t bLog;
 } TPacketDGChangeCharacterPriv;
 
-/**
- * @version 05/06/08	Bang2ni - 지속시간 추가
- */
 typedef struct SPacketDGChangeGuildPriv
 {
 	uint8_t type;
 	int value;
 	uint32_t guild_id;
 	uint8_t bLog;
-	time_t end_time_sec;	///< 지속시간
+	time_t end_time_sec;
 } TPacketDGChangeGuildPriv;
 
 typedef struct SPacketDGChangeEmpirePriv
@@ -1369,27 +1358,24 @@ typedef struct
 	uint32_t dwPID2;
 } TPacketWeddingEnd;
 
-/// 개인상점 가격정보의 헤더. 가변 패킷으로 이 뒤에 byCount 만큼의 TItemPriceInfo 가 온다.
 typedef struct SPacketMyshopPricelistHeader
 {
-	uint32_t	dwOwnerID;	///< 가격정보를 가진 플레이어 ID
-	uint8_t	byCount;	///< 가격정보 갯수
+	uint32_t	dwOwnerID;
+	uint8_t	byCount;
 } TPacketMyshopPricelistHeader;
 
-/// 개인상점의 단일 아이템에 대한 가격정보
 typedef struct SItemPriceInfo
 {
-	uint32_t	dwVnum;		///< 아이템 vnum
-	uint32_t	dwPrice;	///< 가격
+	uint32_t	dwVnum;
+	uint32_t	dwPrice;
 } TItemPriceInfo;
 
-/// 개인상점 아이템 가격정보 리스트 테이블
 typedef struct SItemPriceListTable
 {
-	uint32_t	dwOwnerID;	///< 가격정보를 가진 플레이어 ID
-	uint8_t	byCount;	///< 가격정보 리스트의 갯수
+	uint32_t	dwOwnerID;
+	uint8_t	byCount;
 
-	TItemPriceInfo	aPriceInfo[SHOP_PRICELIST_MAX_NUM];	///< 가격정보 리스트
+	TItemPriceInfo	aPriceInfo[SHOP_PRICELIST_MAX_NUM];
 } TItemPriceListTable;
 
 typedef struct
@@ -1402,12 +1388,12 @@ typedef struct
 //ADMIN_MANAGER
 typedef struct TAdminInfo
 {
-	int m_ID;				//고유ID
-	char m_szAccount[32];	//계정
-	char m_szName[32];		//캐릭터이름
-	char m_szContactIP[16];	//접근아이피
-	char m_szServerIP[16];  //서버아이피
-	int m_Authority;		//권한
+	int m_ID;
+	char m_szAccount[32];
+	char m_szName[32];
+	char m_szContactIP[16];
+	char m_szServerIP[16];
+	int m_Authority;
 } tAdminInfo;
 //END_ADMIN_MANAGER
 

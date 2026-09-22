@@ -170,10 +170,6 @@ static int FN_random_index()
 	return 0;
 }
 
-// 충기환의 확률 테이블
-// blend.txt에서 확률도 받도록 고치면 깔끔하겠지만
-// 각 나라별로 item proto 등을 따로 관리하므로,
-// 혼란이 올 수 있어 이렇게 추가한다.
 // by rtsummit
 
 static int FN_ECS_random_index()

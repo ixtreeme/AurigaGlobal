@@ -78,7 +78,6 @@ int Gamble(std::vector<float>& vec_probs)
 	return -1;
 }
 
-// 가중치 테이블(prob_lst)을 받아 random_set.size()개의 index를 선택하여 random_set을 return
 bool MakeDistinctRandomNumberSet(std::list<float> probabilities, OUT std::vector<int>& random_set)
 {
 	std::vector<float> weights(probabilities.begin(), probabilities.end());
@@ -122,12 +121,6 @@ bool MakeDistinctRandomNumberSet(std::list<float> probabilities, OUT std::vector
 	random_set = std::move(result);
 	return true;
 }
-/* 용혼석 Vnum에 대한 comment
- * ITEM VNUM을 10만 자리부터, FEDCBA라고 한다면
- * FE : 용혼석 종류.	D : 등급
- * C : 단계			B : 강화
- * A : 여벌의 번호들...
- */
 
 uint8_t GetType(uint32_t dwVnum)
 {
@@ -348,7 +341,6 @@ int DSManager::GetDuration(entt::entity item) const
 {
 	return ItemSystem::GetItemDuration(item);
 }
-// 용혼석을 받아서 용심을 추출하는 함수
 
 namespace {
 // Extraction runs on the game thread. Keep the guard off entity storage so

@@ -179,7 +179,6 @@ void CPythonPlayerEventHandler::OnHit(UINT uSkill, CActorInstance& rkActorVictim
 	if (!rkActorVictim.IsPushing())
 		return;
 
-	// 거대 몬스터 밀림 제외
 	extern bool IS_HUGE_RACE(unsigned int vnum);
 	if (IS_HUGE_RACE(rkActorVictim.GetRace()))
 		return;
@@ -286,7 +285,6 @@ void CPythonPlayerEventHandler::CNormalBowAttack_FlyEventHandler_AutoClear::OnEx
 }
 void CPythonPlayerEventHandler::CNormalBowAttack_FlyEventHandler_AutoClear::OnExplodingAtTarget(uint32_t dwSkillIndex)
 {
-//	Tracef("Shoot : 원하는 target에 맞았습니다 : %d, %d\n", dwSkillIndex, m_pInstTarget->GetVirtualID());
 //	CPythonNetworkStream& rkStream=CPythonNetworkStream::Instance();
 //	rkStream.SendAttackPacket(dwSkillIndex, m_pInstTarget->GetVirtualID());
 }

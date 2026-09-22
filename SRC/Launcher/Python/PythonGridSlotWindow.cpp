@@ -18,10 +18,8 @@ void CGridSlotWindow::OnRenderPickingSlot()
 		uint32_t dwSlotNumber = UI::CWindowManager::Instance().GetAttachingSlotNumber();
 		uint32_t dwItemIndex = UI::CWindowManager::Instance().GetAttachingIndex();
 
-		// UseMode 이고..
 		if (m_isUseMode)
 		{
-			// Pick 된 아이템이 있으면..
 			TSlot * pSlot = *SlotList.begin();
 			TSlot * pCenterSlot;
 			if (GetSlotPointer(pSlot->dwCenterSlotNumber, &pCenterSlot))
@@ -40,7 +38,6 @@ void CGridSlotWindow::OnRenderPickingSlot()
 			}
 		}
 
-		// 아니면 그냥 옮기기
 		if (CheckMoving(dwSlotNumber, dwItemIndex, SlotList))
 			CPythonGraphic::Instance().SetDiffuseColor(1.0f, 1.0f, 1.0f, 0.5f);
 		else
@@ -85,8 +82,6 @@ bool CGridSlotWindow::GetPickedSlotPointer(TSlot ** ppSlot)
 	{
 		TSlot * pSlot = *itor;
 
-		// NOTE : 한 슬롯 이상 사이즈의 아이템의 경우 가장 왼쪽 위의 슬롯 포인터를 리턴한다.
-		//        명시적이지 못한 코드.. 더 좋은 방법은 없는가? - [levites]
 		if (!pMinSlot)
 		{
 			pMinSlot = pSlot;
@@ -119,7 +114,6 @@ bool CGridSlotWindow::GetPickedSlotPointer(TSlot ** ppSlot)
 
 		*ppSlot = pCenterSlot;
 
-		// 현재 아이템을 들고 있는 중이고..
 		if (UI::CWindowManager::Instance().IsAttaching())
 		{
 			uint32_t dwSlotNumber = UI::CWindowManager::Instance().GetAttachingSlotNumber();
@@ -159,7 +153,6 @@ bool CGridSlotWindow::GetPickedSlotList(int iWidth, int iHeight, std::list<TSlot
 		int ixStart = ix - ixHalfStep - ixHalfStep % 2;
 		int ixEnd = ix + ixHalfStep;
 
-		// FIXME : 제대로 된 계산 공식을 찾자 - [levites]
 		int iyStart = 0, iyEnd = 0;
 
 		if (1 == iHeight)
@@ -214,7 +207,6 @@ bool CGridSlotWindow::GetPickedSlotList(int iWidth, int iHeight, std::list<TSlot
 			}
 		}
 
-		// Refine Scroll 등을 위한 예외 처리
 		if (m_isUseMode && 1 == pSlotPointerList->size())
 		{
 			TSlot * pMainSlot = *pSlotPointerList->begin();
@@ -348,11 +340,11 @@ bool CGridSlotWindow::CheckMoving(uint32_t dwSlotNumber, uint32_t dwItemIndex, c
 	{
 		TSlot * pSlot = *itor;
 
-		if (dwSlotNumber != pSlot->dwCenterSlotNumber) // 들었던 자리가 아닐 경우에
+		if (dwSlotNumber != pSlot->dwCenterSlotNumber)
 		{
-			if (0 != pSlot->dwItemIndex || pSlot->dwCenterSlotNumber != pSlot->dwSlotNumber) // 아이템이 있고
+			if (0 != pSlot->dwItemIndex || pSlot->dwCenterSlotNumber != pSlot->dwSlotNumber)
 			{
-				if (dwItemIndex != pSlot->dwItemIndex) // 다른 아이템이면 못 옮김
+				if (dwItemIndex != pSlot->dwItemIndex)
 					return false;
 			}
 		}

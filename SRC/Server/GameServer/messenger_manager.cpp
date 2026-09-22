@@ -663,11 +663,9 @@ void MessengerManager::RemoveAllList(keyA account)
 		return;
 	// @fixme142 END
 
-	/* SQL Data ���� */
 	DBManager::instance().Query("DELETE FROM messenger_list%s WHERE account='%s' OR companion='%s'",
 			get_table_postfix(), __account, __account);
 
-	/* ���� �������ִ� ����Ʈ ���� */
 	for (std::set<keyT>::iterator iter = company.begin();
 			iter != company.end();
 			iter++ )
@@ -675,7 +673,6 @@ void MessengerManager::RemoveAllList(keyA account)
 		this->RemoveFromList(account, *iter);
 	}
 
-	/* ������ ����Ÿ ���� */
 	for (std::set<keyT>::iterator iter = company.begin();
 			iter != company.end();
 			)

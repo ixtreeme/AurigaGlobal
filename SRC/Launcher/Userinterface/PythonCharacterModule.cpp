@@ -263,7 +263,6 @@ PyObject * chrSelect(PyObject* poSelf, PyObject* poArgs)
 			break;
 
 		default:
-			// NOTE: 빨간색으로 나오게 하면 스샷 찍을 때 보기가 안좋아서 코멘트 하였습니다 [cronan 040226]
 			//pkInst->SetAddColor(D3DXCOLOR(0.3f, 0.0f, 0.0f, 1.0f));
 			break;
 	}
@@ -572,7 +571,6 @@ PyObject * chrRefresh(PyObject* poSelf, PyObject* poArgs)
 	if (!pkInst)
 		return Py_BuildNone();
 
-	// Select 화면에서는 WAIT 모션이 준비 되지 않은 상태이기 때문에 문제가 생긴다.
 	//pkInst->Refresh(CRaceMotionData::NAME_WAIT, true);
 	return Py_BuildNone();
 }

@@ -63,7 +63,7 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 		uint8_t bHeader = (uint8_t) *(c_pData);
 		const char * c_pszName = nullptr;
 
-		if (bHeader == 0) // ��ȣȭ ó���� �����Ƿ� 0�� ����� ��ŵ�Ѵ�.
+		if (bHeader == 0)
 			iPacketLen = 1;
 		else if (!m_pPacketInfo->Get(bHeader, &iPacketLen, &c_pszName))
 		{
@@ -203,7 +203,7 @@ ACMD(do_block_chat);
 
 int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 {
-	if (bHeader == 10) // ���ʹ� ����
+	if (bHeader == 10)
 		return 0;
 
 	/*if (bHeader == HEADER_CG_TEXT) {
@@ -213,13 +213,11 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 	{
 		if (!guild_mark_server)
 		{
-			// �������! - ��ũ ������ �ƴѵ� ��ũ�� ��û�Ϸ���?
 			LOG_ERROR("Guild Mark login requested but i'm not a mark server!");
 			d->SetPhase(PHASE_CLOSE);
 			return 0;
 		}
 
-		// ������ ���� --;
 		LOG_INFO("MARK_SERVER: Login");
 		d->SetPhase(PHASE_LOGIN);
 		return 0;

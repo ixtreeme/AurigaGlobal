@@ -244,20 +244,20 @@ enum ESlotType
 enum EWindows
 {
 	RESERVED_WINDOW,
-	INVENTORY,				// 기본 인벤토리. (45칸 짜리가 2페이지 존재 = 90칸)
+	INVENTORY,
 	EQUIPMENT,
 	SAFEBOX,
 	MALL,
 	MOUNT_INVENTORY,
 	DRAGON_SOUL_INVENTORY,
-	BELT_INVENTORY,			// NOTE: W2.1 버전에 새로 추가되는 벨트 슬롯 아이템이 제공하는 벨트 인벤토리
+	BELT_INVENTORY,
 #ifdef ENABLE_EXTRA_INVENTORY
 	EXTRA_INVENTORY,
 #endif
 #ifdef ENABLE_SWITCHBOT
 	SWITCHBOT,
 #endif
-	GROUND,					// NOTE: 2013년 2월5일 현재까지 unused.. 왜 있는거지???
+	GROUND,
 	WINDOW_TYPE_MAX,
 };
 
@@ -306,9 +306,6 @@ typedef struct SItemPos
         cell = _cell;
     }
 
-	// 기존에 cell의 형을 보면 BYTE가 대부분이지만, oi
-	// 어떤 부분은 int, 어떤 부분은 WORD로 되어있어,
-	// 가장 큰 자료형인 int로 받는다.
   //  int operator=(const int _cell)
   //  {
 		//window_type = INVENTORY;

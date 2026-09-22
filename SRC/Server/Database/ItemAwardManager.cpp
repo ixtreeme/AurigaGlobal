@@ -115,20 +115,19 @@ void ItemAwardManager::Load(SQLMsg * pMsg)
 		if (row[col])
 		{
 			strlcpy(kData->szWhy, row[col], sizeof(kData->szWhy));
-			//게임 중에 why콜룸에 변동이 생기면
-			char* whyStr = kData->szWhy;	//why 콜룸 읽기
-			char cmdStr[100] = "";	//why콜룸에서 읽은 값을 임시 문자열에 복사해둠
-			strcpy(cmdStr,whyStr);	//명령어 얻는 과정에서 토큰쓰면 원본도 토큰화 되기 때문
+			char* whyStr = kData->szWhy;
+			char cmdStr[100] = "";
+			strcpy(cmdStr,whyStr);
 			char command[20] = "";
 			// @fixme203 directly GetCommand instead of strcpy
-			CClientManager::instance().GetCommand(cmdStr, command);				// command 얻기
+			CClientManager::instance().GetCommand(cmdStr, command);
 			//LOG_ERROR("{},  {}", pItemAward->dwID, command);
-			if( !(strcmp(command,"GIFT") ))	// command 가 GIFT이면
+			if( !(strcmp(command,"GIFT") ))
 			{
 				TPacketItemAwardInfromer giftData;
-				strcpy(giftData.login, kData->szLogin);	//로그인 아이디 복사
-				strcpy(giftData.command, command);					//명령어 복사
-				giftData.vnum = kData->dwVnum;				//아이템 vnum도 복사
+				strcpy(giftData.login, kData->szLogin);
+				strcpy(giftData.command, command);
+				giftData.vnum = kData->dwVnum;
 				CClientManager::instance().ForwardPacket(HEADER_DG_ITEMAWARD_INFORMER,&giftData,sizeof(TPacketItemAwardInfromer));
 			}
 		}

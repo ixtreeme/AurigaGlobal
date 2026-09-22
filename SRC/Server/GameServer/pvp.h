@@ -4,8 +4,6 @@
 #include <entt/entt.hpp>
 
 
-// CPVP���� uint32_t ���̵� �ΰ��� �޾Ƽ� m_dwCRC�� ���� ������ �ִ´�.
-// CPVPManager���� �̷��� ���� CRC�� ���� �˻��Ѵ�.
 class CPVP
 {
 	public:
@@ -27,8 +25,8 @@ class CPVP
 		CPVP(CPVP & v);
 		~CPVP();
 
-		void	Win(uint32_t dwPID); // dwPID�� �̰��!
-		bool	CanRevenge(uint32_t dwPID); // dwPID�� ������ �� �־�?
+		void	Win(uint32_t dwPID);
+		bool	CanRevenge(uint32_t dwPID);
 		bool	IsFight();
 		bool	Agree(uint32_t dwPID);
 
@@ -66,7 +64,7 @@ class CPVPManager : public singleton<CPVPManager>
 
 	void			Insert(entt::entity character, entt::entity victim);
 	bool			CanAttack(entt::entity character, entt::entity victim, bool bIsFarmMap = false);
-	bool			Dead(entt::entity character, uint32_t dwKillerPID);	// PVP�� �־��� �������� ����
+	bool			Dead(entt::entity character, uint32_t dwKillerPID);
 	void			GiveUp(entt::entity character, uint32_t dwKillerPID);
 	void			Connect(entt::entity character);
 #ifdef ENABLE_PVP_ADVANCED

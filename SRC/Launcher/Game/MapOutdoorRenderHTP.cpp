@@ -81,7 +81,6 @@ void CMapOutdoor::__RenderTerrain_RenderHardwareTransformPatch()
 	auto far_it = std::upper_bound(m_PatchVector.begin(),m_PatchVector.end(),fog_far);
 	auto near_it = std::upper_bound(m_PatchVector.begin(),m_PatchVector.end(),fog_near);
 
-	// NOTE: Word Editor 툴에서는 fog far보다 멀리있는 물체를 텍스쳐 없이 그리는 작업을 하지 않음
 
 
 	WORD wPrimitiveCount;
@@ -97,7 +96,6 @@ void CMapOutdoor::__RenderTerrain_RenderHardwareTransformPatch()
 	uint32_t dwFogEnable = STATEMANAGER.GetRenderState(D3DRS_FOGENABLE);
 	auto it = m_PatchVector.begin();
 
-	// NOTE: 맵툴에서는 view ~ fog near 사이의 지형을 fog disabled 상태로 그리는 작업을 하지 않음.
 
 	STATEMANAGER.SetRenderState(D3DRS_FOGENABLE, FALSE);
 
@@ -349,7 +347,6 @@ void CMapOutdoor::__HardwareTransformPatch_RenderPatchSplat(int32_t patchnum, WO
 */
 
 
-	// 그림자
 	if (m_bDrawShadow)
 	{
 		STATEMANAGER.SetRenderState(D3DRS_LIGHTING, TRUE);

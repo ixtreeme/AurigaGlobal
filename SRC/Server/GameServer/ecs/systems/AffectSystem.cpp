@@ -820,8 +820,6 @@ bool UpdateAffect(entt::entity e)
 	}
 #endif
 
-	// affect_event ���� ó���� ���� �ƴ�����, 1��¥�� �̺�Ʈ���� ó���ϴ� ����
-	// �̰� ���̶� ���⼭ ���� ó���� �Ѵ�.
 	if (ecs::PointSystem::Get(e, POINT_HP_RECOVERY) > 0)
 	{
 		if (ecs::PointSystem::GetMaxHP(e) <= ecs::PlayerRuntime::GetHP(e))
@@ -870,7 +868,6 @@ bool UpdateAffect(entt::entity e)
 	AffectSystem::AutoRecallProcess(e);
 #endif
 
-	// ���׹̳� ȸ��
 	if (ecs::PlayerRuntime::GetMaxStamina(e) > ecs::PlayerRuntime::GetStamina(e))
 	{
 		int iSec = (get_dword_time() - ecs::MovementSystem::GetStopTime(e)) / 3000;
@@ -879,7 +876,6 @@ bool UpdateAffect(entt::entity e)
 	}
 
 
-	// ProcessAffect�� affect�� ������ true�� �����Ѵ�.
     // Expiry callbacks can destroy this CHARACTER. Capture the entity before
     // entering the native pass and never read this again afterwards.
     const auto entity = e;
@@ -1045,7 +1041,6 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
 	{
-		////// �������� �ε������ʴ´�.
 		////if (pElements->dwType == SKILL_MUYEONG)
 		////	continue;
 		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
@@ -1172,7 +1167,6 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 		return;
 	AffectState(entity)->isLoaded = true;
 
-	// ��ȥ�� ���� �ε� �� �ʱ�ȭ
 	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_BEGIN pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
 	DragonSoulSystem::Initialize(entity);
 	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_END pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());

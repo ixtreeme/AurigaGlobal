@@ -233,7 +233,7 @@ void CGraphicTextInstance::Update()
 						if (hyperlinkStep == 1)
 						{
 							++hyperlinkStep;
-							kHyperlink.ex = kHyperlink.sx = x; // 실제 텍스트가 시작되는 위치
+							kHyperlink.ex = kHyperlink.sx = x;
 						}
 						else
 						{
@@ -307,7 +307,7 @@ void CGraphicTextInstance::Update()
 		if (token < end)
 		{
 			int newCodePage = ReadToken(token);
-			dataCodePage = newCodePage;	// 아랍 및 베트남 내부 데이터를 UTF8 을 사용하려 했으나 실패
+			dataCodePage = newCodePage;
 			begin = token + 5;
 		}
 		else
@@ -492,7 +492,6 @@ void CGraphicTextInstance::Render(RECT* pClipRect)
 					}
 				}
 
-				// NOTE : ÆuÆ® Aa·A¿¡ Width A|CNA≫ μO´I´U. - [levites]
 				if ((fCurX + fFontWidth) - fStanX > m_fLimitWidth)
 				{
 					if (m_isMultiLine)
@@ -636,7 +635,6 @@ void CGraphicTextInstance::Render(RECT* pClipRect)
 			}
 		}
 
-		// 메인 폰트
 		fCurX = fStanX;
 		fCurY = fStanY;
 		fFontMaxHeight = 0.0f;

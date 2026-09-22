@@ -55,9 +55,8 @@ PyObject * packGet(PyObject * poSelf, PyObject * poArgs)
 	if (!PyTuple_GetString(poArgs, 0, &strFileName))
 		return Py_BuildException();
 
-	// 파이썬에서 읽어드리는 패킹 파일은 python 파일과 txt 파일에 한정한다
 	const char* pcExt = strrchr(strFileName, '.');
-	if (pcExt) // 확장자가 있고
+	if (pcExt)
 	{
 #ifdef ENABLE_PACK_GET_CHECK
 		if ((stricmp(pcExt, ".py") == 0) ||

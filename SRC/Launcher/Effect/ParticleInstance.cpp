@@ -247,9 +247,6 @@ void CParticleInstance::Transform(const D3DXMATRIX * c_matLocal)
 		case BILLBOARD_TYPE_ALL:
 		default:
 			{
-				// NOTE : Rotation Routine. Camera의 Up Vector와 Cross Vector 자체를 View Vector 기준으로
-				//        Rotation 시킨다.
-				// FIXME : 반드시 최적화 할 것!
 				if (m_fRotation==0.0f)
 				{
 					v3Up = -c_rv3Cross;
@@ -301,7 +298,6 @@ void CParticleInstance::Transform(const D3DXMATRIX * c_matLocal)
 				D3DXVec3TransformNormal(&v3Up, &v3Up, c_matLocal);
 		}
 
-		// NOTE: 속도가 길이에 주는 영향 : log(velocity)만큼 늘어난다.
 		float length = D3DXVec3Length(&v3Up);
 		if (length == 0.0f)
 		{
@@ -405,9 +401,6 @@ void CParticleInstance::Transform(const D3DXMATRIX * c_matLocal, const float c_f
 		case BILLBOARD_TYPE_ALL:
 		default:
 			{
-				// NOTE : Rotation Routine. Camera의 Up Vector와 Cross Vector 자체를 View Vector 기준으로
-				//        Rotation 시킨다.
-				// FIXME : 반드시 최적화 할 것!
 				if (m_fRotation==0.0f)
 				{
 					v3Up = -c_rv3Cross;
@@ -438,7 +431,6 @@ void CParticleInstance::Transform(const D3DXMATRIX * c_matLocal, const float c_f
 				D3DXVec3TransformNormal(&v3Up, &v3Up, c_matLocal);
 		}
 
-		// NOTE: 속도가 길이에 주는 영향 : log(velocity)만큼 늘어난다.
 		float length = D3DXVec3Length(&v3Up);
 		if (length == 0.0f)
 		{

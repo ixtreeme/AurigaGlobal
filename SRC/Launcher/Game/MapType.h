@@ -183,7 +183,7 @@ typedef struct SEnvironmentData
 	std::string strMainFlareTextureFileName;
 	float fMainFlareSize;
 
-	bool bReserve; // 외부에서 설정을 고치지 않음
+	bool bReserve;
 } TEnvironmentData;
 
 typedef std::map<DWORD, TEnvironmentData*> TEnvironmentDataMap;

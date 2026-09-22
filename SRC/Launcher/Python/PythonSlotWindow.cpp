@@ -305,7 +305,6 @@ void CSlotWindow::SetCoverButton(uint32_t dwIndex, const char * c_szUpImageName,
 	rpCoverButton->Enable();
 	rpCoverButton->Show();
 
-	// NOTE : Cover 버튼이 Plus 버튼을 가려버려서 임시 코드를..
 	if (pSlot->pSlotButton)
 	{
 		SetTop(pSlot->pSlotButton);
@@ -733,7 +732,6 @@ void CSlotWindow::RefreshSlot()
 {
 	OnRefreshSlot();
 
-	// NOTE : Refresh 될때 ToolTip 도 갱신 합니다 - [levites]
 	if (IsRendering())
 	{
 		TSlot * pSlot;
@@ -1056,8 +1054,6 @@ void CSlotWindow::OnMouseOverOut()
 
 void CSlotWindow::OnMouseOver()
 {
-	// FIXME : 윈도우를 드래깅 하는 도중에 SetTop이 되어버리면 Capture가 풀어져 버린다. 그것의 방지 코드.
-	//         좀 더 근본적인 해결책을 찾아야 할 듯 - [levites]
 //	if (UI::CWindowManager::Instance().IsCapture())
 //	if (!UI::CWindowManager::Instance().IsAttaching())
 //		return;
@@ -1213,7 +1209,6 @@ void CSlotWindow::OnRender()
 	std::for_each(m_pChildList.begin(), m_pChildList.end(), std::mem_fn(&CWindow::OnRender));
 
 	//
-	// 모든 슬롯 상자 그리기
 	//////////////////////////////////////////////////////////////////////////
 #ifdef __RENDER_SLOT_AREA__
 	CPythonGraphic::Instance().SetDiffuseColor(0.5f, 0.5f, 0.5f);
@@ -1298,7 +1293,6 @@ void CSlotWindow::OnRender()
 
 			if (fcurTime - rSlot.fStartCoolTime >= rSlot.fCoolTime)
 			{
-				// 쿨타임이 끝난지 1초 이내라면..
 				if ((fcurTime - rSlot.fStartCoolTime) - rSlot.fCoolTime < 1.0f)
 					__CreateFinishCoolTimeEffect(&rSlot);
 
@@ -1462,8 +1456,6 @@ bool CSlotWindow::GetPickedSlotPointer(TSlot ** ppSlot)
 	int ixLocal = lx - m_rect.left;
 	int iyLocal = ly - m_rect.top;
 
-	// NOTE : 왼쪽 맨위 상단 한곳이 기준 이라는 점을 이용해 왼쪽 위에서부터 오른쪽 아래로
-	//        차례로 검색해 감으로써 덮혀 있는 Slot은 자동 무시 된다는 특성을 이용한다. - [levites]
 	for (TSlotListIterator itor = m_SlotList.begin(); itor != m_SlotList.end(); ++itor)
 	{
 		TSlot & rSlot = *itor;
@@ -1471,7 +1463,6 @@ bool CSlotWindow::GetPickedSlotPointer(TSlot ** ppSlot)
 		int ixCellSize = rSlot.ixCellSize;
 		int iyCellSize = rSlot.iyCellSize;
 
-		// NOTE : Item이 Hide 되어있을 경우를 위한..
 		if (rSlot.isItem)
 		{
 			ixCellSize = max(rSlot.ixCellSize, int(rSlot.byxPlacedItemSize * ITEM_WIDTH));

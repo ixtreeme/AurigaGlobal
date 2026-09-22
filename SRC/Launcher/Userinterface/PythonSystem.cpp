@@ -7,8 +7,6 @@
 
 void CPythonSystem::SetInterfaceHandler(PyObject * poHandler)
 {
-// NOTE : 레퍼런스 카운트는 바꾸지 않는다. 레퍼런스가 남아 있어 Python에서 완전히 지워지지 않기 때문.
-//        대신에 __del__때 Destroy를 호출해 Handler를 NULL로 셋팅한다. - [levites]
 //	if (m_poInterfaceHandler)
 //		Py_DECREF(m_poInterfaceHandler);
 
@@ -46,7 +44,6 @@ void CPythonSystem::GetDisplaySettings()
 	lpD3D->GetAdapterDisplayMode(0, &d3ddmDesktop);
 
 
-	// 이 어뎁터가 가지고 있는 디스플래이 모드갯수를 나열한다..
 	uint32_t dwNumAdapterModes = lpD3D->GetAdapterModeCount(0, D3DFMT_X8R8G8B8);
 
 	for (UINT iMode = 0; iMode < dwNumAdapterModes; iMode++)
@@ -55,12 +52,9 @@ void CPythonSystem::GetDisplaySettings()
 		lpD3D->EnumAdapterModes(0, D3DFMT_X8R8G8B8, iMode, &DisplayMode);
 		uint32_t bpp = 0;
 
-		// 800 600 이상만 걸러낸다.
 		if (DisplayMode.Width < 800 || DisplayMode.Height < 600)
 			continue;
 
-		// 일단 16bbp 와 32bbp만 취급하자.
-		// 16bbp만 처리하게끔 했음 - [levites]
 		if (DisplayMode.Format == D3DFMT_R5G6B5)
 			bpp = 16;
 		else if (DisplayMode.Format == D3DFMT_X8R8G8B8)
@@ -79,7 +73,6 @@ void CPythonSystem::GetDisplaySettings()
 
 			int check_fre = false;
 
-			// 프리퀀시만 다르므로 프리퀀시만 셋팅해준다.
 			for (int j = 0; j < m_ResolutionList[i].frequency_count; ++j)
 			{
 				if (m_ResolutionList[i].frequency[j] == DisplayMode.RefreshRate)
@@ -98,7 +91,6 @@ void CPythonSystem::GetDisplaySettings()
 
 		if (!check_res)
 		{
-			// 새로운 거니까 추가해주자.
 			if (m_ResolutionCount < RESOLUTION_MAX_NUM)
 			{
 				m_ResolutionList[m_ResolutionCount].width			= DisplayMode.Width;

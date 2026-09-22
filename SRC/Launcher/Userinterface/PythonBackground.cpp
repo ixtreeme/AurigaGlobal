@@ -150,7 +150,6 @@ void CPythonBackground::SelectViewDistanceNum(int eNum)
 
 	TEnvironmentData * env = ((TEnvironmentData *) mc_pcurEnvironmentData);
 
-	// 게임 분위기를 바꿔놓을 수 있으므로 reserve로 되어있으면 고치지 않는다.
 	if (env->bReserve)
 	{
 		env->m_fFogNearDistance = m_ViewDistanceSet[m_eViewDistanceNum].m_fFogStart;

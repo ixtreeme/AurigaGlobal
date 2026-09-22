@@ -412,7 +412,6 @@ public:
 
         DungeonSystem::SetFlag(d, kFlagCompleted, 1);
 
-        // eventek stop (exit-et nem cancel-elj�k, mert most allitjuk be)
         CancelEvent(m_evCheck, mapIndex);
         CancelEvent(m_evToF2, mapIndex);
 

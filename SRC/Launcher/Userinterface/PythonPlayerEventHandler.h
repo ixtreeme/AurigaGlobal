@@ -63,9 +63,9 @@ class CPythonPlayerEventHandler : public CActorInstance::IEventHandler
 				virtual void OnSetFlyTarget();
 				virtual void OnShoot(uint32_t dwSkillIndex);
 
-				virtual void OnNoTarget() { /*Tracenf("Shoot : target이 없습니다.");*/ }
-				virtual void OnExplodingOutOfRange() { /*Tracenf("Shoot : 사정거리가 끝났습니다.");*/ }
-				virtual void OnExplodingAtBackground() { /*Tracenf("Shoot : 배경에 맞았습니다.");*/ }
+				virtual void OnNoTarget() {  }
+				virtual void OnExplodingOutOfRange() {  }
+				virtual void OnExplodingAtBackground() {  }
 				virtual void OnExplodingAtAnotherTarget(uint32_t dwSkillIndex, uint32_t dwVID);
 				virtual void OnExplodingAtTarget(uint32_t dwSkillIndex);
 

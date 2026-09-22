@@ -169,7 +169,6 @@ void CInstanceBase::EndWalking(float fBlendingTime)
 
 	m_isGoing = FALSE;
 
-	// 걷고 있을때는 무조건 멈추게 해야 한다
 	if (IsWalking()||!IsAttacked())
 	{
 		m_GraphicThingInstance.Stop(fBlendingTime);

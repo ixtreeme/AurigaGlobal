@@ -67,7 +67,6 @@ bool CConfig::GetWord(FILE *fp, char *tar)
 
 			if ((c == ' ' || c == '\t' || c == '\n'))
 			{
-				// Εά.
 				tar[i] = '\0';
 				return true;
 			}
@@ -144,7 +143,6 @@ bool CConfig::LoadFile(const char* filename)
 	}
 
 
-	// ΖΔΐΟ ΄έ΄Β ΊΞΊΠ.
 	fclose(fp);
 	return true;
 }

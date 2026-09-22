@@ -80,7 +80,6 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 	{
 		if (ecs::PlayerRuntime::IsBlockMode(chr, BLOCK_WHISPER))
 		{
-			// ӼӸ ź ¿ ӼӸ ź.
 			return p->lSize;
 		}
 
@@ -88,12 +87,9 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 		memcpy(buf, c_pbData, MIN(p->lSize, sizeof(buf)));
 
 		TPacketGCWhisper* p2 = (TPacketGCWhisper*) buf;
-		// bType  4Ʈ: Empire ȣ
-		// bType  4Ʈ: EWhisperType
 		uint8_t bToEmpire = (p2->bType >> 4);
 		p2->bType = p2->bType & 0x0F;
 		if(p2->bType == 0x0F) {
-			// ý ޼ ӼӸ bType Ʈ  .
 			p2->bType = WHISPER_TYPE_SYSTEM;
 		} else {
 			if (!ItemSystem::IsEquipUniqueGroup(chr, UNIQUE_GROUP_RING_OF_LANGUAGE))

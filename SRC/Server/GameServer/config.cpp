@@ -34,7 +34,7 @@ int		passes_per_sec = 25;
 uint16_t	db_port = 0;
 uint16_t	p2p_port = 50900;
 char	db_addr[ADDRESS_MAX_LEN + 1];
-int		save_event_second_cycle = passes_per_sec * 120;	// 3분
+int		save_event_second_cycle = passes_per_sec * 120;
 int		ping_event_second_cycle = passes_per_sec * 60;
 bool	g_bNoMoreClient = false;
 bool	g_bNoRegen = false;
@@ -111,25 +111,23 @@ string g_stBlockDate = "30000705";
 extern string g_stLocale;
 
 
-//시야 = VIEW_RANGE + VIEW_BONUS_RANGE
-//VIEW_BONUSE_RANGE : 클라이언트와 시야 처리에서너무 딱 떨어질경우 문제가 발생할수있어 500CM의 여분을 항상준다.
 int VIEW_RANGE = 5000;
 int VIEW_BONUS_RANGE = 500;
 
 int g_server_id = 0;
 string g_strWebMallURL = "https://www.wonder2.org/index.php/shop/login?pid=$playerID&key=$codice";
 
-unsigned int g_uiSpamBlockDuration = 60 * 15; // 기본 15분
-unsigned int g_uiSpamBlockScore = 100; // 기본 100점
-unsigned int g_uiSpamReloadCycle = 60 * 10; // 기본 10분
+unsigned int g_uiSpamBlockDuration = 60 * 15;
+unsigned int g_uiSpamBlockScore = 100;
+unsigned int g_uiSpamReloadCycle = 60 * 10;
 
 int			g_iSpamBlockMaxLevel = 10;
 
 void		LoadStateUserCount();
 void		LoadValidCRCList();
 bool		LoadClientVersion();
-bool            g_protectNormalPlayer   = false;        // 범법자가 "평화모드" 인 일반유저를 공격하지 못함
-bool            g_noticeBattleZone      = false;        // 중립지대에 입장하면 안내메세지를 알려줌
+bool            g_protectNormalPlayer   = false;
+bool            g_noticeBattleZone      = false;
 
 int gPlayerMaxLevel = 99;
 int stone_chance = 30;
@@ -139,10 +137,6 @@ int gShutdownEnable = 0;
 MAPCONFIG_VEC	g_vecMapConf;
 void LoadMapConfig();
 #endif
-/*
- * NOTE : 핵 체크 On/Off. CheckIn할때 false로 수정했으면 반드시 확인하고 고쳐놓을것!
- * 이걸로 생길수있는 똥은 책임안짐 ~ ity ~
- */
 bool gHackCheckEnable = false;
 
 bool g_BlockCharCreation = false;
@@ -319,7 +313,6 @@ static bool __LoadConnectConfigFile(const char* configName)
 	char	value_string[256];
 
 	char db_host[2][64], db_user[2][64], db_pwd[2][64], db_db[2][64];
-	// ... 아... db_port는 이미 있는데... 네이밍 어찌해야함...
 	int mysql_db_port[2];
 
 	for (int n = 0; n < 2; ++n)
@@ -340,9 +333,6 @@ static bool __LoadConnectConfigFile(const char* configName)
 	*log_db = '\0';
 
 
-	// DB에서 로케일정보를 세팅하기위해서는 다른 세팅값보다 선행되어서
-	// DB정보만 읽어와 로케일 세팅을 한후 다른 세팅을 적용시켜야한다.
-	// 이유는 로케일관련된 초기화 루틴이 곳곳에 존재하기 때문.
 
 	bool isCommonSQL = false;
 	bool isPlayerSQL = false;
@@ -466,7 +456,6 @@ static bool __LoadConnectConfigFile(const char* configName)
 		}
 	}
 
-	//처리가 끝났으니 파일을 닫자.
 	fclose(fpOnlyForDB);
 
 	// CONFIG_SQL_INFO_ERROR
@@ -492,7 +481,6 @@ static bool __LoadConnectConfigFile(const char* configName)
 		exit(1);
 	}
 
-	// Common DB 가 Locale 정보를 가지고 있기 때문에 가장 먼저 접속해야 한다.
 	AccountDB::instance().Connect(db_host[1], mysql_db_port[1], db_user[1], db_pwd[1], db_db[1]);
 
 	if (false == AccountDB::instance().IsConnected())
@@ -503,8 +491,6 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 	LOG_INFO("CommonSQL connected");
 
-	// 로케일 정보를 가져오자
-	// <경고> 쿼리문에 절대 조건문(WHERE) 달지 마세요. (다른 지역에서 문제가 생길수 있습니다)
 	{
 		char szQuery[512];
 		snprintf(szQuery, sizeof(szQuery), "SELECT mKey, mValue FROM locale");
@@ -521,7 +507,6 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 		while (nullptr != (row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
 		{
-			// 로케일 세팅
 			if (strcasecmp(row[0], "LOCALE") == 0)
 			{
 				if (LocaleService_Init(row[1]) == false)
@@ -533,15 +518,12 @@ static bool __LoadConnectConfigFile(const char* configName)
 		}
 	}
 
-	// 로케일 정보를 COMMON SQL에 세팅해준다.
-	// 참고로 g_stLocale 정보는 LocaleService_Init() 내부에서 세팅된다.
 	LOG_INFO("Setting DB to locale {}", g_stLocale.c_str());
 
 	AccountDB::instance().SetLocale(g_stLocale);
 
 	AccountDB::instance().ConnectAsync(db_host[1], mysql_db_port[1], db_user[1], db_pwd[1], db_db[1], g_stLocale.c_str());
 
-	// Player DB 접속
 	DBManager::instance().Connect(db_host[0], mysql_db_port[0], db_user[0], db_pwd[0], db_db[0]);
 
 	if (!DBManager::instance().IsConnected())
@@ -552,9 +534,8 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 	LOG_INFO("PlayerSQL connected");
 
-	if (false == g_bAuthServer) // 인증 서버가 아닐 경우
+	if (false == g_bAuthServer)
 	{
-		// Log DB 접속
 		LogManager::instance().Connect(log_host, log_port, log_user, log_pwd, log_db);
 
 		if (!LogManager::instance().IsConnected())
@@ -569,8 +550,6 @@ static bool __LoadConnectConfigFile(const char* configName)
 	}
 
 	// SKILL_POWER_BY_LEVEL
-	// 스트링 비교의 문제로 인해서 AccountDB::instance().SetLocale(g_stLocale) 후부터 한다.
-	// 물론 국내는 별로 문제가 안된다(해외가 문제)
 	{
 		char szQuery[256];
 		snprintf(szQuery, sizeof(szQuery), "SELECT mValue FROM locale WHERE mKey='SKILL_POWER_BY_LEVEL'");
@@ -611,13 +590,11 @@ static bool __LoadConnectConfigFile(const char* configName)
 			}
 		}
 
-		// 종족별 스킬 세팅
 		for (int job = 0; job < JOB_MAX_NUM * 2; ++job)
 		{
 			snprintf(szQuery, sizeof(szQuery), "SELECT mValue from locale where mKey='SKILL_POWER_BY_LEVEL_TYPE%d' ORDER BY CAST(mValue AS unsigned)", job);
 			std::unique_ptr<SQLMsg> pMsg(AccountDB::instance().DirectQuery(szQuery));
 
-			// 세팅이 안되어있으면 기본테이블을 사용한다.
 			if (pMsg->Get()->uiNumRows == 0)
 			{
 				CTableBySkill::instance().SetSkillPowerByLevelFromType(job, aiBaseSkillPowerByLevelTable);
@@ -1250,7 +1227,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 		TOKEN("spam_block_reload_cycle")
 		{
 			str_to_number(g_uiSpamReloadCycle, value_string);
-			g_uiSpamReloadCycle = MAX(60, g_uiSpamReloadCycle); // 최소 1분
+			g_uiSpamReloadCycle = MAX(60, g_uiSpamReloadCycle);
 		}
 
 		TOKEN("spam_block_max_level")
@@ -1438,8 +1415,6 @@ void config_init(std::string_view st_localeServiceName)
 	}
 	// END_OF_LOCALE_SERVICE
 
-	// public ip가 없어도 BIND_IP하면 게임 돌아가는데에는 아무런 지장이 없기 때문에
-	// 주석처리 함.
 	if (!GetIPInfo())
 	{
 	//	LOG_ERROR("Can not get public ip address");
@@ -1540,9 +1515,7 @@ void config_init(std::string_view st_localeServiceName)
 	}
 #endif
 
-	//if(!gHackCheckEnable)	// Hack 체크가 비활성화인 경우
 	//{
-	//	assert(test_server);	// 테스트 서버가 아니라면 assert
 	//}
 
 	LoadValidCRCList();

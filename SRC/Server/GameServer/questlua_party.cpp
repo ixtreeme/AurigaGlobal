@@ -357,8 +357,6 @@ namespace quest
 		}
 	};
 
-	// ��Ƽ ������ ���� �ִ� �Լ�.
-	// ���� �ʿ� �ִ� ��Ƽ���� ������ �޴´�.
 	ALUA(party_give_buff)
 	{
 		// migrated from CHARACTER::AddAffect
@@ -534,7 +532,7 @@ namespace quest
 			{ "is_in_dungeon",	party_is_in_dungeon	},
 			{ "give_buff",		party_give_buff		},
 			{ "is_map_member_flag_lt",	party_is_map_member_flag_lt	},
-			{ "get_member_pids",		party_get_member_pids	}, // ��Ƽ������ pid�� return
+			{ "get_member_pids",		party_get_member_pids	},
 			{"get_leader_name", party_get_leader_name},
 			{"give_gold", party_give_gold},
 			{"give_blacksmith", party_give_blacksmith},

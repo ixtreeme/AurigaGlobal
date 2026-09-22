@@ -633,7 +633,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_NEXT_EXP:
 		val = ecs::PlayerRuntime::GetNextExp(e);
-		bAmount = false;	// 1����� bAmount�� false ?�3� �N�U.
+		bAmount = false;
 		break;
 
 	case POINT_EXP:
@@ -641,7 +641,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		uint32_t exp = ecs::PlayerRuntime::GetExp(e);
 		uint32_t next_exp = ecs::PlayerRuntime::GetNextExp(e);
 
-		// exp�! 0 AI�I�� �!�� 3E���I �N�U
 		if ((amount < 0) && (exp < (uint32_t)(-amount)))
 		{
 			LOG_TRACE("{} AMOUNT < 0 {}, CUR EXP: {}", ecs::PlayerRuntime::GetName(e).data(), -amount, exp);
@@ -671,7 +670,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			//						, 2, "%s", s.c_str());
 			uint32_t iExpBalance = 0;
 
-			// �1o� 3�!
 			if (exp + amount >= next_exp)
 			{
 				iExpBalance = (exp + amount) - next_exp;
@@ -689,7 +687,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			uint32_t q = uint32_t(next_exp / 4.0f);
 			int iLevStep = GetReal(e, POINT_LEVEL_STEP);
 
-			// iLevStepAI 4 AI��AI�� �1o�AI ?A��3�3� �I1Ƿ� ?���?! ?A 1� 3o�� �aAI�U.
 			if (iLevStep >= 4)
 			{
 				LOG_ERROR("{} LEVEL_STEP bigger than 4! ({})", ecs::PlayerRuntime::GetName(e).data(), iLevStep);
@@ -834,17 +831,15 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 		if (val == 0)
 		{
-			// Stamina�! 3oA��I �EA�!
 			ecs::MovementSystem::SetNowWalking(e, true);
 		}
 		else if (prev_val == 0)
 		{
-			// 3o�o 1oA�1I3a�! ���aA��I AIA� �?�a o1��
 			if (const auto* movement = g_registry.try_get<ecs::MovementState>(e))
 				ecs::MovementSystem::SetNowWalking(e, movement->walkPreference);
 		}
 
-		if (amount < 0 && val != 0) // ��1O�� o�3���3E�´U.
+		if (amount < 0 && val != 0)
 			return;
 	}
 	break;
@@ -854,7 +849,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		Set(e, type, ReadInstantArray(e, type) + amount);
 
 		const int64_t base = GetReal(e, POINT_MAX_HP);              // 20-30k
-		const int64_t flat = ReadInstantArray(e, POINT_MAX_HP);                  // �kszerek stb. fix +HP (ett�l lesz 350k)
+		const int64_t flat = ReadInstantArray(e, POINT_MAX_HP);
 		const int64_t party = Get(e, POINT_PARTY_TANKER_BONUS);
 		const int64_t pct = Get(e, POINT_MAX_HP_PCT);              // +20
 
@@ -874,7 +869,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		Set(e, type, ReadInstantArray(e, type) + amount);
 
 		//ecs::PlayerRuntime::SetMaxSP(e, GetMaxSP(e) + amount);
-		// Aִ� ��1A�� = (��o� Aִ� ��1A�� + A߰!) * Aִ���1A��%
 		int64_t sp = GetReal(e, POINT_MAX_SP);
 		int64_t add_sp = std::min((int64_t)800, sp * Get(e, POINT_MAX_SP_PCT) / 100);
 		add_sp += ReadInstantArray(e, POINT_MAX_SP);
@@ -1012,12 +1006,12 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_HP_RECOVERY:
 	case POINT_SP_RECOVERY:
 
-	case POINT_ATTBONUS_HUMAN:	// 42 AΰL?!�� ����
-	case POINT_ATTBONUS_ANIMAL:	// 43 �?1�?!�� �Y1I�� % �o�!
-	case POINT_ATTBONUS_ORC:		// 44 ?o��?!�� �Y1I�� % �o�!
-	case POINT_ATTBONUS_MILGYO:	// 45 1?�3?!�� �Y1I�� % �o�!
-	case POINT_ATTBONUS_UNDEAD:	// 46 1AA1?!�� �Y1I�� % �o�!
-	case POINT_ATTBONUS_DEVIL:	// 47 ����(3Ǹ�)?!�� �Y1I�� % �o�!
+	case POINT_ATTBONUS_HUMAN:
+	case POINT_ATTBONUS_ANIMAL:
+	case POINT_ATTBONUS_ORC:
+	case POINT_ATTBONUS_MILGYO:
+	case POINT_ATTBONUS_UNDEAD:
+	case POINT_ATTBONUS_DEVIL:
 
 	case POINT_ATTBONUS_MONSTER:
 	case POINT_ATTBONUS_SURA:
@@ -1039,11 +1033,11 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_PENETRATE:
 	case POINT_CURSE_PCT:
 
-	case POINT_STEAL_HP:		// 48 ������ E�1�
-	case POINT_STEAL_SP:		// 49 ��1A�� E�1�
+	case POINT_STEAL_HP:
+	case POINT_STEAL_SP:
 
-	case POINT_MANA_BURN_PCT:	// 50 ��3a 1o
-	case POINT_DAMAGE_SP_RECOVER:	// 51 �o�ݴ��O 1A ��1A�� E�o1 E���
+	case POINT_MANA_BURN_PCT:
+	case POINT_DAMAGE_SP_RECOVER:
 	case POINT_RESIST_NORMAL_DAMAGE:
 	case POINT_RESIST_SWORD:
 	case POINT_RESIST_TWOHAND:
@@ -1064,10 +1058,10 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_ICE:
 	case POINT_RESIST_EARTH:
 	case POINT_RESIST_DARK:
-	case POINT_REFLECT_MELEE:	// 67 �o�� 1ݻ�
-	case POINT_REFLECT_CURSE:	// 68 A��� 1ݻ�
-	case POINT_POISON_REDUCE:	// 69 ���Y1I�� ��1O
-	case POINT_KILL_SP_RECOVER:	// 70 Au 1O�e1A MP E�o1
+	case POINT_REFLECT_MELEE:
+	case POINT_REFLECT_CURSE:
+	case POINT_POISON_REDUCE:
+	case POINT_KILL_SP_RECOVER:
 	case POINT_KILL_HP_RECOVERY:	// 75
 	case POINT_HIT_HP_RECOVERY:
 	case POINT_HIT_SP_RECOVERY:
@@ -1409,7 +1403,6 @@ void ComputeBattlePoints(entt::entity e)
 		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
 
 		//
-		// ��o� ATK = 2lev + 2str, ��3�?! ���U 2strAo 1U2? 1� A�A1
 		//
 		int iAtk = GetLevel(e) * 2;
 		int iStatAtk = 0;
@@ -1434,14 +1427,11 @@ void ComputeBattlePoints(entt::entity e)
 			break;
 		}
 
-		// ��A� A��� Aְ�, 1oAEA��� A��N �o�ݷ�AI ST*2 o��U 3�A��� ST*2�� �N�U.
-		// 1oAEA� A߸o �iAo ��� �o�ݷ�AI �o 3��� 3E�� �I�� A��O1��U.
 		if (MountSystem::GetMountVnum(e) && iStatAtk < 2 * Get(e, POINT_ST))
 			iStatAtk = (2 * Get(e, POINT_ST));
 
 		iAtk += iStatAtk;
 
-		// 1¸�(��) : ��1��� �Y1I�� ��1O
 		if (MountSystem::GetMountVnum(e))
 		{
 			if (ecs::PlayerRuntime::GetJob(e) == JOB_SURA && SkillSystem::GetSkillGroup(e) == 1)
@@ -1462,7 +1452,7 @@ void ComputeBattlePoints(entt::entity e)
 		Change(e, POINT_ATT_GRADE, iAtk);
 
 		// DEF = LEV + CON + ARMOR
-		int iShowDef = GetLevel(e) + Get(e, POINT_HT); // For Ymir(A���)
+		int iShowDef = GetLevel(e) + Get(e, POINT_HT);
 		int iDef = GetLevel(e) + (int)(Get(e, POINT_HT) / 1.25); // For Other
 		int iArmor = 0;
 
@@ -1483,7 +1473,6 @@ void ComputeBattlePoints(entt::entity e)
 			}
 		}
 
-		// �� A��� A�A� �� 1a3��AI ��A� ���O 1a3��o��U 3�A��� ���O 1a3��A��� 13��
 		if (true == MountSystem::IsHorseRiding(e))
 		{
 			if (iArmor < MountSystem::GetHorseArmor(e))
@@ -1557,7 +1546,6 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 		// SKILL_DAMAGE_BONUS
 	{
 		auto& bonus = g_registry.get_or_emplace<ecs::SkillDamageBonus>(e);
-		// Aֻ�A� onA� ���OA��� 8onA� vnum, 9onA� add, 15onA� change
 		// 00000000 00000000 00000000 00000000
 		// ^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^
 		// vnum     ^ add       change
@@ -1580,11 +1568,6 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	// END_OF_SKILL_DAMAGE_BONUS
 	break;
 
-	// NOTE: 3AAIAU?! A��N Aִ�HP o�3E1o3a �u1oA� o��� o�3E1o�! �E��Ao 1a1�A� ��?��I1Ƿ�
-	// ��3� MAX_HP�� �e�e�I�� �u1oA� o���A� �a?i 1����! ���e. ��1� ?o�! AI�EAI �O��AuAI�⵵ �I��..
-	// 1U2U �o1�Ao ��A� Aִ� hp?� o�A� hpA� onA2A� ���N �� 1U2? Aִ� hp�� ���OA��� hp�� o����N�U.
-	// ?o�! PointChange?!1� �I�°� ��A��� ��Ao�Y 13�e 1����� 3��?�1� skip..
-	// SP�� �E��AI �e�e�N�U.
 	// Mantis : 101460			~ ity ~
 	case APPLY_MAX_HP:
 	case APPLY_MAX_HP_PCT:
@@ -1695,11 +1678,11 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_RESIST_ASSASSIN:
 	case APPLY_RESIST_SURA:
 	case APPLY_RESIST_SHAMAN:
-	case APPLY_ENERGY:					// 82 ���
-	case APPLY_DEF_GRADE:				// 83 1a3��. DEF_GRADE_BONUS�� A���?!1� ��1e�� o�?����� Aǵ��E 1���(...)�! AִU.
-	case APPLY_COSTUME_ATTR_BONUS:		// 84 ��1oA� 3AAIAU?! oUAo 1�1o�! o�3E1o
-	case APPLY_MAGIC_ATTBONUS_PER:		// 85 ��1� �o�ݷ� +x%
-	case APPLY_MELEE_MAGIC_ATTBONUS_PER:			// 86 ��1� + 1?�� �o�ݷ� +x%
+	case APPLY_ENERGY:
+	case APPLY_DEF_GRADE:
+	case APPLY_COSTUME_ATTR_BONUS:
+	case APPLY_MAGIC_ATTBONUS_PER:
+	case APPLY_MELEE_MAGIC_ATTBONUS_PER:
 #ifdef ENABLE_ACCE_SYSTEM
 	case APPLY_ACCEDRAIN_RATE:			//97
 #endif

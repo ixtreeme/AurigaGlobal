@@ -95,7 +95,6 @@ PyObject * backgroundRegisterEnvironmentData(PyObject * poSelf, PyObject * poArg
 		TraceError("background.RegisterEnvironmentData(iIndex=%d, szEnvironmentFileName=%s)", iIndex, pszEnvironmentFileName);
 
 		// TODO:
-		// 디폴트 환경 설정 작업을 해주자
 	}
 
 	return Py_BuildNone();

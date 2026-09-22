@@ -53,9 +53,6 @@ bool CPythonNetworkStream::RecvMountInventoryPacket()
 	CPythonPlayer& player = CPythonPlayer::Instance();
 
 	// IMPORTANT:
-	// Ha a szerver csak a nem-üres slotokat küldi (wCount),
-	// akkor elõbb törölni kell a teljes kliens oldali mount inventory-t,
-	// különben a régi slot "beragad" (ikon duplikálódik).
 	for (uint16_t slot = 0; slot < c_Mount_Inventory_Count; ++slot)
 	{
 		TItemData empty{};
@@ -980,8 +977,8 @@ bool CPythonNetworkStream::RecvSpecialEffect()
 		return false;
 
 	uint32_t effect = -1;
-	bool bPlayPotionSound = false;	//Æ÷¼ÇÀ» ¸ÔÀ» °æ¿ì´Â Æ÷¼Ç »ç¿îµå¸¦ Ãâ·ÂÇÏÀÚ.!!
-	bool bAttachEffect = true;		//Ä³¸®ÅÍ¿¡ ºÙ´Â ¾îÅÂÄ¡ ÀÌÆåÆ®¿Í ÀÏ¹Ý ÀÌÆåÆ® ±¸ºÐ.!!
+	bool bPlayPotionSound = false;
+	bool bAttachEffect = true;
 	switch (kSpecialEffect.type)
 	{
 		case SE_HPUP_RED:
@@ -1031,11 +1028,11 @@ bool CPythonNetworkStream::RecvSpecialEffect()
 			effect = CInstanceBase::EFFECT_FR_SUCCESS;
 			bAttachEffect = false ;
 			break;
-		case SE_LEVELUP_ON_14_FOR_GERMANY:	//·¹º§¾÷ 14ÀÏ¶§ ( µ¶ÀÏÀü¿ë )
+		case SE_LEVELUP_ON_14_FOR_GERMANY:
 			effect = CInstanceBase::EFFECT_LEVELUP_ON_14_FOR_GERMANY;
 			bAttachEffect = false ;
 			break;
-		case SE_LEVELUP_UNDER_15_FOR_GERMANY: //·¹º§¾÷ 15ÀÏ¶§ ( µ¶ÀÏÀü¿ë )
+		case SE_LEVELUP_UNDER_15_FOR_GERMANY:
 			effect = CInstanceBase::EFFECT_LEVELUP_UNDER_15_FOR_GERMANY;
 			bAttachEffect = false ;
 			break;

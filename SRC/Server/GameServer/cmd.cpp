@@ -224,7 +224,6 @@ ACMD(do_effect);
 
 //gift notify quest command
 ACMD(do_gift);
-// ť
 #ifdef __ATTR_TRANSFER_SYSTEM__
 ACMD(do_attr_transfer);
 #endif
@@ -250,20 +249,15 @@ ACMD(do_ride);
 ACMD(do_get_item_id_list);
 ACMD(do_set_socket);
 
-// ڽ º
 ACMD(do_set_stat);
 
 //
 ACMD (do_can_dead);
 
 ACMD (do_full_set);
-//    ְ
 ACMD (do_item_full_set);
-//   ְ ɼ Ӽ
 ACMD (do_attr_full_set);
-//  ų
 ACMD (do_all_skill_master);
-//  . icon  Ŭ󿡼 Ȯ       .
 ACMD (do_use_item);
 ACMD (do_dragon_soul);
 ACMD (do_clear_affect);
@@ -430,7 +424,7 @@ ACMD(do_ishop);
 
 struct command_info cmd_info[] =
 {
-	{ "!RESERVED!", nullptr,			0,			POS_DEAD,	GM_IMPLEMENTOR	}, /* ݵ   ó̾ Ѵ. */
+	{ "!RESERVED!", nullptr,			0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "who",		do_who,			0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "war",		do_war,			0,			POS_DEAD,	GM_PLAYER	},
 	{ "warp",		do_warp,		0,			POS_DEAD,	GM_LOW_WIZARD	},
@@ -456,7 +450,7 @@ struct command_info cmd_info[] =
 	{ "item",		do_item,		0,			POS_DEAD,	GM_HIGH_WIZARD		},
 
 	{ "mob",		do_mob,			0,			POS_DEAD,	GM_HIGH_WIZARD	},
-	{ "mob_ld",		do_mob_ld,			0,			POS_DEAD,	GM_HIGH_WIZARD	}, /*  ġ   ȯ /mob_ld vnum x y dir */
+	{ "mob_ld",		do_mob_ld,			0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "ma",		do_mob_aggresive,	0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "mc",		do_mob_coward,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "mm",		do_mob_map,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
@@ -579,8 +573,6 @@ struct command_info cmd_info[] =
 	{ "delqf",		do_delqf,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "set_state",	do_set_state,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 
-//	{ "α׸",	do_detaillog,		0,			POS_DEAD,	GM_IMPLEMENTOR	},//@fixme105
-//	{ "ͺ",	do_monsterlog,		0,			POS_DEAD,	GM_IMPLEMENTOR	},//@fixme105
 
 	{ "detaillog",	do_detaillog,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "monsterlog",	do_monsterlog,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
@@ -701,7 +693,6 @@ struct command_info cmd_info[] =
 	{ "get_mob_count",		do_get_mob_count,		0,	POS_DEAD,	GM_IMPLEMENTOR	},
 
 	{ "dice",				do_dice,				0,	POS_DEAD,	GM_PLAYER		},
-//	{ "ֻ",				do_dice,				0,	POS_DEAD,	GM_PLAYER		},//@fixme105
 	{ "special_item",			do_special_item,	0,	POS_DEAD,	GM_IMPLEMENTOR		},
 
 	{ "click_mall",			do_click_mall,			0,	POS_DEAD,	GM_PLAYER		},
@@ -849,7 +840,6 @@ void double_dollar(const char *src, size_t src_len, char *dest, size_t dest_len)
 	const char * tmp = src;
 	size_t cur_len = 0;
 
-	// \0  ڸ Ȯ
 	dest_len -= 1;
 
 	while (src_len-- && *tmp)
@@ -899,7 +889,7 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 		return ;
 	}
 
-	char cmd[128 + 1];  // buffer overflow   ʵ Ϻη ̸ ª
+	char cmd[128 + 1];
 	char new_line[256 + 1];
 	const char * line;
 	int icmd;
@@ -916,7 +906,7 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 	{
 		if (cmd_info[icmd].command_pointer == do_cmd)
 		{
-			if (!strcmp(cmd_info[icmd].command, cmd)) // do_cmd  ɾ ľ   ִ.
+			if (!strcmp(cmd_info[icmd].command, cmd))
 				break;
 		}
 #ifdef ENABLE_BLOCK_CMD_SHORTCUT
@@ -968,7 +958,7 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 		return;
 	}
 
-	if (strncmp("phase", cmd_info[icmd].command, 5) != 0) //  ɾ ó
+	if (strncmp("phase", cmd_info[icmd].command, 5) != 0)
 		LOG_INFO("COMMAND: {}: {}", ecs::PlayerRuntime::GetName(character).data(), cmd_info[icmd].command);
 
 	((*cmd_info[icmd].command_pointer) (character, line, icmd, cmd_info[icmd].subcmd));

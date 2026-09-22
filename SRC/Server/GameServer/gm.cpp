@@ -54,7 +54,6 @@ uint8_t gm_new_get_level( const char * name, const char * host, const char* acco
 		return GM_PLAYER;
 
 	// GERMAN_GM_NOT_CHECK_HOST
-	// 독일 버전은 호스트 체크를 하지 않는다.
 #ifdef ENABLE_NEWSTUFF
 	if (!g_bGMHostCheck)
 #else

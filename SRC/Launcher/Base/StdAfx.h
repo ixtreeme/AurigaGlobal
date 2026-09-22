@@ -9,7 +9,7 @@
 #pragma warning(disable:4995)	// pragma deprecated
 
 #pragma warning(disable:4710)	// not inlined
-#pragma warning(disable:4786)	// character 255 넘어가는거 끄기
+#pragma warning(disable:4786)
 #pragma warning(disable:4244)	// type conversion possible lose of data
 
 #include <windows.h>

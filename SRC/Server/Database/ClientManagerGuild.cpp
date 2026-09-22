@@ -163,7 +163,7 @@ void CClientManager::GuildWar(CPeer* peer, TPacketGuildWar* p)
 
 		case GUILD_WAR_WAIT_START:
 			LOG_INFO("GuildWar: GUILD_WAR_WAIT_START type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
-		case GUILD_WAR_RESERVE:	// 길드전 예약
+		case GUILD_WAR_RESERVE:
 			if (p->bWar != GUILD_WAR_WAIT_START)
 				LOG_INFO("GuildWar: GUILD_WAR_RESERVE type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RemoveDeclare(p->dwGuildFrom, p->dwGuildTo);
@@ -175,21 +175,21 @@ void CClientManager::GuildWar(CPeer* peer, TPacketGuildWar* p)
 
 			break;
 
-		case GUILD_WAR_ON_WAR:		// 길드전을 시작 시킨다. (필드전은 바로 시작 됨)
+		case GUILD_WAR_ON_WAR:
 			LOG_INFO("GuildWar: GUILD_WAR_ON_WAR type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RemoveDeclare(p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().StartWar(p->bType, p->dwGuildFrom, p->dwGuildTo);
 			break;
 
-		case GUILD_WAR_OVER:		// 길드전 정상 종료
+		case GUILD_WAR_OVER:
 			LOG_INFO("GuildWar: GUILD_WAR_OVER type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RecvWarOver(p->dwGuildFrom, p->dwGuildTo, p->bType, p->lWarPrice);
 			break;
 
-		case GUILD_WAR_END:		// 길드전 비정상 종료
+		case GUILD_WAR_END:
 			LOG_INFO("GuildWar: GUILD_WAR_END type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RecvWarEnd(p->dwGuildFrom, p->dwGuildTo);
-			return; // NOTE: RecvWarEnd에서 패킷을 보내므로 따로 브로드캐스팅 하지 않는다.
+			return;
 
 		case GUILD_WAR_CANCEL :
 			LOG_INFO("GuildWar: GUILD_WAR_CANCEL type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);

@@ -142,7 +142,6 @@ namespace quest
 	ALUA(quest_coroutine_yield)
 	{
 		CQuestManager& q = CQuestManager::instance();
-		// other_pc_block 내부에서는 yield가 일어나서는 안된다. 절대로.
 		if (q.IsInOtherPCBlock())
 		{
 			sys_err("FATAL ERROR! Yield occur in other_pc_block.");
@@ -230,20 +229,6 @@ namespace quest
 			{ "getcurrentquestname",	quest_get_current_quest_name	},
 #endif
 			{ "no_send",				quest_no_send				},
-			// begin_other_pc_block(pid), end_other_pc_block 사이를 other_pc_block이라고 하자.
-			// other_pc_block에서는 current_pc가 pid로 변경된다.
-			//						끝나면 다시 원래의 current_pc로 돌아간다.
-			/*		이런 것을 위해 만듬.
-					for i, pid in next, pids, nil do
-						q.begin_other_pc_block(pid)
-						if pc.count_item(PASS_TICKET) < 1 then
-							table.insert(criminalNames, pc.get_name())
-							canPass = false
-						end
-						q.end_other_pc_block()
-					end
-			*/
-			// 주의 : other_pc_block 내부에서는 절대로 yield가 일어나서는 안된다.(ex. wait, select, input, ...)
 			{ "begin_other_pc_block",	quest_begin_other_pc_block	},
 			{ "end_other_pc_block",		quest_end_other_pc_block	},
 			{nullptr, nullptr}

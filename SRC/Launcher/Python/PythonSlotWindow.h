@@ -25,7 +25,7 @@ namespace UI
 		SLOT_STATE_LOCK		= (1 << 0),
 		SLOT_STATE_CANT_USE	= (1 << 1),
 		SLOT_STATE_DISABLE	= (1 << 2),
-		SLOT_STATE_ALWAYS_RENDER_COVER = (1 << 3),			// 현재 Cover 버튼은 슬롯에 무언가 들어와 있을 때에만 렌더링 하는데, 이 flag가 있으면 빈 슬롯이어도 커버 렌더링
+		SLOT_STATE_ALWAYS_RENDER_COVER = (1 << 3),
 #ifdef WJ_ENABLE_TRADABLE_ICON
 		SLOT_STATE_CANT_MOUSE_EVENT		= (1 << 4),
 		SLOT_STATE_UNUSABLE				= (1 << 5),
@@ -49,9 +49,9 @@ namespace UI
 			{
 				uint32_t	dwState;
 				uint32_t	dwSlotNumber;
-				uint32_t	dwCenterSlotNumber;		// NOTE : 사이즈가 큰 아이템의 경우 아이템의 실제 위치 번호
-				uint32_t	dwItemIndex;			// NOTE : 여기서 사용되는 Item이라는 단어는 좁은 개념의 것이 아닌,
-				bool	isItem;					//        "슬롯의 내용물"이라는 포괄적인 개념어. 더 좋은 것이 있을까? - [levites]
+				uint32_t	dwCenterSlotNumber;
+				uint32_t	dwItemIndex;
+				bool	isItem;
 
 				// CoolTime
 				float	fCoolTime;

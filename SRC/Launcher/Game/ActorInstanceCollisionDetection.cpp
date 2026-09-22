@@ -40,7 +40,7 @@ void CActorInstance::UpdatePointInstance(TCollisionPointInstance* pPointInstance
 {
 	if (!pPointInstance)
 	{
-		assert(!"CActorInstance::UpdatePointInstance - pPointInstance is NULL"); // 레퍼런스로 교체하시오
+		assert(!"CActorInstance::UpdatePointInstance - pPointInstance is NULL");
 		return;
 	}
 
@@ -291,17 +291,6 @@ bool CActorInstance::__SplashAttackProcess(CActorInstance& rVictim)
 			if (!__IsSameFlyTarget(&rVictim))
 				return false;
 
-		/*
-				if (IsFlyTargetObject())
-				{
-					CActorInstance * pActorInstance = (CActorInstance *)m_kFlyTarget.GetFlyTarget();
-
-					// NOTE : Target 이 PC 일때는 한명만 때릴 수 있다.
-					if (pActorInstance->IsPC())
-						if (&rVictim != pActorInstance)
-							return false;
-				}
-		*/
 	}
 
 	D3DXVECTOR3 v3HitPosition;
@@ -431,7 +420,6 @@ bool CActorInstance::__NormalAttackProcess(CActorInstance& rVictim)
 							//Tracef(" ----------- Next Hit : %d\n", itHitData->second.size());
 
 							int iCurrentHitCount = itHitData->second.size();
-							// NOTE : 보통 공격은 16명이 한계
 							if (NRaceData::MOTION_TYPE_COMBO == pad->iMotionType || NRaceData::MOTION_TYPE_NORMAL == pad->iMotionType)
 							{
 								if (iCurrentHitCount > MAX_HIT_COUNT)
@@ -452,7 +440,6 @@ bool CActorInstance::__NormalAttackProcess(CActorInstance& rVictim)
 
 						D3DXVECTOR3 v3HitPosition = (GetPosition() + rVictim.GetPosition()) * 0.5f;
 
-						// #0000780: [M2KR] 수룡 타격구 문제
 						extern bool IS_HUGE_RACE(unsigned int vnum);
 						if (IS_HUGE_RACE(rVictim.GetRace()))
 						{

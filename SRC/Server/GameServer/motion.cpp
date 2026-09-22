@@ -477,7 +477,6 @@ bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int i
 						continue;
 
 					case MOTION_EVENT_TYPE_SPECIAL_ATTACKING:
-						// 구 데이터는 하나 라고 가정
 						if (!rkTextFileLoader.SetChildNode("spheredata", 0))
 						{
 							LOG_ERROR("Motion: no sphere data {}", c_pszFileName);

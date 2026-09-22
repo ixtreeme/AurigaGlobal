@@ -46,7 +46,7 @@ void CPartyManager::DeleteAllParty()
 	}
 }
 
-bool CPartyManager::SetParty(entt::entity chEntity)	// PC�� ����ؾ� �Ѵ�!!
+bool CPartyManager::SetParty(entt::entity chEntity)
 {
 	TPartyMap::iterator it = m_map_pkParty.find((ecs::PlayerRuntime::GetPlayerID(chEntity)));
 
@@ -388,7 +388,6 @@ namespace PartySystem
 
 		LOG_TRACE("Party::Destroy");
 
-		// PC�� ���� ��Ƽ�� ��Ƽ�Ŵ����� �ʿ��� PID�� �����ؾ� �Ѵ�.
 		if (state->isPCParty)
 		{
 			for (auto& row : state->members)
@@ -441,7 +440,6 @@ namespace PartySystem
 				}
 				else
 				{
-					// NPC�� ��� ���� �ð� �� ���� ���� �ƴ� �� ������� �ϴ� �̺�Ʈ�� ���۽�Ų��.
 					CombatSystem::SetLastAttacked(member, dwTime);
 					ecs::PlayerRuntime::StartDestroyWhenIdleEvent(member);
 				}
@@ -601,7 +599,7 @@ namespace PartySystem
 			TPacketPartyAdd p;
 			p.dwLeaderPID = GetLeaderPID(party);
 			p.dwPID = dwPID;
-			p.bState = PARTY_ROLE_NORMAL; // #0000790: [M2EU] CZ ũ���� ����: �ʱ�ȭ �߿�!
+			p.bState = PARTY_ROLE_NORMAL;
 			db_clientdesc->DBPacket(HEADER_GD_PARTY_ADD, 0, &p, sizeof(TPacketPartyAdd));
 		}
 	}
@@ -651,11 +649,9 @@ namespace PartySystem
 		if (state->isPCParty)
 			CPartyManager::instance().SetPartyMember(dwPID, entt::null);
 
-		// ������ ������ ��Ƽ�� �ػ�Ǿ�� �Ѵ�.
 		if (bRole == PARTY_ROLE_LEADER)
 			CPartyManager::instance().DeleteParty(party);
 
-		// �� �Ʒ��� �ڵ带 �߰����� �� ��!!! �� DeleteParty �ϸ� the party entity �縦 �Ѵ�.
 	}
 
 	void Quit(entt::entity party, uint32_t dwPID)
@@ -702,7 +698,6 @@ namespace PartySystem
 			return;
 		}
 
-		// �÷��̾� ��Ƽ�� ��� ������Ʈ �̺�Ʈ ����
 		if (state->isPCParty && !state->updateEvent)
 		{
 			party_update_info* info = AllocEventInfo<party_update_info>();
@@ -802,7 +797,6 @@ namespace PartySystem
 		if (ecs::PlayerRuntime::IsPC(character))
 		{
 			SendPartyUnlinkOneToAll(party, character);
-			//SendPartyUnlinkAllToOne(pkChr); // ����� ���̹Ƿ� ���� Unlink ��Ŷ�� ���� �ʿ� ����.
 
 			if (it->second.bRole == PARTY_ROLE_LEADER)
 			{
@@ -810,7 +804,6 @@ namespace PartySystem
 
 				if (ecs::SocialSystem::GetDungeon(it->second.member) != entt::null)
 				{
-					// TODO: ������ ������ �������� ������
 					FExitDungeon f;
 					ForEachNearMember(party, f);
 				}
@@ -1083,9 +1076,8 @@ namespace PartySystem
 				}
 				break;
 
-			case PM_ATTACKED_BY:	// ���� �޾���, �������� ������ ��û
+			case PM_ATTACKED_BY:
 				{
-					// ������ ���� ��
 					const entt::entity victimEntity = CombatSystem::GetVictim(character);
 
 					if (victimEntity == entt::null)
@@ -1237,7 +1229,6 @@ namespace PartySystem
 		if (!state)
 			return;
 
-		// XXX DELETEME Ŭ���̾�Ʈ �Ϸ�ɶ�����
 		{
 			return;
 		}
@@ -1541,7 +1532,6 @@ namespace PartySystem
 
 		bool bLongTimeExpBonusChanged = false;
 
-		// ��Ƽ �Ἲ �� ����� �ð��� ������ ����ġ ���ʽ��� �޴´�.
 		if (!state->longTimeExpBonus && (get_dword_time() - state->startTime > PARTY_ENOUGH_MINUTE_FOR_EXP_BONUS * 60 * 1000 / 1))
 		{
 			bLongTimeExpBonusChanged = true;
@@ -1588,9 +1578,8 @@ namespace PartySystem
 			if (!state->canUsePartyHeal && state->leadership >= 18)
 				state->healTime = get_dword_time();
 
-			state->canUsePartyHeal = state->leadership >= 18; // ��ַ� 18 �̻��� ���� ����� �� ����.
+			state->canUsePartyHeal = state->leadership >= 18;
 
-			// ��ַ� 40�̻��� ��Ƽ �� ��Ÿ���� ����.
 			uint32_t PartyHealCoolTime = (state->leadership >= 40) ? PARTY_HEAL_COOLTIME_SHORT * 60 * 1000 : PARTY_HEAL_COOLTIME_LONG * 60 * 1000;
 
 			if (state->canUsePartyHeal)
@@ -1600,7 +1589,7 @@ namespace PartySystem
 					state->healReady = true;
 
 					// send heal ready
-					if (0) // XXX  DELETEME Ŭ���̾�Ʈ �Ϸ�ɶ�����
+					if (0)
 						if (lEntity != entt::null)
 							ecs::ChatSystem::Send(lEntity, CHAT_TYPE_COMMAND, "PartyHealReady");
 				}
@@ -1915,7 +1904,6 @@ namespace PartySystem
 		if (leaderEntity != entt::null && (ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP) || ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP_MALL)
 			|| ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP_GIFT) || ItemSystem::IsEquipUniqueGroup(leaderEntity, 10010)))
 		{
-			// �߱��� ���� ������ Ȯ���ؾ��Ѵ�.
 			iBonusPartyExpFromItem = 30;
 		}
 
@@ -1989,7 +1977,6 @@ namespace PartySystem
 		if (!state)
 			return false;
 
-		// ��Ƽ���� mapIndex�� �����ȿ� �ִ��� ������� �˻�
 		for (auto& row : state->members)
 		{
 			const entt::entity member = row.second.member;

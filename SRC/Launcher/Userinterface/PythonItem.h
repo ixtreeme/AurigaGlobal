@@ -1,8 +1,5 @@
 #pragma once
 
-// Note : 화면상에 떨어진 Item의 Update와 Rendering을 책임지는 한편
-//        각 아이템의 데이타와 Icon Image Instance의 매니져 역할까지 주관
-//        조금 난잡해진거 같기도 하다 - 2003. 01. 13. [levites]
 
 #include "InstanceBase.h"
 #include "../Granny/ThingInstance.h"

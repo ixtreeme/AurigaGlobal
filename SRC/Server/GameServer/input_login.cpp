@@ -99,8 +99,8 @@ static bool FN_is_battle_zone(entt::entity ch)
 {
 	switch (ecs::PlayerRuntime::GetMapIndex(ch))
 	{
-	case 1:         // � 1
-	case 2:         // � 2
+	case 1:
+	case 2:
 	case 21:        // o 1
 	case 23:        // o 2
 	case 41:        //  1
@@ -387,7 +387,6 @@ bool RaceToJob(unsigned race, unsigned* ret_job)
 	return true;
 }
 
-// � ?
 bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_t shape, uint8_t bEmpire)
 {
 	if (race >= MAIN_RACE_MAX_NUM)
@@ -411,7 +410,7 @@ bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_
 	strlcpy(table->name, name, sizeof(table->name));
 
 	table->level = 1;
-	table->job = race; //   ?�
+	table->job = race;
 	table->voice = 0;
 	table->part_base = shape;
 
@@ -636,7 +635,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		MountSystem::EnterHorse(d->GetEntity());
 	}
 
-	// �?? ?
 	ecs::PlayerRuntime::ResetPlayTime(ch, 0);
 
 	// ?  ?T ?
@@ -804,7 +802,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		// ox ?T
 		if (COXEventManager::instance().Enter(d->GetEntity()) == false)
 		{
-			// ox   ?  . �?
 			if (ecs::PlayerRuntime::GetGMLevel(ch) == GM_PLAYER)
 				ecs::MovementSystem::WarpSet(ch, EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(ch)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(ch)));
 		}

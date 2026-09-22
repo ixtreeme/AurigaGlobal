@@ -2165,13 +2165,11 @@ PyObject * wndMarkBox_SetImageFilename(PyObject * poSelf, PyObject * poArgs)
 
 PyObject * wndMarkBox_SetImage(PyObject * poSelf, PyObject * poArgs)
 {
-	// 아무것도 하지 않음
 	return Py_BuildNone();
 }
 
 PyObject * wndMarkBox_Load(PyObject * poSelf, PyObject * poArgs)
 {
-	// 아무것도 하지 않음
 	return Py_BuildNone();
 }
 

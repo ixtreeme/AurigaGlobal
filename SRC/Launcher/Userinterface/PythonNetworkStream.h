@@ -191,7 +191,6 @@ class CPythonNetworkStream : public CNetworkStream, public CSingleton<CPythonNet
 		bool SendQuickSlotDelPacket(uint8_t wpos);
 		bool SendQuickSlotMovePacket(uint8_t wpos, uint8_t change_pos);
 
-		// PointReset 개 임시
 		bool SendPointResetPacket();
 
 		// Shop
@@ -393,7 +392,6 @@ class CPythonNetworkStream : public CNetworkStream, public CSingleton<CPythonNet
 		// CRC Report
 		bool __SendCRCReportPacket();
 
-		// 용홍석 강화
 		bool SendDragonSoulRefinePacket(uint8_t bRefineType, TItemPos* pos);
 #ifdef ENABLE_DS_REFINE_ALL
 		bool SendDragonSoulRefineAllPacket(uint8_t subheader, uint8_t type, uint8_t grade);
@@ -433,7 +431,6 @@ class CPythonNetworkStream : public CNetworkStream, public CSingleton<CPythonNet
 #endif
 
 	//////////////////////////////////////////////////////////////////////////
-	// Phase 관련
 	//////////////////////////////////////////////////////////////////////////
 	public:
 		void SetOffLinePhase();
@@ -477,7 +474,7 @@ class CPythonNetworkStream : public CNetworkStream, public CSingleton<CPythonNet
 		bool SendWhisperAdminPacket(const char* c_szText, const char* c_szLang, int color);
 #endif
 	protected:
-		bool OnProcess();	// State들을 실제로 실행한다.
+		bool OnProcess();
 		void OffLinePhase();
 		void HandShakePhase();
 		void LoginPhase();
@@ -708,10 +705,8 @@ class CPythonNetworkStream : public CNetworkStream, public CSingleton<CPythonNet
 		// Use Potion
 		bool RecvSpecialEffect();
 
-		// 서버에서 지정한 이팩트 발동 패킷.
 		bool RecvSpecificEffect();
 
-		// 용혼석 관련
 		bool RecvDragonSoulRefine();
 
 		bool RecvWikiPacket();
@@ -746,10 +741,8 @@ class CPythonNetworkStream : public CNetworkStream, public CSingleton<CPythonNet
 		bool RecvUnk213();
 
 	protected:
-		// 이모티콘
 		bool ParseEmoticon(const char * pChatMsg, uint32_t * pdwEmoticon);
 
-		// 파이썬으로 보내는 콜들
 		void OnConnectFailure();
 		void OnScriptEventStart(int iSkin, int iIndex);
 

@@ -42,10 +42,8 @@ void CMapOutdoor::RenderTerrain()
 
 	__RenderTerrain_RecurseRenderQuadTree(m_pRootNode);
 
-	// °Å¸®¼ø Á¤·Ä
 	std::sort(m_PatchVector.begin(),m_PatchVector.end());
 
-	// ±×¸®±â À§ÇÑ º¤ÅÍ ¼¼ÆÃ
 	if (CTerrainPatch::SOFTWARE_TRANSFORM_PATCH_ENABLE)
 		__RenderTerrain_RenderSoftwareTransformPatch();
 	else
@@ -133,13 +131,11 @@ void CMapOutdoor::ApplyLight(uint32_t dwVersion, const D3DLIGHT9& c_rkLight)
 	STATEMANAGER.SetLight(0, &c_rkLight);
 }
 
-// 2004. 2. 17. myevan. ¸ðµç ºÎºÐÀ» º¸ÀÌ°Ô ÃÊ±âÈ­ ÇÑ´Ù
 void CMapOutdoor::InitializeVisibleParts()
 {
 	m_dwVisiblePartFlags=0xffffffff;
 }
 
-// 2004. 2. 17. myevan. Æ¯Á¤ ºÎºÐÀ» º¸ÀÌ°Ô ÇÏ°Å³ª °¨Ãß´Â ÇÔ¼ö
 void CMapOutdoor::SetVisiblePart(int ePart, bool isVisible)
 {
 	uint32_t dwMask=(1<<ePart);
@@ -154,7 +150,6 @@ void CMapOutdoor::SetVisiblePart(int ePart, bool isVisible)
 	}
 }
 
-// 2004. 2. 17. myevan. Æ¯Á¤ ºÎºÐÀÌ º¸ÀÌ´ÂÁö ¾Ë¾Æ³»´Â ÇÔ¼ö
 bool CMapOutdoor::IsVisiblePart(int ePart)
 {
 	uint32_t dwMask=(1<<ePart);
@@ -164,7 +159,6 @@ bool CMapOutdoor::IsVisiblePart(int ePart)
 	return false;
 }
 
-// Splat °³¼ö Á¦ÇÑ
 void CMapOutdoor::SetSplatLimit(int iSplatNum)
 {
 	m_iSplatLimit = iSplatNum;
@@ -355,7 +349,6 @@ struct CMapOutdoor_LessThingInstancePtrRenderOrder
 {
 	bool operator() (CGraphicThingInstance* pkLeft, CGraphicThingInstance* pkRight)
 	{
-		//TODO : CameraÀ§Ä¡±â¹ÝÀ¸·Î ¼ÒÆÃ
 		CCamera* pCurrentCamera = CCameraManager::Instance().GetCurrentCamera();
 		const D3DXVECTOR3& c_rv3CameraPos = pCurrentCamera->GetEye();
 		const D3DXVECTOR3& c_v3LeftPos = pkLeft->GetPosition();
@@ -392,7 +385,6 @@ void CMapOutdoor::RenderArea(bool bRenderAmbience)
 	m_dwRenderedGraphicThingInstanceNum = 0;
 	m_dwRenderedCRCWithNumberVector.clear();
 
-	// NOTE - 20041201.levites.´øÁ¯ ±×¸²ÀÚ Ãß°¡
 	for (int j = 0; j < AROUND_AREA_NUM; ++j)
 	{
 		CArea * pArea;
@@ -524,11 +516,10 @@ void CMapOutdoor::RenderBlendArea()
 {
 	if (!IsVisiblePart(PART_OBJECT))
 		return;
-	// MIP-szűrés és anizotropikus szűrés beállítása a brush textúrákhoz
-	STATEMANAGER.SaveSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);         // Trilineáris szűrés (MIP map)
-	STATEMANAGER.SaveSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);    // Anizotropikus szűrés élesítéshez
-	STATEMANAGER.SaveSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);         // Normál nagyítási szűrés
-	STATEMANAGER.SaveSamplerState(0, D3DSAMP_MAXANISOTROPY, 8);                  // Max. anizotropia (GPU-tól függően 4, 8, 16 lehet)
+	STATEMANAGER.SaveSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+	STATEMANAGER.SaveSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);
+	STATEMANAGER.SaveSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+	STATEMANAGER.SaveSamplerState(0, D3DSAMP_MAXANISOTROPY, 8);
 	STATEMANAGER.SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 	STATEMANAGER.SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 

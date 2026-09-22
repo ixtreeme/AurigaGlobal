@@ -84,14 +84,12 @@ void CMapOutdoor::RenderWater()
 	// RenderState
 	//////////////////////////////////////////////////////////////////////////
 
-	// 물 위 아래 애니시키기...
 	static float s_fWaterHeightCurrent = 0;
 	static float s_fWaterHeightBegin = 0;
 	static float s_fWaterHeightEnd = 0;
 	static uint32_t s_dwLastHeightChangeTime = CTimer::Instance().GetCurrentMillisecond();
 	static uint32_t s_dwBlendtime = 300;
 
-	// 1.5초 마다 변경
 	if ((CTimer::Instance().GetCurrentMillisecond() - s_dwLastHeightChangeTime) > s_dwBlendtime)
 	{
 		s_dwBlendtime = random_range(1000, 3000);
@@ -135,7 +133,6 @@ void CMapOutdoor::RenderWater()
 			DrawWater(i->second);
 	}
 
-	// 렌더링 한 후에는 물 z 위치를 복구
 	m_matWorldForCommonUse._43 = 0.0f;
 
 	//////////////////////////////////////////////////////////////////////////

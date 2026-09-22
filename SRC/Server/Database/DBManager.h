@@ -2,9 +2,6 @@
 #ifndef __INC_METIN2_DB_DBMANAGER_H__
 #define __INC_METIN2_DB_DBMANAGER_H__
 
-// 디비 커넥션 클래스의 목적은...  디비에 접속해서 쿼리보내고 결과 받아오는
-// 모든 일들을 처리한다.
-//                             코드 by 꼬붕 후로그래머 아노아~ = _=)b
 #include <mysql/mysql.h>
 
 #include <SQL/AsyncSQL.h>

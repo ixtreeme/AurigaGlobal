@@ -28,7 +28,6 @@ static bool __TryReplace(const char* name, LPDIRECT3DTEXTURE9 newTex)
 	return true;
 }
 
-// „Loose” keresés: több névváltozattal próbálkozik
 bool ReplaceTextureGlobalByFilenameLoose(const char* base, LPDIRECT3DTEXTURE9 newTex)
 {
 	//TraceError("[LB] ReplaceLoose enter base='%s' tex=%p", base ? base : "(null)", newTex);
@@ -36,10 +35,8 @@ bool ReplaceTextureGlobalByFilenameLoose(const char* base, LPDIRECT3DTEXTURE9 ne
 
 	std::vector<std::string> cand;
 
-	// els?dlegesen a paraméter
 	cand.emplace_back(base);
 
-	// ha relatív, akkor próbáljuk a tipikus gyökerekkel
 	cand.emplace_back("ymir work/razor93/" + std::string(base));
 	cand.emplace_back("ymir work\\razor93\\" + std::string(base));
 	cand.emplace_back("d:/ymir work/razor93/" + std::string(base));
@@ -294,7 +291,7 @@ void base64_decode(const char * str,char * resultStr)
 	{
 		i=0;
 		strcpy(szDest, "");
-		while(nCount<length && i<4)	// 4°³ÀÇ ¹ÙÀÌÆ®¸¦ ¾ò´Â´Ù.
+		while(nCount<length && i<4)
 		{
 			r = str[nCount++];
 			result = __base64_get(r);
@@ -302,13 +299,13 @@ void base64_decode(const char * str,char * resultStr)
 			{
 				if(result!=-1)
 					szDest[i++] = result;
-				else szDest[i++] = '@';	// It's end  (64¹øÀº µðÄÚµù½Ã »ç¿ëµÇÁö ¾Ê±â ¶§¹®)
+				else szDest[i++] = '@';
 			}
 		}
 
-		if(i==4)	// 4°³ÀÇ ¼Ò½º¸¦ ¸ðµÎ ¾ò¾î³Â´Ù. µðÄÚµå ½ÃÀÛ
+		if(i==4)
 		{
-			if( nCount+3 >= length )	// µ¥ÀÌÅÍÀÇ ³¡¿¡ µµ´ÞÇß´Ù.
+			if( nCount+3 >= length )
 			{
 				if( szDest[1] == '@' )
 				{

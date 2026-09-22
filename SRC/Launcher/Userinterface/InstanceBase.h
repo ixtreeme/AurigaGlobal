@@ -132,8 +132,8 @@ class CInstanceBase
 			AFFECT_SLOW,
 			AFFECT_STUN,
 
-			AFFECT_DUNGEON_READY,			// ´øÀü¿¡¼­ ÁØºñ »óÅÂ
-			AFFECT_SHOW_ALWAYS,				// AFFECT_DUNGEON_UNIQUE ¿¡¼­ º¯°æ(Å¬¶óÀÌ¾ðÆ®¿¡¼­ ÄÃ¸µµÇÁö¾ÊÀ½)
+			AFFECT_DUNGEON_READY,
+			AFFECT_SHOW_ALWAYS,
 
 			AFFECT_BUILDING_CONSTRUCTION_SMALL,
 			AFFECT_BUILDING_CONSTRUCTION_LARGE,
@@ -144,34 +144,34 @@ class CInstanceBase
 
 			AFFECT_FISH_MIND,				// 13
 
-			AFFECT_JEONGWI,					// 14 Àü±ÍÈ¥
-			AFFECT_GEOMGYEONG,				// 15 °Ë°æ
-			AFFECT_CHEONGEUN,				// 16 Ãµ±ÙÃß
-			AFFECT_GYEONGGONG,				// 17 °æ°ø¼ú
-			AFFECT_EUNHYEONG,				// 18 ÀºÇü¹ý
-			AFFECT_GWIGEOM,					// 19 ±Í°Ë
-			AFFECT_GONGPO,					// 20 °øÆ÷
-			AFFECT_JUMAGAP,					// 21 ÁÖ¸¶°©
-			AFFECT_HOSIN,					// 22 È£½Å
-			AFFECT_BOHO,					// 23 º¸È£
-			AFFECT_KWAESOK,					// 24 Äè¼Ó
-		    AFFECT_HEUKSIN,					// 25 Èæ½Å¼öÈ£
-			AFFECT_MUYEONG,					// 26 ¹«¿µÁø
-			AFFECT_REVIVE_INVISIBILITY,		// 27 ºÎÈ° ¹«Àû
-			AFFECT_FIRE,					// 28 Áö¼Ó ºÒ
-			AFFECT_GICHEON,					// 29 ±âÃµ ´ë°ø
-			AFFECT_JEUNGRYEOK,				// 30 Áõ·Â¼ú
-			AFFECT_DASH,					// 31 ´ë½¬
-			AFFECT_PABEOP,					// 32 ÆÄ¹ý¼ú
-			AFFECT_FALLEN_CHEONGEUN,		// 33 ´Ù¿î ±×·¹ÀÌµå Ãµ±ÙÃß
-			AFFECT_POLYMORPH,				// 34 Æú¸®¸ðÇÁ
+			AFFECT_JEONGWI,
+			AFFECT_GEOMGYEONG,
+			AFFECT_CHEONGEUN,
+			AFFECT_GYEONGGONG,
+			AFFECT_EUNHYEONG,
+			AFFECT_GWIGEOM,
+			AFFECT_GONGPO,
+			AFFECT_JUMAGAP,
+			AFFECT_HOSIN,
+			AFFECT_BOHO,
+			AFFECT_KWAESOK,
+		    AFFECT_HEUKSIN,
+			AFFECT_MUYEONG,
+			AFFECT_REVIVE_INVISIBILITY,
+			AFFECT_FIRE,
+			AFFECT_GICHEON,
+			AFFECT_JEUNGRYEOK,
+			AFFECT_DASH,
+			AFFECT_PABEOP,
+			AFFECT_FALLEN_CHEONGEUN,
+			AFFECT_POLYMORPH,
 			AFFECT_WAR_FLAG1,				// 35
 			AFFECT_WAR_FLAG2,				// 36
 			AFFECT_WAR_FLAG3,				// 37
 			AFFECT_CHINA_FIREWORK,			// 38
 			AFFECT_PREMIUM_SILVER,
 			AFFECT_PREMIUM_GOLD,
-			AFFECT_RAMADAN_RING,			// 41 ÃÊ½Â´Þ ¹ÝÁö Âø¿ë Affect
+			AFFECT_RAMADAN_RING,
 
 #ifdef ENABLE_MELEY_LAIR_DUNGEON
 			AFFECT_STATUE1 = 46,
@@ -452,7 +452,7 @@ class CInstanceBase
 		//	TITLE_NONE				= 4,
 		};
 
-		enum	//¾Æ·¡ ¹øÈ£°¡ ¹Ù²î¸é registerEffect ÂÊµµ ¹Ù²Ù¾î Áà¾ß ÇÑ´Ù.
+		enum
 		{
 			EFFECT_REFINED_NONE,
 			EFFECT_SWORD_REFINED7,
@@ -473,8 +473,8 @@ class CInstanceBase
 			EFFECT_BODYARMOR_REFINED7,
 			EFFECT_BODYARMOR_REFINED8,
 			EFFECT_BODYARMOR_REFINED9,
-			EFFECT_BODYARMOR_SPECIAL,	// °©¿Ê 4-2-1
-			EFFECT_BODYARMOR_SPECIAL2,	// °©¿Ê 4-2-2
+			EFFECT_BODYARMOR_SPECIAL,
+			EFFECT_BODYARMOR_SPECIAL2,
 //#ifdef ENABLE_LVL115_ARMOR_EFFECT
 			EFFECT_BODYARMOR_SPECIAL3,	// 5-1
 //#endif
@@ -867,7 +867,7 @@ class CInstanceBase
 			EFFECT_WEAPON_COSTUME19_BOW,
 			EFFECT_WEAPON_COSTUME19_BELL,
 			EFFECT_WEAPON_COSTUME19_FAN,
-			EFFECT_WEAPON_COSTUME19_FAN_LEFT, /// itt a vége
+			EFFECT_WEAPON_COSTUME19_FAN_LEFT,
 			EFFECT_REFINED_NUM = EFFECT_WEAPON_COSTUME19_FAN_LEFT + 100,
 		};
 
@@ -879,7 +879,6 @@ class CInstanceBase
 			DAMAGE_BLOCK	= (1<<3),
 			DAMAGE_PENETRATE= (1<<4),
 			DAMAGE_CRITICAL = (1<<5),
-			// ¹Ý-_-»ç
 		};
 
 		enum
@@ -933,17 +932,17 @@ class CInstanceBase
 			EFFECT_SUCCESS,
 			EFFECT_FAIL,
 			EFFECT_FR_SUCCESS,
-			EFFECT_LEVELUP_ON_14_FOR_GERMANY,	//·¹º§¾÷ 14ÀÏ¶§ ( µ¶ÀÏÀü¿ë )
-			EFFECT_LEVELUP_UNDER_15_FOR_GERMANY,//·¹º§¾÷ 15ÀÏ¶§ ( µ¶ÀÏÀü¿ë )
+			EFFECT_LEVELUP_ON_14_FOR_GERMANY,
+			EFFECT_LEVELUP_UNDER_15_FOR_GERMANY,
 			EFFECT_PERCENT_DAMAGE1,
 			EFFECT_PERCENT_DAMAGE2,
 			EFFECT_PERCENT_DAMAGE3,
 			EFFECT_AUTO_HPUP,
 			EFFECT_AUTO_SPUP,
-			EFFECT_RAMADAN_RING_EQUIP,			// ÃÊ½Â´Þ ¹ÝÁö Âø¿ë ¼ø°£¿¡ ¹ßµ¿ÇÏ´Â ÀÌÆåÆ®
-			EFFECT_HALLOWEEN_CANDY_EQUIP,		// ÇÒ·ÎÀ© »çÅÁ Âø¿ë ¼ø°£¿¡ ¹ßµ¿ÇÏ´Â ÀÌÆåÆ®
-			EFFECT_HAPPINESS_RING_EQUIP,				// Çàº¹ÀÇ ¹ÝÁö Âø¿ë ¼ø°£¿¡ ¹ßµ¿ÇÏ´Â ÀÌÆåÆ®
-			EFFECT_LOVE_PENDANT_EQUIP,				// Çàº¹ÀÇ ¹ÝÁö Âø¿ë ¼ø°£¿¡ ¹ßµ¿ÇÏ´Â ÀÌÆåÆ®
+			EFFECT_RAMADAN_RING_EQUIP,
+			EFFECT_HALLOWEEN_CANDY_EQUIP,
+			EFFECT_HAPPINESS_RING_EQUIP,
+			EFFECT_LOVE_PENDANT_EQUIP,
 			#ifdef VERSION_162_ENABLED
 			EFFECT_HEALER,
 #endif
@@ -1053,7 +1052,6 @@ private:
 
 		
 
-		// ½ºÅ©¸³Æ®¿ë Å×½ºÆ® ÇÔ¼ö. ³ªÁß¿¡ ¾ø¿¡ÀÚ
 		void SCRIPT_SetAffect(UINT eAffect, bool isVisible);
 
 		float CalculateDistanceSq3d(const TPixelPosition& c_rkPPosDst);
@@ -1258,7 +1256,7 @@ private:
 		bool					CanAttackHorseLevel();
 
 #ifdef __MOVIE_MODE__
-		bool					IsMovieMode(); // ¿î¿µÀÚ¿ë ¿ÏÀüÈ÷ ¾Èº¸ÀÌ´Â°Å
+		bool					IsMovieMode();
 #endif
 		bool					NEW_CanMoveToDestPixelPosition(const TPixelPosition& c_rkPPosDst);
 
@@ -1404,8 +1402,6 @@ private:
 		//void					SetParts(const WORD * c_pParts);
 		void					Refresh(uint32_t dwMotIndex, bool isLoop);
 
-		//void					AttachEffectByID(uint32_t dwParentPartIndex, const char * c_pszBoneName, uint32_t dwEffectID, int dwLife = CActorInstance::EFFECT_LIFE_INFINITE ); // ¼ö¸íÀº ms´ÜÀ§ÀÔ´Ï´Ù.
-		//void					AttachEffectByName(uint32_t dwParentPartIndex, const char * c_pszBoneName, const char * c_pszEffectName, int dwLife = CActorInstance::EFFECT_LIFE_INFINITE ); // ¼ö¸íÀº ms´ÜÀ§ÀÔ´Ï´Ù.
 
 		float					GetDistance(CInstanceBase * pkTargetInst);
 		float					GetDistance(const TPixelPosition & c_rPixelPosition);
@@ -1419,7 +1415,6 @@ private:
 		bool __Background_IsWaterPixelPosition(const TPixelPosition& c_rkPPos);
 		bool __Background_GetWaterHeight(const TPixelPosition& c_rkPPos, float* pfHeight);
 
-		// 2004.07.25.myevan.ÀÌÆåÆ® ¾È³ª¿À´Â ¹®Á¦
 		/////////////////////////////////////////////////////////////
 		void __ClearAffectFlagContainer();
 		void __ClearAffects();
@@ -1476,7 +1471,6 @@ private:
 		void __DisableChangingTCPState();
 		bool __IsEnableTCPProcess(UINT eCurFunc);
 
-		// 2004.07.17.levites.isShow¸¦ ViewFrustumCheck·Î º¯°æ
 		bool __CanRender();
 		bool __IsInViewFrustum();
 

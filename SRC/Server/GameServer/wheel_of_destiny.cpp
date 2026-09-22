@@ -17,21 +17,21 @@ static constexpr auto WheelItemMax = 16;
 static constexpr std::tuple<uint32_t, std::uint8_t, std::uint8_t> m_Data[WheelItemMax] =
 {
 	{ 39066, 10, 0 },	 //Gaya
-	{ 39067, 10, 25 },  //Utalvany (100 S�)
-	{ 70027, 1, 0 },	 //Misztikus �ld�stekercs
-	{ 89007, 1, 0 }, //1k s�
+	{ 39067, 10, 25 },
+	{ 70027, 1, 0 },
+	{ 89007, 1, 0 },
 	{ 99999, 200, 0 }, //Run-pont
-	{ 70027, 3, 0 },	 //Misztikus �ld�stekercs
-	{ 70610, 3, 0 },	 //Battle Pass utalv�ny
-	{ 72100, 10, 0 },	 //Arany gy�m�lcs
-	{ 611586, 1, 25 },	 //h�tas // 10 p�rget�s ut�n
-	{ 30617, 1, 0 }, 	 //Legend�s B�nuszol�
-	{ 30618, 1, 0 },	 //Legend�s Megv�ltoztat�
-	{ 80008, 5, 0 },	 //Aranyr�g (400 milli�
-	{ 89006, 1, 0 },  //500 s� utalv�ny
-	{ 71107, 5, 0 },	 //�let Gy�m�lcse
-	{ 71129, 5, 0 },	 //S�rk�ny karom
-	{ 71123, 5, 0 },	 //S�rk�ny pikkely
+	{ 70027, 3, 0 },
+	{ 70610, 3, 0 },
+	{ 72100, 10, 0 },
+	{ 611586, 1, 25 },
+	{ 30617, 1, 0 },
+	{ 30618, 1, 0 },
+	{ 80008, 5, 0 },
+	{ 89006, 1, 0 },
+	{ 71107, 5, 0 },
+	{ 71129, 5, 0 },
+	{ 71123, 5, 0 },
 
 };
 

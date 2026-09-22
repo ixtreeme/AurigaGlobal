@@ -27,7 +27,7 @@
 
 typedef struct SOutdoorMapCoordinate
 {
-	short m_sTerrainCoordX;		// Terrain 좌표
+	short m_sTerrainCoordX;
 	short m_sTerrainCoordY;
 } TOutdoorMapCoordinate;
 
@@ -163,7 +163,7 @@ class CMapOutdoor : public CMapBase
 		bool			isTerrainLoaded(WORD wX, WORD wY);
 		bool			isAreaLoaded(WORD wX, WORD wY);
 
-		void			AssignTerrainPtr();				// 현재 좌표에서 주위(ex. 3x3)에 있는 것들의 포인터를 연결한다. (업데이트 시 불려짐)
+		void			AssignTerrainPtr();
 
 		void			SaveAlphaFogOperation();
 		void			RestoreAlphaFogOperation();
@@ -171,7 +171,6 @@ class CMapOutdoor : public CMapBase
 		//////////////////////////////////////////////////////////////////////////
 		// New
 		//////////////////////////////////////////////////////////////////////////
-		// 여러가지 맵들을 얻는다.
 		void			GetHeightMap(const uint8_t& c_rucTerrainNum, WORD ** pwHeightMap);
 		void			GetNormalMap(const uint8_t& c_rucTerrainNum, char ** pucNormalMap);
 
@@ -183,20 +182,18 @@ class CMapOutdoor : public CMapBase
 	//////////////////////////////////////////////////////////////////////////
 	// Terrain
 	//////////////////////////////////////////////////////////////////////////
-		// 데이터
 		CTerrain *					m_pTerrain[AROUND_AREA_NUM];	// Terrain
-		//CTerrainPatchProxy *		m_pTerrainPatchProxyList;			// CTerrain을 랜더링 할때 실제로 랜더링하는 폴리곤 패치들... Seamless Map 을 위해 CTerrain으로부터 독립...
 		std::unique_ptr<CTerrainPatchProxy[]>m_pTerrainPatchProxyList;
 		
-		int32_t						m_lViewRadius;				// 시야 거리.. 셀단위임..
-		float						m_fHeightScale;				// 높이 스케일... 1.0일때 0~655.35미터까지 표현 가능.
+		int32_t						m_lViewRadius;
+		float						m_fHeightScale;
 
-		short						m_sTerrainCountX, m_sTerrainCountY;		// seamless map 안에 들어가는 Terrain개수
+		short						m_sTerrainCountX, m_sTerrainCountY;
 
-		TOutdoorMapCoordinate		m_CurCoordinate;		// 현재의 좌표
+		TOutdoorMapCoordinate		m_CurCoordinate;
 
 		int32_t						m_lCurCoordStartX, m_lCurCoordStartY;
-		TOutdoorMapCoordinate		m_PrevCoordinate;		// 현재의 좌표
+		TOutdoorMapCoordinate		m_PrevCoordinate;
 		TOutdoorMapCoordinateMap	m_EntryPointMap;
 
 		WORD						m_wPatchCount;
@@ -323,7 +320,7 @@ class CMapOutdoor : public CMapBase
 		//////////////////////////////////////////////////////////////////////////
 		// New
 		//////////////////////////////////////////////////////////////////////////
-		int32_t					m_lCenterX, m_lCenterY;		// Terrain 좌표 내의 셀 좌표...
+		int32_t					m_lCenterX, m_lCenterY;
 		int32_t					m_lOldReadX, m_lOldReadY;	/* Last center */
 
 		//////////////////////////////////////////////////////////////////////////

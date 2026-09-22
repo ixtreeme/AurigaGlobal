@@ -1,9 +1,3 @@
-/*
- *    Filename: signal.c
- * Description: 시그널 관련 함수.
- *
- *      Author: 비엽 aka. Cronan
- */
 #define __LIBTHECORE__
 #include "stdafx.h"
 

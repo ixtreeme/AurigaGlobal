@@ -48,8 +48,6 @@ enum EItemDragonSoulSockets
 	ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX = 2,
 	ITEM_SOCKET_CHARGING_AMOUNT_IDX = 2,
 };
-// 헐 이거 미친거 아니야?
-// 나중에 소켓 확장하면 어쩌려고 이지랄 -_-;;;
 enum EItemUniqueSockets
 {
 	ITEM_SOCKET_UNIQUE_SAVE_TIME = ITEM_SOCKET_MAX_NUM - 2,
@@ -59,18 +57,18 @@ enum EItemUniqueSockets
 enum EItemTypes
 {
     ITEM_NONE,              //0
-    ITEM_WEAPON,            //1//무기
-    ITEM_ARMOR,             //2//갑옷
-    ITEM_USE,               //3//아이템 사용
+    ITEM_WEAPON,
+    ITEM_ARMOR,
+    ITEM_USE,
     ITEM_AUTOUSE,           //4
     ITEM_MATERIAL,          //5
-    ITEM_SPECIAL,           //6 //스페셜 아이템
+    ITEM_SPECIAL,
     ITEM_TOOL,              //7
-    ITEM_LOTTERY,           //8//복권
-    ITEM_ELK,               //9//돈
+    ITEM_LOTTERY,
+    ITEM_ELK,
     ITEM_METIN,             //10
     ITEM_CONTAINER,         //11
-    ITEM_FISH,              //12//낚시
+    ITEM_FISH,
     ITEM_ROD,               //13
     ITEM_RESOURCE,          //14
     ITEM_CAMPFIRE,          //15
@@ -78,21 +76,21 @@ enum EItemTypes
     ITEM_SKILLBOOK,         //17
     ITEM_QUEST,             //18
     ITEM_POLYMORPH,         //19
-    ITEM_TREASURE_BOX,      //20//보물상자
-    ITEM_TREASURE_KEY,      //21//보물상자 열쇠
+    ITEM_TREASURE_BOX,
+    ITEM_TREASURE_KEY,
     ITEM_SKILLFORGET,       //22
     ITEM_GIFTBOX,           //23
     ITEM_PICK,              //24
-    ITEM_HAIR,              //25//머리
-    ITEM_TOTEM,             //26//토템
-	ITEM_BLEND,				//27//생성될때 랜덤하게 속성이 붙는 약물
-	ITEM_COSTUME,			//28//코스츔 아이템 (2011년 8월 추가된 코스츔 시스템용 아이템)
-	ITEM_DS,				//29 //용혼석
-	ITEM_SPECIAL_DS,		//30 // 특수한 용혼석 (DS_SLOT에 착용하는 UNIQUE 아이템이라 생각하면 됨)
-	ITEM_EXTRACT,			//31 추출도구.
-	ITEM_SECONDARY_COIN,	//32 ?? 명도전??
-	ITEM_RING,				//33 반지
-	ITEM_BELT,				//34 벨트
+    ITEM_HAIR,
+    ITEM_TOTEM,
+	ITEM_BLEND,
+	ITEM_COSTUME,
+	ITEM_DS,
+	ITEM_SPECIAL_DS,
+	ITEM_EXTRACT,
+	ITEM_SECONDARY_COIN,
+	ITEM_RING,
+	ITEM_BELT,
 	ITEM_SOUL,	
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	ITEM_TRANSFER_SCROLL,
@@ -141,8 +139,8 @@ enum EArmorSubTypes
 
 enum ECostumeSubTypes
 {
-	COSTUME_BODY = ARMOR_BODY,			// [중요!!] ECostumeSubTypes enum value는  종류별로 EArmorSubTypes의 그것과 같아야 함.
-	COSTUME_HAIR = ARMOR_HEAD,			// 이는 코스츔 아이템에 추가 속성을 붙이겠다는 사업부의 요청에 따라서 기존 로직을 활용하기 위함임.
+	COSTUME_BODY = ARMOR_BODY,
+	COSTUME_HAIR = ARMOR_HEAD,
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	COSTUME_MOUNT,
 #endif
@@ -324,8 +322,8 @@ enum EUseSubTypes
 	USE_UNBIND,
 	USE_TIME_CHARGE_PER,
 	USE_TIME_CHARGE_FIX,				// 28
-	USE_PUT_INTO_BELT_SOCKET,			// 29 벨트 소켓에 사용할 수 있는 아이템
-	USE_PUT_INTO_RING_SOCKET,			// 30 반지 소켓에 사용할 수 있는 아이템 (유니크 반지 말고, 새로 추가된 반지 슬롯)
+	USE_PUT_INTO_BELT_SOCKET,
+	USE_PUT_INTO_RING_SOCKET,
 	USE_CHANGE_COSTUME_ATTR,			// 31
 	USE_RESET_COSTUME_ATTR,				// 32
 	USE_UNK33,							// 33
@@ -431,24 +429,24 @@ enum EItemFlag
 
 enum EItemAntiFlag
 {
-	ITEM_ANTIFLAG_FEMALE	= (1 << 0), // 여성 사용 불가
-	ITEM_ANTIFLAG_MALE		= (1 << 1), // 남성 사용 불가
-	ITEM_ANTIFLAG_WARRIOR	= (1 << 2), // 무사 사용 불가
-	ITEM_ANTIFLAG_ASSASSIN	= (1 << 3), // 자객 사용 불가
-	ITEM_ANTIFLAG_SURA		= (1 << 4), // 수라 사용 불가
-	ITEM_ANTIFLAG_SHAMAN	= (1 << 5), // 무당 사용 불가
-	ITEM_ANTIFLAG_GET		= (1 << 6), // 집을 수 없음
-	ITEM_ANTIFLAG_DROP		= (1 << 7), // 버릴 수 없음
-	ITEM_ANTIFLAG_SELL		= (1 << 8), // 팔 수 없음
-	ITEM_ANTIFLAG_EMPIRE_A	= (1 << 9), // A 제국 사용 불가
-	ITEM_ANTIFLAG_EMPIRE_B	= (1 << 10), // B 제국 사용 불가
-	ITEM_ANTIFLAG_EMPIRE_C	= (1 << 11), // C 제국 사용 불가
-	ITEM_ANTIFLAG_SAVE		= (1 << 12), // 저장되지 않음
-	ITEM_ANTIFLAG_GIVE		= (1 << 13), // 거래 불가
-	ITEM_ANTIFLAG_PKDROP	= (1 << 14), // PK시 떨어지지 않음
-	ITEM_ANTIFLAG_STACK		= (1 << 15), // 합칠 수 없음
-	ITEM_ANTIFLAG_MYSHOP	= (1 << 16), // 개인 상점에 올릴 수 없음
-	ITEM_ANTIFLAG_SAFEBOX	= (1 << 17), // 창고에 넣을 수 없음
+	ITEM_ANTIFLAG_FEMALE	= (1 << 0),
+	ITEM_ANTIFLAG_MALE		= (1 << 1),
+	ITEM_ANTIFLAG_WARRIOR	= (1 << 2),
+	ITEM_ANTIFLAG_ASSASSIN	= (1 << 3),
+	ITEM_ANTIFLAG_SURA		= (1 << 4),
+	ITEM_ANTIFLAG_SHAMAN	= (1 << 5),
+	ITEM_ANTIFLAG_GET		= (1 << 6),
+	ITEM_ANTIFLAG_DROP		= (1 << 7),
+	ITEM_ANTIFLAG_SELL		= (1 << 8),
+	ITEM_ANTIFLAG_EMPIRE_A	= (1 << 9),
+	ITEM_ANTIFLAG_EMPIRE_B	= (1 << 10),
+	ITEM_ANTIFLAG_EMPIRE_C	= (1 << 11),
+	ITEM_ANTIFLAG_SAVE		= (1 << 12),
+	ITEM_ANTIFLAG_GIVE		= (1 << 13),
+	ITEM_ANTIFLAG_PKDROP	= (1 << 14),
+	ITEM_ANTIFLAG_STACK		= (1 << 15),
+	ITEM_ANTIFLAG_MYSHOP	= (1 << 16),
+	ITEM_ANTIFLAG_SAFEBOX	= (1 << 17),
 };
 
 enum EItemWearableFlag
@@ -482,16 +480,10 @@ enum ELimitTypes
 	LIMIT_CON,
 	LIMIT_PCBANG,
 
-	/// 착용 여부와 상관 없이 실시간으로 시간 차감 (socket0에 소멸 시간이 박힘: unix_timestamp 타입)
 	LIMIT_REAL_TIME,
 
-	/// 아이템을 맨 처음 사용(혹은 착용) 한 순간부터 리얼타임 타이머 시작
-	/// 최초 사용 전에는 socket0에 사용가능시간(초단위, 0이면 프로토의 limit value값 사용) 값이 쓰여있다가
-	/// 아이템 사용시 socket1에 사용 횟수가 박히고 socket0에 unix_timestamp 타입의 소멸시간이 박힘.
 	LIMIT_REAL_TIME_START_FIRST_USE,
 
-	/// 아이템을 착용 중일 때만 사용 시간이 차감되는 아이템
-	/// socket0에 남은 시간이 초단위로 박힘. (아이템 최초 사용시 해당 값이 0이면 프로토의 limit value값을 socket0에 복사)
 	LIMIT_TIMER_BASED_ON_WEAR,
 	LIMIT_UNIQUE_UNLIMITED,
 	LIMIT_MAX_NUM

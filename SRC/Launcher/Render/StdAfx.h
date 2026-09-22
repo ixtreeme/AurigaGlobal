@@ -8,7 +8,7 @@
 #define _WIN32_DCOM
 
 #pragma warning(disable:4710)	// not inlined
-#pragma warning(disable:4786)	// character 255 넘어가는거 끄기
+#pragma warning(disable:4786)
 #pragma warning(disable:4244)	// type conversion possible lose of data
 
 #pragma warning(disable:4018)

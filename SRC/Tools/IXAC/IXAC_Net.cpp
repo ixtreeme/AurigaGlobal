@@ -44,7 +44,6 @@ namespace IXAC::Net
         g_Config = cfg;
     }
 
-    // Egyszerű fájlbeolvasás
     static bool ReadFileToBuffer(const std::string& path, std::vector<char>& outBuf)
     {
         std::ifstream f(path, std::ios::binary);
@@ -72,7 +71,6 @@ namespace IXAC::Net
         return true;
     }
 
-    // Egyszerű törlés – ha akarsz secure overwrite-ot, ide tudod betenni.
     static void DeleteFileSafe(const std::string& path)
     {
         if (!DeleteFileA(path.c_str()))
@@ -81,7 +79,6 @@ namespace IXAC::Net
         }
     }
 
-    // A tényleges feltöltés – szinkron, ezt fogjuk threadben hívni
     static bool UploadLogBuffer(const std::vector<char>& buf)
     {
         if (!g_CurlInited)
@@ -102,7 +99,6 @@ namespace IXAC::Net
         std::string keyHeader = "X-AC-KEY: " + g_Config.apiKey;
         headers = curl_slist_append(headers, keyHeader.c_str());
 
-        //// HWID header – EZ AZ ÚJ RÉSZ
         std::string hwid = IXAC_GetFinalHWID();
         if (!hwid.empty())
         {
@@ -111,7 +107,6 @@ namespace IXAC::Net
         }
 
 
-        // Tetszőleges content-type, mert bináris logot is küldhetsz
         headers = curl_slist_append(headers, AY_OBFUSCATE("Content-Type: application/octet-stream"));
 
         curl_easy_setopt(curl, CURLOPT_URL, g_Config.serverUrl.c_str());
@@ -124,11 +119,9 @@ namespace IXAC::Net
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, g_Config.connectTimeoutSec);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, g_Config.requestTimeoutSec);
 
-        // SSL ellenőrzés
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, g_Config.verifySsl ? 1L : 0L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, g_Config.verifySsl ? 2L : 0L);
 
-        // (Opcionális) response body ignorálása – nekünk csak a státusz kell
         curl_easy_setopt(
             curl,
             CURLOPT_WRITEFUNCTION,
@@ -153,14 +146,13 @@ namespace IXAC::Net
         return (httpCode >= 200 && httpCode < 300);
     }
 
-    // Cheat detektálás teljes életciklus – log beolvas, upload, töröl, kilép
     static void CheatHandlerThread(std::string logPath)
     {
         std::vector<char> buf;
         bool readOk = ReadFileToBuffer(logPath, buf);
         if (!readOk)
         {
-            DeleteFileSafe(logPath); // opcionális
+            DeleteFileSafe(logPath);
             ExitProcess(0);
             return;
         }

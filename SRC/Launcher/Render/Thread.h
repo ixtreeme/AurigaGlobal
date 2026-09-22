@@ -10,8 +10,8 @@ class CThread
 	protected:
 		static UINT CALLBACK	EntryPoint(void * pThis);
 
-		virtual UINT			Setup() = 0;				// Execute이 불려지기 전에 불려진다.
-		virtual UINT			Execute(void * arg) = 0;	// 실제 쓰레드가 하는 일이 들어가는 곳
+		virtual UINT			Setup() = 0;
+		virtual UINT			Execute(void * arg) = 0;
 
 		UINT					Run(void * arg);
 

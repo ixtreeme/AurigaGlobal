@@ -34,12 +34,12 @@ namespace quest
 			enum
 			{
 				QUEST_SEND_ISBEGIN		= (1 << 0),
-				QUEST_SEND_TITLE		= (1 << 1),  // 30자 까지
-				QUEST_SEND_CLOCK_NAME		= (1 << 2),  // 16자 까지
+				QUEST_SEND_TITLE		= (1 << 1),
+				QUEST_SEND_CLOCK_NAME		= (1 << 2),
 				QUEST_SEND_CLOCK_VALUE		= (1 << 3),
-				QUEST_SEND_COUNTER_NAME		= (1 << 4),  // 16자 까지
+				QUEST_SEND_COUNTER_NAME		= (1 << 4),
 				QUEST_SEND_COUNTER_VALUE	= (1 << 5),
-				QUEST_SEND_ICON_FILE		= (1 << 6),  // 24자 까지
+				QUEST_SEND_ICON_FILE		= (1 << 6),
 			};
 
 			typedef map<unsigned int, QuestState>	QuestInfo;
@@ -121,7 +121,6 @@ namespace quest
 			bool		IsLoaded() const	{ return m_bLoaded; }
 			void		SetLoaded()	{ m_bLoaded = true; }
 			void		Build();
-			// DB에 저장
 			void		Save();
 
 			bool		HasReward() { return !m_vRewardData.empty() || m_bIsGivenReward; }
@@ -175,7 +174,7 @@ namespace quest
 			TTimerMap		m_TimerMap;
 
 			int			m_iSendToClient;
-			bool		m_bLoaded; // 로드는 한번만 한다.
+			bool		m_bLoaded;
 
 			int			m_iLastState;
 

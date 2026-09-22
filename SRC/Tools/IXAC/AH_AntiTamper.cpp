@@ -119,7 +119,7 @@ namespace
         for (auto s : kSkipList)
         {
             if (_wcsicmp(lower.c_str(), s) == 0)
-                return false; // NEM védjük hash-sel
+                return false;
         }
 
         return true; 

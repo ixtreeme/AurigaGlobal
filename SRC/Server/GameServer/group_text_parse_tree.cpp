@@ -198,7 +198,6 @@ bool CGroupNode::GetRow(std::string_view c_rstrRowKey, OUT const CGroupNode::CGr
 	return true;
 }
 
-// 참고로, idx랑 txt에 쓰여진 순서랑 관계 없음.
 bool CGroupNode::GetRow(int idx, OUT const CGroupNode::CGroupNodeRow ** ppRow) const
 {
 	if ((TMapRow::size_type)idx >= m_map_rows.size())
@@ -221,7 +220,6 @@ bool CGroupNode::GetGroupRow(std::string_view stGroupName, std::string_view stRo
 		if (pChildGroup->GetRow(stRow, ppRow))
 			return true;
 	}
-	// default group을 살펴봄.
 	pChildGroup = GetChildNode("default");
 	if (nullptr != pChildGroup)
 	{

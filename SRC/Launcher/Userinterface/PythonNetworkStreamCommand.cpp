@@ -125,7 +125,6 @@ bool SplitToken(const char * c_szLine, CTokenVector * pstTokenVector, const char
 
 		pstTokenVector->push_back(strLine.substr(beginPos, endPos - beginPos));
 
-		// 추가 코드. 맨뒤에 탭이 있는 경우를 체크한다. - [levites]
 		if (int(strLine.find_first_not_of(c_szDelimeter, basePos)) < 0)
 			break;
 	} while (basePos < strLine.length());
@@ -135,7 +134,6 @@ bool SplitToken(const char * c_szLine, CTokenVector * pstTokenVector, const char
 
 void CPythonNetworkStream::ServerCommand(char * c_szCommand)
 {
-	// #0000811: [M2EU] 콘솔창 기능 차단
 	if (strcmpi(c_szCommand, "ConsoleEnable") == 0)
 		return;
 
@@ -257,7 +255,6 @@ void CPythonNetworkStream::ServerCommand(char * c_szCommand)
 		else if ("r_list" == TokenVector[1])
 		{
 			// result list (/cube r_list npcVNUM resultCount resultText)
-			// 20383 4 72723,1/72725,1/72730.1/50001,5 <- 이런식으로 "/" 문자로 구분된 리스트를 줌
 			if (5 != TokenVector.size())
 			{
 				TraceError("CPythonNetworkStream::ServerCommand(c_szCommand=%s) - Strange Parameter Count : %d", c_szCommand, 5);
@@ -271,9 +268,6 @@ void CPythonNetworkStream::ServerCommand(char * c_szCommand)
 		else if ("m_info" == TokenVector[1])
 		{
 			// material list (/cube m_info requestStartIndex resultCount MaterialText)
-			// ex) requestStartIndex: 0, resultCount : 5 - 해당 NPC가 만들수 있는 아이템 중 0~4번째에 해당하는 아이템을 만드는 데 필요한 모든 재료들이 MaterialText에 들어있음
-			// 위 예시처럼 아이템이 다수인 경우 구분자 "@" 문자를 사용
-			// 0 5 125,1|126,2|127,2|123,5&555,5&555,4/120000 <- 이런식으로 서버에서 클라로 리스트를 줌
 
 			if (5 != TokenVector.size())
 			{

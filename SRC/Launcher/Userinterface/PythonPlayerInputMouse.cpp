@@ -115,7 +115,6 @@ void CPythonPlayer::NEW_SetMouseSmartState(int eMBS, bool isAuto)
 	// PrivateShop
 	if (IsOpenPrivateShop())
 	{
-		// ShopPacket 이 오기전 잠깐 동안
 		m_isSmtMov=false;
 		return;
 	}
@@ -126,7 +125,6 @@ void CPythonPlayer::NEW_SetMouseSmartState(int eMBS, bool isAuto)
 		return;
 	}
 
-	// AFFECT_STUN 처리
 	if (pkInstMain->IsSleep())
 	{
 		return;
@@ -387,16 +385,14 @@ void CPythonPlayer::NEW_RefreshMouseWalkingDirection()
 			{
 				float fDistance=pkInstMain->GetDistance(pkInstReserved);
 
-				// #0000806: [M2EU] 수룡에게 무사(나한군) 탄환격 스킬 사용 안됨
 				extern bool IS_HUGE_RACE(unsigned int vnum);
-				if (IS_HUGE_RACE(pkInstReserved->GetRace())) // 거대 종족은 근접을 못함
+				if (IS_HUGE_RACE(pkInstReserved->GetRace()))
 				{
-					fDistance -= 200.0f; // TEMP: 일단 하드 코딩 처리. 정석적으로는 바운드 스피어를 고려해야함
+					fDistance -= 200.0f;
 				}
 
 				if (fDistance < float(m_dwSkillRangeReserved))
 				{
-					// 접근 도중 Target 이 바뀌어 있을 수도 있다 - [levites]
 					SetTarget(m_dwVIDReserved);
 					if (__UseSkill(m_dwSkillSlotIndexReserved))
 						__ClearReservedAction();

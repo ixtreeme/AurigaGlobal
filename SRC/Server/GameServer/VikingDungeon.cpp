@@ -279,7 +279,6 @@ namespace
     {
         mapIdx = 219;
 
-        // IDE a belépő NPC vagy a kívánt visszaérkezési pont koordinátája kell
         x = 5369;
         y = 14350;
     }//536904	1435017

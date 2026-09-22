@@ -71,7 +71,6 @@ bool CInputKeyboard::InitializeKeyboard(HWND hWnd)
 	if (FAILED(hr = ms_lpKeyboard->SetDataFormat(&c_dfDIKeyboard)))
 		return false;
 
-// Alt + F4를 위해 비독점 모드로 - [levites]
 //	uint32_t dwCoopFlags = DISCL_FOREGROUND | DISCL_EXCLUSIVE;
 //	uint32_t dwCoopFlags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
 	uint32_t dwCoopFlags = DISCL_FOREGROUND | DISCL_NONEXCLUSIVE;
@@ -97,7 +96,6 @@ void CInputKeyboard::UpdateKeyboard()
 	{
 		hr = ms_lpKeyboard->Acquire();
 
-		// 현재 어플리케이션이 비활성화 되어 있어 입력을 받을 수 없다.
 		//if (hr == DIERR_OTHERAPPHASPRIO || hr == DIERR_NOTACQUIRED);
 		return;
 	}

@@ -176,7 +176,6 @@ bool DragonSoulTable::ReadBasicApplys()
 		TVecApplys vecApplys;
 		int n = pChild->GetRowCount();
 
-		// BasicApply Group은 Key가 1부터 시작함.
 		for (int j = 1; j <= n; j++)
 		{
 			std::stringstream ss;
@@ -638,7 +637,6 @@ bool DragonSoulTable::GetWeight(uint8_t ds_type, uint8_t grade_idx, uint8_t step
 			return true;
 		}
 	}
-	// default group을 살펴봄.
 	pDragonSoulGroup = m_pWeightTableNode->GetChildNode("default");
 	if (nullptr != pDragonSoulGroup)
 	{

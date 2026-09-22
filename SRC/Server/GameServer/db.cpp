@@ -268,7 +268,6 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					M2_DELETE(pinfo);
 					break;
 				}
-				//��ġ ���� - By SeMinZ
 				d->SetLogin(pinfo->login);
 
 				LOG_INFO("QID_AUTH_LOGIN: START {} {}", qi->dwIdent, static_cast<const void*>(get_pointer(d)));
@@ -385,7 +384,6 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					int nPasswordDiff = strcmp(szEncrytPassword, szPassword);
 
-					//OpenID : OpenID �� ���, ��й�ȣ üũ�� ���� �ʴ´�.
 					if (openid_server)
 					{
 						nPasswordDiff = 0;
@@ -815,7 +813,6 @@ enum EAccountQID
 	QID_SPAM_DB,
 };
 
-// 10�и��� ���ε�
 static LPEVENT s_pkReloadSpamEvent = nullptr;
 
 EVENTINFO(reload_spam_event_info)

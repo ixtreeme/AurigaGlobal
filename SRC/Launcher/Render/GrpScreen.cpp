@@ -55,7 +55,7 @@ void CScreen::RenderBox3d(float sx, float sy, float sz, float ex, float ey, floa
 		{ ex, ey, ez, ms_diffuseColor, 0.0f, 0.0f },	// 3
 
 		{ sx, ey, ez, ms_diffuseColor, 0.0f, 0.0f },	// 2
-		{ ex + 1.0f, ey, ez, ms_diffuseColor, 0.0f, 0.0f }	// 3, (x가 1증가된 3)
+		{ ex + 1.0f, ey, ez, ms_diffuseColor, 0.0f, 0.0f }
 	};
 
 	// 2004.11.18.myevan.DrawIndexPrimitiveUP -> DynamicVertexBuffer
@@ -509,11 +509,8 @@ void CScreen::SetCursorPosition(int x, int y, int hres, int vres)
 	ms_vtPickRayOrig.y = matViewInverse._42;
 	ms_vtPickRayOrig.z = matViewInverse._43;
 
-	//	// 2003. 9. 9 동현 추가
-	//	// 지형 picking을 위한 뻘짓... ㅡㅡ; 위에 것과 통합 필요...
 	ms_Ray.SetStartPoint(ms_vtPickRayOrig);
 	ms_Ray.SetDirection(-ms_vtPickRayDir, 51200.0f);
-	//	// 2003. 9. 9 동현 추가
 }
 
 bool CScreen::GetCursorPosition(float* px, float* py, float* pz)

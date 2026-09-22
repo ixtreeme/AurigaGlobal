@@ -253,7 +253,6 @@ public:
 		void		UpdatePipeLineMatrix();
 
 	protected:
-		// 각종 D3DX Mesh 들 (컬루젼 데이터 등을 표시활 때 쓴다)
 		static LPD3DXMESH				ms_lpSphereMesh;
 		static LPD3DXMESH				ms_lpCylinderMesh;
 
@@ -292,7 +291,6 @@ public:
 		static float					ms_fNearY;
 		static float					ms_fFarY;
 
-		// 2004.11.18.myevan.DynamicVertexBuffer로 교체
 		/*
 		static std::vector<TIndex>		ms_lineIdxVector;
 		static std::vector<TIndex>		ms_lineTriIdxVector;
@@ -310,7 +308,6 @@ public:
 		static uint32_t					ms_dwFlashingEndTime;
 		static D3DXCOLOR				ms_FlashingColor;
 
-		// Terrain picking용 Ray... CCamera 이용하는 버전.. 기존의 Ray와 통합 필요...
  		static CRay						ms_Ray;
 
 		//

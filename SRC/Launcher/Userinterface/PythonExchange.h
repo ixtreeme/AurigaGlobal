@@ -2,9 +2,6 @@
 
 #include "Packet.h"
 
-/*
- *	교환 창 관련
- */
 class CPythonExchange : public CSingleton<CPythonExchange>
 {
 	public:
@@ -123,7 +120,7 @@ class CPythonExchange : public CSingleton<CPythonExchange>
 	protected:
 		bool				m_isTrading;
 
-		bool				m_elk_mode;   // 엘크를 클릭해서 교환했을때를 위한 변종임.
+		bool				m_elk_mode;
 		TExchangeData		m_self;
 		TExchangeData		m_victim;
 };

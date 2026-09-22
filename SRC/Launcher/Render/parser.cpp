@@ -220,11 +220,9 @@ bool Group::GetArg(const char *c_arg_base, int arg_len, TArgList & argList)
 			{
 				isValue = true;
 			}
-			// 값이 아니고, 이름이 시작되지 않았을 경우 빈칸은 건너 뛴다.
 			else if (!isValue && iNameLen == 0 && isspace((unsigned char) c))
 			{
 			}
-			// 엔터는 건너 뛴다
 			else if (c == '\r' || c == '\n')
 			{
 			}
@@ -350,12 +348,12 @@ bool Group::Create(const std::string & stSource)
 					memcpy(box_data, data_begin, data_len);
 					box_data[data_len] = '\0';
 
-					data_len = LocaleString_RightTrim(box_data, data_len); // 오른쪽 빈칸 자르기
+					data_len = LocaleString_RightTrim(box_data, data_len);
 				}
 
 				{
 					const char* space = LocaleString_FindChar(box_data, data_len, ' ');
-					if (space)  // 인자가 있음
+					if (space)
 					{
 						int name_len = space - box_data;
 						cmd.name.assign(box_data, name_len);
@@ -371,7 +369,7 @@ bool Group::Create(const std::string & stSource)
 							return false;
 						}
 					}
-					else        // 인자가 없으므로 모든 스트링이 명령어다.
+					else
 					{
 						cmd.name.assign(box_data);
 						cmd.argList.clear();

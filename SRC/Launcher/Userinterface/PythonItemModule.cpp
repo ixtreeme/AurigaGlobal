@@ -334,7 +334,6 @@ PyObject * itemIsEquipmentVID(PyObject * poSelf, PyObject * poArgs)
 	return Py_BuildValue("i", pItemData->IsEquipment());
 }
 
-// 2005.05.20.myevan.통합 USE_TYPE 체크
 PyObject* itemGetUseType(PyObject * poSelf, PyObject * poArgs)
 {
 	int iItemVID;
@@ -754,7 +753,6 @@ void initItem()
 	PyModule_AddIntConstant(poModule, "COSTUME_TYPE_WEAPON",		CItemData::COSTUME_WEAPON);
 #endif
 
-	// 인벤토리 및 장비창에서의 슬롯 번호
 	PyModule_AddIntConstant(poModule, "COSTUME_SLOT_START",			c_Costume_Slot_Start);
 	PyModule_AddIntConstant(poModule, "COSTUME_SLOT_COUNT",			c_Costume_Slot_Count);
 	PyModule_AddIntConstant(poModule, "COSTUME_SLOT_BODY",			c_Costume_Slot_Body);

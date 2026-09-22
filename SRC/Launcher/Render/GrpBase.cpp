@@ -70,13 +70,11 @@ int						CGraphicBase::ms_iWavingPower;
 uint32_t					CGraphicBase::ms_dwFlashingEndTime;
 D3DXCOLOR				CGraphicBase::ms_FlashingColor;
 
-// Terrain picking용 Ray... CCamera 이용하는 버전.. 기존의 Ray와 통합 필요...
 CRay					CGraphicBase::ms_Ray;
 bool					CGraphicBase::ms_bSupportDXT = true;
 bool					CGraphicBase::ms_isLowTextureMemory = false;
 bool					CGraphicBase::ms_isHighTextureMemory = false;
 
-// 2004.11.18.myevan.DynamicVertexBuffer로 교체
 /*
 std::vector<TIndex>		CGraphicBase::ms_lineIdxVector;
 std::vector<TIndex>		CGraphicBase::ms_lineTriIdxVector;

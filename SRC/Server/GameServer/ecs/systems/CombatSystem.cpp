@@ -1156,7 +1156,6 @@ struct FuncAggregateMonster
 			if (CombatSystem::GetVictim(candidate) != entt::null)
 				return;
 
-			//if (number(1, 100) <= 50) // ӽ÷ 50% Ȯ  ´
 			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(candidate) - ecs::PlayerRuntime::GetX(m_character), ecs::PlayerRuntime::GetY(candidate) - ecs::PlayerRuntime::GetY(m_character)) < 7000)
 				if (CombatSystem::CanBeginFight(candidate))
 					CombatSystem::BeginFight(candidate, m_character);
@@ -1338,7 +1337,7 @@ void DistributeHP(entt::entity victim, entt::entity killer)
 {
 	// The body below the dungeon test was removed long ago; what is left does
 	// nothing whichever way the test goes. Carried over as it stands.
-	if (ecs::SocialSystem::GetDungeon(killer) != entt::null) //  ΰʴ´
+	if (ecs::SocialSystem::GetDungeon(killer) != entt::null)
 		return;
 }
 
@@ -1369,7 +1368,6 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
     int dam, ecs::BattleContribution& info)
 {
     const EDamageType type = static_cast<EDamageType>(rawType);
-	// Ư ŸԿ   ö󰣴
 	switch (type)
 	{
 	case DAMAGE_TYPE_NORMAL_RANGE:
@@ -1388,7 +1386,6 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
 		break;
 	}
 
-	// ڰ    ʽ ش.
 	if (attacker == GetVictim(self))
 		dam = (int)(dam * 1.2f);
 
@@ -1402,7 +1399,6 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
 
 	if (pParty != entt::null && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
 	{
-		//     ϴ
 		int iPartyAggroDist = dam;
 
 		if (PartySystem::GetLeaderPID(pParty) == ecs::PlayerRuntime::GetPacketVID(self))
@@ -1481,7 +1477,7 @@ void Stun(entt::entity e)
 
 	ecs::SocialSystem::CloseMyShop(e);
 
-	ecs::PlayerRuntime::CancelCharEvent(e, ecs::PlayerRuntime::CharEvent::Recovery); // ȸ ̺Ʈ δ.
+	ecs::PlayerRuntime::CancelCharEvent(e, ecs::PlayerRuntime::CharEvent::Recovery);
 
 	TPacketGCStun pack;
 	pack.header = HEADER_GC_STUN;
@@ -1656,12 +1652,10 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 {
 	if (!ecs::IsCharacter(toEntity))
 		return;
-	//  ġ
 	iExp = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(toEntity), ecs::PointSystem::GetLevel(fromEntity), iExp);
 
 	int iBaseExp = iExp;
 
-	// , ȸ ġ ̺Ʈ
 #ifdef ENABLE_EVENT_MANAGER
 	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(EXP_EVENT, ecs::PlayerRuntime::GetEmpire(toEntity));
 	if (event != 0)
@@ -1672,22 +1666,17 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	iExp = iExp * (100 + CPrivManager::instance().GetPriv(toEntity, PRIV_EXP_PCT)) / 100;
 #endif
 
-	// ӳ ⺻ Ǵ ġ ʽ
 	{
-		// 뵿 ޴
 		if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_LARBOR_MEDAL))
 			iExp += iExp * 20 / 100;
 
-		// Ÿ ġ ʽ
 		if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
 			iExp += iExp * 20 / 100; // 1.2 (20%)
 
-		//  ġ ι Ӽ
 		if (ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
 			if (number(1, 100) <= ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
 				iExp += iExp * 30 / 100; // 1.3 (30%)
 
-		//   (2ð¥)
 		if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
 			iExp += iExp * 50 / 100;
 
@@ -1711,15 +1700,12 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		case 20123:
 		case 20124:
 		case 20125:
-			//  ġ ʽ
 			iExp += iExp * 30 / 100;
 			break;
 		}
 	}
 
-	//   Ǹ ġ ʽ
 	{
-		//  : ġ
 		if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_EXP) > 0)
 		{
 			iExp += (iExp * 50 / 100);
@@ -1731,7 +1717,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		}
 
 
-		// ȥ ʽ
 		iExp += iExp * ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;
 	}
 
@@ -1743,10 +1728,8 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		LOG_INFO("Bonus Exp : Ramadan Candy: {} MallExp: {}", ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP), ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS));
 	}
 
-	// ȹ  2005.04.21  85%
 	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(toEntity) / 100;
 
-	// ġ ѹ ȹ淮
 	iExp = MIN(ecs::PlayerRuntime::GetNextExp(toEntity) / 10, iExp);
 
 	if (test_server)
@@ -1777,7 +1760,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 
 	{
 		const entt::entity you = ecs::SocialSystem::GetMarryPartner(toEntity);
-		// κΰ  Ƽ̸ ݽ
 		if (you != entt::null)
 		{
 			// 1 100%
@@ -1924,7 +1906,6 @@ entt::entity DistributeExp(entt::entity e)
 
 	std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(e).entries.begin();
 
-	// ϴ    ɷ . (50m)
 	while (it != CombatSystem::DamageLedgerOf(e).entries.end())
 	{
 		const entt::entity eAttacker = it->first;
@@ -1933,7 +1914,6 @@ entt::entity DistributeExp(entt::entity e)
 		++it;
 
 
-		// NPC ⵵ ϳ? -.-;
 		if (!ecs::IsCharacter(eAttacker) || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(eAttacker), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
 			continue;
 
@@ -1985,7 +1965,7 @@ entt::entity DistributeExp(entt::entity e)
 	ecs::PlayerRuntime::SetExp(e, 0);
 	//CombatSystem::ClearDamageLedger(e);
 
-	if (iTotalDam == 0)	//  ذ 0̸
+	if (iTotalDam == 0)
 		return entt::null;
 
 	// Half of the experience goes to the stone that spawned this mob.
@@ -2003,11 +1983,9 @@ entt::entity DistributeExp(entt::entity e)
 	if (damage_info_table.empty())
 		return entt::null;
 
-	//      HP ȸ Ѵ.
-	CombatSystem::DistributeHP(e, pkChrMostAttacked);	//  ý
+	CombatSystem::DistributeHP(e, pkChrMostAttacked);
 
 	{
-		//     ̳ Ƽ  ġ 20% + ڱⰡ ŭ ġ Դ´.
 		TDamageInfoTable::iterator di = damage_info_table.begin();
 		{
 			TDamageInfoTable::iterator it;
@@ -2050,7 +2028,6 @@ entt::entity DistributeExp(entt::entity e)
 			return pkChrMostAttacked; // seggbe
 		di->Distribute(e, iExp);
 #endif
-		// 100%  Ծ Ѵ.
 		if (fPercent == 1.0f)
 			return pkChrMostAttacked;
 
@@ -2058,7 +2035,6 @@ entt::entity DistributeExp(entt::entity e)
 	}
 
 	{
-		//  80% ġ йѴ.
 		TDamageInfoTable::iterator it;
 
 		for (it = damage_info_table.begin(); it != damage_info_table.end(); ++it)
@@ -2083,7 +2059,6 @@ entt::entity DistributeExp(entt::entity e)
 
 } // namespace CombatSystem
 
-// ȭ
 
 // char_battle.cpp slice BC5 moved into CombatSystem.cpp
 
@@ -2227,7 +2202,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 	const bool hasKiller = killer != entt::null && g_registry.valid(killer);
 
-	CombatSystem::SetKillerPID(victim, 0); // ݵ ʱȭ ؾ DO NOT DELETE THIS LINE UNLESS YOU ARE 1000000% SURE
+	CombatSystem::SetKillerPID(victim, 0);
 
 	bool isAgreedPVP = false;
 	bool isUnderGuildWar = false;
@@ -2497,7 +2472,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	NetworkSyncSystem::ClearSync(victim);
 
 	//LOG_INFO(1, "stun cancel %s[%d]", ecs::PlayerRuntime::GetName(victim).data(), (uint32_t)GetVID());
-	ecs::PlayerRuntime::CancelCharEvent(victim, ecs::PlayerRuntime::CharEvent::Stun); //  ̺Ʈ δ.
+	ecs::PlayerRuntime::CancelCharEvent(victim, ecs::PlayerRuntime::CharEvent::Stun);
 
 	if (ecs::PlayerRuntime::IsPC(victim))
 	{
@@ -2508,12 +2483,10 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	}
 	else
 	{
-		// 忡 ݹ ʹ   Ѵ.
 		if (!(RuntimeFlags(victim) && IS_SET(RuntimeFlags(victim)->instantFlag, INSTANT_FLAG_NO_REWARD)))
 		{
 			if (!(hasKiller && ecs::PlayerRuntime::IsPC(killer) && ecs::SocialSystem::GetGuild(killer) && ecs::SocialSystem::GetGuild(killer)->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
 			{
-				// Ȱϴ ʹ   ʴ´.
 				const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(victim);
 				if (mobTable && mobTable->dwResurrectionVnum)
 				{
@@ -2575,10 +2548,8 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		if (auto* flags = RuntimeFlags(victim))
 		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
-	// ÷̾ ĳ̸
 	if (ecs::PlayerRuntime::GetDesc(victim) != nullptr) {
 		//
-		// Ŭ̾Ʈ Ʈ Ŷ ٽ .
 		//
 		for (const auto& affect : AffectSystem::Snapshot(victim))
 			if (affect)
@@ -2586,11 +2557,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	}
 
 	//
-	// Dead ̺Ʈ ,
 	//
-	// Dead ̺Ʈ    Ŀ Destroy ǵ ָ,
-	// PC  3 ִٰ    ش. 3  κ
-	//   , ⼭    ޴´.
 	if (isDuel == false)
 	{
 		if (ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead))
@@ -2942,7 +2909,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 			REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
 		// NO_DEATH_PENALTY_BUG_FIX
-		if (!bTown) //   ڸ Ȱø  ȣ Ѵ. ( ͽô ġ гƼ )
+		if (!bTown)
 		{
 			if (AffectSystem::FindAffect(e, AFFECT_NO_DEATH_PENALTY))
 			{
@@ -2994,7 +2961,7 @@ TItemDropPenalty aItemDropPenalty_kor[9] =
 	{  25,   1,  5,  1 },	//
 	{  50,   2, 10,  1 },	//
 	{  75,   4, 15,  1 },	//
-	{ 100,   8, 20,  1 },	// п
+	{ 100,   8, 20,  1 },
 };
 
 namespace CombatSystem {
@@ -4396,7 +4363,6 @@ void RewardGold(entt::entity e, entt::entity attacker)
 
 			int iTotalGold = 0;
 			//
-			// ---------   Ȯ  ----------
 			//
 			int iGoldPercent = MobRankStats[ecs::PlayerRuntime::GetMobRank(e)].iGoldPercent;
 
@@ -4441,9 +4407,9 @@ void RewardGold(entt::entity e, entt::entity attacker)
 
 			int iGoldMultipler = 1;
 
-			if (1 == number(1, 50000)) // 1/50000 Ȯ  10
+			if (1 == number(1, 50000))
 				iGoldMultipler *= 10;
-			else if (1 == number(1, 10000)) // 1/10000 Ȯ  5
+			else if (1 == number(1, 10000))
 				iGoldMultipler *= 5;
 
 			//
@@ -4458,7 +4424,6 @@ void RewardGold(entt::entity e, entt::entity attacker)
 				ecs::ChatSystem::Send(attacker, CHAT_TYPE_PARTY, "gold_mul %d rate %d", iGoldMultipler, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker));
 
 			//
-			// ---------   ó -------------
 			//
 			int iGold10DropPct = 100;
 #ifdef ENABLE_EVENT_MANAGER
@@ -4471,11 +4436,10 @@ void RewardGold(entt::entity e, entt::entity attacker)
 			iGold10DropPct = (iGold10DropPct * 100) / (100 + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD10_DROP));
 #endif
 
-			// MOB_RANK BOSS   ź
 			if (ecs::PlayerRuntime::GetMobRank(e) >= MOB_RANK_BOSS && !ecs::PlayerRuntime::IsStone(e) && (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax != 0)
 			{
 				if (1 == number(1, iGold10DropPct))
-					iGoldMultipler *= 10; // 1% Ȯ  10
+					iGoldMultipler *= 10;
 
 				int iSplitCount = number(25, 35);
 
@@ -4516,11 +4480,9 @@ void RewardGold(entt::entity e, entt::entity attacker)
 #endif
 				}
 			}
-			// 1% Ȯ  10  ߸. (10 )
 			else if (1 == number(1, iGold10DropPct))
 			{
 				//
-				//  ź
 				//
 				for (int i = 0; i < 10; ++i)
 				{
@@ -4555,7 +4517,6 @@ void RewardGold(entt::entity e, entt::entity attacker)
 			else
 			{
 				//
-				// Ϲ
 				//
 				int iGold = number((*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMin, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax);
 				iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker) / 100;
@@ -4687,7 +4648,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		dam = (int)((float)dam * (100 + (ecs::PointSystem::Get(attacker, POINT_MAGIC_ATT_BONUS_PER) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100.f + 0.5f);
 	}
 
-	// Ÿ ƴ   ó
 	if (type != DAMAGE_TYPE_NORMAL && type != DAMAGE_TYPE_NORMAL_RANGE)
 	{
 		if (AffectSystem::IsAffectFlag(victim, AFF_TERROR))
@@ -4764,13 +4724,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	//PROF_UNIT puAttr("Attr");
 
 	//
-	//  ų,  ų(ڰ) ũƼð,   Ѵ.
-	//   ʾƾ ϴµ Nerf(ٿ뷱)ġ    ũƼð
-	//     ʰ, /2 ̻Ͽ Ѵ.
 	//
-	//  ̾߱Ⱑ Ƽ и ų ߰
 	//
-	// 20091109 : 簡  û   г,     70%
 	//
 
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
@@ -4781,7 +4736,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	{
 		if (attackerIsCharacter)
 		{
-			// ũƼ
 			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim)) {
@@ -4791,12 +4745,11 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 			if (iCriticalPct)
 			{
-				if (iCriticalPct >= 10) // 10 ũ 5% + (4 1% ),  ġ 50̸ 20%
+				if (iCriticalPct >= 10)
 					iCriticalPct = 5 + (iCriticalPct - 10) / 4;
-				else // 10  ܼ  , 10 = 5%
+				else
 					iCriticalPct /= 2;
 
-				//ũƼ   .
 				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
 
 				if (number(1, 100) <= iCriticalPct)
@@ -4834,16 +4787,13 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 				if (iPenetratePct >= 10)
 				{
-					// 10 ũ 5% + (4 1% ),  ġ 50̸ 20%
 					iPenetratePct = 5 + (iPenetratePct - 10) / 4;
 				}
 				else
 				{
-					// 10  ܼ  , 10 = 5%
 					iPenetratePct /= 2;
 				}
 
-				//Ÿ   .
 				iPenetratePct -= ecs::PointSystem::Get(victim, POINT_RESIST_PENETRATE);
 
 				if (number(1, 100) <= iPenetratePct)
@@ -4868,13 +4818,11 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 	}
 	//
-	// ޺ , Ȱ ,  Ÿ   Ӽ  Ѵ.
 	//
 	else if (type == DAMAGE_TYPE_NORMAL || type == DAMAGE_TYPE_NORMAL_RANGE)
 	{
 		if (type == DAMAGE_TYPE_NORMAL)
 		{
-			//  Ÿ
 			if (ecs::PointSystem::Get(victim, POINT_BLOCK) && number(1, 100) <= ecs::PointSystem::Get(victim, POINT_BLOCK))
 			{
 #ifdef TEXTS_IMPROVEMENT
@@ -4889,7 +4837,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 		else if (type == DAMAGE_TYPE_NORMAL_RANGE)
 		{
-			// Ÿ Ÿ
 			if (ecs::PointSystem::Get(victim, POINT_DODGE) && number(1, 100) <= ecs::PointSystem::Get(victim, POINT_DODGE))
 			{
 #ifdef TEXTS_IMPROVEMENT
@@ -4923,25 +4870,21 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 			// PvP: csak fele hasson
 			if (attackerIsCharacter && ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
-				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
+				resist = (resist + 1) / 2;
 			if (attackerIsCharacter && ecs::PlayerRuntime::IsMonster(attacker) && ecs::PlayerRuntime::IsPC(victim))
-				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
+				resist = (resist + 1) / 2;
 			dam = dam * (100 - resist) / 100;
 		}
 		//
-		//  Ӽ
 		//
 		if (attackerIsCharacter)
 		{
 			if (type == DAMAGE_TYPE_NORMAL)
 			{
-				// ݻ
 				if (ecs::PointSystem::Get(victim, POINT_REFLECT_MELEE))
 				{
 					int reflectDamage = dam * ecs::PointSystem::Get(victim, POINT_REFLECT_MELEE) / 100;
 
-					// NOTE: ڰ IMMUNE_REFLECT Ӽ ִٸ ݻ縦  ϴ
-					// ƴ϶ 1/3  ؼ  ȹ û.
 					if (AffectSystem::IsImmune(attacker, IMMUNE_REFLECT))
 						reflectDamage = int(reflectDamage / 3.0f + 0.5f);
 
@@ -4949,7 +4892,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 
-			// ũƼ
 			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim)) {
@@ -4959,7 +4901,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 			if (iCriticalPct)
 			{
-				//ũƼ   .
 				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
 
 				if (number(1, 100) <= iCriticalPct)
@@ -4991,7 +4932,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			if (iPenetratePct)
 			{
 
-				//Ÿ   .
 				iPenetratePct -= ecs::PointSystem::Get(victim, POINT_RESIST_PENETRATE);
 
 				if (number(1, 100) <= iPenetratePct)
@@ -5057,7 +4997,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 #else
-			// HP ƿ
 			if (ecs::PointSystem::Get(attacker, POINT_STEAL_HP))
 			{
 				int pct = 1;
@@ -5097,7 +5036,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 
-			// SP ƿ
 			if (ecs::PointSystem::Get(attacker, POINT_STEAL_SP))
 			{
 				int pct = 1;
@@ -5125,7 +5063,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 #endif
 
-			//  ƿ
 			if (ecs::PointSystem::Get(attacker, POINT_STEAL_GOLD))
 			{
 				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_STEAL_GOLD))
@@ -5159,8 +5096,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 #else
-			// ĥ  HPȸ
-			if (ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
+			if (ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) && number(0, 4) > 0)
 			{
 				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100; //@fixme107
 
@@ -5171,8 +5107,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 
-			// ĥ  SPȸ
-			if (ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
+			if (ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) && number(0, 4) > 0)
 			{
 				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100; //@fixme107
 
@@ -5184,7 +5119,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 #endif
 
-			//   ش.
 			if (ecs::PointSystem::Get(attacker, POINT_MANA_BURN_PCT))
 			{
 				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_MANA_BURN_PCT))
@@ -5194,7 +5128,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	}
 
 	//
-	// Ÿ Ǵ ų  ʽ /
 	//
 	switch (type)
 	{
@@ -5254,11 +5187,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	}
 
 	//
-	// (żȣ)
 	//
 	if (AffectSystem::IsAffectFlag(victim, AFF_MANASHIELD))
 	{
-		// POINT_MANASHIELD  ۾
 		int iDamageSPPart = dam / 3;
 		int iDamageToSP = iDamageSPPart * ecs::PointSystem::Get(victim, POINT_MANASHIELD) / 100;
 		int iSP = ecs::PlayerRuntime::GetSP(victim);
@@ -5271,14 +5202,12 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 		else
 		{
-			// ŷ ڶ ǰ  ￩ҋ
 			ecs::PointSystem::Change(victim, POINT_SP, -ecs::PlayerRuntime::GetSP(victim));
 			dam -= iSP * 100 / std::max(ecs::PointSystem::Get(victim, POINT_MANASHIELD), (int64_t)1);
 		}
 	}
 
 	//
-	// ü   ( )
 	//
 	//	int64_t dec_dam = std::min((int64_t)200, dam * ecs::PointSystem::Get(victim, POINT_MALL_DEFBONUS) / 100);//razor93
 	//	dam -= dec_dam;
@@ -5287,7 +5216,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	if (attackerIsCharacter)
 	{
 		//
-		// ü ݷ  ( )
 		//
 		if (ecs::PointSystem::Get(attacker, POINT_MALL_ATTBONUS) > 0)
 		{
@@ -5301,7 +5229,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(attacker);
 			int iMapEmpire = ecs::GetEmpireFromMap(lMapIndex);
 
-			// ٸ     10%
 			if (iEmpire && iMapEmpire && iEmpire != iMapEmpire)
 			{
 				dam = dam * 9 / 10;
@@ -5351,7 +5278,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	if (CombatSystem::IsDead(victim))
 		return true;
 
-	//    ʵ .
 	if (type == DAMAGE_TYPE_POISON)
 	{
 		if (ecs::PlayerRuntime::GetHP(victim) - dam <= 0)
@@ -5360,7 +5286,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 	}
 	// ------------------------
-	//  ̾
 	// -----------------------
 	if (attackerIsCharacter && ecs::PlayerRuntime::IsPC(attacker))
 	{
@@ -5378,7 +5303,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	//PROF_UNIT puRest1("Rest1");
 	if (attackerIsCharacter)
 	{
-		// DEATH BLOW : Ȯ  4  (!?  ̺Ʈ  ͸ )
 		if (ecs::PlayerRuntime::IsMonster(attacker) && CombatSystem::IsDeathBlower(attacker))
 		{
 			if (CombatSystem::IsDeathBlow(attacker))
@@ -5869,7 +5793,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	}
 
 	//
-	// !!!!!!!!!  HP ̴ κ !!!!!!!!!
 	//
 	if (!IsUndying(victim))
 	{
@@ -6141,7 +6064,6 @@ public:
 		if (m_bType > 1)
 			SkillSystem::SetSkillMainTarget(me, m_bType, victim);
 
-		//  Ұ
 		if (!battle_is_attackable(me, victim))
 			return;
 
@@ -6155,7 +6077,7 @@ public:
 
 		switch (m_bType)
 		{
-		case 0: // ϹȰ
+		case 0:
 		{
 			int iDam = 0;
 
@@ -6218,12 +6140,11 @@ public:
 				CombatSystem::BeginFight(victim, me);
 
 			CombatSystem::Damage(victim, me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
-			// Ÿġ
 		}
 		break;
 
 
-		case 1: // Ϲ
+		case 1:
 		{
 			int iDam;
 
@@ -6249,7 +6170,6 @@ public:
 				CombatSystem::BeginFight(victim, me);
 
 			CombatSystem::Damage(victim, me, iDam, DAMAGE_TYPE_MAGIC);
-			// Ÿġ
 		}
 		break;
 
@@ -6258,7 +6178,6 @@ public:
 			//int iUseArrow = 2 + (SkillSystem::GetSkillPower(me, SKILL_YEONSA) *6/100);
 			int iUseArrow = 1;
 
-			// Ż ϴ°
 			{
 				if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
 				{
@@ -6394,7 +6313,6 @@ public:
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 			SkillSystem::ComputeSkill(m_me, m_bType, victim);
 
-			// TODO     ϱ
 		}
 		break;
 #ifndef ENABLE_BUG_FIXES
@@ -6720,12 +6638,10 @@ struct FuncSetLastAttacked
 #endif
 
 //
-// CHARACTER::Damage ޼ҵ this  ԰ Ѵ.
 //
 // Arguments
 //    pAttacker		:
 //    dam		:
-//    EDamageType	:   ΰ?
 //
 // Return value
 //    true		: dead

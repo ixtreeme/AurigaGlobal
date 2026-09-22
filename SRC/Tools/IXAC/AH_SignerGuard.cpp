@@ -22,7 +22,6 @@ namespace
         return out;
     }
 
-    // Lekéri egy PE fájl aláírójának subject nevét (ha van)
     bool GetFileSignerSubject(const std::wstring& filePath, std::wstring& outSubject)
     {
         outSubject.clear();
@@ -178,7 +177,7 @@ namespace AntiHook::SignerGuard
                         signer.c_str()
                     );
                     foundBlocked = true;
-                    break; // elég egyet találnunk
+                    break;
                 }
 
             } while (Process32NextW(snap, &pe));
@@ -190,7 +189,6 @@ namespace AntiHook::SignerGuard
 
         if (foundBlocked)
         {
-            // Ha ilyen aláíróval fut valami, nem küldjük tovább játszani.
             IXAC_ReportCheat();
             TerminateProcess(GetCurrentProcess(), 0x5E1F); // "SIGN"
         }

@@ -4,14 +4,6 @@
 
 #include "PropertyManager.h"
 #include "Property.h"
-/*
- *	CProperty 파일 포맷
- *
- *  0 ~ 4 bytes: fourcc
- *  5 ~ 6 bytes: \r\n
- *
- *  그 이후의 바이트들은 텍스트 파일 로더와 같은 구조
- */
 CProperty::CProperty(const char * c_pszFileName) : mc_pFileName(nullptr), m_dwCRC(0)
 {
 	m_stFileName = c_pszFileName;
@@ -68,9 +60,7 @@ bool CProperty::GetVector(const char * c_pszKey, CTokenVector & rTokenVector)
 	if (m_stTokenMap.end() == it)
 		return false;
 
-// NOTE : 튕김 현상 발견
 //	std::copy(rTokenVector.begin(), it->second.begin(), it->second.end());
-// NOTE : 레퍼런스에는 이런 식으로 하게끔 되어 있음
 ///////////////////////////////////////////////////////////////////////////////
 //	template <class InputIterator, class OutputIterator>
 //	OutputIterator copy(InputIterator first, InputIterator last,
@@ -82,11 +72,8 @@ bool CProperty::GetVector(const char * c_pszKey, CTokenVector & rTokenVector)
 //	copy(V.begin(), V.end(), L.begin());
 //	assert(equal(V.begin(), V.end(), L.begin()));
 ///////////////////////////////////////////////////////////////////////////////
-// 헌데 그래도 튕김. - [levites]
 //	std::copy(it->second.begin(), it->second.end(), rTokenVector.begin());
 
-// 결국 이렇게.. - [levites]
-// 현재 사용하는 곳 : WorldEditor/Dialog/MapObjectPropertyPageBuilding.cpp
 	CTokenVector & rSourceTokenVector = it->second;
 	for (auto itor = rSourceTokenVector.begin(); itor != rSourceTokenVector.end(); ++itor)
 	{
@@ -101,7 +88,6 @@ void CProperty::PutString(const char * c_pszKey, const char * c_pszString)
 	std::string stTempKey = c_pszKey;
 	stl_lowers(stTempKey);
 
-	// 이미 있는걸 지움
 
 	if (const auto itor = m_stTokenMap.find(stTempKey); itor != m_stTokenMap.end())
 		m_stTokenMap.erase(itor);

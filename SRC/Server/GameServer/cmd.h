@@ -49,15 +49,15 @@ enum SCMD_RESTART
 };
 
 extern void Shutdown(int iSec);
-extern void SendLog(const char * c_pszBuf);		// 운영자에게만 공지
+extern void SendLog(const char * c_pszBuf);
 #ifdef ENABLE_FULL_NOTICE
 extern void SendNotice(const char * c_pszBuf, bool bBigFont=false);
 extern void BroadcastNotice(const char * c_pszBuf, bool bBigFont=false);
 #else
-extern void SendNotice(const char * c_pszBuf);		// 이 게임서버에만 공지
-extern void BroadcastNotice(const char * c_pszBuf);	// 전 서버에 공지
+extern void SendNotice(const char * c_pszBuf);
+extern void BroadcastNotice(const char * c_pszBuf);
 #endif
-extern void SendNoticeMap(const char* c_pszBuf, int32_t nMapIndex, bool bBigFont); // 지정 맵에만 공지
+extern void SendNoticeMap(const char* c_pszBuf, int32_t nMapIndex, bool bBigFont);
 #ifdef TEXTS_IMPROVEMENT
 extern void SendNoticeNew(uint8_t type, uint8_t empire, int32_t mapidx, uint32_t idx, const char * format, ...);
 extern void BroadcastNoticeNew(uint8_t type, uint8_t empire, int32_t mapidx, uint32_t idx, const char * format, ...);

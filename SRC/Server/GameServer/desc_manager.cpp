@@ -315,7 +315,7 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 		}
 	}
 
-	if (!IsValidIP(admin_ip, host)) // admin_ip 에 등록된 IP 는 최대 사용자 수에 구애받지 않는다.
+	if (!IsValidIP(admin_ip, host))
 	{
 		if (m_iSocketsConnected >= MAX_ALLOW_USER) {
 			LOG_ERROR("max connection reached. MAX_ALLOW_USER = {}", MAX_ALLOW_USER);

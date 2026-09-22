@@ -229,7 +229,6 @@ bool DESC::Setup(LPFDWATCH _fdw, socket_t _fd, const sockaddr_in & c_rSockAddr, 
 	m_wPort			= c_rSockAddr.sin_port;
 	m_dwHandle		= _handle;
 
-	//NOTE: �̰� ���󺰷� �ٸ��� ��ƾ��� ������ �ֳ�?
 	m_lpOutputBuffer = buffer_new(DEFAULT_PACKET_BUFFER_SIZE * 2);
 
 	m_iMinInputBufferLen = MAX_INPUT_LEN >> 1;
@@ -299,7 +298,6 @@ int DESC::ProcessInput()
 
 		int iBytesProceed = 0;
 
-		// false�� ���� �Ǹ� �ٸ� phase�� �ٲ� ���̹Ƿ� �ٽ� ���μ����� �����Ѵ�!
 		while (!m_pInputProcessor->Process(this, buffer_read_peek(m_lpInputBuffer), (int)buffer_size(m_lpInputBuffer), iBytesProceed))
 		{
 			buffer_read_proceed(m_lpInputBuffer, iBytesProceed);
@@ -313,7 +311,6 @@ int DESC::ProcessInput()
 	{
 		int iBytesProceed = 0;
 
-		// false�� ���� �Ǹ� �ٸ� phase�� �ٲ� ���̹Ƿ� �ٽ� ���μ����� �����Ѵ�!
 		while (!m_pInputProcessor->Process(this, buffer_read_peek(m_lpInputBuffer), buffer_size(m_lpInputBuffer), iBytesProceed))
 		{
 			buffer_read_proceed(m_lpInputBuffer, iBytesProceed);
@@ -326,9 +323,7 @@ int DESC::ProcessInput()
 	{
 		int iSizeBuffer = buffer_size(m_lpInputBuffer);
 
-		// 8����Ʈ �����θ� ó���Ѵ�. 8����Ʈ ������ �����ϸ� �߸��� ��ȣȭ ���۸� ��ȣȭ
-		// �� ���ɼ��� �����Ƿ� ©�� ó���ϱ�� �Ѵ�.
-		if (iSizeBuffer & 7) // & 7�� % 8�� ����. 2�� �¼������� ����
+		if (iSizeBuffer & 7)
 			iSizeBuffer -= iSizeBuffer & 7;
 
 		if (iSizeBuffer > 0)
@@ -346,7 +341,6 @@ int DESC::ProcessInput()
 
 			int iBytesProceed = 0;
 
-			// false�� ���� �Ǹ� �ٸ� phase�� �ٲ� ���̹Ƿ� �ٽ� ���μ����� �����Ѵ�!
 			while (!m_pInputProcessor->Process(this, buffer_read_peek(lpBufferDecrypt), buffer_size(lpBufferDecrypt), iBytesProceed))
 			{
 				if (iBytesProceed > iSizeBuffer)
@@ -422,12 +416,11 @@ void DESC::Packet(const void * c_pvData, int iSize)
 {
 	assert(iSize > 0);
 
-	if (m_iPhase == PHASE_CLOSE) // ���� ���¸� ������ �ʴ´�.
+	if (m_iPhase == PHASE_CLOSE)
 		return;
 
 	if (!m_stRelayName.empty())
 	{
-		// Relay ��Ŷ�� ��ȣȭ���� �ʴ´�.
 		TPacketGGRelay p;
 
 		p.bHeader = HEADER_GG_RELAY;
@@ -498,7 +491,6 @@ void DESC::Packet(const void * c_pvData, int iSize)
 			}
 			else
 			{
-				// ��ȣȭ�� �ʿ��� ����� ���� ũ�⸦ Ȯ���Ѵ�.
 				/* buffer_adjust_size(m_lpOutputBuffer, iSize + 8); */
 				uint32_t * pdwWritePoint = (uint32_t *) buffer_write_peek(m_lpOutputBuffer);
 
@@ -541,7 +533,6 @@ void DESC::SetPhase(int _phase)
 	switch (m_iPhase)
 	{
 		case PHASE_CLOSE:
-			// �޽����� ĳ���ʹ����� �Ǹ鼭 ����
 			//MessengerManager::instance().Logout(GetAccountTable().login);
 			m_pInputProcessor = &m_inputClose;
 			break;
@@ -551,8 +542,6 @@ void DESC::SetPhase(int _phase)
 			break;
 
 		case PHASE_SELECT:
-			// �޽����� ĳ���ʹ����� �Ǹ鼭 ����
-			//MessengerManager::instance().Logout(GetAccountTable().login); // �ǵ������� break �Ȱ�
 		case PHASE_LOGIN:
 		case PHASE_LOADING:
 #ifndef _IMPROVED_PACKET_ENCRYPTION_

@@ -43,7 +43,7 @@ protected:
 
 		void                    Destroy();
 
-		void			GracefulShutdown();	// 정상적 셧다운할 때 사용. PC를 모두 저장시키고 Destroy 한다.
+		void			GracefulShutdown();
 
 		uint32_t			AllocVID();
 
@@ -75,11 +75,8 @@ protected:
 		bool			AddToStateList(entt::entity character);
 		void			RemoveFromStateList(entt::entity character);
 
-		// DelayedSave: 어떠한 루틴 내에서 저장을 해야 할 짓을 많이 하면 저장
-		// 쿼리가 너무 많아지므로 "저장을 한다" 라고 표시만 해두고 잠깐
-		// (예: 1 frame) 후에 저장시킨다.
 		void                    DelayedSave(entt::entity character);
-		bool                    FlushDelayedSave(entt::entity character); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
+		bool                    FlushDelayedSave(entt::entity character);
 		void			ProcessDelayedSave();
 
 		template<class Func>	Func for_each_pc(Func f);
@@ -162,7 +159,7 @@ protected:
 		char				dummy1[1024];	// memory barrier
 		// Membership only: the update pump calls AISystem::UpdateStateMachine
 		// with the entity, nothing here dereferences a character.
-		std::unordered_set<entt::entity>	m_set_pkChrState;	// FSM이 돌아가고 있는 놈들
+		std::unordered_set<entt::entity>	m_set_pkChrState;
 		// Membership only. SaveReal is still a CHARACTER method, so the flush
 		// resolves once per entry - the same shape ITEM_MANAGER already uses for
 		// m_set_pkItemForDelayedSave.

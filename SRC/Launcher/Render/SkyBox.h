@@ -63,7 +63,7 @@ public:
 
 private:
 	TPDTVertex m_Vertex[4];
-	TIndex m_Indices[4];					// 인덱스 버퍼...
+	TIndex m_Indices[4];
 	CColorTransitionHelper m_Helper[4];
 };
 
@@ -99,7 +99,6 @@ protected:
 
 protected:
 	//////////////////////////////////////////////////////////////////////////
-	// 타입 정의
 
 	typedef std::vector<CSkyObjectQuad> TSkyObjectQuadVector;
 	typedef TSkyObjectQuadVector::iterator TSkyObjectQuadIterator;
@@ -118,8 +117,7 @@ protected:
 
 	//////////////////////////////////////////////////////////////////////////
 
-	// 구름...
-	TSkyObjectFace m_FaceCloud;		// 구름 일단 한장...
+	TSkyObjectFace m_FaceCloud;
 	D3DXMATRIX m_matWorldCloud, m_matTranslationCloud, m_matTextureCloud;
 	D3DXVECTOR3 m_v3PositionCloud;
 	float m_fCloudScaleX, m_fCloudScaleY, m_fCloudHeight;
@@ -129,7 +127,6 @@ protected:
 
 	uint32_t m_dwlastTime;
 
-	// 스카이 박스 이미지...
 	TGraphicImageInstanceMap m_GraphicImageInstanceMap;
 
 	// Transform...
@@ -137,7 +134,6 @@ protected:
 	D3DXVECTOR3 m_v3Position;
 	float m_fScaleX, m_fScaleY, m_fScaleZ;
 
-	// 랜더링 관련... 임시 변수..
 	unsigned char m_ucRenderMode;
 
 	std::string m_strCurTime;

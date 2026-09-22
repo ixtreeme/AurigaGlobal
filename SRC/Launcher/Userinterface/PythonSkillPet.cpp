@@ -195,7 +195,7 @@ PyObject * petskillGetIconImage(PyObject * poSelf, PyObject * poArgs)
 
 	CPythonSkillPet::SSkillDataPet * c_pSkillData;
 	if (!CPythonSkillPet::Instance().GetSkillData(iSkillIndex, &c_pSkillData))
-		return Py_BuildValue("i", 0);	// 익셉션을 내는 대신 0을 리턴한다.
+		return Py_BuildValue("i", 0);
 
 	auto capsule = PyCapsule_New(c_pSkillData->pImage, nullptr, nullptr);
 	if (capsule)

@@ -95,7 +95,6 @@ void CCullingManager::Reset()
 void CCullingManager::Update()
 {
 	// TODO : update each object
-	// 하지말고 각자 하게 해보자
 
 	//uint32_t time = ELTimer_GetMSec();
 	//Reset();

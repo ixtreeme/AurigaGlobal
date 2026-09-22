@@ -9,7 +9,6 @@
 class CEffectMeshInstance : public CEffectElementBaseInstance
 {
 	public:
-		// NOTE : Mesh 단위 텍스춰 데이타의 인스턴스이다.
 		typedef struct STextureInstance
 		{
 			CFrameController							TextureFrameController;

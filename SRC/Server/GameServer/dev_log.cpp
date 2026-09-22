@@ -31,7 +31,6 @@ static int	s_log_mask = 0xffffffff;
 
 void dev_log(const char *file, int line, const char *function, int level, const char *fmt, ...)
 {
-	// 테스트 서버에서만 남기며, 마스크가 꺼져있으면 남기지 않는다.
 	if (!test_server || !IS_SET(s_log_mask, level))
 		return;
 

@@ -37,12 +37,12 @@ namespace marriage
 		uint32_t dwVnum;
 		int value[MAX_LOVE_GRADE];
 	} g_ItemBonus[MAX_MARRIAGE_UNIQUE_ITEM] = {
-		{ 71069,	{ 4,	5,	6,	8,  } }, // ���� ����
-		{ 71070,	{ 10,	12,	15,	20, } }, // ����ġ ����
-		{ 71071,	{ 4,	5,	6,	8,  } }, // ũ��Ƽ�� ����
-		{ 71072,	{ -4,	-5,	-6,	-8, } }, // ���� ���ݷ� ����
-		{ 71073,	{ 20,	25,	30,	40, } }, // ���ݷ� ���� (���밪)
-		{ 71074,	{ 12,	16,	20,	30, } }, // ���� ���� (���밪)
+		{ 71069,	{ 4,	5,	6,	8,  } },
+		{ 71070,	{ 10,	12,	15,	20, } },
+		{ 71071,	{ 4,	5,	6,	8,  } },
+		{ 71072,	{ -4,	-5,	-6,	-8, } },
+		{ 71073,	{ 20,	25,	30,	40, } },
+		{ 71074,	{ 12,	16,	20,	30, } },
 
 	};
 
@@ -120,17 +120,8 @@ namespace marriage
 		else
 			days /= 86400;
 
-		// �⺻ 50%
 
-		// ������ ���� ������� �� :
-		// ��¥�� ���� ���� 80% �Ϸ�� 8%
-		// ������ ���� ���� 80%
-		// ��Ż 100%
 
-		// �������� �� :
-		// ��¥�� ���� ���� 60% �Ϸ�� 6%
-		// ������ ���� ���� 60%
-		// ��Ż 100%
 		return MIN(50 + MIN(days * point_per_day, max_limit) + MIN(love_point / 1000000, max_limit), 100);
 	}
 
@@ -143,11 +134,9 @@ namespace marriage
 
 		return ecs::PlayerRuntime::GetMapIndex(ch1) == ecs::PlayerRuntime::GetMapIndex(ch2);
 
-		// ��Ƽ üũ�� �������
 		/*if (!ecs::SocialSystem::GetParty(ch1) || ecs::SocialSystem::GetParty(ch1) != ecs::SocialSystem::GetParty(ch2))
 		  return false;*/
 
-		// �Ÿ� üũ�� �������
 		/*const int DISTANCE = 5000;
 
 		  if (labs(ecs::PlayerRuntime::GetX(ch1) - ecs::PlayerRuntime::GetX(ch2)) > DISTANCE)
@@ -159,7 +148,6 @@ namespace marriage
 		  return (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(ch1) - ecs::PlayerRuntime::GetX(ch2), ecs::PlayerRuntime::GetY(ch1) - ecs::PlayerRuntime::GetY(ch2)) < DISTANCE);*/
 	}
 
-	// �ݽ� ��ġ
 	int TMarriage::GetBonus(uint32_t dwItemVnum, bool bShare, entt::entity me)
 	{
 		const entt::entity ch1Entity = CPIDRegistry::Instance().Find(m_pid1);
@@ -167,9 +155,7 @@ namespace marriage
 		if (!is_married)
 			return 0;
 
-		// �ֺ��� �������� �ڱ� ��ɸ� ����ȴ�.
 
-		// �ش� �������� � ����� �ϴ��� ã�´�.
 		int iFindedBonusIndex=0;
 		{
 			for (iFindedBonusIndex = 0; iFindedBonusIndex < MAX_MARRIAGE_UNIQUE_ITEM; ++iFindedBonusIndex)
@@ -211,7 +197,6 @@ namespace marriage
 
 		if (bShare)
 		{
-			// �θ��� ���ʽ��� ���Ѵ�.
 			int count = 0;
 			if (ecs::PlayerRuntime::IsPC(ch1Entity) &&
 #ifdef ENABLE_NEW_USE_POTION
@@ -238,7 +223,6 @@ namespace marriage
 		}
 		else
 		{
-			// ���� �͸� ���
 			int count = 0;
 			if (me != ch1Entity && ecs::PlayerRuntime::IsPC(ch1Entity) &&
 #ifdef ENABLE_NEW_USE_POTION
@@ -280,7 +264,6 @@ namespace marriage
 				SendLoverInfo(ch2, name1, GetMarriagePoint());
 		}
 
-		// �� �� �� ���μ����� �α��� ���̸� �����͸� �����ϰ� �̺�Ʈ �߻�
 		if (IsOnline())
 		{
 			ecs::SocialSystem::SetMarryPartner(ch1, ch2);
@@ -289,7 +272,6 @@ namespace marriage
 			StartNearCheckEvent();
 		}
 
-		// �� �� �α��� �Ǿ� �ִٸ� ��Ŷ�� ������.
 		if (is_married)
 		{
 			LPDESC d1, d2;
@@ -650,7 +632,6 @@ namespace marriage
 
 			if (ecs::IsCharacter(A) && ecs::IsCharacter(B))
 			{
-				// ���� �� ��û�� ������
 				TPacketWeddingRequest p;
 				p.dwPID1 = dwPID1;
 				p.dwPID2 = dwPID2;
@@ -813,11 +794,9 @@ namespace marriage
 		if (!pwi)
 			return;
 
-		// ��ȥ�ڵ��� �������Ѿ���
 		pMarriage->WarpToWeddingMap(dwPID1);
 		pMarriage->WarpToWeddingMap(dwPID2);
 
-		// ����ؼ� �޴�â���� �̸����;���
 		m_setWedding.insert(make_pair(dwPID1, dwPID2));
 	}
 
@@ -836,7 +815,6 @@ namespace marriage
 			return;
 		}
 
-		// �ʿ��� �������մϴ�
 		if (map_allow_find(WEDDING_MAP_INDEX))
 			if (!WeddingManager::instance().End(pMarriage->pWeddingInfo->dwMapIndex))
 			{

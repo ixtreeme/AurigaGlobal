@@ -98,59 +98,6 @@ void CItemData::SetDescription(const std::string& c_rstDesc)
 {
 	m_strDescription=c_rstDesc;
 }
-/*
-bool CItemData::LoadItemData(const char * c_szFileName)
-{
-	CTextFileLoader TextFileLoader;
-
-	if (!TextFileLoader.Load(c_szFileName))
-	{
-		//Lognf(1, "CItemData::LoadItemData(c_szFileName=%s) - FAILED", c_szFileName);
-		return FALSE;
-	}
-
-	TextFileLoader.SetTop();
-
-	TextFileLoader.GetTokenString("modelfilename", &m_strModelFileName);
-	TextFileLoader.GetTokenString("submodelfilename", &m_strSubModelFileName);
-	TextFileLoader.GetTokenString("dropmodelfilename", &m_strDropModelFileName);
-	TextFileLoader.GetTokenString("iconimagefilename", &m_strIconFileName);
-
-	char szDescriptionKey[32+1];
-	_snprintf(szDescriptionKey, 32, "%ddescription", GetDefaultCodePage());
-	if (!TextFileLoader.GetTokenString(szDescriptionKey, &m_strDescription))
-	{
-		TextFileLoader.GetTokenString("description", &m_strDescription);
-	}
-
-	// LOD Model File Name List
-	CTokenVector * pLODModelList;
-	if (TextFileLoader.GetTokenVector("lodmodellist", &pLODModelList))
-	{
-		m_strLODModelFileNameVector.clear();
-		m_strLODModelFileNameVector.resize(pLODModelList->size());
-
-		for (uint32_t i = 0; i < pLODModelList->size(); ++i)
-		{
-			m_strLODModelFileNameVector[i] = pLODModelList->at(0);
-		}
-	}
-
-	// Attaching Data
-	// Item 에 Attaching Data 일단 없음.
-//	if (TextFileLoader.SetChildNode("attachingdata"))
-//	{
-//		if (!NRaceData::LoadAttachingData(TextFileLoader, &m_AttachingDataVector))
-//			return FALSE;
-//
-//		TextFileLoader.SetParentNode();
-//	}
-
-	__LoadFiles();
-
-	return TRUE;
-}
-*/
 void CItemData::SetDefaultItemData(const char * c_szIconFileName, const char * c_szModelFileName)
 {
 	if(c_szModelFileName)
@@ -478,10 +425,6 @@ int32_t CItemData::GetSocket(uint8_t byIndex) const
 	return m_ItemTable.alSockets[byIndex];
 }
 
-//서버와 동일 서버 함수 변경시 같이 변경!!(이후에 합친다)
-//SocketCount = 1 이면 초급무기
-//SocketCount = 2 이면 중급무기
-//SocketCount = 3 이면 고급무기
 int CItemData::GetSocketCount() const
 {
 	return m_ItemTable.bGainSocketPct;
@@ -506,7 +449,6 @@ float CItemData::GetSpecularPowerf() const
 	return float(uSpecularPower) / 100.0f;
 }
 
-//refine 값은 아이템번호 끝자리와 일치한다-_-(테이블이용으로 바꿀 예정)
 UINT CItemData::GetRefine() const
 {
 	return GetIndex()%10;

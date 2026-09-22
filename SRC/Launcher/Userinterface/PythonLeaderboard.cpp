@@ -179,15 +179,11 @@ void CPythonLeaderboard::DrawGuild() const
 
 	// ----------------------------
 	// OSZLOP BEALLITASOK
-	//  - rövidebb headerek: W / D / L / S
-	//  - a stat blokk keskenyebb, hogy a Leader kapjon több helyet
-	//  - jobb szélhez anchorolva, nem vágja le
 	// ----------------------------
-	const int cellW = 56;   // kisebb cella -> több hely balra (Leadernek)
-	const int colGap = 78;   // kisebb gap -> stat oszlopok közelebb, több hely a Leadernek
+	const int cellW = 56;
+	const int colGap = 78;
 	const int rightPad = 45;   // kisebb = jobbra megy a blokk, nagyobb = balra
 
-	// Jobbról balra: SCORE | LOSS | DRAW | WIN
 	const int colScoreR = W - rightPad;
 	const int colLossR = colScoreR - colGap;
 	const int colDrawR = colLossR - colGap;
@@ -198,18 +194,15 @@ void CPythonLeaderboard::DrawGuild() const
 	const int colDrawL = colDrawR - cellW;
 	const int colWinL = colWinR - cellW;
 
-	// Leader oszlop jobb széle a stat blokk elõtt
 	int leaderRight = colWinL - 18;
 	if (leaderRight < 560) // safety
 		leaderRight = 560;
 
-	// Színek
-	const D3DCOLOR winColor = D3DCOLOR_XRGB(0, 255, 0);       // zöld
-	const D3DCOLOR drawColor = D3DCOLOR_XRGB(255, 255, 0);     // sárga
+	const D3DCOLOR winColor = D3DCOLOR_XRGB(0, 255, 0);
+	const D3DCOLOR drawColor = D3DCOLOR_XRGB(255, 255, 0);
 	const D3DCOLOR lossColor = D3DCOLOR_XRGB(255, 0, 0);       // piros
-	const D3DCOLOR scoreColor = D3DCOLOR_XRGB(200, 220, 255);   // világos (score)
+	const D3DCOLOR scoreColor = D3DCOLOR_XRGB(200, 220, 255);
 
-	// Cím
 	RECT titleRect = { 0, 60, W, 100 };
 	D3DRECT titleBgRect = { 0, 60, W, 100 };
 	dev->Clear(1, &titleBgRect, D3DCLEAR_TARGET, D3DCOLOR_XRGB(25, 60, 180), 1.f, 0);
@@ -219,13 +212,11 @@ void CPythonLeaderboard::DrawGuild() const
 		-1, &titleRect, DT_CENTER | DT_VCENTER,
 		D3DCOLOR_XRGB(255, 255, 255));
 
-	// Fejléc bal oldali rész
 	RECT headerLeftRect = { 60, 120, leaderRight, 150 };
 	m_font->DrawTextA(nullptr,
 		"#   Guild                         Leader",
 		-1, &headerLeftRect, 0, D3DCOLOR_XRGB(255, 180, 20));
 
-	// Fejléc stat oszlopok (pontosan középre, rövid feliratok)
 	RECT hWin = { colWinL,    120, colWinR,    150 };
 	RECT hDraw = { colDrawL,   120, colDrawR,   150 };
 	RECT hLoss = { colLossL,   120, colLossR,   150 };
@@ -258,7 +249,6 @@ void CPythonLeaderboard::DrawGuild() const
 		D3DRECT bgRect = { 50, top, W - 50, bottom };
 		dev->Clear(1, &bgRect, D3DCLEAR_TARGET, bgColor, 1.f, 0);
 
-		// Bal oldali (rank/guild/leader) top3 kiemelés
 		D3DCOLOR textColor = D3DCOLOR_XRGB(255, 255, 255);
 		if (i == 0) textColor = D3DCOLOR_XRGB(255, 215, 0);
 		else if (i == 1) textColor = D3DCOLOR_XRGB(192, 192, 192);
@@ -274,11 +264,9 @@ void CPythonLeaderboard::DrawGuild() const
 		r = { 100, top, 410, bottom };
 		m_font->DrawTextA(nullptr, guildBuf, -1, &r, DT_LEFT | DT_VCENTER, textColor);
 
-		// leader (kapott több helyet)
 		r = { 420, top, leaderRight, bottom };
 		m_font->DrawTextA(nullptr, masterBuf, -1, &r, DT_LEFT | DT_VCENTER, textColor);
 
-		// stat cellák (ugyanaz a rect, mint a fejléc -> pontosan alatta középen)
 		RECT rWin = { colWinL,   top, colWinR,   bottom };
 		RECT rDraw = { colDrawL,  top, colDrawR,  bottom };
 		RECT rLoss = { colLossL,  top, colLossR,  bottom };
@@ -320,19 +308,15 @@ void CPythonLeaderboard::DrawTest() const
 	if (FAILED(dev->GetRenderTarget(0, old.GetAddressOf()))) return;
 	if (FAILED(dev->SetRenderTarget(0, rt.Get()))) return;
 
-	// ---------- CÍM ----------
 	RECT titleRect = { 0, 60, W, 100 };
 
-	// háttér téglalap (kék)
 	D3DRECT titleBgRect = { 0, 60, W, 100 };
 	dev->Clear(1, &titleBgRect, D3DCLEAR_TARGET, D3DCOLOR_XRGB(25, 60, 180), 1.f, 0);
 
-	// szöveg rajzolás a háttér fölé
 	m_font->DrawTextA(nullptr,
 		"AURIGA \x95 LEADERBOARD \x95 BY METINSTONE",
 		-1, &titleRect, DT_CENTER | DT_VCENTER,
-		D3DCOLOR_XRGB(255, 255, 255)); // fehér szöveg
-	// ---------- FEJLÉC ----------
+		D3DCOLOR_XRGB(255, 255, 255));
 	RECT headerRect = { 60, 120, W - 60, 150 };
 	m_font->DrawTextA(nullptr, "#   Name                      Lv       Killed Metins         Boss DMG",
 		-1, &headerRect, 0, D3DCOLOR_XRGB(255, 180, 20));
@@ -361,12 +345,10 @@ void CPythonLeaderboard::DrawTest() const
 			int top = startY + static_cast<int>(i) * rowHeight;
 			int bottom = top + rowHeight - 6;
 
-			// sor háttér
 			D3DCOLOR bgColor = (name == myName) ? D3DCOLOR_XRGB(0, 100, 0) : D3DCOLOR_XRGB(30, 30, 30);
 			D3DRECT bgRect = { 50, top, W - 50, bottom };
 			dev->Clear(1, &bgRect, D3DCLEAR_TARGET, bgColor, 1.f, 0);
 
-			// szín
 			D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255);
 			if (i == 0) color = D3DCOLOR_XRGB(255, 215, 0);
 			else if (i == 1) color = D3DCOLOR_XRGB(192, 192, 192);
@@ -446,17 +428,14 @@ void CPythonLeaderboard::DrawSkillMob() const
 		return;
 	}
 
-	// ---------- háttér tábla keret ----------
 	int rows = (int)m_MobSkillLines.size();
 	rows = min(rows, 10);
 	constexpr int rowHeight1 = 28;
 	int totalHeight1 = 150 + rows * rowHeight1;
 	DrawRectSkillMob(dev, 50, 80, 950, 80 + totalHeight1, D3DCOLOR_ARGB(180, 20, 20, 20));
 
-	// ---------- cím ----------
 	RECT titleRect = { 0, 60, W, 100 };
 
-	// címkék háttér (kék csík)
 	D3DRECT titleBgRect = { 0, 60, W, 100 };
 	dev->Clear(1, &titleBgRect, D3DCLEAR_TARGET, D3DCOLOR_XRGB(25, 60, 180), 1.f, 0);
 
@@ -466,7 +445,6 @@ void CPythonLeaderboard::DrawSkillMob() const
 		D3DCOLOR_XRGB(255, 215, 205));
 
 
- // ---------- fejléc ----------
 	RECT headerRect = { 60, 120, W - 60, 150 };
 	m_font->DrawTextA(nullptr,
 		"#        Name                  Lv       Victim                 Skill DMG",
@@ -492,7 +470,6 @@ void CPythonLeaderboard::DrawSkillMob() const
 			char nameBuf[64] = { 0 };
 			char victimBuf[64] = { 0 };
 
-			// ÚJ FORMÁTUM: name;level;victim;dmg
 			int scanned = sscanf(line.c_str(), "%63[^;];%d;%63[^;];%d", nameBuf, &lv, victimBuf, &dmg);
 			if (scanned < 4) continue;
 
@@ -502,19 +479,16 @@ void CPythonLeaderboard::DrawSkillMob() const
 			int top = startY + static_cast<int>(i) * rowHeight;
 			int bottom = top + rowHeight - 6;
 
-			// saját sor kiemelés
 			D3DCOLOR bgColor = (name == myName) ? D3DCOLOR_XRGB(0, 100, 0) : D3DCOLOR_XRGB(30, 30, 30);
 			D3DRECT bgRect = { 50, top, W - 50, bottom };
 			dev->Clear(1, &bgRect, D3DCLEAR_TARGET, bgColor, 1.f, 0);
 
-			// színek
 			D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255);
 			if (i == 0) color = D3DCOLOR_XRGB(255, 215, 0);
 			else if (i == 1) color = D3DCOLOR_XRGB(192, 192, 192);
 			else if (i == 2) color = D3DCOLOR_XRGB(205, 127, 50);
 			if (name == myName) color = D3DCOLOR_XRGB(255, 255, 255);
 
-			// --- oszlop kiosztás ---
 			// Rank
 			RECT colRect = { 60, top, 100, bottom };
 			char bufRank[8];
@@ -530,7 +504,6 @@ void CPythonLeaderboard::DrawSkillMob() const
 			colRect = {.left = 400, .top = top, .right = 440, .bottom = bottom };
 			m_font->DrawTextA(nullptr, bufLv, -1, &colRect, DT_RIGHT | DT_VCENTER, color);
 
-			// Victim (új oszlop)
 			colRect = {.left = 490, .top = top, .right = 700, .bottom = bottom };
 			m_font->DrawTextA(nullptr, victim.c_str(), -1, &colRect, DT_LEFT | DT_VCENTER, color);
 

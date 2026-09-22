@@ -207,10 +207,6 @@ namespace quest
 	{
 		// migrated from CHARACTER::SetQuestFlag
 		// DUAL-PATH: legacy only during migration window
-		// ���ϰ�
-		// 0 : ������ ���� ����
-		// 1 : �߸��� �̸��̴�
-		// 2 : �̸� �ٲٱ� ����
 
 		if ( lua_isstring(L, -1) != true ) return 0;
 

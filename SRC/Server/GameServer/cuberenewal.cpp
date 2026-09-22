@@ -50,12 +50,12 @@ struct SCubeMaterialInfo
 		bHaveComplicateMaterial = false;
 	}
 
-	CUBE_RENEWAL_VALUE			reward;							// º¸»ó?? ¹¹³?
-	TCubeValueVector	material;						// ?ç·áµé?º ¹¹³?
-	int64_t				gold;							// µ·?º ¾ó¸¶µå³?
+	CUBE_RENEWAL_VALUE			reward;
+	TCubeValueVector	material;
+	int64_t				gold;
 	int 				percent;
 	std::string		category;
-	TCubeValueVector	complicateMaterial;				// º¹?â??-_- ?ç·áµé
+	TCubeValueVector	complicateMaterial;
 #ifdef ENABLE_GAYA_SYSTEM
 	uint32_t 				gaya;
 #endif
@@ -78,7 +78,7 @@ struct SItemNameAndLevel
 
 
 typedef std::vector<SCubeMaterialInfo>								TCubeResultList;
-typedef std::unordered_map<uint32_t, TCubeResultList>				TCubeMapByNPC;				// °¢°¢?? NPCº°·? ¾î¶² °? ¸¸µé ¼ö ??°í ?ç·á°¡ ¹º?ö...
+typedef std::unordered_map<uint32_t, TCubeResultList>				TCubeMapByNPC;
 
 TCubeMapByNPC cube_info_map;
 
@@ -264,7 +264,6 @@ bool Cube_load (const char *file)
 #endif
 		else TOKEN("gold")
 		{
-			// ?¦?¶¿¡ ??¿ä?? ±?¾?
 			cube_data->gold = value1;
 		}
 		else TOKEN("end")

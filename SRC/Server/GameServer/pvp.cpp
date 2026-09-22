@@ -510,7 +510,7 @@ void CPVP::Win(uint32_t dwPID)
 
 	m_bRevenge = true;
 
-	m_players[iSlot].bAgree = true; // �ڵ����� ����
+	m_players[iSlot].bAgree = true;
 	m_players[!iSlot].bCanRevenge = true;
 	m_players[!iSlot].bAgree = false;
 
@@ -568,7 +568,6 @@ void RemoveStateFull(entt::entity character)
 
 void CPVPManager::Decline(entt::entity character, entt::entity victim)
 {
-	// Fake PC / desc n�lk�li entit�s ne menjen be pvp state-be
 	if (ecs::IsCharacter(character) && ecs::IsCharacter(victim))
 	{
 		RemoveStateFull(character);
@@ -799,8 +798,6 @@ void CPVPManager::GiveUp(entt::entity character, uint32_t dwKillerPID) // This m
 	}
 }
 
-// ���ϰ�: 0 = PK, 1 = PVP
-// PVP�� �����ϸ� ����ġ�� �������� ������ PK�� ������ �ʴ´�.
 bool CPVPManager::Dead(entt::entity character, uint32_t dwKillerPID)
 {
 	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find((ecs::PlayerRuntime::GetPlayerID(character)));
@@ -859,7 +856,7 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 			return false;
 	}
 
-	if (character == victim)  // ���� �� ĥ��� �ϳ� -_-
+	if (character == victim)
 		return false;
 
 	if (ecs::PlayerRuntime::IsNPC(victim) && ecs::PlayerRuntime::IsNPC(character) && !ecs::PlayerRuntime::IsGuardNPC(character))
@@ -1031,7 +1028,6 @@ void CPVPManager::SendList(LPDESC d)
 		if (!pkPVP->m_players[0].dwVID || !pkPVP->m_players[1].dwVID)
 			continue;
 
-		// VID�� �Ѵ� ���� ��쿡�� ������.
 		if (pkPVP->IsFight())
 		{
 			pack.bMode = PVP_MODE_FIGHT;
@@ -1088,7 +1084,7 @@ void CPVPManager::Process()
 	{
 		CPVP * pvp = (it++)->second;
 
-		if (get_dword_time() - pvp->GetLastFightTime() > 600000) // 10�� �̻� �ο��� ��������
+		if (get_dword_time() - pvp->GetLastFightTime() > 600000)
 		{
 			pvp->Packet(true);
 			Delete(pvp);

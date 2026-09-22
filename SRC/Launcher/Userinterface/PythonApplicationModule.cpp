@@ -290,7 +290,6 @@ PyObject* appGetImageInfo(PyObject* poSelf, PyObject* poArgs)
 	UINT uWidth = 0;
 	UINT uHeight = 0;
 
-	// WIC factory létrehozása
 	ComPtr<IWICImagingFactory> pFactory;
 	HRESULT hr = CoCreateInstance(
 		CLSID_WICImagingFactory,
@@ -301,11 +300,9 @@ PyObject* appGetImageInfo(PyObject* poSelf, PyObject* poArgs)
 
 	if (SUCCEEDED(hr))
 	{
-		// Fájlnév konvertálása wchar_t-re
 		wchar_t wszFileName[MAX_PATH];
 		MultiByteToWideChar(CP_ACP, 0, szFileName, -1, wszFileName, MAX_PATH);
 
-		// Decoder létrehozása
 		ComPtr<IWICBitmapDecoder> pDecoder;
 		hr = pFactory->CreateDecoderFromFilename(
 			wszFileName,
@@ -317,7 +314,6 @@ PyObject* appGetImageInfo(PyObject* poSelf, PyObject* poArgs)
 
 		if (SUCCEEDED(hr))
 		{
-			// Elsõ frame lekérése
 			ComPtr<IWICBitmapFrameDecode> pFrame;
 			hr = pDecoder->GetFrame(0, &pFrame);
 
@@ -1434,7 +1430,7 @@ void initapp()
 	PyModule_AddIntConstant(poModule, "VK_DELETE",	     VK_DELETE);
 
 	PyModule_AddIntConstant(poModule, "DIK_ESCAPE",      DIK_ESCAPE);
-	PyModule_AddIntConstant(poModule, "DIK_ESC",         DIK_ESCAPE);	// ÆíÀÇ¸¦ À§ÇØ
+	PyModule_AddIntConstant(poModule, "DIK_ESC",         DIK_ESCAPE);
 	PyModule_AddIntConstant(poModule, "DIK_1",           DIK_1);
 	PyModule_AddIntConstant(poModule, "DIK_2",           DIK_2);
 	PyModule_AddIntConstant(poModule, "DIK_3",           DIK_3);

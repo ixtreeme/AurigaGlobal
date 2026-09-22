@@ -17,9 +17,6 @@ struct TargetInfoItem
 	uint32_t count = 0;
 };
 
-// special_item_group.txt에서 정의하는 속성 그룹
-// type attr로 선언할 수 있다.
-// 이 속성 그룹을 이용할 수 있는 것은 special_item_group.txt에서 Special type으로 정의된 그룹에 속한 UNIQUE ITEM이다.
 class CSpecialAttrGroup
 {
 public:
@@ -55,10 +52,6 @@ class CSpecialItemGroup
 			MOB_GROUP,
 		};
 
-		// QUEST 타입은 퀘스트 스크립트에서 vnum.sig_use를 사용할 수 있는 그룹이다.
-		//		단, 이 그룹에 들어가기 위해서는 ITEM 자체의 TYPE이 QUEST여야 한다.
-		// SPECIAL 타입은 idx, item_vnum, attr_vnum을 입력한다. attr_vnum은 위에 CSpecialAttrGroup의 Vnum이다.
-		//		이 그룹에 들어있는 아이템은 같이 착용할 수 없다.
 		enum ESIGType { NORMAL, PCT, QUEST, SPECIAL };
 
 		struct CSpecialItemInfo
@@ -91,9 +84,6 @@ class CSpecialItemGroup
 			return m_vecProbs.empty();
 		}
 
-		// Type Multi, 즉 m_bType == PCT 인 경우,
-		// 확률을 더해가지 않고, 독립적으로 계산하여 아이템을 생성한다.
-		// 따라서 여러 개의 아이템이 생성될 수 있다.
 		// by rtsummit
 		int GetMultiIndex(std::vector <int> &idx_vec) const
 		{
@@ -155,8 +145,6 @@ class CSpecialItemGroup
 			return false;
 		}
 
-		// Group의 Type이 Special인 경우에
-		// dwVnum에 매칭되는 AttrVnum을 return해준다.
 		uint32_t GetAttrVnum(uint32_t dwVnum) const
 		{
 			if (CSpecialItemGroup::SPECIAL != m_bType)
@@ -171,7 +159,6 @@ class CSpecialItemGroup
 			return 0;
 		}
 
-		// Group의 Size를 return해준다.
 		int GetGroupSize() const
 		{
 			return m_vecProbs.size();
@@ -380,7 +367,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 #endif
 
 		void			Destroy();
-		void			Update();	// 매 루프마다 부른다.
+		void			Update();
 		void			GracefulShutdown();
 #ifdef __INGAME_WIKI__
 		uint32_t											GetWikiItemStartRefineVnum(uint32_t dwVnum);
@@ -393,14 +380,11 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		std::vector<CommonWikiData::TWikiItemOriginInfo>&	GetItemOrigin(uint32_t vnum) { return m_itemOriginMap[vnum]; }
 #endif
 		uint32_t			GetNewID();
-		bool			SetMaxItemID(TItemIDRangeTable range); // 최대 고유 아이디를 지정
+		bool			SetMaxItemID(TItemIDRangeTable range);
 		bool			SetMaxSpareItemID(TItemIDRangeTable range);
 
-		// DelayedSave: 어떠한 루틴 내에서 저장을 해야 할 짓을 많이 하면 저장
-		// 쿼리가 너무 많아지므로 "저장을 한다" 라고 표시만 해두고 잠깐
-		// (예: 1 frame) 후에 저장시킨다.
 		void			DelayedSave(entt::entity item);
-		void			FlushDelayedSave(entt::entity item); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
+		void			FlushDelayedSave(entt::entity item);
 		void FlushDelayedSaveByOwner(entt::entity owner);
 		// True when sent or already retired; false keeps a delayed save pending.
 		bool			SaveSingleItem(entt::entity item);
@@ -411,7 +395,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 #else
 		void DestroyItem(entt::entity item, const char* file, size_t line);
 #endif
-		void			RemoveItem(entt::entity item, const char * c_pszReason = nullptr); // 사용자로 부터 아이템을 제거
+		void			RemoveItem(entt::entity item, const char * c_pszReason = nullptr);
 
 		TItemTable *            GetTable(uint32_t vnum);
 		bool			GetVnum(const char * c_pszName, uint32_t & r_dwVnum);
@@ -461,8 +445,8 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		std::map<uint32_t, std::unique_ptr<CommonWikiData::TWikiInfoTable>> m_wikiInfoMap;
 		std::map<uint32_t, std::vector<CommonWikiData::TWikiItemOriginInfo>> m_itemOriginMap;
 #endif
-		ITEM_VID_MAP			m_VIDMap;			///< m_dwVIDCount 의 값단위로 아이템을 저장한다.
-		uint32_t				m_dwVIDCount;			///< 이녀석 VID가 아니라 그냥 프로세스 단위 유니크 번호다.
+		ITEM_VID_MAP			m_VIDMap;
+		uint32_t				m_dwVIDCount;
 		uint32_t				m_dwCurrentID;
 		TItemIDRangeTable	m_ItemIDRange;
 		TItemIDRangeTable	m_ItemIDSpareRange;
@@ -491,15 +475,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		// END_OF_CHECK_UNIQUE_GROUP
 
 	private:
-		// 독일에서 기존 캐시 아이템과 같지만, 교환 가능한 캐시 아이템을 만든다고 하여,
-		// 오리지널 아이템에 교환 금지 플래그만 삭제한 새로운 아이템들을 만들어,
-		// 새로운 아이템 대역을 할당하였다.
-		// 문제는 새로운 아이템도 오리지널 아이템과 같은 효과를 내야하는데,
-		// 서버건, 클라건, vnum 기반으로 되어있어
-		// 새로운 vnum을 죄다 서버에 새로 다 박아야하는 안타까운 상황에 맞닿았다.
-		// 그래서 새 vnum의 아이템이면, 서버에서 돌아갈 때는 오리지널 아이템 vnum으로 바꿔서 돌고 하고,
-		// 저장할 때에 본래 vnum으로 바꿔주도록 한다.
-		// 이를 위해 오리지널 vnum과 새로운 vnum을 연결시켜주는 맵을 만듦.
 		typedef std::map <uint32_t, uint32_t> TMapDW2DW;
 		TMapDW2DW	m_map_new_to_ori;
 

@@ -15,7 +15,6 @@ CMappedFile::CMappedFile() :
 	m_pLZObj(nullptr),
 #ifdef MEMORY_LEAK_FIX_RAZRO93
 	m_bOwnsLinkData(false)
-	//m_bFreeOnDestroy(0) Valamiért el crashel tõle az audio...
 #endif
 {
 }
@@ -179,7 +178,6 @@ int CMappedFile::Seek(uint32_t offset, int iSeekType)
 	return m_seekPosition;
 }
 
-// 2004.09.16.myevan.MemoryMappedFile 98/ME °³¼ö Á¦ÇÑ ¹®Á¦ Ã¼Å©
 //uint32_t g_dwCount=0;
 
 int CMappedFile::Map(const void** dest, int offset, int size)
@@ -285,7 +283,6 @@ void CMappedFile::Unmap(const void* data)
 {
 	if (UnmapViewOfFile(data))
 	{
-		// 2004.09.16.myevan.MemoryMappedFile 98/ME °³¼ö Á¦ÇÑ ¹®Á¦ Ã¼Å©
 		//g_dwCount--;
 		//Tracenf("UNMAPFILE %d", g_dwCount);
 	}

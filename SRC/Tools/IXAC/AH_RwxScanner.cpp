@@ -11,7 +11,6 @@
 
 
 // ===============================================================
-// KÜLSŐ TÁMADÓ FOLYAMAT KERESÉSE (HANDLE alapján)
 // ===============================================================
 DWORD FindAttackerProcess(DWORD targetPid)
 {
@@ -46,9 +45,8 @@ DWORD FindAttackerProcess(DWORD targetPid)
             continue;
 
         if (h.ProcessId == targetPid)
-            continue; // saját magunk
+            continue;
 
-        // Ha a handle célpontja a mi PID-ünk:
         if ((DWORD)h.Handle != 0)
         {
             if (h.GrantedAccess &
@@ -131,7 +129,6 @@ namespace AntiHook::RwxScanner
 
                 if (!CheatPID)
                 {
-                    // 2) RWX régió PID keresés
                     CheatPID = FindProcessOwningMemory(regionBase);
                 }
                 if (!CheatPID)
@@ -184,7 +181,6 @@ namespace AntiHook::RwxScanner
                     );
                 }
 
-                // Csak a NAGY privát+exec régiókat tekintjük automatikusan cheatnek
                 if (regionSize >= LARGE_EXEC_THRESHOLD)
                 {
                     foundLargeSuspicious = true;

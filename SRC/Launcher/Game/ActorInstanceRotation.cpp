@@ -62,7 +62,6 @@ void CActorInstance::RotationProcess()
 		m_fcurRotation = m_rotEnd;
 	}
 
-	// FIXME : "건물일때만 체크"로 바꾼다. - [levites]
 	if (0.0f != m_rotX || 0.0f != m_rotY)
 	{
 		CGraphicObjectInstance::SetRotation(m_rotX, m_rotY, m_fcurRotation);

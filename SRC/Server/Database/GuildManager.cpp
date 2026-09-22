@@ -252,7 +252,7 @@ void CGuildManager::ResultRanking(MYSQL_RES * pRes)
 
 void CGuildManager::Update()
 {
-	ProcessReserveWar(); //   ó
+	ProcessReserveWar();
 
 	time_t now = CClientManager::instance().GetCurrentTime();
 
@@ -461,7 +461,6 @@ void CGuildManager::RemoveWar(uint32_t GID1, uint32_t GID2)
 }
 
 //
-//     ʵ 
 //
 void CGuildManager::WarEnd(uint32_t GID1, uint32_t GID2, bool bForceDraw)
 {
@@ -492,7 +491,7 @@ void CGuildManager::WarEnd(uint32_t GID1, uint32_t GID2, bool bForceDraw)
 
 	bool bDraw = false;
 
-	if (!bForceDraw) //  ºΰ ƴ 쿡  üũѴ.
+	if (!bForceDraw)
 	{
 		if (pData->iScore[0] > pData->iScore[1])
 		{
@@ -507,7 +506,7 @@ void CGuildManager::WarEnd(uint32_t GID1, uint32_t GID2, bool bForceDraw)
 		else
 			bDraw = true;
 	}
-	else //  º 쿡  º
+	else
 		bDraw = true;
 
 	if (bDraw)
@@ -515,7 +514,6 @@ void CGuildManager::WarEnd(uint32_t GID1, uint32_t GID2, bool bForceDraw)
 	else
 		ProcessWinLose(win_guild, lose_guild);
 
-	// DB  ü   ֱ   Ŷ  Ѵ.
 	CClientManager::instance().for_each_peer(FSendPeerWar(0, GUILD_WAR_END, GID1, GID2));
 
 	RemoveWar(GID1, GID2);
@@ -570,7 +568,7 @@ void CGuildManager::RecvWarOver(uint32_t dwGuildWinner, uint32_t dwGuildLoser, b
 void CGuildManager::RecvWarEnd(uint32_t GID1, uint32_t GID2)
 {
 	LOG_INFO("GuildWar: RecvWarEnded : {} vs {}", GID1, GID2);
-	WarEnd(GID1, GID2, true); //    Ѿ Ѵ.
+	WarEnd(GID1, GID2, true);
 }
 
 void CGuildManager::StartWar(uint8_t bType, uint32_t GID1, uint32_t GID2, CGuildWarReserve * pkReserve)
@@ -805,7 +803,6 @@ void CGuildManager::WithdrawMoney(CPeer* peer, uint32_t dwGuild, int64_t iGold)
 		return;
 	}
 
-	//  ϰ ÷ش
 	if (it->second.gold >= iGold)
 	{
 		it->second.gold -= iGold;
@@ -836,7 +833,6 @@ void CGuildManager::WithdrawMoneyReply(uint32_t dwGuild, uint8_t bGiveSuccess, i
 }
 
 //
-//  (ڰ   ִ)
 //
 const int c_aiScoreByLevel[GUILD_MAX_LEVEL+1] =
 {
@@ -959,8 +955,6 @@ void CGuildManager::BootReserveWar()
 
 			char buf[512];
 			snprintf(buf, sizeof(buf), "GuildWar: BootReserveWar : step %d id %u GID1 %u GID2 %u", i, t.dwID, t.dwGuildFrom, t.dwGuildTo);
-			// i == 0 ̸   DB ƨ ̹Ƿ º óѴ.
-			// Ǵ, 5     º óѴ. ( þ ش)
 			//if (i == 0 || (int) t.dwTime - CClientManager::instance().GetCurrentTime() < 60 * 5)
 			if (i == 0 || (int) t.dwTime - CClientManager::instance().GetCurrentTime() < 0)
 			{
@@ -1037,7 +1031,6 @@ bool CGuildManager::ReserveWar(TPacketGuildWar * p)
 
 	int lvp, rkp, alv, mc;
 
-	// Ŀ 
 	TGuild & k1 = TouchGuild(GID1);
 
 	lvp = c_aiScoreByLevel[MIN(GUILD_MAX_LEVEL, k1.level)];
@@ -1053,7 +1046,6 @@ bool CGuildManager::ReserveWar(TPacketGuildWar * p)
 	t.lPowerFrom = (int32_t) polyPower.Eval();
 	LOG_INFO("GuildWar: {} lvp {} rkp {} alv {} mc {} power {}", GID1, lvp, rkp, alv, mc, t.lPowerFrom);
 
-	// Ŀ 
 	TGuild & k2 = TouchGuild(GID2);
 
 	lvp = c_aiScoreByLevel[MIN(GUILD_MAX_LEVEL, k2.level)];
@@ -1069,7 +1061,6 @@ bool CGuildManager::ReserveWar(TPacketGuildWar * p)
 	t.lPowerTo = (int32_t) polyPower.Eval();
 	LOG_INFO("GuildWar: {} lvp {} rkp {} alv {} mc {} power {}", GID2, lvp, rkp, alv, mc, t.lPowerTo);
 
-	// ڵĸ 
 	if (t.lPowerTo > t.lPowerFrom)
 	{
 		polyHandicap.SetVar("pA", t.lPowerTo);
@@ -1121,7 +1112,7 @@ void CGuildManager::ProcessReserveWar()
 		CGuildWarReserve * pk = it2->second;
 		TGuildWarReserve & r = pk->GetDataRef();
 
-		if (!r.bStarted && r.dwTime - 1800 <= dwCurTime) // 30  ˸.
+		if (!r.bStarted && r.dwTime - 1800 <= dwCurTime)
 		{
 			int iMin = (int) ceil((int)(r.dwTime - dwCurTime) / 60.0);
 #ifndef TEXTS_IMPROVEMENT
@@ -1264,7 +1255,7 @@ void CGuildWarReserve::Initialize()
 
 void CGuildWarReserve::OnSetup(CPeer * peer)
 {
-	if (m_data.bStarted) // ̹ ۵   ʴ´.
+	if (m_data.bStarted)
 		return;
 
 	FSendPeerWar(m_data.bType, GUILD_WAR_RESERVE, m_data.dwGuildFrom, m_data.dwGuildTo) (peer);
@@ -1350,8 +1341,6 @@ bool CGuildWarReserve::Bet(const char * pszLogin, int64_t dwGold, uint32_t dwGui
 }
 
 //
-// º ó: κ ºΰ  ,    Ư Ȳ 쿡
-//              º ó ־ Ѵ.
 //
 void CGuildWarReserve::Draw()
 {
@@ -1483,7 +1472,6 @@ void CGuildWarReserve::End(int iScoreFrom, int iScoreTo)
 
 			double ratio = (double) it->second.second / dwWinnerBet;
 
-			// 10%    й
 			LOG_INFO("WAR_REWARD: {} {} ratio {:f}", it->first.c_str(), it->second.second, ratio);
 
 			uint32_t dwGold = (uint32_t) (dwTotalBet * ratio * 0.9);

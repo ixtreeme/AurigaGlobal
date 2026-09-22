@@ -49,10 +49,8 @@ namespace quest
 		}
 #endif
 
-		// ��ȯ���� vnum
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
-		// ��ȯ���� �̸�
 		ecs::PetActorState* pet = PetSystem::Summon(chEntity, mobVnum, item, "", false);
 
 		if (pet != nullptr && ecs::PlayerRuntime::IsValid(pet->character))
@@ -68,7 +66,6 @@ namespace quest
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		// ��ȯ���� vnum
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
 		PetSystem::Unsummon(chEntity, mobVnum);
@@ -98,7 +95,6 @@ namespace quest
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		// ��ȯ���� vnum
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
 		lua_pushboolean(L, PetSystem::IsPetSummoned(chEntity, mobVnum));

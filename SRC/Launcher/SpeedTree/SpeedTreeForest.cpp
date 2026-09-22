@@ -125,7 +125,6 @@ void CSpeedTreeForest::DeleteInstance(CSpeedTreeWrapper * pInstance)
 
 void CSpeedTreeForest::UpdateSystem(float fCurrentTime)
 {
-	// 업데이트 할 때 한번
 	static float fLastTime = fCurrentTime;
 	float fElapsedTime = fCurrentTime - fLastTime;
 	CSpeedTreeRT::SetTime(fElapsedTime);

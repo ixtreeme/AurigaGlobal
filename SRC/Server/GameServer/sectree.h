@@ -99,9 +99,9 @@ class SECTREE
 		uint32_t				GetAttribute(int32_t x, int32_t y);
 		bool				IsAttr(int32_t x, int32_t y, uint32_t dwFlag);
 
-		void				CloneAttribute(LPSECTREE tree); // private map 처리시 사용
+		void				CloneAttribute(LPSECTREE tree);
 
-		int				GetEventAttribute(int32_t x, int32_t y); // 20050313 현재는 사용하지 않음
+		int				GetEventAttribute(int32_t x, int32_t y);
 
 		void				SetAttribute(uint32_t x, uint32_t y, uint32_t dwAttr);
 		void				RemoveAttribute(uint32_t x, uint32_t y, uint32_t dwAttr);

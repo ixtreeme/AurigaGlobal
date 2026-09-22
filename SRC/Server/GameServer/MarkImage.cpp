@@ -37,7 +37,6 @@ static void RGBAtoBGRA(uint8_t* data, int pixelCount)
 	}
 }
 
-// stb_image_write TGA callback — writes into a std::vector<uint8_t>
 // ---------------------------------------------------------------------------
 // [SERVER] CGuildMarkImage - Construction
 // ---------------------------------------------------------------------------

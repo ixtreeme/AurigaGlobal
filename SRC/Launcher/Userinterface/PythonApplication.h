@@ -103,7 +103,6 @@ class CPythonApplication : public CMSApplication, public CInputKeyboard, public 
 #endif
 			CURSOR_SHAPE_COUNT,
 
-			// 안정적인 네이밍 변환을 위한 임시 enumerate
 			NORMAL = CURSOR_SHAPE_NORMAL,
 			ATTACK = CURSOR_SHAPE_ATTACK,
 			TARGET = CURSOR_SHAPE_TARGET,
@@ -296,16 +295,15 @@ class CPythonApplication : public CMSApplication, public CInputKeyboard, public 
 
 	protected:
 		IGraphBuilder*			m_pGraphBuilder;			// Graph Builder
-		IBaseFilter*			m_pFilterSG;				// Sample Grabber 필터
-		//ISampleGrabber*			m_pSampleGrabber;			// 영상 이미지 캡처를 위한 샘플 그래버
+		IBaseFilter*			m_pFilterSG;
 		IMediaControl*			m_pMediaCtrl;				// Media Control
 		IMediaEventEx*			m_pMediaEvent;				// Media Event
 		IVideoWindow*			m_pVideoWnd;				// Video Window
 		IBasicVideo*			m_pBasicVideo;
-		uint8_t*					m_pCaptureBuffer;			// 영상 이미지를 캡처한 버퍼
-		int32_t					m_lBufferSize;				// Video 버퍼 크기 변수
-		CGraphicImageTexture*	m_pLogoTex;					// 출력할 텍스쳐
-		bool					m_bLogoError;				// 영상 읽기 상태
+		uint8_t*					m_pCaptureBuffer;
+		int32_t					m_lBufferSize;
+		CGraphicImageTexture*	m_pLogoTex;
+		bool					m_bLogoError;
 		bool					m_bLogoPlay;
 
 		int						m_nLeft, m_nRight, m_nTop, m_nBottom;

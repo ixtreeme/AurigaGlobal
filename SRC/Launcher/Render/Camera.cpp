@@ -445,7 +445,6 @@ void CCamera::RotateEyeAroundTarget(float fPitchDegree, float fRollDegree)
 
 	D3DXMATRIX matRot, matRotPitch, matRotRoll;
 
-	// 머리위로 넘어가기 막기...
 	if (m_fPitch + fPitchDegree > 80.0f)
 	{
 		fPitchDegree = 80.0f - m_fPitch;
@@ -606,7 +605,6 @@ bool CCameraManager::isCurrentCamera(unsigned char ucCameraNum)
 	return false;
 }
 
-// 잡스러운 함수들...
 bool CCameraManager::AddCamera(unsigned char ucCameraNum)
 {
 	if(m_CameraMap.contains(ucCameraNum))

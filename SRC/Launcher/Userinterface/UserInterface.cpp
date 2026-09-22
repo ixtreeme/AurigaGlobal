@@ -255,7 +255,7 @@ bool RunMainScript(CPythonLauncherIxtreeme& pyLauncher, const char* lpCmdLine)
 		SplitLine(lpCmdLine, seperator, &stVec);
 		if (CmdSize == stVec.size() && stVec[0] == loginMark)
 		{
-			char buf[MAX_PATH];	//TODO ľĆ·ˇ ÇÔĽö std::string ÇüĹÂ·Î ĽöÁ¤
+			char buf[MAX_PATH];
 			base64_decode(stVec[2].c_str(), buf);
 			stVec[2] = buf;
 			string_join(seperator, stVec, &stCmdLine);
@@ -358,7 +358,6 @@ bool Main(HINSTANCE hInstance, LPSTR lpCmdLine)
 
 		//ProcessScanner_ReleaseQuitEvent();
 
-		//°ÔŔÓ Áľ·á˝Ă.
 		app->Clear();
 
 		timeEndPeriod(1);

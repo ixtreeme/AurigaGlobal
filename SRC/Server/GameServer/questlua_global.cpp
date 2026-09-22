@@ -898,7 +898,6 @@ namespace quest
 		return 1;
 	}
 
-	// ���ο� state�� �����.
 	ALUA(_set_quest_state)
 	{
 		// migrated from CHARACTER::set_quest_state
@@ -1215,7 +1214,6 @@ namespace quest
 		return 0;
 	}
 
-	//����: �� ������ �ȵǴ� �ʿ����� ���
 	ALUA(_regen_in_map)
 	{
 		// migrated from CHARACTER::regen_in_map

@@ -11,7 +11,6 @@
 //#pragma comment(lib, "Version.lib")
 //
 //// ============================================================
-//// AH_ProcessBlacklist – cheat process detektalas
 ////
 //// Kezelt technikak:
 ////  1) Process nev blacklist  (hlbot.exe, cheatengine stb.)
@@ -227,7 +226,6 @@
 //    }
 //
 //    // Fodetektalas: vegigmegy az osszes explorer.exe peldanyon
-//    // és megkeresi a hollowolt (HLBot) peldanyt
 //    struct HollowResult
 //    {
 //        bool  found;
@@ -237,15 +235,12 @@
 //
 //    // ---------------------------------------------------------------
 //    // Adott nevu process -eket ellenorzi hollowing szempontjabol.
-//    // Nem csak explorer.exe – a HLBot svchost.exe, RuntimeBroker.exe
 //    // vagy barmi mas legitim Windows process neve mogott is elrejthet.
 //    //
-//    // Vizsgalt jelek (tobbszoros megerosites – egy jel nem eleg):
 //    //   A) 32 bites process fut x64 OS-en (ha az eredeti 64 bites)
 //    //   B) Szulo process nem legitim Windows komponens
 //    //   C) .text szekcioja MEM_PRIVATE a betoltott modulban
 //    //
-//    // Ket jel kell a detektalashoz → kevesebb false positive
 //    // ---------------------------------------------------------------
 //
 //    // Legitim Windows process-ok amik sosem lehetnek rosszindulatu szulok
@@ -262,7 +257,6 @@
 //        return false;
 //    }
 //
-//    // Vizsgalt process nevek – ismert cele: legitim nevu de hollowed
 //    static const wchar_t* kHollowTargets[] = {
 //        L"explorer.exe",
 //        L"svchost.exe",
@@ -311,7 +305,6 @@
 //                }
 //
 //                // B) Szulo process anomalia
-//                // Ha a szulo nem egy legitim Windows process → gyanus
 //                DWORD parentPid = GetParentPid(pe.th32ProcessID);
 //                std::wstring parentName = GetProcessName(parentPid);
 //
@@ -514,7 +507,6 @@
 //        ScanProcesses(logFile);
 //        ScanWindows(logFile);
 //
-//        // Process hollowing detektálás – minden 3. korben
 //        // (ReadProcessMemory intenziv, nem kell minden iteracioban)
 //        static unsigned s_hollowCounter = 0;
 //        if (++s_hollowCounter % 3 == 0)

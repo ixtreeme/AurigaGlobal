@@ -16,8 +16,8 @@ EVENTINFO(TargetInfo)
 	uint32_t       dwPID;
 	uint32_t       dwQuestIndex;
 
-	char        szTargetName[32+1]; // ����Ʈ���� ����ϴ� �̸�
-	char        szTargetDesc[32+1]; // ���� Ŭ���̾�Ʈ�� ���۵Ǵ� �̸�
+	char        szTargetName[32+1];
+	char        szTargetDesc[32+1];
 
 	int         iType;
 	int         iArg1;

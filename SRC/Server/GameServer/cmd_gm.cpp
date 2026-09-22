@@ -933,7 +933,7 @@ struct FuncPurge
 
 		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - ecs::PlayerRuntime::GetX(gM), ecs::PlayerRuntime::GetY(chr) - ecs::PlayerRuntime::GetY(gM));
 
-		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
+		if (!m_bAll && iDist >= 1000)
 			return;
 
 		LOG_INFO("PURGE: {} {}", ecs::PlayerRuntime::GetName(chr).data(), iDist);
@@ -2275,7 +2275,6 @@ ACMD(do_reload)
 				break;
 				//END_RELOAD_ADMIN
 			case 'c':	// cube
-				//  μ Ѵ.
 				Cube_init ();
 				break;
 		}
@@ -2407,7 +2406,7 @@ struct FuncWeaken
 
 		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - ecs::PlayerRuntime::GetX(gM), ecs::PlayerRuntime::GetY(chr) - ecs::PlayerRuntime::GetY(gM));
 
-		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
+		if (!m_bAll && iDist >= 1000)
 			return;
 
 		if (ecs::PlayerRuntime::IsNPC(chr))
@@ -2731,7 +2730,6 @@ ACMD(do_priv_empire)
 	if (duration < 0)
 		goto USAGE;
 
-	// ð
 	duration = duration * (60*60);
 
 	LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, duration={}) by command", empire, type, value, duration);
@@ -2746,10 +2744,6 @@ USAGE:
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "  <duration>  hour");
 }
 
-/**
- * @version 05/06/08	Bang2ni -  ʽ Ʈ  ȵǴ  .(ũƮ ۼȵ.)
- * 			          quest/priv_guild.quest   ũƮ о
- */
 ACMD(do_priv_guild)
 {
 	static const char msg[] = { '\0' };
@@ -2857,7 +2851,6 @@ ACMD(do_socket_item)
 // BLOCK_CHAT
 ACMD(do_block_chat_list)
 {
-	// GM ƴϰų block_chat_privilege   ɾ  Ұ
 	if (!ecs::PlayerRuntime::IsValid(character) || ((ecs::PlayerRuntime::GetGMLevel(character)) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(character, "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -2883,7 +2876,6 @@ ACMD(do_block_chat)
 	if (character != entt::null && !ecs::PlayerRuntime::IsPC(character))
 		return;
 	const bool hasExecutor = character != entt::null;
-	// GM ƴϰų block_chat_privilege   ɾ  Ұ
 	if (hasExecutor && (ecs::PlayerRuntime::GetGMLevel(character) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(character, "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -2967,8 +2959,6 @@ ACMD(do_build)
 
 	CLand * pkLand = CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 
-	// NOTE:  üũ Ŭ̾Ʈ  Բ ϱ
-	//       ޼  ʰ  Ѵ.
 	if (!pkLand)
 	{
 		LOG_ERROR("{} trying to build on not buildable area.", ecs::PlayerRuntime::GetName(character).data());
@@ -2981,17 +2971,14 @@ ACMD(do_build)
 		return;
 	}
 
-	// Ǽ  üũ
 	if (GMLevel == GM_PLAYER)
 	{
-		// ÷̾      Ȯؾ Ѵ.
 		if ((!ecs::SocialSystem::GetGuild(character) || ecs::SocialSystem::GetGuild(character)->GetID() != pkLand->GetOwner()))
 		{
 			LOG_ERROR("{} trying to build on not owned land.", ecs::PlayerRuntime::GetName(character).data());
 			return;
 		}
 
-		//  渶ΰ?
 		if (ecs::SocialSystem::GetGuild(character)->GetMasterPID() != (ecs::PlayerRuntime::GetPlayerID(character)))
 		{
 			LOG_ERROR("{} trying to build while not the guild master.", ecs::PlayerRuntime::GetName(character).data());
@@ -3041,11 +3028,9 @@ ACMD(do_build)
 					}
 				}
 
-				// ǹ Ӽ üũ ( ǹ  ־)
 				if (t->dwDependOnGroupVnum)
 				{
 					{
-						// ִ°?
 						if (pkLand->FindObjectByGroup(t->dwDependOnGroupVnum) == entt::null)
 						{
 #ifdef TEXTS_IMPROVEMENT
@@ -3058,8 +3043,6 @@ ACMD(do_build)
 
 				if (test_server || GMLevel == GM_PLAYER)
 				{
-					// GM ƴҰ츸 (׼ GM Ҹ)
-					// Ǽ  üũ
 					if (t->dwPrice > BUILDING_MAX_PRICE)
 					{
 #ifdef TEXTS_IMPROVEMENT
@@ -3077,7 +3060,6 @@ ACMD(do_build)
 						return;
 					}
 
-					//    üũ
 
 					int i;
 					for (i = 0; i < OBJECT_MATERIAL_MAX_NUM; ++i)
@@ -3200,7 +3182,6 @@ ACMD(do_build)
 
 		case 'W' :
 			//
-			// build (w)all ȣ ũ 빮 빮 빮 빮
 
 			if (GMLevel >  GM_PLAYER)
 			{
@@ -3646,7 +3627,7 @@ ACMD(do_stat_plus_amount)
 #ifndef ENABLE_STATPLUS_NOLIMIT
 	switch (subcmd)
 	{
-		case POINT_HT : // ü
+		case POINT_HT :
 			if (nPoint + ecs::PointSystem::Get(character, POINT_HT) > 90)
 			{
 				nPoint = 90 - ecs::PointSystem::Get(character, POINT_HT);
@@ -3660,14 +3641,14 @@ ACMD(do_stat_plus_amount)
 			}
 			break;
 
-		case POINT_ST : // ٷ
+		case POINT_ST :
 			if (nPoint + ecs::PointSystem::Get(character, POINT_ST) > 90)
 			{
 				nPoint = 90 - ecs::PointSystem::Get(character, POINT_ST);
 			}
 			break;
 
-		case POINT_DX : // ø
+		case POINT_DX :
 			if (nPoint + ecs::PointSystem::Get(character, POINT_DX) > 90)
 			{
 				nPoint = 90 - ecs::PointSystem::Get(character, POINT_DX);

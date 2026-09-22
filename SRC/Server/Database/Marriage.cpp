@@ -253,7 +253,6 @@ namespace marriage
 
 	void CManager::OnSetup(CPeer* peer)
 	{
-		// 결혼한 사람들 보내기
 		for (auto it = m_Marriages.begin(); it != m_Marriages.end(); ++it)
 		{
 			TMarriage* pMarriage = *it;
@@ -280,7 +279,6 @@ namespace marriage
 			}
 		}
 
-		// 결혼식 보내기
 		for (auto it = m_mapRunningWedding.begin(); it != m_mapRunningWedding.end(); ++it)
 		{
 			const TWedding& t = it->second;

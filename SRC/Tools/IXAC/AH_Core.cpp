@@ -27,7 +27,6 @@ namespace
     NtQuerySystemInformation_t g_pNtQuerySystemInformation = nullptr;
     NtQueryInformationThread_t g_pNtQueryInformationThread = nullptr;
 
-    // ========= WHITELIST (tedd bele a saját listádat) =========
     std::unordered_set<std::wstring> g_ModuleWhitelist =
     {
         OBF_W(L"userinterface.exe"),

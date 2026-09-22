@@ -1,11 +1,9 @@
-// IXAC_Integrity.cpp – ezt tedd az IXAC.dll projektedbe
 #include <windows.h>
 #include <cstdint>
 #include <cstring>
 
 namespace IXAC
 {
-    // Egyszerû FNV-1a 32 bites hash
     static uint32_t Fnv1a32(const uint8_t* data, size_t size)
     {
         uint32_t hash = 0x811C9DC5u;
@@ -58,7 +56,6 @@ namespace IXAC
         return false;
     }
 
-    // Ezt exportáljuk a kliensnek
     extern "C" __declspec(dllexport)
         bool __stdcall IXAC_GetIntegrityBaseline(uintptr_t* outModuleBase,
             size_t* outTextSize,

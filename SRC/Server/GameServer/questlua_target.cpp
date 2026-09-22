@@ -82,7 +82,6 @@ namespace quest
 		return 0;
 	}
 
-	// ���� ����Ʈ�� ��ϵ� Ÿ���� ���� �Ѵ�.
 	ALUA(target_delete)
 	{
 		// migrated from CHARACTER::DeleteTarget
@@ -101,7 +100,6 @@ namespace quest
 		return 0;
 	}
 
-	// ���� ����Ʈ �ε����� �Ǿ��ִ� Ÿ���� ��� �����Ѵ�.
 	ALUA(target_clear)
 	{
 		// migrated from CHARACTER::DeleteTarget

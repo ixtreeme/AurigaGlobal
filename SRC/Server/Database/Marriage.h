@@ -49,7 +49,7 @@ namespace marriage
 		uint32_t pid2;
 		int   love_point;
 		uint32_t time;
-		uint8_t is_married; // false : ¾àÈ¥ »óÅÂ, true : °áÈ¥ »óÅÂ
+		uint8_t is_married;
 		std::string name1;
 		std::string name2;
 

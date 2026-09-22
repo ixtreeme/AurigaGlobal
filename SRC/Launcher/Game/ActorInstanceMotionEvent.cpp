@@ -373,7 +373,6 @@ void CActorInstance::ProcessMotionEventWarp(const CRaceMotionData::TMotionEventD
 	if (CRaceMotionData::MOTION_EVENT_TYPE_WARP != c_pData->iType)
 		return;
 
-	// FIXME : TMotionWarpEventData·Î »¬ º¯¼ö - [levites]
 	static constexpr float sc_fDistanceFromTarget = 270.0f;
 
 	if (m_kFlyTarget.IsValidTarget())

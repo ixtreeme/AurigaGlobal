@@ -299,7 +299,6 @@ PyObject* grpGetSplitingTextLineCount(PyObject* poSelf, PyObject* poArgs)
 		{
 			i += 1;
 
-			// 자동 줄 바꿈되고 바로 | 가 있을 경우
 			if (iPosition>0)
 				++iLineCount;
 
@@ -349,15 +348,12 @@ PyObject* grpGetSplitingTextLine(PyObject* poSelf, PyObject* poArgs)
 	int iPosition = 0;
 	int iLineCount = 0;
 
-	// 1차 : 조금 더 깔끔하게 안될까 -_-a
-	// 2차 : 오.. 좀 나아졌다 +_+
 	for (uint32_t i = 0; i < strlen(szText);)
 	{
 		if ('|' == szText[i])
 		{
 			i += 1;
 
-			// 자동 줄 바꿈되고 바로 | 가 있을 경우
 			if (iPosition>0)
 				++iLineCount;
 			iPosition = 0;

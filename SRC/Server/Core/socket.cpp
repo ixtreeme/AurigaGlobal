@@ -1,9 +1,3 @@
-/*
- *    Filename: socket.c
- * Description: 소켓 관련 소스.
- *
- *      Author: 비엽 aka. Cronan
- */
 #define __LIBTHECORE__
 #include "stdafx.h"
 #include "Core/Logging.hpp"
@@ -34,7 +28,7 @@ int socket_read(socket_t desc, char* read_point, uint64_t space_left)
     if (ret > 0)
 	return ret;
 
-    if (ret == 0)	// 정상적으로 접속 끊김
+    if (ret == 0)
 	return -1;
 
 #ifdef EINTR            /* Interrupted system call - various platforms */
@@ -74,7 +68,6 @@ int socket_write_tcp(socket_t desc, const char *txt, int length)
 {
     int bytes_written = send(desc, txt, length, 0);
 
-    // 성공
     if (bytes_written > 0)
 	return (bytes_written);
 
@@ -127,7 +120,7 @@ int socket_write(socket_t desc, const char *data, uint64_t length)
 	    if (errno == EAGAIN)
 		LOG_ERROR("socket write would block, about to close!");
 	    else
-		LOG_ERROR("write to desc error");   // '보통' 상대편으로 부터 접속이 끊긴 것이다.
+		LOG_ERROR("write to desc error");
 
 	    return -1;
 	}
@@ -170,8 +163,6 @@ int socket_bind(const char * ip, int port, int protocol)
 
     memset(&sa, 0, sizeof(sa));
     sa.sin_family	= AF_INET;
-//윈도우 서버는 개발용으로만 쓰기 때문에 BIND ip를 INADDR_ANY로 고정
-//(테스트의 편의성을 위해)
 #ifndef _WIN32
     sa.sin_addr.s_addr	= inet_addr(ip);
 #else
@@ -248,7 +239,6 @@ socket_t socket_connect(const char* host, uint16_t port)
     struct sockaddr_in  server_addr;
     int                 rslt;
 
-    /* 소켓주소 구조체 초기화 */
     memset(&server_addr, 0, sizeof(server_addr));
 
     if (isdigit(*host))
@@ -281,7 +271,6 @@ socket_t socket_connect(const char* host, uint16_t port)
     socket_timeout(s, 10, 0);
     socket_lingeron(s);
 
-    /*  연결요청 */
     if ((rslt = connect(s, (struct sockaddr *) &server_addr, sizeof(server_addr))) < 0)
     {
 	socket_close(s);

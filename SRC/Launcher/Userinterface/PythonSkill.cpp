@@ -51,7 +51,6 @@ int SplitLine(const char* c_szText, CTokenVector* pstTokenVector, const char* c_
 
 		pstTokenVector->push_back(stLine.substr(beginPos, endPos - beginPos));
 
-		// 추가 코드. 맨뒤에 탭이 있는 경우를 체크한다. - [levites]
 		if (int(stLine.find_first_not_of(c_szDelimeter, basePos)) < 0)
 			break;
 	} while (basePos < stLine.length());
@@ -227,7 +226,7 @@ bool CPythonSkill::RegisterSkillTable(const char* c_szFileName)
 
 				switch (iVnum)
 				{
-				case 1: // 삼연참
+				case 1:
 					affect.strAffectMinFormula += "* 3";
 					affect.strAffectMaxFormula += "* 3";
 					break;
@@ -406,7 +405,6 @@ bool CPythonSkill::RegisterSkillDesc(const char* c_szFileName)
 			const std::string& c_rstrJob = TokenVector[DESC_TOKEN_TYPE_JOB];
 			const std::string& c_rstrIconName = TokenVector[DESC_TOKEN_TYPE_ICON_NAME];
 
-			// NOTE : Support 스킬임에도 3단계를 지원해야 해서 예외 처리 - [levites]
 			if (c_iSkillIndex_Riding == iSkillIndex)
 			{
 				char szIconFileNameHeader[64 + 1];
@@ -1233,7 +1231,6 @@ bool CPythonSkill::SSkillData::GetState(const char* c_szStateName, int* piState,
 	{
 		*piState = 0;
 
-		// 증지술 임시 제외
 /*
 		if (0 != ms_dwTimeIncreaseSkillNumber)
 		{
@@ -1964,7 +1961,6 @@ PyObject* skillIsLevelUpSkill(PyObject* poSelf, PyObject* poArgs)
 	if (!CPythonSkill::Instance().GetSkillData(iSkillIndex, &c_pSkillData))
 		return Py_BuildException("skill.IsLevelUpSkill - Failed to find skill by %d", iSkillIndex);
 
-	// 모두 레벨업 가능
 
 	return Py_BuildValue("i", TRUE);
 }

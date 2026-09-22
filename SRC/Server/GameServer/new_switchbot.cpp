@@ -612,8 +612,8 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 
 				if (curAttr.bType == APPLY_NORMAL_HIT_DAMAGE_BONUS && curAttr.sValue > BONUSZ)
 				{
-					uint32_t itemID = ItemSystem::GetItemID(item); // vagy más egyedi azonosító
-					if (now - lastNoticedTime[itemID] > BONUSZ_TIME) // csak 10 másodpercenként 1x
+					uint32_t itemID = ItemSystem::GetItemID(item);
+					if (now - lastNoticedTime[itemID] > BONUSZ_TIME)
 					{
 						lastNoticedTime[itemID] = now;
 

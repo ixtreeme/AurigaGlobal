@@ -41,8 +41,6 @@ void CPythonCharacterManager::AdjustCollisionWithOtherObjects(CActorInstance* pI
 
 		if(pInst->TestPhysicsBlendingCollision(*rkActorEach) )
 		{
-			// NOTE : 일단 기존위치로 원복
-			// TODO : 향후 조금더 잘 처리한다면 physic movement거리를 steping해서 iteration처리해야 함.
 			TPixelPosition curPos;
 			pInst->GetPixelPosition(&curPos);
 			pInst->SetBlendingPosition(curPos);
@@ -230,8 +228,6 @@ void CPythonCharacterManager::UpdateTransform()
 
 			pSrcInstance->CheckAdvancing();
 
-			// 2004.08.02.myevan.IsAttacked 일 경우 죽었을때도 체크하므로,
-			// 실질적으로 거리가 변경되는 IsPushing일때만 체크하도록 한다
 			if (pSrcInstance->IsPushing())
 				rkBG.CheckAdvancing(pSrcInstance);
 		}
@@ -668,7 +664,6 @@ void CPythonCharacterManager::__UpdatePickedActorList()
 	for (i=m_kAliveInstMap.begin(); i!=m_kAliveInstMap.end(); ++i)
 	{
 		CInstanceBase* pkInstEach=i->second;
-		// 2004.07.17.levites.isShow를 ViewFrustumCheck로 변경
 		if (pkInstEach->CanPickInstance())
 		{
 			if (pkInstEach->IsDead())
@@ -731,7 +726,6 @@ void CPythonCharacterManager::__NEW_Pick()
 		}
 #endif
 
-	// 정밀한 체크
 	{
 		std::vector<CInstanceBase*>::iterator f;
 		for (f=m_kVct_pkInstPicked.begin(); f!=m_kVct_pkInstPicked.end(); ++f)
@@ -753,7 +747,6 @@ void CPythonCharacterManager::__NEW_Pick()
 		}
 	}
 
-	// 못찾겠으면 걍 순서대로
 	{
 		std::vector<CInstanceBase*>::iterator f;
 		for (f=m_kVct_pkInstPicked.begin(); f!=m_kVct_pkInstPicked.end(); ++f)

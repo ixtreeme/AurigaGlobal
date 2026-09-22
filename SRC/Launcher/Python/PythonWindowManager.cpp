@@ -578,7 +578,6 @@ namespace UI
 		if (m_pActiveWindow)
 			m_pActiveWindow->OnKillFocus();
 
-		// 이미 락된 윈도우리스트안에 있다면 제거한다..
 		m_LockWindowList.remove(pWin);
 
 		if (m_pLockWindow)
@@ -619,8 +618,6 @@ namespace UI
 
 		if (m_pActiveWindow)
 		{
-			// NOTE : 누적된 Window가 많아지면 Clear를 해줘야 할까?
-			//        일단은 중복 누적이 안되며 포커스 되는 갯수 자체가 5개 미만이니 굳이 필요하지는 않을 듯.. - [levites]
 			m_ActiveWindowList.push_back(m_pActiveWindow);
 			m_pActiveWindow->OnKillFocus();
 		}
@@ -662,8 +659,6 @@ namespace UI
 		CWindow * pParentWindow = pWin->GetParent();
 		pParentWindow->SetTop(pWin);
 
-		// NOTE : Capture가 리셋된다..? - [levites]
-		// NOTE : 인벤토리에서 아이템을 드래그 해서 밖에다 놓을때 캡춰가 남아서 창의 버튼을 두번 눌러야 하는 버그를 위해 추가
 //		ResetCapture();
 	}
 
@@ -672,7 +667,6 @@ namespace UI
 		if (m_pLockWindow)
 			return;
 
-		// GameLayer에 속해 있는 윈도우가 피킹 됐다면 무조건 SetTop을 해준다.
 		const auto itor = m_LayerWindowMap.find("UI");
 		if (itor == m_LayerWindowMap.end())
 			return;
@@ -940,7 +934,6 @@ namespace UI
 		{
 			if (m_pLeftCaptureWindow->OnMouseLeftButtonUp())
 			{
-				// NOTE : 여기서 m_pLeftCaptureWindow가 NULL 일 수 있습니다!! - [levites]
 				m_pLeftCaptureWindow = nullptr;
 				return;
 			}
@@ -1204,7 +1197,6 @@ namespace UI
 				return;
 		}
 
-		// NOTE : 전체로 돌리지 않고 Activate되어있는 EditLine에만 보내는 이벤트
 	}
 
 	void CWindowManager::RunChangeCodePage()

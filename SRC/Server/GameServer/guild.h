@@ -32,12 +32,12 @@ struct SGuildMaster
 
 typedef struct SGuildMember
 {
-	uint32_t pid; // player ���̺��� id; primary key
-	uint8_t grade; // ������ �÷��̾��� ��� 1 to 15 (1�� ¯)
+	uint32_t pid;
+	uint8_t grade;
 	uint8_t is_general;
 	uint8_t job;
 	uint8_t level;
-	uint32_t offer_exp; // ������ ����ġ
+	uint32_t offer_exp;
 	uint8_t _dummy;
 
 	std::string name;
@@ -81,7 +81,7 @@ typedef struct packet_guild_sub_info
 
 typedef struct SGuildGrade
 {
-	char grade_name[GUILD_GRADE_NAME_MAX_LEN+1]; // 8+1 �����, ���� ���� �̸�
+	char grade_name[GUILD_GRADE_NAME_MAX_LEN+1];
 	uint8_t auth_flag;
 } TGuildGrade;
 
@@ -279,7 +279,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 		bool		ChargeSP(entt::entity character, int iSP);
 
 		void		Chat(const char* c_pszText);
-		void		P2PChat(const char* c_pszText); // ��� ä��
+		void		P2PChat(const char* c_pszText);
 
 		void		SkillUsableChange(uint32_t dwSkillVnum, bool bUsable);
 		void		AdvanceLevel(int iLevel);
@@ -288,7 +288,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		RequestWithdrawMoney(entt::entity character, int iGold);
 
 		void		RecvMoneyChange(int iGold);
-		void		RecvWithdrawMoneyGive(int iChangeGold); // bGive==1 �̸� ����忡�� �ִ� �� �õ��ϰ� �������и� ��񿡰� ������
+		void		RecvWithdrawMoneyGive(int iChangeGold);
 
 		int		GetGuildMoney() const	{ return m_data.gold; }
 
@@ -299,7 +299,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 		int		GetGuildWarState(uint32_t guild_id);
 		bool		CanStartWar(uint8_t bGuildWarType);
 		uint32_t		GetWarStartTime(uint32_t guild_id);
-		bool		UnderWar(uint32_t guild_id); // �������ΰ�?
+		bool		UnderWar(uint32_t guild_id);
 		uint32_t		UnderAnyWar(uint8_t bType = GUILD_WAR_TYPE_MAX_NUM);
 
 		// War map relative
@@ -344,27 +344,10 @@ void		Reset() { m_data.power = m_data.max_power; }
 		bool		HasLand();
 
 		// GUILD_JOIN_BUG_FIX
-		/// character ���� ��尡�� �ʴ븦 �Ѵ�.
-		/**
-		 * @param	pchInviter �ʴ��� character.
-		 * @param	pchInvitee �ʴ��� character.
-		 *
-		 * �ʴ��ϰų� ������ ���� ���¶�� �ش��ϴ� ä�� �޼����� �����Ѵ�.
-		 */
 		void		Invite( entt::entity inviter, entt::entity invitee );
 
-		/// ����ʴ뿡 ���� ��� character �� ������ ó���Ѵ�.
-		/**
-		 * @param	pchInvitee �ʴ���� character
-		 *
-		 * ��忡 ���԰����� ���°� �ƴ϶�� �ش��ϴ� ä�� �޼����� �����Ѵ�.
-		 */
 		void		InviteAccept( entt::entity invitee );
 
-		/// ����ʴ뿡 ���� ��� character �� �źθ� ó���Ѵ�.
-		/**
-		 * @param	dwPID �ʴ���� character �� PID
-		 */
 		void		InviteDeny( uint32_t dwPID );
 #ifdef ADVANCED_GUILD_INFO
 		void	WarReward(bool bWinner, bool bDraw);
@@ -411,27 +394,21 @@ void		Reset() { m_data.power = m_data.max_power; }
 		bool	abSkillUsable[GUILD_SKILL_COUNT];
 
 		// GUILD_JOIN_BUG_FIX
-		/// ��� ������ �� �� ���� ����� �����ڵ�.
 		enum GuildJoinErrCode {
-			GERR_NONE			= 0,	///< ó������
-			GERR_WITHDRAWPENALTY,		///< Ż���� ���԰����� �ð��� ������ ����
-			GERR_COMMISSIONPENALTY,		///< �ػ��� ���԰����� �ð��� ������ ����
-			GERR_ALREADYJOIN,			///< ��尡�� ��� ĳ���Ͱ� �̹� ��忡 ������ ����
-			GERR_GUILDISFULL,			///< ����ο� ���� �ʰ�
-			GERR_GUILD_IS_IN_WAR,		///< ��尡 ���� ������
-			GERR_INVITE_LIMIT,			///< ���� ���� ���� ����
-			GERR_MAX				///< Error code �ְ�ġ. �� �տ� Error code �� �߰��Ѵ�.
+			GERR_NONE			= 0,
+			GERR_WITHDRAWPENALTY,
+			GERR_COMMISSIONPENALTY,
+			GERR_ALREADYJOIN,
+			GERR_GUILDISFULL,
+			GERR_GUILD_IS_IN_WAR,
+			GERR_INVITE_LIMIT,
+			GERR_MAX
 		};
 
-		/// ��忡 ���� ������ ������ �˻��Ѵ�.
-		/**
-		 * @param [in]	pchInvitee �ʴ�޴� character
-		 * @return	GuildJoinErrCode
-		 */
 		GuildJoinErrCode	VerifyGuildJoinableCondition( entt::entity invitee );
 
 		typedef std::map< uint32_t, LPEVENT >	EventMap;
-		EventMap	m_GuildInviteEventMap;	///< ��� ��û Event map. key: �ʴ���� ĳ������ PID
+		EventMap	m_GuildInviteEventMap;
 		// END_OF_GUILD_JOIN_BUG_FIX
 #ifdef ENABLE_GUILD_ATTRIBUTE
 	public:

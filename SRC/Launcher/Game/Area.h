@@ -264,7 +264,7 @@ class CArea
 
 	protected:
 		// Static Data
-		TObjectDataVector				m_ObjectDataVector;		// Area 상에 있는 오브젝트들
+		TObjectDataVector				m_ObjectDataVector;
 
 		// Rendering Instances
 		TObjectInstanceVector			m_ObjectInstanceVector;
@@ -280,7 +280,6 @@ class CArea
 		TCRCWithNumberVector			m_kRenderedThingInstanceCRCWithNumberVector;
 		TThingInstanceVector			m_kRenderedGrapphicThingInstanceVector;
 
-		// 좌표 : 심리스 맵 전체 중에서의 좌표... 둘다 0~999
 		WORD							m_wX;
 		WORD							m_wY;
 

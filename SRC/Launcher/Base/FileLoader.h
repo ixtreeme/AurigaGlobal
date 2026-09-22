@@ -1,6 +1,6 @@
 #pragma once
 
-#pragma warning(disable:4786)	// character 255 넘어가는거 끄기
+#pragma warning(disable:4786)
 
 #include <windows.h>
 #include <vector>

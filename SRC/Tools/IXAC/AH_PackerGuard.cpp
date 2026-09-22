@@ -1,8 +1,5 @@
 // AH_PackerGuard.cpp
-// Themida / WinLicense / VMProtect packer detektálás futó processzekben
-// PE szekció nevek alapján.
 //
-// Detektált packerek:
 //   Themida / WinLicense : .themida  .boot  _winlice  .winlice  _oreans
 //   VMProtect            : .vmp0     .vmp1  .vmp2
 //   Obsidium             : .obs      .obsidium
@@ -12,7 +9,6 @@
 //   PELock               : .pelock
 //   ExeCryptor           : .xdata
 //
-// A HLBot konkrétan .themida + .boot szekciókat használ (Themida 3.x).
 
 #include "AH_PackerGuard.h"
 #include "AH_Util.h"
@@ -30,13 +26,12 @@
 namespace
 {
     // -------------------------------------------------------------------------
-    // Ismert packer szekció nevek és a hozzájuk tartozó packer neve
     // -------------------------------------------------------------------------
     struct PackerSig
     {
-        const char* sectionName;  // pontosan 8 char max (PE korlát)
+        const char* sectionName;
         const char* packerName;
-        int         score;        // veszélyességi pont
+        int         score;
     };
 
     static const PackerSig kPackerSections[] =
@@ -76,7 +71,6 @@ namespace
         // ExeCryptor
         { ".xdata",    "ExeCryptor",      6  },
 
-        // UPX (kevésbé veszélyes, de gyanús játék kontextusban)
         { "UPX0",      "UPX",             5  },
         { "UPX1",      "UPX",             5  },
     };
@@ -85,8 +79,6 @@ namespace
         sizeof(kPackerSections) / sizeof(kPackerSections[0]);
 
     // -------------------------------------------------------------------------
-    // Whitelisted process nevek - ezeket NEM vizsgáljuk
-    // (rendszer folyamatok amelyek legitim módon packelve lehetnek)
     // -------------------------------------------------------------------------
     static const wchar_t* kWhitelistedProcesses[] =
     {
@@ -99,7 +91,7 @@ namespace
         L"lsass.exe",
         L"svchost.exe",
         L"dwm.exe",
-        L"explorer.exe",   // a hollowing detektálás külön kezeli
+        L"explorer.exe",
         L"taskhostw.exe",
         L"conhost.exe",
         L"dllhost.exe",
@@ -125,7 +117,6 @@ namespace
         sizeof(kWhitelistedProcesses) / sizeof(kWhitelistedProcesses[0]);
 
     // -------------------------------------------------------------------------
-    // Segédfüggvények
     // -------------------------------------------------------------------------
 
     std::wstring WstrToLower(const std::wstring& s)
@@ -150,7 +141,6 @@ namespace
         return false;
     }
 
-    // Szekció név összehasonlítás (max 8 char, null-padded)
     bool SectionNameEquals(const BYTE rawName[8], const char* target)
     {
         char buf[9] = {};
@@ -160,7 +150,7 @@ namespace
         {
             char a = buf[i];
             char b = target[i];
-            if (!b) return (a == 0);   // target rövidebb → match ha buf is vége
+            if (!b) return (a == 0);
             if (!a) return false;
             if (a >= 'A' && a <= 'Z') a = char(a - 'A' + 'a');
             if (b >= 'A' && b <= 'Z') b = char(b - 'A' + 'a');
@@ -170,8 +160,6 @@ namespace
     }
 
     // -------------------------------------------------------------------------
-    // PE fejléc beolvasása egy idegen processből
-    // Visszatér: igaz ha sikerült, és feltölti a szekció neveket
     // -------------------------------------------------------------------------
     struct SectionResult
     {
@@ -180,8 +168,6 @@ namespace
         char        sectionName[16];
     };
 
-    // Megpróbálja beolvasni a PE fejlécet a processből és megkeresi a packer
-    // szekciókat. Ha talál, feltölti az out vektort.
     bool ScanProcessPESections(
         HANDLE hProc,
         uintptr_t baseAddr,
@@ -189,7 +175,6 @@ namespace
     {
         outFindings.clear();
 
-        // Olvassuk be a PE fejlécet (első 4KB elegendő)
         BYTE header[0x1000] = {};
         SIZE_T bytesRead = 0;
 
@@ -219,10 +204,8 @@ namespace
         if (numSections == 0 || numSections > 96)
             return false;
 
-        // Szekció fejlécek
         PIMAGE_SECTION_HEADER sec = IMAGE_FIRST_SECTION(nt);
 
-        // Ellenőrizzük hogy a szekció tábla a bufferben van-e
         uintptr_t secTableEnd = reinterpret_cast<uintptr_t>(sec + numSections)
             - reinterpret_cast<uintptr_t>(header);
         if (secTableEnd > sizeof(header))
@@ -237,11 +220,10 @@ namespace
                     SectionResult sr{};
                     sr.packerName = kPackerSections[j].packerName;
                     sr.score      = kPackerSections[j].score;
-                    // Szekció nevet null-terminated stringként mentjük
                     memcpy(sr.sectionName, sec[i].Name, 8);
                     sr.sectionName[8] = '\0';
                     outFindings.push_back(sr);
-                    break;  // egy szekció csak egyszer illik
+                    break;
                 }
             }
         }
@@ -250,7 +232,6 @@ namespace
     }
 
     // -------------------------------------------------------------------------
-    // Egy process összes moduljában keres packer szekciókat
     // -------------------------------------------------------------------------
     struct ProcessPackerResult
     {
@@ -275,7 +256,6 @@ namespace
 
         if (!hProc)
         {
-            // PROCESS_QUERY_LIMITED_INFORMATION-nal is megpróbáljuk
             hProc = OpenProcess(
                 PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ,
                 FALSE, pid);
@@ -283,13 +263,11 @@ namespace
                 return false;
         }
 
-        // Process teljes elérési útja
         wchar_t pathBuf[MAX_PATH] = {};
         DWORD pathSize = MAX_PATH;
         QueryFullProcessImageNameW(hProc, 0, pathBuf, &pathSize);
         outResult.processPath = pathBuf;
 
-        // Fő modul (EXE) base address lekérése
         HMODULE hMods[1] = {};
         DWORD needed = 0;
         if (EnumProcessModules(hProc, hMods, sizeof(hMods), &needed) && hMods[0])
@@ -332,7 +310,6 @@ namespace AntiHook::PackerGuard
             return;
         }
 
-        // Saját PID - magunkat nem ellenőrizzük
         DWORD selfPid = GetCurrentProcessId();
 
         do
@@ -342,7 +319,6 @@ namespace AntiHook::PackerGuard
 
             std::wstring nameLow = WstrToLower(pe.szExeFile);
 
-            // Whitelist ellenőrzés
             if (IsWhitelisted(nameLow))
                 continue;
 
@@ -350,9 +326,7 @@ namespace AntiHook::PackerGuard
             if (!CheckProcess(pe.th32ProcessID, pe.szExeFile, result))
                 continue;
 
-            // Találat! → logolás és terminálás
 
-            // Log összeállítása
             char logBuf[1024] = {};
             char findingsStr[512] = {};
 
@@ -393,12 +367,10 @@ namespace AntiHook::PackerGuard
 
             AppendLog(logBuf);
 
-            // Riport küldés az IXAC szervernek
             IXAC_ReportCheat();
 
             CloseHandle(hSnap);
 
-            // Kis késleltetés hogy a log biztosan elküldjön
             Sleep(2500);
             TerminateProcess(GetCurrentProcess(), 0xB1CC);
             return;

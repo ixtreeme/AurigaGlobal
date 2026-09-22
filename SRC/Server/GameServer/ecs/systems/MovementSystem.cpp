@@ -1454,7 +1454,6 @@ void SetRotation(entt::entity e, float fRot)
 
 } // namespace ecs::MovementSystem
 
-// x, y 1a��A��?o��?1��U.
 
 namespace ecs::MovementSystem {
 void SetRotationToXY(entt::entity e, int32_t x, int32_t y)
@@ -1477,7 +1476,6 @@ bool CanMove(entt::entity e)
 }
 } // namespace ecs::MovementSystem
 
-// 1����?x, y A��!�� AI? 1AA2�U.
 bool ecs::MovementSystem::Sync(entt::entity e, int32_t x, int32_t y)
 {
 	if (!ecs::PlayerRuntime::GetSectree(e))

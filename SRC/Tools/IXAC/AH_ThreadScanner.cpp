@@ -41,7 +41,6 @@ namespace AntiHook::ThreadScanner
     void SetGuardianThreadId(unsigned long tid) { g_GuardianTid = tid; }
 
     // =====================================================================
-    //  THREAD-IP SCAN (kicsit finomított változat)
     // =====================================================================
 
     void ScanThreadsForSuspiciousEip(const char* logFile)
@@ -109,7 +108,6 @@ namespace AntiHook::ThreadScanner
 
                 CloseHandle(hThread);
 
-                // 1) IP memóriája – ha RWX privát, az már magában gyanús (shellcode)
                 MEMORY_BASIC_INFORMATION mbi{};
                 if (VirtualQuery(reinterpret_cast<LPCVOID>(ip), &mbi, sizeof(mbi)))
                 {
@@ -129,14 +127,11 @@ namespace AntiHook::ThreadScanner
                     }
                 }
 
-                // 2) Modul tulajdonos keresése
                 const ModuleInfo* owner = FindModuleForAddress(modules, ip);
 
-                // Owner nélküli IP → Win10/11 alatt normális lehet (scheduler thunk, stb.).
                 if (!owner)
                     continue;
 
-                // Ha modul nincs whitelisten → gyanús
                 if (!IsModuleWhitelisted(owner->name))
                 {
                     
@@ -167,7 +162,6 @@ namespace AntiHook::ThreadScanner
     }
 
     // =====================================================================
-    //  THREAD-START SCAN – ÚJ, STABIL VÁLTOZAT
     // =====================================================================
 
     void ScanThreadStartAddresses(const char* logFile)
@@ -234,7 +228,6 @@ namespace AntiHook::ThreadScanner
 
                 uintptr_t a = reinterpret_cast<uintptr_t>(startAddr);
 
-                // 1) Memória ellenőrzés – RWX privát → nagyon gyanús (shellcode thread)
                 MEMORY_BASIC_INFORMATION mbi{};
                 if (VirtualQuery(reinterpret_cast<LPCVOID>(a), &mbi, sizeof(mbi)))
                 {
@@ -255,14 +248,11 @@ namespace AntiHook::ThreadScanner
                     }
                 }
 
-                // 2) Modul tulajdonos keresése
                 const ModuleInfo* owner = FindModuleForAddress(modules, a);
 
-                // Ha nincs modul owner → Win10/11-ben normális (scheduler/internal thunk).
                 if (!owner)
                     continue;
 
-                // 3) Modul nincs whitelisten → gyanús
                 if (!IsModuleWhitelisted(owner->name))
                 {
                     fwprintf(

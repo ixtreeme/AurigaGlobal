@@ -76,8 +76,6 @@ void __SetWeaponPower(IAbstractPlayer& rkPlayer, uint32_t dwWeaponID)
 	rkPlayer.SetWeaponPower(minPower, maxPower, minMagicPower, maxMagicPower, addPower);
 }
 
-//테이블에서 이름이 "." 인 것들
-//차후에 서버에서 보내주지 않게 되면 없어질 함수..(서버님께 꼭!!협박; )
 bool IsInvisibleRace(WORD raceNum)
 {
 	switch(raceNum)
@@ -139,7 +137,7 @@ bool CPythonNetworkStream::RecvCharacterAppendPacket()
 #endif
 	kNetActorData.m_dwMountVnum=0;/*chrAddPacket.dwMountVnum*/;
 
-	kNetActorData.m_dwLevel = 0; // 몬스터 레벨 표시 안함
+	kNetActorData.m_dwLevel = 0;
 
 #ifdef ENABLE_MULTI_NAMES
 	if (kNetActorData.m_bType == CActorInstance::TYPE_NPC && chrAddPacket.transname) {
@@ -369,10 +367,6 @@ bool CPythonNetworkStream::RecvCharacterUpdatePacket()
 
 void CPythonNetworkStream::__RecvCharacterAppendPacket(SNetworkActorData * pkNetActorData)
 {
-	// NOTE : 카메라가 땅에 묻히는 문제의 해결을 위해 메인 캐릭터가 지형에 올려지기
-	//        전에 맵을 업데이트 해 높이를 구할 수 있도록 해놓아야 합니다.
-	//        단, 게임이 들어갈때가 아닌 이미 캐릭터가 추가 된 이후에만 합니다.
-	//        헌데 이동인데 왜 Move로 안하고 Append로 하는지..? - [levites]
 	IAbstractPlayer& rkPlayer = IAbstractPlayer::GetSingleton();
 	if (rkPlayer.IsMainCharacterIndex(pkNetActorData->m_dwVID))
 	{
@@ -436,8 +430,6 @@ bool CPythonNetworkStream::RecvCharacterDeletePacket()
 
 	m_rokNetActorMgr->RemoveActor(chrDelPacket.dwVID);
 
-	// 캐릭터가 사라질때 개인 상점도 없애줍니다.
-	// Key Check 를 하기때문에 없어도 상관은 없습니다.
 	PyCallClassMemberFunc(m_apoPhaseWnd[PHASE_WINDOW_GAME],
 		"BINARY_PrivateShop_Disappear",
 		Py_BuildValue("(i)", chrDelPacket.dwVID)

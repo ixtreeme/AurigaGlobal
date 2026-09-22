@@ -27,10 +27,10 @@ class CColorTransitionHelper
 		bool isTransitionStarted() { return m_bTransitionStarted; }
 
 	private:
- 		D3DCOLOR m_dwCurColor;		// 현재 색
+ 		D3DCOLOR m_dwCurColor;
 
-		uint32_t m_dwStartTime;		// 바뀌기 시작하는 시간
-		uint32_t m_dwDuration;			// 얼마 동안에 바뀌는가?
+		uint32_t m_dwStartTime;
+		uint32_t m_dwDuration;
 
 		bool m_bTransitionStarted;
 

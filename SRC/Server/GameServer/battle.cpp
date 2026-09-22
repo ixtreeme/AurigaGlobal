@@ -98,7 +98,6 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 {
     if (!IsBattlePair(character, victim) || character == victim)
         return false;
-	// ���1aAI ��3�A��� �ߴ��N�U.
 	if (CombatSystem::IsDead(victim))
 	{
 		return false;
@@ -112,7 +111,6 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 	}
 #endif
 
-	// 3EA������ �ߴ�
 	{
 		SECTREE* sectree = nullptr;
 
@@ -129,7 +127,6 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 		}
 	}
 
-	// 3��! ��3�A��� �ߴ��N�U.
 	if (CombatSystem::IsStun(character) || CombatSystem::IsDead(character))
 	{
 		return false;
@@ -193,7 +190,6 @@ int battle_melee_attack(entt::entity character, entt::entity victim)
 		return BATTLE_NONE;
 	}
 
-	// �A�� A1A�
 	int distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(character) - ecs::PlayerRuntime::GetY(victim));
 
 	if (!HasCharacterType(victim, CHAR_TYPE_BUILDING))
@@ -202,12 +198,10 @@ int battle_melee_attack(entt::entity character, entt::entity victim)
 
 		if (false == ecs::PlayerRuntime::IsPC(character))
 		{
-			// ��1oA�A� �a?i ��1oA� �o�� �A���� ��?�
 			max = (int)(CombatSystem::GetMobAttackRange(character) * 1.15f);
 		}
 		else
 		{
-			// PCAI �a?i ���! melee ��AI �a?i ��A� �o�� �A���! Aִ� �o�� �A��
 			if (false == ecs::PlayerRuntime::IsPC(victim) && BATTLE_TYPE_MELEE == CombatSystem::GetMobBattleType(victim))
 				max = MAX(300, (int)(CombatSystem::GetMobAttackRange(victim) * 1.15f));
 		}
@@ -785,7 +779,6 @@ void NormalAttackAffect(entt::entity attacker, entt::entity victim)
 {
     if (!IsBattlePair(attacker, victim))
         return;
-	// ?? ?????? U?????? U?? �??
 	if (ecs::PointSystem::Get(attacker, POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_POISON))
 	{
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_POISON_PCT))
@@ -936,7 +929,6 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 		}
 
 
-	//???????? ?????? ????. (2011?? 2?? ???? ???�????? ????.)
 	float attMul = CombatSystem::GetAttackMultiplier(attacker);
 	float tempIDam = iDam;
 	iDam = attMul * tempIDam + 0.5f;

@@ -12,7 +12,6 @@ namespace
     using AntiHook::Core::ModuleInfo;
     using AntiHook::Heuristics::SuspiciousModule;
 
-    // Veszélyes API-k – COM2 és hasonló injektorok/cheatek előszeretettel használják
     static const char* kDangerousApis[] =
     {
        AY_OBFUSCATE( "WriteProcessMemory"),
@@ -60,11 +59,9 @@ namespace
     bool IsSystemPath(const std::wstring& path)
     {
         auto lower = ToLower(path);
-        // nagyon egyszerű, ha kell finomíthatod
         return (lower.find(L"\\windows\\") != std::wstring::npos);
     }
 
-    // PE import tábla kiolvasása: importált függvénynevek listája
     bool GetImportFunctionNames(uintptr_t moduleBase, std::vector<std::string>& outNames)
     {
         outNames.clear();
@@ -87,7 +84,7 @@ namespace
             opt.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 
         if (dir.VirtualAddress == 0)
-            return true; // nincs import – nem baj, csak üres lista
+            return true;
 
         const IMAGE_IMPORT_DESCRIPTOR* impDesc =
             reinterpret_cast<const IMAGE_IMPORT_DESCRIPTOR*>(base + dir.VirtualAddress);
@@ -180,12 +177,10 @@ namespace AntiHook::Heuristics
     {
         std::vector<SuspiciousModule> result;
 
-        // **ITT használjuk újra az AH_Core funkcióidat**
         auto mods = Core::BuildModuleMap();
 
         for (const ModuleInfo& m : mods)
         {
-            // whitelist → skip
             if (Core::IsModuleWhitelisted(m.name))
                 continue;
 
@@ -200,7 +195,6 @@ namespace AntiHook::Heuristics
 
             score = ScoreFromImportNames(imports, reason);
 
-            // system DLL-ekre legyünk kevésbé agresszívek
             int effectiveThreshold = scoreThreshold;
             if (isSystem)
                 effectiveThreshold += 3;

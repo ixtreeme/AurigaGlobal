@@ -173,28 +173,23 @@ bool CActorInstance::InputComboAttackCommand(float fDirRot)
 	}
 	else if (m_pkCurRaceMotionData->IsComboInputTimeData())
 	{
-		// 동작 경과 시간
  		float fElapsedTime = GetAttackingElapsedTime();
 
-		// 이미 입력 한계 시간이 지났다면..
 		if (fElapsedTime > m_pkCurRaceMotionData->GetComboInputEndTime())
 		{
-			//Tracen("입력 한계 시간 지남");
 			if (IsBowMode())
 				m_isNextPreInput = TRUE;
 			return false;
 		}
 
-		if (fElapsedTime > m_pkCurRaceMotionData->GetNextComboTime()) // 콤보 발동 시간 이 후라면
+		if (fElapsedTime > m_pkCurRaceMotionData->GetNextComboTime())
 		{
-			//Tracen("다음 콤보 동작");
 			// args : BlendingTime
 			__RunNextCombo();
 			return true;
 		}
-		else if (fElapsedTime > m_pkCurRaceMotionData->GetComboInputStartTime()) // 선 입력 시간 범위 라면..
+		else if (fElapsedTime > m_pkCurRaceMotionData->GetComboInputStartTime())
 		{
-			//Tracen("선 입력 설정");
 			m_isPreInput = TRUE;
 			return false;
 		}
@@ -202,9 +197,8 @@ bool CActorInstance::InputComboAttackCommand(float fDirRot)
 	else
 	{
 		float fElapsedTime = GetAttackingElapsedTime();
-		if (fElapsedTime > m_pkCurRaceMotionData->GetMotionDuration()*0.9f) // 콤보 발동 시간 이 후라면
+		if (fElapsedTime > m_pkCurRaceMotionData->GetMotionDuration()*0.9f)
 		{
-			//Tracen("다음 콤보 동작");
 			// args : BlendingTime
 			__RunNextCombo();
 			return true;
@@ -232,7 +226,6 @@ void CActorInstance::ComboProcess()
 		// Process PreInput
 		if (m_isPreInput)
 		{
-			//Tracenf("선입력 %f 다음콤보시간 %f", fElapsedTime, m_pkCurRaceMotionData->GetNextComboTime());
 			if (fElapsedTime > m_pkCurRaceMotionData->GetNextComboTime())
 			{
   				__RunNextCombo();
@@ -246,8 +239,8 @@ void CActorInstance::ComboProcess()
 	{
 		m_isPreInput = FALSE;
 
-		if (!IsUsingSkill())	// m_isNextPreInput는 활모드 일때만 사용하는 변수
-		if (m_isNextPreInput)	// 활일때만 스킬이 캔슬 되는건 이곳 때문임
+		if (!IsUsingSkill())
+		if (m_isNextPreInput)
 		{
 			__RunNextCombo();
 			m_isNextPreInput = FALSE;
@@ -291,7 +284,6 @@ void CActorInstance::__RunNextCombo()
 	ComboAttack(wcurComboMotionIndex, m_fAtkDirRot, 0.1f);
 
 	////////////////////////////////
-	// 콤보가 끝났다면
 	if (m_dwcurComboIndex == pComboData->ComboIndexVector.size())
 	{
 		__OnEndCombo();
@@ -305,8 +297,6 @@ void CActorInstance::__OnEndCombo()
 		m_dwcurComboIndex = 1;
 	}
 
-	// 여기서 콤보를 초기화 해선 안된다.
-	// 콤보가 초기화 되는 곳은 마지막 콤보가 끝나고 Motion 이 자동으로 Wait 으로 돌아가는 시점이다.
 }
 
 void CActorInstance::__ClearCombo()
@@ -685,7 +675,6 @@ bool CActorInstance::__CanPushDestActor(CActorInstance& rkActorDst)
 	if (rkActorDst.IsNPC())
 		return false;
 
-	// 거대 몬스터 밀림 제외
 
 	if (IS_HUGE_RACE(rkActorDst.GetRace()))
 		return false;
@@ -804,7 +793,6 @@ void CActorInstance::__ProcessDataAttackSuccess(const NRaceData::TAttackData & c
 
 	if (rVictim.IsBuilding())
 	{
-		// 2004.08.03.빌딩의 경우 흔들리면 이상하다
 	}
 	else if (rVictim.IsStone() || rVictim.IsDoor())
 	{

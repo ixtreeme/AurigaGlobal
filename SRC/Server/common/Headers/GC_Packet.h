@@ -393,8 +393,8 @@ typedef struct packet_item_ground_del
 struct TPacketGCBeltNameUpdate
 {
 	uint8_t header; // HEADER_GC_BELT_NAME_UPDATE
-	uint32_t dwVID; // karakter egyedi azonosítója
-	char name[CHARACTER_NAME_MAX_LEN + 64]; // 88 bájt
+	uint32_t dwVID;
+	char name[CHARACTER_NAME_MAX_LEN + 64];
 };
 
 typedef struct packet_mount_count_overhead {
@@ -581,7 +581,7 @@ typedef struct packet_pvp
 	uint8_t        bHeader;
 	uint32_t       dwVIDSrc;
 	uint32_t       dwVIDDst;
-	uint8_t        bMode;	// 0 ÀÌ¸é ²û, 1ÀÌ¸é ÄÔ
+	uint8_t        bMode;
 } TPacketGCPVP;
 
 typedef struct packet_target
