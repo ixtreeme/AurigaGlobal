@@ -1100,12 +1100,5 @@ namespace fishingnew
 			: pick(aFishFirstTableNormal, firstNormalN);
 	}
 
-	//uint32_t GetFishCatchedVnum(uint8_t normal_chance, uint8_t rare_chance, bool second) {
-	//	if (number(1, 100) >= uint8_t(normal_chance-rare_chance)) {
-	//		return second == true ? aFishSecondTableRare[number(0, 6)] : aFishFirstTableRare[number(0, 4)];
-	//	} else {
-	//		return second == true ? aFishSecondTableNormal[number(0, 6)] : aFishFirstTableNormal[number(0, 4)];
-	//	}
-	//}
 }
 #endif

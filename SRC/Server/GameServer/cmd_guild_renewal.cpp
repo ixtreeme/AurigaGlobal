@@ -21,22 +21,6 @@
 
 namespace
 {
-	static int ParseDeadlineYMD(const char* ymd)
-	{
-		if (!ymd)
-			return 0;
-		int y = 0, m = 0, d = 0;
-		if (sscanf(ymd, "%d.%d.%d", &y, &m, &d) != 3)
-			return 0;
-		tm t = {};
-		t.tm_year = y - 1900;
-		t.tm_mon = m - 1;
-		t.tm_mday = d;
-		t.tm_hour = 23;
-		t.tm_min = 59;
-		t.tm_sec = 59;
-		return (int)mktime(&t);
-	}
 
 	static void BroadcastRenewalStateToGuild(CGuild* g)
 	{

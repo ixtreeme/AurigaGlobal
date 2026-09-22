@@ -371,12 +371,4 @@ void ani_print_attack_speed()
 	s_ANI.print_attack_speed();
 }
 
-#if 0
-int main(int argc, char **argv)
-{
-	ani_init();
-	ani_print_attack_speed();
-	exit(0);
-}
-#endif
 

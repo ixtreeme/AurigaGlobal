@@ -275,11 +275,6 @@ namespace
             snprintf(out, outSz, "%ds", s);
     }
 
-    int32_t GetOutsideMapByEmpire(uint8_t /*empire*/)
-    {
-        return 219;
-    }
-
     void GetOutsideWarpByEmpire(uint8_t /*empire*/, int32_t& mapIdx, int32_t& x, int32_t& y)
     {
         mapIdx = 219;
@@ -288,11 +283,6 @@ namespace
         x = 5369;
         y = 14350;
     }//536904	1435017
-
-    bool IsEntryMapForEmpire(entt::entity ch)
-    {
-        return ecs::PlayerRuntime::IsValid(ch) && ecs::PlayerRuntime::GetMapIndex(ch) == 219;
-    }
 
     void SetOutsideWarpLocation(entt::entity ch)
     {
@@ -1174,11 +1164,6 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         }
     }
 
-    //if (!IsEntryMapForEmpire(ch))
-    //{
-    //    ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You must be in the correct map to enter Frostbane Fortress.");
-    //    return true;
-    //}
 
     if (!ecs::PlayerRuntime::CanWarp(character))
     {

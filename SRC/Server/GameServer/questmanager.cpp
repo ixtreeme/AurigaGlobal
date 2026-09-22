@@ -474,13 +474,6 @@ namespace quest
 				pPC->EndRunning();
 			}
 		}
-		//else
-		//{
-			//cerr << pPC << endl;
-			//cerr << pPC->IsRunning() << endl;
-			//cerr << pPC->GetRunningQuestState()->suspend_state;
-			//cerr << SUSPEND_STATE_WAIT << endl;
-			//cerr << "wrong QUEST_WAIT request! : " << pc << endl;
 			//LOG_ERROR("wrong QUEST_WAIT request! : %d", pc);
 		//}
 	}
@@ -1903,11 +1896,6 @@ namespace quest
 		//	if (it->first.second != arg)
 		//	{
 		//		++it;
-		//	}
-		//	else
-		//	{
-		//		auto event = it->second;
-		//		event_cancel(&event);
 		//		it = m_mapServerTimer.erase(it);
 		//	}
 		//}

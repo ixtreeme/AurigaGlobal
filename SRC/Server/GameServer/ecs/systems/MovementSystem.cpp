@@ -78,12 +78,6 @@ namespace
             g_registry.all_of<ecs::CombatActiveTag>(e);
     }
 
-    inline bool HasMoveState(entt::entity e)
-    {
-        return e != entt::null && g_registry.valid(e) &&
-            g_registry.all_of<ecs::MovementDestination>(e);
-    }
-
     inline bool HasIdleState(entt::entity e)
     {
         if (e == entt::null || !g_registry.valid(e))

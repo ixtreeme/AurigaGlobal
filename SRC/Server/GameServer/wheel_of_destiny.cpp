@@ -66,11 +66,6 @@ template <typename T> std::string NumberToMoneyString(T val)
 void CWheelDestiny::TurnWheel()
 {
 	const entt::entity chEntity = m_owner;
-	//if (m_bTurning)
-	//{
-	//	ecs::ChatSystem::Send(m_owner, CHAT_TYPE_INFO, "Already spinning!");
-	//	return;
-	//}
 
 	//m_bTurning = true;
 

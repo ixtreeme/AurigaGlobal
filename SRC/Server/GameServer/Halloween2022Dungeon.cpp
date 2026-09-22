@@ -352,19 +352,6 @@ namespace
         ecs::QuestSystem::SetFlag(ch, kQfCh, 0);
     }
 
-    int32_t GetPartyOnlineCountOnMap(entt::entity party, int32_t mapIndex)
-    {
-        int32_t count = 0;
-        if (party == entt::null)
-            return 0;
-        auto fn = [&](entt::entity pc){
-            if (ecs::PlayerRuntime::IsValid(pc) && ecs::SocialSystem::GetParty(pc) == party)
-                ++count;
-        };
-        PartySystem::ForEachOnMapMember(party, fn, mapIndex);
-        return count;
-    }
-
     void SetDungeonReady(entt::entity d)
     {
         if (d == entt::null)

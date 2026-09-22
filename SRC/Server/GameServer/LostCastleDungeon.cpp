@@ -569,11 +569,6 @@ void ClearClonesOnMap(int32_t mapIndex)
         }
 
 
-        //void StartFloor1(int32_t mapIndex)
-        //{
-        //    const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
-        //    if (d == entt::null)
-        //        return;
 
         //    DungeonSystem::SetFlag(d, kFlagFloor, 1);
         //    DungeonSystem::SetFlag(d, kFlagCorrectMetin, 0);
@@ -592,12 +587,6 @@ void ClearClonesOnMap(int32_t mapIndex)
         //    while ((int32_t)spawnedVids.size() < kFloor1MetinCount && attempts < maxAttempts)
         //    {
         //        ++attempts;
-        //        const int32_t x = number(minX, maxX);
-        //        const int32_t y = number(minY, maxY);
-
-        //        const entt::entity metin = DungeonSystem::SpawnMob(d, (int32_t)kMetinVnum, x, y);
-        //        if (!ecs::IsCharacter(metin))
-        //            continue;
 
         //        spawnedVids.push_back(ecs::PlayerRuntime::GetPacketVID(metin));
         //    }
@@ -1750,23 +1739,7 @@ bool CLostCastleDungeon::CheckCloneDamage(entt::entity attacker, entt::entity vi
         return true;
 
     // Player/NPC -> Clone
-    //if (!attackerIsClone && victimIsClone)
-    //{
-    //    if (!(ecs::PlayerRuntime::IsPC(attacker) || attacker->IsFakePlayer()))
-    //        return false;
-
-    //    return s_lc.IsCloneAttackAllowed(vVid, ecs::PlayerRuntime::GetPlayerID(attacker));
-    //}
 
     //// Clone -> Player/NPC
-    //if (attackerIsClone && !victimIsClone)
-    //{
-    //    if (!(ecs::PlayerRuntime::IsPC(victim) || victim->IsFakePlayer()))
-    //        return false;
-
-    //    return s_lc.IsCloneAttackAllowed(aVid, ecs::PlayerRuntime::GetPlayerID(victim));
-    //}
-
-    // Clone -> Clone tiltás
     return false;
 }

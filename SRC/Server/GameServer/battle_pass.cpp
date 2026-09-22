@@ -196,33 +196,12 @@ bool CBattlePass::ReadBattlePassGroup()
 
 	return true;
 }
-//#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-//void CHARACTER::BattlePass_StayOnlineTick()
-//{
-//	if (!GetDesc())
-//		return;
-//
-//	const uint8_t bBattlePassId = GetBattlePassId();
-//	if (!bBattlePassId)
-//		return;
-//
 //	// 60 mp-
 //	const uint32_t now = get_dword_time();
 //	if (now < m_dwBattlePassStayOnlineNextTick)
 //		return;
 //
 //	m_dwBattlePassStayOnlineNextTick = now + 60 * 1000;
-//
-//	uint32_t dwNotUsed = 0, dwCount = 0;
-//	if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, STAY_ONLINE_MINUTES, &dwNotUsed, &dwCount))
-//		return;
-//
-//	if (IsCompletedMission(STAY_ONLINE_MINUTES))
-//		return;
-//
-//	if (GetMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
-//		return;
-//
 //
 //	UpdateMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
 //}

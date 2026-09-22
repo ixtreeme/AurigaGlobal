@@ -162,9 +162,6 @@ void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
 #endif
 static void SendBlockChatInfo(entt::entity chEntity, int sec)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp::  SendBlockChatInfo(");//INGAME_DEBUG_RAZOR93
-#endif
 	if (sec <= 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -233,9 +230,6 @@ static bool SpamBlockCheck(entt::entity chEntity, const char* const buf, const s
 {
 	if (!ecs::PlayerRuntime::IsPC(chEntity) || !ecs::PlayerRuntime::GetDesc(chEntity))
 		return true;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp::  bool SpamBlockCheck(entt::entity chEntity, const char* const buf, const size_t buflen)(");//INGAME_DEBUG_RAZOR93
-#endif
 	if (ecs::PointSystem::GetLevel(chEntity) < g_iSpamBlockMaxLevel)
 	{
 		auto it = spam_score_of_ip.find(ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName());
@@ -1176,13 +1170,6 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 			// === Broadcast mindenkinek ===
 #ifdef TEXTS_IMPROVEMENT
 
-			//const DESC_MANAGER::DESC_SET& cset = DESC_MANAGER::instance().GetClientSet();
-			//for (DESC_MANAGER::DESC_SET::const_iterator it = cset.begin(); it != cset.end(); ++it)
-			//{
-			//	LPDESC d = *it;
-			//	LPCHARACTER rc;
-			//	if (!d || !(rc = d->GetCharacter())) continue;
-			//ecs::ChatSystem::SendNew(((rc) ? (rc)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 2181,
 			//	"%s#%d#",
 			//	ecs::PlayerRuntime::GetName(character).data(),            // %s (winner)
 			//	answer                   // %d (correct answer)
@@ -1473,9 +1460,6 @@ void CInputMain::ItemUse(entt::entity character, const char * data)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemUse handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::  CInputMain::ItemUse(");//INGAME_DEBUG_RAZOR93
-#endif
 	ItemSystem::UseItem(character, ((struct command_item_use *) data)->Cell);
 }
 
@@ -1484,9 +1468,6 @@ void CInputMain::ItemToItem(entt::entity character, const char * pcData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemToItem handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemToItem(");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGItemUseToItem * p = (TPacketCGItemUseToItem *) pcData;
 	if (ecs::IsCharacter(character))
 		ItemSystem::UseItem(character, p->Cell, p->TargetCell);
@@ -1497,9 +1478,6 @@ void CInputMain::ItemDrop(entt::entity character, const char * data)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDrop handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop");//INGAME_DEBUG_RAZOR93
-#endif
 	struct command_item_drop * pinfo = (struct command_item_drop *) data;
 	if (!ecs::IsCharacter(character))
 		return;
@@ -1522,9 +1500,6 @@ void CInputMain::ItemDrop2(entt::entity character, const char * data)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDrop2 handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop2");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGItemDrop2 * pinfo = (TPacketCGItemDrop2 *) data;
 	if (!ecs::IsCharacter(character))
 		return;
@@ -1556,9 +1531,6 @@ void CInputMain::InventoryExpansion(entt::entity character, const char * data)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate InventoryExpansion handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::InventoryExpansion");//INGAME_DEBUG_RAZOR93
-#endif
 	InventorySystem::ExpandInventory(character);
 }
 #endif
@@ -1603,9 +1575,6 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 {
 	if (!c_pData || !ecs::PlayerRuntime::IsPC(character))
 		return -1;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::Messenger");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGMessenger* p = (TPacketCGMessenger*) c_pData;
 
 	if (uiBytes < sizeof(TPacketCGMessenger))
@@ -1731,9 +1700,6 @@ int CInputMain::BattlePass(entt::entity character, const char* data, size_t uiBy
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate BattlePass handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::BattlePas");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGBattlePassAction * p = (TPacketCGBattlePassAction *) data;
 
 	if (uiBytes < sizeof(TPacketCGBattlePassAction))
@@ -1776,9 +1742,6 @@ int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Shop handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Shop");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGShop * p = (TPacketCGShop *) data;
 
 	if (uiBytes < sizeof(TPacketCGShop))
@@ -1943,9 +1906,6 @@ void CInputMain::Position(entt::entity character, const char * data)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Position handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Position(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
-#endif
 	struct command_position * pinfo = (struct command_position *) data;
 
 	switch (pinfo->position)
@@ -1974,9 +1934,6 @@ static const int ComboSequenceBySkillLevel[3][8] =
 
 void CInputMain::Move(entt::entity character, const char * data)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Move(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
-#endif
 	if (!ecs::IsCharacter(character))
 		return;
 
@@ -2181,9 +2138,6 @@ void CInputMain::SetSkillColor(entt::entity character, const char* pcData)
 
 void CInputMain::Attack(entt::entity character, const uint8_t header, const char* data)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Attack(LPCHARACTER");//INGAME_DEBUG_RAZOR93
-#endif
 	if (!ecs::IsCharacter(character))
 		return;
 
@@ -2290,9 +2244,6 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate SyncPosition handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::SyncPosition");//INGAME_DEBUG_RAZOR93
-#endif
 	const TPacketCGSyncPosition* pinfo = reinterpret_cast<const TPacketCGSyncPosition*>( c_pcData );
 
 	if (uiBytes < pinfo->wSize)
@@ -2436,9 +2387,6 @@ void CInputMain::FlyTarget(entt::entity character, const char * pcData, uint8_t 
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate FlyTarget handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::FlyTarget");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGFlyTargeting * p = (TPacketCGFlyTargeting *) pcData;
 	CombatSystem::FlyTarget(character, p->dwTargetVID, p->x, p->y, bHeader);
 }
@@ -2448,9 +2396,6 @@ void CInputMain::UseSkill(entt::entity character, const char * pcData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate UseSkill handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::UseSkill");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGUseSkill * p = (TPacketCGUseSkill *) pcData;
 	SkillSystem::UseSkill(character, p->dwVnum, CHARACTER_MANAGER::instance().FindEntity(p->dwVID));
 }
@@ -2460,9 +2405,6 @@ void CInputMain::ScriptButton(entt::entity character, const void* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ScriptButton handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptButton");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGScriptButton * p = (TPacketCGScriptButton *) c_pData;
 	LOG_INFO("QUEST ScriptButton pid {} idx {}", ecs::PlayerRuntime::GetPlayerID(character), p->idx);
 
@@ -2487,9 +2429,6 @@ void CInputMain::ScriptAnswer(entt::entity character, const void* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ScriptAnswer handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptAnswer");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGScriptAnswer * p = (TPacketCGScriptAnswer *) c_pData;
 	LOG_INFO("QUEST ScriptAnswer pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(character), p->answer);
 
@@ -2510,9 +2449,6 @@ void CInputMain::ScriptSelectItem(entt::entity character, const void* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ScriptSelectItem handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptSelectItem");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGScriptSelectItem* p = (TPacketCGScriptSelectItem*) c_pData;
 	LOG_INFO("QUEST ScriptSelectItem pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(character), p->selection);
 	quest::CQuestManager::Instance().SelectItem(ecs::PlayerRuntime::GetPlayerID(character), p->selection);
@@ -2524,9 +2460,6 @@ void CInputMain::QuestInputString(entt::entity character, const void* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate QuestInputString handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestInputString");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGQuestInputString * p = (TPacketCGQuestInputString*) c_pData;
 
 	char msg[65];
@@ -2555,9 +2488,6 @@ void CInputMain::Target(entt::entity character, const char * pcData)
 {
 	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Target");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGTarget * p = (TPacketCGTarget *) pcData;
 
 	const entt::entity buildingEntity = building::CManager::instance().FindObjectByVID(p->dwVID);
@@ -2578,9 +2508,6 @@ void CInputMain::Warp(entt::entity character, const char * pcData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Warp handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Warp");//INGAME_DEBUG_RAZOR93
-#endif
 	ecs::MovementSystem::WarpEnd(character);
 }
 
@@ -2883,9 +2810,6 @@ void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, b
 void CInputMain::SafeboxItemMove(entt::entity character, const char * data)
 {
 
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxItemMove");//INGAME_DEBUG_RAZOR93
-#endif
 	const auto* pinfo = reinterpret_cast<const command_item_move*>(data);
 
 	if (!data || !ecs::PlayerRuntime::IsPC(character) || !InventorySystem::CanHandleItems(character))
@@ -3119,9 +3043,6 @@ void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pD
 
 void CInputMain::MountInventoryItemMove(entt::entity character, const char* data)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryItemMove");
-#endif
 
 	const auto p = reinterpret_cast<const TPacketCGMountInventoryItemMove*>(data);
 
@@ -3157,9 +3078,6 @@ void CInputMain::MountInventoryItemMove(entt::entity character, const char* data
 void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack)
 {
 // migrated from CHARACTER handler
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
-#endif
 	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character) || ecs::SocialSystem::GetShop(character) != entt::null || ecs::SocialSystem::GetMyShop(character) != entt::null
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ecs::AcceSystem::IsOpen(character)
@@ -3182,15 +3100,6 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 	}
 #endif
 
-	//Check DungeonMap Genezis
-	//Check if current map is a dungeon!
-//	if (ecs::SocialSystem::GetDungeon(character) != entt::null)
-//	{
-//#ifdef TEXTS_IMPROVEMENT
-//		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 48, "");
-//#endif
-//		return;
-//	}
 
 	unsigned int iMapCode = pPack->iMapCode;
 	if(iMapCode <0 || iMapCode >= g_vecMapConf.size())
@@ -3258,9 +3167,6 @@ void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyInvite handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInvite");//INGAME_DEBUG_RAZOR93
-#endif
 	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3287,9 +3193,6 @@ void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyInviteAnswer handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInviteAnswer");//INGAME_DEBUG_RAZOR93
-#endif
 	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3319,9 +3222,6 @@ void CInputMain::PartySetState(entt::entity character, const char* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartySetState handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartySetState");//INGAME_DEBUG_RAZOR93
-#endif
 	if (!CPartyManager::instance().IsEnablePCParty())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3387,9 +3287,6 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 {
 	if (!c_pData || !ecs::PlayerRuntime::IsPC(character))
 		return;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyRemove");//INGAME_DEBUG_RAZOR93
-#endif
 	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3494,9 +3391,6 @@ void CInputMain::AnswerMakeGuild(entt::entity character, const char* c_pData)
 {
 	if (!c_pData || !ecs::PlayerRuntime::IsPC(character))
 		return;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::AnswerMakeGuild");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGAnswerMakeGuild* p = (TPacketCGAnswerMakeGuild*) c_pData;
 
 	if (ecs::PointSystem::GetGold(character) < 200000) {
@@ -3573,9 +3467,6 @@ void CInputMain::PartyUseSkill(entt::entity character, const char* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyUseSkill handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyUseSkill");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGPartyUseSkill* p = (TPacketCGPartyUseSkill*) c_pData;
 	const entt::entity pParty = ecs::SocialSystem::GetParty(character);
 	if (pParty == entt::null)
@@ -3628,9 +3519,6 @@ void CInputMain::RecvWikiPacket(entt::entity character, const char * c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate RecvWikiPacket handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::RecvWikiPacket");//INGAME_DEBUG_RAZOR93
-#endif
 	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
 
@@ -3770,9 +3658,6 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Guild handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Guild");//INGAME_DEBUG_RAZOR93
-#endif
 	if (uiBytes < sizeof(TPacketCGGuild))
 		return -1;
 
@@ -4158,9 +4043,6 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 
 void CInputMain::Fishing(entt::entity character, const char* c_pData)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Fishin");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGFishing* p = (TPacketCGFishing*)c_pData;
 	ecs::MovementSystem::SetRotation(character, p->dir * 5);
 	ActivitySystem::Fishing(character);
@@ -4172,9 +4054,6 @@ void CInputMain::ItemGive(entt::entity character, const char* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemGive handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ItemGive");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGGiveItem* p = (TPacketCGGiveItem*) c_pData;
 	const entt::entity to_chEntity = CHARACTER_MANAGER::instance().FindEntity(p->dwTargetVID);
 
@@ -4200,9 +4079,6 @@ void CInputMain::Hack(entt::entity character, const char * c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Hack handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Hack");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGHack * p = (TPacketCGHack *) c_pData;
 
 	char buf[sizeof(p->szBuf)];
@@ -4219,9 +4095,6 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate MyShop handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::MyShop");//INGAME_DEBUG_RAZOR93
-#endif
 	TPacketCGMyShop * p = (TPacketCGMyShop *) c_pData;
 	int iExtraLen = p->bCount * sizeof(TShopItemTable);
 
@@ -4274,9 +4147,6 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Refine handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Refine");//INGAME_DEBUG_RAZOR93
-#endif
 	const TPacketCGRefine* p = reinterpret_cast<const TPacketCGRefine*>(c_pData);
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
@@ -4433,9 +4303,6 @@ void CInputMain::CubeRenewalSend(entt::entity character, const char* data)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate CubeRenewalSend handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::CubeRenewalSend");//INGAME_DEBUG_RAZOR93
-#endif
 	struct packet_send_cube_renewal * pinfo = (struct packet_send_cube_renewal *) data;
 	switch (pinfo->subheader)
 	{
@@ -4499,9 +4366,6 @@ const char* Decode(T*& pObj, const char* data, int* pbufferLeng = nullptr, int* 
 
 int OfflineshopPacketCreateNewShop(entt::entity ch, const char* data, int iBufferLeft)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketCreateNewShop");//INGAME_DEBUG_RAZOR93
-#endif
 	TSubPacketCGShopCreate* pack = nullptr;
 	if(!CanDecode(pack, iBufferLeft))
 		return -1;
@@ -4546,9 +4410,6 @@ int OfflineshopPacketCreateNewShop(entt::entity ch, const char* data, int iBuffe
 
 int OfflineshopPacketChangeShopName(entt::entity ch, const char* data, int iBufferLeft)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketChangeShopName");//INGAME_DEBUG_RAZOR93
-#endif
 	TSubPacketCGShopChangeName* pack = nullptr;
 	if(!CanDecode(pack, iBufferLeft))
 		return -1;
@@ -4566,9 +4427,6 @@ int OfflineshopPacketChangeShopName(entt::entity ch, const char* data, int iBuff
 
 int OfflineshopPacketForceCloseShop(entt::entity ch, const char* data, int iBufferLeft)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketForceCloseShop");//INGAME_DEBUG_RAZOR93
-#endif
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
 	if(!rManager.RecvShopForceCloseClientPacket(ch))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_FORCE_CLOSE);
@@ -5003,9 +4861,6 @@ void CInputMain::ItemDestroy(entt::entity character, const char * data)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDestroy handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDestroy ");//INGAME_DEBUG_RAZOR93
-#endif
 	struct command_item_destroy * pinfo = (struct command_item_destroy *) data;
 	if (ecs::IsCharacter(character)) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -5021,9 +4876,6 @@ void CInputMain::ItemDivision(entt::entity character, const char * data)
 {
 	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDivision ");//INGAME_DEBUG_RAZOR93
-#endif
 	struct command_item_division * pinfo = (struct command_item_division *) data;
 	ItemSystem::ItemDivision(character, pinfo->pos);
 }
@@ -5036,9 +4888,6 @@ void CInputMain::FishingNew(entt::entity character, const char* c_pData)
 {
 	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::FishingNew ");//INGAME_DEBUG_RAZOR93
-#endif
 
 	TPacketFishingNew* p = (TPacketFishingNew*)c_pData;
 	switch (p->subheader) {
@@ -5105,11 +4954,6 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 	{
 		if (ecs::PlayerRuntime::GetWheelDestiny(character))
 		{
-			//if (ecs::PlayerRuntime::GetWheelDestiny(character)->IsTurning())
-			//{
-			//	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Do not close now!!");
-			//	return;
-			//}
 
 
 			if (ecs::PlayerRuntime::GetWheelDestiny(character)->GetGiftVnum())
@@ -5643,9 +5487,6 @@ int CInputMain::Switchbot(entt::entity character, const char* data, size_t uiByt
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Switchbot handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::Switchbot ");//INGAME_DEBUG_RAZOR93
-#endif
 	const TPacketCGSwitchbot* p = reinterpret_cast<const TPacketCGSwitchbot*>(data);
 
 	if (uiBytes < sizeof(TPacketCGSwitchbot))
@@ -5698,9 +5539,6 @@ void CInputMain::ChangeLanguage(entt::entity character, uint8_t bLanguage)
 {
 	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ChangeLanguage ");//INGAME_DEBUG_RAZOR93
-#endif
 
 	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
@@ -5722,9 +5560,6 @@ void CInputMain::RequestLanguage(entt::entity character, const char* targetName)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate RequestLanguage handler ECS
 // DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
-#endif
 	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 

@@ -112,16 +112,6 @@ const int ITEM_BROKEN_METIN_VNUM = 28960;
 
 
 
-static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e))
-        return comp;
-
-    return &g_registry.emplace<ecs::MainInventoryRuntimeComponent>(e);
-}
 
 static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(entt::entity e);
 static entt::entity GetMainInventoryItem(entt::entity e, uint16_t cell);
@@ -155,67 +145,17 @@ static entt::entity GetMainInventoryItem(entt::entity e, uint16_t cell)
 }
 
 #ifdef ENABLE_EXTRA_INVENTORY
-static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e))
-        return comp;
-
-    return &g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(e);
-}
 
 #endif
 
-static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
 
-    if (auto* comp = g_registry.try_get<ecs::DragonSoulInventoryComponent>(e))
-        return comp;
-
-    return &g_registry.emplace<ecs::DragonSoulInventoryComponent>(e);
-}
-
-static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::CubeWindowComponent>(e))
-        return comp;
-
-    return &g_registry.emplace<ecs::CubeWindowComponent>(e);
-}
 
 
 #ifdef ENABLE_ACCE_SYSTEM
-static ecs::AcceWindowComponent* EnsureAcceWindowComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::AcceWindowComponent>(e))
-        return comp;
-
-    return &g_registry.emplace<ecs::AcceWindowComponent>(e);
-}
 
 #endif
 
 #ifdef ENABLE_SWITCHBOT
-static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(e))
-        return comp;
-
-    return &g_registry.emplace<ecs::SwitchbotRuntimeComponent>(e);
-}
 
 #endif
 
@@ -416,20 +356,6 @@ ecs::ItemProtoRef MakeItemPrototype(const TItemTable* proto, uint32_t displayVnu
     return result;
 }
 
-static bool IS_SUMMON_ITEM(int vnum)
-{
-	switch (vnum)
-	{
-	case 22000:
-	case 22010:
-	case 22011:
-	case 22020:
-	case ITEM_MARRIAGE_RING:
-		return true;
-	}
-
-	return false;
-}
 
 
 // item socket º¹»ç -- by mhh
@@ -2222,14 +2148,6 @@ bool CanUsedBy(entt::entity itemEntity, entt::entity character)
 
 bool CanPutInto(entt::entity item, entt::entity container)
 {
-	//if (GetItemType(container) == ITEM_BELT) {
-	//	if (GetItemSubType(item) == USE_PUT_INTO_BELT_SOCKET && GetItemValue(item, 0) != 1) {
-	//		return true;
-	//	}
-	//	else {
-	//		return false;
-	//	}
-	//}
 	/*else*/ if (GetItemType(container) == ITEM_RING)
 		return CanPutIntoRing(container, item);
 

@@ -167,7 +167,6 @@
 
 
 //Razor93 defines//
-//#define ENABLE_INGAME_DEBUG_RAZOR93 //irja chatre realtime mikor milyen fügvényt hiv meg a szerver
 #define ENABLE_TARGET_DAMAGE_RAZOR93//Razor93
 #define ENABLE_MONKEY_DUNGI_BY_RAZOR93 ////Razor93 majom run mob SetHP logika
 #define ENABLE_UPGRADE_NOTICE_BY_RAZOR93 //Razor93 +7 fölött sikeres fejlesztes ingame akkor hyperlinket kuld chatre

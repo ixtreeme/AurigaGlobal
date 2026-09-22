@@ -1076,20 +1076,8 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 			else
 				continue;
 		}
-		//else if (pElements->dwType == AFFECT_NEW_POTION31)
-		//{
-		//	LPPARTY party = ecs::SocialSystem::GetParty(e);
-		//	if ((!party) || (party && ecs::PlayerRuntime::GetPlayerID(e) != party->GetLeaderPID())) {
-		//		const entt::entity item = ItemSystem::FindItemByID(e, e, pElements->dwFlag);
-		//		if (item) {
 		//			item->Lock(false);
 		//			item->SetSocket(1, 0);
-		//			AffectSystem::RemoveAffect(e, AFFECT_NEW_POTION31);
-		//		} else {
-		//			continue;
-		//		}
-		//	}
-		//}
 #endif
 #ifdef ENABLE_RECALL
 #ifdef __PET_SYSTEM__

@@ -149,16 +149,6 @@ static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeCompo
     return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(character);
 }
 
-static uint16_t GetMainInventoryGrid(entt::entity character, uint16_t cell)
-{
-    if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
-        return 0;
-
-    if (const auto* comp = TryGetMainInventoryRuntimeComponent(character))
-        return comp->itemGrid[cell];
-
-    return 0;
-}
 #ifdef ENABLE_EXTRA_INVENTORY
 static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent(entt::entity character)
 {
@@ -171,13 +161,6 @@ static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent
     return &g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(character);
 }
 
-static const ecs::ExtraInventoryRuntimeComponent* TryGetExtraInventoryRuntimeComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    return g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(character);
-}
 #endif
 
 static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(entt::entity character)
@@ -203,13 +186,6 @@ static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity characte
     return &g_registry.emplace<ecs::CubeWindowComponent>(character);
 }
 
-static const ecs::CubeWindowComponent* TryGetCubeWindowComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    return g_registry.try_get<ecs::CubeWindowComponent>(character);
-}
 
 
 #ifdef ENABLE_ACCE_SYSTEM
@@ -224,13 +200,6 @@ static ecs::AcceWindowComponent* EnsureAcceWindowComponent(entt::entity characte
     return &g_registry.emplace<ecs::AcceWindowComponent>(character);
 }
 
-static const ecs::AcceWindowComponent* TryGetAcceWindowComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    return g_registry.try_get<ecs::AcceWindowComponent>(character);
-}
 #endif
 
 #ifdef ENABLE_SWITCHBOT
@@ -245,13 +214,6 @@ static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::ent
     return &g_registry.emplace<ecs::SwitchbotRuntimeComponent>(character);
 }
 
-static const ecs::SwitchbotRuntimeComponent* TryGetSwitchbotRuntimeComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    return g_registry.try_get<ecs::SwitchbotRuntimeComponent>(character);
-}
 #endif
 
 #ifndef ENABLE_SWITCHBOT
@@ -532,12 +494,6 @@ bool ItemSystem::DropItem(entt::entity e, TItemPos Cell,
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	if (ItemSystem::IsExtraItem(item)) {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (ItemSystem::IsExtraItem(item)) {");//INGAME_DEBUG_RAZOR93
-
-		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line 8391 if (ItemSystem::IsExtraItem(item)) {{ ");
-
-#endif
 		InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
 	}
 	else {
@@ -906,9 +862,6 @@ void ecs::SocialSystem::UseSilkBotaryReal(entt::entity e, const TPacketMyshopPri
 
 void NotifyRefineSuccess(entt::entity ch, entt::entity item, const char* way)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_item.cpp::void NotifyRefineSuccess ");//INGAME_DEBUG_RAZOR93
-#endif
 	if (ch != entt::null && ItemSystem::IsValidItem(item))
 	{
 		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefineSuceeded");
@@ -920,9 +873,6 @@ void NotifyRefineSuccess(entt::entity ch, entt::entity item, const char* way)
 
 void NotifyRefineFail(entt::entity ch, entt::entity item, const char* way, int success)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_item.cpp:: void NotifyRefineFail ");//INGAME_DEBUG_RAZOR93
-#endif
 	if (ch != entt::null && ItemSystem::IsValidItem(item))
 	{
 		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefineFailed");
@@ -1127,9 +1077,6 @@ bool ItemSystem::DestroyItem(entt::entity e, TItemPos Cell)
 	if (!ecs::IsCharacter(e))
 		return false;
 
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::DestroyItem(TItemPos Cell),");//INGAME_DEBUG_RAZOR93
-#endif
 	entt::entity item = entt::null;
 	if (!InventorySystem::CanHandleItems(e)) {
 #ifdef TEXTS_IMPROVEMENT
@@ -1221,16 +1168,6 @@ bool IS_SUMMONABLE_ZONE(int map_index)
 	case 73: // ÃµÀÇ µ¿±¼ 2Ãþ
 	case 193: // °�
 // ¹Ì ´øÀü 2-1Ãþ
-#if 0
-	case 184: // ÃµÀÇ µ¿±¼(½�
-// ¼ö)
-	case 185: // ÃµÀÇ µ¿±¼ 2Ãþ(½�
-// ¼ö)
-	case 186: // ÃµÀÇ µ¿±¼(ÃµÁ¶)
-	case 187: // ÃµÀÇ µ¿±¼ 2Ãþ(ÃµÁ¶)
-	case 188: // ÃµÀÇ µ¿±¼(Áø³ë)
-	case 189: // ÃµÀÇ µ¿±¼ 2Ãþ(Áø³ë)
-#endif
 		//		case 206 : // ¾Æ±Íµ¿±¼
 	case 216: // ¾Æ±Íµ¿±¼
 	case 217: // °�
@@ -1289,9 +1226,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity, bool isHigh
 void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 #endif
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
-#endif
 	uint16_t wCell = Cell.cell;
 	uint8_t window_type = Cell.window_type;
 	// The 0xff / 0xffffffff pointer sentinel check is gone with the pointer.
@@ -1455,9 +1389,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 	{
 		if (wCell >= EXTRA_INVENTORY_MAX_NUM)
 		{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (wCell >= EXTRA_INVENTORY_MAX_NUM)");//INGAME_DEBUG_RAZOR93
-#endif
 			LOG_ERROR("PlayerRuntime::SetItem: invalid EXTRA item cell {}", wCell);
 			return;
 		}
@@ -1473,9 +1404,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 
 		if (pOld != entt::null)
 		{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (pOld != entt::null)");//INGAME_DEBUG_RAZOR93
-#endif
 
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
 			{
@@ -1498,9 +1426,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 
 		if (hasItem)
 		{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (hasItem)");//INGAME_DEBUG_RAZOR93
-#endif
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
 			{
 				for (int i = 0; i < ItemSystem::GetItemSize(itemEntity); ++i)
@@ -1643,9 +1568,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 #ifdef ENABLE_EXTRA_INVENTORY
 		case EXTRA_INVENTORY:
 			ItemSystem::SetItemWindow(itemEntity, EXTRA_INVENTORY);
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :653: case switch :ItemSystem::SetItemWindow(itemEntity, EXTRA_INVENTORY);");
-#endif
 			break;
 #endif
 #ifdef ENABLE_SWITCHBOT
@@ -1661,9 +1583,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 } // namespace ecs::PlayerRuntime
 void InventorySystem::ClearItem(entt::entity e)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::ClearItem ");//INGAME_DEBUG_RAZOR93
-#endif
 	int		i;
 	entt::entity item;
 
@@ -1699,9 +1618,6 @@ void InventorySystem::ClearItem(entt::entity e)
 #ifdef ENABLE_EXTRA_INVENTORY
 	for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 	{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :739: for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)");
-#endif
 		if (ItemSystem::IsValidItem(item = ItemSystem::GetExtraInventoryItem(e, i)))
 		{
 			ItemSystem::SetItemSkipSave(item, true);
@@ -2215,9 +2131,6 @@ uint32_t GetItemRefineFromVnum(entt::entity item)
 // The refine itself, with both sides as entities.
 bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp:: bool CHARACTER::DoRefine ");
-#endif
 	if (!InventorySystem::CanHandleItems(e, true))
 	{
 		InventorySystem::ClearRefineMode(e);
@@ -2395,12 +2308,6 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 bool DoRefineWithScroll(entt::entity e, entt::entity item)
 {
 	
-	//if (item && IsRefineBlockedVnum(GetItemVnum(item)))
-	//{
-	//	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "Ezt a targyat nem lehet fejleszteni.");
-	//	InventorySystem::ClearRefineMode(e);
-	//	return false;
-	//}
 
 	if (!InventorySystem::CanHandleItems(e, true))
 	{
@@ -2458,11 +2365,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL)
 	{
 		
-		//if (GetItemRefineLevel(item) >= 4)
-		//{
-		//	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "MAX +9 with this scroll!");
-		//	return false;
-		//}
 	}
 	// END_OF_MUSIC_SCROLL
 
@@ -3392,11 +3294,6 @@ bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditi
 			}
 			else if (scrollType == MUSIN_SCROLL)
 			{
-				//if (GetItemRefineLevel(item) >= 9)
-				//{
-				//	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "MAX +9 with this scroll!");
-				//	return false;
-				//}
 				success_prob += 100;
 				if (success_prob > 100)
 					success_prob = 100;
@@ -4750,15 +4647,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #endif
 						break;
 					default:
-						//#ifdef TEXTS_IMPROVEMENT
-						//									if (item_gets[i]) {
-						//										if (dwCounts[i] > 1) {
-						//											ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
-						//										} else {
-						//											ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
-						//										}
-						//									}
-						//#endif
 						break;
 					}
 				}
@@ -4844,15 +4732,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #endif
 					break;
 				default:
-					//#ifdef TEXTS_IMPROVEMENT
-					//							if (item_gets[i]) {
-					//								if (dwCounts[i] > 1) {
-					//									ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
-					//								} else {
-					//									ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
-					//								}
-					//							}
-					//#endif
 					break;
 				}
 			}
@@ -5622,14 +5501,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			//±âÁ¸ ¿ë±âÀÇ ¸Á�
 // ä
 			case UNIQUE_ITEM_CAPE_OF_COURAGE:
-				// {
-					// if (ecs::PlayerRuntime::GetMapIndex(e) != 1)
-					// {
-	// #ifdef TEXTS_IMPROVEMENT
-						// ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 489, "");
-	// #endif
-						// return true;
-					// }
 
 
 				// }
@@ -6546,46 +6417,9 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			break;
 
 
-			//case 71107: // Ãµµµº¹¼þ¾Æ
-//			{
-//				uint32_t val = GetItemValue(item, 0);
-//				int interval = GetItemValue(item, 1);
-//				quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(e));
-//				int last_use_time = pPC->GetFlag("mythical_peach.last_use_time");
-//
-//				if (get_global_time() - last_use_time < interval * 60 * 60)
-//				{
-//#ifdef TEXTS_IMPROVEMENT
-//					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 508, "");
-//#endif
-//					return false;
-//				}
-//
-//				if (CombatSystem::GetAlignment(e) == 25000000)
-//				{
-//#ifdef TEXTS_IMPROVEMENT
-//					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 674, "%d", 25000000);
-//#endif
-//					return false;
-//				}
-//
-//				if (25000000 - CombatSystem::GetAlignment(e) < val * 10)
-//				{
 //					val = (25000000 - CombatSystem::GetAlignment(e)) / 10;
-//				}
-//
-//				uint32_t old_alignment = CombatSystem::GetAlignment(e) / 10;
-//
-//				CombatSystem::UpdateAlignment(e, val * 10);
-//
-//				ConsumeItemEcs(itemEntity);
 //				pPC->SetFlag("mythical_peach.last_use_time", get_global_time());
 //
-//#ifdef TEXTS_IMPROVEMENT
-//				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 327, "%d", val);
-//#endif
-//
-//				char buf[256 + 1];
 //				snprintf(buf, sizeof(buf), "%u %u", old_alignment, CombatSystem::GetAlignment(e) / 10);
 //				LogManager::instance().CharLog(e, val, "MYTHICAL_PEACH", buf);
 //			}
@@ -6850,15 +6684,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 							break;
 
 						default:
-							//#ifdef TEXTS_IMPROVEMENT
-							//												if (item_gets[i]) {
-							//													if (dwCounts[i] > 1) {
-							//														ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
-							//													} else {
-							//														ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
-							//													}
-							//												}
-							//#endif
 							break;
 						}
 					}
@@ -8937,14 +8762,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 452, "");
 #endif
 							LogManager::instance().ItemLogEntity(e, itemEntity, "PUT_SOCKET_SUCCESS", buf);
-							//}
-							//else
-							//{
-//#ifdef TEXTS_IMPROVEMENT
-													//ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 453, "");
-//#endif
-													//LogManager::instance().ItemLogEntity(e, itemEntity, "PUT_SOCKET_FAIL", buf);
-												//}
 
 							ConsumeItemEcs(itemEntity);
 						}

@@ -937,12 +937,6 @@ void DESC::SendLoginSuccessPacket()
 //{
 //	TPacketGCStateCheck rp;
 //
-//	int iTotal;
-//	int * paiEmpireUserCount;
-//	int iLocal;
-//
-//	DESC_MANAGER::instance().GetUserCount(iTotal, &paiEmpireUserCount, iLocal);
-//
 //	rp.header	= 1;
 //	rp.key		= 0;
 //	rp.index	= nIndex;

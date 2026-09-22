@@ -409,9 +409,6 @@ void CraftItems(entt::entity pc, int slot)
 	if (!state)
 		return;
 
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(pc, CHAT_TYPE_INFO, "char_gaya.cpp::void CHARACTER::CraftGayaItemsm");
-#endif
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	const entt::entity item = ItemSystem::GetItem(pc, TItemPos(EXTRA_INVENTORY, slot));

@@ -662,12 +662,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			}
 #endif
 
-			//#ifdef TEXTS_IMPROVEMENT
-			//
-			//					if (amount > 0) {
-			//						auto s = std::to_string(amount);
-			//						int n = s.length() - 3;
-			//						while (n > 0) {
 			//							s.insert(n, ".");
 			//							n -= 3;
 			//						}
@@ -942,11 +936,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			return;
 		}
 
-		//#ifdef TEXTS_IMPROVEMENT
-		//				if (amount > 0) {
-		//					auto s = std::to_string(amount);
-		//					int n = s.length() - 3;
-		//					while (n > 0) {
 		//						s.insert(n, ".");
 		//						n -= 3;
 		//					}

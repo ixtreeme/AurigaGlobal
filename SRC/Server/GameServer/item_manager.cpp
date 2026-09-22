@@ -1509,22 +1509,9 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 			}
 		}
 
-		//if (pkChr->GetDropMetinStofaVnum())
-		//{
-		//	int iPercent = (pkChr->GetDropMetinStofaPct() * iDeltaPercent) * 400;
-		//	if (iPercent >= number(1, iRandRange))
-		//	{
 		//		item = CreateItem(pkChr->GetDropMetinStofaVnum(), 1, 0, true);
 		//		if (ItemSystem::IsValidItem(item))
 		//			vec_item.push_back(item);
-		//	}
-		//}
-
-		//if (pkChr->GetDropMetinSaccaVnum())
-		//{
-		//	int iPercent = (pkChr->GetDropMetinSaccaPct() * iDeltaPercent) * 400;
-		//	if (iPercent >= number(1, iRandRange))
-		//	{
 		//		item = CreateItem(pkChr->GetDropMetinSaccaVnum(), 1, 0, true);
 		//		if (ItemSystem::IsValidItem(item))
 		//			vec_item.push_back(item);

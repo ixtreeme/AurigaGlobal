@@ -159,11 +159,6 @@ bool CInputUDP::Process(LPDESC pDesc, const void * c_pvOrig, int iBytes, int & r
 		//if (!pDesc)
 		//{
 		//"No desc by handshake %u", dwHandshake);
-		//return true;
-		//}
-
-		//if (m_SockAddr.sin_addr.s_addr != pDesc->GetAddr().sin_addr.s_addr)
-		//{
 		//"Hostname Mismatch! %s != %s", inet_ntoa(m_SockAddr.sin_addr), pDesc->GetHostName());
 		//return true;
 		//}

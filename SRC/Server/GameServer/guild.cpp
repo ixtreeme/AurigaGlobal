@@ -1280,26 +1280,7 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 	SaveSkill();
 	SendDBSkillUpdate();
 
-	/*switch (dwVnum)
-	  {
-	  case GUILD_SKILL_GAHO:
-	  {
-	  TGuildMemberOnlineContainer::iterator it;
-
-	  for (it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-	  ecs::PointSystem::Change((((*it)) ? ((*it))->GetEntityHandle() : entt::null), POINT_DEF_GRADE, 1);
-	  }
-	  break;
-	  case GUILD_SKILL_HIM:
-	  {
-	  TGuildMemberOnlineContainer::iterator it;
-
-	  for (it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-	  ecs::PointSystem::Change((((*it)) ? ((*it))->GetEntityHandle() : entt::null), POINT_ATT_GRADE, 1);
-	  }
-	  break;
-	  }*/
-
+	
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 		SendSkillInfoPacket(*it);
 
@@ -1498,28 +1479,8 @@ int CGuild::GetSkillLevel(uint32_t vnum)
 
 void CGuild::UpdateSkill(uint8_t skill_point, uint8_t* skill_levels)
 {
-	//int iDefMoreBonus = 0;
-	//int iAttMoreBonus = 0;
-
 	m_data.skill_point = skill_point;
-	/*if (skill_levels[GUILD_SKILL_GAHO - GUILD_SKILL_START]!=GetSkillLevel(GUILD_SKILL_GAHO))
-	  {
-	  iDefMoreBonus = skill_levels[GUILD_SKILL_GAHO - GUILD_SKILL_START]-GetSkillLevel(GUILD_SKILL_GAHO);
-	  }
-	  if (skill_levels[GUILD_SKILL_HIM - GUILD_SKILL_START]!=GetSkillLevel(GUILD_SKILL_HIM))
-	  {
-	  iAttMoreBonus = skill_levels[GUILD_SKILL_HIM  - GUILD_SKILL_START]-GetSkillLevel(GUILD_SKILL_HIM);
-	  }
-
-	  if (iDefMoreBonus || iAttMoreBonus)
-	  {
-	  for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-	  {
-	  ecs::PointSystem::Change((((*it)) ? ((*it))->GetEntityHandle() : entt::null), POINT_ATT_GRADE, iAttMoreBonus);
-	  ecs::PointSystem::Change((((*it)) ? ((*it))->GetEntityHandle() : entt::null), POINT_DEF_GRADE, iDefMoreBonus);
-	  }
-	  }*/
-
+	
 	memcpy(m_data.abySkill, skill_levels, sizeof(uint8_t) * GUILD_SKILL_COUNT);
 	ComputeGuildPoints();
 }

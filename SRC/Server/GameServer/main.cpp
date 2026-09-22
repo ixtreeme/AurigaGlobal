@@ -486,12 +486,6 @@ int main(int argc, char **argv)
 	// dispatcher. Skeleton in D.3; D.4 fills in the diff handler.
 	ecs::VisibilitySystem::Init(g_registry);
 
-//#ifdef __NEWPET_SYSTEM__
-//	std::string temp_exp_line;
-//
-//	
-//	std::string path = LocaleService_GetBasePath();
-//	if (!path.empty() && path.back() != '/' && path.back() != '\\')
 //		path += '/';
 //
 //	path += "exppettable.txt";

@@ -1704,13 +1704,6 @@ static const ecs::Health* TryGetHealthComponent(entt::entity e)
     return g_registry.try_get<ecs::Health>(e);
 }
 
-static const ecs::Mana* TryGetManaComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::Mana>(e);
-}
 
 static const ecs::Stamina* TryGetStaminaComponent(entt::entity e)
 {
@@ -1720,13 +1713,6 @@ static const ecs::Stamina* TryGetStaminaComponent(entt::entity e)
     return g_registry.try_get<ecs::Stamina>(e);
 }
 
-static const ecs::LevelComponent* TryGetLevelComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::LevelComponent>(e);
-}
 
 static const ecs::Experience* TryGetExperienceComponent(entt::entity e)
 {
@@ -1736,13 +1722,6 @@ static const ecs::Experience* TryGetExperienceComponent(entt::entity e)
     return g_registry.try_get<ecs::Experience>(e);
 }
 
-static const ecs::GoldAmount* TryGetGoldAmountComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::GoldAmount>(e);
-}
 
 inline bool HasCombatState(entt::entity e)
 {
@@ -2529,9 +2508,6 @@ uint16_t GetRuneEffect(entt::entity e)
 
 bool InventorySystem::CanTakeInventoryItem(entt::entity e, entt::entity item, TItemPos* cell)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-    ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
-#endif
     if (!cell || !ItemSystem::IsValidItem(item))
         return false;
 

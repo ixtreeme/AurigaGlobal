@@ -199,67 +199,6 @@ void ClearCostumeMountEffects(entt::entity owner)
         ecs::PointSystem::Change(owner, point, 0);
 }
 
-void SendMountRemove(entt::entity mount, entt::entity viewer)
-{
-    if (!g_registry.valid(mount) || !g_registry.valid(viewer))
-        return;
-    const auto* vid = g_registry.try_get<ecs::VIDComponent>(mount);
-    auto* desc = ecs::PlayerRuntime::GetDesc(viewer);
-    if (!vid || !desc)
-        return;
-    TPacketGCCharacterDelete packet{};
-    packet.header = HEADER_GC_CHARACTER_DEL;
-    packet.id = vid->value;
-    desc->Packet(&packet, sizeof(packet));
-}
-
-void DestroyOrphanedMountEntities(entt::entity owner,
-    const ecs::CostumeMountRuntime& runtime)
-{
-    if (!ecs::PlayerRuntime::IsValid(owner))
-        return;
-
-    const std::string fallbackName = std::string(ecs::PlayerRuntime::GetName(owner)) + "'s Mount";
-    std::vector<entt::entity> orphans;
-    for (const entt::entity entity : g_registry.view<ecs::StatusFlags>())
-    {
-        const auto* status = g_registry.try_get<ecs::StatusFlags>(entity);
-        if (!status || !status->isMount)
-            continue;
-
-        bool tracked = false;
-        for (const auto& record : runtime.actors)
-            if (record.character == entity && ItemSystem::IsValidItem(record.summonItem))
-            {
-                tracked = true;
-                break;
-            }
-        if (tracked)
-            continue;
-
-        bool owned = false;
-        if (const auto* mountOwner = g_registry.try_get<ecs::MountOwner>(entity))
-            owned = mountOwner->owner == owner;
-        if (!owned)
-            if (const auto* name = g_registry.try_get<ecs::PlayerName>(entity))
-                owned = name->value == fallbackName;
-        if (owned)
-            orphans.push_back(entity);
-    }
-
-    for (const entt::entity orphan : orphans)
-    {
-        if (!g_registry.valid(orphan))
-            continue;
-        std::unordered_set<entt::entity> recipients { owner };
-        if (const auto* viewers = g_registry.try_get<ecs::ViewerMap>(orphan))
-            recipients.insert(viewers->viewers.begin(), viewers->viewers.end());
-        for (const entt::entity viewer : recipients)
-            SendMountRemove(orphan, viewer);
-        ecs::PlayerRuntime::DestroyCharacter(orphan);
-    }
-}
-
 void DestroyCostumeRecord(entt::entity owner, uint32_t vnum)
 {
     auto* runtime = CostumeRuntime(owner);
@@ -1080,7 +1019,6 @@ void MountCostume(entt::entity rider, entt::entity mountItem)
     if (!g_registry.valid(rider))
         return;
 
-    const uint32_t mobVnum = GetMountMobVnum(mountItem);
     auto* runtime = CostumeRuntime(rider);
     if (!runtime)
         return;

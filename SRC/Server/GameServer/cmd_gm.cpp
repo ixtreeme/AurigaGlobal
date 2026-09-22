@@ -135,36 +135,12 @@ void Command_ApplyAffect(entt::entity chEntity, const char* argument, const char
 }
 // END_OF_ADD_COMMAND_SLOW_STUN
 
-// ---------------- GM: dungeon-fuggetlen klon teszt ----------------
-// Hasznalat:
-//   /spawn_clon sourcePlayer targetPlayer [count]
-//   /spawn_clon targetPlayer [count]   (source = te)
-//   /p_clon                (a te targetPid-edhez tartozo klonok torlese ezen a mapon)
-//   /p_clon all            (osszes teszt klon torlese ezen a mapon)
-//   /p_clon targetPlayer   (targetPlayer-hez tartozo klonok torlese ezen a mapon)
 
 //ACMD(do_spawn_clon)
-//{
-//    if (!ch)
-//        return;
-//
-//    char a1[256], a2[256], a3[256];
 //    argument = one_argument(argument, a1, sizeof(a1));
 //    argument = one_argument(argument, a2, sizeof(a2));
 //    one_argument(argument, a3, sizeof(a3));
 //
-//    if (!*a1)
-//    {
-//        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Hasznalat: /spawn_clon sourcePlayer targetPlayer [count]  |  /spawn_clon targetPlayer [count]");
-//        return;
-//    }
-//
-//    LPCHARACTER source = nullptr;
-//    LPCHARACTER target = nullptr;
-//    int count = 1;
-//
-//    if (*a2)
-//    {
 //        // /spawn_clon player1 player2 [count]
 //        source = CHARACTER_MANAGER::instance().FindPC(a1);
 //        target = CHARACTER_MANAGER::instance().FindPC(a2);
@@ -178,71 +154,9 @@ void Command_ApplyAffect(entt::entity chEntity, const char* argument, const char
 //        target = CHARACTER_MANAGER::instance().FindPC(a1);
 //        if (*a3)
 //            str_to_number(count, a3);
-//    }
-//
-//    if (!source || !target)
-//    {
-//        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Hibas nev / celpont.");
-//        return;
-//    }
-//
-//    if (source->IsFakePlayer() || target->IsFakePlayer())
-//    {
-//        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Klonra nem lehet klont inditani.");
-//        return;
-//    }
-//
-//    if (!ecs::PlayerRuntime::GetDesc(((source) ? (source)->GetEntityHandle() : entt::null)) || !ecs::PlayerRuntime::GetDesc(((target) ? (target)->GetEntityHandle() : entt::null)))
-//    {
-//        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A celpont nem elerheto.");
-//        return;
-//    }
-//
-//    if (count <= 0) count = 1;
-//
-//    if (!CLostCastleDungeon::instance().SpawnTestClones(source, target, count))
-//    {
-//        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nem sikerult klont spawnolni.");
-//        return;
-//    }
-//
-//    ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Klon spawn kesz: masolat=%s, target=%s, db=%d", ecs::PlayerRuntime::GetName(((source) ? (source)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((target) ? (target)->GetEntityHandle() : entt::null)).data(), count);
-//}
-//
 //ACMD(do_p_clon)
-//{
-//    if (!ch)
-//        return;
-//
-//    char a1[256];
 //    one_argument(argument, a1, sizeof(a1));
 //
-//    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
-//
-//    if (!*a1)
-//    {
-//        CLostCastleDungeon::instance().PurgeTestClonesForTargetPID((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), mapIndex);
-//        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Klonok torolve (target: te, map: %d)", mapIndex);
-//        return;
-//    }
-//
-//    if (!strncasecmp(a1, "all", 3))
-//    {
-//        CLostCastleDungeon::instance().PurgeTestClonesOnMap(mapIndex);
-//        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Osszes klon torolve ezen a mapon: %d", mapIndex);
-//        return;
-//    }
-//
-//    LPCHARACTER target = CHARACTER_MANAGER::instance().FindPC(a1);
-//    if (!target)
-//    {
-//        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs ilyen player: %s", a1);
-//        return;
-//    }
-//
-//    CLostCastleDungeon::instance().PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(((target) ? (target)->GetEntityHandle() : entt::null)), mapIndex);
-//    ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Klonok torolve (target: %s, map: %d)", ecs::PlayerRuntime::GetName(((target) ? (target)->GetEntityHandle() : entt::null)).data(), mapIndex);
-//}
 
 
 ACMD(do_stun)

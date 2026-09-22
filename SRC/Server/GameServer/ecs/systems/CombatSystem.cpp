@@ -2177,13 +2177,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	//	if (auto* flags = RuntimeFlags(victim))
 	//		SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
 
-	//	ecs::PlayerRuntime::SetPosition(victim, POS_DEAD);
-	//	AffectSystem::ClearAffect(victim, true);
-	//	ClearSync();
-	//	event_cancel(&m_pkStunEvent);
-
-	//	if (hasKiller && ecs::PlayerRuntime::IsPC((hasKiller ? hasKiller->GetEntityHandle() : entt::null)))
-	//		CLostCastleDungeon::instance().OnMobKilled((hasKiller ? hasKiller->GetEntityHandle() : entt::null), victim);
 
 	//	TPacketGCDead pack;
 	//	pack.header = HEADER_GC_DEAD;
@@ -2193,11 +2186,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	//	if (auto* flags = RuntimeFlags(victim))
 	//		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
-	//	if (ecs::SocialSystem::GetDungeon(victim) != entt::null)
-	//		ecs::SocialSystem::GetDungeon(victim)->DeadCharacter(this);
-
-	//	if (m_pkDeadEvent)
-	//		event_cancel(&m_pkDeadEvent);
 
 	//	SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
 	//	pEventInfo->vid = GetVID();
@@ -2423,40 +2411,14 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 			}
 			else
 			{
-//				if (!isAgreedPVP && !isUnderGuildWar && !IsKillerMode() /*&& GetAlignment(victim) >= 0*/ && !isDuel)
-//				{
-//					int iNoPenaltyProb = 0;
-//
-//					if (GetAlignment(killer) >= 0)	// 1/3 percent down
 //						iNoPenaltyProb = 33;
 //					else				// 4/5 percent down
 //						iNoPenaltyProb = 20;
 //
-//					if (number(1, 100) < iNoPenaltyProb) {
-//#ifdef TEXTS_IMPROVEMENT
-//						ecs::ChatSystem::SendNew((hasKiller ? hasKiller->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 413, "");
-//#endif
-//					}
-//					else {
-//						if (ecs::SocialSystem::GetParty((hasKiller ? hasKiller->GetEntityHandle() : entt::null)))
-//						{
 //							FPartyAlignmentCompute f(-20000, ecs::PlayerRuntime::GetX((hasKiller ? hasKiller->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((hasKiller ? hasKiller->GetEntityHandle() : entt::null)));
-//							ecs::SocialSystem::GetParty((hasKiller ? hasKiller->GetEntityHandle() : entt::null))->ForEachOnlineMember(f);
-//
-//							if (f.m_iCount == 0)
-//								CombatSystem::UpdateAlignment(hasKiller->GetEntityHandle(), -20000);
-//							else
-//							{
 //								0, "ALIGNMENT PARTY count %d amount %d", f.m_iCount, f.m_iAmount);
 //
 //								f.m_iStep = 1;
-//								ecs::SocialSystem::GetParty((hasKiller ? hasKiller->GetEntityHandle() : entt::null))->ForEachOnlineMember(f);
-//							}
-//						}
-//						else
-//							CombatSystem::UpdateAlignment(hasKiller->GetEntityHandle(), -20000);
-//					}
-//				}
 
 				char buf[256];
 				snprintf(buf, sizeof(buf),
@@ -6057,11 +6019,6 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 #ifdef LEADERBOARD_RAZOR93
 
 
-//void CHARACTER::SendLeaderboardData()
-//{
-//	if (!GetDesc())
-//		return;
-//
 //	// SQL lekrdezs top 10 jtkosra
 //	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
 //		"SELECT name, level, r5, r8 FROM player.player ORDER BY r5 DESC LIMIT 10"));
@@ -6076,16 +6033,6 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 //	MYSQL_ROW row;
 //	MYSQL_RES* res = pMsg->Get()->pSQLResult;
 //
-//	std::string result;
-//
-//	while ((row = mysql_fetch_row(res)))
-//	{
-//		const char* name = row[0] ? row[0] : "Unknown";
-//		int level = row[1] ? atoi(row[1]) : 0;
-//		int metins = row[2] ? atoi(row[2]) : 0;
-//		int dmg = row[3] ? atoi(row[3]) : 0;
-//
-//		char line[128];
 //		snprintf(line, sizeof(line), "%s;%d;%d;%d\n", name, level, metins, dmg);
 //		result += line;
 //	}
@@ -6099,11 +6046,6 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 //}
 
 
-//void CHARACTER::SendLeaderboardNews()
-//{
-//	if (!GetDesc())
-//		return;
-//
 //	// SQL lekrdezs top 10 jtkosra
 //	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
 //
@@ -6119,16 +6061,6 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 //	MYSQL_ROW row;
 //	MYSQL_RES* res = pMsg->Get()->pSQLResult;
 //
-//	std::string result;
-//
-//	while ((row = mysql_fetch_row(res)))
-//	{
-//		int id = row[0] ? atoi(row[0]) : 0;
-//		const char* title = row[1] ? row[1] : "Unknown";
-//		const char* content = row[2] ? row[2] : "Unknown";
-//		const char* author = row[3] ? row[3] : "Unknown";
-//
-//		char line[512];
 //		snprintf(line, sizeof(line), "%d;%s;%s;%s\n", id, title, content, author);
 //		result += line;
 //	}

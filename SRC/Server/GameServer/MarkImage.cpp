@@ -38,13 +38,6 @@ static void RGBAtoBGRA(uint8_t* data, int pixelCount)
 }
 
 // stb_image_write TGA callback — writes into a std::vector<uint8_t>
-static void StbWriteCallback(void* context, void* data, int size)
-{
-	auto* vec = static_cast<std::vector<uint8_t>*>(context);
-	const uint8_t* bytes = static_cast<const uint8_t*>(data);
-	vec->insert(vec->end(), bytes, bytes + size);
-}
-
 // ---------------------------------------------------------------------------
 // [SERVER] CGuildMarkImage - Construction
 // ---------------------------------------------------------------------------

@@ -104,13 +104,6 @@ bool CAN_ENTER_ZONE(entt::entity character, int map_index)
 
 namespace
 {
-ecs::WarpBlockState* EnsureWarpBlockState(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    return &g_registry.get_or_emplace<ecs::WarpBlockState>(character);
-}
 } // namespace
 
 namespace ecs::SessionSystem {

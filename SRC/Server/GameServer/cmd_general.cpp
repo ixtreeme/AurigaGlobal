@@ -3242,13 +3242,6 @@ void open_in_game_mall(entt::entity character)
 //	}
 //
 //	sas[i+i] = '\0';
-//#endif
-//
-//#ifdef ENABLE_MULTI_LANGUAGE
-//	uint8_t lang = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage() : 0;
-//	std::string str_lang;
-//	switch (lang) {
-//		case LANGUAGE_RO: {
 //			str_lang = "ro";
 //			break;
 //		}
@@ -3438,18 +3431,6 @@ ACMD(do_ride)
 		}
 	}
 //// belt inventory kereses
-//	for (uint8_t i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
-//	{
-//		const entt::entity item = ItemSystem::GetInventoryItem(character, i);
-//		if (!item)
-//			continue;
-//
-//		if (ItemSystem::GetItemType((item ? item->GetEntityHandle() : entt::null)) == ITEM_COSTUME && ItemSystem::GetItemSubType((item ? item->GetEntityHandle() : entt::null)) == COSTUME_MOUNT)
-//		{
-//			ItemSystem::UseItem(character, TItemPos(INVENTORY, i)); // belt inventory is INVENTORY window_type
-//			return;
-//		}
-	//}
 
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 5, "");
