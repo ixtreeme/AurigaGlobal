@@ -284,6 +284,38 @@ void DestroyCostumeRecord(entt::entity owner, uint32_t vnum)
         ecs::PlayerRuntime::DestroyCharacter(character);
 }
 
+// The ridden costume mount is the rider's mount model, so the follow creature
+// must not stay visible next to it. Hiding keeps the record and its item
+// association, so the dismount re-summons the same mount - the legacy actor
+// kept its vnum/summon item through Unsummon the same way.
+void HideCostumeRecord(entt::entity owner, uint32_t vnum)
+{
+    auto* runtime = CostumeRuntime(owner);
+    if (!runtime)
+        return;
+
+    auto* record = CostumeRecord(*runtime, vnum);
+    if (!record)
+        return;
+
+    const entt::entity character = std::exchange(record->character, entt::null);
+    if (ecs::PlayerRuntime::IsValid(character))
+        ecs::PlayerRuntime::DestroyCharacter(character);
+}
+
+void HideCostumeFollowers(entt::entity owner)
+{
+    auto* runtime = CostumeRuntime(owner);
+    if (!runtime)
+        return;
+
+    std::vector<uint32_t> vnums;
+    for (const auto& record : runtime->actors)
+        vnums.push_back(record.vnum);
+    for (const uint32_t vnum : vnums)
+        HideCostumeRecord(owner, vnum);
+}
+
 void EnsureCostumeMountEvent(entt::entity owner)
 {
     auto* runtime = CostumeRuntime(owner);
@@ -303,6 +335,17 @@ void UpdateCostumeMounts(entt::entity owner)
     const uint32_t now = get_dword_time();
     if (runtime->updatePeriod > now - runtime->lastUpdateTime)
         return;
+
+    // Only the ridden mount may be visible: any follower left from an earlier
+    // state (or a stale session) is hidden until the dismount re-summons it.
+    if (MountSystem::GetMountVnum(owner) != 0)
+    {
+        HideCostumeFollowers(owner);
+        if (auto* current = CostumeRuntime(owner))
+            current->lastUpdateTime = now;
+        return;
+    }
+
     std::vector<uint32_t> vnums;
     for (const auto& record : runtime->actors)
         vnums.push_back(record.vnum);
@@ -1026,6 +1069,17 @@ void MountCostume(entt::entity rider, entt::entity mountItem)
     if (!MountItemDuration(rider, mountItem, duration))
         return;
 
+    // Taking a costume mount dismisses the regular horse first, as the legacy
+    // actor did: a summoned horse would stay visible next to the mount.
+    if (IsHorseRiding(rider))
+        StopRiding(rider);
+    if (!g_registry.valid(rider))
+        return;
+    if (GetSummonedHorse(rider) != entt::null)
+        SummonHorse(rider, false);
+    if (!g_registry.valid(rider))
+        return;
+
     const uint32_t mobVnum = GetMountMobVnum(mountItem);
     auto* runtime = CostumeRuntime(rider);
     if (!runtime)
@@ -1061,6 +1115,14 @@ void MountCostume(entt::entity rider, entt::entity mountItem)
     }
     AffectSystem::AddAffect(rider, AFFECT_MOUNT, POINT_MOUNT, ridingVnum,
         AFF_NONE, duration, 0, true);
+
+    // Mounting hides every follower creature; the records stay so the unmount
+    // re-summons the same mount. Without this the ridden model and the
+    // follower render as two mounts.
+    HideCostumeFollowers(rider);
+    if (!g_registry.valid(rider))
+        return;
+
     if (GetMountVnum(rider) == ridingVnum)
     {
         ItemSystem::SetItemSocket(mountItem, 2, 1);
@@ -1180,6 +1242,12 @@ void CheckMount(entt::entity e)
 	const entt::entity mountItem = ItemSystem::GetWearItem(e, WEAR_COSTUME_MOUNT);
 
 	if (!ItemSystem::IsValidItem(mountItem))
+		return;
+
+	// While the rider is mounted the follower stays hidden; the unmount path
+	// re-summons it. Without this an affect change mid-ride would spawn a
+	// second visible mount.
+	if (GetMountVnum(e) != 0)
 		return;
 
 	if (!IsCostumeMountSummoned(e))

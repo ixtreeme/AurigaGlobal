@@ -1,0 +1,51 @@
+Phase 29 - Costume mount no longer leaves a duplicate follower
+Date: 2026-09-22
+Report: one mount appeared twice - the player rode one model while an identical
+mount creature kept following.
+
+Root cause
+----------
+The costume mount migration (76b571fc) moved the ridden/follower split to
+ecs::CostumeMountRuntime but dropped two pieces of the legacy CMountSystem::
+
+    CMountSystem::Mount(vnum, item)
+      -> UnsummonByItem(item); UnsummonAll();   // follower entities destroyed
+      -> CMountActor::Mount(item)
+           -> ClearHorse(owner);                // regular horse dismissed
+
+The new MountCostume only applied AFFECT_MOUNT (which sets the rider's mount
+model through POINT_MOUNT) and kept the follower creature alive, so the rider
+was rendered on the mount while the follower creature walked behind. The same
+gap existed in CheckMount (called from affect changes): mid-ride it could
+summon the follower back, and the follow update kept a stale follower for a
+rider who had mounted by another path.
+
+Fix (ecs/systems/MountSystem.cpp)
+---------------------------------
+- HideCostumeRecord/HideCostumeFollowers destroy the follower creature while
+  keeping the record and its item association, so UnmountCostume re-summons the
+  same mount. This is the native form of the legacy actor Unsummon.
+- MountCostume now clears the regular horse first (StopRiding + dismiss the
+  summoned horse) and hides every follower after the mount affects are applied.
+- UpdateCostumeMounts hides followers while the rider is mounted and does not
+  retire the hidden records, so a stale follower cannot survive the ride.
+- CheckMount returns while mounted, so an affect change mid-ride cannot spawn a
+  second visible mount.
+- UnmountCostume already re-summons from the kept record; no change needed.
+
+Behaviour notes
+---------------
+- The follower is hidden for any active mount (costume or horse), matching the
+  "one visible mount while riding" rule; it returns on dismount.
+- Equipping/using a costume mount still auto-mounts, as the legacy equip path
+  did; it now dismisses the horse and hides the follower in the same step.
+
+Verification
+------------
+- GameServer Release builds; the whole suite (29 targets) passes.
+- build-asan GameServer builds.
+- No headless costume-mount fixture exists (MountLifecycleTests documents that
+  the costume mount runtime is GameServer-covered); the in-game check is:
+  wear a costume mount item, summon a regular horse, mount and dismount, and
+  confirm exactly one mount is visible while riding and the follower returns
+  after the dismount.
