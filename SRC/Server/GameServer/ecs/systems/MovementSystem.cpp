@@ -1267,7 +1267,11 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
         frame.position = position;
         frame.state.lastMoveTime = tick;
         frame.state.moveDuration = arrived ? 0 : 1;
-        frame.state.isWalking = frame.state.isNowWalking = !arrived;
+        // Only the interpolation flag belongs to the tick. isNowWalking is the
+        // walk-mode flag owned by SetNowWalking; writing it here made every
+        // retarget use walk speed and left an interrupted move (mount change,
+        // warp, sync) stuck in walk mode.
+        frame.state.isWalking = !arrived;
         if (arrived) frame.state.stopTime = tick;
         else frame.state.moveStartTime = tick;
         reg.get<ecs::Position>(entity) = position;

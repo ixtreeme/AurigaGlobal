@@ -1,0 +1,41 @@
+Phase 30 - Dismount no longer leaves the character in walk mode
+Date: 2026-09-22
+Report: after dismounting, the character played the walk animation as if the
+stamina bar were empty, while the status window showed full KP.
+
+Root cause
+----------
+MovementSystem_Update wrote BOTH movement flags on every interpolation step:
+
+    frame.state.isWalking = frame.state.isNowWalking = !arrived;
+
+`isWalking` is the tick's interpolation flag, but `isNowWalking` is the
+walk-mode flag whose only legitimate writer is SetNowWalking (player
+preference and the stamina<=0 forced walk). Because the tick set it true while
+moving, the flag was true at the moment the player dismounted:
+
+- SetMountVnum(0) clears the MovementDestination (SyncDestinationClear), which
+  never reset isNowWalking, so the flag stayed true after the interrupted move.
+- The same call re-sends the character insert to the rider; its reciprocal
+  block sends the viewer's WALK_MODE packet when
+  `isNowWalking || stamina <= 0`, so the player's own client received
+  WALKMODE_WALK and switched to the walk animation while standing still.
+- It also made retargets use the walk motion in GetMoveMotionSpeed (walk
+  speed) and told viewers WALK for a moving character.
+
+Fix (ecs/systems/MovementSystem.cpp)
+------------------------------------
+- The tick writes only `isWalking = !arrived`. `isNowWalking` is left to
+  SetNowWalking / SyncWalkingWrite, so an explicit walk mode survives both a
+  mid-move tick and an interrupted move, and runners keep run speed.
+
+Verification
+------------
+- SpatialLifecycleTests WalkModeOwnership: a mid-move tick leaves a runner's
+  isNowWalking false; an explicit walk mode survives a mid-move tick, a
+  destination clear and an arrival. The first and last checks fail on the old
+  tick (it forced true while moving and cleared it on arrival).
+- GameServer Release + build-asan build; the full suite passes 29/29 in both
+  configurations.
+- In-game check: dismount while running and confirm the character keeps the
+  run animation; the walk mode should only change with stamina/preference.

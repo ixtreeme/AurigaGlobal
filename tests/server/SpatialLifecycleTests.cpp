@@ -945,6 +945,32 @@ void NativeMovement() {
     MovementSystem_Update(g_registry, 30);
     Check(probe.positions.size() == 2, "stopped entity moved again");
 }
+void WalkModeOwnership() {
+    Reset(); MapFixture map; MovementProbe probe;
+    // A runner mid-move keeps its run mode: the tick owns the interpolation
+    // flag, not the walk-mode flag.
+    const auto runner = Moving(100, 100, 1000, 100, 10);
+    MovementSystem_Update(g_registry, 10);
+    const auto& running = g_registry.get<ecs::MovementState>(runner);
+    Check(running.isWalking && !running.isNowWalking, "movement tick changed the walk mode");
+
+    // An explicit walk mode survives both a mid-move tick and an interrupted
+    // move (mount change, warp, sync); the tick used to clear it on arrival
+    // and force it true while moving.
+    const auto walker = Moving(500, 500, 700, 500, 10);
+    g_registry.get<ecs::MovementState>(walker).isNowWalking = true;
+    MovementSystem_Update(g_registry, 20);
+    ecs::MovementSystem::SyncDestinationClear(walker);
+    Check(g_registry.get<ecs::MovementState>(walker).isNowWalking,
+        "interrupted move changed the walk mode");
+
+    const auto arriving = Moving(900, 900, 950, 900, 1000);
+    g_registry.get<ecs::MovementState>(arriving).isNowWalking = true;
+    MovementSystem_Update(g_registry, 30);
+    Check(g_registry.get<ecs::MovementState>(arriving).isNowWalking,
+        "arrival overwrote an explicit walk mode");
+}
+
 void MovementVisibilityAndBounds() {
     Reset(); MapFixture map; MovementProbe probe;
     const auto oldViewer = Entity(ecs::SpatialKind::Character), newViewer = Entity(ecs::SpatialKind::Character);
@@ -1718,7 +1744,7 @@ int main() {
         NativeBuildingIdentityAndPlacement(); NativeShopAvatarLifecycle(); NativeShopPreparationCallbacks();
         NativeShopExceptionalRetirement();
         NativeShopPendingRetirementBatch();
-        NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
+        NativeMovement(); WalkModeOwnership(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
         NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations(); ShowHeightSentinel();
