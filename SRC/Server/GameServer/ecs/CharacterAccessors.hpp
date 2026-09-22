@@ -14,8 +14,8 @@
 #include "components/transform_components.hpp"
 #include "components/vital_components.hpp"
 #include "EntityInvariants.hpp"
-#include "../char_interface.hpp"
-#include "../typedef.h"
+#include "../entity/char_interface.hpp"
+#include "../core/typedef.h"
 
 namespace ecs {
 

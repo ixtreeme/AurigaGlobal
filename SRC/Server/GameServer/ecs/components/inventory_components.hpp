@@ -6,10 +6,10 @@
 
 #include <common/tables.h>
 
-#include "../../typedef.h"
-#include "../../cuberenewal.h"
-#include "../../attr_transfer.h"
-#include "../../MountInventory.h"
+#include "../../core/typedef.h"
+#include "../../item/cuberenewal.h"
+#include "../../item/attr_transfer.h"
+#include "../../pet/MountInventory.h"
 #include "item_components.hpp"
 
 namespace ecs {

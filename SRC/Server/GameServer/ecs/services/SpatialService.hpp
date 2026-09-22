@@ -4,7 +4,7 @@
 
 #include <entt/entt.hpp>
 
-#include "../../typedef.h"
+#include "../../core/typedef.h"
 
 class SECTREE;
 using LPSECTREE = SECTREE*;

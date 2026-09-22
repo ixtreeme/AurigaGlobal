@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "../char.h"
+#include "../entity/char.h"
 
 namespace ecs {
 

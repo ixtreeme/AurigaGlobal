@@ -1,5 +1,5 @@
 #pragma once
-#include <GameServer/packet.h>
+#include <GameServer/core/packet.h>
 #include "../CommonDefines.h"
 #include "../service.h"
 

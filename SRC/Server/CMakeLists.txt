@@ -39,6 +39,19 @@ endfunction()
 add_library(SERVER INTERFACE)
 target_include_directories(SERVER INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/core
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/network
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/entity
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/world
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/combat
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/item
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/quest
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/guild
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/pet
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/social
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/dungeon
+    ${CMAKE_CURRENT_LIST_DIR}/GameServer/command
     ${CMAKE_SOURCE_DIR}/extern/fmt/include
     ${CMAKE_SOURCE_DIR}/extern/spdlog/include
 )

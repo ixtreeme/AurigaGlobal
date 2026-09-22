@@ -4,7 +4,7 @@
 
 #include <common/tables.h>
 
-#include "../typedef.h"
+#include "../core/typedef.h"
 
 class EntityFactory {
 public:

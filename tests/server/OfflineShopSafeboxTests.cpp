@@ -1,8 +1,8 @@
-#include "../../SRC/Server/GameServer/stdafx.h"
+#include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/social_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/OfflineShopSystem.hpp"
-#include "../../SRC/Server/GameServer/new_offlineshop.h"
+#include "../../SRC/Server/GameServer/social/new_offlineshop.h"
 
 #include <iostream>
 #include <stdexcept>

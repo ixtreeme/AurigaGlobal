@@ -1,4 +1,4 @@
-#include "../stdafx.h"
+#include "../core/stdafx.h"
 #include "EcsDiagnostics.hpp"
 
 #include "Registry.hpp"

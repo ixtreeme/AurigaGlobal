@@ -1,0 +1,203 @@
+#ifndef __INC_METIN_II_GAME_CHARACTER_MANAGER_H__
+#define __INC_METIN_II_GAME_CHARACTER_MANAGER_H__
+
+#include <entt/entity/entity.hpp>
+
+#include "../ecs/PIDRegistry.hpp"
+#include "../ecs/CharacterAccessors.hpp"
+
+
+#ifdef ENABLE_EVENT_MANAGER
+#include "buffer_manager.h"
+#endif
+
+#include <common/stl.h>
+#include <common/length.h>
+#include <string_view>
+
+
+
+class CHARACTER_MANAGER : public singleton<CHARACTER_MANAGER>
+{
+#ifdef ENABLE_ITEMSHOP
+public:
+	void	LoadItemShopData(const char* c_pData);
+	void	LoadItemShopData(entt::entity character, bool isAll = true);
+	void	LoadItemShopLog(entt::entity character);
+	void	LoadItemShopLogReal(entt::entity character, const char* c_pData);
+	void	LoadItemShopBuy(entt::entity character, int itemID, int itemCount);
+	bool GetItemShopDataByVnum(uint32_t vnum, TIShopData& outData) const;
+	void	LoadItemShopBuyReal(entt::entity character, const char* c_pData);
+	int		GetItemShopUpdateTime() { return itemshopUpdateTime; }
+
+protected:
+	int		itemshopUpdateTime;
+	std::map<uint8_t, std::map<uint8_t, std::vector<TIShopData>>> m_IShopManager;
+#endif
+
+	public:
+		typedef std::unordered_map<std::string, entt::entity> NAME_MAP;
+
+		CHARACTER_MANAGER();
+		virtual ~CHARACTER_MANAGER();
+
+		void                    Destroy();
+
+		void			GracefulShutdown();
+
+		uint32_t			AllocVID();
+
+		entt::entity            CreateCharacterEntity(const char * name, uint32_t dwPID = 0);
+#ifndef DEBUG_ALLOC
+		void DestroyCharacter(entt::entity character);
+#else
+		void DestroyCharacter(entt::entity character, const char* file, size_t line);
+#endif
+
+		void			Update(int iPulse);
+
+		entt::entity		SpawnMobEntity(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bSpawnMotion = false, int iRot = -1, bool bShow = true);
+		entt::entity		SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, bool bIsException=false, bool bSpawnMotion = false , bool bAggressive = false);
+		entt::entity		SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen = nullptr, bool bAggressive_ = false, entt::entity pDungeon = entt::null);
+		bool			SpawnGroupGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, LPREGEN pkRegen = nullptr, bool bAggressive_ = false, entt::entity pDungeon = entt::null);
+		bool			SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, int tx, int ty, LPREGEN pkRegen = nullptr, bool bAggressive_ = false);
+		entt::entity		SpawnMobRandomPosition(uint32_t dwVnum, int32_t lMapIndex);
+
+		void			SelectStone(entt::entity stone);
+
+		NAME_MAP &		GetPCMap() { return m_map_pkPCChr; }
+
+		// Native index lookups; these do not need a legacy CHARACTER shell.
+		entt::entity		FindEntity(uint32_t dwVID);
+		entt::entity		FindPCEntity(const char * name);
+		entt::entity		FindEntityByPID(uint32_t dwPID);
+
+		bool			AddToStateList(entt::entity character);
+		void			RemoveFromStateList(entt::entity character);
+
+		void                    DelayedSave(entt::entity character);
+		bool                    FlushDelayedSave(entt::entity character);
+		void			ProcessDelayedSave();
+
+		template<class Func>	Func for_each_pc(Func f);
+
+		void			RegisterForMonsterLog(entt::entity character);
+		void			UnregisterForMonsterLog(entt::entity character);
+		void			PacketMonsterLog(entt::entity character, const void* buf, int size);
+
+		void			KillLog(uint32_t dwVnum);
+
+		void			RegisterRaceNum(uint32_t dwVnum);
+		void			RegisterRaceNumMap(entt::entity character);
+		void			UnregisterRaceNumMap(entt::entity character);
+		// Fills a snapshot of the entities registered under this race. Callers
+		// destroy characters while walking it, and a destroyed character's
+		// entity simply stops resolving, where a dangling LPCHARACTER did not.
+		bool			GetCharactersByRaceNum(uint32_t dwRaceNum, std::vector<entt::entity>& out);
+
+		entt::entity		FindSpecifyPC(unsigned int uiJobFlag, int32_t lMapIndex, entt::entity except = entt::null, int iMinLevel = 1, int iMaxLevel = PLAYER_MAX_LEVEL_CONST);
+
+		void			SetMobItemRate(int value)	{ m_iMobItemRate = value; }
+		void			SetMobDamageRate(int value)	{ m_iMobDamageRate = value; }
+		void			SetMobGoldAmountRate(int value)	{ m_iMobGoldAmountRate = value; }
+		void			SetMobGoldDropRate(int value)	{ m_iMobGoldDropRate = value; }
+		void			SetMobExpRate(int value)	{ m_iMobExpRate = value; }
+
+		void			SetMobItemRatePremium(int value)	{ m_iMobItemRatePremium = value; }
+		void			SetMobGoldAmountRatePremium(int value)	{ m_iMobGoldAmountRatePremium = value; }
+		void			SetMobGoldDropRatePremium(int value)	{ m_iMobGoldDropRatePremium = value; }
+		void			SetMobExpRatePremium(int value)		{ m_iMobExpRatePremium = value; }
+
+		void			SetUserDamageRatePremium(int value)	{ m_iUserDamageRatePremium = value; }
+		void			SetUserDamageRate(int value ) { m_iUserDamageRate = value; }
+				int			GetMobItemRate(entt::entity character);
+		int			GetMobDamageRate(entt::entity character);
+		int			GetMobGoldAmountRate(entt::entity character);
+		int			GetMobGoldDropRate(entt::entity character);
+		int			GetMobExpRate(entt::entity character);
+
+		int			GetUserDamageRate(entt::entity character);
+		void		SendScriptToMap(int32_t lMapIndex, std::string_view s);
+
+		bool			BeginPendingDestroy();
+		void			FlushPendingDestroy();
+#ifdef ENABLE_EVENT_MANAGER
+	public:
+		void			ClearEventData();
+		bool			CloseEventManuel(uint8_t eventIndex);
+		void			SetEventData(uint8_t dayIndex, const std::vector<TEventManagerData>& m_data);
+		void			SetEventStatus(const uint16_t eventID, const bool eventStatus, const int endTime, const char* endTimeText);
+		void			SendDataPlayer(entt::entity character);
+		void			CheckBonusEvent(entt::entity character);
+		void			UpdateAllPlayerEventData();
+		void			CompareEventSendData(TEMP_BUFFER* buf);
+		const TEventManagerData* CheckEventIsActive(uint8_t eventIndex, uint8_t empireIndex = 0);
+		void			CheckEventForDrop(entt::entity character, entt::entity killer, std::vector<entt::entity>& vec_item);
+	protected:
+		std::map<uint8_t, std::vector<TEventManagerData>>	m_eventData;
+#endif
+		
+
+	private:
+		int					m_iMobItemRate;
+		int					m_iMobDamageRate;
+		int					m_iMobGoldAmountRate;
+		int					m_iMobGoldDropRate;
+		int					m_iMobExpRate;
+
+		int					m_iMobItemRatePremium;
+		int					m_iMobGoldAmountRatePremium;
+		int					m_iMobGoldDropRatePremium;
+		int					m_iMobExpRatePremium;
+
+		int					m_iUserDamageRate;
+		int					m_iUserDamageRatePremium;
+		uint32_t				m_iVIDCount;
+
+		NAME_MAP			m_map_pkPCChr;
+
+		char				dummy1[1024];	// memory barrier
+		// Membership only: the update pump calls AISystem::UpdateStateMachine
+		// with the entity, nothing here dereferences a character.
+		std::unordered_set<entt::entity>	m_set_pkChrState;
+		// Membership only. SaveReal is still a CHARACTER method, so the flush
+		// resolves once per entry - the same shape ITEM_MANAGER already uses for
+		// m_set_pkItemForDelayedSave.
+		std::unordered_set<entt::entity>	m_set_pkChrForDelayedSave;
+		// Membership only: PacketMonsterLog reads position and descriptor off
+		// the entity.
+		std::unordered_set<entt::entity>	m_set_pkChrMonsterLog;
+
+		// The stone a spawn is attributed to. Only null-checked, asked for its
+		// dungeon, and handed to SetStone - all of which take an entity.
+		entt::entity			m_selectedStone;
+
+		std::map<uint32_t, uint32_t> m_map_dwMobKillCount;
+
+		std::set<uint32_t>		m_set_dwRegisteredRaceNum;
+		std::map<uint32_t, std::unordered_set<entt::entity>> m_map_pkChrByRaceNum;
+
+		bool				m_bUsePendingDestroy;
+		std::unordered_set<entt::entity> m_set_pkChrPendingDestroy;
+		std::unordered_set<entt::entity> m_destroyingCharacters;
+
+};
+
+	template<class Func>
+Func CHARACTER_MANAGER::for_each_pc(Func f)
+{
+	for (const entt::entity entity : CPIDRegistry::Instance().Snapshot())
+		if (ecs::IsCharacter(entity))
+			f(entity);
+
+	return f;
+}
+
+
+#ifndef DEBUG_ALLOC
+#define M2_DESTROY_CHARACTER(ptr) CHARACTER_MANAGER::instance().DestroyCharacter(ptr)
+#else
+#define M2_DESTROY_CHARACTER(ptr) CHARACTER_MANAGER::instance().DestroyCharacter(ptr, __FILE__, __LINE__)
+#endif
+
+#endif

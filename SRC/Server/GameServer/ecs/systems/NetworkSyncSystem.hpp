@@ -5,7 +5,7 @@
 
 #include <entt/entt.hpp>
 
-#include "../../packet.h"
+#include "../../core/packet.h"
 
 namespace NetworkSyncSystem {
 

@@ -1,0 +1,785 @@
+#include "stdafx.h"
+#include "../ecs/systems/CombatSystem.hpp"
+#include "../ecs/systems/ItemSystem.hpp"
+#include "../ecs/systems/PointSystem.hpp"
+#include "../ecs/systems/MovementSystem.hpp"
+#include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/SocialSystem.hpp"
+#include "../ecs/AIHelpers.hpp"
+#include "../ecs/systems/QuestSystem.hpp"
+
+#include "TritonTempleDungeon.h"
+
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+
+#include <cmath>
+#include <unordered_map>
+#include <functional>
+#include <memory>
+
+#include "config.h"
+#include "char_interface.hpp"
+#include "char_manager.h"
+#include "desc.h"
+#include "party.h"
+#include "p2p.h"
+#include "sectree_manager.h"
+#include "dungeon.h"
+#include "questmanager.h"
+#include "../ecs/EventDispatcher.hpp"
+#include "../ecs/events.hpp"
+#include "cmd.h"
+#include "db.h"
+#include "log.h"
+
+#ifdef ENABLE_BATTLE_PASS
+#include "battle_pass.h"
+#include "../ecs/CharacterAccessors.hpp"
+#endif
+
+namespace
+{
+    // ---------- CONFIG ----------
+    constexpr int32_t kTritonOriginalMap = 369;
+    constexpr int32_t kPrivateMin = 3690000;
+    constexpr int32_t kPrivateMax = 3700000;
+
+    constexpr uint32_t kEntryNpcVnum = 20094;
+    constexpr uint32_t kBossVnum = 3491;
+    constexpr uint32_t kSealMobVnum = 8054;
+    constexpr uint32_t kBonusMobVnum = 2493;
+
+    // join cords (d.join_cords(369, 601, 2758))
+    constexpr int32_t kEnterX = 601;
+    constexpr int32_t kEnterY = 2758;
+
+    // rejoin warp (pc.warp(60100, 275800, idx))
+    constexpr int32_t kRejoinWarpX = 60100;
+    constexpr int32_t kRejoinWarpY = 275800;
+
+    // completion spawn
+    constexpr int32_t kCompleteNpcX = 88;
+    constexpr int32_t kCompleteNpcY = 116;
+
+    // boss spawn
+    constexpr int32_t kBossX = 90;
+    constexpr int32_t kBossY = 116;
+
+    constexpr int32_t kEndSeconds = 1799;      // 29:59
+    constexpr int32_t kPrepareDelay = 1;
+    constexpr int32_t kRejoinSeconds = 300;
+    constexpr int32_t kCooldownSeconds = 900;
+
+    constexpr int32_t kMinLevel = 60;
+    constexpr int32_t kMaxLevel = 75;
+    constexpr uint32_t kRequiredItem = 76019;
+    constexpr uint32_t kRemoveAllItem = 89104;
+
+    // Dungeon flags (stored in CDungeon)
+    constexpr const char* kFlagFloor = "floor";
+    constexpr const char* kFlagStep = "step";
+    constexpr const char* kFlagBossVid = "boss";
+    constexpr const char* kFlagWasCompleted = "was_completed";
+
+    // Quest flag storage (per character)
+    constexpr const char* kQfDisconnect = "tritontemple_razor93.disconnect";
+    constexpr const char* kQfIdx = "tritontemple_razor93.idx";
+    constexpr const char* kQfCh = "tritontemple_razor93.ch";
+    constexpr const char* kQfEnterTime = "tritontemple_razor93.enter_time";
+    constexpr const char* kQfCooldown = "tritontemple_razor93.cooldown";
+
+    inline bool IsInRange(int32_t v, int32_t lo, int32_t hi) { return v >= lo && v < hi; }
+
+    struct FForEachPC
+    {
+        std::function<void(entt::entity)> fn;
+        void operator()(entt::entity ch)
+        {
+            if (!ecs::IsCharacter(ch) || !ecs::PlayerRuntime::IsPC(ch))
+                return;
+            fn(ch);
+        }
+    };
+
+    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(entt::entity)>& fn)
+    {
+        LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
+        if (!map)
+            return;
+        FForEachPC f{ fn };
+        map->for_each(f);
+    }
+
+
+    struct FCooldownCheck
+    {
+        int32_t now;
+        const char* qfCooldown;
+        bool ok;
+        const char* name;
+        int32_t remain;
+
+        FCooldownCheck(int32_t n, const char* qf) : now(n), qfCooldown(qf), ok(true), name(nullptr), remain(0) {}
+
+        void operator()(entt::entity chEntity)
+        {
+            if (!ecs::PlayerRuntime::IsPC(chEntity))
+                return;
+
+            const int32_t until = ecs::QuestSystem::GetFlag(chEntity, qfCooldown);
+            if (until > now && ok)
+            {
+                ok = false;
+                name = ecs::PlayerRuntime::GetName(chEntity).data();
+                remain = until - now;
+            }
+        }
+    };
+
+    static void DungeonCompleteForMap(int32_t dungeonMapIdx, int32_t dungeonIndex, uint32_t bossVnum, int32_t cooldownSeconds,
+        const char* qfEnterTime, const char* qfCh, const char* qfCooldown)
+    {
+        const int32_t now = get_global_time();
+
+        ForEachPcOnMap(dungeonMapIdx, [&](entt::entity ch){
+                if (!ecs::PlayerRuntime::IsValid(ch))
+                    return;
+
+                // mimic questlua_dungeon::d.complete (simplified)
+                ecs::PlayerRuntime::SetRankPoints(ch, 16,
+                ecs::PlayerRuntime::GetRankPoints(ch, 16) + 1);
+
+#ifdef ENABLE_BATTLE_PASS
+                {
+                    uint8_t battlepassid = ecs::PlayerRuntime::GetBattlePassId(ch);
+                    if (battlepassid)
+                    {
+                        uint32_t id, count;
+                        if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
+                        {
+                            if (id == 1 && ecs::PlayerRuntime::GetMissionProgress(ch, COMPLETE_DUNGEON, battlepassid) < count)
+                                ecs::PlayerRuntime::UpdateMissionProgress(ch, COMPLETE_DUNGEON, battlepassid, 1, count);
+                        }
+                    }
+                }
+#endif
+
+                const int32_t enter_time = ecs::QuestSystem::GetFlag(ch, qfEnterTime);
+                ecs::QuestSystem::SetFlag(ch, qfEnterTime, 0);
+                ecs::QuestSystem::SetFlag(ch, qfCh, 0);
+                ecs::QuestSystem::SetFlag(ch, qfCooldown, now + cooldownSeconds);
+
+                int32_t elapsed = now - enter_time;
+                if (elapsed < 0)
+                    elapsed = 0;
+
+                int32_t damage = 0;
+#ifdef __DUNGEON_INFO_SYSTEM__
+                damage = ecs::PlayerRuntime::GetQuestDamage(ch, (int)bossVnum);
+                if (damage < 0)
+                    damage = 0;
+#endif
+
+                // dungeon_ranking update (same logic as our OrcsDungeon C++ version)
+                const int32_t pid = ecs::PlayerRuntime::GetPlayerID(ch);
+
+                std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery(
+                    "SELECT time, damage FROM dungeon_ranking WHERE pid=%u AND dungeon_index=%d",
+                    pid, dungeonIndex));
+
+                if (msgcheck && msgcheck->Get() && msgcheck->Get()->uiNumRows > 0)
+                {
+                    MYSQL_ROW row = mysql_fetch_row(msgcheck->Get()->pSQLResult);
+                    int32_t lasttime = 0, lastdamage = 0;
+                    str_to_number(lasttime, row[0]);
+                    str_to_number(lastdamage, row[1]);
+
+                    lasttime = elapsed > lasttime ? lasttime : elapsed;
+                    lastdamage = damage > lastdamage ? damage : lastdamage;
+
+                    DBManager::instance().DirectQuery(
+                        "UPDATE dungeon_ranking SET completed=completed+1, time=%d, damage=%d WHERE pid=%u AND dungeon_index=%d",
+                        lasttime, lastdamage, pid, dungeonIndex);
+                }
+                else
+                {
+                    LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
+                    const uint32_t accId = desc ? desc->GetAccountTable().id : 0;
+                    DBManager::instance().DirectQuery(
+                        "INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')",
+                        accId, pid, dungeonIndex, 1, elapsed, damage);
+                }
+            });
+    }
+}
+
+// ------------------ Event plumbing ------------------
+
+namespace
+{
+    EVENTINFO(triton_temple_event_info)
+    {
+        int32_t mapIndex;
+        triton_temple_event_info() : mapIndex(0) {}
+    };
+}
+
+class CTritonTempleDungeonImpl
+{
+public:
+    std::unordered_map<int32_t, LPEVENT> m_evPrepare;
+    std::unordered_map<int32_t, LPEVENT> m_evEnd;
+
+    void CancelEvent(std::unordered_map<int32_t, LPEVENT>& m, int32_t mapIndex)
+    {
+        auto it = m.find(mapIndex);
+        if (it == m.end())
+            return;
+        event_cancel(&it->second);
+        m.erase(it);
+    }
+
+    void CancelAll(int32_t mapIndex)
+    {
+        CancelEvent(m_evPrepare, mapIndex);
+        CancelEvent(m_evEnd, mapIndex);
+    }
+
+    void ClearDungeon(int32_t mapIndex)
+    {
+        CancelAll(mapIndex);
+
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
+            return;
+
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
+        DungeonSystem::KillAll(d);
+        DungeonSystem::ClearRegen(d);
+        DungeonSystem::ExitAllLobby(d, 1);
+    }
+
+    void StartPrepare(int32_t mapIndex)
+    {
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d == entt::null)
+        {
+            CancelAll(mapIndex);
+            return;
+        }
+
+        // as quest: d.setf(step, 35)
+        DungeonSystem::SetFlag(d, kFlagStep, 35);
+
+        // spawn seals (exact coords from quest)
+        const int seals[][2] = {
+            {46,180},{56,180},{66,180},{76,180},{86,180},{96,180},{106,180},{116,180},{126,180},
+            {128,170},{128,160},{128,150},{128,140},{128,130},{128,120},{128,110},{128,100},{128,90},
+            {124,82},{116,74},{106,74},{96,74},{76,74},{66,74},{58,82},{50,90},
+            {54,86},{50,100},{50,110},{50,120},{50,130},{50,140},{50,150},{50,160},{50,170}
+        };
+
+        for (const auto& p : seals)
+            DungeonSystem::SpawnMob(d, kSealMobVnum, p[0], p[1]);
+
+        const entt::entity boss = DungeonSystem::SpawnMob(d, kBossVnum, kBossX, kBossY);
+
+        const uint32_t bossVid = ecs::PlayerRuntime::GetPacketVID(boss);
+        DungeonSystem::SetFlag(d, kFlagBossVid, (int32_t)bossVid);
+
+        const bool ok = boss != entt::null && CombatSystem::SetInvincible(boss, true);
+
+
+        if (!ok)
+        {
+            DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+                1042,
+#endif
+                ""
+#ifdef TEXTS_IMPROVEMENT
+                , true
+#endif
+            );
+            ClearDungeon(mapIndex);
+            return;
+        }
+
+        DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+            1128,
+#endif
+            "30"
+#ifdef TEXTS_IMPROVEMENT
+            , true
+#endif
+        );
+
+        ScheduleEnd(mapIndex, kEndSeconds);
+
+        DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+            1046,
+#endif
+            ""
+#ifdef TEXTS_IMPROVEMENT
+            , true
+#endif
+        );
+    }
+
+    void EndDungeon(int32_t mapIndex)
+    {
+        const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
+        if (d != entt::null)
+        {
+            DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+                1040,
+#endif
+                ""
+#ifdef TEXTS_IMPROVEMENT
+                , true
+#endif
+            );
+            DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+                1041,
+#endif
+                ""
+#ifdef TEXTS_IMPROVEMENT
+                , true
+#endif
+            );
+        }
+        ClearDungeon(mapIndex);
+    }
+
+    void SchedulePrepare(int32_t mapIndex, int32_t seconds);
+    void ScheduleEnd(int32_t mapIndex, int32_t seconds);
+};
+
+static CTritonTempleDungeonImpl s_triton;
+
+EVENTFUNC(triton_temple_prepare_event)
+{
+    auto* info = dynamic_cast<triton_temple_event_info*>(event->info);
+    if (!info)
+        return 0;
+    const int32_t mapIndex = info->mapIndex;
+    s_triton.m_evPrepare.erase(mapIndex);
+    s_triton.StartPrepare(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { CDungeonManager::instance().FindByMapIndex(mapIndex) });
+    return 0;
+}
+
+EVENTFUNC(triton_temple_end_event)
+{
+    auto* info = dynamic_cast<triton_temple_event_info*>(event->info);
+    if (!info)
+        return 0;
+    const int32_t mapIndex = info->mapIndex;
+    s_triton.m_evEnd.erase(mapIndex);
+    s_triton.EndDungeon(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonEnd { CDungeonManager::instance().FindByMapIndex(mapIndex) });
+    return 0;
+}
+
+void CTritonTempleDungeonImpl::SchedulePrepare(int32_t mapIndex, int32_t seconds)
+{
+    CancelEvent(m_evPrepare, mapIndex);
+    auto* info = AllocEventInfo<triton_temple_event_info>();
+    info->mapIndex = mapIndex;
+    m_evPrepare[mapIndex] = event_create(triton_temple_prepare_event, info, PASSES_PER_SEC(seconds));
+}
+
+void CTritonTempleDungeonImpl::ScheduleEnd(int32_t mapIndex, int32_t seconds)
+{
+    CancelEvent(m_evEnd, mapIndex);
+    auto* info = AllocEventInfo<triton_temple_event_info>();
+    info->mapIndex = mapIndex;
+    m_evEnd[mapIndex] = event_create(triton_temple_end_event, info, PASSES_PER_SEC(seconds));
+}
+
+// ------------------ Public facade ------------------
+
+CTritonTempleDungeon& CTritonTempleDungeon::instance()
+{
+    static CTritonTempleDungeon inst;
+    return inst;
+}
+
+bool CTritonTempleDungeon::IsTritonTempleMap(int32_t mapIndex) const
+{
+    return IsInRange(mapIndex, kPrivateMin, kPrivateMax);
+}
+
+void CTritonTempleDungeon::OnPlayerDisconnect(entt::entity character)
+{
+    if (!ecs::PlayerRuntime::IsPC(character))
+        return;
+
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
+    if (!IsTritonTempleMap(idx))
+        return;
+
+    ecs::QuestSystem::SetFlag(character, kQfDisconnect, get_global_time() + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
+}
+
+void CTritonTempleDungeon::OnPlayerLogin(entt::entity character)
+{
+    if (!ecs::PlayerRuntime::IsPC(character))
+        return;
+
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
+    if (!IsTritonTempleMap(idx))
+        return;
+
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
+        return;
+
+    ecs::SocialSystem::SetDungeon(character, d);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
+
+    // Initialize if never started (after server restart)
+    if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
+    {
+        DungeonSystem::SetFlag(d, kFlagFloor, 2);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+        s_triton.SchedulePrepare(idx, 1);
+    }
+}
+
+void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
+{
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
+        return;
+    if (!ecs::PlayerRuntime::IsPC(killer))
+        return;
+
+    // 8054 may be STONE on some cores
+    if (!(ecs::PlayerRuntime::IsMonster(victim) || ecs::PlayerRuntime::IsStone(victim)))
+        return;
+
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);
+    if (!IsTritonTempleMap(idx))
+        return;
+
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
+    if (d == entt::null)
+        return;
+
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
+    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
+
+    if (vnum == kBossVnum)
+    {
+        if (floor == 2 && DungeonSystem::GetFlag(d, kFlagStep) == 0 && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0)
+        {
+            DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
+
+            DungeonCompleteForMap(idx, kTritonOriginalMap, kBossVnum, kCooldownSeconds, kQfEnterTime, kQfCh, kQfCooldown);
+
+#ifdef TEXTS_IMPROVEMENT
+            if (const entt::entity killerParty = ecs::SocialSystem::GetParty(killer); killerParty != entt::null)
+            {
+                const entt::entity leader = PartySystem::GetLeader(killerParty);
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 2173, "%s", leader != entt::null ? ecs::PlayerRuntime::GetName(leader).data() : ecs::PlayerRuntime::GetName(killer).data());
+            }
+            else
+            {
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 2174, "%s", ecs::PlayerRuntime::GetName(killer).data());
+            }
+#endif
+
+            DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+                1054,
+#endif
+                ""
+#ifdef TEXTS_IMPROVEMENT
+                , true
+#endif
+            );
+
+            DungeonSystem::KillAll(d);
+            DungeonSystem::ClearRegen(d);
+
+            DungeonSystem::SpawnMob(d, kEntryNpcVnum, kCompleteNpcX, kCompleteNpcY);
+
+            const int32_t bonus = 10 + quest::CQuestManager::instance().GetEventFlag("dungeon_bonus");
+            if (number(1, 100) <= bonus)
+            {
+                DungeonSystem::SpawnMob(d, kBonusMobVnum, kCompleteNpcX, kCompleteNpcY);
+            }
+        }
+        return;
+    }
+
+    if (vnum == kSealMobVnum)
+    {
+        if (floor != 2)
+            return;
+
+        int32_t s = DungeonSystem::GetFlag(d, kFlagStep) - 1;
+        if (s < 0)
+            s = 0;
+
+        if (s == 0)
+        {
+            const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
+            const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
+            const bool ok = boss != entt::null && CombatSystem::SetInvincible(boss, false);
+
+            if (!ok)
+            {
+                DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+                    1050,
+#endif
+                    ""
+#ifdef TEXTS_IMPROVEMENT
+                    , true
+#endif
+                );
+                s_triton.ClearDungeon(idx);
+            }
+            else
+            {
+                DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+                    1051,
+#endif
+                    ""
+#ifdef TEXTS_IMPROVEMENT
+                    , true
+#endif
+                );
+            }
+        }
+        else
+        {
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%d", s);
+
+            DungeonSystem::Notice(d, 
+#ifdef TEXTS_IMPROVEMENT
+                1052,
+#endif
+                buf
+#ifdef TEXTS_IMPROVEMENT
+                , true
+#endif
+            );
+
+            // quest formula: floor((6 - s) / 1.6)
+            float mul = std::floor((6.0f - (float)s) / 1.6f);
+            // prevent negative/0 multipliers (would result in weird/healing damage)
+            if (mul < 1.0f)
+                mul = 1.0f;
+
+            const uint32_t bossVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagBossVid);
+            const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
+            if (ecs::IsCharacter(boss))
+            {
+                CombatSystem::SetAttackMultiplier(boss, mul);
+                CombatSystem::SetDamageMultiplier(boss, mul);
+            }
+        }
+
+        DungeonSystem::SetFlag(d, kFlagStep, s);
+    }
+}
+bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
+{
+    if (!ecs::PlayerRuntime::IsPC(character))
+        return false;
+
+    if (!ecs::PlayerRuntime::CanWarp(character))
+        return true;
+
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(character);
+
+    // If clicked inside dungeon:
+    // - while run active (was_completed=0): behave as EXIT.
+    // - after completion (was_completed=1): allow starting a NEW run from the same NPC.
+    if (IsTritonTempleMap(mapIdx))
+    {
+        const entt::entity cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
+        if (cur != entt::null && DungeonSystem::GetFlag(cur, kFlagWasCompleted) == 0)
+        {
+            ecs::MovementSystem::WarpSet(character, 535400, 1428400);
+            return true;
+        }
+        // completed -> continue below to fresh entrance flow
+    }
+
+    const int32_t now = get_global_time();
+
+    // Rejoin flow
+    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(character, kQfDisconnect);
+    if (rejoinUntil > now)
+    {
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(character, kQfIdx);
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(character, kQfCh);
+
+        if (IsInRange(rejoinIdx, kPrivateMin, kPrivateMax))
+        {
+            if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
+            {
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You were in Triton Temple on a different channel. Channel: %d", rejoinCh);
+                return true;
+            }
+
+            const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
+            if (d != entt::null && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0 && DungeonSystem::GetFlag(d, kFlagFloor) == 2)
+            {
+                ecs::MovementSystem::SaveExitLocation(character);
+                ecs::MovementSystem::WarpSet(character, kRejoinWarpX, kRejoinWarpY, rejoinIdx);
+                return true;
+            }
+        }
+    }
+
+    // Fresh entrance
+    if (ecs::PointSystem::GetLevel(character) < kMinLevel || ecs::PointSystem::GetLevel(character) > kMaxLevel)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: level requirement is %d-%d.", kMinLevel, kMaxLevel);
+        return true;
+    }
+
+    // Cooldown
+    const int32_t cdUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
+    if (cdUntil > now)
+    {
+        const int32_t remain = cdUntil - now;
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: you must wait %d seconds.", remain);
+        return true;
+    }
+
+    const entt::entity party = ecs::SocialSystem::GetParty(character);
+    if (party != entt::null && PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can start Triton Temple.");
+        return true;
+    }
+
+    // Party cooldown: everyone must be off cooldown (leader cannot bypass others)
+    if (party != entt::null)
+    {
+        FCooldownCheck f(now, kQfCooldown);
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            if (!ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+                return;
+            f(m);
+        });
+        if (!f.ok)
+        {
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
+            return true;
+        }
+    }
+
+    // Check level + entry item for everyone who will enter (same map as leader)
+    if (party == entt::null)
+    {
+        if (ItemSystem::CountItem(character, kRequiredItem) < 1)
+        {
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: you don't have the entry item.");
+            return true;
+        }
+    }
+    else
+    {
+        bool ok = true;
+        const char* badName = nullptr;
+        int32_t badLevel = 0;
+        bool missingItem = false;
+
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            if (!ok || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+                return;
+
+            if (ecs::PointSystem::GetLevel(m) < kMinLevel || ecs::PointSystem::GetLevel(m) > kMaxLevel)
+            {
+                ok = false;
+                badName = ecs::PlayerRuntime::GetName(m).data();
+                badLevel = ecs::PointSystem::GetLevel(m);
+                missingItem = false;
+                return;
+            }
+
+            if (ItemSystem::CountItem(m, kRequiredItem) < 1)
+            {
+                ok = false;
+                badName = ecs::PlayerRuntime::GetName(m).data();
+                badLevel = ecs::PointSystem::GetLevel(m);
+                missingItem = true;
+                return;
+            }
+        });
+
+        if (!ok)
+        {
+            if (missingItem)
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
+            else
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
+            return true;
+        }
+    }
+
+    const entt::entity d = CDungeonManager::instance().Create(kTritonOriginalMap);
+    if (d == entt::null)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: failed to create the dungeon.");
+        return true;
+    }
+
+    // Initialize dungeon flags
+    DungeonSystem::SetFlag(d, kFlagFloor, 2);
+    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagStep, 0);
+    DungeonSystem::SetFlag(d, kFlagBossVid, 0);
+
+    auto applyMember = [&](entt::entity m){
+            if (!ecs::PlayerRuntime::IsPC(m))
+                return;
+
+            ItemSystem::RemoveSpecifyItemEcs(m, kRequiredItem, 1);
+
+            const int32_t rmAll = ItemSystem::CountItem(m, kRemoveAllItem);
+            if (rmAll > 0)
+                ItemSystem::RemoveSpecifyItemEcs(m, kRemoveAllItem, rmAll);
+
+            ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(m, kQfIdx, DungeonSystem::GetMapIndex(d));
+            ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(m, kQfEnterTime, now);
+            // cooldown set on completion
+        };
+
+    if (party == entt::null)
+    {
+        applyMember(character);
+        DungeonSystem::Join_Coords(d, character, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
+    }
+    else
+    {
+        auto fn = [&](entt::entity m){
+            applyMember(m); };
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            if(ecs::PlayerRuntime::IsPC(m) && ecs::SocialSystem::GetParty(m)==party) fn(m); });
+DungeonSystem::JoinParty_Coords(d, party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
+    }
+
+    s_triton.SchedulePrepare(DungeonSystem::GetMapIndex(d), kPrepareDelay);
+    return true;
+}
+
+#endif
+

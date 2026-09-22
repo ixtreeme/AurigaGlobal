@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../typedef.h"
+#include "../core/typedef.h"
 #include "Registry.hpp"
 #include "VIDRegistry.hpp"
 #include "components/ai_components.hpp"

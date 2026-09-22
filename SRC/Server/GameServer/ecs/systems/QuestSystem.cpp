@@ -1,4 +1,4 @@
-#include "../../stdafx.h"
+#include "../../core/stdafx.h"
 
 #include "QuestSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -7,8 +7,8 @@
 
 #include "../Registry.hpp"
 #include "../components/identity_components.hpp"
-#include "../../questmanager.h"
-#include "../../questpc.h"
+#include "../../quest/questmanager.h"
+#include "../../quest/questpc.h"
 
 #include <string>
 

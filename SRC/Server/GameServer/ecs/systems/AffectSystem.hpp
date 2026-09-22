@@ -7,8 +7,8 @@
 #include <entt/entt.hpp>
 #include <common/tables.h>
 
-#include "../../affect.h"
-#include "../../affect_flag.h"
+#include "../../combat/affect.h"
+#include "../../combat/affect_flag.h"
 
 namespace AffectSystem {
 

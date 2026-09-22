@@ -1,4 +1,4 @@
-#include "../../stdafx.h"
+#include "../../core/stdafx.h"
 #include "SessionSystem.hpp"
 #include "ViewSystem.hpp"
 
@@ -29,74 +29,74 @@
 #include "MovementSystem.hpp"
 #include "../EventDispatcher.hpp"
 #include "../events.hpp"
-#include "../../char.h"
+#include "../../entity/char.h"
 
 
-#include "../../config.h"
-#include "../../utils.h"
-#include "../../crc32.h"
-#include "../../char_manager.h"
-#include "../../desc_client.h"
-#include "../../desc_manager.h"
-#include "../../buffer_manager.h"
-#include "../../item_manager.h"
-#include "../../motion.h"
-#include "../../vector.h"
-#include "../../packet.h"
-#include "../../cmd.h"
-#include "../../fishing.h"
-#include "../../exchange.h"
-#include "../../battle.h"
-#include "../../affect.h"
-#include "../../shop.h"
-#include "../../shop_manager.h"
-#include "../../safebox.h"
-#include "../../MountInventory.h"
-#include "../../regen.h"
-#include "../../pvp.h"
-#include "../../party.h"
-#include "../../start_position.h"
-#include "../../questmanager.h"
-#include "../../log.h"
-#include "../../p2p.h"
-#include "../../guild.h"
-#include "../../guild_manager.h"
-#include "../../dungeon.h"
-#include "../../messenger_manager.h"
-#include "../../unique_item.h"
-#include "../../priv_manager.h"
-#include "../../war_map.h"
-#include "../../banword.h"
-#include "../../target.h"
-#include "../../wedding.h"
-#include "../../mob_manager.h"
-#include "../../mining.h"
-#include "../../arena.h"
-#include "../../dev_log.h"
-#include "../../horsename_manager.h"
-#include "../../gm.h"
-#include "../../map_location.h"
-#include "../../skill_power.h"
-#include "../../buff_on_attributes.h"
-#include "../../constants.h"
+#include "../../core/config.h"
+#include "../../core/utils.h"
+#include "../../core/crc32.h"
+#include "../../entity/char_manager.h"
+#include "../../network/desc_client.h"
+#include "../../network/desc_manager.h"
+#include "../../core/buffer_manager.h"
+#include "../../item/item_manager.h"
+#include "../../entity/motion.h"
+#include "../../core/vector.h"
+#include "../../core/packet.h"
+#include "../../command/cmd.h"
+#include "../../world/fishing.h"
+#include "../../social/exchange.h"
+#include "../../combat/battle.h"
+#include "../../combat/affect.h"
+#include "../../social/shop.h"
+#include "../../social/shop_manager.h"
+#include "../../item/safebox.h"
+#include "../../pet/MountInventory.h"
+#include "../../world/regen.h"
+#include "../../combat/pvp.h"
+#include "../../social/party.h"
+#include "../../world/start_position.h"
+#include "../../quest/questmanager.h"
+#include "../../core/log.h"
+#include "../../network/p2p.h"
+#include "../../guild/guild.h"
+#include "../../guild/guild_manager.h"
+#include "../../dungeon/dungeon.h"
+#include "../../social/messenger_manager.h"
+#include "../../item/unique_item.h"
+#include "../../social/priv_manager.h"
+#include "../../world/war_map.h"
+#include "../../social/banword.h"
+#include "../../entity/target.h"
+#include "../../social/wedding.h"
+#include "../../entity/mob_manager.h"
+#include "../../world/mining.h"
+#include "../../world/arena.h"
+#include "../../core/dev_log.h"
+#include "../../pet/horsename_manager.h"
+#include "../../command/gm.h"
+#include "../../world/map_location.h"
+#include "../../combat/skill_power.h"
+#include "../../combat/buff_on_attributes.h"
+#include "../../core/constants.h"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "../../new_offlineshop.h"
-#include "../../new_offlineshop_manager.h"
+#include "../../social/new_offlineshop.h"
+#include "../../social/new_offlineshop_manager.h"
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-#include "../../battle_pass.h"
+#include "../../combat/battle_pass.h"
 #endif
 
 #ifdef __PET_SYSTEM__
-#include "../../PetSystem.h"
+#include "../../pet/PetSystem.h"
 #endif
 #ifdef __NEWPET_SYSTEM__
-#include "../../New_PetSystem.h"
+#include "../../pet/New_PetSystem.h"
 #endif
 #include <boost/algorithm/string/find.hpp>
 
-#include "../../DragonSoul.h"
+#include "../../dungeon/DragonSoul.h"
 #include <Core/Logging.hpp>
 #include <common/CommonDefines.h>
 
@@ -512,7 +512,7 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 #include <iterator>
 #endif
 #ifdef ENABLE_SWITCHBOT
-#include "../../new_switchbot.h"
+#include "../../social/new_switchbot.h"
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
 #include <common/rune_length.h>
@@ -520,17 +520,17 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 #ifdef ENABLE_STOLE_COSTUME
 #include <common/stole_length.h>
 #endif
-#include "../../mount_inventory_helper.h"
+#include "../../pet/mount_inventory_helper.h"
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-#include "../../OrcsDungeon.h"
-#include "../../TritonTempleDungeon.h"
-#include "../../ValentineDungeon.h"
-#include "../../RuneDungeon.h"
-#include "../../PyramidDungeonRazor93.h"
-#include "../../NightmareDungeonRazor93.h"
-#include "../../Halloween2022Dungeon.h"
-#include "../../VikingDungeon.h"
-#include "../../EasterDungeon.h"
+#include "../../dungeon/OrcsDungeon.h"
+#include "../../dungeon/TritonTempleDungeon.h"
+#include "../../dungeon/ValentineDungeon.h"
+#include "../../dungeon/RuneDungeon.h"
+#include "../../dungeon/PyramidDungeonRazor93.h"
+#include "../../dungeon/NightmareDungeonRazor93.h"
+#include "../../dungeon/Halloween2022Dungeon.h"
+#include "../../dungeon/VikingDungeon.h"
+#include "../../dungeon/EasterDungeon.h"
 #endif
 
 

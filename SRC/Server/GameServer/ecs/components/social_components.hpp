@@ -1,5 +1,5 @@
 #pragma once
-#include "../../exchange.h"
+#include "../../social/exchange.h"
 
 #include <cstdint>
 #include <map>
@@ -7,12 +7,12 @@
 #include <string>
 #include <unordered_set>
 
-#include "../../guild.h"
-#include "../../party.h"
-#include "../../dungeon.h"
-#include "../../war_map.h"
-#include "../../shop.h"
-#include "../../typedef.h"
+#include "../../guild/guild.h"
+#include "../../social/party.h"
+#include "../../dungeon/dungeon.h"
+#include "../../world/war_map.h"
+#include "../../social/shop.h"
+#include "../../core/typedef.h"
 
 class CWheelDestiny;
 class CArena;

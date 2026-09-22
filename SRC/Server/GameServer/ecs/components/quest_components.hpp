@@ -5,9 +5,9 @@
 #include <string>
 #include <entt/entity/entity.hpp>
 
-#include "../../char.h"
-#include "../../typedef.h"
-#include "../../questpc.h"
+#include "../../entity/char.h"
+#include "../../core/typedef.h"
+#include "../../quest/questpc.h"
 
 namespace ecs {
 

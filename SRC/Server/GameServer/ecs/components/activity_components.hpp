@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <list>
 
-#include "../../event.h"
+#include "../../world/event.h"
 
 namespace ecs {
 

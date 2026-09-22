@@ -1,0 +1,710 @@
+#include "stdafx.h"
+#include <Core/Logging.hpp>
+#include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/SocialSystem.hpp"
+#include "../ecs/AIHelpers.hpp"
+#include "../ecs/systems/PointSystem.hpp"
+#include <Base/grid.h>
+#include "constants.h"
+#include "utils.h"
+#include "config.h"
+#include "shop.h"
+#include "../ecs/systems/SessionSystem.hpp"
+#include "../ecs/systems/InventorySystem.hpp"
+#include "desc.h"
+#include "desc_manager.h"
+#include "char_interface.hpp"
+#include "char_manager.h"
+#include "item.h"
+#include "item_manager.h"
+#include "buffer_manager.h"
+#include "packet.h"
+#include "log.h"
+#include "db.h"
+#include "questmanager.h"
+#include "mob_manager.h"
+#include "locale_service.h"
+#include "desc_client.h"
+#include "shop_manager.h"
+#include "../ecs/systems/ItemSystem.hpp"
+#include "../ecs/Registry.hpp"
+#include "../ecs/components/social_components.hpp"
+#include "../ecs/EntityFactory.hpp"
+#include "group_text_parse_tree.h"
+#include <boost/algorithm/string/predicate.hpp>
+#include <cctype>
+#ifdef ENABLE_BATTLE_PASS
+#include "battle_pass.h"
+#endif
+
+CShopManager::CShopManager()
+{
+}
+
+CShopManager::~CShopManager()
+{
+	Destroy();
+}
+
+bool CShopManager::Initialize(TShopTable * table, int size)
+{
+	if (!m_map_pkShop.empty())
+		return false;
+
+	int i;
+
+	for (i = 0; i < size; ++i, ++table)
+	{
+		const entt::entity shop = g_registry.create();
+		g_registry.emplace<ecs::ShopData>(shop);
+		ShopSystem::Initialize(shop);
+
+		if (!ShopSystem::Create(shop, table->dwVnum, table->dwNPCVnum, table->items))
+		{
+			g_registry.destroy(shop);
+			continue;
+		}
+
+		m_map_pkShop.insert(TShopMap::value_type(table->dwVnum, shop));
+		m_map_pkShopByNPCVnum.insert(TShopMap::value_type(table->dwNPCVnum, shop));
+	}
+	char szShopTableExFileName[256];
+
+	snprintf(szShopTableExFileName, sizeof(szShopTableExFileName),
+		"%s/shop_table_ex.txt", LocaleService_GetBasePath().c_str());
+
+	return ReadShopTableEx(szShopTableExFileName);
+}
+
+void CShopManager::Destroy()
+{
+	for (auto& row : m_map_pkShop)
+	{
+		if (ShopSystem::IsValid(row.second))
+			ShopSystem::Destroy(row.second);
+	}
+
+	m_map_pkShop.clear();
+	m_map_pkShopByNPCVnum.clear();
+	m_map_pkShopByPC.clear();
+}
+
+entt::entity CShopManager::Get(uint32_t dwVnum)
+{
+	TShopMap::const_iterator it = m_map_pkShop.find(dwVnum);
+
+	if (it == m_map_pkShop.end())
+		return entt::null;
+
+	return ShopSystem::IsValid(it->second) ? it->second : entt::null;
+}
+
+entt::entity CShopManager::GetByNPCVnum(uint32_t dwVnum)
+{
+	TShopMap::const_iterator it = m_map_pkShopByNPCVnum.find(dwVnum);
+
+	if (it == m_map_pkShopByNPCVnum.end())
+		return entt::null;
+
+	return ShopSystem::IsValid(it->second) ? it->second : entt::null;
+}
+
+/*
+// The interface functions.
+ */
+
+// Start shopping.
+bool CShopManager::StartShopping(entt::entity pkChr, entt::entity pkChrShopKeeper, int iShopVnum)
+{
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+	if (ecs::PlayerRuntime::GetGMLevel(pkChr) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(pkChr) < GM_IMPLEMENTOR) {
+		return false;
+	}
+#endif
+	if (ecs::SocialSystem::GetShopOwner(pkChr) == pkChrShopKeeper)
+		return false;
+	// this method is only for NPC
+
+	if (ecs::PlayerRuntime::IsPC(pkChrShopKeeper))
+		return false;
+
+	//PREVENT_TRADE_WINDOW
+	if (ecs::SessionSystem::IsSafeboxOpen(pkChr) || ecs::SocialSystem::HasExchange(pkChr)
+		|| ecs::SocialSystem::GetMyShop(pkChr) != entt::null || ecs::SessionSystem::IsCubeOpen(pkChr))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(pkChr, CHAT_TYPE_INFO, 294, "");
+#endif
+		return false;
+	}
+	//END_PREVENT_TRADE_WINDOW
+
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(pkChr) - ecs::PlayerRuntime::GetX(pkChrShopKeeper), ecs::PlayerRuntime::GetY(pkChr) - ecs::PlayerRuntime::GetY(pkChrShopKeeper));
+
+	if (distance >= SHOP_MAX_DISTANCE)
+	{
+		LOG_INFO("SHOP: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(pkChr).data(), distance);
+		return false;
+	}
+
+	entt::entity pkShop = entt::null;
+
+	if (iShopVnum)
+		pkShop = Get(iShopVnum);
+	else
+		pkShop = GetByNPCVnum(ecs::PlayerRuntime::GetRaceNum(pkChrShopKeeper));
+
+	if (pkShop == entt::null)
+	{
+		LOG_INFO("SHOP: NO SHOP");
+		return false;
+	}
+
+	bool bOtherEmpire = false;
+
+	if (ecs::PlayerRuntime::GetEmpire(pkChr) != ecs::PlayerRuntime::GetEmpire(pkChrShopKeeper))
+		bOtherEmpire = true;
+
+	ShopSystem::AddGuest(pkShop, pkChr, ecs::PlayerRuntime::GetPacketVID(pkChrShopKeeper), bOtherEmpire);
+	ecs::SocialSystem::SetShopOwner(pkChr, pkChrShopKeeper);
+	LOG_INFO("SHOP: START: {}", ecs::PlayerRuntime::GetName(pkChr).data());
+	return true;
+}
+
+entt::entity CShopManager::FindPCShop(uint32_t dwVID)
+{
+	TShopMap::iterator it = m_map_pkShopByPC.find(dwVID);
+
+	if (it == m_map_pkShopByPC.end())
+		return entt::null;
+
+	return ShopSystem::IsValid(it->second) ? it->second : entt::null;
+}
+
+entt::entity CShopManager::CreatePCShop(entt::entity ch, TShopItemTable * pTable, uint8_t bItemCount)
+{
+	if (FindPCShop(ecs::PlayerRuntime::GetPacketVID(ch)) != entt::null)
+		return entt::null;
+
+	const entt::entity pkShop = g_registry.create();
+	g_registry.emplace<ecs::ShopData>(pkShop);
+	ShopSystem::Initialize(pkShop);
+	ShopSystem::SetOwner(pkShop, ch);
+	ShopSystem::SetShopItems(pkShop, pTable, bItemCount);
+
+	m_map_pkShopByPC.insert(TShopMap::value_type(ecs::PlayerRuntime::GetPacketVID(ch), pkShop));
+	return pkShop;
+}
+
+void CShopManager::DestroyPCShop(entt::entity ch)
+{
+	entt::entity pkShop = FindPCShop(ecs::PlayerRuntime::GetPacketVID(ch));
+
+	if (pkShop == entt::null)
+		return;
+
+	//PREVENT_ITEM_COPY;
+	ecs::SocialSystem::SetMyShopTime(ch);
+	//END_PREVENT_ITEM_COPY
+
+	m_map_pkShopByPC.erase(ecs::PlayerRuntime::GetPacketVID(ch));
+	ShopSystem::Destroy(pkShop);
+}
+
+// Stop shopping.
+void CShopManager::StopShopping(entt::entity ch)
+{
+	const entt::entity shop = ecs::SocialSystem::GetShop(ch);
+
+	if (shop == entt::null)
+		return;
+
+	//PREVENT_ITEM_COPY;
+	ecs::SocialSystem::SetMyShopTime(ch);
+	//END_PREVENT_ITEM_COPY
+
+	ShopSystem::RemoveGuest(shop, ch);
+	LOG_INFO("SHOP: END: {}", ecs::PlayerRuntime::GetName(ch).data());
+}
+
+// Buy.
+void CShopManager::Buy(entt::entity ch, uint8_t pos)
+{
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+	if (ecs::PlayerRuntime::GetGMLevel(ch) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch) < GM_IMPLEMENTOR) {
+		return;
+	}
+#endif
+#ifdef ENABLE_NEWSTUFF
+	if (0 != g_BuySellTimeLimitValue)
+	{
+		if (get_dword_time() < ecs::SocialSystem::GetLastBuySellTime(ch)+g_BuySellTimeLimitValue)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
+#endif
+			return;
+		}
+	}
+
+	ecs::SocialSystem::SetLastBuySellTime(ch, get_dword_time());
+#endif
+	const entt::entity pkShop = ecs::SocialSystem::GetShop(ch);
+	if (pkShop == entt::null)
+		return;
+
+	if (const entt::entity owner = ecs::SocialSystem::GetShopOwner(ch); owner != entt::null)
+	{
+		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(ch) - ecs::PlayerRuntime::GetX(owner), ecs::PlayerRuntime::GetY(ch) - ecs::PlayerRuntime::GetY(owner)) > 2000)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 381, "");
+#endif
+			return;
+		}
+	}
+
+	//PREVENT_ITEM_COPY
+	ecs::SocialSystem::SetMyShopTime(ch);
+	//END_PREVENT_ITEM_COPY
+
+	int ret = ShopSystem::Buy(pkShop, ch, pos);
+
+	if (SHOP_SUBHEADER_GC_OK != ret) // Tell the buyer why it failed.
+	{
+		TPacketGCShop pack;
+
+		pack.header	= HEADER_GC_SHOP;
+		pack.subheader	= ret;
+		pack.size	= sizeof(TPacketGCShop);
+
+		ecs::PlayerRuntime::GetDesc(ch)->Packet(&pack, sizeof(pack));
+	}
+}
+
+#ifdef ENABLE_BUY_STACK_FROM_SHOP
+void CShopManager::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+	if (ecs::PlayerRuntime::GetGMLevel(ch) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch) < GM_IMPLEMENTOR) {
+		return;
+	}
+#endif
+
+	const entt::entity pkShop = ecs::SocialSystem::GetShop(ch);
+	if (pkShop == entt::null) {
+		return;
+	}
+
+	if (const entt::entity owner = ecs::SocialSystem::GetShopOwner(ch); owner != entt::null) {
+		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(ch) - ecs::PlayerRuntime::GetX(owner), ecs::PlayerRuntime::GetY(ch) - ecs::PlayerRuntime::GetY(owner)) > 2000) {
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 381, "");
+#endif
+			return;
+		}
+	}
+
+	//PREVENT_ITEM_COPY
+	ecs::SocialSystem::SetMyShopTime(ch);
+	//END_PREVENT_ITEM_COPY
+
+	int ret = ShopSystem::MultipleBuy(pkShop, ch, p, c);
+	if (SHOP_SUBHEADER_GC_OK != ret) {
+		TPacketGCShop pack;
+		pack.header = HEADER_GC_SHOP;
+		pack.subheader = ret;
+		pack.size = sizeof(TPacketGCShop);
+
+		ecs::PlayerRuntime::GetDesc(ch)->Packet(&pack, sizeof(pack));
+	}
+}
+#endif
+
+#ifdef ENABLE_EXTRA_INVENTORY
+void CShopManager::Sell(entt::entity ch, TItemPos Cell,
+#ifdef ENABLE_NEW_STACK_LIMIT
+uint16_t bCount
+#else
+uint8_t bCount
+#endif
+)
+#else
+void CShopManager::Sell(entt::entity ch, uint8_t bCell,
+#ifdef ENABLE_NEW_STACK_LIMIT
+uint16_t bCount
+#else
+uint8_t bCount
+#endif
+)
+#endif
+{
+
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+	if (ecs::PlayerRuntime::GetGMLevel(ch) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch) < GM_IMPLEMENTOR) {
+		return;
+	}
+#endif
+#ifdef ENABLE_NEWSTUFF
+	if (0 != g_BuySellTimeLimitValue)
+	{
+		if (get_dword_time() < ecs::SocialSystem::GetLastBuySellTime(ch)+g_BuySellTimeLimitValue)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
+#endif
+			return;
+		}
+	}
+
+	ecs::SocialSystem::SetLastBuySellTime(ch, get_dword_time());
+#endif
+	const entt::entity pkShop = ecs::SocialSystem::GetShop(ch);
+	if (pkShop == entt::null)
+		return;
+
+	const entt::entity shopKeeper = ecs::SocialSystem::GetShopOwner(ch);
+	if (shopKeeper == entt::null)
+		return;
+
+	if (!InventorySystem::CanHandleItems(ch))
+		return;
+
+	if (ShopSystem::IsPCShop(pkShop))
+		return;
+
+	/*
+	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(ch)-ecs::PlayerRuntime::GetX(shopKeeper), ecs::PlayerRuntime::GetY(ch)-ecs::PlayerRuntime::GetY(shopKeeper))>2000)
+	{
+		return;
+	}
+	*/
+
+	const entt::entity owner = ch;
+#ifdef ENABLE_EXTRA_INVENTORY
+	const entt::entity itemEntity = ItemSystem::GetItem(owner, Cell);
+#else
+	const entt::entity itemEntity = ItemSystem::GetInventoryItem(owner, bCell);
+#endif
+
+	if (!ItemSystem::IsValidItem(itemEntity))
+		return;
+
+	if (ItemSystem::IsItemEquipped(itemEntity) == true)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 541, "");
+#endif
+		return;
+	}
+
+	if (ItemSystem::IsItemLocked(itemEntity))
+	{
+		return;
+	}
+
+	if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_SELL))
+		return;
+
+	const uint32_t itemCount = ItemSystem::GetItemCount(itemEntity);
+	if (itemCount == 0)
+		return;
+	if (bCount == 0 || bCount > itemCount)
+		bCount = static_cast<decltype(bCount)>(itemCount);
+
+	int64_t dwPrice = ItemSystem::GetItemShopBuyPrice(itemEntity);
+
+	if (IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_COUNT_PER_1GOLD))
+	{
+		if (dwPrice == 0)
+			dwPrice = bCount;
+		else
+			dwPrice = bCount / dwPrice;
+	}
+	else
+		dwPrice *= bCount;
+
+/* 	dwPrice /= 5;
+
+	// Sale is disabled.
+	uint32_t dwTax = 0;
+	int iVal = 3;
+
+	{
+		dwTax = dwPrice * iVal/100;
+		dwPrice -= dwTax;
+	} */
+
+	if (test_server)
+		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemID(itemEntity));
+
+	const int64_t currentGold = ecs::PointSystem::GetGold(owner);
+	if (dwPrice < 0 || currentGold >= GOLD_MAX || dwPrice >= GOLD_MAX - currentGold)
+	{
+		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetName(ch).data(), ecs::PointSystem::GetGold(ch));
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 226,
+		"%lld"
+
+		, GOLD_MAX);
+#endif
+		return;
+	}
+
+	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(itemEntity), dwPrice);
+#ifdef ENABLE_BATTLE_PASS
+	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch);
+	if(bBattlePassId)
+	{
+		uint32_t dwItemVnum, dwSellCount;
+		if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, SELL_ITEM, &dwItemVnum, &dwSellCount))
+		{
+			if(dwItemVnum == ItemSystem::GetItemVnum(itemEntity) && ecs::PlayerRuntime::GetMissionProgress(ch, SELL_ITEM, bBattlePassId) < dwSellCount)
+				ecs::PlayerRuntime::UpdateMissionProgress(ch, SELL_ITEM, bBattlePassId, bCount, dwSellCount);
+		}
+	}
+#endif
+	const bool sold = (bCount == itemCount)
+		? ItemSystem::DestroyItemEntityEcs(itemEntity, "SELL")
+		: ItemSystem::ConsumeItemEcs(itemEntity, bCount);
+	if (!sold)
+		return;
+
+	ecs::PointSystem::Change(owner, POINT_GOLD, dwPrice, false);
+}
+
+bool CompareShopItemName(const SShopItemTable& lhs, const SShopItemTable& rhs)
+{
+	TItemTable* lItem = ITEM_MANAGER::instance().GetTable(lhs.vnum);
+	TItemTable* rItem = ITEM_MANAGER::instance().GetTable(rhs.vnum);
+	if (lItem && rItem)
+#ifdef ENABLE_MULTI_NAMES
+		return strcmp(lItem->szLocaleName[DEFAULT_LANGUAGE], rItem->szLocaleName[DEFAULT_LANGUAGE]) < 0;
+#else
+		return strcmp(lItem->szLocaleName, rItem->szLocaleName) < 0;
+#endif
+	else
+		return true;
+}
+
+bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
+{
+	if (!pNode->GetValue("vnum", 0, shopTable.dwVnum))
+	{
+		LOG_ERROR("Group {} does not have vnum.", pNode->GetNodeName().c_str());
+		return false;
+	}
+
+	if (!pNode->GetValue("name", 0, shopTable.name))
+	{
+		LOG_ERROR("Group {} does not have name.", pNode->GetNodeName().c_str());
+		return false;
+	}
+
+	if (shopTable.name.length() >= SHOP_TAB_NAME_MAX)
+	{
+		LOG_ERROR("Shop name length must be less than {}. Error in Group {}, name {}", SHOP_TAB_NAME_MAX, pNode->GetNodeName().c_str(), shopTable.name.c_str());
+		return false;
+	}
+
+	std::string stCoinType;
+	if (!pNode->GetValue("cointype", 0, stCoinType))
+	{
+		stCoinType = "Gold";
+	}
+
+	if (boost::iequals(stCoinType, "Gold"))
+	{
+		shopTable.coinType = SHOP_COIN_TYPE_GOLD;
+	}
+	else if (boost::iequals(stCoinType, "SecondaryCoin"))
+	{
+		shopTable.coinType = SHOP_COIN_TYPE_SECONDARY_COIN;
+	}
+	else
+	{
+		LOG_ERROR("Group {} has undefine cointype({}).", pNode->GetNodeName().c_str(), stCoinType.c_str());
+		return false;
+	}
+
+	CGroupNode* pItemGroup = pNode->GetChildNode("items");
+	if (!pItemGroup)
+	{
+		LOG_ERROR("Group {} does not have 'group items'.", pNode->GetNodeName().c_str());
+		return false;
+	}
+
+	int itemGroupSize = pItemGroup->GetRowCount();
+	std::vector <TShopItemTable> shopItems(itemGroupSize);
+	if (itemGroupSize >= SHOP_HOST_ITEM_MAX_NUM)
+	{
+		LOG_ERROR("count({}) of rows of group items of group {} must be smaller than {}", itemGroupSize, pNode->GetNodeName().c_str(), SHOP_HOST_ITEM_MAX_NUM);
+		return false;
+	}
+
+	for (int i = 0; i < itemGroupSize; i++)
+	{
+		if (!pItemGroup->GetValue(i, "vnum", shopItems[i].vnum))
+		{
+			LOG_ERROR("row({}) of group items of group {} does not have vnum column", i, pNode->GetNodeName().c_str());
+			return false;
+		}
+
+		if (!pItemGroup->GetValue(i, "count", shopItems[i].count))
+		{
+			LOG_ERROR("row({}) of group items of group {} does not have count column", i, pNode->GetNodeName().c_str());
+			return false;
+		}
+		if (!pItemGroup->GetValue(i, "price", shopItems[i].price))
+		{
+			LOG_ERROR("row({}) of group items of group {} does not have price column", i, pNode->GetNodeName().c_str());
+			return false;
+		}
+	}
+	std::string stSort;
+	if (!pNode->GetValue("sort", 0, stSort))
+	{
+		stSort = "None";
+	}
+
+	if (boost::iequals(stSort, "Asc"))
+	{
+		std::sort(shopItems.begin(), shopItems.end(), CompareShopItemName);
+	}
+	else if(boost::iequals(stSort, "Desc"))
+	{
+		std::sort(shopItems.rbegin(), shopItems.rend(), CompareShopItemName);
+	}
+#ifdef ENABLE_120_SHOP_SLOT_RAZOR93
+	CGrid grid = CGrid(15, 9);
+#else
+	CGrid grid = CGrid(5, 9);
+#endif
+	int iPos;
+
+	memset(&shopTable.items[0], 0, sizeof(shopTable.items));
+
+	for (size_t i = 0; i < shopItems.size(); i++)
+	{
+		TItemTable * item_table = ITEM_MANAGER::instance().GetTable(shopItems[i].vnum);
+		if (!item_table)
+		{
+			LOG_ERROR("vnum({}) of group items of group {} does not exist", shopItems[i].vnum, pNode->GetNodeName().c_str());
+			return false;
+		}
+
+		iPos = grid.FindBlank(1, item_table->bSize);
+
+		grid.Put(iPos, 1, item_table->bSize);
+		shopTable.items[iPos] = shopItems[i];
+	}
+
+	shopTable.byItemCount = shopItems.size();
+	return true;
+}
+
+bool CShopManager::ReadShopTableEx(const char* stFileName)
+{
+	// The extended table is optional; a missing file is not an error.
+	// Nothing to read without the file.
+	FILE* fp = fopen(stFileName, "rb");
+	if (nullptr == fp)
+		return true;
+	fclose(fp);
+
+	CGroupTextParseTreeLoader loader;
+	if (!loader.Load(stFileName))
+	{
+		LOG_ERROR("{} Load fail.", stFileName);
+		return false;
+	}
+
+	CGroupNode* pShopNPCGroup = loader.GetGroup("shopnpc");
+	if (nullptr == pShopNPCGroup)
+	{
+		LOG_ERROR("Group ShopNPC is not exist.");
+		return false;
+	}
+
+	typedef std::multimap <uint32_t, TShopTableEx> TMapNPCshop;
+	TMapNPCshop map_npcShop;
+	for (int i = 0; i < pShopNPCGroup->GetRowCount(); i++)
+	{
+		uint32_t npcVnum;
+		std::string shopName;
+		if (!pShopNPCGroup->GetValue(i, "npc", npcVnum) || !pShopNPCGroup->GetValue(i, "group", shopName))
+		{
+			LOG_ERROR("Invalid row({}). Group ShopNPC rows must have 'npc', 'group' columns", i);
+			return false;
+		}
+		std::transform(shopName.begin(), shopName.end(), shopName.begin(), (int(*)(int))std::tolower);
+		CGroupNode* pShopGroup = loader.GetGroup(shopName.c_str());
+		if (!pShopGroup)
+		{
+			LOG_ERROR("Group {} is not exist.", shopName.c_str());
+			return false;
+		}
+		TShopTableEx table;
+		if (!ConvertToShopItemTable(pShopGroup, table))
+		{
+			LOG_ERROR("Cannot read Group {}.", shopName.c_str());
+			return false;
+		}
+		if (m_map_pkShopByNPCVnum.find(npcVnum) != m_map_pkShopByNPCVnum.end())
+		{
+			LOG_ERROR("{} cannot have both original shop and extended shop", npcVnum);
+			return false;
+		}
+
+		map_npcShop.insert(TMapNPCshop::value_type(npcVnum, table));
+	}
+
+	for (TMapNPCshop::iterator it = map_npcShop.begin(); it != map_npcShop.end(); ++it)
+	{
+		uint32_t npcVnum = it->first;
+		TShopTableEx& table = it->second;
+		if (m_map_pkShop.find(table.dwVnum) != m_map_pkShop.end())
+		{
+			LOG_ERROR("Shop vnum({}) already exists", table.dwVnum);
+			return false;
+		}
+		TShopMap::iterator shop_it = m_map_pkShopByNPCVnum.find(npcVnum);
+
+		entt::entity pkShopEx = entt::null;
+		if (m_map_pkShopByNPCVnum.end() == shop_it)
+		{
+			pkShopEx = g_registry.create();
+			auto& state = g_registry.emplace<ecs::ShopData>(pkShopEx);
+			ShopSystem::Initialize(pkShopEx);
+			state.vnum = 0;
+			state.npcVnum = npcVnum;
+			state.extended = true;
+			m_map_pkShopByNPCVnum.insert(TShopMap::value_type(npcVnum, pkShopEx));
+		}
+		else
+		{
+			pkShopEx = shop_it->second;
+			const auto* state = g_registry.try_get<ecs::ShopData>(pkShopEx);
+			if (!state || !state->extended)
+			{
+				LOG_ERROR("WTF!!! It can't be happend. NPC({}) Shop is not extended version.", shop_it->first);
+				return false;
+			}
+		}
+
+		if (ShopSystem::GetTabCount(pkShopEx) >= SHOP_TAB_COUNT_MAX)
+		{
+			LOG_ERROR("ShopEx cannot have tab more than {}", SHOP_TAB_COUNT_MAX);
+			return false;
+		}
+
+		if (ShopSystem::GetVnum(pkShopEx) != 0 && m_map_pkShop.find(ShopSystem::GetVnum(pkShopEx)) != m_map_pkShop.end())
+		{
+			LOG_ERROR("Shop vnum({}) already exist.", ShopSystem::GetVnum(pkShopEx));
+			return false;
+		}
+		m_map_pkShop.insert(TShopMap::value_type (ShopSystem::GetVnum(pkShopEx), pkShopEx));
+		ShopSystem::AddShopTable(pkShopEx, table);
+	}
+
+	return true;
+}

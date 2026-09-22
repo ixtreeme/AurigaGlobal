@@ -1,5 +1,5 @@
-#include "../../SRC/Server/GameServer/stdafx.h"
-#include "../../SRC/Server/GameServer/event_queue.h"
+#include "../../SRC/Server/GameServer/core/stdafx.h"
+#include "../../SRC/Server/GameServer/world/event_queue.h"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include <Core/Logging.hpp>
 #include <entt/entt.hpp>

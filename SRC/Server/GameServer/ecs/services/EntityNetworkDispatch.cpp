@@ -1,13 +1,13 @@
-#include "../../stdafx.h"
+#include "../../core/stdafx.h"
 
 #include "EntityNetworkDispatch.hpp"
 
 #include <algorithm>
 #include <cstring>
 
-#include "../../buffer_manager.h"
-#include "../../packet.h"
-#include "../../utils.h"
+#include "../../core/buffer_manager.h"
+#include "../../core/packet.h"
+#include "../../core/utils.h"
 #include "../NetworkService.hpp"
 #include "../Registry.hpp"
 #include "../components/appearance_components.hpp"

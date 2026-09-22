@@ -4,7 +4,7 @@
 #include <entt/entt.hpp>
 #include <functional>
 
-#include "../../typedef.h"
+#include "../../core/typedef.h"
 
 class CGuild;
 class CWarMap;

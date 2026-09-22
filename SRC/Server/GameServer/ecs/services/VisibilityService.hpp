@@ -6,9 +6,9 @@
 #include <entt/entt.hpp>
 
 #include "SpatialService.hpp"
-#include "../../config.h"
-#include "../../sectree.h"
-#include "../../utils.h"
+#include "../../core/config.h"
+#include "../../world/sectree.h"
+#include "../../core/utils.h"
 #include "../SpatialHelpers.hpp"
 #include "../components/session_components.hpp"
 #include "../components/status_components.hpp"

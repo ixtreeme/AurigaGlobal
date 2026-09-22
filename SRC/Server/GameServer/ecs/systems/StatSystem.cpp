@@ -1,4 +1,4 @@
-#include "../../stdafx.h"
+#include "../../core/stdafx.h"
 #include "StatSystem.hpp"
 #include "PointSystem.hpp"
 #include "CombatSystem.hpp"
@@ -14,13 +14,13 @@
 #include "../components/vital_components.hpp"
 #include "../components/skill_components.hpp"
 #include "../components/combat_components.hpp"
-#include "../../char.h"
-#include "../../constants.h"
-#include "../../char_manager.h"
-#include "../../skill.h"
-#include "../../DragonSoul.h"
-#include "../../PetSystem.h"
-#include "../../horse_rider.h"
+#include "../../entity/char.h"
+#include "../../core/constants.h"
+#include "../../entity/char_manager.h"
+#include "../../combat/skill.h"
+#include "../../dungeon/DragonSoul.h"
+#include "../../pet/PetSystem.h"
+#include "../../pet/horse_rider.h"
 #include <Core/Logging.hpp>
 #include <algorithm>
 #include <array>

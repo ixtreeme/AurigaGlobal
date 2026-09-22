@@ -1,4 +1,4 @@
-#include "../../stdafx.h"
+#include "../../core/stdafx.h"
 
 #include <common/stole_length.h>
 
@@ -17,14 +17,14 @@
 #include "../components/dirty_components.hpp"
 #include "../components/inventory_components.hpp"
 
-#include "../../char.h"
-#include "../../desc.h"
-#include "../../item.h"
-#include "../../item_manager.h"
-#include "../../log.h"
-#include "../../packet.h"
-#include "../../db.h"
-#include "../../questmanager.h"
+#include "../../entity/char.h"
+#include "../../network/desc.h"
+#include "../../item/item.h"
+#include "../../item/item_manager.h"
+#include "../../core/log.h"
+#include "../../core/packet.h"
+#include "../../network/db.h"
+#include "../../quest/questmanager.h"
 
 #include <Core/Logging.hpp>
 

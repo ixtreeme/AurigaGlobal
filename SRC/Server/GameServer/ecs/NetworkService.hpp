@@ -6,7 +6,7 @@
 
 #include <entt/entt.hpp>
 
-#include "../desc.h"
+#include "../network/desc.h"
 #include <Core/Logging.hpp>
 #include "Registry.hpp"
 #include "components/session_components.hpp"

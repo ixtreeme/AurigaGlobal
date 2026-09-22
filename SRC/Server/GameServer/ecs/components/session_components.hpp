@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-#include "../../typedef.h"
+#include "../../core/typedef.h"
 
 namespace ecs {
 

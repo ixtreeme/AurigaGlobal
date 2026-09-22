@@ -11,7 +11,7 @@
 
 #include "../../../common/length.h"
 #include <common/tables.h>
-#include "../../typedef.h"
+#include "../../core/typedef.h"
 
 namespace ItemSystem {
 

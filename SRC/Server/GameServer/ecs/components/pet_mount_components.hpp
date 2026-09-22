@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <common/length.h>
-#include "../../event.h"
+#include "../../world/event.h"
 
 #include <entt/entt.hpp>
 

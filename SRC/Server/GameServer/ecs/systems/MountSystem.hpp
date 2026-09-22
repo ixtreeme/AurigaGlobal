@@ -7,7 +7,7 @@
 #include <entt/entt.hpp>
 
 #include "../components/social_components.hpp"
-#include "../../horse_rider.h"
+#include "../../pet/horse_rider.h"
 
 struct MountInventoryLoadRequest {
     entt::entity character { entt::null };

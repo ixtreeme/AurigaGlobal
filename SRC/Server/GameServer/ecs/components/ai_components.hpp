@@ -9,7 +9,7 @@
 
 #include <common/tables.h>
 
-#include "../../mob_manager.h"
+#include "../../entity/mob_manager.h"
 
 struct regen;
 

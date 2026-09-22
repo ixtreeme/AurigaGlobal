@@ -15,19 +15,19 @@ target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemAttributeTests.cpp
     ecs/systems/ItemAttributeSystem.cpp
-    new_switchbot.cpp
-    DragonSoul.cpp
-    attr_transfer.cpp
+    social/new_switchbot.cpp
+    dungeon/DragonSoul.cpp
+    item/attr_transfer.cpp
 )
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
 
 add_executable(OXEventTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/OXEventTests.cpp
-    OXEvent.cpp
-    buffer_manager.cpp
-    event.cpp
-    event_queue.cpp
+    world/OXEvent.cpp
+    core/buffer_manager.cpp
+    world/event.cpp
+    world/event_queue.cpp
 )
 target_link_libraries(OXEventTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 if(MSVC)
@@ -38,16 +38,16 @@ add_test(NAME ox_event COMMAND OXEventTests)
 
 add_executable(QuestRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuestRuntimeTests.cpp
-    questmanager.cpp
-    questpc.cpp
-    questlua_npc.cpp
-    trigger.cpp
+    quest/questmanager.cpp
+    quest/questpc.cpp
+    quest/questlua_npc.cpp
+    quest/trigger.cpp
     ecs/VIDRegistry.cpp
     ecs/systems/QuestSystem.cpp
-    buffer_manager.cpp
-    event.cpp
-    event_queue.cpp
-    utils.cpp
+    core/buffer_manager.cpp
+    world/event.cpp
+    world/event_queue.cpp
+    core/utils.cpp
 )
 target_link_libraries(QuestRuntimeTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly)
 if(MSVC)
@@ -61,52 +61,52 @@ add_test(NAME quest_runtime COMMAND QuestRuntimeTests)
 
 add_executable(HorseRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/HorseRuntimeTests.cpp
-    horse_rider.cpp
-    event.cpp
-    event_queue.cpp
+    pet/horse_rider.cpp
+    world/event.cpp
+    world/event_queue.cpp
 )
 target_link_libraries(HorseRuntimeTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME horse_runtime COMMAND HorseRuntimeTests)
 
 add_executable(WeddingLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WeddingLifecycleTests.cpp
-    wedding.cpp
+    social/wedding.cpp
 )
 target_link_libraries(WeddingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME wedding_lifecycle COMMAND WeddingLifecycleTests)
 
 add_executable(PartyLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/PartyLifecycleTests.cpp
-    party.cpp
+    social/party.cpp
 )
 target_link_libraries(PartyLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME party_lifecycle COMMAND PartyLifecycleTests)
 
 add_executable(DungeonLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/DungeonLifecycleTests.cpp
-    dungeon.cpp
+    dungeon/dungeon.cpp
 )
 target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME dungeon_lifecycle COMMAND DungeonLifecycleTests)
 
 add_executable(ShopLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ShopLifecycleTests.cpp
-    shop.cpp
-    shop_manager.cpp
-    group_text_parse_tree.cpp
+    social/shop.cpp
+    social/shop_manager.cpp
+    core/group_text_parse_tree.cpp
     ../Base/grid.cpp
-    file_loader.cpp
-    buffer_manager.cpp
-    event.cpp
-    event_queue.cpp
+    core/file_loader.cpp
+    core/buffer_manager.cpp
+    world/event.cpp
+    world/event_queue.cpp
 )
 target_link_libraries(ShopLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 add_test(NAME shop_lifecycle COMMAND ShopLifecycleTests)
 
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
-    PetSystem.cpp
-    New_PetSystem.cpp
+    pet/PetSystem.cpp
+    pet/New_PetSystem.cpp
 )
 target_link_libraries(MountLifecycleTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME mount_lifecycle COMMAND MountLifecycleTests)
@@ -121,8 +121,8 @@ add_test(NAME offline_shop_safebox COMMAND OfflineShopSafeboxTests)
 add_executable(SocialRelationTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/SocialRelationTests.cpp
     ecs/systems/SocialSystem.cpp
-    event.cpp
-    event_queue.cpp
+    world/event.cpp
+    world/event_queue.cpp
 )
 target_link_libraries(SocialRelationTests PRIVATE SERVER EnTT::EnTT LUA)
 if(MSVC)
@@ -136,7 +136,7 @@ add_test(NAME social_relation COMMAND SocialRelationTests)
 
 add_executable(SafeboxLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/SafeboxLifecycleTests.cpp
-    safebox.cpp
+    item/safebox.cpp
     ../Base/grid.cpp
 )
 target_link_libraries(SafeboxLifecycleTests PRIVATE SERVER EnTT::EnTT)
@@ -144,8 +144,8 @@ add_test(NAME safebox_lifecycle COMMAND SafeboxLifecycleTests)
 
 add_executable(ItemManagerLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemManagerLifecycleTests.cpp
-    item_manager.cpp
-    safebox.cpp
+    item/item_manager.cpp
+    item/safebox.cpp
     ../Base/grid.cpp
 )
 target_link_libraries(ItemManagerLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
@@ -172,14 +172,14 @@ add_test(NAME quickslots COMMAND QuickslotTests)
 
 add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/SpatialLifecycleTests.cpp
-    sectree.cpp
+    world/sectree.cpp
     ecs/CBuildingRegistry.cpp
     ecs/OfflineShopEntityRegistry.cpp
     ecs/services/SpatialService.cpp
     ecs/systems/VisibilitySystem.cpp
     ecs/systems/MovementSystem.cpp
-    event.cpp
-    event_queue.cpp
+    world/event.cpp
+    world/event_queue.cpp
 )
 target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 if(MSVC)
@@ -190,8 +190,8 @@ add_test(NAME spatial_lifecycle COMMAND SpatialLifecycleTests)
 
 add_executable(BuildingLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/BuildingLifecycleTests.cpp
-    building.cpp
-    buffer_manager.cpp
+    world/building.cpp
+    core/buffer_manager.cpp
     ecs/CBuildingRegistry.cpp
 )
 target_link_libraries(BuildingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
@@ -203,7 +203,7 @@ add_test(NAME building_lifecycle COMMAND BuildingLifecycleTests)
 
 add_executable(BuffAttributeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/BuffAttributeTests.cpp
-    buff_on_attributes.cpp
+    combat/buff_on_attributes.cpp
 )
 target_link_libraries(BuffAttributeTests PRIVATE SERVER EnTT::EnTT LUA)
 if(MSVC)
@@ -214,7 +214,7 @@ add_test(NAME buff_attributes COMMAND BuffAttributeTests)
 
 add_executable(EntityNetworkDispatchTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/EntityNetworkDispatchTests.cpp
-    entity.cpp
+    entity/entity.cpp
     ecs/services/EntityNetworkDispatch.cpp
     ecs/systems/NetworkSyncSystem.cpp
 )
@@ -236,7 +236,7 @@ add_test(NAME point_calculation COMMAND PointCalculationTests)
 add_executable(CombatStateTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/CombatStateTests.cpp
     ecs/systems/CombatSystem.cpp
-    battle.cpp
+    combat/battle.cpp
 )
 target_compile_definitions(CombatStateTests PRIVATE ENABLE_ANTICHEAT ENABLE_CHECK_BATTLE)
 target_link_libraries(CombatStateTests PRIVATE SERVER EnTT::EnTT LUA)
@@ -259,8 +259,8 @@ add_test(NAME ai_state COMMAND AIStateTests)
 add_executable(AffectLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/AffectLifecycleTests.cpp
     ecs/systems/AffectSystem.cpp
-    affect.cpp
-    horsename_manager.cpp
+    combat/affect.cpp
+    pet/horsename_manager.cpp
 )
 target_link_libraries(AffectLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 if(WIN32)
@@ -270,19 +270,19 @@ add_test(NAME affect_lifecycle COMMAND AffectLifecycleTests)
 
 add_executable(EventLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/EventLifecycleTests.cpp
-    event.cpp
-    event_queue.cpp
+    world/event.cpp
+    world/event_queue.cpp
 )
 target_link_libraries(EventLifecycleTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME event_lifecycle COMMAND EventLifecycleTests)
 
 add_executable(CharacterManagerTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/CharacterManagerTests.cpp
-    char_manager.cpp
+    entity/char_manager.cpp
     ecs/VIDRegistry.cpp
     ecs/PIDRegistry.cpp
-    event.cpp
-    event_queue.cpp
+    world/event.cpp
+    world/event_queue.cpp
 )
 target_link_libraries(CharacterManagerTests PRIVATE SERVER EnTT::EnTT LUA)
 if(WIN32)
@@ -299,12 +299,12 @@ add_test(NAME refine_window COMMAND RefineWindowTests)
 
 add_executable(GmCommandTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/GmCommandTests.cpp
-    cmd_gm.cpp
-    skill_power.cpp
+    command/cmd_gm.cpp
+    combat/skill_power.cpp
     ecs/systems/SkillSystem.cpp
     ecs/PIDRegistry.cpp
-    buffer_manager.cpp
-    utils.cpp
+    core/buffer_manager.cpp
+    core/utils.cpp
 )
 target_link_libraries(GmCommandTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly)
 if(MSVC)
@@ -319,7 +319,7 @@ add_test(NAME gm_commands COMMAND GmCommandTests)
 
 add_executable(ExchangeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ExchangeTests.cpp
-    exchange.cpp
+    social/exchange.cpp
 )
 target_link_libraries(ExchangeTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME exchange COMMAND ExchangeTests)

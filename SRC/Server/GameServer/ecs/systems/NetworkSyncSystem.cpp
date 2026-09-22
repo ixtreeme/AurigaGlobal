@@ -1,4 +1,4 @@
-#include "../../stdafx.h"
+#include "../../core/stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
 
 #include "NetworkSyncSystem.hpp"
@@ -10,16 +10,16 @@
 #include <string>
 #include <string_view>
 
-#include "../../char.h"
-#include "../../char_manager.h"
-#include "../../buffer_manager.h"
-#include "../../desc.h"
-#include "../../guild.h"
-#include "../../item.h"
-#include "../../mob_manager.h"
-#include "../../packet.h"
-#include "../../party.h"
-#include "../../sectree.h"
+#include "../../entity/char.h"
+#include "../../entity/char_manager.h"
+#include "../../core/buffer_manager.h"
+#include "../../network/desc.h"
+#include "../../guild/guild.h"
+#include "../../item/item.h"
+#include "../../entity/mob_manager.h"
+#include "../../core/packet.h"
+#include "../../social/party.h"
+#include "../../world/sectree.h"
 #include "../EntityFactory.hpp"
 #include "../ItemRegistry.hpp"
 #include "../NetworkService.hpp"

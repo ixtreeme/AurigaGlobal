@@ -4,7 +4,7 @@
 
 #include <entt/entt.hpp>
 
-#include "../char.h"
+#include "../entity/char.h"
 
 namespace ecs {
 

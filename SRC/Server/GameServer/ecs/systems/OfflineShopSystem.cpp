@@ -1,4 +1,4 @@
-#include "../../stdafx.h"
+#include "../../core/stdafx.h"
 
 #include "OfflineShopSystem.hpp"
 #include "../Registry.hpp"
@@ -6,8 +6,8 @@
 #include "../components/social_components.hpp"
 #include "../components/dirty_components.hpp"
 
-#include "../../char.h"
-#include "../../new_offlineshop.h"
+#include "../../entity/char.h"
+#include "../../social/new_offlineshop.h"
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 namespace ecs::OfflineShopSystem {

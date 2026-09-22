@@ -3,10 +3,10 @@
 // died, a victim whose entity was destroyed and its slot handed to somebody
 // else, and the AI entity being retired from inside a callback the state body
 // invokes.
-#include "../../SRC/Server/GameServer/stdafx.h"
-#include "../../SRC/Server/GameServer/char.h"
-#include "../../SRC/Server/GameServer/config.h"
-#include "../../SRC/Server/GameServer/char_manager.h"
+#include "../../SRC/Server/GameServer/core/stdafx.h"
+#include "../../SRC/Server/GameServer/entity/char.h"
+#include "../../SRC/Server/GameServer/core/config.h"
+#include "../../SRC/Server/GameServer/entity/char_manager.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/AIHelpers.hpp"
 #include "../../SRC/Server/GameServer/ecs/CharacterAccessors.hpp"
@@ -22,8 +22,8 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
-#include "../../SRC/Server/GameServer/motion.h"
-#include "../../SRC/Server/GameServer/party.h"
+#include "../../SRC/Server/GameServer/entity/motion.h"
+#include "../../SRC/Server/GameServer/social/party.h"
 
 #include <functional>
 #include <memory>

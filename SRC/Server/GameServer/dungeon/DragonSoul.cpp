@@ -1,0 +1,1354 @@
+#include "stdafx.h"
+#include <Core/Logging.hpp>
+#include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/DragonSoulSystem.hpp"
+#include "constants.h"
+#include "char.h" // POINT_* constants still live in this header.
+#include "utils.h"
+#include "item.h"
+#include "item_manager.h"
+#include "unique_item.h"
+#include "packet.h"
+#include "desc.h"
+#include "dragon_soul_table.h"
+#include "log.h"
+#include "DragonSoul.h"
+#include "../ecs/Registry.hpp"
+#include "../ecs/systems/ItemSystem.hpp"
+#include "../ecs/systems/PointSystem.hpp"
+#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/NetworkSyncSystem.hpp"
+#include "../ecs/components/spatial_components.hpp"
+//#include <boost/lexical_cast.hpp>
+
+template <typename T> T MINMAX(T min, T value, T max)
+{
+	T tv;
+
+	tv = (min > value ? min : value);
+	return (max < tv) ? max : tv;
+}
+
+typedef std::vector <std::string> TTokenVector;
+
+
+namespace {
+
+TItemPos DragonSoulItemPosition(entt::entity item)
+{
+	return ItemSystem::IsValidItem(item)
+		? TItemPos(ItemSystem::GetItemWindow(item), ItemSystem::GetItemCell(item))
+		: NPOS;
+}
+
+bool ConsumeDragonSoulMaterials(const std::set<entt::entity>& items, int amount)
+{
+	int remaining = amount;
+	for (const entt::entity item : items)
+	{
+		if (remaining <= 0)
+			break;
+
+		const uint32_t available = ItemSystem::GetItemCount(item);
+		const uint32_t consumed = MIN(static_cast<uint32_t>(remaining), available);
+		if (consumed == 0 || !ItemSystem::ConsumeItemEcs(item, consumed))
+			return false;
+		remaining -= static_cast<int>(consumed);
+	}
+	return remaining == 0;
+}
+
+} // namespace
+
+int Gamble(std::vector<float>& vec_probs)
+{
+	float range = 0.f;
+	for (size_t i = 0; i < vec_probs.size(); i++)
+	{
+		range += vec_probs[i];
+	}
+	float fProb = fnumber(0.f, range);
+	float sum = 0.f;
+	for (size_t idx = 0; idx < vec_probs.size(); idx++)
+	{
+		sum += vec_probs[idx];
+		if (sum >= fProb)
+			return idx;
+	}
+	return -1;
+}
+
+bool MakeDistinctRandomNumberSet(std::list<float> probabilities, OUT std::vector<int>& random_set)
+{
+	std::vector<float> weights(probabilities.begin(), probabilities.end());
+	size_t positive = 0;
+	for (const float weight : weights) {
+		if (!std::isfinite(weight) || weight < 0.f)
+			return false;
+		positive += weight > 0.f;
+	}
+	if (positive < random_set.size())
+		return false;
+	std::vector<int> result;
+	result.reserve(random_set.size());
+	while (result.size() < random_set.size()) {
+		float total = 0.f;
+		int lastPositive = -1;
+		for (size_t i = 0; i < weights.size(); ++i) {
+			total += weights[i];
+			if (weights[i] > 0.f)
+				lastPositive = static_cast<int>(i);
+		}
+		if (!std::isfinite(total) || total <= 0.f || lastPositive < 0)
+			return false;
+		const float draw = fnumber(0.f, total);
+		if (!std::isfinite(draw) || draw < 0.f || draw > total)
+			return false;
+		float sum = 0.f;
+		int selected = lastPositive; // Inclusive upper endpoint / float rounding.
+		for (size_t i = 0; i < weights.size(); ++i) {
+			if (weights[i] <= 0.f)
+				continue;
+			sum += weights[i];
+			if (draw <= sum) {
+				selected = static_cast<int>(i);
+				break;
+			}
+		}
+		result.push_back(selected);
+		weights[selected] = 0.f;
+	}
+	random_set = std::move(result);
+	return true;
+}
+
+uint8_t GetType(uint32_t dwVnum)
+{
+	return (dwVnum / 10000);
+}
+
+uint8_t GetGradeIdx(uint32_t dwVnum)
+{
+	return (dwVnum / 1000) % 10;
+}
+
+uint8_t GetStepIdx(uint32_t dwVnum)
+{
+	return (dwVnum / 100) % 10;
+}
+
+uint8_t GetStrengthIdx(uint32_t dwVnum)
+{
+	return (dwVnum / 10) % 10;
+}
+
+bool DSManager::ReadDragonSoulTableFile(const char* filename)
+{
+	auto table = std::make_unique<DragonSoulTable>();
+	if (!table->ReadDragonSoulTableFile(filename))
+		return false;
+	m_pTable = std::move(table);
+	return true;
+}
+void DSManager::GetDragonSoulInfo(uint32_t dwVnum, uint8_t& bType, uint8_t& bGrade, uint8_t& bStep, uint8_t& bStrength) const
+{
+	bType = GetType(dwVnum);
+	bGrade = GetGradeIdx(dwVnum);
+	bStep = GetStepIdx(dwVnum);
+	bStrength = GetStrengthIdx(dwVnum);
+}
+
+bool DSManager::IsValidCellForThisItem(entt::entity item, const TItemPos& Cell) const
+{
+	if (!ItemSystem::IsValidItem(item))
+		return false;
+
+	uint16_t wBaseCell = GetBasePosition(item);
+	if (WORD_MAX == wBaseCell)
+		return false;
+
+	if (Cell.window_type != DRAGON_SOUL_INVENTORY
+		|| (Cell.cell < wBaseCell || Cell.cell >= wBaseCell + DRAGON_SOUL_BOX_SIZE))
+	{
+		return false;
+	}
+	else
+		return true;
+}
+
+
+uint16_t DSManager::GetBasePosition(entt::entity item) const
+{
+	if (!ItemSystem::IsValidItem(item))
+		return WORD_MAX;
+
+	uint8_t type, grade_idx, step_idx, strength_idx;
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), type, grade_idx, step_idx, strength_idx);
+
+	uint8_t col_type = ItemSystem::GetItemSubType(item);
+	uint8_t row_type = grade_idx;
+	if (row_type > DRAGON_SOUL_GRADE_MAX)
+		return WORD_MAX;
+
+#ifdef ENABLE_DS_GRADE_MYTH
+	return 300 + (col_type * DRAGON_SOUL_GRADE_MAX * DRAGON_SOUL_BOX_SIZE + row_type * DRAGON_SOUL_BOX_SIZE);
+#else
+	return 300 + (col_type * DRAGON_SOUL_STEP_MAX * DRAGON_SOUL_BOX_SIZE + row_type * DRAGON_SOUL_BOX_SIZE);
+#endif
+}
+
+
+bool DSManager::PrepareAttributes(entt::entity item, ecs::ItemAttributes& result, bool refresh)
+{
+	if (!m_pTable || !ItemSystem::IsDragonSoulItem(item))
+		return false;
+	const auto* current = g_registry.try_get<ecs::ItemAttributes>(item);
+	if (!current)
+		return false;
+	const uint32_t vnum = ItemSystem::GetItemVnum(item);
+	uint8_t type, grade, step, strength;
+	GetDragonSoulInfo(vnum, type, grade, step, strength);
+	if (vnum / 10000 > UINT8_MAX || grade >= DRAGON_SOUL_GRADE_MAX ||
+		step >= DRAGON_SOUL_STEP_MAX || strength >= DRAGON_SOUL_STRENGTH_MAX)
+		return false;
+	DragonSoulTable::TVecApplys basic, additional;
+	int basicCount = 0, addMin = 0, addMax = 0;
+	float weight = 0.f;
+	if (!m_pTable->GetBasicApplys(type, basic) || !m_pTable->GetAdditionalApplys(type, additional) ||
+		!m_pTable->GetApplyNumSettings(type, grade, basicCount, addMin, addMax) ||
+		!m_pTable->GetWeight(type, grade, step, strength, weight))
+		return false;
+	constexpr int additionalStart = DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX;
+	constexpr int additionalSlots = ITEM_ATTRIBUTE_MAX_NUM - additionalStart;
+	if (basicCount < 0 || basicCount > additionalStart || static_cast<size_t>(basicCount) > basic.size() ||
+		addMin < 0 || addMax < addMin || addMax > additionalSlots || !std::isfinite(weight) || weight < 0.f)
+		return false;
+	weight /= 100.f;
+	auto convert = [weight](const SApply& apply, TPlayerItemAttribute& attribute) {
+		if (apply.apply_type <= APPLY_NONE || apply.apply_type >= MAX_APPLY_NUM || apply.apply_type > UINT8_MAX)
+			return false;
+		// Preserve the original rounding rule, but never narrow NaN/overflow.
+		const float value = std::ceil(static_cast<float>(apply.apply_value) * weight - 0.01f);
+		if (!std::isfinite(value) || value < INT16_MIN || value > INT16_MAX)
+			return false;
+		attribute = {static_cast<uint8_t>(apply.apply_type), static_cast<int16_t>(value)};
+		return true;
+	};
+	ecs::ItemAttributes prepared = refresh ? *current : ecs::ItemAttributes{};
+	for (int i = 0; i < basicCount; ++i)
+		if (!convert(basic[i], prepared.attrs[i]))
+			return false;
+	if (refresh) {
+		for (int i = additionalStart; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
+			const auto applyType = prepared.attrs[i].bType;
+			if (applyType == APPLY_NONE)
+				continue;
+			const auto found = std::find_if(additional.begin(), additional.end(),
+				[applyType](const SApply& apply) { return apply.apply_type == applyType; });
+			if (found == additional.end() || !convert(*found, prepared.attrs[i]))
+				return false;
+		}
+	} else {
+		std::list<float> probabilities;
+		std::vector<TPlayerItemAttribute> values(additional.size());
+		for (size_t i = 0; i < additional.size(); ++i) {
+			if (!std::isfinite(additional[i].prob) || additional[i].prob < 0.f || !convert(additional[i], values[i]))
+				return false;
+			probabilities.push_back(additional[i].prob);
+		}
+		std::vector<int> selected(number(addMin, addMax));
+		if (!MakeDistinctRandomNumberSet(probabilities, selected))
+			return false;
+		for (size_t i = 0; i < selected.size(); ++i)
+			prepared.attrs[additionalStart + i] = values[selected[i]];
+	}
+	result = prepared;
+	return true;
+}
+
+bool DSManager::RefreshItemAttributes(entt::entity item)
+{
+	ecs::ItemAttributes attributes;
+	return PrepareAttributes(item, attributes, true) && ItemSystem::SetItemAttributesEcs(item, attributes);
+}
+
+bool DSManager::PutAttributes(entt::entity item)
+{
+	ecs::ItemAttributes attributes;
+	return PrepareAttributes(item, attributes, false) && ItemSystem::SetItemAttributesEcs(item, attributes);
+}
+
+#ifdef ENABLE_DS_ENCHANT
+DSManager::EnchantResult DSManager::EnchantWithItemCost(entt::entity owner, entt::entity item, entt::entity material)
+{
+	if (!ecs::PlayerRuntime::IsPC(owner) || !ItemSystem::IsDragonSoulItem(item) ||
+		ItemSystem::GetItemOwner(item) != owner || ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemLocked(item))
+		return EnchantResult::InvalidTarget;
+	const bool equipped = ItemSystem::IsItemEquipped(item);
+	if ((equipped && DragonSoulSystem::IsDeckActivated(owner)) || IsActiveDragonSoul(item))
+		return EnchantResult::Active;
+	const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+	if (!location)
+		return EnchantResult::InvalidTarget;
+	// Equipment locations store the absolute main-inventory cell, whereas
+	// GetItem(EQUIPMENT, cell) accepts a relative equipment index.
+	if (equipped) {
+		if (location->cell < DRAGON_SOUL_EQUIP_SLOT_START || location->cell >= DRAGON_SOUL_EQUIP_SLOT_END ||
+			(location->window != EQUIPMENT && location->window != INVENTORY) ||
+			ItemSystem::GetInventoryItem(owner, location->cell) != item)
+			return EnchantResult::InvalidTarget;
+	} else if (ItemSystem::GetItem(owner, TItemPos(location->window, location->cell)) != item) {
+		return EnchantResult::InvalidTarget;
+	}
+	const uint32_t vnum = ItemSystem::GetItemVnum(item);
+	if (GetGradeIdx(vnum) !=
+#ifdef ENABLE_DS_GRADE_MYTH
+		DRAGON_SOUL_GRADE_MYTH
+#else
+		DRAGON_SOUL_GRADE_LEGENDARY
+#endif
+		|| GetStepIdx(vnum) != DRAGON_SOUL_STEP_HIGHEST)
+		return EnchantResult::InvalidGrade;
+	if (item == material || !ItemSystem::CanConsumeOwnedItem(owner, material) ||
+		ItemSystem::GetItemType(material) != ITEM_USE || ItemSystem::GetItemSubType(material) != USE_DS_ENCHANT)
+		return EnchantResult::InvalidMaterial;
+	ecs::ItemAttributes attributes;
+	if (!PrepareAttributes(item, attributes, false))
+		return EnchantResult::Failed;
+	if (!ItemSystem::ConsumeItemEcs(material))
+		return EnchantResult::Failed;
+	return ItemSystem::SetItemAttributesEcs(item, attributes) ? EnchantResult::Success : EnchantResult::Failed;
+}
+#endif
+bool DSManager::DragonSoulItemInitialize(entt::entity item)
+{
+	if (!ItemSystem::IsDragonSoulItem(item))
+		return false;
+	if (!PutAttributes(item))
+		return false;
+
+	const int duration = GetDuration(item);
+	if (duration > 0)
+		ItemSystem::SetItemSocketEcs(item, ITEM_SOCKET_REMAIN_SEC, duration);
+	return true;
+}
+uint32_t DSManager::MakeDragonSoulVnum(uint8_t bType, uint8_t grade, uint8_t step, uint8_t refine)
+{
+	return bType * 10000 + grade * 1000 + step * 100 + refine * 10;
+}
+
+int DSManager::GetDuration(entt::entity item) const
+{
+	return ItemSystem::GetItemDuration(item);
+}
+
+namespace {
+// Extraction runs on the game thread. Keep the guard off entity storage so
+// entering it cannot invoke registry construction/destruction listeners.
+std::set<entt::entity> extractingOwners;
+struct ExtractionGuard {
+    entt::entity owner;
+    bool entered;
+    explicit ExtractionGuard(entt::entity e) : owner(e), entered(extractingOwners.insert(e).second) {}
+    ~ExtractionGuard() { if (entered) extractingOwners.erase(owner); }
+    ExtractionGuard(const ExtractionGuard&) = delete;
+    ExtractionGuard& operator=(const ExtractionGuard&) = delete;
+};
+
+bool ExtractionAnchor(entt::entity owner, entt::entity item, TItemPos position)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner) || !ItemSystem::IsValidItem(item) ||
+        !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation, ecs::ItemCount>(item))
+        return false;
+    return ItemSystem::GetItemOwner(item) == owner &&
+        ItemSystem::GetItemWindow(item) == position.window_type && ItemSystem::GetItemCell(item) == position.cell &&
+        ItemSystem::GetItem(owner, position) == item;
+}
+
+bool DetachedExtractionItem(entt::entity item)
+{
+    return ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null &&
+        !ItemSystem::IsItemEquipped(item) &&
+        !g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item);
+}
+
+bool ValidExtractor(entt::entity owner, entt::entity soul, entt::entity extractor, uint8_t subtype)
+{
+    return extractor == entt::null || (extractor != soul &&
+        ItemSystem::CanConsumeOwnedItem(owner, extractor) &&
+        ItemSystem::GetItemType(extractor) == ITEM_EXTRACT && ItemSystem::GetItemSubType(extractor) == subtype);
+}
+
+// Only dispose of our still-detached output. A callback may have destroyed,
+// dropped or transferred it; never delete that newer state.
+struct ExtractionOutput {
+    entt::entity item {entt::null};
+    ~ExtractionOutput()
+    {
+        if (DetachedExtractionItem(item) && !ItemSystem::DestroyItemEntityEcs(item, "DS_UNUSED_OUTPUT"))
+            LOG_ERROR("Dragon soul output cleanup failed: entity {}", entt::to_integral(item));
+    }
+    void Give(entt::entity owner)
+    {
+        if (ecs::PlayerRuntime::IsPC(owner) && DetachedExtractionItem(item))
+            ItemSystem::AutoGiveItem(owner, item, true);
+        if (DetachedExtractionItem(item))
+            LOG_ERROR("Committed dragon soul output delivery failed: owner {} item {}",
+                entt::to_integral(owner), entt::to_integral(item));
+    }
+};
+
+void RestorePulledSoul(entt::entity owner, entt::entity item, uint8_t wear, TItemPos destination)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner) ||
+        (!DetachedExtractionItem(item) && !ExtractionAnchor(owner, item, destination)))
+        return;
+    if (ItemSystem::GetWearItem(owner, wear) == entt::null)
+    {
+        InventorySystem::EquipTo(item, owner, wear);
+        if (!DetachedExtractionItem(item)) return;
+    }
+    // If a callback took the original wear slot, retain the stone in carrying
+    // storage when possible. Do not displace the replacement or resurrect it.
+    if (DetachedExtractionItem(item) && ecs::PlayerRuntime::IsPC(owner))
+    {
+        const int cell = ItemSystem::GetEmptyDragonSoulInventory(owner, item);
+        if (cell >= 0) ItemSystem::PlaceItemEcs(owner, item, DRAGON_SOUL_INVENTORY, static_cast<uint16_t>(cell));
+    }
+    if (DetachedExtractionItem(item))
+        LOG_ERROR("Dragon soul pull-out recovery failed: owner {} item {}",
+            entt::to_integral(owner), entt::to_integral(item));
+}
+} // namespace
+
+bool DSManager::ExtractDragonHeartEcs(entt::entity owner, entt::entity item, entt::entity extractor)
+{
+    using Storage = ItemSystem::ItemCostStorage;
+    if (!m_pTable || !InventorySystem::CanHandleItems(owner) || !ItemSystem::IsDragonSoulItem(item) ||
+        !ItemSystem::CanConsumeOwnedItem(owner, item, 1, Storage::DragonSoulInventory) ||
+        !ValidExtractor(owner, item, extractor, EXTRACT_DRAGON_HEART))
+        return false;
+    const TItemPos origin = DragonSoulItemPosition(item);
+    if (!IsValidCellForThisItem(item, origin)) return false;
+    const ExtractionGuard guard(owner);
+    if (!guard.entered) return false;
+
+    const auto vnum = ItemSystem::GetItemVnum(item);
+    const auto itemID = ItemSystem::GetItemID(item);
+    const auto count = ItemSystem::GetItemCount(item);
+    const auto extractorOrigin = DragonSoulItemPosition(extractor);
+    const auto extractorCount = extractor == entt::null ? 0 : ItemSystem::GetItemCount(extractor);
+    const auto extractorVnum = extractor == entt::null ? 0 : ItemSystem::GetItemVnum(extractor);
+    const auto ready = [&] {
+        return InventorySystem::CanHandleItems(owner) &&
+            ExtractionAnchor(owner, item, origin) && ItemSystem::GetItemVnum(item) == vnum &&
+            ItemSystem::GetItemCount(item) == count &&
+            ItemSystem::CanConsumeOwnedItem(owner, item, 1, Storage::DragonSoulInventory) &&
+            ValidExtractor(owner, item, extractor, EXTRACT_DRAGON_HEART) &&
+            (extractor == entt::null || (ExtractionAnchor(owner, extractor, extractorOrigin) &&
+                ItemSystem::GetItemCount(extractor) == extractorCount && ItemSystem::GetItemVnum(extractor) == extractorVnum));
+    };
+
+    uint8_t type, grade, step, strength;
+    GetDragonSoulInfo(vnum, type, grade, step, strength);
+    std::vector<float> chargings, probabilities;
+    if (!m_pTable->GetDragonHeartExtValues(type, grade, chargings, probabilities) ||
+        chargings.empty() || chargings.size() != probabilities.size())
+        return false;
+    double total = 0;
+    for (size_t i = 0; i < probabilities.size(); ++i)
+    {
+        if (!std::isfinite(probabilities[i]) || probabilities[i] < 0 ||
+            !std::isfinite(chargings[i]) || chargings[i] < 0) return false;
+        total += probabilities[i];
+    }
+    if (!(total > 0) || total > FLT_MAX) return false;
+    const float dice = fnumber(0.f, static_cast<float>(total));
+    double cumulative = 0;
+    size_t selected = probabilities.size();
+    for (size_t i = 0; i < probabilities.size(); ++i)
+    {
+        cumulative += probabilities[i];
+        if (probabilities[i] > 0) selected = i;
+        if (probabilities[i] > 0 && dice <= cumulative) break;
+    }
+    const int bonus = extractor == entt::null ? 0 : ItemSystem::GetItemValue(extractor, 0);
+#ifdef ENABLE_DS_EDITS
+    const double charge = bonus; // Preserve this server's extractor-defined charge rule.
+#else
+    const double charge = std::clamp(chargings[selected] * (100.0 + bonus) / 100.0, 0.0, 100.0);
+#endif
+    if (!std::isfinite(charge) || charge < 0 || charge > 100) return false;
+    const bool success = charge >= FLT_EPSILON;
+    const int chargePercent = static_cast<int>(charge + 0.5);
+    ExtractionOutput output;
+    if (success)
+    {
+        output.item = ITEM_MANAGER::instance().CreateItem(DRAGON_HEART_VNUM);
+        if (!DetachedExtractionItem(output.item) ||
+            !ItemSystem::SetItemSocketEcs(output.item, ITEM_SOCKET_CHARGING_AMOUNT_IDX, chargePercent) ||
+            !DetachedExtractionItem(output.item))
+            return false;
+    }
+    const ItemSystem::ItemCost costs[] = {{item, 1, Storage::DragonSoulInventory}, {extractor, 1}};
+    if (!ready() || !ItemSystem::ConsumeOwnedItemCosts(owner, {costs, extractor == entt::null ? 1u : 2u}))
+        return false;
+
+    // Input entities may already be retired. Log the captured identifiers.
+    if (ecs::PlayerRuntime::IsPC(owner))
+        LogManager::instance().ItemLog(owner, itemID, vnum,
+            success ? "DS_HEART_EXTRACT_SUCCESS" : "DS_HEART_EXTRACT_FAIL",
+            success ? (std::to_string(chargePercent) + "%").c_str() : "");
+    if (success) output.Give(owner);
+#ifdef TEXTS_IMPROVEMENT
+    if (ecs::PlayerRuntime::IsPC(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 624, "");
+#endif
+    return success;
+}
+
+bool DSManager::PullOutEcs(entt::entity owner, TItemPos destination, entt::entity& item, entt::entity extractor)
+{
+    const entt::entity soul = item; // Never reread a caller's mutable handle after callbacks.
+    if (!m_pTable || !InventorySystem::CanHandleItems(owner) || !ItemSystem::IsDragonSoulItem(soul) ||
+        !ItemSystem::IsItemEquipped(soul) || !ValidExtractor(owner, soul, extractor, EXTRACT_DRAGON_SOUL))
+        return false;
+    const TItemPos origin = DragonSoulItemPosition(soul);
+    if (!ExtractionAnchor(owner, soul, origin) ||
+        origin.cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM ||
+        origin.cell >= INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX ||
+        ItemSystem::GetItemCount(soul) != 1 || !InventorySystem::CanUnequipNow(owner, soul, false))
+        return false;
+    const ExtractionGuard guard(owner);
+    if (!guard.entered) return false;
+    const auto wear = static_cast<uint8_t>(origin.cell - INVENTORY_MAX_NUM);
+    const auto vnum = ItemSystem::GetItemVnum(soul);
+    const auto itemID = ItemSystem::GetItemID(soul);
+    const auto name = std::string(ItemSystem::GetItemName(soul));
+    const auto extractorOrigin = DragonSoulItemPosition(extractor);
+    const auto extractorCount = extractor == entt::null ? 0 : ItemSystem::GetItemCount(extractor);
+    const auto extractorVnum = extractor == entt::null ? 0 : ItemSystem::GetItemVnum(extractor);
+    const auto extractorReady = [&] {
+        return InventorySystem::CanHandleItems(owner) &&
+            ValidExtractor(owner, soul, extractor, EXTRACT_DRAGON_SOUL) &&
+            (extractor == entt::null || (ExtractionAnchor(owner, extractor, extractorOrigin) &&
+                ItemSystem::GetItemCount(extractor) == extractorCount && ItemSystem::GetItemVnum(extractor) == extractorVnum));
+    };
+    const auto sourceReady = [&] {
+        return ExtractionAnchor(owner, soul, origin) && ItemSystem::IsItemEquipped(soul) &&
+            ItemSystem::GetWearItem(owner, wear) == soul && ItemSystem::GetItemVnum(soul) == vnum &&
+            ItemSystem::GetItemCount(soul) == 1 && !ItemSystem::IsItemLocked(soul) &&
+            !ItemSystem::IsItemExchanging(soul) && extractorReady();
+    };
+    if (!sourceReady()) return false;
+    if (!IsValidCellForThisItem(soul, destination))
+    {
+        const int cell = ItemSystem::GetEmptyDragonSoulInventory(owner, soul);
+        if (cell < 0)
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 626, "");
+#endif
+            return false;
+        }
+        destination = TItemPos(DRAGON_SOUL_INVENTORY, static_cast<uint16_t>(cell));
+    }
+    const auto destinationReady = [&] {
+        return IsValidCellForThisItem(soul, destination) &&
+            InventorySystem::IsEmptyItemGrid(owner, destination, ItemSystem::GetItemSize(soul)) &&
+            ItemSystem::GetItem(owner, destination) == entt::null;
+    };
+    if (!destinationReady()) return false;
+    uint8_t type, grade, step, strength;
+    GetDragonSoulInfo(vnum, type, grade, step, strength);
+    float probability = 0.f;
+    uint32_t byProductVnum = 0;
+    const bool hasRule = m_pTable->GetDragonSoulExtValues(type, grade, probability, byProductVnum);
+    if (hasRule && (!std::isfinite(probability) || probability < 0 || probability > 100)) return false;
+    int bonus = 0;
+    float dice = 0;
+    bool success = true;
+    if (hasRule)
+    {
+        if (extractor != entt::null)
+        {
+            bonus = ItemSystem::GetItemValue(extractor, ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
+            if (bonus < 0 || bonus > 100) return false;
+        }
+        dice = fnumber(0.f, 100.f);
+        success = dice <= probability;
+        // Preserve the deployed rule: the extractor replaces, not adds to, the chance.
+        if (extractor != entt::null) success = number(1, 100) <= bonus;
+    }
+    ExtractionOutput output;
+    if (!success && byProductVnum != 0)
+    {
+        output.item = ITEM_MANAGER::instance().CreateItem(byProductVnum);
+        if (!DetachedExtractionItem(output.item)) return false;
+    }
+    if (!sourceReady() || !destinationReady()) return false;
+
+    const auto recover = [&] { RestorePulledSoul(owner, soul, wear, destination); };
+    if (!ItemSystem::RemoveItemEcs(soul))
+    {
+        recover();
+        return false;
+    }
+    if (!ecs::PlayerRuntime::IsPC(owner) || !DetachedExtractionItem(soul) ||
+        !extractorReady() || !destinationReady() ||
+        !ItemSystem::PlaceItemEcs(owner, soul, destination.window_type, destination.cell) ||
+        !ExtractionAnchor(owner, soul, destination) || ItemSystem::GetItemVnum(soul) != vnum ||
+        ItemSystem::GetItemCount(soul) != 1 || !extractorReady())
+    {
+        recover();
+        return false;
+    }
+
+    ItemSystem::ItemCost costs[2];
+    size_t costCount = 0;
+    if (!success) costs[costCount++] = {soul, 1, ItemSystem::ItemCostStorage::DragonSoulInventory};
+    if (hasRule && extractor != entt::null) costs[costCount++] = {extractor, 1};
+    if (costCount != 0 && !ItemSystem::ConsumeOwnedItemCosts(owner, {costs, costCount}))
+    {
+        recover();
+        return false;
+    }
+    // This is a committed retirement, even when the item-manager cleanup must retry.
+    if (!success) item = entt::null;
+    if (hasRule && ecs::PlayerRuntime::IsPC(owner))
+    {
+        const auto hint = "dice(" + std::to_string(dice) + ") prob(" + std::to_string(probability) +
+            ") extractorBonus(" + std::to_string(bonus) + ") EXTR(VN:" + std::to_string(extractorVnum) +
+            ") ByProd(VN:" + std::to_string(byProductVnum) + ")";
+        LogManager::instance().ItemLog(owner, itemID, vnum,
+            success ? "DS_PULL_OUT_SUCCESS" : "DS_PULL_OUT_FAILED", hint.c_str());
+    }
+    if (!success && byProductVnum != 0) output.Give(owner);
+#ifdef TEXTS_IMPROVEMENT
+    if (hasRule && ecs::PlayerRuntime::IsPC(owner))
+    {
+        if (success) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 534, "%s", name.c_str());
+        else if (byProductVnum == 0) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 537, "");
+        else if (ItemSystem::IsValidItem(output.item))
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 535, "%s", ItemSystem::GetItemName(output.item));
+        else ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 536, "");
+    }
+#endif
+    return success;
+}
+
+bool DSManager::DoRefineGrade(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	if (!ecs::PlayerRuntime::IsValid(ch) || !DragonSoulSystem::CanRefine(ch))
+		return false;
+
+	std::set<entt::entity> items;
+	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
+	{
+		if (aItemPoses[i].IsEquipPosition())
+			return false;
+
+		const entt::entity item = ItemSystem::GetItem(ch, aItemPoses[i]);
+		if (item == entt::null)
+			continue;
+		if (!ItemSystem::IsDragonSoulItem(item))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
+#endif
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
+		}
+		items.insert(item);
+	}
+
+	if (items.empty())
+	{
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL, NPOS);
+		return false;
+	}
+
+	uint8_t dsType, grade, step, strength;
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(*items.begin()), dsType, grade, step, strength);
+
+	int neededCount = 0;
+	int fee = 0;
+	std::vector<float> probabilities;
+	if (!m_pTable->GetRefineGradeValues(dsType, grade, neededCount, fee, probabilities))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
+#endif
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(*items.begin()));
+		return false;
+	}
+
+	for (const entt::entity item : items)
+	{
+		const uint32_t vnum = ItemSystem::GetItemVnum(item);
+		if (ItemSystem::IsItemEquipped(item) || dsType != GetType(vnum) || grade != GetGradeIdx(vnum))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
+#endif
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
+		}
+	}
+
+	const int suppliedCount = static_cast<int>(items.size());
+	if (suppliedCount != neededCount)
+	{
+		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(ch).data());
+		const uint8_t subHeader = suppliedCount < neededCount
+			? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL
+			: DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
+		SendRefineResultPacket(ch, subHeader, NPOS);
+		return false;
+	}
+
+	if (ecs::PointSystem::GetGold(ch) < fee)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
+#endif
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
+		return false;
+	}
+
+	const int resultGrade = Gamble(probabilities);
+	if (resultGrade < 0)
+	{
+		LOG_ERROR("Gamble failed. See RefineGardeTables' probabilities");
+		return false;
+	}
+
+	const uint32_t resultVnum = MakeDragonSoulVnum(dsType, static_cast<uint8_t>(resultGrade), 0, 0);
+	const entt::entity resultItem = ITEM_MANAGER::instance().CreateItem(resultVnum);
+	if (resultItem == entt::null)
+	{
+		LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
+		return false;
+	}
+
+	if (!ConsumeDragonSoulMaterials(items, neededCount))
+	{
+		ItemSystem::DestroyItemEntityEcs(resultItem, "DRAGON_SOUL_REFINE_INPUT_INVALID");
+		return false;
+	}
+
+	ecs::PointSystem::Change(ch, POINT_GOLD, -fee);
+	ItemSystem::AutoGiveItem(ch, resultItem, true);
+
+	char logHint[128];
+	sprintf(logHint, "GRADE : %d -> %d", grade, resultGrade);
+	const bool success = resultGrade > grade;
+	LogManager::instance().ItemLogEntity(ch, resultItem,
+		success ? "DS_GRADE_REFINE_SUCCESS" : "DS_GRADE_REFINE_FAIL", logHint);
+#ifdef TEXTS_IMPROVEMENT
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, success ? 629 : 630, "");
+#endif
+	SendRefineResultPacket(ch,
+		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
+		DragonSoulItemPosition(resultItem));
+	return success;
+}
+bool DSManager::DoRefineGradeEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	if (!ecs::PlayerRuntime::IsValid(owner))
+		return false;
+
+	const bool result = DoRefineGrade(owner, aItemPoses);
+	return result;
+}
+
+
+bool DSManager::DoRefineStep(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	if (!ecs::PlayerRuntime::IsValid(ch) || !DragonSoulSystem::CanRefine(ch))
+		return false;
+
+	std::set<entt::entity> items;
+	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
+	{
+		const entt::entity item = ItemSystem::GetItem(ch, aItemPoses[i]);
+		if (item == entt::null)
+			continue;
+		if (!ItemSystem::IsDragonSoulItem(item))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
+#endif
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
+		}
+		items.insert(item);
+	}
+
+	if (items.empty())
+	{
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL, NPOS);
+		return false;
+	}
+
+	uint8_t dsType, grade, step, strength;
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(*items.begin()), dsType, grade, step, strength);
+
+	int neededCount = 0;
+	int fee = 0;
+	std::vector<float> probabilities;
+	if (!m_pTable->GetRefineStepValues(dsType, step, neededCount, fee, probabilities))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
+#endif
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(*items.begin()));
+		return false;
+	}
+
+	for (const entt::entity item : items)
+	{
+		const uint32_t vnum = ItemSystem::GetItemVnum(item);
+		if (ItemSystem::IsItemEquipped(item) || dsType != GetType(vnum) ||
+			grade != GetGradeIdx(vnum) || step != GetStepIdx(vnum))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
+#endif
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
+		}
+	}
+
+	const int suppliedCount = static_cast<int>(items.size());
+	if (suppliedCount != neededCount)
+	{
+		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(ch).data());
+		const uint8_t subHeader = suppliedCount < neededCount
+			? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL
+			: DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
+		SendRefineResultPacket(ch, subHeader, NPOS);
+		return false;
+	}
+
+	if (ecs::PointSystem::GetGold(ch) < fee)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
+#endif
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
+		return false;
+	}
+
+	const int resultStep = Gamble(probabilities);
+	if (resultStep < 0)
+	{
+		LOG_ERROR("Gamble failed. See RefineStepTables' probabilities");
+		return false;
+	}
+
+	const uint32_t resultVnum = MakeDragonSoulVnum(dsType, grade, static_cast<uint8_t>(resultStep), 0);
+	const entt::entity resultItem = ITEM_MANAGER::instance().CreateItem(resultVnum);
+	if (resultItem == entt::null)
+	{
+		LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
+		return false;
+	}
+
+	if (!ConsumeDragonSoulMaterials(items, neededCount))
+	{
+		ItemSystem::DestroyItemEntityEcs(resultItem, "DRAGON_SOUL_REFINE_INPUT_INVALID");
+		return false;
+	}
+
+	ecs::PointSystem::Change(ch, POINT_GOLD, -fee);
+	ItemSystem::AutoGiveItem(ch, resultItem, true);
+
+	char logHint[128];
+	sprintf(logHint, "STEP : %d -> %d", step, resultStep);
+	const bool success = resultStep > step;
+	LogManager::instance().ItemLogEntity(ch, resultItem,
+		success ? "DS_STEP_REFINE_SUCCESS" : "DS_STEP_REFINE_FAIL", logHint);
+#ifdef TEXTS_IMPROVEMENT
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, success ? 629 : 630, "");
+#endif
+	SendRefineResultPacket(ch,
+		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
+		DragonSoulItemPosition(resultItem));
+	return success;
+}
+bool DSManager::DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	if (!ecs::PlayerRuntime::IsValid(owner))
+		return false;
+
+	const bool result = DoRefineStep(owner, aItemPoses);
+	return result;
+}
+
+
+bool IsDragonSoulRefineMaterial(entt::entity item)
+{
+	if (ItemSystem::GetItemType(item) != ITEM_MATERIAL)
+		return false;
+	return (ItemSystem::GetItemSubType(item) == MATERIAL_DS_REFINE_NORMAL ||
+		ItemSystem::GetItemSubType(item) == MATERIAL_DS_REFINE_BLESSED ||
+		ItemSystem::GetItemSubType(item) == MATERIAL_DS_REFINE_HOLLY);
+}
+
+bool DSManager::DoRefineStrength(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	if (!ecs::PlayerRuntime::IsValid(ch) || !DragonSoulSystem::CanRefine(ch))
+		return false;
+
+	std::set<entt::entity> items;
+	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
+	{
+		const entt::entity item = ItemSystem::GetItem(ch, aItemPoses[i]);
+		if (item != entt::null)
+			items.insert(item);
+	}
+	if (items.empty())
+		return false;
+
+	entt::entity refineStone = entt::null;
+	entt::entity dragonSoul = entt::null;
+	for (const entt::entity item : items)
+	{
+		if (ItemSystem::IsItemEquipped(item))
+			return false;
+
+		if (ItemSystem::IsDragonSoulItem(item))
+		{
+			if (dragonSoul != entt::null)
+			{
+				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, DragonSoulItemPosition(item));
+				return false;
+			}
+			dragonSoul = item;
+		}
+		else if (IsDragonSoulRefineMaterial(item))
+		{
+			if (refineStone != entt::null)
+			{
+				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, DragonSoulItemPosition(item));
+				return false;
+			}
+			refineStone = item;
+		}
+		else
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
+#endif
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
+		}
+	}
+
+	if (dragonSoul == entt::null || refineStone == entt::null)
+	{
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL, NPOS);
+		return false;
+	}
+
+	uint8_t type, grade, step, strength;
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(dragonSoul), type, grade, step, strength);
+
+	float nextWeight = 0.f;
+	if (!m_pTable->GetWeight(type, grade, step, strength + 1, nextWeight) || nextWeight < FLT_EPSILON)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
+#endif
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, DragonSoulItemPosition(dragonSoul));
+		return false;
+	}
+
+	int fee = 0;
+	float probability = 0.f;
+	if (!m_pTable->GetRefineStrengthValues(type, ItemSystem::GetItemSubType(refineStone), strength, fee, probability))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
+#endif
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(dragonSoul));
+		return false;
+	}
+
+	if (ecs::PointSystem::GetGold(ch) < fee)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
+#endif
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
+		return false;
+	}
+
+	const bool success = fnumber(0.f, 100.f) <= probability;
+	entt::entity result = entt::null;
+	if (success || strength != 0)
+	{
+		const uint8_t resultStrength = success ? strength + 1 : strength - 1;
+		const uint32_t resultVnum = MakeDragonSoulVnum(type, grade, step, resultStrength);
+		result = ITEM_MANAGER::instance().CreateItem(resultVnum);
+		if (result == entt::null)
+		{
+			LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
+			return false;
+		}
+		if (!ItemSystem::CopyItemAttributesEcs(dragonSoul, result) || !RefreshItemAttributes(result))
+		{
+			ItemSystem::DestroyItemEntityEcs(result, "DRAGON_SOUL_REFINE_RESULT_INVALID");
+			return false;
+		}
+	}
+
+	char logHint[128];
+	sprintf(logHint, "STRENGTH : %d -> %d", strength,
+		success ? static_cast<int>(strength) + 1 : static_cast<int>(strength) - 1);
+	LogManager::instance().ItemLogEntity(ch, dragonSoul,
+		success ? "DS_STRENGTH_REFINE_SUCCESS" : "DS_STRENGTH_REFINE_FAIL", logHint);
+
+	if (!ItemSystem::ConsumeItemEcs(dragonSoul, 1) || !ItemSystem::ConsumeItemEcs(refineStone, 1))
+	{
+		if (result != entt::null)
+			ItemSystem::DestroyItemEntityEcs(result, "DRAGON_SOUL_REFINE_INPUT_INVALID");
+		return false;
+	}
+
+	ecs::PointSystem::Change(ch, POINT_GOLD, -fee);
+	if (result != entt::null)
+		ItemSystem::AutoGiveItem(ch, result, true);
+
+#ifdef TEXTS_IMPROVEMENT
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, success ? 629 : 630, "");
+#endif
+	SendRefineResultPacket(ch,
+		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
+		DragonSoulItemPosition(result));
+	return true;
+}
+bool DSManager::DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	if (!ecs::PlayerRuntime::IsValid(owner))
+		return false;
+
+	const bool result = DoRefineStrength(owner, aItemPoses);
+	return result;
+}
+
+
+#ifdef ENABLE_DS_REFINE_ALL
+void DSManager::DoRefineAll(entt::entity ch, uint8_t subheader, uint8_t type, uint8_t requestedGrade)
+{
+	if (!ecs::PlayerRuntime::IsValid(ch) || (subheader != DS_SUB_HEADER_DO_REFINE_GRADE && subheader != DS_SUB_HEADER_DO_REFINE_STEP))
+		return;
+	if (type > 5 || requestedGrade > 5)
+		return;
+	if (subheader == DS_SUB_HEADER_DO_REFINE_GRADE && requestedGrade == 5)
+		return;
+	if (!DragonSoulSystem::CanRefine(ch))
+		return;
+
+#ifdef ENABLE_SPAM_CHECK
+	const int32_t remainingDelay = DragonSoulSystem::GetLastRefineTime(ch) - get_global_time();
+	if (remainingDelay > 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 234, "%d", remainingDelay);
+#endif
+		return;
+	}
+	DragonSoulSystem::SetLastRefineTime(ch);
+#endif
+
+	const entt::entity owner = ch;
+	const int32_t firstCell = 300 + (192 * type) + (requestedGrade * DRAGON_SOUL_BOX_SIZE);
+	const bool gradeMode = subheader == DS_SUB_HEADER_DO_REFINE_GRADE;
+	const int firstIndex = gradeMode ? DRAGON_SOUL_GRADE_NORMAL : DRAGON_SOUL_STEP_LOWEST;
+	const int lastIndex = gradeMode
+#ifdef ENABLE_DS_GRADE_MYTH
+		? DRAGON_SOUL_GRADE_LEGENDARY
+#else
+		? DRAGON_SOUL_GRADE_ANCIENT
+#endif
+		: DRAGON_SOUL_STEP_HIGH;
+
+	for (int refineIndex = firstIndex; refineIndex <= lastIndex; ++refineIndex)
+	{
+		std::set<entt::entity> items;
+		for (int32_t i = 0; i < DRAGON_SOUL_BOX_SIZE; ++i)
+		{
+			const entt::entity item = ItemSystem::GetItem(
+				owner, TItemPos(DRAGON_SOUL_INVENTORY, i + firstCell));
+			if (!ItemSystem::IsDragonSoulItem(item) || ItemSystem::IsItemEquipped(item))
+				continue;
+
+			const uint32_t vnum = ItemSystem::GetItemVnum(item);
+			const int itemIndex = gradeMode ? GetGradeIdx(vnum) : GetStepIdx(vnum);
+			if (itemIndex == refineIndex)
+				items.insert(item);
+		}
+
+		if (items.size() < 2)
+			continue;
+
+		entt::entity previous = entt::null;
+		for (const entt::entity current : items)
+		{
+			if (previous == entt::null)
+			{
+				previous = current;
+				continue;
+			}
+
+			uint8_t dsType, grade, step, strength;
+			GetDragonSoulInfo(ItemSystem::GetItemVnum(current), dsType, grade, step, strength);
+
+			int neededCount = 0;
+			int fee = 0;
+			std::vector<float> probabilities;
+			const bool tableValid = gradeMode
+				? m_pTable->GetRefineGradeValues(dsType, grade, neededCount, fee, probabilities)
+				: m_pTable->GetRefineStepValues(dsType, step, neededCount, fee, probabilities);
+			if (!tableValid)
+			{
+				previous = entt::null;
+				continue;
+			}
+			if (neededCount != 2)
+				return;
+
+			const uint32_t previousVnum = ItemSystem::GetItemVnum(previous);
+			const bool pairValid = dsType == GetType(previousVnum) && grade == GetGradeIdx(previousVnum) &&
+				(gradeMode || step == GetStepIdx(previousVnum));
+			if (!pairValid)
+			{
+				previous = entt::null;
+				continue;
+			}
+
+			if (ecs::PointSystem::GetGold(owner) < fee)
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
+#endif
+				return;
+			}
+
+			const int resultIndex = Gamble(probabilities);
+			if (resultIndex < 0)
+			{
+				previous = entt::null;
+				continue;
+			}
+
+			const uint32_t resultVnum = gradeMode
+				? MakeDragonSoulVnum(dsType, static_cast<uint8_t>(resultIndex), 0, 0)
+				: MakeDragonSoulVnum(dsType, grade, static_cast<uint8_t>(resultIndex), 0);
+			const entt::entity result = ITEM_MANAGER::instance().CreateItem(resultVnum);
+			if (result == entt::null)
+			{
+				LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
+				previous = entt::null;
+				continue;
+			}
+
+			if (!ItemSystem::ConsumeItemEcs(previous, 1) || !ItemSystem::ConsumeItemEcs(current, 1))
+			{
+				ItemSystem::DestroyItemEntityEcs(result, "DRAGON_SOUL_REFINE_INPUT_INVALID");
+				return;
+			}
+
+			ecs::PointSystem::Change(owner, POINT_GOLD, -fee);
+			if (ItemSystem::AutoGiveDS(owner, result, true))
+			{
+				char logHint[128];
+				if (gradeMode)
+					sprintf(logHint, "GRADE : %d -> %d", grade, resultIndex);
+				else
+					sprintf(logHint, "STEP : %d -> %d", step, resultIndex);
+
+				const bool success = gradeMode ? resultIndex > grade : resultIndex > step;
+				LogManager::instance().ItemLogEntity(ch, result,
+					gradeMode
+						? (success ? "DS_GRADE_REFINE_SUCCESS" : "DS_GRADE_REFINE_FAIL")
+						: (success ? "DS_STEP_REFINE_SUCCESS" : "DS_STEP_REFINE_FAIL"),
+					logHint);
+			}
+
+			previous = entt::null;
+		}
+	}
+}
+
+void DSManager::DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t type, uint8_t grade)
+{
+	if (!ecs::PlayerRuntime::IsValid(owner))
+		return;
+
+	DoRefineAll(owner, subheader, type, grade);
+}
+
+#endif
+void DSManager::SendRefineResultPacket(entt::entity ch, uint8_t bSubHeader, const TItemPos& pos)
+{
+	TPacketGCDragonSoulRefine pack;
+	pack.bSubType = bSubHeader;
+
+	if (pos.IsValidItemPosition())
+	{
+		pack.Pos = pos;
+	}
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
+	if (nullptr == d)
+	{
+		return ;
+	}
+	else
+	{
+		d->Packet(&pack, sizeof(pack));
+	}
+}
+
+namespace {
+std::set<entt::entity> activatingSouls, deactivatingSouls;
+struct SoulTransition {
+    std::set<entt::entity>& set;
+    entt::entity item;
+    bool entered;
+    SoulTransition(std::set<entt::entity>& states, entt::entity e)
+        : set(states), item(e), entered(set.insert(e).second) {}
+    ~SoulTransition() { if (entered) set.erase(item); }
+    SoulTransition(const SoulTransition&) = delete;
+    SoulTransition& operator=(const SoulTransition&) = delete;
+};
+
+bool EquippedSoul(entt::entity owner, entt::entity item, TItemPos position)
+{
+    return ItemSystem::IsDragonSoulItem(item) && ItemSystem::GetItemProto(item) &&
+        ExtractionAnchor(owner, item, position) && ItemSystem::IsItemEquipped(item) &&
+        !ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 1 &&
+        position.cell >= DRAGON_SOUL_EQUIP_SLOT_START && position.cell < DRAGON_SOUL_EQUIP_SLOT_END &&
+        g_registry.all_of<ecs::ItemSockets>(item) &&
+        ItemSystem::GetWearItem(owner, static_cast<uint8_t>(position.cell - INVENTORY_MAX_NUM)) == item;
+}
+
+void PublishSoulState(entt::entity item)
+{
+    // Publish the current component, not a pre-callback socket snapshot.
+    if (!ItemSystem::IsValidItem(item)) return;
+    ItemSystem::SaveItem(item);
+    if (ItemSystem::IsValidItem(item))
+        ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+}
+} // namespace
+
+int DSManager::LeftTime(entt::entity item) const
+{
+    if (!ItemSystem::IsDragonSoulItem(item) || !ItemSystem::GetItemProto(item))
+        return 0;
+    if (ItemSystem::GetItemLimitTimerBasedOnWearIndex(item) < 0)
+        return INT_MAX;
+    const auto remaining = ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC);
+    // Negative signed sockets must not turn into years of unsigned lifetime.
+    return remaining <= INT_MAX ? static_cast<int>(remaining) : 0;
+}
+
+bool DSManager::IsTimeLeftDragonSoul(entt::entity item) const
+{
+    return LeftTime(item) > 0;
+}
+
+bool DSManager::IsActiveDragonSoul(entt::entity item) const
+{
+    return ItemSystem::IsDragonSoulItem(item) &&
+        ItemSystem::GetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX) != 0;
+}
+
+bool DSManager::ActivateDragonSoul(entt::entity item)
+{
+    if (!ItemSystem::IsDragonSoulItem(item) || deactivatingSouls.contains(item))
+        return false;
+    const auto owner = ItemSystem::GetItemOwner(item);
+    const auto position = DragonSoulItemPosition(item);
+    if (!EquippedSoul(owner, item, position) || !IsTimeLeftDragonSoul(item)) return false;
+    const int deck = DragonSoulSystem::GetActiveDeck(owner);
+    if (deck < 0 || deck >= DRAGON_SOUL_DECK_MAX_NUM ||
+        position.cell < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck ||
+        position.cell >= DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck + 1))
+        return false;
+    const SoulTransition guard(activatingSouls, item);
+    if (!guard.entered) return false;
+    if (IsActiveDragonSoul(item)) return true;
+    const auto bound = [&] { return EquippedSoul(owner, item, position); };
+    const auto active = [&] {
+        return bound() && IsActiveDragonSoul(item) && IsTimeLeftDragonSoul(item) &&
+            DragonSoulSystem::GetActiveDeck(owner) == deck;
+    };
+
+    // No signal or save between the flag and the point operation. A nested
+    // deactivation during publication can undo an activated stone exactly once;
+    // the outer activation must never turn its flag/timer back on afterward.
+    g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 1;
+    if (!ItemSystem::ModifyItemPointsEcs(item, true))
+    {
+        if (bound()) g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 0;
+        return false;
+    }
+    const auto cancel = [&] {
+        if (bound() && IsActiveDragonSoul(item)) DeactivateDragonSoul(item, true);
+        return false;
+    };
+    if (!active()) return cancel();
+    if (!ItemSystem::StartTimerBasedOnWearExpireEventEcs(item) || !active()) return cancel();
+    PublishSoulState(item);
+    if (!active()) return cancel();
+    const auto hint = "LEFT TIME(" + std::to_string(LeftTime(item)) + ")";
+    LogManager::instance().ItemLogEntity(owner, item, "DS_ACTIVATE", hint.c_str());
+    return active() ? true : cancel();
+}
+
+bool DSManager::DeactivateDragonSoul(entt::entity item, bool skipRefreshOwner)
+{
+    if (!ItemSystem::IsDragonSoulItem(item)) return false;
+    const auto owner = ItemSystem::GetItemOwner(item);
+    const auto position = DragonSoulItemPosition(item);
+    if (!EquippedSoul(owner, item, position) || !IsActiveDragonSoul(item)) return false;
+    const SoulTransition guard(deactivatingSouls, item);
+    if (!guard.entered) return false;
+    const auto bound = [&] { return EquippedSoul(owner, item, position); };
+
+    g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 0;
+    if (!ItemSystem::ModifyItemPointsEcs(item, false))
+    {
+        if (bound()) g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 1;
+        return false;
+    }
+    // The deduction has committed. An item/owner destroyed by a later callback
+    // is not a failed deduction and must not be recreated or refunded.
+    if (bound()) ItemSystem::StopTimerBasedOnWearExpireEventEcs(item);
+    if (bound()) PublishSoulState(item);
+    if (bound())
+    {
+        const auto hint = "LEFT TIME(" + std::to_string(LeftTime(item)) + ")";
+        LogManager::instance().ItemLogEntity(owner, item, "DS_DEACTIVATE", hint.c_str());
+    }
+    if (!skipRefreshOwner && ecs::PlayerRuntime::IsPC(owner))
+        RefreshDragonSoulState(owner);
+    return true;
+}
+
+void DSManager::RefreshDragonSoulState(entt::entity owner)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner)) return;
+    for (int wear = WEAR_MAX_NUM; wear < WEAR_MAX_NUM + DS_SLOT_MAX * DRAGON_SOUL_DECK_MAX_NUM; ++wear)
+    {
+        const auto item = ItemSystem::GetWearItem(owner, static_cast<uint8_t>(wear));
+        if (IsActiveDragonSoul(item) && EquippedSoul(owner, item, DragonSoulItemPosition(item)))
+            return;
+    }
+    DragonSoulSystem::DeactivateAll(owner);
+}
+DSManager::DSManager() = default;
+DSManager::~DSManager() = default;

@@ -1,4 +1,4 @@
-#include "../../stdafx.h"
+#include "../../core/stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
 #include "../EntityInvariants.hpp"
 
@@ -6,10 +6,10 @@
 #include "../NetworkService.hpp"
 #include "../Registry.hpp"
 
-#include "../../buffer_manager.h"
-#include "../../config.h"
-#include "../../desc.h"
-#include "../../packet.h"
+#include "../../core/buffer_manager.h"
+#include "../../core/config.h"
+#include "../../network/desc.h"
+#include "../../core/packet.h"
 #include <Core/Logging.hpp>
 
 namespace {

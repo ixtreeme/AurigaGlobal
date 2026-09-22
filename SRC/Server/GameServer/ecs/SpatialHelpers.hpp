@@ -2,8 +2,8 @@
 
 #include <entt/entt.hpp>
 
-#include "../sectree_manager.h"
-#include "../typedef.h"
+#include "../world/sectree_manager.h"
+#include "../core/typedef.h"
 #include "Registry.hpp"
 #include "components/spatial_components.hpp"
 

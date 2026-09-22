@@ -7,7 +7,7 @@
 
 #include <entt/entt.hpp>
 
-#include "../../typedef.h"
+#include "../../core/typedef.h"
 
 namespace ecs { struct SkillColor; }
 

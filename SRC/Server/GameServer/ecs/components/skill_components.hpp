@@ -8,7 +8,7 @@
 
 #include <common/tables.h>
 
-#include "../../char.h"
+#include "../../entity/char.h"
 
 namespace ecs {
 

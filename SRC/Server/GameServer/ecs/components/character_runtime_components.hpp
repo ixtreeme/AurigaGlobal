@@ -6,9 +6,9 @@
 
 #include <cstdint>
 
-#include "../../event.h"
+#include "../../world/event.h"
 
-#include "../../buff_on_attributes.h"
+#include "../../combat/buff_on_attributes.h"
 
 namespace ecs {
 

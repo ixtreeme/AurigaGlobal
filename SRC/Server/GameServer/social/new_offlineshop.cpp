@@ -1,0 +1,816 @@
+#include "stdafx.h"
+#include "../ecs/systems/PointSystem.hpp"
+#include "../ecs/AIHelpers.hpp"
+#include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include <Core/Logging.hpp>
+#include <common/tables.h>
+#include "packet.h"
+#include "item.h"
+#include "char_interface.hpp"
+#include "item_manager.h"
+#include "desc.h"
+#include "char_manager.h"
+#include "../ecs/CharacterAccessors.hpp"
+#include "../ecs/EntityFactory.hpp"
+#include "../ecs/Registry.hpp"
+#include "../ecs/services/EntityNetworkDispatch.hpp"
+#include "../ecs/services/SpatialService.hpp"
+#include "../ecs/systems/ItemSystem.hpp"
+
+#include "new_offlineshop.h"
+#include "../ecs/systems/OfflineShopSystem.hpp"
+#include "new_offlineshop_manager.h"
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+
+
+namespace offlineshop
+{
+	/*
+		structure
+		-	contain item informations (offlineshop::SShopItemInfo)
+		-	contain price (prezzo)
+		-	contain window type (shop/shop safebox)
+
+		methods
+		-	constructor default (all to zero, alloc id)
+		-	copy constructor (using in vector)
+
+		-	gettable to get prototype table directly (very useful in filtering)
+		-	getprice to get the sell price
+		-	getinfo to get the item informations
+
+		-	setprice to set sell price
+		-	setwindow to set the current window (shop/ shop safebox)
+		-	getwindow to get the current window ||
+	*/
+
+
+	CShopItem::CShopItem(uint32_t dwID) : m_dwOwnerID(0)
+	{
+		m_dwID = dwID;
+		m_byWindow = 0;
+
+		ZeroObject(m_itemInfo);
+		ZeroObject(m_priceInfo);
+	}
+
+
+	CShopItem::CShopItem(const CShopItem& rCopy) : m_dwOwnerID(0)
+	{
+		m_dwID = rCopy.GetID();
+		m_byWindow = rCopy.GetWindow();
+
+		CopyObject(m_itemInfo, *rCopy.GetInfo());
+		CopyObject(m_priceInfo, *rCopy.GetPrice());
+	}
+
+	CShopItem::~CShopItem()
+	{
+	}
+
+	bool CShopItem::GetTable(TItemTable ** ppTable) const
+	{
+		if ((*ppTable = ITEM_MANAGER::instance().GetTable(m_itemInfo.dwVnum)))
+			return true;
+		return false;
+	}
+
+	TPriceInfo* CShopItem::GetPrice() const
+	{
+		return const_cast<TPriceInfo*>(&m_priceInfo);
+	}
+
+	entt::entity CShopItem::CreateItem() const
+	{
+		const entt::entity item = ITEM_MANAGER::instance().CreateItem(m_itemInfo.dwVnum, m_itemInfo.dwCount);
+		if (!ItemSystem::IsValidItem(item))
+			return item;
+
+
+		ItemSystem::SetItemAttributes(item, m_itemInfo.aAttr);
+		ItemSystem::SetItemSockets(item, m_itemInfo.alSockets);
+#ifdef __ENABLE_CHANGELOOK_SYSTEM__
+		ItemSystem::SetItemTransmutation(item, m_itemInfo.dwTransmutation);
+#endif
+#ifdef ATTR_LOCK
+		ItemSystem::SetItemLockedAttr(item, m_itemInfo.iLockedAttr);
+#endif
+
+
+		return item;
+	}
+
+	TItemInfoEx* CShopItem::GetInfo() const
+	{
+		return const_cast<TItemInfoEx*>(&m_itemInfo);
+	}
+
+	void CShopItem::SetInfo(const TItemInfoEx& info)
+	{
+		CopyObject(m_itemInfo, info);
+	}
+
+
+	void CShopItem::SetPrice(const TPriceInfo& sPrice)
+	{
+		CopyObject(m_priceInfo, sPrice);
+	}
+
+	void CShopItem::SetWindow(uint8_t byWin)
+	{
+		m_byWindow = byWin;
+	}
+
+	uint8_t CShopItem::GetWindow() const
+	{
+		return m_byWindow;
+	}
+
+	uint32_t CShopItem::GetID() const
+	{
+		return m_dwID;
+	}
+
+
+	void CShopItem::SetOwnerID(uint32_t dwOwnerID)
+	{
+		m_dwOwnerID = dwOwnerID;
+	}
+
+
+
+	bool CShopItem::CanBuy(entt::entity character)
+	{
+		if(!ecs::IsCharacter(character))
+			return false;
+
+		if(m_priceInfo.illYang > ecs::PointSystem::GetGold(character))
+			return false;
+#ifdef __ENABLE_CHEQUE_SYSTEM__
+		if(m_priceInfo.iCheque > ecs::PointSystem::GetReal(character, POINT_CHEQUE))
+			return false;
+#endif
+		return true;
+	}
+
+
+	void CShopItem::operator=(const CShopItem & rItem)
+	{
+		m_dwID = rItem.GetID();
+		m_byWindow = rItem.GetWindow();
+
+		CopyObject(m_itemInfo, *rItem.GetInfo());
+		CopyObject(m_priceInfo, *rItem.GetPrice());
+	}
+
+
+
+
+
+
+
+
+
+	/*
+	CShop
+
+	structure
+	-	item pointers vector
+	-	owner's player id
+	-	duration
+	-	offers vector
+	-	gusts list
+	-	shop virtual id
+
+	metodi
+	-	getitems to get a pointer to items vector
+	-	getoffers to get a pointer to offers vector
+	-	getguests to get a pointer to the guests list
+	-	notify offers to notify to character new offer
+
+	-	getduration to know duration of the shop
+	-	setduration used to set the initi duration a the boot
+	-	decreaseduration to get and decrease duration sametime
+
+	-	setownerpid to set the owner's pid
+	-	getownerpid to get the owner's pid
+
+	-	addguest to add a new guest to the shop
+	-	removeguest to remove a guest to the shop (close board or logout)
+
+	-	setitems used to set initial item on boot
+	-	modifyitem to modify an item and refresh to guest
+	-	buyitem guest , used to buy an item when you are looking the shop
+	-	buyitem character, used to buy item when you are looking a filtered search
+	-	removeitem to remove an item and send refresh to uests
+	-	additem to add an item to the shop and send refresh to guests
+	-	clear to delete the item pointer in vector item and remove all element into containers
+	-	getitem to find item by virtualid
+	-	findowner to use find by pid (char manager) to search owner id
+
+	-	addoffer to add an offer and send notification at the owner (if online, otherwise it will recv it when login)
+	-	(private) refresh list item to a guest or all (args != null -> send to one, otherwise send to all)
+	-	(private) notifyoffer to send notify packet
+
+	*/
+
+
+
+	CShop::CShop()
+	{
+		m_dwPID = 0;
+		m_dwDuration = 0;
+		m_stName.clear();
+#ifdef KASMIR_PAKET_SYSTEM
+		m_Race = 0;
+#endif
+	}
+
+
+	CShop::CShop(const CShop& rCopy)
+	{
+		CopyContainer(m_listGuests, *rCopy.GetGuests());
+		CopyContainer(m_vecItems,   *rCopy.GetItems());
+		CopyContainer(m_vecOffers,  *rCopy.GetOffers());
+
+		m_dwPID			= rCopy.GetOwnerPID();
+		m_dwDuration	= rCopy.GetDuration();
+		m_stName		= rCopy.GetName();
+#ifdef KASMIR_PAKET_SYSTEM
+		m_Race = rCopy.GetRace();
+#endif
+	}
+
+
+	CShop::~CShop()
+	{
+	}
+
+
+
+
+	CShop::VECSHOPITEM * CShop::GetItems() const
+	{
+		return (CShop::VECSHOPITEM *)&m_vecItems;
+	}
+
+	CShop::VECSHOPITEM* CShop::GetItemsSold() const
+	{
+		return (CShop::VECSHOPITEM *)&m_vecItemSold;
+	}
+
+
+	CShop::VECSHOPOFFER * CShop::GetOffers() const
+	{
+		return (CShop::VECSHOPOFFER *)&m_vecOffers;
+	}
+
+	CShop::LISTGUEST * CShop::GetGuests() const
+	{
+		return (CShop::LISTGUEST *)&m_listGuests;
+	}
+
+
+	void CShop::SetDuration(uint32_t dwDuration)
+	{
+		m_dwDuration=dwDuration;
+	}
+
+	uint32_t CShop::DecreaseDuration()
+	{
+		return --m_dwDuration;
+	}
+
+	uint32_t CShop::GetDuration() const
+	{
+		return m_dwDuration;
+	}
+
+
+
+	void CShop::SetOwnerPID(uint32_t dwOwnerPID)
+	{
+		m_dwPID = dwOwnerPID;
+	}
+
+
+
+	uint32_t CShop::GetOwnerPID() const
+	{
+		return m_dwPID;
+	}
+
+
+
+	bool CShop::AddGuest(entt::entity character)
+	{
+		const uint32_t guestID = ecs::PlayerRuntime::GetPlayerID(character);
+		for (LISTGUEST::iterator it = m_listGuests.begin(); it != m_listGuests.end(); it++)
+			if (*it == guestID)
+				return false;
+
+		m_listGuests.push_back(guestID);
+		//__RefreshItems(character);
+		return true;
+	}
+
+
+
+	bool CShop::RemoveGuest(entt::entity character)
+	{
+		const uint32_t guestID = ecs::PlayerRuntime::GetPlayerID(character);
+		for (LISTGUEST::iterator it = m_listGuests.begin(); it != m_listGuests.end(); it++)
+		{
+			if (*it == guestID)
+			{
+				m_listGuests.erase(it);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+
+	void CShop::SetItems(VECSHOPITEM * pVec)
+	{
+		CopyContainer(m_vecItems, *pVec);
+		for(uint32_t i=0; i < m_vecItems.size(); i++)
+			m_vecItems[i].SetWindow(NEW_OFFSHOP);
+
+
+		if (!m_listGuests.empty())
+			__RefreshItems();
+	}
+
+
+	bool CShop::AddItem(CShopItem & rItem)
+	{
+		rItem.SetWindow(NEW_OFFSHOP);
+		m_vecItems.push_back(rItem);
+		__RefreshItems();
+		return true;
+	}
+
+	bool CShop::AddItemSold(CShopItem & rItem)
+	{
+		rItem.SetWindow(NEW_OFFSHOP);
+		m_vecItemSold.push_back(rItem);
+		__RefreshItems();
+		return true;
+	}
+
+
+
+	bool CShop::RemoveItem(uint32_t dwItemID)
+	{
+		for (VECSHOPITEM::iterator it = m_vecItems.begin();
+			it != m_vecItems.end();
+			it++)
+		{
+			if (dwItemID == it->GetID())
+			{
+				m_vecItems.erase(it);
+				__RefreshItems();
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+
+	bool CShop::ModifyItem(uint32_t dwItemID, CShopItem & rItem)
+	{
+		if (rItem.GetID() != dwItemID)
+		{
+			LOG_ERROR("have you forgot to set item id ? {} - {} don't match ", rItem.GetID(), dwItemID);
+			return false;
+		}
+
+
+		CShopItem* pItem = nullptr;
+		if (!GetItem(dwItemID, &pItem))
+			return false;
+
+		*pItem = rItem;
+		pItem->SetWindow(NEW_OFFSHOP);
+		__RefreshItems();
+		return true;
+	}
+
+
+
+
+	bool CShop::BuyItem(uint32_t dwItem)
+	{
+		CShopItem* pItem = nullptr;
+		if (!GetItem(dwItem, &pItem))
+			return false;
+
+
+		m_vecItemSold.emplace_back(*pItem);
+		RemoveItem(dwItem);
+		return true;
+	}
+
+
+
+	bool CShop::GetItem(uint32_t dwItem, CShopItem** ppItem)
+	{
+		for (auto it = m_vecItems.begin();
+			it != m_vecItems.end();
+			++it)
+		{
+			if (dwItem == it->GetID())
+			{
+				*ppItem = &(*it);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+
+	bool CShop::GetItemSold(uint32_t dwItem, CShopItem** ppItem)
+	{
+		for (VECSHOPITEM::iterator it = m_vecItemSold.begin();
+			it != m_vecItemSold.end();
+			it++)
+		{
+			if (dwItem == it->GetID())
+			{
+				*ppItem = &(*it);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+	bool CShop::AddOffer(const TOfferInfo* pOfferInfo)
+	{
+
+		CShopItem* pitem = nullptr;
+		if (!GetItem(pOfferInfo->dwItemID, &pitem))
+			return false;
+
+		m_vecOffers.push_back(*pOfferInfo);
+
+		if (!pOfferInfo->bNoticed && !pOfferInfo->bAccepted)
+		{
+			//offlineshop-updated 04/08/19 reminder
+			const entt::entity pkOwner = FindOwnerCharacter();
+			if (ecs::IsCharacter(pkOwner))
+			{
+				if (ecs::OfflineShopSystem::GetOfflineShop(pkOwner) && ecs::OfflineShopSystem::GetOfflineShop(pkOwner) == ecs::OfflineShopSystem::GetOfflineShopGuest(pkOwner))
+				{
+					NotifyOffers(pkOwner);
+					GetManager().SendShopOpenMyShopClientPacket(pkOwner);
+				}
+			}
+		}
+
+		return true;
+	}
+
+
+
+	bool CShop::AcceptOffer(const TOfferInfo* pOffer)
+	{
+		CShopItem* pkItem = nullptr;
+		if(!GetItem(pOffer->dwItemID, &pkItem))
+			return false;
+
+		TPriceInfo* pPrice = pkItem->GetPrice();
+		CopyObject(*pPrice, pOffer->price);
+		BuyItem(pkItem->GetID());
+
+
+
+		for (uint32_t i = 0; i < m_vecOffers.size(); i++)
+		{
+			TOfferInfo& offer = m_vecOffers.at(i);
+			if (offer.dwOfferID == offer.dwOwnerID)
+			{
+				offer.bAccepted = true;
+				
+				/*
+				offer.bNoticed = false;
+
+				const entt::entity pkOwner = FindOwnerCharacter();
+				if (ecs::IsCharacter(pkOwner))
+					NotifyAcceptedOffers(pkOwner);
+				*/
+				return true;
+			}
+		}
+
+		
+
+		return false;
+	}
+
+
+
+	void CShop::__RefreshItems(entt::entity character)
+	{
+		if(m_listGuests.empty())
+			return;
+
+		if (character == entt::null)
+		{
+			for (auto it = m_listGuests.begin(); it != m_listGuests.end(); ++it)
+			{
+				const entt::entity guest = CHARACTER_MANAGER::instance().FindEntityByPID(*it);
+				if (!ecs::IsCharacter(guest))
+					continue;
+
+				if (ecs::PlayerRuntime::GetPlayerID(guest) == m_dwPID)
+					GetManager().SendShopOpenMyShopClientPacket(guest);
+
+				else
+					GetManager().SendShopOpenClientPacket(guest, this);
+			}
+		}
+
+
+		else
+		{
+			if(ecs::PlayerRuntime::GetPlayerID(character) == m_dwPID)
+				GetManager().SendShopOpenMyShopClientPacket(character);
+
+			else
+				GetManager().SendShopOpenClientPacket(character, this);
+		}
+	}
+
+
+
+	void CShop::Clear()
+	{
+		m_vecItems.clear();
+		m_vecOffers.clear();
+		m_listGuests.clear();
+	}
+
+
+	entt::entity CShop::FindOwnerCharacter()
+	{
+		return CHARACTER_MANAGER::instance().FindEntityByPID(GetOwnerPID());
+	}
+
+
+	void CShop::NotifyOffers(entt::entity character)
+	{
+		for (VECSHOPOFFER::iterator it = m_vecOffers.begin();
+			it != m_vecOffers.end();
+			it++)
+		{
+			if (!it->bNoticed && !it->bAccepted)
+			{
+				it->bNoticed = true;
+				//__SendOfferNotify(ch, &(*it));
+				GetManager().SendShopOfferNotifiedDBPacket(it->dwOfferID, it->dwOwnerID);
+			}
+		}
+	}
+
+	void  CShop::NotifyAcceptedOffers(entt::entity character) //UNUSED
+	{
+		for (VECSHOPOFFER::iterator it = m_vecOffers.begin();
+			it != m_vecOffers.end();
+			it++)
+		{
+			if (!it->bNoticed && it->bAccepted)
+			{
+				it->bNoticed = true;
+				//__SendOfferNotify(ch, &(*it));
+				GetManager().SendShopOfferNotifiedDBPacket(it->dwOfferID, it->dwOwnerID);
+			}
+		}
+	}
+
+
+
+	void CShop::__SendOfferNotify(entt::entity ch, TOfferInfo* pOffer)
+	{
+		//TODO : add send packet
+	}
+
+
+
+	const char* CShop::GetName() const
+	{
+		return m_stName.c_str();
+	}
+
+
+	void CShop::SetName(const char* pcszName)
+	{
+		m_stName = pcszName;
+	}
+
+#ifdef KASMIR_PAKET_SYSTEM
+	void CShop::SetRace(uint32_t dwRace) {
+		m_Race = dwRace;
+	}
+	
+	uint32_t CShop::GetRace() const {
+		return m_Race;
+	}
+#endif
+
+	void CShop::RefreshToOwner()
+	{
+		const entt::entity character = FindOwnerCharacter();
+		if(!ecs::IsCharacter(character))
+			return;
+
+		GetManager().SendShopOpenMyShopClientPacket(character);
+	}
+
+
+
+
+	//AUCTION
+	CAuction::CAuction()
+	{
+		ZeroObject(m_info);
+		ZeroObject(m_bestOffer);
+		m_dwBestBuyer=0;
+	}
+
+
+	CAuction::~CAuction()
+	{
+	}
+
+
+	void CAuction::SetInfo(const TAuctionInfo& auction)
+	{
+		CopyObject(m_info, auction);
+	}
+
+
+
+	void CAuction::SetOffers(const std::vector<TAuctionOfferInfo>& vec)
+	{
+		CopyContainer(m_offersVec, vec);
+	}
+
+
+
+
+	bool CAuction::AddOffer(const TAuctionOfferInfo& offer)
+	{
+		m_offersVec.push_back(offer);
+		__SetBestOffer();
+		__RefreshToGuests();
+		return true;
+	}
+
+
+
+	bool CAuction::AddGuest(entt::entity character)
+	{
+		const uint32_t guestID = ecs::PlayerRuntime::GetPlayerID(character);
+		for (auto it = m_guestsList.begin(); it != m_guestsList.end(); ++it)
+		{
+			if (guestID == *it)
+				return false;
+		}
+
+		m_guestsList.push_back(guestID);
+		ecs::OfflineShopSystem::SetAuctionGuest(character, this);
+		GetManager().SendAuctionOpenAuctionClientPacket(character, m_info, m_offersVec);
+		return true;
+	}
+
+
+
+
+	bool CAuction::RemoveGuest(entt::entity character)
+	{
+		const uint32_t guestID = ecs::PlayerRuntime::GetPlayerID(character);
+		for (auto it = m_guestsList.begin(); it != m_guestsList.end(); ++it)
+		{
+			if (guestID == *it)
+			{
+				m_guestsList.erase(it);
+				ecs::OfflineShopSystem::SetAuctionGuest(character, nullptr);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+
+
+	void CAuction::DecreaseDuration()
+	{
+		if(m_info.dwDuration!=0)
+			m_info.dwDuration--;
+	}
+
+	void CAuction::IncreaseDuration()
+	{
+		m_info.dwDuration++;
+	}
+
+	const TAuctionInfo& CAuction::GetInfo() const
+	{
+		return m_info;
+	}
+
+
+	const CAuction::AUCTION_OFFERVEC& CAuction::GetOffers() const
+	{
+		return m_offersVec;
+	}
+
+
+	const TPriceInfo& CAuction::GetBestOffer() const
+	{
+		return m_bestOffer;
+	}
+
+
+
+	CShop::LISTGUEST& CAuction::GetGuests()
+	{
+		return m_guestsList;
+	}
+
+
+
+	const uint32_t CAuction::GetBestBuyer() const
+	{
+		return m_dwBestBuyer;
+	}
+
+
+
+	void CAuction::__RefreshToGuests()
+	{
+		for (auto it=m_guestsList.begin(); it != m_guestsList.end(); ++it) {
+			const entt::entity guest = CHARACTER_MANAGER::instance().FindEntityByPID(*it);
+			if (!ecs::IsCharacter(guest))
+				continue;
+
+			GetManager().SendAuctionOpenAuctionClientPacket(guest, m_info, m_offersVec);
+		}
+	}
+
+
+
+
+	bool CAuction::__SetBestOffer()
+	{
+		TPriceInfo* pInfo=nullptr;
+		for (auto it = m_offersVec.begin(); it != m_offersVec.end(); ++it)
+		{
+			if (!pInfo)
+			{
+				pInfo = &(it->price);
+				m_dwBestBuyer = it->dwBuyerID;
+				continue;
+			}
+
+			if (pInfo->illYang < it->price.illYang)
+			{
+				pInfo = &it->price;
+				m_dwBestBuyer = it->dwBuyerID;
+			}
+
+		}
+
+		if(pInfo)
+			CopyObject(m_bestOffer, *pInfo);
+
+
+		return pInfo != nullptr;
+	}
+
+
+
+}
+
+
+
+#endif //__ENABLE_NEW_OFFLINESHOP__
+
+
+
+
+
+
+

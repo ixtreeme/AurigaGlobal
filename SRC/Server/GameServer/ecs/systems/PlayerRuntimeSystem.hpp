@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-#include "../../typedef.h"
+#include "../../core/typedef.h"
 #include "../components/session_components.hpp"
 
 class CArena;
