@@ -982,7 +982,6 @@ void CInputDB::Boot(const char* data)
 	}
 
 
-
 	// LOCALE_SERVICE
 	const int FILE_NAME_LEN = 256;
 	char szCommonDropItemFileName[FILE_NAME_LEN];
@@ -1242,125 +1241,10 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 	}
 }
 
-void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
-{
-	if (!d)
-		return;
-
-	TSafeboxTable * p = (TSafeboxTable *) c_pData;
-
-	if (d->GetAccountTable().id != p->dwID)
-	{
-		LOG_ERROR("SafeboxLoad: safebox has different id {} != {}", d->GetAccountTable().id, p->dwID);
-		return;
-	}
-
-	if (!ecs::IsCharacter(d->GetEntity()))
-		return;
-
-	uint8_t bSize = 1;
-
-	const entt::entity chEntity = d->GetEntity();
-
-
-	//PREVENT_TRADE_WINDOW
-	if (ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) != entt::null || ecs::SessionSystem::IsCubeOpen(chEntity) )
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");
-#endif
-		ecs::SessionSystem::SetSafeboxLoading(chEntity, false);
-		return;
-	}
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-	if (AttrTransfer_is_open(chEntity))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");
-#endif
-		ecs::SessionSystem::SetSafeboxLoading(chEntity, false);
-		return;
-	}
-#endif
-	//END_PREVENT_TRADE_WINDOW
-
-	// ADD_PREMIUM
-	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(chEntity, PREMIUM_SAFEBOX) > 0 || ItemSystem::IsEquipUniqueGroup(chEntity, UNIQUE_GROUP_LARGE_SAFEBOX))
-		bSize = 3;
-	// END_OF_ADD_PREMIUM
-
-	//ecs::SessionSystem::LoadSafebox(chEntity, p->bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
-	ecs::SessionSystem::LoadSafebox(chEntity, bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
-}
-
-void CInputDB::SafeboxChangeSize(LPDESC d, const char * c_pData)
-{
-	if (!d)
-		return;
-
-	uint8_t bSize = *(uint8_t *) c_pData;
-
-	if (!ecs::IsCharacter(d->GetEntity()))
-		return;
-
-	ecs::SessionSystem::ChangeSafeboxSize(d->GetEntity(), bSize);
-}
 
 //
 //
-void CInputDB::SafeboxWrongPassword(LPDESC d)
-{
-	if (!d)
-		return;
 
-	if (!ecs::IsCharacter(d->GetEntity()))
-		return;
-
-	TPacketCGSafeboxWrongPassword p;
-	p.bHeader = HEADER_GC_SAFEBOX_WRONG_PASSWORD;
-	d->Packet(&p, sizeof(p));
-
-	ecs::SessionSystem::SetSafeboxLoading(d->GetEntity(), false);
-}
-
-void CInputDB::SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData)
-{
-	if (!d)
-		return;
-
-	if (!ecs::IsCharacter(d->GetEntity()))
-		return;
-
-#ifdef TEXTS_IMPROVEMENT
-	TSafeboxChangePasswordPacketAnswer* p = (TSafeboxChangePasswordPacketAnswer*) c_pData;
-	if (p->flag) {
-		ecs::ChatSystem::SendNew(d->GetEntity(), CHAT_TYPE_INFO, 187, "");
-	}
-	else {
-		ecs::ChatSystem::SendNew(d->GetEntity(), CHAT_TYPE_INFO, 186, "");
-	}
-#endif
-}
-
-void CInputDB::MallLoad(LPDESC d, const char * c_pData)
-{
-	if (!d)
-		return;
-
-	TSafeboxTable * p = (TSafeboxTable *) c_pData;
-
-	if (d->GetAccountTable().id != p->dwID)
-	{
-		LOG_ERROR("safebox has different id {} != {}", d->GetAccountTable().id, p->dwID);
-		return;
-	}
-
-	if (!ecs::IsCharacter(d->GetEntity()))
-		return;
-
-	ecs::SessionSystem::LoadMall(d->GetEntity(), p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
-}
 
 void CInputDB::LoginAlready(LPDESC d, const char * c_pData)
 {
@@ -1460,161 +1344,6 @@ void CInputDB::P2P(const char * c_pData)
 	}
 }
 
-void CInputDB::GuildLoad(const char * c_pData)
-{
-	CGuildManager::instance().LoadGuild(*(uint32_t *) c_pData);
-}
-
-void CInputDB::GuildSkillUpdate(const char* c_pData)
-{
-	TPacketGuildSkillUpdate * p = (TPacketGuildSkillUpdate *) c_pData;
-
-	CGuild * g = CGuildManager::instance().TouchGuild(p->guild_id);
-
-	if (g)
-	{
-		g->UpdateSkill(p->skill_point, p->skill_levels);
-		g->GuildPointChange(POINT_SP, p->amount, p->save?true:false);
-	}
-}
-
-void CInputDB::GuildWar(const char* c_pData)
-{
-	TPacketGuildWar * p = (TPacketGuildWar*) c_pData;
-
-	LOG_INFO("InputDB::GuildWar {} {} state {}", p->dwGuildFrom, p->dwGuildTo, p->bWar);
-
-	switch (p->bWar)
-	{
-		case GUILD_WAR_SEND_DECLARE:
-		case GUILD_WAR_RECV_DECLARE:
-			CGuildManager::instance().DeclareWar(p->dwGuildFrom, p->dwGuildTo, p->bType);
-			break;
-
-		case GUILD_WAR_REFUSE:
-			CGuildManager::instance().RefuseWar(p->dwGuildFrom, p->dwGuildTo);
-			break;
-
-		case GUILD_WAR_WAIT_START:
-			CGuildManager::instance().WaitStartWar(p->dwGuildFrom, p->dwGuildTo);
-			break;
-
-		case GUILD_WAR_CANCEL:
-			CGuildManager::instance().CancelWar(p->dwGuildFrom, p->dwGuildTo);
-			break;
-
-		case GUILD_WAR_ON_WAR:
-			CGuildManager::instance().StartWar(p->dwGuildFrom, p->dwGuildTo);
-			break;
-
-		case GUILD_WAR_END:
-			CGuildManager::instance().EndWar(p->dwGuildFrom, p->dwGuildTo);
-			break;
-
-		case GUILD_WAR_OVER:
-			CGuildManager::instance().WarOver(p->dwGuildFrom, p->dwGuildTo, p->bType);
-			break;
-
-		case GUILD_WAR_RESERVE:
-			CGuildManager::instance().ReserveWar(p->dwGuildFrom, p->dwGuildTo, p->bType);
-			break;
-
-		default:
-			LOG_ERROR("Unknown guild war state");
-			break;
-	}
-}
-
-#ifdef ADVANCED_GUILD_INFO
-void CInputDB::GuildResetStats(const char* c_pData)
-{
-	CGuildManager::instance().ResetStatsToAll();
-}
-#endif
-
-void CInputDB::GuildWarScore(const char* c_pData)
-{
-	TPacketGuildWarScore* p = (TPacketGuildWarScore*) c_pData;
-	CGuild * g = CGuildManager::instance().TouchGuild(p->dwGuildGainPoint);
-
-	if (!g)
-		return;
-
-	g->SetWarScoreAgainstTo(p->dwGuildOpponent, p->lScore);
-}
-
-void CInputDB::GuildSkillRecharge()
-{
-	CGuildManager::instance().SkillRecharge();
-}
-
-void CInputDB::GuildExpUpdate(const char* c_pData)
-{
-	TPacketGuildSkillUpdate * p = (TPacketGuildSkillUpdate *) c_pData;
-	LOG_INFO("GuildExpUpdate {}", p->amount);
-
-	CGuild * g = CGuildManager::instance().TouchGuild(p->guild_id);
-
-	if (g)
-		g->GuildPointChange(POINT_EXP, p->amount);
-}
-
-void CInputDB::GuildAddMember(const char* c_pData)
-{
-	TPacketDGGuildMember * p = (TPacketDGGuildMember *) c_pData;
-	CGuild * g = CGuildManager::instance().TouchGuild(p->dwGuild);
-
-	if (g)
-		g->AddMember(p);
-}
-
-void CInputDB::GuildRemoveMember(const char* c_pData)
-{
-	TPacketGuild* p=(TPacketGuild*)c_pData;
-	CGuild* g = CGuildManager::instance().TouchGuild(p->dwGuild);
-
-	if (g)
-		g->RemoveMember(p->dwInfo);
-}
-
-void CInputDB::GuildChangeGrade(const char* c_pData)
-{
-	TPacketGuild* p=(TPacketGuild*)c_pData;
-	CGuild* g = CGuildManager::instance().TouchGuild(p->dwGuild);
-
-	if (g)
-		g->P2PChangeGrade((uint8_t)p->dwInfo);
-}
-
-void CInputDB::GuildChangeMemberData(const char* c_pData)
-{
-	LOG_INFO("Recv GuildChangeMemberData");
-	TPacketGuildChangeMemberData * p = (TPacketGuildChangeMemberData *) c_pData;
-	CGuild * g = CGuildManager::instance().TouchGuild(p->guild_id);
-
-	if (g)
-		g->ChangeMemberData(p->pid, p->offer, p->level, p->grade);
-}
-
-void CInputDB::GuildDisband(const char* c_pData)
-{
-	TPacketGuild * p = (TPacketGuild*) c_pData;
-	CGuildManager::instance().DisbandGuild(p->dwGuild);
-}
-
-void CInputDB::GuildLadder(const char* c_pData)
-{
-	TPacketGuildLadder* p = (TPacketGuildLadder*) c_pData;
-	LOG_INFO("Recv GuildLadder {} {} / w {} d {} l {}", p->dwGuild, p->lLadderPoint, p->lWin, p->lDraw, p->lLoss);
-	CGuild * g = CGuildManager::instance().TouchGuild(p->dwGuild);
-
-	if (!g)
-		return;
-
-	g->SetLadderPoint(p->lLadderPoint);
-	g->SetWarData(p->lWin, p->lDraw, p->lLoss);
-}
-
 #ifdef __SKILL_COLOR_SYSTEM__
 void CInputDB::SkillColorLoad(LPDESC desc, const char* data)
 {
@@ -1629,168 +1358,6 @@ void CInputDB::SkillColorLoad(LPDESC desc, const char* data)
 }
 #endif
 
-void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
-{
-	const entt::entity chEntity = d ? d->GetEntity() : entt::null;
-
-	if (!ecs::IsCharacter(chEntity))
-		return;
-
-	if (InventorySystem::IsItemLoaded(chEntity))
-		return;
-
-	uint32_t dwCount = decode_4bytes(c_pData);
-	c_pData += sizeof(uint32_t);
-
-	LOG_INFO("ITEM_LOAD: COUNT {} {}", ecs::PlayerRuntime::GetName(chEntity).data(), dwCount);
-
-	std::vector<entt::entity> deferredItems;
-	TPlayerItem * p = (TPlayerItem *) c_pData;
-	uint32_t duplicatePurgeCount = 0;
-
-	for (uint32_t i = 0; i < dwCount; ++i, ++p)
-	{
-		const entt::entity staleItem = ItemSystem::FindItemByID(p->id);
-		if (staleItem != entt::null && ItemSystem::IsValidItem(staleItem))
-		{
-			const entt::entity staleOwner = ItemSystem::GetItemOwner(staleItem);
-			const bool samePlayer =
-				(staleOwner == chEntity) ||
-				(ItemSystem::GetItemLastOwnerPID(staleItem) == ecs::PlayerRuntime::GetPlayerID(chEntity));
-
-#ifdef ENABLE_EXTRA_INVENTORY
-			const bool extraInventoryWindow = (p->window == EXTRA_INVENTORY);
-#else
-			const bool extraInventoryWindow = false;
-#endif
-
-			if (samePlayer || extraInventoryWindow)
-			{
-				++duplicatePurgeCount;
-				LOG_ERROR("DUP_ITEM_PURGE_BEGIN index={} id={} owner_pid={} window={} entity={}",
-					i, p->id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), p->window, static_cast<uint32_t>(staleItem));
-				const bool destroyed = ItemSystem::DestroyLoadedDuplicateItem(staleItem);
-				LOG_ERROR("DUP_ITEM_PURGE_END index={} id={} owner_pid={} window={} destroyed={}",
-					i, p->id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), p->window, destroyed);
-			}
-		}
-
-		const entt::entity item = ITEM_MANAGER::instance().CreateItem(p->vnum, p->count, p->id);
-
-		if (!ItemSystem::IsValidItem(item))
-		{
-			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ecs::PlayerRuntime::GetName(chEntity).data(), p->id);
-			continue;
-		}
-		const entt::entity itemEntity = item;
-		if (!ItemSystem::IsValidItem(itemEntity))
-		{
-			ITEM_MANAGER::instance().RemoveItem(item);
-			continue;
-		}
-
-		ItemSystem::SetItemSkipSave(itemEntity, true);
-		ItemSystem::SetItemSockets(item, p->alSockets);
-		ItemSystem::SetItemAttributes(item, p->aAttr);
-#ifdef ATTR_LOCK
-		ItemSystem::SetItemLockedAttr(item, p->lockedattr);
-#endif
-#ifdef ENABLE_BELT_INVENTORY_EX
-		if (p->window == BELT_INVENTORY)
-		{
-			p->window = INVENTORY;
-			p->pos = p->pos + BELT_INVENTORY_SLOT_START;
-		}
-#endif
-
-		if ((p->window == INVENTORY && ItemSystem::IsValidItem(ItemSystem::GetInventoryItem(chEntity, p->pos))) ||
-				(p->window == EQUIPMENT && ItemSystem::IsValidItem(ItemSystem::GetWearItem(chEntity, p->pos))))
-		{
-			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemName(item));
-			deferredItems.push_back(itemEntity);
-		}
-		else
-		{
-			switch (p->window)
-			{
-				case INVENTORY:
-				case DRAGON_SOUL_INVENTORY:
-#ifdef ENABLE_EXTRA_INVENTORY
-				case EXTRA_INVENTORY:
-#endif
-#ifdef ENABLE_SWITCHBOT
-				case SWITCHBOT:
-#endif
-#ifdef ENABLE_MOUNT_INVENTORY_FIX_RAZOR93_off
-				 case MOUNT_INVENTORY:
-					               // safety: never load these into CHARACTER inventory arrays
-						deferredItems.push_back(itemEntity);
-					break;
-#else
-				case MOUNT_INVENTORY:
-#ifdef __HIGHLIGHT_SYSTEM__
-					InventorySystem::AddToCharacter(item, chEntity, TItemPos(p->window, p->pos), false);
-#else
-					InventorySystem::AddToCharacter(item, chEntity, TItemPos(p->window, p->pos));
-#endif
-					break;
-#endif
-				case EQUIPMENT:
-					if (ItemSystem::CheckItemUseLevel(item, (ecs::PointSystem::GetLevel(chEntity))) == true )
-					{
-						if (InventorySystem::EquipTo(item, chEntity, p->pos) == false )
-						{
-							deferredItems.push_back(itemEntity);
-						}
-					}
-					else
-					{
-						deferredItems.push_back(itemEntity);
-					}
-					break;
-			}
-		}
-
-		if (false == ItemSystem::OnAfterCreatedItem(item))
-			LOG_ERROR("Failed to call ITEM::OnAfterCreatedItem (vnum: {}, id: {})", ItemSystem::GetItemVnum(itemEntity), ItemSystem::GetItemID(itemEntity));
-
-		ItemSystem::SetItemSkipSave(itemEntity, false);
-	}
-
-	if (duplicatePurgeCount > 0)
-	{
-		LOG_ERROR("DUP_ITEM_PURGE_SUMMARY owner_pid={} name={} count={} loaded_count={}",
-			(ecs::PlayerRuntime::GetPlayerID(chEntity)), ecs::PlayerRuntime::GetName(chEntity).data(), duplicatePurgeCount, dwCount);
-	}
-
-	for (const entt::entity itemEntity : deferredItems)
-	{
-		if (!ItemSystem::IsValidItem(itemEntity))
-			continue;
-
-
-		const int pos = InventorySystem::GetEmptyInventory(chEntity, ItemSystem::GetItemSize(itemEntity));
-		if (pos < 0)
-		{
-			PIXEL_POSITION coord;
-			coord.x = ecs::PlayerRuntime::GetX(chEntity);
-			coord.y = ecs::PlayerRuntime::GetY(chEntity);
-
-			ItemSystem::PlaceItemOnGround(itemEntity, ecs::PlayerRuntime::GetMapIndex(chEntity), coord);
-			ItemSystem::SetGroundOwnership(itemEntity, chEntity, 180);
-		}
-		else
-#ifdef __HIGHLIGHT_SYSTEM__
-			InventorySystem::AddToCharacter(itemEntity, chEntity, TItemPos(INVENTORY, pos), false);
-#else
-			InventorySystem::AddToCharacter(itemEntity, chEntity, TItemPos(INVENTORY, pos));
-#endif
-	}
-	ecs::PointSystem::CheckMaximumPoints(chEntity);
-	NetworkSyncSystem::PointsPacket(chEntity);
-
-	InventorySystem::SetItemLoaded(chEntity);
-}
 
 #ifdef ENABLE_BATTLE_PASS
 void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
@@ -1869,83 +1436,6 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 }
 #endif
 
-void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
-{
-	if (!d)
-		return;
-
-	const entt::entity chEntity = d->GetEntity();
-	if (!ecs::IsCharacter(chEntity))
-		return;
-
-	uint32_t dwPID = decode_4bytes(c_pData);
-	c_pData += sizeof(uint32_t);
-
-	uint32_t dwCount = decode_4bytes(c_pData);
-	c_pData += sizeof(uint32_t);
-
-	if (ecs::PlayerRuntime::GetPlayerID(chEntity) != dwPID)
-		return;
-
-	AffectSystem::LoadAffect(chEntity, dwCount, (TPacketAffectElement *) c_pData);
-#ifdef ENABLE_BATTLE_PASS
-#ifdef ENABLE_FREE_PASS_RAZOR93
-	ecs::PlayerRuntime::EnsureFreeBattlePassActive(chEntity);
-	if (!ecs::PlayerRuntime::IsBattlePassLoaded(chEntity))
-		ecs::PlayerRuntime::LoadBattlePass(chEntity, 0, nullptr);
-#endif
-#endif
-
-
-}
-
-
-
-void CInputDB::PartyCreate(const char* c_pData)
-{
-	TPacketPartyCreate* p = (TPacketPartyCreate*) c_pData;
-	CPartyManager::instance().P2PCreateParty(p->dwLeaderPID);
-}
-
-void CInputDB::PartyDelete(const char* c_pData)
-{
-	TPacketPartyDelete* p = (TPacketPartyDelete*) c_pData;
-	CPartyManager::instance().P2PDeleteParty(p->dwLeaderPID);
-}
-
-void CInputDB::PartyAdd(const char* c_pData)
-{
-	TPacketPartyAdd* p = (TPacketPartyAdd*) c_pData;
-	CPartyManager::instance().P2PJoinParty(p->dwLeaderPID, p->dwPID, p->bState);
-}
-
-void CInputDB::PartyRemove(const char* c_pData)
-{
-	TPacketPartyRemove* p = (TPacketPartyRemove*) c_pData;
-	CPartyManager::instance().P2PQuitParty(p->dwPID);
-}
-
-void CInputDB::PartyStateChange(const char* c_pData)
-{
-	TPacketPartyStateChange * p = (TPacketPartyStateChange *) c_pData;
-	const entt::entity pParty = CPartyManager::instance().P2PCreateParty(p->dwLeaderPID);
-
-	if (pParty == entt::null)
-		return;
-
-	PartySystem::SetRole(pParty, p->dwPID, p->bRole, p->bFlag);
-}
-
-void CInputDB::PartySetMemberLevel(const char* c_pData)
-{
-	TPacketPartySetMemberLevel* p = (TPacketPartySetMemberLevel*) c_pData;
-	const entt::entity pParty = CPartyManager::instance().P2PCreateParty(p->dwLeaderPID);
-
-	if (pParty == entt::null)
-		return;
-
-	PartySystem::P2PSetMemberLevel(pParty, p->dwPID, p->bLevel);
-}
 
 void CInputDB::Time(const char * c_pData)
 {
@@ -2004,17 +1494,6 @@ void CInputDB::ReloadProto(const char * c_pData)
 	CHARACTER_MANAGER::instance().for_each_pc([](entt::entity ch) { ecs::PointSystem::Compute(ch); });
 }
 
-void CInputDB::GuildSkillUsableChange(const char* c_pData)
-{
-	TPacketGuildSkillUsableChange* p = (TPacketGuildSkillUsableChange*) c_pData;
-
-	CGuild* g = CGuildManager::instance().TouchGuild(p->dwGuild);
-
-	if (!g)
-		return;
-
-	g->SkillUsableChange(p->dwSkillVnum, p->bUsable?true:false);
-}
 
 void CInputDB::AuthLogin(LPDESC d, const char * c_pData)
 {
@@ -2052,14 +1531,6 @@ void CInputDB::ChangeEmpirePriv(const char* c_pData)
 	// END_OF_ADD_EMPIRE_PRIV_TIME
 }
 
-void CInputDB::ChangeGuildPriv(const char* c_pData)
-{
-	TPacketDGChangeGuildPriv* p = (TPacketDGChangeGuildPriv*) c_pData;
-
-	// ADD_GUILD_PRIV_TIME
-	CPrivManager::instance().GiveGuildPriv(p->guild_id, p->type, p->value, p->bLog, p->end_time_sec);
-	// END_OF_ADD_GUILD_PRIV_TIME
-}
 
 void CInputDB::ChangeCharacterPriv(const char* c_pData)
 {
@@ -2080,27 +1551,6 @@ void CInputDB::MoneyLog(const char* c_pData)
 	LogManager::instance().MoneyLog(p->type, p->vnum, p->gold);
 }
 
-void CInputDB::GuildMoneyChange(const char* c_pData)
-{
-	TPacketDGGuildMoneyChange* p = (TPacketDGGuildMoneyChange*) c_pData;
-
-	CGuild* g = CGuildManager::instance().TouchGuild(p->dwGuild);
-	if (g)
-	{
-		g->RecvMoneyChange(p->iTotalGold);
-	}
-}
-
-void CInputDB::GuildWithdrawMoney(const char* c_pData)
-{
-	TPacketDGGuildMoneyWithdraw* p = (TPacketDGGuildMoneyWithdraw*) c_pData;
-
-	CGuild* g = CGuildManager::instance().TouchGuild(p->dwGuild);
-	if (g)
-	{
-		g->RecvWithdrawMoneyGive(p->iChangeGold);
-	}
-}
 
 void CInputDB::SetEventFlag(const char* c_pData)
 {
@@ -2137,61 +1587,6 @@ void CInputDB::Notice(const char * c_pData)
 	SendNotice(szBuf);
 }
 
-void CInputDB::GuildWarReserveAdd(TGuildWarReserve * p)
-{
-	CGuildManager::instance().ReserveWarAdd(p);
-}
-
-void CInputDB::GuildWarReserveDelete(uint32_t dwID)
-{
-	CGuildManager::instance().ReserveWarDelete(dwID);
-}
-
-void CInputDB::GuildWarBet(TPacketGDGuildWarBet * p)
-{
-	CGuildManager::instance().ReserveWarBet(p);
-}
-
-void CInputDB::MarriageAdd(TPacketMarriageAdd * p)
-{
-	LOG_INFO("MarriageAdd {} {} {} {} {}", p->dwPID1, p->dwPID2, (uint32_t)p->tMarryTime, p->szName1, p->szName2);
-	marriage::CManager::instance().Add(p->dwPID1, p->dwPID2, p->tMarryTime, p->szName1, p->szName2);
-}
-
-void CInputDB::MarriageUpdate(TPacketMarriageUpdate * p)
-{
-	LOG_INFO("MarriageUpdate {} {} {} {}", p->dwPID1, p->dwPID2, p->iLovePoint, p->byMarried);
-	marriage::CManager::instance().Update(p->dwPID1, p->dwPID2, p->iLovePoint, p->byMarried);
-}
-
-void CInputDB::MarriageRemove(TPacketMarriageRemove * p)
-{
-	LOG_INFO("MarriageRemove {} {}", p->dwPID1, p->dwPID2);
-	marriage::CManager::instance().Remove(p->dwPID1, p->dwPID2);
-}
-
-void CInputDB::WeddingRequest(TPacketWeddingRequest* p)
-{
-	marriage::WeddingManager::instance().Request(p->dwPID1, p->dwPID2);
-}
-
-void CInputDB::WeddingReady(TPacketWeddingReady* p)
-{
-	LOG_INFO("WeddingReady {} {} {}", p->dwPID1, p->dwPID2, p->dwMapIndex);
-	marriage::CManager::instance().WeddingReady(p->dwPID1, p->dwPID2, p->dwMapIndex);
-}
-
-void CInputDB::WeddingStart(TPacketWeddingStart* p)
-{
-	LOG_INFO("WeddingStart {} {}", p->dwPID1, p->dwPID2);
-	marriage::CManager::instance().WeddingStart(p->dwPID1, p->dwPID2);
-}
-
-void CInputDB::WeddingEnd(TPacketWeddingEnd* p)
-{
-	LOG_INFO("WeddingEnd {} {}", p->dwPID1, p->dwPID2);
-	marriage::CManager::instance().WeddingEnd(p->dwPID1, p->dwPID2);
-}
 
 // MYSHOP_PRICE_LIST
 void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* p )
@@ -2475,8 +1870,6 @@ void OfflineShopOfferAcceptPacket(const char* data)
 }
 
 
-
-
 void OfflineShopOfferCancelPacket(const char* data)
 {
 	offlineshop::TSubPacketDGOfferCancel* subpack;
@@ -2485,8 +1878,6 @@ void OfflineShopOfferCancelPacket(const char* data)
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
 	rManager.RecvShopOfferCancelDBPacket(subpack->dwOfferID , subpack->dwOwnerID, subpack->IsRemovingItem);//offlineshop-updated 05/08/19
 }
-
-
 
 
 void OfflineShopSafeboxAddItemPacket(const char* data)
@@ -2507,7 +1898,6 @@ void OfflineShopSafeboxAddValutesPacket(const char* data)
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
 	rManager.RecvShopSafeboxAddValutesDBPacket(subpack->dwOwnerID , subpack->valute);
 }
-
 
 
 void OfflineShopSafeboxLoad(const char* data)
@@ -2557,7 +1947,6 @@ void OfflineShopAuctionCreate(const char* data)
 }
 
 
-
 void OfflineShopAuctionAddOffer(const char* data)
 {
 	offlineshop::TSubPacketDGAuctionAddOffer* subpack;
@@ -2565,7 +1954,6 @@ void OfflineShopAuctionAddOffer(const char* data)
 
 	offlineshop::GetManager().RecvAuctionAddOfferDBPacket(subpack->offer);
 }
-
 
 
 void OfflineShopAuctionExpired(const char* data)
@@ -2577,10 +1965,6 @@ void OfflineShopAuctionExpired(const char* data)
 }
 
 
-
-
-
-
 void OfflineshopShopExpired(const char* data)
 {
 	offlineshop::TSubPacketDGShopExpired* subpack;
@@ -2589,10 +1973,6 @@ void OfflineshopShopExpired(const char* data)
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
 	rManager.RecvShopExpiredDBPacket(subpack->dwOwnerID);
 }
-
-
-
-
 
 
 void OfflineshopPacket(const char* data)
@@ -2666,7 +2046,6 @@ void OfflineshopPacket(const char* data)
 		return;
 
 
-
 	case offlineshop::SUBHEADER_DG_SAFEBOX_ADD_ITEM:
 		OfflineShopSafeboxAddItemPacket(data);
 		return;
@@ -2701,7 +2080,6 @@ void OfflineshopPacket(const char* data)
 		return;
 
 
-
 	default:
 		LOG_ERROR("UKNOWN SUB HEADER {} ", pPack->bSubHeader);
 		return;
@@ -2723,8 +2101,6 @@ void LoadItemExtraProto(const char* data)
 	ITEM_MANAGER::instance().InitializeExtraProto((TItemExtraProto*)(data + sizeof(TPacketDGLoadItemExtraProto)), Pack->dwCount);
 }
 #endif
-
-
 
 
 ////////////////////////////////////////////////////////////////////
@@ -3159,10 +2535,6 @@ bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesPro
 	return true;
 }
 
-void CInputDB::GuildChangeMaster(TPacketChangeGuildMaster* p)
-{
-	CGuildManager::instance().ChangeMaster(p->dwGuildID);
-}
 
 void CInputDB::DetailLog(const TPacketNeedLoginLogInfo* info)
 {
@@ -3337,8 +2709,4 @@ void CInputDB::ItemShop(LPDESC d, const char* c_pData)
 }
 #endif
 
-
-
-
-
-
+
