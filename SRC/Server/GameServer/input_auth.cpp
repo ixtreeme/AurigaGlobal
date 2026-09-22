@@ -320,9 +320,6 @@ int CInputAuth::auth_OpenID(const char *authKey, const char *ipAddr, char *rID)
 						//"/kyw/gameauth.php", authKey, ipAddr);
 						openid_uri, authKey, ipAddr, openid_host);
 
-//#ifndef __WIN32__
-//		if (write(fd, request, len) < 0)
-//#else
 		if (socket_write(fd, request, len) < 0)
 //#endif
 		{

@@ -34,12 +34,7 @@ void set_global_time(time_t t)
 #ifndef SHA1_HASH_SIZE
 #define SHA1_HASH_SIZE 20
 #endif
-//std::string mysql_hash_password(const char* tmp_pwd)
-//{
-//	char hash_buf[2*SHA1_HASH_SIZE + 2] = "";
 //	make_scrambled_password(hash_buf, tmp_pwd);
-//	return hash_buf;
-//}
 
 int dice(int number, int size)
 {

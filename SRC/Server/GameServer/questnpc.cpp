@@ -454,10 +454,6 @@ namespace quest
 		std::vector <int> vcode_sizes;
 		int size;
 
-		//uint32_t dwQuestIndex;
-		//int iPCState;
-		//const char* code;
-		//int code_size;
 
 		FuncMatchHandleEvent()
 			: bMatched(false), vdwQuesIndices(0), viPCStates(0), vcodes(0), vcode_sizes(0), size(0)

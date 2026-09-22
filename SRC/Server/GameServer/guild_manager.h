@@ -75,8 +75,6 @@ class CGuildManager : public singleton<CGuildManager>
 		void		Kill(entt::entity killerEntity, entt::entity victimEntity);
 
 		int		GetRank(CGuild* g);
-		//void		GetHighRankString(uint32_t dwMyGuild, char * buffer);
-		//void		GetAroundRankString(uint32_t dwMyGuild, char * buffer);
 		void		GetHighRankString(uint32_t dwMyGuild, char * buffer, size_t buflen);
 		void		GetAroundRankString(uint32_t dwMyGuild, char * buffer, size_t buflen);
 

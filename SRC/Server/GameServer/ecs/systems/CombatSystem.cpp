@@ -1235,8 +1235,6 @@ struct FuncPullMonster
 				return;
 			if (ecs::PlayerRuntime::GetCharType(candidate) != CHAR_TYPE_MONSTER)
 				return;
-			//if (ch->GetVictim() && ch->GetVictim() != m_ch)
-			//return;
 			float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(m_character) - ecs::PlayerRuntime::GetX(candidate), ecs::PlayerRuntime::GetY(m_character) - ecs::PlayerRuntime::GetY(candidate));
 			if (fDist > 3000 || fDist < 100)
 				return;
@@ -2155,8 +2153,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	if (victim == entt::null || !g_registry.valid(victim))
 		return;
 	// FakePlayers are normally excluded from death handling, but LostCastle clones must die.
-	//if (IsFakePlayer() && !CLostCastleDungeon::instance().IsCloneVID(GetVID()))
-	//	return;
 
 	if (IsDead(victim))
 		return;
@@ -2167,9 +2163,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	// LostCastle klonoknak nincs mob_proto (m_pkMobData == nullptr),
 	// ezert a normal !ecs::PlayerRuntime::IsPC(victim) reward/resurrection ag GetMobTable()-t hivna es crashelne.
 	// Itt egy safe halal pipeline + return.
-	//if (IsFakePlayer() && CLostCastleDungeon::instance().IsCloneVID(GetVID()))
-	//{
-	//	if (!hasKiller && m_dwKillerPID)
 	//		hasKiller = CHARACTER_MANAGER::instance().FindByPID(m_dwKillerPID);
 
 	//	m_dwKillerPID = 0;
@@ -2181,17 +2174,12 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	//	TPacketGCDead pack;
 	//	pack.header = HEADER_GC_DEAD;
 	//	pack.vid = ecs::PlayerRuntime::GetPacketVID(victim);
-	//	ecs::ViewSystem::PacketView(victim, &pack, sizeof(pack));
-
-	//	if (auto* flags = RuntimeFlags(victim))
 	//		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
 
 	//	SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
 	//	pEventInfo->vid = GetVID();
 	//	m_pkDeadEvent = event_create(dead_event, pEventInfo, immediate ? 1 : PASSES_PER_SEC(1));
-	//	return;
-	//}
 
 	if (ecs::PlayerRuntime::IsPC(victim))
 	{
@@ -2301,12 +2289,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	}
 
 #ifdef ENABLE_QUEST_DIE_EVENT
-	//if (ecs::PlayerRuntime::IsPC(victim))
-	//{
-	//	if (hasKiller)
 	//	// quest::CQuestManager::instance().Die(ecs::PlayerRuntime::GetPlayerID(victim), quest::QUEST_NO_NPC);
-	//	quest::CQuestManager::instance().Die(ecs::PlayerRuntime::GetPlayerID(victim), (hasKiller)?ecs::PlayerRuntime::GetRaceNum((hasKiller ? hasKiller->GetEntityHandle() : entt::null)):quest::QUEST_NO_NPC);
-	//}
 	if (ecs::PlayerRuntime::IsPC(victim))
 	{
 		if (hasKiller) {
@@ -5297,8 +5280,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	//
 	// ü   ( )
 	//
-	//if (ecs::PointSystem::Get(victim, POINT_MALL_DEFBONUS) > 0)
-	//{
 	//	int64_t dec_dam = std::min((int64_t)200, dam * ecs::PointSystem::Get(victim, POINT_MALL_DEFBONUS) / 100);//razor93
 	//	dam -= dec_dam;
 	//}
@@ -6035,21 +6016,14 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 //
 //		snprintf(line, sizeof(line), "%s;%d;%d;%d\n", name, level, metins, dmg);
 //		result += line;
-//	}
-//
 //	// Klds kliensnek
 //	TPacketGCLeaderboard p;
 //	p.header = HEADER_GC_LEADERBOARD_DATA;
 //	strlcpy(p.data, result.c_str(), sizeof(p.data));
 //
-//	GetDesc()->Packet(&p, sizeof(p));
-//}
 
 
 //	// SQL lekrdezs top 10 jtkosra
-//	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
-//
-//
 //	"SELECT id, title, content,author FROM player.news ORDER BY id DESC LIMIT 5"));
 //
 //	//if (!pMsg || !pMsg->Get()->uiNumRows)
@@ -6063,16 +6037,11 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 //
 //		snprintf(line, sizeof(line), "%d;%s;%s;%s\n", id, title, content, author);
 //		result += line;
-//	}
-//
-//
 //	// Klds kliensnek
 //	TPacketGCLeaderboardNews p;
 //	p.header = HEADER_GC_LEADERBOARD_NEWS;
 //	strlcpy(p.data, result.c_str(), sizeof(p.data));
 //
-//	GetDesc()->Packet(&p, sizeof(p));
-//}
 
 #endif
 
@@ -6266,10 +6235,6 @@ public:
 			NormalAttackAffect(me, victim);
 
 			//
-//#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
-//						const int resist_magic = MINMAX(0, ecs::PointSystem::Get(victim, POINT_RESIST_MAGIC), 100);
-//						const int resist_magic_reduction = MINMAX(0, (ecs::PlayerRuntime::GetJob(me)==JOB_SURA) ? ecs::PointSystem::Get(me, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(me, POINT_RESIST_MAGIC_REDUCTION), 50);
-//						const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //						iDam = iDam * (100 - total_res_magic) / 100;
 //#else
 			iDam = iDam * (100 - (int)(ecs::PointSystem::Get(victim, POINT_RESIST_MAGIC) / 2)) / 100;

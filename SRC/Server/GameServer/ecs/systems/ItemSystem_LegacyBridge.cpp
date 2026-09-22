@@ -2570,9 +2570,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 				// debug log:
 				//LOG_INFO("ItemLink Debug: {}", itemlink);
 				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
-					//GetItemSocket(pkNewItem, 0),
-					//GetItemSocket(pkNewItem, 1),
-					//GetItemSocket(pkNewItem, 2));
 
 				char szChat[2048];
 				snprintf(szChat, sizeof(szChat),
@@ -2964,9 +2961,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 				// debug log:
 				//LOG_INFO(0, "ItemLink Debug: %s", itemlink);
 				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
-					//GetItemSocket(pkNewItem, 0),
-					//GetItemSocket(pkNewItem, 1),
-					//GetItemSocket(pkNewItem, 2));
 
 				char szChat[2048];
 				snprintf(szChat, sizeof(szChat),
@@ -3594,8 +3588,6 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 
 	uint16_t wCell = Cell.cell;
 	uint8_t window_type = Cell.window_type;
-	//uint16_t wDestCell = DestCell.cell;
-	//uint8_t bDestInven = DestCell.window_type;
 	entt::entity item = entt::null;
 
 	if (!InventorySystem::CanHandleItems(e))
@@ -3635,9 +3627,6 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 1247, "");
 #endif
-		//if (ecs::PlayerRuntime::GetDesc(e)) {
-		//	ecs::PlayerRuntime::GetDesc(e)->DelayedDisconnect(3);
-		//}
 		return false;
 	}
 #endif
@@ -4266,9 +4255,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #endif
 
 	// 30001: Teszt klonok torlese (dungeon instance-ben blokkolva)
-	//switch (GetItemVnum(item))
-	//{
-	//	case 30001: return CLostCastleDungeon::instance().OnUseItem30001(e);
 	//	default: break;
 	//}
 
@@ -5503,8 +5489,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			case UNIQUE_ITEM_CAPE_OF_COURAGE:
 
 
-				// }
-				// break;
 			case 70057:
 			case REWARD_BOX_UNIQUE_ITEM_CAPE_OF_COURAGE:
 #ifdef __EFFETTO_MANTELLO__
@@ -6421,9 +6405,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 //				pPC->SetFlag("mythical_peach.last_use_time", get_global_time());
 //
 //				snprintf(buf, sizeof(buf), "%u %u", old_alignment, CombatSystem::GetAlignment(e) / 10);
-//				LogManager::instance().CharLog(e, val, "MYTHICAL_PEACH", buf);
-//			}
-//			break;
 
 			case 71109: // �
 // »¼®¼­
@@ -8180,8 +8161,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					// ½Ã°£ÀÌ ÃæºÐÈ÷ Èê·¶´Ù¸é ÇöÀç ¼Ó¼ºº¯°æ¿¡ ´ëÇÑ ½Ã°£À» ¼³Á¤ÇØ ÁØ´Ù.
 					//
 
-					// uint32_t dwChangeItemAttrCycle = quest::CQuestManager::instance().GetEventFlag(msc_szChangeItemAttrCycleFlag);
-					// if (dwChangeItemAttrCycle < msc_dwDefaultChangeItemAttrCycle)
 						// dwChangeItemAttrCycle = msc_dwDefaultChangeItemAttrCycle;
 					uint32_t dwChangeItemAttrCycle = g_dwItemBonusChangeTime;
 
@@ -8755,8 +8734,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 						if (GetItemAccessorySocketGrade(item2) < GetItemAccessorySocketMaxGrade(item2))
 						{
-							//if (number(1, 100) <= aiAccessorySocketPutPct[GetItemAccessorySocketGrade(item2)])
-							//{
 							SetItemAccessorySocketGrade(item2, GetItemAccessorySocketGrade(item2) + 1);
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 452, "");
@@ -9573,9 +9550,6 @@ void GiveGold(entt::entity e, int64_t iAmount)
 		return;
 
 	LOG_INFO("GIVE_GOLD: {} {}", ecs::PlayerRuntime::GetName(e).data(), iAmount);
-	//#ifdef TEXTS_IMPROVEMENT
-	//	ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 3, "%lld", iAmount);
-	//#endif
 
 #ifdef ENABLE_BATTLE_PASS
 	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
@@ -9634,8 +9608,6 @@ void GiveGold(entt::entity e, int64_t iAmount)
 	// Mindig csak az kapja a goldot, akihez a ItemSystem::GiveGold(GetEntityHandle(), ) meghivodik
 	ecs::PointSystem::Change(e, POINT_GOLD, iAmount, true);
 
-	//if (iAmount > 1000)
-	//{
 	//	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(e, iAmount, "GET_GOLD", ""));
 	//}
 }

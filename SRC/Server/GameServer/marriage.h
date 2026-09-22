@@ -108,8 +108,6 @@ namespace marriage
 			void	RequestRemove(uint32_t dwPID1, uint32_t dwPID2);
 			void	Remove(uint32_t dwPID1, uint32_t dwPID2);
 
-			//void	P2PLogin(uint32_t dwPID);
-			//void	P2PLogout(uint32_t dwPID);
 
 			void	Login(entt::entity ch);
 

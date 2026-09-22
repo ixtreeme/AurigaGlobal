@@ -2352,8 +2352,6 @@ struct FuncSplashDamage
 //					const int resist_magic_reduction = MINMAX(0, (ecs::PlayerRuntime::GetJob(m_pkChr->GetEntityHandle())==JOB_SURA) ? ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION), 50);
 //					const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //					iDam = iDam * (100 - total_res_magic) / 100;
-//				}
-//#else
 				iDam = iDam * (100 - (int)(ecs::PointSystem::Get(victimEntity, POINT_RESIST_MAGIC) / 2)) / 100;
 //#endif
 				break;
@@ -2699,9 +2697,6 @@ struct FuncSplashDamage
 			LOG_INFO("FuncSplashDamage End :{} ", ecs::PlayerRuntime::GetName(m_character).data());
 //#ifdef ENABLE_MAP1_SKILL_MOB
 //		// csak PC -> 136-os mob esetén mentsünk
-//		if (ecs::PlayerRuntime::IsPC(m_character) && pkChrVictim->IsMonster() && ecs::PlayerRuntime::GetRaceNum(victimEntity) == 136)
-//		{
-//
 //			DBManager::instance().DirectQuery(
 //				"UPDATE player.player "
 //				"SET map1_skillmob = GREATEST(map1_skillmob, %d) "
@@ -2709,10 +2704,6 @@ struct FuncSplashDamage
 //				iAmount, ecs::PlayerRuntime::GetPlayerID(m_character));
 //
 //			// (opcionális) debug üzenet a játékosnak
-//			ecs::ChatSystem::Send(m_character, CHAT_TYPE_INFO, "SkillMob DAMAGE: %d (max mentve).", iAmount);
-//		}
-//
-//#endif
 	}
 
 	int		m_x;

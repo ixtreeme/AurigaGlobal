@@ -1092,15 +1092,8 @@ static bool __LoadGeneralConfigFile(const char* configName)
 		}
 
 		// TOKEN("shout_limit_time")
-		// {
-			// int flag = 0;
 			// str_to_number(flag, value_string);
-			// if (flag <= 0) continue;
-
-			// g_iShoutLimitTime = flag;
 			// LOG_INFO("SHOUT_LIMIT_TIME: {}", g_iShoutLimitTime);
-			// continue;
-		// }
 
 		TOKEN("check_version_server")
 		{
@@ -1757,11 +1750,7 @@ void LoadMapConfig()
 		}
 
 
-		// if (vecToken[0] == "index")
-		// {
 			// map.iMapIndex	= (int) atoll(vecToken[1].c_str());
-			// continue;
-		// }
 		
 		if (vecToken[0] == "coord_x")
 		{

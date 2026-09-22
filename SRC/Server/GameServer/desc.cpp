@@ -933,16 +933,11 @@ void DESC::SendLoginSuccessPacket()
 	Packet(&p, sizeof(TPacketGCLoginSuccess));
 }
 
-//void DESC::SendServerStatePacket(int nIndex)
-//{
 //	TPacketGCStateCheck rp;
 //
 //	rp.header	= 1;
 //	rp.key		= 0;
 //	rp.index	= nIndex;
-//
-//	if (g_bNoMoreClient) rp.state = 0;
-//	else rp.state = iTotal > g_iFullUserCount ? 3 : iTotal > g_iBusyUserCount ? 2 : 1;
 //
 //	this->Packet(&rp, sizeof(rp));
 //	// LOG_TRACE("STATE_CHECK PACKET PROCESSED.");

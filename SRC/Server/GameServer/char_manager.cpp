@@ -1437,8 +1437,6 @@ const TEventManagerData* CHARACTER_MANAGER::CheckEventIsActive(uint8_t eventInde
 
 				if (eventData.eventStatus == true)
 					return &eventData;
-				//if (cur_Time >= eventData.startTime && cur_Time <= eventData.endTime)
-				//	return &eventData;
 			}
 		}
 	}

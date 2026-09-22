@@ -515,9 +515,6 @@ struct command_info cmd_info[] =
 	{ "gr_levelup",		do_gr_levelup,	0,			POS_DEAD,	GM_PLAYER	},
 #endif
 	{ "pvp",		do_pvp,			0,			POS_DEAD,	GM_PLAYER	},
-	//{ "spawn_clon",	do_spawn_clon,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
-	//{ "spawm_clon",	do_spawn_clon,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
-	//{ "p_clon",		do_p_clon,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 
 
 #ifdef ENABLE_PVP_ADVANCED

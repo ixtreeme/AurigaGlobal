@@ -918,8 +918,6 @@ namespace quest
 		}
 		if (pPC)
 		{
-			//const char* szQuestName = lua_tostring(L, 1);
-			//const char* szStateName = lua_tostring(L, 2);
 			const string stQuestName(lua_tostring(L, 1));
 			const string stStateName(lua_tostring(L, 2));
 			if ( test_server )

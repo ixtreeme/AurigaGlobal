@@ -730,8 +730,6 @@ bool CManager::LoadLand(TLand * pTable) // from DB
 	//	�ǹ�(object)�� ��� ��忡 ���� �ִ��� �˱� ���ؼ��� �ǹ��� ������ ���� ��� ��� �Ҽ����� �˾��Ѵ�.
 	//	���� ���� load�� ���� ������ ��� �ǹ��� ��� ��忡 �Ҽӵ� ���� ���� ���ؼ�
 	//	��� �ǹ��� ���� ��� ������ ���� ���Ѵ�.
-	//if (!map_allow_find(pTable->lMapIndex))
-	//	return false;
 
 	CLand * pkLand = M2_NEW CLand(pTable);
 	m_map_pkLand.insert(std::make_pair(pkLand->GetID(), pkLand));

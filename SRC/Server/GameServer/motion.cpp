@@ -418,8 +418,6 @@ bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int i
 	if (!rkTextFileLoader.Load(c_pszFileName))
 		return false;
 
-	//if (rkTextFileLoader.IsEmpty())
-	//return false;
 
 	rkTextFileLoader.SetTop();
 
@@ -486,8 +484,6 @@ bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int i
 							return false;
 						}
 
-						//if (!rTextFileLoader.GetTokenFloat("radius", &fRadius))
-						//return false;
 						if (!rkTextFileLoader.GetTokenPosition("position", &v3Position))
 						{
 							LOG_ERROR("Motion: no position data {}", c_pszFileName);

@@ -664,17 +664,11 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 			//							s.insert(n, ".");
 			//							n -= 3;
-			//						}
-			//
-			//						ecs::ChatSystem::SendNew(e,
-			//#ifdef ENABLE_NEW_CHAT
 			//						CHAT_TYPE_INFO_EXP
 			//#else
 			//						CHAT_TYPE_INFO
 			//#endif
 			//						, 2, "%s", s.c_str());
-			//					}
-			//#endif
 			uint32_t iExpBalance = 0;
 
 			// �1o� 3�!
@@ -938,17 +932,11 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 		//						s.insert(n, ".");
 		//						n -= 3;
-		//					}
-		//
-		//					ecs::ChatSystem::SendNew(e,
-		//#ifdef ENABLE_NEW_CHAT
 		//					CHAT_TYPE_INFO_VALUE
 		//#else
 		//					CHAT_TYPE_INFO
 		//#endif
 		//					, 3, "%s", s.c_str());
-		//				}
-		//#endif
 		ecs::PlayerRuntime::SetGold(e, GetGold(e) + amount);
 		val = GetGold(e);
 	}

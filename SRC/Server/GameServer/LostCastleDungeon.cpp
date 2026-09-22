@@ -576,28 +576,12 @@ void ClearClonesOnMap(int32_t mapIndex)
         //    std::vector<uint32_t> spawnedVids;
         //    spawnedVids.reserve(kFloor1MetinCount);
 
-        //    const int32_t minX = std::max(1, kEnterLocalX - kMetinRadiusX);
-        //    const int32_t maxX = std::max(minX + 1, kEnterLocalX + kMetinRadiusX);
-        //    const int32_t minY = std::max(1, kEnterLocalY - kMetinRadiusY);
-        //    const int32_t maxY = std::max(minY + 1, kEnterLocalY + kMetinRadiusY);
 
         //    int32_t attempts = 0;
-        //    const int32_t maxAttempts = kFloor1MetinCount * 60;
-
-        //    while ((int32_t)spawnedVids.size() < kFloor1MetinCount && attempts < maxAttempts)
-        //    {
         //        ++attempts;
 
         //        spawnedVids.push_back(ecs::PlayerRuntime::GetPacketVID(metin));
-        //    }
-
-        //    if (spawnedVids.empty())
-        //    {
         //        "[LostCastle] failed to spawn any metins map=%d localRect=(%d,%d)-(%d,%d)", mapIndex, minX, minY, maxX, maxY);
-        //        return;
-        //    }
-
-        //    const uint32_t correctVid = spawnedVids[number(0, (int)spawnedVids.size() - 1)];
         //    DungeonSystem::SetFlag(d, kFlagCorrectMetin, (int32_t)correctVid);
 
         //    BigNoticeMap(mapIndex, "Elveszett Kastely: %d mp marad meg a megfelelõ metinkõ megtalalasara!", kFloor1TimeSec);

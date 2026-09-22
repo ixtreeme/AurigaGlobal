@@ -418,9 +418,6 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 	unsigned int uiSize;
 	lzo_uint uiDestSize;
 
-//#ifndef _MSC_VER
-//	uint8_t abComp[maxMemSize];
-//#else
 	uint8_t* abComp = M2_NEW uint8_t[maxMemSize];
 //#endif
 	uint32_t * attr = M2_NEW uint32_t[maxMemSize];
@@ -644,8 +641,6 @@ const TMapRegion * SECTREE_MANAGER::FindRegionByPartialName(const char* szMapNam
 	{
 		TMapRegion & rRegion = *(it++);
 
-		//if (rRegion.index == lMapIndex)
-		//return &rRegion;
 		if (rRegion.strMapName.find(szMapName))
 			return &rRegion; // ĳ�� �ؼ� ������ ����
 	}

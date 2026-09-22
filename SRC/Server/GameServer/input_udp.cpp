@@ -156,12 +156,8 @@ bool CInputUDP::Process(LPDESC pDesc, const void * c_pvOrig, int iBytes, int & r
 		//uint32_t dwHandshake = *(uint32_t *) (c_pData + 1);
 		//pDesc = DESC_MANAGER::instance().FindByHandshake(dwHandshake);
 
-		//if (!pDesc)
-		//{
 		//"No desc by handshake %u", dwHandshake);
 		//"Hostname Mismatch! %s != %s", inet_ntoa(m_SockAddr.sin_addr), pDesc->GetHostName());
-		//return true;
-		//}
 
 		if (m_iBufferLeft < iPacketLen)
 			return true;
@@ -180,8 +176,6 @@ bool CInputUDP::Process(LPDESC pDesc, const void * c_pvOrig, int iBytes, int & r
 		iLastPacketLen  = iPacketLen;
 		bLastHeader     = bHeader;
 
-		//if (GetType() != pDesc->GetInputProcessor()->GetType())
-		//return false;
 	}
 
 	*/

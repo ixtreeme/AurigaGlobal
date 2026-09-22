@@ -860,8 +860,6 @@ namespace
             });
 
             ClearDungeonNonPlayers(d);
-            //const entt::entity entryNpc = DungeonSystem::SpawnMob(d, kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
-            //if (ecs::IsCharacter(entryNpc))
             //    DungeonSystem::SetUnique(d, "vk_entry_npc", ecs::PlayerRuntime::GetPacketVID(entryNpc));
 
             BigNoticeMap(idx, "<Frostbane Fortress> Dungeon completed!");

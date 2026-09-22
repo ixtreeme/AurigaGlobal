@@ -864,8 +864,6 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Chat handler ECS
 // DUAL-PATH: legacy only during migration window
-	//if (ch->IsFakePlayer())
-	//	return false;
 	auto pinfo = reinterpret_cast<const TPacketCGChat*>(data);
 
 	if (uiBytes < pinfo->size)
@@ -2275,8 +2273,6 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 	{
 		//LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 		LOG_ERROR("Too many SyncPosition Count({}) from Name({})", iCount, ecs::PlayerRuntime::GetName(character).data());
-		//ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
-		//return -1;
 		iCount = nCountLimit;
 	}
 

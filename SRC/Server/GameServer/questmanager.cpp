@@ -1867,16 +1867,8 @@ namespace quest
 		m_mapServerTimer.erase(std::make_pair(name, arg));
 	}
 
-	//void CQuestManager::ClearServerTimer(const std::string& name, uint32_t arg)
-	//{
 	//	itertype(m_mapServerTimer) it = m_mapServerTimer.find(std::make_pair(name, arg));
-	//	if (it != m_mapServerTimer.end())
-	//	{
-	//		LPEVENT event = it->second;
-	//		event_cancel(&event);
 	//		m_mapServerTimer.erase(it);
-	//	}
-	//}
 
 	void CQuestManager::ClearServerTimer(const std::string& name, uint32_t arg)
 	{
@@ -1891,14 +1883,8 @@ namespace quest
 
 	void CQuestManager::CancelServerTimers(uint32_t arg)
 	{
-		//for (auto it = m_mapServerTimer.begin(); it != m_mapServerTimer.end(); /**/)
-		//{
-		//	if (it->first.second != arg)
-		//	{
 		//		++it;
 		//		it = m_mapServerTimer.erase(it);
-		//	}
-		//}
 		for (auto it = m_mapServerTimer.begin(); it != m_mapServerTimer.end();) {
 			if (it->first.second == arg) {
 				LPEVENT event = it->second;
@@ -1911,20 +1897,9 @@ namespace quest
 		}
 	}
 
-	//void CQuestManager::CancelServerTimers(uint32_t arg)
-	//{
 	//	itertype(m_mapServerTimer) it = m_mapServerTimer.begin();
-	//	for ( ; it != m_mapServerTimer.end();) {
-	//		if (it->first.second == arg) {
-	//			LPEVENT event = it->second;
-	//			event_cancel(&event);
 	//			m_mapServerTimer.erase(it++);
-	//		}
-	//		else {
 	//			++it;
-	//		}
-	//	}
-	//}
 
 	void CQuestManager::SetServerTimerArg(uint32_t dwArg)
 	{

@@ -131,13 +131,8 @@ extern void WriteVersion();
 //// FreeBSD _malloc_message replacement
 //void WriteMallocMessage(const char* p1, const char* p2, const char* p3, const char* p4) {
 //	FILE* fp = ::fopen(DBGALLOC_LOG_FILENAME, "a");
-//	if (fp == NULL) {
-//		return;
-//	}
 //	::fprintf(fp, "%s %s %s %s\n", p1, p2, p3, p4);
 //	::fclose(fp);
-//}
-//#endif
 
 // ���Ӱ� ����Ǵ� ����
 volatile int	num_events_called = 0;
@@ -374,12 +369,7 @@ int main(int argc, char **argv)
 	// event behind, because the async syslog queue dies with the process.
 	InstallCrashReporter();
 
-//#ifdef __ENABLE_NEW_OFFLINESHOP__
-//	if(!Offlineshop_InitializeLibrary("wonder2", "vgbp1q098vgtajp9")){
 //		LOG_ERROR("Cannot initialize correctly offlineshop library!");
-//		return 0;
-//	}
-//#endif
 #ifdef DEBUG_ALLOC
 	DebugAllocator::StaticSetUp();
 #endif
@@ -490,20 +480,10 @@ int main(int argc, char **argv)
 //
 //	path += "exppettable.txt";
 //
-//	std::ifstream exppet_table_open(path);
-//	
-//
 //	/*if (!exp_table_open.is_open())
-//	return 0;*/
-//
-//	int exppet_table_counter = 0;
 //	//int tmppet_exp = 0;
-//	while (!exppet_table_open.eof())
-//	{
 //		exppet_table_open >> temp_exp_line;
 //		str_to_number(exppet_table_common[exppet_table_counter], temp_exp_line.c_str());
-//		if (exppet_table_common[exppet_table_counter] < 2147483647) 
-//		{
 //			0, "Livelli Pet caricati da exppettable.txt: %d !", exppet_table_common[exppet_table_counter]);
 //			exppet_table_counter++;
 //		}
@@ -512,8 +492,6 @@ int main(int argc, char **argv)
 //		//	LOG_ERROR("[main] Impossibile caricare la tabella exp valore non valido");//razor93
 //		//	break;
 //		//}
-//}
-//#endif
 
 	if (g_bAuthServer)
 	{

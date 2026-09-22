@@ -3221,11 +3221,7 @@ void open_in_game_mall(entt::entity character)
 			ecs::PlayerRuntime::GetPlayerID(character), language, sas);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, buf);
 
-//	char buf[512+1];
-//	char sas[33];
 //	MD5_CTX ctx;
-//	const char secretKey[] = "base64:vKqgEB0ho5Swmzh+bQTAmBoWpOk8z2yIFaxsIJMOzvE=";
-//	const char websiteUrl[] = "https://bwmt2-global.eu";
 //	snprintf(buf, sizeof(buf), "%u%s", ch->GetAID(), secretKey);
 //	MD5Init(&ctx);
 //	MD5Update(&ctx, (const unsigned char *) buf, strlen(buf));
@@ -3235,59 +3231,23 @@ void open_in_game_mall(entt::entity character)
 //	static const char hex[] = "0123456789abcdef";
 //	unsigned char digest[16];
 //	MD5Final(digest, &ctx);
-//	int i;
-//	for (i = 0; i < 16; ++i) {
 //		sas[i+i] = hex[digest[i] >> 4];
 //		sas[i+i+1] = hex[digest[i] & 0x0f];
-//	}
-//
 //	sas[i+i] = '\0';
 //			str_lang = "ro";
-//			break;
-//		}
-//		case LANGUAGE_IT: {
 //			str_lang = "it";
-//			break;
-//		}
-//		case LANGUAGE_TR: {
 //			str_lang = "tr";
-//			break;
-//		}
-//		case LANGUAGE_DE: {
 //			str_lang = "de";
-//			break;
-//		}
-//		case LANGUAGE_PL: {
 //			str_lang = "pl";
-//			break;
-//		}
-//		case LANGUAGE_PT: {
 //			str_lang = "pt";
-//			break;
-//		}
-//		case LANGUAGE_ES: {
 //			str_lang = "es";
-//			break;
-//		}
-//		case LANGUAGE_CZ: {
 //			str_lang = "cz";
-//			break;
-//		}
-//		case LANGUAGE_HU: {
 //			str_lang = "hu";
-//			break;
-//		}
 //		default: {
 //			str_lang = "en";
-//			break;
-//		}
-//	}
-//
 //	snprintf(buf, sizeof(buf), "mall %s/in-game-shop?aid=%u&secret=%s&lang=%s", websiteUrl, ch->GetAID(), sas, str_lang.c_str());
 //#else
 //	snprintf(buf, sizeof(buf), "mall %s/in-game-shop?aid=%u&secret=%s", websiteUrl, ch->GetAID(), sas);
-//#endif
-//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, buf);
 }
 
 ACMD(do_in_game_mall)
@@ -3744,8 +3704,6 @@ ACMD(do_event_manager)
 		if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && !test_server)
 			return;
 		const uint8_t subHeader = EVENT_MANAGER_UPDATE;
-		//db_clientdesc->DBPacketHeader(HEADER_GD_EVENT_MANAGER, 0, sizeof(uint8_t));
-		//db_clientdesc->Packet(&subHeader, sizeof(uint8_t));
 		db_clientdesc->DBPacket(HEADER_GD_EVENT_MANAGER, 0, &subHeader, sizeof(uint8_t));
 
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "successfully update!");

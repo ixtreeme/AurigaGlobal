@@ -156,8 +156,6 @@ namespace quest
 		//m_RunningQuestState->iIndex = GetCurrentQuestBeginFlag();
 		m_RunningQuestState->iIndex = qi;
 		m_bShouldSendDone = false;
-		//if (GetCurrentQuestBeginFlag())
-		//{
 		//m_bSendToClient = true;
 		//}
 	}
@@ -313,12 +311,7 @@ namespace quest
 //
 //		if (m_iSendToClient & QUEST_SEND_ISBEGIN) {
 //			qi.isBegin = m_RunningQuestState->bStart?1:0;
-//		}
-//		else {
 //			qi.isBegin = 0;
-//		}
-//
-//		if (m_iSendToClient & QUEST_SEND_CLOCK_NAME) {
 //			m_RunningQuestState->_clock_name.reserve(16+1);
 //			strlcpy(qi.szClockName, m_RunningQuestState->_clock_name.c_str(), sizeof(qi.szClockName));
 //		}
@@ -326,12 +319,7 @@ namespace quest
 //
 //		if (m_iSendToClient & QUEST_SEND_CLOCK_VALUE) {
 //			qi.iClockValue = m_RunningQuestState->_clock_value;
-//		}
-//		else  {
 //			qi.iClockValue = 0;
-//		}
-//
-//		if (m_iSendToClient & QUEST_SEND_COUNTER_NAME) {
 //			m_RunningQuestState->_counter_name.reserve(16+1);
 //			strlcpy(qi.szCounterName, m_RunningQuestState->_counter_name.c_str(), sizeof(qi.szCounterName));
 //		}
@@ -339,12 +327,7 @@ namespace quest
 //
 //		if (m_iSendToClient & QUEST_SEND_COUNTER_VALUE) {
 //			qi.iCounterValue = m_RunningQuestState->_counter_value;
-//		}
-//		else {
 //			qi.iCounterValue = 0;
-//		}
-//
-//		if (m_iSendToClient & QUEST_SEND_ICON_FILE) {
 //			m_RunningQuestState->_icon_file.reserve(24+1);
 //			strlcpy(qi.szIconFileName, m_RunningQuestState->_icon_file.c_str(), sizeof(qi.szIconFileName));
 //		}

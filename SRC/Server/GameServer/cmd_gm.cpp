@@ -3044,8 +3044,6 @@ ACMD(do_build)
 				// ǹ Ӽ üũ ( ǹ  ־)
 				if (t->dwDependOnGroupVnum)
 				{
-					//		const TObjectProto * dependent = CManager::instance().GetObjectProto(dwVnum);
-					//		if (dependent)
 					{
 						// ִ°?
 						if (pkLand->FindObjectByGroup(t->dwDependOnGroupVnum) == entt::null)

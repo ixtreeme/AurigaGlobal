@@ -1496,10 +1496,6 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 	{
 		if (CombatSystem::GetDropMetinStoneVnum(chr))
 		{
-			//if (ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) - ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) >= 30)
-			//{
-			//	return false;
-			//}
 			int iPercent = (CombatSystem::GetDropMetinStonePct(chr) * iDeltaPercent) * 400;
 			if (iPercent >= number(1, iRandRange))
 			{
@@ -1515,8 +1511,6 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 		//		item = CreateItem(pkChr->GetDropMetinSaccaVnum(), 1, 0, true);
 		//		if (ItemSystem::IsValidItem(item))
 		//			vec_item.push_back(item);
-		//	}
-		//}
 	}
 
 	if (MountSystem::IsHorseRiding(killer) &&

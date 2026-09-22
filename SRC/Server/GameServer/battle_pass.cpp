@@ -197,15 +197,9 @@ bool CBattlePass::ReadBattlePassGroup()
 	return true;
 }
 //	// 60 mp-
-//	const uint32_t now = get_dword_time();
-//	if (now < m_dwBattlePassStayOnlineNextTick)
-//		return;
-//
 //	m_dwBattlePassStayOnlineNextTick = now + 60 * 1000;
 //
 //	UpdateMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
-//}
-//#endif
 
 #ifdef ENABLE_BATTLE_PASS_RELOAD
 bool CBattlePass::ReadBattlePassMissions(bool isReloading)

@@ -815,8 +815,6 @@ namespace quest
 		//int n = lua_gettop(L);
 		int n = luaL_getn(qs.co, -1);
 		qs.args = n;
-		//cout << "select here (1-" << qs.args << ")" << endl;
-		//
 
 		ostringstream os;
 		os << "[QUESTION ";

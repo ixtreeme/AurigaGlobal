@@ -569,8 +569,6 @@ void RemoveStateFull(entt::entity character)
 void CPVPManager::Decline(entt::entity character, entt::entity victim)
 {
 	// Fake PC / desc n�lk�li entit�s ne menjen be pvp state-be
-	//if (pkChr->IsFakePlayer() || pkVictim->IsFakePlayer())
-	//	return;
 	if (ecs::IsCharacter(character) && ecs::IsCharacter(victim))
 	{
 		RemoveStateFull(character);
@@ -623,8 +621,6 @@ void CPVPManager::Decline(entt::entity character, entt::entity victim)
 
 void CPVPManager::Insert(entt::entity character, entt::entity victim)
 {
-	//if (pkChr->IsFakePlayer() || pkVictim->IsFakePlayer())
-	//	return;
 	if (CombatSystem::IsDead(character) || CombatSystem::IsDead(victim))
 		return;
 
