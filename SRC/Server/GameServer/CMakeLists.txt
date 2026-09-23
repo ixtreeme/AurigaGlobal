@@ -22,6 +22,15 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
 
+# The switchbot job lifecycle: player-id index, warp freeze, timer, P2P
+# hand-off and teardown, over the production source.
+add_executable(SwitchbotLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/SwitchbotLifecycleTests.cpp
+    social/new_switchbot.cpp
+)
+target_link_libraries(SwitchbotLifecycleTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME switchbot_lifecycle COMMAND SwitchbotLifecycleTests)
+
 add_executable(OXEventTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/OXEventTests.cpp
     world/OXEvent.cpp

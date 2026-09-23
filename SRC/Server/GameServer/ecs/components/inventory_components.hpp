@@ -10,6 +10,7 @@
 #include "../../item/cuberenewal.h"
 #include "../../item/attr_transfer.h"
 #include "../../pet/MountInventory.h"
+#include "../../world/event.h"
 #include "item_components.hpp"
 
 namespace ecs {
@@ -94,6 +95,16 @@ struct SwitchbotRuntimeComponent {
     std::array<entt::entity, SWITCHBOT_SLOT_COUNT> items;
 
     SwitchbotRuntimeComponent() { items.fill(entt::null); }
+};
+
+// A player's switchbot job. It lives on its own registry-owned entity, not
+// on the character, because it outlives the character: it waits out a
+// same-core warp and moves to another core in the P2P packet.
+// CSwitchbotManager keeps the player-id index.
+struct SwitchbotState {
+    TSwitchbotTable table {};
+    LPEVENT switchEvent;
+    bool warping { false };
 };
 #endif
 

@@ -3542,8 +3542,7 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 #ifdef ENABLE_SWITCHBOT
 	if (Cell.IsSwitchbotPosition())
 	{
-		CSwitchbot* pkSwitchbot = CSwitchbotManager::Instance().FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(e));
-		if (pkSwitchbot && pkSwitchbot->IsActive(Cell.cell))
+		if (CSwitchbotManager::Instance().IsActive(ecs::PlayerRuntime::GetPlayerID(e), Cell.cell))
 		{
 			return false;
 		}

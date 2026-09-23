@@ -13,6 +13,7 @@
 #include "p2p.h"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/Registry.hpp"
+#include "../ecs/components/inventory_components.hpp"
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
 #endif
@@ -180,71 +181,72 @@ bool SwitchbotHelper::IsValidItem(entt::entity item)
 }
 
 
-CSwitchbot::CSwitchbot()
+namespace {
+namespace SwitchbotSystem {
+
+// A player's switchbot job is ecs::SwitchbotState on its own registry-owned
+// entity. It is not on the character because it outlives the character: it
+// waits out a same-core warp and moves to another core in the P2P packet.
+// CSwitchbotManager keeps the player-id index; everything here takes the
+// switchbot entity and reads a destroyed one as no switchbot.
+ecs::SwitchbotState* State(entt::entity switchbot)
 {
-	m_pkSwitchEvent = nullptr;
-	m_table = {};
-	m_isWarping = false;
+	return switchbot != entt::null && g_registry.valid(switchbot)
+		? g_registry.try_get<ecs::SwitchbotState>(switchbot) : nullptr;
 }
 
-CSwitchbot::~CSwitchbot()
+entt::entity Create(uint32_t player_id)
 {
-	if (m_pkSwitchEvent)
+	const entt::entity switchbot = g_registry.create();
+	auto& state = g_registry.emplace<ecs::SwitchbotState>(switchbot);
+	state.table.player_id = player_id;
+	return switchbot;
+}
+
+// The timer goes before the state, as the CSwitchbot destructor cancelled it.
+void Destroy(entt::entity switchbot)
+{
+	if (auto* state = State(switchbot); state && state->switchEvent)
 	{
-		event_cancel(&m_pkSwitchEvent);
-		m_pkSwitchEvent = nullptr;
+		event_cancel(&state->switchEvent);
+		state->switchEvent = nullptr;
 	}
 
-	m_table = {};
-	m_isWarping = false;
-}
-
-void CSwitchbot::SetTable(TSwitchbotTable table)
-{
-	m_table = table;
-}
-
-TSwitchbotTable CSwitchbot::GetTable()
-{
-	return m_table;
-}
-
-void CSwitchbot::SetPlayerId(uint32_t player_id)
-{
-	m_table.player_id = player_id;
-}
-
-uint32_t CSwitchbot::GetPlayerId(uint32_t player_id)
-{
-	return m_table.player_id;
-}
-
-void CSwitchbot::RegisterItem(uint16_t wCell, uint32_t item_id)
-{
-	if (!ValidPosition(wCell))
+	if (switchbot != entt::null && g_registry.valid(switchbot))
 	{
-		return;
+		g_registry.destroy(switchbot);
 	}
-
-	m_table.items[wCell] = item_id;
 }
 
-void CSwitchbot::UnregisterItem(uint16_t wCell)
+void RegisterItem(entt::entity switchbot, uint16_t wCell, uint32_t item_id)
 {
-	if (!ValidPosition(wCell))
+	auto* state = State(switchbot);
+	if (!state || !ValidPosition(wCell))
 	{
 		return;
 	}
 
-	m_table.items[wCell] = 0;
-	m_table.active[wCell] = false;
-	m_table.finished[wCell] = false;
-	memset(&m_table.alternatives[wCell], 0, sizeof(m_table.alternatives[wCell]));
+	state->table.items[wCell] = item_id;
 }
 
-void CSwitchbot::SetAttributes(uint8_t slot, std::vector<TSwitchbotAttributeAlternativeTable> vec_alternatives)
+void UnregisterItem(entt::entity switchbot, uint16_t wCell)
 {
-	if (!ValidPosition(slot))
+	auto* state = State(switchbot);
+	if (!state || !ValidPosition(wCell))
+	{
+		return;
+	}
+
+	state->table.items[wCell] = 0;
+	state->table.active[wCell] = false;
+	state->table.finished[wCell] = false;
+	memset(&state->table.alternatives[wCell], 0, sizeof(state->table.alternatives[wCell]));
+}
+
+void SetAttributes(entt::entity switchbot, uint8_t slot, const std::vector<TSwitchbotAttributeAlternativeTable>& vec_alternatives)
+{
+	auto* state = State(switchbot);
+	if (!state || !ValidPosition(slot))
 	{
 		return;
 	}
@@ -253,28 +255,83 @@ void CSwitchbot::SetAttributes(uint8_t slot, std::vector<TSwitchbotAttributeAlte
 	{
 		for (uint8_t attrIdx = 0; attrIdx < MAX_NORM_ATTR_NUM; ++attrIdx)
 		{
-			m_table.alternatives[slot][alternative].attributes[attrIdx].bType = vec_alternatives[alternative].attributes[attrIdx].bType;
-			m_table.alternatives[slot][alternative].attributes[attrIdx].sValue = vec_alternatives[alternative].attributes[attrIdx].sValue;
+			state->table.alternatives[slot][alternative].attributes[attrIdx].bType = vec_alternatives[alternative].attributes[attrIdx].bType;
+			state->table.alternatives[slot][alternative].attributes[attrIdx].sValue = vec_alternatives[alternative].attributes[attrIdx].sValue;
 		}
 	}
 }
 
-void CSwitchbot::SetActive(uint8_t slot, bool active)
+void SetActive(entt::entity switchbot, uint8_t slot, bool active)
 {
-	if (!ValidPosition(slot))
+	auto* state = State(switchbot);
+	if (!state || !ValidPosition(slot))
 	{
 		return;
 	}
 
-	m_table.active[slot] = active;
-	m_table.finished[slot] = false;
+	state->table.active[slot] = active;
+	state->table.finished[slot] = false;
 }
 
+bool IsActive(entt::entity switchbot, uint8_t slot)
+{
+	const auto* state = State(switchbot);
+	if (!state || !ValidPosition(slot))
+	{
+		return false;
+	}
+
+	return state->table.active[slot];
+}
+
+bool HasActiveSlots(entt::entity switchbot)
+{
+	const auto* state = State(switchbot);
+	if (!state)
+	{
+		return false;
+	}
+
+	for (const auto& it : state->table.active)
+	{
+		if (it)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool IsSwitching(entt::entity switchbot)
+{
+	const auto* state = State(switchbot);
+	return state && state->switchEvent != nullptr;
+}
+
+bool IsWarping(entt::entity switchbot)
+{
+	const auto* state = State(switchbot);
+	return state && state->warping;
+}
+
+void SetIsWarping(entt::entity switchbot, bool warping)
+{
+	if (auto* state = State(switchbot))
+	{
+		state->warping = warping;
+	}
+}
+
+void SwitchItems(entt::entity switchbot);
+
+// The timer holds the switchbot entity, not a pointer, so a job destroyed
+// without its timer being cancelled reads as gone and ends the timer.
 EVENTINFO(TSwitchbotEventInfo)
 {
-	CSwitchbot* pkSwitchbot;
+	entt::entity switchbot;
 
-	TSwitchbotEventInfo() : pkSwitchbot(nullptr)
+	TSwitchbotEventInfo() : switchbot(entt::null)
 	{
 	}
 };
@@ -289,86 +346,64 @@ EVENTFUNC(switchbot_event)
 		return 0;
 	}
 
-	if (!info->pkSwitchbot)
+	if (!State(info->switchbot))
 	{
-		LOG_ERROR("switchbot_event> <Factor> Switchbot Null pointer");
+		LOG_ERROR("switchbot_event> <Factor> Switchbot entity is gone");
 		return 0;
 	}
 
-	info->pkSwitchbot->SwitchItems();
+	SwitchItems(info->switchbot);
 
 	return PASSES_PER_SEC(c_fSpeed);
 }
 
-void CSwitchbot::Start()
+void Start(entt::entity switchbot)
 {
+	auto* state = State(switchbot);
+	if (!state)
+	{
+		return;
+	}
+
 	TSwitchbotEventInfo* info = AllocEventInfo<TSwitchbotEventInfo>();
-	info->pkSwitchbot = this;
+	info->switchbot = switchbot;
 
-	m_pkSwitchEvent = event_create(switchbot_event, info, c_fSpeed);
+	state->switchEvent = event_create(switchbot_event, info, c_fSpeed);
 
-	CSwitchbotManager::Instance().SendSwitchbotUpdate(m_table.player_id);
+	CSwitchbotManager::Instance().SendSwitchbotUpdate(state->table.player_id);
 }
 
-void CSwitchbot::Stop()
+void Stop(entt::entity switchbot)
 {
-	if (m_pkSwitchEvent)
+	auto* state = State(switchbot);
+	if (!state)
 	{
-		event_cancel(&m_pkSwitchEvent);
-		m_pkSwitchEvent = nullptr;
+		return;
 	}
 
-	memset(&m_table.active, 0, sizeof(m_table.active));
+	if (state->switchEvent)
+	{
+		event_cancel(&state->switchEvent);
+		state->switchEvent = nullptr;
+	}
 
-	CSwitchbotManager::Instance().SendSwitchbotUpdate(m_table.player_id);
+	memset(&state->table.active, 0, sizeof(state->table.active));
+
+	CSwitchbotManager::Instance().SendSwitchbotUpdate(state->table.player_id);
 }
 
-void CSwitchbot::Pause()
+void Pause(entt::entity switchbot)
 {
-	if (m_pkSwitchEvent)
+	auto* state = State(switchbot);
+	if (state && state->switchEvent)
 	{
-		event_cancel(&m_pkSwitchEvent);
-		m_pkSwitchEvent = nullptr;
+		event_cancel(&state->switchEvent);
+		state->switchEvent = nullptr;
 	}
 }
 
-bool CSwitchbot::IsActive(uint8_t slot)
-{
-	if (!ValidPosition(slot))
-	{
-		return false;
-	}
-
-	return m_table.active[slot];
-}
-
-bool CSwitchbot::HasActiveSlots()
-{
-	for (const auto& it : m_table.active)
-	{
-		if (it)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool CSwitchbot::IsSwitching()
-{
-	return m_pkSwitchEvent != nullptr;
-}
-
-bool CSwitchbot::IsWarping()
-{
-	return m_isWarping;
-}
-
-void CSwitchbot::SetIsWarping(bool warping)
-{
-	m_isWarping = warping;
-}
+} // namespace SwitchbotSystem
+} // namespace
 
 #ifdef ENABLE_APPLY_NORMAL_HIT_DAMAGE_BONUS_50_NOTICE_RAZOR93
 
@@ -431,32 +466,48 @@ std::string MakeFullItemLink(entt::entity item, entt::entity killer)
 
 #endif // ENABLE_APPLY_NORMAL_HIT_DAMAGE_BONUS_50_NOTICE_RAZOR93
 
-void CSwitchbot::SwitchItems()
+namespace {
+namespace SwitchbotSystem {
+
+bool CheckItem(entt::entity switchbot, entt::entity item, uint8_t slot);
+void SendItemUpdate(entt::entity ch, uint8_t slot, entt::entity item);
+
+void SwitchItems(entt::entity switchbot)
 {
-    if (m_isWarping)
+    const auto* current = State(switchbot);
+    if (!current || current->warping)
         return;
-    const auto stopSlot = [this](uint8_t slot) {
-        SetActive(slot, false);
-        if (!HasActiveSlots())
-            Stop();
+    const uint32_t playerId = current->table.player_id;
+    const auto stopSlot = [switchbot, playerId](uint8_t slot) {
+        SetActive(switchbot, slot, false);
+        if (!HasActiveSlots(switchbot))
+            Stop(switchbot);
         else
-            CSwitchbotManager::Instance().SendSwitchbotUpdate(m_table.player_id);
+            CSwitchbotManager::Instance().SendSwitchbotUpdate(playerId);
     };
 	for (uint8_t bSlot = 0; bSlot < SWITCHBOT_SLOT_COUNT; ++bSlot)
 	{
-		if (!m_table.active[bSlot])
+		// The item, notice and payment calls below reach other code, so the
+		// state is read again for every slot instead of being held across them.
+		auto* state = State(switchbot);
+		if (!state)
+		{
+			return;
+		}
+
+		if (!state->table.active[bSlot])
 		{
 			continue;
 		}
 
-		m_table.finished[bSlot] = false;
+		state->table.finished[bSlot] = false;
 
-		const uint32_t item_id = m_table.items[bSlot];
+		const uint32_t item_id = state->table.items[bSlot];
 
         const entt::entity itemEntity = ItemSystem::FindItemByID(item_id);
         const entt::entity owner = ItemSystem::GetItemOwner(itemEntity);
         if (!ItemSystem::IsValidItem(itemEntity) || !ecs::PlayerRuntime::IsValid(owner) ||
-            ecs::PlayerRuntime::GetPlayerID(owner) != m_table.player_id ||
+            ecs::PlayerRuntime::GetPlayerID(owner) != playerId ||
             ItemSystem::GetItemWindow(itemEntity) != SWITCHBOT || ItemSystem::GetItemCell(itemEntity) != bSlot ||
             ItemSystem::GetItem(owner, TItemPos(SWITCHBOT, bSlot)) != itemEntity)
         {
@@ -464,7 +515,7 @@ void CSwitchbot::SwitchItems()
             continue;
         }
 
-		if (CheckItem(itemEntity, bSlot))
+		if (CheckItem(switchbot, itemEntity, bSlot))
 		{
 			LPDESC desc = ecs::PlayerRuntime::GetDesc(owner);
 			if (desc)
@@ -535,17 +586,20 @@ void CSwitchbot::SwitchItems()
 				ecs::PlayerRuntime::GetDesc(owner)->Packet(buf, len);
 			}
 
-			SetActive(bSlot, false);
+			SetActive(switchbot, bSlot, false);
 
-			m_table.finished[bSlot] = true;
-
-			if (!HasActiveSlots())
+			if (auto* finished = State(switchbot))
 			{
-				Stop();
+				finished->table.finished[bSlot] = true;
+			}
+
+			if (!HasActiveSlots(switchbot))
+			{
+				Stop(switchbot);
 			}
 			else
 			{
-				CSwitchbotManager::Instance().SendSwitchbotUpdate(m_table.player_id);
+				CSwitchbotManager::Instance().SendSwitchbotUpdate(playerId);
 			}
 		}
 		else
@@ -568,13 +622,13 @@ void CSwitchbot::SwitchItems()
             else if (outcome.result == SwitchbotHelper::Result::RollFailed)
             {
                 LOG_ERROR("Switchbot reroll failed: player {} item {} slot {}; attributes and payment unchanged",
-                    m_table.player_id, item_id, bSlot);
+                    playerId, item_id, bSlot);
             }
 		}
 	}
 }
 #ifdef ENABLE_APPLY_NORMAL_HIT_DAMAGE_BONUS_50_NOTICE_RAZOR93
-bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
+bool CheckItem(entt::entity switchbot, entt::entity item, uint8_t slot)
 {
 	if (!ValidPosition(slot))
 		return false;
@@ -584,7 +638,14 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 
 	bool checked = false;
 
-	for (const auto& alternative : m_table.alternatives[slot])
+	const auto* state = State(switchbot);
+	if (!state)
+		return false;
+
+	std::array<TSwitchbotAttributeAlternativeTable, SWITCHBOT_ALTERNATIVE_COUNT> alternatives;
+	std::copy(std::begin(state->table.alternatives[slot]), std::end(state->table.alternatives[slot]), alternatives.begin());
+
+	for (const auto& alternative : alternatives)
 	{
 		if (!alternative.IsConfigured())
 			continue;
@@ -645,7 +706,7 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 }
 #else
 
-bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
+bool CheckItem(entt::entity switchbot, entt::entity item, uint8_t slot)
 {
 	if (!ValidPosition(slot))
 	{
@@ -659,7 +720,14 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 
 	bool checked = 0;
 
-	for (const auto& alternative : m_table.alternatives[slot])
+	const auto* state = State(switchbot);
+	if (!state)
+		return false;
+
+	std::array<TSwitchbotAttributeAlternativeTable, SWITCHBOT_ALTERNATIVE_COUNT> alternatives;
+	std::copy(std::begin(state->table.alternatives[slot]), std::end(state->table.alternatives[slot]), alternatives.begin());
+
+	for (const auto& alternative : alternatives)
 	{
 		if (!alternative.IsConfigured())
 		{
@@ -710,7 +778,7 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 	return false;
 }
 #endif
-void CSwitchbot::SendItemUpdate(entt::entity ch, uint8_t slot, entt::entity item)
+void SendItemUpdate(entt::entity ch, uint8_t slot, entt::entity item)
 {
 	LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
 	if (!desc)
@@ -737,6 +805,9 @@ void CSwitchbot::SendItemUpdate(entt::entity ch, uint8_t slot, entt::entity item
 	desc->Packet(&update, sizeof(TSwitchbotUpdateItem));
 }
 
+} // namespace SwitchbotSystem
+} // namespace
+
 CSwitchbotManager::CSwitchbotManager()
 {
 	Initialize();
@@ -749,50 +820,46 @@ CSwitchbotManager::~CSwitchbotManager()
 
 void CSwitchbotManager::Initialize()
 {
-	for (const auto& m_map_Switchbot : m_map_Switchbots)
-{
-	CSwitchbot* pkSwitchbot = m_map_Switchbot.second;
-	if (pkSwitchbot != nullptr) {
-		delete pkSwitchbot;
-		pkSwitchbot = nullptr;
+	for (const auto& [player_id, switchbot] : m_map_Switchbots)
+	{
+		SwitchbotSystem::Destroy(switchbot);
 	}
-}
+
 	m_map_Switchbots.clear();
 }
 
 void CSwitchbotManager::RegisterItem(uint32_t player_id, uint32_t item_id, uint16_t wCell)
 {
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
-		pkSwitchbot = new CSwitchbot();
-		pkSwitchbot->SetPlayerId(player_id);
-		m_map_Switchbots.insert(std::make_pair(player_id, pkSwitchbot));
+		switchbot = SwitchbotSystem::Create(player_id);
+		m_map_Switchbots.insert_or_assign(player_id, switchbot);
 	}
 
-	if (pkSwitchbot->IsWarping())
+	if (SwitchbotSystem::IsWarping(switchbot))
 	{
 		return;
 	}
 
-	pkSwitchbot->RegisterItem(wCell, item_id);
+	SwitchbotSystem::RegisterItem(switchbot, wCell, item_id);
 	SendSwitchbotUpdate(player_id);
 }
 
 void CSwitchbotManager::UnregisterItem(uint32_t player_id, uint16_t wCell)
 {
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	const entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
 		return;
 	}
 
-	if (pkSwitchbot->IsWarping())
+	if (SwitchbotSystem::IsWarping(switchbot))
 	{
 		return;
 	}
 
-	pkSwitchbot->UnregisterItem(wCell);
+	SwitchbotSystem::UnregisterItem(switchbot, wCell);
 	SendSwitchbotUpdate(player_id);
 }
 
@@ -803,25 +870,25 @@ void CSwitchbotManager::Start(uint32_t player_id, uint8_t slot, std::vector<TSwi
 		return;
 	}
 
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	const entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
 		LOG_ERROR("No Switchbot found for player_id {} slot {}", player_id, slot);
 		return;
 	}
 
-	if (pkSwitchbot->IsActive(slot))
+	if (SwitchbotSystem::IsActive(switchbot, slot))
 	{
 		LOG_ERROR("Switchbot slot {} already running for player_id {}", slot, player_id);
 		return;
 	}
 
-	pkSwitchbot->SetActive(slot, true);
-	pkSwitchbot->SetAttributes(slot, vec_alternatives);
+	SwitchbotSystem::SetActive(switchbot, slot, true);
+	SwitchbotSystem::SetAttributes(switchbot, slot, vec_alternatives);
 
-	if (pkSwitchbot->HasActiveSlots() && !pkSwitchbot->IsSwitching())
+	if (SwitchbotSystem::HasActiveSlots(switchbot) && !SwitchbotSystem::IsSwitching(switchbot))
 	{
-		pkSwitchbot->Start();
+		SwitchbotSystem::Start(switchbot);
 	}
 	else
 	{
@@ -836,24 +903,24 @@ void CSwitchbotManager::Stop(uint32_t player_id, uint8_t slot)
 		return;
 	}
 
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	const entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
 		LOG_ERROR("No Switchbot found for player_id {} slot {}", player_id, slot);
 		return;
 	}
 
-	if (!pkSwitchbot->IsActive(slot))
+	if (!SwitchbotSystem::IsActive(switchbot, slot))
 	{
 		LOG_ERROR("Switchbot slot {} is not running for player_id {}", slot, player_id);
 		return;
 	}
 
-	pkSwitchbot->SetActive(slot, false);
+	SwitchbotSystem::SetActive(switchbot, slot, false);
 
-	if (!pkSwitchbot->HasActiveSlots() && pkSwitchbot->IsSwitching())
+	if (!SwitchbotSystem::HasActiveSlots(switchbot) && SwitchbotSystem::IsSwitching(switchbot))
 	{
-		pkSwitchbot->Stop();
+		SwitchbotSystem::Stop(switchbot);
 	}
 	else
 	{
@@ -868,43 +935,51 @@ bool CSwitchbotManager::IsActive(uint32_t player_id, uint8_t slot)
 		return false;
 	}
 
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	const entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
 		return false;
 	}
 
-	return pkSwitchbot->IsActive(slot);
+	return SwitchbotSystem::IsActive(switchbot, slot);
 }
 
 bool CSwitchbotManager::IsWarping(uint32_t player_id)
 {
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	const entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
 		return false;
 	}
 
-	return pkSwitchbot->IsWarping();
+	return SwitchbotSystem::IsWarping(switchbot);
 }
 
 void CSwitchbotManager::SetIsWarping(uint32_t player_id, bool warping)
 {
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	const entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
 		return;
 	}
 
-	pkSwitchbot->SetIsWarping(warping);
+	SwitchbotSystem::SetIsWarping(switchbot, warping);
 }
 
-CSwitchbot* CSwitchbotManager::FindSwitchbot(uint32_t player_id)
+entt::entity CSwitchbotManager::FindSwitchbot(uint32_t player_id)
 {
-	const auto& it = m_map_Switchbots.find(player_id);
+	const auto it = m_map_Switchbots.find(player_id);
 	if (it == m_map_Switchbots.end())
 	{
-		return nullptr;
+		return entt::null;
+	}
+
+	// An entry whose job was destroyed behind the index (a registry reset)
+	// reads as no switchbot, so the next RegisterItem starts a fresh one.
+	if (!SwitchbotSystem::State(it->second))
+	{
+		m_map_Switchbots.erase(it);
+		return entt::null;
 	}
 
 	return it->second;
@@ -912,35 +987,34 @@ CSwitchbot* CSwitchbotManager::FindSwitchbot(uint32_t player_id)
 
 void CSwitchbotManager::P2PSendSwitchbot(uint32_t player_id, uint16_t wTargetPort)
 {
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	const entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
 		//"No switchbot found to transfer. (pid %d source_port %d target_port %d)", player_id, mother_port, wTargetPort);
 		return;
 	}
 
-	pkSwitchbot->Pause();
+	SwitchbotSystem::Pause(switchbot);
 	m_map_Switchbots.erase(player_id);
 
 	TPacketGGSwitchbot pack;
 	pack.wPort = wTargetPort;
-	pack.table = pkSwitchbot->GetTable();
-
+	pack.table = SwitchbotSystem::State(switchbot)->table;
 	P2P_MANAGER::Instance().Send(&pack, sizeof(pack));
-	delete pkSwitchbot;
-	pkSwitchbot = nullptr;
+
+	SwitchbotSystem::Destroy(switchbot);
 }
 
 void CSwitchbotManager::P2PReceiveSwitchbot(TSwitchbotTable table)
 {
-	CSwitchbot* pkSwitchbot = FindSwitchbot(table.player_id);
-	if (!pkSwitchbot)
+	entt::entity switchbot = FindSwitchbot(table.player_id);
+	if (switchbot == entt::null)
 	{
-		pkSwitchbot = new CSwitchbot();
-		m_map_Switchbots.insert(std::make_pair(table.player_id, pkSwitchbot));
+		switchbot = SwitchbotSystem::Create(table.player_id);
+		m_map_Switchbots.insert_or_assign(table.player_id, switchbot);
 	}
 
-	pkSwitchbot->SetTable(table);
+	SwitchbotSystem::State(switchbot)->table = table;
 }
 
 void CSwitchbotManager::SendItemAttributeInformations(entt::entity ch)
@@ -995,8 +1069,8 @@ void CSwitchbotManager::SendItemAttributeInformations(entt::entity ch)
 
 void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 {
-	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
-	if (!pkSwitchbot)
+	const entt::entity switchbot = FindSwitchbot(player_id);
+	if (switchbot == entt::null)
 	{
 		return;
 	}
@@ -1013,7 +1087,13 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 		return;
 	}
 
-	TSwitchbotTable table = pkSwitchbot->GetTable();
+	const auto* state = SwitchbotSystem::State(switchbot);
+	if (!state)
+	{
+		return;
+	}
+
+	TSwitchbotTable table = state->table;
 
 	TPacketGCSwitchbot pack;
 	pack.header = HEADER_GC_SWITCHBOT;
@@ -1030,10 +1110,10 @@ void CSwitchbotManager::EnterGame(entt::entity ch)
 	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(ch), false);
 	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(ch));
 
-	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(ch));
-	if (pkSwitchbot && pkSwitchbot->HasActiveSlots() && !pkSwitchbot->IsSwitching())
+	const entt::entity switchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(ch));
+	if (switchbot != entt::null && SwitchbotSystem::HasActiveSlots(switchbot) && !SwitchbotSystem::IsSwitching(switchbot))
 	{
-		pkSwitchbot->Start();
+		SwitchbotSystem::Start(switchbot);
 	}
 }
 #endif

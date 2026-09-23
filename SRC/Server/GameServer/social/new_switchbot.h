@@ -17,44 +17,9 @@ public:
 	static bool IsValidItem(entt::entity item);
 };
 
-class CSwitchbot
-{
-public:
-	CSwitchbot();
-	~CSwitchbot();
-
-	void SetTable(TSwitchbotTable table);
-	TSwitchbotTable GetTable();
-
-	void SetPlayerId(uint32_t player_id);
-	uint32_t GetPlayerId(uint32_t player_id);
-
-	void RegisterItem(uint16_t wCell, uint32_t item_id);
-	void UnregisterItem(uint16_t wCell);
-	void SetAttributes(uint8_t slot, std::vector<TSwitchbotAttributeAlternativeTable> vec_alternatives);
-	
-	void SetActive(uint8_t slot, bool active);
-	bool IsActive(uint8_t slot);
-	bool HasActiveSlots();
-	bool IsSwitching();
-	bool IsWarping();
-	void SetIsWarping(bool warping);
-
-	void Start();
-	void Stop();
-	void Pause();
-
-	void SwitchItems();
-	bool CheckItem(entt::entity item, uint8_t slot);
-
-	void SendItemUpdate(entt::entity ch, uint8_t slot, entt::entity item);
-
-protected:
-	TSwitchbotTable m_table;
-	LPEVENT m_pkSwitchEvent;
-	bool m_isWarping;
-};
-
+// A player's switchbot job is ecs::SwitchbotState on its own registry-owned
+// entity; there is no heap switchbot object. The manager is the player-id
+// index over those entities and the entry point the packet handlers use.
 class CSwitchbotManager : public singleton<CSwitchbotManager>
 {
 public:
@@ -71,7 +36,7 @@ public:
 	bool IsWarping(uint32_t player_id);
 	void SetIsWarping(uint32_t player_id, bool warping);
 
-	CSwitchbot* FindSwitchbot(uint32_t player_id);
+	entt::entity FindSwitchbot(uint32_t player_id);
 
 	void P2PSendSwitchbot(uint32_t player_id, uint16_t wTargetPort);
 	void P2PReceiveSwitchbot(TSwitchbotTable table);
@@ -82,6 +47,7 @@ public:
 	void EnterGame(entt::entity ch);
 
 protected:
-	std::map<uint32_t, CSwitchbot*> m_map_Switchbots;
+	// The index is service state: player id to the switchbot entity.
+	std::map<uint32_t, entt::entity> m_map_Switchbots;
 };
 #endif
