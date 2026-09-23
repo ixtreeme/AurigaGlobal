@@ -84,6 +84,20 @@ add_executable(WeddingLifecycleTests EXCLUDE_FROM_ALL
 target_link_libraries(WeddingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME wedding_lifecycle COMMAND WeddingLifecycleTests)
 
+# The guild member rows over the production guild.cpp: the player-id
+# index, add/load/remove, the member packets and the row lifetime.
+add_executable(GuildMemberLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/GuildMemberLifecycleTests.cpp
+    guild/guild.cpp
+    ecs/PIDRegistry.cpp
+    core/buffer_manager.cpp
+)
+target_link_libraries(GuildMemberLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+if(WIN32)
+    target_link_libraries(GuildMemberLifecycleTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME guild_member_lifecycle COMMAND GuildMemberLifecycleTests)
+
 add_executable(MarriageLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MarriageLifecycleTests.cpp
     social/marriage.cpp

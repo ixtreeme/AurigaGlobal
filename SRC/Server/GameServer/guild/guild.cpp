@@ -10,6 +10,9 @@
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/Registry.hpp"
+#include "../ecs/components/social_components.hpp"
+#include <cstddef>
+#include <vector>
 #include "utils.h"
 #include "config.h"
 #include "char_interface.hpp"
@@ -30,13 +33,6 @@
 #include "../ecs/EventDispatcher.hpp"
 #include "../ecs/events.hpp"
 #include "../ecs/CharacterAccessors.hpp"
-
-	SGuildMember::SGuildMember(entt::entity character, uint8_t grade, uint32_t offer_exp)
-: pid(ecs::PlayerRuntime::GetPlayerID(character)), grade(grade), is_general(0), job(ecs::PlayerRuntime::GetJob(character)), level(ecs::PointSystem::GetLevel(character)), offer_exp(offer_exp), name(ecs::PlayerRuntime::GetName(character).data())
-{}
-	SGuildMember::SGuildMember(uint32_t pid, uint8_t grade, uint8_t is_general, uint8_t job, uint8_t level, uint32_t offer_exp, char* name)
-: pid(pid), grade(grade), is_general(is_general), job(job), level(level), offer_exp(offer_exp), name(name)
-{}
 
 namespace
 {
@@ -75,11 +71,62 @@ namespace
 	};
 }
 
+namespace
+{
+	// A member row lives on its own registry-owned entity; the guild keeps the
+	// player-id index and owns the rows' lifetime.
+	ecs::GuildMemberRow* Row(entt::entity row)
+	{
+		return row != entt::null && g_registry.valid(row) ? g_registry.try_get<ecs::GuildMemberRow>(row) : nullptr;
+	}
+
+	entt::entity CreateRow(uint32_t guildId, uint32_t pid, uint8_t grade, bool general, uint8_t job, uint8_t level, uint32_t offerExp, const char* name)
+	{
+		const entt::entity row = g_registry.create();
+		auto& member = g_registry.emplace<ecs::GuildMemberRow>(row);
+		member.guildId = guildId;
+		member.pid = pid;
+		member.grade = grade;
+		member.general = general;
+		member.job = job;
+		member.level = level;
+		member.offerExp = offerExp;
+		member.name = name;
+		return row;
+	}
+
+	void DestroyRow(entt::entity row)
+	{
+		if (row != entt::null && g_registry.valid(row))
+			g_registry.destroy(row);
+	}
+
+	// The client's member record. The rows used to be written straight out of
+	// the member struct's memory, whose first thirteen bytes happened to match
+	// this layout; the fields are copied instead.
+	constexpr size_t MEMBER_PACKET_HEAD_SIZE = offsetof(TGuildMemberPacketData, name);
+	static_assert(MEMBER_PACKET_HEAD_SIZE == sizeof(uint32_t) * 3 + 1, "the member record head is 13 bytes on the wire");
+
+	TGuildMemberPacketData MemberPacket(const ecs::GuildMemberRow& row, bool withName)
+	{
+		TGuildMemberPacketData data;
+		memset(&data, 0, sizeof(data));
+		data.pid = row.pid;
+		data.grade = row.grade;
+		data.is_general = row.general ? 1 : 0;
+		data.job = row.job;
+		data.level = row.level;
+		data.offer = row.offerExp;
+		data.name_flag = withName ? 1 : 0;
+		if (withName)
+			strlcpy(data.name, row.name.c_str(), sizeof(data.name));
+		return data;
+	}
+}
+
 CGuild::CGuild(TGuildCreateParameter & cp)
 {
 	Initialize();
-
-	m_general_count = 0;
 
 	m_iMemberCountBonus = 0;
 
@@ -154,6 +201,9 @@ void CGuild::Initialize()
 
 CGuild::~CGuild()
 {
+	// The member rows are this guild's and go with it.
+	for (const auto& [pid, row] : m_member)
+		DestroyRow(row);
 }
 
 void CGuild::RequestAddMember(entt::entity character, int grade)
@@ -178,18 +228,17 @@ void CGuild::RequestAddMember(entt::entity character, int grade)
 
 void CGuild::AddMember(TPacketDGGuildMember * p)
 {
-	TGuildMemberContainer::iterator it;
+	const TGuildMemberContainer::iterator it = m_member.find(p->dwPID);
 
-	if ((it = m_member.find(p->dwPID)) == m_member.end())
-		m_member.insert(std::make_pair(p->dwPID, TGuildMember(p->dwPID, p->bGrade, p->isGeneral, p->bJob, p->bLevel, p->dwOffer, p->szName)));
-	else
+	if (it == m_member.end())
+		m_member.insert(std::make_pair(p->dwPID, CreateRow(GetID(), p->dwPID, p->bGrade, p->isGeneral != 0, p->bJob, p->bLevel, p->dwOffer, p->szName)));
+	else if (ecs::GuildMemberRow* row = Row(it->second))
 	{
-		TGuildMember & r_gm = it->second;
-		r_gm.pid = p->dwPID;
-		r_gm.grade = p->bGrade;
-		r_gm.job = p->bJob;
-		r_gm.offer_exp = p->dwOffer;
-		r_gm.is_general = p->isGeneral;
+		row->pid = p->dwPID;
+		row->grade = p->bGrade;
+		row->job = p->bJob;
+		row->offerExp = p->dwOffer;
+		row->general = p->isGeneral != 0;
 	}
 
 	CGuildManager::instance().Link(p->dwPID, this);
@@ -215,12 +264,12 @@ void CGuild::AddMember(TPacketDGGuildMember * p)
 
 bool CGuild::RequestRemoveMember(uint32_t pid)
 {
-	TGuildMemberContainer::iterator it;
+	const ecs::GuildMemberRow* row = GetMember(pid);
 
-	if ((it = m_member.find(pid)) == m_member.end())
+	if (!row)
 		return false;
 
-	if (it->second.grade == GUILD_LEADER_GRADE)
+	if (row->grade == GUILD_LEADER_GRADE)
 		return false;
 
 	TPacketGuild gd_guild;
@@ -240,12 +289,10 @@ bool CGuild::RemoveMember(uint32_t pid)
 	if ((it = m_member.find(pid)) == m_member.end())
 		return false;
 
-	if (it->second.grade == GUILD_LEADER_GRADE)
+	if (const ecs::GuildMemberRow* row = Row(it->second); row && row->grade == GUILD_LEADER_GRADE)
 		return false;
 
-	if (it->second.is_general)
-		m_general_count--;
-
+	DestroyRow(it->second);
 	m_member.erase(it);
 	SendOnlineRemoveOnePacket(pid);
 
@@ -414,12 +461,11 @@ void CGuild::SendListOneToAll(uint32_t pid)
 
 	pack.size += sizeof(TGuildMemberPacketData);
 
-	char c[CHARACTER_NAME_MAX_LEN+1];
-	memset(c, 0, sizeof(c));
-
-	TGuildMemberContainer::iterator cit = m_member.find(pid);
-	if (cit == m_member.end())
+	const ecs::GuildMemberRow* row = GetMember(pid);
+	if (!row)
 		return;
+
+	const TGuildMemberPacketData member = MemberPacket(*row, true);
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!= m_memberOnline.end(); ++it)
 	{
@@ -430,12 +476,7 @@ void CGuild::SendListOneToAll(uint32_t pid)
 		TEMP_BUFFER buf;
 
 		buf.write(&pack, sizeof(pack));
-
-		cit->second._dummy = 1;
-
-		buf.write(&(cit->second), sizeof(uint32_t) * 3 +1);
-		buf.write(cit->second.name.c_str(), cit->second.name.length());
-		buf.write(c, CHARACTER_NAME_MAX_LEN + 1 - cit->second.name.length());
+		buf.write(&member, sizeof(member));
 		d->Packet(buf.read_peek(), buf.size());
 	}
 }
@@ -446,32 +487,33 @@ void CGuild::SendListPacket(entt::entity character)
 	if (!(d=ecs::PlayerRuntime::GetDesc(character)))
 		return;
 
+	std::vector<TGuildMemberPacketData> members;
+	members.reserve(m_member.size());
+
+	for (TGuildMemberContainer::iterator it = m_member.begin(); it != m_member.end(); ++it)
+	{
+		const ecs::GuildMemberRow* row = Row(it->second);
+		if (!row)
+			continue;
+
+		members.push_back(MemberPacket(*row, true));
+
+		if ( test_server )
+			LOG_INFO("name {} job {}  ", row->name.c_str(), row->job);
+	}
+
 	TPacketGCGuild pack;
 	pack.header = HEADER_GC_GUILD;
 	pack.size = sizeof(TPacketGCGuild);
 	pack.subheader = GUILD_SUBHEADER_GC_LIST;
 
-	pack.size += sizeof(TGuildMemberPacketData) * m_member.size();
+	pack.size += sizeof(TGuildMemberPacketData) * members.size();
 
 	TEMP_BUFFER buf;
 
 	buf.write(&pack,sizeof(pack));
-
-	char c[CHARACTER_NAME_MAX_LEN+1];
-
-	for (TGuildMemberContainer::iterator it = m_member.begin(); it != m_member.end(); ++it)
-	{
-		it->second._dummy = 1;
-
-		buf.write(&(it->second), sizeof(uint32_t)*3+1);
-
-		strlcpy(c, it->second.name.c_str(), MIN(sizeof(c), it->second.name.length() + 1));
-
-		buf.write(c, CHARACTER_NAME_MAX_LEN+1 );
-
-		if ( test_server )
-			LOG_INFO("name {} job {}  ", it->second.name.c_str(), it->second.job);
-	}
+	if (!members.empty())
+		buf.write(members.data(), sizeof(TGuildMemberPacketData) * members.size());
 
 	d->Packet(buf.read_peek(), buf.size());
 
@@ -549,7 +591,8 @@ void CGuild::LoadGuildMemberData(SQLMsg* pmsg)
 	if (pmsg->Get()->uiNumRows == 0)
 		return;
 
-	m_general_count = 0;
+	for (const auto& [memberPid, memberRow] : m_member)
+		DestroyRow(memberRow);
 
 	m_member.clear();
 
@@ -569,10 +612,10 @@ void CGuild::LoadGuildMemberData(SQLMsg* pmsg)
 		uint8_t job = (uint8_t)strtoul(row[5], nullptr, 10);
 		char * name = row[6];
 
-		if (is_general)
-			m_general_count++;
-
-		m_member.insert(std::make_pair(pid, TGuildMember(pid, grade, is_general, job, level, offer, name)));
+		// A player id the result repeats keeps its first row, as the map
+		// insert did.
+		if (const auto inserted = m_member.emplace(pid, entt::null); inserted.second)
+			inserted.first->second = CreateRow(GetID(), pid, grade, is_general != 0, job, level, offer, name);
 		CGuildManager::instance().Link(pid, this);
 	}
 }
@@ -688,13 +731,35 @@ void CGuild::SaveSkill()
 			get_table_postfix(), m_data.power, m_data.skill_point, text, m_data.guild_id);
 }
 
-TGuildMember* CGuild::GetMember(uint32_t pid)
+const ecs::GuildMemberRow* CGuild::GetMember(uint32_t pid) const
 {
-	TGuildMemberContainer::iterator it = m_member.find(pid);
-	if (it==m_member.end())
+	const TGuildMemberContainer::const_iterator it = m_member.find(pid);
+	if (it == m_member.end())
 		return nullptr;
 
-	return &it->second;
+	return Row(it->second);
+}
+
+ecs::GuildMemberRow* CGuild::MemberRow(uint32_t pid)
+{
+	const TGuildMemberContainer::iterator it = m_member.find(pid);
+	if (it == m_member.end())
+		return nullptr;
+
+	return Row(it->second);
+}
+
+// Counted from the rows, so it cannot drift from them: the cached count was
+// not kept by AddMember, and a guild loaded with no member rows never set it.
+int CGuild::GetGeneralCount() const
+{
+	int count = 0;
+	for (const auto& [pid, row] : m_member)
+	{
+		if (const ecs::GuildMemberRow* member = Row(row); member && member->general)
+			++count;
+	}
+	return count;
 }
 
 uint32_t CGuild::GetMemberPID(std::string_view strName)
@@ -702,7 +767,8 @@ uint32_t CGuild::GetMemberPID(std::string_view strName)
 	for ( TGuildMemberContainer::iterator iter = m_member.begin();
 			iter != m_member.end(); iter++ )
 	{
-		if ( iter->second.name == strName ) return iter->first;
+		const ecs::GuildMemberRow* row = Row(iter->second);
+		if ( row && row->name == strName ) return iter->first;
 	}
 
 	return 0;
@@ -940,9 +1006,9 @@ void CGuild::SendGuildInfoPacket(entt::entity character)
 
 bool CGuild::OfferExp(entt::entity character, int amount)
 {
-	TGuildMemberContainer::iterator cit = m_member.find(ecs::PlayerRuntime::GetPlayerID(character));
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
 
-	if (cit == m_member.end())
+	if (!GetMember(pid))
 		return false;
 
 	if (m_data.exp+amount < m_data.exp)
@@ -979,8 +1045,16 @@ bool CGuild::OfferExp(entt::entity character, int amount)
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_EXP_UPDATE, 0, &guild_exp, sizeof(guild_exp));
 	GuildPointChange(POINT_EXP, amount / 100, true);
 
-	cit->second.offer_exp += amount / 100;
-	cit->second._dummy = 0;
+	// The point calls above reach other code; read the row again after them.
+	ecs::GuildMemberRow* row = MemberRow(pid);
+	if (!row)
+		return false;
+
+	row->offerExp += amount / 100;
+
+	const TGuildMemberPacketData member = MemberPacket(*row, false);
+	const uint32_t offer = row->offerExp;
+	const uint8_t grade = row->grade;
 
 	TPacketGCGuild pack;
 	pack.header = HEADER_GC_GUILD;
@@ -991,21 +1065,21 @@ bool CGuild::OfferExp(entt::entity character, int amount)
 		if (d)
 		{
 			pack.subheader = GUILD_SUBHEADER_GC_LIST;
-			pack.size = sizeof(pack) + 13;
+			pack.size = sizeof(pack) + MEMBER_PACKET_HEAD_SIZE;
 			d->BufferedPacket(&pack, sizeof(pack));
-			d->Packet(&(cit->second), sizeof(uint32_t) * 3 + 1);
+			d->Packet(&member, MEMBER_PACKET_HEAD_SIZE);
 		}
 	}
 
-	SaveMember(ecs::PlayerRuntime::GetPlayerID(character));
+	SaveMember(pid);
 
 	TPacketGuildChangeMemberData gd_guild;
 
 	gd_guild.guild_id = GetID();
-	gd_guild.pid = ecs::PlayerRuntime::GetPlayerID(character);
-	gd_guild.offer = cit->second.offer_exp;
+	gd_guild.pid = pid;
+	gd_guild.offer = offer;
 	gd_guild.level = ecs::PointSystem::GetLevel(character);
-	gd_guild.grade = cit->second.grade;
+	gd_guild.grade = grade;
 
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_CHANGE_MEMBER_DATA, 0, &gd_guild, sizeof(gd_guild));
 	return true;
@@ -1070,8 +1144,9 @@ void CGuild::AddComment(entt::entity character, std::string_view str)
 void CGuild::DeleteComment(entt::entity character, uint32_t comment_id)
 {
 	SQLMsg * pmsg;
+	const ecs::GuildMemberRow* member = GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
-	if (GetMember(ecs::PlayerRuntime::GetPlayerID(character))->grade == GUILD_LEADER_GRADE)
+	if (member && member->grade == GUILD_LEADER_GRADE)
 		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u",get_table_postfix(), comment_id, m_data.guild_id);
 	else
 		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u AND name = '%s'",get_table_postfix(), comment_id, m_data.guild_id, ecs::PlayerRuntime::GetName(character).data());
@@ -1144,23 +1219,18 @@ bool CGuild::ChangeMemberGeneral(uint32_t pid, uint8_t is_general)
 	if (is_general && GetGeneralCount() >= GetMaxGeneralCount())
 		return false;
 
-	TGuildMemberContainer::iterator it = m_member.find(pid);
-	if (it == m_member.end())
+	ecs::GuildMemberRow* row = MemberRow(pid);
+	if (!row)
 	{
 		return true;
 	}
 
 	is_general = is_general?1:0;
 
-	if (it->second.is_general == is_general)
+	if ((row->general ? 1 : 0) == is_general)
 		return true;
 
-	if (is_general)
-		++m_general_count;
-	else
-		--m_general_count;
-
-	it->second.is_general = is_general;
+	row->general = is_general != 0;
 
 	TGuildMemberOnlineContainer::iterator itOnline = m_memberOnline.begin();
 
@@ -1191,12 +1261,14 @@ void CGuild::ChangeMemberGrade(uint32_t pid, uint8_t grade)
 	if (grade == 1)
 		return;
 
-	TGuildMemberContainer::iterator it = m_member.find(pid);
+	ecs::GuildMemberRow* row = MemberRow(pid);
 
-	if (it == m_member.end())
+	if (!row)
 		return;
 
-	it->second.grade = grade;
+	row->grade = grade;
+	const uint32_t offer = row->offerExp;
+	const uint8_t level = row->level;
 
 	TGuildMemberOnlineContainer::iterator itOnline = m_memberOnline.begin();
 
@@ -1224,8 +1296,8 @@ void CGuild::ChangeMemberGrade(uint32_t pid, uint8_t grade)
 
 	gd_guild.guild_id = GetID();
 	gd_guild.pid = pid;
-	gd_guild.offer = it->second.offer_exp;
-	gd_guild.level = it->second.level;
+	gd_guild.offer = offer;
+	gd_guild.level = level;
 	gd_guild.grade = grade;
 
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_CHANGE_MEMBER_DATA, 0, &gd_guild, sizeof(gd_guild));
@@ -1490,7 +1562,7 @@ void CGuild::GiveReward(int reward)
 {
 	for (auto it = m_member.begin(); it != m_member.end(); ++it)
 	{
-		uint32_t dwPlayerid = it->second.pid;
+		uint32_t dwPlayerid = it->first;
 		std::unique_ptr<SQLMsg> pMsg( DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE id=%d", dwPlayerid) );
 		if (pMsg->Get()->uiNumRows == 0)
 			return;
@@ -1772,38 +1844,39 @@ void CGuild::SkillRecharge()
 
 void CGuild::SaveMember(uint32_t pid)
 {
-	TGuildMemberContainer::iterator it = m_member.find(pid);
+	const ecs::GuildMemberRow* row = GetMember(pid);
 
-	if (it == m_member.end())
+	if (!row)
 		return;
 
 	DBManager::instance().Query(
 			"UPDATE guild_member%s SET grade = %d, offer = %u, is_general = %d WHERE pid = %u and guild_id = %u",
-			get_table_postfix(), it->second.grade, it->second.offer_exp, it->second.is_general, pid, m_data.guild_id);
+			get_table_postfix(), row->grade, row->offerExp, row->general ? 1 : 0, pid, m_data.guild_id);
 }
 
 void CGuild::LevelChange(uint32_t pid, uint8_t level)
 {
-	TGuildMemberContainer::iterator cit = m_member.find(pid);
+	ecs::GuildMemberRow* row = MemberRow(pid);
 
-	if (cit == m_member.end())
+	if (!row)
 		return;
 
-	cit->second.level = level;
+	row->level = level;
 
 	TPacketGuildChangeMemberData gd_guild;
 
 	gd_guild.guild_id = GetID();
 	gd_guild.pid = pid;
-	gd_guild.offer = cit->second.offer_exp;
-	gd_guild.grade = cit->second.grade;
+	gd_guild.offer = row->offerExp;
+	gd_guild.grade = row->grade;
 	gd_guild.level = level;
+
+	const TGuildMemberPacketData member = MemberPacket(*row, false);
 
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_CHANGE_MEMBER_DATA, 0, &gd_guild, sizeof(gd_guild));
 
 	TPacketGCGuild pack;
 	pack.header = HEADER_GC_GUILD;
-	cit->second._dummy = 0;
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
@@ -1812,24 +1885,25 @@ void CGuild::LevelChange(uint32_t pid, uint8_t level)
 		if (d)
 		{
 			pack.subheader = GUILD_SUBHEADER_GC_LIST;
-			pack.size = sizeof(pack) + 13;
+			pack.size = sizeof(pack) + MEMBER_PACKET_HEAD_SIZE;
 			d->BufferedPacket(&pack, sizeof(pack));
-			d->Packet(&(cit->second), sizeof(uint32_t) * 3 + 1);
+			d->Packet(&member, MEMBER_PACKET_HEAD_SIZE);
 		}
 	}
 }
 
 void CGuild::ChangeMemberData(uint32_t pid, uint32_t offer, uint8_t level, uint8_t grade)
 {
-	TGuildMemberContainer::iterator cit = m_member.find(pid);
+	ecs::GuildMemberRow* row = MemberRow(pid);
 
-	if (cit == m_member.end())
+	if (!row)
 		return;
 
-	cit->second.offer_exp = offer;
-	cit->second.level = level;
-	cit->second.grade = grade;
-	cit->second._dummy = 0;
+	row->offerExp = offer;
+	row->level = level;
+	row->grade = grade;
+
+	const TGuildMemberPacketData member = MemberPacket(*row, false);
 
 	TPacketGCGuild pack;
 	memset(&pack, 0, sizeof(pack));
@@ -1841,9 +1915,9 @@ void CGuild::ChangeMemberData(uint32_t pid, uint32_t offer, uint8_t level, uint8
 		if (d)
 		{
 			pack.subheader = GUILD_SUBHEADER_GC_LIST;
-			pack.size = sizeof(pack) + 13;
+			pack.size = sizeof(pack) + MEMBER_PACKET_HEAD_SIZE;
 			d->BufferedPacket(&pack, sizeof(pack));
-			d->Packet(&(cit->second), sizeof(uint32_t) * 3 + 1);
+			d->Packet(&member, MEMBER_PACKET_HEAD_SIZE);
 		}
 	}
 }
@@ -1908,7 +1982,8 @@ int CGuild::GetTotalLevel() const
 
 	for (auto it = m_member.begin(); it != m_member.end(); ++it)
 	{
-		total += it->second.level;
+		if (const ecs::GuildMemberRow* row = Row(it->second))
+			total += row->level;
 	}
 
 	return total;
@@ -2129,7 +2204,7 @@ void CGuild::Invite( entt::entity inviter, entt::entity invitee )
 #endif
 		return;
 	}
-	else if ( !HasGradeAuth( GetMember( ecs::PlayerRuntime::GetPlayerID(inviter) )->grade, GUILD_AUTH_ADD_MEMBER ) )
+	else if ( !GetMember( ecs::PlayerRuntime::GetPlayerID(inviter) ) || !HasGradeAuth( GetMember( ecs::PlayerRuntime::GetPlayerID(inviter) )->grade, GUILD_AUTH_ADD_MEMBER ) )
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 140, "");

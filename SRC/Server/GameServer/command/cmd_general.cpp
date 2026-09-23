@@ -10,6 +10,7 @@
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
+#include "../ecs/components/social_components.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #ifdef __FreeBSD__
@@ -1916,8 +1917,8 @@ ACMD(do_guildskillup)
 	}
 
 	CGuild* g = ecs::SocialSystem::GetGuild(character);
-	TGuildMember* gm = g->GetMember((ecs::PlayerRuntime::GetPlayerID(character)));
-	if (gm->grade == GUILD_LEADER_GRADE)
+	const ecs::GuildMemberRow* gm = g->GetMember((ecs::PlayerRuntime::GetPlayerID(character)));
+	if (gm && gm->grade == GUILD_LEADER_GRADE)
 	{
 		uint32_t vnum = 0;
 		str_to_number(vnum, arg1);

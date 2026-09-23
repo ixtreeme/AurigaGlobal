@@ -8,6 +8,8 @@
 
 typedef struct _SQLMsg SQLMsg;
 
+namespace ecs { struct GuildMemberRow; }
+
 enum
 {
 	GUILD_GRADE_NAME_MAX_LEN = 8,
@@ -29,23 +31,6 @@ struct SGuildMaster
 	uint32_t pid;
 };
 
-
-typedef struct SGuildMember
-{
-	uint32_t pid;
-	uint8_t grade;
-	uint8_t is_general;
-	uint8_t job;
-	uint8_t level;
-	uint32_t offer_exp;
-	uint8_t _dummy;
-
-	std::string name;
-
-	SGuildMember(entt::entity character, uint8_t grade, uint32_t offer_exp);
-	SGuildMember(uint32_t pid, uint8_t grade, uint8_t is_general, uint8_t job, uint8_t level, uint32_t offer_exp, char* name);
-
-} TGuildMember;
 
 #pragma pack(1)
 typedef struct SGuildMemberPacketData
@@ -250,9 +235,10 @@ void		Reset() { m_data.power = m_data.max_power; }
 		// END_OF_GUILD_MEMBER_COUNT_BONUS
 
 		int		GetMaxGeneralCount() const	{ return 1 /*+ GetSkillLevel(GUILD_SKILL_DEUNGYONG)/3*/;}
-		int		GetGeneralCount() const		{ return m_general_count; }
+		int		GetGeneralCount() const;
 
-		TGuildMember*	GetMember(uint32_t pid);
+		// The member's row, or null for a player who is not a member.
+		const ecs::GuildMemberRow*	GetMember(uint32_t pid) const;
 		uint32_t			GetMemberPID(std::string_view strName);
 
 		bool		HasGradeAuth(int grade, int auth_flag) const	{ return (bool)(m_data.grade_array[grade-1].auth_flag & auth_flag);}
@@ -363,14 +349,16 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		Initialize();
 
 		TGuildData	m_data;
-		int		m_general_count;
 
 		// GUILD_MEMBER_COUNT_BONUS
 		int		m_iMemberCountBonus;
 		// END_OF_GUILD_MEMBER_COUNT_BONUS
 
-		typedef std::map<uint32_t, TGuildMember> TGuildMemberContainer;
+		// The member rows are entities (ecs::GuildMemberRow); the index is the
+		// player id to the row, and the rows go with the guild.
+		typedef std::map<uint32_t, entt::entity> TGuildMemberContainer;
 		TGuildMemberContainer m_member;
+		ecs::GuildMemberRow* MemberRow(uint32_t pid);
 
 		// Online members are held as ECS entities: nothing in the guild code
 		// needs the legacy pointer, it only ever asked for the handle.

@@ -7,6 +7,7 @@
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/QuestSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
+#include "../ecs/components/social_components.hpp"
 #include "char.h"
 #include "char_manager.h"
 #include "desc.h"
@@ -238,7 +239,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 				}
 
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
+				const ecs::GuildMemberRow* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
@@ -297,7 +298,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 				char gradename[GUILD_GRADE_NAME_MAX_LEN + 1];
 				strlcpy(gradename, c_pData + 1, sizeof(gradename));
 
-				const TGuildMember * m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
+				const ecs::GuildMemberRow* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
@@ -324,7 +325,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 
 		case GUILD_SUBHEADER_CG_CHANGE_GRADE_AUTHORITY:
 			{
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
+				const ecs::GuildMemberRow* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 				if (nullptr == m)
 					return -1;
 
@@ -402,7 +403,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 				if (uiBytes < 1 + length)
 					return -1;
 
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
+				const ecs::GuildMemberRow* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
@@ -438,7 +439,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 			{
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
 				const uint8_t grade = *(c_pData + sizeof(uint32_t));
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
+				const ecs::GuildMemberRow* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
@@ -473,7 +474,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 			{
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
 				const uint8_t is_general = *(c_pData + sizeof(uint32_t));
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
+				const ecs::GuildMemberRow* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;

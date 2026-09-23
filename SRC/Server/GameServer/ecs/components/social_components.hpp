@@ -40,6 +40,21 @@ struct SocialRefs {
     uint32_t guildId { 0 };
 };
 
+// One member row of a guild: the DB-backed record of a member, online or
+// not. It lives on its own registry-owned entity, indexed by player id in
+// its CGuild, which destroys the rows it owns. LevelChange keeps the level
+// in step while the member is online; job and name are what the DB loaded.
+struct GuildMemberRow {
+    uint32_t guildId { 0 };
+    uint32_t pid { 0 };
+    uint8_t grade { 0 };
+    bool general { false };
+    uint8_t job { 0 };
+    uint8_t level { 0 };
+    uint32_t offerExp { 0 };
+    std::string name;
+};
+
 // The per-character part of the party relation. The party state itself is
 // ecs::PartyState on the party entity.
 struct PartyMembership {
