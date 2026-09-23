@@ -22,6 +22,8 @@
 #include "desc.h"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
+#include "desc_manager.h"
+#include "questmanager.h"
 
 void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 {
@@ -302,4 +304,26 @@ void CInputDB::MallLoad(LPDESC d, const char * c_pData)
 		return;
 
 	ecs::SessionSystem::LoadMall(d->GetEntity(), p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+}
+
+void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
+{
+	LPDESC d = DESC_MANAGER::instance().FindByLoginName(data->login);
+
+	if(d == nullptr)
+		return;
+	else
+	{
+		const entt::entity chEntity = d->GetEntity();
+		if (ecs::IsCharacter(chEntity))
+		{
+			ecs::PlayerRuntime::SetItemAwardVnum(chEntity, data->vnum);
+			ecs::PlayerRuntime::SetItemAwardCommand(chEntity, data->command);
+
+			if(d->IsPhase(PHASE_GAME))
+			{
+				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(chEntity)),ecs::PlayerRuntime::GetItemAwardVnum(chEntity));
+			}
+		}
+	}
 }

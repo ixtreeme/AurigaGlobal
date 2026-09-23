@@ -39,6 +39,7 @@
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "OXEvent.h"
+#include "item_manager.h"
 
 void CInputMain::OnClick(entt::entity character, const char* data)
 {
@@ -420,3 +421,33 @@ void CInputMain::Target(entt::entity character, const char * pcData)
 	else
 		CombatSystem::SetTarget(character, CHARACTER_MANAGER::instance().FindEntity(p->dwVID));
 }
+
+#ifdef __SEND_TARGET_INFO__
+void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
+{
+	if (!ecs::IsCharacter(character))
+		return;
+
+	const auto* request = reinterpret_cast<const TPacketCGTargetInfoLoad*>(c_pData);
+	const entt::entity targetEntity = CHARACTER_MANAGER::instance().FindEntity(request->dwVID);
+
+	if (!ecs::IsCharacter(targetEntity) || (ecs::PlayerRuntime::GetCharType(targetEntity) != CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsStone(targetEntity)))
+		return;
+
+	std::vector<TargetInfoItem> items;
+	if (!ITEM_MANAGER::instance().CreateDropItemVector(targetEntity, character, items))
+		return;
+
+	TPacketGCTargetInfo info{};
+	info.header = HEADER_GC_TARGET_INFO;
+	info.dwVID = ecs::PlayerRuntime::GetPacketVID(targetEntity);
+	info.race = ecs::PlayerRuntime::GetRaceNum(targetEntity);
+
+	for (const TargetInfoItem& item : items)
+	{
+		info.dwVnum = item.vnum;
+		info.count = item.count;
+		ecs::PlayerRuntime::GetDesc(character)->Packet(&info, sizeof(info));
+	}
+}
+#endif

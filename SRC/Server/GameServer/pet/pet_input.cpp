@@ -277,3 +277,121 @@ void CInputMain::MountInventoryItemMove(entt::entity character, const char* data
 	MountSystem::UpdateMountCountOverheadToViewers(character);
 #endif
 }
+
+#ifdef __NEWPET_SYSTEM__
+void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData)
+{
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
+
+	const entt::entity ownerEntity = character;
+	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity) ||
+		!ecs::PlayerRuntime::GetDesc(ownerEntity))
+	{
+		return;
+	}
+
+	const int eggVnum = ecs::PlayerRuntime::GetEggVID(character);
+	if (eggVnum <= 0)
+		return;
+
+	const auto p = reinterpret_cast<const TPacketCGRequestPetName*>(c_pData);
+	if (ecs::PointSystem::GetGold(ownerEntity) < 100000)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 768, "%d", 100000);
+#endif
+		return;
+	}
+
+	if (!ItemSystem::HasItem(ownerEntity, static_cast<uint32_t>(eggVnum)) ||
+		check_name(p->petname) == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 770, "");
+#endif
+		return;
+	}
+
+#ifdef ENABLE_NEW_PET_EDITS
+	char nameQuery[256] {};
+	snprintf(
+		nameQuery,
+		sizeof(nameQuery),
+		"SELECT id FROM player.new_petsystem%s WHERE name='%s';",
+		get_table_postfix(),
+		p->petname);
+	std::unique_ptr<SQLMsg> nameResult(DBManager::instance().DirectQuery(nameQuery));
+	if (nameResult->Get()->uiNumRows > 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 50, "");
+#endif
+		return;
+	}
+#endif
+
+	const entt::entity petItem =
+		ITEM_MANAGER::instance().CreateItem(static_cast<uint32_t>(eggVnum + 300), 1);
+	if (!ItemSystem::IsValidItem(petItem))
+		return;
+
+	if (!ItemSystem::RemoveSpecifyItemEcs(
+			ownerEntity, static_cast<uint32_t>(eggVnum), 1))
+	{
+		ItemSystem::DestroyItemEntityEcs(petItem, "PET_NAME_EGG_REMOVE_FAILED");
+		return;
+	}
+
+	const uint32_t petItemId = ItemSystem::GetItemID(petItem);
+	DBManager::instance().SendMoneyLog(
+		MONEY_LOG_QUEST, ecs::PlayerRuntime::GetPlayerID(ownerEntity), -100000);
+	ecs::PointSystem::Change(ownerEntity, POINT_GOLD, -100000, true);
+	ItemSystem::AutoGiveItem(ownerEntity, petItem);
+
+#ifdef ENABLE_NEW_PET_EDITS
+	int tmpskill[4] = { -1, -1, -1, -1 };
+#else
+	int tmpskill[4] = { 0, 0, 0, 0 };
+	const int tmpslot = number(1, 3);
+	for (int i = 0; i < 4; ++i)
+	{
+		if (i > tmpslot - 1)
+			tmpskill[i] = -1;
+	}
+#endif
+	const int tmpdur = 3 * 24 * 60;
+	char insertQuery[1024];
+	int hp[] = {30, 35, 40};
+	int mostri[] = {10, 15, 20};
+	int medi[] = {10, 15, 20};
+	snprintf(
+		insertQuery,
+		sizeof(insertQuery),
+		"INSERT INTO new_petsystem VALUES(%u,'%s', 1, 0, 0, 0, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, 0"
+#ifdef ENABLE_NEW_PET_EDITS
+		", %lld"
+#endif
+		")",
+		petItemId,
+		p->petname,
+		hp[number(0, 2)],
+		mostri[number(0, 2)],
+		medi[number(0, 2)],
+		tmpskill[0],
+		0,
+		tmpskill[1],
+		0,
+		tmpskill[2],
+		0,
+		tmpskill[3],
+		0,
+		tmpdur,
+		tmpdur,
+		get_global_time());
+	std::unique_ptr<SQLMsg> insertResult(DBManager::instance().DirectQuery(insertQuery));
+#ifdef TEXTS_IMPROVEMENT
+	ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 769, "");
+#endif
+}
+#endif

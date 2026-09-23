@@ -41,6 +41,7 @@
 #include "input_item_helpers.hpp"
 #include "DragonSoul.h"
 #include "questmanager.h"
+#include "../ecs/systems/AcceSystem.hpp"
 
 void CInputMain::ItemUse(entt::entity character, const char * data)
 {
@@ -588,3 +589,190 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 
 	InventorySystem::ClearRefineMode(character);
 }
+
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+void CInputMain::InventoryExpansion(entt::entity character, const char * data)
+{
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate InventoryExpansion handler ECS
+// DUAL-PATH: legacy only during migration window
+	InventorySystem::ExpandInventory(character);
+}
+#endif
+
+#ifdef ENABLE_ACCE_SYSTEM
+void CInputMain::Acce(entt::entity character, const char* c_pData)
+{
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Acce handler ECS
+// DUAL-PATH: legacy only during migration window
+
+	quest::PC * pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(character));
+	if (pPC->IsRunning())
+		return;
+
+	TPacketAcce * sPacket = (TPacketAcce*) c_pData;
+	switch (sPacket->subheader)
+	{
+	case ACCE_SUBHEADER_CG_CLOSE:
+	{
+		ecs::AcceSystem::Close(character);
+	}
+	break;
+	case ACCE_SUBHEADER_CG_ADD:
+	{
+		ecs::AcceSystem::AddMaterial(character, sPacket->tPos, sPacket->bPos);
+	}
+	break;
+	case ACCE_SUBHEADER_CG_REMOVE:
+	{
+		ecs::AcceSystem::RemoveMaterial(character, sPacket->bPos);
+	}
+	break;
+	case ACCE_SUBHEADER_CG_REFINE:
+	{
+		ecs::AcceSystem::Refine(character);
+	}
+	break;
+	default:
+		break;
+	}
+}
+#endif
+
+#ifdef ENABLE_CUBE_RENEWAL_WORLDARD
+void CInputMain::CubeRenewalSend(entt::entity character, const char* data)
+{
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate CubeRenewalSend handler ECS
+// DUAL-PATH: legacy only during migration window
+	struct packet_send_cube_renewal * pinfo = (struct packet_send_cube_renewal *) data;
+	switch (pinfo->subheader)
+	{
+		case CUBE_RENEWAL_SUB_HEADER_MAKE_ITEM:
+		{
+
+			if (pinfo->index_item > static_cast<uint32_t>(INT_MAX) ||
+				pinfo->count_item == 0 ||
+				pinfo->count_item > static_cast<uint32_t>(g_bItemCountLimit))
+			{
+				return;
+			}
+
+			int index_item_improve = -1;
+			if (pinfo->index_item_improve != UINT32_MAX)
+			{
+				if (pinfo->index_item_improve >= INVENTORY_MAX_NUM)
+					return;
+				index_item_improve = static_cast<int>(pinfo->index_item_improve);
+			}
+
+			Cube_Make(
+				character,
+				static_cast<int>(pinfo->index_item),
+				static_cast<int>(pinfo->count_item),
+				index_item_improve);
+		}
+		break;
+
+		case CUBE_RENEWAL_SUB_HEADER_CLOSE:
+		{
+			Cube_close(character);
+		}
+		break;
+	}
+}
+#endif
+
+#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+void CInputMain::WheelDestiny(entt::entity character, const char* data)
+{
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate WheelDestiny handler ECS
+// DUAL-PATH: legacy only during migration window
+	if (!ecs::IsCharacter(character))
+	{
+		return;
+	}
+
+	if (ecs::PlayerRuntime::IsObserverMode(character) || ecs::SocialSystem::HasExchange(character))
+	{
+		return;
+	}
+
+	const auto pinfo = reinterpret_cast<const TPacketCGWheelDestiny*>(data);
+	enum { OPEN, CLOSE, TURN, GIVE };
+
+	switch (pinfo->option)
+	{
+	case OPEN:
+	{
+
+		if (!ecs::PlayerRuntime::GetWheelDestiny(character))
+		{
+			ecs::PlayerRuntime::SetWheelDestiny(character, std::make_shared<CWheelDestiny>(character));
+		}
+	}
+	break;
+	case CLOSE:
+
+	{
+		if (ecs::PlayerRuntime::GetWheelDestiny(character))
+		{
+
+
+			if (ecs::PlayerRuntime::GetWheelDestiny(character)->GetGiftVnum())
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1307, "");
+#endif
+			}
+			else
+			{
+				ecs::PlayerRuntime::SetWheelDestiny(character, nullptr);
+				ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_WHEEL_CLOSE");
+			}
+		}
+	}
+	break;
+	case TURN:
+	{
+		if (ecs::SocialSystem::GetDungeon(character) != entt::null || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
+		{
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeonban nem tudsz p�rgetni./You cannot in dungeon");
+			return;
+		}
+		if (ecs::PlayerRuntime::GetWheelDestiny(character))
+		{
+			static const uint32_t WHEEL_TICKET_VNUM = 70610;
+
+			if (ItemSystem::CountItem(character, WHEEL_TICKET_VNUM) < 1)
+			{
+
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You Dont have Battle Pass Ticket");
+				return;
+			}
+
+			ItemSystem::RemoveSpecifyItemEcs(character, WHEEL_TICKET_VNUM, 1);
+
+			ecs::PlayerRuntime::GetWheelDestiny(character)->TurnWheel();
+		}
+	}
+	break;
+
+	case GIVE:
+	{
+		if (ecs::PlayerRuntime::GetWheelDestiny(character))
+		{
+			ecs::PlayerRuntime::GetWheelDestiny(character)->GiveMyFuckingGift();
+		}
+	}
+	break;
+	default:
+	{
+		LOG_ERROR("CInputMain::WheelDestiny : Unknown option {} : {}", pinfo->option, ecs::PlayerRuntime::GetName(character).data());
+	}
+	break;
+	}
+}
+#endif

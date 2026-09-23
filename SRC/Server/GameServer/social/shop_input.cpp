@@ -366,3 +366,54 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 	);
 	return (iExtraLen);
 }
+
+#ifdef ENABLE_SWITCHBOT
+int CInputMain::Switchbot(entt::entity character, const char* data, size_t uiBytes)
+{
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Switchbot handler ECS
+// DUAL-PATH: legacy only during migration window
+	const TPacketCGSwitchbot* p = reinterpret_cast<const TPacketCGSwitchbot*>(data);
+
+	if (uiBytes < sizeof(TPacketCGSwitchbot))
+	{
+		return -1;
+	}
+
+	const char* c_pData = data + sizeof(TPacketCGSwitchbot);
+	uiBytes -= sizeof(TPacketCGSwitchbot);
+
+	switch (p->subheader)
+	{
+	case SUBHEADER_CG_SWITCHBOT_START:
+	{
+		size_t extraLen = sizeof(TSwitchbotAttributeAlternativeTable) * SWITCHBOT_ALTERNATIVE_COUNT;
+		if (uiBytes < extraLen)
+		{
+			return -1;
+		}
+
+		std::vector<TSwitchbotAttributeAlternativeTable> vec_alternatives;
+
+		for (uint8_t alternative = 0; alternative < SWITCHBOT_ALTERNATIVE_COUNT; ++alternative)
+		{
+			const TSwitchbotAttributeAlternativeTable* pAttr = reinterpret_cast<const TSwitchbotAttributeAlternativeTable*>(c_pData);
+			c_pData += sizeof(TSwitchbotAttributeAlternativeTable);
+
+			vec_alternatives.emplace_back(*pAttr);
+		}
+
+		CSwitchbotManager::Instance().Start(ecs::PlayerRuntime::GetPlayerID(character), p->slot, vec_alternatives);
+		return extraLen;
+	}
+
+	case SUBHEADER_CG_SWITCHBOT_STOP:
+	{
+		CSwitchbotManager::Instance().Stop(ecs::PlayerRuntime::GetPlayerID(character), p->slot);
+		return 0;
+	}
+	}
+
+	return 0;
+}
+#endif
