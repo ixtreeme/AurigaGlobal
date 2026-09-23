@@ -220,9 +220,9 @@ ACMD(do_emotion)
 			{
 				if (true == marriage::CManager::instance().IsMarried( (ecs::PlayerRuntime::GetPlayerID(character)) ))
 				{
-					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( (ecs::PlayerRuntime::GetPlayerID(character)) );
+					const entt::entity couple = marriage::CManager::instance().Get( (ecs::PlayerRuntime::GetPlayerID(character)) );
 
-					const uint32_t other = marriageInfo->GetOther( (ecs::PlayerRuntime::GetPlayerID(character)) );
+					const uint32_t other = marriage::MarriageSystem::GetOther(couple, (ecs::PlayerRuntime::GetPlayerID(character)) );
 
 					if (0 == other || other != (ecs::PlayerRuntime::GetPlayerID(victim)))
 					{

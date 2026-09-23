@@ -553,9 +553,9 @@ unsigned int DBManager::EscapeString(char *,uint64_t,char const *,unsigned int) 
 float GetDegreeFromPositionXY(int,int,int,int) { UnexpectedService(__func__); }
 void GetDeltaByDegree(float,float,float *,float *) { UnexpectedService(__func__); }
 float GetDegreeDelta(float,float) { UnexpectedService(__func__); }
-bool marriage::TMarriage::IsNear(void) { UnexpectedService(__func__); }
-void marriage::TMarriage::Update(unsigned int) { UnexpectedService(__func__); }
-marriage::TMarriage * marriage::CManager::Get(unsigned int) { UnexpectedService(__func__); }
+bool marriage::MarriageSystem::IsNear(entt::entity) { UnexpectedService(__func__); }
+void marriage::MarriageSystem::Update(entt::entity, uint32_t) { UnexpectedService(__func__); }
+entt::entity marriage::CManager::Get(uint32_t) { UnexpectedService(__func__); }
 bool CArenaManager::OnDead(entt::entity,entt::entity) { UnexpectedService(__func__); }
 void ExchangeSystem::Cancel(entt::entity) { UnexpectedService(__func__); }
 void CShopManager::StopShopping(entt::entity) { UnexpectedService(__func__); }

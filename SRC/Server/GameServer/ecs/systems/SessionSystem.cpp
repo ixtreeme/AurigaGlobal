@@ -256,9 +256,9 @@ void SaveReal(entt::entity e)
         pkQuestPC->Save();
     }
 
-    marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
-    if (pMarriage)
-        pMarriage->Save();
+    const entt::entity couple = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
+    if (couple != entt::null)
+        marriage::MarriageSystem::Save(couple);
 }
 
 // The safebox this character has open, if any.

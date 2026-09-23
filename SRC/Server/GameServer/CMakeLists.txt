@@ -84,6 +84,14 @@ add_executable(WeddingLifecycleTests EXCLUDE_FROM_ALL
 target_link_libraries(WeddingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME wedding_lifecycle COMMAND WeddingLifecycleTests)
 
+add_executable(MarriageLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MarriageLifecycleTests.cpp
+    social/marriage.cpp
+    ecs/PIDRegistry.cpp
+)
+target_link_libraries(MarriageLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+add_test(NAME marriage_lifecycle COMMAND MarriageLifecycleTests)
+
 add_executable(PartyLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/PartyLifecycleTests.cpp
     social/party.cpp

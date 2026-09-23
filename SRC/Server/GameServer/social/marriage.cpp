@@ -10,6 +10,8 @@
 #include "char_manager.h"
 #include "../ecs/PIDRegistry.hpp"
 #include "../ecs/CharacterAccessors.hpp"
+#include "../ecs/Registry.hpp"
+#include "../ecs/components/social_components.hpp"
 #include "sectree_manager.h"
 #include "desc_client.h"
 #include "p2p.h"
@@ -20,7 +22,6 @@
 #ifdef ENABLE_NEW_USE_POTION
 #include "item.h"
 #include "../ecs/EntityFactory.hpp"
-#include "../ecs/Registry.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "unique_item.h"
 #endif
@@ -60,471 +61,559 @@ namespace marriage
 		ecs::PlayerRuntime::GetDesc(ch)->Packet(&p, sizeof(p));
 	}
 
-	// The pair is online while both partners are still characters, which is
-	// what the two pointers answered.
-	bool TMarriage::IsOnline()
+	namespace
 	{
-		return ecs::IsCharacter(ch1) && ecs::IsCharacter(ch2);
-	}
-
-	TMarriage::~TMarriage()
-	{
-		StopNearCheckEvent();
-		if (IsOnline())
+		ecs::CoupleState* Couple(entt::entity couple)
 		{
-			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_divorce");
-			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_divorce");
+			return couple != entt::null && g_registry.valid(couple)
+				? g_registry.try_get<ecs::CoupleState>(couple) : nullptr;
 		}
-		M2_DELETE(pWeddingInfo);
-		pWeddingInfo = nullptr;
 	}
 
-	int TMarriage::GetMarriageGrade()
+	namespace MarriageSystem
 	{
-		int point = MINMAX(50, GetMarriagePoint(), 100);
-		if (point < 65)
-			return 0;
-		else if (point < 80)
-			return 1;
-		else if (point < 100)
-			return 2;
-		return 3;
-	}
-
-	int TMarriage::GetMarriagePoint()
-	{
-		if (test_server)
+		const ecs::CoupleState* State(entt::entity couple)
 		{
-			int value = quest::CQuestManager::instance().GetEventFlag("lovepoint");
-			if (value)
-				return MINMAX(0, value, 100);
+			return Couple(couple);
 		}
 
-		int point_per_day = MARRIAGE_POINT_PER_DAY;
-		int max_limit = 30;
-        const auto first = CPIDRegistry::Instance().Find(m_pid1);
-        const auto second = CPIDRegistry::Instance().Find(m_pid2);
-        if (ecs::PlayerRuntime::IsPC(first) && ecs::PlayerRuntime::IsPC(second))
-        {
-            if (ecs::PlayerRuntime::GetPremiumRemainSeconds(first, PREMIUM_MARRIAGE_FAST) > 0 ||
-                ecs::PlayerRuntime::GetPremiumRemainSeconds(second, PREMIUM_MARRIAGE_FAST) > 0)
-			{
-				point_per_day = MARRIAGE_POINT_PER_DAY_FAST;
-				max_limit = 40;
-			}
-		}
-
-		int days = (get_global_time() - marry_time);
-		if (test_server)
-			days /= 60;
-		else
-			days /= 86400;
-
-
-
-		return MIN(50 + MIN(days * point_per_day, max_limit) + MIN(love_point / 1000000, max_limit), 100);
-	}
-
-	bool TMarriage::IsNear()
-	{
-		if (!is_married)
-			return false;
-		if (!IsOnline())
-			return false;
-
-		return ecs::PlayerRuntime::GetMapIndex(ch1) == ecs::PlayerRuntime::GetMapIndex(ch2);
-
-		/*if (!ecs::SocialSystem::GetParty(ch1) || ecs::SocialSystem::GetParty(ch1) != ecs::SocialSystem::GetParty(ch2))
-		  return false;*/
-
-		/*const int DISTANCE = 5000;
-
-		  if (labs(ecs::PlayerRuntime::GetX(ch1) - ecs::PlayerRuntime::GetX(ch2)) > DISTANCE)
-		  return false;
-
-		  if (labs(ecs::PlayerRuntime::GetY(ch1) - ecs::PlayerRuntime::GetY(ch2)) > DISTANCE)
-		  return false;
-
-		  return (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(ch1) - ecs::PlayerRuntime::GetX(ch2), ecs::PlayerRuntime::GetY(ch1) - ecs::PlayerRuntime::GetY(ch2)) < DISTANCE);*/
-	}
-
-	int TMarriage::GetBonus(uint32_t dwItemVnum, bool bShare, entt::entity me)
-	{
-		const entt::entity ch1Entity = CPIDRegistry::Instance().Find(m_pid1);
-		const entt::entity ch2Entity = CPIDRegistry::Instance().Find(m_pid2);
-		if (!is_married)
-			return 0;
-
-
-		int iFindedBonusIndex=0;
+		uint32_t GetOther(entt::entity couple, uint32_t PID)
 		{
-			for (iFindedBonusIndex = 0; iFindedBonusIndex < MAX_MARRIAGE_UNIQUE_ITEM; ++iFindedBonusIndex)
-			{
-				if (g_ItemBonus[iFindedBonusIndex].dwVnum == dwItemVnum)
-					break;
-			}
-
-			if (iFindedBonusIndex == MAX_MARRIAGE_UNIQUE_ITEM)
+			const auto* state = Couple(couple);
+			if (!state)
 				return 0;
-		}
 
-#ifdef ENABLE_NEW_USE_POTION
-		uint32_t affetIdx;
-		switch (dwItemVnum) {
-			case UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS:
-				affetIdx = AFFECT_NEW_POTION15;
-				break;
-			case UNIQUE_ITEM_MARRIAGE_EXP_BONUS:
-				affetIdx = AFFECT_NEW_POTION16;
-				break;
-			case UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS:
-				affetIdx = AFFECT_NEW_POTION17;
-				break;
-			case UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE:
-				affetIdx = AFFECT_NEW_POTION18;
-				break;
-			case UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS:
-				affetIdx = AFFECT_NEW_POTION19;
-				break;
-			case UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS:
-				affetIdx = AFFECT_NEW_POTION20;
-				break;
-			default:
-				affetIdx = 0;
-				break;
-		}
-#endif
+			if (state->pid1 == PID)
+				return state->pid2;
 
-		if (bShare)
-		{
-			int count = 0;
-			if (ecs::PlayerRuntime::IsPC(ch1Entity) &&
-#ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
-#else
-			ItemSystem::IsEquipUniqueItem(ch1Entity, dwItemVnum)
-#endif
-			)
-				count ++;
-			if (ecs::PlayerRuntime::IsPC(ch2Entity) &&
-#ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
-#else
-			ItemSystem::IsEquipUniqueItem(ch2Entity, dwItemVnum)
-#endif
-			)
-				count ++;
+			if (state->pid2 == PID)
+				return state->pid1;
 
-			const TMarriageItemBonusByGrade& rkBonus = g_ItemBonus[iFindedBonusIndex];
-
-			if (count>=1)
-				return rkBonus.value[GetMarriageGrade()];
-			return 0;
-		}
-		else
-		{
-			int count = 0;
-			if (me != ch1Entity && ecs::PlayerRuntime::IsPC(ch1Entity) &&
-#ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
-#else
-			ItemSystem::IsEquipUniqueItem(ch1Entity, dwItemVnum)
-#endif
-			)
-				count ++;
-			if (me != ch2Entity && ecs::PlayerRuntime::IsPC(ch2Entity) &&
-#ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
-#else
-			ItemSystem::IsEquipUniqueItem(ch2Entity, dwItemVnum)
-#endif
-			)
-				count ++;
-
-			const TMarriageItemBonusByGrade& rkBonus = g_ItemBonus[iFindedBonusIndex];
-
-			if (count>=1)
-				return rkBonus.value[GetMarriageGrade()];
-			return 0;
-		}
-	}
-
-	void TMarriage::Login(entt::entity ch)
-	{
-		if ((ecs::PlayerRuntime::GetPlayerID(ch)) == m_pid1)
-		{
-			ch1 = ch;
-			if (is_married)
-				SendLoverInfo(ch1, name2, GetMarriagePoint());
-		}
-		else if ((ecs::PlayerRuntime::GetPlayerID(ch)) == m_pid2)
-		{
-			ch2 = ch;
-			if (is_married)
-				SendLoverInfo(ch2, name1, GetMarriagePoint());
-		}
-
-		if (IsOnline())
-		{
-			ecs::SocialSystem::SetMarryPartner(ch1, ch2);
-			ecs::SocialSystem::SetMarryPartner(ch2, ch1);
-
-			StartNearCheckEvent();
-		}
-
-		if (is_married)
-		{
-			LPDESC d1, d2;
-			CCI * pkCCI;
-
-			d1 = ecs::PlayerRuntime::GetDesc(ch1);
-
-			if (!d1)
-			{
-				pkCCI = P2P_MANAGER::instance().FindByPID(m_pid1);
-
-				if (pkCCI)
-				{
-					d1 = pkCCI->pkDesc;
-					d1->SetRelay(pkCCI->szName);
-				}
-			}
-
-			d2 = ecs::PlayerRuntime::GetDesc(ch2);
-
-			if (!d2)
-			{
-				pkCCI = P2P_MANAGER::instance().FindByPID(m_pid2);
-
-				if (pkCCI)
-				{
-					d2 = pkCCI->pkDesc;
-					d2->SetRelay(pkCCI->szName);
-				}
-			}
-
-			if (d1 && d2)
-			{
-				d1->ChatPacket(CHAT_TYPE_COMMAND, "lover_login");
-				d2->ChatPacket(CHAT_TYPE_COMMAND, "lover_login");
-				LOG_INFO("lover_login {} {}", m_pid1, m_pid2);
-			}
-		}
-	}
-
-	void TMarriage::Logout(uint32_t pid)
-	{
-		if (pid == m_pid1)
-			ch1 = entt::null;
-		else if (pid == m_pid2)
-			ch2 = entt::null;
-
-		if (ecs::IsCharacter(ch1) || ecs::IsCharacter(ch2))
-		{
-			Save();
-
-			if (ecs::IsCharacter(ch1))
-				ecs::SocialSystem::SetMarryPartner(ch1, entt::null);
-
-			if (ecs::IsCharacter(ch2))
-				ecs::SocialSystem::SetMarryPartner(ch2, entt::null);
-
-			StopNearCheckEvent();
-		}
-
-		if (is_married)
-		{
-			LPDESC d1, d2;
-			CCI * pkCCI;
-
-			d1 = ecs::PlayerRuntime::GetDesc(ch1);
-
-			if (!d1)
-			{
-				pkCCI = P2P_MANAGER::instance().FindByPID(m_pid1);
-
-				if (pkCCI)
-				{
-					d1 = pkCCI->pkDesc;
-					d1->SetRelay(pkCCI->szName);
-				}
-			}
-
-			if (d1 && !g_bShutdown) {
-				d1->ChatPacket(CHAT_TYPE_COMMAND, "lover_logout");
-			}
-
-			d2 = ecs::PlayerRuntime::GetDesc(ch2);
-
-			if (!d2)
-			{
-				pkCCI = P2P_MANAGER::instance().FindByPID(m_pid2);
-
-				if (pkCCI)
-				{
-					d2 = pkCCI->pkDesc;
-					d2->SetRelay(pkCCI->szName);
-				}
-			}
-
-			if (d2 && !g_bShutdown) {
-				d2->ChatPacket(CHAT_TYPE_COMMAND, "lover_logout");
-			}
-		}
-	}
-
-	void TMarriage::NearCheck()
-	{
-		if (!is_married)
-			return;
-
-		if (!IsOnline())
-		{
-			StopNearCheckEvent();
-			return;
-		}
-		LOG_TRACE("NearCheck {} {} {} {} {} {}", m_pid1, m_pid2, IsNear(), isLastNear, byLastLovePoint, GetMarriagePoint());
-
-		if (IsNear() && !isLastNear)
-		{
-			isLastNear = true;
-			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_near");
-			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_near");
-		}
-		else if (!IsNear() && isLastNear)
-		{
-			isLastNear = false;
-			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_far");
-			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_far");
-		}
-
-		if (byLastLovePoint != GetMarriagePoint())
-		{
-			byLastLovePoint = GetMarriagePoint();
-			TPacketGCLovePointUpdate p;
-			p.header = HEADER_GC_LOVE_POINT_UPDATE;
-			p.love_point = byLastLovePoint;
-
-			ecs::PlayerRuntime::GetDesc(ch1)->Packet(&p, sizeof(p));
-			ecs::PlayerRuntime::GetDesc(ch2)->Packet(&p, sizeof(p));
-		}
-	}
-
-	EVENTINFO(near_check_event_info)
-	{
-		TMarriage* pMarriage;
-
-		near_check_event_info()
-		: pMarriage( nullptr )
-		{
-		}
-	};
-
-	EVENTFUNC(near_check_event)
-	{
-		near_check_event_info* info = dynamic_cast<near_check_event_info*>( event->info );
-
-		if ( info == nullptr)
-		{
-			LOG_ERROR("near_check_event> <Factor> Null pointer");
 			return 0;
 		}
 
-		TMarriage* pMarriage = info->pMarriage;
-		pMarriage->NearCheck();
-		return PASSES_PER_SEC(5);
-	}
-
-	void TMarriage::StartNearCheckEvent()
-	{
-		StopNearCheckEvent();
-
-		near_check_event_info* info = AllocEventInfo<near_check_event_info>();
-		info->pMarriage = this;
-		eventNearCheck = event_create(near_check_event, info, 1);
-	}
-
-	void TMarriage::StopNearCheckEvent()
-	{
-		byLastLovePoint = 0;
-		isLastNear = false;
-		event_cancel(&eventNearCheck);
-	}
-
-	void TMarriage::Save()
-	{
-		LOG_INFO("TMarriage::Save() - RequestUpdate.bSave={}", bSave);
-		if (bSave)
+		// The pair is online while both partners are still characters.
+		bool IsOnline(entt::entity couple)
 		{
-			CManager::instance().RequestUpdate(m_pid1, m_pid2, love_point, is_married);
-			bSave = false;
+			const auto* state = Couple(couple);
+			return state && ecs::IsCharacter(state->character1) && ecs::IsCharacter(state->character2);
 		}
-	}
 
-	void TMarriage::SetMarried()
-	{
-		is_married = 1;
-		bSave = true;
-		Save();
-
-		if (IsOnline())
+		int GetMarriageGrade(entt::entity couple)
 		{
-			SendLoverInfo(ch1, name2, GetMarriagePoint());
-			SendLoverInfo(ch2, name1, GetMarriagePoint());
-
-			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_login");
-			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_login");
+			int point = MINMAX(50, GetMarriagePoint(couple), 100);
+			if (point < 65)
+				return 0;
+			else if (point < 80)
+				return 1;
+			else if (point < 100)
+				return 2;
+			return 3;
 		}
-	}
 
-	void TMarriage::Update(uint32_t point)
-	{
-		if (!IsOnline())
-			return;
-
-		if (point > 0 && is_married)
+		int GetMarriagePoint(entt::entity couple)
 		{
-			bSave = true;
-			// @fixme126
-			uint64_t llActualPoints = static_cast<uint64_t>(love_point) + point;
-			love_point = MIN( llActualPoints, 2000000000 );
+			const auto* state = Couple(couple);
+			if (!state)
+				return 0;
 
 			if (test_server)
 			{
-				entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(m_pid1);
-				if (ecs::IsCharacter(ch))
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
-				ch = CHARACTER_MANAGER::instance().FindEntityByPID(m_pid2);
-				if (ecs::IsCharacter(ch))
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
+				int value = quest::CQuestManager::instance().GetEventFlag("lovepoint");
+				if (value)
+					return MINMAX(0, value, 100);
 			}
+
+			int point_per_day = MARRIAGE_POINT_PER_DAY;
+			int max_limit = 30;
+			const auto first = CPIDRegistry::Instance().Find(state->pid1);
+			const auto second = CPIDRegistry::Instance().Find(state->pid2);
+			if (ecs::PlayerRuntime::IsPC(first) && ecs::PlayerRuntime::IsPC(second))
+			{
+				if (ecs::PlayerRuntime::GetPremiumRemainSeconds(first, PREMIUM_MARRIAGE_FAST) > 0 ||
+					ecs::PlayerRuntime::GetPremiumRemainSeconds(second, PREMIUM_MARRIAGE_FAST) > 0)
+				{
+					point_per_day = MARRIAGE_POINT_PER_DAY_FAST;
+					max_limit = 40;
+				}
+			}
+
+			int days = (get_global_time() - state->marryTime);
+			if (test_server)
+				days /= 60;
+			else
+				days /= 86400;
+
+			return MIN(50 + MIN(days * point_per_day, max_limit) + MIN(state->lovePoint / 1000000, max_limit), 100);
+		}
+
+		bool IsNear(entt::entity couple)
+		{
+			const auto* state = Couple(couple);
+			if (!state || !state->married)
+				return false;
+			if (!IsOnline(couple))
+				return false;
+
+			return ecs::PlayerRuntime::GetMapIndex(state->character1) == ecs::PlayerRuntime::GetMapIndex(state->character2);
+		}
+
+		int GetBonus(entt::entity couple, uint32_t dwItemVnum, bool bShare, entt::entity me)
+		{
+			const auto* state = Couple(couple);
+			if (!state)
+				return 0;
+
+			const entt::entity ch1Entity = CPIDRegistry::Instance().Find(state->pid1);
+			const entt::entity ch2Entity = CPIDRegistry::Instance().Find(state->pid2);
+			if (!state->married)
+				return 0;
+
+
+			int iFindedBonusIndex=0;
+			{
+				for (iFindedBonusIndex = 0; iFindedBonusIndex < MAX_MARRIAGE_UNIQUE_ITEM; ++iFindedBonusIndex)
+				{
+					if (g_ItemBonus[iFindedBonusIndex].dwVnum == dwItemVnum)
+						break;
+				}
+
+				if (iFindedBonusIndex == MAX_MARRIAGE_UNIQUE_ITEM)
+					return 0;
+			}
+
+#ifdef ENABLE_NEW_USE_POTION
+			uint32_t affetIdx;
+			switch (dwItemVnum) {
+				case UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS:
+					affetIdx = AFFECT_NEW_POTION15;
+					break;
+				case UNIQUE_ITEM_MARRIAGE_EXP_BONUS:
+					affetIdx = AFFECT_NEW_POTION16;
+					break;
+				case UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS:
+					affetIdx = AFFECT_NEW_POTION17;
+					break;
+				case UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE:
+					affetIdx = AFFECT_NEW_POTION18;
+					break;
+				case UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS:
+					affetIdx = AFFECT_NEW_POTION19;
+					break;
+				case UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS:
+					affetIdx = AFFECT_NEW_POTION20;
+					break;
+				default:
+					affetIdx = 0;
+					break;
+			}
+#endif
+
+			if (bShare)
+			{
+				int count = 0;
+				if (ecs::PlayerRuntime::IsPC(ch1Entity) &&
+#ifdef ENABLE_NEW_USE_POTION
+				affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
+#else
+				ItemSystem::IsEquipUniqueItem(ch1Entity, dwItemVnum)
+#endif
+				)
+					count ++;
+				if (ecs::PlayerRuntime::IsPC(ch2Entity) &&
+#ifdef ENABLE_NEW_USE_POTION
+				affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
+#else
+				ItemSystem::IsEquipUniqueItem(ch2Entity, dwItemVnum)
+#endif
+				)
+					count ++;
+
+				const TMarriageItemBonusByGrade& rkBonus = g_ItemBonus[iFindedBonusIndex];
+
+				if (count>=1)
+					return rkBonus.value[GetMarriageGrade(couple)];
+				return 0;
+			}
+			else
+			{
+				int count = 0;
+				if (me != ch1Entity && ecs::PlayerRuntime::IsPC(ch1Entity) &&
+#ifdef ENABLE_NEW_USE_POTION
+				affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
+#else
+				ItemSystem::IsEquipUniqueItem(ch1Entity, dwItemVnum)
+#endif
+				)
+					count ++;
+				if (me != ch2Entity && ecs::PlayerRuntime::IsPC(ch2Entity) &&
+#ifdef ENABLE_NEW_USE_POTION
+				affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
+#else
+				ItemSystem::IsEquipUniqueItem(ch2Entity, dwItemVnum)
+#endif
+				)
+					count ++;
+
+				const TMarriageItemBonusByGrade& rkBonus = g_ItemBonus[iFindedBonusIndex];
+
+				if (count>=1)
+					return rkBonus.value[GetMarriageGrade(couple)];
+				return 0;
+			}
+		}
+
+		void Save(entt::entity couple)
+		{
+			auto* state = Couple(couple);
+			if (!state)
+				return;
+
+			LOG_INFO("MarriageSystem::Save() - RequestUpdate.needsSave={}", state->needsSave);
+			if (state->needsSave)
+			{
+				CManager::instance().RequestUpdate(state->pid1, state->pid2, state->lovePoint, state->married);
+				state->needsSave = false;
+			}
+		}
+
+		void SetMarried(entt::entity couple)
+		{
+			auto* state = Couple(couple);
+			if (!state)
+				return;
+
+			state->married = true;
+			state->needsSave = true;
+			Save(couple);
+
+			if (IsOnline(couple))
+			{
+				const entt::entity character1 = state->character1;
+				const entt::entity character2 = state->character2;
+				const std::string name1 = state->name1;
+				const std::string name2 = state->name2;
+
+				SendLoverInfo(character1, name2, GetMarriagePoint(couple));
+				SendLoverInfo(character2, name1, GetMarriagePoint(couple));
+
+				ecs::ChatSystem::Send(character1, CHAT_TYPE_COMMAND, "lover_login");
+				ecs::ChatSystem::Send(character2, CHAT_TYPE_COMMAND, "lover_login");
+			}
+		}
+
+		void Update(entt::entity couple, uint32_t point)
+		{
+			if (!IsOnline(couple))
+				return;
+
+			auto* state = Couple(couple);
+			if (point > 0 && state->married)
+			{
+				state->needsSave = true;
+				// @fixme126
+				uint64_t llActualPoints = static_cast<uint64_t>(state->lovePoint) + point;
+				state->lovePoint = MIN( llActualPoints, 2000000000 );
+
+				if (test_server)
+				{
+					const int lovePoint = state->lovePoint;
+					const uint32_t pid1 = state->pid1;
+					const uint32_t pid2 = state->pid2;
+
+					entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(pid1);
+					if (ecs::IsCharacter(ch))
+						ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", lovePoint / 1000000., GetMarriagePoint(couple));
+					ch = CHARACTER_MANAGER::instance().FindEntityByPID(pid2);
+					if (ecs::IsCharacter(ch))
+						ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", lovePoint / 1000000., GetMarriagePoint(couple));
+				}
+			}
+		}
+
+		void WarpToWeddingMap(entt::entity couple, uint32_t dwPID)
+		{
+			const auto* state = Couple(couple);
+			if (!state || !state->weddingMapIndex)
+				return;
+
+			const uint32_t mapIndex = *state->weddingMapIndex;
+			const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
+			if (ecs::IsCharacter(ch))
+			{
+				PIXEL_POSITION pos;
+				if (!SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapIndex/10000, 0, pos))
+				{
+					LOG_ERROR("cannot get warp position");
+					return;
+				}
+				ecs::MovementSystem::SaveExitLocation(ch);
+				ecs::MovementSystem::WarpSet(ch, pos.x, pos.y, mapIndex);
+			}
+		}
+
+		void RequestEndWedding(entt::entity couple)
+		{
+			const auto* state = Couple(couple);
+			if (!state || !state->weddingMapIndex)
+				return;
+			CManager::instance().RequestEndWedding(state->pid1, state->pid2);
 		}
 	}
 
-	void TMarriage::WarpToWeddingMap(uint32_t dwPID)
+	namespace
 	{
-		if (!pWeddingInfo)
-			return;
-
-		const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
-		if (ecs::IsCharacter(ch))
+		void StopNearCheckEvent(entt::entity couple)
 		{
-			PIXEL_POSITION pos;
-			if (!SECTREE_MANAGER::instance().GetRecallPositionByEmpire(pWeddingInfo->dwMapIndex/10000, 0, pos))
+			auto* state = Couple(couple);
+			if (!state)
+				return;
+
+			state->lastLovePoint = 0;
+			state->lastNear = false;
+			event_cancel(&state->nearCheckEvent);
+		}
+
+		void NearCheck(entt::entity couple)
+		{
+			auto* state = Couple(couple);
+			if (!state || !state->married)
+				return;
+
+			if (!MarriageSystem::IsOnline(couple))
 			{
-				LOG_ERROR("cannot get warp position");
+				StopNearCheckEvent(couple);
 				return;
 			}
-			ecs::MovementSystem::SaveExitLocation(ch);
-			ecs::MovementSystem::WarpSet(ch, pos.x, pos.y, pWeddingInfo->dwMapIndex);
-		}
-	}
+			LOG_TRACE("NearCheck {} {} {} {} {} {}", state->pid1, state->pid2, MarriageSystem::IsNear(couple), state->lastNear, state->lastLovePoint, MarriageSystem::GetMarriagePoint(couple));
 
-	void TMarriage::RequestEndWedding()
-	{
-		if (!pWeddingInfo)
-			return;
-		CManager::instance().RequestEndWedding(m_pid1, m_pid2);
+			if (MarriageSystem::IsNear(couple) && !state->lastNear)
+			{
+				state->lastNear = true;
+				ecs::ChatSystem::Send(state->character1, CHAT_TYPE_COMMAND, "lover_near");
+				ecs::ChatSystem::Send(state->character2, CHAT_TYPE_COMMAND, "lover_near");
+			}
+			else if (!MarriageSystem::IsNear(couple) && state->lastNear)
+			{
+				state->lastNear = false;
+				ecs::ChatSystem::Send(state->character1, CHAT_TYPE_COMMAND, "lover_far");
+				ecs::ChatSystem::Send(state->character2, CHAT_TYPE_COMMAND, "lover_far");
+			}
+
+			if (state->lastLovePoint != MarriageSystem::GetMarriagePoint(couple))
+			{
+				state->lastLovePoint = MarriageSystem::GetMarriagePoint(couple);
+				TPacketGCLovePointUpdate p;
+				p.header = HEADER_GC_LOVE_POINT_UPDATE;
+				p.love_point = state->lastLovePoint;
+
+				ecs::PlayerRuntime::GetDesc(state->character1)->Packet(&p, sizeof(p));
+				ecs::PlayerRuntime::GetDesc(state->character2)->Packet(&p, sizeof(p));
+			}
+		}
+
+		// The timer holds the couple entity, not a pointer, so a couple removed
+		// without its timer being cancelled reads as gone and ends the timer.
+		EVENTINFO(near_check_event_info)
+		{
+			entt::entity couple;
+
+			near_check_event_info()
+			: couple( entt::null )
+			{
+			}
+		};
+
+		EVENTFUNC(near_check_event)
+		{
+			near_check_event_info* info = dynamic_cast<near_check_event_info*>( event->info );
+
+			if ( info == nullptr)
+			{
+				LOG_ERROR("near_check_event> <Factor> Null pointer");
+				return 0;
+			}
+
+			if (!Couple(info->couple))
+				return 0;
+
+			NearCheck(info->couple);
+			return PASSES_PER_SEC(5);
+		}
+
+		void StartNearCheckEvent(entt::entity couple)
+		{
+			StopNearCheckEvent(couple);
+
+			auto* state = Couple(couple);
+			if (!state)
+				return;
+
+			near_check_event_info* info = AllocEventInfo<near_check_event_info>();
+			info->couple = couple;
+			state->nearCheckEvent = event_create(near_check_event, info, 1);
+		}
+
+		entt::entity CreateCouple(uint32_t pid1, uint32_t pid2, int lovePoint, time_t marryTime, const char* name1, const char* name2)
+		{
+			const entt::entity couple = g_registry.create();
+			auto& state = g_registry.emplace<ecs::CoupleState>(couple);
+			state.pid1 = pid1;
+			state.pid2 = pid2;
+			state.lovePoint = lovePoint;
+			state.marryTime = marryTime;
+			state.name1 = name1;
+			state.name2 = name2;
+			return couple;
+		}
+
+		// What deleting the TMarriage did: the timer goes, the couple hears
+		// about the divorce while both are online, then the state goes.
+		void DestroyCouple(entt::entity couple)
+		{
+			StopNearCheckEvent(couple);
+			if (MarriageSystem::IsOnline(couple))
+			{
+				const auto* state = Couple(couple);
+				ecs::ChatSystem::Send(state->character1, CHAT_TYPE_COMMAND, "lover_divorce");
+				ecs::ChatSystem::Send(state->character2, CHAT_TYPE_COMMAND, "lover_divorce");
+			}
+
+			if (couple != entt::null && g_registry.valid(couple))
+				g_registry.destroy(couple);
+		}
+
+		void LoginPartner(entt::entity couple, entt::entity ch)
+		{
+			auto* state = Couple(couple);
+			if (!state)
+				return;
+
+			if ((ecs::PlayerRuntime::GetPlayerID(ch)) == state->pid1)
+			{
+				state->character1 = ch;
+				if (state->married)
+					SendLoverInfo(state->character1, state->name2, MarriageSystem::GetMarriagePoint(couple));
+			}
+			else if ((ecs::PlayerRuntime::GetPlayerID(ch)) == state->pid2)
+			{
+				state->character2 = ch;
+				if (state->married)
+					SendLoverInfo(state->character2, state->name1, MarriageSystem::GetMarriagePoint(couple));
+			}
+
+			if (MarriageSystem::IsOnline(couple))
+			{
+				ecs::SocialSystem::SetMarryPartner(state->character1, state->character2);
+				ecs::SocialSystem::SetMarryPartner(state->character2, state->character1);
+
+				StartNearCheckEvent(couple);
+			}
+
+			if (state->married)
+			{
+				LPDESC d1, d2;
+				CCI * pkCCI;
+
+				d1 = ecs::PlayerRuntime::GetDesc(state->character1);
+
+				if (!d1)
+				{
+					pkCCI = P2P_MANAGER::instance().FindByPID(state->pid1);
+
+					if (pkCCI)
+					{
+						d1 = pkCCI->pkDesc;
+						d1->SetRelay(pkCCI->szName);
+					}
+				}
+
+				d2 = ecs::PlayerRuntime::GetDesc(state->character2);
+
+				if (!d2)
+				{
+					pkCCI = P2P_MANAGER::instance().FindByPID(state->pid2);
+
+					if (pkCCI)
+					{
+						d2 = pkCCI->pkDesc;
+						d2->SetRelay(pkCCI->szName);
+					}
+				}
+
+				if (d1 && d2)
+				{
+					d1->ChatPacket(CHAT_TYPE_COMMAND, "lover_login");
+					d2->ChatPacket(CHAT_TYPE_COMMAND, "lover_login");
+					LOG_INFO("lover_login {} {}", state->pid1, state->pid2);
+				}
+			}
+		}
+
+		void LogoutPartner(entt::entity couple, uint32_t pid)
+		{
+			auto* state = Couple(couple);
+			if (!state)
+				return;
+
+			if (pid == state->pid1)
+				state->character1 = entt::null;
+			else if (pid == state->pid2)
+				state->character2 = entt::null;
+
+			if (ecs::IsCharacter(state->character1) || ecs::IsCharacter(state->character2))
+			{
+				MarriageSystem::Save(couple);
+
+				if (ecs::IsCharacter(state->character1))
+					ecs::SocialSystem::SetMarryPartner(state->character1, entt::null);
+
+				if (ecs::IsCharacter(state->character2))
+					ecs::SocialSystem::SetMarryPartner(state->character2, entt::null);
+
+				StopNearCheckEvent(couple);
+			}
+
+			if (state->married)
+			{
+				LPDESC d1, d2;
+				CCI * pkCCI;
+
+				d1 = ecs::PlayerRuntime::GetDesc(state->character1);
+
+				if (!d1)
+				{
+					pkCCI = P2P_MANAGER::instance().FindByPID(state->pid1);
+
+					if (pkCCI)
+					{
+						d1 = pkCCI->pkDesc;
+						d1->SetRelay(pkCCI->szName);
+					}
+				}
+
+				if (d1 && !g_bShutdown) {
+					d1->ChatPacket(CHAT_TYPE_COMMAND, "lover_logout");
+				}
+
+				d2 = ecs::PlayerRuntime::GetDesc(state->character2);
+
+				if (!d2)
+				{
+					pkCCI = P2P_MANAGER::instance().FindByPID(state->pid2);
+
+					if (pkCCI)
+					{
+						d2 = pkCCI->pkDesc;
+						d2->SetRelay(pkCCI->szName);
+					}
+				}
+
+				if (d2 && !g_bShutdown) {
+					d2->ChatPacket(CHAT_TYPE_COMMAND, "lover_logout");
+				}
+			}
+		}
 	}
 
 	CManager::CManager()
@@ -547,25 +636,19 @@ namespace marriage
 
 	bool CManager::IsMarried(uint32_t dwPlayerID)
 	{
-		TMarriage* pkMarriageFinded=Get(dwPlayerID);
-		if (pkMarriageFinded && pkMarriageFinded->is_married)
-			return true;
-
-		return false;
+		const auto* state = Couple(Get(dwPlayerID));
+		return state && state->married;
 	}
 
 	bool CManager::IsEngaged(uint32_t dwPlayerID)
 	{
-		TMarriage* pkMarriageFinded=Get(dwPlayerID);
-		if (pkMarriageFinded && !pkMarriageFinded->is_married)
-			return true;
-
-		return false;
+		const auto* state = Couple(Get(dwPlayerID));
+		return state && !state->married;
 	}
 
 	bool CManager::IsEngagedOrMarried(uint32_t dwPlayerID)
 	{
-		return Get(dwPlayerID) != nullptr;
+		return Get(dwPlayerID) != entt::null;
 	}
 
 	bool CManager::Initialize()
@@ -583,12 +666,20 @@ namespace marriage
 			std::swap(dwPID1, dwPID2);
 	}
 
-	TMarriage* CManager::Get(uint32_t dwPlayerID)
+	entt::entity CManager::Get(uint32_t dwPlayerID)
 	{
-		if (const auto it = m_MarriageByPID.find(dwPlayerID); it != m_MarriageByPID.end())
-			return it->second;
+		const auto it = m_MarriageByPID.find(dwPlayerID);
+		if (it == m_MarriageByPID.end())
+			return entt::null;
 
-		return nullptr;
+		// An entry whose couple is gone (a registry reset) reads as no couple.
+		if (!Couple(it->second))
+		{
+			m_MarriageByPID.erase(it);
+			return entt::null;
+		}
+
+		return it->second;
 	}
 
 	void CManager::RequestAdd(uint32_t dwPID1, uint32_t dwPID2, const char* szName1, const char* szName2)
@@ -622,10 +713,9 @@ namespace marriage
 			std::swap(szName1, szName2);
 		}
 
-		TMarriage* pMarriage = M2_NEW TMarriage(dwPID1, dwPID2, 0, tMarryTime, szName1, szName2);
-		m_Marriages.insert(pMarriage);
-		m_MarriageByPID.insert(make_pair(dwPID1, pMarriage));
-		m_MarriageByPID.insert(make_pair(dwPID2, pMarriage));
+		const entt::entity couple = CreateCouple(dwPID1, dwPID2, 0, tMarryTime, szName1, szName2);
+		m_MarriageByPID.insert_or_assign(dwPID1, couple);
+		m_MarriageByPID.insert_or_assign(dwPID2, couple);
 		{
 			const entt::entity A = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID1);
 			const entt::entity B = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID2);
@@ -654,16 +744,17 @@ namespace marriage
 
 	void CManager::Update(uint32_t dwPID1, uint32_t dwPID2, int32_t lTotalPoint, uint8_t byMarried)
 	{
-		TMarriage* pMarriage = Get(dwPID1);
+		const entt::entity couple = Get(dwPID1);
 
-		if (!pMarriage || pMarriage->GetOther(dwPID1) != dwPID2)
+		if (couple == entt::null || MarriageSystem::GetOther(couple, dwPID1) != dwPID2)
 		{
 			LOG_ERROR("not under marriage : {} {}", dwPID1, dwPID2);
 			return;
 		}
 
-		pMarriage->love_point = lTotalPoint;
-		pMarriage->is_married = byMarried;
+		auto* state = Couple(couple);
+		state->lovePoint = lTotalPoint;
+		state->married = byMarried;
 	}
 
 	void CManager::RequestRemove(uint32_t dwPID1, uint32_t dwPID2)
@@ -678,8 +769,8 @@ namespace marriage
 
 	void CManager::Remove(uint32_t dwPID1, uint32_t dwPID2)
 	{
-		TMarriage* pMarriage = Get(dwPID1);
-		if (!pMarriage || pMarriage->GetOther(dwPID1) != dwPID2)
+		const entt::entity couple = Get(dwPID1);
+		if (couple == entt::null || MarriageSystem::GetOther(couple, dwPID1) != dwPID2)
 		{
 			LOG_ERROR("not under marriage : {} {}", dwPID1, dwPID2);
 			return;
@@ -726,32 +817,31 @@ namespace marriage
 		}
 #endif
 
-		m_Marriages.erase(pMarriage);
 		m_MarriageByPID.erase(dwPID1);
 		m_MarriageByPID.erase(dwPID2);
 
-		M2_DELETE(pMarriage);
+		DestroyCouple(couple);
 	}
 
 	void CManager::Login(entt::entity ch)
 	{
 		uint32_t pid = ecs::PlayerRuntime::GetPlayerID(ch);
 
-		TMarriage* pMarriage = Get(pid);
-		if (!pMarriage)
+		const entt::entity couple = Get(pid);
+		if (couple == entt::null)
 			return;
 
-		pMarriage->Login(ch);
+		LoginPartner(couple, ch);
 	}
 
 	void CManager::Logout(uint32_t pid)
 	{
-		TMarriage * pMarriage = Get(pid);
+		const entt::entity couple = Get(pid);
 
-		if (!pMarriage)
+		if (couple == entt::null)
 			return;
 
-		pMarriage->Logout(pid);
+		LogoutPartner(couple, pid);
 	}
 
 	void CManager::Logout(entt::entity ch)
@@ -761,69 +851,61 @@ namespace marriage
 
 	void CManager::WeddingReady(uint32_t dwPID1, uint32_t dwPID2, uint32_t dwMapIndex)
 	{
-		TMarriage* pMarriage = Get(dwPID1);
-		if (!pMarriage || pMarriage->GetOther(dwPID1) != dwPID2)
+		const entt::entity couple = Get(dwPID1);
+		if (couple == entt::null || MarriageSystem::GetOther(couple, dwPID1) != dwPID2)
 		{
 			LOG_ERROR("wrong marriage {}, {}", dwPID1, dwPID2);
 			return;
 		}
 
-		TWeddingInfo* pwi;
-		if (pMarriage->pWeddingInfo)
-			pwi = pMarriage->pWeddingInfo;
-		else
-		{
-			pwi = M2_NEW TWeddingInfo;
-			pMarriage->pWeddingInfo = pwi;
-		}
-
-		pwi->dwMapIndex = dwMapIndex;
+		Couple(couple)->weddingMapIndex = dwMapIndex;
 	}
 
 	void CManager::WeddingStart(uint32_t dwPID1, uint32_t dwPID2)
 	{
-		TMarriage* pMarriage = Get(dwPID1);
-		if (!pMarriage || pMarriage->GetOther(dwPID1) != dwPID2)
+		const entt::entity couple = Get(dwPID1);
+		if (couple == entt::null || MarriageSystem::GetOther(couple, dwPID1) != dwPID2)
 		{
 			LOG_ERROR("wrong marriage {}, {}", dwPID1, dwPID2);
 			return;
 		}
 
-		TWeddingInfo * pwi = pMarriage->pWeddingInfo;
-
-		if (!pwi)
+		if (!Couple(couple)->weddingMapIndex)
 			return;
 
-		pMarriage->WarpToWeddingMap(dwPID1);
-		pMarriage->WarpToWeddingMap(dwPID2);
+		MarriageSystem::WarpToWeddingMap(couple, dwPID1);
+		MarriageSystem::WarpToWeddingMap(couple, dwPID2);
 
 		m_setWedding.insert(make_pair(dwPID1, dwPID2));
 	}
 
 	void CManager::WeddingEnd(uint32_t dwPID1, uint32_t dwPID2)
 	{
-		TMarriage* pMarriage = Get(dwPID1);
-		if (!pMarriage || pMarriage->GetOther(dwPID1) != dwPID2)
+		const entt::entity couple = Get(dwPID1);
+		if (couple == entt::null || MarriageSystem::GetOther(couple, dwPID1) != dwPID2)
 		{
 			LOG_ERROR("wrong marriage {}, {}", dwPID1, dwPID2);
 			return;
 		}
 
-		if (!pMarriage->pWeddingInfo)
+		const auto* state = Couple(couple);
+		if (!state->weddingMapIndex)
 		{
 			LOG_ERROR("not under wedding {}, {}", dwPID1, dwPID2);
 			return;
 		}
 
+		const uint32_t mapIndex = *state->weddingMapIndex;
 		if (map_allow_find(WEDDING_MAP_INDEX))
-			if (!WeddingManager::instance().End(pMarriage->pWeddingInfo->dwMapIndex))
+			if (!WeddingManager::instance().End(mapIndex))
 			{
-				LOG_ERROR("wedding map error: map_index={}", pMarriage->pWeddingInfo->dwMapIndex);
+				LOG_ERROR("wedding map error: map_index={}", mapIndex);
 				return;
 			}
 
-		M2_DELETE(pMarriage->pWeddingInfo);
-		pMarriage->pWeddingInfo = nullptr;
+		// Ending the map runs its own teardown; read the couple again after it.
+		if (auto* ended = Couple(couple))
+			ended->weddingMapIndex.reset();
 
 		m_setWedding.erase(make_pair(dwPID1, dwPID2));
 	}
@@ -837,7 +919,3 @@ namespace marriage
 		db_clientdesc->DBPacket(HEADER_GD_WEDDING_END, 0, &p, sizeof(p));
 	}
 }
-
-
-
-

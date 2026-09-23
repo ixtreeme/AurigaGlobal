@@ -1,86 +1,37 @@
 #ifndef __MARRIAGE_H
 #define __MARRIAGE_H
 
+namespace ecs { struct CoupleState; }
+
 namespace marriage
 {
-	struct TWeddingInfo
-	{
-		uint32_t dwMapIndex;
-	};
-
 	extern const int MARRIAGE_POINT_PER_DAY;
-	struct TMarriage
+
+	// An engaged or married couple is ecs::CoupleState on its own
+	// registry-owned entity, indexed by both player ids in CManager. It is not
+	// on either character: it is DB-backed and exists while both are offline,
+	// and the partners who are online are validated entities inside it. Every
+	// function takes the couple entity and reads a retired one as no couple.
+	namespace MarriageSystem
 	{
-		uint32_t m_pid1;
-		uint32_t m_pid2;
-		int   love_point;
-		time_t marry_time;
-		entt::entity ch1;
-		entt::entity ch2;
-		bool bSave;
-		bool is_married;
-		std::string name1;
-		std::string name2;
+		// Read access to the couple; null for a retired or foreign entity.
+		const ecs::CoupleState* State(entt::entity couple);
 
-		TWeddingInfo * pWeddingInfo;
+		uint32_t GetOther(entt::entity couple, uint32_t PID);
+		bool IsOnline(entt::entity couple);
+		bool IsNear(entt::entity couple);
 
-		TMarriage(uint32_t pid1, uint32_t pid2, int _love_point, time_t _marry_time, const char* name1, const char* name2) :
-			m_pid1(pid1),
-			m_pid2(pid2),
-			love_point(_love_point),
-			marry_time(_marry_time),
-			is_married(false),
-			name1(name1),
-			name2(name2),
-			pWeddingInfo(nullptr),
-			eventNearCheck(nullptr)
-		{
-			ch1 = ch2 = entt::null;
-			bSave = false;
-			isLastNear = false;
-			byLastLovePoint = 0;
-		}
+		int GetMarriagePoint(entt::entity couple);
+		int GetMarriageGrade(entt::entity couple);
+		int GetBonus(entt::entity couple, uint32_t dwItemVnum, bool bShare = true, entt::entity me = entt::null);
 
-		~TMarriage();
+		void Save(entt::entity couple);
+		void SetMarried(entt::entity couple);
+		void Update(entt::entity couple, uint32_t point);
 
-		void Login(entt::entity ch);
-		void Logout(uint32_t pid);
-
-		bool IsOnline();
-
-		bool IsNear();
-
-		uint32_t GetOther(uint32_t PID) const
-		{
-			if (m_pid1 == PID)
-				return m_pid2;
-
-			if (m_pid2 == PID)
-				return m_pid1;
-
-			return 0;
-		}
-
-		int GetMarriagePoint();
-		int GetMarriageGrade();
-
-		int GetBonus(uint32_t dwItemVnum, bool bShare = true, entt::entity me = entt::null);
-
-		void WarpToWeddingMap(uint32_t dwPID);
-		void Save();
-		void SetMarried();
-
-		void Update(uint32_t point);
-		void RequestEndWedding();
-
-		void StartNearCheckEvent();
-		void StopNearCheckEvent();
-		void NearCheck();
-
-		bool isLastNear;
-		uint8_t byLastLovePoint;
-		LPEVENT eventNearCheck;
-	};
+		void WarpToWeddingMap(entt::entity couple, uint32_t dwPID);
+		void RequestEndWedding(entt::entity couple);
+	}
 
 	class CManager : public singleton<CManager>
 	{
@@ -91,7 +42,8 @@ namespace marriage
 			bool	Initialize();
 			void	Destroy();
 
-			TMarriage*	Get(uint32_t dwPlayerID);
+			// The couple entity for a player id, or entt::null.
+			entt::entity	Get(uint32_t dwPlayerID);
 
 			bool	IsMarriageUniqueItem(uint32_t dwItemVnum);
 
@@ -124,8 +76,8 @@ namespace marriage
 				Func	for_each_wedding(Func f);
 
 		private:
-			std::unordered_set<TMarriage*> m_Marriages;
-			std::map<uint32_t, TMarriage *> m_MarriageByPID;
+			// The index is service state: both player ids to the couple entity.
+			std::map<uint32_t, entt::entity> m_MarriageByPID;
 			std::set<std::pair<uint32_t, uint32_t> > m_setWedding;
 	};
 
@@ -134,9 +86,9 @@ namespace marriage
 		{
 			for (auto it = m_setWedding.begin(); it!=m_setWedding.end(); ++it)
 			{
-				TMarriage* pMarriage = Get(it->first);
-				if (pMarriage)
-					f(pMarriage);
+				const entt::entity couple = Get(it->first);
+				if (couple != entt::null)
+					f(couple);
 			}
 			return f;
 		}

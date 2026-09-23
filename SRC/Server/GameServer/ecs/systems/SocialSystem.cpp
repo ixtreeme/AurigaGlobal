@@ -1349,8 +1349,8 @@ int ecs::SocialSystem::GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool 
 {
     if (!ecs::PlayerRuntime::IsPC(e))
         return 0;
-    auto* pair = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
-    return pair ? pair->GetBonus(itemVnum, share, e) : 0;
+    const entt::entity couple = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
+    return couple != entt::null ? marriage::MarriageSystem::GetBonus(couple, itemVnum, share, e) : 0;
 }
 
 // ForEachMemberPtr handed this a null pointer for every member not linked to a

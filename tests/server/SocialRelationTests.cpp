@@ -170,8 +170,8 @@ void DungeonSystem::ClearMemberDungeonIfOtherMap(entt::entity, int32_t) { Unexpe
 
 void marriage::WeddingSystem::SetMemberMap(entt::entity, entt::entity) { Unexpected("SetMemberMap"); }
 entt::entity marriage::WeddingSystem::GetMemberMap(entt::entity) { Unexpected("GetMemberMap"); }
-marriage::TMarriage* marriage::CManager::Get(uint32_t) { return nullptr; }
-int marriage::TMarriage::GetBonus(uint32_t, bool, entt::entity) { Unexpected("TMarriage::GetBonus"); }
+entt::entity marriage::CManager::Get(uint32_t) { return entt::null; }
+int marriage::MarriageSystem::GetBonus(entt::entity, uint32_t, bool, entt::entity) { Unexpected("MarriageSystem::GetBonus"); }
 
 void ExchangeSystem::Cancel(entt::entity) { Unexpected("ExchangeSystem::Cancel"); }
 bool CBanwordManager::CheckString(const char*, size_t) { return false; }

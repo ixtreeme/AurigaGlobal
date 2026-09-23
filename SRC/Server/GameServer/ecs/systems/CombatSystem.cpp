@@ -1638,11 +1638,11 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 				ecs::PlayerRuntime::GetPremiumRemainSeconds(you, PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint *= 3;
 
-			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
+			const entt::entity couple = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
 
 			// DIVORCE_NULL_BUG_FIX
-			if (pMarriage && pMarriage->IsNear())
-				pMarriage->Update(dwUpdatePoint);
+			if (couple != entt::null && marriage::MarriageSystem::IsNear(couple))
+				marriage::MarriageSystem::Update(couple, dwUpdatePoint);
 			// END_OF_DIVORCE_NULL_BUG_FIX
 		}
 	}
@@ -1769,11 +1769,11 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 				ecs::PlayerRuntime::GetPremiumRemainSeconds(you, PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint = (uint32_t)(dwUpdatePoint * 3);
 
-			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
+			const entt::entity couple = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
 
 			// DIVORCE_NULL_BUG_FIX
-			if (pMarriage && pMarriage->IsNear())
-				pMarriage->Update(dwUpdatePoint);
+			if (couple != entt::null && marriage::MarriageSystem::IsNear(couple))
+				marriage::MarriageSystem::Update(couple, dwUpdatePoint);
 			// END_OF_DIVORCE_NULL_BUG_FIX
 		}
 	}

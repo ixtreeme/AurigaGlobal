@@ -99,6 +99,7 @@
 #include "../components/item_components.hpp"
 #include "../ItemRegistry.hpp"
 #include "../CharacterAccessors.hpp"
+#include "../components/social_components.hpp"
 
 bool IS_SUMMONABLE_ZONE(int map_index);
 bool IS_BOTARYABLE_ZONE(int nMapIndex);
@@ -5283,12 +5284,15 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			break;
 			case ITEM_MARRIAGE_RING:
 			{
-				marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
-				if (pMarriage)
+				const entt::entity couple = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
+				if (const auto* coupleState = marriage::MarriageSystem::State(couple))
 				{
-					if (ecs::IsCharacter(pMarriage->ch1))
+					const entt::entity partner1 = coupleState->character1;
+					const entt::entity partner2 = coupleState->character2;
+
+					if (ecs::IsCharacter(partner1))
 					{
-						if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(pMarriage->ch1)) == true)
+						if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(partner1)) == true)
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 672, "");
@@ -5297,9 +5301,9 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 						}
 					}
 
-					if (ecs::IsCharacter(pMarriage->ch2))
+					if (ecs::IsCharacter(partner2))
 					{
-						if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(pMarriage->ch2)) == true)
+						if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(partner2)) == true)
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 672, "");
@@ -5315,7 +5319,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 					ecs::PointSystem::Change(e, POINT_SP, -consumeSP, false);
 
-					ecs::SessionSystem::WarpToPID(e, pMarriage->GetOther(ecs::PlayerRuntime::GetPlayerID(e)));
+					ecs::SessionSystem::WarpToPID(e, marriage::MarriageSystem::GetOther(couple, ecs::PlayerRuntime::GetPlayerID(e)));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {

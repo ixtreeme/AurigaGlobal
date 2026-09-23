@@ -2,8 +2,10 @@
 #include "../../social/exchange.h"
 
 #include <cstdint>
+#include <ctime>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 
@@ -96,6 +98,30 @@ struct MarriageState {
     // The wedding map this character is on. The map state is a component on a
     // registry-owned entity, indexed by the durable private map index.
     entt::entity weddingMap { entt::null };
+};
+
+// One engaged or married couple. It lives on its own registry-owned entity,
+// not on either character, because it is DB-backed and outlives both
+// logins; marriage::CManager indexes it by both player ids. The partners'
+// characters are entities while they are online and are validated on every
+// read.
+struct CoupleState {
+    uint32_t pid1 { 0 };
+    uint32_t pid2 { 0 };
+    std::string name1;
+    std::string name2;
+    int lovePoint { 0 };
+    time_t marryTime { 0 };
+    bool married { false };
+    // The love points or the married flag changed since the last DB update.
+    bool needsSave { false };
+    entt::entity character1 { entt::null };
+    entt::entity character2 { entt::null };
+    // The wedding map, from WeddingReady until WeddingEnd.
+    std::optional<uint32_t> weddingMapIndex;
+    LPEVENT nearCheckEvent { nullptr };
+    bool lastNear { false };
+    uint8_t lastLovePoint { 0 };
 };
 
 // Authoritative state of one wedding ceremony map. The ceremony's durable
