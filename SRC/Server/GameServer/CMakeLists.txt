@@ -290,7 +290,6 @@ add_test(NAME ai_state COMMAND AIStateTests)
 add_executable(AffectLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/AffectLifecycleTests.cpp
     ecs/systems/AffectSystem.cpp
-    combat/affect.cpp
     pet/horsename_manager.cpp
 )
 target_link_libraries(AffectLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)

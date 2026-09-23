@@ -124,9 +124,9 @@ namespace quest
 		if (const auto* affects = ECS_TryGet<ecs::AffectList>(e))
 		{
 			bool found = false;
-			for (const auto& affect : affects->affects)
+			for (const auto& slot : affects->affects)
 			{
-				if (affect && affect->dwType == AFFECT_SKILL_NO_BOOK_DELAY)
+				if (slot.id && slot.value.dwType == AFFECT_SKILL_NO_BOOK_DELAY)
 				{
 					found = true;
 					break;

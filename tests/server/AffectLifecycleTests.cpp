@@ -97,32 +97,39 @@ entt::entity Actor() {
 CAffect Value(uint32_t type = AFFECT_STR, int32_t value = 10, uint8_t point = POINT_ST) {
     return {type, point, value, AFF_SLOW, 60, 0};
 }
+// The stored value behind an id the caller expects to be live.
+CAffect& Live(entt::entity e, A::AffectId affect) {
+    CAffect* live = A::Resolve(e, affect);
+    Check(live != nullptr, "affect still stored");
+    return *live;
+}
 void StorageChecks() {
     const auto e = Actor(), other = Actor();
-    auto affect = A::Attach(e, Value());
-    Check(affect && A::FindAffect(e, AFFECT_STR) == affect.get(), "authoritative lookup");
-    Check(A::FindAffect(e, AFFECT_STR, POINT_ST, 10) == affect.get(), "value lookup");
+    const auto affect = A::Attach(e, Value());
+    Check(affect && A::FindAffect(e, AFFECT_STR) == A::Resolve(e, affect), "authoritative lookup");
+    Check(A::FindAffect(e, AFFECT_STR, POINT_ST, 10) == A::Resolve(e, affect), "value lookup");
+    Check(A::IdOf(e, A::FindAffect(e, AFFECT_STR)) == affect && !A::IdOf(other, A::Resolve(e, affect)) &&
+        !A::IdOf(e, nullptr), "a stored address names its slot in its owner only");
     Check(!A::FindAffect(e, AFFECT_STR, POINT_DX), "apply filter");
     Check(!A::FindAffect(e, AFFECT_STR, POINT_ST, 11), "value filter");
-    Check(!A::Detach(other, affect.get()), "foreign affect rejected");
-    Check(!A::RemoveAffect(other, affect.get()), "foreign removal rejected");
+    Check(!A::Detach(other, affect) && !A::Resolve(other, affect), "foreign affect rejected");
+    Check(!A::RemoveAffect(other, A::Resolve(e, affect)), "foreign removal rejected");
     Check(A::Snapshot(e).size() == 1, "foreign removal preserved owner");
-    std::weak_ptr<CAffect> lifetime = affect;
-    auto batch = A::Snapshot(e);
-    Check(A::Detach(e, affect.get()) == affect, "detach returns lease");
-    Check(!A::Detach(e, affect.get()), "double detach rejected");
-    affect.reset();
-    Check(!lifetime.expired(), "snapshot keeps allocation alive");
-    batch.clear();
-    Check(lifetime.expired(), "last lease releases allocation");
-    affect = A::Attach(e, Value());
-    lifetime = affect; affect.reset();
+    const auto batch = A::Snapshot(e);
+    Live(e, affect).lDuration = 7;
+    const auto detached = A::Detach(e, affect);
+    Check(detached && detached->lDuration == 7, "detach hands back the stored value");
+    Check(!A::Detach(e, affect) && !A::Resolve(e, affect) && A::Snapshot(e).empty(), "double detach rejected");
+    Check(batch.size() == 1 && batch.front().id == affect && batch.front().value.lDuration == 60,
+        "a snapshot is a copy of the slots");
+    const auto again = A::Attach(e, Value());
+    Check(again && again != affect && !A::Resolve(e, affect), "an identical new record gets a new id");
     g_registry.destroy(e);
-    Check(lifetime.expired(), "registry destruction releases affects");
+    Check(!A::Resolve(e, again) && !A::Detach(e, again), "a destroyed owner resolves nothing");
     const auto recycled = Actor();
     Check(entt::to_entity(e) == entt::to_entity(recycled) && e != recycled, "versioned reuse fixture");
     Check(!A::Attach(e, Value()) && A::Snapshot(e).empty(), "stale owner rejected");
-    Check(A::Snapshot(recycled).empty(), "replacement owner untouched");
+    Check(A::Snapshot(recycled).empty() && !A::Resolve(recycled, again), "replacement owner untouched");
     const auto bare = g_registry.create();
     g_registry.emplace<ecs::AffectList>(bare);
     Check(!A::Attach(bare, Value()), "non-character rejected");
@@ -172,7 +179,7 @@ void RefreshChecks() {
     auto e = Actor();
     const auto first = A::Attach(e, Value());
     const auto second = A::Attach(e, Value(AFFECT_DEX, -3, POINT_DX));
-    g_registry.get<ecs::AffectList>(e).affects.push_back(first);
+    g_registry.get<ecs::AffectList>(e).affects.push_back({first, Value()});
     g_registry.get<ecs::AffectList>(e).affects.push_back({});
     onChange = [](entt::entity actor, uint8_t, int64_t) { A::RefreshAffect(actor); };
     A::RefreshAffect(e); onChange = {};
@@ -183,19 +190,18 @@ void RefreshChecks() {
     e = Actor();
     A::Attach(e, Value());
     auto next = A::Attach(e, Value(AFFECT_DEX, 30));
-    std::weak_ptr<CAffect> removed = next;
-    auto* nextRaw = next.get(); next.reset();
     onChange = [&](entt::entity actor, uint8_t, int64_t) {
-        A::Detach(actor, nextRaw);
-        Check(!removed.expired(), "refresh lease survives nested removal");
+        onChange = {};
+        Check(A::Detach(actor, next).has_value(), "nested removal of the next entry");
+        Check(A::Attach(actor, Value(AFFECT_DEX, 30)) != next, "identical replacement gets a new id");
     };
     A::RefreshAffect(e); onChange = {};
-    Check(ecs::PointSystem::Get(e, POINT_ST) == 10, "removed next entry skipped");
-    Check(removed.expired(), "refresh releases removed entry");
+    Check(ecs::PointSystem::Get(e, POINT_ST) == 10, "removed next entry skipped, its replacement not replayed");
+    Check(!A::Resolve(e, next) && A::Snapshot(e).size() == 2, "removed id stays dead");
 
     e = Actor(); A::Attach(e, Value());
     next = A::Attach(e, Value(AFFECT_DEX, 30));
-    onChange = [&](entt::entity, uint8_t, int64_t) { next->lApplyValue = 50; };
+    onChange = [&](entt::entity actor, uint8_t, int64_t) { Live(actor, next).lApplyValue = 50; };
     A::RefreshAffect(e); onChange = {};
     Check(ecs::PointSystem::Get(e, POINT_ST) == 10, "overwritten snapshot skipped");
 
@@ -203,7 +209,7 @@ void RefreshChecks() {
     onChange = [&](entt::entity actor, uint8_t, int64_t) {
         onChange = {};
         const auto added = A::Attach(actor, Value(AFFECT_DEX, 20));
-        A::ComputeAffect(actor, *added, true);
+        A::ComputeAffect(actor, Live(actor, added), true);
     };
     A::RefreshAffect(e);
     Check(ecs::PointSystem::Get(e, POINT_ST) == 30, "newly applied entry not replayed by refresh");
@@ -237,33 +243,34 @@ void RefreshChecks() {
     Check(threw && g_registry.get<ecs::AffectList>(e).refreshToken == 0, "exception releases refresh guard");
     g_registry.get<TestPoints>(e).values.fill(0); A::RefreshAffect(e);
     Check(ecs::PointSystem::Get(e, POINT_ST) == 10, "refresh can run after exception");
-    const auto duration = A::Snapshot(e).front()->lDuration;
+    const auto duration = A::Snapshot(e).front().value.lDuration;
     A::UpdateAffect(g_registry, 25); AffectSystem_Update(g_registry, 25);
-    Check(A::Snapshot(e).front()->lDuration == duration, "no duplicate ECS expiry scheduler");
+    Check(A::Snapshot(e).front().value.lDuration == duration, "no duplicate ECS expiry scheduler");
 }
 void RemovalChecks() {
     auto e = Actor(); auto affect = A::Attach(e, Value());
-    A::ComputeAffect(e, *affect, true);
+    A::ComputeAffect(e, Live(e, affect), true);
+    CAffect* const stored = A::Resolve(e, affect);
     const int beforeCompute = computes;
     onChange = [&](entt::entity actor, uint8_t, int64_t) {
-        Check(!A::Lease(actor, affect.get()), "detached before point callbacks");
-        Check(!A::RemoveAffect(actor, affect.get()), "nested double removal rejected");
+        Check(!A::Resolve(actor, affect), "detached before point callbacks");
+        Check(!A::RemoveAffect(actor, stored), "nested double removal rejected");
     };
-    Check(A::RemoveAffect(e, affect.get()), "native removal"); onChange = {};
+    Check(A::RemoveAffect(e, stored), "native removal"); onChange = {};
     Check(ecs::PointSystem::Get(e, POINT_ST) == 0 && computes == beforeCompute + 1, "removal applies inverse then recomputes");
     Check(!A::IsAffectFlag(e, AFF_SLOW), "removal clears flag");
-    Check(!A::RemoveAffect(e, affect.get()), "repeat removal has no side effects");
+    Check(!A::RemoveAffect(e, stored), "repeat removal has no side effects");
     Check(computes == beforeCompute + 1, "repeat removal does not recompute");
 
     for (const auto type : {AFFECT_REVIVE_INVISIBLE, AFFECT_MOUNT}) {
         affect = A::Attach(e, Value(type));
         const auto before = computes, beforePackets = packets;
-        A::RemoveAffect(e, affect.get());
+        A::RemoveAffect(e, A::Resolve(e, affect));
         Check(computes == before && packets == beforePackets + 1, "revive/mount skip full recomputation");
     }
     auto& points = g_registry.get<TestPoints>(e).values;
     points[POINT_HP] = 150; points[POINT_SP] = 120;
-    affect = A::Attach(e, Value()); A::RemoveAffect(e, affect.get());
+    affect = A::Attach(e, Value()); A::RemoveAffect(e, A::Resolve(e, affect));
     Check(points[POINT_HP] == 100 && points[POINT_SP] == 80, "maximum HP/SP clamped after removal");
 
     e = Actor(); A::Attach(e, Value()); A::Attach(e, Value());
@@ -285,7 +292,7 @@ void RemovalChecks() {
             onChange = [&](entt::entity actor, uint8_t point, int64_t) {
                 if (point == POINT_HP) { onChange = {}; destroy(actor); }
             };
-        Check(A::RemoveAffect(e, affect.get()), "removal tolerates owner destruction");
+        Check(A::RemoveAffect(e, A::Resolve(e, affect)), "removal tolerates owner destruction");
         Check(replacement != entt::null && replacement != e, "removal callback executed");
         Check(A::Snapshot(replacement).empty(), "removal cannot alter replacement actor");
         onChange = {}; onCompute = {};
@@ -478,11 +485,11 @@ void PublicationChecks() {
     Check(!Add(e) && clientAdds.empty(), "owner destroyed by DB callback: no stale client packet");
     ResetPublication(); connected = entt::null; client = nullptr; db_clientdesc = nullptr;
 }
-A::AffectLease InstallTimed(entt::entity e, uint32_t type, int32_t duration,
+A::AffectId InstallTimed(entt::entity e, uint32_t type, int32_t duration,
     uint8_t point = POINT_NONE, int32_t value = 0, int32_t cost = 0, uint32_t flag = 0) {
-    auto affect = A::Attach(e, {type, point, value, flag, duration, cost});
-    Check(static_cast<bool>(affect), "timed affect fixture attached");
-    A::ComputeAffect(e, *affect, true);
+    const auto affect = A::Attach(e, {type, point, value, flag, duration, cost});
+    Check(affect != 0, "timed affect fixture attached");
+    A::ComputeAffect(e, Live(e, affect), true);
     return affect;
 }
 void ExpiryChecks() {
@@ -491,7 +498,7 @@ void ExpiryChecks() {
     auto affect = InstallTimed(e, AFFECT_STR, 2, POINT_ST, 10, 4, AFF_SLOW);
     g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
     const int beforeCompute = computes;
-    Check(!A::ProcessAffect(e) && affect->lDuration == 1 && ecs::PointSystem::Get(e, POINT_SP) == 6,
+    Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == 1 && ecs::PointSystem::Get(e, POINT_SP) == 6,
         "live effect pays SP and loses one second");
     Check(A::ProcessAffect(e) && ecs::PointSystem::Get(e, POINT_SP) == 2 &&
         ecs::PointSystem::Get(e, POINT_ST) == 0 && !A::IsAffectFlag(e, AFF_SLOW),
@@ -508,7 +515,7 @@ void ExpiryChecks() {
         "insufficient SP expires effect without an overdraft");
     e = Actor(); affect = InstallTimed(e, AFFECT_STR, INT32_MAX, POINT_NONE, 0, INT32_MAX);
     g_registry.get<TestPoints>(e).values[POINT_SP] = static_cast<int64_t>(INT32_MAX) + 3;
-    Check(!A::ProcessAffect(e) && affect->lDuration == INT32_MAX - 1 && ecs::PointSystem::Get(e, POINT_SP) == 3,
+    Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == INT32_MAX - 1 && ecs::PointSystem::Get(e, POINT_SP) == 3,
         "large duration and SP cost remain representable");
 #ifdef ENABLE_SOUL_SYSTEM
     e = Actor();
@@ -520,10 +527,10 @@ void ExpiryChecks() {
     e = Actor(); InstallTimed(e, GUILD_SKILL_START, 20);
     Check(A::ProcessAffect(e), "guild skill expires without a guild war");
     e = Actor(); affect = InstallTimed(e, AFFECT_STR, 3, POINT_NONE, 0, 2);
-    g_registry.get<ecs::AffectList>(e).affects.push_back(affect);
+    g_registry.get<ecs::AffectList>(e).affects.push_back({affect, Live(e, affect)});
     g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
-    Check(!A::ProcessAffect(e) && affect->lDuration == 2 && ecs::PointSystem::Get(e, POINT_SP) == 8,
-        "duplicate lease is processed once");
+    Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == 2 && ecs::PointSystem::Get(e, POINT_SP) == 8,
+        "duplicate slot is processed once");
     g_registry.destroy(e);
     Check(A::ProcessAffect(e) && A::ProcessAffect(entt::null), "stale/null expiry is harmless");
 
@@ -532,7 +539,7 @@ void ExpiryChecks() {
     onChange = [&](entt::entity owner, uint8_t type, int64_t) {
         if (type == POINT_SP) { onChange = {}; Check(!A::ProcessAffect(owner), "nested expiry sees live records but does no work"); }
     };
-    Check(!A::ProcessAffect(e) && affect->lDuration == 2 && ecs::PointSystem::Get(e, POINT_SP) == 8,
+    Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == 2 && ecs::PointSystem::Get(e, POINT_SP) == 8,
         "recursive pass cannot double-charge SP or duration");
     e = Actor(); InstallTimed(e, AFFECT_STR, 1, POINT_NONE, 0, 2);
     g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
@@ -547,7 +554,7 @@ void ExpiryChecks() {
     onChange = [&](entt::entity owner, uint8_t type, int64_t amount) {
         if (type == POINT_ST && amount < 0) {
             onChange = {};
-            A::RemoveAffect(owner, second.get());
+            A::RemoveAffect(owner, A::Resolve(owner, second));
             InstallTimed(owner, AFFECT_DEX, 50, POINT_DX, 19);
         }
     };
@@ -597,7 +604,7 @@ void DeadlineChecks() {
     Check(A::GetBattlePassDeadline(e) == 0 && A::SetBattlePassDeadline(e, 1020) &&
         A::GetBattlePassRemainingSeconds(e) == 20, "battle pass deadline is entity-owned");
     auto affect = InstallTimed(e, AFFECT_BATTLE_PASS, 100, POINT_BATTLE_PASS_ID, 1);
-    Check(!A::ProcessAffect(e) && affect->lDuration == 20, "battle pass uses absolute remaining time");
+    Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == 20, "battle pass uses absolute remaining time");
     nowSeconds = 1020;
     Check(A::ProcessAffect(e), "battle pass expires at the boundary tick");
     A::SetBattlePassDeadline(e, UINT32_MAX); nowSeconds = 0;
@@ -625,13 +632,13 @@ void DeadlineChecks() {
     for (uint8_t premium : {uint8_t(0), uint8_t(PREMIUM_MAX_NUM - 1)}) {
         e = Actor(); premiumRemaining[premium] = 42;
         affect = InstallTimed(e, AFFECT_PREMIUM_START + premium, 2);
-        Check(!A::ProcessAffect(e) && affect->lDuration == 42, "premium duration follows account remaining time");
+        Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == 42, "premium duration follows account remaining time");
         premiumRemaining[premium] = -1;
         Check(A::ProcessAffect(e), "expired account premium removed");
     }
     e = Actor(); premiumRemaining[0] = INT32_MAX;
     affect = InstallTimed(e, AFFECT_PREMIUM_START, 2);
-    Check(!A::ProcessAffect(e) && affect->lDuration == INT32_MAX - 1, "premium duration refresh saturates");
+    Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == INT32_MAX - 1, "premium duration refresh saturates");
     e = Actor(); InstallTimed(e, AFFECT_PREMIUM_START + PREMIUM_MAX_NUM, 1);
     Check(A::ProcessAffect(e), "reserved premium sentinel does not access account array or become immortal");
     ResetPublication();
@@ -641,7 +648,7 @@ void HairAndHorseChecks() {
     auto e = Actor();
     auto hair = InstallTimed(e, AFFECT_HAIR, 5);
     auto horse = InstallTimed(e, AFFECT_HORSE_NAME, 5);
-    Check(!A::ProcessAffect(e) && hair->lDuration == 5 && horse->lDuration == 5,
+    Check(!A::ProcessAffect(e) && Live(e, hair).lDuration == 5 && Live(e, horse).lDuration == 5,
         "valid hair/horse quest deadlines offset ordinary duration ticking");
     hairDeadline = horseDeadline = 999;
     Check(A::ProcessAffect(e) && horseCalls == std::vector<bool>({false, true}) && hairResets > 0,
@@ -715,11 +722,10 @@ void ExpiryPublicationChecks() {
 void LifetimeStressChecks() {
     for (int i = 0; i < 1000; ++i) {
         const auto e = Actor();
-        auto lease = A::Attach(e, Value(AFFECT_STR, i));
-        std::weak_ptr<CAffect> lifetime = lease;
-        auto* raw = lease.get(); lease.reset();
+        const auto affect = A::Attach(e, Value(AFFECT_STR, i));
+        auto* raw = A::Resolve(e, affect);
         A::RefreshAffect(e); A::RemoveAffect(e, raw);
-        Check(lifetime.expired(), "repeated native removal frees owned allocation");
+        Check(!A::Resolve(e, affect) && A::Snapshot(e).empty(), "repeated native removal frees the stored record");
         Check(!A::RemoveAffect(e, raw), "released pointer rejected without dereference");
         g_registry.destroy(e);
     }

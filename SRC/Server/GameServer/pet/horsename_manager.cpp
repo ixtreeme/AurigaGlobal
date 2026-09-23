@@ -66,7 +66,7 @@ void CHorseNameManager::BroadcastHorseName(uint32_t dwPlayerID, const char* szHo
 
 void CHorseNameManager::Validate(entt::entity character)
 {
-    const auto affect = AffectSystem::Lease(character,
+    const auto affect = AffectSystem::IdOf(character,
         AffectSystem::FindAffect(character, AFFECT_HORSE_NAME));
     if (!affect) return;
     auto& state = g_registry.get<ecs::AffectList>(character);
@@ -82,27 +82,29 @@ void CHorseNameManager::Validate(entt::entity character)
                 state && state->horseNameToken == token) state->horseNameToken = 0;
         }
     } guard{character, token};
-    const CAffect expected = *affect;
+    const CAffect expected = *AffectSystem::Resolve(character, affect);
     const auto current = [&] {
         if (!g_registry.valid(character)) return false;
         const auto* state = g_registry.try_get<ecs::AffectList>(character);
         return state && state->horseNameToken == token;
     };
     const auto owned = [&] {
-        return current() && AffectSystem::Lease(character, affect.get()) == affect &&
-            affect->dwType == expected.dwType && affect->bApplyOn == expected.bApplyOn &&
-            affect->lApplyValue == expected.lApplyValue && affect->dwFlag == expected.dwFlag &&
-            affect->lDuration == expected.lDuration && affect->lSPCost == expected.lSPCost;
+        const CAffect* live = current() ? AffectSystem::Resolve(character, affect) : nullptr;
+        return live &&
+            live->dwType == expected.dwType && live->bApplyOn == expected.bApplyOn &&
+            live->lApplyValue == expected.lApplyValue && live->dwFlag == expected.dwFlag &&
+            live->lDuration == expected.lDuration && live->lSPCost == expected.lSPCost;
     };
     const bool expired = ecs::QuestSystem::GetFlag(character, "horse_name.valid_till") < get_global_time();
     if (!owned()) return;
     if (!expired) {
-        if (affect->lDuration < INT32_MAX) ++affect->lDuration;
+        CAffect* live = AffectSystem::Resolve(character, affect);
+        if (live->lDuration < INT32_MAX) ++live->lDuration;
         return;
     }
     MountSystem::SummonHorse(character, false, true);
     if (!owned()) return;
-    AffectSystem::RemoveAffect(character, affect.get());
+    AffectSystem::RemoveAffect(character, AffectSystem::Resolve(character, affect));
     const auto noReplacement = [&] {
         return current() && !AffectSystem::FindAffect(character, AFFECT_HORSE_NAME);
     };

@@ -25,9 +25,14 @@ class CAffect
 		uint32_t   dwFlag;
 		int32_t	lDuration;
 		int32_t	lSPCost;
+};
 
-		static CAffect* Acquire();
-		static void Release(CAffect* p);
+// One stored affect: its value and the slot id that names it in its owner's
+// ecs::AffectList. Ids are never reused, and 0 names no affect.
+struct AffectSlot
+{
+	uint64_t id;
+	CAffect value;
 };
 
 enum EAffectTypes

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
+#include <optional>
 #include <vector>
 
 #include <entt/entt.hpp>
@@ -12,13 +12,20 @@
 
 namespace AffectSystem {
 
-using AffectLease = std::shared_ptr<CAffect>;
-// Storage operations do not apply points or send packets. Raw CAffect* lookup
-// remains a borrowed compatibility API; never retain it across callbacks.
-AffectLease Attach(entt::entity e, const CAffect& value);
-AffectLease Detach(entt::entity e, const CAffect* affect);
-AffectLease Lease(entt::entity e, const CAffect* affect);
-std::vector<AffectLease> Snapshot(entt::entity e);
+// A stored affect is a value in its owner's AffectList, named by a slot id
+// that is never reused (0 names none). Storage operations do not apply points
+// or send packets. Hold the id across a callback: Resolve returns null once
+// the affect is gone, never the replacement a callback put in its place. A
+// raw CAffect* from FindAffect or Resolve is borrowed; never retain it across
+// callbacks.
+using AffectId = uint64_t;
+AffectId Attach(entt::entity e, const CAffect& value);
+// Removes the affect and hands back its last value.
+std::optional<CAffect> Detach(entt::entity e, AffectId affect);
+// The id of the affect stored at that address, or 0; only the address is read.
+AffectId IdOf(entt::entity e, const CAffect* affect);
+CAffect* Resolve(entt::entity e, AffectId affect);
+std::vector<AffectSlot> Snapshot(entt::entity e);
 TAffectFlag GetFlags(entt::entity e);
 void SetFlag(entt::entity e, uint32_t flag, bool enabled = true);
 bool IsLoaded(entt::entity e);

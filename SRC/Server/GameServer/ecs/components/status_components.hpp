@@ -23,9 +23,11 @@ struct DungeonDamage {
 };
 
 struct AffectList {
-    // The registry owns live affects. Short-lived leases protect a callback's
-    // input when a nested operation removes an affect or destroys its owner.
-    std::list<std::shared_ptr<CAffect>> affects;
+    // The registry owns live affects by value. A slot id is never reused, so an
+    // id held across a callback names nothing once a nested operation removes
+    // the affect or destroys its owner. A list keeps the CAffect* FindAffect
+    // lends stable while other slots come and go.
+    std::list<AffectSlot> affects;
     std::vector<TAffectSkills> skillAffects;
     TAffectFlag flags;
     bool isLoaded { false };

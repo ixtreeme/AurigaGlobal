@@ -246,6 +246,13 @@ uint64_t NextAffectToken()
     return ++next;
 }
 
+// Affect slot ids are never reused, so a stale id can never name a replacement.
+AffectSystem::AffectId NextAffectId()
+{
+    static AffectSystem::AffectId next = 0;
+    return ++next;
+}
+
 uint64_t TouchAffectType(entt::entity e, uint32_t type)
 {
     if (auto* state = AffectState(e))
@@ -262,14 +269,14 @@ bool IsCurrentAffectType(entt::entity e, uint32_t type, uint64_t token)
     return it != state->mutationTokens.end() && it->second == token;
 }
 
-AffectSystem::AffectLease LastWireAffect(entt::entity e, uint32_t type, uint8_t apply)
+AffectSystem::AffectId LastWireAffect(entt::entity e, uint32_t type, uint8_t apply)
 {
     const auto* state = AffectState(e);
     if (state)
         for (auto it = state->affects.rbegin(); it != state->affects.rend(); ++it)
-            if (*it && (*it)->dwType == type && (*it)->bApplyOn == apply)
-                return *it;
-    return {};
+            if (it->id && it->value.dwType == type && it->value.bApplyOn == apply)
+                return it->id;
+    return 0;
 }
 
 bool SameAffect(const CAffect& a, const CAffect& b)
@@ -570,40 +577,51 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
     }
 }
 
-AffectLease Attach(entt::entity e, const CAffect& value)
+AffectId Attach(entt::entity e, const CAffect& value)
 {
     auto* state = AffectState(e);
     if (!state || value.bApplyOn >= POINT_MAX_NUM)
-        return {};
-    AffectLease affect(CAffect::Acquire(), &CAffect::Release);
-    *affect = value;
-    state->affects.push_back(affect);
+        return 0;
+    const AffectId affect = NextAffectId();
+    state->affects.push_back({affect, value});
     TouchAffectType(e, value.dwType);
     return affect;
 }
 
-AffectLease Lease(entt::entity e, const CAffect* affect)
+CAffect* Resolve(entt::entity e, AffectId affect)
+{
+    auto* state = AffectState(e);
+    if (!state || !affect)
+        return nullptr;
+    for (auto& slot : state->affects)
+        if (slot.id == affect)
+            return &slot.value;
+    return nullptr;
+}
+
+AffectId IdOf(entt::entity e, const CAffect* affect)
 {
     const auto* state = AffectState(e);
     if (!state || !affect)
-        return {};
-    for (const auto& entry : state->affects)
-        if (entry.get() == affect)
-            return entry;
-    return {};
+        return 0;
+    for (const auto& slot : state->affects)
+        if (&slot.value == affect)
+            return slot.id;
+    return 0;
 }
 
-AffectLease Detach(entt::entity e, const CAffect* affect)
+std::optional<CAffect> Detach(entt::entity e, AffectId affect)
 {
-    auto lease = Lease(e, affect);
-    if (lease) {
-        AffectState(e)->affects.remove(lease);
-        TouchAffectType(e, lease->dwType);
-    }
-    return lease;
+    const CAffect* stored = Resolve(e, affect);
+    if (!stored)
+        return std::nullopt;
+    const CAffect value = *stored;
+    AffectState(e)->affects.remove_if([affect](const AffectSlot& slot) { return slot.id == affect; });
+    TouchAffectType(e, value.dwType);
+    return value;
 }
 
-std::vector<AffectLease> Snapshot(entt::entity e)
+std::vector<AffectSlot> Snapshot(entt::entity e)
 {
     const auto* state = AffectState(e);
     if (!state)
@@ -683,13 +701,13 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
         return nullptr;
     }
 
-    for (const auto& affect : affectList->affects) {
-        if (!affect) {
+    for (auto& slot : affectList->affects) {
+        if (!slot.id) {
             continue;
         }
 
-        if (affect->dwType == type && (apply == APPLY_NONE || affect->bApplyOn == apply)) {
-            return affect.get();
+        if (slot.value.dwType == type && (apply == APPLY_NONE || slot.value.bApplyOn == apply)) {
+            return &slot.value;
         }
     }
 
@@ -700,14 +718,14 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
-    const auto* affectList = g_registry.try_get<ecs::AffectList>(e);
+    auto* affectList = g_registry.try_get<ecs::AffectList>(e);
     if (!affectList)
         return nullptr;
-    for (const auto& affect : affectList->affects)
+    for (auto& slot : affectList->affects)
     {
-        if (affect && affect->dwType == type && affect->bApplyOn == apply &&
-            affect->lApplyValue == value)
-            return affect.get();
+        if (slot.id && slot.value.dwType == type && slot.value.bApplyOn == apply &&
+            slot.value.lApplyValue == value)
+            return &slot.value;
     }
     return nullptr;
 }
@@ -749,9 +767,9 @@ void SaveAffect(entt::entity e)
 {
 	TPacketGDAddAffect p;
 
-	for (const auto& lease : AffectSystem::Snapshot(e))
+	for (const auto& slot : AffectSystem::Snapshot(e))
 	{
-		const CAffect* pkAff = lease.get();
+		const CAffect* pkAff = &slot.value;
 		if (IS_NO_SAVE_AFFECT(pkAff->dwType))
 			continue;
 
@@ -903,11 +921,13 @@ void ClearAffect(entt::entity e, bool bSave)
     for (auto& [type, token] : state->mutationTokens)
         token = NextAffectToken();
 
-	for (const auto& lease : AffectSystem::Snapshot(entity))
+	for (const auto& slot : AffectSystem::Snapshot(entity))
 	{
-		if (!AffectSystem::Lease(entity, lease.get()))
+		const CAffect* live = AffectSystem::Resolve(entity, slot.id);
+		if (!live)
 			continue;
-		CAffect* pkAff = lease.get();
+		const CAffect liveValue = *live;
+		const CAffect* pkAff = &liveValue;
 
 		if (bSave)
 		{
@@ -973,8 +993,8 @@ void ClearAffect(entt::entity e, bool bSave)
 			}
 		}
 
-		if (AffectSystem::Detach(entity, pkAff))
-			AffectSystem::ComputeAffect(entity, *lease, false);
+		if (const auto removed = AffectSystem::Detach(entity, slot.id))
+			AffectSystem::ComputeAffect(entity, *removed, false);
 		if (!AffectState(entity))
 			return;
 	}
@@ -1123,16 +1143,15 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 			LOG_INFO("Load Affect : Affect {} {} {}", ecs::PlayerRuntime::GetName(e).data(), pElements->dwType, static_cast<int>(pElements->bApplyOn));
 		}
 
-		auto lease = AffectSystem::Attach(entity, {pElements->dwType,
+		CAffect loaded{pElements->dwType,
 			pElements->bApplyOn, pElements->lApplyValue, pElements->dwFlag,
-			pElements->lDuration, pElements->lSPCost});
-		if (!lease)
+			pElements->lDuration, pElements->lSPCost};
+		if (!AffectSystem::Attach(entity, loaded))
 			return;
-		CAffect* pkAff = lease.get();
 
-		SendAffectAddPacket(ecs::PlayerRuntime::GetDesc(e), pkAff);
+		SendAffectAddPacket(ecs::PlayerRuntime::GetDesc(e), &loaded);
 
-		AffectSystem::ComputeAffect(entity, *lease, true);
+		AffectSystem::ComputeAffect(entity, loaded, true);
 		if (!AffectState(entity))
 			return;
 	}
@@ -1336,7 +1355,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
     // must not leave a granted affect without an expiry/recovery event.
     if (!StartAffectEvent(e) || !current()) return false;
     if (overwrite) {
-        const auto old = Detach(e, AffectSystem::FindAffect(e, type, isCube ? applyOn : APPLY_NONE));
+        const auto old = Detach(e, IdOf(e, AffectSystem::FindAffect(e, type, isCube ? applyOn : APPLY_NONE)));
         if (old) {
             token = TouchAffectType(e, type);
             const CAffect value = *old;
@@ -1346,11 +1365,14 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
         }
     }
     const CAffect value{type, applyOn, applyValue, flag, duration, spCost};
-    const auto lease = Attach(e, value);
-    if (!lease)
+    const auto added = Attach(e, value);
+    if (!added)
         return false;
-    const auto owned = [&] { return Lease(e, lease.get()) && SameAffect(*lease, value); };
-    const auto publishable = [&] { return owned() && LastWireAffect(e, type, applyOn) == lease; };
+    const auto owned = [&] {
+        const CAffect* live = Resolve(e, added);
+        return live && SameAffect(*live, value);
+    };
+    const auto publishable = [&] { return owned() && LastWireAffect(e, type, applyOn) == added; };
 
     ComputeAffect(e, value, true);
     if (!owned()) return false;
@@ -1388,18 +1410,18 @@ bool RemoveAffect(entt::entity e, uint32_t type)
     bool removed = false;
     // Finite batch: an effect added by a removal callback belongs to the next
     // operation, not to an unbounded Find/Remove loop.
-    for (const auto& affect : Snapshot(e))
-        if (affect && affect->dwType == type)
-            removed = AffectSystem::RemoveAffect(e, affect.get()) || removed;
+    for (const auto& slot : Snapshot(e))
+        if (slot.id && slot.value.dwType == type)
+            removed = AffectSystem::RemoveAffect(e, Resolve(e, slot.id)) || removed;
     return removed;
 }
 
 bool RemoveAffect(entt::entity e, CAffect* affect)
 {
-    const auto lease = Detach(e, affect);
-    if (!lease)
+    const auto removed = Detach(e, IdOf(e, affect));
+    if (!removed)
         return false;
-    const CAffect value = *lease;
+    const CAffect value = *removed;
     ComputeAffect(e, value, false);
     if (!AffectState(e))
         return true;
@@ -1505,8 +1527,9 @@ bool ProcessAffect(entt::entity e)
         const auto* state = AffectState(e);
         return !state || state->affects.empty();
     };
-    const auto stillOwned = [&](const AffectLease& affect, const CAffect& value) {
-        return current() && Lease(e, affect.get()) == affect && SameAffect(*affect, value);
+    const auto stillOwned = [&](AffectId affect, const CAffect& value) {
+        const CAffect* live = current() ? Resolve(e, affect) : nullptr;
+        return live && SameAffect(*live, value);
     };
     bool changed = false;
 
@@ -1514,9 +1537,9 @@ bool ProcessAffect(entt::entity e)
     // PREMIUM_MAX_NUM is a count, not a valid premium index.
     for (uint8_t i = 0; i < PREMIUM_MAX_NUM; ++i) {
         const uint32_t type = AFFECT_PREMIUM_START + i;
-        const auto affect = Lease(e, AffectSystem::FindAffect(e, type));
+        const auto affect = IdOf(e, AffectSystem::FindAffect(e, type));
         if (!affect) continue;
-        const CAffect value = *affect;
+        const CAffect value = *Resolve(e, affect);
         const int64_t remaining = ecs::PlayerRuntime::GetPremiumRemainSeconds(e, i);
         if (!current()) return empty();
         if (!stillOwned(affect, value)) continue;
@@ -1524,11 +1547,11 @@ bool ProcessAffect(entt::entity e)
             AffectSystem::RemoveAffect(e, type);
             changed = true;
             if (!current()) return empty();
-        } else
-            affect->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
+        } else if (CAffect* live = Resolve(e, affect))
+            live->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
     }
 #ifdef ENABLE_VOTE_FOR_BONUS
-    if (const auto affect = Lease(e, AffectSystem::FindAffect(e, AFFECT_VOTEFORBONUS));
+    if (const CAffect* affect = AffectSystem::FindAffect(e, AFFECT_VOTEFORBONUS);
         affect && static_cast<int64_t>(affect->lDuration) <= get_global_time()) {
         AffectSystem::RemoveAffect(e, AFFECT_VOTEFORBONUS);
         changed = true;
@@ -1536,7 +1559,7 @@ bool ProcessAffect(entt::entity e)
     }
 #endif
 #ifdef ENABLE_BATTLE_PASS
-    if (const auto affect = Lease(e, AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS))) {
+    if (const auto affect = IdOf(e, AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS))) {
         const int64_t remaining = GetBattlePassRemainingSeconds(e);
         if (remaining < 0) {
             // Clear the old deadline before callbacks can install a new pass.
@@ -1544,12 +1567,12 @@ bool ProcessAffect(entt::entity e)
             AffectSystem::RemoveAffect(e, AFFECT_BATTLE_PASS);
             changed = true;
             if (!current()) return empty();
-        } else
-            affect->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
+        } else if (CAffect* live = Resolve(e, affect))
+            live->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
     }
 #endif
-    if (const auto affect = Lease(e, AffectSystem::FindAffect(e, AFFECT_HAIR))) {
-        const CAffect value = *affect;
+    if (const auto affect = IdOf(e, AffectSystem::FindAffect(e, AFFECT_HAIR))) {
+        const CAffect value = *Resolve(e, affect);
         const bool expired = ecs::QuestSystem::GetFlag(e, "hair.limit_time") < get_global_time();
         if (!current()) return empty();
         if (stillOwned(affect, value)) {
@@ -1558,8 +1581,8 @@ bool ProcessAffect(entt::entity e)
                 if (!current()) return empty();
                 if (stillOwned(affect, value)) AffectSystem::RemoveAffect(e, static_cast<uint32_t>(AFFECT_HAIR));
                 if (!current()) return empty();
-            } else if (affect->lDuration < INT32_MAX)
-                ++affect->lDuration;
+            } else if (CAffect* live = Resolve(e, affect); live && live->lDuration < INT32_MAX)
+                ++live->lDuration;
         }
     }
     CHorseNameManager::instance().Validate(e);
@@ -1568,12 +1591,12 @@ bool ProcessAffect(entt::entity e)
     const auto oldFlags = GetFlags(e);
     const auto oldMoveSpeed = ecs::PointSystem::Get(e, POINT_MOV_SPEED);
     const auto oldAttackSpeed = ecs::PointSystem::Get(e, POINT_ATT_SPEED);
-    struct Entry { AffectLease affect; CAffect value; };
+    struct Entry { AffectId affect; CAffect value; };
     std::vector<Entry> batch;
-    std::unordered_set<const CAffect*> seen;
-    for (const auto& affect : Snapshot(e))
-        if (affect && seen.insert(affect.get()).second)
-            batch.push_back({affect, *affect});
+    std::unordered_set<AffectId> seen;
+    for (const auto& slot : Snapshot(e))
+        if (slot.id && seen.insert(slot.id).second)
+            batch.push_back({slot.id, slot.value});
 
     // New/replaced records during a point or packet callback wait for the next
     // pass. No registry/list references or borrowed records cross callbacks.
@@ -1601,12 +1624,14 @@ bool ProcessAffect(entt::entity e)
             }
         }
         // Avoid decrementing INT32_MIN. Zero/negative loaded durations expire.
-        if (affect->lDuration > 0) --affect->lDuration;
-        if (affect->lDuration <= 0) expired = true;
+        CAffect* live = Resolve(e, affect);
+        if (!live) continue;
+        if (live->lDuration > 0) --live->lDuration;
+        if (live->lDuration <= 0) expired = true;
         if (!expired) continue;
 
-        const CAffect expiredValue = *affect;
-        if (!Detach(e, affect.get())) continue;
+        const CAffect expiredValue = *live;
+        if (!Detach(e, affect)) continue;
         ComputeAffect(e, expiredValue, false);
         if (!current()) return empty();
         changed = true;
@@ -1657,20 +1682,20 @@ void RefreshAffect(entt::entity e)
         }
     } guard{e, token};
 
-    struct Entry { AffectLease lease; CAffect value; };
+    struct Entry { AffectId id; CAffect value; };
     std::vector<Entry> snapshot;
-    std::unordered_set<const CAffect*> seen;
-    for (const auto& affect : state->affects)
-        if (affect && seen.insert(affect.get()).second)
-            snapshot.push_back({affect, *affect});
+    std::unordered_set<AffectId> seen;
+    for (const auto& slot : state->affects)
+        if (slot.id && seen.insert(slot.id).second)
+            snapshot.push_back({slot.id, slot.value});
 
     for (const auto& entry : snapshot) {
         const auto* current = AffectState(e);
         if (!current || current->refreshToken != token)
             return;
-        // A callback may remove/replace the next affect. Keep its allocation
-        // alive, but never apply an obsolete snapshot or a newly added entry.
-        if (Lease(e, entry.lease.get()) && SameAffect(*entry.lease, entry.value))
+        // A callback may remove/replace the next affect. Its id is never reused,
+        // so neither an obsolete snapshot nor a newly added entry is applied.
+        if (const CAffect* live = Resolve(e, entry.id); live && SameAffect(*live, entry.value))
             ComputeAffect(e, entry.value, true);
     }
 }

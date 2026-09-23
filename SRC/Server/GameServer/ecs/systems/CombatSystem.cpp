@@ -2551,9 +2551,9 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	if (ecs::PlayerRuntime::GetDesc(victim) != nullptr) {
 		//
 		//
-		for (const auto& affect : AffectSystem::Snapshot(victim))
-			if (affect)
-				SendAffectAddPacket(ecs::PlayerRuntime::GetDesc(victim), affect.get());
+		for (auto& slot : AffectSystem::Snapshot(victim))
+			if (slot.id)
+				SendAffectAddPacket(ecs::PlayerRuntime::GetDesc(victim), &slot.value);
 	}
 
 	//

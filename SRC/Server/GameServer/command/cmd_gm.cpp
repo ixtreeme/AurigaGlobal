@@ -3381,10 +3381,11 @@ ACMD(do_affect_remove)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Type Point Modif Duration Flag");
 
 		const auto affects = AffectSystem::Snapshot(tch);
-		for (const auto& pkAff : affects)
+		for (const auto& slot : affects)
 		{
-			if (!pkAff)
+			if (!slot.id)
 				continue;
+			const CAffect* pkAff = &slot.value;
 
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%4d %5d %5d %8d %u",
 					pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->lDuration, pkAff->dwFlag);
