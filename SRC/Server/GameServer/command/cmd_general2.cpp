@@ -622,7 +622,7 @@ ACMD(do_empty_savepoint) {
 
 	char query[512] = {0};
 	snprintf(query, sizeof(query), "DELETE FROM player.savepoint WHERE id = %u AND slot = %d", (ecs::PlayerRuntime::GetPlayerID(character)), slot);
-	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
+	DBManager::instance().Query(query);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, "-", 0, 0, 0);
 }
 
@@ -767,7 +767,7 @@ ACMD(do_save_savepoint) {
 
 		char query2[512] = {0};
 		snprintf(query2, sizeof(query2), "INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(%u, %d, %s, %d, %d, %d, %d, %d)", (ecs::PlayerRuntime::GetPlayerID(character)), slot, SqlString(name.c_str()).c_str(), mapIdx, x, y, pos.x, pos.y);
-		std::unique_ptr<SQLMsg> res2(DBManager::instance().DirectQuery(query2));
+		DBManager::instance().Query(query2);
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, name.c_str(), mapIdx, x, y);
 		ecs::PlayerRuntime::SetSavePointTime(character);
 	}
