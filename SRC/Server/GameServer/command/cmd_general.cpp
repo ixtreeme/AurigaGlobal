@@ -110,20 +110,20 @@ static bool DailyReward_CheckHWIDLimit(entt::entity ch)
 	// 1) ma mar claimelte valaki ezen a kulcson?
 	std::unique_ptr<SQLMsg> chk(DBManager::instance().DirectQuery(
 			"SELECT 1 FROM player.daily_reward_claim_hwid WHERE hwkey=%s AND claim_day=CURDATE() LIMIT 1",
-		key.c_str()
+		SqlString(key.c_str()).c_str()
 	));
 
 	if (chk && chk->Get()->uiNumRows > 0)
 		return false;
 
 	// 2) ha nem, akkor regisztraljuk (mostantol ma mar nem lehet ujra)
-	std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery(
+	DBManager::Instance().Query(
 		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
 			"VALUES(%s, CURDATE(), %u, %u)",
-		key.c_str(),
+		SqlString(key.c_str()).c_str(),
 		(ecs::PlayerRuntime::GetPlayerID(ch)),
 		ecs::PlayerRuntime::GetDesc(ch)->GetAccountTable().id
-	));
+	);
 
 	return true;
 }
