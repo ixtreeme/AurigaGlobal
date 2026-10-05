@@ -70,9 +70,6 @@ void MD5Final(unsigned char digest[MD5_HASHBYTES], MD5_CTX *context);
 void MD5Transform(uint32_t buf[4], uint32_t const in[16]);
 char* MD5End(MD5_CTX *, char *);
 
-char* lutil_md5_file(const char *filename, char *buf);
-char* lutil_md5_data(const unsigned char *data, unsigned int len, char *buf);
-
 #ifdef __cplusplus
 }
 #endif

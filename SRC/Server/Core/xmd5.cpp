@@ -74,42 +74,6 @@ void byteReverse(unsigned char *buf, unsigned longs)
 
 
 
-char *
-lutil_md5_file (const char *filename, char *buf)
-{
-    unsigned char buffer[BUFSIZ]; 
-    MD5_CTX ctx;
-    int f,i,j;
-
-    MD5Init(&ctx);
-
-#ifndef _WIN32
-    f = open(filename,O_RDONLY);
-#else
-	f = _open(filename, _O_RDONLY);
-#endif
-    if (f < 0) return nullptr;
-    while ((i = _read(f,buffer,sizeof buffer)) > 0) {
-                MD5Update(&ctx,buffer,i);
-    }
-    j = errno;
-    _close(f);
-    errno = j;
-    if (i < 0) return nullptr;
-    return MD5End(&ctx, buf);
-}
-
-char *
-lutil_md5_data (const unsigned char *data, unsigned int len, char *buf)
-{
-    MD5_CTX ctx;
-
-    MD5Init(&ctx);
-    MD5Update(&ctx,data,len);
-    return MD5End(&ctx, buf);
-}
-                                   
-                                  
 /* Non-Interface Methods */
 
 /* from md5hl.c */

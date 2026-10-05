@@ -139,7 +139,6 @@ int             total_bytes_written = 0;
 uint8_t		g_bLogLevel = 0;
 
 socket_t	tcp_socket = 0;
-socket_t	udp_socket = 0;
 socket_t	p2p_socket = 0;
 
 LPFDWATCH	main_fdw = nullptr;
@@ -711,14 +710,6 @@ int start(int argc, char **argv)
 	}
 
 
-#ifndef __UDP_BLOCK__
-	if ((udp_socket = socket_udp_bind(g_szPublicIP, mother_port)) == INVALID_SOCKET)
-	{
-		LOG_ERROR("{}: {}", "socket_udp_bind: udp_socket", strerror(errno));
-		return 0;
-	}
-#endif
-
 	// if internal ip exists, p2p socket uses internal ip, if not use public ip
 	//if ((p2p_socket = socket_tcp_bind(*g_szInternalIP ? g_szInternalIP : g_szPublicIP, p2p_port)) == INVALID_SOCKET)
 	if ((p2p_socket = socket_tcp_bind(g_szPublicIP, p2p_port)) == INVALID_SOCKET)
@@ -728,9 +719,6 @@ int start(int argc, char **argv)
 	}
 
 	fdwatch_add_fd(main_fdw, tcp_socket, nullptr, FDW_READ, false);
-#ifndef __UDP_BLOCK__
-	fdwatch_add_fd(main_fdw, udp_socket, NULL, FDW_READ, false);
-#endif
 	fdwatch_add_fd(main_fdw, p2p_socket, nullptr, FDW_READ, false);
 
 	db_clientdesc = DESC_MANAGER::instance().CreateConnectionDesc(main_fdw, db_addr, db_port, PHASE_DBCLIENT, true);
@@ -775,9 +763,6 @@ void destroy()
 
 	LOG_INFO("<shutdown> Closing sockets...");
 	socket_close(tcp_socket);
-#ifndef __UDP_BLOCK__
-	socket_close(udp_socket);
-#endif
 	socket_close(p2p_socket);
 
 	LOG_INFO("<shutdown> fdwatch_delete()...");

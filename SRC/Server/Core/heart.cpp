@@ -24,11 +24,6 @@ LPHEART heart_new(int opt_usec, HEARTFUNC func)
 	return (ht);
 }
 
-void heart_delete(LPHEART ht)
-{
-	free(ht);
-}
-
 int heart_idle(LPHEART ht)
 {
 	struct timeval now, process_time, timeout, temp_time;

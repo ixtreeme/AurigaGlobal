@@ -30,10 +30,6 @@
     extern int		buffer_has_space(LPBUFFER buffer);
 
     extern void		buffer_write (LPBUFFER& buffer, const void* src, int length);
-    extern void		buffer_read(LPBUFFER buffer, void * buf, int bytes);
-    extern uint8_t		buffer_get_byte(LPBUFFER buffer);
-    extern uint16_t		buffer_get_word(LPBUFFER buffer);
-    extern uint32_t	buffer_get_dword(LPBUFFER buffer);
 
     extern const void *	buffer_read_peek(LPBUFFER buffer);
     extern void		buffer_read_proceed(LPBUFFER buffer, int length);

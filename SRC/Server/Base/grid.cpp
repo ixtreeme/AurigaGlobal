@@ -6,8 +6,6 @@
 #include <common/service.h>
 #ifdef ENABLE_GIRD_BUG_FIX
 #include <cstddef>
-#include <limits>
-#include <fmt/format.h>
 
 // Windows header-ek sokszor definialnak min/max macro-t
 #ifdef min
@@ -51,45 +49,6 @@ CGrid::CGrid(int w, int h) : m_iWidth(w), m_iHeight(h)
 #else
 	m_pGrid = new char[m_iWidth * m_iHeight];
 	memset(m_pGrid, 0, sizeof(char) * m_iWidth * m_iHeight);
-#endif
-}
-
-CGrid::CGrid(CGrid* pkGrid, int w, int h) : m_iWidth(w), m_iHeight(h)
-{
-#ifdef ENABLE_GIRD_BUG_FIX
-	m_iWidth = GridClampNonNeg(m_iWidth);
-	m_iHeight = GridClampNonNeg(m_iHeight);
-
-	const size_t dstCells = GridCellCountSafe(m_iWidth, m_iHeight);
-
-	if (!dstCells)
-	{
-		m_pGrid = new char[1];
-		m_pGrid[0] = 0;
-		return;
-	}
-
-	m_pGrid = new char[dstCells];
-
-	size_t srcCells = 0;
-	if (pkGrid)
-	{
-		const int sw = GridClampNonNeg(pkGrid->m_iWidth);
-		const int sh = GridClampNonNeg(pkGrid->m_iHeight);
-		srcCells = GridCellCountSafe(sw, sh);
-	}
-
-	const size_t copySize = (srcCells < dstCells) ? srcCells : dstCells;
-
-	if (copySize && pkGrid && pkGrid->m_pGrid)
-		memcpy(m_pGrid, pkGrid->m_pGrid, copySize);
-
-	if (dstCells > copySize)
-		memset(m_pGrid + copySize, 0, dstCells - copySize);
-#else
-	m_pGrid = new char[m_iWidth * m_iHeight];
-	int iSize = std::min(w * h, pkGrid->m_iWidth * pkGrid->m_iHeight);
-	memcpy(m_pGrid, pkGrid->m_pGrid, sizeof(char) * iSize);
 #endif
 }
 
@@ -224,26 +183,4 @@ bool CGrid::IsEmpty(int iPos, int w, int h)
 	return true;
 }
 
-void CGrid::Print()
-{
-	fmt::print("Grid {}\n", static_cast<const void*>(this));
 
-	for (int y = 0; y < m_iHeight; ++y)
-	{
-		for (int x = 0; x < m_iWidth; ++x)
-			fmt::print("{}", m_pGrid[y * m_iWidth + x]);
-
-		fmt::print("\n");
-	}
-}
-
-uint32_t CGrid::GetSize()
-{
-#ifdef ENABLE_GIRD_BUG_FIX
-	const size_t cells = GridCellCountSafe(GridClampNonNeg(m_iWidth), GridClampNonNeg(m_iHeight));
-	const size_t maxu32 = static_cast<size_t>(std::numeric_limits<uint32_t>::max());
-	return static_cast<uint32_t>((cells < maxu32) ? cells : maxu32);
-#else
-	return m_iWidth * m_iHeight;
-#endif
-}

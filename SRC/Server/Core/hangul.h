@@ -17,8 +17,6 @@ extern "C"
 #define isnhdigit(ch)   (!ishan(ch) && isdigit(ch))
 #define isnhspace(ch)   (!ishan(ch) && isspace(ch))
 
-    extern const char *	first_han(const uint8_t * str);
-    extern int		check_han(const char * str);
     extern int		is_hangul(const uint8_t * str);
     extern int		under_han(const void * orig);
 

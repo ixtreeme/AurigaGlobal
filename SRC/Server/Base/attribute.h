@@ -14,8 +14,6 @@ public:
 	CAttribute(uint32_t* attr, uint32_t width, uint32_t height);
 	~CAttribute();
 	void Alloc();
-	int GetDataType();
-	void* GetDataPtr();
 	void Set(uint32_t x, uint32_t y, uint32_t attr);
 	void Remove(uint32_t x, uint32_t y, uint32_t attr);
 	uint32_t Get(uint32_t x, uint32_t y);

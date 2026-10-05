@@ -22,10 +22,6 @@
 #define str_cmp strcasecmp
 #define STRNCPY(dst, src, len)          do {strncpy(dst, src, len); dst[len] = '\0'; } while(0)
 
-    extern char *	str_dup(const char * source);
-    extern void		printdata(const unsigned char * data, int bytes);
-    extern int		filesize(FILE * fp);
-
 #define core_dump()	core_dump_unix(__FILE__, __LINE__)
     extern void		core_dump_unix(const char *who, uint16_t line);
 
@@ -33,8 +29,6 @@
 
     extern void		parse_token(char * src, char * token, char * value);
     extern void		trim_and_lower(const char * src, char * dest, uint64_t dest_size);
-    extern void		lower_string(const char * src, char * dest, uint64_t dest_len);
-    extern int		is_abbrev(char *arg1, char *arg2);
 
 	extern struct timeval* timediff(const struct timeval* a, const struct timeval* b);
 	extern struct timeval* timeadd(struct timeval* a, struct timeval* b);
@@ -44,8 +38,6 @@
     extern int MIN(int a, int b);
     extern int MINMAX(int min, int value, int max);
 
-	extern uint32_t UMAX(uint32_t a, uint32_t b);
-	extern uint32_t UMIN(uint32_t a, uint32_t b);
 	extern uint32_t UMINMAX(uint32_t min, uint32_t value, uint32_t max);
 
 
@@ -59,8 +51,6 @@
 
     extern float	get_float_time();
     extern uint32_t	get_dword_time();
-
-    extern char *	time_str(time_t ct);
 
 #define CREATE(result, type, number)  do { \
 	if (!((result) = (type *) calloc ((number), sizeof(type)))) { \

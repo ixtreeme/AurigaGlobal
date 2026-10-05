@@ -155,33 +155,6 @@ void buffer_write(LPBUFFER& buffer, const void *src, int length)
 	buffer_write_proceed(buffer, length);
 }
 
-void buffer_read(LPBUFFER buffer, void * buf, int bytes)
-{
-	memcpy(buf, buffer->read_point, bytes);
-	buffer_read_proceed(buffer, bytes);
-}
-
-uint8_t buffer_byte(LPBUFFER buffer)
-{
-	uint8_t val = *(uint8_t *) buffer->read_point;
-	buffer_read_proceed(buffer, sizeof(uint8_t));
-	return val;
-}
-
-uint16_t buffer_word(LPBUFFER buffer)
-{
-	uint16_t val = *(uint16_t *) buffer->read_point;
-	buffer_read_proceed(buffer, sizeof(uint16_t));
-	return val;
-}
-
-uint32_t buffer_dword(LPBUFFER buffer)
-{
-	uint32_t val = *(uint32_t *) buffer->read_point;
-	buffer_read_proceed(buffer, sizeof(uint32_t));
-	return val;
-}
-
 const void * buffer_read_peek(LPBUFFER buffer)
 {
 	return (const void *) buffer->read_point;

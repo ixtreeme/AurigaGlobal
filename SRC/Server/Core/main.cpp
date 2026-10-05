@@ -2,10 +2,6 @@
 #include "stdafx.h"
 #include "memory.h"
 #include "Core/Logging.hpp"
-//#ifdef DISABLE_CORE_PULSE_RAZOR93
-#define THECORE_SECS_TO_PASSES(secs) ((secs) * thecore_heart->passes_per_sec)
-//#endif
-
 LPHEART		thecore_heart = nullptr;
 
 volatile int	shutdowned = false;
@@ -98,16 +94,6 @@ void thecore_destroy(void)
 int thecore_pulse(void)
 {
 	return (thecore_heart->pulse);
-}
-
-float thecore_pulse_per_second(void)
-{
-	return ((float) thecore_heart->passes_per_sec);
-}
-
-float thecore_time(void)
-{
-	return ((float) thecore_heart->pulse / (float) thecore_heart->passes_per_sec);
 }
 
 int thecore_is_shutdowned(void)

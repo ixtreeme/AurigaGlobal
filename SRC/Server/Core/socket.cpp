@@ -9,16 +9,6 @@ void socket_timeout(socket_t s, int32_t sec, int32_t usec);
 void socket_reuse(socket_t s);
 void socket_keepalive(socket_t s);
 
-int socket_udp_read(socket_t desc, char * read_point, uint64_t space_left, struct sockaddr * from, socklen_t * fromlen)
-{
-    /*
-       ssize_t recvfrom(int s, void * buf, size_t len, int flags, struct sockaddr * from, socklen_t * fromlen);
-     */
-    int64_t ret;
-    ret = recvfrom(desc, read_point, space_left, 0, from, fromlen);
-    return (ret);
-}
-
 int socket_read(socket_t desc, char* read_point, uint64_t space_left)
 {
     int	ret;
@@ -194,11 +184,6 @@ int socket_tcp_bind(const char * ip, int port)
     return socket_bind(ip, port, SOCK_STREAM);
 }
 
-int socket_udp_bind(const char * ip, int port)
-{
-    return socket_bind(ip, port, SOCK_DGRAM);
-}
-
 void socket_close(socket_t s)
 {
 #ifdef _WIN32
@@ -361,18 +346,6 @@ void socket_block(socket_t s)
     ioctlsocket(s, FIONBIO, &val);
 }
 #endif
-
-void socket_dontroute(socket_t s)
-{
-    int set;
-
-    if (setsockopt(s, SOL_SOCKET, SO_DONTROUTE, (const char *) &set, sizeof(int)) < 0)
-    {
-	LOG_ERROR("setsockopt: dontroute: {}", strerror(errno));
-	socket_close(s);
-	return;
-    }
-}
 
 void socket_lingeroff(socket_t s)
 {

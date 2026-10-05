@@ -1,58 +1,7 @@
 #define __LIBTHECORE__
 #include "stdafx.h"
-#include <fmt/format.h>
 
 static struct timeval null_time = { 0, 0 };
-
-#define ishprint(x)     ((((x) & 0xE0) > 0x90) || isprint(x))
-
-void printdata(const unsigned char* data, int bytes)
-{
-	int                 i, j, k;
-	const unsigned char* p;
-
-	fmt::print(stderr, "------------------------------------------------------------------\n");
-	j = bytes;
-	while (1)
-	{
-		k = j >= 16 ? 16 : j;
-
-		p = data;
-		for (i = 0; i < 16; i++)
-		{
-			if (i >= k)
-				fmt::print(stderr, "   ");
-			else
-				fmt::print(stderr, "{:02x} ", *p);
-			p++;
-		}
-
-		fmt::print(stderr, "| ");
-
-		p = data;
-		for (i = 0; i < k; i++)
-		{
-			if (i >= k)
-				fmt::print(stderr, " ");
-			else
-			{
-				fmt::print(stderr, "{}", ishprint(*p) && ishprint(*(p + 1)) ? *p : '.');
-			}
-			p++;
-		}
-
-		fmt::print(stderr, "\n");
-
-		j -= 16;
-		data += 16;
-
-		if (j <= 0)
-			break;
-	}
-
-	fmt::print(stderr, "------------------------------------------------------------------\n");
-}
-
 
 struct timeval* timediff(const struct timeval* a, const struct timeval* b)
 {
@@ -104,18 +53,6 @@ struct timeval* timeadd(struct timeval* a, struct timeval* b)
 }
 
 
-char* time_str(time_t ct)
-{
-	static char* time_s;
-
-	time_s = asctime(localtime(&ct));
-
-	time_s[strlen(time_s) - 6] = '\0';
-	time_s += 4;
-
-	return (time_s);
-}
-
 void trim_and_lower(const char* src, char* dest, uint64_t dest_size)
 {
 	const char* tmp = src;
@@ -157,71 +94,6 @@ void trim_and_lower(const char* src, char* dest, uint64_t dest_size)
 			*(dest--) = '\0';
 	}
 }
-
-void lower_string(const char* src, char* dest, uint64_t dest_size)
-{
-	const char* tmp = src;
-	uint64_t len = 0;
-
-	if (!dest || dest_size == 0)
-		return;
-
-	if (!src)
-	{
-		*dest = '\0';
-		return;
-	}
-
-	--dest_size;
-
-	while (*tmp && len < dest_size)
-	{
-		*(dest++) = LOWER(*tmp);
-		++tmp;
-		++len;
-	}
-
-	*dest = '\0';
-}
-
-char* str_dup(const char* source)
-{
-	char* new_line;
-
-	CREATE(new_line, char, strlen(source) + 1);
-	return (strcpy(new_line, source));
-}
-
-int is_abbrev(char* arg1, char* arg2)
-{
-	if (!*arg1)
-		return 0;
-
-	for (; *arg1 && *arg2; arg1++, arg2++)
-		if (LOWER(*arg1) != LOWER(*arg2))
-			return 0;
-
-	if (!*arg1)
-		return 1;
-	else
-		return 0;
-}
-
-
-int filesize(FILE* fp)
-{
-	int pos;
-	int size;
-
-	pos = ftell(fp);
-
-	fseek(fp, 0, SEEK_END);
-	size = ftell(fp);
-	fseek(fp, pos, SEEK_SET);
-
-	return (size);
-}
-
 
 void parse_token(char* src, char* token, char* value)
 {
@@ -333,16 +205,6 @@ int MINMAX(int min, int value, int max)
 }
 
 
-uint32_t UMIN(uint32_t a, uint32_t b)
-{
-	return a < b ? a : b;
-}
-
-uint32_t UMAX(uint32_t a, uint32_t b)
-{
-	return a > b ? a : b;
-}
-
 uint32_t UMINMAX(uint32_t min, uint32_t value, uint32_t max)
 {
 	uint32_t tv;
@@ -419,14 +281,6 @@ void thecore_sleep(struct timeval* timeout)
 	}
 }
 
-void thecore_msleep(uint32_t dwMillisecond)
-{
-	static struct timeval tv_sleep;
-	tv_sleep.tv_sec = dwMillisecond / 1000;
-	tv_sleep.tv_usec = dwMillisecond * 1000;
-	thecore_sleep(&tv_sleep);
-}
-
 void core_dump_unix(const char* who, uint16_t line)
 {
 	LOG_ERROR("*** Dumping Core {}:{} ***", who, line);
@@ -443,11 +297,6 @@ void core_dump_unix(const char* who, uint16_t line)
 void thecore_sleep(struct timeval* timeout)
 {
 	Sleep(timeout->tv_sec * 1000 + timeout->tv_usec / 1000);
-}
-
-void thecore_msleep(uint32_t dwMillisecond)
-{
-	Sleep(dwMillisecond);
 }
 
 void gettimeofday(struct timeval* t, struct timezone* dummy)

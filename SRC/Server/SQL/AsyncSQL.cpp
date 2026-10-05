@@ -25,12 +25,9 @@ CAsyncSQL::CAsyncSQL()
 	m_hThread(INVALID_HANDLE_VALUE),
 #endif
 	m_mtxQuery(nullptr), m_mtxResult(nullptr),
-	m_iQueryFinished(0), m_ulThreadID(0), m_bConnected(false), m_iCopiedQuery(0)
+	m_iQueryFinished(0), m_ulThreadID(0), m_iCopiedQuery(0)
 {
 	memset( &m_hDB, 0, sizeof(m_hDB) );
-
-	m_aiPipe[0] = 0;
-	m_aiPipe[1] = 0;
 }
 
 CAsyncSQL::~CAsyncSQL()
@@ -145,19 +142,7 @@ bool CAsyncSQL::Connect()
 
 	m_ulThreadID = mysql_thread_id(&m_hDB);
 
-	m_bConnected = true;
 	return true;
-}
-
-bool CAsyncSQL::Setup(CAsyncSQL * sql, bool bNoThread)
-{
-	return Setup(sql->m_stHost.c_str(),
-			sql->m_stUser.c_str(), 
-			sql->m_stPassword.c_str(), 
-			sql->m_stDB.c_str(), 
-			sql->m_stLocale.c_str(), 
-			bNoThread,
-			sql->m_iPort);
 }
 
 bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char * c_pszPassword, const char * c_pszDB, const char * c_pszLocale, bool bNoThread, int iPort)

@@ -25,8 +25,6 @@ struct log_file_s
     int		last_day;
 };
 
-LPLOGFILE	log_file_sys = NULL;
-LPLOGFILE	log_file_err = NULL;
 LPLOGFILE	log_file_pt = NULL;
 static char	log_dir[32] = { 0, };
 unsigned int log_keep_days = 3;
@@ -48,19 +46,9 @@ void log_set_level(unsigned int bit)
 	log_level_bits |= bit;
 }
 
-void log_unset_level(unsigned int bit)
-{
-	log_level_bits &= ~bit;
-}
-
 void log_set_expiration_days(unsigned int days)
 {
 	log_keep_days = days;
-}
-
-int log_get_expiration_days(void)
-{
-	return log_keep_days;
 }
 
 int log_init(void)
@@ -88,8 +76,6 @@ void log_destroy(void)
 {
 	log_file_destroy(log_file_pt);
 
-	log_file_sys = NULL;
-	log_file_err = NULL;
 	log_file_pt = NULL;
 
 	logging::Shutdown();
@@ -100,13 +86,6 @@ void log_rotate(void)
 	log_file_check(log_file_pt);
 
 	log_file_rotate(log_file_pt);
-}
-
-static char sys_log_header_string[33] = { 0, };
-
-void sys_log_header(const char *header)
-{
-	strncpy(sys_log_header_string, header, 32);
 }
 
 void pt_log(const char *format, ...)

@@ -4,7 +4,6 @@ class CGrid
 {
 public:
 	CGrid(int w, int h);
-	CGrid(CGrid* pkGrid, int w, int h);
 	~CGrid();
 
 	void		Clear();
@@ -12,8 +11,6 @@ public:
 	bool		IsEmpty(int iPos, int w, int h);
 	bool		Put(int iPos, int w, int h);
 	void		Get(int iPos, int w, int h);
-	void		Print();
-	uint32_t	GetSize();
 
 protected:
 	int	m_iWidth;

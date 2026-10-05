@@ -6,9 +6,6 @@
 
 #include <SQL/AsyncSQL.h>
 
-#define SQL_SAFE_LENGTH(size)	(size * 2 + 1)
-#define QUERY_SAFE_LENGTH(size)	(1024 + SQL_SAFE_LENGTH(size))
-
 class CQueryInfo
 {
     public:

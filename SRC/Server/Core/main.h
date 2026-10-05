@@ -29,8 +29,6 @@ extern "C"
     extern void			thecore_shutdown(void);
     extern void			thecore_destroy(void);
     extern int			thecore_pulse(void);
-    extern float		thecore_time(void);
-    extern float		thecore_pulse_per_second(void);
 	extern int			thecore_is_shutdowned(void);
 
 	extern void			thecore_tick(void);

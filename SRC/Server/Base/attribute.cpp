@@ -158,16 +158,6 @@ CAttribute::~CAttribute()
 		delete[] dwordPtr;
 }
 
-int CAttribute::GetDataType()
-{
-	return dataType;
-}
-
-void* CAttribute::GetDataPtr()
-{
-	return data;
-}
-
 void CAttribute::Set(uint32_t x, uint32_t y, uint32_t attr)
 {
 	if (x > width || y > height)

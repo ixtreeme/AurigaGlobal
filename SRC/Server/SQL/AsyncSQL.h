@@ -85,15 +85,6 @@ typedef struct _SQLMsg
 		return vec_pkResult[uiResultPos];
 	}
 
-	bool Next()
-	{
-		if (uiResultPos + 1 >= vec_pkResult.size())
-			return false;
-
-		++uiResultPos;
-		return true;
-	}
-
 	MYSQL *			m_pkSQL;
 	int				iID;
 	std::string			stQuery;
@@ -115,12 +106,10 @@ class CAsyncSQL
 
 		void		Quit();
 
-		bool   		Setup(const char * c_pszHost, const char * c_pszUser, const char * c_pszPassword, const char * c_pszDB, const char * c_pszLocale, 
+		bool		Setup(const char * c_pszHost, const char * c_pszUser, const char * c_pszPassword, const char * c_pszDB, const char * c_pszLocale, 
 			bool bNoThread = false, int iPort = 0);
-		bool		Setup(CAsyncSQL * sql, bool bNoThread = false);
 
 		bool		Connect();
-		bool		IsConnected() { return m_bConnected; }
 		bool		QueryLocaleSet();
 
 		void		AsyncQuery(const char * c_pszQuery);
@@ -170,7 +159,6 @@ class CAsyncSQL
 		std::string	m_stLocale;
 
 		int	m_iMsgCount;
-		int	m_aiPipe[2];
 		int m_iPort;
 
 		std::queue<SQLMsg *> m_queue_query;
@@ -196,7 +184,6 @@ class CAsyncSQL
 		int	m_iQueryFinished;
 
 		uint32_t m_ulThreadID;
-		bool m_bConnected;
 		int	m_iCopiedQuery;
 };
 
