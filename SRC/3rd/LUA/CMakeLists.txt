@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 project(
     LUA
     VERSION 5.0.1
-    LANGUAGES C CXX)
+    LANGUAGES )
 
 
 set(LUA_SRC

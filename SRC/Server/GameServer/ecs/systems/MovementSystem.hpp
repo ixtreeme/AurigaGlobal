@@ -22,15 +22,16 @@ void SetRotation(entt::entity e, float fRot);
 #endif
 
 
-// Show's z is a sentinel: LONG_MAX means "keep the height you are at", and
+// Show's z is a sentinel: INT_MAX means "keep the height you are at", and
 // 63 of its 69 call sites rely on it. It used to reach SyncPositionComponents
-// unresolved, which wrote LONG_MAX into the character's Position.z.
+// unresolved, which wrote the sentinel into the character's Position.z.
+// (LONG_MAX was used before, but that is 64-bit on LP64 systems.)
 constexpr int32_t ResolveShowHeight(int32_t z, int32_t current)
 {
-    return z == LONG_MAX ? current : z;
+    return z == INT_MAX ? current : z;
 }
 
-bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool showSpawnMotion = false);
+bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z = INT_MAX, bool showSpawnMotion = false);
 bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t privateMapIndex = 0);
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
 // Sends the player to the same place on another channel, after a countdown.

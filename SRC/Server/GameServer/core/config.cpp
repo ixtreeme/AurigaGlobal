@@ -1574,10 +1574,17 @@ bool LoadClientVersion()
 	if (!fp)
 		return false;
 
-	char buf[256];
-	fgets(buf, 256, fp);
+	char buf[256] = { 0 };
+	if (!fgets(buf, sizeof(buf), fp))
+	{
+		fclose(fp);
+		return false;
+	}
 
-	char * p = strchr(buf, '\n');
+	// CRLF files (Windows-edited VERSION) leave a trailing '\r' on Unix where
+	// fopen("r") does no text-mode translation. A '\r' in the version string
+	// makes CheckClientVersion reject every client with a silent kick.
+	char * p = strpbrk(buf, "\r\n");
 	if (p) *p = '\0';
 
 	LOG_ERROR("VERSION: \"{}\"", buf);

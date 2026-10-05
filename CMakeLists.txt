@@ -57,15 +57,22 @@ endif()
 # ============================================================
 # PROJECT - BootstrapVcpkg.cmake UTAN jon (eredeti sorrend)
 # ============================================================
+
+#enable_testing()
+
+# ============================================================
+# Third-party dependencies
+#   Windows: vcpkg (bootstrap + install)
+#   FreeBSD/Linux: system packages (pkg/ports), no vcpkg needed
+# ============================================================
+option(AURIGA_USE_VCPKG "Use vcpkg for third-party dependencies" ${WIN32})
+
+if(AURIGA_USE_VCPKG)
+    # vcpkg bootstrap + triplet + Directory.Build.props generalas
+    include(cmake/BootstrapVcpkg.cmake)
+endif()
+
 project(Auriga_Global VERSION 0.1 LANGUAGES C CXX)
-
-enable_testing()
-
-# ============================================================
-# vcpkg bootstrap + triplet + Directory.Build.props generalas
-# ============================================================
-include(cmake/BootstrapVcpkg.cmake)
-
 # ============================================================
 # Python fajlok Visual Studio-ban
 # ============================================================
@@ -79,30 +86,34 @@ endif()
 # ============================================================
 # vcpkg csomagok telepitese
 # ============================================================
-vcpkg_require(
-    stb
-    lzo
-    lz4
-	curl
-	zstd
-    xxhash
-    python2
-    cryptopp
-    libconfig
-    libsodium
-    rapidjson
-    miniaudio
-    directxsdk
-    entt
-    discord-rpc
-    libjpeg-turbo
-    nlohmann-json
-    boost-foreach
-    boost-exception
-    boost-algorithm
-    boost-property-tree
-    mariadb-connector-cpp
-)
+if(AURIGA_USE_VCPKG)
+    vcpkg_require(
+        stb
+        lzo
+        lz4
+        curl
+        zstd
+        xxhash
+        python2
+        cryptopp
+        libconfig
+        libsodium
+        rapidjson
+        miniaudio
+        directxsdk
+        entt
+        discord-rpc
+        libjpeg-turbo
+        nlohmann-json
+        boost-foreach
+        boost-exception
+        boost-algorithm
+        boost-property-tree
+        mariadb-connector-cpp
+    )
+else()
+    include(cmake/AurigaSystemDeps.cmake)
+endif()
 
 # ============================================================
 # C++ standard

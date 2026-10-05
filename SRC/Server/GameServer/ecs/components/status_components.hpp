@@ -36,6 +36,29 @@ struct AffectList {
     uint64_t horseNameToken { 0 };
     // Reentrant operations of the same type invalidate an unfinished add.
     std::unordered_map<uint32_t, uint64_t> mutationTokens;
+
+    AffectList() = default;
+    AffectList(const AffectList&) = default;
+    AffectList& operator=(const AffectList&) = default;
+    AffectList(AffectList&&) = default;
+
+    // Self-move-assignment must not reach std::list's move assignment: libc++
+    // implements it with splice(end(), other) and its hardening asserts when
+    // the object splices into itself (SIGILL on FreeBSD). MSVC silently
+    // tolerates the self-move, so guard it explicitly.
+    AffectList& operator=(AffectList&& other) noexcept {
+        if (this != &other) {
+            affects = std::move(other.affects);
+            skillAffects = std::move(other.skillAffects);
+            flags = other.flags;
+            isLoaded = other.isLoaded;
+            refreshToken = other.refreshToken;
+            expiryToken = other.expiryToken;
+            horseNameToken = other.horseNameToken;
+            mutationTokens = std::move(other.mutationTokens);
+        }
+        return *this;
+    }
 };
 
 // Persistent deadline, independent of clearing or replacing the live affects.

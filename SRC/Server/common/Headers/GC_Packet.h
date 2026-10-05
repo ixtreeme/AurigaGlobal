@@ -1006,8 +1006,10 @@ typedef struct SPacketGCDragonSoulRefine
 typedef struct SPacketGCStateCheck
 {
 	uint8_t header;
-	unsigned long key;
-	unsigned long index;
+	// uint32_t, not unsigned long: the client is 32-bit on the wire, while
+	// unsigned long is 64-bit on LP64 (FreeBSD).
+	uint32_t key;
+	uint32_t index;
 	unsigned char state;
 } TPacketGCStateCheck;
 

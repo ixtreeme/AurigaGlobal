@@ -100,12 +100,7 @@ ecs::CombatStats MakeDefaultCombatStats(uint32_t alignment)
 
 ecs::AffectList MakeDefaultAffectList()
 {
-    return ecs::AffectList {
-        {},
-        {},
-        TAffectFlag(0, 0),
-        false,
-    };
+    return ecs::AffectList {};
 }
 
 ecs::StatusFlags MakeDefaultStatusFlags()

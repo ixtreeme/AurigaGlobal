@@ -1,5 +1,15 @@
 #pragma once
 
+// FreeBSD's <sys/param.h> (pulled in by the system headers in Core/stdafx.h)
+// defines MIN/MAX as function-like macros. This header declares real functions
+// with those names, so the macros must be dropped. sys/param.h has an include
+// guard, so the macros cannot come back later in the same translation unit.
+#ifdef MIN
+#undef MIN
+#endif
+#ifdef MAX
+#undef MAX
+#endif
 
 #define SAFE_FREE(p)		{ if (p) { free( (void *) p);		(p) = NULL;  } }
 #define SAFE_DELETE(p)		{ if (p) { delete (p);			(p) = NULL;  } }

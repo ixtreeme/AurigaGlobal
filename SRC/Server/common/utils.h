@@ -79,11 +79,14 @@ inline bool str_to_number (long long& out, const char *in)
 	return true;
 }
 
-inline bool str_to_number (uint64_t& out, const char *in)
+// Note: the parameter is unsigned long long instead of uint64_t, because on
+// LP64 platforms (FreeBSD/Linux) uint64_t is a typedef of unsigned long and
+// would collide with the overload above.
+inline bool str_to_number (unsigned long long& out, const char *in)
 {
 	if (nullptr==in || 0==in[0])	return false;
 
-	out = (uint64_t) strtoull(in, nullptr, 10);
+	out = (unsigned long long) strtoull(in, nullptr, 10);
 	return true;
 }
 

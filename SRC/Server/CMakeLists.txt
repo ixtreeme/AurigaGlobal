@@ -64,6 +64,12 @@ if(TARGET auriga_sanitizers)
     target_link_libraries(SERVER INTERFACE auriga_sanitizers)
 endif()
 
+# System packages (FreeBSD/Linux) discovered by cmake/AurigaSystemDeps.cmake.
+# vcpkg builds keep using the MSBuild integration, so this is a no-op there.
+if(TARGET auriga_system_deps)
+    target_link_libraries(SERVER INTERFACE auriga_system_deps)
+endif()
+
 
 add_subdirectory(Base)
 add_subdirectory(Core)

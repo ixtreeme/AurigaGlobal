@@ -2,13 +2,13 @@
 #define _FIFO_ALLOCATOR_H_
 
 #include <deque>
+#include <unordered_map>
 
-#ifdef __GNUC__
-#include <tr1/unordered_map>
-#define TR1_NS std::tr1
-#else
+#if defined(_MSC_VER)
 #include <boost/unordered_map.hpp>
 #define TR1_NS boost
+#else
+#define TR1_NS std
 #endif
 
 // Allocator implementation detail with simple FIFO grow-only pool.

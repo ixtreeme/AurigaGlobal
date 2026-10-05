@@ -3866,7 +3866,9 @@ void Reward(entt::entity e, bool bItemDrop)
 							{
 								uint32_t vnum;
 								uint32_t count;
-								long sockets[ITEM_SOCKET_MAX_NUM];
+								// uint32_t, not long: sockets are 32-bit on the wire and
+								// on Windows, but long is 64-bit on LP64 (FreeBSD).
+								uint32_t sockets[ITEM_SOCKET_MAX_NUM];
 								TPlayerItemAttribute attrs[ITEM_ATTRIBUTE_MAX_NUM];
 							};
 

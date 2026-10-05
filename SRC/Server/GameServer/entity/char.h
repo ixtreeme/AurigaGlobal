@@ -114,7 +114,9 @@ enum
 	FLY_SKILL_MUYEONG,
 };
 
-enum EDamageType
+// The underlying type must match the forward declaration in
+// ecs/systems/CombatSystem.hpp (`enum EDamageType : int`).
+enum EDamageType : int
 {
 	DAMAGE_TYPE_NONE,
 	DAMAGE_TYPE_NORMAL,

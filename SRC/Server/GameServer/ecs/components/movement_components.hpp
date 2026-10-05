@@ -1,7 +1,12 @@
 #pragma once
 
 #include <cstdint>
+
+#if defined(_WIN32)
 #include <winsock2.h>
+#else
+#include <sys/time.h>
+#endif
 
 namespace ecs {
 
