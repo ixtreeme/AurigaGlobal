@@ -26,6 +26,7 @@
 #include "config.h"
 #include "battle_pass.h"
 #include "../ecs/quest_helpers.hpp"
+#include <functional>
 #ifdef ENABLE_MELEY_LAIR
 #include "guild.h"
 #endif
@@ -39,7 +40,35 @@
 namespace quest
 {
 #if defined(__DUNGEON_INFO_SYSTEM__)
-	ALUA(dungeon_update_rank)
+	// Non blocking ranking write: the read runs on the DB worker, the write is
+// issued from the result callback.
+static void DungeonRankUpdateCallback(SQLMsg* msg, uint32_t accId, int32_t pid, int32_t dungeonIndex, int32_t runTime, int32_t runDamage)
+{
+	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
+	{
+		MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+		int32_t lasttime = 0, lastdamage = 0;
+		str_to_number(lasttime, row[0]);
+		str_to_number(lastdamage, row[1]);
+
+		lasttime = runTime > lasttime ? lasttime : runTime;
+		lastdamage = runDamage > lastdamage ? runDamage : lastdamage;
+
+		DBManager::instance().Query("UPDATE dungeon_ranking SET completed=completed+1, time=%d, damage=%d WHERE pid=%u AND dungeon_index=%d", lasttime, lastdamage, pid, dungeonIndex);
+	}
+	else
+	{
+		DBManager::instance().Query("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", accId, pid, dungeonIndex, 1, runTime, runDamage);
+	}
+}
+
+static void DungeonRankUpdate(int32_t pid, int32_t dungeonIndex, int32_t runTime, int32_t runDamage, uint32_t accId)
+{
+	DBManager::instance().FuncQuery(std::bind(&DungeonRankUpdateCallback, std::placeholders::_1, accId, pid, dungeonIndex, runTime, runDamage),
+		"SELECT time, damage FROM dungeon_ranking WHERE pid=%u AND dungeon_index=%d", pid, dungeonIndex);
+}
+
+ALUA(dungeon_update_rank)
 	{
 		// migrated from CHARACTER::GetDungeon
 		// DUAL-PATH: legacy only during migration window
@@ -74,23 +103,7 @@ namespace quest
 			damage = 0;
 		}
 
-		std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery("SELECT time, damage FROM dungeon_ranking WHERE pid=%u AND dungeon_index=%d", pid, map_index));
-		if (msgcheck->Get()->uiNumRows > 0)
-		{
-			MYSQL_ROW row = mysql_fetch_row(msgcheck->Get()->pSQLResult);
-			int32_t lasttime = 0, lastdamage = 0;
-			str_to_number(lasttime, row[0]);
-			str_to_number(lastdamage, row[1]);
-
-			lasttime = time > lasttime ? lasttime : time;
-			lastdamage = damage > lastdamage ? damage : lastdamage;
-
-			std::unique_ptr<SQLMsg> msgupdate(DBManager::instance().DirectQuery("UPDATE dungeon_ranking SET completed=completed+1, time=%d, damage=%d WHERE pid=%u AND dungeon_index=%d", lasttime, lastdamage, pid, map_index));
-		}
-		else
-		{
-			std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", ecs::PlayerRuntime::GetAccountID(chEntity), pid, map_index, 1, time, damage));
-		}
+		DungeonRankUpdate(pid, map_index, time, damage, ecs::PlayerRuntime::GetAccountID(chEntity));
 
 		return 1;
 	}
@@ -1377,23 +1390,9 @@ namespace quest
 						damage = 0;
 					}
 
-					std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery("SELECT time, damage FROM dungeon_ranking WHERE pid=%u AND dungeon_index=%d", pid, idx));
-					if (msgcheck->Get()->uiNumRows > 0)
-					{
-						MYSQL_ROW row = mysql_fetch_row(msgcheck->Get()->pSQLResult);
-						int32_t lasttime = 0, lastdamage = 0;
-						str_to_number(lasttime, row[0]);
-						str_to_number(lastdamage, row[1]);
-
-						lasttime = time > lasttime ? lasttime : time;
-						lastdamage = damage > lastdamage ? damage : lastdamage;
-
-						std::unique_ptr<SQLMsg> msgupdate(DBManager::instance().DirectQuery("UPDATE dungeon_ranking SET completed=completed+1, time=%d, damage=%d WHERE pid=%u AND dungeon_index=%d", lasttime, lastdamage, pid, idx));
-					}
-					else
 					{
 						LPDESC desc = ecs::PlayerRuntime::GetDesc(member);
-						std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", desc ? desc->GetAccountTable().id : 0, pid, idx, 1, time, damage));
+						DungeonRankUpdate(pid, idx, time, damage, desc ? desc->GetAccountTable().id : 0);
 					}
 				}
 			}
@@ -1436,23 +1435,9 @@ namespace quest
 				damage = 0;
 			}
 
-			std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery("SELECT time, damage FROM dungeon_ranking WHERE pid=%u AND dungeon_index=%d", pid, idx));
-			if (msgcheck->Get()->uiNumRows > 0)
-			{
-				MYSQL_ROW row = mysql_fetch_row(msgcheck->Get()->pSQLResult);
-				int32_t lasttime = 0, lastdamage = 0;
-				str_to_number(lasttime, row[0]);
-				str_to_number(lastdamage, row[1]);
-
-				lasttime = time > lasttime ? lasttime : time;
-				lastdamage = damage > lastdamage ? damage : lastdamage;
-
-				std::unique_ptr<SQLMsg> msgupdate(DBManager::instance().DirectQuery("UPDATE dungeon_ranking SET completed=completed+1, time=%d, damage=%d WHERE pid=%u AND dungeon_index=%d", lasttime, lastdamage, pid, idx));
-			}
-			else
 			{
 				LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
-				std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", desc ? desc->GetAccountTable().id : 0, pid, idx, 1, time, damage));
+				DungeonRankUpdate(pid, idx, time, damage, desc ? desc->GetAccountTable().id : 0);
 			}
 		}
 
