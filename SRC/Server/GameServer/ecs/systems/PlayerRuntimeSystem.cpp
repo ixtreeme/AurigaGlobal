@@ -2681,7 +2681,16 @@ void InventorySystem::SetLastUnlock(entt::entity e)
 #endif
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-static int NeedKeys[] = { 2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7 };
+static int NeedKeysForInventory(int stage)
+{
+    static const int legacyNeedKeys[] = { 2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7 };
+    const int legacyNeedKeyCount = sizeof(legacyNeedKeys) / sizeof(legacyNeedKeys[0]);
+    if (stage < legacyNeedKeyCount)
+        return legacyNeedKeys[stage];
+
+    return 7 + ((stage - legacyNeedKeyCount) / 6);
+}
+
 bool InventorySystem::ExpandInventory(entt::entity e)
 {
     if (!ecs::IsCharacter(e))
@@ -2699,10 +2708,11 @@ bool InventorySystem::ExpandInventory(entt::entity e)
 
 #define key2 72320
     const int expansion = ecs::PointSystem::GetInventoryExpansion(e);
-    if (expansion < 0 || expansion >= static_cast<int>(sizeof(NeedKeys) / sizeof(NeedKeys[0])))
+    const int maxStage = (INVENTORY_MAX_NUM - (INVENTORY_PAGE_SIZE * 2)) / 5;
+    if (expansion < 0 || expansion >= maxStage)
         return false;
 
-    int needkey = NeedKeys[expansion];
+    int needkey = NeedKeysForInventory(expansion);
     if (ItemSystem::CountItem(e, key2) >= needkey) {
         ItemSystem::RemoveSpecifyItemEcs(e, key2, needkey);
         ecs::PointSystem::Change(e, POINT_INVEN, 1, false);

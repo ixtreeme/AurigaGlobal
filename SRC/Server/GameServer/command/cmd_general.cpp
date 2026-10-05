@@ -27,6 +27,7 @@
 #include "char_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
+#include "../ecs/systems/InventorySortSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "motion.h"
@@ -583,13 +584,13 @@ ACMD(do_change_channel)
 #ifdef ENABLE_SORT_INVEN
 ACMD(do_item_check)
 {
-	// Disabled until the inventory sorter is rebuilt on the ECS inventory API.
+	InventorySortSystem::SortInventory(character);
 }
 
 
 ACMD(do_sort_extra_inventory)
 {
-	// Disabled until the extra-inventory sorter is rebuilt on the ECS inventory API.
+	InventorySortSystem::SortExtraInventory(character);
 }
 
 #endif

@@ -56,7 +56,7 @@ constexpr uint32_t c_Inventory_Page_Column = 5;
 constexpr uint32_t c_Inventory_Page_Row = 9;
 constexpr uint32_t c_Inventory_Page_Size = c_Inventory_Page_Column*c_Inventory_Page_Row; // x*y
 #ifdef ENABLE_EXTEND_INVEN_SYSTEM
-constexpr uint32_t c_Inventory_Page_Count = 4;
+constexpr uint32_t c_Inventory_Page_Count = 8;
 #else
 const uint32_t c_Inventory_Page_Count = 2;
 #endif
@@ -117,7 +117,7 @@ enum EDragonSoulDeckType
 constexpr uint32_t c_Extra_Inventory_Page_Column = 5;
 constexpr uint32_t c_Extra_Inventory_Page_Row = 9;
 constexpr uint32_t c_Extra_Inventory_Page_Size = c_Extra_Inventory_Page_Column * c_Extra_Inventory_Page_Row;
-constexpr uint32_t c_Extra_Inventory_Page_Count = 24;
+constexpr uint32_t c_Extra_Inventory_Page_Count = 48;
 constexpr uint32_t c_Extra_Inventory_Count = c_Extra_Inventory_Page_Size * c_Extra_Inventory_Page_Count;
 constexpr uint32_t c_Extra_Inventory_Category_Count = 6;
 //To fix search item in refine (0)
@@ -423,14 +423,17 @@ enum
 	// refactored attribute slot begin
 	ITEM_ATTRIBUTE_SLOT_NORM_NUM	= 5,
 	ITEM_ATTRIBUTE_SLOT_RARE_NUM	= 2,
+	ITEM_ATTRIBUTE_SLOT_EXTRA_RARE_NUM	= 1,
 
 	ITEM_ATTRIBUTE_SLOT_NORM_START	= 0,
 	ITEM_ATTRIBUTE_SLOT_NORM_END	= ITEM_ATTRIBUTE_SLOT_NORM_START + ITEM_ATTRIBUTE_SLOT_NORM_NUM,
 
 	ITEM_ATTRIBUTE_SLOT_RARE_START	= ITEM_ATTRIBUTE_SLOT_NORM_END,
 	ITEM_ATTRIBUTE_SLOT_RARE_END	= ITEM_ATTRIBUTE_SLOT_RARE_START + ITEM_ATTRIBUTE_SLOT_RARE_NUM,
+	ITEM_ATTRIBUTE_SLOT_EXTRA_RARE_START	= ITEM_ATTRIBUTE_SLOT_RARE_END,
+	ITEM_ATTRIBUTE_SLOT_EXTRA_RARE_END	= ITEM_ATTRIBUTE_SLOT_EXTRA_RARE_START + ITEM_ATTRIBUTE_SLOT_EXTRA_RARE_NUM,
 
-	ITEM_ATTRIBUTE_SLOT_MAX_NUM		= ITEM_ATTRIBUTE_SLOT_RARE_END, // 7
+	ITEM_ATTRIBUTE_SLOT_MAX_NUM		= ITEM_ATTRIBUTE_SLOT_EXTRA_RARE_END, // 8
 	// refactored attribute slot end
 };
 

@@ -87,6 +87,12 @@ bool CClientManager::InitializeTables()
 		return false;
 	}
 
+	if (!InitializeItemRare8Table())
+	{
+		LOG_ERROR("InitializeItemRare8Table FAILED");
+		return false;
+	}
+
 	if (!InitializeBanwordTable())
 	{
 		LOG_ERROR("InitializeBanwordTable FAILED");
@@ -843,6 +849,101 @@ bool CClientManager::InitializeItemRareTable()
 			t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]);
 
 		m_vec_itemRareTable.push_back(t);
+	}
+
+	return true;
+}
+
+bool CClientManager::InitializeItemRare8Table()
+{
+	char query[4096];
+	snprintf(query, sizeof(query),
+#ifdef ENABLE_NEW_BONUS_TALISMAN
+		"SELECT apply, apply+0, prob, lv1, lv2, lv3, lv4, lv5, weapon, body, wrist, foots, neck, head, shield, ear, talisman "
+#else
+		"SELECT apply, apply+0, prob, lv1, lv2, lv3, lv4, lv5, weapon, body, wrist, foots, neck, head, shield, ear "
+#endif
+#ifdef ENABLE_ITEM_ATTR_COSTUME
+		", costume_body, costume_hair"
+#if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM)
+		", costume_weapon"
+#endif
+#endif
+		" FROM item_attr_rare_8%s ORDER BY apply",
+		GetTablePostfix());
+
+	std::unique_ptr<SQLMsg> pkMsg(CDBManager::instance().DirectQuery(query));
+	SQLResult* pRes = pkMsg->Get();
+
+	if (!pRes->uiNumRows)
+	{
+		LOG_ERROR("no result from item_attr_rare_8");
+		return false;
+	}
+
+	if (!m_vec_itemRare8Table.empty())
+	{
+		LOG_INFO("RELOAD: item_attr_rare_8");
+		m_vec_itemRare8Table.clear();
+	}
+
+	m_vec_itemRare8Table.reserve(pRes->uiNumRows);
+
+	MYSQL_ROW	data;
+
+	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	{
+		TItemAttrTable t;
+
+		memset(&t, 0, sizeof(TItemAttrTable));
+
+		int col = 0;
+
+		strlcpy(t.szApply, data[col++], sizeof(t.szApply));
+		str_to_number(t.dwApplyIndex, data[col++]);
+		str_to_number(t.dwProb, data[col++]);
+		str_to_number(t.lValues[0], data[col++]);
+		str_to_number(t.lValues[1], data[col++]);
+		str_to_number(t.lValues[2], data[col++]);
+		str_to_number(t.lValues[3], data[col++]);
+		str_to_number(t.lValues[4], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_BODY], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_NECK], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_EAR], data[col++]);
+#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN)
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_PENDANT], data[col++]);
+#endif
+#ifdef ENABLE_ITEM_ATTR_COSTUME
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY], data[col++]);
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR], data[col++]);
+#if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM)
+		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON], data[col++]);
+#endif
+#endif
+
+		LOG_INFO("ITEM_RARE8: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} {} {} {} }}",
+			t.szApply,
+			t.dwProb,
+			t.lValues[0],
+			t.lValues[1],
+			t.lValues[2],
+			t.lValues[3],
+			t.lValues[4],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_BODY],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_NECK],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]);
+
+		m_vec_itemRare8Table.push_back(t);
 	}
 
 	return true;

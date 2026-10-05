@@ -126,13 +126,9 @@ static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeCompo
 
 static int GetMainInventoryLimit(entt::entity e)
 {
-    int limit = INVENTORY_MAX_NUM;
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    if (const auto* points = g_registry.try_get<ecs::CharacterPoints>(e))
-        limit = std::clamp(90 + (5 * points->base.envanter), 0,
-                           static_cast<int>(INVENTORY_MAX_NUM));
-#endif
-    return limit;
+    // Full inventory size, independent of the envanter point (see
+    // InventorySystem::GetInventorySize).
+    return INVENTORY_MAX_NUM;
 }
 
 static entt::entity GetMainInventoryItem(entt::entity e, uint16_t cell)

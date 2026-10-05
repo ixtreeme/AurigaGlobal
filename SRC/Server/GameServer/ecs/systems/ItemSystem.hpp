@@ -234,6 +234,7 @@ bool ChangeItemHitDamageBonuses(entt::entity owner, entt::entity item, entt::ent
 #endif
 bool AddItemAttributeEcs(entt::entity item);
 bool AddItemRareAttributeEcs(entt::entity item);
+bool AddItemRareAttribute8Ecs(entt::entity item);
 bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities = nullptr);
 // Synchronous game-thread transactions: prepare without side effects, pay from
 // one validated stack (or the owner's wallet), then publish the new attributes.
@@ -284,6 +285,7 @@ CostumeAttributeResult UseCostumeAttributeItem(entt::entity character,
     entt::entity item, entt::entity material);
 #endif
 bool ChangeItemRareAttributeEcs(entt::entity item);
+bool ChangeItemRareAttribute8Ecs(entt::entity item);
 bool ClearItemAttributesEcs(entt::entity item);
 bool CopyItemAttributesEcs(entt::entity source, entt::entity target);
 bool CopyItemSocketsEcs(entt::entity source, entt::entity target);

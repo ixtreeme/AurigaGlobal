@@ -555,12 +555,37 @@ bool RollRare(entt::entity item, Attributes& attrs)
     const auto selected = rules::Select(g_map_itemRare, set, false,
         [&](uint32_t type, const TItemAttrTable& row) {
             return type < MAX_APPLY_NUM && row.dwApplyIndex > 0 && row.dwApplyIndex <= UINT8_MAX &&
-                !rules::Has(attrs, ITEM_ATTRIBUTE_RARE_START, ITEM_ATTRIBUTE_RARE_END, row.dwApplyIndex);
+                !rules::Has(attrs, ITEM_ATTRIBUTE_RARE_START, ITEM_ATTRIBUTE_MAX_NUM, row.dwApplyIndex);
         }, Random);
     if (selected == g_map_itemRare.end())
         return false;
     const auto& row = selected->second;
     const int level = std::min(5, static_cast<int>(row.bMaxLevelBySet[set]));
+    attrs[slot] = {static_cast<uint8_t>(row.dwApplyIndex), static_cast<int16_t>(row.lValues[level - 1])};
+    return true;
+}
+
+// The 8th bonus lives in its own slot and is rolled from item_attr_rare_8.
+bool RollRare8(entt::entity item, Attributes& attrs)
+{
+    const int set = GetItemAttributeSetIndex(item);
+    const int slot = ITEM_ATTRIBUTE_EXTRA_RARE_START;
+    if (set < 0 || attrs[slot].bType != 0)
+        return false;
+    const auto selected = rules::Select(g_map_itemRare8, set, false,
+        [&](uint32_t type, const TItemAttrTable& row) {
+            return type < MAX_APPLY_NUM && row.dwApplyIndex > 0 && row.dwApplyIndex <= UINT8_MAX &&
+                !rules::Has(attrs, ITEM_ATTRIBUTE_RARE_START, ITEM_ATTRIBUTE_MAX_NUM, row.dwApplyIndex);
+        }, Random);
+    if (selected == g_map_itemRare8.end())
+    {
+        LOG_ERROR("Could not add an 8th bonus - item_attr_rare_8 has incorrect values!");
+        return false;
+    }
+    const auto& row = selected->second;
+    const int level = std::min(5, static_cast<int>(row.bMaxLevelBySet[set]));
+    if (level <= 0)
+        return false;
     attrs[slot] = {static_cast<uint8_t>(row.dwApplyIndex), static_cast<int16_t>(row.lValues[level - 1])};
     return true;
 }
@@ -1510,6 +1535,41 @@ bool ChangeItemRareAttributeEcs(entt::entity item)
             0, 0, 0, GetItemID(item), "SET_RARE_CHANGE", "", "", GetItemOriginalVnum(item)));
     }
     Commit(item, attrs, "SET_RARE");
+    return true;
+}
+
+bool AddItemRareAttribute8Ecs(entt::entity item)
+{
+    const auto* component = AttributesOf(item);
+    if (!component)
+        return false;
+    auto attrs = component->attrs;
+    if (!RollRare8(item, attrs))
+        return false;
+    Commit(item, attrs, "SET_RARE8");
+    return true;
+}
+
+bool ChangeItemRareAttribute8Ecs(entt::entity item)
+{
+    const auto* component = AttributesOf(item);
+    if (!component || GetItemAttributeSetIndex(item) < 0)
+        return false;
+    auto attrs = component->attrs;
+    if (attrs[ITEM_ATTRIBUTE_EXTRA_RARE_START].bType == 0)
+        return false;
+    attrs[ITEM_ATTRIBUTE_EXTRA_RARE_START] = {};
+    const entt::entity owner = GetItemOwner(item);
+    if (owner != entt::null && ecs::PlayerRuntime::GetDesc(owner)) {
+        LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLogEntity(
+            owner, item, "SET_RARE8_CHANGE", ""));
+    } else {
+        LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(
+            0, 0, 0, GetItemID(item), "SET_RARE8_CHANGE", "", "", GetItemOriginalVnum(item)));
+    }
+    if (!RollRare8(item, attrs))
+        return false;
+    Commit(item, attrs, "SET_RARE8");
     return true;
 }
 

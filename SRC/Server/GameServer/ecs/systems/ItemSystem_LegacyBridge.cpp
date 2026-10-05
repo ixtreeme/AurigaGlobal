@@ -1628,22 +1628,22 @@ void InventorySystem::ClearItem(entt::entity e)
 
 
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-static int NeedKeysForExtraInventory[] = {
-											1, // 20-25
-											1, // 25-30
-											1, // 30-35
-											2, // 35-40
-											2, // 40-45 : end page 3
-											2, // 45-50
-											3, // 50-55
-											3, // 55-60
-											3, // 60-65
-											4, // 65-70
-											4, // 70-75
-											4, // 75-80
-											5, // 80-85
-											6, // 90-95 : end page 4
-};
+static int NeedKeysForExtraInventory(uint8_t stage) {
+	static const int legacyNeedKeys[] = {
+		1, 1, 1,
+		2, 2, 2,
+		3, 3, 3,
+		4, 4, 4,
+		5,
+		6,
+	};
+
+	const int legacyNeedKeyCount = sizeof(legacyNeedKeys) / sizeof(legacyNeedKeys[0]);
+	if (stage < legacyNeedKeyCount)
+		return legacyNeedKeys[stage];
+
+	return 6 + ((stage - legacyNeedKeyCount) / 6);
+}
 
 void InventorySystem::UnlockExtraInventory(entt::entity e, uint8_t category) {
 	if (!ecs::IsCharacter(e))
@@ -1686,10 +1686,12 @@ void InventorySystem::UnlockExtraInventory(entt::entity e, uint8_t category) {
 	}
 
 	uint8_t stage = ecs::PlayerRuntime::GetQuestFlag(e, stageName.c_str());
-	if (stage < 0 || stage >= 14)
+	const int freeSlots = (EXTRA_INVENTORY_PAGE_SIZE * 2) + 20;
+	const uint8_t maxStage = (EXTRA_INVENTORY_CATEGORY_MAX_NUM - freeSlots) / 5;
+	if (stage >= maxStage)
 		return;
 
-	int needKeys = NeedKeysForExtraInventory[stage];
+	int needKeys = NeedKeysForExtraInventory(stage);
 	if (ItemSystem::CountItem(e, 72320) >= needKeys) {
 		ItemSystem::RemoveSpecifyItemEcs(e, 72320, needKeys);
 
@@ -6707,6 +6709,102 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					char buf[21];
 					snprintf(buf, sizeof(buf), "%u", GetItemID(item2));
 					LogManager::instance().ItemLogEntity(e, itemEntity, "CHANGE_RARE_ATTR", buf);
+
+					ConsumeItemEcs(itemEntity);
+				}
+#ifdef TEXTS_IMPROVEMENT
+				else {
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 354, "");
+				}
+#endif
+			}
+			break;
+
+			case 30619: // 8. bonusz hozzaadasa
+			{
+				const entt::entity item2 = GetItem(e, DestCell);
+
+				if (!InventorySystem::IsValidItemPosition(e, DestCell) || !IsValidItem(item2))
+					return false;
+
+				if (ITEM_COSTUME == GetItemType(item2))
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 396, "");
+#endif
+					return false;
+				}
+
+				if (IsItemExchanging(item2) || IsItemEquipped(item2))
+					return false;
+
+				if (GetItemAttributeSetIndex(item2) == -1)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 396, "");
+#endif
+					return false;
+				}
+
+				if (AddItemRareAttribute8Ecs(item2) == true)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 389, "");
+#endif
+					char buf[21];
+					snprintf(buf, sizeof(buf), "%u", GetItemID(item2));
+
+					LogManager::instance().ItemLog(
+						ecs::PlayerRuntime::GetPlayerID(e),
+						GetItemAttributeType(item2, ITEM_ATTRIBUTE_EXTRA_RARE_START),
+						GetItemAttributeValue(item2, ITEM_ATTRIBUTE_EXTRA_RARE_START),
+						GetItemID(itemEntity),
+						"ADD_RARE8_ATTR",
+						buf,
+						ecs::PlayerRuntime::GetDesc(e)->GetHostName(),
+						GetItemOriginalVnum(itemEntity));
+
+					ConsumeItemEcs(itemEntity);
+				}
+#ifdef TEXTS_IMPROVEMENT
+				else {
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 308, "");
+				}
+#endif
+			}
+			break;
+
+			case 30620: // 8. bonusz csere
+			{
+				const entt::entity item2 = GetItem(e, DestCell);
+
+				if (!InventorySystem::IsValidItemPosition(e, DestCell) || !IsValidItem(item2))
+					return false;
+
+				if (ITEM_COSTUME == GetItemType(item2))
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 396, "");
+#endif
+					return false;
+				}
+
+				if (IsItemExchanging(item2) || IsItemEquipped(item2))
+					return false;
+
+				if (GetItemAttributeSetIndex(item2) == -1)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 396, "");
+#endif
+					return false;
+				}
+
+				if (ChangeItemRareAttribute8Ecs(item2) == true)
+				{
+					char buf[21];
+					snprintf(buf, sizeof(buf), "%u", GetItemID(item2));
+					LogManager::instance().ItemLogEntity(e, itemEntity, "CHANGE_RARE8_ATTR", buf);
 
 					ConsumeItemEcs(itemEntity);
 				}

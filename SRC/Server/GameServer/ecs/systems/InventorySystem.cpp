@@ -327,13 +327,9 @@ int GetInventorySize(entt::entity owner)
 {
     if (!g_registry.valid(owner))
         return 0;
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    const auto* points = g_registry.try_get<ecs::CharacterPoints>(owner);
-    const int64_t extension = points ? points->base.envanter : 0;
-    return static_cast<int>(std::clamp<int64_t>(90 + 5 * extension, 0, INVENTORY_MAX_NUM));
-#else
+    // The full inventory is usable once unlocked; the envanter point no longer
+    // gates the visible size (matches the live server's Inventory_Size()).
     return INVENTORY_MAX_NUM;
-#endif
 }
 
 bool IsEmptyItemGrid(entt::entity owner, TItemPos position, uint8_t size, int exceptionCell)
@@ -391,20 +387,9 @@ bool IsEmptyItemGrid(entt::entity owner, TItemPos position, uint8_t size, int ex
                 return false;
             const int category = cell / EXTRA_INVENTORY_CATEGORY_MAX_NUM;
             const int begin = category * EXTRA_INVENTORY_CATEGORY_MAX_NUM;
-            int end = begin + EXTRA_INVENTORY_CATEGORY_MAX_NUM;
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-            static constexpr std::array<std::string_view, 6> unlockFlags {
-                "lock_extra.cat1", "lock_extra.cat2", "lock_extra.cat3",
-                "lock_extra.cat4", "lock_extra.cat5", "lock_extra.cat6"
-            };
-            if (category >= static_cast<int>(unlockFlags.size()))
-                return false;
-            constexpr int freeSlots = EXTRA_INVENTORY_PAGE_SIZE * 2 + 20;
-            constexpr int maxUnlockSlots = 25 + EXTRA_INVENTORY_PAGE_SIZE;
-            const int64_t unlocked = std::clamp<int64_t>(
-                int64_t(ecs::QuestSystem::GetFlag(owner, unlockFlags[category])) * 5, 0, maxUnlockSlots);
-            end = std::min(end, begin + freeSlots + static_cast<int>(unlocked));
-#endif
+            // The whole category is usable; the quest-flag clamp was dropped
+            // on the live server.
+            const int end = begin + EXTRA_INVENTORY_CATEGORY_MAX_NUM;
             return fits(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner),
                         end, EXTRA_INVENTORY_PAGE_COLUMN, EXTRA_INVENTORY_PAGE_SIZE);
         }
@@ -580,12 +565,13 @@ void SendQuickslots(entt::entity e)
 
 void SyncQuickslot(entt::entity e, uint16_t type, uint16_t oldPos, uint16_t newPos)
 {
-    // Item cells can exceed the byte-sized quickslot position. Never wrap them
-    // onto an unrelated quickslot (in particular during item destruction).
-    if (oldPos > UINT8_MAX || newPos > UINT8_MAX || oldPos == newPos ||
+    // Quickslot positions are uint16, so cells on the later inventory pages
+    // follow their item too. Callers keep UINT8_MAX (255) as the delete
+    // sentinel for the "item left the inventory" case.
+    if (oldPos == newPos ||
         type == QUICKSLOT_TYPE_NONE || type >= QUICKSLOT_TYPE_MAX_NUM)
         return;
-    const TQuickslot replacement {static_cast<uint8_t>(type), static_cast<uint8_t>(newPos)};
+    const TQuickslot replacement {static_cast<uint8_t>(type), newPos};
     if (newPos != UINT8_MAX && !IsQuickslotValueValid(replacement))
         return;
     auto* slots = GetQuickSlots(e);
@@ -2512,20 +2498,9 @@ static int FindEmptyExtraInventoryPosition(entt::entity owner, uint8_t itemSize,
         return -1;
 
     const int begin = EXTRA_INVENTORY_CATEGORY_MAX_NUM * category;
-    int end = EXTRA_INVENTORY_CATEGORY_MAX_NUM * (category + 1);
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-    static constexpr std::array<std::string_view, 6> unlockFlags {
-        "lock_extra.cat1", "lock_extra.cat2", "lock_extra.cat3",
-        "lock_extra.cat4", "lock_extra.cat5", "lock_extra.cat6"
-    };
-    constexpr int freeSlots = (EXTRA_INVENTORY_PAGE_SIZE * 2) + 20;
-    constexpr int maxUnlockSlots = 25 + EXTRA_INVENTORY_PAGE_SIZE;
-    const int unlockedSlots = static_cast<int>(std::clamp(
-        int64_t(ecs::QuestSystem::GetFlag(owner, unlockFlags[category])) * 5,
-        int64_t(0), int64_t(maxUnlockSlots)));
-    end = std::min(begin + freeSlots + unlockedSlots,
-                   static_cast<int>(EXTRA_INVENTORY_MAX_NUM));
-#endif
+    // The whole category is usable; the quest-flag clamp was dropped on the
+    // live server.
+    const int end = EXTRA_INVENTORY_CATEGORY_MAX_NUM * (category + 1);
 
     for (int cell = begin; cell < end; ++cell)
     {

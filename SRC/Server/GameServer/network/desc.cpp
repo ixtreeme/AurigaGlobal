@@ -1075,6 +1075,14 @@ void DESC::ChatPacketNew(uint8_t type, uint32_t idx, const char * format, ...) {
 	int len = vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 	va_end(args);
 
+	// vsnprintf returns the length it would have written, which can exceed the
+	// buffer. Writing p.size with that value makes the client reject the packet
+	// ("cannot recv TPacketGCChatNew size").
+	if (len < 0)
+		len = 0;
+	else if (len >= static_cast<int>(sizeof(chatbuf)))
+		len = static_cast<int>(sizeof(chatbuf)) - 1;
+
 	TPacketGCChatNew p;
 	p.header = HEADER_GC_CHAT_NEW;
 	p.type = type;

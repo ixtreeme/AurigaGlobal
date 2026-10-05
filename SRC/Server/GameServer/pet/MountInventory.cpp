@@ -158,7 +158,10 @@ void SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
     if (!ItemSystem::IsValidItem(itemEntity) || AccountId(inventory) == 0)
         return;
 
-    char query[512];
+    // The attribute column list is built from ITEM_ATTRIBUTE_MAX_NUM. The old
+    // hardcoded attrtype0..5 dropped the last slot (6, and now 7) on save.
+    char query[2048];
+    size_t len = 0;
     std::array<int32_t, ITEM_SOCKET_MAX_NUM> sockets {};
     std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> attrs {};
     for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
@@ -166,24 +169,28 @@ void SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
     for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
         attrs[i] = ItemSystem::GetItemAttribute(itemEntity, i);
 
-    snprintf(query, sizeof(query),
+    len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
         "REPLACE INTO account_mount_inventory (id, account_id, slot, vnum, count, "
-        "socket0, socket1, socket2, "
-        "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
-        "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5) "
-        "VALUES(%u, %u, %u, %u, %u, %ld, %ld, %ld, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
+        "socket0, socket1, socket2"));
+
+    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+        len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
+            ", attrtype%d, attrvalue%d", i, i));
+
+    len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
+        ") VALUES(%u, %u, %u, %u, %u, %ld, %ld, %ld",
         ItemSystem::GetItemID(itemEntity),
         AccountId(inventory),
         pos,
         ItemSystem::GetItemVnum(itemEntity),
         ItemSystem::GetItemCount(itemEntity),
-        sockets[0], sockets[1], sockets[2],
-        attrs[0].bType, attrs[0].sValue,
-        attrs[1].bType, attrs[1].sValue,
-        attrs[2].bType, attrs[2].sValue,
-        attrs[3].bType, attrs[3].sValue,
-        attrs[4].bType, attrs[4].sValue,
-        attrs[5].bType, attrs[5].sValue);
+        sockets[0], sockets[1], sockets[2]));
+
+    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+        len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
+            ", %d, %d", attrs[i].bType, attrs[i].sValue));
+
+    snprintf(query + len, sizeof(query) - len, ")");
 
     DBManager::instance().Query("%s", query);
 }

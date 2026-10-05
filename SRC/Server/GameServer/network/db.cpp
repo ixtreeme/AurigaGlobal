@@ -495,6 +495,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				ecs::PlayerRuntime::GetAccountID(ch) == request->accountId)
 			{
 				SQLResult* res = pMsg->Get();
+				const auto columnCount = mysql_num_fields(res->pSQLResult);
 				std::vector<TMountInventoryItemTable> items;
 				items.reserve(res->uiNumRows);
 
@@ -513,10 +514,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					str_to_number(entry.alSockets[1], row[5]);
 					str_to_number(entry.alSockets[2], row[6]);
 
-					for (int j = 0; j < 6; ++j)
+					for (int j = 0; j < ITEM_ATTRIBUTE_MAX_NUM; ++j)
 					{
 						int typeIndex = 7 + j * 2;
 						int valueIndex = typeIndex + 1;
+						if (valueIndex >= static_cast<int>(columnCount))
+							break;
 						str_to_number(entry.aAttr[j].bType, row[typeIndex]);
 						str_to_number(entry.aAttr[j].sValue, row[valueIndex]);
 					}

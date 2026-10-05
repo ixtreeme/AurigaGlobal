@@ -419,7 +419,7 @@ void CClientManager::Quit()
 
 void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 {
-	const uint8_t bPacketVersion = 6;
+	const uint8_t bPacketVersion = 7;
 
 	std::vector<tAdminInfo> vAdmin;
 	std::vector<std::string> vHost;
@@ -439,6 +439,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TRefineTable) * m_iRefineTableSize +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemAttrTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemRareTable.size() +
+		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemRare8Table.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TBanwordTable) * m_vec_banwordTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TLand) * m_vec_kLandTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TObjectProto) * m_vec_kObjectProto.size() +
@@ -465,6 +466,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	LOG_INFO("sizeof(TRefineTable) = {}", sizeof(TRefineTable));
 	LOG_INFO("sizeof(TItemAttrTable) = {}", sizeof(TItemAttrTable));
 	LOG_INFO("sizeof(TItemRareTable) = {}", sizeof(TItemAttrTable));
+	LOG_INFO("sizeof(TItemRare8Table) = {}", sizeof(TItemAttrTable));
 	LOG_INFO("sizeof(TBanwordTable) = {}", sizeof(TBanwordTable));
 	LOG_INFO("sizeof(TLand) = {}", sizeof(building::TLand));
 	LOG_INFO("sizeof(TObjectProto) = {}", sizeof(building::TObjectProto));
@@ -500,6 +502,10 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	peer->EncodeWORD(sizeof(TItemAttrTable));
 	peer->EncodeWORD(m_vec_itemRareTable.size());
 	peer->Encode(m_vec_itemRareTable.data(), sizeof(TItemAttrTable) * (uint32_t)m_vec_itemRareTable.size());
+
+	peer->EncodeWORD(sizeof(TItemAttrTable));
+	peer->EncodeWORD(m_vec_itemRare8Table.size());
+	peer->Encode(m_vec_itemRare8Table.data(), sizeof(TItemAttrTable) * (uint32_t)m_vec_itemRare8Table.size());
 
 	peer->EncodeWORD(sizeof(TBanwordTable));
 	peer->EncodeWORD(m_vec_banwordTable.size());
@@ -727,7 +733,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 		pi->pSafebox = pSafebox;
 
-		char szQuery[512];
+		char szQuery[QUERY_MAX_LEN];
 		snprintf(szQuery, sizeof(szQuery),
 				"SELECT id, window+0, pos, count, vnum, "
 #ifdef ATTR_LOCK
@@ -740,7 +746,8 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 				"attrtype3, attrvalue3, "
 				"attrtype4, attrvalue4, "
 				"attrtype5, attrvalue5, "
-				"attrtype6, attrvalue6 "
+				"attrtype6, attrvalue6, "
+				"attrtype7, attrvalue7 "
 
 				"FROM item%s WHERE owner_id=%d AND window='%s'",
 				GetTablePostfix(), pi->account_id, pi->ip[0] == 0 ? "SAFEBOX" : "MALL");
@@ -796,7 +803,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 				auto it = pSet->begin();
 
-				char szQuery[512];
+				char szQuery[QUERY_MAX_LEN];
 
 				while (it != pSet->end())
 				{
@@ -1505,7 +1512,7 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 
 			delete c;
 		}
-		char szQuery[512];
+		char szQuery[QUERY_MAX_LEN];
 
 		snprintf(szQuery, sizeof(szQuery),
 			"REPLACE INTO item%s (id, owner_id, window, pos, count, vnum, "
@@ -1519,12 +1526,13 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 			"attrtype3, attrvalue3, "
 			"attrtype4, attrvalue4, "
 			"attrtype5, attrvalue5, "
-			"attrtype6, attrvalue6) "
+			"attrtype6, attrvalue6, "
+			"attrtype7, attrvalue7) "
 			"VALUES(%u, %u, %d, %d, %u, %u, "
 #ifdef ATTR_LOCK
 			"%d, "
 #endif
-			"%ld, %ld, %ld, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
+			"%ld, %ld, %ld, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
 			GetTablePostfix(),
 			p->id,
 			p->owner,
@@ -1544,7 +1552,8 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 			p->aAttr[3].bType, p->aAttr[3].sValue,
 			p->aAttr[4].bType, p->aAttr[4].sValue,
 			p->aAttr[5].bType, p->aAttr[5].sValue,
-			p->aAttr[6].bType, p->aAttr[6].sValue);
+			p->aAttr[6].bType, p->aAttr[6].sValue,
+			p->aAttr[7].bType, p->aAttr[7].sValue);
 
 		CDBManager::instance().ReturnQuery(szQuery, QID_ITEM_SAVE, pkPeer->GetHandle(), nullptr);
 	}
@@ -2072,7 +2081,7 @@ void CClientManager::CreateObject(TPacketGDCreateObject * p)
 {
 	using namespace building;
 
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 
 	snprintf(szQuery, sizeof(szQuery),
 			"INSERT INTO object%s (land_id, vnum, map_index, x, y, x_rot, y_rot, z_rot) VALUES(%u, %u, %d, %d, %d, %f, %f, %f)",
@@ -3398,7 +3407,7 @@ uint32_t CClientManager::GetItemID()
 
 bool CClientManager::InitializeLocalization()
 {
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery), "SELECT mValue, mKey FROM locale");
 	SQLMsg * pMsg = CDBManager::instance().DirectQuery(szQuery, SQL_COMMON);
 
@@ -3786,7 +3795,7 @@ bool CClientManager::InitializeLocalization()
 
 bool CClientManager::__GetAdminInfo(const char *szIP, std::vector<tAdminInfo> & rAdminVec)
 {
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery),
 			"SELECT mID,mAccount,mName,mContactIP,mServerIP,mAuthority FROM gmlist WHERE mServerIP='ALL' or mServerIP='%s'",
 		   	szIP ? szIP : "ALL");
@@ -3840,7 +3849,7 @@ bool CClientManager::__GetAdminInfo(const char *szIP, std::vector<tAdminInfo> & 
 
 bool CClientManager::__GetHostInfo(std::vector<std::string> & rIPVec)
 {
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery), "SELECT mIP FROM gmhost");
 	SQLMsg * pMsg = CDBManager::instance().DirectQuery(szQuery, SQL_COMMON);
 
@@ -4017,7 +4026,7 @@ void CClientManager::ResetLastPlayerID(const TPacketNeedLoginLogInfo* data)
 
 void CClientManager::ChargeCash(const TRequestChargeCash* packet)
 {
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 	sprintf(szQuery, "update account set coins = coins + %d where id = %d limit 1", packet->amount, packet->aid);
 	LOG_INFO("Request Charge (amount : {}, aid : {})", packet->amount, packet->aid);
 	CDBManager::Instance().AsyncQuery(szQuery, SQL_ACCOUNT);

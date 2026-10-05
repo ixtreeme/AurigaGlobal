@@ -196,6 +196,7 @@ private:
 	bool		InitializeBanwordTable();
 	bool		InitializeItemAttrTable();
 	bool		InitializeItemRareTable();
+	bool		InitializeItemRare8Table();
 	bool		InitializeLandTable();
 	bool		InitializeObjectProto();
 	bool		InitializeObjectTable();
@@ -460,6 +461,7 @@ private:
 	std::vector<TBanwordTable>		m_vec_banwordTable;
 	std::vector<TItemAttrTable>		m_vec_itemAttrTable;
 	std::vector<TItemAttrTable>		m_vec_itemRareTable;
+	std::vector<TItemAttrTable>		m_vec_itemRare8Table;
 
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 	std::vector<TItemExtraProto> m_vec_itemExtraProto;

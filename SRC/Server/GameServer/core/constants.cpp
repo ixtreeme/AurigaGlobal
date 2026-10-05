@@ -699,6 +699,7 @@ const int aiArmorSocketQty[ARMOR_NUM_TYPES] =
 
 TItemAttrMap g_map_itemAttr;
 TItemAttrMap g_map_itemRare;
+TItemAttrMap g_map_itemRare8;
 
 const TApplyInfo aApplyInfo[MAX_APPLY_NUM] =
 /*
@@ -899,9 +900,9 @@ const int aiItemMagicAttributePercentLow[ITEM_ATTRIBUTE_MAX_LEVEL] =
 
 // ADD_ITEM_ATTRIBUTE
 const int aiItemAttributeAddPercent[ITEM_ATTRIBUTE_MAX_NUM] =
-{
-	100, 80, 60, 50, 30, 0, 0,
-};
+    {
+    	100, 80, 60, 50, 30, 0, 0, 0,
+    };
 // END_OF_ADD_ITEM_ATTRIBUTE
 
 const int aiExpLossPercents[PLAYER_EXP_TABLE_MAX + 1] =

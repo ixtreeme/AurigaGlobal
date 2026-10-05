@@ -445,7 +445,8 @@ namespace offlineshop
 		SHOPMAP::iterator it = m_mapShops.insert(std::make_pair(pInfo->dwOwnerID, offlineshop::CShop())).first;
 		offlineshop::CShop& rShop = it->second;
 
-		rShop.SetDuration(pInfo->dwDuration);
+		// Infinite offline shops: duration is not loaded from the cache anymore.
+		rShop.SetDuration(0);
 		rShop.SetOwnerPID(pInfo->dwOwnerID);
 		rShop.SetName(pInfo->szName);
 #ifdef KASMIR_PAKET_SYSTEM
@@ -2048,7 +2049,8 @@ namespace offlineshop
 		OFFSHOP_DEBUG("ch name %s , checked successful , send to db ", ecs::PlayerRuntime::GetName(character).data());
 
 
-		rShopInfo.dwDuration = MIN(rShopInfo.dwDuration , OFFLINESHOP_DURATION_MAX_MINUTES);
+		// Infinite offline shops: always persist duration 0.
+		rShopInfo.dwDuration = 0;
 		SendShopCreateNewDBPacket(rShopInfo, vecItem);
 
 #ifdef KASMIR_PAKET_SYSTEM

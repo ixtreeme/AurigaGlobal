@@ -42,10 +42,13 @@ struct LegacyCharEvents {
 };
 
 // The pulse of the last /gotoxy and the last savepoint write; each command
-// waits ten seconds after its own.
+// waits ten seconds after its own. The inventory sorters store the wall-clock
+// time (get_global_time) until which their own 30 second cooldown runs.
 struct CommandCooldowns {
     int goToXYPulse { 0 };
     int savePointPulse { 0 };
+    int32_t sortInvUntil { 0 };
+    int32_t sortExtraInvUntil { 0 };
 };
 
 struct CharacterRuntimeFlagsComponent {
