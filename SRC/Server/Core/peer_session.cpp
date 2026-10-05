@@ -11,7 +11,7 @@ PeerSession::~PeerSession() = default;
 
 socket_t PeerSession::GetSocketId() const
 {
-	return static_cast<socket_t>(const_cast<PeerSession*>(this)->m_socket.native_handle());
+	return m_socketHandle;
 }
 
 bool PeerSession::HasPendingIoWork() const
@@ -63,6 +63,7 @@ void PeerSession::CreateBuffers(int input_size, int output_size)
 void PeerSession::AttachSocket(auriga::net::tcp::socket&& sock)
 {
 	m_socket = std::move(sock);
+	m_socketHandle = static_cast<socket_t>(m_socket.native_handle());
 	m_ioConnected = true;
 	m_lastReceive = std::chrono::steady_clock::now();
 	m_lastHeartbeat = m_lastReceive;
@@ -75,6 +76,7 @@ void PeerSession::ResetSession()
 	m_writePending = false;
 	m_writeChunk.clear();
 	m_ioConnected = false;
+	m_socketHandle = static_cast<socket_t>(INVALID_SOCKET);
 	m_lastReceive = std::chrono::steady_clock::now();
 	m_lastHeartbeat = m_lastReceive;
 }
@@ -82,6 +84,7 @@ void PeerSession::ResetSession()
 void PeerSession::CloseSocket()
 {
 	m_ioConnected = false;
+	m_socketHandle = static_cast<socket_t>(INVALID_SOCKET);
 
 	// The socket may only be touched on the io thread. When io work is
 	// still outstanding (or a completion is queued for this session) the

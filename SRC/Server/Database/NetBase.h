@@ -9,14 +9,4 @@ class CNetBase
 	virtual ~CNetBase();
 };
 
-class CNetPoller : public CNetBase, public singleton<CNetPoller>
-{
-    public:
-	CNetPoller();
-	virtual ~CNetPoller();
-
-	bool	Create();
-	void	Destroy();
-};
-
 #endif

@@ -130,8 +130,15 @@ void CLIENT_DESC::StartConnect()
 				boost::asio::async_connect(m_socket, results,
 					[this, generation, resolver](const boost::system::error_code & connect_ec, const auriga::net::tcp::endpoint &)
 					{
+						// The native handle is read on the io thread and
+						// cached for the game-thread logging/status paths.
+						socket_t connectedHandle = static_cast<socket_t>(INVALID_SOCKET);
+
+						if (!connect_ec)
+							connectedHandle = static_cast<socket_t>(m_socket.native_handle());
+
 						QueueGameCompletion(generation,
-							[this, connect_ec]()
+							[this, connect_ec, connectedHandle]()
 							{
 								m_connectPending = false;
 
@@ -145,6 +152,7 @@ void CLIENT_DESC::StartConnect()
 
 								LOG_INFO("SYSTEM: connected to server ({}:{} ptr {})", m_stHost.c_str(), m_wPort, static_cast<const void*>(this));
 								m_ioConnected = true;
+								m_socketHandle = connectedHandle;
 								StartRead();
 
 								if (PeerAuth::HasKey())

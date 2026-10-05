@@ -138,9 +138,25 @@ void CClientManager::GetPeerP2PHostNames(std::string& peerHostNames)
 void CClientManager::Destroy()
 {
 	m_mChannelStatus.clear();
-	for (auto i = m_peerList.begin(); i != m_peerList.end(); ++i)
-		(*i)->Destroy();
-	
+
+	for (CPeer * peer : m_peerList)
+	{
+		peer->Destroy();
+
+		if (peer->HasPendingIoWork())
+		{
+			// The engine is stopped by this point; abandoned io work can
+			// never release the peer, so keep it alive instead of freeing
+			// memory a queued completion could still reference.
+			peer->MarkDeletePending();
+			m_pendingDeletePeers.push_back(peer);
+		}
+		else
+		{
+			delete peer;
+		}
+	}
+
 	m_peerList.clear();
 
 #ifdef ENABLE_ITEMSHOP

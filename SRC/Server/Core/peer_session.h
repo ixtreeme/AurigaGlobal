@@ -74,6 +74,11 @@ protected:
 	virtual void	OnHeartbeatSend() {}
 
 	auriga::net::tcp::socket	m_socket;
+
+	// Cached native socket handle for logging/status queries. The game
+	// thread must never read m_socket itself while the io thread owns it.
+	socket_t	m_socketHandle { static_cast<socket_t>(INVALID_SOCKET) };
+
 	LPBUFFER	m_lpInputBuffer { nullptr };
 	LPBUFFER	m_lpOutputBuffer { nullptr };
 

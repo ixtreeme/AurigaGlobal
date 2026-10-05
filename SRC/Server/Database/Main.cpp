@@ -69,6 +69,16 @@ void emergency_sig(int sig)
 		abort();
 }
 
+namespace
+{
+	// Replaces the old CNetPoller lifetime: the core timer is torn down
+	// after the manager objects, exactly as the poller destructor used to.
+	struct ThecoreShutdownGuard
+	{
+		~ThecoreShutdownGuard() { thecore_destroy(); }
+	};
+}
+
 int main()
 {
 #if defined(__FreeBSD__) && defined(__FreeBSD_version) && __FreeBSD_version<1000000
@@ -76,7 +86,7 @@ int main()
 #endif
 
 	CConfig Config;
-	CNetPoller poller;
+	ThecoreShutdownGuard thecoreShutdownGuard;
 	CDBManager DBManager;
 	CClientManager ClientManager;
 	CGuildManager GuildManager;
@@ -359,12 +369,6 @@ int Start()
 		LOG_ERROR("SQL_ITEMSHOP not configured");
 		return false;
 	}*/
-
-	if (!CNetPoller::instance().Create())
-	{
-		LOG_ERROR("Cannot create network poller");
-		return false;
-	}
 
 	LOG_INFO("ClientManager initialization.. ");
 
