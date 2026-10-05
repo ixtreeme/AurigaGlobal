@@ -123,7 +123,6 @@
 
 
 
-extern void WriteVersion();
 ////extern const char * _malloc_options;
 //#if defined(__FreeBSD__) && defined(DEBUG_ALLOC)
 //extern void (*_malloc_message)(const char* p1, const char* p2, const char* p3, const char* p4);
@@ -384,7 +383,6 @@ int main(int argc, char **argv)
 #ifdef __NEW_EVENT_HANDLER__
 	CEventFunctionHandler EventFunctionHandler;
 #endif
-	//WriteVersion();
 	SECTREE_MANAGER	sectree_manager;
 	CHARACTER_MANAGER	char_manager;
 	ITEM_MANAGER	item_manager;
@@ -935,28 +933,6 @@ int io_loop(LPFDWATCH fdw)
 				DESC_MANAGER::instance().AcceptP2PDesc(fdw, p2p_socket);
 				fdwatch_clear_event(fdw, p2p_socket, event_idx);
 			}
-			/*
-			else if (FDW_READ == fdwatch_check_event(fdw, udp_socket, event_idx))
-			{
-				char			buf[256];
-				struct sockaddr_in	cliaddr;
-				socklen_t		socklen = sizeof(cliaddr);
-
-				int iBytesRead;
-
-				if ((iBytesRead = socket_udp_read(udp_socket, buf, 256, (struct sockaddr *) &cliaddr, &socklen)) > 0)
-				{
-					static CInputUDP s_inputUDP;
-
-					s_inputUDP.SetSockAddr(cliaddr);
-
-					int iBytesProceed;
-					s_inputUDP.Process(NULL, buf, iBytesRead, iBytesProceed);
-				}
-
-				fdwatch_clear_event(fdw, udp_socket, event_idx);
-			}
-			*/
 			continue;
 		}
 

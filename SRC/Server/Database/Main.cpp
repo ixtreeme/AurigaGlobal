@@ -57,8 +57,6 @@ int g_iItemPriceListTableCacheFlushSeconds = 540;
 extern const char * _malloc_options;
 #endif
 
-extern void WriteVersion();
-
 void emergency_sig(int sig)
 {
 	if (sig == SIGSEGV)
@@ -72,8 +70,6 @@ void emergency_sig(int sig)
 
 int main()
 {
-	//WriteVersion();
-
 #if defined(__FreeBSD__) && defined(__FreeBSD_version) && __FreeBSD_version<1000000
 	_malloc_options = "A";
 #endif

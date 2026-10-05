@@ -5,7 +5,6 @@
 //#ifdef DISABLE_CORE_PULSE_RAZOR93
 #define THECORE_SECS_TO_PASSES(secs) ((secs) * thecore_heart->passes_per_sec)
 //#endif
-extern void GOST_Init();
 
 LPHEART		thecore_heart = nullptr;
 
@@ -60,8 +59,6 @@ int thecore_init(int fps, HEARTFUNC heartbeat_func)
 
 	if (!log_init() || !pid_init())
 		return false;
-
-	GOST_Init();
 
 	thecore_heart = heart_new(1000000 / fps, heartbeat_func);
 	return true;

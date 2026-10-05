@@ -356,27 +356,6 @@ protected:
 		uint32_t		m_dwHandle;
 };
 
-class CInputUDP : public CInputProcessor
-{
-	public:
-		CInputUDP();
-		virtual bool Process(LPDESC d, const void * c_pvOrig, int iBytes, int & r_iBytesProceed);
-
-		virtual uint8_t GetType() { return INPROC_UDP; }
-		void		SetSockAddr(struct sockaddr_in & rSockAddr) { m_SockAddr = rSockAddr; };
-
-	protected:
-		virtual int	Analyze(LPDESC d, uint8_t bHeader, const char * c_pData);
-
-	protected:
-		void		Handshake(LPDESC lpDesc, const char * c_pData);
-		void		StateChecker(const char * c_pData);
-
-	protected:
-		struct sockaddr_in	m_SockAddr;
-		CPacketInfoUDP 		m_packetInfoUDP;
-};
-
 class CInputP2P : public CInputProcessor
 {
 	public:

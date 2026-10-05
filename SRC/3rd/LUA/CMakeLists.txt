@@ -22,7 +22,6 @@ set(LUA_SRC
 	src/lstate.c
 	src/lstring.c
 	src/ltable.c
-	src/ltests.c
 	src/ltm.c
 	src/lundump.c
 	src/lvm.c
