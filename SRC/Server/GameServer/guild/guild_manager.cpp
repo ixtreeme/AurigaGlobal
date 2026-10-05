@@ -114,7 +114,7 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 
 	if (pmsg->Get()->uiNumRows > 0)
 	{
-		MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+		MYSQL_ROW row = pmsg->Get()->FetchRow();
 
 		if (!(row[0] && row[0][0] == '0'))
 		{
@@ -285,7 +285,7 @@ void CGuildManager::Initialize()
 
 	for (uint64_t i = 0; i < pmsg->Get()->uiNumRows; i++)
 	{
-		MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+		MYSQL_ROW row = pmsg->Get()->FetchRow();
 		uint32_t guild_id = strtoul(row[0], (char**)nullptr, 10);
 		LoadGuild(guild_id);
 

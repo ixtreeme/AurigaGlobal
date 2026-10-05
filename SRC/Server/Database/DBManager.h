@@ -23,20 +23,6 @@ enum eSQL_SLOT
 	SQL_MAX_NUM,
 };
 
-// Quoted and escaped SQL string literal for the Database's direct
-// connection. Use it for every user controlled value:
-//   snprintf(q, sizeof(q), "... WHERE name=%s", SqlString(name).c_str());
-class SqlString
-{
-    public:
-	explicit SqlString(const char * value, int iSlot = SQL_PLAYER);
-	explicit SqlString(const std::string & value, int iSlot = SQL_PLAYER);
-	const char * c_str() const { return m_value.c_str(); }
-
-    private:
-	std::string m_value;
-};
-
 class CDBManager : public singleton<CDBManager>
 {
     protected:

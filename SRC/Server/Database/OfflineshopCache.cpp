@@ -668,7 +668,7 @@ namespace offlineshop
 				return nullptr;
 			}
 
-			if ((row = mysql_fetch_row(pMsg->Get()->pSQLResult))) {
+			if ((row = pMsg->Get()->FetchRow())) {
 				str_to_number(safebox.valutes.illYang, row[0]);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 				str_to_number(safebox.valutes.iCheque , row[1]);
@@ -687,7 +687,7 @@ namespace offlineshop
 			uint32_t dwItemID =0;
 			TItemInfoEx item;
 
-			while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+			while ((row = pMsg->Get()->FetchRow()))
 			{
 				//item_id, vnum , count , sockets, attrs
 

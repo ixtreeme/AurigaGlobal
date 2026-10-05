@@ -1077,7 +1077,7 @@ bool CClientManager::LoadBattlePassRanking()
 	uint8_t posContor = 1;
 
 	MYSQL_ROW row;
-	while ((row = mysql_fetch_row(pRes->pSQLResult)))
+	while ((row = pRes->FetchRow()))
 	{
 		TBattlePassRanking * ranking = new TBattlePassRanking;
 		ranking->bPos = posContor;
@@ -1202,7 +1202,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 			return;
 		}
 
-		MYSQL_ROW row = mysql_fetch_row(pMsg0->Get()->pSQLResult);
+		MYSQL_ROW row = pMsg0->Get()->FetchRow();
 
 		uint32_t dwPID = 0; str_to_number(dwPID, row[0]);
 		if (row[0] && dwPID > 0)
@@ -1447,7 +1447,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 
 	if (msg->Get() && msg->Get()->uiNumRows)
 	{
-		MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+		MYSQL_ROW row = msg->Get()->FetchRow();
 
 		uint32_t dwPID = 0;
 		str_to_number(dwPID, row[0]);

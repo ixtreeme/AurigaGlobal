@@ -353,7 +353,7 @@ namespace quest
 			snprintf(szQuery1, sizeof(szQuery1), "SELECT duration FROM new_petsystem WHERE id = %u LIMIT 1", itemid);
 			std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
 			if (pmsg2->Get()->uiNumRows > 0) {
-				MYSQL_ROW row = mysql_fetch_row(pmsg2->Get()->pSQLResult);
+				MYSQL_ROW row = pmsg2->Get()->FetchRow();
 				lua_pushboolean(L, atoi(row[0]) <= 0);
 				return 0;
 			}

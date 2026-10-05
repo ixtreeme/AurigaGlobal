@@ -280,7 +280,7 @@ namespace
                     [pid, dungeon_index, elapsed, damage, rankAccId](SQLMsg* msgcheck) {
                         if (msgcheck && msgcheck->Get() && msgcheck->Get()->uiNumRows > 0)
                         {
-                            MYSQL_ROW row = mysql_fetch_row(msgcheck->Get()->pSQLResult);
+                            MYSQL_ROW row = msgcheck->Get()->FetchRow();
                             int32_t lasttime = 0, lastdamage = 0;
                             str_to_number(lasttime, row[0]);
                             str_to_number(lastdamage, row[1]);

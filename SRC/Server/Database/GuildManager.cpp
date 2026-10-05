@@ -147,7 +147,7 @@ void CGuildManager::ParseResult(SQLResult * pRes)
 {
 	MYSQL_ROW row;
 
-	while ((row = mysql_fetch_row(pRes->pSQLResult)))
+	while ((row = pRes->FetchRow()))
 	{
 		uint32_t GID = strtoul(row[0], nullptr, 10);
 
@@ -931,7 +931,7 @@ void CGuildManager::BootReserveWar()
 
 		MYSQL_ROW row;
 
-		while ((row = mysql_fetch_row(pmsg->Get()->pSQLResult)))
+		while ((row = pmsg->Get()->FetchRow()))
 		{
 			int col = 0;
 
@@ -986,7 +986,7 @@ int GetAverageGuildMemberLevel(uint32_t dwGID)
 	std::unique_ptr<SQLMsg> msg(CDBManager::instance().DirectQuery(szQuery));
 
 	MYSQL_ROW row;
-	row = mysql_fetch_row(msg->Get()->pSQLResult);
+	row = msg->Get()->FetchRow();
 
 	int nAverageLevel = 0; str_to_number(nAverageLevel, row[0]);
 	return nAverageLevel;
@@ -1001,7 +1001,7 @@ int GetGuildMemberCount(uint32_t dwGID)
 	std::unique_ptr<SQLMsg> msg(CDBManager::instance().DirectQuery(szQuery));
 
 	MYSQL_ROW row;
-	row = mysql_fetch_row(msg->Get()->pSQLResult);
+	row = msg->Get()->FetchRow();
 
 	uint32_t dwCount = 0; str_to_number(dwCount, row[0]);
 	return dwCount;

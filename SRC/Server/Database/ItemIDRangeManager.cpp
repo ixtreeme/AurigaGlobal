@@ -99,7 +99,7 @@ bool CItemIDRangeManager::BuildRange(uint32_t dwMin, uint32_t dwMax, TItemIDRang
 	{
 		if (pMsg->Get()->uiNumRows > 0)
 		{
-			row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+			row = pMsg->Get()->FetchRow();
 			str_to_number(dwItemMaxID, row[0]);
 		}
 		delete pMsg;
@@ -130,7 +130,7 @@ bool CItemIDRangeManager::BuildRange(uint32_t dwMin, uint32_t dwMax, TItemIDRang
 			if (pMsg->Get()->uiNumRows > 0)
 			{
 				uint32_t count = 0;
-				row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+				row = pMsg->Get()->FetchRow();
 				str_to_number(count, row[0]);
 
 				if (count > 0)

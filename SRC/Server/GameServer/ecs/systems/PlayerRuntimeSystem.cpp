@@ -236,7 +236,7 @@ int GetChangeEmpireCount(entt::entity e)
 	if (!message || message->Get()->uiNumRows == 0)
 		return 0;
 
-	MYSQL_ROW row = mysql_fetch_row(message->Get()->pSQLResult);
+	MYSQL_ROW row = message->Get()->FetchRow();
 	uint32_t count = 0;
 	if (row && row[0])
 		str_to_number(count, row[0]);
@@ -290,7 +290,7 @@ int ChangeEmpire(entt::entity e, uint8_t empire)
 		return 0;
 
 	uint32_t playerIDs[5] {};
-	MYSQL_ROW row = mysql_fetch_row(message->Get()->pSQLResult);
+	MYSQL_ROW row = message->Get()->FetchRow();
 	for (size_t index = 0; index < std::size(playerIDs); ++index)
 	{
 		if (row && row[index])
@@ -306,7 +306,7 @@ int ChangeEmpire(entt::entity e, uint8_t empire)
 		std::unique_ptr<SQLMsg> guildMessage(DBManager::instance().DirectQuery(query));
 		if (guildMessage && guildMessage->Get()->uiNumRows > 0)
 		{
-			MYSQL_ROW guildRow = mysql_fetch_row(guildMessage->Get()->pSQLResult);
+			MYSQL_ROW guildRow = guildMessage->Get()->FetchRow();
 			uint32_t guildID = 0;
 			if (guildRow && guildRow[0])
 				str_to_number(guildID, guildRow[0]);
@@ -1580,7 +1580,7 @@ int64_t GetVoteCoin(entt::entity e)
 	if (!message || message->Get()->uiNumRows == 0)
 		return 0;
 
-	MYSQL_ROW row = mysql_fetch_row(message->Get()->pSQLResult);
+	MYSQL_ROW row = message->Get()->FetchRow();
 	int64_t coins = 0;
 	if (row && row[0])
 		str_to_number(coins, row[0]);
@@ -2111,7 +2111,7 @@ uint32_t GetDragonCoin(entt::entity e)
     std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%u';", desc->GetAccountTable().id));
     if (!pMsg || !pMsg->Get() || pMsg->Get()->uiNumRows == 0 || !pMsg->Get()->pSQLResult)
         return 0;
-    MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+    MYSQL_ROW row = pMsg->Get()->FetchRow();
     if (!row || !row[0])
         return 0;
     uint32_t dc = 0;
@@ -2758,7 +2758,7 @@ void ecs::PlayerRuntime::RankingSubcategory(entt::entity e, int iArg)
     uint32_t iRes = pRes1->Get()->uiNumRows;
     if (iRes > 0) {
         MYSQL_ROW data;
-        while ((data = mysql_fetch_row(pRes1->Get()->pSQLResult))) {
+        while ((data = pRes1->Get()->FetchRow())) {
             int col = 1;
             p.list[j].iPosition = j;
             p.list[j].iRealPosition = 0;

@@ -30,7 +30,7 @@ void CHwidManager::InitializeBlocked()
 	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT hwid FROM account.blocked_hwids"));
 	if (msg->Get()->uiNumRows > 0) {
 		MYSQL_ROW row;
-		while ((row = mysql_fetch_row(msg->Get()->pSQLResult))) {
+		while ((row = msg->Get()->FetchRow())) {
 			char hwid[HWID_LENGTH];
 			strlcpy(hwid, row[0], sizeof(hwid));
 			if (std::find(m_blocked_hwid.begin(), m_blocked_hwid.end(), hwid) == m_blocked_hwid.end()) {

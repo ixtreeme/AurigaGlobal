@@ -1191,7 +1191,7 @@ ecs::NewPetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity it
     if (!result || result->uiSQLErrno || !table || table->uiNumRows != 1 || !table->pSQLResult
         || mysql_num_fields(table->pSQLResult) != fields)
         return nullptr;
-    const auto row = mysql_fetch_row(table->pSQLResult);
+    const auto row = table->FetchRow();
     if (!row || !row[0])
         return nullptr;
     std::array<int64_t, 20> values {};

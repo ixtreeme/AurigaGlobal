@@ -50,7 +50,7 @@ namespace marriage
 		{
 			for (uint64_t uiRow = 0; uiRow != pRes->uiNumRows; ++uiRow)
 			{
-				MYSQL_ROW row = mysql_fetch_row(pRes->pSQLResult);
+				MYSQL_ROW row = pRes->FetchRow();
 
 				uint32_t pid1 = 0; str_to_number(pid1, row[0]);
 				uint32_t pid2 = 0; str_to_number(pid2, row[1]);

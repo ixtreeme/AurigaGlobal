@@ -46,7 +46,7 @@ void CClientManager::GuildAddMember(CPeer* peer, TPacketGDGuildAddMember * p)
 		return;
 	}
 
-	MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+	MYSQL_ROW row = pmsg->Get()->FetchRow();
 
 	if (!row[0] || !row[1])
 		return;

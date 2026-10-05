@@ -46,7 +46,7 @@ static void DungeonRankUpdateCallback(SQLMsg* msg, uint32_t accId, int32_t pid, 
 {
 	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
 	{
-		MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+		MYSQL_ROW row = msg->Get()->FetchRow();
 		int32_t lasttime = 0, lastdamage = 0;
 		str_to_number(lasttime, row[0]);
 		str_to_number(lastdamage, row[1]);
@@ -146,7 +146,7 @@ ALUA(dungeon_update_rank)
 			if (pMsg->Get()->uiNumRows > 0) {
 				MYSQL_ROW row;
 				for (unsigned int i = 0; i < pMsg->Get()->uiNumRows; ++i) {
-					row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+					row = pMsg->Get()->FetchRow();
 					int c = 1;
 					uint32_t pid;
 					str_to_number(pid, row[c++]);
@@ -186,7 +186,7 @@ ALUA(dungeon_update_rank)
 			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 
 			if (pMsg->Get()->uiNumRows > 0) {
-				MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+				MYSQL_ROW row = pMsg->Get()->FetchRow();
 				int c = 1;
 				int p;
 				str_to_number(p, row[c++]);
@@ -242,7 +242,7 @@ ALUA(dungeon_update_rank)
 		snprintf(szQuery, sizeof(szQuery), "SELECT completed, time, damage FROM dungeon_ranking%s WHERE pid = '%u' AND dungeon_index = '%d'", get_table_postfix(), pid, map_index);
 		std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 		if (pMsg->Get()->uiNumRows > 0) {
-			MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+			MYSQL_ROW row = pMsg->Get()->FetchRow();
 
 			int points = 0;
 			if (rank_type == 1)

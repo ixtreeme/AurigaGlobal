@@ -4189,7 +4189,7 @@ teleport_area:
 				if (d) {
 					std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(vote_time)-UNIX_TIMESTAMP(NOW()) FROM account.account WHERE id=%u", d->GetAccountTable().id));
 					if (msg->Get()->uiNumRows > 0) {
-						MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+						MYSQL_ROW row = msg->Get()->FetchRow();
 						int32_t expire = atoi(row[0]);
 						if (expire > 0)
 						{

@@ -3894,7 +3894,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 		snprintf(szQuery1, sizeof(szQuery1), "SELECT duration FROM new_petsystem WHERE id = %d LIMIT 1", GetItemID(item2));
 		std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
 		if (pmsg2->Get()->uiNumRows > 0) {
-			MYSQL_ROW row = mysql_fetch_row(pmsg2->Get()->pSQLResult);
+			MYSQL_ROW row = pmsg2->Get()->FetchRow();
 			if (atoi(row[0]) > 0) {
 				if (NewPetSystem::IsActivePet(e)) {
 #ifdef TEXTS_IMPROVEMENT
@@ -3954,7 +3954,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(query));
 					if (pmsg->Get()->uiNumRows > 0)
 					{
-						MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+						MYSQL_ROW row = pmsg->Get()->FetchRow();
 						uint32_t evolution = atoi(row[2]);
 						uint32_t petVnum = 0;
 						switch (GetItemVnum(item)) {
@@ -4102,7 +4102,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			snprintf(query, sizeof(query), "SELECT tduration FROM player.new_petsystem WHERE id = %ld", GetItemSocket(item, 1));
 			std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(query));
 			if (pmsg->Get()->uiNumRows > 0) {
-				MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+				MYSQL_ROW row = pmsg->Get()->FetchRow();
 #ifdef ENABLE_NEW_PET_EDITS
 				SetItemSocket(petItem, 1, atoi(row[0]));
 				SetItemSocket(petItem, 2, atoi(row[0]));

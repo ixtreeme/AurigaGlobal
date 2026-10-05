@@ -190,7 +190,7 @@ bool CClientManager::InitializeRefineTable()
 	TRefineTable* prt = m_pRefineTable;
 	MYSQL_ROW data;
 
-	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	while ((data = pRes->FetchRow()))
 	{
 		//const char* s_szQuery = "SELECT src_vnum, result_vnum, cost, prob, "
 		//"vnum0, count0, vnum1, count1, vnum2, count2,  vnum3, count3, vnum4, count4 "
@@ -327,7 +327,7 @@ bool CClientManager::InitializeShopTable()
 
 	TShopTable* shop_table = m_pShopTable;
 
-	while ((data = mysql_fetch_row(pRes2->pSQLResult)))
+	while ((data = pRes2->FetchRow()))
 	{
 		col = 0;
 
@@ -401,7 +401,7 @@ bool CClientManager::InitializeQuestItemTable()
 
 	MYSQL_ROW row;
 
-	while ((row = mysql_fetch_row(pRes->pSQLResult)))
+	while ((row = pRes->FetchRow()))
 	{
 		int col = 0;
 
@@ -571,7 +571,7 @@ bool CClientManager::InitializeSkillTable()
 
 	MYSQL_ROW	data;
 
-	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	while ((data = pRes->FetchRow()))
 	{
 		TSkillTable t = {};
 
@@ -640,7 +640,7 @@ bool CClientManager::InitializeBanwordTable()
 
 	MYSQL_ROW data;
 
-	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	while ((data = pRes->FetchRow()))
 	{
 		TBanwordTable t;
 
@@ -690,7 +690,7 @@ bool CClientManager::InitializeItemAttrTable()
 
 	MYSQL_ROW	data;
 
-	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	while ((data = pRes->FetchRow()))
 	{
 		TItemAttrTable t;
 
@@ -796,7 +796,7 @@ bool CClientManager::InitializeItemRareTable()
 
 	MYSQL_ROW	data;
 
-	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	while ((data = pRes->FetchRow()))
 	{
 		TItemAttrTable t;
 
@@ -891,7 +891,7 @@ bool CClientManager::InitializeItemRare8Table()
 
 	MYSQL_ROW	data;
 
-	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	while ((data = pRes->FetchRow()))
 	{
 		TItemAttrTable t;
 
@@ -974,7 +974,7 @@ bool CClientManager::InitializeLandTable()
 	MYSQL_ROW	data;
 
 	if (pRes->uiNumRows > 0)
-		while ((data = mysql_fetch_row(pRes->pSQLResult)))
+		while ((data = pRes->FetchRow()))
 		{
 			TLand t = {};
 
@@ -1075,7 +1075,7 @@ bool CClientManager::InitializeObjectProto()
 	MYSQL_ROW	data;
 
 	if (pRes->uiNumRows > 0)
-		while ((data = mysql_fetch_row(pRes->pSQLResult)))
+		while ((data = pRes->FetchRow()))
 		{
 			TObjectProto t = {};
 
@@ -1139,7 +1139,7 @@ bool CClientManager::InitializeObjectTable()
 	MYSQL_ROW data;
 
 	if (pRes->uiNumRows > 0)
-		while ((data = mysql_fetch_row(pRes->pSQLResult)))
+		while ((data = pRes->FetchRow()))
 		{
 			TObject* k = new TObject;
 
@@ -1182,7 +1182,7 @@ bool CClientManager::InitializeItemExtraProtoTable()
 	m_vec_itemExtraProto.reserve(size);
 
 	MYSQL_ROW data;
-	while ((data = mysql_fetch_row(res->pSQLResult)))
+	while ((data = res->FetchRow()))
 	{
 		TItemExtraProto t = {};
 
@@ -1565,7 +1565,7 @@ bool CClientManager::InitializeMobTableFromDB()
 	TMobTable* mob_table = m_vec_mobTable.data();
 
 	MYSQL_ROW data = nullptr;
-	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	while ((data = pRes->FetchRow()))
 	{
 		// check whether or not the field is NULL or that contains an empty string
 		// ## GENERAL
@@ -1780,7 +1780,7 @@ bool CClientManager::InitializeItemTableFromDB()
 	TItemTable* item_table = m_vec_itemTable.data();
 
 	MYSQL_ROW data = nullptr;
-	while ((data = mysql_fetch_row(pRes->pSQLResult)))
+	while ((data = pRes->FetchRow()))
 	{
 		// check whether or not the field is NULL or that contains an empty string
 		// ## GENERAL

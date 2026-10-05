@@ -501,7 +501,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 		MYSQL_ROW row;
 
-		while (nullptr != (row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+		while (nullptr != (row = pMsg->Get()->FetchRow()))
 		{
 			if (strcasecmp(row[0], "LOCALE") == 0)
 			{
@@ -559,7 +559,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 		MYSQL_ROW row;
 
-		row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+		row = pMsg->Get()->FetchRow();
 
 		const char * p = row[0];
 		int cnt = 0;
@@ -597,7 +597,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 				continue;
 			}
 
-			row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+			row = pMsg->Get()->FetchRow();
 			cnt = 0;
 			p = row[0];
 			int aiSkillTable[SKILL_MAX_LEVEL + 1];
@@ -1367,7 +1367,7 @@ static bool __LoadExpTableFromDB(void)
 		memcpy(new_exp_table, exp_table, (PLAYER_MAX_LEVEL_CONST+1)*sizeof(uint32_t));
 
 	MYSQL_ROW row = nullptr;
-	while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+	while ((row = pMsg->Get()->FetchRow()))
 	{
 		uint32_t level = 0;
 		uint32_t exp = 0;

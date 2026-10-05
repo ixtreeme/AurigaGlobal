@@ -16,7 +16,7 @@ void CClientManager::LoadEventFlag()
 	if (pRes->uiNumRows)
 	{
 		MYSQL_ROW row;
-		while ((row = mysql_fetch_row(pRes->pSQLResult)))
+		while ((row = pRes->FetchRow()))
 		{
 			TPacketSetEventFlag p;
 			strlcpy(p.szFlagName, row[0], sizeof(p.szFlagName));

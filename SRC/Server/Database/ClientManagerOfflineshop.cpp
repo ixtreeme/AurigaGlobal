@@ -47,7 +47,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->Get())
 		{
-			while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+			while ((row = pMsg->Get()->FetchRow()))
 			{
 				int col=0;
 				std::string name="";
@@ -91,7 +91,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->Get())
 		{
-			while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+			while ((row = pMsg->Get()->FetchRow()))
 			{
 				int col=0;
 				uint32_t dwItemID=0, dwOwnerID=0;
@@ -160,7 +160,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->Get())
 		{
-			while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+			while ((row = pMsg->Get()->FetchRow()))
 			{
 				int col = 0;
 
@@ -208,7 +208,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->Get())
 		{
-			while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+			while ((row = pMsg->Get()->FetchRow()))
 			{
 				int col = 0;
 
@@ -265,7 +265,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->Get())
 		{
-			while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+			while ((row = pMsg->Get()->FetchRow()))
 			{
 				int col = 0;
 

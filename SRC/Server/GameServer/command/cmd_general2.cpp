@@ -576,7 +576,7 @@ ACMD(do_open_savepoint) {
 		}
 
 		MYSQL_ROW data;
-		while ((data = mysql_fetch_row(res->Get()->pSQLResult))) {
+		while ((data = res->Get()->FetchRow())) {
 			int c = 0;
 			int id = atoi(data[c++]);
 			std::string name = data[c++];
@@ -666,7 +666,7 @@ ACMD(do_go_savepoint) {
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
 		MYSQL_ROW data;
-		while ((data = mysql_fetch_row(res->Get()->pSQLResult))) {
+		while ((data = res->Get()->FetchRow())) {
 			int c = 0;
 			int x = atoi(data[c++]), y = atoi(data[c++]), mapIdx = atoi(data[c++]);
 

@@ -606,7 +606,7 @@ void CGuild::LoadGuildMemberData(SQLMsg* pmsg)
 
 	for (uint64_t i = 0; i < pmsg->Get()->uiNumRows; ++i)
 	{
-		MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+		MYSQL_ROW row = pmsg->Get()->FetchRow();
 
 		uint32_t pid = strtoul(row[0], nullptr, 10);
 		uint8_t grade = (uint8_t) strtoul(row[1], nullptr, 10);
@@ -632,7 +632,7 @@ void CGuild::LoadGuildGradeData(SQLMsg* pmsg)
 {
 	for (uint64_t i = 0; i < pmsg->Get()->uiNumRows; ++i)
 	{
-		MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+		MYSQL_ROW row = pmsg->Get()->FetchRow();
 		uint8_t grade = 0;
 		str_to_number(grade, row[0]);
 		char * name = row[1];
@@ -654,7 +654,7 @@ void CGuild::LoadGuildData(SQLMsg* pmsg)
 		return;
 	}
 
-	MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+	MYSQL_ROW row = pmsg->Get()->FetchRow();
 	m_data.master_pid = strtoul(row[0], (char **)nullptr, 10);
 	m_data.level = (uint8_t)strtoul(row[1], (char **)nullptr, 10);
 	m_data.exp = strtoul(row[2], (char **)nullptr, 10);
@@ -786,7 +786,7 @@ void CGuild::__P2PUpdateGrade(SQLMsg* pmsg)
 {
 	if (pmsg->Get()->uiNumRows)
 	{
-		MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+		MYSQL_ROW row = pmsg->Get()->FetchRow();
 
 		int grade = 0;
 		const char* name = row[1];
@@ -1223,7 +1223,7 @@ void CGuild::RefreshCommentForce(uint32_t player_id)
 
 	for (uint64_t i = 0; i < pmsg->Get()->uiNumRows; i++)
 	{
-		MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+		MYSQL_ROW row = pmsg->Get()->FetchRow();
 		uint32_t id = strtoul(row[0], nullptr, 10);
 
 		strlcpy(szName, row[1], sizeof(szName));
@@ -1591,14 +1591,14 @@ void CGuild::GiveReward(int reward)
 		std::unique_ptr<SQLMsg> pMsg( DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE id=%d", dwPlayerid) );
 		if (pMsg->Get()->uiNumRows == 0)
 			return;
-		MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+		MYSQL_ROW row = pMsg->Get()->FetchRow();
 		int iAccountID = 0;
 		str_to_number( iAccountID, row[0] );
 
 		std::unique_ptr<SQLMsg> pMsg2( DBManager::instance().DirectQuery("SELECT login FROM account.account WHERE id=%d", iAccountID) );
 		if (pMsg2->Get()->uiNumRows == 0)
 			return;
-		MYSQL_ROW nrow = mysql_fetch_row(pMsg2->Get()->pSQLResult);
+		MYSQL_ROW nrow = pMsg2->Get()->FetchRow();
 
 		/*for (int i = 39; i >= 0; i--)
 		{
@@ -2413,7 +2413,7 @@ CGuild::GuildJoinErrCode CGuild::VerifyGuildJoinableCondition(const entt::entity
 
 		if (pMsg->Get()->uiNumRows > 0)
 		{
-			MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+			MYSQL_ROW row = pMsg->Get()->FetchRow();
 			time_t limit_time = 0;
 			str_to_number(limit_time, row[0]);
 

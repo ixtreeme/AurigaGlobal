@@ -304,7 +304,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				}
 				else
 				{
-					MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+					MYSQL_ROW row = pMsg->Get()->FetchRow();
 					int col = 0;
 
 					// PASSWORD('%s'), password, social_id, id, status
@@ -522,7 +522,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 				for (uint64_t i = 0; i < res->uiNumRows; ++i)
 				{
-					MYSQL_ROW row = mysql_fetch_row(res->pSQLResult);
+					MYSQL_ROW row = res->FetchRow();
 					if (!row)
 						continue;
 
@@ -565,7 +565,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				{
 					if (pMsg->Get()->uiNumRows > 0)
 					{
-						MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+						MYSQL_ROW row = pMsg->Get()->FetchRow();
 						int	size = 0;
 						str_to_number(size, row[0]);
 						ecs::SessionSystem::SetSafeboxSize(ch, SAFEBOX_PAGE_SIZE * size);
@@ -581,7 +581,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 				for (uint64_t i = 0; i < pMsg->Get()->uiNumRows; ++i)
 				{
-					MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+					MYSQL_ROW row = pMsg->Get()->FetchRow();
 					//ch->SetSafeboxSize(SAFEBOX_PAGE_SIZE * atoi(row[0]));
 					if (row[0] && row[1])
 					{
@@ -641,7 +641,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 				if (pMsg->Get()->uiNumRows)
 				{
-					MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+					MYSQL_ROW row = pMsg->Get()->FetchRow();
 
 					if (row && row[0])
 					{
@@ -680,7 +680,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				if (pMsg->Get()->uiNumRows)
 				{
 					MYSQL_ROW row;
-					while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+					while ((row = pMsg->Get()->FetchRow()))
 					{
 						ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s %s sec", row[0], row[1]);
 					}
@@ -735,27 +735,6 @@ void DBManager::SendMoneyLog(uint8_t type, uint32_t vnum, int64_t gold)
 uint32_t DBManager::EscapeString(char* dst, uint64_t dstSize, const char *src, uint32_t srcSize)
 {
 	return m_sql_direct.EscapeString(dst, dstSize, src, srcSize);
-}
-
-SqlString::SqlString(const char * value)
-{
-	if (!value)
-	{
-		m_value = "''";
-		return;
-	}
-
-	const uint32_t length = static_cast<uint32_t>(strlen(value));
-	std::vector<char> escaped(static_cast<size_t>(length) * 2 + 1);
-	const uint32_t escapedLength = DBManager::instance().EscapeString(escaped.data(), escaped.size(), value, length);
-
-	m_value.assign("'");
-	m_value.append(escaped.data(), escapedLength);
-	m_value.append("'");
-}
-
-SqlString::SqlString(const std::string & value) : SqlString(value.c_str())
-{
 }
 
 //
@@ -928,7 +907,7 @@ void AccountDB::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					SpamManager::instance().Clear();
 
-					while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+					while ((row = pMsg->Get()->FetchRow()))
 						SpamManager::instance().Insert(row[0], atoi(row[1]));
 				}
 			}

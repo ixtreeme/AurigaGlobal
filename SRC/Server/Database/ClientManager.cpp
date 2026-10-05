@@ -197,7 +197,7 @@ static bool __InitializeDefaultPriv()
 	if (pMsg->Get()->uiNumRows == 0)
 		return false;
 	MYSQL_ROW row = nullptr;
-	while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+	while ((row = pMsg->Get()->FetchRow()))
 	{
 		if (!strcmp(row[0], "EMPIRE"))
 		{
@@ -760,7 +760,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 		}
 		else
 		{
-			MYSQL_ROW row = mysql_fetch_row(res->pSQLResult);
+			MYSQL_ROW row = res->FetchRow();
 
 			if (((!row[2] || !*row[2]) && strcmp("000000", szSafeboxPassword)) ||
 				(row[2] && *row[2] && strcmp(row[2], szSafeboxPassword)))
@@ -1137,7 +1137,7 @@ void CClientManager::RESULT_SAFEBOX_CHANGE_PASSWORD(CPeer * pkPeer, SQLMsg * msg
 
 	if (msg->Get()->uiNumRows > 0)
 	{
-		MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+		MYSQL_ROW row = msg->Get()->FetchRow();
 
 		if ((row[0] && *row[0] && (row[0] != p->login)) || ((!row[0] || !*row[0]) && !strcmp("000000", p->login)))
 		{
@@ -1183,7 +1183,7 @@ void CClientManager::RESULT_PRICELIST_LOAD(CPeer* peer, SQLMsg* pMsg)
 
 	MYSQL_ROW row;
 
-	while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+	while ((row = pMsg->Get()->FetchRow()))
 	{
 		str_to_number(table.aPriceInfo[table.byCount].dwVnum, row[0]);
 		str_to_number(table.aPriceInfo[table.byCount].dwPrice, row[1]);
@@ -1224,7 +1224,7 @@ void CClientManager::RESULT_PRICELIST_LOAD_FOR_UPDATE(SQLMsg* pMsg)
 
 	MYSQL_ROW row;
 
-	while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+	while ((row = pMsg->Get()->FetchRow()))
 	{
 		str_to_number(table.aPriceInfo[table.byCount].dwVnum, row[0]);
 		str_to_number(table.aPriceInfo[table.byCount].dwPrice, row[1]);
@@ -1270,7 +1270,7 @@ void CClientManager::QUERY_EMPIRE_SELECT(CPeer * pkPeer, uint32_t dwHandle, TEmp
 		{
 			LOG_INFO("EMPIRE {}", pRes->uiNumRows);
 
-			MYSQL_ROW row = mysql_fetch_row(pRes->pSQLResult);
+			MYSQL_ROW row = pRes->FetchRow();
 			int pids[3];
 
 			UINT g_start_map[4] =
@@ -3680,7 +3680,7 @@ bool CClientManager::InitializeLocalization()
 
 	MYSQL_ROW row = nullptr;
 
-	for (int n = 0; (row = mysql_fetch_row(pMsg->Get()->pSQLResult)) != nullptr; ++n)
+	for (int n = 0; (row = pMsg->Get()->FetchRow()) != nullptr; ++n)
 	{
 		int col = 0;
 		tLocale locale;
@@ -4068,7 +4068,7 @@ bool CClientManager::__GetAdminInfo(const char *szIP, std::vector<tAdminInfo> & 
 	MYSQL_ROW row;
 	rAdminVec.reserve(pMsg->Get()->uiNumRows);
 
-	while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+	while ((row = pMsg->Get()->FetchRow()))
 	{
 		int idx = 0;
 		tAdminInfo Info;
@@ -4120,7 +4120,7 @@ bool CClientManager::__GetHostInfo(std::vector<std::string> & rIPVec)
 
 	MYSQL_ROW row;
 
-	while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+	while ((row = pMsg->Get()->FetchRow()))
 	{
 		if (row[0] && *row[0])
 		{
@@ -4574,7 +4574,7 @@ bool CClientManager::InitializeEventManager(bool updateFromGameMaster)
 		const struct tm vKey = *localtime(&cur_Time);
 
 		MYSQL_ROW row = nullptr;
-		for (int n = 0; (row = mysql_fetch_row(pMsg->Get()->pSQLResult)) != nullptr; ++n)
+		for (int n = 0; (row = pMsg->Get()->FetchRow()) != nullptr; ++n)
 		{
 			int col = 0;
 			TEventManagerData p;
@@ -4705,7 +4705,7 @@ bool CClientManager::InitializeItemShop()
 
 		MYSQL_ROW row = nullptr;
 		const unsigned int columnCount = mysql_num_fields(pMsg->Get()->pSQLResult);
-		for (int n = 0; (row = mysql_fetch_row(pMsg->Get()->pSQLResult)) != nullptr; ++n)
+		for (int n = 0; (row = pMsg->Get()->FetchRow()) != nullptr; ++n)
 		{
 			int col = 0;
 			TIShopData ishopData{};
@@ -4839,7 +4839,7 @@ void CClientManager::ItemShopIncreaseSellCount(uint32_t itemID, int itemCount)
 	std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(szQuery, SQL_PLAYER));
 	if (pMsg->Get()->uiNumRows > 0)
 	{
-		MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+		MYSQL_ROW row = pMsg->Get()->FetchRow();
 		str_to_number(sellCount, row[0]);
 	}
 	sellCount += itemCount;
@@ -4854,7 +4854,7 @@ uint32_t CClientManager::GetDragonCoin(uint32_t id)
 	std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(szQuery, SQL_ACCOUNT));
 	if (pMsg->Get()->uiNumRows == 0)
 		return 0;
-	MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+	MYSQL_ROW row = pMsg->Get()->FetchRow();
 	uint32_t dc = 0;
 	str_to_number(dc, row[0]);
 	return dc;
@@ -4882,7 +4882,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 				std::vector<TIShopLogData> m_vec;
 
 				MYSQL_ROW row = nullptr;
-				for (int n = 0; (row = mysql_fetch_row(pMsg->Get()->pSQLResult)) != nullptr; ++n)
+				for (int n = 0; (row = pMsg->Get()->FetchRow()) != nullptr; ++n)
 				{
 					int col = 0;
 					TIShopLogData ishopData;
@@ -4989,7 +4989,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 										if (pMsg->Get()->uiNumRows != 0)
 										{
 											MYSQL_ROW row = nullptr;
-											for (int n = 0; (row = mysql_fetch_row(pMsg->Get()->pSQLResult)) != nullptr; ++n)
+											for (int n = 0; (row = pMsg->Get()->FetchRow()) != nullptr; ++n)
 											{
 												int buyCount;
 												str_to_number(buyCount, row[0]);
@@ -5017,7 +5017,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 										if (pMsg->Get()->uiNumRows != 0)
 										{
 											MYSQL_ROW row = nullptr;
-											for (int n = 0; (row = mysql_fetch_row(pMsg->Get()->pSQLResult)) != nullptr; ++n)
+											for (int n = 0; (row = pMsg->Get()->FetchRow()) != nullptr; ++n)
 											{
 												uint32_t buyCount;
 												str_to_number(buyCount, row[0]);
@@ -5061,7 +5061,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 //									if (pLoadMsg->Get()->uiNumRows != 0)
 //									{
 //										MYSQL_ROW row;
-//										while ((row = mysql_fetch_row(pLoadMsg->Get()->pSQLResult)) != nullptr)
+//										while ((row = pLoadMsg->Get()->FetchRow()) != nullptr)
 //										{
 //											int pos;
 //											str_to_number(pos, row[0]);

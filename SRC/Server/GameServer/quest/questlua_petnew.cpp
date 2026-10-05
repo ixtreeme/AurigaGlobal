@@ -198,7 +198,7 @@ namespace quest
 		snprintf(szQuery1, sizeof(szQuery1), "SELECT duration,tduration FROM new_petsystem WHERE id = %u ", id);
 		std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
 		if (pmsg2->Get()->uiNumRows > 0) {
-			MYSQL_ROW row = mysql_fetch_row(pmsg2->Get()->pSQLResult);
+			MYSQL_ROW row = pmsg2->Get()->FetchRow();
 			if (atoi(row[0]) <= 0){
 				DBManager::instance().Query("UPDATE new_petsystem SET duration=%d WHERE id = %u ", atoi(row[1]), id);
 				lua_pushboolean(L, true);

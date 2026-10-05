@@ -183,7 +183,7 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 			"SELECT money FROM guild_renewal_money WHERE guild_id=%u", guildId));
 		if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
 		{
-			MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+			MYSQL_ROW row = msg->Get()->FetchRow();
 			if (row && row[0])
 				c.money = atoll(row[0]);
 		}
@@ -203,7 +203,7 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 			"FROM guild_renewal_tax WHERE guild_id=%u", guildId));
 		if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
 		{
-			MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+			MYSQL_ROW row = msg->Get()->FetchRow();
 			if (row)
 			{
 				c.tax.active = (atoi(row[0]) != 0);
@@ -232,7 +232,7 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 		{
 			for (uint64_t i = 0; i < msg->Get()->uiNumRows; i++)
 			{
-				MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+				MYSQL_ROW row = msg->Get()->FetchRow();
 				if (!row)
 					continue;
 				int slot = atoi(row[0]);
@@ -252,7 +252,7 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 		{
 			for (uint64_t i = 0; i < msg->Get()->uiNumRows; i++)
 			{
-				MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+				MYSQL_ROW row = msg->Get()->FetchRow();
 				if (!row)
 					continue;
 				uint32_t pid = (uint32_t)atoi(row[0]);

@@ -207,27 +207,6 @@ unsigned long CDBManager::EscapeString(void *to, const void *from, unsigned long
 	return mysql_real_escape_string(m_directSQL[iSlot]->GetSQLHandle(), (char *) to, (const char *) from, length);
 }
 
-SqlString::SqlString(const char * value, int iSlot)
-{
-	if (!value)
-	{
-		m_value = "''";
-		return;
-	}
-
-	const unsigned long length = static_cast<unsigned long>(strlen(value));
-	std::vector<char> escaped(static_cast<size_t>(length) * 2 + 1);
-	const unsigned long escapedLength = CDBManager::instance().EscapeString(escaped.data(), value, length, iSlot);
-
-	m_value.assign("'");
-	m_value.append(escaped.data(), escapedLength);
-	m_value.append("'");
-}
-
-SqlString::SqlString(const std::string & value, int iSlot) : SqlString(value.c_str(), iSlot)
-{
-}
-
 void CDBManager::SetLocale(const char * szLocale)
 {
 	const std::string stLocale(szLocale);

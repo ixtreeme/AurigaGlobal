@@ -183,7 +183,7 @@ void CClientManager::RESULT_LOGIN_BY_KEY(CPeer * peer, SQLMsg * msg)
 		return;
 	}
 
-	MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+	MYSQL_ROW row = msg->Get()->FetchRow();
 
 	int col = 0;
 
@@ -505,7 +505,7 @@ void CClientManager::RESULT_LOGIN(CPeer * peer, SQLMsg * msg)
 
 				std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(query, SQL_PLAYER));
 				if (pMsg->Get()->uiNumRows && pMsg->Get()->pSQLResult) {
-					str_to_number(info->pAccountTable->bChannel, mysql_fetch_row(pMsg->Get()->pSQLResult)[0]);
+					str_to_number(info->pAccountTable->bChannel, pMsg->Get()->FetchRow()[0]);
 				}
 			}
 #endif

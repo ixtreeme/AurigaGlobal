@@ -108,7 +108,7 @@ namespace quest
 
 		if ( pmsg->Get()->uiNumRows > 0 )
 		{
-			MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+			MYSQL_ROW row = pmsg->Get()->FetchRow();
 
 			int	count = 0;
 			str_to_number(count, row[0]);

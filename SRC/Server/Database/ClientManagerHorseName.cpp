@@ -28,7 +28,7 @@ void CClientManager::AckHorseName(uint32_t dwPID, CPeer* peer)
 	}
 	else
 	{
-		MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
+		MYSQL_ROW row = pmsg->Get()->FetchRow();
 		strlcpy(packet.szHorseName, row[0], sizeof(packet.szHorseName));
 	}
 
