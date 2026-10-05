@@ -85,6 +85,16 @@ void P2P_MANAGER::RegisterConnector(LPDESC d)
 {
 	LOG_INFO("P2P Connector opened (host {})", d->GetHostName());
 	m_set_pkPeers.insert(d);
+	OnConnectorReady(d);
+}
+
+void P2P_MANAGER::OnConnectorReady(LPDESC d)
+{
+	if (m_set_pkPeers.find(d) == m_set_pkPeers.end())
+		return;
+
+	// The connector may still be connecting (or awaiting link auth); the
+	// initial Boot/Setup is (re)sent once the socket is actually usable.
 	Boot(d);
 
 	TPacketGGSetup p;

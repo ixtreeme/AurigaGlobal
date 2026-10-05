@@ -160,4 +160,36 @@ typedef struct SPacketGGChatNew {
 } TPacketGGChatNew;
 #endif
 
+// Server-to-server link keepalive.
+typedef struct SPacketGGPing
+{
+	uint8_t	bHeader;
+} TPacketGGPing;
+
+typedef struct SPacketGGPong
+{
+	uint8_t	bHeader;
+} TPacketGGPong;
+
+// Server-to-server link authentication challenge/response.
+typedef struct SPacketGGAuthChallenge
+{
+	uint8_t	bHeader;
+	uint8_t	nonce[16];
+	uint8_t	timestamp[8];
+	uint8_t	mac[32];
+} TPacketGGAuthChallenge;
+
+typedef struct SPacketGGAuth
+{
+	uint8_t	bHeader;
+	uint8_t	mac[32];
+} TPacketGGAuth;
+
+typedef struct SPacketGGAuthResult
+{
+	uint8_t	bHeader;
+	uint8_t	bResult;
+} TPacketGGAuthResult;
+
 #pragma pack()

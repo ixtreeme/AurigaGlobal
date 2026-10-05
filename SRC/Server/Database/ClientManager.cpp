@@ -2,6 +2,8 @@
 #include "stdafx.h"
 #include <common/CommonDefines.h>
 
+#include <Core/peer_auth.h>
+
 #include <common/building.h>
 #include <common/VnumHelper.h>
 #include <Base/grid.h>
@@ -2348,6 +2350,120 @@ void CPacketInfo::Reset()
 	m_map_info.clear();
 }
 
+namespace
+{
+	// Minimum payload (dwLength) for the fixed layout GameServer -> Database
+	// messages. Headers whose handlers parse variable length data (item
+	// cache, offline shop, event manager, ...) are either covered with the
+	// smallest structure the parser reads or intentionally left out.
+	const std::unordered_map<uint8_t, uint32_t>& GetMinPeerPayloadSizes()
+	{
+		static const std::unordered_map<uint8_t, uint32_t> s_sizes =
+		{
+			{ HEADER_GD_BOOT, sizeof(TPacketGDBoot) },
+			{ HEADER_GD_LOGIN_BY_KEY, sizeof(TPacketGDLoginByKey) },
+			{ HEADER_GD_LOGOUT, sizeof(TLogoutPacket) },
+			{ HEADER_GD_PLAYER_LOAD, sizeof(TPlayerLoadPacket) },
+			{ HEADER_GD_PLAYER_SAVE, sizeof(TPlayerTable) },
+			{ HEADER_GD_PLAYER_CREATE, sizeof(TPlayerCreatePacket) },
+			{ HEADER_GD_PLAYER_DELETE, sizeof(TPlayerDeletePacket) },
+			{ HEADER_GD_PLAYER_COUNT, sizeof(TPlayerCountPacket) },
+			{ HEADER_GD_QUEST_SAVE, sizeof(TQuestTable) },
+			{ HEADER_GD_SAFEBOX_LOAD, sizeof(TSafeboxLoadPacket) },
+			{ HEADER_GD_SAFEBOX_SAVE, sizeof(TSafeboxTable) },
+			{ HEADER_GD_SAFEBOX_CHANGE_SIZE, sizeof(TSafeboxChangeSizePacket) },
+			{ HEADER_GD_SAFEBOX_CHANGE_PASSWORD, sizeof(TSafeboxChangePasswordPacket) },
+			{ HEADER_GD_MALL_LOAD, sizeof(TSafeboxLoadPacket) },
+			{ HEADER_GD_EMPIRE_SELECT, sizeof(TEmpireSelectPacket) },
+			{ HEADER_GD_SETUP, sizeof(TPacketGDSetup) },
+			{ HEADER_GD_GUILD_CREATE, sizeof(uint32_t) },
+			{ HEADER_GD_GUILD_SKILL_UPDATE, sizeof(TPacketGuildSkillUpdate) },
+			{ HEADER_GD_GUILD_EXP_UPDATE, sizeof(TPacketGuildExpUpdate) },
+			{ HEADER_GD_GUILD_ADD_MEMBER, sizeof(TPacketGDGuildAddMember) },
+			{ HEADER_GD_GUILD_REMOVE_MEMBER, sizeof(TPacketGuild) },
+			{ HEADER_GD_GUILD_CHANGE_GRADE, sizeof(TPacketGuild) },
+			{ HEADER_GD_GUILD_CHANGE_MEMBER_DATA, sizeof(TPacketGuildChangeMemberData) },
+			{ HEADER_GD_GUILD_DISBAND, sizeof(TPacketGuild) },
+			{ HEADER_GD_GUILD_WAR, sizeof(TPacketGuildWar) },
+			{ HEADER_GD_GUILD_WAR_SCORE, sizeof(TPacketGuildWarScore) },
+			{ HEADER_GD_GUILD_CHANGE_LADDER_POINT, sizeof(TPacketGuildLadderPoint) },
+			{ HEADER_GD_GUILD_USE_SKILL, sizeof(TPacketGuildUseSkill) },
+			{ HEADER_GD_FLUSH_CACHE, sizeof(uint32_t) },
+			{ HEADER_GD_ITEM_SAVE, sizeof(TPlayerItem) },
+			{ HEADER_GD_ITEM_DESTROY, sizeof(uint32_t) * 2 },
+			{ HEADER_GD_ITEM_FLUSH, sizeof(uint32_t) },
+			{ HEADER_GD_ADD_AFFECT, sizeof(TPacketGDAddAffect) },
+			{ HEADER_GD_REMOVE_AFFECT, sizeof(TPacketGDRemoveAffect) },
+			{ HEADER_GD_HIGHSCORE_REGISTER, sizeof(TPacketGDHighscore) },
+			{ HEADER_GD_PARTY_CREATE, sizeof(TPacketPartyCreate) },
+			{ HEADER_GD_PARTY_DELETE, sizeof(TPacketPartyDelete) },
+			{ HEADER_GD_PARTY_ADD, sizeof(TPacketPartyAdd) },
+			{ HEADER_GD_PARTY_REMOVE, sizeof(TPacketPartyRemove) },
+			{ HEADER_GD_PARTY_STATE_CHANGE, sizeof(TPacketPartyStateChange) },
+			{ HEADER_GD_PARTY_SET_MEMBER_LEVEL, sizeof(TPacketPartySetMemberLevel) },
+			{ HEADER_GD_CHANGE_NAME, sizeof(TPacketGDChangeName) },
+			{ HEADER_GD_SMS, sizeof(TPacketGDSMS) },
+			{ HEADER_GD_AUTH_LOGIN, sizeof(TPacketGDAuthLogin) },
+			{ HEADER_GD_REQUEST_GUILD_PRIV, sizeof(TPacketGiveGuildPriv) },
+			{ HEADER_GD_REQUEST_EMPIRE_PRIV, sizeof(TPacketGiveEmpirePriv) },
+			{ HEADER_GD_REQUEST_CHARACTER_PRIV, sizeof(TPacketGiveCharacterPriv) },
+			{ HEADER_GD_MONEY_LOG, sizeof(TPacketMoneyLog) },
+			{ HEADER_GD_GUILD_DEPOSIT_MONEY, sizeof(TPacketGDGuildMoney) },
+			{ HEADER_GD_GUILD_WITHDRAW_MONEY, sizeof(TPacketGDGuildMoney) },
+			{ HEADER_GD_GUILD_WITHDRAW_MONEY_GIVE_REPLY, sizeof(TPacketGDGuildMoneyWithdrawGiveReply) },
+			{ HEADER_GD_GUILD_WAR_BET, sizeof(TPacketGDGuildWarBet) },
+			{ HEADER_GD_SET_EVENT_FLAG, sizeof(TPacketSetEventFlag) },
+			{ HEADER_GD_CREATE_OBJECT, sizeof(TPacketGDCreateObject) },
+			{ HEADER_GD_DELETE_OBJECT, sizeof(uint32_t) },
+			{ HEADER_GD_MARRIAGE_ADD, sizeof(TPacketMarriageAdd) },
+			{ HEADER_GD_MARRIAGE_UPDATE, sizeof(TPacketMarriageUpdate) },
+			{ HEADER_GD_MARRIAGE_REMOVE, sizeof(TPacketMarriageRemove) },
+			{ HEADER_GD_WEDDING_REQUEST, sizeof(TPacketWeddingRequest) },
+			{ HEADER_GD_WEDDING_READY, sizeof(TPacketWeddingReady) },
+			{ HEADER_GD_WEDDING_END, sizeof(TPacketWeddingEnd) },
+			{ HEADER_GD_BLOCK_CHAT, sizeof(TPacketBlockChat) },
+			{ HEADER_GD_MYSHOP_PRICELIST_UPDATE, sizeof(TPacketMyshopPricelistHeader) },
+			{ HEADER_GD_MYSHOP_PRICELIST_REQ, sizeof(uint32_t) },
+			{ HEADER_GD_RELOAD_ADMIN, sizeof(TPacketReloadAdmin) },
+			{ HEADER_GD_REQ_CHANGE_GUILD_MASTER, sizeof(TPacketChangeGuildMaster) },
+			{ HEADER_GD_UPDATE_HORSE_NAME, sizeof(TPacketUpdateHorseName) },
+			{ HEADER_GD_REQ_HORSE_NAME, sizeof(uint32_t) },
+			{ HEADER_GD_DC, sizeof(TPacketDC) },
+			{ HEADER_GD_VALID_LOGOUT, sizeof(TPacketNeedLoginLogInfo) },
+			{ HEADER_GD_REQUEST_CHARGE_CASH, sizeof(TRequestChargeCash) },
+			{ HEADER_GD_DELETE_AWARDID, sizeof(TPacketDeleteAwardID) },
+			{ HEADER_GD_UPDATE_CHANNELSTATUS, sizeof(SChannelStatus) },
+			{ HEADER_GD_BREAK_MARRIAGE, sizeof(uint32_t) * 2 },
+#ifdef ENABLE_BATTLE_PASS
+			{ HEADER_GD_SAVE_BATTLE_PASS, sizeof(TPlayerBattlePassMission) },
+			{ HEADER_GD_REGISTER_BP_RANKING, sizeof(TBattlePassRegisterRanking) },
+#endif
+#ifdef BL_OFFLINE_MESSAGE
+			{ HEADER_GD_REQUEST_OFFLINE_MESSAGES, sizeof(TPacketGDReadOfflineMessage) },
+			{ HEADER_GD_SEND_OFFLINE_MESSAGE, sizeof(TPacketGDSendOfflineMessage) },
+#endif
+#ifdef ENABLE_HWID
+			{ HEADER_GD_BLOCKHWID, sizeof(THwidRequest) },
+			{ HEADER_GD_UNBLOCKHWID, sizeof(THwidRequest) },
+#endif
+#ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
+			{ HEADER_GD_FIND_CHANNEL, sizeof(TPacketChangeChannel) },
+#endif
+#ifdef __SKILL_COLOR_SYSTEM__
+			{ HEADER_GD_SKILL_COLOR_SAVE, sizeof(TSkillColor) },
+#endif
+#ifdef ENABLE_EVENT_MANAGER
+			{ HEADER_GD_EVENT_MANAGER, sizeof(uint8_t) + sizeof(uint16_t) },
+#endif
+#ifdef ENABLE_ITEMSHOP
+			{ HEADER_GD_ITEMSHOP, sizeof(uint8_t) + sizeof(uint32_t) },
+#endif
+		};
+
+		return s_sizes;
+	}
+}
+
 void CClientManager::ProcessPackets(CPeer * peer)
 {
 	uint8_t		header;
@@ -2362,8 +2478,48 @@ void CClientManager::ProcessPackets(CPeer * peer)
 		// DISABLE_DB_HEADER_LOG
 		// LOG_INFO("header {} {} size {}", header, this, dwLength);
 		// END_OF_DISABLE_DB_HEADER_LOG
+
+		if (!peer->IsAuthenticated())
+		{
+			if (header != HEADER_GD_AUTH || dwLength != static_cast<uint32_t>(PeerAuth::MAC_SIZE))
+			{
+				LOG_ERROR("Unauthenticated peer packet (header {} length {}) from {} - closing", header, dwLength, peer->GetHost());
+				RemovePeer(peer);
+				return;
+			}
+
+			const auto * payload = reinterpret_cast<const uint8_t *>(data);
+			const bool ok = peer->VerifyAuthResponse(payload);
+
+			peer->EncodeHeader(HEADER_DG_AUTH_RESULT, 0, 1);
+			peer->EncodeBYTE(ok ? 1 : 0);
+			peer->Send();
+
+			peer->SetAuthenticated(ok);
+
+			if (!ok)
+			{
+				LOG_ERROR("Peer auth failed from {}", peer->GetHost());
+				RemovePeer(peer);
+				return;
+			}
+
+			continue;
+		}
+
 		m_bLastHeader = header;
 		++iCount;
+
+		// Strict per-message size check: the handlers below cast the payload
+		// to fixed structures, a short frame must never reach them.
+		const auto minSizeIt = GetMinPeerPayloadSizes().find(header);
+
+		if (minSizeIt != GetMinPeerPayloadSizes().end() && dwLength < minSizeIt->second)
+		{
+			LOG_ERROR("Peer packet too short (header {} length {} minimum {}) from {} - dropping",
+				header, dwLength, minSizeIt->second, peer->GetHost());
+			continue;
+		}
 
 #ifdef _TEST
 		if (header != 10)
@@ -2382,6 +2538,14 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				break;
 
 			case HEADER_GD_HAMMER_OF_TOR:
+				break;
+
+			case HEADER_GD_PING:
+				peer->EncodeReturn(HEADER_DG_PONG, 0);
+				peer->Send();
+				break;
+
+			case HEADER_GD_PONG:
 				break;
 
 			case HEADER_GD_LOGIN_BY_KEY:
@@ -2798,9 +2962,32 @@ void CClientManager::AddPeer(auriga::net::tcp::socket&& sock)
 	auto pPeer = new CPeer;
 
 	if (pPeer->Accept(std::move(sock)))
+	{
+		if (PeerAuth::HasKey())
+		{
+			pPeer->SetAuthenticated(false);
+			pPeer->SendAuthChallenge();
+		}
+		else
+		{
+			pPeer->SetAuthenticated(true);
+		}
+
 		m_peerList.push_front(pPeer);
+	}
 	else
 		delete pPeer;
+}
+
+void CClientManager::CheckHeartbeats()
+{
+	auto it = m_peerList.begin();
+
+	while (it != m_peerList.end())
+	{
+		CPeer * pPeer = *(it++);
+		pPeer->CheckHeartbeat();
+	}
 }
 
 void CClientManager::DoAccept()
@@ -3314,6 +3501,9 @@ int CClientManager::Process()
 
 	// Deferred deletion of peers whose aborted operations have finished.
 	CollectPendingDeletes();
+
+	// Server-to-server link keepalive / idle timeout.
+	CheckHeartbeats();
 
 #ifdef _WIN32
 	if (_kbhit()) {

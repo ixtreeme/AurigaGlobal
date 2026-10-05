@@ -1,11 +1,13 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
+#include <Core/peer_auth.h>
 #include "config.h"
 #include "utils.h"
 #include "desc_client.h"
 #include "desc_manager.h"
 #include "char_interface.hpp"
 #include "protocol.h"
+#include "packet.h"
 #include "p2p.h"
 #include "buffer_manager.h"
 #include "guild_manager.h"
@@ -35,6 +37,8 @@ CLIENT_DESC::CLIENT_DESC()
 	m_iPhaseWhenSucceed = 0;
 	m_bRetryWhenClosed = false;
 	m_connectPending = false;
+	m_bAwaitingAuth = false;
+	m_bAuthResponseSent = false;
 	m_LastTryToConnectTime = 0;
 	m_tLastChannelStatusUpdateTime = 0;
 }
@@ -138,8 +142,21 @@ void CLIENT_DESC::StartConnect()
 					}
 
 					LOG_INFO("SYSTEM: connected to server ({}:{} ptr {})", m_stHost.c_str(), m_wPort, static_cast<const void*>(this));
-					SetPhase(m_iPhaseWhenSucceed);
 					StartRead();
+
+					if (PeerAuth::HasKey())
+					{
+						// Wait for the server-side challenge before switching
+						// to the operational phase.
+						m_bAwaitingAuth = true;
+						m_bAuthResponseSent = false;
+						SetHeartbeat(0, 10);
+					}
+					else
+					{
+						SetPhase(m_iPhaseWhenSucceed);
+						SetHeartbeat(30, 90);
+					}
 				});
 		});
 }
@@ -267,6 +284,10 @@ void CLIENT_DESC::SetPhase(int iPhase)
 				buffer_reset(m_lpOutputBuffer);
 
 			m_pInputProcessor = &m_inputP2P;
+
+			// The early RegisterConnector Boot was dropped while the socket
+			// was still connecting; send the initial peer state now.
+			P2P_MANAGER::instance().OnConnectorReady(this);
 			break;
 
 		case PHASE_CLOSE:
@@ -359,8 +380,202 @@ void CLIENT_DESC::Reset()
 	m_wPort = port;
 
 	m_connectPending = false;
+	m_bAwaitingAuth = false;
+	m_bAuthResponseSent = false;
 
 	InitializeBuffers();
+}
+
+void CLIENT_DESC::SendAuthResponse(const uint8_t nonce[16], uint64_t timestamp)
+{
+	uint8_t mac[PeerAuth::MAC_SIZE];
+	PeerAuth::ComputeAuthMac(PeerAuth::ROLE_CLIENT, nonce, timestamp, mac);
+
+	if (m_iPhaseWhenSucceed == PHASE_P2P)
+	{
+		TPacketGGAuth p;
+		p.bHeader = HEADER_GG_AUTH;
+		memcpy(p.mac, mac, sizeof(p.mac));
+		Packet(&p, sizeof(p));
+	}
+	else
+	{
+		DBPacket(HEADER_GD_AUTH, 0, mac, sizeof(mac));
+	}
+}
+
+void CLIENT_DESC::HandleAuthInput()
+{
+	if (m_iPhaseWhenSucceed == PHASE_P2P)
+	{
+		while (true)
+		{
+			const uint32_t available = buffer_size(m_lpInputBuffer);
+
+			if (!m_bAuthResponseSent)
+			{
+				if (available < sizeof(TPacketGGAuthChallenge))
+					return;
+
+				TPacketGGAuthChallenge challenge;
+				memcpy(&challenge, buffer_read_peek(m_lpInputBuffer), sizeof(challenge));
+				buffer_read_proceed(m_lpInputBuffer, sizeof(challenge));
+
+				if (challenge.bHeader != HEADER_GG_AUTH_CHALLENGE)
+				{
+					LOG_ERROR("CLIENT_DESC: unexpected packet during P2P auth from {} ({})", m_stHost.c_str(), challenge.bHeader);
+					SetPhase(PHASE_CLOSE);
+					return;
+				}
+
+				const uint64_t timestamp = PeerAuth::DecodeTimestamp(challenge.timestamp);
+
+				if (!PeerAuth::IsTimestampFresh(timestamp) ||
+					!PeerAuth::VerifyAuthMac(PeerAuth::ROLE_SERVER, challenge.nonce, timestamp, challenge.mac))
+				{
+					LOG_ERROR("CLIENT_DESC: P2P auth challenge rejected ({})", m_stHost.c_str());
+					SetPhase(PHASE_CLOSE);
+					return;
+				}
+
+				SendAuthResponse(challenge.nonce, timestamp);
+				m_bAuthResponseSent = true;
+				continue;
+			}
+
+			if (available < sizeof(TPacketGGAuthResult))
+				return;
+
+			TPacketGGAuthResult result;
+			memcpy(&result, buffer_read_peek(m_lpInputBuffer), sizeof(result));
+			buffer_read_proceed(m_lpInputBuffer, sizeof(result));
+
+			if (result.bHeader != HEADER_GG_AUTH_RESULT)
+			{
+				LOG_ERROR("CLIENT_DESC: unexpected packet during P2P auth from {} ({})", m_stHost.c_str(), result.bHeader);
+				SetPhase(PHASE_CLOSE);
+				return;
+			}
+
+			m_bAwaitingAuth = false;
+
+			if (result.bResult)
+			{
+				LOG_INFO("SYSTEM: P2P auth OK ({})", m_stHost.c_str());
+				SetPhase(m_iPhaseWhenSucceed);
+				SetHeartbeat(30, 90);
+			}
+			else
+			{
+				LOG_ERROR("SYSTEM: P2P auth failed ({})", m_stHost.c_str());
+				SetPhase(PHASE_CLOSE);
+			}
+
+			return;
+		}
+	}
+
+	// Database link: 9 byte framed challenge/result.
+	while (true)
+	{
+		const uint32_t available = buffer_size(m_lpInputBuffer);
+
+		if (available < 9)
+			return;
+
+		const uint8_t * headerData = static_cast<const uint8_t *>(buffer_read_peek(m_lpInputBuffer));
+		uint8_t header;
+		uint32_t size;
+		memcpy(&header, headerData, sizeof(header));
+		memcpy(&size, headerData + 5, sizeof(size));
+
+		if (available < 9 + size)
+			return;
+
+		const uint8_t * payload = headerData + 9;
+
+		if (!m_bAuthResponseSent)
+		{
+			if (header != HEADER_DG_AUTH_CHALLENGE ||
+				size != static_cast<uint32_t>(PeerAuth::NONCE_SIZE + PeerAuth::TIMESTAMP_SIZE + PeerAuth::MAC_SIZE))
+			{
+				LOG_ERROR("CLIENT_DESC: unexpected packet during DB auth ({})", static_cast<int>(header));
+				SetPhase(PHASE_CLOSE);
+				return;
+			}
+
+			uint8_t nonce[PeerAuth::NONCE_SIZE];
+			memcpy(nonce, payload, sizeof(nonce));
+			const uint64_t timestamp = PeerAuth::DecodeTimestamp(payload + PeerAuth::NONCE_SIZE);
+			const uint8_t * serverMac = payload + PeerAuth::NONCE_SIZE + PeerAuth::TIMESTAMP_SIZE;
+
+			if (!PeerAuth::IsTimestampFresh(timestamp) ||
+				!PeerAuth::VerifyAuthMac(PeerAuth::ROLE_SERVER, nonce, timestamp, serverMac))
+			{
+				LOG_ERROR("CLIENT_DESC: DB auth challenge rejected");
+				SetPhase(PHASE_CLOSE);
+				return;
+			}
+
+			buffer_read_proceed(m_lpInputBuffer, 9 + size);
+			SendAuthResponse(nonce, timestamp);
+			m_bAuthResponseSent = true;
+			continue;
+		}
+
+		if (header != HEADER_DG_AUTH_RESULT || size < 1)
+		{
+			LOG_ERROR("CLIENT_DESC: unexpected packet during DB auth ({})", static_cast<int>(header));
+			SetPhase(PHASE_CLOSE);
+			return;
+		}
+
+		const uint8_t result = payload[0];
+		buffer_read_proceed(m_lpInputBuffer, 9 + size);
+		m_bAwaitingAuth = false;
+
+		if (result)
+		{
+			LOG_INFO("SYSTEM: DB auth OK");
+			SetPhase(m_iPhaseWhenSucceed);
+			SetHeartbeat(30, 90);
+		}
+		else
+		{
+			LOG_ERROR("SYSTEM: DB auth failed");
+			SetPhase(PHASE_CLOSE);
+		}
+
+		return;
+	}
+}
+
+void CLIENT_DESC::OnInput()
+{
+	if (m_bAwaitingAuth)
+	{
+		HandleAuthInput();
+		return;
+	}
+
+	DESC::OnInput();
+}
+
+void CLIENT_DESC::OnHeartbeatSend()
+{
+	if (m_bAwaitingAuth || !IsConnected())
+		return;
+
+	if (m_iPhaseWhenSucceed == PHASE_P2P && IsPhase(PHASE_P2P))
+	{
+		TPacketGGPing p;
+		p.bHeader = HEADER_GG_PING;
+		Packet(&p, sizeof(p));
+	}
+	else if (IsPhase(PHASE_DBCLIENT))
+	{
+		DBPacket(HEADER_GD_PING, 0, nullptr, 0);
+	}
 }
 
 void CLIENT_DESC::InitializeBuffers()

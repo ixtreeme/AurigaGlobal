@@ -224,6 +224,7 @@ protected:
 	void		AddPeer(auriga::net::tcp::socket&& sock);
 	void		RemovePeer(CPeer* pPeer);
 	void		CollectPendingDeletes();
+	void		CheckHeartbeats();
 	CPeer* GetPeer(IDENT ident);
 
 	int		AnalyzeQueryResult(SQLMsg* msg);

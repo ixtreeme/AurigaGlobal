@@ -61,6 +61,7 @@ class DESC_MANAGER : public singleton<DESC_MANAGER>
 
 		LPCLIENT_DESC		CreateConnectionDesc(const char * host, uint16_t port, int iPhaseWhenSucceed, bool bRetryWhenClosed);
 		void			TryConnect();
+		void			CheckHeartbeats();
 
 		LPDESC			FindByHandle(uint32_t handle);
 		LPDESC			FindByHandshake(uint32_t dwHandshake);

@@ -889,6 +889,9 @@ int io_loop()
 	// Deferred deletion of descriptors whose aborted operations have finished.
 	DESC_MANAGER::instance().CollectPendingDeletes();
 
+	// Server-to-server link keepalive / idle timeout.
+	DESC_MANAGER::instance().CheckHeartbeats();
+
 	return 1;
 }
 

@@ -72,6 +72,53 @@ void CPeer::SetUserCount(uint32_t dwCount)
 	m_dwUserCount = dwCount;
 }
 
+void CPeer::SetAuthenticated(bool b)
+{
+	m_bAuthenticated = b;
+
+	// Until the challenge is verified only the auth timeout runs; after a
+	// successful handshake the regular keepalive takes over.
+	SetHeartbeat(b ? 30 : 0, b ? 90 : 10);
+}
+
+void CPeer::SendAuthChallenge()
+{
+	uint8_t nonce[PeerAuth::NONCE_SIZE];
+	uint8_t timestamp[PeerAuth::TIMESTAMP_SIZE];
+	uint8_t mac[PeerAuth::MAC_SIZE];
+
+	PeerAuth::MakeNonce(nonce);
+	memcpy(m_authNonce, nonce, sizeof(m_authNonce));
+
+	m_authTimestamp = PeerAuth::NowSeconds();
+	PeerAuth::EncodeTimestamp(m_authTimestamp, timestamp);
+	PeerAuth::ComputeAuthMac(PeerAuth::ROLE_SERVER, nonce, m_authTimestamp, mac);
+
+	m_bAuthChallengeSent = true;
+
+	EncodeHeader(HEADER_DG_AUTH_CHALLENGE, 0,
+		PeerAuth::NONCE_SIZE + PeerAuth::TIMESTAMP_SIZE + PeerAuth::MAC_SIZE);
+	Encode(nonce, PeerAuth::NONCE_SIZE);
+	Encode(timestamp, PeerAuth::TIMESTAMP_SIZE);
+	Encode(mac, PeerAuth::MAC_SIZE);
+	Send();
+}
+
+bool CPeer::VerifyAuthResponse(const uint8_t mac[PeerAuth::MAC_SIZE])
+{
+	if (!m_bAuthChallengeSent || !PeerAuth::IsTimestampFresh(m_authTimestamp))
+		return false;
+
+	const bool ok = PeerAuth::VerifyAuthMac(PeerAuth::ROLE_CLIENT, m_authNonce, m_authTimestamp, mac);
+
+	// The challenge is single use.
+	memset(m_authNonce, 0, sizeof(m_authNonce));
+	m_authTimestamp = 0;
+	m_bAuthChallengeSent = false;
+
+	return ok;
+}
+
 bool CPeer::PeekPacket(int & iBytesProceed, uint8_t & header, uint32_t & dwHandle, uint32_t & dwLength, const char ** data)
 {
 	if (GetRecvLength() < iBytesProceed + 9)

@@ -16,6 +16,9 @@ class CLIENT_DESC : public DESC
 		bool 		Connect(int iPhaseWhenSucceed = 0);
 		void		Setup(const char * _host, uint16_t _port);
 
+		virtual void	OnInput() override;
+		virtual void	OnHeartbeatSend() override;
+
 		void		SetRetryWhenClosed(bool);
 
 		void		DBPacketHeader(uint8_t bHeader, uint32_t dwHandle, uint32_t dwSize);
@@ -32,11 +35,15 @@ class CLIENT_DESC : public DESC
 	private:
 		void InitializeBuffers();
 		void StartConnect();
+		void SendAuthResponse(const uint8_t nonce[16], uint64_t timestamp);
+		void HandleAuthInput();
 
 	protected:
 		int			m_iPhaseWhenSucceed;
 		bool		m_bRetryWhenClosed;
 		bool		m_connectPending;
+		bool		m_bAwaitingAuth;
+		bool		m_bAuthResponseSent;
 		uint64_t		m_LastTryToConnectTime;
 		uint64_t		m_tLastChannelStatusUpdateTime;
 

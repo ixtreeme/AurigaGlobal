@@ -39,5 +39,12 @@ enum HEADER_GG
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM	
 	HEADER_GG_WHISPER_SYSTEM = 47,
 #endif
+
+	// Server-to-server link keepalive / authentication
+	HEADER_GG_PING = 40,
+	HEADER_GG_PONG = 41,
+	HEADER_GG_AUTH = 42,
+	HEADER_GG_AUTH_RESULT = 43,
+	HEADER_GG_AUTH_CHALLENGE = 44,
 };
 

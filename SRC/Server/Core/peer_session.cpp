@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "peer_session.h"
 
-PeerSession::PeerSession() : m_socket(auriga::net::Io()), m_lastActivity(std::chrono::steady_clock::now())
+PeerSession::PeerSession() : m_socket(auriga::net::Io()),
+                             m_lastReceive(std::chrono::steady_clock::now()),
+                             m_lastHeartbeat(std::chrono::steady_clock::now())
 {
 }
 
@@ -15,7 +17,35 @@ socket_t PeerSession::GetSocketId() const
 int64_t PeerSession::IdleSeconds() const
 {
 	return std::chrono::duration_cast<std::chrono::seconds>(
-		std::chrono::steady_clock::now() - m_lastActivity).count();
+		std::chrono::steady_clock::now() - m_lastReceive).count();
+}
+
+void PeerSession::SetHeartbeat(int intervalSeconds, int timeoutSeconds)
+{
+	m_heartbeatInterval = intervalSeconds;
+	m_heartbeatTimeout = timeoutSeconds;
+	m_lastHeartbeat = std::chrono::steady_clock::now();
+}
+
+void PeerSession::CheckHeartbeat()
+{
+	if (m_heartbeatInterval <= 0 || m_bSessionDestroyed || !m_socket.is_open())
+		return;
+
+	const auto now = std::chrono::steady_clock::now();
+
+	if (m_heartbeatTimeout > 0 &&
+		now - m_lastReceive >= std::chrono::seconds(m_heartbeatTimeout))
+	{
+		OnPeerGone();
+		return;
+	}
+
+	if (now - m_lastHeartbeat >= std::chrono::seconds(m_heartbeatInterval))
+	{
+		m_lastHeartbeat = now;
+		OnHeartbeatSend();
+	}
 }
 
 void PeerSession::CreateBuffers(int input_size, int output_size)
@@ -27,7 +57,8 @@ void PeerSession::CreateBuffers(int input_size, int output_size)
 void PeerSession::AttachSocket(auriga::net::tcp::socket&& sock)
 {
 	m_socket = std::move(sock);
-	m_lastActivity = std::chrono::steady_clock::now();
+	m_lastReceive = std::chrono::steady_clock::now();
+	m_lastHeartbeat = m_lastReceive;
 }
 
 void PeerSession::ResetSession()
@@ -37,7 +68,8 @@ void PeerSession::ResetSession()
 	m_readPending = false;
 	m_writePending = false;
 	m_writeChunk.clear();
-	m_lastActivity = std::chrono::steady_clock::now();
+	m_lastReceive = std::chrono::steady_clock::now();
+	m_lastHeartbeat = m_lastReceive;
 }
 
 void PeerSession::CloseSocket()
@@ -110,7 +142,7 @@ void PeerSession::OnRead(const boost::system::error_code & ec, std::size_t bytes
 		return;
 	}
 
-	m_lastActivity = std::chrono::steady_clock::now();
+	m_lastReceive = std::chrono::steady_clock::now();
 
 	if (m_lpInputBuffer)
 	{
@@ -172,8 +204,6 @@ void PeerSession::OnWrite(const boost::system::error_code & ec, std::size_t byte
 			OnPeerGone();
 		return;
 	}
-
-	m_lastActivity = std::chrono::steady_clock::now();
 
 	OnBytesWritten(bytes);
 

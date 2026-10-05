@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/peer_auth.h>
 #include <sstream>
 #include <string_view>
 #ifndef _WIN32
@@ -788,6 +789,12 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			continue;
 		}
 		// CONNECTION_END
+
+		TOKEN("INTERSERVER_KEY")
+		{
+			PeerAuth::SetKey(value_string);
+			continue;
+		}
 
 		TOKEN("empire_whisper")
 		{

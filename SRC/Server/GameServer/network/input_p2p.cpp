@@ -529,6 +529,17 @@ int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_GG_CHECK_AWAKENESS:
 			IamAwake(d, c_pData);
 			break;
+
+		case HEADER_GG_PING:
+			{
+				TPacketGGPong p;
+				p.bHeader = HEADER_GG_PONG;
+				d->Packet(&p, sizeof(p));
+			}
+			break;
+
+		case HEADER_GG_PONG:
+			break;
 #ifdef ENABLE_SWITCHBOT
 		case HEADER_GG_SWITCHBOT:
 			Switchbot(d, c_pData);

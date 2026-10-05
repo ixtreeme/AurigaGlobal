@@ -11,6 +11,7 @@
 #include "ItemIDRangeManager.h"
 #include <signal.h>
 #include "Core/Logging.hpp"
+#include <Core/peer_auth.h>
 
 #ifdef _WIN64
 #pragma comment(lib, "bcrypt.lib")
@@ -228,6 +229,11 @@ int Start()
 	{
 		LOG_ERROR("{} {}", g_stLocaleNameColumn.c_str(), szBuf);
 		g_stLocaleNameColumn = szBuf;
+	}
+
+	if (CConfig::instance().GetValue("INTERSERVER_KEY", szBuf, 256))
+	{
+		PeerAuth::SetKey(szBuf);
 	}
 
 #ifdef ENABLE_BATTLE_PASS

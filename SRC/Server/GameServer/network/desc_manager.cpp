@@ -505,7 +505,10 @@ LPDESC DESC_MANAGER::AcceptP2PDesc(auriga::net::tcp::socket&& s)
 	++m_iSocketsConnected;
 
 	LOG_INFO("DESC_MANAGER::AcceptP2PDesc  {}:{}", host, peer.sin_port);
-	P2P_MANAGER::instance().RegisterAcceptor(pkDesc);
+
+	if (!pkDesc->IsAwaitingAuth())
+		P2P_MANAGER::instance().RegisterAcceptor(pkDesc);
+
 	return (pkDesc);
 }
 
@@ -697,6 +700,17 @@ void DESC_MANAGER::TryConnect()
 {
 	FuncTryConnect f;
 	std::for_each(m_set_pkClientDesc.begin(), m_set_pkClientDesc.end(), f);
+}
+
+void DESC_MANAGER::CheckHeartbeats()
+{
+	auto it = m_set_pkDesc.begin();
+
+	while (it != m_set_pkDesc.end())
+	{
+		LPDESC d = *(it++);
+		d->CheckHeartbeat();
+	}
 }
 
 bool DESC_MANAGER::IsP2PDescExist(const char* szHost, uint16_t wPort)

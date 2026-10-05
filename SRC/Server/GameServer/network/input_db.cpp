@@ -1900,6 +1900,14 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		Boot(c_pData);
 		break;
 
+	case HEADER_DG_PING:
+		if (db_clientdesc)
+			db_clientdesc->DBPacket(HEADER_GD_PONG, 0, nullptr, 0);
+		break;
+
+	case HEADER_DG_PONG:
+		break;
+
 	case HEADER_DG_LOGIN_SUCCESS:
 		LoginSuccess(m_dwHandle, c_pData);
 		break;

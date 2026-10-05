@@ -25,8 +25,9 @@ class P2P_MANAGER : public singleton<P2P_MANAGER>
 		void			RegisterAcceptor(LPDESC d);
 		void			UnregisterAcceptor(LPDESC d);
 
-		void			RegisterConnector(LPDESC d);
-		void			UnregisterConnector(LPDESC d);
+	void			RegisterConnector(LPDESC d);
+	void			UnregisterConnector(LPDESC d);
+	void			OnConnectorReady(LPDESC d);
 
 		void			EraseUserByDesc(LPDESC d);
 

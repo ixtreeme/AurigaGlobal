@@ -38,6 +38,12 @@ public:
 	void		MarkDeletePending()		{ m_deletePending = true; }
 	int64_t		IdleSeconds() const;
 
+	// Link level liveness handling. The owner loops must call
+	// CheckHeartbeat() periodically; interval == 0 disables sending,
+	// timeout == 0 disables the idle timeout.
+	void		SetHeartbeat(int intervalSeconds, int timeoutSeconds);
+	void		CheckHeartbeat();
+
 protected:
 	void		CreateBuffers(int input_size, int output_size);
 	void		AttachSocket(auriga::net::tcp::socket&& sock);
@@ -53,6 +59,10 @@ protected:
 	virtual void	OnPeerGone() = 0;
 	virtual void	OnOutput() {}
 	virtual void	OnBytesWritten(std::size_t bytes) { (void)bytes; }
+
+	// Called when the link was idle for the configured interval; the
+	// subclass sends the protocol specific ping packet.
+	virtual void	OnHeartbeatSend() {}
 
 	auriga::net::tcp::socket	m_socket;
 	LPBUFFER	m_lpInputBuffer { nullptr };
@@ -75,5 +85,9 @@ protected:
 	bool		m_bSessionDestroyed { false };
 	uint64_t	m_generation { 0 };
 
-	std::chrono::steady_clock::time_point	m_lastActivity;
+	int		m_heartbeatInterval { 0 };
+	int		m_heartbeatTimeout { 0 };
+
+	std::chrono::steady_clock::time_point	m_lastReceive;
+	std::chrono::steady_clock::time_point	m_lastHeartbeat;
 };

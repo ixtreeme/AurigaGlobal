@@ -314,6 +314,11 @@ CPacketInfoGG::CPacketInfoGG()
 #ifdef TEXTS_IMPROVEMENT
 	Set(HEADER_GG_CHAT_NEW, sizeof(TPacketGGChatNew), "ChatNew", false);
 #endif
+	Set(HEADER_GG_PING, sizeof(TPacketGGPing), "Ping", false);
+	Set(HEADER_GG_PONG, sizeof(TPacketGGPong), "Pong", false);
+	Set(HEADER_GG_AUTH, sizeof(TPacketGGAuth), "Auth", false);
+	Set(HEADER_GG_AUTH_RESULT, sizeof(TPacketGGAuthResult), "AuthResult", false);
+	Set(HEADER_GG_AUTH_CHALLENGE, sizeof(TPacketGGAuthChallenge), "AuthChallenge", false);
 }
 
 CPacketInfoGG::~CPacketInfoGG()

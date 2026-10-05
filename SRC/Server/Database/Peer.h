@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Core/peer_auth.h>
+
 #include "PeerBase.h"
 #include <common/CommonDefines.h>
 
@@ -40,6 +42,12 @@ class CPeer : public CPeerBase
 	uint32_t	GetUserCount();
 	void	SetUserCount(uint32_t dwCount);
 
+	bool	IsAuthenticated() const	{ return m_bAuthenticated; }
+	void	SetAuthenticated(bool b);
+
+	void	SendAuthChallenge();
+	bool	VerifyAuthResponse(const uint8_t mac[PeerAuth::MAC_SIZE]);
+
 	void	SetPublicIP(const char * ip)	{ m_stPublicIP = ip; }
 	const char * GetPublicIP()		{ return m_stPublicIP.c_str(); }
 
@@ -62,6 +70,10 @@ class CPeer : public CPeerBase
 
     private:
 	int	m_state;
+	bool	m_bAuthenticated { false };
+	bool	m_bAuthChallengeSent { false };
+	uint8_t	m_authNonce[PeerAuth::NONCE_SIZE] {};
+	uint64_t m_authTimestamp { 0 };
 
 	uint8_t	m_bChannel;
 	uint32_t	m_dwHandle;

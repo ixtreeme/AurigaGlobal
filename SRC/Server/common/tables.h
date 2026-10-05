@@ -155,6 +155,11 @@ enum
 	HEADER_GD_SKILL_COLOR_SAVE = 145,
 #endif
 
+	// Server-to-server link keepalive / authentication
+	HEADER_GD_PING			= 120,
+	HEADER_GD_PONG			= 121,
+	HEADER_GD_AUTH			= 122,
+
 	HEADER_GD_SETUP			= 0xff,
 
 	///////////////////////////////////////////////
@@ -309,6 +314,12 @@ enum
 	HEADER_DG_EVENT_MANAGER						= 212,
 	HEADER_GD_EVENT_MANAGER						= 212,
 #endif
+
+	// Server-to-server link keepalive / authentication
+	HEADER_DG_PING			= 213,
+	HEADER_DG_PONG			= 214,
+	HEADER_DG_AUTH_CHALLENGE	= 215,
+	HEADER_DG_AUTH_RESULT		= 216,
 
 	HEADER_DG_MAP_LOCATIONS		= 0xfe,
 	HEADER_DG_P2P			= 0xff,
