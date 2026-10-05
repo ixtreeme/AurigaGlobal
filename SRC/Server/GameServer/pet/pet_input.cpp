@@ -361,35 +361,40 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 	}
 #endif
 	const int tmpdur = 3 * 24 * 60;
-	char insertQuery[1024];
 	int hp[] = {30, 35, 40};
 	int mostri[] = {10, 15, 20};
 	int medi[] = {10, 15, 20};
-	snprintf(
-		insertQuery,
-		sizeof(insertQuery),
-		"INSERT INTO new_petsystem VALUES(%u,%s, 1, 0, 0, 0, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, 0"
+
 #ifdef ENABLE_NEW_PET_EDITS
-		", %lld"
+	const char* insertQuery = "INSERT INTO new_petsystem VALUES(?, ?, 1, 0, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)";
+#else
+	const char* insertQuery = "INSERT INTO new_petsystem VALUES(?, ?, 1, 0, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
 #endif
-		")",
-		petItemId,
-		SqlString(p->petname).c_str(),
-		hp[number(0, 2)],
-		mostri[number(0, 2)],
-		medi[number(0, 2)],
-		tmpskill[0],
-		0,
-		tmpskill[1],
-		0,
-		tmpskill[2],
-		0,
-		tmpskill[3],
-		0,
-		tmpdur,
-		tmpdur,
-		get_global_time());
-	DBManager::instance().Query(insertQuery);
+
+	SqlParams insertParams
+	{
+		SqlParam::UInt(petItemId),
+		SqlParam::Text(p->petname),
+		SqlParam::Int(hp[number(0, 2)]),
+		SqlParam::Int(mostri[number(0, 2)]),
+		SqlParam::Int(medi[number(0, 2)]),
+		SqlParam::Int(tmpskill[0]),
+		SqlParam::Int(0),
+		SqlParam::Int(tmpskill[1]),
+		SqlParam::Int(0),
+		SqlParam::Int(tmpskill[2]),
+		SqlParam::Int(0),
+		SqlParam::Int(tmpskill[3]),
+		SqlParam::Int(0),
+		SqlParam::Int(tmpdur),
+		SqlParam::Int(tmpdur)
+	};
+
+#ifdef ENABLE_NEW_PET_EDITS
+	insertParams.push_back(SqlParam::Int(static_cast<int64_t>(get_global_time())));
+#endif
+
+	DBManager::instance().QueryPrepared(insertQuery, insertParams);
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 769, "");
 #endif

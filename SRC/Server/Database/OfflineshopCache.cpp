@@ -22,8 +22,8 @@ namespace offlineshop
 #ifdef KASMIR_PAKET_SYSTEM
 	, uint32_t dwKasmirNpc
 #endif
-	);
-	std::string CreateShopCacheUpdateShopNameQuery(uint32_t dwOwnerID, const char* name);
+	, SqlParams& params);
+	std::string CreateShopCacheUpdateShopNameQuery(uint32_t dwOwnerID, const char* name, SqlParams& params);
 	std::string CreateShopCacheUpdateDurationQuery(uint32_t dwOwnerID, uint32_t dwDuration);
 	std::string CreateShopCacheDeleteItemQuery(uint32_t dwOwnerID, uint32_t dwItemID);
 	std::string CreateShopCacheUpdateSoldItemQuery(uint32_t dwOwnerID, uint32_t dwItemID);
@@ -38,7 +38,7 @@ namespace offlineshop
 	std::string CreateSafeboxCacheLoadValutesQuery(uint32_t dwOwnerID);
 
 	//OFFERS
-	std::string CreateOfferCacheInsertOfferQuery(const COfferCache::TOfferCacheInfo& rOffer);
+	std::string CreateOfferCacheInsertOfferQuery(const COfferCache::TOfferCacheInfo& rOffer, SqlParams& params);
 	std::string CreateOfferCacheUpdateNotifiedQuery(uint32_t dwOfferID);
 	std::string CreateOfferCacheUpdateAcceptedQuery(uint32_t dwOfferID);
 	std::string CreateOfferCacheRemoveOfferByShopOwner(uint32_t dwShopOwner);
@@ -47,7 +47,7 @@ namespace offlineshop
 	//AUCTION
 
 	std::string CreateAuctionCacheAddAuctionQuery(const TAuctionInfo& auction);
-	std::string CreateAuctionCacheAddOfferQuery(const TAuctionOfferInfo& auctionOffer);
+	std::string CreateAuctionCacheAddOfferQuery(const TAuctionOfferInfo& auctionOffer, SqlParams& params);
 	std::string CreateAuctionCacheDeleteAuction(uint32_t dwOwnerID);
 	std::string CreateAuctionCacheDeleteAuctionOffers(uint32_t dwOwnerID);
 	std::string CreateAuctionCacheUpdateDurationQuery(uint32_t dwOwnerID, uint32_t dwDuration);
@@ -258,13 +258,14 @@ namespace offlineshop
 		strncpy(qi->szName, szName, sizeof(qi->szName));
 		CopyContainer(qi->items, items);
 
+		SqlParams params;
 		std::string query = CreateShopCacheInsertShopQuery(dwOwnerID, dwDuration, szName
 #ifdef KASMIR_PAKET_SYSTEM
 		, dwKasmirNpc
 #endif
-		);
+		, params);
 		
-		CDBManager::instance().ReturnQuery(query.c_str(), QID_OFFLINESHOP_CREATE_SHOP, 0, qi);
+		CDBManager::instance().ReturnQueryPrepared(query.c_str(), params, QID_OFFLINESHOP_CREATE_SHOP, 0, qi);
 		
 		OFFSHOP_DEBUG("Sent query %s", query.c_str());
 		return true;
@@ -291,8 +292,9 @@ namespace offlineshop
 		TShopCacheInfo& rShop = it->second;
 		strncpy(rShop.szName, szName, sizeof(rShop.szName));
 
-		std::string query = CreateShopCacheUpdateShopNameQuery(dwOwnerID, szName);
-		CDBManager::instance().ReturnQuery(query.c_str(), QID_OFFLINESHOP_SHOP_CHANGE_NAME, 0, nullptr);
+		SqlParams params;
+		std::string query = CreateShopCacheUpdateShopNameQuery(dwOwnerID, szName, params);
+		CDBManager::instance().ReturnQueryPrepared(query.c_str(), params, QID_OFFLINESHOP_SHOP_CHANGE_NAME, 0, nullptr);
 		return true;
 	}
 
@@ -850,8 +852,9 @@ namespace offlineshop
 		SQueryInfoOfferAdd* qi = new SQueryInfoOfferAdd;
 		CopyObject(qi->offer, rOffer);
 
-		std::string query = CreateOfferCacheInsertOfferQuery(rOffer);
-		CDBManager::instance().ReturnQuery(query.c_str(), QID_OFFLINESHOP_OFFER_ADD, 0, qi);
+		SqlParams params;
+		std::string query = CreateOfferCacheInsertOfferQuery(rOffer, params);
+		CDBManager::instance().ReturnQueryPrepared(query.c_str(), params, QID_OFFLINESHOP_OFFER_ADD, 0, qi);
 		return true;
 	}
 
@@ -1046,8 +1049,9 @@ namespace offlineshop
 	{
 		if (quering)
 		{
-			std::string query = CreateAuctionCacheAddOfferQuery(auctionOffer);
-			CDBManager::instance().ReturnQuery(query.c_str(), QID_OFFLINESHOP_AUCTION_INSERT_OFFER, 0 , nullptr);
+			SqlParams params;
+			std::string query = CreateAuctionCacheAddOfferQuery(auctionOffer, params);
+			CDBManager::instance().ReturnQueryPrepared(query.c_str(), params, QID_OFFLINESHOP_AUCTION_INSERT_OFFER, 0 , nullptr);
 			if (m_mapAuction[auctionOffer.dwOwnerID].dwDuration == 0) // +
 				m_mapAuction[auctionOffer.dwOwnerID].dwDuration = 1; // +
 		}
@@ -1360,29 +1364,37 @@ namespace offlineshop
 #ifdef KASMIR_PAKET_SYSTEM
 	, uint32_t dwKasmirNpc
 #endif
-	)
+	, SqlParams& params)
 	{
-		static char szQuery[256];
-		char szEscapeString[OFFLINE_SHOP_NAME_MAX_LEN + 32];
-
-		CDBManager::instance().EscapeString(szEscapeString, name, strlen(name));
 #ifdef KASMIR_PAKET_SYSTEM
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO `player`.`offlineshop_shops` (`owner_id`, `duration`, `name`, `npc`) VALUES(%u, %u, '%s', %u);", dwOwnerID, dwDuration, szEscapeString, dwKasmirNpc);
+		params = {
+			SqlParam::UInt(dwOwnerID),
+			SqlParam::UInt(dwDuration),
+			SqlParam::Text(name),
+			SqlParam::UInt(dwKasmirNpc)
+		};
+
+		return "INSERT INTO `player`.`offlineshop_shops` (`owner_id`, `duration`, `name`, `npc`) VALUES(?, ?, ?, ?);";
 #else
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO `player`.`offlineshop_shops` (`owner_id`, `duration`, `name`) VALUES(%u, %u, '%s');", dwOwnerID, dwDuration, szEscapeString);
+		params = {
+			SqlParam::UInt(dwOwnerID),
+			SqlParam::UInt(dwDuration),
+			SqlParam::Text(name)
+		};
+
+		return "INSERT INTO `player`.`offlineshop_shops` (`owner_id`, `duration`, `name`) VALUES(?, ?, ?);";
 #endif
-		return szQuery;
 	}
 
 
-	std::string CreateShopCacheUpdateShopNameQuery(uint32_t dwOwnerID, const char* name)
+	std::string CreateShopCacheUpdateShopNameQuery(uint32_t dwOwnerID, const char* name, SqlParams& params)
 	{
-		static char szQuery[256];
-		static char szEscapeString[OFFLINE_SHOP_NAME_MAX_LEN + 32];
-		CDBManager::instance().EscapeString(szEscapeString, name, strlen(name));
+		params = {
+			SqlParam::Text(name),
+			SqlParam::UInt(dwOwnerID)
+		};
 
-		snprintf(szQuery, sizeof(szQuery), "UPDATE `player`.`offlineshop_shops` SET `name` = '%s' WHERE `owner_id` = %u;", szEscapeString, dwOwnerID);
-		return szQuery;
+		return "UPDATE `player`.`offlineshop_shops` SET `name` = ? WHERE `owner_id` = ?;";
 	}
 
 
@@ -1545,20 +1557,21 @@ namespace offlineshop
 
 
 	//OFFERCHACHE
-	std::string CreateOfferCacheInsertOfferQuery(const COfferCache::TOfferCacheInfo& rOffer)
+	std::string CreateOfferCacheInsertOfferQuery(const COfferCache::TOfferCacheInfo& rOffer, SqlParams& params)
 	{
-		//offlineshop-updated 03/08/19
-		static char szEscapeString[CHARACTER_NAME_MAX_LEN + 32];
-		CDBManager::instance().EscapeString(szEscapeString, rOffer.szBuyerName, strnlen(rOffer.szBuyerName, sizeof(rOffer.szBuyerName)));
 		// offer_id,owner_id,offerer_id,price_yang,price_cheque,is_notified,is_accept
+		params = {
+			SqlParam::UInt(rOffer.dwOwnerID),
+			SqlParam::UInt(rOffer.dwOffererID),
+			SqlParam::UInt(rOffer.dwItemID),
+			SqlParam::Int(rOffer.price.illYang),
+			SqlParam::UInt(rOffer.bNoticed ? 1 : 0),
+			SqlParam::UInt(rOffer.bAccepted ? 1 : 0),
+			SqlParam::Text(rOffer.szBuyerName)
+		};
 
-		static char szQuery[256];
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO `player`.`offlineshop_offers` (`offer_id`,`owner_id`,`offerer_id`, `item_id`, `price_yang`,"/*`price_cheque`,*/"`is_notified`,`is_accept`, `buyer_name`) VALUES"
-											"(0, %u, %u, %u, %lld, %u, %u, '%s')",
-											rOffer.dwOwnerID, rOffer.dwOffererID, rOffer.dwItemID, rOffer.price.illYang, rOffer.bNoticed?1:0, rOffer.bAccepted?1:0, szEscapeString
-		);
-
-		return szQuery;
+		return "INSERT INTO `player`.`offlineshop_offers` (`offer_id`,`owner_id`,`offerer_id`, `item_id`, `price_yang`,"/*`price_cheque`,*/"`is_notified`,`is_accept`, `buyer_name`) VALUES"
+				"(0, ?, ?, ?, ?, ?, ?, ?)";
 	}
 
 
@@ -1674,20 +1687,18 @@ namespace offlineshop
 	}
 
 
-	std::string CreateAuctionCacheAddOfferQuery(const TAuctionOfferInfo& auctionOffer)
+	std::string CreateAuctionCacheAddOfferQuery(const TAuctionOfferInfo& auctionOffer, SqlParams& params)
 	{
-		static char szEscapeName[CHARACTER_NAME_MAX_LEN+32];
-		CDBManager::instance().EscapeString(szEscapeName, auctionOffer.szBuyerName, strnlen(auctionOffer.szBuyerName , sizeof(auctionOffer.szBuyerName)));
-
-
 		//owner_id 		buyer_id			buyer_name			yang
-		static char szQuery[512];
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO `player`.`offlineshop_auction_offers` (`owner_id`, `buyer_id`, `buyer_name` , `yang`) "
-																"VALUES( %u, %u, '%s' , %lld );",
-																auctionOffer.dwOwnerID, auctionOffer.dwBuyerID, szEscapeName, auctionOffer.price.illYang
-		);
-		
-		return szQuery;
+		params = {
+			SqlParam::UInt(auctionOffer.dwOwnerID),
+			SqlParam::UInt(auctionOffer.dwBuyerID),
+			SqlParam::Text(auctionOffer.szBuyerName),
+			SqlParam::Int(auctionOffer.price.illYang)
+		};
+
+		return "INSERT INTO `player`.`offlineshop_auction_offers` (`owner_id`, `buyer_id`, `buyer_name` , `yang`) "
+				"VALUES( ?, ?, ?, ? );";
 	}
 
 

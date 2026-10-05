@@ -141,22 +141,30 @@ CGuild::CGuild(TGuildCreateParameter & cp)
 		m_data.grade_array[i].auth_flag = 0;
 	}
 
-	std::unique_ptr<SQLMsg> pmsg (DBManager::instance().DirectQuery(
+	char insertGuildQuery[512];
+	snprintf(insertGuildQuery, sizeof(insertGuildQuery),
 				"INSERT INTO guild%s(name, master, sp, level, exp, skill_point, skill) "
-				"VALUES(%s, %u, 1000, 1, 0, 0, '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0')",
-				get_table_postfix(), SqlString(m_data.name).c_str(), m_data.master_pid));
+				"VALUES(?, ?, 1000, 1, 0, 0, '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0')",
+				get_table_postfix());
+
+	std::unique_ptr<SQLMsg> pmsg (DBManager::instance().DirectQueryPrepared(insertGuildQuery,
+				{ SqlParam::Text(m_data.name), SqlParam::UInt(m_data.master_pid) }));
 
 	// TODO if error occur?
 	m_data.guild_id = pmsg->Get()->uiInsertID;
 
+	char insertGradeQuery[512];
+	snprintf(insertGradeQuery, sizeof(insertGradeQuery), "INSERT INTO guild_grade%s VALUES(?, ?, ?, ?)", get_table_postfix());
+
 	for (int i = 0; i < GUILD_GRADE_COUNT; ++i)
 	{
-		DBManager::instance().Query("INSERT INTO guild_grade%s VALUES(%u, %d, %s, %d)",
-				get_table_postfix(),
-				m_data.guild_id,
-				i + 1,
-				SqlString(m_data.grade_array[i].grade_name).c_str(),
-				m_data.grade_array[i].auth_flag);
+		DBManager::instance().QueryPrepared(insertGradeQuery,
+				{
+					SqlParam::UInt(m_data.guild_id),
+					SqlParam::Int(i + 1),
+					SqlParam::Text(m_data.grade_array[i].grade_name),
+					SqlParam::Int(m_data.grade_array[i].auth_flag)
+				});
 	}
 
 	ComputeGuildPoints();
@@ -895,10 +903,11 @@ void CGuild::ChangeGradeName(uint8_t grade, const char* grade_name)
 	if (!*grade_name)
 		return;
 
-	char text[GUILD_NAME_MAX_LEN * 2 + 1];
+	char updateQuery[256];
+	snprintf(updateQuery, sizeof(updateQuery), "UPDATE guild_grade%s SET name = ? where guild_id = ? and grade = ?", get_table_postfix());
 
-	DBManager::instance().EscapeString(text, sizeof(text), grade_name, strlen(grade_name));
-	DBManager::instance().FuncAfterQuery(FSendChangeGrade(GetID(), grade), "UPDATE guild_grade%s SET name = '%s' where guild_id = %u and grade = %d", get_table_postfix(), text, m_data.guild_id, grade);
+	DBManager::instance().FuncAfterQueryPrepared(FSendChangeGrade(GetID(), grade), updateQuery,
+			{ SqlParam::Text(grade_name), SqlParam::UInt(m_data.guild_id), SqlParam::Int(grade) });
 
 	grade--;
 	strlcpy(m_data.grade_array[grade].grade_name, grade_name, sizeof(m_data.grade_array[grade].grade_name));
@@ -1133,12 +1142,19 @@ void CGuild::AddComment(entt::entity character, std::string_view str)
 	if (str.size() > GUILD_COMMENT_MAX_LEN)
 		return;
 
-	char text[GUILD_COMMENT_MAX_LEN * 2 + 1];
-	DBManager::instance().EscapeString(text, sizeof(text), str.data(), str.size());
+	char insertCommentQuery[512];
+	snprintf(insertCommentQuery, sizeof(insertCommentQuery),
+			"INSERT INTO guild_comment%s(guild_id, name, notice, content, time) VALUES(?, ?, ?, ?, NOW())",
+			get_table_postfix());
 
-	DBManager::instance().FuncAfterQuery(std::bind(&CGuild::RefreshCommentForce, this, ecs::PlayerRuntime::GetPlayerID(character)),
-			"INSERT INTO guild_comment%s(guild_id, name, notice, content, time) VALUES(%u, %s, %d, %s, NOW())",
-			get_table_postfix(), m_data.guild_id, SqlString(ecs::PlayerRuntime::GetName(character).data()).c_str(), (!str.empty() && str.front() == '!') ? 1 : 0, SqlString(text).c_str());
+	DBManager::instance().FuncAfterQueryPrepared(std::bind(&CGuild::RefreshCommentForce, this, ecs::PlayerRuntime::GetPlayerID(character)),
+			insertCommentQuery,
+			{
+				SqlParam::UInt(m_data.guild_id),
+				SqlParam::Text(ecs::PlayerRuntime::GetName(character).data()),
+				SqlParam::Int((!str.empty() && str.front() == '!') ? 1 : 0),
+				SqlParam::Text(std::string(str))
+			});
 }
 
 void CGuild::DeleteComment(entt::entity character, uint32_t comment_id)
@@ -1149,7 +1165,16 @@ void CGuild::DeleteComment(entt::entity character, uint32_t comment_id)
 	if (member && member->grade == GUILD_LEADER_GRADE)
 		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u",get_table_postfix(), comment_id, m_data.guild_id);
 	else
-		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u AND name = %s",get_table_postfix(), comment_id, m_data.guild_id, SqlString(ecs::PlayerRuntime::GetName(character).data()).c_str());
+	{
+		char deleteQuery[512];
+		snprintf(deleteQuery, sizeof(deleteQuery), "DELETE FROM guild_comment%s WHERE id = ? AND guild_id = ? AND name = ?", get_table_postfix());
+		pmsg = DBManager::instance().DirectQueryPrepared(deleteQuery,
+				{
+					SqlParam::UInt(comment_id),
+					SqlParam::UInt(m_data.guild_id),
+					SqlParam::Text(ecs::PlayerRuntime::GetName(character).data())
+				});
+	}
 
 	if (pmsg->Get()->uiAffectedRows == 0 || pmsg->Get()->uiAffectedRows == (uint32_t)-1) {
 #ifdef TEXTS_IMPROVEMENT
@@ -1589,7 +1614,9 @@ void CGuild::GiveReward(int reward)
 		//INSERT INTO player.item_award(`login`, `vnum`, `count`, `mall`) VALUES ('account', 189, 1, 1);
 		//Sostituire la query di sotto con questa di sopra una volta aggiungo il system award di VegaS
 		//DBManager::instance().DirectQuery("INSERT INTO item (owner_id, window, pos, count, vnum) VALUES ('%d', 'MALL', '%d', '1', '%d');", iAccountID, iPos, reward);
-		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, why, mall) VALUES (%s, '%d', '1', 'GUILD_REWARD', '1');", SqlString(nrow[0]).c_str(), reward);
+		DBManager::instance().QueryPrepared(
+				"INSERT INTO item_award (login, vnum, count, why, mall) VALUES (?, ?, 1, 'GUILD_REWARD', 1)",
+				{ SqlParam::Text(nrow[0]), SqlParam::Int(reward) });
 	}
 }
 

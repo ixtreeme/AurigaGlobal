@@ -37,9 +37,41 @@ typedef struct _SQLResult
 	uint64_t		uiInsertID;
 } SQLResult;
 
+// Out-of-band parameter for server-side prepared statements. The value is
+// sent through the MySQL binary protocol, so no quoting/escaping is needed
+// and the statement text never changes between executions (statement cache).
+enum class SqlParamType : uint8_t
+{
+	Null,
+	Signed,
+	Unsigned,
+	Real,
+	Text,
+	Blob,
+};
+
+struct SqlParam
+{
+	SqlParamType	type { SqlParamType::Null };
+	int64_t		i64 { 0 };
+	uint64_t	u64 { 0 };
+	double		f64 { 0.0 };
+	std::string	bytes;
+
+	static SqlParam Null() { return SqlParam {}; }
+	static SqlParam Int(int64_t v) { SqlParam p; p.type = SqlParamType::Signed; p.i64 = v; return p; }
+	static SqlParam UInt(uint64_t v) { SqlParam p; p.type = SqlParamType::Unsigned; p.u64 = v; return p; }
+	static SqlParam Real(double v) { SqlParam p; p.type = SqlParamType::Real; p.f64 = v; return p; }
+	static SqlParam Text(std::string v) { SqlParam p; p.type = SqlParamType::Text; p.bytes = std::move(v); return p; }
+	static SqlParam Text(const char * v) { return v ? Text(std::string(v)) : Null(); }
+	static SqlParam Blob(std::string v) { SqlParam p; p.type = SqlParamType::Blob; p.bytes = std::move(v); return p; }
+};
+
+using SqlParams = std::vector<SqlParam>;
+
 typedef struct _SQLMsg
 {
-	_SQLMsg() : m_pkSQL(nullptr), iID(0), uiResultPos(0), pvUserData(nullptr), bReturn(false), uiSQLErrno(0)
+	_SQLMsg() : m_pkSQL(nullptr), iID(0), uiResultPos(0), pvUserData(nullptr), bReturn(false), uiSQLErrno(0), bPrepared(false)
 	{
 	}
 
@@ -85,6 +117,18 @@ typedef struct _SQLMsg
 		return vec_pkResult[uiResultPos];
 	}
 
+	// Prepared statements (writes) have no text result set; the outcome is
+	// the affected row / insert id pair.
+	void StorePrepared(uint64_t affectedRows, uint64_t insertID)
+	{
+		SQLResult * pRes = new SQLResult;
+
+		pRes->uiAffectedRows = affectedRows;
+		pRes->uiInsertID = insertID;
+
+		vec_pkResult.push_back(pRes);
+	}
+
 	MYSQL *			m_pkSQL;
 	int				iID;
 	std::string			stQuery;
@@ -96,6 +140,11 @@ typedef struct _SQLMsg
 	bool			bReturn;
 
 	uint32_t		uiSQLErrno;
+
+	// When set, the message is executed as a server-side prepared
+	// statement and vecParams is bound with mysql_stmt_bind_param.
+	bool			bPrepared;
+	SqlParams		vecParams;
 } SQLMsg;
 
 class CAsyncSQL
@@ -116,6 +165,12 @@ class CAsyncSQL
 		void		ReturnQuery(const char * c_pszQuery, void * pvUserData);
 		SQLMsg *	DirectQuery(const char * c_pszQuery);
 
+		// Prepared (parameterized) variants: the values in params are bound
+		// through the binary protocol, no escaping/quoting is required.
+		void		AsyncQueryPrepared(const char * c_pszQuery, const SqlParams & params);
+		void		ReturnQueryPrepared(const char * c_pszQuery, const SqlParams & params, void * pvUserData);
+		SQLMsg *	DirectQueryPrepared(const char * c_pszQuery, const SqlParams & params);
+
 		uint32_t		CountQuery();
 		uint32_t		CountResult();
 
@@ -133,6 +188,18 @@ class CAsyncSQL
 
 	protected:
 		void		Destroy();
+
+		// Refreshes the reconnect/locale state and drops the prepared
+		// statement cache when the underlying connection changed.
+		void		EnsureConnectionReady();
+
+		MYSQL_STMT *	GetOrPrepare(const std::string & sql);
+		void		DropPrepared(const std::string & sql);
+		void		ClearPrepared();
+
+		// Executes one prepared message; on success stores the affected
+		// rows / insert id into p and returns true.
+		bool		TryExecutePrepared(SQLMsg * p);
 
 		void		PushQuery(SQLMsg * p);
 
@@ -166,6 +233,11 @@ class CAsyncSQL
 		//std::map<int, SQLMsg *>	m_map_kSQLMsgUnfinished;
 
 		std::queue<SQLMsg *> m_queue_result;
+
+		// Prepared statement handles are cached per connection. The cache
+		// is cleared whenever the connection was re-established or the
+		// character set changed.
+		std::map<std::string, MYSQL_STMT *> m_map_prepared;
 
 		volatile bool m_bEnd;
 

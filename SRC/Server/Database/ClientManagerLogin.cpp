@@ -601,9 +601,10 @@ void CClientManager::QUERY_CHANGE_NAME(CPeer * peer, uint32_t dwHandle, TPacketG
 	}
 
 	snprintf(queryStr, sizeof(queryStr),
-			"UPDATE player%s SET name=%s,change_name=0 WHERE id=%u", GetTablePostfix(), SqlString(p->name).c_str(), p->pid);
+			"UPDATE player%s SET name=?,change_name=0 WHERE id=?", GetTablePostfix());
 
-	CDBManager::instance().AsyncQuery(queryStr, SQL_PLAYER);
+	CDBManager::instance().QueryPrepared(queryStr,
+			{ SqlParam::Text(p->name), SqlParam::UInt(p->pid) }, SQL_PLAYER);
 
 	TPacketDGChangeName pdg;
 	peer->EncodeHeader(HEADER_DG_CHANGE_NAME, dwHandle, sizeof(TPacketDGChangeName));

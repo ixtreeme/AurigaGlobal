@@ -55,6 +55,13 @@ class CDBManager : public singleton<CDBManager>
 	void			ReturnQuery(const char * c_pszQuery, int iType, uint32_t dwIdent, void * pvData, int iSlot = SQL_PLAYER);
 	void			AsyncQuery(const char * c_pszQuery, int iSlot = SQL_PLAYER);
 	SQLMsg *		DirectQuery(const char * c_pszQuery, int iSlot = SQL_PLAYER);
+
+	// Prepared (parameterized) variants for write statements. The SQL text
+	// must use '?' placeholders; the values travel out-of-band through the
+	// binary protocol, so no escaping/quoting is needed.
+	void			QueryPrepared(const char * c_pszSql, const SqlParams & params, int iSlot = SQL_PLAYER);
+	void			ReturnQueryPrepared(const char * c_pszSql, const SqlParams & params, int iType, uint32_t dwIdent, void * pvData, int iSlot = SQL_PLAYER);
+	SQLMsg *		DirectQueryPrepared(const char * c_pszSql, const SqlParams & params, int iSlot = SQL_PLAYER);
 	//SQLMsg *		DirectQuery_ItemShop(const char * c_pszQuery, int iSlot = SQL_ITEMSHOP);
 
 	SQLMsg *		PopResult();

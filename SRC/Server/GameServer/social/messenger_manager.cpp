@@ -245,16 +245,11 @@ void MessengerManager::AddToList(MessengerManager::keyA account, MessengerManage
 	if (m_Relation[account].find(companion) != m_Relation[account].end())
 		return;
 
-	// @fixme142 BEGIN
-	DBManager::instance().EscapeString(__account, sizeof(__account), account.c_str(), account.size());
-	DBManager::instance().EscapeString(__companion, sizeof(__companion), companion.c_str(), companion.size());
-	if (account.compare(__account) || companion.compare(__companion))
-		return;
-	// @fixme142 END
-
 	LOG_INFO("Messenger Add {} {}", account.c_str(), companion.c_str());
-	DBManager::instance().Query("INSERT INTO messenger_list%s VALUES ('%s', '%s')",
-			get_table_postfix(), __account, __companion);
+
+	char insertQuery[256];
+	snprintf(insertQuery, sizeof(insertQuery), "INSERT INTO messenger_list%s VALUES (?, ?)", get_table_postfix());
+	DBManager::instance().QueryPrepared(insertQuery, { SqlParam::Text(account), SqlParam::Text(companion) });
 
 	__AddToList(account, companion);
 
@@ -632,16 +627,11 @@ void MessengerManager::RemoveFromList(MessengerManager::keyA account, MessengerM
 	if (companion.size() == 0)
 		return;
 
-	// @fixme142 BEGIN
-	DBManager::instance().EscapeString(__account, sizeof(__account), account.c_str(), account.size());
-	DBManager::instance().EscapeString(__companion, sizeof(__companion), companion.c_str(), companion.size());
-	if (account.compare(__account) || companion.compare(__companion))
-		return;
-	// @fixme142 END
-
 	LOG_INFO("Messenger Remove {} {}", account.c_str(), companion.c_str());
-	DBManager::instance().Query("DELETE FROM messenger_list%s WHERE account='%s' AND companion = '%s'",
-			get_table_postfix(), __account, __companion);
+
+	char deleteQuery[256];
+	snprintf(deleteQuery, sizeof(deleteQuery), "DELETE FROM messenger_list%s WHERE account=? AND companion=?", get_table_postfix());
+	DBManager::instance().QueryPrepared(deleteQuery, { SqlParam::Text(account), SqlParam::Text(companion) });
 
 	__RemoveFromList(account, companion);
 
@@ -657,14 +647,9 @@ void MessengerManager::RemoveAllList(keyA account)
 {
 	std::set<keyT>	company(m_Relation[account]);
 
-	// @fixme142 BEGIN
-	DBManager::instance().EscapeString(__account, sizeof(__account), account.c_str(), account.size());
-	if (account.compare(__account))
-		return;
-	// @fixme142 END
-
-	DBManager::instance().Query("DELETE FROM messenger_list%s WHERE account='%s' OR companion='%s'",
-			get_table_postfix(), __account, __account);
+	char deleteQuery[256];
+	snprintf(deleteQuery, sizeof(deleteQuery), "DELETE FROM messenger_list%s WHERE account=? OR companion=?", get_table_postfix());
+	DBManager::instance().QueryPrepared(deleteQuery, { SqlParam::Text(account), SqlParam::Text(account) });
 
 	for (std::set<keyT>::iterator iter = company.begin();
 			iter != company.end();

@@ -49,12 +49,12 @@ void CClientManager::SetEventFlag(TPacketSetEventFlag* p)
 	{
 		char szQuery[1024];
 		snprintf(szQuery, sizeof(szQuery),
-				"REPLACE INTO quest%s (dwPID, szName, szState, lValue) VALUES(0, %s, '', %d)",
-				GetTablePostfix(), SqlString(p->szFlagName).c_str(), p->lValue);
+				"REPLACE INTO quest%s (dwPID, szName, szState, lValue) VALUES(0, ?, '', ?)",
+				GetTablePostfix());
 		szQuery[1023] = '\0';
 
-		//CDBManager::instance().ReturnQuery(szQuery, QID_QUEST_SAVE, 0, NULL);
-		CDBManager::instance().AsyncQuery(szQuery);
+		CDBManager::instance().QueryPrepared(szQuery,
+				{ SqlParam::Text(p->szFlagName), SqlParam::Int(p->lValue) });
 		LOG_INFO("HEADER_GD_SET_EVENT_FLAG : Changed CClientmanager::SetEventFlag({} {}) ", p->szFlagName, p->lValue);
 		return;
 	}

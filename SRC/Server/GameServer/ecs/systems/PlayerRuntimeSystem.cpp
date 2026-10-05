@@ -503,9 +503,9 @@ int RequestNameChange(entt::entity e, std::string_view name)
 	LogManager::instance().ChangeNameLog(playerID, currentName.c_str(), requestedName.c_str(),
 		desc ? desc->GetHostName() : "");
 
-	snprintf(query, sizeof(query), "UPDATE player%s SET name=%s WHERE id=%u",
-		get_table_postfix(), SqlString(requestedName.c_str()).c_str(), playerID);
-	std::unique_ptr<SQLMsg> updateMessage(DBManager::instance().DirectQuery(query));
+	snprintf(query, sizeof(query), "UPDATE player%s SET name=? WHERE id=?", get_table_postfix());
+	std::unique_ptr<SQLMsg> updateMessage(DBManager::instance().DirectQueryPrepared(query,
+		{ SqlParam::Text(requestedName), SqlParam::UInt(playerID) }));
 	SetPendingName(e, requestedName);
 	return 4;
 #endif
@@ -3860,7 +3860,9 @@ EVENTFUNC(drop_event)
 
             if (!already) {
                 iStatus = iStatus == 1 ? 0 : 1;
-	DBManager::instance().Query("UPDATE account.antifarm SET status=%d WHERE login=%s", iStatus, SqlString(login.c_str()).c_str());
+	DBManager::instance().QueryPrepared(
+		"UPDATE account.antifarm SET status=? WHERE login=?",
+		{ SqlParam::Int(iStatus), SqlParam::Text(login) });
             }
         }
 

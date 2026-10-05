@@ -118,13 +118,14 @@ static bool DailyReward_CheckHWIDLimit(entt::entity ch)
 		return false;
 
 	// 2) ha nem, akkor regisztraljuk (mostantol ma mar nem lehet ujra)
-	DBManager::Instance().Query(
+	DBManager::Instance().QueryPrepared(
 		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
-			"VALUES(%s, CURDATE(), %u, %u)",
-		SqlString(key.c_str()).c_str(),
-		(ecs::PlayerRuntime::GetPlayerID(ch)),
-		ecs::PlayerRuntime::GetDesc(ch)->GetAccountTable().id
-	);
+			"VALUES(?, CURDATE(), ?, ?)",
+		{
+			SqlParam::Text(key),
+			SqlParam::UInt(ecs::PlayerRuntime::GetPlayerID(ch)),
+			SqlParam::UInt(ecs::PlayerRuntime::GetDesc(ch)->GetAccountTable().id)
+		});
 
 	return true;
 }

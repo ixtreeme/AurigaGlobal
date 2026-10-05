@@ -16,6 +16,35 @@
 #define MUTEX_UNLOCK(mtx) ::LeaveCriticalSection(mtx)
 #endif
 
+namespace
+{
+	bool IsConnectionError(uint32_t uiSQLErrno)
+	{
+		switch (uiSQLErrno)
+		{
+			case CR_SOCKET_CREATE_ERROR:
+			case CR_CONNECTION_ERROR:
+			case CR_IPSOCK_ERROR:
+			case CR_UNKNOWN_HOST:
+			case CR_SERVER_GONE_ERROR:
+			case CR_CONN_HOST_ERROR:
+			case ER_NOT_KEYFILE:
+			case ER_CRASHED_ON_USAGE:
+			case ER_CANT_OPEN_FILE:
+			case ER_HOST_NOT_PRIVILEGED:
+			case ER_HOST_IS_BLOCKED:
+			case ER_PASSWORD_NOT_ALLOWED:
+			case ER_PASSWORD_NO_MATCH:
+			case ER_CANT_CREATE_THREAD:
+			case ER_INVALID_USE_OF_NULL:
+				return true;
+
+			default:
+				return false;
+		}
+	}
+}
+
 CAsyncSQL::CAsyncSQL()
 	: m_stHost(""), m_stUser(""), m_stPassword(""), m_stDB(""), m_stLocale(""),
 	m_iMsgCount(0), m_iPort(0), m_bEnd(false),
@@ -38,6 +67,8 @@ CAsyncSQL::~CAsyncSQL()
 
 void CAsyncSQL::Destroy()
 {
+	ClearPrepared();
+
 	if (m_hDB.host)
 	{
 		LOG_INFO("AsyncSQL: closing mysql connection.");
@@ -104,6 +135,9 @@ bool CAsyncSQL::QueryLocaleSet()
 	}
 
 	LOG_INFO("\t--mysql_set_character_set({})", m_stLocale.c_str());
+
+	// Statement handles were prepared under the previous charset.
+	ClearPrepared();
 
 	return true;
 }
@@ -226,12 +260,7 @@ void CAsyncSQL::Quit()
 
 SQLMsg * CAsyncSQL::DirectQuery(const char * c_pszQuery)
 {
-	if (m_ulThreadID != mysql_thread_id(&m_hDB))
-	{
-		LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
-		while (!QueryLocaleSet());
-		m_ulThreadID = mysql_thread_id(&m_hDB);
-	}
+	EnsureConnectionReady();
 
 	SQLMsg * p = new SQLMsg;
 
@@ -253,6 +282,55 @@ SQLMsg * CAsyncSQL::DirectQuery(const char * c_pszQuery)
 
 	p->Store();
 	return p;
+}
+
+SQLMsg * CAsyncSQL::DirectQueryPrepared(const char * c_pszQuery, const SqlParams & params)
+{
+	EnsureConnectionReady();
+
+	SQLMsg * p = new SQLMsg;
+
+	p->m_pkSQL = &m_hDB;
+	p->iID = ++m_iMsgCount;
+	p->stQuery = c_pszQuery;
+	p->vecParams = params;
+	p->bPrepared = true;
+
+	if (!TryExecutePrepared(p))
+	{
+		// Keep Get() usable for the callers even on failure.
+		p->StorePrepared(0, 0);
+	}
+
+	return p;
+}
+
+void CAsyncSQL::AsyncQueryPrepared(const char * c_pszQuery, const SqlParams & params)
+{
+	SQLMsg * p = new SQLMsg;
+
+	p->m_pkSQL = &m_hDB;
+	p->iID = ++m_iMsgCount;
+	p->stQuery = c_pszQuery;
+	p->vecParams = params;
+	p->bPrepared = true;
+
+	PushQuery(p);
+}
+
+void CAsyncSQL::ReturnQueryPrepared(const char * c_pszQuery, const SqlParams & params, void * pvUserData)
+{
+	SQLMsg * p = new SQLMsg;
+
+	p->m_pkSQL = &m_hDB;
+	p->iID = ++m_iMsgCount;
+	p->stQuery = c_pszQuery;
+	p->vecParams = params;
+	p->bPrepared = true;
+	p->bReturn = true;
+	p->pvUserData = pvUserData;
+
+	PushQuery(p);
 }
 
 void CAsyncSQL::AsyncQuery(const char * c_pszQuery)
@@ -277,6 +355,167 @@ void CAsyncSQL::ReturnQuery(const char * c_pszQuery, void * pvUserData)
 	p->pvUserData = pvUserData;
 
 	PushQuery(p);
+}
+
+void CAsyncSQL::EnsureConnectionReady()
+{
+	if (m_ulThreadID != mysql_thread_id(&m_hDB))
+	{
+		LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
+		while (!QueryLocaleSet());
+		m_ulThreadID = mysql_thread_id(&m_hDB);
+
+		// Handles prepared on the previous connection are unusable.
+		ClearPrepared();
+	}
+}
+
+void CAsyncSQL::ClearPrepared()
+{
+	for (auto & entry : m_map_prepared)
+	{
+		if (entry.second)
+			mysql_stmt_close(entry.second);
+	}
+
+	m_map_prepared.clear();
+}
+
+void CAsyncSQL::DropPrepared(const std::string & sql)
+{
+	const auto it = m_map_prepared.find(sql);
+
+	if (it == m_map_prepared.end())
+		return;
+
+	if (it->second)
+		mysql_stmt_close(it->second);
+
+	m_map_prepared.erase(it);
+}
+
+MYSQL_STMT * CAsyncSQL::GetOrPrepare(const std::string & sql)
+{
+	const auto it = m_map_prepared.find(sql);
+
+	if (it != m_map_prepared.end())
+		return it->second;
+
+	MYSQL_STMT * stmt = mysql_stmt_init(&m_hDB);
+
+	if (!stmt)
+	{
+		LOG_ERROR("AsyncSQL: mysql_stmt_init failed: {}", mysql_error(&m_hDB));
+		return nullptr;
+	}
+
+	if (mysql_stmt_prepare(stmt, sql.c_str(), static_cast<unsigned long>(sql.length())))
+	{
+		LOG_ERROR("AsyncSQL: mysql_stmt_prepare failed: {} (query: {})", mysql_stmt_error(stmt), sql.c_str());
+		mysql_stmt_close(stmt);
+		return nullptr;
+	}
+
+	m_map_prepared.emplace(sql, stmt);
+	return stmt;
+}
+
+bool CAsyncSQL::TryExecutePrepared(SQLMsg * p)
+{
+	EnsureConnectionReady();
+
+	MYSQL_STMT * stmt = GetOrPrepare(p->stQuery);
+
+	if (!stmt)
+	{
+		p->uiSQLErrno = mysql_errno(&m_hDB);
+		return false;
+	}
+
+	const size_t paramCount = static_cast<size_t>(mysql_stmt_param_count(stmt));
+
+	if (paramCount != p->vecParams.size())
+	{
+		LOG_ERROR("AsyncSQL: prepared statement parameter mismatch (expected {}, got {}, query: {})",
+			paramCount, p->vecParams.size(), p->stQuery.c_str());
+		p->uiSQLErrno = 0;
+		return false;
+	}
+
+	std::vector<MYSQL_BIND> binds(paramCount);
+	std::vector<my_bool> isNull(paramCount, 0);
+	std::vector<unsigned long> lengths(paramCount, 0);
+
+	if (paramCount)
+		memset(binds.data(), 0, sizeof(MYSQL_BIND) * paramCount);
+
+	for (size_t i = 0; i < paramCount; ++i)
+	{
+		const SqlParam & param = p->vecParams[i];
+		MYSQL_BIND & bind = binds[i];
+
+		bind.is_null = &isNull[i];
+
+		switch (param.type)
+		{
+			case SqlParamType::Null:
+				bind.buffer_type = MYSQL_TYPE_NULL;
+				isNull[i] = 1;
+				break;
+
+			case SqlParamType::Signed:
+				bind.buffer_type = MYSQL_TYPE_LONGLONG;
+				bind.buffer = const_cast<int64_t *>(&param.i64);
+				bind.buffer_length = sizeof(param.i64);
+				bind.is_unsigned = 0;
+				break;
+
+			case SqlParamType::Unsigned:
+				bind.buffer_type = MYSQL_TYPE_LONGLONG;
+				bind.buffer = const_cast<uint64_t *>(&param.u64);
+				bind.buffer_length = sizeof(param.u64);
+				bind.is_unsigned = 1;
+				break;
+
+			case SqlParamType::Real:
+				bind.buffer_type = MYSQL_TYPE_DOUBLE;
+				bind.buffer = const_cast<double *>(&param.f64);
+				bind.buffer_length = sizeof(param.f64);
+				break;
+
+			case SqlParamType::Text:
+			case SqlParamType::Blob:
+				bind.buffer_type = (param.type == SqlParamType::Text) ? MYSQL_TYPE_STRING : MYSQL_TYPE_BLOB;
+				bind.buffer = const_cast<char *>(param.bytes.data());
+				bind.buffer_length = static_cast<unsigned long>(param.bytes.size());
+				lengths[i] = static_cast<unsigned long>(param.bytes.size());
+				bind.length = &lengths[i];
+				break;
+		}
+	}
+
+	if (paramCount && mysql_stmt_bind_param(stmt, binds.data()))
+	{
+		p->uiSQLErrno = mysql_stmt_errno(stmt);
+		LOG_ERROR("AsyncSQL: mysql_stmt_bind_param failed: {} (query: {})", mysql_stmt_error(stmt), p->stQuery.c_str());
+		return false;
+	}
+
+	if (mysql_stmt_execute(stmt))
+	{
+		p->uiSQLErrno = mysql_stmt_errno(stmt);
+		LOG_ERROR("AsyncSQL: prepared statement failed: {} (query: {} errno: {})", mysql_stmt_error(stmt), p->stQuery.c_str(), p->uiSQLErrno);
+
+		if (IsConnectionError(p->uiSQLErrno))
+			DropPrepared(p->stQuery);
+
+		return false;
+	}
+
+	p->StorePrepared(static_cast<uint64_t>(mysql_stmt_affected_rows(stmt)),
+		static_cast<uint64_t>(mysql_stmt_insert_id(stmt)));
+	p->uiSQLErrno = 0;
+	return true;
 }
 
 void CAsyncSQL::PushResult(SQLMsg * p)
@@ -529,40 +768,29 @@ void CAsyncSQL::ChildLoop()
 			if (!PeekQueryFromCopyQueue(&p))
 				continue;
 
-			if (m_ulThreadID != mysql_thread_id(&m_hDB))
+			bool executed;
+
+			if (p->bPrepared)
 			{
-				LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
-				while (!QueryLocaleSet());
-				m_ulThreadID = mysql_thread_id(&m_hDB);
+				executed = TryExecutePrepared(p);
+			}
+			else
+			{
+				executed = (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()) == 0);
+
+				if (!executed)
+				{
+					p->uiSQLErrno = mysql_errno(&m_hDB);
+
+					LOG_ERROR("AsyncSQL: query failed: {} (query: {} errno: {})", mysql_error(&m_hDB), p->stQuery.c_str(), p->uiSQLErrno);
+				}
 			}
 
-			if (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()))
+			if (!executed && IsConnectionError(p->uiSQLErrno))
 			{
-				p->uiSQLErrno = mysql_errno(&m_hDB);
-
-				LOG_ERROR("AsyncSQL: query failed: {} (query: {} errno: {})", mysql_error(&m_hDB), p->stQuery.c_str(), p->uiSQLErrno);
-
-				switch (p->uiSQLErrno)
-				{
-					case CR_SOCKET_CREATE_ERROR:
-					case CR_CONNECTION_ERROR:
-					case CR_IPSOCK_ERROR:
-					case CR_UNKNOWN_HOST:
-					case CR_SERVER_GONE_ERROR:
-					case CR_CONN_HOST_ERROR:
-					case ER_NOT_KEYFILE:
-					case ER_CRASHED_ON_USAGE:
-					case ER_CANT_OPEN_FILE:
-					case ER_HOST_NOT_PRIVILEGED:
-					case ER_HOST_IS_BLOCKED:
-					case ER_PASSWORD_NOT_ALLOWED:
-					case ER_PASSWORD_NO_MATCH:
-					case ER_CANT_CREATE_THREAD:
-					case ER_INVALID_USE_OF_NULL:
-						m_sem.Release();
-						LOG_ERROR("AsyncSQL: retrying");
-						continue;
-				}
+				m_sem.Release();
+				LOG_ERROR("AsyncSQL: retrying");
+				continue;
 			}
 
 			profiler.Stop();
@@ -574,7 +802,14 @@ void CAsyncSQL::ChildLoop()
 
 			if (p->bReturn)
 			{
-				p->Store();
+				if (p->bPrepared)
+				{
+					if (!executed)
+						p->StorePrepared(0, 0);
+				}
+				else
+					p->Store();
+
 				PushResult(p);
 			}
 			else
@@ -588,39 +823,26 @@ void CAsyncSQL::ChildLoop()
 
 	while (PeekQuery(&p))
 	{
-		if (m_ulThreadID != mysql_thread_id(&m_hDB))
+		bool executed;
+
+		if (p->bPrepared)
 		{
-			LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
-			while (!QueryLocaleSet());
-			m_ulThreadID = mysql_thread_id(&m_hDB);
+			executed = TryExecutePrepared(p);
 		}
-
-		if (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()))
+		else
 		{
-			p->uiSQLErrno = mysql_errno(&m_hDB);
+			executed = (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()) == 0);
 
-			LOG_ERROR("AsyncSQL::ChildLoop : mysql_query error: {}:\nquery: {}", mysql_error(&m_hDB), p->stQuery.c_str());
-
-			switch (p->uiSQLErrno)
+			if (!executed)
 			{
-				case CR_SOCKET_CREATE_ERROR:
-				case CR_CONNECTION_ERROR:
-				case CR_IPSOCK_ERROR:
-				case CR_UNKNOWN_HOST:
-				case CR_SERVER_GONE_ERROR:
-				case CR_CONN_HOST_ERROR:
-				case ER_NOT_KEYFILE:
-				case ER_CRASHED_ON_USAGE:
-				case ER_CANT_OPEN_FILE:
-				case ER_HOST_NOT_PRIVILEGED:
-				case ER_HOST_IS_BLOCKED:
-				case ER_PASSWORD_NOT_ALLOWED:
-				case ER_PASSWORD_NO_MATCH:
-				case ER_CANT_CREATE_THREAD:
-				case ER_INVALID_USE_OF_NULL:
-					continue;
+				p->uiSQLErrno = mysql_errno(&m_hDB);
+
+				LOG_ERROR("AsyncSQL::ChildLoop : mysql_query error: {}:\nquery: {}", mysql_error(&m_hDB), p->stQuery.c_str());
 			}
 		}
+
+		if (!executed && IsConnectionError(p->uiSQLErrno))
+			continue;
 
 		LOG_INFO("QUERY_FLUSH: {}", p->stQuery.c_str());
 
@@ -628,7 +850,14 @@ void CAsyncSQL::ChildLoop()
 
 		if (p->bReturn)
 		{
-			p->Store();
+			if (p->bPrepared)
+			{
+				if (!executed)
+					p->StorePrepared(0, 0);
+			}
+			else
+				p->Store();
+
 			PushResult(p);
 		}
 		else

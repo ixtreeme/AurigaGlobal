@@ -46,7 +46,9 @@ bool CHwidManager::IsBlocked(const char * hwid)
 }
 
 void CHwidManager::AddHwidToAccount(const char * login, const char * hwid) {
-	DBManager::instance().Query("UPDATE account.account SET status='BAN2', hwid=%s WHERE login=%s and STATUS='OK'", SqlString(hwid).c_str(), SqlString(login).c_str());
+	DBManager::instance().QueryPrepared(
+		"UPDATE account.account SET status='BAN2', hwid=? WHERE login=? and STATUS='OK'",
+		{ SqlParam::Text(hwid), SqlParam::Text(login) });
 }
 
 void CHwidManager::SendBlockHwid(const char * whoname, const char * targetname)
@@ -124,7 +126,9 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 				}
 			}
 
-			DBManager::instance().Query("INSERT INTO account.blocked_hwids SET hwid=%s, who=%s, accounts=%s", SqlString(hwid).c_str(), SqlString(whoplayername).c_str(), SqlString(ids.c_str()).c_str());
+			DBManager::instance().QueryPrepared(
+				"INSERT INTO account.blocked_hwids SET hwid=?, who=?, accounts=?",
+				{ SqlParam::Text(hwid), SqlParam::Text(whoplayername), SqlParam::Text(ids) });
 		}
 	}
 }
@@ -185,7 +189,9 @@ void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname
 				strlcpy(accountsid, row2[0], sizeof(accountsid));
 
 				DBManager::instance().Query("UPDATE account.account SET status='OK' WHERE id in (%s)", accountsid);
-				DBManager::instance().Query("DELETE FROM account.blocked_hwids WHERE hwid=%s", SqlString(hwid).c_str());
+				DBManager::instance().QueryPrepared(
+					"DELETE FROM account.blocked_hwids WHERE hwid=?",
+					{ SqlParam::Text(hwid) });
 			}
 		}
 	}

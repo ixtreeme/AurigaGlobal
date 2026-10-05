@@ -173,6 +173,34 @@ void CDBManager::AsyncQuery(const char * c_pszQuery, int iSlot)
 	++g_query_count[1];
 }
 
+void CDBManager::QueryPrepared(const char * c_pszSql, const SqlParams & params, int iSlot)
+{
+	assert(iSlot < SQL_MAX_NUM);
+	m_asyncSQL[iSlot]->AsyncQueryPrepared(c_pszSql, params);
+	++g_query_count[1];
+}
+
+void CDBManager::ReturnQueryPrepared(const char * c_pszSql, const SqlParams & params, int iType, uint32_t dwIdent, void * udata, int iSlot)
+{
+	assert(iSlot < SQL_MAX_NUM);
+
+	CQueryInfo * p = new CQueryInfo;
+
+	p->iType = iType;
+	p->dwIdent = dwIdent;
+	p->pvData = udata;
+
+	m_mainSQL[iSlot]->ReturnQueryPrepared(c_pszSql, params, p);
+
+	++g_query_count[0];
+}
+
+SQLMsg * CDBManager::DirectQueryPrepared(const char * c_pszSql, const SqlParams & params, int iSlot)
+{
+	assert(iSlot < SQL_MAX_NUM);
+	return m_directSQL[iSlot]->DirectQueryPrepared(c_pszSql, params);
+}
+
 unsigned long CDBManager::EscapeString(void *to, const void *from, unsigned long length, int iSlot)
 {
 	assert(iSlot < SQL_MAX_NUM);

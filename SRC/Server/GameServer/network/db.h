@@ -72,6 +72,13 @@ class DBManager : public singleton<DBManager>
 		SQLMsg *		DirectQuery(const char * c_pszFormat, ...);
 		void			ReturnQuery(int iType, uint32_t dwIdent, void* pvData, const char * c_pszFormat, ...);
 
+		// Prepared (parameterized) variants for write statements. The SQL
+		// text must use '?' placeholders; the values travel out-of-band
+		// through the binary protocol, so no escaping/quoting is needed.
+		void			QueryPrepared(const char * c_pszSql, const SqlParams & params);
+		SQLMsg *		DirectQueryPrepared(const char * c_pszSql, const SqlParams & params);
+		void			ReturnQueryPrepared(int iType, uint32_t dwIdent, void * pvData, const char * c_pszSql, const SqlParams & params);
+
 		void			Process();
 		void			AnalyzeReturnQuery(SQLMsg * pmsg);
 		void			SendMoneyLog(uint8_t type, uint32_t vnum, int64_t gold);
@@ -96,6 +103,9 @@ class DBManager : public singleton<DBManager>
 
 		template<class Functor> void FuncQuery(Functor f, const char * c_pszFormat, ...);
 		template<class Functor> void FuncAfterQuery(Functor f, const char * c_pszFormat, ...);
+
+		template<class Functor> void FuncQueryPrepared(Functor f, const char * c_pszSql, const SqlParams & params);
+		template<class Functor> void FuncAfterQueryPrepared(Functor f, const char * c_pszSql, const SqlParams & params);
 
 		uint32_t EscapeString(char* dst, uint64_t dstSize, const char *src, uint32_t srcSize);
 
@@ -145,6 +155,26 @@ template <class Functor> void DBManager::FuncAfterQuery(Functor f, const char* c
 	m_sql.ReturnQuery(szQuery, p);
 }
 
+template <class Functor> void DBManager::FuncQueryPrepared(Functor f, const char* c_pszSql, const SqlParams& params)
+{
+	CFuncQueryInfo * p = M2_NEW CFuncQueryInfo;
+
+	p->iQueryType = QUERY_TYPE_FUNCTION;
+	p->f = f;
+
+	m_sql.ReturnQueryPrepared(c_pszSql, params, p);
+}
+
+template <class Functor> void DBManager::FuncAfterQueryPrepared(Functor f, const char* c_pszSql, const SqlParams& params)
+{
+	CFuncAfterQueryInfo * p = M2_NEW CFuncAfterQueryInfo;
+
+	p->iQueryType = QUERY_TYPE_AFTER_FUNCTION;
+	p->f = f;
+
+	m_sql.ReturnQueryPrepared(c_pszSql, params, p);
+}
+
 /// Quoted and escaped SQL string literal built with the direct connection's
 // charset. Use it for every user controlled value instead of interpolating
 // the raw string:
@@ -184,6 +214,10 @@ class AccountDB : public singleton<AccountDB>
 		SQLMsg* DirectQuery(const char * query);
 		void ReturnQuery(int iType, uint32_t dwIdent, void * pvData, const char * c_pszFormat, ...);
 		void AsyncQuery(const char* query);
+
+		SQLMsg* DirectQueryPrepared(const char * c_pszSql, const SqlParams & params);
+		void ReturnQueryPrepared(int iType, uint32_t dwIdent, void * pvData, const char * c_pszSql, const SqlParams & params);
+		void AsyncQueryPrepared(const char * c_pszSql, const SqlParams & params);
 
 		void SetLocale(const std::string & stLocale);
 

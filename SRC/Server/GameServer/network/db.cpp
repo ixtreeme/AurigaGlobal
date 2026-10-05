@@ -110,6 +110,28 @@ void DBManager::ReturnQuery(int iType, uint32_t dwIdent, void * pvData, const ch
 	m_sql.ReturnQuery(szQuery, p);
 }
 
+void DBManager::QueryPrepared(const char * c_pszSql, const SqlParams & params)
+{
+	m_sql.AsyncQueryPrepared(c_pszSql, params);
+}
+
+SQLMsg * DBManager::DirectQueryPrepared(const char * c_pszSql, const SqlParams & params)
+{
+	return m_sql_direct.DirectQueryPrepared(c_pszSql, params);
+}
+
+void DBManager::ReturnQueryPrepared(int iType, uint32_t dwIdent, void * pvData, const char * c_pszSql, const SqlParams & params)
+{
+	CReturnQueryInfo * p = M2_NEW CReturnQueryInfo;
+
+	p->iQueryType = QUERY_TYPE_RETURN;
+	p->iType = iType;
+	p->dwIdent = dwIdent;
+	p->pvData = pvData;
+
+	m_sql.ReturnQueryPrepared(c_pszSql, params, p);
+}
+
 SQLMsg * DBManager::PopResult()
 {
 	SQLMsg * p;
@@ -447,8 +469,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 							M2_DELETE(pinfo);
 							break;
 						} else {
-	DBManager::instance().Query("UPDATE account.account SET hwid=%s WHERE login=%s", SqlString(hwid).c_str(), SqlString(pinfo->login).c_str());
-	DBManager::instance().Query("UPDATE player.player_index SET hwid=%s WHERE id='%d'", SqlString(hwid).c_str(), dwID);
+	DBManager::instance().QueryPrepared(
+		"UPDATE account.account SET hwid=? WHERE login=?",
+		{ SqlParam::Text(pinfo->hwid), SqlParam::Text(pinfo->login) });
+	DBManager::instance().QueryPrepared(
+		"UPDATE player.player_index SET hwid=? WHERE id=?",
+		{ SqlParam::Text(pinfo->hwid), SqlParam::UInt(dwID) });
 						}
 #endif
 
@@ -629,8 +655,11 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				}
 
 				if (bQuery)
-					Query("REPLACE INTO highscore%s VALUES('%s', %u, %d)",
-							get_table_postfix(), info->szBoard, info->dwPID, info->iValue);
+				{
+					char query[256];
+					snprintf(query, sizeof(query), "REPLACE INTO highscore%s VALUES(?, ?, ?)", get_table_postfix());
+					QueryPrepared(query, { SqlParam::Text(info->szBoard), SqlParam::UInt(info->dwPID), SqlParam::Int(info->iValue) });
+				}
 
 				M2_DELETE(info);
 			}
@@ -775,6 +804,28 @@ SQLMsg* AccountDB::DirectQuery(const char * query)
 void AccountDB::AsyncQuery(const char* query)
 {
 	m_sql.AsyncQuery(query);
+}
+
+SQLMsg* AccountDB::DirectQueryPrepared(const char * c_pszSql, const SqlParams & params)
+{
+	return m_sql_direct.DirectQueryPrepared(c_pszSql, params);
+}
+
+void AccountDB::AsyncQueryPrepared(const char * c_pszSql, const SqlParams & params)
+{
+	m_sql.AsyncQueryPrepared(c_pszSql, params);
+}
+
+void AccountDB::ReturnQueryPrepared(int iType, uint32_t dwIdent, void * pvData, const char * c_pszSql, const SqlParams & params)
+{
+	CReturnQueryInfo * p = M2_NEW CReturnQueryInfo;
+
+	p->iQueryType = QUERY_TYPE_RETURN;
+	p->iType = iType;
+	p->dwIdent = dwIdent;
+	p->pvData = pvData;
+
+	m_sql.ReturnQueryPrepared(c_pszSql, params, p);
 }
 
 void AccountDB::ReturnQuery(int iType, uint32_t dwIdent, void * pvData, const char * c_pszFormat, ...)

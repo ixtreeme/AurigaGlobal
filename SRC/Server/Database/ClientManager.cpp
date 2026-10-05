@@ -271,10 +271,12 @@ static bool __UpdateDefaultPriv(const char* priv_type, uint32_t id, uint8_t type
 {
 	char szQuery[1024];
 	snprintf(szQuery, 1024,
-		"REPLACE INTO priv_settings SET priv_type='%s', id=%u, type=%u, value=%d, duration=DATE_ADD(NOW(), INTERVAL %lld SECOND);",
-		priv_type, id, type, value, duration_sec
+		"REPLACE INTO priv_settings SET priv_type=?, id=?, type=?, value=?, duration=DATE_ADD(NOW(), INTERVAL %lld SECOND)",
+		static_cast<long long>(duration_sec)
 	);
-	std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(szQuery, SQL_COMMON));
+	std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQueryPrepared(szQuery,
+			{ SqlParam::Text(priv_type), SqlParam::UInt(id), SqlParam::UInt(type), SqlParam::Int(value) },
+			SQL_COMMON));
 	return pMsg->Get()->uiAffectedRows;
 }
 #endif
@@ -678,17 +680,32 @@ void CClientManager::QUERY_QUEST_SAVE(CPeer * pkPeer, TQuestTable * pTable, uint
 		if (pTable->lValue == 0)
 		{
 			snprintf(szQuery, sizeof(szQuery),
-					"DELETE FROM quest%s WHERE dwPID=%u AND szName=%s AND szState=%s",
-					GetTablePostfix(), pTable->dwPID, SqlString(pTable->szName).c_str(), SqlString(pTable->szState).c_str());
+					"DELETE FROM quest%s WHERE dwPID=? AND szName=? AND szState=?",
+					GetTablePostfix());
+
+			CDBManager::instance().ReturnQueryPrepared(szQuery,
+					{
+						SqlParam::UInt(pTable->dwPID),
+						SqlParam::Text(pTable->szName),
+						SqlParam::Text(pTable->szState)
+					},
+					QID_QUEST_SAVE, pkPeer->GetHandle(), nullptr);
 		}
 		else
 		{
 			snprintf(szQuery, sizeof(szQuery),
-					"REPLACE INTO quest%s (dwPID, szName, szState, lValue) VALUES(%u, %s, %s, %d)",
-					GetTablePostfix(), pTable->dwPID, SqlString(pTable->szName).c_str(), SqlString(pTable->szState).c_str(), pTable->lValue);
-		}
+					"REPLACE INTO quest%s (dwPID, szName, szState, lValue) VALUES(?, ?, ?, ?)",
+					GetTablePostfix());
 
-		CDBManager::instance().ReturnQuery(szQuery, QID_QUEST_SAVE, pkPeer->GetHandle(), nullptr);
+			CDBManager::instance().ReturnQueryPrepared(szQuery,
+					{
+						SqlParam::UInt(pTable->dwPID),
+						SqlParam::Text(pTable->szName),
+						SqlParam::Text(pTable->szState),
+						SqlParam::Int(pTable->lValue)
+					},
+					QID_QUEST_SAVE, pkPeer->GetHandle(), nullptr);
+		}
 	}
 }
 
@@ -1125,12 +1142,11 @@ void CClientManager::RESULT_SAFEBOX_CHANGE_PASSWORD(CPeer * pkPeer, SQLMsg * msg
 		if ((row[0] && *row[0] && (row[0] != p->login)) || ((!row[0] || !*row[0]) && !strcmp("000000", p->login)))
 		{
 			char szQuery[QUERY_MAX_LEN];
-			char escape_pwd[64];
-			CDBManager::instance().EscapeString(escape_pwd, p->safebox_password, strlen(p->safebox_password));
+			snprintf(szQuery, sizeof(szQuery), "UPDATE safebox%s SET password=? WHERE account_id=?", GetTablePostfix());
 
-			snprintf(szQuery, sizeof(szQuery), "UPDATE safebox%s SET password='%s' WHERE account_id=%u", GetTablePostfix(), escape_pwd, p->account_id);
-
-			CDBManager::instance().ReturnQuery(szQuery, QID_SAFEBOX_CHANGE_PASSWORD_SECOND, pkPeer->GetHandle(), p);
+			CDBManager::instance().ReturnQueryPrepared(szQuery,
+					{ SqlParam::Text(p->safebox_password), SqlParam::UInt(p->account_id) },
+					QID_SAFEBOX_CHANGE_PASSWORD_SECOND, pkPeer->GetHandle(), p);
 			return;
 		}
 	}
@@ -1922,19 +1938,15 @@ void CClientManager::QUERY_FLUSH_CACHE(CPeer * pkPeer, const char * c_pData)
 
 void CClientManager::QUERY_SMS(CPeer * pkPeer, TPacketGDSMS * pack)
 {
-	char szQuery[QUERY_MAX_LEN];
-
-	char szMsg[256+1];
-	//unsigned long len = CDBManager::instance().EscapeString(szMsg, pack->szMsg, strlen(pack->szMsg), SQL_ACCOUNT);
-	unsigned long len = CDBManager::instance().EscapeString(szMsg, pack->szMsg, strlen(pack->szMsg));
-	szMsg[len] = '\0';
-
-	snprintf(szQuery, sizeof(szQuery),
-			"INSERT INTO sms_pool (server, sender, receiver, mobile, msg) VALUES(%d, %s, %s, %s, %s)",
-			(m_iPlayerIDStart + 2) / 3, SqlString(pack->szFrom).c_str(), SqlString(pack->szTo).c_str(),
-			SqlString(pack->szMobile).c_str(), SqlString(szMsg).c_str());
-
-	CDBManager::instance().AsyncQuery(szQuery);
+	CDBManager::instance().QueryPrepared(
+			"INSERT INTO sms_pool (server, sender, receiver, mobile, msg) VALUES(?, ?, ?, ?, ?)",
+			{
+				SqlParam::Int((m_iPlayerIDStart + 2) / 3),
+				SqlParam::Text(pack->szFrom),
+				SqlParam::Text(pack->szTo),
+				SqlParam::Text(pack->szMobile),
+				SqlParam::Text(pack->szMsg)
+			});
 }
 
 void CClientManager::QUERY_RELOAD_PROTO()
@@ -4400,12 +4412,9 @@ void CClientManager::OfflineshopLog(const uint32_t dwOwnerID, const uint32_t dwI
 	vsnprintf(szLog, sizeof(szLog), fmt, args);
 	va_end(args);
 
-	static char szEscaped[2048] = "\0";
-	CDBManager::instance().EscapeString(szEscaped, szLog, strlen(szLog));
-
-	static char query[4096];
-	snprintf(query, sizeof(query), "INSERT INTO `player`.`offlineshop_logs` (`owner_id`, `item_id`, `what`, `when`) VALUES( %u, %u, '%s', NOW())", dwOwnerID, dwItemID, szEscaped);
-	CDBManager::instance().AsyncQuery(query);
+	CDBManager::instance().QueryPrepared(
+		"INSERT INTO `player`.`offlineshop_logs` (`owner_id`, `item_id`, `what`, `when`) VALUES(?, ?, ?, NOW())",
+		{ SqlParam::UInt(dwOwnerID), SqlParam::UInt(dwItemID), SqlParam::Text(szLog) });
 }
 #endif
 
@@ -5195,8 +5204,17 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 #endif*/
 
 
-									snprintf(szQuery, sizeof(szQuery), "INSERT INTO player.ishop_log (accountID, playerName, buyDate, buyTime, ipAdress, itemVnum, itemCount, itemPrice) VALUES(%u, %s, NOW(), %lld, %s, %u, %d, %u)", accountID, SqlString(playerName).c_str(), time(nullptr), SqlString(ipAdress).c_str(), itemData.itemVnum, itemCount, itemPrice);
-									std::unique_ptr<SQLMsg> pInsertLog(CDBManager::instance().DirectQuery(szQuery, SQL_PLAYER));
+									std::unique_ptr<SQLMsg> pInsertLog(CDBManager::instance().DirectQueryPrepared(
+										"INSERT INTO player.ishop_log (accountID, playerName, buyDate, buyTime, ipAdress, itemVnum, itemCount, itemPrice) VALUES(?, ?, NOW(), ?, ?, ?, ?, ?)",
+										{
+											SqlParam::UInt(accountID),
+											SqlParam::Text(playerName),
+											SqlParam::Int(static_cast<int64_t>(time(nullptr))),
+											SqlParam::Text(ipAdress),
+											SqlParam::UInt(itemData.itemVnum),
+											SqlParam::Int(itemCount),
+											SqlParam::UInt(itemPrice)
+										}, SQL_PLAYER));
 									if (!pInsertLog || pInsertLog->Get()->uiAffectedRows == 0)
 									{
 										int returnType = 4;

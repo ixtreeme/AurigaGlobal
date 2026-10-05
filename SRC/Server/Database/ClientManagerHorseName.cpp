@@ -4,11 +4,9 @@
 
 void CClientManager::UpdateHorseName(TPacketUpdateHorseName* data, CPeer* peer)
 {
-	char szQuery[512];
-
-	snprintf(szQuery, sizeof(szQuery), "REPLACE INTO horse_name VALUES(%u, %s)", data->dwPlayerID, SqlString(data->szHorseName).c_str());
-
-	CDBManager::instance().AsyncQuery(szQuery);
+	CDBManager::instance().QueryPrepared(
+			"REPLACE INTO horse_name VALUES(?, ?)",
+			{ SqlParam::UInt(data->dwPlayerID), SqlParam::Text(data->szHorseName) });
 
 	ForwardPacket(HEADER_DG_UPDATE_HORSE_NAME, data, sizeof(TPacketUpdateHorseName), 0, peer);
 }

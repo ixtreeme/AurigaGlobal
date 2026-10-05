@@ -1511,10 +1511,9 @@ void ChangeName(entt::entity owner, const char* name)
     auto* actor = FindSummonedRecord(owner);
     if (!actor || !name || !*name || strlen(name) > CHARACTER_NAME_MAX_LEN)
         return;
-    char escaped[CHARACTER_NAME_MAX_LEN * 2 + 1] {};
-    DBManager::instance().EscapeString(escaped, sizeof(escaped), name, static_cast<uint32_t>(strlen(name)));
-    std::unique_ptr<SQLMsg> result(DBManager::instance().DirectQuery(
-        "UPDATE new_petsystem SET name='%s' WHERE id=%u", escaped, actor->summonItemID));
+    std::unique_ptr<SQLMsg> result(DBManager::instance().DirectQueryPrepared(
+        "UPDATE new_petsystem SET name=? WHERE id=?",
+        { SqlParam::Text(name), SqlParam::UInt(actor->summonItemID) }));
     if (!result || result->uiSQLErrno)
         return;
     SetActorName(owner, *actor, name);

@@ -765,9 +765,18 @@ ACMD(do_save_savepoint) {
 		int y = (ecs::PlayerRuntime::GetY(character) - map->m_setting.iBaseY) / 100;
 		PIXEL_POSITION pos { ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetZ(character) };
 
-		char query2[512] = {0};
-		snprintf(query2, sizeof(query2), "INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(%u, %d, %s, %d, %d, %d, %d, %d)", (ecs::PlayerRuntime::GetPlayerID(character)), slot, SqlString(name.c_str()).c_str(), mapIdx, x, y, pos.x, pos.y);
-		DBManager::instance().Query(query2);
+		DBManager::instance().QueryPrepared(
+			"INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+			{
+				SqlParam::UInt(ecs::PlayerRuntime::GetPlayerID(character)),
+				SqlParam::Int(slot),
+				SqlParam::Text(name),
+				SqlParam::Int(mapIdx),
+				SqlParam::Int(x),
+				SqlParam::Int(y),
+				SqlParam::Int(pos.x),
+				SqlParam::Int(pos.y)
+			});
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, name.c_str(), mapIdx, x, y);
 		ecs::PlayerRuntime::SetSavePointTime(character);
 	}

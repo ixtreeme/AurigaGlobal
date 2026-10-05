@@ -1164,23 +1164,21 @@ bool CGuildManager::Bet(uint32_t dwID, const char * c_pszLogin, int64_t dwGold, 
 {
 	const auto it = m_map_kWarReserve.find(dwID);
 
-	char szQuery[1024];
-
 	if (it == m_map_kWarReserve.end())
 	{
 		LOG_INFO("WAR_RESERVE: Bet: cannot find reserve war by id {}", dwID);
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(%s, %d, %lld, NOW())",
-				SqlString(c_pszLogin).c_str(), ITEM_ELK_VNUM, dwGold);
-		CDBManager::instance().AsyncQuery(szQuery);
+		CDBManager::instance().QueryPrepared(
+				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
+				{ SqlParam::Text(c_pszLogin), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::Int(dwGold) });
 		return false;
 	}
 
 	if (!it->second->Bet(c_pszLogin, dwGold, dwGuild))
 	{
 		LOG_INFO("WAR_RESERVE: Bet: cannot bet id {}, login {}, gold {}, guild {}", dwID, c_pszLogin, dwGold, dwGuild);
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(%s, %d, %lld, NOW())",
-				SqlString(c_pszLogin).c_str(), ITEM_ELK_VNUM, dwGold);
-		CDBManager::instance().AsyncQuery(szQuery);
+		CDBManager::instance().QueryPrepared(
+				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
+				{ SqlParam::Text(c_pszLogin), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::Int(dwGold) });
 		return false;
 	}
 
@@ -1303,11 +1301,9 @@ bool CGuildWarReserve::Bet(const char * pszLogin, int64_t dwGold, uint32_t dwGui
 		return false;
 	}
 
-	snprintf(szQuery, sizeof(szQuery),
-			"INSERT INTO guild_war_bet (war_id, login, gold, guild) VALUES(%u, %s, %lld, %u)",
-			m_data.dwID, SqlString(pszLogin).c_str(), dwGold, dwGuild);
-
-	std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
+	std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQueryPrepared(
+			"INSERT INTO guild_war_bet (war_id, login, gold, guild) VALUES(?, ?, ?, ?)",
+			{ SqlParam::UInt(m_data.dwID), SqlParam::Text(pszLogin), SqlParam::Int(dwGold), SqlParam::UInt(dwGuild) }));
 
 	if (pmsg->Get()->uiAffectedRows == 0 || pmsg->Get()->uiAffectedRows == (uint32_t)-1)
 	{
@@ -1354,40 +1350,11 @@ void CGuildWarReserve::Draw()
 
 	LOG_INFO("WAR_REWARD: Draw. war_id {}", m_data.dwID);
 
-	auto it = mapBet.begin();
-
-	while (1)
+	for (const auto& bet : mapBet)
 	{
-		int iLen = 0;
-		int iRow = 0;
-
-		iLen += snprintf(szQuery, sizeof(szQuery) - iLen, "INSERT INTO item_award (login, vnum, socket0, given_time) VALUES");
-
-		while (it != mapBet.end())
-		{
-			if (iRow == 0)
-				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, "(%s, %d, %u, NOW())",
-						SqlString(it->first).c_str(), ITEM_ELK_VNUM, it->second.second);
-			else
-				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, ",(%s, %d, %u, NOW())",
-						SqlString(it->first).c_str(), ITEM_ELK_VNUM, it->second.second);
-
-			++it;
-
-			if (iLen > 384)
-				break;
-
-			++iRow;
-		}
-
-		if (iRow > 0)
-		{
-			LOG_INFO("WAR_REWARD: QUERY: {}", szQuery);
-			CDBManager::instance().AsyncQuery(szQuery);
-		}
-
-		if (it == mapBet.end())
-			break;
+		CDBManager::instance().QueryPrepared(
+				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
+				{ SqlParam::Text(bet.first), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::UInt(bet.second.second) });
 	}
 }
 
