@@ -721,7 +721,7 @@ void DESC::BindCharacter(entt::entity character)
 }
 void DESC::FlushOutput()
 {
-	if (!m_socket.is_open())
+	if (!IsConnected())
 		return;
 
 	if (buffer_size(m_lpOutputBuffer) <= 0)
@@ -735,7 +735,9 @@ void DESC::FlushOutput()
 
 	while (buffer_size(m_lpOutputBuffer) > 0 && !IsPhase(PHASE_CLOSE))
 	{
-		auriga::net::RunFor(std::chrono::milliseconds(10));
+		// The io thread performs the writes; the game thread only drains
+		// the resulting completions and advances the output buffer.
+		auriga::net::DrainCompletions();
 
 		const auto seconds_passed = std::chrono::duration_cast<std::chrono::seconds>(
 			std::chrono::steady_clock::now() - start).count();
@@ -745,7 +747,11 @@ void DESC::FlushOutput()
 			SetPhase(PHASE_CLOSE);
 			break;
 		}
+
+		usleep(1000);
 	}
+
+	auriga::net::DrainCompletions();
 
 	if (buffer_size(m_lpOutputBuffer) == 0)
 		LOG_INFO("FLUSH SUCCESS");

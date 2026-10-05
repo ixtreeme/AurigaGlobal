@@ -95,6 +95,9 @@ int main()
 
 	CClientManager::instance().MainLoop();
 
+	// The game loop is over; join the dedicated io thread.
+	auriga::net::Stop();
+
 	signal_timer_disable();
 
 	DBManager.Quit();
@@ -364,6 +367,9 @@ int Start()
 	}
 
 	LOG_INFO("ClientManager initialization.. ");
+
+	// Socket I/O runs on the dedicated engine thread from here on.
+	auriga::net::Start();
 
 	if (!CClientManager::instance().Initialize())
 	{

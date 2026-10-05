@@ -428,9 +428,10 @@ protected:
 
 private:
 	void					DoAccept();
+	void					DoAccept(std::shared_ptr<auriga::net::tcp::acceptor> acceptor);
 
 	int					m_looping;
-	std::unique_ptr<auriga::net::tcp::acceptor>	m_acceptor;
+	std::shared_ptr<auriga::net::tcp::acceptor>	m_acceptor;
 	std::vector<CPeer*>				m_pendingDeletePeers;
 	TPeerList				m_peerList;
 

@@ -136,7 +136,10 @@ if(MSVC)
         $<$<BOOL:${UNIX}>:UNIX>
     )
 
-    add_compile_options(/bigobj)
+    # Standard C++ exception handling. Boost, fmt and spdlog require it;
+    # without /EHsc the MSVC toolchain defines BOOST_NO_EXCEPTIONS and link
+    # fails on boost::throw_exception.
+    add_compile_options(/bigobj /EHsc)
 
     if(ENABLE_ASAN)
         # Visual Studio's ASan libraries are shipped beside the selected MSVC

@@ -168,7 +168,9 @@ if(WIN32 AND CMAKE_GENERATOR MATCHES "Visual Studio")
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <HighEntropyVA>true</HighEntropyVA>
-      <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
+      <!-- Keep in sync with the global /SAFESEH:NO link option: the
+           current MSVC linker rejects /SAFESEH for x64 targets. -->
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
 

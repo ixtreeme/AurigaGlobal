@@ -93,9 +93,10 @@ class DESC_MANAGER : public singleton<DESC_MANAGER>
 
 	private:
 		void				DoAccept(bool bP2P);
+		void				DoAccept(bool bP2P, std::shared_ptr<auriga::net::tcp::acceptor> acceptor);
 
-		std::unique_ptr<auriga::net::tcp::acceptor>	m_tcpAcceptor;
-		std::unique_ptr<auriga::net::tcp::acceptor>	m_p2pAcceptor;
+		std::shared_ptr<auriga::net::tcp::acceptor>	m_tcpAcceptor;
+		std::shared_ptr<auriga::net::tcp::acceptor>	m_p2pAcceptor;
 		std::vector<LPDESC>				m_pendingDeletes;
 
 		bool				m_bDisconnectInvalidCRC;

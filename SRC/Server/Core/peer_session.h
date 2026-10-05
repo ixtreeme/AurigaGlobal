@@ -5,8 +5,10 @@
 #include <Core/typedef.h>
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 // Shared transport session for the server-to-server links.
@@ -19,9 +21,15 @@
 //   OnPeerGone()  - EOF/error, start the subclass teardown
 //   OnOutput()    - optional post-write hook
 //
-// Deferred deletion is handled here: every pending completion counts in
-// m_pendingAsyncOps, so the owners can keep the object alive until the
-// aborted handlers have run (see MarkDeletePending()).
+// Threading: the socket is only touched by the dedicated io thread. Game
+// logic only ever runs on the game thread: io completions copy their result
+// and enqueue a callback through QueueGameCompletion(), which the game loop
+// processes in DrainCompletions(). Socket mutations requested by the game
+// thread (initial read arm, write starts, close) are posted to the io thread.
+//
+// Deferred deletion is handled here: an object may only be destroyed when
+// HasPendingIoWork() is false, i.e. no asynchronous operation and no queued
+// completion references it anymore (see MarkDeletePending()).
 class PeerSession
 {
 public:
@@ -31,16 +39,17 @@ public:
 	PeerSession(const PeerSession&) = delete;
 	PeerSession& operator=(const PeerSession&) = delete;
 
-	bool		IsConnected() const		{ return m_socket.is_open(); }
+	bool		IsConnected() const		{ return m_ioConnected; }
 	socket_t	GetSocketId() const;
-	int		PendingAsyncOps() const	{ return m_pendingAsyncOps; }
-	bool		IsDeletePending() const	{ return m_deletePending; }
+	int		PendingAsyncOps() const		{ return m_pendingAsyncOps.load(std::memory_order_acquire); }
+	bool		HasPendingIoWork() const;
+	bool		IsDeletePending() const		{ return m_deletePending; }
 	void		MarkDeletePending()		{ m_deletePending = true; }
 	int64_t		IdleSeconds() const;
 
 	// Link level liveness handling. The owner loops must call
 	// CheckHeartbeat() periodically; interval == 0 disables sending,
-	// timeout == 0 disables the idle timeout.
+	// timeout == 0 disables the idle timeout. Runs on the game thread.
 	void		SetHeartbeat(int intervalSeconds, int timeoutSeconds);
 	void		CheckHeartbeat();
 
@@ -72,17 +81,24 @@ protected:
 	// Subclasses may start their own asynchronous operations (for example
 	// the connecting client descriptors), so these bookkeeping members are
 	// available to them as well.
-	void		OnRead(const boost::system::error_code & ec, std::size_t bytes);
+	//
+	// QueueGameCompletion() runs on the io thread, consumes exactly one
+	// pending token and enqueues fn for the game thread. The game loop calls
+	// OnRead/OnWrite with the copied completion result.
+	void		QueueGameCompletion(uint64_t generation, std::function<void()> fn);
+
+	void		OnRead(const boost::system::error_code & ec, std::vector<char> data);
 	void		OnWrite(const boost::system::error_code & ec, std::size_t bytes);
 
 	std::array<char, 65536>	m_readChunk;
 	std::vector<char>	m_writeChunk;
 
-	bool		m_readPending { false };
 	bool		m_writePending { false };
-	int		m_pendingAsyncOps { 0 };
+	std::atomic<int>	m_pendingAsyncOps { 0 };
+	std::atomic<int>	m_queuedCompletions { 0 };
 	bool		m_deletePending { false };
 	bool		m_bSessionDestroyed { false };
+	bool		m_ioConnected { false };
 	uint64_t	m_generation { 0 };
 
 	int		m_heartbeatInterval { 0 };
@@ -90,4 +106,10 @@ protected:
 
 	std::chrono::steady_clock::time_point	m_lastReceive;
 	std::chrono::steady_clock::time_point	m_lastHeartbeat;
+
+private:
+	// io thread entry points.
+	void		ArmRead(uint64_t generation);
+	void		ArmWrite(uint64_t generation);
+	void		IoClose(uint64_t generation);
 };

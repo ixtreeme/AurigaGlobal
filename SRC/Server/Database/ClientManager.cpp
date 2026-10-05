@@ -152,9 +152,18 @@ void CClientManager::Destroy()
 #endif
 	if (m_acceptor)
 	{
-		boost::system::error_code ec;
-		m_acceptor->close(ec);
+		// The accept handler may still reference the acceptor on the io
+		// thread; the close is serialized through the io thread and the
+		// shared_ptr copy keeps the object alive until it ran.
+		auto acceptor = std::move(m_acceptor);
 		m_acceptor.reset();
+
+		auriga::net::PostIo(
+			[acceptor]()
+			{
+				boost::system::error_code ec;
+				acceptor->close(ec);
+			});
 	}
 }
 
@@ -321,7 +330,7 @@ bool CClientManager::Initialize()
 
 	const auriga::net::tcp::endpoint endpoint(address, tmpValue);
 
-	auto acceptor = std::make_unique<auriga::net::tcp::acceptor>(auriga::net::Io());
+	auto acceptor = std::make_shared<auriga::net::tcp::acceptor>(auriga::net::Io());
 
 	acceptor->open(endpoint.protocol(), ec);
 
@@ -2993,20 +3002,29 @@ void CClientManager::CheckHeartbeats()
 
 void CClientManager::DoAccept()
 {
-	if (!m_acceptor || !m_acceptor->is_open())
+	DoAccept(m_acceptor);
+}
+
+void CClientManager::DoAccept(std::shared_ptr<auriga::net::tcp::acceptor> acceptor)
+{
+	if (!acceptor || !acceptor->is_open())
 		return;
 
 	auto socket = std::make_shared<auriga::net::tcp::socket>(auriga::net::Io());
 
-	m_acceptor->async_accept(*socket,
-		[this, socket](const boost::system::error_code & ec)
+	acceptor->async_accept(*socket,
+		[this, socket, acceptor](const boost::system::error_code & ec)
 		{
 			if (!ec)
-				AddPeer(std::move(*socket));
+			{
+				// Adding the peer touches the manager state, so it is
+				// created on the game thread.
+				auriga::net::PostCompletion([this, socket]() { AddPeer(std::move(*socket)); });
+			}
 			else if (ec != boost::asio::error::operation_aborted)
 				LOG_ERROR("Accept failed: {}", ec.message().c_str());
 
-			DoAccept();
+			DoAccept(acceptor);
 		});
 }
 
@@ -3018,7 +3036,7 @@ void CClientManager::CollectPendingDeletes()
 	{
 		CPeer * pPeer = *it;
 
-		if (pPeer->PendingAsyncOps() == 0)
+		if (!pPeer->HasPendingIoWork())
 		{
 			it = m_pendingDeletePeers.erase(it);
 			delete pPeer;
@@ -3067,9 +3085,10 @@ void CClientManager::RemovePeer(CPeer * pPeer)
 	// Cancel the socket operations and release the buffers
 	pPeer->Destroy();
 
-	if (pPeer->PendingAsyncOps() > 0)
+	if (pPeer->HasPendingIoWork())
 	{
-		// Asio completion handlers may still reference this peer.
+		// Asio completion handlers and queued io->game completions may
+		// still reference this peer.
 		pPeer->MarkDeletePending();
 		m_pendingDeletePeers.push_back(pPeer);
 	}
@@ -3496,9 +3515,9 @@ int CClientManager::Process()
 #endif
 	}
 
-	// Dispatches the socket accept/read/write completions that became ready
+	// Runs the accept/read/write completions the io thread handed over
 	// since the previous pulse. Everything runs on this thread.
-	auriga::net::Poll();
+	auriga::net::DrainCompletions();
 
 	// Deferred deletion of peers whose aborted operations have finished.
 	CollectPendingDeletes();

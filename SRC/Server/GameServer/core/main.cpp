@@ -696,6 +696,9 @@ int start(int argc, char **argv)
 
 	signal_timer_disable();
 
+	// Socket I/O runs on the dedicated engine thread from here on.
+	auriga::net::Start();
+
 	if (!DESC_MANAGER::instance().StartAccept(g_szPublicIP, mother_port, false))
 	{
 		LOG_ERROR("{}: {}", "socket_tcp_bind: tcp_socket", strerror(errno));
@@ -745,6 +748,9 @@ int start(int argc, char **argv)
 
 void destroy()
 {
+	LOG_INFO("<shutdown> Stopping AsioEngine...");
+	auriga::net::Stop();
+
 	LOG_INFO("<shutdown> Canceling ReloadSpamEvent...");
 	CancelReloadSpamEvent();
 
@@ -882,9 +888,9 @@ int io_loop()
 	DESC_MANAGER::instance().DestroyClosed();
 	DESC_MANAGER::instance().TryConnect();
 
-	// Dispatches the socket accept/read/write completions that became ready
+	// Runs the accept/read/write completions the io thread handed over
 	// since the previous pulse. Everything runs on this thread.
-	auriga::net::Poll();
+	auriga::net::DrainCompletions();
 
 	// Deferred deletion of descriptors whose aborted operations have finished.
 	DESC_MANAGER::instance().CollectPendingDeletes();

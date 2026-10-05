@@ -527,7 +527,7 @@ bool Complete(entt::entity session)
         !SafeboxDelayPassed(first) || !SafeboxDelayPassed(second) ||
         ExchangeSystem::GetSession(first) != session || ExchangeSystem::GetSession(second) != session)
         return false;
-    if (!db_clientdesc || db_clientdesc->GetSocket() == INVALID_SOCKET)
+    if (!db_clientdesc || !db_clientdesc->IsConnected())
     {
         Info(first, 759); Info(second, 759);
         return false;

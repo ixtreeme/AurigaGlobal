@@ -90,75 +90,80 @@ void CLIENT_DESC::StartConnect()
 {
 	LOG_INFO("SYSTEM: Trying to connect to {}:{}", m_stHost.c_str(), m_wPort);
 
-	boost::system::error_code ec;
-	m_socket.close(ec);
-	m_socket = auriga::net::tcp::socket(auriga::net::Io());
-
 	SetPhase(PHASE_CLIENT_CONNECTING);
 
 	m_connectPending = true;
-	++m_pendingAsyncOps;
 
+	// One token covers the whole resolve -> connect chain; the game
+	// handoff consumes it exactly once on every path.
 	const uint64_t generation = m_generation;
 	const std::string host = m_stHost;
+	const uint16_t port = m_wPort;
 
-	auto resolver = std::make_shared<auriga::net::tcp::resolver>(auriga::net::Io());
+	m_pendingAsyncOps.fetch_add(1, std::memory_order_acq_rel);
 
-	resolver->async_resolve(host, std::to_string(m_wPort),
-		[this, generation, resolver](const boost::system::error_code & resolve_ec, auriga::net::tcp::resolver::results_type results)
-		{
-			--m_pendingAsyncOps;
+	auriga::net::PostIo([this, generation, host, port]()
+	{
+		// Socket setup happens on the io thread: it may race with the
+		// submission of the previous (aborted) session operations.
+		boost::system::error_code ec;
+		m_socket.close(ec);
+		m_socket = auriga::net::tcp::socket(auriga::net::Io());
 
-			if (generation != m_generation || m_bDestroyed || m_deletePending)
-				return;
+		auto resolver = std::make_shared<auriga::net::tcp::resolver>(auriga::net::Io());
 
-			if (resolve_ec)
+		resolver->async_resolve(host, std::to_string(port),
+			[this, generation, resolver](const boost::system::error_code & resolve_ec, auriga::net::tcp::resolver::results_type results)
 			{
-				m_connectPending = false;
-				LOG_ERROR("SYSTEM: could not resolve {}:{} ({})", m_stHost.c_str(), m_wPort, resolve_ec.message().c_str());
-				SetPhase(PHASE_CLIENT_CONNECTING);
-				return;
-			}
-
-			++m_pendingAsyncOps;
-
-			boost::asio::async_connect(m_socket, results,
-				[this, generation, resolver](const boost::system::error_code & connect_ec, const auriga::net::tcp::endpoint &)
+				if (resolve_ec)
 				{
-					--m_pendingAsyncOps;
+					QueueGameCompletion(generation,
+						[this, resolve_ec]()
+						{
+							m_connectPending = false;
+							LOG_ERROR("SYSTEM: could not resolve {}:{} ({})", m_stHost.c_str(), m_wPort, resolve_ec.message().c_str());
+							SetPhase(PHASE_CLIENT_CONNECTING);
+						});
+					return;
+				}
 
-					if (generation != m_generation || m_bDestroyed || m_deletePending)
-						return;
-
-					m_connectPending = false;
-
-					if (connect_ec)
+				boost::asio::async_connect(m_socket, results,
+					[this, generation, resolver](const boost::system::error_code & connect_ec, const auriga::net::tcp::endpoint &)
 					{
-						boost::system::error_code ignored;
-						m_socket.close(ignored);
-						LOG_ERROR("SYSTEM: connection to {}:{} failed ({})", m_stHost.c_str(), m_wPort, connect_ec.message().c_str());
-						SetPhase(PHASE_CLIENT_CONNECTING);
-						return;
-					}
+						QueueGameCompletion(generation,
+							[this, connect_ec]()
+							{
+								m_connectPending = false;
 
-					LOG_INFO("SYSTEM: connected to server ({}:{} ptr {})", m_stHost.c_str(), m_wPort, static_cast<const void*>(this));
-					StartRead();
+								if (connect_ec)
+								{
+									CloseSocket();
+									LOG_ERROR("SYSTEM: connection to {}:{} failed ({})", m_stHost.c_str(), m_wPort, connect_ec.message().c_str());
+									SetPhase(PHASE_CLIENT_CONNECTING);
+									return;
+								}
 
-					if (PeerAuth::HasKey())
-					{
-						// Wait for the server-side challenge before switching
-						// to the operational phase.
-						m_bAwaitingAuth = true;
-						m_bAuthResponseSent = false;
-						SetHeartbeat(0, 10);
-					}
-					else
-					{
-						SetPhase(m_iPhaseWhenSucceed);
-						SetHeartbeat(30, 90);
-					}
-				});
-		});
+								LOG_INFO("SYSTEM: connected to server ({}:{} ptr {})", m_stHost.c_str(), m_wPort, static_cast<const void*>(this));
+								m_ioConnected = true;
+								StartRead();
+
+								if (PeerAuth::HasKey())
+								{
+									// Wait for the server-side challenge before switching
+									// to the operational phase.
+									m_bAwaitingAuth = true;
+									m_bAuthResponseSent = false;
+									SetHeartbeat(0, 10);
+								}
+								else
+								{
+									SetPhase(m_iPhaseWhenSucceed);
+									SetHeartbeat(30, 90);
+								}
+							});
+					});
+			});
+	});
 }
 
 void CLIENT_DESC::Setup(const char * _host, uint16_t _port)
@@ -308,7 +313,7 @@ void CLIENT_DESC::DBPacketHeader(uint8_t bHeader, uint32_t dwHandle, uint32_t dw
 
 void CLIENT_DESC::DBPacket(uint8_t bHeader, uint32_t dwHandle, const void * c_pvData, uint32_t dwSize)
 {
-	if (!m_socket.is_open()) {
+	if (!IsConnected()) {
 		LOG_INFO("CLIENT_DESC [{}] trying DBPacket() while not connected", GetKnownClientDescName(this));
 		return;
 	}
@@ -323,7 +328,7 @@ void CLIENT_DESC::DBPacket(uint8_t bHeader, uint32_t dwHandle, const void * c_pv
 
 void CLIENT_DESC::Packet(const void * c_pvData, int iSize)
 {
-	if (!m_socket.is_open()) {
+	if (!IsConnected()) {
 		LOG_INFO("CLIENT_DESC [{}] trying Packet() while not connected", GetKnownClientDescName(this));
 		return;
 	}
