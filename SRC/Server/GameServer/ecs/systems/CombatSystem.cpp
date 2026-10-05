@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <boost/algorithm/string/find.hpp>
 #include <random>
 #include <thread>
@@ -1013,10 +1014,27 @@ std::vector<LeaderboardEntry> FetchTop10SkillMob()
 	return list;
 }
 
-void CheckLeaderboardSkillMobChanges()
+static void ApplyLeaderboardSkillMobChanges(SQLMsg* pMsg)
 {
 	static std::vector<LeaderboardEntry> s_lastTop10;
-	auto current = FetchTop10SkillMob();
+
+	std::vector<LeaderboardEntry> current;
+
+	if (pMsg && pMsg->Get() && pMsg->Get()->pSQLResult)
+	{
+		MYSQL_ROW row;
+		MYSQL_RES* res = pMsg->Get()->pSQLResult;
+
+		while ((row = mysql_fetch_row(res)))
+		{
+			LeaderboardEntry e;
+			e.name = row[0] ? row[0] : "Unknown";
+			e.level = row[1] ? atoi(row[1]) : 0;
+			e.victim = row[2] ? row[2] : "None";
+			e.dmg = row[3] ? atoi(row[3]) : 0;
+			current.push_back(e);
+		}
+	}
 
 	if (current.size() != s_lastTop10.size())
 	{
@@ -1052,16 +1070,23 @@ void CheckLeaderboardSkillMobChanges()
 	s_lastTop10 = current;
 }
 
-void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewerEntity)
+void CheckLeaderboardSkillMobChanges()
 {
-	if (!g_registry.valid(e) || !g_registry.valid(viewerEntity) || !ecs::PlayerRuntime::GetDesc(viewerEntity))
+	// Non blocking: the read is handled by the DB worker and the diff runs
+	// on the game thread when the result arrives.
+	DBManager::instance().FuncQuery(std::bind(&ApplyLeaderboardSkillMobChanges, std::placeholders::_1),
+		"SELECT name, level, skill_victim, map1_skillmob "
+		"FROM player.player ORDER BY map1_skillmob DESC LIMIT 10");
+}
+
+static void SendLeaderboardDataSkillMobCallback(SQLMsg* pMsg, entt::entity viewerEntity)
+{
+	if (!pMsg || !pMsg->Get() || !pMsg->Get()->pSQLResult)
 		return;
 
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
-		"SELECT name, level, map1_skillmob, skill_victim "
-		"FROM player.player ORDER BY map1_skillmob DESC LIMIT 10"));
+	if (!g_registry.valid(viewerEntity))
+		return;
 
-	if (!pMsg || !pMsg->Get() || !pMsg->Get()->pSQLResult) return;
 	MYSQL_ROW row;
 	MYSQL_RES* res = pMsg->Get()->pSQLResult;
 
@@ -1088,6 +1113,34 @@ void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewerEntity)
 	if (g_registry.valid(viewerEntity))
 		if (auto* desc = ecs::PlayerRuntime::GetDesc(viewerEntity); desc && desc->GetEntity() == viewerEntity)
 			desc->Packet(&p, sizeof(p));
+}
+
+void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewerEntity)
+{
+	if (!g_registry.valid(e) || !g_registry.valid(viewerEntity) || !ecs::PlayerRuntime::GetDesc(viewerEntity))
+		return;
+
+	DBManager::instance().FuncQuery(std::bind(&SendLeaderboardDataSkillMobCallback, std::placeholders::_1, viewerEntity),
+		"SELECT name, level, map1_skillmob, skill_victim "
+		"FROM player.player ORDER BY map1_skillmob DESC LIMIT 10");
+}
+
+static void AfterLeaderboardSkillMobUpdate(entt::entity attacker, entt::entity victim, int dam)
+{
+	if (g_registry.valid(victim))
+	{
+		CheckLeaderboardSkillMobChanges();
+
+		if (ecs::PlayerRuntime::GetMapIndex(victim) == 41)
+		{
+			CHARACTER_MANAGER::instance().for_each_pc([](entt::entity ch) {
+				SendLeaderboardDataSkillMob(ch, ch);
+			});
+		}
+	}
+
+	if (g_registry.valid(attacker) && g_registry.valid(victim))
+		ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, ecs::PlayerRuntime::GetName(victim));
 }
 
 bool IsDeathBlow(entt::entity e)
@@ -5668,7 +5721,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			DBManager::instance().EscapeString(szVictimEsc, sizeof(szVictimEsc), ecs::PlayerRuntime::GetName(victim).data(),
 				strnlen(ecs::PlayerRuntime::GetName(victim).data(), CHARACTER_NAME_MAX_LEN));
 
-			DBManager::instance().DirectQuery(
+			DBManager::instance().FuncAfterQuery(
+				std::bind(&AfterLeaderboardSkillMobUpdate, attacker, victim, dam),
 				"UPDATE player.player "
 				"SET "
 				"    skill_victim = IF(%d > map1_skillmob, '%s', skill_victim), "
@@ -5679,17 +5733,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				dam,
 				ecs::PlayerRuntime::GetPlayerID(attacker)
 			);
-			CheckLeaderboardSkillMobChanges();
-			if (ecs::PlayerRuntime::GetMapIndex(victim) == 41) {
-				CHARACTER_MANAGER::instance().for_each_pc([](entt::entity ch) {
-					CombatSystem::SendLeaderboardDataSkillMob(ch, ch);
-					});
-
-
-			}
-
-
-			ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, ecs::PlayerRuntime::GetName(victim));
 		}
 #endif
 		if (test_server)
