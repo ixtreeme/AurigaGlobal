@@ -1219,19 +1219,20 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 	}
 
 	snprintf(queryStr, sizeof(queryStr),
-			"SELECT COUNT(*) as count FROM player%s WHERE name=%s", GetTablePostfix(), SqlString(packet->player_table.name).c_str());
+			"SELECT COUNT(*) as count FROM player%s WHERE name=?", GetTablePostfix());
 
-	std::unique_ptr<SQLMsg> pMsg1(CDBManager::instance().DirectQuery(queryStr));
+	std::unique_ptr<SQLMsg> pMsg1(CDBManager::instance().DirectQueryPrepared(queryStr,
+			{ SqlParam::Text(packet->player_table.name) }));
 
 	if (pMsg1->Get()->uiNumRows)
 	{
-		if (!pMsg1->Get()->pSQLResult)
+		if (!pMsg1->Get()->pSQLResult && !pMsg1->Get()->bPrepared)
 		{
 			peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_FAILED, dwHandle, 0);
 			return;
 		}
 
-		MYSQL_ROW row = mysql_fetch_row(pMsg1->Get()->pSQLResult);
+		MYSQL_ROW row = pMsg1->Get()->FetchRow();
 
 		if (*row[0] != '0')
 		{
@@ -1264,7 +1265,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 #endif
 			"playtime, "
 			"skill_level, quickslot) "
-			"VALUES(0, %u, %s, "
+			"VALUES(0, %u, ?, "
 			"%d, %d, %d, %d, %d, "
 			"%d, %d, %d, %d, %d, %d, %d, "
 			"%d, %d, %d, %d, %d, %d, %d, 0,"
@@ -1281,7 +1282,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 #endif
 			"0, ",
 			GetTablePostfix(),
-			packet->account_id, SqlString(packet->player_table.name).c_str(),
+			packet->account_id,
 			packet->player_table.level, packet->player_table.st, packet->player_table.ht, packet->player_table.dx, packet->player_table.iq,
 			packet->player_table.job, packet->player_table.voice, packet->player_table.dir, packet->player_table.x, packet->player_table.y, packet->player_table.z,
 			packet->player_table.hp, packet->player_table.sp, packet->player_table.sRandomHP, packet->player_table.sRandomSP, packet->player_table.stat_point, packet->player_table.stamina, packet->player_table.part_base, packet->player_table.part_base, packet->player_table.gold
@@ -1310,7 +1311,8 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 	CDBManager::instance().EscapeString(text, packet->player_table.quickslot, sizeof(packet->player_table.quickslot));
 	queryLen += snprintf(queryStr + queryLen, sizeof(queryStr) - queryLen, "'%s')", text);
 
-	std::unique_ptr<SQLMsg> pMsg2(CDBManager::instance().DirectQuery(queryStr));
+	std::unique_ptr<SQLMsg> pMsg2(CDBManager::instance().DirectQueryPrepared(queryStr,
+			{ SqlParam::Text(packet->player_table.name) }));
 	if (g_test_server)
 		LOG_INFO("Create_Player queryLen[{}] TEXT[{}]", queryLen, text);
 
@@ -1634,7 +1636,7 @@ void CClientManager::QUERY_REMOVE_AFFECT(CPeer * peer, TPacketGDRemoveAffect * p
 void CClientManager::QUERY_HIGHSCORE_REGISTER(CPeer* peer, TPacketGDHighscore * data)
 {
 	char szQuery[128];
-	snprintf(szQuery, sizeof(szQuery), "SELECT value FROM highscore%s WHERE board=%s AND pid = %u", GetTablePostfix(), SqlString(data->szBoard).c_str(), data->dwPID);
+	snprintf(szQuery, sizeof(szQuery), "SELECT value FROM highscore%s WHERE board=? AND pid = ?", GetTablePostfix());
 
 	LOG_INFO("HEADER_GD_HIGHSCORE_REGISTER: PID {}", data->dwPID);
 
@@ -1644,7 +1646,9 @@ void CClientManager::QUERY_HIGHSCORE_REGISTER(CPeer* peer, TPacketGDHighscore * 
 	pi->player_id = data->dwPID;
 	pi->account_index = (data->cDir > 0);
 
-	CDBManager::instance().ReturnQuery(szQuery, QID_HIGHSCORE_REGISTER, peer->GetHandle(), pi);
+	CDBManager::instance().ReturnQueryPrepared(szQuery,
+			{ SqlParam::Text(data->szBoard), SqlParam::UInt(data->dwPID) },
+			QID_HIGHSCORE_REGISTER, peer->GetHandle(), pi);
 }
 
 void CClientManager::RESULT_HIGHSCORE_REGISTER(CPeer * pkPeer, SQLMsg * msg)
@@ -1667,13 +1671,13 @@ void CClientManager::RESULT_HIGHSCORE_REGISTER(CPeer * pkPeer, SQLMsg * msg)
 	}
 	else
 	{
-		if (!res->pSQLResult)
+		if (!res->pSQLResult && !res->bPrepared)
 		{
 			delete pi;
 			return;
 		}
 
-		MYSQL_ROW row = mysql_fetch_row(res->pSQLResult);
+		MYSQL_ROW row = res->FetchRow();
 		if (row && row[0])
 		{
 			int current_value = 0; str_to_number(current_value, row[0]);

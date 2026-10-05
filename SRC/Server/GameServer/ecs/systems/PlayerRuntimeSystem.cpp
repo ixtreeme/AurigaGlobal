@@ -478,12 +478,12 @@ int RequestNameChange(entt::entity e, std::string_view name)
 		return 2;
 
 	char query[1024];
-	snprintf(query, sizeof(query), "SELECT COUNT(*) FROM player%s WHERE name=%s",
-		get_table_postfix(), SqlString(requestedName.c_str()).c_str());
-	std::unique_ptr<SQLMsg> checkMessage(DBManager::instance().DirectQuery(query));
+	snprintf(query, sizeof(query), "SELECT COUNT(*) FROM player%s WHERE name=?",
+		get_table_postfix());
+	std::unique_ptr<SQLMsg> checkMessage(DBManager::instance().DirectQueryPrepared(query, { SqlParam::Text(requestedName) }));
 	if (checkMessage && checkMessage->Get()->uiNumRows > 0)
 	{
-		MYSQL_ROW row = mysql_fetch_row(checkMessage->Get()->pSQLResult);
+		MYSQL_ROW row = checkMessage->Get()->FetchRow();
 		int count = 0;
 		if (row && row[0])
 			str_to_number(count, row[0]);

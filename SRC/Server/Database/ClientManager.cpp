@@ -2235,15 +2235,15 @@ void CClientManager::BlockChat(TPacketBlockChat* p)
 	char szQuery[256];
 
 	if (g_stLocale == "sjis")
-		snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player%s WHERE name = %s collate sjis_japanese_ci", GetTablePostfix(), SqlString(p->szName).c_str());
+		snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player%s WHERE name = ? collate sjis_japanese_ci", GetTablePostfix());
 	else
-		snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player%s WHERE name = %s", GetTablePostfix(), SqlString(p->szName).c_str());
-	std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
+		snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player%s WHERE name = ?", GetTablePostfix());
+	std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQueryPrepared(szQuery, { SqlParam::Text(p->szName) }));
 	SQLResult * pRes = pmsg->Get();
 
 	if (pRes->uiNumRows)
 	{
-		MYSQL_ROW row = mysql_fetch_row(pRes->pSQLResult);
+		MYSQL_ROW row = pRes->FetchRow();
 		uint32_t pid = strtoul(row[0], nullptr, 10);
 
 		TPacketGDAddAffect pa;

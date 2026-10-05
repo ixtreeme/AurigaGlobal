@@ -1201,18 +1201,22 @@ void CInputMain::RequestLanguage(entt::entity character, const char* targetName)
 		return;
 
 	int id = 0;
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s", SqlString(targetName).c_str()));
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQueryPrepared(
+		"SELECT account_id FROM player.player WHERE name=?",
+		{ SqlParam::Text(targetName) }));
 	if (pMsg->Get()->uiNumRows != 0) {
-		MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+		MYSQL_ROW row = pMsg->Get()->FetchRow();
 		id = atoi(row[0]);
 	}
 
 	if (id == 0)
 		return;
 
-	std::unique_ptr<SQLMsg> pMsg2(DBManager::instance().DirectQuery("SELECT language FROM account.account WHERE id=%d", id));
+	std::unique_ptr<SQLMsg> pMsg2(DBManager::instance().DirectQueryPrepared(
+		"SELECT language FROM account.account WHERE id=?",
+		{ SqlParam::UInt(static_cast<uint32_t>(id)) }));
 	if (pMsg2->Get()->uiNumRows != 0) {
-		MYSQL_ROW row = mysql_fetch_row(pMsg2->Get()->pSQLResult);
+		MYSQL_ROW row = pMsg2->Get()->FetchRow();
 
 		TPacketRecvLang p;
 		p.bHeader = HEADER_GC_RECV_LANGUAGE;

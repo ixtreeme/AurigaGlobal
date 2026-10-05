@@ -1420,51 +1420,19 @@ void CGuildWarReserve::End(int iScoreFrom, int iScoreTo)
 
 	LOG_INFO("WAR_REWARD: End: Total bet: {}, Winner bet: {}", dwTotalBet, dwWinnerBet);
 
-	auto it = mapBet.begin();
-
-	while (1)
+	for (const auto& bet : mapBet)
 	{
-		int iLen = 0;
-		int iRow = 0;
+		if (bet.second.first != dwWinner)
+			continue;
 
-		iLen += snprintf(szQuery, sizeof(szQuery) - iLen, "INSERT INTO item_award (login, vnum, socket0, given_time) VALUES");
+		double ratio = (double) bet.second.second / dwWinnerBet;
 
-		while (it != mapBet.end())
-		{
-			if (it->second.first != dwWinner)
-			{
-				++it;
-				continue;
-			}
+		LOG_INFO("WAR_REWARD: {} {} ratio {:f}", bet.first.c_str(), bet.second.second, ratio);
 
-			double ratio = (double) it->second.second / dwWinnerBet;
+		uint32_t dwGold = (uint32_t) (dwTotalBet * ratio * 0.9);
 
-			LOG_INFO("WAR_REWARD: {} {} ratio {:f}", it->first.c_str(), it->second.second, ratio);
-
-			uint32_t dwGold = (uint32_t) (dwTotalBet * ratio * 0.9);
-
-			if (iRow == 0)
-				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, "(%s, %d, %u, NOW())",
-						SqlString(it->first).c_str(), ITEM_ELK_VNUM, dwGold);
-			else
-				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, ",(%s, %d, %u, NOW())",
-						SqlString(it->first).c_str(), ITEM_ELK_VNUM, dwGold);
-
-			++it;
-
-			if (iLen > 384)
-				break;
-
-			++iRow;
-		}
-
-		if (iRow > 0)
-		{
-			LOG_INFO("WAR_REWARD: query: {}", szQuery);
-			CDBManager::instance().AsyncQuery(szQuery);
-		}
-
-		if (it == mapBet.end())
-			break;
+		CDBManager::instance().QueryPrepared(
+				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
+				{ SqlParam::Text(bet.first), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::UInt(dwGold) });
 	}
 }

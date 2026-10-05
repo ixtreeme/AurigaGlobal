@@ -570,23 +570,24 @@ void CClientManager::QUERY_CHANGE_NAME(CPeer * peer, uint32_t dwHandle, TPacketG
 
 	if (g_stLocale == "sjis")
 		snprintf(queryStr, sizeof(queryStr),
-				"SELECT COUNT(*) as count FROM player%s WHERE name=%s collate sjis_japanese_ci AND id <> %u",
-				GetTablePostfix(), SqlString(p->name).c_str(), p->pid);
+				"SELECT COUNT(*) as count FROM player%s WHERE name=? collate sjis_japanese_ci AND id <> ?",
+				GetTablePostfix());
 	else
 		snprintf(queryStr, sizeof(queryStr),
-			"SELECT COUNT(*) as count FROM player%s WHERE name=%s AND id <> %u", GetTablePostfix(), SqlString(p->name).c_str(), p->pid);
+			"SELECT COUNT(*) as count FROM player%s WHERE name=? AND id <> ?", GetTablePostfix());
 
-	std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(queryStr, SQL_PLAYER));
+	std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQueryPrepared(queryStr,
+			{ SqlParam::Text(p->name), SqlParam::UInt(p->pid) }, SQL_PLAYER));
 
 	if (pMsg->Get()->uiNumRows)
 	{
-		if (!pMsg->Get()->pSQLResult)
+		if (!pMsg->Get()->pSQLResult && !pMsg->Get()->bPrepared)
 		{
 			peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_FAILED, dwHandle, 0);
 			return;
 		}
 
-		MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+		MYSQL_ROW row = pMsg->Get()->FetchRow();
 
 		if (*row[0] != '0')
 		{
