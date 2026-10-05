@@ -2404,15 +2404,16 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				break;
 
 			case HEADER_GD_PLAYER_SAVE:
-				LOG_TRACE("HEADER_GD_PLAYER_SAVE (handle: {} length: {})", dwHandle, dwLength);
-				QUERY_PLAYER_SAVE(peer, dwHandle, (TPlayerTable *) data);
-				break;
 #ifdef HEADER_GD_PLAYER_SAVE_SIZE_CHECK
 				if (dwLength != sizeof(TPlayerTable)) {
 					LOG_ERROR("PLAYER_SAVE size mismatch got={} expected={} - DROP", dwLength, sizeof(TPlayerTable));
 					break;
 				}
 #endif
+				LOG_TRACE("HEADER_GD_PLAYER_SAVE (handle: {} length: {})", dwHandle, dwLength);
+				QUERY_PLAYER_SAVE(peer, dwHandle, (TPlayerTable *) data);
+				break;
+
 			case HEADER_GD_PLAYER_CREATE:
 				LOG_INFO("HEADER_GD_PLAYER_CREATE (handle: {} length: {})", dwHandle, dwLength);
 				__QUERY_PLAYER_CREATE(peer, dwHandle, (TPlayerCreatePacket *) data);

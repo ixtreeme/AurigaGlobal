@@ -3,9 +3,8 @@
 
 #include <entt/entt.hpp>
 
-#include <Core/asio_engine.h>
+#include <Core/peer_session.h>
 
-#include <array>
 #include <vector>
 
 #include "constants.h"
@@ -88,7 +87,7 @@ struct seq_t
 };
 typedef std::vector<seq_t>	seq_vector_t;
 
-class DESC
+class DESC : public PeerSession
 {
 	public:
 		EVENTINFO(desc_event_info)
@@ -113,8 +112,7 @@ class DESC
 
 		bool			Setup(auriga::net::tcp::socket&& sock, const struct sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake);
 
-		socket_t		GetSocket() const	{ return static_cast<socket_t>(const_cast<DESC*>(this)->m_socket.native_handle()); }
-		bool			IsConnected() const	{ return m_socket.is_open(); }
+		socket_t		GetSocket() const	{ return GetSocketId(); }
 		const char *	GetHostName()		{ return m_stHost.c_str(); }
 		uint16_t			GetPort()	{ return m_wPort; }
 
@@ -127,15 +125,8 @@ class DESC
 		void			Packet(const void * c_pvData, int iSize);
 		void			LargePacket(const void * c_pvData, int iSize);
 
-		void			StartRead();
-		void			StartWrite();
-
 		int			ProcessInput();		// parses the input buffer, returns -1 if error
 		int			ProcessOutput();	// queues the output buffer, returns 0
-
-		int			PendingAsyncOps() const	{ return m_pendingAsyncOps; }
-		bool			IsDeletePending() const	{ return m_deletePending; }
-		void			MarkDeletePending()	{ m_deletePending = true; }
 
 		CInputProcessor	*	GetInputProcessor()	{ return m_pInputProcessor; }
 
@@ -217,8 +208,9 @@ class DESC
 
 	protected:
 		void			Initialize();
-		void			OnRead(const boost::system::error_code & ec, std::size_t bytes);
-		void			OnWrite(const boost::system::error_code & ec, std::size_t bytes);
+		virtual void		OnInput() override;
+		virtual void		OnPeerGone() override;
+		virtual void		OnBytesWritten(std::size_t bytes) override;
 
 	protected:
 		CInputProcessor *	m_pInputProcessor;
@@ -230,14 +222,6 @@ class DESC
 		CInputAuth		m_inputAuth;
 
 
-		auriga::net::tcp::socket	m_socket;
-		bool			m_readPending { false };
-		bool			m_writePending { false };
-		int			m_pendingAsyncOps { 0 };
-		bool			m_deletePending { false };
-		uint64_t		m_generation { 0 };
-		std::array<char, 65536>	m_readChunk;
-		std::vector<char>	m_writeChunk;
 		int				m_iPhase;
 		uint32_t			m_dwHandle;
 
@@ -245,7 +229,6 @@ class DESC
 		uint16_t			m_wPort;
 		uint64_t			m_LastTryToConnectTime;
 
-		LPBUFFER		m_lpInputBuffer;
 		int				m_iMinInputBufferLen;
 
 		uint32_t			m_dwHandshake;
@@ -255,7 +238,6 @@ class DESC
 		bool			m_bHandshaking;
 
 		LPBUFFER		m_lpBufferedOutputBuffer;
-		LPBUFFER		m_lpOutputBuffer;
 
 		LPEVENT			m_pkPingEvent;
 		entt::entity	m_lpCharacter{ entt::null };

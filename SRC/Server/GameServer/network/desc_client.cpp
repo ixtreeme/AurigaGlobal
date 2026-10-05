@@ -365,7 +365,6 @@ void CLIENT_DESC::Reset()
 
 void CLIENT_DESC::InitializeBuffers()
 {
-	m_lpOutputBuffer = buffer_new(1024 * 1024);
-	m_lpInputBuffer = buffer_new(1024 * 1024);
+	CreateBuffers(1024 * 1024, 1024 * 1024);
 	m_iMinInputBufferLen = 1024 * 1024;
 }

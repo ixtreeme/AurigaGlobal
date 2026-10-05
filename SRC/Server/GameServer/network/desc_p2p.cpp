@@ -24,14 +24,13 @@ void DESC_P2P::Destroy()
 #endif
 bool DESC_P2P::Setup(auriga::net::tcp::socket&& sock, const char * host, uint16_t wPort)
 {
-	m_socket = std::move(sock);
+	AttachSocket(std::move(sock));
 	m_stHost = host;
 	m_wPort = wPort;
 
-	if (!(m_lpOutputBuffer = buffer_new(1024 * 1024)))
-		return false;
+	CreateBuffers(1024 * 1024, 1024 * 1024);
 
-	if (!(m_lpInputBuffer = buffer_new(1024 * 1024)))
+	if (!m_lpInputBuffer || !m_lpOutputBuffer)
 		return false;
 
 	m_iMinInputBufferLen = 1024 * 1024;

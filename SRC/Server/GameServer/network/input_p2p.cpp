@@ -66,6 +66,13 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 		return -1;
 	}
 
+	if (p->lSize > 1024)
+	{
+		LOG_ERROR("InputP2P::Relay : packet too large ({})", p->lSize);
+		d->SetPhase(PHASE_CLOSE);
+		return -1;
+	}
+
 	LOG_TRACE("InputP2P::Relay : {} size {}", p->szName, p->lSize);
 
 	const entt::entity chr = CHARACTER_MANAGER::instance().FindPCEntity(p->szName);
@@ -83,8 +90,14 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 			return p->lSize;
 		}
 
+		if (p->lSize < static_cast<int>(sizeof(TPacketGCWhisper)))
+		{
+			LOG_ERROR("InputP2P::Relay : whisper packet too short ({})", p->lSize);
+			return p->lSize;
+		}
+
 		char buf[1024];
-		memcpy(buf, c_pbData, MIN(p->lSize, sizeof(buf)));
+		memcpy(buf, c_pbData, p->lSize);
 
 		TPacketGCWhisper* p2 = (TPacketGCWhisper*) buf;
 		uint8_t bToEmpire = (p2->bType >> 4);
@@ -161,6 +174,9 @@ int CInputP2P::NoticeNew(LPDESC d, const char * c_pData, uint64_t uiBytes)
 
 int CInputP2P::Guild(LPDESC d, const char* c_pData, size_t uiBytes)
 {
+	if (uiBytes < sizeof(TPacketGGGuild))
+		return -1;
+
 	TPacketGGGuild * p = (TPacketGGGuild *) c_pData;
 	uiBytes -= sizeof(TPacketGGGuild);
 	c_pData += sizeof(TPacketGGGuild);

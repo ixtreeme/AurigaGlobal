@@ -34,7 +34,6 @@ add_test(NAME switchbot_lifecycle COMMAND SwitchbotLifecycleTests)
 add_executable(OXEventTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/OXEventTests.cpp
     world/OXEvent.cpp
-    core/buffer_manager.cpp
     world/event.cpp
     world/event_queue.cpp
 )
@@ -53,7 +52,6 @@ add_executable(QuestRuntimeTests EXCLUDE_FROM_ALL
     quest/trigger.cpp
     ecs/VIDRegistry.cpp
     ecs/systems/QuestSystem.cpp
-    core/buffer_manager.cpp
     world/event.cpp
     world/event_queue.cpp
     core/utils.cpp
@@ -90,7 +88,6 @@ add_executable(GuildMemberLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/GuildMemberLifecycleTests.cpp
     guild/guild.cpp
     ecs/PIDRegistry.cpp
-    core/buffer_manager.cpp
 )
 target_link_libraries(GuildMemberLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 if(WIN32)
@@ -127,7 +124,6 @@ add_executable(ShopLifecycleTests EXCLUDE_FROM_ALL
     core/group_text_parse_tree.cpp
     ../Base/grid.cpp
     core/file_loader.cpp
-    core/buffer_manager.cpp
     world/event.cpp
     world/event_queue.cpp
 )
@@ -222,7 +218,6 @@ add_test(NAME spatial_lifecycle COMMAND SpatialLifecycleTests)
 add_executable(BuildingLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/BuildingLifecycleTests.cpp
     world/building.cpp
-    core/buffer_manager.cpp
     ecs/CBuildingRegistry.cpp
 )
 target_link_libraries(BuildingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
@@ -333,7 +328,6 @@ add_executable(GmCommandTests EXCLUDE_FROM_ALL
     combat/skill_power.cpp
     ecs/systems/SkillSystem.cpp
     ecs/PIDRegistry.cpp
-    core/buffer_manager.cpp
     core/utils.cpp
 )
 target_link_libraries(GmCommandTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly)

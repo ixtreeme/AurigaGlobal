@@ -30,7 +30,6 @@ extern int current_bytes_written;
 extern int total_bytes_written;
 
 DESC::DESC()
-	: m_socket(auriga::net::Io())
 {
 	Initialize();
 }
@@ -43,9 +42,7 @@ void DESC::Initialize()
 	m_bDestroyed = false;
 
 	m_pInputProcessor = nullptr;
-	++m_generation;
-	m_readPending = false;
-	m_writePending = false;
+	ResetSession();
 	m_iPhase = PHASE_CLOSE;
 	m_dwHandle = 0;
 
@@ -132,9 +129,6 @@ void DESC::Destroy()
 		m_lpCharacter = entt::null;
 	}
 
-	SAFE_BUFFER_DELETE(m_lpOutputBuffer);
-	SAFE_BUFFER_DELETE(m_lpInputBuffer);
-
 	event_cancel(&m_pkPingEvent);
 	event_cancel(&m_pkDisconnectEvent);
 
@@ -153,7 +147,7 @@ void DESC::Destroy()
 		CShutdownManager::instance().RemoveDesc((LPDESC)this);
 	}
 
-	if (m_socket.is_open())
+	if (IsConnected())
 	{
 		LOG_INFO("SYSTEM: closing socket. DESC #{}", GetSocket());
 		Log("SYSTEM: closing socket. DESC #%d", static_cast<int>(GetSocket()));
@@ -161,10 +155,9 @@ void DESC::Destroy()
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 		cipher_.CleanUp();
 #endif
-
-		boost::system::error_code ec;
-		m_socket.close(ec);
 	}
+
+	DestroySession();
 
 	m_seq_vector.clear();
 }
@@ -223,16 +216,15 @@ void DESC::SetPong(bool b)
 
 bool DESC::Setup(auriga::net::tcp::socket&& sock, const sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake)
 {
-	m_socket	= std::move(sock);
+	AttachSocket(std::move(sock));
 
 	m_stHost		= inet_ntoa(c_rSockAddr.sin_addr);
 	m_wPort			= c_rSockAddr.sin_port;
 	m_dwHandle		= _handle;
 
-	m_lpOutputBuffer = buffer_new(DEFAULT_PACKET_BUFFER_SIZE * 2);
+	CreateBuffers(MAX_INPUT_LEN, DEFAULT_PACKET_BUFFER_SIZE * 2);
 
 	m_iMinInputBufferLen = MAX_INPUT_LEN >> 1;
-	m_lpInputBuffer = buffer_new(MAX_INPUT_LEN);
 
 	m_SockAddr = c_rSockAddr;
 
@@ -353,108 +345,22 @@ int DESC::ProcessInput()
 	return 0;
 }
 
-void DESC::StartRead()
+void DESC::OnInput()
 {
-	if (m_readPending || m_bDestroyed || m_deletePending || !m_socket.is_open())
-		return;
-
-	m_readPending = true;
-	++m_pendingAsyncOps;
-
-	const uint64_t generation = m_generation;
-
-	m_socket.async_read_some(
-		boost::asio::buffer(m_readChunk),
-		[this, generation](const boost::system::error_code & ec, std::size_t bytes)
-		{
-			--m_pendingAsyncOps;
-
-			if (generation != m_generation || m_bDestroyed || m_deletePending)
-				return;
-
-			m_readPending = false;
-			OnRead(ec, bytes);
-		});
+	ProcessInput();
 }
 
-void DESC::OnRead(const boost::system::error_code & ec, std::size_t bytes)
+void DESC::OnPeerGone()
 {
-	if (ec)
-	{
-		if (ec == boost::asio::error::operation_aborted)
-			return;
-
-		SetPhase(PHASE_CLOSE);
-		return;
-	}
-
-	if (bytes == 0)
-	{
-		SetPhase(PHASE_CLOSE);
-		return;
-	}
-
-	if (m_lpInputBuffer)
-	{
-		buffer_write(m_lpInputBuffer, m_readChunk.data(), static_cast<int>(bytes));
-		ProcessInput();
-	}
-
-	StartRead();
+	SetPhase(PHASE_CLOSE);
 }
 
-void DESC::StartWrite()
+void DESC::OnBytesWritten(std::size_t bytes)
 {
-	if (m_writePending || m_bDestroyed || m_deletePending || !m_socket.is_open())
-		return;
-
-	const int bytes = m_lpOutputBuffer ? static_cast<int>(buffer_size(m_lpOutputBuffer)) : 0;
-
-	if (bytes <= 0)
-		return;
-
-	const char * readPoint = static_cast<const char *>(buffer_read_peek(m_lpOutputBuffer));
-	m_writeChunk.assign(readPoint, readPoint + bytes);
-
-	m_writePending = true;
-	++m_pendingAsyncOps;
-
-	const uint64_t generation = m_generation;
-
-	boost::asio::async_write(
-		m_socket,
-		boost::asio::buffer(m_writeChunk),
-		[this, generation](const boost::system::error_code & ec, std::size_t bytes_transferred)
-		{
-			--m_pendingAsyncOps;
-
-			if (generation != m_generation || m_bDestroyed || m_deletePending)
-				return;
-
-			m_writePending = false;
-			OnWrite(ec, bytes_transferred);
-		});
-}
-
-void DESC::OnWrite(const boost::system::error_code & ec, std::size_t bytes)
-{
-	if (ec)
-	{
-		if (ec != boost::asio::error::operation_aborted)
-			SetPhase(PHASE_CLOSE);
-		return;
-	}
-
 	max_bytes_written = MAX(static_cast<int>(bytes), max_bytes_written);
 
 	total_bytes_written += static_cast<int>(bytes);
 	current_bytes_written += static_cast<int>(bytes);
-
-	buffer_read_proceed(m_lpOutputBuffer, static_cast<int>(bytes));
-	m_writeChunk.clear();
-
-	if (buffer_size(m_lpOutputBuffer) > 0)
-		StartWrite();
 }
 
 int DESC::ProcessOutput()

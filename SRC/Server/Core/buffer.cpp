@@ -126,3 +126,36 @@ void buffer_adjust_size(LPBUFFER& buffer, int add_size)
 
 	buffer_reserve(buffer, buffer->write_point_pos + static_cast<std::size_t>(add_size));
 }
+
+TEMP_BUFFER::TEMP_BUFFER(int Size, bool ForceDelete) : buf(nullptr)
+{
+	if (ForceDelete && Size < 1024 * 128)
+		Size = 1024 * 128;
+
+	buf = buffer_new(Size);
+}
+
+TEMP_BUFFER::~TEMP_BUFFER()
+{
+	buffer_delete(buf);
+}
+
+const void * TEMP_BUFFER::read_peek()
+{
+	return buffer_read_peek(buf);
+}
+
+void TEMP_BUFFER::write(const void * data, int size)
+{
+	buffer_write(buf, data, size);
+}
+
+int TEMP_BUFFER::size()
+{
+	return static_cast<int>(buffer_size(buf));
+}
+
+void TEMP_BUFFER::reset()
+{
+	buffer_reset(buf);
+}

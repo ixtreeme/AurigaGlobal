@@ -41,4 +41,23 @@
 
 	extern void		buffer_adjust_size(LPBUFFER& buffer, int add_size);
 
+	// Small scoped packet building helper (formerly duplicated in the
+	// GameServer and Database buffer_manager files).
+	class TEMP_BUFFER
+	{
+		public:
+			TEMP_BUFFER(int Size = 8192, bool ForceDelete = false);
+			~TEMP_BUFFER();
+
+			const void *	read_peek();
+			void		write(const void * data, int size);
+			int		size();
+			void		reset();
+
+			LPBUFFER	getptr() { return buf; }
+
+		protected:
+			LPBUFFER	buf;
+	};
+
 #endif
