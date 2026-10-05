@@ -365,14 +365,37 @@ void CHARACTER_MANAGER::Destroy()
 
 	// Shutdown must drain deferred requests before walking the live index.
 	FlushPendingDestroy();
-	for (auto snapshot = CVIDRegistry::Instance().Snapshot(); !snapshot.empty();
-		snapshot = CVIDRegistry::Instance().Snapshot())
+
+	// Destroying a character can cascade (dungeon, rider, pet), so sweep
+	// until the live index is empty. The snapshot is taken once per sweep:
+	// the previous shape re-snapshotted after every single entity, which is
+	// O(N^2) and dominated shutdown with ~100k registered characters.
+	size_t previousSize = static_cast<size_t>(-1);
+
+	while (true)
 	{
-		const entt::entity character = snapshot.front();
-		if (character == entt::null)
-			CVIDRegistry::Instance().UnregisterEntity(character);
-		else
-			M2_DESTROY_CHARACTER(character);
+		const auto snapshot = CVIDRegistry::Instance().Snapshot();
+
+		if (snapshot.empty())
+			break;
+
+		// A shutdown must make progress; if the index stops shrinking,
+		// stop instead of spinning (and leave a trace for diagnosis).
+		if (snapshot.size() >= previousSize)
+		{
+			LOG_ERROR("CHARACTER_MANAGER::Destroy: registry not shrinking, {} entities left", snapshot.size());
+			break;
+		}
+
+		previousSize = snapshot.size();
+
+		for (const entt::entity character : snapshot)
+		{
+			if (character == entt::null)
+				CVIDRegistry::Instance().UnregisterEntity(character);
+			else
+				M2_DESTROY_CHARACTER(character);
+		}
 	}
 }
 
