@@ -2067,9 +2067,6 @@ void initapp()
 	PyModule_AddIntConstant(poModule, "ENABLE_NEW_EXTRA_BONUS", 0);
 #endif
 
-	PyModule_AddIntConstant(poModule, "USE_OPENID",	0);
-	PyModule_AddIntConstant(poModule, "OPENID_TEST",	0);
-
 #ifdef ENABLE_RANKING
 	PyModule_AddIntConstant(poModule, "ENABLE_RANKING", 1);
 #else

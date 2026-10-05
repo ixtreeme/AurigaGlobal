@@ -97,14 +97,6 @@ typedef struct packet_auth_success
 	uint8_t	bResult;
 } TPacketGCAuthSuccess;
 
-typedef struct packet_auth_success_openid
-{
-	uint8_t	bHeader;
-	uint32_t	dwLoginKey;
-	uint8_t	bResult;
-	char	login[LOGIN_MAX_LEN + 1];
-} TPacketGCAuthSuccessOpenID;
-
 typedef struct packet_login_failure
 {
 	uint8_t	header;

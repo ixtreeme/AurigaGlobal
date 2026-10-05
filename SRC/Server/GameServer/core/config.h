@@ -135,7 +135,6 @@ extern bool g_BlockCharCreation;
 extern int gAttrTransferLimit;
 #endif
 // missing begin
-extern int openid_server;
 extern std::string g_stBlockDate;
 
 extern int g_iSpamBlockMaxLevel;

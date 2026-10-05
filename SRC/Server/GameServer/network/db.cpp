@@ -384,11 +384,6 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					int nPasswordDiff = strcmp(szEncrytPassword, szPassword);
 
-					if (openid_server)
-					{
-						nPasswordDiff = 0;
-					}
-
 					if (nPasswordDiff)
 					{
 						LoginFailure(d, "WRONGPWD");

@@ -693,7 +693,6 @@ const char * GetRecvHeaderName(uint8_t header)
 		stringList[135] = "HEADER_GC_DAMAGE_INFO";
 		stringList[136] = "HEADER_GC_CHAR_ADDITIONAL_INFO";
 		stringList[150] = "HEADER_GC_AUTH_SUCCESS";
-		stringList[154] = "HEADER_GC_AUTH_SUCCESS_OPENID";
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 		stringList[0xeb] = "HEADER_GC_KEY_AGREEMENT_COMPLETED";
 		stringList[0xec] = "HEADER_GC_KEY_AGREEMENT";

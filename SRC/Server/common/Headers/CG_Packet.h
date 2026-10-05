@@ -43,13 +43,6 @@ typedef struct command_login3
 #endif
 } TPacketCGLogin3;
 
-typedef struct command_login5
-{
-	uint8_t	header;
-	char	authKey[OPENID_AUTHKEY_LEN + 1];
-	uint32_t	adwClientKey[4];
-} TPacketCGLogin5;
-
 #ifdef __NEWPET_SYSTEM__
 typedef struct packet_RequestPetName
 {
