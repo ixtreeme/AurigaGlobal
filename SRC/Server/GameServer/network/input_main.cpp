@@ -1201,7 +1201,7 @@ void CInputMain::RequestLanguage(entt::entity character, const char* targetName)
 		return;
 
 	int id = 0;
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name='%s'", targetName));
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s", SqlString(targetName).c_str()));
 	if (pMsg->Get()->uiNumRows != 0) {
 		MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
 		id = atoi(row[0]);

@@ -46,7 +46,7 @@ bool CHwidManager::IsBlocked(const char * hwid)
 }
 
 void CHwidManager::AddHwidToAccount(const char * login, const char * hwid) {
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status='BAN2', hwid='%s' WHERE login='%s' and STATUS='OK'", hwid, login));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status='BAN2', hwid=%s WHERE login=%s and STATUS='OK'", SqlString(hwid).c_str(), SqlString(login).c_str()));
 }
 
 void CHwidManager::SendBlockHwid(const char * whoname, const char * targetname)
@@ -70,13 +70,13 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 	char playername[CHARACTER_NAME_MAX_LEN * 2 + 1];
 	DBManager::instance().EscapeString(playername, sizeof(playername), targetname, strlen(targetname));
 
-	std::unique_ptr<SQLMsg> check(DBManager::instance().DirectQuery("SELECT mID FROM common.gmlist WHERE mName='%s' AND mAuthority='IMPLEMENTOR' LIMIT 1", playername));
+	std::unique_ptr<SQLMsg> check(DBManager::instance().DirectQuery("SELECT mID FROM common.gmlist WHERE mName=%s AND mAuthority='IMPLEMENTOR' LIMIT 1", SqlString(playername).c_str()));
 	if (check->Get()->uiNumRows > 0) {
 		LOG_INFO("HWID:: {} tried to block {} (IMPLEMENTOR).", whoplayername, playername);
 		return;
 	}
 
-	std::unique_ptr<SQLMsg> msgid(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name='%s' LIMIT 1", playername));
+	std::unique_ptr<SQLMsg> msgid(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s LIMIT 1", SqlString(playername).c_str()));
 	if (msgid->Get()->uiNumRows > 0) {
 		MYSQL_ROW rowid = mysql_fetch_row(msgid->Get()->pSQLResult);
 
@@ -101,7 +101,7 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 
 			std::string ids;
 
-			std::unique_ptr<SQLMsg> getaccountsid(DBManager::instance().DirectQuery("SELECT id FROM player.player_index WHERE hwid='%s'", hwid));
+			std::unique_ptr<SQLMsg> getaccountsid(DBManager::instance().DirectQuery("SELECT id FROM player.player_index WHERE hwid=%s", SqlString(hwid).c_str()));
 			if (getaccountsid->Get()->uiNumRows > 0) {
 				std::vector<int32_t> vec_ids;
 
@@ -124,7 +124,7 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 				}
 			}
 
-			std::unique_ptr<SQLMsg> blockhwid(DBManager::instance().DirectQuery("INSERT INTO account.blocked_hwids SET hwid='%s', who='%s', accounts='%s'", hwid, whoplayername, ids.c_str()));
+			std::unique_ptr<SQLMsg> blockhwid(DBManager::instance().DirectQuery("INSERT INTO account.blocked_hwids SET hwid=%s, who=%s, accounts=%s", SqlString(hwid).c_str(), SqlString(whoplayername).c_str(), SqlString(ids.c_str()).c_str()));
 		}
 	}
 }
@@ -150,7 +150,7 @@ void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname
 	char playername[CHARACTER_NAME_MAX_LEN * 2 + 1];
 	DBManager::instance().EscapeString(playername, sizeof(playername), targetname, strlen(targetname));
 
-	std::unique_ptr<SQLMsg> msgid(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name='%s' LIMIT 1", playername));
+	std::unique_ptr<SQLMsg> msgid(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s LIMIT 1", SqlString(playername).c_str()));
 	if (msgid->Get()->uiNumRows > 0) {
 		MYSQL_ROW rowid = mysql_fetch_row(msgid->Get()->pSQLResult);
 
@@ -177,7 +177,7 @@ void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname
 				m_blocked_hwid.erase(v);
 			}
 
-			std::unique_ptr<SQLMsg> getaccountsid(DBManager::instance().DirectQuery("SELECT accounts FROM account.blocked_hwids WHERE hwid='%s'", hwid));
+			std::unique_ptr<SQLMsg> getaccountsid(DBManager::instance().DirectQuery("SELECT accounts FROM account.blocked_hwids WHERE hwid=%s", SqlString(hwid).c_str()));
 			if (getaccountsid->Get()->uiNumRows > 0) {
 				MYSQL_ROW row2 = mysql_fetch_row(getaccountsid->Get()->pSQLResult);
 
@@ -185,7 +185,7 @@ void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname
 				strlcpy(accountsid, row2[0], sizeof(accountsid));
 
 				std::unique_ptr<SQLMsg> unlockaccounts(DBManager::instance().DirectQuery("UPDATE account.account SET status='OK' WHERE id in (%s)", accountsid));
-				std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("DELETE FROM account.blocked_hwids WHERE hwid='%s'", hwid));
+				std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("DELETE FROM account.blocked_hwids WHERE hwid=%s", SqlString(hwid).c_str()));
 			}
 		}
 	}

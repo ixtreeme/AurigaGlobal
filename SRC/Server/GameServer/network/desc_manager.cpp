@@ -519,7 +519,7 @@ void DESC_MANAGER::ConnectAccount(std::string_view login, LPDESC d)
 	m_map_loginName.insert(DESC_LOGINNAME_MAP::value_type(loginString, d));
 #ifdef ENABLE_BLOCK_MULTIFARM
 	int iStatus = 1, c = 0;
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE hwid='%s'", d->GetHwid()));
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE hwid=%s", SqlString(d->GetHwid()).c_str()));
 	if (pMsg->Get()->uiNumRows != 0) {
 		MYSQL_ROW row;
 		while (nullptr != (row = mysql_fetch_row(pMsg->Get()->pSQLResult))) {
@@ -532,7 +532,7 @@ void DESC_MANAGER::ConnectAccount(std::string_view login, LPDESC d)
 		}
 	}
 
-	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("INSERT INTO account.antifarm SET hwid='%s', login='%s', status=%d", d->GetHwid(), loginString.c_str(), iStatus));
+	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("INSERT INTO account.antifarm SET hwid=%s, login=%s, status=%d", SqlString(d->GetHwid()).c_str(), SqlString(loginString.c_str()).c_str(), iStatus));
 #endif
 }
 
@@ -542,7 +542,7 @@ void DESC_MANAGER::DisconnectAccount(std::string_view login)
 	dev_log(LOG_DEB0, "BBBB DisConnectAccount(%s)", loginString.c_str());
 	m_map_loginName.erase(loginString);
 #ifdef ENABLE_BLOCK_MULTIFARM
-	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("DELETE FROM account.antifarm WHERE login='%s'", loginString.c_str()));
+	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("DELETE FROM account.antifarm WHERE login=%s", SqlString(loginString.c_str()).c_str()));
 #endif
 }
 

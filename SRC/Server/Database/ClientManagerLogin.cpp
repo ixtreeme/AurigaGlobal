@@ -570,11 +570,11 @@ void CClientManager::QUERY_CHANGE_NAME(CPeer * peer, uint32_t dwHandle, TPacketG
 
 	if (g_stLocale == "sjis")
 		snprintf(queryStr, sizeof(queryStr),
-				"SELECT COUNT(*) as count FROM player%s WHERE name='%s' collate sjis_japanese_ci AND id <> %u",
-				GetTablePostfix(), p->name, p->pid);
+				"SELECT COUNT(*) as count FROM player%s WHERE name=%s collate sjis_japanese_ci AND id <> %u",
+				GetTablePostfix(), SqlString(p->name).c_str(), p->pid);
 	else
 		snprintf(queryStr, sizeof(queryStr),
-			"SELECT COUNT(*) as count FROM player%s WHERE name='%s' AND id <> %u", GetTablePostfix(), p->name, p->pid);
+			"SELECT COUNT(*) as count FROM player%s WHERE name=%s AND id <> %u", GetTablePostfix(), SqlString(p->name).c_str(), p->pid);
 
 	std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(queryStr, SQL_PLAYER));
 
@@ -601,7 +601,7 @@ void CClientManager::QUERY_CHANGE_NAME(CPeer * peer, uint32_t dwHandle, TPacketG
 	}
 
 	snprintf(queryStr, sizeof(queryStr),
-			"UPDATE player%s SET name='%s',change_name=0 WHERE id=%u", GetTablePostfix(), p->name, p->pid);
+			"UPDATE player%s SET name=%s,change_name=0 WHERE id=%u", GetTablePostfix(), SqlString(p->name).c_str(), p->pid);
 
 	std::unique_ptr<SQLMsg> pMsg0(CDBManager::instance().DirectQuery(queryStr, SQL_PLAYER));
 

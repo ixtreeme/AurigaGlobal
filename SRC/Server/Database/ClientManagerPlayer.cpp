@@ -1149,7 +1149,7 @@ void CClientManager::QUERY_REGISTER_RANKING(CPeer * peer, uint32_t dwHandle, TBa
 
 	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery),
-		"REPLACE INTO battle_pass_ranking (player_name, battle_pass_id, finish_time) VALUES ('%s', %d, NOW())", pRanking->playerName, pRanking->bBattlePassId);
+		"REPLACE INTO battle_pass_ranking (player_name, battle_pass_id, finish_time) VALUES (%s, %d, NOW())", SqlString(pRanking->playerName).c_str(), pRanking->bBattlePassId);
 
 	CDBManager::instance().AsyncQuery(szQuery);
 }
@@ -1221,7 +1221,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 	}
 
 	snprintf(queryStr, sizeof(queryStr),
-			"SELECT COUNT(*) as count FROM player%s WHERE name='%s'", GetTablePostfix(), packet->player_table.name);
+			"SELECT COUNT(*) as count FROM player%s WHERE name=%s", GetTablePostfix(), SqlString(packet->player_table.name).c_str());
 
 	std::unique_ptr<SQLMsg> pMsg1(CDBManager::instance().DirectQuery(queryStr));
 
@@ -1266,7 +1266,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 #endif
 			"playtime, "
 			"skill_level, quickslot) "
-			"VALUES(0, %u, '%s', "
+			"VALUES(0, %u, %s, "
 			"%d, %d, %d, %d, %d, "
 			"%d, %d, %d, %d, %d, %d, %d, "
 			"%d, %d, %d, %d, %d, %d, %d, 0,"
@@ -1283,7 +1283,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 #endif
 			"0, ",
 			GetTablePostfix(),
-			packet->account_id, packet->player_table.name,
+			packet->account_id, SqlString(packet->player_table.name).c_str(),
 			packet->player_table.level, packet->player_table.st, packet->player_table.ht, packet->player_table.dx, packet->player_table.iq,
 			packet->player_table.job, packet->player_table.voice, packet->player_table.dir, packet->player_table.x, packet->player_table.y, packet->player_table.z,
 			packet->player_table.hp, packet->player_table.sp, packet->player_table.sRandomHP, packet->player_table.sRandomSP, packet->player_table.stat_point, packet->player_table.stamina, packet->player_table.part_base, packet->player_table.part_base, packet->player_table.gold
@@ -1565,13 +1565,13 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 		CDBManager::instance().AsyncQuery(queryStr);
 		// END_OF_MYSHOP_PRICE_LIST
 
-		snprintf(queryStr, sizeof(queryStr), "DELETE FROM messenger_list%s WHERE account='%s' OR companion='%s'", GetTablePostfix(), szName, szName);
+		snprintf(queryStr, sizeof(queryStr), "DELETE FROM messenger_list%s WHERE account=%s OR companion=%s", GetTablePostfix(), SqlString(szName).c_str(), SqlString(szName).c_str());
 		CDBManager::instance().AsyncQuery(queryStr);
 
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM horse_name%s WHERE id=%u", GetTablePostfix(), pi->player_id);
 		CDBManager::instance().AsyncQuery(queryStr);
 
-		snprintf(queryStr, sizeof(queryStr), "DELETE FROM guild_comment%s WHERE name='%s'", GetTablePostfix(), szName);
+		snprintf(queryStr, sizeof(queryStr), "DELETE FROM guild_comment%s WHERE name=%s", GetTablePostfix(), SqlString(szName).c_str());
 		CDBManager::instance().AsyncQuery(queryStr);
 
 		peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_SUCCESS, pi->dwHandle, 1);
@@ -1636,7 +1636,7 @@ void CClientManager::QUERY_REMOVE_AFFECT(CPeer * peer, TPacketGDRemoveAffect * p
 void CClientManager::QUERY_HIGHSCORE_REGISTER(CPeer* peer, TPacketGDHighscore * data)
 {
 	char szQuery[128];
-	snprintf(szQuery, sizeof(szQuery), "SELECT value FROM highscore%s WHERE board='%s' AND pid = %u", GetTablePostfix(), data->szBoard, data->dwPID);
+	snprintf(szQuery, sizeof(szQuery), "SELECT value FROM highscore%s WHERE board=%s AND pid = %u", GetTablePostfix(), SqlString(data->szBoard).c_str(), data->dwPID);
 
 	LOG_INFO("HEADER_GD_HIGHSCORE_REGISTER: PID {}", data->dwPID);
 
@@ -1664,7 +1664,7 @@ void CClientManager::RESULT_HIGHSCORE_REGISTER(CPeer * pkPeer, SQLMsg * msg)
 	if (res->uiNumRows == 0)
 	{
 		char buf[256];
-		snprintf(buf, sizeof(buf), "INSERT INTO highscore%s VALUES('%s', %u, %d)", GetTablePostfix(), szBoard, pi->player_id, value);
+		snprintf(buf, sizeof(buf), "INSERT INTO highscore%s VALUES(%s, %u, %d)", GetTablePostfix(), SqlString(szBoard).c_str(), pi->player_id, value);
 		CDBManager::instance().AsyncQuery(buf);
 	}
 	else
@@ -1686,14 +1686,14 @@ void CClientManager::RESULT_HIGHSCORE_REGISTER(CPeer * pkPeer, SQLMsg * msg)
 			else
 			{
 				char buf[256];
-				snprintf(buf, sizeof(buf), "REPLACE INTO highscore%s VALUES('%s', %u, %d)", GetTablePostfix(), szBoard, pi->player_id, value);
+				snprintf(buf, sizeof(buf), "REPLACE INTO highscore%s VALUES(%s, %u, %d)", GetTablePostfix(), SqlString(szBoard).c_str(), pi->player_id, value);
 				CDBManager::instance().AsyncQuery(buf);
 			}
 		}
 		else
 		{
 			char buf[256];
-			snprintf(buf, sizeof(buf), "INSERT INTO highscore%s VALUES('%s', %u, %d)", GetTablePostfix(), szBoard, pi->player_id, value);
+		snprintf(buf, sizeof(buf), "INSERT INTO highscore%s VALUES(%s, %u, %d)", GetTablePostfix(), SqlString(szBoard).c_str(), pi->player_id, value);
 			CDBManager::instance().AsyncQuery(buf);
 		}
 	}

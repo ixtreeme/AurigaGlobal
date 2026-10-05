@@ -478,8 +478,8 @@ int RequestNameChange(entt::entity e, std::string_view name)
 		return 2;
 
 	char query[1024];
-	snprintf(query, sizeof(query), "SELECT COUNT(*) FROM player%s WHERE name='%s'",
-		get_table_postfix(), requestedName.c_str());
+	snprintf(query, sizeof(query), "SELECT COUNT(*) FROM player%s WHERE name=%s",
+		get_table_postfix(), SqlString(requestedName.c_str()).c_str());
 	std::unique_ptr<SQLMsg> checkMessage(DBManager::instance().DirectQuery(query));
 	if (checkMessage && checkMessage->Get()->uiNumRows > 0)
 	{
@@ -503,8 +503,8 @@ int RequestNameChange(entt::entity e, std::string_view name)
 	LogManager::instance().ChangeNameLog(playerID, currentName.c_str(), requestedName.c_str(),
 		desc ? desc->GetHostName() : "");
 
-	snprintf(query, sizeof(query), "UPDATE player%s SET name='%s' WHERE id=%u",
-		get_table_postfix(), requestedName.c_str(), playerID);
+	snprintf(query, sizeof(query), "UPDATE player%s SET name=%s WHERE id=%u",
+		get_table_postfix(), SqlString(requestedName.c_str()).c_str(), playerID);
 	std::unique_ptr<SQLMsg> updateMessage(DBManager::instance().DirectQuery(query));
 	SetPendingName(e, requestedName);
 	return 4;
@@ -2781,10 +2781,10 @@ void ecs::PlayerRuntime::RankingSubcategory(entt::entity e, int iArg)
 
     char szQuery2[1024] = { 0 };
     if (ecs::PlayerRuntime::GetGMLevel(e) > GM_PLAYER) {
-        snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, name.c_str());
+	snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res ORDER BY r%d desc, level desc, name asc) as custom WHERE name=%s", iArg, get_table_postfix(), iArg, SqlString(name.c_str()).c_str());
     }
     else {
-        snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res WHERE name not in(SELECT mName FROM common.gmlist) ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, name.c_str());
+	snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res WHERE name not in(SELECT mName FROM common.gmlist) ORDER BY r%d desc, level desc, name asc) as custom WHERE name=%s", iArg, get_table_postfix(), iArg, SqlString(name.c_str()).c_str());
     }
     std::unique_ptr<SQLMsg> pRes2(DBManager::instance().DirectQuery(szQuery2));
     iRes = pRes2->Get()->uiNumRows;
@@ -3760,7 +3760,7 @@ void SetDropStatus(entt::entity e)
 
     std::string login = desc->GetAccountTable().login;
     std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(
-        "SELECT status FROM account.antifarm WHERE login='%s'", login.c_str()));
+			"SELECT status FROM account.antifarm WHERE login=%s", SqlString(login.c_str()).c_str()));
     if (msg->Get()->uiNumRows == 0)
         return;
 
@@ -3807,7 +3807,7 @@ EVENTFUNC(drop_event)
     }
     else {
         std::string login = ecs::PlayerRuntime::GetDesc(character)->GetAccountTable().login;
-        std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE login='%s'", login.c_str()));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE login=%s", SqlString(login.c_str()).c_str()));
         if (msg->Get()->uiNumRows > 0) {
             MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
             int iStatus = atoi(row[0]);
@@ -3821,7 +3821,7 @@ EVENTFUNC(drop_event)
                 }
                 else {
                     int c = 0;
-                    std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT COUNT(*) FROM account.antifarm WHERE hwid='%s' and status=1", d->GetHwid()));
+	std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT COUNT(*) FROM account.antifarm WHERE hwid=%s and status=1", SqlString(d->GetHwid()).c_str()));
                     if (msg2->Get()->uiNumRows > 0) {
                         MYSQL_ROW row2 = mysql_fetch_row(msg2->Get()->pSQLResult);
                         c = atoi(row2[0]);
@@ -3860,7 +3860,7 @@ EVENTFUNC(drop_event)
 
             if (!already) {
                 iStatus = iStatus == 1 ? 0 : 1;
-                std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("UPDATE account.antifarm SET status=%d WHERE login='%s'", iStatus, login.c_str()));
+	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("UPDATE account.antifarm SET status=%d WHERE login=%s", iStatus, SqlString(login.c_str()).c_str()));
             }
         }
 

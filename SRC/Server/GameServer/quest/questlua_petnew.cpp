@@ -280,7 +280,7 @@ namespace quest
 		}
 
 		char query1[256] = {0};
-		snprintf(query1, sizeof(query1), "SELECT id FROM player.new_petsystem WHERE name='%s';", szName);
+		snprintf(query1, sizeof(query1), "SELECT id FROM player.new_petsystem WHERE name=%s;", SqlString(szName).c_str());
 		std::unique_ptr<SQLMsg> pRes(DBManager::instance().DirectQuery(query1));
 		if (pRes->Get()->uiNumRows > 0) {
 			lua_pushnumber(L, 2);

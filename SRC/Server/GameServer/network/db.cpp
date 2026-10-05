@@ -713,6 +713,27 @@ uint32_t DBManager::EscapeString(char* dst, uint64_t dstSize, const char *src, u
 	return m_sql_direct.EscapeString(dst, dstSize, src, srcSize);
 }
 
+SqlString::SqlString(const char * value)
+{
+	if (!value)
+	{
+		m_value = "''";
+		return;
+	}
+
+	const uint32_t length = static_cast<uint32_t>(strlen(value));
+	std::vector<char> escaped(static_cast<size_t>(length) * 2 + 1);
+	const uint32_t escapedLength = DBManager::instance().EscapeString(escaped.data(), escaped.size(), value, length);
+
+	m_value.assign("'");
+	m_value.append(escaped.data(), escapedLength);
+	m_value.append("'");
+}
+
+SqlString::SqlString(const std::string & value) : SqlString(value.c_str())
+{
+}
+
 //
 // Common SQL
 //

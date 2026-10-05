@@ -181,7 +181,7 @@ int CWhisperAdmin::Whisper(LPDESC d, const char * c_pData, size_t uiBytes)
 void CWhisperAdmin::SaveLog(entt::entity ch, const char* c_pszText, const char* c_pszLang, int color)
 {
 	char szQuery[QUERY_MAX_LEN + 1];
-	snprintf(szQuery, sizeof(szQuery), "INSERT INTO whisper_system_message (who, date, text, lang, color) VALUES('%s', NOW(), '%s', '%s', '%d')", ecs::PlayerRuntime::GetName(ch).data(), c_pszText, c_pszLang, color);
+	snprintf(szQuery, sizeof(szQuery), "INSERT INTO whisper_system_message (who, date, text, lang, color) VALUES(%s, NOW(), %s, %s, '%d')", SqlString(ecs::PlayerRuntime::GetName(ch).data()).c_str(), SqlString(c_pszText).c_str(), SqlString(c_pszLang).c_str(), color);
 	std::unique_ptr<SQLMsg> msg(DBManager::Instance().DirectQuery(szQuery));
 }
 

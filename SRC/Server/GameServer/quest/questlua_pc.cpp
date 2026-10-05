@@ -3061,13 +3061,13 @@ teleport_area:
 
 		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, desc->GetAccountTable().login);
 
-		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall)select '%s', %d, %d, now(), '%s', 1 from DUAL where not exists (select login, why from item_award where login = '%s' and why  = '%s') ;",
-			desc->GetAccountTable().login,
+		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall)select %s, %d, %d, now(), %s, 1 from DUAL where not exists (select login, why from item_award where login = %s and why  = %s) ;",
+			SqlString(desc->GetAccountTable().login).c_str(),
 			dwVnum,
 			icount,
-			lua_tostring(L,3),
-			desc->GetAccountTable().login,
-			lua_tostring(L,3));
+			SqlString(lua_tostring(L,3)).c_str(),
+			SqlString(desc->GetAccountTable().login).c_str(),
+			SqlString(lua_tostring(L,3)).c_str());
 
 		lua_pushnumber (L, 0);
 		return 1;
@@ -3094,16 +3094,16 @@ teleport_area:
 
 		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, desc->GetAccountTable().login);
 
-		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall, socket0, socket1, socket2)select '%s', %d, %d, now(), '%s', 1, %s, %s, %s from DUAL where not exists (select login, why from item_award where login = '%s' and why  = '%s') ;",
-			desc->GetAccountTable().login,
+		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall, socket0, socket1, socket2)select %s, %d, %d, now(), %s, 1, %s, %s, %s from DUAL where not exists (select login, why from item_award where login = %s and why  = %s) ;",
+			SqlString(desc->GetAccountTable().login).c_str(),
 			dwVnum,
 			icount,
-			lua_tostring(L,3),
-			lua_tostring(L,4),
-			lua_tostring(L,5),
-			lua_tostring(L,6),
-			desc->GetAccountTable().login,
-			lua_tostring(L,3));
+			SqlString(lua_tostring(L,3)).c_str(),
+			SqlString(lua_tostring(L,4)).c_str(),
+			SqlString(lua_tostring(L,5)).c_str(),
+			SqlString(lua_tostring(L,6)).c_str(),
+			SqlString(desc->GetAccountTable().login).c_str(),
+			SqlString(lua_tostring(L,3)).c_str());
 
 		lua_pushnumber (L, 0);
 		return 1;

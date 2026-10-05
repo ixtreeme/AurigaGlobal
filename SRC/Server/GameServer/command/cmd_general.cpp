@@ -109,7 +109,7 @@ static bool DailyReward_CheckHWIDLimit(entt::entity ch)
 
 	// 1) ma mar claimelte valaki ezen a kulcson?
 	std::unique_ptr<SQLMsg> chk(DBManager::instance().DirectQuery(
-		"SELECT 1 FROM player.daily_reward_claim_hwid WHERE hwkey='%s' AND claim_day=CURDATE() LIMIT 1",
+			"SELECT 1 FROM player.daily_reward_claim_hwid WHERE hwkey=%s AND claim_day=CURDATE() LIMIT 1",
 		key.c_str()
 	));
 
@@ -119,7 +119,7 @@ static bool DailyReward_CheckHWIDLimit(entt::entity ch)
 	// 2) ha nem, akkor regisztraljuk (mostantol ma mar nem lehet ujra)
 	std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery(
 		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
-		"VALUES('%s', CURDATE(), %u, %u)",
+			"VALUES(%s, CURDATE(), %u, %u)",
 		key.c_str(),
 		(ecs::PlayerRuntime::GetPlayerID(ch)),
 		ecs::PlayerRuntime::GetDesc(ch)->GetAccountTable().id
@@ -210,7 +210,7 @@ ACMD(do_daily_reward_reload){
 		}
 	}
 
-	std::unique_ptr<SQLMsg> msgend(DBManager::instance().DirectQuery("SELECT items, count FROM player.daily_reward_items WHERE reward = '%s'", rewards.c_str()));
+	std::unique_ptr<SQLMsg> msgend(DBManager::instance().DirectQuery("SELECT items, count FROM player.daily_reward_items WHERE reward = %s", SqlString(rewards.c_str()).c_str()));
 	if (msgend->Get()->uiNumRows > 0) {
 		MYSQL_ROW row;
 		while ((row = mysql_fetch_row(msgend->Get()->pSQLResult)) != nullptr) {
@@ -253,7 +253,7 @@ ACMD(do_daily_reward_get_reward){
 #endif
 		std::string counts = "";
 
-		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT items, count from player.daily_reward_items where reward = '%s' ORDER BY RAND() limit 1", rewards.c_str()));
+		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT items, count from player.daily_reward_items where reward = %s ORDER BY RAND() limit 1", SqlString(rewards.c_str()).c_str()));
 		if (msg2->Get()->uiNumRows > 0) {
 			MYSQL_ROW row;
 			while ((row = mysql_fetch_row(msg2->Get()->pSQLResult)) != nullptr) {

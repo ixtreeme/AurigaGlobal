@@ -6,7 +6,7 @@ void CClientManager::UpdateHorseName(TPacketUpdateHorseName* data, CPeer* peer)
 {
 	char szQuery[512];
 
-	snprintf(szQuery, sizeof(szQuery), "REPLACE INTO horse_name VALUES(%u, '%s')", data->dwPlayerID, data->szHorseName);
+	snprintf(szQuery, sizeof(szQuery), "REPLACE INTO horse_name VALUES(%u, %s)", data->dwPlayerID, SqlString(data->szHorseName).c_str());
 
 	std::unique_ptr<SQLMsg> pmsg_insert(CDBManager::instance().DirectQuery(szQuery));
 

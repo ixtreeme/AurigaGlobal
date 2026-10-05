@@ -145,7 +145,22 @@ template <class Functor> void DBManager::FuncAfterQuery(Functor f, const char* c
 	m_sql.ReturnQuery(szQuery, p);
 }
 
-////////////////////////////////////////////////////////////////
+/// Quoted and escaped SQL string literal built with the direct connection's
+// charset. Use it for every user controlled value instead of interpolating
+// the raw string:
+//   snprintf(q, sizeof(q), "... WHERE name=%s", SqlString(name).c_str());
+class SqlString
+{
+	public:
+		explicit SqlString(const char * value);
+		explicit SqlString(const std::string & value);
+		const char * c_str() const { return m_value.c_str(); }
+
+	private:
+		std::string m_value;
+};
+
+///////////////////////////////////////////////////////////////
 typedef struct SHighscoreRegisterQueryInfo
 {
 	char    szBoard[20+1];

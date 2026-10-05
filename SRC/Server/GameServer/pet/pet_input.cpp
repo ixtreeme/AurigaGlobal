@@ -318,9 +318,9 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 	snprintf(
 		nameQuery,
 		sizeof(nameQuery),
-		"SELECT id FROM player.new_petsystem%s WHERE name='%s';",
+		"SELECT id FROM player.new_petsystem%s WHERE name=%s;",
 		get_table_postfix(),
-		p->petname);
+		SqlString(p->petname).c_str());
 	std::unique_ptr<SQLMsg> nameResult(DBManager::instance().DirectQuery(nameQuery));
 	if (nameResult->Get()->uiNumRows > 0)
 	{
@@ -368,13 +368,13 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 	snprintf(
 		insertQuery,
 		sizeof(insertQuery),
-		"INSERT INTO new_petsystem VALUES(%u,'%s', 1, 0, 0, 0, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, 0"
+		"INSERT INTO new_petsystem VALUES(%u,%s, 1, 0, 0, 0, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, 0"
 #ifdef ENABLE_NEW_PET_EDITS
 		", %lld"
 #endif
 		")",
 		petItemId,
-		p->petname,
+		SqlString(p->petname).c_str(),
 		hp[number(0, 2)],
 		mostri[number(0, 2)],
 		medi[number(0, 2)],

@@ -49,8 +49,8 @@ void CClientManager::SetEventFlag(TPacketSetEventFlag* p)
 	{
 		char szQuery[1024];
 		snprintf(szQuery, sizeof(szQuery),
-				"REPLACE INTO quest%s (dwPID, szName, szState, lValue) VALUES(0, '%s', '', %d)",
-				GetTablePostfix(), p->szFlagName, p->lValue);
+				"REPLACE INTO quest%s (dwPID, szName, szState, lValue) VALUES(0, %s, '', %d)",
+				GetTablePostfix(), SqlString(p->szFlagName).c_str(), p->lValue);
 		szQuery[1023] = '\0';
 
 		//CDBManager::instance().ReturnQuery(szQuery, QID_QUEST_SAVE, 0, NULL);

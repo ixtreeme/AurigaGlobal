@@ -1169,8 +1169,8 @@ bool CGuildManager::Bet(uint32_t dwID, const char * c_pszLogin, int64_t dwGold, 
 	if (it == m_map_kWarReserve.end())
 	{
 		LOG_INFO("WAR_RESERVE: Bet: cannot find reserve war by id {}", dwID);
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO item_award (login, vnum, socket0, given_time) VALUES('%s', %d, %lld, NOW())",
-				c_pszLogin, ITEM_ELK_VNUM, dwGold);
+		snprintf(szQuery, sizeof(szQuery), "INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(%s, %d, %lld, NOW())",
+				SqlString(c_pszLogin).c_str(), ITEM_ELK_VNUM, dwGold);
 		CDBManager::instance().AsyncQuery(szQuery);
 		return false;
 	}
@@ -1178,8 +1178,8 @@ bool CGuildManager::Bet(uint32_t dwID, const char * c_pszLogin, int64_t dwGold, 
 	if (!it->second->Bet(c_pszLogin, dwGold, dwGuild))
 	{
 		LOG_INFO("WAR_RESERVE: Bet: cannot bet id {}, login {}, gold {}, guild {}", dwID, c_pszLogin, dwGold, dwGuild);
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO item_award (login, vnum, socket0, given_time) VALUES('%s', %d, %lld, NOW())",
-				c_pszLogin, ITEM_ELK_VNUM, dwGold);
+		snprintf(szQuery, sizeof(szQuery), "INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(%s, %d, %lld, NOW())",
+				SqlString(c_pszLogin).c_str(), ITEM_ELK_VNUM, dwGold);
 		CDBManager::instance().AsyncQuery(szQuery);
 		return false;
 	}
@@ -1304,8 +1304,8 @@ bool CGuildWarReserve::Bet(const char * pszLogin, int64_t dwGold, uint32_t dwGui
 	}
 
 	snprintf(szQuery, sizeof(szQuery),
-			"INSERT INTO guild_war_bet (war_id, login, gold, guild) VALUES(%u, '%s', %lld, %u)",
-			m_data.dwID, pszLogin, dwGold, dwGuild);
+			"INSERT INTO guild_war_bet (war_id, login, gold, guild) VALUES(%u, %s, %lld, %u)",
+			m_data.dwID, SqlString(pszLogin).c_str(), dwGold, dwGuild);
 
 	std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
 
@@ -1366,11 +1366,11 @@ void CGuildWarReserve::Draw()
 		while (it != mapBet.end())
 		{
 			if (iRow == 0)
-				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, "('%s', %d, %u, NOW())",
-						it->first.c_str(), ITEM_ELK_VNUM, it->second.second);
+				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, "(%s, %d, %u, NOW())",
+						SqlString(it->first).c_str(), ITEM_ELK_VNUM, it->second.second);
 			else
-				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, ",('%s', %d, %u, NOW())",
-						it->first.c_str(), ITEM_ELK_VNUM, it->second.second);
+				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, ",(%s, %d, %u, NOW())",
+						SqlString(it->first).c_str(), ITEM_ELK_VNUM, it->second.second);
 
 			++it;
 
@@ -1477,11 +1477,11 @@ void CGuildWarReserve::End(int iScoreFrom, int iScoreTo)
 			uint32_t dwGold = (uint32_t) (dwTotalBet * ratio * 0.9);
 
 			if (iRow == 0)
-				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, "('%s', %d, %u, NOW())",
-						it->first.c_str(), ITEM_ELK_VNUM, dwGold);
+				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, "(%s, %d, %u, NOW())",
+						SqlString(it->first).c_str(), ITEM_ELK_VNUM, dwGold);
 			else
-				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, ",('%s', %d, %u, NOW())",
-						it->first.c_str(), ITEM_ELK_VNUM, dwGold);
+				iLen += snprintf(szQuery + iLen, sizeof(szQuery) - iLen, ",(%s, %d, %u, NOW())",
+						SqlString(it->first).c_str(), ITEM_ELK_VNUM, dwGold);
 
 			++it;
 

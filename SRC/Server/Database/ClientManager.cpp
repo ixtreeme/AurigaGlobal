@@ -653,14 +653,14 @@ void CClientManager::QUERY_QUEST_SAVE(CPeer * pkPeer, TQuestTable * pTable, uint
 		if (pTable->lValue == 0)
 		{
 			snprintf(szQuery, sizeof(szQuery),
-					"DELETE FROM quest%s WHERE dwPID=%u AND szName='%s' AND szState='%s'",
-					GetTablePostfix(), pTable->dwPID, pTable->szName, pTable->szState);
+					"DELETE FROM quest%s WHERE dwPID=%u AND szName=%s AND szState=%s",
+					GetTablePostfix(), pTable->dwPID, SqlString(pTable->szName).c_str(), SqlString(pTable->szState).c_str());
 		}
 		else
 		{
 			snprintf(szQuery, sizeof(szQuery),
-					"REPLACE INTO quest%s (dwPID, szName, szState, lValue) VALUES(%u, '%s', '%s', %d)",
-					GetTablePostfix(), pTable->dwPID, pTable->szName, pTable->szState, pTable->lValue);
+					"REPLACE INTO quest%s (dwPID, szName, szState, lValue) VALUES(%u, %s, %s, %d)",
+					GetTablePostfix(), pTable->dwPID, SqlString(pTable->szName).c_str(), SqlString(pTable->szState).c_str(), pTable->lValue);
 		}
 
 		CDBManager::instance().ReturnQuery(szQuery, QID_QUEST_SAVE, pkPeer->GetHandle(), nullptr);
@@ -1905,8 +1905,9 @@ void CClientManager::QUERY_SMS(CPeer * pkPeer, TPacketGDSMS * pack)
 	szMsg[len] = '\0';
 
 	snprintf(szQuery, sizeof(szQuery),
-			"INSERT INTO sms_pool (server, sender, receiver, mobile, msg) VALUES(%d, '%s', '%s', '%s', '%s')",
-			(m_iPlayerIDStart + 2) / 3, pack->szFrom, pack->szTo, pack->szMobile, szMsg);
+			"INSERT INTO sms_pool (server, sender, receiver, mobile, msg) VALUES(%d, %s, %s, %s, %s)",
+			(m_iPlayerIDStart + 2) / 3, SqlString(pack->szFrom).c_str(), SqlString(pack->szTo).c_str(),
+			SqlString(pack->szMobile).c_str(), SqlString(szMsg).c_str());
 
 	CDBManager::instance().AsyncQuery(szQuery);
 }
@@ -2197,9 +2198,9 @@ void CClientManager::BlockChat(TPacketBlockChat* p)
 	char szQuery[256];
 
 	if (g_stLocale == "sjis")
-		snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player%s WHERE name = '%s' collate sjis_japanese_ci", GetTablePostfix(), p->szName);
+		snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player%s WHERE name = %s collate sjis_japanese_ci", GetTablePostfix(), SqlString(p->szName).c_str());
 	else
-		snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player%s WHERE name = '%s'", GetTablePostfix(), p->szName);
+		snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player%s WHERE name = %s", GetTablePostfix(), SqlString(p->szName).c_str());
 	std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
 	SQLResult * pRes = pmsg->Get();
 
@@ -5159,7 +5160,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 #endif*/
 
 
-									snprintf(szQuery, sizeof(szQuery), "INSERT INTO player.ishop_log (accountID, playerName, buyDate, buyTime, ipAdress, itemVnum, itemCount, itemPrice) VALUES(%u, '%s', NOW(), %lld, '%s', %u, %d, %u)", accountID, playerName, time(nullptr), ipAdress, itemData.itemVnum, itemCount, itemPrice);
+									snprintf(szQuery, sizeof(szQuery), "INSERT INTO player.ishop_log (accountID, playerName, buyDate, buyTime, ipAdress, itemVnum, itemCount, itemPrice) VALUES(%u, %s, NOW(), %lld, %s, %u, %d, %u)", accountID, SqlString(playerName).c_str(), time(nullptr), SqlString(ipAdress).c_str(), itemData.itemVnum, itemCount, itemPrice);
 									std::unique_ptr<SQLMsg> pInsertLog(CDBManager::instance().DirectQuery(szQuery, SQL_PLAYER));
 									if (!pInsertLog || pInsertLog->Get()->uiAffectedRows == 0)
 									{
