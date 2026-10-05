@@ -218,7 +218,7 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 		}
 		else
 		{
-			DBManager::instance().DirectQuery(
+			DBManager::instance().Query(
 				"INSERT IGNORE INTO guild_renewal_tax(guild_id,active,deadline,per_member_money) VALUES(%u,0,0,0)", guildId);
 			c.tax = Tax{};
 		}
@@ -453,14 +453,14 @@ bool CGuildRenewal::LoadLevelReqFromFile(const char* filename)
 void CGuildRenewal::DB_SaveMoney(uint32_t guildId)
 {
 	auto& c = GetCache(guildId);
-	DBManager::instance().DirectQuery(
+	DBManager::instance().Query(
 		"REPLACE INTO guild_renewal_money(guild_id,money) VALUES(%u,%lld)", guildId, (long long)c.money);
 }
 
 void CGuildRenewal::DB_SaveTax(uint32_t guildId)
 {
 	auto& c = GetCache(guildId);
-	DBManager::instance().DirectQuery(
+	DBManager::instance().Query(
 		"REPLACE INTO guild_renewal_tax(guild_id,active,deadline,per_member_money,"
 		"item1_vnum,item1_count,item2_vnum,item2_count,item3_vnum,item3_count,item4_vnum,item4_count,item5_vnum,item5_count)"
 		" VALUES(%u,%d,%d,%lld,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u)",
@@ -482,7 +482,7 @@ void CGuildRenewal::DB_SaveSlot(uint32_t guildId, uint16_t slot)
 		return;
 
 	auto& s = c.storage[slot];
-	DBManager::instance().DirectQuery(
+	DBManager::instance().Query(
 		"REPLACE INTO guild_renewal_storage(guild_id,slot,vnum,count) VALUES(%u,%u,%u,%u)",
 		guildId, (unsigned)slot, (unsigned)s.vnum, (unsigned)s.count);
 }
@@ -495,7 +495,7 @@ void CGuildRenewal::DB_SaveContrib(uint32_t guildId, uint32_t pid)
 		return;
 	const Contrib& cc = it->second;
 
-	DBManager::instance().DirectQuery(
+	DBManager::instance().Query(
 		"REPLACE INTO guild_renewal_contrib(guild_id,pid,paid_money,paid_item_total,paid_flag,last_pay_time)"
 		" VALUES(%u,%u,%lld,%lld,%u,%d)",
 		guildId, pid,

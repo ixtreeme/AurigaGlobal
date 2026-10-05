@@ -183,32 +183,34 @@ namespace
                 // dungeon_ranking update (same logic as our OrcsDungeon C++ version)
                 const int32_t pid = ecs::PlayerRuntime::GetPlayerID(ch);
 
-                std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery(
+                LPDESC rankDesc = ecs::PlayerRuntime::GetDesc(ch);
+                const uint32_t rankAccId = rankDesc ? rankDesc->GetAccountTable().id : 0;
+
+                DBManager::instance().FuncQuery(
+                    [pid, dungeonIndex, elapsed, damage, rankAccId](SQLMsg* msgcheck) {
+                        if (msgcheck && msgcheck->Get() && msgcheck->Get()->uiNumRows > 0)
+                        {
+                            MYSQL_ROW row = mysql_fetch_row(msgcheck->Get()->pSQLResult);
+                            int32_t lasttime = 0, lastdamage = 0;
+                            str_to_number(lasttime, row[0]);
+                            str_to_number(lastdamage, row[1]);
+
+                            lasttime = elapsed > lasttime ? lasttime : elapsed;
+                            lastdamage = damage > lastdamage ? damage : lastdamage;
+
+                            DBManager::instance().Query(
+                                "UPDATE dungeon_ranking SET completed=completed+1, time=%d, damage=%d WHERE pid=%u AND dungeon_index=%d",
+                                lasttime, lastdamage, pid, dungeonIndex);
+                        }
+                        else
+                        {
+                            DBManager::instance().Query(
+                                "INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')",
+                                rankAccId, pid, dungeonIndex, 1, elapsed, damage);
+                        }
+                    },
                     "SELECT time, damage FROM dungeon_ranking WHERE pid=%u AND dungeon_index=%d",
-                    pid, dungeonIndex));
-
-                if (msgcheck && msgcheck->Get() && msgcheck->Get()->uiNumRows > 0)
-                {
-                    MYSQL_ROW row = mysql_fetch_row(msgcheck->Get()->pSQLResult);
-                    int32_t lasttime = 0, lastdamage = 0;
-                    str_to_number(lasttime, row[0]);
-                    str_to_number(lastdamage, row[1]);
-
-                    lasttime = elapsed > lasttime ? lasttime : elapsed;
-                    lastdamage = damage > lastdamage ? damage : lastdamage;
-
-                    DBManager::instance().Query(
-                        "UPDATE dungeon_ranking SET completed=completed+1, time=%d, damage=%d WHERE pid=%u AND dungeon_index=%d",
-                        lasttime, lastdamage, pid, dungeonIndex);
-                }
-                else
-                {
-                    LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
-                    const uint32_t accId = desc ? desc->GetAccountTable().id : 0;
-                    DBManager::instance().Query(
-                        "INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')",
-                        accId, pid, dungeonIndex, 1, elapsed, damage);
-                }
+                    pid, dungeonIndex);
             });
     }
 }

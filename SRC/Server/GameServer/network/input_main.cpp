@@ -1183,7 +1183,7 @@ void CInputMain::ChangeLanguage(entt::entity character, uint8_t bLanguage)
 
 	if(bLanguage > LANGUAGE_DEFAULT && bLanguage < LANGUAGE_MAX_NUM)
 	{
-		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET language = %d WHERE id = %d;", bLanguage, ecs::PlayerRuntime::GetAccountID(character)));
+		DBManager::instance().Query("UPDATE account.account SET language = %d WHERE id = %d;", bLanguage, ecs::PlayerRuntime::GetAccountID(character));
 		ecs::PlayerRuntime::GetDesc(character)->SetLanguage(bLanguage);
 	}
 }

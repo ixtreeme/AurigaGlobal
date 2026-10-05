@@ -3903,7 +3903,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					return false;
 				}
 
-				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET duration =(tduration) WHERE id = %d", GetItemID(item2)));
+				DBManager::instance().Query("UPDATE new_petsystem SET duration =(tduration) WHERE id = %d", GetItemID(item2));
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 788, "");
 #endif
