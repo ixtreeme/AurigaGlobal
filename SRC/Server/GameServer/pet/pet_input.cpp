@@ -389,7 +389,7 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 		tmpdur,
 		tmpdur,
 		get_global_time());
-	std::unique_ptr<SQLMsg> insertResult(DBManager::instance().DirectQuery(insertQuery));
+	DBManager::instance().Query(insertQuery);
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 769, "");
 #endif

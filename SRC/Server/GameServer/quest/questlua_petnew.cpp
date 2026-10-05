@@ -200,7 +200,7 @@ namespace quest
 		if (pmsg2->Get()->uiNumRows > 0) {
 			MYSQL_ROW row = mysql_fetch_row(pmsg2->Get()->pSQLResult);
 			if (atoi(row[0]) <= 0){
-				delete(DBManager::instance().DirectQuery("UPDATE new_petsystem SET duration=%d WHERE id = %u ", atoi(row[1]), id));
+				DBManager::instance().Query("UPDATE new_petsystem SET duration=%d WHERE id = %u ", atoi(row[1]), id);
 				lua_pushboolean(L, true);
 			}
 			else{

@@ -46,7 +46,7 @@ bool CHwidManager::IsBlocked(const char * hwid)
 }
 
 void CHwidManager::AddHwidToAccount(const char * login, const char * hwid) {
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status='BAN2', hwid=%s WHERE login=%s and STATUS='OK'", SqlString(hwid).c_str(), SqlString(login).c_str()));
+	DBManager::instance().Query("UPDATE account.account SET status='BAN2', hwid=%s WHERE login=%s and STATUS='OK'", SqlString(hwid).c_str(), SqlString(login).c_str());
 }
 
 void CHwidManager::SendBlockHwid(const char * whoname, const char * targetname)
@@ -120,11 +120,11 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 
 				if (!ids.empty()) {
 					ids.erase(ids.end()- 1);
-					std::unique_ptr<SQLMsg> blockaccountsid(DBManager::instance().DirectQuery("UPDATE account.account SET status='BAN1' WHERE id IN (%s)", ids.c_str()));
+					DBManager::instance().Query("UPDATE account.account SET status='BAN1' WHERE id IN (%s)", ids.c_str());
 				}
 			}
 
-			std::unique_ptr<SQLMsg> blockhwid(DBManager::instance().DirectQuery("INSERT INTO account.blocked_hwids SET hwid=%s, who=%s, accounts=%s", SqlString(hwid).c_str(), SqlString(whoplayername).c_str(), SqlString(ids.c_str()).c_str()));
+			DBManager::instance().Query("INSERT INTO account.blocked_hwids SET hwid=%s, who=%s, accounts=%s", SqlString(hwid).c_str(), SqlString(whoplayername).c_str(), SqlString(ids.c_str()).c_str());
 		}
 	}
 }
@@ -184,8 +184,8 @@ void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname
 				char accountsid[255 + 1];
 				strlcpy(accountsid, row2[0], sizeof(accountsid));
 
-				std::unique_ptr<SQLMsg> unlockaccounts(DBManager::instance().DirectQuery("UPDATE account.account SET status='OK' WHERE id in (%s)", accountsid));
-				std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("DELETE FROM account.blocked_hwids WHERE hwid=%s", SqlString(hwid).c_str()));
+				DBManager::instance().Query("UPDATE account.account SET status='OK' WHERE id in (%s)", accountsid);
+				DBManager::instance().Query("DELETE FROM account.blocked_hwids WHERE hwid=%s", SqlString(hwid).c_str());
 			}
 		}
 	}

@@ -532,7 +532,7 @@ void DESC_MANAGER::ConnectAccount(std::string_view login, LPDESC d)
 		}
 	}
 
-	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("INSERT INTO account.antifarm SET hwid=%s, login=%s, status=%d", SqlString(d->GetHwid()).c_str(), SqlString(loginString.c_str()).c_str(), iStatus));
+	DBManager::instance().Query("INSERT INTO account.antifarm SET hwid=%s, login=%s, status=%d", SqlString(d->GetHwid()).c_str(), SqlString(loginString.c_str()).c_str(), iStatus);
 #endif
 }
 
@@ -542,7 +542,7 @@ void DESC_MANAGER::DisconnectAccount(std::string_view login)
 	dev_log(LOG_DEB0, "BBBB DisConnectAccount(%s)", loginString.c_str());
 	m_map_loginName.erase(loginString);
 #ifdef ENABLE_BLOCK_MULTIFARM
-	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("DELETE FROM account.antifarm WHERE login=%s", SqlString(loginString.c_str()).c_str()));
+	DBManager::instance().Query("DELETE FROM account.antifarm WHERE login=%s", SqlString(loginString.c_str()).c_str());
 #endif
 }
 

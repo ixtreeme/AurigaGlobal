@@ -3909,7 +3909,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #endif
 			}
 			else {
-				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET duration =(tduration/2) WHERE id = %d", GetItemID(item2)));
+				DBManager::instance().Query("UPDATE new_petsystem SET duration =(tduration/2) WHERE id = %d", GetItemID(item2));
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 788, "");
 #endif
@@ -4116,7 +4116,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #else
 			SetItemSocket(petItem, 1, GetItemAttributeType(item, 0));
 #endif
-			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE player.new_petsystem SET id = %d WHERE id = %ld", GetItemID(petItem), GetItemSocket(item, 1)));
+			DBManager::instance().Query("UPDATE player.new_petsystem SET id = %d WHERE id = %ld", GetItemID(petItem), GetItemSocket(item, 1));
 			ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 857, "%s", GetItemName(item));
@@ -7717,7 +7717,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 			SetItemSocket(item2, 1, iNewDuration);
 			SetItemSocket(item2, 2, iNewDuration);
-			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE player.new_petsystem SET duration = %d, tduration = %d WHERE id = %lu ", iNewDuration, iNewDuration, GetItemID(item2)));
+			DBManager::instance().Query("UPDATE player.new_petsystem SET duration = %d, tduration = %d WHERE id = %lu ", iNewDuration, iNewDuration, GetItemID(item2));
 
 			{
 				char buf[21];
@@ -7793,7 +7793,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					iMax = iValue + 5 > 100 ? 100 : iValue + 5;
 
 				SetItemForceAttributeEcs(item2, idx, 1, iMax);
-				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE player.new_petsystem SET bonus%d = %d WHERE id = %lu ", idx, iMax, GetItemID(item2)));
+				DBManager::instance().Query("UPDATE player.new_petsystem SET bonus%d = %d WHERE id = %lu ", idx, iMax, GetItemID(item2));
 
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 61, "");

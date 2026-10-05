@@ -373,7 +373,7 @@ namespace quest
 		uint32_t itemid = ItemSystem::GetItemID(q.GetCurrentItemEntity());
 		if (itemid != 0)
 		{
-			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET duration =(tduration/2) WHERE id = %d", itemid));
+			DBManager::instance().Query("UPDATE new_petsystem SET duration =(tduration/2) WHERE id = %d", itemid);
 		}
 		return 0;
 	}

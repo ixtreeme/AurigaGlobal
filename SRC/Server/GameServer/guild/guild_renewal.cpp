@@ -97,13 +97,13 @@ namespace
 		// Ha minden 0, toroljuk a sort (hogy ne nojon feleslegesen a tabla).
 		if (a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0 && a[4] == 0)
 		{
-			DBManager::instance().DirectQuery(
+			DBManager::instance().Query(
 				"DELETE FROM guild_renewal_kisado_item WHERE guild_id=%u AND pid=%u",
 				guildId, pid);
 			return;
 		}
 
-		DBManager::instance().DirectQuery(
+		DBManager::instance().Query(
 			"REPLACE INTO guild_renewal_kisado_item(guild_id,pid,item0,item1,item2,item3,item4) "
 			"VALUES(%u,%u,%u,%u,%u,%u,%u)",
 			guildId, pid,
@@ -112,7 +112,7 @@ namespace
 
 	static void KisAdo_DBDeleteGuild(uint32_t guildId)
 	{
-		DBManager::instance().DirectQuery("DELETE FROM guild_renewal_kisado_item WHERE guild_id=%u", guildId);
+		DBManager::instance().Query("DELETE FROM guild_renewal_kisado_item WHERE guild_id=%u", guildId);
 	}
 
 	static void KisAdo_DBLoadGuild(uint32_t guildId)
@@ -190,7 +190,7 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 		else
 		{
 			// ensure row exists
-			DBManager::instance().DirectQuery("INSERT IGNORE INTO guild_renewal_money(guild_id,money) VALUES(%u,0)", guildId);
+			DBManager::instance().Query("INSERT IGNORE INTO guild_renewal_money(guild_id,money) VALUES(%u,0)", guildId);
 			c.money = 0;
 		}
 	}
@@ -1271,7 +1271,7 @@ bool CGuildRenewal::TryLevelUp(entt::entity chEntity)
 
 		// Befizetsek trlse
 		c.contrib.clear();
-		DBManager::instance().DirectQuery("DELETE FROM guild_renewal_contrib WHERE guild_id=%u", guildId);
+		DBManager::instance().Query("DELETE FROM guild_renewal_contrib WHERE guild_id=%u", guildId);
 		KisAdo_ClearGuild(guildId);
 		KisAdo_DBDeleteGuild(guildId);
 
@@ -1281,7 +1281,7 @@ bool CGuildRenewal::TryLevelUp(entt::entity chEntity)
 			s.vnum = 0;
 			s.count = 0;
 		}
-		DBManager::instance().DirectQuery("DELETE FROM guild_renewal_storage WHERE guild_id=%u", guildId);
+		DBManager::instance().Query("DELETE FROM guild_renewal_storage WHERE guild_id=%u", guildId);
 
 		// Yang nullzs (clamp miatt elvileg mr 0, de biztos ami biztos)
 		c.money = 0;

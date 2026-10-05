@@ -452,12 +452,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 							M2_DELETE(pinfo);
 							break;
 						} else {
-							std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("UPDATE account.account SET hwid='%s' WHERE login='%s'", hwid, pinfo->login));
-							std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("UPDATE player.player_index SET hwid='%s' WHERE id='%d'", hwid, dwID));
+	DBManager::instance().Query("UPDATE account.account SET hwid=%s WHERE login=%s", SqlString(hwid).c_str(), SqlString(pinfo->login).c_str());
+	DBManager::instance().Query("UPDATE player.player_index SET hwid=%s WHERE id='%d'", SqlString(hwid).c_str(), dwID);
 						}
 #endif
 
-						std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("UPDATE account SET last_play=NOW() WHERE id=%u", dwID));
+						DBManager::instance().Query("UPDATE account SET last_play=NOW() WHERE id=%u", dwID);
 
 						TAccountTable & r = d->GetAccountTable();
 						r.id = dwID;

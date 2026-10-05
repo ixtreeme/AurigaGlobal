@@ -1589,7 +1589,7 @@ void CGuild::GiveReward(int reward)
 		//INSERT INTO player.item_award(`login`, `vnum`, `count`, `mall`) VALUES ('account', 189, 1, 1);
 		//Sostituire la query di sotto con questa di sopra una volta aggiungo il system award di VegaS
 		//DBManager::instance().DirectQuery("INSERT INTO item (owner_id, window, pos, count, vnum) VALUES ('%d', 'MALL', '%d', '1', '%d');", iAccountID, iPos, reward);
-		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("INSERT INTO item_award (login, vnum, count, why, mall) VALUES (%s, '%d', '1', 'GUILD_REWARD', '1');", SqlString(nrow[0]).c_str(), reward));
+		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, why, mall) VALUES (%s, '%d', '1', 'GUILD_REWARD', '1');", SqlString(nrow[0]).c_str(), reward);
 	}
 }
 

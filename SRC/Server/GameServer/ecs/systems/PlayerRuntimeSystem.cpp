@@ -3860,7 +3860,7 @@ EVENTFUNC(drop_event)
 
             if (!already) {
                 iStatus = iStatus == 1 ? 0 : 1;
-	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("UPDATE account.antifarm SET status=%d WHERE login=%s", iStatus, SqlString(login.c_str()).c_str()));
+	DBManager::instance().Query("UPDATE account.antifarm SET status=%d WHERE login=%s", iStatus, SqlString(login.c_str()).c_str());
             }
         }
 
