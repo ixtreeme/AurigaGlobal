@@ -16,7 +16,7 @@
 #     or databases/mysql80-client   (mysql/mysql.h, libmysqlclient)
 #   devel/pkgconf                   (optional, faster discovery)
 #
-# Base system: libmd (md5.h), libexecinfo (backtrace), clang/libc++ with
+# Base system: libexecinfo (backtrace), clang/libc++ with
 # C++23 <print> support (FreeBSD 14.1+ / 15.x).
 
 include(FindPackageHandleStandardArgs)

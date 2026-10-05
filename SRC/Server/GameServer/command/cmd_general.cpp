@@ -13,11 +13,7 @@
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
-#ifdef __FreeBSD__
-#include <md5.h>
-#else
-#include <Core/xmd5.h>
-#endif
+#include <cryptopp/md5.h>
 
 #include "utils.h"
 #include "config.h"
@@ -3181,7 +3177,6 @@ void open_in_game_mall(entt::entity character)
 
 	char buf[512+1];
 	char sas[33];
-	MD5_CTX ctx;
 	const char sas_key[] = "raLgNC5jCu7LrA";
 
 	char language[3];
@@ -3190,55 +3185,22 @@ void open_in_game_mall(entt::entity character)
 	snprintf(buf, sizeof(buf), "%u%u%s", ecs::PlayerRuntime::GetPlayerID(character),
 		ecs::PlayerRuntime::GetAccountID(character), sas_key);
 
-	MD5Init(&ctx);
-	MD5Update(&ctx, (const unsigned char *) buf, strlen(buf));
-#ifdef __FreeBSD__
-	MD5End(&ctx, sas);
-#else
+	CryptoPP::MD5 md5;
+	CryptoPP::byte digest[CryptoPP::MD5::DIGESTSIZE];
+	md5.CalculateDigest(digest, reinterpret_cast<const CryptoPP::byte*>(buf), strlen(buf));
+
 	static const char hex[] = "0123456789abcdef";
-	unsigned char digest[16];
-	MD5Final(digest, &ctx);
-	int i;
-	for (i = 0; i < 16; ++i) {
+	for (int i = 0; i < CryptoPP::MD5::DIGESTSIZE; ++i) {
 		sas[i+i] = hex[digest[i] >> 4];
 		sas[i+i+1] = hex[digest[i] & 0x0f];
 	}
-	sas[i+i] = '\0';
-#endif
+	sas[CryptoPP::MD5::DIGESTSIZE * 2] = '\0';
 
 	// snprintf(buf, sizeof(buf), "mall https://www.%s/shop?pid=%u&lang=%s&sid=%d&sas=%s",
 			// g_strWebMallURL.c_str(), (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), language, g_server_id, sas);
 	snprintf(buf, sizeof(buf), "mall https://bwmt2-global.eu/shop/",
 			ecs::PlayerRuntime::GetPlayerID(character), language, sas);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, buf);
-
-//	MD5_CTX ctx;
-//	snprintf(buf, sizeof(buf), "%u%s", ch->GetAID(), secretKey);
-//	MD5Init(&ctx);
-//	MD5Update(&ctx, (const unsigned char *) buf, strlen(buf));
-//#ifdef __FreeBSD__
-//	MD5End(&ctx, sas);
-//#else
-//	static const char hex[] = "0123456789abcdef";
-//	unsigned char digest[16];
-//	MD5Final(digest, &ctx);
-//		sas[i+i] = hex[digest[i] >> 4];
-//		sas[i+i+1] = hex[digest[i] & 0x0f];
-//	sas[i+i] = '\0';
-//			str_lang = "ro";
-//			str_lang = "it";
-//			str_lang = "tr";
-//			str_lang = "de";
-//			str_lang = "pl";
-//			str_lang = "pt";
-//			str_lang = "es";
-//			str_lang = "cz";
-//			str_lang = "hu";
-//		default: {
-//			str_lang = "en";
-//	snprintf(buf, sizeof(buf), "mall %s/in-game-shop?aid=%u&secret=%s&lang=%s", websiteUrl, ch->GetAID(), sas, str_lang.c_str());
-//#else
-//	snprintf(buf, sizeof(buf), "mall %s/in-game-shop?aid=%u&secret=%s", websiteUrl, ch->GetAID(), sas);
 }
 
 ACMD(do_in_game_mall)

@@ -1,6 +1,5 @@
 set(AURIGA_SERVER_PLATFORM_LIBS
     $<$<PLATFORM_ID:Windows>:ws2_32>
-    $<$<NOT:$<PLATFORM_ID:Windows>>:md>
 )
 
 function(auriga_collect_server_sources out_var)
