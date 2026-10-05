@@ -40,7 +40,7 @@ namespace marriage
 				"SELECT pid1, pid2, love_point, time, is_married, p1.name, p2.name FROM marriage, player%s as p1, player%s as p2 WHERE p1.id = pid1 AND p2.id = pid2",
 				GetTablePostfix(), GetTablePostfix());
 
-		unique_ptr<SQLMsg> pmsg_delete(CDBManager::instance().DirectQuery("DELETE FROM marriage WHERE is_married = 0"));
+		CDBManager::instance().AsyncQuery("DELETE FROM marriage WHERE is_married = 0");
 		unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
 
 		SQLResult * pRes = pmsg->Get();

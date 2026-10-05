@@ -8,7 +8,7 @@ void CClientManager::UpdateHorseName(TPacketUpdateHorseName* data, CPeer* peer)
 
 	snprintf(szQuery, sizeof(szQuery), "REPLACE INTO horse_name VALUES(%u, %s)", data->dwPlayerID, SqlString(data->szHorseName).c_str());
 
-	std::unique_ptr<SQLMsg> pmsg_insert(CDBManager::instance().DirectQuery(szQuery));
+	CDBManager::instance().AsyncQuery(szQuery);
 
 	ForwardPacket(HEADER_DG_UPDATE_HORSE_NAME, data, sizeof(TPacketUpdateHorseName), 0, peer);
 }

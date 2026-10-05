@@ -1203,13 +1203,13 @@ bool CGuildManager::ChangeMaster(uint32_t dwGID, uint32_t dwFrom, uint32_t dwTo)
 	char szQuery[1024];
 
 	snprintf(szQuery, sizeof(szQuery), "UPDATE guild%s SET master=%u WHERE id=%u", GetTablePostfix(), dwTo, dwGID);
-	delete CDBManager::instance().DirectQuery(szQuery);
+	CDBManager::instance().AsyncQuery(szQuery);
 
 	snprintf(szQuery, sizeof(szQuery), "UPDATE guild_member%s SET grade=1 WHERE pid=%u", GetTablePostfix(), dwTo);
-	delete CDBManager::instance().DirectQuery(szQuery);
+	CDBManager::instance().AsyncQuery(szQuery);
 
 	snprintf(szQuery, sizeof(szQuery), "UPDATE guild_member%s SET grade=15 WHERE pid=%u", GetTablePostfix(), dwFrom);
-	delete CDBManager::instance().DirectQuery(szQuery);
+	CDBManager::instance().AsyncQuery(szQuery);
 
 	return true;
 }

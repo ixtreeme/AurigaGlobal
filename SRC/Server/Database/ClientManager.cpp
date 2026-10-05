@@ -1215,7 +1215,7 @@ void CClientManager::QUERY_EMPIRE_SELECT(CPeer * pkPeer, uint32_t dwHandle, TEmp
 	char szQuery[QUERY_MAX_LEN];
 
 	snprintf(szQuery, sizeof(szQuery), "UPDATE player_index%s SET empire=%u WHERE id=%u", GetTablePostfix(), p->bEmpire, p->dwAccountID);
-	delete CDBManager::instance().DirectQuery(szQuery);
+	CDBManager::instance().AsyncQuery(szQuery);
 
 	LOG_INFO("EmpireSelect: {}", szQuery);
 	{

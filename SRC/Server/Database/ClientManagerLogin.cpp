@@ -603,7 +603,7 @@ void CClientManager::QUERY_CHANGE_NAME(CPeer * peer, uint32_t dwHandle, TPacketG
 	snprintf(queryStr, sizeof(queryStr),
 			"UPDATE player%s SET name=%s,change_name=0 WHERE id=%u", GetTablePostfix(), SqlString(p->name).c_str(), p->pid);
 
-	std::unique_ptr<SQLMsg> pMsg0(CDBManager::instance().DirectQuery(queryStr, SQL_PLAYER));
+	CDBManager::instance().AsyncQuery(queryStr, SQL_PLAYER);
 
 	TPacketDGChangeName pdg;
 	peer->EncodeHeader(HEADER_DG_CHANGE_NAME, dwHandle, sizeof(TPacketDGChangeName));

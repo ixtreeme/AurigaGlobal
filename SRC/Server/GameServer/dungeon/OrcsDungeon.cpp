@@ -438,7 +438,7 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
                 lasttime = elapsed > lasttime ? lasttime : elapsed;
                 lastdamage = damage > lastdamage ? damage : lastdamage;
 
-                DBManager::instance().DirectQuery(
+                DBManager::instance().Query(
                     "UPDATE dungeon_ranking SET completed=completed+1, time=%d, damage=%d WHERE pid=%u AND dungeon_index=%d",
                     lasttime, lastdamage, pid, dungeon_index);
             }
@@ -446,7 +446,7 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
             {
                 LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
                 const uint32_t accId = desc ? desc->GetAccountTable().id : 0;
-                DBManager::instance().DirectQuery(
+                DBManager::instance().Query(
                     "INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')",
                     accId, pid, dungeon_index, 1, elapsed, damage);
             }

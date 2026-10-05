@@ -1334,7 +1334,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 		LOG_ERROR("QUERY_ERROR: {}", queryStr);
 
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM player%s WHERE id=%u", GetTablePostfix(), player_id);
-		CDBManager::instance().DirectQuery(queryStr);
+		CDBManager::instance().AsyncQuery(queryStr);
 
 		peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_FAILED, dwHandle, 0);
 		return;
@@ -1538,7 +1538,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 		}
 
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM player%s WHERE id=%d", GetTablePostfix(), pi->player_id);
-		delete CDBManager::instance().DirectQuery(queryStr);
+		CDBManager::instance().AsyncQuery(queryStr);
 
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','DRAGON_SOUL_INVENTORY','BELT_INVENTORY'"
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -1549,7 +1549,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 #endif
 		"))",
 		GetTablePostfix(), pi->player_id);
-		delete CDBManager::instance().DirectQuery(queryStr);
+		CDBManager::instance().AsyncQuery(queryStr);
 
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM quest%s WHERE dwPID=%u", GetTablePostfix(), pi->player_id);
 		CDBManager::instance().AsyncQuery(queryStr);
