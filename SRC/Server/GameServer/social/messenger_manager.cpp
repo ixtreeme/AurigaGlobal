@@ -52,18 +52,14 @@ void MessengerManager::Login(MessengerManager::keyA account)
 	if (m_set_loginAccount.find(account) != m_set_loginAccount.end())
 		return;
 
-	// @fixme142 BEGIN
-	DBManager::instance().EscapeString(__account, sizeof(__account), account.c_str(), account.size());
-	if (account.compare(__account))
-		return;
-	// @fixme142 END
-
-	DBManager::instance().FuncQuery(std::bind(&MessengerManager::LoadList, this,std::placeholders::_1), "SELECT account, companion FROM messenger_list%s WHERE account='%s'", get_table_postfix(), __account);
+	char listQuery[256];
+	snprintf(listQuery, sizeof(listQuery), "SELECT account, companion FROM messenger_list%s WHERE account=?", get_table_postfix());
+	DBManager::instance().FuncQueryPrepared(std::bind(&MessengerManager::LoadList, this,std::placeholders::_1), listQuery, { SqlParam::Text(account) });
 #ifdef ENABLE_MESSENGER_TEAM
-	DBManager::instance().FuncQuery(std::bind(&MessengerManager::LoadTeamList, this, std::placeholders::_1), "SELECT %s,mName FROM common.gmlist WHERE mName!=%s", SqlString(account.c_str()).c_str(), SqlString(account.c_str()).c_str());
+	DBManager::instance().FuncQueryPrepared(std::bind(&MessengerManager::LoadTeamList, this, std::placeholders::_1), "SELECT ?, mName FROM common.gmlist WHERE mName != ?", { SqlParam::Text(account), SqlParam::Text(account) });
 #endif
 #ifdef ENABLE_MESSENGER_HELPER
-	DBManager::instance().FuncQuery(std::bind(&MessengerManager::LoadHelperList, this, std::placeholders::_1), "SELECT %s,mName FROM common.helperlist WHERE mName!=%s", SqlString(account.c_str()).c_str(), SqlString(account.c_str()).c_str());
+	DBManager::instance().FuncQueryPrepared(std::bind(&MessengerManager::LoadHelperList, this, std::placeholders::_1), "SELECT ?, mName FROM common.helperlist WHERE mName != ?", { SqlParam::Text(account), SqlParam::Text(account) });
 #endif
 	m_set_loginAccount.insert(account);
 }
@@ -85,7 +81,7 @@ void MessengerManager::LoadList(SQLMsg * msg)
 
 	for (uint64_t i = 0; i < msg->Get()->uiNumRows; ++i)
 	{
-		MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+		MYSQL_ROW row = msg->Get()->FetchRow();
 
 		if (row[0] && row[1])
 		{
@@ -271,7 +267,7 @@ void MessengerManager::LoadTeamList(SQLMsg * msg)
 
 	for (uint64_t i = 0; i < msg->Get()->uiNumRows; ++i)
 	{
-		MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+		MYSQL_ROW row = msg->Get()->FetchRow();
 
 		if (row[0] && row[1])
 		{
@@ -324,13 +320,17 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 			int iSize = it->size();
 #ifdef ENABLE_MULTI_LANGUAGE
 			bool bAuto = false;
-			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s", SqlString(it->c_str()).c_str()));
+			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQueryPrepared(
+				"SELECT account_id FROM player.player WHERE name=?",
+				{ SqlParam::Text(it->c_str()) }));
 			if (pMsg->Get()->uiNumRows != 0) {
-				MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+				MYSQL_ROW row = pMsg->Get()->FetchRow();
 				int id = atoi(row[0]);
-				std::unique_ptr<SQLMsg> pMsg2(DBManager::instance().DirectQuery("SELECT language FROM account.account WHERE id=%d", id));
+				std::unique_ptr<SQLMsg> pMsg2(DBManager::instance().DirectQueryPrepared(
+					"SELECT language FROM account.account WHERE id=?",
+					{ SqlParam::UInt(static_cast<uint32_t>(id)) }));
 				if (pMsg2->Get()->uiNumRows != 0) {
-					row = mysql_fetch_row(pMsg2->Get()->pSQLResult);
+					row = pMsg2->Get()->FetchRow();
 					strncpy(pack_online.language, row[0], sizeof(pack_online.language));
 					bAuto = true;
 				}
@@ -352,13 +352,17 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 			int iSize = it->size();
 #ifdef ENABLE_MULTI_LANGUAGE
 			bool bAuto = false;
-			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s", SqlString(it->c_str()).c_str()));
+			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQueryPrepared(
+				"SELECT account_id FROM player.player WHERE name=?",
+				{ SqlParam::Text(it->c_str()) }));
 			if (pMsg->Get()->uiNumRows != 0) {
-				MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+				MYSQL_ROW row = pMsg->Get()->FetchRow();
 				int id = atoi(row[0]);
-				std::unique_ptr<SQLMsg> pMsg2(DBManager::instance().DirectQuery("SELECT language FROM account.account WHERE id=%d", id));
+				std::unique_ptr<SQLMsg> pMsg2(DBManager::instance().DirectQueryPrepared(
+					"SELECT language FROM account.account WHERE id=?",
+					{ SqlParam::UInt(static_cast<uint32_t>(id)) }));
 				if (pMsg2->Get()->uiNumRows != 0) {
-					row = mysql_fetch_row(pMsg2->Get()->pSQLResult);
+					row = pMsg2->Get()->FetchRow();
 					strncpy(pack_offline.language, row[0], sizeof(pack_offline.language));
 					bAuto = true;
 				}
@@ -440,7 +444,7 @@ void MessengerManager::LoadHelperList(SQLMsg * msg)
 	std::string account;
 	for (uint32_t i = 0; i < msg->Get()->uiNumRows; ++i)
 	{
-		MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+		MYSQL_ROW row = msg->Get()->FetchRow();
 		if (row[0] && row[1])
 		{
 			if (account.length() == 0)
@@ -491,13 +495,17 @@ void MessengerManager::SendHelperList(MessengerManager::keyA account)
 			int iSize = it->size();
 #ifdef ENABLE_MULTI_LANGUAGE
 			bool bAuto = false;
-			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s", SqlString(it->c_str()).c_str()));
+			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQueryPrepared(
+				"SELECT account_id FROM player.player WHERE name=?",
+				{ SqlParam::Text(it->c_str()) }));
 			if (pMsg->Get()->uiNumRows != 0) {
-				MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+				MYSQL_ROW row = pMsg->Get()->FetchRow();
 				int id = atoi(row[0]);
-				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT language FROM account.account WHERE id=%d", id));
+				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQueryPrepared(
+					"SELECT language FROM account.account WHERE id=?",
+					{ SqlParam::UInt(static_cast<uint32_t>(id)) }));
 				if (msg->Get()->uiNumRows != 0) {
-					row = mysql_fetch_row(msg->Get()->pSQLResult);
+					row = msg->Get()->FetchRow();
 					strncpy(pack_online.language, row[0], sizeof(pack_online.language));
 					bAuto = true;
 				}
@@ -521,13 +529,17 @@ void MessengerManager::SendHelperList(MessengerManager::keyA account)
 			int iSize = it->size();
 #ifdef ENABLE_MULTI_LANGUAGE
 			bool bAuto = false;
-			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s", SqlString(it->c_str()).c_str()));
+			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQueryPrepared(
+				"SELECT account_id FROM player.player WHERE name=?",
+				{ SqlParam::Text(it->c_str()) }));
 			if (pMsg->Get()->uiNumRows != 0) {
-				MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+				MYSQL_ROW row = pMsg->Get()->FetchRow();
 				int id = atoi(row[0]);
-				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT language FROM account.account WHERE id=%d", id));
+				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQueryPrepared(
+					"SELECT language FROM account.account WHERE id=?",
+					{ SqlParam::UInt(static_cast<uint32_t>(id)) }));
 				if (msg->Get()->uiNumRows != 0) {
-					row = mysql_fetch_row(msg->Get()->pSQLResult);
+					row = msg->Get()->FetchRow();
 					strncpy(pack_offline.language, row[0], sizeof(pack_offline.language));
 					bAuto = true;
 				}

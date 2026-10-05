@@ -7,6 +7,7 @@
 #include <queue>
 #include <vector>
 #include <map>
+#include <deque>
 #include <mysql/mysql.h>
 #include <mysql/errmsg.h>
 #include <mysql/mysqld_error.h>
@@ -31,10 +32,19 @@ typedef struct _SQLResult
 		}
 	}
 
+	// Prepared statements have no MYSQL_RES; their rows are materialized
+	// as strings so FetchRow() behaves exactly like mysql_fetch_row().
+	MYSQL_ROW FetchRow();
+
 	MYSQL_RES *	pSQLResult;
 	uint64_t		uiNumRows;
 	uint64_t		uiAffectedRows;
 	uint64_t		uiInsertID;
+
+	bool			bPrepared { false };
+	std::deque<std::string>			preparedCells;
+	std::vector<std::vector<char *>>	preparedRows;
+	size_t			preparedRowPos { 0 };
 } SQLResult;
 
 // Out-of-band parameter for server-side prepared statements. The value is
@@ -123,6 +133,7 @@ typedef struct _SQLMsg
 	{
 		SQLResult * pRes = new SQLResult;
 
+		pRes->bPrepared = true;
 		pRes->uiAffectedRows = affectedRows;
 		pRes->uiInsertID = insertID;
 
@@ -197,9 +208,13 @@ class CAsyncSQL
 		void		DropPrepared(const std::string & sql);
 		void		ClearPrepared();
 
-		// Executes one prepared message; on success stores the affected
-		// rows / insert id into p and returns true.
+		// Executes one prepared message; on success stores the result set
+		// (SELECT) or the affected rows / insert id (write) into p and
+		// returns true.
 		bool		TryExecutePrepared(SQLMsg * p);
+
+		// Materializes a prepared result set into p as string cells.
+		bool		StorePreparedResult(SQLMsg * p, MYSQL_STMT * stmt, MYSQL_RES * meta);
 
 		void		PushQuery(SQLMsg * p);
 

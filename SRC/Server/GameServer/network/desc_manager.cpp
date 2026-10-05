@@ -544,10 +544,12 @@ void DESC_MANAGER::ConnectAccount(std::string_view login, LPDESC d)
 	m_map_loginName.insert(DESC_LOGINNAME_MAP::value_type(loginString, d));
 #ifdef ENABLE_BLOCK_MULTIFARM
 	int iStatus = 1, c = 0;
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE hwid=%s", SqlString(d->GetHwid()).c_str()));
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQueryPrepared(
+		"SELECT status FROM account.antifarm WHERE hwid=?",
+		{ SqlParam::Text(d->GetHwid()) }));
 	if (pMsg->Get()->uiNumRows != 0) {
 		MYSQL_ROW row;
-		while (nullptr != (row = mysql_fetch_row(pMsg->Get()->pSQLResult))) {
+		while (nullptr != (row = pMsg->Get()->FetchRow())) {
 			if (atoi(row[0]) > 0)
 				c += 1;
 		}

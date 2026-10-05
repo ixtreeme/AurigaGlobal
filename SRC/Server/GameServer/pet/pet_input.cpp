@@ -314,14 +314,15 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 	}
 
 #ifdef ENABLE_NEW_PET_EDITS
-	char nameQuery[256] {};
+	char nameQuery[256];
 	snprintf(
 		nameQuery,
 		sizeof(nameQuery),
-		"SELECT id FROM player.new_petsystem%s WHERE name=%s;",
-		get_table_postfix(),
-		SqlString(p->petname).c_str());
-	std::unique_ptr<SQLMsg> nameResult(DBManager::instance().DirectQuery(nameQuery));
+		"SELECT id FROM player.new_petsystem%s WHERE name=?",
+		get_table_postfix());
+	std::unique_ptr<SQLMsg> nameResult(DBManager::instance().DirectQueryPrepared(
+		nameQuery,
+		{ SqlParam::Text(p->petname) }));
 	if (nameResult->Get()->uiNumRows > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT

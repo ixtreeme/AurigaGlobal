@@ -16,6 +16,17 @@
 #define MUTEX_UNLOCK(mtx) ::LeaveCriticalSection(mtx)
 #endif
 
+MYSQL_ROW SQLResult::FetchRow()
+{
+	if (pSQLResult)
+		return mysql_fetch_row(pSQLResult);
+
+	if (preparedRowPos >= preparedRows.size())
+		return nullptr;
+
+	return preparedRows[preparedRowPos++].data();
+}
+
 namespace
 {
 	bool IsConnectionError(uint32_t uiSQLErrno)
@@ -512,9 +523,106 @@ bool CAsyncSQL::TryExecutePrepared(SQLMsg * p)
 		return false;
 	}
 
+	MYSQL_RES * meta = mysql_stmt_result_metadata(stmt);
+
+	if (meta)
+	{
+		const bool stored = StorePreparedResult(p, stmt, meta);
+		mysql_free_result(meta);
+		return stored;
+	}
+
 	p->StorePrepared(static_cast<uint64_t>(mysql_stmt_affected_rows(stmt)),
 		static_cast<uint64_t>(mysql_stmt_insert_id(stmt)));
 	p->uiSQLErrno = 0;
+	return true;
+}
+
+bool CAsyncSQL::StorePreparedResult(SQLMsg * p, MYSQL_STMT * stmt, MYSQL_RES * meta)
+{
+	if (mysql_stmt_store_result(stmt))
+	{
+		p->uiSQLErrno = mysql_stmt_errno(stmt);
+		LOG_ERROR("AsyncSQL: mysql_stmt_store_result failed: {} (query: {})", mysql_stmt_error(stmt), p->stQuery.c_str());
+		return false;
+	}
+
+	const size_t columnCount = mysql_num_fields(meta);
+	MYSQL_FIELD * fields = mysql_fetch_fields(meta);
+
+	std::vector<MYSQL_BIND> binds(columnCount);
+	std::vector<my_bool> isNull(columnCount, 0);
+	std::vector<unsigned long> lengths(columnCount, 0);
+	std::vector<std::vector<char>> buffers(columnCount);
+
+	if (columnCount)
+		memset(binds.data(), 0, sizeof(MYSQL_BIND) * columnCount);
+
+	// Fetch every column as string, matching the text protocol's
+	// mysql_fetch_row() representation.
+	for (size_t i = 0; i < columnCount; ++i)
+	{
+		const size_t capacity = static_cast<size_t>(fields[i].max_length) + 1;
+
+		buffers[i].resize(capacity);
+
+		binds[i].buffer_type = MYSQL_TYPE_STRING;
+		binds[i].buffer = buffers[i].data();
+		binds[i].buffer_length = static_cast<unsigned long>(capacity);
+		binds[i].length = &lengths[i];
+		binds[i].is_null = &isNull[i];
+	}
+
+	if (columnCount && mysql_stmt_bind_result(stmt, binds.data()))
+	{
+		p->uiSQLErrno = mysql_stmt_errno(stmt);
+		LOG_ERROR("AsyncSQL: mysql_stmt_bind_result failed: {} (query: {})", mysql_stmt_error(stmt), p->stQuery.c_str());
+		mysql_stmt_free_result(stmt);
+		return false;
+	}
+
+	SQLResult * pRes = new SQLResult;
+	pRes->bPrepared = true;
+
+	int rc;
+
+	while ((rc = mysql_stmt_fetch(stmt)) == 0 || rc == MYSQL_DATA_TRUNCATED)
+	{
+		std::vector<char *> row(columnCount, nullptr);
+
+		for (size_t i = 0; i < columnCount; ++i)
+		{
+			if (isNull[i])
+				continue;
+
+			unsigned long cellLength = lengths[i];
+
+			if (cellLength > buffers[i].size())
+				cellLength = static_cast<unsigned long>(buffers[i].size());
+
+			pRes->preparedCells.emplace_back(buffers[i].data(), cellLength);
+			row[i] = pRes->preparedCells.back().data();
+		}
+
+		pRes->preparedRows.push_back(std::move(row));
+	}
+
+	if (rc != MYSQL_NO_DATA)
+	{
+		p->uiSQLErrno = mysql_stmt_errno(stmt);
+		LOG_ERROR("AsyncSQL: mysql_stmt_fetch failed: {} (query: {})", mysql_stmt_error(stmt), p->stQuery.c_str());
+		delete pRes;
+		mysql_stmt_free_result(stmt);
+		return false;
+	}
+
+	pRes->uiNumRows = pRes->preparedRows.size();
+
+	p->vec_pkResult.push_back(pRes);
+	p->uiSQLErrno = 0;
+
+	mysql_stmt_free_result(stmt);
+
 	return true;
 }
 

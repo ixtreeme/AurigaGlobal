@@ -66,25 +66,25 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 		return;
 	}
 
-	char whoplayername[CHARACTER_NAME_MAX_LEN * 2 + 1];
-	DBManager::instance().EscapeString(whoplayername, sizeof(whoplayername), whoname, strlen(whoname));
-
-	char playername[CHARACTER_NAME_MAX_LEN * 2 + 1];
-	DBManager::instance().EscapeString(playername, sizeof(playername), targetname, strlen(targetname));
-
-	std::unique_ptr<SQLMsg> check(DBManager::instance().DirectQuery("SELECT mID FROM common.gmlist WHERE mName=%s AND mAuthority='IMPLEMENTOR' LIMIT 1", SqlString(playername).c_str()));
+	std::unique_ptr<SQLMsg> check(DBManager::instance().DirectQueryPrepared(
+		"SELECT mID FROM common.gmlist WHERE mName=? AND mAuthority='IMPLEMENTOR' LIMIT 1",
+		{ SqlParam::Text(targetname) }));
 	if (check->Get()->uiNumRows > 0) {
-		LOG_INFO("HWID:: {} tried to block {} (IMPLEMENTOR).", whoplayername, playername);
+		LOG_INFO("HWID:: {} tried to block {} (IMPLEMENTOR).", whoname, targetname);
 		return;
 	}
 
-	std::unique_ptr<SQLMsg> msgid(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s LIMIT 1", SqlString(playername).c_str()));
+	std::unique_ptr<SQLMsg> msgid(DBManager::instance().DirectQueryPrepared(
+		"SELECT account_id FROM player.player WHERE name=? LIMIT 1",
+		{ SqlParam::Text(targetname) }));
 	if (msgid->Get()->uiNumRows > 0) {
-		MYSQL_ROW rowid = mysql_fetch_row(msgid->Get()->pSQLResult);
+		MYSQL_ROW rowid = msgid->Get()->FetchRow();
 
-		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT hwid FROM player.player_index WHERE id=%d LIMIT 1", atoi(rowid[0])));
+		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQueryPrepared(
+			"SELECT hwid FROM player.player_index WHERE id=? LIMIT 1",
+			{ SqlParam::UInt(static_cast<uint32_t>(atoi(rowid[0]))) }));
 		if (msg->Get()->uiNumRows > 0) {
-			MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+			MYSQL_ROW row = msg->Get()->FetchRow();
 
 			char hwid[HWID_LENGTH];
 			strlcpy(hwid, row[0], sizeof(hwid));
@@ -103,12 +103,14 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 
 			std::string ids;
 
-			std::unique_ptr<SQLMsg> getaccountsid(DBManager::instance().DirectQuery("SELECT id FROM player.player_index WHERE hwid=%s", SqlString(hwid).c_str()));
+			std::unique_ptr<SQLMsg> getaccountsid(DBManager::instance().DirectQueryPrepared(
+				"SELECT id FROM player.player_index WHERE hwid=?",
+				{ SqlParam::Text(hwid) }));
 			if (getaccountsid->Get()->uiNumRows > 0) {
 				std::vector<int32_t> vec_ids;
 
 				MYSQL_ROW row2;
-				while ((row2 = mysql_fetch_row(getaccountsid->Get()->pSQLResult))) {
+				while ((row2 = getaccountsid->Get()->FetchRow())) {
 					int32_t id = atoi(row2[0]);
 					if (std::find(vec_ids.begin(), vec_ids.end(), id) == vec_ids.end()) {
 						vec_ids.push_back(id);
@@ -128,7 +130,7 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 
 			DBManager::instance().QueryPrepared(
 				"INSERT INTO account.blocked_hwids SET hwid=?, who=?, accounts=?",
-				{ SqlParam::Text(hwid), SqlParam::Text(whoplayername), SqlParam::Text(ids) });
+				{ SqlParam::Text(hwid), SqlParam::Text(whoname), SqlParam::Text(ids) });
 		}
 	}
 }
@@ -148,19 +150,17 @@ void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname
 		return;
 	}
 
-	char whoplayername[CHARACTER_NAME_MAX_LEN * 2 + 1];
-	DBManager::instance().EscapeString(whoplayername, sizeof(whoplayername), whoname, strlen(whoname));
-
-	char playername[CHARACTER_NAME_MAX_LEN * 2 + 1];
-	DBManager::instance().EscapeString(playername, sizeof(playername), targetname, strlen(targetname));
-
-	std::unique_ptr<SQLMsg> msgid(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name=%s LIMIT 1", SqlString(playername).c_str()));
+	std::unique_ptr<SQLMsg> msgid(DBManager::instance().DirectQueryPrepared(
+		"SELECT account_id FROM player.player WHERE name=? LIMIT 1",
+		{ SqlParam::Text(targetname) }));
 	if (msgid->Get()->uiNumRows > 0) {
-		MYSQL_ROW rowid = mysql_fetch_row(msgid->Get()->pSQLResult);
+		MYSQL_ROW rowid = msgid->Get()->FetchRow();
 
-		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT hwid FROM player.player_index WHERE id=%d LIMIT 1", atoi(rowid[0])));
+		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQueryPrepared(
+			"SELECT hwid FROM player.player_index WHERE id=? LIMIT 1",
+			{ SqlParam::UInt(static_cast<uint32_t>(atoi(rowid[0]))) }));
 		if (msg->Get()->uiNumRows > 0) {
-			MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+			MYSQL_ROW row = msg->Get()->FetchRow();
 
 			char hwid[HWID_LENGTH];
 			strlcpy(hwid, row[0], sizeof(hwid));
@@ -181,9 +181,11 @@ void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname
 				m_blocked_hwid.erase(v);
 			}
 
-			std::unique_ptr<SQLMsg> getaccountsid(DBManager::instance().DirectQuery("SELECT accounts FROM account.blocked_hwids WHERE hwid=%s", SqlString(hwid).c_str()));
+			std::unique_ptr<SQLMsg> getaccountsid(DBManager::instance().DirectQueryPrepared(
+				"SELECT accounts FROM account.blocked_hwids WHERE hwid=?",
+				{ SqlParam::Text(hwid) }));
 			if (getaccountsid->Get()->uiNumRows > 0) {
-				MYSQL_ROW row2 = mysql_fetch_row(getaccountsid->Get()->pSQLResult);
+				MYSQL_ROW row2 = getaccountsid->Get()->FetchRow();
 
 				char accountsid[255 + 1];
 				strlcpy(accountsid, row2[0], sizeof(accountsid));

@@ -2781,16 +2781,16 @@ void ecs::PlayerRuntime::RankingSubcategory(entt::entity e, int iArg)
 
     char szQuery2[1024] = { 0 };
     if (ecs::PlayerRuntime::GetGMLevel(e) > GM_PLAYER) {
-	snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res ORDER BY r%d desc, level desc, name asc) as custom WHERE name=%s", iArg, get_table_postfix(), iArg, SqlString(name.c_str()).c_str());
+	snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res ORDER BY r%d desc, level desc, name asc) as custom WHERE name=?", iArg, get_table_postfix(), iArg);
     }
     else {
-	snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res WHERE name not in(SELECT mName FROM common.gmlist) ORDER BY r%d desc, level desc, name asc) as custom WHERE name=%s", iArg, get_table_postfix(), iArg, SqlString(name.c_str()).c_str());
+	snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res WHERE name not in(SELECT mName FROM common.gmlist) ORDER BY r%d desc, level desc, name asc) as custom WHERE name=?", iArg, get_table_postfix(), iArg);
     }
-    std::unique_ptr<SQLMsg> pRes2(DBManager::instance().DirectQuery(szQuery2));
+    std::unique_ptr<SQLMsg> pRes2(DBManager::instance().DirectQueryPrepared(szQuery2, { SqlParam::Text(name) }));
     iRes = pRes2->Get()->uiNumRows;
     if (iRes > 0) {
         j = MAX_RANKING_LIST - 1;
-        MYSQL_ROW data = mysql_fetch_row(pRes2->Get()->pSQLResult);
+        MYSQL_ROW data = pRes2->Get()->FetchRow();
         p.list[j].iPosition = j;
         p.list[j].iRealPosition = atoi(data[1]);
         p.list[j].iLevel = atoi(data[4]);
@@ -3759,12 +3759,13 @@ void SetDropStatus(entt::entity e)
         return;
 
     std::string login = desc->GetAccountTable().login;
-    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(
-			"SELECT status FROM account.antifarm WHERE login=%s", SqlString(login.c_str()).c_str()));
+    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQueryPrepared(
+			"SELECT status FROM account.antifarm WHERE login=?",
+			{ SqlParam::Text(login) }));
     if (msg->Get()->uiNumRows == 0)
         return;
 
-    MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+    MYSQL_ROW row = msg->Get()->FetchRow();
     if (atoi(row[0]) == 1)
     {
         AffectSystem::RemoveAffect(e, AFFECT_DROP_BLOCK);
@@ -3807,9 +3808,11 @@ EVENTFUNC(drop_event)
     }
     else {
         std::string login = ecs::PlayerRuntime::GetDesc(character)->GetAccountTable().login;
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE login=%s", SqlString(login.c_str()).c_str()));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQueryPrepared(
+			"SELECT status FROM account.antifarm WHERE login=?",
+			{ SqlParam::Text(login) }));
         if (msg->Get()->uiNumRows > 0) {
-            MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+            MYSQL_ROW row = msg->Get()->FetchRow();
             int iStatus = atoi(row[0]);
             bool already = false;
             if (info->drop) {
@@ -3821,9 +3824,11 @@ EVENTFUNC(drop_event)
                 }
                 else {
                     int c = 0;
-	std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT COUNT(*) FROM account.antifarm WHERE hwid=%s and status=1", SqlString(d->GetHwid()).c_str()));
+	std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQueryPrepared(
+			"SELECT COUNT(*) FROM account.antifarm WHERE hwid=? and status=1",
+			{ SqlParam::Text(d->GetHwid()) }));
                     if (msg2->Get()->uiNumRows > 0) {
-                        MYSQL_ROW row2 = mysql_fetch_row(msg2->Get()->pSQLResult);
+                        MYSQL_ROW row2 = msg2->Get()->FetchRow();
                         c = atoi(row2[0]);
                     }
 

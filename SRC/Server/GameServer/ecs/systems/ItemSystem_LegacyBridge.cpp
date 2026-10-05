@@ -5426,9 +5426,9 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 			case 70611://79900
 			{
-				char szQuery[1024];
-				snprintf(szQuery, sizeof(szQuery), "SELECT * FROM battle_pass_ranking WHERE player_name = %s AND battle_pass_id = %d;", SqlString(ecs::PlayerRuntime::GetName(e).data()).c_str(), 1);
-				std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(szQuery));
+				std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQueryPrepared(
+					"SELECT * FROM battle_pass_ranking WHERE player_name = ? AND battle_pass_id = ?",
+					{ SqlParam::Text(ecs::PlayerRuntime::GetName(e).data()), SqlParam::Int(1) }));
 				if (pmsg->Get()->uiNumRows > 0) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 6, "");

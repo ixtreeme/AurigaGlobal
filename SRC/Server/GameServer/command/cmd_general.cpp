@@ -109,9 +109,9 @@ static bool DailyReward_CheckHWIDLimit(entt::entity ch)
 	std::string key = MakeDailyRewardHWKey(ch);
 
 	// 1) ma mar claimelte valaki ezen a kulcson?
-	std::unique_ptr<SQLMsg> chk(DBManager::instance().DirectQuery(
-			"SELECT 1 FROM player.daily_reward_claim_hwid WHERE hwkey=%s AND claim_day=CURDATE() LIMIT 1",
-		SqlString(key.c_str()).c_str()
+	std::unique_ptr<SQLMsg> chk(DBManager::instance().DirectQueryPrepared(
+			"SELECT 1 FROM player.daily_reward_claim_hwid WHERE hwkey=? AND claim_day=CURDATE() LIMIT 1",
+		{ SqlParam::Text(key) }
 	));
 
 	if (chk && chk->Get()->uiNumRows > 0)
@@ -176,7 +176,7 @@ static void DailyRewardReloadItemsCallback(SQLMsg* msg, entt::entity character, 
 	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
 	{
 		MYSQL_ROW row;
-		while ((row = mysql_fetch_row(msg->Get()->pSQLResult)) != nullptr)
+		while ((row = msg->Get()->FetchRow()) != nullptr)
 			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetReward|%s|%s", row[0], row[1]);
 	}
 
@@ -199,7 +199,7 @@ static void DailyRewardReloadStatusCallback(SQLMsg* msg, entt::entity character)
 
 	if (hasRow)
 	{
-		MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+		MYSQL_ROW row = msg->Get()->FetchRow();
 
 		if (row && row[0])
 		{
@@ -238,15 +238,15 @@ static void DailyRewardReloadFinalCallback(SQLMsg* msg, entt::entity character)
 	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
 	{
 		MYSQL_ROW row;
-		while ((row = mysql_fetch_row(msg->Get()->pSQLResult)) != nullptr)
+		while ((row = msg->Get()->FetchRow()) != nullptr)
 		{
 			time = row[0] ? row[0] : "";
 			rewards = row[1] ? row[1] : "";
 		}
 	}
 
-	DBManager::instance().FuncQuery(std::bind(&DailyRewardReloadItemsCallback, std::placeholders::_1, character, time, rewards),
-		"SELECT items, count FROM player.daily_reward_items WHERE reward = %s", SqlString(rewards.c_str()).c_str());
+	DBManager::instance().FuncQueryPrepared(std::bind(&DailyRewardReloadItemsCallback, std::placeholders::_1, character, time, rewards),
+		"SELECT items, count FROM player.daily_reward_items WHERE reward = ?", { SqlParam::Text(rewards) });
 }
 
 ACMD(do_daily_reward_reload){
@@ -271,7 +271,7 @@ static void DailyRewardItemsGivenCallback(SQLMsg* msg, entt::entity character)
 	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
 	{
 		MYSQL_ROW row;
-		while ((row = mysql_fetch_row(msg->Get()->pSQLResult)) != nullptr)
+		while ((row = msg->Get()->FetchRow()) != nullptr)
 		{
 			items = row[0] ? row[0] : "";
 			counts = row[1] ? row[1] : "";
@@ -299,7 +299,7 @@ static void DailyRewardGetCallback(SQLMsg* msg, entt::entity character)
 	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
 	{
 		MYSQL_ROW row;
-		while ((row = mysql_fetch_row(msg->Get()->pSQLResult)) != nullptr)
+		while ((row = msg->Get()->FetchRow()) != nullptr)
 			rewards = row[0] ? row[0] : "";
 
 		reward = true;
@@ -322,8 +322,8 @@ static void DailyRewardGetCallback(SQLMsg* msg, entt::entity character)
 	}
 #endif
 
-	DBManager::instance().FuncQuery(std::bind(&DailyRewardItemsGivenCallback, std::placeholders::_1, character),
-		"SELECT items, count from player.daily_reward_items where reward = %s ORDER BY RAND() limit 1", SqlString(rewards.c_str()).c_str());
+	DBManager::instance().FuncQueryPrepared(std::bind(&DailyRewardItemsGivenCallback, std::placeholders::_1, character),
+		"SELECT items, count from player.daily_reward_items where reward = ? ORDER BY RAND() limit 1", { SqlParam::Text(rewards) });
 }
 
 ACMD(do_daily_reward_get_reward){
