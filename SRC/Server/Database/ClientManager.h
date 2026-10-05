@@ -1,6 +1,8 @@
 #pragma once
 
 
+#include <Core/asio_engine.h>
+
 #include <common/stl.h>
 #include <common/building.h>
 
@@ -39,6 +41,8 @@ uint64_t CreatePlayerSaveQuery(char* pszQuery, uint64_t querySize, TPlayerTable*
 class CClientManager : public CNetBase, public singleton<CClientManager>
 {
 public:
+	friend class CPeer;
+
 	typedef std::list<CPeer*>			TPeerList;
 	typedef std::unordered_map<uint32_t, CPlayerTableCache*> TPlayerTableCacheMap;
 	typedef std::unordered_map<uint32_t, CItemCache*> TItemCacheMap;
@@ -217,8 +221,9 @@ protected:
 	bool		MirrorMobTableIntoDB();
 	bool		MirrorItemTableIntoDB();
 
-	void		AddPeer(socket_t fd);
+	void		AddPeer(auriga::net::tcp::socket&& sock);
 	void		RemovePeer(CPeer* pPeer);
+	void		CollectPendingDeletes();
 	CPeer* GetPeer(IDENT ident);
 
 	int		AnalyzeQueryResult(SQLMsg* msg);
@@ -421,8 +426,11 @@ protected:
 #endif
 
 private:
+	void					DoAccept();
+
 	int					m_looping;
-	socket_t				m_fdAccept;
+	std::unique_ptr<auriga::net::tcp::acceptor>	m_acceptor;
+	std::vector<CPeer*>				m_pendingDeletePeers;
 	TPeerList				m_peerList;
 
 	CPeer* m_pkAuthPeer;

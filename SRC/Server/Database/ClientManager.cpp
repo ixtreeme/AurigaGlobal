@@ -87,7 +87,7 @@ int g_query_count[2];
 bool g_bMirror2DB = false;
 #endif
 
-CClientManager::CClientManager() : m_looping(0), m_fdAccept(0),
+CClientManager::CClientManager() : m_looping(0), m_acceptor(nullptr),
                                    m_pkAuthPeer(nullptr),
                                    m_iPlayerIDStart(0),
                                    //m_iPlayerDeleteLevelLimit(0),
@@ -148,10 +148,11 @@ void CClientManager::Destroy()
 #if defined(BL_OFFLINE_MESSAGE)
 	m_OfflineMessage.clear();
 #endif
-	if (m_fdAccept > 0)
+	if (m_acceptor)
 	{
-		socket_close(m_fdAccept);
-		m_fdAccept = -1;
+		boost::system::error_code ec;
+		m_acceptor->close(ec);
+		m_acceptor.reset();
 	}
 }
 
@@ -307,16 +308,40 @@ bool CClientManager::Initialize()
 	if (!CConfig::instance().GetValue("BIND_IP", szBindIP, 128))
 		strlcpy(szBindIP, "0", sizeof(szBindIP));
 
-	m_fdAccept = socket_tcp_bind(szBindIP, tmpValue);
+	boost::system::error_code ec;
+	auto address = boost::asio::ip::make_address(szBindIP, ec);
 
-	if (m_fdAccept < 0)
+	if (ec)
 	{
-		LOG_ERROR("{}: {}", "socket", strerror(errno));
+		ec.clear();
+		address = boost::asio::ip::address_v4::any();
+	}
+
+	const auriga::net::tcp::endpoint endpoint(address, tmpValue);
+
+	auto acceptor = std::make_unique<auriga::net::tcp::acceptor>(auriga::net::Io());
+
+	acceptor->open(endpoint.protocol(), ec);
+
+	if (!ec)
+		acceptor->set_option(boost::asio::socket_base::reuse_address(true), ec);
+
+	if (!ec)
+		acceptor->bind(endpoint, ec);
+
+	if (!ec)
+		acceptor->listen(boost::asio::socket_base::max_listen_connections, ec);
+
+	if (ec)
+	{
+		LOG_ERROR("ACCEPT_BIND: {} ({})", szBindIP, ec.message().c_str());
 		return false;
 	}
 
-	LOG_INFO("ACCEPT_HANDLE: {}", m_fdAccept);
-	fdwatch_add_fd(m_fdWatcher, m_fdAccept, nullptr, FDW_READ, false);
+	m_acceptor = std::move(acceptor);
+
+	LOG_INFO("ACCEPT_HANDLE: {}", tmpValue);
+	DoAccept();
 
 	if (!CConfig::instance().GetValue("BACKUP_LIMIT_SEC", &tmpValue))
 		tmpValue = 600;
@@ -2767,14 +2792,51 @@ void CClientManager::ProcessPackets(CPeer * peer)
 	peer->RecvEnd(i);
 }
 
-void CClientManager::AddPeer(socket_t fd)
+void CClientManager::AddPeer(auriga::net::tcp::socket&& sock)
 {
 	auto pPeer = new CPeer;
 
-	if (pPeer->Accept(fd))
+	if (pPeer->Accept(std::move(sock)))
 		m_peerList.push_front(pPeer);
 	else
 		delete pPeer;
+}
+
+void CClientManager::DoAccept()
+{
+	if (!m_acceptor || !m_acceptor->is_open())
+		return;
+
+	auto socket = std::make_shared<auriga::net::tcp::socket>(auriga::net::Io());
+
+	m_acceptor->async_accept(*socket,
+		[this, socket](const boost::system::error_code & ec)
+		{
+			if (!ec)
+				AddPeer(std::move(*socket));
+			else if (ec != boost::asio::error::operation_aborted)
+				LOG_ERROR("Accept failed: {}", ec.message().c_str());
+
+			DoAccept();
+		});
+}
+
+void CClientManager::CollectPendingDeletes()
+{
+	auto it = m_pendingDeletePeers.begin();
+
+	while (it != m_pendingDeletePeers.end())
+	{
+		CPeer * pPeer = *it;
+
+		if (pPeer->PendingAsyncOps() == 0)
+		{
+			it = m_pendingDeletePeers.erase(it);
+			delete pPeer;
+		}
+		else
+			++it;
+	}
 }
 
 void CClientManager::RemovePeer(CPeer * pPeer)
@@ -2812,7 +2874,20 @@ void CClientManager::RemovePeer(CPeer * pPeer)
 	}
 
 	m_peerList.remove(pPeer);
-	delete pPeer;
+
+	// Cancel the socket operations and release the buffers
+	pPeer->Destroy();
+
+	if (pPeer->PendingAsyncOps() > 0)
+	{
+		// Asio completion handlers may still reference this peer.
+		pPeer->MarkDeletePending();
+		m_pendingDeletePeers.push_back(pPeer);
+	}
+	else
+	{
+		delete pPeer;
+	}
 }
 
 CPeer * CClientManager::GetPeer(IDENT ident)
@@ -3232,70 +3307,12 @@ int CClientManager::Process()
 #endif
 	}
 
-	int num_events = fdwatch(m_fdWatcher, nullptr);
-	int idx;
-	CPeer * peer;
+	// Dispatches the socket accept/read/write completions that became ready
+	// since the previous pulse. Everything runs on this thread.
+	auriga::net::Poll();
 
-	for (idx = 0; idx < num_events; ++idx)
-	{
-		peer = (CPeer *) fdwatch_get_client_data(m_fdWatcher, idx);
-
-		if (!peer)
-		{
-			if (fdwatch_check_event(m_fdWatcher, m_fdAccept, idx) == FDW_READ)
-			{
-				AddPeer(m_fdAccept);
-				fdwatch_clear_event(m_fdWatcher, m_fdAccept, idx);
-			}
-			else
-			{
-				LOG_INFO("FDWATCH: peer null in event: ident {}", fdwatch_get_ident(m_fdWatcher, idx)); // @warme012
-			}
-
-			continue;
-		}
-
-		switch (fdwatch_check_event(m_fdWatcher, peer->GetFd(), idx))
-		{
-			case FDW_READ:
-				if (peer->Recv() < 0)
-				{
-					LOG_ERROR("Recv failed");
-					RemovePeer(peer);
-				}
-				else
-				{
-					if (peer == m_pkAuthPeer)
-						if (g_log)
-							LOG_INFO("AUTH_PEER_READ: size {}", peer->GetRecvLength());
-
-					ProcessPackets(peer);
-				}
-				break;
-
-			case FDW_WRITE:
-				//if (peer == m_pkAuthPeer)
-					//if (g_log)
-					//	LOG_INFO("AUTH_PEER_WRITE: size {}", peer->GetSendLength());
-
-				if (peer->Send() < 0)
-				{
-					LOG_ERROR("Send failed");
-					RemovePeer(peer);
-				}
-
-				break;
-
-			case FDW_EOF:
-				RemovePeer(peer);
-				break;
-
-			default:
-				LOG_ERROR("fdwatch_check_fd returned unknown result");
-				RemovePeer(peer);
-				break;
-		}
-	}
+	// Deferred deletion of peers whose aborted operations have finished.
+	CollectPendingDeletes();
 
 #ifdef _WIN32
 	if (_kbhit()) {

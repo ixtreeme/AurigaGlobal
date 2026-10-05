@@ -1,41 +1,44 @@
 #ifndef __INC_LIBTHECORE_BUFFER_H__
 #define __INC_LIBTHECORE_BUFFER_H__
 
-#define SAFE_BUFFER_DELETE(buf)		{ if(buf != NULL) { buffer_delete(buf); buf = NULL; } }
+#include <cstdint>
+#include <cstddef>
+#include <memory>
 
-    typedef struct buffer	BUFFER;
-    typedef struct buffer *	LPBUFFER;
+#define SAFE_BUFFER_DELETE(buf)		{ if(buf != nullptr) { buffer_delete(buf); buf = nullptr; } }
 
-    struct buffer
-    {
-	struct buffer * next;
+	typedef struct buffer	BUFFER;
+	typedef struct buffer *	LPBUFFER;
 
-	char *          write_point;
-	int             write_point_pos;
-
-	const char *    read_point;
-	int             length;
-
-	char *          mem_data;
-	int             mem_size;
-
-    int32_t            flag;
-    };
+	// Contiguous, RAII-managed byte buffer.
+	//
+	// The legacy pool managed raw malloc'd blocks and could hand out buffers
+	// with dangling bookkeeping on realloc. The storage is a unique_ptr<char[]>
+	// now; the layout of the public fields is kept so the existing peek/proceed
+	// based protocol code stays unchanged.
+	struct buffer
+	{
+		std::unique_ptr<char[]>	mem_data;
+		std::size_t		mem_size { 0 };		// allocated capacity
+		std::size_t		write_point_pos { 0 };	// committed bytes
+		std::size_t		read_point_pos { 0 };	// consumed offset
+	};
 
 	extern LPBUFFER	buffer_new(int size);
-    extern void		buffer_delete(LPBUFFER buffer);
-    extern void		buffer_reset(LPBUFFER buffer);
+	extern void		buffer_delete(LPBUFFER buffer);
+	extern void		buffer_reset(LPBUFFER buffer);
 
-    extern uint32_t	buffer_size(LPBUFFER buffer);
-    extern int		buffer_has_space(LPBUFFER buffer);
+	extern uint32_t	buffer_size(LPBUFFER buffer);
+	extern int		buffer_has_space(LPBUFFER buffer);
 
-    extern void		buffer_write (LPBUFFER& buffer, const void* src, int length);
+	extern void		buffer_write(LPBUFFER& buffer, const void* src, int length);
 
-    extern const void *	buffer_read_peek(LPBUFFER buffer);
-    extern void		buffer_read_proceed(LPBUFFER buffer, int length);
+	extern const void *	buffer_read_peek(LPBUFFER buffer);
+	extern void		buffer_read_proceed(LPBUFFER buffer, int length);
 
-    extern void *	buffer_write_peek(LPBUFFER buffer);
-    extern void		buffer_write_proceed(LPBUFFER buffer, int length);
+	extern void *	buffer_write_peek(LPBUFFER buffer);
+	extern void		buffer_write_proceed(LPBUFFER buffer, int length);
 
-    extern void		buffer_adjust_size(LPBUFFER & buffer, int add_size);
+	extern void		buffer_adjust_size(LPBUFFER& buffer, int add_size);
+
 #endif

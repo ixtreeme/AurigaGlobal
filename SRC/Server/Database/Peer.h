@@ -8,7 +8,8 @@ class CPeer : public CPeerBase
     protected:
 	virtual void OnAccept();
 	virtual void OnClose();
-	virtual void OnConnect();
+	virtual void OnRecvData();
+	virtual void OnDisconnect();
 
     public:
 #pragma pack(1)

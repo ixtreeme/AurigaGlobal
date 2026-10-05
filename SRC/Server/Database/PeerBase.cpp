@@ -2,8 +2,8 @@
 #include "PeerBase.h"
 #include <common/CommonDefines.h>
 
-CPeerBase::CPeerBase() : m_host{}, m_fd(INVALID_SOCKET), m_wPort(0), m_BytesRemain(0), m_outBuffer(nullptr),
-                         m_inBuffer(nullptr)
+CPeerBase::CPeerBase() : m_host{}, m_wPort(0), m_BytesRemain(0), m_outBuffer(nullptr),
+                         m_inBuffer(nullptr), m_socket(auriga::net::Io())
 {
 }
 
@@ -14,17 +14,20 @@ CPeerBase::~CPeerBase()
 
 void CPeerBase::Disconnect()
 {
-	if (m_fd != INVALID_SOCKET)
+	if (m_socket.is_open())
 	{
-		fdwatch_del_fd(m_fdWatcher, m_fd);
-
-		socket_close(m_fd);
-		m_fd = INVALID_SOCKET;
+		boost::system::error_code ec;
+		m_socket.close(ec);
 	}
 }
 
 void CPeerBase::Destroy()
 {
+	if (m_bDestroyed)
+		return;
+
+	m_bDestroyed = true;
+
 	Disconnect();
 
 	if (m_outBuffer)
@@ -40,33 +43,24 @@ void CPeerBase::Destroy()
 	}
 }
 
-bool CPeerBase::Accept(socket_t fd_accept)
+bool CPeerBase::Accept(auriga::net::tcp::socket&& sock)
 {
-	struct sockaddr_in peer;
+	m_socket = std::move(sock);
 
-	if ((m_fd = socket_accept(fd_accept, &peer)) == INVALID_SOCKET)
+	boost::system::error_code ec;
+	const auto endpoint = m_socket.remote_endpoint(ec);
+
+	if (ec)
 	{
 		Destroy();
 		return false;
 	}
 
-//	#ifdef ENABLE_PORT_SECURITY
-//	// refuse if remote host != localhost (only the same machine must be able to connect in here)
-//	std::string targetIP = inet_ntoa(peer.sin_addr);
-//	if (targetIP.rfind("127.0.0.1", 0) && targetIP.rfind("192.168.", 0) && targetIP.rfind("10.", 0))
-//	{
-//		LOG_INFO("BLOCK CONNECTION FROM {}", inet_ntoa(peer.sin_addr));
-//		Destroy();
-//		return false;
-//	}
-//#endif
+	m_socket.set_option(boost::asio::socket_base::send_buffer_size(233016), ec);
+	m_socket.set_option(boost::asio::socket_base::receive_buffer_size(233016), ec);
 
-	//socket_block(m_fd);
-	socket_sndbuf(m_fd, 233016);
-	socket_rcvbuf(m_fd, 233016);
-
-	strlcpy(m_host, inet_ntoa(peer.sin_addr), sizeof(m_host));
-	m_wPort = peer.sin_port;
+	strlcpy(m_host, endpoint.address().to_string().c_str(), sizeof(m_host));
+	m_wPort = htons(endpoint.port());
 
 	m_outBuffer = buffer_new(DEFAULT_PACKET_BUFFER_SIZE);
 	m_inBuffer = buffer_new(MAX_INPUT_LEN);
@@ -77,32 +71,10 @@ bool CPeerBase::Accept(socket_t fd_accept)
 		return false;
 	}
 
-	fdwatch_add_fd(m_fdWatcher, m_fd, this, FDW_READ, false);
+	StartRead();
 
 	OnAccept();
-	LOG_INFO("ACCEPT FROM {}", inet_ntoa(peer.sin_addr));
-	return true;
-}
-
-bool CPeerBase::Connect(const char* host, uint16_t port)
-{
-	strlcpy(m_host, host, sizeof(m_host));
-	m_wPort = port;
-
-	if ((m_fd = socket_connect(host, port)) == INVALID_SOCKET)
-		return false;
-
-	m_outBuffer = buffer_new(DEFAULT_PACKET_BUFFER_SIZE);
-
-	if (!m_outBuffer)
-	{
-		Destroy();
-		return false;
-	}
-
-	fdwatch_add_fd(m_fdWatcher, m_fd, this, FDW_READ, false);
-
-	OnConnect();
+	LOG_INFO("ACCEPT FROM {}", m_host);
 	return true;
 }
 
@@ -120,7 +92,7 @@ void CPeerBase::EncodeBYTE(uint8_t b)
 	}
 
 	buffer_write(m_outBuffer, &b, 1);
-	fdwatch_add_fd(m_fdWatcher, m_fd, this, FDW_WRITE, true);
+	StartWrite();
 }
 
 void CPeerBase::EncodeWORD(uint16_t w)
@@ -132,7 +104,7 @@ void CPeerBase::EncodeWORD(uint16_t w)
 	}
 
 	buffer_write(m_outBuffer, &w, 2);
-	fdwatch_add_fd(m_fdWatcher, m_fd, this, FDW_WRITE, true);
+	StartWrite();
 }
 
 void CPeerBase::EncodeDWORD(uint32_t dw)
@@ -144,7 +116,7 @@ void CPeerBase::EncodeDWORD(uint32_t dw)
 	}
 
 	buffer_write(m_outBuffer, &dw, 4);
-	fdwatch_add_fd(m_fdWatcher, m_fd, this, FDW_WRITE, true);
+	StartWrite();
 }
 
 void CPeerBase::Encode(const void* data, uint32_t size)
@@ -156,32 +128,7 @@ void CPeerBase::Encode(const void* data, uint32_t size)
 	}
 
 	buffer_write(m_outBuffer, data, size);
-	fdwatch_add_fd(m_fdWatcher, m_fd, this, FDW_WRITE, true);
-}
-
-int CPeerBase::Recv()
-{
-	if (!m_inBuffer)
-	{
-		LOG_ERROR("input buffer nil");
-		return -1;
-	}
-
-	buffer_adjust_size(m_inBuffer, MAX_INPUT_LEN >> 2);
-	int bytes_to_read = buffer_has_space(m_inBuffer);
-	int64_t bytes_read = socket_read(m_fd, (char *) buffer_write_peek(m_inBuffer), bytes_to_read);
-
-	if (bytes_read < 0)
-	{
-		LOG_ERROR("socket_read failed {}", strerror(errno));
-		return -1;
-	}
-	else if (bytes_read == 0)
-		return 0;
-
-	buffer_write_proceed(m_inBuffer, bytes_read);
-	m_BytesRemain = buffer_size(m_inBuffer);
-	return 1;
+	StartWrite();
 }
 
 void CPeerBase::RecvEnd(int proceed_bytes)
@@ -207,24 +154,107 @@ int CPeerBase::GetSendLength()
 
 int CPeerBase::Send()
 {
-	if (buffer_size(m_outBuffer) <= 0)
-		return 0;
+	if (!m_socket.is_open())
+		return -1;
 
-	int iBufferLeft = fdwatch_get_buffer_size(m_fdWatcher, m_fd);
-	int iBytesToWrite = MIN(iBufferLeft, buffer_size(m_outBuffer));
+	StartWrite();
+	return 0;
+}
 
-	if (iBytesToWrite == 0)
-		return 0;
+void CPeerBase::StartRead()
+{
+	if (m_readPending || m_bDestroyed || m_deletePending || !m_socket.is_open())
+		return;
 
-	int result = socket_write(m_fd, (const char *) buffer_read_peek(m_outBuffer), iBytesToWrite);
+	m_readPending = true;
+	++m_pendingAsyncOps;
 
-	if (result == 0)
+	const uint64_t generation = m_generation;
+
+	m_socket.async_read_some(
+		boost::asio::buffer(m_readChunk),
+		[this, generation](const boost::system::error_code & ec, std::size_t bytes)
+		{
+			--m_pendingAsyncOps;
+
+			if (generation != m_generation || m_bDestroyed || m_deletePending)
+				return;
+
+			m_readPending = false;
+			OnRead(ec, bytes);
+		});
+}
+
+void CPeerBase::OnRead(const boost::system::error_code & ec, std::size_t bytes)
+{
+	if (ec)
 	{
-		buffer_read_proceed(m_outBuffer, iBytesToWrite);
-
-		if (buffer_size(m_outBuffer) != 0)
-			fdwatch_add_fd(m_fdWatcher, m_fd, this, FDW_WRITE, true);
+		if (ec != boost::asio::error::operation_aborted)
+			OnDisconnect();
+		return;
 	}
 
-	return (result);
+	if (bytes == 0)
+	{
+		OnDisconnect();
+		return;
+	}
+
+	if (m_inBuffer)
+	{
+		buffer_write(m_inBuffer, m_readChunk.data(), static_cast<int>(bytes));
+		m_BytesRemain = buffer_size(m_inBuffer);
+		OnRecvData();
+	}
+
+	StartRead();
+}
+
+void CPeerBase::StartWrite()
+{
+	if (m_writePending || m_bDestroyed || m_deletePending || !m_socket.is_open())
+		return;
+
+	const int bytes = m_outBuffer ? static_cast<int>(buffer_size(m_outBuffer)) : 0;
+
+	if (bytes <= 0)
+		return;
+
+	const char * readPoint = static_cast<const char *>(buffer_read_peek(m_outBuffer));
+	m_writeChunk.assign(readPoint, readPoint + bytes);
+
+	m_writePending = true;
+	++m_pendingAsyncOps;
+
+	const uint64_t generation = m_generation;
+
+	boost::asio::async_write(
+		m_socket,
+		boost::asio::buffer(m_writeChunk),
+		[this, generation](const boost::system::error_code & ec, std::size_t bytes_transferred)
+		{
+			--m_pendingAsyncOps;
+
+			if (generation != m_generation || m_bDestroyed || m_deletePending)
+				return;
+
+			m_writePending = false;
+			OnWrite(ec, bytes_transferred);
+		});
+}
+
+void CPeerBase::OnWrite(const boost::system::error_code & ec, std::size_t bytes)
+{
+	if (ec)
+	{
+		if (ec != boost::asio::error::operation_aborted)
+			OnDisconnect();
+		return;
+	}
+
+	buffer_read_proceed(m_outBuffer, static_cast<int>(bytes));
+	m_writeChunk.clear();
+
+	if (buffer_size(m_outBuffer) > 0)
+		StartWrite();
 }

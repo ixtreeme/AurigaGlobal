@@ -30,6 +30,7 @@ extern int current_bytes_written;
 extern int total_bytes_written;
 
 DESC::DESC()
+	: m_socket(auriga::net::Io())
 {
 	Initialize();
 }
@@ -42,8 +43,9 @@ void DESC::Initialize()
 	m_bDestroyed = false;
 
 	m_pInputProcessor = nullptr;
-	m_lpFdw = nullptr;
-	m_sock = INVALID_SOCKET;
+	++m_generation;
+	m_readPending = false;
+	m_writePending = false;
 	m_iPhase = PHASE_CLOSE;
 	m_dwHandle = 0;
 
@@ -151,18 +153,17 @@ void DESC::Destroy()
 		CShutdownManager::instance().RemoveDesc((LPDESC)this);
 	}
 
-	if (m_sock != INVALID_SOCKET)
+	if (m_socket.is_open())
 	{
-		LOG_INFO("SYSTEM: closing socket. DESC #{}", m_sock);
-		Log("SYSTEM: closing socket. DESC #%d", m_sock);
-		fdwatch_del_fd(m_lpFdw, m_sock);
+		LOG_INFO("SYSTEM: closing socket. DESC #{}", GetSocket());
+		Log("SYSTEM: closing socket. DESC #%d", static_cast<int>(GetSocket()));
 
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 		cipher_.CleanUp();
 #endif
 
-		socket_close(m_sock);
-		m_sock = INVALID_SOCKET;
+		boost::system::error_code ec;
+		m_socket.close(ec);
 	}
 
 	m_seq_vector.clear();
@@ -220,10 +221,9 @@ void DESC::SetPong(bool b)
 	m_bPong = b;
 }
 
-bool DESC::Setup(LPFDWATCH _fdw, socket_t _fd, const sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake)
+bool DESC::Setup(auriga::net::tcp::socket&& sock, const sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake)
 {
-	m_lpFdw		= _fdw;
-	m_sock		= _fd;
+	m_socket	= std::move(sock);
 
 	m_stHost		= inet_ntoa(c_rSockAddr.sin_addr);
 	m_wPort			= c_rSockAddr.sin_port;
@@ -235,8 +235,6 @@ bool DESC::Setup(LPFDWATCH _fdw, socket_t _fd, const sockaddr_in & c_rSockAddr, 
 	m_lpInputBuffer = buffer_new(MAX_INPUT_LEN);
 
 	m_SockAddr = c_rSockAddr;
-
-	fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_READ, false);
 
 	// Ping Event
 	desc_event_info* info = AllocEventInfo<desc_event_info>();
@@ -254,6 +252,7 @@ bool DESC::Setup(LPFDWATCH _fdw, socket_t _fd, const sockaddr_in & c_rSockAddr, 
 	// Set Phase to handshake
 	SetPhase(PHASE_HANDSHAKE);
 	StartHandshake(_handshake);
+	StartRead();
 
 #if defined(__IMPROVED_HANDSHAKE_PROCESS__)
 	// Set host handshake time
@@ -261,31 +260,19 @@ bool DESC::Setup(LPFDWATCH _fdw, socket_t _fd, const sockaddr_in & c_rSockAddr, 
 		thecore_pulse() + PASSES_PER_SEC(INTRUSIVE_HANDSHAKE_PULSE));
 #endif
 
-	LOG_INFO("SYSTEM: new connection from [{}] fd: {} handshake {} output input_len {}, ptr {}", m_stHost.c_str(), m_sock, m_dwHandshake, buffer_size(m_lpInputBuffer), static_cast<const void*>(this));
+	LOG_INFO("SYSTEM: new connection from [{}] fd: {} handshake {} output input_len {}, ptr {}", m_stHost.c_str(), GetSocket(), m_dwHandshake, buffer_size(m_lpInputBuffer), static_cast<const void*>(this));
 
-	Log("SYSTEM: new connection from [%s] fd: %d handshake %u ptr %p", m_stHost.c_str(), m_sock, m_dwHandshake, this);
+	Log("SYSTEM: new connection from [%s] fd: %d handshake %u ptr %p", m_stHost.c_str(), static_cast<int>(GetSocket()), m_dwHandshake, this);
 	return true;
 }
 
 int DESC::ProcessInput()
 {
-	int64_t bytes_read;
-
 	if (!m_lpInputBuffer)
 	{
 		LOG_ERROR("DESC::ProcessInput : nil input buffer");
 		return -1;
 	}
-
-	buffer_adjust_size(m_lpInputBuffer, m_iMinInputBufferLen);
-	bytes_read = socket_read(m_sock, (char*)buffer_write_peek(m_lpInputBuffer),buffer_has_space(m_lpInputBuffer));
-
-	if (bytes_read < 0)
-		return -1;
-	else if (bytes_read == 0)
-		return 0;
-
-	buffer_write_proceed(m_lpInputBuffer, bytes_read);
 
 	if (!m_pInputProcessor)
 		LOG_ERROR("no input processor");
@@ -363,42 +350,117 @@ int DESC::ProcessInput()
 	}
 #endif // _IMPROVED_PACKET_ENCRYPTION_
 
-	return (bytes_read);
+	return 0;
+}
+
+void DESC::StartRead()
+{
+	if (m_readPending || m_bDestroyed || m_deletePending || !m_socket.is_open())
+		return;
+
+	m_readPending = true;
+	++m_pendingAsyncOps;
+
+	const uint64_t generation = m_generation;
+
+	m_socket.async_read_some(
+		boost::asio::buffer(m_readChunk),
+		[this, generation](const boost::system::error_code & ec, std::size_t bytes)
+		{
+			--m_pendingAsyncOps;
+
+			if (generation != m_generation || m_bDestroyed || m_deletePending)
+				return;
+
+			m_readPending = false;
+			OnRead(ec, bytes);
+		});
+}
+
+void DESC::OnRead(const boost::system::error_code & ec, std::size_t bytes)
+{
+	if (ec)
+	{
+		if (ec == boost::asio::error::operation_aborted)
+			return;
+
+		SetPhase(PHASE_CLOSE);
+		return;
+	}
+
+	if (bytes == 0)
+	{
+		SetPhase(PHASE_CLOSE);
+		return;
+	}
+
+	if (m_lpInputBuffer)
+	{
+		buffer_write(m_lpInputBuffer, m_readChunk.data(), static_cast<int>(bytes));
+		ProcessInput();
+	}
+
+	StartRead();
+}
+
+void DESC::StartWrite()
+{
+	if (m_writePending || m_bDestroyed || m_deletePending || !m_socket.is_open())
+		return;
+
+	const int bytes = m_lpOutputBuffer ? static_cast<int>(buffer_size(m_lpOutputBuffer)) : 0;
+
+	if (bytes <= 0)
+		return;
+
+	const char * readPoint = static_cast<const char *>(buffer_read_peek(m_lpOutputBuffer));
+	m_writeChunk.assign(readPoint, readPoint + bytes);
+
+	m_writePending = true;
+	++m_pendingAsyncOps;
+
+	const uint64_t generation = m_generation;
+
+	boost::asio::async_write(
+		m_socket,
+		boost::asio::buffer(m_writeChunk),
+		[this, generation](const boost::system::error_code & ec, std::size_t bytes_transferred)
+		{
+			--m_pendingAsyncOps;
+
+			if (generation != m_generation || m_bDestroyed || m_deletePending)
+				return;
+
+			m_writePending = false;
+			OnWrite(ec, bytes_transferred);
+		});
+}
+
+void DESC::OnWrite(const boost::system::error_code & ec, std::size_t bytes)
+{
+	if (ec)
+	{
+		if (ec != boost::asio::error::operation_aborted)
+			SetPhase(PHASE_CLOSE);
+		return;
+	}
+
+	max_bytes_written = MAX(static_cast<int>(bytes), max_bytes_written);
+
+	total_bytes_written += static_cast<int>(bytes);
+	current_bytes_written += static_cast<int>(bytes);
+
+	buffer_read_proceed(m_lpOutputBuffer, static_cast<int>(bytes));
+	m_writeChunk.clear();
+
+	if (buffer_size(m_lpOutputBuffer) > 0)
+		StartWrite();
 }
 
 int DESC::ProcessOutput()
 {
-	if (buffer_size(m_lpOutputBuffer) <= 0)
-		return 0;
-
-	int buffer_left = fdwatch_get_buffer_size(m_lpFdw, m_sock);
-
-	if (buffer_left <= 0)
-		return 0;
-
-	int bytes_to_write = MIN(buffer_left, buffer_size(m_lpOutputBuffer));
-
-	if (bytes_to_write == 0)
-		return 0;
-
-	int result = socket_write(m_sock, (const char *) buffer_read_peek(m_lpOutputBuffer), bytes_to_write);
-
-	if (result == 0)
-	{
-		//LOG_INFO("{} bytes written to {} first {}", bytes_to_write, GetHostName(), *(uint8_t *) buffer_read_peek(m_lpOutputBuffer));
-		//Log("%d bytes written", bytes_to_write);
-		max_bytes_written = MAX(bytes_to_write, max_bytes_written);
-
-		total_bytes_written += bytes_to_write;
-		current_bytes_written += bytes_to_write;
-
-		buffer_read_proceed(m_lpOutputBuffer, bytes_to_write);
-
-		if (buffer_size(m_lpOutputBuffer) != 0)
-			fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, true);
-	}
-
-	return (result);
+	StartWrite();
+	return 0;
 }
 
 void DESC::BufferedPacket(const void * c_pvData, int iSize)
@@ -510,7 +572,7 @@ void DESC::Packet(const void * c_pvData, int iSize)
 
 	//LOG_INFO("{} bytes written (first byte {})", iSize, *(uint8_t *) c_pvData);
 	if (m_iPhase != PHASE_CLOSE)
-		fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, true);
+		StartWrite();
 }
 
 void DESC::LargePacket(const void * c_pvData, int iSize)
@@ -751,79 +813,32 @@ void DESC::BindCharacter(entt::entity character)
 {
 	m_lpCharacter = character;
 }
-#include <time.h>
 void DESC::FlushOutput()
 {
-	if (m_sock == INVALID_SOCKET) {
+	if (!m_socket.is_open())
 		return;
-	}
 
 	if (buffer_size(m_lpOutputBuffer) <= 0)
 		return;
 
-	timeval sleep_tv, now_tv, start_tv;
-	int event_triggered = false;
-
-	gettimeofday(&start_tv, nullptr);
-
-	socket_block(m_sock);
 	LOG_INFO("FLUSH START {}", buffer_size(m_lpOutputBuffer));
 
-	while (buffer_size(m_lpOutputBuffer) > 0)
+	StartWrite();
+
+	const auto start = std::chrono::steady_clock::now();
+
+	while (buffer_size(m_lpOutputBuffer) > 0 && !IsPhase(PHASE_CLOSE))
 	{
-		gettimeofday(&now_tv, nullptr);
+		auriga::net::RunFor(std::chrono::milliseconds(10));
 
-		int iSecondsPassed = now_tv.tv_sec - start_tv.tv_sec;
+		const auto seconds_passed = std::chrono::duration_cast<std::chrono::seconds>(
+			std::chrono::steady_clock::now() - start).count();
 
-		if (iSecondsPassed > 10)
+		if (seconds_passed > 10)
 		{
-			if (!event_triggered || iSecondsPassed > 20)
-			{
-				SetPhase(PHASE_CLOSE);
-				break;
-			}
-		}
-
-		sleep_tv.tv_sec = 0;
-		sleep_tv.tv_usec = 10000;
-
-		int num_events = fdwatch(m_lpFdw, &sleep_tv);
-
-		if (num_events < 0)
-		{
-			LOG_ERROR("num_events < 0 : {}", num_events);
+			SetPhase(PHASE_CLOSE);
 			break;
 		}
-
-		int event_idx;
-
-		for (event_idx = 0; event_idx < num_events; ++event_idx)
-		{
-			LPDESC d2 = (LPDESC) fdwatch_get_client_data(m_lpFdw, event_idx);
-
-			if (d2 != this)
-				continue;
-
-			switch (fdwatch_check_event(m_lpFdw, m_sock, event_idx))
-			{
-				case FDW_WRITE:
-					event_triggered = true;
-
-					if (ProcessOutput() < 0)
-					{
-						LOG_ERROR("Cannot flush output buffer");
-						SetPhase(PHASE_CLOSE);
-					}
-					break;
-
-				case FDW_EOF:
-					SetPhase(PHASE_CLOSE);
-					break;
-			}
-		}
-
-		if (IsPhase(PHASE_CLOSE))
-			break;
 	}
 
 	if (buffer_size(m_lpOutputBuffer) == 0)

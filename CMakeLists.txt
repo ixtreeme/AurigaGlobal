@@ -105,6 +105,7 @@ if(AURIGA_USE_VCPKG)
         discord-rpc
         libjpeg-turbo
         nlohmann-json
+        boost-asio
         boost-foreach
         boost-exception
         boost-algorithm

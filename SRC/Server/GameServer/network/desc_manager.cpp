@@ -266,6 +266,11 @@ void DESC_MANAGER::Destroy()
 	m_map_loginName.clear();
 	m_map_handle.clear();
 
+	CloseAcceptors();
+
+	auriga::net::Poll();
+	CollectPendingDeletes();
+
 	Initialize();
 }
 
@@ -293,24 +298,119 @@ RETRY:
 	return (crc);
 }
 
-LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
+bool DESC_MANAGER::StartAccept(const char * ip, uint16_t port, bool bP2P)
 {
-	socket_t                    desc;
-	LPDESC						newd;
-	static sockaddr_in   peer;
-	static char					host[MAX_HOST_LENGTH + 1];
+	boost::system::error_code ec;
 
-	if ((desc = socket_accept(s, &peer)) == -1)
+	auto acceptor = std::make_unique<auriga::net::tcp::acceptor>(auriga::net::Io());
+
+	auto address = boost::asio::ip::make_address(ip ? ip : "", ec);
+
+	if (ec)
+	{
+		ec.clear();
+		address = boost::asio::ip::address_v4::any();
+	}
+
+	const auriga::net::tcp::endpoint endpoint(address, port);
+
+	acceptor->open(endpoint.protocol(), ec);
+
+	if (!ec)
+		acceptor->set_option(boost::asio::socket_base::reuse_address(true), ec);
+
+	if (!ec)
+		acceptor->bind(endpoint, ec);
+
+	if (!ec)
+		acceptor->listen(boost::asio::socket_base::max_listen_connections, ec);
+
+	if (ec)
+	{
+		LOG_ERROR("SYSTEM: BINDING TCP PORT ON [{}] FAILED ({})", port, ec.message().c_str());
+		return false;
+	}
+
+	LOG_INFO("SYSTEM: BINDING {}TCP PORT ON [{}]", bP2P ? "P2P " : "", port);
+
+	if (bP2P)
+		m_p2pAcceptor = std::move(acceptor);
+	else
+		m_tcpAcceptor = std::move(acceptor);
+
+	DoAccept(bP2P);
+	return true;
+}
+
+void DESC_MANAGER::CloseAcceptors()
+{
+	if (m_tcpAcceptor)
+	{
+		boost::system::error_code ec;
+		m_tcpAcceptor->close(ec);
+		m_tcpAcceptor.reset();
+	}
+
+	if (m_p2pAcceptor)
+	{
+		boost::system::error_code ec;
+		m_p2pAcceptor->close(ec);
+		m_p2pAcceptor.reset();
+	}
+}
+
+void DESC_MANAGER::DoAccept(bool bP2P)
+{
+	auto * acceptor = bP2P ? m_p2pAcceptor.get() : m_tcpAcceptor.get();
+
+	if (!acceptor || !acceptor->is_open())
+		return;
+
+	auto socket = std::make_shared<auriga::net::tcp::socket>(auriga::net::Io());
+
+	acceptor->async_accept(*socket,
+		[this, bP2P, socket](const boost::system::error_code & ec)
+		{
+			if (!ec)
+			{
+				if (bP2P)
+					AcceptP2PDesc(std::move(*socket));
+				else
+					AcceptDesc(std::move(*socket));
+			}
+			else if (ec != boost::asio::error::operation_aborted)
+			{
+				LOG_ERROR("Accept failed: {}", ec.message().c_str());
+			}
+
+			DoAccept(bP2P);
+		});
+}
+
+LPDESC DESC_MANAGER::AcceptDesc(auriga::net::tcp::socket&& s)
+{
+	boost::system::error_code ec;
+	const auto endpoint = s.remote_endpoint(ec);
+
+	if (ec)
 		return nullptr;
 
-	strlcpy(host, inet_ntoa(peer.sin_addr), sizeof(host));
+	sockaddr_in peer{};
+	peer.sin_family = AF_INET;
+	peer.sin_port = htons(endpoint.port());
+
+	if (endpoint.address().is_v4())
+		peer.sin_addr.s_addr = htonl(endpoint.address().to_v4().to_uint());
+
+	char host[MAX_HOST_LENGTH + 1];
+	strlcpy(host, endpoint.address().to_string().c_str(), sizeof(host));
 
 	if (g_bAuthServer)
 	{
 		if (IsBanIP(peer.sin_addr))
 		{
 			LOG_INFO("connection from {} was banned.", host);
-			socket_close(desc);
+			s.close(ec);
 			return nullptr;
 		}
 	}
@@ -319,7 +419,7 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 	{
 		if (m_iSocketsConnected >= MAX_ALLOW_USER) {
 			LOG_ERROR("max connection reached. MAX_ALLOW_USER = {}", MAX_ALLOW_USER);
-			socket_close(desc);
+			s.close(ec);
 			return nullptr;
 		}
 	}
@@ -330,8 +430,8 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 	{
 		if (INTRUSIVE_HANDSHAKE_LOG)
 			LOG_INFO("intrusive connection from {} was blocked temporarily.", host);
-		socket_close(desc);
-		return NULL;
+		s.close(ec);
+		return nullptr;
 	}
 
 	// Check if the handshake is intrusive
@@ -343,8 +443,8 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 		{
 			// Set intruder with the next (delayed) handshake time
 			SetIntruder(host, thecore_pulse() + PASSES_PER_SEC(INTRUSIVE_HANDSHAKE_NEXT_PULSE));
-			socket_close(desc);
-			return NULL;
+			s.close(ec);
+			return nullptr;
 		}
 
 		// Set intrusive count
@@ -357,12 +457,11 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 		AllowHandshake(host);
 #endif
 
-	newd = M2_NEW DESC;
+	auto newd = M2_NEW DESC;
 	crc_t handshake = CreateHandshake();
 
-	if (!newd->Setup(fdw, desc, peer, ++m_iHandleCount, handshake))
+	if (!newd->Setup(std::move(s), peer, ++m_iHandleCount, handshake))
 	{
-		socket_close(desc);
 		M2_DELETE(newd);
 		return nullptr;
 	}
@@ -375,23 +474,29 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 	return (newd);
 }
 
-LPDESC DESC_MANAGER::AcceptP2PDesc(LPFDWATCH fdw, socket_t bind_fd)
+LPDESC DESC_MANAGER::AcceptP2PDesc(auriga::net::tcp::socket&& s)
 {
-	socket_t           fd;
-	sockaddr_in peer;
-	char               host[MAX_HOST_LENGTH + 1];
+	boost::system::error_code ec;
+	const auto endpoint = s.remote_endpoint(ec);
 
-	if ((fd = socket_accept(bind_fd, &peer)) == -1)
+	if (ec)
 		return nullptr;
 
-	strlcpy(host, inet_ntoa(peer.sin_addr), sizeof(host));
+	sockaddr_in peer{};
+	peer.sin_family = AF_INET;
+	peer.sin_port = htons(endpoint.port());
+
+	if (endpoint.address().is_v4())
+		peer.sin_addr.s_addr = htonl(endpoint.address().to_v4().to_uint());
+
+	char host[MAX_HOST_LENGTH + 1];
+	strlcpy(host, endpoint.address().to_string().c_str(), sizeof(host));
 
 	auto pkDesc = M2_NEW DESC_P2P;
 
-	if (!pkDesc->Setup(fdw, fd, host, peer.sin_port))
+	if (!pkDesc->Setup(std::move(s), host, peer.sin_port))
 	{
 		LOG_ERROR("DESC_MANAGER::AcceptP2PDesc : Setup failed");
-		socket_close(fd);
 		M2_DELETE(pkDesc);
 		return nullptr;
 	}
@@ -454,8 +559,37 @@ void DESC_MANAGER::DestroyDesc(LPDESC d, bool bEraseFromSet)
 	// Explicit call to the virtual function Destroy()
 	d->Destroy();
 
-	M2_DELETE(d);
+	if (d->PendingAsyncOps() > 0)
+	{
+		// Asio completion handlers may still reference this descriptor.
+		// Keep the object alive until the aborted operations have completed.
+		d->MarkDeletePending();
+		m_pendingDeletes.push_back(d);
+	}
+	else
+	{
+		M2_DELETE(d);
+	}
+
 	--m_iSocketsConnected;
+}
+
+void DESC_MANAGER::CollectPendingDeletes()
+{
+	auto it = m_pendingDeletes.begin();
+
+	while (it != m_pendingDeletes.end())
+	{
+		LPDESC d = *it;
+
+		if (d->PendingAsyncOps() == 0)
+		{
+			it = m_pendingDeletes.erase(it);
+			M2_DELETE(d);
+		}
+		else
+			++it;
+	}
 }
 
 void DESC_MANAGER::DestroyClosed()
@@ -536,11 +670,11 @@ LPDESC DESC_MANAGER::FindByCharacterName(const char* name)
 	return (it == m_set_pkDesc.end()) ? nullptr : (*it);
 }
 
-LPCLIENT_DESC DESC_MANAGER::CreateConnectionDesc(LPFDWATCH fdw, const char* host, uint16_t port, int iPhaseWhenSucceed, bool bRetryWhenClosed)
+LPCLIENT_DESC DESC_MANAGER::CreateConnectionDesc(const char* host, uint16_t port, int iPhaseWhenSucceed, bool bRetryWhenClosed)
 {
 	const auto newd = M2_NEW CLIENT_DESC;
 
-	newd->Setup(fdw, host, port);
+	newd->Setup(host, port);
 	newd->Connect(iPhaseWhenSucceed);
 	newd->SetRetryWhenClosed(bRetryWhenClosed);
 

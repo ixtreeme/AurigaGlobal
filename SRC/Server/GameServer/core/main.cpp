@@ -138,12 +138,7 @@ int             current_bytes_written = 0;
 int             total_bytes_written = 0;
 uint8_t		g_bLogLevel = 0;
 
-socket_t	tcp_socket = 0;
-socket_t	p2p_socket = 0;
-
-LPFDWATCH	main_fdw = nullptr;
-
-int		io_loop(LPFDWATCH fdw);
+int		io_loop();
 
 int		start(int argc, char **argv);
 int		idle();
@@ -701,9 +696,7 @@ int start(int argc, char **argv)
 
 	signal_timer_disable();
 
-	main_fdw = fdwatch_new(4096);
-
-	if ((tcp_socket = socket_tcp_bind(g_szPublicIP, mother_port)) == INVALID_SOCKET)
+	if (!DESC_MANAGER::instance().StartAccept(g_szPublicIP, mother_port, false))
 	{
 		LOG_ERROR("{}: {}", "socket_tcp_bind: tcp_socket", strerror(errno));
 		return 0;
@@ -711,17 +704,14 @@ int start(int argc, char **argv)
 
 
 	// if internal ip exists, p2p socket uses internal ip, if not use public ip
-	//if ((p2p_socket = socket_tcp_bind(*g_szInternalIP ? g_szInternalIP : g_szPublicIP, p2p_port)) == INVALID_SOCKET)
-	if ((p2p_socket = socket_tcp_bind(g_szPublicIP, p2p_port)) == INVALID_SOCKET)
+	//if (!DESC_MANAGER::instance().StartAccept(*g_szInternalIP ? g_szInternalIP : g_szPublicIP, p2p_port, true))
+	if (!DESC_MANAGER::instance().StartAccept(g_szPublicIP, p2p_port, true))
 	{
 		LOG_ERROR("{}: {}", "socket_tcp_bind: p2p_socket", strerror(errno));
 		return 0;
 	}
 
-	fdwatch_add_fd(main_fdw, tcp_socket, nullptr, FDW_READ, false);
-	fdwatch_add_fd(main_fdw, p2p_socket, nullptr, FDW_READ, false);
-
-	db_clientdesc = DESC_MANAGER::instance().CreateConnectionDesc(main_fdw, db_addr, db_port, PHASE_DBCLIENT, true);
+	db_clientdesc = DESC_MANAGER::instance().CreateConnectionDesc(db_addr, db_port, PHASE_DBCLIENT, true);
 	if (!g_bAuthServer) {
 		db_clientdesc->UpdateChannelStatus(0, true);
 	}
@@ -731,7 +721,7 @@ int start(int argc, char **argv)
 		if (g_stAuthMasterIP.length() != 0)
 		{
 			LOG_ERROR("SlaveAuth");
-			g_pkAuthMasterDesc = DESC_MANAGER::instance().CreateConnectionDesc(main_fdw, g_stAuthMasterIP.c_str(), g_wAuthMasterPort, PHASE_P2P, true);
+			g_pkAuthMasterDesc = DESC_MANAGER::instance().CreateConnectionDesc(g_stAuthMasterIP.c_str(), g_wAuthMasterPort, PHASE_P2P, true);
 			P2P_MANAGER::instance().RegisterConnector(g_pkAuthMasterDesc);
 			g_pkAuthMasterDesc->SetP2P(g_stAuthMasterIP.c_str(), g_wAuthMasterPort, g_bChannel);
 
@@ -761,12 +751,8 @@ void destroy()
 	LOG_INFO("<shutdown> regen_free()...");
 	regen_free();
 
-	LOG_INFO("<shutdown> Closing sockets...");
-	socket_close(tcp_socket);
-	socket_close(p2p_socket);
-
-	LOG_INFO("<shutdown> fdwatch_delete()...");
-	fdwatch_delete(main_fdw);
+	LOG_INFO("<shutdown> Closing acceptors...");
+	DESC_MANAGER::instance().CloseAcceptors();
 
 	LOG_INFO("<shutdown> event_destroy()...");
 	// Cancel ECS-owned affect timers while their queue entries still exist,
@@ -839,7 +825,7 @@ int idle()
 	s_dwProfiler[PROF_CHR_UPDATE] += (get_dword_time() - t);
 
 	t = get_dword_time();
-	if (!io_loop(main_fdw)) return 0;
+	if (!io_loop()) return 0;
 	s_dwProfiler[PROF_IO] += (get_dword_time() - t);
 
 	log_rotate();
@@ -891,93 +877,17 @@ int idle()
 	return 1;
 }
 
-int io_loop(LPFDWATCH fdw)
+int io_loop()
 {
-	LPDESC	d;
-	int		num_events, event_idx;
-
 	DESC_MANAGER::instance().DestroyClosed();
 	DESC_MANAGER::instance().TryConnect();
 
-	if ((num_events = fdwatch(fdw, nullptr)) < 0)
-		return 0;
+	// Dispatches the socket accept/read/write completions that became ready
+	// since the previous pulse. Everything runs on this thread.
+	auriga::net::Poll();
 
-	for (event_idx = 0; event_idx < num_events; ++event_idx)
-	{
-		d = (LPDESC) fdwatch_get_client_data(fdw, event_idx);
-
-		if (!d)
-		{
-			if (FDW_READ == fdwatch_check_event(fdw, tcp_socket, event_idx))
-			{
-				DESC_MANAGER::instance().AcceptDesc(fdw, tcp_socket);
-				fdwatch_clear_event(fdw, tcp_socket, event_idx);
-			}
-			else if (FDW_READ == fdwatch_check_event(fdw, p2p_socket, event_idx))
-			{
-				DESC_MANAGER::instance().AcceptP2PDesc(fdw, p2p_socket);
-				fdwatch_clear_event(fdw, p2p_socket, event_idx);
-			}
-			continue;
-		}
-
-		int iRet = fdwatch_check_event(fdw, d->GetSocket(), event_idx);
-
-		switch (iRet)
-		{
-			case FDW_READ:
-				if (db_clientdesc == d)
-				{
-					int size = d->ProcessInput();
-
-					if (size)
-						LOG_TRACE("DB_BYTES_READ: {}", size);
-
-					if (size < 0)
-					{
-						d->SetPhase(PHASE_CLOSE);
-					}
-				}
-				else if (d->ProcessInput() < 0)
-				{
-					d->SetPhase(PHASE_CLOSE);
-				}
-				break;
-
-			case FDW_WRITE:
-				if (db_clientdesc == d)
-				{
-					int buf_size = buffer_size(d->GetOutputBuffer());
-					int sock_buf_size = fdwatch_get_buffer_size(fdw, d->GetSocket());
-
-					int ret = d->ProcessOutput();
-
-					if (ret < 0)
-					{
-						d->SetPhase(PHASE_CLOSE);
-					}
-
-					if (buf_size)
-						LOG_INFO("DB_BYTES_WRITE: size {} sock_buf {} ret {}", buf_size, sock_buf_size, ret);
-				}
-				else if (d->ProcessOutput() < 0)
-				{
-					d->SetPhase(PHASE_CLOSE);
-				}
-				break;
-
-			case FDW_EOF:
-				{
-					d->SetPhase(PHASE_CLOSE);
-				}
-				break;
-
-			default:
-				LOG_ERROR("fdwatch_check_event returned unknown {}", iRet);
-				d->SetPhase(PHASE_CLOSE);
-				break;
-		}
-	}
+	// Deferred deletion of descriptors whose aborted operations have finished.
+	DESC_MANAGER::instance().CollectPendingDeletes();
 
 	return 1;
 }

@@ -2,9 +2,13 @@
 #define __INC_METIN_II_GAME_DESC_MANAGER_H__
 
 
+#include <Core/asio_engine.h>
+
 #include <common/stl.h>
 #include <common/length.h>
+#include <memory>
 #include <string_view>
+#include <vector>
 //#include "IFileMonitor.h"
 
 class CLoginKey;
@@ -33,8 +37,11 @@ class DESC_MANAGER : public singleton<DESC_MANAGER>
 		void			Initialize();
 		void			Destroy();
 
-		LPDESC			AcceptDesc(LPFDWATCH fdw, socket_t s);
-		LPDESC			AcceptP2PDesc(LPFDWATCH fdw, socket_t s);
+		LPDESC			AcceptDesc(auriga::net::tcp::socket&& s);
+		LPDESC			AcceptP2PDesc(auriga::net::tcp::socket&& s);
+		bool			StartAccept(const char * ip, uint16_t port, bool bP2P);
+		void			CloseAcceptors();
+		void			CollectPendingDeletes();
 		void			DestroyDesc(LPDESC d, bool erase_from_set = true);
 
 		uint32_t			CreateHandshake();
@@ -52,7 +59,7 @@ class DESC_MANAGER : public singleton<DESC_MANAGER>
 		void AllowHandshake(const char* c_szHost);
 #endif
 
-		LPCLIENT_DESC		CreateConnectionDesc(LPFDWATCH fdw, const char * host, uint16_t port, int iPhaseWhenSucceed, bool bRetryWhenClosed);
+		LPCLIENT_DESC		CreateConnectionDesc(const char * host, uint16_t port, int iPhaseWhenSucceed, bool bRetryWhenClosed);
 		void			TryConnect();
 
 		LPDESC			FindByHandle(uint32_t handle);
@@ -84,6 +91,12 @@ class DESC_MANAGER : public singleton<DESC_MANAGER>
 		bool			IsP2PDescExist(const char * szHost, uint16_t wPort);
 
 	private:
+		void				DoAccept(bool bP2P);
+
+		std::unique_ptr<auriga::net::tcp::acceptor>	m_tcpAcceptor;
+		std::unique_ptr<auriga::net::tcp::acceptor>	m_p2pAcceptor;
+		std::vector<LPDESC>				m_pendingDeletes;
+
 		bool				m_bDisconnectInvalidCRC;
 
 		DESC_HANDLE_RANDOM_KEY_MAP	m_map_handle_random_key;

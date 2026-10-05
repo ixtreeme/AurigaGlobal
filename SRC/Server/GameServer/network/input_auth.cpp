@@ -274,8 +274,6 @@ void CInputAuth::LoginOpenID(LPDESC d, const char * c_pData)
 	}
 }
 
-extern void socket_timeout(socket_t s, int32_t sec, int32_t usec);
-
 //OpenID
 int CInputAuth::auth_OpenID(const char *authKey, const char *ipAddr, char *rID)
 {
@@ -290,50 +288,157 @@ int CInputAuth::auth_OpenID(const char *authKey, const char *ipAddr, char *rID)
 	extern char openid_host[256];
 	extern char openid_uri[256];
 
-    int		port	= 80;
+	const int port = 80;
 
-    socket_t fd = socket_connect(openid_host, port);
-    if (fd < 0)
-    {
-		LOG_ERROR("[auth_OpenID] : could not connect to OpenID server({})", openid_host);
+	// Dedicated io_context: this is a blocking helper called from the main
+	// thread, it must not interleave with the shared server engine.
+	boost::asio::io_context io;
+	auriga::net::tcp::socket socket(io);
+	boost::asio::steady_timer timer(io);
+	boost::system::error_code ec;
+
+	auto close_socket = [&socket]()
+	{
+		boost::system::error_code ignored;
+		socket.close(ignored);
+	};
+
+	auriga::net::tcp::resolver resolver(io);
+	auto results = resolver.resolve(openid_host, std::to_string(port), ec);
+
+	if (ec)
+	{
+		LOG_ERROR("[auth_OpenID] : could not connect to OpenID server({}) ({})", openid_host, ec.message().c_str());
 		return 1;
-    }
+	}
 
-    socket_block(fd);
-    socket_timeout(fd, 3, 0);
+	bool done = false;
 
-    // send request
-    {
-		char request[512];
-		int len = snprintf(request, sizeof(request),
-						//"GET /kyw/gameauth.php?auth_key=%s&ip=%s HTTP/1.1\r\n"
-						"GET %s?auth_key=%s&ip=%s HTTP/1.1\r\n"
-						"Host: %s\r\n"
-						"Connection: Close\r\n\r\n",
-						//openid_uri, authKey,ipAddr);//"aaaaa", "202.31.212.73");
-						//authKey,ipAddr);
-						//"/kyw/gameauth.php", authKey, ipAddr);
-						openid_uri, authKey, ipAddr, openid_host);
-
-		if (socket_write(fd, request, len) < 0)
-//#endif
+	boost::asio::async_connect(socket, results,
+		[&](const boost::system::error_code & e, const auriga::net::tcp::endpoint &)
 		{
-			LOG_ERROR("[auth_OpenID] : could not send auth-request ({})", authKey);
-			socket_close(fd);
-			return 2;
-		}
-    }
+			if (!done)
+			{
+				ec = e;
+				done = true;
+			}
+			timer.cancel();
+		});
+
+	timer.expires_after(std::chrono::seconds(3));
+	timer.async_wait(
+		[&](const boost::system::error_code & e)
+		{
+			if (!e)
+			{
+				close_socket();
+				if (!done)
+				{
+					ec = boost::asio::error::timed_out;
+					done = true;
+				}
+			}
+		});
+
+	io.run();
+
+	if (!done || ec)
+	{
+		LOG_ERROR("[auth_OpenID] : could not connect to OpenID server({}) ({})", openid_host, ec.message().c_str());
+		close_socket();
+		return 1;
+	}
+
+	// send request
+	char request[512];
+	int request_len = snprintf(request, sizeof(request),
+					"GET %s?auth_key=%s&ip=%s HTTP/1.1\r\n"
+					"Host: %s\r\n"
+					"Connection: Close\r\n\r\n",
+					openid_uri, authKey, ipAddr, openid_host);
+
+	done = false;
+	ec.clear();
+
+	boost::asio::async_write(socket, boost::asio::buffer(request, request_len),
+		[&](const boost::system::error_code & e, std::size_t)
+		{
+			if (!done)
+			{
+				ec = e;
+				done = true;
+			}
+			timer.cancel();
+		});
+
+	timer.expires_after(std::chrono::seconds(3));
+	timer.async_wait(
+		[&](const boost::system::error_code & e)
+		{
+			if (!e)
+			{
+				close_socket();
+				if (!done)
+				{
+					ec = boost::asio::error::timed_out;
+					done = true;
+				}
+			}
+		});
+
+	io.restart();
+	io.run();
+
+	if (!done || ec)
+	{
+		LOG_ERROR("[auth_OpenID] : could not send auth-request ({})", authKey);
+		close_socket();
+		return 2;
+	}
 
     // read reply
     {
 	char reply[1024] = {0};
-	int len;
-//#ifndef __WIN32__
-//	len = read(fd, reply, sizeof(reply));
-//#else
-	len = socket_read(fd, reply, sizeof(reply));
-//#endif
-	socket_close(fd);
+	int len = -1;
+	std::size_t read_len = 0;
+
+	done = false;
+	ec.clear();
+
+	socket.async_read_some(boost::asio::buffer(reply, sizeof(reply) - 1),
+		[&](const boost::system::error_code & e, std::size_t n)
+		{
+			if (!done)
+			{
+				ec = e;
+				read_len = n;
+				done = true;
+			}
+			timer.cancel();
+		});
+
+	timer.expires_after(std::chrono::seconds(3));
+	timer.async_wait(
+		[&](const boost::system::error_code & e)
+		{
+			if (!e)
+			{
+				close_socket();
+				if (!done)
+				{
+					ec = boost::asio::error::timed_out;
+					done = true;
+				}
+			}
+		});
+
+	io.restart();
+	io.run();
+
+	close_socket();
+
+	if (done && !ec && read_len > 0)
+		len = static_cast<int>(read_len);
 
 	if (len <= 0)
 	{

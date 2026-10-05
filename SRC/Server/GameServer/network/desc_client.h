@@ -14,7 +14,7 @@ class CLIENT_DESC : public DESC
 		virtual void	SetPhase(int phase);
 
 		bool 		Connect(int iPhaseWhenSucceed = 0);
-		void		Setup(LPFDWATCH _fdw, const char * _host, uint16_t _port);
+		void		Setup(const char * _host, uint16_t _port);
 
 		void		SetRetryWhenClosed(bool);
 
@@ -31,10 +31,12 @@ class CLIENT_DESC : public DESC
 
 	private:
 		void InitializeBuffers();
+		void StartConnect();
 
 	protected:
 		int			m_iPhaseWhenSucceed;
 		bool		m_bRetryWhenClosed;
+		bool		m_connectPending;
 		uint64_t		m_LastTryToConnectTime;
 		uint64_t		m_tLastChannelStatusUpdateTime;
 

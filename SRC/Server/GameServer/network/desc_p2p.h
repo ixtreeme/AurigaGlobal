@@ -7,6 +7,6 @@ class DESC_P2P : public DESC
 
 		virtual void	Destroy();
 		virtual void	SetPhase(int iPhase);
-		bool		Setup(LPFDWATCH _fdw, socket_t fd, const char * host, uint16_t wPort);
+		bool		Setup(auriga::net::tcp::socket&& sock, const char * host, uint16_t wPort);
 };
 

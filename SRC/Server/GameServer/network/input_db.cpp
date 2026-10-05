@@ -1219,8 +1219,6 @@ void CInputDB::MapLocations(const char * c_pData)
 
 void CInputDB::P2P(const char * c_pData)
 {
-	extern LPFDWATCH main_fdw;
-
 	TPacketDGP2P * p = (TPacketDGP2P *) c_pData;
 
 	P2P_MANAGER& mgr = P2P_MANAGER::instance();
@@ -1229,7 +1227,7 @@ void CInputDB::P2P(const char * c_pData)
 	{
 		LOG_INFO("InputDB:P2P {}:{}", p->szHost, p->wPort);
 	    LPCLIENT_DESC pkDesc = DESC_MANAGER::instance().CreateConnectionDesc(
-		    main_fdw, p->szHost, p->wPort, PHASE_P2P, false);
+		    p->szHost, p->wPort, PHASE_P2P, false);
 		mgr.RegisterConnector(pkDesc);
 		pkDesc->SetP2P(p->szHost, p->wPort, p->bChannel);
 	}

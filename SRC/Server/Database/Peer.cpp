@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Peer.h"
+#include "ClientManager.h"
 #include "ItemIDRangeManager.h"
 
 CPeer::CPeer()
@@ -29,13 +30,17 @@ void CPeer::OnAccept()
 	static uint32_t current_handle = 0;
 	m_dwHandle = ++current_handle;
 
-	LOG_INFO("Connection accepted. (host: {} handle: {} fd: {})", m_host, m_dwHandle, m_fd);
+	LOG_INFO("Connection accepted. (host: {} handle: {} fd: {})", m_host, m_dwHandle, GetFd());
 }
 
-void CPeer::OnConnect()
+void CPeer::OnRecvData()
 {
-	LOG_INFO("Connection established. (host: {} handle: {} fd: {})", m_host, m_dwHandle, m_fd);
-	m_state = STATE_PLAYING;
+	CClientManager::instance().ProcessPackets(this);
+}
+
+void CPeer::OnDisconnect()
+{
+	CClientManager::instance().RemovePeer(this);
 }
 
 void CPeer::OnClose()

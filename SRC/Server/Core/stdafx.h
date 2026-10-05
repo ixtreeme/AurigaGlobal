@@ -28,7 +28,6 @@
 #include "xgetopt.h"
 
 #define S_ISDIR(m)	(m & _S_IFDIR)
-#define snprintf _snprintf
 #ifndef WIN32
 struct timespec
 {
@@ -38,14 +37,11 @@ struct timespec
 #define strtof(str, endptr) (float)strtod(str, endptr)
 #endif
 
-#define __USE_SELECT__
-
 #define PATH_MAX _MAX_PATH
 
 // C runtime library adjustments
 #define strlcat(dst, src, size) strcat_s(dst, size, src)
 #define strlcpy(dst, src, size) strncpy_s(dst, size, src, _TRUNCATE)
-#define strtoull(str, endptr, base) _strtoui64(str, endptr, base)
 
 #define strcasecmp(s1, s2) _stricmp(s1, s2)
 #define strncasecmp(s1, s2, n) _strnicmp(s1, s2, n)
@@ -71,13 +67,6 @@ inline double rint(double x)
 
 
 #else
-
-#ifndef __FreeBSD__
-#define __USE_SELECT__
-#ifdef __CYGWIN__
-#define _POSIX_SOURCE 1
-#endif
-#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -106,18 +95,12 @@ inline double rint(double x)
 #include <pthread.h>
 #include <semaphore.h>
 
-#ifdef __FreeBSD__
-#include <sys/event.h>
-#endif
-
 
 #endif
 
 
 #include "typedef.h"
 #include "heart.h"
-#include "fdwatch.h"
-#include "socket.h"
 #include "kstbl.h"
 #include "hangul.h"
 #include "buffer.h"

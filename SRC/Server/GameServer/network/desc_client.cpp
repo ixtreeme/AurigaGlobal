@@ -14,8 +14,6 @@
 #include "party.h"
 #include <common/CommonDefines.h>
 
-extern LPFDWATCH	main_fdw;
-
 LPCLIENT_DESC db_clientdesc = nullptr;
 LPCLIENT_DESC g_pkAuthMasterDesc = nullptr;
 LPCLIENT_DESC g_NetmarbleDBDesc = nullptr;
@@ -36,6 +34,7 @@ CLIENT_DESC::CLIENT_DESC()
 {
 	m_iPhaseWhenSucceed = 0;
 	m_bRetryWhenClosed = false;
+	m_connectPending = false;
 	m_LastTryToConnectTime = 0;
 	m_tLastChannelStatusUpdateTime = 0;
 }
@@ -46,10 +45,6 @@ CLIENT_DESC::~CLIENT_DESC()
 
 void CLIENT_DESC::Destroy()
 {
-	if (m_sock == INVALID_SOCKET) {
-		return;
-	}
-
 	P2P_MANAGER::instance().UnregisterConnector(this);
 
 	if (this == db_clientdesc)
@@ -59,12 +54,7 @@ void CLIENT_DESC::Destroy()
 		CGuildManager::instance().StopAllGuildWar();
 	}
 
-	fdwatch_del_fd(m_lpFdw, m_sock);
-
-	LOG_INFO("SYSTEM: closing client socket. DESC #{}", m_sock);
-
-	socket_close(m_sock);
-	m_sock = INVALID_SOCKET;
+	LOG_INFO("SYSTEM: closing client socket. DESC #{}", GetSocket());
 
 	// Chain up to base class Destroy()
 	DESC::Destroy();
@@ -85,38 +75,82 @@ bool CLIENT_DESC::Connect(int iPhaseWhenSucceed)
 
 	m_LastTryToConnectTime = get_global_time();
 
-	if (m_sock != INVALID_SOCKET)
+	if (IsConnected() || m_connectPending)
 		return false;
 
-	LOG_INFO("SYSTEM: Trying to connect to {}:{}", m_stHost.c_str(), m_wPort);
-
-	m_sock = socket_connect(m_stHost.c_str(), m_wPort);
-
-	if (m_sock != INVALID_SOCKET)
-	{
-		LOG_INFO("SYSTEM: connected to server (fd {}, ptr {})", m_sock, static_cast<const void*>(this));
-		fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_READ, false);
-		fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, false);
-		SetPhase(m_iPhaseWhenSucceed);
-		return true;
-	}
-	else
-	{
-		SetPhase(PHASE_CLIENT_CONNECTING);
-		return false;
-	}
+	StartConnect();
+	return true;
 }
 
-void CLIENT_DESC::Setup(LPFDWATCH _fdw, const char * _host, uint16_t _port)
+void CLIENT_DESC::StartConnect()
+{
+	LOG_INFO("SYSTEM: Trying to connect to {}:{}", m_stHost.c_str(), m_wPort);
+
+	boost::system::error_code ec;
+	m_socket.close(ec);
+	m_socket = auriga::net::tcp::socket(auriga::net::Io());
+
+	SetPhase(PHASE_CLIENT_CONNECTING);
+
+	m_connectPending = true;
+	++m_pendingAsyncOps;
+
+	const uint64_t generation = m_generation;
+	const std::string host = m_stHost;
+
+	auto resolver = std::make_shared<auriga::net::tcp::resolver>(auriga::net::Io());
+
+	resolver->async_resolve(host, std::to_string(m_wPort),
+		[this, generation, resolver](const boost::system::error_code & resolve_ec, auriga::net::tcp::resolver::results_type results)
+		{
+			--m_pendingAsyncOps;
+
+			if (generation != m_generation || m_bDestroyed || m_deletePending)
+				return;
+
+			if (resolve_ec)
+			{
+				m_connectPending = false;
+				LOG_ERROR("SYSTEM: could not resolve {}:{} ({})", m_stHost.c_str(), m_wPort, resolve_ec.message().c_str());
+				SetPhase(PHASE_CLIENT_CONNECTING);
+				return;
+			}
+
+			++m_pendingAsyncOps;
+
+			boost::asio::async_connect(m_socket, results,
+				[this, generation, resolver](const boost::system::error_code & connect_ec, const auriga::net::tcp::endpoint &)
+				{
+					--m_pendingAsyncOps;
+
+					if (generation != m_generation || m_bDestroyed || m_deletePending)
+						return;
+
+					m_connectPending = false;
+
+					if (connect_ec)
+					{
+						boost::system::error_code ignored;
+						m_socket.close(ignored);
+						LOG_ERROR("SYSTEM: connection to {}:{} failed ({})", m_stHost.c_str(), m_wPort, connect_ec.message().c_str());
+						SetPhase(PHASE_CLIENT_CONNECTING);
+						return;
+					}
+
+					LOG_INFO("SYSTEM: connected to server ({}:{} ptr {})", m_stHost.c_str(), m_wPort, static_cast<const void*>(this));
+					SetPhase(m_iPhaseWhenSucceed);
+					StartRead();
+				});
+		});
+}
+
+void CLIENT_DESC::Setup(const char * _host, uint16_t _port)
 {
 	// 1MB input/output buffer
-	m_lpFdw = _fdw;
 	m_stHost = _host;
 	m_wPort = _port;
 
 	InitializeBuffers();
-
-	m_sock = INVALID_SOCKET;
 }
 
 void CLIENT_DESC::SetPhase(int iPhase)
@@ -253,7 +287,7 @@ void CLIENT_DESC::DBPacketHeader(uint8_t bHeader, uint32_t dwHandle, uint32_t dw
 
 void CLIENT_DESC::DBPacket(uint8_t bHeader, uint32_t dwHandle, const void * c_pvData, uint32_t dwSize)
 {
-	if (m_sock == INVALID_SOCKET) {
+	if (!m_socket.is_open()) {
 		LOG_INFO("CLIENT_DESC [{}] trying DBPacket() while not connected", GetKnownClientDescName(this));
 		return;
 	}
@@ -263,18 +297,16 @@ void CLIENT_DESC::DBPacket(uint8_t bHeader, uint32_t dwHandle, const void * c_pv
 	if (c_pvData)
 		buffer_write(m_lpOutputBuffer, c_pvData, dwSize);
 
-	fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, true);
 	ProcessOutput();
 }
 
 void CLIENT_DESC::Packet(const void * c_pvData, int iSize)
 {
-	if (m_sock == INVALID_SOCKET) {
+	if (!m_socket.is_open()) {
 		LOG_INFO("CLIENT_DESC [{}] trying Packet() while not connected", GetKnownClientDescName(this));
 		return;
 	}
 	buffer_write(m_lpOutputBuffer, c_pvData, iSize);
-	fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, true);
 	ProcessOutput();
 }
 
@@ -316,7 +348,6 @@ void CLIENT_DESC::UpdateChannelStatus(uint32_t t, bool fForce)
 void CLIENT_DESC::Reset()
 {
 	// Backup connection target info
-	LPFDWATCH fdw = m_lpFdw;
 	std::string host = m_stHost;
 	uint16_t port = m_wPort;
 
@@ -324,9 +355,10 @@ void CLIENT_DESC::Reset()
 	Initialize();
 
 	// Restore connection target info
-	m_lpFdw = fdw;
 	m_stHost = host;
 	m_wPort = port;
+
+	m_connectPending = false;
 
 	InitializeBuffers();
 }

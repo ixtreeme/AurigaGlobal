@@ -3,6 +3,11 @@
 
 #include <entt/entt.hpp>
 
+#include <Core/asio_engine.h>
+
+#include <array>
+#include <vector>
+
 #include "constants.h"
 #include "input.h"
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
@@ -106,9 +111,10 @@ class DESC
 
 		void			FlushOutput();
 
-		bool			Setup(LPFDWATCH _fdw, socket_t _fd, const struct sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake);
+		bool			Setup(auriga::net::tcp::socket&& sock, const struct sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake);
 
-		socket_t		GetSocket() const	{ return m_sock; }
+		socket_t		GetSocket() const	{ return static_cast<socket_t>(const_cast<DESC*>(this)->m_socket.native_handle()); }
+		bool			IsConnected() const	{ return m_socket.is_open(); }
 		const char *	GetHostName()		{ return m_stHost.c_str(); }
 		uint16_t			GetPort()	{ return m_wPort; }
 
@@ -121,8 +127,15 @@ class DESC
 		void			Packet(const void * c_pvData, int iSize);
 		void			LargePacket(const void * c_pvData, int iSize);
 
-		int			ProcessInput();		// returns -1 if error
-		int			ProcessOutput();	// returns -1 if error
+		void			StartRead();
+		void			StartWrite();
+
+		int			ProcessInput();		// parses the input buffer, returns -1 if error
+		int			ProcessOutput();	// queues the output buffer, returns 0
+
+		int			PendingAsyncOps() const	{ return m_pendingAsyncOps; }
+		bool			IsDeletePending() const	{ return m_deletePending; }
+		void			MarkDeletePending()	{ m_deletePending = true; }
 
 		CInputProcessor	*	GetInputProcessor()	{ return m_pInputProcessor; }
 
@@ -204,6 +217,8 @@ class DESC
 
 	protected:
 		void			Initialize();
+		void			OnRead(const boost::system::error_code & ec, std::size_t bytes);
+		void			OnWrite(const boost::system::error_code & ec, std::size_t bytes);
 
 	protected:
 		CInputProcessor *	m_pInputProcessor;
@@ -215,8 +230,14 @@ class DESC
 		CInputAuth		m_inputAuth;
 
 
-		LPFDWATCH		m_lpFdw;
-		socket_t		m_sock;
+		auriga::net::tcp::socket	m_socket;
+		bool			m_readPending { false };
+		bool			m_writePending { false };
+		int			m_pendingAsyncOps { 0 };
+		bool			m_deletePending { false };
+		uint64_t		m_generation { 0 };
+		std::array<char, 65536>	m_readChunk;
+		std::vector<char>	m_writeChunk;
 		int				m_iPhase;
 		uint32_t			m_dwHandle;
 

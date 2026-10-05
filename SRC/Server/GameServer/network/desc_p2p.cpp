@@ -11,18 +11,9 @@ DESC_P2P::~DESC_P2P()
 
 void DESC_P2P::Destroy()
 {
-	if (m_sock == INVALID_SOCKET) {
-		return;
-	}
-
 	P2P_MANAGER::instance().UnregisterAcceptor(this);
 
-	fdwatch_del_fd(m_lpFdw, m_sock);
-
-	LOG_INFO("SYSTEM: closing p2p socket. DESC #{}", m_sock);
-
-	socket_close(m_sock);
-	m_sock = INVALID_SOCKET;
+	LOG_INFO("SYSTEM: closing p2p socket. DESC #{}", GetSocket());
 
 	// Chain up to base class Destroy()
 	DESC::Destroy();
@@ -31,12 +22,11 @@ void DESC_P2P::Destroy()
 #ifdef ENABLE_PORT_SECURITY
 #include "config.h"
 #endif
-bool DESC_P2P::Setup(LPFDWATCH fdw, socket_t fd, const char * host, uint16_t wPort)
+bool DESC_P2P::Setup(auriga::net::tcp::socket&& sock, const char * host, uint16_t wPort)
 {
-	m_lpFdw = fdw;
+	m_socket = std::move(sock);
 	m_stHost = host;
 	m_wPort = wPort;
-	m_sock = fd;
 
 	if (!(m_lpOutputBuffer = buffer_new(1024 * 1024)))
 		return false;
@@ -44,20 +34,20 @@ bool DESC_P2P::Setup(LPFDWATCH fdw, socket_t fd, const char * host, uint16_t wPo
 	if (!(m_lpInputBuffer = buffer_new(1024 * 1024)))
 		return false;
 
-	fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_READ, false);
-
 	m_iMinInputBufferLen = 1024 * 1024;
 #ifdef ENABLE_PORT_SECURITY
 	if (strcmp(host, g_szPublicIP)) // refuse if remote host != public ip (only the same machine must be able to connect in here)
 	{
-		LOG_INFO("SYSTEM: new p2p connection from [{}] to [{}] fd: {} BLOCKED", host, g_szPublicIP, m_sock);
+		LOG_INFO("SYSTEM: new p2p connection from [{}] to [{}] fd: {} BLOCKED", host, g_szPublicIP, GetSocket());
 		SetPhase(PHASE_CLOSE);
 		return true;
 	}
 #endif
 	SetPhase(PHASE_P2P);
 
-	LOG_INFO("SYSTEM: new p2p connection from [{}] fd: {}", host, m_sock);
+	StartRead();
+
+	LOG_INFO("SYSTEM: new p2p connection from [{}] fd: {}", host, GetSocket());
 	return true;
 }
 
