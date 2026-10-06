@@ -154,7 +154,7 @@ class CGuildWarReserve
 
 	TGuildWarReserve				m_data;
 	// <login, <guild, gold>>
-	std::map<std::string, std::pair<uint32_t, uint32_t> > mapBet;
+	std::map<std::string, std::pair<uint32_t, int64_t> > mapBet;
 	int						m_iLastNoticeMin;
 };
 

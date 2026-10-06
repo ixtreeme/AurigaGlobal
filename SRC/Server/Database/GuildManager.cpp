@@ -1080,7 +1080,7 @@ bool CGuildManager::ReserveWar(TPacketGuildWar * p)
 
 	snprintf(szQuery, sizeof(szQuery),
 			"INSERT INTO guild_war_reservation (guild1, guild2, time, type, warprice, initscore, power1, power2, handicap) "
-			"VALUES(%u, %u, DATE_ADD(NOW(), INTERVAL 180 SECOND), %u, %ld, %ld, %ld, %ld, %ld)",
+			"VALUES(%u, %u, DATE_ADD(NOW(), INTERVAL 180 SECOND), %u, %d, %d, %d, %d, %d)",
 			GID1, GID2, p->bType, p->lWarPrice, p->lInitialScore, t.lPowerFrom, t.lPowerTo, t.lHandicap);
 
 	std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
@@ -1237,11 +1237,12 @@ void CGuildWarReserve::Initialize()
 
 		char szLogin[LOGIN_MAX_LEN+1];
 		uint32_t dwGuild;
-		uint32_t dwGold;
+		int64_t dwGold;
 
 		while ((row = mysql_fetch_row(res)))
 		{
-			dwGuild = dwGold = 0;
+			dwGuild = 0;
+			dwGold = 0;
 			strlcpy(szLogin, row[0], sizeof(szLogin));
 			str_to_number(dwGuild, row[1]);
 			str_to_number(dwGold, row[2]);
@@ -1399,8 +1400,8 @@ void CGuildWarReserve::End(int iScoreFrom, int iScoreTo)
 	if (mapBet.empty())
 		return;
 
-	uint32_t dwTotalBet = m_data.dwBetFrom + m_data.dwBetTo;
-	uint32_t dwWinnerBet = 0;
+	const int64_t dwTotalBet = static_cast<int64_t>(m_data.dwBetFrom) + static_cast<int64_t>(m_data.dwBetTo);
+	int64_t dwWinnerBet = 0;
 
 	if (dwWinner == m_data.dwGuildFrom)
 		dwWinnerBet = m_data.dwBetFrom;
@@ -1425,14 +1426,14 @@ void CGuildWarReserve::End(int iScoreFrom, int iScoreTo)
 		if (bet.second.first != dwWinner)
 			continue;
 
-		double ratio = (double) bet.second.second / dwWinnerBet;
+		const double ratio = static_cast<double>(bet.second.second) / static_cast<double>(dwWinnerBet);
 
 		LOG_INFO("WAR_REWARD: {} {} ratio {:f}", bet.first.c_str(), bet.second.second, ratio);
 
-		uint32_t dwGold = (uint32_t) (dwTotalBet * ratio * 0.9);
+		const int64_t dwGold = static_cast<int64_t>(static_cast<double>(dwTotalBet) * ratio * 0.9);
 
 		CDBManager::instance().QueryPrepared(
 				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
-				{ SqlParam::Text(bet.first), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::UInt(dwGold) });
+				{ SqlParam::Text(bet.first), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::UInt(static_cast<uint32_t>(dwGold)) });
 	}
 }

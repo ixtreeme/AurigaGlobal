@@ -997,13 +997,13 @@ void CGuild::SendGuildInfoPacket(entt::entity character)
 	pack_sub.exp	= m_data.exp;
 	pack_sub.level	= m_data.level;
 	strlcpy(pack_sub.name, m_data.name, sizeof(pack_sub.name));
-	pack_sub.gold	= m_data.gold;
+	pack_sub.gold	= static_cast<uint32_t>(std::min<int64_t>(m_data.gold, UINT32_MAX));
 	pack_sub.has_land	= HasLand();
 #ifdef ADVANCED_GUILD_INFO
 	pack_sub.trophies	= m_data.trophies;
-	pack_sub.win	= m_data.win;
-	pack_sub.loss	= m_data.loss;
-	pack_sub.draw	= m_data.draw;
+	pack_sub.win	= static_cast<int32_t>(m_data.win);
+	pack_sub.loss	= static_cast<int32_t>(m_data.loss);
+	pack_sub.draw	= static_cast<int32_t>(m_data.draw);
 #endif
 
 	LOG_INFO("GMC guild_name {}", m_data.name);
@@ -2100,7 +2100,7 @@ void CGuild::AdvanceLevel(int iLevel)
 	m_data.level = MIN(GUILD_MAX_LEVEL, iLevel);
 }
 
-void CGuild::RequestWithdrawMoney(entt::entity character, int iGold)
+void CGuild::RequestWithdrawMoney(entt::entity character, int64_t iGold)
 {
 	if (!ecs::SocialSystem::CanDeposit(character))
 	{
@@ -2134,13 +2134,15 @@ void CGuild::RequestWithdrawMoney(entt::entity character, int iGold)
 	ecs::SocialSystem::UpdateDepositPulse(character);
 }
 
-void CGuild::RecvMoneyChange(int iGold)
+void CGuild::RecvMoneyChange(int64_t iGold)
 {
 	m_data.gold = iGold;
 
+	const uint32_t wireGold = static_cast<uint32_t>(std::min<int64_t>(iGold, UINT32_MAX));
+
 	TPacketGCGuild p;
 	p.header = HEADER_GC_GUILD;
-	p.size = sizeof(p) + sizeof(int);
+	p.size = sizeof(p) + sizeof(wireGold);
 	p.subheader = GUILD_SUBHEADER_GC_MONEY_CHANGE;
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
@@ -2148,11 +2150,11 @@ void CGuild::RecvMoneyChange(int iGold)
 		const entt::entity ch = *it;
 		LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 		d->BufferedPacket(&p, sizeof(p));
-		d->Packet(&iGold, sizeof(int));
+		d->Packet(&wireGold, sizeof(wireGold));
 	}
 }
 
-void CGuild::RecvWithdrawMoneyGive(int iChangeGold)
+void CGuild::RecvWithdrawMoneyGive(int64_t iChangeGold)
 {
 	const entt::entity ch = GetMasterCharacter();
 

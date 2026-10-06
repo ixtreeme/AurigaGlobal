@@ -680,7 +680,7 @@ void UpdateDepositPulse(entt::entity e)
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-bool DepositGuildMoney(entt::entity character, CGuild& guild, int gold)
+bool DepositGuildMoney(entt::entity character, CGuild& guild, int64_t gold)
 {
     if (!CanDeposit(character))
     {
@@ -704,7 +704,7 @@ bool DepositGuildMoney(entt::entity character, CGuild& guild, int gold)
     char hint[65];
     snprintf(hint, sizeof(hint), "%u %s", guild.GetID(), guild.GetName());
     LogManager::instance().CharLog(
-        character, gold, "GUILD_DEPOSIT", hint);
+        character, static_cast<uint32_t>(std::min<int64_t>(gold, UINT32_MAX)), "GUILD_DEPOSIT", hint);
     UpdateDepositPulse(character);
 
     LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}",

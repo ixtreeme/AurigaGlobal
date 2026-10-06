@@ -109,11 +109,11 @@ typedef struct SGuildData
 
 	int		ladder_point;
 
-	int		win;
-	int		draw;
-	int		loss;
+	uint32_t	win;
+	uint32_t	draw;
+	uint32_t	loss;
 
-	int		gold;
+	int64_t	gold;
 #ifdef ADVANCED_GUILD_INFO
 	int		trophies;
 #endif
@@ -271,12 +271,12 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		AdvanceLevel(int iLevel);
 
 		// Guild Money
-		void		RequestWithdrawMoney(entt::entity character, int iGold);
+		void		RequestWithdrawMoney(entt::entity character, int64_t iGold);
 
-		void		RecvMoneyChange(int iGold);
-		void		RecvWithdrawMoneyGive(int iChangeGold);
+		void		RecvMoneyChange(int64_t iGold);
+		void		RecvWithdrawMoneyGive(int64_t iChangeGold);
 
-		int		GetGuildMoney() const	{ return m_data.gold; }
+		int64_t		GetGuildMoney() const	{ return m_data.gold; }
 
 		// War general
 		void		GuildWarPacket(uint32_t guild_id, uint8_t bWarType, uint8_t bWarState);
@@ -319,13 +319,13 @@ void		Reset() { m_data.power = m_data.max_power; }
 		int			GetLadderPoint() const	{ return m_data.ladder_point; }
 		void		SetLadderPoint(int point);
 
-		void		SetWarData(int iWin, int iDraw, int iLoss) { m_data.win = iWin, m_data.draw = iDraw, m_data.loss = iLoss; }
+		void		SetWarData(uint32_t iWin, uint32_t iDraw, uint32_t iLoss) { m_data.win = iWin, m_data.draw = iDraw, m_data.loss = iLoss; }
 
 		void		ChangeLadderPoint(int iChange);
 
-		int			GetGuildWarWinCount() const { return m_data.win; }
-		int			GetGuildWarDrawCount() const { return m_data.draw; }
-		int			GetGuildWarLossCount() const { return m_data.loss; }
+	uint32_t	GetGuildWarWinCount() const { return m_data.win; }
+	uint32_t	GetGuildWarDrawCount() const { return m_data.draw; }
+	uint32_t	GetGuildWarLossCount() const { return m_data.loss; }
 
 		bool		HasLand();
 

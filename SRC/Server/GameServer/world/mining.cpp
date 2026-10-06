@@ -475,7 +475,7 @@ namespace mining
 		if (refineGuild && refineGuild != ecs::SocialSystem::GetGuild(character))
 		{
 			ecs::SocialSystem::DepositGuildMoney(
-				character, *refineGuild, static_cast<int>(guildFee));
+				character, *refineGuild, guildFee);
 			remaining -= guildFee;
 		}
 

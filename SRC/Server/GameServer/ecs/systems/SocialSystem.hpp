@@ -106,6 +106,6 @@ void SetShop(entt::entity e, entt::entity shop);
 void SetShopOwner(entt::entity e, entt::entity owner);
 bool CanDeposit(entt::entity e);
 void UpdateDepositPulse(entt::entity e);
-bool DepositGuildMoney(entt::entity character, CGuild& guild, int gold);
+bool DepositGuildMoney(entt::entity character, CGuild& guild, int64_t gold);
 
 } // namespace ecs::SocialSystem
