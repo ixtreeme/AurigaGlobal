@@ -10,32 +10,32 @@ LoginDB::~LoginDB() = default;
 
 bool LoginDB::Connect(const LoginConfig& config)
 {
-	if (config.sqlHost.empty() || config.sqlDatabase.empty())
+	if (config.sql.host.empty() || config.sql.database.empty())
 	{
 		LOG_ERROR("LoginServer: PLAYER_SQL is missing from the configuration");
 		return false;
 	}
 
-	if (!m_sql.Setup(config.sqlHost.c_str(), config.sqlUser.c_str(), config.sqlPassword.c_str(),
-			config.sqlDatabase.c_str(), config.locale.c_str(), false, config.sqlPort))
+	if (!m_sql.Setup(config.sql.host.c_str(), config.sql.user.c_str(), config.sql.password.c_str(),
+			config.sql.database.c_str(), config.locale.c_str(), false, config.sql.port))
 	{
 		LOG_ERROR("LoginServer: cannot open the account database connection");
 		return false;
 	}
 
 	LOG_INFO("LoginServer: account database connected ({}:{}/{})",
-		config.sqlHost, config.sqlPort, config.sqlDatabase);
+		config.sql.host, config.sql.port, config.sql.database);
 
 	return true;
 }
 
 bool LoginDB::ConnectDirect(const LoginConfig& config)
 {
-	if (config.sqlHost.empty() || config.sqlDatabase.empty())
+	if (config.sql.host.empty() || config.sql.database.empty())
 		return false;
 
-	return m_direct.Setup(config.sqlHost.c_str(), config.sqlUser.c_str(), config.sqlPassword.c_str(),
-		config.sqlDatabase.c_str(), config.locale.c_str(), true, config.sqlPort);
+	return m_direct.Setup(config.sql.host.c_str(), config.sql.user.c_str(), config.sql.password.c_str(),
+		config.sql.database.c_str(), config.locale.c_str(), true, config.sql.port);
 }
 
 SQLMsg* LoginDB::DirectQuery(const char* sql)

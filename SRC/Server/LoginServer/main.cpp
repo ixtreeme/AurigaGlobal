@@ -35,8 +35,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	LOG_INFO("LoginServer: starting (port {}, locale {}, auth {})",
-		config.listenPort, config.locale, config.authMaster.empty() ? "master" : config.authMaster);
+	LOG_INFO("LoginServer: starting (port {}, locale {})", config.listenPort, config.locale);
 
 	if (!config.interserverKey.empty())
 		PeerAuth::SetKey(config.interserverKey);
@@ -51,7 +50,7 @@ int main(int argc, char** argv)
 	}
 
 	LoginDBLink dbLink;
-	dbLink.Configure(config.dbLinkHost, config.dbLinkPort);
+	dbLink.Configure(config.dbLink.host, config.dbLink.port);
 	auth.SetLink(&dbLink);
 
 	LoginListener listener(config.listenPort, auth);

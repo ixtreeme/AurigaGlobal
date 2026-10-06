@@ -2,11 +2,10 @@
 
 #include <Core/Logging.hpp>
 
-#include <fstream>
-#include <sstream>
+#include <nlohmann/json.hpp>
 
-// The conf.txt format is line based: "token value...". Unknown tokens are
-// ignored so the login server can share the layout with the game confs.
+#include <fstream>
+
 bool LoadLoginConfig(const char* path, LoginConfig& cfg)
 {
 	std::ifstream in(path);
@@ -17,73 +16,53 @@ bool LoadLoginConfig(const char* path, LoginConfig& cfg)
 		return false;
 	}
 
-	std::string line;
+	nlohmann::json doc;
 
-	while (std::getline(in, line))
+	try
 	{
-		std::istringstream iss(line);
-		std::string token;
+		doc = nlohmann::json::parse(in);
+	}
+	catch (const std::exception& ex)
+	{
+		LOG_ERROR("LoginServer: invalid JSON in '{}': {}", path, ex.what());
+		return false;
+	}
 
-		if (!(iss >> token))
-			continue;
+	try
+	{
+		cfg.listenPort = doc.value("port", 0);
+		cfg.locale = doc.value("locale", std::string("utf8mb4"));
+		cfg.interserverKey = doc.value("interserver_key", std::string());
+		cfg.blockLoginDate = doc.value("block_login", std::string());
 
-		if (token == "port")
+		if (doc.contains("account_sql"))
 		{
-			int value = 0;
-			iss >> value;
-			cfg.listenPort = static_cast<uint16_t>(value);
-		}
-		else if (token == "LOCALE")
-		{
-			iss >> cfg.locale;
-		}
-		else if (token == "AUTH_SERVER")
-		{
-			std::string first;
-			iss >> first;
+			const auto& sql = doc.at("account_sql");
 
-			if (first == "master")
-				cfg.authMaster = "master";
-			else
-			{
-				int port = 0;
-				iss >> port;
-				cfg.authMaster = first + " " + std::to_string(port);
-			}
+			cfg.sql.host = sql.value("host", std::string());
+			cfg.sql.port = sql.value("port", 0);
+			cfg.sql.user = sql.value("user", std::string());
+			cfg.sql.password = sql.value("password", std::string());
+			cfg.sql.database = sql.value("database", std::string());
 		}
-		else if (token == "PLAYER_SQL")
-		{
-			iss >> cfg.sqlHost >> cfg.sqlUser >> cfg.sqlPassword >> cfg.sqlDatabase >> cfg.sqlPort;
-		}
-		else if (token == "db_addr")
-		{
-			iss >> cfg.dbLinkHost;
 
-			// Some confs carry the port on the same line, others in the
-			// separate db_port token.
-			int value = 0;
-			if (iss >> value)
-				cfg.dbLinkPort = static_cast<uint16_t>(value);
-		}
-		else if (token == "db_port")
+		if (doc.contains("database_link"))
 		{
-			int value = 0;
-			iss >> value;
-			cfg.dbLinkPort = static_cast<uint16_t>(value);
+			const auto& link = doc.at("database_link");
+
+			cfg.dbLink.host = link.value("host", std::string());
+			cfg.dbLink.port = static_cast<uint16_t>(link.value("port", 0));
 		}
-		else if (token == "INTERSERVER_KEY")
-		{
-			iss >> cfg.interserverKey;
-		}
-		else if (token == "BLOCK_LOGIN")
-		{
-			iss >> cfg.blockLoginDate;
-		}
+	}
+	catch (const std::exception& ex)
+	{
+		LOG_ERROR("LoginServer: config type error in '{}': {}", path, ex.what());
+		return false;
 	}
 
 	if (cfg.listenPort == 0)
 	{
-		LOG_ERROR("LoginServer: 'port' is missing from '{}'", path);
+		LOG_ERROR("LoginServer: 'port' is missing or zero in '{}'", path);
 		return false;
 	}
 
