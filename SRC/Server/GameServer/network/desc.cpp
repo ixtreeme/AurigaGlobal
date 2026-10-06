@@ -132,7 +132,7 @@ void DESC::Destroy()
 	event_cancel(&m_pkPingEvent);
 	event_cancel(&m_pkDisconnectEvent);
 
-	if (!g_bAuthServer)
+	if (true)
 	{
 		if (m_accountTable.login[0] && m_accountTable.passwd[0])
 		{
@@ -526,13 +526,6 @@ void DESC::SetPhase(int _phase)
 			m_pInputProcessor = &m_inputMain;
 			break;
 
-		case PHASE_AUTH:
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-			m_bEncrypted = true;
-#endif
-			m_pInputProcessor = &m_inputAuth;
-			LOG_INFO("AUTH_PHASE {}", static_cast<const void*>(this));
-			break;
 	}
 }
 

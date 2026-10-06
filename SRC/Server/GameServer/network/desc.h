@@ -219,7 +219,6 @@ class DESC : public PeerSession
 		CInputLogin		m_inputLogin;
 		CInputMain		m_inputMain;
 		CInputDead		m_inputDead;
-		CInputAuth		m_inputAuth;
 
 
 		int				m_iPhase;

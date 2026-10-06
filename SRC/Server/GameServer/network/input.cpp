@@ -139,11 +139,7 @@ void CInputProcessor::Handshake(LPDESC d, const char * c_pData)
 				d->SendKeyAgreement();
 #else
 				// Handshaking succeeded
-				if (g_bAuthServer) {
-					d->SetPhase(PHASE_AUTH);
-				} else {
-					d->SetPhase(PHASE_LOGIN);
-				}
+				d->SetPhase(PHASE_LOGIN);
 #endif // #ifdef _IMPROVED_PACKET_ENCRYPTION_
 			}
 		}
@@ -252,11 +248,7 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		}
 		if (d->FinishHandshake(p->wAgreedLength, p->data, p->wDataLength)) {
 			// Handshaking succeeded
-			if (g_bAuthServer) {
-				d->SetPhase(PHASE_AUTH);
-			} else {
-				d->SetPhase(PHASE_LOGIN);
-			}
+			d->SetPhase(PHASE_LOGIN);
 		} else {
 			LOG_ERROR("[CInputHandshake] Key agreement failed: al={} dl={}", p->wAgreedLength, p->wDataLength);
 			d->SetPhase(PHASE_CLOSE);

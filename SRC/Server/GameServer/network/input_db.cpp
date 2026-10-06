@@ -1342,7 +1342,7 @@ void CInputDB::MoneyLog(const char* c_pData)
 	if (p->type == 4) // QUEST_MONEY_LOG_SKIP
 		return;
 
-	if (g_bAuthServer ==true )
+	if (false ==true )
 		return;
 
 	LogManager::instance().MoneyLog(p->type, p->vnum, p->gold);
@@ -2264,7 +2264,7 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #ifdef ENABLE_HWID
 	case HEADER_DG_BLOCKHWID:
 		{
-			if (g_bAuthServer) {
+			if (false) {
 				const THwidRequest* p = reinterpret_cast<const THwidRequest*>(c_pData);
 				CHwidManager::instance().RecvBlockHwid(p->whoname, p->targetname);
 			}
@@ -2273,7 +2273,7 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		break;
 	case HEADER_DG_UNBLOCKHWID:
 		{
-			if (g_bAuthServer) {
+			if (false) {
 				const THwidRequest* p = reinterpret_cast<const THwidRequest*>(c_pData);
 				CHwidManager::instance().RecvUnblockHwid(p->whoname, p->targetname);
 			}

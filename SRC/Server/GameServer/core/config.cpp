@@ -88,7 +88,6 @@ int			g_iBusyUserCount = 650;
 //int			g_iFullUserCount = 600;
 //int			g_iBusyUserCount = 350;
 bool		g_bEmpireWhisper = true;
-uint8_t		g_bAuthServer = false;
 
 bool		g_bCheckClientVersion = true;
 string	g_stClientVersion = "20251204";
@@ -163,9 +162,6 @@ static std::set<int> s_set_map_allows;
 
 bool map_allow_find(int32_t index)
 {
-	if (g_bAuthServer)
-		return false;
-
 	if (s_set_map_allows.find(index) == s_set_map_allows.end())
 		return false;
 
@@ -530,7 +526,6 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 	LOG_INFO("PlayerSQL connected");
 
-	if (false == g_bAuthServer)
 	{
 		LogManager::instance().Connect(log_host, log_port, log_user, log_pwd, log_db);
 
@@ -703,8 +698,6 @@ static bool __LoadDefaultConfigFile(const char* configName)
 				LOG_ERROR("AUTH_SERVER: syntax error: <ip|master> <port>");
 				exit(1);
 			}
-
-			g_bAuthServer = true;
 
 			LoadBanIP("BANIP");
 

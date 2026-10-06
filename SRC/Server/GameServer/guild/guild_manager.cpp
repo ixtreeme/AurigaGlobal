@@ -272,7 +272,7 @@ void CGuildManager::Initialize()
 {
 	LOG_INFO("Initializing Guild");
 
-	if (g_bAuthServer)
+	if (false)
 	{
 		LOG_INFO("	No need for auth server");
 		return;

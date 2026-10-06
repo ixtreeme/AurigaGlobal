@@ -48,7 +48,7 @@ bool DBManager::Connect(const char * host, const int port, const char * user, co
 	if (!m_sql_direct.Setup(host, user, pwd, db, g_stLocale.c_str(), true, port))
 		LOG_ERROR("cannot open direct sql connection to host {}", host);
 
-	if (m_bIsConnect && !g_bAuthServer)
+	if (m_bIsConnect && true)
 	{
 		LoadDBString();
 	}

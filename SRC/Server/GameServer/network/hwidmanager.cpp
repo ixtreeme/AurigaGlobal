@@ -62,7 +62,7 @@ void CHwidManager::SendBlockHwid(const char * whoname, const char * targetname)
 
 void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 {
-	if (!g_bAuthServer) {
+	if (true) {
 		return;
 	}
 
@@ -146,7 +146,7 @@ void CHwidManager::SendUnblockHwid(const char * whoname, const char * targetname
 
 void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname)
 {
-	if (!g_bAuthServer) {
+	if (true) {
 		return;
 	}
 

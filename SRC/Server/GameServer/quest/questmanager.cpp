@@ -92,7 +92,7 @@ namespace quest
 
 	bool CQuestManager::Initialize()
 	{
-		if (g_bAuthServer)
+		if (false)
 			return true;
 
 		if (!InitializeLua())

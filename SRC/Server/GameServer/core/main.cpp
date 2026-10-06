@@ -254,7 +254,7 @@ void heartbeat(LPHEART ht, int pulse)
 
 	if (!(pulse % ht->passes_per_sec))
 	{
-		if (!g_bAuthServer)
+		if (true)
 		{
 			TPlayerCountPacket pack;
 			pack.dwCount = DESC_MANAGER::instance().GetLocalUserCount();
@@ -478,7 +478,7 @@ int main(int argc, char **argv)
 //		//	break;
 //		//}
 
-	if (g_bAuthServer)
+	if (false)
 	{
 #ifdef ENABLE_HWID
 		hwid_manager.InitializeBlocked();
@@ -491,7 +491,7 @@ int main(int argc, char **argv)
 	g_bShutdown = true;
 	g_bNoMoreClient = true;
 
-	if (g_bAuthServer)
+	if (false)
 	{
 		int iLimit = DBManager::instance().CountQuery() / 50;
 		int i = 0;
@@ -550,7 +550,7 @@ int main(int argc, char **argv)
 	LOG_INFO("<shutdown> Destroying building::CManager...");
 	building_manager.Destroy();
 
-	if (g_bAuthServer)
+	if (false)
 	{
 #ifdef ENABLE_HWID
 		hwid_manager.CleanBlocked();
@@ -715,11 +715,11 @@ int start(int argc, char **argv)
 	}
 
 	db_clientdesc = DESC_MANAGER::instance().CreateConnectionDesc(db_addr, db_port, PHASE_DBCLIENT, true);
-	if (!g_bAuthServer) {
+	if (true) {
 		db_clientdesc->UpdateChannelStatus(0, true);
 	}
 
-	if (g_bAuthServer)
+	if (false)
 	{
 		if (g_stAuthMasterIP.length() != 0)
 		{

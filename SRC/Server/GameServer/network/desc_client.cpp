@@ -196,7 +196,7 @@ void CLIENT_DESC::SetPhase(int iPhase)
 			{
 				LOG_INFO("PHASE_DBCLIENT");
 
-				if (!g_bAuthServer)
+				if (true)
 				{
 					static bool bSentBoot = false;
 
@@ -218,7 +218,7 @@ void CLIENT_DESC::SetPhase(int iPhase)
 				memset(&p, 0, sizeof(p));
 				strlcpy(p.szPublicIP, g_szPublicIP, sizeof(p.szPublicIP));
 
-				if (!g_bAuthServer)
+				if (true)
 				{
 					p.bChannel	= g_bChannel;
 					p.wListenPort = mother_port;
@@ -351,7 +351,7 @@ bool CLIENT_DESC::IsRetryWhenClosed()
 
 void CLIENT_DESC::Update(uint32_t t)
 {
-	if (!g_bAuthServer) {
+	if (true) {
 		UpdateChannelStatus(t, false);
 	}
 }

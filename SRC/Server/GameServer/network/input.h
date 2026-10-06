@@ -398,18 +398,7 @@ class CInputP2P : public CInputProcessor
 		CPacketInfoGG 	m_packetInfoGG;
 };
 
-class CInputAuth : public CInputProcessor
-{
-	public:
-		CInputAuth();
-		virtual uint8_t GetType() { return INPROC_AUTH; }
 
-	protected:
-		virtual int	Analyze(LPDESC d, uint8_t bHeader, const char * c_pData);
-
-	public:
-		void		Login(LPDESC d, const char * c_pData);
-};
 
 #endif /* __INC_METIN_II_GAME_INPUT_PROCESSOR__ */
 

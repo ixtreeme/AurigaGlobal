@@ -430,7 +430,7 @@ LPDESC DESC_MANAGER::AcceptDesc(auriga::net::tcp::socket&& s)
 	char host[MAX_HOST_LENGTH + 1];
 	strlcpy(host, endpoint.address().to_string().c_str(), sizeof(host));
 
-	if (g_bAuthServer)
+	if (false)
 	{
 		if (IsBanIP(peer.sin_addr))
 		{
