@@ -6095,20 +6095,20 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				if (ecs::PlayerRuntime::GetDesc(e) == nullptr)
 					break;
 
-				const uint32_t curCoins = ecs::PlayerRuntime::GetDragonCoin(e);
-				const uint64_t maxCoins = 0xFFFFFFFFULL; // uint32 max
+				const int64_t curCoins = ecs::PlayerRuntime::GetDragonCoin(e);
+				const int64_t maxCoins = static_cast<int64_t>(UINT32_MAX);
 
-				if ((uint64_t)curCoins >= maxCoins)
+				if (curCoins >= maxCoins)
 					break;
 
-				const uint64_t canAdd = ((uint64_t)curCoins + total > maxCoins) ? (maxCoins - (uint64_t)curCoins) : total;
+				const int64_t canAdd = (curCoins + static_cast<int64_t>(total) > maxCoins) ? (maxCoins - curCoins) : static_cast<int64_t>(total);
 				if (canAdd == 0)
 					break;
 
-				ecs::PlayerRuntime::SetDragonCoin(e, curCoins + (uint32_t)canAdd);
+				ecs::PlayerRuntime::SetDragonCoin(e, curCoins + canAdd);
 
 				ConsumeItemEcs(itemEntity, count); // teljes stack felhasznalasa
-				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "Kaptal %u Sarkanyermet.", (uint32_t)canAdd);
+				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "Kaptal %lld Sarkanyermet.", static_cast<long long>(canAdd));
 #else
 				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "ItemShop ki van kapcsolva.");
 #endif

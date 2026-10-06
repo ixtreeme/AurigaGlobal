@@ -4273,7 +4273,7 @@ void CClientManager::ResetLastPlayerID(const TPacketNeedLoginLogInfo* data)
 void CClientManager::ChargeCash(const TRequestChargeCash* packet)
 {
 	char szQuery[QUERY_MAX_LEN];
-	sprintf(szQuery, "update account set coins = coins + %d where id = %d limit 1", packet->amount, packet->aid);
+	sprintf(szQuery, "update account set coins = coins + %lld where id = %d limit 1", static_cast<long long>(packet->amount), packet->aid);
 	LOG_INFO("Request Charge (amount : {}, aid : {})", packet->amount, packet->aid);
 	CDBManager::Instance().AsyncQuery(szQuery, SQL_ACCOUNT);
 }
@@ -4814,10 +4814,10 @@ bool CClientManager::InitializeItemShop()
 	itemShopUpdateTime = time(nullptr);
 	return true;
 }
-void CClientManager::SetDragonCoin(uint32_t id, uint32_t amount)
+void CClientManager::SetDragonCoin(uint32_t id, int64_t amount)
 {
 	char szQuery[84];
-	snprintf(szQuery, sizeof(szQuery), "UPDATE account.account SET coins = %u WHERE id = %u", amount, id);
+	snprintf(szQuery, sizeof(szQuery), "UPDATE account.account SET coins = %lld WHERE id = %u", static_cast<long long>(amount), id);
 	std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(szQuery, SQL_ACCOUNT));
 }
 
@@ -4837,7 +4837,7 @@ void CClientManager::ItemShopIncreaseSellCount(uint32_t itemID, int itemCount)
 	snprintf(szQuery, sizeof(szQuery), "UPDATE player.ishop_data SET sellCount = %u WHERE id = %u", sellCount, itemID);
 	std::unique_ptr<SQLMsg> pMsgLast(CDBManager::instance().DirectQuery(szQuery, SQL_PLAYER));
 }
-uint32_t CClientManager::GetDragonCoin(uint32_t id)
+int64_t CClientManager::GetDragonCoin(uint32_t id)
 {
 	char szQuery[84];
 	snprintf(szQuery, sizeof(szQuery), "SELECT coins FROM account.account WHERE id = %u", id);
@@ -4845,7 +4845,7 @@ uint32_t CClientManager::GetDragonCoin(uint32_t id)
 	if (pMsg->Get()->uiNumRows == 0)
 		return 0;
 	MYSQL_ROW row = pMsg->Get()->FetchRow();
-	uint32_t dc = 0;
+	int64_t dc = 0;
 	str_to_number(dc, row[0]);
 	return dc;
 }
@@ -4953,11 +4953,11 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 								const TIShopData& itemData = *itReal;
 								if (std::cmp_equal(itemData.id, itemID))
 								{
-									uint32_t accountDragonCoin = GetDragonCoin(accountID);
+									int64_t accountDragonCoin = GetDragonCoin(accountID);
 
-									uint32_t itemPrice = itemData.itemPrice * itemCount;
+									int64_t itemPrice = static_cast<int64_t>(itemData.itemPrice) * itemCount;
 									if (itemData.discount > 0)
-										itemPrice = (uint32_t)(float(itemPrice) / 100.0 * float(100 - itemData.discount));//razor93
+										itemPrice = itemPrice * (100 - itemData.discount) / 100;
 									if (itemPrice > accountDragonCoin)
 									{
 										int returnType = 0;

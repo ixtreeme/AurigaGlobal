@@ -2017,7 +2017,8 @@ void CHARACTER_MANAGER::LoadItemShopData(entt::entity character, bool isAll)
 	TPacketGCItemShop p;
 	p.header = HEADER_GC_ITEMSHOP;
 
-	uint32_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
+	const int64_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
+	const uint32_t wireDragonCoin = static_cast<uint32_t>(std::min<int64_t>(dragonCoin, UINT32_MAX));
 
 	if (isAll)
 	{
@@ -2062,7 +2063,7 @@ void CHARACTER_MANAGER::LoadItemShopData(entt::entity character, bool isAll)
 
 		buf.write(&p, sizeof(TPacketGCItemShop));
 		buf.write(&subIndex, sizeof(uint8_t));
-		buf.write(&dragonCoin, sizeof(uint32_t));
+		buf.write(&wireDragonCoin, sizeof(uint32_t));
 		buf.write(&itemshopUpdateTime, sizeof(int));
 		buf.write(&categoryTotalSize, sizeof(int));
 
@@ -2095,7 +2096,7 @@ void CHARACTER_MANAGER::LoadItemShopData(entt::entity character, bool isAll)
 		buf.write(&p, sizeof(TPacketGCItemShop));
 		uint8_t subIndex = ITEMSHOP_LOAD;
 		buf.write(&subIndex, sizeof(uint8_t));
-		buf.write(&dragonCoin, sizeof(uint32_t));
+		buf.write(&wireDragonCoin, sizeof(uint32_t));
 		buf.write(&itemshopUpdateTime, sizeof(int));
 		int categoryTotalSize = 9999;
 		buf.write(&categoryTotalSize, sizeof(int));
@@ -2176,11 +2177,12 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 		p.size += sizeof(TIShopLogData);
 
 	uint8_t subIndex = ITEMSHOP_DRAGONCOIN;
-	uint32_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
+	const int64_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
+	const uint32_t wireDragonCoin = static_cast<uint32_t>(std::min<int64_t>(dragonCoin, UINT32_MAX));
 
 	buf.write(&p, sizeof(TPacketGCItemShop));
 	buf.write(&subIndex, sizeof(uint8_t));
-	buf.write(&dragonCoin, sizeof(uint32_t));
+	buf.write(&wireDragonCoin, sizeof(uint32_t));
 	buf.write(&isOpenLog, sizeof(bool));
 	if (isOpenLog)
 	{
@@ -2279,11 +2281,10 @@ void CHARACTER_MANAGER::LoadItemShopBuy(entt::entity character, int itemID, int 
 							const TIShopData itemData = *itReal;
 							if (std::cmp_equal(itemData.id, itemID))
 							{
-								uint32_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
-								uint32_t itemPrice = itemData.itemPrice * itemCount;
+								const int64_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
+								int64_t itemPrice = static_cast<int64_t>(itemData.itemPrice) * itemCount;
 								if (itemData.discount > 0)
-									//itemPrice = long long(float(itemData.itemPrice) / 100.0 * float(100 - itemData.discount));//razor93
-									itemPrice = static_cast<uint32_t>(float(itemData.itemPrice) / 100.0f * float(100 - itemData.discount));
+									itemPrice = itemPrice * (100 - itemData.discount) / 100;
 
 
 								if (itemPrice > dragonCoin)

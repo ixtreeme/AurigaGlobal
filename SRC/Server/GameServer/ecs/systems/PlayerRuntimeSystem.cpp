@@ -2103,7 +2103,7 @@ bool ecs::PlayerRuntime::IsGM(entt::entity e)
 #ifdef ENABLE_ITEMSHOP
 namespace ecs::PlayerRuntime {
 
-uint32_t GetDragonCoin(entt::entity e)
+int64_t GetDragonCoin(entt::entity e)
 {
     auto* desc = GetDesc(e);
     if (!desc || desc->GetAccountTable().id == 0)
@@ -2114,17 +2114,17 @@ uint32_t GetDragonCoin(entt::entity e)
     MYSQL_ROW row = pMsg->Get()->FetchRow();
     if (!row || !row[0])
         return 0;
-    uint32_t dc = 0;
+    int64_t dc = 0;
     str_to_number(dc, row[0]);
     return dc;
 }
 
-void SetDragonCoin(entt::entity e, uint32_t amount)
+void SetDragonCoin(entt::entity e, int64_t amount)
 {
     auto* desc = GetDesc(e);
     if (!desc || desc->GetAccountTable().id == 0)
         return;
-    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%u' WHERE id = '%u';", amount, desc->GetAccountTable().id));
+    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%u';", static_cast<long long>(amount), desc->GetAccountTable().id));
 }
 
 void SetProtectTime(entt::entity e, std::string_view flag, int value)

@@ -108,8 +108,8 @@ public:
 	bool		InitializeItemShop();
 	void		SendItemShopData(CPeer* pkPeer = nullptr, bool isPacket = false);
 	void		RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* data);
-	uint32_t	GetDragonCoin(uint32_t id);
-	void		SetDragonCoin(uint32_t id, uint32_t amount);
+	int64_t		GetDragonCoin(uint32_t id);
+	void		SetDragonCoin(uint32_t id, int64_t amount);
 	void		ItemShopIncreaseSellCount(uint32_t itemID, int itemCount);
 protected:
 	uint64_t			itemShopUpdateTime;

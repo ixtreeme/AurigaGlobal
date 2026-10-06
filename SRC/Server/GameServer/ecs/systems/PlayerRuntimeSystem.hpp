@@ -26,8 +26,8 @@ LPDESC GetDesc(entt::entity e);
 uint32_t GetPlayerID(entt::entity e);
 uint32_t GetAccountID(entt::entity e);
 #ifdef ENABLE_ITEMSHOP
-uint32_t GetDragonCoin(entt::entity e);
-void SetDragonCoin(entt::entity e, uint32_t amount);
+int64_t GetDragonCoin(entt::entity e);
+void SetDragonCoin(entt::entity e, int64_t amount);
 void SetProtectTime(entt::entity e, std::string_view flag, int value);
 int GetProtectTime(entt::entity e, std::string_view flag);
 #endif

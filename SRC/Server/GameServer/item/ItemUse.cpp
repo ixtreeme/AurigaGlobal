@@ -20,21 +20,21 @@ namespace
 		if (!ecs::PlayerRuntime::IsValid(chEntity) || amount == 0)
 			return;
 
-		const uint32_t cur = ecs::PlayerRuntime::GetDragonCoin(chEntity);
-		const uint64_t maxCoins = 0xFFFFFFFFULL; // uint32 max
+		const int64_t cur = ecs::PlayerRuntime::GetDragonCoin(chEntity);
+		const int64_t maxCoins = static_cast<int64_t>(UINT32_MAX);
 
-		if ((uint64_t)cur >= maxCoins)
+		if (cur >= maxCoins)
 		{
 			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You cannot receive more Dragon Coins.");
 			return;
 		}
 
-		const uint64_t canAdd = std::min<uint64_t>((uint64_t)amount, maxCoins - (uint64_t)cur);
+		const int64_t canAdd = std::min<int64_t>(static_cast<int64_t>(amount), maxCoins - cur);
 		if (canAdd == 0)
 			return;
 
-		ecs::PlayerRuntime::SetDragonCoin(chEntity, cur + (uint32_t)canAdd);
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %u Dragon Coins.", (uint32_t)canAdd);
+		ecs::PlayerRuntime::SetDragonCoin(chEntity, cur + canAdd);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %lld Dragon Coins.", static_cast<long long>(canAdd));
 	}
 
 	inline bool CheckCanUseNow(entt::entity ch)
