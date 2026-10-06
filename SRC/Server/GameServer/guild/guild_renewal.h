@@ -37,7 +37,7 @@ public:
 	bool DepositYang(entt::entity chEntity, int64_t yang);
 
 	// Guild leader sets a tax request (deadline unix timestamp + per member requirements)
-	bool SetTaxRequest(entt::entity leaderEntity, int deadlineUnix,
+	bool SetTaxRequest(entt::entity leaderEntity, int64_t deadlineUnix,
 		int64_t perMemberMoney,
 		const std::array<uint32_t,5>& vnums,
 		const std::array<uint32_t,5>& counts);
@@ -63,7 +63,7 @@ private:
 	struct Tax
 	{
 		bool active{false};
-		int deadline{0};
+		int64_t deadline{0};
 		int64_t perMemberMoney{0};
 		std::array<uint32_t,5> vnum{{0,0,0,0,0}};
 		std::array<uint32_t,5> count{{0,0,0,0,0}};
@@ -74,7 +74,7 @@ private:
 		int64_t paidMoney{ 0 };
 		int64_t paidItemTotal{ 0 };
 		uint8_t paidFlag{ 0 };
-		int lastPayTime{ 0 };
+		int64_t lastPayTime{ 0 };
 	};
 
 

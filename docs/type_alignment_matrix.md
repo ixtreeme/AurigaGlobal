@@ -36,7 +36,7 @@ mezöje 4 byte, ott `static_cast<uint32_t>(std::min<int64_t>(value, UINT32_MAX))
 | `level/level_step` | TINYINT UNSIGNED | uint8_t | OK |
 | `hp/mp` | BIGINT UNSIGNED | ECS Health/Mana uint64_t; TPlayerTable uint64_t; PointSystem GetMaxHP/GetMaxSP uint64_t | Javitva: HP/MP uint64 (GC points packet mar int64 volt) |
 | `r0..r19` | BIGINT (schema) | long long, `%lld` | OK |
-| `battle_pass_end` | DATETIME | uint32_t + FROM_UNIXTIME(%d) | Phase 2: 2038, `%u`/int64 |
+| `battle_pass_end` | DATETIME | uint32_t + FROM_UNIXTIME(%u) | Javitva: 2038-mentes 2106-ig (2026-10-06) |
 
 ### 2. Item (`player.item`)
 | Mezö | DB | Rendszer/C++ | Statusz |
@@ -54,7 +54,7 @@ mezöje 4 byte, ott `static_cast<uint32_t>(std::min<int64_t>(value, UINT32_MAX))
 | `guild.gold` | BIGINT | `SGuildData.gold` int64_t (javítva), `GetGuildMoney` int64 | Javítva: 4a9b1446 |
 | `guild.win/draw/loss` | INT UNSIGNED | `SGuildData.win/draw/loss` uint32_t (javítva) | Javítva: 4a9b1446 |
 | `guild.exp` | INT UNSIGNED | uint32_t | OK |
-| `guild.skill_point` | INT | uint8_t (tables.h) | Phase 2: DB INT vs uint8 (packet-hatar) |
+| `guild.skill_point` | INT | uint8_t (tables.h); wire 1 byte (guild.cpp:1531) | Javitva: DB load clamp 0..255; a DB INT meg marad (wire 1 byte) |
 | `guild_war_bet.gold` | BIGINT (frissítve) | mapBet int64_t, `str_to_number(int64)` | Javítva: 4a9b1446 + migracio |
 | `player_index.pid1..5` | INT UNSIGNED | uint32_t | OK |
 | `player_index.hwid` | VARCHAR(64) | char[65] | OK |
@@ -64,7 +64,7 @@ mezöje 4 byte, ott `static_cast<uint32_t>(std::min<int64_t>(value, UINT32_MAX))
 |---|---|---|---|
 | `coins` | BIGINT | `GetDragonCoin`/`SetDragonCoin` int64_t (javítva); item shop ar int64 | Javítva: f54af1d5 |
 | charge packet `amount` | - | `SRequestChargeCash.amount` int32 (wire) -> SQL `%lld` cast | Javítva: f54af1d5 |
-| `account_mount_inventory.attrtype6` | hianyzik | mento loop 0..7 | Phase 2 migracio (DB audit P2) |
+| `account_mount_inventory.attrtype6` | migracio kesz | mento loop 0..7 | Javitva: 2026-10-06 migracio ADD COLUMN |
 
 ### 5. Safebox (`player.safebox`)
 | Mezö | DB | Rendszer/C++ | Statusz |
@@ -92,8 +92,17 @@ mezöje 4 byte, ott `static_cast<uint32_t>(std::min<int64_t>(value, UINT32_MAX))
 - Phase 1c (27e50185): `%ld`/`%lu` hordozhatosagi javitasok (FreeBSD/Linux).
 - DB: `SRC/Server/Database/sql/2026_10_06_type_alignment.sql`, `db/schema.sql` frissitve.
 
-## Phase 2 (kovetkezo kor)
-- `guild.skill_point`, `trophies`, `part_*`, `count` tipusok veglegesitese.
-- Packet-structok signedness sweep-je (a kliens `Packet.h`-val parban).
-- Idobelyeg 2038: `battle_pass_end`, `premiumTimes`, `last_pay_time`, `deadline`.
+## Phase 2 - elvegzett (2026-10-06)
+- `battle_pass_end`: FROM_UNIXTIME(%u) -> 2038-mentes (2106-ig).
+- `guild_renewal_tax.deadline`, `guild_renewal_contrib.last_pay_time`: int64 +
+  DB BIGINT + `%lld` + `str_to_number(int64)`.
+- `guild.skill_point`: DB load clamp 0..255 (a wire 1 byte marad).
+- `account_mount_inventory.attrtype6/attrvalue6`: migracio kesz.
+
+## Phase 3 (hatralevo)
+- Packet-structok teljes signedness sweep-je (a kliens `Packet.h`-val parban).
+- `premiumTimes` (TAccountTable, LoginServer) 2038: 64-bitesites kliens-packet
+  egyeztetessel.
+- `char_manager` event idobelyeg (`int cur_Time = time(nullptr)`) 64-bitre.
+- `exp` uint64 nagyon magas XP-hoz; `window` mindig nev szerinti write.
 - `safebox/myshop` 64-bitesitese csak kliens-protokoll frissitessel.

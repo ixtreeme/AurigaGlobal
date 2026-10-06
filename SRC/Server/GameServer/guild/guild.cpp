@@ -660,7 +660,7 @@ void CGuild::LoadGuildData(SQLMsg* pmsg)
 	m_data.exp = strtoul(row[2], (char **)nullptr, 10);
 	strlcpy(m_data.name, row[3], sizeof(m_data.name));
 
-	m_data.skill_point = (uint8_t) strtoul(row[4], (char **)nullptr, 10);
+	m_data.skill_point = static_cast<uint8_t>(std::min<unsigned long>(strtoul(row[4], nullptr, 10), 255));
 	if (row[5])
 		memcpy(m_data.abySkill, row[5], sizeof(uint8_t) * GUILD_SKILL_COUNT);
 	else

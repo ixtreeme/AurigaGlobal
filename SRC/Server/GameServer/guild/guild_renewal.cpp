@@ -207,7 +207,7 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 			if (row)
 			{
 				c.tax.active = (atoi(row[0]) != 0);
-				c.tax.deadline = atoi(row[1]);
+				str_to_number(c.tax.deadline, row[1]);
 				c.tax.perMemberMoney = atoll(row[2]);
 				for (int i = 0; i < 5; i++)
 				{
@@ -260,7 +260,7 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 				cc.paidMoney = atoll(row[1]);
 				cc.paidItemTotal = atoll(row[2]);
 				cc.paidFlag = (uint8_t)atoi(row[3]);
-				cc.lastPayTime = atoi(row[4]);
+				str_to_number(cc.lastPayTime, row[4]);
 				c.contrib[pid] = cc;
 			}
 		}
@@ -463,7 +463,7 @@ void CGuildRenewal::DB_SaveTax(uint32_t guildId)
 	DBManager::instance().Query(
 		"REPLACE INTO guild_renewal_tax(guild_id,active,deadline,per_member_money,"
 		"item1_vnum,item1_count,item2_vnum,item2_count,item3_vnum,item3_count,item4_vnum,item4_count,item5_vnum,item5_count)"
-		" VALUES(%u,%d,%d,%lld,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u)",
+		" VALUES(%u,%d,%lld,%lld,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u)",
 		guildId,
 		c.tax.active ? 1 : 0,
 		c.tax.deadline,
@@ -497,7 +497,7 @@ void CGuildRenewal::DB_SaveContrib(uint32_t guildId, uint32_t pid)
 
 	DBManager::instance().Query(
 		"REPLACE INTO guild_renewal_contrib(guild_id,pid,paid_money,paid_item_total,paid_flag,last_pay_time)"
-		" VALUES(%u,%u,%lld,%lld,%u,%d)",
+		" VALUES(%u,%u,%lld,%lld,%u,%lld)",
 		guildId, pid,
 		(long long)cc.paidMoney,
 		(long long)cc.paidItemTotal,
@@ -942,7 +942,7 @@ bool CGuildRenewal::DepositYang(entt::entity chEntity, int64_t yang)
 	return true;
 }
 
-bool CGuildRenewal::SetTaxRequest(entt::entity leaderEntity, int deadlineUnix, int64_t perMemberMoney,
+bool CGuildRenewal::SetTaxRequest(entt::entity leaderEntity, int64_t deadlineUnix, int64_t perMemberMoney,
 	const std::array<uint32_t, 5>& vnums,
 	const std::array<uint32_t, 5>& counts)
 {
@@ -1026,7 +1026,7 @@ bool CGuildRenewal::PayCustom(entt::entity chEntity, int64_t yang, const std::ar
 				Contrib& cc = c.contrib[pid];
 				cc.paidMoney += allowed;
 				cc.paidFlag = 1;
-				cc.lastPayTime = (int)get_global_time();
+				cc.lastPayTime = static_cast<int64_t>(get_global_time());
 				DB_SaveContrib(guildId, pid);
 
 				any = true;
@@ -1119,7 +1119,7 @@ bool CGuildRenewal::PayCustom(entt::entity chEntity, int64_t yang, const std::ar
 		Contrib& cc = c.contrib[pid];
 		cc.paidItemTotal += (int64_t)allowed;
 		cc.paidFlag = 1;
-		cc.lastPayTime = (int)get_global_time();
+		cc.lastPayTime = static_cast<int64_t>(get_global_time());
 		DB_SaveContrib(guildId, pid);
 
 		int reqIdx = -1;

@@ -1186,7 +1186,7 @@ CREATE TABLE IF NOT EXISTS `player`.`guild_renewal_money` (
 CREATE TABLE IF NOT EXISTS `player`.`guild_renewal_tax` (
   `guild_id`         INT UNSIGNED NOT NULL,
   `active`           TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  `deadline`         INT          NOT NULL DEFAULT 0,
+  `deadline`         BIGINT       NOT NULL DEFAULT 0,  -- int64_t unix (2026-10-06 migracio)
   `per_member_money` BIGINT       NOT NULL DEFAULT 0,
   `item1_vnum`       INT UNSIGNED NOT NULL DEFAULT 0,
   `item1_count`      INT UNSIGNED NOT NULL DEFAULT 0,
@@ -1221,7 +1221,7 @@ CREATE TABLE IF NOT EXISTS `player`.`guild_renewal_contrib` (
   `paid_money`      BIGINT       NOT NULL DEFAULT 0,
   `paid_item_total` BIGINT       NOT NULL DEFAULT 0,
   `paid_flag`       TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  `last_pay_time`   INT          NOT NULL DEFAULT 0,
+  `last_pay_time`   BIGINT          NOT NULL DEFAULT 0,  -- int64_t unix (2026-10-06 migracio)
   PRIMARY KEY (`guild_id`, `pid`)
 ) ENGINE=InnoDB;
 

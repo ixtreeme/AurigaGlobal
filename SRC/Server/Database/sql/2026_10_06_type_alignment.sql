@@ -33,3 +33,17 @@ ALTER TABLE `player`.`guild_war_bet`
 
 ALTER TABLE `log`.`money_log`
     MODIFY COLUMN `gold` BIGINT NOT NULL;
+
+-- guild renewal idobelyegek (2038-mentes, int64)
+ALTER TABLE `player`.`guild_renewal_tax`
+    MODIFY COLUMN `deadline` BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE `player`.`guild_renewal_contrib`
+    MODIFY COLUMN `last_pay_time` BIGINT NOT NULL DEFAULT 0;
+
+-- account_mount_inventory: a mento loop ITEM_ATTRIBUTE_MAX_NUM=8-ig jar,
+-- de az attrtype6/attrvalue6 par hianyzik (a 2026_04_15 migracio csak a 7-est
+-- adta hozza). Ha az oszlopok mar leteznek, ez az ALTER hibazik -> kihagyhato.
+ALTER TABLE `account`.`account_mount_inventory`
+    ADD COLUMN `attrtype6` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    ADD COLUMN `attrvalue6` SMALLINT NOT NULL DEFAULT 0;
