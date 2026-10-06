@@ -134,8 +134,8 @@ void CItemCache::OnFlush()
 		char szValues[QUERY_MAX_LEN];
 		char szUpdate[QUERY_MAX_LEN];
 		int iLen = snprintf(szColumns, sizeof(szColumns), "id, owner_id, window, pos, count, vnum");
-		int iValueLen = snprintf(szValues, sizeof(szValues), "%u, %u, %d, %d, %u, %u", p->id, p->owner, p->window, p->pos, p->count, p->vnum);
-		int iUpdateLen = snprintf(szUpdate, sizeof(szUpdate), "owner_id=%u, window=%d, pos=%d, count=%u, vnum=%u", p->owner, p->window, p->pos, p->count, p->vnum);
+		int iValueLen = snprintf(szValues, sizeof(szValues), "%u, %u, '%s', %d, %u, %u", p->id, p->owner, GetItemWindowName(p->window), p->pos, p->count, p->vnum);
+		int iUpdateLen = snprintf(szUpdate, sizeof(szUpdate), "owner_id=%u, window='%s', pos=%d, count=%u, vnum=%u", p->owner, GetItemWindowName(p->window), p->pos, p->count, p->vnum);
 #ifdef ATTR_LOCK
 		iLen += snprintf(szColumns + iLen, sizeof(szColumns) - iLen, ", lockedattr");
 		iValueLen += snprintf(szValues + iValueLen, sizeof(szValues) - iValueLen, ", %d", p->lockedattr);

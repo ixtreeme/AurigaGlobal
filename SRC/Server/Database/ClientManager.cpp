@@ -33,6 +33,20 @@
 #undef max
 #endif
 
+const char* GetItemWindowName(uint8_t window)
+{
+	static const char* const s_names[] = {
+		"INVENTORY", "INVENTORY", "EQUIPMENT", "SAFEBOX", "MALL",
+		"MOUNT_INVENTORY", "DRAGON_SOUL_INVENTORY", "BELT_INVENTORY",
+		"EXTRA_INVENTORY", "SWITCHBOT", "GROUND", "NEW_OFFSHOP", "SHOP_SAFEBOX"
+	};
+
+	if (window < sizeof(s_names) / sizeof(s_names[0]))
+		return s_names[window];
+
+	return "INVENTORY";
+}
+
 #if defined(ENABLE_EXTEND_ITEM_AWARD)
 #include <float.h>
 #include "Core/Logging.hpp"
@@ -1585,7 +1599,7 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 			"attrtype5, attrvalue5, "
 			"attrtype6, attrvalue6, "
 			"attrtype7, attrvalue7) "
-			"VALUES(%u, %u, %d, %d, %u, %u, "
+			"VALUES(%u, %u, '%s', %d, %u, %u, "
 #ifdef ATTR_LOCK
 			"%d, "
 #endif
@@ -1593,7 +1607,7 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 			GetTablePostfix(),
 			p->id,
 			p->owner,
-			p->window,
+			GetItemWindowName(p->window),
 			p->pos,
 			p->count,
 			p->vnum,

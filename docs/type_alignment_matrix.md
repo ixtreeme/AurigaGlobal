@@ -46,7 +46,7 @@ mezöje 4 byte, ott `static_cast<uint32_t>(std::min<int64_t>(value, UINT32_MAX))
 | `attrtypeN` | TINYINT UNSIGNED | uint8_t | OK |
 | `attrvalueN` | SMALLINT | int16_t sValue | OK |
 | `lockedattr` | SMALLINT | int16_t | OK |
-| `window` | ENUM (schema) | uint8_t; kevert `%d`/`'NAME'` iras | Phase 2: mindig nev szerinti write |
+| `window` | ENUM, index 1 = INVENTORY | uint8_t; a DB iras `GetItemWindowName` nevre | Javitva: nevre iras + ENUM sorrend a kodhoz igazitva |
 
 ### 3. Guild (`player.guild`, `guild_war_bet`, `player_index`)
 | Mezö | DB | Rendszer/C++ | Statusz |
@@ -127,6 +127,6 @@ Tovabbi, nem tipus-jellegu elteresek (megnezve, nem javitva):
 - `premiumTimes` (TAccountTable, LoginServer) 2038: 64-bitesites kliens-packet
   egyeztetessel.
 - `char_manager` event idobelyeg (`int cur_Time = time(nullptr)`) 64-bitre.
-- `exp` uint64 nagyon magas XP-hoz; `window` mindig nev szerinti write.
+- `exp` uint64 nagyon magas XP-hoz.
 - `safebox/myshop` 64-bitesitese csak kliens-protokoll frissitessel.
 - A mezonev-drift felszamolasa (opcionális, kliens-oldali atnevezesekkel).

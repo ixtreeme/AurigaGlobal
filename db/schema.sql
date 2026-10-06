@@ -203,17 +203,16 @@ CREATE TABLE IF NOT EXISTS `player`.`player` (
 --   never AUTO_INCREMENT: ids are passed explicitly in every INSERT.
 -- NOTE: owner_id is a player id for INVENTORY/EQUIPMENT rows but an
 --   ACCOUNT id for SAFEBOX/MALL rows (ClientManager.cpp:1009,1543-1551).
--- TODO(verify) `window`: the SQL mixes string and numeric forms:
---   Cache.cpp:149 / ClientManager.cpp:1592 write it numerically (%d),
---   while ClientManager.cpp:811 and 1029 compare/write string literals
---   ('SAFEBOX','MALL','INVENTORY',...).  Only a MySQL ENUM (index based)
---   satisfies both.  The value order below mirrors EWindows
---   (length.h:669-690) for the active build defines.
+-- `window`: MySQL ENUM, index 1 = INVENTORY (EWindows RESERVED_WINDOW=0 is a
+--   sentinel and is never persisted). The Database layer writes the ENUM name
+--   (GetItemWindowName, ClientManager.cpp) and reads it back with `window+0`,
+--   so the ENUM order must match EWindows indices shifted by the missing
+--   RESERVED_WINDOW entry (length.h:669-690, active build defines).
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS `player`.`item` (
   `id`          INT UNSIGNED     NOT NULL,
   `owner_id`    INT UNSIGNED     NOT NULL DEFAULT 0,
-  `window`      ENUM('RESERVED_WINDOW','INVENTORY','EQUIPMENT','SAFEBOX','MALL',
+  `window`      ENUM('INVENTORY','EQUIPMENT','SAFEBOX','MALL',
                      'MOUNT_INVENTORY','DRAGON_SOUL_INVENTORY','BELT_INVENTORY',
                      'EXTRA_INVENTORY','SWITCHBOT','GROUND',
                      'NEW_OFFSHOP','SHOP_SAFEBOX') NOT NULL DEFAULT 'INVENTORY',

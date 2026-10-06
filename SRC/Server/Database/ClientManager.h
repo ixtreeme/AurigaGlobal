@@ -700,6 +700,11 @@ protected:
 #endif
 };
 
+// Maps the in-memory EWindows value (TPlayerItem::window) to the persisted
+// `item.window` ENUM name. The DB ENUM index 1 is INVENTORY (EWindows=1), so
+// the names must be written explicitly instead of the numeric index.
+const char* GetItemWindowName(uint8_t window);
+
 template<class Func>
 Func CClientManager::for_each_peer(Func f)
 {
