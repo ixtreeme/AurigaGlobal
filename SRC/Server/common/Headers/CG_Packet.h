@@ -464,7 +464,7 @@ typedef struct command_safebox_money
 {
 	uint8_t        bHeader;
 	uint8_t        bState;
-	int32_t	lMoney;
+	uint32_t	dwMoney;
 } TPacketCGSafeboxMoney;
 
 typedef struct command_guild

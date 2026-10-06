@@ -273,7 +273,7 @@ typedef struct packet_points
 typedef struct packet_skill_level
 {
 	uint8_t		bHeader;
-	TPlayerSkill	skills[SKILL_MAX_NUM];
+	uint8_t		abSkillLevels[SKILL_MAX_NUM];
 } TPacketGCSkillLevel;
 
 typedef struct packet_point_change
@@ -730,7 +730,7 @@ typedef struct packet_empire
 typedef struct packet_safebox_money_change
 {
 	uint8_t	bHeader;
-	int32_t	lMoney;
+	uint32_t	dwMoney;
 } TPacketGCSafeboxMoneyChange;
 
 typedef struct packet_mount_inventory
@@ -747,7 +747,7 @@ typedef struct packet_mount_inventory_item
 	uint16_t wSlot;
 	uint32_t dwVnum;
 	uint32_t dwCount;
-	int32_t alSockets[ITEM_SOCKET_MAX_NUM];
+	uint32_t alSockets[ITEM_SOCKET_MAX_NUM];
 	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 } TMountInventoryItemData;
 

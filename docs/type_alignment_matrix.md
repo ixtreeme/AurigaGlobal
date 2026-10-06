@@ -99,10 +99,34 @@ mezöje 4 byte, ott `static_cast<uint32_t>(std::min<int64_t>(value, UINT32_MAX))
 - `guild.skill_point`: DB load clamp 0..255 (a wire 1 byte marad).
 - `account_mount_inventory.attrtype6/attrvalue6`: migracio kesz.
 
+## Phase 2b - packet sweep (2026-10-06)
+A szerver `common/Headers/{GC,CG}_Packet.h` es a kliens
+`Launcher/UserInterface/Packet.h` kozos structjai (169 nev) pozicio szerinti
+osszevetese; 43 struct tert el, ebbol tipus-eltres 3 volt:
+
+- `packet_skill_level`: szerver `TPlayerSkill skills[SKILL_MAX_NUM]` (10 byte/skill)
+  vs kliens `uint8_t abSkillLevels[SKILL_MAX_NUM]`. A szerver 2551 byte-ot kuldott,
+  a kliens 256-ot vart -> stream-desync. **Javitva**: a szerver most a kliens
+  shape-et kuld (256 byte, csak a skill szintek).
+- `command_safebox_money`, `packet_safebox_money_change`: `int32_t lMoney` vs
+  kliens `uint32_t dwMoney`. **Javitva**: `uint32_t dwMoney`.
+- `packet_mount_inventory_item.alSockets`: `int32_t[3]` vs kliens `uint32_t[3]`.
+  **Javitva**: `uint32_t` (memcpy bit-azonos).
+
+Tovabbi, nem tipus-jellegu elteresek (megnezve, nem javitva):
+- Mezonev-drift (wire-kompatibilis): `command_attack` (dwVID/dwVictimVID),
+  `command_chat` (size/length), `command_guild`, `packet_party_update`,
+  `packet_main_character*` stb.
+- `command_messenger_remove`: szerver `char login[31]` vs kliens
+  `uint8_t length`; a szerverben nincs CG handlere (P2P külön structot hasznal).
+- `command_player_create`: a kliensnek van egy extra `pin` mezoje a struct
+  vegen; a szerver a sajat (rovidebb) structjat olvassa, a plusz byte-okat
+  figyelmen kivul hagyja.
+
 ## Phase 3 (hatralevo)
-- Packet-structok teljes signedness sweep-je (a kliens `Packet.h`-val parban).
 - `premiumTimes` (TAccountTable, LoginServer) 2038: 64-bitesites kliens-packet
   egyeztetessel.
 - `char_manager` event idobelyeg (`int cur_Time = time(nullptr)`) 64-bitre.
 - `exp` uint64 nagyon magas XP-hoz; `window` mindig nev szerinti write.
 - `safebox/myshop` 64-bitesitese csak kliens-protokoll frissitessel.
+- A mezonev-drift felszamolasa (opcionális, kliens-oldali atnevezesekkel).

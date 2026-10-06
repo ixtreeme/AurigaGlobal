@@ -303,7 +303,8 @@ void SendSkillLevelPacket(entt::entity e)
 
     TPacketGCSkillLevel packet {};
     packet.bHeader = HEADER_GC_SKILL_LEVEL;
-    std::copy_n(levels->levels.begin(), SKILL_MAX_NUM, packet.skills);
+    for (size_t i = 0; i < SKILL_MAX_NUM; ++i)
+        packet.abSkillLevels[i] = levels->levels[i].bLevel;
     session->desc->Packet(&packet, sizeof(packet));
 }
 
