@@ -1,9 +1,9 @@
 #include "stdafx.h"
+#include "DatabaseConfig.h"
 #include "GuildManager.h"
 #include "Main.h"
 #include "ClientManager.h"
 #include "QID.h"
-#include "Config.h"
 #include <math.h>
 
 extern std::string g_stLocale;
@@ -176,16 +176,16 @@ void CGuildManager::Initialize()
 
 	char str[128 + 1];
 
-	if (!CConfig::instance().GetValue("POLY_POWER", str, sizeof(str)))
-		*str = '\0';
+	snprintf(str, sizeof(str), "%u %u",
+		DbConfig().guild.polyPower[0], DbConfig().guild.polyPower[1]);
 
 	if (!polyPower.Analyze(str))
 		LOG_ERROR("cannot set power poly: {}", str);
 	else
 		LOG_INFO("POWER_POLY: {}", str);
 
-	if (!CConfig::instance().GetValue("POLY_HANDICAP", str, sizeof(str)))
-		*str = '\0';
+	snprintf(str, sizeof(str), "%u %u",
+		DbConfig().guild.polyHandicap[0], DbConfig().guild.polyHandicap[1]);
 
 	if (!polyHandicap.Analyze(str))
 		LOG_ERROR("cannot set handicap poly: {}", str);

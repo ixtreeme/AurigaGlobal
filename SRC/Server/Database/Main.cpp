@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "Config.h"
 #include "Peer.h"
 #include "DBManager.h"
 #include "ClientManager.h"
+#include "DatabaseConfig.h"
 #include "GuildManager.h"
 #include "ItemAwardManager.h"
 #include "PrivManager.h"
@@ -85,7 +85,6 @@ int main()
 	_malloc_options = "A";
 #endif
 
-	CConfig Config;
 	ThecoreShutdownGuard thecoreShutdownGuard;
 	CDBManager DBManager;
 	CClientManager ClientManager;
@@ -141,234 +140,108 @@ void emptybeat(LPHEART heart, int pulse)
 //
 int Start()
 {
-	if (!CConfig::instance().LoadFile("conf.txt"))
+	if (!DbConfig().Load("conf.json"))
 	{
-		LOG_ERROR("Loading conf.txt failed.");
+		LOG_ERROR("Loading conf.json failed.");
 		return false;
 	}
 
-	if (!CConfig::instance().GetValue("TEST_SERVER", &g_test_server))
-	{
-		LOG_ERROR("Real Server");
-	}
-	else
-		LOG_ERROR("Test Server");
+	g_test_server = DbConfig().server.test ? TRUE : FALSE;
+	LOG_ERROR(DbConfig().server.test ? "Test Server" : "Real Server");
 
-	if (!CConfig::instance().GetValue("LOG", &g_log))
-	{
-		LOG_ERROR("Log Off");
-		g_log= 0;
-	}
-	else
-	{
-		g_log = 1;
-		LOG_ERROR("Log On");
-	}
+	g_log = DbConfig().server.log ? 1 : 0;
+	LOG_ERROR(g_log ? "Log On" : "Log Off");
 
-
-	int tmpValue;
-
-	int heart_beat = 50;
-	if (!CConfig::instance().GetValue("CLIENT_HEART_FPS", &heart_beat))
-	{
-		LOG_ERROR("Cannot find CLIENT_HEART_FPS configuration.");
-		return false;
-	}
+	const int heart_beat = DbConfig().server.clientHeartFps;
 
 	log_set_expiration_days(3);
 
-	if (CConfig::instance().GetValue("LOG_KEEP_DAYS", &tmpValue))
+	if (const int logKeepDays = DbConfig().server.logKeepDays; logKeepDays > 0)
 	{
-		tmpValue = MINMAX(3, tmpValue, 30);
-		log_set_expiration_days(tmpValue);
-		LOG_ERROR("Setting log keeping days to {}", tmpValue);
+		const int effective = MINMAX(3, logKeepDays, 30);
+		log_set_expiration_days(effective);
+		LOG_ERROR("Setting log keeping days to {}", effective);
 	}
 
 	thecore_init(heart_beat, emptybeat);
 	signal_timer_enable(60);
 
-	char szBuf[256+1];
+	g_stLocale = DbConfig().server.locale;
+	LOG_INFO("LOCALE set to {}", g_stLocale.c_str());
 
-	if (CConfig::instance().GetValue("LOCALE", szBuf, 256))
-	{
-		g_stLocale = szBuf;
-		LOG_INFO("LOCALE set to {}", g_stLocale.c_str());
-	}
+	SetTablePostfix(DbConfig().server.tablePostfix.c_str());
 
-	if (!CConfig::instance().GetValue("TABLE_POSTFIX", szBuf, 256))
-	{
-		LOG_INFO("TABLE_POSTFIX not configured use default"); // @warme012
-		szBuf[0] = '\0';
-	}
+	g_iPlayerCacheFlushSeconds = DbConfig().cache.playerFlushSeconds;
+	LOG_INFO("PLAYER_CACHE_FLUSH_SECONDS: {}", g_iPlayerCacheFlushSeconds);
 
-	SetTablePostfix(szBuf);
+	g_iItemCacheFlushSeconds = DbConfig().cache.itemFlushSeconds;
+	LOG_INFO("ITEM_CACHE_FLUSH_SECONDS: {}", g_iItemCacheFlushSeconds);
 
-	if (CConfig::instance().GetValue("PLAYER_CACHE_FLUSH_SECONDS", szBuf, 256))
-	{
-		str_to_number(g_iPlayerCacheFlushSeconds, szBuf);
-		LOG_INFO("PLAYER_CACHE_FLUSH_SECONDS: {}", g_iPlayerCacheFlushSeconds);
-	}
+	g_iItemPriceListTableCacheFlushSeconds = DbConfig().cache.pricelistFlushSeconds;
+	LOG_INFO("ITEM_PRICELIST_CACHE_FLUSH_SECONDS: {}", g_iItemPriceListTableCacheFlushSeconds);
 
-	if (CConfig::instance().GetValue("ITEM_CACHE_FLUSH_SECONDS", szBuf, 256))
-	{
-		str_to_number(g_iItemCacheFlushSeconds, szBuf);
-		LOG_INFO("ITEM_CACHE_FLUSH_SECONDS: {}", g_iItemCacheFlushSeconds);
-	}
+	CClientManager::instance().SetCacheFlushCountLimit(DbConfig().cache.flushLimitPerSecond);
 
-	// MYSHOP_PRICE_LIST
-	if (CConfig::instance().GetValue("ITEM_PRICELIST_CACHE_FLUSH_SECONDS", szBuf, 256))
-	{
-		str_to_number(g_iItemPriceListTableCacheFlushSeconds, szBuf);
-		LOG_INFO("ITEM_PRICELIST_CACHE_FLUSH_SECONDS: {}", g_iItemPriceListTableCacheFlushSeconds);
-	}
-	// END_OF_MYSHOP_PRICE_LIST
-	//
-	if (CConfig::instance().GetValue("CACHE_FLUSH_LIMIT_PER_SECOND", szBuf, 256))
-	{
-		uint32_t dwVal = 0; str_to_number(dwVal, szBuf);
-		CClientManager::instance().SetCacheFlushCountLimit(dwVal);
-	}
-
-	int iIDStart;
-	if (!CConfig::instance().GetValue("PLAYER_ID_START", &iIDStart))
+	if (DbConfig().server.playerIdStart == 0)
 	{
 		LOG_ERROR("PLAYER_ID_START not configured");
 		return false;
 	}
 
-	CClientManager::instance().SetPlayerIDStart(iIDStart);
+	CClientManager::instance().SetPlayerIDStart(static_cast<int>(DbConfig().server.playerIdStart));
 
-	if (CConfig::instance().GetValue("NAME_COLUMN", szBuf, 256))
-	{
-		LOG_ERROR("{} {}", g_stLocaleNameColumn.c_str(), szBuf);
-		g_stLocaleNameColumn = szBuf;
-	}
+	g_stLocaleNameColumn = DbConfig().server.nameColumn;
+	LOG_ERROR("NAME_COLUMN {}", g_stLocaleNameColumn.c_str());
 
-	if (CConfig::instance().GetValue("INTERSERVER_KEY", szBuf, 256))
-	{
-		PeerAuth::SetKey(szBuf);
-	}
+	if (!DbConfig().server.interserverKey.empty())
+		PeerAuth::SetKey(DbConfig().server.interserverKey);
 
 #ifdef ENABLE_BATTLE_PASS
-	if (CConfig::instance().GetValue("CURRENT_BATTLE_PASS_ID", szBuf, 256))
-	{
-		str_to_number(g_iCurrentBattlePassId, szBuf);
-		LOG_INFO("CURRENT_BATTLE_PASS_ID: {}", g_iCurrentBattlePassId);
-	}
+	g_iCurrentBattlePassId = DbConfig().server.currentBattlePassId;
+	LOG_INFO("CURRENT_BATTLE_PASS_ID: {}", g_iCurrentBattlePassId);
 #endif
 
-	char szAddr[64], szDB[64], szUser[64], szPassword[64];
-	int iPort;
-	char line[256+1];
-
-	if (CConfig::instance().GetValue("SQL_PLAYER", line, 256))
+	auto connectSql = [](int slot, const SqlConnectionConfig& sql, const char* label)
 	{
-		sscanf(line, " %s %s %s %s %d ", szAddr, szDB, szUser, szPassword, &iPort);
-		LOG_INFO("connecting to MySQL server (player)");
+		LOG_INFO("connecting to MySQL server ({})", label);
 
 		int iRetry = 5;
 
 		do
 		{
-			if (CDBManager::instance().Connect(SQL_PLAYER, szAddr, iPort, szDB, szUser, szPassword))
+			if (CDBManager::instance().Connect(slot, sql.host.c_str(), sql.port, sql.database.c_str(), sql.user.c_str(), sql.password.c_str()))
 			{
 				LOG_INFO("   OK");
-				break;
+				return true;
 			}
 
 			LOG_INFO("   failed, retrying in 5 seconds");
 			LOG_ERROR("   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
-		LOG_ERROR("Success PLAYER");
-		SetPlayerDBName(szDB);
-	}
-	else
+
+		return false;
+	};
+
+	if (!connectSql(SQL_PLAYER, DbConfig().sql.player, "player"))
 	{
 		LOG_ERROR("SQL_PLAYER not configured");
 		return false;
 	}
 
-	if (CConfig::instance().GetValue("SQL_ACCOUNT", line, 256))
-	{
-		sscanf(line, " %s %s %s %s %d ", szAddr, szDB, szUser, szPassword, &iPort);
-		LOG_INFO("connecting to MySQL server (account)");
+	SetPlayerDBName(DbConfig().sql.player.database.c_str());
 
-		int iRetry = 5;
-
-		do
-		{
-			if (CDBManager::instance().Connect(SQL_ACCOUNT, szAddr, iPort, szDB, szUser, szPassword))
-			{
-				LOG_INFO("   OK");
-				break;
-			}
-
-			LOG_INFO("   failed, retrying in 5 seconds");
-			LOG_ERROR("   failed, retrying in 5 seconds");
-			sleep(5);
-		} while (iRetry--);
-		LOG_ERROR("Success ACCOUNT");
-	}
-	else
+	if (!connectSql(SQL_ACCOUNT, DbConfig().sql.account, "account"))
 	{
 		LOG_ERROR("SQL_ACCOUNT not configured");
 		return false;
 	}
 
-	if (CConfig::instance().GetValue("SQL_COMMON", line, 256))
-	{
-		sscanf(line, " %s %s %s %s %d ", szAddr, szDB, szUser, szPassword, &iPort);
-		LOG_INFO("connecting to MySQL server (common)");
-
-		int iRetry = 5;
-
-		do
-		{
-			if (CDBManager::instance().Connect(SQL_COMMON, szAddr, iPort, szDB, szUser, szPassword))
-			{
-				LOG_INFO("   OK");
-				break;
-			}
-
-			LOG_INFO("   failed, retrying in 5 seconds");
-			LOG_ERROR("   failed, retrying in 5 seconds");
-			sleep(5);
-		} while (iRetry--);
-		LOG_ERROR("Success COMMON");
-	}
-	else
+	if (!connectSql(SQL_COMMON, DbConfig().sql.common, "common"))
 	{
 		LOG_ERROR("SQL_COMMON not configured");
 		return false;
 	}
-
-	/*if (CConfig::instance().GetValue("SQL_ITEMSHOP", line, 256))
-	{
-		sscanf(line, " %s %s %s %s %d ", szAddr, szDB, szUser, szPassword, &iPort);
-		LOG_INFO("connecting to MySQL server (common)");
-
-		int iRetry = 5;
-
-		do
-		{
-			if (CDBManager::instance().Connect(SQL_ITEMSHOP, szAddr, iPort, szDB, szUser, szPassword))
-			{
-				LOG_INFO("   OK");
-				break;
-			}
-
-			LOG_INFO("   failed, retrying in 5 seconds");
-			LOG_INFO("   failed, retrying in 5 seconds");
-			sleep(5);
-		} while (iRetry--);
-		LOG_INFO("Success ITEMSHOP");
-	}
-	else
-	{
-		LOG_ERROR("SQL_ITEMSHOP not configured");
-		return false;
-	}*/
 
 	LOG_INFO("ClientManager initialization.. ");
 
@@ -389,7 +262,6 @@ int Start()
 	signal(SIGSEGV, emergency_sig);
 	return true;
 }
-
 void SetTablePostfix(const char* c_pszTablePostfix)
 {
 	if (!c_pszTablePostfix || !*c_pszTablePostfix)

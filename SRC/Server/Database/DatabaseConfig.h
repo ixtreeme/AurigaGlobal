@@ -35,6 +35,9 @@ struct SqlConnectionConfig
 
 struct DatabaseConfig
 {
+	// [start_item_id, end_item_id]
+	uint32_t itemIdRange[2] { 0, 0 };
+
 	struct ServerConfig
 	{
 		bool		test { false };
@@ -85,3 +88,6 @@ struct DatabaseConfig
 
 	bool Load(const char* path);
 };
+
+// Process-wide configuration instance, loaded once at startup.
+DatabaseConfig& DbConfig();

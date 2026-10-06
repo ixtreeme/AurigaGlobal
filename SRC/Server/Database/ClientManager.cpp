@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "DatabaseConfig.h"
 #include <common/CommonDefines.h>
 
 #include <Core/peer_auth.h>
@@ -13,7 +14,6 @@
 #include <algorithm>
 
 #include "Main.h"
-#include "Config.h"
 #include "DBManager.h"
 #include "QID.h"
 #include "GuildManager.h"
@@ -309,15 +309,12 @@ bool CClientManager::Initialize()
 	//END_ITEM_UNIQUE_ID
 
 #ifdef ENABLE_PROTO_FROM_DB
-	int iTemp;
-	if (CConfig::instance().GetValue("PROTO_FROM_DB", &iTemp))
+	bIsProtoReadFromDB = DbConfig().proto.fromDb;
+	LOG_INFO("PROTO_FROM_DB: {}", bIsProtoReadFromDB?"Enabled":"Disabled");
+
+	if (!bIsProtoReadFromDB)
 	{
-		bIsProtoReadFromDB = !!iTemp;
-		LOG_INFO("PROTO_FROM_DB: {}", bIsProtoReadFromDB?"Enabled":"Disabled");
-	}
-	if (!bIsProtoReadFromDB && CConfig::instance().GetValue("MIRROR2DB", &iTemp))
-	{
-		g_bMirror2DB = !!iTemp;
+		g_bMirror2DB = DbConfig().proto.mirror2db;
 		LOG_INFO("MIRROR2DB: {}", g_bMirror2DB?"Enabled":"Disabled");
 	}
 #endif
@@ -329,13 +326,10 @@ bool CClientManager::Initialize()
 
 	CGuildManager::instance().BootReserveWar();
 
-	if (!CConfig::instance().GetValue("BIND_PORT", &tmpValue))
-		tmpValue = 5300;
+	tmpValue = DbConfig().network.bindPort;
 
 	char szBindIP[128];
-
-	if (!CConfig::instance().GetValue("BIND_IP", szBindIP, 128))
-		strlcpy(szBindIP, "0", sizeof(szBindIP));
+	strlcpy(szBindIP, DbConfig().network.bindIp.c_str(), sizeof(szBindIP));
 
 	boost::system::error_code ec;
 	auto address = boost::asio::ip::make_address(szBindIP, ec);
@@ -372,18 +366,13 @@ bool CClientManager::Initialize()
 	LOG_INFO("ACCEPT_HANDLE: {}", tmpValue);
 	DoAccept();
 
-	if (!CConfig::instance().GetValue("BACKUP_LIMIT_SEC", &tmpValue))
-		tmpValue = 600;
-
 	m_looping = true;
 
-	// if (!CConfig::instance().GetValue("PLAYER_DELETE_LEVEL_LIMIT", &m_iPlayerDeleteLevelLimit))
 	// {
 		// LOG_ERROR("conf.txt: Cannot find PLAYER_DELETE_LEVEL_LIMIT, use default level {}", PLAYER_MAX_LEVEL_CONST + 1);
 		// m_iPlayerDeleteLevelLimit = PLAYER_MAX_LEVEL_CONST + 1;
 	// }
 
-	// if (!CConfig::instance().GetValue("PLAYER_DELETE_LEVEL_LIMIT_LOWER", &m_iPlayerDeleteLevelLimitLower))
 	// {
 		// m_iPlayerDeleteLevelLimitLower = 0;
 	// }
@@ -3628,11 +3617,12 @@ uint64_t CClientManager::GetCurrentTime()
 // ITEM_UNIQUE_ID
 bool CClientManager::InitializeNowItemID()
 {
-	uint32_t dwMin, dwMax;
+	const uint32_t dwMin = DbConfig().itemIdRange[0];
+	const uint32_t dwMax = DbConfig().itemIdRange[1];
 
-	if (!CConfig::instance().GetTwoValue("ITEM_ID_RANGE", &dwMin, &dwMax))
+	if (dwMin == 0 || dwMax == 0)
 	{
-		LOG_ERROR("conf.txt: Cannot find ITEM_ID_RANGE [start_item_id] [end_item_id]");
+		LOG_ERROR("conf.json: item_id_range [start_item_id, end_item_id] is missing");
 		return false;
 	}
 

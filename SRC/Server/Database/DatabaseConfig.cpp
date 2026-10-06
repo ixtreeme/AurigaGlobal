@@ -7,6 +7,12 @@
 
 #include <fstream>
 
+DatabaseConfig& DbConfig()
+{
+	static DatabaseConfig s_config;
+	return s_config;
+}
+
 namespace
 {
 	void LoadSqlConnection(const nlohmann::json& section, SqlConnectionConfig& out)
@@ -64,6 +70,13 @@ bool DatabaseConfig::Load(const char* path)
 			network.bindIp = n.value("bind_ip", std::string("0.0.0.0"));
 			network.bindPort = static_cast<uint16_t>(n.value("bind_port", 5300));
 			network.backupLimitSec = n.value("backup_limit_sec", 600);
+		}
+
+		if (doc.contains("item_id_range") && doc.at("item_id_range").is_array())
+		{
+			const auto& v = doc.at("item_id_range");
+			itemIdRange[0] = v.size() > 0 ? v[0].get<uint32_t>() : 0u;
+			itemIdRange[1] = v.size() > 1 ? v[1].get<uint32_t>() : 0u;
 		}
 
 		if (doc.contains("sql"))

@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "Main.h"
-#include "Config.h"
 #include "DBManager.h"
 #include "QID.h"
 #include "Peer.h"
