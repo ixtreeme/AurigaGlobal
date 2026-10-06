@@ -56,12 +56,12 @@ inline void AttackAffect(entt::entity attacker,
                 return;
 			if (test_server)
 			{
-				ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
+				ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%lld%%) SUCCESS", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
 			}
 		}
 		else if (test_server)
 		{
-			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
+			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%lld%%) FAIL", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
 		}
 	}
 }

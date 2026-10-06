@@ -2585,7 +2585,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	if (ecs::PlayerRuntime::GetMobRank(victim) >= MOB_RANK_BOSS && hasKiller && ecs::PlayerRuntime::IsPC(killer))
 	{
 		char buf[51];
-		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, ecs::PlayerRuntime::GetMapIndex(killer));
+		snprintf(buf, sizeof(buf), "%d %d", g_bChannel, ecs::PlayerRuntime::GetMapIndex(killer));
 		if (ecs::PlayerRuntime::IsStone(victim))
 			LogManager::instance().CharLog(killer, ecs::PlayerRuntime::GetRaceNum(victim), "STONE_KILL", buf);
 		else

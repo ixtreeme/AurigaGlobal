@@ -166,7 +166,7 @@ class CProfiler : public singleton<CProfiler>
 				for (int i = 0; i < rProfileStackData.iCallStep; ++i)
 					fprintf(fp, "\t");
 
-				fprintf(fp, "%-24s: %lu\n", rProfileStackData.strName.c_str(), rProfileStackData.iEndTime - rProfileStackData.iStartTime);
+				fprintf(fp, "%-24s: %d\n", rProfileStackData.strName.c_str(), rProfileStackData.iEndTime - rProfileStackData.iStartTime);
 			}
 
 			fprintf(fp, "Name                                 Call/Load       Ratio\n");

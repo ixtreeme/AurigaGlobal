@@ -803,7 +803,7 @@ bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
     desc->Packet(&p, sizeof(TPacketGCWarp));
 
     char buf[256];
-    snprintf(buf, sizeof(buf), "%s MapIdx %ld DestMapIdx%ld DestX%ld DestY%ld Empire%d", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), lPrivateMapIndex, x, y, ecs::PlayerRuntime::GetEmpire(e));
+	snprintf(buf, sizeof(buf), "%s MapIdx %d DestMapIdx%d DestX%d DestY%d Empire%d", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), lPrivateMapIndex, x, y, ecs::PlayerRuntime::GetEmpire(e));
     LogManager::instance().CharLog(e, 0, "WARP", buf);
 
     return true;
@@ -878,7 +878,7 @@ namespace {
 
             char szTmp[64];
 
-            if (3 != sscanf(ecs::PlayerRuntime::GetName(warp).data(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
+            if (3 != sscanf(ecs::PlayerRuntime::GetName(warp).data(), " %s %d %d ", szTmp, &m_lTargetX, &m_lTargetY))
             {
                 if (number(1, 100) < 5)
                     LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", ecs::PlayerRuntime::GetRaceNum(warp), ecs::PlayerRuntime::GetName(warp).data());

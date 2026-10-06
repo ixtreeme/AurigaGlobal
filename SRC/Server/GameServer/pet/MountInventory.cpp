@@ -178,7 +178,7 @@ void SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
             ", attrtype%d, attrvalue%d", i, i));
 
     len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
-        ") VALUES(%u, %u, %u, %u, %u, %ld, %ld, %ld",
+		") VALUES(%u, %u, %u, %u, %u, %d, %d, %d",
         ItemSystem::GetItemID(itemEntity),
         AccountId(inventory),
         pos,

@@ -3569,7 +3569,7 @@ bool ecs::MovementSystem::SwitchChannel(entt::entity e, int32_t newAddr, uint16_
     ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(p));
 
     char buf[256];
-    snprintf(buf, sizeof(buf), "%s Port%d Map%ld x%ld y%ld", std::string(ecs::PlayerRuntime::GetName(e)).c_str(), wPort, ecs::PlayerRuntime::GetMapIndex(e), x, y);
+    snprintf(buf, sizeof(buf), "%s Port%d Map%d x%d y%d", std::string(ecs::PlayerRuntime::GetName(e)).c_str(), wPort, ecs::PlayerRuntime::GetMapIndex(e), x, y);
     LogManager::instance().CharLog(e, 0, "CHANGE_CH", buf);
 
     return true;

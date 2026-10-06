@@ -4099,7 +4099,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			SetItemForceAttributeEcs(petItem, 2, 1, GetItemAttributeType(item, 2));
 
 			char query[256];
-			snprintf(query, sizeof(query), "SELECT tduration FROM player.new_petsystem WHERE id = %ld", GetItemSocket(item, 1));
+			snprintf(query, sizeof(query), "SELECT tduration FROM player.new_petsystem WHERE id = %u", GetItemSocket(item, 1));
 			std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(query));
 			if (pmsg->Get()->uiNumRows > 0) {
 				MYSQL_ROW row = pmsg->Get()->FetchRow();
@@ -4116,7 +4116,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #else
 			SetItemSocket(petItem, 1, GetItemAttributeType(item, 0));
 #endif
-			DBManager::instance().Query("UPDATE player.new_petsystem SET id = %d WHERE id = %ld", GetItemID(petItem), GetItemSocket(item, 1));
+			DBManager::instance().Query("UPDATE player.new_petsystem SET id = %d WHERE id = %u", GetItemID(petItem), GetItemSocket(item, 1));
 			ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 857, "%s", GetItemName(item));
@@ -5008,11 +5008,11 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				{
 					if (GetItemVnum(item) == DRAGON_HEART_VNUM)
 					{
-						sprintf(buf, "Inc %ds by item{VN:%d SOC%d:%ld}", ret, GetItemVnum(item), ITEM_SOCKET_CHARGING_AMOUNT_IDX, GetItemSocket(item, ITEM_SOCKET_CHARGING_AMOUNT_IDX));
+						sprintf(buf, "Inc %ds by item{VN:%d SOC%d:%u}", ret, GetItemVnum(item), ITEM_SOCKET_CHARGING_AMOUNT_IDX, GetItemSocket(item, ITEM_SOCKET_CHARGING_AMOUNT_IDX));
 					}
 					else
 					{
-						sprintf(buf, "Inc %ds by item{VN:%d VAL%d:%ld}", ret, GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
+						sprintf(buf, "Inc %ds by item{VN:%d VAL%d:%d}", ret, GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -5026,11 +5026,11 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				{
 					if (GetItemVnum(item) == DRAGON_HEART_VNUM)
 					{
-						sprintf(buf, "No change by item{VN:%d SOC%d:%ld}", GetItemVnum(item), ITEM_SOCKET_CHARGING_AMOUNT_IDX, GetItemSocket(item, ITEM_SOCKET_CHARGING_AMOUNT_IDX));
+						sprintf(buf, "No change by item{VN:%d SOC%d:%u}", GetItemVnum(item), ITEM_SOCKET_CHARGING_AMOUNT_IDX, GetItemSocket(item, ITEM_SOCKET_CHARGING_AMOUNT_IDX));
 					}
 					else
 					{
-						sprintf(buf, "No change by item{VN:%d VAL%d:%ld}", GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
+						sprintf(buf, "No change by item{VN:%d VAL%d:%d}", GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -5061,7 +5061,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 670, "%s#%d", GetItemName(pDestItem), ret);
 #endif
-					sprintf(buf, "Increase %ds by item{VN:%d VAL%d:%ld}", ret, GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
+					sprintf(buf, "Increase %ds by item{VN:%d VAL%d:%d}", ret, GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
 					LogManager::instance().ItemLogEntity(e, item, "DS_CHARGING_SUCCESS", buf);
 					ConsumeItemEcs(itemEntity);
 					return true;
@@ -5071,7 +5071,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 671, "%s", GetItemName(pDestItem));
 #endif
-					sprintf(buf, "No change by item{VN:%d VAL%d:%ld}", GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
+					sprintf(buf, "No change by item{VN:%d VAL%d:%d}", GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
 					LogManager::instance().ItemLogEntity(e, item, "DS_CHARGING_FAILED", buf);
 					return false;
 				}
@@ -7717,7 +7717,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 			SetItemSocket(item2, 1, iNewDuration);
 			SetItemSocket(item2, 2, iNewDuration);
-			DBManager::instance().Query("UPDATE player.new_petsystem SET duration = %d, tduration = %d WHERE id = %lu ", iNewDuration, iNewDuration, GetItemID(item2));
+			DBManager::instance().Query("UPDATE player.new_petsystem SET duration = %d, tduration = %d WHERE id = %u ", iNewDuration, iNewDuration, GetItemID(item2));
 
 			{
 				char buf[21];
@@ -7793,7 +7793,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					iMax = iValue + 5 > 100 ? 100 : iValue + 5;
 
 				SetItemForceAttributeEcs(item2, idx, 1, iMax);
-				DBManager::instance().Query("UPDATE player.new_petsystem SET bonus%d = %d WHERE id = %lu ", idx, iMax, GetItemID(item2));
+				DBManager::instance().Query("UPDATE player.new_petsystem SET bonus%d = %d WHERE id = %u ", idx, iMax, GetItemID(item2));
 
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 61, "");

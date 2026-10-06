@@ -1081,7 +1081,7 @@ ACMD(do_state)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", buf);
 
 	int len;
-	len = snprintf(buf, sizeof(buf), "Coordinate %ldx%ld (%ldx%ld)",
+	len = snprintf(buf, sizeof(buf), "Coordinate %dx%d (%dx%d)",
 			ecs::PlayerRuntime::GetX(tch), ecs::PlayerRuntime::GetY(tch), ecs::PlayerRuntime::GetX(tch) / 100, ecs::PlayerRuntime::GetY(tch) / 100);
 
 	if (len < 0 || len >= (int) sizeof(buf))
@@ -1093,7 +1093,7 @@ ACMD(do_state)
 	if (pSec && map)
 	{
 		const TMapSetting& map_setting = map->m_setting;
-		snprintf(buf + len, sizeof(buf) - len, " MapIndex %ld Attribute %08X Local Position (%ld x %ld)",
+		snprintf(buf + len, sizeof(buf) - len, " MapIndex %d Attribute %08X Local Position (%d x %d)",
 			ecs::PlayerRuntime::GetMapIndex(tch), pSec->GetAttribute(ecs::PlayerRuntime::GetX(tch), ecs::PlayerRuntime::GetY(tch)), (ecs::PlayerRuntime::GetX(tch) - map_setting.iBaseX)/100, (ecs::PlayerRuntime::GetY(tch) - map_setting.iBaseY)/100);
 	}
 

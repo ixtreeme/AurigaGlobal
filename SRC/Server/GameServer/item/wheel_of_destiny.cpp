@@ -40,7 +40,7 @@ CWheelDestiny::CWheelDestiny(entt::entity owner)
 {
 	const entt::entity chEntity = m_owner;
 	for (auto i = 0; i < WheelItemMax; i++)
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %lu %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %u %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ecs::PlayerRuntime::GetWheelFreeCount(m_owner));
 }
 
@@ -99,7 +99,7 @@ void CWheelDestiny::TurnWheel()
 		ecs::PointSystem::Change(chEntity, POINT_GOLD, -WheelPrice);
 
 	//vnum, count, spin count, pos
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_TURN %lu %d %d %d", GetGiftVnum(), GetGiftCount(), number(1, 8), Rand);
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_TURN %u %d %d %d", GetGiftVnum(), GetGiftCount(), number(1, 8), Rand);
 
 	turn_count++;
 }

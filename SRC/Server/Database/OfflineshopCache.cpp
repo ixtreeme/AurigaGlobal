@@ -1302,7 +1302,7 @@ namespace offlineshop
 
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
-				",%ld ", rItem.item.alSockets[i]);
+				",%d ", rItem.item.alSockets[i]);
 
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
@@ -1445,7 +1445,7 @@ namespace offlineshop
 
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
-				",%ld ", item.alSockets[i]);
+				",%d ", item.alSockets[i]);
 
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
@@ -1666,7 +1666,7 @@ namespace offlineshop
 
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
-				",%ld ", auction.item.alSockets[i]);
+				",%d ", auction.item.alSockets[i]);
 
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
