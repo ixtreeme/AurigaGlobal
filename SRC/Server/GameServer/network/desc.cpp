@@ -132,20 +132,17 @@ void DESC::Destroy()
 	event_cancel(&m_pkPingEvent);
 	event_cancel(&m_pkDisconnectEvent);
 
-	if (true)
+	if (m_accountTable.login[0] && m_accountTable.passwd[0])
 	{
-		if (m_accountTable.login[0] && m_accountTable.passwd[0])
-		{
-			TLogoutPacket pack;
+		TLogoutPacket pack;
 
-			strlcpy(pack.login, m_accountTable.login, sizeof(pack.login));
-			strlcpy(pack.passwd, m_accountTable.passwd, sizeof(pack.passwd));
+		strlcpy(pack.login, m_accountTable.login, sizeof(pack.login));
+		strlcpy(pack.passwd, m_accountTable.passwd, sizeof(pack.passwd));
 
-			db_clientdesc->DBPacket(HEADER_GD_LOGOUT, m_dwHandle, &pack, sizeof(TLogoutPacket));
-		}
-
-		CShutdownManager::instance().RemoveDesc((LPDESC)this);
+		db_clientdesc->DBPacket(HEADER_GD_LOGOUT, m_dwHandle, &pack, sizeof(TLogoutPacket));
 	}
+
+	CShutdownManager::instance().RemoveDesc((LPDESC)this);
 
 	if (IsConnected())
 	{

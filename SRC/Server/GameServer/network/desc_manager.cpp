@@ -430,16 +430,6 @@ LPDESC DESC_MANAGER::AcceptDesc(auriga::net::tcp::socket&& s)
 	char host[MAX_HOST_LENGTH + 1];
 	strlcpy(host, endpoint.address().to_string().c_str(), sizeof(host));
 
-	if (false)
-	{
-		if (IsBanIP(peer.sin_addr))
-		{
-			LOG_INFO("connection from {} was banned.", host);
-			s.close(ec);
-			return nullptr;
-		}
-	}
-
 	if (!IsValidIP(admin_ip, host))
 	{
 		if (m_iSocketsConnected >= MAX_ALLOW_USER) {

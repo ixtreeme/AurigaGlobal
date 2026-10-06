@@ -92,10 +92,7 @@ namespace quest
 
 	bool CQuestManager::Initialize()
 	{
-		if (false)
-			return true;
-
-		if (!InitializeLua())
+				if (!InitializeLua())
 			return false;
 
 		m_mapEventName.insert(TEventNameMap::value_type("click", QUEST_CLICK_EVENT));

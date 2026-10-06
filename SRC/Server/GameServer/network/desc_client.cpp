@@ -17,15 +17,12 @@
 #include <common/CommonDefines.h>
 
 LPCLIENT_DESC db_clientdesc = nullptr;
-LPCLIENT_DESC g_pkAuthMasterDesc = nullptr;
 LPCLIENT_DESC g_NetmarbleDBDesc = nullptr;
 
 
 static const char* GetKnownClientDescName(LPCLIENT_DESC desc) {
 	if (desc == db_clientdesc) {
 		return "db_clientdesc";
-	} else if (desc == g_pkAuthMasterDesc) {
-		return "g_pkAuthMasterDesc";
 	} else if (desc == g_NetmarbleDBDesc) {
 		return "g_NetmarbleDBDesc";
 	} 
@@ -196,7 +193,6 @@ void CLIENT_DESC::SetPhase(int iPhase)
 			{
 				LOG_INFO("PHASE_DBCLIENT");
 
-				if (true)
 				{
 					static bool bSentBoot = false;
 
@@ -218,7 +214,6 @@ void CLIENT_DESC::SetPhase(int iPhase)
 				memset(&p, 0, sizeof(p));
 				strlcpy(p.szPublicIP, g_szPublicIP, sizeof(p.szPublicIP));
 
-				if (true)
 				{
 					p.bChannel	= g_bChannel;
 					p.wListenPort = mother_port;
@@ -276,11 +271,7 @@ void CLIENT_DESC::SetPhase(int iPhase)
 					CPartyManager::instance().EnablePCParty();
 					//CPartyManager::instance().SendPartyToDB();
 				}
-				else
-				{
-					p.bAuthServer = true;
-					buf.write(&p, sizeof(p));
-				}
+				
 
 				DBPacket(HEADER_GD_SETUP, 0, buf.read_peek(), buf.size());
 				m_pInputProcessor = &m_inputDB;
@@ -351,7 +342,7 @@ bool CLIENT_DESC::IsRetryWhenClosed()
 
 void CLIENT_DESC::Update(uint32_t t)
 {
-	if (true) {
+	{
 		UpdateChannelStatus(t, false);
 	}
 }

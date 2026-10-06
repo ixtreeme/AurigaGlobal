@@ -84,9 +84,6 @@ class DBManager : public singleton<DBManager>
 		void			SendMoneyLog(uint8_t type, uint32_t vnum, int64_t gold);
 
 
-		void			LoginPrepare(LPDESC d, uint32_t * pdwClientKey, int * paiPremiumTimes = nullptr);
-		void			SendAuthLogin(LPDESC d);
-		void			SendLoginPing(const char * c_pszLogin);
 
 		void			InsertLoginData(CLoginData * pkLD);
 		void			DeleteLoginData(CLoginData * pkLD);

@@ -392,8 +392,7 @@ void CInputP2P::LoginPing(LPDESC d, const char * c_pData)
 {
 	TPacketGGLoginPing * p = (TPacketGGLoginPing *) c_pData;
 
-	if (!g_pkAuthMasterDesc) // If I am master, I have to broadcast
-		P2P_MANAGER::instance().Send(p, sizeof(TPacketGGLoginPing), d);
+	P2P_MANAGER::instance().Send(p, sizeof(TPacketGGLoginPing), d);
 }
 
 // BLOCK_CHAT

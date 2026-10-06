@@ -272,13 +272,7 @@ void CGuildManager::Initialize()
 {
 	LOG_INFO("Initializing Guild");
 
-	if (false)
-	{
-		LOG_INFO("	No need for auth server");
-		return;
-	}
-
-	std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery("SELECT id FROM guild%s", get_table_postfix()));
+		std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery("SELECT id FROM guild%s", get_table_postfix()));
 
 	std::vector<uint32_t> vecGuildID;
 	vecGuildID.reserve(pmsg->Get()->uiNumRows);

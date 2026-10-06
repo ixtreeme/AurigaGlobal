@@ -714,9 +714,7 @@ namespace offlineshop
 
 	void CShopManager::DestroyNewShopEntities(const offlineshop::CShop& rShop)
 	{
-		if (false)
-			return;
-		const uint32_t ownerPID = rShop.GetOwnerPID();
+				const uint32_t ownerPID = rShop.GetOwnerPID();
 		m_retiringEntities.reserve(m_retiringEntities.size() + m_vecCities.size());
 		for (auto& city : m_vecCities)
 		{

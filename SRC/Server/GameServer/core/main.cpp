@@ -254,18 +254,10 @@ void heartbeat(LPHEART ht, int pulse)
 
 	if (!(pulse % ht->passes_per_sec))
 	{
-		if (true)
 		{
 			TPlayerCountPacket pack;
 			pack.dwCount = DESC_MANAGER::instance().GetLocalUserCount();
 			db_clientdesc->DBPacket(HEADER_GD_PLAYER_COUNT, 0, &pack, sizeof(TPlayerCountPacket));
-		}
-		else
-		{
-			DESC_MANAGER::instance().ProcessExpiredLoginKey();
-			/*
-			   if (!(pulse % (ht->passes_per_sec * 600)))
-			 */
 		}
 
 		{
@@ -478,39 +470,12 @@ int main(int argc, char **argv)
 //		//	break;
 //		//}
 
-	if (false)
-	{
-#ifdef ENABLE_HWID
-		hwid_manager.InitializeBlocked();
-#endif
-	}
-
 	while (idle());
 
 	LOG_INFO("<shutdown> Starting...");
 	g_bShutdown = true;
 	g_bNoMoreClient = true;
 
-	if (false)
-	{
-		int iLimit = DBManager::instance().CountQuery() / 50;
-		int i = 0;
-
-		do
-		{
-			uint32_t dwCount = DBManager::instance().CountQuery();
-			LOG_INFO("Queries {}", dwCount);
-
-			if (dwCount == 0)
-				break;
-
-			usleep(500000);
-
-			if (++i >= iLimit)
-				if (dwCount == DBManager::instance().CountQuery())
-					break;
-		} while (1);
-	}
 //#ifdef __ENABLE_NEW_OFFLINESHOP__
 //	Offlineshop_CleanUpLibrary();
 //#endif
@@ -549,13 +514,6 @@ int main(int argc, char **argv)
 	quest_manager.Destroy();
 	LOG_INFO("<shutdown> Destroying building::CManager...");
 	building_manager.Destroy();
-
-	if (false)
-	{
-#ifdef ENABLE_HWID
-		hwid_manager.CleanBlocked();
-#endif
-	}
 
 	destroy();
 
@@ -715,32 +673,12 @@ int start(int argc, char **argv)
 	}
 
 	db_clientdesc = DESC_MANAGER::instance().CreateConnectionDesc(db_addr, db_port, PHASE_DBCLIENT, true);
-	if (true) {
-		db_clientdesc->UpdateChannelStatus(0, true);
-	}
+	db_clientdesc->UpdateChannelStatus(0, true);
 
-	if (false)
-	{
-		if (g_stAuthMasterIP.length() != 0)
-		{
-			LOG_ERROR("SlaveAuth");
-			g_pkAuthMasterDesc = DESC_MANAGER::instance().CreateConnectionDesc(g_stAuthMasterIP.c_str(), g_wAuthMasterPort, PHASE_P2P, true);
-			P2P_MANAGER::instance().RegisterConnector(g_pkAuthMasterDesc);
-			g_pkAuthMasterDesc->SetP2P(g_stAuthMasterIP.c_str(), g_wAuthMasterPort, g_bChannel);
+	LOG_INFO("SPAM_CONFIG: duration {} score {} reload cycle {}\n", g_uiSpamBlockDuration, g_uiSpamBlockScore, g_uiSpamReloadCycle);
 
-		}
-		else
-		{
-			LOG_ERROR("MasterAuth {}", LC_GetLocalType());
-		}
-	}
-	else
-	{
-		LOG_INFO("SPAM_CONFIG: duration {} score {} reload cycle {}\n", g_uiSpamBlockDuration, g_uiSpamBlockScore, g_uiSpamReloadCycle);
-
-		extern void LoadSpamDB();
-		LoadSpamDB();
-	}
+	extern void LoadSpamDB();
+	LoadSpamDB();
 
 	signal_timer_enable(30);
 	return 1;

@@ -93,8 +93,6 @@ extern void	LoadValidCRCList();
 extern bool	IsValidProcessCRC(uint32_t dwCRC);
 extern bool	IsValidFileCRC(uint32_t dwCRC);
 
-extern std::string	g_stAuthMasterIP;
-extern uint16_t		g_wAuthMasterPort;
 
 extern std::string	g_stClientVersion;
 extern bool		g_bCheckClientVersion;

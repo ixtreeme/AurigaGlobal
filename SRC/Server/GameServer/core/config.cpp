@@ -92,8 +92,6 @@ bool		g_bEmpireWhisper = true;
 bool		g_bCheckClientVersion = true;
 string	g_stClientVersion = "20251204";
 
-string	g_stAuthMasterIP;
-uint16_t		g_wAuthMasterPort = 0;
 
 static std::set<uint32_t> s_set_dwFileCRC;
 static std::set<uint32_t> s_set_dwProcessCRC;
@@ -686,33 +684,7 @@ static bool __LoadDefaultConfigFile(const char* configName)
 			continue;
 		}
 
-		TOKEN("auth_server")
-		{
-			char szIP[32];
-			char szPort[32];
-
-			two_arguments(value_string, szIP, sizeof(szIP), szPort, sizeof(szPort));
-
-			if (!*szIP || (!*szPort && strcasecmp(szIP, "master")))
-			{
-				LOG_ERROR("AUTH_SERVER: syntax error: <ip|master> <port>");
-				exit(1);
 			}
-
-			LoadBanIP("BANIP");
-
-			if (!strcasecmp(szIP, "master"))
-				LOG_INFO("AUTH_SERVER: I am the master");
-			else
-		{
-				g_stAuthMasterIP = szIP;
-				str_to_number(g_wAuthMasterPort, szPort);
-
-				LOG_INFO("AUTH_SERVER: master {} {}", g_stAuthMasterIP.c_str(), g_wAuthMasterPort);
-			}
-			continue;
-		}
-	}
 
 	fclose(fp);
 	return true;
