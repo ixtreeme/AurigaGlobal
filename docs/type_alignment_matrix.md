@@ -34,7 +34,7 @@ mezöje 4 byte, ott `static_cast<uint32_t>(std::min<int64_t>(value, UINT32_MAX))
 | `gold` | BIGINT | TPlayerTable.gold int64_t; PointSystem int64_t | OK |
 | `exp` | INT UNSIGNED | TPlayerTable.exp uint32_t | OK (nagy XP -> Phase 2: uint64) |
 | `level/level_step` | TINYINT UNSIGNED | uint8_t | OK |
-| `hp/mp` | INT | int (tables.h); ECS PointSystem int64_t Get | Phase 2: ECS int64 vs DB INT; nagy HP eseten BIGINT |
+| `hp/mp` | BIGINT UNSIGNED | ECS Health/Mana uint64_t; TPlayerTable uint64_t; PointSystem GetMaxHP/GetMaxSP uint64_t | Javitva: HP/MP uint64 (GC points packet mar int64 volt) |
 | `r0..r19` | BIGINT (schema) | long long, `%lld` | OK |
 | `battle_pass_end` | DATETIME | uint32_t + FROM_UNIXTIME(%d) | Phase 2: 2038, `%u`/int64 |
 
@@ -93,7 +93,6 @@ mezöje 4 byte, ott `static_cast<uint32_t>(std::min<int64_t>(value, UINT32_MAX))
 - DB: `SRC/Server/Database/sql/2026_10_06_type_alignment.sql`, `db/schema.sql` frissitve.
 
 ## Phase 2 (kovetkezo kor)
-- `hp/mp` ECS int64 vs DB INT/BIGINT egyeztetes.
 - `guild.skill_point`, `trophies`, `part_*`, `count` tipusok veglegesitese.
 - Packet-structok signedness sweep-je (a kliens `Packet.h`-val parban).
 - Idobelyeg 2038: `battle_pass_end`, `premiumTimes`, `last_pay_time`, `deadline`.

@@ -990,7 +990,7 @@ void ActorDoPetSkill(entt::entity owner, NewPetRecord& actor, int skillslot)
             return;
         }
         g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[0] = get_global_time();
-        int riphp = MIN(ecs::PlayerRuntime::GetHP(owner) + (int)Pet_Skill_Table[9][2 + actor.skill[skillslot]], ecs::PointSystem::GetMaxHP(owner));
+        const int64_t riphp = std::min<int64_t>(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(owner)) + (int64_t)Pet_Skill_Table[9][2 + actor.skill[skillslot]], static_cast<int64_t>(ecs::PointSystem::GetMaxHP(owner)));
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 751, "");
 #endif

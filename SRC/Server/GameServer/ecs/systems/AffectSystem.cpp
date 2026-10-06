@@ -96,9 +96,9 @@ EVENTFUNC(poison_event)
         return 0;
     }
 
-    int dam = ecs::PointSystem::GetMaxHP(character) * GetPoisonDamageRate(character) / 1000;
+    const int64_t dam = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(character)) * GetPoisonDamageRate(character) / 1000;
     if (test_server) {
-        ecs::ChatSystem::Send(character, CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
+        ecs::ChatSystem::Send(character, CHAT_TYPE_NOTICE, "Poison Damage %lld", static_cast<long long>(dam));
     }
 
     if (character != entt::null) {
@@ -846,7 +846,7 @@ bool UpdateAffect(entt::entity e)
 		}
 		else
 		{
-			int iVal = MIN(ecs::PointSystem::Get(e, POINT_HP_RECOVERY), ecs::PointSystem::GetMaxHP(e) * 7 / 100);
+			const int64_t iVal = std::min<int64_t>(ecs::PointSystem::Get(e, POINT_HP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxHP(e)) * 7 / 100);
 
 			ecs::PointSystem::Change(e, POINT_HP, iVal);
 			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -iVal);
@@ -859,7 +859,7 @@ bool UpdateAffect(entt::entity e)
 			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
 		else
 		{
-			int iVal = MIN(ecs::PointSystem::Get(e, POINT_SP_RECOVERY), ecs::PointSystem::GetMaxSP(e) * 7 / 100);
+			const int64_t iVal = std::min<int64_t>(ecs::PointSystem::Get(e, POINT_SP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxSP(e)) * 7 / 100);
 
 			ecs::PointSystem::Change(e, POINT_SP, iVal);
 			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -iVal);

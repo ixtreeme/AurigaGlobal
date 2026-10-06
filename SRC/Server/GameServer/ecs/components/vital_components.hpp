@@ -6,8 +6,8 @@
 
 namespace ecs {
 
-struct Health { int32_t current; int32_t max; };
-struct Mana { int32_t current; int32_t max; };
+struct Health { uint64_t current; uint64_t max; };
+struct Mana { uint64_t current; uint64_t max; };
 struct Stamina { int32_t current; int32_t max; };
 
 struct LevelComponent { int32_t value; };

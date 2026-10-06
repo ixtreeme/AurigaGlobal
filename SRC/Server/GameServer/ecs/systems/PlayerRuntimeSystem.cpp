@@ -645,7 +645,7 @@ bool IsMount(entt::entity e)
     return flags && flags->isMount;
 }
 
-int64_t GetSP(entt::entity e)
+uint64_t GetSP(entt::entity e)
 {
     if (const auto* mana = g_registry.try_get<ecs::Mana>(e))
         return mana->current;
@@ -1970,28 +1970,28 @@ namespace ecs::PlayerRuntime {
 // but Ensure*/TryGet* on GetEntityHandle() plus one component field, so this
 // only moves them where PointSystem::Change can reach them without a pointer.
 
-void SetHP(entt::entity e, int64_t hp)
+void SetHP(entt::entity e, uint64_t hp)
 {
     if (auto* health = EnsureHealthComponent(e))
-        health->current = static_cast<int32_t>(std::clamp<int64_t>(hp, 0, INT32_MAX));
+        health->current = hp;
 }
 
-void SetMaxHP(entt::entity e, int64_t value)
+void SetMaxHP(entt::entity e, uint64_t value)
 {
     if (auto* health = EnsureHealthComponent(e))
-        health->max = static_cast<int32_t>(std::clamp<int64_t>(value, 0, INT32_MAX));
+        health->max = value;
 }
 
-void SetSP(entt::entity e, int64_t sp)
+void SetSP(entt::entity e, uint64_t sp)
 {
     if (auto* mana = EnsureManaComponent(e))
-        mana->current = static_cast<int32_t>(std::clamp<int64_t>(sp, 0, INT32_MAX));
+        mana->current = sp;
 }
 
-void SetMaxSP(entt::entity e, int64_t value)
+void SetMaxSP(entt::entity e, uint64_t value)
 {
     if (auto* mana = EnsureManaComponent(e))
-        mana->max = static_cast<int32_t>(std::clamp<int64_t>(value, 0, INT32_MAX));
+        mana->max = value;
 }
 
 void SetStamina(entt::entity e, int64_t value)
@@ -2172,7 +2172,7 @@ bool IsRaceFlag(entt::entity e, uint32_t dwBit)
     return table && IS_SET(table->dwRaceFlag, dwBit);
 }
 
-int64_t GetHP(entt::entity e)
+uint64_t GetHP(entt::entity e)
 {
     if (const auto* health = TryGetHealthComponent(e))
         return health->current;
@@ -2182,8 +2182,8 @@ int64_t GetHP(entt::entity e)
 
 int GetHPPct(entt::entity e)
 {
-    const int64_t maxHP = ecs::PointSystem::GetMaxHP(e);
-    if (maxHP <= 0)
+    const uint64_t maxHP = ecs::PointSystem::GetMaxHP(e);
+    if (maxHP == 0)
         return 0;
 
     return static_cast<int>((ecs::PlayerRuntime::GetHP(e) * 100) / maxHP);

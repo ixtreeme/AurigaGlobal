@@ -331,8 +331,8 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     reg.emplace_or_replace<ecs::MovementState>(entity, MakeDefaultMovementState(now));
     reg.emplace_or_replace<ecs::MovementSpeed>(entity, std::max<int32_t>(1, data.sMovingSpeed), std::max<int32_t>(1, data.sMovingSpeed));
     reg.emplace_or_replace<ecs::SyncState>(entity, MakeDefaultSyncState());
-    reg.emplace_or_replace<ecs::Health>(entity, static_cast<int32_t>(std::min<uint64_t>(data.dwMaxHP, INT32_MAX)), static_cast<int32_t>(std::min<uint64_t>(data.dwMaxHP, INT32_MAX)));
-    reg.emplace_or_replace<ecs::Mana>(entity, 0, 0);
+    reg.emplace_or_replace<ecs::Health>(entity, data.dwMaxHP, data.dwMaxHP);
+    reg.emplace_or_replace<ecs::Mana>(entity, 0ULL, 0ULL);
     reg.emplace_or_replace<ecs::Stamina>(entity, 0, 0);
     reg.emplace_or_replace<ecs::LevelComponent>(entity, data.bLevel);
     reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.dwExp), 0);

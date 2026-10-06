@@ -3730,14 +3730,14 @@ void Reward(entt::entity e, bool bItemDrop)
 		{
 			if (ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY))
 			{
-				int iHP = ecs::PointSystem::GetMaxHP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY) / 100;
+				int64_t iHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(attacker)) * ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY) / 100;
 				ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 				CombatSystem::CreateFly(e, FLY_HP_SMALL, attacker);
 			}
 
 			if (ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER))
 			{
-				int iSP = ecs::PointSystem::GetMaxSP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER) / 100;
+				int64_t iSP = static_cast<int64_t>(ecs::PointSystem::GetMaxSP(attacker)) * ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER) / 100;
 				ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 				CombatSystem::CreateFly(e, FLY_SP_SMALL, attacker);
 			}
@@ -4769,8 +4769,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 #endif
 
 
-	int iCurHP = ecs::PlayerRuntime::GetHP(victim);
-	int iCurSP = ecs::PlayerRuntime::GetSP(victim);
+	const int64_t iCurHP = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim));
+	const int64_t iCurSP = static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim));
 
 	bool IsCritical = false;
 	bool IsPenetrate = false;
@@ -5002,7 +5002,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 #ifdef ENABLE_BUG_FIXES
 			if (int64_t iStealHP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_HP)) {
 				if (number(1, 100) <= iStealHP_ptr) {
-					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, ecs::PlayerRuntime::GetHP(victim))) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
+					int64_t iHP = std::min<int64_t>((int64_t)dam, std::max<int64_t>((int64_t)0, static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)))) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
 
 
 					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (ecs::PlayerRuntime::GetHP(victim) > 0) && (iHP > 0)) {
@@ -5039,7 +5039,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			if (int64_t iStealSP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_SP)) {
 				if (ecs::PlayerRuntime::IsPC(victim) && ecs::PlayerRuntime::IsPC(attacker)) {
 					if (number(1, 100) <= iStealSP_ptr) {
-						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, ecs::PlayerRuntime::GetSP(victim))) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
+						int64_t iSP = std::min<int64_t>((int64_t)dam, std::max<int64_t>((int64_t)0, static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim)))) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
 
 
 						if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(victim) > 0) && (iSP > 0))
@@ -5132,7 +5132,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			int iAbsoHP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY);
 			if (iAbsoHP_ptr > 0) {
 				if (number(1, 100) <= iAbsoHP_ptr) {
-					int iHPAbso = std::min(dam, ecs::PlayerRuntime::GetHP(victim)) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
+					int64_t iHPAbso = std::min<int64_t>(static_cast<int64_t>(dam), static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim))) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
 					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (ecs::PlayerRuntime::GetHP(victim) > 0) && (iHPAbso > 0)) {
 						CombatSystem::CreateFly(victim, FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHPAbso);
@@ -5143,7 +5143,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			int64_t iAbsoSP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY);
 			if (iAbsoSP_ptr > 0) {
 				if (number(1, 100) <= iAbsoSP_ptr) {
-					int64_t iSPAbso = std::min(dam, ecs::PlayerRuntime::GetSP(victim)) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
+					int64_t iSPAbso = std::min<int64_t>(static_cast<int64_t>(dam), static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim))) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
 					if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(victim) > 0) && (iSPAbso > 0)) {
 						CombatSystem::CreateFly(victim, FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSPAbso);
@@ -5247,7 +5247,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	{
 		int iDamageSPPart = dam / 3;
 		int iDamageToSP = iDamageSPPart * ecs::PointSystem::Get(victim, POINT_MANASHIELD) / 100;
-		int iSP = ecs::PlayerRuntime::GetSP(victim);
+		const int64_t iSP = static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim));
 
 		// SP
 		if (iDamageToSP <= iSP)
@@ -5257,7 +5257,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 		else
 		{
-			ecs::PointSystem::Change(victim, POINT_SP, -ecs::PlayerRuntime::GetSP(victim));
+			ecs::PointSystem::Change(victim, POINT_SP, -static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim)));
 			dam -= iSP * 100 / std::max(ecs::PointSystem::Get(victim, POINT_MANASHIELD), (int64_t)1);
 		}
 	}
@@ -5335,9 +5335,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 	if (type == DAMAGE_TYPE_POISON)
 	{
-		if (ecs::PlayerRuntime::GetHP(victim) - dam <= 0)
+	if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= 0)
 		{
-			dam = ecs::PlayerRuntime::GetHP(victim) - 1;
+			dam = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - 1;
 		}
 	}
 	// ------------------------
@@ -5447,8 +5447,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					{
 						if (step == 0)
 						{
-							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 60;
-							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
+							int64_t per = (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim)) / 100) * 60;
+							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "step", 1);
 								if (racevnum == 3997) {
@@ -5466,7 +5466,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - per), false);
 								}
 								else
 								{
@@ -5479,8 +5479,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 						}
 						else if (step == 2)
 						{
-							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 20;
-							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
+							int64_t per = (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim)) / 100) * 20;
+							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "step", 3);
 								if (racevnum == 3997) {
@@ -5498,7 +5498,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - per), false);
 								}
 								else
 								{
@@ -5519,8 +5519,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 						{
 							if (PartySystem::GetLeaderPID(party) == ecs::PlayerRuntime::GetPlayerID(attacker))
 							{
-								int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 70;
-								if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
+								int64_t per = (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim)) / 100) * 70;
+								if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 								{
 									DungeonSystem::SetFlag(dungeon, "step", 1);
 									DungeonSystem::Notice(dungeon, 908, "");
@@ -5540,8 +5540,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					{
 						if (step == 0)
 						{
-							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 50;
-							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
+							int64_t per = (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim)) / 100) * 50;
+							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "step", 1);
 								DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen8.txt");
@@ -5551,7 +5551,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - per), false);
 								}
 								else
 								{
@@ -5565,8 +5565,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 						}
 						else if (step == 2)
 						{
-							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 10;
-							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
+							int64_t per = (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim)) / 100) * 10;
+							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "step", 3);
 								DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen9.txt");
@@ -5576,7 +5576,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - per), false);
 								}
 								else
 								{
@@ -5606,14 +5606,14 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 						int32_t floor = DungeonSystem::GetFlag(dungeon, "floor");
 						if (floor >= 1 && floor < 5)
 						{
-							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 75;
-							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
+							int64_t per = (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim)) / 100) * 75;
+							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "floor", floor + 1);
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - per), false);
 								}
 								else
 								{
@@ -5638,14 +5638,14 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 						}
 						else if (floor >= 7 && floor < 11)
 						{
-							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 50;
-							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
+							int64_t per = (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim)) / 100) * 50;
+							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "floor", floor + 1);
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - per), false);
 								}
 								else
 								{
@@ -5670,14 +5670,14 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 						}
 						else if (floor >= 13 && floor < 17)
 						{
-							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 5;
-							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
+							int64_t per = (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim)) / 100) * 5;
+							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "floor", floor + 1);
 
 								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - per), false);
 								}
 								else
 								{
@@ -5850,7 +5850,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 #endif
 
-		if (ecs::PlayerRuntime::GetHP(victim) - dam <= 0) // @fixme137
+		if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= 0) // @fixme137
 			dam = ecs::PlayerRuntime::GetHP(victim);
 
 		ecs::PointSystem::Change(victim, POINT_HP, -dam, false);
@@ -6726,7 +6726,7 @@ static void ProcessStoneSpawnStep(entt::entity stone)
 	if (stone == entt::null || !g_registry.valid(stone) || !ecs::PlayerRuntime::IsStone(stone) || ecs::PointSystem::GetMaxHP(stone) <= 0)
 		return;
 
-	const int iPercent = (ecs::PlayerRuntime::GetHP(stone) * 100) / ecs::PointSystem::GetMaxHP(stone);
+	const int64_t iPercent = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(stone)) * 100 / static_cast<int64_t>(ecs::PointSystem::GetMaxHP(stone));
 	const uint32_t dwVnum = number(
 		MIN((*ecs::PlayerRuntime::GetMobTable(stone)).sAttackSpeed, (*ecs::PlayerRuntime::GetMobTable(stone)).sMovingSpeed),
 		MAX((*ecs::PlayerRuntime::GetMobTable(stone)).sAttackSpeed, (*ecs::PlayerRuntime::GetMobTable(stone)).sMovingSpeed));
@@ -6744,7 +6744,7 @@ static void ProcessStoneSpawnStep(entt::entity stone)
 	else if (iPercent <= 99) wantStep = 1;
 	else return;
 
-	for (int step = ecs::PointSystem::GetMaxSP(stone) + 1; step <= wantStep; ++step)
+	for (uint64_t step = ecs::PointSystem::GetMaxSP(stone) + 1; step <= static_cast<uint64_t>(wantStep); ++step)
 	{
 		ecs::PlayerRuntime::SetMaxSP(stone, step);
 		ecs::MovementSystem::SendMovePacket(stone, FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(stone), ecs::PlayerRuntime::GetY(stone), 0);
@@ -7137,14 +7137,14 @@ void BroadcastTargetPacket(entt::entity e)
 	}
 	else
 	{
-		p.bHPPercent = std::min((ecs::PlayerRuntime::GetHP(e) * 100) / ecs::PointSystem::GetMaxHP(e), (int64_t)100);
-		p.iMinHP = ecs::PlayerRuntime::GetHP(e);
-		p.iMaxHP = ecs::PointSystem::GetMaxHP(e);
+		p.bHPPercent = static_cast<uint8_t>(std::min<int64_t>(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(e)) * 100 / static_cast<int64_t>(ecs::PointSystem::GetMaxHP(e)), (int64_t)100));
+		p.iMinHP = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(e));
+		p.iMaxHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(e));
 	}
 #else
 	if (ecs::PlayerRuntime::GetDesc(e) != nullptr)
 		p.bHPPercent = 0;
-	else if (ecs::PointSystem::GetMaxHP(e) <= 0)
+	else if (ecs::PointSystem::GetMaxHP(e) == 0)
 		p.bHPPercent = 0;
 	else
 		p.bHPPercent = MINMAX(0, ecs::PlayerRuntime::GetHPPct(e), 100);
@@ -7242,8 +7242,8 @@ void SetTarget(entt::entity e, entt::entity target)
 		{
 			p.bHPPercent = MINMAX(0, ecs::PlayerRuntime::GetHPPct(target), 100);
 #ifdef __VIEW_TARGET_DECIMAL_HP__
-			p.iMinHP = ecs::PlayerRuntime::GetHP(target);
-			p.iMaxHP = ecs::PointSystem::GetMaxHP(target);
+			p.iMinHP = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(target));
+			p.iMaxHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(target));
 #endif
 		}
 #else
@@ -7299,9 +7299,9 @@ void SetTarget(entt::entity e, entt::entity target)
 				}
 				else
 				{
-					p.bHPPercent = std::min((ecs::PlayerRuntime::GetHP(target) * 100) / ecs::PointSystem::GetMaxHP(target), (int64_t)100);
-					p.iMinHP = ecs::PlayerRuntime::GetHP(target);
-					p.iMaxHP = ecs::PointSystem::GetMaxHP(target);
+					p.bHPPercent = static_cast<uint8_t>(std::min<int64_t>(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(target)) * 100 / static_cast<int64_t>(ecs::PointSystem::GetMaxHP(target)), (int64_t)100));
+					p.iMinHP = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(target));
+					p.iMaxHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(target));
 				}
 			}
 		}
@@ -7328,7 +7328,7 @@ void SetTarget(entt::entity e, entt::entity target)
 				if (ecs::PointSystem::GetMaxHP(target) <= 0)
 					p.bHPPercent = 0;
 				else
-					p.bHPPercent = MINMAX(0, (ecs::PlayerRuntime::GetHP(target) * 100) / ecs::PointSystem::GetMaxHP(target), 100);
+					p.bHPPercent = static_cast<uint8_t>(std::min<int64_t>(static_cast<int64_t>(ecs::PlayerRuntime::GetHP(target)) * 100 / static_cast<int64_t>(ecs::PointSystem::GetMaxHP(target)), (int64_t)100));
 			}
 		}
 	}

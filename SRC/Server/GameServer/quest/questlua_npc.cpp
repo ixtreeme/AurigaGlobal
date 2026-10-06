@@ -355,7 +355,7 @@ namespace quest
 		const entt::entity npc = CVIDRegistry::Instance().Find(static_cast<uint32_t>(vid));
 		if (npc != entt::null && g_registry.valid(npc) && percent > 0 && percent <= 100)
 		{
-			const int damage = ecs::PointSystem::GetMaxHP(npc) * percent / 100;
+			const int64_t damage = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(npc)) * percent / 100;
 			ecs::PointSystem::Change(npc, POINT_HP, -damage);
 			lua_pushboolean(L, 1);
 		}

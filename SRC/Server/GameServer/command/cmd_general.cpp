@@ -1861,14 +1861,14 @@ ACMD(do_pvp_advanced)
 	int m_Vid = ecs::PlayerRuntime::GetPacketVID(victim);
 	int m_Level = ecs::PointSystem::GetLevel(victim);
 	int m_PlayTime = ecs::PointSystem::GetReal(victim, POINT_PLAYTIME);
-	int m_MaxHP = ecs::PointSystem::GetMaxHP(victim);
-	int m_MaxSP = ecs::PointSystem::GetMaxSP(victim);
+	const int64_t m_MaxHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(victim));
+	const int64_t m_MaxSP = static_cast<int64_t>(ecs::PointSystem::GetMaxSP(victim));
 
 	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(victim);
 
 	if (g)
 	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %lld %lld", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 
 		if (statusEq < 1)
 			NetworkSyncSystem::SendEquipmentToViewer(g_registry, victim, character);

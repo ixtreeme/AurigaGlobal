@@ -468,8 +468,8 @@ typedef struct SPlayerTable
 	int32_t	lExitMapIndex;
 
 	// @fixme301
-	int		hp;
-	int		sp;
+	uint64_t	hp;
+	uint64_t	sp;
 
 	short	sRandomHP;
 	short	sRandomSP;

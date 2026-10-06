@@ -170,12 +170,12 @@ struct EvFireApplied {
 
 struct EvPoisonApplied {
     entt::entity entity { entt::null };
-    int32_t damage { 0 };
+    int64_t damage { 0 };
 };
 
 struct EvBleedingApplied {
     entt::entity entity { entt::null };
-    int32_t damage { 0 };
+    int64_t damage { 0 };
 };
 
 // Character/session lifecycle

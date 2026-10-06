@@ -266,8 +266,8 @@ ezek gyakorlati P0 hibak:
   -> `BIGINT` (lasd: `db/db_schema_audit.md` P0).
 - `player.item.window` kevert szoveges/numerikus hasznalat
   (`window+0` vs `'INVENTORY'`) -> csak `ENUM` fedi le.
-- `player.hp`/`mp` `int` vs `mob_proto.max_hp` `uint64`
-  (`tables.h:471,545`) -> nagy HP-jú buildoknél szuk.
+- `player.hp`/`mp` -> `uint64_t` (ECS Health/Mana, TPlayerTable), DB
+  `BIGINT UNSIGNED`; javitva (2026-10-06 migracio).
 - Hianyzo migraciok: `attrtype7/attrvalue7`, `account_mount_inventory`
   `attrtype6/attrvalue6` (lasd a DB auditot).
 

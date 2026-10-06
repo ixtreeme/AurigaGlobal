@@ -352,7 +352,7 @@ namespace
             if (dmg < 1)
                 dmg = 1;
             if (dmg >= ecs::PlayerRuntime::GetHP(ch))
-                dmg = ecs::PlayerRuntime::GetHP(ch) - 1;
+		dmg = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(ch)) - 1;
             if (dmg > 0)
                 ecs::PointSystem::Change(ch, POINT_HP, -dmg);
         });

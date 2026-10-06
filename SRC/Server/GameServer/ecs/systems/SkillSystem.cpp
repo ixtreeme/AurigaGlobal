@@ -4166,9 +4166,11 @@ struct FHealerParty
 
 	void operator () (entt::entity target)
 	{
-		int iRevive = (int)(ecs::PointSystem::GetMaxHP(m_healer) / 100 * 15);
-		int iHP = (ecs::PointSystem::GetMaxHP(target) >= ecs::PlayerRuntime::GetHP(target) + iRevive) ? (int)(ecs::PlayerRuntime::GetHP(target) + iRevive) : (int)(ecs::PointSystem::GetMaxHP(target));
-		ecs::PlayerRuntime::SetHP(target, iHP);
+		const int64_t iRevive = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(m_healer)) / 100 * 15;
+		const int64_t curHP = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(target));
+		const int64_t maxHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(target));
+		const int64_t iHP = (maxHP >= curHP + iRevive) ? (curHP + iRevive) : maxHP;
+		ecs::PlayerRuntime::SetHP(target, static_cast<uint64_t>(iHP));
 		NetworkSyncSystem::BroadcastEffect(g_registry, target, SE_EFFECT_HEALER);
 		LOG_INFO("FHealerParty: {} (entity: {}) heal the HP of {} (entity: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<uint32_t>(m_healer), ecs::PlayerRuntime::GetName(target).data(), static_cast<uint32_t>(target), iRevive, ecs::PlayerRuntime::GetHP(target));
 	}

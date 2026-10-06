@@ -4,6 +4,7 @@
 --
 -- A kod elvarasaihoz igazitja a DB oszlopokat:
 --   - guild bank / guild war bet / account coins / player gold: BIGINT
+--   - player hp/mp: BIGINT UNSIGNED (az ECS Health/Mana uint64)
 --   - guild win/draw/loss: INT UNSIGNED (nem lehet negativ)
 --   - exp: INT UNSIGNED
 -- Reszletek: docs/source_type_audit.md, docs/type_alignment_matrix.md
@@ -17,7 +18,9 @@ ALTER TABLE `account`.`account`
 
 ALTER TABLE `player`.`player`
     MODIFY COLUMN `gold` BIGINT NOT NULL DEFAULT 0,
-    MODIFY COLUMN `exp` INT UNSIGNED NOT NULL DEFAULT 0;
+    MODIFY COLUMN `exp` INT UNSIGNED NOT NULL DEFAULT 0,
+    MODIFY COLUMN `hp` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    MODIFY COLUMN `mp` BIGINT UNSIGNED NOT NULL DEFAULT 0;
 
 ALTER TABLE `player`.`guild`
     MODIFY COLUMN `gold` BIGINT NOT NULL DEFAULT 0,

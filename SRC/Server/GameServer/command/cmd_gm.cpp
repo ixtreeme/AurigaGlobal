@@ -1100,8 +1100,8 @@ ACMD(do_state)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", buf);
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "LEV %d", (ecs::PointSystem::GetLevel(tch)));
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "HP %d/%d", ecs::PlayerRuntime::GetHP(tch), ecs::PointSystem::GetMaxHP(tch));
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "SP %d/%d", ecs::PointSystem::Get(tch, POINT_SP), ecs::PointSystem::GetMaxSP(tch));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "HP %llu/%llu", static_cast<unsigned long long>(ecs::PlayerRuntime::GetHP(tch)), static_cast<unsigned long long>(ecs::PointSystem::GetMaxHP(tch)));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "SP %lld/%llu", static_cast<long long>(ecs::PointSystem::Get(tch, POINT_SP)), static_cast<unsigned long long>(ecs::PointSystem::GetMaxSP(tch)));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
 			ecs::PointSystem::Get(tch, POINT_ATT_GRADE),
 			ecs::PointSystem::Get(tch, POINT_MAGIC_ATT_GRADE),

@@ -114,8 +114,8 @@ uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable
 			"exit_x = %d, "
 			"exit_y = %d, "
 			"exit_map_index = %d, "
-			"hp = %d, "
-			"mp = %d, "
+			"hp = %llu, "
+			"mp = %llu, "
 			"stamina = %d, "
 			"random_hp = %d, "
 			"random_sp = %d, "
@@ -1268,7 +1268,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 			"VALUES(0, %u, ?, "
 			"%d, %d, %d, %d, %d, "
 			"%d, %d, %d, %d, %d, %d, %d, "
-			"%d, %d, %d, %d, %d, %d, %d, 0,"
+			"%llu, %llu, %d, %d, %d, %d, %d, 0,"
 #ifdef ENABLE_ACCE_SYSTEM
 			"0, "
 #endif

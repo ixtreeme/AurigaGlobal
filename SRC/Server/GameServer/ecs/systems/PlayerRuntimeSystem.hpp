@@ -61,7 +61,7 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity item);
 #endif
 void SetWear(entt::entity e, uint8_t bCell, entt::entity item);
 bool IsRaceFlag(entt::entity e, uint32_t dwBit);
-int64_t GetHP(entt::entity e);
+uint64_t GetHP(entt::entity e);
 int GetHPPct(entt::entity e);
 void SetDungeonTicketExtraMetin(entt::entity e, bool value);
 bool IsDungeonTicketExtraMetin(entt::entity e);
@@ -123,7 +123,7 @@ bool IsGuardNPC(entt::entity e);
 // The remaining two CharacterType tests the AI states need. CHARACTER
 // carried these as inline reads of m_bCharType; the component is what the
 // factory fills and what IsGuardNPC above already trusts.
-int64_t GetSP(entt::entity e);
+uint64_t GetSP(entt::entity e);
 int GetQuestFlag(entt::entity e, const std::string& flag);
 void SetQuestFlag(entt::entity e, const std::string& flag, int value);
 int GetPetEnchant(entt::entity e);
@@ -162,10 +162,10 @@ uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos);
 uint16_t GetRuneEffect(entt::entity e);
 
 // The point writers and readers PointSystem::Change needs.
-void SetHP(entt::entity e, int64_t hp);
-void SetMaxHP(entt::entity e, int64_t value);
-void SetSP(entt::entity e, int64_t sp);
-void SetMaxSP(entt::entity e, int64_t value);
+void SetHP(entt::entity e, uint64_t hp);
+void SetMaxHP(entt::entity e, uint64_t value);
+void SetSP(entt::entity e, uint64_t sp);
+void SetMaxSP(entt::entity e, uint64_t value);
 void SetStamina(entt::entity e, int64_t value);
 void SetMaxStamina(entt::entity e, int64_t value);
 int GetStamina(entt::entity e);

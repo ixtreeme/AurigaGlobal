@@ -171,19 +171,19 @@ int64_t Get(entt::entity e, uint8_t type)
 		return 0;
 	case ecs::PointRouter::PointSource::SRC_HP_CURRENT:
 		if (const auto* health = g_registry.try_get<ecs::Health>(e))
-			return health->current;
+			return static_cast<int64_t>(health->current);
 		return 0;
 	case ecs::PointRouter::PointSource::SRC_HP_MAX:
 		if (const auto* health = g_registry.try_get<ecs::Health>(e))
-			return health->max;
+			return static_cast<int64_t>(health->max);
 		return 0;
 	case ecs::PointRouter::PointSource::SRC_SP_CURRENT:
 		if (const auto* mana = g_registry.try_get<ecs::Mana>(e))
-			return mana->current;
+			return static_cast<int64_t>(mana->current);
 		return 0;
 	case ecs::PointRouter::PointSource::SRC_SP_MAX:
 		if (const auto* mana = g_registry.try_get<ecs::Mana>(e))
-			return mana->max;
+			return static_cast<int64_t>(mana->max);
 		return 0;
 	case ecs::PointRouter::PointSource::SRC_STAMINA_CURRENT:
 		if (const auto* stamina = g_registry.try_get<ecs::Stamina>(e))
@@ -263,7 +263,7 @@ int64_t GetGold(entt::entity e)
 	return 0;
 }
 
-int32_t GetMaxHP(entt::entity e)
+uint64_t GetMaxHP(entt::entity e)
 {
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* health = g_registry.try_get<ecs::Health>(e))
@@ -273,7 +273,7 @@ int32_t GetMaxHP(entt::entity e)
 	return 0;
 }
 
-int32_t GetMaxSP(entt::entity e)
+uint64_t GetMaxSP(entt::entity e)
 {
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* mana = g_registry.try_get<ecs::Mana>(e))
@@ -433,9 +433,9 @@ bool ResetStat(entt::entity e, int statIndex)
 	Compute(e);
 	NetworkSyncSystem::PointsPacket(e);
 	if (point == POINT_HT)
-		Change(e, POINT_HP, GetMaxHP(e) - Get(e, POINT_HP));
+		Change(e, POINT_HP, static_cast<int64_t>(GetMaxHP(e)) - Get(e, POINT_HP));
 	else if (point == POINT_IQ)
-		Change(e, POINT_SP, GetMaxSP(e) - Get(e, POINT_SP));
+		Change(e, POINT_SP, static_cast<int64_t>(GetMaxSP(e)) - Get(e, POINT_SP));
 
 	char detail[128];
 	snprintf(detail, sizeof(detail), "reset %s(%lld)->1 stat_point(%lld)->(%lld)",
@@ -773,8 +773,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			break;
 			}
 
-			Change(e, POINT_HP, GetMaxHP(e) - Get(e, POINT_HP));
-			Change(e, POINT_SP, GetMaxSP(e) - Get(e, POINT_SP));
+			Change(e, POINT_HP, static_cast<int64_t>(GetMaxHP(e)) - Get(e, POINT_HP));
+			Change(e, POINT_SP, static_cast<int64_t>(GetMaxSP(e)) - Get(e, POINT_SP));
 			Change(e, POINT_STAMINA, ecs::PlayerRuntime::GetMaxStamina(e) - ecs::PlayerRuntime::GetStamina(e));
 
 			Set(e, POINT_LEVEL_STEP, val);
@@ -794,8 +794,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 		int64_t prev_hp = Get(e, POINT_HP);
 
-		amount = std::min(GetMaxHP(e) - Get(e, POINT_HP), amount);
-		ecs::PlayerRuntime::SetHP(e, Get(e, POINT_HP) + amount);
+		amount = std::min(static_cast<int64_t>(GetMaxHP(e)) - Get(e, POINT_HP), amount);
+		ecs::PlayerRuntime::SetHP(e, static_cast<uint64_t>(std::max<int64_t>(0, Get(e, POINT_HP) + amount)));
 		val = Get(e, POINT_HP);
 
 		CombatSystem::BroadcastTargetPacket(e);
@@ -813,8 +813,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (::CombatSystem::IsDead(e) || ::CombatSystem::IsStun(e))
 			return;
 
-		amount = std::min(GetMaxSP(e) - Get(e, POINT_SP), amount);
-		ecs::PlayerRuntime::SetSP(e, Get(e, POINT_SP) + amount);
+		amount = std::min(static_cast<int64_t>(GetMaxSP(e)) - Get(e, POINT_SP), amount);
+		ecs::PlayerRuntime::SetSP(e, static_cast<uint64_t>(std::max<int64_t>(0, Get(e, POINT_SP) + amount)));
 		val = Get(e, POINT_SP);
 	}
 	break;
@@ -1572,27 +1572,27 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_MAX_HP:
 	case APPLY_MAX_HP_PCT:
 	{
-		int i = GetMaxHP(e);
+		const uint64_t i = GetMaxHP(e);
 		if (i == 0) {
 			break;
 		}
 
 		Change(e, aApplyInfo[bApplyType].bPointType, iVal);
-		float fRatio = (float)GetMaxHP(e) / (float)i;
-		Change(e, POINT_HP, Get(e, POINT_HP) * fRatio - Get(e, POINT_HP));
+		const double fRatio = static_cast<double>(GetMaxHP(e)) / static_cast<double>(i);
+		Change(e, POINT_HP, static_cast<int64_t>(static_cast<double>(Get(e, POINT_HP)) * fRatio) - Get(e, POINT_HP));
 	}
 	break;
 	case APPLY_MAX_SP:
 	case APPLY_MAX_SP_PCT:
 	{
-		int i = GetMaxSP(e);
+		const uint64_t i = GetMaxSP(e);
 		if (i == 0) {
 			break;
 		}
 
 		Change(e, aApplyInfo[bApplyType].bPointType, iVal);
-		float fRatio = (float)GetMaxSP(e) / (float)i;
-		Change(e, POINT_SP, Get(e, POINT_SP) * fRatio - Get(e, POINT_SP));
+		const double fRatio = static_cast<double>(GetMaxSP(e)) / static_cast<double>(i);
+		Change(e, POINT_SP, static_cast<int64_t>(static_cast<double>(Get(e, POINT_SP)) * fRatio) - Get(e, POINT_SP));
 	}
 	break;
 	case APPLY_STR:

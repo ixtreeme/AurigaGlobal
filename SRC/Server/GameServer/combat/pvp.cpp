@@ -672,15 +672,15 @@ void CPVPManager::Insert(entt::entity character, entt::entity victim)
 		int m_Vid = ecs::PlayerRuntime::GetPacketVID(character);
 		int m_Level = (ecs::PointSystem::GetLevel(character));
 		int m_PlayTime = ecs::PointSystem::GetReal(character, POINT_PLAYTIME);
-		int m_MaxHP = ecs::PointSystem::GetMaxHP(character);
-		int m_MaxSP = ecs::PointSystem::GetMaxSP(character);
+		const int64_t m_MaxHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(character));
+		const int64_t m_MaxSP = static_cast<int64_t>(ecs::PointSystem::GetMaxSP(character));
 		int PVP_BLOCK_VIEW_EQUIPMENT = ecs::QuestSystem::GetFlag(character, BLOCK_EQUIPMENT_);
 
 		uint32_t m_Race = (ecs::PlayerRuntime::GetRaceNum(character));
 
 		if (g)
 		{
-			ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
+			ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %lld %lld %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
 
 			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
 				NetworkSyncSystem::SendEquipmentToViewer(g_registry, character, victim);

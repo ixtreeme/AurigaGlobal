@@ -646,17 +646,17 @@ EVENTFUNC(kill_campfire_event)
 	return 0;
 }
 
-int CalculateConsume(entt::entity chEntity)
+int64_t CalculateConsume(entt::entity chEntity)
 {
 	static const int WARP_NEED_LIFE_PERCENT = 30;
 	static const int WARP_MIN_LIFE_PERCENT = 10;
 	// CONSUME_LIFE_WHEN_USE_WARP_ITEM
-	int consumeLife = 0;
+	int64_t consumeLife = 0;
 	{
 		// CheckNeedLifeForWarp
-		const int curLife = ecs::PlayerRuntime::GetHP(chEntity);
+		const int64_t curLife = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(chEntity));
 		const int needPercent = WARP_NEED_LIFE_PERCENT;
-		const int needLife = ecs::PointSystem::GetMaxHP(chEntity) * needPercent / 100;
+		const int64_t needLife = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(chEntity)) * needPercent / 100;
 		if (curLife < needLife)
 		{
 #ifdef TEXTS_IMPROVEMENT
@@ -671,7 +671,7 @@ int CalculateConsume(entt::entity chEntity)
 
 
 		const int minPercent = WARP_MIN_LIFE_PERCENT;
-		const int minLife = ecs::PointSystem::GetMaxHP(chEntity) * minPercent / 100;
+		const int64_t minLife = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(chEntity)) * minPercent / 100;
 		if (curLife - needLife < minLife)
 			consumeLife = curLife - minLife;
 
@@ -682,12 +682,12 @@ int CalculateConsume(entt::entity chEntity)
 	return consumeLife;
 }
 
-int CalculateConsumeSP(entt::entity lpCharEntity)
+int64_t CalculateConsumeSP(entt::entity lpCharEntity)
 {
 	static const int NEED_WARP_SP_PERCENT = 30;
 
-	const int curSP = ecs::PlayerRuntime::GetSP(lpCharEntity);
-	const int needSP = ecs::PointSystem::GetMaxSP(lpCharEntity) * NEED_WARP_SP_PERCENT / 100;
+	const int64_t curSP = static_cast<int64_t>(ecs::PlayerRuntime::GetSP(lpCharEntity));
+	const int64_t needSP = static_cast<int64_t>(ecs::PointSystem::GetMaxSP(lpCharEntity)) * NEED_WARP_SP_PERCENT / 100;
 
 	if (curSP < needSP)
 	{
@@ -1009,7 +1009,7 @@ bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity e, uint32_t dwGroupNu
 		{
 			int64_t iDropHP = ecs::PointSystem::GetMaxHP(e) * dwCount / 100;
 			LOG_INFO("CSpecialItemGroup::DRAIN_HP {}", -iDropHP);
-			iDropHP = std::min(iDropHP, ecs::PlayerRuntime::GetHP(e) - 1);
+			iDropHP = std::min<int64_t>(iDropHP, static_cast<int64_t>(ecs::PlayerRuntime::GetHP(e)) - 1);
 			LOG_INFO("CSpecialItemGroup::DRAIN_HP {}", -iDropHP);
 			ecs::PointSystem::Change(e, POINT_HP, -iDropHP);
 			bSuccess = true;
@@ -5314,7 +5314,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 						}
 					}
 
-					int consumeSP = CalculateConsumeSP(e);
+					int64_t consumeSP = CalculateConsumeSP(e);
 
 					if (consumeSP < 0)
 						return false;
@@ -7453,7 +7453,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 
 			// CONSUME_LIFE_WHEN_USE_WARP_ITEM
-			int consumeLife = CalculateConsume(e);
+			int64_t consumeLife = CalculateConsume(e);
 
 			if (consumeLife < 0)
 				return false;
