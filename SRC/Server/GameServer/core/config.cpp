@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include <Core/peer_auth.h>
-#include <sstream>
 #include <string_view>
 #ifndef _WIN32
 #include <ifaddrs.h>
@@ -19,6 +18,7 @@
 #include "war_map.h"
 #include "locale_service.h"
 #include "config.h"
+#include "GameConfig.h"
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include "db.h"
@@ -141,20 +141,6 @@ bool g_BlockCharCreation = false;
 #ifdef __ATTR_TRANSFER_SYSTEM__
 int	gAttrTransferLimit = 0;
 #endif
-
-bool is_string_true(const char * string)
-{
-	bool	result = 0;
-	if (isnhdigit(*string))
-	{
-		str_to_number(result, string);
-		return result > 0 ? true : false;
-	}
-	else if (LOWER(*string) == 't')
-		return true;
-	else
-		return false;
-}
 
 static std::set<int> s_set_map_allows;
 
@@ -296,182 +282,15 @@ bool GetIPInfo()
 	}
 }
 
-static bool __LoadConnectConfigFile(const char* configName)
-	{
-	char	buf[256];
-	char	token_string[256];
-	char	value_string[256];
+static void __ApplyConnectConfig(const GameConfig& cfg)
+{
+	g_stHostname = cfg.server.hostname;
+	g_bChannel = cfg.server.channel;
 
-	char db_host[2][64], db_user[2][64], db_pwd[2][64], db_db[2][64];
-	int mysql_db_port[2];
+	LOG_INFO("HOSTNAME: {}", g_stHostname.c_str());
 
-	for (int n = 0; n < 2; ++n)
-	{
-		*db_host[n]	= '\0';
-		*db_user[n] = '\0';
-		*db_pwd[n]= '\0';
-		*db_db[n]= '\0';
-		mysql_db_port[n] = 0;
-	}
-
-	char log_host[64], log_user[64], log_pwd[64], log_db[64];
-	int log_port = 0;
-
-	*log_host = '\0';
-	*log_user = '\0';
-	*log_pwd = '\0';
-	*log_db = '\0';
-
-
-
-	bool isCommonSQL = false;
-	bool isPlayerSQL = false;
-
-	FILE* fpOnlyForDB;
-
-	if (!(fpOnlyForDB = fopen(configName, "r")))
-	{
-		LOG_ERROR("Can not open [{}]", configName);
-		exit(1);
-	}
-
-	while (fgets(buf, 256, fpOnlyForDB))
-	{
-		parse_token(buf, token_string, value_string);
-
-		TOKEN("hostname")
-		{
-			g_stHostname = value_string;
-			LOG_INFO("HOSTNAME: {}", g_stHostname.c_str());
-			continue;
-		}
-
-		TOKEN("channel")
-		{
-			str_to_number(g_bChannel, value_string);
-			continue;
-		}
-
-		TOKEN("player_sql")
-		{
-			const char * line = two_arguments(value_string, db_host[0], sizeof(db_host[0]), db_user[0], sizeof(db_user[0]));
-			line = two_arguments(line, db_pwd[0], sizeof(db_pwd[0]), db_db[0], sizeof(db_db[0]));
-
-			if ('\0' != line[0])
-			{
-				char buf[256];
-				one_argument(line, buf, sizeof(buf));
-				str_to_number(mysql_db_port[0], buf);
-			}
-
-			if (!*db_host[0] || !*db_user[0] || !*db_pwd[0] || !*db_db[0])
-			{
-				LOG_ERROR("PLAYER_SQL syntax: logsql <host user password db>");
-				exit(1);
-			}
-
-			char buf[1024];
-			snprintf(buf, sizeof(buf), "PLAYER_SQL: %s %s %s %s %d", db_host[0], db_user[0], db_pwd[0], db_db[0], mysql_db_port[0]);
-			isPlayerSQL = true;
-			continue;
-		}
-
-		TOKEN("common_sql")
-		{
-			const char * line = two_arguments(value_string, db_host[1], sizeof(db_host[1]), db_user[1], sizeof(db_user[1]));
-			line = two_arguments(line, db_pwd[1], sizeof(db_pwd[1]), db_db[1], sizeof(db_db[1]));
-
-			if ('\0' != line[0])
-			{
-				char buf[256];
-				one_argument(line, buf, sizeof(buf));
-				str_to_number(mysql_db_port[1], buf);
-			}
-
-			if (!*db_host[1] || !*db_user[1] || !*db_pwd[1] || !*db_db[1])
-			{
-				LOG_ERROR("COMMON_SQL syntax: logsql <host user password db>");
-				exit(1);
-			}
-
-			char buf[1024];
-			snprintf(buf, sizeof(buf), "COMMON_SQL: %s %s %s %s %d", db_host[1], db_user[1], db_pwd[1], db_db[1], mysql_db_port[1]);
-			isCommonSQL = true;
-			continue;
-		}
-
-		TOKEN("log_sql")
-		{
-			const char * line = two_arguments(value_string, log_host, sizeof(log_host), log_user, sizeof(log_user));
-			line = two_arguments(line, log_pwd, sizeof(log_pwd), log_db, sizeof(log_db));
-
-			if ('\0' != line[0])
-			{
-				char buf[256];
-				one_argument(line, buf, sizeof(buf));
-				str_to_number(log_port, buf);
-			}
-
-			if (!*log_host || !*log_user || !*log_pwd || !*log_db)
-			{
-				LOG_ERROR("LOG_SQL syntax: logsql <host user password db>");
-				exit(1);
-			}
-
-			char buf[1024];
-			snprintf(buf, sizeof(buf), "LOG_SQL: %s %s %s %s %d", log_host, log_user, log_pwd, log_db, log_port);
-			continue;
-		}
-		TOKEN("itemshop_sql")
-		{
-			const char* line = two_arguments(value_string, log_host, sizeof(log_host), log_user, sizeof(log_user));
-			line = two_arguments(line, log_pwd, sizeof(log_pwd), log_db, sizeof(log_db));
-
-			if ('\0' != line[0])
-			{
-				char buf[256];
-				one_argument(line, buf, sizeof(buf));
-				str_to_number(log_port, buf);
-			}
-
-			if (!*log_host || !*log_user || !*log_pwd || !*log_db)
-			{
-				LOG_ERROR("ITEMSHOP_SQL syntax: logsql <host user password db>");
-				exit(1);
-			}
-
-			char buf[1024];
-			snprintf(buf, sizeof(buf), "ITEMSHOP_SQL: %s %s %s %s %d", log_host, log_user, log_pwd, log_db, log_port);
-			continue;
-		}
-	}
-
-	fclose(fpOnlyForDB);
-
-	// CONFIG_SQL_INFO_ERROR
-	if (!isCommonSQL)
-	{
-		LOG_INFO("LOAD_COMMON_SQL_INFO_FAILURE:");
-		LOG_INFO("");
-		LOG_INFO("CONFIG:");
-		LOG_INFO("------------------------------------------------");
-		LOG_INFO("COMMON_SQL: HOST USER PASSWORD DATABASE");
-		LOG_INFO("");
-		exit(1);
-	}
-
-	if (!isPlayerSQL)
-	{
-		LOG_INFO("LOAD_PLAYER_SQL_INFO_FAILURE:");
-		LOG_INFO("");
-		LOG_INFO("CONFIG:");
-		LOG_INFO("------------------------------------------------");
-		LOG_INFO("PLAYER_SQL: HOST USER PASSWORD DATABASE");
-		LOG_INFO("");
-		exit(1);
-	}
-
-	AccountDB::instance().Connect(db_host[1], mysql_db_port[1], db_user[1], db_pwd[1], db_db[1]);
+	AccountDB::instance().Connect(cfg.sql.common.host.c_str(), cfg.sql.common.port,
+			cfg.sql.common.user.c_str(), cfg.sql.common.password.c_str(), cfg.sql.common.database.c_str());
 
 	if (false == AccountDB::instance().IsConnected())
 	{
@@ -512,9 +331,11 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 	AccountDB::instance().SetLocale(g_stLocale);
 
-	AccountDB::instance().ConnectAsync(db_host[1], mysql_db_port[1], db_user[1], db_pwd[1], db_db[1], g_stLocale.c_str());
+	AccountDB::instance().ConnectAsync(cfg.sql.common.host.c_str(), cfg.sql.common.port,
+			cfg.sql.common.user.c_str(), cfg.sql.common.password.c_str(), cfg.sql.common.database.c_str(), g_stLocale.c_str());
 
-	DBManager::instance().Connect(db_host[0], mysql_db_port[0], db_user[0], db_pwd[0], db_db[0]);
+	DBManager::instance().Connect(cfg.sql.player.host.c_str(), cfg.sql.player.port,
+			cfg.sql.player.user.c_str(), cfg.sql.player.password.c_str(), cfg.sql.player.database.c_str());
 
 	if (!DBManager::instance().IsConnected())
 	{
@@ -525,7 +346,8 @@ static bool __LoadConnectConfigFile(const char* configName)
 	LOG_INFO("PlayerSQL connected");
 
 	{
-		LogManager::instance().Connect(log_host, log_port, log_user, log_pwd, log_db);
+		LogManager::instance().Connect(cfg.sql.log.host.c_str(), cfg.sql.log.port,
+				cfg.sql.log.user.c_str(), cfg.sql.log.password.c_str(), cfg.sql.log.database.c_str());
 
 		if (!LogManager::instance().IsConnected())
 		{
@@ -623,639 +445,195 @@ static bool __LoadConnectConfigFile(const char* configName)
 	// LOG_KEEP_DAYS_EXTEND
 	log_set_expiration_days(2);
 	// END_OF_LOG_KEEP_DAYS_EXTEND
-	return true;
 }
 
-static bool __LoadDefaultConfigFile(const char* configName)
+static void __ApplyDefaultConfig(const GameConfig& cfg)
 {
-	FILE	*fp;
+	mother_port = cfg.network.port;
+	p2p_port = cfg.network.p2pPort;
 
-	char	buf[256];
-	char	token_string[256];
-	char	value_string[256];
-
-	if (!(fp = fopen(configName, "r")))
-		return false;
-
-	while (fgets(buf, 256, fp))
-	{
-		parse_token(buf, token_string, value_string);
-
-		TOKEN("port")
-		{
-			str_to_number(mother_port, value_string);
-			continue;
-		}
-
-		TOKEN("p2p_port")
-		{
-			str_to_number(p2p_port, value_string);
-			continue;
-		}
-
-		TOKEN("map_allow")
-		{
-			char * p = value_string;
-			string stNum;
-
-			for (; *p; p++)
-			{
-				if (isnhspace(*p))
-				{
-					if (!stNum.empty())
-					{
-						int32_t	index = 0;
-						str_to_number(index, stNum.c_str());
-						map_allow_add(index);
-						stNum.clear();
-					}
-				}
-				else
-					stNum += *p;
-			}
-
-			if (!stNum.empty())
-		{
-				int32_t	index = 0;
-				str_to_number(index, stNum.c_str());
-				map_allow_add(index);
-			}
-
-			continue;
-		}
-
-			}
-
-	fclose(fp);
-	return true;
+	for (int32_t index : cfg.mapAllow)
+		map_allow_add(index);
 }
 
-static bool __LoadGeneralConfigFile(const char* configName)
+static void __ApplyGeneralConfig(const GameConfig& cfg)
 {
-	FILE	*fp;
+	g_stBlockDate = cfg.server.blockLogin;
 
-	char	buf[256];
-	char	token_string[256];
-	char	value_string[256];
+	db_port = cfg.network.dbPort;
 
-	if (!(fp = fopen(configName, "r")))
-		return false;
+	strlcpy(db_addr, cfg.network.dbAddr.c_str(), sizeof(db_addr));
 
-	while (fgets(buf, 256, fp))
+	for (int n = 0; n < ADDRESS_MAX_LEN; ++n)
 	{
-		parse_token(buf, token_string, value_string);
-
-		// DB_ONLY_BEGIN
-		TOKEN("BLOCK_LOGIN")
-		{
-			g_stBlockDate = value_string;
-		}
-		// DB_ONLY_END
-
-		// CONNECTION_BEGIN
-		TOKEN("db_port")
-		{
-			str_to_number(db_port, value_string);
-			continue;
-		}
-
-		TOKEN("db_addr")
-		{
-			strlcpy(db_addr, value_string, sizeof(db_addr));
-
-			for (int n =0; n < ADDRESS_MAX_LEN; ++n)
-			{
-				if (db_addr[n] == ' ')
-					db_addr[n] = '\0';
-			}
-
-			continue;
-		}
-		// CONNECTION_END
-
-		TOKEN("INTERSERVER_KEY")
-		{
-			PeerAuth::SetKey(value_string);
-			continue;
-		}
-
-		TOKEN("empire_whisper")
-		{
-			bool b_value = 0;
-			str_to_number(b_value, value_string);
-			g_bEmpireWhisper = !!b_value;
-			continue;
-		}
-
-		TOKEN("mark_server")
-		{
-			guild_mark_server = is_string_true(value_string);
-			continue;
-		}
-
-		TOKEN("mark_min_level")
-		{
-			str_to_number(guild_mark_min_level, value_string);
-			guild_mark_min_level = MINMAX(0, guild_mark_min_level, GUILD_MAX_LEVEL);
-			continue;
-		}
-
-		TOKEN("log_keep_days")
-		{
-			int i = 0;
-			str_to_number(i, value_string);
-			log_set_expiration_days(MINMAX(1, i, 90));
-			continue;
-		}
-
-		TOKEN("passes_per_sec")
-		{
-			str_to_number(passes_per_sec, value_string);
-			continue;
-		}
-
-		TOKEN("save_event_second_cycle")
-		{
-			int	cycle = 0;
-			str_to_number(cycle, value_string);
-			save_event_second_cycle = cycle * passes_per_sec;
-			continue;
-		}
-
-		TOKEN("ping_event_second_cycle")
-		{
-			int	cycle = 0;
-			str_to_number(cycle, value_string);
-			ping_event_second_cycle = cycle * passes_per_sec;
-			continue;
-		}
-
-		TOKEN("table_postfix")
-		{
-			g_table_postfix = value_string;
-			continue;
-		}
-
-		TOKEN("test_server")
-		{
-			LOG_INFO("-----------------------------------------------");
-			LOG_INFO("TEST_SERVER");
-			LOG_INFO("-----------------------------------------------");
-			str_to_number(test_server, value_string);
-			continue;
-		}
-
-		TOKEN("shutdowned")
-		{
-			g_bNoMoreClient = true;
-			continue;
-		}
-
-		TOKEN("no_regen")
-		{
-			g_bNoRegen = true;
-			continue;
-		}
-
-#ifdef ENABLE_NEWSTUFF
-		TOKEN("item_count_limit")
-		{
-			str_to_number(g_bItemCountLimit, value_string);
-			LOG_INFO("ITEM_COUNT_LIMIT: {}", g_bItemCountLimit);
-			continue;
-		}
-
-		TOKEN("disable_shop_price_3x")
-		{
-			g_bEmpireShopPriceTripleDisable = true;
-			LOG_INFO("EMPIRE_SHOP_PRICE_3x: DISABLED");
-			continue;
-		}
-
-		TOKEN("shop_price_3x_tax") //alternative
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			g_bEmpireShopPriceTripleDisable = !flag;
-			LOG_INFO("SHOP_PRICE_3X_TAX: {}", (!g_bEmpireShopPriceTripleDisable)?"ENABLED":"DISABLED");
-			continue;
-		}
-
-		//unused
-		TOKEN("enable_shout_addon")
-		{
-			g_bShoutAddonEnable = true;
-			continue;
-		}
-
-		//unused
-		TOKEN("enable_all_mount_attack")
-		{
-			g_bAllMountAttack = true;
-			continue;
-		}
-
-		TOKEN("disable_change_attr_time")
-		{
-			g_dwItemBonusChangeTime = 0;
-			LOG_INFO("CHANGE_ATTR_TIME_LIMIT: DISABLED");
-			continue;
-		}
-
-		TOKEN("change_attr_time_limit") //alternative
-		{
-			uint32_t flag = 0;
-			str_to_number(flag, value_string);
-			g_dwItemBonusChangeTime = flag;
-			LOG_INFO("CHANGE_ATTR_TIME_LIMIT: {}", g_dwItemBonusChangeTime);
-			continue;
-		}
-
-		TOKEN("disable_prism_item")
-		{
-			g_bDisablePrismNeed = true;
-			LOG_INFO("PRISM_ITEM_REQUIREMENT: DISABLED");
-			continue;
-		}
-
-		TOKEN("prism_item_require") //alternative
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			g_bDisablePrismNeed = !flag;
-			LOG_INFO("PRISM_ITEM_REQUIRE: {}", (!g_bDisablePrismNeed)?"ENABLED":"DISABLED");
-			continue;
-		}
-
-		TOKEN("enable_global_shout")
-		{
-			g_bGlobalShoutEnable = true;
-			LOG_INFO("GLOBAL_SHOUT: ENABLED");
-			continue;
-		}
-
-		TOKEN("global_shout") //alternative
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			g_bGlobalShoutEnable = !!flag;
-			LOG_INFO("GLOBAL_SHOUT: {}", (g_bGlobalShoutEnable)?"ENABLED":"DISABLED");
-			continue;
-		}
-
-		TOKEN("disable_emotion_mask")
-		{
-			g_bDisableEmotionMask = true;
-			LOG_INFO("EMOTION_MASK_REQUIREMENT: DISABLED");
-			continue;
-		}
-
-		TOKEN("emotion_mask_require") //alternative
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			g_bDisableEmotionMask = !flag;
-			LOG_INFO("EMOTION_MASK_REQUIRE: {}", (g_bDisableEmotionMask)?"ENABLED":"DISABLED");
-			continue;
-		}
-
-		TOKEN("enable_bootary_check")
-		{
-			g_bEnableBootaryCheck = true;
-			LOG_INFO("ENABLE_BOOTARY_CHECK: ENABLED");
-			continue;
-		}
-
-		TOKEN("bootary_check") //alternative
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			g_bEnableBootaryCheck = !!flag;
-			LOG_INFO("BOOTARY_CHECK: {}", (g_bEnableBootaryCheck)?"ENABLED":"DISABLED");
-			continue;
-		}
-
-		TOKEN("status_point_get_level_limit")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			if (flag <= 0) continue;
-
-			g_iStatusPointGetLevelLimit = MINMAX(0, flag, PLAYER_MAX_LEVEL_CONST);
-			LOG_INFO("STATUS_POINT_GET_LEVEL_LIMIT: {}", g_iStatusPointGetLevelLimit);
-			continue;
-		}
-
-		TOKEN("status_point_set_max_value")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			if (flag <= 0) continue;
-
-			g_iStatusPointSetMaxValue = flag;
-			LOG_INFO("STATUS_POINT_SET_MAX_VALUE: {}", g_iStatusPointSetMaxValue);
-			continue;
-		}
-
-		TOKEN("shout_limit_level")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			if (flag <= 0) continue;
-
-			g_iShoutLimitLevel = flag;
-			LOG_INFO("SHOUT_LIMIT_LEVEL: {}", g_iShoutLimitLevel);
-			continue;
-		}
-
-		TOKEN("db_log_level")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-
-			g_iDbLogLevel = flag;
-			LOG_INFO("DB_LOG_LEVEL: {}", g_iDbLogLevel);
-			continue;
-		}
-
-		TOKEN("sys_log_level")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-
-			g_iSysLogLevel = flag;
-			LOG_INFO("SYS_LOG_LEVEL: {}", g_iSysLogLevel);
-			continue;
-		}
-
-		TOKEN("item_destroy_time_autogive")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-
-			g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE] = flag;
-			LOG_INFO("ITEM_DESTROY_TIME_AUTOGIVE: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
-			continue;
-		}
-
-		TOKEN("item_destroy_time_dropgold")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-
-			g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD] = flag;
-			LOG_INFO("ITEM_DESTROY_TIME_DROPGOLD: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD]);
-			continue;
-		}
-
-		TOKEN("item_destroy_time_dropitem")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-
-			g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM] = flag;
-			LOG_INFO("ITEM_DESTROY_TIME_DROPITEM: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM]);
-			continue;
-		}
-
-		// TOKEN("shout_limit_time")
-			// str_to_number(flag, value_string);
-			// LOG_INFO("SHOUT_LIMIT_TIME: {}", g_iShoutLimitTime);
-
-		TOKEN("check_version_server")
-		{
-			int flag = 0;
-
-			str_to_number(flag, value_string);
-			g_bCheckClientVersion = !!flag;
-			LOG_INFO("CHECK_VERSION_SERVER: {}", g_bCheckClientVersion);
-			continue;
-		}
-
-		TOKEN("check_version_value")
-		{
-			g_stClientVersion = value_string;
-			LOG_INFO("CHECK_VERSION_VALUE: {}", g_stClientVersion.c_str());
-			continue;
-		}
-
-		TOKEN("gm_host_check")
-		{
-			uint32_t flag = 0;
-			str_to_number(flag, value_string);
-
-			g_bGMHostCheck = !!flag;
-			LOG_INFO("GM_HOST_CHECK: {}", g_bGMHostCheck);
-			continue;
-		}
-
-		TOKEN("guild_invite_limit")
-		{
-			uint32_t flag = 0;
-			str_to_number(flag, value_string);
-
-			g_bGuildInviteLimit = !!flag;
-			LOG_INFO("GUILD_INVITE_LIMIT: {}", g_bGuildInviteLimit);
-			continue;
-		}
-
-		TOKEN("guild_infinite_members")
-		{
-			uint32_t flag = 0;
-			str_to_number(flag, value_string);
-
-			g_bGuildInfiniteMembers = !!flag;
-			LOG_INFO("GUILD_INFINITE_MEMBERS: {}", g_bGuildInfiniteMembers);
-			continue;
-		}
-
-		TOKEN("empire_language_check")
-		{
-			int flag = 0;
-			str_to_number(flag, value_string);
-			g_bDisableEmpireLanguageCheck = !flag;
-			LOG_INFO("EMPIRE_LANGUAGE_CHECK: {}", (g_bDisableEmpireLanguageCheck)?"DISABLED":"ENABLED");
-			continue;
-		}
-
-		TOKEN("skillbook_nextread_min")
-		{
-			uint32_t flag = 0;
-			str_to_number(flag, value_string);
-			g_dwSkillBookNextReadMin = flag;
-			LOG_INFO("SKILLBOOK_NEXTREAD_MIN: {}", g_dwSkillBookNextReadMin);
-			continue;
-		}
-
-		TOKEN("skillbook_nextread_max")
-		{
-			uint32_t flag = 0;
-			str_to_number(flag, value_string);
-			g_dwSkillBookNextReadMax = flag;
-			LOG_INFO("SKILLBOOK_NEXTREAD_MAX: {}", g_dwSkillBookNextReadMax);
-			continue;
-		}
-#endif
-
-		TOKEN("traffic_profile")
-		{
-			g_bTrafficProfileOn = true;
-			continue;
-		}
-
-		TOKEN("no_wander")
-		{
-			no_wander = true;
-			continue;
-		}
-
-		TOKEN("user_limit")
-		{
-			str_to_number(g_iUserLimit, value_string);
-			continue;
-		}
-
-		TOKEN("skill_disable")
-		{
-			str_to_number(g_bSkillDisable, value_string);
-			continue;
-		}
-
-		TOKEN("quest_dir")
-		{
-			LOG_INFO("QUEST_DIR SETTING : {}", value_string);
-			g_stQuestDir = value_string;
-		}
-
-		TOKEN("quest_object_dir")
-		{
-			//g_stQuestObjectDir = value_string;
-			std::istringstream is(value_string);
-			LOG_INFO("QUEST_OBJECT_DIR SETTING : {}", value_string);
-			string dir;
-			while (!is.eof())
-			{
-				is >> dir;
-				if (is.fail())
-					break;
-				g_setQuestObjectDir.insert(dir);
-				LOG_INFO("QUEST_OBJECT_DIR INSERT : {}", dir .c_str());
-			}
-		}
-
-		TOKEN("server_id")
-		{
-			str_to_number(g_server_id, value_string);
-		}
-
-		TOKEN("mall_url")
-		{
-			g_strWebMallURL = value_string;
-		}
-
-		TOKEN("bind_ip")
-		{
-			strlcpy(g_szPublicIP, value_string, sizeof(g_szPublicIP));
-		}
-
-		TOKEN("view_range")
-		{
-			str_to_number(VIEW_RANGE, value_string);
-		}
-
-		TOKEN("spam_block_duration")
-		{
-			str_to_number(g_uiSpamBlockDuration, value_string);
-		}
-
-		TOKEN("spam_block_score")
-		{
-			str_to_number(g_uiSpamBlockScore, value_string);
-			g_uiSpamBlockScore = MAX(1, g_uiSpamBlockScore);
-		}
-
-		TOKEN("spam_block_reload_cycle")
-		{
-			str_to_number(g_uiSpamReloadCycle, value_string);
-			g_uiSpamReloadCycle = MAX(60, g_uiSpamReloadCycle);
-		}
-
-		TOKEN("spam_block_max_level")
-		{
-			str_to_number(g_iSpamBlockMaxLevel, value_string);
-		}
-		TOKEN("protect_normal_player")
-		{
-			str_to_number(g_protectNormalPlayer, value_string);
-		}
-		TOKEN("notice_battle_zone")
-		{
-			str_to_number(g_noticeBattleZone, value_string);
-		}
-
-		TOKEN("pk_protect_level")
-		{
-		    str_to_number(PK_PROTECT_LEVEL, value_string);
-		    LOG_ERROR("PK_PROTECT_LEVEL: {}", PK_PROTECT_LEVEL);
-		}
-		
+		if (db_addr[n] == ' ')
+			db_addr[n] = '\0';
+	}
+
+	if (!cfg.interserverKey.empty())
+		PeerAuth::SetKey(cfg.interserverKey);
+
+	g_bEmpireWhisper = cfg.server.empireWhisper;
+
+	guild_mark_server = cfg.guild.markServer;
+	guild_mark_min_level = static_cast<uint8_t>(MINMAX(0, cfg.guild.markMinLevel, GUILD_MAX_LEVEL));
+
+	log_set_expiration_days(MINMAX(1, cfg.logs.keepDays, 90));
+
+	passes_per_sec = cfg.server.passesPerSec;
+	save_event_second_cycle = cfg.events.saveSecondCycle * passes_per_sec;
+	ping_event_second_cycle = cfg.events.pingSecondCycle * passes_per_sec;
+
+	g_table_postfix = cfg.server.tablePostfix;
+
+	LOG_INFO("-----------------------------------------------");
+	LOG_INFO("TEST_SERVER");
+	LOG_INFO("-----------------------------------------------");
+	test_server = cfg.server.test;
+
+	g_bNoMoreClient = cfg.server.shutdowned;
+	g_bNoRegen = cfg.server.noRegen;
+
+	g_bItemCountLimit = cfg.gameplay.itemCountLimit;
+	LOG_INFO("ITEM_COUNT_LIMIT: {}", g_bItemCountLimit);
+
+	g_bEmpireShopPriceTripleDisable = cfg.gameplay.empireShopPriceTripleDisable;
+	LOG_INFO("EMPIRE_SHOP_PRICE_3x: {}", (g_bEmpireShopPriceTripleDisable) ? "DISABLED" : "ENABLED");
+
+	g_bShoutAddonEnable = cfg.gameplay.shoutAddonEnable;
+
+	g_bAllMountAttack = cfg.gameplay.allMountAttack;
+
+	g_dwItemBonusChangeTime = cfg.gameplay.itemBonusChangeTime;
+	LOG_INFO("CHANGE_ATTR_TIME_LIMIT: {}", g_dwItemBonusChangeTime);
+
+	g_bDisablePrismNeed = cfg.gameplay.disablePrismNeed;
+	LOG_INFO("PRISM_ITEM_REQUIREMENT: {}", (g_bDisablePrismNeed) ? "DISABLED" : "ENABLED");
+
+	g_bGlobalShoutEnable = cfg.gameplay.globalShoutEnable;
+	LOG_INFO("GLOBAL_SHOUT: {}", (g_bGlobalShoutEnable) ? "ENABLED" : "DISABLED");
+
+	g_bDisableEmotionMask = cfg.gameplay.disableEmotionMask;
+	LOG_INFO("EMOTION_MASK_REQUIREMENT: {}", (g_bDisableEmotionMask) ? "DISABLED" : "ENABLED");
+
+	g_bEnableBootaryCheck = cfg.gameplay.enableBootaryCheck;
+	LOG_INFO("BOOTARY_CHECK: {}", (g_bEnableBootaryCheck) ? "ENABLED" : "DISABLED");
+
+	if (cfg.gameplay.statusPointGetLevelLimit > 0)
+	{
+		g_iStatusPointGetLevelLimit = MINMAX(0, cfg.gameplay.statusPointGetLevelLimit, PLAYER_MAX_LEVEL_CONST);
+		LOG_INFO("STATUS_POINT_GET_LEVEL_LIMIT: {}", g_iStatusPointGetLevelLimit);
+	}
+
+	if (cfg.gameplay.statusPointSetMaxValue > 0)
+	{
+		g_iStatusPointSetMaxValue = cfg.gameplay.statusPointSetMaxValue;
+		LOG_INFO("STATUS_POINT_SET_MAX_VALUE: {}", g_iStatusPointSetMaxValue);
+	}
+
+	if (cfg.gameplay.shoutLimitLevel > 0)
+	{
+		g_iShoutLimitLevel = cfg.gameplay.shoutLimitLevel;
+		LOG_INFO("SHOUT_LIMIT_LEVEL: {}", g_iShoutLimitLevel);
+	}
+
+	g_iDbLogLevel = cfg.logs.dbLevel;
+	LOG_INFO("DB_LOG_LEVEL: {}", g_iDbLogLevel);
+
+	g_iSysLogLevel = cfg.logs.sysLevel;
+	LOG_INFO("SYS_LOG_LEVEL: {}", g_iSysLogLevel);
+
+	g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE] = cfg.itemDestroy.autogive;
+	LOG_INFO("ITEM_DESTROY_TIME_AUTOGIVE: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+
+	g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD] = cfg.itemDestroy.dropgold;
+	LOG_INFO("ITEM_DESTROY_TIME_DROPGOLD: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD]);
+
+	g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM] = cfg.itemDestroy.dropitem;
+	LOG_INFO("ITEM_DESTROY_TIME_DROPITEM: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM]);
+
+	g_bCheckClientVersion = cfg.version.checkServer;
+	LOG_INFO("CHECK_VERSION_SERVER: {}", g_bCheckClientVersion);
+
+	g_stClientVersion = cfg.version.value;
+	LOG_INFO("CHECK_VERSION_VALUE: {}", g_stClientVersion.c_str());
+
+	g_bGMHostCheck = cfg.gameplay.gmHostCheck;
+	LOG_INFO("GM_HOST_CHECK: {}", g_bGMHostCheck);
+
+	g_bGuildInviteLimit = cfg.guild.inviteLimit;
+	LOG_INFO("GUILD_INVITE_LIMIT: {}", g_bGuildInviteLimit);
+
+	g_bGuildInfiniteMembers = cfg.guild.infiniteMembers;
+	LOG_INFO("GUILD_INFINITE_MEMBERS: {}", g_bGuildInfiniteMembers);
+
+	g_bDisableEmpireLanguageCheck = cfg.gameplay.disableEmpireLanguageCheck;
+	LOG_INFO("EMPIRE_LANGUAGE_CHECK: {}", (g_bDisableEmpireLanguageCheck) ? "DISABLED" : "ENABLED");
+
+	g_dwSkillBookNextReadMin = cfg.gameplay.skillBookNextReadMin;
+	LOG_INFO("SKILLBOOK_NEXTREAD_MIN: {}", g_dwSkillBookNextReadMin);
+
+	g_dwSkillBookNextReadMax = cfg.gameplay.skillBookNextReadMax;
+	LOG_INFO("SKILLBOOK_NEXTREAD_MAX: {}", g_dwSkillBookNextReadMax);
+
+	g_bTrafficProfileOn = cfg.server.trafficProfile;
+	no_wander = cfg.server.noWander;
+	g_iUserLimit = cfg.server.userLimit;
+	g_bSkillDisable = cfg.server.skillDisable;
+
+	if (!cfg.quest.dir.empty())
+	{
+		LOG_INFO("QUEST_DIR SETTING : {}", cfg.quest.dir.c_str());
+		g_stQuestDir = cfg.quest.dir;
+	}
+
+	for (const auto& dir : cfg.quest.objectDir)
+	{
+		LOG_INFO("QUEST_OBJECT_DIR INSERT : {}", dir.c_str());
+		g_setQuestObjectDir.insert(dir);
+	}
+
+	g_server_id = cfg.server.serverId;
+	g_strWebMallURL = cfg.server.mallUrl;
+
+	if (!cfg.network.bindIp.empty())
+		strlcpy(g_szPublicIP, cfg.network.bindIp.c_str(), sizeof(g_szPublicIP));
+
+	VIEW_RANGE = cfg.server.viewRange;
+
+	g_uiSpamBlockDuration = cfg.spamBlock.duration;
+	g_uiSpamBlockScore = static_cast<unsigned int>(MAX(1, static_cast<int>(cfg.spamBlock.score)));
+	g_uiSpamReloadCycle = static_cast<unsigned int>(MAX(60, static_cast<int>(cfg.spamBlock.reloadCycle)));
+	g_iSpamBlockMaxLevel = cfg.spamBlock.maxLevel;
+
+	g_protectNormalPlayer = cfg.server.protectNormalPlayer;
+	g_noticeBattleZone = cfg.server.noticeBattleZone;
+
+	if (cfg.server.pkProtectLevel >= 0)
+	{
+		PK_PROTECT_LEVEL = static_cast<uint8_t>(cfg.server.pkProtectLevel);
+		LOG_ERROR("PK_PROTECT_LEVEL: {}", PK_PROTECT_LEVEL);
+	}
+
 #ifdef __ATTR_TRANSFER_SYSTEM__
-		TOKEN("ATTR_TRANSFER_LIMIT")
-		{
-			str_to_number(gAttrTransferLimit, value_string);
-			LOG_ERROR("ATTR_TRANSFER_LIMIT: {}", gAttrTransferLimit);
-			continue;
-		}
+	gAttrTransferLimit = cfg.server.attrTransferLimit;
+	LOG_ERROR("ATTR_TRANSFER_LIMIT: {}", gAttrTransferLimit);
 #endif
-		
-		TOKEN("max_level")
-		{
-			str_to_number(gPlayerMaxLevel, value_string);
 
-			gPlayerMaxLevel = MINMAX(1, gPlayerMaxLevel, PLAYER_MAX_LEVEL_CONST);
+	gPlayerMaxLevel = MINMAX(1, cfg.server.maxLevel, PLAYER_MAX_LEVEL_CONST);
+	LOG_ERROR("PLAYER_MAX_LEVEL: {}", gPlayerMaxLevel);
 
-			LOG_ERROR("PLAYER_MAX_LEVEL: {}", gPlayerMaxLevel);
-		}
-		
-		TOKEN("stone_chance")
-		{
-			str_to_number(stone_chance, value_string);
-			
-			stone_chance = MINMAX(1, stone_chance, 100);
-			
-			LOG_ERROR("STONE_CHANCE: {}/n", stone_chance);
-		}
-		
-		TOKEN("shutdown_age")
-		{
-			str_to_number(gShutdownAge, value_string);
-			LOG_ERROR("SHUTDOWN_AGE: {}", gShutdownAge);
+	stone_chance = MINMAX(1, cfg.server.stoneChance, 100);
+	LOG_ERROR("STONE_CHANCE: {}/n", stone_chance);
 
-		}
+	gShutdownAge = cfg.shutdown.age;
+	LOG_ERROR("SHUTDOWN_AGE: {}", gShutdownAge);
 
-		TOKEN("shutdown_enable")
-		{
-			str_to_number(gShutdownEnable, value_string);
-			LOG_ERROR("SHUTDOWN_ENABLE: {}", gShutdownEnable);
-		}
+	gShutdownEnable = cfg.shutdown.enable;
+	LOG_ERROR("SHUTDOWN_ENABLE: {}", gShutdownEnable);
 
-		TOKEN("block_char_creation")
-		{
-			int tmp = 0;
-
-			str_to_number(tmp, value_string);
-
-			if (0 == tmp)
-				g_BlockCharCreation = false;
-			else
-				g_BlockCharCreation = true;
-
-			continue;
-		}
-	}
-	fclose(fp);
-	return true;
-	}
+	g_BlockCharCreation = cfg.server.blockCharCreation;
+}
 
 #define ENABLE_CMD_PLAYER
 static bool __LoadDefaultCMDFile(const char* cmdName)
@@ -1348,22 +726,13 @@ static bool __LoadExpTableFromDB(void)
 }
 #endif
 
-// #define ENABLE_GENERAL_CMD
-// #define ENABLE_GENERAL_CONFIG
 void config_init(std::string_view st_localeServiceName)
 {
-	// LOCALE_SERVICE
-	string	st_configFileName;
-
-	st_configFileName.reserve(32);
-	st_configFileName = "CONFIG";
-
+	// The GameServer reads a single conf.json from the working directory.
+	// The historical CONFIG / CONFIG.<locale> naming and the GENERAL_*
+	// overlays are gone; the argument is kept for start() compatibility.
 	if (!st_localeServiceName.empty())
-	{
-		st_configFileName += ".";
-		st_configFileName.append(st_localeServiceName);
-	}
-	// END_OF_LOCALE_SERVICE
+		LOG_INFO("Locale service name '{}' ignored, reading conf.json", st_localeServiceName);
 
 	if (!GetIPInfo())
 	{
@@ -1371,38 +740,17 @@ void config_init(std::string_view st_localeServiceName)
 	//	exit(1);
 	}
 
-	// default config load (REQUIRED)
-	if (!__LoadConnectConfigFile(st_configFileName.c_str()) ||
-		!__LoadDefaultConfigFile(st_configFileName.c_str()) ||
-		!__LoadGeneralConfigFile(st_configFileName.c_str())
-	)
+	GameConfig cfg;
+
+	if (!cfg.Load("conf.json"))
 	{
-		LOG_ERROR("Can not open [{}]", st_configFileName.c_str());
+		LOG_ERROR("Can not load [conf.json]");
 		exit(1);
 	}
-#ifdef ENABLE_GENERAL_CONFIG
-	// general config - locale based
-	{
-		char szFileName[256];
-		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s", LocaleService_GetBasePath().c_str(), st_configFileName.c_str());
-		if (__LoadGeneralConfigFile(szFileName))
-			LOG_ERROR("GENERAL CONFIG LOAD OK [{}]", szFileName);
-	}
-	// general config - locale n channel based
-	{
-		char szFileName[256];
-		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s_CHANNEL_%d", LocaleService_GetBasePath().c_str(), st_configFileName.c_str(), g_bChannel);
-		if (__LoadGeneralConfigFile(szFileName))
-			LOG_ERROR("GENERAL CONFIG LOAD OK [{}]", szFileName);
-	}
-	// general config - locale n channel n hostname based
-	{
-		char szFileName[256];
-		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s_CHANNEL_%d_HOSTNAME_%s", LocaleService_GetBasePath().c_str(), st_configFileName.c_str(), g_bChannel, g_stHostname.c_str());
-		if (__LoadGeneralConfigFile(szFileName))
-			LOG_ERROR("GENERAL CONFIG LOAD OK [{}]", szFileName);
-	}
-#endif
+
+	__ApplyConnectConfig(cfg);
+	__ApplyDefaultConfig(cfg);
+	__ApplyGeneralConfig(cfg);
 
 	if (g_setQuestObjectDir.empty())
 		g_setQuestObjectDir.insert(g_stDefaultQuestObjectDir);
@@ -1441,32 +789,6 @@ void config_init(std::string_view st_localeServiceName)
 
 	std::string st_cmdFileName("CMD");
 	__LoadDefaultCMDFile(st_cmdFileName.c_str());
-#ifdef ENABLE_GENERAL_CMD
-	// general cmd - locale based
-	{
-		char szFileName[256];
-		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s", LocaleService_GetBasePath().c_str(), st_cmdFileName.c_str());
-		if (__LoadDefaultCMDFile(szFileName))
-			LOG_INFO("GENERAL CMD LOAD OK [{}]", szFileName);
-	}
-	// general cmd - locale n channel based
-	{
-		char szFileName[256];
-		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s_CHANNEL_%d", LocaleService_GetBasePath().c_str(), st_cmdFileName.c_str(), g_bChannel);
-		if (__LoadDefaultCMDFile(szFileName))
-			LOG_INFO("GENERAL CMD LOAD OK [{}]", szFileName);
-	}
-	// general cmd - locale n channel n hostname based
-	{
-		char szFileName[256];
-		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s_CHANNEL_%d_HOSTNAME_%s", LocaleService_GetBasePath().c_str(), st_cmdFileName.c_str(), g_bChannel, g_stHostname.c_str());
-		if (__LoadDefaultCMDFile(szFileName))
-			LOG_INFO("GENERAL CMD LOAD OK [{}]", szFileName);
-	}
-#endif
-
-	//{
-	//}
 
 	LoadValidCRCList();
 	LoadStateUserCount();

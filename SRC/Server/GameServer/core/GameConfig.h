@@ -17,7 +17,8 @@
 //     "protect_normal_player": false, "notice_battle_zone": false,
 //     "pk_protect_level": 30, "skill_disable": false, "no_wander": false,
 //     "shutdowned": false, "no_regen": false, "traffic_profile": false,
-//     "attr_transfer_limit": 0
+//     "attr_transfer_limit": 0, "passes_per_sec": 25, "view_range": 5000,
+//     "mall_url": "https://..."
 //   },
 //   "network": { "port": 50080, "p2p_port": 50900, "db_addr": "",
 //                "db_port": 0, "bind_ip": "" },
@@ -43,8 +44,7 @@
 //     "item_bonus_change_time": 60, "all_mount_attack": true,
 //     "enable_bootary_check": false, "gm_host_check": false,
 //     "status_point_get_level_limit": 90, "status_point_set_max_value": 90,
-//     "shout_limit_level": 15, "db_log_level": 3, "sys_log_level": 3,
-//     "disable_empire_language_check": false,
+//     "shout_limit_level": 15, "disable_empire_language_check": false,
 //     "skillbook_nextread_min": 28800, "skillbook_nextread_max": 43200
 //   }
 // }
@@ -76,13 +76,16 @@ struct GameConfig
 		bool		empireWhisper { true };
 		bool		protectNormalPlayer { false };
 		bool		noticeBattleZone { false };
-		uint8_t		pkProtectLevel { 30 };
+		int		pkProtectLevel { -1 }; // unset: keep the locale default
 		bool		skillDisable { false };
 		bool		noWander { false };
 		bool		shutdowned { false };
 		bool		noRegen { false };
 		bool		trafficProfile { false };
 		int		attrTransferLimit { 0 };
+		int		passesPerSec { 25 };
+		int		viewRange { 5000 };
+		std::string	mallUrl { "https://www.wonder2.org/index.php/shop/login?pid=$playerID&key=$codice" };
 	} server;
 
 	struct NetworkConfig
@@ -125,7 +128,7 @@ struct GameConfig
 
 	struct QuestConfig
 	{
-		std::string		dir { "./quest" };
+		std::string		dir; // unset: keep the locale default
 		std::vector<std::string>	objectDir;
 	} quest;
 
@@ -176,9 +179,7 @@ struct GameConfig
 		bool		gmHostCheck { false };
 		int		statusPointGetLevelLimit { 90 };
 		int		statusPointSetMaxValue { 90 };
-		int		shoutLimitLevel { 15 };
-		int		dbLogLevel { 3 }; // LOG_LEVEL_MAX
-		int		sysLogLevel { 3 };
+		int	shoutLimitLevel { 15 };
 		bool		disableEmpireLanguageCheck { false };
 		uint32_t	skillBookNextReadMin { 28800 };
 		uint32_t	skillBookNextReadMax { 43200 };

@@ -59,13 +59,16 @@ bool GameConfig::Load(const char* path)
 			server.empireWhisper = s.value("empire_whisper", true);
 			server.protectNormalPlayer = s.value("protect_normal_player", false);
 			server.noticeBattleZone = s.value("notice_battle_zone", false);
-			server.pkProtectLevel = static_cast<uint8_t>(s.value("pk_protect_level", 30));
+			server.pkProtectLevel = s.value("pk_protect_level", -1);
 			server.skillDisable = s.value("skill_disable", false);
 			server.noWander = s.value("no_wander", false);
 			server.shutdowned = s.value("shutdowned", false);
 			server.noRegen = s.value("no_regen", false);
 			server.trafficProfile = s.value("traffic_profile", false);
 			server.attrTransferLimit = s.value("attr_transfer_limit", 0);
+			server.passesPerSec = s.value("passes_per_sec", 25);
+			server.viewRange = s.value("view_range", 5000);
+			server.mallUrl = s.value("mall_url", std::string("https://www.wonder2.org/index.php/shop/login?pid=$playerID&key=$codice"));
 		}
 
 		if (doc.contains("network"))
@@ -125,7 +128,7 @@ bool GameConfig::Load(const char* path)
 		if (doc.contains("quest"))
 		{
 			const auto& q = doc.at("quest");
-			quest.dir = q.value("dir", std::string("./quest"));
+			quest.dir = q.value("dir", std::string());
 
 			if (q.contains("object_dir") && q.at("object_dir").is_array())
 			{
@@ -187,8 +190,6 @@ bool GameConfig::Load(const char* path)
 			gameplay.statusPointGetLevelLimit = gp.value("status_point_get_level_limit", 90);
 			gameplay.statusPointSetMaxValue = gp.value("status_point_set_max_value", 90);
 			gameplay.shoutLimitLevel = gp.value("shout_limit_level", 15);
-			gameplay.dbLogLevel = gp.value("db_log_level", 3);
-			gameplay.sysLogLevel = gp.value("sys_log_level", 3);
 			gameplay.disableEmpireLanguageCheck = gp.value("disable_empire_language_check", false);
 			gameplay.skillBookNextReadMin = gp.value("skillbook_nextread_min", 28800u);
 			gameplay.skillBookNextReadMax = gp.value("skillbook_nextread_max", 43200u);
