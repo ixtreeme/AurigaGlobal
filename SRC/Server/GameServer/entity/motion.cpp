@@ -1,481 +1,176 @@
 #include "stdafx.h"
-#include <common/stl.h>
-#include "constants.h"
 #include "motion.h"
-#include "text_file_loader.h"
 #include "mob_manager.h"
-#include "char_interface.hpp"
-#include "Core/Logging.hpp"
-#include <common/CommonDefines.h>
-#include "config.h"
+#include "db.h"
 
-static const char* GetMotionFileName(TMobTable* mobTable, EPublicMotion motion)
+#include <Core/Logging.hpp>
+
+#include <cmath>
+#include <cstdlib>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace
 {
-	char buf[1024];
-	const char * folder = mobTable->szFolder;
-	snprintf(buf, sizeof(buf), "data/monster/%s/motlist.txt", folder);
-
-	FILE * fp = fopen(buf, "rt");
-	char * v[4];
-
-	if (fp != nullptr)
+	struct SSplashRow
 	{
-		const char* field = nullptr;
+		int	skillIndex { 0 };
+		uint32_t	timing { 0 };
+		uint32_t	hitDistance { 0 };
+	};
 
-		switch (motion)
+	void AssignMotionRow(const MYSQL_ROW row, CMotionManager::SMotionData& out)
+	{
+		out.walkSpeed = static_cast<float>(atof(row[1] ? row[1] : "0"));
+		out.runSpeed = static_cast<float>(atof(row[2] ? row[2] : "0"));
+		out.attackDuration = static_cast<float>(atof(row[3] ? row[3] : "0"));
+
+		for (int i = 0; i < MOB_SKILL_MAX_NUM; ++i)
+			out.skillDuration[i] = static_cast<float>(atof(row[4 + i] ? row[4 + i] : "0"));
+	}
+}
+
+bool CMotionManager::Build()
+{
+	m_map_motion.clear();
+
+	std::map<std::string, SMotionData> folderMotion;
+
+	{
+		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(
+				"SELECT folder, walk_speed, run_speed, attack_duration, "
+				"skill1_duration, skill2_duration, skill3_duration, skill4_duration, skill5_duration "
+				"FROM mob_motion"));
+
+		if (msg && msg->Get())
 		{
-			case MOTION_WALK				: field = "WALK"; break;
-			case MOTION_RUN					: field = "RUN"; break;
-			case MOTION_NORMAL_ATTACK		: field = "NORMAL_ATTACK"; break;
-			case MOTION_SPECIAL_1			: field = "SPECIAL"; break;
-			case MOTION_SPECIAL_2			: field = "SPECIAL1"; break;
-			case MOTION_SPECIAL_3			: field = "SPECIAL2"; break;
-			case MOTION_SPECIAL_4			: field = "SPECIAL3"; break;
-			case MOTION_SPECIAL_5			: field = "SPECIAL4"; break;
-
-			default:
-				fclose(fp);
-				LOG_ERROR("Motion: no process for this motion({}) vnum({})", motion, mobTable->dwVnum);
-				return nullptr;
-		}
-
-		while (fgets(buf, 1024, fp))
-		{
-			v[0] = strtok(buf,  " \t\r\n");
-			v[1] = strtok(nullptr, " \t\r\n");
-			v[2] = strtok(nullptr, " \t\r\n");
-			v[3] = strtok(nullptr, " \t\r\n");
-
-			if (nullptr != v[0] && nullptr != v[1] && nullptr != v[2] && nullptr != v[3] && !strcasecmp(v[1], field))
+			for (uint64_t i = 0; i < msg->Get()->uiNumRows; ++i)
 			{
-				fclose(fp);
+				MYSQL_ROW row = msg->Get()->FetchRow();
 
-				static std::string str;
-				str = "data/monster/";
-				str += folder;
-				str += "/";
-				str += v[2];
+				if (!row || !row[0] || !row[0][0])
+					continue;
 
-				return str.c_str();
+				SMotionData data;
+				AssignMotionRow(row, data);
+				folderMotion[row[0]] = data;
 			}
 		}
-
-		fclose(fp);
-	}
-	else if (test_server) {
-		LOG_ERROR("Motion: {} have not motlist.txt vnum({}) folder({})", folder, mobTable->dwVnum, mobTable->szFolder);
 	}
 
-	return nullptr;
-}
+	std::map<std::string, std::vector<SSplashRow>> folderSplash;
 
-static void LoadMotion(CMotionSet* pMotionSet, TMobTable* mob_table, EPublicMotion motion)
-{
-	const char* cpFileName = GetMotionFileName(mob_table, motion);
-
-	if (cpFileName == nullptr)
 	{
-		return;
-	}
+		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(
+				"SELECT folder, skill_index, timing_ms, hit_distance "
+				"FROM mob_skill_splash ORDER BY folder, skill_index, event_index"));
 
-	CMotion* pMotion = M2_NEW CMotion;
-
-	if (pMotion->LoadFromFile(cpFileName) == true)
-	{
-		if (test_server) {
-			if (motion == MOTION_RUN)
-				if (0.0f == pMotion->GetAccumVector().y)
-					LOG_ERROR("cannot find accumulation data in file '{}'", cpFileName);
-		}
-
-		pMotionSet->Insert(MAKE_MOTION_KEY(MOTION_MODE_GENERAL, motion), pMotion);
-	}
-	else
-	{
-		M2_DELETE(pMotion);
-		LOG_ERROR("Motion: Load failed vnum({}) motion({}) file({})", mob_table->dwVnum, motion, cpFileName);
-	}
-}
-
-static void LoadSkillMotion(CMotionSet* pMotionSet, CMob* pMob, EPublicMotion motion)
-{
-	int idx = 0;
-
-	switch (motion)
-	{
-		case MOTION_SPECIAL_1 : idx = 0; break;
-		case MOTION_SPECIAL_2 : idx = 1; break;
-		case MOTION_SPECIAL_3 : idx = 2; break;
-		case MOTION_SPECIAL_4 : idx = 3; break;
-		case MOTION_SPECIAL_5 : idx = 4; break;
-
-		default :
-			return;
-	}
-
-	TMobTable* mob_table = &pMob->m_table;
-
-	if (mob_table->Skills[idx].dwVnum == 0) return;
-
-	const char* cpFileName = GetMotionFileName(mob_table, motion);
-	if (cpFileName == nullptr) return;
-
-	CMotion* pMotion = M2_NEW CMotion;
-
-	if (pMotion->LoadMobSkillFromFile(cpFileName, pMob, idx) == true)
-	{
-		pMotionSet->Insert(MAKE_MOTION_KEY(MOTION_MODE_GENERAL, motion), pMotion);
-	}
-	else
-	{
-		if (mob_table->Skills[idx].dwVnum != 0)
+		if (msg && msg->Get())
 		{
-			LOG_ERROR("Motion: Skill exist but no motion data for index {} mob {} skill {}", idx, mob_table->dwVnum, mob_table->Skills[idx].dwVnum);
+			for (uint64_t i = 0; i < msg->Get()->uiNumRows; ++i)
+			{
+				MYSQL_ROW row = msg->Get()->FetchRow();
+
+				if (!row || !row[0] || !row[0][0])
+					continue;
+
+				SSplashRow splash;
+				splash.skillIndex = row[1] ? atoi(row[1]) : 0;
+				splash.timing = static_cast<uint32_t>(row[2] ? strtoul(row[2], nullptr, 10) : 0);
+				// Same conversion the old .msa loader applied: the raw signed
+				// position is stored in the DB and reinterpreted here.
+				splash.hitDistance = static_cast<uint32_t>(static_cast<int32_t>(row[3] ? atoi(row[3]) : 0));
+
+				folderSplash[row[0]].push_back(splash);
+			}
 		}
-		M2_DELETE(pMotion);
 	}
-}
 
-CMotionManager::CMotionManager()
-{
-}
+	uint32_t loadedMotions = 0;
+	uint32_t loadedSplashes = 0;
 
-CMotionManager::~CMotionManager()
-{
-	iterator it = m_map_pkMotionSet.begin();
-	for ( ; it != m_map_pkMotionSet.end(); ++it) {
-		M2_DELETE(it->second);
+	CMobManager::iterator it = CMobManager::instance().begin();
+
+	for (; it != CMobManager::instance().end(); ++it)
+	{
+		CMob* mob = it->second;
+
+		if (!mob)
+			continue;
+
+		for (int i = 0; i < MOB_SKILL_MAX_NUM; ++i)
+		{
+			mob->m_mobSkillInfo[i].dwSkillVnum = 0;
+			mob->m_mobSkillInfo[i].bSkillLevel = 0;
+			mob->m_mobSkillInfo[i].vecSplashAttack.clear();
+		}
+
+		const char* folder = mob->m_table.szFolder;
+
+		if (!folder || !folder[0])
+			continue;
+
+		const auto motionIt = folderMotion.find(folder);
+
+		if (motionIt != folderMotion.end())
+		{
+			m_map_motion[mob->m_table.dwVnum] = motionIt->second;
+			++loadedMotions;
+		}
+
+		const auto splashIt = folderSplash.find(folder);
+
+		if (splashIt != folderSplash.end())
+		{
+			for (const SSplashRow& splash : splashIt->second)
+			{
+				if (splash.skillIndex < 0 || splash.skillIndex >= MOB_SKILL_MAX_NUM)
+					continue;
+
+				mob->AddSkillSplash(splash.skillIndex, splash.timing, splash.hitDistance);
+				mob->m_mobSkillInfo[splash.skillIndex].dwSkillVnum = mob->m_table.Skills[splash.skillIndex].dwVnum;
+				mob->m_mobSkillInfo[splash.skillIndex].bSkillLevel = mob->m_table.Skills[splash.skillIndex].bLevel;
+				++loadedSplashes;
+			}
+		}
 	}
-}
 
-const CMotionSet * CMotionManager::GetMotionSet(uint32_t dwVnum)
-{
-	iterator it = m_map_pkMotionSet.find(dwVnum);
-
-	if (m_map_pkMotionSet.end() == it)
-		return nullptr;
-
-	return it->second;
-}
-
-const CMotion * CMotionManager::GetMotion(uint32_t dwVnum, uint32_t dwKey)
-{
-	const CMotionSet * pkMotionSet = GetMotionSet(dwVnum);
-
-	if (!pkMotionSet)
-		return nullptr;
-
-	return pkMotionSet->GetMotion(dwKey);
+	LOG_INFO("Motion: {} mob motions, {} skill splashes loaded from the DB", loadedMotions, loadedSplashes);
+	return true;
 }
 
 float CMotionManager::GetMotionDuration(uint32_t dwVnum, uint32_t dwKey)
 {
-	const CMotion * pkMotion = GetMotion(dwVnum, dwKey);
-	return pkMotion ? pkMotion->GetDuration() : 0.0f;
-}
+	const auto it = m_map_motion.find(dwVnum);
 
-enum EMotionEventType
-{
-	MOTION_EVENT_TYPE_NONE,					// 0
-	MOTION_EVENT_TYPE_EFFECT,				// 1
-	MOTION_EVENT_TYPE_SCREEN_WAVING,		// 2
-	MOTION_EVENT_TYPE_SCREEN_FLASHING,		// 3
-	MOTION_EVENT_TYPE_SPECIAL_ATTACKING,	// 4
-	MOTION_EVENT_TYPE_SOUND,				// 5
-	MOTION_EVENT_TYPE_FLY,					// 6
-	MOTION_EVENT_TYPE_CHARACTER_SHOW,		// 7
-	MOTION_EVENT_TYPE_CHARACTER_HIDE,		// 8
-	MOTION_EVENT_TYPE_WARP,					// 9
-	MOTION_EVENT_TYPE_EFFECT_TO_TARGET,		// 10
-	MOTION_EVENT_TYPE_MAX_NUM,				// 11
-};
+	if (it == m_map_motion.end())
+		return 0.0f;
 
-bool CMotionManager::Build()
-{
-	const char * c_apszFolderName[MAIN_RACE_MAX_NUM] =
+	if (GET_MOTION_MODE(dwKey) != MOTION_MODE_GENERAL)
+		return 0.0f;
+
+	const uint16_t index = GET_MOTION_INDEX(dwKey);
+
+	switch (index)
 	{
-		"data/pc/warrior",
-		"data/pc/assassin",
-		"data/pc/sura",
-		"data/pc/shaman",
-		"data/pc2/warrior",
-		"data/pc2/assassin",
-		"data/pc2/sura",
-		"data/pc2/shaman",
-	};
-
-	for (int i = 0; i < MAIN_RACE_MAX_NUM; ++i)
-	{
-		CMotionSet * pkMotionSet = M2_NEW CMotionSet;
-		m_map_pkMotionSet.insert(TContainer::value_type(i, pkMotionSet));
-
-		char sz[256];
-
-		snprintf(sz, sizeof(sz), "%s/general/run.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_GENERAL, MOTION_RUN);
-		snprintf(sz, sizeof(sz), "%s/general/walk.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_GENERAL, MOTION_WALK);
-
-		snprintf(sz, sizeof(sz), "%s/twohand_sword/run.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_TWOHAND_SWORD, MOTION_RUN);
-		snprintf(sz, sizeof(sz), "%s/twohand_sword/walk.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_TWOHAND_SWORD, MOTION_WALK);
-
-		snprintf(sz, sizeof(sz), "%s/onehand_sword/run.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_ONEHAND_SWORD, MOTION_RUN);
-		snprintf(sz, sizeof(sz), "%s/onehand_sword/walk.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_ONEHAND_SWORD, MOTION_WALK);
-
-		snprintf(sz, sizeof(sz), "%s/dualhand_sword/run.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_DUALHAND_SWORD, MOTION_RUN);
-		snprintf(sz, sizeof(sz), "%s/dualhand_sword/walk.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_DUALHAND_SWORD, MOTION_WALK);
-
-		snprintf(sz, sizeof(sz), "%s/bow/run.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_BOW, MOTION_RUN);
-		snprintf(sz, sizeof(sz), "%s/bow/walk.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_BOW, MOTION_WALK);
-
-		snprintf(sz, sizeof(sz), "%s/bell/run.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_BELL, MOTION_RUN);
-		snprintf(sz, sizeof(sz), "%s/bell/walk.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_BELL, MOTION_WALK);
-
-		snprintf(sz, sizeof(sz), "%s/fan/run.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_FAN, MOTION_RUN);
-		snprintf(sz, sizeof(sz), "%s/fan/walk.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_FAN, MOTION_WALK);
-
-		snprintf(sz, sizeof(sz), "%s/horse/run.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_HORSE, MOTION_RUN);
-		snprintf(sz, sizeof(sz), "%s/horse/walk.msa", c_apszFolderName[i]);
-		pkMotionSet->Load(sz, MOTION_MODE_HORSE, MOTION_WALK);
-	}
-
-	CMobManager::iterator it = CMobManager::instance().begin();
-
-	while (it != CMobManager::instance().end())
-	{
-		CMob * pkMob = (it++)->second;
-		TMobTable * t = &pkMob->m_table;
-
-		if ('\0' != t->szFolder[0])
-		{
-			CMotionSet * pkMotionSet = M2_NEW CMotionSet;
-			m_map_pkMotionSet.insert(TContainer::value_type(t->dwVnum, pkMotionSet));
-
-			LoadMotion(pkMotionSet, t, MOTION_WALK);
-			LoadMotion(pkMotionSet, t, MOTION_RUN);
-			LoadMotion(pkMotionSet, t, MOTION_NORMAL_ATTACK);
-
-			LoadSkillMotion(pkMotionSet, pkMob, MOTION_SPECIAL_1);
-			LoadSkillMotion(pkMotionSet, pkMob, MOTION_SPECIAL_2);
-			LoadSkillMotion(pkMotionSet, pkMob, MOTION_SPECIAL_3);
-			LoadSkillMotion(pkMotionSet, pkMob, MOTION_SPECIAL_4);
-			LoadSkillMotion(pkMotionSet, pkMob, MOTION_SPECIAL_5);
-		}
-	}
-
-	return true;
-}
-
-CMotionSet::CMotionSet()
-{
-}
-
-CMotionSet::~CMotionSet()
-{
-	iterator it = m_map_pkMotion.begin();
-	for ( ; it != m_map_pkMotion.end(); ++it) {
-		M2_DELETE(it->second);
+		case MOTION_NORMAL_ATTACK:	return it->second.attackDuration;
+		case MOTION_SPECIAL_1:		return it->second.skillDuration[0];
+		case MOTION_SPECIAL_2:		return it->second.skillDuration[1];
+		case MOTION_SPECIAL_3:		return it->second.skillDuration[2];
+		case MOTION_SPECIAL_4:		return it->second.skillDuration[3];
+		case MOTION_SPECIAL_5:		return it->second.skillDuration[4];
+		default:			return 0.0f;
 	}
 }
 
-const CMotion * CMotionSet::GetMotion(uint32_t dwKey) const
+float CMotionManager::GetMoveSpeed(uint32_t dwVnum, bool walking) const
 {
-	const_iterator it = m_map_pkMotion.find(dwKey);
+	const auto it = m_map_motion.find(dwVnum);
 
-	if (it == m_map_pkMotion.end())
-		return nullptr;
+	if (it == m_map_motion.end())
+		return 0.0f;
 
-	return it->second;
+	const float speed = walking ? it->second.walkSpeed : it->second.runSpeed;
+	return (std::isfinite(speed) && speed > 0.0f) ? speed : 0.0f;
 }
-
-void CMotionSet::Insert(uint32_t dwKey, CMotion * pkMotion)
-{
-	m_map_pkMotion.insert(TContainer::value_type(dwKey, pkMotion));
-}
-
-bool CMotionSet::Load(const char * szFileName, int mode, int motion)
-{
-	CMotion * pkMotion = M2_NEW CMotion;
-
-	if (!pkMotion->LoadFromFile(szFileName))
-	{
-		M2_DELETE(pkMotion);
-		return false;
-	}
-
-	Insert(MAKE_MOTION_KEY(mode, motion), pkMotion);
-
-	return true;
-}
-
-CMotion::CMotion() : m_isEmpty(true), m_fDuration(0.0f), m_isAccumulation(false)
-{
-	m_vec3Accumulation.x = 0.0f;
-	m_vec3Accumulation.y = 0.0f;
-	m_vec3Accumulation.z = 0.0f;
-}
-
-CMotion::~CMotion()
-{
-}
-
-bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int iSkillIndex)
-{
-	CTextFileLoader rkTextFileLoader;
-	if (!rkTextFileLoader.Load(c_pszFileName))
-		return false;
-
-
-	rkTextFileLoader.SetTop();
-
-	if (!rkTextFileLoader.GetTokenFloat("motionduration", &m_fDuration))
-	{
-		LOG_ERROR("Motion: no motion duration {}", c_pszFileName);
-		return false;
-	}
-
-	//if (rkTextFileLoader.GetTokenPosition("accumulation", &m_vec3Accumulation))
-	//m_isAccumulation = true;
-
-	std::string strNodeName;
-	for (uint32_t i = 0; i < rkTextFileLoader.GetChildNodeCount(); ++i)
-	{
-		//CTextFileLoader::CGotoChild GotoChild(rkTextFileLoader, i);
-		rkTextFileLoader.SetChildNode(i);
-
-		rkTextFileLoader.GetCurrentNodeName(&strNodeName);
-
-		if (0 == strNodeName.compare("motioneventdata"))
-		{
-			uint32_t dwMotionEventDataCount;
-
-			if (!rkTextFileLoader.GetTokenDoubleWord("motioneventdatacount", &dwMotionEventDataCount))
-				continue;
-
-			for (uint32_t j = 0; j < dwMotionEventDataCount; ++j)
-			{
-				if (!rkTextFileLoader.SetChildNode("event", j))
-				{
-					LOG_ERROR("Motion: no event data {} {}", j, c_pszFileName);
-					return false;
-				}
-
-				int iType;
-				if (!rkTextFileLoader.GetTokenInteger("motioneventtype", &iType))
-				{
-					LOG_ERROR("Motion: no motioneventtype data {}", c_pszFileName);
-					return false;
-				}
-
-				//float fRadius;
-				D3DVECTOR v3Position;
-
-				switch (iType)
-				{
-					case MOTION_EVENT_TYPE_FLY:
-					case MOTION_EVENT_TYPE_EFFECT:
-					case MOTION_EVENT_TYPE_SCREEN_WAVING:
-					case MOTION_EVENT_TYPE_SOUND:
-					case MOTION_EVENT_TYPE_CHARACTER_SHOW:
-					case MOTION_EVENT_TYPE_CHARACTER_HIDE:
-					case MOTION_EVENT_TYPE_WARP:
-					case MOTION_EVENT_TYPE_EFFECT_TO_TARGET:
-						rkTextFileLoader.SetParentNode();
-						continue;
-
-					case MOTION_EVENT_TYPE_SPECIAL_ATTACKING:
-						if (!rkTextFileLoader.SetChildNode("spheredata", 0))
-						{
-							LOG_ERROR("Motion: no sphere data {}", c_pszFileName);
-							return false;
-						}
-
-						if (!rkTextFileLoader.GetTokenPosition("position", &v3Position))
-						{
-							LOG_ERROR("Motion: no position data {}", c_pszFileName);
-							return false;
-						}
-
-						rkTextFileLoader.SetParentNode();
-						break;
-					default:
-						assert(!" CRaceMotionData::LoadMotionData - Strange Event Type");
-						return false;
-						break;
-				}
-
-				float fStartingTime;
-
-				if (!rkTextFileLoader.GetTokenFloat("startingtime", &fStartingTime))
-				{
-					LOG_ERROR("Motion: no startingtime data {}", c_pszFileName);
-					return false;
-				}
-
-				pMob->AddSkillSplash(iSkillIndex, 100 + uint32_t(fStartingTime * 1000), (uint32_t)(v3Position.y)); // -(uint32_t)(v3Position.y)
-
-				rkTextFileLoader.SetParentNode();
-			}
-		}
-		rkTextFileLoader.SetParentNode();
-	}
-
-	pMob->m_mobSkillInfo[iSkillIndex].dwSkillVnum = pMob->m_table.Skills[iSkillIndex].dwVnum;
-	pMob->m_mobSkillInfo[iSkillIndex].bSkillLevel = pMob->m_table.Skills[iSkillIndex].bLevel;
-	m_isEmpty = false;
-	return true;
-}
-
-bool CMotion::LoadFromFile(const char * c_pszFileName)
-{
-	CTextFileLoader loader;
-
-	if (!loader.Load(c_pszFileName))
-	{
-		LOG_INFO("Motion: LoadFromFile fail: {}", c_pszFileName);
-		return false;
-	}
-
-	if (!loader.GetTokenFloat("motionduration", &m_fDuration))
-	{
-		LOG_ERROR("Motion: {} does not have a duration", c_pszFileName);
-		return false;
-	}
-
-	if (loader.GetTokenPosition("accumulation", &m_vec3Accumulation))
-		m_isAccumulation = true;
-
-	LOG_TRACE("{:<48} {:.3f} {}", strchr(c_pszFileName, '/') + 1, GetDuration(), GetAccumVector().y);
-
-	m_isEmpty = false;
-	return true;
-}
-
-float CMotion::GetDuration() const
-{
-	return m_fDuration;
-}
-
-const D3DVECTOR & CMotion::GetAccumVector() const
-{
-	return m_vec3Accumulation;
-}
-
-bool CMotion::IsEmpty()
-{
-	return m_isEmpty;
-}
-

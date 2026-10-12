@@ -124,3 +124,42 @@ Szerver viselkedes (`GotoWithDuration`):
 Kliens (Unity) teendok: a `TPacketCGMove` + `dwDuration` kitoltese a
 sajat animacio-órából; protokoll-verzio bump, hogy a regi kliens ne
 csatlakozhasson (a szerver a bővebb structot olvassa).
+
+
+## 11. Mob/NPC motion bake - implementalva (2026-10-12)
+
+A szerver mar **egyetlen .msa/motlist.txt fajlt sem olvas**; minden adat a
+player DB-bol jon.
+
+- **Sema**: `player.mob_motion` (folder PK: walk_speed, run_speed,
+  attack_duration, skill1..5_duration) es `player.mob_skill_splash`
+  (folder, skill_index, event_index, timing_ms, hit_distance) - lasd
+  `SRC/Server/Database/sql/2026_10_12_mob_motion.sql`. Kulcs a **folder**
+  (tobb vnum is hasznalhatja ugyanazt a mappat); a vnum->folder feloldas a
+  szerveren tortenik (`CMob.m_table.szFolder`), igy az extractornak nem
+  kell DB-t olvasnia.
+- **Extractor**: `SRC/Tools/motion_bake.py` (py2.7/py3 kompatibilis):
+  `data/monster/*/motlist.txt` + `.msa` -> `REPLACE INTO` SQL
+  (`py motion_bake.py <share/data> <out.sql>`). Uj kliens animacio eseten
+  ujrafuttatando. Meres a jelenlegi adaton: 726 mappa, 1101 sor, hianyzo
+  hivatkozott fajl a bake-elt tipusokra 0.
+- **Konverziok** (parity az elozo fajlparserrel):
+  - walk/run speed = `-Accumulation.y / MotionDuration` px/s (kerekitve);
+  - attack/skill duration = `MotionDuration * 1000` ms;
+  - splash timing = `100 + trunc(StartingTime * 1000)`;
+  - splash tavolsag = a nyers signed `Position.y` (a regi kod is
+    cast-tal ugyanezt a wrap-et adta; a DB-ben signed marad);
+  - `NORMAL_ATTACK1`-et nem olvassuk (a regi strcasecmp is egzakt volt);
+  - a `SPECIAL`/`SPECIAL1..4` -> skill_index 0..4 (a mob_proto
+    Skills[0..4] sorrendje).
+- **Szerver**: `CMotionManager::Build()` a mob proto betoltes utan fut
+  (`input_db.cpp`), DB-bol tolt; `GetMoveSpeed(vnum, walking)` a
+  `MovementSystem::GetMoveMotionSpeed`-ben (mob ag); `GetMotionDuration`
+  valtozatlan API (GENERAL mod, NORMAL_ATTACK/SPECIAL_1..5). A splash
+  `CMob::AddSkillSplash` + `dwSkillVnum`/`bSkillLevel` a `m_table.Skills`
+  alapjan all ossze. A `CMotion`/`CMotionSet`/fajlparser teljesen torolve.
+- **Fallbackek** (adathiany eseten): mob speed 300, mob attack 2s,
+  splash nelkul nincs kesleltetett talalat; PC (lost castle race)
+  idozito 650ms konstans marad.
+- A szerver `data/monster/**` `.msa` + `motlist.txt` (es a tobbi, eddig
+  sem olvasott `pc*/dungeon/event` .msa) torolheto.

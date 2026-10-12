@@ -1662,31 +1662,17 @@ uint32_t GetMotionMode(entt::entity e)
 
 float GetMoveMotionSpeed(entt::entity e)
 {
+    // Monster/mount path only: players send their animation duration in the
+    // move packet and never reach this lookup.
     if (!IsValid(e)) return 300.0f;
-    const auto mode = GetMotionMode(e);
-    const auto race = PlayerRuntime::GetRaceNum(e);
+    const uint32_t vnum = PlayerRuntime::GetRaceNum(e);
     const bool attached = PlayerRuntime::GetDesc(e) != nullptr;
-    if (!attached && mode == MOTION_MODE_GENERAL && FixedMovementRace(race)) return 100.0f;
+    if (!attached && FixedMovementRace(vnum)) return 100.0f;
     const auto* movement = g_registry.try_get<ecs::MovementState>(e);
     const bool walking = attached && ((movement && movement->isNowWalking) || PlayerRuntime::GetStamina(e) <= 0);
-    const auto motionIndex = walking ? MOTION_WALK : MOTION_RUN;
-    const auto mount = MountSystem::GetMountVnum(e);
-    const CMotion* motion = nullptr;
-    if (mount) {
-        motion = CMotionManager::instance().GetMotion(mount, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, motionIndex));
-        if (!motion) motion = CMotionManager::instance().GetMotion(race, MAKE_MOTION_KEY(MOTION_MODE_HORSE, motionIndex));
-    } else {
-        motion = CMotionManager::instance().GetMotion(race, MAKE_MOTION_KEY(mode, motionIndex));
-    }
-    if (motion) {
-        const float duration = motion->GetDuration();
-        const float distance = -motion->GetAccumVector().y;
-        if (std::isfinite(duration) && duration > 0 && std::isfinite(distance) && distance > 0) {
-            const float speed = distance / duration;
-            if (std::isfinite(speed) && speed > 0) return speed;
-        }
-    }
-    return 300.0f; // Missing/malformed motion must not introduce NaN or zero division.
+    const float speed = CMotionManager::instance().GetMoveSpeed(vnum, walking);
+    if (std::isfinite(speed) && speed > 0.0f) return speed;
+    return 300.0f; // Unknown motion must not introduce NaN or zero division.
 }
 
 float GetMoveSpeed(entt::entity e)

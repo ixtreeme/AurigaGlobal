@@ -479,6 +479,45 @@ CREATE TABLE IF NOT EXISTS `player`.`mob_proto` (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
+-- mob_motion
+--   DB: player. Baked from the client .msa/motlist.txt files by
+--   SRC/Tools/motion_bake.py (no runtime .msa access on the server).
+--   Read:  GameServer/entity/motion.cpp (CMotionManager::Build).
+--   Keyed by mob folder (mob_proto.folder); several vnums can share one.
+--   Speed = -Accumulation.y / MotionDuration (px/s, rounded);
+--   *_duration = MotionDuration in ms.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `player`.`mob_motion` (
+  `folder`           VARCHAR(65)  NOT NULL,
+  `walk_speed`       INT          NOT NULL DEFAULT 0,
+  `run_speed`        INT          NOT NULL DEFAULT 0,
+  `attack_duration`  INT          NOT NULL DEFAULT 0,
+  `skill1_duration`  INT          NOT NULL DEFAULT 0,
+  `skill2_duration`  INT          NOT NULL DEFAULT 0,
+  `skill3_duration`  INT          NOT NULL DEFAULT 0,
+  `skill4_duration`  INT          NOT NULL DEFAULT 0,
+  `skill5_duration`  INT          NOT NULL DEFAULT 0,
+  PRIMARY KEY (`folder`)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- mob_skill_splash
+--   DB: player. MotionEventType 4 ("special attacking") events of the
+--   client skill .msa files (SPECIAL..SPECIAL4 -> skill_index 0..4).
+--   Read:  GameServer/entity/motion.cpp -> CMob::AddSkillSplash.
+--   timing_ms = 100 + trunc(StartingTime * 1000) (legacy formula);
+--   hit_distance = raw signed Position.y of the first SphereData.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `player`.`mob_skill_splash` (
+  `folder`       VARCHAR(65)      NOT NULL,
+  `skill_index`  TINYINT UNSIGNED NOT NULL,
+  `event_index`  TINYINT UNSIGNED NOT NULL,
+  `timing_ms`    INT UNSIGNED     NOT NULL DEFAULT 0,
+  `hit_distance` INT              NOT NULL DEFAULT 0,
+  PRIMARY KEY (`folder`, `skill_index`, `event_index`)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
 -- item_proto
 --   DB: player. Table is item_proto<%postfix%>.
 --   Read:  ClientManagerBoot.cpp:1726-1762 (SELECT, ENABLE_MULTI_NAMES branch)

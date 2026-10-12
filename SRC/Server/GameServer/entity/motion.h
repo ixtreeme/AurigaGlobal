@@ -1,7 +1,11 @@
 #pragma once
 
-#include <common/d3dtype.h>
-#include <common/CommonDefines.h>
+#include <cstdint>
+#include <map>
+#include <string>
+
+#include <common/length.h>
+#include <common/singleton.h>
 
 enum EMotionMode
 {
@@ -60,29 +64,6 @@ enum EPublicMotion
 	MOTION_MAX_NUM = PUBLIC_MOTION_END,
 };
 
-class CMob;
-
-class CMotion
-{
-	public:
-		CMotion();
-		~CMotion();
-
-		bool			LoadFromFile(const char * c_pszFileName);
-		bool			LoadMobSkillFromFile(const char * c_pszFileName, CMob * pMob, int iSkillIndex);
-
-		float			GetDuration() const;
-		const D3DVECTOR &	GetAccumVector() const;
-
-		bool			IsEmpty();
-
-	protected:
-		bool			m_isEmpty;
-		float			m_fDuration;
-		bool			m_isAccumulation;
-		D3DVECTOR		m_vec3Accumulation;
-};
-
 typedef uint32_t MOTION_KEY;
 
 #define MAKE_MOTION_KEY(mode, index)			( ((mode) << 24) | ((index) << 8) | (0) )
@@ -92,43 +73,35 @@ typedef uint32_t MOTION_KEY;
 #define GET_MOTION_INDEX(key)				((uint16_t) ((key >> 8) & 0xFFFF))
 #define GET_MOTION_SUB_INDEX(key)			((uint8_t) ((key) & 0xFF))
 
-class CMotionSet
-{
-	public:
-		typedef std::map<uint32_t, CMotion *>	TContainer;
-		typedef TContainer::iterator		iterator;
-		typedef TContainer::const_iterator	const_iterator;
-
-	public:
-		CMotionSet();
-		~CMotionSet();
-
-		void		Insert(uint32_t dwKey, CMotion * pkMotion);
-		bool		Load(const char * szFileName, int mode, int motion);
-
-		const CMotion *	GetMotion(uint32_t dwKey) const;
-
-	protected:
-		// uint32_t = MOTION_KEY
-		TContainer			m_map_pkMotion;
-};
-
+// Motion timings baked from the client .msa files into the player DB by
+// SRC/Tools/motion_bake.py (mob_motion / mob_skill_splash). The server never
+// reads .msa or motlist.txt; players send their own move duration in the
+// move packet.
 class CMotionManager : public singleton<CMotionManager>
 {
 	public:
-		typedef std::map<uint32_t, CMotionSet *> TContainer;
-		typedef TContainer::iterator iterator;
+		CMotionManager() = default;
+		virtual ~CMotionManager() = default;
 
-		CMotionManager();
-		virtual ~CMotionManager();
+		// Loads mob_motion / mob_skill_splash from the player DB and fills the
+		// CMob skill splash data. Called after the mob proto load.
+		bool				Build();
 
-		bool			Build();
+		// Animation duration in seconds; 0 when unknown.
+		float				GetMotionDuration(uint32_t dwVnum, uint32_t dwKey);
 
-		const CMotionSet *	GetMotionSet(uint32_t dwVnum);
-		const CMotion *		GetMotion(uint32_t dwVnum, uint32_t dwKey);
-		float			    GetMotionDuration(uint32_t dwVnum, uint32_t dwKey);
+		// Baked movement speed in px/s; 0 when unknown.
+		float				GetMoveSpeed(uint32_t dwVnum, bool walking) const;
+
+		struct SMotionData
+		{
+			float	walkSpeed { 0.0f };
+			float	runSpeed { 0.0f };
+			float	attackDuration { 0.0f };
+			float	skillDuration[MOB_SKILL_MAX_NUM] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+		};
 
 	protected:
-		// uint32_t = JOB or MONSTER VNUM
-		TContainer		m_map_pkMotionSet;
-	};
+		// uint32_t = MONSTER VNUM or MOUNT VNUM
+		std::map<uint32_t, SMotionData>	m_map_motion;
+};
