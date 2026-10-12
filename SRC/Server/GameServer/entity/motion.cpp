@@ -9,69 +9,6 @@
 #include <common/CommonDefines.h>
 #include "config.h"
 
-// POLYMORPH_BUG_FIX
-static float MSA_GetNormalAttackDuration(const char* msaPath)
-{
-	float duration = 99.0f;
-	FILE * fp = fopen(msaPath, "rt");
-	if (!fp)
-		return duration;
-
-	char line[1024];
-	while (fgets(line, sizeof(line), fp))
-	{
-		char key[1024];
-		char val[1024];
-
-		sscanf(line, "%s %s", key, val);
-		if (strcmp(key, "MotionDuration") == 0)
-		{
-			duration = atof(val);
-			break;
-		}
-	}
-	fclose(fp);
-
-	return duration;
-}
-
-static float MOB_GetNormalAttackDuration(TMobTable* mobTable)
-{
-	float minDuration = 99.0f;
-
-	const char * folder = mobTable->szFolder;
-
-	char motlistPath[1024];
-	snprintf(motlistPath, sizeof(motlistPath), "data/monster/%s/motlist.txt", folder);
-
-	FILE * fp = fopen(motlistPath, "rt");
-	if (!fp)
-		return minDuration;
-
-	char line[1024];
-	while (fgets(line, sizeof(line), fp))
-	{
-		char mode[1024];
-		char type[1024];
-		char msaName[1024];
-		int percent;
-
-		sscanf(line, "%s %s %s %d", mode, type, msaName, &percent);
-		if (strcmp(mode, "GENERAL") == 0 && strncmp(type, "NORMAL_ATTACK", 13) == 0)
-		{
-			char msaPath[1024];
-			snprintf(msaPath, sizeof(msaPath), "data/monster/%s/%s", folder, msaName);
-			float curDuration = MSA_GetNormalAttackDuration(msaPath);
-			if (curDuration < minDuration)
-				minDuration = curDuration;
-		}
-	}
-	fclose(fp);
-
-	return minDuration;
-}
-// END_OF_POLYMORPH_BUG_FIX
-
 static const char* GetMotionFileName(TMobTable* mobTable, EPublicMotion motion)
 {
 	char buf[1024];
@@ -237,17 +174,6 @@ float CMotionManager::GetMotionDuration(uint32_t dwVnum, uint32_t dwKey)
 	return pkMotion ? pkMotion->GetDuration() : 0.0f;
 }
 
-// POLYMORPH_BUG_FIX
-float	CMotionManager::GetNormalAttackDuration(uint32_t dwVnum)
-{
-	std::map<uint32_t, float>::iterator f = m_map_normalAttackDuration.find(dwVnum);
-	if (m_map_normalAttackDuration.end() == f)
-		return 0.0f;
-	else
-		return f->second;
-}
-// END_OF_POLYMORPH_BUG_FIX
-
 enum EMotionEventType
 {
 	MOTION_EVENT_TYPE_NONE,					// 0
@@ -347,12 +273,6 @@ bool CMotionManager::Build()
 			LoadSkillMotion(pkMotionSet, pkMob, MOTION_SPECIAL_3);
 			LoadSkillMotion(pkMotionSet, pkMob, MOTION_SPECIAL_4);
 			LoadSkillMotion(pkMotionSet, pkMob, MOTION_SPECIAL_5);
-
-			// POLYMORPH_BUG_FIX
-			float normalAttackDuration = MOB_GetNormalAttackDuration(t);
-			LOG_TRACE("mob_normal_attack_duration:{}:{}:{:.2f}", t->dwVnum, t->szFolder, normalAttackDuration);
-			m_map_normalAttackDuration.insert(std::map<uint32_t, float>::value_type(t->dwVnum, normalAttackDuration));
-			// END_OF_POLYMORPH_BUG_FIX
 		}
 	}
 

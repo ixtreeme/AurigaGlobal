@@ -49,7 +49,8 @@
 #include "OXEvent.h"
 #include "polymorph.h"
 #include "blend_item.h"
-#include "ani.h"
+
+
 #include "BattleArena.h"
 #include "over9refine.h"
 #include "horsename_manager.h"
@@ -446,7 +447,6 @@ int main(int argc, char **argv)
 	OXEvent_manager.Initialize();
 	Cube_init();
 	Blend_Item_init();
-	ani_init();
 
 	// Phase 15E-final.LPENTITY.4-architect.D.3: connect the
 	// VisibilitySystem PositionChangedEvent handler to the global

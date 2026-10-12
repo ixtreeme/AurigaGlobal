@@ -128,15 +128,7 @@ class CMotionManager : public singleton<CMotionManager>
 		const CMotion *		GetMotion(uint32_t dwVnum, uint32_t dwKey);
 		float			    GetMotionDuration(uint32_t dwVnum, uint32_t dwKey);
 
-		// POLYMORPH_BUG_FIX
-		float			    GetNormalAttackDuration(uint32_t dwVnum);
-		// END_OF_POLYMORPH_BUG_FIX
-
 	protected:
 		// uint32_t = JOB or MONSTER VNUM
 		TContainer		m_map_pkMotionSet;
-
-		// POLYMORPH_BUG_FIX
-		std::map<uint32_t, float> m_map_normalAttackDuration;
-		// END_OF_POLYMORPH_BUG_FIX
-};
+	};
