@@ -193,10 +193,35 @@ namespace
         return speed <= 100 ? int(200 - speed) : int(10000 / speed);
     }
 
+    // Fixed base for server-forced player moves (clone sync, knockback):
+    // normal player movement timing arrives in the move packet instead.
+    static constexpr float kPlayerForcedMoveSpeed = 450.0f;
+
+    static float MaxMoveSpeed(entt::entity e)
+    {
+        float base = 600.0f;
+        if (MountSystem::IsRiding(e))
+            base *= 2.0f;
+        const int factor = MovementDurationFactor(e);
+        if (factor <= 0)
+            return base;
+        return base * 100.0f / factor;
+    }
+
     uint32_t MovementDuration(entt::entity e, const ecs::Position& from, int32_t x, int32_t y)
     {
         const double distance = std::hypot(double(from.x) - x, double(from.y) - y);
-        const float millis = (static_cast<float>(distance) / ecs::MovementSystem::GetMoveMotionSpeed(e)) * 1000.0f;
+        // Player movement timing is client-authoritative (see GotoWithDuration);
+        // only monsters consult the motion data. Server-forced player moves use
+        // a fixed base speed.
+        float speed = 0.0f;
+        if (ecs::PlayerRuntime::IsPC(e))
+            speed = kPlayerForcedMoveSpeed;
+        else
+            speed = ecs::MovementSystem::GetMoveMotionSpeed(e);
+        if (!std::isfinite(speed) || speed <= 0.0f)
+            speed = 300.0f;
+        const float millis = (static_cast<float>(distance) / speed) * 1000.0f;
         // Keep normal float/truncation and integer-factor semantics, but never
         // cast infinity/out-of-range floats or overflow the duration product.
         const auto base = static_cast<uint64_t>(std::clamp<double>(millis, 0, INT_MAX));
@@ -1125,9 +1150,54 @@ bool Goto(entt::entity e, int32_t x, int32_t y)
     auto& state = g_registry.get<ecs::MovementState>(e);
     state.moveStartTime = now;
     state.moveDuration = duration;
+    const double distance = std::hypot(double(position.x) - x, double(position.y) - y);
+    state.moveSpeed = duration > 0 ? static_cast<float>(distance / (duration / 1000.0)) : 0.0f;
     g_registry.get<ecs::AIState>(e).stateDuration = 4;
     // Observers of the destination see its matching timing. Reentry cannot
     // overwrite the nested command after this publication.
+    WriteDestination(e, x, y);
+    return command.Current() && g_registry.all_of<ecs::MovementDestination>(e) &&
+        g_registry.get<ecs::MovementDestination>(e).x == x &&
+        g_registry.get<ecs::MovementDestination>(e).y == y;
+}
+
+// Player move driven by the client-provided animation duration. The duration is
+// only capped server-side (never extended), so a client cannot move faster than
+// the point budget allows while the animation timing still comes from the
+// client. No motion-file lookup happens on this path.
+bool GotoWithDuration(entt::entity e, int32_t x, int32_t y, uint32_t clientDuration)
+{
+    if (!IsValid(e) || !g_registry.all_of<ecs::CharacterType, ecs::Position>(e))
+        return false;
+    const auto position = g_registry.get<ecs::Position>(e);
+    if (position.x == x && position.y == y) return false;
+    if (!PlayerRuntime::GetDesc(e) && FixedMovementRace(PlayerRuntime::GetRaceNum(e)))
+        return false;
+    if (const auto* destination = g_registry.try_get<ecs::MovementDestination>(e);
+        destination && destination->x == x && destination->y == y)
+        return false;
+
+    MotionCommand command(e);
+    if (!command.started) return false;
+    if (!command.Prepare<ecs::AIState>() || !command.Prepare<ecs::DirtyTag>()) return false;
+
+    const double distance = std::hypot(double(position.x) - x, double(position.y) - y);
+    const float maxSpeed = MaxMoveSpeed(e);
+    const uint64_t minDuration = (std::isfinite(maxSpeed) && maxSpeed > 0.0f)
+        ? static_cast<uint64_t>(distance / maxSpeed * 1000.0)
+        : 0;
+    uint64_t duration = std::max<uint64_t>(clientDuration, minDuration);
+    if (duration == 0)
+        duration = 1;
+    duration = std::min<uint64_t>(duration, INT_MAX);
+
+    const auto now = get_dword_time();
+    if (!command.Current() || !g_registry.all_of<ecs::AIState>(e)) return false;
+    auto& state = g_registry.get<ecs::MovementState>(e);
+    state.moveStartTime = now;
+    state.moveDuration = static_cast<uint32_t>(duration);
+    state.moveSpeed = static_cast<float>(distance / (duration / 1000.0));
+    g_registry.get<ecs::AIState>(e).stateDuration = 4;
     WriteDestination(e, x, y);
     return command.Current() && g_registry.all_of<ecs::MovementDestination>(e) &&
         g_registry.get<ecs::MovementDestination>(e).x == x &&
@@ -1144,6 +1214,7 @@ void Stop(entt::entity e)
     const bool wasIdle = HasIdleState(e);
     auto& state = g_registry.get<ecs::MovementState>(e);
     state.moveStartTime = state.moveDuration = 0;
+    state.moveSpeed = 0.0f;
     g_registry.remove<ecs::CombatActiveTag>(e);
     if (!command.Current()) return;
     g_registry.remove<ecs::CombatTarget>(e);
@@ -1168,6 +1239,7 @@ void SyncDestinationClear(entt::entity e)
     if (!command.started) return;
     auto& state = g_registry.get<ecs::MovementState>(e);
     state.moveStartTime = state.moveDuration = 0;
+    state.moveSpeed = 0.0f;
     g_registry.remove<ecs::MovementDestination>(e);
 }
 
@@ -1619,12 +1691,18 @@ float GetMoveMotionSpeed(entt::entity e)
 
 float GetMoveSpeed(entt::entity e)
 {
-    return GetMoveMotionSpeed(e) * 100.0f / MovementDurationFactor(e);
+    const auto* state = g_registry.try_get<ecs::MovementState>(e);
+    if (state && std::isfinite(state->moveSpeed) && state->moveSpeed > 0.0f)
+        return state->moveSpeed;
+    return 300.0f;
 }
 
 void CalculateMoveDuration(entt::entity e)
 {
     if (!IsValid(e) || !g_registry.all_of<ecs::Position>(e)) return;
+    // Player animation timing is client-authoritative (move packet); this
+    // recompute path is for server-driven monsters only.
+    if (PlayerRuntime::IsPC(e)) return;
     MotionCommand command(e);
     if (!command.started) return;
     const auto position = g_registry.get<ecs::Position>(e);

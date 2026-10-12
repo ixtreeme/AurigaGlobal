@@ -98,3 +98,29 @@ eventek par ezer sor.
   (PC speed ~300, mob attack ~2s, splash nelkul azonnali talalat).
 - A `data/pc/**` run/walk `.msa`-k addig kellenek, amig a Phase 2/3 nem
   keszul el (a CMotionManager meg olvassa oket).
+
+
+## 10. PC mozgas a packetbol - implementalva (2026-10-12)
+
+Protokoll (kliens -> szerver), `TPacketCGMove`:
+`bHeader, bFunc, bArg, bRot, lX, lY, dwTime, dwDuration(u32, ms)`.
+A kliens a sajat aktualis animaciojabol szamolja (lovagolva a horse/mount
+animaciobol is) es kitolti.
+
+Szerver viselkedes (`GotoWithDuration`):
+- a kapott `dwDuration` az iranyadó, de also korlatot kap:
+  `minDuration = distance / MaxMoveSpeed`,
+  `MaxMoveSpeed = 600 * 100 / MovementDurationFactor` (mounted eseten x2).
+  Igy a kliens nem mehet gyorsabban a pont-budgetnel, de a kliens
+  animacio-idejet a szerver nem nyujtja meg.
+- `MovementState.moveDuration` = a validalt duration,
+  `MovementState.moveSpeed` = tavolsag/ido; a GC `packet_move.dwDuration`
+  ezt echo-zza minden kozelitonek; az intercept is ezt hasznalja.
+- PC agakon nincs tobb .msa lookup: `MovementDuration` (server-forced PC
+  mozgas: clone/knockback) konstans 450 px/s, `GetMoveSpeed` a
+  `moveSpeed` komponensbol szamol, `CalculateMoveDuration` PC-re no-op.
+- Mobok valtozatlanul motion-alapuak a bake fazisig.
+
+Kliens (Unity) teendok: a `TPacketCGMove` + `dwDuration` kitoltese a
+sajat animacio-órából; protokoll-verzio bump, hogy a regi kliens ne
+csatlakozhasson (a szerver a bővebb structot olvassa).

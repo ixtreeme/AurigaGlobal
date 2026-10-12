@@ -27,6 +27,9 @@ struct MovementState {
     bool walkPreference { false };
     // Distinguishes reentrant commands, even when their target/timing is equal.
     uint64_t commandRevision { 0 };
+    // Effective px/s of the active move (client-provided for players, motion
+    // based for monsters); 0 when idle.
+    float moveSpeed { 0.0f };
 };
 
 struct MovementSpeed {

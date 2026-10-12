@@ -102,6 +102,9 @@ typedef struct command_move
 	int32_t	lX;
 	int32_t	lY;
 	uint32_t	dwTime;
+	// Client-computed animation duration for this move (ms). Server-validated
+	// and used as-is for players; no server-side motion file lookup.
+	uint32_t	dwDuration;
 } TPacketCGMove;
 
 typedef struct command_sync_position_element

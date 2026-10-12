@@ -199,7 +199,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 		ecs::MovementSystem::SetRotation(character, pinfo->bRot * 5.0f);
 		ecs::MovementSystem::ResetStopTime(character);
 
-		ecs::MovementSystem::Goto(character, pinfo->lX, pinfo->lY);
+		ecs::MovementSystem::GotoWithDuration(character, pinfo->lX, pinfo->lY, pinfo->dwDuration);
 	}
 	else
 	{

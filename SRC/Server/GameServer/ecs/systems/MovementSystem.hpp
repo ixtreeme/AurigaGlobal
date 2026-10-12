@@ -63,6 +63,9 @@ bool CanMove(entt::entity e);
 // Moves the entity to (x, y) on its map at once, changing sector if needed.
 bool Sync(entt::entity e, int32_t x, int32_t y);
 bool Goto(entt::entity e, int32_t x, int32_t y);
+// Player path: the duration comes from the client move packet (validated and
+// capped server-side), no motion-file lookup.
+bool GotoWithDuration(entt::entity e, int32_t x, int32_t y, uint32_t clientDuration);
 void Stop(entt::entity e);
 uint32_t GetMotionMode(entt::entity e);
 float GetMoveMotionSpeed(entt::entity e);
