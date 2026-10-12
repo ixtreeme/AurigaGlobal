@@ -300,44 +300,12 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 
 	LOG_INFO("CommonSQL connected");
 
-	if (!cfg.server.localeService.empty())
+	if (LocaleService_InitFlat(cfg.server.dataPath, cfg.server.locale) == false)
 	{
-		if (LocaleService_Init(cfg.server.localeService) == false)
-		{
-			LOG_ERROR("GameServer: invalid locale_service '{}'", cfg.server.localeService);
-			exit(1);
-		}
+		LOG_ERROR("GameServer: invalid locale configuration (data_path '{}', locale '{}')",
+				cfg.server.dataPath, cfg.server.locale);
+		exit(1);
 	}
-	else
-	{
-		char szQuery[512];
-		snprintf(szQuery, sizeof(szQuery), "SELECT mKey, mValue FROM locale");
-
-		std::unique_ptr<SQLMsg> pMsg(AccountDB::instance().DirectQuery(szQuery));
-
-		if (pMsg->Get()->uiNumRows == 0)
-		{
-			LOG_ERROR("COMMON_SQL: DirectQuery failed : {}", szQuery);
-			exit(1);
-		}
-
-		MYSQL_ROW row;
-
-		while (nullptr != (row = pMsg->Get()->FetchRow()))
-		{
-			if (strcasecmp(row[0], "LOCALE") == 0)
-			{
-				if (LocaleService_Init(row[1]) == false)
-				{
-					LOG_ERROR("COMMON_SQL: invalid locale key {}", row[1]);
-					exit(1);
-				}
-			}
-		}
-	}
-
-	if (!cfg.server.locale.empty())
-		g_stLocale = cfg.server.locale;
 
 	LOG_INFO("Setting DB to locale {}", g_stLocale.c_str());
 

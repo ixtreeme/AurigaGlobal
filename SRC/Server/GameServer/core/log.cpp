@@ -354,15 +354,6 @@ void LogManager::ChatLog(uint32_t where, uint32_t who_id, const char* who_name, 
 		where, who_id, who_name, whom_id, whom_name, type, msg, ip);
 }
 
-void LogManager::InvalidServerLog(enum eLocalization eLocaleType, const char* pcszIP, const char* pszRevision)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MAX);
-	// revision sql inject exploit fix
-	m_sql.EscapeString(__escape_hint, sizeof(__escape_hint), pszRevision, strlen(pszRevision));
-	// @fixme101 last %s to '%s'
-	Query("INSERT INTO invalid_server_log(locale_type, log_date, ip, revision) VALUES(%d, NOW(), '%s', '%s')", eLocaleType, pcszIP, __escape_hint);
-}
-
 #ifdef __ATTR_TRANSFER_SYSTEM__
 void LogManager::AttrTransferLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t item_vnum)
 {

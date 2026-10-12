@@ -24,7 +24,7 @@
     "view_range": 10000,
     "mall_url": "https://www.wonder2.org/index.php/shop/login?pid=$playerID&key=$codice",
     "locale": "latin1",
-    "locale_service": "germany"
+    "data_path": "data"
   },
   "network": {
     "port": 30054,

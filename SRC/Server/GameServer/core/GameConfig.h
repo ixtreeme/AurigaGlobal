@@ -18,8 +18,7 @@
 //     "pk_protect_level": 30, "skill_disable": false, "no_wander": false,
 //     "shutdowned": false, "no_regen": false, "traffic_profile": false,
 //     "attr_transfer_limit": 0, "passes_per_sec": 25, "view_range": 5000,
-//     "mall_url": "https://...", "locale": "latin1",
-//     "locale_service": "germany"
+//     "mall_url": "https://...", "locale": "latin1", "data_path": "data"
 //   },
 //   "network": { "port": 50080, "p2p_port": 50900, "db_addr": "",
 //                "db_port": 0, "bind_ip": "" },
@@ -87,8 +86,8 @@ struct GameConfig
 		int		passesPerSec { 25 };
 		int		viewRange { 5000 };
 		std::string	mallUrl { "https://www.wonder2.org/index.php/shop/login?pid=$playerID&key=$codice" };
-		std::string	locale;        // DB charset (e.g. "latin1"); empty = from the locale table
-		std::string	localeService; // data dir under locale/ (e.g. "germany"); empty = from the locale table
+		std::string	locale { "latin1" }; // DB charset, e.g. "latin1"
+		std::string	dataPath { "data" };   // server data root (map/quest/drop/...), relative to cwd
 	} server;
 
 	struct NetworkConfig

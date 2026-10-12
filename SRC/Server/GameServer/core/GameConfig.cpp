@@ -69,8 +69,8 @@ bool GameConfig::Load(const char* path)
 			server.passesPerSec = s.value("passes_per_sec", 25);
 			server.viewRange = s.value("view_range", 5000);
 			server.mallUrl = s.value("mall_url", std::string("https://www.wonder2.org/index.php/shop/login?pid=$playerID&key=$codice"));
-			server.locale = s.value("locale", std::string());
-			server.localeService = s.value("locale_service", std::string());
+			server.locale = s.value("locale", std::string("latin1"));
+			server.dataPath = s.value("data_path", std::string("data"));
 		}
 
 		if (doc.contains("network"))

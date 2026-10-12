@@ -143,3 +143,30 @@ Ezzel a szerver egy nyelven fut, a charset/nev/ut a conf.json-bol jon, a
 Hatralevo (kulon fazis): holt szimbolumok (g_stLocaleFilename,
 g_iUseLocale, LC_*), a 30 nyelvi init-ag osszevonasa, empire cvt es
 ENABLE_MULTI_NAMES kivezetes.
+
+## 9. Flat adatelrendezes (2026-10-12)
+
+- A `locale/<nyelv>` indirekcio megszunt: a szerver egy fix
+  `server.data_path`-bol dolgozik (alap: "data"), a map/quest/drop/config
+  fajlok kozvetlenul ott vannak. `LocaleService_Init` + a 30 nyelvi ag
+  helyett `LocaleService_InitFlat(dataPath, charset)`.
+- GameServer conf.json: `server.data_path` (pl. "data") es
+  `server.locale` (charset). A DB `locale` tabla `LOCALE` sorat a
+  GameServer mar **nem olvassa** (a SKILL_POWER sorok tovabbra is kellenek).
+- Nevvalidacio charset-alapu: latin*/egyeb -> `check_name_alphabet`,
+  sjis/big5/gb2312/euckr -> a sajat valtozat.
+- `PK_PROTECT_LEVEL` a confbol (`pk_protect_level`; a live confokban 15,
+  a korabbi germany default megorzese).
+- Live: `share/locale/germany/*` (39 tetel) atmasolva a `share/data/`
+  ala; a core-ok `data` symlinkje mar oda mutatott. A core `locale`
+  symlinkek torolve, az ures `share/locale/germany` torolve (a
+  `germany---------`/`.tgz` backupok maradtak). `start.sh`
+  quest-compile path: `share/data/quest`; a `gen.py` mar nem gyart
+  `locale` symlinket.
+- Torolt holt kod: `LocaleService_Init` + nyelvi agak, `LC_*` /
+  `eLocalization`, `InvalidServerLog` (hivas nelkul), a
+  `g_stLocaleFilename` extern.
+- Ami maradt: `locale_convert_language`/`LC_CONVERT` (a kliens
+  nyelvi kódját adja a quest-Lua-nak), a quest-Lua szotarak
+  (`translate.lua` gameforge, `quest/locale.lua`), es az
+  `ENABLE_MULTI_NAMES` proto-nevkolumna (Database `name_column`).
