@@ -300,6 +300,15 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 
 	LOG_INFO("CommonSQL connected");
 
+	if (!cfg.server.localeService.empty())
+	{
+		if (LocaleService_Init(cfg.server.localeService) == false)
+		{
+			LOG_ERROR("GameServer: invalid locale_service '{}'", cfg.server.localeService);
+			exit(1);
+		}
+	}
+	else
 	{
 		char szQuery[512];
 		snprintf(szQuery, sizeof(szQuery), "SELECT mKey, mValue FROM locale");
@@ -326,6 +335,9 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 			}
 		}
 	}
+
+	if (!cfg.server.locale.empty())
+		g_stLocale = cfg.server.locale;
 
 	LOG_INFO("Setting DB to locale {}", g_stLocale.c_str());
 

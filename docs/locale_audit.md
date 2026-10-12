@@ -122,3 +122,24 @@ Ezzel a szerver egy nyelven fut, a charset/nev/ut a conf.json-bol jon, a
   `name`-re kell valtani).
 - A questek `gameforge[...]`/`locale.*` hasznalata: tartalom, nem
   tavolithato el a locale-refaktorral egyutt.
+
+## 8. Implementalt kivaltas (2026-10-12)
+
+- GameConfig: uj server.locale (charset, pl. "latin1") es
+  server.locale_service (pl. "germany") kulcs.
+- GameServer config.cpp: ha a locale_service meg van adva, a
+  LocaleService_Init ezzel fut, es a locale tabla LOCALE sorat **nem
+  olvassa**; ha nincs, a regi DB-sor logika marad (fallback). A locale
+  kulcs felulirja a g_stLocale charsetet a service init utan.
+- Database ClientManager::InitializeLocalization: a 341 soros
+  LOCALE-sor -> charset/name-column tabla **torolve**; a charset es a
+  name_column a conf.json-bol jon. A DB_NAME_COLUMN sor explicit
+  feluliraskent meg marad.
+- Live conf.json-ok frissitve: core-okban
+  "locale": "latin1", "locale_service": "germany"; db/conf.json
+  "name_column": "locale_name" (a jelenlegi effektiv ertek megorzese).
+- A locale/germany adatkonyvtar es a Quest-Lua szotarak valtozatlanok.
+
+Hatralevo (kulon fazis): holt szimbolumok (g_stLocaleFilename,
+g_iUseLocale, LC_*), a 30 nyelvi init-ag osszevonasa, empire cvt es
+ENABLE_MULTI_NAMES kivezetes.
