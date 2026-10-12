@@ -22,7 +22,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	const char* configPath = (argc > 1) ? argv[1] : "conf.txt";
+	const char* configPath = (argc > 1) ? argv[1] : "conf.json";
 
 	thecore_init(25, EmptyBeat);
 
