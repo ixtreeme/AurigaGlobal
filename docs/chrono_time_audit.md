@@ -122,3 +122,29 @@ adattipus-elteresekbol szarmazo bugok megszuntetese.
 - Quest flag idobelyegek int32 -> int64.
 - LoginServer `time_t` hasznalatok atnezese; `localtime`/`strftime`
   helperek chrono-ra (Time.h `LocalTime` mar ad alapot).
+
+
+## Phase 2 statusz (KESZ, 2026-10-13)
+
+- **heart (Core/heart.h/.cpp)**: a `struct timeval` mezok helyett
+  `std::chrono::steady_clock::time_point` / `microseconds`; a
+  `heart_idle` mar chrono durationokkel szamol, a varakozas
+  `std::this_thread::sleep_for` (a `thecore_sleep(timeval*)` helper
+  torolve - mar nem volt hivas). A tick-utemezes igy monoton.
+- **Ido-wire (BOOT packet)**: a Database `time_t` helyett explicit
+  `int64_t`-et kuld (`ClientManager.cpp` packet-meret + Encode), a
+  GameServer `memcpy`-vel olvassa (`input_db.cpp` BOOT es `CInputDB::Time`).
+  A korabbi `*(time_t*)data` platformfuggo meret + nem igazitott
+  pointer-dereference volt.
+- **Takaritas**: `thecore_sleep` deklaracio + ket definicio torolve;
+  `get_boot_sec`/`gettimeofday` alapu `get_dword_time` mar Phase 1-ben
+  kivezetve.
+- Build: GameServer/Database/LoginServer Debug + Release zold.
+
+### Megjegyzes a pulse-okhoz
+
+A `heart.pulse` es a `thecore_pulse()` tovabbra is `int` (a hivashelyek
+szama es a struktura-mezok miatt); a hasznalat wrap-turo (`diff` es
+`% passes_per_sec`), a ~2.7 eves tullfolyas elmeleti (signed overflow).
+A Phase 3-ban a pulse-szamlalok es az ECS pulse-mezok int64-re
+egysegesithetok.

@@ -46,8 +46,7 @@
 
 	float	fnumber(float from, float to);
 
-    extern void		thecore_sleep(struct timeval * timeout);
-    extern uint32_t	thecore_random();
+        extern uint32_t	thecore_random();
 
     extern float	get_float_time();
     extern uint32_t	get_dword_time();

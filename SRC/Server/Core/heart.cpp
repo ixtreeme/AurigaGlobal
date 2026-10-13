@@ -1,5 +1,9 @@
 #include "stdafx.h"
 
+#include "heart.h"
+
+#include <chrono>
+#include <thread>
 
 extern volatile int num_events_called;
 
@@ -15,45 +19,46 @@ LPHEART heart_new(int opt_usec, HEARTFUNC func)
 
 	CREATE(ht, HEART, 1);
 
+	const auto now = std::chrono::steady_clock::now();
+
 	ht->func = func;
-	ht->opt_time.tv_sec = 0;
-	ht->opt_time.tv_usec = opt_usec;
+	ht->opt_time = std::chrono::microseconds(opt_usec);
 	ht->passes_per_sec = 1000000 / opt_usec;
-	gettimeofday(&ht->last_time, (struct timezone*) nullptr);
-	gettimeofday(&ht->before_sleep, (struct timezone*) nullptr);
+	ht->last_time = now;
+	ht->before_sleep = now;
 	return (ht);
 }
 
 int heart_idle(LPHEART ht)
 {
-	struct timeval now, process_time, timeout, temp_time;
+	const auto now = std::chrono::steady_clock::now();
+
+	ht->before_sleep = now;
+
+	const auto process_time = now - ht->last_time;
+
 	int missed_pulse;
 
-	gettimeofday(&ht->before_sleep, (struct timezone*)0);
-	process_time = *timediff(&ht->before_sleep, &ht->last_time);
-
-	if (process_time.tv_sec == 0 && process_time.tv_usec < ht->opt_time.tv_usec)
+	if (process_time < ht->opt_time)
 	{
 		missed_pulse = 0;
 	}
 	else
 	{
-		missed_pulse = process_time.tv_sec * ht->passes_per_sec;
-		missed_pulse += process_time.tv_usec / ht->opt_time.tv_usec;
+		missed_pulse = static_cast<int>(process_time / ht->opt_time);
 	}
 
 	if (missed_pulse > 0)
 	{
-		gettimeofday(&ht->last_time, (struct timezone*)0);
+		ht->last_time = now;
 	}
 	else
 	{
-		temp_time = *timediff(&ht->opt_time, &process_time);
-		ht->last_time = *timeadd(&ht->before_sleep, &temp_time);
-		gettimeofday(&now, (struct timezone*)0);
-		timeout = *timediff(&ht->last_time, &now);
+		ht->last_time = ht->before_sleep + ht->opt_time;
 
-		thecore_sleep(&timeout);
+		const auto timeout = ht->last_time - now;
+
+		std::this_thread::sleep_for(timeout);
 	}
 
 	++missed_pulse;

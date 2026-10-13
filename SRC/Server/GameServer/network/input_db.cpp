@@ -940,8 +940,11 @@ void CInputDB::Boot(const char* data)
 			CManager::instance().LoadObject(kObj, true);
 	}
 
-	set_global_time(*(time_t *) data);
-	data += sizeof(time_t);
+	// Wire format: explicit int64 (a time_t merete platformfuggo).
+	int64_t serverTime = 0;
+	std::memcpy(&serverTime, data, sizeof(serverTime));
+	set_global_time(static_cast<time_t>(serverTime));
+	data += sizeof(serverTime);
 
 	if (decode_2bytes(data) != sizeof(TItemIDRangeTable) )
 	{
@@ -1236,7 +1239,10 @@ void CInputDB::P2P(const char * c_pData)
 
 void CInputDB::Time(const char * c_pData)
 {
-	set_global_time(*(time_t *) c_pData);
+	// Wire format: explicit int64 (a time_t merete platformfuggo).
+	int64_t serverTime = 0;
+	std::memcpy(&serverTime, c_pData, sizeof(serverTime));
+	set_global_time(static_cast<time_t>(serverTime));
 }
 
 void CInputDB::ReloadProto(const char * c_pData)

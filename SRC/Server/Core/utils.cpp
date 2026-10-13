@@ -274,11 +274,6 @@ float fnumber(float from, float to)
 }
 
 #ifndef _WIN32
-void thecore_sleep(struct timeval* timeout)
-{
-	std::this_thread::sleep_for(std::chrono::seconds(timeout->tv_sec) + std::chrono::microseconds(timeout->tv_usec));
-}
-
 void core_dump_unix(const char* who, uint16_t line)
 {
 	LOG_ERROR("*** Dumping Core {}:{} ***", who, line);
@@ -291,11 +286,6 @@ void core_dump_unix(const char* who, uint16_t line)
 }
 
 #else
-
-void thecore_sleep(struct timeval* timeout)
-{
-	std::this_thread::sleep_for(std::chrono::seconds(timeout->tv_sec) + std::chrono::microseconds(timeout->tv_usec));
-}
 
 void gettimeofday(struct timeval* t, struct timezone* dummy)
 {

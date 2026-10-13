@@ -504,7 +504,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TLand) * m_vec_kLandTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TObjectProto) * m_vec_kObjectProto.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TObject) * m_map_pkObjectTable.size() +
-		sizeof(time_t) +
+		sizeof(int64_t) +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemIDRangeTable)*2 +
 		//ADMIN_MANAGER
 		sizeof(uint16_t) + sizeof(uint16_t) + 16 * vHost.size() +
@@ -588,8 +588,9 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	while (it != m_map_pkObjectTable.end())
 		peer->Encode(it++->second, sizeof(building::TObject));
 
-	time_t now = time(nullptr);
-	peer->Encode(&now, sizeof(time_t));
+	// Wire format: explicit int64 (a time_t merete platformfuggo).
+	const int64_t now = static_cast<int64_t>(std::time(nullptr));
+	peer->Encode(&now, sizeof(now));
 
 	TItemIDRangeTable itemRange = CItemIDRangeManager::instance().GetRange();
 	TItemIDRangeTable itemRangeSpare = CItemIDRangeManager::instance().GetRange();
