@@ -79,8 +79,8 @@ namespace
     constexpr int32_t kBossX = 940;
     constexpr int32_t kBossY = 1140;
 
-    // Regen file (Lua: data/dungeon/pyramide/regen3.txt)
-    constexpr const char* kRegen3 = "data/dungeon/pyramide/regen3.txt";
+    // Regen file (Lua: data/dungeon/pyramide/regen3.json)
+    constexpr const char* kRegen3 = "data/dungeon/pyramide/regen3.json";
 
     // Dungeon flags (stored in CDungeon)
     constexpr const char* kFlagFloor = "floor";

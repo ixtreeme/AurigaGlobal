@@ -3,9 +3,9 @@ const static int nBATTLE_ARENA_MAP[] = { 0, 190, 191, 192 };
 const static std::string strRegen[] =
 {
 	"",
-	"/metin2_map_battlearena01/regen00.txt",
-	"/metin2_map_battlearena02/regen00.txt",
-	"/metin2_map_battlearena03/regen00.txt",
+	"/metin2_map_battlearena01/regen00.json",
+	"/metin2_map_battlearena02/regen00.json",
+	"/metin2_map_battlearena03/regen00.json",
 };
 
 enum BATTLEARENA_STATUS

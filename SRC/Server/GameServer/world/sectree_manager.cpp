@@ -27,7 +27,10 @@
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include "Core/Logging.hpp"
+#include "JsonFile.h"
 #include "../ecs/systems/CombatSystem.hpp"
+
+#include <nlohmann/json.hpp>
 
 uint16_t SECTREE_MANAGER::current_sectree_version = MAKEWORD(0, 3);
 
@@ -196,36 +199,29 @@ int SECTREE_MANAGER::LoadSettingFile(int32_t lMapIndex, const char * c_pszSettin
 {
 	memset(&r_setting, 0, sizeof(TMapSetting));
 
-	FILE * fp = fopen(c_pszSettingFileName, "r");
+	nlohmann::json doc;
 
-	if (!fp)
+	if (!JsonFile::Load(c_pszSettingFileName, doc))
 	{
 		LOG_ERROR("cannot open file: {}", c_pszSettingFileName);
 		return 0;
 	}
 
-	char buf[256], cmd[256];
 	int iWidth = 0, iHeight = 0;
 
-	while (fgets(buf, 256, fp))
+	if (doc.contains("map_size") && doc.at("map_size").is_array() && doc.at("map_size").size() >= 2)
 	{
-		sscanf(buf, " %s ", cmd);
-
-		if (!strcasecmp(cmd, "MapSize"))
-		{
-			sscanf(buf, " %s %d %d ", cmd, &iWidth, &iHeight);
-		}
-		else if (!strcasecmp(cmd, "BasePosition"))
-		{
-			sscanf(buf, " %s %d %d", cmd, &r_setting.iBaseX, &r_setting.iBaseY);
-		}
-		else if (!strcasecmp(cmd, "CellScale"))
-		{
-			sscanf(buf, " %s %d ", cmd, &r_setting.iCellScale);
-		}
+		iWidth = doc.at("map_size").at(0).get<int>();
+		iHeight = doc.at("map_size").at(1).get<int>();
 	}
 
-	fclose(fp);
+	if (doc.contains("base_position") && doc.at("base_position").is_array() && doc.at("base_position").size() >= 2)
+	{
+		r_setting.iBaseX = doc.at("base_position").at(0).get<int>();
+		r_setting.iBaseY = doc.at("base_position").at(1).get<int>();
+	}
+
+	r_setting.iCellScale = doc.value("cell_scale", 0);
 
 	if ((iWidth == 0 && iHeight == 0) || r_setting.iCellScale == 0)
 	{
@@ -281,31 +277,24 @@ LPSECTREE_MAP SECTREE_MANAGER::BuildSectreeFromSetting(TMapSetting & r_setting)
 
 void SECTREE_MANAGER::LoadDungeon(int iIndex, const char * c_pszFileName)
 {
-	FILE* fp = fopen(c_pszFileName, "r");
+	nlohmann::json doc;
 
-	if (!fp)
+	if (!JsonFile::Load(c_pszFileName, doc))
+		return;
+
+	if (!doc.contains("positions") || !doc.at("positions").is_array())
 		return;
 
 	int count = 0; // for debug
 
-	while (!feof(fp))
+	for (const auto& entry : doc.at("positions"))
 	{
-		char buf[1024];
-
-		if (nullptr == fgets(buf, 1024, fp))
-			break;
-
-		if ((buf[0] == '#' || buf[0] == '/') && buf[1] == '/')
-			continue;
-
-		std::istringstream ins(buf, std::ios_base::in);
-		std::string position_name;
-		int32_t x, y, sx, sy, dir;
-
-		ins >> position_name >> x >> y >> sx >> sy >> dir;
-
-		if (ins.fail())
-			continue;
+		std::string position_name = entry.value("name", std::string());
+		int32_t x = entry.value("x", 0);
+		int32_t y = entry.value("y", 0);
+		int32_t sx = entry.value("sx", 0);
+		int32_t sy = entry.value("sy", 0);
+		int32_t dir = entry.value("dir", 0);
 
 		x -= sx;
 		y -= sy;
@@ -319,32 +308,46 @@ void SECTREE_MANAGER::LoadDungeon(int iIndex, const char * c_pszFileName)
 		count++;
 	}
 
-	fclose(fp);
-
 	LOG_TRACE("Dungeon Position Load [{:3}]{} count {}", iIndex, c_pszFileName, count);
 }
 
 bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_setting, const char * c_pszMapName)
 {
-	FILE * fp = fopen(c_pszFileName, "r");
-
 	if ( test_server )
 		LOG_TRACE("[LoadMapRegion] file({})", c_pszFileName);
 
-	if (!fp)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(c_pszFileName, doc))
 		return false;
 
 	int32_t iX=0, iY=0;
 	PIXEL_POSITION pos[3] = { {0,0,0}, {0,0,0}, {0,0,0} };
+	int iEmpirePositionCount = 0;
 
-	fscanf(fp, " %d %d ", &iX, &iY);
+	if (doc.contains("spawn") && doc.at("spawn").is_array() && doc.at("spawn").size() >= 2)
+	{
+		iX = doc.at("spawn").at(0).get<int32_t>();
+		iY = doc.at("spawn").at(1).get<int32_t>();
+	}
 
-	int iEmpirePositionCount = fscanf(fp, " %d %d %d %d %d %d ",
-			&pos[0].x, &pos[0].y,
-			&pos[1].x, &pos[1].y,
-			&pos[2].x, &pos[2].y);
+	if (doc.contains("empire_spawn") && doc.at("empire_spawn").is_array() && doc.at("empire_spawn").size() >= 3)
+	{
+		for (int n = 0; n < 3; ++n)
+		{
+			const auto& spawn = doc.at("empire_spawn").at(n);
 
-	fclose(fp);
+			if (!spawn.is_array() || spawn.size() < 2)
+			{
+				iEmpirePositionCount = 0;
+				break;
+			}
+
+			pos[n].x = spawn.at(0).get<int32_t>();
+			pos[n].y = spawn.at(1).get<int32_t>();
+			iEmpirePositionCount += 2;
+		}
+	}
 
 	if( iEmpirePositionCount == 6 )
 	{
@@ -688,31 +691,30 @@ int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapB
 		LOG_INFO("[BUILD] Build {} {} ", c_pszListFileName, c_pszMapBasePath);
 	}
 
-	FILE* fp = fopen(c_pszListFileName, "r");
+	nlohmann::json doc;
 
-	if (nullptr == fp)
+	if (!JsonFile::Load(c_pszListFileName, doc))
 		return 0;
 
-	char buf[256 + 1];
-	char szFilename[256];
-	char szMapName[256];
-	int iIndex;
-
-	while (fgets(buf, 256, fp))
+	if (!doc.contains("maps") || !doc.at("maps").is_array())
 	{
-		// @fixme144 BEGIN
-		char * szEndline = strrchr(buf, '\n');
-		if (!szEndline)
+		LOG_ERROR("cannot parse map index: {}", c_pszListFileName);
+		return 0;
+	}
+
+	char szFilename[256];
+
+	for (const auto& entry : doc.at("maps"))
+	{
+		int iIndex = entry.value("index", 0);
+		std::string mapName = entry.value("name", std::string());
+
+		if (mapName.empty())
 			continue;
-		*szEndline = '\0';
-		// @fixme144 END
 
-		if (!strncmp(buf, "//", 2) || *buf == '#')
-			continue;
+		const char* szMapName = mapName.c_str();
 
-		sscanf(buf, " %d %s ", &iIndex, szMapName);
-
-		snprintf(szFilename, sizeof(szFilename), "%s/%s/Setting.txt", c_pszMapBasePath, szMapName);
+		snprintf(szFilename, sizeof(szFilename), "%s/%s/setting.json", c_pszMapBasePath, szMapName);
 
 		TMapSetting setting;
 		setting.iIndex = iIndex;
@@ -720,16 +722,14 @@ int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapB
 		if (!LoadSettingFile(iIndex, szFilename, setting))
 		{
 			LOG_ERROR("can't load file {} in LoadSettingFile", szFilename);
-			fclose(fp);
 			return 0;
 		}
 
-		snprintf(szFilename, sizeof(szFilename), "%s/%s/Town.txt", c_pszMapBasePath, szMapName);
+		snprintf(szFilename, sizeof(szFilename), "%s/%s/town.json", c_pszMapBasePath, szMapName);
 
 		if (!LoadMapRegion(szFilename, setting, szMapName))
 		{
 			LOG_ERROR("can't load file {} in LoadMapRegion", szFilename);
-			fclose(fp);
 			return 0;
 		}
 
@@ -745,30 +745,28 @@ int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapB
 			snprintf(szFilename, sizeof(szFilename), "%s/%s/server_attr", c_pszMapBasePath, szMapName);
 			LoadAttribute(pkMapSectree, szFilename, setting);
 
-			snprintf(szFilename, sizeof(szFilename), "%s/%s/regen.txt", c_pszMapBasePath, szMapName);
+			snprintf(szFilename, sizeof(szFilename), "%s/%s/regen.json", c_pszMapBasePath, szMapName);
 			regen_load(szFilename, setting.iIndex, setting.iBaseX, setting.iBaseY);
 
-			snprintf(szFilename, sizeof(szFilename), "%s/%s/npc.txt", c_pszMapBasePath, szMapName);
+			snprintf(szFilename, sizeof(szFilename), "%s/%s/npc.json", c_pszMapBasePath, szMapName);
 			regen_load(szFilename, setting.iIndex, setting.iBaseX, setting.iBaseY);
 
-			snprintf(szFilename, sizeof(szFilename), "%s/%s/boss.txt", c_pszMapBasePath, szMapName);
+			snprintf(szFilename, sizeof(szFilename), "%s/%s/boss.json", c_pszMapBasePath, szMapName);
 #ifdef ENABLE_ATLAS_BOSS
 			regen_load(szFilename, setting.iIndex, setting.iBaseX, setting.iBaseY, true);
 #else
 			regen_load(szFilename, setting.iIndex, setting.iBaseX, setting.iBaseY);
 #endif
 
-			snprintf(szFilename, sizeof(szFilename), "%s/%s/stone.txt", c_pszMapBasePath, szMapName);
+			snprintf(szFilename, sizeof(szFilename), "%s/%s/stone.json", c_pszMapBasePath, szMapName);
 			regen_load(szFilename, setting.iIndex, setting.iBaseX, setting.iBaseY);
 
-			snprintf(szFilename, sizeof(szFilename), "%s/%s/dungeon.txt", c_pszMapBasePath, szMapName);
+			snprintf(szFilename, sizeof(szFilename), "%s/%s/dungeon.json", c_pszMapBasePath, szMapName);
 			LoadDungeon(iIndex, szFilename);
 
 			pkMapSectree->Build();
 		}
 	}
-
-	fclose(fp);
 
 	return 1;
 }

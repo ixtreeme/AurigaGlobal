@@ -5453,13 +5453,13 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							{
 								DungeonSystem::SetFlag(dungeon, "step", 1);
 								if (racevnum == 3997) {
-									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen2_type3a.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen2_type3a.json");
 								}
 								else if (racevnum == 3998) {
-									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen3_type3a.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen3_type3a.json");
 								}
 								else if (racevnum == 3996) {
-									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen4_type3a.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen4_type3a.json");
 								}
 
 								DungeonSystem::Notice(dungeon, 905, "");
@@ -5485,13 +5485,13 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							{
 								DungeonSystem::SetFlag(dungeon, "step", 3);
 								if (racevnum == 3997) {
-									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen2_type3b.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen2_type3b.json");
 								}
 								else if (racevnum == 3998) {
-									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen3_type3b.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen3_type3b.json");
 								}
 								else if (racevnum == 3996) {
-									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen4_type3b.txt");
+									DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen4_type3b.json");
 								}
 
 								DungeonSystem::Notice(dungeon, 907, "");
@@ -5545,7 +5545,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "step", 1);
-								DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen8.txt");
+								DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen8.json");
 
 								DungeonSystem::Notice(dungeon, 907, "");
 								DungeonSystem::Notice(dungeon, 906, "");
@@ -5570,7 +5570,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 							if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= per)
 							{
 								DungeonSystem::SetFlag(dungeon, "step", 3);
-								DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen9.txt");
+								DungeonSystem::SpawnRegen(dungeon, "data/dungeon/rune/regen9.json");
 
 								DungeonSystem::Notice(dungeon, 905, "");
 								DungeonSystem::Notice(dungeon, 906, "");

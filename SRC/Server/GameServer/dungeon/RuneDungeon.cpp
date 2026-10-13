@@ -107,23 +107,23 @@ namespace
     constexpr int32_t kMaxLevel = 140;
 
     // Regen files
-    constexpr const char* kRegenFloor1 = "data/dungeon/rune/regen1.txt";
+    constexpr const char* kRegenFloor1 = "data/dungeon/rune/regen1.json";
 
-    constexpr const char* kRegenFloor2_Type1 = "data/dungeon/rune/regen2_type1.txt";
-    constexpr const char* kRegenFloor2_Type3a = "data/dungeon/rune/regen2_type3a.txt";
-    constexpr const char* kRegenFloor2_Type3b = "data/dungeon/rune/regen2_type3b.txt";
+    constexpr const char* kRegenFloor2_Type1 = "data/dungeon/rune/regen2_type1.json";
+    constexpr const char* kRegenFloor2_Type3a = "data/dungeon/rune/regen2_type3a.json";
+    constexpr const char* kRegenFloor2_Type3b = "data/dungeon/rune/regen2_type3b.json";
 
-    constexpr const char* kRegenFloor3_Type1 = "data/dungeon/rune/regen3_type1.txt";
-    constexpr const char* kRegenFloor3_Type3a = "data/dungeon/rune/regen3_type3a.txt";
-    constexpr const char* kRegenFloor3_Type3b = "data/dungeon/rune/regen3_type3b.txt";
+    constexpr const char* kRegenFloor3_Type1 = "data/dungeon/rune/regen3_type1.json";
+    constexpr const char* kRegenFloor3_Type3a = "data/dungeon/rune/regen3_type3a.json";
+    constexpr const char* kRegenFloor3_Type3b = "data/dungeon/rune/regen3_type3b.json";
 
-    constexpr const char* kRegenFloor4_Type1 = "data/dungeon/rune/regen4_type1.txt";
-    constexpr const char* kRegenFloor4_Type3a = "data/dungeon/rune/regen4_type3a.txt";
-    constexpr const char* kRegenFloor4_Type3b = "data/dungeon/rune/regen4_type3b.txt";
+    constexpr const char* kRegenFloor4_Type1 = "data/dungeon/rune/regen4_type1.json";
+    constexpr const char* kRegenFloor4_Type3a = "data/dungeon/rune/regen4_type3a.json";
+    constexpr const char* kRegenFloor4_Type3b = "data/dungeon/rune/regen4_type3b.json";
 
-    constexpr const char* kRegenFloor5 = "data/dungeon/rune/regen5.txt";
-    constexpr const char* kRegenFloor6 = "data/dungeon/rune/regen6.txt";
-    constexpr const char* kRegenFloor7 = "data/dungeon/rune/regen7.txt";
+    constexpr const char* kRegenFloor5 = "data/dungeon/rune/regen5.json";
+    constexpr const char* kRegenFloor6 = "data/dungeon/rune/regen6.json";
+    constexpr const char* kRegenFloor7 = "data/dungeon/rune/regen7.json";
 
     // Dungeon flags
     constexpr const char* kFlagFloor = "floor";

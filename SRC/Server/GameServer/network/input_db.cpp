@@ -1037,7 +1037,7 @@ void CInputDB::Boot(const char* data)
 	snprintf(szDropItemGroupFileName, sizeof(szDropItemGroupFileName),
 			"%s/drop_item_group.json", LocaleService_GetBasePath().c_str());
 	snprintf(szMapIndexFileName, sizeof(szMapIndexFileName),
-			"%s/index", LocaleService_GetMapPath().c_str());
+			"%s/index.json", LocaleService_GetMapPath().c_str());
 	snprintf(szItemVnumMaskTableFileName, sizeof(szItemVnumMaskTableFileName),
 			"%s/ori_to_new_table.json", LocaleService_GetBasePath().c_str());
 	snprintf(szDragonSoulTableFileName, sizeof(szDragonSoulTableFileName),

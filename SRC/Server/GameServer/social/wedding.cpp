@@ -424,7 +424,7 @@ namespace marriage
 		string st_weddingMapRegenFileName;
 		st_weddingMapRegenFileName.reserve(64);
 		st_weddingMapRegenFileName  = LocaleService_GetMapPath();
-		st_weddingMapRegenFileName += "/metin2_map_wedding_01/npc.txt";
+		st_weddingMapRegenFileName += "/metin2_map_wedding_01/npc.json";
 
 		if (!regen_do(st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY, entt::null, true))
 		{

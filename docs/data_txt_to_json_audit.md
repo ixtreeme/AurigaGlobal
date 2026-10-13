@@ -146,8 +146,10 @@ A `.quest`/`.lua` scriptek maradnak (Lua interpreter, nem adat).
 - **Phase 2 - B + C (KESZ)**: blend, cube, fishing (cp949 name dekod),
   gaya, guild_renewal_levelup; shop_table_ex olvasas JSON-ra allitva
   (a fajl tovabbra sem letezik; a shopok DB-bol).
-- **Phase 3 - D + E**: regen csalad (~120 fajl) + map meta
-  (index/Setting/Town/dungeon/map_config); `map_0/` + backup torles.
+- **Phase 3 - D + E (KESZ)**: regen csalad + map meta JSON-ban; a
+  quest lua regen utvonalak is `.json`-ra irva; `map_0/` +
+  `share/locale/germany---------/` torolve. A `map_config.txt` (kikapcsolt
+  ENABLE_MAP_TELEPORTER + regi kliens) es a MapProperty.txt kimaradt.
 - **Phase 4 - F**: questnpc/questcategory -> JSON.
 - **Phase 5 - H/I**: Database import (kulon dontes) + hulladek torles.
 
@@ -232,10 +234,63 @@ commit -> elo szerver data frissitese (kulon lepes).
 
 ### Hatralevo
 
-- Phase 3: regen csalad (~120 fajl: map/*/{regen,npc,boss,stone}.txt,
-  dungeon/**, battlearena/wedding) + map meta (map/index, Setting.txt,
-  Town.txt, dungeon.txt, map_config.txt) konverzio; `map_0/` es
-  `share/locale/germany---------/` hulladek torlese.
 - Phase 4: questnpc/questcategory.
 - Phase 5: Database import txt-k (kulon dontes) + junk (.txt0218/.bak/
   .bck/.ryuga, comon_Drop_item_input_format_razor93.txt) torles.
+
+
+## 7. Phase 3 statusz (2026-10-13)
+
+### Regen csalad (D)
+
+- Konverter: `SRC/Tools/txt2json/txt2json_regen.py`. A regi `get_word`/
+  `read_line` token-stream portja (whitespace tokenek, `//` sorvegig,
+  `e` tipus z utan zar, EOF-nal felbevágott bejegyzes eldobva).
+- JSON: `{"regens":[{type, x, y, range_x, range_y, z, dir, time,
+  percent, count, vnum}]}`; a `time` nyers string ("10s", "1h30m"),
+  a `percent` benne marad de a loader nem hasznalja (mint eddig); a
+  kozeppont/sugar szamitas (`sx=(x-rx)*100`, `ex=(x+rx)*100`) a
+  betolteskor tortenik, igy a REGEN struct valtozatlan maradt.
+- Szerver: `regen_do` / `regen_load_in_file` / `regen_load` (es az
+  EXCEPTION ag) JSON-t olvas; a `get_word`/`next_line`/`read_line` es az
+  `ERegenModes` torolve. A típusfeloldas (`m`/`g`/`ga`/`e`/`r`/`s`,
+  ismeretlen -> exit(1)) bitazonos.
+- Erintett utvonalak: `map/*/regen.json|npc.json|boss.json|stone.json`,
+  `dungeon/**/*.json` (kemenyitett konstansok: LostCastle, Halloween2022,
+  Pyramid, Rune, Viking, CombatSystem), `BattleArena.h` regen00.json,
+  `wedding.cpp` npc.json; a quest lua-kban (aktiv `Quest/`, `pre_qc/`,
+  `Quest non usati/`) 131 `.txt` -> `.json` csere.
+- Paritas: 342 regen fajl txt vs JSON bejegyzes-szam egyezik (0 elteres).
+
+### Map meta (E)
+
+- Konverter: `SRC/Tools/txt2json/txt2json_map.py` (index/setting/town/
+  dungeon mod).
+- `map/index` -> `map/index.json` (`{"maps":[{index,name}]}`, 48 map);
+  `input_db.cpp` az `index.json`-t tolti.
+- `<map>/Setting.txt` -> `setting.json` (`cell_scale`, `map_size`,
+  `base_position`; a tobbi KV - HeightScale/ViewRadius/TextureSet/
+  Environment - nem kellett a loadernek);
+- `<map>/Town.txt` -> `town.json` (`spawn`, opcionalis `empire_spawn`);
+- `<map>/dungeon.txt` -> `dungeon.json` (`positions`; jelenleg egyik
+  mapon sem letezik, de a loader tudja).
+- `sectree_manager.cpp` Build/LoadSettingFile/LoadMapRegion/LoadDungeon
+  JSON-ra atirva, a `Setting.txt`/`Town.txt`/`regen.txt`/`npc.txt`/
+  `boss.txt`/`stone.txt`/`dungeon.txt` utvonalak `.json`-ra.
+- Kimaradt (szandekosan): `map/map_config.txt` - az ENABLE_MAP_TELEPORTER
+  nincs bekapcsolva es a regi kliens is olvassa; `MapProperty.txt` es
+  `metin.txt` - nincs szerver olvaso.
+
+### Adat rendezes
+
+- Az elo `share/data`-ban 493 txt torolve (minden olyan, aminek van
+  `.json` parja), 1.7 MB.
+- `share/data/map_0/` (177 txt, 6.9 MB) es
+  `share/locale/germany---------/` (45.8 MB backup) torolve - egyik sem
+  olvasott (a `share/locale/*.tgz` backupok megmaradtak).
+- Megtartva: gaya per-player allapotfajlok, whisper.txt, quest
+  questnpc/questcategory (Phase 4), Database import / junk (Phase 5).
+
+### Build
+
+- GameServer Debug + Release zold.

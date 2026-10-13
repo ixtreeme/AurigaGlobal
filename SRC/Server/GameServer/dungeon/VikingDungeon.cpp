@@ -89,9 +89,9 @@ namespace
     constexpr int64_t kFinalBossNormalHP  = 10000000000;
     constexpr int64_t kFinalBossPenaltyHP = 4000000;
 
-    constexpr const char* kRegen1FloorA = "data/dungeon/viking_dungeon/regen_1f_a.txt";
-    constexpr const char* kRegen1FloorB = "data/dungeon/viking_dungeon/regen_1f_b.txt";
-    constexpr const char* kRegen2FloorA = "data/dungeon/viking_dungeon/regen_2f_a.txt";
+    constexpr const char* kRegen1FloorA = "data/dungeon/viking_dungeon/regen_1f_a.json";
+    constexpr const char* kRegen1FloorB = "data/dungeon/viking_dungeon/regen_1f_b.json";
+    constexpr const char* kRegen2FloorA = "data/dungeon/viking_dungeon/regen_2f_a.json";
 
     constexpr const char* kQfCooldown   = "vikingdungeon_zone.cooldown";
     constexpr const char* kQfDisconnect = "vikingdungeon_zone.disconnect";

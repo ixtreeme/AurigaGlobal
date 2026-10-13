@@ -77,9 +77,9 @@ namespace
     constexpr int32_t  kFloor1Wave1Kills = 120;
     constexpr int32_t  kFloor1Wave2Kills = 182;
 
-    constexpr const char* kFloor1StatuesRegen  = "data/dungeon/halloween2022_dungeon/1floor_statues.txt";
-    constexpr const char* kFloor1Monsters1Regen = "data/dungeon/halloween2022_dungeon/1floor_monsters_1.txt";
-    constexpr const char* kFloor1Monsters2Regen = "data/dungeon/halloween2022_dungeon/1floor_monsters_2.txt";
+    constexpr const char* kFloor1StatuesRegen  = "data/dungeon/halloween2022_dungeon/1floor_statues.json";
+    constexpr const char* kFloor1Monsters1Regen = "data/dungeon/halloween2022_dungeon/1floor_monsters_1.json";
+    constexpr const char* kFloor1Monsters2Regen = "data/dungeon/halloween2022_dungeon/1floor_monsters_2.json";
 
     // Floor 2
     constexpr uint32_t kCalyxEmptyNpc   = 9482;
@@ -93,8 +93,8 @@ namespace
     constexpr int32_t  kFinalBossSpawnDelaySec = 10;
     constexpr int32_t  kSecondStoneCountNeeded = 8;
 
-    constexpr const char* kFloor2MonstersRegen = "data/dungeon/halloween2022_dungeon/2floor_monsters.txt";
-    constexpr const char* kFloor2StonesRegen   = "data/dungeon/halloween2022_dungeon/2floor_stones.txt";
+    constexpr const char* kFloor2MonstersRegen = "data/dungeon/halloween2022_dungeon/2floor_monsters.json";
+    constexpr const char* kFloor2StonesRegen   = "data/dungeon/halloween2022_dungeon/2floor_stones.json";
 
     // Reward
     constexpr uint32_t kRewardItemVnum  = 30934;

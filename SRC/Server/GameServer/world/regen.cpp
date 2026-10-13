@@ -7,7 +7,10 @@
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "regen.h"
+#include "JsonFile.h"
 #include "mob_manager.h"
+
+#include <nlohmann/json.hpp>
 #include "dungeon.h"
 
 
@@ -15,235 +18,6 @@
 
 LPREGEN	regen_list = nullptr;
 LPREGEN_EXCEPTION regen_exception_list = nullptr;
-
-enum ERegenModes
-{
-	MODE_TYPE = 0,
-	MODE_SX,
-	MODE_SY,
-	MODE_EX,
-	MODE_EY,
-	MODE_Z_SECTION,
-	MODE_DIRECTION,
-	MODE_REGEN_TIME,
-	MODE_REGEN_PERCENT,
-	MODE_MAX_COUNT,
-	MODE_VNUM
-};
-
-static bool get_word(FILE *fp, char *buf)
-{
-	int i = 0;
-	int c;
-
-	int semicolon_mode = 0;
-
-	while ((c = fgetc(fp)) != EOF)
-	{
-		if (i == 0)
-		{
-			if (c == '"')
-			{
-				semicolon_mode = 1;
-				continue;
-			}
-
-			if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
-				continue;
-		}
-
-		if (semicolon_mode)
-		{
-			if (c == '"')
-			{
-				buf[i] = '\0';
-				return true;
-			}
-
-			buf[i++] = c;
-		}
-		else
-		{
-			if ((c == ' ' || c == '\t' || c == '\n' || c == '\r'))
-			{
-				buf[i] = '\0';
-				return true;
-			}
-
-			buf[i++] = c;
-		}
-
-		if (i == 2 && buf[0] == '/' && buf[1] == '/')
-		{
-			buf[i] = '\0';
-			return true;
-		}
-	}
-
-	buf[i] = '\0';
-	return (i != 0);
-}
-
-static void next_line(FILE *fp)
-{
-	int c;
-
-	while ((c = fgetc(fp)) != EOF)
-		if (c == '\n')
-			return;
-}
-
-static bool read_line(FILE *fp, LPREGEN regen)
-{
-	char szTmp[256];
-
-	int mode = MODE_TYPE;
-	int tmpTime;
-	uint32_t i;
-
-	while (get_word(fp, szTmp))
-	{
-		if (!strncmp(szTmp, "//", 2))
-		{
-			next_line(fp);
-			continue;
-		}
-
-		switch (mode)
-		{
-			case MODE_TYPE:
-				if (szTmp[0] == 'm')
-					regen->type = REGEN_TYPE_MOB;
-				else if (szTmp[0] == 'g')
-				{
-					regen->type = REGEN_TYPE_GROUP;
-
-					if (szTmp[1] == 'a')
-						regen->is_aggressive = true;
-				}
-				else if (szTmp[0] == 'e')
-					regen->type = REGEN_TYPE_EXCEPTION;
-				else if (szTmp[0] == 'r')
-					regen->type = REGEN_TYPE_GROUP_GROUP;
-				else if (szTmp[0] == 's')
-					regen->type = REGEN_TYPE_ANYWHERE;
-				else
-				{
-					LOG_ERROR("read_line: unknown regen type {}", szTmp[0]);
-					exit(1);
-				}
-
-				++mode;
-				break;
-
-			case MODE_SX:
-				str_to_number(regen->sx, szTmp);
-				++mode;
-				break;
-
-			case MODE_SY:
-				str_to_number(regen->sy, szTmp);
-				++mode;
-				break;
-
-			case MODE_EX:
-				{
-					int iX = 0;
-					str_to_number(iX, szTmp);
-
-					regen->sx -= iX;
-					regen->ex = regen->sx + iX * 2;
-
-					regen->sx *= 100;
-					regen->ex *= 100;
-
-					++mode;
-				}
-				break;
-
-			case MODE_EY:
-				{
-					int iY = 0;
-					str_to_number(iY, szTmp);
-
-					regen->sy -= iY;
-					regen->ey = regen->sy + iY * 2;
-
-					regen->sy *= 100;
-					regen->ey *= 100;
-
-					++mode;
-				}
-				break;
-
-			case MODE_Z_SECTION:
-				str_to_number(regen->z_section, szTmp);
-
-				if (regen->type == REGEN_TYPE_EXCEPTION)
-					return true;
-
-				++mode;
-				break;
-
-			case MODE_DIRECTION:
-				str_to_number(regen->direction, szTmp);
-				++mode;
-				break;
-
-			case MODE_REGEN_TIME:
-				regen->time = 0;
-				tmpTime = 0;
-
-				for (i = 0; i < strlen(szTmp); ++i)
-				{
-					switch (szTmp[i])
-					{
-						case 'h':
-							regen->time += tmpTime * 3600;
-							tmpTime = 0;
-							break;
-
-						case 'm':
-							regen->time += tmpTime * 60;
-							tmpTime = 0;
-							break;
-
-						case 's':
-							regen->time += tmpTime;
-							tmpTime = 0;
-							break;
-
-						default:
-							if (szTmp[i] >= '0' && szTmp[i] <= '9')
-							{
-								tmpTime *= 10;
-								tmpTime += (szTmp[i] - '0');
-							}
-					}
-				}
-
-				++mode;
-				break;
-
-			case MODE_REGEN_PERCENT:
-				++mode;
-				break;
-
-			case MODE_MAX_COUNT:
-				regen->count = 0;
-				str_to_number(regen->max_count, szTmp);
-				++mode;
-				break;
-
-			case MODE_VNUM:
-				str_to_number(regen->vnum, szTmp);
-				++mode;
-				return true;
-		}
-	}
-
-	return false;
-}
 
 bool is_regen_exception(int32_t x, int32_t y)
 {
@@ -425,6 +199,117 @@ EVENTFUNC(dungeon_regen_event)
 	return PASSES_PER_SEC(regen->time);
 }
 
+namespace
+{
+	bool RegenTypeFromToken(const std::string& token, REGEN& regen)
+	{
+		if (token.empty())
+			return false;
+
+		switch (token[0])
+		{
+			case 'm':
+				regen.type = REGEN_TYPE_MOB;
+				return true;
+
+			case 'g':
+				regen.type = REGEN_TYPE_GROUP;
+
+				if (token.size() > 1 && token[1] == 'a')
+					regen.is_aggressive = true;
+
+				return true;
+
+			case 'e':
+				regen.type = REGEN_TYPE_EXCEPTION;
+				return true;
+
+			case 'r':
+				regen.type = REGEN_TYPE_GROUP_GROUP;
+				return true;
+
+			case 's':
+				regen.type = REGEN_TYPE_ANYWHERE;
+				return true;
+		}
+
+		LOG_ERROR("read_line: unknown regen type {}", token);
+		exit(1);
+	}
+
+	uint32_t RegenParseTime(const std::string& text)
+	{
+		uint32_t time = 0;
+		uint32_t tmpTime = 0;
+
+		for (size_t i = 0; i < text.size(); ++i)
+		{
+			switch (text[i])
+			{
+				case 'h':
+					time += tmpTime * 3600;
+					tmpTime = 0;
+					break;
+
+				case 'm':
+					time += tmpTime * 60;
+					tmpTime = 0;
+					break;
+
+				case 's':
+					time += tmpTime;
+					tmpTime = 0;
+					break;
+
+				default:
+					if (text[i] >= '0' && text[i] <= '9')
+					{
+						tmpTime *= 10;
+						tmpTime += (text[i] - '0');
+					}
+					break;
+			}
+		}
+
+		return time;
+	}
+
+	bool RegenFromJson(const nlohmann::json& entry, REGEN& regen)
+	{
+		if (!RegenTypeFromToken(entry.value("type", std::string()), regen))
+			return false;
+
+		const int x = entry.value("x", 0);
+		const int y = entry.value("y", 0);
+		const int range_x = entry.value("range_x", 0);
+		const int range_y = entry.value("range_y", 0);
+
+		regen.sx = x;
+		regen.sy = y;
+
+		// Same maths as the old MODE_EX / MODE_EY.
+		regen.sx -= range_x;
+		regen.ex = regen.sx + range_x * 2;
+
+		regen.sy -= range_y;
+		regen.ey = regen.sy + range_y * 2;
+
+		regen.sx *= 100;
+		regen.ex *= 100;
+
+		regen.sy *= 100;
+		regen.ey *= 100;
+
+		regen.z_section = static_cast<uint8_t>(entry.value("z", 0));
+		regen.direction = static_cast<uint8_t>(entry.value("dir", 0));
+		regen.time = RegenParseTime(JsonFile::ToToken(entry.value("time", "0")));
+		// "percent": the old parser read it but never used it.
+		regen.max_count = entry.value("count", 0);
+		regen.vnum = entry.value("vnum", 0);
+		return true;
+	}
+}
+
 bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, entt::entity pDungeon, bool bOnce)
 {
 	if (g_bNoRegen)
@@ -434,20 +319,21 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, e
 		return true;
 
 	LPREGEN regen = nullptr;
-	FILE* fp = fopen(filename, "rt");
 
-	if (nullptr == fp)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(filename, doc) || !doc.contains("regens") || !doc.at("regens").is_array())
 	{
 		LOG_ERROR("SYSTEM: regen_do: {}: file not found", filename);
 		return false;
 	}
 
-	while (true)
+	for (const auto& entry : doc.at("regens"))
 	{
 		REGEN tmp{};
 
-		if (!read_line(fp, &tmp))
-			break;
+		if (!RegenFromJson(entry, tmp))
+			continue;
 
 		if (tmp.type == REGEN_TYPE_MOB ||
 			tmp.type == REGEN_TYPE_GROUP ||
@@ -521,7 +407,6 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, e
 		}
 	}
 
-	fclose(fp);
 	return true;
 }
 
@@ -531,20 +416,21 @@ bool regen_load_in_file(const char* filename, int32_t lMapIndex, int base_x, int
 		return true;
 
 	LPREGEN regen = nullptr;
-	FILE * fp = fopen(filename, "rt");
 
-	if (nullptr == fp)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(filename, doc) || !doc.contains("regens") || !doc.at("regens").is_array())
 	{
 		LOG_ERROR("SYSTEM: regen_do: {}: file not found", filename);
 		return false;
 	}
 
-	while (true)
+	for (const auto& entry : doc.at("regens"))
 	{
 		REGEN tmp{};
 
-		if (!read_line(fp, &tmp))
-			break;
+		if (!RegenFromJson(entry, tmp))
+			continue;
 
 		if (tmp.type == REGEN_TYPE_MOB ||
 			tmp.type == REGEN_TYPE_GROUP ||
@@ -593,7 +479,6 @@ bool regen_load_in_file(const char* filename, int32_t lMapIndex, int base_x, int
 		}
 	}
 
-	fclose(fp);
 	return true;
 }
 
@@ -626,20 +511,21 @@ bool regen_load(const char* filename, int32_t lMapIndex, int base_x, int base_y)
 		return true;
 
 	LPREGEN regen = nullptr;
-	FILE* fp = fopen(filename, "rt");
 
-	if (nullptr == fp)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(filename, doc) || !doc.contains("regens") || !doc.at("regens").is_array())
 	{
 		LOG_INFO("SYSTEM: regen_load: {}: file not found", filename);
 		return false;
 	}
 
-	while (true)
+	for (const auto& entry : doc.at("regens"))
 	{
 		REGEN tmp{};
 
-		if (!read_line(fp, &tmp))
-			break;
+		if (!RegenFromJson(entry, tmp))
+			continue;
 
 		if (tmp.type == REGEN_TYPE_MOB ||
 			tmp.type == REGEN_TYPE_GROUP ||
@@ -746,7 +632,6 @@ bool regen_load(const char* filename, int32_t lMapIndex, int base_x, int base_y)
 		}
 	}
 
-	fclose(fp);
 	return true;
 }
 

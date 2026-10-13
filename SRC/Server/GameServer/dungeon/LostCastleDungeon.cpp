@@ -83,7 +83,7 @@ namespace
     constexpr int32_t  kFloor2TimeSec = 180;
     constexpr int32_t  kFloor2CenterX = kEnterLocalX;
     constexpr int32_t  kFloor2CenterY = kEnterLocalY;
-    constexpr const char* kFloor2Regen = "data/dungeon/elveszett_kastely/floor2.txt";
+    constexpr const char* kFloor2Regen = "data/dungeon/elveszett_kastely/floor2.json";
     constexpr uint32_t kKeyItems[5] = { 30001, 30002, 30003, 30004, 30005 };
 
     // Floor3
@@ -92,7 +92,7 @@ namespace
     constexpr int32_t  kFloor3CenterY = kEnterLocalY;
 
     // Floor4
-    constexpr const char* kFloor4Regen = "data/dungeon/elveszett_kastely/floor4.txt";
+    constexpr const char* kFloor4Regen = "data/dungeon/elveszett_kastely/floor4.json";
     constexpr uint32_t kTotemVnum = 9298;
     constexpr uint32_t kTileItemVnum = 30007;
     constexpr int32_t  kTileDropChancePct = 3;
