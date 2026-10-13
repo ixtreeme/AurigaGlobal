@@ -8,7 +8,9 @@
 #include "mob_manager.h"
 #include "regen.h"
 #include "sectree.h"
-#include "json_group_loader.h"
+#include "JsonFile.h"
+
+#include <nlohmann/json.hpp>
 #include "questmanager.h"
 #include "locale_service.h"
 
@@ -260,60 +262,44 @@ CMobGroup * CMobManager::GetGroup(uint32_t dwVnum)
 	return it->second;
 }
 
+
 bool CMobManager::LoadGroupGroup(const char * c_pszFileName)
 {
-	CJsonGroupLoader loader;
+	nlohmann::json doc;
 
-	if (!loader.Load(c_pszFileName))
+	if (!JsonFile::Load(c_pszFileName, doc) || !doc.contains("groups") || !doc.at("groups").is_array())
 		return false;
 
-	std::string stName;
-
-	for (uint32_t i = 0; i < loader.GetChildNodeCount(); ++i)
+	for (const auto& group : doc.at("groups"))
 	{
-		loader.SetChildNode(i);
+		std::string stName = group.value("name", std::string());
 
-		loader.GetCurrentNodeName(&stName);
-
-		int iVnum;
-
-		if (!loader.GetTokenInteger("vnum", &iVnum))
+		if (!group.contains("vnum"))
 		{
 			LOG_ERROR("LoadGroupGroup : Syntax error {} : no vnum, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			continue;
 		}
 
-		TTokenVector * pTok;
+		int iVnum = group.value("vnum", 0);
 
 		CMobGroupGroup * pkGroup = M2_NEW CMobGroupGroup(iVnum);
 
-		for (int k = 1; k < 256; ++k)
+		if (group.contains("members") && group.at("members").is_array())
 		{
-			char buf[4];
-			snprintf(buf, sizeof(buf), "%d", k);
-
-			if (loader.GetTokenVector(buf, &pTok))
+			for (const auto& member : group.at("members"))
 			{
-				uint32_t dwMobVnum = 0;
-				str_to_number(dwMobVnum, pTok->at(0).c_str());
+				uint32_t dwMobVnum = member.value("vnum", 0u);
 
-				// ADD_MOB_GROUP_GROUP_PROB
-				int prob = 1;
-				if (pTok->size() > 1)
-					str_to_number(prob, pTok->at(1).c_str());
-				// END_OF_ADD_MOB_GROUP_GROUP_PROB
+				// ADD_MOB_GROUP_GROUP_PROB (the old loader parsed but never
+				// used the prob value)
+				int prob = member.value("prob", 1);
 
 				if (dwMobVnum)
 					pkGroup->AddMember(dwMobVnum);
 
-				continue;
+				(void)prob;
 			}
-
-			break;
 		}
-
-		loader.SetParentNode();
 
 		m_map_pkMobGroupGroup.insert(std::make_pair((uint32_t)iVnum, pkGroup));
 	}
@@ -321,74 +307,55 @@ bool CMobManager::LoadGroupGroup(const char * c_pszFileName)
 	return true;
 }
 
+
 bool CMobManager::LoadGroup(const char * c_pszFileName)
 {
-	CJsonGroupLoader loader;
+	nlohmann::json doc;
 
-	if (!loader.Load(c_pszFileName))
+	if (!JsonFile::Load(c_pszFileName, doc) || !doc.contains("groups") || !doc.at("groups").is_array())
 		return false;
 
-	std::string stName;
-
-	for (uint32_t i = 0; i < loader.GetChildNodeCount(); ++i)
+	for (const auto& group : doc.at("groups"))
 	{
-		loader.SetChildNode(i);
+		std::string stName = group.value("name", std::string());
 
-		loader.GetCurrentNodeName(&stName);
-
-		int iVnum;
-
-		if (!loader.GetTokenInteger("vnum", &iVnum))
+		if (!group.contains("vnum"))
 		{
 			LOG_ERROR("LoadGroup : Syntax error {} : no vnum, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			continue;
 		}
 
-		TTokenVector * pTok;
+		int iVnum = group.value("vnum", 0);
 
-		if (!loader.GetTokenVector("leader", &pTok))
+		if (!group.contains("leader") || !group.at("leader").is_object() || !group.at("leader").contains("vnum"))
 		{
 			LOG_ERROR("LoadGroup : Syntax error {} : no leader, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			continue;
 		}
 
-		if (pTok->size() < 2)
-		{
-			LOG_ERROR("LoadGroup : Syntax error {} : no leader vnum, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
-			continue;
-		}
+		const auto& leader = group.at("leader");
 
 		CMobGroup * pkGroup = M2_NEW CMobGroup;
 
 		pkGroup->Create(iVnum, stName);
-		uint32_t vnum = 0;
-		str_to_number(vnum, pTok->at(1).c_str());
+		uint32_t vnum = leader.value("vnum", 0u);
 		pkGroup->AddMember(vnum);
 
 		LOG_TRACE("GROUP: {:<5} {}", iVnum, stName.c_str());
-		LOG_TRACE("               {} {}", pTok->at(0).c_str(), pTok->at(1).c_str());
+		LOG_TRACE("               {} {}", leader.value("name", std::string()).c_str(), vnum);
 
-		for (int k = 1; k < 256; ++k)
+		if (group.contains("members") && group.at("members").is_array())
 		{
-			char buf[4];
-			snprintf(buf, sizeof(buf), "%d", k);
-
-			if (loader.GetTokenVector(buf, &pTok))
+			for (const auto& member : group.at("members"))
 			{
-				LOG_TRACE("               {} {}", pTok->at(0).c_str(), pTok->at(1).c_str());
-				uint32_t vnum = 0;
-				str_to_number(vnum, pTok->at(1).c_str());
-				pkGroup->AddMember(vnum);
-				continue;
-			}
+				uint32_t dwMobVnum = member.value("vnum", 0u);
 
-			break;
+				LOG_TRACE("               {} {}", member.value("name", std::string()).c_str(), dwMobVnum);
+
+				pkGroup->AddMember(dwMobVnum);
+			}
 		}
 
-		loader.SetParentNode();
 		m_map_pkMobGroup.insert(std::map<uint32_t, CMobGroup *>::value_type(iVnum, pkGroup));
 	}
 

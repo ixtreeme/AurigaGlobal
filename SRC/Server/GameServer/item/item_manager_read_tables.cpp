@@ -7,7 +7,6 @@
 #include "db.h"
 #include "log.h"
 #include "skill.h"
-#include "json_group_loader.h"
 #include "JsonFile.h"
 #include "priv_manager.h"
 #include "questmanager.h"
@@ -28,224 +27,111 @@
 #endif
 std::vector<CItemDropInfo> g_vec_pkCommonDropItem[MOB_RANK_MAX_NUM];
 
-#ifdef NEW_READ_COMMON_DROP_ITEM
+
 bool ITEM_MANAGER::ReadCommonDropItemFile(const char *c_pszFileName)
 {
-	CJsonGroupLoader loader;
+	nlohmann::json doc;
 
-	if (!loader.Load(c_pszFileName))
+	if (!JsonFile::Load(c_pszFileName, doc) || !doc.contains("groups") || !doc.at("groups").is_array())
 		return false;
 
-	std::string stName;
-
-	for (uint32_t i = 0; i < loader.GetChildNodeCount(); ++i)
+	for (const auto& group : doc.at("groups"))
 	{
-		loader.SetChildNode(i);
-		loader.GetCurrentNodeName(&stName);
+		std::string stName = group.value("name", std::string());
 
-		int rank;
-
-		if (!loader.GetTokenInteger("rank", &rank))
+		if (!group.contains("rank"))
 		{
 			LOG_ERROR("CommonDropitem : Syntax error {} : no rank, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			return false;
 		}
 
-		TTokenVector *pTok;
+		int rank = group.value("rank", 0);
 
-		for (int k = 1; k < 1024; ++k)
-		{
-			char buf[4];
-			snprintf(buf, sizeof(buf), "%d", k);
-
-			if (loader.GetTokenVector(buf, &pTok))
-			{
-				uint32_t vnum = 0;
-				if (!GetVnumByOriginalName(pTok->at(3).c_str(), vnum))
-				{
-					str_to_number(vnum, pTok->at(3).c_str());
-					if (!ITEM_MANAGER::instance().GetTable(vnum))
-					{
-						LOG_ERROR("CommonDropitem : there is no item node {} : vnum {}", stName.c_str(), vnum);
-						return false;
-					}
-				}
-
-				int lvlStart = 0;
-				str_to_number(lvlStart, pTok->at(0).c_str());
-				if (lvlStart < 1)
-				{
-					LOG_ERROR("CommonDropitem : lvlStart negative node {} : lvlstart {}", stName.c_str(), lvlStart);
-					return false;
-				}
-
-				int lvlEnd = 0;
-				str_to_number(lvlEnd, pTok->at(1).c_str());
-				if (lvlEnd < 1)
-				{
-					LOG_ERROR("CommonDropitem : lvlEnd negative node {} : lvlEnd {}", stName.c_str(), lvlEnd);
-					return false;
-				}
-
-				if (lvlStart > lvlEnd)
-				{
-					LOG_ERROR("CommonDropitem : lvlStart and lvlEnd >< node {} : lvlStart {} lvlEnd {}", stName.c_str(), lvlStart, lvlEnd);
-					return false;
-				}
-
-				float pct = atof(pTok->at(2).c_str());
-
-				// int count = 0;
-				// str_to_number(count, pTok->at(4).c_str());
-
-				uint32_t dwPct = (uint32_t)(pct * 10000.0f);
-
-				if (lvlStart == 0)
-					continue;
-
-				LOG_TRACE("CommonDropItem ADD: Rank {}  LvlStart {}  LvlEnd {}   dwPct {}   Vnum {}", rank, lvlStart, lvlEnd, dwPct, vnum);
-
-				g_vec_pkCommonDropItem[rank].push_back(CItemDropInfo(lvlStart, lvlEnd, dwPct, vnum));
-			}
-		}
-
-		loader.SetParentNode();
-	}
-
-	return true;
-}
-#else
-bool ITEM_MANAGER::ReadCommonDropItemFile(const char * c_pszFileName)
-{
-	FILE * fp = fopen(c_pszFileName, "r");
-
-	if (!fp)
-	{
-		LOG_ERROR("Cannot open {}", c_pszFileName);
-		return false;
-	}
-
-	char buf[1024];
-
-	int lines = 0;
-
-	while (fgets(buf, 1024, fp))
-	{
-		++lines;
-
-		if (!*buf || *buf == '\n')
+		if (!group.contains("items") || !group.at("items").is_array())
 			continue;
 
-		TDropItem d[MOB_RANK_MAX_NUM];
-		char szTemp[64];
-
-		memset(&d, 0, sizeof(d));
-
-		char * p = buf;
-		char * p2;
-
-		for (int i = 0; i <= MOB_RANK_S_KNIGHT; ++i)
+		for (const auto& entry : group.at("items"))
 		{
-			for (int j = 0; j < 6; ++j)
+			std::string name = entry.value("item", std::string());
+			uint32_t vnum = 0;
+
+			if (!GetVnumByOriginalName(name.c_str(), vnum))
 			{
-				p2 = strchr(p, '\t');
+				str_to_number(vnum, name.c_str());
 
-				if (!p2)
-					break;
-
-				strlcpy(szTemp, p, MIN(sizeof(szTemp), (p2 - p) + 1));
-				p = p2 + 1;
-
-				switch (j)
+				if (!ITEM_MANAGER::instance().GetTable(vnum))
 				{
-				case 0: break;
-				case 1: str_to_number(d[i].iLvStart, szTemp);	break;
-				case 2: str_to_number(d[i].iLvEnd, szTemp);	break;
-				case 3: d[i].fPercent = atof(szTemp);	break;
-				case 4: strlcpy(d[i].szItemName, szTemp, sizeof(d[i].szItemName));	break;
-				case 5: str_to_number(d[i].iCount, szTemp);	break;
-				}
-			}
-
-			uint32_t dwPct = (uint32_t) (d[i].fPercent * 10000.0f);
-			uint32_t dwItemVnum = 0;
-
-			if (!ITEM_MANAGER::instance().GetVnumByOriginalName(d[i].szItemName, dwItemVnum))
-			{
-				str_to_number(dwItemVnum, d[i].szItemName);
-				if (!ITEM_MANAGER::instance().GetTable(dwItemVnum))
-				{
-					LOG_ERROR("No such an item (name: {})", d[i].szItemName);
-					fclose(fp);
+					LOG_ERROR("CommonDropitem : there is no item node {} : vnum {}", stName.c_str(), vnum);
 					return false;
 				}
 			}
 
-			if (d[i].iLvStart == 0)
+			int lvlStart = entry.value("level_start", 0);
+
+			if (lvlStart < 1)
+			{
+				LOG_ERROR("CommonDropitem : lvlStart negative node {} : lvlstart {}", stName.c_str(), lvlStart);
+				return false;
+			}
+
+			int lvlEnd = entry.value("level_end", 0);
+
+			if (lvlEnd < 1)
+			{
+				LOG_ERROR("CommonDropitem : lvlEnd negative node {} : lvlEnd {}", stName.c_str(), lvlEnd);
+				return false;
+			}
+
+			if (lvlStart > lvlEnd)
+			{
+				LOG_ERROR("CommonDropitem : lvlStart and lvlEnd >< node {} : lvlStart {} lvlEnd {}", stName.c_str(), lvlStart, lvlEnd);
+				return false;
+			}
+
+			float pct = entry.value("chance", 0.0f);
+
+			uint32_t dwPct = (uint32_t)(pct * 10000.0f);
+
+			if (lvlStart == 0)
 				continue;
 
-			g_vec_pkCommonDropItem[i].push_back(CItemDropInfo(d[i].iLvStart, d[i].iLvEnd, dwPct, dwItemVnum));
-		}
-	}
+			LOG_TRACE("CommonDropItem ADD: Rank {}  LvlStart {}  LvlEnd {}   dwPct {}   Vnum {}", rank, lvlStart, lvlEnd, dwPct, vnum);
 
-	fclose(fp);
-
-	for (int i = 0; i < MOB_RANK_MAX_NUM; ++i)
-	{
-		std::vector<CItemDropInfo> & v = g_vec_pkCommonDropItem[i];
-		std::sort(v.begin(), v.end());
-
-		std::vector<CItemDropInfo>::iterator it = v.begin();
-
-		LOG_TRACE("CommonItemDrop rank {}", i);
-
-		while (it != v.end())
-		{
-			const CItemDropInfo & c = *(it++);
-			LOG_TRACE("CommonItemDrop {} {} {} {}", c.m_iLevelStart, c.m_iLevelEnd, c.m_iPercent, c.m_dwVnum);
+			g_vec_pkCommonDropItem[rank].push_back(CItemDropInfo(lvlStart, lvlEnd, dwPct, vnum));
 		}
 	}
 
 	return true;
 }
 
-#endif
+
 
 bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 {
-	CJsonGroupLoader loader;
+	nlohmann::json doc;
 
-	if (!loader.Load(c_pszFileName))
+	if (!JsonFile::Load(c_pszFileName, doc) || !doc.contains("groups") || !doc.at("groups").is_array())
 		return false;
 
-	std::string stName;
-
-	for (uint32_t i = 0; i < loader.GetChildNodeCount(); ++i)
+	for (const auto& group : doc.at("groups"))
 	{
-		loader.SetChildNode(i);
+		std::string stName = group.value("name", std::string());
 
-		loader.GetCurrentNodeName(&stName);
-
-		int iVnum;
-
-		if (!loader.GetTokenInteger("vnum", &iVnum))
+		if (!group.contains("vnum"))
 		{
 			LOG_ERROR("ReadSpecialDropItemFile : Syntax error {} : no vnum, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			return false;
 		}
 
+		int iVnum = group.value("vnum", 0);
+
 		LOG_TRACE("DROP_ITEM_GROUP {} {}", stName.c_str(), iVnum);
 
-		TTokenVector * pTok;
-
-		//
-		std::string stType;
+		std::string stType = group.value("type", std::string());
 		int type = CSpecialItemGroup::NORMAL;
-		if (loader.GetTokenString("type", &stType))
+
+		if (!stType.empty())
 		{
-			stl_lowers(stType);
 			if (stType == "pct")
 			{
 				type = CSpecialItemGroup::PCT;
@@ -264,62 +150,60 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 		if ("attr" == stType)
 		{
 			CSpecialAttrGroup * pkGroup = M2_NEW CSpecialAttrGroup(iVnum);
-			for (int k = 1; k < 1024; ++k) // @fixme148 256 -> 1024
-			{
-				char buf[4];
-				snprintf(buf, sizeof(buf), "%d", k);
 
-				if (loader.GetTokenVector(buf, &pTok))
+			if (group.contains("attrs") && group.at("attrs").is_array())
+			{
+				for (const auto& attr : group.at("attrs"))
 				{
 					uint32_t apply_type = 0;
 					int	apply_value = 0;
-					str_to_number(apply_type, pTok->at(0).c_str());
+					std::string applyName = attr.value("apply", std::string());
+
+					str_to_number(apply_type, applyName.c_str());
+
 					if (0 == apply_type)
 					{
-						apply_type = FN_get_apply_type(pTok->at(0).c_str());
+						apply_type = FN_get_apply_type(applyName.c_str());
+
 						if (0 == apply_type)
 						{
-							LOG_ERROR("Invalid APPLY_TYPE {} in Special Item Group Vnum {}", pTok->at(0).c_str(), iVnum);
+							LOG_ERROR("Invalid APPLY_TYPE {} in Special Item Group Vnum {}", applyName.c_str(), iVnum);
 							return false;
 						}
 					}
-					str_to_number(apply_value, pTok->at(1).c_str());
+
+					apply_value = attr.value("value", 0);
+
 					if (apply_type > MAX_APPLY_NUM)
 					{
 						LOG_ERROR("Invalid APPLY_TYPE {} in Special Item Group Vnum {}", apply_type, iVnum);
 						M2_DELETE(pkGroup);
 						return false;
 					}
+
 					pkGroup->m_vecAttrs.push_back(CSpecialAttrGroup::CSpecialAttrInfo(apply_type, apply_value));
 				}
-				else
-				{
-					break;
-				}
 			}
-			if (loader.GetTokenVector("effect", &pTok))
-			{
-				pkGroup->m_stEffectFileName = pTok->at(0);
-			}
-			loader.SetParentNode();
+
+			if (group.contains("effect") && group.at("effect").is_string())
+				pkGroup->m_stEffectFileName = group.at("effect").get<std::string>();
+
 			m_map_pkSpecialAttrGroup.insert(std::make_pair(iVnum, pkGroup));
 		}
 		else
 		{
 			CSpecialItemGroup * pkGroup = M2_NEW CSpecialItemGroup(iVnum, type);
-			for (int k = 1; k < 1024; ++k) // @fixme148 256 -> 1024
-			{
-				char buf[4];
-				snprintf(buf, sizeof(buf), "%d", k);
 
-				if (loader.GetTokenVector(buf, &pTok))
+			if (group.contains("items") && group.at("items").is_array())
+			{
+				for (const auto& entry : group.at("items"))
 				{
-					const std::string& name = pTok->at(0);
+					std::string name = entry.value("item", std::string());
 					uint32_t dwVnum = 0;
 
 					if (!GetVnumByOriginalName(name.c_str(), dwVnum))
 					{
-						if (name == "����ġ" || name == "exp")
+						if (name == "exp")
 						{
 							dwVnum = CSpecialItemGroup::EXP;
 						}
@@ -346,6 +230,7 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 						else
 						{
 							str_to_number(dwVnum, name.c_str());
+
 							if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 							{
 								LOG_ERROR("ReadSpecialDropItemFile : there is no item {} : node {}", name.c_str(), stName.c_str());
@@ -356,16 +241,9 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 						}
 					}
 
-					int iCount = 0;
-					str_to_number(iCount, pTok->at(1).c_str());
-					int iProb = 0;
-					str_to_number(iProb, pTok->at(2).c_str());
-
-					int iRarePct = 0;
-					if (pTok->size() > 3)
-					{
-						str_to_number(iRarePct, pTok->at(3).c_str());
-					}
+					int iCount = entry.value("count", 0);
+					int iProb = entry.value("prob", 0);
+					int iRarePct = entry.value("rare", 0);
 
 					LOG_TRACE("        name {} count {} prob {} rare {}", name.c_str(), iCount, iProb, iRarePct);
 					pkGroup->AddItem(dwVnum, iCount, iProb, iRarePct);
@@ -374,14 +252,14 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 					auto pTableTemp = GetTable(dwVnum);
 					uint32_t addVnum = dwVnum;
 					uint32_t startRefineVnum = GetWikiItemStartRefineVnum(dwVnum);
-					
+
 					if (pTableTemp && (pTableTemp->bType == ITEM_WEAPON || pTableTemp->bType == ITEM_ARMOR) && startRefineVnum != addVnum)
 						addVnum = (startRefineVnum != 0 ? startRefineVnum : addVnum);
-					
+
 					CommonWikiData::TWikiItemOriginInfo origin_info;
 					origin_info.set_vnum(iVnum);
 					origin_info.set_is_mob(false);
-					
+
 					m_itemOriginMap[addVnum].push_back(origin_info);
 #endif
 
@@ -391,13 +269,9 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 						m_ItemToSpecialGroup[dwVnum] = iVnum;
 					}
 					// END_OF_CHECK_UNIQUE_GROUP
-
-					continue;
 				}
-
-				break;
 			}
-			loader.SetParentNode();
+
 			if (CSpecialItemGroup::QUEST == type)
 			{
 				m_map_pkQuestItemGroup.insert(std::make_pair(iVnum, pkGroup));
@@ -413,6 +287,7 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 }
 
 
+
 bool ITEM_MANAGER::ConvSpecialDropItemFile()
 {
 	char szSpecialItemGroupFileName[256];
@@ -426,143 +301,100 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 		return false;
 	}
 
-	CJsonGroupLoader loader;
+	nlohmann::json doc;
 
-	if (!loader.Load(szSpecialItemGroupFileName))
+	if (!JsonFile::Load(szSpecialItemGroupFileName, doc) || !doc.contains("groups") || !doc.at("groups").is_array())
 	{
 		fclose(fp);
 		return false;
 	}
 
-	std::string stName;
-
-	for (uint32_t i = 0; i < loader.GetChildNodeCount(); ++i)
+	for (const auto& group : doc.at("groups"))
 	{
-		loader.SetChildNode(i);
+		std::string stName = group.value("name", std::string());
 
-		loader.GetCurrentNodeName(&stName);
-
-		int iVnum;
-
-		if (!loader.GetTokenInteger("vnum", &iVnum))
+		if (!group.contains("vnum"))
 		{
 			LOG_ERROR("ConvSpecialDropItemFile : Syntax error {} : no vnum, node {}", szSpecialItemGroupFileName, stName.c_str());
-			loader.SetParentNode();
 			fclose(fp);
 			return false;
 		}
 
-		std::string str;
-		int type = 0;
-		if (loader.GetTokenString("type", &str))
-		{
-			stl_lowers(str);
-			if (str == "pct")
-				type = 1;
-			// @fixme148 BEGIN
-			else if (str == "quest")
-				type = 2;
-			else if (str == "special")
-				type = 3;
-			else if (str == "attr")
-				type = 4;
-			// @fixme148 END
-		}
+		int iVnum = group.value("vnum", 0);
 
-		TTokenVector * pTok;
+		std::string str = group.value("type", std::string());
+		int type = 0;
+		if (str == "pct")
+			type = 1;
+		else if (str == "quest")
+			type = 2;
+		else if (str == "special")
+			type = 3;
+		else if (str == "attr")
+			type = 4;
 
 		fprintf(fp, "Group	%s\n", stName.c_str());
 		fprintf(fp, "{\n");
 		fprintf(fp, "	Vnum	%i\n", iVnum);
 		if (type==1)
 			fprintf(fp, "	Type	Pct\n");
-			// @fixme148 BEGIN
 		else if (type==2)
 			fprintf(fp, "	Type	Quest\n");
 		else if (type==3)
 			fprintf(fp, "	Type	special\n");
 		else if (type==4)
 			fprintf(fp, "	Type	ATTR\n");
-			// @fixme148 END
 
-		for (int k = 1; k < 1024; ++k) // @fixme148 256 -> 1024
+		int k = 1;
+
+		if (type==4)
 		{
-			char buf[4];
-			snprintf(buf, sizeof(buf), "%d", k);
-
-			if (loader.GetTokenVector(buf, &pTok))
+			if (group.contains("attrs") && group.at("attrs").is_array())
 			{
-				std::string& name = pTok->at(0);
-				uint32_t dwVnum = 0;
-
-				if (!GetVnumByOriginalName(name.c_str(), dwVnum))
+				for (const auto& attr : group.at("attrs"))
 				{
-					if (
-						name == "exp" ||
-						name == "mob" ||
-						name == "slow" ||
-						name == "drain_hp" ||
-						name == "poison" ||
-						name == "group")
-					{
-						dwVnum = 0;
-					}
-					// @fixme148 BEGIN
-					else if (name == "����ġ")
-					{
-						dwVnum = 0;
-						name = "exp";
-					}
-					// @fixme148 END
-					else
-					{
-						str_to_number(dwVnum, name.c_str());
-						if (!ITEM_MANAGER::instance().GetTable(dwVnum) && type!=4)
-						{
-							LOG_ERROR("ReadSpecialDropItemFile : there is no item {} : node {}", name.c_str(), stName.c_str());
-							fclose(fp);
+					std::string applyName = attr.value("apply", std::string());
+					uint32_t dwApply = 0;
+					str_to_number(dwApply, applyName.c_str());
 
-							return false;
-						}
-					}
+					if (0 == dwApply)
+						dwApply = FN_get_apply_type(applyName.c_str());
+
+					int iValue = attr.value("value", 0);
+
+					fprintf(fp, "	%d	%u	%d\n", k++, dwApply, iValue);
 				}
-
-				int iCount = 0;
-				str_to_number(iCount, pTok->at(1).c_str());
-				int iProb = 0;
-				// @fixme148 BEGIN
-				if (pTok->size() > 2)
-					str_to_number(iProb, pTok->at(2).c_str());
-				// @fixme148 END
-
-				int iRarePct = 0;
-				if (pTok->size() > 3)
-					str_to_number(iRarePct, pTok->at(3).c_str());
-
-				// @fixme148 BEGIN
-				if (type==4)
-					fprintf(fp, "	%d	%u	%d\n", k, dwVnum, iCount);
-				// @fixme148 END
-				else
-				{
-					if (0 == dwVnum)
-						fprintf(fp, "	%d	%s	%d	%d\n", k, name.c_str(), iCount, iProb);
-					else
-						fprintf(fp, "	%d	%u	%d	%d\n", k, dwVnum, iCount, iProb);
-				}
-
-				continue;
 			}
-
-			break;
 		}
+		else
+		{
+			if (group.contains("items") && group.at("items").is_array())
+			{
+				for (const auto& entry : group.at("items"))
+				{
+					std::string name = entry.value("item", std::string());
+					uint32_t dwVnum = 0;
+
+					if (!GetVnumByOriginalName(name.c_str(), dwVnum))
+						str_to_number(dwVnum, name.c_str());
+
+					int iCount = entry.value("count", 0);
+					int iProb = entry.value("prob", 0);
+
+					if (0 == dwVnum)
+						fprintf(fp, "	%d	%s	%d	%d\n", k++, name.c_str(), iCount, iProb);
+					else
+						fprintf(fp, "	%d	%u	%d	%d\n", k++, dwVnum, iCount, iProb);
+				}
+			}
+		}
+
 		std::string effect;
-		if (loader.GetTokenString("effect", &effect))
-			fprintf(fp, "	effect	\"%s\"\n", effect.c_str());
+		if (group.contains("effect") && group.at("effect").is_string())
+			fprintf(fp, "\teffect\t\"%s\"\n", group.at("effect").get<std::string>().c_str());
+
 		fprintf(fp, "}\n");
 		fprintf(fp, "\n");
-
-		loader.SetParentNode();
 	}
 
 	fclose(fp);
@@ -620,52 +452,50 @@ bool ITEM_MANAGER::ReadEtcDropItemFile(const char * c_pszFileName)
 	return true;
 }
 
+
 bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 {
-	CJsonGroupLoader loader;
+	nlohmann::json doc;
 
-	if (!loader.Load(c_pszFileName))
+	if (!JsonFile::Load(c_pszFileName, doc) || !doc.contains("groups") || !doc.at("groups").is_array())
 		return false;
 
-	for (uint32_t i = 0; i < loader.GetChildNodeCount(); ++i)
+	for (const auto& group : doc.at("groups"))
 	{
-		std::string stName("");
-
-		loader.GetCurrentNodeName(&stName);
+		std::string stName = group.value("name", std::string());
 
 		if (strncmp (stName.c_str(), "kr_", 3) == 0)
 			continue;
-
-		loader.SetChildNode(i);
 
 		int iMobVnum = 0;
 		int iKillDrop = 0;
 		int iLevelLimit = 0;
 
-		std::string strType("");
+		std::string strType = group.value("type", std::string());
 
-		if (!loader.GetTokenString("type", &strType))
+		if (strType.empty())
 		{
 			LOG_ERROR("ReadMonsterDropItemGroup : Syntax error {} : no type (kill|drop), node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			return false;
 		}
 
-		if (!loader.GetTokenInteger("mob", &iMobVnum))
+		if (!group.contains("mob"))
 		{
 			LOG_ERROR("ReadMonsterDropItemGroup : Syntax error {} : no mob vnum, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			return false;
 		}
+
+		iMobVnum = group.value("mob", 0);
 
 		if (strType == "kill")
 		{
-			if (!loader.GetTokenInteger("kill_drop", &iKillDrop))
+			if (!group.contains("kill_drop"))
 			{
 				LOG_ERROR("ReadMonsterDropItemGroup : Syntax error {} : no kill drop count, node {}", c_pszFileName, stName.c_str());
-				loader.SetParentNode();
 				return false;
 			}
+
+			iKillDrop = group.value("kill_drop", 0);
 		}
 		else
 		{
@@ -674,12 +504,13 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 		if ( strType == "limit" )
 		{
-			if ( !loader.GetTokenInteger("level_limit", &iLevelLimit) )
+			if (!group.contains("level_limit"))
 			{
 				LOG_ERROR("ReadmonsterDropItemGroup : Syntax error {} : no level_limit, node {}", c_pszFileName, stName.c_str());
-				loader.SetParentNode();
 				return false;
 			}
+
+			iLevelLimit = group.value("level_limit", 0);
 		}
 		else
 		{
@@ -690,84 +521,71 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 		if (iKillDrop == 0)
 		{
-			loader.SetParentNode();
 			continue;
 		}
 
-		TTokenVector* pTok = nullptr;
+		const nlohmann::json& items = (group.contains("items") && group.at("items").is_array())
+			? group.at("items") : nlohmann::json::array();
 
 		if (strType == "kill")
 		{
 			CMobItemGroup * pkGroup = M2_NEW CMobItemGroup(iMobVnum, iKillDrop, stName);
 
-			for (int k = 1; k < 256; ++k)
+			for (const auto& entry : items)
 			{
-				char buf[4];
-				snprintf(buf, sizeof(buf), "%d", k);
+				std::string name = entry.value("item", std::string());
+				uint32_t dwVnum = 0;
 
-				if (loader.GetTokenVector(buf, &pTok))
+				if (!GetVnumByOriginalName(name.c_str(), dwVnum))
 				{
-					//1, "               %s %s", pTok->at(0).c_str(), pTok->at(1).c_str());
-					std::string& name = pTok->at(0);
-					uint32_t dwVnum = 0;
-
-					if (!GetVnumByOriginalName(name.c_str(), dwVnum))
+					str_to_number(dwVnum, name.c_str());
+					if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 					{
-						str_to_number(dwVnum, name.c_str());
-						if (!ITEM_MANAGER::instance().GetTable(dwVnum))
-						{
-							LOG_ERROR("ReadMonsterDropItemGroup : there is no item {} : node {} : vnum {}", name.c_str(), stName.c_str(), dwVnum);
-							return false;
-						}
-					}
-
-					int iCount = 0;
-					str_to_number(iCount, pTok->at(1).c_str());
-
-					if (iCount<1)
-					{
-						LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {} : vnum {}, count {}", name.c_str(), stName.c_str(), dwVnum, iCount);
+						LOG_ERROR("ReadMonsterDropItemGroup : there is no item {} : node {} : vnum {}", name.c_str(), stName.c_str(), dwVnum);
 						return false;
 					}
-
-					int iPartPct = 0;
-					str_to_number(iPartPct, pTok->at(2).c_str());
-
-					if (iPartPct == 0)
-					{
-						LOG_ERROR("ReadMonsterDropItemGroup : there is no drop percent for item {} : node {} : vnum {}, count {}, pct {}", name.c_str(), stName.c_str(), dwVnum, iCount, iPartPct);
-						return false;
-					}
-
-					int iRarePct = 0;
-					str_to_number(iRarePct, pTok->at(3).c_str());
-					iRarePct = MINMAX(0, iRarePct, 100);
-
-					LOG_TRACE("        {} count {} rare {}", name.c_str(), iCount, iRarePct);
-					pkGroup->AddItem(dwVnum, iCount, iPartPct, iRarePct);
-#ifdef __INGAME_WIKI__
-					CommonWikiData::TWikiInfoTable* tbl;
-					if ((tbl = GetItemWikiInfo(dwVnum)) && !tbl->origin_vnum)
-						tbl->origin_vnum = iMobVnum;
-
-					auto pTableTemp = GetTable(dwVnum);
-					uint32_t currVnum = dwVnum;
-					uint32_t startRefineVnum = GetWikiItemStartRefineVnum(dwVnum);
-					
-					if (pTableTemp && (pTableTemp->bType == ITEM_WEAPON || pTableTemp->bType == ITEM_ARMOR) && startRefineVnum != currVnum)
-						currVnum = (startRefineVnum != 0 ? startRefineVnum : currVnum);
-					
-					CommonWikiData::TWikiItemOriginInfo origin_info;
-					origin_info.set_vnum(iMobVnum);
-					origin_info.set_is_mob(true);
-					
-					m_itemOriginMap[currVnum].push_back(origin_info);
-					CMobManager::instance().GetMobWikiInfo(iMobVnum).push_back(CommonWikiData::TWikiMobDropInfo(dwVnum, iCount));
-#endif
-					continue;
 				}
 
-				break;
+				int iCount = entry.value("count", 0);
+
+				if (iCount<1)
+				{
+					LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {} : vnum {}, count {}", name.c_str(), stName.c_str(), dwVnum, iCount);
+					return false;
+				}
+
+				int iPartPct = entry.value("chance", 0);
+
+				if (iPartPct == 0)
+				{
+					LOG_ERROR("ReadMonsterDropItemGroup : there is no drop percent for item {} : node {} : vnum {}, count {}, pct {}", name.c_str(), stName.c_str(), dwVnum, iCount, iPartPct);
+					return false;
+				}
+
+				int iRarePct = entry.value("rare", 0);
+				iRarePct = MINMAX(0, iRarePct, 100);
+
+				LOG_TRACE("        {} count {} rare {}", name.c_str(), iCount, iRarePct);
+				pkGroup->AddItem(dwVnum, iCount, iPartPct, iRarePct);
+#ifdef __INGAME_WIKI__
+				CommonWikiData::TWikiInfoTable* tbl;
+				if ((tbl = GetItemWikiInfo(dwVnum)) && !tbl->origin_vnum)
+					tbl->origin_vnum = iMobVnum;
+
+				auto pTableTemp = GetTable(dwVnum);
+				uint32_t currVnum = dwVnum;
+				uint32_t startRefineVnum = GetWikiItemStartRefineVnum(dwVnum);
+
+				if (pTableTemp && (pTableTemp->bType == ITEM_WEAPON || pTableTemp->bType == ITEM_ARMOR) && startRefineVnum != currVnum)
+					currVnum = (startRefineVnum != 0 ? startRefineVnum : currVnum);
+
+				CommonWikiData::TWikiItemOriginInfo origin_info;
+				origin_info.set_vnum(iMobVnum);
+				origin_info.set_is_mob(true);
+
+				m_itemOriginMap[currVnum].push_back(origin_info);
+				CMobManager::instance().GetMobWikiInfo(iMobVnum).push_back(CommonWikiData::TWikiMobDropInfo(dwVnum, iCount));
+#endif
 			}
 			m_map_pkMobItemGroup.insert(std::map<uint32_t, CMobItemGroup*>::value_type(iMobVnum, pkGroup));
 
@@ -787,68 +605,58 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 				pkGroup = it->second;
 			}
 
-			for (int k = 1; k < 256; ++k)
+			for (const auto& entry : items)
 			{
-				char buf[4];
-				snprintf(buf, sizeof(buf), "%d", k);
+				std::string name = entry.value("item", std::string());
+				uint32_t dwVnum = 0;
 
-				if (loader.GetTokenVector(buf, &pTok))
+				if (!GetVnumByOriginalName(name.c_str(), dwVnum))
 				{
-					std::string& name = pTok->at(0);
-					uint32_t dwVnum = 0;
-
-					if (!GetVnumByOriginalName(name.c_str(), dwVnum))
+					str_to_number(dwVnum, name.c_str());
+					if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 					{
-						str_to_number(dwVnum, name.c_str());
-						if (!ITEM_MANAGER::instance().GetTable(dwVnum))
-						{
-							LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
-							M2_DELETE(pkGroup);
-
-							return false;
-						}
-					}
-
-					int iCount = 0;
-					str_to_number(iCount, pTok->at(1).c_str());
-
-					if (iCount < 1)
-					{
-						LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
+						LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
 						M2_DELETE(pkGroup);
 
 						return false;
 					}
-
-					float fPercent = atof(pTok->at(2).c_str());
-
-					uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
-
-					LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
-					pkGroup->AddItem(dwVnum, dwPct, iCount);
-#ifdef __INGAME_WIKI__
-					CommonWikiData::TWikiInfoTable* tbl;
-					if ((tbl = GetItemWikiInfo(dwVnum)) && !tbl->origin_vnum)
-						tbl->origin_vnum = iMobVnum;
-
-					auto pTableTemp = GetTable(dwVnum);
-					uint32_t currVnum = dwVnum;
-					uint32_t startRefineVnum = GetWikiItemStartRefineVnum(dwVnum);
-					
-					if (pTableTemp && (pTableTemp->bType == ITEM_WEAPON || pTableTemp->bType == ITEM_ARMOR) && startRefineVnum != currVnum)
-						currVnum = startRefineVnum != 0 ? startRefineVnum : currVnum;
-
-					CommonWikiData::TWikiItemOriginInfo origin_info;
-					origin_info.set_vnum(iMobVnum);
-					origin_info.set_is_mob(true);
-					
-					m_itemOriginMap[currVnum].push_back(origin_info);
-					CMobManager::instance().GetMobWikiInfo(iMobVnum).push_back(CommonWikiData::TWikiMobDropInfo(dwVnum, iCount));
-#endif
-					continue;
 				}
 
-				break;
+				int iCount = entry.value("count", 0);
+
+				if (iCount < 1)
+				{
+					LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
+					M2_DELETE(pkGroup);
+
+					return false;
+				}
+
+				float fPercent = entry.value("chance", 0.0f);
+
+				uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
+
+				LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
+				pkGroup->AddItem(dwVnum, dwPct, iCount);
+#ifdef __INGAME_WIKI__
+				CommonWikiData::TWikiInfoTable* tbl;
+				if ((tbl = GetItemWikiInfo(dwVnum)) && !tbl->origin_vnum)
+					tbl->origin_vnum = iMobVnum;
+
+				auto pTableTemp = GetTable(dwVnum);
+				uint32_t currVnum = dwVnum;
+				uint32_t startRefineVnum = GetWikiItemStartRefineVnum(dwVnum);
+
+				if (pTableTemp && (pTableTemp->bType == ITEM_WEAPON || pTableTemp->bType == ITEM_ARMOR) && startRefineVnum != currVnum)
+					currVnum = startRefineVnum != 0 ? startRefineVnum : currVnum;
+
+				CommonWikiData::TWikiItemOriginInfo origin_info;
+				origin_info.set_vnum(iMobVnum);
+				origin_info.set_is_mob(true);
+
+				m_itemOriginMap[currVnum].push_back(origin_info);
+				CMobManager::instance().GetMobWikiInfo(iMobVnum).push_back(CommonWikiData::TWikiMobDropInfo(dwVnum, iCount));
+#endif
 			}
 			if (bNew)
 				m_map_pkDropItemGroup.insert(std::map<uint32_t, CDropItemGroup*>::value_type(iMobVnum, pkGroup));
@@ -858,65 +666,55 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 		{
 			CLevelItemGroup* pkLevelItemGroup = M2_NEW CLevelItemGroup(iLevelLimit);
 
-			for ( int k=1; k < 256; k++ )
+			for (const auto& entry : items)
 			{
-				char buf[4];
-				snprintf(buf, sizeof(buf), "%d", k);
+				std::string name = entry.value("item", std::string());
+				uint32_t dwItemVnum = 0;
 
-				if ( loader.GetTokenVector(buf, &pTok) )
+				if (false == GetVnumByOriginalName(name.c_str(), dwItemVnum))
 				{
-					std::string& name = pTok->at(0);
-					uint32_t dwItemVnum = 0;
-
-					if (false == GetVnumByOriginalName(name.c_str(), dwItemVnum))
+					str_to_number(dwItemVnum, name.c_str());
+					if ( !ITEM_MANAGER::instance().GetTable(dwItemVnum) )
 					{
-						str_to_number(dwItemVnum, name.c_str());
-						if ( !ITEM_MANAGER::instance().GetTable(dwItemVnum) )
-						{
-							LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
-							M2_DELETE(pkLevelItemGroup);
-							return false;
-						}
-					}
-
-					int iCount = 0;
-					str_to_number(iCount, pTok->at(1).c_str());
-
-					if (iCount < 1)
-					{
-						LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
+						LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
 						M2_DELETE(pkLevelItemGroup);
 						return false;
 					}
-
-					float fPct = atof(pTok->at(2).c_str());
-					uint32_t dwPct = (uint32_t)(10000.0f * fPct);
-
-					LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
-					pkLevelItemGroup->AddItem(dwItemVnum, dwPct, iCount);
-#ifdef __INGAME_WIKI__
-					CommonWikiData::TWikiInfoTable* tbl;
-					if ((tbl = GetItemWikiInfo(dwItemVnum)) && !tbl->origin_vnum)
-						tbl->origin_vnum = iMobVnum;
-
-					auto pTableTemp = GetTable(dwItemVnum);
-					uint32_t currVnum = dwItemVnum;
-					uint32_t startRefineVnum = GetWikiItemStartRefineVnum(dwItemVnum);
-					
-					if (pTableTemp && (pTableTemp->bType == ITEM_WEAPON || pTableTemp->bType == ITEM_ARMOR) && startRefineVnum != currVnum)
-						currVnum = startRefineVnum != 0 ? startRefineVnum : currVnum;
-
-					CommonWikiData::TWikiItemOriginInfo origin_info;
-					origin_info.set_vnum(iMobVnum);
-					origin_info.set_is_mob(true);
-					
-					m_itemOriginMap[currVnum].push_back(origin_info);
-					CMobManager::instance().GetMobWikiInfo(iMobVnum).push_back(CommonWikiData::TWikiMobDropInfo(dwItemVnum, iCount));
-#endif
-					continue;
 				}
 
-				break;
+				int iCount = entry.value("count", 0);
+
+				if (iCount < 1)
+				{
+					LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
+					M2_DELETE(pkLevelItemGroup);
+					return false;
+				}
+
+				float fPct = entry.value("chance", 0.0f);
+				uint32_t dwPct = (uint32_t)(10000.0f * fPct);
+
+				LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
+				pkLevelItemGroup->AddItem(dwItemVnum, dwPct, iCount);
+#ifdef __INGAME_WIKI__
+				CommonWikiData::TWikiInfoTable* tbl;
+				if ((tbl = GetItemWikiInfo(dwItemVnum)) && !tbl->origin_vnum)
+					tbl->origin_vnum = iMobVnum;
+
+				auto pTableTemp = GetTable(dwItemVnum);
+				uint32_t currVnum = dwItemVnum;
+				uint32_t startRefineVnum = GetWikiItemStartRefineVnum(dwItemVnum);
+
+				if (pTableTemp && (pTableTemp->bType == ITEM_WEAPON || pTableTemp->bType == ITEM_ARMOR) && startRefineVnum != currVnum)
+					currVnum = startRefineVnum != 0 ? startRefineVnum : currVnum;
+
+				CommonWikiData::TWikiItemOriginInfo origin_info;
+				origin_info.set_vnum(iMobVnum);
+				origin_info.set_is_mob(true);
+
+				m_itemOriginMap[currVnum].push_back(origin_info);
+				CMobManager::instance().GetMobWikiInfo(iMobVnum).push_back(CommonWikiData::TWikiMobDropInfo(dwItemVnum, iCount));
+#endif
 			}
 
 			m_map_pkLevelItemGroup.insert(std::map<uint32_t, CLevelItemGroup*>::value_type(iMobVnum, pkLevelItemGroup));
@@ -925,50 +723,39 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 		{
 			CBuyerThiefGlovesItemGroup* pkGroup = M2_NEW CBuyerThiefGlovesItemGroup(0, iMobVnum, stName);
 
-			for (int k = 1; k < 256; ++k)
+			for (const auto& entry : items)
 			{
-				char buf[4];
-				snprintf(buf, sizeof(buf), "%d", k);
+				std::string name = entry.value("item", std::string());
+				uint32_t dwVnum = 0;
 
-				if (loader.GetTokenVector(buf, &pTok))
+				if (!GetVnumByOriginalName(name.c_str(), dwVnum))
 				{
-					std::string& name = pTok->at(0);
-					uint32_t dwVnum = 0;
-
-					if (!GetVnumByOriginalName(name.c_str(), dwVnum))
+					str_to_number(dwVnum, name.c_str());
+					if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 					{
-						str_to_number(dwVnum, name.c_str());
-						if (!ITEM_MANAGER::instance().GetTable(dwVnum))
-						{
-							LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
-							M2_DELETE(pkGroup);
-
-							return false;
-						}
-					}
-
-					int iCount = 0;
-					str_to_number(iCount, pTok->at(1).c_str());
-
-					if (iCount < 1)
-					{
-						LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
+						LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
 						M2_DELETE(pkGroup);
 
 						return false;
 					}
-
-					float fPercent = atof(pTok->at(2).c_str());
-
-					uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
-
-					LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
-					pkGroup->AddItem(dwVnum, dwPct, iCount);
-
-					continue;
 				}
 
-				break;
+				int iCount = entry.value("count", 0);
+
+				if (iCount < 1)
+				{
+					LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
+					M2_DELETE(pkGroup);
+
+					return false;
+				}
+
+				float fPercent = entry.value("chance", 0.0f);
+
+				uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
+
+				LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
+				pkGroup->AddItem(dwVnum, dwPct, iCount);
 			}
 
 			m_map_pkGloveItemGroup.insert(std::map<uint32_t, CBuyerThiefGlovesItemGroup*>::value_type(iMobVnum, pkGroup));
@@ -976,51 +763,41 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 		else
 		{
 			LOG_ERROR("ReadMonsterDropItemGroup : Syntax error {} : invalid type {} (kill|drop), node {}", c_pszFileName, strType.c_str(), stName.c_str());
-			loader.SetParentNode();
 			return false;
 		}
-
-		loader.SetParentNode();
 	}
 
 	return true;
 }
 
+
 bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 {
-	CJsonGroupLoader loader;
+	nlohmann::json doc;
 
-	if (!loader.Load(c_pszFileName))
+	if (!JsonFile::Load(c_pszFileName, doc) || !doc.contains("groups") || !doc.at("groups").is_array())
 		return false;
 
-	std::string stName;
-
-	for (uint32_t i = 0; i < loader.GetChildNodeCount(); ++i)
+	for (const auto& group : doc.at("groups"))
 	{
-		loader.SetChildNode(i);
+		std::string stName = group.value("name", std::string());
 
-		loader.GetCurrentNodeName(&stName);
-
-		int iVnum;
-		int iMobVnum;
-
-		if (!loader.GetTokenInteger("vnum", &iVnum))
+		if (!group.contains("vnum"))
 		{
 			LOG_ERROR("ReadDropItemGroup : Syntax error {} : no vnum, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			return false;
 		}
 
-		if (!loader.GetTokenInteger("mob", &iMobVnum))
+		if (!group.contains("mob"))
 		{
 			LOG_ERROR("ReadDropItemGroup : Syntax error {} : no mob vnum, node {}", c_pszFileName, stName.c_str());
-			loader.SetParentNode();
 			return false;
 		}
 
-		LOG_TRACE("DROP_ITEM_GROUP {} {}", stName.c_str(), iMobVnum);
+		int iVnum = group.value("vnum", 0);
+		int iMobVnum = group.value("mob", 0);
 
-		TTokenVector * pTok;
+		LOG_TRACE("DROP_ITEM_GROUP {} {}", stName.c_str(), iMobVnum);
 
 		auto it = m_map_pkDropItemGroup.find(iMobVnum);
 
@@ -1031,14 +808,11 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 		else
 			pkGroup = it->second;
 
-		for (int k = 1; k < 256; ++k)
+		if (group.contains("items") && group.at("items").is_array())
 		{
-			char buf[4];
-			snprintf(buf, sizeof(buf), "%d", k);
-
-			if (loader.GetTokenVector(buf, &pTok))
+			for (const auto& entry : group.at("items"))
 			{
-				std::string& name = pTok->at(0);
+				std::string name = entry.value("item", std::string());
 				uint32_t dwVnum = 0;
 
 				if (!GetVnumByOriginalName(name.c_str(), dwVnum))
@@ -1055,13 +829,11 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 					}
 				}
 
-				float fPercent = atof(pTok->at(1).c_str());
+				float fPercent = entry.value("chance", 0.0f);
 
 				uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
 
-				int iCount = 1;
-				if (pTok->size() > 2)
-					str_to_number(iCount, pTok->at(2).c_str());
+				int iCount = entry.value("count", 1);
 
 				if (iCount < 1)
 				{
@@ -1075,16 +847,11 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 
 				LOG_TRACE("        {} {} {}", name.c_str(), dwPct, iCount);
 				pkGroup->AddItem(dwVnum, dwPct, iCount);
-				continue;
 			}
-
-			break;
 		}
 
 		if (it == m_map_pkDropItemGroup.end())
 			m_map_pkDropItemGroup.insert(std::map<uint32_t, CDropItemGroup*>::value_type(iMobVnum, pkGroup));
-
-		loader.SetParentNode();
 	}
 
 	return true;

@@ -294,3 +294,62 @@ commit -> elo szerver data frissitese (kulon lepes).
 ### Build
 
 - GameServer Debug + Release zold.
+
+
+## 8. Tipusos group/drop JSON (2026-10-13)
+
+A Phase 1-ben letrehozott strukturális (token-tomb) JSON helyett a group/drop
+tablak tipusos, nevesitett mezos JSON-t kaptak; a `CJsonGroupLoader` es a
+token-alapu szerkezet teljesen megszunt.
+
+### Kommentkezeles
+
+A `//` a sor vegig tarto komment. A konverter a `//` elotti adatreszt tartja
+meg (`400//metin szilank` -> 400, `5//Az elet vize` -> 5); ha egy token csak
+komment volt, eltunik. Ez javitja azt a regi esetet is, amikor a komment
+szokozzel volt leválasztva (a regi parser ilyenkor 0-t olvasott).
+
+### Sémák (fajlonkent)
+
+- `group.json`: `{name, vnum, leader:{name,vnum}, members:[{name,vnum}]}`
+- `group_group.json`: `{name, vnum, members:[{vnum, prob}]}` (a prob a regi
+  parserben is olvasva, de nem hasznalva)
+- `mob_drop_item.json`: `{name, mob, type: kill|drop|limit|thiefgloves,
+  kill_drop?, level_limit?, items:[{item, count, chance, rare?}]}`
+  (kill: int chance + rare 0..100; drop/limit/thiefgloves: float chance)
+- `drop_item_group.json`: `{name, vnum, mob, items:[{item, chance, count}]}`
+- `special_item_group.json`: `{name, vnum, type?: pct|quest|special|attr,
+  items:[{item, count, prob, rare?}]}` vagy attr eseten
+  `{attrs:[{apply, value}], effect}`
+- `common_drop_item.json`: `{name, rank, items:[{level_start, level_end,
+  chance, item}]}`
+
+### Szerver
+
+- `mob_manager.cpp` (LoadGroup/LoadGroupGroup) es
+  `item_manager_read_tables.cpp` (ReadCommonDropItemFile/ReadSpecialDropItemFile/
+  ReadMonsterDropItemGroup/ReadDropItemGroup + a ConvSpecialDropItemFile GM
+  dump) kozvetlenul nlohmann-nal olvassa a tipusos JSON-t; a regi
+  validaciok (count >= 1, kill chance != 0, rare clamp, ismeretlen tipus ->
+  hiba) valtozatlanok.
+- A `#ifdef NEW_READ_COMMON_DROP_ITEM` halott (nyers fopen) aga torolve.
+- A special_item_group regi korea nev-alias osszehasonlitasa torolve (az
+  adatban csak "exp" fordul elo).
+- `json_group_loader.{h,cpp}` torolve; a `TTokenVector` typedef a
+  `json_group_tree.h`-ba kerult.
+
+### Konverter pipeline
+
+1. `txt2json_group.py <mode> <in.txt> <out.json>`: txt -> strukturális JSON
+   (a tokenek kommentestul megmaradnak).
+2. `txt2json_typed.py <mode> <in.json> <out.json>`: strukturális -> tipusos
+   JSON (komment kivagas + mezok).
+
+A fenti fajlok ujrageneralasahoz a ket lepes egyutt hasznalando (uj kliens
+adat eseten). Az elo `share/data`-ban a tipusos JSON-ok vannak (group,
+group_group, mob_drop_item, drop_item_group, special_item_group,
+common_drop_item).
+
+### Build
+
+- GameServer Debug + Release zold; ShopLifecycleTests zold.

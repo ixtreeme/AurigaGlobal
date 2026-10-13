@@ -1,12 +1,15 @@
 #pragma once
 
-#include "json_group_loader.h"
-
 #include <common/d3dtype.h>
 
 #include <map>
 #include <sstream>
+#include <string>
 #include <string_view>
+#include <vector>
+
+typedef std::vector<std::string> TTokenVector;
+typedef std::map<std::string, TTokenVector, std::less<>> TTokenVectorMap;
 
 typedef std::map<std::string, int, std::less<>> TMapNameToIndex;
 
