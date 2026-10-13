@@ -308,7 +308,7 @@ namespace
 
     inline int32_t CooldownRemain(entt::entity ch)
     {
-        const int32_t now = get_global_time();
+        const time_t now = get_global_time();
         const int32_t until = ecs::QuestSystem::GetFlag(ch, kQfCooldown);
         return (until > now) ? (until - now) : 0;
     }
@@ -461,7 +461,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     if (!ecs::PlayerRuntime::CanWarp(character))
         return true;
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
     const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(character);
 
     // We normally warp members from the leader's current map. If the NPC is clicked

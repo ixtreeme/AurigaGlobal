@@ -20,7 +20,7 @@ class CPlayerTableCache : public cache<TPlayerTable>
 
 	virtual void OnFlush();
 
-	uint32_t GetLastUpdateTime() { return m_lastUpdateTime; }
+	uint32_t GetLastUpdateAgeSeconds() const { return cache<TPlayerTable>::GetLastUpdateAgeSeconds(); }
 };
 
 // MYSHOP_PRICE_LIST

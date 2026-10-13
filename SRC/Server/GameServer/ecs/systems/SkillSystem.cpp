@@ -1157,7 +1157,7 @@ bool SkillSystem::LearnGrandMasterSkill(entt::entity e, uint32_t dwSkillVnum)
 	int n = number(1, iBookCount);
 	LOG_INFO("Number({})", n);
 
-	uint32_t nextTime = get_global_time() + number(g_dwSkillBookNextReadMin, g_dwSkillBookNextReadMax);
+	time_t nextTime = get_global_time() + number(g_dwSkillBookNextReadMin, g_dwSkillBookNextReadMax);
 
 	LOG_INFO("GrandMaster SkillBookCount min {} cur {} max {} (next_time={})", iMinReadCount, iTotalReadCount, iMaxReadCount, nextTime);
 

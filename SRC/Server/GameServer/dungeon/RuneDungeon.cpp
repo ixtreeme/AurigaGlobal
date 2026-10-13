@@ -226,7 +226,7 @@ namespace
     }
     static void RuneDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
     {
-        const int32_t now = get_global_time();
+        const time_t now = get_global_time();
 
         ForEachPcOnMap(dungeonMapIdx, [&](entt::entity ch){
                 if (!ecs::PlayerRuntime::IsValid(ch))
@@ -897,7 +897,7 @@ void CRuneDungeon::OnPlayerDisconnect(entt::entity character)
     if (!IsRuneDungeonMap(idx))
         return;
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
     ecs::QuestSystem::SetFlag(character, kQfDisconnect, now + kRejoinSeconds);
 }
 
@@ -1232,7 +1232,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(character, kQfIdx);
     const int32_t rejoinCh = ecs::QuestSystem::GetFlag(character, kQfCh);
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
 
     if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel)
     {
@@ -1484,7 +1484,7 @@ bool CRuneDungeon::OnUseItem89100(entt::entity character)
     if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
     const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
 
     if (cooldownUntil <= now)

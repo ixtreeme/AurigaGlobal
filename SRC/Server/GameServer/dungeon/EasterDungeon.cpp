@@ -430,7 +430,7 @@ public:
         CancelEvent(m_evCheck, mapIndex);
         CancelEvent(m_evToF2, mapIndex);
 
-        const int32_t now = get_global_time();
+        const time_t now = get_global_time();
         ForEachPcOnMap(mapIndex, [&](entt::entity ch){
                 if (!ecs::PlayerRuntime::IsValid(ch))
                     return;
@@ -772,7 +772,7 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
         // completed -> allow starting a new run from the same NPC
     }
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
 
     // Rejoin flow
     const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(character, "easter_dungeon.disconnect");

@@ -1424,7 +1424,7 @@ void CLostCastleDungeon::OnPlayerDisconnect(entt::entity character)
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
     ecs::QuestSystem::SetFlag(character, kQfDisconnect, now + kRejoinSeconds);
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);

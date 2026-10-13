@@ -699,9 +699,9 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 		{
 			// SPAWN_BLOCK_LOG
 			static bool s_isLog = quest::CQuestManager::instance().GetEventFlag("spawn_block_log");
-			static uint32_t s_nextTime = get_global_time() + 10000;
+			static time_t s_nextTime = get_global_time() + 10000;
 
-			uint32_t curTime = static_cast<uint32_t>(get_global_time());
+			time_t curTime = get_global_time();
 
 			if (curTime > s_nextTime)
 			{

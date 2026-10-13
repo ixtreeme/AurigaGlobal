@@ -269,7 +269,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 
 					if (g_bGuildInviteLimit)
 					{
-						DBManager::instance().Query("REPLACE INTO guild_invite_limit VALUES(%d, %d)", pGuild->GetID(), get_global_time());
+						DBManager::instance().Query("REPLACE INTO guild_invite_limit VALUES(%d, %lld)", pGuild->GetID(), (long long)get_global_time());
 					}
 				}
 				else

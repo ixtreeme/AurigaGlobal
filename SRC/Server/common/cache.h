@@ -1,13 +1,20 @@
 #pragma once
 
+#include <chrono>
+#include <cstdint>
+#include <cstring>
+
+// TTL cache. A lejarati idok monoton oraval (steady_clock) szamolodnak,
+// igy a falora ugralasa (NTP/DST/kezi allitas) nem jar le/el koran
+// cache-eket (ld. docs/chrono_time_audit.md).
 template <typename T> class cache
 {
 	public:
 	virtual ~cache() = default;
 
-	cache(): m_bNeedQuery(false), m_expireTime(600), m_lastUpdateTime(0)
+	cache(): m_bNeedQuery(false), m_expireTime(std::chrono::seconds(600))
 		{
-			m_lastFlushTime = time(nullptr);
+			m_lastFlushTime = std::chrono::steady_clock::now();
 
 			memset( &m_data, 0, sizeof(m_data) );
 		}
@@ -15,7 +22,7 @@ template <typename T> class cache
 		T * Get(bool bUpdateTime = true)
 		{
 			if (bUpdateTime)
-				m_lastUpdateTime = time(nullptr);
+				m_lastUpdateTime = std::chrono::steady_clock::now();
 
 			return &m_data;
 		}
@@ -23,7 +30,7 @@ template <typename T> class cache
 		void Put(T * pNew, bool bSkipQuery = false)
 		{
 			memcpy(&m_data, pNew, sizeof(T));
-			m_lastUpdateTime = time(nullptr);
+			m_lastUpdateTime = std::chrono::steady_clock::now();
 
 			if (!bSkipQuery)
 				m_bNeedQuery = true;
@@ -31,7 +38,7 @@ template <typename T> class cache
 
 		bool CheckFlushTimeout()
 		{
-			if (m_bNeedQuery && time(nullptr) - m_lastFlushTime > m_expireTime)
+			if (m_bNeedQuery && std::chrono::steady_clock::now() - m_lastFlushTime > m_expireTime)
 				return true;
 
 			return false;
@@ -39,10 +46,17 @@ template <typename T> class cache
 
 		bool CheckTimeout()
 		{
-			if (time(nullptr) - m_lastUpdateTime > m_expireTime)
+			if (std::chrono::steady_clock::now() - m_lastUpdateTime > m_expireTime)
 				return true;
 
 			return false;
+		}
+
+		// Masodperc, ami a legutobbi update ota elt (monoton).
+		uint32_t GetLastUpdateAgeSeconds() const
+		{
+			return static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::seconds>(
+				std::chrono::steady_clock::now() - m_lastUpdateTime).count());
 		}
 
 		void Flush()
@@ -52,7 +66,7 @@ template <typename T> class cache
 
 			OnFlush();
 			m_bNeedQuery = false;
-			m_lastFlushTime = time(nullptr);
+			m_lastFlushTime = std::chrono::steady_clock::now();
 		}
 
 		virtual void OnFlush() = 0;
@@ -61,7 +75,7 @@ template <typename T> class cache
 	protected:
 		T       m_data;
 		bool    m_bNeedQuery;
-		time_t  m_expireTime;
-		time_t	m_lastUpdateTime;
-		time_t	m_lastFlushTime;
+		std::chrono::steady_clock::duration m_expireTime;
+		std::chrono::steady_clock::time_point m_lastUpdateTime;
+		std::chrono::steady_clock::time_point m_lastFlushTime;
 };

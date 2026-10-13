@@ -8072,14 +8072,14 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 					if (pPC)
 					{
-						uint32_t dwNowSec = get_global_time();
+						int64_t dwNowSec = get_global_time();
 
 						uint32_t dwLastChangeItemAttrSec = pPC->GetFlag(kLastChangeItemAttrFlag);
 
 						if (dwLastChangeItemAttrSec + dwChangeItemAttrCycle > dwNowSec)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 391, "%d#%d", dwChangeItemAttrCycle, dwChangeItemAttrCycle - (dwNowSec - dwLastChangeItemAttrSec));
+							ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 391, "%d#%lld", dwChangeItemAttrCycle, (long long)(dwChangeItemAttrCycle - (dwNowSec - dwLastChangeItemAttrSec)));
 #endif
 							return false;
 						}

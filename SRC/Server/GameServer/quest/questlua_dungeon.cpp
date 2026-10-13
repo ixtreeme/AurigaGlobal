@@ -1379,7 +1379,7 @@ ALUA(dungeon_update_rank)
 					ecs::QuestSystem::SetFlag(member, questname + ".ch", 0);
 					ecs::QuestSystem::SetFlag(member, questname + ".cooldown", get_global_time() + cooldown);
 					int32_t pid = (ecs::PlayerRuntime::GetPlayerID(member));
-					int32_t time = get_global_time() - enter_time;
+					int64_t time = static_cast<int64_t>(get_global_time()) - enter_time;
 					int32_t damage = ecs::PlayerRuntime::GetQuestDamage(member, race);
 
 					if (time < 0) {
@@ -1424,7 +1424,7 @@ ALUA(dungeon_update_rank)
 			ecs::QuestSystem::SetFlag(chEntity, questname + ".ch", 0);
 			ecs::QuestSystem::SetFlag(chEntity, questname + ".cooldown", get_global_time() + cooldown);
 			int32_t pid = (ecs::PlayerRuntime::GetPlayerID(chEntity));
-			int32_t time = get_global_time() - enter_time;
+			int64_t time = static_cast<int64_t>(get_global_time()) - enter_time;
 			int32_t damage = ecs::PlayerRuntime::GetQuestDamage(chEntity, race);
 
 			if (time < 0) {

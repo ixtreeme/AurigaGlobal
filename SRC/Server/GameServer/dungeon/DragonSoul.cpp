@@ -1051,11 +1051,11 @@ void DSManager::DoRefineAll(entt::entity ch, uint8_t subheader, uint8_t type, ui
 		return;
 
 #ifdef ENABLE_SPAM_CHECK
-	const int32_t remainingDelay = DragonSoulSystem::GetLastRefineTime(ch) - get_global_time();
+	const int64_t remainingDelay = DragonSoulSystem::GetLastRefineTime(ch) - static_cast<int64_t>(get_global_time());
 	if (remainingDelay > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 234, "%d", remainingDelay);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 234, "%lld", (long long)remainingDelay);
 #endif
 		return;
 	}

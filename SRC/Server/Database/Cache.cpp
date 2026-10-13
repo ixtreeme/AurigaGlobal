@@ -21,7 +21,7 @@ extern int g_iSkillColorCacheFlushSeconds;
 
 CSKillColorCache::CSKillColorCache()
 {
-	m_expireTime = MIN(1800, g_iSkillColorCacheFlushSeconds);
+	m_expireTime = std::chrono::seconds(MIN(1800, g_iSkillColorCacheFlushSeconds));
 }
 
 CSKillColorCache::~CSKillColorCache()
@@ -79,7 +79,7 @@ void CSKillColorCache::OnFlush()
 
 CItemCache::CItemCache()
 {
-	m_expireTime = MIN(1800, g_iItemCacheFlushSeconds);
+	m_expireTime = std::chrono::seconds(MIN(1800, g_iItemCacheFlushSeconds));
 }
 
 CItemCache::~CItemCache()
@@ -96,7 +96,7 @@ void CItemCache::Delete()
 
 	m_data.vnum = 0;
 	m_bNeedQuery = true;
-	m_lastUpdateTime = time(nullptr);
+	m_lastUpdateTime = std::chrono::steady_clock::now();
 	OnFlush();
 
 	//m_bNeedQuery = false;
@@ -207,7 +207,7 @@ void CItemCache::OnFlush()
 //
 CPlayerTableCache::CPlayerTableCache()
 {
-	m_expireTime = MIN(300, g_iPlayerCacheFlushSeconds);
+	m_expireTime = std::chrono::seconds(MIN(300, g_iPlayerCacheFlushSeconds));
 }
 
 CPlayerTableCache::~CPlayerTableCache()
@@ -233,7 +233,7 @@ const int CItemPriceListTableCache::s_nMinFlushSec = 1800;
 
 CItemPriceListTableCache::CItemPriceListTableCache()
 {
-	m_expireTime = MIN(s_nMinFlushSec, g_iItemPriceListTableCacheFlushSeconds);
+	m_expireTime = std::chrono::seconds(MIN(s_nMinFlushSec, g_iItemPriceListTableCacheFlushSeconds));
 }
 
 void CItemPriceListTableCache::UpdateList(const TItemPriceListTable* pUpdateList)

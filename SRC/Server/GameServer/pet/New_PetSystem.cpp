@@ -979,7 +979,7 @@ void ActorDoPetSkill(entt::entity owner, NewPetRecord& actor, int skillslot)
     {
         if (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[0] <= 480) {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 749, "%d", (480 - (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[0])));
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 749, "%d", (int)((480 - (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[0])));
 #endif
             return;
         }
@@ -1003,7 +1003,7 @@ void ActorDoPetSkill(entt::entity owner, NewPetRecord& actor, int skillslot)
     {
         if (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[1] <= 600) {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 749, "%d", (600 - (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[1])));
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 749, "%d", (int)((600 - (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[1])));
 #endif
             return;
         }
@@ -1020,7 +1020,7 @@ void ActorDoPetSkill(entt::entity owner, NewPetRecord& actor, int skillslot)
     {
         if (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[2] <= 480) {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 749, "%d", (480 - (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[2])));
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 749, "%d", (int)((480 - (get_global_time() - g_registry.get_or_emplace<ecs::NewPetSkillState>(owner).cooldowns[2])));
 #endif
             return;
         }

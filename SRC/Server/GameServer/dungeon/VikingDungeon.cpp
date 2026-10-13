@@ -599,7 +599,7 @@ namespace
                 return 0;
             }
 
-            const int32_t now = get_global_time();
+            const time_t now = get_global_time();
             const int32_t limit = DungeonSystem::GetFlag(d, kFlagTimeLimit);
             if (limit <= 0)
             {
@@ -1112,7 +1112,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         return false;
 
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(npc);
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
 
     const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(character);
     const bool isInsideViking = IsVikingDungeonMap(currentIdx);

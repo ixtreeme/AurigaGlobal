@@ -277,7 +277,7 @@ CPlayerTableCache * CClientManager::GetPlayerCache(uint32_t id)
 		return nullptr;
 
 	TPlayerTable* pTable = it->second->Get(false);
-	pTable->logoff_interval = GetCurrentTime() - it->second->GetLastUpdateTime();
+	pTable->logoff_interval = it->second->GetLastUpdateAgeSeconds();
 	return it->second;
 }
 

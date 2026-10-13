@@ -318,16 +318,16 @@ ACMD(do_delivery_biologist) {
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 865, "");
 #endif
 		if (waittime != 0 && count + 1 >= biologistMissionInfo[stat][1]) {
-			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 1#%d#%d", count + 1, waittime - get_global_time());
+			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 1#%d#%d", count + 1, (int)(waittime - get_global_time()));
 		} else {
-			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count + 1, waittime - get_global_time());
+			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count + 1, (int)(waittime - get_global_time()));
 		}
 	}
 	else {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 864, "");
 #endif
-		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count, waittime - get_global_time());
+		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count, (int)(waittime - get_global_time()));
 	}
 	ecs::QuestSystem::SetFlag(character, "biologist.time", waittime);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_time %d", waittime);

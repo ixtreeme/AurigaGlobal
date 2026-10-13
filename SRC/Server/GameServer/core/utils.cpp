@@ -1,28 +1,29 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
+#include <Core/Time.h>
 
 
 #include <boost/algorithm/string/classification.hpp> // Include boost::for is_any_of
 #include <boost/algorithm/string/split.hpp>
 
 
-static int global_time_gap = 0;
+static int64_t global_time_gap = 0;
 
 time_t get_global_time()
 {
-	return time(nullptr) + global_time_gap;
+	return static_cast<time_t>(auriga::time::UnixSeconds() + global_time_gap);
 }
 
 #ifdef ENABLE_GAYA_SYSTEM
 time_t init_gayaTime()
 {
-	return time(nullptr) + global_time_gap;
+	return static_cast<time_t>(auriga::time::UnixSeconds() + global_time_gap);
 }
 #endif
 
 void set_global_time(time_t t)
 {
-	global_time_gap = t - time(nullptr);
+	global_time_gap = static_cast<int64_t>(t) - auriga::time::UnixSeconds();
 
 	//char time_str_buf[32];
 	//snprintf(time_str_buf, sizeof(time_str_buf), "%s", time_str(get_global_time()));

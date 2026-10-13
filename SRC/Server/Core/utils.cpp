@@ -1,6 +1,8 @@
 #define __LIBTHECORE__
 #include "stdafx.h"
 
+#include "Time.h"
+
 #include <chrono>
 #include <thread>
 
@@ -311,27 +313,14 @@ void core_dump_unix(const char* who, uint16_t line)
 
 float get_float_time()
 {
-	struct timeval tv;
-	gettimeofday(&tv, nullptr);
-	tv.tv_sec -= 1057699978;
-	return ((float)tv.tv_sec + ((float)tv.tv_usec / 1000000.0f));
-}
-
-static uint32_t get_boot_sec()
-{
-	static struct timeval tv_boot = { 0L, 0L };
-
-	if (tv_boot.tv_sec == 0)
-		gettimeofday(&tv_boot, nullptr);
-
-	return tv_boot.tv_sec;
+	// Monoton (steady_clock): NTP/DST/kezi oraallitas nem zavarja a
+	// sync-ablakokat.
+	return auriga::time::ProcessSeconds();
 }
 
 uint32_t get_dword_time()
 {
-	struct timeval tv;
-	gettimeofday(&tv, nullptr);
-	//tv.tv_sec -= 1057699978;
-	tv.tv_sec -= get_boot_sec();
-	return (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+	// Monoton ezredmasodperc a process indulasa ota; a reguli timer-ek
+	// unsigned kulonbseget hasznaljak, igy a ~49 napos ujraindulas rendben.
+	return static_cast<uint32_t>(auriga::time::ProcessMillis());
 }

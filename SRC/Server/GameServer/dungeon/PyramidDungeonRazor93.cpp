@@ -327,7 +327,7 @@ void CPyramidDungeonRazor93::OnPlayerDisconnect(entt::entity character)
     if (!IsPyramidDungeonMap(mapIdx))
         return;
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
     ecs::QuestSystem::SetFlag(character, kQfDisconnect, now + kRejoinSeconds);
     ecs::QuestSystem::SetFlag(character, kQfIdx, mapIdx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
@@ -381,7 +381,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     if (!ecs::PlayerRuntime::CanWarp(character))
         return true;
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
 
     // If clicked inside dungeon:
     // - while active: exit to lobby

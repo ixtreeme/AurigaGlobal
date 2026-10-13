@@ -323,7 +323,7 @@ namespace
     {
         if (!ecs::PlayerRuntime::IsValid(ch))
             return 0;
-        const int32_t now = get_global_time();
+        const time_t now = get_global_time();
         const int32_t until = ecs::QuestSystem::GetFlag(ch, kQfCooldown);
         return (until > now) ? (until - now) : 0;
     }
@@ -504,7 +504,7 @@ namespace
                 return 0;
             }
 
-            const int32_t now = get_global_time();
+            const time_t now = get_global_time();
             const int32_t limit = DungeonSystem::GetFlag(d, kFlagTimeLimit);
             if (limit <= 0)
             {
@@ -641,7 +641,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         return false;
 
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(npc);
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
     const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(character);
 
     bool fromCompletedInside = false;

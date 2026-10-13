@@ -139,7 +139,7 @@ namespace
     static void DungeonCompleteForMap(int32_t dungeonMapIdx, int32_t dungeonIndex, uint32_t bossVnum, int32_t cooldownSeconds,
         const char* qfEnterTime, const char* qfCh, const char* qfCooldown)
     {
-        const int32_t now = get_global_time();
+        const time_t now = get_global_time();
 
         ForEachPcOnMap(dungeonMapIdx, [&](entt::entity ch){
                 if (!ecs::PlayerRuntime::IsValid(ch))
@@ -620,7 +620,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
         // completed -> continue below to fresh entrance flow
     }
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
 
     // Rejoin flow
     const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(character, kQfDisconnect);

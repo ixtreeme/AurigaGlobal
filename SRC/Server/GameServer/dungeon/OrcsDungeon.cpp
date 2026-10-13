@@ -379,7 +379,7 @@ void COrcsDungeon::OnPlayerLogin(entt::entity character)
 
 static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
 {
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
 
     ForEachPcOnMap(dungeonMapIdx, [&](entt::entity ch){
             if (!ecs::PlayerRuntime::IsValid(ch))
@@ -633,7 +633,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
         // completed -> continue below (fresh entrance flow)
     }
 
-    const int32_t now = get_global_time();
+    const time_t now = get_global_time();
 
     // Rejoin flow
     const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(character, kQfDisconnect);
