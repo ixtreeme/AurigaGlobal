@@ -31,6 +31,7 @@
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "json_group_tree.h"
+#include "FileHandle.h"
 #include <boost/algorithm/string/predicate.hpp>
 #include <cctype>
 #ifdef ENABLE_BATTLE_PASS
@@ -605,11 +606,8 @@ bool ConvertToShopItemTable(IN CJsonGroupNode* pNode, OUT TShopTableEx& shopTabl
 bool CShopManager::ReadShopTableEx(const char* stFileName)
 {
 	// The extended table is optional; a missing file is not an error.
-	// Nothing to read without the file.
-	FILE* fp = fopen(stFileName, "rb");
-	if (nullptr == fp)
+	if (!auriga::FileExists(stFileName))
 		return true;
-	fclose(fp);
 
 	CJsonGroupTreeLoader loader;
 	if (!loader.Load(stFileName))

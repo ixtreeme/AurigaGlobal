@@ -43,6 +43,7 @@
 #endif
 #ifdef __INGAME_WIKI__
 #include "refine.h"
+#include <fstream>
 #endif
 
 namespace
@@ -1034,26 +1035,20 @@ void load_lotto()
 		return;
 
 	bLoaded = true;
-	FILE* fp = fopen("lotto.txt", "r");
 
-	if (!fp)
+	std::ifstream file("lotto.txt");
+
+	if (!file)
 		return;
 
-	char buf[256];
+	std::string line;
 
-	while (fgets(buf, 256, fp))
+	while (std::getline(file, line))
 	{
-		char* psz = strchr(buf, '\n');
-
-		if (nullptr != psz)
-			*psz = '\0';
-
 		uint32_t dw = 0;
-		str_to_number(dw, buf);
+		str_to_number(dw, line.c_str());
 		g_set_lotto.insert(dw);
 	}
-
-	fclose(fp);
 }
 
 uint32_t lotto()
@@ -1074,12 +1069,11 @@ uint32_t lotto()
 
 		if (!g_set_lotto.contains(dw))
 		{
-			FILE* fp = fopen("lotto.txt", "a+");
-			if (fp)
-			{
-				fprintf(fp, "%u\n", dw);
-				fclose(fp);
-			}
+			std::ofstream file("lotto.txt", std::ios::app);
+
+			if (file)
+				file << dw << '\n';
+
 			return dw;
 		}
 	} while (1);

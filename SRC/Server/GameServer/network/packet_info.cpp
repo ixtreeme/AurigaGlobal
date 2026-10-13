@@ -6,6 +6,9 @@
 #include <common/in_game_wiki.h>
 #endif
 
+#include <fmt/format.h>
+#include <fstream>
+
 CPacketInfo::CPacketInfo()
 	: m_pCurrentPacket(nullptr), m_dwStartTime(0)
 {
@@ -72,30 +75,18 @@ void CPacketInfo::End()
 
 void CPacketInfo::Log(const char * c_pszFileName)
 {
-	FILE * fp;
+	std::ofstream file(c_pszFileName);
 
-	fp = fopen(c_pszFileName, "w");
-
-	if (!fp)
+	if (!file)
 		return;
 
-	std::map<int, TPacketElement *>::iterator it = m_pPacketMap.begin();
+	file << "Name             Called     Load       Ratio\n";
 
-	fprintf(fp, "Name             Called     Load       Ratio\n");
-
-	while (it != m_pPacketMap.end())
+	for (const auto& [id, p] : m_pPacketMap)
 	{
-		TPacketElement * p = it->second;
-		++it;
-
-		fprintf(fp, "%-16s %-10d %-10u %.2f\n",
-				p->stName.c_str(),
-				p->iCalled,
-				p->dwLoad,
-				p->iCalled != 0 ? (float) p->dwLoad / p->iCalled : 0.0f);
+		const double ratio = p->iCalled != 0 ? static_cast<double>(p->dwLoad) / p->iCalled : 0.0;
+		file << fmt::format("{:<16} {:<10} {:<10} {:.2f}\n", p->stName, p->iCalled, p->dwLoad, ratio);
 	}
-
-	fclose(fp);
 }
 ///---------------------------------------------------------
 

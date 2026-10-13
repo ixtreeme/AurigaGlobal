@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 #include <vector>
 #include <algorithm>
+#include <fstream>
+#include <string>
 
 typedef unsigned char uint8_t;
 typedef unsigned long uint32_t;
@@ -20,6 +22,9 @@ typedef unsigned long uint32_t;
 #include <Core/Logging.hpp>
 #include "ip_ban.h"
 #include "Core/Logging.hpp"
+
+#include <fstream>
+#include <string>
 
 #endif
 
@@ -141,41 +146,37 @@ std::map<int, std::vector<IP> > mapBanIP;
 
 bool LoadBanIP(const char * filename)
 {
-	FILE * fp = fopen(filename, "r");
+	std::ifstream file(filename);
 
-	if (!fp)
+	if (!file)
 		return false;
-
-	char buf[256];
-	char start[256];
-	char end[256];
 
 	LOG_ERROR("LOADING BANNED IP LIST");
 
-	while (fgets(buf, 256, fp))
+	std::string buf;
+
+	while (std::getline(file, buf))
 	{
-		*strchr(buf, '\n') = '\0';
-		char * p = strchr(buf, '\t');
+		if (!buf.empty() && buf.back() == '\r')
+			buf.pop_back();
 
-		if (!p)
+		std::string start = buf;
+		std::string end;
+
+		const auto tab = buf.find('\t');
+
+		if (tab != std::string::npos)
 		{
-			strlcpy(start, buf, sizeof(start));
-			*end = '\0';
-		}
-		else
-		{
-			char * p2 = strchr(p + 1, '\t');
+			start = buf.substr(0, tab);
 
-			if (p2)
-				*p2 = '\0';
+			const auto tab2 = buf.find('\t', tab + 1);
 
-			strlcpy(end, p + 1, sizeof(end));
-
-			*p = '\0';
-			strlcpy(start, buf, sizeof(start));
+			end = (tab2 == std::string::npos)
+				? buf.substr(tab + 1)
+				: buf.substr(tab + 1, tab2 - tab - 1);
 		}
 
-		IP ip(start, end);
+		IP ip(start.c_str(), end.c_str());
 
 		auto it = mapBanIP.find(ip.hash());
 
@@ -189,8 +190,6 @@ bool LoadBanIP(const char * filename)
 			it->second.push_back(ip);
 	}
 
-	fclose(fp);
-
 	return true;
 }
 
@@ -200,15 +199,14 @@ bool BanIP(struct in_addr in, const char* c_szIP)
 	if (IsBanIP(in))
 		return false;
 
-	FILE* pFile = fopen("BANIP", "a");
-	if (!pFile)
+	std::ofstream file("BANIP", std::ios::app);
+	if (!file)
 	{
 		LOG_INFO("cannot open BANIP");
 		return false;
 	}
 
-	fprintf(pFile, "%s\n", c_szIP);
-	fclose(pFile);
+	file << c_szIP << '\n';
 
 	mapBanIP.clear();
 	if (LoadBanIP("BANIP"))
@@ -349,37 +347,32 @@ int main(int argc, char **argv)
 
 	argc--, argv++;
 
-	FILE * fp = fopen(*argv, "r");
+	std::ifstream file(*argv);
 
-	if (!fp)
+	if (!file)
 		return 0;
 
 	vector<IP> v;
-	char buf[256];
-	char start[32];
-	char end[32];
+	std::string buf;
 
-	while (fgets(buf, 256, fp))
+	while (std::getline(file, buf))
 	{
-		*strchr(buf, '\n') = '\0';
-		char * p = strchr(buf, '\t');
+		if (!buf.empty() && buf.back() == '\r')
+			buf.pop_back();
 
-		if (!p)
+		std::string start = buf;
+		std::string end;
+
+		const auto tab = buf.find('\t');
+
+		if (tab != std::string::npos)
 		{
-			strlcpy(start, buf, sizeof(start));
-			*end = '\0';
-		}
-		else
-		{
-			strlcpy(end, p + 1, sizeof(end));
-			*p = '\0';
-			strlcpy(start, buf, sizeof(start));
+			start = buf.substr(0, tab);
+			end = buf.substr(tab + 1);
 		}
 
-		v.push_back(IP(start, end));
+		v.push_back(IP(start.c_str(), end.c_str()));
 	}
-
-	fclose(fp);
 
 	LOG_INFO("size {}", v.size());
 	UniqueIP(v);

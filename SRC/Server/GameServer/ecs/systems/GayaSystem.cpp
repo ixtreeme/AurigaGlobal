@@ -4,6 +4,7 @@
 #include "../../entity/char.h"
 #include "../../core/config.h"
 #include "../../core/locale_service.h"
+#include "../../core/FileHandle.h"
 #include "../../core/JsonFile.h"
 #include "../../quest/questmanager.h"
 #include "ItemSystem.hpp"
@@ -14,12 +15,20 @@
 #include "../components/identity_components.hpp"
 #include <Core/Logging.hpp>
 
+#include <fmt/format.h>
 #include <nlohmann/json.hpp>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
 namespace
 {
+
+std::string GayaStateFilePath(entt::entity pc)
+{
+	return fmt::format("{}/gaya/{}_gaya_system.txt", LocaleService_GetBasePath(), ecs::PlayerRuntime::GetName(pc));
+}
 
 struct GayaShopEntry
 {
@@ -166,10 +175,7 @@ bool CheckItemsFull(entt::entity pc)
 	if (pc == entt::null || !g_registry.valid(pc))
 		return false;
 
-	FILE* fp;
-	char file_name[256 + 1];
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(pc).data());
-	return (fp = fopen(file_name, "r")) != nullptr ? (fclose(fp), true) : false;
+	return auriga::FileExists(GayaStateFilePath(pc));
 }
 
 void ClearMarket(entt::entity pc)
@@ -249,27 +255,22 @@ void RefreshItemsMarket(entt::entity pc)
 	if (!state || state->loadItems.size() < 2)
 		return;
 
-	FILE* fileID;
-	char file_name[256 + 1];
+	std::ofstream file(GayaStateFilePath(pc));
 
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(pc).data());
-	fileID = fopen(file_name, "w");
-
-	if (nullptr == fileID)
+	if (!file)
 		return;
 
 	for (int i = 0; i < 9; ++i)
 	{
 		const int rnd = number(1, static_cast<int>(state->loadItems.size()) - 1);
-		fprintf(fileID, "Item\t%d\t%d\t%d\n", state->loadItems[rnd].items, state->loadItems[rnd].gaya, state->loadItems[rnd].count);
+		file << fmt::format("Item\t{}\t{}\t{}\n", state->loadItems[rnd].items, state->loadItems[rnd].gaya, state->loadItems[rnd].count);
 	}
 
 	if (!state->infoSlots.empty())
-		fprintf(fileID, "Slots_Desblock\t%d\t%d\t%d\t%d\t%d\t%d\n",
+		file << fmt::format("Slots_Desblock\t{}\t{}\t{}\t{}\t{}\t{}\n",
 			state->infoSlots[0].value_1, state->infoSlots[0].value_2, state->infoSlots[0].value_3,
 			state->infoSlots[0].value_4, state->infoSlots[0].value_5, state->infoSlots[0].value_6);
 
-	fclose(fileID);
 	MarkDirty(pc);
 }
 
@@ -279,13 +280,13 @@ void UpdateSlot(entt::entity pc, int slot)
 	if (!state || state->infoSlots.empty() || state->infoItems.size() < 9)
 		return;
 
-	FILE* fileID;
-	char file_name[256 + 1];
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(pc).data());
-	fileID = fopen(file_name, "w");
+	std::ofstream file(GayaStateFilePath(pc));
+
+	if (!file)
+		return;
 
 	for (int i = 0; i < 9; ++i)
-		fprintf(fileID, "Item\t%d\t%d\t%d\n", state->infoItems[i].value_1, state->infoItems[i].value_2, state->infoItems[i].value_3);
+		file << fmt::format("Item\t{}\t{}\t{}\n", state->infoItems[i].value_1, state->infoItems[i].value_2, state->infoItems[i].value_3);
 
 	if (slot == 3) { state->infoSlots[0].value_1 = 1; }
 	else if (slot == 4) { state->infoSlots[0].value_2 = 1; }
@@ -294,10 +295,10 @@ void UpdateSlot(entt::entity pc, int slot)
 	else if (slot == 7) { state->infoSlots[0].value_5 = 1; }
 	else if (slot == 8) { state->infoSlots[0].value_6 = 1; }
 
-	fprintf(fileID, "Slots_Desblock\t%d\t%d\t%d\t%d\t%d\t%d\n",
+	file << fmt::format("Slots_Desblock\t{}\t{}\t{}\t{}\t{}\t{}\n",
 		state->infoSlots[0].value_1, state->infoSlots[0].value_2, state->infoSlots[0].value_3,
 		state->infoSlots[0].value_4, state->infoSlots[0].value_5, state->infoSlots[0].value_6);
-	fclose(fileID);
+
 	InfoMarket(pc);
 }
 
@@ -307,59 +308,39 @@ void UpdateItems0(entt::entity pc)
 	if (!state)
 		return;
 
-	FILE* fp;
-	char one_line[256];
-	int value1, value2, value3, value4, value5, value6;
-	const char* delim = " \t\r\n";
-	char *v, *token_string;
-	char file_name[256 + 1];
+	std::ifstream file(GayaStateFilePath(pc));
 
-	GayaShopEntry marketItem {};
-	GayaShopEntry marketSlots {};
-
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(pc).data());
-	fp = fopen(file_name, "r");
-	if (!fp)
+	if (!file)
 		return;
 
-	while (fgets(one_line, 256, fp))
+	std::string line;
+
+	while (std::getline(file, line))
 	{
-		value1 = value2 = value3 = value4 = value5 = value6 = 0;
-
-		if (one_line[0] == '#')
+		if (line.empty() || line[0] == '#')
 			continue;
 
-		token_string = strtok(one_line, delim);
-		if (nullptr == token_string)
+		std::istringstream ins(line);
+		std::string token;
+
+		if (!(ins >> token))
 			continue;
 
-		if ((v = strtok(nullptr, delim))) str_to_number(value1, v);
-		if ((v = strtok(nullptr, delim))) str_to_number(value2, v);
-		if ((v = strtok(nullptr, delim))) str_to_number(value3, v);
-		if ((v = strtok(nullptr, delim))) str_to_number(value4, v);
-		if ((v = strtok(nullptr, delim))) str_to_number(value5, v);
-		if ((v = strtok(nullptr, delim))) str_to_number(value6, v);
-
-		TOKEN("Item")
+		if (token == "Item")
 		{
-			marketItem.value_1 = value1;
-			marketItem.value_2 = value2;
-			marketItem.value_3 = value3;
+			GayaShopEntry marketItem {};
+			ins >> marketItem.value_1 >> marketItem.value_2 >> marketItem.value_3;
 			state->infoItems.push_back(marketItem);
 		}
-		else TOKEN("Slots_Desblock")
+		else if (token == "Slots_Desblock")
 		{
-			marketSlots.value_1 = value1;
-			marketSlots.value_2 = value2;
-			marketSlots.value_3 = value3;
-			marketSlots.value_4 = value4;
-			marketSlots.value_5 = value5;
-			marketSlots.value_6 = value6;
+			GayaShopEntry marketSlots {};
+			ins >> marketSlots.value_1 >> marketSlots.value_2 >> marketSlots.value_3
+				>> marketSlots.value_4 >> marketSlots.value_5 >> marketSlots.value_6;
 			state->infoSlots.push_back(marketSlots);
 		}
 	}
 
-	fclose(fp);
 	MarkDirty(pc);
 }
 
@@ -369,21 +350,18 @@ void UpdateItems(entt::entity pc)
 	if (!state || state->loadItems.size() < 2)
 		return;
 
-	FILE* fileID;
-	char file_name[256 + 1];
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(pc).data());
-	fileID = fopen(file_name, "a");
-	if (!fileID)
+	std::ofstream file(GayaStateFilePath(pc), std::ios::app);
+
+	if (!file)
 		return;
 
 	for (int i = 0; i < 9; ++i)
 	{
 		const int rnd = number(1, static_cast<int>(state->loadItems.size()) - 1);
-		fprintf(fileID, "Item\t%d\t%d\t%d\n", state->loadItems[rnd].items, state->loadItems[rnd].gaya, state->loadItems[rnd].count);
+		file << fmt::format("Item\t{}\t{}\t{}\n", state->loadItems[rnd].items, state->loadItems[rnd].gaya, state->loadItems[rnd].count);
 	}
 
-	fprintf(fileID, "Slots_Desblock\t%d\t%d\t%d\t%d\t%d\t%d\n", 0, 0, 0, 0, 0, 0);
-	fclose(fileID);
+	file << "Slots_Desblock\t0\t0\t0\t0\t0\t0\n";
 	MarkDirty(pc);
 }
 

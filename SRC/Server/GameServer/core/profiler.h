@@ -4,6 +4,12 @@
 #include <unordered_map>
 #include <Core/Logging.hpp>
 
+#include <fmt/format.h>
+#include <fstream>
+#include <iostream>
+#include <ostream>
+#include <string>
+
 class CProfiler : public singleton<CProfiler>
 {
 	public:
@@ -148,42 +154,41 @@ class CProfiler : public singleton<CProfiler>
 
 		void Log(const char * c_pszFileName)
 		{
-			FILE * fp = fopen(c_pszFileName, "w");
+			std::ofstream file(c_pszFileName);
 
-			if (!fp)
+			if (!file)
 				return;
 
-			Print(fp);
-			fclose(fp);
+			Print(file);
 		}
 
-		void Print(FILE * fp = stderr)
+		void Print(std::ostream& out = std::cerr)
 		{
 			for (int i = 0; i < m_ProfileStackDataCount; ++i)
 			{
 				TProfileStackData & rProfileStackData = m_ProfileStackDatas[i];
 
-				for (int i = 0; i < rProfileStackData.iCallStep; ++i)
-					fprintf(fp, "\t");
+				for (int step = 0; step < rProfileStackData.iCallStep; ++step)
+					out << '\t';
 
-				fprintf(fp, "%-24s: %d\n", rProfileStackData.strName.c_str(), rProfileStackData.iEndTime - rProfileStackData.iStartTime);
+				out << fmt::format("{:<24}: {}\n", rProfileStackData.strName, rProfileStackData.iEndTime - rProfileStackData.iStartTime);
 			}
 
-			fprintf(fp, "Name                                 Call/Load       Ratio\n");
-
-			std::string stLine;
+			out << "Name                                 Call/Load       Ratio\n";
 
 			for (uint32_t k = 0; k < m_vec_Accum.size(); ++k)
 			{
 				TProfileAccumData * p = m_vec_Accum[k];
 
-				stLine.assign(p->iDepth * 5, ' ');
+				std::string stLine(p->iDepth * 5, ' ');
 				stLine += p->strName;
 
-				fprintf(fp, "%-30s %10d/%-10d %.2f\n",
-						stLine.c_str(),
+				const double ratio = p->iCallingCount != 0 ? static_cast<double>(p->iCollapsedTime) / p->iCallingCount : 0.0;
+
+				out << fmt::format("{:<30} {:>10}/{:<10} {:.2f}\n",
+						stLine,
 						p->iCallingCount, p->iCollapsedTime,
-						p->iCallingCount != 0 ? (float) p->iCollapsedTime / p->iCallingCount : 0.0f);
+						ratio);
 			}
 		}
 

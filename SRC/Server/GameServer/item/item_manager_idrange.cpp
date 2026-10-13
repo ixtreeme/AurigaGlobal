@@ -4,17 +4,18 @@
 #include "desc_client.h"
 #include "item_manager.h"
 
+#include <fstream>
+
 int touch(const char *path)
 {
-	FILE	*fp;
+	std::ofstream file(path, std::ios::app);
 
-	if ( !(fp = fopen(path, "a")) )
+	if (!file)
 	{
 		LOG_ERROR("touch failed");
 		return (-1);
 	}
 
-	fclose(fp);
 	return 0;
 }
 

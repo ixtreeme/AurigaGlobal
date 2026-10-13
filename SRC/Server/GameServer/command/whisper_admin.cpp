@@ -20,6 +20,7 @@
 #include "config.h"
 #include "dev_log.h"
 #include <Core/Logging.hpp>
+#include <fmt/format.h>
 #include <fstream>
 #include <algorithm>
 #include <iostream>
@@ -47,8 +48,7 @@ bool CWhisperAdmin::file_is_empty(std::ifstream& file)
 std::string CWhisperAdmin::GetLang()
 {
 	std::string lang;
-	char szFileName[256];
-	snprintf(szFileName, sizeof(szFileName), "%s/whisper.txt", LocaleService_GetBasePath().c_str());
+	const std::string szFileName = fmt::format("{}/whisper.txt", LocaleService_GetBasePath());
 
 	std::ifstream file(szFileName);
 
@@ -56,7 +56,6 @@ std::string CWhisperAdmin::GetLang()
 		return "";
 
 	file >> lang;
-	file.close();
 
 	return lang.c_str();
 }
@@ -66,8 +65,7 @@ int CWhisperAdmin::GetColor()
 	std::string f;
 	int color;
 
-	char szFileName[256];
-	snprintf(szFileName, sizeof(szFileName), "%s/whisper.txt", LocaleService_GetBasePath().c_str());
+	const std::string szFileName = fmt::format("{}/whisper.txt", LocaleService_GetBasePath());
 
 	std::ifstream file(szFileName);
 
@@ -76,56 +74,20 @@ int CWhisperAdmin::GetColor()
 
 	file >> f;
 	file >> color;
-	file.close();
 
 	return color;
 }
 
-/*
 void CWhisperAdmin::SaveConfig(const char* c_pszLang, int color)
 {
-	char szFileName[256];
-	snprintf(szFileName, sizeof(szFileName), "%s/whisper.txt", LocaleService_GetBasePath().c_str());
+	const std::string szFileName = fmt::format("{}/whisper.txt", LocaleService_GetBasePath());
 
-	FILE *fp = 0;
-	fp = fopen(szFileName, "a");
+	std::ofstream file(szFileName);
 
-	if (0 == fp)
+	if (!file)
 		return;
 
-	std::ifstream fFile(szFileName);
-	if (!fFile.is_open())
-		return;
-
-	FILE *f = 0;
-	f = fopen(szFileName, "w");
-
-	fprintf(f, "");
-	fclose(f);
-
-	fprintf(fp, "%s\n", c_pszLang);
-	fprintf(fp, "%d", color);
-
-	fclose(fp);
-	fFile.close();
-}
-*/
-
-void CWhisperAdmin::SaveConfig(const char* c_pszLang, int color)
-{
-	char szFileName[256];
-	snprintf(szFileName, sizeof(szFileName), "%s/whisper.txt", LocaleService_GetBasePath().c_str());
-
-	FILE *fp = nullptr;
-	fp = fopen(szFileName, "w");
-
-	if (nullptr == fp)
-		return;
-
-	fprintf(fp, "%s\n", c_pszLang);
-	fprintf(fp, "%d", color);
-
-	fclose(fp);
+	file << fmt::format("{}\n{}", c_pszLang, color);
 }
 
 struct whisper_packet_func

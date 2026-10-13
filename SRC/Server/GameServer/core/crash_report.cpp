@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "crash_report.h"
+#include "FileHandle.h"
 
 #ifdef _WIN32
 
@@ -52,19 +53,20 @@ namespace
 
     LONG WINAPI OnUnhandledException(EXCEPTION_POINTERS* info)
     {
-        FILE* fp = fopen("crash.txt", "a");
+        // RAII, but no iostream machinery during a crash.
+        auriga::FilePtr fp = auriga::OpenFile("crash.txt", "a");
         const HANDLE process = GetCurrentProcess();
 
         const DWORD64 faultPC = reinterpret_cast<DWORD64>(info->ExceptionRecord->ExceptionAddress);
         const DWORD64 moduleBase = reinterpret_cast<DWORD64>(GetModuleHandleA(nullptr));
 
-        Emit(fp, "\n=== CRASH: exception 0x%08lX at 0x%llx (module + 0x%llx) ===\n",
+        Emit(fp.get(), "\n=== CRASH: exception 0x%08lX at 0x%llx (module + 0x%llx) ===\n",
             info->ExceptionRecord->ExceptionCode, faultPC, faultPC - moduleBase);
 
         if (info->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION &&
             info->ExceptionRecord->NumberParameters >= 2)
         {
-            Emit(fp, "    %s address 0x%llx\n",
+            Emit(fp.get(), "    %s address 0x%llx\n",
                 info->ExceptionRecord->ExceptionInformation[0] ? "writing" : "reading",
                 static_cast<DWORD64>(info->ExceptionRecord->ExceptionInformation[1]));
         }
@@ -91,12 +93,10 @@ namespace
             if (frame.AddrPC.Offset == 0)
                 break;
 
-            DescribeAddress(fp, process, frame.AddrPC.Offset, i);
+            DescribeAddress(fp.get(), process, frame.AddrPC.Offset, i);
         }
 
         SymCleanup(process);
-        if (fp)
-            fclose(fp);
 
         return EXCEPTION_EXECUTE_HANDLER;
     }

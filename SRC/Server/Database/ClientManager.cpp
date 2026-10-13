@@ -27,6 +27,9 @@
 #include <memory>
 #include <cmath>
 #include <print>
+#include <fstream>
+#include <iomanip>
+#include <string>
 #include <mysql/mysql.h>
 
 #ifdef max
@@ -3337,29 +3340,26 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 
 void UsageLog()
 {
-	FILE* fp = nullptr;
+	std::ofstream file("usage.txt", std::ios::app);
 
-	time_t      ct;
-	char        *time_s;
-	struct tm   lt;
-
-	int         avg = g_dwUsageAvg / 3600;
-
-	fp = fopen("usage.txt", "a+");
-
-	if (!fp)
+	if (!file)
 		return;
 
-	ct = time(nullptr);
-	lt = *localtime(&ct);
-	time_s = asctime(&lt);
+	const time_t ct = time(nullptr);
+	const struct tm lt = *localtime(&ct);
+	const char* time_s = asctime(&lt);
 
-	time_s[strlen(time_s) - 1] = '\0';
+	std::string stamp(time_s + 4);
 
-	fprintf(fp, "| %4d %-15.15s | %5d | %5u |", lt.tm_year + 1900, time_s + 4, avg, g_dwUsageMax);
+	if (stamp.size() > 15)
+		stamp.resize(15);
 
-	fprintf(fp, "\n");
-	fclose(fp);
+	const int avg = g_dwUsageAvg / 3600;
+
+	file << "| " << std::setw(4) << lt.tm_year + 1900 << ' '
+		<< std::left << std::setw(15) << stamp << std::right
+		<< " | " << std::setw(5) << avg
+		<< " | " << std::setw(5) << g_dwUsageMax << " |\n";
 
 	g_dwUsageMax = g_dwUsageAvg = 0;
 }

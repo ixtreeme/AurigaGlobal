@@ -25,6 +25,8 @@
 #include "skill_power.h"
 #include "Core/Logging.hpp"
 #include <fmt/format.h>
+#include <fstream>
+#include <sstream>
 
 using std::string;
 
@@ -617,64 +619,66 @@ static void __ApplyGeneralConfig(const GameConfig& cfg)
 
 #define ENABLE_CMD_PLAYER
 static bool __LoadDefaultCMDFile(const char* cmdName)
-	{
-	FILE	*fp;
-	char	buf[256];
+{
+	std::ifstream file(cmdName);
 
-	if ((fp = fopen(cmdName, "r")))
+	if (!file)
+		return false;
+
+	std::string buf;
+
+	while (std::getline(file, buf))
 	{
-		while (fgets(buf, 256, fp))
+		std::istringstream ins(buf);
+
+		std::string cmd;
+		std::string levelname;
+		int level;
+
+		ins >> cmd >> levelname;
+
+		if (cmd.empty() || levelname.empty())
 		{
-			char cmd[32], levelname[32];
-			int level;
-
-			two_arguments(buf, cmd, sizeof(cmd), levelname, sizeof(levelname));
-
-			if (!*cmd || !*levelname)
-			{
 #ifdef ENABLE_CMD_PLAYER
-				LOG_ERROR("CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
+			LOG_ERROR("CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
 #else
-				LOG_ERROR("CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
+			LOG_ERROR("CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
 #endif
-				exit(1);
-			}
-
-			if (!strcasecmp(levelname, "LOW_WIZARD"))
-				level = GM_LOW_WIZARD;
-			else if (!strcasecmp(levelname, "WIZARD"))
-				level = GM_WIZARD;
-			else if (!strcasecmp(levelname, "HIGH_WIZARD"))
-				level = GM_HIGH_WIZARD;
-			else if (!strcasecmp(levelname, "GOD"))
-				level = GM_GOD;
-			else if (!strcasecmp(levelname, "IMPLEMENTOR"))
-				level = GM_IMPLEMENTOR;
-#ifdef ENABLE_CMD_PLAYER
-			else if (!strcasecmp(levelname, "PLAYER"))
-				level = GM_PLAYER;
-#endif
-			else if (!strcasecmp(levelname, "DISABLE"))
-				level = GM_DISABLE;
-			else
-			{
-#ifdef ENABLE_CMD_PLAYER
-				LOG_ERROR("CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
-#else
-				LOG_ERROR("CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
-#endif
-				exit(1);
-			}
-
-			if (test_server)
-				LOG_INFO("CMD_REWRITE: [{}] [{}:{}]", cmd, levelname, level);
-			interpreter_set_privilege(cmd, level);
+			exit(1);
 		}
 
-		fclose(fp);
-		return true;
+		if (!strcasecmp(levelname.c_str(), "LOW_WIZARD"))
+			level = GM_LOW_WIZARD;
+		else if (!strcasecmp(levelname.c_str(), "WIZARD"))
+			level = GM_WIZARD;
+		else if (!strcasecmp(levelname.c_str(), "HIGH_WIZARD"))
+			level = GM_HIGH_WIZARD;
+		else if (!strcasecmp(levelname.c_str(), "GOD"))
+			level = GM_GOD;
+		else if (!strcasecmp(levelname.c_str(), "IMPLEMENTOR"))
+			level = GM_IMPLEMENTOR;
+#ifdef ENABLE_CMD_PLAYER
+		else if (!strcasecmp(levelname.c_str(), "PLAYER"))
+			level = GM_PLAYER;
+#endif
+		else if (!strcasecmp(levelname.c_str(), "DISABLE"))
+			level = GM_DISABLE;
+		else
+		{
+#ifdef ENABLE_CMD_PLAYER
+			LOG_ERROR("CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
+#else
+			LOG_ERROR("CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
+#endif
+			exit(1);
+		}
+
+		if (test_server)
+			LOG_INFO("CMD_REWRITE: [{}] [{}:{}]", cmd, levelname, level);
+		interpreter_set_privilege(cmd.c_str(), level);
 	}
-	return false;
+
+	return true;
 }
 
 #define ENABLE_EXPTABLE_FROMDB
@@ -794,55 +798,51 @@ void LoadValidCRCList()
 	s_set_dwProcessCRC.clear();
 	s_set_dwFileCRC.clear();
 
-	FILE * fp;
-	char buf[256];
+	std::ifstream file("CRC");
 
-	if ((fp = fopen("CRC", "r")))
+	if (!file)
+		return;
+
+	std::string buf;
+
+	while (std::getline(file, buf))
 	{
-		while (fgets(buf, 256, fp))
-		{
-			if (!*buf)
-				continue;
+		std::istringstream ins(buf);
 
-			uint32_t dwValidClientProcessCRC;
-			uint32_t dwValidClientFileCRC;
+		uint32_t dwValidClientProcessCRC = 0;
+		uint32_t dwValidClientFileCRC = 0;
 
-			sscanf(buf, " %u %u ", &dwValidClientProcessCRC, &dwValidClientFileCRC);
+		if (!(ins >> dwValidClientProcessCRC >> dwValidClientFileCRC))
+			continue;
 
-			s_set_dwProcessCRC.insert(dwValidClientProcessCRC);
-			s_set_dwFileCRC.insert(dwValidClientFileCRC);
+		s_set_dwProcessCRC.insert(dwValidClientProcessCRC);
+		s_set_dwFileCRC.insert(dwValidClientFileCRC);
 
-			LOG_ERROR("CLIENT_CRC: {} {}", dwValidClientProcessCRC, dwValidClientFileCRC);
-		}
-
-		fclose(fp);
+		LOG_ERROR("CLIENT_CRC: {} {}", dwValidClientProcessCRC, dwValidClientFileCRC);
 	}
 }
 
 bool LoadClientVersion()
 {
-	FILE * fp = fopen("VERSION", "r");
+	std::ifstream file("VERSION");
 
-	if (!fp)
+	if (!file)
 		return false;
 
-	char buf[256] = { 0 };
-	if (!fgets(buf, sizeof(buf), fp))
-	{
-		fclose(fp);
+	std::string version;
+
+	if (!std::getline(file, version))
 		return false;
-	}
 
-	// CRLF files (Windows-edited VERSION) leave a trailing '\r' on Unix where
-	// fopen("r") does no text-mode translation. A '\r' in the version string
-	// makes CheckClientVersion reject every client with a silent kick.
-	char * p = strpbrk(buf, "\r\n");
-	if (p) *p = '\0';
+	// CRLF files (Windows-edited VERSION) leave a trailing '\r'. A '\r' in
+	// the version string makes CheckClientVersion reject every client with
+	// a silent kick.
+	if (!version.empty() && version.back() == '\r')
+		version.pop_back();
 
-	LOG_ERROR("VERSION: \"{}\"", buf);
+	LOG_ERROR("VERSION: \"{}\"", version);
 
-	g_stClientVersion = buf;
-	fclose(fp);
+	g_stClientVersion = version;
 	return true;
 }
 
@@ -869,14 +869,12 @@ void CheckClientVersion()
 
 void LoadStateUserCount()
 {
-	FILE * fp = fopen("state_user_count", "r");
+	std::ifstream file("state_user_count");
 
-	if (!fp)
+	if (!file)
 		return;
 
-	fscanf(fp, " %d %d ", &g_iFullUserCount, &g_iBusyUserCount);
-
-	fclose(fp);
+	file >> g_iFullUserCount >> g_iBusyUserCount;
 }
 
 bool IsValidProcessCRC(uint32_t dwCRC)
@@ -917,15 +915,14 @@ void LoadMapConfig()
 	auto funcTakeLines = [](std::string filename, std::vector<std::string>& vec) {
 		vec.clear();
 
-		FILE * pFile = fopen( filename.c_str() , "r" );
-		if(!pFile)
+		std::ifstream file(filename);
+
+		if (!file)
 			return;
 
-		char szLine[256]="\0";
-		while (fgets(szLine, sizeof(szLine), pFile))
-			vec.emplace_back(std::string(szLine));
-
-		fclose(pFile);
+		std::string line;
+		while (std::getline(file, line))
+			vec.emplace_back(line);
 	};
 
 

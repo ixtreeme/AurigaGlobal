@@ -5,6 +5,7 @@
 
 #include <Core/peer_session.h>
 
+#include <fstream>
 #include <vector>
 
 #include "constants.h"
@@ -246,7 +247,7 @@ class DESC : public PeerSession
 		struct sockaddr_in	m_SockAddr;
 		struct sockaddr_in 	m_UDPSockAddr;
 
-		FILE *			m_pLogFile;
+		std::ofstream	m_LogFile;
 		std::string		m_stRelayName;
 
 		std::string		m_stP2PHost;

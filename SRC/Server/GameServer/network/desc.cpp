@@ -25,6 +25,10 @@
 #include "../ecs/events.hpp"
 #include "Core/Logging.hpp"
 
+#include <fmt/format.h>
+#include <cstdarg>
+#include <cstdio>
+
 extern int max_bytes_written;
 extern int current_bytes_written;
 extern int total_bytes_written;
@@ -67,8 +71,6 @@ void DESC::Initialize()
 
 	memset( &m_SockAddr, 0, sizeof(m_SockAddr) );
 	memset( &m_UDPSockAddr, 0, sizeof(m_UDPSockAddr) );
-
-	m_pLogFile = nullptr;
 
 #ifndef _IMPROVED_PACKET_ENCRYPTION_
 	m_bEncrypted = false;
@@ -116,12 +118,6 @@ void DESC::Destroy()
 
 	if (GetAccountTable().id)
 		DESC_MANAGER::instance().DisconnectAccount(GetAccountTable().login);
-
-	if (m_pLogFile)
-	{
-		fclose(m_pLogFile);
-		m_pLogFile = nullptr;
-	}
 
 	if (m_lpCharacter != entt::null)
 	{
@@ -548,29 +544,27 @@ void DESC::UDPGrant(const sockaddr_in & c_rSockAddr)
 
 void DESC::Log(const char * format, ...)
 {
-	if (!m_pLogFile)
+	if (!m_LogFile.is_open())
 		return;
-
-	va_list args;
 
 	time_t ct = get_global_time();
 	tm tm = *localtime(&ct);
 
-	fprintf(m_pLogFile,
-			"%02d %02d %02d:%02d:%02d | ",
+	char message[1024];
+	va_list args;
+
+	va_start(args, format);
+	vsnprintf(message, sizeof(message), format, args);
+	va_end(args);
+
+	m_LogFile << fmt::format("{:02} {:02} {:02}:{:02}:{:02} | {}\n",
 			tm.tm_mon + 1,
 			tm.tm_mday,
 			tm.tm_hour,
 			tm.tm_min,
-			tm.tm_sec);
-
-	va_start(args, format);
-	vfprintf(m_pLogFile, format, args);
-	va_end(args);
-
-	LOG_INFO("");
-
-	fflush(m_pLogFile);
+			tm.tm_sec,
+			message);
+	m_LogFile.flush();
 }
 
 void DESC::StartHandshake(uint32_t _handshake)

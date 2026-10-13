@@ -10,7 +10,9 @@
 #include "sectree.h"
 #include "JsonFile.h"
 
+#include <fmt/format.h>
 #include <nlohmann/json.hpp>
+#include <fstream>
 #include "questmanager.h"
 #include "locale_service.h"
 
@@ -225,21 +227,15 @@ void CMobManager::IncRegenCount(uint8_t bRegenType, uint32_t dwVnum, int iCount,
 
 void CMobManager::DumpRegenCount(const char* c_szFilename)
 {
-	FILE* fp = fopen(c_szFilename, "w");
+	std::ofstream file(c_szFilename);
 
-	if (fp)
-	{
-		std::map<uint32_t, double>::iterator it;
+	if (!file)
+		return;
 
-		fprintf(fp,"MOB_VNUM\tCOUNT\n");
+	file << "MOB_VNUM\tCOUNT\n";
 
-		for (it = m_mapRegenCount.begin(); it != m_mapRegenCount.end(); ++it)
-		{
-			fprintf(fp,"%u\t%g\n", it->first, it->second);
-		}
-
-		fclose(fp);
-	}
+	for (const auto& entry : m_mapRegenCount)
+		file << fmt::format("{}\t{}\n", entry.first, entry.second);
 }
 
 uint32_t CMobManager::GetGroupFromGroupGroup(uint32_t dwVnum)
