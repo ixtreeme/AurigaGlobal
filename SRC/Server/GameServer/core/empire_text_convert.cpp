@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "empire_text_convert.h"
+#include "FileHandle.h"
 
 namespace
 {
@@ -18,7 +19,7 @@ bool LoadEmpireTextConvertTable(uint32_t dwEmpireID, const char* c_szFileName)
 	if (dwEmpireID < 1 || dwEmpireID > 3)
 		return false;
 
-	FILE * fp = fopen(c_szFileName, "rb");
+	auriga::FilePtr fp = auriga::OpenFile(c_szFileName, "rb");
 
 	if (!fp)
 		return false;
@@ -29,14 +30,12 @@ bool LoadEmpireTextConvertTable(uint32_t dwEmpireID, const char* c_szFileName)
 
 	STextConvertTable& rkTextConvTable=g_aTextConvTable[dwEmpireID-1];
 
-	fread(rkTextConvTable.acUpper, 1, dwEngCount, fp);
-	fread(rkTextConvTable.acLower, 1, dwEngCount, fp);
-	fread(rkTextConvTable.aacHan, 1, dwHanSize, fp);
+	fread(rkTextConvTable.acUpper, 1, dwEngCount, fp.get());
+	fread(rkTextConvTable.acLower, 1, dwEngCount, fp.get());
+	fread(rkTextConvTable.aacHan, 1, dwHanSize, fp.get());
 
-	fread(rkTextConvTable.aacJaum, 1, 60, fp);
-	fread(rkTextConvTable.aacMoum, 1, 42, fp);
-
-	fclose(fp);
+	fread(rkTextConvTable.aacJaum, 1, 60, fp.get());
+	fread(rkTextConvTable.aacMoum, 1, 42, fp.get());
 
 	return true;
 }

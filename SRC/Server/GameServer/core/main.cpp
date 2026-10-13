@@ -123,15 +123,6 @@
 
 
 
-////extern const char * _malloc_options;
-//#if defined(__FreeBSD__) && defined(DEBUG_ALLOC)
-//extern void (*_malloc_message)(const char* p1, const char* p2, const char* p3, const char* p4);
-//// FreeBSD _malloc_message replacement
-//void WriteMallocMessage(const char* p1, const char* p2, const char* p3, const char* p4) {
-//	FILE* fp = ::fopen(DBGALLOC_LOG_FILENAME, "a");
-//	::fprintf(fp, "%s %s %s %s\n", p1, p2, p3, p4);
-//	::fclose(fp);
-
 volatile int	num_events_called = 0;
 int             max_bytes_written = 0;
 int             current_bytes_written = 0;

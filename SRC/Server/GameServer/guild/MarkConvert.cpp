@@ -12,6 +12,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <system_error>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -36,34 +40,31 @@ static constexpr uint32_t OLD_MARKS_PER_ROW = 32;
 // ---------------------------------------------------------------------------
 static std::vector<Pixel> LoadOldGuildMarkImageFile()
 {
-	FILE* fp = fopen(OLD_MARK_DATA_FILENAME, "rb");
-	if (!fp)
+	std::ifstream file(OLD_MARK_DATA_FILENAME, std::ios::binary | std::ios::ate);
+
+	if (!file)
 	{
 		LOG_ERROR("GuildMarkConvert: cannot open {}", OLD_MARK_DATA_FILENAME);
 		return {};
 	}
 
-	fseek(fp, 0, SEEK_END);
-	const long fileSize = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+	const std::streamoff fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
 
 	if (fileSize < 0 || static_cast<size_t>(fileSize) < OLD_IMAGE_DATA_SIZE)
 	{
 		LOG_ERROR("GuildMarkConvert: {} is too small ({} bytes, expected {})", OLD_MARK_DATA_FILENAME, fileSize, OLD_IMAGE_DATA_SIZE);
-		fclose(fp);
 		return {};
 	}
 
 	std::vector<Pixel> data(OLD_IMAGE_WIDTH * OLD_IMAGE_HEIGHT);
 
-	if (fread(data.data(), OLD_IMAGE_DATA_SIZE, 1, fp) != 1)
+	if (!file.read(reinterpret_cast<char*>(data.data()), OLD_IMAGE_DATA_SIZE))
 	{
 		LOG_ERROR("GuildMarkConvert: failed to read {}", OLD_MARK_DATA_FILENAME);
-		fclose(fp);
 		return {};
 	}
 
-	fclose(fp);
 	return data;
 }
 
@@ -72,41 +73,35 @@ static std::vector<Pixel> LoadOldGuildMarkImageFile()
 // ---------------------------------------------------------------------------
 bool GuildMarkConvert(const std::vector<uint32_t>& vecGuildID)
 {
-#ifdef _WIN32
-	_mkdir("mark");
-#else
-	mkdir("mark", S_IRWXU);
-#endif
+	std::error_code ec;
+	std::filesystem::create_directory("mark", ec);
 
-#ifdef _WIN32
-	if (0 != _access(OLD_MARK_INDEX_FILENAME, 0))
-#else
-	if (0 != access(OLD_MARK_INDEX_FILENAME, F_OK))
-#endif
+	if (!std::filesystem::exists(OLD_MARK_INDEX_FILENAME, ec))
 		return true;
 
-	FILE* fp = fopen(OLD_MARK_INDEX_FILENAME, "r");
-	if (!fp)
+	std::ifstream file(OLD_MARK_INDEX_FILENAME);
+
+	if (!file)
 		return false;
 
 	std::vector<Pixel> oldImage = LoadOldGuildMarkImageFile();
 	if (oldImage.empty())
-	{
-		fclose(fp);
 		return false;
-	}
 
 	const std::unordered_set<uint32_t> validGuilds(vecGuildID.begin(), vecGuildID.end());
 
 	LOG_INFO("GuildMarkConvert: starting conversion ({} valid guilds)", validGuilds.size());
 
-	char line[256];
 	Pixel mark[SGuildMark::SIZE];
+	std::string line;
 
-	while (fgets(line, sizeof(line) - 1, fp))
+	while (std::getline(file, line))
 	{
+		std::istringstream ins(line);
+
 		uint32_t guild_id = 0, mark_id = 0;
-		if (sscanf(line, "%u %u", &guild_id, &mark_id) != 2)
+
+		if (!(ins >> guild_id >> mark_id))
 			continue;
 
 		if (validGuilds.find(guild_id) == validGuilds.end())
@@ -144,13 +139,12 @@ bool GuildMarkConvert(const std::vector<uint32_t>& vecGuildID)
 		}
 
 		CGuildMarkManager::instance().SaveMark(guild_id, reinterpret_cast<uint8_t*>(mark));
-		line[0] = '\0';
 	}
 
-	fclose(fp);
+	file.close();
 
-	rename(OLD_MARK_INDEX_FILENAME, OLD_MARK_INDEX_FILENAME ".removable");
-	rename(OLD_MARK_DATA_FILENAME, OLD_MARK_DATA_FILENAME ".removable");
+	std::filesystem::rename(OLD_MARK_INDEX_FILENAME, OLD_MARK_INDEX_FILENAME ".removable", ec);
+	std::filesystem::rename(OLD_MARK_DATA_FILENAME, OLD_MARK_DATA_FILENAME ".removable", ec);
 
 	LOG_INFO("GuildMarkConvert: conversion complete");
 	return true;

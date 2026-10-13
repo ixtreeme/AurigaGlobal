@@ -27,10 +27,12 @@
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include "Core/Logging.hpp"
+#include "FileHandle.h"
 #include "JsonFile.h"
 #include "../ecs/systems/CombatSystem.hpp"
 
 #include <nlohmann/json.hpp>
+#include <vector>
 
 uint16_t SECTREE_MANAGER::current_sectree_version = MAKEWORD(0, 3);
 
@@ -399,7 +401,7 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 
 bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_pszFileName, TMapSetting & r_setting)
 {
-	FILE * fp = fopen(c_pszFileName, "rb");
+	auriga::FilePtr fp = auriga::OpenFile(c_pszFileName, "rb");
 
 	if (!fp)
 	{
@@ -409,17 +411,16 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 
 	int iWidth, iHeight;
 
-	fread(&iWidth, sizeof(int), 1, fp);
-	fread(&iHeight, sizeof(int), 1, fp);
+	fread(&iWidth, sizeof(int), 1, fp.get());
+	fread(&iHeight, sizeof(int), 1, fp.get());
 
-	size_t maxMemSize = LZOManager::instance().GetMaxCompressedSize(sizeof(uint32_t) * (SECTREE_SIZE / CELL_SIZE) * (SECTREE_SIZE / CELL_SIZE));
+	const size_t maxMemSize = LZOManager::instance().GetMaxCompressedSize(sizeof(uint32_t) * (SECTREE_SIZE / CELL_SIZE) * (SECTREE_SIZE / CELL_SIZE));
 
 	unsigned int uiSize;
 	lzo_uint uiDestSize;
 
-	uint8_t* abComp = M2_NEW uint8_t[maxMemSize];
-//#endif
-	uint32_t * attr = M2_NEW uint32_t[maxMemSize];
+	std::vector<uint8_t> abComp(maxMemSize);
+	std::vector<uint32_t> attr((SECTREE_SIZE / CELL_SIZE) * (SECTREE_SIZE / CELL_SIZE));
 
 	for (int y = 0; y < iHeight; ++y)
 		for (int x = 0; x < iWidth; ++x)
@@ -440,10 +441,6 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 				pkMapSectree->DumpAllToSysErr();
 				abort();
 
-				M2_DELETE_ARRAY(attr);
-#ifdef _MSC_VER
-				M2_DELETE_ARRAY(abComp);
-#endif
 				return false;
 			}
 			// END_OF_SERVER_ATTR_LOAD_ERROR
@@ -451,43 +448,25 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 			if (tree->m_id.package != id.package)
 			{
 				LOG_ERROR("returned tree id mismatch! return {}, request {}", tree->m_id.package, id.package);
-				fclose(fp);
-
-				M2_DELETE_ARRAY(attr);
-#ifdef _MSC_VER
-				M2_DELETE_ARRAY(abComp);
-#endif
 				return false;
 			}
 
-			fread(&uiSize, sizeof(int), 1, fp);
-			fread(abComp, sizeof(char), uiSize, fp);
+			fread(&uiSize, sizeof(int), 1, fp.get());
+			fread(abComp.data(), sizeof(char), uiSize, fp.get());
 
 			//LZOManager::instance().Decompress(abComp, uiSize, (uint8_t *) tree->GetAttributePointer(), &uiDestSize);
-			uiDestSize = sizeof(uint32_t) * maxMemSize;
-			LZOManager::instance().Decompress(abComp, uiSize, (uint8_t *) attr, &uiDestSize);
+			uiDestSize = sizeof(uint32_t) * attr.size();
+			LZOManager::instance().Decompress(abComp.data(), uiSize, reinterpret_cast<uint8_t*>(attr.data()), &uiDestSize);
 
 			if (uiDestSize != sizeof(uint32_t) * (SECTREE_SIZE / CELL_SIZE) * (SECTREE_SIZE / CELL_SIZE))
 			{
 				LOG_ERROR("SECTREE_MANAGER::LoadAttribte : {} : {} {} size mismatch! {}", c_pszFileName, static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y), uiDestSize);
-				fclose(fp);
-
-				M2_DELETE_ARRAY(attr);
-#ifdef _MSC_VER
-				M2_DELETE_ARRAY(abComp);
-#endif
 				return false;
 			}
 
-			tree->BindAttribute(M2_NEW CAttribute(attr, SECTREE_SIZE / CELL_SIZE, SECTREE_SIZE / CELL_SIZE));
+			tree->BindAttribute(M2_NEW CAttribute(attr.data(), SECTREE_SIZE / CELL_SIZE, SECTREE_SIZE / CELL_SIZE));
 		}
 
-	fclose(fp);
-
-	M2_DELETE_ARRAY(attr);
-#ifdef _MSC_VER
-	M2_DELETE_ARRAY(abComp);
-#endif
 	return true;
 }
 

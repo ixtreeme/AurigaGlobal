@@ -9,6 +9,10 @@
 
 #include "crc32.h"
 
+#include <fmt/format.h>
+#include <fstream>
+#include <sstream>
+
 #include <cstdio>
 #include <algorithm>
 
@@ -61,22 +65,24 @@ void CGuildMarkManager::SetMarkPathPrefix(const char* prefix)
 // ---------------------------------------------------------------------------
 bool CGuildMarkManager::LoadMarkIndex()
 {
-	char buf[64];
-	snprintf(buf, sizeof(buf), "mark/%s_index", m_pathPrefix.c_str());
+	const std::string path = fmt::format("mark/{}_index", m_pathPrefix);
 
-	FILE* fp = fopen(buf, "r");
-	if (!fp)
+	std::ifstream file(path);
+
+	if (!file)
 		return false;
 
-	char line[256];
-	while (fgets(line, sizeof(line) - 1, fp))
+	std::string line;
+
+	while (std::getline(file, line))
 	{
+		std::istringstream ins(line);
+
 		uint32_t guildID = 0, markID = 0;
-		if (sscanf(line, "%u %u", &guildID, &markID) == 2)
+
+		if (ins >> guildID >> markID)
 			AddMarkIDByGuildID(guildID, markID);
 	}
-
-	fclose(fp);
 
 	LoadMarkImages();
 	return true;
@@ -84,20 +90,19 @@ bool CGuildMarkManager::LoadMarkIndex()
 
 bool CGuildMarkManager::SaveMarkIndex()
 {
-	char buf[64];
-	snprintf(buf, sizeof(buf), "mark/%s_index", m_pathPrefix.c_str());
+	const std::string path = fmt::format("mark/{}_index", m_pathPrefix);
 
-	FILE* fp = fopen(buf, "w");
-	if (!fp)
+	std::ofstream file(path);
+
+	if (!file)
 	{
-		LOG_ERROR("MarkManager::SaveMarkIndex: cannot open index file {}", buf);
+		LOG_ERROR("MarkManager::SaveMarkIndex: cannot open index file {}", path);
 		return false;
 	}
 
 	for (const auto& [guildID, markID] : m_mapGID_MarkID)
-		fprintf(fp, "%u %u\n", guildID, markID);
+		file << fmt::format("{} {}\n", guildID, markID);
 
-	fclose(fp);
 	LOG_INFO("MarkManager::SaveMarkIndex: {} entries saved", m_mapGID_MarkID.size());
 	return true;
 }
@@ -346,22 +351,22 @@ const CGuildMarkManager::TGuildSymbol* CGuildMarkManager::GetGuildSymbol(uint32_
 
 bool CGuildMarkManager::LoadSymbol(const char* filename)
 {
-	FILE* fp = fopen(filename, "rb");
-	if (!fp)
+	std::ifstream file(filename, std::ios::binary);
+
+	if (!file)
 		return true;
 
 	uint32_t symbolCount = 0;
-	if (fread(&symbolCount, sizeof(symbolCount), 1, fp) != 1)
+
+	if (!file.read(reinterpret_cast<char*>(&symbolCount), sizeof(symbolCount)))
 	{
 		LOG_ERROR("MarkManager::LoadSymbol: failed to read symbol count from {}", filename);
-		fclose(fp);
 		return false;
 	}
 
 	if (symbolCount > 100000)
 	{
 		LOG_ERROR("MarkManager::LoadSymbol: suspicious symbol count {} in {}", symbolCount, filename);
-		fclose(fp);
 		return false;
 	}
 
@@ -370,8 +375,8 @@ bool CGuildMarkManager::LoadSymbol(const char* filename)
 		uint32_t guildID = 0;
 		uint32_t dwSize = 0;
 
-		if (fread(&guildID, sizeof(guildID), 1, fp) != 1 ||
-		    fread(&dwSize, sizeof(dwSize), 1, fp) != 1)
+		if (!file.read(reinterpret_cast<char*>(&guildID), sizeof(guildID)) ||
+		    !file.read(reinterpret_cast<char*>(&dwSize), sizeof(dwSize)))
 		{
 			LOG_ERROR("MarkManager::LoadSymbol: truncated file at entry {}/{}", i, symbolCount);
 			break;
@@ -380,14 +385,14 @@ bool CGuildMarkManager::LoadSymbol(const char* filename)
 		if (dwSize > MAX_SYMBOL_SIZE)
 		{
 			LOG_ERROR("MarkManager::LoadSymbol: symbol {} too large ({} > {}), skipping", guildID, dwSize, MAX_SYMBOL_SIZE);
-			fseek(fp, dwSize, SEEK_CUR);
+			file.seekg(dwSize, std::ios::cur);
 			continue;
 		}
 
 		TGuildSymbol gs;
 		gs.raw.resize(dwSize);
 
-		if (fread(gs.raw.data(), 1, dwSize, fp) != dwSize)
+		if (!file.read(reinterpret_cast<char*>(gs.raw.data()), dwSize))
 		{
 			LOG_ERROR("MarkManager::LoadSymbol: incomplete read for guild {}", guildID);
 			break;
@@ -397,34 +402,33 @@ bool CGuildMarkManager::LoadSymbol(const char* filename)
 		m_mapSymbol.emplace(guildID, std::move(gs));
 	}
 
-	fclose(fp);
 	return true;
 }
 
 void CGuildMarkManager::SaveSymbol(const char* filename)
 {
-	FILE* fp = fopen(filename, "wb");
-	if (!fp)
+	std::ofstream file(filename, std::ios::binary);
+
+	if (!file)
 	{
 		LOG_ERROR("MarkManager::SaveSymbol: cannot open {} for writing", filename);
 		return;
 	}
 
-	uint32_t symbolCount = static_cast<uint32_t>(m_mapSymbol.size());
-	fwrite(&symbolCount, sizeof(symbolCount), 1, fp);
+	const uint32_t symbolCount = static_cast<uint32_t>(m_mapSymbol.size());
+	file.write(reinterpret_cast<const char*>(&symbolCount), sizeof(symbolCount));
 
 	for (const auto& [guildID, symbol] : m_mapSymbol)
 	{
-		uint32_t id = guildID;
-		uint32_t dwSize = static_cast<uint32_t>(symbol.raw.size());
-		fwrite(&id, sizeof(id), 1, fp);
-		fwrite(&dwSize, sizeof(dwSize), 1, fp);
+		const uint32_t id = guildID;
+		const uint32_t dwSize = static_cast<uint32_t>(symbol.raw.size());
+
+		file.write(reinterpret_cast<const char*>(&id), sizeof(id));
+		file.write(reinterpret_cast<const char*>(&dwSize), sizeof(dwSize));
 
 		if (!symbol.raw.empty())
-			fwrite(symbol.raw.data(), 1, dwSize, fp);
+			file.write(reinterpret_cast<const char*>(symbol.raw.data()), dwSize);
 	}
-
-	fclose(fp);
 }
 
 // ---------------------------------------------------------------------------

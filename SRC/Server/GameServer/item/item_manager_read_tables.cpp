@@ -8,6 +8,7 @@
 #include "log.h"
 #include "skill.h"
 #include "JsonFile.h"
+#include <fstream>
 #include "priv_manager.h"
 #include "questmanager.h"
 #include "unique_item.h"
@@ -294,18 +295,16 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 	snprintf(szSpecialItemGroupFileName, sizeof(szSpecialItemGroupFileName),
 		"%s/special_item_group.json", LocaleService_GetBasePath().c_str());
 
-	FILE *fp = fopen("special_item_group_vnum.txt", "w");
-	if (!fp)
-	{
-		LOG_ERROR("could not open file ({})", "special_item_group_vnum.txt");
-		return false;
-	}
-
 	nlohmann::json doc;
 
 	if (!JsonFile::Load(szSpecialItemGroupFileName, doc) || !doc.contains("groups") || !doc.at("groups").is_array())
+		return false;
+
+	std::ofstream file("special_item_group_vnum.txt");
+
+	if (!file)
 	{
-		fclose(fp);
+		LOG_ERROR("could not open file ({})", "special_item_group_vnum.txt");
 		return false;
 	}
 
@@ -316,7 +315,6 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 		if (!group.contains("vnum"))
 		{
 			LOG_ERROR("ConvSpecialDropItemFile : Syntax error {} : no vnum, node {}", szSpecialItemGroupFileName, stName.c_str());
-			fclose(fp);
 			return false;
 		}
 
@@ -333,17 +331,18 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 		else if (str == "attr")
 			type = 4;
 
-		fprintf(fp, "Group	%s\n", stName.c_str());
-		fprintf(fp, "{\n");
-		fprintf(fp, "	Vnum	%i\n", iVnum);
+		file << "Group" << '\t' << stName << '\n';
+		file << "{" << '\n';
+		file << '\t' << "Vnum" << '\t' << iVnum << '\n';
+
 		if (type==1)
-			fprintf(fp, "	Type	Pct\n");
+			file << '\t' << "Type" << '\t' << "Pct" << '\n';
 		else if (type==2)
-			fprintf(fp, "	Type	Quest\n");
+			file << '\t' << "Type" << '\t' << "Quest" << '\n';
 		else if (type==3)
-			fprintf(fp, "	Type	special\n");
+			file << '\t' << "Type" << '\t' << "special" << '\n';
 		else if (type==4)
-			fprintf(fp, "	Type	ATTR\n");
+			file << '\t' << "Type" << '\t' << "ATTR" << '\n';
 
 		int k = 1;
 
@@ -362,7 +361,7 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 
 					int iValue = attr.value("value", 0);
 
-					fprintf(fp, "	%d	%u	%d\n", k++, dwApply, iValue);
+					file << '\t' << k++ << '\t' << dwApply << '\t' << iValue << '\n';
 				}
 			}
 		}
@@ -382,22 +381,20 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 					int iProb = entry.value("prob", 0);
 
 					if (0 == dwVnum)
-						fprintf(fp, "	%d	%s	%d	%d\n", k++, name.c_str(), iCount, iProb);
+						file << '\t' << k++ << '\t' << name << '\t' << iCount << '\t' << iProb << '\n';
 					else
-						fprintf(fp, "	%d	%u	%d	%d\n", k++, dwVnum, iCount, iProb);
+						file << '\t' << k++ << '\t' << dwVnum << '\t' << iCount << '\t' << iProb << '\n';
 				}
 			}
 		}
 
-		std::string effect;
 		if (group.contains("effect") && group.at("effect").is_string())
-			fprintf(fp, "\teffect\t\"%s\"\n", group.at("effect").get<std::string>().c_str());
+			file << '\t' << "effect" << '\t' << '\"' << group.at("effect").get<std::string>() << '\"' << '\n';
 
-		fprintf(fp, "}\n");
-		fprintf(fp, "\n");
+		file << "}" << '\n';
+		file << '\n';
 	}
 
-	fclose(fp);
 	return true;
 }
 

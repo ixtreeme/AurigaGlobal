@@ -61,3 +61,34 @@ alapu fajlkezeles es a hozza tartozo kezi buffer-memoria kivaltasa RAII-ra.
   FilePtr (unique_ptr + fclose) a biztonsagos valasztas.
 - A gaya per-player fajlok es a whisper/lotto tovabbra is szoveges
   allapotfajlok (nem JSON) - itt csak a kezeles modja valtozik.
+
+
+## Statusz (2026-10-13): mindharom fazis KESZ
+
+- **A+B fazis** (commit 287f32a0): `core/FileHandle.h` (FilePtr RAII +
+  OpenFile + FileExists) letrejott; atirva ofstream/ifstream + fmt-re:
+  GayaSystem (5 hely: letezes, 2x "w" iras, olvasas+parolas, "a"),
+  shop_manager letezes, mob_manager DumpRegenCount, item_manager_idrange
+  touch, packet_info Log, profiler Log/Print, crash_report (FilePtr,
+  crash-safe), whisper_admin, ip_ban (BANIP olvasas/append/tool main),
+  item_manager lotto.txt, config.cpp (CRC, VERSION, state_user_count,
+  CMD fajl, map_config funcTakeLines), desc.h/desc.cpp m_pLogFile
+  (halott FILE* tag -> std::ofstream), Database UsageLog (usage.txt).
+- **C fazis**: MarkManager (mark index + binaris symbol load/save),
+  MarkConvert (legacy mark konverzio, std::filesystem),
+  sectree_manager LoadAttribute (FilePtr + std::vector<uint8_t/uint32_t>
+  a M2_NEW tombok + kezi felszabaditasok helyett),
+  empire_text_convert (FilePtr), ConvSpecialDropItemFile (ofstream).
+- Vegallapot: a GameServer/Database/LoginServer kodban **nincs tobb
+  fopen/fclose** (kiveve maga a FileHandle helper). A kezi `char[256]`
+  utvonal-epitesek helyett `fmt::format` + `std::string`.
+- A nem fajlkezeleshez tartozo motor-szintu `M2_NEW`/`M2_DELETE` es
+  poolok atirasa szandekosan kimaradt (kulon, nagy refaktor; itt csak a
+  fajlkezelo kod kezi foglalasai szuntek meg).
+- Build: GameServer Debug + Release, Database Debug + Release,
+  ShopLifecycleTests zold.
+- Megjegyzes: az `empire_text_convert.cpp` legacy (nem UTF-8) karakteres
+  literalt tartalmaz; a patchelest byte-szinten kellett elvegezni, hogy
+  a litera ne séruljön.
+- A `DESC::Log` es a profiler `Log`/`Print` API valtozatlan (hivasok
+  miatt); a profiler `Print` mostantol `std::ostream&`-re ir.
