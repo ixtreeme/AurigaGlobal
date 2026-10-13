@@ -864,19 +864,19 @@ bool ITEM_MANAGER::ReadItemVnumMaskTable(const char * c_pszFileName)
 	if (!JsonFile::Load(c_pszFileName, doc))
 		return false;
 
-	if (!doc.is_array())
+	if (!doc.contains("pairs") || !doc.at("pairs").is_array())
 	{
-		LOG_ERROR("ReadItemVnumMaskTable : {} must be an array of [ori_vnum, new_vnum] pairs", c_pszFileName);
+		LOG_ERROR("ReadItemVnumMaskTable : {} must have a 'pairs' array of {{ori, new}} entries", c_pszFileName);
 		return false;
 	}
 
-	for (const auto& entry : doc)
+	for (const auto& entry : doc.at("pairs"))
 	{
-		if (!entry.is_array() || entry.size() < 2)
+		if (!entry.is_object())
 			continue;
 
-		uint32_t ori_vnum = entry.at(0).get<uint32_t>();
-		uint32_t new_vnum = entry.at(1).get<uint32_t>();
+		uint32_t ori_vnum = entry.value("ori", 0u);
+		uint32_t new_vnum = entry.value("new", 0u);
 
 		m_map_new_to_ori.insert (TMapDW2DW::value_type (new_vnum, ori_vnum));
 	}

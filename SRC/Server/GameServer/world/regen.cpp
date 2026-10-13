@@ -203,75 +203,45 @@ namespace
 {
 	bool RegenTypeFromToken(const std::string& token, REGEN& regen)
 	{
-		if (token.empty())
-			return false;
-
-		switch (token[0])
+		if (token == "mob")
 		{
-			case 'm':
-				regen.type = REGEN_TYPE_MOB;
-				return true;
-
-			case 'g':
-				regen.type = REGEN_TYPE_GROUP;
-
-				if (token.size() > 1 && token[1] == 'a')
-					regen.is_aggressive = true;
-
-				return true;
-
-			case 'e':
-				regen.type = REGEN_TYPE_EXCEPTION;
-				return true;
-
-			case 'r':
-				regen.type = REGEN_TYPE_GROUP_GROUP;
-				return true;
-
-			case 's':
-				regen.type = REGEN_TYPE_ANYWHERE;
-				return true;
+			regen.type = REGEN_TYPE_MOB;
+			return true;
 		}
 
-		LOG_ERROR("read_line: unknown regen type {}", token);
+		if (token == "group")
+		{
+			regen.type = REGEN_TYPE_GROUP;
+			return true;
+		}
+
+		if (token == "group_aggressive")
+		{
+			regen.type = REGEN_TYPE_GROUP;
+			regen.is_aggressive = true;
+			return true;
+		}
+
+		if (token == "exception")
+		{
+			regen.type = REGEN_TYPE_EXCEPTION;
+			return true;
+		}
+
+		if (token == "group_group")
+		{
+			regen.type = REGEN_TYPE_GROUP_GROUP;
+			return true;
+		}
+
+		if (token == "anywhere")
+		{
+			regen.type = REGEN_TYPE_ANYWHERE;
+			return true;
+		}
+
+		LOG_ERROR("RegenFromJson: unknown regen type '{}'", token);
 		exit(1);
-	}
-
-	uint32_t RegenParseTime(const std::string& text)
-	{
-		uint32_t time = 0;
-		uint32_t tmpTime = 0;
-
-		for (size_t i = 0; i < text.size(); ++i)
-		{
-			switch (text[i])
-			{
-				case 'h':
-					time += tmpTime * 3600;
-					tmpTime = 0;
-					break;
-
-				case 'm':
-					time += tmpTime * 60;
-					tmpTime = 0;
-					break;
-
-				case 's':
-					time += tmpTime;
-					tmpTime = 0;
-					break;
-
-				default:
-					if (text[i] >= '0' && text[i] <= '9')
-					{
-						tmpTime *= 10;
-						tmpTime += (text[i] - '0');
-					}
-					break;
-			}
-		}
-
-		return time;
 	}
 
 	bool RegenFromJson(const nlohmann::json& entry, REGEN& regen)
@@ -302,8 +272,9 @@ namespace
 
 		regen.z_section = static_cast<uint8_t>(entry.value("z", 0));
 		regen.direction = static_cast<uint8_t>(entry.value("dir", 0));
-		regen.time = RegenParseTime(JsonFile::ToToken(entry.value("time", "0")));
-		// "percent": the old parser read it but never used it.
+		// "time" is already in seconds; "percent" is kept in the JSON only
+		// (the old parser read but never used it).
+		regen.time = entry.value("time", 0u);
 		regen.max_count = entry.value("count", 0);
 		regen.vnum = entry.value("vnum", 0);
 		return true;

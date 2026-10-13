@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Converts the old server "group/token" txt tables to the JSON format read by
-# CJsonGroupLoader / CJsonGroupTreeLoader (GameServer/core/json_group_loader*,
-# json_group_tree*).
+# First step of the group/token table migration: converts the old txt tables
+# to a structural JSON (token arrays). The output is fed to txt2json_typed.py,
+# which produces the typed JSON the GameServer reads.
 #
 # Usage:
 #   python txt2json_group.py tokens <in.txt> <out.json>

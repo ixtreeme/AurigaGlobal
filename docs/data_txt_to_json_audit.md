@@ -353,3 +353,59 @@ common_drop_item).
 ### Build
 
 - GameServer Debug + Release zold; ShopLifecycleTests zold.
+
+
+## 9. Kiterjesztes az osszes konvertalt fajlra (2026-10-13)
+
+A tipusos kezeles (nevesitett mezok, `//` komment kivagas) kiterjedt a
+maradek konvertalt fajlokra is.
+
+### Named rows: battle_pass, dragon_soul_table, shop_table_ex
+
+- Uj JSON forma: `{name, columns:[...], rows:{"1": {oszlop: ertek, ...}},
+  groups:[...]}` - a korabbi `tokens: {"1": [ertek1, ertek2]}` helyett a
+  sorok nevesitett oszlopokkal.
+- A `CJsonGroupTreeLoader` (json_group_tree.cpp) az uj formatumot olvassa;
+  a cellakat az oszlop-sorrend szerint vektorba rendezi, igy a fogyasztok
+  (battle_pass.cpp, dragon_soul_table.cpp, shop_manager.cpp) valtozatlanok.
+- `battle_pass.json` es `dragon_soul_table.json` ujragenerálva;
+  `shop_table_ex.json` egyelore nem letezik (a shopok DB-bol mennek), de a
+  betolto es a konverter kesz hozza.
+
+### Regen
+
+- `type` mostantol szemantikus: `mob`, `group`, `group_aggressive`
+  (a regi "ga"), `exception`, `group_group` (regi "r"/"ra"), `anywhere`
+  (regi "s").
+- `time` egesz masodperc (a regi "10s"/"1h30m" forma a konverzio alatt
+  szamolodik ki).
+- `percent` int (a regi parser is olvasta, de nem hasznalta - megtartva).
+- A `regen.cpp` a szemantikus tipust es a kesz masodpercet olvassa.
+
+### Egyeb
+
+- `ori_to_new_table.json`: `{"pairs": [{"ori": ..., "new": ...}]}` a
+  korabbi [ori, new] parok helyett; a `ReadItemVnumMaskTable` ezt olvassa.
+  (Az elo adat ures: `{"pairs": []}`.)
+- `setting.json`: a teljes Setting.txt tartalom, nevesitett mezokkel
+  (`script_type`, `cell_scale`, `height_scale`, `view_radius`, `map_size`,
+  `base_position`, `texture_set`, `environment`). 69 mapnal a
+  `share/locale/germany.tgz`-beli eredeti txt alapjan dusitva (csak akkor,
+  ha a hasznalt mezok egyeztek), 6 mapnal (nincs tarball pelda) maradt a
+  szukseges 3 mezo.
+- `txt2json_map.py` setting modja is a teljes mezoket allitja elo.
+
+### Validacio
+
+- A `share/locale/germany.tgz` eredeti txt-ivel szemben a regen fajlok es
+  a dragon_soul_table ujrafuttatott pipeline-eredmenye bitazonos a live
+  JSON-nal; a tarball-beli battle_pass.txt regebbi (3 group a mostani 2
+  helyett), ott a live a mervado.
+- Regen tipus-eloszlas a live adatban: mob 13415, group 21228,
+  group_aggressive 1650, group_group 11375, anywhere 1.
+- GameServer Debug + Release es ShopLifecycleTests zold.
+
+### Konverter
+
+- `txt2json_typed.py` uj modok: `named_rows` (battle_pass/dragon_soul/
+  shop_table_ex) es `regen`.

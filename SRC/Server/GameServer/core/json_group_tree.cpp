@@ -4,8 +4,11 @@
 
 #include <common/stl.h>
 
+#include <Core/Logging.hpp>
+
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <functional>
 
 
@@ -54,23 +57,53 @@ bool CJsonGroupTreeLoader::Load(const char* c_szFileName)
 			}
 		}
 
-		if (doc.contains("tokens") && doc.at("tokens").is_object())
+		if (doc.contains("rows") && doc.at("rows").is_object())
 		{
-			for (const auto& item : doc.at("tokens").items())
+			// Named rows: { "rowkey": { "column": value | [values] } }.
+			// The cell values are collected in column order, so the row
+			// vector keeps the same layout the old txt loader produced.
+			std::vector<std::pair<int, std::string>> orderedColumns;
+
+			for (const auto& column : node->m_map_columnNameToIndex)
+				orderedColumns.push_back(std::make_pair(column.second, column.first));
+
+			std::sort(orderedColumns.begin(), orderedColumns.end());
+
+			for (const auto& item : doc.at("rows").items())
 			{
 				std::string key = item.key();
 				stl_lowers(key);
 
 				TTokenVector values;
 
-				if (item.value().is_array())
+				if (item.value().is_object())
 				{
-					for (const auto& value : item.value())
-						values.push_back(JsonFile::ToToken(value));
-				}
-				else
-				{
-					values.push_back(JsonFile::ToToken(item.value()));
+					for (const auto& column : orderedColumns)
+					{
+						if (!item.value().contains(column.second))
+						{
+							values.push_back(std::string());
+							continue;
+						}
+
+						const auto& value = item.value().at(column.second);
+
+						if (value.is_array())
+						{
+							for (const auto& element : value)
+								values.push_back(JsonFile::ToToken(element));
+						}
+						else
+						{
+							values.push_back(JsonFile::ToToken(value));
+						}
+					}
+
+					for (const auto& column : item.value().items())
+					{
+						if (!node->m_map_columnNameToIndex.count(column.key()))
+							LOG_ERROR("CJsonGroupTreeLoader: row {} has unknown column '{}' (ignored)", key, column.key());
+					}
 				}
 
 				node->m_map_rows.insert(std::make_pair(key, CJsonGroupNode::CJsonGroupRow(node, values)));

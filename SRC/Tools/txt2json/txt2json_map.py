@@ -60,6 +60,16 @@ def convert_index(in_path, out_path):
     return 0
 
 
+SETTING_KEYS = (
+    ("scripttype", "script_type", "str"),
+    ("cellscale", "cell_scale", "int"),
+    ("heightscale", "height_scale", "float"),
+    ("viewradius", "view_radius", "int"),
+    ("textureset", "texture_set", "str"),
+    ("environment", "environment", "str"),
+)
+
+
 def convert_setting(in_path, out_path):
     doc = collections.OrderedDict()
 
@@ -75,8 +85,15 @@ def convert_setting(in_path, out_path):
             doc["map_size"] = [int(parts[1]), int(parts[2])]
         elif key == "baseposition" and len(parts) >= 3:
             doc["base_position"] = [int(parts[1]), int(parts[2])]
-        elif key == "cellscale" and len(parts) >= 2:
-            doc["cell_scale"] = int(parts[1])
+        else:
+            for source, target, kind in SETTING_KEYS:
+                if key == source and len(parts) >= 2:
+                    if kind == "int":
+                        doc[target] = int(parts[1])
+                    elif kind == "float":
+                        doc[target] = float(parts[1])
+                    else:
+                        doc[target] = parts[1]
 
     write_json(out_path, doc)
     return 0

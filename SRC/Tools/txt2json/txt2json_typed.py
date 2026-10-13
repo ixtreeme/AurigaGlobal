@@ -35,6 +35,13 @@ def strip_comment(token):
 
 
 def to_int(text, default=0):
+    if isinstance(text, bool):
+        return default
+    if isinstance(text, int):
+        return text
+    if isinstance(text, float):
+        return int(text)
+
     text = text.strip()
 
     if not text:
@@ -59,6 +66,11 @@ def to_int(text, default=0):
 
 
 def to_float(text, default=0.0):
+    if isinstance(text, bool):
+        return default
+    if isinstance(text, (int, float)):
+        return float(text)
+
     text = text.strip()
 
     if not text:
@@ -375,6 +387,115 @@ def convert_common_drop_item(in_path, out_path):
     return 0
 
 
+def convert_named_rows(in_path, out_path):
+    """Structural rows/columns tree -> row objects with named columns."""
+    doc = json.load(io.open(in_path, "r", encoding="utf-8"))
+
+    def walk(node):
+        out = collections.OrderedDict()
+
+        if "name" in node:
+            out["name"] = node["name"]
+
+        columns = node.get("columns", [])
+
+        if columns:
+            out["columns"] = columns
+
+        rows = node.get("tokens")
+
+        if rows:
+            named = collections.OrderedDict()
+
+            for key, values in rows.items():
+                if columns and len(values) != len(columns):
+                    raise ConversionError("row %s: %d values, %d columns" % (key, len(values), len(columns)))
+
+                cells = collections.OrderedDict()
+
+                for column, value in zip(columns, values):
+                    cells[column] = strip_comment(value)
+
+                named[key] = cells
+
+            out["rows"] = named
+
+        groups = node.get("groups")
+
+        if groups:
+            out["groups"] = [walk(child) for child in groups]
+
+        return out
+
+    result = walk(doc)
+    write_json(out_path, result, " (named rows)")
+    return 0
+
+
+def parse_time(text):
+    """The old read_line m/h/s parser (seconds)."""
+    time = 0
+    tmp = 0
+
+    for c in text:
+        if c == "h":
+            time += tmp * 3600
+            tmp = 0
+        elif c == "m":
+            time += tmp * 60
+            tmp = 0
+        elif c == "s":
+            time += tmp
+            tmp = 0
+        elif c.isdigit():
+            tmp = tmp * 10 + (ord(c) - 48)
+
+    return time
+
+
+REGEN_TYPES = {
+    "m": "mob",
+    "g": "group",
+    "ga": "group_aggressive",
+    "e": "exception",
+    "r": "group_group",
+    "s": "anywhere",
+}
+
+
+def convert_regen(in_path, out_path):
+    doc = json.load(io.open(in_path, "r", encoding="utf-8"))
+    out = []
+
+    for entry in doc.get("regens", []):
+        token = entry.get("type", "")
+
+        if not token or token[0] not in "mgers":
+            raise ConversionError("unknown regen type %s" % token)
+
+        semantic = REGEN_TYPES.get(token[:2]) if token[:2] == "ga" else REGEN_TYPES.get(token[0])
+
+        if semantic is None:
+            raise ConversionError("unknown regen type %s" % token)
+
+        out.append(collections.OrderedDict([
+            ("type", semantic),
+            ("x", to_int(entry.get("x", "0"))),
+            ("y", to_int(entry.get("y", "0"))),
+            ("range_x", to_int(entry.get("range_x", "0"))),
+            ("range_y", to_int(entry.get("range_y", "0"))),
+            ("z", to_int(entry.get("z", "0"))),
+            ("dir", to_int(entry.get("dir", "0"))),
+            ("time", parse_time(entry.get("time", "0"))),
+            ("percent", to_int(entry.get("percent", "0"))),
+            ("count", to_int(entry.get("count", "0"))),
+            ("vnum", to_int(entry.get("vnum", "0"))),
+        ]))
+
+    write_json(out_path, collections.OrderedDict([("regens", out)]), " (%d regen)" % len(out))
+    return 0
+
+
 def write_json(out_path, doc, note=""):
     text = json.dumps(doc, indent=2, ensure_ascii=False)
     if not isinstance(text, str):
@@ -394,6 +515,8 @@ CONVERTERS = {
     "drop_item_group": convert_drop_item_group,
     "special_item_group": convert_special_item_group,
     "common_drop_item": convert_common_drop_item,
+    "named_rows": convert_named_rows,
+    "regen": convert_regen,
 }
 
 
