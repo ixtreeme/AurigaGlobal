@@ -1027,21 +1027,21 @@ void CInputDB::Boot(const char* data)
 	char szDragonSoulTableFileName[FILE_NAME_LEN];
 
 	snprintf(szCommonDropItemFileName, sizeof(szCommonDropItemFileName),
-			"%s/common_drop_item.txt", LocaleService_GetBasePath().c_str());
+			"%s/common_drop_item.json", LocaleService_GetBasePath().c_str());
 	snprintf(szETCDropItemFileName, sizeof(szETCDropItemFileName),
-			"%s/etc_drop_item.txt", LocaleService_GetBasePath().c_str());
+			"%s/etc_drop_item.json", LocaleService_GetBasePath().c_str());
 	snprintf(szMOBDropItemFileName, sizeof(szMOBDropItemFileName),
-			"%s/mob_drop_item.txt", LocaleService_GetBasePath().c_str());
+			"%s/mob_drop_item.json", LocaleService_GetBasePath().c_str());
 	snprintf(szSpecialItemGroupFileName, sizeof(szSpecialItemGroupFileName),
-			"%s/special_item_group.txt", LocaleService_GetBasePath().c_str());
+			"%s/special_item_group.json", LocaleService_GetBasePath().c_str());
 	snprintf(szDropItemGroupFileName, sizeof(szDropItemGroupFileName),
-			"%s/drop_item_group.txt", LocaleService_GetBasePath().c_str());
+			"%s/drop_item_group.json", LocaleService_GetBasePath().c_str());
 	snprintf(szMapIndexFileName, sizeof(szMapIndexFileName),
 			"%s/index", LocaleService_GetMapPath().c_str());
 	snprintf(szItemVnumMaskTableFileName, sizeof(szItemVnumMaskTableFileName),
-			"%s/ori_to_new_table.txt", LocaleService_GetBasePath().c_str());
+			"%s/ori_to_new_table.json", LocaleService_GetBasePath().c_str());
 	snprintf(szDragonSoulTableFileName, sizeof(szDragonSoulTableFileName),
-			"%s/dragon_soul_table.txt", LocaleService_GetBasePath().c_str());
+			"%s/dragon_soul_table.json", LocaleService_GetBasePath().c_str());
 
 	LOG_INFO("Initializing Informations of Cube System");
 	Cube_InformationInitialize();

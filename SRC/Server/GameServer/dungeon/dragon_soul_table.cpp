@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "constants.h"
-#include "group_text_parse_tree.h"
+#include "json_group_tree.h"
 #include "dragon_soul_table.h"
 #include "item_manager.h"
 #include <boost/lexical_cast.hpp>
@@ -40,12 +40,12 @@ const std::string g_astMaterialName[] =
 
 bool DragonSoulTable::ReadDragonSoulTableFile(const char * c_pszFileName)
 {
-	m_pLoader = new CGroupTextParseTreeLoader;
-	CGroupTextParseTreeLoader& loader = *m_pLoader;
+	m_pLoader = new CJsonGroupTreeLoader;
+	CJsonGroupTreeLoader& loader = *m_pLoader;
 
 	if (false == loader.Load(c_pszFileName))
 	{
-		LOG_ERROR("dragon_soul_table.txt load error");
+		LOG_ERROR("dragon_soul_table.json load error");
 		return false;
 	}
 
@@ -106,11 +106,11 @@ bool DragonSoulTable::ReadVnumMapper()
 	std::string stName;
 
 	// Group VnumMapper Reading.
-	CGroupNode* pGroupNode = m_pLoader->GetGroup("vnummapper");
+	CJsonGroupNode* pGroupNode = m_pLoader->GetGroup("vnummapper");
 
 	if (nullptr == pGroupNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need VnumMapper.");
+		LOG_ERROR("dragon_soul_table.json need VnumMapper.");
 		return false;
 	}
 	{
@@ -125,7 +125,7 @@ bool DragonSoulTable::ReadVnumMapper()
 
 		for (int i = 0; i < n; i++)
 		{
-			const CGroupNode::CGroupNodeRow* pRow;
+			const CJsonGroupNode::CJsonGroupRow* pRow;
 			pGroupNode->GetRow(i, &pRow);
 
 			std::string stDragonSoulName;
@@ -157,17 +157,17 @@ bool DragonSoulTable::ReadVnumMapper()
 
 bool DragonSoulTable::ReadBasicApplys()
 {
-	CGroupNode* pGroupNode = m_pLoader->GetGroup("basicapplys");
+	CJsonGroupNode* pGroupNode = m_pLoader->GetGroup("basicapplys");
 
 	if (nullptr == pGroupNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need BasicApplys.");
+		LOG_ERROR("dragon_soul_table.json need BasicApplys.");
 		return false;
 	}
 
 	for (uint32_t i = 0; i < m_vecDragonSoulNames.size(); i++)
 	{
-		CGroupNode* pChild;
+		CJsonGroupNode* pChild;
 		if (nullptr == (pChild = pGroupNode->GetChildNode(m_vecDragonSoulNames[i])))
 		{
 			LOG_ERROR("In Group BasicApplys, {} group is not defined.", m_vecDragonSoulNames[i].c_str());
@@ -180,7 +180,7 @@ bool DragonSoulTable::ReadBasicApplys()
 		{
 			std::stringstream ss;
 			ss << j;
-			const CGroupNode::CGroupNodeRow* pRow = nullptr;
+			const CJsonGroupNode::CJsonGroupRow* pRow = nullptr;
 
 			pChild->GetRow(ss.str(), &pRow);
 			if (nullptr == pRow)
@@ -216,16 +216,16 @@ bool DragonSoulTable::ReadBasicApplys()
 
 bool DragonSoulTable::ReadAdditionalApplys()
 {
-	CGroupNode* pGroupNode = m_pLoader->GetGroup("additionalapplys");
+	CJsonGroupNode* pGroupNode = m_pLoader->GetGroup("additionalapplys");
 	if (nullptr == pGroupNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need AdditionalApplys.");
+		LOG_ERROR("dragon_soul_table.json need AdditionalApplys.");
 		return false;
 	}
 
 	for (size_t i = 0; i < m_vecDragonSoulNames.size(); i++)
 	{
-		CGroupNode* pChild;
+		CJsonGroupNode* pChild;
 		if (nullptr == (pChild = pGroupNode->GetChildNode(m_vecDragonSoulNames[i])))
 		{
 			LOG_ERROR("In Group AdditionalApplys, {} group is not defined.", m_vecDragonSoulNames[i].c_str());
@@ -237,7 +237,7 @@ bool DragonSoulTable::ReadAdditionalApplys()
 
 		for (int j = 0; j < n; j++)
 		{
-			const CGroupNode::CGroupNodeRow* pRow;
+			const CJsonGroupNode::CJsonGroupRow* pRow;
 
 			pChild->GetRow(j, &pRow);
 
@@ -278,7 +278,7 @@ bool DragonSoulTable::CheckApplyNumSettings ()
 	// Group ApplyNumSettings Reading.
 	if (nullptr == m_pApplyNumSettingNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need ApplyNumSettings.");
+		LOG_ERROR("dragon_soul_table.json need ApplyNumSettings.");
 		return false;
 	}
 	else
@@ -305,7 +305,7 @@ bool DragonSoulTable::CheckWeightTables ()
 	// Group WeightTables Reading.
 	if (nullptr == m_pWeightTableNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need WeightTables.");
+		LOG_ERROR("dragon_soul_table.json need WeightTables.");
 		return false;
 	}
 	else
@@ -336,7 +336,7 @@ bool DragonSoulTable::CheckRefineGradeTables()
 	// Group UpgradeTables Reading.
 	if (nullptr == m_pRefineGradeTableNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need RefineGradeTables.");
+		LOG_ERROR("dragon_soul_table.json need RefineGradeTables.");
 		return false;
 	}
 	else
@@ -387,7 +387,7 @@ bool DragonSoulTable::CheckRefineStepTables ()
 	// Group ImproveTables Reading.
 	if (nullptr == m_pRefineStrengthTableNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need RefineStepTables.");
+		LOG_ERROR("dragon_soul_table.json need RefineStepTables.");
 		return false;
 	}
 	else
@@ -436,11 +436,11 @@ bool DragonSoulTable::CheckRefineStepTables ()
 
 bool DragonSoulTable::CheckRefineStrengthTables()
 {
-	CGroupNode* pGroupNode = m_pRefineStrengthTableNode;
+	CJsonGroupNode* pGroupNode = m_pRefineStrengthTableNode;
 	// Group RefineTables Reading.
 	if (nullptr == pGroupNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need RefineStrengthTables.");
+		LOG_ERROR("dragon_soul_table.json need RefineStrengthTables.");
 		return false;
 	}
 	for (size_t i = 0; i < m_vecDragonSoulTypes.size(); i++)
@@ -478,7 +478,7 @@ bool DragonSoulTable::CheckDragonHeartExtTables()
 	// Group DragonHeartExtTables Reading.
 	if (nullptr == m_pDragonHeartExtTableNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need DragonHeartExtTables.");
+		LOG_ERROR("dragon_soul_table.json need DragonHeartExtTables.");
 		return false;
 	}
 	for (size_t i = 0; i < m_vecDragonSoulTypes.size(); i++)
@@ -525,7 +525,7 @@ bool DragonSoulTable::CheckDragonSoulExtTables()
 	// Group DragonSoulExtTables Reading.
 	if (nullptr == m_pDragonSoulExtTableNode)
 	{
-		LOG_ERROR("dragon_soul_table.txt need DragonSoulExtTables.");
+		LOG_ERROR("dragon_soul_table.json need DragonSoulExtTables.");
 		return false;
 	}
 	for (size_t i = 0; i < m_vecDragonSoulTypes.size(); i++)
@@ -629,7 +629,7 @@ bool DragonSoulTable::GetWeight(uint8_t ds_type, uint8_t grade_idx, uint8_t step
 		return false;
 	}
 
-	CGroupNode* pDragonSoulGroup = m_pWeightTableNode->GetChildNode(stDragonSoulName);
+	CJsonGroupNode* pDragonSoulGroup = m_pWeightTableNode->GetChildNode(stDragonSoulName);
 	if (nullptr != pDragonSoulGroup)
 	{
 		if (pDragonSoulGroup->GetGroupValue(g_astGradeName[grade_idx], g_astStepName[step_index], strength_idx, fWeight))
@@ -668,7 +668,7 @@ bool DragonSoulTable::GetRefineGradeValues(uint8_t ds_type, uint8_t grade_idx, O
 		return false;
 	}
 
-	const CGroupNode::CGroupNodeRow * pRow;
+	const CJsonGroupNode::CJsonGroupRow * pRow;
 	if (!m_pRefineGradeTableNode->GetGroupRow(stDragonSoulName, g_astGradeName[grade_idx], &pRow))
 	{
 		LOG_ERROR("Invalid row. DragonSoulGroup({}) Grade({})", stDragonSoulName.c_str(), g_astGradeName[grade_idx].c_str());
@@ -716,7 +716,7 @@ bool DragonSoulTable::GetRefineStepValues(uint8_t ds_type, uint8_t step_idx, OUT
 		return false;
 	}
 
-	const CGroupNode::CGroupNodeRow * pRow;
+	const CJsonGroupNode::CJsonGroupRow * pRow;
 	if (!m_pRefineStepTableNode->GetGroupRow(stDragonSoulName, g_astStepName[step_idx], &pRow))
 	{
 		LOG_ERROR("Invalid row. DragonSoulGroup({}) Step({})", stDragonSoulName.c_str(), g_astStepName[step_idx].c_str());
@@ -795,7 +795,7 @@ bool DragonSoulTable::GetDragonHeartExtValues(uint8_t ds_type, uint8_t grade_idx
 		return false;
 	}
 
-	const CGroupNode::CGroupNodeRow * pRow;
+	const CJsonGroupNode::CJsonGroupRow * pRow;
 	if (!m_pDragonHeartExtTableNode->GetGroupRow(stDragonSoulName, "charging", &pRow))
 	{
 		LOG_ERROR("Invalid CHARGING row. DragonSoulGroup({})", stDragonSoulName.c_str());

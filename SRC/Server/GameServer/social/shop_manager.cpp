@@ -30,7 +30,7 @@
 #include "../ecs/Registry.hpp"
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/EntityFactory.hpp"
-#include "group_text_parse_tree.h"
+#include "json_group_tree.h"
 #include <boost/algorithm/string/predicate.hpp>
 #include <cctype>
 #ifdef ENABLE_BATTLE_PASS
@@ -71,7 +71,7 @@ bool CShopManager::Initialize(TShopTable * table, int size)
 	char szShopTableExFileName[256];
 
 	snprintf(szShopTableExFileName, sizeof(szShopTableExFileName),
-		"%s/shop_table_ex.txt", LocaleService_GetBasePath().c_str());
+		"%s/shop_table_ex.json", LocaleService_GetBasePath().c_str());
 
 	return ReadShopTableEx(szShopTableExFileName);
 }
@@ -486,7 +486,7 @@ bool CompareShopItemName(const SShopItemTable& lhs, const SShopItemTable& rhs)
 		return true;
 }
 
-bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
+bool ConvertToShopItemTable(IN CJsonGroupNode* pNode, OUT TShopTableEx& shopTable)
 {
 	if (!pNode->GetValue("vnum", 0, shopTable.dwVnum))
 	{
@@ -526,7 +526,7 @@ bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
 		return false;
 	}
 
-	CGroupNode* pItemGroup = pNode->GetChildNode("items");
+	CJsonGroupNode* pItemGroup = pNode->GetChildNode("items");
 	if (!pItemGroup)
 	{
 		LOG_ERROR("Group {} does not have 'group items'.", pNode->GetNodeName().c_str());
@@ -611,14 +611,14 @@ bool CShopManager::ReadShopTableEx(const char* stFileName)
 		return true;
 	fclose(fp);
 
-	CGroupTextParseTreeLoader loader;
+	CJsonGroupTreeLoader loader;
 	if (!loader.Load(stFileName))
 	{
 		LOG_ERROR("{} Load fail.", stFileName);
 		return false;
 	}
 
-	CGroupNode* pShopNPCGroup = loader.GetGroup("shopnpc");
+	CJsonGroupNode* pShopNPCGroup = loader.GetGroup("shopnpc");
 	if (nullptr == pShopNPCGroup)
 	{
 		LOG_ERROR("Group ShopNPC is not exist.");
@@ -637,7 +637,7 @@ bool CShopManager::ReadShopTableEx(const char* stFileName)
 			return false;
 		}
 		std::transform(shopName.begin(), shopName.end(), shopName.begin(), (int(*)(int))std::tolower);
-		CGroupNode* pShopGroup = loader.GetGroup(shopName.c_str());
+		CJsonGroupNode* pShopGroup = loader.GetGroup(shopName.c_str());
 		if (!pShopGroup)
 		{
 			LOG_ERROR("Group {} is not exist.", shopName.c_str());

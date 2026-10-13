@@ -20,7 +20,6 @@
 #include "sectree_manager.h"
 #include "shop_manager.h"
 #include "regen.h"
-#include "text_file_loader.h"
 #include "skill.h"
 #include "pvp.h"
 #include "party.h"
@@ -703,9 +702,6 @@ void destroy()
 	// including any entities not owned by the legacy character manager.
 	g_registry.clear<ecs::AffectTickState>();
 	event_destroy();
-
-	LOG_INFO("<shutdown> CTextFileLoader::DestroySystem()...");
-	CTextFileLoader::DestroySystem();
 
 	LOG_INFO("<shutdown> thecore_destroy()...");
 	thecore_destroy();

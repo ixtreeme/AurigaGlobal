@@ -7,7 +7,8 @@
 #include "db.h"
 #include "log.h"
 #include "skill.h"
-#include "text_file_loader.h"
+#include "json_group_loader.h"
+#include "JsonFile.h"
 #include "priv_manager.h"
 #include "questmanager.h"
 #include "unique_item.h"
@@ -19,7 +20,8 @@
 #include "item.h"
 #include "item_manager.h"
 #include "item_manager_private_types.h"
-#include "group_text_parse_tree.h"
+
+#include <nlohmann/json.hpp>
 #ifdef __INGAME_WIKI__
 #include <common/in_game_wiki.h>
 #include "mob_manager.h"
@@ -29,7 +31,7 @@ std::vector<CItemDropInfo> g_vec_pkCommonDropItem[MOB_RANK_MAX_NUM];
 #ifdef NEW_READ_COMMON_DROP_ITEM
 bool ITEM_MANAGER::ReadCommonDropItemFile(const char *c_pszFileName)
 {
-	CTextFileLoader loader;
+	CJsonGroupLoader loader;
 
 	if (!loader.Load(c_pszFileName))
 		return false;
@@ -212,7 +214,7 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char * c_pszFileName)
 
 bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 {
-	CTextFileLoader loader;
+	CJsonGroupLoader loader;
 
 	if (!loader.Load(c_pszFileName))
 		return false;
@@ -317,7 +319,7 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 
 					if (!GetVnumByOriginalName(name.c_str(), dwVnum))
 					{
-						if (name == "°æÇèÄ¡" || name == "exp")
+						if (name == "ï¿½ï¿½ï¿½ï¿½Ä¡" || name == "exp")
 						{
 							dwVnum = CSpecialItemGroup::EXP;
 						}
@@ -415,7 +417,7 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 {
 	char szSpecialItemGroupFileName[256];
 	snprintf(szSpecialItemGroupFileName, sizeof(szSpecialItemGroupFileName),
-		"%s/special_item_group.txt", LocaleService_GetBasePath().c_str());
+		"%s/special_item_group.json", LocaleService_GetBasePath().c_str());
 
 	FILE *fp = fopen("special_item_group_vnum.txt", "w");
 	if (!fp)
@@ -424,7 +426,7 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 		return false;
 	}
 
-	CTextFileLoader loader;
+	CJsonGroupLoader loader;
 
 	if (!loader.Load(szSpecialItemGroupFileName))
 	{
@@ -506,7 +508,7 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 						dwVnum = 0;
 					}
 					// @fixme148 BEGIN
-					else if (name == "°æÇèÄ¡")
+					else if (name == "ï¿½ï¿½ï¿½ï¿½Ä¡")
 					{
 						dwVnum = 0;
 						name = "exp";
@@ -569,70 +571,58 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 
 bool ITEM_MANAGER::ReadEtcDropItemFile(const char * c_pszFileName)
 {
-	FILE * fp = fopen(c_pszFileName, "r");
+	nlohmann::json doc;
 
-	if (!fp)
+	if (!JsonFile::Load(c_pszFileName, doc))
 	{
 		LOG_ERROR("Cannot open {}", c_pszFileName);
 		return false;
 	}
 
-	char buf[512];
-
-	int lines = 0;
-
-	while (fgets(buf, 512, fp))
+	if (!doc.is_array())
 	{
-		++lines;
+		LOG_ERROR("ReadEtcDropItemFile : {} must be an array of {{item, prob}} entries", c_pszFileName);
+		return false;
+	}
 
-		if (!*buf || *buf == '\n')
+	for (const auto& entry : doc)
+	{
+		if (!entry.is_object())
 			continue;
 
-		char szItemName[256];
-		float fProb = 0.0f;
+		std::string szItemName = entry.value("item", std::string());
+		float fProb = entry.value("prob", 0.0f);
 
-		strlcpy(szItemName, buf, sizeof(szItemName));
-		char * cpTab = strrchr(szItemName, '\t');
-
-		if (!cpTab)
-			continue;
-
-		*cpTab = '\0';
-		fProb = atof(cpTab + 1);
-
-		if (!*szItemName || fProb == 0.0f)
+		if (szItemName.empty() || fProb == 0.0f)
 			continue;
 
 		uint32_t dwItemVnum;
 
-		if (!ITEM_MANAGER::instance().GetVnumByOriginalName(szItemName, dwItemVnum))
+		if (!ITEM_MANAGER::instance().GetVnumByOriginalName(szItemName.c_str(), dwItemVnum))
 		{
 #ifdef ENABLE_BUG_FIXES
-			str_to_number(dwItemVnum, szItemName);
+			str_to_number(dwItemVnum, szItemName.c_str());
 			if (!ITEM_MANAGER::instance().GetTable(dwItemVnum))
 			{
-				LOG_ERROR("No such an item (name/vnum: {})", szItemName);
-				fclose(fp);
+				LOG_ERROR("No such an item (name/vnum: {})", szItemName.c_str());
 				return false;
 			}
 #else
-			LOG_ERROR("No such an item (name: {})", szItemName);
-			fclose(fp);
+			LOG_ERROR("No such an item (name: {})", szItemName.c_str());
 			return false;
 #endif
 		}
 
 		m_map_dwEtcItemDropProb[dwItemVnum] = (uint32_t) (fProb * 10000.0f);
-		LOG_TRACE("ETC_DROP_ITEM: {} prob {:f}", szItemName, fProb);
+		LOG_TRACE("ETC_DROP_ITEM: {} prob {:f}", szItemName.c_str(), fProb);
 	}
 
-	fclose(fp);
 	return true;
 }
 
 bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 {
-	CTextFileLoader loader;
+	CJsonGroupLoader loader;
 
 	if (!loader.Load(c_pszFileName))
 		return false;
@@ -998,7 +988,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 {
-	CTextFileLoader loader;
+	CJsonGroupLoader loader;
 
 	if (!loader.Load(c_pszFileName))
 		return false;
@@ -1102,17 +1092,27 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 
 bool ITEM_MANAGER::ReadItemVnumMaskTable(const char * c_pszFileName)
 {
-	FILE *fp = fopen(c_pszFileName, "r");
-	if (!fp)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(c_pszFileName, doc))
+		return false;
+
+	if (!doc.is_array())
 	{
+		LOG_ERROR("ReadItemVnumMaskTable : {} must be an array of [ori_vnum, new_vnum] pairs", c_pszFileName);
 		return false;
 	}
 
-	int ori_vnum, new_vnum;
-	while (fscanf(fp, "%u %u", &ori_vnum, &new_vnum) != EOF)
+	for (const auto& entry : doc)
 	{
+		if (!entry.is_array() || entry.size() < 2)
+			continue;
+
+		uint32_t ori_vnum = entry.at(0).get<uint32_t>();
+		uint32_t new_vnum = entry.at(1).get<uint32_t>();
+
 		m_map_new_to_ori.insert (TMapDW2DW::value_type (new_vnum, ori_vnum));
 	}
-	fclose(fp);
+
 	return true;
 }

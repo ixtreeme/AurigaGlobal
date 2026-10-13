@@ -121,9 +121,10 @@ add_executable(ShopLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ShopLifecycleTests.cpp
     social/shop.cpp
     social/shop_manager.cpp
-    core/group_text_parse_tree.cpp
+    core/json_group_loader.cpp
+    core/json_group_tree.cpp
+    core/JsonFile.cpp
     ../Base/grid.cpp
-    core/file_loader.cpp
     world/event.cpp
     world/event_queue.cpp
 )

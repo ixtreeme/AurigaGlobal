@@ -8,7 +8,7 @@
 #include "mob_manager.h"
 #include "regen.h"
 #include "sectree.h"
-#include "text_file_loader.h"
+#include "json_group_loader.h"
 #include "questmanager.h"
 #include "locale_service.h"
 
@@ -93,9 +93,9 @@ bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 	char szGroupGroupFileName[FILE_NAME_LEN];
 
 	snprintf(szGroupFileName, sizeof(szGroupGroupFileName),
-			"%s/group.txt", LocaleService_GetBasePath().c_str());
+			"%s/group.json", LocaleService_GetBasePath().c_str());
 	snprintf(szGroupGroupFileName, sizeof(szGroupGroupFileName),
-			"%s/group_group.txt", LocaleService_GetBasePath().c_str());
+			"%s/group_group.json", LocaleService_GetBasePath().c_str());
 
 	if (!LoadGroup(szGroupFileName))
 	{
@@ -262,7 +262,7 @@ CMobGroup * CMobManager::GetGroup(uint32_t dwVnum)
 
 bool CMobManager::LoadGroupGroup(const char * c_pszFileName)
 {
-	CTextFileLoader loader;
+	CJsonGroupLoader loader;
 
 	if (!loader.Load(c_pszFileName))
 		return false;
@@ -323,7 +323,7 @@ bool CMobManager::LoadGroupGroup(const char * c_pszFileName)
 
 bool CMobManager::LoadGroup(const char * c_pszFileName)
 {
-	CTextFileLoader loader;
+	CJsonGroupLoader loader;
 
 	if (!loader.Load(c_pszFileName))
 		return false;

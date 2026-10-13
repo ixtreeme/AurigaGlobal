@@ -4,7 +4,7 @@
 #include <common/stl.h>
 #include <common/length.h>
 #include <common/tables.h>
-#include "group_text_parse_tree.h"
+#include "json_group_tree.h"
 
 #include "packet.h"
 
@@ -41,7 +41,7 @@ class CBattlePass : public singleton<CBattlePass>
 #endif
 
 	private:
-		CGroupTextParseTreeLoader* m_pLoader;
+		CJsonGroupTreeLoader* m_pLoader;
 		
 		typedef std::map <uint8_t, std::string> TMapBattlePassName;
 		typedef std::map <std::string, std::vector<TBattlePassRewardItem>> TMapBattlePassReward;

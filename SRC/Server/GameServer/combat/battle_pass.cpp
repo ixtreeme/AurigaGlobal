@@ -122,14 +122,14 @@ CBattlePass::~CBattlePass()
 bool CBattlePass::ReadBattlePassFile()
 {
 	char szBattlePassFileName[256];
-	snprintf(szBattlePassFileName, sizeof(szBattlePassFileName),"%s/battle_pass.txt", LocaleService_GetBasePath().c_str());
+	snprintf(szBattlePassFileName, sizeof(szBattlePassFileName),"%s/battle_pass.json", LocaleService_GetBasePath().c_str());
 
-	m_pLoader = new CGroupTextParseTreeLoader;
-	CGroupTextParseTreeLoader& loader = *m_pLoader;
+	m_pLoader = new CJsonGroupTreeLoader;
+	CJsonGroupTreeLoader& loader = *m_pLoader;
 
 	if (false == loader.Load(szBattlePassFileName))
 	{
-		LOG_ERROR("battle_pass.txt load error");
+		LOG_ERROR("battle_pass.json load error");
 		return false;
 	}
 
@@ -146,11 +146,11 @@ bool CBattlePass::ReadBattlePassGroup()
 {
 	std::string stName;
 
-	CGroupNode* pGroupNode = m_pLoader->GetGroup("battlepass");
+	CJsonGroupNode* pGroupNode = m_pLoader->GetGroup("battlepass");
 
 	if (nullptr == pGroupNode)
 	{
-		LOG_ERROR("battle_pass.txt need BattlePass group.");
+		LOG_ERROR("battle_pass.json need BattlePass group.");
 		return false;
 	}
 
@@ -165,7 +165,7 @@ bool CBattlePass::ReadBattlePassGroup()
 
 	for (int i = 0; i < n; i++)
 	{
-		const CGroupNode::CGroupNodeRow* pRow;
+		const CJsonGroupNode::CJsonGroupRow* pRow;
 		pGroupNode->GetRow(i, &pRow);
 
 		std::string stBattlePassName;
@@ -220,11 +220,11 @@ bool CBattlePass::ReadBattlePassMissions()
 	{
 		std::string battlePassName = it++->second;
 
-		CGroupNode* pGroupNode = m_pLoader->GetGroup(battlePassName.c_str());
+		CJsonGroupNode* pGroupNode = m_pLoader->GetGroup(battlePassName.c_str());
 
 		if (nullptr == pGroupNode)
 		{
-			LOG_ERROR("battle_pass.txt need group {}.", battlePassName.c_str());
+			LOG_ERROR("battle_pass.json need group {}.", battlePassName.c_str());
 			return false;
 		}
 
@@ -236,7 +236,7 @@ bool CBattlePass::ReadBattlePassMissions()
 		}
 
 		{
-			CGroupNode* pChild;
+			CJsonGroupNode* pChild;
 			if (nullptr == (pChild = pGroupNode->GetChildNode("reward")))
 			{
 				LOG_ERROR("In Group {}, Reward group is not defined.", battlePassName.c_str());
@@ -250,7 +250,7 @@ bool CBattlePass::ReadBattlePassMissions()
 			{
 				std::stringstream ss;
 				ss << j;
-				const CGroupNode::CGroupNodeRow* pRow = nullptr;
+				const CJsonGroupNode::CJsonGroupRow* pRow = nullptr;
 
 				pChild->GetRow(ss.str(), &pRow);
 				if (nullptr == pRow)
@@ -289,7 +289,7 @@ bool CBattlePass::ReadBattlePassMissions()
 			std::stringstream ss;
 			ss << "mission_" << i;
 
-			CGroupNode* pChild;
+			CJsonGroupNode* pChild;
 			if (nullptr == (pChild = pGroupNode->GetChildNode(ss.str())))
 			{
 				LOG_ERROR("In Group {}, {} subgroup is not defined.", battlePassName.c_str(), ss.str().c_str());
@@ -305,7 +305,7 @@ bool CBattlePass::ReadBattlePassMissions()
 
 			for (int j = 0; j < m; j++)
 			{
-				const CGroupNode::CGroupNodeRow* pRow = nullptr;
+				const CJsonGroupNode::CJsonGroupRow* pRow = nullptr;
 
 				pChild->GetRow(j, &pRow);
 				if (nullptr == pRow)

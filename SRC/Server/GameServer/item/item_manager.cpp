@@ -17,7 +17,6 @@
 #include "db.h"
 #include "log.h"
 #include "skill.h"
-#include "text_file_loader.h"
 #include "priv_manager.h"
 #include "questmanager.h"
 #include "unique_item.h"

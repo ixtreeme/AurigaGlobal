@@ -16,7 +16,6 @@
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
-#include "text_file_loader.h"
 #include "item.h"
 #include "item_manager.h"
 #include "config.h"

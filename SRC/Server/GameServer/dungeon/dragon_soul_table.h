@@ -11,8 +11,8 @@ struct SApply
 
 const int DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX = 3;
 
-class CGroupNode;
-class CGroupTextParseTreeLoader;
+class CJsonGroupNode;
+class CJsonGroupTreeLoader;
 
 class DragonSoulTable
 {
@@ -37,17 +37,17 @@ public:
 	bool	GetDragonSoulExtValues(uint8_t ds_type, uint8_t grade_idx, OUT float& prob, OUT uint32_t& by_product);
 
 private:
-	CGroupTextParseTreeLoader* m_pLoader;
+	CJsonGroupTreeLoader* m_pLoader;
 	std::string stFileName;
 
 	// caching m_pLoader's child nodes.
-	CGroupNode*	m_pApplyNumSettingNode;
-	CGroupNode*	m_pWeightTableNode;
-	CGroupNode*	m_pRefineGradeTableNode;
-	CGroupNode*	m_pRefineStepTableNode;
-	CGroupNode*	m_pRefineStrengthTableNode;
-	CGroupNode*	m_pDragonHeartExtTableNode;
-	CGroupNode*	m_pDragonSoulExtTableNode;
+	CJsonGroupNode*	m_pApplyNumSettingNode;
+	CJsonGroupNode*	m_pWeightTableNode;
+	CJsonGroupNode*	m_pRefineGradeTableNode;
+	CJsonGroupNode*	m_pRefineStepTableNode;
+	CJsonGroupNode*	m_pRefineStrengthTableNode;
+	CJsonGroupNode*	m_pDragonHeartExtTableNode;
+	CJsonGroupNode*	m_pDragonSoulExtTableNode;
 
 	typedef std::map <std::string, uint8_t> TMapNameToType;
 	typedef std::map <uint8_t, std::string> TMapTypeToName;
