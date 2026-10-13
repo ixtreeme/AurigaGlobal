@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
+#include "JsonFile.h"
+#include <nlohmann/json.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
@@ -355,8 +357,8 @@ void CGuildRenewal::EnsureLevelReqLoaded()
 	if (!base.empty() && base.back() != '/' && base.back() != '\\')
 		base += '/';
 
-	std::string p0 = base + "guild_renewal_levelup.txt";
-	if (LoadLevelReqFromFile(p0.c_str()))
+	std::string p0 = base + "guild_renewal_levelup.json";
+	if (LoadLevelReqFromJson(p0.c_str()))
 	{
 		LOG_INFO("GUILD_RENEWAL: loaded levelup requirements from {}", p0.c_str());
 		m_levelReqLoaded = true;
@@ -366,14 +368,14 @@ void CGuildRenewal::EnsureLevelReqLoaded()
 	// fallback pathok (ha valamirt nem a locale basepath-bl fut)
 	const char* paths[] =
 	{
-		"../conf/guild_renewal_levelup.txt",
-		"share/conf/guild_renewal_levelup.txt",
-		"./guild_renewal_levelup.txt",
+		"../conf/guild_renewal_levelup.json",
+		"share/conf/guild_renewal_levelup.json",
+		"./guild_renewal_levelup.json",
 	};
 
 	for (const char* p : paths)
 	{
-		if (LoadLevelReqFromFile(p))
+		if (LoadLevelReqFromJson(p))
 		{
 			LOG_INFO("GUILD_RENEWAL: loaded levelup requirements from {}", p);
 			m_levelReqLoaded = true;
@@ -381,64 +383,54 @@ void CGuildRenewal::EnsureLevelReqLoaded()
 		}
 	}
 
-	LOG_ERROR("GUILD_RENEWAL: FAILED to load guild_renewal_levelup.txt. Tried: {}, ../conf/, share/conf/, ./", p0.c_str());
+	LOG_ERROR("GUILD_RENEWAL: FAILED to load guild_renewal_levelup.json. Tried: {}, ../conf/, share/conf/, ./", p0.c_str());
 
 	m_levelReqLoaded = true; // ne prblja minden open-nl jra
 }
 
 
-bool CGuildRenewal::LoadLevelReqFromFile(const char* filename)
+bool CGuildRenewal::LoadLevelReqFromJson(const char* filename)
 {
-	FILE* fp = fopen(filename, "r");
-	if (!fp)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(filename, doc))
 		return false;
+
+	if (!doc.contains("levels") || !doc.at("levels").is_array())
+	{
+		LOG_ERROR("GUILD_RENEWAL: {} needs a 'levels' array", filename);
+		return false;
+	}
 
 	// ha tbb helyrl prbljuk, ne keveredjen ssze
 	m_levelReqByTargetLevel.clear();
 
-	char line[512];
-	while (fgets(line, sizeof(line), fp))
+	for (const auto& entry : doc.at("levels"))
 	{
-		// Trim leading whitespace + BOM + kommentek
-		char* p = line;
-		while (*p && (unsigned char)(*p) <= ' ')
-			++p;
-
-		// UTF-8 BOM
-		if ((unsigned char)p[0] == 0xEF && (unsigned char)p[1] == 0xBB && (unsigned char)p[2] == 0xBF)
-			p += 3;
-
-		if (!*p || *p == '#' || *p == ';' || (*p == '/' && *(p + 1) == '/'))
+		if (!entry.contains("level") || !entry.contains("yang"))
 			continue;
 
-		int lvl = 0;            // cl ch szint (pl 22, ha most 21 a ch)
-		long long yang = 0;
-		unsigned v[5] = { 0,0,0,0,0 };
-		unsigned c[5] = { 0,0,0,0,0 };
+		int lvl = entry.value("level", 0);            // cl ch szint (pl 22, ha most 21 a ch)
 
-		int n = std::sscanf(p, "%d %lld %u %u %u %u %u %u %u %u %u %u",
-			&lvl, &yang,
-			&v[0], &c[0],
-			&v[1], &c[1],
-			&v[2], &c[2],
-			&v[3], &c[3],
-			&v[4], &c[4]);
+		if (lvl < 21 || lvl > NSBUZERANT)
+			continue;
 
-		// minimum: lvl + yang
-		if (n >= 2 && lvl >= 21 && lvl <= NSBUZERANT)
+		LevelReq r;
+		r.yang = entry.value("yang", (long long)0);
+
+		if (entry.contains("items") && entry.at("items").is_array())
 		{
-			LevelReq r;
-			r.yang = yang;
-			for (int i = 0; i < 5; ++i)
-			{
-				r.vnum[i] = v[i];
-				r.count[i] = c[i];
-			}
-			m_levelReqByTargetLevel[(uint8_t)lvl] = r;
-		}
-	}
+			const auto& items = entry.at("items");
 
-	fclose(fp);
+			for (int i = 0; i < 5 && i < (int)items.size(); ++i)
+			{
+				r.vnum[i] = items.at(i).value("vnum", 0u);
+				r.count[i] = items.at(i).value("count", 0u);
+			}
+		}
+
+		m_levelReqByTargetLevel[(uint8_t)lvl] = r;
+	}
 
 	if (m_levelReqByTargetLevel.empty())
 	{

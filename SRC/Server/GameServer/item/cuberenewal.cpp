@@ -16,6 +16,7 @@
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include "locale_service.h"
+#include "JsonFile.h"
 #include "item.h"
 #include "item_manager.h"
 #include "questmanager.h"
@@ -29,6 +30,7 @@
 #include "../ecs/systems/ItemSystem.hpp"
 #include <string_view>
 #include <limits>
+#include <nlohmann/json.hpp>
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
@@ -158,7 +160,7 @@ void Cube_init()
 	std::vector<CUBE_RENEWAL_DATA*>::iterator iter;
 
 	char file_name[256+1];
-	snprintf(file_name, sizeof(file_name), "%s/cube.txt", LocaleService_GetBasePath().c_str());
+	snprintf(file_name, sizeof(file_name), "%s/cube.json", LocaleService_GetBasePath().c_str());
 
 	LOG_INFO("Cube_Init {}", file_name);
 
@@ -176,111 +178,72 @@ void Cube_init()
 
 bool Cube_load (const char *file)
 {
-	FILE	*fp;
-
-
-	const char	*value_string;
-
-	char	one_line[256];
-	int		value1, value2;
-	const char	*delim = " \t\r\n";
-	char	*v, *token_string;
-	//char *v1;
-	CUBE_RENEWAL_DATA	*cube_data = nullptr;
-	CUBE_RENEWAL_VALUE	cube_value = {0,0};
-
 	if (nullptr == file || 0 == file[0])
 		return false;
 
-	if ((fp = fopen(file, "r")) == nullptr)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(file, doc))
 		return false;
 
-	while (fgets(one_line, 256, fp))
+	if (!doc.contains("cubes") || !doc.at("cubes").is_array())
 	{
-		value1 = value2 = 0;
+		LOG_ERROR("Cube_load: {} needs a 'cubes' array", file);
+		return false;
+	}
 
-		if (one_line[0] == '#')
-			continue;
+	for (const auto& entry : doc.at("cubes"))
+	{
+		CUBE_RENEWAL_DATA	*cube_data = M2_NEW CUBE_RENEWAL_DATA;
 
-		token_string = strtok(one_line, delim);
-
-		if (nullptr == token_string)
-			continue;
-
-		// set value1, value2
-		if ((v = strtok(nullptr, delim)))
-			str_to_number(value1, v);
-		    value_string = v;
-
-		if ((v = strtok(nullptr, delim)))
-			str_to_number(value2, v);
-
-		TOKEN("section")
+		if (entry.contains("npcs"))
 		{
-			cube_data = M2_NEW CUBE_RENEWAL_DATA;
-		}
-		else TOKEN("npc")
-		{
-			cube_data->npc_vnum.push_back((uint16_t)value1);
-		}
-		else TOKEN("item")
-		{
-			cube_value.vnum		= value1;
-			cube_value.count	= value2;
-
-			cube_data->item.push_back(cube_value);
-		}
-		else TOKEN("reward")
-		{
-			cube_value.vnum		= value1;
-			cube_value.count	= value2;
-
-			cube_data->reward.push_back(cube_value);
-		}
-		else TOKEN("percent")
-		{
-
-			cube_data->percent = value1;
+			for (const auto& npc : entry.at("npcs"))
+				cube_data->npc_vnum.push_back((uint16_t)npc.get<uint32_t>());
 		}
 
-		else TOKEN("category")
+		auto loadValues = [](const nlohmann::json& values, std::vector<CUBE_RENEWAL_VALUE>& out)
 		{
-			cube_data->category = value_string;
-		}
+			for (const auto& value : values)
+			{
+				CUBE_RENEWAL_VALUE cube_value = { 0, 0 };
+				cube_value.vnum = value.value("vnum", 0u);
+				cube_value.count = value.value("count", 0);
+				out.push_back(cube_value);
+			}
+		};
+
+		if (entry.contains("items") && entry.at("items").is_array())
+			loadValues(entry.at("items"), cube_data->item);
+
+		if (entry.contains("rewards") && entry.at("rewards").is_array())
+			loadValues(entry.at("rewards"), cube_data->reward);
+
+		cube_data->percent = entry.value("percent", 0);
+
+		if (entry.contains("category") && entry.at("category").is_string())
+			cube_data->category = entry.at("category").get<std::string>();
+
 #ifdef ENABLE_CUBE_RENEWAL_COPY_WORLDARD
-
-		else TOKEN("allow_copy")
-		{
-			cube_data->allowCopy = value1;
-		}
-
+		cube_data->allowCopy = entry.value("allow_copy", 0u);
 #endif
 
 #ifdef ENABLE_GAYA_SYSTEM
-		else TOKEN("gaya")
-		{
-			cube_data->gaya = value1;
-		}
+		cube_data->gaya = entry.value("gaya", 0u);
 #endif
-		else TOKEN("gold")
-		{
-			cube_data->gold = value1;
-		}
-		else TOKEN("end")
-		{
+		cube_data->gold = entry.value("gold", (int64_t)0);
 
-			// TODO : check cube data
-			if (false == FN_check_cube_data(cube_data))
-			{
-				dev_log(LOG_DEB0, "something wrong");
-				M2_DELETE(cube_data);
-				continue;
-			}
-			s_cube_proto.push_back(cube_data);
+		// TODO : check cube data
+		if (false == FN_check_cube_data(cube_data))
+		{
+			dev_log(LOG_DEB0, "something wrong");
+			M2_DELETE(cube_data);
+			continue;
 		}
+
+		s_cube_proto.push_back(cube_data);
 	}
 
-	fclose(fp);
 	return true;
 }
 

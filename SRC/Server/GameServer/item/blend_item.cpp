@@ -13,8 +13,11 @@
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include "locale_service.h"
+#include "JsonFile.h"
 #include "item.h"
 #include "blend_item.h"
+
+#include <nlohmann/json.hpp>
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
@@ -38,7 +41,7 @@ bool	Blend_Item_init()
 {
 	T_BLEND_ITEM_INFO::iterator			iter;
 	char	file_name[256];
-	snprintf (file_name, sizeof(file_name), "%s/blend.txt", LocaleService_GetBasePath().c_str());
+	snprintf (file_name, sizeof(file_name), "%s/blend.json", LocaleService_GetBasePath().c_str());
 
 	LOG_INFO("Blend_Item_init {} ", file_name);
 
@@ -59,95 +62,62 @@ bool	Blend_Item_init()
 
 bool	Blend_Item_load(char *file)
 {
-	FILE	*fp;
-	char	one_line[256];
-	const char	*delim = " \t\r\n";
-	char	*v;
-
-	BLEND_ITEM_INFO	*blend_item_info = nullptr;
-
-	if (nullptr==file || 0==file[0])
+	if (nullptr == file || 0 == file[0])
 		return false;
 
-	if ((fp = fopen(file, "r"))==nullptr)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(file, doc))
 		return false;
 
-	while (fgets(one_line, 256, fp))
+	if (!doc.contains("blends") || !doc.at("blends").is_array())
 	{
-		if (one_line[0]=='#')
-			continue;
-
-		const char* token_string = strtok(one_line, delim);
-
-		if (nullptr ==token_string)
-			continue;
-
-		TOKEN("section")
-		{
-			blend_item_info = new BLEND_ITEM_INFO;
-			memset(blend_item_info, 0x00, sizeof(BLEND_ITEM_INFO));
-		}
-		else TOKEN("item_vnum")
-		{
-			v = strtok(nullptr, delim);
-
-			if (nullptr ==v)
-			{
-				fclose(fp);
-				return false;
-			}
-
-			str_to_number(blend_item_info->item_vnum, v);
-		}
-		else TOKEN("apply_type")
-		{
-			v = strtok(nullptr, delim);
-
-			if (nullptr ==v)
-			{
-				fclose(fp);
-				return false;
-			}
-
-			blend_item_info->apply_type = FN_get_apply_type(v);
-		}
-		else TOKEN("apply_value")
-		{
-			for (int i=0; i<MAX_BLEND_ITEM_VALUE; ++i)
-			{
-				v = strtok(nullptr, delim);
-
-				if (nullptr ==v)
-				{
-					fclose(fp);
-					return false;
-				}
-
-				str_to_number(blend_item_info->apply_value[i], v);
-			}
-		}
-		else TOKEN("apply_duration")
-		{
-			for (int i=0; i<MAX_BLEND_ITEM_VALUE; ++i)
-			{
-				v = strtok(nullptr, delim);
-
-				if (nullptr ==v)
-				{
-					fclose(fp);
-					return false;
-				}
-
-				str_to_number(blend_item_info->apply_duration[i], v);
-			}
-		}
-		else TOKEN("end")
-		{
-			s_blend_info.push_back(blend_item_info);
-		}
+		LOG_ERROR("Blend_Item_load: {} needs a 'blends' array", file);
+		return false;
 	}
 
-	fclose(fp);
+	for (const auto& entry : doc.at("blends"))
+	{
+		BLEND_ITEM_INFO	*blend_item_info = new BLEND_ITEM_INFO;
+		memset(blend_item_info, 0x00, sizeof(BLEND_ITEM_INFO));
+
+		blend_item_info->item_vnum = entry.value("item_vnum", 0u);
+
+		if (entry.contains("apply_type"))
+			blend_item_info->apply_type = FN_get_apply_type(JsonFile::ToToken(entry.at("apply_type")).c_str());
+
+		if (entry.contains("apply_value"))
+		{
+			const auto& values = entry.at("apply_value");
+
+			if (!values.is_array() || values.size() < MAX_BLEND_ITEM_VALUE)
+			{
+				LOG_ERROR("Blend_Item_load: 'apply_value' needs {} values (item_vnum {})", MAX_BLEND_ITEM_VALUE, blend_item_info->item_vnum);
+				M2_DELETE(blend_item_info);
+				return false;
+			}
+
+			for (int i = 0; i < MAX_BLEND_ITEM_VALUE; ++i)
+				str_to_number(blend_item_info->apply_value[i], JsonFile::ToToken(values.at(i)).c_str());
+		}
+
+		if (entry.contains("apply_duration"))
+		{
+			const auto& durations = entry.at("apply_duration");
+
+			if (!durations.is_array() || durations.size() < MAX_BLEND_ITEM_VALUE)
+			{
+				LOG_ERROR("Blend_Item_load: 'apply_duration' needs {} values (item_vnum {})", MAX_BLEND_ITEM_VALUE, blend_item_info->item_vnum);
+				M2_DELETE(blend_item_info);
+				return false;
+			}
+
+			for (int i = 0; i < MAX_BLEND_ITEM_VALUE; ++i)
+				str_to_number(blend_item_info->apply_duration[i], JsonFile::ToToken(durations.at(i)).c_str());
+		}
+
+		s_blend_info.push_back(blend_item_info);
+	}
 
 	return true;
 }

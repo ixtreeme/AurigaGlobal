@@ -138,11 +138,14 @@ A `.quest`/`.lua` scriptek maradnak (Lua interpreter, nem adat).
 
 ## 3. Fazisok
 
-- **Phase 1 - A csalad + infra**: `JsonFile` helper, `txt2json_group.py`,
-  `CJsonFileLoader` (CTextFileLoader API), fogyasztok atkotese,
-  `CTextFileLoader`/`group_text_parse_tree` torles. ~10 adatfajl.
-- **Phase 2 - B + C**: blend, cube, fishing (encoding!), gaya,
-  guild_renewal_levelup; shop_table_ex dontes.
+- **Phase 1 - A csalad + infra (KESZ, 15f49bb3)**: `JsonFile` helper,
+  `CJsonGroupLoader`/`CJsonGroupTreeLoader`, fogyasztok atkotese
+  (mob_manager, item_manager_read_tables, battle_pass, dragon_soul,
+  shop_manager), `CTextFileLoader`/`file_loader`/`group_text_parse_tree`
+  torlese. 10 adatfajl JSON-ban, a txt-k torolve.
+- **Phase 2 - B + C (KESZ)**: blend, cube, fishing (cp949 name dekod),
+  gaya, guild_renewal_levelup; shop_table_ex olvasas JSON-ra allitva
+  (a fajl tovabbra sem letezik; a shopok DB-bol).
 - **Phase 3 - D + E**: regen csalad (~120 fajl) + map meta
   (index/Setting/Town/dungeon/map_config); `map_0/` + backup torles.
 - **Phase 4 - F**: questnpc/questcategory -> JSON.
@@ -171,3 +174,68 @@ commit -> elo szerver data frissitese (kulon lepes).
   112, gaya 1384 = runtime, quest 2).
 - Szerver-altal olvasott, konvertalando adatfajl becsles: ~150-300 fajl
   (A/B/C ~15 + D ~120 + E 1 + 75*3 + F 2), mapankent 3-4.
+
+
+## 6. Implementacios statusz (2026-10-13)
+
+### Phase 1 (KESZ, commit 15f49bb3)
+
+- Uj infrastruktura: `core/JsonFile.{h,cpp}` (nlohmann parse + log) es a ket
+  loader: `core/json_group_loader.{h,cpp}` (CJsonGroupLoader, a
+  CTextFileLoader API-parja) es `core/json_group_tree.{h,cpp}`
+  (CJsonGroupNode/CJsonGroupTreeLoader, a CGroupTextParseTreeLoader parja).
+- A JSON szerkezet: `{ "tokens": {kulcs: ertek|tomb}, "groups":
+  [{name, tokens, groups}], "columns": [...] }`; kulcsok/group nevek
+  lowercase-elve (mint a regi `stl_lowers`), ertekek valtozatlanok.
+- Konverter: `SRC/Tools/txt2json/txt2json_group.py` (tokens|rows mod);
+  a regi parser break/exit viselkedeset is masolja; nem-UTF-8 fajlokat
+  (group.txt, dragon_soul_table.txt) latin-1-gyel byte-huen olvas.
+- Atkotve: mob_manager (group), item_manager_read_tables (common/etc/mob
+  drop, special_item_group, drop_item_group, ori_to_new_table mask),
+  battle_pass, dragon_soul_table, shop_manager. Az etc_drop_item es
+  ori_to_new_table uj semantikus JSON (`[]`).
+- Torolt loaderek: `text_file_loader.{h,cpp}`, `file_loader.{h,cpp}`,
+  `group_text_parse_tree.{h,cpp}` (a ShopLifecycleTests CMake listaja is
+  frissitve).
+- Az elo `share/data`-ban: group/group_group/common_drop_item/
+  mob_drop_item/special_item_group/drop_item_group/dragon_soul_table/
+  battle_pass/etc_drop_item/ori_to_new_table -> `.json` (a txt-k torolve).
+- Paritas: txt vs JSON group-szamok egyeznek (926/216/183/98/35/12), a
+  kulcs-mezok spot-checkje egyezik.
+
+### Phase 2 (KESZ)
+
+- `blend.json`: `{"blends":[{item_vnum, apply_type, apply_value[5],
+  apply_duration[5]}]}`; a fogyaszto ugyanazt a hibat adja hianyos
+  tombre, mint a regi parser.
+- `cube.json`: `{"cubes":[{npcs[], items[{vnum,count}],
+  rewards[{vnum,count}], percent, category, allow_copy, gaya, gold}]}`;
+  a regi FN_check_cube_data validacio valtozatlan, a hibas section
+  kiesik. (A "49051" nevu sor a regi parserben sem volt hasznalva.)
+- `fishing.json`: `{"fish":[{name, vnum, dead_vnum, grill_vnum, prob[4],
+  difficulty, time_type, length_range[3], used_table[10]}]}`; a nev
+  cp949 -> UTF-8 dekodolas (a kliens oldali korea nevek); a regi parser
+  "utolso tab utani oszlop elveszik" viselkedese megmaradt; hianyzo
+  oszlop -> 0.
+- `gaya.json`: `{"items":[{item, gaya, count}], "config":{...}}`; a
+  config kulcsok a regi TOKEN-ek lowercase-ei; a fajlvegi `##nev`
+  reszek a regi parserben sem szamitottak (value3-ba estek, a vnum
+  szamitott csak).
+- `guild_renewal_levelup.json`: `{"levels":[{level, yang,
+  items[{vnum,count}] x5}]}`; validacio 21..NSBUZERANT (30) es
+  "van-e ertelmes sor" ugyanaz. A `share/conf` es `share/data` peldany
+  is JSON-ra valtott, a loadersorrend valtozatlan.
+- `shop_table_ex` olvasas `shop_table_ex.json`-ra allitva (a fajl az elo
+  adatban nem letezik; a shopok tovabbra is DB-bol toltodnek, a hiany
+  ugyanugy csak log).
+- Build: GameServer Debug + Release zold; ShopLifecycleTests zold.
+
+### Hatralevo
+
+- Phase 3: regen csalad (~120 fajl: map/*/{regen,npc,boss,stone}.txt,
+  dungeon/**, battlearena/wedding) + map meta (map/index, Setting.txt,
+  Town.txt, dungeon.txt, map_config.txt) konverzio; `map_0/` es
+  `share/locale/germany---------/` hulladek torlese.
+- Phase 4: questnpc/questcategory.
+- Phase 5: Database import txt-k (kulon dontes) + junk (.txt0218/.bak/
+  .bck/.ryuga, comon_Drop_item_input_format_razor93.txt) torles.

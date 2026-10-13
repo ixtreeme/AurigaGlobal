@@ -29,4 +29,12 @@ namespace JsonFile
 
 		return true;
 	}
+
+	std::string ToToken(const nlohmann::json& value)
+	{
+		if (value.is_string())
+			return value.get<std::string>();
+
+		return value.dump();
+	}
 }

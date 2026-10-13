@@ -8,16 +8,7 @@
 
 #include <functional>
 
-namespace
-{
-	std::string TokenValueToString(const nlohmann::json& value)
-	{
-		if (value.is_string())
-			return value.get<std::string>();
 
-		return value.dump();
-	}
-}
 
 CJsonGroupTreeLoader::CJsonGroupTreeLoader()
 	: m_pRootGroupNode(nullptr)
@@ -56,7 +47,7 @@ bool CJsonGroupTreeLoader::Load(const char* c_szFileName)
 
 			for (const auto& column : doc.at("columns"))
 			{
-				std::string name = TokenValueToString(column);
+				std::string name = JsonFile::ToToken(column);
 				stl_lowers(name);
 				node->m_map_columnNameToIndex.insert(TMapNameToIndex::value_type(name, index));
 				++index;
@@ -75,11 +66,11 @@ bool CJsonGroupTreeLoader::Load(const char* c_szFileName)
 				if (item.value().is_array())
 				{
 					for (const auto& value : item.value())
-						values.push_back(TokenValueToString(value));
+						values.push_back(JsonFile::ToToken(value));
 				}
 				else
 				{
-					values.push_back(TokenValueToString(item.value()));
+					values.push_back(JsonFile::ToToken(item.value()));
 				}
 
 				node->m_map_rows.insert(std::make_pair(key, CJsonGroupNode::CJsonGroupRow(node, values)));

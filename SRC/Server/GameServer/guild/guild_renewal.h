@@ -100,7 +100,7 @@ private:
 
 	// Level-up requirements
 	void EnsureLevelReqLoaded();
-	bool LoadLevelReqFromFile(const char* filename);
+	bool LoadLevelReqFromJson(const char* filename);
 
 	// DB helpers
 	void DB_SaveMoney(uint32_t guildId);

@@ -4,6 +4,7 @@
 #include "../../entity/char.h"
 #include "../../core/config.h"
 #include "../../core/locale_service.h"
+#include "../../core/JsonFile.h"
 #include "../../quest/questmanager.h"
 #include "ItemSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -13,6 +14,7 @@
 #include "../components/identity_components.hpp"
 #include <Core/Logging.hpp>
 
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -114,66 +116,48 @@ void Load(entt::entity pc)
 	if (!state)
 		return;
 
-	FILE* fp;
-	char one_line[256];
-	int value1, value2, value3;
-	const char* delim = " \t\r\n";
-	char *v, *token_string;
 	char file_name[256 + 1];
 
 	state->loadItems.clear();
 	state->config = {};
 
-	GayaLoadEntry gayaValues {};
+	snprintf(file_name, sizeof(file_name), "%s/gaya.json", LocaleService_GetBasePath().c_str());
 
-	snprintf(file_name, sizeof(file_name), "%s/gaya.txt", LocaleService_GetBasePath().c_str());
-	fp = fopen(file_name, "r");
-	if (fp == nullptr)
+	nlohmann::json doc;
+
+	if (!JsonFile::Load(file_name, doc))
 	{
 		LOG_ERROR("Gaya: Error, it's not possible load {} !", file_name);
 		return;
 	}
 
-	while (fgets(one_line, 256, fp))
+	if (doc.contains("items") && doc.at("items").is_array())
 	{
-		value1 = value2 = value3 = 0;
-
-		if (one_line[0] == '#')
-			continue;
-
-		token_string = strtok(one_line, delim);
-		if (nullptr == token_string)
-			continue;
-
-		if ((v = strtok(nullptr, delim)))
-			str_to_number(value1, v);
-
-		if ((v = strtok(nullptr, delim)))
-			str_to_number(value2, v);
-
-		if ((v = strtok(nullptr, delim)))
-			str_to_number(value3, v);
-
-		TOKEN("ITEM")
+		for (const auto& entry : doc.at("items"))
 		{
-			gayaValues.items = value1;
-			gayaValues.gaya = value2;
-			gayaValues.count = value3;
+			GayaLoadEntry gayaValues {};
+			gayaValues.items = entry.value("item", 0);
+			gayaValues.gaya = entry.value("gaya", 0);
+			gayaValues.count = entry.value("count", 0);
 			state->loadItems.push_back(gayaValues);
 		}
-		else TOKEN("GLIMMERSTONE") { state->config.glimmerstone = value1; }
-		else TOKEN("GAYA_EXPANSION") { state->config.gaya_expansion = value1; }
-		else TOKEN("GAYA_REFRESH") { state->config.gaya_refresh = value1; }
-		else TOKEN("GLIMMERSTONE_COUNT") { state->config.glimmerstone_count = value1; }
-		else TOKEN("GRADE_STONE") { state->config.grade_stone = value1; }
-		else TOKEN("GIVE_GAYA") { state->config.give_gaya = value1; }
-		else TOKEN("PROB_GAYA") { state->config.prob_gaya = value1; }
-		else TOKEN("COST_GAYA_YANG") { state->config.cost_gaya_yang = value1; }
-		else TOKEN("GAYA_EXPANSION_COUNT") { state->config.gaya_expansion_count = value1; }
-		else TOKEN("GAYA_REFRESH_COUNT") { state->config.gaya_refresh_count = value1; }
 	}
 
-	fclose(fp);
+	if (doc.contains("config") && doc.at("config").is_object())
+	{
+		const auto& config = doc.at("config");
+		state->config.glimmerstone = config.value("glimmerstone", 0);
+		state->config.gaya_expansion = config.value("gaya_expansion", 0);
+		state->config.gaya_refresh = config.value("gaya_refresh", 0);
+		state->config.glimmerstone_count = config.value("glimmerstone_count", 0);
+		state->config.grade_stone = config.value("grade_stone", 0);
+		state->config.give_gaya = config.value("give_gaya", 0);
+		state->config.prob_gaya = config.value("prob_gaya", 0);
+		state->config.cost_gaya_yang = config.value("cost_gaya_yang", 0);
+		state->config.gaya_expansion_count = config.value("gaya_expansion_count", 0);
+		state->config.gaya_refresh_count = config.value("gaya_refresh_count", 0);
+	}
+
 	MarkDirty(pc);
 }
 

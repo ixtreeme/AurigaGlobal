@@ -8,14 +8,6 @@
 
 namespace
 {
-	std::string TokenValueToString(const nlohmann::json& value)
-	{
-		if (value.is_string())
-			return value.get<std::string>();
-
-		return value.dump();
-	}
-
 	void ParseTokens(const nlohmann::json& doc, CJsonGroupLoader::TGroupNode* node)
 	{
 		if (!doc.contains("tokens") || !doc.at("tokens").is_object())
@@ -31,11 +23,11 @@ namespace
 			if (item.value().is_array())
 			{
 				for (const auto& value : item.value())
-					tokens.push_back(TokenValueToString(value));
+					tokens.push_back(JsonFile::ToToken(value));
 			}
 			else
 			{
-				tokens.push_back(TokenValueToString(item.value()));
+				tokens.push_back(JsonFile::ToToken(item.value()));
 			}
 
 			node->LocalTokenVectorMap.insert(std::make_pair(key, tokens));

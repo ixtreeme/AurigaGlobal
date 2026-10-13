@@ -9,6 +9,8 @@
 #include "constants.h"
 #include "fishing.h"
 #include "locale_service.h"
+#include "JsonFile.h"
+#include <nlohmann/json.hpp>
 
 #ifndef __FISHING_MAIN__
 #include "item_manager.h"
@@ -133,16 +135,21 @@ void Initialize()
 	const int FILE_NAME_LEN = 256;
 	char szFishingFileName[FILE_NAME_LEN+1];
 	snprintf(szFishingFileName, sizeof(szFishingFileName),
-			"%s/fishing.txt", LocaleService_GetBasePath().c_str());
-	FILE * fp = fopen(szFishingFileName, "r");
+			"%s/fishing.json", LocaleService_GetBasePath().c_str());
+
+	nlohmann::json doc;
+	bool loaded = JsonFile::Load(szFishingFileName, doc);
+
+	if (loaded && (!doc.contains("fish") || !doc.at("fish").is_array()))
+		loaded = false;
 	// END_OF_LOCALE_SERVICE
 
 	if (*fish_info_bak[0].name)
 		SendLog("Reloading fish table.");
 
-	if (!fp)
+	if (!loaded)
 	{
-		SendLog("error! cannot open fishing.txt");
+		SendLog("error! cannot open fishing.json");
 
 		if (*fish_info_bak[0].name)
 		{
@@ -154,88 +161,47 @@ void Initialize()
 
 	memset(fish_info, 0, sizeof(fish_info));
 
-	char buf[512];
 	int idx = 0;
 
-	while (fgets(buf, 512, fp))
+	for (const auto& entry : doc.at("fish"))
 	{
-		if (*buf == '#')
-			continue;
-
-		char * p = strrchr(buf, '\n');
-		*p = '\0';
-
-		const char * start = buf;
-		const char * tab = strchr(start, '\t');
-
-		if (!tab)
-		{
-			LOG_INFO("Tab error on line: {}", buf);
-			SendLog("error! parsing fishing.txt");
-
-			if (*fish_info_bak[0].name)
-			{
-				memcpy(fish_info, fish_info_bak, sizeof(fish_info));
-				SendLog("  restoring to backup");
-			}
-			break;
-		}
-
-		char szCol[256], szCol2[256];
-		int iColCount = 0;
-
-		do
-		{
-			strlcpy(szCol2, start, MIN(sizeof(szCol2), (tab - start) + 1));
-			szCol2[tab-start] = '\0';
-
-			trim_and_lower(szCol2, szCol, sizeof(szCol));
-
-			if (!*szCol || *szCol == '\t')
-				iColCount++;
-			else
-			{
-				switch (iColCount++)
-				{
-					case 0: strlcpy(fish_info[idx].name, szCol, sizeof(fish_info[idx].name)); break;
-					case 1: str_to_number(fish_info[idx].vnum, szCol); break;
-					case 2: str_to_number(fish_info[idx].dead_vnum, szCol); break;
-					case 3: str_to_number(fish_info[idx].grill_vnum, szCol); break;
-					case 4: str_to_number(fish_info[idx].prob[0], szCol); break;
-					case 5: str_to_number(fish_info[idx].prob[1], szCol); break;
-					case 6: str_to_number(fish_info[idx].prob[2], szCol); break;
-					case 7: str_to_number(fish_info[idx].prob[3], szCol); break;
-					case 8: str_to_number(fish_info[idx].difficulty, szCol); break;
-					case 9: str_to_number(fish_info[idx].time_type, szCol); break;
-					case 10: str_to_number(fish_info[idx].length_range[0], szCol); break;
-					case 11: str_to_number(fish_info[idx].length_range[1], szCol); break;
-					case 12: str_to_number(fish_info[idx].length_range[2], szCol); break;
-					case 13: // 0
-					case 14: // 1
-					case 15: // 2
-					case 16: // 3
-					case 17: // 4
-					case 18: // 5
-					case 19: // 6
-					case 20: // 7
-					case 21: // 8
-					case 22: // 9
-							 str_to_number(fish_info[idx].used_table[iColCount-1-12], szCol);
-							 break;
-				}
-			}
-
-			start = tab + 1;
-			tab = strchr(start, '\t');
-		} while (tab);
-
-		idx++;
-
 		if (idx == MAX_FISH)
 			break;
-	}
 
-	fclose(fp);
+		char szCol[256];
+		char szCol2[256];
+
+		strlcpy(szCol2, entry.value("name", std::string()).c_str(), sizeof(szCol2));
+		trim_and_lower(szCol2, szCol, sizeof(szCol));
+		strlcpy(fish_info[idx].name, szCol, sizeof(fish_info[idx].name));
+
+		fish_info[idx].vnum = entry.value("vnum", 0u);
+		fish_info[idx].dead_vnum = entry.value("dead_vnum", 0u);
+		fish_info[idx].grill_vnum = entry.value("grill_vnum", 0u);
+
+		if (entry.contains("prob") && entry.at("prob").is_array())
+		{
+			for (int i = 0; i < MAX_PROB && i < (int)entry.at("prob").size(); ++i)
+				fish_info[idx].prob[i] = entry.at("prob").at(i).get<int>();
+		}
+
+		fish_info[idx].difficulty = entry.value("difficulty", 0);
+		fish_info[idx].time_type = entry.value("time_type", 0);
+
+		if (entry.contains("length_range") && entry.at("length_range").is_array())
+		{
+			for (int i = 0; i < 3 && i < (int)entry.at("length_range").size(); ++i)
+				fish_info[idx].length_range[i] = entry.at("length_range").at(i).get<int>();
+		}
+
+		if (entry.contains("used_table") && entry.at("used_table").is_array())
+		{
+			for (int i = 0; i < NUM_USE_RESULT_COUNT && i < (int)entry.at("used_table").size(); ++i)
+				fish_info[idx].used_table[i] = entry.at("used_table").at(i).get<int>();
+		}
+
+		++idx;
+	}
 
 	for (int i = 0; i < MAX_FISH; ++i)
 	{
