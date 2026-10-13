@@ -409,3 +409,18 @@ maradek konvertalt fajlokra is.
 
 - `txt2json_typed.py` uj modok: `named_rows` (battle_pass/dragon_soul/
   shop_table_ex) es `regen`.
+
+
+## 10. group_group tag-nevek (2026-10-13)
+
+A `group_group.json` tagjai group vnumokra hivatkoznak (group.json); a puszta
+szam nem olvashato, ezert minden tag megkapja a hivatkozott group nevet:
+
+    { "vnum": 6107, "group": "owl_metin2b", "prob": 1 }
+
+- A `txt2json_typed.py group_group` opcionalis negyedik parametere a
+  `group.json`: ha meg van adva, a tagok neve feloldva bekerul a JSON-ba
+  (feloldatlan vnum -> "?<vnum>" es figyelmeztetes).
+- A szerver `LoadGroupGroup` csak a vnum/prob mezoket olvassa, a `group`
+  mezot figyelmen kivul hagyja (nincs C++ valtozas).
+- Az elo `group_group.json` (817 tag) mind feloldva.

@@ -155,9 +155,22 @@ def convert_group(in_path, out_path):
     return 0
 
 
-def convert_group_group(in_path, out_path):
+def convert_group_group(in_path, out_path, reference_path=None):
     doc = json.load(io.open(in_path, "r", encoding="utf-8"))
+
+    # The members reference group vnums (group.json). With the reference file
+    # the referenced group name is written next to the vnum so the file is
+    # readable; the loader only uses vnum/prob.
+    names_by_vnum = {}
+
+    if reference_path:
+        reference = json.load(io.open(reference_path, "r", encoding="utf-8"))
+
+        for group in reference.get("groups", []):
+            names_by_vnum[to_int(group.get("vnum", 0))] = group.get("name", "")
+
     out = []
+    unresolved = 0
 
     for group in doc.get("groups", []):
         vnum = read_tokens(group, "vnum")
@@ -169,7 +182,18 @@ def convert_group_group(in_path, out_path):
         members = []
 
         for values in read_sequence(group):
-            member = collections.OrderedDict([("vnum", to_int(values[0]))])
+            member_vnum = to_int(values[0])
+            member = collections.OrderedDict([("vnum", member_vnum)])
+
+            if reference_path:
+                member_name = names_by_vnum.get(member_vnum)
+
+                if member_name is None:
+                    unresolved += 1
+                    member_name = "?%d" % member_vnum if member_vnum else "?"
+
+                member["group"] = member_name
+
             member["prob"] = to_int(values[1], 1) if len(values) > 1 else 1
             members.append(member)
 
@@ -178,6 +202,9 @@ def convert_group_group(in_path, out_path):
             ("vnum", to_int(vnum[0])),
             ("members", members),
         ]))
+
+    if reference_path and unresolved:
+        print("note: %d member vnum not found in the reference group table" % unresolved)
 
     write_json(out_path, collections.OrderedDict([("groups", out)]), " (%d group)" % len(out))
     return 0
@@ -522,16 +549,21 @@ CONVERTERS = {
 
 def main():
     if len(sys.argv) < 4:
-        print("Usage: python txt2json_typed.py <%s> <in.json> <out.json>" % "|".join(sorted(CONVERTERS)))
+        print("Usage: python txt2json_typed.py <%s> <in.json> <out.json> [reference.json]" % "|".join(sorted(CONVERTERS)))
+        print("  group_group: the optional reference is group.json (member names).")
         return 1
 
-    converter = CONVERTERS.get(sys.argv[1])
+    mode = sys.argv[1]
+    converter = CONVERTERS.get(mode)
 
     if converter is None:
-        print("unknown mode: %s" % sys.argv[1])
+        print("unknown mode: %s" % mode)
         return 1
 
     try:
+        if mode == "group_group" and len(sys.argv) > 4:
+            return converter(sys.argv[2], sys.argv[3], sys.argv[4])
+
         return converter(sys.argv[2], sys.argv[3])
     except ConversionError as ex:
         print("error: %s" % ex)
