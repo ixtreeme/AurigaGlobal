@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 
 typedef struct heart	HEART;
 typedef struct heart* LPHEART;
@@ -19,7 +20,7 @@ struct heart
     std::chrono::steady_clock::time_point	last_time;
 
     int			passes_per_sec;
-    int			pulse;
+    int64_t		pulse;
 };
 
 extern LPHEART	heart_new(int opt_usec, HEARTFUNC func);

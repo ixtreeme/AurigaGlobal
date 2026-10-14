@@ -506,7 +506,7 @@ typedef struct SPlayerTable
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-	uint32_t	dwBattlePassEndTime;
+	time_t	dwBattlePassEndTime;
 #endif
 #ifdef ENABLE_RANKING
 	long long	lRankPoints[RANKING_MAX_CATEGORIES];

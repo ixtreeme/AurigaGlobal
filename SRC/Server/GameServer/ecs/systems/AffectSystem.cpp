@@ -1484,14 +1484,14 @@ void RemoveGoodAffects(entt::entity e)
         AffectSystem::RemoveAffect(e, type);
 }
 
-uint32_t GetBattlePassDeadline(entt::entity e)
+time_t GetBattlePassDeadline(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e)) return 0;
     const auto* state = g_registry.try_get<ecs::BattlePassTiming>(e);
     return state ? state->deadline : 0;
 }
 
-bool SetBattlePassDeadline(entt::entity e, uint32_t deadline)
+bool SetBattlePassDeadline(entt::entity e, time_t deadline)
 {
     if (e == entt::null || !g_registry.valid(e) ||
         !ecs::Invariants::HasAnyTypeTag(g_registry, e)) return false;

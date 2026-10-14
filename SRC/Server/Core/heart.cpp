@@ -26,6 +26,7 @@ LPHEART heart_new(int opt_usec, HEARTFUNC func)
 	ht->passes_per_sec = 1000000 / opt_usec;
 	ht->last_time = now;
 	ht->before_sleep = now;
+	ht->pulse = 0;
 	return (ht);
 }
 

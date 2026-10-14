@@ -91,7 +91,7 @@ void thecore_destroy(void)
 	log_destroy();
 }
 
-int thecore_pulse(void)
+int64_t thecore_pulse(void)
 {
 	return (thecore_heart->pulse);
 }

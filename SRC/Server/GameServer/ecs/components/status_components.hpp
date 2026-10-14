@@ -1,4 +1,5 @@
 #pragma once
+#include <ctime>
 
 #include <cstdint>
 #include <list>
@@ -63,7 +64,7 @@ struct AffectList {
 
 // Persistent deadline, independent of clearing or replacing the live affects.
 struct BattlePassTiming {
-    uint32_t deadline { 0 };
+    time_t deadline { 0 };
 };
 
 // Own only the affect/recovery scheduler here. Its callback still delegates the

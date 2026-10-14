@@ -157,7 +157,7 @@ uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-			"battle_pass_end = FROM_UNIXTIME(%u), "
+			"battle_pass_end = FROM_UNIXTIME(%lld), "
 #endif
 #ifdef ENABLE_RANKING
 			"r0 = %lld, "
@@ -231,7 +231,7 @@ uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable
 		, pkTab->envanter
 #endif
 #ifdef ENABLE_BATTLE_PASS
-		,pkTab->dwBattlePassEndTime
+		,(long long)pkTab->dwBattlePassEndTime
 #endif
 #ifdef ENABLE_RANKING
 		, pkTab->lRankPoints[0],

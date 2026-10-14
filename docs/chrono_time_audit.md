@@ -182,3 +182,36 @@ egysegesithetok.
 - **Pulse**: `heart.pulse`/`thecore_pulse()` int64-re az ECS pulse-mezokkel
   egyutt (a Phase 2-ben dokumentalt tullfolyas miatt).
 - **LoginServer** tovabbi `time_t` hasznalatok atnezese (login_limiter).
+
+
+## Phase 3B statusz (KESZ resz, 2026-10-13)
+
+- **Battle pass lejarat int64**: `TPlayerTable::dwBattlePassEndTime` uint32 ->
+  `time_t`; az ECS `BattlePassTiming::deadline` es az
+  `AffectSystem::Get/SetBattlePassDeadline` is `time_t`; a Database mentes
+  `FROM_UNIXTIME(%u)` -> `%lld` (+ cast). Igy a `SetBattlePassDeadline(e,
+  get_global_time() + X)` hivasoknal nincs tobb uint32 szukites.
+- **Pulse int64**: `heart.pulse`, `thecore_pulse()` es a `heart_new`
+  inicializalas (pulse=0) int64 - a ~2.7 eves signed overflow megszunt;
+  a fogyasztok (`% passes_per_sec`, diff-ek) valtozatlanul mukodnek, a
+  struktura-mezokbe valo castolas megmaradt ahol szukseges.
+- Build: GameServer/Database/LoginServer Debug + Release zold.
+
+### Megjegyzes a TPlayerTable wire-hez
+
+A `TPlayerTable` a GameServer <-> Database kozott `sizeof(TPlayerTable)`
+alapu memcpy-val megy (PLAYER_SAVE/PLAYER_LOAD); a meret valtozasa miatt
+a ket binari **egyutt** telepítendo (a PLAYER_SAVE oldal meret-ellenorzest
+is dob, ha elter). A BOOT protokoll `bPacketVersion` emelese javasolt a
+kovetkezo deploy-nal.
+
+### Hatralevo (Phase 3C)
+
+- **Premium idok**: `iPremiumTimes[8]` `int` a LoginServer <-> Database
+  packetben (`login_db_link.h`), a Database `LoginData`-ban es a
+  `TPlayerTable::aiPremiumTimes`-ben -> int64 (LoginServer, Database es
+  GameServer egyutt; a LoginServer wire miatt kulon protokoll-egyeztetes).
+- **DB migracio**: unix-masodperc tipusu INT oszlopok -> BIGINT
+  (`marriage.time`, `horse_hp_droptime`, `upgrade_limit_time` stb.), a
+  `player.playtime` es premium oszlopok egyeztetese.
+- **Quest flag idobelyegek**: `QuestSystem::SetFlag/GetFlag` int32 -> int64.

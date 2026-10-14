@@ -28,7 +28,7 @@ extern "C"
     extern int			thecore_idle(void);
     extern void			thecore_shutdown(void);
     extern void			thecore_destroy(void);
-    extern int			thecore_pulse(void);
+    extern int64_t		thecore_pulse(void);
 	extern int			thecore_is_shutdowned(void);
 
 	extern void			thecore_tick(void);
