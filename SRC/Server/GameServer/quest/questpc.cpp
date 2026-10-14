@@ -56,7 +56,7 @@ namespace quest
 		return CQuestManager::instance().GetQuestIndexByName(GetCurrentQuestName());
 	}
 
-	void PC::SetFlag(const string& name, int value, bool bSkipSave)
+	void PC::SetFlag(const string& name, int64_t value, bool bSkipSave)
 	{
 		if ( test_server )
 			LOG_TRACE("QUEST Setting flag {} {}", name.c_str(), value);
@@ -92,7 +92,7 @@ namespace quest
 		return false;
 	}
 
-	int PC::GetFlag(const string & name)
+	int64_t PC::GetFlag(const string & name)
 	{
 		if (const auto it = m_FlagMap.find(name); it != m_FlagMap.end())
 		{
@@ -102,7 +102,7 @@ namespace quest
 		return 0;
 	}
 
-	void PC::SaveFlag(const string & name, int value)
+	void PC::SaveFlag(const string & name, int64_t value)
 	{
 		if (const auto it = m_FlagSaveMap.find(name); it == m_FlagSaveMap.end())
 			m_FlagSaveMap.insert(make_pair(name, value));
@@ -567,7 +567,7 @@ namespace quest
 		while (it != m_FlagSaveMap.end())
 		{
 			const std::string & stComp = it->first;
-			int32_t lValue = it->second;
+			int64_t lValue = it->second;
 
 			++it;
 

@@ -673,7 +673,7 @@ typedef struct SQuestTable
 	uint32_t		dwPID;
 	char		szName[QUEST_NAME_MAX_LEN + 1];
 	char		szState[QUEST_STATE_MAX_LEN + 1];
-	int32_t		lValue;
+	int64_t		lValue;
 } TQuestTable;
 
 typedef struct SItemLimit

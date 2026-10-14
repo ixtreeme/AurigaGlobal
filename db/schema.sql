@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `player`.`player` (
   `horse_level`       TINYINT UNSIGNED   NOT NULL DEFAULT 0,
   `horse_riding`      TINYINT UNSIGNED   NOT NULL DEFAULT 0,
   `horse_hp`          SMALLINT           NOT NULL DEFAULT 0,    -- short sHealth
-  `horse_hp_droptime` INT UNSIGNED       NOT NULL DEFAULT 0,    -- uint32_t, %u
+  `horse_hp_droptime` BIGINT UNSIGNED    NOT NULL DEFAULT 0,    -- uint32_t, %u
   `horse_stamina`     SMALLINT           NOT NULL DEFAULT 0,    -- short sStamina
   `horse_skill_point` SMALLINT           NOT NULL DEFAULT 0,
   `envanter`          INT                NOT NULL DEFAULT 0,    -- __ENABLE_EXTEND_INVEN_SYSTEM__, %d
@@ -292,7 +292,7 @@ CREATE TABLE IF NOT EXISTS `player`.`quest` (
   `dwPID`   INT UNSIGNED   NOT NULL DEFAULT 0,
   `szName`  VARCHAR(32)    NOT NULL DEFAULT '',   -- QUEST_NAME_MAX_LEN=32
   `szState` VARCHAR(64)    NOT NULL DEFAULT '',   -- QUEST_STATE_MAX_LEN=64
-  `lValue`  INT            NOT NULL DEFAULT 0,
+  `lValue`  BIGINT         NOT NULL DEFAULT 0,
   UNIQUE KEY `pid_name_state` (`dwPID`, `szName`, `szState`),  -- suggestion: REPLACE key; DELETE also filters szState
   KEY `dwPID` (`dwPID`)
 ) ENGINE=InnoDB;
@@ -1296,7 +1296,7 @@ CREATE TABLE IF NOT EXISTS `player`.`marriage` (
   `pid1`       INT UNSIGNED NOT NULL,
   `pid2`       INT UNSIGNED NOT NULL,
   `love_point` INT          NOT NULL DEFAULT 0,
-  `time`       INT UNSIGNED NOT NULL DEFAULT 0,
+  `time`       BIGINT UNSIGNED NOT NULL DEFAULT 0,
   `is_married` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`pid1`, `pid2`)  -- TODO(verify): PK implied (pid1<pid2 Align, DELETE by pair)
 ) ENGINE=InnoDB;

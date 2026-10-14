@@ -14,7 +14,7 @@
 
 namespace ecs::QuestSystem {
 
-int32_t GetFlag(entt::entity e, std::string_view flagName)
+int64_t GetFlag(entt::entity e, std::string_view flagName)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return 0;
@@ -27,7 +27,7 @@ int32_t GetFlag(entt::entity e, std::string_view flagName)
 	return pc ? pc->GetFlag(std::string(flagName)) : 0;
 }
 
-void SetFlag(entt::entity e, std::string_view flagName, int32_t value)
+void SetFlag(entt::entity e, std::string_view flagName, int64_t value)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return;

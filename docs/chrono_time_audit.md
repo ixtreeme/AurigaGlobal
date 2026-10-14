@@ -247,3 +247,36 @@ kovetkezo deploy-nal.
 - **Megjegyzes**: a `TPlayerTable` es `TPacketGDAuthLogin` merete valtozott
   (int64 premium) - a GameServer/Database/LoginServer binarisokat egyutt
   kell telepiteni (protokoll-verzio bump javasolt).
+
+
+## Phase 3D statusz (KESZ, 2026-10-13)
+
+- **Quest flag idobelyegek int64**: `TFlagMap` (`map<string,int>` ->
+  `map<string,int64_t>`), `PC::SetFlag/GetFlag/SaveFlag/DeleteFlag`,
+  `ecs::QuestSystem::SetFlag/GetFlag`, `TQuestTable::lValue` int64;
+  a lua `pc.setf` hatar `static_cast<int64_t>`-ra valt (a `getf`
+  `lua_pushnumber` marad, <2^53 pontossag eleg). A Database oldal
+  valtozatlanul megy (`SqlParam::Int` mar int64-et vesz, a betoltes
+  `str_to_number` int64-re).
+- **DB migracio**: `SRC/Server/Database/sql/2026_10_13_time_bigint.sql`:
+  - `player.quest.lValue` INT -> BIGINT (a fenti int64 valtas miatt),
+  - `player.marriage.time` INT UNSIGNED -> BIGINT UNSIGNED,
+  - `player.player.horse_hp_droptime` INT UNSIGNED -> BIGINT UNSIGNED.
+  A `db/schema.sql` ugyanigy frissult.
+- **Megjegyzes**: a `TQuestTable` merete valtozott (GameServer <-> Database
+  quest save/load wire) - a binariisokat egyutt kell telepiteni.
+- Build: GameServer/Database/LoginServer Debug + Release zold.
+
+## Chrono atallas - osszegzes (Phase 1-3)
+
+- Ido-fogalmak szetvalasztva: `WallClock` (system_clock) vs `SteadyClock`
+  (monoton); timer-ek/cache/heart monotonok.
+- Minden `localtime`/`gmtime`/`asctime` kivezetve (Time.h LocalTime/UtcTime).
+- A 32-bites idotarolo helyek (dungeon `now`, premium idok, battle pass end,
+  quest flags, pulse, global_time_gap) int64-re valtak; a hozzájuk tartozo
+  DB oszlopok BIGINT-re (migracio+).
+- Az ido-wire pontok (BOOT packet, TPlayerTable, TPacketGDAuthLogin,
+  TQuestTable) explicit int64/Wall-clock ertekeket visznek.
+- Nyitva maradt (opcionalis): event/`PASSES_PER_SEC` API chrono-burkolasa,
+  `marriage`/`horse` C++ mezok int64-re emelese (a DB mar BIGINT),
+  event flag idok int64, `ClientManagerEventFlag` parse int64.
