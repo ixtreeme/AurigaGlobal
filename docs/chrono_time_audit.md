@@ -148,3 +148,37 @@ szama es a struktura-mezok miatt); a hasznalat wrap-turo (`diff` es
 `% passes_per_sec`), a ~2.7 eves tullfolyas elmeleti (signed overflow).
 A Phase 3-ban a pulse-szamlalok es az ECS pulse-mezok int64-re
 egysegesithetok.
+
+
+## Phase 3A statusz (KESZ, 2026-10-13)
+
+- **localtime/gmtime/asctime teljes kivezetese**: minden hivas
+  `auriga::time::LocalTime` / `UtcTime` (thread-safe, ertek szerint) +
+  `strftime` a tm ertekre. Erintett: Core/log.cpp (2x), Core/utils.cpp,
+  Database/ClientManager.cpp (8 blokk + UsageLog asctime), battle_pass.cpp,
+  PlayerRuntimeSystem.cpp, char_manager.cpp, desc.cpp, questlua_global.cpp
+  (`time_to_str` mar gmtime helyett UtcTime + strftime buffer),
+  LoginServer/login_auth.cpp, debug_allocator_adapter.h.
+- **shutdown_manager**: a `struct tm* m_pTime` (localtime statikus bufferere
+  mutato pointer!) helyett `std::tm m_time` ertek; az `UpdateTime()` chrono
+  alapu LocalTime-nal tolti.
+- A `Core/Time.h` uj `UtcTime(time_t)` helpert kapott.
+- Build: GameServer/Database/LoginServer Debug + Release zold.
+
+### Hatralevo (Phase 3B)
+
+- **Premium idok**: `TPlayerTable::aiPremiumTimes`/`CLoginData::m_aiPremiumTimes`
+  `int[8]` (login-oldali memcpy-val) -> int64 (mindket oldalon: GameServer
+  network/login_data + Database/LoginData + ECS premium tarolo).
+- **Battle pass lejarat**: `dwBattlePassEndTime` uint32 ->
+  `time_t`/int64 (TPlayerTable, ECS `BattlePassTiming::deadline`,
+  SessionSystem mentes, EntityFactory); a Database `FROM_UNIXTIME(%u)` /
+  `UNIX_TIMESTAMP` konverziok `%lld`-re.
+- **DB migracio**: idobelyeg-oszlopok INT -> BIGINT ahol unix-masodperc
+  (pl. `marriage.time`, `horse_hp_droptime`, `upgrade_limit_time`), a
+  `player.playtime`/premium oszlopok egyeztetese a C++ tipusokkal.
+- **Quest flag idobelyegek**: `QuestSystem::SetFlag/GetFlag` int32 ->
+  int64 (lua-hatarok atnezese).
+- **Pulse**: `heart.pulse`/`thecore_pulse()` int64-re az ECS pulse-mezokkel
+  egyutt (a Phase 2-ben dokumentalt tullfolyas miatt).
+- **LoginServer** tovabbi `time_t` hasznalatok atnezese (login_limiter).

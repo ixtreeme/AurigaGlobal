@@ -54,4 +54,16 @@ namespace auriga::time
 #endif
 		return out;
 	}
+
+	// Thread-safe UTC ido ertek szerint (gmtime_s/gmtime_r).
+	inline std::tm UtcTime(std::time_t t)
+	{
+		std::tm out {};
+#ifdef _WIN32
+		gmtime_s(&out, &t);
+#else
+		gmtime_r(&t, &out);
+#endif
+		return out;
+	}
 }

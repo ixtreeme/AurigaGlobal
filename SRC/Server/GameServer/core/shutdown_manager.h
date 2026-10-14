@@ -1,6 +1,7 @@
 #ifndef __INC_METIN_II_SHUTDOWNMANAGER_H__
 #define __INC_METIN_II_SHUTDOWNMANAGER_H__
 
+#include <Core/Time.h>
 class CShutdownManager : public singleton<CShutdownManager>
 {
 public:
@@ -15,10 +16,10 @@ public:
 
 private:
 	std::list<LPDESC> m_lstDesc;
-	struct tm* m_pTime; time_t m_lTime;
+	std::tm m_time{}; time_t m_lTime{ 0 };
 	bool m_bShutdownAlarm;
 
-	void inline UpdateTime() { time(&m_lTime); m_pTime = localtime(&m_lTime); }
+	void inline UpdateTime() { m_lTime = ::time(nullptr); m_time = auriga::time::LocalTime(m_lTime); }
 
 public:
 	bool CheckShutdownAge(const char* szSocialID);

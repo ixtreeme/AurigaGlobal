@@ -134,7 +134,7 @@ struct tm* tm_calc(const struct tm* curr_tm, int days)
 	if (!curr_tm)
 	{
 		time_t time_s = time(0);
-		new_tm = *localtime(&time_s);
+		new_tm = auriga::time::LocalTime(time_s);
 	}
 	else
 		memcpy(&new_tm, curr_tm, sizeof(struct tm));

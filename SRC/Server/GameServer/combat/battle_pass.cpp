@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "../ecs/systems/ItemSystem.hpp"
 #include <Core/Logging.hpp>
+#include <Core/Time.h>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
@@ -39,7 +40,7 @@ namespace
 	static uint32_t GetBattlePassCycleKeyYYYYMM()
 	{
 		time_t t = get_global_time();
-		struct tm now = *localtime(&t);
+		std::tm now = auriga::time::LocalTime(t);
 		return (uint32_t)((now.tm_year + 1900) * 100 + (now.tm_mon + 1));
 	}
 

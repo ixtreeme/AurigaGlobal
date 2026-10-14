@@ -26,6 +26,7 @@
 #include "Core/Logging.hpp"
 
 #include <fmt/format.h>
+#include <Core/Time.h>
 #include <cstdarg>
 #include <cstdio>
 
@@ -548,7 +549,7 @@ void DESC::Log(const char * format, ...)
 		return;
 
 	time_t ct = get_global_time();
-	tm tm = *localtime(&ct);
+	tm tm = auriga::time::LocalTime(ct);
 
 	char message[1024];
 	va_list args;

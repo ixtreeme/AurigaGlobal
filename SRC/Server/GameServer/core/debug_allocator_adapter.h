@@ -68,7 +68,8 @@ struct ScopedOutputFile {
 	std::ostream& Datetime() {
 		char buf[24];
 		time_t t = ::time(nullptr);
-		::strftime(buf, 24, "%Y-%m-%d %H:%M:%S", ::localtime(&t));
+		const std::tm tm = auriga::time::LocalTime(t);
+		::strftime(buf, 24, "%Y-%m-%d %H:%M:%S", &tm);
 		return stream << buf;
 	}
 	std::ofstream stream;

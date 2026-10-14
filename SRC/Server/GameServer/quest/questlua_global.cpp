@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "../ecs/services/SpatialService.hpp"
 #include <Core/Logging.hpp>
+#include <Core/Time.h>
+#include <ctime>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
@@ -71,8 +73,11 @@ namespace quest
 	{
 		// migrated from CHARACTER::time_to_str
 		// DUAL-PATH: legacy only during migration window
-		time_t curTime = (time_t)lua_tonumber(L, -1);
-		lua_pushstring(L, asctime(gmtime(&curTime)));
+		const time_t curTime = static_cast<time_t>(lua_tonumber(L, -1));
+		const std::tm utc = auriga::time::UtcTime(curTime);
+		char timeBuf[32] = {};
+		std::strftime(timeBuf, sizeof(timeBuf), "%a %b %e %H:%M:%S %Y", &utc);
+		lua_pushstring(L, timeBuf);
 		return 1;
 	}
 

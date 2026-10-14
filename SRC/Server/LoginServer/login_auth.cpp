@@ -6,6 +6,7 @@
 #include "login_session.h"
 
 #include <Core/Logging.hpp>
+#include <Core/Time.h>
 
 #include <cctype>
 #include <cstdlib>
@@ -187,10 +188,9 @@ void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, S
 	if (row[col])
 	{
 		const time_t createTime = static_cast<time_t>(strtoll(row[col], nullptr, 10));
-		const struct tm* createTm = localtime(&createTime);
+		const std::tm createTm = auriga::time::LocalTime(createTime);
 
-		if (createTm)
-			strftime(createDate, sizeof(createDate), "%Y%m%d", createTm);
+		strftime(createDate, sizeof(createDate), "%Y%m%d", &createTm);
 	}
 
 	if (strcmp(encPassword, storedPassword) != 0)

@@ -2,6 +2,7 @@
 #include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
+#include <Core/Time.h>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -1437,7 +1438,7 @@ void CHARACTER_MANAGER::CheckBonusEvent(entt::entity character)
 const TEventManagerData* CHARACTER_MANAGER::CheckEventIsActive(uint8_t eventIndex, uint8_t empireIndex)
 {
 	const time_t cur_Time = time(nullptr);
-	const struct tm vKey = *localtime(&cur_Time);
+	const std::tm vKey = auriga::time::LocalTime(cur_Time);
 
 	for (const auto& [dayIndex, dayVector] : m_eventData)
 	{

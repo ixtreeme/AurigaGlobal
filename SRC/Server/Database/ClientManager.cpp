@@ -4,6 +4,7 @@
 #include <common/CommonDefines.h>
 
 #include <Core/peer_auth.h>
+#include <Core/Time.h>
 
 #include <common/building.h>
 #include <common/VnumHelper.h>
@@ -3347,8 +3348,10 @@ void UsageLog()
 		return;
 
 	const time_t ct = time(nullptr);
-	const struct tm lt = *localtime(&ct);
-	const char* time_s = asctime(&lt);
+	const std::tm lt = auriga::time::LocalTime(ct);
+	char timeBuf[32] = {};
+	std::strftime(timeBuf, sizeof(timeBuf), "%a %b %e %H:%M:%S %Y", &lt);
+	const char* time_s = timeBuf;
 
 	std::string stamp(time_s + 4);
 
@@ -4114,7 +4117,7 @@ void SetTimeToString(TEventManagerData* eventData)
 	else
 	{
 		const time_t startTime = eventData->startTime;
-		const struct tm vEventStartKey = *localtime(&startTime);
+		const std::tm vEventStartKey = auriga::time::LocalTime(startTime);
 		snprintf(eventData->startTimeText, sizeof(eventData->startTimeText), "%d-%02d-%02d %02d:%02d:%02d", vEventStartKey.tm_year + 1900, vEventStartKey.tm_mon + 1, vEventStartKey.tm_mday, vEventStartKey.tm_hour, vEventStartKey.tm_min, vEventStartKey.tm_sec);
 	}
 
@@ -4123,7 +4126,7 @@ void SetTimeToString(TEventManagerData* eventData)
 	else
 	{
 		const time_t endTime = eventData->endTime;
-		const struct tm vEventEndKey = *localtime(&endTime);
+		const std::tm vEventEndKey = auriga::time::LocalTime(endTime);
 		snprintf(eventData->endTimeText, sizeof(eventData->endTimeText), "%d-%02d-%02d %02d:%02d:%02d", vEventEndKey.tm_year + 1900, vEventEndKey.tm_mon + 1, vEventEndKey.tm_mday, vEventEndKey.tm_hour, vEventEndKey.tm_min, vEventEndKey.tm_sec);
 	}
 }
@@ -4174,7 +4177,7 @@ void CClientManager::RecvEventManagerPacket(const char* data)
 void CClientManager::UpdateEventManager()
 {
 	const time_t now = time(nullptr);
-	const struct tm vKey = *localtime(&now);
+	const std::tm vKey = auriga::time::LocalTime(now);
 	if (vKey.tm_mday == 1 && vKey.tm_hour == 0 && vKey.tm_min == 0 && vKey.tm_sec == 0) // Month Update!
 	{
 		InitializeEventManager(true);
@@ -4235,7 +4238,7 @@ bool CClientManager::InitializeEventManager(bool updateFromGameMaster)
 	if (pMsg->Get()->uiNumRows != 0)
 	{
 		const time_t cur_Time = time(nullptr);
-		const struct tm vKey = *localtime(&cur_Time);
+		const std::tm vKey = auriga::time::LocalTime(cur_Time);
 
 		MYSQL_ROW row = nullptr;
 		for (int n = 0; (row = pMsg->Get()->FetchRow()) != nullptr; ++n)
@@ -4252,7 +4255,7 @@ bool CClientManager::InitializeEventManager(bool updateFromGameMaster)
 				str_to_number(p.value[j], row[col++]);
 
 			const time_t eventEndTime = p.endTime;
-			const struct tm vEventEndKey = *localtime(&eventEndTime);
+			const std::tm vEventEndKey = auriga::time::LocalTime(eventEndTime);
 			if (vEventEndKey.tm_mon < vKey.tm_mon && p.endTime != 0)
 				continue;
 
@@ -4262,7 +4265,7 @@ bool CClientManager::InitializeEventManager(bool updateFromGameMaster)
 			p.eventStatus = p.eventTypeOnlyStart ? false : cur_Time >= p.startTime && cur_Time <= p.endTime;
 
 			const time_t eventStartTime = p.startTime;
-			const struct tm vEventStartKey = *localtime(&eventStartTime);
+			const std::tm vEventStartKey = auriga::time::LocalTime(eventStartTime);
 
 			bool insertWithStart = true;
 			if (vEventStartKey.tm_mon < vKey.tm_mon)
@@ -4892,7 +4895,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 
 									char       timeText[21];
 									time_t     now = time(nullptr);
-									struct tm  tstruct = *localtime(&now);
+									struct tm  tstruct = auriga::time::LocalTime(now);
 									strftime(timeText, sizeof(timeText), "%Y-%m-%d %X", &tstruct);
 
 									TIShopLogData logData;

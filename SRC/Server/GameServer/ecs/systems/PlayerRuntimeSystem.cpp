@@ -12,6 +12,7 @@
 #include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
+#include <Core/Time.h>
 #include "SkillSystem.hpp"
 #include "../EcsDiagnostics.hpp"
 #include "InventorySystem.hpp"
@@ -780,7 +781,7 @@ int GetSecondsTillNextMonth()
 {
     time_t iTime;
     time(&iTime);
-    struct tm endTime = *localtime(&iTime);
+    std::tm endTime = auriga::time::LocalTime(iTime);
 
     int iCurrentMonth = endTime.tm_mon;
 
@@ -1607,6 +1608,7 @@ bool SetVoteCoin(entt::entity e, int64_t amount)
 #include "../../../common/rune_length.h"
 #include "../../../common/stole_length.h"
 #include <Core/Logging.hpp>
+#include <Core/Time.h>
 #ifdef ENABLE_ANTICHEAT
 #include "../../network/hwidmanager.h"
 #endif

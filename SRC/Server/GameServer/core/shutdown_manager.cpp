@@ -8,7 +8,7 @@
 
 CShutdownManager t = CShutdownManager();
 
-CShutdownManager::CShutdownManager() : m_pTime(nullptr), m_lTime(0), m_bShutdownAlarm(false)
+CShutdownManager::CShutdownManager() : m_bShutdownAlarm(false)
 {
 	m_lstDesc.clear();
 }
@@ -52,7 +52,7 @@ void CShutdownManager::Update()
 
 	if(!m_bShutdownAlarm)
 	{
-		if(m_pTime->tm_hour >= 23 && m_pTime->tm_min >= 50)
+		if(m_time.tm_hour >= 23 && m_time.tm_min >= 50)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			for(std::list<LPDESC>::iterator i = m_lstDesc.begin(); i != m_lstDesc.end(); i++) {
@@ -105,11 +105,11 @@ bool CShutdownManager::CheckShutdownAge(const char* szSocialID)
 
 	if(CharToInt(szSocialID[6]) < 3)
 	{
-		nAge = m_pTime->tm_year - nAge;
+		nAge = m_time.tm_year - nAge;
 	}
 	else
 	{
-		nAge = m_pTime->tm_year - 100 - nAge;
+		nAge = m_time.tm_year - 100 - nAge;
 	}
 
 	if(nAge < gShutdownAge)
@@ -124,7 +124,7 @@ bool CShutdownManager::CheckShutdownTime()
 
 	UpdateTime();
 
-	if(m_pTime->tm_hour < 6)
+	if(m_time.tm_hour < 6)
 		return true;
 	else
 		return false;

@@ -1,6 +1,7 @@
 #define __LIBTHECORE__
 #include "stdafx.h"
 #include "Logging.hpp"
+#include "Time.h"
 #include "Core/Logging.hpp"
 
 #ifndef _WIN32
@@ -111,7 +112,7 @@ LPLOGFILE log_file_init(const char * filename, const char * openmode)
 	time_t time_s;
 
 	time_s = time(0);
-	curr_tm = *localtime(&time_s);
+	curr_tm = auriga::time::LocalTime(time_s);
 
 	fp = fopen(filename, openmode);
 
@@ -264,7 +265,7 @@ void log_file_rotate(LPLOGFILE logfile)
     char	system_cmd[128];
 
     time_s = time(0);
-    curr_tm = *localtime(&time_s);
+    curr_tm = auriga::time::LocalTime(time_s);
 
     if (curr_tm.tm_mday != logfile->last_day)
     {
