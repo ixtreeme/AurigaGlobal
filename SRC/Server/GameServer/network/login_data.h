@@ -31,9 +31,9 @@ class CLoginData
 		void		SetDeleted(bool bSet);
 		bool		IsDeleted();
 
-		void		SetPremium(int * paiPremiumTimes);
-		int		GetPremium(uint8_t type);
-		int *		GetPremiumPtr();
+		void		SetPremium(int64_t * paiPremiumTimes);
+		int64_t	GetPremium(uint8_t type);
+		int64_t *	GetPremiumPtr();
 
 
 	private:
@@ -44,7 +44,7 @@ class CLoginData
 		char		m_szIP[MAX_HOST_LENGTH+1];
 		bool		m_bDeleted;
 		std::string	m_stLogin;
-		int		m_aiPremiumTimes[PREMIUM_MAX_NUM];
+		int64_t	m_aiPremiumTimes[PREMIUM_MAX_NUM];
 
 
 

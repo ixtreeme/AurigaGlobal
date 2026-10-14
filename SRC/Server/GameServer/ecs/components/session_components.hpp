@@ -33,7 +33,7 @@ struct LoginInfo {
     uint32_t playStartTime;
     std::string mobile;
     uint32_t logOffInterval;
-    std::array<int, PREMIUM_MAX_NUM> premiumTimes {};
+    std::array<int64_t, PREMIUM_MAX_NUM> premiumTimes {};
 };
 
 struct AntiFlood {

@@ -33,9 +33,9 @@ class CLoginData
 
 	time_t		Getlastplay() { return m_lastplay; }
 
-	void            SetPremium(int * paiPremiumTimes);
-	int             GetPremium(uint8_t type);
-	int *           GetPremiumPtr();
+	void            SetPremium(int64_t * paiPremiumTimes);
+	int64_t         GetPremium(uint8_t type);
+	int64_t *       GetPremiumPtr();
 
 	uint32_t		GetLastPlayerID() const { return m_dwLastPlayerID; }
 	void		SetLastPlayerID(uint32_t id) { m_dwLastPlayerID = id; }
@@ -50,7 +50,7 @@ class CLoginData
 	bool		m_bDeleted;
 
 	time_t		m_lastplay;
-	int		m_aiPremiumTimes[PREMIUM_MAX_NUM];
+	int64_t	m_aiPremiumTimes[PREMIUM_MAX_NUM];
 
 	uint32_t		m_dwLastPlayerID;
 

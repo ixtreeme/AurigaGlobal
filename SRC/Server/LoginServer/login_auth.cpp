@@ -173,12 +173,12 @@ void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, S
 	const char* status = row[col++];
 	const char* notAvail = row[col++];
 
-	int premiumTimes[PREMIUM_MAX_NUM] = {};
+	int64_t premiumTimes[PREMIUM_MAX_NUM] = {};
 
 	for (int i = PREMIUM_EXP; i <= PREMIUM_GOLD; ++i)
 	{
 		if (row[col])
-			premiumTimes[i] = atoi(row[col]);
+			premiumTimes[i] = strtoll(row[col], nullptr, 10);
 
 		++col;
 	}

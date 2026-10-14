@@ -101,12 +101,12 @@ bool CLoginData::IsDeleted()
 	return m_bDeleted;
 }
 
-void CLoginData::SetPremium(int * paiPremiumTimes)
+void CLoginData::SetPremium(int64_t * paiPremiumTimes)
 {
 	memcpy(m_aiPremiumTimes, paiPremiumTimes, sizeof(m_aiPremiumTimes));
 }
 
-int CLoginData::GetPremium(uint8_t type)
+int64_t CLoginData::GetPremium(uint8_t type)
 {
 	if (type >= PREMIUM_MAX_NUM)
 		return 0;
@@ -114,7 +114,7 @@ int CLoginData::GetPremium(uint8_t type)
 	return m_aiPremiumTimes[type];
 }
 
-int * CLoginData::GetPremiumPtr()
+int64_t * CLoginData::GetPremiumPtr()
 {
 	return &m_aiPremiumTimes[0];
 }

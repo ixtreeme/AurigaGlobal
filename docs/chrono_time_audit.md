@@ -215,3 +215,35 @@ kovetkezo deploy-nal.
   (`marriage.time`, `horse_hp_droptime`, `upgrade_limit_time` stb.), a
   `player.playtime` es premium oszlopok egyeztetese.
 - **Quest flag idobelyegek**: `QuestSystem::SetFlag/GetFlag` int32 -> int64.
+
+
+## Phase 3C statusz (KESZ resz, 2026-10-13)
+
+- **Premium idok int64**: a teljes lanc `int` -> `int64_t`:
+  - `TPacketGDAuthLogin::iPremiumTimes` (common/tables.h) es
+    `LoginGDAuthLogin::iPremiumTimes` (LoginServer/login_db_link.h) -
+    a LoginServer <-> Database auth wire,
+  - `LoginServer/login_auth.cpp`: helyi `premiumTimes` tomb + `strtoll`
+    (elotte `atoi` -> 32-bites),
+  - `CLoginData` (Database/LoginData.*) es `CLoginData`
+    (GameServer/network/login_data.*): Set/Get/Ptr + tomb,
+  - `TPlayerTable::aiPremiumTimes`,
+  - ECS `LoginInfo::premiumTimes` (`std::array<int64_t, 9>`),
+  - `PlayerRuntimeSystem::GetPremiumRemainSeconds` visszateres int64
+    (elotte `premiumTimes[i] - get_global_time()` 64-bites erteket
+    int-be truncolt).
+  - A DB oldal mar `UNIX_TIMESTAMP(silver_expire)` stb. (DATETIME -> unix
+    masodperc), igy nincs oszlop-migracio; a DATETIME 2038 felett is OK.
+- Ezzel a premium lejarati idok 2038 utan is helyesek.
+- Build: GameServer/Database/LoginServer Debug + Release zold.
+
+### Hatralevo (Phase 3D)
+
+- **Quest flag idobelyegek**: `QuestSystem::SetFlag/GetFlag` int32 -> int64
+  (a flag-tar tipusa + lua getf/setf hatarok atnezese).
+- **DB migracio**: unix-masodperc jellegu INT oszlopok -> BIGINT
+  (`marriage.time`, `horse_hp_droptime`, `upgrade_limit_time` stb.),
+  valamint a hozzajuk tartozo C++ mezok (TMarriage.time uint32 stb.).
+- **Megjegyzes**: a `TPlayerTable` es `TPacketGDAuthLogin` merete valtozott
+  (int64 premium) - a GameServer/Database/LoginServer binarisokat egyutt
+  kell telepiteni (protokoll-verzio bump javasolt).

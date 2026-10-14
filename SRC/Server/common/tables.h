@@ -500,7 +500,7 @@ typedef struct SPlayerTable
 
 	uint32_t	logoff_interval;
 
-	int		aiPremiumTimes[PREMIUM_MAX_NUM];
+	int64_t		aiPremiumTimes[PREMIUM_MAX_NUM];
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 	int 	envanter;
 #endif
@@ -1151,7 +1151,7 @@ typedef struct SPacketGDAuthLogin
 #ifdef ENABLE_MULTI_LANGUAGE
 	uint8_t	bLanguage;
 #endif	
-	int		iPremiumTimes[PREMIUM_MAX_NUM];
+	int64_t		iPremiumTimes[PREMIUM_MAX_NUM];
 } TPacketGDAuthLogin;
 
 typedef struct SPacketGDLoginByKey

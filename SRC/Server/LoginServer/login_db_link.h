@@ -48,7 +48,7 @@ struct LoginGDAuthLogin
 #ifdef ENABLE_MULTI_LANGUAGE
 	uint8_t		bLanguage;
 #endif
-	int			iPremiumTimes[PREMIUM_MAX_NUM];
+	int64_t			iPremiumTimes[PREMIUM_MAX_NUM];
 };
 
 #pragma pack()

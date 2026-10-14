@@ -853,7 +853,7 @@ uint8_t GetMobRank(entt::entity e)
 	return table ? table->bRank : MOB_RANK_KNIGHT;
 }
 
-int GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType)
+int64_t GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType)
 {
 	if (e == entt::null || !g_registry.valid(e) || premiumType >= PREMIUM_MAX_NUM)
 		return 0;
