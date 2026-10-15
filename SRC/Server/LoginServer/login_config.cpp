@@ -53,6 +53,15 @@ bool LoadLoginConfig(const char* path, LoginConfig& cfg)
 			cfg.dbLink.host = link.value("host", std::string());
 			cfg.dbLink.port = static_cast<uint16_t>(link.value("port", 0));
 		}
+
+		if (doc.contains("tls"))
+		{
+			const auto& tls = doc.at("tls");
+
+			cfg.tls.enabled = tls.value("enabled", false);
+			cfg.tls.certFile = tls.value("cert_file", std::string());
+			cfg.tls.keyFile = tls.value("key_file", std::string());
+		}
 	}
 	catch (const std::exception& ex)
 	{
@@ -63,6 +72,12 @@ bool LoadLoginConfig(const char* path, LoginConfig& cfg)
 	if (cfg.listenPort == 0)
 	{
 		LOG_ERROR("LoginServer: 'port' is missing or zero in '{}'", path);
+		return false;
+	}
+
+	if (cfg.tls.enabled && (cfg.tls.certFile.empty() || cfg.tls.keyFile.empty()))
+	{
+		LOG_ERROR("LoginServer: 'tls' is enabled without 'cert_file' and 'key_file' in '{}'", path);
 		return false;
 	}
 

@@ -10,13 +10,19 @@
 class LoginAuth;
 class LoginSession;
 
+namespace auriga::net
+{
+	class TlsServerContext;
+}
+
 // Client acceptor for the login server. Accepted connections become login
-// sessions; closed sessions are reaped by Collect() from the server loop
+// sessions - over TLS when a context is given, with the legacy packet cipher
+// otherwise; closed sessions are reaped by Collect() from the server loop
 // once their outstanding io work has drained.
 class LoginListener
 {
 public:
-	LoginListener(uint16_t port, LoginAuth& auth);
+	LoginListener(uint16_t port, LoginAuth& auth, auriga::net::TlsServerContext* tls = nullptr);
 	~LoginListener();
 
 	LoginListener(const LoginListener&) = delete;
@@ -25,7 +31,8 @@ public:
 	bool IsOpen() const { return m_acceptor.is_open(); }
 	void Start();
 
-	// Game loop: deletes sessions whose socket teardown has completed.
+	// Game loop: drops sessions past their TLS handshake deadline and
+	// deletes those whose socket teardown has completed.
 	void Collect();
 
 	LoginLimiter& Limiter() { return m_limiter; }
@@ -40,5 +47,6 @@ private:
 	auriga::net::tcp::acceptor m_acceptor;
 	std::vector<LoginSession*> m_sessions;
 	LoginAuth& m_auth;
+	auriga::net::TlsServerContext* m_tls { nullptr };
 	LoginLimiter m_limiter;
 };

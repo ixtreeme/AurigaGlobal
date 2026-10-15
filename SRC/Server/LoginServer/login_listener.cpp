@@ -18,8 +18,8 @@ namespace
 	}
 }
 
-LoginListener::LoginListener(uint16_t port, LoginAuth& auth)
-	: m_acceptor(auriga::net::Io()), m_auth(auth)
+LoginListener::LoginListener(uint16_t port, LoginAuth& auth, auriga::net::TlsServerContext* tls)
+	: m_acceptor(auriga::net::Io()), m_auth(auth), m_tls(tls)
 {
 	boost::system::error_code ec;
 
@@ -69,6 +69,10 @@ void LoginListener::Collect()
 	while (it != m_sessions.end())
 	{
 		LoginSession* session = *it;
+
+		// A TLS peer that never finishes its handshake is dropped here.
+		if (!session->IsClosed())
+			session->CheckHeartbeat();
 
 		if (session->IsClosed() && !session->HasPendingIoWork() && !session->HasPendingDbWork())
 		{
@@ -129,7 +133,7 @@ void LoginListener::OnAccept(auriga::net::tcp::socket& socket)
 	auto* session = new LoginSession(NextHandshakeValue(), &m_auth);
 	session->SetHost(host);
 
-	if (!session->Accept(std::move(socket)))
+	if (!session->Accept(std::move(socket), m_tls))
 		delete session;
 	else
 	{

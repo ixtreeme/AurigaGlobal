@@ -20,9 +20,13 @@ LoginSession::LoginSession(uint32_t handshake, LoginAuth* auth)
 {
 }
 
-bool LoginSession::Accept(auriga::net::tcp::socket&& sock)
+bool LoginSession::Accept(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext* tls)
 {
-	AttachSocket(std::move(sock));
+	// Over TLS the handshake packet below waits until the stream is up.
+	if (tls)
+		AttachTlsSocket(std::move(sock), *tls);
+	else
+		AttachSocket(std::move(sock));
 	CreateBuffers(MAX_INPUT_LEN, OUTPUT_BUFFER_SIZE);
 
 	if (!m_lpInputBuffer || !m_lpOutputBuffer)
@@ -166,6 +170,16 @@ void LoginSession::HandleHandshake(const char* data, int)
 
 	if (bias >= 0 && bias <= 50)
 	{
+		// TLS already protects the stream: no key agreement, the completion
+		// tells the client to send LOGIN3.
+		if (IsTls())
+		{
+			SendKeyAgreementCompleted();
+			m_phase = Phase::Auth;
+			LOG_INFO("LoginServer: handshake complete over TLS, waiting for LOGIN3");
+			return;
+		}
+
 		SendKeyAgreement();
 		return;
 	}
@@ -190,6 +204,13 @@ void LoginSession::HandleKeyAgreement(const char* data, int)
 {
 	if (m_phase != Phase::Handshake)
 		return;
+
+	if (IsTls())
+	{
+		LOG_ERROR("LoginServer: key agreement on a TLS session");
+		Close();
+		return;
+	}
 
 	const auto* p = reinterpret_cast<const LoginKeyAgreement*>(data);
 

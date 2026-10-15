@@ -1,3 +1,5 @@
+#include "TestTls.h"
+
 #include "../../SRC/Server/LoginServer/login_auth.h"
 #include "../../SRC/Server/LoginServer/login_db.h"
 #include "../../SRC/Server/LoginServer/login_db_link.h"
@@ -5,11 +7,14 @@
 
 #include <Core/asio_engine.h>
 #include <Core/Time.h>
+#include <Core/tls.h>
 
 #include <boost/asio.hpp>
 
+#include <atomic>
 #include <chrono>
 #include <cstring>
+#include <exception>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -19,11 +24,14 @@
 
 using namespace std::chrono_literals;
 using tcp = boost::asio::ip::tcp;
+namespace ssl = boost::asio::ssl;
+using namespace test_tls;
 
 // A production LoginSession on a loopback socket, driven by a scripted client
 // that speaks the real handshake and key agreement with its own Cipher, then
 // sends LOGIN3 encrypted. TCP may split any packet; the session has to
-// assemble it from the pieces whatever the cipher state.
+// assemble it from the pieces whatever the cipher state. Over TLS the same
+// session skips the key agreement and reads LOGIN3 from the TLS stream.
 namespace {
 int checks = 0;
 void Check(bool value, const char* why) { ++checks; if (!value) throw std::runtime_error(why); }
@@ -161,6 +169,113 @@ void Scenario(const std::vector<size_t>& agreementPieces, const std::vector<size
     session->EndDbQuery();
     delete session;
 }
+
+// A TLS client on its own thread (the session answers from the game thread
+// once the TLS stream is up): handshake echo, then KEY_AGREEMENT_COMPLETED
+// with no key agreement, then LOGIN3 split as given - or, with
+// sendKeyAgreement, a key agreement in place of the echo, which the TLS
+// session must answer by closing.
+void TlsScenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool sendKeyAgreement = false)
+{
+    queries.clear();
+    auto context = auriga::net::TlsServerContext::FromPem(pem.cert, pem.key);
+    Check(context != nullptr, "the test certificate did not load");
+    tcp::acceptor acceptor(auriga::net::Io(), tcp::endpoint(boost::asio::ip::make_address("127.0.0.1"), 0));
+    const auto endpoint = acceptor.local_endpoint();
+    LoginAuth auth;
+    auto* session = new LoginSession(0x7151, &auth);
+
+    std::atomic<bool> finished { false }, mayClose { false };
+    std::exception_ptr failure;
+    std::thread client([&] {
+        try {
+            boost::asio::io_context io;
+            ssl::context clientContext(ssl::context::tls_client);
+            clientContext.set_verify_mode(ssl::verify_peer);
+            clientContext.add_certificate_authority(boost::asio::buffer(pem.cert));
+            ssl::stream<tcp::socket> stream(io, clientContext);
+            stream.next_layer().connect(endpoint);
+            stream.next_layer().set_option(tcp::no_delay(true));
+            Expect(Within(io, [&](Done done) { stream.async_handshake(ssl::stream_base::client, done); }),
+                "the TLS handshake failed");
+            const auto send = [&](const void* data, size_t size) {
+                Expect(Within(io, [&](Done done) {
+                    boost::asio::async_write(stream, boost::asio::buffer(data, size), Transfer(done));
+                }), "a client packet could not be written");
+            };
+
+            LoginGCHandshake hello {};
+            Expect(Within(io, [&](Done done) { boost::asio::async_read(stream, boost::asio::buffer(&hello, sizeof(hello)), Transfer(done)); }),
+                "no handshake from the server");
+            Check(hello.bHeader == HEADER_GC_HANDSHAKE && hello.dwHandshake == 0x7151, "the handshake packet was wrong");
+            if (sendKeyAgreement) {
+                // Instead of the echo: the session must drop the connection
+                // without answering.
+                LoginKeyAgreement agreement {};
+                agreement.bHeader = HEADER_CG_KEY_AGREEMENT;
+                send(&agreement, sizeof(agreement));
+                char extra[64];
+                std::size_t got = 0;
+                const auto ec = Within(io, [&](Done done) { stream.async_read_some(boost::asio::buffer(extra), Transfer(done, &got)); });
+                Check(ec && got == 0, "the TLS session answered a key agreement");
+            } else {
+                LoginCGHandshake echo {};
+                echo.bHeader = HEADER_CG_HANDSHAKE;
+                echo.dwHandshake = hello.dwHandshake;
+                echo.dwTime = get_dword_time();
+                send(&echo, sizeof(echo));
+
+                LoginKeyAgreementCompleted completed {};
+                Expect(Within(io, [&](Done done) { boost::asio::async_read(stream, boost::asio::buffer(&completed, sizeof(completed)), Transfer(done)); }),
+                    "no completion after the handshake");
+                Check(completed.bHeader == HEADER_GC_KEY_AGREEMENT_COMPLETED,
+                    "a TLS session did not go straight to the completion");
+
+                const auto login = Login3("tester", "secret");
+                const auto* bytes = reinterpret_cast<const char*>(&login);
+                size_t sent = 0;
+                for (const size_t piece : loginPieces) {
+                    send(bytes + sent, piece);
+                    sent += piece;
+                    std::this_thread::sleep_for(60ms);
+                }
+                send(bytes + sent, sizeof(login) - sent);
+            }
+            const auto until = std::chrono::steady_clock::now() + 5s;
+            while (!mayClose && std::chrono::steady_clock::now() < until)
+                std::this_thread::sleep_for(2ms);
+            boost::system::error_code ec;
+            stream.lowest_layer().close(ec);
+        } catch (...) {
+            failure = std::current_exception();
+        }
+        finished = true;
+    });
+
+    tcp::socket accepted(auriga::net::Io());
+    acceptor.accept(accepted);
+    Check(session->Accept(std::move(accepted), context.get()), "the session did not accept the connection");
+    PumpUntil([&] { return !queries.empty() || session->IsClosed() || finished.load(); });
+    mayClose = true;
+    PumpUntil([&] { return finished.load(); });
+    client.join();
+    if (failure)
+        std::rethrow_exception(failure);
+
+    if (sendKeyAgreement) {
+        Check(queries.empty() && session->IsClosed(), "a TLS session accepted a key agreement");
+    } else {
+        Check(session->IsTls() && session->IsTlsReady(), "the session was not a ready TLS session");
+        Check(queries.size() == 1 && queries[0].params.size() == 2 &&
+            queries[0].params[0].bytes == "secret" && queries[0].params[1].bytes == "tester",
+            "LOGIN3 over TLS did not arrive intact");
+    }
+    Check(PumpUntil([&] { return session->IsClosed() && !session->HasPendingIoWork(); }),
+        "the session did not wind down after the client left");
+    if (!sendKeyAgreement)
+        session->EndDbQuery();
+    delete session;
+}
 }
 
 // Database and link seams; the session, the auth and the cipher are real.
@@ -186,6 +301,10 @@ int main()
         Scenario({}, {});                       // every packet whole
         Scenario({7, 100}, {10});               // key agreement in three, LOGIN3 in two
         Scenario({}, {1, 40, 2, 30});           // LOGIN3 in five pieces
+        const Pem pem = SelfSigned("login-tls-test");
+        TlsScenario(pem, {});                   // over TLS, LOGIN3 whole
+        TlsScenario(pem, {1, 40, 2, 30});       // over TLS, LOGIN3 in five pieces
+        TlsScenario(pem, {}, true);             // a key agreement on a TLS session
     } catch (const std::exception& error) {
         std::cerr << "login session test failed: " << error.what() << '\n';
         result = 1;

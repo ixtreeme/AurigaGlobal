@@ -2,11 +2,14 @@
 #include <Core/Logging.hpp>
 #include <Core/asio_engine.h>
 #include <Core/peer_auth.h>
+#include <Core/tls.h>
 
 #include "login_auth.h"
 #include "login_config.h"
 #include "login_db_link.h"
 #include "login_listener.h"
+
+#include <memory>
 
 // LoginServer: standalone login/auth server, next to Database and GameServer.
 //
@@ -53,7 +56,28 @@ int main(int argc, char** argv)
 	dbLink.Configure(config.dbLink.host, config.dbLink.port);
 	auth.SetLink(&dbLink);
 
-	LoginListener listener(config.listenPort, auth);
+	// Client connections are TLS when configured; the legacy packet cipher
+	// runs on the plain socket otherwise.
+	std::unique_ptr<auriga::net::TlsServerContext> tls;
+
+	if (config.tls.enabled)
+	{
+		tls = auriga::net::TlsServerContext::FromFiles(config.tls.certFile, config.tls.keyFile);
+
+		if (!tls)
+		{
+			LOG_ERROR("LoginServer: startup aborted, the TLS certificate could not be loaded");
+			auriga::net::Stop();
+			thecore_destroy();
+			return 1;
+		}
+
+		LOG_INFO("LoginServer: client connections use TLS ({})", config.tls.certFile);
+	}
+	else
+		LOG_INFO("LoginServer: client connections use the legacy packet cipher");
+
+	LoginListener listener(config.listenPort, auth, tls.get());
 	auth.SetLimiter(&listener.Limiter());
 
 	if (!listener.IsOpen())

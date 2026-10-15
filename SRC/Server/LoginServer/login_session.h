@@ -88,22 +88,28 @@ class LoginAuth;
 
 // Client session for the login/auth role.
 //
-// Handshake phases (improved packet encryption):
+// Handshake phases, legacy packet cipher:
 //   server -> HANDSHAKE
 //   client -> HANDSHAKE (echo + time delta)
 //   server -> KEY_AGREEMENT
 //   client -> KEY_AGREEMENT
 //   server -> KEY_AGREEMENT_COMPLETED, cipher activates -> AUTH
 //
-// LOGIN3 handling (account lookup + login key reply) is the next step; it
-// lands in HandleLogin().
+// Over TLS (the stream is already up when HANDSHAKE goes out):
+//   server -> HANDSHAKE
+//   client -> HANDSHAKE (echo + time delta)
+//   server -> KEY_AGREEMENT_COMPLETED, no key agreement -> AUTH
+//
+// LOGIN3 is then answered in HandleLogin().
 class LoginSession : public PeerSession
 {
 public:
 	LoginSession(uint32_t handshake, LoginAuth* auth);
 	~LoginSession() override = default;
 
-	bool Accept(auriga::net::tcp::socket&& sock);
+	// With a TLS context the connection is TLS and the packet cipher stays
+	// off; without one the legacy key agreement runs.
+	bool Accept(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext* tls = nullptr);
 	bool IsClosed() const { return m_closed; }
 
 	const std::string& GetLogin() const { return m_login; }
