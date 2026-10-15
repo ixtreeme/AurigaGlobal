@@ -211,9 +211,14 @@ void DESC::SetPong(bool b)
 	m_bPong = b;
 }
 
-bool DESC::Setup(auriga::net::tcp::socket&& sock, const sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake)
+bool DESC::Setup(auriga::net::tcp::socket&& sock, const sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake,
+	auriga::net::TlsServerContext* tls)
 {
-	AttachSocket(std::move(sock));
+	// Over TLS the handshake packet below waits until the stream is up.
+	if (tls)
+		AttachTlsSocket(std::move(sock), *tls);
+	else
+		AttachSocket(std::move(sock));
 
 	m_stHost		= inet_ntoa(c_rSockAddr.sin_addr);
 	m_wPort			= c_rSockAddr.sin_port;

@@ -13,6 +13,11 @@
 
 class CLoginKey;
 
+namespace auriga::net
+{
+	class TlsServerContext;
+}
+
 class DESC_MANAGER : public singleton<DESC_MANAGER>
 {
 	public:
@@ -91,11 +96,16 @@ class DESC_MANAGER : public singleton<DESC_MANAGER>
 
 		bool			IsP2PDescExist(const char * szHost, uint16_t wPort);
 
+		// Client connections accepted from here on are TLS sessions. The
+		// context is owned by the caller and must outlive them.
+		void			SetClientTls(auriga::net::TlsServerContext* tls) { m_clientTls = tls; }
+
 	private:
 		void				DoAccept(bool bP2P);
 		void				DoAccept(bool bP2P, std::shared_ptr<auriga::net::tcp::acceptor> acceptor);
 
 		std::shared_ptr<auriga::net::tcp::acceptor>	m_tcpAcceptor;
+		auriga::net::TlsServerContext*			m_clientTls { nullptr };
 		std::shared_ptr<auriga::net::tcp::acceptor>	m_p2pAcceptor;
 		std::vector<LPDESC>				m_pendingDeletes;
 

@@ -136,7 +136,15 @@ void CInputProcessor::Handshake(LPDESC d, const char * c_pData)
 			if (d->HandshakeProcess(p->dwTime, p->lDelta, false))
 			{
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
-				d->SendKeyAgreement();
+				// TLS already protects the stream: no key agreement, the
+				// completion tells the client to log in.
+				if (d->IsTls())
+				{
+					d->SendKeyAgreementCompleted();
+					d->SetPhase(PHASE_LOGIN);
+				}
+				else
+					d->SendKeyAgreement();
 #else
 				// Handshaking succeeded
 				d->SetPhase(PHASE_LOGIN);
@@ -233,6 +241,13 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 	else if (bHeader == HEADER_CG_KEY_AGREEMENT)
 	{
+		if (d->IsTls())
+		{
+			LOG_ERROR("key agreement on a TLS connection from {}", inet_ntoa(d->GetAddr().sin_addr));
+			d->SetPhase(PHASE_CLOSE);
+			return 0;
+		}
+
 		// Send out the key agreement completion packet first
 		// to help client to enter encryption mode
 		d->SendKeyAgreementCompleted();

@@ -475,7 +475,7 @@ LPDESC DESC_MANAGER::AcceptDesc(auriga::net::tcp::socket&& s)
 	auto newd = new DESC;
 	crc_t handshake = CreateHandshake();
 
-	if (!newd->Setup(std::move(s), peer, ++m_iHandleCount, handshake))
+	if (!newd->Setup(std::move(s), peer, ++m_iHandleCount, handshake, m_clientTls))
 	{
 		delete newd;
 		return nullptr;

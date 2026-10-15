@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <string_view>
 
 enum
@@ -15,6 +16,11 @@ extern char sql_addr[256];
 
 extern uint16_t mother_port;
 extern uint16_t p2p_port;
+
+// TLS on the client port (network.tls in conf.json); P2P stays plain.
+extern bool g_clientTls;
+extern std::string g_clientTlsCertFile;
+extern std::string g_clientTlsKeyFile;
 
 extern char db_addr[ADDRESS_MAX_LEN + 1];
 extern uint16_t db_port;

@@ -111,7 +111,10 @@ class DESC : public PeerSession
 
 		void			FlushOutput();
 
-		bool			Setup(auriga::net::tcp::socket&& sock, const struct sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake);
+		// With a TLS context the connection is TLS and the packet cipher
+		// stays off; without one the legacy key agreement runs.
+		bool			Setup(auriga::net::tcp::socket&& sock, const struct sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake,
+						auriga::net::TlsServerContext* tls = nullptr);
 
 		socket_t		GetSocket() const	{ return GetSocketId(); }
 		const char *	GetHostName()		{ return m_stHost.c_str(); }

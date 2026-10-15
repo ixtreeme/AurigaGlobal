@@ -81,6 +81,14 @@ bool GameConfig::Load(const char* path)
 			network.dbAddr = n.value("db_addr", std::string());
 			network.dbPort = static_cast<uint16_t>(n.value("db_port", 0));
 			network.bindIp = n.value("bind_ip", std::string());
+
+			if (n.contains("tls"))
+			{
+				const auto& tls = n.at("tls");
+				network.tls.enabled = tls.value("enabled", false);
+				network.tls.certFile = tls.value("cert_file", std::string());
+				network.tls.keyFile = tls.value("key_file", std::string());
+			}
 		}
 
 		if (doc.contains("sql"))
