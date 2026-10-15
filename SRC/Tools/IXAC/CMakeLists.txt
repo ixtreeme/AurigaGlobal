@@ -5,7 +5,6 @@ add_library(IXAC SHARED ${IXAC_HEADER} ${IXAC_SOURCE} IXAC_Resource.rc)
 
 target_link_libraries(IXAC
 
-	PUBLIC SecureLayer
 	PUBLIC psapi
 	# The static libcurl (IXAC_Net) needs Winsock and SSPI.
 	PRIVATE ws2_32

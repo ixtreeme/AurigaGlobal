@@ -95,7 +95,6 @@ if(AURIGA_USE_VCPKG)
         zstd
         xxhash
         python2
-        cryptopp
         OpenSSL
         libconfig
         libsodium

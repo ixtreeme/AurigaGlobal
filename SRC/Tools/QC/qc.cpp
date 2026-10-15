@@ -58,7 +58,30 @@ extern "C" {
 #include <sys/stat.h>
 #include <cerrno>
 
-#include "../../Launcher/Base/crc32.h"
+#include <array>
+#include <cstdint>
+
+// Standard CRC-32 (reflected 0xEDB88320, as zlib) - the value the client
+// Base library's GetCRC32 gave for the state names, without its Windows API.
+static uint32_t GetCRC32(const char* buf, size_t len)
+{
+	static const std::array<uint32_t, 256> table = [] {
+		std::array<uint32_t, 256> t {};
+		for (uint32_t i = 0; i < 256; ++i)
+		{
+			uint32_t c = i;
+			for (int k = 0; k < 8; ++k)
+				c = (c & 1) ? 0xEDB88320u ^ (c >> 1) : c >> 1;
+			t[i] = c;
+		}
+		return t;
+	}();
+
+	uint32_t crc = 0xffffffffu;
+	for (size_t i = 0; i < len; ++i)
+		crc = table[(crc ^ static_cast<unsigned char>(buf[i])) & 0xff] ^ (crc >> 8);
+	return crc ^ 0xffffffffu;
+}
 
 #define OUTPUT_FOLDER "object"
 
