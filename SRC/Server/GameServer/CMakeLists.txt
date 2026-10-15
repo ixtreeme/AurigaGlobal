@@ -95,6 +95,19 @@ if(WIN32)
 endif()
 add_test(NAME guild_member_lifecycle COMMAND GuildMemberLifecycleTests)
 
+# The LoginServer's Database link (login_db_link.cpp) against a scripted
+# Database on a loopback socket: the interserver auth handshake accepted,
+# and refused in each way it can be.
+add_executable(LoginDbLinkTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/LoginDbLinkTests.cpp
+    ../LoginServer/login_db_link.cpp
+)
+target_link_libraries(LoginDbLinkTests PRIVATE SERVER S_Core)
+if(WIN32)
+    target_link_libraries(LoginDbLinkTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME login_db_link COMMAND LoginDbLinkTests)
+
 # Core byte buffers under the asio session patterns: an output buffer that is
 # rarely drained to empty, a reader left with partial packets, growth.
 add_executable(BufferTests EXCLUDE_FROM_ALL

@@ -76,7 +76,9 @@ protected:
 private:
 	void StartConnect();
 	void ProcessPackets();
-	void HandleAuthFrame(uint8_t header, const char* payload, uint32_t size);
+	// One frame of the auth handshake; false when it refused the handshake
+	// and dropped the link, which releases the session buffers.
+	bool HandleAuthFrame(uint8_t header, const char* payload, uint32_t size);
 	void SendFrame(uint8_t header, const void* payload, uint32_t size);
 
 	std::string	m_host;

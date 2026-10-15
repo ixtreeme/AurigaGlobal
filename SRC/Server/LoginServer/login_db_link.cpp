@@ -169,7 +169,12 @@ void LoginDBLink::ProcessPackets()
 		const char* payload = data + offset + sizeof(LoginDBHeader);
 
 		if (m_awaitingAuth)
-			HandleAuthFrame(header.bHeader, payload, header.dwSize);
+		{
+			// A refused handshake drops the link, which releases the input
+			// buffer `data` points into: nothing more may be read from it.
+			if (!HandleAuthFrame(header.bHeader, payload, header.dwSize))
+				return;
+		}
 		else if (header.bHeader == DG_PING)
 			SendFrame(GD_PING, nullptr, 0);
 
@@ -179,14 +184,14 @@ void LoginDBLink::ProcessPackets()
 	buffer_read_proceed(m_lpInputBuffer, offset);
 }
 
-void LoginDBLink::HandleAuthFrame(uint8_t header, const char* payload, uint32_t size)
+bool LoginDBLink::HandleAuthFrame(uint8_t header, const char* payload, uint32_t size)
 {
 	if (header == DG_AUTH_CHALLENGE)
 	{
 		if (size != static_cast<uint32_t>(PeerAuth::NONCE_SIZE + PeerAuth::TIMESTAMP_SIZE + PeerAuth::MAC_SIZE))
 		{
 			OnPeerGone();
-			return;
+			return false;
 		}
 
 		std::memcpy(m_authNonce, payload, PeerAuth::NONCE_SIZE);
@@ -201,13 +206,13 @@ void LoginDBLink::HandleAuthFrame(uint8_t header, const char* payload, uint32_t 
 		{
 			LOG_ERROR("LoginServer: database auth challenge rejected");
 			OnPeerGone();
-			return;
+			return false;
 		}
 
 		uint8_t mac[PeerAuth::MAC_SIZE];
 		PeerAuth::ComputeAuthMac(PeerAuth::ROLE_CLIENT, m_authNonce, m_authTimestamp, mac);
 		SendFrame(GD_AUTH, mac, sizeof(mac));
-		return;
+		return true;
 	}
 
 	if (header == DG_AUTH_RESULT)
@@ -216,14 +221,16 @@ void LoginDBLink::HandleAuthFrame(uint8_t header, const char* payload, uint32_t 
 		{
 			LOG_ERROR("LoginServer: database auth failed");
 			OnPeerGone();
-			return;
+			return false;
 		}
 
 		m_awaitingAuth = false;
 		m_linked = true;
 		LOG_INFO("LoginServer: database link authenticated");
-		return;
+		return true;
 	}
+
+	return true;
 }
 
 void LoginDBLink::SendAuthLogin(const LoginGDAuthLogin& data)
