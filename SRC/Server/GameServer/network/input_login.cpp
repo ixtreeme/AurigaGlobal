@@ -204,9 +204,6 @@ void CInputLogin::LoginByKey(LPDESC d, const char* data)
 	LOG_INFO("LOGIN_BY_KEY: {} key {}", login, pinfo->dwLoginKey);
 
 	d->SetLoginKey(pinfo->dwLoginKey);
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-	d->SetSecurityKey(pinfo->adwClientKey);
-#endif
 
 	TPacketGDLoginByKey ptod;
 

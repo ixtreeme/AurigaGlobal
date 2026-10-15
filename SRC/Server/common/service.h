@@ -3,7 +3,6 @@
 
 
 #define ENABLE_NEW_CHANGES
-#define _IMPROVED_PACKET_ENCRYPTION_
 
 #define __ATTR_TRANSFER_SYSTEM__
 #define __PET_SYSTEM__

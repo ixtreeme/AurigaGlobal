@@ -185,8 +185,6 @@ CPacketInfoCG::CPacketInfoCG() {}
 CPacketInfoGG::CPacketInfoGG() {}
 CPacketInfoCG::~CPacketInfoCG() {}
 CPacketInfoGG::~CPacketInfoGG() {}
-Cipher::Cipher() : activated_(false), encoder_(nullptr), decoder_(nullptr), key_agreement_(nullptr) {}
-Cipher::~Cipher() {}
 void DESC::Packet(const void* data, int size) {
     const auto header = *static_cast<const uint8_t*>(data);
     uint8_t sub = 0;

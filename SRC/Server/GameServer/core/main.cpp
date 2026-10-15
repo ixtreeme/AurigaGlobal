@@ -636,23 +636,26 @@ int start(int argc, char **argv)
 	// Socket I/O runs on the dedicated engine thread from here on.
 	auriga::net::Start();
 
-	// The client port speaks TLS when configured; the legacy packet cipher
-	// runs on the plain socket otherwise. The context outlives every session.
+	// The client port speaks TLS only (network.tls in conf.json). The
+	// context outlives every session.
 	static std::unique_ptr<auriga::net::TlsServerContext> s_clientTls;
 
-	if (g_clientTls)
+	if (g_clientTlsCertFile.empty() || g_clientTlsKeyFile.empty())
 	{
-		s_clientTls = auriga::net::TlsServerContext::FromFiles(g_clientTlsCertFile, g_clientTlsKeyFile);
-
-		if (!s_clientTls)
-		{
-			LOG_ERROR("the client TLS certificate could not be loaded");
-			return 0;
-		}
-
-		DESC_MANAGER::instance().SetClientTls(s_clientTls.get());
-		LOG_INFO("client connections use TLS ({})", g_clientTlsCertFile);
+		LOG_ERROR("network.tls needs cert_file and key_file for the client port");
+		return 0;
 	}
+
+	s_clientTls = auriga::net::TlsServerContext::FromFiles(g_clientTlsCertFile, g_clientTlsKeyFile);
+
+	if (!s_clientTls)
+	{
+		LOG_ERROR("the client TLS certificate could not be loaded");
+		return 0;
+	}
+
+	DESC_MANAGER::instance().SetClientTls(s_clientTls.get());
+	LOG_INFO("client connections use TLS ({})", g_clientTlsCertFile);
 
 	if (!DESC_MANAGER::instance().StartAccept(g_szPublicIP, mother_port, false))
 	{

@@ -122,15 +122,14 @@ if(WIN32)
 endif()
 add_test(NAME login_auth COMMAND LoginAuthTests)
 
-# A login session on a loopback socket: the real handshake, key agreement and
-# encrypted LOGIN3, with packets split across reads.
+# A login session on a loopback socket over TLS: the handshake and LOGIN3,
+# with packets split across reads.
 add_executable(LoginSessionTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/LoginSessionTests.cpp
     ../LoginServer/login_session.cpp
     ../LoginServer/login_auth.cpp
     ../LoginServer/login_hwid.cpp
     ../LoginServer/login_limiter.cpp
-    ../LoginServer/cipher.cpp
 )
 target_link_libraries(LoginSessionTests PRIVATE SERVER S_Core)
 if(WIN32)

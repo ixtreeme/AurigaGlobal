@@ -96,8 +96,8 @@ class DESC_MANAGER : public singleton<DESC_MANAGER>
 
 		bool			IsP2PDescExist(const char * szHost, uint16_t wPort);
 
-		// Client connections accepted from here on are TLS sessions. The
-		// context is owned by the caller and must outlive them.
+		// Client connections are TLS sessions with this context; none is
+		// accepted before it is set. Owned by the caller, outlives them.
 		void			SetClientTls(auriga::net::TlsServerContext* tls) { m_clientTls = tls; }
 
 	private:

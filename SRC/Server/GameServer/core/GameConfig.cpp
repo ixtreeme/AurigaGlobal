@@ -85,7 +85,6 @@ bool GameConfig::Load(const char* path)
 			if (n.contains("tls"))
 			{
 				const auto& tls = n.at("tls");
-				network.tls.enabled = tls.value("enabled", false);
 				network.tls.certFile = tls.value("cert_file", std::string());
 				network.tls.keyFile = tls.value("key_file", std::string());
 			}

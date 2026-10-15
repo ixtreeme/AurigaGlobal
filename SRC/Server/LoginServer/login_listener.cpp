@@ -18,7 +18,7 @@ namespace
 	}
 }
 
-LoginListener::LoginListener(uint16_t port, LoginAuth& auth, auriga::net::TlsServerContext* tls)
+LoginListener::LoginListener(uint16_t port, LoginAuth& auth, auriga::net::TlsServerContext& tls)
 	: m_acceptor(auriga::net::Io()), m_auth(auth), m_tls(tls)
 {
 	boost::system::error_code ec;

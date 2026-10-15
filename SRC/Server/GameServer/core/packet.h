@@ -360,23 +360,13 @@ typedef struct
 	uint32_t	dwGuildID;
 } TLandPacketElement;
 
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
-struct TPacketKeyAgreement
-{
-	static const int MAX_DATA_LEN = 256;
-	uint8_t bHeader;
-	uint16_t wAgreedLength;
-	uint16_t wDataLength;
-	uint8_t data[MAX_DATA_LEN];
-};
-
-struct TPacketKeyAgreementCompleted
+// Sent once the handshake echo is accepted: the client may log in. The
+// stream is TLS, so there is no key agreement.
+struct TPacketHandshakeCompleted
 {
 	uint8_t bHeader;
 	uint8_t data[3]; // dummy (not used)
 };
-
-#endif // _IMPROVED_PACKET_ENCRYPTION_
 
 
 

@@ -56,28 +56,21 @@ int main(int argc, char** argv)
 	dbLink.Configure(config.dbLink.host, config.dbLink.port);
 	auth.SetLink(&dbLink);
 
-	// Client connections are TLS when configured; the legacy packet cipher
-	// runs on the plain socket otherwise.
-	std::unique_ptr<auriga::net::TlsServerContext> tls;
+	// Client connections are TLS only.
+	const std::unique_ptr<auriga::net::TlsServerContext> tls =
+		auriga::net::TlsServerContext::FromFiles(config.tls.certFile, config.tls.keyFile);
 
-	if (config.tls.enabled)
+	if (!tls)
 	{
-		tls = auriga::net::TlsServerContext::FromFiles(config.tls.certFile, config.tls.keyFile);
-
-		if (!tls)
-		{
-			LOG_ERROR("LoginServer: startup aborted, the TLS certificate could not be loaded");
-			auriga::net::Stop();
-			thecore_destroy();
-			return 1;
-		}
-
-		LOG_INFO("LoginServer: client connections use TLS ({})", config.tls.certFile);
+		LOG_ERROR("LoginServer: startup aborted, the TLS certificate could not be loaded");
+		auriga::net::Stop();
+		thecore_destroy();
+		return 1;
 	}
-	else
-		LOG_INFO("LoginServer: client connections use the legacy packet cipher");
 
-	LoginListener listener(config.listenPort, auth, tls.get());
+	LOG_INFO("LoginServer: client connections use TLS ({})", config.tls.certFile);
+
+	LoginListener listener(config.listenPort, auth, *tls);
 	auth.SetLimiter(&listener.Limiter());
 
 	if (!listener.IsOpen())

@@ -14,10 +14,9 @@
 //   "account_sql": { "host": "..", "port": 3306, "user": "..",
 //                    "password": "..", "database": ".." },
 //   "database_link": { "host": "..", "port": 5300 },
-//   "tls": {                               // optional; without it (or with
-//     "enabled": true,                     // enabled false) clients use the
-//     "cert_file": "tls/login.crt",        // legacy packet cipher
-//     "key_file": "tls/login.key"          // PEM chain and private key
+//   "tls": {                               // required: clients connect
+//     "cert_file": "tls/login.crt",        // over TLS only (PEM chain
+//     "key_file": "tls/login.key"          // and private key)
 //   }
 // }
 struct LoginConfig
@@ -45,7 +44,6 @@ struct LoginConfig
 
 	struct
 	{
-		bool		enabled { false };
 		std::string	certFile;
 		std::string	keyFile;
 	} tls;

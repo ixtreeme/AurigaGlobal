@@ -108,5 +108,4 @@ inline double rint(double x)
 #include "log.h"
 #include "main.h"
 #include "utils.h"
-#include "crypt.h"
 

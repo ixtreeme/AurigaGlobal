@@ -58,9 +58,6 @@ void DESC::Initialize()
 	m_iMinInputBufferLen = 0;
 
 	m_dwHandshake = 0;
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
-	m_plainInput = 0;
-#endif
 	m_dwHandshakeSentTime = 0;
 	m_iHandshakeRetry = 0;
 	m_dwClientTime = 0;
@@ -76,9 +73,6 @@ void DESC::Initialize()
 	memset( &m_SockAddr, 0, sizeof(m_SockAddr) );
 	memset( &m_UDPSockAddr, 0, sizeof(m_UDPSockAddr) );
 
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-	m_bEncrypted = false;
-#endif
 
 	m_wP2PPort = 0;
 	m_bP2PChannel = 0;
@@ -91,10 +85,6 @@ void DESC::Initialize()
 
 	m_pkLoginKey = nullptr;
 	m_dwLoginKey = 0;
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-	memset( m_adwDecryptionKey, 0, sizeof(m_adwDecryptionKey) );
-	memset( m_adwEncryptionKey, 0, sizeof(m_adwEncryptionKey) );
-#endif
 
 	m_bCRCMagicCubeIdx = 0;
 	m_dwProcCRC = 0;
@@ -148,10 +138,6 @@ void DESC::Destroy()
 	{
 		LOG_INFO("SYSTEM: closing socket. DESC #{}", GetSocket());
 		Log("SYSTEM: closing socket. DESC #%d", static_cast<int>(GetSocket()));
-
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
-		cipher_.CleanUp();
-#endif
 	}
 
 	DestroySession();
@@ -212,13 +198,10 @@ void DESC::SetPong(bool b)
 }
 
 bool DESC::Setup(auriga::net::tcp::socket&& sock, const sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake,
-	auriga::net::TlsServerContext* tls)
+	auriga::net::TlsServerContext& tls)
 {
-	// Over TLS the handshake packet below waits until the stream is up.
-	if (tls)
-		AttachTlsSocket(std::move(sock), *tls);
-	else
-		AttachSocket(std::move(sock));
+	// The handshake packet below waits until the TLS stream is up.
+	AttachTlsSocket(std::move(sock), tls);
 
 	m_stHost		= inet_ntoa(c_rSockAddr.sin_addr);
 	m_wPort			= c_rSockAddr.sin_port;
@@ -238,10 +221,6 @@ bool DESC::Setup(auriga::net::tcp::socket&& sock, const sockaddr_in & c_rSockAdd
 
 	m_pkPingEvent = event_create(ping_event, info, ping_event_second_cycle);
 
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-	memcpy(m_adwEncryptionKey, "1234abcd5678efgh", sizeof(uint32_t) * 4);
-	memcpy(m_adwDecryptionKey, "1234abcd5678efgh", sizeof(uint32_t) * 4);
-#endif // _IMPROVED_PACKET_ENCRYPTION_
 
 	// Set Phase to handshake
 	SetPhase(PHASE_HANDSHAKE);
@@ -270,18 +249,8 @@ int DESC::ProcessInput()
 
 	if (!m_pInputProcessor)
 		LOG_ERROR("no input processor");
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
 	else
 	{
-		// Only what arrived since the last pass is still ciphertext. Bytes
-		// that were already buffered when the cipher activated were sent
-		// before the client could encrypt, so they count as plaintext too.
-		const int total = static_cast<int>(buffer_size(m_lpInputBuffer));
-
-		if (cipher_.activated() && total > m_plainInput)
-			cipher_.Decrypt(static_cast<char*>(const_cast<void*>(buffer_read_peek(m_lpInputBuffer))) + m_plainInput,
-				static_cast<size_t>(total - m_plainInput));
-
 		int iBytesProceed = 0;
 
 		while (!m_pInputProcessor->Process(this, buffer_read_peek(m_lpInputBuffer), (int)buffer_size(m_lpInputBuffer), iBytesProceed))
@@ -291,67 +260,7 @@ int DESC::ProcessInput()
 		}
 
 		buffer_read_proceed(m_lpInputBuffer, iBytesProceed);
-
-		// What is left is a partial packet, already plaintext. A phase
-		// change may have reset or replaced the buffer meanwhile.
-		m_plainInput = m_lpInputBuffer ? static_cast<int>(buffer_size(m_lpInputBuffer)) : 0;
 	}
-#else
-	else if (!m_bEncrypted)
-	{
-		int iBytesProceed = 0;
-
-		while (!m_pInputProcessor->Process(this, buffer_read_peek(m_lpInputBuffer), buffer_size(m_lpInputBuffer), iBytesProceed))
-		{
-			buffer_read_proceed(m_lpInputBuffer, iBytesProceed);
-			iBytesProceed = 0;
-		}
-
-		buffer_read_proceed(m_lpInputBuffer, iBytesProceed);
-	}
-	else
-	{
-		int iSizeBuffer = buffer_size(m_lpInputBuffer);
-
-		if (iSizeBuffer & 7)
-			iSizeBuffer -= iSizeBuffer & 7;
-
-		if (iSizeBuffer > 0)
-		{
-			TEMP_BUFFER	tempbuf;
-			LPBUFFER lpBufferDecrypt = tempbuf.getptr();
-			buffer_adjust_size(lpBufferDecrypt, iSizeBuffer);
-
-			int iSizeAfter = TEA_Decrypt((uint32_t *) buffer_write_peek(lpBufferDecrypt),
-					(uint32_t *) buffer_read_peek(m_lpInputBuffer),
-					GetDecryptionKey(),
-					iSizeBuffer);
-
-			buffer_write_proceed(lpBufferDecrypt, iSizeAfter);
-
-			int iBytesProceed = 0;
-
-			while (!m_pInputProcessor->Process(this, buffer_read_peek(lpBufferDecrypt), buffer_size(lpBufferDecrypt), iBytesProceed))
-			{
-				if (iBytesProceed > iSizeBuffer)
-				{
-					buffer_read_proceed(m_lpInputBuffer, iSizeBuffer);
-					iSizeBuffer = 0;
-					iBytesProceed = 0;
-					break;
-				}
-
-				buffer_read_proceed(m_lpInputBuffer, iBytesProceed);
-				iSizeBuffer -= iBytesProceed;
-
-				buffer_read_proceed(lpBufferDecrypt, iBytesProceed);
-				iBytesProceed = 0;
-			}
-
-			buffer_read_proceed(m_lpInputBuffer, iBytesProceed);
-		}
-	}
-#endif // _IMPROVED_PACKET_ENCRYPTION_
 
 	return 0;
 }
@@ -430,59 +339,8 @@ void DESC::Packet(const void * c_pvData, int iSize)
 			iSize = buffer_size(m_lpBufferedOutputBuffer);
 		}
 
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
-		void* buf = buffer_write_peek(m_lpOutputBuffer);
-
-
-		if (packet_encode(m_lpOutputBuffer, c_pvData, iSize))
-		{
-			if (cipher_.activated()) {
-				cipher_.Encrypt(buf, iSize);
-			}
-		}
-		else
-		{
+		if (!packet_encode(m_lpOutputBuffer, c_pvData, iSize))
 			m_iPhase = PHASE_CLOSE;
-		}
-#else
-		if (!m_bEncrypted)
-		{
-			if (!packet_encode(m_lpOutputBuffer, c_pvData, iSize))
-			{
-				m_iPhase = PHASE_CLOSE;
-			}
-		}
-		else
-		{
-			if (buffer_has_space(m_lpOutputBuffer) < iSize + 8)
-			{
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-				buffer_adjust_size(m_lpOutputBuffer, iSize);
-				if (buffer_has_space(m_lpOutputBuffer) < iSize + 8) {
-				LOG_ERROR("desc buffer mem_size overflow. memsize({}) write_pos({}) iSize({})", m_lpOutputBuffer->mem_size, m_lpOutputBuffer->write_point_pos, iSize);
-				m_iPhase = PHASE_CLOSE;
-				}
-#else
-				LOG_ERROR("desc buffer mem_size overflow. memsize({}) write_pos({}) iSize({})", m_lpOutputBuffer->mem_size, m_lpOutputBuffer->write_point_pos, iSize);
-
-				m_iPhase = PHASE_CLOSE;
-#endif
-			}
-			else
-			{
-				/* buffer_adjust_size(m_lpOutputBuffer, iSize + 8); */
-				uint32_t * pdwWritePoint = (uint32_t *) buffer_write_peek(m_lpOutputBuffer);
-
-				if (packet_encode(m_lpOutputBuffer, c_pvData, iSize))
-				{
-					int iSize2 = TEA_Encrypt(pdwWritePoint, pdwWritePoint, GetEncryptionKey(), iSize);
-
-					if (iSize2 > iSize)
-						buffer_write_proceed(m_lpOutputBuffer, iSize2 - iSize);
-				}
-			}
-		}
-#endif // _IMPROVED_PACKET_ENCRYPTION_
 
 		SAFE_BUFFER_DELETE(m_lpBufferedOutputBuffer);
 	}
@@ -523,17 +381,11 @@ void DESC::SetPhase(int _phase)
 		case PHASE_SELECT:
 		case PHASE_LOGIN:
 		case PHASE_LOADING:
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-			m_bEncrypted = true;
-#endif
 			m_pInputProcessor = &m_inputLogin;
 			break;
 
 		case PHASE_GAME:
 		case PHASE_DEAD:
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-			m_bEncrypted = true;
-#endif
 			m_pInputProcessor = &m_inputMain;
 			break;
 
@@ -671,46 +523,14 @@ uint32_t DESC::GetClientTime()
 	return m_dwClientTime;
 }
 
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
-void DESC::SendKeyAgreement()
+void DESC::SendHandshakeCompleted()
 {
-	TPacketKeyAgreement packet;
+	TPacketHandshakeCompleted packet {};
 
-	size_t data_length = TPacketKeyAgreement::MAX_DATA_LEN;
-	size_t agreed_length = cipher_.Prepare(packet.data, &data_length);
-	if (agreed_length == 0) {
-		// Initialization failure
-		SetPhase(PHASE_CLOSE);
-		return;
-	}
-	assert(data_length <= TPacketKeyAgreement::MAX_DATA_LEN);
-
-	packet.bHeader = HEADER_GC_KEY_AGREEMENT;
-	packet.wAgreedLength = (uint16_t)agreed_length;
-	packet.wDataLength = (uint16_t)data_length;
+	packet.bHeader = HEADER_GC_HANDSHAKE_COMPLETED;
 
 	Packet(&packet, sizeof(packet));
 }
-
-void DESC::SendKeyAgreementCompleted()
-{
-	TPacketKeyAgreementCompleted packet;
-
-	packet.bHeader = HEADER_GC_KEY_AGREEMENT_COMPLETED;
-
-	Packet(&packet, sizeof(packet));
-}
-
-bool DESC::FinishHandshake(size_t agreed_length, const void* buffer, size_t length)
-{
-	return cipher_.Activate(false, agreed_length, buffer, length);
-}
-
-bool DESC::IsCipherPrepared()
-{
-	return cipher_.IsKeyPrepared();
-}
-#endif // #ifdef _IMPROVED_PACKET_ENCRYPTION_
 
 void DESC::SetRelay(const char * c_pszName)
 {
@@ -879,42 +699,6 @@ uint32_t DESC::GetLoginKey()
 
 	return m_dwLoginKey;
 }
-
-const uint8_t* GetKey_20050304Myevan()
-{
-	static bool bGenerated = false;
-	static uint32_t s_adwKey[1938];
-
-	if (!bGenerated)
-	{
-		bGenerated = true;
-		uint32_t seed = 1491971513;
-
-		for (UINT i = 0; i < uint8_t(seed); ++i)
-		{
-			seed ^= 2148941891ul;
-			seed += 3592385981ul;
-
-			s_adwKey[i] = seed;
-		}
-	}
-
-	return (const uint8_t*)s_adwKey;
-}
-
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-void DESC::SetSecurityKey(const uint32_t * c_pdwKey)
-{
-	const uint8_t * c_pszKey = (const uint8_t *) "JyTxtHljHJlVJHorRM301vf@4fvj10-v";
-
-	c_pszKey = GetKey_20050304Myevan() + 37;
-
-	memcpy(&m_adwDecryptionKey, c_pdwKey, 16);
-	TEA_Encrypt(&m_adwEncryptionKey[0], &m_adwDecryptionKey[0], (const uint32_t *) c_pszKey, 16);
-
-	LOG_INFO("SetSecurityKey decrypt {} {} {} {} encrypt {} {} {} {}", m_adwDecryptionKey[0], m_adwDecryptionKey[1], m_adwDecryptionKey[2], m_adwDecryptionKey[3], m_adwEncryptionKey[0], m_adwEncryptionKey[1], m_adwEncryptionKey[2], m_adwEncryptionKey[3]);
-}
-#endif // _IMPROVED_PACKET_ENCRYPTION_
 
 void DESC::AssembleCRCMagicCube(uint8_t bProcPiece, uint8_t bFilePiece)
 {

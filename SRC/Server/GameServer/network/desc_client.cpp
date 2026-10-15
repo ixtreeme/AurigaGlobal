@@ -257,9 +257,6 @@ void CLIENT_DESC::SetPhase(int iPhase)
 #ifdef ENABLE_MULTI_LANGUAGE
 								pck.bLanguage = r.bLanguage;
 #endif
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-								memcpy(pck.adwClientKey, d->GetDecryptionKey(), 16);
-#endif
 
 								buf.write(&pck, sizeof(TPacketLoginOnSetup));
 							}

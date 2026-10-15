@@ -441,8 +441,6 @@ CPacketInfoCG::CPacketInfoCG() = default;
 CPacketInfoGG::CPacketInfoGG() = default;
 CPacketInfoCG::~CPacketInfoCG() = default;
 CPacketInfoGG::~CPacketInfoGG() = default;
-Cipher::Cipher() : activated_(false), encoder_(nullptr), decoder_(nullptr), key_agreement_(nullptr) {}
-Cipher::~Cipher() = default;
 void intrusive_ptr_add_ref(EVENT* event) { ++event->ref_count; }
 void intrusive_ptr_release(EVENT* event) { if (--event->ref_count == 0) delete event; }
 namespace ecs::PlayerRuntime {

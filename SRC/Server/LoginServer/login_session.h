@@ -8,7 +8,6 @@
 #include <common/Headers/Header_CG.h>
 #include <common/Headers/Header_GC.h>
 
-#include "cipher.h"
 
 #include <cstdint>
 #include <string>
@@ -53,17 +52,8 @@ struct LoginCGLogin3
 #endif
 };
 
-struct LoginKeyAgreement
-{
-	static const int MAX_DATA_LEN = 256;
-
-	uint8_t		bHeader;
-	uint16_t	wAgreedLength;
-	uint16_t	wDataLength;
-	uint8_t		data[MAX_DATA_LEN];
-};
-
-struct LoginKeyAgreementCompleted
+// The handshake echo was accepted: the client may send LOGIN3.
+struct LoginHandshakeCompleted
 {
 	uint8_t		bHeader;
 	uint8_t		data[3];
@@ -86,19 +76,11 @@ struct LoginGCLoginFailure
 
 class LoginAuth;
 
-// Client session for the login/auth role.
-//
-// Handshake phases, legacy packet cipher:
+// Client session for the login/auth role, always over TLS. Once the TLS
+// stream is up:
 //   server -> HANDSHAKE
 //   client -> HANDSHAKE (echo + time delta)
-//   server -> KEY_AGREEMENT
-//   client -> KEY_AGREEMENT
-//   server -> KEY_AGREEMENT_COMPLETED, cipher activates -> AUTH
-//
-// Over TLS (the stream is already up when HANDSHAKE goes out):
-//   server -> HANDSHAKE
-//   client -> HANDSHAKE (echo + time delta)
-//   server -> KEY_AGREEMENT_COMPLETED, no key agreement -> AUTH
+//   server -> HANDSHAKE_COMPLETED -> AUTH
 //
 // LOGIN3 is then answered in HandleLogin().
 class LoginSession : public PeerSession
@@ -107,9 +89,7 @@ public:
 	LoginSession(uint32_t handshake, LoginAuth* auth);
 	~LoginSession() override = default;
 
-	// With a TLS context the connection is TLS and the packet cipher stays
-	// off; without one the legacy key agreement runs.
-	bool Accept(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext* tls = nullptr);
+	bool Accept(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext& tls);
 	bool IsClosed() const { return m_closed; }
 
 	const std::string& GetLogin() const { return m_login; }
@@ -143,12 +123,10 @@ private:
 	void ProcessPackets();
 	int  PacketSize(const uint8_t* data, int available) const;
 	void HandleHandshake(const char* data, int length);
-	void HandleKeyAgreement(const char* data, int length);
 	void HandleLogin(const char* data, int length);
 
 	void SendHandshakePacket(uint32_t dwTime, int32_t lDelta);
-	void SendKeyAgreement();
-	void SendKeyAgreementCompleted();
+	void SendHandshakeCompleted();
 
 	bool WritePacket(const void* data, int size);
 	void FlushOutput();
@@ -166,11 +144,4 @@ private:
 	std::string	m_login;
 	std::string	m_host;
 	int		m_pendingDbQueries { 0 };
-
-	Cipher		m_cipher;
-
-	// Bytes at the front of the input buffer that are already plaintext: a
-	// partial packet left for the next read was decrypted with its stream
-	// position and must not be decrypted again.
-	int		m_plainInput { 0 };
 };

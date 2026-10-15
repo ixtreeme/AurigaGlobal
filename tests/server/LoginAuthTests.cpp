@@ -126,8 +126,6 @@ void LoginSession::OnInput() { Unexpected(__func__); }
 void LoginSession::OnPeerGone() { Unexpected(__func__); }
 void LoginSession::SendLoginFailure(const char* status) { failures.push_back({this, status}); }
 void LoginSession::SendAuthSuccess(uint32_t) { Unexpected(__func__); }
-Cipher::Cipher() : activated_(false), encoder_(nullptr), decoder_(nullptr), key_agreement_(nullptr) {}
-Cipher::~Cipher() {}
 
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;

@@ -10,10 +10,7 @@
 
 #include "constants.h"
 #include "input.h"
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
-#include "cipher.h"
 #include <Core/Logging.hpp>
-#endif
 
 #define MAX_ALLOW_USER                  4096
 //#define MAX_INPUT_LEN			2048
@@ -111,10 +108,9 @@ class DESC : public PeerSession
 
 		void			FlushOutput();
 
-		// With a TLS context the connection is TLS and the packet cipher
-		// stays off; without one the legacy key agreement runs.
+		// A client connection is always TLS.
 		bool			Setup(auriga::net::tcp::socket&& sock, const struct sockaddr_in & c_rSockAddr, uint32_t _handle, uint32_t _handshake,
-						auriga::net::TlsServerContext* tls = nullptr);
+						auriga::net::TlsServerContext& tls);
 
 		socket_t		GetSocket() const	{ return GetSocketId(); }
 		const char *	GetHostName()		{ return m_stHost.c_str(); }
@@ -161,17 +157,7 @@ class DESC : public PeerSession
 		uint32_t			GetHandshake() const	{ return m_dwHandshake; }
 		uint32_t			GetClientTime();
 
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
-		void SendKeyAgreement();
-		void SendKeyAgreementCompleted();
-		bool FinishHandshake(size_t agreed_length, const void* buffer, size_t length);
-		bool IsCipherPrepared();
-#else
-		// Obsolete encryption stuff here
-		void			SetSecurityKey(const uint32_t * c_pdwKey);
-		const uint32_t *	GetEncryptionKey() const { return &m_adwEncryptionKey[0]; }
-		const uint32_t *	GetDecryptionKey() const { return &m_adwDecryptionKey[0]; }
-#endif
+		void			SendHandshakeCompleted();
 
 		uint8_t			GetEmpire();
 
@@ -280,19 +266,6 @@ class DESC : public PeerSession
 		bool			m_bDestroyed;
 		bool			m_bChannelStatusRequested;
 
-#ifdef _IMPROVED_PACKET_ENCRYPTION_
-		Cipher cipher_;
-
-		// Bytes at the front of the input buffer that are already plaintext:
-		// a partial packet left for the next read was decrypted with its
-		// stream position and must not be decrypted again.
-		int			m_plainInput { 0 };
-#else
-		// Obsolete encryption stuff here
-		bool			m_bEncrypted;
-		uint32_t			m_adwDecryptionKey[4];
-		uint32_t			m_adwEncryptionKey[4];
-#endif
 
 	public:
 		LPEVENT			m_pkDisconnectEvent;

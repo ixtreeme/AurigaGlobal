@@ -56,9 +56,6 @@ inline bool __packet_encode(LPBUFFER pbuf, const void * data, int length, const 
 		return false;
 	}
 
-#ifndef _IMPROVED_PACKET_ENCRYPTION_
-	buffer_adjust_size(pbuf, length);
-#endif
 	buffer_write(pbuf, data, length);
 	return true;
 }

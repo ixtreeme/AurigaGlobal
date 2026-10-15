@@ -22,8 +22,7 @@
 //   },
 //   "network": { "port": 50080, "p2p_port": 50900, "db_addr": "",
 //                "db_port": 0, "bind_ip": "",
-//                "tls": { "enabled": false,      // client port only; off =
-//                         "cert_file": "",       // the legacy packet cipher.
+//                "tls": { "cert_file": "",       // client port, required:
 //                         "key_file": "" } },    // PEM chain and private key
 //   "sql": { "player": { "host": "", "port": 0, "user": "",
 //                        "password": "", "database": "" },
@@ -103,7 +102,6 @@ struct GameConfig
 
 		struct
 		{
-			bool		enabled { false };
 			std::string	certFile;
 			std::string	keyFile;
 		} tls;

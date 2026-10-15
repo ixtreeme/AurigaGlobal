@@ -5,8 +5,7 @@
 enum HEADER_GC
 {
 
-	HEADER_GC_KEY_AGREEMENT_COMPLETED = 0xeb,
-	HEADER_GC_KEY_AGREEMENT = 0xec,
+	HEADER_GC_HANDSHAKE_COMPLETED = 0xeb, // the handshake echo was accepted: log in
 	HEADER_GC_TIME_SYNC = 0xed,
 	HEADER_GC_PHASE = 0xee,
 	HEADER_GC_BINDUDP = 0xef,

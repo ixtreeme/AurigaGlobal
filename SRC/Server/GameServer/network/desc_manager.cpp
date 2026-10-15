@@ -472,10 +472,17 @@ LPDESC DESC_MANAGER::AcceptDesc(auriga::net::tcp::socket&& s)
 		AllowHandshake(host);
 #endif
 
+	if (!m_clientTls)
+	{
+		LOG_ERROR("client connection from {} refused: no TLS context", host);
+		s.close(ec);
+		return nullptr;
+	}
+
 	auto newd = new DESC;
 	crc_t handshake = CreateHandshake();
 
-	if (!newd->Setup(std::move(s), peer, ++m_iHandleCount, handshake, m_clientTls))
+	if (!newd->Setup(std::move(s), peer, ++m_iHandleCount, handshake, *m_clientTls))
 	{
 		delete newd;
 		return nullptr;

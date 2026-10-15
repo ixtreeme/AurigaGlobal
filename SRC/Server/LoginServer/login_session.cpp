@@ -20,13 +20,10 @@ LoginSession::LoginSession(uint32_t handshake, LoginAuth* auth)
 {
 }
 
-bool LoginSession::Accept(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext* tls)
+bool LoginSession::Accept(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext& tls)
 {
-	// Over TLS the handshake packet below waits until the stream is up.
-	if (tls)
-		AttachTlsSocket(std::move(sock), *tls);
-	else
-		AttachSocket(std::move(sock));
+	// The handshake packet below waits until the TLS stream is up.
+	AttachTlsSocket(std::move(sock), tls);
 	CreateBuffers(MAX_INPUT_LEN, OUTPUT_BUFFER_SIZE);
 
 	if (!m_lpInputBuffer || !m_lpOutputBuffer)
@@ -71,14 +68,7 @@ void LoginSession::ProcessPackets()
 	if (total <= 0)
 		return;
 
-	char* data = const_cast<char*>(static_cast<const char*>(buffer_read_peek(m_lpInputBuffer)));
-
-	// Only what arrived since the last pass is still ciphertext. Bytes that
-	// were already buffered when the cipher activated were sent before the
-	// client could encrypt, so they count as plaintext too.
-	if (m_cipher.activated() && total > m_plainInput)
-		m_cipher.Decrypt(data + m_plainInput, total - m_plainInput);
-	m_plainInput = total;
+	const char* data = static_cast<const char*>(buffer_read_peek(m_lpInputBuffer));
 
 	int offset = 0;
 
@@ -103,10 +93,6 @@ void LoginSession::ProcessPackets()
 				HandleHandshake(data + offset, size);
 				break;
 
-			case HEADER_CG_KEY_AGREEMENT:
-				HandleKeyAgreement(data + offset, size);
-				break;
-
 			case HEADER_CG_LOGIN3:
 				HandleLogin(data + offset, size);
 				break;
@@ -122,7 +108,6 @@ void LoginSession::ProcessPackets()
 	}
 
 	buffer_read_proceed(m_lpInputBuffer, offset);
-	m_plainInput -= offset;
 }
 
 int LoginSession::PacketSize(const uint8_t* data, int) const
@@ -131,9 +116,6 @@ int LoginSession::PacketSize(const uint8_t* data, int) const
 	{
 		case HEADER_CG_HANDSHAKE:
 			return sizeof(LoginCGHandshake);
-
-		case HEADER_CG_KEY_AGREEMENT:
-			return sizeof(LoginKeyAgreement);
 
 		case HEADER_CG_LOGIN3:
 			return sizeof(LoginCGLogin3);
@@ -170,17 +152,10 @@ void LoginSession::HandleHandshake(const char* data, int)
 
 	if (bias >= 0 && bias <= 50)
 	{
-		// TLS already protects the stream: no key agreement, the completion
-		// tells the client to send LOGIN3.
-		if (IsTls())
-		{
-			SendKeyAgreementCompleted();
-			m_phase = Phase::Auth;
-			LOG_INFO("LoginServer: handshake complete over TLS, waiting for LOGIN3");
-			return;
-		}
-
-		SendKeyAgreement();
+		// The stream is TLS: the completion tells the client to send LOGIN3.
+		SendHandshakeCompleted();
+		m_phase = Phase::Auth;
+		LOG_INFO("LoginServer: handshake complete, waiting for LOGIN3");
 		return;
 	}
 
@@ -198,41 +173,6 @@ void LoginSession::HandleHandshake(const char* data, int)
 
 	m_handshakeSentTime = now;
 	SendHandshakePacket(now, newDelta);
-}
-
-void LoginSession::HandleKeyAgreement(const char* data, int)
-{
-	if (m_phase != Phase::Handshake)
-		return;
-
-	if (IsTls())
-	{
-		LOG_ERROR("LoginServer: key agreement on a TLS session");
-		Close();
-		return;
-	}
-
-	const auto* p = reinterpret_cast<const LoginKeyAgreement*>(data);
-
-	// The completion packet must leave in plaintext before activation.
-	SendKeyAgreementCompleted();
-
-	if (!m_cipher.IsKeyPrepared())
-	{
-		LOG_ERROR("LoginServer: cipher is not prepared");
-		Close();
-		return;
-	}
-
-	if (!m_cipher.Activate(false, p->wAgreedLength, p->data, p->wDataLength))
-	{
-		LOG_ERROR("LoginServer: key agreement failed (al={}, dl={})", p->wAgreedLength, p->wDataLength);
-		Close();
-		return;
-	}
-
-	m_phase = Phase::Auth;
-	LOG_INFO("LoginServer: handshake complete, waiting for LOGIN3");
 }
 
 void LoginSession::HandleLogin(const char* data, int)
@@ -284,31 +224,10 @@ void LoginSession::SendHandshakePacket(uint32_t dwTime, int32_t lDelta)
 		FlushOutput();
 }
 
-void LoginSession::SendKeyAgreement()
+void LoginSession::SendHandshakeCompleted()
 {
-	LoginKeyAgreement packet {};
-	size_t dataLength = LoginKeyAgreement::MAX_DATA_LEN;
-	const size_t agreedLength = m_cipher.Prepare(packet.data, &dataLength);
-
-	if (agreedLength == 0)
-	{
-		LOG_ERROR("LoginServer: key preparation failed");
-		Close();
-		return;
-	}
-
-	packet.bHeader = HEADER_GC_KEY_AGREEMENT;
-	packet.wAgreedLength = static_cast<uint16_t>(agreedLength);
-	packet.wDataLength = static_cast<uint16_t>(dataLength);
-
-	if (WritePacket(&packet, sizeof(packet)))
-		FlushOutput();
-}
-
-void LoginSession::SendKeyAgreementCompleted()
-{
-	LoginKeyAgreementCompleted packet {};
-	packet.bHeader = HEADER_GC_KEY_AGREEMENT_COMPLETED;
+	LoginHandshakeCompleted packet {};
+	packet.bHeader = HEADER_GC_HANDSHAKE_COMPLETED;
 
 	if (WritePacket(&packet, sizeof(packet)))
 		FlushOutput();
@@ -325,12 +244,7 @@ bool LoginSession::WritePacket(const void* data, int size)
 		return false;
 	}
 
-	char* writePeek = static_cast<char*>(buffer_write_peek(m_lpOutputBuffer));
 	buffer_write(m_lpOutputBuffer, data, size);
-
-	if (m_cipher.activated())
-		m_cipher.Encrypt(writePeek, size);
-
 	return true;
 }
 

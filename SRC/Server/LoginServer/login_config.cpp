@@ -58,7 +58,6 @@ bool LoadLoginConfig(const char* path, LoginConfig& cfg)
 		{
 			const auto& tls = doc.at("tls");
 
-			cfg.tls.enabled = tls.value("enabled", false);
 			cfg.tls.certFile = tls.value("cert_file", std::string());
 			cfg.tls.keyFile = tls.value("key_file", std::string());
 		}
@@ -75,9 +74,9 @@ bool LoadLoginConfig(const char* path, LoginConfig& cfg)
 		return false;
 	}
 
-	if (cfg.tls.enabled && (cfg.tls.certFile.empty() || cfg.tls.keyFile.empty()))
+	if (cfg.tls.certFile.empty() || cfg.tls.keyFile.empty())
 	{
-		LOG_ERROR("LoginServer: 'tls' is enabled without 'cert_file' and 'key_file' in '{}'", path);
+		LOG_ERROR("LoginServer: 'tls' with 'cert_file' and 'key_file' is required in '{}'", path);
 		return false;
 	}
 

@@ -920,8 +920,6 @@ CPacketInfoCG::CPacketInfoCG() {}
 CPacketInfoGG::CPacketInfoGG() {}
 CPacketInfoCG::~CPacketInfoCG() {}
 CPacketInfoGG::~CPacketInfoGG() {}
-Cipher::Cipher() : activated_(false), encoder_(nullptr), decoder_(nullptr), key_agreement_(nullptr) {}
-Cipher::~Cipher() {}
 void battle_end(entt::entity) { UnexpectedService(__func__); }
 void MountSystem::SummonHorse(entt::entity e, bool summon, bool fromFar, uint32_t vnum, const char* name) {
     Check(g_registry.valid(e) && fromFar && vnum == 0 && name == nullptr, "horse-name refresh uses the live owner entity");

@@ -36,7 +36,6 @@ uint16_t	mother_port = 50080;
 int		passes_per_sec = 25;
 uint16_t	db_port = 0;
 uint16_t	p2p_port = 50900;
-bool		g_clientTls = false;
 std::string	g_clientTlsCertFile;
 std::string	g_clientTlsKeyFile;
 char	db_addr[ADDRESS_MAX_LEN + 1];
@@ -436,7 +435,6 @@ static void __ApplyDefaultConfig(const GameConfig& cfg)
 {
 	mother_port = cfg.network.port;
 	p2p_port = cfg.network.p2pPort;
-	g_clientTls = cfg.network.tls.enabled;
 	g_clientTlsCertFile = cfg.network.tls.certFile;
 	g_clientTlsKeyFile = cfg.network.tls.keyFile;
 

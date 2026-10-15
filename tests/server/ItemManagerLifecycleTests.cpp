@@ -168,8 +168,6 @@ CPacketInfoCG::CPacketInfoCG() {}
 CPacketInfoGG::CPacketInfoGG() {}
 CPacketInfoCG::~CPacketInfoCG() {}
 CPacketInfoGG::~CPacketInfoGG() {}
-Cipher::Cipher() : activated_(false), encoder_(nullptr), decoder_(nullptr), key_agreement_(nullptr) {}
-Cipher::~Cipher() {}
 void intrusive_ptr_add_ref(EVENT* event) { ++event->ref_count; }
 void intrusive_ptr_release(EVENT* event) { if (!--event->ref_count) delete event; }
 void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) { Unexpected(); }
