@@ -119,6 +119,14 @@ if(WIN32)
 endif()
 add_test(NAME core_buffer COMMAND BufferTests)
 
+# common/singleton.h: registration at the derived address, no copies, and a
+# hard stop - also with NDEBUG - on a second instance or a use with none alive.
+add_executable(SingletonTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/SingletonTests.cpp
+)
+target_link_libraries(SingletonTests PRIVATE SERVER)
+add_test(NAME singleton COMMAND SingletonTests)
+
 # The daily reward's DB chains over a scripted database that runs the queries
 # in order, like the async worker: claims sent at once, one machine with two
 # characters, a claim taken by another channel, the gift window reload.
