@@ -9,7 +9,13 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <vector>
+
+namespace auriga::net
+{
+	class TlsServerContext;
+}
 
 // Shared transport session for the server-to-server links.
 //
@@ -53,9 +59,22 @@ public:
 	void		SetHeartbeat(int intervalSeconds, int timeoutSeconds);
 	void		CheckHeartbeat();
 
+	// TLS sessions only: a peer that has not finished the handshake within
+	// this time is dropped by CheckHeartbeat() (default 10 seconds).
+	void		SetTlsHandshakeTimeout(std::chrono::milliseconds timeout) { m_tlsHandshakeTimeout = timeout; }
+	bool		IsTls() const			{ return m_tls != nullptr; }
+	bool		IsTlsReady() const		{ return m_tlsReady; }
+
 protected:
 	void		CreateBuffers(int input_size, int output_size);
 	void		AttachSocket(auriga::net::tcp::socket&& sock);
+
+	// Wraps an accepted socket in a server TLS stream and starts the
+	// handshake on the io thread. Until it is done, queued output stays in
+	// the buffer and StartRead() only takes note; both go once the stream is
+	// up. A failed handshake ends in OnPeerGone(). A session stays TLS for
+	// its whole lifetime.
+	void		AttachTlsSocket(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext& context);
 
 	void		StartRead();
 	void		StartWrite();
@@ -116,5 +135,18 @@ private:
 	// io thread entry points.
 	void		ArmRead(uint64_t generation);
 	void		ArmWrite(uint64_t generation);
+	void		ArmTlsHandshake(uint64_t generation);
 	void		IoClose(uint64_t generation);
+
+	void		OnTlsHandshake(const boost::system::error_code & ec);
+	void		CloseTransport();
+
+	// The TLS stream owns the socket of a TLS session; m_socket stays unused
+	// then. Assigned on the game thread before any io work is posted.
+	struct TlsStream;
+	std::unique_ptr<TlsStream>	m_tls;
+	bool		m_tlsReady { false };
+	bool		m_readAfterTls { false };
+	std::chrono::steady_clock::time_point	m_tlsStarted;
+	std::chrono::milliseconds	m_tlsHandshakeTimeout { 10000 };
 };

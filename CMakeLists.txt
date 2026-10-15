@@ -96,6 +96,7 @@ if(AURIGA_USE_VCPKG)
         xxhash
         python2
         cryptopp
+        OpenSSL
         libconfig
         libsodium
         rapidjson

@@ -1,5 +1,18 @@
 #include "stdafx.h"
 #include "peer_session.h"
+#include "tls.h"
+
+#include <boost/asio/ssl.hpp>
+
+struct PeerSession::TlsStream
+{
+	TlsStream(auriga::net::tcp::socket&& sock, boost::asio::ssl::context& context)
+		: stream(std::move(sock), context)
+	{
+	}
+
+	boost::asio::ssl::stream<auriga::net::tcp::socket> stream;
+};
 
 PeerSession::PeerSession() : m_socket(auriga::net::Io()),
                              m_lastReceive(std::chrono::steady_clock::now()),
@@ -35,10 +48,21 @@ void PeerSession::SetHeartbeat(int intervalSeconds, int timeoutSeconds)
 
 void PeerSession::CheckHeartbeat()
 {
-	if (m_heartbeatInterval <= 0 || m_bSessionDestroyed || !m_ioConnected)
+	if (m_bSessionDestroyed || !m_ioConnected)
 		return;
 
 	const auto now = std::chrono::steady_clock::now();
+
+	// A peer that opens a TLS connection and never completes the handshake
+	// would otherwise hold the session.
+	if (m_tls && !m_tlsReady && now - m_tlsStarted >= m_tlsHandshakeTimeout)
+	{
+		OnPeerGone();
+		return;
+	}
+
+	if (m_heartbeatInterval <= 0)
+		return;
 
 	if (m_heartbeatTimeout > 0 &&
 		now - m_lastReceive >= std::chrono::seconds(m_heartbeatTimeout))
@@ -69,6 +93,50 @@ void PeerSession::AttachSocket(auriga::net::tcp::socket&& sock)
 	m_lastHeartbeat = m_lastReceive;
 }
 
+void PeerSession::AttachTlsSocket(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext& context)
+{
+	m_tls = std::make_unique<TlsStream>(std::move(sock), context.Native());
+	m_socketHandle = static_cast<socket_t>(m_tls->stream.lowest_layer().native_handle());
+	m_ioConnected = true;
+	m_tlsReady = false;
+	m_readAfterTls = false;
+	m_lastReceive = std::chrono::steady_clock::now();
+	m_lastHeartbeat = m_lastReceive;
+	m_tlsStarted = m_lastReceive;
+
+	const uint64_t generation = m_generation;
+	m_pendingAsyncOps.fetch_add(1, std::memory_order_acq_rel);
+
+	auriga::net::PostIo([this, generation]() { ArmTlsHandshake(generation); });
+}
+
+void PeerSession::ArmTlsHandshake(uint64_t generation)
+{
+	m_tls->stream.async_handshake(boost::asio::ssl::stream_base::server,
+		[this, generation](const boost::system::error_code & ec)
+		{
+			QueueGameCompletion(generation, [this, ec]() { OnTlsHandshake(ec); });
+		});
+}
+
+void PeerSession::OnTlsHandshake(const boost::system::error_code & ec)
+{
+	if (ec)
+	{
+		if (ec != boost::asio::error::operation_aborted)
+			OnPeerGone();
+		return;
+	}
+
+	m_tlsReady = true;
+	m_lastReceive = std::chrono::steady_clock::now();
+
+	if (m_readAfterTls)
+		StartRead();
+
+	StartWrite();
+}
+
 void PeerSession::ResetSession()
 {
 	++m_generation;
@@ -77,6 +145,8 @@ void PeerSession::ResetSession()
 	m_writeChunk.clear();
 	m_ioConnected = false;
 	m_socketHandle = static_cast<socket_t>(INVALID_SOCKET);
+	m_tlsReady = false;
+	m_readAfterTls = false;
 	m_lastReceive = std::chrono::steady_clock::now();
 	m_lastHeartbeat = m_lastReceive;
 }
@@ -100,8 +170,17 @@ void PeerSession::CloseSocket()
 		return;
 	}
 
+	CloseTransport();
+}
+
+void PeerSession::CloseTransport()
+{
 	boost::system::error_code ec;
-	m_socket.close(ec);
+
+	if (m_tls)
+		m_tls->stream.lowest_layer().close(ec);
+	else
+		m_socket.close(ec);
 }
 
 void PeerSession::DestroySession()
@@ -128,8 +207,7 @@ void PeerSession::DestroySession()
 
 void PeerSession::IoClose(uint64_t generation)
 {
-	boost::system::error_code ec;
-	m_socket.close(ec);
+	CloseTransport();
 
 	// Consume the token that CloseSocket() acquired for this post.
 	QueueGameCompletion(generation, []() {});
@@ -140,6 +218,13 @@ void PeerSession::StartRead()
 	if (m_bSessionDestroyed || m_deletePending || !m_ioConnected)
 		return;
 
+	// The read loop starts once the TLS stream is up (OnTlsHandshake).
+	if (m_tls && !m_tlsReady)
+	{
+		m_readAfterTls = true;
+		return;
+	}
+
 	const uint64_t generation = m_generation;
 	m_pendingAsyncOps.fetch_add(1, std::memory_order_acq_rel);
 
@@ -148,9 +233,7 @@ void PeerSession::StartRead()
 
 void PeerSession::ArmRead(uint64_t generation)
 {
-	m_socket.async_read_some(
-		boost::asio::buffer(m_readChunk),
-		[this, generation](const boost::system::error_code & ec, std::size_t bytes)
+	auto handler = [this, generation](const boost::system::error_code & ec, std::size_t bytes)
 		{
 			const bool rearm = (!ec && bytes > 0);
 
@@ -175,7 +258,12 @@ void PeerSession::ArmRead(uint64_t generation)
 			// wait for the next game tick.
 			if (rearm)
 				ArmRead(generation);
-		});
+		};
+
+	if (m_tls)
+		m_tls->stream.async_read_some(boost::asio::buffer(m_readChunk), std::move(handler));
+	else
+		m_socket.async_read_some(boost::asio::buffer(m_readChunk), std::move(handler));
 }
 
 void PeerSession::OnRead(const boost::system::error_code & ec, std::vector<char> data)
@@ -216,6 +304,11 @@ void PeerSession::StartWrite()
 	if (m_writePending || m_bSessionDestroyed || m_deletePending || !m_ioConnected)
 		return;
 
+	// Output queued before the TLS stream is up waits in the buffer; the
+	// handshake completion flushes it.
+	if (m_tls && !m_tlsReady)
+		return;
+
 	const int bytes = m_lpOutputBuffer ? static_cast<int>(buffer_size(m_lpOutputBuffer)) : 0;
 
 	if (bytes <= 0)
@@ -235,10 +328,7 @@ void PeerSession::StartWrite()
 
 void PeerSession::ArmWrite(uint64_t generation)
 {
-	boost::asio::async_write(
-		m_socket,
-		boost::asio::buffer(m_writeChunk),
-		[this, generation](const boost::system::error_code & ec, std::size_t bytes_transferred)
+	auto handler = [this, generation](const boost::system::error_code & ec, std::size_t bytes_transferred)
 		{
 			QueueGameCompletion(generation,
 				[this, ec, bytes_transferred]()
@@ -246,7 +336,12 @@ void PeerSession::ArmWrite(uint64_t generation)
 					m_writePending = false;
 					OnWrite(ec, bytes_transferred);
 				});
-		});
+		};
+
+	if (m_tls)
+		boost::asio::async_write(m_tls->stream, boost::asio::buffer(m_writeChunk), std::move(handler));
+	else
+		boost::asio::async_write(m_socket, boost::asio::buffer(m_writeChunk), std::move(handler));
 }
 
 void PeerSession::OnWrite(const boost::system::error_code & ec, std::size_t bytes)

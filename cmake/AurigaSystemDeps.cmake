@@ -16,7 +16,8 @@
 #     or databases/mysql80-client   (mysql/mysql.h, libmysqlclient)
 #   devel/pkgconf                   (optional, faster discovery)
 #
-# Base system: libexecinfo (backtrace), clang/libc++ with
+# Base system: OpenSSL (TLS for the client-facing sessions, found by
+# SRC/Server/Core), libexecinfo (backtrace), clang/libc++ with
 # C++23 <print> support (FreeBSD 14.1+ / 15.x).
 
 include(FindPackageHandleStandardArgs)

@@ -138,6 +138,17 @@ if(WIN32)
 endif()
 add_test(NAME login_session COMMAND LoginSessionTests)
 
+# PeerSession over TLS on a loopback socket: a trusted client, a plaintext
+# client, an outdated TLS client and a peer that never handshakes.
+add_executable(TlsSessionTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/TlsSessionTests.cpp
+)
+target_link_libraries(TlsSessionTests PRIVATE SERVER S_Core)
+if(WIN32)
+    target_link_libraries(TlsSessionTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME tls_session COMMAND TlsSessionTests)
+
 # Core byte buffers under the asio session patterns: an output buffer that is
 # rarely drained to empty, a reader left with partial packets, growth.
 add_executable(BufferTests EXCLUDE_FROM_ALL
