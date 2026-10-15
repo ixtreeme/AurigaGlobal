@@ -154,7 +154,7 @@ void AssertActor(entt::entity e) {
     Check(g_registry.valid(e) && g_registry.any_of<ecs::TagPC, ecs::TagNPC, ecs::TagMonster, ecs::TagStone>(e), "stale/non-character service call");
 }
 }
-int thecore_pulse() { return static_cast<int>(tick); }
+int64_t thecore_pulse() { return static_cast<int>(tick); }
 std::shared_ptr<spdlog::logger> logging::GetLogger() {
     static auto logger = std::make_shared<spdlog::logger>("combat-state"); return logger;
 }
@@ -337,7 +337,7 @@ unsigned int ecs::PlayerRuntime::GetPacketVID(entt::entity e) {
 }
 unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).race; }
 bool ecs::PlayerRuntime::IsRaceFlag(entt::entity e,unsigned int) { AssertActor(e); return false; }
-int64_t ecs::PlayerRuntime::GetHP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).hp; }
+uint64_t ecs::PlayerRuntime::GetHP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).hp; }
 int ecs::PlayerRuntime::GetHPPct(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetAIFlag(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetJob(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).job; }
@@ -373,8 +373,8 @@ bool AffectSystem::AddAffect(entt::entity e,unsigned int,unsigned char,int,unsig
 bool AffectSystem::RemoveAffect(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool AffectSystem::IsPolymorphed(entt::entity e) { AssertActor(e); return false; }
 int64_t ecs::PointSystem::Get(entt::entity e,unsigned char p) { AssertActor(e); return g_registry.get<BattleFixture>(e).points[p]; }
-int ecs::PointSystem::GetMaxHP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).maxHP; }
-int ecs::PointSystem::GetMaxSP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).maxSP; }
+uint64_t ecs::PointSystem::GetMaxHP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).maxHP; }
+uint64_t ecs::PointSystem::GetMaxSP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).maxSP; }
 int ecs::PointSystem::GetLevel(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).level; }
 void ecs::PointSystem::Change(entt::entity e,unsigned char point,int64_t amount,bool,bool,bool) {
     AssertActor(e); Check(point == POINT_SP, "unexpected point change");
@@ -383,8 +383,8 @@ void ecs::PointSystem::Change(entt::entity e,unsigned char point,int64_t amount,
 }
 entt::entity ecs::SocialSystem::GetParty(entt::entity) { UnexpectedService(__func__); }
 entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) { UnexpectedService(__func__); }
-int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
-void ecs::QuestSystem::SetFlag(entt::entity,std::string_view,int) { UnexpectedService(__func__); }
+int64_t ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
+void ecs::QuestSystem::SetFlag(entt::entity,std::string_view,int64_t) { UnexpectedService(__func__); }
 bool NetworkSyncSystem::SetSyncOwner(entt::entity,entt::entity,bool) { UnexpectedService(__func__); }
 void NetworkSyncSystem::ClearSync(entt::entity) { UnexpectedService(__func__); }
 void NetworkSyncSystem::BroadcastSyncPacket(entt::registry &,entt::entity) { UnexpectedService(__func__); }
@@ -432,8 +432,8 @@ int ecs::PlayerRuntime::GetPosition(entt::entity e) {
     const auto* runtime = g_registry.valid(e) ? g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e) : nullptr;
     return runtime ? runtime->position : POS_STANDING;
 }
-int64_t ecs::PlayerRuntime::GetSP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).sp; }
-void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) {}
+uint64_t ecs::PlayerRuntime::GetSP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).sp; }
+void ecs::PlayerRuntime::SetHP(entt::entity, uint64_t) {}
 entt::entity ecs::SocialSystem::GetDungeon(entt::entity) { return entt::null; }
 int SkillSystem::GetSkillPower(entt::entity, uint32_t, uint8_t) { return 0; }
 uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { return 0; }
@@ -456,7 +456,7 @@ bool ecs::PlayerRuntime::IsImmortal(entt::entity) { return false; }
 int SkillSystem::ComputeSkill(entt::entity,uint32_t,entt::entity,uint8_t) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
-int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
+int64_t ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
 void ecs::AcceSystem::Close(entt::entity) { UnexpectedService(__func__); }
 int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, unsigned char) { UnexpectedService(__func__); }
@@ -550,6 +550,10 @@ int CPrivManager::GetPriv(entt::entity,unsigned char) { UnexpectedService(__func
 _SQLMsg * DBManager::DirectQuery(char const *,...) { UnexpectedService(__func__); }
 void DBManager::SendMoneyLog(unsigned char,unsigned int,int64_t) { UnexpectedService(__func__); }
 unsigned int DBManager::EscapeString(char *,uint64_t,char const *,unsigned int) { UnexpectedService(__func__); }
+void CAsyncSQL::ReturnQuery(char const *,void *) { UnexpectedService(__func__); }
+bool ecs::PlayerRuntime::IsArenaObserverMode(entt::entity) { UnexpectedService(__func__); }
+CArena* ecs::PlayerRuntime::GetArena(entt::entity) { UnexpectedService(__func__); }
+void CArena::SendPacketToObserver(const void*,int) { UnexpectedService(__func__); }
 float GetDegreeFromPositionXY(int,int,int,int) { UnexpectedService(__func__); }
 void GetDeltaByDegree(float,float,float *,float *) { UnexpectedService(__func__); }
 float GetDegreeDelta(float,float) { UnexpectedService(__func__); }
@@ -609,7 +613,7 @@ bool MountSystem::IsRiding(entt::entity e) { AssertActor(e); return g_registry.g
 int ecs::SocialSystem::GetMarriageBonus(entt::entity e,uint32_t,bool) { AssertActor(e); return 0; }
 entt::entity ecs::SocialSystem::GetMyShop(entt::entity e) { AssertActor(e); return entt::null; }
 SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity e) { AssertActor(e); return nullptr; }
-void ecs::PlayerRuntime::SetMaxSP(entt::entity, int64_t) {}
+void ecs::PlayerRuntime::SetMaxSP(entt::entity, uint64_t) {}
 void ecs::MovementSystem::SetRotation(entt::entity e,float
 #ifdef ENABLE_ANCIENT_PYRAMID
     , bool

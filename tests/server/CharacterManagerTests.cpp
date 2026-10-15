@@ -347,13 +347,13 @@ LPDESC GetDesc(entt::entity) { return nullptr; }
 void SetName(entt::entity e, std::string_view name) {
     if (IsValid(e)) g_registry.emplace_or_replace<ecs::PlayerName>(e, std::string(name));
 }
-uint32_t GetDragonCoin(entt::entity) { Unexpected(); }
+int64_t GetDragonCoin(entt::entity) { Unexpected(); }
 int GetProtectTime(entt::entity, std::string_view) { Unexpected(); }
 void SetEmpire(entt::entity, uint8_t) { Unexpected(); }
 void SetDungeonTicketExtraMetin(entt::entity, bool) { Unexpected(); }
 void SetProto(entt::entity, const CMob*) { Unexpected(); }
 void SetDungeon(entt::entity, entt::entity) { Unexpected(); }
-int GetPremiumRemainSeconds(entt::entity, uint8_t) { Unexpected(); }
+int64_t GetPremiumRemainSeconds(entt::entity, uint8_t) { Unexpected(); }
 void DestroyCharacter(entt::entity e) { CHARACTER_MANAGER::instance().DestroyCharacter(e); }
 }
 namespace ecs::MovementSystem {

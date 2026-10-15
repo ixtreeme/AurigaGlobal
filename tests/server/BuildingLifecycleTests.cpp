@@ -127,7 +127,7 @@ void ecs::SocialSystem::SetGuild(entt::entity npc, CGuild* guild) {
     Check(ecs::IsCharacter(npc) && guild == activeGuild, "invalid building NPC guild assignment");
 }
 quest::PC* quest::CQuestManager::GetPC(unsigned int) { throw std::runtime_error("unexpected quest service"); }
-void quest::PC::SetFlag(const std::string&, int, bool) { throw std::runtime_error("unexpected quest flag"); }
+void quest::PC::SetFlag(const std::string&, int64_t, bool) { throw std::runtime_error("unexpected quest flag"); }
 void intrusive_ptr_add_ref(EVENT*) { throw std::runtime_error("unexpected building event"); }
 void intrusive_ptr_release(EVENT*) { throw std::runtime_error("unexpected building event"); }
 int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity) { Unexpected(); }

@@ -223,7 +223,7 @@ add_executable(ItemManagerLifecycleTests EXCLUDE_FROM_ALL
     item/safebox.cpp
     ../Base/grid.cpp
 )
-target_link_libraries(ItemManagerLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(ItemManagerLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 add_test(NAME item_manager_lifecycle COMMAND ItemManagerLifecycleTests)
 
 add_executable(ItemRuntimeTests EXCLUDE_FROM_ALL
@@ -242,7 +242,7 @@ add_executable(QuickslotTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuickslotTests.cpp
     ecs/systems/InventorySystem.cpp
 )
-target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 add_test(NAME quickslots COMMAND QuickslotTests)
 
 add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
@@ -292,7 +292,7 @@ add_executable(EntityNetworkDispatchTests EXCLUDE_FROM_ALL
     ecs/services/EntityNetworkDispatch.cpp
     ecs/systems/NetworkSyncSystem.cpp
 )
-target_link_libraries(EntityNetworkDispatchTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(EntityNetworkDispatchTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 if(MSVC)
     target_compile_options(EntityNetworkDispatchTests PRIVATE /Gy)
     target_link_options(EntityNetworkDispatchTests PRIVATE /OPT:REF /OPT:NOICF)
@@ -335,7 +335,7 @@ add_executable(AffectLifecycleTests EXCLUDE_FROM_ALL
     ecs/systems/AffectSystem.cpp
     pet/horsename_manager.cpp
 )
-target_link_libraries(AffectLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(AffectLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 if(WIN32)
     target_link_libraries(AffectLifecycleTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
@@ -393,7 +393,7 @@ add_executable(ExchangeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ExchangeTests.cpp
     social/exchange.cpp
 )
-target_link_libraries(ExchangeTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(ExchangeTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 add_test(NAME exchange COMMAND ExchangeTests)
 
 # Exercise the same generation-aware diagnostic implementation as GameServer.

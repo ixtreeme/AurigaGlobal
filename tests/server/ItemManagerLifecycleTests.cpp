@@ -136,14 +136,19 @@ std::shared_ptr<spdlog::logger> logging::GetLogger() {
 // Descriptor/character seams for unrelated engine services.
 // Real descriptor objects with controlled packet sinks; no fabricated pointers
 // or live networking/crypto/parser services in persistence regression tests.
-DESC::DESC() { m_sock = 1; m_entity = entt::null; m_accountTable = {}; }
+DESC::DESC() { m_socketHandle = 1; m_entity = entt::null; m_accountTable = {}; }
 DESC::~DESC() {}
 void DESC::Destroy() { Unexpected(); }
 void DESC::SetPhase(int) { Unexpected(); }
+void DESC::OnInput() { Unexpected(); }
+void DESC::OnPeerGone() { Unexpected(); }
+void DESC::OnBytesWritten(std::size_t) { Unexpected(); }
 CLIENT_DESC::CLIENT_DESC() {}
 CLIENT_DESC::~CLIENT_DESC() {}
 void CLIENT_DESC::Destroy() { Unexpected(); }
 void CLIENT_DESC::SetPhase(int) { Unexpected(); }
+void CLIENT_DESC::OnInput() { Unexpected(); }
+void CLIENT_DESC::OnHeartbeatSend() { Unexpected(); }
 CInputProcessor::CInputProcessor() {}
 bool CInputProcessor::Process(DESC*, const void*, int, int&) { Unexpected(); }
 void CInputProcessor::Handshake(DESC*, const char*) { Unexpected(); }
@@ -156,9 +161,7 @@ int CInputDead::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 int CInputDB::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 bool CInputDB::Process(DESC*, const void*, int, int&) { Unexpected(); }
 CInputP2P::CInputP2P() {}
-CInputAuth::CInputAuth() {}
 int CInputP2P::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
-int CInputAuth::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 CPacketInfo::CPacketInfo() : m_pCurrentPacket(nullptr), m_dwStartTime(0) {}
 CPacketInfo::~CPacketInfo() {}
 CPacketInfoCG::CPacketInfoCG() {}
@@ -275,7 +278,7 @@ bool IsPC(entt::entity owner) { return g_registry.valid(owner) && g_registry.all
 bool IsStone(entt::entity) { Unexpected(); }
 uint8_t GetCharType(entt::entity) { Unexpected(); }
 uint8_t GetMobRank(entt::entity) { Unexpected(); }
-int GetPremiumRemainSeconds(entt::entity, uint8_t) { Unexpected(); }
+int64_t GetPremiumRemainSeconds(entt::entity, uint8_t) { Unexpected(); }
 }
 void NetworkSyncSystem::PointsPacket(entt::entity owner) { Check(g_registry.valid(owner), "stale points packet"); ++points; }
 void ecs::PointSystem::Compute(entt::entity owner) {
@@ -885,22 +888,23 @@ void SlotAndPersistenceGuards() {
 }
 
 void DuplicateLoadRetirement() {
-
-    Reset(); Manager manager; const auto item = Item(manager);
-    const auto owner = Owner(item, EQUIPMENT, INVENTORY_MAX_NUM + WEAR_BODY);
-    g_registry.get<ecs::ItemFlags>(item).skipSave = false;
-    onDetach = [&](entt::entity current) {
-        Check(manager.Busy(current) && ItemSystem::GetItemSkipSave(current),
-            "duplicate detached outside manager guard or could delete DB row");
-    };
-    Check(db_clientdesc == nullptr && ItemSystem::DestroyLoadedDuplicateItem(item),
-        "duplicate retirement required legacy object or DB connection");
-    Check(!g_registry.valid(item) && !manager.Indexed(item) && !manager.Busy(item) &&
-        !inventory.contains({owner, INVENTORY_MAX_NUM + WEAR_BODY}) &&
-        groundCalls == 1 && detachCalls == 1 && factoryCalls == 1,
-        "duplicate retirement skipped/repeated entity, slot, index or allocation cleanup");
-    Check(!ItemSystem::DestroyLoadedDuplicateItem(item) && factoryCalls == 1,
-        "already retired duplicate was destroyed again");
+    {
+        Reset(); Manager manager; const auto item = Item(manager);
+        const auto owner = Owner(item, EQUIPMENT, INVENTORY_MAX_NUM + WEAR_BODY);
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        onDetach = [&](entt::entity current) {
+            Check(manager.Busy(current) && ItemSystem::GetItemSkipSave(current),
+                "duplicate detached outside manager guard or could delete DB row");
+        };
+        Check(db_clientdesc == nullptr && ItemSystem::DestroyLoadedDuplicateItem(item),
+            "duplicate retirement required legacy object or DB connection");
+        Check(!g_registry.valid(item) && !manager.Indexed(item) && !manager.Busy(item) &&
+            !inventory.contains({owner, INVENTORY_MAX_NUM + WEAR_BODY}) &&
+            groundCalls == 1 && detachCalls == 1 && factoryCalls == 1,
+            "duplicate retirement skipped/repeated entity, slot, index or allocation cleanup");
+        Check(!ItemSystem::DestroyLoadedDuplicateItem(item) && factoryCalls == 1,
+            "already retired duplicate was destroyed again");
+    }
 
     for (int invalid = 0; invalid < 4; ++invalid) {
         Reset(); Manager manager; const auto item = Item(manager);

@@ -701,7 +701,7 @@ bool InventorySystem::EquipTo(entt::entity,entt::entity,unsigned char) { Unexpec
 unsigned int ecs::PlayerRuntime::GetPlayerID(entt::entity e) { Check(IsPC(e), "invalid PID lookup"); return 7; }
 unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity) { Unexpected(); }
 unsigned char ecs::PlayerRuntime::GetSex(entt::entity) { Unexpected(); }
-int64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
+uint64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
 unsigned char ecs::PlayerRuntime::GetJob(entt::entity e) { return g_registry.get<Player>(e).job; }
 bool ecs::PlayerRuntime::ChangeSex(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::SetRace(entt::entity,unsigned char) { Unexpected(); }
@@ -740,12 +740,12 @@ CGuild * ecs::SocialSystem::GetGuild(entt::entity e) {
 }
 bool ecs::SocialSystem::HasExchange(entt::entity) { Unexpected(); }
 entt::entity ecs::SocialSystem::GetShop(entt::entity) { Unexpected(); }
-int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { Unexpected(); }
+int64_t ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity e, unsigned char type) { return g_registry.get<ecs::CharacterPoints>(e).base.points[type]; }
 int64_t ecs::PointSystem::GetReal(entt::entity,unsigned char) { Unexpected(); }
 int64_t ecs::PointSystem::GetGold(entt::entity) { Unexpected(); }
-int ecs::PointSystem::GetMaxHP(entt::entity) { Unexpected(); }
-int ecs::PointSystem::GetMaxSP(entt::entity) { Unexpected(); }
+uint64_t ecs::PointSystem::GetMaxHP(entt::entity) { Unexpected(); }
+uint64_t ecs::PointSystem::GetMaxSP(entt::entity) { Unexpected(); }
 bool ecs::PointSystem::Set(entt::entity,unsigned char,int64_t) { Unexpected(); }
 bool ecs::PointSystem::SetReal(entt::entity,unsigned char,int64_t) { Unexpected(); }
 bool ecs::PointSystem::ResetAllPoints(entt::entity,int) { Unexpected(); }
@@ -858,7 +858,7 @@ void fishing::Simulation(int,int,int,entt::entity) { Unexpected(); }
 void quest::PC::EndRunning(void) { Unexpected(); }
 void quest::PC::SetQuest(std::string const &,quest::QuestState &) { Unexpected(); }
 void quest::PC::ClearQuest(std::string const &) { Unexpected(); }
-void quest::PC::SetFlag(std::string const &,int,bool) { Unexpected(); }
+void quest::PC::SetFlag(std::string const &,int64_t,bool) { Unexpected(); }
 bool quest::PC::DeleteFlag(std::string const &) { Unexpected(); }
 std::string const & quest::PC::GetCurrentQuestName(void)const { Unexpected(); }
 void quest::PC::ClearTimer(void) { Unexpected(); }
@@ -942,8 +942,8 @@ int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { Unexpected();
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsMonster(entt::entity) { return false; }
 float ecs::PlayerRuntime::GetRotation(entt::entity) { return 0.0f; }
-void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) {}
-int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
+void ecs::PlayerRuntime::SetHP(entt::entity, uint64_t) {}
+uint64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 #ifdef ENABLE_GAYA_SYSTEM
 int ecs::PointSystem::GetGaya(entt::entity) { Unexpected(); }
 #endif
@@ -984,7 +984,7 @@ int CalcMagicDamage(entt::entity,entt::entity) { Unexpected(); }
 int CalcArrowDamage(entt::entity,entt::entity,entt::entity,entt::entity,bool) { Unexpected(); }
 float CalcAttackRating(entt::entity,entt::entity,bool) { Unexpected(); }
 bool battle_is_attackable(entt::entity,entt::entity) { Unexpected(); }
-int quest::PC::GetFlag(std::string const &) { Unexpected(); }
+int64_t quest::PC::GetFlag(std::string const &) { Unexpected(); }
 int quest::CQuestManager::GetEventFlag(std::string const &) { Unexpected(); }
 bool RaceToJob(unsigned int,unsigned int *) { Unexpected(); }
 unsigned char ItemSystem::GetItemType(entt::entity) { Unexpected(); }

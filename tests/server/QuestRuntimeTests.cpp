@@ -374,7 +374,7 @@ void CombatSystem::SetAttackMultiplier(entt::entity,float) {Unexpected();}
 void CombatSystem::SetDamageMultiplier(entt::entity,float) {Unexpected();}
 entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) {Unexpected();}
 CGuild* ecs::SocialSystem::GetGuild(entt::entity) {Unexpected();}
-int32_t ecs::PointSystem::GetMaxHP(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).maxHP;}
+uint64_t ecs::PointSystem::GetMaxHP(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).maxHP;}
 bool CShopManager::StartShopping(entt::entity,entt::entity,int) {Unexpected();}
 bool map_allow_find(int32_t) {Unexpected();}
 bool SECTREE_MANAGER::GetMapBasePositionByMapIndex(int32_t,PIXEL_POSITION&) {Unexpected();}
@@ -392,7 +392,7 @@ entt::entity ecs::SocialSystem::GetMyShop(entt::entity e) {CheckLive(e);return e
 entt::entity ecs::SocialSystem::GetShopOwner(entt::entity) {Unexpected();}
 void ecs::SocialSystem::SetShop(entt::entity,entt::entity) {Unexpected();}
 void ecs::SocialSystem::SetShopOwner(entt::entity,entt::entity) {Unexpected();}
-int64_t ecs::PlayerRuntime::GetHP(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).hp;}
+uint64_t ecs::PlayerRuntime::GetHP(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).hp;}
 int32_t ecs::PlayerRuntime::GetX(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).x;}
 int32_t ecs::PlayerRuntime::GetY(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).y;}
 LPSECTREE ecs::PlayerRuntime::GetSectree(entt::entity e) {CheckLive(e);return searchTree;}

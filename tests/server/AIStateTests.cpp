@@ -215,6 +215,8 @@ void GetDeltaByDegree(float, float distance, float* x, float* y)
     if (y) *y = 0.0f;
 }
 
+SECTREE_MANAGER::SECTREE_MANAGER() = default;
+SECTREE_MANAGER::~SECTREE_MANAGER() = default;
 bool SECTREE_MANAGER::IsMovablePosition(int, int, int) { return true; }
 
 
@@ -235,7 +237,9 @@ uint32_t get_dword_time() { return g_rec.nowMs; }
 
 // The pump reads the pulse, so the cases below drive it.
 int g_pulse = 0;
-int thecore_pulse() { return g_pulse; }
+int64_t thecore_pulse() { return g_pulse; }
+CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
+CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 bool CHARACTER_MANAGER::AddToStateList(entt::entity) { return true; }
 
 // --- the cases --------------------------------------------------------------
@@ -575,6 +579,9 @@ void BattleSurvivesDestructionInsideAttack()
 
 int main()
 {
+    CHARACTER_MANAGER characters;
+    CMotionManager motions;
+    SECTREE_MANAGER sectrees;
     try {
         AWaitingStateIsNotRunEarly();
         ADeadCharacterDoesNotRunItsState();

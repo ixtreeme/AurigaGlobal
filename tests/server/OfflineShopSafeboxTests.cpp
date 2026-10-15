@@ -10,7 +10,7 @@
 entt::registry g_registry;
 
 static int fixturePulse = 0;
-int thecore_pulse() { return fixturePulse; }
+int64_t thecore_pulse() { return fixturePulse; }
 
 // The safebox type is exercised through its owner relations only; the item and
 // value containers are empty in this fixture, so the stubs stay trivial.

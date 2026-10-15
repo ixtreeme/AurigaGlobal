@@ -108,15 +108,12 @@ struct MotionSettings {
 };
 std::unordered_map<entt::entity, MotionSettings> motionSettings;
 std::map<entt::entity, TItemTable> weaponProtos;
-std::map<std::pair<uint32_t, uint32_t>, const CMotion*> motions;
-std::vector<std::pair<uint32_t, uint32_t>> motionRequests;
+// Baked movement speeds (px/s) by (vnum, walking); a missing entry is unknown.
+std::map<std::pair<uint32_t, bool>, float> moveSpeeds;
 // Only entities a test places have a position; every other entity keeps the
 // "must not be asked" guarantee the plain Unexpected() doubles gave.
 struct Placement { int32_t x, y, mapIndex; };
 std::map<entt::entity, Placement> placements;
-struct TestMotion : CMotion {
-    TestMotion(float duration, float distance) { m_fDuration = duration; m_vec3Accumulation = {0, -distance, 0}; }
-};
 
 struct MapFixture {
     int index;
@@ -168,7 +165,7 @@ void Reset() {
     onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
     movementPackets.clear(); movementRecipients.clear(); animationPackets.clear(); onAnimation = {};
     transitions.clear(); motionSettings.clear(); weaponProtos.clear();
-    motions.clear(); motionRequests.clear(); placements.clear(); g_registry.clear();
+    moveSpeeds.clear(); placements.clear(); g_registry.clear();
 }
 struct Callback {
     std::function<void(entt::registry&, entt::entity)> fn;
@@ -340,6 +337,7 @@ uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity e) { return motionSettings[e].race; }
 int ecs::PlayerRuntime::GetStamina(entt::entity e) { return motionSettings[e].stamina; }
 uint32_t MountSystem::GetMountVnum(entt::entity e) { return motionSettings[e].mount; }
+bool MountSystem::IsRiding(entt::entity e) { return motionSettings[e].mount != 0; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity e) { CheckShow(e); return g_registry.get<ecs::PlayerName>(e).value; }
 int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) {
     if (g_registry.all_of<ShowProbe>(e)) return g_registry.get<ecs::MapIndex>(e).value;
@@ -374,7 +372,7 @@ void Save(entt::entity) { Unexpected(); }
 void CombatSystem::DistributeSP(entt::entity e, entt::entity target, int) {
     Check(e == target, "recovery SP target mismatch"); RecoveryCallback(e, 2);
 }
-int64_t ecs::PlayerRuntime::GetHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).current; }
+uint64_t ecs::PlayerRuntime::GetHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).current; }
 int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }
 void ecs::PointSystem::Compute(entt::entity e) { CheckShow(e); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity e) {
@@ -395,15 +393,8 @@ int DungeonSystem::GetFlag(entt::entity dungeon, std::string key) {
 }
 // The leave hook is exercised by the dungeon migration test, not here.
 void ecs::SocialSystem::ClearDungeonIfOtherMap(entt::entity, int32_t) {}
-CMotion::CMotion() {}
-CMotion::~CMotion() {}
-float CMotion::GetDuration() const { return m_fDuration; }
-const D3DXVECTOR3& CMotion::GetAccumVector() const { return m_vec3Accumulation; }
-CMotionManager::CMotionManager() {}
-CMotionManager::~CMotionManager() {}
-const CMotion* CMotionManager::GetMotion(uint32_t race, uint32_t key) {
-    motionRequests.emplace_back(race, key);
-    auto it = motions.find({race, key}); return it == motions.end() ? nullptr : it->second;
+float CMotionManager::GetMoveSpeed(uint32_t vnum, bool walking) const {
+    const auto it = moveSpeeds.find({vnum, walking}); return it == moveSpeeds.end() ? 0.0f : it->second;
 }
 float GetDegreeFromPositionXY(int32_t, int32_t, int32_t, int32_t) { Unexpected(); }
 void quest::CQuestManager::AttrIn(entt::entity, entt::entity, int) { Unexpected(); }
@@ -424,7 +415,7 @@ int64_t ecs::PointSystem::Get(entt::entity e, uint8_t point) {
     if (point == POINT_HP_REGEN) return Recovery(e).bonus;
     Unexpected();
 }
-int ecs::PointSystem::GetMaxHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).max; }
+uint64_t ecs::PointSystem::GetMaxHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).max; }
 void ecs::PointSystem::Change(entt::entity e, uint8_t point, int64_t amount, bool, bool, bool) {
     Recovery(e); Check(point == POINT_HP, "recovery changed unexpected point"); ++recoveryChanges;
     auto& health = g_registry.get<ecs::Health>(e);
@@ -1176,7 +1167,8 @@ void NativeMovementCommands() {
     Check(ecs::MovementSystem::Goto(e, 400, 500), "native Goto rejected fresh target");
     g_registry.get<ecs::MovementState>(e).walkPreference = true;
     const auto initial = g_registry.get<ecs::MovementState>(e);
-    Check(initial.moveStartTime == 123456 && initial.moveDuration == 1666 &&
+    // A server-forced player move uses the fixed 450 base, not motion data.
+    Check(initial.moveStartTime == 123456 && initial.moveDuration == 1111 &&
         g_registry.get<ecs::MovementDestination>(e).x == 400 &&
         AIHelpers::GetStateDuration(e) == 4, "Goto target/timing/AI commit missing");
     Check(!ecs::MovementSystem::Goto(e, 400, 500) &&
@@ -1187,8 +1179,12 @@ void NativeMovementCommands() {
 
     motionSettings[e].movePoint = 200;
     ecs::MovementSystem::CalculateMoveDuration(e);
-    Check(g_registry.get<ecs::MovementState>(e).moveDuration == 833, "speed-change duration calculation");
-    Check(ecs::MovementSystem::GetMoveSpeed(e) == 600.0f, "native effective movement speed");
+    Check(g_registry.get<ecs::MovementState>(e).moveDuration == 1111, "server recomputed client-timed PC move");
+    Check(std::abs(ecs::MovementSystem::GetMoveSpeed(e) - 500 / 1.111f) < 0.01f, "committed movement speed");
+    const auto mob = Moving(100, 100, 400, 500, 200, true);
+    motionSettings[mob].movePoint = 200;
+    ecs::MovementSystem::CalculateMoveDuration(mob);
+    Check(g_registry.get<ecs::MovementState>(mob).moveDuration == 833, "speed-change duration calculation");
     g_registry.emplace<ecs::CombatActiveTag>(e);
     g_registry.emplace<ecs::CombatTarget>(e, Entity(ecs::SpatialKind::Character), 0u);
     ecs::MovementSystem::Stop(e);
@@ -1237,9 +1233,10 @@ void NativeMotionSelection() {
     motionSettings[e].weapon = entt::null;
     motionSettings[e].race = 1;
     motionSettings[e].attached = true;
-    TestMotion run(2, 800), walk(2, 300), mounted(1, 900), horse(1, 700);
-    motions[{1, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_RUN)}] = &run;
-    motions[{1, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_WALK)}] = &walk;
+    // The baked speeds come by vnum and walking; the motion bake dropped the
+    // mount/horse-mode motion lookups along with the .msa files.
+    moveSpeeds[{1, false}] = 400;
+    moveSpeeds[{1, true}] = 150;
     Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 400, "run motion speed");
     g_registry.get<ecs::MovementState>(e).isNowWalking = true;
     Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 150, "walk motion speed");
@@ -1249,29 +1246,24 @@ void NativeMotionSelection() {
     motionSettings[e].attached = false;
     Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 400, "descriptor-free character used PC walk motion");
     motionSettings[e].attached = true; motionSettings[e].stamina = 100;
-    motionSettings[e].mount = 20201;
-    motions[{20201, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_RUN)}] = &mounted;
-    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 900, "mount motion speed");
-    motions.erase({20201, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_RUN)});
-    motions[{1, MAKE_MOTION_KEY(MOTION_MODE_HORSE, MOTION_RUN)}] = &horse;
-    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 700, "horse-mode fallback");
-    motions.clear();
-    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 300, "missing mount motion fallback");
-    motionSettings[e].mount = 0;
-    TestMotion zeroDuration(0, 100), zeroDistance(1, 0), negative(1, -100),
-        infinite(std::numeric_limits<float>::infinity(), 100), nan(1, std::numeric_limits<float>::quiet_NaN());
-    for (const auto* bad : {&zeroDuration, &zeroDistance, &negative, &infinite, &nan}) {
-        motions[{1, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_RUN)}] = bad;
+    moveSpeeds.clear();
+    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 300, "missing motion fallback");
+    for (const float bad : {0.0f, -100.0f, std::numeric_limits<float>::infinity(), std::numeric_limits<float>::quiet_NaN()}) {
+        moveSpeeds[{1, false}] = bad;
         Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 300, "malformed motion introduced invalid speed");
     }
-    motions.clear();
-    ecs::MovementSystem::SyncDestinationWrite(e, INT32_MIN, INT32_MAX);
-    motionSettings[e].movePoint = INT64_MIN;
-    ecs::MovementSystem::CalculateMoveDuration(e);
-    Check(g_registry.get<ecs::MovementState>(e).moveDuration == INT_MAX,
+    moveSpeeds.clear();
+    // Only monsters recompute their duration on the server.
+    const auto mob = Moving(100, 100, 101, 100, 200, true);
+    ecs::MovementSystem::SyncDestinationWrite(mob, INT32_MIN, INT32_MAX);
+    motionSettings[mob].movePoint = INT64_MIN;
+    ecs::MovementSystem::CalculateMoveDuration(mob);
+    Check(g_registry.get<ecs::MovementState>(mob).moveDuration == INT_MAX,
         "extreme duration overflowed rather than saturating");
-    motionSettings[e].movePoint = INT64_MAX;
-    Check(std::abs(ecs::MovementSystem::GetMoveSpeed(e) - 30000.0f / 28) < 0.01f,
+    ecs::MovementSystem::SyncDestinationWrite(mob, 400, 100);
+    motionSettings[mob].movePoint = INT64_MAX;
+    ecs::MovementSystem::CalculateMoveDuration(mob);
+    Check(g_registry.get<ecs::MovementState>(mob).moveDuration == 1000 * 28 / 100,
         "movement point upper limit changed");
 #ifdef ENABLE_MELEY_LAIR
     motionSettings[e].attached = false; motionSettings[e].race = 6193;
@@ -1292,10 +1284,11 @@ void NativeMotionSelection() {
 void MovementCommandReentry() {
     Reset(); MapFixture map;
     const auto e = Moving(100, 100, 101, 100);
+    // A descriptor-free PC (clone) moves at the fixed 450 forced-move base.
     ecs::MovementSystem::SyncDestinationClear(e);
     Callback arrival {[&](entt::registry& reg, entt::entity changed) {
         if (changed != e) return;
-        Check(reg.get<ecs::MovementState>(e).moveDuration == 1000 &&
+        Check(reg.get<ecs::MovementState>(e).moveDuration == 666 &&
             reg.get<ecs::MovementDestination>(e).x == 400, "destination observer saw incomplete timing");
         ecs::MovementSystem::Stop(e);
     }};
@@ -1312,7 +1305,7 @@ void MovementCommandReentry() {
     }};
     connection = g_registry.on_construct<ecs::DirtyTag>().connect<&Callback::Run>(speedChange);
     Check(ecs::MovementSystem::Goto(e, 700, 100) &&
-        g_registry.get<ecs::MovementState>(e).moveDuration == 1000,
+        g_registry.get<ecs::MovementState>(e).moveDuration == 666,
         "Goto used speed from before preparation callback");
     connection.release();
     motionSettings[e].movePoint = 100;
@@ -1338,7 +1331,7 @@ void MovementCommandReentry() {
     connection = g_registry.on_construct<ecs::AIState>().connect<&Callback::Run>(prepare);
     Check(!ecs::MovementSystem::Goto(e, 400, 100) && nested &&
         g_registry.get<ecs::MovementDestination>(e).x == 700 &&
-        g_registry.get<ecs::MovementState>(e).moveDuration == 2000, "preparation replaced nested command");
+        g_registry.get<ecs::MovementState>(e).moveDuration == 1333, "preparation replaced nested command");
     connection.release();
 
     g_registry.emplace<ecs::CombatActiveTag>(e);
@@ -1348,7 +1341,7 @@ void MovementCommandReentry() {
     connection = g_registry.on_destroy<ecs::CombatActiveTag>().connect<&Callback::Run>(stop);
     ecs::MovementSystem::Stop(e);
     Check(g_registry.get<ecs::MovementDestination>(e).x == 1000 &&
-        g_registry.get<ecs::MovementState>(e).moveDuration == 3000, "old Stop erased new Goto");
+        g_registry.get<ecs::MovementState>(e).moveDuration == 2000, "old Stop erased new Goto");
     connection.release();
 
     Callback clear {[&](entt::registry& reg, entt::entity changed) {
@@ -1571,7 +1564,7 @@ void NativeAIScheduleStorage() {
 entt::entity RecoveryActor(bool player = false, uint8_t type = CHAR_TYPE_MONSTER) {
     const auto e = g_registry.create();
     g_registry.emplace<ecs::CharacterType>(e, player ? uint8_t(CHAR_TYPE_PC) : type);
-    g_registry.emplace<ecs::Health>(e, 500, 1000);
+    g_registry.emplace<ecs::Health>(e, uint64_t { 500 }, uint64_t { 1000 });
     auto& probe = g_registry.emplace<RecoveryProbe>(e);
     probe.mob.bRegenCycle = 2; probe.mob.bRegenPercent = 10;
     motionSettings[e].attached = player;

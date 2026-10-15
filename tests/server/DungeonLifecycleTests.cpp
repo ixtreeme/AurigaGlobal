@@ -210,8 +210,8 @@ uint32_t GetRaceNum(entt::entity e) { const auto* a = ActorOf(e); return a ? a->
 std::string_view GetName(entt::entity e) { const auto* a = ActorOf(e); return a ? a->name : "unknown"; }
 int32_t GetMapIndex(entt::entity e) { const auto* a = ActorOf(e); return a ? a->mapIndex : 0; }
 uint32_t GetPacketVID(entt::entity e) { const auto* a = ActorOf(e); return a ? a->vid : 0; }
-int64_t GetHP(entt::entity) { return 100; }
-void SetHP(entt::entity, int64_t) {}
+uint64_t GetHP(entt::entity) { return 100; }
+void SetHP(entt::entity, uint64_t) {}
 entt::entity FindByVID(uint32_t vid) {
     for (const auto e : g_registry.view<Actor>())
         if (g_registry.get<Actor>(e).vid == vid) return e;

@@ -131,6 +131,8 @@ void DBManager::Query(const char* format, ...)
 }
 MYSQL_ROW STDCALL mysql_fetch_row(MYSQL_RES*) { return resultCursor < resultRows.size() ? resultRows[resultCursor++] : nullptr; }
 void STDCALL mysql_free_result(MYSQL_RES*) {}
+// The rows come back through SQLResult::FetchRow, as in AsyncSQL.cpp.
+MYSQL_ROW SQLResult::FetchRow() { return pSQLResult ? mysql_fetch_row(pSQLResult) : nullptr; }
 
 void CLIENT_DESC::DBPacket(uint8_t header, uint32_t, const void*, uint32_t) { dbHeaders.push_back(header); }
 void DESC::BufferedPacket(const void* data, int size)
@@ -186,7 +188,7 @@ UNEXPECTED(void ecs::SocialSystem::UpdateDepositPulse(entt::entity), "SocialSyst
 UNEXPECTED(int32_t ecs::PlayerRuntime::GetX(entt::entity), "PlayerRuntime::GetX")
 UNEXPECTED(int32_t ecs::PlayerRuntime::GetY(entt::entity), "PlayerRuntime::GetY")
 UNEXPECTED(void ecs::PlayerRuntime::SetGold(entt::entity, int64_t), "PlayerRuntime::SetGold")
-UNEXPECTED(void ecs::QuestSystem::SetFlag(entt::entity, std::string_view, int), "QuestSystem::SetFlag")
+UNEXPECTED(void ecs::QuestSystem::SetFlag(entt::entity, std::string_view, int64_t), "QuestSystem::SetFlag")
 UNEXPECTED(int SkillSystem::ComputeSkill(entt::entity, uint32_t, entt::entity, uint8_t), "SkillSystem::ComputeSkill")
 UNEXPECTED(void NetworkSyncSystem::BroadcastSpecificEffect(entt::registry&, entt::entity, const char*), "NetworkSyncSystem::BroadcastSpecificEffect")
 UNEXPECTED(void NetworkSyncSystem::PointsPacket(entt::entity), "NetworkSyncSystem::PointsPacket")
@@ -205,6 +207,9 @@ UNEXPECTED(CCI* P2P_MANAGER::FindByPID(uint32_t), "P2P_MANAGER::FindByPID")
 UNEXPECTED(SQLMsg* DBManager::DirectQuery(const char*, ...), "DBManager::DirectQuery")
 UNEXPECTED(uint32_t DBManager::EscapeString(char*, uint64_t, const char*, uint32_t), "DBManager::EscapeString")
 UNEXPECTED(void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t), "DBManager::SendMoneyLog")
+UNEXPECTED(SQLMsg* DBManager::DirectQueryPrepared(const char*, const SqlParams&), "DBManager::DirectQueryPrepared")
+UNEXPECTED(void DBManager::QueryPrepared(const char*, const SqlParams&), "DBManager::QueryPrepared")
+UNEXPECTED(void CAsyncSQL::ReturnQueryPrepared(const char*, const SqlParams&, void*), "CAsyncSQL::ReturnQueryPrepared")
 UNEXPECTED(double CPoly::Eval(), "CPoly::Eval")
 UNEXPECTED(int CPoly::SetVar(std::string_view, double), "CPoly::SetVar")
 UNEXPECTED(LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t), "event_create_ex")

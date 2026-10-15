@@ -84,6 +84,7 @@ LPEVENT scheduled;
 std::vector<LPEVENT> retainedEvents;
 std::vector<std::string> databaseRow;
 std::vector<std::string> queries;
+SqlParams lastParams;
 bool failQuery = false, failPayment = false;
 int nullColumn = -1, databaseRows = 1, liveResults = 0, consumed = 0, removedItems = 0;
 uint32_t nowSeconds = 2000000;
@@ -133,7 +134,7 @@ void Reset()
     onCompute = {};
     failQuery = failPayment = false;
     nullColumn = -1; databaseRows = 1; consumed = removedItems = questDelay = 0;
-    queries.clear(); growthBonusOwners.clear();
+    queries.clear(); lastParams.clear(); growthBonusOwners.clear();
     std::fill(std::begin(testPetExp), std::end(testPetExp), 1000u);
     databaseRow = {"grown pet","1","0","0","10","20","30","0","0","0","0","-1","0","-1","0","120","200","0","1","1000000"};
 }
@@ -160,6 +161,19 @@ struct FakeResult {
 extern "C" MYSQL_ROW STDCALL mysql_fetch_row(MYSQL_RES* result) { return reinterpret_cast<FakeResult*>(result)->row.data(); }
 extern "C" unsigned int STDCALL mysql_num_fields(MYSQL_RES* result) { return static_cast<unsigned int>(reinterpret_cast<FakeResult*>(result)->row.size()); }
 extern "C" void STDCALL mysql_free_result(MYSQL_RES* result) { --liveResults; delete reinterpret_cast<FakeResult*>(result); }
+MYSQL_ROW SQLResult::FetchRow() { return pSQLResult ? mysql_fetch_row(pSQLResult) : nullptr; }
+// The rename binds its values; the statement and its parameters are recorded.
+SQLMsg* DBManager::DirectQueryPrepared(const char* query, const SqlParams& params) {
+    queries.emplace_back(query);
+    lastParams = params;
+    if (failQuery) return nullptr;
+    auto message = std::make_unique<SQLMsg>();
+    auto result = std::make_unique<SQLResult>();
+    result->bPrepared = true;
+    result->uiAffectedRows = 1;
+    message->vec_pkResult.push_back(result.release());
+    return message.release();
+}
 SQLMsg* DBManager::DirectQuery(const char* format, ...) {
     char query[4096];
     va_list args; va_start(args, format); vsnprintf(query, sizeof(query), format, args); va_end(args);
@@ -385,8 +399,8 @@ entt::entity ecs::SocialSystem::GetDungeon(entt::entity e) {
 bool ecs::SocialSystem::HasExchange(entt::entity e) { State(e); return false; }
 entt::entity ecs::SocialSystem::GetMyShop(entt::entity e) { State(e); return entt::null; }
 entt::entity ecs::SocialSystem::GetShopOwner(entt::entity e) { State(e); return entt::null; }
-int32_t ecs::QuestSystem::GetFlag(entt::entity e, std::string_view) { State(e); return questDelay; }
-void ecs::QuestSystem::SetFlag(entt::entity e, std::string_view, int32_t time) { State(e); questDelay = time; }
+int64_t ecs::QuestSystem::GetFlag(entt::entity e, std::string_view) { State(e); return questDelay; }
+void ecs::QuestSystem::SetFlag(entt::entity e, std::string_view, int64_t time) { State(e); questDelay = time; }
 void ecs::ViewSystem::PacketView(entt::entity e, const void*, int, entt::entity) { State(e); ++packets; }
 void ecs::ViewSystem::ViewReencode(entt::entity e) { State(e); ++packets; }
 void ecs::ChatSystem::Send(entt::entity e, uint8_t, const char*, ...) { State(e); }
@@ -761,8 +775,9 @@ void GrowthDatabaseValidation()
         && ItemSystem::GetItemSocket(seal, 1) == 120, "growth skin changed identity/progression/duration");
     NewPetSystem::ChangeName(owner, "O'Pet");
     Check(g_registry.get<ecs::PlayerName>(actor->character).value == "O'Pet", "native rename did not publish name");
-    Check(queries.back().find("name='O\\'Pet' WHERE id=" + std::to_string(ItemSystem::GetItemID(seal))) != std::string::npos,
-        "rename was not escaped and keyed by item ID");
+    Check(queries.back() == "UPDATE new_petsystem SET name=? WHERE id=?" && lastParams.size() == 2 &&
+        lastParams[0].bytes == "O'Pet" && lastParams[1].u64 == ItemSystem::GetItemID(seal),
+        "rename was not bound and keyed by item ID");
     NewPetSystem::Unsummon(owner, 34041);
 }
 

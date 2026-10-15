@@ -162,7 +162,7 @@ uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity e)
 }
 int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) { return mapIndices.at(e); }
 LPDESC ecs::PlayerRuntime::GetDesc(entt::entity e) { return ecs::IsCharacter(e) ? DescOf(e) : nullptr; }
-int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, uint8_t) { return 0; }
+int64_t ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, uint8_t) { return 0; }
 void ecs::SocialSystem::SetMarryPartner(entt::entity e, entt::entity partner) { partners[e] = partner; }
 void ecs::ChatSystem::Send(entt::entity e, uint8_t, const char* format, ...) { chats.emplace_back(e, format); }
 void ecs::MovementSystem::SaveExitLocation(entt::entity) {}

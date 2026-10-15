@@ -152,6 +152,8 @@ int ItemSystem::GetItemAttributeCount(entt::entity) { Unexpected("ItemSystem::Ge
 int ItemSystem::GetItemAttributeSetIndex(entt::entity) { Unexpected("ItemSystem::GetItemAttributeSetIndex"); }
 bool ItemSystem::CanPayItemAttributeCost(entt::entity, entt::entity, uint32_t) { Unexpected("ItemSystem::CanPayItemAttributeCost"); }
 bool ItemSystem::ChangeItemAttributeWithItemCost(entt::entity, entt::entity, uint32_t, const int*) { Unexpected("ItemSystem::ChangeItemAttributeWithItemCost"); }
+bool ItemSystem::ChangeItemAttributeWithGoldCost(entt::entity, int64_t) { Unexpected("ItemSystem::ChangeItemAttributeWithGoldCost"); }
+int64_t ecs::PointSystem::GetGold(entt::entity) { Unexpected("ecs::PointSystem::GetGold"); }
 bool ItemSystem::IsItemExchanging(entt::entity) { Unexpected("ItemSystem::IsItemExchanging"); }
 bool ItemSystem::IsItemLocked(entt::entity) { Unexpected("ItemSystem::IsItemLocked"); }
 uint8_t ItemSystem::GetItemWindow(entt::entity) { Unexpected("ItemSystem::GetItemWindow"); }

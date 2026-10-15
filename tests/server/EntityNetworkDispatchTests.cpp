@@ -396,7 +396,7 @@ std::shared_ptr<spdlog::logger> logging::GetLogger() {
     static auto logger = std::make_shared<spdlog::logger>("entity-wire-test"); return logger;
 }
 std::shared_ptr<spdlog::logger> logging::GetErrorLogger() { return logging::GetLogger(); }
-DESC::DESC() { m_sock = 1; m_accountTable = {}; }
+DESC::DESC() { m_socketHandle = 1; m_accountTable = {}; }
 DESC::~DESC() = default;
 void DESC::Packet(const void* data, int size) {
     Check(data && size > 0, "invalid transport payload");
@@ -419,6 +419,9 @@ void DESC::BufferedPacket(const void* data, int size) {
 }
 void DESC::Destroy() { Unexpected(); }
 void DESC::SetPhase(int) { Unexpected(); }
+void DESC::OnInput() { Unexpected(); }
+void DESC::OnPeerGone() { Unexpected(); }
+void DESC::OnBytesWritten(std::size_t) { Unexpected(); }
 CInputProcessor::CInputProcessor() = default;
 bool CInputProcessor::Process(DESC*, const void*, int, int&) { Unexpected(); }
 void CInputProcessor::Handshake(DESC*, const char*) { Unexpected(); }
@@ -431,9 +434,7 @@ int CInputDead::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 int CInputDB::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 bool CInputDB::Process(DESC*, const void*, int, int&) { Unexpected(); }
 CInputP2P::CInputP2P() = default;
-CInputAuth::CInputAuth() = default;
 int CInputP2P::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
-int CInputAuth::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 CPacketInfo::CPacketInfo() : m_pCurrentPacket(nullptr), m_dwStartTime(0) {}
 CPacketInfo::~CPacketInfo() = default;
 CPacketInfoCG::CPacketInfoCG() = default;
@@ -500,11 +501,6 @@ bool IsStone(entt::entity) { Unexpected(); }
 bool IsMonster(entt::entity) { Unexpected(); }
 }
 void CombatSystem::SendDamagePacket(entt::entity, entt::entity, int, uint8_t) { Unexpected(); }
-TEMP_BUFFER::TEMP_BUFFER(int, bool) { Unexpected(); }
-TEMP_BUFFER::~TEMP_BUFFER() = default;
-const void* TEMP_BUFFER::read_peek() { Unexpected(); }
-void TEMP_BUFFER::write(const void*, int) { Unexpected(); }
-int TEMP_BUFFER::size() { Unexpected(); }
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 entt::entity CHARACTER_MANAGER::FindEntity(uint32_t vid) {

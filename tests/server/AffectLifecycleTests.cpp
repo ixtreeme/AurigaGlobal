@@ -735,8 +735,8 @@ int64_t ecs::PointSystem::Get(entt::entity e, uint8_t type) {
     const auto* points = g_registry.valid(e) ? g_registry.try_get<TestPoints>(e) : nullptr;
     return points && type < POINT_MAX_NUM ? points->values[type] : 0;
 }
-int32_t ecs::PointSystem::GetMaxHP(entt::entity) { return 100; }
-int32_t ecs::PointSystem::GetMaxSP(entt::entity) { return 80; }
+uint64_t ecs::PointSystem::GetMaxHP(entt::entity) { return 100; }
+uint64_t ecs::PointSystem::GetMaxSP(entt::entity) { return 80; }
 void ecs::PointSystem::Change(entt::entity e, uint8_t type, int64_t amount, bool, bool
 #ifdef __ENABLE_BLOCK_EXP__
     , bool
@@ -759,7 +759,7 @@ CGuild* ecs::SocialSystem::GetGuild(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e); }
 LPDESC ecs::PlayerRuntime::GetDesc(entt::entity e) { return e == connected ? client : nullptr; }
 // The affect tick reads these now that UpdateAffect lives in this system.
-int64_t ecs::PlayerRuntime::GetHP(entt::entity) { UnexpectedService(__func__); }
+uint64_t ecs::PlayerRuntime::GetHP(entt::entity) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetMapIndex(entt::entity) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetStamina(entt::entity) { UnexpectedService(__func__); }
 bool CombatSystem::IsDead(entt::entity) { UnexpectedService(__func__); }
@@ -811,18 +811,18 @@ void ecs::PlayerRuntime::SetPart(entt::entity e, unsigned char part, unsigned sh
     if (onPart) { const auto callback = onPart; callback(e); }
 }
 unsigned char ecs::PlayerRuntime::GetMobRank(entt::entity) { UnexpectedService(__func__); }
-int ecs::QuestSystem::GetFlag(entt::entity e, std::string_view flag) {
+int64_t ecs::QuestSystem::GetFlag(entt::entity e, std::string_view flag) {
     if (onQuest) { const auto callback = onQuest; callback(e); }
     if (flag == "hair.limit_time") return hairDeadline;
     if (flag == "horse_name.valid_till") return horseDeadline;
     UnexpectedService("unexpected quest flag");
 }
-int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, uint8_t type) {
+int64_t ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, uint8_t type) {
     Check(type < PREMIUM_MAX_NUM, "premium index must be within the account array");
     return premiumRemaining[type];
 }
 int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity) { UnexpectedService(__func__); }
-int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
+uint64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 void NetworkSyncSystem::BroadcastSyncPacket(entt::registry&, entt::entity e) {
     ++syncs;
     if (onSync) { const auto callback = onSync; callback(e); }
@@ -842,8 +842,8 @@ void CombatSystem::SetValidComboInterval(entt::entity,int) { UnexpectedService(_
 unsigned int CGuild::UnderAnyWar(unsigned char) { UnexpectedService(__func__); }
 void CGuild::GiveGuildBuff(entt::entity) { UnexpectedService(__func__); }
 int64_t get_global_time(void) { return nowSeconds; }
-void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) { UnexpectedService(__func__); }
-void ecs::PlayerRuntime::SetMaxHP(entt::entity, int64_t) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::SetHP(entt::entity, uint64_t) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::SetMaxHP(entt::entity, uint64_t) { UnexpectedService(__func__); }
 unsigned int ecs::MovementSystem::GetStopTime(entt::entity) { UnexpectedService(__func__); }
 void SkillSystem::StartMuyeongEvent(entt::entity) { UnexpectedService(__func__); }
 void SkillSystem::StopMuyeongEvent(entt::entity) { UnexpectedService(__func__); }
@@ -892,10 +892,15 @@ DESC::DESC() {}
 DESC::~DESC() {}
 void DESC::Destroy() { UnexpectedService(__func__); }
 void DESC::SetPhase(int) { UnexpectedService(__func__); }
+void DESC::OnInput() { UnexpectedService(__func__); }
+void DESC::OnPeerGone() { UnexpectedService(__func__); }
+void DESC::OnBytesWritten(std::size_t) { UnexpectedService(__func__); }
 CLIENT_DESC::CLIENT_DESC() {}
 CLIENT_DESC::~CLIENT_DESC() {}
 void CLIENT_DESC::Destroy() { UnexpectedService(__func__); }
 void CLIENT_DESC::SetPhase(int) { UnexpectedService(__func__); }
+void CLIENT_DESC::OnInput() { UnexpectedService(__func__); }
+void CLIENT_DESC::OnHeartbeatSend() { UnexpectedService(__func__); }
 CInputProcessor::CInputProcessor() {}
 bool CInputProcessor::Process(DESC*, const void*, int, int&) { UnexpectedService(__func__); }
 void CInputProcessor::Handshake(DESC*, const char*) { UnexpectedService(__func__); }
@@ -908,9 +913,7 @@ int CInputDead::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func_
 int CInputDB::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
 bool CInputDB::Process(DESC*, const void*, int, int&) { UnexpectedService(__func__); }
 CInputP2P::CInputP2P() {}
-CInputAuth::CInputAuth() {}
 int CInputP2P::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
-int CInputAuth::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
 CPacketInfo::CPacketInfo() : m_pCurrentPacket(nullptr), m_dwStartTime(0) {}
 CPacketInfo::~CPacketInfo() {}
 CPacketInfoCG::CPacketInfoCG() {}

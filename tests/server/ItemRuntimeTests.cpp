@@ -219,6 +219,15 @@ void MountSystem::FeedHorse(entt::entity) { ++feeds; }
 void NetworkSyncSystem::BroadcastEffect(entt::registry&, entt::entity, uint8_t) {}
 void InventorySystem::SetRefineNPC(entt::entity, entt::entity) { Unexpected(); }
 bool fishing::GrillFishEcs(entt::entity, entt::entity) { Unexpected(); }
+quest::CQuestManager::CQuestManager() = default;
+quest::CQuestManager::~CQuestManager() = default;
+LogManager::LogManager() : m_bIsConnect(false) {}
+LogManager::~LogManager() = default;
+CSemaphore::CSemaphore() = default;
+CSemaphore::~CSemaphore() = default;
+CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::~CAsyncSQL() = default;
+quest::NPC::~NPC() = default;
 bool quest::CQuestManager::TakeItem(unsigned int, unsigned int, entt::entity) { Unexpected(); }
 CRuneDungeon& CRuneDungeon::instance() { static CRuneDungeon dungeon; return dungeon; }
 CHalloween2022Dungeon& CHalloween2022Dungeon::instance() { static CHalloween2022Dungeon dungeon; return dungeon; }
@@ -883,6 +892,8 @@ void NativePickups() {
 }
 int main() {
     ITEM_MANAGER itemManager;
+    quest::CQuestManager quests;
+    LogManager logs;
     g_dispatcher.sink<ecs::EvItemExpired>().connect<&Published>();
     g_registry.on_construct<ecs::ItemEvents>().connect<&Constructed>();
     g_registry.on_construct<ecs::ItemIdentity>().connect<&FactoryIdentity>();

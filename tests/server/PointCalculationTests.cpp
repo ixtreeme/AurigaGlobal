@@ -78,8 +78,8 @@ entt::entity ActorEntity(bool player = true) {
     actor.mob.dwMaxHP = 3000; actor.mob.sAttackSpeed = 90; actor.mob.sMovingSpeed = 70; actor.mob.wDef = 7;
     g_registry.emplace<ecs::CharacterStatsComponent>(e);
     g_registry.emplace<ecs::CharacterPoints>(e, ecs::CharacterPoints {});
-    g_registry.emplace<ecs::Health>(e, 500, 1000);
-    g_registry.emplace<ecs::Mana>(e, 80, 200);
+    g_registry.emplace<ecs::Health>(e, uint64_t { 500 }, uint64_t { 1000 });
+    g_registry.emplace<ecs::Mana>(e, uint64_t { 80 }, uint64_t { 200 });
     g_registry.emplace<ecs::Stamina>(e, 100, 100);
     g_registry.emplace<ecs::LevelComponent>(e, 20);
     g_registry.emplace<ecs::SkillDamageBonus>(e);
@@ -136,10 +136,10 @@ LPDESC GetDesc(entt::entity e) { Check(IsValid(e), "stale descriptor lookup"); r
 std::string_view GetName(entt::entity e) { Check(IsValid(e), "stale actor name"); return "actor"; }
 uint32_t GetPlayerID(entt::entity) { return 1; }
 uint32_t GetPacketVID(entt::entity) { return 2; }
-void SetHP(entt::entity e, int64_t value) { g_registry.get<ecs::Health>(e).current = static_cast<int32_t>(value); }
-void SetSP(entt::entity e, int64_t value) { g_registry.get<ecs::Mana>(e).current = static_cast<int32_t>(value); }
-void SetMaxHP(entt::entity e, int64_t value) { g_registry.get<ecs::Health>(e).max = static_cast<int32_t>(value); }
-void SetMaxSP(entt::entity e, int64_t value) { g_registry.get<ecs::Mana>(e).max = static_cast<int32_t>(value); }
+void SetHP(entt::entity e, uint64_t value) { g_registry.get<ecs::Health>(e).current = value; }
+void SetSP(entt::entity e, uint64_t value) { g_registry.get<ecs::Mana>(e).current = value; }
+void SetMaxHP(entt::entity e, uint64_t value) { g_registry.get<ecs::Health>(e).max = value; }
+void SetMaxSP(entt::entity e, uint64_t value) { g_registry.get<ecs::Mana>(e).max = value; }
 void SetMaxStamina(entt::entity e, int64_t value) { g_registry.get<ecs::Stamina>(e).max = static_cast<int32_t>(value); }
 int64_t GetMaxStamina(entt::entity e) { return g_registry.get<ecs::Stamina>(e).max; }
 int GetStamina(entt::entity e) { return g_registry.get<ecs::Stamina>(e).current; }
@@ -235,20 +235,20 @@ void AffectSystem::SetPolymorph(entt::entity, uint32_t, bool) { Unexpected(); }
 int AffectSystem::GetPolymorphPower(entt::entity) { Unexpected(); }
 bool AffectSystem::IsPolyMaintainStat(entt::entity) { return false; }
 uint32_t AffectSystem::GetPolymorphVnum(entt::entity) { return 0; }
-int64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
+uint64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity e) {
     if (!onMovement) Unexpected();
     onMovement(e);
 }
-int ecs::QuestSystem::GetFlag(entt::entity, std::string_view) { Unexpected(); }
-void ecs::QuestSystem::SetFlag(entt::entity, std::string_view, int) { Unexpected(); }
+int64_t ecs::QuestSystem::GetFlag(entt::entity, std::string_view) { Unexpected(); }
+void ecs::QuestSystem::SetFlag(entt::entity, std::string_view, int64_t) { Unexpected(); }
 void ecs::PlayerRuntime::SetExp(entt::entity, uint32_t) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetExp(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetNextExp(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetGold(entt::entity, int64_t) { Unexpected(); }
 void ecs::PlayerRuntime::SetLevel(entt::entity, uint8_t) { Unexpected(); }
 bool ecs::PlayerRuntime::SetRankPoints(entt::entity, int, int64_t) { return true; }
-int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
+uint64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 void SkillSystem::SendSkillLevelPacket(entt::entity) { Unexpected(); }
 void NetworkSyncSystem::PointsPacket(entt::entity) { Unexpected(); }
 void CGuild::LevelChange(uint32_t, uint8_t) { Unexpected(); }

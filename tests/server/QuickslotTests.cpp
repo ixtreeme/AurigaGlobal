@@ -420,12 +420,11 @@ void InventoryGrids()
     g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner);
     auto& points = g_registry.emplace<ecs::CharacterPoints>(owner);
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    points.base.envanter = 0;
-    Check(InventorySystem::GetInventorySize(owner) == 90, "base inventory size wrong");
-    points.base.envanter = INT32_MAX;
-    Check(InventorySystem::GetInventorySize(owner) == INVENTORY_MAX_NUM, "extension overflow");
-    points.base.envanter = -100;
-    Check(InventorySystem::GetInventorySize(owner) == 0, "negative extension accepted");
+    // The envanter point no longer gates the usable size (live server rule).
+    for (const int extension : {0, INT32_MAX, -100}) {
+        points.base.envanter = extension;
+        Check(InventorySystem::GetInventorySize(owner) == INVENTORY_MAX_NUM, "envanter point gated inventory size");
+    }
     points.base.envanter = INT32_MAX;
 #endif
     auto& main = g_registry.get<ecs::MainInventoryRuntimeComponent>(owner);
@@ -467,18 +466,11 @@ void InventoryGrids()
     for (int unlock : {-1, 0, 1, 14, INT32_MAX})
     {
         extraUnlock = unlock;
+        // The quest-flag clamp was dropped (live server rule): the whole
+        // category is usable at every unlock stage.
         for (int pos = 0; pos < EXTRA_INVENTORY_MAX_NUM; ++pos)
-        {
-            const int relative = pos % EXTRA_INVENTORY_CATEGORY_MAX_NUM;
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-            const int unlocked = static_cast<int>(std::clamp<int64_t>(int64_t(unlock) * 5, 0, 70));
-            const bool expected = relative < 110 + unlocked;
-#else
-            const bool expected = true;
-#endif
-            Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(EXTRA_INVENTORY, pos), 1) == expected,
-                  "extra category unlock bounds");
-        }
+            Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(EXTRA_INVENTORY, pos), 1),
+                  "unlock stage gated extra cell");
     }
     Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(EXTRA_INVENTORY, EXTRA_INVENTORY_MAX_NUM), 1),
           "extra inventory end accepted");
@@ -499,7 +491,7 @@ void InventoryGrids()
           !InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, 0), 1), "stale inventory accepted");
 }
 }
-int32_t ecs::QuestSystem::GetFlag(entt::entity owner, std::string_view flag)
+int64_t ecs::QuestSystem::GetFlag(entt::entity owner, std::string_view flag)
 {
     Check(g_registry.valid(owner) && flag.starts_with("lock_extra.cat"), "unexpected quest query");
     return extraUnlock;
@@ -507,21 +499,26 @@ int32_t ecs::QuestSystem::GetFlag(entt::entity owner, std::string_view flag)
 
 // Link the entire production inventory source. Only external services are
 // doubled; placement, removal, unequip, grid queries and quickslots are real.
-DESC::DESC() { m_sock = 1; m_entity = entt::null; m_accountTable = {}; }
+DESC::DESC() { m_socketHandle = 1; m_entity = entt::null; m_accountTable = {}; }
 DESC::~DESC() {}
 // The refine fee moved into InventorySystem, which this target compiles.
 namespace ecs::SocialSystem {
 CGuild* GetGuild(entt::entity) { Unexpected(); }
 CGuild* GetRefineGuild(entt::entity) { Unexpected(); }
-bool DepositGuildMoney(entt::entity, CGuild&, int) { Unexpected(); }
+bool DepositGuildMoney(entt::entity, CGuild&, int64_t) { Unexpected(); }
 }
 uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
 void DESC::Destroy() { Unexpected(); }
 void DESC::SetPhase(int) { Unexpected(); }
+void DESC::OnInput() { Unexpected(); }
+void DESC::OnPeerGone() { Unexpected(); }
+void DESC::OnBytesWritten(std::size_t) { Unexpected(); }
 CLIENT_DESC::CLIENT_DESC() {}
 CLIENT_DESC::~CLIENT_DESC() {}
 void CLIENT_DESC::Destroy() { Unexpected(); }
 void CLIENT_DESC::SetPhase(int) { Unexpected(); }
+void CLIENT_DESC::OnInput() { Unexpected(); }
+void CLIENT_DESC::OnHeartbeatSend() { Unexpected(); }
 CInputProcessor::CInputProcessor() {}
 bool CInputProcessor::Process(DESC*, const void*, int, int&) { Unexpected(); }
 void CInputProcessor::Handshake(DESC*, const char*) { Unexpected(); }
@@ -534,9 +531,7 @@ int CInputDead::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 int CInputDB::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 bool CInputDB::Process(DESC*, const void*, int, int&) { Unexpected(); }
 CInputP2P::CInputP2P() {}
-CInputAuth::CInputAuth() {}
 int CInputP2P::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
-int CInputAuth::Analyze(DESC*, uint8_t, const char*) { Unexpected(); }
 CPacketInfo::CPacketInfo() : m_pCurrentPacket(nullptr), m_dwStartTime(0) {}
 CPacketInfo::~CPacketInfo() {}
 CPacketInfoCG::CPacketInfoCG() {}
@@ -836,7 +831,7 @@ LPEVENT event_create_ex(TEVENTFUNC function, event_info_data* info, int32_t dela
     return timer;
 }
 void event_cancel(LPEVENT* e) { e->reset(); if (onCancel) { auto f = onCancel; f(); } }
-int thecore_pulse() { return timerPulse; }
+int64_t thecore_pulse() { return timerPulse; }
 const int aiAccessorySocketEffectivePct[ITEM_ACCESSORY_SOCKET_MAX_NUM + 1] = {};
 int passes_per_sec = 25;
 
@@ -982,7 +977,8 @@ void PlacementQueries() {
     Meta(item).proto.bSize = 1;
     Check(ItemSystem::GetEmptyExtraInventory(owner, item) == begin + EXTRA_INVENTORY_CATEGORY_MAX_NUM - 1, "unlock multiplication overflow");
     extraUnlock = INT32_MIN;
-    Check(ItemSystem::GetEmptyExtraInventory(owner, item) == -1, "negative unlock opened slot");
+    Check(ItemSystem::GetEmptyExtraInventory(owner, item) == begin + EXTRA_INVENTORY_CATEGORY_MAX_NUM - 1,
+        "unlock stage gated extra query");
     Meta(item).extra = false;
 #endif
     auto& ds = g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner);
@@ -1194,8 +1190,8 @@ uint8_t ecs::PlayerRuntime::GetJob(entt::entity e) { return Actor(e).job; }
 uint8_t ecs::PlayerRuntime::GetSex(entt::entity e) { return Actor(e).sex; }
 int64_t ecs::PointSystem::Get(entt::entity e, uint8_t type) { return Actor(e).points[type]; }
 int32_t ecs::PointSystem::GetLevel(entt::entity e) { return Actor(e).level; }
-int32_t ecs::PointSystem::GetMaxHP(entt::entity e) { return Actor(e).maxHP; }
-int32_t ecs::PointSystem::GetMaxSP(entt::entity e) { return Actor(e).maxSP; }
+uint64_t ecs::PointSystem::GetMaxHP(entt::entity e) { return Actor(e).maxHP; }
+uint64_t ecs::PointSystem::GetMaxSP(entt::entity e) { return Actor(e).maxSP; }
 void ecs::PointSystem::Change(entt::entity e, uint8_t type, int64_t amount, bool, bool
 #ifdef __ENABLE_BLOCK_EXP__
 , bool
@@ -1868,7 +1864,7 @@ void MoveSpecialWindows()
     Check(!InventorySystem::MoveItem(owner, TItemPos(EXTRA_INVENTORY, 360), TItemPos(EXTRA_INVENTORY, 0), 0), "extra category escaped");
     Check(!InventorySystem::MoveItem(owner, TItemPos(EXTRA_INVENTORY, 360), TItemPos(INVENTORY, 0), 0), "extra item escaped inventory");
     extraUnlock = INT32_MIN;
-    Check(!InventorySystem::MoveItem(owner, TItemPos(EXTRA_INVENTORY, 360), TItemPos(EXTRA_INVENTORY, 539), 0), "locked extra slot accepted");
+    Check(InventorySystem::MoveItem(owner, TItemPos(EXTRA_INVENTORY, 360), TItemPos(EXTRA_INVENTORY, 539), 0), "unlock stage gated extra move");
 #endif
 #ifdef ENABLE_SWITCHBOT
     Reset();

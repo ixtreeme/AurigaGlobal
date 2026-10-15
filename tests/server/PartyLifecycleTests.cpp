@@ -228,8 +228,8 @@ LPDESC GetDesc(entt::entity e) { const auto* a = ActorOf(e); return a && a->pc &
 int32_t GetMapIndex(entt::entity e) { const auto* a = ActorOf(e); return a ? a->mapIndex : 0; }
 int32_t GetX(entt::entity e) { const auto* a = ActorOf(e); return a ? a->x : 0; }
 int32_t GetY(entt::entity e) { const auto* a = ActorOf(e); return a ? a->y : 0; }
-int64_t GetHP(entt::entity) { return 100; }
-int64_t GetSP(entt::entity) { return 100; }
+uint64_t GetHP(entt::entity) { return 100; }
+uint64_t GetSP(entt::entity) { return 100; }
 int GetSkillPowerByLevel(entt::entity, int, bool) { return 100; }
 const TMobTable* GetMobTable(entt::entity e) {
     static TMobTable table {};
@@ -255,8 +255,8 @@ void SetDungeon(entt::entity, entt::entity) {}
 namespace ecs::PointSystem {
 int64_t Get(entt::entity, uint8_t) { return 0; }
 int GetLevel(entt::entity e) { const auto* a = ActorOf(e); return a ? a->level : 0; }
-int32_t GetMaxHP(entt::entity) { return 1000; }
-int32_t GetMaxSP(entt::entity) { return 1000; }
+uint64_t GetMaxHP(entt::entity) { return 1000; }
+uint64_t GetMaxSP(entt::entity) { return 1000; }
 void Change(entt::entity, uint8_t, int64_t, bool, bool, bool) {}
 void Compute(entt::entity) {}
 void ComputeBattlePoints(entt::entity) {}

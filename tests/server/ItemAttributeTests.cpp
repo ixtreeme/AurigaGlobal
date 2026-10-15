@@ -37,6 +37,7 @@
 entt::registry g_registry;
 TItemAttrMap g_map_itemAttr;
 TItemAttrMap g_map_itemRare;
+TItemAttrMap g_map_itemRare8;
 int g_iDbLogLevel = 0;
 int g_bItemCountLimit = 200;
 const int aiItemMagicAttributePercentHigh[ITEM_ATTRIBUTE_MAX_LEVEL] = {0, 0, 0, 0, 100};
@@ -1632,7 +1633,8 @@ void DragonSoulPreparation()
     dsBasicCount = 3;
     const auto savedBasic = dsBasic;
     dsBasic.pop_back(); reject(); dsBasic = savedBasic;
-    for (const auto bounds : {std::pair{-1, 2}, std::pair{3, 2}, std::pair{0, 5}}) {
+    for (const auto bounds : {std::pair{-1, 2}, std::pair{3, 2},
+        std::pair{0, ITEM_ATTRIBUTE_MAX_NUM - DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX + 1}}) {
         dsAddMin = bounds.first; dsAddMax = bounds.second; reject();
     }
     dsAddMin = dsAddMax = 2;

@@ -41,7 +41,7 @@ entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 CLIENT_DESC* db_clientdesc = nullptr;
 int passes_per_sec = 25;
-int thecore_pulse() { return 0; }
+int64_t thecore_pulse() { return 0; }
 void ContinueOnFatalError() {}
 LPHEART thecore_heart = nullptr;
 int number_ex(int from, int, const char*, int) { return from; }

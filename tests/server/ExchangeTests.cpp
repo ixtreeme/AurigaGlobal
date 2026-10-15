@@ -151,16 +151,21 @@ namespace logging {
 std::shared_ptr<spdlog::logger> GetLogger() { static auto log = std::make_shared<spdlog::logger>("exchange"); return log; }
 std::shared_ptr<spdlog::logger> GetErrorLogger() { return GetLogger(); }
 }
-int thecore_pulse() { return pulse; }
+int64_t thecore_pulse() { return pulse; }
 void intrusive_ptr_release(EVENT*) { Unexpected("unexpected live event in exchange fixture"); }
-DESC::DESC() { m_sock = 1; m_entity = entt::null; m_accountTable = {}; }
+DESC::DESC() { m_socketHandle = 1; m_entity = entt::null; m_accountTable = {}; }
 DESC::~DESC() {}
 void DESC::Destroy() { Unexpected(__func__); }
 void DESC::SetPhase(int) { Unexpected(__func__); }
-CLIENT_DESC::CLIENT_DESC() {}
+void DESC::OnInput() { Unexpected(__func__); }
+void DESC::OnPeerGone() { Unexpected(__func__); }
+void DESC::OnBytesWritten(std::size_t) { Unexpected(__func__); }
+CLIENT_DESC::CLIENT_DESC() { m_ioConnected = true; }
 CLIENT_DESC::~CLIENT_DESC() {}
 void CLIENT_DESC::Destroy() { Unexpected(__func__); }
 void CLIENT_DESC::SetPhase(int) { Unexpected(__func__); }
+void CLIENT_DESC::OnInput() { Unexpected(__func__); }
+void CLIENT_DESC::OnHeartbeatSend() { Unexpected(__func__); }
 CInputProcessor::CInputProcessor() {}
 bool CInputProcessor::Process(DESC*, const void*, int, int&) { Unexpected(__func__); }
 void CInputProcessor::Handshake(DESC*, const char*) { Unexpected(__func__); }
@@ -173,9 +178,7 @@ int CInputDead::Analyze(DESC*, uint8_t, const char*) { Unexpected(__func__); }
 int CInputDB::Analyze(DESC*, uint8_t, const char*) { Unexpected(__func__); }
 bool CInputDB::Process(DESC*, const void*, int, int&) { Unexpected(__func__); }
 CInputP2P::CInputP2P() {}
-CInputAuth::CInputAuth() {}
 int CInputP2P::Analyze(DESC*, uint8_t, const char*) { Unexpected(__func__); }
-int CInputAuth::Analyze(DESC*, uint8_t, const char*) { Unexpected(__func__); }
 CPacketInfo::CPacketInfo() : m_pCurrentPacket(nullptr), m_dwStartTime(0) {}
 CPacketInfo::~CPacketInfo() {}
 CPacketInfoCG::CPacketInfoCG() {}
@@ -245,7 +248,7 @@ bool IsSafeboxOpen(entt::entity e) { return A(e).safebox; }
 bool IsCubeOpen(entt::entity e) { return A(e).cube; }
 }
 namespace ecs::QuestSystem {
-int32_t GetFlag(entt::entity e, std::string_view) { const int result = A(e).unlocked; Call(onFlag); return result; }
+int64_t GetFlag(entt::entity e, std::string_view) { const int result = A(e).unlocked; Call(onFlag); return result; }
 }
 void ecs::ChatSystem::SendNew(entt::entity e, uint8_t, uint32_t, const char*, ...) { A(e); }
 namespace ecs::PointSystem {
