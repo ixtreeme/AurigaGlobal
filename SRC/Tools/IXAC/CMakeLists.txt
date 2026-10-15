@@ -7,6 +7,9 @@ target_link_libraries(IXAC
 
 	PUBLIC SecureLayer
 	PUBLIC psapi
+	# The static libcurl (IXAC_Net) needs Winsock and SSPI.
+	PRIVATE ws2_32
+	PRIVATE secur32
 )
 
 set_target_properties(IXAC PROPERTIES FOLDER IXAC)

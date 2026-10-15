@@ -25,10 +25,40 @@ CHwidManager::CHwidManager() {
 }
 
 #include "CHwidManager.h"
-#include <cryptopp/sha.h>
-#include <cryptopp/filters.h>
-#include <cryptopp/base64.h>
-#include <cryptopp/hex.h>
+
+#include <windows.h>
+#include <bcrypt.h>
+#include <wincrypt.h>
+
+#pragma comment(lib, "bcrypt.lib")
+#pragma comment(lib, "crypt32.lib")
+
+namespace
+{
+    // Base64 (no line breaks) of the SHA-256 of the text, from the Windows
+    // crypto API: the value Crypto++'s HashFilter + Base64Encoder produced.
+    // Empty when the API fails; the login server answers an empty HWID.
+    std::string Sha256Base64(const std::string& text)
+    {
+        UCHAR digest[32] {};
+        if (!BCRYPT_SUCCESS(BCryptHash(BCRYPT_SHA256_ALG_HANDLE, nullptr, 0,
+                reinterpret_cast<PUCHAR>(const_cast<char*>(text.data())), static_cast<ULONG>(text.size()),
+                digest, sizeof(digest))))
+            return std::string();
+
+        const DWORD flags = CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF;
+        DWORD length = 0;
+        if (!CryptBinaryToStringA(digest, sizeof(digest), flags, nullptr, &length))
+            return std::string();
+
+        std::string encoded(length, '\0');
+        if (!CryptBinaryToStringA(digest, sizeof(digest), flags, encoded.data(), &length))
+            return std::string();
+
+        encoded.resize(length);
+        return encoded;
+    }
+}
 
 std::string IXAC_GetFinalHWID()
 {
@@ -42,16 +72,5 @@ std::string IXAC_GetFinalHWID()
         .append(hwidManager.getHDDSerial())
         .append(AY_OBFUSCATE("ASfds<W!k(T0=;d%Tc!k"));
 
-    CryptoPP::SHA256 sha;
-    std::string out;
-
-    CryptoPP::StringSource s(chain, true,
-        new CryptoPP::HashFilter(sha,
-            new CryptoPP::Base64Encoder(
-                new CryptoPP::StringSink(out), false
-            )
-        )
-    );
-
-    return out;
+    return Sha256Base64(chain);
 }

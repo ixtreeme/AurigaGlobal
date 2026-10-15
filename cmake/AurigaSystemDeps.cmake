@@ -10,7 +10,6 @@
 #   devel/stb                       (stb_image.h / stb_image_write.h)
 #   archivers/lzo2                  (lzo/lzo1x.h)
 #   archivers/lz4                   (lz4.h)
-#   security/cryptopp               (cryptopp/cryptlib.h)
 #   devel/boost-libs                (boost/unordered_map.hpp, ...)
 #   databases/mariadb-connector-c   (mariadb/mysql.h, libmariadb)
 #     or databases/mysql80-client   (mysql/mysql.h, libmysqlclient)
@@ -46,25 +45,6 @@ find_path(AURIGA_LZO_INCLUDE_DIR NAMES lzo/lzo1x.h REQUIRED)
 find_library(AURIGA_LZO_LIBRARY NAMES lzo2 lzo REQUIRED)
 target_include_directories(auriga_system_deps INTERFACE ${AURIGA_LZO_INCLUDE_DIR})
 target_link_libraries(auriga_system_deps INTERFACE ${AURIGA_LZO_LIBRARY})
-
-# --- Crypto++ (GameServer/core/cipher.*) ---
-find_path(AURIGA_CRYPTOPP_INCLUDE_DIR NAMES cryptopp/cryptlib.h REQUIRED)
-find_library(AURIGA_CRYPTOPP_LIBRARY NAMES cryptopp REQUIRED)
-target_include_directories(auriga_system_deps INTERFACE ${AURIGA_CRYPTOPP_INCLUDE_DIR})
-target_link_libraries(auriga_system_deps INTERFACE ${AURIGA_CRYPTOPP_LIBRARY})
-
-# The stock FreeBSD package (security/cryptopp) is built with
-# -DCRYPTOPP_DISABLE_ASM (the amd64 SIMD option is not a default), which sets
-# CRYPTOPP_BOOL_ALIGN16 to 0 and changes the class layout. The application must
-# be compiled with the same define, otherwise Crypto++ objects are allocated by
-# one layout and destroyed by another (SIGBUS/SEGV in member_ptr destructors).
-# Set AURIGA_CRYPTOPP_SIMD=ON when linking a self-built SIMD-enabled library.
-option(AURIGA_CRYPTOPP_SIMD "Crypto++ was built with SIMD/ASM (FreeBSD port SIMD option)" OFF)
-if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND NOT AURIGA_CRYPTOPP_SIMD)
-    target_compile_definitions(auriga_system_deps INTERFACE CRYPTOPP_DISABLE_ASM)
-    message(STATUS "auriga system deps: Crypto++ compiled with CRYPTOPP_DISABLE_ASM "
-        "(match the stock FreeBSD package; use -DAURIGA_CRYPTOPP_SIMD=ON for a SIMD build)")
-endif()
 
 # --- MariaDB / MySQL client (SQL/*, Database/*, GameServer/core/utils.cpp) ---
 # The sources include <mysql/mysql.h>, <mysql/errmsg.h> and
@@ -105,4 +85,4 @@ if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 endif()
 
 message(STATUS "auriga system deps: mysql=${AURIGA_MYSQL_LIBRARY} "
-    "lzo=${AURIGA_LZO_LIBRARY} lz4=${AURIGA_LZ4_LIBRARY} cryptopp=${AURIGA_CRYPTOPP_LIBRARY}")
+    "lzo=${AURIGA_LZO_LIBRARY} lz4=${AURIGA_LZ4_LIBRARY}")
