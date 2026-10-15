@@ -173,7 +173,7 @@ void LoginFailure(LPDESC d, const char * c_pszStatus)
 
 CInputHandshake::CInputHandshake()
 {
-	CPacketInfoCG * pkPacketInfo = M2_NEW CPacketInfoCG;
+	CPacketInfoCG * pkPacketInfo = new CPacketInfoCG;
 
 	m_pMainPacketInfo = m_pPacketInfo;
 	BindPacketInfo(pkPacketInfo);
@@ -183,7 +183,7 @@ CInputHandshake::~CInputHandshake()
 {
 	if(nullptr != m_pPacketInfo )
 	{
-		M2_DELETE(m_pPacketInfo);
+		delete m_pPacketInfo;
 		m_pPacketInfo = nullptr;
 	}
 }

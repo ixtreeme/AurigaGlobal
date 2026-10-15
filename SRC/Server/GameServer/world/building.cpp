@@ -218,7 +218,7 @@ void Destroy(entt::entity object)
     finish([&] { ecs::SpatialService::RemoveEntity(g_registry, object); });
     finish([&] {
         if (ecs::IsCharacter(state.npc))
-            M2_DESTROY_CHARACTER(state.npc);
+            CHARACTER_MANAGER::instance().DestroyCharacter(state.npc);
     });
     finish([&] { if (g_registry.valid(object)) g_registry.destroy(object); });
     if (failure)
@@ -329,14 +329,14 @@ void RegenNPC(entt::entity object)
         return;
     }
     if (!IsValid(object) || GetNPCEntity(object) != entt::null) {
-        M2_DESTROY_CHARACTER(npc);
+        CHARACTER_MANAGER::instance().DestroyCharacter(npc);
         return;
     }
     g_registry.get<ecs::BuildingState>(object).npc = npc;
     auto* guild = CGuildManager::instance().FindGuild(state.guildId);
     if (!guild) {
         g_registry.get<ecs::BuildingState>(object).npc = entt::null;
-        M2_DESTROY_CHARACTER(npc);
+        CHARACTER_MANAGER::instance().DestroyCharacter(npc);
         return;
     }
     ecs::SocialSystem::SetGuild(npc, guild);
@@ -420,7 +420,7 @@ void CLand::PutData(const TLand * data)
 						continue;
 
 					if (ecs::IsCharacter(chEntity))
-						M2_DESTROY_CHARACTER(chEntity);
+						CHARACTER_MANAGER::instance().DestroyCharacter(chEntity);
 				}
 			}
 		}
@@ -672,7 +672,7 @@ void CManager::Destroy()
 {
 	auto it = m_map_pkLand.begin();
 	for ( ; it != m_map_pkLand.end(); ++it) {
-		M2_DELETE(it->second);
+		delete it->second;
 	}
 	m_map_pkLand.clear();
 	m_objectsByID.clear();
@@ -727,7 +727,7 @@ bool CManager::LoadLand(TLand * pTable) // from DB
 	if (!pTable || m_map_pkLand.contains(pTable->dwID))
 		return false;
 
-	CLand * pkLand = M2_NEW CLand(pTable);
+	CLand * pkLand = new CLand(pTable);
 	m_map_pkLand.insert(std::make_pair(pkLand->GetID(), pkLand));
 
 	LOG_TRACE("LAND: {} map {} {}x{} w {} h {}", pTable->dwID, pTable->lMapIndex, pTable->x, pTable->y, pTable->width, pTable->height);

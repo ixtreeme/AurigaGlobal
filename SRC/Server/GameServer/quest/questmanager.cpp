@@ -1578,7 +1578,7 @@ namespace quest
 							case 3:
 							case 23:
 							case 43:
-								M2_DESTROY_CHARACTER(chEntity);
+								CHARACTER_MANAGER::instance().DestroyCharacter(chEntity);
 								break;
 						}
 					}
@@ -1828,7 +1828,7 @@ namespace quest
 
 	void CQuestManager::AddServerTimer(const std::string& name, uint32_t arg, LPEVENT event)
 	{
-		LOG_INFO("XXX AddServerTimer {} {} {}", name.c_str(), arg, static_cast<const void*>(get_pointer(event)));
+		LOG_INFO("XXX AddServerTimer {} {} {}", name.c_str(), arg, static_cast<const void*>(event.get()));
 		if (m_mapServerTimer.contains(std::make_pair(name, arg)))
 		{
 			LOG_ERROR("already registered server timer name:{} arg:{}", name.c_str(), arg);

@@ -274,7 +274,7 @@ void AnswerMemberQuery(const std::vector<Member>& members)
 void DropQueries()
 {
     for (auto* info : pendingQueries)
-        M2_DELETE(info);
+        delete info;
     pendingQueries.clear();
     pendingQueryText.clear();
 }

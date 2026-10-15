@@ -472,12 +472,12 @@ LPDESC DESC_MANAGER::AcceptDesc(auriga::net::tcp::socket&& s)
 		AllowHandshake(host);
 #endif
 
-	auto newd = M2_NEW DESC;
+	auto newd = new DESC;
 	crc_t handshake = CreateHandshake();
 
 	if (!newd->Setup(std::move(s), peer, ++m_iHandleCount, handshake))
 	{
-		M2_DELETE(newd);
+		delete newd;
 		return nullptr;
 	}
 
@@ -507,12 +507,12 @@ LPDESC DESC_MANAGER::AcceptP2PDesc(auriga::net::tcp::socket&& s)
 	char host[MAX_HOST_LENGTH + 1];
 	strlcpy(host, endpoint.address().to_string().c_str(), sizeof(host));
 
-	auto pkDesc = M2_NEW DESC_P2P;
+	auto pkDesc = new DESC_P2P;
 
 	if (!pkDesc->Setup(std::move(s), host, peer.sin_port))
 	{
 		LOG_ERROR("DESC_MANAGER::AcceptP2PDesc : Setup failed");
-		M2_DELETE(pkDesc);
+		delete pkDesc;
 		return nullptr;
 	}
 
@@ -593,7 +593,7 @@ void DESC_MANAGER::DestroyDesc(LPDESC d, bool bEraseFromSet)
 	}
 	else
 	{
-		M2_DELETE(d);
+		delete d;
 	}
 
 	--m_iSocketsConnected;
@@ -610,7 +610,7 @@ void DESC_MANAGER::CollectPendingDeletes()
 		if (!d->HasPendingIoWork())
 		{
 			it = m_pendingDeletes.erase(it);
-			M2_DELETE(d);
+			delete d;
 		}
 		else
 			++it;
@@ -697,7 +697,7 @@ LPDESC DESC_MANAGER::FindByCharacterName(const char* name)
 
 LPCLIENT_DESC DESC_MANAGER::CreateConnectionDesc(const char* host, uint16_t port, int iPhaseWhenSucceed, bool bRetryWhenClosed)
 {
-	const auto newd = M2_NEW CLIENT_DESC;
+	const auto newd = new CLIENT_DESC;
 
 	newd->Setup(host, port);
 	newd->Connect(iPhaseWhenSucceed);
@@ -850,7 +850,7 @@ uint32_t DESC_MANAGER::CreateLoginKey(LPDESC d)
 		if (m_map_pkLoginKey.contains(dwKey))
 			continue;
 
-		auto pkKey = M2_NEW CLoginKey(dwKey, d);
+		auto pkKey = new CLoginKey(dwKey, d);
 		d->SetLoginKey(pkKey);
 		m_map_pkLoginKey.insert(std::make_pair(dwKey, pkKey));
 		break;
@@ -874,7 +874,7 @@ void DESC_MANAGER::ProcessExpiredLoginKey()
 
 		if (dwCurrentTime - it2->second->m_dwExpireTime > 60000)
 		{
-			M2_DELETE(it2->second);
+			delete it2->second;
 			m_map_pkLoginKey.erase(it2);
 		}
 	}

@@ -33,7 +33,7 @@ CSkillManager::CSkillManager()
 CSkillManager::~CSkillManager()
 {
 	for (const auto it : m_map_pkSkillProto) {
-		M2_DELETE(it.second);
+		delete it.second;
 	}
 }
 
@@ -98,7 +98,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 
 	for (int i = 0; i < iSize; ++i, ++t)
 	{
-		CSkillProto * pkProto = M2_NEW CSkillProto;
+		CSkillProto * pkProto = new CSkillProto;
 
 		pkProto->dwVnum = t->dwVnum;
 		strlcpy(pkProto->szName, t->szName, sizeof(pkProto->szName));
@@ -127,7 +127,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -141,7 +141,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -161,7 +161,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 				LOG_ERROR("{}", buf);
 				SendLog(buf);
 				bError = true;
-				M2_DELETE(pkProto);
+				delete pkProto;
 				continue;
 			}
 		}
@@ -174,7 +174,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -184,7 +184,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -194,7 +194,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -204,7 +204,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -214,7 +214,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -224,7 +224,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -234,7 +234,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -244,7 +244,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -254,7 +254,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -264,7 +264,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -274,7 +274,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -285,7 +285,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 			LOG_ERROR("{}", buf);
 			SendLog(buf);
 			bError = true;
-			M2_DELETE(pkProto);
+			delete pkProto;
 			continue;
 		}
 
@@ -299,7 +299,7 @@ bool CSkillManager::Initialize(TSkillTable * pTab, int iSize)
 		auto it = m_map_pkSkillProto.begin();
 
 		while (it != m_map_pkSkillProto.end()) {
-			M2_DELETE(it->second);
+			delete it->second;
 			++it;
 		}
 

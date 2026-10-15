@@ -58,7 +58,7 @@ bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 
 	for (int i = 0; i < iSize; ++i, ++t)
 	{
-		CMob * pkMob = M2_NEW CMob;
+		CMob * pkMob = new CMob;
 
 		memcpy(&pkMob->m_table, t, sizeof(TMobTable));
 
@@ -278,7 +278,7 @@ bool CMobManager::LoadGroupGroup(const char * c_pszFileName)
 
 		int iVnum = group.value("vnum", 0);
 
-		CMobGroupGroup * pkGroup = M2_NEW CMobGroupGroup(iVnum);
+		CMobGroupGroup * pkGroup = new CMobGroupGroup(iVnum);
 
 		if (group.contains("members") && group.at("members").is_array())
 		{
@@ -331,7 +331,7 @@ bool CMobManager::LoadGroup(const char * c_pszFileName)
 
 		const auto& leader = group.at("leader");
 
-		CMobGroup * pkGroup = M2_NEW CMobGroup;
+		CMobGroup * pkGroup = new CMobGroup;
 
 		pkGroup->Create(iVnum, stName);
 		uint32_t vnum = leader.value("vnum", 0u);

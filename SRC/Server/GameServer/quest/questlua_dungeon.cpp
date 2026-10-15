@@ -874,7 +874,7 @@ ALUA(dungeon_update_rank)
 		const entt::entity ch = CHARACTER_MANAGER::instance().FindEntity(vid);
 		if (ecs::IsCharacter(ch))
 		{
-			M2_DESTROY_CHARACTER(ch);
+			CHARACTER_MANAGER::instance().DestroyCharacter(ch);
 		}
 
 		return 0;

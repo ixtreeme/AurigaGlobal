@@ -1495,7 +1495,7 @@ int GetPosition(entt::entity e)
 
 void DestroyCharacter(entt::entity e)
 {
-    M2_DESTROY_CHARACTER(e);
+    CHARACTER_MANAGER::instance().DestroyCharacter(e);
 }
 
 #ifdef __NEWPET_SYSTEM__

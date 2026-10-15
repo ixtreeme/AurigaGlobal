@@ -24,7 +24,7 @@ void CEventQueue::Destroy()
 
 TQueueElement * CEventQueue::Enqueue(LPEVENT pvData, int duration, int pulse)
 {
-	TQueueElement * pElem = M2_NEW TQueueElement;
+	TQueueElement * pElem = new TQueueElement;
 
 	pElem->pvData = pvData;
 	pElem->iStartTime = pulse;
@@ -53,7 +53,7 @@ void CEventQueue::Delete(TQueueElement * pElem)
 	if (pElem->pvData && pElem->pvData->q_el == pElem)
 		pElem->pvData->q_el = nullptr;
 
-	M2_DELETE(pElem);
+	delete pElem;
 
 }
 

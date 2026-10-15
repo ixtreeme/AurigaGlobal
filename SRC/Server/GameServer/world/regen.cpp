@@ -313,7 +313,7 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, e
 		{
 			if (!bOnce)
 			{
-				regen = M2_NEW REGEN;
+				regen = new REGEN;
 				*regen = tmp;
 			}
 			else
@@ -353,7 +353,7 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, e
 				{
 					LOG_ERROR("In {}, No mob data by vnum {}", filename, regen->vnum);
 					if (!bOnce) {
-						M2_DELETE(regen);
+						delete regen;
 					}
 					continue;
 				}
@@ -508,7 +508,7 @@ bool regen_load(const char* filename, int32_t lMapIndex, int base_x, int base_y)
 				CMobManager::instance().IncRegenCount(tmp.type, tmp.vnum, tmp.max_count, tmp.time);
 			}
 
-			regen = M2_NEW REGEN;
+			regen = new REGEN;
 			*regen = tmp;
 			INSERT_TO_TW_LIST(regen, regen_list, prev, next);
 
@@ -591,7 +591,7 @@ bool regen_load(const char* filename, int32_t lMapIndex, int base_x, int base_y)
 		{
 			LPREGEN_EXCEPTION exc;
 
-			exc = M2_NEW REGEN_EXCEPTION;
+			exc = new REGEN_EXCEPTION;
 
 			exc->sx = tmp.sx;
 			exc->sy = tmp.sy;
@@ -616,7 +616,7 @@ void regen_free(void)
 		next_regen = regen->next;
 
 		event_cancel(&regen->event);
-		M2_DELETE(regen);
+		delete regen;
 	}
 
 	regen_list = nullptr;
@@ -625,7 +625,7 @@ void regen_free(void)
 	{
 		next_exc = exc->next;
 
-		M2_DELETE(exc);
+		delete exc;
 	}
 
 	regen_exception_list = nullptr;

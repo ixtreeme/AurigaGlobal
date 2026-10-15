@@ -9,8 +9,6 @@
 #endif
 #include <common/CommonDefines.h>
 
-#include "fifo_allocator.h"
-
 struct TargetInfoItem
 {
 	uint32_t vnum = 0;
@@ -390,11 +388,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		bool			SaveSingleItem(entt::entity item);
 
 		entt::entity            CreateItem(uint32_t vnum, uint32_t count = 1, uint32_t dwID = 0, bool bTryMagic = false, int iRarePct = -1, bool bSkipSave = false);
-#ifndef DEBUG_ALLOC
 		void DestroyItem(entt::entity item);
-#else
-		void DestroyItem(entt::entity item, const char* file, size_t line);
-#endif
 		void			RemoveItem(entt::entity item, const char * c_pszReason = nullptr);
 
 		TItemTable *            GetTable(uint32_t vnum);
@@ -457,7 +451,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 
 	private:
 		void ForgetItem(entt::entity item, uint32_t id, uint32_t vid);
-		void DestroyItemNow(entt::entity item, const char* file, size_t line);
+		void DestroyItemNow(entt::entity item);
 	protected:
 		std::map<uint32_t, entt::entity>		m_map_pkItemByID;
 		std::map<uint32_t, uint32_t>		m_map_dwEtcItemDropProb;
@@ -495,11 +489,5 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 	private:
 
 };
-
-#ifndef DEBUG_ALLOC
-#define M2_DESTROY_ITEM(ptr) ITEM_MANAGER::instance().DestroyItem(ptr)
-#else
-#define M2_DESTROY_ITEM(ptr) ITEM_MANAGER::instance().DestroyItem(ptr, __FILE__, __LINE__)
-#endif
 
 #endif

@@ -624,7 +624,7 @@ namespace DungeonSystem
 					&& !ecs::PlayerRuntime::IsNewPet(entity)
 #endif
 				)
-					M2_DESTROY_CHARACTER(entity);
+					CHARACTER_MANAGER::instance().DestroyCharacter(entity);
 			}
 		};
 	}
@@ -910,7 +910,7 @@ namespace DungeonSystem
 			LPREGEN regen = *it;
 
 			event_cancel(&regen->event);
-			M2_DELETE(regen);
+			delete regen;
 		}
 		state->regens.clear();
 	}

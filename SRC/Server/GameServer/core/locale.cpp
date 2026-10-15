@@ -117,7 +117,7 @@ char *locale_convert(const char *src, int32_t len)
 	if (!len)
 		return nullptr;
 
-	buf = M2_NEW char[len + 1];
+	buf = new char[len + 1];
 
 	for (j = i = 0, tmp = src, dest = buf; i < len; i++, tmp++)
 	{
@@ -156,7 +156,7 @@ char *locale_convert(const char *src, int32_t len)
 
 	if (!j)
 	{
-		M2_DELETE_ARRAY(buf);
+		delete[] buf;
 		return nullptr;
 	}
 

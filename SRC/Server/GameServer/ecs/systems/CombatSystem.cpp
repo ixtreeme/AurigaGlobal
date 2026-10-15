@@ -2168,7 +2168,7 @@ EVENTFUNC(dead_event)
 			}
 		}
 
-		M2_DESTROY_CHARACTER(chEntity);
+		CHARACTER_MANAGER::instance().DestroyCharacter(chEntity);
 	}
 
 	return 0;
@@ -2616,8 +2616,8 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	{
 		if (ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead))
 		{
-			LOG_TRACE("DEAD_EVENT_CANCEL: {} {} {}", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim), static_cast<const void*>(get_pointer(
-				ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead))));
+			LOG_TRACE("DEAD_EVENT_CANCEL: {} {} {}", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim), static_cast<const void*>(
+				ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead).get()));
 			ecs::PlayerRuntime::CancelCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead);
 		}
 
@@ -2663,8 +2663,8 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 					event_create(dead_event, pEventInfo, immediate ? 1 : PASSES_PER_SEC(1)));
 			}
 
-			LOG_TRACE("DEAD_EVENT_CREATE: {} {} {}", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim), static_cast<const void*>(get_pointer(
-				ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead))));
+			LOG_TRACE("DEAD_EVENT_CREATE: {} {} {}", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim), static_cast<const void*>(
+				ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead).get()));
 		}
 	}
 

@@ -1169,7 +1169,7 @@ void CInputDB::LoginAlready(LPDESC d, const char * c_pData)
 
 void CInputDB::EmpireSelect(LPDESC d, const char * c_pData)
 {
-	LOG_INFO("EmpireSelect {}", static_cast<const void*>(get_pointer(d)));
+	LOG_INFO("EmpireSelect {}", static_cast<const void*>(d));
 
 	if (!d)
 		return;

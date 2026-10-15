@@ -65,7 +65,7 @@ constexpr int64_t DAY = 24 * 60 * 60;
 void Reset()
 {
     for (auto& query : pending)
-        M2_DELETE(query.info);
+        delete query.info;
     pending.clear();
     status.clear();
     machineClaims.clear();
@@ -190,7 +190,7 @@ void RunDatabase()
         res->uiAffectedRows = result.affected;
         msg.vec_pkResult.push_back(res);
         query.info->f(&msg);
-        M2_DELETE(query.info);
+        delete query.info;
     }
 }
 

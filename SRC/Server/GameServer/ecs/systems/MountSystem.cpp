@@ -379,7 +379,7 @@ void MountSystem::QueryMountInventory(entt::entity e)
     const uint64_t requestId = NextMountInventoryRequestId();
     g_registry.emplace_or_replace<ecs::MountInventoryLoadState>(e, accountId, requestId);
 
-    auto* request = M2_NEW MountInventoryLoadRequest;
+    auto* request = new MountInventoryLoadRequest;
     request->character = e;
     request->accountId = accountId;
     request->requestId = requestId;
@@ -714,7 +714,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 
 		if (!ecs::MovementSystem::Show(horse, ecs::PlayerRuntime::GetMapIndex(rider), x, y, ecs::PlayerRuntime::GetZ(rider)))
 		{
-			M2_DESTROY_CHARACTER(horse);
+			CHARACTER_MANAGER::instance().DestroyCharacter(horse);
 			LOG_ERROR("cannot show monster");
 			SetSummonedHorse(rider, entt::null);
 			return;
@@ -744,7 +744,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 
 		if (!bFromFar)
 		{
-			M2_DESTROY_CHARACTER(horse);
+			CHARACTER_MANAGER::instance().DestroyCharacter(horse);
 		}
 		else
 		{

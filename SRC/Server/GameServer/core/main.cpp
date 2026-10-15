@@ -339,10 +339,6 @@ int main(int argc, char **argv)
 	InstallCrashReporter();
 
 //		LOG_ERROR("Cannot initialize correctly offlineshop library!");
-#ifdef DEBUG_ALLOC
-	DebugAllocator::StaticSetUp();
-#endif
-
 #ifdef ENABLE_GOOGLE_TEST
 #ifndef _WIN32
 	// <Factor> start unit tests if option is set
@@ -507,10 +503,6 @@ int main(int argc, char **argv)
 
 	destroy();
 
-#ifdef DEBUG_ALLOC
-	DebugAllocator::StaticTearDown();
-#endif
-
 	return 1;
 }
 
@@ -537,12 +529,6 @@ int start(int argc, char **argv)
 
 	bool bVerbose = false;
 	char ch;
-
-//	//_malloc_options = "A";
-//#if defined(__FreeBSD__) && defined(DEBUG_ALLOC)
-//	_malloc_message = WriteMallocMessage;
-//#endif
-
 
 #ifdef ENABLE_NEWSTUFF
 

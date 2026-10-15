@@ -939,7 +939,7 @@ void ecs::SocialSystem::DenyToParty(entt::entity e, entt::entity memberEntity)
 
     auto* memberInvitations = g_registry.try_get<ecs::PartyInvitations>(memberEntity);
 
-    LOG_INFO("DenyToParty {} member {} {}", ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(memberEntity), static_cast<const void*>(memberInvitations ? get_pointer(memberInvitations->requestEvent) : nullptr));
+    LOG_INFO("DenyToParty {} member {} {}", ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(memberEntity), static_cast<const void*>(memberInvitations ? memberInvitations->requestEvent.get() : nullptr));
 
     if (!memberInvitations || !memberInvitations->requestEvent)
         return;
@@ -970,7 +970,7 @@ void ecs::SocialSystem::AcceptToParty(entt::entity e, entt::entity memberEntity)
 
     auto* memberInvitations = g_registry.try_get<ecs::PartyInvitations>(memberEntity);
 
-    LOG_INFO("AcceptToParty {} member {} {}", ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(memberEntity), static_cast<const void*>(memberInvitations ? get_pointer(memberInvitations->requestEvent) : nullptr));
+    LOG_INFO("AcceptToParty {} member {} {}", ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(memberEntity), static_cast<const void*>(memberInvitations ? memberInvitations->requestEvent.get() : nullptr));
 
     if (!memberInvitations || !memberInvitations->requestEvent)
         return;

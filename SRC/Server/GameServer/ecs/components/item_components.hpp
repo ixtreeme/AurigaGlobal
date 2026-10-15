@@ -7,7 +7,6 @@
 #include <common/length.h>
 #include <common/tables.h>
 
-#include "../../core/debug_allocator.h"
 #include "../../world/event.h"
 
 namespace ecs {

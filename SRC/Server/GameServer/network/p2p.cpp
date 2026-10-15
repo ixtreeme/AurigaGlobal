@@ -154,7 +154,7 @@ void P2P_MANAGER::Login(LPDESC d, const TPacketGGLogin * p)
 	if (nullptr == pkCCI)
 	{
 		UpdateP2P = true;
-		pkCCI = M2_NEW CCI;
+		pkCCI = new CCI;
 
 		strlcpy(pkCCI->szName, p->szName, sizeof(pkCCI->szName));
 
@@ -218,7 +218,7 @@ void P2P_MANAGER::Logout(CCI * pkCCI)
 
 	m_map_pkCCI.erase(name);
 	m_map_dwPID_pkCCI.erase(pkCCI->dwPID);
-	M2_DELETE(pkCCI);
+	delete pkCCI;
 }
 
 void P2P_MANAGER::Logout(const char * c_pszName)

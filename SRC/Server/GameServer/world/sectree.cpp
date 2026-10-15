@@ -99,7 +99,7 @@ void SECTREE::Destroy() {
         else if (type == ecs::SpatialKind::Character) {
             if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
                 DESC_MANAGER::instance().DestroyDesc(desc);
-            else M2_DESTROY_CHARACTER(e);
+            else CHARACTER_MANAGER::instance().DestroyCharacter(e);
         }
     }
     m_entities.clear();
@@ -202,7 +202,7 @@ void SECTREE::RemoveEntity(entt::entity e) {
 
 void SECTREE::BindAttribute(CAttribute * pkAttribute)
 {
-    m_pkAttribute = std::shared_ptr<CAttribute>(pkAttribute, [](CAttribute* attr) { M2_DELETE(attr); });
+    m_pkAttribute = std::shared_ptr<CAttribute>(pkAttribute, [](CAttribute* attr) { delete attr; });
     isClone = false;
 }
 

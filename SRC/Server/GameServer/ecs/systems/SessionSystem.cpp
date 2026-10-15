@@ -783,7 +783,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
             db_clientdesc->DBPacket(HEADER_GD_SAVE_BATTLE_PASS, 0, pkMission, sizeof(TPlayerBattlePassMission));
 
         if (pkMission)
-            M2_DELETE(pkMission);
+            delete pkMission;
     }
     ecs::PlayerRuntime::SetBattlePassLoaded(e, false);
 #endif
@@ -810,7 +810,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     if (ecs::PlayerRuntime::GetDesc(e))
         ecs::PlayerRuntime::GetDesc(e)->BindCharacter(entt::null);
 
-    M2_DESTROY_CHARACTER(e);
+    CHARACTER_MANAGER::instance().DestroyCharacter(e);
 }
 
 bool GetSkipSave(entt::entity e)

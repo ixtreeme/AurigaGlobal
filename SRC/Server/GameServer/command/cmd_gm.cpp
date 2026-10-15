@@ -945,7 +945,7 @@ struct FuncPurge
 #endif
 		)
 		{
-			M2_DESTROY_CHARACTER(chr);
+			CHARACTER_MANAGER::instance().DestroyCharacter(chr);
 		}
 	}
 };

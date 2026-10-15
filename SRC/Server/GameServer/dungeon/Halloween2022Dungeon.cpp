@@ -1082,7 +1082,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
             return true;
         DungeonSystem::SetFlag(d, kFlagCanDestroyStatue, 0);
         DungeonSystem::SetFlag(d, kFlagAngelStatueCount, DungeonSystem::GetFlag(d, kFlagAngelStatueCount) + 1);
-        M2_DESTROY_CHARACTER(npc);
+        CHARACTER_MANAGER::instance().DestroyCharacter(npc);
 
         if (DungeonSystem::GetFlag(d, kFlagAngelStatueCount) == 1)
         {
@@ -1114,7 +1114,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
         DungeonSystem::SetFlag(d, kFlagSealState, DungeonSystem::GetFlag(d, kFlagSealState) + 1);
         DungeonSystem::SetFlag(d, kFlagFloor1Monsters, 1);
         DungeonSystem::SpawnMob(d, kSealMiddleNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
-        M2_DESTROY_CHARACTER(npc);
+        CHARACTER_MANAGER::instance().DestroyCharacter(npc);
         DungeonSystem::SpawnRegen(d, kFloor1Monsters1Regen);
         NoticeMap(idx, "<Bloody cathedral> The first wave has begun.");
         return true;
@@ -1129,7 +1129,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
         DungeonSystem::SetFlag(d, kFlagSealState, DungeonSystem::GetFlag(d, kFlagSealState) + 1);
         DungeonSystem::SetFlag(d, kFlagKillFirstBoss, 1);
         DungeonSystem::SpawnMob(d, kSealFullNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
-        M2_DESTROY_CHARACTER(npc);
+        CHARACTER_MANAGER::instance().DestroyCharacter(npc);
         DungeonSystem::SpawnMob(d, kFirstBossVnum, kFirstBossPos.x, kFirstBossPos.y);
         return true;
     }

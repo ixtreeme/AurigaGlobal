@@ -164,14 +164,14 @@ namespace quest
 	{
 		RemoveTimer(name);
 		m_TimerMap.insert(make_pair(name, pEvent));
-		LOG_TRACE("QUEST add timer {} {}", static_cast<const void*>(get_pointer(pEvent)), m_TimerMap.size());
+		LOG_TRACE("QUEST add timer {} {}", static_cast<const void*>(pEvent.get()), m_TimerMap.size());
 	}
 
 	void PC::RemoveTimerNotCancel(const string & name)
 	{
 		if (const auto it = m_TimerMap.find(name); it != m_TimerMap.end())
 		{
-			LOG_TRACE("QUEST remove with no cancel {}", static_cast<const void*>(get_pointer(it->second)));
+			LOG_TRACE("QUEST remove with no cancel {}", static_cast<const void*>(it->second.get()));
 			m_TimerMap.erase(it);
 		}
 
@@ -184,7 +184,7 @@ namespace quest
 
 		if (it != m_TimerMap.end())
 		{
-			LOG_TRACE("QUEST remove timer {}", static_cast<const void*>(get_pointer(it->second)));
+			LOG_TRACE("QUEST remove timer {}", static_cast<const void*>(it->second.get()));
 			CancelTimerEvent(&it->second);
 			m_TimerMap.erase(it);
 		}

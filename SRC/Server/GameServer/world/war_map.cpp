@@ -1017,7 +1017,7 @@ CWarMapManager::~CWarMapManager()
 {
 	for( std::map<int32_t, TWarMapInfo *>::const_iterator iter = m_map_kWarMapInfo.begin() ; iter != m_map_kWarMapInfo.end() ; ++iter )
 	{
-		M2_DELETE(iter->second);
+		delete iter->second;
 	}
 
 	m_map_kWarMapInfo.clear();
@@ -1027,7 +1027,7 @@ bool CWarMapManager::LoadWarMapInfo(const char * c_pszFileName)
 {
 	TWarMapInfo * k;
 
-	k = M2_NEW TWarMapInfo;
+	k = new TWarMapInfo;
 	k->bType = WAR_MAP_TYPE_NORMAL;
 
 	k->lMapIndex = 110;//Razor93
@@ -1040,7 +1040,7 @@ bool CWarMapManager::LoadWarMapInfo(const char * c_pszFileName)
 
 	m_map_kWarMapInfo.insert(std::make_pair(k->lMapIndex, k));
 
-	k = M2_NEW TWarMapInfo;
+	k = new TWarMapInfo;
 	k->bType = WAR_MAP_TYPE_FLAG;
 
 	k->lMapIndex = 111;
@@ -1095,7 +1095,7 @@ int32_t CWarMapManager::CreateWarMap(const TGuildWarInfo& guildWarInfo, uint32_t
 
 	if (lMapIndex)
 	{
-		m_mapWarMap.insert(std::make_pair(lMapIndex, M2_NEW CWarMap(lMapIndex, guildWarInfo, pkInfo, dwGuildID1, dwGuildID2)));
+		m_mapWarMap.insert(std::make_pair(lMapIndex, new CWarMap(lMapIndex, guildWarInfo, pkInfo, dwGuildID1, dwGuildID2)));
 	}
 
 	return lMapIndex;
@@ -1121,7 +1121,7 @@ void CWarMapManager::DestroyWarMap(CWarMap* pMap)
 	LOG_INFO("WarMap::DestroyWarMap : {}", mapIdx);
 
 	m_mapWarMap.erase(pMap->GetMapIndex());
-	M2_DELETE(pMap);
+	delete pMap;
 
 	SECTREE_MANAGER::instance().DestroyPrivateMap(mapIdx);
 }

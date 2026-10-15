@@ -48,7 +48,7 @@ bool	Blend_Item_init()
 	DO_ALL_BLEND_INFO(iter)
 	{
 		BLEND_ITEM_INFO* blend_item_info = *iter;
-		M2_DELETE(blend_item_info);
+		delete blend_item_info;
 	}
 	s_blend_info.clear();
 
@@ -93,7 +93,7 @@ bool	Blend_Item_load(char *file)
 			if (!values.is_array() || values.size() < MAX_BLEND_ITEM_VALUE)
 			{
 				LOG_ERROR("Blend_Item_load: 'apply_value' needs {} values (item_vnum {})", MAX_BLEND_ITEM_VALUE, blend_item_info->item_vnum);
-				M2_DELETE(blend_item_info);
+				delete blend_item_info;
 				return false;
 			}
 
@@ -108,7 +108,7 @@ bool	Blend_Item_load(char *file)
 			if (!durations.is_array() || durations.size() < MAX_BLEND_ITEM_VALUE)
 			{
 				LOG_ERROR("Blend_Item_load: 'apply_duration' needs {} values (item_vnum {})", MAX_BLEND_ITEM_VALUE, blend_item_info->item_vnum);
-				M2_DELETE(blend_item_info);
+				delete blend_item_info;
 				return false;
 			}
 

@@ -487,7 +487,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 m_cloneNextAction.erase(vid);
                 m_cloneOffset.erase(vid);
                 if (const entt::entity c = CHARACTER_MANAGER::instance().FindEntity(vid); ecs::IsCharacter(c))
-                    M2_DESTROY_CHARACTER(c);
+                    CHARACTER_MANAGER::instance().DestroyCharacter(c);
             }
         }
 
@@ -784,7 +784,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             if (!ecs::MovementSystem::Show(cloneEntity, mapIndex, gx, gy, 0))
             {
-                M2_DESTROY_CHARACTER(cloneEntity);
+                CHARACTER_MANAGER::instance().DestroyCharacter(cloneEntity);
                 continue;
             }
 
@@ -1313,7 +1313,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
 
         if (!ecs::MovementSystem::Show(cloneEntity, mapIndex, gx, gy, 0))
         {
-            M2_DESTROY_CHARACTER(cloneEntity);
+            CHARACTER_MANAGER::instance().DestroyCharacter(cloneEntity);
             continue;
         }
 
@@ -1380,7 +1380,7 @@ void CLostCastleDungeon::PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t
         s_lc.m_cloneOffset.erase(vid);
 
         if (const entt::entity c = CHARACTER_MANAGER::instance().FindEntity(vid); ecs::IsCharacter(c))
-            M2_DESTROY_CHARACTER(c);
+            CHARACTER_MANAGER::instance().DestroyCharacter(c);
 
         // if we cleared some clones, and map has none left, stop AI
         if (m != -1)

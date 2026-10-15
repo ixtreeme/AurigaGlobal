@@ -1187,7 +1187,7 @@ bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::enti
         return true;
 
     // Purge the NPC (Lua: npc.purge())
-    M2_DESTROY_CHARACTER(npc);
+    CHARACTER_MANAGER::instance().DestroyCharacter(npc);
 
     int32_t opened = DungeonSystem::GetFlag(d, kFlagOpened) + 1;
     DungeonSystem::SetFlag(d, kFlagOpened, opened);

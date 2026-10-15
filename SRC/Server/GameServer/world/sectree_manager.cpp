@@ -48,7 +48,7 @@ SECTREE_MAP::~SECTREE_MAP()
 
 	while (it != map_.end()) {
 		LPSECTREE sectree = (it++)->second;
-		M2_DELETE(sectree);
+		delete sectree;
 	}
 
 	map_.clear();
@@ -72,7 +72,7 @@ SECTREE_MAP::SECTREE_MAP(SECTREE_MAP & r)
 
 	while (it != r.map_.end())
 	{
-		LPSECTREE tree = M2_NEW SECTREE;
+		LPSECTREE tree = new SECTREE;
 
 		tree->m_id.coord = it->second->m_id.coord;
 		tree->CloneAttribute(it->second);
@@ -161,7 +161,7 @@ SECTREE_MANAGER::~SECTREE_MANAGER()
 
 	   while (it != m_map_pkSectree.end())
 	   {
-	   M2_DELETE(it->second);
+	   delete it->second;
 	   ++it;
 	   }
 	 */
@@ -239,7 +239,7 @@ int SECTREE_MANAGER::LoadSettingFile(int32_t lMapIndex, const char * c_pszSettin
 
 LPSECTREE_MAP SECTREE_MANAGER::BuildSectreeFromSetting(TMapSetting & r_setting)
 {
-	LPSECTREE_MAP pkMapSectree = M2_NEW SECTREE_MAP;
+	LPSECTREE_MAP pkMapSectree = new SECTREE_MAP;
 
 	pkMapSectree->m_setting = r_setting;
 
@@ -250,7 +250,7 @@ LPSECTREE_MAP SECTREE_MANAGER::BuildSectreeFromSetting(TMapSetting & r_setting)
 	{
 		for (y = r_setting.iBaseY; y < r_setting.iBaseY + r_setting.iHeight; y += SECTREE_SIZE)
 		{
-			tree = M2_NEW SECTREE;
+			tree = new SECTREE;
 			tree->m_id.coord.x = x / SECTREE_SIZE;
 			tree->m_id.coord.y = y / SECTREE_SIZE;
 			pkMapSectree->Add(tree->m_id.package, tree);
@@ -260,7 +260,7 @@ LPSECTREE_MAP SECTREE_MANAGER::BuildSectreeFromSetting(TMapSetting & r_setting)
 
 	if ((r_setting.iBaseX + r_setting.iWidth) % SECTREE_SIZE)
 	{
-		tree = M2_NEW SECTREE;
+		tree = new SECTREE;
 		tree->m_id.coord.x = ((r_setting.iBaseX + r_setting.iWidth) / SECTREE_SIZE) + 1;
 		tree->m_id.coord.y = ((r_setting.iBaseY + r_setting.iHeight) / SECTREE_SIZE);
 		pkMapSectree->Add(tree->m_id.package, tree);
@@ -268,7 +268,7 @@ LPSECTREE_MAP SECTREE_MANAGER::BuildSectreeFromSetting(TMapSetting & r_setting)
 
 	if ((r_setting.iBaseY + r_setting.iHeight) % SECTREE_SIZE)
 	{
-		tree = M2_NEW SECTREE;
+		tree = new SECTREE;
 		tree->m_id.coord.x = ((r_setting.iBaseX + r_setting.iWidth) / SECTREE_SIZE);
 		tree->m_id.coord.y = ((r_setting.iBaseX + r_setting.iHeight) / SECTREE_SIZE) + 1;
 		pkMapSectree->Add(tree->m_id.package, tree);
@@ -464,7 +464,7 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 				return false;
 			}
 
-			tree->BindAttribute(M2_NEW CAttribute(attr.data(), SECTREE_SIZE / CELL_SIZE, SECTREE_SIZE / CELL_SIZE));
+			tree->BindAttribute(new CAttribute(attr.data(), SECTREE_SIZE / CELL_SIZE, SECTREE_SIZE / CELL_SIZE));
 		}
 
 	return true;
@@ -992,7 +992,7 @@ int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 	int32_t lNewMapIndex = lMapIndex * 10000 + i;
 	*/
 
-	pkMapSectree = M2_NEW SECTREE_MAP(*pkMapSectree);
+	pkMapSectree = new SECTREE_MAP(*pkMapSectree);
 	m_map_pkSectree.insert(std::map<uint32_t, LPSECTREE_MAP>::value_type(lNewMapIndex, pkMapSectree));
 
 	LOG_INFO("PRIVATE_MAP: {} created (original {})", lNewMapIndex, lMapIndex);
@@ -1025,7 +1025,7 @@ void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 	}
 #endif
 
-	M2_DELETE(pkMapSectree);
+	delete pkMapSectree;
 
 	LOG_INFO("PRIVATE_MAP: {} destroyed", lMapIndex);
 }
@@ -1432,7 +1432,7 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 
 	LOG_INFO("2 {}", static_cast<const void*>(pdwDest));
 
-	uint32_t * pdwLine = M2_NEW uint32_t[SECTREE_SIZE / CELL_SIZE];
+	uint32_t * pdwLine = new uint32_t[SECTREE_SIZE / CELL_SIZE];
 
 	for (y = 0; y < 4 * iMapHeight; ++y)
 	{
@@ -1458,7 +1458,7 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 				if (!pdwLine)
 				{
 					LOG_ERROR("cannot get attribute line pointer");
-					M2_DELETE_ARRAY(pdwLine);
+					delete[] pdwLine;
 					continue;
 				}
 
@@ -1482,7 +1482,7 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 		}
 	}
 
-	M2_DELETE_ARRAY(pdwLine);
+	delete[] pdwLine;
 	LOG_INFO("3");
 
 	if (image.Save(c_pszFileName))
@@ -1510,7 +1510,7 @@ struct FPurgeMonsters
 		if (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsPet(character))
 #endif
 		{
-			M2_DESTROY_CHARACTER(character);
+			CHARACTER_MANAGER::instance().DestroyCharacter(character);
 		}
 	}
 };
@@ -1536,7 +1536,7 @@ struct FPurgeStones
 
 		if ( ecs::PlayerRuntime::IsStone(character) == true )
 		{
-			M2_DESTROY_CHARACTER(character);
+			CHARACTER_MANAGER::instance().DestroyCharacter(character);
 		}
 	}
 };
@@ -1567,7 +1567,7 @@ struct FPurgeNPCs
 		if ( ecs::PlayerRuntime::IsNPC(character) == true && !ecs::PlayerRuntime::IsPet(character))
 #endif
 		{
-			M2_DESTROY_CHARACTER(character);
+			CHARACTER_MANAGER::instance().DestroyCharacter(character);
 		}
 	}
 };

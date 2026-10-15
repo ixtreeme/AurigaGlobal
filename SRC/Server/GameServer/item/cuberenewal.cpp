@@ -167,7 +167,7 @@ void Cube_init()
 	for (iter = s_cube_proto.begin(); iter!=s_cube_proto.end(); iter++)
 	{
 		p_cube = *iter;
-		M2_DELETE(p_cube);
+		delete p_cube;
 	}
 
 	s_cube_proto.clear();
@@ -194,7 +194,7 @@ bool Cube_load (const char *file)
 
 	for (const auto& entry : doc.at("cubes"))
 	{
-		CUBE_RENEWAL_DATA	*cube_data = M2_NEW CUBE_RENEWAL_DATA;
+		CUBE_RENEWAL_DATA	*cube_data = new CUBE_RENEWAL_DATA;
 
 		if (entry.contains("npcs"))
 		{
@@ -237,7 +237,7 @@ bool Cube_load (const char *file)
 		if (false == FN_check_cube_data(cube_data))
 		{
 			dev_log(LOG_DEB0, "something wrong");
-			M2_DELETE(cube_data);
+			delete cube_data;
 			continue;
 		}
 

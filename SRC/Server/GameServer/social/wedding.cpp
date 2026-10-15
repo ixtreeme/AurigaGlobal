@@ -101,7 +101,7 @@ namespace marriage
 
 		if (state->endEvent)
 		{
-			LOG_ERROR("WeddingMap::SetEnded - ALREADY EndEvent(m_pEndEvent={:x})", reinterpret_cast<uintptr_t>(get_pointer(state->endEvent)));
+			LOG_ERROR("WeddingMap::SetEnded - ALREADY EndEvent(m_pEndEvent={:x})", reinterpret_cast<uintptr_t>(state->endEvent.get()));
 			return;
 		}
 

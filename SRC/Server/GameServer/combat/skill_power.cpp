@@ -49,7 +49,7 @@ void CTableBySkill::SetSkillPowerByLevelFromType(int idx, const int* aTable)
 {
 	DeleteSkillPowerByLevelFromType(idx);
 
-	int* aiSkillTable = M2_NEW int[SKILL_MAX_LEVEL+1];
+	int* aiSkillTable = new int[SKILL_MAX_LEVEL+1];
 
 	memcpy (aiSkillTable, aTable, sizeof(int) * (SKILL_MAX_LEVEL + 1));
 	m_aiSkillPowerByLevelFromType[idx] = aiSkillTable;
@@ -59,7 +59,7 @@ void CTableBySkill::DeleteSkillPowerByLevelFromType(int idx)
 {
 	if (nullptr != m_aiSkillPowerByLevelFromType[idx])
 	{
-		M2_DELETE_ARRAY(m_aiSkillPowerByLevelFromType[idx]);
+		delete[] m_aiSkillPowerByLevelFromType[idx];
 		m_aiSkillPowerByLevelFromType[idx] = nullptr;
 	}
 }
@@ -76,7 +76,7 @@ void CTableBySkill::SetSkillDamageByLevelTable( const int* aTable )
 {
 	DeleteSkillDamageByLevelTable();
 
-	int* aiSkillDamageTable = M2_NEW int[PLAYER_MAX_LEVEL_CONST];
+	int* aiSkillDamageTable = new int[PLAYER_MAX_LEVEL_CONST];
 
 	memcpy ( aiSkillDamageTable, aTable, sizeof( int ) * ( PLAYER_MAX_LEVEL_CONST ) );
 
@@ -87,7 +87,7 @@ void CTableBySkill::DeleteSkillDamageByLevelTable()
 {
 	if (nullptr != m_aiSkillDamageByLevel)
 	{
-		M2_DELETE_ARRAY(m_aiSkillDamageByLevel);
+		delete[] m_aiSkillDamageByLevel;
 		m_aiSkillDamageByLevel = nullptr;
 	}
 }

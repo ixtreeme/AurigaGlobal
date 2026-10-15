@@ -2001,7 +2001,7 @@ namespace quest
 		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(character);
 		LOG_INFO("TRY GIVE LOTTO TO pid {}", playerID);
 
-		uint32_t * pdw = M2_NEW uint32_t[3];
+		uint32_t * pdw = new uint32_t[3];
 
 		pdw[0] = 50001;
 		pdw[1] = 1;

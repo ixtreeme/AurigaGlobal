@@ -14,7 +14,7 @@ LPEVENT event_create_ex(TEVENTFUNC func, event_info_data* info, int32_t when)
 	if (when < 1)
 		when = 1;
 
-	new_event = M2_NEW event;
+	new_event = new event;
 
 	assert(NULL != new_event);
 
@@ -109,7 +109,7 @@ int event_process(int pulse)
 		else
 		{
 			//0, "EVENT: %s %d event %p info %p", the_event->file, the_event->line, the_event, the_event->info);
-			new_time = (the_event->func) (get_pointer(the_event), processing_time);
+			new_time = (the_event->func) (the_event.get(), processing_time);
 
 			if (new_time <= 0 || the_event->is_force_to_end)
 			{
@@ -174,6 +174,6 @@ void intrusive_ptr_add_ref(EVENT* p) {
 
 void intrusive_ptr_release(EVENT* p) {
 	if ( --(p->ref_count) == 0 ) {
-		M2_DELETE(p);
+		delete p;
 	}
 }

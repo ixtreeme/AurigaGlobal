@@ -332,11 +332,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
                 g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item))
                 if (auto* flags = g_registry.try_get<ecs::ItemFlags>(item)) flags->skipSave = originalSkipSave;
         }};
-#ifdef DEBUG_ALLOC
-        DestroyItem(item, __FILE__, __LINE__);
-#else
         DestroyItem(item);
-#endif
     };
     const ScopeExit creationGuard {cleanup};
     const auto live = [&] {
@@ -726,7 +722,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 		if (!stillOwned())
 		{
 			// Closing a storage during logging can already detach this item.
-			if (detached()) DestroyItemNow(itemEntity, __FILE__, __LINE__);
+			if (detached()) DestroyItemNow(itemEntity);
 			return;
 		}
 
@@ -751,7 +747,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 #endif
 			if (!stillOwned())
 			{
-				if (detached()) DestroyItemNow(itemEntity, __FILE__, __LINE__);
+				if (detached()) DestroyItemNow(itemEntity);
 				return;
 			}
 			if (recordedSlot() != itemEntity) return;
@@ -773,7 +769,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 		}
 	}
 
-	DestroyItemNow(itemEntity, __FILE__, __LINE__);
+	DestroyItemNow(itemEntity);
 }
 
 void ITEM_MANAGER::ForgetItem(entt::entity item, uint32_t id, uint32_t vid)
@@ -784,25 +780,17 @@ void ITEM_MANAGER::ForgetItem(entt::entity item, uint32_t id, uint32_t vid)
 	if (auto it = m_VIDMap.find(vid); it != m_VIDMap.end() && it->second == item)
 		m_VIDMap.erase(it);
 }
-#ifndef DEBUG_ALLOC
 void ITEM_MANAGER::DestroyItem(entt::entity itemEntity)
-#else
-void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t line)
-#endif
 {
 	if (!ItemSystem::IsValidItem(itemEntity) || m_itemsBeingDestroyed.contains(itemEntity))
 		return;
 
 	m_itemsBeingDestroyed.insert(itemEntity);
 	ItemDestructionGuard guard {m_itemsBeingDestroyed, itemEntity};
-#ifdef DEBUG_ALLOC
-	DestroyItemNow(itemEntity, file, line);
-#else
-	DestroyItemNow(itemEntity, __FILE__, __LINE__);
-#endif
+	DestroyItemNow(itemEntity);
 }
 
-void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char*, size_t)
+void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity)
 {
 	const uint32_t id = ItemSystem::GetItemID(itemEntity);
 	const uint32_t vid = ItemSystem::GetItemVID(itemEntity);
@@ -935,7 +923,7 @@ bool ItemSystem::DestroyLoadedDuplicateItem(entt::entity item)
 
     // The manager owns detachment, its reentry guard and native indexes.
     // Never detach first outside that protected lifecycle.
-    M2_DESTROY_ITEM(item);
+    ITEM_MANAGER::instance().DestroyItem(item);
     const bool destroyed = !g_registry.valid(item);
     LOG_ERROR("DUP_ITEM_DESTROY_END entity={} id={} destroyed={}", entt::to_integral(item), id, destroyed);
     return destroyed;
@@ -1511,7 +1499,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 
 	if (GetDropPerKillPct(100, 1000, iDeltaPercent, "lotto_drop") >= number(1, iRandRange))
 	{
-		uint32_t* pdw = M2_NEW uint32_t[3];
+		uint32_t* pdw = new uint32_t[3];
 
 		pdw[0] = 50001;
 		pdw[1] = 1;

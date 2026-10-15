@@ -1507,7 +1507,7 @@ namespace quest
             if (!ecs::PlayerRuntime::IsMonster(candidate) && !ecs::PlayerRuntime::IsStone(candidate)) return;
             const auto x = ecs::PlayerRuntime::GetX(candidate), y = ecs::PlayerRuntime::GetY(candidate);
             if (x1 <= x && x <= x2 && y1 <= y && y <= y2)
-                M2_DESTROY_CHARACTER(candidate);
+                CHARACTER_MANAGER::instance().DestroyCharacter(candidate);
         }
     };
 

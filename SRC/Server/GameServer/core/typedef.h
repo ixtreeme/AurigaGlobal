@@ -3,43 +3,23 @@
 #include <unordered_set>
 
 class DESC;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<DESC> LPDESC;
-#else
 typedef DESC* LPDESC;
-#endif
 
 class CLIENT_DESC;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<CLIENT_DESC> LPCLIENT_DESC;
-#else
 typedef CLIENT_DESC* LPCLIENT_DESC;
-#endif
 
 class DESC_P2P;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<DESC_P2P> LPDESC_P2P;
-#else
 typedef DESC_P2P* LPDESC_P2P;
-#endif
 
 typedef struct regen* LPREGEN;
 typedef struct regen_exception* LPREGEN_EXCEPTION;
 
 class SECTREE;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<SECTREE> LPSECTREE;
-#else
 typedef SECTREE* LPSECTREE;
-#endif
 typedef std::list<LPSECTREE> LPSECTREE_LIST;
 
 class SECTREE_MAP;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<SECTREE_MAP> LPSECTREE_MAP;
-#else
 typedef SECTREE_MAP* LPSECTREE_MAP;
-#endif
 
 typedef struct pixel_position_s
 {

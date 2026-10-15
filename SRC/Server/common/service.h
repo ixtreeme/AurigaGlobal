@@ -2,9 +2,6 @@
 #define __INC_SERVICE_H__
 
 
-//#define DEBUG_ALLOC
-
-
 #define ENABLE_NEW_CHANGES
 #define _IMPROVED_PACKET_ENCRYPTION_
 

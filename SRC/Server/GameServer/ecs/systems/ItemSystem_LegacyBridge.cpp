@@ -642,7 +642,7 @@ EVENTFUNC(kill_campfire_event)
 	}
 	ecs::PlayerRuntime::SetCharEvent(
 		info->ch, ecs::PlayerRuntime::CharEvent::Mining, nullptr);
-	M2_DESTROY_CHARACTER(info->ch);
+	CHARACTER_MANAGER::instance().DestroyCharacter(info->ch);
 	return 0;
 }
 

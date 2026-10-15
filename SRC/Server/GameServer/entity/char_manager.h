@@ -48,11 +48,7 @@ protected:
 		uint32_t			AllocVID();
 
 		entt::entity            CreateCharacterEntity(const char * name, uint32_t dwPID = 0);
-#ifndef DEBUG_ALLOC
 		void DestroyCharacter(entt::entity character);
-#else
-		void DestroyCharacter(entt::entity character, const char* file, size_t line);
-#endif
 
 		void			Update(int iPulse);
 
@@ -192,12 +188,5 @@ Func CHARACTER_MANAGER::for_each_pc(Func f)
 
 	return f;
 }
-
-
-#ifndef DEBUG_ALLOC
-#define M2_DESTROY_CHARACTER(ptr) CHARACTER_MANAGER::instance().DestroyCharacter(ptr)
-#else
-#define M2_DESTROY_CHARACTER(ptr) CHARACTER_MANAGER::instance().DestroyCharacter(ptr, __FILE__, __LINE__)
-#endif
 
 #endif

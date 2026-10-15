@@ -1184,7 +1184,7 @@ void CGuild::DeleteComment(entt::entity character, uint32_t comment_id)
 		RefreshCommentForce(ecs::PlayerRuntime::GetPlayerID(character));
 	}
 
-	M2_DELETE(pmsg);
+	delete pmsg;
 }
 
 void CGuild::RefreshComment(entt::entity character)

@@ -100,7 +100,7 @@ void DBManager::ReturnQuery(int iType, uint32_t dwIdent, void * pvData, const ch
 	vsnprintf(szQuery, sizeof(szQuery), c_pszFormat, args);
 	va_end(args);
 
-	CReturnQueryInfo * p = M2_NEW CReturnQueryInfo;
+	CReturnQueryInfo * p = new CReturnQueryInfo;
 
 	p->iQueryType = QUERY_TYPE_RETURN;
 	p->iType = iType;
@@ -122,7 +122,7 @@ SQLMsg * DBManager::DirectQueryPrepared(const char * c_pszSql, const SqlParams &
 
 void DBManager::ReturnQueryPrepared(int iType, uint32_t dwIdent, void * pvData, const char * c_pszSql, const SqlParams & params)
 {
-	CReturnQueryInfo * p = M2_NEW CReturnQueryInfo;
+	CReturnQueryInfo * p = new CReturnQueryInfo;
 
 	p->iQueryType = QUERY_TYPE_RETURN;
 	p->iType = iType;
@@ -160,7 +160,7 @@ void DBManager::Process()
 					{
 						CFuncQueryInfo* qi = reinterpret_cast<CFuncQueryInfo*>( pMsg->pvUserData );
 						qi->f(pMsg);
-						M2_DELETE(qi);
+						delete qi;
 					}
 					break;
 
@@ -168,7 +168,7 @@ void DBManager::Process()
 					{
 						CFuncAfterQueryInfo* qi = reinterpret_cast<CFuncAfterQueryInfo*>( pMsg->pvUserData );
 						qi->f();
-						M2_DELETE(qi);
+						delete qi;
 					}
 					break;
 			}
@@ -203,7 +203,7 @@ void DBManager::DeleteLoginData(CLoginData * pkLD)
 	LOG_INFO("DeleteLoginData {} {}", pkLD->GetLogin(), static_cast<const void*>(pkLD));
 
 
-	M2_DELETE(it->second);
+	delete it->second;
 	m_map_pkLoginData.erase(it);
 }
 
@@ -258,7 +258,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					request->requestId, items);
 			}
 			if (request)
-				M2_DELETE(request);
+				delete request;
 		}
 		break;
 
@@ -336,7 +336,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					}
 				}
 
-				M2_DELETE_ARRAY(pdw);
+				delete[] pdw;
 			}
 			break;
 
@@ -367,7 +367,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					QueryPrepared(query, { SqlParam::Text(info->szBoard), SqlParam::UInt(info->dwPID), SqlParam::Int(info->iValue) });
 				}
 
-				M2_DELETE(info);
+				delete info;
 			}
 			break;
 
@@ -405,7 +405,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 			break;
 	}
 
-	M2_DELETE(qi);
+	delete qi;
 }
 
 void DBManager::LoadDBString()
@@ -503,7 +503,7 @@ void AccountDB::AsyncQueryPrepared(const char * c_pszSql, const SqlParams & para
 
 void AccountDB::ReturnQueryPrepared(int iType, uint32_t dwIdent, void * pvData, const char * c_pszSql, const SqlParams & params)
 {
-	CReturnQueryInfo * p = M2_NEW CReturnQueryInfo;
+	CReturnQueryInfo * p = new CReturnQueryInfo;
 
 	p->iQueryType = QUERY_TYPE_RETURN;
 	p->iType = iType;
@@ -522,7 +522,7 @@ void AccountDB::ReturnQuery(int iType, uint32_t dwIdent, void * pvData, const ch
 	vsnprintf(szQuery, sizeof(szQuery), c_pszFormat, args);
 	va_end(args);
 
-	CReturnQueryInfo * p = M2_NEW CReturnQueryInfo;
+	CReturnQueryInfo * p = new CReturnQueryInfo;
 
 	p->iQueryType = QUERY_TYPE_RETURN;
 	p->iType = iType;
@@ -620,7 +620,7 @@ void AccountDB::AnalyzeReturnQuery(SQLMsg * pMsg)
 			break;
 	}
 
-	M2_DELETE(qi);
+	delete qi;
 }
 
 

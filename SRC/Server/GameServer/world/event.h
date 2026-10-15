@@ -32,7 +32,7 @@ struct event
 	~event() {
 		if (info != nullptr) {
 
-			M2_DELETE(info);
+			delete info;
 
 		}
 	}
@@ -50,7 +50,7 @@ extern void intrusive_ptr_release(EVENT* p);
 
 template<class T> // T should be a subclass of event_info_data
 T* AllocEventInfo() {
-	return M2_NEW T;
+	return new T;
 }
 
 extern void		event_destroy();

@@ -18,7 +18,7 @@ CPacketInfo::~CPacketInfo()
 {
 	auto it = m_pPacketMap.begin();
 	for ( ; it != m_pPacketMap.end(); ++it) {
-		M2_DELETE(it->second);
+		delete it->second;
 	}
 }
 
@@ -27,7 +27,7 @@ void CPacketInfo::Set(int header, int iSize, const char* c_pszName, bool bSeq)
 	if (m_pPacketMap.find(header) != m_pPacketMap.end())
 		return;
 
-	TPacketElement * element = M2_NEW TPacketElement;
+	TPacketElement * element = new TPacketElement;
 
 	element->iSize = iSize;
 	element->stName.assign(c_pszName);

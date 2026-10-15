@@ -193,7 +193,7 @@ namespace
 			const entt::entity character = mgr.FindEntity(vid);
 			if (character != entt::null && ecs::PlayerRuntime::GetRaceNum(character) == st.mobVnum
 				&& ecs::PlayerRuntime::GetMapIndex(character) == st.mapIndex)
-				M2_DESTROY_CHARACTER(character);
+				mgr.DestroyCharacter(character);
 		}
 		st.hadWave = false;
 		st.nextRetryTime = 0;
@@ -395,7 +395,7 @@ void CHARACTER_MANAGER::Destroy()
 			if (character == entt::null)
 				CVIDRegistry::Instance().UnregisterEntity(character);
 			else
-				M2_DESTROY_CHARACTER(character);
+				DestroyCharacter(character);
 		}
 	}
 }
@@ -432,7 +432,7 @@ entt::entity CHARACTER_MANAGER::CreateCharacterEntity(const char* name, uint32_t
 #ifdef ENABLE_BUG_FIXES
 	if (dwVID != ecs::PlayerRuntime::GetPacketVID(character)) {
 		--m_iVIDCount;
-		M2_DESTROY_CHARACTER(character);
+		DestroyCharacter(character);
 		return entt::null;
 	}
 #endif
@@ -456,11 +456,7 @@ entt::entity CHARACTER_MANAGER::CreateCharacterEntity(const char* name, uint32_t
 	return character;
 }
 
-#ifndef DEBUG_ALLOC
 void CHARACTER_MANAGER::DestroyCharacter(entt::entity character)
-#else
-void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* file, size_t line)
-#endif
 {
 	if (character == entt::null)
 		return;
@@ -653,7 +649,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t 
 
 	if (!ecs::MovementSystem::Show(character, lMapIndex, x, y, 0, false))
 	{
-		M2_DESTROY_CHARACTER(character);
+		DestroyCharacter(character);
 		LOG_ERROR("SpawnMobRandomPosition: cannot show monster");
 		return entt::null;
 	}
@@ -1058,7 +1054,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		for (const entt::entity character : CVIDRegistry::Instance().Snapshot())
 		{
 			if (ecs::PlayerRuntime::IsStone(character) && ecs::PlayerRuntime::IsDungeonTicketExtraMetin(character))
-				M2_DESTROY_CHARACTER(character);
+				DestroyCharacter(character);
 		}
 
 		if (nowActive && nowExtraCount > 0)
@@ -1412,7 +1408,7 @@ void CHARACTER_MANAGER::FlushPendingDestroy()
 	// Detach the batch before callbacks; new requests belong to the live set.
 	const auto pending = std::exchange(m_set_pkChrPendingDestroy, {});
 	for (const entt::entity character : pending)
-		M2_DESTROY_CHARACTER(character);
+		DestroyCharacter(character);
 }
 
 
@@ -2457,7 +2453,7 @@ int ProcessDespawnEvent(const LPEVENT& event, bool idle)
         return 0;
     }
     ClearDespawnEvent(character, event, slot);
-    M2_DESTROY_CHARACTER(character);
+    CHARACTER_MANAGER::instance().DestroyCharacter(character);
     return 0;
 }
 

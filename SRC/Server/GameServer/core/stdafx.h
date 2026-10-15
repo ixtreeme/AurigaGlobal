@@ -3,13 +3,6 @@
 
 #define NOMINMAX
 
-// Basic features
-// Enable or disable memory pooling for specific object types
-// Enable or disable heap allocation debugging
-//#define DEBUG_ALLOC
-
-#include "debug_allocator.h"
-
 #include <Core/stdafx.h>
 
 #include <common/singleton.h>

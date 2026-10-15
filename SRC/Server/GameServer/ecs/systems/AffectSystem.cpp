@@ -351,7 +351,7 @@ EVENTFUNC(load_affect_login_event)
 
 	if (!ecs::IsCharacter(character))
 	{
-		M2_DELETE_ARRAY(info->data);
+		delete[] info->data;
 		info->data = nullptr;
 		return 0;
 	}
@@ -360,7 +360,7 @@ EVENTFUNC(load_affect_login_event)
 
 	if (!d)
 	{
-		M2_DELETE_ARRAY(info->data);
+		delete[] info->data;
 		info->data = nullptr;
 		return 0;
 	}
@@ -375,7 +375,7 @@ EVENTFUNC(load_affect_login_event)
 	}
 	else if (d->IsPhase(PHASE_CLOSE))
 	{
-		M2_DELETE_ARRAY(info->data);
+		delete[] info->data;
 		info->data = nullptr;
 		return 0;
 	}
@@ -388,7 +388,7 @@ EVENTFUNC(load_affect_login_event)
 		LOG_ERROR("AFFECT_EVENT_LOAD_END pid={} name={} count={} data={}",
 			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data));
 		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));
-		M2_DELETE_ARRAY(info->data);
+		delete[] info->data;
 		info->data = nullptr;
 		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_END pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));
 		return 0;
@@ -396,7 +396,7 @@ EVENTFUNC(load_affect_login_event)
 	else
 	{
 		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ecs::PlayerRuntime::GetPlayerID(character));
-		M2_DELETE_ARRAY(info->data);
+		delete[] info->data;
 		info->data = nullptr;
 		return 0;
 	}
@@ -1036,7 +1036,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 
 		info->pid = ecs::PlayerRuntime::GetPlayerID(e);
 		info->count = dwCount;
-		info->data = M2_NEW char[sizeof(TPacketAffectElement) * dwCount];
+		info->data = new char[sizeof(TPacketAffectElement) * dwCount];
 		memcpy(info->data, pElements, sizeof(TPacketAffectElement) * dwCount);
 
 		event_create(load_affect_login_event, info, PASSES_PER_SEC(1));
