@@ -95,6 +95,17 @@ if(WIN32)
 endif()
 add_test(NAME guild_member_lifecycle COMMAND GuildMemberLifecycleTests)
 
+# Core byte buffers under the asio session patterns: an output buffer that is
+# rarely drained to empty, a reader left with partial packets, growth.
+add_executable(BufferTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/BufferTests.cpp
+)
+target_link_libraries(BufferTests PRIVATE SERVER S_Core)
+if(WIN32)
+    target_link_libraries(BufferTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME core_buffer COMMAND BufferTests)
+
 # The daily reward's DB chains over a scripted database that runs the queries
 # in order, like the async worker: claims sent at once, one machine with two
 # characters, a claim taken by another channel, the gift window reload.

@@ -33,6 +33,9 @@
 
 	extern void		buffer_write(LPBUFFER& buffer, const void* src, int length);
 
+	// The peek pointers point into the storage. Making room (buffer_write,
+	// buffer_adjust_size) or consuming bytes (buffer_read_proceed) may move
+	// the unread bytes, so a peeked pointer must not be held across either.
 	extern const void *	buffer_read_peek(LPBUFFER buffer);
 	extern void		buffer_read_proceed(LPBUFFER buffer, int length);
 
