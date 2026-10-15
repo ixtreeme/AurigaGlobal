@@ -149,6 +149,17 @@ if(WIN32)
 endif()
 add_test(NAME tls_session COMMAND TlsSessionTests)
 
+# The server-to-server MAC, pinned to the value the previous implementation
+# produced, plus nonces and timestamps.
+add_executable(PeerAuthTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PeerAuthTests.cpp
+)
+target_link_libraries(PeerAuthTests PRIVATE SERVER S_Core)
+if(WIN32)
+    target_link_libraries(PeerAuthTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME peer_auth COMMAND PeerAuthTests)
+
 # Core byte buffers under the asio session patterns: an output buffer that is
 # rarely drained to empty, a reader left with partial packets, growth.
 add_executable(BufferTests EXCLUDE_FROM_ALL

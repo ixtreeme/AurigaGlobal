@@ -1,24 +1,26 @@
 #include "stdafx.h"
 #include "peer_auth.h"
 
-#include <cryptopp/hmac.h>
-#include <cryptopp/osrng.h>
-#include <cryptopp/sha.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#include <openssl/rand.h>
 
 #include <chrono>
 #include <cstring>
+#include <stdexcept>
 
 namespace
 {
 	std::string g_key;
-	CryptoPP::AutoSeededRandomPool g_rng;
 
+	// HMAC-SHA256 over the message with the interserver key.
 	void ComputeMac(const uint8_t * data, size_t length, uint8_t out[PeerAuth::MAC_SIZE])
 	{
-		CryptoPP::HMAC<CryptoPP::SHA256> hmac(
-			reinterpret_cast<const CryptoPP::byte *>(g_key.data()), g_key.size());
+		unsigned int written = 0;
 
-		hmac.CalculateDigest(out, data, length);
+		if (!HMAC(EVP_sha256(), g_key.data(), static_cast<int>(g_key.size()), data, length, out, &written) ||
+			written != PeerAuth::MAC_SIZE)
+			throw std::runtime_error("PeerAuth: HMAC-SHA256 failed");
 	}
 }
 
@@ -37,7 +39,9 @@ bool PeerAuth::HasKey()
 
 void PeerAuth::MakeNonce(uint8_t nonce[NONCE_SIZE])
 {
-	g_rng.GenerateBlock(nonce, NONCE_SIZE);
+	// A nonce from a failing generator would make the challenge replayable.
+	if (RAND_bytes(nonce, NONCE_SIZE) != 1)
+		throw std::runtime_error("PeerAuth: the random generator failed");
 }
 
 uint64_t PeerAuth::NowSeconds()

@@ -13,7 +13,7 @@
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
-#include <cryptopp/md5.h>
+#include <openssl/evp.h>
 
 #include "utils.h"
 #include "config.h"
@@ -3061,16 +3061,16 @@ void open_in_game_mall(entt::entity character)
 	snprintf(buf, sizeof(buf), "%u%u%s", ecs::PlayerRuntime::GetPlayerID(character),
 		ecs::PlayerRuntime::GetAccountID(character), sas_key);
 
-	CryptoPP::MD5 md5;
-	CryptoPP::byte digest[CryptoPP::MD5::DIGESTSIZE];
-	md5.CalculateDigest(digest, reinterpret_cast<const CryptoPP::byte*>(buf), strlen(buf));
+	constexpr int MD5_SIZE = 16;
+	unsigned char digest[MD5_SIZE] {};
+	EVP_Digest(buf, strlen(buf), digest, nullptr, EVP_md5(), nullptr);
 
 	static const char hex[] = "0123456789abcdef";
-	for (int i = 0; i < CryptoPP::MD5::DIGESTSIZE; ++i) {
+	for (int i = 0; i < MD5_SIZE; ++i) {
 		sas[i+i] = hex[digest[i] >> 4];
 		sas[i+i+1] = hex[digest[i] & 0x0f];
 	}
-	sas[CryptoPP::MD5::DIGESTSIZE * 2] = '\0';
+	sas[MD5_SIZE * 2] = '\0';
 
 	// snprintf(buf, sizeof(buf), "mall https://www.%s/shop?pid=%u&lang=%s&sid=%d&sas=%s",
 			// g_strWebMallURL.c_str(), (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), language, g_server_id, sas);
