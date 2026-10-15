@@ -51,6 +51,7 @@
 #include <common/VnumHelper.h>
 #include "shop.h"
 #include "shop_manager.h"
+#include "daily_reward.h"
 #include <string_view>
 #include <charconv>
 
@@ -100,35 +101,6 @@ static std::string MakeDailyRewardHWKey(entt::entity ch)
 	key += std::to_string(d->GetAccountTable().id);
 	return key;
 }
-
-static bool DailyReward_CheckHWIDLimit(entt::entity ch)
-{
-	if (!ecs::PlayerRuntime::IsValid(ch) || !(ecs::PlayerRuntime::IsPC(ch)) || !ecs::PlayerRuntime::GetDesc(ch))
-		return false;
-
-	std::string key = MakeDailyRewardHWKey(ch);
-
-	// 1) ma mar claimelte valaki ezen a kulcson?
-	std::unique_ptr<SQLMsg> chk(DBManager::instance().DirectQueryPrepared(
-			"SELECT 1 FROM player.daily_reward_claim_hwid WHERE hwkey=? AND claim_day=CURDATE() LIMIT 1",
-		{ SqlParam::Text(key) }
-	));
-
-	if (chk && chk->Get()->uiNumRows > 0)
-		return false;
-
-	// 2) ha nem, akkor regisztraljuk (mostantol ma mar nem lehet ujra)
-	DBManager::Instance().QueryPrepared(
-		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
-			"VALUES(?, CURDATE(), ?, ?)",
-		{
-			SqlParam::Text(key),
-			SqlParam::UInt(ecs::PlayerRuntime::GetPlayerID(ch)),
-			SqlParam::UInt(ecs::PlayerRuntime::GetDesc(ch)->GetAccountTable().id)
-		});
-
-	return true;
-}
 #endif
 
 ACMD(do_user_horse_ride)
@@ -163,175 +135,22 @@ ACMD(do_user_horse_ride)
 		MountSystem::StopRiding(character);
 	}
 }
-// Daily reward reload: the status read, the optional reset and the item
-// listing run on the DB worker; every follow-up query is queued after the
-// previous one on the same connection, so the ordering is kept.
-static void DailyRewardReloadFinalCallback(SQLMsg* msg, entt::entity character);
+ACMD(do_daily_reward_reload)
+{
+	DailyReward::Reload(character);
+}
 
-static void DailyRewardReloadItemsCallback(SQLMsg* msg, entt::entity character, std::string time, std::string rewards)
+ACMD(do_daily_reward_get_reward)
 {
 	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
-
-	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
-	{
-		MYSQL_ROW row;
-		while ((row = msg->Get()->FetchRow()) != nullptr)
-			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetReward|%s|%s", row[0], row[1]);
-	}
-
-	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetTime|%s", time.c_str());
-	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetDailyReward|%s", rewards.c_str());
-	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetRewardDone|");
-}
-
-static void DailyRewardReloadStatusCallback(SQLMsg* msg, entt::entity character)
-{
-	if (!ecs::PlayerRuntime::IsValid(character))
-		return;
-
-	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
-
-	// A stale row (older than a day) is reset; the queued DELETE/INSERT are
-	// executed before the follow-up SELECT below.
-	bool hasRow = msg && msg->Get() && msg->Get()->uiNumRows > 0;
-	bool reset = false;
-
-	if (hasRow)
-	{
-		MYSQL_ROW row = msg->Get()->FetchRow();
-
-		if (row && row[0])
-		{
-			const int64_t lastTime = atoll(row[0]);
-			reset = (lastTime + 24 * 60 * 60) < static_cast<int64_t>(time(nullptr));
-		}
-	}
-	else
-	{
-		reset = true;
-	}
-
-	if (reset)
-	{
-		DBManager::instance().Query("DELETE FROM player.daily_reward_status WHERE pid = %u", pid);
-		DBManager::instance().Query("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", pid);
-
-#ifdef TEXTS_IMPROVEMENT
-		if (hasRow)
-			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 721, "");
-#endif
-	}
-
-	DBManager::instance().FuncQuery(std::bind(&DailyRewardReloadFinalCallback, std::placeholders::_1, character),
-		"SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", pid);
-}
-
-static void DailyRewardReloadFinalCallback(SQLMsg* msg, entt::entity character)
-{
-	if (!ecs::PlayerRuntime::IsValid(character))
-		return;
-
-	std::string time = "";
-	std::string rewards = "";
-
-	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
-	{
-		MYSQL_ROW row;
-		while ((row = msg->Get()->FetchRow()) != nullptr)
-		{
-			time = row[0] ? row[0] : "";
-			rewards = row[1] ? row[1] : "";
-		}
-	}
-
-	DBManager::instance().FuncQueryPrepared(std::bind(&DailyRewardReloadItemsCallback, std::placeholders::_1, character, time, rewards),
-		"SELECT items, count FROM player.daily_reward_items WHERE reward = ?", { SqlParam::Text(rewards) });
-}
-
-ACMD(do_daily_reward_reload){
-	if (!ecs::PlayerRuntime::IsValid(character)) {
-		return;
-	}
-
-	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ManagerGiftSystem DeleteRewards|");
-
-	DBManager::instance().FuncQuery(std::bind(&DailyRewardReloadStatusCallback, std::placeholders::_1, character),
-		"SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(character)));
-}
-
-static void DailyRewardItemsGivenCallback(SQLMsg* msg, entt::entity character)
-{
-	if (!ecs::PlayerRuntime::IsValid(character))
-		return;
-
-	std::string items = "";
-	std::string counts = "";
-
-	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
-	{
-		MYSQL_ROW row;
-		while ((row = msg->Get()->FetchRow()) != nullptr)
-		{
-			items = row[0] ? row[0] : "";
-			counts = row[1] ? row[1] : "";
-		}
-	}
-
-	uint32_t item = 0;
-	uint32_t count = 0;
-
-	str_to_number(item, items.c_str());
-	str_to_number(count, counts.c_str());
-	ItemSystem::AutoGiveItemEcs(character, item, count);
-
-	DBManager::instance().Query("UPDATE daily_reward_status SET reward = CASE WHEN reward = 0 THEN '1' WHEN reward = 1 THEN '2' WHEN reward = 2 THEN '3' WHEN reward = 3 THEN '4' WHEN reward = 4 THEN '5' WHEN reward = 5 THEN '6' WHEN reward = 6 THEN '0' END, total_rewards = total_rewards +1, time = (NOW() + interval 1 day) WHERE pid = %u", ecs::PlayerRuntime::GetPlayerID(character));
-}
-
-static void DailyRewardGetCallback(SQLMsg* msg, entt::entity character)
-{
-	if (!ecs::PlayerRuntime::IsValid(character))
-		return;
-
-	std::string rewards = "";
-	bool reward = false;
-
-	if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
-	{
-		MYSQL_ROW row;
-		while ((row = msg->Get()->FetchRow()) != nullptr)
-			rewards = row[0] ? row[0] : "";
-
-		reward = true;
-	}
-
-	if (!reward)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 715, "");
-#endif
-		return;
-	}
 
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
-	// HWID limit: 1 gep / nap
-	if (!DailyReward_CheckHWIDLimit(character))
-	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Napi 1 jutalom jar. // You have already collected the reward.");
-		return;
-	}
+	const LPDESC desc = ecs::PlayerRuntime::GetDesc(character);
+	DailyReward::Claim(character, MakeDailyRewardHWKey(character), desc ? desc->GetAccountTable().id : 0);
+#else
+	DailyReward::Claim(character, std::string(), 0);
 #endif
-
-	DBManager::instance().FuncQueryPrepared(std::bind(&DailyRewardItemsGivenCallback, std::placeholders::_1, character),
-		"SELECT items, count from player.daily_reward_items where reward = ? ORDER BY RAND() limit 1", { SqlParam::Text(rewards) });
-}
-
-ACMD(do_daily_reward_get_reward){
-	if (!ecs::PlayerRuntime::IsValid(character))
-		return;
-
-	DBManager::instance().FuncQuery(std::bind(&DailyRewardGetCallback, std::placeholders::_1, character),
-		"SELECT reward from player.daily_reward_status where (NOW() > time) and pid = %u", (ecs::PlayerRuntime::GetPlayerID(character)));
 }
 ACMD(do_user_horse_back)
 {

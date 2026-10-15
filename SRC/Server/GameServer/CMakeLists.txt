@@ -95,6 +95,19 @@ if(WIN32)
 endif()
 add_test(NAME guild_member_lifecycle COMMAND GuildMemberLifecycleTests)
 
+# The daily reward's DB chains over a scripted database that runs the queries
+# in order, like the async worker: claims sent at once, one machine with two
+# characters, a claim taken by another channel, the gift window reload.
+add_executable(DailyRewardTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/DailyRewardTests.cpp
+    command/daily_reward.cpp
+)
+target_link_libraries(DailyRewardTests PRIVATE SERVER EnTT::EnTT)
+if(WIN32)
+    target_link_libraries(DailyRewardTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME daily_reward COMMAND DailyRewardTests)
+
 # The SQL layer's prepared result path (StorePreparedResult) over a scripted
 # double of the MySQL statement API: whole cells, NULLs, truncated values.
 add_executable(AsyncSqlPreparedTests EXCLUDE_FROM_ALL
