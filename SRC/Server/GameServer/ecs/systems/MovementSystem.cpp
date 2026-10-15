@@ -1433,10 +1433,12 @@ void StartRecoveryEvent(entt::entity e)
         seconds = mob ? std::max<int>(1, mob->bRegenCycle) : 1;
     }
 
+    // Single-entity insert, as in WriteDestination: emplace's post-callback
+    // get would read a component an observer removed.
     if (!g_registry.all_of<ecs::LegacyCharEvents>(e))
-        g_registry.emplace<ecs::LegacyCharEvents>(e);
+        g_registry.insert<ecs::LegacyCharEvents>(&e, &e + 1);
     // Construction observers may remove the slot, retire the entity or start
-    // another timer. Do not retain emplace's reference across those callbacks.
+    // another timer. Reacquire the slot after those callbacks.
     if (!HasRecoveryCharacter(e)) return;
     auto* events = g_registry.try_get<ecs::LegacyCharEvents>(e);
     if (!events || events->recovery || CombatSystem::IsDead(e) || CombatSystem::IsStun(e))

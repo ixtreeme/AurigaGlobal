@@ -2468,10 +2468,12 @@ void StartDespawnEvent(entt::entity character, DespawnSlot slot, TEVENTFUNC call
 {
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, character)) return;
     if (const auto* current = FindDespawnSlot(character, slot); current && *current) return;
+    // Single-entity insert publishes construction without emplace's
+    // post-callback get, which would read a component an observer removed.
     if (!g_registry.all_of<ecs::LegacyCharEvents>(character))
-        g_registry.emplace<ecs::LegacyCharEvents>(character);
+        g_registry.insert<ecs::LegacyCharEvents>(&character, &character + 1);
     // Construction observers may retire the entity, remove the component or
-    // start a timer. Reacquire rather than using emplace's returned reference.
+    // start a timer. Reacquire the slot rather than trusting the insert.
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, character)) return;
     auto* current = FindDespawnSlot(character, slot);
     if (!current || *current) return;
