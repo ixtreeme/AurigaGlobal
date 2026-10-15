@@ -108,6 +108,20 @@ if(WIN32)
 endif()
 add_test(NAME login_db_link COMMAND LoginDbLinkTests)
 
+# The login server's account authentication from the raw LOGIN3 bytes, over a
+# recording session and account database.
+add_executable(LoginAuthTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/LoginAuthTests.cpp
+    ../LoginServer/login_auth.cpp
+    ../LoginServer/login_hwid.cpp
+    ../LoginServer/login_limiter.cpp
+)
+target_link_libraries(LoginAuthTests PRIVATE SERVER S_Core)
+if(WIN32)
+    target_link_libraries(LoginAuthTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME login_auth COMMAND LoginAuthTests)
+
 # Core byte buffers under the asio session patterns: an output buffer that is
 # rarely drained to empty, a reader left with partial packets, growth.
 add_executable(BufferTests EXCLUDE_FROM_ALL

@@ -39,6 +39,14 @@ namespace
 
 		return true;
 	}
+
+	// The fixed-size strings of LOGIN3 are client bytes; only a terminated
+	// one may be read as a C string.
+	template <size_t N>
+	bool Terminated(const char (&field)[N])
+	{
+		return std::memchr(field, '\0', N) != nullptr;
+	}
 }
 
 LoginAuth::LoginAuth() = default;
@@ -67,6 +75,18 @@ void LoginAuth::Process()
 
 void LoginAuth::RequestLogin(LoginSession* session, const LoginCGLogin3* packet)
 {
+	// A real client terminates every field; anything else is rejected before
+	// login, password or hwid is read past its array.
+	if (!Terminated(packet->login) || !Terminated(packet->passwd)
+#ifdef ENABLE_HWID
+		|| !Terminated(packet->hwid)
+#endif
+		)
+	{
+		session->SendLoginFailure("NOID");
+		return;
+	}
+
 	std::string login(packet->login);
 
 	for (char& c : login)
