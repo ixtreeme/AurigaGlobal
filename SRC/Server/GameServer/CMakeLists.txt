@@ -95,6 +95,17 @@ if(WIN32)
 endif()
 add_test(NAME guild_member_lifecycle COMMAND GuildMemberLifecycleTests)
 
+# The SQL layer's prepared result path (StorePreparedResult) over a scripted
+# double of the MySQL statement API: whole cells, NULLs, truncated values.
+add_executable(AsyncSqlPreparedTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlPreparedTests.cpp
+)
+target_link_libraries(AsyncSqlPreparedTests PRIVATE SERVER S_SQL)
+if(WIN32)
+    target_link_libraries(AsyncSqlPreparedTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME async_sql_prepared COMMAND AsyncSqlPreparedTests)
+
 add_executable(MarriageLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MarriageLifecycleTests.cpp
     social/marriage.cpp

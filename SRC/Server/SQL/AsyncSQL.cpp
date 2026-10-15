@@ -1,6 +1,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include <print>
 #include <mysql/mysql.h>
 
@@ -53,6 +54,35 @@ namespace
 			default:
 				return false;
 		}
+	}
+
+	// First read of a prepared result cell. A longer value is reported as
+	// truncated with its full length and read again whole.
+	constexpr size_t PREPARED_CELL_CAPACITY = 256;
+
+	// Reads one column of the current row whole, after mysql_stmt_fetch
+	// reported it longer than its bound buffer.
+	bool FetchWholeColumn(MYSQL_STMT * stmt, unsigned int column, unsigned long length, std::string & out)
+	{
+		out.assign(length, '\0');
+
+		MYSQL_BIND bind;
+		memset(&bind, 0, sizeof(bind));
+
+		unsigned long fetched = 0;
+		my_bool isNull = 0;
+
+		bind.buffer_type = MYSQL_TYPE_STRING;
+		bind.buffer = out.data();
+		bind.buffer_length = length;
+		bind.length = &fetched;
+		bind.is_null = &isNull;
+
+		if (mysql_stmt_fetch_column(stmt, &bind, column, 0))
+			return false;
+
+		out.resize(fetched < length ? fetched : length);
+		return true;
 	}
 }
 
@@ -548,7 +578,6 @@ bool CAsyncSQL::StorePreparedResult(SQLMsg * p, MYSQL_STMT * stmt, MYSQL_RES * m
 	}
 
 	const size_t columnCount = mysql_num_fields(meta);
-	MYSQL_FIELD * fields = mysql_fetch_fields(meta);
 
 	std::vector<MYSQL_BIND> binds(columnCount);
 	std::vector<my_bool> isNull(columnCount, 0);
@@ -559,16 +588,17 @@ bool CAsyncSQL::StorePreparedResult(SQLMsg * p, MYSQL_STMT * stmt, MYSQL_RES * m
 		memset(binds.data(), 0, sizeof(MYSQL_BIND) * columnCount);
 
 	// Fetch every column as string, matching the text protocol's
-	// mysql_fetch_row() representation.
+	// mysql_fetch_row() representation. MYSQL_FIELD::max_length is only
+	// filled in when STMT_ATTR_UPDATE_MAX_LENGTH is set, so it cannot size
+	// the buffers: they start at a fixed size and a longer value is read
+	// again whole below.
 	for (size_t i = 0; i < columnCount; ++i)
 	{
-		const size_t capacity = static_cast<size_t>(fields[i].max_length) + 1;
-
-		buffers[i].resize(capacity);
+		buffers[i].resize(PREPARED_CELL_CAPACITY);
 
 		binds[i].buffer_type = MYSQL_TYPE_STRING;
 		binds[i].buffer = buffers[i].data();
-		binds[i].buffer_length = static_cast<unsigned long>(capacity);
+		binds[i].buffer_length = static_cast<unsigned long>(PREPARED_CELL_CAPACITY);
 		binds[i].length = &lengths[i];
 		binds[i].is_null = &isNull[i];
 	}
@@ -595,12 +625,17 @@ bool CAsyncSQL::StorePreparedResult(SQLMsg * p, MYSQL_STMT * stmt, MYSQL_RES * m
 			if (isNull[i])
 				continue;
 
-			unsigned long cellLength = lengths[i];
+			if (lengths[i] <= buffers[i].size())
+				pRes->preparedCells.emplace_back(buffers[i].data(), lengths[i]);
+			else if (!FetchWholeColumn(stmt, static_cast<unsigned int>(i), lengths[i], pRes->preparedCells.emplace_back()))
+			{
+				p->uiSQLErrno = mysql_stmt_errno(stmt);
+				LOG_ERROR("AsyncSQL: mysql_stmt_fetch_column failed: {} (query: {})", mysql_stmt_error(stmt), p->stQuery.c_str());
+				delete pRes;
+				mysql_stmt_free_result(stmt);
+				return false;
+			}
 
-			if (cellLength > buffers[i].size())
-				cellLength = static_cast<unsigned long>(buffers[i].size());
-
-			pRes->preparedCells.emplace_back(buffers[i].data(), cellLength);
 			row[i] = pRes->preparedCells.back().data();
 		}
 
