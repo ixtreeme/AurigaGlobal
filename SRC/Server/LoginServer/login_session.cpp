@@ -69,8 +69,12 @@ void LoginSession::ProcessPackets()
 
 	char* data = const_cast<char*>(static_cast<const char*>(buffer_read_peek(m_lpInputBuffer)));
 
-	if (m_cipher.activated())
-		m_cipher.Decrypt(data, total);
+	// Only what arrived since the last pass is still ciphertext. Bytes that
+	// were already buffered when the cipher activated were sent before the
+	// client could encrypt, so they count as plaintext too.
+	if (m_cipher.activated() && total > m_plainInput)
+		m_cipher.Decrypt(data + m_plainInput, total - m_plainInput);
+	m_plainInput = total;
 
 	int offset = 0;
 
@@ -114,6 +118,7 @@ void LoginSession::ProcessPackets()
 	}
 
 	buffer_read_proceed(m_lpInputBuffer, offset);
+	m_plainInput -= offset;
 }
 
 int LoginSession::PacketSize(const uint8_t* data, int) const

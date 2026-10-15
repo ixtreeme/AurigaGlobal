@@ -58,6 +58,9 @@ void DESC::Initialize()
 	m_iMinInputBufferLen = 0;
 
 	m_dwHandshake = 0;
+#ifdef _IMPROVED_PACKET_ENCRYPTION_
+	m_plainInput = 0;
+#endif
 	m_dwHandshakeSentTime = 0;
 	m_iHandshakeRetry = 0;
 	m_dwClientTime = 0;
@@ -265,9 +268,14 @@ int DESC::ProcessInput()
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 	else
 	{
-		if (cipher_.activated()) {
-			cipher_.Decrypt(const_cast<void*>(buffer_read_peek(m_lpInputBuffer)), (size_t)buffer_size(m_lpInputBuffer));
-		}
+		// Only what arrived since the last pass is still ciphertext. Bytes
+		// that were already buffered when the cipher activated were sent
+		// before the client could encrypt, so they count as plaintext too.
+		const int total = static_cast<int>(buffer_size(m_lpInputBuffer));
+
+		if (cipher_.activated() && total > m_plainInput)
+			cipher_.Decrypt(static_cast<char*>(const_cast<void*>(buffer_read_peek(m_lpInputBuffer))) + m_plainInput,
+				static_cast<size_t>(total - m_plainInput));
 
 		int iBytesProceed = 0;
 
@@ -278,6 +286,10 @@ int DESC::ProcessInput()
 		}
 
 		buffer_read_proceed(m_lpInputBuffer, iBytesProceed);
+
+		// What is left is a partial packet, already plaintext. A phase
+		// change may have reset or replaced the buffer meanwhile.
+		m_plainInput = m_lpInputBuffer ? static_cast<int>(buffer_size(m_lpInputBuffer)) : 0;
 	}
 #else
 	else if (!m_bEncrypted)

@@ -279,6 +279,11 @@ class DESC : public PeerSession
 
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 		Cipher cipher_;
+
+		// Bytes at the front of the input buffer that are already plaintext:
+		// a partial packet left for the next read was decrypted with its
+		// stream position and must not be decrypted again.
+		int			m_plainInput { 0 };
 #else
 		// Obsolete encryption stuff here
 		bool			m_bEncrypted;
