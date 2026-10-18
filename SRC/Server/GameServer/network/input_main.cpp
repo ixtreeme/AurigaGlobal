@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/packet_string.h>
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
@@ -222,6 +223,12 @@ int OfflineshopPacketCreateNewShop(entt::entity ch, const char* data, int iBuffe
 	data = Decode(pack, data, &iExtra, &iBufferLeft);
 
 	offlineshop::TShopInfo& rShopInfo = pack->shop;
+	if (!packet_string::IsTerminated(rShopInfo.szName))
+	{
+		if (auto* desc = ecs::PlayerRuntime::GetDesc(ch))
+			desc->SetPhase(PHASE_CLOSE);
+		return -1;
+	}
 
 	//fix flooding
 	if (rShopInfo.dwCount > 500 || rShopInfo.dwCount == 0) {
@@ -264,6 +271,12 @@ int OfflineshopPacketChangeShopName(entt::entity ch, const char* data, int iBuff
 
 	int iExtra=0;
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
+	if (!packet_string::IsTerminated(pack->szName))
+	{
+		if (auto* desc = ecs::PlayerRuntime::GetDesc(ch))
+			desc->SetPhase(PHASE_CLOSE);
+		return -1;
+	}
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
 	if(!rManager.RecvShopChangeNameClientPacket(ch, pack->szName))

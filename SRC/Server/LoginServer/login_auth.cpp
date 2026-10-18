@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <random>
+#include <openssl/rand.h>
 
 namespace
 {
@@ -49,7 +49,10 @@ namespace
 	}
 }
 
-LoginAuth::LoginAuth() = default;
+LoginAuth::LoginAuth(RandomBytes randomBytes)
+	: m_randomBytes(randomBytes ? randomBytes : &RAND_bytes)
+{
+}
 
 LoginAuth::~LoginAuth() = default;
 
@@ -61,15 +64,22 @@ bool LoginAuth::Init(const LoginConfig& config)
 		return false;
 
 #ifdef ENABLE_HWID
-	if (m_db.ConnectDirect(config))
-		m_hwid.Initialize(m_db);
+	if (!m_db.ConnectDirect(config) || !m_hwid.Initialize(m_db))
+		return false;
 #endif
 
 	return true;
 }
 
-void LoginAuth::Process()
+void LoginAuth::Process(std::chrono::steady_clock::time_point now)
 {
+	for (auto it = m_attempts.begin(); it != m_attempts.end(); )
+	{
+		auto attempt = it->second;
+		++it;
+		if (now >= attempt->deadline)
+			FailLogin(attempt->session, attempt->login, "SHUTDOWN");
+	}
 	m_db.Process();
 }
 
@@ -124,6 +134,9 @@ void LoginAuth::RequestLogin(LoginSession* session, const LoginCGLogin3* packet)
 	m_pendingLogins.insert(login);
 	session->BeginLogin(login);
 	session->BeginDbQuery();
+	const auto attempt = std::make_shared<Attempt>(Attempt {
+		session, login, std::chrono::steady_clock::now() + std::chrono::seconds(10) });
+	m_attempts.emplace(session, attempt);
 
 	LOG_INFO("LoginServer: login request for '{}'", login);
 
@@ -147,17 +160,29 @@ void LoginAuth::RequestLogin(LoginSession* session, const LoginCGLogin3* packet)
 
 	m_db.Query(query,
 		{ SqlParam::Text(passwd), SqlParam::Text(login) },
-		[this, session, login, request](SQLMsg* msg) { OnLoginResult(session, login, msg, request); });
+		[this, ticket = std::weak_ptr<Attempt>(attempt), request](SQLMsg* msg) {
+			if (const auto current = ticket.lock())
+				OnLoginResult(current->session, current->login, msg, request);
+		});
 }
 
 void LoginAuth::OnSessionClosed(LoginSession* session)
 {
+	const auto pending = m_attempts.find(session);
+	if (pending != m_attempts.end())
+	{
+		m_pendingLogins.erase(pending->second->login);
+		m_attempts.erase(pending);
+		session->EndDbQuery();
+	}
 	std::erase_if(m_logins, [session](const auto& entry) { return entry.second == session; });
 	session->CompleteLogin(false);
 }
 
 void LoginAuth::FailLogin(LoginSession* session, const std::string& login, const char* status)
 {
+	if (!m_attempts.erase(session))
+		return;
 	m_pendingLogins.erase(login);
 	session->EndDbQuery();
 	session->CompleteLogin(false);
@@ -176,6 +201,7 @@ void LoginAuth::OnRegistrationResult(LoginSession* session, const std::string& l
 	m_pendingLogins.erase(login);
 	session->EndDbQuery();
 	session->CompleteLogin(true);
+	m_attempts.erase(session);
 	m_logins[login] = session;
 	if (m_limiter)
 		m_limiter->ReportLoginResult(session->GetHost(), login, true);
@@ -191,7 +217,12 @@ void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, S
 		return;
 	}
 
-	SQLResult* result = msg ? msg->Get() : nullptr;
+	if (!msg || msg->uiSQLErrno)
+	{
+		FailLogin(session, login, "SHUTDOWN");
+		return;
+	}
+	SQLResult* result = msg->Get();
 
 	if (!result || result->uiNumRows == 0)
 	{
@@ -281,6 +312,11 @@ void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, S
 #endif
 
 	const uint32_t loginKey = GenerateLoginKey();
+	if (!loginKey)
+	{
+		FailLogin(session, login, "SHUTDOWN");
+		return;
+	}
 
 	LoginGDAuthLogin registration {};
 	registration.dwID = accountId;
@@ -295,16 +331,34 @@ void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, S
 	registration.bLanguage = language;
 #endif
 	std::memcpy(registration.iPremiumTimes, premiumTimes, sizeof(registration.iPremiumTimes));
+	const auto attempt = m_attempts.at(session);
+	attempt->deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
 
 	if (!m_link || !m_link->SendAuthLogin(registration,
-		[this, session, login, loginKey](bool success) { OnRegistrationResult(session, login, loginKey, success); }))
+		[this, ticket = std::weak_ptr<Attempt>(attempt), loginKey](bool success) {
+			if (const auto current = ticket.lock())
+				OnRegistrationResult(current->session, current->login, loginKey, success);
+		}))
 		FailLogin(session, login, "SHUTDOWN");
 }
 
 uint32_t LoginAuth::GenerateLoginKey()
 {
-	static std::mt19937 rng(std::random_device {}());
-	static std::uniform_int_distribution<uint32_t> dist(1, 0x7fffffff);
-
-	return dist(rng);
+	// Retain the existing nonzero 31-bit wire range. Masking a uniform
+	// 32-bit sample and rejecting zero keeps every permitted key equiprobable.
+	// A broken provider returning only zeros must not stall the game thread.
+	for (int attempt = 0; attempt < 8; ++attempt)
+	{
+		uint32_t key = 0;
+		if (m_randomBytes(reinterpret_cast<unsigned char*>(&key), sizeof(key)) != 1)
+		{
+			LOG_ERROR("LoginServer: cryptographic login key generation failed");
+			return 0;
+		}
+		key &= 0x7fffffff;
+		if (key)
+			return key;
+	}
+	LOG_ERROR("LoginServer: random provider did not produce a nonzero login key");
+	return 0;
 }

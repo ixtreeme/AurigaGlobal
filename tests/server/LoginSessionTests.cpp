@@ -67,7 +67,7 @@ LoginCGLogin3 Login3(const char* login, const char* passwd)
 // thread once the TLS stream is up): handshake echo, HANDSHAKE_COMPLETED, then
 // LOGIN3 split as given - or, with retiredHeader, the old key agreement
 // header in place of the echo, which the session must answer by closing.
-void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retiredHeader = false)
+void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retiredHeader = false, int idleStage = 0)
 {
     queries.clear();
     auto context = auriga::net::TlsServerContext::FromPem(pem.cert, pem.key);
@@ -78,6 +78,7 @@ void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retir
     auto* session = new LoginSession(0x7151, &auth);
 
     std::atomic<bool> finished { false }, mayClose { false };
+    std::atomic<bool> readyForExpiry { false };
     std::exception_ptr failure;
     std::thread client([&] {
         try {
@@ -109,6 +110,8 @@ void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retir
                 std::size_t got = 0;
                 const auto ec = Within(io, [&](Done done) { stream.async_read_some(boost::asio::buffer(extra), Transfer(done, &got)); });
                 Check(ec && got == 0, "the session answered a retired key agreement header");
+            } else if (idleStage == 1) {
+                readyForExpiry = true; // TLS is ready, no application handshake.
             } else {
                 LoginCGHandshake echo {};
                 echo.bHeader = HEADER_CG_HANDSHAKE;
@@ -121,6 +124,10 @@ void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retir
                     "no completion after the handshake");
                 Check(completed.bHeader == HEADER_GC_HANDSHAKE_COMPLETED, "the handshake was not completed");
 
+                if (idleStage == 2) {
+                    readyForExpiry = true; // Handshake complete, no LOGIN3.
+                } else {
+
                 const auto login = Login3("tester", "secret");
                 const auto* bytes = reinterpret_cast<const char*>(&login);
                 size_t sent = 0;
@@ -130,6 +137,7 @@ void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retir
                     std::this_thread::sleep_for(60ms);
                 }
                 send(bytes + sent, sizeof(login) - sent);
+                }
             }
             const auto until = std::chrono::steady_clock::now() + 5s;
             while (!mayClose && std::chrono::steady_clock::now() < until)
@@ -145,7 +153,18 @@ void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retir
     tcp::socket accepted(auriga::net::Io());
     acceptor.accept(accepted);
     Check(session->Accept(std::move(accepted), *context), "the session did not accept the connection");
-    PumpUntil([&] { return !queries.empty() || session->IsClosed() || finished.load(); });
+    if (idleStage) {
+        Check(PumpUntil([&] { return readyForExpiry.load() || finished.load(); }), "idle client did not reach its phase");
+        Check(readyForExpiry, "idle client failed before its deadline");
+        if (idleStage == 2) {
+            session->CheckTimeouts(std::chrono::steady_clock::now() + 21s);
+            Check(!session->IsClosed(), "LOGIN3 idle deadline did not reset after handshake");
+        }
+        session->CheckTimeouts(std::chrono::steady_clock::now() + (idleStage == 1 ? 21s : 31s));
+        Check(session->IsClosed() && !session->HasPendingDbWork(), "idle protocol phase did not close");
+    } else {
+        PumpUntil([&] { return !queries.empty() || session->IsClosed() || finished.load(); });
+    }
     mayClose = true;
     PumpUntil([&] { return finished.load(); });
     client.join();
@@ -154,7 +173,7 @@ void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retir
 
     if (retiredHeader) {
         Check(queries.empty() && session->IsClosed(), "the session accepted a retired key agreement header");
-    } else {
+    } else if (!idleStage) {
         Check(session->IsTls() && session->IsTlsReady(), "the session was not a ready TLS session");
         Check(queries.size() == 1 && queries[0].params.size() == 2 &&
             queries[0].params[0].bytes == "secret" && queries[0].params[1].bytes == "tester",
@@ -162,8 +181,7 @@ void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retir
     }
     Check(PumpUntil([&] { return session->IsClosed() && !session->HasPendingIoWork(); }),
         "the session did not wind down after the client left");
-    if (!retiredHeader)
-        session->EndDbQuery();
+    Check(!session->HasPendingDbWork(), "closed session retained a query reference");
     delete session;
 }
 }
@@ -192,6 +210,8 @@ int main()
         Scenario(pem, {});                      // LOGIN3 whole
         Scenario(pem, {1, 40, 2, 30});          // LOGIN3 in five pieces
         Scenario(pem, {}, true);                // the retired key agreement header
+        Scenario(pem, {}, false, 1);            // TLS ready, no application handshake
+        Scenario(pem, {}, false, 2);            // Handshake complete, no LOGIN3
     } catch (const std::exception& error) {
         std::cerr << "login session test failed: " << error.what() << '\n';
         result = 1;

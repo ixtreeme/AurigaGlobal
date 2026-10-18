@@ -7,6 +7,8 @@
 #include "Main.h"
 #include "QID.h"
 #include "Cache.h"
+#include "login_validation.h"
+#include <Core/packet_string.h>
 
 extern std::string g_stLocale;
 extern bool CreatePlayerTableFromRes(MYSQL_RES * res, TPlayerTable * pkTab);
@@ -78,9 +80,15 @@ bool CClientManager::FindLogonAccount(const char * c_pszLogin)
 
 void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPacketGDLoginByKey * p)
 {
+	if (!packet_string::IsTerminated(p->szLogin) || !packet_string::IsTerminated(p->szIP))
+	{
+		pkPeer->EncodeReturn(HEADER_DG_LOGIN_NOT_EXIST, dwHandle);
+		return;
+	}
+
 	CLoginData * pkLoginData = GetLoginData(p->dwLoginKey);
 	char szLogin[LOGIN_MAX_LEN + 1];
-	trim_and_lower(p->szLogin, szLogin, sizeof(szLogin));
+	trim_and_lower(p->szLogin, sizeof(p->szLogin), szLogin, sizeof(szLogin));
 
 	if (!pkLoginData)
 	{
@@ -90,6 +98,12 @@ void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPack
 	}
 
 	TAccountTable & r = pkLoginData->GetAccountRef();
+	if (!ValidateLoginByKey(*p, r, pkLoginData->GetKey(), pkLoginData->GetClientKey()))
+	{
+		LOG_INFO("LOGIN_BY_KEY credentials differ for input {}", szLogin);
+		pkPeer->EncodeReturn(HEADER_DG_LOGIN_NOT_EXIST, dwHandle);
+		return;
+	}
 
 	if (FindLogonAccount(r.login))
 	{
@@ -98,23 +112,6 @@ void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPack
 		strlcpy(ptog.szLogin, szLogin, sizeof(ptog.szLogin));
 		pkPeer->EncodeHeader(HEADER_DG_LOGIN_ALREADY, dwHandle, sizeof(TPacketDGLoginAlready));
 		pkPeer->Encode(&ptog, sizeof(TPacketDGLoginAlready));
-		return;
-	}
-
-	if (r.login == szLogin)
-	{
-		LOG_INFO("LOGIN_BY_KEY login differ {} {} input {}", r.login, p->dwLoginKey, szLogin);
-		pkPeer->EncodeReturn(HEADER_DG_LOGIN_NOT_EXIST, dwHandle);
-		return;
-	}
-
-	if (memcmp(pkLoginData->GetClientKey(), p->adwClientKey, sizeof(uint32_t) * 4) != 0)
-	{
-		const uint32_t * pdwClientKey = pkLoginData->GetClientKey();
-
-		LOG_INFO("LOGIN_BY_KEY client key differ {} {} {} {} {}, {} {} {} {}", r.login, p->adwClientKey[0], p->adwClientKey[1], p->adwClientKey[2], p->adwClientKey[3], pdwClientKey[0], pdwClientKey[1], pdwClientKey[2], pdwClientKey[3]);
-
-		pkPeer->EncodeReturn(HEADER_DG_LOGIN_NOT_EXIST, dwHandle);
 		return;
 	}
 

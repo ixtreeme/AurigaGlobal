@@ -91,6 +91,7 @@ public:
 
 	bool Accept(auriga::net::tcp::socket&& sock, auriga::net::TlsServerContext& tls);
 	bool IsClosed() const { return m_closed; }
+	void CheckTimeouts(std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
 
 	const std::string& GetLogin() const { return m_login; }
 	bool CanStartLogin() const { return !m_closed && m_authState == AuthState::Ready; }
@@ -98,6 +99,7 @@ public:
 	void CompleteLogin(bool success)
 	{
 		m_authState = success ? AuthState::Authenticated : AuthState::Ready;
+		m_phaseDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
 		if (!success)
 			m_login.clear();
 	}
@@ -105,8 +107,7 @@ public:
 	const std::string& GetHost() const { return m_host; }
 	void SetHost(const std::string& host) { m_host = host; }
 
-	// Account lookups and Database registrations in flight; the session
-	// cannot be reaped while either result callback still references it.
+	// Active auth attempts. Closing/expiry detaches their weak callbacks.
 	void BeginDbQuery() { ++m_pendingDbQueries; }
 	void EndDbQuery() { --m_pendingDbQueries; }
 	bool HasPendingDbWork() const { return m_pendingDbQueries > 0; }
@@ -154,4 +155,6 @@ private:
 	std::string	m_login;
 	std::string	m_host;
 	int		m_pendingDbQueries { 0 };
+	std::chrono::steady_clock::time_point m_phaseDeadline {
+		std::chrono::steady_clock::now() + std::chrono::seconds(20) };
 };

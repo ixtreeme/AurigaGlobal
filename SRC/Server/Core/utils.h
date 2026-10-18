@@ -29,6 +29,7 @@
 
     extern void		parse_token(char * src, char * token, char * value);
     extern void		trim_and_lower(const char * src, char * dest, uint64_t dest_size);
+    extern bool         trim_and_lower(const char * src, uint64_t src_size, char * dest, uint64_t dest_size);
 
 	extern struct timeval* timediff(const struct timeval* a, const struct timeval* b);
 	extern struct timeval* timeadd(struct timeval* a, struct timeval* b);

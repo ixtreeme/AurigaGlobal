@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <atomic>
+#include <thread>
 
 // The production CAsyncSQL::StorePreparedResult, driven through a scripted
 // result set. The statement calls it makes are doubles that behave like the
@@ -37,6 +39,11 @@ struct ScriptedResult
 };
 
 ScriptedResult script;
+bool connectSucceeds = false;
+std::atomic<int> closedConnections { 0 }, timeoutOptions { 0 }, prepareCalls { 0 };
+bool queryConnectionFailure = false;
+bool executeConnectionFailure = false;
+std::atomic<int> executeCalls { 0 };
 
 void Load(Rows rows)
 {
@@ -91,32 +98,39 @@ void gettimeofday(struct timeval* t, struct timezone*) { t->tv_sec = 0; t->tv_us
 
 extern "C" {
 my_ulonglong STDCALL mysql_affected_rows(MYSQL*) { Unexpected("mysql_affected_rows"); }
-void STDCALL mysql_close(MYSQL*) { Unexpected("mysql_close"); }
-unsigned int STDCALL mysql_errno(MYSQL*) { Unexpected("mysql_errno"); }
-const char* STDCALL mysql_error(MYSQL*) { Unexpected("mysql_error"); }
+void STDCALL mysql_close(MYSQL*) { ++closedConnections; }
+unsigned int STDCALL mysql_errno(MYSQL*) { return CR_SERVER_GONE_ERROR; }
+const char* STDCALL mysql_error(MYSQL*) { return "scripted connection failure"; }
 MYSQL_ROW STDCALL mysql_fetch_row(MYSQL_RES*) { Unexpected("mysql_fetch_row"); }
 void STDCALL mysql_free_result(MYSQL_RES*) { Unexpected("mysql_free_result"); }
-MYSQL* STDCALL mysql_init(MYSQL*) { Unexpected("mysql_init"); }
+MYSQL* STDCALL mysql_init(MYSQL* handle) { return handle; }
 my_ulonglong STDCALL mysql_insert_id(MYSQL*) { Unexpected("mysql_insert_id"); }
 int STDCALL mysql_next_result(MYSQL*) { Unexpected("mysql_next_result"); }
 my_ulonglong STDCALL mysql_num_rows(MYSQL_RES*) { Unexpected("mysql_num_rows"); }
-int STDCALL mysql_options(MYSQL*, enum mysql_option, const void*) { Unexpected("mysql_options"); }
-MYSQL* STDCALL mysql_real_connect(MYSQL*, const char*, const char*, const char*, const char*, unsigned int, const char*, unsigned long) { Unexpected("mysql_real_connect"); }
+int STDCALL mysql_options(MYSQL*, enum mysql_option option, const void* value) {
+    if ((option == MYSQL_OPT_CONNECT_TIMEOUT || option == MYSQL_OPT_READ_TIMEOUT || option == MYSQL_OPT_WRITE_TIMEOUT) &&
+        *static_cast<const unsigned int*>(value) == 5) ++timeoutOptions;
+    return 0;
+}
+MYSQL* STDCALL mysql_real_connect(MYSQL* handle, const char*, const char*, const char*, const char*, unsigned int, const char*, unsigned long) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    return connectSucceeds ? handle : nullptr;
+}
 unsigned long STDCALL mysql_real_escape_string(MYSQL*, char*, const char*, unsigned long) { Unexpected("mysql_real_escape_string"); }
 int STDCALL mysql_real_query(MYSQL*, const char*, unsigned long) { Unexpected("mysql_real_query"); }
 int STDCALL mysql_set_character_set(MYSQL*, const char*) { Unexpected("mysql_set_character_set"); }
 MYSQL_RES* STDCALL mysql_store_result(MYSQL*) { Unexpected("mysql_store_result"); }
-unsigned long STDCALL mysql_thread_id(MYSQL*) { Unexpected("mysql_thread_id"); }
+unsigned long STDCALL mysql_thread_id(MYSQL*) { return 1; }
 unsigned int STDCALL mysql_thread_safe(void) { Unexpected("mysql_thread_safe"); }
-unsigned long long STDCALL mysql_stmt_affected_rows(MYSQL_STMT*) { Unexpected("mysql_stmt_affected_rows"); }
+unsigned long long STDCALL mysql_stmt_affected_rows(MYSQL_STMT*) { return 1; }
 my_bool STDCALL mysql_stmt_bind_param(MYSQL_STMT*, MYSQL_BIND*) { Unexpected("mysql_stmt_bind_param"); }
-my_bool STDCALL mysql_stmt_close(MYSQL_STMT*) { Unexpected("mysql_stmt_close"); }
-int STDCALL mysql_stmt_execute(MYSQL_STMT*) { Unexpected("mysql_stmt_execute"); }
-MYSQL_STMT* STDCALL mysql_stmt_init(MYSQL*) { Unexpected("mysql_stmt_init"); }
-unsigned long long STDCALL mysql_stmt_insert_id(MYSQL_STMT*) { Unexpected("mysql_stmt_insert_id"); }
-unsigned long STDCALL mysql_stmt_param_count(MYSQL_STMT*) { Unexpected("mysql_stmt_param_count"); }
-int STDCALL mysql_stmt_prepare(MYSQL_STMT*, const char*, unsigned long) { Unexpected("mysql_stmt_prepare"); }
-MYSQL_RES* STDCALL mysql_stmt_result_metadata(MYSQL_STMT*) { Unexpected("mysql_stmt_result_metadata"); }
+my_bool STDCALL mysql_stmt_close(MYSQL_STMT*) { return 0; }
+int STDCALL mysql_stmt_execute(MYSQL_STMT*) { return executeConnectionFailure && ++executeCalls == 1 ? 1 : 0; }
+MYSQL_STMT* STDCALL mysql_stmt_init(MYSQL*) { return reinterpret_cast<MYSQL_STMT*>(&script); }
+unsigned long long STDCALL mysql_stmt_insert_id(MYSQL_STMT*) { return 0; }
+unsigned long STDCALL mysql_stmt_param_count(MYSQL_STMT*) { return 0; }
+int STDCALL mysql_stmt_prepare(MYSQL_STMT*, const char*, unsigned long) { const auto count = ++prepareCalls; return queryConnectionFailure && count == 1 ? 1 : 0; }
+MYSQL_RES* STDCALL mysql_stmt_result_metadata(MYSQL_STMT*) { return nullptr; }
 
 // The statement calls StorePreparedResult makes, scripted.
 int STDCALL mysql_stmt_store_result(MYSQL_STMT*) { return 0; }
@@ -142,7 +156,7 @@ int STDCALL mysql_stmt_fetch_column(MYSQL_STMT*, MYSQL_BIND* bind, unsigned int 
     return 0;
 }
 my_bool STDCALL mysql_stmt_free_result(MYSQL_STMT*) { return 0; }
-unsigned int STDCALL mysql_stmt_errno(MYSQL_STMT*) { return 2051; }
+unsigned int STDCALL mysql_stmt_errno(MYSQL_STMT*) { return executeConnectionFailure ? CR_SERVER_LOST : 2051; }
 const char* STDCALL mysql_stmt_error(MYSQL_STMT*) { return "scripted failure"; }
 }
 
@@ -246,6 +260,49 @@ void EmptyResult()
     PreparedHarness sql;
     Check(sql.Store(msg) && msg.Get() && msg.Get()->uiNumRows == 0 && !msg.Get()->FetchRow(), "no rows, no cells");
 }
+
+void ConnectionStartupAndQueryFailure()
+{
+    for (bool success : {false, true}) {
+        connectSucceeds = success; timeoutOptions = 0;
+        const auto closed = closedConnections.load();
+        {
+            CAsyncSQL sql;
+            Check(sql.GetConnectionState() == CAsyncSQL::ConnectionState::NotStarted, "new SQL connection already ready");
+            sql.SetTimeouts(5);
+            Check(sql.Setup("test", "user", "secret", "account", "ascii"), "worker did not start");
+            Check(!sql.WaitForConnection(std::chrono::milliseconds(1)), "thread startup reported SQL ready");
+            Check(sql.WaitForConnection(std::chrono::seconds(1)) == success, "initial connection outcome lost");
+            Check(sql.GetConnectionState() == (success ? CAsyncSQL::ConnectionState::Ready : CAsyncSQL::ConnectionState::Failed),
+                "wrong SQL startup state");
+            Check(timeoutOptions == 3, "connect/read/write timeouts missing");
+        }
+        Check(closedConnections == closed + 1, "initialized connector leaked on startup/shutdown");
+    }
+
+    for (bool duringExecution : {false, true}) {
+    CAsyncSQL sql;
+    sql.SetRetryConnectionErrors(false);
+    Check(sql.Setup("test", "user", "secret", "account", "ascii") && sql.WaitForConnection(std::chrono::seconds(1)), "query test not connected");
+    queryConnectionFailure = !duringExecution; executeConnectionFailure = duringExecution;
+    prepareCalls = 0; executeCalls = 0;
+    sql.ReturnQueryPrepared("same-query", {}, nullptr);
+    sql.ReturnQueryPrepared("same-query", {}, nullptr);
+    std::vector<std::unique_ptr<SQLMsg>> results;
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (results.size() < 2 && std::chrono::steady_clock::now() < deadline) {
+        SQLMsg* msg = nullptr;
+        if (sql.PopResult(&msg)) results.emplace_back(msg);
+        else std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    sql.Quit();
+    queryConnectionFailure = false; executeConnectionFailure = false;
+    Check(results.size() == 2, "connection failure left the worker queue stuck");
+    Check(results[0]->uiSQLErrno == (duringExecution ? CR_SERVER_LOST : CR_SERVER_GONE_ERROR) && results[1]->uiSQLErrno == 0 && results[1]->Get()->uiAffectedRows == 1,
+        "failed query did not complete before the following successful query");
+    Check(prepareCalls == 2, "lost connection retained a stale prepared handle");
+    }
+}
 }
 
 int main()
@@ -257,6 +314,7 @@ int main()
         RowsStayValidAcrossManyRows();
         FailedSecondReadIsAnError();
         EmptyResult();
+        ConnectionStartupAndQueryFailure();
     } catch (const std::exception& error) {
         std::cerr << "FAILED: " << error.what() << "\n";
         return 1;

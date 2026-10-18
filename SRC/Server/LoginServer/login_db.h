@@ -4,6 +4,8 @@
 
 #include <functional>
 #include <string>
+#include <memory>
+#include <unordered_map>
 
 struct LoginConfig;
 
@@ -40,4 +42,5 @@ private:
 
 	CAsyncSQL m_sql;
 	CAsyncSQL m_direct;
+	std::unordered_map<PendingQuery*, std::unique_ptr<PendingQuery>> m_pending;
 };

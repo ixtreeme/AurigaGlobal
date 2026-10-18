@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "character_selection.h"
+#include <Core/packet_string.h>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -116,9 +117,14 @@ static bool FN_is_battle_zone(entt::entity ch)
 void CInputLogin::Login(LPDESC d, const char* data)
 {
 	TPacketCGLogin* pinfo = (TPacketCGLogin*)data;
+	if (!packet_string::IsTerminated(pinfo->login) || !packet_string::IsTerminated(pinfo->passwd))
+	{
+		d->SetPhase(PHASE_CLOSE);
+		return;
+	}
 
 	char login[LOGIN_MAX_LEN + 1];
-	trim_and_lower(pinfo->login, login, sizeof(login));
+	trim_and_lower(pinfo->login, sizeof(pinfo->login), login, sizeof(login));
 
 	LOG_INFO("InputLogin::Login : {}", login);
 
@@ -168,9 +174,14 @@ void CInputLogin::Login(LPDESC d, const char* data)
 void CInputLogin::LoginByKey(LPDESC d, const char* data)
 {
 	TPacketCGLogin2* pinfo = (TPacketCGLogin2*)data;
+	if (!packet_string::IsTerminated(pinfo->login))
+	{
+		d->SetPhase(PHASE_CLOSE);
+		return;
+	}
 
 	char login[LOGIN_MAX_LEN + 1];
-	trim_and_lower(pinfo->login, login, sizeof(login));
+	trim_and_lower(pinfo->login, sizeof(pinfo->login), login, sizeof(login));
 
 	if (g_bNoMoreClient)
 	{
@@ -435,6 +446,11 @@ bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_
 void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 {
 	struct command_player_create* pinfo = (struct command_player_create*)data;
+	if (!packet_string::IsTerminated(pinfo->name) || pinfo->index >= PLAYER_PER_ACCOUNT || !d->GetAccountTable().id)
+	{
+		d->SetPhase(PHASE_CLOSE);
+		return;
+	}
 	TPlayerCreatePacket player_create_packet;
 
 	LOG_INFO("PlayerCreate: name {} pos {} job {} shape {}", pinfo->name, pinfo->index, pinfo->job, pinfo->shape);
@@ -498,6 +514,11 @@ void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 void CInputLogin::CharacterDelete(LPDESC d, const char* data)
 {
 	struct command_player_delete* pinfo = (struct command_player_delete*)data;
+	if (!packet_string::IsTerminated(pinfo->private_code))
+	{
+		d->SetPhase(PHASE_CLOSE);
+		return;
+	}
 	const TAccountTable& c_rAccountTable = d->GetAccountTable();
 
 	if (!c_rAccountTable.id)

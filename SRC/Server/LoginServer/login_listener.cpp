@@ -52,7 +52,10 @@ LoginListener::~LoginListener()
 
 	// The engine is stopped before this destructor runs.
 	for (LoginSession* session : m_sessions)
+	{
+		m_auth.OnSessionClosed(session);
 		delete session;
+	}
 
 	m_sessions.clear();
 }
@@ -64,6 +67,7 @@ void LoginListener::Start()
 
 void LoginListener::Collect()
 {
+	m_limiter.Collect();
 	auto it = m_sessions.begin();
 
 	while (it != m_sessions.end())
@@ -72,7 +76,10 @@ void LoginListener::Collect()
 
 		// A TLS peer that never finishes its handshake is dropped here.
 		if (!session->IsClosed())
+		{
 			session->CheckHeartbeat();
+			session->CheckTimeouts();
+		}
 
 		if (session->IsClosed() && !session->HasPendingIoWork() && !session->HasPendingDbWork())
 		{

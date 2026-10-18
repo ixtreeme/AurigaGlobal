@@ -143,6 +143,30 @@ add_executable(PlayerLoadTests EXCLUDE_FROM_ALL
 target_link_libraries(PlayerLoadTests PRIVATE SERVER)
 add_test(NAME player_load COMMAND PlayerLoadTests)
 
+add_executable(LoginByKeyTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/LoginByKeyTests.cpp
+    ../Database/login_validation.cpp
+)
+target_link_libraries(LoginByKeyTests PRIVATE SERVER S_Core)
+add_test(NAME login_by_key COMMAND LoginByKeyTests)
+
+add_executable(PlayerCreateTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PlayerCreateTests.cpp
+    ../Database/player_create.cpp
+)
+target_link_libraries(PlayerCreateTests PRIVATE SERVER S_SQL S_Core)
+if(WIN32)
+    target_link_libraries(PlayerCreateTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME player_create COMMAND PlayerCreateTests)
+
+add_executable(PacketStringTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PacketStringTests.cpp
+    network/packet_validation.cpp
+)
+target_link_libraries(PacketStringTests PRIVATE SERVER S_Core EnTT::EnTT)
+add_test(NAME packet_strings COMMAND PacketStringTests)
+
 # A login session on a loopback socket over TLS: the handshake and LOGIN3,
 # with packets split across reads.
 add_executable(LoginSessionTests EXCLUDE_FROM_ALL

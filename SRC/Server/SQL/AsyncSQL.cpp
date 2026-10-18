@@ -39,6 +39,7 @@ namespace
 			case CR_IPSOCK_ERROR:
 			case CR_UNKNOWN_HOST:
 			case CR_SERVER_GONE_ERROR:
+			case CR_SERVER_LOST:
 			case CR_CONN_HOST_ERROR:
 			case ER_NOT_KEYFILE:
 			case ER_CRASHED_ON_USAGE:
@@ -110,12 +111,15 @@ void CAsyncSQL::Destroy()
 {
 	ClearPrepared();
 
-	if (m_hDB.host)
+	if (m_mysqlInitialized)
 	{
 		LOG_INFO("AsyncSQL: closing mysql connection.");
 		mysql_close(&m_hDB);
 		m_hDB.host = nullptr;
+		m_mysqlInitialized = false;
 	}
+	for (auto* queue : { &m_queue_query, &m_queue_query_copy, &m_queue_result })
+		while (!queue->empty()) { delete queue->front(); queue->pop(); }
 
 	if (m_mtxQuery)
 	{
@@ -136,7 +140,7 @@ void CAsyncSQL::Destroy()
 		::DeleteCriticalSection(m_mtxResult);
 #endif
 		delete m_mtxResult;
-		m_mtxQuery = nullptr;
+		m_mtxResult = nullptr;
 	}
 }
 
@@ -185,10 +189,19 @@ bool CAsyncSQL::QueryLocaleSet()
 
 bool CAsyncSQL::Connect()
 {
+	SetConnectionState(ConnectionState::Connecting);
 	if (nullptr == mysql_init(&m_hDB))
 	{
 		std::print(stderr, "mysql_init failed\n");
+		SetConnectionState(ConnectionState::Failed);
 		return false;
+	}
+	m_mysqlInitialized = true;
+	if (m_timeoutSeconds)
+	{
+		mysql_options(&m_hDB, MYSQL_OPT_CONNECT_TIMEOUT, &m_timeoutSeconds);
+		mysql_options(&m_hDB, MYSQL_OPT_READ_TIMEOUT, &m_timeoutSeconds);
+		mysql_options(&m_hDB, MYSQL_OPT_WRITE_TIMEOUT, &m_timeoutSeconds);
 	}
 
 	//mysql_options(&m_hDB, MYSQL_SET_CHARSET_NAME, m_stLocale.c_str());
@@ -204,6 +217,7 @@ bool CAsyncSQL::Connect()
 	if (!mysql_real_connect(&m_hDB, m_stHost.c_str(), m_stUser.c_str(), m_stPassword.c_str(), m_stDB.c_str(), m_iPort, nullptr, CLIENT_MULTI_STATEMENTS))
 	{
 		std::print(stderr, "mysql_real_connect: %s\n", mysql_error(&m_hDB));
+		SetConnectionState(ConnectionState::Failed);
 		return false;
 	}
 
@@ -216,12 +230,32 @@ bool CAsyncSQL::Connect()
 
 
 	m_ulThreadID = mysql_thread_id(&m_hDB);
+	SetConnectionState(ConnectionState::Ready);
 
 	return true;
 }
 
+void CAsyncSQL::SetConnectionState(ConnectionState state)
+{
+	{
+		std::lock_guard<std::mutex> lock(m_connectionMutex);
+		m_connectionState = state;
+	}
+	m_connectionChanged.notify_all();
+}
+
+bool CAsyncSQL::WaitForConnection(std::chrono::milliseconds timeout)
+{
+	std::unique_lock<std::mutex> lock(m_connectionMutex);
+	m_connectionChanged.wait_for(lock, timeout, [this] {
+		return m_connectionState != ConnectionState::Connecting;
+	});
+	return m_connectionState == ConnectionState::Ready;
+}
+
 bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char * c_pszPassword, const char * c_pszDB, const char * c_pszLocale, bool bNoThread, int iPort)
 {
+	SetConnectionState(ConnectionState::Connecting);
 	m_stHost = c_pszHost;
 	m_stUser = c_pszUser;
 	m_stPassword = c_pszPassword;
@@ -259,7 +293,12 @@ bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char
 			exit(0);
 		}
 
-		pthread_create(&m_hThread, NULL, AsyncSQLThread, this);
+		if (pthread_create(&m_hThread, NULL, AsyncSQLThread, this) != 0)
+		{
+			m_hThread = 0;
+			SetConnectionState(ConnectionState::Failed);
+			return false;
+		}
 #else
 		m_mtxQuery = new CRITICAL_SECTION;
 		m_mtxResult = new CRITICAL_SECTION;
@@ -268,7 +307,9 @@ bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char
 		::InitializeCriticalSection(m_mtxResult);
 
 		m_hThread = (HANDLE)::_beginthreadex(nullptr, 0, AsyncSQLThread, this, 0, nullptr);
-		if (m_hThread == INVALID_HANDLE_VALUE) {
+		if (!m_hThread || m_hThread == INVALID_HANDLE_VALUE) {
+			m_hThread = INVALID_HANDLE_VALUE;
+			SetConnectionState(ConnectionState::Failed);
 			LOG_ERROR("{}: {}", "CAsyncSQL::Setup", strerror(errno));
 			return false;
 		}
@@ -294,6 +335,7 @@ void CAsyncSQL::Quit()
 #else
 	if (m_hThread != INVALID_HANDLE_VALUE) {
 		::WaitForSingleObject(m_hThread, INFINITE);
+		::CloseHandle(m_hThread);
 		m_hThread = INVALID_HANDLE_VALUE;
 	}
 #endif
@@ -301,13 +343,17 @@ void CAsyncSQL::Quit()
 
 SQLMsg * CAsyncSQL::DirectQuery(const char * c_pszQuery)
 {
-	EnsureConnectionReady();
-
 	SQLMsg * p = new SQLMsg;
 
 	p->m_pkSQL = &m_hDB;
 	p->iID = ++m_iMsgCount;
 	p->stQuery = c_pszQuery;
+	if (!EnsureConnectionReady())
+	{
+		p->uiSQLErrno = mysql_errno(&m_hDB);
+		p->StorePrepared(0, 0);
+		return p;
+	}
 
 	if (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()))
 	{
@@ -327,8 +373,6 @@ SQLMsg * CAsyncSQL::DirectQuery(const char * c_pszQuery)
 
 SQLMsg * CAsyncSQL::DirectQueryPrepared(const char * c_pszQuery, const SqlParams & params)
 {
-	EnsureConnectionReady();
-
 	SQLMsg * p = new SQLMsg;
 
 	p->m_pkSQL = &m_hDB;
@@ -398,17 +442,19 @@ void CAsyncSQL::ReturnQuery(const char * c_pszQuery, void * pvUserData)
 	PushQuery(p);
 }
 
-void CAsyncSQL::EnsureConnectionReady()
+bool CAsyncSQL::EnsureConnectionReady()
 {
 	if (m_ulThreadID != mysql_thread_id(&m_hDB))
 	{
 		LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
-		while (!QueryLocaleSet());
+		if (!QueryLocaleSet())
+			return false;
 		m_ulThreadID = mysql_thread_id(&m_hDB);
 
 		// Handles prepared on the previous connection are unusable.
 		ClearPrepared();
 	}
+	return true;
 }
 
 void CAsyncSQL::ClearPrepared()
@@ -463,7 +509,11 @@ MYSQL_STMT * CAsyncSQL::GetOrPrepare(const std::string & sql)
 
 bool CAsyncSQL::TryExecutePrepared(SQLMsg * p)
 {
-	EnsureConnectionReady();
+	if (!EnsureConnectionReady())
+	{
+		p->uiSQLErrno = mysql_errno(&m_hDB);
+		return false;
+	}
 
 	MYSQL_STMT * stmt = GetOrPrepare(p->stQuery);
 
@@ -672,6 +722,8 @@ void CAsyncSQL::PushResult(SQLMsg * p)
 
 bool CAsyncSQL::PopResult(SQLMsg ** pp)
 {
+	if (!m_mtxResult)
+		return false;
 	MUTEX_LOCK(m_mtxResult);
 
 	if (m_queue_result.empty())
@@ -904,7 +956,7 @@ void CAsyncSQL::ChildLoop()
 
 		SQLMsg * p;
 
-		while (count--)
+		while (count-- && (!m_bEnd || m_flushOnQuit))
 		{
 			profiler.Start();
 
@@ -929,7 +981,7 @@ void CAsyncSQL::ChildLoop()
 				}
 			}
 
-			if (!executed && IsConnectionError(p->uiSQLErrno))
+			if (!executed && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
 			{
 				m_sem.Release();
 				LOG_ERROR("AsyncSQL: retrying");
@@ -962,6 +1014,8 @@ void CAsyncSQL::ChildLoop()
 		}
 	}
 
+	if (!m_flushOnQuit)
+		return;
 	SQLMsg * p;
 
 	while (PeekQuery(&p))
@@ -984,7 +1038,7 @@ void CAsyncSQL::ChildLoop()
 			}
 		}
 
-		if (!executed && IsConnectionError(p->uiSQLErrno))
+		if (!executed && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
 			continue;
 
 		LOG_INFO("QUERY_FLUSH: {}", p->stQuery.c_str());

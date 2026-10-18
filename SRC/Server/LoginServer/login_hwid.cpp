@@ -13,7 +13,7 @@ bool LoginHwid::Initialize(LoginDB& db)
 
 	std::unique_ptr<SQLMsg> msg(db.DirectQuery("SELECT hwid FROM account.blocked_hwids"));
 
-	if (!msg || !msg->Get())
+	if (!msg || msg->uiSQLErrno || !msg->Get())
 	{
 		LOG_ERROR("LoginServer: cannot load the blocked HWID list");
 		return false;

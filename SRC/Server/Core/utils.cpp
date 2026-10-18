@@ -60,44 +60,36 @@ struct timeval* timeadd(struct timeval* a, struct timeval* b)
 
 void trim_and_lower(const char* src, char* dest, uint64_t dest_size)
 {
-	const char* tmp = src;
-	uint64_t len = 0;
-
-	if (!dest || dest_size == 0)
+	if (!dest || !dest_size)
 		return;
+	trim_and_lower(src, src ? strlen(src) + 1 : 0, dest, dest_size);
+}
 
-	if (!src)
-	{
+bool trim_and_lower(const char* src, uint64_t src_size, char* dest, uint64_t dest_size)
+{
+	if (!dest || !dest_size)
+		return false;
+	if (!src) {
 		*dest = '\0';
-		return;
+		return false;
 	}
-
-	while (*tmp)
+	const auto* end = static_cast<const char*>(memchr(src, '\0', src_size));
+	if (!end) {
+		*dest = '\0';
+		return false;
+	}
+	while (src < end && isnhspace(static_cast<unsigned char>(*src)))
+		++src;
+	uint64_t length = 0;
+	while (src < end && length < dest_size - 1)
 	{
-		if (!isnhspace(*tmp))
-			break;
-
-		tmp++;
+		const auto value = *src++;
+		dest[length++] = LOWER(value);
 	}
-
-	--dest_size;
-
-	while (*tmp && len < dest_size)
-	{
-		*(dest++) = LOWER(*tmp);
-		++tmp;
-		++len;
-	}
-
-	*dest = '\0';
-
-	if (len > 0)
-	{
-		--dest;
-
-		while (*dest && isnhspace(*dest) && len--)
-			*(dest--) = '\0';
-	}
+	while (length && isnhspace(static_cast<unsigned char>(dest[length - 1])))
+		--length;
+	dest[length] = '\0';
+	return true;
 }
 
 void parse_token(char* src, char* token, char* value)

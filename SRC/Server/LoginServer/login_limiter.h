@@ -1,64 +1,80 @@
 #pragma once
 
-#include <cstdint>
+#include <chrono>
+#include <cstddef>
+#include <list>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
-// Login server abuse guards.
-//
-// Two independent layers:
-//  - connection flood guard: a permissive per-host new-connection window
-//    (slow lines and a single long handshake never trip it). Hosts with an
-//    established session keep it; the limit applies only to new connections.
-//  - login attempt guard: brute force is limited on the credential check,
-//    per account (lockout) and per host (a looser limit).
+// All calls run on the game thread. Existing sessions never exempt new
+// connections from rate limits. Durations use only the monotonic clock.
 class LoginLimiter
 {
 public:
-	// Game thread. Returns false when the new connection is rejected.
-	bool AllowConnect(const std::string& host);
+    using Clock = std::chrono::steady_clock;
+    using TimePoint = Clock::time_point;
+    static constexpr std::size_t MAX_TRACKED_HOSTS = 65536;
+    static constexpr std::size_t MAX_TRACKED_ACCOUNTS = 65536;
+    static constexpr std::size_t COLLECT_BUDGET = 256;
+    static constexpr auto IDLE_RETENTION = std::chrono::minutes(15);
 
-	// Game thread. Checked when a LOGIN3 arrives.
-	bool AllowLoginAttempt(const std::string& host, const std::string& account);
+    LoginLimiter() = default;
+    LoginLimiter(const LoginLimiter&) = delete;
+    LoginLimiter& operator=(const LoginLimiter&) = delete;
 
-	// Game thread. Outcome of the credential validation.
-	void ReportLoginResult(const std::string& host, const std::string& account, bool success);
+    bool AllowConnect(const std::string& host, TimePoint now = Clock::now());
+    bool AllowLoginAttempt(const std::string& host, const std::string& account, TimePoint now = Clock::now());
+    void ReportLoginResult(const std::string& host, const std::string& account, bool success, TimePoint now = Clock::now());
+    // An admitted connection is counted before the next game-loop collection.
+    void SessionOpened(const std::string& host, TimePoint now = Clock::now());
+    void SessionClosed(const std::string& host, TimePoint now = Clock::now());
 
-	void SessionOpened(const std::string& host);
-	void SessionClosed(const std::string& host);
+    void Collect(TimePoint now = Clock::now());
+    std::size_t TrackedHostCount() const { return m_hosts.size(); }
+    std::size_t TrackedAccountCount() const { return m_accounts.size(); }
 
 private:
-	static constexpr int CONNECT_WINDOW_SECONDS = 10;
-	static constexpr int CONNECT_LIMIT = 30;
-	static constexpr int MAX_SESSIONS_PER_HOST = 128;
-	static constexpr int CONNECT_BLOCK_BASE_SECONDS = 30;
-	static constexpr int CONNECT_BLOCK_MAX_SECONDS = 600;
+    static constexpr auto CONNECT_WINDOW = std::chrono::seconds(10);
+    static constexpr int CONNECT_LIMIT = 30;
+    static constexpr int MAX_SESSIONS_PER_HOST = 128;
+    static constexpr int CONNECT_BLOCK_BASE_SECONDS = 30;
+    static constexpr int CONNECT_BLOCK_MAX_SECONDS = 600;
+    static constexpr auto LOGIN_WINDOW = std::chrono::seconds(300);
+    static constexpr int LOGIN_FAIL_LIMIT = 5;
+    static constexpr auto LOGIN_BLOCK = std::chrono::seconds(300);
+    static constexpr int HOST_LOGIN_FAIL_LIMIT = 10;
 
-	static constexpr int LOGIN_WINDOW_SECONDS = 300;
-	static constexpr int LOGIN_FAIL_LIMIT = 5;
-	static constexpr int LOGIN_BLOCK_SECONDS = 300;
-	static constexpr int HOST_LOGIN_FAIL_LIMIT = 10;
+    using Order = std::list<std::string>;
+    struct HostState
+    {
+        int connects { 0 };
+        std::optional<TimePoint> connectWindowStart;
+        std::optional<TimePoint> blockedUntil;
+        int blockLevel { 0 };
+        int activeSessions { 0 };
+        int loginFailures { 0 };
+        std::optional<TimePoint> loginWindowStart;
+        std::optional<TimePoint> loginBlockedUntil;
+        TimePoint lastSeen;
+        Order::iterator order;
+    };
+    struct AccountState
+    {
+        int failures { 0 };
+        std::optional<TimePoint> windowStart;
+        std::optional<TimePoint> blockedUntil;
+        TimePoint lastSeen;
+        Order::iterator order;
+    };
+    HostState* TrackHost(const std::string& host, TimePoint now);
+    AccountState* TrackAccount(const std::string& account, TimePoint now);
+    void Touch(HostState& state, TimePoint now);
+    void Touch(AccountState& state, TimePoint now);
+    void RemoveAccount(const std::string& account);
 
-	struct HostState
-	{
-		int		connects { 0 };
-		uint64_t	connectWindowStart { 0 };
-		uint64_t	blockedUntil { 0 };
-		int		blockLevel { 0 };
-		int		activeSessions { 0 };
-
-		int		loginFailures { 0 };
-		uint64_t	loginWindowStart { 0 };
-		uint64_t	loginBlockedUntil { 0 };
-	};
-
-	struct AccountState
-	{
-		int		failures { 0 };
-		uint64_t	windowStart { 0 };
-		uint64_t	blockedUntil { 0 };
-	};
-
-	std::unordered_map<std::string, HostState> m_hosts;
-	std::unordered_map<std::string, AccountState> m_accounts;
+    Order m_hostOrder;
+    Order m_accountOrder;
+    std::unordered_map<std::string, HostState> m_hosts;
+    std::unordered_map<std::string, AccountState> m_accounts;
 };

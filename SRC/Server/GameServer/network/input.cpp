@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "packet_validation.h"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include <sstream>
@@ -78,6 +79,15 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 		if (m_iBufferLeft < iPacketLen)
 			return true;
 
+		const auto type = GetType();
+		if ((type == INPROC_HANDSHAKE || type == INPROC_LOGIN || type == INPROC_MAIN || type == INPROC_DEAD) &&
+			!ValidateClientPacketStrings(bHeader, c_pData, iPacketLen))
+		{
+			LOG_ERROR("Unterminated client packet field, header {}", static_cast<int>(bHeader));
+			lpDesc->SetPhase(PHASE_CLOSE);
+			return true;
+		}
+
 		int originalPacketSize = iPacketLen;
 		uint8_t preAnalyzeSeq = *(uint8_t*)(c_pData + iPacketLen - sizeof(uint8_t));
 
@@ -151,8 +161,13 @@ void CInputProcessor::Version(entt::entity ch, const char* c_pData)
 		return;
 
 	TPacketCGClientVersion * p = (TPacketCGClientVersion *) c_pData;
+	if (!ValidateClientPacketStrings(HEADER_CG_CLIENT_VERSION, p, sizeof(*p)))
+		return;
+	auto* desc = ecs::PlayerRuntime::GetDesc(ch);
+	if (!desc)
+		return;
 	LOG_INFO("VERSION: {} {} {}", ecs::PlayerRuntime::GetName(ch).data(), p->timestamp, p->filename);
-	ecs::PlayerRuntime::GetDesc(ch)->SetClientVersion(p->timestamp);
+	desc->SetClientVersion(p->timestamp);
 }
 
 void LoginFailure(LPDESC d, const char * c_pszStatus)

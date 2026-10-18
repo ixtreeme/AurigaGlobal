@@ -33,6 +33,7 @@ bool LoginSession::Accept(auriga::net::tcp::socket&& sock, auriga::net::TlsServe
 	}
 
 	m_handshakeSentTime = get_dword_time();
+	m_phaseDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(20);
 	SendHandshakePacket(m_handshakeSentTime, 0);
 	StartRead();
 	return true;
@@ -55,7 +56,15 @@ void LoginSession::Close()
 
 	m_closed = true;
 	m_phase = Phase::Closed;
+	if (m_auth)
+		m_auth->OnSessionClosed(this);
 	DestroySession();
+}
+
+void LoginSession::CheckTimeouts(std::chrono::steady_clock::time_point now)
+{
+	if (!m_closed && m_authState != AuthState::Pending && now >= m_phaseDeadline)
+		Close();
 }
 
 void LoginSession::ProcessPackets()
@@ -155,6 +164,7 @@ void LoginSession::HandleHandshake(const char* data, int)
 		// The stream is TLS: the completion tells the client to send LOGIN3.
 		SendHandshakeCompleted();
 		m_phase = Phase::Auth;
+		m_phaseDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
 		LOG_INFO("LoginServer: handshake complete, waiting for LOGIN3");
 		return;
 	}

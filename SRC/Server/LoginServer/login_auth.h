@@ -7,6 +7,8 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <chrono>
+#include <memory>
 
 struct LoginCGLogin3;
 struct LoginConfig;
@@ -19,7 +21,8 @@ class LoginSession;
 class LoginAuth
 {
 public:
-	LoginAuth();
+	using RandomBytes = int (*)(unsigned char*, int);
+	explicit LoginAuth(RandomBytes randomBytes = nullptr);
 	~LoginAuth();
 
 	LoginAuth(const LoginAuth&) = delete;
@@ -34,7 +37,7 @@ public:
 	void SetLimiter(LoginLimiter* limiter) { m_limiter = limiter; }
 
 	// Server loop: dispatches the finished account queries.
-	void Process();
+	void Process(std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
 
 	// LOGIN3 from a session.
 	void RequestLogin(LoginSession* session, const LoginCGLogin3* packet);
@@ -54,7 +57,16 @@ private:
 	LoginHwid m_hwid;
 	LoginDBLink* m_link { nullptr };
 	LoginLimiter* m_limiter { nullptr };
-	uint32_t m_keyCounter { 0 };
+	RandomBytes m_randomBytes;
 	std::set<std::string> m_pendingLogins;
 	std::unordered_map<std::string, LoginSession*> m_logins;
+	struct Attempt
+	{
+		LoginSession* session;
+		std::string login;
+		std::chrono::steady_clock::time_point deadline;
+	};
+	// Callbacks hold weak tickets. Closing or timing out an attempt releases
+	// the session immediately; a late SQL/Database result cannot access it.
+	std::unordered_map<LoginSession*, std::shared_ptr<Attempt>> m_attempts;
 };

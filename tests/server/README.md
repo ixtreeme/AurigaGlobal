@@ -2,7 +2,7 @@
 
 ## Server audit fixes (2026-10-18)
 
-CTest is enabled at the project root. The `ServerTests` target builds all 43
+CTest is enabled at the project root. The `ServerTests` target builds all 46
 server test executables, including the ones excluded from the default build;
 each registered test carries the `server` label and a 60-second timeout.
 
@@ -43,6 +43,89 @@ same secondary-skill normalization the Database uses: old and new skill costs
 are added, caps and low levels are retained, and repeated loads do not refund
 spent points. These tests use controlled services; live SQL, client rendering
 and production deployment still require integration verification.
+
+## Follow-up fixes R1-R4 (2026-10-18)
+
+LoginByKeyTests runs the same credential validator as Database's
+QUERY_LOGIN_BY_KEY: normalized account names must match by content, both keys
+must match, and every fixed string must terminate within its field. Invalid
+credentials are rejected before the already-online lookup or account queries.
+
+PlayerCreateTests checks the production INSERT builder's column/parameter
+mapping, signedness, 64-bit HP/SP/gold, initial appearance, optional columns and
+binary skills/quickslots. The Database now binds every inserted value through
+the prepared protocol. An explicit SQL mode creates a temporary player_test
+table using the player table definition in db/schema.sql and reads back every
+inserted field through the production CAsyncSQL implementation. It then kills
+only its own test connection and verifies a cached prepared query can recover:
+
+```powershell
+# Start an isolated local MariaDB, create the dedicated auriga_r1_r4_test DB;
+# the test uses loopback, the supplied port, root and an empty test password.
+& build/SRC/Server/GameServer/RelWithDebInfo/PlayerCreateTests.exe --sql <port> db/schema.sql
+& build-asan/SRC/Server/GameServer/RelWithDebInfo/PlayerCreateTests.exe --sql <port> db/schema.sql
+```
+
+PacketStringTests checks the production fixed-string gate for LOGIN/LOGIN2/3,
+create/delete/rename, both versions, whisper, quest, guild, hack, shop, pet and
+admin whisper packets. Tests use exact heap allocations without any terminator,
+last-byte terminators and every shorter packet length. The normal packet
+processor runs this gate before dispatching client handlers; variable-payload
+framing and semantics remain the handlers' responsibility. Bounded
+trim_and_lower also handles unterminated/all-whitespace and overlapping input.
+Offline-shop create/rename subpacket handlers validate their name arrays after
+the existing payload-length check; filter names already use explicit lengths.
+
+LoginAuthTests now covers ten-second account/registration deadlines, immediate
+detach on close, a replacement attempt, and late callbacks after destruction.
+Callbacks hold weak attempt tickets rather than retaining a raw session.
+LoginSessionTests uses real TLS sockets to check silent application handshakes
+and missing LOGIN3: twenty seconds from accept and thirty seconds from the
+completed handshake, respectively. Failed/completed authentication also starts
+a thirty-second session deadline. Partial packets and retries do not extend it.
+
+AsyncSqlPreparedTests scripts delayed successful/failed initial SQL connections
+and a lost connection followed by a successful queued query. Login SQL uses
+five-second connector connect/read/write timeouts, waits up to ten seconds for
+actual readiness, completes failed queries instead of retrying indefinitely,
+and discards unstarted work on shutdown. SQL and HWID initialization failures
+abort LoginServer before listening. The logger outlives SQL cleanup on all exits.
+On Windows, `CheckLoginStartup.ps1 -Binary <LoginServer.exe>` additionally runs
+the actual server with a refused SQL port and a silent local TCP endpoint. Both
+must exit with code 1 within twelve seconds, before TLS/listener initialization;
+this also detects a crash during SQL cleanup after logger shutdown. Run it for
+the normal and ASAN executables. It keeps its isolated logs in the temp folder.
+The tests do not establish full login/create/select/gameplay integration or
+production schema compatibility; those remain in the release verification work.
+
+## Login key and limiter hardening R5 (2026-10-18)
+
+LoginAuth defaults to OpenSSL RAND_bytes, retaining the nonzero 31-bit key
+range. Zero samples are rejected; retries are bounded. A provider error or
+eight zero results completes the attempt with SHUTDOWN, without registering or
+issuing a key. LoginAuthTests injects failed, partially written and zero-only
+providers, verifies pending-state release and successful retries, and checks
+the Database acknowledgement still precedes key delivery. Normal success cases
+also execute the real OpenSSL provider.
+
+LoginLimiter now uses steady_clock for every window, lock and retention time.
+Unused host/account state expires after fifteen minutes. Collect runs from the
+listener's regular game-loop collection and inspects at most 256 entries per
+map per call; it retains live sessions and unexpired locks. Last-use lists
+keep lookup/touch and cleanup constant-time on average without full map scans.
+Each map holds at most 65,536 entries. At capacity, unknown entries are refused
+until expired state is reclaimed; protected state is never evicted to admit
+them. An account entry is reserved before SQL, so admitted failures remain
+trackable even if concurrent requests fill the remaining capacity.
+
+LoginLimiterTests uses deterministic monotonic timestamps, including epoch
+zero and exact window/lock deadlines. It covers escalation, bounded incremental
+cleanup, refreshed entries, live-session counts, both full maps and recovery.
+LoginAuthTests separately saturates the account map and verifies an unknown
+login is blocked before SQL while an already tracked account can continue.
+Connection and credential thresholds remain unchanged. Rebuild LoginServer,
+LoginAuthTests, LoginLimiterTests and LoginSessionTests in both configurations;
+the existing full server CTest commands include all of these checks.
 
 ## Native buildings and offline-shop world objects
 

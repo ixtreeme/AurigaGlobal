@@ -1,5 +1,7 @@
 
 #include "stdafx.h"
+#include "player_create.h"
+#include <Core/packet_string.h>
 
 #include "ClientManager.h"
 
@@ -1150,8 +1152,13 @@ time_by_id_map_t s_createTimeByAccountID;
  */
 void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlayerCreatePacket* packet)
 {
+	if (packet->account_index >= PLAYER_PER_ACCOUNT ||
+		!packet_string::IsTerminated(packet->player_table.name))
+	{
+		peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_FAILED, dwHandle, 0);
+		return;
+	}
 	char	queryStr[QUERY_MAX_LEN];
-	int queryLen;
 	uint32_t		player_id;
 
 
@@ -1166,15 +1173,16 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 		}
 	}
 
-	queryLen = snprintf(queryStr, sizeof(queryStr),
-	                        "SELECT pid%u FROM player_index%s WHERE id=%d", packet->account_index + 1,
-	                        GetTablePostfix(), packet->account_id);
+	snprintf(queryStr, sizeof(queryStr),
+	                        "SELECT pid%u FROM player_index%s WHERE id=?", packet->account_index + 1,
+	                        GetTablePostfix());
 
-	std::unique_ptr<SQLMsg> pMsg0(CDBManager::instance().DirectQuery(queryStr));
+	std::unique_ptr<SQLMsg> pMsg0(CDBManager::instance().DirectQueryPrepared(queryStr,
+		{ SqlParam::UInt(packet->account_id) }));
 
 	if (pMsg0->Get()->uiNumRows != 0)
 	{
-		if (!pMsg0->Get()->pSQLResult)
+		if (!pMsg0->Get()->pSQLResult && !pMsg0->Get()->bPrepared)
 		{
 			peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_FAILED, dwHandle, 0);
 			return;
@@ -1225,79 +1233,13 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 		return;
 	}
 
-	queryLen = snprintf(queryStr, sizeof(queryStr),
-			"INSERT INTO player%s "
-			"(id, account_id, name, "
-			"level, st, ht, dx, iq, "
-			"job, voice, dir, x, y, z, "
-			"hp, mp, random_hp, random_sp, stat_point, stamina, part_base, part_main, part_hair,"
-#ifdef ENABLE_ACCE_SYSTEM
-			"part_acce, "
-#endif
-			"gold, "
-#ifdef ENABLE_GAYA_SYSTEM
-			"gaya, "
-#endif
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-			"envanter, "
-#endif
-			"playtime, "
-			"skill_level, quickslot) "
-			"VALUES(0, %u, ?, "
-			"%d, %d, %d, %d, %d, "
-			"%d, %d, %d, %d, %d, %d, %d, "
-			"%llu, %llu, %d, %d, %d, %d, %d, 0,"
-#ifdef ENABLE_ACCE_SYSTEM
-			"0, "
-#endif
-			"%lld, "
-
-#ifdef ENABLE_GAYA_SYSTEM
-			"%d, "
-#endif
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-			"%d, "
-#endif
-			"0, ",
-			GetTablePostfix(),
-			packet->account_id,
-			packet->player_table.level, packet->player_table.st, packet->player_table.ht, packet->player_table.dx, packet->player_table.iq,
-			packet->player_table.job, packet->player_table.voice, packet->player_table.dir, packet->player_table.x, packet->player_table.y, packet->player_table.z,
-			packet->player_table.hp, packet->player_table.sp, packet->player_table.sRandomHP, packet->player_table.sRandomSP, packet->player_table.stat_point, packet->player_table.stamina, packet->player_table.part_base, packet->player_table.part_base, packet->player_table.gold
-#ifdef ENABLE_GAYA_SYSTEM
-			,packet->player_table.gaya
-#endif
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-			,packet->player_table.envanter
-#endif
-			);
-
+	const auto create = BuildPlayerCreateQuery(GetTablePostfix(), packet->account_id, packet->player_table);
 	LOG_INFO("PlayerCreate accountid {} name {} level {} gold {}, st {} ht {} job {}", packet->account_id, packet->player_table.name, packet->player_table.level, packet->player_table.gold, packet->player_table.st, packet->player_table.ht, packet->player_table.job);
-
-			
-#ifdef ENABLE_GAYA_SYSTEM
-	LOG_INFO("PlayerCreate accountid {} name {} gaya {}", packet->account_id, packet->player_table.name, packet->player_table.gaya);
-#endif
-
-	static char text[8192 + 1];
-
-	CDBManager::instance().EscapeString(text, packet->player_table.skills, sizeof(packet->player_table.skills));
-	queryLen += snprintf(queryStr + queryLen, sizeof(queryStr) - queryLen, "'%s', ", text);
-	if (g_test_server)
-		LOG_INFO("Create_Player queryLen[{}] TEXT[{}]", queryLen, text);
-
-	CDBManager::instance().EscapeString(text, packet->player_table.quickslot, sizeof(packet->player_table.quickslot));
-	queryLen += snprintf(queryStr + queryLen, sizeof(queryStr) - queryLen, "'%s')", text);
-
-	std::unique_ptr<SQLMsg> pMsg2(CDBManager::instance().DirectQueryPrepared(queryStr,
-			{ SqlParam::Text(packet->player_table.name) }));
-	if (g_test_server)
-		LOG_INFO("Create_Player queryLen[{}] TEXT[{}]", queryLen, text);
-
+	std::unique_ptr<SQLMsg> pMsg2(CDBManager::instance().DirectQueryPrepared(create.sql.c_str(), create.params));
 	if (pMsg2->Get()->uiAffectedRows <= 0)
 	{
 		peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_ALREADY, dwHandle, 0);
-		LOG_INFO("ALREADY EXIST3 query: {} AffectedRows {}", queryStr, pMsg2->Get()->uiAffectedRows);
+		LOG_INFO("ALREADY EXIST3 query: {} AffectedRows {}", create.sql, pMsg2->Get()->uiAffectedRows);
 		return;
 	}
 

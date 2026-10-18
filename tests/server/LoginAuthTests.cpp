@@ -2,6 +2,7 @@
 #include "../../SRC/Server/LoginServer/login_db.h"
 #include "../../SRC/Server/LoginServer/login_db_link.h"
 #include "../../SRC/Server/LoginServer/login_session.h"
+#include "../../SRC/Server/LoginServer/login_limiter.h"
 
 #include <cstring>
 #include <iostream>
@@ -27,6 +28,18 @@ struct Registration { LoginGDAuthLogin data; LoginDBLink::RegistrationCallback c
 std::vector<Registration> registrations;
 std::vector<uint32_t> successes;
 bool linkAvailable = true;
+std::vector<uint32_t> randomSamples;
+int randomStatus = 1;
+size_t randomCalls = 0;
+
+int ScriptedRandom(unsigned char* output, int length)
+{
+    Check(length == sizeof(uint32_t), "login key random request changed size");
+    const auto value = randomCalls < randomSamples.size() ? randomSamples[randomCalls] : uint32_t(0);
+    ++randomCalls;
+    std::memcpy(output, &value, sizeof(value));
+    return randomStatus;
+}
 
 void Reset() {
     failures.clear(); queries.clear(); queryCallbacks.clear();
@@ -172,7 +185,8 @@ void OneAttemptPerSessionAndDatabaseAck()
     Check(successes.empty() && registrations.size() == 1 && session.HasPendingDbWork(),
         "authentication succeeded or released the session before Database ACK");
     Check(registrations[0].data.dwID == 42 && std::string(registrations[0].data.szLogin) == "alice" &&
-        registrations[0].data.dwLoginKey != 0, "registration lost the authenticated identity");
+        registrations[0].data.dwLoginKey != 0 && registrations[0].data.dwLoginKey <= 0x7fffffff,
+        "registration lost the authenticated identity or key range");
     Session duplicate(2, &auth);
     auth.RequestLogin(&duplicate, &alice);
     auth.RequestLogin(&session, &bob);
@@ -221,7 +235,7 @@ void DisconnectWhileWaiting()
         auth.RequestLogin(&session, &packet);
         if (duringRegistration) CompleteQuery(0);
         session.OnPeerGone();
-        Check(session.HasPendingDbWork(), "disconnect released a session still referenced by a callback");
+        Check(!session.HasPendingDbWork(), "disconnect retained an active attempt");
         if (duringRegistration) CompleteRegistration(0, true);
         else CompleteQuery(0);
         Check(successes.empty() && failures.empty() && !session.HasPendingDbWork(),
@@ -232,13 +246,100 @@ void DisconnectWhileWaiting()
         CompleteQuery(1, false);
     }
 }
+
+void AttemptDeadlinesAndLateResults()
+{
+    for (bool duringRegistration : {false, true}) {
+        Reset(); LoginAuth auth; LoginDBLink link; auth.SetLink(&link);
+        auto session = std::make_unique<Session>(1, &auth);
+        const auto packet = Packet("tester", "secret", "HWID-1");
+        auth.RequestLogin(session.get(), &packet);
+        if (duringRegistration) CompleteQuery(0);
+        auth.Process(std::chrono::steady_clock::now() + std::chrono::seconds(11));
+        Check(!session->HasPendingDbWork() && session->CanStartLogin() && failures.size() == 1 &&
+            failures.back().status == "SHUTDOWN", "expired attempt retained the session or account");
+        auth.RequestLogin(session.get(), &packet);
+        Check(queries.size() == 2 && session->HasPendingDbWork(), "timeout prevented a fresh attempt");
+        if (duringRegistration) CompleteRegistration(0, true);
+        else CompleteQuery(0);
+        Check(successes.empty() && session->HasPendingDbWork(), "stale completion affected the replacement attempt");
+        session->OnPeerGone();
+        Check(!session->HasPendingDbWork(), "closed replacement retained its callback reference");
+        session.reset();
+        CompleteQuery(1); // ASAN must not find a dangling session.
+        Check(successes.empty() && registrations.size() == (duringRegistration ? 1 : 0),
+            "late query authenticated a destroyed session");
+    }
+}
+
+void SqlFailureReleasesAttempt()
+{
+    Reset(); LoginAuth auth; Session session(1, &auth);
+    const auto packet = Packet("tester", "secret", "HWID-1");
+    auth.RequestLogin(&session, &packet);
+    SQLMsg failure; failure.uiSQLErrno = CR_SERVER_LOST;
+    queryCallbacks[0](&failure);
+    Check(!session.HasPendingDbWork() && session.CanStartLogin() && failures.back().status == "SHUTDOWN",
+        "SQL failure was treated as valid credentials or retained the attempt");
+    auth.RequestLogin(&session, &packet);
+    CompleteQuery(1, false);
+    Check(queries.size() == 2 && !session.HasPendingDbWork(), "SQL failure prevented retry");
+}
+
+void RandomFailuresAndZeroSamples()
+{
+    // A provider failure can leave bytes in its output. None of those bytes
+    // may become a registered key; repeated zero output must also terminate.
+    for (int status : {0, -1, 1}) {
+        Reset(); LoginAuth auth(&ScriptedRandom); LoginDBLink link; auth.SetLink(&link);
+        Session session(1, &auth);
+        randomStatus = status; randomCalls = 0;
+        randomSamples = status == 1 ? std::vector<uint32_t>{} : std::vector<uint32_t>{123};
+        const auto packet = Packet("tester", "secret", "HWID-1");
+        auth.RequestLogin(&session, &packet); CompleteQuery(0);
+        Check(registrations.empty() && successes.empty() && failures.size() == 1 && failures[0].status == "SHUTDOWN",
+            "random failure registered or issued a key");
+        Check(!session.HasPendingDbWork() && session.CanStartLogin() && session.GetLogin().empty(),
+            "random failure stranded the session or account");
+        Check(randomCalls == (status == 1 ? 8 : 1), "random failure was not bounded");
+
+        randomStatus = 1; randomCalls = 0;
+        randomSamples = {0, 0x80000000, 0xffffffff};
+        auth.RequestLogin(&session, &packet); CompleteQuery(1);
+        Check(registrations.size() == 1 && registrations[0].data.dwLoginKey == 0x7fffffff && randomCalls == 3,
+            "zero rejection or the compatible key range is broken");
+        Check(successes.empty(), "random key bypassed Database acknowledgement");
+        CompleteRegistration(0, true);
+        Check(successes.size() == 1 && successes[0] == 0x7fffffff && !session.HasPendingDbWork(),
+            "random failure prevented a successful retry");
+        session.OnPeerGone();
+    }
+}
+
+void LimiterCapacityRejectsBeforeSql()
+{
+    Reset(); LoginLimiter limiter;
+    const auto now = LoginLimiter::Clock::now();
+    for (size_t i = 0; i < LoginLimiter::MAX_TRACKED_ACCOUNTS; ++i)
+        Check(limiter.AllowLoginAttempt("192.0.2.1", "capacity" + std::to_string(i), now), "auth fixture reached capacity early");
+    LoginAuth auth; auth.SetLimiter(&limiter);
+    Session session(1, &auth); session.SetHost("192.0.2.1");
+    const auto overflow = Packet("overflow", "secret", "HWID-1");
+    auth.RequestLogin(&session, &overflow);
+    Check(Rejected(session, "BLOCK"), "full limiter admitted an untracked SQL lookup");
+    const auto tracked = Packet("capacity0", "secret", "HWID-1");
+    auth.RequestLogin(&session, &tracked);
+    Check(queries.size() == 1 && session.HasPendingDbWork(), "capacity rejected an already tracked account");
+    CompleteQuery(0, false);
+    Check(!session.HasPendingDbWork() && failures.back().status == "WRONGPWD", "admitted lookup lost its failure at capacity");
+}
 }
 
 // Session, database and link seams. The session is a real LoginSession object
 // whose network half is never started.
 LoginSession::LoginSession(uint32_t handshake, LoginAuth* auth) : m_handshake(handshake), m_auth(auth) {}
 void LoginSession::OnInput() { Unexpected(__func__); }
-void LoginSession::OnPeerGone() { m_closed = true; }
+void LoginSession::OnPeerGone() { m_closed = true; if (m_auth) m_auth->OnSessionClosed(this); }
 void LoginSession::SendLoginFailure(const char* status) { failures.push_back({this, status}); }
 void LoginSession::SendAuthSuccess(uint32_t key) { successes.push_back(key); }
 
@@ -273,6 +374,10 @@ int main()
         OneAttemptPerSessionAndDatabaseAck();
         RegistrationFailuresReleaseTheAttempt();
         DisconnectWhileWaiting();
+        AttemptDeadlinesAndLateResults();
+        SqlFailureReleasesAttempt();
+        RandomFailuresAndZeroSamples();
+        LimiterCapacityRejectsBeforeSql();
     } catch (const std::exception& error) {
         std::cerr << "login auth test failed: " << error.what() << '\n';
         return 1;

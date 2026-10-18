@@ -27,14 +27,20 @@ int main(int argc, char** argv)
 {
 	const char* configPath = (argc > 1) ? argv[1] : "conf.json";
 
-	thecore_init(25, EmptyBeat);
+	if (!thecore_init(25, EmptyBeat))
+		return 1;
+	// SQL/session destructors still log while unwinding every exit path.
+	// The core (and its logger) must outlive those objects.
+	struct CoreCleanup
+	{
+		~CoreCleanup() { thecore_destroy(); }
+	} coreCleanup;
 
 	LoginConfig config;
 
 	if (!LoadLoginConfig(configPath, config))
 	{
 		LOG_ERROR("LoginServer: startup aborted, invalid configuration");
-		thecore_destroy();
 		return 1;
 	}
 
@@ -50,6 +56,8 @@ int main(int argc, char** argv)
 	if (!auth.Init(config))
 	{
 		LOG_ERROR("LoginServer: account database is not available");
+		auriga::net::Stop();
+		return 1;
 	}
 
 	LoginDBLink dbLink;
@@ -64,7 +72,6 @@ int main(int argc, char** argv)
 	{
 		LOG_ERROR("LoginServer: startup aborted, the TLS certificate could not be loaded");
 		auriga::net::Stop();
-		thecore_destroy();
 		return 1;
 	}
 
@@ -77,7 +84,6 @@ int main(int argc, char** argv)
 	{
 		LOG_ERROR("LoginServer: listener could not be opened");
 		auriga::net::Stop();
-		thecore_destroy();
 		return 1;
 	}
 
@@ -95,6 +101,5 @@ int main(int argc, char** argv)
 	// away.
 	auriga::net::Stop();
 
-	thecore_destroy();
 	return 0;
 }

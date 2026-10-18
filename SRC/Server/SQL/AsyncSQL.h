@@ -8,6 +8,10 @@
 #include <vector>
 #include <map>
 #include <deque>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <mysql/mysql.h>
 #include <mysql/errmsg.h>
 #include <mysql/mysqld_error.h>
@@ -170,6 +174,13 @@ class CAsyncSQL
 			bool bNoThread = false, int iPort = 0);
 
 		bool		Connect();
+		enum class ConnectionState { NotStarted, Connecting, Ready, Failed };
+		ConnectionState GetConnectionState() const { return m_connectionState.load(); }
+		bool WaitForConnection(std::chrono::milliseconds timeout);
+		// Configure before Setup; zero preserves the connector default.
+		void SetTimeouts(unsigned int seconds) { m_timeoutSeconds = seconds; }
+		void SetRetryConnectionErrors(bool retry) { m_retryConnectionErrors = retry; }
+		void SetFlushOnQuit(bool flush) { m_flushOnQuit = flush; }
 		bool		QueryLocaleSet();
 
 		void		AsyncQuery(const char * c_pszQuery);
@@ -202,7 +213,7 @@ class CAsyncSQL
 
 		// Refreshes the reconnect/locale state and drops the prepared
 		// statement cache when the underlying connection changed.
-		void		EnsureConnectionReady();
+		bool		EnsureConnectionReady();
 
 		MYSQL_STMT *	GetOrPrepare(const std::string & sql);
 		void		DropPrepared(const std::string & sql);
@@ -254,7 +265,15 @@ class CAsyncSQL
 		// character set changed.
 		std::map<std::string, MYSQL_STMT *> m_map_prepared;
 
-		volatile bool m_bEnd;
+		std::atomic<bool> m_bEnd;
+		std::atomic<ConnectionState> m_connectionState { ConnectionState::NotStarted };
+		std::mutex m_connectionMutex;
+		std::condition_variable m_connectionChanged;
+		void SetConnectionState(ConnectionState state);
+		unsigned int m_timeoutSeconds { 0 };
+		bool m_retryConnectionErrors { true };
+		bool m_flushOnQuit { true };
+		bool m_mysqlInitialized { false };
 
 #ifndef _WIN32
 		pthread_t m_hThread;
