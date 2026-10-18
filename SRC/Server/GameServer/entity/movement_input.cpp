@@ -183,14 +183,6 @@ void CInputMain::Move(entt::entity character, const char * data)
 		}
 	}
 
-	// migrated from CHARACTER::Move
-	entt::entity e = (ecs::IsCharacter(character) && ecs::PlayerRuntime::GetDesc(character)) ? ecs::PlayerRuntime::GetDesc(character)->GetEntity() : entt::null;
-	if (e != entt::null && g_registry.valid(e))
-	{
-		g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(pinfo->lX), static_cast<int32_t>(pinfo->lY));
-		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-	}
-	// DUAL-PATH: ECS + legacy call
 	if (pinfo->bFunc == FUNC_MOVE)
 	{
 		if (ecs::PointSystem::GetLimitPoint(character, POINT_MOV_SPEED) == 0)
@@ -199,7 +191,8 @@ void CInputMain::Move(entt::entity character, const char * data)
 		ecs::MovementSystem::SetRotation(character, pinfo->bRot * 5.0f);
 		ecs::MovementSystem::ResetStopTime(character);
 
-		ecs::MovementSystem::GotoWithDuration(character, pinfo->lX, pinfo->lY, pinfo->dwDuration);
+		if (!ecs::MovementSystem::GotoWithDuration(character, pinfo->lX, pinfo->lY, pinfo->dwDuration))
+			return;
 	}
 	else
 	{

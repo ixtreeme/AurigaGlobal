@@ -30,6 +30,9 @@ struct MovementState {
     // Effective px/s of the active move (client-provided for players, motion
     // based for monsters); 0 when idle.
     float moveSpeed { 0.0f };
+    // Origin of the active command. Interpolation always starts here so
+    // rounding and update frequency cannot accumulate movement drift.
+    int32_t moveStartX { 0 }, moveStartY { 0 };
 };
 
 struct MovementSpeed {

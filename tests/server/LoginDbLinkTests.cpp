@@ -28,14 +28,15 @@ constexpr uint8_t DG_PING = 213;
 constexpr uint8_t DG_AUTH_CHALLENGE = 215;
 constexpr uint8_t DG_AUTH_RESULT = 216;
 constexpr uint8_t GD_AUTH = 122;
+constexpr uint8_t GD_AUTH_LOGIN = 100;
+constexpr uint8_t DG_AUTH_LOGIN = 122;
 constexpr size_t HEADER_SIZE = 9;
 
 using Bytes = std::vector<uint8_t>;
 
-Bytes Frame(uint8_t header, const Bytes& payload)
+Bytes Frame(uint8_t header, const Bytes& payload, uint32_t handle = 0)
 {
     Bytes out(HEADER_SIZE + payload.size());
-    const uint32_t handle = 0;
     const uint32_t size = static_cast<uint32_t>(payload.size());
     out[0] = header;
     std::memcpy(out.data() + 1, &handle, sizeof(handle));
@@ -122,6 +123,7 @@ public:
     std::atomic<bool> sawClose { false };
     std::atomic<bool> clientMacValid { false };
     std::atomic<bool> releaseLinkedPeer { false };
+    std::atomic<bool> registrationsRead { false };
 
 private:
     void Run(const Script& script)
@@ -261,6 +263,109 @@ void ValidHandshakeLinks()
     Check(PumpUntil([&] { return !link.IsLinked(); }), "the link is down once the database goes away");
     Settle(link, db);
 }
+
+void Authenticate(tcp::socket& socket)
+{
+    Challenge challenge;
+    boost::asio::write(socket, boost::asio::buffer(Frame(DG_AUTH_CHALLENGE, challenge.Payload(true))));
+    Bytes response(HEADER_SIZE + PeerAuth::MAC_SIZE);
+    boost::asio::read(socket, boost::asio::buffer(response));
+    if (response[0] != GD_AUTH || !PeerAuth::VerifyAuthMac(PeerAuth::ROLE_CLIENT,
+        challenge.nonce, challenge.timestamp, response.data() + HEADER_SIZE))
+        throw std::runtime_error("wrong client authentication");
+    boost::asio::write(socket, boost::asio::buffer(Frame(DG_AUTH_RESULT, {1})));
+}
+
+uint32_t ReadRegistration(tcp::socket& socket, uint32_t expectedKey)
+{
+    LoginDBHeader header {};
+    do {
+        boost::asio::read(socket, boost::asio::buffer(&header, sizeof(header)));
+    } while (header.bHeader == 120 && header.dwSize == 0); // Optional GD_PING.
+    if (header.bHeader != GD_AUTH_LOGIN || header.dwSize != sizeof(LoginGDAuthLogin) || header.dwHandle == 0)
+        throw std::runtime_error("invalid registration frame");
+    LoginGDAuthLogin registration {};
+    boost::asio::read(socket, boost::asio::buffer(&registration, sizeof(registration)));
+    if (registration.dwLoginKey != expectedKey)
+        throw std::runtime_error("registration payload changed");
+    return header.dwHandle;
+}
+
+void RegistrationsUseCorrelatedAcknowledgements()
+{
+    ScriptedDatabase db([](ScriptedDatabase& self, tcp::socket& socket) {
+        Authenticate(socket);
+        const auto first = ReadRegistration(socket, 42), second = ReadRegistration(socket, 43);
+        if (first == second) throw std::runtime_error("registration handles reused");
+        self.registrationsRead = true;
+        Bytes replies = Frame(DG_AUTH_LOGIN, {1}, second + 100); // Unknown request.
+        replies += Frame(DG_AUTH_LOGIN, {0}, second);
+        replies += Frame(DG_AUTH_LOGIN, {1}, first);
+        replies += Frame(DG_AUTH_LOGIN, {1}, first); // Duplicate ACK.
+        boost::asio::write(socket, boost::asio::buffer(replies));
+        const auto deadline = std::chrono::steady_clock::now() + 5s;
+        while (!self.releaseLinkedPeer && std::chrono::steady_clock::now() < deadline)
+            std::this_thread::sleep_for(2ms);
+        boost::system::error_code ec;
+        socket.shutdown(tcp::socket::shutdown_both, ec);
+        socket.close(ec);
+    });
+    LoginDBLink link;
+    Connect(link, db);
+    Check(PumpUntil([&] { return link.IsLinked(); }), "registration fixture did not link");
+    std::vector<std::pair<int, bool>> results;
+    LoginGDAuthLogin request {}; request.dwLoginKey = 42;
+    Check(link.SendAuthLogin(request, [&](bool ok) { results.emplace_back(1, ok); }), "first registration refused");
+    request.dwLoginKey = 43;
+    Check(link.SendAuthLogin(request, [&](bool ok) { results.emplace_back(2, ok); }), "second registration refused");
+    Check(results.empty(), "registration completed before a reply");
+    Check(PumpUntil([&] { return results.size() == 2; }), "registration ACKs were not dispatched");
+    Check(results == std::vector<std::pair<int, bool>>{{2, false}, {1, true}}, "out-of-order ACKs reached wrong requests");
+    // Expiring an unrelated period must not repeat already completed callbacks.
+    link.Tick(std::chrono::steady_clock::now() + 11s);
+    Check(results.size() == 2 && link.IsLinked(), "duplicate ACK or expired completed request ran twice");
+    db.releaseLinkedPeer = true;
+    Check(PumpUntil([&] { return !link.IsLinked(); }), "acknowledged link did not close");
+    Settle(link, db);
+    Check(results.size() == 2, "duplicate ACK completed a request more than once");
+}
+
+void RegistrationFailure(const std::string& mode)
+{
+    ScriptedDatabase db([&](ScriptedDatabase& self, tcp::socket& socket) {
+        Authenticate(socket);
+        const auto handle = ReadRegistration(socket, 42);
+        self.registrationsRead = true;
+        if (mode == "malformed") {
+            boost::asio::write(socket, boost::asio::buffer(Frame(DG_AUTH_LOGIN, {}, handle)));
+            self.sawClose = self.WaitForClose(socket);
+        } else if (mode == "timeout") {
+            self.sawClose = self.WaitForClose(socket);
+        } // "disconnect": close the peer as the script returns.
+    });
+    LoginDBLink link;
+    Connect(link, db);
+    Check(PumpUntil([&] { return link.IsLinked(); }), "failure fixture did not link");
+    int completed = 0;
+    bool successful = true;
+    LoginGDAuthLogin request {}; request.dwLoginKey = 42;
+    Check(link.SendAuthLogin(request, [&](bool ok) { ++completed; successful = ok; }), "registration not queued");
+    Check(PumpUntil([&] { return db.registrationsRead.load(); }), "script did not receive registration");
+    if (mode == "timeout") link.Tick(std::chrono::steady_clock::now() + 11s);
+    Check(PumpUntil([&] { return completed == 1 && !link.IsLinked(); }), "failure left a pending registration");
+    Check(!successful, "failed registration reported success");
+    Settle(link, db);
+    Check(completed == 1, "failure completed a registration more than once");
+}
+
+void OfflineRegistrationIsNotQueued()
+{
+    LoginDBLink link; LoginGDAuthLogin request {};
+    int calls = 0;
+    Check(!link.SendAuthLogin(request, [&](bool) { ++calls; }), "offline link accepted a registration");
+    link.Tick(std::chrono::steady_clock::now() + 11s);
+    Check(calls == 0, "unaccepted registration retained its callback");
+}
 }
 
 std::shared_ptr<spdlog::logger> logging::GetErrorLogger()
@@ -284,6 +389,9 @@ int main()
         WrongServerMacDropsTheLink();
         MalformedChallengeDropsTheLink();
         FailedResultDropsTheLink();
+        OfflineRegistrationIsNotQueued();
+        RegistrationsUseCorrelatedAcknowledgements();
+        for (const auto mode : {"disconnect", "malformed", "timeout"}) RegistrationFailure(mode);
     } catch (const std::exception& error) {
         std::cerr << "FAILED: " << error.what() << "\n";
         result = 1;

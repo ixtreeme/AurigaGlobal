@@ -180,7 +180,7 @@ bool LoginDB::ConnectDirect(const LoginConfig&) { Unexpected(__func__); }
 SQLMsg* LoginDB::DirectQuery(const char*) { Unexpected(__func__); }
 void LoginDB::Query(const std::string&, const SqlParams& params, Callback) { queries.push_back({params}); }
 void LoginDB::Process() {}
-void LoginDBLink::SendAuthLogin(const LoginGDAuthLogin&) { Unexpected(__func__); }
+bool LoginDBLink::SendAuthLogin(const LoginGDAuthLogin&, RegistrationCallback) { Unexpected(__func__); }
 MYSQL_ROW SQLResult::FetchRow() { Unexpected(__func__); }
 
 int main()

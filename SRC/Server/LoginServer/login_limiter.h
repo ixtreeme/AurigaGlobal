@@ -9,7 +9,7 @@
 // Two independent layers:
 //  - connection flood guard: a permissive per-host new-connection window
 //    (slow lines and a single long handshake never trip it). Hosts with an
-//    established session are not cut off.
+//    established session keep it; the limit applies only to new connections.
 //  - login attempt guard: brute force is limited on the credential check,
 //    per account (lockout) and per host (a looser limit).
 class LoginLimiter
@@ -30,6 +30,7 @@ public:
 private:
 	static constexpr int CONNECT_WINDOW_SECONDS = 10;
 	static constexpr int CONNECT_LIMIT = 30;
+	static constexpr int MAX_SESSIONS_PER_HOST = 128;
 	static constexpr int CONNECT_BLOCK_BASE_SECONDS = 30;
 	static constexpr int CONNECT_BLOCK_MAX_SECONDS = 600;
 

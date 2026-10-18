@@ -13,6 +13,7 @@ namespace
 {
 	// GD/DG protocol headers (common/tables.h).
 	constexpr uint8_t GD_AUTH_LOGIN = 100;
+	constexpr uint8_t DG_AUTH_LOGIN = 122;
 	constexpr uint8_t GD_PING = 120;
 	constexpr uint8_t GD_AUTH = 122;
 	constexpr uint8_t DG_PING = 213;
@@ -34,8 +35,18 @@ void LoginDBLink::Configure(const std::string& host, uint16_t port)
 	LOG_INFO("LoginServer: database link target {}:{}", m_host, m_port);
 }
 
-void LoginDBLink::Tick()
+void LoginDBLink::Tick(std::chrono::steady_clock::time_point now)
 {
+	for (const auto& [handle, registration] : m_registrations)
+	{
+		if (now >= registration.deadline)
+		{
+			LOG_ERROR("LoginServer: database registration {} timed out", handle);
+			OnPeerGone();
+			return;
+		}
+	}
+
 	if (m_linked)
 	{
 		const uint64_t now = static_cast<uint64_t>(std::time(nullptr));
@@ -49,7 +60,7 @@ void LoginDBLink::Tick()
 		return;
 	}
 
-	if (m_connectPending || m_host.empty() || m_port == 0)
+	if (m_connectPending || HasPendingIoWork() || m_host.empty() || m_port == 0)
 		return;
 
 	if (m_lastTryTime != 0 && static_cast<uint64_t>(std::time(nullptr)) - m_lastTryTime < RECONNECT_SECONDS)
@@ -136,6 +147,7 @@ void LoginDBLink::OnPeerGone()
 	m_awaitingAuth = false;
 	m_connectPending = false;
 	DestroySession();
+	FailRegistrations();
 }
 
 void LoginDBLink::ProcessPackets()
@@ -177,6 +189,22 @@ void LoginDBLink::ProcessPackets()
 		}
 		else if (header.bHeader == DG_PING)
 			SendFrame(GD_PING, nullptr, 0);
+		else if (header.bHeader == DG_AUTH_LOGIN)
+		{
+			if (header.dwSize != 1)
+			{
+				OnPeerGone();
+				return;
+			}
+			if (auto it = m_registrations.find(header.dwHandle); it != m_registrations.end())
+			{
+				auto callback = std::move(it->second.callback);
+				m_registrations.erase(it);
+				callback(payload[0] == 1);
+				if (m_bSessionDestroyed)
+					return;
+			}
+		}
 
 		offset += static_cast<int>(sizeof(LoginDBHeader)) + static_cast<int>(header.dwSize);
 	}
@@ -233,25 +261,37 @@ bool LoginDBLink::HandleAuthFrame(uint8_t header, const char* payload, uint32_t 
 	return true;
 }
 
-void LoginDBLink::SendAuthLogin(const LoginGDAuthLogin& data)
+bool LoginDBLink::SendAuthLogin(const LoginGDAuthLogin& data, RegistrationCallback callback)
 {
-	if (!m_linked)
+	if (!m_linked || !callback || !m_lpOutputBuffer)
 	{
 		LOG_ERROR("LoginServer: database link is down, auth login for '{}' not registered", data.szLogin);
-		return;
+		return false;
 	}
 
-	SendFrame(GD_AUTH_LOGIN, &data, sizeof(data));
+	do { ++m_nextRegistration; } while (m_nextRegistration == 0 || m_registrations.contains(m_nextRegistration));
+	m_registrations.emplace(m_nextRegistration,
+		Registration { std::move(callback), std::chrono::steady_clock::now() + std::chrono::seconds(10) });
+	SendFrame(GD_AUTH_LOGIN, &data, sizeof(data), m_nextRegistration);
+	return true;
 }
 
-void LoginDBLink::SendFrame(uint8_t header, const void* payload, uint32_t size)
+void LoginDBLink::FailRegistrations()
+{
+	auto registrations = std::move(m_registrations);
+	m_registrations.clear();
+	for (auto& [handle, registration] : registrations)
+		registration.callback(false);
+}
+
+void LoginDBLink::SendFrame(uint8_t header, const void* payload, uint32_t size, uint32_t handle)
 {
 	if (!m_lpOutputBuffer)
 		return;
 
 	LoginDBHeader frame {};
 	frame.bHeader = header;
-	frame.dwHandle = 0;
+	frame.dwHandle = handle;
 	frame.dwSize = size;
 
 	buffer_write(m_lpOutputBuffer, &frame, sizeof(frame));

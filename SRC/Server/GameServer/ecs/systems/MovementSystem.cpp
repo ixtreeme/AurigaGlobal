@@ -117,7 +117,7 @@ namespace
     {
         return std::tie(s.moveStartTime, s.moveDuration, s.lastMoveTime, s.lastAttackTime,
             s.walkStartTime, s.stopTime, s.isWalking, s.isNowWalking,
-            s.walkPreference, s.commandRevision);
+            s.walkPreference, s.commandRevision, s.moveSpeed, s.moveStartX, s.moveStartY);
     }
 
     // A command owns no component references across construction/destruction
@@ -239,7 +239,6 @@ namespace
         ecs::MovementState state;
         int32_t mapIndex;
         uint64_t spatialRevision;
-        int32_t step;
         bool moving = true;
 
         bool Current(entt::registry& reg) const
@@ -251,12 +250,10 @@ namespace
                 return false;
             const auto& pos = reg.get<ecs::Position>(entity);
             const auto* dest = reg.try_get<ecs::MovementDestination>(entity);
-            const auto* speed = reg.try_get<ecs::MovementSpeed>(entity);
             if (pos.x != position.x || pos.y != position.y || pos.z != position.z ||
                 reg.get<ecs::MapIndex>(entity).value != mapIndex ||
                 reg.get<ecs::SpatialRevision>(entity).value != spatialRevision ||
                 MovementValues(reg.get<ecs::MovementState>(entity)) != MovementValues(state) ||
-                (speed ? std::max<int32_t>(1, speed->run) : 200) != step ||
                 (moving ? !dest || dest->x != destination.x || dest->y != destination.y : dest != nullptr))
                 return false;
             auto* tree = ecs::SectorOf(reg, entity);
@@ -1150,6 +1147,8 @@ bool Goto(entt::entity e, int32_t x, int32_t y)
     auto& state = g_registry.get<ecs::MovementState>(e);
     state.moveStartTime = now;
     state.moveDuration = duration;
+    state.moveStartX = position.x;
+    state.moveStartY = position.y;
     const double distance = std::hypot(double(position.x) - x, double(position.y) - y);
     state.moveSpeed = duration > 0 ? static_cast<float>(distance / (duration / 1000.0)) : 0.0f;
     g_registry.get<ecs::AIState>(e).stateDuration = 4;
@@ -1162,9 +1161,8 @@ bool Goto(entt::entity e, int32_t x, int32_t y)
 }
 
 // Player move driven by the client-provided animation duration. The duration is
-// only capped server-side (never extended), so a client cannot move faster than
-// the point budget allows while the animation timing still comes from the
-// client. No motion-file lookup happens on this path.
+// extended when necessary to enforce the server's speed budget. The animation
+// timing otherwise comes from the client. No motion-file lookup happens here.
 bool GotoWithDuration(entt::entity e, int32_t x, int32_t y, uint32_t clientDuration)
 {
     if (!IsValid(e) || !g_registry.all_of<ecs::CharacterType, ecs::Position>(e))
@@ -1196,6 +1194,8 @@ bool GotoWithDuration(entt::entity e, int32_t x, int32_t y, uint32_t clientDurat
     auto& state = g_registry.get<ecs::MovementState>(e);
     state.moveStartTime = now;
     state.moveDuration = static_cast<uint32_t>(duration);
+    state.moveStartX = position.x;
+    state.moveStartY = position.y;
     state.moveSpeed = static_cast<float>(distance / (duration / 1000.0));
     g_registry.get<ecs::AIState>(e).stateDuration = 4;
     WriteDestination(e, x, y);
@@ -1252,6 +1252,11 @@ void SyncTimingWrite(entt::entity e, uint32_t startTime, uint32_t duration)
     {
         state->moveStartTime = startTime;
         state->moveDuration = duration;
+        if (const auto* position = g_registry.try_get<ecs::Position>(e))
+        {
+            state->moveStartX = position->x;
+            state->moveStartY = position->y;
+        }
     }
 }
 
@@ -1294,11 +1299,9 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
     auto view = reg.view<ecs::MovementDestination, ecs::Position, ecs::MapIndex,
         ecs::MovementState, ecs::SpatialRevision, ecs::SpatialEntity, ecs::CharacterType>();
     for (auto entity : view) {
-        const auto* speed = reg.try_get<ecs::MovementSpeed>(entity);
         frames.push_back({entity, view.get<ecs::Position>(entity),
             view.get<ecs::MovementDestination>(entity), view.get<ecs::MovementState>(entity),
-            view.get<ecs::MapIndex>(entity).value, view.get<ecs::SpatialRevision>(entity).value,
-            speed ? std::max<int32_t>(1, speed->run) : 200});
+            view.get<ecs::MapIndex>(entity).value, view.get<ecs::SpatialRevision>(entity).value});
     }
 
     for (auto frame : frames) {
@@ -1307,19 +1310,26 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
         const auto entity = frame.entity;
         const auto oldPosition = frame.position;
         const auto oldState = frame.state;
-        // Widen before subtracting: opposite int32 endpoints must not overflow.
-        const double dx = double(frame.destination.x) - oldPosition.x;
-        const double dy = double(frame.destination.y) - oldPosition.y;
-        const double distance = std::hypot(dx, dy);
-        const bool arrived = distance <= frame.step;
+        const bool atDestination = oldPosition.x == frame.destination.x && oldPosition.y == frame.destination.y;
+        // Durations are capped at INT_MAX. Unsigned subtraction crosses the
+        // millisecond-counter wrap; the upper half means a tick before start.
+        const uint32_t elapsed = tick - oldState.moveStartTime;
+        if (!atDestination && (oldState.moveDuration == 0 || elapsed > INT_MAX))
+            continue;
+        const bool arrived = atDestination || elapsed >= oldState.moveDuration;
         auto position = oldPosition;
         if (arrived) {
             position.x = frame.destination.x;
             position.y = frame.destination.y;
         } else {
-            position.x = int32_t(double(oldPosition.x) + std::round(dx * frame.step / distance));
-            position.y = int32_t(double(oldPosition.y) + std::round(dy * frame.step / distance));
+            const double fraction = double(elapsed) / oldState.moveDuration;
+            position.x = int32_t(std::round(double(oldState.moveStartX) +
+                (double(frame.destination.x) - oldState.moveStartX) * fraction));
+            position.y = int32_t(std::round(double(oldState.moveStartY) +
+                (double(frame.destination.y) - oldState.moveStartY) * fraction));
         }
+        if (!arrived && position.x == oldPosition.x && position.y == oldPosition.y)
+            continue;
 
         auto* target = ecs::SectorAt(frame.mapIndex, position.x, position.y);
         if (!target || target->IsDestroying())
@@ -1332,14 +1342,16 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
 
         frame.position = position;
         frame.state.lastMoveTime = tick;
-        frame.state.moveDuration = arrived ? 0 : 1;
         // Only the interpolation flag belongs to the tick. isNowWalking is the
         // walk-mode flag owned by SetNowWalking; writing it here made every
         // retarget use walk speed and left an interrupted move (mount change,
         // warp, sync) stuck in walk mode.
         frame.state.isWalking = !arrived;
-        if (arrived) frame.state.stopTime = tick;
-        else frame.state.moveStartTime = tick;
+        if (arrived) {
+            frame.state.stopTime = tick;
+            frame.state.moveStartTime = frame.state.moveDuration = 0;
+            frame.state.moveSpeed = 0.0f;
+        }
         reg.get<ecs::Position>(entity) = position;
         reg.get<ecs::MovementState>(entity) = frame.state;
 
@@ -1694,13 +1706,19 @@ void CalculateMoveDuration(entt::entity e)
     MotionCommand command(e);
     if (!command.started) return;
     const auto position = g_registry.get<ecs::Position>(e);
-    const auto* dest = g_registry.try_get<ecs::MovementDestination>(e);
-    const auto duration = MovementDuration(e, position, dest ? dest->x : position.x, dest ? dest->y : position.y);
+    const auto* destination = g_registry.try_get<ecs::MovementDestination>(e);
+    const ecs::MovementDestination dest = destination ? *destination : ecs::MovementDestination {position.x, position.y};
+    const auto duration = MovementDuration(e, position, dest.x, dest.y);
     const auto now = get_dword_time();
     if (!command.Current()) return;
     auto& state = g_registry.get<ecs::MovementState>(e);
     state.moveStartTime = now;
     state.moveDuration = duration;
+    state.moveStartX = position.x;
+    state.moveStartY = position.y;
+    state.moveSpeed = duration > 0
+        ? float(std::hypot(double(dest.x) - position.x, double(dest.y) - position.y) * 1000.0 / duration)
+        : 0.0f;
 }
 
 } // namespace ecs::MovementSystem

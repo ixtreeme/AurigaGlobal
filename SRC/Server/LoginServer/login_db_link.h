@@ -11,7 +11,10 @@
 #include "login_session.h"
 
 #include <cstdint>
+#include <chrono>
+#include <functional>
 #include <string>
+#include <unordered_map>
 
 // Link to the Database server (the game's db_addr/db_port target).
 //
@@ -62,12 +65,14 @@ public:
 	void Configure(const std::string& host, uint16_t port);
 
 	// Server loop: retries the connection every few seconds.
-	void Tick();
+	void Tick(std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
 
 	bool IsLinked() const { return m_linked; }
 
-	// Registers a completed login in the Database server.
-	void SendAuthLogin(const LoginGDAuthLogin& data);
+	// A queued registration completes exactly once: ACK, refusal, timeout or
+	// link loss. False means nothing was queued and callback is not called.
+	using RegistrationCallback = std::function<void(bool)>;
+	bool SendAuthLogin(const LoginGDAuthLogin& data, RegistrationCallback callback);
 
 protected:
 	void OnInput() override;
@@ -79,7 +84,16 @@ private:
 	// One frame of the auth handshake; false when it refused the handshake
 	// and dropped the link, which releases the session buffers.
 	bool HandleAuthFrame(uint8_t header, const char* payload, uint32_t size);
-	void SendFrame(uint8_t header, const void* payload, uint32_t size);
+	void SendFrame(uint8_t header, const void* payload, uint32_t size, uint32_t handle = 0);
+	void FailRegistrations();
+
+	struct Registration
+	{
+		RegistrationCallback callback;
+		std::chrono::steady_clock::time_point deadline;
+	};
+	std::unordered_map<uint32_t, Registration> m_registrations;
+	uint32_t m_nextRegistration { 0 };
 
 	std::string	m_host;
 	uint16_t	m_port { 0 };

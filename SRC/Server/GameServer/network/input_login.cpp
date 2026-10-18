@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "character_selection.h"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -217,31 +218,21 @@ void CInputLogin::LoginByKey(LPDESC d, const char* data)
 
 void CInputLogin::ChangeName(LPDESC d, const char* data)
 {
-	TPacketCGChangeName* p = (TPacketCGChangeName*)data;
-	const TAccountTable& c_r = d->GetAccountTable();
-
-	if (!c_r.id)
-	{
-		LOG_ERROR("no account table");
-		return;
-	}
-
-	if (!c_r.players[p->index].bChangeName)
+	const auto* request = reinterpret_cast<const TPacketCGChangeName*>(data);
+	TPacketGDChangeName pdb {};
+	const auto result = character_selection::PrepareChangeName(d->GetAccountTable(), *request, pdb);
+	if (result == character_selection::ChangeNameResult::Ignore)
 		return;
 
-	if (!check_name(p->name))
+	if (result == character_selection::ChangeNameResult::InvalidName)
 	{
-		TPacketGCCreateFailure pack;
+		TPacketGCCreateFailure pack {};
 		pack.header = HEADER_GC_CHARACTER_CREATE_FAILURE;
 		pack.bType = 0;
 		d->Packet(&pack, sizeof(pack));
 		return;
 	}
 
-	TPacketGDChangeName pdb;
-
-	pdb.pid = c_r.players[p->index].dwID;
-	strlcpy(pdb.name, p->name, sizeof(pdb.name));
 	db_clientdesc->DBPacket(HEADER_GD_CHANGE_NAME, d->GetHandle(), &pdb, sizeof(TPacketGDChangeName));
 }
 

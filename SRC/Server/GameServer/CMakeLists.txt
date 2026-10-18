@@ -122,6 +122,27 @@ if(WIN32)
 endif()
 add_test(NAME login_auth COMMAND LoginAuthTests)
 
+add_executable(LoginLimiterTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/LoginLimiterTests.cpp
+    ../LoginServer/login_limiter.cpp
+)
+target_link_libraries(LoginLimiterTests PRIVATE SERVER)
+add_test(NAME login_limiter COMMAND LoginLimiterTests)
+
+add_executable(CharacterSelectionTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/CharacterSelectionTests.cpp
+    network/character_selection.cpp
+)
+target_link_libraries(CharacterSelectionTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME character_selection COMMAND CharacterSelectionTests)
+
+add_executable(PlayerLoadTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PlayerLoadTests.cpp
+    ../Database/player_load.cpp
+)
+target_link_libraries(PlayerLoadTests PRIVATE SERVER)
+add_test(NAME player_load COMMAND PlayerLoadTests)
+
 # A login session on a loopback socket over TLS: the handshake and LOGIN3,
 # with packets split across reads.
 add_executable(LoginSessionTests EXCLUDE_FROM_ALL
@@ -306,6 +327,7 @@ add_test(NAME quickslots COMMAND QuickslotTests)
 
 add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/SpatialLifecycleTests.cpp
+    entity/movement_input.cpp
     world/sectree.cpp
     ecs/CBuildingRegistry.cpp
     ecs/OfflineShopEntityRegistry.cpp
@@ -315,10 +337,16 @@ add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     world/event.cpp
     world/event_queue.cpp
 )
-target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+if(WIN32)
+    target_link_libraries(SpatialLifecycleTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
 if(MSVC)
     target_compile_options(SpatialLifecycleTests PRIVATE /Gy)
     target_link_options(SpatialLifecycleTests PRIVATE /OPT:REF /OPT:NOICF)
+else()
+    target_compile_options(SpatialLifecycleTests PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(SpatialLifecycleTests PRIVATE -Wl,--gc-sections)
 endif()
 add_test(NAME spatial_lifecycle COMMAND SpatialLifecycleTests)
 
@@ -482,3 +510,11 @@ endif()
 target_compile_definitions(GameServer PRIVATE
     $<$<CONFIG:Debug>:AURIGA_LPENTITY_FIXUP_AUDIT>
 )
+
+# Build every registered server test explicitly, including EXCLUDE_FROM_ALL
+# executables. CTest is enabled at the root, also for a fresh checkout.
+get_property(_server_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+list(FILTER _server_test_targets INCLUDE REGEX "Tests$")
+add_custom_target(ServerTests DEPENDS ${_server_test_targets})
+get_property(_server_tests DIRECTORY PROPERTY TESTS)
+set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)

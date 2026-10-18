@@ -44,6 +44,8 @@ public:
 
 private:
 	void OnLoginResult(LoginSession* session, const std::string& login, SQLMsg* msg, const LoginCGLogin3& request);
+	void FailLogin(LoginSession* session, const std::string& login, const char* status);
+	void OnRegistrationResult(LoginSession* session, const std::string& login, uint32_t loginKey, bool success);
 	uint32_t GenerateLoginKey();
 
 	std::string m_blockLoginDate;

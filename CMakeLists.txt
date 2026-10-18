@@ -58,7 +58,6 @@ endif()
 # PROJECT - BootstrapVcpkg.cmake UTAN jon (eredeti sorrend)
 # ============================================================
 
-#enable_testing()
 
 # ============================================================
 # Third-party dependencies
@@ -73,6 +72,7 @@ if(AURIGA_USE_VCPKG)
 endif()
 
 project(Auriga_Global VERSION 0.1 LANGUAGES C CXX)
+enable_testing()
 # ============================================================
 # Python fajlok Visual Studio-ban
 # ============================================================

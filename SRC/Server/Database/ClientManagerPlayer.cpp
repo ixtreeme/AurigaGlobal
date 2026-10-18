@@ -7,6 +7,7 @@
 #include "QID.h"
 #include "ItemAwardManager.h"
 #include "Cache.h"
+#include "player_load.h"
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	#include <common/length.h>
@@ -701,30 +702,7 @@ bool CreatePlayerTableFromRes(MYSQL_RES * res, TPlayerTable * pkTab)
 		str_to_number(lRankPoint, row[col++]);
 #endif
 
-	// reset sub_skill_point
-	{
-		pkTab->skills[123].bLevel = 0; // SKILL_CREATE
-
-		if (pkTab->level > 9)
-		{
-			int max_point = pkTab->level - 9;
-
-			int skill_point =
-				MIN(20, pkTab->skills[121].bLevel) +	// SKILL_LEADERSHIP
-				MIN(20, pkTab->skills[124].bLevel) +	// SKILL_MINING
-				MIN(10, pkTab->skills[131].bLevel) +	// SKILL_HORSE_SUMMON
-				MIN(20, pkTab->skills[141].bLevel) +	// SKILL_ADD_HP
-				MIN(20, pkTab->skills[142].bLevel);	// SKILL_RESIST_PENETRATE
-
-#ifdef ENABLE_NEW_SECONDARY_SKILLS
-			skill_point =+ MIN(10, pkTab->skills[143].bLevel) + MIN(10, pkTab->skills[144].bLevel) + MIN(10, pkTab->skills[145].bLevel) + MIN(10, pkTab->skills[146].bLevel);
-#endif
-
-			pkTab->sub_skill_point = max_point - skill_point;
-		}
-		else
-			pkTab->sub_skill_point = 0;
-	}
+	NormalizeSecondarySkills(*pkTab);
 
 	return true;
 }

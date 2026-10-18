@@ -54,6 +54,9 @@
 #include "../../SRC/Server/GameServer/core/log.h"
 #include "../../SRC/Server/GameServer/network/p2p.h"
 #include "../../SRC/Server/GameServer/social/new_switchbot.h"
+#include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
+#include "../../SRC/Server/GameServer/world/building.h"
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
@@ -61,6 +64,7 @@ int VIEW_RANGE = 5000;
 int VIEW_BONUS_RANGE = 500;
 namespace {
 int checks = 0;
+uint32_t clockNow = 123456;
 HEART recoveryHeart {};
 struct RecoveryProbe {
     TMobTable mob {};
@@ -107,6 +111,7 @@ struct MotionSettings {
     entt::entity weapon = entt::null;
 };
 std::unordered_map<entt::entity, MotionSettings> motionSettings;
+std::unordered_map<entt::entity, DESC*> inputDescriptors;
 std::map<entt::entity, TItemTable> weaponProtos;
 // Baked movement speeds (px/s) by (vnum, walking); a missing entry is unknown.
 std::map<std::pair<uint32_t, bool>, float> moveSpeeds;
@@ -160,11 +165,13 @@ bool Visible(entt::entity source, entt::entity viewer) {
         g_registry.get<ecs::ViewMap>(viewer).visible.contains(source);
 }
 void Reset() {
+    clockNow = 123456;
     onRecovery = {}; recoveryChanges = recoveryNotices = 0;
     event_destroy(); recoveryHeart.pulse = 0; recoveryHeart.passes_per_sec = 25;
     onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
     movementPackets.clear(); movementRecipients.clear(); animationPackets.clear(); onAnimation = {};
     transitions.clear(); motionSettings.clear(); weaponProtos.clear();
+    inputDescriptors.clear();
     moveSpeeds.clear(); placements.clear(); g_registry.clear();
 }
 struct Callback {
@@ -233,12 +240,13 @@ DESC_MANAGER::DESC_MANAGER() {}
 DESC_MANAGER::~DESC_MANAGER() {}
 void DESC_MANAGER::DestroyDesc(LPDESC, bool) { Unexpected(); }
 DESC* ecs::PlayerRuntime::GetDesc(entt::entity e) {
+    if (auto it = inputDescriptors.find(e); it != inputDescriptors.end()) return it->second;
     // Boolean-only attachment seam: no transport object is dereferenced here.
     return motionSettings[e].attached ? reinterpret_cast<DESC*>(uintptr_t(1)) : nullptr;
 }
 // Gameplay leaf services are isolated here; movement, packet encoding,
 // SetPosition, sectree relocation and visibility run their production code.
-uint32_t get_dword_time() { return 123456; }
+uint32_t get_dword_time() { return clockNow; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.all_of<ecs::TagPC>(e); }
 bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs::StoneAITag>(e); }
 unsigned char ecs::PlayerRuntime::GetCharType(entt::entity) { Unexpected(); }
@@ -290,6 +298,50 @@ int SECTREE_MANAGER::GetMapIndex(int, int) { Unexpected(); }
 void CSwitchbotManager::P2PSendSwitchbot(uint32_t, uint16_t) { Unexpected(); }
 void CSwitchbotManager::SetIsWarping(uint32_t, bool) { Unexpected(); }
 void DESC::Packet(const void*, int) { Unexpected(); }
+// Real descriptor/input objects for the packet-to-movement integration case.
+// Only their transport, dispatch and clock-sync services are replaced.
+CPacketInfo::CPacketInfo() = default;
+CPacketInfo::~CPacketInfo() = default;
+CPacketInfoCG::CPacketInfoCG() = default;
+CPacketInfoCG::~CPacketInfoCG() = default;
+CInputProcessor::CInputProcessor() : m_pPacketInfo(nullptr), m_iBufferLeft(0) {}
+bool CInputProcessor::Process(LPDESC, const void*, int, int&) { Unexpected(); }
+void CInputProcessor::Handshake(LPDESC, const char*) { Unexpected(); }
+CInputHandshake::CInputHandshake() : m_pMainPacketInfo(nullptr) {}
+CInputHandshake::~CInputHandshake() = default;
+int CInputHandshake::Analyze(LPDESC, uint8_t, const char*) { Unexpected(); }
+int CInputLogin::Analyze(LPDESC, uint8_t, const char*) { Unexpected(); }
+int CInputMain::Analyze(LPDESC, uint8_t, const char*) { Unexpected(); }
+int CInputDead::Analyze(LPDESC, uint8_t, const char*) { Unexpected(); }
+DESC::DESC() = default;
+DESC::~DESC() = default;
+void DESC::Destroy() { Unexpected(); }
+void DESC::SetPhase(int) { Unexpected(); }
+void DESC::OnInput() { Unexpected(); }
+void DESC::OnPeerGone() { Unexpected(); }
+void DESC::OnBytesWritten(std::size_t) { Unexpected(); }
+bool DESC::IsHandshaking() { return true; }
+uint32_t DESC::GetClientTime() { return get_dword_time(); }
+bool DESC::DelayedDisconnect(int) { Unexpected(); }
+bool SkillSystem::IsUsableSkillMotion(entt::entity, uint32_t) { Unexpected(); }
+// Other entry points sharing movement_input.cpp are outside this fixture.
+void CombatSystem::SetTarget(entt::entity, entt::entity) { Unexpected(); }
+void CombatSystem::FlyTarget(entt::entity, uint32_t, int32_t, int32_t, uint8_t) { Unexpected(); }
+bool NetworkSyncSystem::SetSyncOwner(entt::entity, entt::entity, bool) { Unexpected(); }
+void ecs::PlayerRuntime::OnClick(entt::entity, entt::entity) { Unexpected(); }
+void ecs::PlayerRuntime::SetLastSyncTime(entt::entity, const timeval&) { Unexpected(); }
+const timeval& ecs::PlayerRuntime::GetLastSyncTime(entt::entity) { Unexpected(); }
+int ecs::PlayerRuntime::GetSyncHackCount(entt::entity) { Unexpected(); }
+void ecs::PlayerRuntime::SetSyncHackCount(entt::entity, int) { Unexpected(); }
+bool ecs::PlayerRuntime::IsValid(entt::entity) { Unexpected(); }
+entt::entity building::CManager::FindObjectByVID(uint32_t) { Unexpected(); }
+entt::entity CHARACTER_MANAGER::FindEntity(uint32_t) { Unexpected(); }
+void LogManager::HackLog(const char*, entt::entity) { Unexpected(); }
+bool ITEM_MANAGER::CreateDropItemVector(entt::entity, entt::entity, std::vector<TargetInfoItem>&) { Unexpected(); }
+timeval* timediff(const timeval*, const timeval*) { Unexpected(); }
+#ifdef _WIN32
+void gettimeofday(timeval*, timezone*) { Unexpected(); }
+#endif
 void LogManager::CharLog(entt::entity, uint32_t, const char*, const char*) { Unexpected(); }
 void P2P_MANAGER::Send(const void*, int, LPDESC) { Unexpected(); }
 uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
@@ -331,24 +383,35 @@ void ecs::ViewSystem::PacketView(entt::entity e, const void* data, int size, ent
 // Fail-fast link seams for the still-unmigrated functions in MovementSystem.cpp.
 // None may be reached by the native tick or packet tests.
 void ecs::ChatSystem::Send(entt::entity, uint8_t, const char*, ...) { Unexpected(); }
-entt::entity ecs::SocialSystem::GetMyShop(entt::entity) { Unexpected(); }
+entt::entity ecs::SocialSystem::GetMyShop(entt::entity e) {
+    if (inputDescriptors.contains(e)) return entt::null;
+    Unexpected();
+}
 bool AffectSystem::IsPolymorphed(entt::entity e) { return motionSettings[e].polymorphed; }
-uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { Unexpected(); }
+uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity e) {
+    if (inputDescriptors.contains(e)) return g_registry.get<ecs::VIDComponent>(e).value;
+    Unexpected();
+}
 uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity e) { return motionSettings[e].race; }
 int ecs::PlayerRuntime::GetStamina(entt::entity e) { return motionSettings[e].stamina; }
 uint32_t MountSystem::GetMountVnum(entt::entity e) { return motionSettings[e].mount; }
 bool MountSystem::IsRiding(entt::entity e) { return motionSettings[e].mount != 0; }
-std::string_view ecs::PlayerRuntime::GetName(entt::entity e) { CheckShow(e); return g_registry.get<ecs::PlayerName>(e).value; }
+std::string_view ecs::PlayerRuntime::GetName(entt::entity e) {
+    if (inputDescriptors.contains(e)) return "input-player";
+    CheckShow(e); return g_registry.get<ecs::PlayerName>(e).value;
+}
 int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) {
-    if (g_registry.all_of<ShowProbe>(e)) return g_registry.get<ecs::MapIndex>(e).value;
+    if (inputDescriptors.contains(e) || g_registry.all_of<ShowProbe>(e)) return g_registry.get<ecs::MapIndex>(e).value;
     auto it = placements.find(e); if (it == placements.end()) Unexpected();
     return it->second.mapIndex;
 }
 int32_t ecs::PlayerRuntime::GetX(entt::entity e) {
+    if (inputDescriptors.contains(e)) return g_registry.get<ecs::Position>(e).x;
     auto it = placements.find(e); if (it == placements.end()) Unexpected();
     return it->second.x;
 }
 int32_t ecs::PlayerRuntime::GetY(entt::entity e) {
+    if (inputDescriptors.contains(e)) return g_registry.get<ecs::Position>(e).y;
     auto it = placements.find(e); if (it == placements.end()) Unexpected();
     return it->second.y;
 }
@@ -363,7 +426,7 @@ void ecs::PlayerRuntime::SetCharEvent(entt::entity e, CharEvent type, LPEVENT ev
 int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
 void CombatSystem::CheckTarget(entt::entity e) { RecoveryCallback(e, 0); }
 bool CombatSystem::IsStun(entt::entity e) { return Recovery(e).stun; }
-bool CombatSystem::IsDead(entt::entity e) { return Recovery(e).dead; }
+bool CombatSystem::IsDead(entt::entity e) { return inputDescriptors.contains(e) ? false : Recovery(e).dead; }
 int CalculateDuration(int, int) { Unexpected(); }
 namespace ecs::SessionSystem {
 void FlushDelayedSaveItem(entt::entity) { Unexpected(); }
@@ -373,13 +436,17 @@ void CombatSystem::DistributeSP(entt::entity e, entt::entity target, int) {
     Check(e == target, "recovery SP target mismatch"); RecoveryCallback(e, 2);
 }
 uint64_t ecs::PlayerRuntime::GetHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).current; }
-int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }
+int ecs::PointSystem::GetLimitPoint(entt::entity e, uint8_t point) {
+    if (inputDescriptors.contains(e) && point == POINT_MOV_SPEED) return int(motionSettings[e].movePoint);
+    Unexpected();
+}
 void ecs::PointSystem::Compute(entt::entity e) { CheckShow(e); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity e) {
     auto& data = Recovery(e); return data.missingMob ? nullptr : &data.mob;
 }
 void ecs::MovementSystem::OnMove(entt::entity, bool) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t flag) {
+    if (inputDescriptors.contains(e) && flag == AFF_STUN) return false;
     Check(flag == AFF_POISON, "recovery read unexpected affect"); return Recovery(e).poison;
 }
 bool ItemSystem::IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
@@ -906,6 +973,12 @@ entt::entity Moving(int x, int y, int targetX, int targetY, int speed = 200, boo
     g_registry.emplace<ecs::CharacterRuntimeFlagsComponent>(e);
     Check(Spawn(e, 1, x, y), "native mover spawn");
     g_registry.emplace<ecs::MovementDestination>(e, targetX, targetY);
+    // Explicit time contract: speed is world units per 10 ms in these
+    // spatial fixtures. Production commands calculate their own duration.
+    auto& state = g_registry.get<ecs::MovementState>(e);
+    state.moveStartX = x; state.moveStartY = y;
+    state.moveDuration = uint32_t(std::min<double>(INT_MAX,
+        std::ceil(std::hypot(double(targetX) - x, double(targetY) - y) * 10 / std::max(1, speed))));
     return e;
 }
 void NativeMovement() {
@@ -936,6 +1009,101 @@ void NativeMovement() {
     MovementSystem_Update(g_registry, 30);
     Check(probe.positions.size() == 2, "stopped entity moved again");
 }
+void MovementPacketInitializesTheCommand() {
+    Reset(); MapFixture map;
+    const auto e = Moving(100, 100, 101, 100);
+    g_registry.emplace<ecs::TagCharacter>(e);
+    DESC descriptor;
+    descriptor.SetEntity(e);
+    inputDescriptors[e] = &descriptor;
+    ecs::MovementSystem::Stop(e);
+    struct Input : CInputMain { using CInputMain::Move; } input;
+    TPacketCGMove packet {};
+    packet.bHeader = HEADER_CG_MOVE; packet.bFunc = FUNC_MOVE;
+    packet.lX = 700; packet.lY = 100; packet.dwDuration = 1200; packet.dwTime = get_dword_time();
+    input.Move(e, reinterpret_cast<const char*>(&packet));
+    const auto& state = g_registry.get<ecs::MovementState>(e);
+    Check(state.moveDuration == 1200 && state.moveStartTime == get_dword_time() &&
+        state.moveStartX == 100 && g_registry.get<ecs::MovementDestination>(e).x == 700,
+        "input handler prepublished the target and suppressed command initialization");
+    Check(movementPackets.size() == 1 && movementPackets[0].dwDuration == 1200 && movementPackets[0].lX == 700,
+        "input published a zero or stale movement duration");
+    input.Move(e, reinterpret_cast<const char*>(&packet));
+    Check(movementPackets.size() == 1, "refused repeated command was published again");
+    MovementSystem_Update(g_registry, get_dword_time() + 600);
+    Check(g_registry.get<ecs::Position>(e).x == 400, "packet timing did not drive movement");
+    // A zero movement budget must leave destination and packets alone.
+    packet.lX = 900; motionSettings[e].movePoint = 0;
+    input.Move(e, reinterpret_cast<const char*>(&packet));
+    Check(g_registry.get<ecs::MovementDestination>(e).x == 700 && movementPackets.size() == 1,
+        "rejected input changed the destination or published a packet");
+    inputDescriptors.erase(e);
+}
+
+void ElapsedMovementTiming() {
+    {
+        Reset(); MapFixture map; MovementProbe probe;
+        const auto e = Moving(100, 100, 101, 100);
+        motionSettings[e].attached = true;
+        ecs::MovementSystem::SyncDestinationClear(e);
+        Check(ecs::MovementSystem::GotoWithDuration(e, 1100, 100, 10000), "client-timed move did not start");
+        const auto start = get_dword_time();
+        MovementSystem_Update(g_registry, start);
+        MovementSystem_Update(g_registry, start);
+        Check(g_registry.get<ecs::Position>(e).x == 100 && probe.moved.empty(), "move advanced without elapsed time");
+        MovementSystem_Update(g_registry, start + 5000);
+        const auto& state = g_registry.get<ecs::MovementState>(e);
+        Check(g_registry.get<ecs::Position>(e).x == 600 && state.moveDuration == 10000 &&
+            state.moveStartTime == start, "tick changed command timing or missed halfway position");
+        const auto notices = probe.moved.size();
+        MovementSystem_Update(g_registry, start + 5000);
+        Check(g_registry.get<ecs::Position>(e).x == 600 && probe.moved.size() == notices,
+            "same timestamp moved or published twice");
+        MovementSystem_Update(g_registry, start + 15000);
+        Check(g_registry.get<ecs::Position>(e).x == 1100 && !g_registry.all_of<ecs::MovementDestination>(e) &&
+            g_registry.get<ecs::MovementState>(e).moveDuration == 0, "lagged tick did not settle at destination");
+    }
+    auto atOneSecond = [](bool fine) {
+        Reset(); MapFixture map;
+        const auto e = Moving(100, 100, 101, 100);
+        motionSettings[e].attached = true;
+        ecs::MovementSystem::SyncDestinationClear(e);
+        Check(ecs::MovementSystem::GotoWithDuration(e, 1100, 100, 10000), "cadence fixture did not start");
+        const auto start = get_dword_time();
+        if (fine) for (uint32_t ms = 1; ms < 1000; ++ms) MovementSystem_Update(g_registry, start + ms);
+        MovementSystem_Update(g_registry, start + 1000);
+        return g_registry.get<ecs::Position>(e).x;
+    };
+    const auto coarse = atOneSecond(false), fine = atOneSecond(true);
+    Check(coarse == 200 && fine == coarse, "rounding made movement depend on update frequency");
+    {
+        Reset(); MapFixture map;
+        const auto e = Moving(100, 100, 101, 100);
+        motionSettings[e].attached = true;
+        ecs::MovementSystem::SyncDestinationClear(e);
+        clockNow = UINT32_MAX - 50;
+        Check(ecs::MovementSystem::GotoWithDuration(e, 500, 100, 1000), "wrap fixture did not start");
+        MovementSystem_Update(g_registry, uint32_t(clockNow + 250));
+        Check(g_registry.get<ecs::Position>(e).x == 200, "millisecond rollover broke elapsed movement");
+        MovementSystem_Update(g_registry, uint32_t(clockNow + 1000));
+        Check(g_registry.get<ecs::Position>(e).x == 500 && !g_registry.all_of<ecs::MovementDestination>(e),
+            "rollover move did not arrive");
+    }
+    for (bool riding : {false, true}) {
+        Reset(); MapFixture map;
+        const auto e = Moving(100, 100, 101, 100);
+        motionSettings[e].attached = true;
+        motionSettings[e].movePoint = 200;
+        motionSettings[e].mount = riding ? 20110 : 0;
+        ecs::MovementSystem::SyncDestinationClear(e);
+        Check(ecs::MovementSystem::GotoWithDuration(e, 700, 100, 1), "speed-budget move did not start");
+        const auto duration = g_registry.get<ecs::MovementState>(e).moveDuration;
+        Check(duration == (riding ? 250 : 500), "speed point or mount budget ignored");
+        MovementSystem_Update(g_registry, get_dword_time() + duration / 2);
+        Check(g_registry.get<ecs::Position>(e).x == 400, "speed budget was not used by the tick");
+    }
+}
+
 void WalkModeOwnership() {
     Reset(); MapFixture map; MovementProbe probe;
     // A runner mid-move keeps its run mode: the tick owns the interpolation
@@ -979,6 +1147,9 @@ void MovementVisibilityAndBounds() {
     const auto overflow = Moving(100, 500, INT32_MIN, 500, 1);
     const auto diagonal = Moving(500, 500, 800, 900, 100);
     const auto zeroSpeed = Moving(100, 700, 110, 700, 0);
+    ecs::MovementSystem::SyncTimingWrite(overflow, 59, INT_MAX);
+    ecs::MovementSystem::SyncTimingWrite(diagonal, 50, 50);
+    ecs::MovementSystem::SyncTimingWrite(zeroSpeed, 50, 100);
     const auto detached = Moving(100, 900, 110, 900);
     ecs::SpatialService::RemoveEntity(g_registry, detached);
     const auto dead = Moving(100, 1100, 110, 1100);
@@ -1028,7 +1199,7 @@ void MovementCallbackRetarget() {
     probe.onPosition = [&](const ecs::PositionChangedEvent& event) {
         if (event.entity != e) return;
         g_registry.emplace<ecs::MovementDestination>(e, 1000, 100);
-        g_registry.get<ecs::MovementState>(e).moveDuration = 777;
+        ecs::MovementSystem::SyncTimingWrite(e, 100, 777);
     };
     MovementSystem_Update(g_registry, 100);
     Check(g_registry.get<ecs::MovementDestination>(e).x == 1000 &&
@@ -1042,6 +1213,7 @@ void MovementCallbackRetarget() {
         Check(Spawn(e, 1, event.newX, event.newY), "same-location callback respawn");
     };
     g_registry.get<ecs::MovementDestination>(e).x = 500;
+    ecs::MovementSystem::SyncTimingWrite(e, 100, 10);
     MovementSystem_Update(g_registry, 110);
     Check(transitions.empty() && map.At(500, 100)->Contains(e), "old arrival transitioned new spawn");
 
@@ -1496,11 +1668,11 @@ void ShownMountFollowAndRemoval() {
             "follow move omitted owner or observer");
         Check(movementPackets.back().lX == 6800 && movementPackets.back().dwDuration > 0,
             "follow move lost destination or duration");
-        MovementSystem_Update(g_registry, 123500);
+        MovementSystem_Update(g_registry, 124123);
         Check(g_registry.get<ecs::Position>(follower).x == 6400 &&
             SectreeMember(follower, map.At(6400, 100)), "shown follower did not advance across sector");
-        MovementSystem_Update(g_registry, 123540);
-        MovementSystem_Update(g_registry, 123580);
+        MovementSystem_Update(g_registry, 124790);
+        MovementSystem_Update(g_registry, 125456);
         Check(g_registry.get<ecs::Position>(follower).x == 6800 &&
             !g_registry.all_of<ecs::MovementDestination>(follower), "shown follower did not arrive");
         packets.clear();
@@ -1737,7 +1909,7 @@ int main() {
         NativeBuildingIdentityAndPlacement(); NativeShopAvatarLifecycle(); NativeShopPreparationCallbacks();
         NativeShopExceptionalRetirement();
         NativeShopPendingRetirementBatch();
-        NativeMovement(); WalkModeOwnership(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
+        NativeMovement(); MovementPacketInitializesTheCommand(); ElapsedMovementTiming(); WalkModeOwnership(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
         NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations(); ShowHeightSentinel();

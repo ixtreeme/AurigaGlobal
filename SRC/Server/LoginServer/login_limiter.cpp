@@ -7,12 +7,14 @@ bool LoginLimiter::AllowConnect(const std::string& host)
 {
 	const uint64_t now = static_cast<uint64_t>(std::time(nullptr));
 	HostState& state = m_hosts[host];
+	if (state.activeSessions >= MAX_SESSIONS_PER_HOST)
+		return false;
 
 	if (state.blockedUntil != 0 && now < state.blockedUntil)
 	{
-		// Never cut off an address that has live players behind it (NAT,
-		// shared connections); the flood guard is for new bursts only.
-		return state.activeSessions > 0;
+		// Existing sessions are untouched. Their presence must not exempt
+		// new connections from the flood guard, including behind a NAT.
+		return false;
 	}
 
 	if (state.blockedUntil != 0)

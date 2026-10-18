@@ -22,8 +22,48 @@ struct Failure { const LoginSession* session; std::string status; };
 std::vector<Failure> failures;
 struct Issued { std::string sql; SqlParams params; };
 std::vector<Issued> queries;
+std::vector<LoginDB::Callback> queryCallbacks;
+struct Registration { LoginGDAuthLogin data; LoginDBLink::RegistrationCallback callback; };
+std::vector<Registration> registrations;
+std::vector<uint32_t> successes;
+bool linkAvailable = true;
 
-void Reset() { failures.clear(); queries.clear(); }
+void Reset() {
+    failures.clear(); queries.clear(); queryCallbacks.clear();
+    registrations.clear(); successes.clear(); linkAvailable = true;
+}
+
+struct Session : LoginSession {
+    using LoginSession::LoginSession;
+    using LoginSession::OnPeerGone;
+};
+
+void CompleteQuery(size_t index, bool passwordMatches = true)
+{
+    SQLMsg msg;
+    auto* result = new SQLResult;
+    result->uiNumRows = 1;
+    result->bPrepared = true;
+    result->preparedCells = {"HASH", passwordMatches ? "HASH" : "OTHER", "000000000000000000", "42"};
+#ifdef ENABLE_MULTI_LANGUAGE
+    result->preparedCells.push_back("0");
+#endif
+    result->preparedCells.push_back("OK");
+    result->preparedCells.push_back("0");
+    for (int i = 0; i < 8; ++i) result->preparedCells.push_back("0");
+    std::vector<char*> row;
+    for (auto& cell : result->preparedCells) row.push_back(cell.data());
+    result->preparedRows.push_back(std::move(row));
+    msg.vec_pkResult.push_back(result);
+    auto callback = std::move(queryCallbacks.at(index));
+    callback(&msg);
+}
+
+void CompleteRegistration(size_t index, bool success)
+{
+    auto callback = std::move(registrations.at(index).callback);
+    callback(success);
+}
 
 LoginCGLogin3 Packet(const char* login, const char* passwd, const char* hwid)
 {
@@ -117,15 +157,90 @@ void NoTerminatorAnywhere()
     auth.RequestLogin(&session, reinterpret_cast<const LoginCGLogin3*>(storage.get()));
     Check(Rejected(session, "NOID"), "a LOGIN3 without any terminator was accepted");
 }
+
+void OneAttemptPerSessionAndDatabaseAck()
+{
+    Reset(); LoginAuth auth; LoginDBLink link; auth.SetLink(&link);
+    Session session(1, &auth);
+    const auto alice = Packet("alice", "secret", "HWID-1");
+    const auto bob = Packet("bob", "secret", "HWID-2");
+    auth.RequestLogin(&session, &alice);
+    auth.RequestLogin(&session, &bob);
+    Check(queries.size() == 1 && session.GetLogin() == "alice" && failures.back().status == "ALREADY",
+        "a second account overwrote an in-flight attempt");
+    CompleteQuery(0);
+    Check(successes.empty() && registrations.size() == 1 && session.HasPendingDbWork(),
+        "authentication succeeded or released the session before Database ACK");
+    Check(registrations[0].data.dwID == 42 && std::string(registrations[0].data.szLogin) == "alice" &&
+        registrations[0].data.dwLoginKey != 0, "registration lost the authenticated identity");
+    Session duplicate(2, &auth);
+    auth.RequestLogin(&duplicate, &alice);
+    auth.RequestLogin(&session, &bob);
+    Check(queries.size() == 1 && session.GetLogin() == "alice", "registration wait allowed another lookup");
+    CompleteRegistration(0, true);
+    Check(successes.size() == 1 && successes[0] == registrations[0].data.dwLoginKey &&
+        !session.HasPendingDbWork() && !session.CanStartLogin(), "Database ACK did not complete exactly one login");
+    auth.RequestLogin(&session, &bob);
+    Check(queries.size() == 1 && session.GetLogin() == "alice", "authenticated session switched accounts");
+    session.OnPeerGone(); auth.OnSessionClosed(&session);
+    auth.RequestLogin(&duplicate, &alice);
+    Check(queries.size() == 2, "closed session left its account stuck ALREADY");
+    CompleteQuery(1, false);
+    Check(!duplicate.HasPendingDbWork() && duplicate.CanStartLogin() && duplicate.GetLogin().empty(),
+        "failed credentials did not release the session and account");
+}
+
+void RegistrationFailuresReleaseTheAttempt()
+{
+    for (bool offline : {false, true}) {
+        Reset(); LoginAuth auth; LoginDBLink link; auth.SetLink(&link);
+        Session session(1, &auth);
+        const auto packet = Packet("tester", "secret", "HWID-1");
+        linkAvailable = !offline;
+        auth.RequestLogin(&session, &packet); CompleteQuery(0);
+        if (!offline) {
+            Check(successes.empty() && session.HasPendingDbWork(), "registration was not pending");
+            CompleteRegistration(0, false); // Refusal, timeout and link loss use this completion.
+        }
+        Check(successes.empty() && failures.size() == 1 && failures[0].status == "SHUTDOWN" &&
+            !session.HasPendingDbWork() && session.CanStartLogin() && session.GetLogin().empty(),
+            "failed/offline registration yielded success or stranded the attempt");
+        linkAvailable = true;
+        auth.RequestLogin(&session, &packet); CompleteQuery(1); CompleteRegistration(offline ? 0 : 1, true);
+        Check(successes.size() == 1 && !session.HasPendingDbWork(), "registration failure prevented retry");
+        session.OnPeerGone(); auth.OnSessionClosed(&session);
+    }
+}
+
+void DisconnectWhileWaiting()
+{
+    for (bool duringRegistration : {false, true}) {
+        Reset(); LoginAuth auth; LoginDBLink link; auth.SetLink(&link);
+        Session session(1, &auth);
+        const auto packet = Packet("tester", "secret", "HWID-1");
+        auth.RequestLogin(&session, &packet);
+        if (duringRegistration) CompleteQuery(0);
+        session.OnPeerGone();
+        Check(session.HasPendingDbWork(), "disconnect released a session still referenced by a callback");
+        if (duringRegistration) CompleteRegistration(0, true);
+        else CompleteQuery(0);
+        Check(successes.empty() && failures.empty() && !session.HasPendingDbWork(),
+            "late result answered a closed session or retained it");
+        auth.OnSessionClosed(&session);
+        Session next(2, &auth); auth.RequestLogin(&next, &packet);
+        Check(queries.size() == 2, "disconnect left a pending or successful login behind");
+        CompleteQuery(1, false);
+    }
+}
 }
 
 // Session, database and link seams. The session is a real LoginSession object
 // whose network half is never started.
 LoginSession::LoginSession(uint32_t handshake, LoginAuth* auth) : m_handshake(handshake), m_auth(auth) {}
 void LoginSession::OnInput() { Unexpected(__func__); }
-void LoginSession::OnPeerGone() { Unexpected(__func__); }
+void LoginSession::OnPeerGone() { m_closed = true; }
 void LoginSession::SendLoginFailure(const char* status) { failures.push_back({this, status}); }
-void LoginSession::SendAuthSuccess(uint32_t) { Unexpected(__func__); }
+void LoginSession::SendAuthSuccess(uint32_t key) { successes.push_back(key); }
 
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
@@ -136,10 +251,18 @@ LoginDB::~LoginDB() = default;
 bool LoginDB::Connect(const LoginConfig&) { Unexpected(__func__); }
 bool LoginDB::ConnectDirect(const LoginConfig&) { Unexpected(__func__); }
 SQLMsg* LoginDB::DirectQuery(const char*) { Unexpected(__func__); }
-void LoginDB::Query(const std::string& sql, const SqlParams& params, Callback) { queries.push_back({sql, params}); }
+void LoginDB::Query(const std::string& sql, const SqlParams& params, Callback callback) {
+    queries.push_back({sql, params}); queryCallbacks.push_back(std::move(callback));
+}
 void LoginDB::Process() {}
-void LoginDBLink::SendAuthLogin(const LoginGDAuthLogin&) { Unexpected(__func__); }
-MYSQL_ROW SQLResult::FetchRow() { Unexpected(__func__); }
+LoginDBLink::LoginDBLink() = default;
+void LoginDBLink::OnInput() { Unexpected(__func__); }
+void LoginDBLink::OnPeerGone() { Unexpected(__func__); }
+bool LoginDBLink::SendAuthLogin(const LoginGDAuthLogin& data, RegistrationCallback callback) {
+    if (!linkAvailable) return false;
+    registrations.push_back({data, std::move(callback)}); return true;
+}
+MYSQL_ROW SQLResult::FetchRow() { return preparedRowPos < preparedRows.size() ? preparedRows[preparedRowPos++].data() : nullptr; }
 
 int main()
 {
@@ -147,6 +270,9 @@ int main()
         TerminatedFields();
         UnterminatedFields();
         NoTerminatorAnywhere();
+        OneAttemptPerSessionAndDatabaseAck();
+        RegistrationFailuresReleaseTheAttempt();
+        DisconnectWhileWaiting();
     } catch (const std::exception& error) {
         std::cerr << "login auth test failed: " << error.what() << '\n';
         return 1;

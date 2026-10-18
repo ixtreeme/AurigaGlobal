@@ -75,6 +75,14 @@ void LoginAuth::Process()
 
 void LoginAuth::RequestLogin(LoginSession* session, const LoginCGLogin3* packet)
 {
+	if (!session || !packet || session->IsClosed())
+		return;
+	if (!session->CanStartLogin())
+	{
+		session->SendLoginFailure("ALREADY");
+		return;
+	}
+
 	// A real client terminates every field; anything else is rejected before
 	// login, password or hwid is read past its array.
 	if (!Terminated(packet->login) || !Terminated(packet->passwd)
@@ -114,7 +122,7 @@ void LoginAuth::RequestLogin(LoginSession* session, const LoginCGLogin3* packet)
 	const std::string passwd(packet->passwd);
 
 	m_pendingLogins.insert(login);
-	session->SetLogin(login);
+	session->BeginLogin(login);
 	session->BeginDbQuery();
 
 	LOG_INFO("LoginServer: login request for '{}'", login);
@@ -144,28 +152,50 @@ void LoginAuth::RequestLogin(LoginSession* session, const LoginCGLogin3* packet)
 
 void LoginAuth::OnSessionClosed(LoginSession* session)
 {
-	if (session->GetLogin().empty())
+	std::erase_if(m_logins, [session](const auto& entry) { return entry.second == session; });
+	session->CompleteLogin(false);
+}
+
+void LoginAuth::FailLogin(LoginSession* session, const std::string& login, const char* status)
+{
+	m_pendingLogins.erase(login);
+	session->EndDbQuery();
+	session->CompleteLogin(false);
+	if (!session->IsClosed() && status)
+		session->SendLoginFailure(status);
+}
+
+void LoginAuth::OnRegistrationResult(LoginSession* session, const std::string& login, uint32_t loginKey, bool success)
+{
+	if (!success || session->IsClosed())
+	{
+		FailLogin(session, login, "SHUTDOWN");
 		return;
+	}
 
-	const auto it = m_logins.find(session->GetLogin());
-
-	if (it != m_logins.end() && it->second == session)
-		m_logins.erase(it);
+	m_pendingLogins.erase(login);
+	session->EndDbQuery();
+	session->CompleteLogin(true);
+	m_logins[login] = session;
+	if (m_limiter)
+		m_limiter->ReportLoginResult(session->GetHost(), login, true);
+	LOG_INFO("LoginServer: login registered for '{}'", login);
+	session->SendAuthSuccess(loginKey);
 }
 
 void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, SQLMsg* msg, const LoginCGLogin3& request)
 {
-	session->EndDbQuery();
-	m_pendingLogins.erase(login);
-
 	if (session->IsClosed())
+	{
+		FailLogin(session, login, nullptr);
 		return;
+	}
 
 	SQLResult* result = msg ? msg->Get() : nullptr;
 
 	if (!result || result->uiNumRows == 0)
 	{
-		session->SendLoginFailure("NOID");
+		FailLogin(session, login, "NOID");
 		return;
 	}
 
@@ -173,7 +203,7 @@ void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, S
 
 	if (!row || !row[0] || !row[1] || !row[2] || !row[3])
 	{
-		session->SendLoginFailure("NOID");
+		FailLogin(session, login, "NOID");
 		return;
 	}
 
@@ -218,25 +248,25 @@ void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, S
 		if (m_limiter)
 			m_limiter->ReportLoginResult(session->GetHost(), login, false);
 
-		session->SendLoginFailure("WRONGPWD");
+		FailLogin(session, login, "WRONGPWD");
 		return;
 	}
 
 	if (notAvail && atoi(notAvail) != 0)
 	{
-		session->SendLoginFailure("NOTAVAIL");
+		FailLogin(session, login, "NOTAVAIL");
 		return;
 	}
 
-	if (strcmp(status, "OK") != 0)
+	if (!status || strcmp(status, "OK") != 0)
 	{
-		session->SendLoginFailure(status);
+		FailLogin(session, login, status ? status : "NOID");
 		return;
 	}
 
 	if (!m_blockLoginDate.empty() && strncmp(createDate, m_blockLoginDate.c_str(), 8) >= 0)
 	{
-		session->SendLoginFailure("BLKLOGIN");
+		FailLogin(session, login, "BLKLOGIN");
 		return;
 	}
 
@@ -244,38 +274,31 @@ void LoginAuth::OnLoginResult(LoginSession* session, const std::string& login, S
 
 #ifdef ENABLE_HWID
 	if (!m_hwid.CheckAndUpdate(session, login, request.hwid, accountId))
+	{
+		FailLogin(session, login, nullptr);
 		return;
+	}
 #endif
 
 	const uint32_t loginKey = GenerateLoginKey();
 
-	m_logins[login] = session;
-
-	if (m_limiter)
-		m_limiter->ReportLoginResult(session->GetHost(), login, true);
-
-	LOG_INFO("LoginServer: login OK for '{}' (account {}, key {})", login, accountId, loginKey);
-
-	session->SendAuthSuccess(loginKey);
-
-	if (m_link)
-	{
-		LoginGDAuthLogin registration {};
-		registration.dwID = accountId;
+	LoginGDAuthLogin registration {};
+	registration.dwID = accountId;
 #ifdef ENABLE_HWID
-		strlcpy(registration.hwid, request.hwid, sizeof(registration.hwid));
+	strlcpy(registration.hwid, request.hwid, sizeof(registration.hwid));
 #endif
-		registration.dwLoginKey = loginKey;
-		strlcpy(registration.szLogin, login.c_str(), sizeof(registration.szLogin));
-		strlcpy(registration.szSocialID, socialId, sizeof(registration.szSocialID));
-		std::memcpy(registration.adwClientKey, request.adwClientKey, sizeof(registration.adwClientKey));
+	registration.dwLoginKey = loginKey;
+	strlcpy(registration.szLogin, login.c_str(), sizeof(registration.szLogin));
+	strlcpy(registration.szSocialID, socialId, sizeof(registration.szSocialID));
+	std::memcpy(registration.adwClientKey, request.adwClientKey, sizeof(registration.adwClientKey));
 #ifdef ENABLE_MULTI_LANGUAGE
-		registration.bLanguage = language;
+	registration.bLanguage = language;
 #endif
-		std::memcpy(registration.iPremiumTimes, premiumTimes, sizeof(registration.iPremiumTimes));
+	std::memcpy(registration.iPremiumTimes, premiumTimes, sizeof(registration.iPremiumTimes));
 
-		m_link->SendAuthLogin(registration);
-	}
+	if (!m_link || !m_link->SendAuthLogin(registration,
+		[this, session, login, loginKey](bool success) { OnRegistrationResult(session, login, loginKey, success); }))
+		FailLogin(session, login, "SHUTDOWN");
 }
 
 uint32_t LoginAuth::GenerateLoginKey()

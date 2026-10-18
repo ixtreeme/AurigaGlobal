@@ -93,13 +93,20 @@ public:
 	bool IsClosed() const { return m_closed; }
 
 	const std::string& GetLogin() const { return m_login; }
-	void SetLogin(const std::string& login) { m_login = login; }
+	bool CanStartLogin() const { return !m_closed && m_authState == AuthState::Ready; }
+	void BeginLogin(const std::string& login) { m_login = login; m_authState = AuthState::Pending; }
+	void CompleteLogin(bool success)
+	{
+		m_authState = success ? AuthState::Authenticated : AuthState::Ready;
+		if (!success)
+			m_login.clear();
+	}
 
 	const std::string& GetHost() const { return m_host; }
 	void SetHost(const std::string& host) { m_host = host; }
 
-	// Account lookups in flight; the session cannot be reaped while a
-	// result callback still references it.
+	// Account lookups and Database registrations in flight; the session
+	// cannot be reaped while either result callback still references it.
 	void BeginDbQuery() { ++m_pendingDbQueries; }
 	void EndDbQuery() { --m_pendingDbQueries; }
 	bool HasPendingDbWork() const { return m_pendingDbQueries > 0; }
@@ -113,6 +120,9 @@ protected:
 	void OnOutput() override {}
 
 private:
+	enum class AuthState { Ready, Pending, Authenticated };
+	AuthState m_authState { AuthState::Ready };
+
 	enum class Phase
 	{
 		Handshake,
