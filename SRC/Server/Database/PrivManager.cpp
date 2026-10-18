@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "PrivManager.h"
 #include "ClientManager.h"
+#include <common/time_64.h>
 
 const int PRIV_DURATION = 60*60*12;
 const int CHARACTER_GOOD_PRIV_DURATION = 2*60*60;
@@ -23,7 +24,7 @@ CPrivManager::~CPrivManager()
 //
 void CPrivManager::Update()
 {
-	time_t now = CClientManager::instance().GetCurrentTime();
+	int64_t now = CClientManager::instance().GetCurrentTime();
 
 	while (!m_pqPrivGuild.empty() && m_pqPrivGuild.top().first <= now)
 	{
@@ -93,7 +94,7 @@ void CPrivManager::AddCharPriv(uint32_t pid, uint8_t type, int value)
 	if (!value)
 		return;
 
-	time_t now = CClientManager::instance().GetCurrentTime();
+	int64_t now = CClientManager::instance().GetCurrentTime();
 	TPrivCharData* p = new TPrivCharData(type, value, pid);
 
 	int iDuration = CHARACTER_BAD_PRIV_DURATION;
@@ -101,7 +102,7 @@ void CPrivManager::AddCharPriv(uint32_t pid, uint8_t type, int value)
 	if (value > 0)
 		iDuration = CHARACTER_GOOD_PRIV_DURATION;
 
-	m_pqPrivChar.push(std::make_pair(now+iDuration, p));
+	m_pqPrivChar.push(std::make_pair(time64::AddSeconds(now, iDuration), p));
 	m_aPrivChar[type].insert(std::make_pair(pid, p));
 
 	// TODO send packet
@@ -111,7 +112,7 @@ void CPrivManager::AddCharPriv(uint32_t pid, uint8_t type, int value)
 
 //
 //
-void CPrivManager::AddGuildPriv(uint32_t guild_id, uint8_t type, int value, time_t duration_sec)
+void CPrivManager::AddGuildPriv(uint32_t guild_id, uint8_t type, int value, int64_t duration_sec)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
@@ -121,8 +122,8 @@ void CPrivManager::AddGuildPriv(uint32_t guild_id, uint8_t type, int value, time
 
 	auto it = m_aPrivGuild[type].find(guild_id);
 
-	time_t now = CClientManager::instance().GetCurrentTime();
-	time_t end = now + duration_sec;
+	int64_t now = CClientManager::instance().GetCurrentTime();
+	const int64_t end = time64::AddSeconds(now, duration_sec);
 	TPrivGuildData * p = new TPrivGuildData(type, value, guild_id, end);
 	m_pqPrivGuild.push(std::make_pair(end, p));
 
@@ -138,7 +139,7 @@ void CPrivManager::AddGuildPriv(uint32_t guild_id, uint8_t type, int value, time
 	LOG_INFO("Guild Priv guild({}) type({}) value({}) duration_sec({})", guild_id, type, value, duration_sec);
 }
 
-void CPrivManager::AddEmpirePriv(uint8_t empire, uint8_t type, int value, time_t duration_sec)
+void CPrivManager::AddEmpirePriv(uint8_t empire, uint8_t type, int value, int64_t duration_sec)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
@@ -149,8 +150,8 @@ void CPrivManager::AddEmpirePriv(uint8_t empire, uint8_t type, int value, time_t
 	if (duration_sec < 0)
 		duration_sec = 0;
 
-	time_t now = CClientManager::instance().GetCurrentTime();
-	time_t end = now+duration_sec;
+	int64_t now = CClientManager::instance().GetCurrentTime();
+	const int64_t end = time64::AddSeconds(now, duration_sec);
 
 	{
 		if (m_aaPrivEmpire[type][empire])
@@ -170,7 +171,7 @@ void CPrivManager::AddEmpirePriv(uint8_t empire, uint8_t type, int value, time_t
 
 struct FSendChangeGuildPriv
 {
-	FSendChangeGuildPriv(uint32_t guild_id, uint8_t type, int value, time_t end_time_sec)
+	FSendChangeGuildPriv(uint32_t guild_id, uint8_t type, int value, int64_t end_time_sec)
 	{
 		p.guild_id = guild_id;
 		p.type = type;
@@ -193,7 +194,7 @@ struct FSendChangeGuildPriv
 
 struct FSendChangeEmpirePriv
 {
-	FSendChangeEmpirePriv(uint8_t empire, uint8_t type, int value, time_t end_time_sec)
+	FSendChangeEmpirePriv(uint8_t empire, uint8_t type, int value, int64_t end_time_sec)
 	{
 		p.empire = empire;
 		p.type = type;
@@ -233,14 +234,14 @@ struct FSendChangeCharPriv
 };
 
 // ADD_GUILD_PRIV_TIME
-void CPrivManager::SendChangeGuildPriv(uint32_t guild_id, uint8_t type, int value, time_t end_time_sec)
+void CPrivManager::SendChangeGuildPriv(uint32_t guild_id, uint8_t type, int value, int64_t end_time_sec)
 {
 	CClientManager::instance().for_each_peer(FSendChangeGuildPriv(guild_id, type, value, end_time_sec));
 }
 // END_OF_ADD_GUILD_PRIV_TIME
 
 // ADD_EMPIRE_PRIV_TIME
-void CPrivManager::SendChangeEmpirePriv(uint8_t empire, uint8_t type, int value, time_t end_time_sec)
+void CPrivManager::SendChangeEmpirePriv(uint8_t empire, uint8_t type, int value, int64_t end_time_sec)
 {
 	CClientManager::instance().for_each_peer(FSendChangeEmpirePriv(empire, type, value, end_time_sec));
 }

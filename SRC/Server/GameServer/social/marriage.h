@@ -52,7 +52,7 @@ namespace marriage
 			bool	IsEngagedOrMarried(uint32_t dwPlayerID);
 
 			void	RequestAdd(uint32_t dwPID1, uint32_t dwPID2, const char* szName1, const char* szName2);
-			void	Add(uint32_t dwPID1, uint32_t dwPID2, time_t tMarryTime, const char* szName1, const char* szName2);
+			void	Add(uint32_t dwPID1, uint32_t dwPID2, int64_t tMarryTime, const char* szName1, const char* szName2);
 
 			void	RequestUpdate(uint32_t dwPID1, uint32_t dwPID2, int iUpdatePoint, uint8_t byMarried);
 			void	Update(uint32_t dwPID1, uint32_t dwPID2, int32_t lTotalPoint, uint8_t byMarried);

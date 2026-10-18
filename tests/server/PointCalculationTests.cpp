@@ -35,6 +35,8 @@
 #include "../../SRC/Server/GameServer/ecs/systems/QuestSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
+#include "../../SRC/Server/GameServer/core/packet.h"
+#include <cstring>
 #include <Core/Logging.hpp>
 #include <functional>
 #include <iostream>
@@ -65,6 +67,10 @@ namespace P = ecs::PointSystem;
 namespace {
 int checks = 0, modifies = 0, packets = 0, supportLevel = 0, activeDeck = -1;
 int64_t mountHP = 0;
+entt::entity connected = entt::null;
+LPDESC DescToken() { static int token; return reinterpret_cast<LPDESC>(&token); }
+std::vector<TPacketGCPointChange> pointPackets;
+int pointBroadcasts = 0;
 std::function<void(entt::entity)> onItem, onAffect, onPacket, onMovement;
 struct Actor { bool player = true; uint8_t job = 0; uint32_t immune = 0; TMobTable mob {}; };
 struct Gear { int flatHP = 300, pctHP = 20; bool rune = false, active = true; uint32_t immune = IMMUNE_STUN; TItemTable proto {}; };
@@ -98,6 +104,7 @@ entt::entity Wear(entt::entity owner, int slot = WEAR_BODY) {
 void Reset() {
     g_registry.clear(); equipment.clear(); inventory.clear(); modifies = packets = supportLevel = 0; activeDeck = -1; mountHP = 0;
     onItem = onAffect = onPacket = onMovement = {};
+    connected = entt::null; pointPackets.clear(); pointBroadcasts = 0;
     for (auto& job : JobInitialPoints) {
         job = {}; job.max_hp = 1000; job.max_sp = 200; job.max_stamina = 100;
         job.hp_per_ht = 10; job.sp_per_iq = 5; job.stamina_per_con = 2;
@@ -132,7 +139,7 @@ uint32_t GetPlayStartTime(entt::entity) { return 0; }
 bool IsPC(entt::entity e) { return IsValid(e) && g_registry.get<Actor>(e).player; }
 uint8_t GetJob(entt::entity e) { return g_registry.get<Actor>(e).job; }
 const TMobTable* GetMobTable(entt::entity e) { return IsPC(e) ? nullptr : &g_registry.get<Actor>(e).mob; }
-LPDESC GetDesc(entt::entity e) { Check(IsValid(e), "stale descriptor lookup"); return nullptr; }
+LPDESC GetDesc(entt::entity e) { Check(IsValid(e), "stale descriptor lookup"); return e == connected ? DescToken() : nullptr; }
 std::string_view GetName(entt::entity e) { Check(IsValid(e), "stale actor name"); return "actor"; }
 uint32_t GetPlayerID(entt::entity) { return 1; }
 uint32_t GetPacketVID(entt::entity) { return 2; }
@@ -229,7 +236,11 @@ int number_ex(int, int, const char*, int) { Unexpected(); }
 uint32_t get_dword_time() { return 1000; }
 const CMob* CMobManager::Get(uint32_t) { Unexpected(); }
 namespace ecs::SessionSystem { void Save(entt::entity) {} }
-void ecs::ViewSystem::PacketView(entt::entity, const void*, int, entt::entity) { Unexpected(); }
+void ecs::ViewSystem::PacketView(entt::entity e, const void* data, int size, entt::entity except) {
+    Check(e == connected && except == entt::null, "unexpected point broadcast route");
+    ++pointBroadcasts;
+    DescToken()->Packet(data, size);
+}
 void BroadcastNoticeNew(uint8_t, uint8_t, int, uint32_t, const char*, ...) { Unexpected(); }
 void AffectSystem::SetPolymorph(entt::entity, uint32_t, bool) { Unexpected(); }
 int AffectSystem::GetPolymorphPower(entt::entity) { Unexpected(); }
@@ -257,7 +268,14 @@ void PartySystem::RequestSetMemberLevel(entt::entity, uint32_t, uint8_t) { Unexp
 void ecs::MovementSystem::SetNowWalking(entt::entity e, bool walking) {
     g_registry.get<ecs::MovementState>(e).isNowWalking = walking;
 }
-void DESC::Packet(const void*, int) { Unexpected(); }
+void DESC::Packet(const void* data, int size) {
+    Check(this == DescToken() && size == sizeof(TPacketGCPointChange), "unexpected point packet transport");
+    TPacketGCPointChange packet {};
+    std::memcpy(&packet, data, sizeof(packet));
+    Check(packet.header == HEADER_GC_CHARACTER_POINT_CHANGE && packet.dwVID == 2 &&
+        packet.value == P::Get(connected, packet.type), "point packet published before authoritative commit");
+    pointPackets.push_back(packet);
+}
 void quest::CQuestManager::LevelUp(uint32_t) { Unexpected(); }
 void LogManager::CharLog(entt::entity, uint32_t, const char*, const char*) { Unexpected(); }
 void LogManager::LevelLog(entt::entity, uint32_t, uint32_t) { Unexpected(); }
@@ -296,6 +314,31 @@ void NativeVitalSourceChecks() {
         Check(replacement != e && P::Get(e, POINT_HP) == 0 && P::Get(replacement, POINT_HP) == 500,
             "recycled character inherited vital reads");
     }
+}
+void PointPublicationChecks() {
+    Reset(); const auto e = ActorEntity(); connected = e;
+    constexpr int64_t large = int64_t{1} << 40;
+    g_registry.get<ecs::Health>(e) = {uint64_t(large + 500), uint64_t(large + 1000)};
+    g_registry.get<ecs::Mana>(e) = {uint64_t(large + 80), uint64_t(large + 200)};
+    P::Set(e, POINT_STAT, 123);
+    P::Change(e, POINT_HP, -17, true);
+    P::Change(e, POINT_SP, 19, false);
+    Check(pointPackets.size() == 2 && pointBroadcasts == 0, "private vital delta missing or broadcast");
+    Check(pointPackets[0].type == POINT_HP && pointPackets[0].amount == -17 && pointPackets[0].value == large + 483 &&
+        pointPackets[1].type == POINT_SP && pointPackets[1].amount == 0 && pointPackets[1].value == large + 99,
+        "vital delta truncated or lost amount policy");
+    P::Change(e, POINT_HP, -1, true, true);
+    Check(pointBroadcasts == 1 && pointPackets.size() == 3 && pointPackets.back().value == large + 482,
+        "explicit visible vital delta not routed once");
+    P::Change(e, POINT_HP, 0);
+    Check(pointPackets.size() == 3 && P::Get(e, POINT_STAT) == 123,
+        "no-op vital change duplicated packets or cleared unrelated points");
+    connected = entt::null;
+    P::Change(e, POINT_SP, -1);
+    Check(pointPackets.size() == 3 && P::Get(e, POINT_SP) == large + 98, "disconnected update lost state or sent a packet");
+    g_registry.destroy(e);
+    P::Change(e, POINT_HP, -1);
+    Check(pointPackets.size() == 3, "retired character emitted a point delta");
 }
 void FormulaChecks() {
     Reset(); const auto e = ActorEntity();
@@ -440,7 +483,7 @@ void CallbackChecks() {
 int main() {
     try {
         CSkillManager skills; CHARACTER_MANAGER characters; DSManager dragonSouls;
-        NativeVitalSourceChecks(); FormulaChecks(); RepeatedCalculation(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
+        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

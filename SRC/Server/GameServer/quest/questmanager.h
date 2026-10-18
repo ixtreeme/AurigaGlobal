@@ -201,10 +201,10 @@ namespace quest
 		unsigned int 	GetQuestIndexByName(const std::string& name);
 		const std::string& GetQuestNameByIndex(unsigned int idx);
 
-		void		RequestSetEventFlag(const std::string& name, int value);
+		void		RequestSetEventFlag(const std::string& name, int64_t value);
 
-		void		SetEventFlag(const std::string& name, int value);
-		int			GetEventFlag(const std::string& name);
+		void		SetEventFlag(const std::string& name, int64_t value);
+		int64_t		GetEventFlag(const std::string& name);
 		void		BroadcastEventFlagOnLogin(entt::entity ch);
 
 		void		SendEventFlagList(entt::entity chEntity);
@@ -236,7 +236,7 @@ namespace quest
 
 		int				m_iRunningEventIndex;
 
-		std::map<std::string, int>		m_mapEventFlag;
+		std::map<std::string, int64_t>		m_mapEventFlag;
 
 		void			GotoSelectState(QuestState& qs);
 		void			GotoPauseState(QuestState& qs);

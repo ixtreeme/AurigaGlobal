@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <common/time_64.h>
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -2255,12 +2256,12 @@ void CGuild::Invite( entt::entity inviter, entt::entity invitee )
 			break;
 		case GERR_WITHDRAWPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 180, "%lld", static_cast<long long>(quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay")));
 #endif
 			return;
 		case GERR_COMMISSIONPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
+			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 137, "%lld", static_cast<long long>(quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay")));
 #endif
 						return;
 		case GERR_ALREADYJOIN:
@@ -2336,12 +2337,12 @@ void CGuild::InviteAccept( entt::entity invitee )
 			break;
 		case GERR_WITHDRAWPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 180, "%lld", static_cast<long long>(quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay")));
 #endif
 			return;
 		case GERR_COMMISSIONPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
+			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 137, "%lld", static_cast<long long>(quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay")));
 #endif
 						return;
 		case GERR_ALREADYJOIN:
@@ -2421,11 +2422,13 @@ CGuild::GuildJoinErrCode CGuild::VerifyGuildJoinableCondition(const entt::entity
 
 			if (test_server == true)
 			{
-				limit_time += quest::CQuestManager::instance().GetEventFlag("guild_invite_limit") * 60;
+				const auto delay = std::clamp<int64_t>(quest::CQuestManager::instance().GetEventFlag("guild_invite_limit"), 0, INT64_MAX / 60);
+				limit_time = time64::AddSeconds(limit_time, delay * 60);
 			}
 			else
 			{
-				limit_time += quest::CQuestManager::instance().GetEventFlag("guild_invite_limit") * 24 * 60 * 60;
+				const auto delay = std::clamp<int64_t>(quest::CQuestManager::instance().GetEventFlag("guild_invite_limit"), 0, INT64_MAX / 86400);
+				limit_time = time64::AddSeconds(limit_time, delay * 86400);
 			}
 
 			if (get_global_time() < limit_time)

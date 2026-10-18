@@ -29,7 +29,8 @@ entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 namespace {
 HEART horseHeart {};
-int checks = 0, now = 1'000'000, packets = 0, computes = 0, skillPackets = 0, unmounts = 0, summons = 0;
+int checks = 0, packets = 0, computes = 0, skillPackets = 0, unmounts = 0, summons = 0;
+int64_t now = 1'000'000;
 bool dead = false, stunned = false, polymorphed = false, arena = false, war = false;
 uint32_t armorVnum = 0;
 std::function<void(entt::entity)> onPacket, onTick, onConstruct, onUnmount, onMount;
@@ -102,11 +103,36 @@ void TimerLifecycle() {
     event_destroy();
     Check(!retained->q_el, "shutdown left queue backlinks");
 }
+void WideHealthDeadlines() {
+    constexpr uint64_t interval = 3 * 24 * 60 * 60;
+    for (const int64_t boundary : {int64_t{2147483648}, int64_t{4294967296}, int64_t{1} << 40}) {
+        Reset(); now = boundary - 10; const auto e = Rider();
+        MountSystem::SetHorseLevel(e, 10);
+        const auto deadline = uint64_t(now) + interval;
+        Check(State(e).healthDropTime == deadline, "next health deadline narrowed at 2038/2106");
+        const auto saved = MountSystem::StoreHorseData(e);
+        Check(saved.dwHorseHealthDropTime == deadline, "horse DB snapshot truncated deadline");
+        MountSystem::LoadHorseData(e, saved, 0);
+        now = static_cast<int64_t>(deadline);
+        const auto health = MountSystem::GetHorseHealth(e);
+        MountSystem::CheckHorseHealthDropTime(e, false);
+        Check(MountSystem::GetHorseHealth(e) == health, "exact wide deadline expired early");
+        ++now; MountSystem::CheckHorseHealthDropTime(e, false);
+        Check(MountSystem::GetHorseHealth(e) == health - 1 && State(e).healthDropTime == deadline + interval,
+            "wide expiry lost health interval or wrapped deadline");
+        auto future = MountSystem::StoreHorseData(e);
+        future.dwHorseHealthDropTime = UINT64_MAX;
+        MountSystem::LoadHorseData(e, future, 0);
+        MountSystem::CheckHorseHealthDropTime(e, false);
+        Check(MountSystem::StoreHorseData(e).dwHorseHealthDropTime == UINT64_MAX,
+            "unsigned BIGINT horse deadline did not round-trip");
+    }
+}
 void ExpiryAndPolicies() {
     Reset(); auto e=Rider();
     State(e).healthDropTime=now-3*24*60*60;
     MountSystem::CheckHorseHealthDropTime(e,false);
-    Check(MountSystem::GetHorseHealth(e)==14 && State(e).healthDropTime==uint32_t(now),
+    Check(MountSystem::GetHorseHealth(e)==14 && State(e).healthDropTime==uint64_t(now),
         "exact health deadline changed");
     ++now; MountSystem::CheckHorseHealthDropTime(e,false);
     Check(MountSystem::GetHorseHealth(e)==13, "elapsed health interval was not applied");
@@ -243,7 +269,7 @@ int main() {
     g_registry.on_construct<ecs::HorseRuntime>().connect<&Constructed>();
     g_dispatcher.sink<ecs::EvHorseStaminaConsume>().connect<&Ticked>();
     try {
-        NativeData(); TimerLifecycle(); ExpiryAndPolicies(); CallbackSafety(); Reset();
+        NativeData(); TimerLifecycle(); WideHealthDeadlines(); ExpiryAndPolicies(); CallbackSafety(); Reset();
         std::cout<<"Horse runtime: "<<checks<<" checks passed\n";
     } catch(const std::exception& error) {
         std::cerr<<error.what()<<'\n'; Reset(); return 1;

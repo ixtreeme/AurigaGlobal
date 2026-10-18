@@ -2,7 +2,7 @@
 
 ## Server audit fixes (2026-10-18)
 
-CTest is enabled at the project root. The `ServerTests` target builds all 46
+CTest is enabled at the project root. The `ServerTests` target builds all 48
 server test executables, including the ones excluded from the default build;
 each registered test carries the `server` label and a 60-second timeout.
 
@@ -43,6 +43,73 @@ same secondary-skill normalization the Database uses: old and new skill costs
 are added, caps and low levels are retained, and repeated loads do not refund
 spent points. These tests use controlled services; live SQL, client rendering
 and production deployment still require integration verification.
+
+## Persisted time and fixed packet widths R7 (2026-10-18)
+
+Event flags use int64_t in the GameServer/Database API, maps and packets; horse
+deadlines use uint64_t through runtime, DB snapshot, UPDATE and row load.
+Marriage and privilege time fields have fixed widths. GameServer privilege
+deadlines use a 64-bit clamp, replacing an int-only MINMAX that truncated them.
+The wire sizes and coordinated deployment requirements are documented in
+[server_time64_contract.md](../../docs/server_time64_contract.md).
+
+DatabaseTimeTests runs the real Database event load/set/setup, player UPDATE
+builder, marriage load/INSERT/setup and wedding queues, plus privilege setup and
+expiry. Its SQL/transport/clock services are controlled in CTest. An optional
+real SQL mode uses temporary tables from the checked-in schema in the dedicated
+auriga_time64_test database:
+
+```powershell
+& build/SRC/Server/GameServer/RelWithDebInfo/DatabaseTimeTests.exe --sql <port> db/schema.sql
+& build-asan/SRC/Server/GameServer/RelWithDebInfo/DatabaseTimeTests.exe --sql <port> db/schema.sql
+```
+
+It checks signed event limits, the production horse UPDATE through UINT64_MAX
+and a marriage INSERT beyond 2106. PrivilegeTimeTests runs the actual GameServer
+request/apply paths with controlled leaf services, checking wide timestamps,
+week-long caps and overflow-safe addition. Both suites pin packet widths;
+GameServer rejects affected fixed DG payloads with the wrong byte length before
+casting them. Database already checks the corresponding fixed GD lengths.
+
+QuestRuntimeTests exercises the real Lua event bindings and map, including
+exact decimal strings for values outside the bundled Lua 5.0.3 double precision,
+and rejects invalid or unsafe values. Numeric timestamps beyond 2038/2106 still
+work; game.get_event_flag_string provides an exact full-width result.
+GmCommandTests checks full-range decimal GM input and bounded rate settings.
+HorseRuntimeTests and MarriageLifecycleTests cover 2038/2106/2^40-second dates,
+deadline equality, future dates and long elapsed intervals. These are server and
+protocol checks; live Unity client verification remains pending its connection
+migration.
+
+## Event-driven network publication R6 (2026-10-18)
+
+The disabled `NetworkSyncSystem_Update` prototype is removed. State owners
+explicitly publish committed changes; `DirtyTag` is a generic mutation marker,
+not a network queue. The packet ownership, recipient and ordering contract is
+documented in [server_network_publication.md](../../docs/server_network_publication.md).
+Appearance UPDATE now uses the same spatial-revision-checked PacketView dispatch
+as movement and point broadcasts.
+
+EntityNetworkDispatchTests captures the actual packet builders and transport
+selection. A moving player publishes exactly one appearance UPDATE to itself
+and its nearby observer, with all compiled appearance parts, both affect words
+and skill colors, without MOVE/ADD/full-points replay or timing changes. A
+full-points refresh preserves all 255 signed 64-bit fields and reaches only the
+owner. Missing sessions, retired sources and a spatial-revision change between
+recipients are covered. PointCalculationTests additionally captures the real
+PointSystem::Change HP/SP delta bytes, checks commit-before-send, 64-bit values,
+private/explicit-broadcast selection and the amount-display policy.
+GmCommandTests validates every skill level in the real owner's skill snapshot,
+including the final slot, and checks unloaded/session/lifetime gates. Existing
+affect, inventory and movement fixtures exercise their state-owner operations.
+
+Packet transport and surrounding services are controlled in these fixtures.
+Two-client rendering, equipment/affect changes while moving, skill colors,
+HP/SP target/party UI and logout/relog persistence remain the R12 integration
+checks. These live checks depend on completing the Unity client's connection
+migration so it can connect to the current server. Until that prerequisite is
+ready, continue the client-independent server/database automation and keep the
+live client results pending.
 
 ## Follow-up fixes R1-R4 (2026-10-18)
 

@@ -19,7 +19,7 @@ struct HorseRuntime {
     uint8_t level { 0 };
     int16_t health { 0 };
     int16_t stamina { 0 };
-    uint32_t healthDropTime { 0 };
+    uint64_t healthDropTime { 0 };
     uint64_t timerRevision { 0 };
     LPEVENT regen;
     LPEVENT consume;

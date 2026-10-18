@@ -126,7 +126,7 @@ struct CoupleState {
     std::string name1;
     std::string name2;
     int lovePoint { 0 };
-    time_t marryTime { 0 };
+    int64_t marryTime { 0 };
     bool married { false };
     // The love points or the married flag changed since the last DB update.
     bool needsSave { false };

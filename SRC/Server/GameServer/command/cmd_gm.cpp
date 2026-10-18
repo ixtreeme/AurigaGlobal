@@ -2,6 +2,7 @@
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
+#include <common/event_flag.h>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -1979,8 +1980,8 @@ ACMD(do_event_flag)
 	if (!(*arg1) || !(*arg2))
 		return;
 
-	int value = 0;
-	str_to_number(value, arg2);
+	int64_t value = 0;
+	if (!EventFlag::ParseValue(arg2, value)) return;
 
 	if (!strcmp(arg1, "mob_item") ||
 			!strcmp(arg1, "mob_exp") ||
@@ -1992,11 +1993,12 @@ ACMD(do_event_flag)
 			!strcmp(arg1, "mob_gold_buyer") ||
 			!strcmp(arg1, "mob_gold_pct_buyer")
 	   )
-		value = MINMAX(0, value, 1000);
+		value = std::clamp<int64_t>(value, 0, 1000);
 
-	//quest::CQuestManager::instance().SetEventFlag(arg1, atoi(arg2));
+	TPacketSetEventFlag validated {};
+	if (!EventFlag::BuildPacket(arg1, value, validated)) return;
 	quest::CQuestManager::instance().RequestSetEventFlag(arg1, value);
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "RequestSetEventFlag %s %d", arg1, value);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "RequestSetEventFlag %s %lld", arg1, static_cast<long long>(value));
 	LOG_INFO("RequestSetEventFlag {} {}", arg1, value);
 }
 

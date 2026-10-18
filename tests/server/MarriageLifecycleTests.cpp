@@ -172,7 +172,7 @@ bool ecs::MovementSystem::WarpSet(entt::entity e, int32_t, int32_t, int32_t mapI
 CAffect* AffectSystem::FindAffect(entt::entity, uint32_t, uint8_t) { return nullptr; }
 
 // --- services only other paths use --------------------------------------------
-int quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected("CQuestManager::GetEventFlag"); }
+int64_t quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected("CQuestManager::GetEventFlag"); }
 bool AffectSystem::RemoveAffect(entt::entity, uint32_t) { Unexpected("AffectSystem::RemoveAffect"); }
 entt::entity ItemSystem::FindItemByID(entt::entity, uint32_t) { Unexpected("ItemSystem::FindItemByID"); }
 bool ItemSystem::IsValidItem(entt::entity) { Unexpected("ItemSystem::IsValidItem"); }
@@ -256,6 +256,23 @@ void AddIndexesByBothPlayers()
     Check(!marriages.IsEngagedOrMarried(40) && marriages.Get(40) == entt::null, "a stranger has a couple");
 }
 
+void WideMarriageTime()
+{
+    for (const int64_t timestamp : {int64_t{2147483648}, int64_t{4294967296}, int64_t{1} << 40}) {
+        Reset(); now = timestamp;
+        marriages.Add(10, 20, timestamp, "first", "second");
+        const auto couple = marriages.Get(10);
+        Check(State(couple)->marryTime == timestamp, "marriage time narrowed during hydration");
+        Check(marriage::MarriageSystem::GetMarriagePoint(couple) == 50, "new wide-dated marriage has wrong bonus");
+        now += 40 * 86400;
+        Check(marriage::MarriageSystem::GetMarriagePoint(couple) == 80, "wide marriage age did not earn capped bonus");
+        g_registry.get<ecs::CoupleState>(couple).marryTime = now + 86400;
+        Check(marriage::MarriageSystem::GetMarriagePoint(couple) == 50, "future marriage time produced negative/wrapped points");
+        g_registry.get<ecs::CoupleState>(couple).marryTime = 0;
+        now = int64_t{1} << 40;
+        Check(marriage::MarriageSystem::GetMarriagePoint(couple) == 80, "old marriage age overflowed seconds or bonus multiplication");
+    }
+}
 void AddWithBothOnlineRequestsTheWedding()
 {
     Reset();
@@ -438,6 +455,7 @@ int main()
 {
     try {
         AddIndexesByBothPlayers();
+        WideMarriageTime();
         AddWithBothOnlineRequestsTheWedding();
         LoginAndLogoutTrackThePartners();
         MarriedCoupleAnnouncesAndSaves();

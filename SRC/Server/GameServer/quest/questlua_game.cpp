@@ -42,31 +42,9 @@
 
 namespace quest
 {
-	ALUA(game_set_event_flag)
-	{
-		// migrated from CHARACTER::RequestSetEventFlag
-		// DUAL-PATH: legacy only during migration window
-		CQuestManager & q = CQuestManager::instance();
-
-		if (lua_isstring(L,1) && lua_isnumber(L, 2))
-			q.RequestSetEventFlag(lua_tostring(L,1), (int)lua_tonumber(L,2));
-
-		return 0;
-	}
-
-	ALUA(game_get_event_flag)
-	{
-		// migrated from CHARACTER::GetEventFlag
-		// DUAL-PATH: legacy fallback during migration window
-		CQuestManager& q = CQuestManager::instance();
-
-		if (lua_isstring(L,1))
-			lua_pushnumber(L, q.GetEventFlag(lua_tostring(L,1)));
-		else
-			lua_pushnumber(L, 0);
-
-		return 1;
-	}
+	int game_set_event_flag(lua_State* L);
+	int game_get_event_flag(lua_State* L);
+	int game_get_event_flag_string(lua_State* L);
 
 	ALUA(game_request_make_guild)
 	{
@@ -420,6 +398,7 @@ namespace quest
 			{ "open_safebox",				game_open_safebox				},
 			{ "open_mall",					game_open_mall					},
 			{ "get_event_flag",				game_get_event_flag				},
+			{ "get_event_flag_string", game_get_event_flag_string },
 			{ "set_event_flag",				game_set_event_flag				},
 			{ "drop_item",					game_drop_item					},
 			{ "drop_item_with_ownership",	game_drop_item_with_ownership	},

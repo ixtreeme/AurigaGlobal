@@ -9,6 +9,10 @@
 
 namespace NetworkSyncSystem {
 
+// Event-driven publication: commit ECS state, then send the appropriate packet.
+// DirtyTag is a generic mutation marker, never a request for network replay.
+// See docs/server_network_publication.md for ownership and recipient rules.
+
 bool SetSyncOwner(entt::entity e, entt::entity owner, bool bRemoveFromList = true);
 bool IsSyncOwner(entt::entity e, entt::entity candidate);
 void ClearSync(entt::entity e);
@@ -47,5 +51,3 @@ namespace ecs::ItemNetworkSystem {
 void SendItemUpdate(entt::registry& reg, entt::entity item);
 
 } // namespace ecs::ItemNetworkSystem
-
-void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick);

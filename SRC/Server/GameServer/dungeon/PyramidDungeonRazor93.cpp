@@ -432,10 +432,10 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     // Anti-spam: razor93_357_%d
     char flagName[64];
     snprintf(flagName, sizeof(flagName), "razor93_357_%d", (int)g_bChannel);
-    const int32_t antiUntil = quest::CQuestManager::instance().GetEventFlag(flagName);
+    const int64_t antiUntil = quest::CQuestManager::instance().GetEventFlag(flagName);
     if (antiUntil > now)
     {
-        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Please wait %d seconds.", antiUntil - now);
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Please wait %lld seconds.", static_cast<long long>(antiUntil - now));
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(flagName, now + kAntiSpamSeconds);

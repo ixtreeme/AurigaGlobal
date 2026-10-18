@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include <Core/packet_string.h>
+#include <common/time_64_packets.h>
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/components/skill_components.hpp"
@@ -1355,6 +1357,8 @@ void CInputDB::MoneyLog(const char* c_pData)
 void CInputDB::SetEventFlag(const char* c_pData)
 {
 	TPacketSetEventFlag* p = (TPacketSetEventFlag*) c_pData;
+	if (!packet_string::IsTerminated(p->szFlagName) || !p->szFlagName[0])
+		return;
 	quest::CQuestManager::instance().SetEventFlag(p->szFlagName, p->lValue);
 }
 
@@ -2299,6 +2303,13 @@ bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesPro
 		iSize		= *((uint32_t *) (c_pData + 5));	// 4
 
 		LOG_TRACE("DBCLIENT: header {} handle {} size {} bytes {}", bHeader, m_dwHandle, iSize, bytes);
+
+		if (iSize < 0 || !time64::ValidDatabasePacketSize(bHeader, static_cast<size_t>(iSize)))
+		{
+			LOG_ERROR("DB packet layout mismatch: header {} size {}", bHeader, iSize);
+			d->SetPhase(PHASE_CLOSE);
+			return false;
+		}
 
 		if (m_iBufferLeft - 9 < iSize)
 			return true;

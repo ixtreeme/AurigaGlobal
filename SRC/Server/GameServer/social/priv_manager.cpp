@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
+#include <common/time_64.h>
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
@@ -31,7 +32,7 @@ CPrivManager::CPrivManager()
 	memset(m_aakPrivEmpireData, 0, sizeof(m_aakPrivEmpireData));
 }
 
-void CPrivManager::RequestGiveGuildPriv(uint32_t guild_id, uint8_t type, int value, time_t duration_sec)
+void CPrivManager::RequestGiveGuildPriv(uint32_t guild_id, uint8_t type, int value, int64_t duration_sec)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
@@ -40,7 +41,7 @@ void CPrivManager::RequestGiveGuildPriv(uint32_t guild_id, uint8_t type, int val
 	}
 
 	value = MINMAX(0, value, 50);
-	duration_sec = MINMAX(0, duration_sec, 60*60*24*7);
+	duration_sec = std::clamp<int64_t>(duration_sec, 0, 60*60*24*7);
 
 	TPacketGiveGuildPriv p;
 	p.type = type;
@@ -51,7 +52,7 @@ void CPrivManager::RequestGiveGuildPriv(uint32_t guild_id, uint8_t type, int val
 	db_clientdesc->DBPacket(HEADER_GD_REQUEST_GUILD_PRIV, 0, &p, sizeof(p));
 }
 
-void CPrivManager::RequestGiveEmpirePriv(uint8_t empire, uint8_t type, int value, time_t duration_sec)
+void CPrivManager::RequestGiveEmpirePriv(uint8_t empire, uint8_t type, int value, int64_t duration_sec)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
@@ -60,7 +61,7 @@ void CPrivManager::RequestGiveEmpirePriv(uint8_t empire, uint8_t type, int value
 	}
 
 	value = MINMAX(0, value, 200);
-	duration_sec = MINMAX(0, duration_sec, 60*60*24*7);
+	duration_sec = std::clamp<int64_t>(duration_sec, 0, 60*60*24*7);
 
 	TPacketGiveEmpirePriv p;
 	p.type = type;
@@ -89,7 +90,7 @@ void CPrivManager::RequestGiveCharacterPriv(uint32_t pid, uint8_t type, int valu
 	db_clientdesc->DBPacket(HEADER_GD_REQUEST_CHARACTER_PRIV, 0, &p, sizeof(p));
 }
 
-void CPrivManager::GiveGuildPriv(uint32_t guild_id, uint8_t type, int value, uint8_t bLog, time_t end_time_sec)
+void CPrivManager::GiveGuildPriv(uint32_t guild_id, uint8_t type, int value, uint8_t bLog, int64_t end_time_sec)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
@@ -97,10 +98,9 @@ void CPrivManager::GiveGuildPriv(uint32_t guild_id, uint8_t type, int value, uin
 		return;
 	}
 
-	LOG_INFO("Set Guild Priv: guild_id({}) type({}) value({}) duration_sec({})", guild_id, static_cast<int>(type), value, end_time_sec - get_global_time());
-
 	value = MINMAX(0, value, 50);
-	end_time_sec = MINMAX(0, end_time_sec, get_global_time()+60*60*24*7);
+	end_time_sec = std::clamp<int64_t>(end_time_sec, 0, time64::AddSeconds(get_global_time(), 60*60*24*7));
+	LOG_INFO("Set Guild Priv: guild_id({}) type({}) value({}) end_time_sec({})", guild_id, static_cast<int>(type), value, end_time_sec);
 
 	m_aPrivGuild[type][guild_id].value = value;
 	m_aPrivGuild[type][guild_id].end_time_sec = end_time_sec;
@@ -140,7 +140,7 @@ void CPrivManager::GiveCharacterPriv(uint32_t pid, uint8_t type, int value, uint
 		LogManager::instance().CharLog(pid, 0, type, value, "CHARACTER_PRIV", "", "");
 }
 
-void CPrivManager::GiveEmpirePriv(uint8_t empire, uint8_t type, int value, uint8_t bLog, time_t end_time_sec)
+void CPrivManager::GiveEmpirePriv(uint8_t empire, uint8_t type, int value, uint8_t bLog, int64_t end_time_sec)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
@@ -148,10 +148,9 @@ void CPrivManager::GiveEmpirePriv(uint8_t empire, uint8_t type, int value, uint8
 		return;
 	}
 
-	LOG_INFO("Set Empire Priv: empire({}) type({}) value({}) duration_sec({})", static_cast<int>(empire), static_cast<int>(type), value, end_time_sec-get_global_time());
-
 	value = MINMAX(0, value, 200);
-	end_time_sec = MINMAX(0, end_time_sec, get_global_time()+60*60*24*7);
+	end_time_sec = std::clamp<int64_t>(end_time_sec, 0, time64::AddSeconds(get_global_time(), 60*60*24*7));
+	LOG_INFO("Set Empire Priv: empire({}) type({}) value({}) end_time_sec({})", static_cast<int>(empire), static_cast<int>(type), value, end_time_sec);
 
 	SPrivEmpireData& rkPrivEmpireData=m_aakPrivEmpireData[type][empire];
 	rkPrivEmpireData.m_value = value;

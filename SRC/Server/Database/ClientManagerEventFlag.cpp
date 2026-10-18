@@ -4,6 +4,8 @@
 #include "Main.h"
 #include "DBManager.h"
 #include "QID.h"
+#include <common/event_flag.h>
+#include <Core/packet_string.h>
 
 void CClientManager::LoadEventFlag()
 {
@@ -17,9 +19,13 @@ void CClientManager::LoadEventFlag()
 		MYSQL_ROW row;
 		while ((row = pRes->FetchRow()))
 		{
-			TPacketSetEventFlag p;
-			strlcpy(p.szFlagName, row[0], sizeof(p.szFlagName));
-			str_to_number(p.lValue, row[1]);
+			TPacketSetEventFlag p {};
+			int64_t value = 0;
+			if (!row[0] || !row[1] || !EventFlag::ParseValue(row[1], value) ||
+				!EventFlag::BuildPacket(row[0], value, p)) {
+				LOG_ERROR("Invalid event flag row");
+				continue;
+			}
 			LOG_INFO("EventFlag Load {} {}", p.szFlagName, p.lValue);
 			m_map_lEventFlag.insert(std::make_pair(std::string(p.szFlagName), p.lValue));
 			ForwardPacket(HEADER_DG_SET_EVENT_FLAG, &p, sizeof(TPacketSetEventFlag));
@@ -29,6 +35,8 @@ void CClientManager::LoadEventFlag()
 
 void CClientManager::SetEventFlag(TPacketSetEventFlag* p)
 {
+	if (!p || !packet_string::IsTerminated(p->szFlagName) || !p->szFlagName[0])
+		return;
 	ForwardPacket(HEADER_DG_SET_EVENT_FLAG, p, sizeof(TPacketSetEventFlag));
 
 	bool bChanged = false;
@@ -73,14 +81,13 @@ void CClientManager::SendEventFlagsOnSetup(CPeer* peer)
 }
 
 #ifdef ENABLE_ITEMSHOP
-void CClientManager::SetEventFlag(const char* flag, int32_t value)
+void CClientManager::SetEventFlag(const char* flag, int64_t value)
 {
-	TPacketSetEventFlag p;
-	strlcpy(p.szFlagName, flag, sizeof(p.szFlagName));
-	p.lValue = value;
+	TPacketSetEventFlag p {};
+	if (!flag || !EventFlag::BuildPacket(flag, value, p)) return;
 	SetEventFlag(&p);
 }
-int CClientManager::GetEventFlag(const char* flag)
+int64_t CClientManager::GetEventFlag(const char* flag)
 {
 	auto it = m_map_lEventFlag.find(flag);
 	if (it != m_map_lEventFlag.end())

@@ -21,7 +21,7 @@
 
 void CInputDB::MarriageAdd(TPacketMarriageAdd * p)
 {
-	LOG_INFO("MarriageAdd {} {} {} {} {}", p->dwPID1, p->dwPID2, (uint32_t)p->tMarryTime, p->szName1, p->szName2);
+	LOG_INFO("MarriageAdd {} {} {} {} {}", p->dwPID1, p->dwPID2, p->tMarryTime, p->szName1, p->szName2);
 	marriage::CManager::instance().Add(p->dwPID1, p->dwPID2, p->tMarryTime, p->szName1, p->szName2);
 }
 

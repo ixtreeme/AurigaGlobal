@@ -510,7 +510,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     // Anti-spam per channel (simple 5s lock)
     char antiSpamFlag[64];
     snprintf(antiSpamFlag, sizeof(antiSpamFlag), "nightmare_razor93_%d", (int)g_bChannel);
-    const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
+    const int64_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
     if (antiSpamUntil > now)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Please wait a moment.");

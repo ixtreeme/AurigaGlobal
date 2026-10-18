@@ -435,7 +435,7 @@ struct	THorseInfo
 	uint8_t	bRiding;
 	short	sStamina;
 	short	sHealth;
-	uint32_t	dwHorseHealthDropTime;
+	uint64_t	dwHorseHealthDropTime;
 };
 
 typedef struct SPlayerTable
@@ -506,7 +506,7 @@ typedef struct SPlayerTable
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-	time_t	dwBattlePassEndTime;
+	int64_t	dwBattlePassEndTime;
 #endif
 #ifdef ENABLE_RANKING
 	long long	lRankPoints[RANKING_MAX_CATEGORIES];
@@ -1167,14 +1167,14 @@ typedef struct SPacketGiveGuildPriv
 	uint8_t type;
 	int value;
 	uint32_t guild_id;
-	time_t duration_sec;
+	int64_t duration_sec;
 } TPacketGiveGuildPriv;
 typedef struct SPacketGiveEmpirePriv
 {
 	uint8_t type;
 	int value;
 	uint8_t empire;
-	time_t duration_sec;
+	int64_t duration_sec;
 } TPacketGiveEmpirePriv;
 typedef struct SPacketGiveCharacterPriv
 {
@@ -1207,7 +1207,7 @@ typedef struct SPacketDGChangeGuildPriv
 	int value;
 	uint32_t guild_id;
 	uint8_t bLog;
-	time_t end_time_sec;
+	int64_t end_time_sec;
 } TPacketDGChangeGuildPriv;
 
 typedef struct SPacketDGChangeEmpirePriv
@@ -1216,7 +1216,7 @@ typedef struct SPacketDGChangeEmpirePriv
 	int value;
 	uint8_t empire;
 	uint8_t bLog;
-	time_t end_time_sec;
+	int64_t end_time_sec;
 } TPacketDGChangeEmpirePriv;
 
 typedef struct SPacketMoneyLog
@@ -1255,7 +1255,7 @@ typedef struct SPacketGDGuildMoneyWithdrawGiveReply
 typedef struct SPacketSetEventFlag
 {
 	char	szFlagName[EVENT_FLAG_NAME_MAX_LEN + 1];
-	int32_t	lValue;
+	int64_t	lValue;
 } TPacketSetEventFlag;
 
 typedef struct SPacketLoginOnSetup
@@ -1325,7 +1325,7 @@ typedef struct
 {
 	uint32_t dwPID1;
 	uint32_t dwPID2;
-	time_t tMarryTime;
+	int64_t tMarryTime;
 	char szName1[CHARACTER_NAME_MAX_LEN + 1];
 	char szName2[CHARACTER_NAME_MAX_LEN + 1];
 } TPacketMarriageAdd;

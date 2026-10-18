@@ -12,10 +12,10 @@ namespace marriage
 {
 	struct TWeddingInfo
 	{
-		uint32_t dwTime;
+		uint64_t dwTime;
 		uint32_t dwPID1;
 		uint32_t dwPID2;
-		TWeddingInfo(uint32_t time, uint32_t pid1, uint32_t pid2)
+		TWeddingInfo(uint64_t time, uint32_t pid1, uint32_t pid2)
 			: dwTime(time),
 			dwPID1(pid1),
 			dwPID2(pid2)
@@ -25,12 +25,12 @@ namespace marriage
 
 	struct TWedding
 	{
-		uint32_t dwTime;
+		uint64_t dwTime;
 		uint32_t dwMapIndex;
 		uint32_t dwPID1;
 		uint32_t dwPID2;
 
-		TWedding(uint32_t time, uint32_t dwMapIndex, uint32_t pid1, uint32_t pid2)
+		TWedding(uint64_t time, uint32_t dwMapIndex, uint32_t pid1, uint32_t pid2)
 			: dwTime(time),
 			dwMapIndex(dwMapIndex),
 			dwPID1(pid1),
@@ -48,12 +48,12 @@ namespace marriage
 		uint32_t pid1;
 		uint32_t pid2;
 		int   love_point;
-		uint32_t time;
+		int64_t time;
 		uint8_t is_married;
 		std::string name1;
 		std::string name2;
 
-		TMarriage(uint32_t _pid1, uint32_t _pid2, int _love_point, uint32_t _time, uint8_t _is_married, const char* name1, const char* name2)
+		TMarriage(uint32_t _pid1, uint32_t _pid2, int _love_point, int64_t _time, uint8_t _is_married, const char* name1, const char* name2)
 			: pid1(_pid1), pid2(_pid2), love_point(_love_point), time(_time), is_married(_is_married), name1(name1), name2(name2)
 		{
 		}

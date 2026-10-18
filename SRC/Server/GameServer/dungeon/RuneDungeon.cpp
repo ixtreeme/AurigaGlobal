@@ -1262,7 +1262,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     // Anti spam (Lua: ww_218_%d)
     char flagName[64];
     snprintf(flagName, sizeof(flagName), "ww_218_%d", (int)g_bChannel);
-    const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(flagName);
+    const int64_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(flagName);
     if (antiSpamUntil > now)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Please wait a moment.");

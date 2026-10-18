@@ -3,6 +3,7 @@
 
 #include "NetworkSyncSystem.hpp"
 #include "CombatSystem.hpp"
+#include "ViewSystem.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -26,7 +27,6 @@
 #include "../Registry.hpp"
 #include "../components/appearance_components.hpp"
 #include "../components/combat_components.hpp"
-#include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/item_components.hpp"
 #include "../components/item_proto_components.hpp"
@@ -165,7 +165,9 @@ void UpdatePacket(entt::entity e)
     // AdditionalInfo completes CHARACTER_ADD; it is not an update packet.
     // Sending it alone replays the client's cached ADD (including its position)
     // and can recreate a deleted follower or reset a moving one.
-    ecs::NetworkService::BroadcastToView(g_registry, e, &packet, sizeof(packet), false);
+    // Use the same revision-checked recipient dispatch as movement and point
+    // deltas. A callback that moves/retires the source ends this publication.
+    ecs::ViewSystem::PacketView(e, &packet, sizeof(packet));
 }
 
 void MainCharacterPacket(entt::entity e)
@@ -246,7 +248,6 @@ void PointsPacket(entt::entity e)
 }
 
 } // namespace NetworkSyncSystem
-
 namespace {
 void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot)
 {
@@ -1074,47 +1075,3 @@ void ClearSync(entt::entity e)
 }
 
 } // namespace NetworkSyncSystem
-
-void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
-{
-    auto view = reg.view<ecs::TagPC, ecs::NetworkSession, ecs::Position, ecs::Health, ecs::Mana, ecs::VIDComponent, ecs::DirtyTag>();
-
-    for (const entt::entity entity : view) {
-        auto& session = view.get<ecs::NetworkSession>(entity);
-        const auto& position = view.get<ecs::Position>(entity);
-        const auto& health = view.get<ecs::Health>(entity);
-        const auto& mana = view.get<ecs::Mana>(entity);
-        const auto& vid = view.get<ecs::VIDComponent>(entity);
-
-        if (!session.desc) {
-            reg.remove<ecs::DirtyTag>(entity);
-            continue;
-        }
-
-        TPacketGCMove movePacket {};
-        movePacket.bHeader = HEADER_GC_MOVE;
-        movePacket.bFunc = FUNC_WAIT;
-        movePacket.bArg = 0;
-        movePacket.bRot = 0.0f;
-        movePacket.dwVID = vid.value;
-        movePacket.lX = position.x;
-        movePacket.lY = position.y;
-        movePacket.dwTime = tick;
-        movePacket.dwDuration = 0;
-        session.desc->Packet(&movePacket, sizeof(movePacket));
-
-        TPacketGCPoints pointsPacket {};
-        pointsPacket.header = HEADER_GC_CHARACTER_POINTS;
-        pointsPacket.points[POINT_HP] = health.current;
-        pointsPacket.points[POINT_MAX_HP] = health.max;
-        pointsPacket.points[POINT_SP] = mana.current;
-        pointsPacket.points[POINT_MAX_SP] = mana.max;
-        if (const auto* stamina = reg.try_get<ecs::Stamina>(entity)) {
-            pointsPacket.points[POINT_STAMINA] = stamina->current;
-            pointsPacket.points[POINT_MAX_STAMINA] = stamina->max;
-        }
-        session.desc->Packet(&pointsPacket, sizeof(pointsPacket));
-
-        reg.remove<ecs::DirtyTag>(entity);
-    }
-}

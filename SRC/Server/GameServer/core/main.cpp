@@ -742,10 +742,8 @@ int idle()
 		MovementSystem_Update(g_registry, tick);
 		AffectSystem::UpdateAffect(g_registry, tick);
 		AffectSystem_Update(g_registry, tick);
-		// NetworkSyncSystem is disabled during the migration window.
-		// Legacy CHARACTER packet paths remain authoritative for full stat/bonus UI sync.
-		// Re-enable after the ECS sync packet surface matches the legacy packet layout.
-		// NetworkSyncSystem_Update(g_registry, tick);
+		// State owners publish protocol packets when their changes commit.
+		// There is no DirtyTag network replay; see docs/server_network_publication.md.
 		g_dispatcher.update();
 		// Phase 15E-final.LPENTITY.4-architect.D.5: drift detector self-throttles
 		// to one sweep per 5s. Body is a no-op outside AURIGA_LPENTITY_FIXUP_AUDIT.

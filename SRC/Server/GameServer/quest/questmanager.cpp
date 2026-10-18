@@ -4,6 +4,9 @@
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include <fstream>
+#include <algorithm>
+#include <limits>
+#include <common/event_flag.h>
 #include "constants.h"
 #include "buffer_manager.h"
 #include "packet.h"
@@ -1406,74 +1409,78 @@ namespace quest
 			if (!ecs::PlayerRuntime::IsValid(chEntity))
 				return;
 			const std::string& flagname = it->first;
-			int value = it->second;
+			const int64_t value = it->second;
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 757, "%s#%d", flagname.c_str(), value);
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 757, "%s#%lld", flagname.c_str(), static_cast<long long>(value));
 #endif
 		}
 	}
 
-	void CQuestManager::RequestSetEventFlag(const std::string& name, int value)
+	void CQuestManager::RequestSetEventFlag(const std::string& name, int64_t value)
 	{
-		TPacketSetEventFlag p;
-		strlcpy(p.szFlagName, name.c_str(), sizeof(p.szFlagName));
-		p.lValue = value;
+		TPacketSetEventFlag p {};
+		if (!EventFlag::BuildPacket(name, value, p)) return;
 		db_clientdesc->DBPacket(HEADER_GD_SET_EVENT_FLAG, 0, &p, sizeof(TPacketSetEventFlag));
 	}
 
-	void CQuestManager::SetEventFlag(const std::string& name, int value)
+	void CQuestManager::SetEventFlag(const std::string& name, int64_t value)
 	{
+		TPacketSetEventFlag validated {};
+		if (!EventFlag::BuildPacket(name, value, validated)) return;
+		// Numeric gameplay settings remain bounded ints; arbitrary flags retain
+		// their full value in storage and on the DB link.
+		const int setting = static_cast<int>(std::clamp<int64_t>(value, INT32_MIN, INT32_MAX));
 		static const char*	DROPEVENT_CHARTONE_NAME		= "drop_char_stone";
 		static const int	DROPEVENT_CHARTONE_NAME_LEN = strlen(DROPEVENT_CHARTONE_NAME);
 
-		int prev_value = m_mapEventFlag[name];
+		const int64_t prev_value = m_mapEventFlag[name];
 
 		LOG_TRACE("QUEST eventflag {} {} prev_value {}", name.c_str(), value, m_mapEventFlag[name]);
 		m_mapEventFlag[name] = value;
 
 		if (name == "mob_item")
 		{
-			CHARACTER_MANAGER::instance().SetMobItemRate(value);
+			CHARACTER_MANAGER::instance().SetMobItemRate(setting);
 		}
 		else if (name == "mob_dam")
 		{
-			CHARACTER_MANAGER::instance().SetMobDamageRate(value);
+			CHARACTER_MANAGER::instance().SetMobDamageRate(setting);
 		}
 		else if (name == "mob_gold")
 		{
-			CHARACTER_MANAGER::instance().SetMobGoldAmountRate(value);
+			CHARACTER_MANAGER::instance().SetMobGoldAmountRate(setting);
 		}
 		else if (name == "mob_gold_pct")
 		{
-			CHARACTER_MANAGER::instance().SetMobGoldDropRate(value);
+			CHARACTER_MANAGER::instance().SetMobGoldDropRate(setting);
 		}
 		else if (name == "user_dam")
 		{
-			CHARACTER_MANAGER::instance().SetUserDamageRate(value);
+			CHARACTER_MANAGER::instance().SetUserDamageRate(setting);
 		}
 		else if (name == "user_dam_buyer")
 		{
-			CHARACTER_MANAGER::instance().SetUserDamageRatePremium(value);
+			CHARACTER_MANAGER::instance().SetUserDamageRatePremium(setting);
 		}
 		else if (name == "mob_exp")
 		{
-			CHARACTER_MANAGER::instance().SetMobExpRate(value);
+			CHARACTER_MANAGER::instance().SetMobExpRate(setting);
 		}
 		else if (name == "mob_item_buyer")
 		{
-			CHARACTER_MANAGER::instance().SetMobItemRatePremium(value);
+			CHARACTER_MANAGER::instance().SetMobItemRatePremium(setting);
 		}
 		else if (name == "mob_exp_buyer")
 		{
-			CHARACTER_MANAGER::instance().SetMobExpRatePremium(value);
+			CHARACTER_MANAGER::instance().SetMobExpRatePremium(setting);
 		}
 		else if (name == "mob_gold_buyer")
 		{
-			CHARACTER_MANAGER::instance().SetMobGoldAmountRatePremium(value);
+			CHARACTER_MANAGER::instance().SetMobGoldAmountRatePremium(setting);
 		}
 		else if (name == "mob_gold_pct_buyer")
 		{
-			CHARACTER_MANAGER::instance().SetMobGoldDropRatePremium(value);
+			CHARACTER_MANAGER::instance().SetMobGoldDropRatePremium(setting);
 		}
 		else if (name == "crcdisconnect")
 		{
@@ -1487,7 +1494,7 @@ namespace quest
 				if (!ecs::PlayerRuntime::IsPC(ch))
 					continue;
 
-				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "newyear_boom %d", value);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "newyear_boom %lld", static_cast<long long>(value));
 			}
 		}
 		else if ( name == "eclipse" )
@@ -1587,24 +1594,24 @@ namespace quest
 		}
 		else if (name.compare(0, DROPEVENT_CHARTONE_NAME_LEN, DROPEVENT_CHARTONE_NAME)== 0)
 		{
-			DropEvent_CharStone_SetValue(name, value);
+			DropEvent_CharStone_SetValue(name, setting);
 		}
 		else if (name.compare(0, strlen("refine_box"), "refine_box")== 0)
 		{
-			DropEvent_RefineBox_SetValue(name, value);
+			DropEvent_RefineBox_SetValue(name, setting);
 		}
 		else if (name == "gold_drop_limit_time")
 		{
-			g_GoldDropTimeLimitValue = value * 1000;
+			g_GoldDropTimeLimitValue = static_cast<uint32_t>(std::clamp<int64_t>(value, 0, UINT32_MAX / 1000) * 1000);
 		}
 #ifdef ENABLE_NEWSTUFF
 		else if (name == "box_use_limit_time")
 		{
-			g_BoxUseTimeLimitValue = value * 1000;
+			g_BoxUseTimeLimitValue = static_cast<uint32_t>(std::clamp<int64_t>(value, 0, UINT32_MAX / 1000) * 1000);
 		}
 		else if (name == "buysell_limit_time")
 		{
-			g_BuySellTimeLimitValue = value * 1000;
+			g_BuySellTimeLimitValue = static_cast<uint32_t>(std::clamp<int64_t>(value, 0, UINT32_MAX / 1000) * 1000);
 		}
 		else if (name == "no_drop_metin_stone")
 		{
@@ -1621,9 +1628,9 @@ namespace quest
 #endif
 	}
 
-	int	CQuestManager::GetEventFlag(const std::string& name)
+	int64_t CQuestManager::GetEventFlag(const std::string& name)
 	{
-		std::map<std::string,int>::iterator it = m_mapEventFlag.find(name);
+		const auto it = m_mapEventFlag.find(name);
 
 		if (it == m_mapEventFlag.end())
 			return 0;
@@ -1633,21 +1640,21 @@ namespace quest
 
 	void CQuestManager::BroadcastEventFlagOnLogin(entt::entity ch)
 	{
-		int iEventFlagValue;
+		int64_t iEventFlagValue;
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_snow")))
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_snow %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_snow %lld", static_cast<long long>(iEventFlagValue));
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_boom")))
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_boom %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_boom %lld", static_cast<long long>(iEventFlagValue));
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_tree")))
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_tree %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_tree %lld", static_cast<long long>(iEventFlagValue));
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("day")))
@@ -1657,7 +1664,7 @@ namespace quest
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("newyear_boom")))
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "newyear_boom %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "newyear_boom %lld", static_cast<long long>(iEventFlagValue));
 		}
 
 		if ( (iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("eclipse")) )

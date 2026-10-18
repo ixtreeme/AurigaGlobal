@@ -55,7 +55,7 @@ namespace marriage
 				uint32_t pid1 = 0; str_to_number(pid1, row[0]);
 				uint32_t pid2 = 0; str_to_number(pid2, row[1]);
 				int love_point = 0; str_to_number(love_point, row[2]);
-				uint32_t time = 0; str_to_number(time, row[3]);
+				int64_t time = 0; str_to_number(time, row[3]);
 				uint8_t is_married = 0; str_to_number(is_married, row[4]);
 				const char* name1 = row[5];
 				const char* name2 = row[6];
@@ -89,7 +89,7 @@ namespace marriage
 
 	void CManager::Add(uint32_t dwPID1, uint32_t dwPID2, const char* szName1, const char* szName2)
 	{
-		uint32_t now = CClientManager::instance().GetCurrentTime();
+		const int64_t now = static_cast<int64_t>(CClientManager::instance().GetCurrentTime());
 		if (IsMarried(dwPID1) || IsMarried(dwPID2))
 		{
 			LOG_ERROR("cannot marry already married character. {} - {}", dwPID1, dwPID2);
@@ -98,13 +98,12 @@ namespace marriage
 
 		Align(dwPID1, dwPID2);
 
-		char szQuery[512];
-		snprintf(szQuery, sizeof(szQuery), "INSERT INTO marriage(pid1, pid2, love_point, time) VALUES (%u, %u, 0, %u)", dwPID1, dwPID2, now);
+		unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQueryPrepared(
+			"INSERT INTO marriage(pid1, pid2, love_point, time) VALUES (?, ?, 0, ?)",
+			{SqlParam::UInt(dwPID1), SqlParam::UInt(dwPID2), SqlParam::Int(now)}));
 
-		unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
-
-		SQLResult* res = pmsg->Get();
-		if (res->uiAffectedRows == 0 || res->uiAffectedRows == (uint32_t)-1)
+		SQLResult* res = pmsg ? pmsg->Get() : nullptr;
+		if (!res || pmsg->uiSQLErrno || res->uiAffectedRows == 0 || res->uiAffectedRows == UINT64_MAX)
 		{
 			LOG_ERROR("cannot insert marriage");
 			return;
@@ -117,7 +116,7 @@ namespace marriage
 		m_MarriageByPID.insert(make_pair(dwPID1, pMarriage));
 		m_MarriageByPID.insert(make_pair(dwPID2, pMarriage));
 
-		TPacketMarriageAdd p;
+		TPacketMarriageAdd p {};
 		p.dwPID1 = dwPID1;
 		p.dwPID2 = dwPID2;
 		p.tMarryTime = now;
@@ -302,7 +301,7 @@ namespace marriage
 
 	void CManager::ReadyWedding(uint32_t dwMapIndex, uint32_t dwPID1, uint32_t dwPID2)
 	{
-		uint32_t dwStartTime = CClientManager::instance().GetCurrentTime();
+		const uint64_t dwStartTime = CClientManager::instance().GetCurrentTime();
 		m_pqWeddingStart.push(TWedding(dwStartTime + 5, dwMapIndex, dwPID1, dwPID2));
 	}
 
@@ -326,7 +325,7 @@ namespace marriage
 
 	void CManager::Update()
 	{
-		uint32_t now = CClientManager::instance().GetCurrentTime();
+		const uint64_t now = CClientManager::instance().GetCurrentTime();
 
 		if (!m_pqWeddingEnd.empty())
 		{
@@ -339,7 +338,7 @@ namespace marriage
 				if (it == m_mapRunningWedding.end())
 					continue;
 
-				TWedding& w = it->second;
+				const TWedding w = it->second;
 
 				TPacketWeddingEnd p;
 				p.dwPID1 = w.dwPID1;

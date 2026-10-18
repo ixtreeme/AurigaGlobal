@@ -1176,7 +1176,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
     char antiSpamFlag[64];
     snprintf(antiSpamFlag, sizeof(antiSpamFlag), "vikingdungeon_%d", (int)g_bChannel);
-    const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
+    const int64_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
     if (antiSpamUntil > now)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Please wait a moment.");

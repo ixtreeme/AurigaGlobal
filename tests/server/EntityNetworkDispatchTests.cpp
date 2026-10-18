@@ -18,13 +18,17 @@
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/appearance_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/dirty_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/pet_mount_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/session_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/skill_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/social_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/spatial_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/transform_components.hpp"
+#include <array>
 #include <cstring>
 #include <functional>
 #include <iostream>
@@ -42,6 +46,7 @@ std::map<const DESC*, std::vector<uint8_t>> bufferedWire;
 std::function<void(const DESC*)> onWire;
 SECTREE* updateSector = nullptr;
 std::vector<entt::entity> updateMembers;
+struct PacketPoints { std::array<int64_t, POINT_MAX_NUM> values {}; };
 void Check(bool value, const char* message) {
     ++checks;
     if (!value) throw std::runtime_error(message);
@@ -389,6 +394,97 @@ void NativeMoveBroadcastRouting() {
     Check(wire.empty(), "retired source broadcast MOVE");
     updateMembers.clear(); updateSector = nullptr; g_registry.clear(); wire.clear();
 }
+void CommittedStatePublication() {
+    DESC ownerDesc, observerDesc, distantDesc;
+    SECTREE tree;
+    updateSector = &tree;
+    const auto owner = Character(1000, true, &ownerDesc);
+    const auto observer = Character(1001, true, &observerDesc);
+    const auto distant = Character(1002, true, &distantDesc);
+    g_registry.get<ecs::Position>(distant).x += VIEW_RANGE + VIEW_BONUS_RANGE + 1;
+    updateMembers = {owner, observer, distant};
+    for (const auto e : updateMembers) {
+        g_registry.emplace<ecs::SectorPlacement>(e, 3, 6200u, 100u);
+        g_registry.emplace<ecs::SpatialRevision>(e, 1u);
+    }
+    auto& parts = g_registry.emplace<ecs::AppearancePartsComponent>(owner);
+    for (size_t i = 0; i < PART_MAX_NUM; ++i) parts.parts[i] = uint16_t(100 + i);
+    auto& affects = g_registry.emplace<ecs::AffectList>(owner);
+    affects.flags.bits[0] = 1; affects.flags.bits[1] = 0x80000000u;
+#ifdef __SKILL_COLOR_SYSTEM__
+    auto& colors = g_registry.emplace<ecs::SkillColor>(owner);
+    colors.data[0][0] = 0x12345678;
+    colors.data[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT - 1]
+        [ESkillColorLength::MAX_EFFECT_COUNT - 1] = 0xabcdef01;
+#endif
+    auto& movement = g_registry.get<ecs::MovementState>(owner);
+    movement.moveStartTime = now - 100; movement.moveDuration = 900;
+    g_registry.emplace<ecs::MovementDestination>(owner, 6800, 100);
+    const auto position = g_registry.get<ecs::Position>(owner);
+    const auto revision = g_registry.get<ecs::SpatialRevision>(owner).value;
+    g_registry.emplace<ecs::DirtyTag>(owner);
+    Check(wire.empty(), "generic mutation marker emitted network packets");
+
+    NetworkSyncSystem::UpdatePacket(owner);
+    Check(wire.size() == 2 && !wire.count(&distantDesc), "appearance update recipients differ from visible owner/observer");
+    for (const auto* desc : {&ownerDesc, &observerDesc}) {
+        Check(wire.at(desc).size() == 1, "appearance change replayed MOVE, ADD or full points");
+        const auto packet = Packet<TPacketGCCharacterUpdate>(*desc, 0, HEADER_GC_CHARACTER_UPDATE);
+        Check(packet.dwVID == 1000 && packet.awPart[CHR_EQUIPPART_ARMOR] == 100 + PART_MAIN &&
+            packet.awPart[CHR_EQUIPPART_WEAPON] == 100 + PART_WEAPON &&
+            packet.awPart[CHR_EQUIPPART_HEAD] == 100 + PART_HEAD &&
+            packet.awPart[CHR_EQUIPPART_HAIR] == 100 + PART_HAIR, "equipment appearance lost on UPDATE");
+#ifdef ENABLE_RUNE_SYSTEM
+        Check(packet.awPart[CHR_EQUIPPART_RUNE] == 100 + PART_RUNE, "rune appearance lost");
+#endif
+#ifdef ENABLE_ACCE_SYSTEM
+        Check(packet.awPart[CHR_EQUIPPART_ACCE] == 100 + PART_ACCE, "accessory appearance lost");
+#endif
+#ifdef ENABLE_COSTUME_EFFECT
+        Check(packet.awPart[CHR_EQUIPPART_EFFECT_BODY] == 100 + PART_EFFECT_BODY &&
+            packet.awPart[CHR_EQUIPPART_EFFECT_WEAPON] == 100 + PART_EFFECT_WEAPON, "costume effects lost");
+#endif
+        Check(packet.dwAffectFlag[0] == 1 && packet.dwAffectFlag[1] == 0x80000000u &&
+            packet.bMovingSpeed == 150 && packet.bAttackSpeed == 150, "affect/speed UPDATE fields lost");
+#ifdef __SKILL_COLOR_SYSTEM__
+        Check(std::memcmp(packet.dwSkillColor, colors.data, sizeof(colors.data)) == 0, "skill colors lost on UPDATE");
+#endif
+    }
+    Check(movement.moveStartTime == now - 100 && movement.moveDuration == 900 &&
+        g_registry.get<ecs::MovementDestination>(owner).x == 6800 &&
+        g_registry.get<ecs::Position>(owner).x == position.x &&
+        g_registry.get<ecs::SpatialRevision>(owner).value == revision &&
+        g_registry.all_of<ecs::DirtyTag>(owner), "appearance publication altered movement or consumed the mutation marker");
+
+    // Every slot, including the final one, must survive a full owner snapshot.
+    // Use large signed values so a sparse/32-bit packet cannot pass this test.
+    auto& points = g_registry.emplace<PacketPoints>(owner).values;
+    for (size_t i = 0; i < points.size(); ++i)
+        points[i] = (i % 2 ? -1 : 1) * ((int64_t{1} << 40) + int64_t(i));
+    wire.clear();
+    NetworkSyncSystem::PointsPacket(owner);
+    Check(wire.size() == 1 && wire.at(&ownerDesc).size() == 1, "private points leaked to observers or duplicated");
+    const auto snapshot = Packet<TPacketGCPoints>(ownerDesc, 0, HEADER_GC_CHARACTER_POINTS);
+    for (size_t i = 0; i < points.size(); ++i)
+        Check(snapshot.points[i] == points[i], "full snapshot zeroed or truncated a point");
+    Check(g_registry.all_of<ecs::DirtyTag>(owner), "points publication consumed generic mutation state");
+
+    wire.clear();
+    onWire = [owner](const DESC*) { ++g_registry.get<ecs::SpatialRevision>(owner).value; };
+    NetworkSyncSystem::UpdatePacket(owner);
+    onWire = {};
+    Check(wire.size() == 1 && wire.at(&ownerDesc).size() == 1,
+        "appearance update reached a later viewer after source revision changed");
+    wire.clear();
+    g_registry.get<ecs::NetworkSession>(owner).desc = nullptr;
+    NetworkSyncSystem::PointsPacket(owner);
+    Check(wire.empty(), "owner snapshot sent without a session");
+    g_registry.destroy(owner);
+    NetworkSyncSystem::PointsPacket(owner);
+    NetworkSyncSystem::UpdatePacket(owner);
+    Check(wire.empty(), "retired owner emitted state packets");
+    updateMembers.clear(); updateSector = nullptr; g_registry.clear(); wire.clear();
+}
 }
 
 uint32_t get_dword_time() { return now; }
@@ -458,7 +554,11 @@ CGuild* GetGuild(entt::entity e) { Live(e); return nullptr; }
 void SendGuildName(entt::entity e, CGuild*) { Live(e); }
 }
 namespace ecs::PointSystem {
-int64_t Get(entt::entity e, uint8_t type) { Live(e); Check(type == POINT_MOV_SPEED || type == POINT_ATT_SPEED, "unexpected packet point"); return 150; }
+int64_t Get(entt::entity e, uint8_t type) {
+    Live(e);
+    if (const auto* points = g_registry.try_get<PacketPoints>(e)) return points->values.at(type);
+    Check(type == POINT_MOV_SPEED || type == POINT_ATT_SPEED, "unexpected packet point"); return 150;
+}
 int GetLevel(entt::entity e) { Live(e); return 30; }
 }
 uint32_t MountSystem::GetMountVnum(entt::entity e) { Live(e); return g_registry.get<ecs::MountState>(e).mountVnum; }
@@ -526,6 +626,7 @@ int main() {
         MountWireRoundTrip(); ExpiredAndMissingSession();
         UpdateAfterVisibilityRemoval();
         NativeMoveBroadcastRouting();
+        CommittedStatePublication();
         std::cout << "Entity wire checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `player`.`player` (
   `horse_level`       TINYINT UNSIGNED   NOT NULL DEFAULT 0,
   `horse_riding`      TINYINT UNSIGNED   NOT NULL DEFAULT 0,
   `horse_hp`          SMALLINT           NOT NULL DEFAULT 0,    -- short sHealth
-  `horse_hp_droptime` BIGINT UNSIGNED    NOT NULL DEFAULT 0,    -- uint32_t, %u
+  `horse_hp_droptime` BIGINT UNSIGNED    NOT NULL DEFAULT 0,    -- uint64_t, %llu
   `horse_stamina`     SMALLINT           NOT NULL DEFAULT 0,    -- short sStamina
   `horse_skill_point` SMALLINT           NOT NULL DEFAULT 0,
   `envanter`          INT                NOT NULL DEFAULT 0,    -- __ENABLE_EXTEND_INVEN_SYSTEM__, %d
@@ -286,7 +286,7 @@ CREATE TABLE IF NOT EXISTS `player`.`affect` (
 --          ("SELECT dwPID,szName,szState,lValue FROM quest%s WHERE dwPID=%u")
 --   READ   SRC/Server/Database/ClientManagerPlayer.cpp:962-996 (mapping)
 --   Types: TQuestTable tables.h:668-677 (uint32_t dwPID, char szName[33],
---          char szState[65], int32_t lValue)
+--          char szState[65], int64_t lValue)
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS `player`.`quest` (
   `dwPID`   INT UNSIGNED   NOT NULL DEFAULT 0,
@@ -1289,7 +1289,7 @@ CREATE TABLE IF NOT EXISTS `player`.`guild_renewal_kisado_item` (
 --   141  UPDATE marriage SET love_point=%d,is_married=%d WHERE pid1=%u AND pid2=%u
 --   188  DELETE FROM marriage WHERE pid1=%u AND pid2=%u
 --   231  UPDATE marriage SET is_married=1 WHERE pid1=%u AND pid2=%u
--- Types: TMarriage (Marriage.h): uint32 pid1/pid2, int love_point, uint32 time (unix), uint8 is_married.
+-- Types: Database TMarriage (Marriage.h): uint32 pid1/pid2, int love_point, int64 time (unix), uint8 is_married.
 -- Names of the two characters are NOT stored here (joined from player).
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `player`.`marriage` (

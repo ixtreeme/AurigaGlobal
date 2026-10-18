@@ -413,7 +413,7 @@ void DungeonSystem::DeadCharacter(entt::entity, entt::entity) { Unexpected(); }
 entt::entity CDungeonManager::FindByMapIndex(int32_t) { Unexpected(); }
 void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t) { Unexpected(); }
 bool map_allow_find(int32_t) { Unexpected(); }
-int quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
+int64_t quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
 void quest::FSendPacket::operator()(entt::entity) { Unexpected(); }
 entt::entity EntityFactory::EnsureCharacterEntity(entt::registry&, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateMonster(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }

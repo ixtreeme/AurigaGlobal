@@ -77,6 +77,7 @@ ACMD(do_set_socket);
 ACMD(do_user);
 ACMD(do_setskill);
 ACMD(do_set_skill_group);
+ACMD(do_event_flag);
 void SendNotice(const char*, bool);
 void SendNoticeMap(const char*, int32_t, bool);
 void SendNoticeNew(uint8_t, uint8_t, int32_t, uint32_t, const char*, ...);
@@ -107,6 +108,8 @@ std::function<void(entt::entity)> onCompute, onPointChange, onColorUpdate, onCol
 int colorTokens = 0, colorPayments = 0, guildSkillLevel = 0;
 bool refuseColorPayment = false, hasGuild = false;
 std::vector<TSkillColor> savedColors;
+std::vector<TPacketGCSkillLevel> skillPackets;
+std::vector<std::pair<std::string, int64_t>> eventRequests;
 std::map<std::pair<entt::entity, uint32_t>, entt::entity> slots;
 void Check(bool value, const char* message) { ++checks; if (!value) throw std::runtime_error(message); }
 uint32_t Key(TItemPos pos) { return (uint32_t(pos.window_type) << 16) | pos.cell; }
@@ -119,7 +122,7 @@ void Reset() {
     activePet = rejectDestroy = false; socketWrites = packets = computes = dbPackets = 0;
     onColorUpdate = onColorPayment = {};
     colorTokens = colorPayments = guildSkillLevel = 0;
-    refuseColorPayment = hasGuild = false; savedColors.clear();
+    refuseColorPayment = hasGuild = false; savedColors.clear(); skillPackets.clear(); eventRequests.clear();
 }
 entt::entity Actor(const char* name = "GM") {
     auto e = g_registry.create();
@@ -240,6 +243,26 @@ void NoticeChecks() {
     }
     Check(totals == 2 && names == 2, "nested user list shared state or format");
 }
+void EventFlagCommandChecks() {
+    Reset(); const auto player = Actor(); quest::CQuestManager quests;
+    for (const auto* value : {"2147483648", "4294967296", "9223372036854775807", "-9223372036854775808"}) {
+        const auto input = std::string("time64 ") + value;
+        const auto before = eventRequests.size();
+        do_event_flag(player, input.c_str(), 0, 0);
+        Check(eventRequests.size() == before + 1 && eventRequests.back().first == "time64" &&
+            eventRequests.back().second == std::stoll(value), "GM event value truncated before DB request");
+    }
+    const auto before = eventRequests.size();
+    for (const auto* value : {"9223372036854775808", "-9223372036854775809", "12junk"}) {
+        const auto input = std::string("time64 ") + value;
+        do_event_flag(player, input.c_str(), 0, 0);
+    }
+    Check(eventRequests.size() == before, "malformed GM event value accepted");
+    do_event_flag(player, "mob_exp 9223372036854775807", 0, 0);
+    Check(eventRequests.back().second == 1000, "rate setting overflowed before clamp");
+    do_event_flag(player, "mob_exp -9223372036854775808", 0, 0);
+    Check(eventRequests.back().second == 0, "negative rate setting overflowed before clamp");
+}
 void SkillChecks() {
     Reset(); auto player = Actor();
     std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
@@ -289,6 +312,32 @@ void SkillChecks() {
     Check(!g_registry.valid(player), "eligibility callback not exercised");
     SkillSystem::SetSkillGroup(player, 1);
     Check(packets == 3, "stale skill owner packet");
+}
+void SkillPublicationChecks() {
+    Reset(); const auto player = Actor();
+    g_registry.emplace<ecs::NetworkSession>(player).desc = DescToken();
+    g_registry.emplace<ecs::SkillLevels>(player);
+    SkillSystem::SendSkillLevelPacket(player);
+    Check(packets == 0, "unloaded skill table published zeros");
+    std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
+    for (size_t i = 0; i < levels.size(); ++i) levels[i].bLevel = uint8_t(i % 41);
+    SkillSystem::LoadSkillLevels(player, levels.data(), 1);
+    SkillSystem::SendSkillLevelPacket(player);
+    Check(packets == 1 && skillPackets.size() == 1 && skillPackets.back().bHeader == HEADER_GC_SKILL_LEVEL,
+        "skill snapshot missing, duplicated or wrong header");
+    for (size_t i = 0; i < levels.size(); ++i)
+        Check(skillPackets.back().abSkillLevels[i] == levels[i].bLevel, "skill level lost in owner snapshot");
+    for (size_t i = 0; i < levels.size(); ++i)
+        Check(g_registry.get<ecs::SkillLevels>(player).levels[i].bLevel == levels[i].bLevel,
+            "skill publication mutated authoritative levels");
+    g_registry.get<ecs::NetworkSession>(player).desc = nullptr;
+    SkillSystem::SendSkillLevelPacket(player);
+    g_registry.destroy(player);
+    const auto replacement = Actor();
+    g_registry.emplace<ecs::NetworkSession>(replacement).desc = DescToken();
+    SkillSystem::SendSkillLevelPacket(player);
+    SkillSystem::SendSkillLevelPacket(replacement);
+    Check(packets == 1, "missing session, retired owner or unloaded replacement published skills");
 }
 void SkillRuntimeChecks() {
     Reset(); auto caster = Actor(), target = Actor("Target");
@@ -653,6 +702,11 @@ void ChatSystem::SendNew(entt::entity e, uint8_t type, uint32_t index, const cha
 void DESC::Packet(const void* data, int size) {
     Check(this == DescToken() && data, "descriptor token");
     Check(size == sizeof(TPacketGCChangeSkillGroup) || size == sizeof(TPacketGCSkillLevel), "packet type");
+    if (size == sizeof(TPacketGCSkillLevel)) {
+        TPacketGCSkillLevel packet {};
+        std::memcpy(&packet, data, sizeof(packet));
+        skillPackets.push_back(packet);
+    }
     ++packets; if (onPacket) onPacket();
 }
 P2P_MANAGER::P2P_MANAGER() = default;
@@ -870,7 +924,13 @@ quest::PC * quest::CQuestManager::GetPC(unsigned int) { Unexpected(); }
 quest::PC * quest::CQuestManager::GetPCForce(unsigned int) { Unexpected(); }
 int quest::CQuestManager::GetQuestStateIndex(std::string const &,std::string const &) { Unexpected(); }
 unsigned int quest::CQuestManager::GetQuestIndexByName(std::string const &) { Unexpected(); }
-void quest::CQuestManager::RequestSetEventFlag(std::string const &,int) { Unexpected(); }
+void quest::CQuestManager::RequestSetEventFlag(std::string const & name,int64_t value) { eventRequests.emplace_back(name, value); }
+quest::CQuestManager::CQuestManager() = default;
+quest::CQuestManager::~CQuestManager() = default;
+quest::NPC::NPC() = default;
+quest::NPC::~NPC() = default;
+quest::PC::PC() : m_RunningQuestState(nullptr) {}
+quest::PC::~PC() = default;
 void quest::CQuestManager::SendEventFlagList(entt::entity) { Unexpected(); }
 void quest::CQuestManager::Reload(void) { Unexpected(); }
 void DBManager::ReturnQuery(int,unsigned int,void *,char const *,...) { Unexpected(); }
@@ -985,7 +1045,7 @@ int CalcArrowDamage(entt::entity,entt::entity,entt::entity,entt::entity,bool) { 
 float CalcAttackRating(entt::entity,entt::entity,bool) { Unexpected(); }
 bool battle_is_attackable(entt::entity,entt::entity) { Unexpected(); }
 int64_t quest::PC::GetFlag(std::string const &) { Unexpected(); }
-int quest::CQuestManager::GetEventFlag(std::string const &) { Unexpected(); }
+int64_t quest::CQuestManager::GetEventFlag(std::string const &) { Unexpected(); }
 bool RaceToJob(unsigned int,unsigned int *) { Unexpected(); }
 unsigned char ItemSystem::GetItemType(entt::entity) { Unexpected(); }
 unsigned char ItemSystem::GetItemSubType(entt::entity) { Unexpected(); }
@@ -1002,7 +1062,7 @@ int main() {
             power.SetSkillPowerByLevelFromType(index, table.data());
         }
         static int dbToken; db_clientdesc = reinterpret_cast<CLIENT_DESC*>(&dbToken);
-        PurgeChecks(); NoticeChecks(); SkillChecks(); SkillRuntimeChecks(); SkillPowerChecks(); SkillColorChecks(); SkillCommandChecks(); SkillTableChecks(); SocketChecks();
+        PurgeChecks(); NoticeChecks(); EventFlagCommandChecks(); SkillChecks(); SkillPublicationChecks(); SkillRuntimeChecks(); SkillPowerChecks(); SkillColorChecks(); SkillCommandChecks(); SkillTableChecks(); SocketChecks();
         std::cout << "GM command checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

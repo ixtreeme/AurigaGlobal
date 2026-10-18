@@ -926,7 +926,7 @@ void MountSystem::SummonHorse(entt::entity e, bool summon, bool fromFar, uint32_
     horseCalls.push_back(summon);
     if (onHorse) { const auto callback = onHorse; callback(e, summon); }
 }
-int quest::CQuestManager::GetEventFlag(std::string const &) { UnexpectedService(__func__); }
+int64_t quest::CQuestManager::GetEventFlag(std::string const &) { UnexpectedService(__func__); }
 entt::entity ItemSystem::FindItemByID(entt::entity,unsigned int) { UnexpectedService(__func__); }
 entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { UnexpectedService(__func__); }
 bool ItemSystem::IsValidItem(entt::entity) { UnexpectedService(__func__); }

@@ -367,7 +367,7 @@ CSkillProto* CSkillManager::Get(uint32_t id) {
     return availableSkills.contains(id) ? &skill : nullptr;
 }
 int CPrivManager::GetPriv(entt::entity, uint8_t) { Unexpected(); }
-int quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
+int64_t quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
 void quest::CQuestManager::RegisterNPCVnum(uint32_t) { Unexpected(); }
 bool Blend_Item_set_value(entt::entity item) {
     g_registry.get<ecs::ItemSockets>(item).sockets = {3, 7, 900}; CreationStage("blend", item); return true;

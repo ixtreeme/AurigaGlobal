@@ -2,7 +2,9 @@
 
 Az eredeti audit alapállapota: `129a28d7` – a korábbi nyolc javítás commitja. A vizsgálat kezdetén a munkafa tiszta volt; akkor mindhárom szerver normál/ASAN buildje és 43/43 teszt volt sikeres. Az alábbi részletes megállapítások ezt az auditállapotot rögzítik. A végrehajtás friss állapota külön szerepel itt.
 
-## Végrehajtási állapot – R1–R5 elkészült
+Az R1–R5 javításai és regressziói a `25a2b1cf` commitban szerepelnek.
+
+## Végrehajtási állapot – R1–R7 megvalósítva és ellenőrizve
 
 | Pont | Megvalósult változtatás |
 |---|---|
@@ -11,6 +13,8 @@ Az eredeti audit alapállapota: `129a28d7` – a korábbi nyolc javítás commit
 | R3 | Közös klienscsomag-ellenőrzés a feldolgozás előtt, hosszkorlátos normalizálás, külön login/create/delete/version védelem és offline-shop névellenőrzés. |
 | R4 | Tényleges SQL-készállapot megvárása, indulás megszakítása SQL/HWID-hibánál, 5 másodperces connector-időkorlátok, 10 másodperces belépési kísérletek és korlátos protokollvárakozás. Weak visszahívási jegyekkel a lejárt/bezárt session azonnal felszabadítható. A naplózó az SQL-objektumok után áll le. |
 | R5 | OpenSSL `RAND_bytes` alapú login-kulcs, hibánál kulcskiadás nélküli lezárással. A limiter monoton órát használ; 15 perc inaktivitás után, körönként legfeljebb 256 host- és 256 accountbejegyzést vizsgál. Mindkét állapottér felső korlátja 65 536; a megtelt tér új, nem követhető kéréseket utasít el, az élő sessionök és aktív tiltások megtartásával. |
+| R6 | A leváltott `NetworkSyncSystem_Update` ciklus és deklarációja kivezetve. Végleges, eseményenkénti publikálási szerződés készült; a `DirtyTag` nem hálózati sor. A megjelenés UPDATE a mozgással és pontváltozásokkal közös, térbeli verziót ellenőrző `PacketView` útvonalat használja. |
+| R7 | Az event flag teljes GameServer/Database lánca `int64_t`, a ló határideje `uint64_t`. Fix 64 bites házassági/privilege/battle-pass belső mezők; 64 bites lejárati sorok és határellenőrzés. Javított privilege-clamp, házassági INSERT-hibakezelés és esküvői kitakarítás; az inaktív battle pass SQL-értéke `NULL`. A megváltozott DG-csomagméretet a feldolgozás előtt ellenőrzi a GameServer. |
 
 Ellenőrzés: GameServer, LoginServer és Database sikeres normál és ASAN RelWithDebInfo build; **46/46 CTest mindkettőben**. Külön MariaDB 13.0.2 tesztpéldányon a repository sémájával a karakter INSERT és minden mező visszaolvasása is sikeres, `uint64_t` maximális HP-val, nagy SP/pénz értékekkel és bináris skill/quickslot adatokkal. A teszt a saját SQL-kapcsolatát megszakítva a cached prepared lekérdezés helyreállását is ellenőrzi; mindkét builddel **136 ellenőrzés sikeres**.
 
@@ -18,7 +22,13 @@ A valódi LoginServer mindkét builddel szabályosan 1-es kóddal lépett ki elu
 
 Az R5 után a LoginServer és az érintett tesztek normál/ASAN buildje is sikeres; a teljes regresszió ismét **46/46 mindkettőben**. Az új esetek lefedik a hibás vagy csak nulla mintákat adó véletlenforrást és az újrapróbálást, a monoton időablakok és tiltások pontos határait, a takarítási munkakorlátot, az élő sessionök megőrzését, mindkét állapottér telítődését és helyreállását. Telített limiternél a valódi `LoginAuth` az SQL-lekérdezés előtt válaszol `BLOCK` státusszal. A korábbi kapcsolati és credential-küszöbök, valamint a nem nulla, 31 bites kulcstartomány változatlan.
 
-**Nyitott munkacsomagok: R6–R13.** Az R11 továbbra is csak tervezett LostCastle-kiadás esetén szükséges. A teljes klienses belépés/létrehozás/játék és az éles adatbázis-séma ellenőrzése az R12 része; az izolált SQL-próba ezt nem helyettesíti.
+Az R6 után a GameServer és a teljes ServerTests cél normál/ASAN RelWithDebInfo buildje is sikeres; **46/46 CTest mindkettőben**. Az új esetek a valódi packet builderekkel és küldési útvonallal ellenőrzik a mozgás közbeni felszerelés/affect/skill-color UPDATE-et, a saját és közeli/távoli címzetteket, a teljes 255 mezős pontcsomagot, a 64 bites HP/SP-deltákat, a teljes skilltáblát és a két címzett közötti térbeli verzióváltást. Nincs szintetikus WAIT vagy részleges teljespont-csomag. A részletes szerződés: [server_network_publication.md](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/server_network_publication.md).
+
+Az R7 GameServer/LoginServer/Database és ServerTests buildje normál és ASAN RelWithDebInfo konfigurációban is sikeres; **48/48 CTest mindkettőben**, valamint külön MariaDB 13.0.2 példányon **109 SQL-/állapotellenőrzés mindkettővel** sikeres. Az új `DatabaseTimeTests` és `PrivilegeTimeTests`, valamint a bővített quest/GM/horse/marriage tesztek 2038/2106 utáni időket, signed/unsigned határokat, teljes Lua/GM értékátadást, lejáratot és SQL-hibát is ellenőriznek. Részletek és közös komponensfrissítés: [server_time64_contract.md](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/server_time64_contract.md).
+
+**Nyitott munkacsomagok: R8–R13.** Az R11 továbbra is csak tervezett LostCastle-kiadás esetén szükséges. A teljes klienses belépés/létrehozás/játék, a kétklienses megjelenítés és az éles adatbázis-séma ellenőrzése az R12 része; a helyi regresszió és az izolált SQL-próba ezt nem helyettesíti.
+
+**Klienses tesztfüggőség:** a felhasználó jelzése alapján élő klienspróba csak a Unity kliens csatlakozási átállása után végezhető el. A klienses R12-ellenőrzések addig függőségre várnak; a kliens nélkül automatizálható szerver-/adatbázis-tesztek és a többi szerveroldali feladat továbbhaladhatnak. Az R6 szerveroldali megvalósítása kész, az élő megjelenítés ellenőrzése még nyitott.
 
 ## Az R1–R4 eredeti auditmegállapításai – megvalósítva
 
@@ -90,7 +100,9 @@ Lezárás: óraváltás nem befolyásolja a tiltási időt; sok egyedi IP/login 
 
 **Prioritás: P2. Típus: befejezetlen architekturális átállás.**
 
-Források: [main.cpp:745](D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/core/main.cpp:745), [NetworkSyncSystem.cpp:1078](D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp:1078).
+**Állapot: megvalósítva és ellenőrizve.** Az alábbi leírás az eredeti audit megállapítása; a végleges megoldás a dokumentum elején és a [publikálási szerződésben](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/server_network_publication.md) szerepel. Az élő kétklienses ellenőrzés az R12 része.
+
+Aktuális források: [main.cpp:745](D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/core/main.cpp:745), [NetworkSyncSystem.cpp:146](D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp:146).
 
 A központi `NetworkSyncSystem_Update` hívás ki van kommentelve. A meglévő ciklus minden dirty játékosnak nulla időtartamú WAIT mozgást és csak néhány vitális pontot kitöltő points csomagot küldene. Emiatt a puszta visszakapcsolás nem megfelelő lezárás. A célzott entity-native csomagküldő függvények közben már működnek.
 
@@ -101,6 +113,8 @@ Lezárás: felszerelés, affect, HP/SP, skillek és mozgás helyesen jelennek me
 ### R7 – A 64 bites időátállás maradékának lezárása
 
 **Prioritás: P2. Típus: igazolt típuskülönbségek, részben hosszú távú munka.**
+
+**Állapot: megvalósítva és ellenőrizve normál/ASAN konfigurációban.** Az alábbi szöveg az eredeti audit megállapítása. A végleges adat- és protokollszerződés a [server_time64_contract.md](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/server_time64_contract.md) fájlban szerepel.
 
 Források: [tables.h:438](D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/common/tables.h:438), [tables.h:1258](D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/common/tables.h:1258), [ClientManagerEventFlag.cpp](D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/Database/ClientManagerEventFlag.cpp).
 
@@ -166,13 +180,21 @@ Lezárás: a dungeon teljesen végigjátszható újrabelépéssel, sikertelen pr
 
 A 43 teszt erős helyi regressziós alap, de a tesztek leírása is külön jelzi a valódi SQL, kliens és egyes szolgáltatások hiányát. A repositoryban nem találtam verziózott GitHub/GitLab/Jenkins CI-konfigurációt vagy CMake presetet. A mostani commit ellenőrzése Windows/MSVC alatt történt.
 
-Teendők:
+Az eredeti audit óta a helyi regresszió 48 tesztre bővült; az izolált karakter-INSERT, SQL-újracsatlakozás és az R7 64 bites adatmentési útvonalainak valódi SQL-ellenőrzése is elkészült. A teljes R12 továbbra is nyitott, az alábbi függőségek szerint.
 
-- Elkülönített valódi adatbázissal login → karakterlétrehozás/választás → játék → logout/relog integrációs folyamat.
+Kliens nélkül megvalósítható feladatok:
+
 - Mentési hibainjektálás: megszakadó SQL/DB-link, újraindítás, item/exchange/offline shop/safebox/daily reward tartósság és ismételt kérések.
 - Tiszta buildből normál/ASAN tesztek automatizálása; FreeBSD/Linux fordítás és célplatformos regresszió.
 - Az élő séma és a verziózott SQL-migrációk gépi egyeztetése; a változó belső packet-layoutokhoz verzió-/kompatibilitási ellenőrzés és összehangolt telepítési lépés.
 - A korábbi skillpont-hiba miatt érintett karakterek felmérése, majd csak meghatározott szabályokkal adatkorrekció.
+
+Unity kliens csatlakozási átállására váró ellenőrzések:
+
+- Elkülönített valódi adatbázissal, az átállított Unity klienssel login → karakterlétrehozás/választás → játék → logout/relog integrációs folyamat.
+- Két csatlakozott klienssel mozgás közbeni felszerelésváltás, affectek hozzáadása/lejárata, skillpontok és skill-color, HP/SP és target/party UI, látótérbe belépés/kilépés és mentett állapot visszatöltése.
+
+Ezeket a klienses eseteket az átállás elkészülte után kell végrehajtani; addig nem tekinthetők sikeresen teszteltnek. A szerveroldali automatizálásuk és a protokolltesztek előkészítése ettől függetlenül haladhat. Az élő adatbázis és a célplatform ellenőrzéséhez a megfelelő környezet is szükséges.
 
 Lezárás: a kiadás ellenőrizhetően reprodukálható; migrációhiány vagy hibás komponensverzió felismerhető; az újraindítási és mentési esetek ténylegesen teszteltek. Az élő állapot és korábbi túlköltések ténye jelenleg nincs megállapítva.
 
@@ -195,8 +217,8 @@ Lezárás: a teendőlista a tényleges kódállapotot követi; megszűnnek a fé
 - A házaspár entitásalapú `CoupleState` tárolása és a régi `TMarriage` objektum kiváltása.
 - Affectek értékként tárolása; a régi `shared_ptr<CAffect>` lista már nem az aktuális megoldás.
 - A régi `CHARACTER`, `CItem`, `CParty` objektummodell kiváltása a játékállapotban.
-- A normál quest flag 64 bitesítése; ez nem azonos a még 32 bites event flaggel.
+- A normál quest flag, valamint az R7-ben az event flag teljes láncának 64 bitesítése.
 - Kliens-TLS, a régi packet cipher kivezetése, valamint a teljes szerverteszt-regisztráció.
 - A `PrivManager` „TODO send packet” megjegyzései melletti küldések már megvannak; a cube betöltő a „TODO check cube data” mellett ténylegesen meghívja az ellenőrzőt. Ezeket nem soroltam hiányzó implementációként.
 
-Az **R1–R5 elkészült**. Javasolt következő munkasorrend: **R6 → R12**, ezután a tervezett tartalmi és adatátállási feladatok. Az R11 kiadási szándékhoz kötött, az R13 nem előzi meg a működési javításokat.
+Az **R1–R7 szerveroldali megvalósítása és normál/ASAN ellenőrzése elkészült**. Következőként folytatható az **R8**, illetve az **R12 kliens nélkül automatizálható része**. Az élő klienspróbák a Unity kliens csatlakozási átállására várnak. Az R11 kiadási szándékhoz kötött, az R13 nem előzi meg a működési javításokat.

@@ -41,6 +41,8 @@
 #include <functional>
 #include <iostream>
 #include <stdexcept>
+#include <limits>
+#include <common/event_flag.h>
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
@@ -48,9 +50,13 @@ int test_server=0;
 namespace quest {
 int npc_lock(lua_State*);
 int npc_unlock(lua_State*);
+int game_set_event_flag(lua_State*);
+int game_get_event_flag(lua_State*);
+int game_get_event_flag_string(lua_State*);
 }
 namespace {
 int checks=0, clicks=0, chats=0, attrCalls=0, affects=0, saves=0, pidLookups=0;
+std::vector<TPacketSetEventFlag> eventRequests;
 bool hasTarget=false, hasChat=false;
 TargetInfo targetInfo;
 std::map<uint32_t,entt::entity> players;
@@ -91,6 +97,43 @@ void Reset() {
     searchTree=nullptr;searchCandidates.clear();onMember={};
     g_registry.clear();players.clear();gifts.clear();experience.clear();
     clicks=chats=attrCalls=affects=saves=pidLookups=0;hasTarget=hasChat=false;nextExp[1]=100;
+}
+void WideEventFlags(lua_State* L) {
+    Reset(); quest::CQuestManager q;
+    int dbToken = 0;
+    db_clientdesc = reinterpret_cast<CLIENT_DESC*>(&dbToken);
+    eventRequests.clear();
+    for (const int64_t value : {int64_t{2147483648}, int64_t{4294967296}, int64_t{1} << 40, INT64_MIN, INT64_MAX}) {
+        q.SetEventFlag("time64", value);
+        Check(q.GetEventFlag("time64") == value && q.GetEventFlag("unknown") == 0, "event flag storage truncated value");
+        lua_settop(L, 0); lua_pushstring(L, "time64");
+        const auto text = std::to_string(value); lua_pushlstring(L, text.data(), text.size());
+        const auto count = eventRequests.size();
+        Check(quest::game_set_event_flag(L) == 0 && eventRequests.size() == count + 1 &&
+            eventRequests.back().lValue == value && std::string(eventRequests.back().szFlagName) == "time64",
+            "exact Lua event flag did not reach DB request intact");
+        lua_settop(L, 0); lua_pushstring(L, "time64");
+        Check(quest::game_get_event_flag_string(L) == 1 && std::string(lua_tostring(L, -1)) == text,
+            "exact Lua event flag read lost precision");
+    }
+    q.SetEventFlag("time64", 4294967296LL);
+    lua_settop(L, 0); lua_pushstring(L, "time64");
+    Check(quest::game_get_event_flag(L) == 1 && lua_tonumber(L, -1) == 4294967296.0, "numeric Lua timestamp read truncated");
+    const auto count = eventRequests.size();
+    for (const double invalid : {std::numeric_limits<double>::infinity(),
+        std::numeric_limits<double>::quiet_NaN(), 1.5, 9223372036854775808.0, 9007199254740992.0}) {
+        lua_settop(L, 0); lua_pushstring(L, "time64"); lua_pushnumber(L, invalid);
+        quest::game_set_event_flag(L);
+    }
+    lua_settop(L, 0); lua_pushstring(L, "time64"); lua_pushstring(L, "9223372036854775808");
+    quest::game_set_event_flag(L);
+    q.RequestSetEventFlag(std::string(EVENT_FLAG_NAME_MAX_LEN + 1, 'x'), 1);
+    Check(eventRequests.size() == count, "invalid/unrepresentable event request reached DB");
+    lua_settop(L, 0); lua_pushstring(L, "time64"); lua_pushnumber(L, 4294967297.0);
+    quest::game_set_event_flag(L);
+    Check(eventRequests.size() == count + 1 && eventRequests.back().lValue == 4294967297LL,
+        "numeric Lua event timestamp narrowed");
+    db_clientdesc = nullptr; lua_settop(L, 0);
 }
 void References() {
     Reset();quest::CQuestManager q;
@@ -330,7 +373,11 @@ std::string g_stQuestDir;
 std::set<std::string> g_setQuestObjectDir;
 void DESC::Packet(const void*,int) {Unexpected();}
 void CLIENT_DESC::Packet(const void*,int) {Unexpected();}
-void CLIENT_DESC::DBPacket(uint8_t,uint32_t,const void*,uint32_t) {Unexpected();}
+void CLIENT_DESC::DBPacket(uint8_t header,uint32_t,const void* data,uint32_t size) {
+    Check(this == db_clientdesc && header == HEADER_GD_SET_EVENT_FLAG && size == sizeof(TPacketSetEventFlag),
+        "unexpected event flag DB frame");
+    TPacketSetEventFlag packet {}; std::memcpy(&packet, data, sizeof(packet)); eventRequests.push_back(packet);
+}
 void CLIENT_DESC::DBPacketHeader(uint8_t,uint32_t,uint32_t) {Unexpected();}
 const DESC_MANAGER::DESC_SET& DESC_MANAGER::GetClientSet() {Unexpected();}
 void CHARACTER_MANAGER::DestroyCharacter(entt::entity) {Unexpected();}
@@ -587,7 +634,7 @@ int main() {
     g_registry.on_construct<ecs::ClickTrigger>().connect<&TriggerConstructed>();
     auto* L=lua_open();
     try {
-        References();OtherPCBlocks();QuestPCOwnership();LuaAndDispatch(L);RewardBatches();RewardCompletion();ConstructionCallbacks();
+        WideEventFlags(L);References();OtherPCBlocks();QuestPCOwnership();LuaAndDispatch(L);RewardBatches();RewardCompletion();ConstructionCallbacks();
         NativeClick();TriggerConstruction();NativeVictimSearch();Reset();
         lua_close(L);std::cout<<"Quest runtime: "<<checks<<" checks passed\n";
     } catch(const std::exception& error) {

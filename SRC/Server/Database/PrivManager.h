@@ -14,9 +14,9 @@ struct TPrivEmpireData
     uint8_t empire;
 
 	// ADD_EMPIRE_PRIV_TIME
-    time_t end_time_sec;
+    int64_t end_time_sec;
 
-    TPrivEmpireData(uint8_t type, int value, uint8_t empire, time_t end_time_sec)
+    TPrivEmpireData(uint8_t type, int value, uint8_t empire, int64_t end_time_sec)
 	: type(type), value(value), bRemoved(false), empire(empire), end_time_sec(end_time_sec)
     {}
 	// END_OF_ADD_EMPIRE_PRIV_TIME
@@ -30,9 +30,9 @@ struct TPrivGuildData
     uint32_t guild_id;
 
 	// ADD_GUILD_PRIV_TIME
-    time_t end_time_sec;
+    int64_t end_time_sec;
 
-    TPrivGuildData(uint8_t type, int value, uint32_t guild_id, time_t _end_time_sec)
+    TPrivGuildData(uint8_t type, int value, uint32_t guild_id, int64_t _end_time_sec)
 	: type(type), value(value), bRemoved(false), guild_id(guild_id), end_time_sec(_end_time_sec )
     {}
 	// END_OF_ADD_GUILD_PRIV_TIME
@@ -56,11 +56,11 @@ class CPrivManager : public singleton<CPrivManager>
 	virtual ~CPrivManager();
 
 	// ADD_GUILD_PRIV_TIME
-	void AddGuildPriv(uint32_t guild_id, uint8_t type, int value, time_t time_sec);
+	void AddGuildPriv(uint32_t guild_id, uint8_t type, int value, int64_t time_sec);
 	// END_OF_ADD_GUILD_PRIV_TIME
 
 	// ADD_EMPIRE_PRIV_TIME
-	void AddEmpirePriv(uint8_t empire, uint8_t type, int value, time_t time_sec);
+	void AddEmpirePriv(uint8_t empire, uint8_t type, int value, int64_t time_sec);
 	// END_OF_ADD_EMPIRE_PRIV_TIME
 
 	void AddCharPriv(uint32_t pid, uint8_t type, int value);
@@ -72,18 +72,18 @@ class CPrivManager : public singleton<CPrivManager>
     private:
 
 	// ADD_GUILD_PRIV_TIME
-	void SendChangeGuildPriv(uint32_t guild_id, uint8_t type, int value, time_t end_time_sec);
+	void SendChangeGuildPriv(uint32_t guild_id, uint8_t type, int value, int64_t end_time_sec);
 	// END_OF_ADD_GUILD_PRIV_TIME
 
 	// ADD_EMPIRE_PRIV_TIME
-	void SendChangeEmpirePriv(uint8_t empire, uint8_t type, int value, time_t end_time_sec);
+	void SendChangeEmpirePriv(uint8_t empire, uint8_t type, int value, int64_t end_time_sec);
 	// END_OF_ADD_EMPIRE_PRIV_TIME
 
 	void SendChangeCharPriv(uint32_t pid, uint8_t type, int value);
 
-	typedef std::pair<time_t, TPrivCharData *> stPairChar;
-	typedef std::pair<time_t, TPrivGuildData*> stPairGuild;
-	typedef std::pair<time_t, TPrivEmpireData*> stPairEmpire;
+	typedef std::pair<int64_t, TPrivCharData *> stPairChar;
+	typedef std::pair<int64_t, TPrivGuildData*> stPairGuild;
+	typedef std::pair<int64_t, TPrivEmpireData*> stPairEmpire;
 
 	std::priority_queue<stPairChar, std::vector<stPairChar>, std::greater<stPairChar> >
 	    m_pqPrivChar;

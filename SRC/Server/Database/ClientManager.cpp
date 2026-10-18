@@ -223,14 +223,14 @@ static bool __InitializeDefaultPriv()
 			uint8_t empire = 0;
 			uint8_t type = 1;
 			int value = 0;
-			time_t duration_sec = 0;
+			int64_t duration_sec = 0;
 			// set
 			str_to_number(empire, row[1]);
 			str_to_number(type, row[2]);
 			str_to_number(value, row[3]);
 			str_to_number(duration_sec, row[4]);
 			// recalibrate time
-			time_t now_time_sec = CClientManager::instance().GetCurrentTime();
+			int64_t now_time_sec = CClientManager::instance().GetCurrentTime();
 			if (now_time_sec>duration_sec)
 				duration_sec = 0;
 			else
@@ -245,14 +245,14 @@ static bool __InitializeDefaultPriv()
 			uint32_t guild_id = 0;
 			uint8_t type = 1;
 			int value = 0;
-			time_t duration_sec = 0;
+			int64_t duration_sec = 0;
 			// set
 			str_to_number(guild_id, row[1]);
 			str_to_number(type, row[2]);
 			str_to_number(value, row[3]);
 			str_to_number(duration_sec, row[4]);
 			// recalibrate time
-			time_t now_time_sec = CClientManager::instance().GetCurrentTime();
+			int64_t now_time_sec = CClientManager::instance().GetCurrentTime();
 			if (now_time_sec>duration_sec)
 				duration_sec = 0;
 			else
@@ -285,7 +285,7 @@ static bool __InitializeDefaultPriv()
 	return true;
 }
 
-static bool __UpdateDefaultPriv(const char* priv_type, uint32_t id, uint8_t type, int value, time_t duration_sec)
+static bool __UpdateDefaultPriv(const char* priv_type, uint32_t id, uint8_t type, int value, int64_t duration_sec)
 {
 	char szQuery[1024];
 	snprintf(szQuery, 1024,

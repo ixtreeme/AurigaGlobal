@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
+#include <algorithm>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -119,7 +120,7 @@ namespace marriage
 
 			if (test_server)
 			{
-				int value = quest::CQuestManager::instance().GetEventFlag("lovepoint");
+				const int value = static_cast<int>(std::clamp<int64_t>(quest::CQuestManager::instance().GetEventFlag("lovepoint"), 0, 100));
 				if (value)
 					return MINMAX(0, value, 100);
 			}
@@ -138,11 +139,11 @@ namespace marriage
 				}
 			}
 
-			int days = (get_global_time() - state->marryTime);
-			if (test_server)
-				days /= 60;
-			else
-				days /= 86400;
+			const int64_t currentTime = std::max<int64_t>(0, get_global_time());
+			const int64_t elapsed = currentTime - std::clamp<int64_t>(state->marryTime, 0, currentTime);
+			// The bonus saturates after a few days. Bound before narrowing or
+			// multiplying so long-lived/future-dated rows cannot wrap the UI.
+			const int days = static_cast<int>(std::min<int64_t>(elapsed / (test_server ? 60 : 86400), max_limit));
 
 			return MIN(50 + MIN(days * point_per_day, max_limit) + MIN(state->lovePoint / 1000000, max_limit), 100);
 		}
@@ -454,7 +455,7 @@ namespace marriage
 			state->nearCheckEvent = event_create(near_check_event, info, 1);
 		}
 
-		entt::entity CreateCouple(uint32_t pid1, uint32_t pid2, int lovePoint, time_t marryTime, const char* name1, const char* name2)
+		entt::entity CreateCouple(uint32_t pid1, uint32_t pid2, int lovePoint, int64_t marryTime, const char* name1, const char* name2)
 		{
 			const entt::entity couple = g_registry.create();
 			auto& state = g_registry.emplace<ecs::CoupleState>(couple);
@@ -690,7 +691,7 @@ namespace marriage
 			std::swap(szName1, szName2);
 		}
 
-		TPacketMarriageAdd p;
+		TPacketMarriageAdd p {};
 
 		p.dwPID1 = dwPID1;
 		p.dwPID2 = dwPID2;
@@ -699,7 +700,7 @@ namespace marriage
 		db_clientdesc->DBPacket(HEADER_GD_MARRIAGE_ADD, 0, &p, sizeof(p));
 	}
 
-	void CManager::Add(uint32_t dwPID1, uint32_t dwPID2, time_t tMarryTime, const char* szName1, const char* szName2)
+	void CManager::Add(uint32_t dwPID1, uint32_t dwPID2, int64_t tMarryTime, const char* szName1, const char* szName2)
 	{
 		if (IsEngagedOrMarried(dwPID1) || IsEngagedOrMarried(dwPID2))
 		{

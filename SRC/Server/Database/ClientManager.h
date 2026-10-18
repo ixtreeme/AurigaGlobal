@@ -383,8 +383,8 @@ protected:
 	void		SendEventFlagsOnSetup(CPeer* peer);
 
 
-	void SetEventFlag(const char* flag, int32_t value);
-	int GetEventFlag(const char* flag);
+	void SetEventFlag(const char* flag, int64_t value);
+	int64_t GetEventFlag(const char* flag);
 
 
 
@@ -518,7 +518,7 @@ private:
 	typedef std::map<uint8_t, TPartyMap>	TPartyChannelMap;
 	TPartyChannelMap m_map_pkChannelParty;
 
-	typedef std::map<std::string, int32_t>	TEventFlagMap;
+	typedef std::map<std::string, int64_t>	TEventFlagMap;
 	TEventFlagMap m_map_lEventFlag;
 #if defined(BL_OFFLINE_MESSAGE)
 	struct SOfflineMessage

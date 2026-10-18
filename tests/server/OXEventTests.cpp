@@ -163,8 +163,8 @@ void LogManager::ItemLog(uint32_t pid,uint32_t,uint32_t count,uint32_t,const cha
 namespace quest {
 CQuestManager::CQuestManager()=default;CQuestManager::~CQuestManager()=default;
 NPC::NPC()=default;NPC::~NPC()=default;PC::PC():m_RunningQuestState(nullptr){}PC::~PC()=default;
-int CQuestManager::GetEventFlag(const std::string&) {return status;}
-void CQuestManager::RequestSetEventFlag(const std::string&,int value) {status=value;}
+int64_t CQuestManager::GetEventFlag(const std::string&) {return status;}
+void CQuestManager::RequestSetEventFlag(const std::string&,int64_t value) {status=static_cast<int>(value);}
 }
 namespace ecs::PlayerRuntime {
 bool IsPC(entt::entity e) {return g_registry.valid(e) && g_registry.all_of<Player>(e);}

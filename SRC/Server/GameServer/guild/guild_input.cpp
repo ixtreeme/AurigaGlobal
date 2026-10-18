@@ -44,14 +44,14 @@ void CInputMain::AnswerMakeGuild(entt::entity character, const char* c_pData)
 
 	if (get_global_time() - ecs::QuestSystem::GetFlag(character, "guild_manage.new_disband_time") < CGuildManager::instance().GetDisbandDelay()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 181, "%d", quest::CQuestManager::instance().GetEventFlag("guild_disband_delay"));
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 181, "%lld", static_cast<long long>(quest::CQuestManager::instance().GetEventFlag("guild_disband_delay")));
 #endif
 		return;
 	}
 
 	if (get_global_time() - ecs::QuestSystem::GetFlag(character, "guild_manage.new_withdraw_time") < CGuildManager::instance().GetWithdrawDelay()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 179, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 179, "%lld", static_cast<long long>(quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay")));
 #endif
 		return;
 	}

@@ -157,7 +157,7 @@ CAsyncSQL::~CAsyncSQL() = default;
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
 bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { return false; }
-int quest::CQuestManager::GetEventFlag(const std::string&) { return 0; }
+int64_t quest::CQuestManager::GetEventFlag(const std::string&) { return 0; }
 const std::string& LocaleService_GetBasePath() { static const std::string path = "/never/read"; return path; }
 void ContinueOnFatalError() {}
 

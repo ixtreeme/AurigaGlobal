@@ -93,11 +93,8 @@ bool EnsureHorse(entt::entity rider) {
     return ecs::PlayerRuntime::IsPC(rider) &&
         g_registry.all_of<ecs::HorseRuntime, ecs::MountState>(rider);
 }
-uint32_t Now() { return static_cast<uint32_t>(std::clamp<int64_t>(get_global_time(), 0, std::numeric_limits<uint32_t>::max())); }
-uint32_t NextHealthDrop() {
-    return static_cast<uint32_t>(std::min<uint64_t>(uint64_t(Now()) + HealthInterval,
-        std::numeric_limits<uint32_t>::max()));
-}
+uint64_t Now() { return static_cast<uint64_t>(std::max<int64_t>(0, get_global_time())); }
+uint64_t NextHealthDrop() { return Now() + HealthInterval; }
 bool Alive(entt::entity rider) {
     return ecs::PlayerRuntime::IsPC(rider) && MountSystem::GetHorseLevel(rider) > 0 &&
         MountSystem::GetHorseHealth(rider) > 0;
@@ -268,10 +265,11 @@ void ChangeHorseHealth(entt::entity rider, int64_t delta, bool send) {
 }
 void CheckHorseHealthDropTime(entt::entity rider, bool send) {
     auto* state = Horse(rider);
-    if (!state || !state->level || state->healthDropTime >= Now()) return;
-    const uint64_t drops = (uint64_t(Now()) - state->healthDropTime + HealthInterval - 1) / HealthInterval;
-    state->healthDropTime = static_cast<uint32_t>(std::min<uint64_t>(
-        uint64_t(state->healthDropTime) + drops * HealthInterval, std::numeric_limits<uint32_t>::max()));
+    const uint64_t now = Now();
+    if (!state || !state->level || state->healthDropTime >= now) return;
+    const uint64_t elapsed = now - state->healthDropTime;
+    const uint64_t drops = elapsed / HealthInterval + (elapsed % HealthInterval != 0);
+    state->healthDropTime += drops * HealthInterval;
     ChangeHorseHealth(rider, -static_cast<int64_t>(drops), send);
 }
 void FeedHorse(entt::entity rider) {
