@@ -8,11 +8,13 @@
 //#define QUEST_DIR "./quest/"
 
 #include "lua_incl.h"
+#include <memory>
 
 #define ENABLE_QUEST_DIE_EVENT
 
 namespace quest
 {
+    struct RuntimeGeneration;
 	enum
 	{
 		QUEST_NO_NPC,
@@ -114,6 +116,7 @@ namespace quest
 
 	struct QuestState
 	{
+		std::shared_ptr<RuntimeGeneration> runtime;
 		lua_State *	co;
 		int		ico;
 		short int	args;

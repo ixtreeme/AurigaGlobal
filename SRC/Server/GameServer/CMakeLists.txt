@@ -19,6 +19,15 @@ add_executable(ServerConfigTests EXCLUDE_FROM_ALL
 target_link_libraries(ServerConfigTests PRIVATE SERVER S_Core)
 add_test(NAME server_config COMMAND ServerConfigTests)
 
+add_executable(ServerPackageCheck EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/SRC/Tools/ServerPackageCheck.cpp
+    core/JsonFile.cpp
+    quest/quest_data.cpp
+    quest/quest_source.cpp
+    quest/quest_snapshot.cpp
+)
+target_link_libraries(ServerPackageCheck PRIVATE SERVER LUA S_Core)
+
 add_executable(MotionTimingTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MotionTimingTests.cpp
     entity/motion.cpp
@@ -37,6 +46,11 @@ endif()
 add_test(NAME motion_timing COMMAND MotionTimingTests)
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    add_custom_command(TARGET ServerPackageCheck POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${AURIGA_ASAN_RUNTIME_DLL}"
+            "$<TARGET_FILE_DIR:ServerPackageCheck>"
+    )
     add_custom_command(TARGET MotionTimingTests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${AURIGA_ASAN_RUNTIME_DLL}"
@@ -47,6 +61,7 @@ endif()
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
     add_test(NAME server_config_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerConfigToolsTests.py)
+    add_test(NAME quest_source_migration COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/QuestSourceMigrationTests.py --checker $<TARGET_FILE:ServerPackageCheck>)
 endif()
 
 # Headless regression checks compile the production attribute, switchbot and DS
@@ -86,6 +101,14 @@ add_test(NAME ox_event COMMAND OXEventTests)
 add_executable(QuestRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuestRuntimeTests.cpp
     quest/questmanager.cpp
+    quest/quest_data.cpp
+    quest/quest_source.cpp
+    quest/quest_snapshot.cpp
+    quest/quest_runtime.cpp
+    quest/quest_hotreload.cpp
+    quest/quest_reload_control.cpp
+    quest/quest_execution.cpp
+    quest/questevent.cpp
     quest/questpc.cpp
     quest/questlua_npc.cpp
     quest/questlua_event_flag.cpp
@@ -105,6 +128,31 @@ if(WIN32)
     target_link_libraries(QuestRuntimeTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
 add_test(NAME quest_runtime COMMAND QuestRuntimeTests)
+
+add_executable(LuaSourceTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/LuaSourceTests.cpp
+    ${CMAKE_SOURCE_DIR}/tests/server/NPCSourceTests.cpp
+    quest/quest_source.cpp
+    quest/questnpc.cpp
+    quest/quest_runtime.cpp
+    quest/quest_snapshot.cpp
+)
+target_link_libraries(LuaSourceTests PRIVATE LUA SERVER EnTT::EnTT S_Core)
+if(MSVC)
+    target_compile_options(LuaSourceTests PRIVATE /Gy)
+    target_link_options(LuaSourceTests PRIVATE /OPT:REF /OPT:NOICF)
+else()
+    target_compile_options(LuaSourceTests PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(LuaSourceTests PRIVATE -Wl,--gc-sections)
+endif()
+add_test(NAME lua_sources COMMAND LuaSourceTests)
+
+add_executable(QuestDataTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/QuestDataTests.cpp
+    quest/quest_data.cpp
+)
+target_link_libraries(QuestDataTests PRIVATE SERVER)
+add_test(NAME quest_data COMMAND QuestDataTests)
 
 add_executable(HorseRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/HorseRuntimeTests.cpp
@@ -581,7 +629,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target ServerConfigTests GameServer DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests OfflineShopSafeboxTests SocialRelationTests)
+    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests OfflineShopSafeboxTests SocialRelationTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
@@ -607,5 +655,6 @@ target_compile_definitions(GameServer PRIVATE
 get_property(_server_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
 list(FILTER _server_test_targets INCLUDE REGEX "Tests$")
 add_custom_target(ServerTests DEPENDS ${_server_test_targets})
+add_dependencies(ServerTests ServerPackageCheck)
 get_property(_server_tests DIRECTORY PROPERTY TESTS)
 set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)

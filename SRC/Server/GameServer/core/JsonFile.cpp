@@ -1,15 +1,22 @@
 #include "stdafx.h"
 #include "JsonFile.h"
+#include "locale_service.h"
 
 #include <Core/Logging.hpp>
 
 #include <fstream>
+#include <filesystem>
 
 namespace JsonFile
 {
 	bool Load(const std::string& path, nlohmann::json& doc)
 	{
-		std::ifstream in(path);
+		// Dungeon constants and quest scripts use data/... paths. Resolve these
+		// against the configured data root, independent of each core's cwd.
+		auto resolved = std::filesystem::path(path);
+		if (resolved.is_relative() && !resolved.empty() && *resolved.begin() == "data")
+			resolved = std::filesystem::path(LocaleService_GetBasePath()) / resolved.lexically_relative("data");
+		std::ifstream in(resolved);
 
 		if (!in)
 		{

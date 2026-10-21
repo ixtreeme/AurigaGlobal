@@ -5,6 +5,7 @@ namespace quest
 {
 	EVENTINFO(quest_server_event_info)
 	{
+        std::shared_ptr<RuntimeGeneration> runtime;
 		int		time_cycle;
 		uint32_t 	npc_id;
 		uint32_t	arg;
@@ -17,10 +18,12 @@ namespace quest
 		, name( nullptr )
 		{
 		}
+        ~quest_server_event_info() override { delete[] name; }
 	};
 
 	EVENTINFO(quest_event_info)
 	{
+        std::shared_ptr<RuntimeGeneration> runtime;
 		int		time_cycle;
 		uint32_t	player_id;
 		uint32_t 	npc_id;
@@ -33,6 +36,7 @@ namespace quest
 		, name( nullptr )
 		{
 		}
+        ~quest_event_info() override { delete[] name; }
 	};
 
 	extern LPEVENT quest_create_server_timer_event(const char* name, double when, uint32_t timernpc = QUEST_NO_NPC, bool loop = false, uint32_t arg = 0);

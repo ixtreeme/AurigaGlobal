@@ -918,7 +918,7 @@ std::string const & quest::PC::GetCurrentQuestName(void)const { Unexpected(); }
 void quest::PC::ClearTimer(void) { Unexpected(); }
 void quest::PC::SendFlagList(entt::entity) { Unexpected(); }
 quest::QuestState quest::CQuestManager::OpenState(std::string const &,int)const { Unexpected(); }
-void quest::CQuestManager::CloseState(quest::QuestState &)const { Unexpected(); }
+void quest::CQuestManager::CloseState(quest::QuestState &, bool)const { Unexpected(); }
 bool quest::CQuestManager::RunState(quest::QuestState &) { Unexpected(); }
 quest::PC * quest::CQuestManager::GetPC(unsigned int) { Unexpected(); }
 quest::PC * quest::CQuestManager::GetPCForce(unsigned int) { Unexpected(); }
@@ -932,7 +932,7 @@ quest::NPC::~NPC() = default;
 quest::PC::PC() : m_RunningQuestState(nullptr) {}
 quest::PC::~PC() = default;
 void quest::CQuestManager::SendEventFlagList(entt::entity) { Unexpected(); }
-void quest::CQuestManager::Reload(void) { Unexpected(); }
+bool quest::CQuestManager::Reload(std::string*) { Unexpected(); }
 void DBManager::ReturnQuery(int,unsigned int,void *,char const *,...) { Unexpected(); }
 void DBManager::SendMoneyLog(unsigned char,unsigned int,int64_t) { Unexpected(); }
 void DBManager::LoadDBString(void) { Unexpected(); }

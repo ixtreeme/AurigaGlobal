@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include "questmanager.h"
+#include "quest_runtime.h"
 #include "profiler.h"
 #include "config.h"
 #include "char_interface.hpp"
@@ -31,181 +32,62 @@ namespace quest
 	void NPC::Set(unsigned int vnum, const string & script_name)
 	{
 		m_vnum = vnum;
+        for (auto& events : m_mapOwnQuest) events.clear();
+        for (auto& events : m_mapOwnArgQuest) events.clear();
 
-		char buf[PATH_MAX];
-
-		CQuestManager::TEventNameMap::iterator itEventName = CQuestManager::instance().m_mapEventName.begin();
-
-		while (itEventName != CQuestManager::instance().m_mapEventName.end())
-		{
-			auto it = itEventName;
-			++itEventName;
-
-			for (auto itObjectDir = g_setQuestObjectDir.begin(); itObjectDir != g_setQuestObjectDir.end(); ++itObjectDir)
-			{
-				int is = snprintf(buf, sizeof(buf), "%s/%s/%s/", itObjectDir->c_str(), script_name.c_str(), it->first.c_str());
-
-				if (is < 0 || is >= (int) sizeof(buf))
-					is = sizeof(buf) - 1;
-
-				//LOG_INFO("XXX {}", buf);
-				int event_index = it->second;
-
-				DIR * pdir = opendir(buf);
-
-				if (!pdir)
-					continue;
-
-				dirent * pde;
-
-				while ((pde = readdir(pdir)))
-				{
-					if (pde->d_name[0] == '.')
-						continue;
-
-					if (!strncasecmp(pde->d_name, "CVS", 3))
-						continue;
-
-					LOG_INFO("QUEST reading {}", pde->d_name);
-					strlcpy(buf + is, pde->d_name, sizeof(buf) - is);
-					LoadStateScript(event_index, buf, pde->d_name);
-				}
-
-				closedir(pdir);
-			}
-		}
-	}
-
-	void NPC::LoadStateScript(int event_index, const char* filename, const char* script_name)
-	{
-		ifstream inf(filename);
-		const string s(script_name);
-
-		size_t i = s.find('.');
-
-		CQuestManager & q = CQuestManager::instance();
-
-		//
-		// script_name examples:
-		//   christmas_tree.start -> argument not exist
-		//
-		//   guild_manage.start.0.script -> argument exist
-		//   guild_manage.start.0.when
-		//   guild_manage.start.0.arg
-
-		///////////////////////////////////////////////////////////////////////////
-		// Quest name
-		const string stQuestName = s.substr(0, i);
-
-		int quest_index = q.GetQuestIndexByName(stQuestName);
-
-		if (quest_index == 0)
-		{
-			LOG_ERROR("cannot find quest index for {}", stQuestName.c_str());
-			assert(!"cannot find quest index");
-			return;
-		}
-
-		///////////////////////////////////////////////////////////////////////////
-		// State name
-		string stStateName;
-
-		size_t j = i;
-		i = s.find('.', i + 1);
-
-		if (i == s.npos)
-			stStateName = s.substr(j + 1, s.npos);
-		else
-			stStateName = s.substr(j + 1, i - j - 1);
-
-		int state_index = q.GetQuestStateIndex(stQuestName, stStateName);
-		///////////////////////////////////////////////////////////////////////////
-
-		LOG_TRACE("QUEST loading {} : {} [STATE] {}", filename, stQuestName.c_str(), stStateName.c_str());
-
-		if (i == s.npos)
-		{
-			// like in example: christmas_tree.start
-			istreambuf_iterator<char> ib(inf), ie;
-			copy(ib, ie, back_inserter(m_mapOwnQuest[event_index][quest_index][q.GetQuestStateIndex(stQuestName, stStateName)].m_code));
-		}
-		else
-		{
-			//
-			// like in example: guild_manage.start.0.blah
-			// NOTE : currently, only CHAT script uses argument
-			//
-
-			///////////////////////////////////////////////////////////////////////////
-			j = i;
-			i = s.find('.', i + 1);
-
-			if (i == s.npos)
-			{
-				LOG_ERROR("invalid QUEST STATE index [{}] [{}]", filename, script_name);
-				return;
-			}
-
-			const int index = strtol(s.substr(j + 1, i - j - 1).c_str(), nullptr, 10);
-			///////////////////////////////////////////////////////////////////////////
-			// Type name
-			j = i;
-			i = s.find('.', i + 1);
-
-			if (i != s.npos)
-			{
-				LOG_ERROR("invalid QUEST STATE name [{}] [{}]", filename, script_name);
-				return;
-			}
-
-			const string type_name = s.substr(j + 1, i - j - 1);
-			///////////////////////////////////////////////////////////////////////////
-
-			istreambuf_iterator<char> ib(inf), ie;
-
-			m_mapOwnArgQuest[event_index][quest_index][state_index].resize(MAX(index + 1, m_mapOwnArgQuest[event_index][quest_index][state_index].size()));
-
-			if (type_name == "when")
-			{
-				copy(ib, ie, back_inserter(m_mapOwnArgQuest[event_index][quest_index][state_index][index].when_condition));
-			}
-			else if (type_name == "arg")
-			{
-				string s;
-				getline(inf, s);
-				m_mapOwnArgQuest[event_index][quest_index][state_index][index].arg.clear();
-
-				for (string::iterator it = s.begin(); it != s.end(); ++it)
-				{
-					m_mapOwnArgQuest[event_index][quest_index][state_index][index].arg+=*it;
-				}
-			}
-			else if (type_name == "script")
-			{
-				copy(ib, ie, back_inserter(m_mapOwnArgQuest[event_index][quest_index][state_index][index].script.m_code));
-				m_mapOwnArgQuest[event_index][quest_index][state_index][index].quest_index = quest_index;
-				m_mapOwnArgQuest[event_index][quest_index][state_index][index].state_index = state_index;
-			}
-		}
-	}
+        auto& manager = CQuestManager::instance();
+        // A numeric target may also have a human-readable alias in questnpc.json.
+        const auto numeric = std::to_string(vnum);
+        for (const auto& definition : manager.GetQuestSources()) {
+            const auto questIndex = manager.GetQuestIndexByName(definition.name);
+            for (const auto& handler : definition.handlers) {
+                if (handler.target != script_name && !(vnum && handler.target == numeric)) continue;
+                const auto event = manager.m_mapEventName.find(handler.event);
+                if (event == manager.m_mapEventName.end()) continue; // validated at startup
+                const int state = definition.states.at(handler.state);
+                if (handler.argument.empty()) {
+                    auto& code = m_mapOwnQuest[event->second][questIndex][state].m_code;
+                    const std::string body = source::HandlerCode(handler);
+                    code.insert(code.end(), body.begin(), body.end());
+                } else {
+                    AArgScript argument;
+                    argument.arg = handler.argument;
+                    argument.when_condition.assign(handler.condition.begin(), handler.condition.end());
+                    argument.script.m_code.assign(handler.code.begin(), handler.code.end());
+                    argument.script.m_code.push_back('\n');
+                    argument.quest_index = questIndex;
+                    argument.state_index = state;
+                    m_mapOwnArgQuest[event->second][questIndex][state].push_back(std::move(argument));
+                }
+            }
+        }
+    }
 
 	bool NPC::OnEnterState(PC& pc, uint32_t quest_index, int state)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return ExecuteEventScript(pc, QUEST_ENTER_STATE_EVENT, quest_index, state);
 	}
 
 	bool NPC::OnLeaveState(PC& pc, uint32_t quest_index, int state)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return ExecuteEventScript(pc, QUEST_LEAVE_STATE_EVENT, quest_index, state);
 	}
 
 	bool NPC::OnLetter(PC& pc, uint32_t quest_index, int state)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return ExecuteEventScript(pc, QUEST_LETTER_EVENT, quest_index, state);
 	}
 
 	bool NPC::OnTarget(PC & pc, uint32_t dwQuestIndex, const char * c_pszTargetName, const char * c_pszVerb, bool & bRet)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		LOG_INFO("OnTarget begin {} verb {} qi {}", c_pszTargetName, c_pszVerb, dwQuestIndex);
 
 		bRet = false;
@@ -268,21 +150,29 @@ namespace quest
 
 	bool NPC::OnAttrIn(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleEvent(pc, QUEST_ATTR_IN_EVENT);
 	}
 
 	bool NPC::OnAttrOut(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleEvent(pc, QUEST_ATTR_OUT_EVENT);
 	}
 
 	bool NPC::OnTakeItem(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleEvent(pc, QUEST_ITEM_TAKE_EVENT);
 	}
 
 	bool NPC::OnUseItem(PC& pc, bool bReceiveAll)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		if (bReceiveAll)
 			return HandleReceiveAllEvent(pc, QUEST_ITEM_USE_EVENT);
 		else
@@ -291,6 +181,8 @@ namespace quest
 
 	bool NPC::OnSIGUse(PC& pc, bool bReceiveAll)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		if (bReceiveAll)
 			return HandleReceiveAllEvent(pc, QUEST_SIG_USE_EVENT);
 		else
@@ -299,21 +191,29 @@ namespace quest
 
 	bool NPC::OnClick(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleEvent(pc, QUEST_CLICK_EVENT);
 	}
 
 	bool NPC::OnServerTimer(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleReceiveAllEvent(pc, QUEST_SERVER_TIMER_EVENT);
 	}
 
 	bool NPC::OnTimer(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleEvent(pc, QUEST_TIMER_EVENT);
 	}
 
 	bool NPC::OnKill(PC & pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		//PROF_UNIT puOnKill("quest::NPC::OnKill");
 		if (m_vnum)
 		{
@@ -330,6 +230,8 @@ namespace quest
 #ifdef __DUNGEON_INFO_SYSTEM__
 	bool NPC::OnQuestDamage(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		if (m_vnum == 0)
 			return HandleReceiveAllEvent(pc, QUEST_DAMAGE_EVENT);
 		else
@@ -339,6 +241,8 @@ namespace quest
 
 	bool NPC::OnPartyKill(PC & pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		if (m_vnum)
 		{
 			return HandleEvent(pc, QUEST_PARTY_KILL_EVENT);
@@ -352,17 +256,23 @@ namespace quest
 #ifdef ENABLE_QUEST_DIE_EVENT
 	bool NPC::OnDie(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleReceiveAllEvent(pc, QUEST_DIE_EVENT);
 	}
 #endif
 
 	bool NPC::OnLevelUp(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleReceiveAllEvent(pc, QUEST_LEVELUP_EVENT);
 	}
 
 	bool NPC::OnLogin(PC& pc, const char * c_pszQuestName)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		/*
 		   if (c_pszQuestName)
 		   {
@@ -409,11 +319,15 @@ namespace quest
 
 	bool NPC::OnLogout(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleReceiveAllEvent(pc, QUEST_LOGOUT_EVENT);
 	}
 
 	bool NPC::OnUnmount(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleReceiveAllEvent(pc, QUEST_UNMOUNT_EVENT);
 	}
 
@@ -481,6 +395,8 @@ namespace quest
 
 	bool NPC::HandleEvent(PC& pc, int EventIndex)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		if (EventIndex < 0 || EventIndex >= QUEST_EVENT_COUNT)
 		{
 			LOG_ERROR("QUEST invalid EventIndex : {}", EventIndex);
@@ -598,6 +514,8 @@ namespace quest
 
 	bool NPC::HandleReceiveAllEvent(PC& pc, int EventIndex)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		if (EventIndex < 0 || EventIndex >= QUEST_EVENT_COUNT)
 		{
 			LOG_ERROR("QUEST invalid EventIndex : {}", EventIndex);
@@ -709,6 +627,8 @@ namespace quest
 
 	bool NPC::HandleReceiveAllNoWaitEvent(PC& pc, int EventIndex)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		//cerr << EventIndex << endl;
 		if (EventIndex<0 || EventIndex>=QUEST_EVENT_COUNT)
 		{
@@ -744,6 +664,8 @@ namespace quest
 
 	bool NPC::OnInfo(PC & pc, unsigned int quest_index)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		const int EventIndex = QUEST_INFO_EVENT;
 
 		if (pc.IsRunning())
@@ -791,6 +713,8 @@ namespace quest
 
 	bool NPC::OnButton(PC & pc, unsigned int quest_index)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		const int EventIndex = QUEST_BUTTON_EVENT;
 
 		if (pc.IsRunning())
@@ -884,6 +808,8 @@ namespace quest
 
 	bool NPC::OnChat(PC& pc)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		if (pc.IsRunning())
 		{
 			if (test_server)
@@ -947,6 +873,8 @@ namespace quest
 
 	bool NPC::ExecuteEventScript(PC& pc, int EventIndex, uint32_t dwQuestIndex, int iState)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		QuestMapType& rQuest = m_mapOwnQuest[EventIndex];
 
 		auto itQuest = rQuest.find(dwQuestIndex);
@@ -971,6 +899,8 @@ namespace quest
 
 	bool NPC::OnItemInformer(PC& pc, unsigned int vnum)
 	{
+        auto& runtimeManager = CQuestManager::instance();
+        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
 		return HandleEvent(pc, QUEST_ITEM_INFORMER_EVENT);
 	}
 }

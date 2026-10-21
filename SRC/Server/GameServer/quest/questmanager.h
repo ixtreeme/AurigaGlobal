@@ -10,6 +10,7 @@
 #include <entt/entt.hpp>
 
 #include "questnpc.h"
+#include "quest_source.h"
 
 
 #ifdef ENABLE_NEWSTUFF
@@ -50,6 +51,8 @@ typedef struct luaC_tab {
 
 namespace quest
 {
+	class RuntimeScope;
+	namespace data { struct Configuration; }
 	bool IsScriptTrue(const char* code, int size);
 	std::string ScriptToString(const std::string& str);
 
@@ -77,6 +80,7 @@ namespace quest
 
 		bool		InitializeLua();
 		lua_State* GetLuaState() { return L; }
+		const source::Catalog& GetQuestSources() const { return m_questSources; }
 		void		AddLuaFunctionTable(const char* c_pszName, luaL_reg* preg, bool bCheckIfExists = false) const;
 		void		AddLuaFunctionSubTable(const char* c_pszName, const char* c_pszSubName, luaL_reg* preg) const;
 #ifdef ENABLE_NEWSTUFF
@@ -90,7 +94,7 @@ namespace quest
 		TEventNameMap	m_mapEventName;
 
 		QuestState		OpenState(const std::string& quest_name, int state_index) const;
-		void		CloseState(QuestState& qs) const;
+		void		CloseState(QuestState& qs, bool aborting = false) const;
 		bool		RunState(QuestState& qs);
 
 		PC* GetPC(unsigned int pc);
@@ -209,7 +213,18 @@ namespace quest
 
 		void		SendEventFlagList(entt::entity chEntity);
 
-		void		Reload();
+        bool Reload(std::string* error = nullptr);
+        bool PrepareReload(const std::string& dataRoot, const std::string& revision, std::string& error);
+        bool CommitReload(const std::string& revision, std::string& error);
+        void AbortReload(const std::string& revision);
+        void PollReloadControl();
+        void SynchronizeReload();
+        std::shared_ptr<RuntimeGeneration> CurrentRuntime() const { return m_currentRuntime; }
+        std::shared_ptr<RuntimeGeneration> ActiveRuntime() const { return m_activeRuntime; }
+        std::string RuntimeRevision() const;
+        void CollectRuntimes();
+        void ConfigureReloadControl(const std::string& package, const std::string& instance,
+                                    const std::string& dataRoot, const std::string& questRoot);
 
 		//void		CreateAllButton(const std::string& quest_name, const std::string& button_name);
 		void		SetError() { m_bError = true; }
@@ -230,6 +245,20 @@ namespace quest
 		void		RegisterNPCVnum(uint32_t dwVnum);
 
 	private:
+        friend struct RuntimeGeneration;
+        friend class RuntimeScope;
+        void EnsureRuntime();
+        void SwitchRuntime(const std::shared_ptr<RuntimeGeneration>& runtime) noexcept;
+        void CloseRuntime(const std::shared_ptr<RuntimeGeneration>& runtime);
+        std::shared_ptr<RuntimeGeneration> m_currentRuntime, m_activeRuntime, m_preparedRuntime;
+        std::vector<std::shared_ptr<RuntimeGeneration>> m_runtimes;
+        unsigned int m_runtimeExecutionDepth = 0;
+        std::string m_reloadPackage, m_reloadInstance, m_reloadToken, m_reloadRequest, m_reloadPhase, m_reloadTransaction;
+        int64_t m_reloadExpiry = 0, m_reloadStatusAt = 0;
+        bool m_pollingReload = false;
+        bool LoadCommittedRuntime(std::string& error);
+        NPC& GetNPC(unsigned int vnum);
+
 		uint32_t			m_dwServerTimerArg;
 
 		std::map<std::pair<std::string, uint32_t>, LPEVENT> m_mapServerTimer;
@@ -246,6 +275,7 @@ namespace quest
 		void			GotoSelectItemState(QuestState& qs);
 
 		lua_State* L;
+		source::Catalog m_questSources;
 
 		bool			m_bNoSend;
 
@@ -253,6 +283,8 @@ namespace quest
 		std::map<unsigned int, NPC>		m_mapNPC;
 		std::map<std::string, unsigned int>	m_mapNPCNameID;
 		std::map<std::string, unsigned int>	m_mapTimerID;
+		std::map<std::string, uint16_t> m_questCategories;
+		bool Initialize(const data::Configuration& config);
 
 		QuestState* m_CurrentRunningState;
 

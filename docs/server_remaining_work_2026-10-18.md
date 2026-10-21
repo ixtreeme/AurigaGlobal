@@ -4,7 +4,9 @@ Az eredeti audit alapállapota: `129a28d7` – a korábbi nyolc javítás commit
 
 Az R1–R5 javításai és regressziói a `25a2b1cf` commitban szerepelnek.
 
-## Végrehajtási állapot – R1–R7 megvalósítva és ellenőrizve
+Az R6–R7 javításai és regressziói az `e11abc55` commitban szerepelnek.
+
+## Végrehajtási állapot – R1–R8 megvalósítva és ellenőrizve
 
 | Pont | Megvalósult változtatás |
 |---|---|
@@ -15,6 +17,7 @@ Az R1–R5 javításai és regressziói a `25a2b1cf` commitban szerepelnek.
 | R5 | OpenSSL `RAND_bytes` alapú login-kulcs, hibánál kulcskiadás nélküli lezárással. A limiter monoton órát használ; 15 perc inaktivitás után, körönként legfeljebb 256 host- és 256 accountbejegyzést vizsgál. Mindkét állapottér felső korlátja 65 536; a megtelt tér új, nem követhető kéréseket utasít el, az élő sessionök és aktív tiltások megtartásával. |
 | R6 | A leváltott `NetworkSyncSystem_Update` ciklus és deklarációja kivezetve. Végleges, eseményenkénti publikálási szerződés készült; a `DirtyTag` nem hálózati sor. A megjelenés UPDATE a mozgással és pontváltozásokkal közös, térbeli verziót ellenőrző `PacketView` útvonalat használja. |
 | R7 | Az event flag teljes GameServer/Database lánca `int64_t`, a ló határideje `uint64_t`. Fix 64 bites házassági/privilege/battle-pass belső mezők; 64 bites lejárati sorok és határellenőrzés. Javított privilege-clamp, házassági INSERT-hibakezelés és esküvői kitakarítás; az inaktív battle pass SQL-értéke `NULL`. A megváltozott DG-csomagméretet a feldolgozás előtt ellenőrzi a GameServer. |
+| R8 | A quest NPC-kapcsolatok és kategóriák típusos JSON-ból töltődnek; mindkét TXT-parser kivezetve. Szigorú konverter, JSON-sémák, mező-/tartomány-/duplikációellenőrzés és cache-alapú kategórialekérdezés készült. Hibás metadata mellett a reload megtartja a működő állapotot; sikeres reload törli a régi név–index kapcsolatokat. |
 
 Ellenőrzés: GameServer, LoginServer és Database sikeres normál és ASAN RelWithDebInfo build; **46/46 CTest mindkettőben**. Külön MariaDB 13.0.2 tesztpéldányon a repository sémájával a karakter INSERT és minden mező visszaolvasása is sikeres, `uint64_t` maximális HP-val, nagy SP/pénz értékekkel és bináris skill/quickslot adatokkal. A teszt a saját SQL-kapcsolatát megszakítva a cached prepared lekérdezés helyreállását is ellenőrzi; mindkét builddel **136 ellenőrzés sikeres**.
 
@@ -26,7 +29,9 @@ Az R6 után a GameServer és a teljes ServerTests cél normál/ASAN RelWithDebIn
 
 Az R7 GameServer/LoginServer/Database és ServerTests buildje normál és ASAN RelWithDebInfo konfigurációban is sikeres; **48/48 CTest mindkettőben**, valamint külön MariaDB 13.0.2 példányon **109 SQL-/állapotellenőrzés mindkettővel** sikeres. Az új `DatabaseTimeTests` és `PrivilegeTimeTests`, valamint a bővített quest/GM/horse/marriage tesztek 2038/2106 utáni időket, signed/unsigned határokat, teljes Lua/GM értékátadást, lejáratot és SQL-hibát is ellenőriznek. Részletek és közös komponensfrissítés: [server_time64_contract.md](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/server_time64_contract.md).
 
-**Nyitott munkacsomagok: R8–R13.** Az R11 továbbra is csak tervezett LostCastle-kiadás esetén szükséges. A teljes klienses belépés/létrehozás/játék, a kétklienses megjelenítés és az éles adatbázis-séma ellenőrzése az R12 része; a helyi regresszió és az izolált SQL-próba ezt nem helyettesíti.
+Az R8 GameServer- és ServerTests-buildje normál és ASAN RelWithDebInfo konfigurációban is sikeres; **49/49 CTest mindkettőben** átment. A `QuestDataTests` mindkét konfigurációban **77 ellenőrzést**, a konverter Python-tesztje mindkét C++ olvasóval **7/7 tesztet** teljesített. A bővített quest runtime összesen **629 ellenőrzése** sikeres. A helyi questadatok 0 NPC- és 1 kategóriarekordja konvertálva, teljes TXT/JSON rekordparitással és változatlan eredeti TXT-hashekkel. Szerződés és telepítés: [server_quest_json_contract.md](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/server_quest_json_contract.md).
+
+**Nyitott munkacsomagok: R9–R13.** Az R11 továbbra is csak tervezett LostCastle-kiadás esetén szükséges. A teljes klienses belépés/létrehozás/játék, a kétklienses megjelenítés és az éles adatbázis-séma ellenőrzése az R12 része; a helyi regresszió és az izolált SQL-próba ezt nem helyettesíti.
 
 **Klienses tesztfüggőség:** a felhasználó jelzése alapján élő klienspróba csak a Unity kliens csatlakozási átállása után végezhető el. A klienses R12-ellenőrzések addig függőségre várnak; a kliens nélkül automatizálható szerver-/adatbázis-tesztek és a többi szerveroldali feladat továbbhaladhatnak. Az R6 szerveroldali megvalósítása kész, az élő megjelenítés ellenőrzése még nyitott.
 
@@ -128,6 +133,8 @@ Lezárás: 2038/2106 utáni releváns időértékek mentése és visszatöltése
 
 **Prioritás: P2. Típus: dokumentált és kódból ellenőrzött nyitott migráció.**
 
+**Állapot: megvalósítva és ellenőrizve; normál és ASAN konfigurációban is 49/49 teszt sikeres.** Az alábbi szöveg az eredeti audit megállapítása. A séma, konverter és betöltési/reload szerződés a [server_quest_json_contract.md](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/server_quest_json_contract.md) fájlban szerepel.
+
 Forrás: [questmanager.cpp:131](D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/quest/questmanager.cpp:131), valamint a 271. és 307. sor körüli kategóriabetöltés.
 
 A `questnpc.txt` és `questcategory.txt` betöltése még szöveges; a JSON-audit Phase 4 része ténylegesen hátravan. A Lua/quest programok nem tartoznak ebbe az adatkonverzióba.
@@ -180,7 +187,9 @@ Lezárás: a dungeon teljesen végigjátszható újrabelépéssel, sikertelen pr
 
 A 43 teszt erős helyi regressziós alap, de a tesztek leírása is külön jelzi a valódi SQL, kliens és egyes szolgáltatások hiányát. A repositoryban nem találtam verziózott GitHub/GitLab/Jenkins CI-konfigurációt vagy CMake presetet. A mostani commit ellenőrzése Windows/MSVC alatt történt.
 
-Az eredeti audit óta a helyi regresszió 48 tesztre bővült; az izolált karakter-INSERT, SQL-újracsatlakozás és az R7 64 bites adatmentési útvonalainak valódi SQL-ellenőrzése is elkészült. A teljes R12 továbbra is nyitott, az alábbi függőségek szerint.
+Az eredeti audit óta a helyi regresszió 49 tesztre bővült; az izolált karakter-INSERT, SQL-újracsatlakozás és az R7 64 bites adatmentési útvonalainak valódi SQL-ellenőrzése, valamint az R8 JSON-konverter/olvasó paritástesztje is elkészült. A teljes R12 továbbra is nyitott, az alábbi függőségek szerint.
+
+Elkészült a forrás alapján összeállított MariaDB friss telepítési séma és az ismételhető izolált tesztindító: 102 tábla, 365 előkészített/végrehajtott SQL-sablon, 168 szerkezeti/adat-visszaolvasási ellenőrzés. A natív valódi SQL-es tesztek 136, illetve 109 ellenőrzést teljesítenek normál és ASAN buildben. Telepítés és korlátok: [db/README.md](../db/README.md). A séma nem helyettesíti a hiányzó játékadatokat, a meglévő adatbázis migrációját vagy a teljes szerverindítást; ezek még ellenőrizendők.
 
 Kliens nélkül megvalósítható feladatok:
 
@@ -221,4 +230,4 @@ Lezárás: a teendőlista a tényleges kódállapotot követi; megszűnnek a fé
 - Kliens-TLS, a régi packet cipher kivezetése, valamint a teljes szerverteszt-regisztráció.
 - A `PrivManager` „TODO send packet” megjegyzései melletti küldések már megvannak; a cube betöltő a „TODO check cube data” mellett ténylegesen meghívja az ellenőrzőt. Ezeket nem soroltam hiányzó implementációként.
 
-Az **R1–R7 szerveroldali megvalósítása és normál/ASAN ellenőrzése elkészült**. Következőként folytatható az **R8**, illetve az **R12 kliens nélkül automatizálható része**. Az élő klienspróbák a Unity kliens csatlakozási átállására várnak. Az R11 kiadási szándékhoz kötött, az R13 nem előzi meg a működési javításokat.
+Az **R1–R8 szerveroldali megvalósítása és normál/ASAN ellenőrzése elkészült**. Következőként folytatható az **R9**, illetve az **R12 kliens nélkül automatizálható része**. Az élő klienspróbák a Unity kliens csatlakozási átállására várnak. Az R11 kiadási szándékhoz kötött, az R13 nem előzi meg a működési javításokat.

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Quest categories",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["categories"],
+  "properties": {
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["quest", "category"],
+        "properties": {
+          "quest": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+          "category": {"type": "integer", "minimum": 0, "maximum": 65535}
+        }
+      },
+      "$comment": "The server additionally requires unique quest names. Category values match the existing uint16 client field; undefined compiled quests retain category 0."
+    }
+  }
+}

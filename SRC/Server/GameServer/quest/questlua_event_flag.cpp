@@ -14,6 +14,8 @@ namespace quest {
 			const size_t length = lua_strlen(L, 2);
 			const char* text = lua_tostring(L, 2);
 			valid = EventFlag::ParseValue(std::string_view(text, length), value);
+		} else if (lua_isinteger(L, 2)) {
+			value = lua_tointeger(L, 2); valid = true;
 		} else if (lua_isnumber(L, 2)) {
 			valid = EventFlag::FromNumber(lua_tonumber(L, 2), value);
 		}
@@ -31,7 +33,7 @@ namespace quest {
 		CQuestManager& q = CQuestManager::instance();
 
 		if (lua_isstring(L,1))
-			lua_pushnumber(L, q.GetEventFlag(lua_tostring(L,1)));
+			lua_pushinteger(L, q.GetEventFlag(lua_tostring(L,1)));
 		else
 			lua_pushnumber(L, 0);
 

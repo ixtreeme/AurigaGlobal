@@ -142,6 +142,29 @@ DDL validation does not supply game reference content or replace full-server,
 restart/persistence or Unity client tests. db/check_ready.sql reports missing
 reference data. Exact coverage limits are in the schema audit.
 
+## Quest metadata JSON R8 (2026-10-18)
+
+QuestDataTests executes the typed production reader, including missing fields,
+integer bounds/types, directory identifiers, duplicate records/JSON keys and
+failure of the second file without partial publication. QuestRuntimeTests also
+drives real manager initialization and reload with controlled Lua/NPC services:
+the reserved notarget entry, name resolution, category defaults and cached
+lookups, successful removal of stale mappings and preservation of live state
+when new metadata is invalid.
+
+The converter suite checks actual CLI behavior and complete record parity with
+the same C++ consumer. Run it after building the reader, with each configuration:
+
+```powershell
+python tests/server/QuestDataConversionTests.py --reader build/SRC/Server/GameServer/RelWithDebInfo/QuestDataTests.exe -v
+python tests/server/QuestDataConversionTests.py --reader build-asan/SRC/Server/GameServer/RelWithDebInfo/QuestDataTests.exe -v
+```
+
+The schema, conversion/deployment instructions and unchanged Lua/client boundary
+are documented in [server_quest_json_contract.md](../../docs/server_quest_json_contract.md).
+The MSBuild `/p:CL_MPCount=2` above bounds compiler memory use on Windows; omit
+the arguments after `--` for non-MSBuild generators.
+
 ## Persisted time and fixed packet widths R7 (2026-10-18)
 
 Event flags use int64_t in the GameServer/Database API, maps and packets; horse
@@ -2262,3 +2285,34 @@ is 29 tests in each. The remaining phase23 service fixes (F2 session ordering,
 F3 pvp, F4/F8 guild manager, F6/F7 war-map events, F11 arena) still rely on
 compilation and the existing suite; their focused fixtures would need the full
 session, pvp, guild and arena service doubles.
+
+
+## Lua 5.5 / direct quest sources (2026-10-21)
+
+`LuaSourceTests` uses the actual Lua 5.5 VM and source parser. It covers
+legacy operators, comments/strings, state IDs, repeated state blocks,
+NPC/chat/target events, source-list errors, dialog yield/resume sequences,
+64-bit integers, coroutine close, text-only loads and instruction budgets.
+`QuestSourceMigrationTests.py --checker <ServerPackageCheck>` verifies isolated
+migration, legacy state IDs, duplicate IDs and original source preservation.
+Both are registered in CTest (`lua_sources`, `quest_source_migration`).
+The manager's editor suite uses this same modern native parser.
+See `docs/lua55_quest_migration.md` for deployment and gameplay checks.
+
+`QuestRuntimeTests` also compiles the production coroutine execution,
+generation switching, immutable snapshots, timer callbacks and reload control.
+It checks an online player's suspended dialog retaining its old globals and
+file contents while new events use the new VM, stable IDs/flags, loop timer
+adoption versus one-shot retention, staging side-effect rejection, failed
+syntax/state changes, and release of retired VMs.
+
+`QuestHotreloadTests.py --core <QuestRuntimeTests> --checker <ServerPackageCheck>`
+launches two native processes using that runtime and the production filesystem
+publication protocol. It verifies shared activation, all-core abort, invalid
+source rejection, postcommit timeout recovery, stale token rejection, state
+removal rejection, ID stability and restart from a sealed committed generation
+despite broken pending source edits. It is registered as CTest `quest_hotreload`.
+These fixtures open no game/SQL ports and require no player credentials.
+The manager backend and SSH GUI tests cover live saves under the publication
+lock, restricted edit scope and the asynchronous remote reload command.
+

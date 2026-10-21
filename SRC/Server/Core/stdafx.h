@@ -60,10 +60,8 @@ inline unsigned sleep(unsigned sec) {
 	::Sleep(sec * 1000);
 	return 0;
 }
-inline double rint(double x)
-{
-	return ::floor(x+.5);
-}
+// Modern MSVC provides the standard rint. Defining a replacement here
+// conflicts with the CRT object used by nearbyint in the Lua integration.
 
 
 #else

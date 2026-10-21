@@ -15,6 +15,9 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "questmanager.h"
+#include "quest_runtime.h"
+#include "questevent.h"
+#include "quest_data.h"
 #include "../ecs/components/quest_components.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
@@ -28,10 +31,6 @@
 #include "dungeon.h"
 #include "../ecs/VIDRegistry.hpp"
 
-
-#ifdef __QUEST_RENEWAL__
-#include <boost/tokenizer.hpp>
-#endif
 
 uint32_t g_GoldDropTimeLimitValue = 0;
 #ifdef ENABLE_NEWSTUFF
@@ -83,18 +82,37 @@ namespace quest
 		Destroy();
 	}
 
-	void CQuestManager::Destroy()
-	{
-		if (L)
-		{
-			lua_close(L);
-			L = nullptr;
-		}
-	}
+    void CQuestManager::Destroy()
+    {
+        for (auto& [key, event] : m_mapServerTimer) CancelTimerEvent(&event);
+        m_mapServerTimer.clear();
+        if (!m_runtimes.empty()) {
+            for (const auto& runtime : m_runtimes) CloseRuntime(runtime);
+            SwitchRuntime(nullptr);
+            m_preparedRuntime.reset(); m_activeRuntime.reset(); m_runtimes.clear();
+        } else if (L) { lua_close(L); L = nullptr; }
+    }
 
 	bool CQuestManager::Initialize()
 	{
-				if (!InitializeLua())
+		data::Configuration config;
+		std::string error;
+        EnsureRuntime();
+        if (!LoadCommittedRuntime(error)) { LOG_ERROR("QUEST committed runtime: {}", error); return false; }
+        const bool loaded = m_currentRuntime->files.empty() ? data::Load(g_stQuestDir, config, error) :
+            data::ParseConfiguration(m_currentRuntime->files.at("quest/questnpc.json"), m_currentRuntime->files.at("quest/questcategory.json"), config, error);
+        if (!loaded)
+		{
+			LOG_ERROR("QUEST data: {}", error);
+			return false;
+		}
+		return Initialize(config);
+	}
+
+	bool CQuestManager::Initialize(const data::Configuration& config)
+	{
+        EnsureRuntime();
+		if (!InitializeLua())
 			return false;
 
 		m_mapEventName.insert(TEventNameMap::value_type("click", QUEST_CLICK_EVENT));
@@ -126,62 +144,32 @@ namespace quest
 		m_mapEventName.insert(TEventNameMap::value_type("damage", QUEST_DAMAGE_EVENT));
 #endif
 
-		m_bNoSend = false;
-
-		m_iCurrentSkin = QUEST_SKIN_NORMAL;
-
-		{
-			ifstream inf((g_stQuestDir + "/questnpc.txt").c_str());
-			int line = 0;
-
-			if (!inf.is_open())
-				LOG_ERROR("QUEST Cannot open 'questnpc.txt'");
-			else
-				LOG_TRACE("QUEST can open 'questnpc.txt' ({})", g_stQuestDir.c_str());
-
-			while (1)
-			{
-				unsigned int vnum;
-
-				inf >> vnum;
-
-				line++;
-
-				if (inf.fail())
-					break;
-
-				string s;
-				getline(inf, s);
-				unsigned int li = 0, ri = s.size()-1;
-				while (li < s.size() && isspace(s[li])) li++;
-				while (ri > 0 && isspace(s[ri])) ri--;
-
-				if (ri < li)
-				{
-					LOG_ERROR("QUEST questnpc.txt:{}:npc name error", line);
-					continue;
+		for (const auto& definition : m_questSources)
+			for (const auto& handler : definition.handlers)
+				if (!m_mapEventName.contains(handler.event)) {
+					LOG_ERROR("QUEST {}: unsupported event '{}'", definition.file, handler.event);
+					lua_pushfstring(L, "%s: unsupported event '%s'", definition.file.c_str(), handler.event.c_str());
+					return false;
 				}
 
-				s = s.substr(li, ri-li+1);
+        if (!m_currentRuntime->staging) {
+            m_bNoSend = false;
+            m_iCurrentSkin = QUEST_SKIN_NORMAL;
+        }
 
-				int	n = 0;
-				str_to_number(n, s.c_str());
-				if (n)
-					continue;
-
-				//cout << '-' << s << '-' << endl;
-				if ( test_server )
-					LOG_TRACE("QUEST reading script of {}({})", s.c_str(), vnum);
-				m_mapNPC[vnum].Set(vnum, s);
-				m_mapNPCNameID[s] = vnum;
-			}
-
-			// notarget quest
-			m_mapNPC[0].Set(0, "notarget");
+		m_questCategories = config.categories;
+		for (const auto& npc : config.npcs)
+		{
+			m_mapNPC[npc.vnum].Set(npc.vnum, npc.name);
+			m_mapNPCNameID.emplace(npc.name, npc.vnum);
 		}
+		// Scripts without an NPC always retain their reserved runtime entry.
+		m_mapNPC[0].Set(0, "notarget");
 
-		SetEventFlag("guild_withdraw_delay", 1);
-		SetEventFlag("guild_disband_delay", 1);
+        if (!m_currentRuntime->staging) {
+            SetEventFlag("guild_withdraw_delay", 1);
+            SetEventFlag("guild_disband_delay", 1);
+        }
 
 
 #ifdef __QUEST_RENEWAL__
@@ -260,120 +248,34 @@ namespace quest
 #ifdef __QUEST_RENEWAL__
 	int CQuestManager::GetQuestCategoryByQuestIndex(uint16_t q_index)
 	{
-		if (QuestCategoryIndexMap.contains(q_index))
-			return QuestCategoryIndexMap[q_index];
-		else
-			return 0; /* DEFAULT_QUEST_CATEGORY */
+		const auto it = QuestCategoryIndexMap.find(q_index);
+		return it != QuestCategoryIndexMap.end() ? it->second : 0;
 	}
 
 	void CQuestManager::ReadQuestCategoryToDict()
 	{
-		if (!QuestCategoryIndexMap.empty())
-			QuestCategoryIndexMap.clear();
-
-		ifstream inf((g_stQuestDir + "/questcategory.txt").c_str());
-
-		if (!inf.is_open())
+		QuestCategoryIndexMap.clear();
+		for (const auto& [name, category] : m_questCategories)
 		{
-			LOG_ERROR("QUEST Cannot open 'questcategory.txt'");
-			return;
-		}
-
-		string lineFromFile;
-		while (getline(inf, lineFromFile))
-		{
-			if (lineFromFile.empty())
+			const auto index = GetQuestIndexByName(name);
+			if (index == 0 || index > UINT16_MAX)
+			{
+				LOG_ERROR("QUEST category: unregistered or out-of-range quest '{}' ({})", name, index);
 				continue;
-
-			boost::tokenizer token(lineFromFile, boost::escaped_list_separator('\\', '\t', '\"'));
-			std::vector data(token.begin(), token.end());
-
-			int category_num = atoi(data[0].c_str());
-			string quest_name = data[1];
-
-			unsigned int quest_index = CQuestManager::instance().GetQuestIndexByName(quest_name);
-
-			if (test_server)
-				LOG_TRACE("QUEST_CATEGORY_LINE: {} => {}, {}", lineFromFile.c_str(), data[0].c_str(), quest_name.c_str());
-
-			if (quest_index != 0)
-				QuestCategoryIndexMap[quest_index] = category_num;
-			else
-				LOG_ERROR("QUEST couldnt find QuestIndex for name Quest: {}({})", quest_name.c_str(), category_num);
+			}
+			QuestCategoryIndexMap.emplace(static_cast<uint16_t>(index), category);
 		}
 	}
 #endif
 
 	int CQuestManager::ReadQuestCategoryFile(uint16_t q_index)
 	{
-
-		ifstream inf((g_stQuestDir + "/questcategory.txt").c_str());
-		int line = 0;
-		int c_qi = 99;
-
-		if (!inf.is_open())
-			LOG_ERROR("QUEST Cannot open 'questcategory.txt'");
-		else
-			LOG_TRACE("QUEST can open 'questcategory.txt' ({})", g_stQuestDir.c_str());
-
-		while (1)
-		{
-			string qn = CQuestManager::instance().GetQuestNameByIndex(q_index);
-
-			unsigned int category_num;
-
-			//enum
-			//{
-			//	MAIN_QUEST,		//0
-			//	SUB_QUEST,		//1
-			//	COLLECT_QUEST,	//2
-			//	LEVELUP_QUEST,	//3
-			//	SCROLL_QUEST,	//4
-			//	SYSTEM_QUEST,	//5
-			//};
-
-			inf >> category_num;
-
-			line++;
-
-			if (inf.fail())
-				break;
-
-			string s;
-			getline(inf, s);
-			unsigned int li = 0, ri = s.size()-1;
-			while (li < s.size() && isspace(s[li])) li++;
-			while (ri > 0 && isspace(s[ri])) ri--;
-
-			if (ri < li)
-			{
-				LOG_ERROR("QUEST questcategory.txt:{}:npc name error", line);
-				continue;
-			}
-
-			s = s.substr(li, ri-li+1);
-
-			int	n = 0;
-			str_to_number(n, s.c_str());
-			if (n)
-				continue;
-
-			//cout << '-' << s << '-' << endl;
-			if ( test_server )
-				LOG_TRACE("QUEST reading script of {}({})", s.c_str(), category_num);
-
-			if (qn == s)
-			{
-				c_qi = category_num;
-				break;
-			}
-		}
-
-		// notarget quest
-		//m_mapNPC[0].Set(0, "notarget");
-
-
-		return c_qi;
+		// Compatibility API: use the validated startup snapshot instead of I/O
+		// on every lookup; its historical missing-category value remains 99.
+		const auto quest = m_mapQuestNameByIndex.find(q_index);
+		if (quest == m_mapQuestNameByIndex.end()) return 99;
+		const auto category = m_questCategories.find(quest->second);
+		return category != m_questCategories.end() ? category->second : 99;
 	}
 
 	void CQuestManager::Input(unsigned int pc, const char* msg)
@@ -419,10 +321,13 @@ namespace quest
 
 			if (!pPC->GetRunningQuestState()->chat_scripts.empty())
 			{
-				QuestState& old_qs = *pPC->GetRunningQuestState();
-				CloseState(old_qs);
+                QuestState& old_qs = *pPC->GetRunningQuestState();
+                const auto generation = old_qs.runtime;
+                const auto scripts = old_qs.chat_scripts;
+                RuntimeScope scope(*this, generation);
+                CloseState(old_qs);
 
-				if (selection >= pPC->GetRunningQuestState()->chat_scripts.size())
+				if (selection >= scripts.size())
 				{
 					pPC->SetSendDoneFlag();
 					GotoEndState(old_qs);
@@ -430,7 +335,7 @@ namespace quest
 				}
 				else
 				{
-					AArgScript* pas = pPC->GetRunningQuestState()->chat_scripts[selection];
+					AArgScript* pas = scripts[selection];
 					ExecuteQuestScript(*pPC, pas->quest_index, pas->state_index, pas->script.GetCode(), pas->script.GetSize());
 				}
 			}
@@ -480,7 +385,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[QUEST_NO_NPC].OnEnterState(*pPC, quest_index, state);
+			GetNPC(QUEST_NO_NPC).OnEnterState(*pPC, quest_index, state);
 		}
 		else
 			LOG_ERROR("QUEST no such pc id : {}", pc);
@@ -494,7 +399,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[QUEST_NO_NPC].OnLeaveState(*pPC, quest_index, state);
+			GetNPC(QUEST_NO_NPC).OnLeaveState(*pPC, quest_index, state);
 		}
 		else
 			LOG_ERROR("QUEST no such pc id : {}", pc);
@@ -508,7 +413,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[QUEST_NO_NPC].OnLetter(*pPC, quest_index, state);
+			GetNPC(QUEST_NO_NPC).OnLetter(*pPC, quest_index, state);
 		}
 		else
 			LOG_ERROR("QUEST no such pc id : {}", pc);
@@ -546,7 +451,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[QUEST_NO_NPC].OnLogin(*pPC, c_pszQuest);
+			GetNPC(QUEST_NO_NPC).OnLogin(*pPC, c_pszQuest);
 		}
 		else
 		{
@@ -563,7 +468,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[QUEST_NO_NPC].OnLogout(*pPC);
+			GetNPC(QUEST_NO_NPC).OnLogout(*pPC);
 		}
 		else
 			LOG_ERROR("QUEST no such pc id : {}", pc);
@@ -584,10 +489,10 @@ namespace quest
 
 			// kill call script
 			if (npc >= MAIN_RACE_MAX_NUM) //@fixme109
-				m_mapNPC[npc].OnKill(*pPC); //@warme004
+				GetNPC(npc).OnKill(*pPC); //@warme004
 
 			if (GetCurrentPCEntity() != ch || m_pCurrentPC != pPC) return;
-			m_mapNPC[QUEST_NO_NPC].OnKill(*pPC);
+			GetNPC(QUEST_NO_NPC).OnKill(*pPC);
 
 #ifdef ENABLE_PARTYKILL
 			// party_kill call script
@@ -601,9 +506,9 @@ namespace quest
 
                 PC* leader = GetPC(ecs::PlayerRuntime::GetPlayerID(leaderEntity));
                 if (!leader || !CheckQuestLoaded(leader)) return;
-                if (npc >= MAIN_RACE_MAX_NUM) m_mapNPC[npc].OnPartyKill(*leader);
+                if (npc >= MAIN_RACE_MAX_NUM) GetNPC(npc).OnPartyKill(*leader);
                 if (GetCurrentPCEntity() != leaderEntity || m_pCurrentPC != leader) return;
-                m_mapNPC[QUEST_NO_NPC].OnPartyKill(*leader);
+                GetNPC(QUEST_NO_NPC).OnPartyKill(*leader);
                 if (!ecs::PlayerRuntime::IsPC(ch)) return;
 				pPC = GetPC(pc);
 			}
@@ -625,7 +530,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[QUEST_NO_NPC].OnDie(*pPC);
+			GetNPC(QUEST_NO_NPC).OnDie(*pPC);
 
 		}
 		else
@@ -642,9 +547,9 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[npc].OnQuestDamage(*pPC);
+			GetNPC(npc).OnQuestDamage(*pPC);
 			if (npc != QUEST_NO_NPC)
-				m_mapNPC[QUEST_NO_NPC].OnQuestDamage(*pPC);
+				GetNPC(QUEST_NO_NPC).OnQuestDamage(*pPC);
 		}
 	}
 #endif
@@ -656,7 +561,7 @@ namespace quest
 		m_currentPartyMember = entt::null;
 		m_pCurrentPC = GetPCForce(0);
 		m_currentCharacter = entt::null;
-		return m_mapNPC[npc].OnServerTimer(*m_pCurrentPC);
+		return GetNPC(npc).OnServerTimer(*m_pCurrentPC);
 	}
 
 	bool CQuestManager::Timer(unsigned int pc, unsigned int npc)
@@ -670,7 +575,7 @@ namespace quest
 				return false;
 			}
 			// call script
-			return m_mapNPC[npc].OnTimer(*pPC);
+			return GetNPC(npc).OnTimer(*pPC);
 		}
 		else
 		{
@@ -690,7 +595,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[QUEST_NO_NPC].OnLevelUp(*pPC);
+			GetNPC(QUEST_NO_NPC).OnLevelUp(*pPC);
 		}
 		else
 		{
@@ -709,7 +614,7 @@ namespace quest
 				return;
 
 			// call script
-			m_mapNPC[attr+QUEST_ATTR_NPC_START].OnAttrIn(*pPC);
+			GetNPC(attr+QUEST_ATTR_NPC_START).OnAttrIn(*pPC);
 		}
 		else
 		{
@@ -730,7 +635,7 @@ namespace quest
 				return;
 
 			// call script
-			m_mapNPC[attr+QUEST_ATTR_NPC_START].OnAttrOut(*pPC);
+			GetNPC(attr+QUEST_ATTR_NPC_START).OnAttrOut(*pPC);
 		}
 		else
 		{
@@ -749,7 +654,7 @@ namespace quest
 				return false;
 
 			bool bRet;
-			return m_mapNPC[QUEST_NO_NPC].OnTarget(*pPC, dwQuestIndex, c_pszTargetName, c_pszVerb, bRet);
+			return GetNPC(QUEST_NO_NPC).OnTarget(*pPC, dwQuestIndex, c_pszTargetName, c_pszVerb, bRet);
 		}
 
 		return false;
@@ -773,7 +678,7 @@ namespace quest
 				return;
 			}
 
-			m_mapNPC[QUEST_NO_NPC].OnInfo(*pPC, quest_index);
+			GetNPC(QUEST_NO_NPC).OnInfo(*pPC, quest_index);
 		}
 		else
 		{
@@ -798,7 +703,7 @@ namespace quest
 #endif
 				return;
 			}
-			m_mapNPC[QUEST_NO_NPC].OnButton(*pPC, quest_index);
+			GetNPC(QUEST_NO_NPC).OnButton(*pPC, quest_index);
 		}
 		else
 		{
@@ -826,7 +731,7 @@ namespace quest
 			}
 			// call script
 			SetCurrentItem(item);
-			return m_mapNPC[npc].OnTakeItem(*pPC);
+			return GetNPC(npc).OnTakeItem(*pPC);
 		}
 		else
 		{
@@ -856,7 +761,7 @@ namespace quest
 			// call script
 			SetCurrentItem(item);
 
-			return m_mapNPC[ItemSystem::GetItemVnum(item)].OnUseItem(*pPC, bReceiveAll);
+			return GetNPC(ItemSystem::GetItemVnum(item)).OnUseItem(*pPC, bReceiveAll);
 		}
 		else
 		{
@@ -886,7 +791,7 @@ namespace quest
 			// call script
 			SetCurrentItem(item);
 
-			return m_mapNPC[sig_vnum].OnSIGUse(*pPC, bReceiveAll);
+			return GetNPC(sig_vnum).OnSIGUse(*pPC, bReceiveAll);
 		}
 		else
 		{
@@ -914,7 +819,7 @@ namespace quest
 			{
 				bool bRet;
 
-				if (m_mapNPC[QUEST_NO_NPC].OnTarget(*pPC, pInfo->dwQuestIndex, pInfo->szTargetName, "click", bRet))
+				if (GetNPC(QUEST_NO_NPC).OnTarget(*pPC, pInfo->dwQuestIndex, pInfo->szTargetName, "click", bRet))
 					return true;
 			}
 		}
@@ -951,7 +856,7 @@ namespace quest
 			if (pInfo)
 			{
 				bool bRet;
-				if (m_mapNPC[QUEST_NO_NPC].OnTarget(*pPC, pInfo->dwQuestIndex, pInfo->szTargetName, "click", bRet))
+				if (GetNPC(QUEST_NO_NPC).OnTarget(*pPC, pInfo->dwQuestIndex, pInfo->szTargetName, "click", bRet))
 					return bRet;
 			}
 
@@ -1013,7 +918,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return;
 
-			m_mapNPC[QUEST_NO_NPC].OnUnmount(*pPC);
+			GetNPC(QUEST_NO_NPC).OnUnmount(*pPC);
 		}
 		else
 			LOG_ERROR("QUEST no such pc id : {}", pc);
@@ -1027,7 +932,7 @@ namespace quest
 			return;
 		}
 
-		m_mapNPC[QUEST_NO_NPC].OnItemInformer(*pPC,vnum);
+		GetNPC(QUEST_NO_NPC).OnItemInformer(*pPC,vnum);
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////
@@ -1035,20 +940,9 @@ namespace quest
 	///////////////////////////////////////////////////////////////////////////////////////////
 	void CQuestManager::LoadStartQuest(const std::string& quest_name, unsigned int idx)
 	{
-		for (auto it = g_setQuestObjectDir.begin(); it != g_setQuestObjectDir.end(); ++it)
-		{
-			const std::string& stQuestObjectDir = *it;
-			string full_name = stQuestObjectDir + "/begin_condition/" + quest_name;
-			ifstream inf(full_name.c_str());
-
-			if (inf.is_open())
-			{
-				LOG_TRACE("QUEST loading begin condition for {}", quest_name.c_str());
-
-				istreambuf_iterator<char> ib(inf), ie;
-				copy(ib, ie, back_inserter(m_hmQuestStartScript[idx]));
-			}
-		}
+		for (const auto& definition : m_questSources)
+			if (definition.name == quest_name && !definition.startCondition.empty())
+				m_hmQuestStartScript[idx].assign(definition.startCondition.begin(), definition.startCondition.end());
 	}
 
 	bool CQuestManager::CanStartQuest(unsigned int quest_index, const PC& pc)
@@ -1063,8 +957,9 @@ namespace quest
 		else
 		{
 			int x = lua_gettop(L);
-			lua_dobuffer(L, it->second.data(), it->second.size(), "StartScript");
-			int bStart = lua_toboolean(L, -1);
+			const int result = lua_dobuffer(L, it->second.data(), it->second.size(), "StartScript");
+			int bStart = result == LUA_OK && lua_toboolean(L, -1);
+			if (result != LUA_OK) LOG_ERROR("QUEST start condition failed: {}", lua_tostring(L, -1));
 			lua_settop(L, x);
 			return bStart != 0;
 		}
@@ -1162,6 +1057,7 @@ namespace quest
 
     PC* CQuestManager::GetPC(entt::entity character)
     {
+        SynchronizeReload();
         if (!ecs::PlayerRuntime::IsPC(character)) {
             m_currentCharacter = entt::null;
             m_pCurrentPC = nullptr;
@@ -1359,10 +1255,16 @@ namespace quest
 
 	void CQuestManager::RegisterQuest(const std::string & stQuestName, unsigned int idx)
 	{
-		assert(idx > 0);
-
-
-
+        EnsureRuntime();
+        auto& ids = m_currentRuntime->stableIds;
+        if (const auto found = ids.find(stQuestName); found != ids.end()) idx = found->second;
+        else {
+            unsigned int highest = 0;
+            for (const auto& [name, id] : ids) highest = std::max(highest, id);
+            if (m_currentRuntime->staging || idx <= highest) idx = highest + 1;
+            if (!idx || idx > UINT16_MAX) throw std::runtime_error("quest ID space exhausted");
+            ids.emplace(stQuestName, idx);
+        }
 		if (auto it = m_hmQuestName.find(stQuestName); it != m_hmQuestName.end())
 			return;
 
@@ -1678,27 +1580,6 @@ namespace quest
 		}
 	}
 
-	void CQuestManager::Reload()
-	{
-		lua_close(L);
-		m_mapNPC.clear();
-		m_mapNPCNameID.clear();
-		m_hmQuestName.clear();
-		m_mapTimerID.clear();
-		m_hmQuestStartScript.clear();
-		m_mapEventName.clear();
-		L = nullptr;
-		Initialize();
-
-		for (auto it = m_registeredNPCVnum.begin(); it != m_registeredNPCVnum.end(); ++it)
-		{
-			char buf[256];
-			uint32_t dwVnum = *it;
-			snprintf(buf, sizeof(buf), "%u", dwVnum);
-			m_mapNPC[dwVnum].Set(dwVnum, buf);
-		}
-	}
-
 	bool CQuestManager::ExecuteQuestScript(PC& pc, uint32_t quest_index, const int state, const char* code, const int code_size, std::vector<AArgScript*>* pChatScripts, bool bUseCache)
 	{
 		return ExecuteQuestScript(pc, CQuestManager::instance().GetQuestNameByIndex(quest_index), state, code, code_size, pChatScripts, bUseCache);
@@ -1714,7 +1595,7 @@ namespace quest
 		{
 			lua_getglobal(qs.co, "__codecache");
 			// stack : __codecache
-			lua_pushnumber(qs.co, (long)code);
+			lua_pushlightuserdata(qs.co, const_cast<char*>(code));
 			// stack : __codecache (codeptr)
 			lua_rawget(qs.co, -2);
 			// stack : __codecache (compiled-code)
@@ -1727,9 +1608,12 @@ namespace quest
 				// and only function remain in stack
 				lua_pop(qs.co, 1);
 				// stack : __codecache
-				luaL_loadbuffer(qs.co, code, code_size, quest_name.c_str());
+				if (luaL_loadbufferx(qs.co, code, code_size, quest_name.c_str(), "t") != LUA_OK) {
+					LOG_ERROR("QUEST {} parse error: {}", quest_name, lua_tostring(qs.co, -1));
+					CQuestManager::instance().CloseState(qs); return false;
+				}
 				// stack : __codecache (compiled-code)
-				lua_pushnumber(qs.co, (long)code);
+				lua_pushlightuserdata(qs.co, const_cast<char*>(code));
 				// stack : __codecache (compiled-code) (codeptr)
 				lua_pushvalue(qs.co, -2);
 				// stack : __codecache (compiled-code) (codeptr) (compiled_code)
@@ -1745,8 +1629,10 @@ namespace quest
 				// stack : (compiled-code)
 			}
 		}
-		else
-			luaL_loadbuffer(qs.co, code, code_size, quest_name.c_str());
+		else if (luaL_loadbufferx(qs.co, code, code_size, quest_name.c_str(), "t") != LUA_OK) {
+			LOG_ERROR("QUEST {} parse error: {}", quest_name, lua_tostring(qs.co, -1));
+			CQuestManager::instance().CloseState(qs); return false;
+		}
 
 		pc.SetQuest(quest_name, qs);
 
@@ -1762,29 +1648,9 @@ namespace quest
 
 	void CQuestManager::RegisterNPCVnum(uint32_t dwVnum)
 	{
-		if (m_registeredNPCVnum.find(dwVnum) != m_registeredNPCVnum.end())
-			return;
-
 		m_registeredNPCVnum.insert(dwVnum);
-
-		char buf[256];
-		DIR* dir;
-
-		for (auto it = g_setQuestObjectDir.begin(); it != g_setQuestObjectDir.end(); ++it)
-		{
-			const std::string& stQuestObjectDir = *it;
-			snprintf(buf, sizeof(buf), "%s/%u", stQuestObjectDir.c_str(), dwVnum);
-			LOG_INFO("{}", buf);
-
-			if ((dir = opendir(buf)))
-			{
-				closedir(dir);
-				snprintf(buf, sizeof(buf), "%u", dwVnum);
-				LOG_INFO("{}", buf);
-
-				m_mapNPC[dwVnum].Set(dwVnum, buf);
-			}
-		}
+		if (m_mapNPC.contains(dwVnum)) return;
+		m_mapNPC[dwVnum].Set(dwVnum, std::to_string(dwVnum));
 	}
 
 	void CQuestManager::WriteRunningStateToSyserr()
@@ -1839,6 +1705,7 @@ namespace quest
 		if (m_mapServerTimer.contains(std::make_pair(name, arg)))
 		{
 			LOG_ERROR("already registered server timer name:{} arg:{}", name.c_str(), arg);
+            CancelTimerEvent(&event);
 			return;
 		}
 		m_mapServerTimer.insert(std::make_pair(make_pair(name, arg), event));
@@ -1858,7 +1725,7 @@ namespace quest
 		if (it != m_mapServerTimer.end())
 		{
 			auto event = it->second;
-			event_cancel(&event);
+			CancelTimerEvent(&event);
 			m_mapServerTimer.erase(it);
 		}
 	}
@@ -1870,7 +1737,7 @@ namespace quest
 		for (auto it = m_mapServerTimer.begin(); it != m_mapServerTimer.end();) {
 			if (it->first.second == arg) {
 				LPEVENT event = it->second;
-				event_cancel(&event);
+				CancelTimerEvent(&event);
 				m_mapServerTimer.erase(it++);
 			}
 			else {

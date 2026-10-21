@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GameConfig.h"
+#include "../quest/quest_runtime.h"
 #include <Core/server_config.h>
 #include <iostream>
 #include "../ecs/AIHelpers.hpp"
@@ -241,6 +242,8 @@ unsigned int save_idx = 0;
 
 void heartbeat(LPHEART ht, int pulse)
 {
+    if (pulse % std::max(1, passes_per_sec / 5) == 0)
+        if (auto* quests = quest::CQuestManager::instance_ptr()) quests->PollReloadControl();
 	uint32_t t;
 
 	t = get_dword_time();
@@ -344,6 +347,32 @@ int main(int argc, char **argv)
 	// event behind, because the async syslog queue dies with the process.
 	InstallCrashReporter();
 
+    // Run the actual game Lua bindings in preparation mode, without opening
+    // sockets, connecting to SQL or applying shared C++ registrations.
+    if (argc == 3 && std::string(argv[1]) == "--check-quest-runtime") {
+        try {
+            const auto root = std::filesystem::canonical(argv[2]).generic_string();
+            if (!LocaleService_InitFlat(root, "latin1")) return 1;
+            quest::CQuestManager manager;
+            manager.ConfigureReloadControl(root, "quest-validator", root, root + "/quest");
+            manager.CurrentRuntime()->staging = true;
+            if (!manager.Initialize()) {
+                auto* L = manager.GetLuaState();
+                std::cerr << "QUEST_RUNTIME_INVALID: " << (L && lua_isstring(L, -1) ? lua_tostring(L, -1) : "initialization failed") << '\n';
+                return 1;
+            }
+            std::string error;
+            if (!manager.PrepareReload(root, manager.RuntimeRevision(), error)) {
+                std::cerr << "QUEST_RUNTIME_INVALID: " << error << '\n'; return 1;
+            }
+            manager.AbortReload(manager.RuntimeRevision());
+            std::cout << "QUEST_RUNTIME_OK " << manager.RuntimeRevision() << '\n';
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "QUEST_RUNTIME_INVALID: " << error.what() << '\n'; return 1;
+        }
+    }
+
 //		LOG_ERROR("Cannot initialize correctly offlineshop library!");
 #ifdef ENABLE_GOOGLE_TEST
 #ifndef _WIN32
@@ -439,11 +468,14 @@ int main(int argc, char **argv)
 	offlineshop::CShopManager offshopManager;
 #endif
 	quest::CQuestManager quest_manager;
+    quest_manager.ConfigureReloadControl(section.source.parent_path().generic_string(), section.instance,
+        LocaleService_GetBasePath(), g_stQuestDir);
 
 	if (!quest_manager.Initialize()) {
 		CleanUpForEarlyExit();
 		return 0;
 	}
+    quest_manager.PollReloadControl();
 
 	MessengerManager::instance().Initialize();
 	CGuildManager::instance().Initialize();

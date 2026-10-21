@@ -60,6 +60,10 @@ extern "C" {
 
 #include <array>
 #include <cstdint>
+#include <cstdlib>
+
+// Editor checks run in an isolated process and must never open a crash dialog.
+static bool syntaxOnly = false;
 
 // Standard CRC-32 (reflected 0xEDB88320, as zlib) - the value the client
 // Base library's GetCRC32 gave for the state names, without its Windows API.
@@ -177,18 +181,20 @@ void errorline(int line , const char * str)
 		std::cerr << g_filename <<":";
 	std::cerr << line<< ':';
 	std::cerr << str << '\n';
+	if (syntaxOnly) std::exit(1);
 	abort();
 }
 void error(const char * str)
 {
 	std::cout.flush();
 	if (g_filename)
-		std::cout << g_filename <<":";
+		std::cerr << g_filename <<":";
 	if (pls)
 	{
-		std::cout << pls->linenumber << ':';
+		std::cerr << pls->linenumber << ':';
 	}
 	std::cerr << str << '\n';
+	if (syntaxOnly) std::exit(1);
 	abort();
 }
 
@@ -298,6 +304,7 @@ void parse(char * filename)
 	std::ifstream inf(filename);
 	LoadF lf;
 	lf.f = fopen(filename,"r");
+	if (!lf.f) { std::cerr << "Cannot open quest source\n"; std::exit(1); }
 	ZIO z;
 	luaZ_init(&z, getF,&lf,"quest");
 	Mbuffer b;
@@ -819,6 +826,7 @@ void parse(char * filename)
 
 	}
 	assert(nested==0);
+	if (syntaxOnly && quest_name.empty()) error("quest declaration missing");
 	for (auto& it : used_state_name_map)
 	{
 		if (!define_state_name_set.contains(it.second))
@@ -827,6 +835,13 @@ void parse(char * filename)
 		}
 	}
 
+	if (syntaxOnly) {
+		// The normal compiler validates event bodies separately. Validate the
+		// collected functions too, without publishing any generated objects.
+		check_syntax("return {__editor_dummy=0" + all_functions + "}", quest_name);
+		fclose(lf.f);
+		return;
+	}
 	if (!define_state_name_set.empty())
 	{
 		if (0 != mkdir(OUTPUT_FOLDER "/state", S_IRWXU))
@@ -998,9 +1013,15 @@ void parse(char * filename)
 
 int main(int argc, char* argv[])
 {
-	mkdir(OUTPUT_FOLDER, 0700);
+	syntaxOnly = argc == 3 && std::string(argv[1]) == "--check";
+	if (!syntaxOnly) mkdir(OUTPUT_FOLDER, 0700);
 //#if LUA_V == 503
 	L = lua_open();
+	if (!L) return 2;
+	if (syntaxOnly) lua_atpanic(L, [](lua_State* state) -> int {
+		std::cerr << "QUEST_LEXICAL_ERROR " << lua_tostring(state, -1) << '\n';
+		std::exit(1);
+	});
 //#elif LUA_V == 523
 //		L = luaL_newstate();
 //#else
@@ -1010,7 +1031,7 @@ int main(int argc, char* argv[])
 
 	if (argc > 1)
 	{
-		for (int i = 1; i < argc; ++i)
+		for (int i = syntaxOnly ? 2 : 1; i < argc; ++i)
 		{
 			g_filename = argv[i];
 			parse(argv[i]);
@@ -1018,6 +1039,7 @@ int main(int argc, char* argv[])
 	}
 
 	lua_close(L);
+	if (syntaxOnly) std::cout << "QUEST_SYNTAX_OK\n";
 	return 0;
 }
 

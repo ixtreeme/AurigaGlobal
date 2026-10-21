@@ -98,7 +98,6 @@ namespace quest
 
 			// true if quest still running, false if ended
 
-			void LoadStateScript(int idx, const char* filename, const char* script_name);
 
 			unsigned int m_vnum;
 			QuestMapType m_mapOwnQuest[QUEST_EVENT_COUNT];

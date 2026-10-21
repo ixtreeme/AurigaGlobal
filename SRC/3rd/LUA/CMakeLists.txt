@@ -42,13 +42,13 @@ set(${PROJECT_NAME}
 					include/lauxlib.h
 )
 
+set(PROJECT_NAME LUA_LEGACY)
 add_library(${PROJECT_NAME} STATIC ${LUA_SRC})
-add_library(lua::lua ALIAS ${PROJECT_NAME})
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION       ${${PROJECT_NAME}_VERSION}
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION       5.0.3
                                                         PUBLIC_HEADER "${PROJECT_NAME}")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "lua")
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "lua50_legacy")
 
 if(MSVC)
   # The Lua sources keep their historical .c extension, but we need Visual Studio

@@ -38,6 +38,11 @@ namespace quest
 	void PC::Destroy()
 	{
 		ClearTimer();
+        auto* manager = CQuestManager::instance_ptr();
+        for (auto& [id, state] : m_QuestInfo) {
+            if (state.co && manager && manager->GetLuaState()) manager->CloseState(state, true);
+            state.runtime.reset();
+        }
 	}
 
 	void PC::SetID(uint32_t dwID)

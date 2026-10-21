@@ -1,7 +1,9 @@
 # data/ txt -> JSON atallas (GameServer) - audit es terv
 
-Statusz: TERV (2026-10-13). A `share/data` alatti txt fajlok JSON-alapu
-betoltesre atallitasa, paritas megorzessel; a txt-k fazisonkent torolhetok.
+Statusz: Phase 1–4 megvalositva (frissitve: 2026-10-18), Phase 5 kulon dontes.
+A `share/data` alatti txt fajlok JSON-alapu betoltesre atallitasa, paritas
+megorzessel; a txt-k fazisonkent torolhetok. A korabbi datumos szakaszok
+az adott fazis akkori allapotat rogzitik.
 
 ## 0. Hatokor
 
@@ -150,7 +152,8 @@ A `.quest`/`.lua` scriptek maradnak (Lua interpreter, nem adat).
   quest lua regen utvonalak is `.json`-ra irva; `map_0/` +
   `share/locale/germany---------/` torolve. A `map_config.txt` (kikapcsolt
   ENABLE_MAP_TELEPORTER + regi kliens) es a MapProperty.txt kimaradt.
-- **Phase 4 - F**: questnpc/questcategory -> JSON.
+- **Phase 4 - F (KESZ, 2026-10-18)**: questnpc/questcategory -> tipusos JSON;
+  schema, szigoru konverter, validalt startup/reload es paritastesztek.
 - **Phase 5 - H/I**: Database import (kulon dontes) + hulladek torles.
 
 Minden fazis: konverter + paritas-ellenorzes -> Debug/Release build ->
@@ -234,7 +237,7 @@ commit -> elo szerver data frissitese (kulon lepes).
 
 ### Hatralevo
 
-- Phase 4: questnpc/questcategory.
+- Phase 4: megvalositva 2026-10-18; reszletek a Phase 4 szakaszban alabb.
 - Phase 5: Database import txt-k (kulon dontes) + junk (.txt0218/.bak/
   .bck/.ryuga, comon_Drop_item_input_format_razor93.txt) torles.
 
@@ -424,3 +427,29 @@ szam nem olvashato, ezert minden tag megkapja a hivatkozott group nevet:
 - A szerver `LoadGroupGroup` csak a vnum/prob mezoket olvassa, a `group`
   mezot figyelmen kivul hagyja (nincs C++ valtozas).
 - Az elo `group_group.json` (817 tag) mind feloldva.
+
+## 11. Phase 4 – quest metadata (2026-10-18, R8)
+
+- A `questnpc.json` es `questcategory.json` tipusos olvasoja a
+  `quest/quest_data.{h,cpp}`. Az NPC vnum/name kapcsolatok es a quest category
+  ertekek nevesitett mezok; a regi TXT parserek es a tokenizer elhagyva.
+- Semak: `docs/schemas/questnpc.schema.json` es `questcategory.schema.json`.
+  Szigoru tipus-/tartomany-/identifier-ellenorzes; dupla rekord vagy JSON-kulcs
+  elutasitva. A ket fajl csak teljes validalas utan kerul atadasra.
+- A `CQuestManager` a JSON-t Lua-inicializalas elott ellenorzi; rossz reload
+  metadata mellett a regi allapot mukodik tovabb. A `notarget` es a category
+  alapertelmezesek megmaradtak; a kompatibilitasi olvaso is cache-bol dolgozik.
+- Konverter: `SRC/Tools/txt2json/txt2json_quest.py` (Python 2.7/3), `npc` es
+  `category` moddal, teljes rekord-/mezoosszevetest vegzo `--check` opcioval.
+- A helyi `D:/AurigaGlobal/Auriga-Server/srv1/share/data/quest` adatai
+  konvertalva: 0 NPC es 1 kategoria (`guild_war_join`, 3). Mindket JSON-t a
+  normal es ASAN production C++ olvaso is elfogadta; a TXT/JSON paritas es az
+  eredeti TXT-k valtozatlan SHA256 erteke ellenorizve. A TXT-k migracios
+  masolatkent megmaradtak; a szerver nem olvassa oket. Nem tortent szerverrestart.
+- `QuestDataTests`, bovitetett `QuestRuntimeTests`, valamint a Python
+  `QuestDataConversionTests.py` fedi a parser-, CLI-, paritas- es reloadeseteket.
+  A teljes normal/ASAN build es regresszio eredmenye az aktualis
+  `server_remaining_work_2026-10-18.md` vegrehajtasi allapotaban szerepel.
+- Telepitesi es formatumleiras: [server_quest_json_contract.md](server_quest_json_contract.md).
+  A Lua/quest programok formatuma es a klienscsomagok valtozatlanok. A Database
+  proto-TXT import tovabbra is kulon adatpipeline-dontes.

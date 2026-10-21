@@ -2261,8 +2261,11 @@ ACMD(do_reload)
 				break;
 
 			case 'q':
-				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading quest.");
-				quest::CQuestManager::instance().Reload();
+			{
+                std::string error;
+                const bool okay = quest::CQuestManager::instance().Reload(&error);
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", okay ? "Quest reload complete." : error.c_str());
+			}
 				break;
 
 			case 'f':

@@ -1265,7 +1265,7 @@ namespace quest
         const char * sz2 = lua_tostring(L, 2);
         CQuestManager & q = CQuestManager::Instance();
         PC * pPC = q.GetCurrentPC();
-        pPC->SetFlag(string(sz)+"."+sz2, static_cast<int64_t>(rint(lua_tonumber(L,3))));
+        pPC->SetFlag(string(sz)+"."+sz2, LuaIntegerValue(L, 3));
         return 0;
     }
 
@@ -1286,7 +1286,7 @@ namespace quest
 			{
 				return 0;
 			}
-			lua_pushnumber(L,pPC->GetFlag(string(sz)+"."+sz2));
+			lua_pushinteger(L,pPC->GetFlag(string(sz)+"."+sz2));
 			return 1;
 		}
 	}
@@ -1303,7 +1303,7 @@ namespace quest
 			const char* sz = lua_tostring(L,-1);
 			CQuestManager& q = CQuestManager::Instance();
 			PC* pPC = q.GetCurrentPC();
-			lua_pushnumber(L,pPC->GetFlag(sz));
+			lua_pushinteger(L,pPC->GetFlag(sz));
 			return 1;
 		}
 	}
@@ -1320,7 +1320,7 @@ namespace quest
 			const char* sz = lua_tostring(L,-1);
 			CQuestManager& q = CQuestManager::Instance();
 			PC* pPC = q.GetCurrentPC();
-			lua_pushnumber(L,pPC->GetFlag(pPC->GetCurrentQuestName() + "."+sz));
+			lua_pushinteger(L,pPC->GetFlag(pPC->GetCurrentQuestName() + "."+sz));
 			if ( test_server )
 				LOG_INFO("GetQF ( {} . {} )", pPC->GetCurrentQuestName().c_str(), sz);
 		}
@@ -1343,7 +1343,7 @@ namespace quest
             const char* sz = lua_tostring(L,1);
             CQuestManager& q = CQuestManager::Instance();
             PC* pPC = q.GetCurrentPC();
-            pPC->SetFlag(sz, static_cast<int64_t>(rint(lua_tonumber(L,2))));
+            pPC->SetFlag(sz, LuaIntegerValue(L, 2));
         }
         return 0;
     }
@@ -1364,7 +1364,7 @@ namespace quest
             const char* sz = lua_tostring(L,1);
             CQuestManager& q = CQuestManager::Instance();
             PC* pPC = q.GetCurrentPC();
-            pPC->SetFlag(pPC->GetCurrentQuestName()+"."+sz, int(rint(lua_tonumber(L,2))));
+            pPC->SetFlag(pPC->GetCurrentQuestName()+"."+sz, LuaIntegerValue(L, 2));
         }
         return 0;
     }

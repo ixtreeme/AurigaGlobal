@@ -11,6 +11,7 @@
 #include <sstream>
 
 #include "questmanager.h"
+#include "quest_runtime.h"
 #include "questlua.h"
 #include "config.h"
 #include "desc.h"
@@ -40,7 +41,9 @@ namespace quest
 
 	string ScriptToString(const string& str)
 	{
-		lua_State* L = CQuestManager::instance().GetLuaState();
+        auto& manager = CQuestManager::instance();
+        RuntimeScope executing(manager, manager.CurrentRuntime(), true);
+        lua_State* L = manager.GetLuaState();
 		int x = lua_gettop(L);
 
 		int errcode = lua_dobuffer(L, ("return "+str).c_str(), str.size()+7, "ScriptToString");
@@ -140,10 +143,12 @@ namespace quest
 		if (size==0)
 			return true;
 
-		lua_State* L = CQuestManager::instance().GetLuaState();
+        auto& manager = CQuestManager::instance();
+        RuntimeScope executing(manager, manager.CurrentRuntime(), true);
+        lua_State* L = manager.GetLuaState();
 		int x = lua_gettop(L);
 		int errcode = lua_dobuffer(L, code, size, "IsScriptTrue");
-		int bStart = lua_toboolean(L, -1);
+		int bStart = errcode == LUA_OK && lua_toboolean(L, -1);
 		if (errcode)
 		{
 			sys_err("LUA ScriptRunError (code:{} src:[{}])", errcode, std::string(code, size));
@@ -610,16 +615,24 @@ namespace quest
 //#if LUA_V == 503
 		L = lua_open();
 
-		luaopen_base(L);
-		luaopen_table(L);
-		luaopen_string(L);
-		luaopen_math(L);
-		//TEMP
-		luaopen_io(L);
-		luaopen_debug(L);
-//#else
-//	#error "lua version not found"
-//#endif
+		if (!L) return false;
+        // Reject broken quest sources before settings can register any C++ data.
+        try {
+            auto& runtime = *m_currentRuntime;
+            if (runtime.files.empty()) {
+                runtime.originalDataRoot = std::filesystem::absolute(LocaleService_GetBasePath()).lexically_normal().generic_string();
+                runtime.originalQuestRoot = std::filesystem::absolute(g_stQuestDir).lexically_normal().generic_string();
+                runtime.Capture(runtime.originalDataRoot, runtime.originalQuestRoot);
+            }
+            m_questSources = source::LoadFiles(L, runtime.files);
+        }
+        catch (const std::exception& error) {
+            LOG_ERROR("QUEST source initialization failed: {}", error.what());
+            lua_pushstring(L, error.what());
+            return false;
+        }
+        if (!LuaOpenQuestLibraries(L)) return false;
+        RememberStandardAPIs(L, *m_currentRuntime);
 
 		RegisterAffectFunctionTable();
 		RegisterBuildingFunctionTable();
@@ -684,25 +697,27 @@ namespace quest
 		// global namespace functions
 		//
 		RegisterGlobalFunctionTable(L);
+        GuardRuntimeAPIs(L, *m_currentRuntime);
 
 		// LUA_INIT_ERROR_MESSAGE
 		{
 			char settingsFileName[256];
 			snprintf(settingsFileName, sizeof(settingsFileName), "%s/settings.lua", LocaleService_GetBasePath().c_str());
 
-			int settingsLoadingResult = luaL_loadfile(L, settingsFileName);
+			int settingsLoadingResult = m_currentRuntime->LoadFile(L, "settings.lua");
 			LOG_INFO("LoadSettings({}), returns {}", settingsFileName, settingsLoadingResult);
 			if (settingsLoadingResult != 0)
 			{
-				sys_err("LOAD_SETTINGS_FAILURE({})", settingsFileName);
+				sys_err("LOAD_SETTINGS_FAILURE({}): {}", settingsFileName, lua_tostring(L, -1));
 				return false;
 			}
 
+			LuaExecutionBudget settingsBudget(L);
 			int settingsExecutionResult = lua_pcall(L, 0, 0, 0);
 			LOG_INFO("ExecuteSettings({}), returns {}", settingsFileName, settingsExecutionResult);
 			if (settingsExecutionResult != 0)
 			{
-				sys_err("EXECUTE_SETTINGS_FAILURE({})", settingsFileName);
+				sys_err("EXECUTE_SETTINGS_FAILURE({}): {}", settingsFileName, lua_tostring(L, -1));
 				return false;
 			}
 		}
@@ -715,7 +730,7 @@ namespace quest
 			LOG_INFO("LoadQuestlib({}), returns {}", questlibFileName, questlibLoadingResult);
 			if (questlibLoadingResult != 0)
 			{
-				sys_err("LOAD_QUESTLIB_FAILURE({})", questlibFileName);
+				sys_err("LOAD_QUESTLIB_FAILURE({}): {}", questlibFileName, lua_tostring(L, -1));
 				return false;
 			}
 		}
@@ -730,7 +745,7 @@ namespace quest
 			LOG_INFO("LoadTranslate({}), returns {}", translateFileName, translateLoadingResult);
 			if (translateLoadingResult != 0)
 			{
-				sys_err("LOAD_TRANSLATE_ERROR({})", translateFileName);
+				sys_err("LOAD_TRANSLATE_ERROR({}): {}", translateFileName, lua_tostring(L, -1));
 				return false;
 			}
 		}
@@ -767,41 +782,30 @@ namespace quest
 		}
 		// END_OF_LUA_INIT_ERROR_MESSAGE
 
-		for (auto it = g_setQuestObjectDir.begin(); it != g_setQuestObjectDir.end(); ++it)
-		{
-			const string& stQuestObjectDir = *it;
-			char buf[PATH_MAX];
-			snprintf(buf, sizeof(buf), "%s/state/", stQuestObjectDir.c_str());
-			DIR * pdir = opendir(buf);
-			int iQuestIdx = 0;
-
-			if (pdir)
-			{
-				dirent * pde;
-
-				while ((pde = readdir(pdir)))
-				{
-					if (pde->d_name[0] == '.')
-						continue;
-
-					snprintf(buf + 11, sizeof(buf) - 11, "%s", pde->d_name);
-
-					RegisterQuest(pde->d_name, ++iQuestIdx);
-					int ret = lua_dofile(L, (stQuestObjectDir + "/state/" + pde->d_name).c_str());
-					LOG_TRACE("QUEST: loading {}, returns {}", (stQuestObjectDir + "/state/" + pde->d_name).c_str(), ret);
-
-					BuildStateIndexToName(pde->d_name);
-				}
-
-				closedir(pdir);
-			}
-		}
+        try {
+            unsigned int index = 0;
+            for (const auto& definition : m_questSources) {
+                RegisterQuest(definition.name, ++index);
+                if (lua_dobuffer(L, definition.stateCode.data(), definition.stateCode.size(),
+                        ("@" + definition.file).c_str()) != LUA_OK) {
+                    LOG_ERROR("QUEST {} initialization failed: {}", definition.file, lua_tostring(L, -1));
+                    return false;
+                }
+                BuildStateIndexToName(definition.name.c_str());
+            }
+            LOG_INFO("QUEST: {} sources loaded directly ({}, no object directory)", m_questSources.size(), LUA_RELEASE);
+        } catch (const std::exception& error) {
+            LOG_ERROR("QUEST source initialization failed: {}", error.what());
+            lua_pushstring(L, error.what());
+            return false;
+        }
 
 //#if LUA_V == 503
-		lua_setgcthreshold(L, 0);
+		lua_gc(L, LUA_GCCOLLECT);
 //#endif
 		lua_newtable(L);
 		lua_setglobal(L, "__codecache");
+        FinishRuntimeBootstrap(L);
 		return true;
 	}
 
@@ -935,84 +939,7 @@ namespace quest
 		SendScript();
 	}
 
-	QuestState CQuestManager::OpenState(const string& quest_name, int state_index) const
-	{
-		QuestState qs;
-		qs.args=0;
-		qs.st = state_index;
-		qs.co = lua_newthread(L);
-		qs.ico = lua_ref(L, 1/*qs.co*/);
-		return qs;
-	}
 
-
-	bool CQuestManager::RunState(QuestState & qs)
-	{
-		ClearError();
-
-		m_CurrentRunningState = &qs;
-
-		int ret = lua_resume(qs.co, qs.args);
-		if (ret == 0)
-		{
-			if (lua_gettop(qs.co) == 0)
-			{
-				// end of quest
-				GotoEndState(qs);
-				return false;
-			}
-
-			if (!strcmp(lua_tostring(qs.co, 1), "select"))
-			{
-				GotoSelectState(qs);
-				return true;
-			}
-
-			if (!strcmp(lua_tostring(qs.co, 1), "wait"))
-			{
-				GotoPauseState(qs);
-				return true;
-			}
-
-			if (!strcmp(lua_tostring(qs.co, 1), "input"))
-			{
-				GotoInputState(qs);
-				return true;
-			}
-
-			if (!strcmp(lua_tostring(qs.co, 1), "confirm"))
-			{
-				GotoConfirmState(qs);
-				return true;
-			}
-
-			if (!strcmp(lua_tostring(qs.co, 1), "select_item"))
-			{
-				GotoSelectItemState(qs);
-				return true;
-			}
-		}
-		else
-		{
-			sys_err("LUA_ERROR: {}", lua_tostring(qs.co, 1));
-		}
-
-		WriteRunningStateToSyserr();
-		SetError();
-
-		GotoEndState(qs);
-		return false;
-	}
-
-	void CQuestManager::CloseState(QuestState& qs) const
-	{
-		if (qs.co)
-		{
-			//cerr << "ICO "<<qs.ico <<endl;
-			lua_unref(L, qs.ico);
-			qs.co = nullptr;
-		}
-	}
 }
 
 

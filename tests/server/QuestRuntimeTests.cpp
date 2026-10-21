@@ -1,5 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
+#include "../../SRC/Server/GameServer/quest/quest_runtime.h"
 #include "../../SRC/Server/GameServer/quest/questevent.h"
 #include "../../SRC/Server/GameServer/entity/char.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
@@ -23,6 +24,7 @@
 #include "../../SRC/Server/GameServer/dungeon/EasterDungeon.h"
 #include "../../SRC/Server/GameServer/ecs/services/SpatialService.hpp"
 #include "../../SRC/Server/GameServer/core/constants.h"
+#include "../../SRC/Server/GameServer/core/config.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/EventDispatcher.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
@@ -43,6 +45,11 @@
 #include <stdexcept>
 #include <limits>
 #include <common/event_flag.h>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <thread>
+#include <source_location>
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
@@ -64,6 +71,13 @@ std::vector<uint32_t> gifts;
 std::vector<int64_t> experience;
 std::function<void()> onGive, onTarget, onChat, onAttr, onPublish;
 std::function<void(entt::entity)> onConstruct;
+std::function<void(quest::CQuestManager&)> onInitializeLua;
+bool initializeLuaResult = true;
+bool realLuaFixture = false;
+int nativeEffects = 0;
+std::function<void()> onTimer;
+int TestMutation(lua_State*) { ++nativeEffects; return 0; }
+std::function<void(uint32_t, const std::string&)> onNpcSet;
 struct TargetData {
     int32_t x=0,y=0,level=1,maxHP=100;
     int64_t hp=100;
@@ -134,6 +148,162 @@ void WideEventFlags(lua_State* L) {
     Check(eventRequests.size() == count + 1 && eventRequests.back().lValue == 4294967297LL,
         "numeric Lua event timestamp narrowed");
     db_clientdesc = nullptr; lua_settop(L, 0);
+}
+
+void GenerationHotreload() {
+    Reset();
+    static HEART heart {}; thecore_heart=&heart;
+    const auto root = std::filesystem::temp_directory_path() / ("auriga-hotreload-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    std::filesystem::create_directories(root / "quest");
+    struct Cleanup {
+        std::filesystem::path root; std::string old = g_stQuestDir;
+        ~Cleanup() { realLuaFixture=false; onInitializeLua={};onNpcSet={};onTimer={};g_stQuestDir=old;
+            std::error_code ignored; std::filesystem::remove_all(root, ignored); }
+    } cleanup {root};
+    auto write = [&](const char* name, const char* value) { std::ofstream(root/name, std::ios::binary) << value; };
+    write("settings.lua", "-- immutable setup"); write("restart_city_pos.lua", "-- immutable setup");
+    write("quest/questnpc.json", R"({"npcs":[]})"); write("quest/questcategory.json", R"({"categories":[]})");
+    write("quest/quest_list", "main.quest\n");
+    write("quest/main.quest", "quest main begin state start begin when login begin end when pulse.server_timer begin end end end");
+    write("quest/questlib.lua", "helper='old'"); write("quest/extra.lua", "return 'old-file'");
+    g_stQuestDir = (root/"quest").string(); realLuaFixture=true;
+    onInitializeLua=[](quest::CQuestManager&) {}; onNpcSet=[](uint32_t,const std::string&) {};
+    quest::CQuestManager q;
+    Check(q.Initialize(), "initial real Lua fixture failed");
+    auto original=q.ActiveRuntime(); const auto firstId=q.GetQuestIndexByName("main");
+    const auto player=Character(501);q.GetPC(player)->SetLoaded();q.GetPC(player)->SetFlag("main.saved",42);
+    auto dialog=q.OpenState("main",0);
+    const std::string script="local n=coroutine.yield('select', {'a','b'}); answer=helper..':'..dofile('quest/extra.lua')..':'..n";
+    Check(luaL_loadbufferx(dialog.co,script.data(),script.size(),"@suspended-dialog","t")==LUA_OK && q.RunState(dialog),"dialog failed to suspend");
+    auto single=quest::quest_create_server_timer_event("pulse",2,q.LoadTimerScript("pulse"),false,1);
+    auto loop=quest::quest_create_server_timer_event("pulse",2,q.LoadTimerScript("pulse"),true,2);
+    auto late=quest::quest_create_server_timer_event("pulse",3600,q.LoadTimerScript("pulse"),false,3);
+    q.AddServerTimer("pulse",1,single);q.AddServerTimer("pulse",2,loop);
+    q.AddServerTimer("pulse",3,late);
+    write("quest/questlib.lua", "helper='new'");write("quest/extra.lua", "return 'new-file'");
+    write("quest/quest_list", "extra.quest\nmain.quest\n");
+    write("quest/extra.quest", "quest extra begin state start begin when login begin end end end");
+    std::string error;
+    Check(q.PrepareReload(root.generic_string(),"",error), "valid generation was rejected");
+    Check(q.ActiveRuntime()==original && q.GetQuestIndexByName("extra")==0,"prepare activated early");
+    // The explicit prepare is already staged. Commit the captured fingerprint.
+    quest::RuntimeSnapshot next;next.Capture(root.generic_string(),(root/"quest").generic_string());
+    Check(q.CommitReload(next.revision,error), "prepared generation did not commit");
+    Check(q.ActiveRuntime()!=original && q.GetQuestIndexByName("main")==firstId && q.GetQuestIndexByName("extra")>firstId,"quest IDs changed after insertion/reorder");
+    Check(q.GetPC(player)->GetFlag("main.saved")==42,"reload changed player flags");
+    dialog.args=1;lua_pushinteger(dialog.co,2);
+    Check(!q.RunState(dialog),"old dialog failed to finish");
+    {quest::RuntimeScope scope(q,original);lua_getglobal(q.GetLuaState(),"answer");
+        Check(std::string(lua_tostring(q.GetLuaState(),-1))=="old:old-file:2","suspended dialog read new-generation globals/files");lua_pop(q.GetLuaState(),1);}
+    q.CloseState(dialog);
+    auto fresh=q.OpenState("main",0);
+    const std::string freshScript="answer=helper..':'..dofile('quest/extra.lua')";
+    Check(luaL_loadbufferx(fresh.co,freshScript.data(),freshScript.size(),"@fresh-event","t")==LUA_OK && !q.RunState(fresh),"new event failed");
+    lua_getglobal(q.GetLuaState(),"answer");Check(std::string(lua_tostring(q.GetLuaState(),-1))=="new:new-file","new event used stale library");lua_pop(q.GetLuaState(),1);q.CloseState(fresh);
+    std::vector<std::string> ticks;
+    onTimer=[&] {lua_getglobal(q.GetLuaState(),"helper");ticks.emplace_back(lua_tostring(q.GetLuaState(),-1));lua_pop(q.GetLuaState(),1);};
+    Check(single->func(single,0)==0,"one-shot timer repeated");
+    Check(loop->func(loop,0)==50,"loop timer interval changed");
+    Check(ticks==std::vector<std::string>({"old","new"}),"timer generation migration policy failed");
+    Check(static_cast<quest::quest_server_event_info*>(loop->info)->runtime==q.ActiveRuntime(),"loop timer retained old generation");
+    q.ClearServerTimer("pulse",2);q.ClearServerTimer("pulse",3);
+    Check(!static_cast<quest::quest_server_event_info*>(late->info)->runtime,"canceled distant timer retained old VM until its deadline");
+    quest::CancelTimerEvent(&single);quest::CancelTimerEvent(&loop);
+    std::weak_ptr<quest::RuntimeGeneration> retired=original;
+    original.reset();q.CollectRuntimes();
+    Check(retired.expired(),"finished dialog/timers retained retired Lua VM");
+    event_destroy();
+    const auto active=q.ActiveRuntime();
+    write("quest/questlib.lua","test_mutation(); helper='unsafe'");nativeEffects=0;
+    Check(!q.PrepareReload(root.generic_string(),"",error) && nativeEffects==0 && q.ActiveRuntime()==active,"staging mutated live game state");
+    write("quest/questlib.lua","helper='third'");
+    write("quest/main.quest","quest main begin state start begin when login begin if then end end end end");
+    Check(!q.PrepareReload(root.generic_string(),"",error) && q.ActiveRuntime()==active,"bad syntax replaced active generation");
+    write("quest/main.quest","quest main begin state start begin when login begin end end end");
+    write("quest/quest_list","extra.quest\n");
+    Check(!q.PrepareReload(root.generic_string(),"",error),"removed persisted quest was accepted");
+    write("quest/quest_list","main.quest\nextra.quest\n");write("settings.lua","changed=true");
+    Check(!q.PrepareReload(root.generic_string(),"",error),"shared setup changed during hotreload");
+    q.DisconnectPC(player);
+    event_destroy();Reset();
+}
+void QuestDataInitialization() {
+    Reset(); quest::CQuestManager q;
+    const auto path = std::filesystem::temp_directory_path() /
+        ("auriga-quest-runtime-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    Check(std::filesystem::create_directory(path), "quest fixture directory already exists");
+    struct Cleanup {
+        std::filesystem::path path;
+        std::string oldDirectory = g_stQuestDir;
+        ~Cleanup() {
+            onInitializeLua = {}; onNpcSet = {}; initializeLuaResult = true; g_stQuestDir = oldDirectory;
+            std::error_code ignored;
+            std::filesystem::remove(path / "questnpc.json", ignored);
+            std::filesystem::remove(path / "questcategory.json", ignored);
+            std::filesystem::remove(path / "quest_list", ignored);
+            std::filesystem::remove(path, ignored);
+        }
+    } cleanup {path};
+    g_stQuestDir = path.string();
+    int initializations = 0;
+    std::vector<std::pair<uint32_t, std::string>> scripts;
+    onInitializeLua = [&](quest::CQuestManager& manager) {
+        ++initializations;
+        manager.RegisterQuest("guild_war_join", 7);
+        manager.RegisterQuest("uncategorized", 8);
+    };
+    onNpcSet = [&](uint32_t vnum, const std::string& name) { scripts.emplace_back(vnum, name); };
+    auto write = [&](const char* file, const char* text) { std::ofstream(path / file, std::ios::binary) << text; };
+    Check(!q.Initialize() && initializations == 0 && scripts.empty() && !q.GetLuaState(),
+        "invalid quest data reached Lua/script loading");
+    write("questnpc.json", R"({"npcs":[{"vnum":20016,"name":"blacksmith"}]})");
+    write("questcategory.json", R"({"categories":[{"quest":"guild_war_join","category":3},{"quest":"not_compiled","category":4}]})");
+    write("quest_list", "");
+    Check(q.Initialize() && initializations == 1, "valid quest JSON did not initialize");
+    q.CurrentRuntime()->originalDataRoot = path.generic_string();
+    q.CurrentRuntime()->originalQuestRoot = path.generic_string();
+    Check(scripts.size() == 2 && scripts[0] == std::make_pair(20016u, std::string("blacksmith")) &&
+        scripts[1] == std::make_pair(0u, std::string("notarget")), "NPC aliases or reserved scripts changed");
+    Check(q.FindNPCIDByName("blacksmith") == 20016 && q.FindNPCIDByName("missing") == 0,
+        "NPC JSON did not populate runtime name resolution");
+    Check(q.GetQuestCategoryByQuestIndex(7) == 3 && q.GetQuestCategoryByQuestIndex(8) == 0 &&
+        q.ReadQuestCategoryFile(7) == 3 && q.ReadQuestCategoryFile(8) == 99 && q.ReadQuestCategoryFile(65535) == 99,
+        "category lookup or historical defaults changed");
+    Check(q.QuestCategoryIndexMap.size() == 1, "uncompiled quest became a categorized quest");
+    auto* oldLua = q.GetLuaState();
+    write("questcategory.json", R"({"categories":[{"quest":"guild_war_join","category":"bad"}]})");
+    q.Reload();
+    Check(q.GetLuaState() == oldLua && initializations == 1 && scripts.size() == 2 &&
+        q.GetQuestCategoryByQuestIndex(7) == 3 && q.FindNPCIDByName("blacksmith") == 20016,
+        "invalid reload destroyed live quest state");
+    onInitializeLua = [&](quest::CQuestManager& manager) { ++initializations; manager.RegisterQuest("main", 9); };
+    write("questnpc.json", R"({"npcs":[]})");
+    write("questcategory.json", R"({"categories":[{"quest":"main","category":65535}]})");
+    q.Reload();
+    Check(initializations == 2 && scripts.size() == 3 && scripts.back() == std::make_pair(0u, std::string("notarget")),
+        "valid reload did not retain the reserved script entry");
+    Check(q.FindNPCIDByName("blacksmith") == 0 && q.GetQuestIndexByName("guild_war_join") == 0 &&
+        q.GetQuestCategoryByQuestIndex(7) == 0 && q.ReadQuestCategoryFile(7) == 99 &&
+        q.GetQuestCategoryByQuestIndex(9) == 65535 && q.ReadQuestCategoryFile(9) == 65535,
+        "reload retained stale name/index/category associations");
+    oldLua = q.GetLuaState();
+    onInitializeLua = [&](quest::CQuestManager& manager) { ++initializations; manager.RegisterQuest("failed_candidate", 10); };
+    initializeLuaResult = false;
+    q.Reload();
+    Check(q.GetLuaState() == oldLua && q.GetQuestIndexByName("main") == 9 &&
+        q.GetQuestIndexByName("failed_candidate") == 0 && q.GetQuestCategoryByQuestIndex(9) == 65535,
+        "failed Lua candidate replaced the previous runtime");
+    initializeLuaResult = true;
+    onInitializeLua = [&](quest::CQuestManager& manager) { ++initializations; manager.RegisterQuest("main", 9); };
+    const auto connected = Character(1234);
+    Check(q.GetPC(1234) != nullptr, "reload fixture PC was not created");
+    q.Reload();
+    Check(initializations == 4 && q.GetLuaState() == oldLua && q.GetQuestIndexByName("main") == 9,
+        "hotreload failed with a connected quest PC");
+    g_registry.destroy(connected);
+    std::filesystem::remove(path / "questcategory.json");
+    Check(q.GetQuestCategoryByQuestIndex(9) == 65535 && q.ReadQuestCategoryFile(9) == 65535,
+        "category lookup still reads a runtime text/file path");
 }
 void References() {
     Reset();quest::CQuestManager q;
@@ -314,7 +484,6 @@ bool NPC::OnTarget(PC&,uint32_t,const char*,const char*,bool& result) {result=fa
 bool NPC::HasChat() {return hasChat;}
 bool NPC::OnChat(PC&) {++chats;if(onChat){auto fn=onChat;fn();}return false;}
 bool NPC::OnClick(PC&) {++clicks;return false;}
-void CancelTimerEvent(LPEVENT*) {throw std::runtime_error("unexpected timer");}
 }
 entt::entity ecs::SocialSystem::GetParty(entt::entity) {return entt::null;}
 uint32_t PartySystem::GetLeaderPID(entt::entity) {throw std::runtime_error("unexpected party");}
@@ -338,7 +507,9 @@ bool AffectSystem::AddAffect(entt::entity e,uint32_t,uint8_t,int32_t,uint32_t,in
     CheckLive(e);++affects;return true;
 }
 namespace {
-[[noreturn]] void Unexpected() { throw std::runtime_error("unexpected external service"); }
+[[noreturn]] void Unexpected(std::source_location site = std::source_location::current()) {
+    throw std::runtime_error(std::string("unexpected external service: ") + site.function_name() + ':' + std::to_string(site.line()));
+}
 }
 namespace ecs::PlayerRuntime {
 bool IsValid(entt::entity e) { return g_registry.valid(e); }
@@ -384,17 +555,40 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity) {Unexpected();}
 entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t,int32_t,int32_t,int32_t,int32_t,bool,int,bool) {Unexpected();}
 bool CHARACTER_MANAGER::GetCharactersByRaceNum(uint32_t,std::vector<entt::entity>&) {Unexpected();}
 namespace quest {
-void NPC::Set(uint32_t,const std::string&) {Unexpected();}
-bool CQuestManager::InitializeLua() {Unexpected();}
-QuestState CQuestManager::OpenState(const std::string&,int) const {Unexpected();}
-void CQuestManager::CloseState(QuestState&) const {Unexpected();}
-bool CQuestManager::RunState(QuestState&) {Unexpected();}
-void CQuestManager::GotoEndState(QuestState&) {Unexpected();}
+void NPC::Set(uint32_t vnum,const std::string& name) {if(onNpcSet) onNpcSet(vnum,name);}
+bool CQuestManager::InitializeLua() {
+    if(!onInitializeLua)Unexpected();
+    L=lua_open();
+    if (realLuaFixture) {
+        auto& runtime = *CurrentRuntime();
+        if (runtime.files.empty()) runtime.Capture(runtime.originalDataRoot, runtime.originalQuestRoot);
+        Check(LuaOpenQuestLibraries(L), "fixture libraries failed");
+        RememberStandardAPIs(L, runtime);
+        lua_pushcfunction(L, TestMutation); lua_setglobal(L, "test_mutation");
+        lua_pushcfunction(L, TestMutation); lua_setglobal(L, "add_goto_info");
+        GuardRuntimeAPIs(L, runtime);
+        if (lua_dofile(L, "quest/questlib.lua") != LUA_OK) return false;
+        m_questSources = source::LoadFiles(L, runtime.files);
+        unsigned id = 0;
+        for (const auto& definition : m_questSources) {
+            RegisterQuest(definition.name, ++id);
+            if (lua_dobuffer(L, definition.stateCode.data(), definition.stateCode.size(), definition.file.c_str()) != LUA_OK) return false;
+        }
+    }
+    if(realLuaFixture) FinishRuntimeBootstrap(L);
+    onInitializeLua(*this); return initializeLuaResult;
+}
+void CQuestManager::GotoEndState(QuestState&) {}
+void CQuestManager::GotoSelectState(QuestState& qs) { qs.suspend_state = SUSPEND_STATE_SELECT; }
+void CQuestManager::GotoPauseState(QuestState& qs) { qs.suspend_state = SUSPEND_STATE_PAUSE; }
+void CQuestManager::GotoInputState(QuestState& qs) { qs.suspend_state = SUSPEND_STATE_INPUT; }
+void CQuestManager::GotoConfirmState(QuestState& qs) { qs.suspend_state = SUSPEND_STATE_CONFIRM; }
+void CQuestManager::GotoSelectItemState(QuestState& qs) { qs.suspend_state = SUSPEND_STATE_SELECT_ITEM; }
 void CQuestManager::AddLuaFunctionTable(const char*,luaL_reg*,bool) const {Unexpected();}
-bool NPC::OnServerTimer(PC&) {Unexpected();}
+bool NPC::OnServerTimer(PC&) {if(onTimer) {onTimer(); return true;} Unexpected();}
 bool NPC::OnDie(PC&) {Unexpected();}
 bool NPC::OnQuestDamage(PC&) {Unexpected();}
-bool NPC::OnTimer(PC&) {Unexpected();}
+bool NPC::OnTimer(PC&) {if(onTimer) {onTimer(); return true;} Unexpected();}
 bool NPC::OnLevelUp(PC&) {Unexpected();}
 bool NPC::OnLogout(PC&) {Unexpected();}
 bool NPC::OnTakeItem(PC&) {Unexpected();}
@@ -628,13 +822,33 @@ void TriggerConstruction() {
 }
 }
 
-int main() {
+int main(int argc, char** argv) {
     CHARACTER_MANAGER characters;CTargetManager targets;
+    if (argc == 4 && std::string(argv[1]) == "--reload-core") {
+        try {
+            const auto root=std::filesystem::canonical(argv[2]);const std::string name=argv[3];
+            g_stQuestDir=(root/"data/quest").generic_string();realLuaFixture=true;
+            onNpcSet=[](uint32_t,const std::string&) {};
+            onInitializeLua=[&](quest::CQuestManager& manager) {
+                if(manager.CurrentRuntime()->staging && std::filesystem::exists(root/"run"/("reject-"+name)))
+                    throw std::runtime_error("injected core preparation failure");
+            };
+            quest::CQuestManager q;
+            q.ConfigureReloadControl(root.generic_string(),name,(root/"data").generic_string(),g_stQuestDir);
+            if(!q.Initialize()) throw std::runtime_error("test core initialization failed");
+            const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(120);
+            while(!std::filesystem::exists(root/"run/test-stop") && std::chrono::steady_clock::now()<deadline) {
+                if(!std::filesystem::exists(root/"run"/("stall-"+name))) q.PollReloadControl();
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+            return 0;
+        } catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}
+    }
     g_registry.on_construct<ecs::QuestContext>().connect<&Constructed>();
     g_registry.on_construct<ecs::ClickTrigger>().connect<&TriggerConstructed>();
     auto* L=lua_open();
     try {
-        WideEventFlags(L);References();OtherPCBlocks();QuestPCOwnership();LuaAndDispatch(L);RewardBatches();RewardCompletion();ConstructionCallbacks();
+        GenerationHotreload();QuestDataInitialization();WideEventFlags(L);References();OtherPCBlocks();QuestPCOwnership();LuaAndDispatch(L);RewardBatches();RewardCompletion();ConstructionCallbacks();
         NativeClick();TriggerConstruction();NativeVictimSearch();Reset();
         lua_close(L);std::cout<<"Quest runtime: "<<checks<<" checks passed\n";
     } catch(const std::exception& error) {

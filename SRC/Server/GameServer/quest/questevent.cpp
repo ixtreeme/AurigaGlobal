@@ -6,18 +6,35 @@
 #include "../ecs/CharacterAccessors.hpp"
 #include "questmanager.h"
 #include "questevent.h"
+#include "quest_runtime.h"
 
 namespace quest
 {
+    namespace {
+    template<class T> void AdoptLoopGeneration(CQuestManager& manager, T& timer, const char* event) {
+        const auto active = manager.ActiveRuntime();
+        if (!timer.time_cycle || !timer.name || !active || active == timer.runtime || manager.CurrentRuntime() != active) return;
+        for (const auto& definition : manager.GetQuestSources())
+            for (const auto& handler : definition.handlers)
+                if (handler.target == timer.name && handler.event == event) {
+                    timer.runtime = active;
+                    timer.npc_id = manager.LoadTimerScript(timer.name);
+                    return;
+                }
+    }
+    }
 	void CancelTimerEvent(LPEVENT * ppEvent)
 	{
+        if (!ppEvent || !*ppEvent) return;
 		quest_event_info* info = dynamic_cast<quest_event_info*>((*ppEvent)->info);
 
 		if (info)
 		{
 			delete[] info->name;
 			info->name = nullptr;
+			info->runtime.reset();
 		}
+        if (auto* server = dynamic_cast<quest_server_event_info*>((*ppEvent)->info)) server->runtime.reset();
 
 		event_cancel(ppEvent);
 	}
@@ -33,6 +50,9 @@ namespace quest
 		}
 
 		CQuestManager& q = CQuestManager::instance();
+        if (info->runtime && info->runtime->closed) return 0;
+        AdoptLoopGeneration(q, *info, "server_timer");
+        RuntimeScope runtime(q, info->runtime, true);
 
 		if (!q.ServerTimer(info->npc_id, info->arg))
 			return passes_per_sec / 2 + 1;
@@ -58,6 +78,9 @@ namespace quest
 		}
 
 		CQuestManager & q = CQuestManager::instance();
+        if (info->runtime && info->runtime->closed) return 0;
+        AdoptLoopGeneration(q, *info, "timer");
+        RuntimeScope runtime(q, info->runtime, true);
 
 		if (ecs::IsCharacter(CHARACTER_MANAGER::instance().FindEntityByPID(info->player_id)))
 		{
@@ -92,6 +115,7 @@ END_OF_TIMER_EVENT:
 		int32_t ltime_cycle = (int32_t) (rint(PASSES_PER_SEC(when)));
 
 		quest_server_event_info* info = AllocEventInfo<quest_server_event_info>();
+        info->runtime = CQuestManager::instance().CurrentRuntime();
 
 		info->npc_id = timernpc;
 		info->time_cycle = loop ? ltime_cycle : 0;
@@ -111,6 +135,7 @@ END_OF_TIMER_EVENT:
 		int32_t ltime_cycle = (int) (rint(PASSES_PER_SEC(when)));
 
 		quest_event_info* info = AllocEventInfo<quest_event_info>();
+        info->runtime = CQuestManager::instance().CurrentRuntime();
 
 		info->player_id		= player_id;
 		info->npc_id		= npc_id;
