@@ -10,6 +10,31 @@ find_package(EnTT CONFIG REQUIRED)
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 
+add_executable(MotionTimingTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MotionTimingTests.cpp
+    entity/motion.cpp
+)
+target_link_libraries(MotionTimingTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+if(WIN32)
+    target_link_libraries(MotionTimingTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+if(MSVC)
+    target_compile_options(MotionTimingTests PRIVATE /Gy)
+    target_link_options(MotionTimingTests PRIVATE /OPT:REF /OPT:NOICF)
+else()
+    target_compile_options(MotionTimingTests PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(MotionTimingTests PRIVATE -Wl,--gc-sections)
+endif()
+add_test(NAME motion_timing COMMAND MotionTimingTests)
+
+if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    add_custom_command(TARGET MotionTimingTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${AURIGA_ASAN_RUNTIME_DLL}"
+            "$<TARGET_FILE_DIR:MotionTimingTests>"
+    )
+endif()
+
 # Headless regression checks compile the production attribute, switchbot and DS
 # sources with service test doubles; no server/DB startup is needed.
 add_executable(ItemAttributeTests EXCLUDE_FROM_ALL

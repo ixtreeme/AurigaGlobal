@@ -13,6 +13,10 @@
 
 namespace
 {
+	float DurationSeconds(float milliseconds)
+	{
+		return std::isfinite(milliseconds) && milliseconds > 0.0f ? milliseconds * 0.001f : 0.0f;
+	}
 	struct SSplashRow
 	{
 		int	skillIndex { 0 };
@@ -154,12 +158,12 @@ float CMotionManager::GetMotionDuration(uint32_t dwVnum, uint32_t dwKey)
 
 	switch (index)
 	{
-		case MOTION_NORMAL_ATTACK:	return it->second.attackDuration;
-		case MOTION_SPECIAL_1:		return it->second.skillDuration[0];
-		case MOTION_SPECIAL_2:		return it->second.skillDuration[1];
-		case MOTION_SPECIAL_3:		return it->second.skillDuration[2];
-		case MOTION_SPECIAL_4:		return it->second.skillDuration[3];
-		case MOTION_SPECIAL_5:		return it->second.skillDuration[4];
+		case MOTION_NORMAL_ATTACK:	return DurationSeconds(it->second.attackDuration);
+		case MOTION_SPECIAL_1:		return DurationSeconds(it->second.skillDuration[0]);
+		case MOTION_SPECIAL_2:		return DurationSeconds(it->second.skillDuration[1]);
+		case MOTION_SPECIAL_3:		return DurationSeconds(it->second.skillDuration[2]);
+		case MOTION_SPECIAL_4:		return DurationSeconds(it->second.skillDuration[3]);
+		case MOTION_SPECIAL_5:		return DurationSeconds(it->second.skillDuration[4]);
 		default:			return 0.0f;
 	}
 }

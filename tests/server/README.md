@@ -44,6 +44,39 @@ are added, caps and low levels are retained, and repeated loads do not refund
 spent points. These tests use controlled services; live SQL, client rendering
 and production deployment still require integration verification.
 
+## Server audit coverage
+
+SpatialLifecycleTests now executes the production `CInputMain::Move` with a real
+descriptor object over controlled transport/services, then the real movement
+tick. Destination publication belongs to the movement command. Active timing
+retains its start, duration and origin until arrival; interpolation uses elapsed
+milliseconds, including counter rollover. Tests cover identical timestamps,
+fine/coarse update cadence, lagged arrival, point/mount speed budgets and the
+existing spatial/reentrancy contracts. Older spatial fixtures now supply an
+explicit time interval instead of relying on a fixed distance per update.
+
+LoginAuthTests covers one attempt per session through both the account lookup
+and the Database acknowledgement. SQL failure, registration refusal, offline
+link and disconnect release the pending account and session reference; late
+results cannot authenticate a closed connection. LoginDbLinkTests exercises
+real loopback framing with unique echoed request handles, out-of-order results,
+unknown/duplicate results, malformed ACKs, disconnect and a ten-second
+registration deadline. No new wire fields are introduced: the existing GD/DG
+handle identifies the request.
+
+LoginLimiterTests checks that an existing session never exempts new connections
+from the burst block, and that the per-address cap of 128 simultaneous login
+sessions is released on close. Existing sessions are retained. The pre-existing
+30 connections per ten-second window and credential locks remain in effect.
+
+CharacterSelectionTests covers all 256 byte-sized character indices, empty and
+non-renamable slots, authentication, unterminated names and the name policy over
+the production outgoing rename-request builder. PlayerLoadTests executes the
+same secondary-skill normalization the Database uses: old and new skill costs
+are added, caps and low levels are retained, and repeated loads do not refund
+spent points. These tests use controlled services; live SQL, client rendering
+and production deployment still require integration verification.
+
 ## Source-derived MariaDB schema (2026-10-18)
 
 The fresh-install schema and deployment instructions are in
