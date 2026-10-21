@@ -1200,7 +1200,7 @@ class MainWindow(QMainWindow):
             self.remote_state = value['state']
             self.remote_online = True
             self.update_channels()
-        self.remote_request('status', {}, received, poll=True)
+        self.remote_request('status', dict(force_sql=force), received, poll=True)
 
     def show_remote_output(self, text):
         self.console_toggle.setChecked(True)
@@ -1388,9 +1388,27 @@ class MainWindow(QMainWindow):
             self.stack_metric.setText('Befejezetlen buildtelepítés' if state.get('deployment_pending') else
                                      'Indítás…' if starting else state['phase'])
             self.core_metric.setText('%d / %d core fut' % (sum(row['running'] for row in state['rows'] if row['name'] not in ('database', 'login')), len(state['config']['game_servers'])))
-            self.db_metric.setText('SQL: külső szolgáltatás' if external else 'MariaDB: fut' if state['database_running'] else 'MariaDB: leállítva' if state['database_initialized'] else 'SQL: még nincs betöltve')
+            sql_status = state.get('database_status', {})
+            if external:
+                self.db_metric.setText({'available':'SQL: elérhető', 'partial':'SQL: részben elérhető',
+                    'unavailable':'SQL: nem elérhető', 'error':'SQL: kapcsolati hiba',
+                    'unknown':'SQL: nem ellenőrizhető'}.get(sql_status.get('status'), 'SQL: ellenőrzés…'))
+                self.db_metric.setStyleSheet('color: ' + ('#83d6c0' if sql_status.get('status') == 'available' else
+                    '#ffb4a7' if sql_status.get('status') in ('unavailable','error') else '#edcf8e') + ';')
+                details = [sql_status['message']] if sql_status.get('message') else []
+                details += ['%s:%s / %s — %s' % (row['host'],row['port'],row['database'],row['message'])
+                            for row in sql_status.get('connections', [])]
+                self.db_metric.setToolTip('\n'.join(details))
+            else:
+                self.db_metric.setStyleSheet('')
+                self.db_metric.setText('MariaDB: fut' if state['database_running'] else 'MariaDB: leállítva' if state['database_initialized'] else 'SQL: még nincs betöltve')
+                self.db_metric.setToolTip('A helyi csomag saját MariaDB-folyamatának állapota.')
             self.target_hint.setText(('A célgép külső SQL-szolgáltatását használjuk. A kapcsolatok a Beállítások oldalon szerkeszthetők; az indítás ellenőrzi őket. ' if external else '') +
                 'A beállítások és játékadatok mentéséhez leállítás szükséges. A questek külön, futás közben is frissíthetők.')
+            if external and sql_status.get('status') not in (None, 'available'):
+                failed = next((row for row in sql_status.get('connections', []) if row['status'] != 'available'), None)
+                reason = '%s:%s / %s — %s' % (failed['host'],failed['port'],failed['database'],failed['message']) if failed else sql_status.get('message','')
+                self.target_hint.setText('SQL: ' + reason + ' A kapcsolatot a Beállítások oldalon javíthatod; az Állapot frissítése újra ellenőrzi.')
             if state.get('deployment_pending'):
                 self.target_hint.setText('Befejezetlen buildtelepítés miatt az indítás tiltott. Ellenőrizd a mentést és az eredményt: ' + state['deployment_pending'])
             self.core_table.setRowCount(len(state['rows']))
@@ -1402,7 +1420,7 @@ class MainWindow(QMainWindow):
             self.prepare_button.setEnabled(not busy and not running)
             self.setup_db_button.setEnabled(not busy and not running and not state['database_initialized'] and bool(state.get('can_setup')))
             self.check_button.setEnabled(not busy)
-            self.db_check_button.setEnabled(not busy and bool(state.get('can_start', state['database_initialized'])))
+            self.db_check_button.setEnabled(not busy and (external or bool(state.get('can_start', state['database_initialized']))))
             self.start_button.setEnabled(not busy and not running and bool(state.get('can_start', state['database_initialized'])))
             self.start_button.setToolTip('Kijelölt csatornák és közös CH99 indítása a kiválasztott szerveren.')
             self.stop_button.setEnabled(not busy and state['running'])

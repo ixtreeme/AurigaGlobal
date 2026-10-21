@@ -2384,6 +2384,14 @@ lock, restricted edit scope and the asynchronous remote reload command.
 
 ## Shared local/SSH targets (2026-10-21)
 
+SQL-status coverage checks effective per-instance connection overrides, private
+option-file cleanup, read-only queries, error classification, secret-free caching,
+expiry/forced refresh/config changes, and copied Windows ownership on FreeBSD.
+An external SQL failure must retain the package connection and its editable
+settings. Qt coverage checks the SQL card, failing endpoint details, disabled
+start and hidden local database controls. External SQL can remain running while
+a stopped game server's configuration is edited.
+
 Run `build/server-manager-env/Scripts/python.exe -B tests/server/ServerManagerTargetTests.py`
 after building the native package validators. The suite sends the production
 standard-library package RPC through local subprocess pipes instead of SSH.

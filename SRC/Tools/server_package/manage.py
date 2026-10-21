@@ -343,7 +343,7 @@ def init_db(explicit=None):
 
 def database_check():
     folder = db_folder()
-    if os.name != 'nt' and not (folder / 'owner.json').is_file():
+    if os.name != 'nt':
         return external_database_check()
     if (folder / 'import-in-progress.json').exists(): raise RuntimeError('A database import is incomplete; inspect its private import journal')
     if not (folder / 'initialized.json').is_file(): raise RuntimeError('Run init-db before database-check')
@@ -362,7 +362,9 @@ def external_database_check():
     Credentials go into private temporary option files, never process arguments.
     """
     cfg = config()
-    binary = shutil.which('mariadb') or shutil.which('mysql')
+    binary = shutil.which('mariadb') or shutil.which('mysql') or next(
+        (str(Path(directory) / name) for name in ('mariadb','mysql') for directory in ('/usr/local/bin','/usr/bin')
+         if (Path(directory) / name).is_file() and os.access(Path(directory) / name, os.X_OK)), None)
     if not binary:
         raise RuntimeError('Install a MariaDB command-line client on the server to check external SQL connections')
     postfix = cfg.get('common', {}).get('table_postfix', '')

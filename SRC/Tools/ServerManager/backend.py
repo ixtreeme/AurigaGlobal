@@ -3,6 +3,7 @@
 This module has no Qt dependency. SQL is controlled only by explicit manage.py actions.
 """
 import contextlib
+from concurrent.futures import ThreadPoolExecutor
 import copy
 import datetime
 import hashlib
@@ -16,6 +17,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import re
+import time
 
 
 class EditorError(RuntimeError):
@@ -164,6 +167,103 @@ def pending_deployment(root):
     return None
 
 
+def sql_client():
+    for name in ('mariadb', 'mysql'):
+        found = shutil.which(name)
+        if found: return found
+        for directory in ('/usr/local/bin', '/usr/bin'):
+            path = Path(directory) / name
+            if path.is_file() and os.access(path, os.X_OK): return str(path)
+    return None
+
+
+def sql_connections(config):
+    """Mirror native common/default/instance overrides; deduplicate credentials privately."""
+    common = config.get('common', {}).get('sql', {})
+    sections = [('database', merge({'sql': {key:common[key] for key in ('player','account','common') if key in common}}, config['database']))]
+    sections.append(('login', {'sql': {'account': merge(common.get('account', {}), config['login'].get('account_sql', {}))}}))
+    for name, core in config['game_servers'].items():
+        base = {'sql': {key:common[key] for key in ('player','common','log') if key in common}}
+        sections.append((name, merge(merge(base, config.get('game_defaults', {})), core)))
+    connections = {}
+    for instance, section in sections:
+        for role, connection in section.get('sql', {}).items():
+            value = {key:connection.get(key, default) for key, default in
+                     (('host',''),('port',3306),('user',''),('password',''),('database',''))}
+            if value['port'] == 0: value['port'] = 3306
+            if (any(not isinstance(value[key], str) or '\x00' in value[key] for key in ('host','user','password','database'))
+                    or not value['host'] or not value['database'] or type(value['port']) is not int or not 1 <= value['port'] <= 65535):
+                raise EditorError('Érvénytelen SQL-kapcsolat: ' + instance + '/' + role)
+            identity = tuple(value[key] for key in ('host','port','user','password','database'))
+            connections.setdefault(identity, dict(connection=value, roles=[]))['roles'].append(instance + '/' + role)
+    if not connections or len(connections) > 64: raise EditorError('Az SQL-kapcsolatok száma 1–64 legyen.')
+    return list(connections.values())
+
+
+def probe_sql(binary, entry):
+    connection = entry['connection']
+    row = dict(roles=entry['roles'], host=connection['host'], port=connection['port'], database=connection['database'])
+    def quoted(value):
+        return '"' + str(value).replace('\\','\\\\').replace('"','\\"').replace('\n','\\n').replace('\r','\\r').replace('\t','\\t') + '"'
+    try:
+        with tempfile.TemporaryDirectory(prefix='auriga-sql-status-') as directory:
+            options = Path(directory) / 'client.cnf'
+            descriptor = os.open(options, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            with os.fdopen(descriptor, 'w', encoding='utf-8') as handle:
+                handle.write('[client]\n' + '\n'.join(key+'='+quoted(value) for key,value in connection.items())+'\n')
+            result = subprocess.run([binary, '--defaults-file='+str(options), '--protocol=tcp', '--connect-timeout=2',
+                                     '--default-character-set=utf8mb4', '--batch', '--skip-column-names'],
+                                    input='SELECT 1;\n', capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=3,
+                                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        if result.returncode == 0 and result.stdout.strip() == '1': return dict(row, status='available', message='Kapcsolat és adatbázis-hozzáférés rendben.')
+        match = re.search(r'\bERROR\s+(\d+)\b', result.stderr)
+        code = int(match[1]) if match else None
+        messages = {1044:'Nincs jogosultság az adatbázishoz.',1045:'Hibás SQL-felhasználó, jelszó vagy hozzáférési szabály.',
+                    1049:'A beállított adatbázis nem létezik.',2002:'Az SQL-végpont nem érhető el.',
+                    2003:'Az SQL-végpont nem érhető el.',2005:'Az SQL-kiszolgáló neve nem oldható fel.',
+                    2013:'Az SQL-kapcsolat megszakadt vagy időtúllépés történt.'}
+        return dict(row, status='unavailable' if code in (2002,2003,2005,2013) else 'error', code=code,
+                    message=messages.get(code,'Az SQL-ellenőrzés sikertelen.'))
+    except subprocess.TimeoutExpired:
+        return dict(row, status='unavailable', message='Az SQL-kapcsolat ellenőrzésének időkorlátja lejárt.')
+    except (OSError, UnicodeError):
+        return dict(row, status='unknown', message='Az SQL-kliens nem indítható.')
+
+
+def external_sql_status(root, config, force=False):
+    """Read-only SELECT 1 checks. The private, secret-free cache expires after 30 seconds."""
+    key = sha(json.dumps(config, sort_keys=True, ensure_ascii=True).encode())
+    cache = root / 'run/sql-status.json'
+    safe_cache = not any(path.is_symlink() or (hasattr(path,'is_junction') and path.is_junction()) for path in (cache,*cache.parents))
+    if safe_cache and not force and cache.is_file() and cache.stat().st_size <= 128*1024:
+        try:
+            value = strict_json(cache.read_text(encoding='utf-8'))
+            if (value['version'] == 1 and value['key'] == key and 0 <= time.time()-value['result']['checked_at'] < 30
+                    and value['result']['status'] in ('available','partial','unavailable','error','unknown')):
+                return value['result']
+        except (EditorError, OSError, ValueError, KeyError, TypeError): pass
+    result = dict(status='unknown', checked_at=time.time(), connections=[], message='')
+    binary = sql_client()
+    if not binary:
+        result['message'] = 'Az ellenőrzéshez MariaDB parancssori kliens szükséges a célgépen.'
+    else:
+        try: entries = sql_connections(config)
+        except EditorError as error: result.update(status='error', message=str(error))
+        except (AttributeError, KeyError, TypeError, ValueError):
+            result.update(status='error', message='Az SQL-kapcsolatok konfigurációja hibás.')
+        else:
+            with ThreadPoolExecutor(max_workers=min(8,len(entries))) as pool:
+                rows = list(pool.map(lambda entry: probe_sql(binary,entry), entries))
+            statuses = {row['status'] for row in rows}
+            result.update(connections=rows, status='available' if statuses == {'available'} else
+                          'partial' if 'available' in statuses else 'error' if 'error' in statuses else
+                          'unknown' if 'unknown' in statuses else 'unavailable')
+    if safe_cache:
+        try: load_manager(root).save_json(cache, dict(version=1,key=key,result=result))
+        except OSError: pass
+    return result
+
+
 def describe(root):
     root = package_root(root)
     manager = load_manager(root)
@@ -199,8 +299,8 @@ def describe(root):
             port = section.get('network', {}).get('port', 0)
         rows.append(dict(name=name, channel=channel, port=port, running=states.get(name, False)))
     db_record = root / 'run/mariadb/process.json'
-    db_live = db_record.is_file() and manager.owned(manager.read_json(db_record))
-    external = os.name != 'nt' and not (root / 'run/mariadb/owner.json').is_file()
+    external = os.name != 'nt'
+    db_live = not external and db_record.is_file() and manager.owned(manager.read_json(db_record))
     pending = pending_deployment(root)
     if pending and not running:
         phase = 'Befejezetlen buildtelepítés: ' + pending.relative_to(root).as_posix()
@@ -346,7 +446,7 @@ def save_document(root, relative, payload, expected_hash):
         state = describe(root)
         if state['running'] and not (live and state.get('hotreload') and hotreload_file(document.relative)):
             raise EditorError('Ez a fájl csak leállított szervernél menthető. Futás közben a hotreloadot támogató core-ok questforrásai szerkeszthetők.')
-        if document.relative == 'server.json' and state['database_running']:
+        if document.relative == 'server.json' and state.get('database_kind', 'managed') == 'managed' and state['database_running']:
             raise EditorError('A konfiguráció mentése előtt a helyi MariaDB-t is állítsd le.')
         candidate = document.path.with_name('.' + document.path.name + '.edit-' + secrets.token_hex(6))
         descriptor = os.open(candidate, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)

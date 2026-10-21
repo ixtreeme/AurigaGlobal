@@ -238,6 +238,22 @@ class TargetGuiTests(unittest.TestCase):
         self.assertIn('local-core', self.window.config_editor.document.value['game_servers'])
         self.assertEqual({b.property('channel') for b in self.window.channel_boxes}, {1})
 
+    def test_external_sql_status_shows_real_connection_result_and_hides_local_sql_controls(self):
+        self.connect()
+        state = self.window.remote_state
+        state.update(database_kind='external',database_initialized=False,database_running=False,can_start=False)
+        row = dict(host='127.0.0.1',port=3307,database='player',status='unavailable',message='Az SQL-végpont nem érhető el.')
+        state['database_status'] = dict(status='unavailable',connections=[row],checked_at=0)
+        self.window.refresh()
+        self.assertEqual(self.window.db_metric.text(),'SQL: nem elérhető')
+        self.assertIn('3307',self.window.db_metric.toolTip());self.assertIn('3307',self.window.target_hint.text())
+        self.assertTrue(self.window.database_tools_panel.isHidden());self.assertTrue(self.window.stop_db_button.isHidden())
+        self.assertTrue(self.window.db_check_button.isEnabled());self.assertFalse(self.window.start_button.isEnabled())
+        row.update(status='available',message='Kapcsolat rendben.')
+        state['database_status']['status']='available';state.update(database_running=True,can_start=True)
+        self.window.refresh();self.assertEqual(self.window.db_metric.text(),'SQL: elérhető')
+        self.assertTrue(self.window.start_button.isEnabled());self.assertTrue(self.window.remote_online)
+
     def test_remote_form_save_changes_only_remote_file_and_creates_remote_backup(self):
         self.connect();editor=self.window.config_editor
         local=(self.local/'server.json').read_bytes()

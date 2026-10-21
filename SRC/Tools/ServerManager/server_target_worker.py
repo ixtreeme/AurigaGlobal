@@ -50,8 +50,13 @@ def inventory(api, root):
     return dict(data=api.file_list(root), quests=api.file_list(root, True), logs=api.log_files(root))
 
 
-def status(api, root):
+def status(api, root, force_sql=False):
     state = api.describe(root)
+    if state['database_kind'] == 'external':
+        state['database_status'] = api.external_sql_status(root, state['config'], force=force_sql)
+        state['database_running'] = state['database_status']['status'] == 'available'
+        state['database_initialized'] = state['database_running']
+        state['can_start'] = state['can_start'] and state['database_running']
     jobs = root / 'run/manager-jobs'
     manager = api.load_manager(root)
     # The detached start process may still be checking files/SQL before it
@@ -98,8 +103,8 @@ def start_detached(api, root, arguments):
 def dispatch(api, root, request):
     operation, args = request['operation'], request.get('arguments', {})
     if operation == 'connect':
-        return dict(state=status(api, root), inventory=inventory(api, root), document=bytes_packet(api, root, 'server.json'))
-    if operation == 'status': return dict(state=status(api, root))
+        return dict(state=status(api, root, force_sql=True), inventory=inventory(api, root), document=bytes_packet(api, root, 'server.json'))
+    if operation == 'status': return dict(state=status(api, root, force_sql=args.get('force_sql') is True))
     if operation == 'inventory': return inventory(api, root)
     if operation == 'read': return bytes_packet(api, root, args['relative'])
     if operation == 'save':
@@ -137,6 +142,8 @@ def dispatch(api, root, request):
         manager = api.load_manager(root)
         if argv[0] == 'setup-db' and not status(api, root).get('can_setup'):
             raise ValueError('Ezen a célgépen nincs saját Windowsos adatbázis-előkészítés. Az SQL-kapcsolatok a Beállítások oldalon szerkeszthetők.')
+        if argv[0] == 'stop-db' and api.describe(root)['database_kind'] == 'external':
+            raise ValueError('A külső SQL-szolgáltatást az alkalmazás nem állítja le.')
         stream = io.StringIO()
         old = sys.argv
         try:

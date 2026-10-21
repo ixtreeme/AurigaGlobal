@@ -368,6 +368,9 @@ class ExternalSqlTests(unittest.TestCase):
         from types import SimpleNamespace
         import inspect
         namespace = dict(vars(manage), os=SimpleNamespace(name='posix'))
+        # A copied Windows package must still use the FreeBSD system database.
+        (self.root / 'run/mariadb').mkdir(parents=True)
+        (self.root / 'run/mariadb/owner.json').write_text('{"binary_dir":"D:/old/mariadb"}')
         callback = mock.Mock()
         namespace['external_database_check'] = callback
         exec(inspect.getsource(manage.database_check), namespace)

@@ -358,6 +358,18 @@ A távoli folyamatkezelés az **Áttekintés** oldalon használható, az előké
 JSON-csomag saját felügyelőjével. FreeBSD-n a folyamat azonosításához a PID,
 a kezdési idő és a futtatható állomány együtt szükséges; nem igényel procfs-t.
 Azonos forrásból készült FreeBSD-binárisok és friss vezérlőszkriptek kellenek.
+FreeBSD-n az SQL külső szolgáltatás: a kezelő a `server.json` tényleges SQL-kapcsolatait
+ellenőrzi, a közös beállítások és a Database/LoginServer/game core felülírásainak
+összefésülésével. A célgépen található `mariadb` vagy `mysql` kliens adatbázisonként
+`SELECT 1` lekérdezést futtat. A kártya az elérhető, részben elérhető, hibás és
+nem ellenőrizhető kapcsolatokat külön jelzi; a részletekben a cím, port és adatbázis
+látható. A jelszó privát ideiglenes opciófájlba kerül, a naplóba és a cache-be nem.
+A `run/sql-status.json` privát cache legfeljebb 30 másodperces; az **Állapot frissítése**
+és az újracsatlakozás azonnal újra ellenőriz, konfigurációváltozásnál a cache érvénytelen.
+A **SQL-kapcsolatok ellenőrzése** a teljes indulási referenciaadat-ellenőrzést végzi.
+A külső SQL-t az app nem inicializálja, nem indítja és nem állítja le; a helyi
+MariaDB-gombok távoli FreeBSD-n rejtettek. A Windows-csomagból átmásolt
+`run/mariadb/owner.json` nem teszi helyivé a FreeBSD-s adatbázist.
 Külső rc.d/screen/tmux indítást a kezelő nem vesz át automatikusan:
 annak átállítása és a teljes kiadás élesítése külön telepítési feladat.
 A fájlfeltöltés már listát készít, ideiglenes helyre tölt, ellenőriz és ment
