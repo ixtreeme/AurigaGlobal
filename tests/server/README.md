@@ -2,47 +2,17 @@
 
 ## Server audit fixes (2026-10-18)
 
-CTest is enabled at the project root. The `ServerTests` target builds all 48
-server test executables, including the ones excluded from the default build;
+CTest is enabled at the project root. With Python available, 53 server tests
+are registered. The `ServerTests` target builds all native server test
+executables, including the ones excluded from the default build;
 each registered test carries the `server` label and a 60-second timeout.
 
 ```powershell
-cmake --build build --config RelWithDebInfo --target GameServer LoginServer Database ServerTests --parallel 8
+cmake --build build --config RelWithDebInfo --target GameServer LoginServer Database ServerTests --parallel 2 -- /p:CL_MPCount=2
 ctest --test-dir build -C RelWithDebInfo -L server --output-on-failure --parallel 4
-cmake --build build-asan --config RelWithDebInfo --target GameServer LoginServer Database ServerTests --parallel 8
+cmake --build build-asan --config RelWithDebInfo --target GameServer LoginServer Database ServerTests --parallel 2 -- /p:CL_MPCount=2
 ctest --test-dir build-asan -C RelWithDebInfo -L server --output-on-failure --parallel 4
 ```
-
-SpatialLifecycleTests now executes the production `CInputMain::Move` with a real
-descriptor object over controlled transport/services, then the real movement
-tick. Destination publication belongs to the movement command. Active timing
-retains its start, duration and origin until arrival; interpolation uses elapsed
-milliseconds, including counter rollover. Tests cover identical timestamps,
-fine/coarse update cadence, lagged arrival, point/mount speed budgets and the
-existing spatial/reentrancy contracts. Older spatial fixtures now supply an
-explicit time interval instead of relying on a fixed distance per update.
-
-LoginAuthTests covers one attempt per session through both the account lookup
-and the Database acknowledgement. SQL failure, registration refusal, offline
-link and disconnect release the pending account and session reference; late
-results cannot authenticate a closed connection. LoginDbLinkTests exercises
-real loopback framing with unique echoed request handles, out-of-order results,
-unknown/duplicate results, malformed ACKs, disconnect and a ten-second
-registration deadline. No new wire fields are introduced: the existing GD/DG
-handle identifies the request.
-
-LoginLimiterTests checks that an existing session never exempts new connections
-from the burst block, and that the per-address cap of 128 simultaneous login
-sessions is released on close. Existing sessions are retained. The pre-existing
-30 connections per ten-second window and credential locks remain in effect.
-
-CharacterSelectionTests covers all 256 byte-sized character indices, empty and
-non-renamable slots, authentication, unterminated names and the name policy over
-the production outgoing rename-request builder. PlayerLoadTests executes the
-same secondary-skill normalization the Database uses: old and new skill costs
-are added, caps and low levels are retained, and repeated loads do not refund
-spent points. These tests use controlled services; live SQL, client rendering
-and production deployment still require integration verification.
 
 ## Shared server configuration (2026-10-19)
 
@@ -94,6 +64,83 @@ existing output archive before writing it.
 normal/skill animation durations are returned in seconds, movement speeds
 retain px/s, and invalid durations become unknown. ServerConfigTests also
 rejects mismatched shutdown PID/token pairs and consumes only the owned request.
+
+## Qt6 server manager (2026-10-20)
+
+`ServerBackupTests.py --backup <adapted folder> --mariadb-bin <bin>` passes 8
+tests including actual MariaDB import, all-table count/checksum verification,
+nonempty-database refusal and automatic rollback after injected partial failure.
+The source schema additionally passes 365 SQL prepare/execution checks and 175
+invariants on MariaDB 11.4.13. Package tools now have 21 tests, including headerless
+Dragon Soul row preservation and bundled-runtime/existing-data guards. Windows
+venv lifecycle fixtures use the base interpreter so child PIDs match native processes.
+
+`ServerManagerSshTests.py --gui` covers the remote-connection page:
+real OpenSSH configuration parsing for separate ProxyJump identities, strict
+host trust, shared SSH/SFTP routing, loopback-only forwards, profile locking,
+and Qt child-process failure, timeout and cleanup. All network fixtures use
+loopback; no production host is contacted. `server_manager_ssh` runs the
+Qt-independent portion under CTest. FreeBSD 15.1 execution, production service
+management and deployment remain separate integration work.
+
+`ServerManagerPasswordTests.py` covers migration of old key-only profiles,
+memory-only credentials, authenticated askpass requests, cleanup and rejection
+of missing passwords or unrelated prompts. Its `--gui` mode checks the masked
+password field and profile save. `--native --gui` additionally uses a disposable
+Paramiko loopback server with the actual OpenSSH and SFTP clients: different
+jump/target passwords, UTF-8 passwords, untouched RPC stdin, batch upload,
+local forwarding, Qt probe, wrong password and strict host trust. First-contact
+coverage includes exact SHA-256 approval and persistence, rejection before
+authentication, changed-key refusal, both ProxyJump hops, SFTP without a prior
+probe, a real CMake/Ninja worker build over SSH and the Qt confirmation with
+paused connection timeout. Closing a pending approval must not leave a late
+dialog or accept the host. Paramiko is a
+test-only dependency; the installed GUI continues to use Windows OpenSSH.
+PAM tests advertise only keyboard-interactive authentication, exercise both
+FreeBSD password prompts, SSH RPC reconnection, Qt probe, first-contact SFTP,
+separate ProxyJump credentials and the real build worker. OTP/password-change
+prompts must receive no stored password; repeated challenges or fallback
+between password/PAM cannot resubmit the secret within one SSH process.
+`--askpass-exe <AurigaServerManager.exe>` tests the frozen helper too.
+`server_manager_password` runs the dependency-free checks under CTest.
+Remember-password coverage includes an actual Windows Credential Manager
+write/read/delete with a unique temporary credential, restoration in a fresh
+interpreter and the frozen worker, checkbox save/clear, profile deletion,
+endpoint changes, absent plaintext profile secrets and rollback on profile-write
+or vault failure. Existing key-only and session-only profiles default to no
+persistent credential storage.
+Password-mode UI checks also require inactive private-key/identity fields to
+be disabled and hidden; invalid hidden drafts cannot block profile saves.
+Saving an active profile with a changed route leaves it disconnected until
+explicit connection, without SSH or local key-file checks during the save.
+
+Remote build preflight tests cover the FreeBSD non-interactive PATH, missing
+Ninja stopping before CMake with an installation hint, recovery from a cached
+NOTFOUND build tool, explicit tool overrides and generator conflicts without
+cache deletion. The Qt status must display the concrete worker error.
+`SystemDependencyTests.py` configures the production system-dependency module
+with isolated SDK fixtures: classic MySQL headers, recovery from an empty old
+cache, explicit include overrides and MariaDB forwarding headers. It requires
+CMake and Ninja, without a C/C++ compiler or a database process.
+It also checks that an absent nlohmann JSON SDK fails configuration with the
+FreeBSD package command, before any C++ compilation begins.
+
+[server_manager.md](../../docs/server_manager.md) covers the packaged PySide6
+application. `server_manager_tools` exercises file ownership, optimistic edit
+conflicts, exact backups, failed-validation rollback, native configuration/Lua
+checks, encoding preservation and the guarded GUI installer. The explicit run
+with `--package D:/AurigaGlobal/Server2-Local` passed 18/18 on disposable fixtures.
+The normal CTest invocation omits that optional native integration case.
+
+With the Qt environment, `ServerManagerGuiTests.py --package <release>` passed
+11/11: masked forms, real keyboard editing and asynchronous save, rejected port
+collision, typed tables, JSON view/row operations and Latin1/CRLF Lua editing.
+They also exercise sparse inherited overrides/reset, invalid draft retention,
+save-while-typing and toolbar visibility at 1100 px with long file names. These tests
+copy the release first and never initialize MariaDB. Frozen executable workers
+also pass all 15 native configuration checks, data parsing and TLS checks.
+GUI updates preserve operator edits to config/data and their original manifest
+hashes, back up replaced GUI files, and reject externally changed GUI binaries.
 
 ## Server audit coverage
 
@@ -2334,4 +2381,25 @@ despite broken pending source edits. It is registered as CTest `quest_hotreload`
 These fixtures open no game/SQL ports and require no player credentials.
 The manager backend and SSH GUI tests cover live saves under the publication
 lock, restricted edit scope and the asynchronous remote reload command.
+
+## Shared local/SSH targets (2026-10-21)
+
+Run `build/server-manager-env/Scripts/python.exe -B tests/server/ServerManagerTargetTests.py`
+after building the native package validators. The suite sends the production
+standard-library package RPC through local subprocess pipes instead of SSH.
+It verifies remote inventory, encoding, server-side native validation, exact
+backups/restoration, external edit conflicts, path boundaries, detached start
+and stop, protocol version checks, and redacted log reads.
+
+The Qt tests use two independent disposable packages. They check that the
+overview, channels, configuration and documents follow the selected target;
+remote saves never modify the local package; failed connections disable
+operations; in-flight writes and unsaved edits prevent target switching; and
+late or mismatched responses cannot replace another target's content.
+No real SSH host, database or game process is contacted.
+
+`ServerPackageToolsTests.py` also covers the FreeBSD/system-MariaDB branch:
+per-role option files, password escaping/private cleanup, connection failure,
+table-postfix rules, read-only readiness checks and absence of local SQL
+bootstrap/start side effects. It remains part of CTest `server_package_tools`.
 
