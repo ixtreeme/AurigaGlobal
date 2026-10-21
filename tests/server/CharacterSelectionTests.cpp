@@ -28,12 +28,13 @@ int main()
         }
         Check(nameChecks == PLAYER_PER_ACCOUNT, "invalid index reached name validation");
         Check(output.pid == 42 && std::string(output.name) == "ValidName", "valid request lost player or name");
-        request.index = 4;
-        account.players[4].bChangeName = false;
+        static_assert(PLAYER_PER_ACCOUNT == 4, "Only four character slots are supported");
+        request.index = PLAYER_PER_ACCOUNT - 1;
+        account.players[PLAYER_PER_ACCOUNT - 1].bChangeName = false;
         Check(PrepareChangeName(account, request, output) == Result::Ignore, "unrequested rename allowed");
-        account.players[4].bChangeName = true; account.players[4].dwID = 0;
+        account.players[PLAYER_PER_ACCOUNT - 1].bChangeName = true; account.players[PLAYER_PER_ACCOUNT - 1].dwID = 0;
         Check(PrepareChangeName(account, request, output) == Result::Ignore, "empty slot accepted");
-        account.players[4].dwID = 42;
+        account.players[PLAYER_PER_ACCOUNT - 1].dwID = 42;
         std::memset(request.name, 'x', sizeof(request.name));
         const auto before = nameChecks;
         Check(PrepareChangeName(account, request, output) == Result::InvalidName && nameChecks == before,

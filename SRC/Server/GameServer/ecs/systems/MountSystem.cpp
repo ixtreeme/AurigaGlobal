@@ -389,7 +389,8 @@ void MountSystem::QueryMountInventory(entt::entity e)
         request,
         "SELECT id, slot, vnum, count, socket0, socket1, socket2, "
         "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
-        "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5 "
+        "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5, "
+        "attrtype6, attrvalue6, attrtype7, attrvalue7 "
         "FROM account_mount_inventory WHERE account_id=%u ORDER BY slot",
         accountId);
 }

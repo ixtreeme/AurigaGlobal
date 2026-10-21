@@ -1,206 +1,150 @@
-# Adatbazis sema audit (kod alapjan)
+# SQL-séma forrásaudit és ellenőrzés — 2026-10-18
 
-Ez a dokumentum a `db/schema.sql` melletti tipusaudit: hol ter el a kod
-altal elvart adattipus/meret a tipikus (vagy a kodban keverten hasznalt)
-MySQL tipusoktol, illetve mely oszlopok hianyozhatnak a valos DB-bol.
-Minden allitas mellett forras (`fajl:sor`) szerepel.
+## Kiegészítés — 2026-10-20
 
-A `db/schema.sql` a kodbol kovetkeztetett teljes DDL (98 tabla). Ez az audit
-a **kockazatos pontokat** gyujti ossze, prioritás szerint.
+A tényleges mentés alapján a mob szöveg/numerikus tárolása, talisman mezők és
+előjeles pénznapló-azonosítók szélesebbek; a level log, bónuszdefiníció és
+birodalomváltási táblák felesleges egyedisége megszűnt, az affect kulcsába a
+`lApplyValue` is bekerült. Így nem szükséges érvényes régi sorokat eldobni.
+Az oszlopok sorrendje és a C++ bináris mezők nem változtak. MariaDB 11.4.13:
+102 tábla, 365 SQL prepare/végrehajtás, 175 invariáns, 0 feloldatlan hiba.
+Részletes adatmegőrzés és ismert korlátok:
+[helyreállítási jelentés](../docs/database_restore_2026-10-20.md).
 
----
+A korábbi következtetett vázlat helyét a [schema.sql](schema.sql) átveszi:
+**102 létrehozható tábla, négy adatbázisban**, valódi MariaDB-n ellenőrizve.
+Telepítés: [README.md](README.md). A korábbi audit 98 táblára, bizonytalan
+routingra és TODO-oszlopokra vonatkozó állításai már nem az aktuális állapotot
+írják le; ez a dokumentum felülírja azt az auditot.
 
-## 1. Modszer es korlatok
+## Forrás és módszer
 
-- Oszlopnevek: kizarolag literalis SQL-bol. Pozicionalis INSERT-nel a nev
-  `TODO(verify name)` jelolest kapott (log DB egy resze).
-- Tipusok: C++ struct mezok (`SRC/Server/common/tables.h`, `length.h`) es
-  printf formatumok (`%d/%u/%lld/%s`) alapjan.
-- A repo nem tartalmaz `CREATE TABLE`-t (csak a 2026_04_15 migraciot), a valos
-  elo sema nincs meg ehhez a repohoz -> az eltereseket ELES DB-n kell
-  ellenorizni a 8. pont SQL-jeivel.
-- Nem volt cel a default ertekek/NULL-ok pontos rekonstrukcioja; ezek a
-  schema.sql-ben javaslatok.
+A teljes `SRC/Server` C++ forrásállomány SQL-literáljainak leltára készült,
+a `common/service.h`, `common/CommonDefines.h` és a Database saját
+`ENABLE_PROTO_FROM_DB` definícióival. Az ellenőrzött profil üres tábla-postfixet
+és latin1/UTF-8 kapcsolatot használ, utf8mb4 tárolással. A történeti
+`72e9bc79:player.sql` DDL a pozicionális mezőnevek egyeztetéséhez szolgált
+kiegészítésként, nem változatlanul átvett telepítési dumpként.
 
-Jelolesek: **P0** = bizonyitottan szuk lehet (tulfolyas/adatvesztes),
-**P1** = kevert vagy tobbjelentesu tipus, **P2** = hianyzo oszlop/migracio,
-**P3** = bizonytalan nev, **P4** = DB-routing bizonytalansag.
+A [source_sql.py](tools/source_sql.py) komment- és stringtudatos lexikai leltár,
+korlátozott feltételesfordítás-kezeléssel, **nem teljes C++ fordító vagy
+vezérlésifolyam-elemző**. Az SQL-paramétereket reprezentatív értékek helyettesítik.
+A több hívásban összeálló queryk áttekintett szerződései a
+[sql_assemblies.json](sql_assemblies.json) és
+[sql_assemblies.py](tools/sql_assemblies.py) fájlokban vannak. A builderforrások
+LF-re normalizált SHA256-ujjlenyomata változáskor felülvizsgálatot kényszerít ki;
+az eltűnt szerződések is hibát okoznak. Feature-váltáskor az összeállításokat és
+az enumokat újra kell ellenőrizni.
 
----
+| Forrás | Szerződés |
+|---|---|
+| `common/tables.h`, `length.h`, `item_length.h` | C++ mezőszélességek, packed BLOB-ok, inventory- és apply-azonosítók |
+| `Database/player_create.cpp`, `player_save.cpp`, `ClientManagerPlayer.cpp` | Karakter létrehozása, mentése, betöltése és törlési archívuma |
+| `Database/ClientManagerBoot.cpp` | Proto-, skill-, bónusz- és bolttáblák, nyelvi oszlopok, mirror INSERT-ek |
+| `Database/Cache.cpp`, `ItemAwardManager.cpp`, `ClientManagerOfflineshop.cpp`, `OfflineshopCache.cpp` | Itemek, jutalmak, nyolc bónusz, offline boltok, aukciók és valuták |
+| `GameServer/pet/MountInventory.cpp`, `ecs/systems/MountSystem.cpp` | Fiókszintű mount-raktár player routingja és teljes rekordja |
+| `Database/ClientManager.cpp`, `GameServer/core/config.cpp` | Locale és pozíció szerint olvasott itemshop rekordok |
+| `GameServer/core/log.cpp`, `LoginServer` | Log-adatbázis pozicionális INSERT-ek, account- és loginmezők |
 
-## 2. P0 - Meret/tipus kockazatok (bizonyitek a kodban)
+A táblák eloszlása: `player` **69**, `common` **7**, `account` **3**, `log`
+**23**. Mind InnoDB és `utf8mb4_unicode_ci`, dinamikus sorformátummal. Egyes
+történeti/opcionális táblák megmaradtak; nincs adatot törlő DDL.
 
-| Tabla.Oszlop | Kod elvaras | Javasolt tipus | Bizonyitek | Kockazat |
-|---|---|---|---|---|
-| `account.coins` | int64 (`%lld`) | `BIGINT` | `PlayerRuntimeSystem.cpp:1584-1587` (int64_t), `:1600` (`%lld`); mas helyeken `%u`: `:2127`, `ClientManager.cpp:4276,4820` | A `%u`-s irasok 4 294 967 295 felett csorbulnak; ha a DB `INT`, minden 4.29Mrd feletti coin elveszik |
-| `player.gold` | int64 (`%lld`) | `BIGINT` | `ClientManagerPlayer.cpp` UPDATE `gold = %lld`; `tables.h:457` int64_t | Yang tulfolyas 4.29Mrd felett |
-| `guild.gold` | int64 (`%lld`) | `BIGINT` | `GuildManager.cpp:773` | Guild bank tulfolyas |
-| `log.money_log.gold` | int64 (`%lld`) | `BIGINT` | `log.cpp:148` | Logolt osszeg csorbul |
-| `player.r0`..`r19` | long long (`%lld`) | `BIGINT` | `ClientManagerPlayer.cpp` `r0 = %lld`; `tables.h:136` | Leaderboard ertekek tulfolyasa |
-| `mob_proto.max_hp` | uint64 | `BIGINT UNSIGNED` | `tables.h:545` uint64_t `dwMaxHP` | Nagy HP-jú mobok (custom szerverek) csonkulasa |
-| `item_proto.gold`, `item_proto.shop_buy_price` | int64 | `BIGINT` | `tables.h:711-712` int64_t | Magas aru itemek tulfolyasa |
-| `shop_item.gold` | int64 | `BIGINT` | `tables.h:655` int64_t `price` | Shop arak tulfolyasa |
-| `player.exp` | uint32 (`%u`) | `INT UNSIGNED` (nagy level eseten `BIGINT`) | `tables.h:455` uint32_t; `exp_table` ertekek gyorsan nonek | 4.29Mrd XP felett tulfolyas magas levelu szerveren |
-| `player.hp`, `player.mp` | int32 | `INT` | `tables.h:471` `int hp` | Ha a harcos max HP > INT (proto `max_hp` uint64), a perzisztalt HP nem fer el -> `BIGINT` javasolt ott, ahol ilyen build van |
+## A korábbi vázlat javításai
 
-Megjegyzes: a `player.playtime` (`uint32`, `%u`) ~136 evig eleg, nem kockazat.
-A `safebox.gold` szandekosan `uint32` a structban; ha 4.29Mrd feletti raktar
-yang kell, ott is `BIGINT` kell.
+| Terület | Végleges szerkezet és indok |
+|---|---|
+| Account jelszó | `VARCHAR(128)`; a korábbi 16 karakter nem tárolta a jelenlegi MariaDB `PASSWORD()` 41 karakteres hashét |
+| DB-routing | `account_mount_inventory` és `sms_pool` a **player** adatbázisban; a forrás player kapcsolata éri el őket |
+| Extra proto | Hat mező pontos sorrendben: `vnum`, `rarity`, `bonus_type0`, `bonus_value0`, `bonus_type1`, `bonus_value1` |
+| Offline valuták | `offlineshop_safebox_valutes(owner_id,yang,cheque)`; egy INSERT kikapcsolt cheque feature mellett is nevesíti a cheque mezőt |
+| String tábla | `player.string(name,text)` a forrásbeli lekérdezéshez |
+| Nyelvi protók | `locale_name` és a tíz aktív `locale_name_*` oszlop is rendelkezésre áll |
+| Itembónuszok | Mindhárom `item_attr*`.`apply` valódi ENUM; az `apply+0` a C++ azonosítóját adja |
+| Apply-azonosítók | Az explicit 97-es folytatás előtti 92–96-os helyek fenntartva; a 122–126-os típusok az aktuális forrássorrendet követik |
+| Inventory-ablak | Az ENUM első eleme INVENTORY=1. A C++ RESERVED_WINDOW=0 nem kerül elé, mert eltolná a többi azonosítót |
+| Guild skillek | `BINARY(12)` teljes, nullázott alapértékkel; a natív másolat mérete és bájtjai kódolástól függetlenek |
+| Player BLOB | NULL esetén marad a loader nullázó fallback; nem NULL esetén CHECK rögzíti a 2550 bájtos skill és 108 bájtos quickslot méretet |
+| Itemshop dátumok | `offerTime` és `addedTime` nem NULL, a feltétel nélküli natív stringolvasóhoz igazítva |
+| 64 bites adatok | Coin, yang, ranglista, HP/SP, eventflag és lóhatáridő a jelenlegi C++ signed/unsigned szélességet követi |
+| Itemadatok | Három socket és mind a nyolc bónuszpár a használt item-, award-, mount- és offline tárolókban |
+| Indexek | Account/owner/ID keresések; antifarm login/hwid indexek, blocked_hwids kulcs |
 
----
+A skill BLOB 255 darab packed `TPlayerSkill` (1+1+8 bájt), a quickslot 36 darab
+packed `TQuickslot` (1+2 bájt). Ez a jelenlegi build bináris szerződése;
+struktúraváltozáskor adatkonverzió is kell. A NULL fallback nem tesz érvényessé
+egy régi, rövidebb, nem NULL BLOB-ot.
 
-## 3. P1 - Kevert / tobbjelentesu oszlopok
+A régi SQL apply-nevek közül az azonos numerikus értékű neveket megőriztük,
+például `MAGIC_ATT_GRADE_BONUS`, `ATT_BONUS_TO_WARRIOR`, `Danni Medi[PVM]`,
+`ATTBONUS_RUNE`. A C++/SQL névmegfeleltetés explicit a
+[schema_checks.py](tools/schema_checks.py) fájlban. Régi balancing dump vakimportja
+a mezőméretek és az utolsó ENUM-azonosítók miatt nem ellenőrzött import.
 
-| Oszlop | Problema | Javaslat |
-|---|---|---|
-| `player.item.window` | A kod KET formaban hasznalja: szovegesen (`window='SAFEBOX'`, `window in ('INVENTORY',...)`; `ClientManagerPlayer.cpp:432,529`, `ClientManager.cpp:811`) es numerikusan (`window=%d`, `window+0`; `Cache.cpp:137,149`, `ClientManagerPlayer.cpp:426`) | `ENUM` az `EWindows` sorrendben (`length.h:669-690`). Ha a valos DB `VARCHAR`, a numerikus irasok/`window+0` latens hiba |
-| `player.last_play` | Iras `NOW()`, olvasas `UNIX_TIMESTAMP(last_play)` | `DATETIME` |
-| `player.battle_pass_end` | Iras `FROM_UNIXTIME(%d)`, olvasas `UNIX_TIMESTAMP(...)` | `DATETIME` |
-| `log.loginlog2.playtime` | `TIMEDIFF(...)` iras | `TIME` (ha INT masodperc a valos DB, a kodnak kell igazodnia) |
-| `player.item.socket0..2` | 3 db socket; a socket2 idobelyeges unique-oknal unix idot tarol (`ClientManager.cpp:906,979`) | elojeles `INT`; szukebb (pl. `SMALLINT`) tipus 2038 utan/adatvesztes kockazat |
-| `player.item.attrvalue0..7` | `short` -> `SMALLINT` | Ha 32767 feletti bonus kell, `INT` |
-| `player.item.lockedattr` | `short`, ertek `-1` is (`input_db.cpp:418`) | elojeles `SMALLINT` |
-| `player.affect.bType` | A forkban `uint32_t dwType` (`tables.h:936-944`), sok base-ben `SMALLINT UNSIGNED` | `INT UNSIGNED` |
-| `player.player_index.ch` | Build flag (`ENABLE_GENERAL_CH`) jelenleg KI van kapcsolva, de a literalis SQL-ben szerepel | hagyni a tablaban, vagy kapcsolni a definet |
-| `player.money_log`, `lotto_list`, `change_empire` | Kulonleges/egyedi oszlopnevek, csak kodbazisbol | Nev-tipus ellenorzes lentebb (P3) |
+Nem kerültek be idegen kulcsok vagy egyedi inventory-slot megkötések: a cache-ek
+és az aszinkron itemmozgatás több SQL-lépésből állnak. Új ilyen megszorítások
+tranzakciós forrásmódosítást és külön tesztet igényelnének.
 
----
+## Három szükséges forrásjavítás
 
-## 4. P2 - Hianyzo oszlopok / migraciok (a kod mar hasznalja!)
+1. `Database/ClientManagerPlayer.cpp`: a skill-color SELECT-ből hiányzott a
+   vessző az `s10_col5` után. MariaDB aliasnak vette a következő mezőt: 54 mező
+   jött vissza az olvasott 55 helyett. Az ellenőrző most rögzíti az 55 mezőt.
+2. `Database/ClientManagerBoot.cpp`: az ötbónuszos item-proto mirror INSERT két
+   névoszlopága öt apply-párt sorolt fel, de háromhoz adott értéket.
+   A formátum és az argumentumlista kiegészült a negyedik/ötödik párral.
+3. `GameServer/ecs/systems/MountSystem.cpp`: a mount-raktár SELECT hat
+   bónuszpárt kért a mentett/feldolgozott nyolcból. Most mind a nyolcat lekéri;
+   az ellenőrző rögzíti a 23 eredménymezőt.
 
-1. `player.item.attrtype7`, `attrvalue7` - a SELECT/REPLACE mar tartalmazza
-   (`ClientManagerPlayer.cpp:431`, `ClientManager.cpp:1575`), a migracio:
-   `SRC/Server/Database/sql/2026_04_15_add_8th_bonus.sql`.
-2. `player.item_award.attrtype7`, `attrvalue7` - ugyanaz a migracio
-   (`ClientManager.cpp:1006-1031`).
-3. `player.offlineshop_shop_items.attr7/attrval7`,
-   `offlineshop_safebox_items.attr7/attrval7`, `offlineshop_auctions.attr7/attrval7`
-   - ugyanaz a migracio; a mento loop `ITEM_ATTRIBUTE_MAX_NUM=8`-ig jar
-   (`ClientManagerOfflineshop.cpp`).
-4. `account_mount_inventory.attrtype6/attrvalue6` - a mento loop 0..7-ig jar
-   (`MountInventory.cpp:172-195`, `ITEM_ATTRIBUTE_MAX_NUM=8`,
-   `item_length.h:28`), de a legacy dumpban es a migracioban csak a 7-es par
-   van benne. Ha a 6-os par hianyzik, a mentes SQL hibat dob.
-5. Build flag-hez kotott `player` oszlopok - ha az elo DB regi, ezek
-   hianyozhatnak (a kod viszont hasznalja oket):
-   `gaya`, `part_acce`, `envanter`, `battle_pass_end`, `r0..r19`,
-   `skill_victim`, `map1_skillmob`, `change_name`;
-   `player_index.hwid`; `player.item.lockedattr`.
-6. `guild.trophies` (`ADVANCED_GUILD_INFO`, service.h) es a
-   `guild_renewal_*` tablak (`ENABLE_GUILD_RENEWAL_BY_RAZOR93`).
-7. `common.locale.mValue`: `SKILL_POWER_BY_LEVEL` sorok hosszu listat
-   tartalmaznak (`config.cpp` feldolgozas), ezert `VARCHAR(32)` nem eleg:
-   `TEXT` (vagy nagyobb VARCHAR) kell.
-8. `item_extra_proto`: a betoltes `SELECT *` (`ClientManagerBoot.cpp:1174`),
-   az 5 oszlop neve/tipusa a kodbol nem allapithato meg (schema.sql TODO).
+Ezeket a futó szerverbinárisokban is alkalmazni kell: a DDL önmagában nem javítja
+a régi binárisok lekérdezéseit.
 
----
+## Ellenőrzési eredmény
 
-## 5. P3 - Bizonytalan oszlopnevek (pozicionalis INSERT)
+Elkülönített MariaDB **13.0.2**, Windows/MSVC, 2026-10-18:
 
-Ezeknel a kod csak ertekeket ad, oszlopnevet nem. A `db/schema.sql`-ben
-`TODO(verify name)` jeloles van; elo DB-vel egyeztetni kell:
+| Ellenőrzés | Eredmény |
+|---|---|
+| Friss DDL import, majd ismételt import | 102 tábla, mindkét import sikeres |
+| Aktív C++ SQL-leltár | 367 egyedi sablon |
+| Latin1/UTF-8: prepare és végrehajtás | **365/365**, 0 feloldatlan hiba |
+| SQL-ek komponensenként | Database 184, GameServer 176, LoginServer 5 |
+| Külön locale-ágak | 2 SJIS-specifikus sablon indokoltan kizárva |
+| Szerkezeti/adat-visszaolvasási invariánsok | **168/168** |
+| Normál és ASAN szerver CTest | **49/49**, mindkét buildben |
+| Natív PlayerCreateTests valódi SQL-lel | **136 ellenőrzés**, normál és ASAN |
+| Natív DatabaseTimeTests valódi SQL-lel | **109 ellenőrzés**, normál és ASAN |
+| Helyi aktív quest Lua-k statikus guild SQL-jei | **4/4** külön prepare és végrehajtás |
 
-- `log.money_log` (4 oszlop), `log.shout_log` (4), `log.fish_log` (8),
-  `log.quest_reward_log` (7), `log.dragon_slay_log` (4)
-- `player.ishop_data` (csak `SELECT *`, egyedul a `sellCount` nevesitett)
-- `player.money_log`, `player.lotto_list`, `player.change_empire`
-  (kodbeli nevek/ertekek alapjan)
-- `player.new_petsystem` evolution/evocation slot-oszlopok
-- `log.cheat_log` (a build flag jelenleg KI van kapcsolva)
+A DDL és az SQL-próbák strict módban futottak:
+`STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE`.
+A DML-próbák véletlen nevű saját adatbázisokban, visszagörgetéssel futnak.
+Az invariánsok a signed/unsigned 64 bites szélsőértékeket, a hash hosszát, a
+BLOB méretellenőrzést, a guild bináris bájtjait, minden aktív apply/window
+azonosítót és a pozicionális struktúrákat is mérik.
 
----
+A natív karakterteszt szándékosan hibás prepared statementet idéz elő az
+újracsatlakozás vizsgálatához; az ekkori 1243-as SQL-napló elvárt hibainjektálás,
+a teszt sikeresen zárult. A két natív teszt DDL-kiemelője kezeli az új
+táblabeállításokat; módosításuk után CTest-eseteik mindkét buildben újra lefutottak.
+A Python ellenőrző és az ideiglenes MariaDB teljes indítás/leállítás folyamata
+a mellékelt PowerShell scriptből is sikeresen futott.
 
-## 6. P4 - DB-routing bizonytalansagok
+## Korlátok és a még szükséges adatok
 
-A kod tobb helyen nem minositi a tablat, ezert a szerver-kapcsolat donti el,
-melyik adatbazisba kerul. Ezeket ellenorizni kell:
+- A prepare az SQL-szintaxist és oszlopokat, a reprezentatív végrehajtás az adott
+  próbát igazolja. Sok SELECT/UPDATE üres táblán fut; ez nem teljes játékmenet-
+  vagy minden lehetséges paraméterértéket lefedő teszt.
+- A hiányzó referenciaadatok nem állíthatók elő C++ típusokból. A seed két
+  konfigurációs sort ad; a readiness lekérdezés nyolc üres referenciatáblát jelez.
+  A szükséges saját játékadat-dump nincs a repóban.
+- Lua futás közben tetszőleges SQL-t építhet; erre a C++ leltár nem ad általános
+  garanciát. A helyi aktív Quest könyvtár négy statikus guild SQL-je külön volt
+  ellenőrizve. Külső web/admin rendszerek sémája nincs ebben a forrásban.
+- Nincs élő DB-migráció, FreeBSD/Linux futás, teljes szerverboot, újraindításos
+  játékmenet vagy Unity klienses integrációs próba. Az élő DB-t nem módosítottuk.
 
-| Tabla | Kodbeli kapcsolat | Megjegyzes |
-|---|---|---|
-| `priv_settings` | `SQL_COMMON` (`ClientManager.cpp:193`) | a schema `common` alatt van; ha az elo DB-ben player, at kell tenni |
-| `spam_db` | `AccountDB` = common (`network/db.cpp:581`) | `common` alatt |
-| `whisper_system_message` | `DBManager` default = player (`whisper_admin.cpp:184`) | **nem** a log DB-ben van |
-| `loginlog`, `loginlog2` | `LogManager` = log DB (`log.cpp:136,322`) | log DB |
-| `sms_pool` | Database default slot = player (`ClientManager.cpp:1930`), de a regi dumpban is player | a schema `account` alatt van (TODO) |
-| `account_mount_inventory` | GameServer `DBManager` (player kapcsolat, `config.cpp:337`), a migracio viszont `account`-ot minosit | ellenorizni kell a valos helyet |
-| `item_proto`, `mob_proto`, `object_proto`, `refine_proto`, `skill_proto`, `item_attr*`, `banword`, `land`, `object` | `CDBManager` default = `SQL_PLAYER` (`DBManager.h:43`) | player DB |
-| `locale`, `gmlist`, `gmhost`, `helperlist`, `exp_table` | `SQL_COMMON` / `AccountDB` | common DB |
-
----
-
-## 7. REPLACE / unique key kockazatok
-
-`REPLACE INTO` unique kulcs nelkul duplikal (MySQL INSERT-kent viselkedik) vagy
-véletlenszerűen torol. A kodbol kovetkezo kulcsok:
-
-- `player.item` -> `PRIMARY KEY (id)` (minden REPLACE id-t ad)
-- `player.affect` -> `UNIQUE (dwPID, bType, bApplyOn)` (REPLACE + DELETE szures)
-- `player.quest` -> `UNIQUE (dwPID, szName, szState)` (REPLACE + DELETE szures)
-- `player.player_index` -> `PRIMARY KEY (id)`
-- `player.safebox` -> `PRIMARY KEY (account_id)`
-- `player.skill_color` -> `PRIMARY KEY (player_id)` (REPLACE)
-- `player.horse_name` -> `PRIMARY KEY (id)` (REPLACE VALUES(?,?))
-- `player.priv_settings` -> unique `(priv_type, id, type)` (REPLACE ... SET)
-- `log.levellog` -> `PRIMARY KEY (name)` (REPLACE INTO)
-- `player.item` -> javasolt `UNIQUE (owner_id, window, pos)` az inventory
-  duplikacio ellen (a kod ezt nem garantalja)
-
----
-
-## 8. Ellenorzo SQL az elo DB-n
-
-Futtasd a szerveren, es hasonlitsd a `db/schema.sql`-hez:
-
-```sql
--- oszlopok es tipusok
-SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, COLUMN_TYPE,
-       IS_NULLABLE, COLUMN_DEFAULT, COLUMN_KEY, EXTRA
-FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA IN ('player','common','account','log')
-ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION;
-
--- indexek / unique kulcsok
-SELECT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, NON_UNIQUE,
-       GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS cols
-FROM information_schema.STATISTICS
-WHERE TABLE_SCHEMA IN ('player','common','account','log')
-GROUP BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, NON_UNIQUE;
-
--- a P0 tablak ellenorzese kulon
-SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, COLUMN_TYPE
-FROM information_schema.COLUMNS
-WHERE (TABLE_SCHEMA='account'   AND TABLE_NAME='account'   AND COLUMN_NAME='coins')
-   OR (TABLE_SCHEMA='player'    AND TABLE_NAME='player'    AND COLUMN_NAME IN ('gold','exp','hp','mp'))
-   OR (TABLE_SCHEMA='player'    AND TABLE_NAME='item'      AND COLUMN_NAME IN ('window','socket0','socket1','socket2'))
-   OR (TABLE_SCHEMA='player'    AND TABLE_NAME='guild'     AND COLUMN_NAME='gold')
-   OR (TABLE_SCHEMA='player'    AND TABLE_NAME IN ('item_proto','mob_proto'))
-   OR (TABLE_SCHEMA='log'       AND TABLE_NAME='money_log' AND COLUMN_NAME='gold');
-```
-
-Alter mintak (csak a fenti ellenorzes utan futtatni!):
-
-```sql
-ALTER TABLE account.account MODIFY coins BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE player.player      MODIFY gold BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE player.guild       MODIFY gold BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE log.money_log      MODIFY gold BIGINT NOT NULL;
-ALTER TABLE player.mob_proto   MODIFY max_hp BIGINT UNSIGNED NOT NULL DEFAULT 0;
-ALTER TABLE player.item        MODIFY window ENUM('RESERVED_WINDOW','INVENTORY','EQUIPMENT','SAFEBOX','MALL','MOUNT_INVENTORY','DRAGON_SOUL_INVENTORY','BELT_INVENTORY','EXTRA_INVENTORY','SWITCHBOT','GROUND','NEW_OFFSHOP','SHOP_SAFEBOX') NOT NULL DEFAULT 'INVENTORY';
-```
-
----
-
-## 9. Fontosabb forrasok
-
-- `SRC/Server/common/tables.h` - SPlayerTable, TPlayerItem, SMobTable,
-  SItemTable, TPacketAffectElement, TSafeboxTable
-- `SRC/Server/common/length.h`, `common/item_length.h` - meretek
-- `SRC/Server/Database/ClientManagerPlayer.cpp` - player/item/affect/quest
-- `SRC/Server/Database/Cache.cpp`, `ClientManager.cpp` - item, safebox, ishop
-- `SRC/Server/Database/ClientManagerBoot.cpp` - proto tablak
-- `SRC/Server/Database/ClientManagerGuild.cpp`, `GuildManager.cpp` - guild
-- `SRC/Server/Database/ClientManagerOfflineshop.cpp` - offlineshop
-- `SRC/Server/GameServer/core/log.cpp` - log DB
-- `SRC/Server/LoginServer/login_auth.cpp`, `login_hwid.cpp` - account
-- `SRC/Server/Database/sql/2026_04_15_add_8th_bonus.sql` - ismert migracio
+Ez ellenőrzött **friss telepítési séma**. A `CREATE IF NOT EXISTS` nem javít
+meglévő táblát; élő adatbázishoz állapotfelmérés és külön migráció kell.
+Az R12 kiadási/integrációs feladat továbbra is részben nyitott.

@@ -136,7 +136,7 @@ void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPack
 	LOG_INFO("LOGIN_BY_KEY success {} {} {}", r.login, p->dwLoginKey, info->ip);
 	char szQuery[QUERY_MAX_LEN];
 
-	snprintf(szQuery, sizeof(szQuery), "SELECT pid1, pid2, pid3, pid4, pid5, empire FROM player_index%s WHERE id=%u", GetTablePostfix(), r.id);
+	snprintf(szQuery, sizeof(szQuery), "SELECT pid1, pid2, pid3, pid4, empire FROM player_index%s WHERE id=%u", GetTablePostfix(), r.id);
 
 	CDBManager::instance().ReturnQuery(szQuery, QID_LOGIN_BY_KEY, pkPeer->GetHandle(), info);
 }
@@ -160,7 +160,7 @@ void CClientManager::RESULT_LOGIN_BY_KEY(CPeer * peer, SQLMsg * msg)
 		uint32_t account_id = info->pAccountTable->id;
 		char szQuery[QUERY_MAX_LEN];
 
-		snprintf(szQuery, sizeof(szQuery), "SELECT pid1, pid2, pid3, pid4, pid5, empire FROM player_index%s WHERE id=%u", GetTablePostfix(), account_id);
+		snprintf(szQuery, sizeof(szQuery), "SELECT pid1, pid2, pid3, pid4, empire FROM player_index%s WHERE id=%u", GetTablePostfix(), account_id);
 
 		std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(szQuery, SQL_PLAYER));
 
@@ -230,7 +230,7 @@ void CClientManager::RESULT_PLAYER_INDEX_CREATE(CPeer * pkPeer, SQLMsg * msg)
 
 	char szQuery[QUERY_MAX_LEN];
 
-	snprintf(szQuery, sizeof(szQuery), "SELECT pid1, pid2, pid3, pid4, pid5, empire FROM player_index%s WHERE id=%u", GetTablePostfix(),
+	snprintf(szQuery, sizeof(szQuery), "SELECT pid1, pid2, pid3, pid4, empire FROM player_index%s WHERE id=%u", GetTablePostfix(),
 			info->pAccountTable->id);
 
 	CDBManager::instance().ReturnQuery(szQuery, QID_LOGIN_BY_KEY, pkPeer->GetHandle(), info);
@@ -468,36 +468,17 @@ void CClientManager::RESULT_LOGIN(CPeer * peer, SQLMsg * msg)
 
 #ifdef ENABLE_GENERAL_CH
 			uint8_t ch = peer->GetChannel();
-			std::string pids = std::to_string(info->pAccountTable->players[0].dwID);
-			for (int i = 1; i < 5; i++) {
-				pids += ", ";
-				pids += std::to_string(info->pAccountTable->players[i].dwID == 0 ? -1 : info->pAccountTable->players[i].dwID);
-			}
-
 			char query[512];
 
 			if (ch != 99) {
 				info->pAccountTable->bChannel = ch;
-				snprintf(query, sizeof(query), "UPDATE player_index%s SET ch=%d WHERE pid1 IN (%s) OR pid2 IN (%s) OR pid3 IN (%s) OR pid4 IN (%s) OR pid5 IN (%s)",
-												GetTablePostfix(),
-												ch,
-												pids.c_str(),
-												pids.c_str(),
-												pids.c_str(),
-												pids.c_str(),
-												pids.c_str()
-				);
+				snprintf(query, sizeof(query), "UPDATE player_index%s SET ch=%d WHERE id=%u",
+					GetTablePostfix(), ch, info->pAccountTable->id);
 
 				std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(query, SQL_PLAYER));
 			} else {
-				snprintf(query, sizeof(query), "SELECT ch FROM player_index%s WHERE pid1 IN (%s) OR pid2 IN (%s) OR pid3 IN (%s) OR pid4 IN (%s) OR pid5 IN (%s)",
-												GetTablePostfix(),
-												pids.c_str(),
-												pids.c_str(),
-												pids.c_str(),
-												pids.c_str(),
-												pids.c_str()
-				);
+				snprintf(query, sizeof(query), "SELECT ch FROM player_index%s WHERE id=%u",
+					GetTablePostfix(), info->pAccountTable->id);
 
 				std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(query, SQL_PLAYER));
 				if (pMsg->Get()->uiNumRows && pMsg->Get()->pSQLResult) {

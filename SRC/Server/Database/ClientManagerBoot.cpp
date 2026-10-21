@@ -1419,6 +1419,9 @@ bool CClientManager::MirrorItemTableIntoDB()
 				"%u, %d, %u, %u, %d, " //20
 				"%u, %d, %u, %d, " //24
 				"%u, %d, %u, %d, %u, %d, " //30
+#ifdef ENABLE_APPLYTYPE5_RAZOR93
+				"%u, %d, %u, %d, "
+#endif
 				"%d, %d, %d, %d, %d, %d )", //36
 				GetTablePostfix(), g_stLocaleNameColumn.c_str(), //2
 				t.dwVnum, t.bType, t.bSubType, t.szName,
@@ -1432,6 +1435,9 @@ bool CClientManager::MirrorItemTableIntoDB()
 				t.dwRefinedVnum, t.wRefineSet, t.bAlterToMagicItemPct, t.bGainSocketPct, t.sAddonType, //20
 				t.aLimits[0].bType, t.aLimits[0].lValue, t.aLimits[1].bType, t.aLimits[1].lValue, //24
 				t.aApplies[0].bType, t.aApplies[0].lValue, t.aApplies[1].bType, t.aApplies[1].lValue, t.aApplies[2].bType, t.aApplies[2].lValue, //30
+#ifdef ENABLE_APPLYTYPE5_RAZOR93
+				t.aApplies[3].bType, t.aApplies[3].lValue, t.aApplies[4].bType, t.aApplies[4].lValue,
+#endif
 				t.alValues[0], t.alValues[1], t.alValues[2], t.alValues[3], t.alValues[4], t.alValues[5]); //36
 			CDBManager::instance().AsyncQuery(query);
 		}
@@ -1460,6 +1466,9 @@ bool CClientManager::MirrorItemTableIntoDB()
 				"%d, %d, %d, %d, %d, "
 				"%d, %d, %d, %d, "
 				"%d, %d, %d, %d, %d, %d, "
+#ifdef ENABLE_APPLYTYPE5_RAZOR93
+				"%d, %d, %d, %d, "
+#endif
 				"%d, %d, %d, %d, %d, %d )",
 				GetTablePostfix(),
 				t.dwVnum, t.bType, t.bSubType, t.szName,
@@ -1468,6 +1477,9 @@ bool CClientManager::MirrorItemTableIntoDB()
 				t.dwRefinedVnum, t.wRefineSet, t.bAlterToMagicItemPct, t.bGainSocketPct, t.sAddonType,
 				t.aLimits[0].bType, t.aLimits[0].lValue, t.aLimits[1].bType, t.aLimits[1].lValue,
 				t.aApplies[0].bType, t.aApplies[0].lValue, t.aApplies[1].bType, t.aApplies[1].lValue, t.aApplies[2].bType, t.aApplies[2].lValue,
+#ifdef ENABLE_APPLYTYPE5_RAZOR93
+				t.aApplies[3].bType, t.aApplies[3].lValue, t.aApplies[4].bType, t.aApplies[4].lValue,
+#endif
 				t.alValues[0], t.alValues[1], t.alValues[2], t.alValues[3], t.alValues[4], t.alValues[5]);
 			CDBManager::instance().AsyncQuery(query);
 		}

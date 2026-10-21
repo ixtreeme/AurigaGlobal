@@ -156,7 +156,7 @@ void CClientManager::QUERY_SKILL_COLOR_LOAD(CPeer * peer, uint32_t dwHandle, TPl
 			"s7_col1, s7_col2, s7_col3, s7_col4, s7_col5, " // begin of buffs
 			"s8_col1, s8_col2, s8_col3, s8_col4, s8_col5, "
 			"s9_col1, s9_col2, s9_col3, s9_col4, s9_col5, "
-			"s10_col1, s10_col2, s10_col3, s10_col4, s10_col5 "
+			"s10_col1, s10_col2, s10_col3, s10_col4, s10_col5, "
 			"s11_col1, s11_col2, s11_col3, s11_col4, s11_col5 "
 			"FROM skill_color%s WHERE player_id=%u",
 			GetTablePostfix(), packet->player_id);

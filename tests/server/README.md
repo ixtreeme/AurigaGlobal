@@ -44,6 +44,39 @@ are added, caps and low levels are retained, and repeated loads do not refund
 spent points. These tests use controlled services; live SQL, client rendering
 and production deployment still require integration verification.
 
+## Source-derived MariaDB schema (2026-10-18)
+
+The fresh-install schema and deployment instructions are in
+[db/README.md](../../db/README.md). It contains 102 tables across four databases.
+The disposable Windows runner needs MariaDB binaries, Python 3.9+ and a matching
+Connector/C library:
+
+```powershell
+& ./db/tools/TestSchema.ps1 `
+  -MariaDBBin 'C:/Program Files/MariaDB 13.0/bin' `
+  -ClientLibrary 'C:/vcpkg/installed/x64-windows/bin/libmariadb.dll' `
+  -Python 'C:/path/to/python.exe'
+```
+
+It creates a TEMP data directory and random loopback port, verifies ownership,
+runs the validator and stops its own process, retaining logs and a JSON report.
+The validator inventories active C++ SQL and reviewed dynamic assemblies with
+source hashes; it is not a C++ compiler. MariaDB 13.0.2 passed 365 prepared and
+executed SQL templates plus 168 data/layout invariants. Two SJIS runtime-locale
+queries are explicitly excluded from the UTF8 profile.
+
+For native SQL modes, first create auriga_r1_r4_test and auriga_time64_test on a
+separate loopback test instance with an empty root password. Run
+PlayerCreateTests and DatabaseTimeTests with --sql <port> db/schema.sql; both
+use temporary tables. Their extractors support the schema's table options.
+They passed 136 and 109 checks respectively, in normal and ASAN builds. The
+character test intentionally invalidates a prepared statement to check recovery;
+the resulting 1243 error log is expected. These modes are separate from CTest.
+
+DDL validation does not supply game reference content or replace full-server,
+restart/persistence or Unity client tests. db/check_ready.sql reports missing
+reference data. Exact coverage limits are in the schema audit.
+
 ## Persisted time and fixed packet widths R7 (2026-10-18)
 
 Event flags use int64_t in the GameServer/Database API, maps and packets; horse

@@ -1,0 +1,82 @@
+{
+  "98998cb1cec7f78c": {
+    "kind": "item_cache",
+    "file": "SRC/Server/Database/Cache.cpp",
+    "source_hash": "0eee8d93844b04fb186b75693ac71eada5a8f83fc7d7e303e5ed9c2005c342e3"
+  },
+  "a0e64c40aa76fec2": {
+    "kind": "route_common",
+    "file": "SRC/Server/Database/ClientManager.cpp",
+    "source_hash": "f84706cbb08e05b0ab686a2d164ce3af2e7b84be53f57548446eef033eedfe1a"
+  },
+  "8d878f30b23dfa92": {
+    "kind": "item_award",
+    "file": "SRC/Server/Database/ClientManager.cpp",
+    "source_hash": "f84706cbb08e05b0ab686a2d164ce3af2e7b84be53f57548446eef033eedfe1a"
+  },
+  "577c95dc7f0f4f8a": {
+    "kind": "sjis",
+    "file": "SRC/Server/Database/ClientManager.cpp",
+    "source_hash": "f84706cbb08e05b0ab686a2d164ce3af2e7b84be53f57548446eef033eedfe1a"
+  },
+  "d4eab6222203daa7": {
+    "kind": "mob_proto",
+    "file": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "source_hash": "0053e4ca7f11debed9526669753827f557bd1823d02d7edc541656063c5a5e21"
+  },
+  "c4c5914529972903": {
+    "kind": "item_proto",
+    "file": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "source_hash": "0053e4ca7f11debed9526669753827f557bd1823d02d7edc541656063c5a5e21"
+  },
+  "d088e9566b80217b": {
+    "kind": "sjis",
+    "file": "SRC/Server/Database/ClientManagerLogin.cpp",
+    "source_hash": "16ed409bc6bbefdefbdab309f25b42542199ce5d0d447bea89995cc59404b920"
+  },
+  "714deeb7c8170b36": {
+    "kind": "shop_select",
+    "file": "SRC/Server/Database/ClientManagerOfflineshop.cpp",
+    "source_hash": "baea7afb10c0d326497b491ed65230aaec58ea2135c8ffa7f3d5d9cd1a1ffe0f"
+  },
+  "08e4b6bedf3d717c": {
+    "kind": "auction_select",
+    "file": "SRC/Server/Database/ClientManagerOfflineshop.cpp",
+    "source_hash": "baea7afb10c0d326497b491ed65230aaec58ea2135c8ffa7f3d5d9cd1a1ffe0f"
+  },
+  "43faf8c9873640cf": {
+    "kind": "shop_insert",
+    "file": "SRC/Server/Database/OfflineshopCache.cpp",
+    "source_hash": "7efb6f3672498608ae989c2ab3aa9f824437373391f19be61c700a9152ebb142"
+  },
+  "334e19193c322700": {
+    "kind": "safebox_insert",
+    "file": "SRC/Server/Database/OfflineshopCache.cpp",
+    "source_hash": "7efb6f3672498608ae989c2ab3aa9f824437373391f19be61c700a9152ebb142"
+  },
+  "c24fc73efe5a687f": {
+    "kind": "safebox_select",
+    "file": "SRC/Server/Database/OfflineshopCache.cpp",
+    "source_hash": "7efb6f3672498608ae989c2ab3aa9f824437373391f19be61c700a9152ebb142"
+  },
+  "72d62a20b7a09ff8": {
+    "kind": "auction_insert",
+    "file": "SRC/Server/Database/OfflineshopCache.cpp",
+    "source_hash": "7efb6f3672498608ae989c2ab3aa9f824437373391f19be61c700a9152ebb142"
+  },
+  "0b58c6570b34f0b4": {
+    "kind": "player_create",
+    "file": "SRC/Server/Database/player_create.cpp",
+    "source_hash": "abaebef3054812291781bb56aa24130c7da8d3759586c825d6efc60b6bc86956"
+  },
+  "35e4a2a2bc5e7382": {
+    "kind": "player_save",
+    "file": "SRC/Server/Database/player_save.cpp",
+    "source_hash": "640fb67e442e941ecf791be4d534e6491f3d592c8b4d99dd86509a95bd024ee8"
+  },
+  "760baa8793164ef0": {
+    "kind": "mount_save",
+    "file": "SRC/Server/GameServer/pet/MountInventory.cpp",
+    "source_hash": "5c0792327b2e9282fd25adaf3448e34bfcc7a9ccf873c242e25f2e41fea0257b"
+  }
+}

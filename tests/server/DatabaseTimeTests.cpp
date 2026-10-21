@@ -169,10 +169,10 @@ void PlayerSave() {
 std::string TableDDL(const std::string& schema, const std::string& name, const std::string& temporary) {
     const auto begin = schema.find("CREATE TABLE IF NOT EXISTS `player`.`" + name + "`");
     const auto columns = schema.find('(', begin);
-    const std::string suffix = ") ENGINE=InnoDB;";
-    const auto end = schema.find(suffix, columns);
+    const auto engine = schema.find(") ENGINE=InnoDB", columns);
+    const auto end = schema.find(';', engine);
     Check(begin != std::string::npos && columns != std::string::npos && end != std::string::npos, "missing schema table");
-    return "CREATE TEMPORARY TABLE " + temporary + " " + schema.substr(columns, end + suffix.size() - columns);
+    return "CREATE TEMPORARY TABLE " + temporary + " " + schema.substr(columns, end + 1 - columns);
 }
 void SqlChecks(TestClientManager& client, unsigned int port, const char* schemaPath) {
     std::ifstream file(schemaPath); Check(bool(file), "schema file unavailable");

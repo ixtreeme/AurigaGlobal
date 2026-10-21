@@ -39,10 +39,10 @@ void SqlRoundTrip(const PlayerCreateQuery& query, unsigned int port, const char*
     const auto begin = schema.find("CREATE TABLE IF NOT EXISTS `player`.`player`");
     Check(begin != std::string::npos, "player schema missing");
     const auto columns = schema.find('(', begin);
-    const std::string tableEnd = ") ENGINE=InnoDB;";
-    const auto end = schema.find(tableEnd, columns);
+    const auto engine = schema.find(") ENGINE=InnoDB", columns);
+    const auto end = schema.find(';', engine);
     Check(columns != std::string::npos && end != std::string::npos, "incomplete player schema");
-    const std::string create = "CREATE TEMPORARY TABLE player_test " + schema.substr(columns, end + tableEnd.size() - columns);
+    const std::string create = "CREATE TEMPORARY TABLE player_test " + schema.substr(columns, end + 1 - columns);
 
     CAsyncSQL sql;
     sql.SetTimeouts(5);

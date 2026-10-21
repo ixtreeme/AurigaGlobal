@@ -284,13 +284,13 @@ int ChangeEmpire(entt::entity e, uint8_t empire)
 
 	char query[1025];
 	snprintf(query, sizeof(query),
-		"SELECT pid1, pid2, pid3, pid4, pid5 FROM player_index%s WHERE id=%u AND empire=%u",
+		"SELECT pid1, pid2, pid3, pid4 FROM player_index%s WHERE id=%u AND empire=%u",
 		get_table_postfix(), accountID, GetEmpire(e));
 	std::unique_ptr<SQLMsg> message(DBManager::instance().DirectQuery(query));
 	if (!message || message->Get()->uiNumRows == 0)
 		return 0;
 
-	uint32_t playerIDs[5] {};
+	uint32_t playerIDs[PLAYER_PER_ACCOUNT] {};
 	MYSQL_ROW row = message->Get()->FetchRow();
 	for (size_t index = 0; index < std::size(playerIDs); ++index)
 	{

@@ -1268,7 +1268,7 @@ void CClientManager::QUERY_EMPIRE_SELECT(CPeer * pkPeer, uint32_t dwHandle, TEmp
 
 	LOG_INFO("EmpireSelect: {}", szQuery);
 	{
-		snprintf(szQuery, sizeof(szQuery),"SELECT pid1, pid2, pid3, pid4, pid5 FROM player_index%s WHERE id=%u", GetTablePostfix(), p->dwAccountID);
+		snprintf(szQuery, sizeof(szQuery),"SELECT pid1, pid2, pid3, pid4 FROM player_index%s WHERE id=%u", GetTablePostfix(), p->dwAccountID);
 
 		std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
 
@@ -1279,7 +1279,7 @@ void CClientManager::QUERY_EMPIRE_SELECT(CPeer * pkPeer, uint32_t dwHandle, TEmp
 			LOG_INFO("EMPIRE {}", pRes->uiNumRows);
 
 			MYSQL_ROW row = pRes->FetchRow();
-			int pids[3];
+			int pids[PLAYER_PER_ACCOUNT];
 
 			UINT g_start_map[4] =
 			{
@@ -1297,7 +1297,7 @@ void CClientManager::QUERY_EMPIRE_SELECT(CPeer * pkPeer, uint32_t dwHandle, TEmp
 	{ 969600, 278400 }
 			};
 
-			for (int i = 0; i < 3; ++i)
+			for (int i = 0; i < PLAYER_PER_ACCOUNT; ++i)
 			{
 				str_to_number(pids[i], row[i]);
 				LOG_INFO("EMPIRE PIDS[{}]", pids[i]);
