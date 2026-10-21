@@ -70,6 +70,9 @@ def status(api, root):
 
 def start_detached(api, root, arguments):
     manager = api.load_manager(root)
+    pending = api.pending_deployment(root)
+    if pending:
+        raise ValueError('Befejezetlen buildtelepítés; indítás előtt ellenőrizd a mentést és a naplót: ' + str(pending))
     state = status(api, root)
     if state['running'] or state.get('starting'):
         raise ValueError('A kiválasztott távoli szerver már fut vagy indul.')

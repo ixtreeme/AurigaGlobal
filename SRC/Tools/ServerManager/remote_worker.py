@@ -14,6 +14,7 @@ import subprocess
 import sys
 import threading
 import time
+import types
 
 
 def emit(message):
@@ -314,6 +315,13 @@ def build_job(request):
             signal.signal(sig, handler)
 
 
+def install_job(request):
+    module = types.ModuleType('_auriga_remote_deploy')
+    exec(compile(request['install_support'], '<auriga-remote-deploy>', 'exec'), module.__dict__)
+    module.deploy(request, types.SimpleNamespace(root_path=root_path, no_links=no_links,
+                  locked=locked, digest=digest, emit=emit))
+
+
 def main(encoded):
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -322,7 +330,7 @@ def main(encoded):
         request = json.loads(base64.b64decode(encoded))
         if not re.fullmatch(r'[0-9a-f]{24}', request['id']):
             raise ValueError('Hibás feladatazonosító.')
-        actions = dict(prepare=prepare, commit=commit, build=build_job, configure=build_job, cancel=cancel_build)
+        actions = dict(prepare=prepare, commit=commit, build=build_job, configure=build_job, cancel=cancel_build, install=install_job)
         actions[request['action']](request)
     except Exception as error:
         emit('AURIGA_JOB_FAILED ' + str(error))

@@ -388,8 +388,9 @@ a hitelesítést használja. Futó helyi portalagút mellett is indítható.
 
 A további beállítások `-DNÉV=ÉRTÉK` formában adhatók meg, szóközös értékek
 idézőjelezhetők. FreeBSD-n az alapérték `-DAURIGA_USE_VCPKG=OFF`.
-A művelet nem futtat `git pull`, telepítést vagy szolgáltatás-újraindítást.
-A kész kimenet a megadott buildmappában marad.
+A konfigurálás és fordítás nem futtat `git pull` műveletet és nem indítja újra
+a szolgáltatásokat. A kész kimenet a megadott buildmappában marad; a telepítés
+külön gombbal kérhető.
 
 A célgépen előzetesen szükséges Python 3, CMake, a választott buildeszköz,
 C++23 fordító és a projekt függőségei. A függőséglista a
@@ -427,6 +428,45 @@ a worker a hozzá tartozó build-folyamatcsoportot állítja le. Kapcsolatszakad
 után ellenőrizd a távoli eredményfájlt; a kapcsolat eltűnése önmagában nem
 bizonyítja a build leállását. Az app saját futó művelete alatt a bezárás
 blokkolt, így előbb megszakítás vagy befejezés szükséges.
+
+### Build telepítése
+
+1. Csatlakozz a felső szerverválasztóban a kívánt távoli profilhoz.
+2. Fordítsd le mind a négy célt: `GameServer Database LoginServer ServerPackageCheck`.
+3. Az **Áttekintés** oldalon állítsd le a játék- és adatbázis-szerverprogramokat.
+   A MariaDB SQL-szolgáltatást ehhez nem kell leállítani.
+4. A **Távoli build** fülön ellenőrizd a buildmappát, a konfigurációt és a
+   **Telepítés helye** sort, majd kattints a **Build telepítése** gombra.
+5. Siker után az **Áttekintés → Indítás** a profil szervermappájának `bin`
+   könyvtárából indítja az új programokat.
+
+A telepítő a CMake szokásos `SRC/Server/<komponens>/<program>` kimeneteit keresi
+(több konfiguráció esetén a kiválasztott konfiguráció almappáját is kezeli).
+A build- és a szervermappa különálló könyvtár legyen. Csak a célgép
+architektúrájához illő 64 bites ELF-programokat fogad el; Windows `.exe` nem
+telepíthető FreeBSD-re. Eltérő CMake buildkonfiguráció, hiányzó vagy többértelmű
+kimenet esetén a célfájlokat nem módosítja.
+
+A másolást a buildmappa, a szervermappa és a felügyelő zárolása védi. A worker
+a felügyelő állapota mellett a ténylegesen futó programokat és a konfigurált
+szerverportokat is ellenőrzi. FreeBSD-n ehhez a rendszer `procstat` programját
+használja; a saját csomaghoz futtatási és fájlírási jogosultság szükséges.
+Az előkészített programokon konfiguráció- és Lua-ellenőrzés fut, majd SHA-256
+ellenőrzéssel és `0755` futtatási joggal kerülnek a `bin` mappába. Telepítés után
+az ellenőrzések újra lefutnak. Konfiguráció, játéktartalom, TLS- és SQL-adat
+nem része ennek a műveletnek.
+
+A mentés és az eredmény helye:
+`<szervermappa>/run/deployments/<azonosító>/{backup,result.json}`.
+Kezelt hiba vagy megszakítás esetén visszaállítja a lecserélt fájlokat.
+Az SSH-kapcsolat elvesztése után az eredményfájlt kell ellenőrizni;
+`success` jelzi a befejezést. Áramkimaradás vagy kényszerített folyamatkilövés
+esetén négy külön fájl cseréje nem atomi: `installing` vagy `rollback-failed`
+állapotnál az app tiltja az újabb telepítést és az indítást. Ilyenkor előbb
+a `backup` fájljaiból és a naplóban rögzített ellenőrzőösszegekből helyre kell
+állítani a teljes készletet, majd rendezni az eredményfájlt. Kézi parancssoros
+indítás előtt is ellenőrizd ezt az állapotot. Telepítés közben a megszakítás
+gomb és az app bezárása tiltott; az indítás mindig külön művelet.
 
 ## Fájlok és mappák feltöltése
 

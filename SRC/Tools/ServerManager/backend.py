@@ -153,6 +153,17 @@ class Document:
             raise EditorError('A szöveg nem írható vissza az eredeti %s kódolással.' % self.encoding) from None
 
 
+def pending_deployment(root):
+    for path in sorted((root / 'run/deployments').glob('*/result.json')):
+        try:
+            if strict_json(path.read_text(encoding='utf-8'))['status'] not in ('installing', 'rollback-failed'):
+                continue
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+        return path
+    return None
+
+
 def describe(root):
     root = package_root(root)
     manager = load_manager(root)
@@ -190,10 +201,14 @@ def describe(root):
     db_record = root / 'run/mariadb/process.json'
     db_live = db_record.is_file() and manager.owned(manager.read_json(db_record))
     external = os.name != 'nt' and not (root / 'run/mariadb/owner.json').is_file()
+    pending = pending_deployment(root)
+    if pending and not running:
+        phase = 'Befejezetlen buildtelepítés: ' + pending.relative_to(root).as_posix()
     return dict(config=config, rows=rows, running=running, phase=phase, database_running=db_live,
                 database_initialized=(root / 'run/mariadb/data').is_dir(),
                 database_kind='external' if external else 'managed',
-                can_start=(external and hasattr(manager, 'external_database_check')) or (root / 'run/mariadb/data').is_dir(),
+                can_start=not pending and ((external and hasattr(manager, 'external_database_check')) or (root / 'run/mariadb/data').is_dir()),
+                deployment_pending=pending.relative_to(root).as_posix() if pending else None,
                 can_setup=os.name == 'nt' and (root / 'db/backup/manifest.json').is_file(),
                 reload_supported=(root / 'quest_reload.py').is_file() and hasattr(manager, 'apply_quests'),
                 hotreload=bool(running and hasattr(manager, 'quest_reload_status') and manager.quest_reload_status()['available']))

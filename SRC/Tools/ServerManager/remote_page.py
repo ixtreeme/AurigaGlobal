@@ -142,6 +142,7 @@ class RemotePage(QWidget):
         layout.addWidget(closing_hint)
         self.closing_hint = closing_hint
         self.work = RemoteWork(self)
+        self.remote_root.textChanged.connect(self.work.update_destination)
         self.tabs.currentChanged.connect(self.work_visibility)
         self.work_visibility()
         self.timer = QTimer(self)

@@ -150,6 +150,15 @@ class RpcTests(unittest.TestCase):
         self.assertTrue(self.rpc('action', dict(argv=['stop']))['ok'])
         self.assertIn('stop', (self.root / 'actions.trace').read_text())
 
+    def test_unfinished_binary_installation_blocks_remote_start(self):
+        path = self.root / 'run/deployments' / ('d'*24) / 'result.json'
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(dict(status='installing')))
+        state = self.rpc('status')['result']['state']
+        self.assertFalse(state['can_start']);self.assertIn('Befejezetlen', state['phase'])
+        result = self.rpc('action', dict(argv=['start']))
+        self.assertFalse(result['ok']);self.assertIn('Befejezetlen', result['error'])
+        self.assertFalse((self.root / 'actions.trace').exists())
 
 
 class FakeSession:

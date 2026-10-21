@@ -47,7 +47,8 @@ class RemoteWork:
         self.build_page = QWidget()
         build_layout = QVBoxLayout(self.build_page)
         hint = QLabel('A forrásnak már a távoli gépen kell lennie; a Feltöltés fülön is felmásolhatod. '
-                      'A fordítás külön buildmappába kerül. A kész binárisokat innen nem telepítjük és nem indítjuk el.')
+                      'A fordítás külön buildmappába kerül. A Build telepítése gomb a négy kész programot '
+                      'a leállított szerver bin mappájába másolja, a korábbi fájlok mentésével.')
         hint.setWordWrap(True)
         build_layout.addWidget(hint)
         form = QFormLayout()
@@ -75,19 +76,30 @@ class RemoteWork:
         self.preview.setReadOnly(True)
         self.preview.setMaximumHeight(105)
         build_layout.addWidget(self.preview)
+        self.destination = QLabel()
+        self.destination.setWordWrap(True)
         buttons = QHBoxLayout()
         self.configure_button = self.button('Csak konfigurálás', lambda: self.start_build('configure'))
         self.build_button = self.button('Konfigurálás és build', lambda: self.start_build('build'))
         self.build_button.setObjectName('Primary')
+        self.install_button = self.button('Build telepítése', self.install)
+        self.install_button.setToolTip('GameServer, Database, LoginServer és ServerPackageCheck telepítése. '
+                                       'A szervernek leállítva kell lennie. Indítani utána az Áttekintés oldalon lehet.')
         buttons.addWidget(self.configure_button)
         buttons.addWidget(self.build_button)
+        buttons.addWidget(self.install_button)
         buttons.addStretch()
-        build_layout.addLayout(buttons)
         build_layout.addStretch()
         build_scroll = QScrollArea()
         build_scroll.setWidgetResizable(True)
         build_scroll.setWidget(self.build_page)
-        page.tabs.addTab(build_scroll, 'Távoli build')
+        build_container = QWidget()
+        container_layout = QVBoxLayout(build_container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.addWidget(build_scroll, 1)
+        container_layout.addWidget(self.destination)
+        container_layout.addLayout(buttons)
+        page.tabs.addTab(build_container, 'Távoli build')
 
         self.upload_page = QWidget()
         layout = QVBoxLayout(self.upload_page)
@@ -192,11 +204,16 @@ class RemoteWork:
         self.refresh_preview()
 
     def refresh_preview(self):
+        self.update_destination()
         try:
             request = jobs.build_request(self.current())
             self.preview.setPlainText(shlex.join(request['configure']) + '\n' + shlex.join(request['compile']))
         except EditorError as error:
             self.preview.setPlainText(str(error))
+
+    def update_destination(self, *_):
+        root = self.page.remote_root.text().rstrip('/')
+        self.destination.setText('Telepítés helye: ' + (root + '/bin' if root else 'Add meg a profil távoli szervermappáját.'))
 
     def invalidate(self, *_):
         if self.snapshot:
@@ -230,8 +247,12 @@ class RemoteWork:
             control.setEnabled(not busy)
         self.build_button.setEnabled(not busy and self.page.target_allowed())
         self.configure_button.setEnabled(not busy and self.page.target_allowed())
+        state = getattr(self.page.owner, 'remote_state', None) or {}
+        self.install_button.setEnabled(not busy and self.page.target_allowed()
+            and getattr(self.page.owner, 'remote_online', True)
+            and not state.get('running') and not state.get('starting') and not state.get('deployment_pending'))
         self.upload_button.setEnabled(not busy and self.snapshot is not None and self.page.target_allowed())
-        self.cancel_button.setEnabled(self.planner is not None or (self.process is not None and self.phase != 'commit'))
+        self.cancel_button.setEnabled(self.planner is not None or (self.process is not None and self.phase not in ('commit', 'install')))
 
     def append(self, text):
         self.log.moveCursor(self.log.textCursor().MoveOperation.End)
@@ -315,6 +336,22 @@ class RemoteWork:
             self.cleanup()
             self.page.owner.error(str(error))
 
+    def install(self):
+        if self.page.probe_process is not None or self.active():
+            return
+        try:
+            profile = self.page.operation_profile(server=True)
+            state = getattr(self.page.owner, 'remote_state', None) or {}
+            if state.get('running') or state.get('starting'):
+                raise EditorError('Telepítés előtt állítsd le a kiválasztott szervert az Áttekintés oldalon.')
+            self.request = jobs.install_request(self.current(), profile['remote_root'])
+            self.session = ssh.Session(profile, parent=self.page)
+            self.begin_log()
+            self.start_worker(self.request, 'install')
+        except (EditorError, OSError) as error:
+            self.cleanup()
+            self.page.owner.error(str(error))
+
     def start_worker(self, request, phase):
         self.start_process(self.session.ssh('python3 -u -'), phase, jobs.worker_input(request))
 
@@ -332,7 +369,8 @@ class RemoteWork:
         process.errorOccurred.connect(lambda error: self.failed(process, error, decoder))
         self.status.setText({'prepare': 'Távoli feltöltési terület előkészítése…', 'transfer': 'Fájlok feltöltése SFTP-vel…',
                              'commit': 'Ellenőrzés, mentés és fájlcsere…', 'build': 'Távoli konfigurálás és build…',
-                             'configure': 'Távoli CMake-konfigurálás…'}[phase])
+                             'configure': 'Távoli CMake-konfigurálás…',
+                             'install': 'Build ellenőrzése, mentése és telepítése a szerver bin mappájába…'}[phase])
         self.page.controls()
         process.start(*command)
 
@@ -359,7 +397,8 @@ class RemoteWork:
         self.process = None
         process.deleteLater()
         marker = {'prepare': 'AURIGA_UPLOAD_PREPARED ', 'commit': 'AURIGA_UPLOAD_SUCCESS ',
-                  'build': 'AURIGA_BUILD_SUCCESS ', 'configure': 'AURIGA_BUILD_SUCCESS '}.get(self.phase)
+                  'build': 'AURIGA_BUILD_SUCCESS ', 'configure': 'AURIGA_BUILD_SUCCESS ',
+                  'install': 'AURIGA_INSTALL_SUCCESS '}.get(self.phase)
         verified = not marker or any(line.startswith(marker) for line in self.phase_output.splitlines())
         failure = next((line.removeprefix('AURIGA_JOB_FAILED ') for line in reversed(self.phase_output.splitlines())
                         if line.startswith('AURIGA_JOB_FAILED ')), '')
@@ -376,7 +415,9 @@ class RemoteWork:
                 self.start_worker(dict(self.request, action='commit'), 'commit')
                 return
             else:
-                self.status.setText('A távoli művelet sikeresen befejeződött. Részletek és mentési útvonal a naplóban.')
+                self.status.setText('A négy program telepítése sikeresen befejeződött. Mentési útvonal a naplóban. '
+                    'A szervert az Áttekintés oldalon indíthatod.' if self.phase == 'install' else
+                    'A távoli művelet sikeresen befejeződött. Részletek és mentési útvonal a naplóban.')
                 self.cleanup()
                 self.invalidate()
                 self.page.controls()
@@ -408,7 +449,7 @@ class RemoteWork:
             process.start(*self.session.ssh('python3 -u -'))
             self.status.setText('Távoli build megszakításának kérése…')
             self.page.controls()
-        elif self.process is not None and self.phase != 'commit':
+        elif self.process is not None and self.phase not in ('commit', 'install'):
             self._cancelling = True
             self.process.kill()
 

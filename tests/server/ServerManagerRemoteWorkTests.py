@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -18,6 +19,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / 'SRC/Tools/ServerManager'))
 import remote_jobs as jobs
 import remote_worker as worker
+import remote_deploy as deploy
 import ssh_connection as ssh
 from backend import EditorError
 
@@ -59,6 +61,15 @@ class WorkTests(unittest.TestCase):
         self.assertEqual(request['compile'][-4:], ['GameServer', 'Database', 'LoginServer', 'ServerPackageCheck'])
         self.assertNotIn('--install', request['compile'])
 
+    def test_freebsd_process_enumeration_refuses_inaccessible_server_or_failed_probe(self):
+        with mock.patch.object(deploy.sys, 'platform', 'freebsd14'), mock.patch.object(deploy.subprocess, 'run') as run:
+            run.return_value = SimpleNamespace(returncode=0, stderr='', stdout=' PID COMM OSREL PATH\n123 GameServer 1402000 /a path/GameServer\n')
+            self.assertEqual(deploy.process_images(), [(123, Path('/a path/GameServer'))])
+            for result in (SimpleNamespace(returncode=1, stderr='denied', stdout=''),
+                           SimpleNamespace(returncode=0, stderr='', stdout='123 GameServer 1402000 -\n'),
+                           SimpleNamespace(returncode=0, stderr='', stdout='PID COMM OSREL PATH\n')):
+                run.return_value = result
+                with self.assertRaises(ValueError): deploy.process_images()
 
     def test_build_rejects_shell_and_path_mode_overrides(self):
         for extra in ('-S /tmp/evil', '--preset evil', '-P code.cmake', '-DTEST=1 ; rm -rf /'):
@@ -260,6 +271,167 @@ class WorkTests(unittest.TestCase):
         self.assertTrue((Path(request['build']) / 'built.ok').is_file())
 
 
+class DeployTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix='auriga-deploy-test-')
+        self.addCleanup(temporary.cleanup)
+        self.base = Path(temporary.name).resolve()
+        self.root, self.build = self.base / 'server', self.base / 'build'
+        (self.root / 'bin').mkdir(parents=True)
+        (self.root / '.auriga-package.json').write_text('{}')
+        shutil.copy2(REPO / 'SRC/Tools/server_package/manage.py', self.root / 'manage.py')
+        cfg = json.loads((REPO / 'config/server.json.example').read_text())
+        (self.root / 'server.json').write_text(json.dumps(cfg))
+        self.config = cfg
+        self.original_config = (self.root / 'server.json').read_bytes()
+        self.new, self.old = {}, {}
+        header = bytearray(20)
+        header[:8] = b'\x7fELF\x02\x01\x01\x09';header[16:20] = b'\x02\x00\x3e\x00'
+        for name, component in deploy.PROGRAMS.items():
+            path = self.build / 'SRC/Server' / component / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            self.new[name] = bytes(header) + name.encode()
+            self.old[name] = ('old-' + name).encode()
+            path.write_bytes(self.new[name])
+            (self.root / 'bin' / name).write_bytes(self.old[name])
+        self.request = dict(action='install', id='d'*24, root=str(self.root), build=str(self.build), configuration='Release')
+        self.folder = self.root / 'run/deployments' / self.request['id']
+        # Production file transactions, hashing and all three locks remain real.
+        # ELF execution and POSIX process enumeration have native FreeBSD coverage.
+        for patch in (mock.patch.object(deploy, 'process_images', return_value=[]),
+                      mock.patch.object(deploy, 'validate_programs'),
+                      mock.patch.object(deploy.platform, 'machine', return_value='amd64'),
+                      mock.patch.object(deploy.sys, 'platform', 'freebsd14'),
+                      mock.patch.object(deploy, 'socket') ):
+            patch.start();self.addCleanup(patch.stop)
+        self.helpers = SimpleNamespace(**{name:getattr(worker, name) for name in ('root_path','no_links','locked','digest')}, emit=lambda _:None)
+
+    def assert_originals(self):
+        for name, data in self.old.items(): self.assertEqual((self.root / 'bin' / name).read_bytes(), data)
+        self.assertEqual((self.root / 'server.json').read_bytes(), self.original_config)
+
+    def result(self): return json.loads((self.folder / 'result.json').read_text())
+
+    def test_install_four_files_and_preserve_verified_backups_and_configuration(self):
+        deploy.deploy(self.request, self.helpers)
+        for name in deploy.PROGRAMS:
+            self.assertEqual((self.root / 'bin' / name).read_bytes(), self.new[name])
+            self.assertEqual((self.folder / 'backup' / name).read_bytes(), self.old[name])
+        self.assertEqual((self.root / 'server.json').read_bytes(), self.original_config)
+        self.assertEqual(self.result()['status'], 'success')
+        self.assertEqual(deploy.validate_programs.call_count, 2)
+        self.assertFalse((self.build / '.auriga-manager/operation.lock').exists())
+        self.assertFalse((self.root / '.auriga-manager/operation.lock').exists())
+
+    def test_mid_swap_failure_restores_every_replaced_file(self):
+        replace = os.replace
+        def fail(source, target):
+            if Path(source) == self.folder / 'staging/LoginServer': raise OSError('simulated disk error')
+            return replace(source, target)
+        with mock.patch.object(deploy.os, 'replace', side_effect=fail), self.assertRaises(OSError):
+            deploy.deploy(self.request, self.helpers)
+        self.assert_originals();self.assertEqual(self.result()['status'], 'rolled-back')
+
+    def test_post_install_validation_failure_rolls_back_all_four(self):
+        deploy.validate_programs.side_effect = [None, ValueError('post-install test failed')]
+        with self.assertRaisesRegex(ValueError, 'post-install'): deploy.deploy(self.request, self.helpers)
+        self.assert_originals();self.assertEqual(self.result()['status'], 'rolled-back')
+
+    def test_validation_before_replacement_leaves_all_originals(self):
+        deploy.validate_programs.side_effect = ValueError('missing shared library')
+        with self.assertRaisesRegex(ValueError, 'missing shared library'): deploy.deploy(self.request, self.helpers)
+        self.assert_originals();self.assertEqual(self.result()['status'], 'failed')
+
+    def test_failed_rollback_retains_backup_and_blocks_start(self):
+        import backend
+        copy = shutil.copy2
+        def fail(source, target):
+            if Path(source) == self.folder / 'backup/GameServer': raise OSError('restore disk failure')
+            return copy(source, target)
+        deploy.validate_programs.side_effect = [None, ValueError('post-install failure')]
+        with mock.patch.object(deploy.shutil, 'copy2', side_effect=fail), self.assertRaisesRegex(RuntimeError, 'visszaállítás nem teljes'):
+            deploy.deploy(self.request, self.helpers)
+        self.assertEqual(self.result()['status'], 'rollback-failed')
+        self.assertEqual(self.result()['rollback_errors'], ['GameServer'])
+        self.assertEqual((self.folder / 'backup/GameServer').read_bytes(), self.old['GameServer'])
+        self.assertFalse(backend.describe(self.root)['can_start'])
+
+    def test_failed_first_install_removes_new_files(self):
+        for path in (self.root / 'bin').iterdir(): path.unlink()
+        deploy.validate_programs.side_effect = [None, ValueError('post-install test failed')]
+        with self.assertRaises(ValueError): deploy.deploy(self.request, self.helpers)
+        self.assertFalse(list((self.root / 'bin').iterdir()))
+        self.assertEqual(self.result()['status'], 'rolled-back')
+
+    def test_running_unmanaged_binary_is_refused_before_copying(self):
+        deploy.process_images.return_value = [(123, self.root / 'bin/GameServer')]
+        with self.assertRaisesRegex(ValueError, 'Még fut'): deploy.deploy(self.request, self.helpers)
+        self.assert_originals();self.assertFalse(self.folder.exists())
+
+    def test_owned_supervisor_is_refused(self):
+        manager = deploy.load_manager(self.root)
+        manager.save_json(self.root / 'run/supervisor.json', dict(supervisor=manager.identity(os.getpid()), children=[]))
+        with self.assertRaisesRegex(ValueError, 'állítsd le'): deploy.deploy(self.request, self.helpers)
+        self.assert_originals()
+
+    def test_used_port_is_refused(self):
+        deploy.socket.socket.return_value.__enter__.return_value.bind.side_effect = OSError('busy')
+        with self.assertRaisesRegex(ValueError, 'szerverport'): deploy.deploy(self.request, self.helpers)
+        self.assert_originals()
+
+    def test_build_and_runtime_locks_both_block_replacement(self):
+        for root in (self.build, self.root):
+            with self.subTest(root=root), worker.locked(root), self.assertRaisesRegex(ValueError, 'zárolja'):
+                deploy.deploy(self.request, self.helpers)
+        self.assert_originals()
+
+    def test_wrong_config_or_platform_and_missing_target_are_refused(self):
+        cache = self.build / 'CMakeCache.txt';cache.write_text('CMAKE_BUILD_TYPE:STRING=Debug\n')
+        with self.assertRaisesRegex(ValueError, 'konfigurációja eltér'): deploy.deploy(self.request, self.helpers)
+        cache.unlink()
+        path = self.build / 'SRC/Server/GameServer/ServerPackageCheck'
+        path.write_bytes(b'MZ invalid Windows binary')
+        with self.assertRaisesRegex(ValueError, 'ELF'): deploy.deploy(self.request, self.helpers)
+        path.unlink()
+        with self.assertRaisesRegex(ValueError, 'ServerPackageCheck'): deploy.deploy(self.request, self.helpers)
+        self.assert_originals()
+
+    def test_insufficient_space_keeps_originals(self):
+        with mock.patch.object(deploy.shutil, 'disk_usage', return_value=SimpleNamespace(free=1)), self.assertRaisesRegex(ValueError, 'szabad hely'):
+            deploy.deploy(self.request, self.helpers)
+        self.assert_originals()
+
+    def test_interruption_rolls_back_and_restores_signal_handlers(self):
+        import signal
+        original = signal.getsignal(signal.SIGTERM)
+        def interrupt(directory, *_):
+            if directory == self.root / 'bin': signal.getsignal(signal.SIGTERM)(signal.SIGTERM, None)
+        deploy.validate_programs.side_effect = interrupt
+        with self.assertRaises(InterruptedError): deploy.deploy(self.request, self.helpers)
+        self.assert_originals();self.assertEqual(self.result()['status'], 'rolled-back')
+        self.assertIs(signal.getsignal(signal.SIGTERM), original)
+
+    def test_unfinished_or_failed_rollback_blocks_retry_and_gui_start(self):
+        import backend
+        for status in ('installing', 'rollback-failed'):
+            self.folder.mkdir(parents=True, exist_ok=True)
+            (self.folder / 'result.json').write_text(json.dumps(dict(status=status)))
+            with self.subTest(status=status), self.assertRaisesRegex(ValueError, 'helyreállítást'): deploy.deploy(self.request, self.helpers)
+            self.assertFalse(backend.describe(self.root)['can_start'])
+            self.assertIn('Befejezetlen', backend.describe(self.root)['phase'])
+        self.assert_originals()
+
+    def test_validation_output_redacts_sql_and_interserver_secrets(self):
+        text = self.config['common']['sql']['player']['password'] + ' ' + self.config['common']['interserver_key']
+        self.assertNotIn('REPLACE', deploy.redacted(text, self.config))
+
+    def test_install_plan_separate_runtime_and_worker_payload_contains_deployer(self):
+        settings = dict(jobs.defaults(), build_dir='/Auriga/Source/build', configuration='Debug')
+        request = jobs.install_request(settings, '/Auriga/Server')
+        self.assertEqual(request['root'], '/Auriga/Server');self.assertEqual(request['configuration'], 'Debug')
+        self.assertIn(b'install_support', jobs.worker_input(request))
+        for root in ('/Auriga/Source', '/Auriga/Source/build', '/Auriga/Source/build/server', '/'):
+            with self.subTest(root=root), self.assertRaises(EditorError): jobs.install_request(settings, root)
 
 
 class GuiTests(unittest.TestCase):
@@ -286,7 +458,26 @@ class GuiTests(unittest.TestCase):
         profile['work'].update(source_dir='/home/source', build_dir='/home/build', upload_dir='/home/upload')
         self.page.load(profile)
 
+    def test_install_destination_changes_and_verified_qprocess_success_is_required(self):
+        self.page.remote_root.setText('/home/runtime')
+        self.assertIn('/home/runtime/bin', self.page.work.destination.text())
+        for marker, success in (('AURIGA_INSTALL_SUCCESS files=4 backup=test', True), ('missing marker', False)):
+            command = [sys.executable, '-c', 'import sys;sys.stdin.read();print(' + repr(marker) + ')']
+            with mock.patch.object(ssh.Session, 'ssh', return_value=(command[0], command[1:])):
+                self.page.work.install()
+                self.assertFalse(self.page.work.cancel_button.isEnabled())
+                self.wait(lambda: not self.page.work.active())
+            self.assertEqual('sikeresen' in self.page.work.status.text(), success)
+        self.assertEqual(self.errors, [])
 
+    def test_install_disabled_and_refused_when_server_running_or_disconnected(self):
+        self.page.owner.remote_state = dict(running=True)
+        self.page.work.controls()
+        self.assertFalse(self.page.work.install_button.isEnabled())
+        self.page.work.install();self.assertIn('állítsd le', self.errors.pop())
+        self.page.owner.remote_state = None;self.page.owner.remote_online = False
+        self.page.work.controls();self.assertFalse(self.page.work.install_button.isEnabled())
+        self.page.work.install();self.assertIn('csatlakozz', self.errors.pop())
 
     def wait(self, predicate):
         deadline = time.monotonic() + 8

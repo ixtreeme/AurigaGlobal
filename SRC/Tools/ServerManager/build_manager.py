@@ -61,6 +61,7 @@ def main():
                '--hidden-import', 'server_package.manage', '--hidden-import', 'run_server',
                '--hidden-import', 'ctypes.wintypes', '--exclude-module', 'PySide6.QtNetwork',
                '--add-data', str(source / 'remote_worker.py') + os.pathsep + '.',
+               '--add-data', str(source / 'remote_deploy.py') + os.pathsep + '.',
                '--add-data', str(source / 'server_target_worker.py') + os.pathsep + 'remote_support',
                '--add-data', str(source / 'backend.py') + os.pathsep + 'remote_support',
                '--add-data', str(source / 'editor_checks.py') + os.pathsep + 'remote_support',

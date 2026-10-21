@@ -2403,3 +2403,13 @@ per-role option files, password escaping/private cleanup, connection failure,
 table-postfix rules, read-only readiness checks and absence of local SQL
 bootstrap/start side effects. It remains part of CTest `server_package_tools`.
 
+## Távoli buildtelepítés
+
+A `ServerManagerRemoteWorkTests.py` a build és feltöltés mellett a négyprogramos
+telepítést is ellenőrzi: valódi fájlcsere, ellenőrzőösszegek, mentés, zárolások,
+futó folyamat/port elutasítása, konfiguráció/platform/kimenet ellenőrzése,
+helyhiány, megszakítás és részleges csere utáni visszaállítás. Az ELF-futtatást
+és a POSIX folyamatlistát a Windowsos tesztek helyettesítik; ezek külön FreeBSD
+próbacsomagon tesztelendők. A Qt-tesztek ellenőrzik a profil célját, az új gombot,
+a sikervisszajelzést és a futó/offline cél tiltását. A `ServerManagerTargetTests.py`
+RPC-n is ellenőrzi, hogy befejezetlen telepítés után az indítás tiltott.

@@ -77,9 +77,22 @@ def build_request(settings, action='build'):
 
 
 def worker_input(request):
+    request = dict(request)
+    if request['action'] == 'install':
+        request['install_support'] = Path(__file__).with_name('remote_deploy.py').read_text(encoding='utf-8')
     source = Path(__file__).with_name('remote_worker.py').read_text(encoding='utf-8')
     data = base64.b64encode(json.dumps(request, ensure_ascii=True).encode()).decode('ascii')
     return (source + '\nif __name__ == "__main__":\n    main(' + repr(data) + ')\n').encode('utf-8')
+
+
+def install_request(settings, root):
+    settings = validate_settings(settings)
+    build = remote_path(settings['build_dir'], 'Buildmappa')
+    root = remote_path(root, 'Szervermappa')
+    if PurePosixPath(build).is_relative_to(PurePosixPath(root)) or PurePosixPath(root).is_relative_to(PurePosixPath(build)):
+        raise EditorError('A buildmappa és a szervermappa különálló mappák legyenek.')
+    return dict(action='install', id=secrets.token_hex(12), build=build, root=root,
+                configuration=settings['configuration'])
 
 
 class UploadSnapshot:

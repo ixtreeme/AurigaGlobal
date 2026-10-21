@@ -1385,11 +1385,14 @@ class MainWindow(QMainWindow):
             external = state.get('database_kind') == 'external'
             self.database_tools_panel.setVisible(not external)
             self.stop_db_button.setVisible(not external)
-            self.stack_metric.setText(state['phase'] if state['running'] else 'Indítás…' if starting else 'Leállítva')
+            self.stack_metric.setText('Befejezetlen buildtelepítés' if state.get('deployment_pending') else
+                                     'Indítás…' if starting else state['phase'])
             self.core_metric.setText('%d / %d core fut' % (sum(row['running'] for row in state['rows'] if row['name'] not in ('database', 'login')), len(state['config']['game_servers'])))
             self.db_metric.setText('SQL: külső szolgáltatás' if external else 'MariaDB: fut' if state['database_running'] else 'MariaDB: leállítva' if state['database_initialized'] else 'SQL: még nincs betöltve')
             self.target_hint.setText(('A célgép külső SQL-szolgáltatását használjuk. A kapcsolatok a Beállítások oldalon szerkeszthetők; az indítás ellenőrzi őket. ' if external else '') +
                 'A beállítások és játékadatok mentéséhez leállítás szükséges. A questek külön, futás közben is frissíthetők.')
+            if state.get('deployment_pending'):
+                self.target_hint.setText('Befejezetlen buildtelepítés miatt az indítás tiltott. Ellenőrizd a mentést és az eredményt: ' + state['deployment_pending'])
             self.core_table.setRowCount(len(state['rows']))
             for i, row in enumerate(state['rows']):
                 for j, value in enumerate((row['name'], row['channel'], row['port'], 'Fut' if row['running'] else 'Leállítva')):
