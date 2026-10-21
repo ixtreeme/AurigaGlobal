@@ -23,6 +23,7 @@
 #include "buffer_manager.h"
 #include "locale_service.h"
 #include "../ecs/CharacterAccessors.hpp"
+#include <fmt/format.h>
 
 #ifdef ENABLE_PVP_ADVANCED
 /*
@@ -314,16 +315,14 @@ EVENTFUNC(pvp_duel_counter)
 			uint32_t chA_Race = (ecs::PlayerRuntime::GetRaceNum(characterA));
 			uint32_t chB_Race = (ecs::PlayerRuntime::GetRaceNum(characterB));
 
-			int chA_[] = {(ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[8]))};
-			int chB_[] = {(ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[8]))};
+			int64_t chA_[] = {(ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[8]))};
+			int64_t chB_[] = {(ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[8]))};
 
-			char chA_buf[CHAT_MAX_LEN + 1], chB_buf[CHAT_MAX_LEN + 1];
+			const auto chACommand = fmt::format("BINARY_Duel_LiveInterface {} {} {} {} {} {} {} {} {} {} {} {}", chB_Name, chB_Level, chB_Race, chA_[0], chA_[1], chA_[2], chA_[3], chA_[4], chA_[5], chA_[6], chA_[7], chA_[8]);
+			const auto chBCommand = fmt::format("BINARY_Duel_LiveInterface {} {} {} {} {} {} {} {} {} {} {} {}", chA_Name, chA_Level, chA_Race, chB_[0], chB_[1], chB_[2], chB_[3], chB_[4], chB_[5], chB_[6], chB_[7], chB_[8]);
 
-			snprintf(chA_buf, sizeof(chA_buf), "BINARY_Duel_LiveInterface %s %d %d %d %d %d %d %d %d %d %d %d", chB_Name, chB_Level, chB_Race, chA_[0], chA_[1], chA_[2], chA_[3], chA_[4], chA_[5], chA_[6], chA_[7], chA_[8]);
-			snprintf(chB_buf, sizeof(chB_buf), "BINARY_Duel_LiveInterface %s %d %d %d %d %d %d %d %d %d %d %d", chA_Name, chA_Level, chA_Race, chB_[0], chB_[1], chB_[2], chB_[3], chB_[4], chB_[5], chB_[6], chB_[7], chB_[8]);
-
-			ecs::ChatSystem::Send(characterA, CHAT_TYPE_COMMAND, chA_buf);
-			ecs::ChatSystem::Send(characterB, CHAT_TYPE_COMMAND, chB_buf);
+			ecs::ChatSystem::Send(characterA, CHAT_TYPE_COMMAND, "%s", chACommand.c_str());
+			ecs::ChatSystem::Send(characterB, CHAT_TYPE_COMMAND, "%s", chBCommand.c_str());
 
 			ecs::PlayerRuntime::SetHP(characterA, ecs::PointSystem::GetMaxHP(characterA));
 			ecs::PlayerRuntime::SetHP(characterB, ecs::PointSystem::GetMaxHP(characterB));
@@ -662,35 +661,27 @@ void CPVPManager::Insert(entt::entity character, entt::entity victim)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 
-		int mTable[] = {(ecs::QuestSystem::GetFlag(character, szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[8]))};
+		int64_t mTable[] = {(ecs::QuestSystem::GetFlag(character, szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(character, szTableStaticPvP[8]))};
 
 		CGuild * g = ecs::SocialSystem::GetGuild(character);
 
 		const char* m_Name = ecs::PlayerRuntime::GetName(character).data();
 		const char* m_GuildName = "-";
 
-		int m_Vid = ecs::PlayerRuntime::GetPacketVID(character);
+		const auto m_Vid = ecs::PlayerRuntime::GetPacketVID(character);
 		int m_Level = (ecs::PointSystem::GetLevel(character));
-		int m_PlayTime = ecs::PointSystem::GetReal(character, POINT_PLAYTIME);
+		const auto m_PlayTime = ecs::PointSystem::GetReal(character, POINT_PLAYTIME);
 		const int64_t m_MaxHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(character));
 		const int64_t m_MaxSP = static_cast<int64_t>(ecs::PointSystem::GetMaxSP(character));
-		int PVP_BLOCK_VIEW_EQUIPMENT = ecs::QuestSystem::GetFlag(character, BLOCK_EQUIPMENT_);
+		const auto PVP_BLOCK_VIEW_EQUIPMENT = ecs::QuestSystem::GetFlag(character, BLOCK_EQUIPMENT_);
 
 		uint32_t m_Race = (ecs::PlayerRuntime::GetRaceNum(character));
 
-		if (g)
-		{
-			ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %lld %lld %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
+		const auto command = fmt::format("BINARY_Duel_Request {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", m_Vid, m_Name, g ? g->GetName() : m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
+		ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, "%s", command.c_str());
 
-			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
-				NetworkSyncSystem::SendEquipmentToViewer(g_registry, character, victim);
-		}
-		else {
-			ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
-
-			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
-				NetworkSyncSystem::SendEquipmentToViewer(g_registry, character, victim);
-		}
+		if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
+			NetworkSyncSystem::SendEquipmentToViewer(g_registry, character, victim);
 	}
 }
 #endif

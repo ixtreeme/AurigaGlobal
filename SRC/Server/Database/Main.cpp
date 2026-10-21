@@ -152,7 +152,7 @@ void emptybeat(LPHEART heart, int pulse)
 //
 int Start()
 {
-	g_test_server = DbConfig().server.test ? TRUE : FALSE;
+	g_test_server = DbConfig().server.test ? 1 : 0;
 	LOG_ERROR(DbConfig().server.test ? "Test Server" : "Real Server");
 
 	g_log = DbConfig().server.log ? 1 : 0;

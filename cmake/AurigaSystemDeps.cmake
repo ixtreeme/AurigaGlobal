@@ -61,8 +61,14 @@ target_link_libraries(auriga_system_deps INTERFACE ${AURIGA_LZO_LIBRARY})
 # <mysql/mysqld_error.h>. MariaDB Connector/C ships these headers as
 # <mariadb/...> only, so generate thin forwarding headers when the classic
 # <mysql/...> layout is not installed.
-set(AURIGA_MYSQL_INCLUDE_DIR "" CACHE PATH "MariaDB/MySQL client include directory")
-find_path(AURIGA_MYSQL_INCLUDE_DIR NAMES mysql/mysql.h)
+# Earlier builds cached an empty default, which makes find_path skip its
+# search entirely. Recover that cache while retaining explicit nonempty paths.
+if(DEFINED AURIGA_MYSQL_INCLUDE_DIR AND AURIGA_MYSQL_INCLUDE_DIR STREQUAL "")
+    unset(AURIGA_MYSQL_INCLUDE_DIR CACHE)
+    unset(AURIGA_MYSQL_INCLUDE_DIR)
+endif()
+find_path(AURIGA_MYSQL_INCLUDE_DIR NAMES mysql/mysql.h
+    DOC "MariaDB/MySQL client include directory")
 if(NOT AURIGA_MYSQL_INCLUDE_DIR)
     find_path(AURIGA_MARIADB_INCLUDE_DIR NAMES mariadb/mysql.h REQUIRED)
     set(_auriga_mysql_compat_dir "${CMAKE_BINARY_DIR}/auriga_mysql_compat")
