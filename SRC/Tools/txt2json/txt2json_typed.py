@@ -416,7 +416,8 @@ def convert_common_drop_item(in_path, out_path):
 
 def convert_named_rows(in_path, out_path):
     """Structural rows/columns tree -> row objects with named columns."""
-    doc = json.load(io.open(in_path, "r", encoding="utf-8"))
+    with io.open(in_path, "r", encoding="utf-8") as handle:
+        doc = json.load(handle)
 
     def walk(node):
         out = collections.OrderedDict()
@@ -425,6 +426,13 @@ def convert_named_rows(in_path, out_path):
             out["name"] = node["name"]
 
         columns = node.get("columns", [])
+        declared_columns = bool(columns)
+        if not columns and node.get("tokens"):
+            # The TXT reader also supports positional rows without a #--#
+            # header (for example Dragon Soul's GRADE_BRILLIANT weights).
+            # Name the positions explicitly so no cell disappears in zip().
+            width = max(len(values) if isinstance(values, list) else 1 for values in node["tokens"].values())
+            columns = [str(index) for index in range(width)]
 
         if columns:
             out["columns"] = columns
@@ -435,7 +443,7 @@ def convert_named_rows(in_path, out_path):
             named = collections.OrderedDict()
 
             for key, values in rows.items():
-                if columns and len(values) != len(columns):
+                if declared_columns and len(values) != len(columns):
                     raise ConversionError("row %s: %d values, %d columns" % (key, len(values), len(columns)))
 
                 cells = collections.OrderedDict()

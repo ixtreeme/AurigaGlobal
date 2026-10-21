@@ -61,7 +61,9 @@ endif()
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
     add_test(NAME server_config_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerConfigToolsTests.py)
+    add_test(NAME server_package_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerPackageToolsTests.py --checker $<TARGET_FILE:ServerPackageCheck>)
     add_test(NAME quest_source_migration COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/QuestSourceMigrationTests.py --checker $<TARGET_FILE:ServerPackageCheck>)
+    add_test(NAME server_backup_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerBackupTests.py)
 endif()
 
 # Headless regression checks compile the production attribute, switchbot and DS
@@ -128,6 +130,10 @@ if(WIN32)
     target_link_libraries(QuestRuntimeTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
 add_test(NAME quest_runtime COMMAND QuestRuntimeTests)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME quest_hotreload COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/QuestHotreloadTests.py
+        --core $<TARGET_FILE:QuestRuntimeTests> --checker $<TARGET_FILE:ServerPackageCheck>)
+endif()
 
 add_executable(LuaSourceTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/LuaSourceTests.cpp

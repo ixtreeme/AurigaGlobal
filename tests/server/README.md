@@ -76,6 +76,25 @@ the explicit Python run including native binaries passed 9/9 in each build.
 Database's ASAN post-build now copies the same runtime DLL as the other two
 servers, allowing preflight without a developer-toolchain PATH.
 
+## Server2 package and lifecycle (2026-10-20)
+
+[server2_package.md](../../docs/server2_package.md) describes the generated
+localhost distribution and its limits. `ServerPackageCheck` uses the production
+JSON reader, quest metadata reader and linked Lua parser from a foreign cwd.
+`server_package_tools` runs 18 converter/ownership/native/lifecycle cases,
+including real subprocess startup, ordered token-based graceful shutdown,
+startup rollback and exclusive supervisor locking. Normal and ASAN CTest
+passed 53/53; the expanded Python cases passed 18/18 with both checkers.
+The file-only `prepare` path creates runtime defaults without SQL or service
+startup and preserves existing runtime content. Archive cases check ZIP CRCs
+and SHA256, exclude mutable runtime files, and reject changed assets or an
+existing output archive before writing it.
+
+`MotionTimingTests` uses the real motion getters with millisecond DB payloads:
+normal/skill animation durations are returned in seconds, movement speeds
+retain px/s, and invalid durations become unknown. ServerConfigTests also
+rejects mismatched shutdown PID/token pairs and consumes only the owned request.
+
 ## Server audit coverage
 
 SpatialLifecycleTests now executes the production `CInputMain::Move` with a real
