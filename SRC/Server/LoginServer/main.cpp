@@ -3,6 +3,8 @@
 #include <Core/asio_engine.h>
 #include <Core/peer_auth.h>
 #include <Core/tls.h>
+#include <Core/server_config.h>
+#include <iostream>
 
 #include "login_auth.h"
 #include "login_config.h"
@@ -25,7 +27,17 @@ namespace
 
 int main(int argc, char** argv)
 {
-	const char* configPath = (argc > 1) ? argv[1] : "conf.json";
+    auriga::config::StartupOptions options;
+    auriga::config::Section section;
+    std::string configError;
+    if (!auriga::config::ParseArguments(auriga::config::Role::Login, argc, argv, options, configError))
+    { std::cerr << configError << '\n'; auriga::config::PrintUsage(auriga::config::Role::Login); return 1; }
+    if (options.help) { auriga::config::PrintUsage(auriga::config::Role::Login); return 0; }
+    LoginConfig config;
+    if (!auriga::config::Load(options, auriga::config::Role::Login, section, configError) || !LoadLoginConfig(section, config, configError))
+    { std::cerr << "LoginServer configuration: " << configError << '\n'; return 1; }
+    if (options.checkOnly) { auriga::config::PrintChecked(section, auriga::config::Role::Login); return 0; }
+    if (!auriga::config::EnterWorkingDirectory(section, configError)) { std::cerr << configError << '\n'; return 1; }
 
 	if (!thecore_init(25, EmptyBeat))
 		return 1;
@@ -35,14 +47,6 @@ int main(int argc, char** argv)
 	{
 		~CoreCleanup() { thecore_destroy(); }
 	} coreCleanup;
-
-	LoginConfig config;
-
-	if (!LoadLoginConfig(configPath, config))
-	{
-		LOG_ERROR("LoginServer: startup aborted, invalid configuration");
-		return 1;
-	}
 
 	LOG_INFO("LoginServer: starting (port {}, locale {})", config.listenPort, config.locale);
 
@@ -89,7 +93,7 @@ int main(int argc, char** argv)
 
 	listener.Start();
 
-	while (thecore_idle())
+	while (!auriga::config::ShutdownRequested() && thecore_idle())
 	{
 		auriga::net::DrainCompletions();
 		auth.Process();

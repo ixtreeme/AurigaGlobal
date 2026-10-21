@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "GameConfig.h"
+#include <Core/server_config.h>
+#include <iostream>
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -134,7 +137,7 @@ uint8_t		g_bLogLevel = 0;
 
 int		io_loop();
 
-int		start(int argc, char **argv);
+int		start(int argc, char **argv, const GameConfig& config);
 int		idle();
 void	destroy();
 
@@ -356,6 +359,18 @@ int main(int argc, char **argv)
 #endif
 #endif
 
+    auriga::config::StartupOptions options;
+    auriga::config::Section section;
+    std::string configError;
+    if (!auriga::config::ParseArguments(auriga::config::Role::Game, argc, argv, options, configError))
+    { std::cerr << configError << '\n'; auriga::config::PrintUsage(auriga::config::Role::Game); return 1; }
+    if (options.help) { auriga::config::PrintUsage(auriga::config::Role::Game); return 0; }
+    GameConfig gameConfig;
+    if (!auriga::config::Load(options, auriga::config::Role::Game, section, configError) || !gameConfig.Load(section, configError))
+    { std::cerr << "GameServer configuration: " << configError << '\n'; return 1; }
+    if (options.checkOnly) { auriga::config::PrintChecked(section, auriga::config::Role::Game); return 0; }
+    if (!auriga::config::EnterWorkingDirectory(section, configError)) { std::cerr << configError << '\n'; return 1; }
+
 #ifdef __NEW_EVENT_HANDLER__
 	CEventFunctionHandler EventFunctionHandler;
 #endif
@@ -415,9 +430,9 @@ int main(int argc, char **argv)
 	CSwitchbotManager switchbot;
 #endif
 
-	if (!start(argc, argv)) {
+	if (!start(argc, argv, gameConfig)) {
 		CleanUpForEarlyExit();
-		return 0;
+		return 1;
 	}
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -459,7 +474,7 @@ int main(int argc, char **argv)
 //		//	break;
 //		//}
 
-	while (idle());
+	while (!auriga::config::ShutdownRequested() && idle());
 
 	LOG_INFO("<shutdown> Starting...");
 	g_bShutdown = true;
@@ -512,6 +527,7 @@ int main(int argc, char **argv)
 void usage()
 {
 	std::string options =
+			"Configuration: --config <server.json> --instance <name> [--check-config]\n"
 			"Option list"
 			"-p <port>    : bind port number (port must be over 1024)"
 			"-l <level>   : sets log level"
@@ -526,7 +542,7 @@ void usage()
 	LOG_INFO("{}", options);
 }
 
-int start(int argc, char **argv)
+int start(int argc, char **argv, const GameConfig& config)
 {
 	std::string st_localeServiceName;
 
@@ -614,7 +630,8 @@ int start(int argc, char **argv)
 	}
 
 	// LOCALE_SERVICE
-	config_init(st_localeServiceName);
+	if (!st_localeServiceName.empty()) LOG_INFO("The -n locale option is ignored; use server.json");
+	config_init(config);
 	// END_OF_LOCALE_SERVICE
 
 #ifdef _WIN32
@@ -636,7 +653,7 @@ int start(int argc, char **argv)
 	// Socket I/O runs on the dedicated engine thread from here on.
 	auriga::net::Start();
 
-	// The client port speaks TLS only (network.tls in conf.json). The
+	// The client port speaks TLS only (resolved network.tls in server.json). The
 	// context outlives every session.
 	static std::unique_ptr<auriga::net::TlsServerContext> s_clientTls;
 

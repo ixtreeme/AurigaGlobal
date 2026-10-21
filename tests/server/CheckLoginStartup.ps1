@@ -14,16 +14,25 @@ foreach ($taskMode in @('refused', 'silent')) {
     New-Item -ItemType Directory -Path $taskDir | Out-Null
     $taskConfig = Join-Path $taskDir 'config.json'
     @{
-        port = 55991
-        account_sql = @{ host = '127.0.0.1'; port = $taskSqlPort; user = 'root'; password = ''; database = 'account' }
-        tls = @{ cert_file = 'unused-cert.pem'; key_file = 'unused-key.pem' }
-    } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $taskConfig
+        schema_version = 1
+        common = @{
+            sql = @{
+                account = @{ host = '127.0.0.1'; port = $taskSqlPort; user = 'root'; password = ''; database = 'account' }
+                player = @{ host = '127.0.0.1'; database = 'player' }
+                common = @{ host = '127.0.0.1'; database = 'common' }
+            }
+            tls = @{ cert_file = 'unused-cert.pem'; key_file = 'unused-key.pem' }
+        }
+        database = @{ item_id_range = @(1, 2) }
+        login = @{ port = 55991; working_directory = '.' }
+        game_servers = @{}
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $taskConfig
     $taskProcess = $null
     $taskTimer = [Diagnostics.Stopwatch]::StartNew()
     try {
         # The silent listener accepts TCP in the kernel, but never sends an
         # SQL greeting. Only this script's child process may be terminated.
-        $taskProcess = Start-Process -FilePath $taskBinary -ArgumentList ('"' + $taskConfig + '"') `
+        $taskProcess = Start-Process -FilePath $taskBinary -ArgumentList @('--config', ('"' + $taskConfig + '"')) `
             -WorkingDirectory $taskDir -WindowStyle Hidden -PassThru `
             -RedirectStandardOutput (Join-Path $taskDir 'stdout.log') `
             -RedirectStandardError (Join-Path $taskDir 'stderr.log')

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstdint>
+namespace auriga::config { struct Section; }
 #include <string>
 
-// LoginServer configuration, loaded from conf.json.
+// LoginServer configuration, resolved from the shared server.json.
+// The schema below is the effective payload after common settings are merged.
 //
 // Schema:
 // {
@@ -49,4 +51,4 @@ struct LoginConfig
 	} tls;
 };
 
-bool LoadLoginConfig(const char* path, LoginConfig& cfg);
+bool LoadLoginConfig(const auriga::config::Section& input, LoginConfig& cfg, std::string& error);

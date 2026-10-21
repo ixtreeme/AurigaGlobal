@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Auriga central server configuration, version 1",
+  "type": "object",
+  "required": ["schema_version", "database", "login", "game_servers"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "common": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "locale": {"type": "string"},
+        "table_postfix": {"type": "string"},
+        "interserver_key": {"type": "string"},
+        "sql": {"$ref": "#/$defs/sharedSqlRoles"},
+        "tls": {"$ref": "#/$defs/sharedTls"},
+        "database_link": {"$ref": "#/$defs/databaseLink"}
+      }
+    },
+    "database": {
+      "type": "object",
+      "required": ["item_id_range"],
+      "properties": {
+        "working_directory": {"$ref": "#/$defs/path"},
+        "server": {"type": "object"},
+        "network": {"type": "object", "properties": {"bind_ip": {"type": "string"}, "bind_port": {"$ref": "#/$defs/port"}}},
+        "item_id_range": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 1, "maximum": 4294967295}},
+        "sql": {"$ref": "#/$defs/sqlRoles"},
+        "cache": {"type": "object"},
+        "proto": {"type": "object"},
+        "guild": {"type": "object"}
+      }
+    },
+    "login": {
+      "type": "object",
+      "required": ["port"],
+      "properties": {
+        "working_directory": {"$ref": "#/$defs/path"},
+        "port": {"$ref": "#/$defs/port"},
+        "locale": {"type": "string"},
+        "interserver_key": {"type": "string"},
+        "block_login": {"type": "string"},
+        "account_sql": {"$ref": "#/$defs/sql"},
+        "database_link": {"$ref": "#/$defs/databaseLink"},
+        "tls": {"$ref": "#/$defs/tls"}
+      }
+    },
+    "game_defaults": {"$ref": "#/$defs/game"},
+    "game_servers": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$", "not": {"enum": ["database", "login"]}},
+      "additionalProperties": {"$ref": "#/$defs/game"}
+    }
+  },
+  "$defs": {
+    "path": {"type": "string", "minLength": 1},
+    "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+    "tls": {"type": "object", "properties": {"cert_file": {"$ref": "#/$defs/path"}, "key_file": {"$ref": "#/$defs/path"}}},
+    "sharedTls": {"$ref": "#/$defs/tls", "required": ["cert_file", "key_file"]},
+    "sql": {"type": "object", "properties": {"host": {"type": "string", "minLength": 1}, "database": {"type": "string", "minLength": 1}, "user": {"type": "string"}, "password": {"type": "string"}, "port": {"type": "integer", "minimum": 0, "maximum": 65535}}},
+    "sharedSql": {"$ref": "#/$defs/sql", "required": ["host", "database"]},
+    "sharedSqlRoles": {"type": "object", "additionalProperties": false, "properties": {"player": {"$ref": "#/$defs/sharedSql"}, "account": {"$ref": "#/$defs/sharedSql"}, "common": {"$ref": "#/$defs/sharedSql"}, "log": {"$ref": "#/$defs/sharedSql"}}},
+    "sqlRoles": {"type": "object", "additionalProperties": false, "properties": {"player": {"$ref": "#/$defs/sql"}, "account": {"$ref": "#/$defs/sql"}, "common": {"$ref": "#/$defs/sql"}, "log": {"$ref": "#/$defs/sql"}}},
+    "databaseLink": {"type": "object", "properties": {"host": {"type": "string", "minLength": 1}, "port": {"$ref": "#/$defs/port"}}},
+    "game": {
+      "type": "object",
+      "properties": {
+        "working_directory": {"$ref": "#/$defs/path"},
+        "server": {"type": "object", "properties": {"hostname": {"type": "string", "minLength": 1}, "channel": {"type": "integer", "minimum": 1, "maximum": 255}, "server_id": {"type": "integer", "minimum": 0, "maximum": 2147483647}, "data_path": {"$ref": "#/$defs/path"}, "table_postfix": {"type": "string"}}},
+        "network": {"type": "object", "properties": {"port": {"$ref": "#/$defs/port"}, "p2p_port": {"$ref": "#/$defs/port"}, "db_addr": {"type": "string"}, "db_port": {"$ref": "#/$defs/port"}, "bind_ip": {"type": "string"}, "tls": {"$ref": "#/$defs/tls"}}},
+        "sql": {"$ref": "#/$defs/sqlRoles"},
+        "interserver_key": {"type": "string"},
+        "map_allow": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 1, "maximum": 2147483647}},
+        "quest": {"type": "object", "properties": {"dir": {"type": "string"}, "object_dir": {"deprecated": true, "description": "Ignored by the direct quest source loader", "type": "array", "items": {"type": "string"}}}}
+      }
+    }
+  }
+}

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstdint>
+namespace auriga::config { struct Section; }
 #include <string>
 
-// Typed Database server configuration, loaded from conf.json.
+// Typed Database server configuration, resolved from the shared server.json.
+// The schema below is the effective payload after common settings are merged.
 //
 // Schema:
 // {
@@ -86,7 +88,7 @@ struct DatabaseConfig
 		uint32_t	polyHandicap[2] { 0, 0 };
 	} guild;
 
-	bool Load(const char* path);
+	bool Load(const auriga::config::Section& input, std::string& error);
 };
 
 // Process-wide configuration instance, loaded once at startup.

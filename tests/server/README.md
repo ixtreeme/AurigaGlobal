@@ -44,6 +44,38 @@ are added, caps and low levels are retained, and repeated loads do not refund
 spent points. These tests use controlled services; live SQL, client rendering
 and production deployment still require integration verification.
 
+## Shared server configuration (2026-10-19)
+
+Database, LoginServer and named GameServer instances load one `server.json`.
+The example, migration and startup commands are documented in
+[server_configuration.md](../../docs/server_configuration.md).
+
+`ServerConfigTests` executes the production resolver and all three typed
+readers. It covers shared settings, recursive overrides, replaced arrays,
+absolute paths, isolated working directories, atomic failure/reload,
+duplicate keys, port collisions, DB-link/key consistency and numeric bounds.
+Error assertions verify that supplied passwords stay out of diagnostics.
+
+`server_config_tools` checks the Python converter and launcher. To include
+actual executable preflight from an unrelated working directory, run:
+
+```powershell
+python -B tests/server/ServerConfigToolsTests.py --bin-dir build -v
+python -B tests/server/ServerConfigToolsTests.py --bin-dir build-asan -v
+```
+
+This also checks visible launcher success/failure output and that preflight
+creates no runtime files. `CheckLoginStartup.ps1` now supplies the central
+configuration format; refused and silent SQL still abort startup before TLS
+or a listener can start. These checks do not replace a full game boot with
+the downloaded data, certificates and restored database.
+
+Verified on Windows 2026-10-19: all three normal/ASAN server binaries built;
+CTest passed 51/51 in each build. ServerConfigTests passed 60 checks, and
+the explicit Python run including native binaries passed 9/9 in each build.
+Database's ASAN post-build now copies the same runtime DLL as the other two
+servers, allowing preflight without a developer-toolchain PATH.
+
 ## Server audit coverage
 
 SpatialLifecycleTests now executes the production `CInputMain::Move` with a real

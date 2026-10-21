@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "common": {
+    "locale": "utf8mb4",
+    "table_postfix": "",
+    "interserver_key": "REPLACE_WITH_YOUR_SHARED_KEY",
+    "sql": {
+      "player": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "player"},
+      "account": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "account"},
+      "common": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "common"},
+      "log": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "log"}
+    },
+    "tls": {"cert_file": "tls/server.crt", "key_file": "tls/server.key"}
+  },
+  "database": {
+    "working_directory": "run/database",
+    "network": {"bind_ip": "127.0.0.1", "bind_port": 5300},
+    "item_id_range": [100000000, 199999999],
+    "proto": {"from_db": true, "mirror2db": false}
+  },
+  "login": {
+    "working_directory": "run/login",
+    "port": 30052
+  },
+  "game_defaults": {
+    "server": {"data_path": "data", "max_level": 160},
+    "network": {"bind_ip": "127.0.0.1"},
+    "version": {"check_server": true, "value": "20251204"}
+  },
+  "game_servers": {
+    "ch1-core1": {
+      "working_directory": "run/ch1-core1",
+      "server": {"hostname": "Auriga-CH1-Core1", "channel": 1, "server_id": 1},
+      "network": {"port": 30054, "p2p_port": 30055},
+      "map_allow": [1, 21, 41]
+    }
+  }
+}

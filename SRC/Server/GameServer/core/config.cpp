@@ -714,27 +714,9 @@ static bool __LoadExpTableFromDB(void)
 }
 #endif
 
-void config_init(std::string_view st_localeServiceName)
+void config_init(const GameConfig& cfg)
 {
-	// The GameServer reads a single conf.json from the working directory.
-	// The historical CONFIG / CONFIG.<locale> naming and the GENERAL_*
-	// overlays are gone; the argument is kept for start() compatibility.
-	if (!st_localeServiceName.empty())
-		LOG_INFO("Locale service name '{}' ignored, reading conf.json", st_localeServiceName);
-
-	if (!GetIPInfo())
-	{
-	//	LOG_ERROR("Can not get public ip address");
-	//	exit(1);
-	}
-
-	GameConfig cfg;
-
-	if (!cfg.Load("conf.json"))
-	{
-		LOG_ERROR("Can not load [conf.json]");
-		exit(1);
-	}
+	GetIPInfo();
 
 	__ApplyConnectConfig(cfg);
 	__ApplyDefaultConfig(cfg);

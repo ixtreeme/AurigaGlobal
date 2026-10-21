@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include <Core/server_config.h>
 #include "DatabaseConfig.h"
 #include <common/CommonDefines.h>
 
@@ -409,7 +410,7 @@ void CClientManager::MainLoop()
 
 	LOG_INFO("ClientManager pointer is {}", static_cast<const void*>(this));
 
-	while (!m_bShutdowned)
+	while (!m_bShutdowned && !auriga::config::ShutdownRequested())
 	{
 		while ((tmp = CDBManager::instance().PopResult()))
 		{
@@ -3640,7 +3641,7 @@ bool CClientManager::InitializeNowItemID()
 
 	if (dwMin == 0 || dwMax == 0)
 	{
-		LOG_ERROR("conf.json: item_id_range [start_item_id, end_item_id] is missing");
+		LOG_ERROR("server.json: database.item_id_range [start_item_id, end_item_id] is missing");
 		return false;
 	}
 

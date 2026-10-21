@@ -3,6 +3,8 @@
 #include "DBManager.h"
 #include "ClientManager.h"
 #include "DatabaseConfig.h"
+#include <Core/server_config.h>
+#include <iostream>
 #include "GuildManager.h"
 #include "ItemAwardManager.h"
 #include "PrivManager.h"
@@ -79,8 +81,18 @@ namespace
 	};
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    auriga::config::StartupOptions options;
+    auriga::config::Section section;
+    std::string configError;
+    if (!auriga::config::ParseArguments(auriga::config::Role::Database, argc, argv, options, configError))
+    { std::cerr << configError << '\n'; auriga::config::PrintUsage(auriga::config::Role::Database); return 1; }
+    if (options.help) { auriga::config::PrintUsage(auriga::config::Role::Database); return 0; }
+    if (!auriga::config::Load(options, auriga::config::Role::Database, section, configError) || !DbConfig().Load(section, configError))
+    { std::cerr << "Database configuration: " << configError << '\n'; return 1; }
+    if (options.checkOnly) { auriga::config::PrintChecked(section, auriga::config::Role::Database); return 0; }
+    if (!auriga::config::EnterWorkingDirectory(section, configError)) { std::cerr << configError << '\n'; return 1; }
 #if defined(__FreeBSD__) && defined(__FreeBSD_version) && __FreeBSD_version<1000000
 	_malloc_options = "A";
 #endif
@@ -140,12 +152,6 @@ void emptybeat(LPHEART heart, int pulse)
 //
 int Start()
 {
-	if (!DbConfig().Load("conf.json"))
-	{
-		LOG_ERROR("Loading conf.json failed.");
-		return false;
-	}
-
 	g_test_server = DbConfig().server.test ? TRUE : FALSE;
 	LOG_ERROR(DbConfig().server.test ? "Test Server" : "Real Server");
 

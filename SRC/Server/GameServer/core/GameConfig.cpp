@@ -1,11 +1,10 @@
-#include "stdafx.h"
 #include "GameConfig.h"
 
-#include <Core/Logging.hpp>
+#include <Core/server_config.h>
 
 #include <nlohmann/json.hpp>
 
-#include <fstream>
+#include <utility>
 
 namespace
 {
@@ -19,28 +18,24 @@ namespace
 	}
 }
 
-bool GameConfig::Load(const char* path)
+bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 {
-	std::ifstream in(path);
-
-	if (!in)
-	{
-		LOG_ERROR("GameServer: cannot open config '{}'", path ? path : "(null)");
-		return false;
-	}
-
-	nlohmann::json doc;
-
-	try
-	{
-		doc = nlohmann::json::parse(in);
-	}
-	catch (const std::exception& ex)
-	{
-		LOG_ERROR("GameServer: invalid JSON in '{}': {}", path, ex.what());
-		return false;
-	}
-
+	GameConfig parsed;
+	auto& server = parsed.server;
+	auto& network = parsed.network;
+	auto& sql = parsed.sql;
+	auto& interserverKey = parsed.interserverKey;
+	auto& mapAllow = parsed.mapAllow;
+	auto& events = parsed.events;
+	auto& shutdown = parsed.shutdown;
+	auto& logs = parsed.logs;
+	auto& quest = parsed.quest;
+	auto& spamBlock = parsed.spamBlock;
+	auto& guild = parsed.guild;
+	auto& version = parsed.version;
+	auto& itemDestroy = parsed.itemDestroy;
+	auto& gameplay = parsed.gameplay;
+	const auto& doc = input.values;
 	try
 	{
 		if (doc.contains("server"))
@@ -204,29 +199,31 @@ bool GameConfig::Load(const char* path)
 			gameplay.skillBookNextReadMax = gp.value("skillbook_nextread_max", 43200u);
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const std::exception&)
 	{
-		LOG_ERROR("GameServer: config type error in '{}': {}", path, ex.what());
+		error = "GameServer configuration contains an invalid field type";
 		return false;
 	}
 
 	if (!sql.player.IsValid())
 	{
-		LOG_ERROR("GameServer: 'sql.player' is missing from '{}'", path);
+		error = "GameServer: 'sql.player' is missing";
 		return false;
 	}
 
 	if (!sql.common.IsValid())
 	{
-		LOG_ERROR("GameServer: 'sql.common' is missing from '{}'", path);
+		error = "GameServer: 'sql.common' is missing";
 		return false;
 	}
 
 	if (!sql.log.IsValid())
 	{
-		LOG_ERROR("GameServer: 'sql.log' is missing from '{}'", path);
+		error = "GameServer: 'sql.log' is missing";
 		return false;
 	}
 
+	*this = std::move(parsed);
+	error.clear();
 	return true;
 }

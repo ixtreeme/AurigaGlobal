@@ -369,3 +369,8 @@ sln
 forras
 /.makepack/root/game.py
 bgfx.cmake
+
+# Local server credentials and per-instance runtime files
+server.json
+/run/
+/config/run/

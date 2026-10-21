@@ -11,6 +11,7 @@
 #   archivers/lzo2                  (lzo/lzo1x.h)
 #   archivers/lz4                   (lz4.h)
 #   devel/boost-libs                (boost/unordered_map.hpp, ...)
+#   devel/nlohmann-json             (nlohmann/json.hpp, shared server config)
 #   databases/mariadb-connector-c   (mariadb/mysql.h, libmariadb)
 #     or databases/mysql80-client   (mysql/mysql.h, libmysqlclient)
 #   devel/pkgconf                   (optional, faster discovery)
@@ -29,6 +30,15 @@ target_link_libraries(auriga_system_deps INTERFACE Threads::Threads)
 # --- Boost: header-only usage (unordered_map, algorithm, lexical_cast, ...) ---
 find_path(AURIGA_BOOST_INCLUDE_DIR NAMES boost/unordered_map.hpp REQUIRED)
 target_include_directories(auriga_system_deps INTERFACE ${AURIGA_BOOST_INCLUDE_DIR})
+
+# --- JSON: shared server configuration, metadata and game data ---
+find_path(AURIGA_NLOHMANN_INCLUDE_DIR NAMES nlohmann/json.hpp)
+if(NOT AURIGA_NLOHMANN_INCLUDE_DIR)
+    message(FATAL_ERROR
+        "nlohmann/json.hpp not found. On FreeBSD install devel/nlohmann-json "
+        "(pkg install nlohmann-json), or set AURIGA_NLOHMANN_INCLUDE_DIR.")
+endif()
+target_include_directories(auriga_system_deps INTERFACE ${AURIGA_NLOHMANN_INCLUDE_DIR})
 
 # --- stb: header-only image codecs (GameServer/guild/MarkImage.cpp) ---
 find_path(AURIGA_STB_INCLUDE_DIR NAMES stb/stb_image.h REQUIRED)

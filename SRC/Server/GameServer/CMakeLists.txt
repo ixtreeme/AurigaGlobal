@@ -10,6 +10,15 @@ find_package(EnTT CONFIG REQUIRED)
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 
+add_executable(ServerConfigTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ServerConfigTests.cpp
+    core/GameConfig.cpp
+    ../Database/DatabaseConfig.cpp
+    ../LoginServer/login_config.cpp
+)
+target_link_libraries(ServerConfigTests PRIVATE SERVER S_Core)
+add_test(NAME server_config COMMAND ServerConfigTests)
+
 add_executable(MotionTimingTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MotionTimingTests.cpp
     entity/motion.cpp
@@ -33,6 +42,11 @@ if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
             "${AURIGA_ASAN_RUNTIME_DLL}"
             "$<TARGET_FILE_DIR:MotionTimingTests>"
     )
+endif()
+
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME server_config_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerConfigToolsTests.py)
 endif()
 
 # Headless regression checks compile the production attribute, switchbot and DS
@@ -567,7 +581,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests OfflineShopSafeboxTests SocialRelationTests)
+    foreach(_asan_target ServerConfigTests GameServer DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests OfflineShopSafeboxTests SocialRelationTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

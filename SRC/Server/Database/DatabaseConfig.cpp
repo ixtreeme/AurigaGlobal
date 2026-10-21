@@ -1,11 +1,10 @@
-#include "stdafx.h"
 #include "DatabaseConfig.h"
 
-#include <Core/Logging.hpp>
+#include <Core/server_config.h>
 
 #include <nlohmann/json.hpp>
 
-#include <fstream>
+#include <utility>
 
 DatabaseConfig& DbConfig()
 {
@@ -25,28 +24,17 @@ namespace
 	}
 }
 
-bool DatabaseConfig::Load(const char* path)
+bool DatabaseConfig::Load(const auriga::config::Section& input, std::string& error)
 {
-	std::ifstream in(path);
-
-	if (!in)
-	{
-		LOG_ERROR("Database: cannot open config '{}'", path ? path : "(null)");
-		return false;
-	}
-
-	nlohmann::json doc;
-
-	try
-	{
-		doc = nlohmann::json::parse(in);
-	}
-	catch (const std::exception& ex)
-	{
-		LOG_ERROR("Database: invalid JSON in '{}': {}", path, ex.what());
-		return false;
-	}
-
+	DatabaseConfig parsed;
+	auto& server = parsed.server;
+	auto& network = parsed.network;
+	auto& sql = parsed.sql;
+	auto& cache = parsed.cache;
+	auto& proto = parsed.proto;
+	auto& guild = parsed.guild;
+	auto& itemIdRange = parsed.itemIdRange;
+	const auto& doc = input.values;
 	try
 	{
 		if (doc.contains("server"))
@@ -128,17 +116,19 @@ bool DatabaseConfig::Load(const char* path)
 			}
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const std::exception&)
 	{
-		LOG_ERROR("Database: config type error in '{}': {}", path, ex.what());
+		error = "Database configuration contains an invalid field type";
 		return false;
 	}
 
 	if (!sql.player.IsValid())
 	{
-		LOG_ERROR("Database: 'sql.player' is missing from '{}'", path);
+		error = "Database: 'sql.player' is missing";
 		return false;
 	}
 
+	*this = std::move(parsed);
+	error.clear();
 	return true;
 }

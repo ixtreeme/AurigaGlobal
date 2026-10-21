@@ -1,10 +1,14 @@
 #pragma once
 
+#include <common/CommonDefines.h>
+#include <common/service.h>
 #include <cstdint>
+namespace auriga::config { struct Section; }
 #include <string>
 #include <vector>
 
-// Typed GameServer configuration, loaded from conf.json.
+// Typed GameServer configuration, resolved from the shared server.json.
+// The schema below is the effective payload after common/default/instance merging.
 //
 // Schema (every key is optional; the defaults below match the historical
 // CONFIG defaults):
@@ -195,5 +199,5 @@ struct GameConfig
 		uint32_t	skillBookNextReadMax { 43200 };
 	} gameplay;
 
-	bool Load(const char* path);
+	bool Load(const auriga::config::Section& input, std::string& error);
 };

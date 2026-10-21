@@ -10,14 +10,15 @@ enum
 
 enum ItemDestroyTime {ITEM_DESTROY_TIME_AUTOGIVE, ITEM_DESTROY_TIME_DROPGOLD, ITEM_DESTROY_TIME_DROPITEM, ITEM_DESTROY_TIME_MAX};
 
-void config_init(std::string_view st_localeServiceName); // loads conf.json; arg unused
+struct GameConfig;
+void config_init(const GameConfig& cfg); // applies the selected central configuration
 
 extern char sql_addr[256];
 
 extern uint16_t mother_port;
 extern uint16_t p2p_port;
 
-// TLS on the client port (network.tls in conf.json); P2P stays plain.
+// TLS on the client port (resolved network.tls in server.json); P2P stays plain.
 extern std::string g_clientTlsCertFile;
 extern std::string g_clientTlsKeyFile;
 
