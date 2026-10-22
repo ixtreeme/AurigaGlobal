@@ -1217,13 +1217,12 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 		add(info.m_dwVnum, 1);
 	}
 
-	if (!isStone)
+	// The target-info preview lists configured entries, including metin groups.
+	// It must not roll loot or consume the gameplay RNG.
+	if (const auto it = m_map_pkDropItemGroup.find(race); it != m_map_pkDropItemGroup.end() && it->second)
 	{
-		if (const auto it = m_map_pkDropItemGroup.find(race); it != m_map_pkDropItemGroup.end())
-		{
-			for (const auto& info : it->second->GetVector())
-				add(info.dwVnum, info.iCount);
-		}
+		for (const auto& info : it->second->GetVector())
+			add(info.dwVnum, info.iCount);
 	}
 
 	if (const auto it = m_map_pkMobItemGroup.find(race); it != m_map_pkMobItemGroup.end())
@@ -1231,8 +1230,8 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 		CMobItemGroup* group = it->second;
 		if (group && !group->IsEmpty())
 		{
-			const auto& info = group->GetOne();
-			add(info.dwItemVnum, info.iCount);
+			for (const auto& info : group->GetVector())
+				add(info.dwItemVnum, info.iCount);
 		}
 	}
 

@@ -225,6 +225,11 @@ class CMobItemGroup
 			return m_vecItems[GetOneIndex()];
 		}
 
+		const std::vector<SMobItemGroupInfo>& GetVector() const
+		{
+			return m_vecItems;
+		}
+
 	private:
 		uint32_t m_dwMobVnum;
 		int m_iKillDrop;

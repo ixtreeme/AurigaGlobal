@@ -1627,6 +1627,14 @@ still needs migration.
 
 ## Item-manager creation and destruction
 
+`ItemManagerLifecycleTests` also exercises the production target-info drop
+preview for stones and normal monsters. Configured `drop` entries and every
+`kill` choice must be listed with their configured counts, without calling RNG.
+Repeated queries, empty/null groups, invalid entities, player targets and zero
+item/count entries are covered. This changes the preview only, not actual loot
+rolls or probabilities; packet delivery and deployed drop data still require an
+in-game server test after rebuilding/deploying GameServer.
+
 `ItemManagerLifecycleTests` compiles the complete production `item_manager.cpp`,
 `safebox.cpp` and `Base/grid.cpp`. Both high-level `RemoveItem` and low-level
 `DestroyItem` read identity, location and ownership from ECS; an optional legacy
