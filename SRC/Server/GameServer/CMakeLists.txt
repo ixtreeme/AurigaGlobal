@@ -19,6 +19,12 @@ add_executable(ServerConfigTests EXCLUDE_FROM_ALL
 target_link_libraries(ServerConfigTests PRIVATE SERVER S_Core)
 add_test(NAME server_config COMMAND ServerConfigTests)
 
+add_executable(LoggingShutdownTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/LoggingShutdownTests.cpp
+)
+target_link_libraries(LoggingShutdownTests PRIVATE SERVER S_Core)
+add_test(NAME logging_shutdown COMMAND LoggingShutdownTests)
+
 add_executable(ServerPackageCheck EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/SRC/Tools/ServerPackageCheck.cpp
     core/JsonFile.cpp

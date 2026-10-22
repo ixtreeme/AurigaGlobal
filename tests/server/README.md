@@ -2457,3 +2457,16 @@ debugger-alfolyamatot használ. FreeBSD-integrációhoz külön, hálózati port
 nyitó `-g -O0` C-próbaprogram SIGSEGV hibájából létrehozott valódi core szükséges;
 a GDB és LLDB hibavermében a próba függvénynevét és forrássorát is ellenőrizd.
 Ehhez az élő játékfolyamatot nem kell megszakítani.
+
+## Naplózás a leállítás után
+
+A `logging_shutdown` CTest (`LoggingShutdownTests`) a `logging::Shutdown()` utáni
+`LOG_INFO`, `LOG_WARN`, `LOG_ERROR` és `SPDLOG_INFO` hívásokat ellenőrzi. Ezek
+null logger helyett szinkron stderr-loggerbe írnak. A leállítás kiüríti a sorban
+álló üzeneteket, és a naplózás újraindítható.
+
+A 2026-10-22-i FreeBSD core-ban a GameServer managereinek `CAsyncSQL` destruktora
+a naplózás leállítása után naplózott, így minden szabályos leállás SIGSEGV-vel
+végződött. A GameServer azóta a Database és a LoginServer mintájára guarddal,
+a managerek után állítja le a core-t. A régi getterekkel a teszt hozzáférési
+hibával leáll.

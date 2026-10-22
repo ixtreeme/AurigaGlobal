@@ -341,6 +341,21 @@ static void CleanUpForEarlyExit() {
 	CancelReloadSpamEvent();
 }
 
+// thecore_destroy() ends with logging::Shutdown(), so it must run after every manager
+// main() owns: their destructors still log (CAsyncSQL::Destroy). Database and LoginServer
+// order it the same way. Armed once thecore_init() has run, so the early exits after it
+// (TLS, bind) flush the log too; before it there is no core to tear down.
+static bool s_thecoreStarted = false;
+
+struct ThecoreShutdownGuard
+{
+	~ThecoreShutdownGuard()
+	{
+		if (s_thecoreStarted)
+			thecore_destroy();
+	}
+};
+
 int main(int argc, char **argv)
 {
 	// Before anything else: an access violation otherwise leaves only a WER
@@ -399,6 +414,9 @@ int main(int argc, char **argv)
     { std::cerr << "GameServer configuration: " << configError << '\n'; return 1; }
     if (options.checkOnly) { auriga::config::PrintChecked(section, auriga::config::Role::Game); return 0; }
     if (!auriga::config::EnterWorkingDirectory(section, configError)) { std::cerr << configError << '\n'; return 1; }
+
+	// Declared before the managers, so it is destroyed after them (see the guard).
+	ThecoreShutdownGuard thecoreShutdown;
 
 #ifdef __NEW_EVENT_HANDLER__
 	CEventFunctionHandler EventFunctionHandler;
@@ -679,6 +697,7 @@ int start(int argc, char **argv, const GameConfig& config)
 		LOG_ERROR("Could not initialize thecore, check owner of pid, syslog");
 		exit(0);
 	}
+	s_thecoreStarted = true;
 
 	signal_timer_disable();
 
@@ -752,9 +771,7 @@ void destroy()
 	// including any entities not owned by the legacy character manager.
 	g_registry.clear<ecs::AffectTickState>();
 	event_destroy();
-
-	LOG_INFO("<shutdown> thecore_destroy()...");
-	thecore_destroy();
+	// thecore_destroy() runs from main's ThecoreShutdownGuard, after the managers.
 }
 
 int idle()
