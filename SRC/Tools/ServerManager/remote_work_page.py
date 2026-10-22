@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout,
 from backend import EditorError
 import remote_jobs as jobs
 import ssh_connection as ssh
+from remote_packages_page import RemotePackages
 
 
 class PrepareUpload(QThread):
@@ -144,6 +145,7 @@ class RemoteWork:
         row.addStretch()
         layout.addLayout(row)
         page.tabs.addTab(self.upload_page, 'Feltöltés')
+        self.packages = RemotePackages(self)
 
         self.cancel_button = QPushButton('Művelet megszakítása')
         self.cancel_button.clicked.connect(self.cancel)
@@ -153,7 +155,7 @@ class RemoteWork:
         self.log.setMinimumHeight(100)
         self.log.setMaximumHeight(180)
         self.log.document().setMaximumBlockCount(1800)
-        self.status = QLabel('Nincs távoli build vagy feltöltés folyamatban.')
+        self.status = QLabel('Nincs folyamatban távoli művelet.')
         self.status.setWordWrap(True)
         # Shared job status remains accessible when switching between work tabs.
         page.layout().addWidget(self.status)
@@ -178,6 +180,7 @@ class RemoteWork:
 
     def load(self, settings):
         self.invalidate()
+        self.packages.reset()
         self.sources = []
         self.selection.setText('Nincs kiválasztott fájl vagy mappa.')
         self.overwrite.setChecked(False)
@@ -253,6 +256,9 @@ class RemoteWork:
             and not state.get('running') and not state.get('starting') and not state.get('deployment_pending'))
         self.upload_button.setEnabled(not busy and self.snapshot is not None and self.page.target_allowed())
         self.cancel_button.setEnabled(self.planner is not None or (self.process is not None and self.phase not in ('commit', 'install')))
+        self.packages.controls(not busy)
+        if self.phase == 'packages' and self.request and self.request['operation'] in ('install', 'update'):
+            self.cancel_button.setEnabled(False)
 
     def append(self, text):
         self.log.moveCursor(self.log.textCursor().MoveOperation.End)
@@ -370,6 +376,7 @@ class RemoteWork:
         self.status.setText({'prepare': 'Távoli feltöltési terület előkészítése…', 'transfer': 'Fájlok feltöltése SFTP-vel…',
                              'commit': 'Ellenőrzés, mentés és fájlcsere…', 'build': 'Távoli konfigurálás és build…',
                              'configure': 'Távoli CMake-konfigurálás…',
+                             'packages': 'Távoli csomagművelet fut…',
                              'install': 'Build ellenőrzése, mentése és telepítése a szerver bin mappájába…'}[phase])
         self.page.controls()
         process.start(*command)
@@ -382,8 +389,11 @@ class RemoteWork:
 
     def read(self, process, decoder, final=False):
         text = decoder.decode(bytes(process.readAllStandardOutput()), final=final)
-        self.phase_output = (self.phase_output + text)[-64000:]
-        self.append(text)
+        self.phase_output = (self.phase_output + text)[-(2 * 1024 * 1024 if self.phase == 'packages' else 64000):]
+        if self.phase == 'packages':
+            self.packages.display(text, final)
+        else:
+            self.append(text)
 
     def failed(self, process, error, decoder):
         if error == QProcess.ProcessError.FailedToStart:
@@ -398,7 +408,7 @@ class RemoteWork:
         process.deleteLater()
         marker = {'prepare': 'AURIGA_UPLOAD_PREPARED ', 'commit': 'AURIGA_UPLOAD_SUCCESS ',
                   'build': 'AURIGA_BUILD_SUCCESS ', 'configure': 'AURIGA_BUILD_SUCCESS ',
-                  'install': 'AURIGA_INSTALL_SUCCESS '}.get(self.phase)
+                  'install': 'AURIGA_INSTALL_SUCCESS ', 'packages': 'AURIGA_PACKAGES_RESULT '}.get(self.phase)
         verified = not marker or any(line.startswith(marker) for line in self.phase_output.splitlines())
         failure = next((line.removeprefix('AURIGA_JOB_FAILED ') for line in reversed(self.phase_output.splitlines())
                         if line.startswith('AURIGA_JOB_FAILED ')), '')
@@ -415,6 +425,14 @@ class RemoteWork:
                 self.start_worker(dict(self.request, action='commit'), 'commit')
                 return
             else:
+                if self.phase == 'packages':
+                    try:
+                        self.status.setText(self.packages.completed(self.phase_output))
+                    except (KeyError, TypeError, ValueError) as error:
+                        self.status.setText('Hibás csomagválasz: ' + str(error))
+                    self.cleanup()
+                    self.page.controls()
+                    return
                 self.status.setText('A négy program telepítése sikeresen befejeződött. Mentési útvonal a naplóban. '
                     'A szervert az Áttekintés oldalon indíthatod.' if self.phase == 'install' else
                     'A távoli művelet sikeresen befejeződött. Részletek és mentési útvonal a naplóban.')
@@ -432,6 +450,8 @@ class RemoteWork:
         return getattr(self, '_cancelling', False)
 
     def cancel(self):
+        if self.phase == 'packages' and self.request and self.request['operation'] in ('install', 'update'):
+            return
         if self.planner:
             self.planner.cancel.set()
         elif self.process is not None and self.phase in ('build', 'configure'):

@@ -1484,7 +1484,8 @@ class MainWindow(QMainWindow):
         if self.remote_client and self.remote_client.process:
             self.remote_client.cancel()
         if self.remote_page.work.active():
-            self.error('Várd meg a távoli művelet végét, vagy kérd a megszakítását az Éles kapcsolat oldalon. Fájlcsere közben a befejezést meg kell várni.')
+            self.error('Várd meg a távoli művelet végét, vagy kérd a megszakítását a Kapcsolatok és eszközök oldalon. '
+                       'Fájlcsere és csomagtelepítés közben a befejezést meg kell várni.')
             event.ignore()
             return
         if self.busy():

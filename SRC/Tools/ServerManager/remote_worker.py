@@ -322,6 +322,12 @@ def install_job(request):
                   locked=locked, digest=digest, emit=emit))
 
 
+def package_job(request):
+    module = types.ModuleType('_auriga_remote_packages')
+    exec(compile(request['package_support'], '<auriga-remote-packages>', 'exec'), module.__dict__)
+    module.execute(request, emit)
+
+
 def main(encoded):
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -330,7 +336,8 @@ def main(encoded):
         request = json.loads(base64.b64decode(encoded))
         if not re.fullmatch(r'[0-9a-f]{24}', request['id']):
             raise ValueError('Hibás feladatazonosító.')
-        actions = dict(prepare=prepare, commit=commit, build=build_job, configure=build_job, cancel=cancel_build, install=install_job)
+        actions = dict(prepare=prepare, commit=commit, build=build_job, configure=build_job,
+                       cancel=cancel_build, install=install_job, packages=package_job)
         actions[request['action']](request)
     except Exception as error:
         emit('AURIGA_JOB_FAILED ' + str(error))

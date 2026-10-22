@@ -38,7 +38,7 @@ class RemotePage(QWidget):
         title.setObjectName('SectionTitle')
         layout.addWidget(title)
         hint = QLabel('A felső szerverválasztó kapcsolja az Áttekintést, a beállításokat és a fájlokat helyi vagy távoli célgépre. '
-                      'Itt az SSH-profilokat és alagutakat állíthatod be; a build és feltöltés a fent kiválasztott távoli szerveren fut.')
+                      'Itt az SSH-profilokat és alagutakat állíthatod be; a build, feltöltés és csomagkezelés a fent kiválasztott távoli gépen fut.')
         hint.setWordWrap(True)
         hint.setObjectName('Subtle')
         layout.addWidget(hint)
@@ -154,7 +154,8 @@ class RemotePage(QWidget):
         self.tunnel_timer.setSingleShot(True)
         self.tunnel_timer.timeout.connect(self.tunnel_timeout)
         for edit in self.findChildren(QLineEdit):
-            edit.textChanged.connect(self.changed)
+            if edit not in (self.work.packages.search, self.work.packages.names):
+                edit.textChanged.connect(self.changed)
         for spin in self.findChildren(QSpinBox):
             spin.valueChanged.connect(self.changed)
         self.mode.currentIndexChanged.connect(self.update_mode)
@@ -252,6 +253,7 @@ class RemotePage(QWidget):
         if not self.loading:
             self.dirty = True
             self.save_button.setText('Profil mentése •')
+            self.work.packages.invalidate()
 
     def update_mode(self, *_):
         via_jump = self.mode.currentData() == 'proxyjump'

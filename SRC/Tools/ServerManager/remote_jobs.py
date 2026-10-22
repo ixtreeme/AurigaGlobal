@@ -80,6 +80,8 @@ def worker_input(request):
     request = dict(request)
     if request['action'] == 'install':
         request['install_support'] = Path(__file__).with_name('remote_deploy.py').read_text(encoding='utf-8')
+    if request['action'] == 'packages':
+        request['package_support'] = Path(__file__).with_name('remote_packages.py').read_text(encoding='utf-8')
     source = Path(__file__).with_name('remote_worker.py').read_text(encoding='utf-8')
     data = base64.b64encode(json.dumps(request, ensure_ascii=True).encode()).decode('ascii')
     return (source + '\nif __name__ == "__main__":\n    main(' + repr(data) + ')\n').encode('utf-8')

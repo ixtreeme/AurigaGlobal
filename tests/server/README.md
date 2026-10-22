@@ -2421,3 +2421,22 @@ helyhiány, megszakítás és részleges csere utáni visszaállítás. Az ELF-f
 próbacsomagon tesztelendők. A Qt-tesztek ellenőrzik a profil célját, az új gombot,
 a sikervisszajelzést és a futó/offline cél tiltását. A `ServerManagerTargetTests.py`
 RPC-n is ellenőrzi, hogy befejezetlen telepítés után az indítás tiltott.
+
+## Távoli FreeBSD-csomagkezelő
+
+`build/server-manager-env/Scripts/python.exe -B tests/server/ServerManagerPackagesTests.py`
+a Qt-környezetben futtatható. Ellenőrzi az argumentumok validálását,
+a platform és a root jogosultság vizsgálatát, a shell nélküli parancsindítást,
+a valódi alfolyamat-kimenetet és hibakódokat, valamint a `pkg install -n`
+nem nulla, de sikeres terv-visszajelzésének szűk elfogadását. Az elavult tervet
+a worker a telepítés előtt elutasítja; csak a sikeres telepítés és meglétellenőrzés
+után küld sikervisszajelzést. A tesztek külön vizsgálják az átfedő tranzakciók
+zárolását, a hibák naplózását és a megszakadt SSH-kliens melletti naplózást.
+
+A Qt-próba valódi helyi alfolyamatokon vezeti végig a keresés → kijelölés → terv
+→ telepítés folyamatot. Hiányzó, sérült vagy másik kéréshez tartozó válasz,
+profilváltás és névváltoztatás nem engedhet korábbi tervvel telepíteni.
+Kis ablakban a görgetés és a mindig elérhető telepítési gomb is ellenőrzött.
+A teszt nem ér el valódi SSH-gépet, és nem telepít rendszerfüggőséget.
+Valódi FreeBSD ellenőrzéskor a lekérdezést és a tervet írás nélkül futtasd;
+a telepítési folyamatot külön tesztkörnyezetben vizsgáld.

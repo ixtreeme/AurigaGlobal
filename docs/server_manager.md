@@ -519,6 +519,40 @@ a szerver megfelelő karbantartási állapotában indítsd.
 Parancshasználat: [SFTP](https://man.openbsd.org/sftp),
 [CMake konfigurálás és build](https://cmake.org/cmake/help/latest/manual/cmake.1.html).
 
+## Távoli FreeBSD-csomagok
+
+A felső célgépválasztóban válaszd a távoli profilt, majd az **SSH-profilok és
+távoli eszközök → Csomagkezelő** fület. Ugyanazt a jelszavas vagy kulcsos,
+közvetlen vagy ProxyJump-kapcsolatot használja, mint a build és a feltöltés.
+A szervercsomagnak nem kell futnia, a célgépen Python 3 és telepített `pkg`
+szükséges. A keresés és a telepített lista nem módosít csomagokat.
+
+1. Keress névrészletre (például `ninja`), vagy kérd le a **Telepített csomagok** listáját.
+2. Jelöld ki a kívánt sorokat, majd **Kijelöltek hozzáadása**. Dupla kattintás is használható.
+   A pontos neveket kézzel, szóközzel elválasztva is megadhatod.
+3. **Telepítési terv**: a `pkg install -U -n` megmutatja a függőségeket, az esetleges
+   frissítéseket, eltávolításokat és a letöltendő mennyiséget. Még nem telepít.
+4. **Terv szerinti telepítés**: újraellenőrzi a tervet és a telepített csomagok
+   állapotát, majd telepít. Változás esetén új tervet kér. Sikerhez a `pkg` nulla
+   kilépési kódja és a kért csomagok meglétének ellenőrzése is szükséges.
+
+A **Katalógus frissítése** csak a csomagjegyzéket frissíti (`pkg update`);
+ezután új terv szükséges. Az app nem futtat teljes rendszerfrissítést.
+A listák legfeljebb 500 sort mutatnak. Ha nincs találat, próbálj pontosabb
+nevet vagy frissítsd a katalógust. A hiányzó `pkg` első telepítését az app
+nem végzi el automatikusan; ehhez a szerveren `/usr/sbin/pkg bootstrap` kell.
+
+A telepítés és katalógusfrissítés root SSH-felhasználót igényel. Ezek közben
+a megszakítás és az app bezárása blokkolt. Kapcsolatszakadás után a megkezdett
+csomagtranzakció tovább futhat: az eredményt a célgépen a
+`/var/log/auriga-manager/packages/<feladatazonosító>.log` fájlban ellenőrizd,
+majd kérd le ismét a telepített listát. Az app által indított párhuzamos
+tranzakciókat a `/var/run/auriga-manager-pkg.lock` zár akadályozza meg;
+beragadt zárat csak a hozzá tartozó folyamat és napló ellenőrzése után távolíts el.
+
+Parancsok: [FreeBSD pkg install](https://man.freebsd.org/cgi/man.cgi?query=pkg-install&sektion=8),
+[pkg rquery](https://man.freebsd.org/cgi/man.cgi?query=pkg-rquery&sektion=8).
+
 ## Fejlesztői futtatás és fordítás
 
 ```powershell
@@ -554,6 +588,7 @@ Az SSH-konfiguráció és a hibakezelés távoli gép nélkül ellenőrizhető:
 python -B tests/server/ServerManagerSshTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerSshTests.py --gui
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerRemoteWorkTests.py
+.\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerPackagesTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerTargetTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerPasswordTests.py --gui
 ```
