@@ -182,7 +182,7 @@ class PackageToolsTests(unittest.TestCase):
         asset.unlink()
         with self.assertRaises(PackageError): prepare_server.create_archive(package, archive)
         self.assertFalse(archive.exists())
-    def supervised_fixture(self, fail=None):
+    def supervised_fixture(self, fail=None, game_bind=None):
         import socket
         probes = [socket.socket() for _ in range(5)]
         for probe in probes: probe.bind(('127.0.0.1',0))
@@ -190,6 +190,7 @@ class PackageToolsTests(unittest.TestCase):
         for probe in probes: probe.close()
         cfg = {'database': {'network': {'bind_port': ports[0]}}, 'login': {'port': ports[1]},
                'game_servers': {'ch1-core1': {'server': {'channel': 1}, 'network': {'port': ports[2], 'p2p_port': ports[3]}}}}
+        if game_bind: cfg['game_servers']['ch1-core1']['network']['bind_ip'] = game_bind
         write_json(self.root / 'fixture.json', cfg)
         (self.root / 'bin').mkdir(exist_ok=True)
         for program in ('Database','GameServer','LoginServer'):
@@ -200,8 +201,8 @@ from pathlib import Path
 name=sys.argv[1]; root=Path(sys.argv[2]); listeners=[]
 with (root/'trace').open('a') as trace: trace.write('START '+name+'\\n')
 if name==sys.argv[4]: raise SystemExit(3)
-for port in ([] if sys.argv[4]=='stall:'+name else json.loads(sys.argv[3])):
- s=socket.socket(); s.bind(('127.0.0.1',port)); s.listen(); listeners.append(s)
+for host,port in ([] if sys.argv[4]=='stall:'+name else json.loads(sys.argv[3])):
+ s=socket.socket(); s.bind((host,port)); s.listen(); listeners.append(s)
 while True:
  if (root/'crash.request').is_file() and (root/'crash.request').read_text()==name: raise SystemExit(7)
  p=Path('.auriga-stop')
@@ -223,7 +224,7 @@ def spawn(argv,**kwargs):
  # A Windows venv executable is a launcher with a separate child PID. Use
  # the real interpreter so the fixture has the native server's one-PID shape.
  runtime=getattr(sys,'_base_executable',sys.executable)
- return original([runtime,'-B',str(manage.ROOT/'child.py'),name,str(manage.ROOT),json.dumps(manage.instance_ports(cfg,name)),sys.argv[3]],**kwargs)
+ return original([runtime,'-B',str(manage.ROOT/'child.py'),name,str(manage.ROOT),json.dumps(manage.instance_endpoints(cfg,name)),sys.argv[3]],**kwargs)
 manage.subprocess.Popen=spawn
 manage.supervise([1])
 ''', encoding='utf-8')
@@ -258,6 +259,38 @@ manage.supervise([1])
             self.assertFalse(state.exists())
             self.assertFalse(list((self.root/'run/crashes').glob('*/event.json')), 'Graceful stop must not become a crash')
         finally: self.cleanup_fixture(process, log)
+    def test_supervisor_reaches_cores_on_their_bind_address(self):
+        # A core bound to the VPS address does not answer on 127.0.0.1; readiness must probe
+        # where server.json binds it (BSD, 2026-10-22: the stack stopped after 90 s).
+        import socket
+        with socket.socket() as probe:
+            try: probe.bind(('127.0.0.2', 0))
+            except OSError: self.skipTest('127.0.0.2 is not a local address here')
+        cfg = {'database': {'network': {'bind_port': 1, 'bind_ip': '0.0.0.0'}}, 'login': {'port': 2},
+               'game_defaults': {'network': {'bind_ip': '10.0.0.5'}},
+               'game_servers': {'a': {'network': {'port': 3, 'p2p_port': 4, 'bind_ip': '203.0.113.7'}},
+                                'b': {'network': {'port': 5, 'p2p_port': 6}}}}
+        self.assertEqual(manage.instance_endpoints(cfg, 'database'), [('127.0.0.1', 1)])
+        self.assertEqual(manage.instance_endpoints(cfg, 'login'), [('127.0.0.1', 2)])
+        self.assertEqual(manage.instance_endpoints(cfg, 'a'), [('203.0.113.7', 3), ('203.0.113.7', 4)])
+        self.assertEqual(manage.instance_endpoints(cfg, 'b'), [('10.0.0.5', 5), ('10.0.0.5', 6)])
+        process, log = self.supervised_fixture(game_bind='127.0.0.2')
+        try:
+            state = self.root / 'run/supervisor.json'
+            deadline = time.monotonic() + 15
+            while time.monotonic() < deadline:
+                if process.poll() is not None: self.fail((self.root / 'worker.log').read_text())
+                if state.exists() and json.loads(state.read_text())['phase'] == 'listening': break
+                time.sleep(0.05)
+            else: self.fail('The core listening on 127.0.0.2 was never found ready')
+            manage.stop()
+            self.assertEqual(process.wait(timeout=15), 0, (self.root / 'worker.log').read_text())
+        finally: self.cleanup_fixture(process, log)
+    def test_supervisor_names_a_foreign_bind_address(self):
+        cfg = {'database': {'network': {'bind_port': 1}}, 'login': {'port': 2},
+               'game_servers': {'ch1-core1': {'network': {'port': 3, 'p2p_port': 4, 'bind_ip': '203.0.113.7'}}}}
+        with self.assertRaisesRegex(RuntimeError, 'ch1-core1 cannot listen on 203.0.113.7:3'):
+            for host, port in manage.instance_endpoints(cfg, 'ch1-core1'): manage.free_endpoint('ch1-core1', host, port)
     def test_supervisor_rolls_back_failed_startup(self):
         process, log = self.supervised_fixture(fail='ch1-core1')
         try:

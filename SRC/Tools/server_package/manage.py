@@ -458,6 +458,36 @@ def instance_ports(cfg, name):
     return [network['port'], network['p2p_port']]
 
 
+def reachable_host(bind_ip):
+    """The address to reach a listener bound to bind_ip: itself, or loopback for all interfaces."""
+    if not bind_ip or bind_ip == '0.0.0.0': return '127.0.0.1'
+    return '::1' if bind_ip == '::' else bind_ip
+
+
+def instance_endpoints(cfg, name):
+    """(host, port) pairs each server listens on, as server.json binds them.
+
+    A core bound to the VPS address does not answer on 127.0.0.1, so readiness and the
+    free-port check use the configured bind_ip. LoginListener binds every IPv4 interface."""
+    if name == 'login': return [('127.0.0.1', port) for port in instance_ports(cfg, name)]
+    if name == 'database':
+        bind_ip = cfg['database'].get('network', {}).get('bind_ip', '0.0.0.0')
+    else:
+        bind_ip = cfg['game_servers'][name]['network'].get(
+            'bind_ip', cfg.get('game_defaults', {}).get('network', {}).get('bind_ip', ''))
+    host = reachable_host(bind_ip)
+    return [(host, port) for port in instance_ports(cfg, name)]
+
+
+def free_endpoint(name, host, port):
+    with socket.socket(socket.AF_INET6 if ':' in host else socket.AF_INET) as probe:
+        if os.name == 'nt': probe.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        try: probe.bind((host, port))
+        except OSError as error:
+            raise RuntimeError('%s cannot listen on %s:%d: the port is in use or the address is not on this machine (%s)'
+                               % (name, host, port, error)) from None
+
+
 def instance_directory(cfg, name):
     section = cfg[name] if name in ('database', 'login') else cfg['game_servers'][name]
     path = (ROOT / section.get('working_directory', 'run/' + name)).resolve()
@@ -606,7 +636,7 @@ def supervise_owned(channels, all_channels=False):
         if owned(previous['supervisor']) or any(owned(c['identity']) for c in previous['children']):
             raise RuntimeError('An owned stack is still running; use status/stop')
     for name in names:
-        for port in instance_ports(cfg, name): free_port(port)
+        for host, port in instance_endpoints(cfg, name): free_endpoint(name, host, port)
     state_file.parent.mkdir(parents=True, exist_ok=True)
     token = secrets.token_hex(24)
     state = dict(supervisor=identity(os.getpid()), token=token, children=[], phase='starting', crash_monitor=CRASH_MONITOR_VERSION)
@@ -639,17 +669,19 @@ def supervise_owned(channels, all_channels=False):
                                           directory=str(directory)))
             save_json(state_file, state)
             deadline = time.monotonic() + 90
-            pending = set(instance_ports(cfg, name))
+            pending = set(instance_endpoints(cfg, name))
             while pending and time.monotonic() < deadline:
                 if stop_file.is_file() and stop_file.read_text(encoding='ascii').strip() == token:
                     stop_file.unlink(); raise StopRequested()
                 if detect_exit(): raise RuntimeError('A server exited during startup; see run/crashes and run/*/console.log')
-                for port in list(pending):
+                for endpoint in list(pending):
                     try:
-                        with socket.create_connection(('127.0.0.1',port), timeout=0.2): pending.remove(port)
+                        with socket.create_connection(endpoint, timeout=0.2): pending.remove(endpoint)
                     except OSError: pass
                 time.sleep(0.2)
-            if pending: raise RuntimeError('Readiness deadline exceeded for ' + name)
+            if pending:
+                raise RuntimeError('Readiness deadline exceeded for %s: nothing listens on %s'
+                                   % (name, ', '.join('%s:%d' % endpoint for endpoint in sorted(pending))))
             print('LISTENING ' + name, flush=True)
         state['phase'] = 'listening'; save_json(state_file, state)
         print('STACK_LISTENING; Ctrl+C or server.ps1 stop requests graceful shutdown', flush=True)

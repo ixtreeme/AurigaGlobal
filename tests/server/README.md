@@ -2470,3 +2470,20 @@ a naplózás leállítása után naplózott, így minden szabályos leállás SI
 végződött. A GameServer azóta a Database és a LoginServer mintájára guarddal,
 a managerek után állítja le a core-t. A régi getterekkel a teszt hozzáférési
 hibával leáll.
+
+## Felügyelő: készenlét a beállított bind címen
+
+A `ServerPackageToolsTests.py` (CTest `server_package_tools`) két esete fedi,
+hogy a felügyelő a szervereket a `server.json` szerinti címükön keresi:
+
+- A `test_supervisor_reaches_cores_on_their_bind_address` egy `127.0.0.2`-re
+  kötött maggal végigviszi a felügyelt indítást és leállítást. A végpontokat
+  is ellenőrzi:
+  - a `0.0.0.0` és az üres cím `127.0.0.1` lesz;
+  - a LoginServer mindig `127.0.0.1`;
+  - a magok a saját vagy a `game_defaults` címüket kapják.
+- A `test_supervisor_names_a_foreign_bind_address` azt ellenőrzi, hogy a nem
+  helyi cím hibája megnevezi a példányt, a címet és a portot.
+
+A régi, csak `127.0.0.1`-et próbáló készenléttel az első eset elbukik.
+Ha a `127.0.0.2` nem köthető, az eset kimarad.
