@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 import secrets
 import shutil
+import signal
 import socket
 import ssl
 import subprocess
@@ -21,6 +22,7 @@ from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parent
 PACKAGE_CONTROL_VERSION = 2
+CRASH_MONITOR_VERSION = 1
 
 
 class StopRequested(Exception):
@@ -507,6 +509,93 @@ def prepare_package():
     return report
 
 
+def enable_child_cores():
+    """Only change this supervisor's inherited limit, never global sysctls."""
+    if os.name == 'nt': return
+    try:
+        import resource
+        soft, hard = resource.getrlimit(resource.RLIMIT_CORE)
+        if soft != hard: resource.setrlimit(resource.RLIMIT_CORE, (hard, hard))
+        if hard == 0: print('CRASH_MONITOR: core dump disabled by hard resource limit', flush=True)
+    except (OSError, ValueError) as error:
+        print('CRASH_MONITOR: core limit could not be enabled: ' + str(error), flush=True)
+
+
+def crash_launch(program, directory, fingerprints):
+    stat = program.stat()
+    key = (str(program), stat.st_size, stat.st_mtime_ns)
+    if key not in fingerprints:
+        with program.open('rb') as stream:
+            fingerprints[key] = hashlib.file_digest(stream, 'sha256').hexdigest()
+    return dict(program=str(program), sha256=fingerprints[key], started_ns=time.time_ns(),
+                before={p.name: (p.stat().st_size, p.stat().st_mtime_ns) for p in directory.iterdir()
+                        if p.is_file() and not p.is_symlink() and
+                        (p.name == 'core' or '.core' in p.name or p.suffix in ('.dmp', '.mdmp'))})
+
+
+def record_crash(name, process, directory, launch, phase):
+    """Persist an unexpected exit before the normal sibling shutdown removes state."""
+    code = process.poll()
+    if code is None: return None
+    event_id = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S-') + secrets.token_hex(6)
+    folder = ROOT / 'run/crashes' / event_id
+    folder.mkdir(mode=0o700, parents=True)
+    reason = ('Windows exception 0x%08X' % (code & 0xffffffff) if os.name == 'nt' and code & 0x80000000 else
+              signal.Signals(-code).name if os.name != 'nt' and code < 0 and -code in signal.valid_signals() else
+              'Unexpected exit (%d)' % code)
+    event = dict(schema_version=1, id=event_id, timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                 instance=name, pid=process.pid, exit_code=code, reason=reason, phase=phase,
+                 program=launch['program'], binary_sha256=launch['sha256'], binary=None, cores=[], errors=[])
+    save_json(folder / 'event.json', event)
+    try:
+        for original in list(directory.iterdir()):
+            if not original.is_file() or original.is_symlink(): continue
+            stat = original.stat()
+            if not (original.name == 'core' or '.core' in original.name or original.suffix in ('.dmp', '.mdmp')): continue
+            if (stat.st_size, stat.st_mtime_ns) == tuple(launch['before'].get(original.name, ())): continue
+            if stat.st_mtime_ns < launch['started_ns']: continue
+            with original.open('rb') as source: header = source.read(18)
+            elf_core = (header[:4] == b'\x7fELF' and len(header) >= 18 and
+                        int.from_bytes(header[16:18], 'little' if header[5] == 1 else 'big') == 4)
+            if not elf_core and header[:4] != b'MDMP': continue
+            target = folder / original.name
+            os.replace(original, target)
+            if os.name != 'nt': target.chmod(0o600)
+            event['cores'].append(target.relative_to(ROOT).as_posix())
+        for filename in ('console.log', 'syserr', 'syslog'):
+            original = directory / filename
+            if original.is_file() and not original.is_symlink():
+                with original.open('rb') as stream:
+                    stream.seek(max(0, original.stat().st_size - 160000))
+                    (folder / (filename + '.tail.log')).write_bytes(stream.read(160000))
+        program = Path(launch['program'])
+        with program.open('rb') as stream: current = hashlib.file_digest(stream, 'sha256').hexdigest()
+        if current != launch['sha256']:
+            event['errors'].append('Executable changed after launch; current binary was not archived.')
+        else:
+            binaries = ROOT / 'run/crashes/binaries' / current
+            binaries.mkdir(mode=0o700, parents=True, exist_ok=True)
+            target = binaries / program.name
+            if not target.exists():
+                temporary = target.with_name(target.name + '.new-' + event_id)
+                try:
+                    shutil.copy2(program, temporary)
+                    with temporary.open('rb') as stream:
+                        if hashlib.file_digest(stream, 'sha256').hexdigest() != current:
+                            raise RuntimeError('Executable changed while archiving crash binary')
+                    replace_file(temporary, target)
+                finally: temporary.unlink(missing_ok=True)
+            event['binary'] = target.relative_to(ROOT).as_posix()
+            pdb = program.with_suffix('.pdb')
+            if pdb.is_file() and not (binaries / pdb.name).exists(): shutil.copy2(pdb, binaries / pdb.name)
+    except (OSError, ValueError, RuntimeError) as error:
+        event['errors'].append(str(error))
+    finally:
+        save_json(folder / 'event.json', event)
+    print('CRASH_RECORDED ' + event_id + ' ' + name + ' ' + reason, flush=True)
+    return event
+
+
 def supervise_owned(channels, all_channels=False):
     cfg = file_check()
     database_check()
@@ -520,11 +609,19 @@ def supervise_owned(channels, all_channels=False):
         for port in instance_ports(cfg, name): free_port(port)
     state_file.parent.mkdir(parents=True, exist_ok=True)
     token = secrets.token_hex(24)
-    state = dict(supervisor=identity(os.getpid()), token=token, children=[], phase='starting')
+    state = dict(supervisor=identity(os.getpid()), token=token, children=[], phase='starting', crash_monitor=CRASH_MONITOR_VERSION)
     children, shutdown_errors = [], []
+    launches, fingerprints = {}, {}
+    def detect_exit():
+        exited = [(name, process, directory) for name, process, directory, _ in children if process.poll() is not None]
+        for name, process, directory in exited:
+            try: record_crash(name, process, directory, launches[name], state['phase'])
+            except Exception as error: print('CRASH_MONITOR_ERROR ' + str(error), file=sys.stderr, flush=True)
+        return bool(exited)
     try:
         save_json(state_file, state)
         prepare_runtime(cfg, names)
+        enable_child_cores()
         for name in names:
             if stop_file.is_file() and stop_file.read_text(encoding='ascii').strip() == token:
                 stop_file.unlink(); raise StopRequested()
@@ -532,6 +629,7 @@ def supervise_owned(channels, all_channels=False):
             child_token = secrets.token_hex(24)
             env = dict(os.environ, AURIGA_SHUTDOWN_TOKEN=child_token)
             program = executable('Database' if name == 'database' else 'LoginServer' if name == 'login' else 'GameServer')
+            launches[name] = crash_launch(program, directory, fingerprints)
             with (directory / 'console.log').open('ab') as log:
                 process = subprocess.Popen([str(program), '--config', str(ROOT / 'server.json'), '--instance', name],
                     cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT,
@@ -545,7 +643,7 @@ def supervise_owned(channels, all_channels=False):
             while pending and time.monotonic() < deadline:
                 if stop_file.is_file() and stop_file.read_text(encoding='ascii').strip() == token:
                     stop_file.unlink(); raise StopRequested()
-                if any(p.poll() is not None for _,p,_,_ in children): raise RuntimeError('A server exited during startup; see run/*/console.log')
+                if detect_exit(): raise RuntimeError('A server exited during startup; see run/crashes and run/*/console.log')
                 for port in list(pending):
                     try:
                         with socket.create_connection(('127.0.0.1',port), timeout=0.2): pending.remove(port)
@@ -558,7 +656,7 @@ def supervise_owned(channels, all_channels=False):
         while True:
             if stop_file.is_file() and stop_file.read_text(encoding='ascii').strip() == token:
                 stop_file.unlink(); break
-            if any(p.poll() is not None for _,p,_,_ in children): raise RuntimeError('A server exited; shutting down the remaining owned servers')
+            if detect_exit(): raise RuntimeError('A server exited; see run/crashes; shutting down the remaining owned servers')
             time.sleep(0.25)
     except (KeyboardInterrupt, StopRequested):
         print('Graceful shutdown requested')

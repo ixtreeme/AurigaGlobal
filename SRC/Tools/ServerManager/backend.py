@@ -19,6 +19,7 @@ import sys
 import tempfile
 import re
 import time
+import crash_tools
 
 
 class EditorError(RuntimeError):
@@ -268,7 +269,7 @@ def describe(root):
     root = package_root(root)
     manager = load_manager(root)
     config = strict_json((root / 'server.json').read_text(encoding='utf-8-sig'))
-    states, running = {}, False
+    states, running, state = {}, False, {}
     retained = root / 'run/supervisor.json'
     phase = 'Leállítva'
     if retained.is_file():
@@ -305,6 +306,8 @@ def describe(root):
     if pending and not running:
         phase = 'Befejezetlen buildtelepítés: ' + pending.relative_to(root).as_posix()
     return dict(config=config, rows=rows, running=running, phase=phase, database_running=db_live,
+                crashes=crash_tools.summary(root), crash_monitor_available=bool(getattr(manager, 'CRASH_MONITOR_VERSION', 0)),
+                crash_monitor_active=bool(state.get('crash_monitor')) if retained.is_file() else False,
                 database_initialized=(root / 'run/mariadb/data').is_dir(),
                 database_kind='external' if external else 'managed',
                 can_start=not pending and ((external and hasattr(manager, 'external_database_check')) or (root / 'run/mariadb/data').is_dir()),

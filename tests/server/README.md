@@ -2440,3 +2440,20 @@ Kis ablakban a görgetés és a mindig elérhető telepítési gomb is ellenőrz
 A teszt nem ér el valódi SSH-gépet, és nem telepít rendszerfüggőséget.
 Valódi FreeBSD ellenőrzéskor a lekérdezést és a tervet írás nélkül futtasd;
 a telepítési folyamatot külön tesztkörnyezetben vizsgáld.
+
+## Crashfigyelő és core-elemző
+
+`build/server-manager-env/Scripts/python.exe -B tests/server/ServerManagerCrashTests.py`
+teszteli az esemény, az eredeti bináris és a friss core megőrzését, a korábbi
+core elutasítását, a binárisváltozás és hibás architektúra kezelését, a debugger
+indulási szkriptjeinek tiltását, a valódi alfolyamat-kimenetet és hibakódot,
+az idő- és méretkorlátot, valamint a termelési SSH RPC-kódon át a jelszómaszkolást.
+A Qt-rész ellenőrzi az aszinkron listát és elemzést, a célváltást és a
+célgépenként megjegyzett nyugtázást. A `ServerPackageToolsTests.py` valódi
+felügyelőpróbája a hibás indulás rögzítését és a szabályos leállítás csendjét is ellenőrzi.
+
+Az automatizált Windows-próba szintetikus ELF-fejléceket és elkülönített helyi
+debugger-alfolyamatot használ. FreeBSD-integrációhoz külön, hálózati portot nem
+nyitó `-g -O0` C-próbaprogram SIGSEGV hibájából létrehozott valódi core szükséges;
+a GDB és LLDB hibavermében a próba függvénynevét és forrássorát is ellenőrizd.
+Ehhez az élő játékfolyamatot nem kell megszakítani.

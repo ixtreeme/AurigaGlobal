@@ -31,7 +31,7 @@ def no_links(path):
 
 
 def load_support(request):
-    for name in ('backend', 'editor_checks'):
+    for name in ('crash_tools', 'backend', 'editor_checks'):
         module = types.ModuleType(name)
         module.__file__ = '<auriga-' + name + '>'
         sys.modules[name] = module
@@ -105,6 +105,11 @@ def dispatch(api, root, request):
     if operation == 'connect':
         return dict(state=status(api, root, force_sql=True), inventory=inventory(api, root), document=bytes_packet(api, root, 'server.json'))
     if operation == 'status': return dict(state=status(api, root, force_sql=args.get('force_sql') is True))
+    if operation == 'crashes': return api.crash_tools.inventory(root)
+    if operation == 'crash-analyze':
+        result = api.crash_tools.analyze(root, args['core'], args['binary'], args.get('expected'))
+        result['report'] = api.redact(result['report'], root)
+        return result
     if operation == 'inventory': return inventory(api, root)
     if operation == 'read': return bytes_packet(api, root, args['relative'])
     if operation == 'save':

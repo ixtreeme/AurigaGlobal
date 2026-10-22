@@ -23,6 +23,7 @@ from remote_page import RemotePage
 from code_editor import CodePane
 import server_targets as targets
 import ssh_connection as ssh
+from crash_page import CrashPage
 
 PATH_ROLE = int(Qt.ItemDataRole.UserRole)
 VALUE_ROLE = PATH_ROLE + 1
@@ -838,11 +839,16 @@ class MainWindow(QMainWindow):
         self.location.setObjectName('Subtle')
         self.location.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(self.location)
+        self.crash_alert = QLabel()
+        self.crash_alert.setWordWrap(True)
+        self.crash_alert.setStyleSheet('background: #592d30; color: #ffd2cb; padding: 8px;')
+        self.crash_alert.hide()
+        layout.addWidget(self.crash_alert)
         main = QSplitter(Qt.Orientation.Vertical)
         self.main_splitter = main
         body = QSplitter()
         self.navigation = QListWidget()
-        self.navigation.addItems(['Áttekintés', 'Beállítások', 'Játékadatok', 'Questek és Lua', 'Naplók', 'Kapcsolatok és eszközök'])
+        self.navigation.addItems(['Áttekintés', 'Beállítások', 'Játékadatok', 'Questek és Lua', 'Naplók', 'Kapcsolatok és eszközök', 'Összeomlások'])
         self.navigation.setFixedWidth(176)
         self.pages = QStackedWidget()
         self.overview = self.dashboard()
@@ -850,9 +856,10 @@ class MainWindow(QMainWindow):
         self.data_page, self.quest_page = FilePage(self), FilePage(self, True)
         self.log_page = self.logs_page()
         self.remote_page = RemotePage(self)
+        self.crash_page = CrashPage(self)
         self.profiles_changed()
         self.target_choice.currentIndexChanged.connect(self.target_selected)
-        for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page):
+        for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page, self.crash_page):
             self.pages.addWidget(page)
         body.addWidget(self.navigation)
         body.addWidget(self.pages)
@@ -977,6 +984,7 @@ class MainWindow(QMainWindow):
 
     def busy(self):
         return (self.process is not None and self.process.state() != QProcess.ProcessState.NotRunning) or \
+            bool(hasattr(self, 'crash_page') and self.crash_page.active()) or \
             bool(self.remote_client and self.remote_client.busy()) or \
             bool(hasattr(self, 'remote_page') and (self.remote_page.work.active() or
                  (self.remote_page.probe_process and getattr(self.remote_page, 'probe_action', '') in ('reload-quests', 'apply-quests'))))
@@ -1162,7 +1170,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage('Csatlakozva: ' + self.remote_profile['name'])
         self.remote_request('connect', {}, connected)
 
-    def remote_request(self, operation, arguments, callback, *, poll=False):
+    def remote_request(self, operation, arguments, callback, *, poll=False, error_callback=None):
         client, epoch = self.remote_client, self.target_epoch
         if not client or not self.is_remote():
             return False
@@ -1185,6 +1193,7 @@ class MainWindow(QMainWindow):
             if operation in ('connect', 'status') or client.last_transport_error:
                 self.remote_online = False
             self.statusBar().showMessage('Távoli szerver: ' + message[:180])
+            if error_callback:error_callback(message)
             if not poll:
                 self.show_remote_output(message)
                 self.error(message)
@@ -1362,7 +1371,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, 'console'): return
         try:
             busy = self.busy()
-            switching_blocked = bool(self.process or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process)
+            switching_blocked = bool(self.process or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active())
             self.target_choice.setEnabled(not switching_blocked)
             self.choose_root_button.setEnabled(not switching_blocked)
             self.open_root_button.setEnabled(not self.is_remote() and bool(self.root))
@@ -1371,6 +1380,7 @@ class MainWindow(QMainWindow):
             self.target_badge.setStyleSheet('background: #594124; color: #ffe0a5;' if self.is_remote() else 'background: #203f38; color: #a4e1ce;')
             self.remote_page.controls()
             state = self.state()
+            self.crash_page.tick(state)
             actions = (self.prepare_button, self.check_button, self.start_button, self.stop_button, self.stop_db_button, self.setup_db_button, self.quest_reload_button, self.db_check_button)
             if not state:
                 for item in actions: item.setEnabled(False)
@@ -1523,7 +1533,7 @@ def run(arguments):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--package', type=Path)
     parser.add_argument('--screenshot', type=Path, help=argparse.SUPPRESS)
-    parser.add_argument('--screenshot-page', choices=['overview', 'settings', 'data', 'quests', 'remote'], default='overview', help=argparse.SUPPRESS)
+    parser.add_argument('--screenshot-page', choices=['overview', 'settings', 'data', 'quests', 'remote', 'crashes'], default='overview', help=argparse.SUPPRESS)
     parser.add_argument('--screenshot-file', help=argparse.SUPPRESS)
     args = parser.parse_args(arguments)
     application = QApplication.instance() or QApplication([sys.argv[0]])
@@ -1537,7 +1547,7 @@ def run(arguments):
     window = MainWindow(args.package or default_root())
     if args.screenshot:
         window.resize(1320, 860)
-        window.navigation.setCurrentRow({'overview': 0, 'settings': 1, 'data': 2, 'quests': 3, 'remote': 5}[args.screenshot_page])
+        window.navigation.setCurrentRow({'overview': 0, 'settings': 1, 'data': 2, 'quests': 3, 'remote': 5, 'crashes': 6}[args.screenshot_page])
         if args.screenshot_file and args.screenshot_page in ('data', 'quests'):
             page = window.data_page if args.screenshot_page == 'data' else window.quest_page
             page.editor.load(args.screenshot_file)

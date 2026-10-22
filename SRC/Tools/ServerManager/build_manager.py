@@ -65,6 +65,7 @@ def main():
                '--add-data', str(source / 'remote_packages.py') + os.pathsep + '.',
                '--add-data', str(source / 'server_target_worker.py') + os.pathsep + 'remote_support',
                '--add-data', str(source / 'backend.py') + os.pathsep + 'remote_support',
+               '--add-data', str(source / 'crash_tools.py') + os.pathsep + 'remote_support',
                '--add-data', str(source / 'editor_checks.py') + os.pathsep + 'remote_support',
                '--add-binary', str(validators / ('ServerPackageCheck' + suffix)) + os.pathsep + 'validators',
                '--exclude-module', 'PySide6.QtQml', '--exclude-module', 'PySide6.QtQuick',

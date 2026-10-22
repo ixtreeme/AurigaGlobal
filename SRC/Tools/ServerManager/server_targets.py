@@ -22,7 +22,7 @@ def support_file(name):
 
 
 def worker_input(request):
-    payload = dict(request, support={name: support_file(name + '.py') for name in ('backend', 'editor_checks')})
+    payload = dict(request, support={name: support_file(name + '.py') for name in ('crash_tools', 'backend', 'editor_checks')})
     encoded = base64.b64encode(json.dumps(payload, ensure_ascii=True).encode()).decode('ascii')
     return (support_file('server_target_worker.py') + '\nif __name__ == "__main__":\n    main(' + repr(encoded) + ')\n').encode('utf-8')
 
@@ -85,7 +85,7 @@ class RemoteClient(QObject):
             process.readyReadStandardError.connect(lambda: self.read_error(process))
             process.finished.connect(lambda code, status: self.finished(process, request, code, status))
             process.errorOccurred.connect(lambda reason: self.failed(process, request, reason))
-            self.timer.start(600000 if operation == 'action' else 120000 if operation == 'save' else 45000)
+            self.timer.start(600000 if operation == 'action' else 120000 if operation in ('save','crash-analyze') else 45000)
             self.changed.emit()
             process.start(*command)
             return True

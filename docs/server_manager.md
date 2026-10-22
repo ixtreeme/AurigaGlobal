@@ -553,6 +553,58 @@ beragadt zárat csak a hozzá tartozó folyamat és napló ellenőrzése után t
 Parancsok: [FreeBSD pkg install](https://man.freebsd.org/cgi/man.cgi?query=pkg-install&sektion=8),
 [pkg rquery](https://man.freebsd.org/cgi/man.cgi?query=pkg-rquery&sektion=8).
 
+## Összeomlásfigyelő és core-elemző
+
+Az **Összeomlások** oldal a felső választóban kijelölt helyi vagy távoli
+szerverhez tartozik. A friss `manage.py` felügyelője az indulás közben és
+futás közben észlelt váratlan kilépést is rögzíti, az alkalmazás bezárása után
+is. A kézi, szabályos leállítás nem crash. Az eseményben időpont, példánynév,
+PID, kilépési kód/jel, indulási vagy futási állapot és binárisellenőrzőösszeg
+szerepel. Új eseménynél az appban piros jelzés jelenik meg; a **Jelzés nyugtázása**
+csak a jelzést rejti el, a mentést megtartja. Az ellenőrzés a meglévő
+állapotlekéréshez kapcsolódik, távolról néhány másodperces késéssel jelezhet.
+
+Mentési hely: `run/crashes/<esemény>/event.json`, az utolsó 160 kB-os
+naplórészletek és az ugyanebben a futásban létrejött core fájlok. Az azonos
+binárisok közös példánya a `run/crashes/binaries/<sha256>/` alá kerül;
+Windowsnál az elérhető PDB-t is megőrzi. Az app ezeket nem törli automatikusan.
+Az eseményrögzítés a megmaradt saját folyamatok szabályos leállítása előtt történik.
+Váratlan, nulla kilépési kód is esemény, de ez önmagában nem bizonyít memóriakezelési hibát.
+
+A listából válassz eseményt vagy core fájlt, majd **Core elemzése**.
+Az archivált programot automatikusan felajánlja, a rögzített SHA-256 eltérését
+elutasítja. Régebbi vagy kézzel megadott core mellett válaszd ki az ugyanabból
+a buildből származó programot. Külső könyvtárban, például `/var/coredumps` alatt
+levő fájlnál teljes célgépi útvonal írható be. Az automatikus keresés a csomag
+gyökerére és `run` mappájára korlátozott, legfeljebb 500 core-t és 200 eseményt mutat.
+
+FreeBSD/Linux ELF core esetén GDB-t, ennek hiányában LLDB-t használ. Az elemzés
+a célgépen fut, nem tölti le a teljes memóriaképet Windowsra. A debugger
+indulási és automatikusan betöltődő szkriptjei letiltottak, az app nem indítja
+és nem folytatja a vizsgált programot. A jelentés az összes szál korlátozott
+mélységű hibavermét és moduladatait mutatja; másolható, illetve helyi szövegfájlba
+menthető. Az időkorlát 90 másodperc, a kimenet legfeljebb 512 kB.
+Windows minidumphoz a célgépen elérhető CDB és megfelelő PDB szükséges.
+Windows dumpok létrehozásához külön WER/ProcDump beállítás kell; ezt az app nem
+módosítja automatikusan. Az ismert konfigurációs jelszavakat a jelentés kitakarja,
+de a memória más érzékeny adatot is tartalmazhat: megosztás előtt ellenőrizd.
+
+Fájlnevekhez és sorszámokhoz **Debug** vagy **RelWithDebInfo** build szükséges,
+a binárisokat ne stripeld. A FreeBSD felügyelő csak saját, gyerekfolyamatokra
+öröklődő core-méretkorlátját emeli a megengedett kemény korlátig; globális
+`kern.corefile`/`kern.coredump` beállítást nem változtat. A tiltott dump, megtelt
+lemez vagy máshová irányított core miatt egy eseményhez nem feltétlenül tartozik
+core fájl. Az utóbbi kézzel is megnyitható. A felügyelő saját, erőszakos
+megszüntetését nem tudja utólag saját kilépési kóddal rögzíteni.
+
+A friss `manage.py`-nak a helyi és távoli szervercsomagban is szerepelnie kell.
+A már futó régi felügyelő a következő szabályos szerverindítástól kapja meg a
+figyelést; a kezelő ennek állapotát kiírja. Az új funkció telepítése nem indítja
+újra a futó szervert.
+
+Hivatkozások: [GDB automatikus szkriptbetöltés](https://sourceware.org/gdb/current/onlinedocs/gdb.html/Auto_002dloading.html),
+[LLDB batch/core](https://lldb.llvm.org/man/lldb.html).
+
 ## Fejlesztői futtatás és fordítás
 
 ```powershell
@@ -589,6 +641,7 @@ python -B tests/server/ServerManagerSshTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerSshTests.py --gui
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerRemoteWorkTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerPackagesTests.py
+.\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerCrashTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerTargetTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerPasswordTests.py --gui
 ```

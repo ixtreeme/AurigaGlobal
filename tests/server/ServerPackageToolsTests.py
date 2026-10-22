@@ -191,6 +191,9 @@ class PackageToolsTests(unittest.TestCase):
         cfg = {'database': {'network': {'bind_port': ports[0]}}, 'login': {'port': ports[1]},
                'game_servers': {'ch1-core1': {'server': {'channel': 1}, 'network': {'port': ports[2], 'p2p_port': ports[3]}}}}
         write_json(self.root / 'fixture.json', cfg)
+        (self.root / 'bin').mkdir(exist_ok=True)
+        for program in ('Database','GameServer','LoginServer'):
+            (self.root / 'bin' / (program + ('.exe' if os.name == 'nt' else ''))).write_bytes(b'owned fake program '+program.encode())
         child = self.root / 'child.py'
         child.write_text('''import json,os,socket,sys,time
 from pathlib import Path
@@ -200,6 +203,7 @@ if name==sys.argv[4]: raise SystemExit(3)
 for port in ([] if sys.argv[4]=='stall:'+name else json.loads(sys.argv[3])):
  s=socket.socket(); s.bind(('127.0.0.1',port)); s.listen(); listeners.append(s)
 while True:
+ if (root/'crash.request').is_file() and (root/'crash.request').read_text()==name: raise SystemExit(7)
  p=Path('.auriga-stop')
  if p.exists() and p.read_text().split()==[str(os.getpid()),os.environ['AURIGA_SHUTDOWN_TOKEN']]: break
  time.sleep(0.02)
@@ -252,6 +256,7 @@ manage.supervise([1])
             trace = (self.root / 'trace').read_text().splitlines()
             self.assertEqual(trace, ['START database','START ch1-core1','START login','STOP login','STOP ch1-core1','STOP database'])
             self.assertFalse(state.exists())
+            self.assertFalse(list((self.root/'run/crashes').glob('*/event.json')), 'Graceful stop must not become a crash')
         finally: self.cleanup_fixture(process, log)
     def test_supervisor_rolls_back_failed_startup(self):
         process, log = self.supervised_fixture(fail='ch1-core1')
@@ -260,7 +265,30 @@ manage.supervise([1])
             trace = (self.root / 'trace').read_text().splitlines()
             self.assertEqual(trace, ['START database','START ch1-core1','STOP database'])
             self.assertFalse((self.root / 'run/supervisor.json').exists())
+            reports=list((self.root/'run/crashes').glob('*/event.json'))
+            self.assertEqual(len(reports),1)
+            event=json.loads(reports[0].read_text())
+            self.assertEqual((event['instance'],event['exit_code'],event['phase']),('ch1-core1',3,'starting'))
         finally: self.cleanup_fixture(process, log)
+    def test_supervisor_records_exit_after_readiness_and_stops_siblings(self):
+        process, log = self.supervised_fixture()
+        try:
+            state = self.root / 'run/supervisor.json'
+            deadline = time.monotonic() + 15
+            while time.monotonic() < deadline:
+                if process.poll() is not None: self.fail((self.root / 'worker.log').read_text())
+                if state.exists() and json.loads(state.read_text())['phase'] == 'listening': break
+                time.sleep(.05)
+            else: self.fail('Supervisor readiness deadline')
+            (self.root/'crash.request').write_text('ch1-core1')
+            self.assertNotEqual(process.wait(timeout=15),0)
+            reports=list((self.root/'run/crashes').glob('*/event.json'))
+            self.assertEqual(len(reports),1)
+            event=json.loads(reports[0].read_text())
+            self.assertEqual((event['instance'],event['exit_code'],event['phase']),('ch1-core1',7,'listening'))
+            self.assertTrue((self.root/event['binary']).is_file())
+            self.assertEqual((self.root/'trace').read_text().splitlines()[-2:],['STOP login','STOP database'])
+        finally: self.cleanup_fixture(process,log)
     def test_supervisor_can_cancel_startup_before_listener(self):
         process, log = self.supervised_fixture(fail='stall:ch1-core1')
         try:
