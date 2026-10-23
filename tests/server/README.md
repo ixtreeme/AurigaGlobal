@@ -2466,6 +2466,28 @@ nyitó `-g -O0` C-próbaprogram SIGSEGV hibájából létrehozott valódi core s
 a GDB és LLDB hibavermében a próba függvénynevét és forrássorát is ellenőrizd.
 Ehhez az élő játékfolyamatot nem kell megszakítani.
 
+## Mentési központ
+
+`build/server-manager-env/Scripts/python.exe -B tests/server/ServerManagerBackupTests.py`
+ellenőrzi a mentési archívumot, tartalomellenőrzést, importot, célútvonalakat,
+symbolic-link elutasítást, felülírás előtti tervet, védőmentést, rollbacket és
+megszakadt helyreállítás utáni indításvédelmet. A napi futás deduplikációját,
+a megőrzési szabályt, a kézi mentések megmaradását és az idegen cron-sorok
+megőrzését is méri. Qt mellett az aszinkron készítés, visszaállítás, egymásba
+fűzött letöltési feladat és a termelési RPC-válasz is tesztelt; Qt nélkül
+ezek kimaradnak. A Qt nélküli rész CTest: `server_manager_backups`.
+
+A `ServerManagerRemoteWorkTests.py` azt is bizonyítja, hogy a build előtti mentés
+hibája még a bináriscserék előtt megállítja a telepítést. A natív integrációhoz
+friss, véletlen loopback porton futó saját MariaDB-példány kell: négy játékadatbázis,
+MyISAM + InnoDB, BLOB/nullbájtok, view, tárolt rutin, utólag hozzáadott tábla,
+majd visszaállítás és szándékos hiba utáni rollback. A rendszerséma érintetlensége
+külön sentinel táblával ellenőrizhető. Élő adatbázison a destruktív próbát ne futtasd.
+
+FreeBSD-integrációhoz külön ideiglenes csomagon próbáld az SSH-s készítést,
+a valódi SFTP-letöltést/visszatöltést és a visszaállítást. Az ütemező saját
+futtatója tesztelhető ideiglenes fake-crontab programmal, az igazi crontab módosítása nélkül.
+
 ## Naplózás a leállítás után
 
 A `logging_shutdown` CTest (`LoggingShutdownTests`) a `logging::Shutdown()` utáni
@@ -2495,3 +2517,38 @@ hogy a felügyelő a szervereket a `server.json` szerinti címükön keresi:
 
 A régi, csak `127.0.0.1`-et próbáló készenléttel az első eset elbukik.
 Ha a `127.0.0.2` nem köthető, az eset kimarad.
+
+## Core-ok indítása és leállítása egyenként
+
+A `ServerPackageToolsTests.py` (CTest `server_package_tools`) valódi
+felügyelőpróbái:
+
+- **Utólagos indítás és egyenkénti leállítás:**
+  - a futó stackhez utólag indítanak egy core-t, amely a LoginServer elé
+    kerül;
+  - az ismételt indítás „already running”;
+  - csatorna szerint leállítanak egy másik core-t, és a stack összeomlási
+    esemény nélkül fut tovább;
+  - a Database egyenkénti leállítását és az ismeretlen csatornát a parancs
+    elutasítja;
+  - a teljes leállítás sorrendje: login → utólag indított core → database.
+- **Elbukó utólagos indítás:** csak az a core esik ki, `starting` fázisú
+  összeomlási eseménnyel, a stack fut tovább.
+- **Futó stack nélkül** a vezérlés érthető hibával áll meg.
+
+A `ServerManagerTargetTests.py` a távoli `start-cores`/`stop-cores`
+továbbítását és a hibás kiválasztás elutasítását ellenőrzi, valamint
+azt, hogy régebbi `manage.py` esetén a hibaüzenet a frissítést kéri.
+
+A `ServerManagerGuiTests.py --package <release>` a gombokat ellenőrzi:
+- a kijelölés szerinti engedélyezést;
+- a megerősítést;
+- hogy a leállítás csak a futó core-okat kapja meg;
+- a csatornák utólagos indítását;
+- a régi `manage.py` miatti tiltást.
+
+Négy mutáció mindegyikét elkapja egy teszt:
+- leállítás összeomlásként;
+- utólagos core a LoginServer mögött;
+- utólagos hiba miatti teljes leállás;
+- leállított core leállítása.

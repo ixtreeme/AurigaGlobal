@@ -24,6 +24,7 @@ from code_editor import CodePane
 import server_targets as targets
 import ssh_connection as ssh
 from crash_page import CrashPage
+from backup_page import BackupPage
 
 PATH_ROLE = int(Qt.ItemDataRole.UserRole)
 VALUE_ROLE = PATH_ROLE + 1
@@ -802,6 +803,7 @@ class MainWindow(QMainWindow):
         self.remote_online = False
         self.remote_next_poll = 0
         self.remote_next_log = 0
+        self.reported_start_failure = None
         self.target_epoch = 0
         self.action_log, self.log_text, self.on_finished = None, '', None
         self.settings = QSettings('Auriga', 'ServerManager')
@@ -848,7 +850,7 @@ class MainWindow(QMainWindow):
         self.main_splitter = main
         body = QSplitter()
         self.navigation = QListWidget()
-        self.navigation.addItems(['Áttekintés', 'Beállítások', 'Játékadatok', 'Questek és Lua', 'Naplók', 'Kapcsolatok és eszközök', 'Összeomlások'])
+        self.navigation.addItems(['Áttekintés', 'Beállítások', 'Játékadatok', 'Questek és Lua', 'Naplók', 'Kapcsolatok és eszközök', 'Összeomlások', 'Mentések'])
         self.navigation.setFixedWidth(176)
         self.pages = QStackedWidget()
         self.overview = self.dashboard()
@@ -857,9 +859,10 @@ class MainWindow(QMainWindow):
         self.log_page = self.logs_page()
         self.remote_page = RemotePage(self)
         self.crash_page = CrashPage(self)
+        self.backup_page = BackupPage(self)
         self.profiles_changed()
         self.target_choice.currentIndexChanged.connect(self.target_selected)
-        for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page, self.crash_page):
+        for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page, self.crash_page, self.backup_page):
             self.pages.addWidget(page)
         body.addWidget(self.navigation)
         body.addWidget(self.pages)
@@ -958,6 +961,15 @@ class MainWindow(QMainWindow):
         self.core_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.core_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         layout.addWidget(self.core_table, 1)
+        core_tools = QHBoxLayout()
+        self.start_cores_button = button('Kijelölt core-ok indítása', lambda: self.control_selected_cores('start'))
+        self.stop_cores_button = button('Kijelölt core-ok leállítása', lambda: self.control_selected_cores('stop'), 'Stop')
+        core_tools.addWidget(self.start_cores_button)
+        core_tools.addWidget(self.stop_cores_button)
+        core_tools.addWidget(note('Futó szervernél a táblában kijelölt core-ok külön indíthatók és leállíthatók; '
+                                  'a többi core, a Database és a LoginServer tovább fut.'), 1)
+        layout.addLayout(core_tools)
+        self.core_table.itemSelectionChanged.connect(self.update_core_buttons)
         self.target_hint = note('A beállítások és játékadatok módosításához leállítás szükséges. A questek külön, futás közben is frissíthetők.')
         layout.addWidget(self.target_hint)
         return page
@@ -985,6 +997,7 @@ class MainWindow(QMainWindow):
     def busy(self):
         return (self.process is not None and self.process.state() != QProcess.ProcessState.NotRunning) or \
             bool(hasattr(self, 'crash_page') and self.crash_page.active()) or \
+            bool(hasattr(self, 'backup_page') and self.backup_page.active()) or \
             bool(self.remote_client and self.remote_client.busy()) or \
             bool(hasattr(self, 'remote_page') and (self.remote_page.work.active() or
                  (self.remote_page.probe_process and getattr(self.remote_page, 'probe_action', '') in ('reload-quests', 'apply-quests'))))
@@ -1056,7 +1069,7 @@ class MainWindow(QMainWindow):
 
     def may_switch_target(self):
         local_busy = self.process is not None and self.process.state() != QProcess.ProcessState.NotRunning
-        if local_busy or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process:
+        if local_busy or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active() or self.backup_page.active():
             self.error('Célgépváltás előtt várd meg a folyamatban lévő művelet végét.')
             return False
         return all(editor.may_discard() for editor in self.editors) and self.remote_page.may_discard()
@@ -1071,6 +1084,7 @@ class MainWindow(QMainWindow):
         self.remote_inventory = dict(data=[], quests=[], logs=[])
 
     def clear_target_pages(self):
+        self.reported_start_failure = None
         for editor in self.editors: editor.clear()
         for page in (self.data_page, self.quest_page): page.files.clear()
         self.core_table.setRowCount(0)
@@ -1160,7 +1174,8 @@ class MainWindow(QMainWindow):
             self.set_remote(saved)
             return
         def connected(value):
-            self.remote_state, self.remote_inventory = value['state'], value['inventory']
+            self.receive_remote_state(value['state'])
+            self.remote_inventory = value['inventory']
             self.remote_online = True
             self.remote_next_poll = time.monotonic() + 5
             if not self.config_editor.document:
@@ -1206,10 +1221,18 @@ class MainWindow(QMainWindow):
         if not force and time.monotonic() < self.remote_next_poll: return
         self.remote_next_poll = time.monotonic() + 5
         def received(value):
-            self.remote_state = value['state']
+            self.receive_remote_state(value['state'])
             self.remote_online = True
             self.update_channels()
         self.remote_request('status', dict(force_sql=force), received, poll=True)
+
+    def receive_remote_state(self, state):
+        self.remote_state = state
+        job = state.get('start_job')
+        if (not state['running'] and job and job['status'] == 'failed' and
+                self.reported_start_failure != job['id']):
+            self.reported_start_failure = job['id']
+            self.show_remote_output('A távoli indítás sikertelen.\nNapló: ' + job['log'] + '\n' + job['output'])
 
     def show_remote_output(self, text):
         self.console_toggle.setChecked(True)
@@ -1326,6 +1349,17 @@ class MainWindow(QMainWindow):
         if not selected:
             self.error('Jelölj ki legalább egy normál csatornát.')
             return
+        state = self.state()
+        if state and state['running']:
+            # A running stack gets the selected channels' cores added; the rest keeps running.
+            if not self.core_control_ready(state):
+                self.error('A futó szerverhez csak a teljes indulás után, friss manage.py-jal indítható további csatorna.')
+                return
+            arguments = ['start-cores']
+            for channel in selected:
+                arguments += ['--channel', str(channel)]
+            self.job(arguments)
+            return
         arguments = ['start']
         for channel in selected:
             arguments += ['--channel', str(channel)]
@@ -1350,6 +1384,42 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage('A felügyelő az alkalmazás bezárása után is fut; leállítás a Leállítás gombbal.')
         self.refresh()
 
+    def core_control_ready(self, state):
+        # Cores start and stop one by one only under a live supervisor whose manage.py knows how.
+        return bool(state and state['running'] and state.get('core_control') and state['phase'] == 'Fut' and not self.busy())
+
+    def selected_cores(self, state):
+        rows = {index.row() for index in self.core_table.selectionModel().selectedRows()}
+        return [row for i, row in enumerate(state['rows']) if i in rows and row['name'] not in ('database', 'login')]
+
+    def update_core_buttons(self, state=None):
+        if not hasattr(self, 'start_cores_button'): return
+        if state is None:
+            try: state = self.state()
+            except (api.EditorError, OSError, ValueError, KeyError, TypeError): state = None
+        ready = self.core_control_ready(state)
+        selected = self.selected_cores(state) if state else []
+        self.start_cores_button.setEnabled(ready and any(not row['running'] for row in selected))
+        self.stop_cores_button.setEnabled(ready and any(row['running'] for row in selected))
+        outdated = bool(state and state['running'] and not state.get('core_control'))
+        tip = 'A szervermappa manage.py fájlja régebbi; a core-onkénti vezérléshez másold fel a frisset.' if outdated else ''
+        self.start_cores_button.setToolTip(tip or 'A kijelölt, leállított core-ok indítása a futó szerverhez.')
+        self.stop_cores_button.setToolTip(tip or 'A kijelölt, futó core-ok szabályos leállítása; a többi tovább fut.')
+
+    def control_selected_cores(self, action):
+        state = self.state()
+        if not self.core_control_ready(state): return
+        names = [row['name'] for row in self.selected_cores(state) if row['running'] == (action == 'stop')]
+        if not names: return
+        if action == 'stop' and QMessageBox.question(
+                self, 'Auriga szerverkezelő',
+                'Leállítod ezeket a core-okat? A rajtuk lévő játékosok kilépnek.\n\n' + '\n'.join(names)) != QMessageBox.StandardButton.Yes:
+            return
+        arguments = [action + '-cores']
+        for name in names:
+            arguments += ['--instance', name]
+        self.job(arguments)
+
     def reload_quests(self):
         if any(editor.dirty for editor in self.editors):
             self.error('Questfrissítés előtt mentsd vagy töltsd újra a módosított fájlokat.')
@@ -1371,7 +1441,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, 'console'): return
         try:
             busy = self.busy()
-            switching_blocked = bool(self.process or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active())
+            switching_blocked = bool(self.process or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active() or self.backup_page.active())
             self.target_choice.setEnabled(not switching_blocked)
             self.choose_root_button.setEnabled(not switching_blocked)
             self.open_root_button.setEnabled(not self.is_remote() and bool(self.root))
@@ -1381,7 +1451,10 @@ class MainWindow(QMainWindow):
             self.remote_page.controls()
             state = self.state()
             self.crash_page.tick(state)
-            actions = (self.prepare_button, self.check_button, self.start_button, self.stop_button, self.stop_db_button, self.setup_db_button, self.quest_reload_button, self.db_check_button)
+            self.backup_page.tick(state)
+            busy = self.busy()
+            actions = (self.prepare_button, self.check_button, self.start_button, self.stop_button, self.stop_db_button, self.setup_db_button, self.quest_reload_button, self.db_check_button,
+                       self.start_cores_button, self.stop_cores_button)
             if not state:
                 for item in actions: item.setEnabled(False)
                 self.core_table.setRowCount(0)
@@ -1397,6 +1470,10 @@ class MainWindow(QMainWindow):
             self.stop_db_button.setVisible(not external)
             self.stack_metric.setText('Befejezetlen buildtelepítés' if state.get('deployment_pending') else
                                      'Indítás…' if starting else state['phase'])
+            start_job = state.get('start_job') if self.is_remote() else None
+            failed_start = bool(start_job and start_job['status'] == 'failed' and not running)
+            self.stack_metric.setStyleSheet('color: #ffb4a7;' if failed_start else '')
+            self.stack_metric.setToolTip(start_job['output'] if failed_start else '')
             self.core_metric.setText('%d / %d core fut' % (sum(row['running'] for row in state['rows'] if row['name'] not in ('database', 'login')), len(state['config']['game_servers'])))
             sql_status = state.get('database_status', {})
             if external:
@@ -1421,6 +1498,10 @@ class MainWindow(QMainWindow):
                 self.target_hint.setText('SQL: ' + reason + ' A kapcsolatot a Beállítások oldalon javíthatod; az Állapot frissítése újra ellenőrzi.')
             if state.get('deployment_pending'):
                 self.target_hint.setText('Befejezetlen buildtelepítés miatt az indítás tiltott. Ellenőrizd a mentést és az eredményt: ' + state['deployment_pending'])
+            if state.get('backup_restore_pending'):
+                self.target_hint.setText('Befejezetlen visszaállítás miatt az indítás tiltott. A Mentések oldalon állíts helyre egy ellenőrzött mentést.')
+            if failed_start and not state.get('deployment_pending') and not state.get('backup_restore_pending'):
+                self.target_hint.setText('Az indítás hibával leállt. A pontos ok az alsó műveleti naplóban látható. Teljes napló: ' + start_job['log'])
             self.core_table.setRowCount(len(state['rows']))
             for i, row in enumerate(state['rows']):
                 for j, value in enumerate((row['name'], row['channel'], row['port'], 'Fut' if row['running'] else 'Leállítva')):
@@ -1431,8 +1512,11 @@ class MainWindow(QMainWindow):
             self.setup_db_button.setEnabled(not busy and not running and not state['database_initialized'] and bool(state.get('can_setup')))
             self.check_button.setEnabled(not busy)
             self.db_check_button.setEnabled(not busy and (external or bool(state.get('can_start', state['database_initialized']))))
-            self.start_button.setEnabled(not busy and not running and bool(state.get('can_start', state['database_initialized'])))
-            self.start_button.setToolTip('Kijelölt csatornák és közös CH99 indítása a kiválasztott szerveren.')
+            self.start_button.setEnabled(not busy and ((not running and bool(state.get('can_start', state['database_initialized'])))
+                                                       or self.core_control_ready(state)))
+            self.start_button.setToolTip('A bejelölt csatornák core-jainak indítása a futó szerverhez.' if running else
+                                         'Kijelölt csatornák és közös CH99 indítása a kiválasztott szerveren.')
+            self.update_core_buttons(state)
             self.stop_button.setEnabled(not busy and state['running'])
             self.stop_db_button.setEnabled(not busy and not running and state['database_running'])
             self.quest_reload_button.setEnabled(not busy and (bool(state.get('hotreload')) or (not running and bool(state.get('reload_supported')))))
@@ -1533,7 +1617,7 @@ def run(arguments):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--package', type=Path)
     parser.add_argument('--screenshot', type=Path, help=argparse.SUPPRESS)
-    parser.add_argument('--screenshot-page', choices=['overview', 'settings', 'data', 'quests', 'remote', 'crashes'], default='overview', help=argparse.SUPPRESS)
+    parser.add_argument('--screenshot-page', choices=['overview', 'settings', 'data', 'quests', 'remote', 'crashes', 'backups'], default='overview', help=argparse.SUPPRESS)
     parser.add_argument('--screenshot-file', help=argparse.SUPPRESS)
     args = parser.parse_args(arguments)
     application = QApplication.instance() or QApplication([sys.argv[0]])
@@ -1547,7 +1631,7 @@ def run(arguments):
     window = MainWindow(args.package or default_root())
     if args.screenshot:
         window.resize(1320, 860)
-        window.navigation.setCurrentRow({'overview': 0, 'settings': 1, 'data': 2, 'quests': 3, 'remote': 5, 'crashes': 6}[args.screenshot_page])
+        window.navigation.setCurrentRow({'overview': 0, 'settings': 1, 'data': 2, 'quests': 3, 'remote': 5, 'crashes': 6, 'backups': 7}[args.screenshot_page])
         if args.screenshot_file and args.screenshot_page in ('data', 'quests'):
             page = window.data_page if args.screenshot_page == 'data' else window.quest_page
             page.editor.load(args.screenshot_file)

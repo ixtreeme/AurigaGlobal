@@ -407,8 +407,10 @@ def external_database_check():
                 with os.fdopen(descriptor, 'w', encoding='utf-8') as handle: handle.write(result.stderr)
                 raise RuntimeError('External SQL check failed for role ' + name + '; see run/sql-check-error.log')
             lines = result.stdout.splitlines()
-            if not lines or lines[0] != '1' or any(not line.endswith('\tREADY') for line in lines[1:] if line):
-                raise RuntimeError('External SQL reference data is missing or invalid for role ' + name)
+            invalid = [line for line in lines[1:] if line and not line.endswith('\tREADY')]
+            if not lines or lines[0] != '1' or invalid:
+                details = '; '.join(invalid)[:2000]
+                raise RuntimeError('External SQL reference data is missing or invalid for role ' + name + (': ' + details if details else ''))
             print('EXTERNAL_SQL_READY ' + name)
 
 
@@ -627,6 +629,10 @@ def record_crash(name, process, directory, launch, phase):
 
 
 def supervise_owned(channels, all_channels=False):
+    for journal in (ROOT / 'run/backup-restores').glob('*/result.json'):
+        try: pending = read_json(journal).get('status') in ('restoring','rollback-failed')
+        except (OSError,ValueError): pending = True
+        if pending: raise RuntimeError('Unfinished backup restore; recover from the Backup Center before starting the server')
     cfg = file_check()
     database_check()
     names = select_instances(cfg, channels, all_channels)
@@ -642,53 +648,138 @@ def supervise_owned(channels, all_channels=False):
     state = dict(supervisor=identity(os.getpid()), token=token, children=[], phase='starting', crash_monitor=CRASH_MONITOR_VERSION)
     children, shutdown_errors = [], []
     launches, fingerprints = {}, {}
-    def detect_exit():
-        exited = [(name, process, directory) for name, process, directory, _ in children if process.poll() is not None]
+    control = ROOT / 'run/control'
+
+    def stop_requested():
+        if stop_file.is_file() and stop_file.read_text(encoding='ascii').strip() == token:
+            stop_file.unlink(); raise StopRequested()
+
+    def detect_exit(skip=()):
+        exited = [(name, process, directory) for name, process, directory, _ in children
+                  if name not in skip and process.poll() is not None]
         for name, process, directory in exited:
             try: record_crash(name, process, directory, launches[name], state['phase'])
             except Exception as error: print('CRASH_MONITOR_ERROR ' + str(error), file=sys.stderr, flush=True)
         return bool(exited)
+
+    def forget(name):
+        # Removed before an intended stop, so its exit is not taken for a crash.
+        entry = next(child for child in children if child[0] == name)
+        record = next(child for child in state['children'] if child['name'] == name)
+        children.remove(entry); state['children'].remove(record)
+        save_json(state_file, state)
+        return entry, record
+
+    def adopt(entry, record):
+        # A core added later goes before LoginServer, which stops first at shutdown.
+        at = next((i for i, child in enumerate(children) if child[0] == 'login'), len(children))
+        children.insert(at, entry); state['children'].insert(at, record)
+        save_json(state_file, state)
+
+    def launch(name):
+        directory = instance_directory(cfg, name)
+        child_token = secrets.token_hex(24)
+        env = dict(os.environ, AURIGA_SHUTDOWN_TOKEN=child_token)
+        program = executable('Database' if name == 'database' else 'LoginServer' if name == 'login' else 'GameServer')
+        launches[name] = crash_launch(program, directory, fingerprints)
+        with (directory / 'console.log').open('ab') as log:
+            process = subprocess.Popen([str(program), '--config', str(ROOT / 'server.json'), '--instance', name],
+                cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        adopt((name, process, directory, child_token),
+              dict(name=name, identity=identity(process.pid), token=child_token, directory=str(directory)))
+        return process
+
+    def wait_listening(name, process, later=False):
+        """None once every endpoint answers, else why not. A core started later fails on its own;
+        during the stack's start any exit stops everything, as before."""
+        deadline = time.monotonic() + 90
+        pending = set(instance_endpoints(cfg, name))
+        while pending and time.monotonic() < deadline:
+            stop_requested()
+            if later and process.poll() is not None:
+                entry, _ = forget(name)
+                try: record_crash(name, process, entry[2], launches[name], 'starting')
+                except Exception as error: print('CRASH_MONITOR_ERROR ' + str(error), file=sys.stderr, flush=True)
+                return '%s exited during startup (code %s); see run/crashes and its console.log' % (name, process.poll())
+            if detect_exit(skip=(name,) if later else ()):
+                raise RuntimeError('A server exited during startup; see run/crashes and run/*/console.log')
+            for endpoint in list(pending):
+                try:
+                    with socket.create_connection(endpoint, timeout=0.2): pending.remove(endpoint)
+                except OSError: pass
+            time.sleep(0.2)
+        if pending:
+            return ('Readiness deadline exceeded for %s: nothing listens on %s'
+                    % (name, ', '.join('%s:%d' % endpoint for endpoint in sorted(pending))))
+        print('LISTENING ' + name, flush=True)
+        return None
+
+    def stop_child(name):
+        entry, record = forget(name)
+        _, process, directory, child_token = entry
+        request_child_stop(process, directory, child_token)
+        deadline = time.monotonic() + 60
+        while process.poll() is None and time.monotonic() < deadline:
+            if detect_exit(): raise RuntimeError('A server exited; see run/crashes; shutting down the remaining owned servers')
+            time.sleep(0.2)
+        if process.poll() is None:
+            adopt(entry, record)  # Still owned: a full stop or recovery can retry it.
+            return '%s did not stop within 60 seconds' % name
+        print('STOPPED ' + name, flush=True)
+        return None
+
+    def control_core(action, name):
+        running = any(child[0] == name for child in children)
+        if action == 'stop':
+            return (stop_child(name) or 'stopped') if running else 'not running'
+        if running: return 'already running'
+        try:
+            for host, port in instance_endpoints(cfg, name): free_endpoint(name, host, port)
+        except RuntimeError as error: return str(error)
+        prepare_runtime(cfg, [name])
+        process = launch(name)
+        failure = wait_listening(name, process, later=True)
+        if failure and process.poll() is None:
+            stop_child(name)
+        return failure or 'started'
+
+    def serve_control():
+        # run/control/<id>.request.json from control_cores(); answered in <id>.result.json.
+        if not control.is_dir(): return
+        for path in sorted(control.glob('*.request.json')):
+            identity_ = path.name[:-len('.request.json')]
+            try: request = read_json(path)
+            except (OSError, ValueError): request = {}
+            path.unlink(missing_ok=True)
+            if not re.fullmatch('[a-f0-9]{24}', identity_): continue
+            result = dict(id=identity_, ok=False, instances={})
+            names = request.get('instances')
+            if request.get('token') != token: result['error'] = 'The request does not carry this supervisor\'s token'
+            elif request.get('action') not in ('start', 'stop'): result['error'] = 'Unknown core action'
+            elif not isinstance(names, list) or not names or any(name not in cfg['game_servers'] for name in names):
+                result['error'] = 'Only configured game cores can be started or stopped one by one'
+            else:
+                for name in names: result['instances'][name] = control_core(request['action'], name)
+                result['ok'] = all(outcome in ('started', 'stopped', 'already running', 'not running')
+                                   for outcome in result['instances'].values())
+            save_json(control / (identity_ + '.result.json'), result)
+
     try:
         save_json(state_file, state)
         prepare_runtime(cfg, names)
         enable_child_cores()
         for name in names:
-            if stop_file.is_file() and stop_file.read_text(encoding='ascii').strip() == token:
-                stop_file.unlink(); raise StopRequested()
-            directory = instance_directory(cfg, name)
-            child_token = secrets.token_hex(24)
-            env = dict(os.environ, AURIGA_SHUTDOWN_TOKEN=child_token)
-            program = executable('Database' if name == 'database' else 'LoginServer' if name == 'login' else 'GameServer')
-            launches[name] = crash_launch(program, directory, fingerprints)
-            with (directory / 'console.log').open('ab') as log:
-                process = subprocess.Popen([str(program), '--config', str(ROOT / 'server.json'), '--instance', name],
-                    cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT,
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-            children.append((name, process, directory, child_token))
-            state['children'].append(dict(name=name, identity=identity(process.pid), token=child_token,
-                                          directory=str(directory)))
-            save_json(state_file, state)
-            deadline = time.monotonic() + 90
-            pending = set(instance_endpoints(cfg, name))
-            while pending and time.monotonic() < deadline:
-                if stop_file.is_file() and stop_file.read_text(encoding='ascii').strip() == token:
-                    stop_file.unlink(); raise StopRequested()
-                if detect_exit(): raise RuntimeError('A server exited during startup; see run/crashes and run/*/console.log')
-                for endpoint in list(pending):
-                    try:
-                        with socket.create_connection(endpoint, timeout=0.2): pending.remove(endpoint)
-                    except OSError: pass
-                time.sleep(0.2)
-            if pending:
-                raise RuntimeError('Readiness deadline exceeded for %s: nothing listens on %s'
-                                   % (name, ', '.join('%s:%d' % endpoint for endpoint in sorted(pending))))
-            print('LISTENING ' + name, flush=True)
+            stop_requested()
+            failure = wait_listening(name, launch(name))
+            if failure: raise RuntimeError(failure)
         state['phase'] = 'listening'; save_json(state_file, state)
         print('STACK_LISTENING; Ctrl+C or server.ps1 stop requests graceful shutdown', flush=True)
         while True:
             if stop_file.is_file() and stop_file.read_text(encoding='ascii').strip() == token:
                 stop_file.unlink(); break
             if detect_exit(): raise RuntimeError('A server exited; see run/crashes; shutting down the remaining owned servers')
+            serve_control()
             time.sleep(0.25)
     except (KeyboardInterrupt, StopRequested):
         print('Graceful shutdown requested')
@@ -708,6 +799,45 @@ def supervise_owned(channels, all_channels=False):
             state_file.unlink(missing_ok=True)
         else:
             print('Shutdown not complete; process identities retained: ' + ', '.join(shutdown_errors), file=sys.stderr)
+
+
+def control_cores(action, channels=None, instances=None):
+    """Start or stop game cores of the running stack one by one ('start' / 'stop')."""
+    cfg = config()
+    names = []
+    for name in instances or []:
+        if name not in cfg['game_servers']:
+            raise RuntimeError('Not a configured game core: %s (Database and LoginServer belong to the whole stack)' % name)
+        if name not in names: names.append(name)
+    if channels:
+        known = {core['server']['channel'] for core in cfg['game_servers'].values()}
+        if set(channels) - known: raise RuntimeError('Unknown selected channel')
+        names += [name for name, core in cfg['game_servers'].items() if core['server']['channel'] in channels and name not in names]
+    if not names: raise RuntimeError('Select at least one game core (--instance) or channel (--channel)')
+    state_file = ROOT / 'run/supervisor.json'
+    if not state_file.is_file(): raise RuntimeError('No managed stack is running; start the server first')
+    state = read_json(state_file)
+    if not owned(state['supervisor']): raise RuntimeError('The supervisor is not running; stop the stack and start it again')
+    if state.get('phase') != 'listening': raise RuntimeError('The stack is starting or stopping; try again once it runs')
+    control = ROOT / 'run/control'
+    control.mkdir(parents=True, exist_ok=True)
+    request_id = secrets.token_hex(12)
+    temporary = control / (request_id + '.tmp')
+    temporary.write_text(json.dumps(dict(token=state['token'], action=action, instances=names)), encoding='utf-8')
+    replace_file(temporary, control / (request_id + '.request.json'))
+    result_path = control / (request_id + '.result.json')
+    deadline = time.monotonic() + min(570, 100 * len(names) + 30)
+    while time.monotonic() < deadline:
+        if result_path.is_file():
+            result = read_json(result_path)
+            result_path.unlink(missing_ok=True)
+            for name, outcome in result.get('instances', {}).items(): print('%s: %s' % (name, outcome), flush=True)
+            if result.get('error'): raise RuntimeError(result['error'])
+            if not result.get('ok'): raise RuntimeError('Not every core could be ' + ('started' if action == 'start' else 'stopped'))
+            return
+        if not owned(state['supervisor']): raise RuntimeError('The supervisor stopped before it answered; see its start log')
+        time.sleep(0.2)
+    print('The supervisor is still working on the request; refresh the status later', flush=True)
 
 
 def supervise(channels, all_channels=False):
@@ -752,8 +882,9 @@ def status():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare','check','setup-db','init-db','import-db','start-db','stop-db','database-check','start','stop','status','reload-quests','quest-status','apply-quests'])
+    parser.add_argument('action', choices=['prepare','check','setup-db','init-db','import-db','start-db','stop-db','database-check','start','stop','status','reload-quests','quest-status','apply-quests','start-cores','stop-cores'])
     parser.add_argument('--channel', type=int, action='append')
+    parser.add_argument('--instance', action='append')
     parser.add_argument('--all-channels', action='store_true')
     parser.add_argument('--mariadb-bin')
     parser.add_argument('--backup', type=Path)
@@ -774,6 +905,7 @@ def main():
         elif args.action == 'database-check': database_check()
         elif args.action == 'start': supervise(args.channel, args.all_channels)
         elif args.action == 'stop': stop()
+        elif args.action in ('start-cores', 'stop-cores'): control_cores(args.action.split('-')[0], args.channel, args.instance)
         else: status()
         return 0
     except (RuntimeError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:

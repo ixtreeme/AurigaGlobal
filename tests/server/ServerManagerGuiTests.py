@@ -13,7 +13,7 @@ from unittest import mock
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / 'SRC/Tools/ServerManager'))
-from PySide6.QtCore import QPoint, QSettings, Qt
+from PySide6.QtCore import QItemSelectionModel, QPoint, QSettings, Qt
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QComboBox, QLineEdit
@@ -103,6 +103,55 @@ class ServerManagerGuiTests(unittest.TestCase):
         self.assertEqual(form.mode.currentIndex(), 0)
         self.assertFalse(self.window.console_panel.isVisible())
         self.assertFalse(self.window.config_editor.tabs.isTabVisible(1))
+
+    def test_cores_start_and_stop_one_by_one_from_the_table(self):
+        state = api.describe(self.root)
+        state = dict(state, running=True, phase='Fut', core_control=True)
+        state['rows'] = [dict(row, running=row['name'] in ('database', 'login', 'ch1-core1')) for row in state['rows']]
+        names = [row['name'] for row in state['rows']]
+        jobs = []
+        def select(*rows):
+            # Several rows, as a Ctrl-click would select them (selectRow replaces the selection).
+            table = self.window.core_table
+            table.clearSelection()
+            for name in rows:
+                table.selectionModel().select(table.model().index(names.index(name), 0),
+                    QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+            self.app.processEvents()
+        def selected():
+            return sorted(index.row() for index in self.window.core_table.selectionModel().selectedRows())
+        click = lambda widget: QTest.mouseClick(widget, Qt.MouseButton.LeftButton)
+        with mock.patch.object(self.window, 'state', return_value=state), \
+                mock.patch.object(self.window, 'job', side_effect=lambda arguments, callback=None: jobs.append(arguments)):
+            self.window.refresh()
+            self.assertFalse(self.window.start_cores_button.isEnabled(), 'nothing selected')
+            self.assertFalse(self.window.stop_cores_button.isEnabled())
+            select('ch2-core1')
+            self.assertTrue(self.window.start_cores_button.isEnabled())
+            self.assertFalse(self.window.stop_cores_button.isEnabled(), 'a stopped core cannot be stopped')
+            self.window.refresh()
+            self.assertEqual(selected(), [names.index('ch2-core1')], 'a status poll keeps the selection')
+            click(self.window.start_cores_button)
+            self.assertEqual(jobs[-1], ['start-cores', '--instance', 'ch2-core1'])
+            select('ch1-core1', 'ch2-core1')
+            with mock.patch.object(ui.QMessageBox, 'question', return_value=ui.QMessageBox.StandardButton.No):
+                click(self.window.stop_cores_button)
+            self.assertEqual(len(jobs), 1, 'declining the confirmation stops nothing')
+            with mock.patch.object(ui.QMessageBox, 'question', return_value=ui.QMessageBox.StandardButton.Yes):
+                click(self.window.stop_cores_button)
+            self.assertEqual(jobs[-1], ['stop-cores', '--instance', 'ch1-core1'], 'only the running one of the selection')
+            select('database', 'login')
+            self.assertFalse(self.window.start_cores_button.isEnabled())
+            self.assertFalse(self.window.stop_cores_button.isEnabled(), 'Database and LoginServer stay with the stack')
+            self.assertTrue(self.window.start_button.isEnabled(), 'a running stack can take more channels')
+            click(self.window.start_button)
+            self.assertEqual(jobs[-1], ['start-cores', '--channel', '1'])
+            state['core_control'] = False
+            select('ch2-core1')
+            self.window.refresh()
+            self.assertFalse(self.window.start_cores_button.isEnabled())
+            self.assertFalse(self.window.start_button.isEnabled())
+            self.assertIn('manage.py', self.window.start_cores_button.toolTip())
 
     def test_real_field_edit_and_async_native_save(self):
         editor = self.window.config_editor

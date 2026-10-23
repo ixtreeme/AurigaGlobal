@@ -310,6 +310,12 @@ class DeployTests(unittest.TestCase):
         for name, data in self.old.items(): self.assertEqual((self.root / 'bin' / name).read_bytes(), data)
         self.assertEqual((self.root / 'server.json').read_bytes(), self.original_config)
 
+    def test_automatic_backup_failure_prevents_any_binary_replacement(self):
+        self.helpers.backup_before_deploy=mock.Mock(side_effect=ValueError('backup failed'))
+        with self.assertRaisesRegex(ValueError,'backup failed'):deploy.deploy(self.request,self.helpers)
+        self.helpers.backup_before_deploy.assert_called_once_with(self.root)
+        self.assert_originals()
+
     def result(self): return json.loads((self.folder / 'result.json').read_text())
 
     def test_install_four_files_and_preserve_verified_backups_and_configuration(self):

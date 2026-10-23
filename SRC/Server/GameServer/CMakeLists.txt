@@ -73,6 +73,7 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME server_manager_ssh COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerManagerSshTests.py)
     add_test(NAME server_manager_password COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerManagerPasswordTests.py)
     add_test(NAME server_backup_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerBackupTests.py)
+    add_test(NAME server_manager_backups COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerManagerBackupTests.py)
 endif()
 
 # Headless regression checks compile the production attribute, switchbot and DS
