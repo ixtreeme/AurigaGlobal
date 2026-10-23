@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <common/character_creation.h>
 #include <Core/packet_string.h>
 #include <common/time_64_packets.h>
 #include "../ecs/systems/InventorySystem.hpp"
@@ -256,10 +257,6 @@ d->GetAccountTable().bChannel,
 	d->Packet(&pack, sizeof(TPacketGCPlayerCreateSuccess));
 
 #ifdef ENABLE_REWARD_AT_START
-	TPlayerItem t;
-	memset(&t, 0, sizeof(t));
-	t.owner	= r_Tab.players[pPacketDB->bAccountCharacterIndex].dwID;
-
 	struct SInitialItem
 	{
 		uint8_t	window;
@@ -397,32 +394,86 @@ d->GetAccountTable().bChannel,
 	};
 
 
-	unsigned job = pPacketDB->player.byJob;
-	for (int i = 0; i < 11; i++) {
-		if (initialItems[job][i].dwVnum == 0)
-			continue;
-
-		t.id = ITEM_MANAGER::instance().GetNewID();
-		t.window = initialItems[job][i].window;
-		t.pos = initialItems[job][i].pos;
-		t.count = initialItems[job][i].count;
-		t.vnum = initialItems[job][i].dwVnum;
-		for (int x = 0; x < ITEM_SOCKET_MAX_NUM; ++x) {
-			t.alSockets[x] = 0;
+	const unsigned race = pPacketDB->player.byJob;
+	if (race >= MAIN_RACE_MAX_NUM) return;
+	std::array<bool, INVENTORY_MAX_NUM> occupied{};
+	auto grant = [&](uint32_t vnum, uint32_t count, int wear, const TPlayerItemAttribute* attributes = nullptr) {
+		const auto* proto = ITEM_MANAGER::instance().GetTable(vnum);
+		if (!proto) { LOG_ERROR("Missing starter item {}", vnum); return; }
+		TPlayerItem item{};
+		item.owner = pPacketDB->player.dwID;
+		item.id = ITEM_MANAGER::instance().GetNewID();
+		item.vnum = vnum; item.count = count;
+		// Direct DB starter grants bypass CreateItem/UseItem initialization.
+		// Equipped first-use costumes must already have a running expiry timer.
+		for (const auto& limit : proto->aLimits) {
+			if (limit.bType == LIMIT_REAL_TIME || (wear >= 0 && limit.bType == LIMIT_REAL_TIME_START_FIRST_USE)) {
+				item.alSockets[0] = static_cast<int32_t>(time(nullptr) + (limit.lValue > 0 ? limit.lValue : 604800));
+				if (limit.bType == LIMIT_REAL_TIME_START_FIRST_USE) item.alSockets[1] = 1;
+			}
+			else if (limit.bType == LIMIT_TIMER_BASED_ON_WEAR) item.alSockets[0] = limit.lValue;
 		}
-
-		for (int x = 0; x < 5; ++x) {
-			t.aAttr[x].bType = initialItems[job][i].aAttr[x].bType;
-			t.aAttr[x].sValue = initialItems[job][i].aAttr[x].sValue;
+		if (wear >= 0) { item.window = EQUIPMENT; item.pos = wear; }
+		else {
+			const int height = std::max(1, static_cast<int>(proto->bSize));
+			int found = -1;
+			for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell) {
+				const int bottom = cell + (height - 1) * INVENTORY_PAGE_COLUMN;
+				if (bottom >= INVENTORY_MAX_NUM || cell / INVENTORY_PAGE_SIZE != bottom / INVENTORY_PAGE_SIZE) continue;
+				bool free = true;
+				for (int row = 0; row < height; ++row) if (occupied[cell + row * INVENTORY_PAGE_COLUMN]) free = false;
+				if (!free) continue;
+				found = cell;
+				for (int row = 0; row < height; ++row) occupied[cell + row * INVENTORY_PAGE_COLUMN] = true;
+				break;
+			}
+			if (found < 0) { LOG_ERROR("Starter inventory full for {}", item.owner); return; }
+			item.window = INVENTORY; item.pos = found;
 		}
-
+		if (attributes) std::copy_n(attributes, 5, item.aAttr);
+		else if (proto->bType == ITEM_COSTUME &&
+			(proto->bSubType == COSTUME_BODY || proto->bSubType == COSTUME_HAIR || proto->bSubType == COSTUME_WEAPON)) {
+			// Use the same magic/addon initializer as quest/chest item creation,
+			// then persist its complete rolled attributes with the starter row.
+			const auto rolled = ITEM_MANAGER::instance().CreateItem(vnum, count, 0, true, -1, true);
+			if (!ItemSystem::IsValidItem(rolled)) { LOG_ERROR("Failed starter costume initialization {}", vnum); return; }
+			ItemSystem::SetItemSkipSave(rolled, true);
+			for (int index = 0; index < ITEM_ATTRIBUTE_MAX_NUM; ++index)
+				item.aAttr[index] = ItemSystem::GetItemAttribute(rolled, index);
+			// The detached template must never emit a DB row or delete the real grant.
+			ITEM_MANAGER::instance().DestroyItem(rolled);
+		}
 #ifdef ATTR_LOCK
-		t.lockedattr = -1;
+		item.lockedattr = -1;
 #endif
-
-		db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_SAVE, 0, sizeof(TPlayerItem));
-		db_clientdesc->Packet(&t, sizeof(TPlayerItem));
+		db_clientdesc->DBPacket(HEADER_GD_ITEM_SAVE, 0, &item, sizeof(item));
+	};
+	for (const auto& initial : initialItems[race]) {
+		if (!initial.dwVnum || initial.dwVnum == 50188 || initial.dwVnum == 11409) continue;
+		int wear = -1;
+		switch (initial.dwVnum) {
+		case 12209:case 12349:case 12489:case 12629:wear=WEAR_HEAD;break;
+		case 13009:wear=WEAR_SHIELD;break;case 14009:wear=WEAR_WRIST;break;
+		case 15009:wear=WEAR_FOOTS;break;case 16009:wear=WEAR_NECK;break;case 17009:wear=WEAR_EAR;break;
+		}
+		grant(initial.dwVnum, initial.count, wear, initial.aAttr);
 	}
+	const uint32_t weapon = character_creation::Weapon(race, pPacketDB->player.skill_group);
+	grant(weapon, 1, WEAR_WEAPON);
+	grant(character_creation::Armor(race), 1, WEAR_BODY);
+	const uint32_t alternatives[4][3]{{19,3009,0},{1009,2009,19},{19,0,0},{5009,7009,0}};
+	for (uint32_t vnum : alternatives[race % 4]) if (vnum && vnum != weapon) grant(vnum, 1, -1);
+	grant(71231, 1, WEAR_COSTUME_MOUNT);
+	grant(88222, 1, WEAR_COSTUME_EFFECT_WEAPON);
+	grant(88224, 1, WEAR_COSTUME_EFFECT_BODY);
+	grant(character_creation::Male(race) ? 41311 : 41312, 1, WEAR_COSTUME_BODY);
+	grant(character_creation::Male(race) ? 45147 : 45148, 1, WEAR_COSTUME_HAIR);
+	const uint32_t costume = character_creation::WeaponCostume(weapon);
+	grant(costume, 1, WEAR_COSTUME_WEAPON);
+	for (uint32_t vnum : alternatives[race % 4])
+		if (vnum && character_creation::WeaponCostume(vnum) != costume)
+			grant(character_creation::WeaponCostume(vnum), 1, -1);
+	grant(76016, 40, -1);
 #endif
 
 	LogManager::instance().CharLog(pack.player.dwID, 0, 0, 0, "CREATE PLAYER", "", d->GetHostName());

@@ -233,6 +233,15 @@ void CAttribute::Set(uint32_t, uint32_t, uint32_t) { Unexpected(); }
 void CAttribute::Remove(uint32_t, uint32_t, uint32_t) { Unexpected(); }
 CHARACTER_MANAGER::CHARACTER_MANAGER() {}
 CHARACTER_MANAGER::~CHARACTER_MANAGER() {}
+// Out-of-line key functions emit RTTI required by singleton's guard on FreeBSD.
+// These service doubles are never connected to SQL or the live quest runtime.
+CBattlePass::~CBattlePass() = default;
+CSwitchbotManager::~CSwitchbotManager() = default;
+quest::CQuestManager::~CQuestManager() = default;
+quest::NPC::~NPC() = default;
+LogManager::~LogManager() = default;
+CAsyncSQL::~CAsyncSQL() = default;
+CSemaphore::~CSemaphore() = default;
 bool CHARACTER_MANAGER::AddToStateList(entt::entity e) { Check(g_registry.valid(e), "wake stale NPC"); return awake.insert(e).second; }
 void CHARACTER_MANAGER::RemoveFromStateList(entt::entity e) { awake.erase(e); }
 void CHARACTER_MANAGER::DestroyCharacter(entt::entity e) { g_registry.destroy(e); }
@@ -1596,15 +1605,16 @@ void NativeWarpLocations() {
 // LONG_MAX into Position.z, and every read of the character's height after
 // that returned it. There is one resolution now, before anything reads z.
 void ShowHeightSentinel() {
-    Check(ecs::MovementSystem::ResolveShowHeight(LONG_MAX, 250) == 250,
+    Check(ecs::MovementSystem::ResolveShowHeight(INT32_MAX, 250) == 250,
         "the sentinel was written through as a height");
     Check(ecs::MovementSystem::ResolveShowHeight(0, 250) == 0,
         "an explicit ground height was overridden");
     Check(ecs::MovementSystem::ResolveShowHeight(-120, 250) == -120,
         "an explicit height below zero was overridden");
-    Check(ecs::MovementSystem::ResolveShowHeight(LONG_MAX, 0) == 0,
+    Check(ecs::MovementSystem::ResolveShowHeight(INT32_MAX, 0) == 0,
         "the sentinel did not resolve against a zero height");
-    static_assert(ecs::MovementSystem::ResolveShowHeight(LONG_MAX, 7) == 7);
+    // The production API is int32_t on Windows and FreeBSD; long is not.
+    static_assert(ecs::MovementSystem::ResolveShowHeight(INT32_MAX, 7) == 7);
 }
 
 void ShownMountFollowAndRemoval() {

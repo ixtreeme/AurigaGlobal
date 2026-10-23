@@ -556,7 +556,7 @@ bool PickupItem(entt::entity character, uint32_t vid)
 #else
                 CHAT_TYPE_INFO,
 #endif
-                102, "%d#%s", count, name.c_str());
+                102, "%u#[{%u}]", count, vnum);
 #endif
     };
 #ifdef ENABLE_EXTRA_INVENTORY

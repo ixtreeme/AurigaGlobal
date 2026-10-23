@@ -1340,7 +1340,8 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 		}
 		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
 
-		if (!ecs::PlayerRuntime::IsStone(chr) && it != m_map_pkDropItemGroup.end())
+		// Configured per-race drop groups apply to stones too, matching target info.
+		if (it != m_map_pkDropItemGroup.end() && it->second)
 		{
 			auto v = it->second->GetVector();
 

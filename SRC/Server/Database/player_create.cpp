@@ -37,8 +37,10 @@ PlayerCreateQuery BuildPlayerCreateQuery(const char* tablePostfix, uint32_t acco
     add("stat_point", SqlParam::Int(player.stat_point));
     add("stamina", SqlParam::Int(player.stamina));
     add("part_base", SqlParam::UInt(player.part_base));
-    add("part_main", SqlParam::UInt(player.part_base));
-    add("part_hair", SqlParam::UInt(0));
+    add("part_main", SqlParam::UInt(player.parts[PART_MAIN] ? player.parts[PART_MAIN] : player.part_base));
+    add("part_hair", SqlParam::UInt(player.parts[PART_HAIR]));
+    add("skill_group", SqlParam::UInt(player.skill_group));
+    add("skill_point", SqlParam::Int(player.skill_point));
 #ifdef ENABLE_ACCE_SYSTEM
     add("part_acce", SqlParam::UInt(0));
 #endif

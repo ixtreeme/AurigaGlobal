@@ -147,6 +147,14 @@ int main(int argc, char** argv)
         u("hp", player.hp); u("mp", player.sp); i("gold", player.gold);
         i("random_hp", 301); i("random_sp", -302); i("stat_point", 47); i("stamina", 251);
         u("part_base", 8); u("part_main", 8); u("part_hair", 0); u("playtime", 0);
+        u("skill_group", player.skill_group); i("skill_point", player.skill_point);
+        auto chosen = player;
+        chosen.level = 5; chosen.skill_group = 2; chosen.skill_point = 1;
+        chosen.parts[PART_MAIN] = 11809; chosen.parts[PART_HAIR] = 44;
+        const auto selected = Columns(BuildPlayerCreateQuery("_test", 1, chosen));
+        Check(selected.at("level").u64 == 5 && selected.at("skill_group").u64 == 2 && selected.at("skill_point").i64 == 1 &&
+            selected.at("part_main").u64 == 11809 && selected.at("part_hair").u64 == 44,
+            "creation choices were discarded from the parameterized INSERT");
 #ifdef ENABLE_ACCE_SYSTEM
         u("part_acce", 0);
 #endif

@@ -32,7 +32,7 @@ void ResetMountCounter(entt::entity e);
 uint8_t GetMountCounter(entt::entity e);
 uint8_t IncreaseMountCounter(entt::entity e);
 void SetStone(entt::entity e, entt::entity stone);
-void ClearStone(entt::entity e);
+void ClearStone(entt::entity e, const ecs::DamageLedger* deathCredit = nullptr);
 entt::entity GetSelectedTarget(entt::entity e);
 void SendDamagePacket(entt::entity e, entt::entity attacker, int Damage, uint8_t DamageFlag);
 void SetTarget(entt::entity e, entt::entity target);

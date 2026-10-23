@@ -1097,13 +1097,15 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 	pack.player.dwID = player_id;
 	strlcpy(pack.player.szName, packet->player_table.name, sizeof(pack.player.szName));
 	pack.player.byJob = packet->player_table.job;
-	pack.player.byLevel = 1;
+	pack.player.byLevel = packet->player_table.level;
 	pack.player.dwPlayMinutes = 0;
 	pack.player.byST = packet->player_table.st;
 	pack.player.byHT = packet->player_table.ht;
 	pack.player.byDX = packet->player_table.dx;
 	pack.player.byIQ = packet->player_table.iq;
-	pack.player.wMainPart = packet->player_table.part_base;
+	pack.player.wMainPart = packet->player_table.parts[PART_MAIN] ? packet->player_table.parts[PART_MAIN] : packet->player_table.part_base;
+	pack.player.wHairPart = packet->player_table.parts[PART_HAIR];
+	pack.player.skill_group = packet->player_table.skill_group;
 	pack.player.x = packet->player_table.x;
 	pack.player.y = packet->player_table.y;
 

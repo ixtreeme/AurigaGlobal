@@ -3236,14 +3236,13 @@ void GiveMessage(entt::entity owner, entt::entity item, uint32_t count)
 {
 #ifdef TEXTS_IMPROVEMENT
     if (!GiveReceipt(owner, item)) return;
-    const auto name = GiveName(owner, item);
     ecs::ChatSystem::SendNew(owner,
 #ifdef ENABLE_NEW_CHAT
         CHAT_TYPE_INFO_ITEM,
 #else
         CHAT_TYPE_INFO,
 #endif
-        102, "%u#%s", count, name.c_str());
+        102, "%u#[{%u}]", count, GetItemVnum(item));
 #else
     (void)owner; (void)item; (void)count;
 #endif

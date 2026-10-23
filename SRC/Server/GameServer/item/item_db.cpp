@@ -16,6 +16,7 @@
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
+#include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/StatSystem.hpp"
 #include "char_manager.h"
@@ -186,6 +187,9 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	NetworkSyncSystem::PointsPacket(chEntity);
 
 	InventorySystem::SetItemLoaded(chEntity);
+#ifdef ENABLE_RECALL
+	AffectSystem::AutoRecallProcess(chEntity);
+#endif
 }
 
 void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)

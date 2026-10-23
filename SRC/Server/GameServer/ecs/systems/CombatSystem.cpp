@@ -2181,6 +2181,9 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 {
 	if (victim == entt::null || !g_registry.valid(victim))
 		return;
+	// Reward consumes the stone's ledger before its spawned mobs are cleared.
+	// Preserve contribution shares for their EXP, never for cleanup/despawn calls.
+	ecs::DamageLedger stoneDeathCredit;
 	// FakePlayers are normally excluded from death handling, but LostCastle clones must die.
 
 	if (IsDead(victim))
@@ -2542,6 +2545,9 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 			if (!(hasKiller && ecs::PlayerRuntime::IsPC(killer) && ecs::SocialSystem::GetGuild(killer) && ecs::SocialSystem::GetGuild(killer)->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
 			{
 				const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(victim);
+				if (ecs::PlayerRuntime::IsStone(victim))
+					if (const auto* ledger = g_registry.try_get<ecs::DamageLedger>(victim))
+						stoneDeathCredit = *ledger;
 				if (mobTable && mobTable->dwResurrectionVnum)
 				{
 					// DUNGEON_MONSTER_REBIRTH_BUG_FIX
@@ -2625,7 +2631,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		{
 			// Every mob the stone spawned dies here, and each of those deaths
 			// comes back through this function.
-			ClearStone(victim);
+			ClearStone(victim, &stoneDeathCredit);
 			if (!g_registry.valid(victim))
 				return;
 		}
@@ -3337,7 +3343,7 @@ static bool __TryAutoGiveRewardItem(entt::entity owner, entt::entity itemEntity,
 #else
 					CHAT_TYPE_INFO
 #endif
-					, 102, "%u#%s", dwGivenCount, itemName.c_str());
+					, 102, "%u#[{%u}]", dwGivenCount, itemVnum);
 			}
 #endif
 			return true;
@@ -3376,7 +3382,7 @@ static bool __TryAutoGiveRewardItem(entt::entity owner, entt::entity itemEntity,
 #else
 			CHAT_TYPE_INFO
 #endif
-			, 102, "%u#%s", dwGivenCount, itemName.c_str());
+			, 102, "%u#[{%u}]", dwGivenCount, itemVnum);
 	}
 #endif
 
@@ -7034,7 +7040,7 @@ void SetStone(entt::entity e, entt::entity stone)
 // stone. The member list is taken by move first: every Dead() below comes back
 // through here and erases from the very list the old std::for_each walked,
 // which invalidated its iterator mid-iteration.
-void ClearStone(entt::entity e)
+void ClearStone(entt::entity e, const ecs::DamageLedger* deathCredit)
 {
     if (e == entt::null || !g_registry.valid(e))
         return;
@@ -7048,6 +7054,19 @@ void ClearStone(entt::entity e)
         {
             if (member == entt::null || !g_registry.valid(member))
                 continue;
+            // A stone kill should pay its auto-cleared spawn EXP even when the
+            // player one-shots the stone. Keep already-hit mobs' own contributors.
+            // Detach first: routing half the EXP into an already-dead stone loses it.
+            if (deathCredit && !deathCredit->entries.empty() && !IsDead(member))
+            {
+                SetStone(member, entt::null);
+                auto& ledger = DamageLedgerOf(member);
+                if (ledger.entries.empty())
+                    ledger = *deathCredit;
+                DistributeExp(member);
+                if (!g_registry.valid(member))
+                    continue;
+            }
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
             if (auto* flags = RuntimeFlags(member))
                 SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);

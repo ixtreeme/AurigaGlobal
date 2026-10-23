@@ -129,6 +129,15 @@ void PetSystem::RefreshBuff(entt::entity) {}
 DSManager::DSManager() = default;
 DSManager::~DSManager() = default;
 DragonSoulTable::~DragonSoulTable() = default;
+// Native singleton diagnostics reference RTTI even when these services are
+// isolated by test doubles and never constructed in this fixture.
+LogManager::~LogManager() = default;
+quest::CQuestManager::~CQuestManager() = default;
+quest::NPC::~NPC() = default;
+CMobManager::~CMobManager() = default;
+CAsyncSQL::~CAsyncSQL() = default;
+CSemaphore::~CSemaphore() = default;
+void intrusive_ptr_release(event*) { Unexpected(); }
 bool DSManager::IsTimeLeftDragonSoul(entt::entity) const { return true; }
 
 namespace ecs::PlayerRuntime {
@@ -370,6 +379,16 @@ void RepeatedCalculation() {
     Check(P::GetMaxHP(e) == 1670 && g_registry.get<ecs::SkillDamageBonus>(e).bySkill.empty() &&
         ecs::PlayerRuntime::GetImmuneFlag(e) == 0, "removed item retained bonuses");
 }
+void SkillPointSpendChecks() {
+    Reset();const auto e=ActorEntity();
+    P::Set(e,POINT_SKILL,5);P::SetReal(e,POINT_SKILL,5);
+    for(int remaining=4;remaining>=0;--remaining){
+        P::Change(e,POINT_SKILL,-1);
+        P::Compute(e);
+        Check(P::Get(e,POINT_SKILL)==remaining&&P::GetReal(e,POINT_SKILL)==remaining,
+            "spending one skill point consumed the pool during recompute");
+    }
+}
 void SourceChecks() {
     Reset(); auto e = ActorEntity(false);
     g_registry.get<Actor>(e).mob.dwImmuneFlag = IMMUNE_POISON;
@@ -483,7 +502,7 @@ void CallbackChecks() {
 int main() {
     try {
         CSkillManager skills; CHARACTER_MANAGER characters; DSManager dragonSouls;
-        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
+        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SkillPointSpendChecks(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

@@ -1720,23 +1720,31 @@ void InventorySystem::UnlockExtraInventory(entt::entity e, uint8_t category) {
 #ifdef ENABLE_RECALL
 void AffectSystem::AutoRecallProcess(entt::entity e)
 {
-	if (ecs::PlayerRuntime::GetDesc(e) == nullptr)
+	const auto* descriptor = ecs::PlayerRuntime::GetDesc(e);
+	if (!descriptor || !descriptor->IsPhase(PHASE_GAME) || !ecs::PlayerRuntime::GetSectree(e)
+		|| !InventorySystem::IsItemLoaded(e))
 		return;
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+	// ENABLE_01092021 disables the old LoadAffect mount-restore branch.
+	// Restore only after inventory, placement and the GAME phase are ready.
+	if (ecs::PlayerRuntime::GetMapIndex(e) != 113 &&
+		!CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(e)))
+		MountSystem::CheckMount(e);
+#endif
 
 #ifdef __PET_SYSTEM__
 	{
 		const CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_RECALL1);
 		if (pAffect) {
 			const entt::entity pItem = ItemSystem::FindItemByID(e, pAffect->dwFlag);
-			if (pItem != entt::null) {
-				if (ItemSystem::GetItemSocket(pItem, 2) == false) {
-					if (PetSystem::CountSummoned(e) < 1) {
-						ecs::PetActorState* pPet = PetSystem::Summon(e,
-							ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
-						if (!pPet)
-							AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
-					}
-				}
+			if (ItemSystem::IsValidItem(pItem)) {
+				// Socket 2 is persisted and can still be 1 after a core transfer.
+				// Live ECS actors, not that stale marker, decide whether to recall.
+				if (PetSystem::CountSummoned(e) == 0)
+					PetSystem::Summon(e, ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
+				// Keep recall intent on transient spawn failure; Summon can replace
+				// the affect, so the old pAffect must not be dereferenced afterwards.
 			}
 			else
 				AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
@@ -1748,15 +1756,10 @@ void AffectSystem::AutoRecallProcess(entt::entity e)
 		const CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_RECALL2);
 		if (pAffect) {
 			const entt::entity pItem = ItemSystem::FindItemByID(e, pAffect->dwFlag);
-			if (pItem != entt::null) {
-				if (ItemSystem::GetItemSocket(pItem, 0) == false) {
-					if (NewPetSystem::CountSummoned(e) < 1) {
-						ecs::NewPetActorState* pPet = NewPetSystem::Summon(e,
-							ItemSystem::GetItemValue(pItem, 0), pItem, "", false);
-						if (!pPet)
-							AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
-					}
-				}
+			if (ItemSystem::IsValidItem(pItem)) {
+				// The saved growth-pet active marker is not a live actor handle.
+				if (NewPetSystem::CountSummoned(e) == 0)
+					NewPetSystem::Summon(e, ItemSystem::GetItemValue(pItem, 0), pItem, "", false);
 			}
 			else
 				AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));

@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "character_selection.h"
+#include <common/character_creation.h>
+#include "../item/item_manager.h"
 #include <Core/packet_string.h>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -10,6 +12,7 @@
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
+#include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/CharacterAccessors.hpp"
@@ -408,7 +411,7 @@ bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_
 
 	strlcpy(table->name, name, sizeof(table->name));
 
-	table->level = 1;
+	table->level = character_creation::StartLevel;
 	table->job = race;
 	table->voice = 0;
 	table->part_base = shape;
@@ -499,6 +502,44 @@ void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 		d->Packet(&packFailure, sizeof(packFailure));
 		return;
 	}
+	uint8_t skillGroup = 1;
+	uint16_t hairAppearance = 0;
+	if (pinfo->Con == character_creation::ChoicesMarker)
+	{
+		skillGroup = pinfo->Int;
+		hairAppearance = static_cast<uint16_t>(pinfo->Str) | (static_cast<uint16_t>(pinfo->Dex) << 8);
+	}
+	if (skillGroup < 1 || skillGroup > 2 || !character_creation::ValidHair(hairAppearance))
+	{
+		d->Packet(&packFailure, sizeof(packFailure));
+		return;
+	}
+	if (hairAppearance != 0)
+	{
+		const auto* hair = ITEM_MANAGER::instance().GetTable(character_creation::HairItem(pinfo->job, hairAppearance));
+		const bool male = pinfo->job == 0 || pinfo->job == 2 || pinfo->job == 5 || pinfo->job == 7;
+		const uint32_t anti = (1u << (2 + pinfo->job % 4)) | (male ? ITEM_ANTIFLAG_MALE : ITEM_ANTIFLAG_FEMALE);
+		if (!hair || hair->bType != ITEM_COSTUME || hair->bSubType != COSTUME_HAIR || hair->alValues[3] != hairAppearance || (hair->dwAntiFlags & anti))
+		{
+			d->Packet(&packFailure, sizeof(packFailure));
+			return;
+		}
+	}
+	auto& initial = player_create_packet.player_table;
+	initial.skill_group = skillGroup;
+	initial.skill_point = character_creation::StartLevel;
+	initial.stat_point = (character_creation::StartLevel - 1) * 3;
+	initial.parts[PART_HAIR] = hairAppearance;
+	initial.parts[PART_MAIN] = character_creation::Armor(pinfo->job);
+	unsigned initialJob = 0;
+	RaceToJob(pinfo->job, &initialJob);
+	for (int level = 1; level < character_creation::StartLevel; ++level)
+	{
+		initial.sRandomHP += number(JobInitialPoints[initialJob].hp_per_lv_begin, JobInitialPoints[initialJob].hp_per_lv_end);
+		initial.sRandomSP += number(JobInitialPoints[initialJob].sp_per_lv_begin, JobInitialPoints[initialJob].sp_per_lv_end);
+	}
+	initial.hp += initial.sRandomHP;
+	initial.sp += initial.sRandomSP;
 
 	trim_and_lower(c_rAccountTable.login, player_create_packet.login, sizeof(player_create_packet.login));
 	strlcpy(player_create_packet.passwd, c_rAccountTable.passwd, sizeof(player_create_packet.passwd));
@@ -589,6 +630,14 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ecs::MovementSystem::Show(ch, ecs::PlayerRuntime::GetMapIndex(ch), pos.x, pos.y, pos.z);
 	CombatSystem::ReviveInvisible(ch, 5);
 	d->SetPhase(PHASE_GAME);
+#ifdef ENABLE_RECALL
+	AffectSystem::AutoRecallProcess(ch);
+#endif
+	// Inventory/recall can spawn followers during PHASE_LOADING. Publish the
+	// current scene again after GAME so a loading client's discarded inserts do
+	// not leave stationary mounts/pets invisible until they leave view range.
+	// This replays only to this client, not to unrelated nearby players.
+	ecs::ViewSystem::ViewReencode(ch);
 	SECTREE_MANAGER::instance().SendNPCPosition(ch);
 #ifdef ENABLE_ATLAS_BOSS
 	SECTREE_MANAGER::instance().SendBossPosition(ch);

@@ -192,6 +192,14 @@ DSManager::~DSManager() = default;
 DragonSoulTable::~DragonSoulTable() = default;
 LogManager::LogManager() : m_bIsConnect(false) {}
 LogManager::~LogManager() = default;
+// Supply the key virtual functions of service doubles on the Itanium ABI too.
+// singleton's release guard references their RTTI even when no live service
+// is constructed. Linking the real managers here would start unrelated systems.
+CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
+DBManager::~DBManager() = default;
+CRefineManager::~CRefineManager() = default;
+quest::CQuestManager::~CQuestManager() = default;
+quest::NPC::~NPC() = default;
 
 namespace ItemSystem {
 bool IsValidItem(entt::entity item) { return g_registry.valid(item) && g_registry.all_of<ecs::ItemIdentity>(item); }
