@@ -6,7 +6,6 @@
 #include "../../SRC/Server/GameServer/network/db.h"
 #include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/network/desc_client.h"
-#include "../../SRC/Server/GameServer/combat/battle_pass.h"
 #include "../../SRC/Server/GameServer/core/config.h"
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
@@ -156,7 +155,6 @@ CAsyncSQL::CAsyncSQL() = default;
 CAsyncSQL::~CAsyncSQL() = default;
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
-bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { return false; }
 int64_t quest::CQuestManager::GetEventFlag(const std::string&) { return 0; }
 const std::string& LocaleService_GetBasePath() { static const std::string path = "/never/read"; return path; }
 void ContinueOnFatalError() {}
@@ -173,9 +171,6 @@ int32_t GetY(entt::entity e) { const auto* a = g_registry.try_get<Actor>(e); ret
 uint8_t GetEmpire(entt::entity e) { const auto* a = g_registry.try_get<Actor>(e); return a ? a->empire : 0; }
 uint8_t GetGMLevel(entt::entity) { return GM_PLAYER; }
 LPDESC GetDesc(entt::entity e) { return IsPC(e) ? reinterpret_cast<LPDESC>(static_cast<uintptr_t>(0x3000 + entt::to_entity(e))) : nullptr; }
-uint8_t GetBattlePassId(entt::entity) { return 0; }
-uint32_t GetMissionProgress(entt::entity, uint32_t, uint32_t) { return 0; }
-bool UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { return false; }
 }
 
 namespace ItemSystem {

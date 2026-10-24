@@ -19,31 +19,6 @@ struct FishingState {
 
 struct FishingActiveTag {};
 
-// The battle-pass missions this character is working on. It was a raw list
-// of pointers on CHARACTER, so nothing entity-native could read a mission.
-struct BattlePassMissions {
-    std::list<TPlayerBattlePassMission*> missions;
-    // Whether the list above came back from the database. It was a CHARACTER
-    // field beside the list it describes.
-    bool loaded { false };
-
-    BattlePassMissions() = default;
-    BattlePassMissions(const BattlePassMissions&) = default;
-    BattlePassMissions& operator=(const BattlePassMissions&) = default;
-    BattlePassMissions(BattlePassMissions&&) = default;
-
-    // entt's swap-and-pop erases the last pool element by doing
-    // `elem = std::move(elem)`. libc++ implements list move assignment with
-    // splice(end(), other) and its hardening traps on the self-splice (SIGILL
-    // on FreeBSD); MSVC tolerates the self-move. Guard it like AffectList.
-    BattlePassMissions& operator=(BattlePassMissions&& other) noexcept {
-        if (this != &other) {
-            missions = std::move(other.missions);
-            loaded = other.loaded;
-        }
-        return *this;
-    }
-};
 
 // When a box was last opened. It was a CHARACTER field guarding a cooldown
 // that only the item code enforced.

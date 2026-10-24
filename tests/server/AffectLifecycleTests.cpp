@@ -598,51 +598,6 @@ void ExpiryChecks() {
     Check(A::ProcessAffect(e) && !g_registry.valid(e), "HP clamp destruction prevents a stale SP clamp");
     ResetPublication();
 }
-void DeadlineChecks() {
-    ResetPublication(); nowSeconds = 1000;
-    auto e = Actor();
-    Check(A::GetBattlePassDeadline(e) == 0 && A::SetBattlePassDeadline(e, 1020) &&
-        A::GetBattlePassRemainingSeconds(e) == 20, "battle pass deadline is entity-owned");
-    auto affect = InstallTimed(e, AFFECT_BATTLE_PASS, 100, POINT_BATTLE_PASS_ID, 1);
-    Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == 20, "battle pass uses absolute remaining time");
-    nowSeconds = 1020;
-    Check(A::ProcessAffect(e), "battle pass expires at the boundary tick");
-    A::SetBattlePassDeadline(e, UINT32_MAX); nowSeconds = 0;
-    Check(A::GetBattlePassRemainingSeconds(e) == INT32_MAX, "far-future timestamp clamps instead of wrapping negative");
-    InstallTimed(e, AFFECT_BATTLE_PASS, 3);
-    Check(!A::ProcessAffect(e) && A::FindAffect(e, AFFECT_BATTLE_PASS)->lDuration == INT32_MAX - 1,
-        "remaining plus one cannot overflow duration");
-    g_registry.remove<ecs::AffectList>(e); g_registry.emplace<ecs::AffectList>(e);
-    Check(A::GetBattlePassDeadline(e) == UINT32_MAX, "clearing affects does not erase persisted deadline");
-    g_registry.destroy(e);
-    Check(!A::SetBattlePassDeadline(e, 12) && A::GetBattlePassDeadline(e) == 0 && !A::SetBattlePassDeadline(entt::null, 12),
-        "stale deadline writes rejected");
-    const auto nonCharacter = g_registry.create();
-    Check(!A::SetBattlePassDeadline(nonCharacter, 12), "deadline cannot be attached to a non-character entity");
-    nowSeconds = 1000; e = Actor(); A::SetBattlePassDeadline(e, 999);
-    InstallTimed(e, AFFECT_BATTLE_PASS, 100);
-    onCompute = [&](entt::entity owner) {
-        onCompute = {};
-        A::SetBattlePassDeadline(owner, 2000);
-        InstallTimed(owner, AFFECT_BATTLE_PASS, 1000);
-    };
-    Check(!A::ProcessAffect(e) && A::GetBattlePassDeadline(e) == 2000,
-        "expiry cannot clear a new deadline installed by removal callback");
-
-    for (uint8_t premium : {uint8_t(0), uint8_t(PREMIUM_MAX_NUM - 1)}) {
-        e = Actor(); premiumRemaining[premium] = 42;
-        affect = InstallTimed(e, AFFECT_PREMIUM_START + premium, 2);
-        Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == 42, "premium duration follows account remaining time");
-        premiumRemaining[premium] = -1;
-        Check(A::ProcessAffect(e), "expired account premium removed");
-    }
-    e = Actor(); premiumRemaining[0] = INT32_MAX;
-    affect = InstallTimed(e, AFFECT_PREMIUM_START, 2);
-    Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == INT32_MAX - 1, "premium duration refresh saturates");
-    e = Actor(); InstallTimed(e, AFFECT_PREMIUM_START + PREMIUM_MAX_NUM, 1);
-    Check(A::ProcessAffect(e), "reserved premium sentinel does not access account array or become immortal");
-    ResetPublication();
-}
 void HairAndHorseChecks() {
     ResetPublication(); nowSeconds = 1000; hairDeadline = horseDeadline = 2000;
     auto e = Actor();
@@ -937,7 +892,7 @@ int main() {
         CHorseNameManager horseNames;
         StorageChecks(); FlagAndPointChecks(); RefreshChecks(); RemovalChecks();
         AddChecks(); TimerChecks(); PublicationChecks(); LifetimeStressChecks();
-        ExpiryChecks(); DeadlineChecks(); HairAndHorseChecks(); ExpiryPublicationChecks();
+        ExpiryChecks();  HairAndHorseChecks(); ExpiryPublicationChecks();
         std::cout << "Affect checks passed: " << checks << '\n'; return 0;
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

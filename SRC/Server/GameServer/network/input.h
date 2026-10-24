@@ -136,9 +136,6 @@ class CInputMain : public CInputProcessor
 		void		FlyTarget(entt::entity character, const char * pcData, uint8_t bHeader);
 		void		UseSkill(entt::entity character, const char * pcData);
 
-#ifdef ENABLE_BATTLE_PASS	
-		int 		BattlePass(entt::entity character, const char * data, size_t uiBytes);
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 		void		SetSkillColor(entt::entity character, const char * pcData);
@@ -249,10 +246,6 @@ protected:
 	void		ItemLoad(LPDESC d, const char * c_pData);
 	void		AffectLoad(LPDESC d, const char * c_pData);
 
-#ifdef ENABLE_BATTLE_PASS
-	void		BattlePassLoad(LPDESC d, const char * c_pData);
-	void		BattlePassLoadRanking(LPDESC d, const char * c_pData);
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	void		SkillColorLoad(LPDESC d, const char * c_pData);

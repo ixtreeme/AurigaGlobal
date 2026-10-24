@@ -14,9 +14,6 @@
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/components/inventory_components.hpp"
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#endif
 
 namespace {
 bool RequiresZodiacChanger(uint32_t vnum)
@@ -88,18 +85,6 @@ void RecordSwitchProgress(entt::entity owner, uint32_t materialVnum)
     const int category = materialVnum == 86051 || materialVnum == 88965 ? 13 : 12;
     ecs::PlayerRuntime::SetRankPoints(owner, category,
         ecs::PlayerRuntime::GetRankPoints(owner, category) + 1);
-#endif
-#ifdef ENABLE_BATTLE_PASS
-    const uint8_t battlePass = ecs::PlayerRuntime::GetBattlePassId(owner);
-    if (battlePass != 0) {
-        for (const auto mission : {USE_ITEM, USE_ITEM1, USE_ITEM2}) {
-            uint32_t requiredVnum = 0;
-            uint32_t requiredCount = 0;
-            if (CBattlePass::instance().BattlePassMissionGetInfo(battlePass, mission, &requiredVnum, &requiredCount) &&
-                requiredVnum == materialVnum && ecs::PlayerRuntime::GetMissionProgress(owner, mission, battlePass) < requiredCount)
-                ecs::PlayerRuntime::UpdateMissionProgress(owner, mission, battlePass, 1, requiredCount);
-        }
-    }
 #endif
 }
 } // namespace

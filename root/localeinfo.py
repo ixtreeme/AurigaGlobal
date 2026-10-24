@@ -729,13 +729,6 @@ if app.ENABLE_GAYA_SYSTEM:
 		return "%s %s" % ('.'.join([ i-3<0 and str(n)[:i] or str(n)[i-3:i] for i in range(len(str(n))%3, len(str(n))+1, 3) if i ]), GAYA_SYSTEM_UNIT_GAYA)
 
 
-if app.ENABLE_BATTLE_PASS:
-	def AddPointToNumberString(n) :
-		if n <= 0 :
-			return "0"
-
-		return "%s" % ('.'.join([ i-3<0 and str(n)[:i] or str(n)[i-3:i] for i in range(len(str(n))%3, len(str(n))+1, 3) if i ]))
-
 def NumberToSecondaryCoinString(n) :
 	if n <= 0 :
 		return "0 %s" % (MONETARY_UNIT_JUN)

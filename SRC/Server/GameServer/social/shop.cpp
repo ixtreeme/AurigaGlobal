@@ -22,7 +22,6 @@
 #include "questmanager.h"
 #include "mob_manager.h"
 #include "locale_service.h"
-#include "battle_pass.h"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
@@ -951,20 +950,6 @@ namespace ShopSystem
 				}
 			}
 
-#ifdef ENABLE_BATTLE_PASS
-			{
-				uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch);
-				if(bBattlePassId)
-				{
-					uint32_t dwYangCount, dwNotUsed;
-					if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, SPENT_YANG, &dwNotUsed, &dwYangCount))
-					{
-						if(ecs::PlayerRuntime::GetMissionProgress(ch, SPENT_YANG, bBattlePassId) < dwYangCount)
-							ecs::PlayerRuntime::UpdateMissionProgress(ch, SPENT_YANG, bBattlePassId, dwPrice, dwYangCount);
-					}
-				}
-			}
-#endif
 
 			if (!ismultiple) {
 #ifdef ENABLE_LIMIT_BUY_SPEED

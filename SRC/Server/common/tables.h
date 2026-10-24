@@ -101,11 +101,6 @@ enum
 	HEADER_GD_WEDDING_READY		= 74,
 	HEADER_GD_WEDDING_END		= 75,
 
-#ifdef ENABLE_BATTLE_PASS
-	HEADER_GD_SAVE_BATTLE_PASS		= 82,
-	HEADER_GD_REGISTER_BP_RANKING	= 83,
-	HEADER_GD_BATTLE_PASS_RANKING 	= 84,
-#endif
 #ifdef ENABLE_HWID
 	HEADER_GD_BLOCKHWID = 85,
 	HEADER_GD_UNBLOCKHWID = 86,
@@ -212,10 +207,6 @@ enum
 	HEADER_GD_ITEMSHOP					= 76,
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-	HEADER_DG_BATTLE_PASS_LOAD = 78,
-	HEADER_DG_BATTLE_PASS_LOAD_RANKING = 79,
-#endif
 #ifdef ENABLE_HWID
 	HEADER_DG_BLOCKHWID = 80,
 	HEADER_DG_UNBLOCKHWID = 81,
@@ -505,9 +496,6 @@ typedef struct SPlayerTable
 	int 	envanter;
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-	int64_t	dwBattlePassEndTime;
-#endif
 #ifdef ENABLE_RANKING
 	long long	lRankPoints[RANKING_MAX_CATEGORIES];
 #endif
@@ -2006,50 +1994,7 @@ typedef struct
 } TSkillColor;
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-typedef struct SPlayerBattlePassMission
-{
-	uint32_t dwPlayerId;
-	uint32_t dwMissionId;
-	uint32_t dwBattlePassId;
-	uint32_t dwExtraInfo;
-	uint8_t bCompleted;
-	uint8_t bIsUpdated;
-} TPlayerBattlePassMission;
 
-typedef struct SBattlePassRewardItem
-{
-	uint32_t	dwVnum;
-	int	bCount;
-} TBattlePassRewardItem;
-
-typedef struct SBattlePassMissionInfo
-{
-	uint8_t	bMissionType;
-	uint32_t	dwMissionInfo[3];
-	TBattlePassRewardItem aRewardList[MISSION_REWARD_COUNT];
-} TBattlePassMissionInfo;
-
-typedef struct SBattlePassRanking
-{
-	uint8_t	bPos;
-	char	playerName[CHARACTER_NAME_MAX_LEN + 1];
-	uint32_t	dwFinishTime;
-} TBattlePassRanking;
-
-typedef struct SBattlePassRegisterRanking
-{
-	uint8_t	bBattlePassId;
-	char	playerName[CHARACTER_NAME_MAX_LEN + 1];
-} TBattlePassRegisterRanking;
-#endif
-
-#ifdef ENABLE_BATTLE_PASS_SECURITY_KILL
-typedef struct SBattlePassKillVictim {
-	uint32_t	dwVictimPid;
-	uint32_t	dwLastKillTime;
-} TBattlePassKillVictim;
-#endif
 
 #if defined(BL_OFFLINE_MESSAGE)
 typedef struct

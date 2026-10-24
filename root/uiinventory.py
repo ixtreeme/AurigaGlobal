@@ -410,7 +410,6 @@ class BeltInventoryWindow(ui.ScriptWindow):
 		# if arg == 0:
 			# self.inventory.OpenSupportGui()
 		# elif arg == 1:
-			# net.SendBattlePassAction(1)
 		# elif arg == 2:
 			# self.inventory.OpenSwitchbot()
 		# elif arg == 3:
@@ -498,9 +497,6 @@ class InventoryWindow(ui.ScriptWindow):
 	def OpenRanking(self):
 		if self.interface:
 			self.interface.OpenRanking()
-
-	def OpenBattlepass(self):
-		net.SendBattlePassAction(1)
 
 	def OpenSwitchbot(self):
 		if self.interface:
@@ -747,7 +743,6 @@ class InventoryWindow(ui.ScriptWindow):
 		btn_rune = _reparent(getattr(self, "RuneButton", None))
 		btn_exinv = _reparent(getattr(self, "ExtendIntentory", None))
 		btn_rank = _reparent(getattr(self, "RankingButton", None))
-		btn_bpass = _reparent(getattr(self, "BattlepassButton", None))
 		btn_shop = _reparent(getattr(self, "OfflineshopButton", None))
 		btn_switch = _reparent(getattr(self, "SwitchbotButton", None))
 
@@ -843,7 +838,7 @@ class InventoryWindow(ui.ScriptWindow):
 		order = []
 		if getattr(self, "btnBeltInv", None):
 			order.append(self.btnBeltInv)
-		for b in (btn_mount, btn_rune, btn_exinv, btn_rank, btn_bpass, btn_shop, btn_switch):
+		for b in (btn_mount, btn_rune, btn_exinv, btn_rank, btn_shop, btn_switch):
 			if b: order.append(b)
 		for b in (self.btnEventCal, self.btnWiki, self.btnDungeon, self.btnBiolog, self.btnDailyGift, self.btnAutoShout, self.btnSavepoint):
 			if b: order.append(b)
@@ -957,7 +952,6 @@ class InventoryWindow(ui.ScriptWindow):
 			self.animalButton = self.GetChild2("AnimalButton")
 			self.OfflineshopButton = self.GetChild2("OfflineShop")
 			self.SwitchbotButton = self.GetChild2("SwitchbotButton")
-			self.BattlepassButton = self.GetChild2("BattlepassButton")
 			self.RankingButton = self.GetChild2("RankingButton")
 			#if app.ENABLE_SORT_INVEN:
 			#	self.separateButton = self.GetChild("SeparateButton")
@@ -1103,9 +1097,6 @@ class InventoryWindow(ui.ScriptWindow):
 
 		if self.SwitchbotButton:
 			self.SwitchbotButton.SetEvent(ui.__mem_func__(self.OpenSwitchbot))
-
-		if self.BattlepassButton:
-			self.BattlepassButton.SetEvent(ui.__mem_func__(self.OpenBattlepass))
 
 		if self.RankingButton:
 			self.RankingButton.SetEvent(ui.__mem_func__(self.OpenRanking))
@@ -1341,7 +1332,6 @@ class InventoryWindow(ui.ScriptWindow):
 					self.RuneButton.Show()
 					self.OfflineshopButton.Show()
 					self.SwitchbotButton.Show()
-					self.BattlepassButton.Show()
 					self.RankingButton.Show()
 					self.ExtendIntentory.Show()
 					for item in self.visibleButtonList:
@@ -1354,7 +1344,6 @@ class InventoryWindow(ui.ScriptWindow):
 					self.RuneButton.Show()
 					self.OfflineshopButton.Show()
 					self.SwitchbotButton.Show()
-					self.BattlepassButton.Show()
 					self.RankingButton.Show()
 					self.ExtendIntentory.Show()
 					for item in self.visibleButtonList:

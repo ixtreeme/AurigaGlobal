@@ -912,8 +912,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 
 
-	//#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-	//	ch->LoadStayActiveBattlePass();
 	//#endif
 #ifdef __ENABLE_BLOCK_EXP__
 	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %d", ecs::QuestSystem::GetFlag(ch, "exp.stat"));

@@ -232,7 +232,6 @@ class TaskBar(ui.ScriptWindow):
 	BUTTON_WEBOVE_STRANKY = 6
 	BUTTON_EXTENDED_INV = 7
 	BUTTON_SWITCHBOT = 8
-	BUTTON_BATTLEPASS = 9
 	BUTTON_RANKING = 10
 	BTN_DAILYGIFT = 11
 	BUTTON_BIO = 12
@@ -444,7 +443,6 @@ class TaskBar(ui.ScriptWindow):
 		toggleButtonDict[TaskBar.BUTTON_WEBOVE_STRANKY]=self.GetChild("Webove_stranky")######################################################
 		toggleButtonDict[TaskBar.BUTTON_EXTENDED_INV]=self.GetChild("ExtendIntentory")
 		toggleButtonDict[TaskBar.BUTTON_SWITCHBOT]=self.GetChild("switchbot")
-		toggleButtonDict[TaskBar.BUTTON_BATTLEPASS]=self.GetChild("battlepass")
 		toggleButtonDict[TaskBar.BUTTON_RANKING]=self.GetChild("ranking")
 		toggleButtonDict[TaskBar.BUTTON_BIO]=self.GetChild("biosz")
 		toggleButtonDict[TaskBar.BUTTON_DUNGEON]=self.GetChild("dungeon")

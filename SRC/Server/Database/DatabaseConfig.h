@@ -12,8 +12,7 @@ namespace auriga::config { struct Section; }
 //   "server":  { "test": false, "log": true, "locale": "utf8mb4",
 //                "table_postfix": "", "player_id_start": 1,
 //                "name_column": "name", "client_heart_fps": 50,
-//                "log_keep_days": 3, "interserver_key": "",
-//                "current_battle_pass_id": 1 },
+//                "log_keep_days": 3, "interserver_key": "" },
 //   "network": { "bind_ip": "0.0.0.0", "bind_port": 5300,
 //                "backup_limit_sec": 600 },
 //   "sql":     { "player":  { "host": "", "port": 0, "user": "",
@@ -51,7 +50,6 @@ struct DatabaseConfig
 		int		clientHeartFps { 50 };
 		int		logKeepDays { 3 };
 		std::string	interserverKey;
-		int		currentBattlePassId { 1 };
 	} server;
 
 	struct NetworkConfig

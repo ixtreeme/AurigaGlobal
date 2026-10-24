@@ -56,8 +56,6 @@ if app.ENABLE_MELEY_LAIR_DUNGEON:
 	import uidragonlairranking
 if app.ENABLE_ACCE_SYSTEM:
 	import uiacce
-if app.ENABLE_BATTLE_PASS:
-	import uibattlepass
 if app.ENABLE_GAYA_SYSTEM:
 	import uisystemgems
 if app.ENABLE_EXTRA_INVENTORY:
@@ -240,9 +238,6 @@ class Interface(object):
 			self.wndStoneCraft = None
 		if app.ENABLE_SWITCHBOT:
 			self.wndSwitchbot = None
-		if app.ENABLE_BATTLE_PASS:
-			self.wndBattlePass = None
-			self.wndBattlePassButton = None
 		if app.ENABLE_DUNGEON_INFO_SYSTEM:
 			self.wndDungeonInfo = None
 		
@@ -345,7 +340,6 @@ class Interface(object):
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_SYSTEM, ui.__mem_func__(self.ToggleSystemDialog))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_WEBOVE_STRANKY, ui.__mem_func__(self.OtevritWeb))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_EXTENDED_INV, ui.__mem_func__(self.ExtInvRazor93))
-		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_BATTLEPASS, ui.__mem_func__(self.OpenBattlePass))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_SWITCHBOT, ui.__mem_func__(self.ToggleSwitchbotWindow))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_RANKING, ui.__mem_func__(self.OpenRanking))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BTN_DAILYGIFT, ui.__mem_func__(self.ToggleWikiNew))
@@ -483,11 +477,6 @@ class Interface(object):
 		if app.ENABLE_RANKING:
 			self.wndRanking = uiranking.RankingWindow()
 		
-		if app.ENABLE_BATTLE_PASS:
-			self.wndBattlePass = uibattlepass.BattlePassWindow()
-			self.wndBattlePassButton = uibattlepass.BattlePassButton()
-			self.wndBattlePassButton.BindInterface(self)
-
 		if app.ENABLE_DUNGEON_INFO_SYSTEM:
 			self.wndDungeonInfo = uidungeoninfo.DungeonInfo()
 			self.wndMiniMap.BindInterfaceClass(self)
@@ -720,8 +709,6 @@ class Interface(object):
 		self.wndCube.SetItemToolTip(self.tooltipItem)
 		self.wndCubeResult.SetItemToolTip(self.tooltipItem)
 
-		if app.ENABLE_BATTLE_PASS:
-			self.wndBattlePass.SetItemToolTip(self.tooltipItem)
 		self.wndSafebox.SetItemToolTip(self.tooltipItem)
 
 		if app.ENABLE_ACCE_SYSTEM:
@@ -993,10 +980,6 @@ class Interface(object):
 				self.wndCubeRenewal.Destroy()
 				self.wndCubeRenewal.Close()
 
-		if app.ENABLE_BATTLE_PASS:
-			if self.wndBattlePass:
-				self.wndBattlePass.Destroy()
-
 		if app.ENABLE_DUNGEON_INFO_SYSTEM:
 			if self.wndDungeonInfo:
 				self.wndDungeonInfo.Destroy()
@@ -1098,13 +1081,6 @@ class Interface(object):
 			del self.wndSwitchbot
 
 		del self.wndOfflineshop
-
-		if app.ENABLE_BATTLE_PASS:
-			if self.wndBattlePass:
-				del self.wndBattlePass
-				
-			if self.wndBattlePassButton:
-				del self.wndBattlePassButton
 
 		if app.ENABLE_DUNGEON_INFO_SYSTEM:
 			if self.wndDungeonInfo:
@@ -1826,43 +1802,6 @@ class Interface(object):
 
 	# ������ ��
 
-	if app.ENABLE_BATTLE_PASS:
-		def OpenBattlePass(self):
-			if False == player.IsObserverMode():
-				if not self.wndBattlePass.IsShow():
-					self.wndBattlePass.Open()
-					self.wndBattlePassButton.CompleteLoading()
-				else:
-					self.wndBattlePass.Close()
-
-		def AddBattlePassMission(self, missionType, missionInfo1, missionInfo2, missionInfo3):
-			if self.wndBattlePass:
-				self.wndBattlePass.AddMission(missionType, missionInfo1, missionInfo2, missionInfo3)
-				
-		def UpdateBattlePassMission(self, missionType, newProgress):
-			if self.wndBattlePass:
-				self.wndBattlePass.UpdateMission(missionType, newProgress)
-				
-		def AddBattlePassMissionReward(self, missionType, itemVnum, itemCount):
-			if self.wndBattlePass:
-				self.wndBattlePass.AddMissionReward(missionType, itemVnum, itemCount)
-				
-		def AddBattlePassReward(self, itemVnum, itemCount):
-			if self.wndBattlePass:
-				self.wndBattlePass.AddReward(itemVnum, itemCount)
-				
-		def AddBattlePassRanking(self, pos, playerName, finishTime):
-			if self.wndBattlePass:
-				self.wndBattlePass.AddRanking(pos, playerName, finishTime)
-				
-		def RefreshBattlePassRanking(self):
-			if self.wndBattlePass:
-				self.wndBattlePass.RefreshRanking()
-				
-		def OpenBattlePassRanking(self):
-			if self.wndBattlePass:
-				self.wndBattlePass.OpenRanking()
-
 	def ToggleGuildWindow(self):
 		if not self.wndGuild.IsShow():
 			if self.wndGuild.CanOpen():
@@ -2177,11 +2116,6 @@ class Interface(object):
 			if self.wndRanking:
 				hideWindows += self.wndRanking,
 
-		if app.ENABLE_BATTLE_PASS:
-			if self.wndBattlePass and self.wndBattlePassButton:
-				hideWindows += self.wndBattlePass,\
-							self.wndBattlePassButton,
-		
 		hideWindows = filter(lambda x:x.IsShow(), hideWindows)
 		map(lambda x:x.Hide(), hideWindows)
 		import sys

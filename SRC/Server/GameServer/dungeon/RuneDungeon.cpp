@@ -36,10 +36,6 @@
 #include "../ecs/Registry.hpp"
 #include "../ecs/EntityFactory.hpp"
 
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#include "../ecs/CharacterAccessors.hpp"
-#endif
 
 namespace
 {
@@ -237,20 +233,6 @@ namespace
                 ecs::PlayerRuntime::SetRankPoints(ch, 16,
                 ecs::PlayerRuntime::GetRankPoints(ch, 16) + 1);
 
-#ifdef ENABLE_BATTLE_PASS
-                {
-                    const uint8_t battlepassid = ecs::PlayerRuntime::GetBattlePassId(ch);
-                    if (battlepassid)
-                    {
-                        uint32_t id, count;
-                        if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
-                        {
-                            if (id == 1 && ecs::PlayerRuntime::GetMissionProgress(ch, COMPLETE_DUNGEON, battlepassid) < count)
-                                ecs::PlayerRuntime::UpdateMissionProgress(ch, COMPLETE_DUNGEON, battlepassid, 1, count);
-                        }
-                    }
-                }
-#endif
 
                 const int32_t enter_time = ecs::QuestSystem::GetFlag(ch, kQfEnterTime);
 

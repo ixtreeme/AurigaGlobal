@@ -84,9 +84,6 @@
 #include "../../social/new_offlineshop_manager.h"
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-#include "../../combat/battle_pass.h"
-#endif
 
 #ifdef __PET_SYSTEM__
 #include "../../pet/PetSystem.h"
@@ -562,9 +559,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	{
 	case POINT_NONE:
 
-#ifdef ENABLE_BATTLE_PASS
-	case POINT_BATTLE_PASS_ID:
-#endif		
 
 		return;
 

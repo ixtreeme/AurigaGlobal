@@ -321,9 +321,6 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 				",envanter "
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-				",UNIX_TIMESTAMP(battle_pass_end) "
-#endif
 #ifdef ENABLE_RANKING
 				", r0, "
 				"r1, "
@@ -382,14 +379,6 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 		CDBManager::instance().ReturnQuery(queryStr, QID_AFFECT, peer->GetHandle(), new ClientHandleInfo(dwHandle, packet->player_id));
 	}
 
-#ifdef ENABLE_BATTLE_PASS
-	// Load all missions from table
-	char queryStrBP[QUERY_MAX_LEN];
-	snprintf(queryStrBP, sizeof(queryStrBP),
-		"SELECT player_id, mission_id, battle_pass_id, extra_info, completed FROM battle_pass WHERE player_id = %u", packet->player_id);
-		
-	CDBManager::instance().ReturnQuery(queryStrBP, QID_BATTLE_PASS, peer->GetHandle(), new ClientHandleInfo(dwHandle, packet->player_id));
-#endif
 
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -526,9 +515,6 @@ bool CreatePlayerTableFromRes(MYSQL_RES * res, TPlayerTable * pkTab)
 	str_to_number(pkTab->envanter, row[col++]);
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-	str_to_number(pkTab->dwBattlePassEndTime, row[col++]);
-#endif
 #ifdef ENABLE_RANKING
 	for (long long& lRankPoint : pkTab->lRankPoints)
 		str_to_number(lRankPoint, row[col++]);
@@ -564,12 +550,6 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 			RESULT_ITEM_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
 			break;
 
-#ifdef ENABLE_BATTLE_PASS
-		case QID_BATTLE_PASS:
-		LOG_INFO("QID_BATTLE_PASS {}", info->dwHandle);
-		RESULT_BATTLE_PASS_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
-		break;
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 		case QID_SKILL_COLOR:
@@ -805,163 +785,6 @@ void CClientManager::RESULT_QUEST_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t 
 	peer->Encode(s_table.data(), sizeof(TQuestTable) * dwCount);
 }
 
-#ifdef ENABLE_BATTLE_PASS
-void CClientManager::RESULT_BATTLE_PASS_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t dwHandle, uint32_t dwRealPID)
-{
-	int iNumRows;
-
-	if ((iNumRows = mysql_num_rows(pRes)) == 0)
-	{
-		uint32_t dwCount = 0;
-		TPlayerBattlePassMission pbpTable = {0};
-
-		LOG_INFO("BATTLE_PASS_LOAD: count {} PID {}", dwCount, dwRealPID);
-
-		peer->EncodeHeader(HEADER_DG_BATTLE_PASS_LOAD, dwHandle, sizeof(uint32_t) + sizeof(uint32_t) + sizeof(TPlayerBattlePassMission) * dwCount);
-		peer->Encode(&dwRealPID, sizeof(uint32_t));
-		peer->Encode(&dwCount, sizeof(uint32_t));
-		peer->Encode(&pbpTable, sizeof(TPlayerBattlePassMission) * dwCount);
-		return;
-	}
-
-	static std::vector<TPlayerBattlePassMission> s_mission;
-	s_mission.resize(iNumRows);
-
-	for (int i = 0; i < iNumRows; ++i)
-	{
-		int col = 0;
-		TPlayerBattlePassMission & r = s_mission[i];
-		MYSQL_ROW row = mysql_fetch_row(pRes);
-
-		str_to_number(r.dwPlayerId, row[col++]);
-		str_to_number(r.dwMissionId, row[col++]);
-		str_to_number(r.dwBattlePassId, row[col++]);
-		str_to_number(r.dwExtraInfo, row[col++]);
-		str_to_number(r.bCompleted, row[col++]);
-
-		r.bIsUpdated = 0;
-	}
-
-	LOG_INFO("BATTLE_PASS_LOAD: count {} PID {}", s_mission.size(), dwRealPID);
-
-	uint32_t dwCount = s_mission.size();
-
-	peer->EncodeHeader(HEADER_DG_BATTLE_PASS_LOAD, dwHandle, sizeof(uint32_t) + sizeof(uint32_t) + sizeof(TPlayerBattlePassMission) * dwCount);
-	peer->Encode(&dwRealPID, sizeof(uint32_t));
-	peer->Encode(&dwCount, sizeof(uint32_t));
-	peer->Encode(s_mission.data(), sizeof(TPlayerBattlePassMission) * dwCount);
-}
-
-void CClientManager::QUERY_SAVE_BATTLE_PASS(CPeer * peer, uint32_t dwHandle, TPlayerBattlePassMission* battlePass)
-{
-	if (g_test_server)
-		LOG_INFO("QUERY_SAVE_BATTLE_PASS: {}", battlePass->dwPlayerId);
-
-	char szQuery[QUERY_MAX_LEN];
-	snprintf(szQuery, sizeof(szQuery),
-		"REPLACE INTO battle_pass (player_id, mission_id, battle_pass_id, extra_info, completed) VALUES (%d, %d, %d, %d, %d)",
-		battlePass->dwPlayerId,
-		battlePass->dwMissionId,
-		battlePass->dwBattlePassId,
-		battlePass->dwExtraInfo,
-		battlePass->bCompleted ? 1 : 0);
-	CDBManager::instance().AsyncQuery(szQuery);
-}
-
-extern int g_iCurrentBattlePassId;
-bool CClientManager::LoadBattlePassRanking()
-{
-	char query[256];
-	snprintf(query, sizeof(query), "SELECT player_name, UNIX_TIMESTAMP(finish_time) "
-				"FROM battle_pass_ranking WHERE battle_pass_id = %d ORDER BY finish_time ASC LIMIT 45;", g_iCurrentBattlePassId);
-
-	std::unique_ptr<SQLMsg> pkMsg(CDBManager::instance().DirectQuery(query));
-	SQLResult * pRes = pkMsg->Get();
-
-	if (!pRes->uiNumRows)
-		return true; // No ranking for battle pass with id %i%
-
-	if(!m_vec_battlePassRanking.empty())
-		m_vec_battlePassRanking.clear();
-
-	uint8_t posContor = 1;
-
-	MYSQL_ROW row;
-	while ((row = pRes->FetchRow()))
-	{
-		TBattlePassRanking * ranking = new TBattlePassRanking;
-		ranking->bPos = posContor;
-		strlcpy(ranking->playerName, row[0], sizeof(ranking->playerName));
-		str_to_number(ranking->dwFinishTime, row[1]);
-
-		m_vec_battlePassRanking.push_back(ranking);
-		posContor++;
-	}
-
-	return true;
-}
-
-void CClientManager::RequestLoadBattlePassRanking(CPeer * peer, uint32_t dwHandle, const char* data)
-{
-	uint32_t dwPlayerID = *(uint32_t *)data;
-	data += sizeof(uint32_t);
-
-	uint8_t bIsGlobal = *(uint8_t *)data;
-	data += sizeof(uint8_t);
-
-	if(m_vec_battlePassRanking.empty())
-	{
-		uint32_t dwCount = 0;
-		TBattlePassRanking pbpTable = {0};
-
-		LOG_INFO("RequestLoadBattlePassRanking: count {} PID {}", dwCount, dwPlayerID);
-
-		peer->EncodeHeader(HEADER_DG_BATTLE_PASS_LOAD_RANKING, dwHandle, sizeof(uint32_t) + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(TBattlePassRanking) * dwCount);
-		peer->Encode(&dwPlayerID, sizeof(uint32_t));
-		peer->Encode(&bIsGlobal, sizeof(uint8_t));
-		peer->Encode(&dwCount, sizeof(uint32_t));
-		peer->Encode(&pbpTable, sizeof(TBattlePassRanking) * dwCount);
-		return;
-	}
-	else
-	{
-		static std::vector<TBattlePassRanking> sendVector;
-		sendVector.resize(m_vec_battlePassRanking.size());
-
-		//MYSQL_ROW row;
-
-		for (unsigned int i = 0; i < m_vec_battlePassRanking.size(); ++i)
-		{
-			TBattlePassRanking * pkRanking = m_vec_battlePassRanking[i];
-			TBattlePassRanking & r = sendVector[i];
-
-			r.bPos = pkRanking->bPos;
-			strlcpy(r.playerName, pkRanking->playerName, sizeof(r.playerName));
-			r.dwFinishTime = pkRanking->dwFinishTime;
-		}
-
-		LOG_INFO("RequestLoadBattlePassRanking: count {} PID {}", sendVector.size(), dwPlayerID);
-
-		uint32_t dwCount = sendVector.size();
-
-		peer->EncodeHeader(HEADER_DG_BATTLE_PASS_LOAD_RANKING, dwHandle, sizeof(uint32_t) + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(TBattlePassRanking) * dwCount);
-		peer->Encode(&dwPlayerID, sizeof(uint32_t));
-		peer->Encode(&bIsGlobal, sizeof(uint8_t));
-		peer->Encode(&dwCount, sizeof(uint32_t));
-		peer->Encode(sendVector.data(), sizeof(TBattlePassRanking) * dwCount);
-	}
-}
-
-void CClientManager::QUERY_REGISTER_RANKING(CPeer * peer, uint32_t dwHandle, TBattlePassRegisterRanking* pRanking)
-{
-	if (g_test_server)
-		LOG_INFO("REGISTER_RANKING: {} id {}", pRanking->playerName, pRanking->bBattlePassId);
-
-	CDBManager::instance().QueryPrepared(
-		"REPLACE INTO battle_pass_ranking (player_name, battle_pass_id, finish_time) VALUES (?, ?, NOW())",
-		{ SqlParam::Text(pRanking->playerName), SqlParam::Int(pRanking->bBattlePassId) });
-}
-#endif
 
 /*
  * PLAYER SAVE

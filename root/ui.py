@@ -969,10 +969,6 @@ class TextLine(Window):
 	def SetFontColor(self, red, green, blue):
 		wndMgr.SetFontColor(self.hWnd, red, green, blue)
 
-	if app.ENABLE_BATTLE_PASS:
-		def SetTextColor(self, color):
-			self.SetPackedFontColor(color)
-
 	def SetPackedFontColor(self, color):
 		wndMgr.SetFontColor(self.hWnd, color)
 
@@ -6677,50 +6673,6 @@ def MakeTextLine(parent):
 	textLine.SetVerticalAlignCenter()
 	textLine.Show()
 	return textLine
-
-
-if app.ENABLE_BATTLE_PASS:
-	def AddTextLine(parent, x, y, text):
-		textLine = TextLine()
-		textLine.SetParent(parent)
-		textLine.SetPosition(x, y)
-		textLine.SetText(text)
-		textLine.Show()
-		return textLine
-
-	def MakeNewTextLine(parent, horizontalAlign = True, verticalAlgin = True, x = 0, y = 0):
-		textLine = TextLine()
-		textLine.SetParent(parent)
-
-		if horizontalAlign == True:
-			textLine.SetWindowHorizontalAlignCenter()
-
-		if verticalAlgin == True:
-			textLine.SetWindowVerticalAlignCenter()
-
-		textLine.SetHorizontalAlignCenter()
-		textLine.SetVerticalAlignCenter()
-
-		if x != 0 and y != 0:
-			textLine.SetPosition(x, y)
-
-		textLine.Show()
-		return textLine
-
-	def MakeExpandedImageBox(parent, name, x, y, flag = ""):
-		image = ExpandedImageBox()
-		image.SetParent(parent)
-		image.LoadImage(name)
-		image.SetPosition(x, y)
-
-		if flag != "":
-			image.AddFlag(flag)
-
-		image.Show()
-
-		return image
-
-
 
 
 def MakeButton(parent, x, y, tooltipText, path, up, over, down):

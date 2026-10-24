@@ -10,7 +10,6 @@
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/EntityFactory.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
-#include "../../SRC/Server/GameServer/combat/battle_pass.h"
 #include "../../SRC/Server/GameServer/world/sectree.h"
 #include "../../SRC/Server/GameServer/ecs/ItemInvariants.hpp"
 #include "../../SRC/Server/GameServer/ecs/EventDispatcher.hpp"
@@ -25,6 +24,10 @@
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/WoodcuttingSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/HerbalismSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/WoodcuttingRules.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/HerbalismRules.hpp"
 #include "../../SRC/Server/GameServer/ecs/ItemRegistry.hpp"
 #include <Core/Logging.hpp>
 #include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
@@ -274,12 +277,8 @@ SECTREE::SECTREE() = default;
 SECTREE::~SECTREE() = default;
 int32_t ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
 bool ecs::PlayerRuntime::IsObserverMode(entt::entity e) { return g_registry.get<Actor>(e).observer; }
-uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { return 0; }
-uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { Unexpected(); }
-bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { Unexpected(); }
 int64_t ecs::PlayerRuntime::GetRankPoints(entt::entity, int) { return 0; }
 bool ecs::PlayerRuntime::SetRankPoints(entt::entity, int, int64_t) { return true; }
-bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { Unexpected(); }
 quest::PC* quest::CQuestManager::GetPCForce(unsigned int) { return nullptr; }
 void ecs::SessionSystem::Save(entt::entity owner) {
     Check(pickupTest && ecs::PlayerRuntime::IsPC(owner), "pickup saved a stale character"); ++pickupSaves;
@@ -901,4 +900,19 @@ int main() {
     try { NativeFactory(); NativePrototypeRefresh(); FactoryCallbacks(); NativePickups(); NativeInventoryAndUse(); NativeNpcItems(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
     std::cout << "Item runtime: " << checks << " checks passed\n";
+}
+
+// NPC item tests exercise ordinary gifts, not gathering-tool refinement.
+// Reject only that out-of-scope route; actual tool refinement must not be masked.
+namespace WoodcuttingSystem {
+bool TryRefine(entt::entity, entt::entity, entt::entity item) {
+    if (!npcTest || WoodcuttingRules::IsAxe(ItemSystem::GetItemVnum(item))) Unexpected();
+    return false;
+}
+}
+namespace HerbalismSystem {
+bool TryRefine(entt::entity, entt::entity, entt::entity item) {
+    if (!npcTest || HerbalismRules::IsShears(ItemSystem::GetItemVnum(item))) Unexpected();
+    return false;
+}
 }

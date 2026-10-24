@@ -2511,7 +2511,6 @@ WIKI_SUBCATEGORY_SHOULDER_SASH	Kuþak
 WIKI_SUBCATEGORY_EPIC_SYSTEM	EPÝK SÝSTEM
 WIKI_SUBCATEGORY_COSTUME_SASH	Kuþak Kostümü
 WIKI_SUBCATEGORY_COSTUMES	Kostümler
-WIKI_SUBCATEGORY_BATTLEPASS	Savaþ Pasosu
 WIKI_SUBCATEGORY_BOOST	BECERÝ YÜKSELTME
 WIKI_SUBCATEGORY_PASSIVE	Pasif Beceri
 WIKI_SUBCATEGORY_BIOLOGIST	BÝYOLOG
@@ -2739,18 +2738,6 @@ BIOLOGIST_MISSION_NAME_11	Aðaç Yaratýk Kökü
 BIOLOGIST_MISSION_NAME_12	Chaegirab'ýn yüzükleri
 BIOLOGIST_MISSION_NAME_13	Metin Kristalleri
 BIOLOGIST_MISSION_NAME_14	Büyülü Tohum
-BATTLE_PASS_PROCENT	Yüzde: %.1f%%
-BATTLE_PASS_ALERT1	Henüz savaþ biletiniz aktif deðil, etkinleþtirmek için bu öðeye ihtiyacýnýz var.
-BATTLE_PASS_OK	Tamam
-BATTLE_PASS_STATUS	Durum: %s%s|h|r
-BATTLE_PASS_INACTIVE	Aktif Deðil
-BATTLE_PASS_ACTIVE	Devam etmekte
-BATTLE_PASS_COMPLETED	Tamamlandý
-BATTLE_PASS_UNKNOWN_NAME	Bilinmeyen isim
-BATTLE_PASS_NAME	Ýsim: %s
-BATTLE_PASS_COUNTQUEST	Kalan Görevler: %s
-BATTLE_PASS_COUNTQUEST_COMPELTED	Tamamlanan Görevler: %s
-BATTLE_PASS_REMAINING_TIME	Kalan süre: %s
 PETBOX_RIMUOVE	Evcil hayvaný dýþarý çýkarmak istediðinden emin misin?
 BUY_GAYA_ITEM	Bu öðeyi satýn almak istiyor musunuz?
 PETSKILLNAME_1	Direnç (Savaþçý)
@@ -3060,7 +3047,6 @@ EXCHANGE_TITLE	Ticaret yapmak %s
 EXCHANGE_TITLE_LEVEL	Ticaret yapmak %s (%d)
 USE_200_ITEMS	|Eemoji/key_rclick|e + |Eemoji/key_ctrl|e Tüm yýðýný kullanmak için.
 INFO_INCREASE_CHAR_STAT	|Eemoji/key_lclick|e + |Eemoji/key_ctrl|e 10 puan ile artýrmak için.
-BATTLE_PASS_JAN20	Aralik 2021
 SKILL_COLOR_SELECT_FIRST	Önce bir renk seçin.
 SKILL_COLOR_PICK_TOOLTIP	%s için istediðiniz rengi seçin. (HEX Code : %s)
 SKILL_COLOR_PRESET_TOOLTIP_TITLE	önceden ayarlanmýþ renk
@@ -3565,7 +3551,6 @@ PURCHASES_PRICE	Price
 PURCHASES_PRICE_TEXT	|Eishop/mini_coin|e |cffF7BD48%s Dragon Coins
 CATEGORY_0_NAME	Special Items
 CATEGORY_0_SUB_0_NAME	Costume Event
-CATEGORY_0_SUB_1_NAME	Battle Pass
 CATEGORY_0_SUB_2_NAME	Special
 CATEGORY_1_NAME	Weapon
 CATEGORY_1_SUB_0_NAME	Sword

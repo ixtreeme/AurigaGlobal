@@ -749,7 +749,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 			if (ItemSystem::CountItem(character, WHEEL_TICKET_VNUM) < 1)
 			{
 
-				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You Dont have Battle Pass Ticket");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You don't have a Wheel of Destiny ticket.");
 				return;
 			}
 

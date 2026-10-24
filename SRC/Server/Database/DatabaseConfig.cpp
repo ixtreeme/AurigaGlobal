@@ -49,7 +49,6 @@ bool DatabaseConfig::Load(const auriga::config::Section& input, std::string& err
 			server.clientHeartFps = s.value("client_heart_fps", 50);
 			server.logKeepDays = s.value("log_keep_days", 3);
 			server.interserverKey = s.value("interserver_key", std::string());
-			server.currentBattlePassId = s.value("current_battle_pass_id", 1);
 		}
 
 		if (doc.contains("network"))

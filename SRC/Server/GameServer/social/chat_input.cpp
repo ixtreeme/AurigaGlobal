@@ -42,9 +42,6 @@
 #include "p2p.h"
 #include "shop.h"
 #include "unique_item.h"
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#endif
 #include "gm.h"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
@@ -815,20 +812,6 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 
 				P2P_MANAGER::instance().Send(&p, sizeof(p));
 				SendShout(shoutbuf, ecs::PlayerRuntime::GetEmpire(character));
-#ifdef ENABLE_BATTLE_PASS
-				if (uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(character))
-				{
-					uint32_t dwCount, dwNotUsed;
-					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COUNTER_CHAT, &dwNotUsed, &dwCount))
-					{
-						if (!ecs::PlayerRuntime::IsCompletedMission(character, COUNTER_CHAT))
-						{
-							if (ecs::PlayerRuntime::GetMissionProgress(character, COUNTER_CHAT, bBattlePassId) < dwCount)
-								ecs::PlayerRuntime::UpdateMissionProgress(character, COUNTER_CHAT, bBattlePassId, 1, dwCount);
-						}
-					}
-				}
-#endif
 				return iExtraLen;
 			}
 		}
@@ -1126,22 +1109,6 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 
 		SendShout(chatbuf, ecs::PlayerRuntime::GetEmpire(character));
 
-#ifdef ENABLE_BATTLE_PASS
-		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(character);
-		if(bBattlePassId)
-		{
-			uint32_t dwCount, dwNotUsed;
-			if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COUNTER_CHAT, &dwNotUsed, &dwCount))
-			{
-				if (!ecs::PlayerRuntime::IsCompletedMission(character, COUNTER_CHAT))
-				{
-					if(ecs::PlayerRuntime::GetMissionProgress(character, COUNTER_CHAT, bBattlePassId) < dwCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(character, COUNTER_CHAT, bBattlePassId, 1, dwCount);
-				}
-			}
-		}
-
-#endif
 
 		return (iExtraLen);
 	}

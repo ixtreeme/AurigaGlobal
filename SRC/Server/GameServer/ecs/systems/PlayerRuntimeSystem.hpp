@@ -129,10 +129,6 @@ void SetQuestFlag(entt::entity e, const std::string& flag, int value);
 int GetPetEnchant(entt::entity e);
 void SetPetEnchant(entt::entity e, int value);
 void SetUseSeedOrMoonBottleTime(entt::entity e);
-std::list<TPlayerBattlePassMission*>& GetBattlePassMissions(entt::entity e);
-uint32_t GetBattlePassAdjustedTotal(entt::entity e, uint32_t dwMissionID,
-                                    uint32_t dwBattlePassID, uint32_t dwBaseTotal);
-void ApplyBattlePassBoostRecalc(entt::entity e, uint8_t bBattlePassId);
 int GetCmdAntiFloodPulse(entt::entity e);
 void SetCmdAntiFloodPulse(entt::entity e, int pulse);
 uint32_t IncreaseCmdAntiFloodCount(entt::entity e);
@@ -142,8 +138,6 @@ uint32_t IncreaseItemUseAntiFloodCount(entt::entity e);
 void SetItemUseAntiFloodCount(entt::entity e, uint32_t count);
 uint32_t GetBoxUseTime(entt::entity e);
 void SetBoxUseTime(entt::entity e, uint32_t when);
-bool HasBattlePassBoost(entt::entity e, uint8_t bBattlePassId);
-int GetSecondsTillNextMonth();
 bool IsWarping(entt::entity e);
 bool IsImmortal(entt::entity e);
 uint32_t GetMonsterDrainSPPoint(entt::entity e);
@@ -181,7 +175,7 @@ void SetImmuneFlag(entt::entity e, uint32_t value);
 // The three timed events that used to be CHARACTER members. Slot names the
 // one being addressed; Cancel runs event_cancel on it, Set stores or clears.
 enum class CharEvent : uint8_t { Dead, Stun, Recovery, Fishing, Timed, Warp, WarpNPC,
-                                 BattlePassStayOnline, Drop, Mining,
+                                 Drop, Mining,
                                  DestroyWhenIdle, Save };
 LPEVENT GetCharEvent(entt::entity e, CharEvent slot);
 void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev);
@@ -210,7 +204,6 @@ bool IsStone(entt::entity e);
 bool IsMonster(entt::entity e);
 uint8_t GetMobRank(entt::entity e);
 int64_t GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType);
-uint8_t GetBattlePassId(entt::entity e);
 #ifdef ENABLE_ANTICHEAT
 // Counts a stone kill toward the reward flood check; ClearCheatChecks resets it.
 void ProcessCheatCheck(entt::entity e, int32_t time);
@@ -247,14 +240,6 @@ void SetArenaObserverMode(entt::entity e, bool flag);
 bool GetArenaObserverMode(entt::entity e);
 const ecs::MobileAuth& GetMobileAuth(entt::entity e);
 void SetMobilePhone(entt::entity e, const char* phone);
-bool IsBattlePassLoaded(entt::entity e);
-void SetBattlePassLoaded(entt::entity e, bool loaded);
-#ifdef ENABLE_BATTLE_PASS
-// Grants the free pass affect when none is running, and marks the pass loaded.
-void EnsureFreeBattlePassActive(entt::entity e);
-// Replaces the mission list with the loaded rows.
-void LoadBattlePass(entt::entity e, uint32_t dwCount, TPlayerBattlePassMission* data);
-#endif
 // Sends the configured login notices.
 void SendGreetMessage(entt::entity e);
 // Reads the loaded player row into this character's components.
@@ -281,13 +266,6 @@ int GetEggVID(entt::entity e);
 uint64_t GetQuestDamage(entt::entity e, int race);
 // Keeps the highest hit e has dealt to a tracked dungeon boss race.
 void SetQuestDamage(entt::entity e, int race, int dmg);
-#endif
-#ifdef ENABLE_BATTLE_PASS
-uint8_t GetBattlePassID(entt::entity e);
-uint32_t GetMissionProgress(entt::entity e, uint32_t missionID, uint32_t battlePassID);
-bool IsCompletedMission(entt::entity e, uint8_t missionType);
-bool UpdateMissionProgress(entt::entity e, uint32_t missionID, uint32_t battlePassID,
-    uint32_t updateValue, uint32_t totalValue, bool overrideValue = false);
 #endif
 
 #ifdef ENABLE_VOTE4BUFF

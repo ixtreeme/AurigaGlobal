@@ -63,9 +63,6 @@ struct AffectList {
 };
 
 // Persistent deadline, independent of clearing or replacing the live affects.
-struct BattlePassTiming {
-    time_t deadline { 0 };
-};
 
 // Own only the affect/recovery scheduler here. Its callback still delegates the
 // unmigrated recovery/expiry rules, but never owns a CHARACTER pointer.

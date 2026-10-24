@@ -133,13 +133,6 @@ bool CClientManager::InitializeTables()
 	}
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-	if (!LoadBattlePassRanking())
-	{
-		LOG_ERROR("LoadBattlePassRanking FAILED");
-		return false;
-	}
-#endif
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 	if (!InitializeOfflineshopTable())

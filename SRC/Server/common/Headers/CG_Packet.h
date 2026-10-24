@@ -789,11 +789,6 @@ typedef struct packet_skill_color
 } TPacketCGSkillColor;
 #endif
 
-typedef struct SPacketCGBattlePassAction
-{
-	uint8_t	bHeader;
-	uint8_t	bAction;
-} TPacketCGBattlePassAction;
 
 
 

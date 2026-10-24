@@ -29,9 +29,6 @@
 #include "wheel_of_destiny.h"
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-#include "utils.h"
-#endif
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
 #include "attr_transfer.h"
@@ -375,9 +372,6 @@ enum EPointTypes
 	POINT_GAYA = 163,
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-	POINT_BATTLE_PASS_ID,
-#endif
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 	POINT_EXTRA_INVENTORY1 = 165,
 	POINT_EXTRA_INVENTORY2,

@@ -38,7 +38,6 @@
 #include "../../core/constants.h"
 #include "../../network/desc.h"
 #include "../../core/buffer_manager.h"
-#include "../../combat/battle_pass.h"
 #include "../../social/banword.h"
 #include "../../core/crc32.h"
 #include "../../network/db.h"
@@ -673,10 +672,6 @@ void SetQuestFlag(entt::entity e, const std::string& flag, int value)
     pPC->SetFlag(flag, value);
 }
 
-// Whether a warp is already scheduled for this character.
-// Seconds left in the calendar month. Nothing here is per-character;
-// it was a CHARACTER method only because its callers were.
-// Whether this character carries the boost affect for a given battle pass.
 int GetPetEnchant(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -699,48 +694,8 @@ void SetUseSeedOrMoonBottleTime(entt::entity e)
     g_registry.get_or_emplace<ecs::SeedBottleTime>(e).pulse = thecore_pulse();
 }
 
-// The mission list, created on first ask so every caller sees one list.
-std::list<TPlayerBattlePassMission*>& GetBattlePassMissions(entt::entity e)
-{
-    return g_registry.get_or_emplace<ecs::BattlePassMissions>(e).missions;
-}
 
-// A boost halves what a mission needs, rounding up.
-uint32_t GetBattlePassAdjustedTotal(entt::entity e, uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwBaseTotal)
-{
-    if (dwBaseTotal <= 1)
-        return dwBaseTotal;
 
-    if (!ecs::PlayerRuntime::HasBattlePassBoost(e, (uint8_t)dwBattlePassID))
-        return dwBaseTotal;
-
-    return (dwBaseTotal + 1) / 2;
-}
-
-// After a boost is gained, every unfinished mission of that pass is
-// re-checked against its new, lower target.
-void ApplyBattlePassBoostRecalc(entt::entity e, uint8_t bBattlePassId)
-{
-    auto it = GetBattlePassMissions(e).begin();
-    while (it != GetBattlePassMissions(e).end())
-    {
-        TPlayerBattlePassMission* m = *it++;
-        if (!m || m->dwBattlePassId != bBattlePassId)
-            continue;
-
-        if (m->bCompleted)
-            continue;
-
-        uint32_t dwInfo1 = 0, dwBaseNeed = 0;
-        if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, (uint8_t)m->dwMissionId, &dwInfo1, &dwBaseNeed))
-            continue;
-
-        const uint32_t dwNeed = GetBattlePassAdjustedTotal(e, m->dwMissionId, bBattlePassId, dwBaseNeed);
-
-        if (m->dwExtraInfo >= dwNeed)
-            ecs::PlayerRuntime::UpdateMissionProgress(e, m->dwMissionId, bBattlePassId, dwNeed, dwNeed, true);
-    }
-}
 
 namespace {
 ecs::AntiFloodState& AntiFlood(entt::entity e)
@@ -773,39 +728,7 @@ void SetBoxUseTime(entt::entity e, uint32_t when)
     g_registry.get_or_emplace<ecs::BoxUseTime>(e).value = when;
 }
 
-bool HasBattlePassBoost(entt::entity e, uint8_t bBattlePassId)
-{
-    CAffect* p = AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS_BOOST, POINT_BATTLE_PASS_ID);
-    return p && p->lApplyValue == bBattlePassId;
-}
 
-int GetSecondsTillNextMonth()
-{
-    time_t iTime;
-    time(&iTime);
-    std::tm endTime = auriga::time::LocalTime(iTime);
-
-    int iCurrentMonth = endTime.tm_mon;
-
-    endTime.tm_hour = 0;
-    endTime.tm_min = 0;
-    endTime.tm_sec = 0;
-    endTime.tm_mday = 1;
-
-    if (iCurrentMonth == 12)
-    {
-        endTime.tm_mon = 0;
-        endTime.tm_year = endTime.tm_year + 1;
-    }
-    else
-    {
-        endTime.tm_mon = iCurrentMonth + 1;
-    }
-
-    int seconds = difftime(mktime(&endTime), iTime);
-
-    return seconds;
-}
 
 bool IsWarping(entt::entity e)
 {
@@ -912,20 +835,7 @@ bool IsArenaObserverMode(entt::entity e)
 	return status && status->isArenaObserver;
 }
 
-bool IsBattlePassLoaded(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return false;
-    const auto* missions = g_registry.try_get<ecs::BattlePassMissions>(e);
-    return missions && missions->loaded;
-}
 
-void SetBattlePassLoaded(entt::entity e, bool loaded)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return;
-    g_registry.get_or_emplace<ecs::BattlePassMissions>(e).loaded = loaded;
-}
 
 const ecs::MobileAuth& GetMobileAuth(entt::entity e)
 {
@@ -1031,7 +941,6 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::Timed:    return &events.timed;
     case ecs::PlayerRuntime::CharEvent::Warp:     return &events.warp;
     case ecs::PlayerRuntime::CharEvent::WarpNPC:  return &events.warpNPC;
-    case ecs::PlayerRuntime::CharEvent::BattlePassStayOnline: return &events.battlePassStayOnline;
     case ecs::PlayerRuntime::CharEvent::Drop: return &events.drop;
     case ecs::PlayerRuntime::CharEvent::Mining: return &events.mining;
     case ecs::PlayerRuntime::CharEvent::DestroyWhenIdle: return &events.destroyWhenIdle;
@@ -1532,13 +1441,6 @@ uint64_t GetQuestDamage(entt::entity e, int race)
 }
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-uint8_t GetBattlePassID(entt::entity e)
-{
-	return ecs::IsCharacter(e) ? ecs::PlayerRuntime::GetBattlePassId(e) : 0;
-}
-
-#endif
 
 #ifdef ENABLE_RANKING
 int64_t GetRankPoints(entt::entity e, int category)
@@ -2214,211 +2116,7 @@ std::string ecs::PlayerRuntime::GetLang(entt::entity e) {
 }
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
 
-void ecs::PlayerRuntime::EnsureFreeBattlePassActive(entt::entity e)
-{
-    const uint8_t kDefaultBattlePassId = 1;
-
-    int remain = 0;
-    if (AffectSystem::GetBattlePassDeadline(e) > 0)
-        remain = AffectSystem::GetBattlePassRemainingSeconds(e);
-
-    if (remain <= 0)
-    {
-        remain = ecs::PlayerRuntime::GetSecondsTillNextMonth();
-        AffectSystem::SetBattlePassDeadline(e, get_global_time() + remain);
-    }
-
-    if (!ecs::PlayerRuntime::GetBattlePassId(e))
-        AffectSystem::AddAffect(e, AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
-    ecs::PlayerRuntime::SetBattlePassLoaded(e, true);
-}
-#endif
-
-#ifdef ENABLE_BATTLE_PASS
-void ecs::PlayerRuntime::LoadBattlePass(entt::entity e, uint32_t dwCount, TPlayerBattlePassMission* data)
-{
-    ecs::PlayerRuntime::SetBattlePassLoaded(e, false);
-
-    for (auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin(); it != ecs::PlayerRuntime::GetBattlePassMissions(e).end(); ++it)
-        delete (*it);
-    ecs::PlayerRuntime::GetBattlePassMissions(e).clear();
-
-    const uint8_t kDefaultBattlePassId = 1;
-
-    int remain = 0;
-    if (AffectSystem::GetBattlePassDeadline(e) > 0)
-        remain = AffectSystem::GetBattlePassRemainingSeconds(e);
-
-    if (remain <= 0)
-    {
-        remain = ecs::PlayerRuntime::GetSecondsTillNextMonth();
-        AffectSystem::SetBattlePassDeadline(e, get_global_time() + remain);
-    }
-
-    if (!ecs::PlayerRuntime::GetBattlePassId(e))
-        AffectSystem::AddAffect(e, AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
-
-    if (dwCount == 0 || !data)
-    {
-        ecs::PlayerRuntime::SetBattlePassLoaded(e, true);
-        return;
-    }
-
-    for (size_t i = 0; i < dwCount; ++i, ++data)
-    {
-        TPlayerBattlePassMission* newMission = new TPlayerBattlePassMission;
-        newMission->dwPlayerId = data->dwPlayerId;
-        newMission->dwMissionId = data->dwMissionId;
-        newMission->dwBattlePassId = data->dwBattlePassId;
-        newMission->dwExtraInfo = data->dwExtraInfo;
-        newMission->bCompleted = data->bCompleted;
-        newMission->bIsUpdated = data->bIsUpdated;
-
-        ecs::PlayerRuntime::GetBattlePassMissions(e).push_back(newMission);
-    }
-
-    ecs::PlayerRuntime::SetBattlePassLoaded(e, true);
-}
-
-#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-#endif
-
-#ifdef ENABLE_FREE_PASS_RAZOR93
-#endif
-
-namespace ecs::PlayerRuntime {
-uint32_t GetMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBattlePassID)
-{
-    auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin();
-    while (it != ecs::PlayerRuntime::GetBattlePassMissions(e).end())
-    {
-        TPlayerBattlePassMission* pkMission = *it++;
-        if (pkMission->dwMissionId == dwMissionID && pkMission->dwBattlePassId == dwBattlePassID)
-            return pkMission->dwExtraInfo;
-    }
-
-    return 0;
-}
-
-bool IsCompletedMission(entt::entity e, uint8_t bMissionType)
-{
-    auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin();
-    while (it != ecs::PlayerRuntime::GetBattlePassMissions(e).end())
-    {
-        TPlayerBattlePassMission* pkMission = *it++;
-        if (pkMission->dwMissionId == bMissionType)
-            return (pkMission->bCompleted ? true : false);
-    }
-
-    return false;
-}
-
-bool UpdateMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwUpdateValue, uint32_t dwTotalValue, bool isOverride)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return false;
-
-	if (!ecs::IsCharacter(e))
-		return false;
-
-    if (!ecs::PlayerRuntime::IsBattlePassLoaded(e))
-        return false;
-#ifdef ENABLE_FREE_PASS_RAZOR93
-    dwTotalValue = ecs::PlayerRuntime::GetBattlePassAdjustedTotal(e, dwMissionID, dwBattlePassID, dwTotalValue);
-#endif
-    bool foundMission = false;
-    uint32_t dwSaveProgress = 0;
-
-    auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin();
-    while (it != ecs::PlayerRuntime::GetBattlePassMissions(e).end())
-    {
-        TPlayerBattlePassMission* pkMission = *it++;
-
-        if (pkMission->dwMissionId == dwMissionID && pkMission->dwBattlePassId == dwBattlePassID)
-        {
-            pkMission->bIsUpdated = 1;
-#ifdef ENABLE_FREE_PASS_RAZOR93
-            if (pkMission->bCompleted)
-                return false;
-#endif
-            if (isOverride)
-                pkMission->dwExtraInfo = dwUpdateValue;
-            else
-                pkMission->dwExtraInfo += dwUpdateValue;
-
-            if (pkMission->dwExtraInfo >= dwTotalValue)
-            {
-                pkMission->dwExtraInfo = dwTotalValue;
-                pkMission->bCompleted = 1;
-
-#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-                if (pkMission->dwMissionId == STAY_ONLINE_MINUTES)
-                    ecs::PlayerRuntime::CancelCharEvent(e,
-                        ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
-#endif
-                CBattlePass::instance().BattlePassRewardMission(e, dwMissionID, dwBattlePassID);
-            }
-
-            dwSaveProgress = pkMission->dwExtraInfo;
-            foundMission = true;
-            break;
-        }
-    }
-
-    if (!foundMission)
-    {
-        TPlayerBattlePassMission* newMission = new TPlayerBattlePassMission;
-        newMission->dwPlayerId = GetPlayerID(e);
-        newMission->dwMissionId = dwMissionID;
-        newMission->dwBattlePassId = dwBattlePassID;
-
-        if (dwUpdateValue >= dwTotalValue)
-        {
-            newMission->dwExtraInfo = dwTotalValue;
-            newMission->bCompleted = 1;
-#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-            if (newMission->dwMissionId == STAY_ONLINE_MINUTES)
-                ecs::PlayerRuntime::CancelCharEvent(e,
-                        ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
-#endif
-            CBattlePass::instance().BattlePassRewardMission(e, dwMissionID, dwBattlePassID);
-
-            dwSaveProgress = dwTotalValue;
-        }
-        else
-        {
-            newMission->dwExtraInfo = dwUpdateValue;
-            newMission->bCompleted = 0;
-
-            dwSaveProgress = dwUpdateValue;
-        }
-
-        newMission->bIsUpdated = 1;
-
-        ecs::PlayerRuntime::GetBattlePassMissions(e).push_back(newMission);
-    }
-
-    if (!GetDesc(e))
-        return false;
-
-    TPacketGCBattlePassUpdate packet;
-    packet.bHeader = HEADER_GC_BATTLE_PASS_UPDATE;
-    packet.bMissionType = dwMissionID;
-    packet.dwNewProgress = dwSaveProgress;
-    GetDesc(e)->Packet(&packet, sizeof(TPacketGCBattlePassUpdate));
-	return true;
-}
-
-uint8_t GetBattlePassId(entt::entity e)
-{
-    const CAffect* affect = AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID);
-    return affect ? static_cast<uint8_t>(affect->lApplyValue) : 0;
-}
-}
-
-#endif
 
 #if defined(BL_OFFLINE_MESSAGE)
 uint32_t ecs::ChatSystem::GetLastOfflineMessageTime(entt::entity e)
@@ -3100,12 +2798,6 @@ void DestroyCharacterStatePre(entt::entity character)
 #ifdef ENABLE_NEW_FISHING_SYSTEM
     ActivitySystem::StopFishing(character);
 #endif
-#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-    if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
-    {
-        ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
-    }
-#endif
 
     ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Mining);
 #ifdef ENABLE_BLOCK_MULTIFARM
@@ -3215,9 +2907,6 @@ void ecs::PlayerRuntime::SetPlayerProto(entt::entity e, const TPlayerTable* t)
     ecs::PointSystem::SetRandomSP(e, t->sRandomSP);
 
     SkillSystem::LoadSkillLevels(e, t->skills, t->skill_group);
-#ifdef ENABLE_BATTLE_PASS
-    AffectSystem::SetBattlePassDeadline(e, t->dwBattlePassEndTime);
-#endif
 
     if (t->lMapIndex >= 10000)
     {

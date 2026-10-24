@@ -59,9 +59,6 @@
 #include "../../world/start_position.h"
 #include "../../entity/target.h"
 #include "../../core/utils.h"
-#ifdef ENABLE_BATTLE_PASS
-#include "../../combat/battle_pass.h"
-#endif
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 #include "../../dungeon/OrcsDungeon.h"
 #include "../../dungeon/TritonTempleDungeon.h"
@@ -659,9 +656,6 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
     }
     SkillSystem::StoreSkillLevels(e, tab.skills);
 
-#ifdef ENABLE_BATTLE_PASS
-    tab.dwBattlePassEndTime = AffectSystem::GetBattlePassDeadline(e);
-#endif
 #ifdef ENABLE_RANKING
     const entt::entity rankEntity = e;
     for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
@@ -773,20 +767,6 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     AffectSystem::SaveAffect(e);
     AffectSystem::SetLoaded(e, false);
 
-#ifdef ENABLE_BATTLE_PASS
-    auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin();
-    while (it != ecs::PlayerRuntime::GetBattlePassMissions(e).end())
-    {
-        TPlayerBattlePassMission* pkMission = *it++;
-
-        if (pkMission->bIsUpdated)
-            db_clientdesc->DBPacket(HEADER_GD_SAVE_BATTLE_PASS, 0, pkMission, sizeof(TPlayerBattlePassMission));
-
-        if (pkMission)
-            delete pkMission;
-    }
-    ecs::PlayerRuntime::SetBattlePassLoaded(e, false);
-#endif
 
     SetSkipSave(e, true);
 

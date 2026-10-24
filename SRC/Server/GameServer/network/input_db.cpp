@@ -58,9 +58,6 @@
 #include "map_location.h"
 #include "DragonSoul.h"
 
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#endif
 
 #include "shutdown_manager.h"
 #include <common/CommonDefines.h>
@@ -1166,13 +1163,6 @@ void CInputDB::Boot(const char* data)
 
 	// END_OF_LOCALE_SERVICE
 
-#ifdef ENABLE_BATTLE_PASS
-	LOG_INFO("LoadLocaleFile: BattlePassInfo");
-	if (!CBattlePass::instance().ReadBattlePassFile())
-	{
-		LOG_ERROR("Cannot load battle_pass.txt");
-	}
-#endif
 
 	building::CManager::instance().FinalizeBoot();
 
@@ -2023,15 +2013,6 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		AffectLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
 		break;
 
-#ifdef ENABLE_BATTLE_PASS
-	case HEADER_DG_BATTLE_PASS_LOAD:
-		BattlePassLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
-		break;
-
-	case HEADER_DG_BATTLE_PASS_LOAD_RANKING:
-		BattlePassLoadRanking(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
-		break;
-#endif
 
 	case HEADER_DG_SAFEBOX_LOAD:
 		SafeboxLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);

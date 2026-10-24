@@ -63,10 +63,6 @@
 #ifdef ENABLE_SWITCHBOT
 #include "../../social/new_switchbot.h"
 #endif
-#ifdef ENABLE_BATTLE_PASS
-#include "../../combat/battle_pass.h"
-#include "../components/visibility_components.hpp"
-#endif
 #include "../../dungeon/DragonSoul.h"
 #include "../../combat/buff_on_attributes.h"
 #include "../../item/ItemUse.h"
@@ -1114,18 +1110,6 @@ bool ItemSystem::DestroyItem(entt::entity e, TItemPos Cell)
 	InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-	if (bBattlePassId)
-	{
-		uint32_t dwItemVnum, dwCnt;
-		if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, DESTROY_ITEM, &dwItemVnum, &dwCnt))
-		{
-			if (dwItemVnum == ItemSystem::GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, DESTROY_ITEM, bBattlePassId) < dwCnt)
-				ecs::PlayerRuntime::UpdateMissionProgress(e, DESTROY_ITEM, bBattlePassId, ItemSystem::GetItemCount(item), dwCnt);
-		}
-	}
-#endif
 
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 47, "%s", ItemSystem::GetItemName(item));
@@ -2208,18 +2192,6 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 			uint8_t bCell = GetItemCell(item);
 
 
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
 
 			// DETAIL_REFINE_LOG
 			NotifyRefineSuccess(e, item, ecs::SocialSystem::IsRefineThroughGuild(e) ? "GUILD" : "POWER");
@@ -2467,18 +2439,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 			uint8_t bCell = GetItemCell(item);
 
 
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
 
 			NotifyRefineSuccess(e, item, szRefineType);
 
@@ -2588,18 +2548,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 			uint8_t bCell = GetItemCell(item);
 
 
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
 
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -prt->cost);
 			NotifyRefineFail(e, item, szRefineType, -1);
@@ -2839,18 +2787,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 			uint8_t bCell = GetItemCell(item);
 
 
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
 
 			NotifyRefineSuccess(e, item, szRefineType);
 
@@ -2960,18 +2896,6 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 			uint8_t bCell = GetItemCell(item);
 
 
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
 
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -prt->cost);
 			NotifyRefineFail(e, item, szRefineType, -1);
@@ -5394,85 +5318,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 			case UNIQUE_ITEM_TREASURE_BOX:
 				break;
-#ifdef ENABLE_BATTLE_PASS
-#ifdef ENABLE_FREE_PASS_RAZOR93
-#ifdef ENABLE_BATTLE_PASS
-			case 70611:
-			{
-				const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-				if (!bBattlePassId)
-				{
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 780, "");
-#endif
-					return false;
-				}
-
-				// 1x hasznalhato ugyanarra a BP ID-re
-				if (ecs::PlayerRuntime::HasBattlePassBoost(e, bBattlePassId))
-				{
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 8, "");
-#endif
-					return false;
-				}
-
-				int remain = AffectSystem::GetBattlePassRemainingSeconds(e);
-				if (remain <= 0)
-					remain = ecs::PlayerRuntime::GetSecondsTillNextMonth();
-
-				 
-				AffectSystem::AddAffect(e, AFFECT_BATTLE_PASS_BOOST, POINT_BATTLE_PASS_ID, bBattlePassId, 0, remain, 0, true);
-
-				 
-				ecs::PlayerRuntime::ApplyBattlePassBoostRecalc(e, bBattlePassId);
-
-				 
-				CBattlePass::instance().BattlePassRequestOpen(e);
-
-				ConsumeItemEcs(itemEntity);
-			}
-			break;
-#endif
-
-#else
-
-			case 70611://79900
-			{
-				std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQueryPrepared(
-					"SELECT * FROM battle_pass_ranking WHERE player_name = ? AND battle_pass_id = ?",
-					{ SqlParam::Text(ecs::PlayerRuntime::GetName(e).data()), SqlParam::Int(1) }));
-				if (pmsg->Get()->uiNumRows > 0) {
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 6, "");
-#endif
-					return false;
-				}
-
-				int iSeconds = ecs::PlayerRuntime::GetSecondsTillNextMonth();
-				if (iSeconds < 0) {
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 7, "");
-#endif
-					return false;
-				}
-
-				if (AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS)) {
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 8, "");
-#endif
-					return false;
-				}
-				else {
-					AffectSystem::SetBattlePassDeadline(e, get_global_time() + iSeconds);
-
-					AffectSystem::AddAffect(e, AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, 1, 0, iSeconds, 0, true);
-					ConsumeItemEcs(itemEntity);
-				}
-			}
-			break;
-#endif
-#endif
 			case 27989:
 			case 76006:
 			{
@@ -8278,30 +8123,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					}
 
 
-#ifdef ENABLE_BATTLE_PASS
-					uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-					if (bBattlePassId)
-					{
-						uint32_t dwItemVnum, dwUseCount;
-						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
-						{
-							if (dwItemVnum == GetItemVnum(itemEntity) && ecs::PlayerRuntime::GetMissionProgress(e, USE_ITEM, bBattlePassId) < dwUseCount)
-								ecs::PlayerRuntime::UpdateMissionProgress(e, USE_ITEM, bBattlePassId, 1, dwUseCount);
-						}
-
-						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
-						{
-							if (dwItemVnum == GetItemVnum(itemEntity) && ecs::PlayerRuntime::GetMissionProgress(e, USE_ITEM1, bBattlePassId) < dwUseCount)
-								ecs::PlayerRuntime::UpdateMissionProgress(e, USE_ITEM1, bBattlePassId, 1, dwUseCount);
-						}
-
-						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
-						{
-							if (dwItemVnum == GetItemVnum(itemEntity) && ecs::PlayerRuntime::GetMissionProgress(e, USE_ITEM2, bBattlePassId) < dwUseCount)
-								ecs::PlayerRuntime::UpdateMissionProgress(e, USE_ITEM2, bBattlePassId, 1, dwUseCount);
-						}
-					}
-#endif
 					if (!ChangeItemAttributeEcs(item2))
 					    return false;
 				}
@@ -9440,18 +9261,6 @@ void GiveGold(entt::entity e, int64_t iAmount)
 
 	LOG_INFO("GIVE_GOLD: {} {}", ecs::PlayerRuntime::GetName(e).data(), iAmount);
 
-#ifdef ENABLE_BATTLE_PASS
-	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
-	if (bBattlePassId)
-	{
-		uint32_t dwYangCount, dwNotUsed;
-		if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, FARM_YANG, &dwNotUsed, &dwYangCount))
-		{
-			if (ecs::PlayerRuntime::GetMissionProgress(e, FARM_YANG, bBattlePassId) < dwYangCount)
-				ecs::PlayerRuntime::UpdateMissionProgress(e, FARM_YANG, bBattlePassId, iAmount, dwYangCount);
-		}
-	}
-#endif
 
 	/*
 	// PARTY GOLD SPLIT -  kikommentelve

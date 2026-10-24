@@ -91,9 +91,6 @@
 	#include "fstream"
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#endif
 
 //#define __FILEMONITOR__
 
@@ -443,9 +440,6 @@ int main(int argc, char **argv)
 	DBManager		db_manager;
 	AccountDB 		account_db;
 
-#ifdef ENABLE_BATTLE_PASS
-	CBattlePass	battle_pass;
-#endif
 
 	LogManager		log_manager;
 	MessengerManager	messenger_manager;

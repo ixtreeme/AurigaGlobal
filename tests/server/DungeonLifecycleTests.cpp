@@ -10,7 +10,6 @@
 #include "../../SRC/Server/GameServer/dungeon/Halloween2022Dungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/VikingDungeon.h"
 #include "../../SRC/Server/GameServer/network/db.h"
-#include "../../SRC/Server/GameServer/combat/battle_pass.h"
 #include "../../SRC/Server/GameServer/item/item_manager.h"
 #include "../../SRC/Server/GameServer/social/party.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
@@ -272,9 +271,6 @@ uint8_t GetGMLevel(entt::entity) { return 0; }
 DESC* GetDesc(entt::entity) { return nullptr; }
 int64_t GetRankPoints(entt::entity, int) { return 0; }
 bool SetRankPoints(entt::entity, int, int64_t) { return true; }
-uint8_t GetBattlePassId(entt::entity) { return 0; }
-uint32_t GetMissionProgress(entt::entity, uint32_t, uint32_t) { return 0; }
-bool UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { return true; }
 uint64_t GetQuestDamage(entt::entity, int) { return 0; }
 entt::entity FindByVID(uint32_t vid) {
     for (const auto e : g_registry.view<Actor>())
@@ -345,9 +341,6 @@ DBManager testDbManager;
 void DBManager::Query(const char*, ...) {}
 void CAsyncSQL::ReturnQuery(const char*, void* data) { delete static_cast<CFuncQueryInfo*>(data); }
 MYSQL_ROW SQLResult::FetchRow() { return nullptr; }
-bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { return false; }
-CBattlePass::CBattlePass() = default;
-CBattlePass::~CBattlePass() = default;
 TItemTable* ITEM_MANAGER::GetTable(uint32_t) { return nullptr; }
 ITEM_MANAGER::ITEM_MANAGER() = default;
 ITEM_MANAGER::~ITEM_MANAGER() = default;

@@ -16,9 +16,6 @@ static_assert(sizeof(TPacketMarriageAdd) == 16 + 2 * (CHARACTER_NAME_MAX_LEN + 1
 static_assert(sizeof(TPacketGiveGuildPriv) == 17 && sizeof(TPacketGiveEmpirePriv) == 14);
 static_assert(sizeof(TPacketDGChangeGuildPriv) == 18 && sizeof(TPacketDGChangeEmpirePriv) == 15);
 static_assert(std::is_same_v<decltype(TPacketMarriageAdd::tMarryTime), int64_t>);
-#ifdef ENABLE_BATTLE_PASS
-static_assert(std::is_same_v<decltype(TPlayerTable::dwBattlePassEndTime), int64_t>);
-#endif
 
 class TestClientManager : public CClientManager {
 public:
@@ -161,10 +158,6 @@ void PlayerSave() {
     const auto length = CreatePlayerSaveQuery(query, sizeof(query), &player);
     Check(length < sizeof(query) && std::string(query).find("horse_hp_droptime = 18446744073709551615,") != std::string::npos,
         "production player UPDATE truncated horse BIGINT");
-#ifdef ENABLE_BATTLE_PASS
-    Check(std::string(query).find("battle_pass_end = FROM_UNIXTIME(NULLIF(0, 0))") != std::string::npos,
-        "inactive battle pass was converted as an invalid zero Unix time");
-#endif
 }
 std::string TableDDL(const std::string& schema, const std::string& name, const std::string& temporary) {
     const auto begin = schema.find("CREATE TABLE IF NOT EXISTS `player`.`" + name + "`");
@@ -201,12 +194,9 @@ void SqlChecks(TestClientManager& client, unsigned int port, const char* schemaP
     for (const uint64_t deadline : {uint64_t{2147483648}, uint64_t{4294967296}, UINT64_MAX}) {
         TPlayerTable player {}; player.id = 1; player.horse.dwHorseHealthDropTime = deadline;
         char query[QUERY_MAX_LEN] {}; CreatePlayerSaveQuery(query, sizeof(query), &player); run(query);
-        auto read = run("SELECT horse_hp_droptime, battle_pass_end FROM player_test WHERE id=1");
+        auto read = run("SELECT horse_hp_droptime FROM player_test WHERE id=1");
         const auto row = read->Get()->FetchRow();
         Check(row && std::stoull(row[0]) == deadline, "real horse UPDATE/read narrowed deadline");
-#ifdef ENABLE_BATTLE_PASS
-        Check(row[1] == nullptr, "inactive battle pass was not saved as NULL");
-#endif
     }
     marriage::CManager manager; now = uint64_t{1} << 40;
     manager.Add(30, 40, "first", "second");

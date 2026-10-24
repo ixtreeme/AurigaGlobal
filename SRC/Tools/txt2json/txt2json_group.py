@@ -11,7 +11,7 @@
 #
 #   tokens : CTextFileLoader grammar (group.txt, mob_drop_item.txt, ...)
 #   rows   : CGroupTextParseTreeLoader grammar ("#--#" column header,
-#            battle_pass.txt, dragon_soul_table.txt, shop_table_ex.txt)
+#            dragon_soul_table.txt, shop_table_ex.txt)
 #
 # The parser is a faithful port of the old C++ loaders:
 #   - " \t" delimiters, "#" comment lines (except "#--#"), quoted tokens,

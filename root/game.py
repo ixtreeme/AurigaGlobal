@@ -464,8 +464,6 @@ class GameWindow(ui.ScriptWindow):
 			# onPressKeyDict[app.DIK_F6] = lambda : self.GuildWar_OpenRank()
 		# if app.ENABLE_DUNGEON_INFO_SYSTEM:
 			# onPressKeyDict[app.DIK_F7] = lambda : self.OpenDungeoninfo()
-		if app.ENABLE_BATTLE_PASS:
-			onPressKeyDict[app.DIK_F8] = lambda : self.OpenBattlePassWindow()
 		if app.ENABLE_WHISPER_ADMIN_SYSTEM:
 			onPressKeyDict[app.DIK_F9] = lambda : self.OpenWhisperSystem()
 		#onPressKeyDict[app.DIK_F5] = lambda : self.OpenTeleporter()
@@ -926,17 +924,11 @@ class GameWindow(ui.ScriptWindow):
 			self.affectShower.BINARY_NEW_AddAffect(type, pointIdx, value, duration)
 			if chr.NEW_AFFECT_DRAGON_SOUL_DECK1 == type or chr.NEW_AFFECT_DRAGON_SOUL_DECK2 == type:
 				self.interface.DragonSoulActivate(type - chr.NEW_AFFECT_DRAGON_SOUL_DECK1)
-			elif type == chr.NEW_AFFECT_BATTLE_PASS:
-				self.interface.wndBattlePass.SetBattlePassInfo(value, duration)
-				self.interface.wndBattlePass.SetInactiveBG(False)
-				self.interface.wndBattlePass.SetStatus(False)
 			elif app.ENABLE_DS_SET and type == chr.NEW_AFFECT_DS_SET and self.interface:
 				self.interface.SetDSSet(value)
 		except:
 			pass
 		#else:
-		#	self.interface.wndBattlePass.SetBattlePassInfo(1, 1)		
-		#	self.interface.wndBattlePass.SetInactiveBG(True)
 						
 	# def BINARY_NEW_RemoveAffect(self, type, pointIdx):
 		# self.affectShower.BINARY_NEW_RemoveAffect(type, pointIdx)
@@ -951,11 +943,6 @@ class GameWindow(ui.ScriptWindow):
 		self.affectShower.BINARY_NEW_RemoveAffect(type, pointIdx)
 		if chr.NEW_AFFECT_DRAGON_SOUL_DECK1 == type or chr.NEW_AFFECT_DRAGON_SOUL_DECK2 == type:
 			self.interface.DragonSoulDeactivate()
-		elif type == chr.NEW_AFFECT_BATTLE_PASS:
-			if self.interface:
-				if self.interface.wndBattlePass:
-					self.interface.wndBattlePass.SetInactiveBG(True)
-					self.interface.wndBattlePass.SetStatus(True)
 		elif app.ENABLE_DS_SET and type == chr.NEW_AFFECT_DS_SET and self.interface:
 			self.interface.SetDSSet(0)
 	# END_OF_UNKNOWN_UPDATE
@@ -3397,42 +3384,6 @@ class GameWindow(ui.ScriptWindow):
 			self.wndPopupDialog.SetText(localeinfo.ENVANTER_KEY_NEED % int(need))
 			self.wndPopupDialog.Open()
 
-	if app.ENABLE_BATTLE_PASS:
-		def OpenBattlePassWindow(self):
-			net.SendBattlePassAction(1)
-
-		def BINARY_BattlePassOpen(self):
-			if self.interface:
-				self.interface.OpenBattlePass()
-
-		def BINARY_BattlePassAddMission(self, missionType, missionInfo1, missionInfo2, missionInfo3):
-			if self.interface:
-				self.interface.AddBattlePassMission(missionType, missionInfo1, missionInfo2, missionInfo3)
-				
-		def BINARY_BattlePassAddMissionReward(self, missionType, itemVnum, itemCount):
-			if self.interface:
-				self.interface.AddBattlePassMissionReward(missionType, itemVnum, itemCount)
-				
-		def BINARY_BattlePassUpdate(self, missionType, newProgress):
-			if self.interface:
-				self.interface.UpdateBattlePassMission(missionType, newProgress)
-				
-		def BINARY_BattlePassAddReward(self, itemVnum, itemCount):
-			if self.interface:
-				self.interface.AddBattlePassReward(itemVnum, itemCount)
-				
-		def BINARY_BattlePassAddRanking(self, pos, playerName, finishTime):
-			if self.interface:
-				self.interface.AddBattlePassRanking(pos, playerName, finishTime)
-				
-		def BINARY_BattlePassRefreshRanking(self):
-			if self.interface:
-				self.interface.RefreshBattlePassRanking()
-				
-		def BINARY_BattlePassOpenRanking(self):
-			if self.interface:
-				self.interface.OpenBattlePassRanking()
-				
 	if app.NEW_PET_SYSTEM:
 		def SetPetEvolution(self, evo):
 			petname = [localeinfo.PET_MISSING1_1, localeinfo.PET_MISSING1_2, localeinfo.PET_MISSING1_3, localeinfo.PET_MISSING1_4]

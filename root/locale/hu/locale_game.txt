@@ -2518,7 +2518,6 @@ WIKI_SUBCATEGORY_SHOULDER_SASH	VÁLLPÁNT
 WIKI_SUBCATEGORY_EPIC_SYSTEM	EPIKUS RENDSZER
 WIKI_SUBCATEGORY_COSTUME_SASH	VÁLLPÁR KOSZTÜM
 WIKI_SUBCATEGORY_COSTUMES	KOSZTÜMÖK
-WIKI_SUBCATEGORY_BATTLEPASS	BATTLE PASS
 WIKI_SUBCATEGORY_BOOST	BOOST KÉPESSÉG
 WIKI_SUBCATEGORY_PASSIVE	PASSZÍV KÉPESSÉG
 WIKI_SUBCATEGORY_BIOLOGIST	BIOLÓGUS
@@ -2746,18 +2745,6 @@ BIOLOGIST_MISSION_NAME_11	Sötét páfrányok
 BIOLOGIST_MISSION_NAME_12	Chaegirab gyurui
 BIOLOGIST_MISSION_NAME_13	Metin kristályok
 BIOLOGIST_MISSION_NAME_14	Tisztított magok
-BATTLE_PASS_PROCENT	Százalékok: %.1f%%
-BATTLE_PASS_ALERT1	Nincsen aktív battlepassod aktiválva, erre a tárgyra van szükséged hogy aktiválhasd.
-BATTLE_PASS_OK	OK
-BATTLE_PASS_STATUS	Státusz: %s%s|h|r
-BATTLE_PASS_INACTIVE	Inaktív
-BATTLE_PASS_ACTIVE	Folyamatban
-BATTLE_PASS_COMPLETED	Elkészítve
-BATTLE_PASS_UNKNOWN_NAME	Nem ismert név
-BATTLE_PASS_NAME	Név: %s
-BATTLE_PASS_COUNTQUEST	Fennmaradó küldetések: %s
-BATTLE_PASS_COUNTQUEST_COMPELTED	Elkészíttett küldetések: %s
-BATTLE_PASS_REMAINING_TIME	Fennmaradó ido: %s
 PETBOX_RIMUOVE	Biztos hogy ezt a kisállatot akarod kivenni?
 BUY_GAYA_ITEM	Biztos hogy ezt a tárgyat akarod megvenni?
 PETSKILLNAME_1	Ellenállás (warrior)
@@ -3067,7 +3054,6 @@ EXCHANGE_TITLE	Cserély ezzel %s
 EXCHANGE_TITLE_LEVEL	Cserély ezzel %s (%d)
 USE_200_ITEMS	|Eemoji/key_rclick|e + |Eemoji/key_ctrl|e Hogy használj egy egész csomagot.
 INFO_INCREASE_CHAR_STAT	|Eemoji/key_lclick|e + |Eemoji/key_ctrl|e 10 pontal növelhess.
-BATTLE_PASS_JAN20	December 2021
 SKILL_COLOR_SELECT_FIRST	Eloször válasszon színt.
 SKILL_COLOR_PICK_TOOLTIP	Válassza ki a kívánt színt %s. (HEX Code : %s)
 SKILL_COLOR_PRESET_TOOLTIP_TITLE	Elore beállított szín
@@ -3573,7 +3559,6 @@ PURCHASES_PRICE	Price
 PURCHASES_PRICE_TEXT	|Eishop/mini_coin|e |cffF7BD48%s Dragon Coins
 CATEGORY_0_NAME	Special Items
 CATEGORY_0_SUB_0_NAME	Costume Event
-CATEGORY_0_SUB_1_NAME	Battle Pass
 CATEGORY_0_SUB_2_NAME	Special
 CATEGORY_1_NAME	Weapon
 CATEGORY_1_SUB_0_NAME	Sword

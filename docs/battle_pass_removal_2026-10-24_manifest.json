@@ -1,0 +1,2835 @@
+{
+  "seasonal_pass_unchanged": 34,
+  "preexisting_user_files_unchanged": 8,
+  "modified_prefabs_valid": [
+    "Assets\\Metin2\\Generated\\UI\\Prefabs\\Metin2Ui_inventorywindowex.prefab",
+    "Assets\\Metin2\\Generated\\UI\\Prefabs\\Metin2Ui_inventory_menu.prefab",
+    "Assets\\Metin2\\MobileUI\\Prefabs\\WindowsCopies\\Metin2MobileUi_inventorywindowex.prefab",
+    "Assets\\Metin2\\MobileUI\\Prefabs\\WindowsCopies\\Metin2MobileUi_inventory_menu.prefab"
+  ],
+  "removed_assets_guids_unreferenced": 128,
+  "removed_embedded_sprites_unreferenced": 60,
+  "server_branch": "codex/mission-engine",
+  "server_base": "9cda87fd",
+  "unity_branch": "/main/codex-mission-engine",
+  "unity_base_changeset": 29,
+  "database_schema_or_data_modified": false,
+  "deployed": false,
+  "source_backup_files": 522,
+  "changes": [
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/GameType.h",
+      "action": "edit",
+      "before_sha256": "d5184c35a12cf21567c9cafad44af980ad7c0a8862ca819b5632adf4e21b33da",
+      "after_sha256": "6a630f34327958fa89042194465fb86271ee56a2d1491685545a680f05db3344"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/InstanceBase.h",
+      "action": "edit",
+      "before_sha256": "c11b384979ef2197d677bf37120f5b052882c8ebd84bc337e23f31198055a9ae",
+      "after_sha256": "1d8c3127933dc8fd9b1e09b58ed262e1afbf9b983ead4f18b2c98b53af33ee55"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/Locale_inc.h",
+      "action": "edit",
+      "before_sha256": "e762e514f5dc04fc2ddb72279849e25a6c15887a0cfc4f51b5472f455c583bab",
+      "after_sha256": "a59d2a8e0735eaaef52a1f6620a65027915a498f892f761c347339743ea6b96a"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/Packet.h",
+      "action": "edit",
+      "before_sha256": "7943065454c0820c937b8f701f45fbed4cb932eb30e97f870bc2f3e9ba93cefb",
+      "after_sha256": "cafe67b57ee07ba0ffcd912d435c649bad54be05821bb14c76ee8c13f300d289"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/PythonApplicationModule.cpp",
+      "action": "edit",
+      "before_sha256": "1b7e8b1cf6dddb325170111923dd17cf1833799fc0811c9e7516f1aaf3972829",
+      "after_sha256": "ee79c2ef173966cb1c7301e333821c00ef83c52cc48094da3182d06a958473ce"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/PythonCharacterModule.cpp",
+      "action": "edit",
+      "before_sha256": "22a4eea32fc7fd02745606afcd7f137e5b239fc5b6896e164df7da5e381d622d",
+      "after_sha256": "0a908cd272158cae582acbb5e0ea0702d6c575eac84a077277416dd7179eaa29"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/PythonNetworkStream.cpp",
+      "action": "edit",
+      "before_sha256": "76449d55a49eadfcf7b4046ef01ea496ba0c25decf0cc0bc63f579a4720fc2fe",
+      "after_sha256": "97d7e78f213125078c73c2b36db5734dcf3afd248332b540fbb98571b24d788d"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/PythonNetworkStream.h",
+      "action": "edit",
+      "before_sha256": "146c000dc0a27880136b6b638c9f88377378b97e34921bd0762784dc3a918b22",
+      "after_sha256": "456b3a5891979f40025436d404c96340b00ae0abb469c6ace701b43b4c20708c"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/PythonNetworkStreamModule.cpp",
+      "action": "edit",
+      "before_sha256": "364abc10898a92946c0d7759bbccf06461c202c78fb477405e630566c30bd14c",
+      "after_sha256": "17f3821d977c452f197ca5d0326861f8891a6bcc0100b30ce11bcb32ea939e93"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Launcher/UserInterface/PythonNetworkStreamPhaseGame.cpp",
+      "action": "edit",
+      "before_sha256": "6b42e9eca1ce8f04cb4eaa2d906685d1d24f464a8afddb20e154d7e319ce0140",
+      "after_sha256": "0069f8081692712c9e77d00504e97591d1c7f620d5dd5d5bb77268c584e41012"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/ClientManager.cpp",
+      "action": "edit",
+      "before_sha256": "06411cba9029be15c8f907d846409ce5b3523b53562f7408734e71c5e45a9793",
+      "after_sha256": "85a2057c6102287ea39d8c17c21e66793767647495566fc5afa7b624eaa38a82"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/ClientManager.h",
+      "action": "edit",
+      "before_sha256": "da2f581b77e60eb9980450a4b3f59c84e8e80f747812973aebce654efbe49ff6",
+      "after_sha256": "89c3458450843ce44f799f839470da30142e5334b8dc9f944edc39a254fa90a2"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+      "action": "edit",
+      "before_sha256": "1b0d2cf094fffa2c7c8bde5f2210de95b229d97031d19c4248abef3e7380d84c",
+      "after_sha256": "ddcdd68b70c435f3c0b5b06465eb20391a636157e29c2359c27f85d2c799db90"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/ClientManagerPlayer.cpp",
+      "action": "edit",
+      "before_sha256": "35dfeea6039e1da519e1989ce2d615a6f0a9bfba41562c52113786e6b82a5d76",
+      "after_sha256": "bec279292ef26ee3d2aee4a3b510f106507a0a8234eb3533968af7fb370678bf"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/DatabaseConfig.cpp",
+      "action": "edit",
+      "before_sha256": "b21de293466c30707ff36ff60b7d42f364b22631f06a8127c90721028fe6d7a9",
+      "after_sha256": "0259f587bc05d6eb9a4e8fb9126a69bf1c2f9695acfe213c108e6781486c329e"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/DatabaseConfig.h",
+      "action": "edit",
+      "before_sha256": "c2d69e0d0e049dabf0f68b018438ba372748922bc1ed1cd44047d334a440c32f",
+      "after_sha256": "7638718d4f19cdf64c2f46cd5dc18cdde13cf183a9ca4a396c7675e27d54a113"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/Main.cpp",
+      "action": "edit",
+      "before_sha256": "691d793b486c0046d6aa2319578b1ca0229d5abdf15a3e1f6ddc0e94bb39e24c",
+      "after_sha256": "060b061884346ebfeded9bbde11c1e4058bc524fafaf844dfe37490b9c66d2d0"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/QID.h",
+      "action": "edit",
+      "before_sha256": "34b17dfd27049be43ad73b3c27d7a75883e50c4aa9a2c35f93302bf052e21277",
+      "after_sha256": "241da05292146a52e98028a9d497cc208807951dc7788d438c85881bb665d631"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/Database/player_save.cpp",
+      "action": "edit",
+      "before_sha256": "640fb67e442e941ecf791be4d534e6491f3d592c8b4d99dd86509a95bd024ee8",
+      "after_sha256": "372df05ada6e0baecc45cd6896ae225a4d8a5ab2a129865bd7069d480c0e13c5"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/combat/affect.h",
+      "action": "edit",
+      "before_sha256": "dc1d14d2b84b481596c3a70e122cd27b991355c660b0d008b0ea2b9cba2e265f",
+      "after_sha256": "c37c1837eead5c12989a411e494965beb0f7dccb223b0a4cf5fc2530eb4caa00"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/combat/affect_db.cpp",
+      "action": "edit",
+      "before_sha256": "a38c8ff2c5d49bb28e74a1eec23c92abf3a57bbfe5b1b4db44bee6c7c0c73a09",
+      "after_sha256": "4c6ba0e1d7b2f55e8c7ca51019c3d1190f78ccc6e2566d9c9b8475e6a7f76ba7"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/combat/battle_pass.cpp",
+      "action": "delete",
+      "before_sha256": "6cc605322a8b86d00426d0cc78b11940487a7b9637a9ae74ff87d9de82ec0950",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/combat/battle_pass.h",
+      "action": "delete",
+      "before_sha256": "8802b887c99df2bae9ff3404641280975001b8ebadd5c6e4eb70ddb16eea502e",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/combat/battle_pass_input.cpp",
+      "action": "delete",
+      "before_sha256": "e3d1c12af711440862e6747fca15c8a63798c1189466199cbab36619d678da3d",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/core/main.cpp",
+      "action": "edit",
+      "before_sha256": "dfc18aecb2d591f2f622d78a176ff9861e3c099900f84232e8a425e26959c94b",
+      "after_sha256": "1aafefaac1ecfe16b3b86b8a991a20b8fa236720dc88d4ebf49e79240754fb40"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/dungeon/OrcsDungeon.cpp",
+      "action": "edit",
+      "before_sha256": "cdfa122c963c1ae779e198c45c58abc402ffbd83bd1193c75d617fee46b5800f",
+      "after_sha256": "e49af3e7296e5f06be513b320118dbd3d96d09d729df0b2af7bbe09cc641de26"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/dungeon/RuneDungeon.cpp",
+      "action": "edit",
+      "before_sha256": "491762d51163ef13fd618c3ef41a74ea0fae6f9133b233f8f4e0b60cacb54a39",
+      "after_sha256": "326cf3623fe06d886692f074b757157ca116b7b6669effa1092064f98d97f5d7"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/dungeon/TritonTempleDungeon.cpp",
+      "action": "edit",
+      "before_sha256": "8d67e77e58cf01d88555639c5e622c24a4dd8eb1ac301509ee62b6e9d86316e2",
+      "after_sha256": "3f08b7b2c274371b1f1f6635ed68a44547058238ed428e1af63e6f3123e82b8d"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/EntityFactory.cpp",
+      "action": "edit",
+      "before_sha256": "692ff6d8b3468beaeaac00a4140c6db91bc15f8a4aa6c3f1564236d771476975",
+      "after_sha256": "dcdf077bed7b4fcf78338ee25894cfd3e26d21ec8b98d8b8d3137e69830c40cc"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/components/activity_components.hpp",
+      "action": "edit",
+      "before_sha256": "5c2e0a124906677126a8f5277b3182f0065dca70b660bace248e2d16718072ea",
+      "after_sha256": "b43709e0e58b83b7d0b2e75c3582cb19d284e03192cccc82a10fa131044d8e2f"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/components/character_runtime_components.hpp",
+      "action": "edit",
+      "before_sha256": "3a376d28b05c405c025394dfde6b6eee4065ecdac014149863133649b343d9a6",
+      "after_sha256": "d3d77ed57db34664ce814510fef61d263034bacf8512c00037835fc4933900a4"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/components/status_components.hpp",
+      "action": "edit",
+      "before_sha256": "65864b7c8ae1fe742c8e2a0be9e4a3c401028f2453d9eb8629b32dd9bbc97a25",
+      "after_sha256": "707740a364610295bffa07ff460b6c39b043fee4482250f480609225dd1f17d4"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp",
+      "action": "edit",
+      "before_sha256": "4e82bb09227ed5d5885c8d8a4a3badca885c3525503a90dce856a84bff778d55",
+      "after_sha256": "d9210997d450f74697a343c641f49d15b62fc1a9cbb92d1960fcac26c64d777c"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/AffectSystem.cpp",
+      "action": "edit",
+      "before_sha256": "23c3215a9d6eccce3af1ed81bc0b3dc00096dabe95f330f98d7cef27880c483d",
+      "after_sha256": "25318201791fdd9f7df513e516e8280078a31bc4edb6a45dd559c99258b1eba0"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/AffectSystem.hpp",
+      "action": "edit",
+      "before_sha256": "6de841c5afa6132bcd131f52f799f07cac659e91d270a2b6676ce53506dc5eb4",
+      "after_sha256": "5a1bc499548fb1c7b4a05db43a6bd078beffa41e46b0d77a0965e7d0158af3b1"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/CombatSystem.cpp",
+      "action": "edit",
+      "before_sha256": "655397f8fcde6309a54454ef7719d9f9d4b0f38f90db5a0cba81189d93da9f30",
+      "after_sha256": "139c43cd1e4f248b4a66fd55ccee1e1a22b3664957f9c48105c1d41837e06745"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/ItemSystem.cpp",
+      "action": "edit",
+      "before_sha256": "d00612a790e99ada35a338e54a84ed16a4f38094ebfb01c54866ce37b9073a3d",
+      "after_sha256": "13a6b71c20e2791e49fe8a7db093683c1e3f7beb60b282ba0305e3514d9f98da"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp",
+      "action": "edit",
+      "before_sha256": "cf70f012f3ada7946ce0d18cb48ac4bcaf334422c8ca628faf9b452b9ccf27b4",
+      "after_sha256": "b12e603eb9e839fb3a69661c1e33a253bb683d66c940f9606a69b4931bcc1e71"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/MovementSystem.cpp",
+      "action": "edit",
+      "before_sha256": "a1281dbdb3766271dd07901e749aeaf80fa466e3b2ab6689c9618d036f61e564",
+      "after_sha256": "c6f96520cb63d6248210c2cc5c6bd1b3a846ea23993073d15c589f270feb54e3"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp",
+      "action": "edit",
+      "before_sha256": "4260ced333f8f866adde85cf436e8cb3910f927d3094e05513f5a578521b973d",
+      "after_sha256": "228d807a7e3170b4d86e668f948b4f482a43d91dcd1f657e3934fc103041dceb"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp",
+      "action": "edit",
+      "before_sha256": "8229e257314ac376b27bb4f1a247177bfceda45d210f43e3273c033752ce2ae7",
+      "after_sha256": "0a7cded7b5fbebc25dcf4a5e861c640944659a8d3b04e3974b57ca9923b4baa5"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/PointSystem.cpp",
+      "action": "edit",
+      "before_sha256": "010c04d46e315eec30ea5e866e27e3c3385b80b7b266d85b40690c84a66654f3",
+      "after_sha256": "7d3b4ae4471b9a1c3c59e04fb89a8199b098edc151a0b3aa3bf6d00802645163"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/ecs/systems/SessionSystem.cpp",
+      "action": "edit",
+      "before_sha256": "cecb1d52c69c29bbe6425d6200c97c792f6b0b0383edc44ac19612e1193c9885",
+      "after_sha256": "ddd0ef7e1c7bdc135ce132cb59c3ea7387474bb9697dc9004217213784e6eaf3"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/entity/char.h",
+      "action": "edit",
+      "before_sha256": "7def14f388e38ccd9b284e1e550cae7dbb953784a8b202d09654d8c97f0395aa",
+      "after_sha256": "3c930e085eaabacf7dcb4c9bb77311661e375a2e9f2b1864cf9459470c1829de"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/item/cuberenewal.cpp",
+      "action": "edit",
+      "before_sha256": "d68a263e1bb33f6833d0890762f09d524950cee7c42af75ababb7009d1ec0406",
+      "after_sha256": "a197b2e943f110cf36f8a4922b0a2b487564c089f2b35b24618a35e85dfe32f5"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/item/item_input.cpp",
+      "action": "edit",
+      "before_sha256": "b3522b0f2ea6a12e860329bc4b8624ff03151e33619d7fa0ee4bd2581668248c",
+      "after_sha256": "091b7a83471e96beda74ab10e67bb080ffd7b415fa631f38b8c91a3dd3189c72"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/network/input.h",
+      "action": "edit",
+      "before_sha256": "7a1fccd0bf9d7bce691f0245661b05c3094d00696a95f7272c7190e5799ed2b6",
+      "after_sha256": "7ccdfd632c9233ad2e4984b1305d667da7f71e9ebc929e6604c641eac828114d"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/network/input_db.cpp",
+      "action": "edit",
+      "before_sha256": "be9146b9a744db38582b595623400fe6a8c1cf777dc04156d879fbd226e5dd26",
+      "after_sha256": "86fc8896b0ce397ce5cff006a78b66221a16185bfb78ff925cfb499a4bdad69f"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/network/input_login.cpp",
+      "action": "edit",
+      "before_sha256": "d0e8763d48c9ee0dce5e7952e28e17eed7c612b3c09689ab184ad33232030fd1",
+      "after_sha256": "863c4c08f34af6c66478ef4cbe44e45edd257e1646be46f06e31c9a1a894f09f"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/network/input_main.cpp",
+      "action": "edit",
+      "before_sha256": "606be5220a9b6346c642401102890f89edf95e28aca0c0f79aae13fdb19b8f3c",
+      "after_sha256": "4d5b8e5bb49b774e00a9136cf7bd4c6bf6acfdc5cc4dc47c453748fcf596ca26"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/network/packet_info.cpp",
+      "action": "edit",
+      "before_sha256": "e3418bcc93f6ff2dc4db1affcb4d0fe67ef043f6f76d08892f9244f1c64acede",
+      "after_sha256": "e2457e4590e608c25fe44d6de71b93d6dc2db48aeb7d7514d17c9bfe51569b0a"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/quest/questlua_dungeon.cpp",
+      "action": "edit",
+      "before_sha256": "5f35d5b32f587daca4ea3aaf08785676b16c0d933173ab14d23be0257c2ccb94",
+      "after_sha256": "4aa5755db5b2998c07bd79263695072811a0005d7201a207e43f8bebe8eedd11"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/quest/questlua_pc.cpp",
+      "action": "edit",
+      "before_sha256": "53668c212d1e83d13db76b97d9a5af29a75f0e81c3ab562d89d5ee70de3dd721",
+      "after_sha256": "1259d73ebe62d819dcc8e739b4411c78c2305f1d22462a53ce580c464f75b59e"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/social/chat_input.cpp",
+      "action": "edit",
+      "before_sha256": "19356e06e6f6a0b69053298ad069cba3acdbd82dec8daafd4b287b4ae358b465",
+      "after_sha256": "f4d4a05d0d3e71a12d6122072b637b6a396c013f584c332eda875fde1cdad69d"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/social/new_switchbot.cpp",
+      "action": "edit",
+      "before_sha256": "b7471761a7f3d3e174a9b7d3e1404bfc80b974495a30335f518e737da4cf64c3",
+      "after_sha256": "c24f1151ec128e4f0d604f4b6605bbb729e7aba4adff05d83dca4fb4763617a6"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/social/shop.cpp",
+      "action": "edit",
+      "before_sha256": "ebd9d3bfb47f3c7485519435b63b61830d08c1e37984fca7e0a776f43dce124e",
+      "after_sha256": "211767578063b83c95b4de68c651fa1636d65d920c9497d78f1ae49c8f10dbc1"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/social/shop_manager.cpp",
+      "action": "edit",
+      "before_sha256": "185e29083e8dd545ace7e168e7620a595b33066f3c282e7e0a3e6dd385df2ea7",
+      "after_sha256": "ad75590eb6d7ba7582b83b15aadf6fed3291e431051c2ac9f50eadcd5992fd4f"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/GameServer/world/fishing.cpp",
+      "action": "edit",
+      "before_sha256": "4841b809d8220c50cf329fefe78f1a9d2cfdb5cefbcec84448ba85eef27a39a4",
+      "after_sha256": "eb904b5a9334df8bcb3f2bc9c902d91b49b74afc7ee34eaed53c04bc95a07940"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/common/Headers/CG_Packet.h",
+      "action": "edit",
+      "before_sha256": "56d89a7451046b86b452919cdb1bda2e38e0ffbe6303ab470934c2dc83030dea",
+      "after_sha256": "390a58e413926198cf8e2ad7983a538e1875b6961914a51f3aac9b137c96a0c4"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/common/Headers/GC_Packet.h",
+      "action": "edit",
+      "before_sha256": "89d0bfb6c9cde37b6de126de814f0da13f5998270923ca82cd6790e750d281c8",
+      "after_sha256": "8263d8db6df71ff692a15e333d4cea598e728b9632a240f36defb680467fbf17"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/common/Headers/Header_CG.h",
+      "action": "edit",
+      "before_sha256": "86e34f2aae25e6461ec537f925c0e7e91b92e1c3433d5805ffd85a4bb2b95813",
+      "after_sha256": "714f1ad4e074701467ca5225fd1636194a82ecee7007d44a913065156056b14c"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/common/Headers/Header_GC.h",
+      "action": "edit",
+      "before_sha256": "20d9e365ada7938c1c570496a0e515de4843edeccae6c46a1b1412889eb5ebf2",
+      "after_sha256": "78353c8267db692617f5fc35756d4c84620d2cd3414fe80aefb874580919786a"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/common/length.h",
+      "action": "edit",
+      "before_sha256": "ab333c4b2b35845302e3c9a82d5860be169ae64eb349f7ee9ef77745166d47e7",
+      "after_sha256": "20bbf926a304d76f51916c4f0461ff95baf28dfb9e5e321913773a4f49090848"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/common/service.h",
+      "action": "edit",
+      "before_sha256": "aea5b896eddb064b722019252ed16123c93fbf6a8545c254dc3f2e80628b82ea",
+      "after_sha256": "f8493353583fa8a403577d0277b97e083c5ff3d3c1096b15a09210233438f676"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Server/common/tables.h",
+      "action": "edit",
+      "before_sha256": "c347d8980970e3e04cd0ac06b3c8745b3f84fac818a9785c01084ee492326efc",
+      "after_sha256": "f4d52336f0e6c0b107f2890eb0522ac44d97b595a2f804f8b6087787007e1168"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Tools/ServerManager/quest_api_catalog.py",
+      "action": "edit",
+      "before_sha256": "ff40bcdc7c69b815ca84f4f39e0190b58b0fe2c2809edb5eda3ef5f0dc5cdbbf",
+      "after_sha256": "80bbee706d2056ea095a1a47555e4c5a74458915b9c632d4d1494f9b17198df7"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Tools/server_package/data.py",
+      "action": "edit",
+      "before_sha256": "cff6086053d64388f6579216cfd94a1cc0707184b9cce60cf37f2c57b7b89fa2",
+      "after_sha256": "3166ea618fbb8392ebb5b92d33a47bb9f5ad9c273aceaf7f5ad2fb41cca5a74c"
+    },
+    {
+      "repository": "server",
+      "path": "SRC/Tools/txt2json/txt2json_group.py",
+      "action": "edit",
+      "before_sha256": "4c39df35b10cb17c12bd563d78ce16266c4767a4a3980cd1951175f8445bad4d",
+      "after_sha256": "31f31c0b00a8bf804ec74587bc29fd6409b4dc623ec2229dc699d2912d75c8b3"
+    },
+    {
+      "repository": "server",
+      "path": "root/data/inventorywindowex.py",
+      "action": "edit",
+      "before_sha256": "2d315c734dc017e67bfbc6c6d337bea318c3ed62823c1a3059fe23fd7d71f9c2",
+      "after_sha256": "2b9f860ef9a41f5fa15e0b21c65560c5af8ecf2551145fc718dbf6d477b8dac3"
+    },
+    {
+      "repository": "server",
+      "path": "root/game.py",
+      "action": "edit",
+      "before_sha256": "fe7fbe27747ab0a60d5fdf98e601cf2e761e792f1a567f6d704c5024bcbe30ed",
+      "after_sha256": "933c7b1a81de9932b539e7c23b9d512ef377954b486d31278b34c402a31c4c84"
+    },
+    {
+      "repository": "server",
+      "path": "root/ingamewikiconfig.py",
+      "action": "edit",
+      "before_sha256": "99a97d65b81418b3f871516a7c01f7c77f8ec56db5b0a70633510bdcc91f1d59",
+      "after_sha256": "21deb4667d01b3d2b85d314ade25b5e3d949c8aae6292c180c715ce7e1930064"
+    },
+    {
+      "repository": "server",
+      "path": "root/interfacemodule.py",
+      "action": "edit",
+      "before_sha256": "88c9419797d9bce8fbc6804fc2d2b220788b2e8b1aaffcd660346cc86746475b",
+      "after_sha256": "b201399a4aee7a35b52a7e9d40558bdefe45d8cb1d0fdcba2717874b8141f7dc"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/cz/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "40c10dbc9aa4b7c09fc7c1da92f51c5a15b1c5a15978ed049078d9a18fbf3ce5",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/cz/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "f1fce5b01ef9e561cb219dd5fe50e5663c181bf96b181ba73bad0dc34810404d",
+      "after_sha256": "a1467c19a6fd31868984a66c79a2b957949f003f583039cd55d1cc94fadf279e"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/de/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "0614012645ee3b8936faad65ee969ea20ee5a68bdddb91be01a2e409764695dd",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/de/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "e5537bd4e303a339a82bd433d043581528b75becad51f396fd46657f29b03721",
+      "after_sha256": "413eb88953e97ce89bce7ff0f3d14c159aefa0dc5ff75d96dce5555463e52d79"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/en/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "9e8ad9fb8036a48b542c7c7046dd17e5962f8648934c8a446789b0e7c66f0ad3",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/en/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "c2573d9c3f4b16f10be98a4810210ac45fd9820db2a79d47c8a3f50e94e52166",
+      "after_sha256": "6d4119ac9a339ee57ebdaaa667f46843d15250b22b4d0324f8dbfe813c9a31bc"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/es/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "d6fafa24afa5d32d210ede56b74ee72806f42e37c9bc757307bbf00089254add",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/es/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "2dfb880136007fd5c853f5c9d9739066147bc04953f64509a083efc43c55589f",
+      "after_sha256": "803fe64d1870acb0290afaf70fef2af0b0583cd6780cf987a8571bf450b5c606"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/hu/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "7ea24552cb06bd306c896f851a4e9269774bcb79b2c722e8b4c4e155d43c0a20",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/hu/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "4a9dd5e7bf15a4ed14a352b9e1c8df45f0e506deb6657c9a56d76506f62334a5",
+      "after_sha256": "b02616d5c4ec0911fe5a6a445c9537ed0eb986c07d8ba3ac01f53fff5a9309cb"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/it/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "e3327491b52171807e5b7b862be2201acc03c9011a412810750839e9adcb4c9e",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/it/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "8b65238d931810505a4e262e87b607cd05c12a3e1346b6b0bfabf561d6daa350",
+      "after_sha256": "1ff3183aeec9ac6d6f7aee6d2881bc3228428eed7e03f069cba8ad41f7b39fbf"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/pl/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "35394377e65418968bd33d90e2452705197816902ebf48dd989138b2bc382379",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/pl/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "7ce46d60aeb7e5f404be3ea1f26079d60128c91bdb68cf457e75d9c94653d15e",
+      "after_sha256": "16d85e5f3a312c54be47a5b5a908ecfa3596445d55bf5fa5f47053643bd5ca33"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/pt/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "90d37738d497bff5370999d353d844c8a82e510a1bc12eda41a23f9114bff316",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/pt/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "b986bc9f016bc38483f576b6f73176c73777afab7b088a74179508ed90f296ed",
+      "after_sha256": "0788f7b8a7633d60872f4f04d9e8723e1c9cb1eec8d4141a9f0d156d76c3d708"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/ro/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "4861312976904b0e0c0cc190753c2609415a27a58450c4286afb39d355eb4189",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/ro/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "7ca7a195dd1976c13c31893e1092fce8d91d2586117796df61ad1cd09cc2dff6",
+      "after_sha256": "3ebe4bc99a5037de322ef95b94f244f4adfb02009d287057c4200791a3590255"
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/tr/battle_pass.txt",
+      "action": "delete",
+      "before_sha256": "111a634acf4d56e5dc7c3e8b515d5c02d0c27c61da0b00ddab8a91567cd5a72d",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/locale/tr/locale_game.txt",
+      "action": "edit",
+      "before_sha256": "a2fe69fbeac5c1f8a8d95aa825ba0692682924c630759a07b19a6891681e47a1",
+      "after_sha256": "4ae20ee5f58ed5352d339a3f74e5d32ae0595f41499879feab12acd7cb7d0584"
+    },
+    {
+      "repository": "server",
+      "path": "root/localeinfo.py",
+      "action": "edit",
+      "before_sha256": "6aa2adade4b98f5be892ffeb428498e83a75df95df21ebfe04167dbff69ada61",
+      "after_sha256": "2d447a00a1a132bb1e9a9789fdf242a6bdb818c8938d8120671328298905423d"
+    },
+    {
+      "repository": "server",
+      "path": "root/ui.py",
+      "action": "edit",
+      "before_sha256": "d3d0f8a342fb76a0f01b58d58a5095a30e70c3840861b938409dfd662355a2f5",
+      "after_sha256": "fa551d381b0b4382d7b12b362e99619c2340a60afda515aa80675bc4c02994d5"
+    },
+    {
+      "repository": "server",
+      "path": "root/uibattlepass.py",
+      "action": "delete",
+      "before_sha256": "35450f3383206d48e6d934e5a1eeea4a6d3d6bfcc0170105c5655bdc1b76c0fa",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/uiinventory.py",
+      "action": "edit",
+      "before_sha256": "bf6b27103e1428c09e8a20d847a19b39815618b527823f83ce754a18e6b49adc",
+      "after_sha256": "d18c85f5709ed1cb51f7bb1bc66e47430f87a63779fcad0a07402fec7dfcee2a"
+    },
+    {
+      "repository": "server",
+      "path": "root/uiscript/battlepasswindow.py",
+      "action": "delete",
+      "before_sha256": "6bb6f6f40c20a90dab5c2d728a59ec73820267eeaf3954fa5f8bffdc6af9e517",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/uiscript/battlepasswindow_back.py",
+      "action": "delete",
+      "before_sha256": "64bb7698579cbe2a7bfa0b3859de43efd17340e5ac0eb2af59bb756630951fa9",
+      "after_sha256": null
+    },
+    {
+      "repository": "server",
+      "path": "root/uiscript/inventory_menu.py",
+      "action": "edit",
+      "before_sha256": "9f715361d8d68f24f2d73305616bd4329c5cd33518c7906326b8464bb50523d3",
+      "after_sha256": "cde4324d195faf224a3779d6eaa6507f61a42a580c67cf0d5b6fe2c63033787b"
+    },
+    {
+      "repository": "server",
+      "path": "root/uiscript/inventorywindowex.py",
+      "action": "edit",
+      "before_sha256": "2d315c734dc017e67bfbc6c6d337bea318c3ed62823c1a3059fe23fd7d71f9c2",
+      "after_sha256": "2b9f860ef9a41f5fa15e0b21c65560c5af8ecf2551145fc718dbf6d477b8dac3"
+    },
+    {
+      "repository": "server",
+      "path": "root/uitaskbar.py",
+      "action": "edit",
+      "before_sha256": "7d4b2f120d92196dacc45396c49a0d3f64fb1bc82ca662d2494df75f804456ab",
+      "after_sha256": "c54fe8a39c18c469a9f066bb6330e7e5f5ad7b5682490338b0d760383ab756b9"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/AffectLifecycleTests.cpp",
+      "action": "edit",
+      "before_sha256": "1241e8ee83bbd80b87679be5150ff275575cb8c9b56ec2d9b80be5df0af02c62",
+      "after_sha256": "178fa99bbafe997281a41447e668dbcb1aa587fcc132e0194b010c295db1edbd"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/CombatStateTests.cpp",
+      "action": "edit",
+      "before_sha256": "1fb8f76d836608f8818eb9d7dade2ea34fcc9fe7a6a0fd84986544f831748a93",
+      "after_sha256": "91212c37fa3b377e6a30b967469374e641643ac2fc717fb1200a747b6a33ac2b"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/DatabaseTimeTests.cpp",
+      "action": "edit",
+      "before_sha256": "4173c09f68fb38047971be3a74f488e316452274b74b1de1f184ef15b7c00bb1",
+      "after_sha256": "2021dffe1eb901c168f8b4deeedd113fd611b63506e91e743715e5e1e7f64e18"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/DungeonLifecycleTests.cpp",
+      "action": "edit",
+      "before_sha256": "92a28cf43b6466706d080c63d2a053da652c8ba8fd64f7f6aa8b9ce7952cc334",
+      "after_sha256": "d18eb704a8d8409915f8c766991eefe5e299fd3d8a45ef52d8a242f6c2e2b149"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/ItemAttributeTests.cpp",
+      "action": "edit",
+      "before_sha256": "d92b35c5456566f7101b4d9b8134cbe8c50b2518fae071f289f4ba4f7604b3bf",
+      "after_sha256": "d79b1d8cb4e5a7ce051aafe664920460da4a2a041c77165c645dc1981060eeac"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/ItemRuntimeTests.cpp",
+      "action": "edit",
+      "before_sha256": "b6337f174c978d5ce238a34b277e49d03f5a8da047c1f5db5d0f19e3b9e4b38b",
+      "after_sha256": "36a5fa009a53853ccf0d4a917f45b2c4484f58b5ab7dc6f5ee49b83010d12eda"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/ShopLifecycleTests.cpp",
+      "action": "edit",
+      "before_sha256": "14bb3e4cd22b236f8db2f150949347d8879ac118e0d3eb5707f93640de50b574",
+      "after_sha256": "e0dc7cf1d79629c9270928ed44d71881895722fb67736a99c290c671a364f8e0"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/SpatialLifecycleTests.cpp",
+      "action": "edit",
+      "before_sha256": "8ae893f48d6dd38ac21f4d4493cb89256617fba666302b257ee9c54f513abcb0",
+      "after_sha256": "8abf4d3d09e2ebef562456ff1b1d0eda8ec7a28a763e507768b472acde17e67d"
+    },
+    {
+      "repository": "server",
+      "path": "tests/server/SwitchbotLifecycleTests.cpp",
+      "action": "edit",
+      "before_sha256": "a1cd8debebeb50d34329fafcbaa49dffcf6c2cd6b020737ff0ceed47cc18d7ca",
+      "after_sha256": "d5722f1a6ee6ed7e3981adbf5d65a089771517f875071787c65c118f11e2498b"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Editor/Metin2AurigaAccessParityValidator.cs",
+      "action": "edit",
+      "before_sha256": "2e7a6ddaa196f1afc8c76092b7b8f38ebd4d85ee45c7dd450dc5361ea6f1a1a7",
+      "after_sha256": "a5a7da9b1b5fd3e09b4e9e7c129fae239a519e7c638cd8a94a17e8eda2eaca05"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Editor/Metin2AurigaCustomSystemsValidator.cs",
+      "action": "edit",
+      "before_sha256": "6af3aac7c5ac0c49064c036404195c42231cf530b6f8c1b5a9bdd4c58d49c472",
+      "after_sha256": "e4fc83f6fa7ef076b962fb4664a5bd6a2041c52dc22a709ca27e104e376e9e64"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Editor/Metin2DeepseekUiRegressionValidator.cs",
+      "action": "edit",
+      "before_sha256": "10704f15a79a32b61ec53526fa54b74f370d51ccb662656491ccb76a49aa7547",
+      "after_sha256": "24dd3882cb6f058f983949b91c5594b697318eea88ce526b8d1db3a3ce37270a"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Editor/Metin2ProtocolCodecValidator.cs",
+      "action": "edit",
+      "before_sha256": "7df4d4403595524ae6f49ceb10e9229278c1bba636a0d786795a3ae8949c4761",
+      "after_sha256": "6795f20308d9c1fcf32bafe1c02cbb68562f2e1bad2965d61e7953a399dd735e"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/battle_pass.meta",
+      "action": "delete",
+      "before_sha256": "6dc6737cacb74ca5dc5eecb74817d9284a06b660d78070ed7239faf17f9ba3f4",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/battle_pass/battlepass_active.png",
+      "action": "delete",
+      "before_sha256": "8b9e8922bae1228040851f5af8b1803b9d51f66f484f0cdfebf4b0974dc45645",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/battle_pass/battlepass_active.png.meta",
+      "action": "delete",
+      "before_sha256": "645cfaf4b87806d03d770b4d2a9757724da69d9397d3012943551bd13589492c",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/battle_pass/battlepass_hover.png",
+      "action": "delete",
+      "before_sha256": "2d008e9d3b6ff596160656ac88190549dc07399108a06dd8c952390ebb7a4768",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/battle_pass/battlepass_hover.png.meta",
+      "action": "delete",
+      "before_sha256": "9135be86adf0c8f7f309d61d291e94599f3cb74304d2a265bfbdf1a02df88a85",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/battle_pass/battlepass_normal.png",
+      "action": "delete",
+      "before_sha256": "73f6942195b825df1301e7a3a8090b61161a1ee6c4f2a87e8837ac42e5e3b804",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/battle_pass/battlepass_normal.png.meta",
+      "action": "delete",
+      "before_sha256": "675868ba314a0f756b43e8297f66d8594e2de80c514f2024a7508b0efdb8f694",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass.meta",
+      "action": "delete",
+      "before_sha256": "cb143147dfa03505486a915e1f61c695d3115d25aacb8b3a5f1ae8ece5e122b2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/category_btn_1.png",
+      "action": "delete",
+      "before_sha256": "a577a89c70e8d3a6447b75541e418e5fcd4b879622cff0b984177b0cd622c41f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/category_btn_1.png.meta",
+      "action": "delete",
+      "before_sha256": "a29203e502a23377e2557fe75882e4286cbc5d3fc0b1442206a44d05ae8107a9",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/category_btn_2.png",
+      "action": "delete",
+      "before_sha256": "f88bf4774bba6cbe84ba47809bcf342675e7a64cb9bf806234d92156fac7c306",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/category_btn_2.png.meta",
+      "action": "delete",
+      "before_sha256": "797507782e988c63484f485fc6b0fe5ca8f31067a237bb93f2f217937c3e7c20",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/general_image.png",
+      "action": "delete",
+      "before_sha256": "18b17c5dd320e3e0652809b37d1b6faa350133682ad632d41e7645968838df90",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/general_image.png.meta",
+      "action": "delete",
+      "before_sha256": "2504e40c73e6c73b4055a743fcc7a409643b0adca1a1af6bef3593501c24cf1c",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/info_bar_even.png",
+      "action": "delete",
+      "before_sha256": "c53e5fbf6dcc890580c47b84684f0b579f2254b0ca22632828a3afdb0880a594",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/info_bar_even.png.meta",
+      "action": "delete",
+      "before_sha256": "02d3f143dc138a8daccb5ad01338d966db159771a745c4efa686f1ff5a869283",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/info_bar_title.png",
+      "action": "delete",
+      "before_sha256": "2d1672a15bb91e6342cd06675089aa6a3cfaf12f22dcbf38af57c126b8602829",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/info_bar_title.png.meta",
+      "action": "delete",
+      "before_sha256": "5f01939bf8b9fc61f375f58abe18529cedb86542122a9d14f11bdfbaa8bc647e",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/loading_background.png",
+      "action": "delete",
+      "before_sha256": "845d0e766329626f97dc361f10d99de5b8448290d9393f5cb095be7b761206e8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/loading_background.png.meta",
+      "action": "delete",
+      "before_sha256": "41f43deb8bfb762c4d316681bba4279f7b756955ecbb64f46f626f386c44ca79",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission.meta",
+      "action": "delete",
+      "before_sha256": "c7080a60764bdcea6e1f97ba8bc8664eafe03b407ee6596c07002b64b564e9e0",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_10_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_10_big.png.meta",
+      "action": "delete",
+      "before_sha256": "f0a6eeee5d9b028a4fd3b5e18b9d3539f6c22c06dd54e4bef6a502c7d809b97a",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_10_small.png",
+      "action": "delete",
+      "before_sha256": "699495c32db13334f1478b809ab30487a834f7a1d5b82408b8308274a26d14b3",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_10_small.png.meta",
+      "action": "delete",
+      "before_sha256": "9ee79a9b18241fa1dfa45e020d364c8f7c47e5b6763ec38b2dcd724c7e6b4017",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_11_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_11_big.png.meta",
+      "action": "delete",
+      "before_sha256": "f9232691a9bedc7516b5440600bf19b52230d396b8fbc2fda963b96673c56c61",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_11_small.png",
+      "action": "delete",
+      "before_sha256": "59707cb94a4df5bd64aae4c4aec64dd8c9d1d3c81900ae8dc09465384dd84b61",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_11_small.png.meta",
+      "action": "delete",
+      "before_sha256": "64c5bccc3833444468c5637cf5c4ec1b959886ac9cfc6f64e93c102cede8be60",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_12_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_12_big.png.meta",
+      "action": "delete",
+      "before_sha256": "6e74f6b6238b25c27e9eed96b9827fab4d4e8b2c30c899bd66efab1f730253a7",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_12_small.png",
+      "action": "delete",
+      "before_sha256": "888051dd9df87e886478cbee8606dbba948b8e671ef039f7e36d30dd3e133fa5",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_12_small.png.meta",
+      "action": "delete",
+      "before_sha256": "2ffcbca0fedf7143997a8294fdc02d86e3e8df649be8efb214f9c83923bde1c0",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_13_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_13_big.png.meta",
+      "action": "delete",
+      "before_sha256": "61c4007db9a60f4d825dafd24ebf654e1461fe4e08966d6e1c277bed963eef3d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_13_small.png",
+      "action": "delete",
+      "before_sha256": "2d9a6b357306c1e93c6dc1c9c755d5e9d0cff1da3cd9e4ca0eff1ca0af85e594",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_13_small.png.meta",
+      "action": "delete",
+      "before_sha256": "fa04230e81eee0c9414332b78a52da0d0289b890c0fa6405412b82ea6c4a8928",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_14_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_14_big.png.meta",
+      "action": "delete",
+      "before_sha256": "9dd21377b830cbe2926e35d62a49de29b61aa52e5549a98f80a8cef3b9b0348c",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_14_small.png",
+      "action": "delete",
+      "before_sha256": "2d9a6b357306c1e93c6dc1c9c755d5e9d0cff1da3cd9e4ca0eff1ca0af85e594",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_14_small.png.meta",
+      "action": "delete",
+      "before_sha256": "ff8eb6f78485640fab57aba4925ffc7bcf73cf8c50f5aa137357bb0145faa9e2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_15_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_15_big.png.meta",
+      "action": "delete",
+      "before_sha256": "0d1e5844702dbc0de54e10f81ac9a9ac3a2694082ce8bd98eaafc2e28be487eb",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_15_small.png",
+      "action": "delete",
+      "before_sha256": "1eb1a238af5d69a34aabcb42000baba29db70baf21087598bccb3d5eafa19a08",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_15_small.png.meta",
+      "action": "delete",
+      "before_sha256": "b5dce753d27cc3d6c57696a6f2c55d3227738d12be8c66d299810dd3d288e02f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_16_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_16_big.png.meta",
+      "action": "delete",
+      "before_sha256": "8823b34b43b24933524bafab99576b62d2f86053ace7e607b14659dc38bfb668",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_16_small.png",
+      "action": "delete",
+      "before_sha256": "59975091b5044cb9e274d4854c09d1438d7e6e4bf9d6ae6b065b858b6d320229",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_16_small.png.meta",
+      "action": "delete",
+      "before_sha256": "bc09bdd7dc204f7a974d52c0dd84aa1a27f8334fb03046ae5a724375935f215f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_17_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_17_big.png.meta",
+      "action": "delete",
+      "before_sha256": "8bdaeec088f0966d567e57dbb9661864b4f8f16440c9b9788d7defcb64421291",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_17_small.png",
+      "action": "delete",
+      "before_sha256": "86f62166d97b411a3035b2343d87eeb3e88a5ae0ce90366ed6638ffe6bcaa4ce",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_17_small.png.meta",
+      "action": "delete",
+      "before_sha256": "6ff4cf4b4382eeebd49edabf752676e923cf9f851cbe0302754a31dd3831bb74",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_18_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_18_big.png.meta",
+      "action": "delete",
+      "before_sha256": "833dd695b1e8b85f829f7491b72d22ca110ba11011056541b04a11afcdb1c765",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_18_small.png",
+      "action": "delete",
+      "before_sha256": "523986569cf0ba5ecf021dbfa09b531cddd51d7e68a6967108df187736b6fdb0",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_18_small.png.meta",
+      "action": "delete",
+      "before_sha256": "a4c7642acdf79477063991e16ee8f99c6e00359b83d25aaef399f535114aba84",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_19_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_19_big.png.meta",
+      "action": "delete",
+      "before_sha256": "c6eb2d412a53fde0ccf907cdaf3402e6bf38af479a60549f033271dea6d73db2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_19_small.png",
+      "action": "delete",
+      "before_sha256": "0387042db7cc5d45116f87d4f686167372b21d4a9615da234556d5bc2ac6a63e",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_19_small.png.meta",
+      "action": "delete",
+      "before_sha256": "eceacb81a7f92e0756fb9ebfd71a93fd694bf2f5c690d1c039bdc07ce169b2f0",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_1_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_1_big.png.meta",
+      "action": "delete",
+      "before_sha256": "298593fce67435bc1a4859088bb94dc0faef27f02d3f8aae22e426ec3c652ba6",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_1_small.png",
+      "action": "delete",
+      "before_sha256": "bfcf0fe0cb51ffdce83a1dea8a273d43c9051e6e41063fc5d2dc3112194c245e",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_1_small.png.meta",
+      "action": "delete",
+      "before_sha256": "cc64bfc6cf7bab025b1aaa737aeb412ce8717b30025995622b11d25583b43501",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_20_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_20_big.png.meta",
+      "action": "delete",
+      "before_sha256": "7e8a444473f66b53b45258e14347e10574d94ed576ecb6fc6eb7395ced0f9374",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_20_small.png",
+      "action": "delete",
+      "before_sha256": "3f4566c3c590abd0ab5c5b7e6a55e4c32af8563ab073ee27c418f0746fec17cf",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_20_small.png.meta",
+      "action": "delete",
+      "before_sha256": "7e2978ae27ea74a1614000b8383a61238be1dfd7f5ae54dde97ed85d89ebe1b1",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_21_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_21_big.png.meta",
+      "action": "delete",
+      "before_sha256": "8e463367613ef387658810c260438efa13133f28999e8396c5d5921b79a4654a",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_21_small.png",
+      "action": "delete",
+      "before_sha256": "8536aaec76fc7f4711645fb6bd34ba99d47ca79dd5310b671cdf69ce878d3459",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_21_small.png.meta",
+      "action": "delete",
+      "before_sha256": "b0761b4d1b3e62949441016f572f2d5410d0fdfb580a529abae4e6190732d8f8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_22_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_22_big.png.meta",
+      "action": "delete",
+      "before_sha256": "eeba612c1a53804761f6eb1ba015a3041dc649049fa618bfe122eb21df34f29d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_22_small.png",
+      "action": "delete",
+      "before_sha256": "018aaf93f737e99b42e841f469b5877e6a0fcee690069c69f4d323648d11de72",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_22_small.png.meta",
+      "action": "delete",
+      "before_sha256": "b78be1d73750fab1d5cfce15ef015387b7eacd2f47898f907853717c263f1b64",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_2_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_2_big.png.meta",
+      "action": "delete",
+      "before_sha256": "d3d15c15a7286223f6f1a97398237c5444853d777657df7e3bac92751af79638",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_2_small.png",
+      "action": "delete",
+      "before_sha256": "1653f78e118b1682b86fef8808b1487e4b93148d675a5923c2c9f1b91f4efda9",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_2_small.png.meta",
+      "action": "delete",
+      "before_sha256": "2a2f2e3fcadf9d84274a11230e6ec54a182d49ec3599b5a343bbadb5249c7908",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_3_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_3_big.png.meta",
+      "action": "delete",
+      "before_sha256": "aafa70108b6bb000a78bca43a0140347af3459da683eb5836a3676914dc5e494",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_3_small.png",
+      "action": "delete",
+      "before_sha256": "3fb6dc0a9c29226146a808f1a1f2bad5e5108fdb98be69f4dd3e1b460c84b5a2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_3_small.png.meta",
+      "action": "delete",
+      "before_sha256": "e0a0c352c9c4f55bcd1f0a51b7f695823a0b9ce7e2d013e11b3ff90b68f4a7f2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_4_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_4_big.png.meta",
+      "action": "delete",
+      "before_sha256": "3192956f942658eaf0c13a74bd0033a591b12d2d71374cacea0be91f635b9b40",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_4_small.png",
+      "action": "delete",
+      "before_sha256": "1e4fc623fabe78a1da6189fe57ec554f8d691035e8a3f2084ed299ae0afcea70",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_4_small.png.meta",
+      "action": "delete",
+      "before_sha256": "b3c64d9f5dd3eda236319428effdcb861d8cfc7d6d7f74aecbe6525d16f9e156",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_5_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_5_big.png.meta",
+      "action": "delete",
+      "before_sha256": "29b41d3ac1cc141f0362e575e7bc7c45dc69ca5fac49cb4aefecbe4058def9fd",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_5_small.png",
+      "action": "delete",
+      "before_sha256": "eceda61057acd23cae17797239129181fd18a0341a70bbf8479a801e89471e68",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_5_small.png.meta",
+      "action": "delete",
+      "before_sha256": "e56a13f6e103d17967a9387ea5bb81b7605f7a20a0f1169c0ad25251dacf188b",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_6_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_6_big.png.meta",
+      "action": "delete",
+      "before_sha256": "b90bd3ba40e167af608d4e89ca3e26d2203f52c08c1cdcf0f1ea98ffab11f749",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_6_small.png",
+      "action": "delete",
+      "before_sha256": "d803489315034c65f99a3043b174dbc8daad88dead6156b61f89cae38fc43a5f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_6_small.png.meta",
+      "action": "delete",
+      "before_sha256": "c49907202940d9b2fb3e3c88905f7926b82f39eda596ff8cd15cd8a185523742",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_7_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_7_big.png.meta",
+      "action": "delete",
+      "before_sha256": "956cfc23a03ab475b48776c56d5e92a0afdcb0e57c936f83aa94e14df1ff9bde",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_7_small.png",
+      "action": "delete",
+      "before_sha256": "60eb87fa81807f0458c976019d3dd70a9dbe45c0f21c88430b6a048841cc5437",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_7_small.png.meta",
+      "action": "delete",
+      "before_sha256": "423c8bec50d293db76d3aacf42038c1952f260bfbd79c030a3bb12986787313a",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_8_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_8_big.png.meta",
+      "action": "delete",
+      "before_sha256": "88fd76ddc78ed8a9eda5885b36fe2785262bebb918bef7811b7a7bfa3f35b7a7",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_8_small.png",
+      "action": "delete",
+      "before_sha256": "d6b1ca57c5687ecb84d62d18b58d5d62f6c4966038bc21efca62fde9db5c31c5",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_8_small.png.meta",
+      "action": "delete",
+      "before_sha256": "577201d3e514dd89e097a5f2aeef6f262b7539a33361fe669058d02410ad6af8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_9_big.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_9_big.png.meta",
+      "action": "delete",
+      "before_sha256": "0e45925afdc4957669baa71202435e9e4d0e733b0f7950324e8276661c09fdc8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_9_small.png",
+      "action": "delete",
+      "before_sha256": "20bef8f1b76bf0032469c18b51b54952bc12c5f77cb3b2b6c830e34c1b5adbbd",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission/mission_9_small.png.meta",
+      "action": "delete",
+      "before_sha256": "7e210793f0f675f1f2a429a75f5e2dfd3afe2ff85d37ae03e750fec1728746d9",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_bg_normal.png",
+      "action": "delete",
+      "before_sha256": "34f3e1417746d9a505d8cae236bec01784c761afc99ca414268e8075721c2ec2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_bg_normal.png.meta",
+      "action": "delete",
+      "before_sha256": "c52d56cc4f8bf23978eb7b9a6e09011e710d1d98fb30fd5461ac87c8cf4173ec",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_bg_over.png",
+      "action": "delete",
+      "before_sha256": "879d0357ca4191a5d7672977ddc05ca86b6ce5294a3cd31aa7c7a33bec8d57da",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_bg_over.png.meta",
+      "action": "delete",
+      "before_sha256": "2ecb0de8d0d0bd069f70610ba2f93eb731542c380735a8869f6876cb1b68ade2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_bg_selected.png",
+      "action": "delete",
+      "before_sha256": "96858a2ff3ded424fd50ea6567b758fbb400aa89a2981827e5c62d87738d712d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_bg_selected.png.meta",
+      "action": "delete",
+      "before_sha256": "f6e4e6e8d6b757a4f6c9bc6b9c6be1b604d583c75ae1881b1e8690821713a9e2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_big_clean.png",
+      "action": "delete",
+      "before_sha256": "b677821864b60247e294770092f8bc228c2870e41063b9f315cefe9c62d4a80d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_big_clean.png.meta",
+      "action": "delete",
+      "before_sha256": "8901ab130dd02c2fe7fc1d4e5cd699236ea62bd363e1a59db01ab488a22f9f57",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_progress_empty.png",
+      "action": "delete",
+      "before_sha256": "afb0e19b6c58ec10dd4e0ca53c41e0e9782dd4ac1288b7c3ab802f4093998ff3",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_progress_empty.png.meta",
+      "action": "delete",
+      "before_sha256": "04a0e08822c0f5b853dd4c2c8e85917a8d481294d6b28f97007265de3ac54c08",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_progress_full.png",
+      "action": "delete",
+      "before_sha256": "17549d4787e0c9c5d2b2d2554ce88ab6b0b0915ed752c48b98ddaef3d6f5efa0",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_progress_full.png.meta",
+      "action": "delete",
+      "before_sha256": "76b88e701bccbc511a8f817e94a4fac2bb670da58532c07ab514d3f34ca433e7",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_progress_low.png",
+      "action": "delete",
+      "before_sha256": "666f1bd1531ef2123bd44f0fb366136a495bf27031af595b2a1e3055bc1aec73",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_progress_low.png.meta",
+      "action": "delete",
+      "before_sha256": "16fd0977b24f10ea59ec53349352f512e5ed31f74a9d2110e330af077a1528d3",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_progress_middle.png",
+      "action": "delete",
+      "before_sha256": "fbcdacc4a3a5245f9ca36b79ac9305fd4a07a52251c89fcd564bbe3762b6d8eb",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_progress_middle.png.meta",
+      "action": "delete",
+      "before_sha256": "f3c485715edf928f2b92a2d6db00c5e97c31598630be040569eb7b6f8e997d8f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_small_clean.png",
+      "action": "delete",
+      "before_sha256": "caeba39d5baa219e34f893a10d3ec7b7e9519e79ff9f88a400f2036f52281145",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/mission_small_clean.png.meta",
+      "action": "delete",
+      "before_sha256": "f600657d98a8545b0f812c00c6eeb6ddd0c11cbc9bff66d6e414724c4278dc71",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination.meta",
+      "action": "delete",
+      "before_sha256": "0db4e96e060f8328e3f49e6d0843f8a8997d8cc6fdc694a54c3ae777784b6a17",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_first_prev_default.png",
+      "action": "delete",
+      "before_sha256": "c0082ca5a588f718757aaef3d9c9fbc76ad62c6dfec6fb393342f8d6bc2b3994",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_first_prev_default.png.meta",
+      "action": "delete",
+      "before_sha256": "3803b6db5a7444962eebf7891b8b05c72cd81104ffa52af9e7fc757184b43a5b",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_first_prev_down.png",
+      "action": "delete",
+      "before_sha256": "120bd1fb7acef049291e8cfb8ce419e4bb0597fce2304299ef07d238764ba88f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_first_prev_down.png.meta",
+      "action": "delete",
+      "before_sha256": "4bba36be72077fbca60de7e5104fa84eb73964731113dcf833316c79614f1668",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_first_prev_hover.png",
+      "action": "delete",
+      "before_sha256": "412f391723b253978fd33da4328c9b792f790c39868f89924894d9c8a3c6ae40",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_first_prev_hover.png.meta",
+      "action": "delete",
+      "before_sha256": "7dbb946ae8d181f00cc7e61e86815fe40ef813e2032294d332344b38f3528739",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_last_next_default.png",
+      "action": "delete",
+      "before_sha256": "2ef8b4b54ddc0fb94d30a11041787a4b98b014e2ee87098979820948b2314459",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_last_next_default.png.meta",
+      "action": "delete",
+      "before_sha256": "884cf6ac84a725ca4d325c6d2896813a48eb83a255ad5fd60711e805e0bd2424",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_last_next_down.png",
+      "action": "delete",
+      "before_sha256": "129adad898e490dc606ef305e2881cc3590b7814eb770dccc7f05db73ef96f3b",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_last_next_down.png.meta",
+      "action": "delete",
+      "before_sha256": "91df932e1d6ade719071e2ccbcd475c7d91f315e48a54a3d4a99c446583490b7",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_last_next_hover.png",
+      "action": "delete",
+      "before_sha256": "15314dc6979aeb4bd33d60554f8850fc89400b7cc35963b0be8e985fc7c92821",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_last_next_hover.png.meta",
+      "action": "delete",
+      "before_sha256": "5505ac8b8a19fce1d061d46ae5db851138ca11ad49118ad4e0c951bfc6477dd3",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_next_default.png",
+      "action": "delete",
+      "before_sha256": "35040baa13b53d3347f548118136681b931c0d9f8f1652ae26973332abeb2900",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_next_default.png.meta",
+      "action": "delete",
+      "before_sha256": "46254e4cc6e568b0afb5337a81b262266d23efc4a4d9477c09d9e2165d3eeed5",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_next_down.png",
+      "action": "delete",
+      "before_sha256": "8dfd22c03d7fb67ede6ba5f4545016605f79283c068da71617d52cb668c1c4bb",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_next_down.png.meta",
+      "action": "delete",
+      "before_sha256": "210e3b9ef61e0e7cf357ee461b28b862d330a0d66a185914a080daf723bc639a",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_next_hover.png",
+      "action": "delete",
+      "before_sha256": "6d222632557f107a5ce9e6f92c69e6adeb6dff7ad74659ef328473b12e709720",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_next_hover.png.meta",
+      "action": "delete",
+      "before_sha256": "c588e78a08a650dc5372a05273b10cb6dafa096daf5f11f0d26c6827c1f641dc",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_prev_default.png",
+      "action": "delete",
+      "before_sha256": "1028a1ed92c7cf3166f97978bca7588ea6a3add92cc83f09a7d05c7720911f00",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_prev_default.png.meta",
+      "action": "delete",
+      "before_sha256": "410b11fd60b8bdbc915cc30455bf39ba7487a8ad02963bcafdf9a06cd79b3aaa",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_prev_down.png",
+      "action": "delete",
+      "before_sha256": "9409853579d31f6f4f934e14268e9c41ec9c4151d365e167357a743b1ca976ec",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_prev_down.png.meta",
+      "action": "delete",
+      "before_sha256": "d62ded755f18512bfbbcd0ad1ee45fdda0e257a4f31d1d6afadaa5e583f6bffc",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_prev_hover.png",
+      "action": "delete",
+      "before_sha256": "42a8a5f703a78756e7fe353d26148e4310fdb58f0b806c502f23a8d019a99cac",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/btn_prev_hover.png.meta",
+      "action": "delete",
+      "before_sha256": "21e24f591d2acdd927a5af3b802e658f88195716e956461486808da657dd555a",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/pagenumber_default.png",
+      "action": "delete",
+      "before_sha256": "9a9bb663b4371b435a81a066090d44e1feb01f7ffcc6d14588171f093de76c3f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/pagenumber_default.png.meta",
+      "action": "delete",
+      "before_sha256": "efc70b4d2637080b887489669805718ada9d5fdf53fd22af3f35619843f51899",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/pagenumber_down.png",
+      "action": "delete",
+      "before_sha256": "a53cce37f8de70b1b202a204751d8534456114484bdf3751833c3f6eff49950a",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/pagination/pagenumber_down.png.meta",
+      "action": "delete",
+      "before_sha256": "49a6869bd797a23833c7839bd75e1f52e17344936bcd7a13c2e26cfa3cfae610",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/place_1_border.png",
+      "action": "delete",
+      "before_sha256": "a4ed13de83c6eb0b0986d06b54c0d1e8ef2d8d490e6aa64f149b1e35fe3f8d05",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/place_1_border.png.meta",
+      "action": "delete",
+      "before_sha256": "8ae8670455f3abc163dfad7723eef1447d1bcdc6d6ad46fa26d021dc4127c7a4",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/place_2_border.png",
+      "action": "delete",
+      "before_sha256": "ce988e7bba424379b3678f97b1bf2314f5839b95ac4f7d335ea9fa13c9618c09",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/place_2_border.png.meta",
+      "action": "delete",
+      "before_sha256": "cd97015f1e3f01b9cfa56a07883a41bcb4dd7ca747611099a9c2927685bf74b7",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/place_3_border.png",
+      "action": "delete",
+      "before_sha256": "a7fca4e069d71e99831f190d4597ad84849ffcdcba42b672874f823a02894148",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/place_3_border.png.meta",
+      "action": "delete",
+      "before_sha256": "4a4232f3f3f7aa468ac9c0e9bf1d0bed2ea7ede37bce1581bc52cb1ca3b10e4c",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_down.png",
+      "action": "delete",
+      "before_sha256": "f78454f5bb4f23ae81ad11d3347d14aef5bf623e3477322906e527e9517e96f3",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_down.png.meta",
+      "action": "delete",
+      "before_sha256": "a17449db9ce7b5424f173df271922a60546c9fa7a830448d8a7a6ddcbc2ae055",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_item_normal.png",
+      "action": "delete",
+      "before_sha256": "a1434bd848ccda28ad705212bd51a74347c543de58c1bd485d2977c9a63f7e31",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_item_normal.png.meta",
+      "action": "delete",
+      "before_sha256": "f9909c12a55664cc315dbb64f68520e932bfe83881d8dda6a96baca01b255ad8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_item_over.png",
+      "action": "delete",
+      "before_sha256": "f829c911f9353a972d5f5d4a5ff3ab184a748c23b248d06080b32d8be116c7e6",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_item_over.png.meta",
+      "action": "delete",
+      "before_sha256": "29a3c9f81916236401e99f40036e25be6c700560839ee6d5510e24757ac5910d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_normal.png",
+      "action": "delete",
+      "before_sha256": "60f759e877d3942f01cb4e23701443675692e7f1ce732beecbfe870813690733",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_normal.png.meta",
+      "action": "delete",
+      "before_sha256": "4ea5416ab3749a272621d73fe3db52372c61b8381626d2fbfaf49f0b5beb0351",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_over.png",
+      "action": "delete",
+      "before_sha256": "a73ab273442fe665052ae7797677494e05c2ef5f2ed4df8581342afa13734829",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_over.png.meta",
+      "action": "delete",
+      "before_sha256": "e5b4ab745f77a1a6c03a453d4da59109c825b2ea7ec12518c5ce1c83e54e3d7b",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_title.png",
+      "action": "delete",
+      "before_sha256": "66b909cb9c8d3b6fbdb54611e36c2cb7ee48bb9d3502424960ea2387f4c1df5c",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/ranking_title.png.meta",
+      "action": "delete",
+      "before_sha256": "78df522ba84bb233bf92c6321be4d66191f326f01b8fb739d77d82cc5a042043",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/reward_down.png",
+      "action": "delete",
+      "before_sha256": "a7da53e78a8090ceaead9315d6791df5ed0a299e83a444e97a4956d9a2cf97d3",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/reward_down.png.meta",
+      "action": "delete",
+      "before_sha256": "169172bf20d70e622eb2f6938a7e7b005be69011d4d9d190c523ccf274baf3db",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/reward_normal.png",
+      "action": "delete",
+      "before_sha256": "890f5314bfd436e9e67e3f30dfe9b4d7e7cb5f6c84e338729dfaf418955d5a36",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/reward_normal.png.meta",
+      "action": "delete",
+      "before_sha256": "b56f47d27cac070e36d3518794bd21a0405680e378ef45e8ba38e43cb98cad93",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/reward_over.png",
+      "action": "delete",
+      "before_sha256": "d6b33f71bbc89f09d619c48880bcafdc0b51bd083f8e5848e966bfbaaf3c9ff1",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/reward_over.png.meta",
+      "action": "delete",
+      "before_sha256": "dd28e09e36f1d03099c52f08a927d1f7376c1e0017ebbfb956f2a44962325a00",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/title_bar_special.png",
+      "action": "delete",
+      "before_sha256": "1aec30249433a0817669c093fc801a1e7a99b7961eda651b24f9ca2351662160",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/title_bar_special.png.meta",
+      "action": "delete",
+      "before_sha256": "3e0403e01f95ccc2faab2b8e31f0cdf4c34a3dc311401058636ac6942035e4a1",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/total_progress_empty.png",
+      "action": "delete",
+      "before_sha256": "5bd0f55c293d0649d7ca152c446c27ee8365760743a4e4152f8b054736b173ac",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/total_progress_empty.png.meta",
+      "action": "delete",
+      "before_sha256": "693de7b9eaf2fda2048aea890d1eededb4c1f64361249075bb9280d61a34c502",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/total_progress_full.png",
+      "action": "delete",
+      "before_sha256": "df8fd3bf22a3aafebf7fd53f97ab6a1a6c4c5780d6f0f4e167867da1b1de27ee",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Atlases/etc/ymir work/ui/game/battle_pass/total_progress_full.png.meta",
+      "action": "delete",
+      "before_sha256": "a9a3b0baec2a64d6e12caf0611449643f179a5e8d5555a3798c57a67d55eab01",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Layouts/battlepasswindow.json",
+      "action": "delete",
+      "before_sha256": "0f1dfe8f35cf82c867ab68789551b910b85a901fc998b6a5f2719f5f19bbaff5",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Layouts/battlepasswindow.json.meta",
+      "action": "delete",
+      "before_sha256": "605df35828662df6283ebe96e884e48b4709faedd2ae9ad2e0890447da126ae1",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Layouts/battlepasswindow_back.json",
+      "action": "delete",
+      "before_sha256": "d460aa09ac671c8f3b05e348d29762fdf1d4757d8068daf82551a4c132f71b59",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Layouts/battlepasswindow_back.json.meta",
+      "action": "delete",
+      "before_sha256": "3a454897c4b48af02ae878a48a174466c5fafbc4f6688a39db78c1483d111413",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Layouts/extra-sprites.json",
+      "action": "edit",
+      "before_sha256": "33eea11a73fc9a2317a23e0da195934d1c7dcf0ab3e3b0fa54e19763fbc3ca94",
+      "after_sha256": "2e2ef24fae3ae11ee386ca4c2837080937f43e1e9ef6b7b461b82451b559ec97"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Layouts/inventory_menu.json",
+      "action": "edit",
+      "before_sha256": "2451c1f67bade08652cd15029f44659777bc4a068cccee1a7dd47841c8d3da1a",
+      "after_sha256": "ea1a0d7a03a9484faa1825d961ece1acfc658598b94f85f1c1f030caadbb8f89"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Layouts/inventorywindowex.json",
+      "action": "edit",
+      "before_sha256": "5529d4b2565bef8621b6c65f0f261eeda1faa752f631fa4220ced27d0b9da741",
+      "after_sha256": "da48588f66930fbf0a1042ed2d9bd05298c7361f4a980b25ef398c46b17295e3"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Prefabs/Metin2Ui_battlepasswindow.prefab",
+      "action": "delete",
+      "before_sha256": "599c1a1c5fc1d36aca30207e2e8952908b132b04d4d45aa17b33da3323f17f91",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Prefabs/Metin2Ui_battlepasswindow.prefab.meta",
+      "action": "delete",
+      "before_sha256": "0e33254336fd1197f062f8fec7b31ea5b700bb5134d070035b67fd80fa20f5a8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Prefabs/Metin2Ui_battlepasswindow_back.prefab",
+      "action": "delete",
+      "before_sha256": "d595e8c1c1466cfa6443801ea3e9fd7f5fd8d91c65f55af6eb316cbb4a8369f2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Prefabs/Metin2Ui_battlepasswindow_back.prefab.meta",
+      "action": "delete",
+      "before_sha256": "8bd5f20d26043f0a3688c6a505aa48e2f370fa6665ff7ae7c68eb650efb64ba9",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Prefabs/Metin2Ui_inventory_menu.prefab",
+      "action": "edit",
+      "before_sha256": "ee68a631cf51a8aa8b08d30c7972a86b7040fc9162b6a4063a79fc7f48982a42",
+      "after_sha256": "782d962f357076809839c0a100d4dd60f34d6fad2868cc0c1f540cf601af9222"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Generated/UI/Prefabs/Metin2Ui_inventorywindowex.prefab",
+      "action": "edit",
+      "before_sha256": "40acaf57b9b1079063609ab543ae9374fabe052e8213a5889b3a964f4cf3502e",
+      "after_sha256": "d50691bdc3ac1beb6307c9ac5441fc017f692d7efbca97c5fb7c434775c60b09"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/GeneratedData/Metin2LocaleText.asset",
+      "action": "edit",
+      "before_sha256": "ddb39dd45dc9c219aa81070af6ec57ee17d447b9b92b72236c83f2fa17c0e589",
+      "after_sha256": "e48bc5986b0a7275d43834815f6ad49cca1ab8c66592f50f14eef1f5787f9702"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/GeneratedData/Metin2UiCatalog.asset",
+      "action": "edit",
+      "before_sha256": "e82803e9ffe6c2a9ceebb993ffd81c4706bb1331fea94d0805f44de4f6d38522",
+      "after_sha256": "adf78c02965fdda6cadc650c97b9bccfe80a8228f0f29d0a9bd7360f78190d5a"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/MobileUI/Prefabs/WindowsCopies/Metin2MobileUi_battlepasswindow.prefab",
+      "action": "delete",
+      "before_sha256": "9326244168358fc408df7f6f0c96157eab1dc6075bccaf13ebbf363a1461d3bb",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/MobileUI/Prefabs/WindowsCopies/Metin2MobileUi_battlepasswindow.prefab.meta",
+      "action": "delete",
+      "before_sha256": "b46d1f3914b85bd88207016aa738b949bed5e1ce7cf8bf8e2ea99bd28df5b8d3",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/MobileUI/Prefabs/WindowsCopies/Metin2MobileUi_battlepasswindow_back.prefab",
+      "action": "delete",
+      "before_sha256": "0cad416ec90454af6e04b6bb728605dfc589ca7cf12963f11f28c03325f9c274",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/MobileUI/Prefabs/WindowsCopies/Metin2MobileUi_battlepasswindow_back.prefab.meta",
+      "action": "delete",
+      "before_sha256": "26624f0721425c903d5c6f61b5a7954b5896c355efbdbf1c56a933c0319e003b",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/MobileUI/Prefabs/WindowsCopies/Metin2MobileUi_inventory_menu.prefab",
+      "action": "edit",
+      "before_sha256": "51fa200d619440b3a0ae63f3675f1deef8c09408be69a680a5f429c5759dbe68",
+      "after_sha256": "d49a1dded11992d986582f92308ac046ff1e7c55ca156e3e9eeb433a97a89a91"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/MobileUI/Prefabs/WindowsCopies/Metin2MobileUi_inventorywindowex.prefab",
+      "action": "edit",
+      "before_sha256": "4aad49e941cd2f44adf24a42ad8eeff342d4f3eeb43e2bfb454706aaa92d8564",
+      "after_sha256": "2dde1b870479f1639f374d45255516578d8eef0d4a8645dd9628f8c58d847e95"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/cz.json",
+      "action": "edit",
+      "before_sha256": "3ef925ea851113500d23e0a79c42cdeb9d92b33e0cbc3b8b1de8ed672e9536af",
+      "after_sha256": "46b37a9d39d937cf77cf2d617cf5200602bbb3390b0e4279078e492832b520f8"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/cz_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/cz_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "34b41cb5a50ee04e11bc0fa5a7cf6db4b3bf0fb582a6b20cc3facda17c1bf217",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/de.json",
+      "action": "edit",
+      "before_sha256": "433787697741f315e4ea4d5b92a3cdb2fd8d67f2c8b3ce963c6955ec5bdeb128",
+      "after_sha256": "4c720a623521f13f1b39d89a7beb7437e8aa4832dd0f744f4cb115218926269b"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/de_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/de_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "959623f9f79876fdb068a70e7a5e80cadb8198a0b8c5546e4db5bc631222626f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/dk.json",
+      "action": "edit",
+      "before_sha256": "50a09900cba7bb8300e5e5afac7127885a3fc51a17f346bc8992882c01d46b79",
+      "after_sha256": "f19ea072d60ee6d635c28dd2f5dc36c0f1a2c42d9dc88687c61e02c14a077b95"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/dk_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/dk_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "e9fd6f4743d8a1a6f5ed9351ba65a377a57c70271064afefb49df003d861c6fa",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/en.json",
+      "action": "edit",
+      "before_sha256": "fc57d92649473c111847dc78393b44b9685d2594729ff402f5b3b0a65516066a",
+      "after_sha256": "f01cb6064067184d83befa48874024ae6d70acc2ae6e07f87fb15d329ec197dd"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/en_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/en_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "8bbde4ab4ebe94cb80e28b6c1e33571e7c3d2110c85e44a005961938f632215e",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/es.json",
+      "action": "edit",
+      "before_sha256": "4ed52d6471559e1d740067f6adefdf321bdede85ecfdc3cdd077ec8c26b9959f",
+      "after_sha256": "e527b1044d2a154b926eba6b305c9814ee62743c41482ce34dc8fafa2906b4ea"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/es_battlepass.json",
+      "action": "delete",
+      "before_sha256": "9c88c2fa3817b7d6b9e24a58281f9ba326a0b4b7fabc8c3f16086e541043de4d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/es_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "16c24274d9cf2115bb911d960f0b02e6fa7142874f932d9881af38c5655776cd",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/fr.json",
+      "action": "edit",
+      "before_sha256": "d3325f2c251f016018e38f5e8f85a58f85036c910c351304b9a58cd831695a1b",
+      "after_sha256": "91e262ad57b78f4fb74add3edf1970e6921da42e9c1247b4a615cd2fc29835b2"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/fr_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/fr_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "dc6bcaf34d1a409fbd256b1959761a8096c0049385c7cb8b90aa776c89aeded8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/gr.json",
+      "action": "edit",
+      "before_sha256": "ef2404ea8b7fb5231729731f997c41d6aba98925292dd266a62dae428b30d013",
+      "after_sha256": "98ed320916a71d1b4300e933b3b3085bdc7299370183cfeb951006467a5124a1"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/gr_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/gr_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "e046bbaa5f590b92b8436b3ac57b7e98c85391d75efc0fa898686c9e40348ea4",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/hu.json",
+      "action": "edit",
+      "before_sha256": "8eefc26ead4c94a0d7a8409a581460c92152d71616c6b9bdd10af06a70c0eb62",
+      "after_sha256": "a9ed076654fe8a70b5cea2156ccab87ac66dcbb8e774ebbee2a3929176345a86"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/hu_battlepass.json",
+      "action": "delete",
+      "before_sha256": "55a87d82958d20528b233ba5fdf262a9ad4b769b28d9eeb7a333ece7dedd768a",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/hu_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "abf56619c6072cffe48d97d10e489bf20e9c5a65c06101d4d625784454e1c05d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/it.json",
+      "action": "edit",
+      "before_sha256": "b9e9374ac6bdca386401f9812615ab5b0224afd52b48c416629e745892a99a91",
+      "after_sha256": "e7bc15907458cd4dcf0d5ce92d9a859bc8bb47de4b3d3a5dc26eeb83f77668a1"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/it_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/it_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "3c91ad05ee02056585d8f999360bd8df72020e32f205f55ba8ecec65d0acf293",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/nl.json",
+      "action": "edit",
+      "before_sha256": "65062b159c40223ae68867ec9c2ac92f764fefdfd194b2dd3af99e4d19be29b7",
+      "after_sha256": "7ed5277aa52550c8fc9d3ee6bf4c67ddcc9c2f2a3b149c17fbd0be243c54f762"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/nl_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/nl_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "4c82a1a1aa38699a77a891a3b942944fc3e6bdedc0e98e73e1eaf295204d7b30",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/pl.json",
+      "action": "edit",
+      "before_sha256": "a5a1706af2ddcf00ed07dbf55935d1ab25ef2243d0c31f5a6f0a7a5995517ebb",
+      "after_sha256": "41c2bb18ee13a352e00e9d04f9703ddbbc74140be77bbe5d3c874fc442a9b349"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/pl_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/pl_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "aa1add6aee90838b5febe01f04383f42f07a4fae50712e2420b5f767afbf953c",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/pt.json",
+      "action": "edit",
+      "before_sha256": "911eea4aa1f641071c7052e8390709a93e43da843ffea5c627d159b34e8ea055",
+      "after_sha256": "ccd47f0efd2a07c37288ea84ab470435550fc5a50bffb94596af38148ef3ece3"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/pt_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/pt_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "fa6cbbac3c4f4a253f5a5fa70a3514cd37cf52e41cb22943ebb8fc32be27e8c4",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/ro.json",
+      "action": "edit",
+      "before_sha256": "c584cdd83d9de50e831dca8e9dd399539ab1dcd9888adc9ffce37d96be415a0c",
+      "after_sha256": "9aa289ca29b9e8d016443430783d849b735f333c8c8fd822f8d01612395ec70c"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/ro_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/ro_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "50f044b56c100c4731648fdef8c590e49e90ba5e4e0568f5c7c076428fabcff5",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/ru.json",
+      "action": "edit",
+      "before_sha256": "79e1f78d6f60f709b879fc9badc41c3ae0e26a77440f898aed0695007de25bfd",
+      "after_sha256": "3a3372f5f3a89e010d6682e0240fe59928cc24bbe0ac3a803447c660402541a8"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/ru_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/ru_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "2fd84e743708cfd849a33f7d6cb291e708769c278a798574a40158bc5467a73b",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/tr.json",
+      "action": "edit",
+      "before_sha256": "bb3465ce8f2d531932c8a23057dbbc620f2dd195317f7f41ae103db413d613bc",
+      "after_sha256": "87651b2f19cc9dccc589350cab7be4f3cbfde3c84123f03a9873ddf0f18579b5"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/tr_battlepass.json",
+      "action": "delete",
+      "before_sha256": "72f4f26ebc36e00842708585bfd37b8db0be6185c3fd692ced492766f82af082",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Locales/tr_battlepass.json.meta",
+      "action": "delete",
+      "before_sha256": "d94383b373e0d2ea2468efc5592465665442533ffcf62303a14badc1372cad45",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/cz/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "fe3f2dbce293125558dcecc911be895bcc727746a80f307e746adca61ae1d9a8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/cz/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "356cc3d0648f1b9e3714522edb68294d196511c2c654e25ed994e565b692d05f",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/de/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "f93fc83e638839861a4eb6e214698011641a9274a360dce738c7e097baba30ac",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/de/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "329e2bf467eb4c7f9505292be7e25bdc922a1dc1c385a9bf3181bc89a6b1bd49",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/en/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "406da7dccf50df80f65b57d0711eb6e00d6e3b8bffe1213e4e33f38b3e87a5e7",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/en/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "73fee5c715cccd9226fb7de78aed7f4408ec135d397b6bf1137e7010da8dc859",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/es/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "c30a60545a1c55b9e1457f05aa6761be52dbb2fe18c8bb274d93c0d9bf38170b",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/es/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "393b3f51f31190bcc514c77eb726a1fb984475acb3735d3edab04a2011d8e3bc",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/hu/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "406da7dccf50df80f65b57d0711eb6e00d6e3b8bffe1213e4e33f38b3e87a5e7",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/hu/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "abc1558f8a63188a8036d8d157d0f9160b01a1288a9d6a30b5615612d2ba3e17",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/it/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "d5c66bd4227fb1b4b28427df4889813dd4c4921e496931d0e22f0944e31c9bb3",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/it/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "9282d606d8f4110b49ed26523dc22ffd2e85639295257505d1b60b3ed67f8372",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/pl/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "d91d866693f290f84b0b26dfab4a092c6034c2645060cc5ba1624aba18c745aa",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/pl/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "5daf26402e13f80345d6d8a82a4ac30219d994864c515fe9c5fc9ff7142e03f2",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/pt/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "f9b4a3bb640251baa9cabc827a54abfaead19ff6bc217132218d064f5e2118a8",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/pt/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "5235f2c48b90917038325742a97662c5c4451935f825b099aa615f2f243043c7",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/ro/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "38a63646625335af89596858eae38f2a5633c54d1d2bbe04c10b911645146237",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/ro/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "a465adc25a04f771a16a62c0c58e3ca94beb0787848527d9cc8772c5311671ff",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/tr/systems/battlepass.txt",
+      "action": "delete",
+      "before_sha256": "b8b0b47460793fbf1962d81cae8f8700e1be057f629f3a99301aab9d22a9a81d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2/Wiki/tr/systems/battlepass.txt.meta",
+      "action": "delete",
+      "before_sha256": "6653402f42a401701538537e637d793772f67b029d280b531ab4ced8597951f4",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/Metin2UiSpriteCatalog.asset",
+      "action": "edit",
+      "before_sha256": "f5051261677dc5cd0ba7d40f4d866efc2957b8167adc590b6139d8926c631a78",
+      "after_sha256": "72234c32c5d1e7bbf46c4a2440a951017014f4759f68ab07ec7140d0f7172313"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Resources/MobileUI/Metin2MobileUiCatalog.asset",
+      "action": "edit",
+      "before_sha256": "b1ef19c43c66c066cc8f784e6834fd0ba1693c4793b3dcee403cddcd806ccd6c",
+      "after_sha256": "1ae0c1a4aefa25ec467f9c06f17334de506cf8aa9bad6ed51e060f9121047867"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Mobile/Metin2MobileHudView.cs",
+      "action": "edit",
+      "before_sha256": "6558c05cf4ae625733f5b041fa39093e4c6673365cf552805e6dcec57cfd1eda",
+      "after_sha256": "e2d129211522676044bb85f32f9e6fe981d2ac298a72507ac21fe4558f3ae3f1"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2AurigaCustomSystems.cs",
+      "action": "edit",
+      "before_sha256": "65719dd64f369582ee57838fec8077fa734fd143b9279b2909f2b21d59ab193c",
+      "after_sha256": "65d32a1064794a1a56d2055ab9e6ee339791456860bc34f99389d75ed024c986"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2AuthSession.cs",
+      "action": "edit",
+      "before_sha256": "88c6d90be48c6233e89caa4e92783866364868abe5f406020a74a229a65b9d65",
+      "after_sha256": "94df7f4747889e0de207349ea9b687549c5902474edd4046a22eb64ce82cdee4"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2BattlePassLocale.cs",
+      "action": "delete",
+      "before_sha256": "0ffad49d00e23681322d9b7080ec6d74550c581e2245e6af73dca74bc596553d",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2BattlePassLocale.cs.meta",
+      "action": "delete",
+      "before_sha256": "4aae0a2743208efd146d3089424b0b2a09ff22a1603165ce3a2917f75f0a4eeb",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2BattlePassPanel.cs",
+      "action": "delete",
+      "before_sha256": "bd8c0b84c493f48b40f9dd0b22b4f5b0f8961435deb653f4cee3bb940dbff268",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2BattlePassPanel.cs.meta",
+      "action": "delete",
+      "before_sha256": "587d2e901e8b19448427c732b9dd22e1290db0fa54a564f1966c24d114c1358b",
+      "after_sha256": null
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2ClientBootstrap.cs",
+      "action": "edit",
+      "before_sha256": "de36c5a0d199e0e66f27dffc19fbf75284eb5a3815a9778c5ad16cdb103a050c",
+      "after_sha256": "0e2eb4c4618b79c3570e3728a10534c3b30f976f077f7e9d215a7c729a679878"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2GamePacketCodec.cs",
+      "action": "edit",
+      "before_sha256": "e54deb3a5637cc60357cd15706a49a22fbcb0e8c893d57e1abaaf1abdcd7721f",
+      "after_sha256": "719c488febe122c758acc824a9b4d8c6e0b36e954c9cc49288e59b9e20b8ac43"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2GameRuntime.cs",
+      "action": "edit",
+      "before_sha256": "d2c06898658a148cfdb03aa349e95ec48a48bd1391970aa47c33f0b3d1c13b4d",
+      "after_sha256": "6d26a442237e6e410515efd6d6db0105800523782a74dc8992cfadee58ce81d8"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2GameUi.cs",
+      "action": "edit",
+      "before_sha256": "59b9f4c35b5750ad1ab9f7efcb285be3eadf110cba56cd91818fc09925d482f1",
+      "after_sha256": "2c02f77f0834ffec1d6847e6243c1b4ec84864457c7510d793608557cba866d2"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2InputController.cs",
+      "action": "edit",
+      "before_sha256": "8b40dd5310488eff0e35177bef978905d38420c54efabd5527dc4a2fdc4a1e6e",
+      "after_sha256": "1a4f62a980c83e6ffcc15d84f85b65d37bb90a16002cccc3f3bacd6620de4932"
+    },
+    {
+      "repository": "unity",
+      "path": "Assets/Metin2/Runtime/Network/Metin2PacketFramer.cs",
+      "action": "edit",
+      "before_sha256": "fac2a56469841e95620ea75abcf83a119b349461d3571319d2e4ca42c08028bf",
+      "after_sha256": "6f53eea64c3c7743d09a6a3ea1787c32c88d58cc9519dcfb0ce52199e98ec95b"
+    },
+    {
+      "repository": "unity",
+      "path": "Tools/ProtocolAudit/AurigaPacketSizes.cpp",
+      "action": "edit",
+      "before_sha256": "29ca2ffd37911cd62433251fbaf63077d2544e0103586985ddd913d7400780b7",
+      "after_sha256": "c5079c85d0c34de90719765c7905f978ae3da93b43011d006b5a14e295d48e76"
+    }
+  ]
+}

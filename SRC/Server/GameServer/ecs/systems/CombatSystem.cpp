@@ -84,9 +84,6 @@
 #ifdef __NEWPET_SYSTEM__
 #include "../../pet/New_PetSystem.h"
 #endif
-#ifdef ENABLE_BATTLE_PASS
-#include "../../combat/battle_pass.h"
-#endif
 #ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
 #include <unordered_map>
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
@@ -2449,30 +2446,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 				LogManager::instance().CharLog(victim, ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
 			}
-
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(killer);
-			if (bBattlePassId)
-			{
-				uint32_t dwToKillCount, dwMinLevel;
-				uint32_t dwLevel = ecs::PointSystem::GetLevel(victim);
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_KILL, &dwMinLevel, &dwToKillCount))
-				{
-#ifdef ENABLE_BATTLE_PASS_SECURITY_KILL
-					if ((ecs::PlayerRuntime::GetDesc(victim)->GetHostName() != ecs::PlayerRuntime::GetDesc(killer)->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(ecs::PlayerRuntime::GetPlayerID(killer), ecs::PlayerRuntime::GetPlayerID(victim)))
-					{
-						if (dwLevel >= dwMinLevel && ecs::PlayerRuntime::GetMissionProgress(killer, PLAYER_KILL, bBattlePassId) < dwToKillCount)
-						{
-							ecs::PlayerRuntime::UpdateMissionProgress(killer, PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
-							CBattlePass::instance().RegisterPlayerKill(ecs::PlayerRuntime::GetPlayerID(killer), ecs::PlayerRuntime::GetPlayerID(victim));
-						}
-					}
-#else
-					if (dwLevel >= dwMinLevel && ecs::PlayerRuntime::GetMissionProgress(killer, PLAYER_KILL, bBattlePassId) < dwToKillCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(killer, PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
-#endif
-				}
-			}
 			if (hasKiller && ecs::PlayerRuntime::IsPC(killer) && ecs::PlayerRuntime::IsPC(victim))
 			{
 				const char* szMapName;
@@ -2521,8 +2494,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 				BroadcastNotice(szMsg);
 			}
 
-
-#endif
 		}
 	}
 	else
@@ -3235,38 +3206,6 @@ void ItemDropPenalty(entt::entity e, entt::entity killer)
 // char_battle.cpp slice BC3a helper surface duplicated into CombatSystem.cpp
 
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
-static void __UpdateBattlePassCollectProgress(entt::entity owner, uint32_t dwItemVnum, uint32_t dwCount)
-{
-#ifdef ENABLE_BATTLE_PASS
-	if (!ecs::IsCharacter(owner) || !dwCount)
-		return;
-
-	const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(owner);
-	if (!bBattlePassId)
-		return;
-
-	auto updateMission = [&](uint32_t dwMissionType)
-		{
-			uint32_t dwMissionItemVnum = 0;
-			uint32_t dwNeedCount = 0;
-
-			if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, dwMissionType, &dwMissionItemVnum, &dwNeedCount))
-				return;
-
-			if (dwMissionItemVnum != dwItemVnum)
-				return;
-
-			if (ecs::PlayerRuntime::GetMissionProgress(owner, dwMissionType, bBattlePassId) >= dwNeedCount)
-				return;
-
-			ecs::PlayerRuntime::UpdateMissionProgress(owner, dwMissionType, bBattlePassId, dwCount, dwNeedCount);
-		};
-
-	updateMission(COLLECT_ITEM);
-	updateMission(COLLECT_ITEM1);
-	updateMission(COLLECT_ITEM2);
-#endif
-}
 
 static bool __TryAutoGiveRewardItem(entt::entity owner, entt::entity itemEntity, uint32_t& dwGivenCount)
 {
@@ -3407,23 +3346,17 @@ static bool __TryAutoGiveRewardItem(entt::entity owner, entt::entity itemEntity,
 	return true;
 }
 
-static void __GiveRewardItemToCharacterOrDrop(entt::entity chEntity, entt::entity victim, entt::entity itemEntity, const PIXEL_POSITION& pos, bool bTrackBattlePass)
+static void __GiveRewardItemToCharacterOrDrop(entt::entity chEntity, entt::entity victim, entt::entity itemEntity, const PIXEL_POSITION& pos)
 {
 	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
 
 	uint32_t dwGivenCount = 0;
-	const uint32_t dwItemVnum = ItemSystem::GetItemVnum(itemEntity);
 
 	if (ecs::IsCharacter(chEntity) && __TryAutoGiveRewardItem(chEntity, itemEntity, dwGivenCount))
 	{
-		if (bTrackBattlePass && dwGivenCount > 0)
-			__UpdateBattlePassCollectProgress(chEntity, dwItemVnum, dwGivenCount);
 		return;
 	}
-
-	if (bTrackBattlePass && dwGivenCount > 0)
-		__UpdateBattlePassCollectProgress(chEntity, dwItemVnum, dwGivenCount);
 
 	if (!ItemSystem::PlaceItemOnGround(
 			itemEntity,
@@ -3734,18 +3667,6 @@ void Reward(entt::entity e, bool bItemDrop)
 		CEasterDungeon::instance().OnMobKilled(attacker, e);
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(attacker);
-		if (bBattlePassId)
-		{
-			uint32_t dwMonsterVnum, dwToKillCount;
-			if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_KILL, &dwMonsterVnum, &dwToKillCount))
-			{
-				if (dwMonsterVnum == ecs::PlayerRuntime::GetRaceNum(e) && ecs::PlayerRuntime::GetMissionProgress(attacker, MONSTER_KILL, bBattlePassId) < dwToKillCount)
-					ecs::PlayerRuntime::UpdateMissionProgress(attacker, MONSTER_KILL, bBattlePassId, 1, dwToKillCount);
-			}
-		}
-#endif
 
 		if (!number(0, 9))
 		{
@@ -3998,7 +3919,7 @@ void Reward(entt::entity e, bool bItemDrop)
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
 									if (bInstantRewardToInventory)
 									{
-										__GiveRewardItemToCharacterOrDrop(rchEntity, e, newItem, mpos, true);
+										__GiveRewardItemToCharacterOrDrop(rchEntity, e, newItem, mpos);
 									}
 									else
 									{
@@ -4068,7 +3989,7 @@ void Reward(entt::entity e, bool bItemDrop)
 
 				if (bInstantRewardToInventory && !bKeepGroundDrop)
 				{
-					__GiveRewardItemToCharacterOrDrop(attacker, e, itemEntity, pos, true);
+					__GiveRewardItemToCharacterOrDrop(attacker, e, itemEntity, pos);
 				}
 				else
 				{
@@ -4183,7 +4104,7 @@ void Reward(entt::entity e, bool bItemDrop)
 
 						if (bInstantRewardToInventory && !bKeepGroundDrop)
 						{
-							__GiveRewardItemToCharacterOrDrop(owner, e, itemEntity, pos, true);
+							__GiveRewardItemToCharacterOrDrop(owner, e, itemEntity, pos);
 						}
 						else
 						{
@@ -5410,47 +5331,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		float tempDam = dam;
 		dam = tempDam * damMul + 0.5f;
 
-#ifdef ENABLE_BATTLE_PASS
-		if (dam > 0)
-		{
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(attacker);
-			if (bBattlePassId)
-			{
-				if (ecs::PlayerRuntime::IsPC(victim))
-				{
-					uint32_t dwMinLevel, dwDamage;
-					uint32_t dwLevel = ecs::PointSystem::GetLevel(victim);
-					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_DAMAGE, &dwMinLevel, &dwDamage))
-					{
-						if (!ecs::PlayerRuntime::IsCompletedMission(attacker, PLAYER_DAMAGE))
-						{
-							uint32_t dwDam = dam;
-							if (dwLevel >= dwMinLevel && ecs::PlayerRuntime::GetMissionProgress(victim, PLAYER_DAMAGE, bBattlePassId) < dwDam)
-							{
-								ecs::PlayerRuntime::UpdateMissionProgress(attacker, PLAYER_DAMAGE, bBattlePassId, dwDam, dwDamage);
-							}
-						}
-					}
-				}
-				else
-				{
-					uint32_t dwMonsterVnum, dwDamage;
-					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_DAMAGE, &dwMonsterVnum, &dwDamage))
-					{
-						uint32_t dwRaceNum = ecs::PlayerRuntime::GetRaceNum(victim);
-						if (!ecs::PlayerRuntime::IsCompletedMission(attacker, MONSTER_DAMAGE))
-						{
-							uint32_t dwDam = dam;
-							if (dwMonsterVnum == dwRaceNum && ecs::PlayerRuntime::GetMissionProgress(victim, MONSTER_DAMAGE, bBattlePassId) < dwDam)
-							{
-								ecs::PlayerRuntime::UpdateMissionProgress(attacker, MONSTER_DAMAGE, bBattlePassId, dwDam, dwDamage);
-							}
-						}
-					}
-				}
-			}
-		}
-#endif
 
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 		if (!ecs::PlayerRuntime::IsPC(victim) && attackerIsCharacter && ecs::PlayerRuntime::IsPC(attacker))

@@ -35,18 +35,7 @@ window = {
 					"over_image" : "d:/ymir work/ui/support/buff_hover.tga",
 					"down_image" : "d:/ymir work/ui/support/buff_active.tga",
 				},	
-				{
-					"name" : "button2",
-					"type" : "button",
-					"x" : 0,
-					"y" : BOARD_WIDTH,
-					"tooltip_text" : uiscriptlocale.BATTLE_PASS,
-					"tooltip_x" : -57,
-					"tooltip_y" : 10,
-					"default_image" : "d:/ymir work/ui/battle_pass/battlepass_normal.tga",
-					"over_image" : "d:/ymir work/ui/battle_pass/battlepass_hover.tga",
-					"down_image" : "d:/ymir work/ui/battle_pass/battlepass_active.tga",
-				},
+
 				{
 					"name" : "button3",
 					"type" : "button",

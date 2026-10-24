@@ -12,7 +12,6 @@
 #include "../../SRC/Server/GameServer/core/buffer_manager.h"
 #include "../../SRC/Server/GameServer/core/constants.h"
 #include "../../SRC/Server/GameServer/core/packet.h"
-#include "../../SRC/Server/GameServer/combat/battle_pass.h"
 #include "../../SRC/Server/GameServer/world/event.h"
 #include <Core/Logging.hpp>
 #include <cstdlib>
@@ -111,12 +110,6 @@ LPDESC ecs::PlayerRuntime::GetDesc(entt::entity) { return nullptr; }
 // --- services only the reroll / notice / client paths use ---------------------
 bool ecs::PlayerRuntime::IsPC(entt::entity) { Unexpected("PlayerRuntime::IsPC"); }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { Unexpected("PlayerRuntime::GetName"); }
-#ifdef ENABLE_BATTLE_PASS
-uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { Unexpected("GetBattlePassId"); }
-uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { Unexpected("GetMissionProgress"); }
-bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { Unexpected("UpdateMissionProgress"); }
-bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { Unexpected("BattlePassMissionGetInfo"); }
-#endif
 #ifdef ENABLE_RANKING
 int64_t ecs::PlayerRuntime::GetRankPoints(entt::entity, int) { Unexpected("GetRankPoints"); }
 bool ecs::PlayerRuntime::SetRankPoints(entt::entity, int, int64_t) { Unexpected("SetRankPoints"); }

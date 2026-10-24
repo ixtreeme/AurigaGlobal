@@ -37,10 +37,6 @@
 #include "../ecs/systems/ItemSystem.hpp"
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#include "Core/Logging.hpp"
-#endif
 
 #define ENABLE_FISHINGROD_RENEWAL
 namespace fishing
@@ -504,21 +500,6 @@ void Take(fishing_event_info* info, entt::entity ch)
 					p.info = item_vnum;
 					ecs::PlayerRuntime::GetDesc(ch)->Packet(&p, sizeof(TPacketGCFishing));
 
-#ifdef ENABLE_BATTLE_PASS
-						uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch);
-						if(bBattlePassId)
-						{
-							uint32_t dwCount, dwNotUsed;
-							if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, CATCH_FISH, &dwNotUsed, &dwCount))
-							{
-								if (ecs::PlayerRuntime::IsValid(ch))
-								{
-									if (ecs::PlayerRuntime::GetMissionProgress(ch, CATCH_FISH, bBattlePassId) < dwCount)
-										ecs::PlayerRuntime::UpdateMissionProgress(ch, CATCH_FISH, bBattlePassId, 1, dwCount);
-								}
-							}
-						}
-#endif
 					const entt::entity item = ItemSystem::AutoGiveItemEcs(ch, item_vnum, 1, -1, false);
 					if (item != entt::null)
 					{
@@ -694,20 +675,6 @@ void Grill(entt::entity owner, entt::entity itemEntity)
 
 	int count = ItemSystem::GetItemCount(itemEntity);
 
-#ifdef ENABLE_BATTLE_PASS
-	if (!ecs::IsCharacter(owner))
-		return;
-	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(owner);
-	if(bBattlePassId)
-	{
-		uint32_t dwCount, dwNotUsed;
-		if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, FRY_FISH, &dwNotUsed, &dwCount))
-		{
-			if(ecs::PlayerRuntime::GetMissionProgress(owner, FRY_FISH, bBattlePassId) < dwCount)
-				ecs::PlayerRuntime::UpdateMissionProgress(owner, FRY_FISH, bBattlePassId, count, dwCount);
-		}
-	}
-#endif
 
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 116, "%s", ItemSystem::GetItemName(itemEntity));

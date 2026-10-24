@@ -119,7 +119,7 @@ FUNCTIONS = {'': ('__fish_real_refine_rod', '__get_empire_priv', '__get_empire_p
         'is_horse_alive', 'is_married', 'is_mount', 'is_near_vid', 'is_polymorphed', 'is_pvp0',
         'is_riding', 'is_skill_book_no_delay', 'is_trade0', 'isguildmaster',
         'learn_grand_master_skill', 'make_guild0', 'make_item0', 'mining', 'mount', 'mount_bonus',
-        'open_acce', 'open_battle_pass_ranking', 'open_biologist_change', 'open_sash', 'open_shop0',
+        'open_acce', 'open_biologist_change', 'open_sash', 'open_shop0',
         'ore_refine', 'pc_attract_ranger', 'pointchange', 'polymorph', 'pullmob', 'refine_equip',
         'remove_from_guild', 'remove_item', 'remove_polymorph', 'remove_skill_book_no_delay',
         'removeitem', 'reset_point', 'reset_status', 'revive_horse', 'save_exit_location', 'select',

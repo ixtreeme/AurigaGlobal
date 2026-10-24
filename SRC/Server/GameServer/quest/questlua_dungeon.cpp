@@ -24,7 +24,6 @@
 #include "desc_manager.h"
 #include "db.h"
 #include "config.h"
-#include "battle_pass.h"
 #include "../ecs/quest_helpers.hpp"
 #include <functional>
 #ifdef ENABLE_MELEY_LAIR
@@ -1363,20 +1362,6 @@ ALUA(dungeon_update_rank)
 					}
 
 					ecs::PlayerRuntime::SetRankPoints(member, 16, ecs::PlayerRuntime::GetRankPoints(member, 16) + 1);
-#ifdef ENABLE_BATTLE_PASS
-					const uint8_t battlepassid = ecs::PlayerRuntime::GetBattlePassID(member);
-					if(battlepassid)
-					{
-						uint32_t id, count;
-						if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
-						{
-							if (id == 1 && ecs::PlayerRuntime::GetMissionProgress(member, COMPLETE_DUNGEON, battlepassid) < count)
-							{
-								ecs::PlayerRuntime::UpdateMissionProgress(member, COMPLETE_DUNGEON, battlepassid, 1, count);
-							}
-						}
-					}
-#endif
 					int32_t enter_time = ecs::QuestSystem::GetFlag(member, questname + ".enter_time");
 					ecs::QuestSystem::SetFlag(member, questname + ".enter_time", 0);
 					ecs::QuestSystem::SetFlag(member, questname + ".ch", 0);
@@ -1408,20 +1393,6 @@ ALUA(dungeon_update_rank)
 		else
 		{
 			ecs::PlayerRuntime::SetRankPoints(chEntity, 16, ecs::PlayerRuntime::GetRankPoints(chEntity, 16) + 1);
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t battlepassid = ecs::PlayerRuntime::GetBattlePassID(chEntity);
-			if(battlepassid)
-			{
-				uint32_t id, count;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
-				{
-					if (id == 1 && ecs::PlayerRuntime::GetMissionProgress(chEntity, COMPLETE_DUNGEON, battlepassid) < count)
-					{
-						ecs::PlayerRuntime::UpdateMissionProgress(chEntity, COMPLETE_DUNGEON, battlepassid, 1, count);
-					}
-				}
-			}
-#endif
 			int32_t enter_time = ecs::QuestSystem::GetFlag(chEntity, questname + ".enter_time");
 			ecs::QuestSystem::SetFlag(chEntity, questname + ".enter_time", 0);
 			ecs::QuestSystem::SetFlag(chEntity, questname + ".ch", 0);

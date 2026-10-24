@@ -22,7 +22,6 @@
 #include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/core/buffer_manager.h"
 #include "../../SRC/Server/GameServer/network/p2p.h"
-#include "../../SRC/Server/GameServer/combat/battle_pass.h"
 #include "../../SRC/Server/common/stole_length.h"
 #include "../../SRC/Server/common/rune_length.h"
 #include "../../SRC/Server/GameServer/dungeon/DragonSoul.h"
@@ -159,12 +158,6 @@ void ecs::ChatSystem::SendNew(entt::entity owner, uint8_t, uint32_t message, con
 #endif
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { if (!transferTest && !extractionTest) UnexpectedSwitchbotService(); return 42; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { UnexpectedSwitchbotService(); }
-#ifdef ENABLE_BATTLE_PASS
-uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { UnexpectedSwitchbotService(); }
-uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { UnexpectedSwitchbotService(); }
-bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { UnexpectedSwitchbotService(); }
-bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { UnexpectedSwitchbotService(); }
-#endif
 #ifdef ENABLE_RANKING
 int64_t ecs::PlayerRuntime::GetRankPoints(entt::entity, int) { UnexpectedSwitchbotService(); }
 bool ecs::PlayerRuntime::SetRankPoints(entt::entity, int, int64_t) { UnexpectedSwitchbotService(); }

@@ -2481,10 +2481,6 @@ namespace
 			{ HEADER_GD_DELETE_AWARDID, sizeof(TPacketDeleteAwardID) },
 			{ HEADER_GD_UPDATE_CHANNELSTATUS, sizeof(SChannelStatus) },
 			{ HEADER_GD_BREAK_MARRIAGE, sizeof(uint32_t) * 2 },
-#ifdef ENABLE_BATTLE_PASS
-			{ HEADER_GD_SAVE_BATTLE_PASS, sizeof(TPlayerBattlePassMission) },
-			{ HEADER_GD_REGISTER_BP_RANKING, sizeof(TBattlePassRegisterRanking) },
-#endif
 #ifdef BL_OFFLINE_MESSAGE
 			{ HEADER_GD_REQUEST_OFFLINE_MESSAGES, sizeof(TPacketGDReadOfflineMessage) },
 			{ HEADER_GD_SEND_OFFLINE_MESSAGE, sizeof(TPacketGDSendOfflineMessage) },
@@ -2952,19 +2948,6 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				break;
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-			case HEADER_GD_SAVE_BATTLE_PASS:
-				QUERY_SAVE_BATTLE_PASS(peer, dwHandle, (TPlayerBattlePassMission *)data);
-				break;
-
-			case HEADER_GD_REGISTER_BP_RANKING:
-				QUERY_REGISTER_RANKING(peer, dwHandle, (TBattlePassRegisterRanking *)data);
-				break;
-
-			case HEADER_GD_BATTLE_PASS_RANKING:
-				RequestLoadBattlePassRanking(peer, dwHandle, data);
-				break;
-#endif
 #if defined(BL_OFFLINE_MESSAGE)
 			case HEADER_GD_REQUEST_OFFLINE_MESSAGES:
 				RequestReadOfflineMessages(peer, dwHandle, (TPacketGDReadOfflineMessage*) data);
@@ -3231,9 +3214,6 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 		case QID_QUEST:
 		case QID_AFFECT:
 
-#ifdef ENABLE_BATTLE_PASS
-		case QID_BATTLE_PASS:
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 		case QID_SKILL_COLOR:
@@ -3522,12 +3502,6 @@ int CClientManager::Process()
 
 		if (!(thecore_heart->pulse % (thecore_heart->passes_per_sec * 60)))
 
-#ifdef ENABLE_BATTLE_PASS
-		if (!(thecore_heart->pulse % (thecore_heart->passes_per_sec * 3600)))	// Refresh ranking cache every hour
-		{
-			CClientManager::instance().LoadBattlePassRanking();
-		}
-#endif
 
 		{
 			CClientManager::instance().SendTime();

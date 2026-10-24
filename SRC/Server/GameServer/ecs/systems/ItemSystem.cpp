@@ -62,9 +62,6 @@
 #ifdef ENABLE_SWITCHBOT
 #include "../../social/new_switchbot.h"
 #endif
-#ifdef ENABLE_BATTLE_PASS
-#include "../../combat/battle_pass.h"
-#endif
 #include "../../dungeon/DragonSoul.h"
 #include "../../combat/buff_on_attributes.h"
 #include "../../item/ItemUse.h"
@@ -530,23 +527,6 @@ bool PickupItem(entt::entity character, uint32_t vid)
     }
 
     const uint32_t vnum = GetItemVnum(item);
-#ifdef ENABLE_BATTLE_PASS
-    const bool trackPickup = GetItemEvents(item).ownership != nullptr;
-#endif
-    const auto collected = [&](uint32_t count) {
-#ifdef ENABLE_BATTLE_PASS
-        if (!trackPickup || !ecs::PlayerRuntime::IsPC(owner)) return;
-        const uint8_t pass = ecs::PlayerRuntime::GetBattlePassId(owner);
-        if (!pass) return;
-        for (const auto mission : {COLLECT_ITEM, COLLECT_ITEM1, COLLECT_ITEM2}) {
-            if (!ecs::PlayerRuntime::IsPC(owner)) return;
-            uint32_t wantedVnum = 0, goal = 0;
-            if (CBattlePass::instance().BattlePassMissionGetInfo(pass, mission, &wantedVnum, &goal) &&
-                wantedVnum == vnum && ecs::PlayerRuntime::GetMissionProgress(owner, mission, pass) < goal)
-                ecs::PlayerRuntime::UpdateMissionProgress(owner, mission, pass, count, goal);
-        }
-#endif
-    };
     const auto nameForOwner = [&](entt::entity source) {
         auto* desc = ecs::PlayerRuntime::GetDesc(owner);
         return std::string(GetItemName(source, desc ? desc->GetLanguage() : 0));
@@ -585,7 +565,6 @@ bool PickupItem(entt::entity character, uint32_t vid)
             const std::string name = nameForOwner(target);
             const auto merged = MergeItemStacksEcs(owner, item, target, 0, StackSource::GroundPickup);
             if (!merged.transferred) continue;
-            collected(merged.transferred);
             if (merged.sourceDepleted) { notify(merged.transferred, name); return true; }
         }
     }
@@ -632,7 +611,6 @@ bool PickupItem(entt::entity character, uint32_t vid)
         if (PlaceItemOnGround(item, map, position)) SetGroundOwnership(item, owner);
         return false;
     }
-    collected(count);
     if (IsValidItem(item) && ecs::PlayerRuntime::IsPC(owner) && GetItemOwner(item) == owner) {
         char hint[64];
         snprintf(hint, sizeof(hint), "%s %u %u", name.c_str(), count, originalVnum);

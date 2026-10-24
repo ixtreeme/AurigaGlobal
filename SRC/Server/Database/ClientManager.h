@@ -285,14 +285,6 @@ protected:
 	// @fixme402 (RESULT_AFFECT_LOAD +dwRealPID)
 	void		RESULT_AFFECT_LOAD(CPeer* pkPeer, MYSQL_RES* pRes, uint32_t dwHandle, uint32_t dwRealPID);
 
-#ifdef ENABLE_BATTLE_PASS
-	void RESULT_BATTLE_PASS_LOAD(CPeer* peer, MYSQL_RES* pRes, uint32_t dwHandle, uint32_t dwRealPID);
-	void QUERY_SAVE_BATTLE_PASS(CPeer* peer, uint32_t dwHandle, TPlayerBattlePassMission* battlePass);
-	void QUERY_REGISTER_RANKING(CPeer* peer, uint32_t dwHandle, TBattlePassRegisterRanking* pRanking);
-
-	bool LoadBattlePassRanking();
-	void RequestLoadBattlePassRanking(CPeer* peer, uint32_t dwHandle, const char* data);
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	void		QUERY_SKILL_COLOR_LOAD(CPeer* peer, uint32_t dwHandle, TPlayerLoadPacket* packet);
@@ -489,9 +481,6 @@ private:
 	TItemCacheMap				m_map_itemCache;
 	TItemCacheSetPtrMap			m_map_pkItemCacheSetPtr;
 
-#ifdef ENABLE_BATTLE_PASS
-	std::vector<TBattlePassRanking*> m_vec_battlePassRanking;
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	TSkillColorCacheMap			m_map_SkillColorCache;

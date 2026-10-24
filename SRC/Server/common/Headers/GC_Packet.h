@@ -1174,31 +1174,6 @@ typedef struct SPacketGCChatNew {
 
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-
-typedef struct SPacketGCBattlePass
-{
-	uint8_t	bHeader;
-	uint16_t	wSize;
-	uint16_t	wRewardSize;
-} TPacketGCBattlePass;
-
-typedef struct SPacketGCBattlePassUpdate
-{
-	uint8_t	bHeader;
-	uint8_t	bMissionType;
-	uint32_t	dwNewProgress;
-} TPacketGCBattlePassUpdate;
-
-
-
-typedef struct SPacketGCBattlePassRanking
-{
-	uint8_t	bHeader;
-	uint16_t	wSize;
-	uint8_t	bIsGlobal;
-} TPacketGCBattlePassRanking;
-#endif
 
 #ifdef ENABLE_ATLAS_BOSS
 typedef struct SPacketGCBossPosition

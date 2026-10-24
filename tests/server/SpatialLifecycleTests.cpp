@@ -49,7 +49,6 @@
 #include <limits>
 #include "../../SRC/Server/GameServer/pet/mount_inventory_helper.h"
 #include "../../SRC/Server/GameServer/world/map_location.h"
-#include "../../SRC/Server/GameServer/combat/battle_pass.h"
 #include "../../SRC/Server/GameServer/ecs/EcsDiagnostics.hpp"
 #include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/core/log.h"
@@ -236,7 +235,6 @@ CHARACTER_MANAGER::CHARACTER_MANAGER() {}
 CHARACTER_MANAGER::~CHARACTER_MANAGER() {}
 // Out-of-line key functions emit RTTI required by singleton's guard on FreeBSD.
 // These service doubles are never connected to SQL or the live quest runtime.
-CBattlePass::~CBattlePass() = default;
 CSwitchbotManager::~CSwitchbotManager() = default;
 quest::CQuestManager::~CQuestManager() = default;
 quest::NPC::~NPC() = default;
@@ -283,11 +281,6 @@ void CombatSystem::SendLeaderboardDataGuild(entt::entity) { Unexpected(); }
 void CombatSystem::SendLeaderboardDataSkillMob(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdateMountInventoryCountOverhead(entt::entity e, entt::entity viewer) { CheckShow(e); CheckShow(viewer); }
 void CombatSystem::UpdateKillerMode(entt::entity e) { RecoveryCallback(e, 1); }
-uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { Unexpected(); }
-bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, uint8_t) { Unexpected(); }
-uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { Unexpected(); }
-bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { Unexpected(); }
-bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { Unexpected(); }
 CPIDRegistry& CPIDRegistry::Instance() { Unexpected(); }
 std::vector<entt::entity> CPIDRegistry::Snapshot() const { Unexpected(); }
 
@@ -424,14 +417,6 @@ int32_t ecs::PlayerRuntime::GetY(entt::entity e) {
     if (inputDescriptors.contains(e)) return g_registry.get<ecs::Position>(e).y;
     auto it = placements.find(e); if (it == placements.end()) Unexpected();
     return it->second.y;
-}
-LPEVENT ecs::PlayerRuntime::GetCharEvent(entt::entity e, CharEvent type) {
-    CheckShow(e); Check(type == CharEvent::BattlePassStayOnline, "Show read unexpected timer");
-    return g_registry.get<ecs::LegacyCharEvents>(e).battlePassStayOnline;
-}
-void ecs::PlayerRuntime::SetCharEvent(entt::entity e, CharEvent type, LPEVENT event) {
-    CheckShow(e); Check(type == CharEvent::BattlePassStayOnline, "Show wrote unexpected timer");
-    g_registry.get<ecs::LegacyCharEvents>(e).battlePassStayOnline = event;
 }
 int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
 void CombatSystem::CheckTarget(entt::entity e) { RecoveryCallback(e, 0); }
@@ -2055,3 +2040,6 @@ int main() {
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
+
+LPEVENT ecs::PlayerRuntime::GetCharEvent(entt::entity, CharEvent) { Unexpected(); }
+void ecs::PlayerRuntime::SetCharEvent(entt::entity, CharEvent, LPEVENT) { Unexpected(); }

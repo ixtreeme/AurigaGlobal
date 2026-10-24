@@ -23,7 +23,6 @@
 #include <sstream>
 #include "packet.h"
 #include "desc_client.h"
-#include "battle_pass.h"
 #include "config.h"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
@@ -611,22 +610,6 @@ void Cube_Make(entt::entity chEntity, int index, int count_item, int index_item_
 		return;
 	}
 
-#ifdef ENABLE_BATTLE_PASS
-	const uint8_t battlePassId = ecs::PlayerRuntime::GetBattlePassId(chEntity);
-	if (battlePassId)
-	{
-		uint32_t missionItemVnum = 0;
-		uint32_t missionCount = 0;
-		if (CBattlePass::instance().BattlePassMissionGetInfo(
-				battlePassId, CRAFT_ITEM, &missionItemVnum, &missionCount) &&
-			missionItemVnum == materialInfo.reward.vnum &&
-			ecs::PlayerRuntime::GetMissionProgress(chEntity, CRAFT_ITEM, battlePassId) < missionCount)
-		{
-			ecs::PlayerRuntime::UpdateMissionProgress(chEntity, 
-				CRAFT_ITEM, battlePassId, rewardCount, missionCount);
-		}
-	}
-#endif
 
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 818, "");

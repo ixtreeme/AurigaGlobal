@@ -34,9 +34,6 @@
 #include "FileHandle.h"
 #include <boost/algorithm/string/predicate.hpp>
 #include <cctype>
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#endif
 
 CShopManager::CShopManager()
 {
@@ -452,18 +449,6 @@ uint8_t bCount
 	}
 
 	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(itemEntity), dwPrice);
-#ifdef ENABLE_BATTLE_PASS
-	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch);
-	if(bBattlePassId)
-	{
-		uint32_t dwItemVnum, dwSellCount;
-		if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, SELL_ITEM, &dwItemVnum, &dwSellCount))
-		{
-			if(dwItemVnum == ItemSystem::GetItemVnum(itemEntity) && ecs::PlayerRuntime::GetMissionProgress(ch, SELL_ITEM, bBattlePassId) < dwSellCount)
-				ecs::PlayerRuntime::UpdateMissionProgress(ch, SELL_ITEM, bBattlePassId, bCount, dwSellCount);
-		}
-	}
-#endif
 	const bool sold = (bCount == itemCount)
 		? ItemSystem::DestroyItemEntityEcs(itemEntity, "SELL")
 		: ItemSystem::ConsumeItemEcs(itemEntity, bCount);

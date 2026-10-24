@@ -95,7 +95,7 @@ class DataBuilder:
         for filename, mode in modes.items():
             self.group(locale / (filename + '.txt'), data / (filename + '.json'), mode,
                        reference=data / 'group.json' if filename == 'group_group' else None)
-        for filename in ('battle_pass','dragon_soul_table'):
+        for filename in ('dragon_soul_table',):
             self.group(locale / (filename + '.txt'), data / (filename + '.json'), 'named_rows', 'rows')
         for mode, filename in (('blend','blend'),('cube','cube'),('fishing','fishing'),('gaya','gaya'),('guild','guild_renewal_levelup')):
             source, target = locale / (filename + '.txt'), data / (filename + '.json')

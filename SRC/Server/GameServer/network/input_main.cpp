@@ -85,11 +85,6 @@
 #include "new_offlineshop.h"
 #include "new_offlineshop_manager.h"
 #endif
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#include "../ecs/systems/MountSystem.hpp"
-#include "../ecs/systems/ActivitySystem.hpp"
-#endif
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 	#include "refine.h"
@@ -885,12 +880,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				return -1;
 			break;
 
-#ifdef ENABLE_BATTLE_PASS
-		case HEADER_CG_BATTLE_PASS:
-			if ((iExtraLen = BattlePass(character, c_pData, m_iBufferLeft)) < 0)
-				return -1;
-			break;
-#endif
 
 		case HEADER_CG_ON_CLICK:
 			OnClick(character, c_pData);

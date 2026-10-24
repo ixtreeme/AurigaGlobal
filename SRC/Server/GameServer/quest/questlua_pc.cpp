@@ -52,9 +52,6 @@
 #include "pvp.h"
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-#include "battle_pass.h"
-#endif
 
 #ifdef ENABLE_DICE_SYSTEM
 #include "party.h"
@@ -4027,50 +4024,6 @@ teleport_area:
 	}
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-	int pc_update_dungeon_progress(lua_State * L)
-	{
-		if (!lua_isnumber(L, 1))
-		{
-			sys_err("arg1 must be number");
-			return 0;
-		}
-
-		uint8_t bDungeonType = (int) lua_tonumber(L, 1);
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (chEntity != entt::null)
-		{
-			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassID(chEntity);
-			if(bBattlePassId)
-			{
-				uint32_t dwDungeonID, dwCount;
-				if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COMPLETE_DUNGEON, &dwDungeonID, &dwCount))
-				{
-					if(dwDungeonID == bDungeonType && ecs::PlayerRuntime::GetMissionProgress(chEntity, COMPLETE_DUNGEON, bBattlePassId) < dwCount)
-						ecs::PlayerRuntime::UpdateMissionProgress(chEntity, COMPLETE_DUNGEON, bBattlePassId, 1, dwCount);
-				}
-			}
-		}
-
-		return 0;
-	}
-
-	int pc_open_battle_pass_ranking(lua_State * L)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity))
-		{
-			uint32_t dwPlayerId = (ecs::PlayerRuntime::GetPlayerID(chEntity));
-			uint8_t bIsGlobal = 1;
-
-			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, desc->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
-			db_clientdesc->Packet(&dwPlayerId, sizeof(uint32_t));
-			db_clientdesc->Packet(&bIsGlobal, sizeof(uint8_t));
-		}
-
-		return 0;
-	}
-#endif
 
 #if defined(__DUNGEON_INFO_SYSTEM__)
 	ALUA(pc_get_last_damage)
@@ -4318,10 +4271,6 @@ teleport_area:
 			{ "getmoney",		pc_get_money		},
 			{ "get_money",		pc_get_money		},
 
-#ifdef ENABLE_BATTLE_PASS
-			{ "update_dungeon_progress", pc_update_dungeon_progress },
-			{ "open_battle_pass_ranking", pc_open_battle_pass_ranking },
-#endif
 
 			{ "get_real_alignment",	pc_get_real_alignment	},
 			{ "get_alignment",		pc_get_alignment	},

@@ -693,7 +693,6 @@ WIKI_CATEGORIES = [
 		localeinfo.WIKI_CATEGORY_SYSTEMS,
 		[
 			#[localeinfo.WIKI_SUBCATEGORY_DRAGONALCHEMY, ("systems/dragon_alchemy.txt",)],
-			#[localeinfo.WIKI_SUBCATEGORY_BATTLEPASS, ("systems/battlepass.txt",)],
 			[localeinfo.WIKI_SUBCATEGORY_BOOST, ("systems/boost.txt",)],
 			[localeinfo.WIKI_SUBCATEGORY_PASSIVE, ("systems/passive.txt",)],
 			[localeinfo.WIKI_SUBCATEGORY_BIOLOGIST, ("systems/biologist.txt",)],

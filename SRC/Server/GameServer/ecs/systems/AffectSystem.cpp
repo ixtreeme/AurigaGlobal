@@ -1484,26 +1484,8 @@ void RemoveGoodAffects(entt::entity e)
         AffectSystem::RemoveAffect(e, type);
 }
 
-time_t GetBattlePassDeadline(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e)) return 0;
-    const auto* state = g_registry.try_get<ecs::BattlePassTiming>(e);
-    return state ? state->deadline : 0;
-}
 
-bool SetBattlePassDeadline(entt::entity e, time_t deadline)
-{
-    if (e == entt::null || !g_registry.valid(e) ||
-        !ecs::Invariants::HasAnyTypeTag(g_registry, e)) return false;
-    g_registry.get_or_emplace<ecs::BattlePassTiming>(e).deadline = deadline;
-    return true;
-}
 
-int32_t GetBattlePassRemainingSeconds(entt::entity e)
-{
-    const int64_t remaining = static_cast<int64_t>(GetBattlePassDeadline(e)) - get_global_time();
-    return static_cast<int32_t>(std::clamp<int64_t>(remaining, INT32_MIN, INT32_MAX));
-}
 
 bool ProcessAffect(entt::entity e)
 {
@@ -1556,19 +1538,6 @@ bool ProcessAffect(entt::entity e)
         AffectSystem::RemoveAffect(e, AFFECT_VOTEFORBONUS);
         changed = true;
         if (!current()) return empty();
-    }
-#endif
-#ifdef ENABLE_BATTLE_PASS
-    if (const auto affect = IdOf(e, AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS))) {
-        const int64_t remaining = GetBattlePassRemainingSeconds(e);
-        if (remaining < 0) {
-            // Clear the old deadline before callbacks can install a new pass.
-            SetBattlePassDeadline(e, 0);
-            AffectSystem::RemoveAffect(e, AFFECT_BATTLE_PASS);
-            changed = true;
-            if (!current()) return empty();
-        } else if (CAffect* live = Resolve(e, affect))
-            live->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
     }
 #endif
     if (const auto affect = IdOf(e, AffectSystem::FindAffect(e, AFFECT_HAIR))) {

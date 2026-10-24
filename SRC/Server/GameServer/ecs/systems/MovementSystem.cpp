@@ -65,7 +65,6 @@
 #include "../../entity/char_manager.h"
 #include "../EntityInvariants.hpp"
 #include "../components/visibility_components.hpp"
-#include "../../combat/battle_pass.h"
 #include <Core/Logging.hpp>
 
 void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot);
@@ -419,36 +418,6 @@ bool CheckAndHandleSameHwid(entt::entity character)
     return false;
 }
 
-#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-EVENTFUNC(battle_pass_stay_online_event_session){
-    char_event_info* info = dynamic_cast<char_event_info*>(event->info);
-    if (!info || info->ch == entt::null)
-        return 0;
-
-	const entt::entity character = info->ch;
-
-    if (!ecs::PlayerRuntime::GetDesc(character))
-        return PASSES_PER_SEC(60);
-
-    const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(character);
-    if (!bBattlePassId)
-        return PASSES_PER_SEC(60);
-
-    uint32_t dwNotUsed = 0;
-    uint32_t dwCount = 0;
-    if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, STAY_ONLINE_MINUTES, &dwNotUsed, &dwCount))
-        return PASSES_PER_SEC(60);
-
-    if (ecs::PlayerRuntime::IsCompletedMission(character, STAY_ONLINE_MINUTES))
-        return PASSES_PER_SEC(60);
-
-    if (ecs::PlayerRuntime::GetMissionProgress(character, STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
-        return PASSES_PER_SEC(60);
-
-    ecs::PlayerRuntime::UpdateMissionProgress(character, STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
-    return PASSES_PER_SEC(60);
-}
-#endif
 
 } // namespace
 
@@ -500,15 +469,6 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
     // Saving an exit location must leave pc.in_dungeon() true during the run.
     if (ecs::PlayerRuntime::IsPC(e))
         ecs::SocialSystem::ClearDungeonIfOtherMap(e, lMapIndex);
-#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-    if (!ecs::PlayerRuntime::GetCharEvent(e, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
-    {
-        char_event_info* info = AllocEventInfo<char_event_info>();
-        info->ch = e;
-        ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline,
-            event_create(battle_pass_stay_online_event_session, info, PASSES_PER_SEC(60)));
-    }
-#endif
 
     bool bChangeTree = false;
 

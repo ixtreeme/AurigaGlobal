@@ -10,7 +10,6 @@
 
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 
-#include "../../combat/battle_pass.h"
 #include "../../entity/char.h"
 #include "../../entity/char_manager.h"
 #include "../../core/config.h"
@@ -47,26 +46,6 @@ ecs::FishingState* GetFishingState(entt::entity e)
     return &g_registry.get_or_emplace<ecs::FishingState>(e);
 }
 
-#ifdef ENABLE_BATTLE_PASS
-void UpdateFishingBattlePassLegacyBoundary(entt::entity fisher)
-{
-    if (!ecs::IsCharacter(fisher))
-        return;
-
-    const uint8_t battlePassId = ecs::PlayerRuntime::GetBattlePassId(fisher);
-    if (!battlePassId)
-        return;
-
-    uint32_t count = 0;
-    uint32_t unused = 0;
-    if (CBattlePass::instance().BattlePassMissionGetInfo(
-            battlePassId, CATCH_FISH, &unused, &count) &&
-        ecs::PlayerRuntime::GetMissionProgress(fisher, CATCH_FISH, battlePassId) < count)
-    {
-        ecs::PlayerRuntime::UpdateMissionProgress(fisher, CATCH_FISH, battlePassId, 1, count);
-    }
-}
-#endif
 
 void MarkFishing(entt::entity e, bool active)
 {
@@ -471,9 +450,6 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
 #ifdef ENABLE_RANKING
         ecs::PlayerRuntime::SetRankPoints(
             fisher, 14, ecs::PlayerRuntime::GetRankPoints(fisher, 14) + 1);
-#endif
-#ifdef ENABLE_BATTLE_PASS
-        UpdateFishingBattlePassLegacyBoundary(fisher);
 #endif
 
         p.subheader = FISHING_SUBHEADER_NEW_CATCH_SUCCESS;

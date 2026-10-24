@@ -38,9 +38,6 @@ BOOL g_test_server = false;
 int g_iPlayerCacheFlushSeconds = 60*5;
 int g_iItemCacheFlushSeconds = 60*5;
 
-#ifdef ENABLE_BATTLE_PASS
-int g_iCurrentBattlePassId = 1;
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	int g_iSkillColorCacheFlushSeconds = 60*7;
@@ -202,10 +199,6 @@ int Start()
 	if (!DbConfig().server.interserverKey.empty())
 		PeerAuth::SetKey(DbConfig().server.interserverKey);
 
-#ifdef ENABLE_BATTLE_PASS
-	g_iCurrentBattlePassId = DbConfig().server.currentBattlePassId;
-	LOG_INFO("CURRENT_BATTLE_PASS_ID: {}", g_iCurrentBattlePassId);
-#endif
 
 	auto connectSql = [](int slot, const SqlConnectionConfig& sql, const char* label)
 	{

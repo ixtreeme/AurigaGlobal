@@ -37,13 +37,6 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 		return;
 
 	AffectSystem::LoadAffect(chEntity, dwCount, (TPacketAffectElement *) c_pData);
-#ifdef ENABLE_BATTLE_PASS
-#ifdef ENABLE_FREE_PASS_RAZOR93
-	ecs::PlayerRuntime::EnsureFreeBattlePassActive(chEntity);
-	if (!ecs::PlayerRuntime::IsBattlePassLoaded(chEntity))
-		ecs::PlayerRuntime::LoadBattlePass(chEntity, 0, nullptr);
-#endif
-#endif
 
 
 }

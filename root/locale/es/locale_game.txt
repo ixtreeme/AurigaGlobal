@@ -2511,7 +2511,6 @@ WIKI_SUBCATEGORY_SHOULDER_SASH	FAJA
 WIKI_SUBCATEGORY_EPIC_SYSTEM	SISTEMA EPIC
 WIKI_SUBCATEGORY_COSTUME_SASH	CINTURÓN DE DISFRAZ
 WIKI_SUBCATEGORY_COSTUMES	DISFRACES
-WIKI_SUBCATEGORY_BATTLEPASS	PASE DE BATALLA
 WIKI_SUBCATEGORY_BOOST	AUMENTAR LA HABILIDAD
 WIKI_SUBCATEGORY_PASSIVE	HABILIDAD PASIVA
 WIKI_SUBCATEGORY_BIOLOGIST	BIÓLOGO
@@ -2739,18 +2738,6 @@ BIOLOGIST_MISSION_NAME_11	Helechos oscuros
 BIOLOGIST_MISSION_NAME_12	Los anillos de Chaegirab
 BIOLOGIST_MISSION_NAME_13	Los cristales de metin
 BIOLOGIST_MISSION_NAME_14	Núcleos purificados
-BATTLE_PASS_PROCENT	Porcentaje: %.1f%%
-BATTLE_PASS_ALERT1	Aún no tienes el pase de batalla activo, necesitas este ítem para activarlo.
-BATTLE_PASS_OK	OK
-BATTLE_PASS_STATUS	Estado: %s%s|h|r
-BATTLE_PASS_INACTIVE	Inactivo
-BATTLE_PASS_ACTIVE	En progreso
-BATTLE_PASS_COMPLETED	Completado
-BATTLE_PASS_UNKNOWN_NAME	Nombre desconocido
-BATTLE_PASS_NAME	Nombre: %s
-BATTLE_PASS_COUNTQUEST	Misiones restantes: %s
-BATTLE_PASS_COUNTQUEST_COMPELTED	Misiones completadas: %s
-BATTLE_PASS_REMAINING_TIME	Tiempo restante: %s
 PETBOX_RIMUOVE	¿Estás seguro de que quieres sacar a la mascota?
 BUY_GAYA_ITEM	¿Quieres comprar este artículo?
 PETSKILLNAME_1	Resistencia (guerrero)
@@ -3060,7 +3047,6 @@ EXCHANGE_TITLE	comercio con %s
 EXCHANGE_TITLE_LEVEL	comercio con %s (%d)
 USE_200_ITEMS	|Eemoji/key_rclick|e + |Eemoji/key_ctrl|e Para usar toda la pila.
 INFO_INCREASE_CHAR_STAT	|Eemoji/key_lclick|e + |Eemoji/key_ctrl|e Aumentar con 10 puntos.
-BATTLE_PASS_JAN20	Diciembre 2021
 SKILL_COLOR_SELECT_FIRST	Elija un color primero.
 SKILL_COLOR_PICK_TOOLTIP	Elija el color deseado para %s. (HEX Code : %s)
 SKILL_COLOR_PRESET_TOOLTIP_TITLE	Color preestablecido
@@ -3565,7 +3551,6 @@ PURCHASES_PRICE	Price
 PURCHASES_PRICE_TEXT	|Eishop/mini_coin|e |cffF7BD48%s Dragon Coins
 CATEGORY_0_NAME	Special Items
 CATEGORY_0_SUB_0_NAME	Costume Event
-CATEGORY_0_SUB_1_NAME	Battle Pass
 CATEGORY_0_SUB_2_NAME	Special
 CATEGORY_1_NAME	Weapon
 CATEGORY_1_SUB_0_NAME	Sword

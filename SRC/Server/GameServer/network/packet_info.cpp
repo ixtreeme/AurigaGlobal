@@ -207,9 +207,6 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_SLOT_MACHINE, sizeof(TPacketCGSlotMachine), "SlotMachine", true);
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-	Set(HEADER_CG_BATTLE_PASS, sizeof(TPacketCGBattlePassAction), "BattlePass");
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	Set(HEADER_CG_SKILL_COLOR, sizeof(TPacketCGSkillColor), "ChangeSkillColor", true);

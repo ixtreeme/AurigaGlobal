@@ -215,18 +215,7 @@ window = {
 
 									"children" :
 									(
-										##BattlePass
-										{
-											"name" : "BattlepassButton",
-											"type" : "button",
 
-											"x" : 2,
-											"y" : 2,
-											"tooltip_text" : "Battle Pass",
-											"default_image" : "d:/ymir work/ui/game/taskbar/Bp1.png",
-											"over_image" : "d:/ymir work/ui/game/taskbar/Bp2.png",
-											"down_image" : "d:/ymir work/ui/game/taskbar/Bp3.png",
-										},
 										##Ranking
 										{
 											"name" : "RankingButton",

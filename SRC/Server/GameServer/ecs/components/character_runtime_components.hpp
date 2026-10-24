@@ -34,7 +34,6 @@ struct LegacyCharEvents {
     LPEVENT timed { nullptr };
     LPEVENT warp { nullptr };
     LPEVENT warpNPC { nullptr };
-    LPEVENT battlePassStayOnline { nullptr };
     LPEVENT drop { nullptr };
     LPEVENT mining { nullptr };
     LPEVENT destroyWhenIdle { nullptr };

@@ -75,7 +75,6 @@
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
 #include "../../SRC/Server/GameServer/quest/questlua.h"
 #include "../../SRC/Server/GameServer/pet/New_PetSystem.h"
-#include "../../SRC/Server/GameServer/combat/battle_pass.h"
 #include "../../SRC/Server/GameServer/dungeon/OrcsDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/TritonTempleDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/ValentineDungeon.h"
@@ -98,7 +97,6 @@ CPVPManager::~CPVPManager() = default;
 quest::CQuestManager::~CQuestManager() = default;
 CGuildManager::~CGuildManager() = default;
 LogManager::~LogManager() = default;
-CBattlePass::~CBattlePass() = default;
 CShopManager::~CShopManager() = default;
 ITEM_MANAGER::~ITEM_MANAGER() = default;
 CSkillManager::~CSkillManager() = default;
@@ -382,7 +380,6 @@ bool ecs::PlayerRuntime::IsMonster(entt::entity e) { return IsValid(e) && g_regi
 unsigned char ecs::PlayerRuntime::GetCharType(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetMobRank(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::SetQuestNPC(entt::entity,entt::entity) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity,unsigned int,unsigned int,unsigned int,unsigned int,bool) { UnexpectedService(__func__); }
 int64_t ecs::PlayerRuntime::GetRankPoints(entt::entity,int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::SetRankPoints(entt::entity,int,int64_t) { UnexpectedService(__func__); }
 void SendAffectAddPacket(DESC *,CAffect *) { UnexpectedService(__func__); }
@@ -437,7 +434,6 @@ uint32_t MountSystem::GetMountVnum(entt::entity) { UnexpectedService(__func__); 
 void MountSystem::SetMountVnum(entt::entity,uint32_t) { UnexpectedService(__func__); }
 bool ecs::SessionSystem::IsCubeOpen(entt::entity) { UnexpectedService(__func__); }
 void ecs::SessionSystem::SetCubeNPC(entt::entity,entt::entity) { UnexpectedService(__func__); }
-uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetExp(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).exp; }
 void ecs::PlayerRuntime::SetExp(entt::entity e,uint32_t value) { AssertActor(e);g_registry.get<BattleFixture>(e).exp=value; }
 void AffectSystem::ClearAffect(entt::entity,bool) { UnexpectedService(__func__); }
@@ -476,7 +472,6 @@ uint64_t ecs::PlayerRuntime::GetSP(entt::entity e) { AssertActor(e); return g_re
 void ecs::PlayerRuntime::SetHP(entt::entity, uint64_t) {}
 entt::entity ecs::SocialSystem::GetDungeon(entt::entity) { return entt::null; }
 int SkillSystem::GetSkillPower(entt::entity, uint32_t, uint8_t) { return 0; }
-uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { return 0; }
 uint32_t SkillSystem::GetLastSkillTime(entt::entity) { return 0; }
 void ecs::MovementSystem::OnMove(entt::entity, bool) {}
 bool ecs::PlayerRuntime::IsPet(entt::entity) { return false; }
@@ -502,7 +497,6 @@ void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Un
 int64_t ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
 void ecs::AcceSystem::Close(entt::entity) { UnexpectedService(__func__); }
 int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, unsigned char) { UnexpectedService(__func__); }
 unsigned int PartySystem::GetLeaderPID(entt::entity) { UnexpectedService(__func__); }
 bool PartySystem::IsPositionNearLeader(entt::entity, entt::entity) { UnexpectedService(__func__); }
 void PartySystem::SendMessage(entt::entity, entt::entity, unsigned char, unsigned int, unsigned int) { UnexpectedService(__func__); }
@@ -622,9 +616,6 @@ void SetExp(entt::entity, int, int) { UnexpectedService(__func__); }
 int GetLevel(entt::entity) { UnexpectedService(__func__); }
 int GetLevelStep(entt::entity) { UnexpectedService(__func__); }
 }
-bool CBattlePass::BattlePassMissionGetInfo(unsigned char,unsigned char,unsigned int *,unsigned int *) { UnexpectedService(__func__); }
-bool CBattlePass::IsEligibleForPlayerKill(unsigned int,unsigned int) { UnexpectedService(__func__); }
-void CBattlePass::RegisterPlayerKill(unsigned int,unsigned int) { UnexpectedService(__func__); }
 COrcsDungeon & COrcsDungeon::instance(void) { UnexpectedService(__func__); }
 void COrcsDungeon::OnMobKilled(entt::entity,entt::entity) { UnexpectedService(__func__); }
 CTritonTempleDungeon & CTritonTempleDungeon::instance(void) { UnexpectedService(__func__); }
