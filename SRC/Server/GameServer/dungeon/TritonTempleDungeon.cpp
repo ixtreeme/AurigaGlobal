@@ -458,6 +458,11 @@ void CTritonTempleDungeon::OnPlayerLogin(entt::entity character)
 
 void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim) ||
+        !ecs::PlayerRuntime::IsPC(killer) ||
+        ecs::PlayerRuntime::GetMapIndex(killer) != ecs::PlayerRuntime::GetMapIndex(victim))
+        return;
+
     if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
         return;
     if (!ecs::PlayerRuntime::IsPC(killer))
@@ -743,7 +748,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
     }
 
     // Initialize dungeon flags
-    DungeonSystem::SetFlag(d, kFlagFloor, 2);
+    DungeonSystem::SetFlag(d, kFlagFloor, 0);
     DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
     DungeonSystem::SetFlag(d, kFlagStep, 0);
     DungeonSystem::SetFlag(d, kFlagBossVid, 0);
@@ -779,7 +784,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
 DungeonSystem::JoinParty_Coords(d, party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
-    s_triton.SchedulePrepare(DungeonSystem::GetMapIndex(d), kPrepareDelay);
+    // OnPlayerLogin starts preparation after the first member reaches GAME.
     return true;
 }
 

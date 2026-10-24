@@ -1031,6 +1031,7 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
         return;
     }
 
+    ecs::SocialSystem::SetDungeon(character, d);
     SetOutsideWarpLocation(character);
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
@@ -1111,6 +1112,9 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     if (!ecs::PlayerRuntime::IsValid(npc) || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
+    if (ecs::PlayerRuntime::GetMapIndex(character) != ecs::PlayerRuntime::GetMapIndex(npc))
+        return false;
+
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(npc);
     const time_t now = get_global_time();
 
@@ -1137,9 +1141,11 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return true;
         }
 
-        DungeonSystem::SetFlag(d, rewardFlag, 1);
-        ItemSystem::AutoGiveItemEcs(character, kRewardItemVnum, kRewardItemCount);
-        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reward received.");
+        if (ItemSystem::AutoGiveItemEcs(character, kRewardItemVnum, kRewardItemCount) != entt::null)
+        {
+            DungeonSystem::SetFlag(d, rewardFlag, 1);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reward received.");
+        }
         return true;
     }
 
@@ -1155,8 +1161,8 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         const entt::entity d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
         if (d != entt::null && DungeonSystem::GetFlag(d, kFlagCompleted) == 0 && DungeonSystem::GetFlag(d, kFlagBlockRejoin) == 0)
         {
-            ecs::MovementSystem::WarpSet(character, kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
-            ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
+            if (ecs::MovementSystem::WarpSet(character, kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx))
+                ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
             return true;
         }
     }
@@ -1335,6 +1341,10 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
 bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item)
 {
+    if (!ecs::PlayerRuntime::IsValid(from) || !ecs::PlayerRuntime::IsValid(npc) ||
+        ecs::PlayerRuntime::GetMapIndex(from) != ecs::PlayerRuntime::GetMapIndex(npc))
+        return false;
+
     if (!ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::CanConsumeOwnedItem(from, item) || !ecs::PlayerRuntime::IsPC(from))
         return false;
 
@@ -1441,6 +1451,11 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::en
 
 void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim) ||
+        !ecs::PlayerRuntime::IsPC(killer) ||
+        ecs::PlayerRuntime::GetMapIndex(killer) != ecs::PlayerRuntime::GetMapIndex(victim))
+        return;
+
     if (!ecs::PlayerRuntime::IsValid(victim) || !ecs::PlayerRuntime::IsPC(killer))
         return;
 

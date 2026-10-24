@@ -467,8 +467,14 @@ int DungeonSystem::GetFlag(entt::entity dungeon, std::string key) {
     const auto it = state->flags.find(key);
     return it != state->flags.end() ? it->second : 0;
 }
-// The leave hook is exercised by the dungeon migration test, not here.
-void ecs::SocialSystem::ClearDungeonIfOtherMap(entt::entity, int32_t) {}
+// Model the relation effect at the movement/service boundary. A return-point
+// setter must never reach this hook; only an actual map transfer may do so.
+void ecs::SocialSystem::ClearDungeonIfOtherMap(entt::entity e, int32_t mapIndex) {
+    auto* membership = g_registry.try_get<ecs::DungeonMembership>(e);
+    if (!membership || !g_registry.valid(membership->dungeon)) return;
+    const auto* dungeon = g_registry.try_get<ecs::DungeonState>(membership->dungeon);
+    if (dungeon && dungeon->mapIndex != mapIndex) membership->dungeon = entt::null;
+}
 float CMotionManager::GetMoveSpeed(uint32_t vnum, bool walking) const {
     const auto it = moveSpeeds.find({vnum, walking}); return it == moveSpeeds.end() ? 0.0f : it->second;
 }
@@ -1599,6 +1605,25 @@ void NativeWarpLocations() {
     Check(ecs::MovementSystem::GetExitLocation(entt::null).mapIndex == 0, "the null handle carried an exit");
 }
 
+void DungeonReturnLocationKeepsMembership() {
+    Reset();
+    const auto player = Entity(ecs::SpatialKind::Character), dungeon = g_registry.create();
+    g_registry.emplace_or_replace<ecs::TagPC>(player);
+    g_registry.emplace<ecs::DungeonState>(dungeon).mapIndex = 3520000;
+    g_registry.emplace<ecs::DungeonMembership>(player).dungeon = dungeon;
+    // nemere_zone.login calls pc.set_warp_location(219,5354,14284).
+    ecs::MovementSystem::SetWarpLocation(player, 219, 5354, 14284);
+    Check(g_registry.get<ecs::DungeonMembership>(player).dungeon == dungeon,
+        "Nemere return-point setup cleared pc.in_dungeon before the boss kill");
+    Check(ecs::MovementSystem::GetWarpLocation(player).mapIndex == 219,
+        "return-point setup lost the exit destination");
+    // WarpEnd clears a consumed destination; the player has just arrived,
+    // so this must not remove the new dungeon membership either.
+    ecs::MovementSystem::SetWarpLocationRaw(player, 0, 0, 0);
+    Check(g_registry.get<ecs::DungeonMembership>(player).dungeon == dungeon,
+        "clearing the consumed warp removed dungeon membership");
+}
+
 // Show's height sentinel. The wrapper resolved LONG_MAX for its own
 // SyncPositionComponents call and then handed the raw value to CHARACTER::Show,
 // which synced a second time - so every caller that let z default wrote
@@ -1660,6 +1685,15 @@ void ShownMountFollowAndRemoval() {
         return e;
     };
     const auto owner = character(true, 7000), observer = character(true, 6800);
+    const auto dungeon = g_registry.create();
+    g_registry.emplace<ecs::DungeonState>(dungeon).mapIndex = 3;
+    g_registry.emplace<ecs::DungeonMembership>(owner).dungeon = dungeon;
+    Check(ecs::MovementSystem::Show(owner, 3, 7000, 100, 0) &&
+        g_registry.get<ecs::DungeonMembership>(owner).dungeon == dungeon,
+        "same-map Show detached a dungeon member");
+    Check(!ecs::MovementSystem::Show(owner, 4, 7000, 100, 0) &&
+        g_registry.get<ecs::DungeonMembership>(owner).dungeon == dungeon,
+        "rejected Show detached a dungeon member");
     entt::entity previous = entt::null;
     for (int cycle = 0; cycle < 2; ++cycle) {
         const auto follower = character(false, 6200);
@@ -1697,6 +1731,10 @@ void ShownMountFollowAndRemoval() {
         Check(!map.At(6800, 100)->Contains(follower), "retired mount retained sector membership");
         previous = follower;
     }
+    MapFixture lobby(4);
+    Check(ecs::MovementSystem::Show(owner, 4, 100, 100, 0) &&
+        g_registry.get<ecs::DungeonMembership>(owner).dungeon == entt::null,
+        "actual map departure kept dungeon membership");
 }
 
 void NativeAIScheduleStorage() {
@@ -1922,7 +1960,8 @@ int main() {
         NativeMovement(); MovementPacketInitializesTheCommand(); ElapsedMovementTiming(); WalkModeOwnership(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
-        NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations(); ShowHeightSentinel();
+        NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations();
+        DungeonReturnLocationKeepsMembership(); ShowHeightSentinel();
         ShownMountFollowAndRemoval();
         NativeRecoveryTimers();
         Reset(); ecs::VisibilitySystem::Shutdown(g_registry);

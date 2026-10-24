@@ -2583,6 +2583,21 @@ egylépéses visszavonás, azonosító közepén javítás UTF-16-os kurzorpozí
 meglévő argumentumok megtartása. Kommentek, hosszú sztringek, ismeretlen
 névterek, JSON, kijelölés és fájlváltás esetén nem marad nyitott téves lista.
 
+### Nemere / piramis regressziók (2026-10-23)
+
+A `SpatialLifecycleTests` ellenőrzi, hogy `SetWarpLocation` (questes kijárat)
+és `SetWarpLocationRaw(...,0,0,0)` (a beérkezett warp nullázása) megtartja
+a dungeon-tagságot, míg az érvényes másik mapra helyezés megszünteti azt.
+Ugyanazon a mapon maradás és sikertelen `Show` sem választhat le.
+
+A `LuaSourceTests` a 6191-es kill feltételének valódi forrásból összeállított
+Lua-kódján ellenőrzi a tagság-, map- és emeletfeltételt, valamint a befejezést
+és kijáratot. A `DungeonLifecycleTests` már a valódi piramisvezérlőt is linkeli:
+késleltetett érkezés, egyszeri előkészítés, teljes 7 metines/bossos menet,
+partytag első érkezése, hiányzó instancia, idegen mapon megölt mob, helyes
+visszalépési koordináták és sikertelen warp után megőrzött visszatérési adatok.
+Részletek és játékteszt: `docs/dungeon_audit_2026-10-23.md`.
+
 ### Eltérésalapú távoli feltöltés
 
 A `ServerManagerRemoteWorkTests.py` a tartalom szerinti összehasonlítást,
@@ -2597,3 +2612,42 @@ fájl/mappa ütközés. A Qt-próba a valódi workerrel, helyi alfolyamatokon á
 futtatja az összehasonlítás → staging → SFTP-másolat → commit folyamatot;
 változatlan vagy csak nem engedélyezett törléseket tartalmazó listán tiltott
 a feltöltés, cél- vagy SSH-cím módosításakor elvész a korábbi terv.
+
+### Teljes dungeonvizsgálat (2026-10-24)
+
+A `DungeonLifecycleTests` a valódi dungeonimplementációt és mind a kilenc
+aktív C++ dungeonvezérlőt linkeli. Ellenőrzi a privát instanciák elszigetelését,
+a halott/alapmapot váltott entitások kiszűrését, a prototípusonkénti számlálást,
+a sebezhetetlen mobok jutalom nélküli takarítását, késői és nem partyvezetői
+érkezést, Orc/Triton kapukat, Valentine/Easter teljes kezdeti hullámait és
+bossbefejezését, Rune/Nightmare indulást, emeletfüggő visszalépést és sikertelen
+warp utáni megőrzött adatokat. A Halloween/Viking ládateszt ellenőrzi a jutalom
+kézbesítését, a sikertelen átadás újrapróbálását és a duplázás elutasítását.
+
+A `DungeonQuestTests.cpp` a `LuaSourceTests` része. A repositoryban tárolt
+15 questet a valódi parserrel és eseménykód-generátorral tölti Lua 5.5-be.
+Mindegyiknél fut az első, nem vezető partytag loginja, az ismételt login és
+az előkészítési időzítő. A majom teljes többemeletes menete, 73 kezdeti mob,
+közös lándzsaszámláló, 47 végső őr, boss, négy rejoinpont és hiányzó spawnok
+külön esetek. Meley jutalom és Bezárás, hiányzó Dragon/Spider boss,
+Razador notice és ismételt befejezés is szerepel. Az
+`AURIGA_DUNGEON_TEST_SOURCES` változó külön másolatra irányíthatja a questeket
+eredeti/mutált forrás elleni próbához, a serving fájlok módosítása nélkül.
+
+A `CombatStateTests` valódi `DistributeExp` hívással ellenőrzi a nulla EXP
+melletti kill-jóváírást és az eltűnt/távoli/másik mapon lévő sebző elutasítását.
+A szolgáltatáshelyettesítők nem kapcsolódnak SQL-hez vagy hálózathoz.
+
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer ServerPackageCheck DungeonLifecycleTests CombatStateTests LuaSourceTests SpatialLifecycleTests QuestRuntimeTests --parallel 6
+ctest --test-dir build -C RelWithDebInfo -R '^(dungeon_lifecycle|combat_state|spatial_lifecycle|lua_sources|quest_runtime)$' --output-on-failure
+python -B tests/server/ServerPackageToolsTests.py --checker build/SRC/Server/GameServer/RelWithDebInfo/ServerPackageCheck.exe
+```
+
+A `ServerPackageToolsTests.py` az ismert eredeti dungeonfájlok javítását és az
+egyedileg módosított források megőrzését, a csomag integritását és az ismételt
+alkalmazást is ellenőrzi. Az LF/CRLF különbség nem számít egyedi tartalomnak.
+
+A regressziók nem helyettesítik a valódi klienssel végzett játékpróbát: a spawn,
+regen, hálózat és SQL a natív tesztekben helyettesített szolgáltatás. A vizsgált
+kör, a hibák eredete és a telepítés: `docs/dungeon_audit_2026-10-24.md`.

@@ -1564,6 +1564,11 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
 
 void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim) ||
+        !ecs::PlayerRuntime::IsPC(killer) ||
+        ecs::PlayerRuntime::GetMapIndex(killer) != ecs::PlayerRuntime::GetMapIndex(victim))
+        return;
+
     if (!ecs::PlayerRuntime::IsValid(victim))
         return;
 
@@ -1613,6 +1618,10 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
 bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity itemEntity)
 {
+    if (!ecs::PlayerRuntime::IsValid(from) || !ecs::PlayerRuntime::IsValid(npc) ||
+        ecs::PlayerRuntime::GetMapIndex(from) != ecs::PlayerRuntime::GetMapIndex(npc))
+        return false;
+
     if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::IsValidItem(itemEntity))
         return false;
 

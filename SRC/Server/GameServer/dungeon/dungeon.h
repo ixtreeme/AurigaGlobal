@@ -94,7 +94,7 @@ namespace DungeonSystem
 	// count behind (B4).
 	void AddMonster(entt::entity dungeon, entt::entity monster);
 	void RemoveMonster(entt::entity monster);
-	int32_t CountMonster(entt::entity dungeon);
+	int32_t CountMonster(entt::entity dungeon, uint32_t vnum = 0);
 
 	// The character-side relation. SocialSystem::SetDungeon/GetDungeon and the
 	// movement leave hook delegate here, so the membership bookkeeping lives

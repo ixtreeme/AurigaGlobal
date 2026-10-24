@@ -782,7 +782,10 @@ ALUA(dungeon_update_rank)
 			return 1;
 		}
 
-		lua_pushnumber(L, DungeonSystem::CountMonster(dungeon));
+		// The first argument is always the private map index. An optional
+		// prototype filter excludes invincible gates/bosses from wave checks.
+		const uint32_t vnum = lua_isnumber(L, 2) ? (uint32_t)lua_tonumber(L, 2) : 0;
+		lua_pushnumber(L, DungeonSystem::CountMonster(dungeon, vnum));
 		return 1;
 	}
 

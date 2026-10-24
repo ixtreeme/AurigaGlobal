@@ -385,6 +385,8 @@ void CNightmareDungeonRazor93::OnPlayerLogin(entt::entity character)
     if (d == entt::null)
         return;
 
+    ecs::SocialSystem::SetDungeon(character, d);
+
     if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
     {
         DungeonSystem::SetFlag(d, kFlagFloor, 2);
@@ -397,6 +399,11 @@ void CNightmareDungeonRazor93::OnPlayerLogin(entt::entity character)
 
 void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victim)
 {
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim) ||
+        !ecs::PlayerRuntime::IsPC(killer) ||
+        ecs::PlayerRuntime::GetMapIndex(killer) != ecs::PlayerRuntime::GetMapIndex(victim))
+        return;
+
     if (!ecs::PlayerRuntime::IsValid(victim) || !ecs::PlayerRuntime::IsPC(killer))
         return;
 
@@ -500,8 +507,8 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
             if (d != entt::null && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0 && DungeonSystem::GetFlag(d, kFlagFloor) == 2)
             {
                 ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Rejoining...");
-                ecs::MovementSystem::WarpSet(character, kRejoinX, kRejoinY, rejoinIdx);
-                ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
+                if (ecs::MovementSystem::WarpSet(character, kRejoinX, kRejoinY, rejoinIdx))
+                    ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
                 return true;
             }
         }

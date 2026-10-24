@@ -88,6 +88,23 @@
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
+// Out-of-line keys emit RTTI for the service doubles on Clang/ELF too.
+// None of these services is constructed or connected by this fixture.
+CMobManager::~CMobManager() = default;
+SECTREE_MANAGER::~SECTREE_MANAGER() = default;
+marriage::CManager::~CManager() = default;
+DBManager::~DBManager() = default;
+CPVPManager::~CPVPManager() = default;
+quest::CQuestManager::~CQuestManager() = default;
+CGuildManager::~CGuildManager() = default;
+LogManager::~LogManager() = default;
+CBattlePass::~CBattlePass() = default;
+CShopManager::~CShopManager() = default;
+ITEM_MANAGER::~ITEM_MANAGER() = default;
+CSkillManager::~CSkillManager() = default;
+CAsyncSQL::~CAsyncSQL() = default;
+CSemaphore::~CSemaphore() = default;
+quest::NPC::~NPC() = default;
 const TMobRankStat MobRankStats[MOB_RANK_MAX_NUM] {};
 const uint32_t party_exp_distribute_table[PLAYER_EXP_TABLE_MAX + 1] {};
 const int* aiPercentByDeltaLev = nullptr;
@@ -102,11 +119,12 @@ namespace C = CombatSystem;
 namespace {
 struct BattleFixture {
     std::array<int64_t, 256> points {};
-    int level {90}, x {0}, y {0};
+    int level {90}, x {0}, y {0}, map {2};
     uint8_t job {JOB_WARRIOR}, skillGroup {0};
     uint32_t lastMove {0};
     int hp {500}, maxHP {1000}, sp {0}, maxSP {1000};
     uint32_t race {0};
+    uint32_t exp {0};
     entt::entity weapon {entt::null};
     bool riding {false};
 };
@@ -341,7 +359,7 @@ uint64_t ecs::PlayerRuntime::GetHP(entt::entity e) { AssertActor(e); return g_re
 int ecs::PlayerRuntime::GetHPPct(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetAIFlag(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetJob(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).job; }
-int ecs::PlayerRuntime::GetMapIndex(entt::entity e) { AssertActor(e); return 2; }
+int ecs::PlayerRuntime::GetMapIndex(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).map; }
 int ecs::PlayerRuntime::GetX(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).x; }
 int ecs::PlayerRuntime::GetY(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).y; }
 bool ecs::PlayerRuntime::IsValid(entt::entity e) { return ecs::Invariants::HasAnyTypeTag(g_registry,e); }
@@ -381,7 +399,7 @@ void ecs::PointSystem::Change(entt::entity e,unsigned char point,int64_t amount,
     auto& data = g_registry.get<BattleFixture>(e); ++spChanges;
     data.sp = static_cast<int32_t>(std::clamp<int64_t>(int64_t(data.sp) + amount, 0, data.maxSP));
 }
-entt::entity ecs::SocialSystem::GetParty(entt::entity) { UnexpectedService(__func__); }
+entt::entity ecs::SocialSystem::GetParty(entt::entity) { return entt::null; }
 entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) { UnexpectedService(__func__); }
 int64_t ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
 void ecs::QuestSystem::SetFlag(entt::entity,std::string_view,int64_t) { UnexpectedService(__func__); }
@@ -412,8 +430,8 @@ void MountSystem::SetMountVnum(entt::entity,uint32_t) { UnexpectedService(__func
 bool ecs::SessionSystem::IsCubeOpen(entt::entity) { UnexpectedService(__func__); }
 void ecs::SessionSystem::SetCubeNPC(entt::entity,entt::entity) { UnexpectedService(__func__); }
 uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { UnexpectedService(__func__); }
-uint32_t ecs::PlayerRuntime::GetExp(entt::entity) { UnexpectedService(__func__); }
-void ecs::PlayerRuntime::SetExp(entt::entity,uint32_t) { UnexpectedService(__func__); }
+uint32_t ecs::PlayerRuntime::GetExp(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).exp; }
+void ecs::PlayerRuntime::SetExp(entt::entity e,uint32_t value) { AssertActor(e);g_registry.get<BattleFixture>(e).exp=value; }
 void AffectSystem::ClearAffect(entt::entity,bool) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetMonsterDrainSPPoint(entt::entity) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SetRotationToXY(entt::entity, int, int) { UnexpectedService(__func__); }
@@ -485,7 +503,7 @@ entt::entity DungeonSystem::GetMast(entt::entity) { UnexpectedService(__func__);
 void DungeonSystem::SetMast(entt::entity, entt::entity) { UnexpectedService(__func__); }
 void DungeonSystem::RemoveMonster(entt::entity) { UnexpectedService(__func__); }
 void DungeonSystem::RestoreMastPartialHP(entt::entity) { UnexpectedService(__func__); }
-int32_t DungeonSystem::CountMonster(entt::entity) { UnexpectedService(__func__); }
+int32_t DungeonSystem::CountMonster(entt::entity, uint32_t) { UnexpectedService(__func__); }
 void DungeonSystem::UpdateMastHP(entt::entity) { UnexpectedService(__func__); }
 int MountSystem::GetHorseHealth(entt::entity) { UnexpectedService(__func__); }
 int MountSystem::GetHorseMaxHealth(entt::entity) { UnexpectedService(__func__); }
@@ -1190,9 +1208,25 @@ void NativeSPRecoveryChecks() {
     Check(spChanges == previous, "invalid SP participants were accepted");
 }
 }
+void ZeroExpKillCreditChecks() {
+    Reset();
+    const auto objective=Actor(), first=Actor(), second=Actor(), wrongMap=Actor(), away=Actor(), stale=Actor();
+    for (auto e:{objective,first,second,wrongMap,away,stale}) g_registry.emplace<ecs::TagCharacter>(e);
+    auto& ledger=C::DamageLedgerOf(objective).entries;
+    ledger[first].totalDamage=30;ledger[second].totalDamage=70;
+    ledger[wrongMap].totalDamage=1000;g_registry.get<BattleFixture>(wrongMap).map=3;
+    ledger[away].totalDamage=2000;g_registry.get<BattleFixture>(away).x=6000;
+    ledger[stale].totalDamage=3000;g_registry.destroy(stale);
+    Check(C::DistributeExp(objective)==second,"zero EXP objective lost kill credit or credited another map");
+    Check(g_registry.get<BattleFixture>(objective).exp==0 && spChanges==0,"zero EXP objective ran reward-point delivery");
+    C::ClearDamageLedger(objective);
+    Check(C::DistributeExp(objective)==entt::null,"cleanup without contributions invented kill credit");
+    Check(C::DistributeExp(entt::null)==entt::null,"invalid objective received credit");
+}
 int main() {
     try {
         CHARACTER_MANAGER characters;
+        ZeroExpKillCreditChecks();
         NativeSPRecoveryChecks(); AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
         BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();
         DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); MetinStoneDropChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../ecs/components/character_runtime_components.hpp"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
@@ -287,7 +288,7 @@ namespace DungeonSystem
 			state->monsters.erase(monster);
 	}
 
-	int32_t CountMonster(entt::entity dungeon)
+	int32_t CountMonster(entt::entity dungeon, uint32_t vnum)
 	{
 		ecs::DungeonState* state = Find(dungeon);
 		if (!state)
@@ -301,11 +302,13 @@ namespace DungeonSystem
 		{
 			const entt::entity monster = *it;
 
-			if (monster == entt::null || !g_registry.valid(monster))
+			if (monster == entt::null || !g_registry.valid(monster) ||
+				CombatSystem::IsDead(monster) || GetMemberDungeon(monster) != dungeon)
 				it = state->monsters.erase(it);
 			else
 			{
-				++count;
+				if (vnum == 0 || ecs::PlayerRuntime::GetRaceNum(monster) == vnum)
+					++count;
 				++it;
 			}
 		}
@@ -557,6 +560,16 @@ namespace DungeonSystem
 			const char * m_psz;
 		};
 
+		void KillForCleanup(entt::entity character)
+		{
+			// Administrative cleanup must remove protected bosses too, without
+			// replaying a player's old damage ledger as another quest kill.
+			auto& flags = g_registry.get_or_emplace<ecs::CharacterRuntimeFlagsComponent>(character);
+			SET_BIT(flags.instantFlag, INSTANT_FLAG_NO_REWARD);
+			CombatSystem::SetInvincible(character, false);
+			CombatSystem::Dead(character);
+		}
+
 		struct FKillSectree
 		{
 			void operator () (entt::entity character)
@@ -570,7 +583,7 @@ namespace DungeonSystem
 #endif
 				)
 				{
-					CombatSystem::Dead(character);
+					KillForCleanup(character);
 				}
 			}
 		};
@@ -584,7 +597,7 @@ namespace DungeonSystem
 
 				if (!ecs::PlayerRuntime::IsPC(character) && (ecs::PlayerRuntime::GetCharType(character) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(character)))
 				{
-					CombatSystem::Dead(character);
+					KillForCleanup(character);
 				}
 			}
 		};
@@ -602,7 +615,7 @@ namespace DungeonSystem
 					int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(character);
 					if (racevnum != 3963 && racevnum != 3964)
 					{
-						CombatSystem::Dead(character);
+						KillForCleanup(character);
 					}
 				}
 			}

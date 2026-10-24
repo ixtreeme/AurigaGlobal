@@ -3,6 +3,7 @@ import argparse
 import contextlib
 import importlib.util
 import io
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -19,6 +20,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / 'SRC/Tools'))
 from server_package.legacy import central_config, sql_connection, PackageError
 from server_package.data import DataBuilder, write_json, module as converter_module
+from server_package.dungeon_resources import apply_known_dungeon_fixes, RESOURCES
 from server_package import manage
 import prepare_server
 CHECKER = None
@@ -44,6 +46,61 @@ class PackageToolsTests(unittest.TestCase):
         self.assertEqual(node['columns'], list(map(str, range(7))))
         self.assertEqual(list(node['rows']['step_lowest'].values()), ['3','4','5','6','0','0','0'])
         self.assertEqual(node['rows']['short'], {'0':'8','1':'10'})
+    def dungeon_resources(self, names=('sample',)):
+        resources = self.root / 'resources'
+        entries = {}
+        for name in names:
+            relative = 'quest/Quest/dungeon/' + name + '.lua'
+            old, fixed = b'-- original\r\n', b'-- fixed\n'
+            replacement = resources / relative
+            replacement.parent.mkdir(parents=True, exist_ok=True)
+            replacement.write_bytes(fixed)
+            target = self.root / 'data' / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(old)
+            entries[relative] = dict(previous_sha256=hashlib.sha256(old).hexdigest(),
+                previous_lf_sha256=hashlib.sha256(old.replace(b'\r\n', b'\n')).hexdigest(),
+                fixed_sha256=hashlib.sha256(fixed).hexdigest())
+        write_json(resources / 'dungeon-fixes.json', dict(version=1, files=entries))
+        return resources, self.root / 'data'
+    def test_dungeon_fixes_update_only_known_originals_and_are_idempotent(self):
+        resources, data = self.dungeon_resources(('sample', 'lf', 'custom', 'missing'))
+        (resources / 'quest/Quest/dungeon/lf.lua').write_bytes(b'-- fixed\r\n')
+        (data / 'quest/Quest/dungeon/lf.lua').write_bytes(b'-- original\n')
+        custom = data / 'quest/Quest/dungeon/custom.lua'
+        custom.write_bytes(b'-- developer changes\n')
+        (data / 'quest/Quest/dungeon/missing.lua').unlink()
+        report = apply_known_dungeon_fixes(data, resources)
+        self.assertEqual(len(report['applied']), 2)
+        self.assertEqual(report['custom'], ['quest/Quest/dungeon/custom.lua'])
+        self.assertEqual(report['missing'], ['quest/Quest/dungeon/missing.lua'])
+        self.assertEqual(custom.read_bytes(), b'-- developer changes\n')
+        self.assertEqual((data / 'quest/Quest/dungeon/sample.lua').read_bytes(), b'-- fixed\n')
+        report = apply_known_dungeon_fixes(data, resources)
+        self.assertEqual(report['applied'], [])
+        self.assertEqual(len(report['current']), 2)
+    def test_corrupt_dungeon_bundle_is_rejected_before_any_write(self):
+        resources, data = self.dungeon_resources(('first', 'broken'))
+        (resources / 'quest/Quest/dungeon/broken.lua').write_bytes(b'CORRUPT')
+        with self.assertRaisesRegex(PackageError, 'checksum mismatch'):
+            apply_known_dungeon_fixes(data, resources)
+        self.assertEqual((data / 'quest/Quest/dungeon/first.lua').read_bytes(), b'-- original\r\n')
+    def test_tracked_dungeon_bundle_checksums_and_untouched_unknown_sources(self):
+        data = self.root / 'data'
+        unknown = data / 'quest/Quest/dungeon/new_dungeon.lua'
+        unknown.parent.mkdir(parents=True)
+        unknown.write_bytes(b'CUSTOM')
+        report = apply_known_dungeon_fixes(data)
+        self.assertEqual(len(report['missing']), 15)
+        self.assertEqual(unknown.read_bytes(), b'CUSTOM')
+        manifest = json.loads((RESOURCES / 'dungeon-fixes.json').read_text())
+        for relative in manifest['files']:
+            target = data / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((RESOURCES / relative).read_bytes())
+        report = apply_known_dungeon_fixes(data)
+        self.assertEqual(len(report['current']), 15)
+        self.assertEqual(report['applied'], [])
     def test_packaged_database_runtime_is_preferred(self):
         binaries = self.root / 'tools/mariadb/bin'
         binaries.mkdir(parents=True)

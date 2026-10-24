@@ -298,12 +298,8 @@ void SetWarpLocationRaw(entt::entity e, int32_t mapIndex, int32_t x, int32_t y)
     if (!IsValid(e))
         return;
 
-    // The dungeon membership only lives while the character is on the
-    // dungeon's map. Without this an ex-member stayed counted, and a set that
-    // looked empty tore the instance down under the rest of the party.
-    if (ecs::PlayerRuntime::IsPC(e))
-        ecs::SocialSystem::ClearDungeonIfOtherMap(e, mapIndex);
-
+    // This is also pc.set_warp_location's return point, and WarpEnd clears it
+    // after arrival. Neither operation moves the character out of a dungeon.
     auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(e);
     warp.x = x;
     warp.y = y;
@@ -498,6 +494,10 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
         LOG_INFO("cannot find sectree by {}x{} mapindex {}", x, y, lMapIndex);
         return false;
     }
+    // Commit membership changes only after a real destination was accepted.
+    // Saving an exit location must leave pc.in_dungeon() true during the run.
+    if (ecs::PlayerRuntime::IsPC(e))
+        ecs::SocialSystem::ClearDungeonIfOtherMap(e, lMapIndex);
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     if (!ecs::PlayerRuntime::GetCharEvent(e, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
     {
@@ -797,6 +797,7 @@ bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
         ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
     }
 
+    ecs::SocialSystem::ClearDungeonIfOtherMap(e, lMapIndex);
     SetWarpLocationRaw(e, lMapIndex, x, y);
 
     LOG_INFO("WarpSet {} {} {} current map {} target map {}", ecs::PlayerRuntime::GetName(e).data(), x, y, ecs::PlayerRuntime::GetMapIndex(e), lMapIndex);

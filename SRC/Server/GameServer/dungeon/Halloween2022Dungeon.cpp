@@ -625,6 +625,7 @@ void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
             return;
         }
 
+        ecs::SocialSystem::SetDungeon(character, d);
         SetOutsideWarpLocation(character);
         ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
         ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
@@ -638,6 +639,9 @@ void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
 bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 {
     if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::IsValid(npc))
+        return false;
+
+    if (ecs::PlayerRuntime::GetMapIndex(character) != ecs::PlayerRuntime::GetMapIndex(npc))
         return false;
 
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(npc);
@@ -680,7 +684,8 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return true;
         }
 
-        DungeonSystem::SetFlag(d, rewardFlag, 1);
+        if (ItemSystem::AutoGiveItemEcs(character, kRewardItemVnum, kRewardItemCount) != entt::null)
+            DungeonSystem::SetFlag(d, rewardFlag, 1);
         return true;
     }
 
@@ -699,11 +704,10 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
             if (d != entt::null && DungeonSystem::GetFlag(d, kFlagCompleted) == 0)
             {
                 const int32_t floor = std::max(1, DungeonSystem::GetFlag(d, kFlagFloor));
-                if (floor == 1)
-                    ecs::MovementSystem::WarpSet(character, kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
-                else
-                    ecs::MovementSystem::WarpSet(character, kRejoinFloor2GlobalX * 100, kRejoinFloor2GlobalY * 100, rejoinIdx);
-                ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
+                if (ecs::MovementSystem::WarpSet(character,
+                    (floor == 1 ? kEnterGlobalX : kRejoinFloor2GlobalX) * 100,
+                    (floor == 1 ? kEnterGlobalY : kRejoinFloor2GlobalY) * 100, rejoinIdx))
+                    ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
                 return true;
             }
         }
@@ -861,6 +865,11 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
 void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim) ||
+        !ecs::PlayerRuntime::IsPC(killer) ||
+        ecs::PlayerRuntime::GetMapIndex(killer) != ecs::PlayerRuntime::GetMapIndex(victim))
+        return;
+
     if (!ecs::PlayerRuntime::IsValid(victim) || !ecs::PlayerRuntime::IsPC(killer))
         return;
 
@@ -1047,7 +1056,8 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
             ClearRejoinFlags(pc);
         });
 
-        DungeonSystem::SpawnMob(d, kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
+        DungeonSystem::SpawnMob(d, kEntryNpcVnum, kRewardChestPos.x + 4, kRewardChestPos.y, kRewardChestPos.dir);
+        DungeonSystem::SpawnMob(d, kRewardChestVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
        // NoticeMap(idx, "<Bloody cathedral> You can now take your reward from the chest.");
 
         char tmp[64];
@@ -1060,6 +1070,10 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
 
 bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item)
 {
+    if (!ecs::PlayerRuntime::IsValid(from) || !ecs::PlayerRuntime::IsValid(npc) ||
+        ecs::PlayerRuntime::GetMapIndex(from) != ecs::PlayerRuntime::GetMapIndex(npc))
+        return false;
+
     if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::CanConsumeOwnedItem(from, item))
         return false;
 

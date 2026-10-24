@@ -49,9 +49,10 @@ namespace
     constexpr int32_t kJoinX = 9796;
     constexpr int32_t kJoinY = 23660;
 
-    // Rejoin warp coords (Lua: pc.warp(218600, 348900, rejoinIDX))
-    constexpr int32_t kRejoinWarpX100 = 218600;
-    constexpr int32_t kRejoinWarpY100 = 348900;
+    // Rejoin must resolve to map 357, just like the initial entry. The old
+    // copied coordinates belonged to another map and WarpSet rejected them.
+    constexpr int32_t kRejoinWarpX100 = kJoinX * 100;
+    constexpr int32_t kRejoinWarpY100 = kJoinY * 100;
 
     // Exit / lobby warp location (Lua: pc.set_warp_location(219, 5354, 14284))
     constexpr int32_t kLobbyMap = 219;
@@ -350,26 +351,28 @@ void CPyramidDungeonRazor93::OnPlayerLogin(entt::entity character)
     if (!IsPyramidDungeonMap(mapIdx))
         return;
 
+    const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIdx);
+    if (d == entt::null)
+    {
+        ResetRejoinFlags(character);
+        ecs::MovementSystem::WarpSet(character, kLobbyX * 100, kLobbyY * 100);
+        return;
+    }
+    ecs::SocialSystem::SetDungeon(character, d);
+
     // Set exit location as in Lua
     ecs::MovementSystem::SetWarpLocation(character, kLobbyMap, kLobbyX, kLobbyY);
     ecs::QuestSystem::SetFlag(character, kQfIdx, mapIdx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
-    // Safety: if dungeon is uninitialized, initialize like Lua login does.
-    const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIdx);
-    if (d == entt::null)
-        return;
-
+    // Start after the first actual arrival, not while the entrance NPC's
+    // player is still loading. Any member may arrive before the leader.
     if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
     {
-        const entt::entity party = ecs::SocialSystem::GetParty(character);
-        if (party == entt::null || PartySystem::GetLeaderPID(party) == ecs::PlayerRuntime::GetPlayerID(character))
-        {
-            DungeonSystem::SetFlag(d, kFlagFloor, 2);
-            DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
-            DungeonSystem::SetFlag(d, kFlagBossSpawned, 0);
-            s_pyr.SchedulePrepare(mapIdx, 1);
-        }
+        DungeonSystem::SetFlag(d, kFlagFloor, 2);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+        DungeonSystem::SetFlag(d, kFlagBossSpawned, 0);
+        s_pyr.SchedulePrepare(mapIdx, 1);
     }
 }
 
@@ -419,10 +422,9 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
                 const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
                 if (floor == 2)
                 {
-                    // Lua used pc.warp(218600, 348900, rejoinIDX)
                     ecs::MovementSystem::SaveExitLocation(character);
-                    ecs::MovementSystem::WarpSet(character, kRejoinWarpX100, kRejoinWarpY100, rejoinIdx);
-                    ResetRejoinFlags(character);
+                    if (ecs::MovementSystem::WarpSet(character, kRejoinWarpX100, kRejoinWarpY100, rejoinIdx))
+                        ResetRejoinFlags(character);
                     return true;
                 }
             }
@@ -540,7 +542,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
         return true;
     }
 
-    DungeonSystem::SetFlag(d, kFlagFloor, 2);
+    DungeonSystem::SetFlag(d, kFlagFloor, 0);
     DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
     DungeonSystem::SetFlag(d, kFlagBossSpawned, 0);
     DungeonSystem::SetFlag(d, kFlagStep, 0);
@@ -555,8 +557,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
         DungeonSystem::Join_Coords(d, character, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
-    // Prepare after 1 second (spawn metins etc.)
-    s_pyr.SchedulePrepare(DungeonSystem::GetMapIndex(d), 1);
+    // OnPlayerLogin schedules preparation once the first member is in GAME.
 
     return true;
 }
@@ -568,6 +569,8 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
 
     const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(killer);
     if (!IsPyramidDungeonMap(mapIdx))
+        return;
+    if (ecs::PlayerRuntime::GetMapIndex(victim) != mapIdx)
         return;
 
     const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIdx);

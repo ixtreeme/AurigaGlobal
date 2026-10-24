@@ -152,6 +152,7 @@ endif()
 add_executable(LuaSourceTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/LuaSourceTests.cpp
     ${CMAKE_SOURCE_DIR}/tests/server/NPCSourceTests.cpp
+    ${CMAKE_SOURCE_DIR}/tests/server/DungeonQuestTests.cpp
     quest/quest_source.cpp
     quest/questnpc.cpp
     quest/quest_runtime.cpp
@@ -401,6 +402,14 @@ add_executable(DungeonLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/DungeonLifecycleTests.cpp
     dungeon/dungeon.cpp
     dungeon/PyramidDungeonRazor93.cpp
+    dungeon/OrcsDungeon.cpp
+    dungeon/TritonTempleDungeon.cpp
+    dungeon/ValentineDungeon.cpp
+    dungeon/EasterDungeon.cpp
+    dungeon/NightmareDungeonRazor93.cpp
+    dungeon/RuneDungeon.cpp
+    dungeon/Halloween2022Dungeon.cpp
+    dungeon/VikingDungeon.cpp
 )
 target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME dungeon_lifecycle COMMAND DungeonLifecycleTests)

@@ -7,6 +7,7 @@
 #include <chrono>
 
 int CheckNPCSources(lua_State* L);
+int CheckDungeonQuests(lua_State* L);
 
 namespace {
 int checks = 0;
@@ -121,6 +122,7 @@ int main() {
         Check(LuaOpenQuestLibraries(L), "quest libraries failed to open");
         Parser(L); Coroutines(L); Lists(L);
         checks += CheckNPCSources(L);
+        checks += CheckDungeonQuests(L);
         Check(lua_gettop(L) == 0, "Lua stack leaked");
         lua_close(L);
         std::cout << checks << " Lua/source checks passed\n";

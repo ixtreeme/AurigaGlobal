@@ -46,7 +46,7 @@ int CheckNPCSources(lua_State* L) {
     auto check = [&](bool value, const char* error) { ++checks; if (!value) throw std::runtime_error(error); };
     quest::CQuestManager manager;
     manager.m_mapEventName = {{"login", QUEST_LOGIN_EVENT}, {"chat", QUEST_CHAT_EVENT},
-        {"click", QUEST_CLICK_EVENT}, {"server_timer", QUEST_SERVER_TIMER_EVENT}};
+        {"click", QUEST_CLICK_EVENT}, {"kill", QUEST_KILL_EVENT}, {"server_timer", QUEST_SERVER_TIMER_EVENT}};
     auto definition = quest::source::ParseLegacy(R"q(quest routing begin
         state start begin
             when login begin result=1 end
@@ -56,6 +56,14 @@ int CheckNPCSources(lua_State* L) {
             when blacksmith.click with true begin result=5 return end
             when blacksmith.click begin result=6 end
             when scheduled.server_timer begin result=7 end
+            when 6191.kill with pc.in_dungeon() begin
+                local idx=pc.get_map_index()
+                if idx >= 3520000 and idx < 3530000 and d.getf(idx,"floor") == 9 then
+                    d.setf(idx,"was_completed",1)
+                    d.complete(6191,2400,352,"nemere_zone")
+                    d.spawn_mob(idx,20395,927,335)
+                end
+            end
         end
         state running begin when 20016.chat."running" begin result=8 end end
     end)q", "routing.quest");
@@ -80,5 +88,33 @@ int CheckNPCSources(lua_State* L) {
     InspectNPC timer;
     timer.Set(UINT_MAX, "scheduled");
     check(timer.m_mapOwnQuest[QUEST_SERVER_TIMER_EVENT].at(71).contains(0), "named server timer missing");
+    InspectNPC nemere;
+    nemere.Set(6191, "6191"); // Boss does not need an alias in questnpc.json.
+    const auto& kill = nemere.m_mapOwnQuest[QUEST_KILL_EVENT].at(71).at(0);
+    const char* fixture = R"lua(
+        is_member=false; map_index=3520000; floor=9; completions=0; exit_npc=0
+        pc={in_dungeon=function() return is_member end,get_map_index=function() return map_index end}
+        d={getf=function() return floor end, setf=function(idx,key,value) completed=value end,
+            complete=function(vnum,cooldown,base,name)
+                assert(vnum==6191 and cooldown==2400 and base==352 and name=='nemere_zone')
+                completions=completions+1
+            end,
+            spawn_mob=function(idx,vnum,x,y) exit_npc=vnum end}
+    )lua";
+    check(lua_dobuffer(L,fixture,std::strlen(fixture),"@nemere-fixture")==LUA_OK,"Nemere fixture failed");
+    const auto runKill = [&] {
+        check(lua_dobuffer(L,kill.GetCode(),kill.GetSize(),"@nemere-kill")==LUA_OK,"Nemere kill handler failed");
+    };
+    runKill(); lua_getglobal(L,"completions");
+    check(lua_tointeger(L,-1)==0,"Nemere kill ignored the dungeon membership guard"); lua_pop(L,1);
+    for (const char* invalid : {"is_member=true; map_index=3519999", "map_index=3530000", "map_index=3520000; floor=8"}) {
+        check(lua_dobuffer(L,invalid,std::strlen(invalid),"@nemere-position")==LUA_OK,"Nemere state change failed");
+        runKill(); lua_getglobal(L,"completions");
+        check(lua_tointeger(L,-1)==0,"Nemere completed outside its map/floor"); lua_pop(L,1);
+    }
+    check(lua_dobuffer(L,"floor=9",7,"@nemere-floor")==LUA_OK,"Nemere floor change failed");
+    runKill(); lua_getglobal(L,"completions");
+    check(lua_tointeger(L,-1)==1,"Nemere boss kill did not reach completion"); lua_pop(L,1);
+    lua_getglobal(L,"exit_npc"); check(lua_tointeger(L,-1)==20395,"Nemere exit NPC was not spawned"); lua_pop(L,1);
     return checks;
 }

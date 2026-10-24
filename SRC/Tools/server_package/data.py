@@ -180,6 +180,15 @@ class DataBuilder:
                 count += motion.bake_folder(str(folder), out)
         self.notes.append('motion.sql: %d generated motion/splash rows' % count)
         result = self.patch_lua_paths(data)
+        from .dungeon_resources import apply_known_dungeon_fixes
+        result['dungeon_fixes'] = apply_known_dungeon_fixes(data)
+        if result['dungeon_fixes']['applied']:
+            # Validate the replacement handlers with the same native loader as
+            # the original quest migration; stored state IDs stay unchanged.
+            checked = reconcile(data / 'quest', self.checker, quest, duplicate_policy='last')
+            self.quest_report['dungeon_check'] = checked['check']
+        for relative in result['dungeon_fixes']['custom']:
+            self.notes.append('Dungeon fix skipped for custom source: ' + relative)
         result['quest_migration'] = self.quest_report
         return result
 

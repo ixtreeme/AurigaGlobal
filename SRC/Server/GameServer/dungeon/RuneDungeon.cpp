@@ -928,27 +928,24 @@ void CRuneDungeon::OnPlayerLogin(entt::entity character)
     if (d == entt::null)
         return;
 
-    // Start only once, only by leader / solo.
+    ecs::SocialSystem::SetDungeon(character, d);
+
+    // The first member to finish loading starts the run once.
     if (DungeonSystem::GetFlag(d, kFlagFloor) == 0)
     {
-        bool isLeader = true;
-        if (const entt::entity party = ecs::SocialSystem::GetParty(character); party != entt::null)
-        {
-            if (PartySystem::GetLeaderPID(party) != ecs::PlayerRuntime::GetPlayerID(character))
-                isLeader = false;
-        }
-
-        if (isLeader)
-        {
-            DungeonSystem::SetFlag(d, kFlagFloor, 1);
-            DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
-            s_rune.SchedulePrepare(idx, kPrepareDelay);
-        }
+        DungeonSystem::SetFlag(d, kFlagFloor, 1);
+        DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+        s_rune.SchedulePrepare(idx, kPrepareDelay);
     }
 }
 
 void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim) ||
+        !ecs::PlayerRuntime::IsPC(killer) ||
+        ecs::PlayerRuntime::GetMapIndex(killer) != ecs::PlayerRuntime::GetMapIndex(victim))
+        return;
+
     if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
         return;
 
@@ -1052,9 +1049,10 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     }
 
     // Floors 2-4: boss kill always advances (type 2 or type 3)
-    if (floor >= 2 && floor <= 4)
+    if (floor >= 2 && floor <= 4 && (type == 2 || type == 3))
     {
-        if (vnum == kBossFloor2 || vnum == kBossFloor3 || vnum == kBossFloor4)
+        const uint32_t expected = floor == 2 ? kBossFloor2 : floor == 3 ? kBossFloor3 : kBossFloor4;
+        if (vnum == expected)
         {
             s_rune.CreateRandomFloor(idx);
             return;
@@ -1163,6 +1161,10 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
 bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item)
 {
+    if (!ecs::PlayerRuntime::IsValid(from) || !ecs::PlayerRuntime::IsValid(npc) ||
+        ecs::PlayerRuntime::GetMapIndex(from) != ecs::PlayerRuntime::GetMapIndex(npc))
+        return false;
+
     if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::CanConsumeOwnedItem(from, item))
         return false;
 
@@ -1242,18 +1244,20 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
             if (d != entt::null && DungeonSystem::GetFlag(d, kFlagWasCompleted) == 0)
             {
                 const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
+                bool warped = false;
                 if (floor == 1)
-                    ecs::MovementSystem::WarpSet(character, kEnterFloor1X * 100, kEnterFloor1Y * 100, rejoinIdx);
+                    warped = ecs::MovementSystem::WarpSet(character, kEnterFloor1X * 100, kEnterFloor1Y * 100, rejoinIdx);
                 else if (floor == 2)
-                    ecs::MovementSystem::WarpSet(character, kEnterFloor2X * 100, kEnterFloor2Y * 100, rejoinIdx);
+                    warped = ecs::MovementSystem::WarpSet(character, kEnterFloor2X * 100, kEnterFloor2Y * 100, rejoinIdx);
                 else if (floor == 3)
-                    ecs::MovementSystem::WarpSet(character, kEnterFloor3X * 100, kEnterFloor3Y * 100, rejoinIdx);
+                    warped = ecs::MovementSystem::WarpSet(character, kEnterFloor3X * 100, kEnterFloor3Y * 100, rejoinIdx);
                 else if (floor == 4)
-                    ecs::MovementSystem::WarpSet(character, kEnterFloor4X * 100, kEnterFloor4Y * 100, rejoinIdx);
+                    warped = ecs::MovementSystem::WarpSet(character, kEnterFloor4X * 100, kEnterFloor4Y * 100, rejoinIdx);
                 else if (floor == 5)
-                    ecs::MovementSystem::WarpSet(character, kEnterFloor5X * 100, kEnterFloor5Y * 100, rejoinIdx);
+                    warped = ecs::MovementSystem::WarpSet(character, kEnterFloor5X * 100, kEnterFloor5Y * 100, rejoinIdx);
 
-                ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
+                if (warped)
+                    ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
                 return true;
             }
         }

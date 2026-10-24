@@ -1946,9 +1946,6 @@ entt::entity DistributeExp(entt::entity e)
 
 	int iExpToDistribute = ecs::PlayerRuntime::GetExp(e);
 
-	if (iExpToDistribute <= 0)
-		return entt::null;
-
 	uint64_t	iTotalDam = 0;
 	entt::entity pkChrMostAttacked = entt::null;
 	uint64_t iMostDam = 0;
@@ -1969,7 +1966,9 @@ entt::entity DistributeExp(entt::entity e)
 		++it;
 
 
-		if (!ecs::IsCharacter(eAttacker) || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(eAttacker), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
+		if (!ecs::IsCharacter(eAttacker) || ecs::PlayerRuntime::IsNPC(eAttacker) ||
+			ecs::PlayerRuntime::GetMapIndex(eAttacker) != ecs::PlayerRuntime::GetMapIndex(e) ||
+			DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(eAttacker), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
 			continue;
 
 		iTotalDam += iDam;
@@ -2022,6 +2021,11 @@ entt::entity DistributeExp(entt::entity e)
 
 	if (iTotalDam == 0)
 		return entt::null;
+
+	// Kill credit also drives quest/counter events and must exist for gates
+	// and other objectives whose prototype intentionally awards no EXP.
+	if (iExpToDistribute <= 0)
+		return pkChrMostAttacked;
 
 	// Half of the experience goes to the stone that spawned this mob.
 	if (const entt::entity stone = CombatSystem::GetStone(e); stone != entt::null)

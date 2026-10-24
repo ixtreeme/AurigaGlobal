@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "files": {
+    "quest/Quest/dungeon/catacombe.lua": {
+      "previous_sha256": "74aea29e559ef8fd048d492e5d0dbcfbd3614511818d3f561410e4fc7dd89208",
+      "fixed_sha256": "cfe90c0f427ef691c181a3f6602062dd313b0f8de2cb79f743b43ecdb4f8bbd2",
+      "previous_lf_sha256": "74aea29e559ef8fd048d492e5d0dbcfbd3614511818d3f561410e4fc7dd89208"
+    },
+    "quest/Quest/dungeon/christmas_zone1.lua": {
+      "previous_sha256": "8356a97e63fc5ac62e4ddf6021df8ea2e9285e669572baa719cadb73b96267d8",
+      "fixed_sha256": "66fdf2d802fd24d2ada7d6ca91e1f66e56d03ebc078d866ad9d2cf9b9260e2f2",
+      "previous_lf_sha256": "3438b6462fb6a886c6b63197dd13b128a4f7b082aa368c540d7c133b15acb5bb"
+    },
+    "quest/Quest/dungeon/christmas_zone2.lua": {
+      "previous_sha256": "3755fcfda8b358d8cf044844c1736f79329f046fe3c4d233ff75cb2c39f5d0b2",
+      "fixed_sha256": "12fdcf69e13845a5869710feb40510d7965a2ce087cacec6026f93a1c8e4c2fd",
+      "previous_lf_sha256": "384eee69d4b91eef106476f1f2726aded2c476bc3fb002905cd55f598009475f"
+    },
+    "quest/Quest/dungeon/deviltower_zone.lua": {
+      "previous_sha256": "29f845f337a707444d830cbb141adf88e41e1b77a7cb846fb01ff7f2189c9e50",
+      "fixed_sha256": "b1f7a76f9343f4eb6409736c6f5401def959da5580140511c4190f5d594d2b8b",
+      "previous_lf_sha256": "29f845f337a707444d830cbb141adf88e41e1b77a7cb846fb01ff7f2189c9e50"
+    },
+    "quest/Quest/dungeon/dragonlair_zone.lua": {
+      "previous_sha256": "5a04eb64bc56acde417b6eab87f361b60f09adaf4e073af73ec6c46cb21ee4a4",
+      "fixed_sha256": "335e938afeb936bf7fdaf39778d4a22da4946e76010a418d55b9f8428f46120f",
+      "previous_lf_sha256": "5a04eb64bc56acde417b6eab87f361b60f09adaf4e073af73ec6c46cb21ee4a4"
+    },
+    "quest/Quest/dungeon/dungeon_spider.lua": {
+      "previous_sha256": "054afec613050d9ba407e89df1b62394f9cd4c898c5ac86764ae074345d97b26",
+      "fixed_sha256": "6c0d66578a1996c9fec57812bdca853c470493a6412d7596f64ed2746ea03f2c",
+      "previous_lf_sha256": "054afec613050d9ba407e89df1b62394f9cd4c898c5ac86764ae074345d97b26"
+    },
+    "quest/Quest/dungeon/enchanted_forest.lua": {
+      "previous_sha256": "53fd15ea13c31d5227b9893ac4a98f3a7fc21193ee85b8d0693c2a5c23aa25c1",
+      "fixed_sha256": "8c0d6c5b3cd6e59ea9d260b270d691c4bc08db07589c466a51c615b9dcc8718d",
+      "previous_lf_sha256": "53fd15ea13c31d5227b9893ac4a98f3a7fc21193ee85b8d0693c2a5c23aa25c1"
+    },
+    "quest/Quest/dungeon/meleylair_zone.lua": {
+      "previous_sha256": "6e28bcdd19ad467b88cc6a533c7a2d79091af7bd9e1edc7941c6de4c66b9b5be",
+      "fixed_sha256": "eb5a580cc7497fa637c06bc193f073852002130a51e9a9d8ac660db7b7632cee",
+      "previous_lf_sha256": "bc196a0994de5ebdd9151d4d9a634bf498e68b340827074e618b5af562a45551"
+    },
+    "quest/Quest/dungeon/monkey_tower_razor93.lua": {
+      "previous_sha256": "328b1db01e1400f5f7a3b01d7c8ba5a66b23355caf0b3a55f62498c75987fe29",
+      "fixed_sha256": "c57b2969ef37bd5e8383a0a9b61c18acef16b2f76fccb3ed30e01550155129bd",
+      "previous_lf_sha256": "69e5524702aa768b77e9d4f4952db021a6298182b9c9f8ef7925657b82b667b5"
+    },
+    "quest/Quest/dungeon/nemere_zone.lua": {
+      "previous_sha256": "7551505d79bf2cd90e050cb30e4aff7b2373bd0361925d0381e252492e230bb1",
+      "fixed_sha256": "ce8acd43f498af4cc7053327df943560d04ce869b080059dd313dd5af247eabb",
+      "previous_lf_sha256": "7551505d79bf2cd90e050cb30e4aff7b2373bd0361925d0381e252492e230bb1"
+    },
+    "quest/Quest/dungeon/owl_zone_razor93.lua": {
+      "previous_sha256": "55156e262171260aaa78302797e19590e87f668c47bf7349192f8a5f8f66eff9",
+      "fixed_sha256": "6dc6eca4279b6e5fed323533176e735165f4b8a06db505f972583fce2d247a60",
+      "previous_lf_sha256": "18533f0ed2c1d5f73316aba6d9a5c0985e1842534d34c39cba250c89721ed9ea"
+    },
+    "quest/Quest/dungeon/razador_zone.lua": {
+      "previous_sha256": "2a70493e4b9fd12b29dd084be6d07ca647310a65ff2b32f15531dc1b5e452c57",
+      "fixed_sha256": "37904bb9cd8bfa25b9d7ab9fd930f60f3e0c6b2996e39a978109d4f604c8b608",
+      "previous_lf_sha256": "2a70493e4b9fd12b29dd084be6d07ca647310a65ff2b32f15531dc1b5e452c57"
+    },
+    "quest/Quest/dungeon/slime_dungeon.lua": {
+      "previous_sha256": "71f958a2117753d656a6799e835db1c6c87100f4da06288cced393af785a7baa",
+      "fixed_sha256": "3067ab86e61436e3bf414f3ea931995a52e417d22c076b93834b051ca6314f6a",
+      "previous_lf_sha256": "71f958a2117753d656a6799e835db1c6c87100f4da06288cced393af785a7baa"
+    },
+    "quest/Quest/dungeon/temple_ochao.lua": {
+      "previous_sha256": "dfd42c789d987718d2fd8e88df2ee76a6ebcb7fe1c3abd48f19badfa789fa496",
+      "fixed_sha256": "08b829ce9c65bf347c5ecfe2243fc54a967ca29b18d2d7a6e13ba09fe88bbaff",
+      "previous_lf_sha256": "d790a73820758194e6c8610bcc3caa4b40fa633eb3381aefcefec16501ef2390"
+    },
+    "quest/Quest/dungeon/underwater_zone.lua": {
+      "previous_sha256": "440614b2cdbc19add33df59d496bd623352ec91543515bf20cc0fed867923d4d",
+      "fixed_sha256": "9506bdf74c9fa9b33e2e177652e4028d43da74419dcd57cd7b2c642cce04bed4",
+      "previous_lf_sha256": "440614b2cdbc19add33df59d496bd623352ec91543515bf20cc0fed867923d4d"
+    }
+  }
+}

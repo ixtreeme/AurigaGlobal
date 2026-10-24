@@ -203,13 +203,7 @@ namespace
 
     inline int CountMobVnumOnMap(int32_t mapIndex, uint32_t vnum)
     {
-        LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
-        if (!map)
-            return 0;
-
-        FCountMobVnum f(vnum);
-        map->for_each(f);
-        return f.count;
+        return DungeonSystem::CountMonster(CDungeonManager::instance().FindByMapIndex(mapIndex), vnum);
     }
 
     struct FCooldownCheck
@@ -683,6 +677,11 @@ void CEasterDungeon::OnPlayerLogin(entt::entity character)
 
 void CEasterDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim) ||
+        !ecs::PlayerRuntime::IsPC(killer) ||
+        ecs::PlayerRuntime::GetMapIndex(killer) != ecs::PlayerRuntime::GetMapIndex(victim))
+        return;
+
     if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
         return;
     if (!ecs::PlayerRuntime::IsPC(killer))
@@ -730,10 +729,6 @@ void CEasterDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         // progress info (killernek)
         int metins = CountMobVnumOnMap(idx, kFloor2MetinVnum);
         int mobs = CountMobVnumOnMap(idx, kFloor2MobVnum);
-
-        // ha victim meg "benne van", vonjunk le 1-et (tick miatt)
-        if (vnum == kFloor2MetinVnum && metins > 0) --metins;
-        if (vnum == kFloor2MobVnum && mobs > 0) --mobs;
 
         //ChatToChar(killer, "Easter: Metins left: %d, monsters left: %d", metins, mobs);
 
@@ -793,7 +788,9 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
             if (d != entt::null && DungeonSystem::GetFlag(d, kFlagCompleted) == 0)
             {
                 ecs::MovementSystem::SaveExitLocation(character);
-                ecs::MovementSystem::WarpSet(character, kEnterX * 100, kEnterY * 100, rejoinIdx);
+                const bool firstFloor = DungeonSystem::GetFlag(d, kFlagFloor) <= 1;
+                ecs::MovementSystem::WarpSet(character, (firstFloor ? kEnterX : kFloor2X) * 100,
+                    (firstFloor ? kEnterY : kFloor2Y) * 100, rejoinIdx);
                 return true;
             }
         }
@@ -950,7 +947,7 @@ if (!it.ok)
     ChatToChar(character, "Easter: The dungeon is starting. Please wait 1 second...");
 
     // Start floor1 after short delay
-    s_easter.SchedulePrepare(DungeonSystem::GetMapIndex(d), kPrepareDelay);
+    // OnPlayerLogin starts preparation after the first member reaches GAME.
     return true;
 }
 
