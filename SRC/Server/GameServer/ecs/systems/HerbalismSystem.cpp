@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../mission_pass/MissionPassEvents.hpp"
 #include "HerbalismSystem.hpp"
 #include "HerbalismRules.hpp"
 #include "WoodcuttingSystem.hpp"
@@ -121,6 +122,7 @@ bool Drop(entt::entity worker, entt::entity plant) {
         ItemSystem::DestroyItemEntityEcs(item, "HERBALISM_DROP_ROLLBACK"); return false;
     }
     DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, herb, 1);
+    AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::HerbGather,herb);
     return true;
 }
 bool GoodLocation(int32_t map, int32_t x, int32_t y) {
@@ -219,6 +221,7 @@ bool TryRefine(entt::entity smith, entt::entity worker, entt::entity tool) {
         ItemSystem::RemoveItemEcs(upgraded); ItemSystem::PlaceItemEcs(worker,tool,INVENTORY,cell);
         ItemSystem::DestroyItemEntityEcs(upgraded,"HERBALISM_REFINE_SOURCE_ROLLBACK"); return true;
     }
+    AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::ToolUpgrade,vnum+1);
     Notice(worker,"HERB_REFINE_SUCCESS"); return true;
 }
 void Tick(uint32_t now) {
@@ -247,6 +250,7 @@ void Tick(uint32_t now) {
             auto points = HerbalismRules::AddPoint(vnum,old);
             if (points != old) {
                 ItemSystem::SetItemSocket(state.shears,0,points);
+                AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::ToolTraining,vnum,points-old);
                 if (HerbalismRules::CanRefine(vnum,points)) Notice(worker,"HERB_READY");
             }
         }

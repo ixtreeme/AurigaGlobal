@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -1552,6 +1553,7 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
         DungeonSystem::SetFlag(d, kFlagCompleted, 1);
         DungeonSystem::SetFlag(d, kFlagBlockRejoin, 1);
+        AurigaMissionPass::Events::Complete(idx);
         s_viking.ScheduleComplete(idx);
         return;
     }

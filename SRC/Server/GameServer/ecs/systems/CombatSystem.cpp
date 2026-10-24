@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../mission_pass/MissionPassEvents.hpp"
 #include "MovementSystem.hpp"
 #include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -3703,6 +3704,7 @@ void Reward(entt::entity e, bool bItemDrop)
 	//PROF_UNIT pu1("r1");
 	if (ecs::PlayerRuntime::IsPC(attacker))
 	{
+		AurigaMissionPass::Events::Kill(attacker,e);
 		if ((ecs::PointSystem::GetLevel(e) - ecs::PointSystem::GetLevel(attacker)) >= -10)
 		{
 			/*if (CombatSystem::GetRealAlignment(attacker) < 0) // trsra: minden gyilkols 2 pontot ad

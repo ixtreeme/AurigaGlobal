@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -161,6 +162,7 @@ namespace mining
 			return;
 		}
 		ItemSystem::SetGroundOwnership(item, character, 15);
+		AurigaMissionPass::Events::Emit(character,AurigaMissionPass::Kind::OreGather,dwRawOreVnum,iFractionCount);
 
 		DBManager::instance().SendMoneyLog(
 			MONEY_LOG_DROP, ItemSystem::GetItemVnum(item), ItemSystem::GetItemCount(item));

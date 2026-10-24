@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include <common/time_64.h>
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -1054,6 +1055,7 @@ bool CGuild::OfferExp(entt::entity character, int amount)
 	guild_exp.amount = amount / 100;
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_EXP_UPDATE, 0, &guild_exp, sizeof(guild_exp));
 	GuildPointChange(POINT_EXP, amount / 100, true);
+	AurigaMissionPass::Events::Emit(character,AurigaMissionPass::Kind::GuildExp,GetID(),amount);
 
 	// The point calls above reach other code; read the row again after them.
 	ecs::GuildMemberRow* row = MemberRow(pid);

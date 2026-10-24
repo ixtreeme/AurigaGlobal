@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
@@ -646,6 +647,7 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
             DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
             // Global notice
+            AurigaMissionPass::Events::Complete(mapIdx);
             if (const entt::entity killerParty = ecs::SocialSystem::GetParty(killer); killerParty != entt::null)
             {
                 const entt::entity leader = PartySystem::GetLeader(killerParty);

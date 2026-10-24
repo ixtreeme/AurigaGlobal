@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
@@ -1003,6 +1004,7 @@ int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 	m_map_pkSectree.insert(std::map<uint32_t, LPSECTREE_MAP>::value_type(lNewMapIndex, pkMapSectree));
 
 	LOG_INFO("PRIVATE_MAP: {} created (original {})", lNewMapIndex, lMapIndex);
+	AurigaMissionPass::Events::Reset(lNewMapIndex);
 	return lNewMapIndex;
 }
 
@@ -1018,6 +1020,7 @@ void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 
 	// WARNING:
 	pkMapSectree->DrainEntities();
+	AurigaMissionPass::Events::Reset(lMapIndex);
 
 	m_map_pkSectree.erase(lMapIndex);
 

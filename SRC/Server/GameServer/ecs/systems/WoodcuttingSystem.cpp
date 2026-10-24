@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../mission_pass/MissionPassEvents.hpp"
 #include "WoodcuttingSystem.hpp"
 #include "HerbalismSystem.hpp"
 #include "WoodcuttingRules.hpp"
@@ -221,6 +222,7 @@ bool TryRefine(entt::entity smith, entt::entity worker, entt::entity axe) {
         return true;
     }
     Notice(worker, "WOODCUT_REFINE_SUCCESS");
+    AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::ToolUpgrade,vnum+1);
     return true;
 }
 
@@ -324,16 +326,19 @@ void Tick(uint32_t now) {
                 ecs::PlayerRuntime::GetPacketVID(state.tree), ecs::PlayerRuntime::GetPacketVID(worker));
         const bool rewarded = number(1, 100) <= settings.logChance && DropLog(worker, state.tree);
         Notice(worker, rewarded ? "WOODCUT_LOG_SUCCESS" : "WOODCUT_NO_LOG");
+        if(rewarded)AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::WoodGather,90011);
         const auto vnum = ItemSystem::GetItemVnum(state.axe);
         if (vnum < WoodcuttingRules::LastAxe && number(1, 100) <= settings.pointChance) {
             const auto old = ItemSystem::GetItemSocket(state.axe, 0);
             const auto points = WoodcuttingRules::AddPoint(vnum, old);
             if (points != old) {
                 ItemSystem::SetItemSocket(state.axe, 0, points);
+                AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::ToolTraining,vnum,points-old);
                 if (WoodcuttingRules::CanRefine(vnum, points)) Notice(worker, "WOODCUT_READY");
             }
         }
         if (!trunk.remaining) {
+            AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::TreeFelled,WoodcuttingRules::TreeRace);
             trunk.fellAt = now ? now : 1;
             BroadcastSnapshot(state.tree);
             Cancel(worker, nullptr);

@@ -99,6 +99,8 @@ class DBManager : public singleton<DBManager>
 		const std::vector<std::string> & GetGreetMessage();
 
 		template<class Functor> void FuncQuery(Functor f, const char * c_pszFormat, ...);
+		// Already-built SQL, without the legacy 4096-byte formatting truncation.
+		template<class Functor> void FuncQueryText(Functor f, const std::string& sql);
 		template<class Functor> void FuncAfterQuery(Functor f, const char * c_pszFormat, ...);
 
 		template<class Functor> void FuncQueryPrepared(Functor f, const char * c_pszSql, const SqlParams & params);
@@ -117,6 +119,14 @@ class DBManager : public singleton<DBManager>
 		std::vector<std::string>		m_vec_GreetMessage;
 		std::map<uint32_t, CLoginData *>		m_map_pkLoginData;
 };
+
+template <class Functor> void DBManager::FuncQueryText(Functor f, const std::string& sql)
+{
+	CFuncQueryInfo* p = new CFuncQueryInfo;
+	p->iQueryType = QUERY_TYPE_FUNCTION;
+	p->f = f;
+	m_sql.ReturnQuery(sql.c_str(), p);
+}
 
 template <class Functor> void DBManager::FuncQuery(Functor f, const char* c_pszFormat, ...)
 {

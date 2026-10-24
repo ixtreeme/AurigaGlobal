@@ -685,6 +685,13 @@ add_executable(HerbalismRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/HerbalismRulesTests.cpp)
 add_test(NAME herbalism_rules COMMAND HerbalismRulesTests)
 
+add_executable(MissionPassRulesTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MissionPassRulesTests.cpp)
+find_path(AURIGA_MISSION_PASS_JSON_INCLUDE NAMES nlohmann/json.hpp REQUIRED)
+target_include_directories(MissionPassRulesTests PRIVATE ${AURIGA_MISSION_PASS_JSON_INCLUDE})
+add_test(NAME mission_pass_rules COMMAND MissionPassRulesTests
+    ${CMAKE_SOURCE_DIR}/config/mission_pass.json.example)
+
 # Build every registered server test explicitly, including EXCLUDE_FROM_ALL
 # executables. CTest is enabled at the root, also for a fresh checkout.
 get_property(_server_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
