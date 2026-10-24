@@ -1,6 +1,7 @@
 """Standard-library worker sent over verified SSH stdin; also exercised locally."""
 import base64
 import contextlib
+import fnmatch
 import hashlib
 import json
 import os
@@ -82,6 +83,126 @@ def upload_stage(request):
     return root, stage
 
 
+def upload_comparison(request):
+    """Read only: compare the exact selected roots, never metadata or excluded trees."""
+    root = root_path(request['destination'])
+    if root.exists() and not root.is_dir():
+        raise ValueError('A feltöltési cél nem mappa.')
+    patterns = request.get('excludes', [])
+    scopes = request.get('scopes', [])
+    if not scopes or not isinstance(patterns, list) or any(not isinstance(p, str) for p in patterns):
+        raise ValueError('Hiányzó feltöltési hatókör vagy hibás kizárás.')
+    local_files = {row['path']: row for row in request['files']}
+    local_dirs = set(request['directories'])
+    remote_files, remote_dirs, conflicts = {}, set(), []
+    visited = 0
+
+    def excluded(relative):
+        return any(part == '.auriga-manager' or any(fnmatch.fnmatchcase(part, p) for p in patterns)
+                   for part in PurePosixPath(relative).parts)
+
+    def walk(relative):
+        nonlocal visited
+        if excluded(relative):
+            return
+        visited += 1
+        if visited > 50000:
+            raise ValueError('Túl nagy összehasonlítás; válassz kisebb mappát vagy további kizárásokat.')
+        path = path_at(root, relative) if relative else root
+        no_links(path)
+        if not path.exists():
+            return
+        if path.is_dir():
+            if relative:
+                remote_dirs.add(relative)
+            if relative in local_files:
+                conflicts.append(dict(path=relative, change='conflict', detail='A távoli célban mappa van fájl helyett.', size=0))
+                return
+            for child in sorted(path.iterdir()):
+                walk((relative + '/' if relative else '') + child.name)
+        elif path.is_file():
+            before = path.stat()
+            sha256 = digest(path)
+            after = path.stat()
+            if (before.st_size, before.st_mtime_ns, before.st_ino) != (after.st_size, after.st_mtime_ns, after.st_ino):
+                raise ValueError('Összehasonlítás közben módosult a távoli fájl: ' + relative)
+            remote_files[relative] = dict(size=after.st_size, sha256=sha256)
+        else:
+            raise ValueError('Nem szabályos távoli fájl: ' + relative)
+        if visited % 200 == 0:
+            emit('Összehasonlítva: %d távoli bejegyzés.' % visited)
+
+    normalized = []
+    for scope in scopes:
+        relative = scope['path']
+        if relative:
+            path_at(root, relative)
+        elif not scope['directory']:
+            raise ValueError('Érvénytelen feltöltési hatókör.')
+        normalized.append((relative, bool(scope['directory'])))
+        if scope['directory']:
+            walk(relative)
+        else:
+            # Selecting a single file never authorizes inspecting its siblings.
+            path = path_at(root, relative)
+            if path.is_dir():
+                conflicts.append(dict(path=relative, change='conflict', detail='A távoli célban mappa van fájl helyett.', size=0))
+            else:
+                walk(relative)
+
+    def in_scope(relative):
+        return any(relative == name or directory and (not name or relative.startswith(name + '/'))
+                   for name, directory in normalized)
+
+    for relative in (*local_files, *local_dirs):
+        if not in_scope(relative) or excluded(relative):
+            raise ValueError('A helyi lista kívül esik a kijelölt hatókörön: ' + relative)
+        path_at(root, relative)
+    files, deletions, directories, changes = [], [], [], list(conflicts)
+    conflicted = {row['path'] for row in conflicts}
+    unchanged = 0
+    for relative, row in sorted(local_files.items()):
+        if relative in conflicted:
+            continue
+        previous = remote_files.get(relative)
+        if previous == dict(size=row['size'], sha256=row['sha256']):
+            unchanged += 1
+            continue
+        change = 'modified' if previous is not None else 'new'
+        files.append(dict(row, previous=previous))
+        changes.append(dict(path=relative, change=change, size=row['size']))
+    for relative in sorted(local_dirs, key=lambda p: (p.count('/'), p)):
+        if relative in remote_files:
+            changes.append(dict(path=relative, change='conflict', detail='A távoli célban fájl van mappa helyett.', size=0))
+        elif relative not in remote_dirs:
+            directories.append(relative)
+            changes.append(dict(path=relative, change='directory', size=0))
+    for relative, previous in sorted(remote_files.items()):
+        if relative not in local_files and relative not in local_dirs:
+            deletions.append(dict(path=relative, key='deleted-%08d' % len(deletions), **previous))
+            changes.append(dict(path=relative, change='deleted', size=previous['size']))
+    result = dict(id=request['id'], destination=request['destination'], delta_version=1,
+                  files=files, directories=directories, deletions=deletions, changes=changes, unchanged=unchanged)
+    encoded = json.dumps(result, ensure_ascii=True, separators=(',', ':'))
+    if len(encoded) > 12 * 1024 * 1024:
+        raise ValueError('Túl nagy eltéréslista; válassz kisebb mappát.')
+    return result
+
+
+def compare_upload(request):
+    result = upload_comparison(request)
+    emit('AURIGA_UPLOAD_COMPARISON ' + json.dumps(result, ensure_ascii=True, separators=(',', ':')))
+
+
+def check_previous(target, previous):
+    no_links(target)
+    if previous is None:
+        if target.exists():
+            raise ValueError('A cél az összehasonlítás óta létrejött; készíts új listát: ' + str(target))
+    elif (not target.is_file() or target.stat().st_size != previous['size'] or digest(target) != previous['sha256']):
+        raise ValueError('A cél az összehasonlítás óta megváltozott; készíts új listát: ' + str(target))
+
+
 def prepare(request):
     root, stage = upload_stage(request)
     stage.mkdir(mode=0o700, parents=True, exist_ok=False)
@@ -96,16 +217,40 @@ def commit(request):
     backup = stage / 'backup'
     backup.mkdir(mode=0o700)
     installed, created_dirs = [], []
+    deletions = manifest.get('deletions', [])
+    delta = manifest.get('delta_version') == 1
+    if deletions and (not delta or not manifest.get('delete', False) or not request.get('delete', False)):
+        raise ValueError('A távoli törlések végrehajtása nincs engedélyezve.')
+    if delta:
+        seen = set()
+        for row in (*manifest['files'], *deletions):
+            name = row['path']
+            path_at(root, name)
+            if name in seen or not any(name == scope['path'] or scope['directory'] and
+                (not scope['path'] or name.startswith(scope['path'] + '/')) for scope in manifest['scopes']):
+                raise ValueError('A változtatás kívül esik a kijelölt hatókörön: ' + name)
+            if any(part == '.auriga-manager' or any(fnmatch.fnmatchcase(part, p) for p in manifest['excludes'])
+                   for part in PurePosixPath(name).parts):
+                raise ValueError('Kizárt cél nem módosítható: ' + name)
+            seen.add(name)
     with locked(root):
         # Verify EVERY byte and target before touching any original.
         for row in manifest['files']:
             target = path_at(root, row['path'])
+            if not re.fullmatch(r'[0-9]{8}', row['key']):
+                raise ValueError('Hibás feltöltési fájlkulcs.')
             staged = stage / 'files' / row['key']
             no_links(staged)
             if staged.stat().st_size != row['size'] or digest(staged) != row['sha256']:
                 raise ValueError('Feltöltési ellenőrzőösszeg eltér: ' + row['path'])
             if target.exists() and (not target.is_file() or not request.get('overwrite', False)):
                 raise ValueError('A cél létezik; a felülírás nincs engedélyezve: ' + row['path'])
+            if delta:
+                check_previous(target, row['previous'])
+        for row in deletions:
+            if not re.fullmatch(r'deleted-[0-9]{8}', row['key']):
+                raise ValueError('Hibás törlési fájlkulcs.')
+            check_previous(path_at(root, row['path']), row)
         for relative in manifest['directories']:
             target = path_at(root, relative)
             if target.exists() and not target.is_dir():
@@ -120,27 +265,50 @@ def commit(request):
                 target = path_at(root, row['path'])
                 old = backup / row['key']
                 existed = target.exists()
+                if delta:
+                    check_previous(target, row['previous'])
                 if existed:
                     shutil.copy2(target, old)
+                    if delta and digest(old) != row['previous']['sha256']:
+                        raise ValueError('A mentés közben megváltozott a cél: ' + row['path'])
                     # Preserve existing Unix executable bits; new scripts can
                     # explicitly be chmod'ed after upload by their operator.
                     os.chmod(stage / 'files' / row['key'], stat.S_IMODE(target.stat().st_mode))
                 else:
                     os.chmod(stage / 'files' / row['key'], 0o644)
+                if delta:
+                    check_previous(target, row['previous'])
                 os.replace(stage / 'files' / row['key'], target)
                 installed.append((target, old, existed))
                 emit('Feltöltve: ' + row['path'])
-        except BaseException:
+            for row in deletions:
+                target, old = path_at(root, row['path']), backup / row['key']
+                check_previous(target, row)
+                os.replace(target, old)
+                installed.append((target, old, True))
+                emit('Törölve, mentéssel: ' + row['path'])
+        except BaseException as error:
+            rollback_errors = []
             for target, old, existed in reversed(installed):
-                if existed:
-                    os.replace(old, target)
-                else:
-                    target.unlink()
+                try:
+                    if existed:
+                        temporary = stage / ('rollback-' + old.name)
+                        shutil.copy2(old, temporary)
+                        os.replace(temporary, target)
+                    else:
+                        target.unlink()
+                except OSError:
+                    rollback_errors.append(str(target))
             for directory in reversed(created_dirs):
-                directory.rmdir()
+                try: directory.rmdir()
+                except OSError: rollback_errors.append(str(directory))
+            (stage / 'result.json').write_text(json.dumps(dict(status='rollback-failed' if rollback_errors else 'rolled-back',
+                error=str(error), rollback_errors=rollback_errors)), encoding='utf-8')
+            if rollback_errors:
+                raise RuntimeError('A visszaállítás nem teljes; mentés: ' + str(backup)) from error
             raise
-    (stage / 'result.json').write_text(json.dumps(dict(status='success', files=len(installed))), encoding='utf-8')
-    emit('AURIGA_UPLOAD_SUCCESS files=%d backup=%s' % (len(installed), backup))
+    (stage / 'result.json').write_text(json.dumps(dict(status='success', files=len(manifest['files']), deleted=len(deletions))), encoding='utf-8')
+    emit('AURIGA_UPLOAD_SUCCESS files=%d deleted=%d backup=%s' % (len(manifest['files']), len(deletions), backup))
 
 
 def cancel_build(request):
@@ -343,7 +511,7 @@ def main(encoded):
         request = json.loads(base64.b64decode(encoded))
         if not re.fullmatch(r'[0-9a-f]{24}', request['id']):
             raise ValueError('Hibás feladatazonosító.')
-        actions = dict(prepare=prepare, commit=commit, build=build_job, configure=build_job,
+        actions = dict(compare=compare_upload, prepare=prepare, commit=commit, build=build_job, configure=build_job,
                        cancel=cancel_build, install=install_job, packages=package_job)
         actions[request['action']](request)
     except Exception as error:

@@ -7,6 +7,7 @@ import shlex
 import threading
 
 from PySide6.QtCore import QProcess, QThread, Signal, QStandardPaths, QTimer
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout,
     QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton, QSpinBox,
     QTableWidget, QTableWidgetItem, QHeaderView, QScrollArea, QVBoxLayout, QWidget)
@@ -105,8 +106,8 @@ class RemoteWork:
         self.upload_page = QWidget()
         layout = QVBoxLayout(self.upload_page)
         hint = QLabel('Válassz fájlokat vagy mappát, majd készíts feltöltési listát. '
-                      'A feltöltés ideiglenes helyre történik, és SHA-256 ellenőrzés után kerül a célba. '
-                      'A célban található többi fájlt nem töröljük.')
+                      'SHA-256 alapján csak a helyi és távoli tartalom eltérései jelennek meg. '
+                      'A csak távolin lévő fájlok törléséhez külön kapcsoló szükséges.')
         hint.setWordWrap(True)
         layout.addWidget(hint)
         upload_form = QFormLayout()
@@ -127,16 +128,22 @@ class RemoteWork:
         self.selection.setWordWrap(True)
         self.selection.setMaximumHeight(64)
         layout.addWidget(self.selection)
-        self.table = QTableWidget(0, 2)
-        self.table.setHorizontalHeaderLabels(['Célhoz viszonyított útvonal', 'Méret (bájt)'])
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.table = QTableWidget(0, 3)
+        self.table.setHorizontalHeaderLabels(['Változás', 'Célhoz viszonyított útvonal', 'Méret (bájt)'])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         layout.addWidget(self.table, 1)
         self.overwrite = QCheckBox('Meglévő fájlok felülírása, előtte távoli biztonsági mentéssel')
         self.controls_list.append(self.overwrite)
         layout.addWidget(self.overwrite)
+        self.delete = QCheckBox('A „Törölt / csak távolin” fájlok eltávolítása is, távoli biztonsági mentéssel')
+        self.delete.setToolTip('Csak a kijelölt mappán belül listázott fájlokra vonatkozik. '
+            'A kizárt fájlokat és a kiválasztáson kívüli tartalmat nem törli.')
+        self.controls_list.append(self.delete)
+        layout.addWidget(self.delete)
         row = QHBoxLayout()
-        self.plan_button = self.button('Feltöltési lista készítése', self.prepare)
+        self.plan_button = self.button('Eltérések keresése', self.prepare)
         self.upload_button = self.button('Feltöltés indítása', self.upload)
         self.upload_button.setObjectName('Primary')
         self.upload_button.setEnabled(False)
@@ -170,6 +177,8 @@ class RemoteWork:
             else:
                 control.valueChanged.connect(self.changed)
         self.contents.toggled.connect(self.invalidate)
+        self.delete.toggled.connect(self.controls)
+        self.overwrite.toggled.connect(self.controls)
         self.load(jobs.defaults())
 
     def button(self, label, callback):
@@ -184,6 +193,7 @@ class RemoteWork:
         self.sources = []
         self.selection.setText('Nincs kiválasztott fájl vagy mappa.')
         self.overwrite.setChecked(False)
+        self.delete.setChecked(False)
         for key, value in settings.items():
             control = self.settings[key]
             control.blockSignals(True)
@@ -254,7 +264,13 @@ class RemoteWork:
         self.install_button.setEnabled(not busy and self.page.target_allowed()
             and getattr(self.page.owner, 'remote_online', True)
             and not state.get('running') and not state.get('starting') and not state.get('deployment_pending'))
-        self.upload_button.setEnabled(not busy and self.snapshot is not None and self.page.target_allowed())
+        ready = self.snapshot is not None and self.snapshot.compared
+        if ready:
+            ready = not any(row['change'] == 'conflict' for row in self.snapshot.changes) and bool(
+                self.snapshot.request['files'] or self.snapshot.request['directories'] or
+                self.delete.isChecked() and self.snapshot.request.get('deletions'))
+        self.upload_button.setEnabled(not busy and ready and self.page.target_allowed())
+        self.plan_button.setEnabled(not busy and self.page.target_allowed())
         self.cancel_button.setEnabled(self.planner is not None or (self.process is not None and self.phase not in ('commit', 'install')))
         self.packages.controls(not busy)
         if self.phase == 'packages' and self.request and self.request['operation'] in ('install', 'update'):
@@ -279,10 +295,11 @@ class RemoteWork:
         self.append('Naplófájl: ' + str(path) + '\n')
 
     def prepare(self):
-        if self.page.probe_process is not None or self.active():
+        if self.page.probe_process is not None or self.active() or self.page.owner_busy():
             return
         try:
             self.invalidate()
+            self.page.operation_profile()
             settings = jobs.validate_settings(self.current())
             self.planner = PrepareUpload(list(self.sources), settings['upload_dir'], settings['excludes'], self.contents.isChecked(), self.page)
             self.planner.ready.connect(self.prepared)
@@ -297,23 +314,46 @@ class RemoteWork:
 
     def prepared(self, snapshot):
         self.snapshot = snapshot
-        rows = snapshot.request['files']
-        self.table.setRowCount(len(rows) + len(snapshot.request['directories']))
+
+    def display_comparison(self):
+        labels = dict(new='Új', modified='Módosított', deleted='Törölt / csak távolin',
+                      directory='Új mappa', conflict='Ütközés')
+        colors = dict(new='#81d4ad', modified='#edc278', deleted='#ee9c9c', directory='#81d4ad', conflict='#ee9c9c')
+        rows = self.snapshot.changes
+        self.table.setRowCount(len(rows))
         for index, row in enumerate(rows):
-            self.table.setItem(index, 0, QTableWidgetItem(row['path']))
-            self.table.setItem(index, 1, QTableWidgetItem(str(row['size'])))
-        for index, relative in enumerate(snapshot.request['directories'], len(rows)):
-            self.table.setItem(index, 0, QTableWidgetItem(relative + '/'))
-            self.table.setItem(index, 1, QTableWidgetItem('mappa'))
-        self.status.setText('%d fájl, %d bájt, %d kihagyott bejegyzés. Cél: %s' %
-                            (len(rows), sum(row['size'] for row in rows), snapshot.skipped, snapshot.request['destination']))
+            self.table.setItem(index, 0, QTableWidgetItem(labels[row['change']]))
+            self.table.item(index, 0).setForeground(QColor(colors[row['change']]))
+            self.table.setItem(index, 1, QTableWidgetItem(row['path'] + ('/' if row['change'] == 'directory' else '')))
+            self.table.item(index, 1).setToolTip(row['path'])
+            self.table.setItem(index, 2, QTableWidgetItem(str(row['size']) if row['change'] != 'directory' else 'mappa'))
+            if row.get('detail'):
+                self.table.item(index, 0).setToolTip(row['detail'])
+        counts = {kind: sum(row['change'] == kind for row in rows) for kind in labels}
+        self.status.setText(('%d új, %d módosított, %d törölt / csak távolin, %d új mappa, %d ütközés. '
+            '%d változatlan fájl kihagyva. Cél: %s') % (counts['new'], counts['modified'], counts['deleted'],
+            counts['directory'], counts['conflict'], self.snapshot.unchanged, self.snapshot.request['destination']))
 
     def preparation_failed(self, message):
         self.status.setText(message)
 
     def preparation_finished(self):
+        cancelled = self.planner.cancel.is_set()
         self.planner.deleteLater()
         self.planner = None
+        if cancelled:
+            self.invalidate()
+            self.status.setText('Az összehasonlítást megszakítottad.')
+        elif self.snapshot is not None:
+            try:
+                self.session = ssh.Session(self.page.operation_profile(), parent=self.page)
+                self.request = dict(self.snapshot.request, action='compare')
+                self.begin_log()
+                self.start_worker(self.request, 'compare')
+            except (EditorError, OSError) as error:
+                self.cleanup()
+                self.invalidate()
+                self.status.setText(str(error))
         self.page.controls()
 
     def start_build(self, action):
@@ -333,9 +373,8 @@ class RemoteWork:
         if self.page.probe_process is not None or self.active() or self.snapshot is None:
             return
         try:
+            self.request = self.snapshot.upload_request(self.overwrite.isChecked(), self.delete.isChecked())
             self.session = ssh.Session(self.page.operation_profile(), parent=self.page)
-            self.snapshot.request['id'] = secrets.token_hex(12)
-            self.request = dict(self.snapshot.request, overwrite=self.overwrite.isChecked())
             self.begin_log()
             self.start_worker(self.request, 'prepare')
         except (EditorError, OSError) as error:
@@ -364,6 +403,7 @@ class RemoteWork:
     def start_process(self, command, phase, data=None):
         self.phase = phase
         self.phase_output = ''
+        self.display_buffer = ''
         process = QProcess(self.page)
         ssh.configure_process(process, self.session)
         self.process = process
@@ -373,7 +413,8 @@ class RemoteWork:
         process.started.connect(lambda: self.feed(process, data))
         process.finished.connect(lambda code, status: self.finished(process, code, status, decoder))
         process.errorOccurred.connect(lambda error: self.failed(process, error, decoder))
-        self.status.setText({'prepare': 'Távoli feltöltési terület előkészítése…', 'transfer': 'Fájlok feltöltése SFTP-vel…',
+        self.status.setText({'compare': 'A helyi és távoli fájlok összehasonlítása SHA-256 alapján…',
+                             'prepare': 'Távoli feltöltési terület előkészítése…', 'transfer': 'Fájlok feltöltése SFTP-vel…',
                              'commit': 'Ellenőrzés, mentés és fájlcsere…', 'build': 'Távoli konfigurálás és build…',
                              'configure': 'Távoli CMake-konfigurálás…',
                              'packages': 'Távoli csomagművelet fut…',
@@ -389,9 +430,17 @@ class RemoteWork:
 
     def read(self, process, decoder, final=False):
         text = decoder.decode(bytes(process.readAllStandardOutput()), final=final)
-        self.phase_output = (self.phase_output + text)[-(2 * 1024 * 1024 if self.phase == 'packages' else 64000):]
+        limit = 16 * 1024 * 1024 if self.phase == 'compare' else 2 * 1024 * 1024 if self.phase == 'packages' else 64000
+        self.phase_output = (self.phase_output + text)[-limit:]
         if self.phase == 'packages':
             self.packages.display(text, final)
+        elif self.phase == 'compare':
+            self.display_buffer += text
+            lines = self.display_buffer.split('\n')
+            self.display_buffer = '' if final else lines.pop()
+            for line in lines:
+                if not line.startswith('AURIGA_UPLOAD_COMPARISON ') and line:
+                    self.append(line + '\n')
         else:
             self.append(text)
 
@@ -406,7 +455,7 @@ class RemoteWork:
         self.read(process, decoder, final=True)
         self.process = None
         process.deleteLater()
-        marker = {'prepare': 'AURIGA_UPLOAD_PREPARED ', 'commit': 'AURIGA_UPLOAD_SUCCESS ',
+        marker = {'compare': 'AURIGA_UPLOAD_COMPARISON ', 'prepare': 'AURIGA_UPLOAD_PREPARED ', 'commit': 'AURIGA_UPLOAD_SUCCESS ',
                   'build': 'AURIGA_BUILD_SUCCESS ', 'configure': 'AURIGA_BUILD_SUCCESS ',
                   'install': 'AURIGA_INSTALL_SUCCESS ', 'packages': 'AURIGA_PACKAGES_RESULT '}.get(self.phase)
         verified = not marker or any(line.startswith(marker) for line in self.phase_output.splitlines())
@@ -415,9 +464,25 @@ class RemoteWork:
         if not verified and not failure:
             self.append('A távoli siker-visszajelzés hiányzik.\n')
         if code == 0 and verified and not failure and status == QProcess.ExitStatus.NormalExit and not self.cancelling:
-            if self.phase == 'prepare':
+            if self.phase == 'compare':
                 try:
-                    self.start_process(self.session.sftp(self.snapshot.batch()), 'transfer')
+                    packets = [line.removeprefix(marker) for line in self.phase_output.splitlines() if line.startswith(marker)]
+                    if len(packets) != 1:
+                        raise EditorError('Nem egyértelmű távoli összehasonlítási válasz.')
+                    self.snapshot.apply_comparison(json.loads(packets[0]))
+                    self.display_comparison()
+                    self.cleanup()
+                    self.page.controls()
+                    return
+                except (EditorError, ValueError, TypeError) as error:
+                    self.append(str(error) + '\n')
+                    failure = 'Az összehasonlítás nem sikerült: ' + str(error)
+            elif self.phase == 'prepare':
+                try:
+                    if self.request['files']:
+                        self.start_process(self.session.sftp(self.snapshot.batch()), 'transfer')
+                    else:
+                        self.start_worker(dict(self.request, action='commit'), 'commit')
                     return
                 except (EditorError, OSError) as error:
                     self.append(str(error) + '\n')
@@ -443,6 +508,8 @@ class RemoteWork:
         self.status.setText(failure or 'A művelet megszakadt vagy hibával leállt. A napló tartalmazza a részleteket; '
                             'kapcsolatszakadásnál a távoli build állapotát és a megmaradt feltöltési területet ellenőrizd.')
         self.cleanup()
+        if self.phase in ('compare', 'prepare', 'transfer', 'commit'):
+            self.invalidate()
         self.page.controls()
 
     @property

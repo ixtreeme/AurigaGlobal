@@ -2582,3 +2582,18 @@ szűkítés, Ctrl+Space, nyilak, Enter/Tab és egér, Esc, névtér és kulcssz�
 egylépéses visszavonás, azonosító közepén javítás UTF-16-os kurzorpozícióval,
 meglévő argumentumok megtartása. Kommentek, hosszú sztringek, ismeretlen
 névterek, JSON, kijelölés és fájlváltás esetén nem marad nyitott téves lista.
+
+### Eltérésalapú távoli feltöltés
+
+A `ServerManagerRemoteWorkTests.py` a tartalom szerinti összehasonlítást,
+változatlan fájlok kihagyását, kijelölt mappák hatókörét és a kétoldali
+kizárásokat is vizsgálja. Az új, módosított, üres mappás és csak távolin lévő
+bejegyzések mellett azonos méret/dátum melletti eltérést is tesztel. Az
+összehasonlítás nem hozhat létre célmappát vagy metaadatokat.
+
+Külön eset a törlés engedélyezése, a távoli szerkesztés miatti ütközés,
+feltöltés és törlés utáni rollback, megőrzött mentések, hibás válasz és
+fájl/mappa ütközés. A Qt-próba a valódi workerrel, helyi alfolyamatokon át
+futtatja az összehasonlítás → staging → SFTP-másolat → commit folyamatot;
+változatlan vagy csak nem engedélyezett törléseket tartalmazó listán tiltott
+a feltöltés, cél- vagy SSH-cím módosításakor elvész a korábbi terv.

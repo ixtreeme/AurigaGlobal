@@ -253,6 +253,7 @@ class RemotePage(QWidget):
         if not self.loading:
             self.dirty = True
             self.save_button.setText('Profil mentése •')
+            self.work.invalidate()
             self.work.packages.invalidate()
 
     def update_mode(self, *_):

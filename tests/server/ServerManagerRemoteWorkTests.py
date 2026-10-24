@@ -47,6 +47,129 @@ class WorkTests(unittest.TestCase):
             shutil.copy2(snapshot.root / row['key'], stage / 'files' / row['key'])
         return request, stage
 
+    def compared(self, snapshot):
+        with mock.patch.object(worker, 'root_path', return_value=self.target):
+            result = worker.upload_comparison(snapshot.request)
+        snapshot.apply_comparison(result)
+        return result
+
+    def delta_uploaded(self, snapshot, delete=False):
+        request = dict(snapshot.upload_request(overwrite=True, delete=delete), destination=str(self.target))
+        worker.prepare(request)
+        _, stage = worker.upload_stage(request)
+        for row in request['files']:
+            shutil.copy2(snapshot.root / row['key'], stage / 'files' / row['key'])
+        return request, stage
+
+    def test_comparison_is_read_only_and_uses_content_instead_of_timestamps(self):
+        (self.source / 'same').write_bytes(b'same')
+        (self.source / 'changed').write_bytes(b'new!')
+        (self.source / 'new').write_bytes(b'new')
+        self.target.mkdir()
+        (self.target / 'same').write_bytes(b'same')
+        (self.target / 'changed').write_bytes(b'old!')
+        (self.target / 'removed').write_bytes(b'remote only')
+        os.utime(self.target / 'same', (100, 100))
+        stamp = (self.source / 'changed').stat().st_mtime
+        os.utime(self.target / 'changed', (stamp, stamp))
+        snapshot = self.snapshot()
+        unchanged_key = next(row['key'] for row in snapshot.request['files'] if row['path'] == 'same')
+        self.compared(snapshot)
+        self.assertEqual({row['path']: row['change'] for row in snapshot.changes},
+            {'changed': 'modified', 'new': 'new', 'removed': 'deleted'})
+        self.assertEqual(snapshot.unchanged, 1)
+        self.assertFalse((self.target / '.auriga-manager').exists())
+        self.assertEqual({row['path'] for row in snapshot.request['files']}, {'changed', 'new'})
+        self.assertNotIn('/' + unchanged_key + '"', snapshot.batch().read_text())
+
+    def test_comparison_missing_destination_does_not_create_it_and_empty_local_can_list_deletions(self):
+        snapshot = self.snapshot()
+        self.compared(snapshot)
+        self.assertFalse(self.target.exists())
+        self.assertEqual(snapshot.changes, [])
+        self.target.mkdir(); (self.target / 'removed').write_bytes(b'old')
+        empty = self.snapshot(); self.compared(empty)
+        self.assertEqual([(row['path'], row['change']) for row in empty.changes], [('removed', 'deleted')])
+        with self.assertRaises(EditorError): empty.upload_request(delete=False)
+        self.assertEqual(len(empty.upload_request(delete=True)['deletions']), 1)
+
+    def test_scopes_excludes_metadata_and_unselected_siblings_are_preserved(self):
+        (self.source / 'same').write_bytes(b'same')
+        scoped = self.target / self.source.name
+        scoped.mkdir(parents=True)
+        (scoped / 'same').write_bytes(b'same'); (scoped / 'removed').write_bytes(b'old')
+        (scoped / '.git').mkdir(); (scoped / '.git/config').write_bytes(b'excluded')
+        (scoped / '.auriga-manager').mkdir(); (scoped / '.auriga-manager/saved').write_bytes(b'private')
+        (self.target / 'unrelated').write_bytes(b'keep')
+        snapshot = jobs.UploadSnapshot([self.source], '/home/destination', excludes='.git', contents=False)
+        self.addCleanup(snapshot.close); self.compared(snapshot)
+        self.assertEqual([row['path'] for row in snapshot.request['deletions']], [self.source.name + '/removed'])
+        request, stage = self.delta_uploaded(snapshot, delete=True); worker.commit(request)
+        self.assertEqual((stage / 'backup/deleted-00000000').read_bytes(), b'old')
+        for path in (scoped / '.git/config', scoped / '.auriga-manager/saved', self.target / 'unrelated'):
+            self.assertTrue(path.is_file())
+        single = self.snapshot([self.source / 'same'], contents=False); self.compared(single)
+        self.assertFalse(single.request['deletions'])
+
+    def test_delta_upload_skips_unchanged_and_requires_explicit_delete_and_overwrite(self):
+        for name, value in [('same', b'same'), ('modified', b'new'), ('new', b'added')]:
+            (self.source / name).write_bytes(value)
+        self.target.mkdir()
+        for name, value in [('same', b'same'), ('modified', b'old'), ('removed', b'keep unless opted in')]:
+            (self.target / name).write_bytes(value)
+        snapshot = self.snapshot(); self.compared(snapshot)
+        with self.assertRaisesRegex(EditorError, 'felülírás'): snapshot.upload_request()
+        request, stage = self.delta_uploaded(snapshot)
+        worker.commit(request)
+        self.assertEqual((self.target / 'modified').read_bytes(), b'new')
+        self.assertEqual((self.target / 'new').read_bytes(), b'added')
+        self.assertEqual((self.target / 'removed').read_bytes(), b'keep unless opted in')
+        self.assertEqual(len(list((stage / 'backup').iterdir())), 1)
+        self.assertEqual(json.loads((stage / 'result.json').read_text())['files'], 2)
+
+    def test_changed_remote_file_new_collision_and_delete_race_are_refused(self):
+        for kind in ('modified', 'new', 'deleted'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory(dir=self.root) as folder:
+                self.target = Path(folder)
+                for path in self.source.iterdir(): path.unlink()
+                if kind != 'deleted': (self.source / 'file').write_bytes(b'new')
+                if kind != 'new': (self.target / 'file').write_bytes(b'old')
+                snapshot = self.snapshot(); self.compared(snapshot)
+                request, stage = self.delta_uploaded(snapshot, delete=True)
+                (self.target / 'file').write_bytes(b'concurrent edit')
+                with self.assertRaisesRegex(ValueError, 'összehasonlítás óta'): worker.commit(request)
+                self.assertEqual((self.target / 'file').read_bytes(), b'concurrent edit')
+
+    def test_delete_failure_rolls_back_uploads_and_prior_deletions_and_retains_backups(self):
+        (self.source / 'modified').write_bytes(b'new')
+        self.target.mkdir()
+        for name in ('modified', 'removed-a', 'removed-b'): (self.target / name).write_bytes(name.encode())
+        snapshot = self.snapshot(); self.compared(snapshot)
+        request, stage = self.delta_uploaded(snapshot, delete=True)
+        original = os.replace
+        def fail(source, destination):
+            if Path(source) == self.target / 'removed-b': raise OSError('delete failure')
+            return original(source, destination)
+        with mock.patch.object(worker.os, 'replace', side_effect=fail), self.assertRaisesRegex(OSError, 'delete failure'):
+            worker.commit(request)
+        for name in ('modified', 'removed-a', 'removed-b'):
+            self.assertEqual((self.target / name).read_bytes(), name.encode())
+        self.assertEqual(json.loads((stage / 'result.json').read_text())['status'], 'rolled-back')
+        self.assertEqual((stage / 'backup/deleted-00000000').read_bytes(), b'removed-a')
+
+    def test_conflicts_and_invalid_cross_scope_comparison_responses_block_upload(self):
+        (self.source / 'file').write_bytes(b'new'); self.target.mkdir(); (self.target / 'file').mkdir()
+        snapshot = self.snapshot(); self.compared(snapshot)
+        self.assertEqual(snapshot.changes[0]['change'], 'conflict')
+        with self.assertRaisesRegex(EditorError, 'ütközésmentes'): snapshot.upload_request()
+        fresh = self.snapshot()
+        with mock.patch.object(worker, 'root_path', return_value=self.target): result = worker.upload_comparison(fresh.request)
+        result['deletions'] = [dict(path='../outside', key='deleted-00000000', size=1, sha256='a'*64)]
+        with self.assertRaises(EditorError): fresh.apply_comparison(result)
+        self.assertFalse(fresh.compared)
+        result['id'] = 'f'*24
+        with self.assertRaises(EditorError): fresh.apply_comparison(result)
+
     def build_request(self, configure=None, compile=None):
         (self.source / 'CMakeLists.txt').write_text('project(Test NONE)', encoding='utf-8')
         return dict(id='b' * 24, action='build', source=str(self.source), build=str(self.root / 'build'),
@@ -492,6 +615,11 @@ class GuiTests(unittest.TestCase):
             time.sleep(.01)
         self.assertTrue(predicate(), 'Qt operation did not finish')
 
+    def local_worker(self, target):
+        program = 'import sys;source=sys.stdin.buffer.read().decode();source=source.replace("path = Path(value)",' + \
+            repr('path = Path(' + repr(str(target)) + ')') + ',1);exec(compile(source,"<test-worker>","exec"))'
+        return sys.executable, ['-u', '-c', program]
+
     def test_build_async_success_failed_start_and_missing_success_marker(self):
         for command, success in (([sys.executable, '-c', 'print("AURIGA_BUILD_SUCCESS log=test")'], True),
                                  ([str(self.root / 'missing.exe')], False),
@@ -516,20 +644,84 @@ class GuiTests(unittest.TestCase):
         (source / 'file').write_bytes(b'upload')
         self.page.work.choose([str(source)])
         self.page.work.contents.setChecked(True)
-        self.page.work.prepare()
-        self.wait(lambda: self.page.work.planner is None)
-        self.assertIsNotNone(self.page.work.snapshot)
-        self.assertTrue(self.page.work.upload_button.isEnabled())
-        programs = [(sys.executable, ['-c', 'print("AURIGA_UPLOAD_PREPARED /home/upload/stage")']),
-                    (sys.executable, ['-c', 'print("AURIGA_UPLOAD_SUCCESS files=1 backup=test")'])]
-        with mock.patch.object(ssh.Session, 'ssh', side_effect=programs) as commands, \
-             mock.patch.object(ssh.Session, 'sftp', return_value=(sys.executable, ['-c', 'print("uploaded")'])):
+        target = self.root / 'remote'
+        def transfer(_):
+            snapshot = self.page.work.snapshot
+            code = 'import shutil\n'
+            for row in self.page.work.request['files']:
+                path = target / '.auriga-manager/uploads' / self.page.work.request['id'] / 'files' / row['key']
+                code += 'shutil.copy2(' + repr(str(snapshot.root / row['key'])) + ',' + repr(str(path)) + ')\n'
+            return sys.executable, ['-c', code]
+        with mock.patch.object(ssh.Session, 'ssh', return_value=self.local_worker(target)) as commands, \
+             mock.patch.object(ssh.Session, 'sftp', side_effect=transfer):
+            self.page.work.prepare()
+            self.wait(lambda: not self.page.work.active())
+            self.assertTrue(self.page.work.snapshot.compared)
+            self.assertTrue(self.page.work.upload_button.isEnabled())
+            self.assertFalse(target.exists())
+            self.assertEqual(self.page.work.table.item(0, 0).text(), 'Új')
             self.page.work.upload()
             self.wait(lambda: not self.page.work.active())
-            self.assertEqual(commands.call_count, 2)
+            self.assertEqual(commands.call_count, 3)
+        self.assertEqual((target / 'file').read_bytes(), b'upload')
         self.assertIn('sikeresen', self.page.work.status.text())
         self.assertIsNone(self.page.work.snapshot)
         self.assertEqual(self.errors, [])
+
+    def test_deleted_only_pipeline_keeps_backup_and_does_not_start_sftp(self):
+        source = self.root / 'empty'; source.mkdir()
+        target = self.root / 'remote'; target.mkdir(); (target / 'removed').write_bytes(b'preserved in backup')
+        self.page.work.choose([str(source)]); self.page.work.contents.setChecked(True)
+        with mock.patch.object(ssh.Session, 'ssh', return_value=self.local_worker(target)), \
+                mock.patch.object(ssh.Session, 'sftp') as transfer:
+            self.page.work.prepare(); self.wait(lambda: not self.page.work.active())
+            self.assertTrue((target / 'removed').exists())
+            self.page.work.delete.setChecked(True)
+            self.page.work.upload(); self.wait(lambda: not self.page.work.active())
+            transfer.assert_not_called()
+        self.assertFalse((target / 'removed').exists())
+        saved = list((target / '.auriga-manager/uploads').glob('*/backup/deleted-00000000'))
+        self.assertEqual(len(saved), 1); self.assertEqual(saved[0].read_bytes(), b'preserved in backup')
+        self.assertIn('sikeresen', self.page.work.status.text())
+
+    def test_cancelling_remote_comparison_invalidates_snapshot(self):
+        source = self.root / 'file'; source.write_bytes(b'x'); self.page.work.choose([str(source)])
+        command = [sys.executable, '-c', 'import sys,time;sys.stdin.buffer.read();time.sleep(5)']
+        with mock.patch.object(ssh.Session, 'ssh', return_value=(command[0], command[1:])):
+            self.page.work.prepare()
+            self.wait(lambda: self.page.work.process is not None)
+            self.page.work.cancel(); self.wait(lambda: not self.page.work.active())
+        self.assertIsNone(self.page.work.snapshot)
+        self.assertFalse(self.page.work.upload_button.isEnabled())
+
+    def test_comparison_zero_changes_deleted_only_and_conflicts_control_upload(self):
+        source = self.root / 'source'; source.mkdir(); (source / 'same').write_bytes(b'same')
+        snapshot = jobs.UploadSnapshot([source], '/home/upload', contents=True)
+        self.addCleanup(snapshot.close)
+        target = self.root / 'remote'; target.mkdir(); (target / 'same').write_bytes(b'same')
+        with mock.patch.object(worker, 'root_path', return_value=target): result = worker.upload_comparison(snapshot.request)
+        snapshot.apply_comparison(result); self.page.work.snapshot = snapshot; self.page.work.display_comparison(); self.page.work.controls()
+        self.assertEqual(self.page.work.table.rowCount(), 0)
+        self.assertFalse(self.page.work.upload_button.isEnabled())
+        self.assertIn('1 változatlan', self.page.work.status.text())
+        self.page.work.snapshot = None
+        (source / 'same').unlink()
+        empty = jobs.UploadSnapshot([source], '/home/upload', contents=True); self.addCleanup(empty.close)
+        with mock.patch.object(worker, 'root_path', return_value=target): result = worker.upload_comparison(empty.request)
+        empty.apply_comparison(result); self.page.work.snapshot = empty; self.page.work.display_comparison(); self.page.work.controls()
+        self.assertEqual(self.page.work.table.item(0, 0).text(), 'Törölt / csak távolin')
+        self.assertFalse(self.page.work.upload_button.isEnabled())
+        self.page.work.delete.setChecked(True)
+        self.assertTrue(self.page.work.upload_button.isEnabled())
+
+    def test_failed_or_malformed_comparison_does_not_enable_upload(self):
+        source = self.root / 'file'; source.write_bytes(b'x'); self.page.work.choose([str(source)])
+        for output in ('missing comparison', 'AURIGA_UPLOAD_COMPARISON {}'):
+            command = [sys.executable, '-c', 'import sys;sys.stdin.buffer.read();print(' + repr(output) + ')']
+            with mock.patch.object(ssh.Session, 'ssh', return_value=(command[0], command[1:])):
+                self.page.work.prepare(); self.wait(lambda: not self.page.work.active())
+            self.assertIsNone(self.page.work.snapshot)
+            self.assertFalse(self.page.work.upload_button.isEnabled())
 
     def test_profile_change_invalidates_reviewed_upload_and_saves_build_fields(self):
         self.page.work.settings['parallel'].setValue(5)
@@ -543,6 +735,11 @@ class GuiTests(unittest.TestCase):
         self.assertIsNone(self.page.work.snapshot)
         self.assertFalse(copied.exists())
         self.assertFalse(self.page.work.upload_button.isEnabled())
+        self.page.work.snapshot = jobs.UploadSnapshot([source], '/home/upload')
+        copied = self.page.work.snapshot.root
+        self.page.target['host'].setText('changed.invalid')
+        self.assertIsNone(self.page.work.snapshot)
+        self.assertFalse(copied.exists())
 
 
 if __name__ == '__main__':

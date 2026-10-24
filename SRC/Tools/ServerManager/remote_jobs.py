@@ -107,9 +107,13 @@ class UploadSnapshot:
         self.directory = tempfile.TemporaryDirectory(prefix='auriga-upload-')
         self.root = Path(self.directory.name)
         self.request = dict(action='prepare', id=secrets.token_hex(12),
-                            destination=remote_path(destination, 'Feltöltési cél'), files=[], directories=[])
+                            destination=remote_path(destination, 'Feltöltési cél'), files=[], directories=[], scopes=[])
+        self.compared = False
+        self.changes = []
+        self.unchanged = 0
         self.skipped = 0
         patterns = [p.strip() for p in excludes.split(';') if p.strip()]
+        self.request['excludes'] = patterns
         seen, dirs = set(), set()
 
         def add(path, relative):
@@ -118,7 +122,7 @@ class UploadSnapshot:
             if path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
                 raise EditorError('Szimbolikus link/junction nem tölthető fel: ' + str(path))
             rel = PurePosixPath(relative)
-            if any(fnmatch.fnmatchcase(part, pattern) for part in rel.parts for pattern in patterns):
+            if '.auriga-manager' in rel.parts or any(fnmatch.fnmatchcase(part, pattern) for part in rel.parts for pattern in patterns):
                 self.skipped += 1
                 return
             if (not rel.parts or rel.is_absolute() or '..' in rel.parts or '\\' in relative
@@ -158,6 +162,7 @@ class UploadSnapshot:
                 raise EditorError('Válassz fájlokat vagy mappát. A tartalom módhoz pontosan egy mappa kell.')
             for original in sources:
                 path = Path(original).absolute()
+                self.request['scopes'].append(dict(path='' if contents else path.name, directory=path.is_dir()))
                 if contents:
                     if path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
                         raise EditorError('Linkelt forrásmappa nem tölthető fel.')
@@ -165,12 +170,90 @@ class UploadSnapshot:
                         add(child, child.name)
                 else:
                     add(path, path.name)
-            if not self.request['files'] and not dirs:
+            if not self.request['files'] and not dirs and not contents:
                 raise EditorError('A kiválasztás és a kizárások után nincs feltölthető tartalom.')
             self.request['directories'] = sorted(dirs, key=lambda name: (name.count('/'), name))
         except BaseException:
             self.close()
             raise
+
+    def apply_comparison(self, result):
+        if (not isinstance(result, dict) or result.get('id') != self.request['id']
+                or result.get('destination') != self.request['destination'] or result.get('delta_version') != 1):
+            raise EditorError('Az összehasonlítás másik célhoz vagy korábbi listához tartozik.')
+        originals = {row['path']: row for row in self.request['files']}
+        original_dirs = set(self.request['directories'])
+        seen = set()
+
+        def relative(name):
+            if (not isinstance(name, str) or not name or len(name) > 4096
+                    or str(PurePosixPath(name)) != name or PurePosixPath(name).is_absolute()
+                    or '..' in PurePosixPath(name).parts or '\\' in name
+                    or any(ord(c) < 32 or ord(c) == 127 for c in name)
+                    or any(part == '.auriga-manager' or any(fnmatch.fnmatchcase(part, p) for p in self.request['excludes'])
+                           for part in PurePosixPath(name).parts)
+                    or not any(name == scope['path'] or scope['directory'] and
+                               (not scope['path'] or name.startswith(scope['path'] + '/'))
+                               for scope in self.request['scopes'])):
+                raise EditorError('Az összehasonlítás hatókörön kívüli útvonalat tartalmaz.')
+            if name in seen:
+                raise EditorError('Ismétlődő útvonal az összehasonlításban: ' + name)
+            seen.add(name)
+            return name
+
+        def fingerprint(value):
+            if (not isinstance(value, dict) or type(value.get('size')) is not int or value['size'] < 0
+                    or not isinstance(value.get('sha256'), str) or not re.fullmatch(r'[0-9a-f]{64}', value['sha256'])):
+                raise EditorError('Hibás távoli ellenőrzőösszeg.')
+            return dict(size=value['size'], sha256=value['sha256'])
+
+        files, deletions, directories, changes = [], [], [], []
+        try:
+            for row in result['files']:
+                name = relative(row['path'])
+                if name not in originals or any(row[key] != originals[name][key] for key in ('key', 'size', 'sha256')):
+                    raise EditorError('A helyi pillanatképhez nem illő összehasonlítás.')
+                previous = None if row['previous'] is None else fingerprint(row['previous'])
+                files.append(dict(originals[name], previous=previous))
+                changes.append(dict(path=name, change='new' if previous is None else 'modified', size=row['size']))
+            for name in result['directories']:
+                relative(name)
+                if name not in original_dirs:
+                    raise EditorError('Ismeretlen mappa az összehasonlításban.')
+                directories.append(name)
+                changes.append(dict(path=name, change='directory', size=0))
+            for index, row in enumerate(result['deletions']):
+                name = relative(row['path'])
+                if name in originals or name in original_dirs or row['key'] != 'deleted-%08d' % index:
+                    raise EditorError('Hibás törlési jelölt az összehasonlításban.')
+                deletions.append(dict(path=name, key=row['key'], **fingerprint(row)))
+                changes.append(dict(path=name, change='deleted', size=row['size']))
+            for row in result['changes']:
+                if row['change'] == 'conflict':
+                    name = relative(row['path'])
+                    if name not in originals and name not in original_dirs:
+                        raise EditorError('Ismeretlen ütközés az összehasonlításban.')
+                    changes.append(dict(path=name, change='conflict', size=0, detail=str(row.get('detail', ''))[:512]))
+            unchanged = result['unchanged']
+            if type(unchanged) is not int or not 0 <= unchanged <= len(originals):
+                raise EditorError('Hibás változatlan fájlszám.')
+        except (KeyError, TypeError) as error:
+            raise EditorError('Hiányos összehasonlítási válasz.') from error
+        self.request.update(delta_version=1, files=files, directories=directories, deletions=deletions)
+        self.changes = sorted(changes, key=lambda row: row['path'])
+        self.unchanged = unchanged
+        self.compared = True
+
+    def upload_request(self, overwrite=False, delete=False):
+        if not self.compared or any(row['change'] == 'conflict' for row in self.changes):
+            raise EditorError('Előbb készíts sikeres, ütközésmentes összehasonlítást.')
+        if not overwrite and any(row['previous'] is not None for row in self.request['files']):
+            raise EditorError('A módosított fájlok cseréjéhez jelöld be a meglévő fájlok felülírását.')
+        deletions = self.request['deletions'] if delete else []
+        if not self.request['files'] and not self.request['directories'] and not deletions:
+            raise EditorError('Nincs végrehajtható változás. A listázott törlésekhez külön engedélyezés szükséges.')
+        self.request['id'] = secrets.token_hex(12)
+        return dict(self.request, overwrite=overwrite, delete=delete, deletions=deletions)
 
     @property
     def stage(self):

@@ -523,21 +523,45 @@ A **Kapcsolatok és eszközök → Feltöltés** fülön:
 2. Mappánál eldönthető, hogy maga a mappa vagy csak a tartalma kerüljön a célba.
    A kizárt nevek/minták `;` jellel választhatók el. Alapból kimarad például
    `.git`, `.plastic`, `build`, `Library`, `Temp`, `.venv` és `__pycache__`.
-3. **Feltöltési lista készítése:** a háttérben helyi pillanatkép és SHA-256
-   készül. A táblázat a célhoz viszonyított útvonalakat és méreteket mutatja.
+3. **Eltérések keresése:** a háttérben helyi pillanatkép készül, majd az app
+   SSH-n összehasonlítja a távoli cél tartalmával. SHA-256 alapján csak az
+   **Új**, **Módosított**, **Törölt / csak távolin**, illetve **Új mappa** sorok
+   látszanak. A változatlan fájlokat nem listázza és nem tölti fel; önmagában
+   az eltérő dátum sem jelent módosítást. Az összesítő jelzi a kihagyott fájlok
+   számát. Az ellenőrzés a célon nem hoz létre fájlt vagy mappát.
    Az eredeti fájl későbbi szerkesztése nem változtatja meg a jóváhagyott bájtokat.
 4. Meglévő fájlok cseréjéhez jelöld be a **Meglévő fájlok felülírása** kapcsolót,
-   majd kattints a **Feltöltés indítása** gombra. A célmappa változtatása új
-   feltöltési listát igényel.
+   majd kattints a **Feltöltés indítása** gombra. Az összehasonlítás nem a Git
+   állapotát, hanem a helyi és távoli fájlok tényleges tartalmát vizsgálja.
+5. A **„Törölt / csak távolin” fájlok eltávolítása is** kapcsoló külön engedélyezi
+   a listázott, csak a távoli célon lévő fájlok törlését. Alapból kikapcsolt.
+   Törléskor a fájl a művelet saját távoli `backup` mappájába kerül.
+
+A törlési lista kizárólag a kijelölt mappára vonatkozik: például `Server`
+kiválasztásakor a cél `Server/` részfáját vizsgálja, testvérmappákat nem.
+A **Csak a mappa tartalmát** módban a teljes célmappa a kijelölt hatókör.
+Egyenként kiválasztott fájloknál a szomszédos fájlok nem törlési jelöltek.
+A kizárások a helyi és távoli oldalon is érvényesek; a `.auriga-manager`
+metaadatait mindenhol kihagyja. A csak távolin lévő fájl lehet szándékosan
+ott tartott kiegészítés is: a kapcsolót csak a megjelenített lista áttekintése
+után engedélyezd. Üres helyi mappa is összehasonlítható tartalom módban.
+
+Fájl/mappa típusütközés **Ütközés** sorral jelenik meg, és blokkolja a műveletet.
+Ha nincs eltérés, vagy csak nem engedélyezett törlés szerepel a listában,
+a feltöltési gomb inaktív. A célmappa, forráskiválasztás, kizárások vagy
+SSH-profil módosítása új összehasonlítást igényel.
 
 Az app SFTP-vel egyedi `<cél>/.auriga-manager/uploads/<azonosító>/files`
 területre tölt. Az összes fájl ellenőrzőösszegét és az ütközéseket a távoli
-worker még az eredetik módosítása előtt ellenőrzi. Felülírásnál a régi bájtok
+worker még az eredetik módosítása előtt ellenőrzi. Az összehasonlításkori célhoz
+képest megváltozott, eltűnt vagy közben létrejött fájlnál új listát kér, az
+aktuális változatot nem írja felül és nem törli. Felülírásnál a régi bájtok
 és fájljogok ugyanott a `backup` mappába kerülnek; a `request.json` rendeli
 egymáshoz az útvonalakat és a számozott mentéseket. Ezután fájlonként atomikus
 csere történik. Kezelt telepítési hiba esetén a már elvégzett cseréket visszaállítja.
 
-A cél egyéb fájljait nem törli, az üres mappákat is létrehozza, linkelt
+A kiválasztáson és a jóváhagyott törlési listán kívüli fájlokat megtartja.
+A hiányzó üres mappákat is létrehozza, a kiürült távoli mappákat megtartja. Linkelt
 célútvonalakat és kiválasztott symlink/junction forrásokat elutasít.
 Meglévő fájl Unix-jogai megmaradnak; az új fájlok `0644` jogosultságot kapnak.
 Új futtatható szkriptnél külön kell a megfelelő Unix-jogot beállítani.
