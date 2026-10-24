@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest import mock
@@ -212,7 +213,11 @@ for host,port in ([] if sys.argv[4]=='stall:'+name else json.loads(sys.argv[3]))
 while True:
  if (root/'crash.request').is_file() and (root/'crash.request').read_text()==name: raise SystemExit(7)
  p=Path('.auriga-stop')
- if p.exists() and p.read_text().split()==[str(os.getpid()),os.environ['AURIGA_SHUTDOWN_TOKEN']]: break
+ if p.exists() and p.read_text().split()==[str(os.getpid()),os.environ['AURIGA_SHUTDOWN_TOKEN']]:
+  if (root/('hold-stop-'+name)).exists():
+   (root/('stop-blocked-'+name)).touch()
+   while (root/('hold-stop-'+name)).exists(): time.sleep(.02)
+  break
  time.sleep(0.02)
 with (root/'trace').open('a') as trace: trace.write('STOP '+name+'\\n')
 ''', encoding='utf-8')
@@ -226,7 +231,9 @@ manage.file_check=lambda:cfg
 manage.database_check=lambda:None
 original=subprocess.Popen
 def spawn(argv,**kwargs):
+ if Path(argv[0]).parent != manage.ROOT/'bin': return original(argv,**kwargs)
  name=argv[-1]
+ if (manage.ROOT/('spawn-error-'+name)).exists(): raise PermissionError('Injected process launch failure')
  # A Windows venv executable is a launcher with a separate child PID. Use
  # the real interpreter so the fixture has the native server's one-PID shape.
  runtime=getattr(sys,'_base_executable',sys.executable)
@@ -357,6 +364,65 @@ manage.supervise([1])
             manage.control_cores('start', instances=['ch1-core1'])
         with self.assertRaisesRegex(RuntimeError, 'Select at least one game core'):
             manage.control_cores('stop')
+    def test_preparation_and_spawn_errors_only_fail_the_requested_core(self):
+        process, log = self.supervised_fixture()
+        try:
+            state = self.wait_listening(process)
+            original = json.loads(state.read_text())['children']
+            conflict = self.root/'run/ch2-core1'
+            conflict.write_text('This runtime directory is currently a file')
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                with self.assertRaisesRegex(RuntimeError, 'Not every core could be started'):
+                    manage.control_cores('start', instances=['ch2-core1'])
+            self.assertIn('FileExistsError', output.getvalue())
+            conflict.unlink()
+            injected = self.root/'spawn-error-ch2-core1'; injected.touch()
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                with self.assertRaisesRegex(RuntimeError, 'Not every core could be started'):
+                    manage.control_cores('start', instances=['ch2-core1'])
+            self.assertIn('Injected process launch failure', output.getvalue())
+            self.assertIsNone(process.poll())
+            self.assertEqual(json.loads(state.read_text())['children'], original)
+            self.assertTrue(all(manage.owned(child['identity']) for child in original))
+            injected.unlink()
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                manage.control_cores('start', instances=['ch2-core1'])
+            self.assertIn('ch2-core1: started', output.getvalue())
+            manage.stop(); self.assertEqual(process.wait(timeout=15), 0)
+        finally: self.cleanup_fixture(process, log)
+    def test_stopping_core_remains_owned_when_a_sibling_crashes(self):
+        process, log = self.supervised_fixture()
+        hold = self.root/'hold-stop-ch1-core1'; hold.touch()
+        thread, errors = None, []
+        try:
+            state = self.wait_listening(process)
+            original = json.loads(state.read_text())['children']
+            def stop_core():
+                try: manage.control_cores('stop', instances=['ch1-core1'])
+                except RuntimeError as error: errors.append(str(error))
+            thread = threading.Thread(target=stop_core); thread.start()
+            deadline = time.monotonic() + 10
+            while not (self.root/'stop-blocked-ch1-core1').exists() and time.monotonic() < deadline: time.sleep(.02)
+            self.assertTrue((self.root/'stop-blocked-ch1-core1').exists())
+            self.assertEqual(json.loads(state.read_text())['children'], original, 'a stopping core keeps its recovery identity')
+            (self.root/'crash.request').write_text('login')
+            deadline = time.monotonic() + 10
+            while json.loads(state.read_text())['phase'] != 'stopping' and time.monotonic() < deadline: time.sleep(.02)
+            self.assertEqual(json.loads(state.read_text())['phase'], 'stopping')
+            self.assertTrue(all(manage.owned(child['identity']) for child in original if child['name'] != 'login'))
+            hold.unlink()
+            self.assertNotEqual(process.wait(timeout=15), 0)
+            thread.join(5); self.assertFalse(thread.is_alive()); self.assertTrue(errors)
+            self.assertFalse(any(manage.owned(child['identity']) for child in original))
+            trace = (self.root/'trace').read_text().splitlines()
+            self.assertLess(trace.index('STOP ch1-core1'), trace.index('STOP database'))
+            self.assertFalse(state.exists())
+            events = [json.loads(path.read_text()) for path in (self.root/'run/crashes').glob('*/event.json')]
+            self.assertEqual([event['instance'] for event in events], ['login'])
+        finally:
+            hold.unlink(missing_ok=True)
+            self.cleanup_fixture(process, log)
+            if thread: thread.join(5)
     def test_supervisor_rolls_back_failed_startup(self):
         process, log = self.supervised_fixture(fail='ch1-core1')
         try:

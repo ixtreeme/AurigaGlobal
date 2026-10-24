@@ -60,7 +60,7 @@ def main():
             print('SERVER_MANAGER_ERROR: Native data/Lua check failed '+config()['common']['sql']['player']['password'], file=sys.stderr, flush=True)
             return 1
         (ROOT/'run').mkdir(exist_ok=True)
-        save_json(ROOT/'run/supervisor.json',dict(supervisor=identity(os.getpid()),token='test',children=[],phase='listening'))
+        save_json(ROOT/'run/supervisor.json',dict(supervisor=identity(os.getpid()),token='test',children=[],phase='listening',core_control_version=CORE_CONTROL_VERSION))
         print('STACK_LISTENING; fixture', flush=True)
         while not (ROOT/'run/fake-stop').exists(): time.sleep(.03)
         (ROOT/'run/supervisor.json').unlink(missing_ok=True)
@@ -145,12 +145,16 @@ class RpcTests(unittest.TestCase):
         self.assertIn('frissítést igényel', result['error'])
 
     def test_core_control_is_validated_and_routed(self):
-        self.assertTrue(self.rpc('status')['result']['state']['core_control'])
+        self.assertTrue(self.rpc('status')['result']['state']['core_control_supported'])
+        self.assertFalse(self.rpc('status')['result']['state']['core_control'])
+        self.assertTrue(self.rpc('action',dict(argv=['start']))['ok'])
+        deadline = time.monotonic() + 5
+        while not self.rpc('status')['result']['state']['core_control'] and time.monotonic() < deadline: time.sleep(.03)
         result = self.rpc('action', dict(argv=['start-cores', '--instance', 'remote-core', '--channel', '2']))
         self.assertTrue(result['ok'], result)
         self.assertTrue(self.rpc('action', dict(argv=['stop-cores', '--instance', 'remote-core']))['ok'])
         self.assertEqual((self.root / 'actions.trace').read_text().splitlines(),
-                         ['start-cores --instance remote-core --channel 2', 'stop-cores --instance remote-core'])
+                         ['start', 'start-cores --instance remote-core --channel 2', 'stop-cores --instance remote-core'])
         for argv in (['stop-cores'], ['start-cores', '--instance', '../escape'], ['start-cores', '--channel', 'x'],
                      ['stop-cores', '--instance'], ['start-cores', '--config', '/another/server.json']):
             result = self.rpc('action', dict(argv=argv))
@@ -163,6 +167,19 @@ class RpcTests(unittest.TestCase):
         result = self.rpc('action', dict(argv=['start-cores', '--instance', 'remote-core']))
         self.assertFalse(result['ok'])
         self.assertIn('friss manage.py', result['error'])
+
+    def test_updated_file_cannot_enable_core_requests_for_an_old_running_supervisor(self):
+        self.assertTrue(self.rpc('action',dict(argv=['start']))['ok'])
+        path = self.root/'run/supervisor.json'
+        deadline = time.monotonic() + 5
+        while not path.exists() and time.monotonic() < deadline: time.sleep(.03)
+        state = json.loads(path.read_text()); state.pop('core_control_version')
+        path.write_text(json.dumps(state))
+        result = self.rpc('status')['result']['state']
+        self.assertTrue(result['running']); self.assertTrue(result['core_control_supported']); self.assertFalse(result['core_control'])
+        response = self.rpc('action',dict(argv=['start-cores','--instance','remote-core']))
+        self.assertFalse(response['ok']); self.assertIn('indítsd újra',response['error'])
+        self.assertEqual((self.root/'actions.trace').read_text().splitlines(),['start'])
 
     def test_detached_remote_start_survives_request_exit_and_stop_is_routed(self):
         result = self.rpc('action', dict(argv=['start', '--channel', '1']))
@@ -238,7 +255,7 @@ class FakeSession:
     def ssh(self, command):
         self.calls.append((self.profile['id'], command))
         if self.fail: return PYTHON, ['-c', "import sys; print('Host key verification failed.',file=sys.stderr);sys.exit(255)"]
-        if self.slow: return PYTHON, ['-B', '-u', '-c', "import sys,time; source=sys.stdin.read();time.sleep(1);exec(compile(source,'<test-ssh>','exec'))"]
+        if self.slow: return PYTHON, ['-B', '-u', '-c', "import sys,time; source=sys.stdin.buffer.read();time.sleep(1);exec(compile(source,'<test-ssh>','exec'))"]
         return PYTHON, ['-B', '-u', '-']
 
 
@@ -428,7 +445,7 @@ class TargetGuiTests(unittest.TestCase):
         self.assertFalse(self.window.set_root(self.local))
         self.assertTrue(self.window.is_remote())
         self.wait(lambda:not self.window.busy())
-        self.assertEqual(json.loads((self.remote/'data/example.json').read_text()),dict(value=2))
+        self.assertEqual(json.loads((self.remote/'data/example.json').read_text()),dict(value=2),self.errors)
         self.assertEqual(json.loads((self.local/'data/example.json').read_text()),dict(value=1))
 
     def test_reply_for_another_target_is_rejected(self):

@@ -201,6 +201,8 @@ def dispatch(api, root, request):
         manager = api.load_manager(root)
         if argv[0] in ('start-cores', 'stop-cores') and not hasattr(manager, 'control_cores'):
             raise ValueError('A távoli manage.py nem ismeri a core-onkénti indítást. Másold fel a friss manage.py fájlt a szervermappába.')
+        if argv[0] in ('start-cores', 'stop-cores') and not api.describe(root).get('core_control'):
+            raise ValueError('A futó felügyelő nem támogatja a core-onkénti vezérlést. Állítsd le, majd indítsd újra a szervert a friss manage.py használatával.')
         if argv[0] == 'setup-db' and not status(api, root).get('can_setup'):
             raise ValueError('Ezen a célgépen nincs saját Windowsos adatbázis-előkészítés. Az SQL-kapcsolatok a Beállítások oldalon szerkeszthetők.')
         if argv[0] == 'stop-db' and api.describe(root)['database_kind'] == 'external':

@@ -23,10 +23,15 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parent
 PACKAGE_CONTROL_VERSION = 2
 CRASH_MONITOR_VERSION = 1
+CORE_CONTROL_VERSION = 1
 
 
 class StopRequested(Exception):
     pass
+
+
+class ChildExited(RuntimeError):
+    """An existing stack member exited; the remaining children must shut down."""
 
 
 def read_json(path):
@@ -645,8 +650,10 @@ def supervise_owned(channels, all_channels=False):
         for host, port in instance_endpoints(cfg, name): free_endpoint(name, host, port)
     state_file.parent.mkdir(parents=True, exist_ok=True)
     token = secrets.token_hex(24)
-    state = dict(supervisor=identity(os.getpid()), token=token, children=[], phase='starting', crash_monitor=CRASH_MONITOR_VERSION)
+    state = dict(supervisor=identity(os.getpid()), token=token, children=[], phase='starting',
+                 crash_monitor=CRASH_MONITOR_VERSION, core_control_version=CORE_CONTROL_VERSION)
     children, shutdown_errors = [], []
+    stopping = set()
     launches, fingerprints = {}, {}
     control = ROOT / 'run/control'
 
@@ -657,16 +664,23 @@ def supervise_owned(channels, all_channels=False):
     def detect_exit(skip=()):
         exited = [(name, process, directory) for name, process, directory, _ in children
                   if name not in skip and process.poll() is not None]
+        unexpected = False
         for name, process, directory in exited:
+            if name in stopping:
+                forget(name)
+                print('STOPPED ' + name, flush=True)
+                continue
+            unexpected = True
             try: record_crash(name, process, directory, launches[name], state['phase'])
             except Exception as error: print('CRASH_MONITOR_ERROR ' + str(error), file=sys.stderr, flush=True)
-        return bool(exited)
+        return unexpected
 
     def forget(name):
-        # Removed before an intended stop, so its exit is not taken for a crash.
+        # Keep ownership until the process has actually exited, including on errors.
         entry = next(child for child in children if child[0] == name)
         record = next(child for child in state['children'] if child['name'] == name)
         children.remove(entry); state['children'].remove(record)
+        stopping.discard(name)
         save_json(state_file, state)
         return entry, record
 
@@ -703,7 +717,7 @@ def supervise_owned(channels, all_channels=False):
                 except Exception as error: print('CRASH_MONITOR_ERROR ' + str(error), file=sys.stderr, flush=True)
                 return '%s exited during startup (code %s); see run/crashes and its console.log' % (name, process.poll())
             if detect_exit(skip=(name,) if later else ()):
-                raise RuntimeError('A server exited during startup; see run/crashes and run/*/console.log')
+                raise ChildExited('A server exited during startup; see run/crashes and run/*/console.log')
             for endpoint in list(pending):
                 try:
                     with socket.create_connection(endpoint, timeout=0.2): pending.remove(endpoint)
@@ -716,16 +730,19 @@ def supervise_owned(channels, all_channels=False):
         return None
 
     def stop_child(name):
-        entry, record = forget(name)
+        entry = next(child for child in children if child[0] == name)
         _, process, directory, child_token = entry
         request_child_stop(process, directory, child_token)
+        stopping.add(name)
         deadline = time.monotonic() + 60
         while process.poll() is None and time.monotonic() < deadline:
-            if detect_exit(): raise RuntimeError('A server exited; see run/crashes; shutting down the remaining owned servers')
+            stop_requested()
+            if detect_exit(skip=(name,)): raise ChildExited('A server exited; see run/crashes; shutting down the remaining owned servers')
             time.sleep(0.2)
         if process.poll() is None:
-            adopt(entry, record)  # Still owned: a full stop or recovery can retry it.
+            # The normal monitor will finish this intended stop when it exits.
             return '%s did not stop within 60 seconds' % name
+        forget(name)
         print('STOPPED ' + name, flush=True)
         return None
 
@@ -737,11 +754,17 @@ def supervise_owned(channels, all_channels=False):
         try:
             for host, port in instance_endpoints(cfg, name): free_endpoint(name, host, port)
         except RuntimeError as error: return str(error)
-        prepare_runtime(cfg, [name])
-        process = launch(name)
-        failure = wait_listening(name, process, later=True)
-        if failure and process.poll() is None:
-            stop_child(name)
+        try:
+            prepare_runtime(cfg, [name])
+            process = launch(name)
+            failure = wait_listening(name, process, later=True)
+        except ChildExited:
+            raise
+        except (OSError, RuntimeError, ValueError) as error:
+            failure = '%s could not start: %s: %s' % (name, type(error).__name__, error)
+        if failure and any(child[0] == name for child in children):
+            cleanup_error = stop_child(name)
+            if cleanup_error: failure += '; ' + cleanup_error
         return failure or 'started'
 
     def serve_control():
@@ -760,7 +783,11 @@ def supervise_owned(channels, all_channels=False):
             elif not isinstance(names, list) or not names or any(name not in cfg['game_servers'] for name in names):
                 result['error'] = 'Only configured game cores can be started or stopped one by one'
             else:
-                for name in names: result['instances'][name] = control_core(request['action'], name)
+                for name in names:
+                    try: result['instances'][name] = control_core(request['action'], name)
+                    except ChildExited: raise
+                    except (OSError, RuntimeError, ValueError) as error:
+                        result['instances'][name] = '%s: %s' % (type(error).__name__, error)
                 result['ok'] = all(outcome in ('started', 'stopped', 'already running', 'not running')
                                    for outcome in result['instances'].values())
             save_json(control / (identity_ + '.result.json'), result)
@@ -819,6 +846,8 @@ def control_cores(action, channels=None, instances=None):
     state = read_json(state_file)
     if not owned(state['supervisor']): raise RuntimeError('The supervisor is not running; stop the stack and start it again')
     if state.get('phase') != 'listening': raise RuntimeError('The stack is starting or stopping; try again once it runs')
+    if state.get('core_control_version') != CORE_CONTROL_VERSION:
+        raise RuntimeError('The running supervisor does not support core control; stop the stack and start it again with the updated manage.py')
     control = ROOT / 'run/control'
     control.mkdir(parents=True, exist_ok=True)
     request_id = secrets.token_hex(12)

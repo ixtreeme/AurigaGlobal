@@ -1402,7 +1402,9 @@ class MainWindow(QMainWindow):
         self.start_cores_button.setEnabled(ready and any(not row['running'] for row in selected))
         self.stop_cores_button.setEnabled(ready and any(row['running'] for row in selected))
         outdated = bool(state and state['running'] and not state.get('core_control'))
-        tip = 'A szervermappa manage.py fájlja régebbi; a core-onkénti vezérléshez másold fel a frisset.' if outdated else ''
+        tip = (('A futó felügyelő még nem támogatja a core-onkénti vezérlést. A friss manage.py használatához állítsd le, majd indítsd újra a szervert.'
+                if state.get('core_control_supported') else
+                'A szervermappa manage.py fájlja régebbi; a core-onkénti vezérléshez másold fel a frisset.') if outdated else '')
         self.start_cores_button.setToolTip(tip or 'A kijelölt, leállított core-ok indítása a futó szerverhez.')
         self.stop_cores_button.setToolTip(tip or 'A kijelölt, futó core-ok szabályos leállítása; a többi tovább fut.')
 

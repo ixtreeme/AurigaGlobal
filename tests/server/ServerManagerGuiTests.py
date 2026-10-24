@@ -147,10 +147,14 @@ class ServerManagerGuiTests(unittest.TestCase):
             click(self.window.start_button)
             self.assertEqual(jobs[-1], ['start-cores', '--channel', '1'])
             state['core_control'] = False
+            state['core_control_supported'] = True
             select('ch2-core1')
             self.window.refresh()
             self.assertFalse(self.window.start_cores_button.isEnabled())
             self.assertFalse(self.window.start_button.isEnabled())
+            self.assertIn('indítsd újra', self.window.start_cores_button.toolTip())
+            state['core_control_supported'] = False
+            self.window.refresh()
             self.assertIn('manage.py', self.window.start_cores_button.toolTip())
 
     def test_real_field_edit_and_async_native_save(self):

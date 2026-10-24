@@ -34,6 +34,23 @@ class SqlStatusTests(unittest.TestCase):
         return dict(roles=entry['roles'],host=value['host'],port=value['port'],database=value['database'],
                     status='available',message='Kapcsolat rendben.')
 
+    def test_core_control_is_advertised_by_the_live_supervisor(self):
+        manager = api.load_manager(self.root)
+        state = dict(supervisor=manager.identity(os.getpid()), children=[], phase='listening', token='fixture')
+        manager.save_json(self.root/'run/supervisor.json', state)
+        status = api.describe(self.root)
+        self.assertTrue(status['running']); self.assertTrue(status['core_control_supported'])
+        self.assertFalse(status['core_control'], 'updating manage.py does not update an already running supervisor')
+        with self.assertRaisesRegex(RuntimeError, 'running supervisor does not support core control'):
+            manager.control_cores('start', instances=[next(iter(self.config['game_servers']))])
+        self.assertFalse((self.root/'run/control').exists(), 'old owners must not receive unanswerable requests')
+        state['core_control_version'] = manager.CORE_CONTROL_VERSION
+        manager.save_json(self.root/'run/supervisor.json', state)
+        self.assertTrue(api.describe(self.root)['core_control'])
+        state['supervisor'] = dict(pid=0, created='invalid', image='invalid')
+        manager.save_json(self.root/'run/supervisor.json', state)
+        self.assertFalse(api.describe(self.root)['core_control'], 'a stale version marker cannot authorize core control')
+
     def test_effective_instance_overrides_are_checked_and_common_connections_are_deduplicated(self):
         entries = api.sql_connections(self.config)
         self.assertEqual(len(entries),4)
@@ -366,7 +383,7 @@ class ServerManagerTests(unittest.TestCase):
         with self.assertRaises(api.EditorError):
             api.save_document(self.root, document.relative, b'function broken(', document.digest)
         self.assertEqual(script.read_bytes(), document.original)
-        self.assertIn('PACKAGE_DATA_OK', api.save_document(self.root, document.relative, b'return 2\n', document.digest))
+        self.assertIn('LUA_SYNTAX_OK', api.save_document(self.root, document.relative, b'return 2\n', document.digest))
 
 
 if __name__ == '__main__':

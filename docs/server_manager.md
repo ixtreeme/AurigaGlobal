@@ -96,6 +96,9 @@ nem mentett kapcsolati útvonalnál az app előbb a megfelelő profil kiválaszt
   - A Database és a LoginServer a teljes stackhez tartozik.
   - Ha a szervermappa `manage.py` fájlja régebbi, a gombok tiltottak, és
     a súgójuk a frissítését kéri.
+    Ha a fájl már friss, de a felügyelő még a régi kóddal fut, a súgó egy
+    teljes szerverleállítást és újraindítást kér. A futó felügyelő támogatása
+    nélkül a kezelő nem küld külön core-vezérlési kérést.
 - **Kapcsolatok és eszközök:** közvetlen SSH vagy ProxyJump, gépenként külön kulcsos vagy jelszavas belépés,
   kapcsolatellenőrzés, helyi porttovábbítás, távoli CMake-build és ellenőrzött
   fájl-/mappafeltöltés. A beállítások profilonként menthetők.

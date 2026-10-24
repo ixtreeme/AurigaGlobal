@@ -2552,3 +2552,15 @@ Négy mutáció mindegyikét elkapja egy teszt:
 - utólagos core a LoginServer mögött;
 - utólagos hiba miatti teljes leállás;
 - leállított core leállítása.
+
+A core-vezérlés hibakezelésének regressziós esetei valódi, ideiglenes
+alfolyamatokkal ellenőrzik, hogy egy futási mappa ütközése vagy egy indítási
+jogosultsághiba csak az új core kérését utasítja el. A lassú leállítás alatt
+összeomló másik szerver esetén a leálló core az állapotfájlban marad, és a
+Database csak a kilépése után áll le. Az utólagos indítás és leállítás korábbi
+tesztjei továbbra is ellenőrzik a sikeres utat és az összeomlási naplózást.
+
+A backend-, célgép- és GUI-tesztek a futó felügyelő `core_control_version`
+jelzését vizsgálják: a friss fájl önmagában nem engedélyezi a külön vezérlést.
+Régi vagy már nem futó felügyelőnél a gombok tiltottak, a távoli kérés érthető
+hibával visszatér, és nem hagy megválaszolhatatlan kérést a vezérlési mappában.

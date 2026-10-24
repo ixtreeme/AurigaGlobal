@@ -270,7 +270,7 @@ def describe(root):
     root = package_root(root)
     manager = load_manager(root)
     config = strict_json((root / 'server.json').read_text(encoding='utf-8-sig'))
-    states, running, state = {}, False, {}
+    states, running, state, supervisor_live = {}, False, {}, False
     retained = root / 'run/supervisor.json'
     phase = 'Leállítva'
     if retained.is_file():
@@ -319,7 +319,8 @@ def describe(root):
                 deployment_pending=pending.relative_to(root).as_posix() if pending else None,
                 can_setup=os.name == 'nt' and (root / 'db/backup/manifest.json').is_file(),
                 reload_supported=(root / 'quest_reload.py').is_file() and hasattr(manager, 'apply_quests'),
-                core_control=hasattr(manager, 'control_cores'),
+                core_control_supported=hasattr(manager, 'control_cores'),
+                core_control=bool(supervisor_live and hasattr(manager, 'control_cores') and state.get('core_control_version') == 1),
                 hotreload=bool(running and hasattr(manager, 'quest_reload_status') and manager.quest_reload_status()['available']))
 
 

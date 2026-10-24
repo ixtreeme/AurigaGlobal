@@ -100,6 +100,9 @@ ugyanazt a port- és készenléti ellenőrzést kapja, mint a teljes indításn�
 Ha nem indul el, csak az a core marad leállítva, és a stack fut tovább.
 Ugyanígy: a kért leállítás nem számít összeomlásnak, a stack fut tovább.
 A Database és a LoginServer csak a teljes stackkel együtt indul és áll le.
+A core-onkénti vezérlés támogatását a futó felügyelő jelzi. Ha a `manage.py`
+fájlt működés közben frissíted, a teljes szervert egyszer le kell állítani és
+újraindítani; addig a külön core-vezérlés tiltott, a teljes leállítás használható.
 Az SQL-kliens az adminjelszót privát futási fájlból kapja, nem parancssori argumentumból.
 
 ## Ismert adateltérések és hátralévő integráció
