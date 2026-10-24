@@ -3,15 +3,16 @@ import json
 import re
 
 from PySide6.QtCore import QProcess, QRect, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import (QColor, QFont, QKeySequence, QPainter, QShortcut,
+from PySide6.QtGui import (QColor, QFont, QKeySequence, QPainter, QShortcut, QStandardItem, QStandardItemModel,
                           QSyntaxHighlighter, QTextCharFormat, QTextCursor,
                           QTextFormat, QTextBlockUserData)
-from PySide6.QtWidgets import (QCheckBox, QHBoxLayout, QInputDialog, QLabel,
+from PySide6.QtWidgets import (QApplication, QCheckBox, QCompleter, QHBoxLayout, QInputDialog, QLabel,
     QLineEdit, QListWidget, QListWidgetItem, QPlainTextEdit, QPushButton,
     QTextEdit, QToolButton, QVBoxLayout, QWidget)
 
 import backend as api
 from editor_checks import Issue, NativeRequest, json_issues, language_for
+from quest_api_catalog import FUNCTIONS, ORIGINS
 
 
 def utf16(text):
@@ -25,7 +26,7 @@ class BlockData(QTextBlockUserData):
 
 
 class Syntax(QSyntaxHighlighter):
-    KEYWORDS = set(('and break do else elseif end false for function if in local nil not or '
+    KEYWORDS = set(('and break do else elseif end false for function goto if in local nil not or '
                     'repeat return then true until while quest state when begin with').split())
     TOKEN = re.compile(r'\b[A-Za-z_][\w]*\b|\b(?:0[xX][\da-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b')
     LONG = re.compile(r'\[(=*)\[')
@@ -139,6 +140,18 @@ class CodeEdit(QPlainTextEdit):
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         self.setTabStopDistance(self.fontMetrics().horizontalAdvance(' ') * 4)
         self.syntax = Syntax(self.document())
+        self.completion_model = QStandardItemModel(self)
+        self.completer = QCompleter(self.completion_model, self)
+        self.completer.setWidget(self)
+        self.completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseSensitive)
+        self.completer.setMaxVisibleItems(10)
+        self.completer.popup().setFont(self.font())
+        self.completer.popup().setAccessibleName('Lua- és quest-kiegészítések')
+        self.completer.activated[str].connect(self.insert_completion)
+        self.completion_namespace = None
+        self.textChanged.connect(self.hide_completion)
+        self.cursorPositionChanged.connect(self.hide_completion)
         self.gutter = Gutter(self)
         self.issues, self.matches = [], []
         self.blockCountChanged.connect(self.update_margin)
@@ -311,7 +324,136 @@ class CodeEdit(QPlainTextEdit):
                 edit.insertText('-- ')
         cursor.endEditBlock()
 
+    def hide_completion(self):
+        self.completer.popup().hide()
+
+    def completion_context(self):
+        """Return the qualified token and its UTF-16 replacement range at the caret."""
+        cursor = self.textCursor()
+        if self.syntax.language not in ('lua', 'quest') or cursor.hasSelection():
+            return None
+        block = cursor.block()
+        self.syntax.rehighlightBlock(block)
+        position = cursor.positionInBlock()
+        before = block.text().encode('utf-16-le')[:position * 2].decode('utf-16-le')
+        # A continued long comment/string also covers an empty line.
+        if (position == 0 and block.previous().isValid() and block.previous().userState() > 0
+                or position > 0 and self.ignored(cursor.position() - 1)):
+            return None
+        match = re.search(r'(?<![\w.:\]])([A-Za-z_][A-Za-z_0-9]*(?:\.[A-Za-z_][A-Za-z_0-9]*)*\.?)$', before)
+        if match:
+            prefix = match[1]
+        elif not before or before[-1].isspace() or before[-1] in '(=,+-*/%<>~{;':
+            prefix = ''
+        else:
+            return None
+        # Include the rest of the current identifier when completing in its middle.
+        after = block.text().encode('utf-16-le')[position * 2:].decode('utf-16-le')
+        suffix = re.match(r'[A-Za-z_0-9]*', after)[0]
+        return prefix, cursor.position() - utf16(prefix), cursor.position() + utf16(suffix)
+
+    def request_completion(self, manual=True):
+        context = self.completion_context()
+        if context is None:
+            self.hide_completion()
+            return
+        prefix = context[0]
+        namespace = prefix.rsplit('.', 1)[0] if '.' in prefix else ''
+        if namespace not in FUNCTIONS or not manual and '.' not in prefix and len(prefix) < 2:
+            self.hide_completion()
+            return
+        if self.completion_namespace != (namespace, self.syntax.language):
+            self.completion_namespace = (namespace, self.syntax.language)
+            self.completion_model.clear()
+            names = {((namespace + '.') if namespace else '') + name: 'function'
+                     for name in FUNCTIONS[namespace]}
+            if not namespace:
+                names.update({name: 'namespace' for name in FUNCTIONS if name})
+                keywords = self.syntax.KEYWORDS
+                if self.syntax.language == 'lua':
+                    keywords = keywords - {'quest', 'state', 'when', 'begin', 'with'}
+                names.update({name: 'keyword' for name in keywords})
+            for name, kind in sorted(names.items()):
+                item = QStandardItem(name)
+                item.setData(kind, Qt.ItemDataRole.UserRole)
+                if kind == 'function':
+                    item.setToolTip(name + '()\n' + '\n'.join(ORIGINS[namespace])
+                        + '\nAz opcionális szerverfunkciók elérhetősége a build beállításaitól függ.')
+                else:
+                    item.setToolTip('Névtér' if kind == 'namespace' else 'Kulcsszó')
+                self.completion_model.appendRow(item)
+        self.completer.setCompletionPrefix(prefix)
+        if not self.completer.completionCount():
+            self.hide_completion()
+            return
+        self.completer.popup().setCurrentIndex(self.completer.completionModel().index(0, 0))
+        rect = self.cursorRect()
+        rect.setWidth(min(600, max(320, self.completer.popup().sizeHintForColumn(0) + 30)))
+        self.completer.complete(rect)
+
+    def insert_completion(self, name):
+        context = self.completion_context()
+        if context is None:
+            self.hide_completion()
+            return
+        prefix, start, end = context
+        namespace = prefix.rsplit('.', 1)[0] if '.' in prefix else ''
+        if namespace not in FUNCTIONS or not name.startswith(prefix):
+            return
+        if name in FUNCTIONS and name:
+            kind = 'namespace'
+        elif name.removeprefix(namespace + '.' if namespace else '') in FUNCTIONS[namespace]:
+            kind = 'function'
+        elif '.' not in name and name in self.syntax.KEYWORDS:
+            kind = 'keyword'
+        else:
+            return
+        self.hide_completion()
+        cursor = self.textCursor()
+        cursor.setPosition(start)
+        cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+        tail = cursor.block().text().encode('utf-16-le')[(end - cursor.block().position()) * 2:].decode('utf-16-le')
+        insert, advance = name, 0
+        if kind == 'function':
+            existing = re.match(r'[ \t]*\(', tail)
+            if existing:
+                advance = utf16(existing[0])
+            else:
+                insert += '()'
+                advance = -1
+        elif kind == 'namespace':
+            if tail.startswith('.'):
+                advance = 1
+            else:
+                insert += '.'
+        cursor.beginEditBlock()
+        cursor.insertText(insert)
+        cursor.setPosition(cursor.position() + advance)
+        cursor.endEditBlock()
+        self.setTextCursor(cursor)
+        self.ensureCursorVisible()
+        if kind == 'namespace':
+            self.request_completion()
+
     def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Space and event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            self.request_completion()
+            return
+        popup = self.completer.popup()
+        was_visible = popup.isVisible()
+        if was_visible and event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_PageUp, Qt.Key.Key_PageDown):
+            QApplication.sendEvent(popup, event)
+            return
+        if was_visible and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Tab):
+            name = popup.currentIndex().data()
+            if name:
+                self.insert_completion(name)
+            else:
+                self.hide_completion()
+            return
+        if was_visible and event.key() in (Qt.Key.Key_Escape, Qt.Key.Key_Backtab):
+            self.hide_completion()
+            return
         if event.key() in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab) and not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             self.indent(event.key() == Qt.Key.Key_Backtab or bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier))
             return
@@ -326,6 +468,10 @@ class CodeEdit(QPlainTextEdit):
             cursor.endEditBlock()
             return
         super().keyPressEvent(event)
+        if (not event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.AltModifier)
+                and (event.text() and re.fullmatch(r'[A-Za-z_0-9.]', event.text())
+                     or was_visible and event.key() == Qt.Key.Key_Backspace)):
+            self.request_completion(manual=False)
 
 
 class CodePane(QWidget):
@@ -352,6 +498,9 @@ class CodePane(QWidget):
         tool('Sorhoz…', self.goto_dialog)
         self.format_button = tool('JSON rendezése', self.format_json)
         tool('Ellenőrzés · F7', self.validate_now)
+        self.completion_button = tool('Kiegészítés', lambda: self.complete_code())
+        self.completion_button.setToolTip('Lua- és quest-függvények · Ctrl+Space\n'
+            'A pc. után automatikusan megjelennek a lehetőségek.\nEnter / Tab: beszúrás; Esc: bezárás.')
         self.wrap = QCheckBox('Sortördelés')
         self.wrap.toggled.connect(lambda on: self.edit.setLineWrapMode(
             QPlainTextEdit.LineWrapMode.WidgetWidth if on else QPlainTextEdit.LineWrapMode.NoWrap))
@@ -388,6 +537,8 @@ class CodePane(QWidget):
         self.find_panel.hide()
         self.edit = CodeEdit()
         self.edit.setAccessibleName('Forráskód szerkesztő')
+        self.edit.setToolTip('Lua / quest: pc., npc., item.… · Ctrl+Space: kiegészítés\n'
+            'Enter / Tab: beszúrás · Esc: lista bezárása')
         self.layout.addWidget(self.edit, 1)
         self.issue_list = QListWidget()
         self.issue_list.setMaximumHeight(85)
@@ -417,18 +568,30 @@ class CodePane(QWidget):
         for keys, callback in [('Ctrl+f', self.show_find), ('Ctrl+h', self.show_find), ('F3', self.find_next),
                                ('Shift+F3', lambda: self.find_next(True)), ('Ctrl+g', self.goto_dialog),
                                ('Ctrl+/', self.edit.comment), ('Ctrl+Shift+f', self.format_json),
-                               ('F7', self.validate_now), ('Escape', self.hide_find)]:
+                               ('F7', self.validate_now), ('Escape', self.escape)]:
             shortcut = QShortcut(QKeySequence(keys), self)
             shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
             shortcut.activated.connect(callback)
 
     def set_context(self, relative, encoding='utf-8', newline='\n'):
         self.stop_check()
+        self.edit.hide_completion()
         self.relative, self.encoding, self.newline = relative, encoding, newline
         self.edit.syntax.language = language_for(relative)
         self.edit.syntax.rehighlight()
         self.format_button.setVisible(self.edit.syntax.language == 'json')
+        self.completion_button.setVisible(self.edit.syntax.language in ('lua', 'quest'))
         self.changed()
+
+    def complete_code(self):
+        self.edit.setFocus()
+        self.edit.request_completion()
+
+    def escape(self):
+        if self.edit.completer.popup().isVisible():
+            self.edit.hide_completion()
+        else:
+            self.hide_find()
 
     def update_position(self):
         cursor = self.edit.textCursor()
@@ -532,6 +695,7 @@ class CodePane(QWidget):
 
     def shutdown(self):
         self.timer.stop()
+        self.edit.hide_completion()
         self.stop_check()
 
     def show_find(self):

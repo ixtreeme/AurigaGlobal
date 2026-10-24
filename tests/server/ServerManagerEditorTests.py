@@ -19,6 +19,8 @@ from PySide6.QtWidgets import QApplication
 import backend as api
 from code_editor import CodePane, utf16
 from editor_checks import NativeRequest, json_issues, language_for
+from generate_quest_api import render, tables
+from quest_api_catalog import FUNCTIONS
 
 
 class EditorTests(unittest.TestCase):
@@ -117,6 +119,143 @@ class EditorTests(unittest.TestCase):
         self.pane.edit.moveCursor(QTextCursor.MoveOperation.End)
         QTest.keyClick(self.pane.edit, Qt.Key.Key_Return)
         self.assertEqual(self.pane.edit.toPlainText(), '    {\n        ')
+
+    def completions(self):
+        model = self.pane.edit.completer.completionModel()
+        return [model.index(row, 0).data() for row in range(model.rowCount())]
+
+    def test_completion_catalog_tracks_source_and_excludes_comments_and_disabled_libraries(self):
+        source = REPO / 'SRC/Tools/ServerManager/quest_api_catalog.py'
+        self.assertEqual(source.read_text(encoding='utf-8'), render(REPO))
+        self.assertIn('get_level', FUNCTIONS['pc'])
+        self.assertIn('give_item2', FUNCTIONS['pc'])
+        self.assertNotIn('mysql_password', FUNCTIONS[''])  # Commented-out registration.
+        self.assertNotIn('execute', FUNCTIONS['os'])
+        self.assertNotIn('io', FUNCTIONS)
+        self.assertNotIn('debug', FUNCTIONS)
+        self.assertIn('foreach', FUNCTIONS['table'])
+        self.assertIn('loadstring', FUNCTIONS[''])
+        self.assertEqual(tables('luaL_Reg a[] = {\n // {"bad", fn},\n {"yes", fn},\n {nullptr, nullptr}\n};'),
+                         {'a': {'yes'}})
+
+    def test_pc_completion_typing_filter_tab_insertion_and_undo(self):
+        self.load('', 'data/quest/Quest/demo.lua')
+        edit = self.pane.edit
+        edit.setFocus()
+        QTest.keyClicks(edit, 'pc.')
+        self.assertTrue(edit.completer.popup().isVisible())
+        self.assertIn('pc.get_level', self.completions())
+        self.assertNotIn('npc.get_level', self.completions())
+        QTest.keyClicks(edit, 'get_leve')
+        self.assertEqual(self.completions(), ['pc.get_level'])
+        QTest.keyClick(edit, Qt.Key.Key_Tab)
+        self.assertEqual(edit.toPlainText(), 'pc.get_level()')
+        self.assertEqual(edit.textCursor().position(), len('pc.get_level('))
+        self.assertFalse(edit.completer.popup().isVisible())
+        edit.undo()
+        self.assertEqual(edit.toPlainText(), 'pc.get_leve')
+
+    def test_completion_enter_click_and_escape_leave_normal_enter_and_tab_working(self):
+        self.load('pc.get_leve', 'data/quest/demo.lua')
+        edit = self.pane.edit
+        edit.moveCursor(QTextCursor.MoveOperation.End)
+        edit.setFocus()
+        QTest.keyClick(edit, Qt.Key.Key_Space, Qt.KeyboardModifier.ControlModifier)
+        self.assertTrue(edit.completer.popup().isVisible())
+        QTest.keyClick(edit, Qt.Key.Key_Return)
+        self.assertEqual(edit.toPlainText(), 'pc.get_level()')
+        edit.setPlainText('pc.get_leve')
+        edit.moveCursor(QTextCursor.MoveOperation.End)
+        self.pane.complete_code()
+        popup = edit.completer.popup()
+        rect = popup.visualRect(popup.model().index(0, 0))
+        QTest.mouseClick(popup.viewport(), Qt.MouseButton.LeftButton, pos=rect.center())
+        self.assertEqual(edit.toPlainText(), 'pc.get_level()')
+        edit.setPlainText('pc.')
+        edit.moveCursor(QTextCursor.MoveOperation.End)
+        self.pane.complete_code()
+        QTest.keyClick(edit, Qt.Key.Key_Escape)
+        self.assertFalse(popup.isVisible())
+        QTest.keyClick(edit, Qt.Key.Key_Return)
+        QTest.keyClick(edit, Qt.Key.Key_Tab)
+        self.assertEqual(edit.toPlainText(), 'pc.\n    ')
+
+    def test_completion_arrow_navigation_unknown_member_and_closed_comment(self):
+        self.load('--[[pc.]] pc.', 'data/quest/Quest/demo.lua')
+        edit = self.pane.edit
+        edit.moveCursor(QTextCursor.MoveOperation.End)
+        edit.setFocus()
+        self.pane.complete_code()
+        choices = self.completions()
+        self.assertGreater(len(choices), 2)
+        QTest.keyClick(edit, Qt.Key.Key_Down)
+        self.assertEqual(edit.completer.popup().currentIndex().data(), choices[1])
+        QTest.keyClick(edit, Qt.Key.Key_Return)
+        self.assertEqual(edit.toPlainText(), '--[[pc.]] ' + choices[1] + '()')
+        edit.setPlainText('pc.')
+        edit.moveCursor(QTextCursor.MoveOperation.End)
+        self.pane.complete_code()
+        QTest.keyClicks(edit, 'function_that_does_not_exist')
+        self.assertFalse(edit.completer.popup().isVisible())
+        self.assertEqual(edit.toPlainText(), 'pc.function_that_does_not_exist')
+
+    def test_completion_replaces_middle_of_identifier_without_duplicate_parentheses_or_unicode_damage(self):
+        original = 'local text = "á😀"; pc.get_lvel (50187, 1)'
+        self.load(original, 'data/quest/demo.lua')
+        edit = self.pane.edit
+        cursor = edit.textCursor()
+        cursor.setPosition(utf16('local text = "á😀"; pc.get_l'))
+        edit.setTextCursor(cursor)
+        edit.request_completion()
+        edit.insert_completion('pc.get_level')
+        self.assertEqual(edit.toPlainText(), 'local text = "á😀"; pc.get_level (50187, 1)')
+        self.assertEqual(edit.textCursor().position(), utf16('local text = "á😀"; pc.get_level ('))
+        edit.undo()
+        self.assertEqual(edit.toPlainText(), original)
+
+    def test_completion_is_suppressed_in_comments_strings_json_unknown_tables_and_selections(self):
+        for text in ('-- pc.', 'local x = "pc.', "local x = 'pc.",
+                     '--[=[\npc.', 'local x = [=[\npc.', '--[[\n', 'foo.pc.', 'unknown.', 'pc:'):
+            with self.subTest(text=text):
+                self.load(text, 'data/quest/demo.lua')
+                self.pane.edit.moveCursor(QTextCursor.MoveOperation.End)
+                self.pane.complete_code()
+                self.assertFalse(self.pane.edit.completer.popup().isVisible())
+        self.load('pc.', 'data/example.json')
+        self.pane.edit.moveCursor(QTextCursor.MoveOperation.End)
+        self.pane.complete_code()
+        self.assertFalse(self.pane.edit.completer.popup().isVisible())
+        self.assertFalse(self.pane.completion_button.isVisible())
+        self.load('pc.', 'data/quest/demo.lua')
+        self.pane.edit.selectAll()
+        self.pane.complete_code()
+        self.assertFalse(self.pane.edit.completer.popup().isVisible())
+
+    def test_namespace_completion_manual_root_keywords_backspace_and_context_switch(self):
+        self.load('p', 'data/quest/demo.lua')
+        edit = self.pane.edit
+        edit.moveCursor(QTextCursor.MoveOperation.End)
+        self.pane.complete_code()
+        self.assertIn('pc', self.completions())
+        edit.insert_completion('pc')
+        self.assertEqual(edit.toPlainText(), 'pc.')
+        self.assertIn('pc.get_level', self.completions())
+        QTest.keyClicks(edit, 'get_leve')
+        QTest.keyClick(edit, Qt.Key.Key_Backspace)
+        self.assertIn('pc.get_level', self.completions())
+        self.pane.set_context('data/example.json')
+        self.assertFalse(edit.completer.popup().isVisible())
+        self.load('functio', 'data/quest/demo.lua')
+        edit.moveCursor(QTextCursor.MoveOperation.End)
+        self.pane.complete_code()
+        edit.insert_completion('function')
+        self.assertEqual(edit.toPlainText(), 'function')
+        self.load('', 'data/quest/Quest/demo.lua')
+        self.pane.complete_code()
+        self.assertIn('quest', self.completions())
+        self.pane.set_context('data/quest/questlib.lua')
+        self.pane.complete_code()
+        self.assertNotIn('quest', self.completions())
 
     def test_highlighter_multiline_comments_strings_and_unicode_brackets(self):
         self.load('--[=[ comment\n() ]=]\nlocal x = "😀 ()"\nreturn (1)', 'data/quest/test.lua')

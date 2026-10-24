@@ -2575,3 +2575,10 @@ fájlnál a régi jelentést elveti, core nélküli eseménynél törli a koráb
 A `ServerManagerTests.py` questlista-próbája a régi `data/quest/object` fa
 elrejtését és a közvetlen szerkesztési kísérletek elutasítását is ellenőrzi;
 a `quest_list` és az aktív források továbbra is megnyithatók.
+
+A `ServerManagerEditorTests.py` a forrásból generált Lua-/quest-API-katalógus
+frissességét és a Qt-s kiegészítést is ellenőrzi: `pc.` gépelése, prefix szerinti
+szűkítés, Ctrl+Space, nyilak, Enter/Tab és egér, Esc, névtér és kulcsszó,
+egylépéses visszavonás, azonosító közepén javítás UTF-16-os kurzorpozícióval,
+meglévő argumentumok megtartása. Kommentek, hosszú sztringek, ismeretlen
+névterek, JSON, kijelölés és fájlváltás esetén nem marad nyitott téves lista.

@@ -44,6 +44,8 @@ def main():
                         help='Directory containing ServerPackageCheck syntax-check binaries')
     args = parser.parse_args()
     source = Path(__file__).resolve().parent
+    # The frozen app carries its API index; stale suggestions must not silently ship.
+    subprocess.run([sys.executable, '-B', str(source / 'generate_quest_api.py'), '--check'], check=True)
     validators = args.validators.resolve()
     suffix = '.exe' if os.name == 'nt' else ''
     for name in ('ServerPackageCheck',):

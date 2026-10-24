@@ -143,11 +143,31 @@ szerint is szűr, a találatokat kiemeli. A csere egyszerre egy találatra
 vagy az összes találatra elvégezhető; az összes csere egyetlen lépésben
 visszavonható. A keresés a megnyitott dokumentumban működik, egyszerű szövegre.
 
+Lua- és quest-fájlban a `pc.`, `npc.`, `item.`, `d.` stb. után automatikus
+függvénylista jelenik meg. További gépeléssel szűkíthető, a nyilakkal választhatsz,
+Enterrel, Tabbal vagy kattintással beszúrhatod a kiválasztott nevet.
+A **Kiegészítés** gomb vagy a **Ctrl+Space** kézzel is megnyitja a listát;
+pont nélkül globális függvényeket, névtereket és kulcsszavakat ajánl fel.
+Függvénynél zárójelpárt is beszúr, a kurzort középre helyezi; a már meglévő
+nyitó zárójelet és argumentumokat megtartja. A beszúrás egy lépésben visszavonható.
+Esc bezárja a listát. Kommentben, sztringben és JSON-ban nincs kiegészítés.
+
+A beépített lista a szerver C++-os Lua-regisztrációiból és a használt Lua 5.5
+könyvtárakból készül; helyi és távoli szerkesztésnél is, kapcsolat nélkül elérhető.
+Az opcionális API-k is szerepelnek, tényleges elérhetőségük a célgép buildjétől
+függ. A lista függvényneveket ad, az argumentumokat kézzel kell kitölteni;
+nem helyettesíti a szintaxisellenőrzést. Tetszőleges saját Lua-könyvtárak
+függvényeit jelenleg nem indexeli. API-változtatás után a fejlesztő futtassa a
+`SRC/Tools/ServerManager/generate_quest_api.py` fájlt; a manager buildje ellenőrzi,
+hogy a mellékelt katalógus friss-e.
+
 | Billentyű | Művelet |
 | --- | --- |
 | Ctrl+F / Ctrl+H | Keresés / csere megnyitása |
 | F3 / Shift+F3 | Következő / előző találat, körbefordulással |
 | Ctrl+G | Ugrás sorszámra |
+| Ctrl+Space | Lua-/quest-kiegészítések megnyitása |
+| ↑ / ↓, Enter / Tab, Esc | A nyitott kiegészítési listában: választás, beszúrás, bezárás |
 | Tab / Shift+Tab | Behúzás / behúzás visszavétele; kijelölt sorokon is |
 | Ctrl+/ | Kijelölt Lua-/quest-sorok kommentelése / visszaállítása |
 | Ctrl+Shift+F | Érvényes JSON formázása, a típusok megőrzésével |
