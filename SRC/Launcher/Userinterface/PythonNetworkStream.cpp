@@ -220,11 +220,6 @@ class CMainPacketHeaderMap : public CNetworkPacketHeaderMap
 #ifdef ENABLE_RANKING
 			Set(HEADER_GC_RANKING_SEND, TPacketType(sizeof(TPacketGCRankingTable), STATIC_SIZE_PACKET));
 #endif
-#ifdef ENABLE_BATTLE_PASS
-			Set(HEADER_GC_BATTLE_PASS_OPEN, TPacketType(sizeof(TPacketGCBattlePass), DYNAMIC_SIZE_PACKET));
-			Set(HEADER_GC_BATTLE_PASS_UPDATE, TPacketType(sizeof(TPacketGCBattlePassUpdate), STATIC_SIZE_PACKET));
-			Set(HEADER_GC_BATTLE_PASS_RANKING, TPacketType(sizeof(TPacketGCBattlePassRanking), DYNAMIC_SIZE_PACKET));
-#endif
 
 			Set(HEADER_GC_UNK_213, TPacketType(sizeof(TPacketGCUnk213), STATIC_SIZE_PACKET)); // @fixme007
 #ifdef __ENABLE_NEW_OFFLINESHOP__

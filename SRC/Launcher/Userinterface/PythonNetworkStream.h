@@ -753,15 +753,6 @@ class CPythonNetworkStream : public CNetworkStream, public CSingleton<CPythonNet
 		void SetGameOffline();
 		bool IsGameOnline();
 
-#ifdef ENABLE_BATTLE_PASS
-	public:
-		bool SendBattlePassAction(uint8_t bAction);
-
-	protected:
-		bool RecvBattlePassPacket();
-		bool RecvBattlePassRankingPacket();
-		bool RecvBattlePassUpdatePacket();
-#endif
 
 
 	protected:

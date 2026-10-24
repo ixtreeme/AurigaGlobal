@@ -43,9 +43,6 @@ enum
     HEADER_CG_SCRIPT_ANSWER						= 29,
 	HEADER_CG_QUEST_INPUT_STRING				= 30,
     HEADER_CG_QUEST_CONFIRM                     = 31,
-#ifdef ENABLE_BATTLE_PASS
-	HEADER_CG_BATTLE_PASS = 40,
-#endif
 	HEADER_CG_LOGIN3 = 44,
 	HEADER_CG_USE_SKILL = 42,
 	HEADER_CG_SHOP								= 50,
@@ -3806,41 +3803,6 @@ typedef struct packet_skill_color
 }TPacketCGSkillColor;
 #endif
 
-#ifdef ENABLE_BATTLE_PASS
-enum
-{
-	HEADER_GC_BATTLE_PASS_OPEN = 160,
-	HEADER_GC_BATTLE_PASS_UPDATE = 161,
-	HEADER_GC_BATTLE_PASS_RANKING = 162,
-};
-
-typedef struct SPacketGCBattlePass
-{
-	uint8_t	bHeader;
-	uint16_t	wSize;
-	uint16_t	wRewardSize;
-} TPacketGCBattlePass;
-
-typedef struct SPacketGCBattlePassUpdate
-{
-	uint8_t	bHeader;
-	uint8_t	bMissionType;
-	uint32_t	dwNewProgress;
-} TPacketGCBattlePassUpdate;
-
-typedef struct SPacketCGBattlePassAction
-{
-	uint8_t	bHeader;
-	uint8_t	bAction;
-} TPacketCGBattlePassAction;
-
-typedef struct SPacketGCBattlePassRanking
-{
-	uint8_t	bHeader;
-	uint16_t	wSize;
-	uint8_t	bIsGlobal;
-} TPacketGCBattlePassRanking;
-#endif
 
 #ifdef ENABLE_ATLAS_BOSS
 typedef struct SPacketGCBossPosition

@@ -1575,16 +1575,6 @@ void initchr()
 	PyModule_AddIntConstant(poModule, "AFFECT_FALLEN_CHEONGEUN",			CInstanceBase::AFFECT_FALLEN_CHEONGEUN);
 	PyModule_AddIntConstant(poModule, "AFFECT_CHINA_FIREWORK",				CInstanceBase::AFFECT_CHINA_FIREWORK);
 
-#ifdef ENABLE_BATTLE_PASS
-	PyModule_AddIntConstant(poModule, "NEW_AFFECT_BATTLE_PASS",		CInstanceBase::NEW_AFFECT_BATTLE_PASS);
-#ifdef ENABLE_FREE_PASS_RAZOR93
-	PyModule_AddIntConstant(poModule, "NEW_AFFECT_BATTLE_PASS_BOOST", CInstanceBase::NEW_AFFECT_BATTLE_PASS_BOOST);
-#endif
-#if defined(ENABLE_RENEWAL_AFFECT_SHOWER)
-	PyModule_AddIntConstant(poModule, "NEW_AFFECT_POLYMORPH", CInstanceBase::NEW_AFFECT_POLYMORPH);
-#endif
-
-#endif
 
 #ifdef ENABLE_MELEY_LAIR_DUNGEON
 	PyModule_AddIntConstant(poModule, "AFFECT_STATUE1", CInstanceBase::AFFECT_STATUE1);

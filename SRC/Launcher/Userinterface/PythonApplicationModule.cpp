@@ -2082,11 +2082,6 @@ void initapp()
 #else
 	PyModule_AddIntConstant(poModule, "ENABLE_NEW_SECONDARY_SKILLS", 0);
 #endif
-#ifdef ENABLE_BATTLE_PASS
-	PyModule_AddIntConstant(poModule, "ENABLE_BATTLE_PASS", 1);
-#else
-	PyModule_AddIntConstant(poModule, "ENABLE_BATTLE_PASS", 0);
-#endif
 #ifdef ENABLE_ATTR_COSTUMES
 	PyModule_AddIntConstant(poModule, "ENABLE_ATTR_COSTUMES", 1);
 #else

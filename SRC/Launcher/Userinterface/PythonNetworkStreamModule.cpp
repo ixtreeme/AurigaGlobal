@@ -539,17 +539,6 @@ PyObject* netSendWhisperPacket(PyObject* poSelf, PyObject* poArgs)
 	return Py_BuildNone();
 }
 
-#ifdef ENABLE_BATTLE_PASS
-PyObject* netSendBattlePassAction(PyObject* poSelf, PyObject* poArgs)
-{
-	int iAction = 0;
-	if (!PyTuple_GetInteger(poArgs, 0, &iAction))
-		return Py_BuildException();
-
-	CPythonNetworkStream::Instance().SendBattlePassAction(iAction);
-	return Py_BuildNone();
-}
-#endif
 
 PyObject* netSendCharacterPositionPacket(PyObject* poSelf, PyObject* poArgs)
 {
@@ -2017,9 +2006,6 @@ void initnet()
 		{ "PreserveServerCommand",				netPreserveServerCommand,				METH_VARARGS },
 		{ "GetPreservedServerCommand",			netGetPreservedServerCommand,			METH_VARARGS },
 
-#ifdef ENABLE_BATTLE_PASS
-		{ "SendBattlePassAction",					netSendBattlePassAction,					METH_VARARGS },
-#endif
 
 		{ "StartGame",							netStartGame,							METH_VARARGS },
 		{ "IsTest",								netIsTest,								METH_VARARGS },

@@ -139,7 +139,6 @@
 #define ENABLE_5LAYER_SKILL_COLOR 			// Enable 5 layers for skill color
 #endif
 #define ENABLE_CONFIG_MODULE 					// Enable configuration module for saving settings
-#define ENABLE_BATTLE_PASS
 #define ENABLE_NEW_EXCHANGE_WINDOW
 #define ENABLE_PVP_ADVANCED
 #define EQUIP_ENABLE_VIEW_SASH
@@ -285,7 +284,6 @@
 #define APPLY_MAX_NUM_ 5
 #endif
 #define AFFECT_EXP_ITEM_RAZOR93
-#define ENABLE_FREE_PASS_RAZOR93
 #define AUTO_SHOUT
 
 #define ENABLE_REFINE_RENEWAL

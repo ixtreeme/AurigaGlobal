@@ -492,27 +492,6 @@ typedef struct packet_shop_item
 #endif
 } TShopItemData;
 
-#ifdef ENABLE_BATTLE_PASS
-typedef struct SBattlePassRewardItem
-{
-	uint32_t	dwVnum;
-	int	bCount;
-} TBattlePassRewardItem;
-
-typedef struct SBattlePassMissionInfo
-{
-	uint8_t	bMissionType;
-	uint32_t	dwMissionInfo[3];
-	TBattlePassRewardItem aRewardList[3];
-} TBattlePassMissionInfo;
-
-typedef struct SBattlePassRanking
-{
-	uint8_t	bPos;
-	char	playerName[24 + 1];
-	uint32_t	dwFinishTime;
-} TBattlePassRanking;
-#endif
 
 #pragma pack(pop)
 
