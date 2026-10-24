@@ -2651,3 +2651,10 @@ alkalmazást is ellenőrzi. Az LF/CRLF különbség nem számít egyedi tartalom
 A regressziók nem helyettesítik a valódi klienssel végzett játékpróbát: a spawn,
 regen, hálózat és SQL a natív tesztekben helyettesített szolgáltatás. A vizsgált
 kör, a hibák eredete és a telepítés: `docs/dungeon_audit_2026-10-24.md`.
+
+A `ServerManagerPackagingTests.py` Windows alatt a Python és a natív
+szintaxisellenőrző azonos nevű, eltérő OpenSSL DLL-jeinek elkülönítését is
+ellenőrzi. Hiányos Python-függőségnél a csomag változatlan marad; a Pythonhoz
+tartozó kiegészítő tanúsítványtiltási adatfájl változatlanul bekerül. A kész
+csomag ellenőrzéséhez a telepített `AurigaServerManager.exe --worker ... check`
+útvonal és a mellékelt natív Lua-ellenőrző is szükséges.
