@@ -11,6 +11,7 @@
 #include "NetworkSyncSystem.hpp"
 
 #include "CombatSystem.hpp"
+#include "HerbalismRules.hpp"
 #include "SessionSystem.hpp"
 #include "SkillSystem.hpp"
 #include "MountSystem.hpp"
@@ -2712,6 +2713,13 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 {
     if (attacker == entt::null || !g_registry.valid(attacker))
         return false;
+    // Pruning shears are gathering tools, even though the equipment protocol
+    // retains the old SWORD subtype. Never trust a client-side attack gate.
+    if (ecs::PlayerRuntime::IsPC(attacker)) {
+        const auto tool=ItemSystem::GetWearItem(attacker,WEAR_WEAPON);
+        if (ItemSystem::IsValidItem(tool) && HerbalismRules::IsShears(ItemSystem::GetItemVnum(tool)))
+            return false;
+    }
     if (victim == entt::null || !g_registry.valid(victim))
         return false;
 

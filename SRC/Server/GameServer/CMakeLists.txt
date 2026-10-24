@@ -10,6 +10,10 @@ find_package(EnTT CONFIG REQUIRED)
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 
+add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
+add_test(NAME woodcutting_rules COMMAND WoodcuttingRulesTests)
+
 add_executable(ServerConfigTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ServerConfigTests.cpp
     core/GameConfig.cpp
@@ -73,6 +77,7 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME server_manager_ssh COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerManagerSshTests.py)
     add_test(NAME server_manager_password COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerManagerPasswordTests.py)
     add_test(NAME server_backup_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerBackupTests.py)
+    add_test(NAME server_manager_backups COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerManagerBackupTests.py)
 endif()
 
 # Headless regression checks compile the production attribute, switchbot and DS
@@ -395,6 +400,7 @@ add_test(NAME party_lifecycle COMMAND PartyLifecycleTests)
 add_executable(DungeonLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/DungeonLifecycleTests.cpp
     dungeon/dungeon.cpp
+    dungeon/PyramidDungeonRazor93.cpp
 )
 target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME dungeon_lifecycle COMMAND DungeonLifecycleTests)
@@ -664,6 +670,11 @@ endif()
 target_compile_definitions(GameServer PRIVATE
     $<$<CONFIG:Debug>:AURIGA_LPENTITY_FIXUP_AUDIT>
 )
+
+# Build every registered server test explicitly, including EXCLUDE_FROM_ALL
+add_executable(HerbalismRulesTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/HerbalismRulesTests.cpp)
+add_test(NAME herbalism_rules COMMAND HerbalismRulesTests)
 
 # Build every registered server test explicitly, including EXCLUDE_FROM_ALL
 # executables. CTest is enabled at the root, also for a fresh checkout.

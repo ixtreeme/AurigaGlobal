@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "enabled": false,
+  "map": "metin2_map_main_razor93",
+  "population_per_species": 3,
+  "attempts_per_plant": 8,
+  "attempt_seconds": 3,
+  "respawn_seconds": 300,
+  "drop_chance_percent": 40,
+  "point_chance_percent": 20,
+  "refine_chance_percent": 80
+}

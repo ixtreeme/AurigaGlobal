@@ -171,6 +171,7 @@ class SECTREE_MANAGER : public singleton<SECTREE_MANAGER>
 		const TMapRegion *	GetMapRegion(int32_t lMapIndex);
 		int32_t			GetMapIndex(int32_t x, int32_t y);
 		const TMapRegion *	FindRegionByPartialName(const char* szMapName);
+        const TMapRegion* FindRegionByExactName(const std::string& name) const;
 
 		bool		GetMapBasePosition(int32_t x, int32_t y, PIXEL_POSITION & r_pos);
 		bool		GetMapBasePositionByMapIndex(int32_t lMapIndex, PIXEL_POSITION & r_pos);

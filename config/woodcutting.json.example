@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "map": "metin2_map_main_razor93",
+  "population": 12,
+  "hits_per_tree": 20,
+  "hit_seconds": 2,
+  "fallen_seconds": 180,
+  "respawn_seconds": 300,
+  "log_chance_percent": 30,
+  "point_chance_percent": 20,
+  "refine_chance_percent": 80
+}

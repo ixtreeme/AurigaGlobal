@@ -43,6 +43,8 @@ ACMD(do_warp);
 ACMD(do_goto);
 ACMD(do_item);
 ACMD(do_mob);
+ACMD(do_woodcut);
+ACMD(do_herbalism);
 ACMD(do_mob_ld);
 ACMD(do_mob_aggresive);
 ACMD(do_mob_coward);
@@ -450,6 +452,8 @@ struct command_info cmd_info[] =
 	{ "item",		do_item,		0,			POS_DEAD,	GM_HIGH_WIZARD		},
 
 	{ "mob",		do_mob,			0,			POS_DEAD,	GM_HIGH_WIZARD	},
+	{ "woodcut", do_woodcut, 0, POS_STANDING, GM_PLAYER },
+    { "herbalism", do_herbalism, 0, POS_STANDING, GM_PLAYER },
 	{ "mob_ld",		do_mob_ld,			0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "ma",		do_mob_aggresive,	0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "mc",		do_mob_coward,		0,			POS_DEAD,	GM_HIGH_WIZARD	},

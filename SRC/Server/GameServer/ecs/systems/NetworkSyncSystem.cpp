@@ -40,6 +40,8 @@
 #include "../components/transform_components.hpp"
 #include "../components/vital_components.hpp"
 #include "ItemSystem.hpp"
+#include "WoodcuttingRules.hpp"
+#include "HerbalismRules.hpp"
 #include "MountSystem.hpp"
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
@@ -285,6 +287,15 @@ void CopyStringView(char* dest, std::size_t destSize, std::string_view value)
 
 uint16_t GetAppearancePart(entt::registry& reg, entt::entity e, uint8_t part)
 {
+    if (ecs::PlayerRuntime::IsPC(e)) {
+        const auto tool = ItemSystem::GetWearItem(e, WEAR_WEAPON);
+        if (ItemSystem::IsValidItem(tool) && (WoodcuttingRules::IsAxe(ItemSystem::GetItemVnum(tool)) || HerbalismRules::IsShears(ItemSystem::GetItemVnum(tool)))) {
+            if (part == PART_WEAPON) return static_cast<uint16_t>(ItemSystem::GetItemVnum(tool));
+#ifdef ENABLE_COSTUME_EFFECT
+            if (part == PART_EFFECT_WEAPON) return 0;
+#endif
+        }
+    }
     const auto* appearance = reg.try_get<ecs::AppearancePartsComponent>(e);
     if (!appearance || part >= PART_MAX_NUM)
         return 0;

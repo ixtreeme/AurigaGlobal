@@ -6,6 +6,8 @@
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/WoodcuttingSystem.hpp"
+#include "../ecs/systems/HerbalismSystem.hpp"
 #include "../ecs/systems/VisibilitySystem.hpp"
 #include <Core/Logging.hpp>
 #include <Core/tls.h>
@@ -242,6 +244,9 @@ unsigned int save_idx = 0;
 
 void heartbeat(LPHEART ht, int pulse)
 {
+    if (!(pulse % ht->passes_per_sec) && !g_bShutdown)
+        WoodcuttingSystem::Tick(get_dword_time());
+        HerbalismSystem::Tick(get_dword_time());
     if (pulse % std::max(1, passes_per_sec / 5) == 0)
         if (auto* quests = quest::CQuestManager::instance_ptr()) quests->PollReloadControl();
 	uint32_t t;

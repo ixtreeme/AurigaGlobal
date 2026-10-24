@@ -6,6 +6,8 @@
 #include "ViewSystem.hpp"
 #include "AffectSystem.hpp"
 #include "ActivitySystem.hpp"
+#include "WoodcuttingSystem.hpp"
+#include "HerbalismSystem.hpp"
 #include "ChatSystem.hpp"
 #include "VisibilitySystem.hpp"
 #include "PointSystem.hpp"
@@ -3434,6 +3436,8 @@ void ecs::MovementSystem::OnMove(entt::entity e, bool bIsAttack)
 
     // MINING
     ActivitySystem::CancelMining(e);
+    WoodcuttingSystem::Cancel(e);
+    HerbalismSystem::Cancel(e);
     // END_OF_MINING
 }
 

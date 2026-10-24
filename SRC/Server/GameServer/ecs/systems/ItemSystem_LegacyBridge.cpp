@@ -6,6 +6,8 @@
 #include "ActivitySystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "WoodcuttingRules.hpp"
+#include "HerbalismRules.hpp"
 #include "MovementSystem.hpp"
 #include "SkillSystem.hpp"
 #include "SocialSystem.hpp"
@@ -3777,6 +3779,14 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 {
 	if (!ecs::IsCharacter(e))
 		return false;
+
+    // A tool's sockets are authoritative training, not metin-stone slots. Do
+    // not let generic tuning/socket/attribute consumables overwrite them.
+    if (InventorySystem::IsValidItemPosition(e, DestCell)) {
+        const auto destination = GetItem(e, DestCell);
+        if (IsValidItem(destination) && WoodcuttingRules::IsAxe(GetItemVnum(destination))) return false;
+        if (IsValidItem(destination) && HerbalismRules::IsShears(GetItemVnum(destination))) return false;
+    }
 
 	entt::entity itemEntity = item;
 	int iLimitRealtimeStartFirstUseFlagIndex = -1;

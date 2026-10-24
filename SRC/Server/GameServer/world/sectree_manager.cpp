@@ -609,6 +609,13 @@ bool SECTREE_MANAGER::GetMapBasePosition(int32_t x, int32_t y, PIXEL_POSITION & 
 	return false;
 }
 
+const TMapRegion* SECTREE_MANAGER::FindRegionByExactName(const std::string& name) const
+{
+    for (const auto& region : m_vec_mapRegion)
+        if (region.strMapName == name) return &region;
+    return nullptr;
+}
+
 const TMapRegion * SECTREE_MANAGER::FindRegionByPartialName(const char* szMapName)
 {
 	std::vector<TMapRegion>::iterator it = m_vec_mapRegion.begin();
