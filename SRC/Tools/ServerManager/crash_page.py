@@ -1,7 +1,7 @@
 """Local/SSH crash events and noninteractive core analysis."""
 import datetime
 import hashlib
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import time
 
 from PySide6.QtCore import QThread, Signal, Qt
@@ -34,7 +34,9 @@ class CrashPage(QWidget):
         self.target = None
         self.next_poll = 0
         self.data = dict(events=[], cores=[])
+        self.rows = []
         self.last_report = ''
+        self.report_context = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0,0,0,0)
         row = QHBoxLayout()
@@ -102,9 +104,9 @@ class CrashPage(QWidget):
     def tick(self,state):
         target=self.owner.target_id()
         if target!=self.target:
-            self.target=target;self.next_poll=0;self.data=dict(events=[],cores=[])
+            self.target=target;self.next_poll=0;self.data=dict(events=[],cores=[]);self.rows=[]
             self.events.setRowCount(0);self.core_choice.clear();self.core_path.clear();self.binary_path.clear()
-            self.report.clear();self.last_report=''
+            self.report.clear();self.last_report='';self.report_context=None
         latest=(state or {}).get('crashes',{}).get('latest')
         unread=bool(latest and self.owner.settings.value(self.key())!=latest['id'])
         self.owner.crash_alert.setVisible(unread)
@@ -148,13 +150,26 @@ class CrashPage(QWidget):
     def received(self,value):
         self.data=value
         selected=self.core_path.text()
-        self.events.blockSignals(True);self.events.setRowCount(len(value['events']))
-        for row,event in enumerate(value['events']):
-            try: timestamp=datetime.datetime.fromisoformat(event['timestamp']).astimezone().strftime('%Y-%m-%d %H:%M:%S')
-            except ValueError:timestamp=event['timestamp']
-            for column,text in enumerate((timestamp,event['instance'],event['pid'],event['reason'],
-                                          str(len(event.get('cores',[])))+' db')):
-                self.events.setItem(row,column,QTableWidgetItem(str(text)))
+        self.rows=[dict(event=event,core=None) for event in value['events']]
+        listed={path for event in value['events'] for path in event.get('cores',[])}
+        for core in value['cores']:
+            if core['path'] not in listed:
+                self.rows.append(dict(event=None,core=core));listed.add(core['path'])
+        self.events.blockSignals(True);self.events.clearSelection();self.events.setRowCount(len(self.rows))
+        for row,entry in enumerate(self.rows):
+            event,core=entry['event'],entry['core']
+            if event:
+                try: timestamp=datetime.datetime.fromisoformat(event['timestamp']).astimezone().strftime('%Y-%m-%d %H:%M:%S')
+                except ValueError:timestamp=event['timestamp']
+                values=(timestamp,event['instance'],event['pid'],event['reason'],str(len(event.get('cores',[])))+' db')
+                tip='\n'.join(event.get('cores',[]))
+            else:
+                timestamp=datetime.datetime.fromtimestamp(core['modified']).astimezone().strftime('%Y-%m-%d %H:%M:%S')
+                values=(timestamp,self.core_instance(core),'—','Nincs eseménynapló',core['path'])
+                tip='Meglévő core fájl. A felügyelő nem rögzített hozzá eseményt; a PID és a kilépési jel ismeretlen. Az időpont a fájl módosításának ideje.'
+            for column,text in enumerate(values):
+                item=QTableWidgetItem(str(text));item.setToolTip(tip)
+                self.events.setItem(row,column,item)
         self.events.blockSignals(False)
         self.core_choice.blockSignals(True);self.core_choice.clear()
         for core in value['cores']:
@@ -163,7 +178,7 @@ class CrashPage(QWidget):
         self.core_choice.blockSignals(False)
         if not selected and value['cores']:
             self.core_choice.setCurrentIndex(0)
-            self.select_core(0)
+        if self.core_choice.currentIndex()>=0:self.select_core(self.core_choice.currentIndex(),preserve_report=True)
         tools=', '.join(name for name,path in value['debuggers'].items() if path) or 'nincs debugger'
         self.status.setText('%d esemény, %d core fájl. Debugger: %s.%s' % (len(value['events']),len(value['cores']),tools,
                             ' A lista elérte a keresési korlátot.' if value.get('limited') else ''))
@@ -171,23 +186,66 @@ class CrashPage(QWidget):
         if state.get('running') and not state.get('crash_monitor_active'):
             self.status.setText(self.status.text()+' A futó felügyelőben még nincs crashfigyelő; a következő indítástól aktív.')
 
+    def core_instance(self,core):
+        path=PurePosixPath(core['path'])
+        config=(self.owner.state() or {}).get('config',{})
+        instances=dict(config.get('game_servers',{}))
+        instances.update({name:config[name] for name in ('database','login') if name in config})
+        for name,section in instances.items():
+            directory=PurePosixPath(section.get('working_directory','run/'+name).replace('\\','/'))
+            if path.parent==directory:return name
+        return '—'
+
+    def event_report(self,event):
+        return '\n'.join('%s: %s'%(key,event.get(key,'')) for key in
+            ('timestamp','instance','pid','reason','phase','program','binary','binary_sha256'))+'\n'+'\n'.join(event.get('errors',[]))
+
     def select_event(self):
         row=self.events.currentRow()
-        if not 0<=row<len(self.data['events']):return
-        event=self.data['events'][row]
-        self.last_report='\n'.join('%s: %s'%(key,event.get(key,'')) for key in
-            ('timestamp','instance','pid','reason','phase','program','binary','binary_sha256'))
-        self.last_report+='\n'+'\n'.join(event.get('errors',[]));self.report.setPlainText(self.last_report)
-        if event.get('cores'):
-            self.core_path.setText(event['cores'][0])
-            index=next((i for i,core in enumerate(self.data['cores']) if core['path']==event['cores'][0]),-1)
-            self.core_choice.setCurrentIndex(index)
-        if event.get('binary'):self.binary_path.setText(event['binary'])
+        if not 0<=row<len(self.rows):return
+        entry=self.rows[row]
+        if entry['core']:
+            index=next((i for i,core in enumerate(self.data['cores']) if core['path']==entry['core']['path']),-1)
+            self.core_choice.blockSignals(True);self.core_choice.setCurrentIndex(index);self.core_choice.blockSignals(False)
+            self.select_core(index)
+            return
+        event=entry['event']
+        self.last_report=self.event_report(event);self.report.setPlainText(self.last_report)
+        core=next(iter(event.get('cores',[])),'')
+        self.core_choice.blockSignals(True)
+        self.core_choice.setCurrentIndex(next((i for i,item in enumerate(self.data['cores']) if item['path']==core),-1))
+        self.core_choice.blockSignals(False)
+        self.core_path.setText(core);self.binary_path.setText(event.get('binary') or '')
+        item=next((item for item in self.data['cores'] if item['path']==core),None)
+        self.report_context=(item['path'],item['size'],item['mtime_ns']) if item else None
         self.controls()
 
-    def select_core(self,index):
+    def select_core(self,index,preserve_report=False):
         core=self.core_choice.itemData(index)
-        if core:self.core_path.setText(core['path']);self.binary_path.setText(core['binary'])
+        if not core:return
+        context=(core['path'],core['size'],core['mtime_ns'])
+        preserving=preserve_report and self.report_context==context
+        self.core_path.setText(core['path'])
+        if not (preserving and self.binary_path.text().strip()):self.binary_path.setText(core['binary'])
+        row=next((i for i,entry in enumerate(self.rows) if
+            (entry['core'] and entry['core']['path']==core['path']) or
+            (entry['event'] and core['path'] in entry['event'].get('cores',[]))),-1)
+        self.events.blockSignals(True)
+        if row>=0:self.events.selectRow(row)
+        self.events.blockSignals(False)
+        if row>=0 and self.rows[row]['event']:
+            details=self.event_report(self.rows[row]['event'])
+        else:
+            timestamp=datetime.datetime.fromtimestamp(core['modified']).astimezone().strftime('%Y-%m-%d %H:%M:%S')
+            details=('Core fájl: %s\nPéldány: %s\nMódosítva: %s\nMéret: %.1f MiB\nFormátum: %s\n'
+                     'Ehhez a core fájlhoz nincs felügyelő által rögzített esemény. A PID és a kilépési jel ismeretlen.\n'
+                     'Az elemzéshez az összeomláskor használt build programját válaszd.' %
+                     (core['path'],self.core_instance(core),timestamp,core['size']/1048576,core['format']))
+        # A background refresh keeps an already displayed debugger report.
+        if not (preserving and self.last_report):
+            self.last_report=details;self.report.setPlainText(details)
+        self.report_context=context
+        self.controls()
 
     def browse(self,control):
         if self.owner.is_remote():
@@ -202,6 +260,7 @@ class CrashPage(QWidget):
             self.failed('Válassz core fájlt és az összeomláshoz tartozó programot.');return
         core=self.core_path.text().strip()
         expected=next((dict(size=row['size'],mtime_ns=row['mtime_ns']) for row in self.data['cores'] if row['path']==core),None)
+        self.report_context=(core,expected['size'],expected['mtime_ns']) if expected else None
         self.last_report='';self.report.clear()
         self.status.setText('Core elemzése, legfeljebb 90 másodperc…')
         self.run('crash-analyze',dict(core=core,binary=self.binary_path.text().strip(),expected=expected),self.analyzed)

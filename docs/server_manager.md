@@ -584,6 +584,9 @@ Az eseményrögzítés a megmaradt saját folyamatok szabályos leállítása el
 Váratlan, nulla kilépési kód is esemény, de ez önmagában nem bizonyít memóriakezelési hibát.
 
 A listából válassz eseményt vagy core fájlt, majd **Core elemzése**.
+Az eseménynapló nélküli, megtalált core fájlok is külön sorban jelennek meg
+a táblázatban. Ezeknél az időpont a fájl módosításának ideje, a PID és a
+kilépési jel ismeretlen. A sor kiválasztása kitölti az elemzés célfájlját.
 Az archivált programot automatikusan felajánlja, a rögzített SHA-256 eltérését
 elutasítja. Régebbi vagy kézzel megadott core mellett válaszd ki az ugyanabból
 a buildből származó programot. Külső könyvtárban, például `/var/coredumps` alatt

@@ -171,15 +171,70 @@ class CrashGuiTests(unittest.TestCase):
     def test_async_inventory_analysis_export_data_and_target_reset(self):
         self.page.refresh_list();self.wait()
         self.assertEqual(self.page.core_choice.count(),1)
+        self.assertEqual(self.page.events.rowCount(),1, 'a core without an event must appear in the main table')
+        self.assertEqual(self.page.events.item(0,1).text(),'ch1-core1')
+        self.assertEqual(self.page.events.item(0,2).text(),'—')
+        self.assertEqual(self.page.events.item(0,3).text(),'Nincs eseménynapló')
+        self.assertEqual(self.page.events.item(0,4).text(),'run/ch1-core1/GameServer.core')
         self.page.core_choice.setCurrentIndex(0)
         self.assertIn('GameServer.core',self.page.core_path.text())
         value=dict(report='#0 probe',debugger='test debugger',checked_at='now')
         with mock.patch.object(crashes,'analyze',return_value=value):self.page.analyze();self.wait()
         self.assertEqual(self.page.last_report,'#0 probe')
         self.assertTrue(self.page.export_button.isEnabled())
+        self.page.binary_path.setText('bin/same-build-custom-program')
+        self.page.refresh_list();self.wait()
+        self.assertEqual(self.page.last_report,'#0 probe','refresh must retain the current debugger report')
+        self.assertEqual(self.page.binary_path.text(),'bin/same-build-custom-program')
         self.view.target_epoch+=1;self.page.next_poll=time.monotonic()+30
         self.page.tick(self.view.state())
         self.assertEqual(self.page.last_report,'');self.assertEqual(self.page.core_choice.count(),0)
+        self.assertEqual(self.page.events.rowCount(),0);self.assertEqual(self.page.rows,[])
+
+    def test_mixed_events_and_unrecorded_cores_select_the_correct_binary(self):
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        root=self.root
+        other=root/'run/ch1-core2/GameServer.core';other.parent.mkdir();other.write_bytes(elf(4))
+        event=dict(schema_version=1,id='fixture-event',timestamp='2026-10-23T18:00:00+00:00',instance='ch1-core1',
+                   pid=1234,reason='SIGSEGV',cores=['run/ch1-core1/GameServer.core'],binary='run/crashes/binaries/exact/GameServer')
+        folder=root/'run/crashes/fixture-event';folder.mkdir(parents=True);(folder/'event.json').write_text(json.dumps(event))
+        self.view.show();self.view.navigation.setCurrentRow(6)
+        self.page.received(crashes.inventory(root));self.app.processEvents()
+        self.assertEqual(self.page.events.rowCount(),2,'a linked core must not be added twice')
+        self.assertEqual(self.page.core_choice.count(),2)
+        self.assertIn('1 esemény, 2 core fájl',self.page.status.text())
+        standalone=next(i for i,row in enumerate(self.page.rows) if row['core'])
+        item=self.page.events.item(standalone,1)
+        QTest.mouseClick(self.page.events.viewport(),Qt.MouseButton.LeftButton,pos=self.page.events.visualItemRect(item).center())
+        self.assertEqual(self.page.core_path.text(),'run/ch1-core2/GameServer.core')
+        self.assertEqual(self.page.binary_path.text(),'bin/GameServer.exe' if os.name=='nt' else 'bin/GameServer')
+        self.assertIn('A PID és a kilépési jel ismeretlen',self.page.report.toPlainText())
+        self.page.events.selectRow(0);self.page.select_event()
+        self.assertEqual(self.page.core_path.text(),event['cores'][0])
+        self.assertEqual(self.page.binary_path.text(),event['binary'])
+        self.assertIn('pid: 1234',self.page.last_report)
+        index=next(i for i in range(self.page.core_choice.count()) if self.page.core_choice.itemData(i)['path']==other.relative_to(root).as_posix())
+        self.page.core_choice.setCurrentIndex(index)
+        self.assertEqual(self.page.events.currentRow(),standalone)
+        self.assertNotIn('pid: 1234',self.page.report.toPlainText())
+
+    def test_event_without_a_core_clears_the_previous_analysis_target(self):
+        value=crashes.inventory(self.root)
+        event=dict(id='no-core',timestamp='2026-10-23T18:00:00+00:00',instance='login',pid=5,reason='Unexpected exit',cores=[],binary=None)
+        value['events']=[event]
+        self.page.received(value)
+        self.assertTrue(self.page.core_path.text())
+        self.page.events.selectRow(0);self.page.select_event()
+        self.assertEqual(self.page.core_choice.currentIndex(),-1)
+        self.assertEqual(self.page.core_path.text(),'');self.assertEqual(self.page.binary_path.text(),'')
+
+    def test_replaced_core_invalidates_its_previous_debugger_report(self):
+        value=crashes.inventory(self.root);self.page.received(value)
+        self.page.analyzed(dict(report='#0 previous crash',debugger='test',checked_at='now'))
+        core=value['cores'][0];core['mtime_ns']+=1
+        self.page.received(value)
+        self.assertNotIn('#0 previous crash',self.page.report.toPlainText())
 
     def test_persistent_alert_acknowledgement_is_target_specific(self):
         latest=dict(id='test-event',instance='ch1-core1',reason='SIGSEGV',timestamp='now')

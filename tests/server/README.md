@@ -2564,3 +2564,10 @@ A backend-, célgép- és GUI-tesztek a futó felügyelő `core_control_version`
 jelzését vizsgálják: a friss fájl önmagában nem engedélyezi a külön vezérlést.
 Régi vagy már nem futó felügyelőnél a gombok tiltottak, a távoli kérés érthető
 hibával visszatér, és nem hagy megválaszolhatatlan kérést a vezérlési mappában.
+
+A `ServerManagerCrashTests.py` Qt-próbái az eseménynapló nélkül meglévő core
+fájl táblázatos megjelenését is ellenőrzik. Vegyes listán a rögzített eseményhez
+tartozó core nem jelenik meg kétszer, a sor és a választó ugyanarra a fájlra
+mutat, az archivált bináris kiválasztása megmarad. A lista frissítése megtartja
+az aktuális debuggerjelentést és a kézzel megadott programot; megváltozott core
+fájlnál a régi jelentést elveti, core nélküli eseménynél törli a korábbi célt.
