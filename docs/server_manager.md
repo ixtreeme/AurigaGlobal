@@ -87,6 +87,15 @@ nem mentett kapcsolati útvonalnál az app előbb a megfelelő profil kiválaszt
   Az **Adatbázis előkészítése** gomb új, üres csomagban a mellékelt
   `db/backup` mentést és a `tools/mariadb` futtatókörnyezetet használja.
   Ellenőrzi a teljes importot, és elutasítja meglévő adatok felülírását.
+  Futó szervernél:
+  - A **Kijelölt core-ok indítása** és a **Kijelölt core-ok leállítása**
+    gomb a táblában kijelölt game core-okat külön indítja vagy állítja le.
+    A leállítás megerősítést kér, mert a rajta lévő játékosok kilépnek.
+  - A **Kijelölt csatornák indítása** a bejelölt csatornák core-jait
+    indítja a futó szerverhez.
+  - A Database és a LoginServer a teljes stackhez tartozik.
+  - Ha a szervermappa `manage.py` fájlja régebbi, a gombok tiltottak, és
+    a súgójuk a frissítését kéri.
 - **Kapcsolatok és eszközök:** közvetlen SSH vagy ProxyJump, gépenként külön kulcsos vagy jelszavas belépés,
   kapcsolatellenőrzés, helyi porttovábbítás, távoli CMake-build és ellenőrzött
   fájl-/mappafeltöltés. A beállítások profilonként menthetők.
@@ -605,6 +614,88 @@ figyelést; a kezelő ennek állapotát kiírja. Az új funkció telepítése ne
 Hivatkozások: [GDB automatikus szkriptbetöltés](https://sourceware.org/gdb/current/onlinedocs/gdb.html/Auto_002dloading.html),
 [LLDB batch/core](https://lldb.llvm.org/man/lldb.html).
 
+## Mentési központ
+
+A **Mentések** oldal a felső választóban kijelölt helyi vagy távoli csomagot
+kezeli. **Új mentés** előtt jelöld ki az összetevőket:
+
+- **Konfiguráció:** `server.json`.
+- **Játékadatok és questek:** `data`, `runtime_defaults`, valamint a konfigurált
+  játékpéldányok `mark` tartalma és `guild_symbol.tga` fájlja.
+- **TLS:** a csomag `tls` mappájának tanúsítványai és privát kulcsai.
+- **Adatbázisok:** az effektív közös/core/login SQL-beállításokkal használt
+  játékadatbázisok, általában account, common, player és log. SQL-rendszersémát,
+  MariaDB-felhasználókat, grantokat és az SQL-szolgáltatás saját konfigurációját nem menti.
+
+Az archívum nem tartalmazza a szerverprogramokat, teljes naplókat, core fájlokat
+vagy az SQL adatkönyvtárát. A binárisok korábbi verzióját a buildtelepítés saját
+mentése őrzi. A csomagon kívüli TLS-fájlokat sem másolja automatikusan.
+A mentés a lemezen levő állapotról készül; előtte mentsd a szerkesztők módosításait.
+
+Tárolás: `run/backups/<id>/backup.tar.gz`, mellette SHA-256 ellenőrzőösszegeket
+tartalmazó leíró és kis méretű katalógusbejegyzés. Csak teljes, sikeresen
+lezárt mentés kerül a listába. A **Letöltés / másolat mentése** a gépeden
+ellenőrzött másolatot készít; távolról SFTP-t használ. A helyi célfájlt csak
+sikeres méret- és hash-ellenőrzés után cseréli le. A **Mentési archívum betöltése**
+egy korábban kimentett saját archívumot a kijelölt gép katalógusába tesz:
+ez még nem állítja vissza a tartalmát. Csak megbízható, saját SQL-mentést tölts be.
+
+SQL-mentéshez `mariadb` és `mariadb-dump` szükséges. A helyi saját SQL-példánynál
+az ellenőrzött adatkönyvtár admin-hozzáférését használja. FreeBSD root SSH mellett
+a helyi root socket-belépést előbb csak olvasó lekérdezéssel ellenőrzi, és csak
+egyező SQL-portnál használja. Egyébként a konfigurált SQL-hitelesítést alkalmazza;
+ennek a teljes logikai mentéshez szükséges jogosultságokkal kell rendelkeznie.
+A jelszó privát, ideiglenes opciófájlban szerepel, nem parancssori argumentumban.
+
+Az egy SQL-célgépen levő adatbázisokat közös globális olvasási zárral menti,
+így a MyISAM és az InnoDB táblák együtt is következetesek maradnak. Eközben az
+írások várakozhatnak. Több SQL-célgép külön pillanatkép, nem elosztott tranzakció.
+A mentés futó játékszerver mellett is készülhet; a fájlváltozásokat és az élő
+questszerkesztést zárolással, illetve tartalomellenőrzéssel védi.
+
+Visszaállítás:
+
+1. Állítsd le a játékszervert; az SQL-szolgáltatás maradjon elindítva.
+2. Válassz mentést és visszaállítandó összetevőket, majd **Visszaállítási terv**.
+3. A teljes archívum és minden tag ellenőrzése után megjelennek a fájlcserék,
+   törlendő többletfájlok és a felülírandó SQL-célok.
+4. Jelöld be a felülírást, majd **Terv szerinti visszaállítás**.
+
+Alapból megőrzi a jelenlegi SQL-kapcsolatokat, így egy másik gépről származó
+konfiguráció nem irányítja át a következő indítást a forrás SQL-szerverére.
+Adatbázisneveket nem nevez át automatikusan. Az SQL-visszaállítás újralétrehozza
+a kijelölt játéksémákat, ezért a mentés után létrehozott többlettáblák és rutinok
+sem maradnak bennük. A fájloknál is a kiválasztott összetevők mentett tartalma áll helyre.
+
+A változtatás előtt kötelező automatikus védőmentés készül. Hiba esetén ebből
+visszaállítja az előző állapotot. A több adatbázis/fájl cseréje nem egyetlen
+atomikus művelet: eredménye a `run/backup-restores/<id>/result.json` naplóba kerül.
+Félbeszakadt vagy sikertelen rollback mellett a GUI és a friss `manage.py`
+tiltja a szerverindítást. A Mentések oldalon egy ellenőrzött mentés sikeres
+helyreállítása oldja fel ezt. Kapcsolatszakadáskor előbb csatlakozz újra,
+ellenőrizd a naplót és a mentéslistát; a már megkezdett távoli művelet tovább futhat.
+
+**Napi automatikus mentés:** állítsd be a célgép helyi idejét és a megtartandó
+ütemezett mentések számát, majd mentsd a beállítást. A 0 minden mentést megtart.
+A kézi, build előtti és visszaállítási védőmentéseket ez a megőrzés nem törli.
+FreeBSD-n csak saját, csomagonként jelölt cron-sorát kezeli; a többi bejegyzést
+megőrzi. Windowson saját Feladatütemező-feladatot hoz létre, amelyhez a felhasználónak
+bejelentkezve kell maradnia. A GUI mindkét esetben bezárható. A napi futás aznap
+már elkészült mentést nem duplázza meg. Az utolsó ütemezett siker/hiba az oldalon látszik.
+
+**Automatikus mentés buildtelepítés előtt:** ugyanitt kapcsolható be. A távoli
+telepítő a kiválasztott összetevőkről mentést készít a bináriscsere előtt;
+ha a mentés hibázik, a telepítés nem írja felül a programokat. Ez kiegészíti
+a telepítő meglévő binárismentését. Mindkét automatizmus alapból ki van kapcsolva.
+
+A mentésekben fiókadatok, konfigurációs jelszavak és privát kulcsok is lehetnek;
+a letöltött másolatot ennek megfelelően tárold. A központ nem titkosítja az archívumot.
+Az aktív mentés/visszaállítás alatt az app célgépet nem vált és nem zárható be.
+Az SFTP-archívumátvitel külön megszakítható; a részleges feltöltés még nem katalógusbejegyzés.
+
+Részletek: [MariaDB dump és zárolások](https://mariadb.com/docs/server/clients-and-utilities/backup-restore-and-import-clients/mariadb-dump),
+[Windows Feladatütemező](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/schtasks-create).
+
 ## Fejlesztői futtatás és fordítás
 
 ```powershell
@@ -642,6 +733,7 @@ python -B tests/server/ServerManagerSshTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerRemoteWorkTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerPackagesTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerCrashTests.py
+.\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerBackupTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerTargetTests.py
 .\build\server-manager-env\Scripts\python.exe -B tests/server/ServerManagerPasswordTests.py --gui
 ```

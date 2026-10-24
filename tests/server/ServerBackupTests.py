@@ -146,6 +146,39 @@ class NativeBackupTests(unittest.TestCase):
         manager.stop_db()
 
 
+class NativeReadinessTests(unittest.TestCase):
+    def test_legacy_skill_curves_accept_supported_prefix_and_reject_invalid_data(self):
+        if not BINARIES: self.skipTest('Pass --mariadb-bin for owned SQL integration')
+        from backup_sandbox import Sandbox
+        with tempfile.TemporaryDirectory(prefix='auriga-readiness-sql-') as directory:
+            sandbox = Sandbox(Path(directory)/'sql', BINARIES)
+            try:
+                sandbox.start()
+                sandbox.client.query('CREATE DATABASE common')
+                sandbox.client.query('CREATE TABLE common.locale(mKey VARCHAR(64),mValue TEXT)')
+                query = (ROOT/'db/check_ready.sql').read_text().split('UNION ALL')[0]
+                for values, expected in [
+                    (' '.join(map(str,range(41))), 'READY'),
+                    (' '.join(map(str,range(45))), 'READY'),
+                    (' '.join(['-1','+2']+['3']*39), 'READY'),
+                    (' '.join(map(str,range(40))), 'MISSING_OR_INVALID'),
+                    (' '.join(['0']*40+['invalid']), 'MISSING_OR_INVALID'),
+                    (' '.join(['0']*41+['invalid']), 'MISSING_OR_INVALID'),
+                    ('', 'MISSING_OR_INVALID'),
+                ]:
+                    with self.subTest(values=values):
+                        sandbox.client.query('DELETE FROM common.locale')
+                        sandbox.client.query("INSERT INTO common.locale VALUES('SKILL_POWER_BY_LEVEL','"+values+"')")
+                        self.assertEqual(sandbox.client.query(query)[0][1], expected)
+                sandbox.client.query('DELETE FROM common.locale')
+                self.assertEqual(sandbox.client.query(query)[0][1],'MISSING_OR_INVALID')
+                values=' '.join(['0']*41)
+                sandbox.client.query("INSERT INTO common.locale VALUES('SKILL_POWER_BY_LEVEL','"+values+"'),('SKILL_POWER_BY_LEVEL','"+values+"')")
+                self.assertEqual(sandbox.client.query(query)[0][1],'MISSING_OR_INVALID')
+            finally:
+                sandbox.stop()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--backup', type=Path)

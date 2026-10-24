@@ -20,6 +20,7 @@ import tempfile
 import re
 import time
 import crash_tools
+import backup_tools
 
 
 class EditorError(RuntimeError):
@@ -303,17 +304,22 @@ def describe(root):
     external = os.name != 'nt'
     db_live = not external and db_record.is_file() and manager.owned(manager.read_json(db_record))
     pending = pending_deployment(root)
+    backup_pending = backup_tools.pending(root)
     if pending and not running:
         phase = 'Befejezetlen buildtelepítés: ' + pending.relative_to(root).as_posix()
+    if backup_pending and not running:
+        phase = 'Befejezetlen visszaállítás — Mentések oldal'
     return dict(config=config, rows=rows, running=running, phase=phase, database_running=db_live,
                 crashes=crash_tools.summary(root), crash_monitor_available=bool(getattr(manager, 'CRASH_MONITOR_VERSION', 0)),
                 crash_monitor_active=bool(state.get('crash_monitor')) if retained.is_file() else False,
                 database_initialized=(root / 'run/mariadb/data').is_dir(),
                 database_kind='external' if external else 'managed',
-                can_start=not pending and ((external and hasattr(manager, 'external_database_check')) or (root / 'run/mariadb/data').is_dir()),
+                can_start=not pending and not backup_pending and ((external and hasattr(manager, 'external_database_check')) or (root / 'run/mariadb/data').is_dir()),
+                backup_restore_pending=backup_pending,
                 deployment_pending=pending.relative_to(root).as_posix() if pending else None,
                 can_setup=os.name == 'nt' and (root / 'db/backup/manifest.json').is_file(),
                 reload_supported=(root / 'quest_reload.py').is_file() and hasattr(manager, 'apply_quests'),
+                core_control=hasattr(manager, 'control_cores'),
                 hotreload=bool(running and hasattr(manager, 'quest_reload_status') and manager.quest_reload_status()['available']))
 
 

@@ -71,6 +71,10 @@ A seed alapértékei: `DB_NAME_COLUMN=name`, valamint 41 szám a
 megjegyzésében van. Saját balanszhoz ezt egyeztetni kell. Az `INSERT IGNORE`
 megőrzi a meglévő locale sorokat.
 
+Az indulási ellenőrzés legalább 41 egész számot követel meg. A régi, például
+45 értékes görbéket is elfogadja: a GameServer csak a 0–40. szinthez tartozó
+értékeket használja, a további értékek nem befolyásolják a futását.
+
 Az `account.account.password` 128 karakteres, a kód jelenlegi MariaDB
 `PASSWORD()` útvonalához is elegendő. A teszt 41 karakteres natív hash tárolását
 ellenőrizte. [MariaDB PASSWORD dokumentáció](https://mariadb.com/docs/server/reference/sql-functions/secondary-functions/encryption-hashing-and-compression-functions/password).

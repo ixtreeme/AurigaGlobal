@@ -51,10 +51,17 @@ def fixture(root, name, channel=1):
     source = source[:at] + r'''
 def main():
     action = sys.argv[1]
-    with (ROOT/'actions.trace').open('a') as output: output.write(action+'\n')
+    with (ROOT/'actions.trace').open('a') as output: output.write(' '.join(sys.argv[1:])+'\n')
     if action == 'start':
+        failure = ROOT/'test-start-failure'
+        if failure.is_file():
+            time.sleep(float(failure.read_text()))
+            print('PACKAGE_DATA_INVALID Quest/login/levelup.lua: duplicate quest id: levelup', flush=True)
+            print('SERVER_MANAGER_ERROR: Native data/Lua check failed '+config()['common']['sql']['player']['password'], file=sys.stderr, flush=True)
+            return 1
         (ROOT/'run').mkdir(exist_ok=True)
         save_json(ROOT/'run/supervisor.json',dict(supervisor=identity(os.getpid()),token='test',children=[],phase='listening'))
+        print('STACK_LISTENING; fixture', flush=True)
         while not (ROOT/'run/fake-stop').exists(): time.sleep(.03)
         (ROOT/'run/supervisor.json').unlink(missing_ok=True)
     elif action == 'stop':
@@ -137,6 +144,26 @@ class RpcTests(unittest.TestCase):
         self.assertFalse(result['ok'])
         self.assertIn('frissítést igényel', result['error'])
 
+    def test_core_control_is_validated_and_routed(self):
+        self.assertTrue(self.rpc('status')['result']['state']['core_control'])
+        result = self.rpc('action', dict(argv=['start-cores', '--instance', 'remote-core', '--channel', '2']))
+        self.assertTrue(result['ok'], result)
+        self.assertTrue(self.rpc('action', dict(argv=['stop-cores', '--instance', 'remote-core']))['ok'])
+        self.assertEqual((self.root / 'actions.trace').read_text().splitlines(),
+                         ['start-cores --instance remote-core --channel 2', 'stop-cores --instance remote-core'])
+        for argv in (['stop-cores'], ['start-cores', '--instance', '../escape'], ['start-cores', '--channel', 'x'],
+                     ['stop-cores', '--instance'], ['start-cores', '--config', '/another/server.json']):
+            result = self.rpc('action', dict(argv=argv))
+            self.assertFalse(result['ok'], argv)
+            self.assertIn('Hibás core- vagy csatornakiválasztás', result['error'])
+        # A package whose manage.py predates core control says so instead of failing obscurely.
+        path = self.root / 'manage.py'
+        path.write_text(path.read_text(encoding='utf-8').replace('def control_cores(', 'def _older_manager('), encoding='utf-8')
+        self.assertFalse(self.rpc('status')['result']['state']['core_control'])
+        result = self.rpc('action', dict(argv=['start-cores', '--instance', 'remote-core']))
+        self.assertFalse(result['ok'])
+        self.assertIn('friss manage.py', result['error'])
+
     def test_detached_remote_start_survives_request_exit_and_stop_is_routed(self):
         result = self.rpc('action', dict(argv=['start', '--channel', '1']))
         self.assertTrue(result['ok'], result)
@@ -149,6 +176,45 @@ class RpcTests(unittest.TestCase):
         self.assertTrue(state['running'])
         self.assertTrue(self.rpc('action', dict(argv=['stop']))['ok'])
         self.assertIn('stop', (self.root / 'actions.trace').read_text())
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            state = self.rpc('status')['result']['state']
+            if state['start_job']['status'] == 'stopped': break
+        self.assertEqual(state['start_job']['status'], 'stopped')
+        self.assertNotEqual(state['phase'], 'Indítás sikertelen')
+
+    def test_failed_detached_preflight_survives_reconnect_with_redacted_diagnostics(self):
+        (self.root/'test-start-failure').write_text('0.7')
+        result = self.rpc('action', dict(argv=['start','--channel','1']))
+        self.assertTrue(result['ok'], result)
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            state = self.rpc('connect')['result']['state']
+            if state['start_job']['status'] == 'failed': break
+            time.sleep(.05)
+        self.assertFalse(state['running']);self.assertFalse(state['starting'])
+        self.assertEqual(state['phase'], 'Indítás sikertelen')
+        self.assertIn('duplicate quest id: levelup', state['start_job']['output'])
+        self.assertNotIn('PRIVATE_remote-core', state['start_job']['output'])
+
+    def test_immediate_start_failure_keeps_journal_and_rejects_foreign_log_path(self):
+        (self.root/'test-start-failure').write_text('0')
+        result = self.rpc('action', dict(argv=['start']))
+        # Process startup can itself exceed the 100 ms acknowledgement window.
+        # Either response must leave a durable, readable failure once it exits.
+        if result['ok']: self.assertTrue(result['result']['detached'])
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            state = self.rpc('status')['result']['state']
+            if state['start_job']['status'] == 'failed': break
+            time.sleep(.05)
+        self.assertEqual(state['start_job']['status'], 'failed')
+        self.assertIn('duplicate quest id', state['start_job']['output'])
+        self.assertNotIn('PRIVATE_', state['start_job']['output'])
+        journal = next((self.root/'run/manager-jobs').glob('remote-start-*.json'))
+        record = json.loads(journal.read_text());record['log'] = 'server.json'
+        journal.write_text(json.dumps(record))
+        self.assertIsNone(self.rpc('status')['result']['state']['start_job'])
 
     def test_unfinished_binary_installation_blocks_remote_start(self):
         path = self.root / 'run/deployments' / ('d'*24) / 'result.json'
@@ -253,6 +319,27 @@ class TargetGuiTests(unittest.TestCase):
         state['database_status']['status']='available';state.update(database_running=True,can_start=True)
         self.window.refresh();self.assertEqual(self.window.db_metric.text(),'SQL: elérhető')
         self.assertTrue(self.window.start_button.isEnabled());self.assertTrue(self.window.remote_online)
+
+    def test_failed_start_is_visible_once_with_reason_and_clears_after_success(self):
+        self.connect()
+        state = copy.deepcopy(self.window.remote_state)
+        state.update(running=False,starting=False,phase='Indítás sikertelen',start_job=dict(
+            id='failure-1',status='failed',log='run/manager-jobs/remote-start-1.log',
+            output='PACKAGE_DATA_INVALID Quest/login/levelup.lua: duplicate quest id: levelup'))
+        self.window.console.clear()
+        self.window.receive_remote_state(state);self.window.receive_remote_state(state)
+        self.window.refresh()
+        self.assertEqual(self.window.console.toPlainText().count('duplicate quest id: levelup'),1)
+        self.assertIn('sikertelen',self.window.stack_metric.text())
+        self.assertIn('duplicate quest id',self.window.stack_metric.toolTip())
+        self.assertIn('remote-start-1.log',self.window.target_hint.text())
+        self.assertTrue(self.window.console_toggle.isChecked())
+        self.assertTrue(self.window.remote_online)
+        state.update(phase='Fut',running=True)
+        state['start_job']['status']='running'
+        self.window.receive_remote_state(state);self.window.refresh()
+        self.assertEqual(self.window.stack_metric.text(),'Fut')
+        self.assertEqual(self.window.stack_metric.toolTip(),'')
 
     def test_remote_form_save_changes_only_remote_file_and_creates_remote_backup(self):
         self.connect();editor=self.window.config_editor

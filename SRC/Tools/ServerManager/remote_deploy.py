@@ -224,6 +224,8 @@ def deploy(request, helpers):
                             raise ValueError('A mentés közben megváltozott a célfájl: ' + name)
                 if helpers.digest(root / 'server.json') != configuration_hash:
                     raise ValueError('A szerver konfigurációja közben megváltozott; próbáld újra.')
+                if getattr(helpers,'backup_before_deploy',None):
+                    record['automatic_backup']=helpers.backup_before_deploy(root)
                 record['status'] = 'installing';journal(folder / 'result.json', record)
                 target.mkdir(exist_ok=True)
                 for name in PROGRAMS:

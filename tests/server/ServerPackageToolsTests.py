@@ -1,6 +1,8 @@
 """Source preservation, conversion fidelity, runtime ownership and native Lua/JSON checks."""
 import argparse
+import contextlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -184,14 +186,18 @@ class PackageToolsTests(unittest.TestCase):
         self.assertFalse(archive.exists())
     def supervised_fixture(self, fail=None, game_bind=None):
         import socket
-        probes = [socket.socket() for _ in range(5)]
+        probes = [socket.socket() for _ in range(7)]
         for probe in probes: probe.bind(('127.0.0.1',0))
         ports = [probe.getsockname()[1] for probe in probes]
         for probe in probes: probe.close()
         cfg = {'database': {'network': {'bind_port': ports[0]}}, 'login': {'port': ports[1]},
-               'game_servers': {'ch1-core1': {'server': {'channel': 1}, 'network': {'port': ports[2], 'p2p_port': ports[3]}}}}
+               'game_servers': {'ch1-core1': {'server': {'channel': 1}, 'network': {'port': ports[2], 'p2p_port': ports[3]}},
+                                'ch2-core1': {'server': {'channel': 2}, 'network': {'port': ports[4], 'p2p_port': ports[5]}}}}
         if game_bind: cfg['game_servers']['ch1-core1']['network']['bind_ip'] = game_bind
         write_json(self.root / 'fixture.json', cfg)
+        # control_cores() reads the package's own server.json.
+        write_json(self.root / 'server.json', cfg)
+        write_json(self.root / '.auriga-package.json', {'version': 1})
         (self.root / 'bin').mkdir(exist_ok=True)
         for program in ('Database','GameServer','LoginServer'):
             (self.root / 'bin' / (program + ('.exe' if os.name == 'nt' else ''))).write_bytes(b'owned fake program '+program.encode())
@@ -291,6 +297,66 @@ manage.supervise([1])
                'game_servers': {'ch1-core1': {'network': {'port': 3, 'p2p_port': 4, 'bind_ip': '203.0.113.7'}}}}
         with self.assertRaisesRegex(RuntimeError, 'ch1-core1 cannot listen on 203.0.113.7:3'):
             for host, port in manage.instance_endpoints(cfg, 'ch1-core1'): manage.free_endpoint('ch1-core1', host, port)
+    def wait_listening(self, process):
+        state = self.root / 'run/supervisor.json'
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            if process.poll() is not None: self.fail((self.root / 'worker.log').read_text())
+            if state.exists() and json.loads(state.read_text())['phase'] == 'listening': return state
+            time.sleep(0.05)
+        self.fail('Supervisor readiness deadline')
+    def test_supervisor_starts_and_stops_cores_one_by_one(self):
+        process, log = self.supervised_fixture()
+        try:
+            state = self.wait_listening(process)
+            names = lambda: [child['name'] for child in json.loads(state.read_text())['children']]
+            self.assertNotIn('ch2-core1', names())
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output): manage.control_cores('start', instances=['ch2-core1'])
+            self.assertIn('ch2-core1: started', output.getvalue())
+            self.assertEqual(names(), ['database', 'ch1-core1', 'ch2-core1', 'login'], 'a later core goes before LoginServer')
+            with contextlib.redirect_stdout(io.StringIO()) as again: manage.control_cores('start', channels=[2])
+            self.assertIn('ch2-core1: already running', again.getvalue())
+            with contextlib.redirect_stdout(io.StringIO()) as stopped: manage.control_cores('stop', channels=[1])
+            self.assertIn('ch1-core1: stopped', stopped.getvalue())
+            self.assertEqual(names(), ['database', 'ch2-core1', 'login'])
+            self.assertIsNone(process.poll(), 'stopping one core keeps the stack running')
+            self.assertEqual(json.loads(state.read_text())['phase'], 'listening')
+            self.assertFalse(list((self.root/'run/crashes').glob('*/event.json')), 'a requested stop is not a crash')
+            with self.assertRaisesRegex(RuntimeError, 'Not a configured game core: database'):
+                manage.control_cores('stop', instances=['database'])
+            with self.assertRaisesRegex(RuntimeError, 'Unknown selected channel'):
+                manage.control_cores('start', channels=[7])
+            manage.stop()
+            self.assertEqual(process.wait(timeout=15), 0, (self.root / 'worker.log').read_text())
+            trace = (self.root / 'trace').read_text().splitlines()
+            self.assertEqual(trace, ['START database', 'START ch1-core1', 'START login', 'START ch2-core1', 'STOP ch1-core1',
+                                     'STOP login', 'STOP ch2-core1', 'STOP database'])
+        finally: self.cleanup_fixture(process, log)
+    def test_supervisor_survives_a_core_that_fails_to_start_later(self):
+        process, log = self.supervised_fixture(fail='ch2-core1')
+        try:
+            state = self.wait_listening(process)
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                with self.assertRaisesRegex(RuntimeError, 'Not every core could be started'):
+                    manage.control_cores('start', instances=['ch2-core1'])
+            self.assertIn('ch2-core1 exited during startup (code 3)', output.getvalue())
+            self.assertIsNone(process.poll(), 'a core failing later does not stop the stack')
+            self.assertEqual([child['name'] for child in json.loads(state.read_text())['children']], ['database', 'ch1-core1', 'login'])
+            reports = list((self.root/'run/crashes').glob('*/event.json'))
+            self.assertEqual(len(reports), 1)
+            event = json.loads(reports[0].read_text())
+            self.assertEqual((event['instance'], event['exit_code'], event['phase']), ('ch2-core1', 3, 'starting'))
+            manage.stop()
+            self.assertEqual(process.wait(timeout=15), 0, (self.root / 'worker.log').read_text())
+        finally: self.cleanup_fixture(process, log)
+    def test_core_control_needs_a_running_stack(self):
+        write_json(self.root / '.auriga-package.json', {'version': 1})
+        write_json(self.root / 'server.json', {'game_servers': {'ch1-core1': {'server': {'channel': 1}}}})
+        with self.assertRaisesRegex(RuntimeError, 'No managed stack is running'):
+            manage.control_cores('start', instances=['ch1-core1'])
+        with self.assertRaisesRegex(RuntimeError, 'Select at least one game core'):
+            manage.control_cores('stop')
     def test_supervisor_rolls_back_failed_startup(self):
         process, log = self.supervised_fixture(fail='ch1-core1')
         try:
@@ -424,6 +490,13 @@ class ExternalSqlTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'read-only'):
                 manage.external_database_check()
         native.assert_not_called()
+
+    def test_invalid_reference_data_identifies_the_requirement(self):
+        from types import SimpleNamespace
+        result = SimpleNamespace(returncode=0,stdout='1\ncommon.locale / SKILL_POWER_BY_LEVEL\tMISSING_OR_INVALID\n',stderr='')
+        with mock.patch.object(manage.shutil,'which',return_value='/usr/local/bin/mariadb'), mock.patch.object(manage,'native',return_value=result):
+            with self.assertRaisesRegex(RuntimeError,'SKILL_POWER_BY_LEVEL.*MISSING_OR_INVALID'):
+                manage.external_database_check()
 
     def test_system_sql_branch_does_not_bootstrap_or_start_a_database(self):
         from types import SimpleNamespace

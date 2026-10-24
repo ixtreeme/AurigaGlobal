@@ -85,6 +85,21 @@ A `start` konzolos felügyelet; a `stop` másik konzolból is kérhető. SQL
 referenciaadatok nélkül az indítás elutasított. A `start` alapból CH1-et és
 a közös CH99-et választja; `--channel` többször megadható, vagy használható
 a `--all-channels`. A `stop-db` előtt a szervereket le kell állítani.
+
+A futó stackhez utólag is indítható core vagy csatorna, és a game core-ok
+egyenként leállíthatók:
+
+```powershell
+.\server.ps1 start-cores --channel 2
+.\server.ps1 start-cores --instance ch2-core2
+.\server.ps1 stop-cores --instance ch1-core2
+```
+
+A felügyelő a kérést a `run/control` mappán át kapja. Az utólag induló core
+ugyanazt a port- és készenléti ellenőrzést kapja, mint a teljes indításnál.
+Ha nem indul el, csak az a core marad leállítva, és a stack fut tovább.
+Ugyanígy: a kért leállítás nem számít összeomlásnak, a stack fut tovább.
+A Database és a LoginServer csak a teljes stackkel együtt indul és áll le.
 Az SQL-kliens az adminjelszót privát futási fájlból kapja, nem parancssori argumentumból.
 
 ## Ismert adateltérések és hátralévő integráció

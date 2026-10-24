@@ -437,7 +437,8 @@ class RemotePage(QWidget):
     def owner_busy(self):
         client = getattr(self.owner, 'remote_client', None)
         process = getattr(self.owner, 'process', None)
-        return bool(client and client.busy()) or bool(process and process.state() != QProcess.ProcessState.NotRunning)
+        return bool(client and client.busy()) or bool(process and process.state() != QProcess.ProcessState.NotRunning) or \
+            bool(hasattr(self.owner,'backup_page') and self.owner.backup_page.active())
 
     def operation_profile(self, server=False):
         profile = self.current()

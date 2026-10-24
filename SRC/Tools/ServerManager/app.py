@@ -51,6 +51,17 @@ def main():
     if arguments[:1] == ['--worker']:
         from backend import worker
         return worker(arguments[1], arguments[2], arguments[3:])
+    if arguments[:1] == ['--backup-scheduled'] and len(arguments)==2:
+        reconnect_streams()
+        import backend, backup_tools
+        root=backend.package_root(arguments[1])
+        try:
+            result=backup_tools.run_schedule(root,backend)
+            print('BACKUP_SCHEDULE_RESULT',result)
+            return 0
+        except Exception as error:
+            print('BACKUP_SCHEDULE_FAILED',backend.redact(str(error),root))
+            return 1
     from window import run
     return run(arguments)
 

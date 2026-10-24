@@ -80,6 +80,10 @@ def worker_input(request):
     request = dict(request)
     if request['action'] == 'install':
         request['install_support'] = Path(__file__).with_name('remote_deploy.py').read_text(encoding='utf-8')
+        base=Path(__file__).resolve().parent
+        request['backup_support'] = {name:next(path for path in
+            (base/'remote_support'/(name+'.py'),base/(name+'.py')) if path.is_file()).read_text(encoding='utf-8')
+            for name in ('crash_tools','backup_tools','backend')}
     if request['action'] == 'packages':
         request['package_support'] = Path(__file__).with_name('remote_packages.py').read_text(encoding='utf-8')
     source = Path(__file__).with_name('remote_worker.py').read_text(encoding='utf-8')

@@ -1,7 +1,8 @@
 -- Read-only startup prerequisite checks after schema/content import.
 -- A READY row proves presence, not the correctness of gameplay formulas/data.
+-- GameServer consumes levels 0-40; legacy curves may retain additional levels.
 SELECT 'common.locale / SKILL_POWER_BY_LEVEL' AS requirement,
-       IF(COUNT(*) = 1 AND MAX(mValue REGEXP '^[[:space:]]*[+-]?[0-9]+([[:space:]]+[+-]?[0-9]+){40}[[:space:]]*$'),
+       IF(COUNT(*) = 1 AND MAX(mValue REGEXP '^[[:space:]]*[+-]?[0-9]+([[:space:]]+[+-]?[0-9]+){40,}[[:space:]]*$'),
           'READY', 'MISSING_OR_INVALID') AS status
 FROM common.locale WHERE mKey = 'SKILL_POWER_BY_LEVEL'
 UNION ALL SELECT 'common.locale / DB_NAME_COLUMN', IF(COUNT(*) = 1, 'READY', 'MISSING')

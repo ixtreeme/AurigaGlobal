@@ -316,10 +316,17 @@ def build_job(request):
 
 
 def install_job(request):
+    for name,source in request.get('backup_support',{}).items():
+        support=types.ModuleType(name);support.__file__='<auriga-'+name+'>'
+        sys.modules[name]=support
+        exec(compile(source,support.__file__,'exec'),support.__dict__)
+    def backup_before_deploy(root):
+        return sys.modules['backup_tools'].before_deploy(root,sys.modules['backend'],emit)
     module = types.ModuleType('_auriga_remote_deploy')
     exec(compile(request['install_support'], '<auriga-remote-deploy>', 'exec'), module.__dict__)
     module.deploy(request, types.SimpleNamespace(root_path=root_path, no_links=no_links,
-                  locked=locked, digest=digest, emit=emit))
+                  locked=locked, digest=digest, emit=emit,
+                  backup_before_deploy=backup_before_deploy if request.get('backup_support') else None))
 
 
 def package_job(request):
