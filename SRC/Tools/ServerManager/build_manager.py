@@ -36,6 +36,32 @@ def fix_windows_icu(bundle):
         print('QT_ICU_FIXED: using the Windows system ICU API')
 
 
+def fix_windows_openssl(bundle, validators, python_dlls=None):
+    # The native validator and CPython can use different OpenSSL builds with
+    # identical DLL names. Keep each pair beside its own executable/module.
+    if os.name != 'nt':
+        return
+    import _ssl
+    import ssl
+    python_dlls = Path(python_dlls or Path(_ssl.__file__).resolve().parent)
+    internal = Path(bundle).resolve() / '_internal'
+    names = ('libcrypto-3-x64.dll', 'libssl-3-x64.dll')
+    for name in names:
+        if not (python_dlls / name).is_file():
+            raise ValueError('Missing CPython OpenSSL dependency: ' + name)
+    for name in names:
+        shutil.copy2(python_dlls / name, internal / name)
+        native = Path(validators) / name
+        if native.is_file():
+            shutil.copy2(native, internal / 'validators' / name)
+    # Some Python distributions ship an additional distrust policy alongside
+    # ssl.py. Preserve that data too; SSLContext loads it before checking TLS.
+    policy = Path(ssl.__file__).with_name('codex-rejected-cas.pem')
+    if policy.is_file():
+        shutil.copy2(policy, internal / policy.name)
+    print('QT_OPENSSL_FIXED: isolated Python and native validator dependencies')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -77,6 +103,7 @@ def main():
     if code:
         return code
     fix_windows_icu(output / 'AurigaServerManager')
+    fix_windows_openssl(output / 'AurigaServerManager', validators)
     licenses = output / 'AurigaServerManager/licenses'
     licenses.mkdir()
     shutil.copy2(source.parents[2] / 'SRC/3rd/LUA55/doc/readme.html', licenses / 'Lua-README.html')

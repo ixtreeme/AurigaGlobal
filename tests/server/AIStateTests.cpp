@@ -6,6 +6,7 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/entity/char.h"
 #include "../../SRC/Server/GameServer/core/config.h"
+#include "../../SRC/Server/GameServer/core/packet.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/AIHelpers.hpp"
@@ -14,6 +15,7 @@
 #include "../../SRC/Server/GameServer/ecs/components/ai_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/combat_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AISystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
@@ -58,10 +60,16 @@ struct Recorder {
     uint32_t nowMs { 1000 };
     uint32_t lastAttackTime { 0 };
     int attackPeriodMs { 0 };
+    uint16_t attackRange { 100 };
+    uint8_t battleType { BATTLE_TYPE_MELEE };
+    int followCalls { 0 };
+    std::vector<uint8_t> movePackets;
     std::function<void(entt::entity)> onAttack;
     // Fires inside Goto, standing in for a packet callback that retires the
     // entity while the state body is still running.
     std::function<void(entt::entity)> onGoto;
+    std::function<void(entt::entity)> onStop;
+    std::function<void(entt::entity)> onMovePacket;
 };
 
 Recorder g_rec;
@@ -142,8 +150,8 @@ entt::entity GetProtege(entt::entity) { return entt::null; }
 void CowardEscape(entt::entity) {}
 bool IsBerserker(entt::entity) { return false; }
 bool IsDeathBlow(entt::entity) { return false; }
-uint16_t GetMobAttackRange(entt::entity) { return 100; }
-uint8_t GetMobBattleType(entt::entity) { return 0; }
+uint16_t GetMobAttackRange(entt::entity) { return g_rec.attackRange; }
+uint8_t GetMobBattleType(entt::entity) { return g_rec.battleType; }
 uint32_t GetLastAttackTime(entt::entity) { return g_rec.lastAttackTime; }
 bool Attack(entt::entity attacker, entt::entity victim, uint8_t)
 {
@@ -161,11 +169,21 @@ void SetGodSpeed(entt::entity, bool) {}
 bool IsRevive(entt::entity) { return false; }
 bool IsStoneSkinner(entt::entity) { return false; }
 bool Return(entt::entity) { return false; }
-bool Follow(entt::entity, entt::entity, float) { return false; }
+bool Follow(entt::entity, entt::entity, float) { ++g_rec.followCalls; return true; }
 } // namespace CombatSystem
 
 namespace ecs::MovementSystem {
 bool CanMove(entt::entity) { return true; }
+bool StopForAttack(entt::entity e)
+{
+    auto& state = g_registry.get<ecs::MovementState>(e);
+    state.moveStartTime = state.moveDuration = 0;
+    state.moveSpeed = 0;
+    state.isWalking = false;
+    g_registry.remove<ecs::MovementDestination>(e);
+    if (g_rec.onStop) g_rec.onStop(e);
+    return g_registry.valid(e) && !g_registry.all_of<ecs::MovementDestination>(e);
+}
 bool Goto(entt::entity e, int32_t, int32_t)
 {
     g_rec.gotoCalls.push_back(e);
@@ -176,8 +194,12 @@ bool Goto(entt::entity e, int32_t, int32_t)
 void SetNowWalking(entt::entity, bool) {}
 void SetRotationToXY(entt::entity, int32_t, int32_t) {}
 void SetRotation(entt::entity, float, bool) {}
-void SendMovePacket(entt::entity, uint8_t, uint8_t, uint32_t, uint32_t,
-    uint32_t, uint32_t, float) {}
+void SendMovePacket(entt::entity e, uint8_t function, uint8_t, uint32_t, uint32_t,
+    uint32_t, uint32_t, float)
+{
+    g_rec.movePackets.push_back(function);
+    if (g_rec.onMovePacket) g_rec.onMovePacket(e);
+}
 } // namespace ecs::MovementSystem
 
 
@@ -556,6 +578,80 @@ void PlayerBattleStateDoesNotAutoAttack()
     Check(g_rec.attacked.empty(), "a PC with a target still needs client attack input");
 }
 
+// A player can approach a mob while its old stand-off destination is still
+// active. The independent movement pump must not carry that mob past the
+// player and back to its old ring while battle is waiting for a cooldown.
+void BattleStopsTheOldChaseWhenTheVictimComesWithinReach()
+{
+    for (const uint16_t range : {uint16_t(150), uint16_t(850)}) {
+        for (const bool coolingDown : {false, true}) {
+            Reset();
+            const auto mob = MakeMonster();
+            const auto victim = MakeMonster(1000 + range / 2, 1000);
+            g_rec.victim = victim;
+            g_rec.attackRange = range;
+            g_rec.battleType = range == 850 ? BATTLE_TYPE_RANGE : BATTLE_TYPE_MELEE;
+            g_rec.nowMs = 10000;
+            g_rec.lastAttackTime = coolingDown ? 9500 : 0;
+            g_rec.attackPeriodMs = 2000;
+            g_registry.emplace<ecs::MovementDestination>(mob,
+                ecs::MovementDestination {1000 - range * 2, 1000});
+            auto& movement = g_registry.emplace<ecs::MovementState>(mob);
+            movement.moveDuration = 5000;
+            movement.moveSpeed = 360;
+            movement.isWalking = true;
+            g_registry.emplace<ecs::CombatActiveTag>(mob);
+
+            AISystem::StateBattle(mob);
+
+            Check(!g_registry.all_of<ecs::MovementDestination>(mob),
+                "an in-range mob kept its old chase destination");
+            Check(g_registry.get<ecs::MovementState>(mob).moveDuration == 0 &&
+                !g_registry.get<ecs::MovementState>(mob).isWalking,
+                "an in-range mob kept movement timing during its attack/cooldown");
+            Check(g_rec.victim == victim && g_registry.all_of<ecs::CombatActiveTag>(mob),
+                "stopping the chase must preserve combat and its victim");
+            Check(!g_rec.movePackets.empty() && g_rec.movePackets.front() == FUNC_WAIT,
+                "the client did not receive the interrupted chase's stop position");
+            Check(g_rec.followCalls == 0, "an in-range mob started another stand-off move");
+            Check(g_rec.attacked.size() == (coolingDown ? 0u : 1u),
+                "stopping the chase bypassed the attack cooldown");
+        }
+    }
+}
+
+void BattleStopHonoursCallbacksAndKeepsAnOutOfRangeChase()
+{
+    for (int mutation = 0; mutation < 3; ++mutation) {
+        Reset();
+        const auto mob = MakeMonster();
+        const auto victim = MakeMonster();
+        g_rec.victim = victim;
+        g_registry.emplace<ecs::MovementState>(mob).moveDuration = 5000;
+        g_registry.emplace<ecs::MovementDestination>(mob, 500, 1000);
+        g_rec.onMovePacket = [&](entt::entity source) {
+            if (mutation == 0) g_registry.destroy(source);
+            if (mutation == 1) g_registry.destroy(victim);
+            if (mutation == 2) g_registry.emplace<ecs::MovementDestination>(source, 2000, 1000);
+        };
+        AISystem::StateBattle(mob);
+        Check(g_rec.attacked.empty(), "stop packet callback was followed by a stale attack");
+    }
+
+    Reset();
+    const auto mob = MakeMonster();
+    g_rec.victim = MakeMonster(3000, 1000);
+    g_rec.attackRange = 850;
+    g_rec.battleType = BATTLE_TYPE_RANGE;
+    g_registry.emplace<ecs::MovementState>(mob).moveDuration = 5000;
+    g_registry.emplace<ecs::MovementDestination>(mob, 2000, 1000);
+    AISystem::StateBattle(mob);
+    Check(g_registry.all_of<ecs::MovementDestination>(mob) &&
+        g_registry.get<ecs::MovementState>(mob).moveDuration == 5000 &&
+        g_rec.followCalls == 1 && g_rec.attacked.empty(),
+        "out-of-range ranged mob lost its pursuit");
+}
+
 // The entity can be retired by a callback while battle is still running.
 void BattleSurvivesDestructionInsideAttack()
 {
@@ -595,6 +691,8 @@ int main()
         BattlePumpConvertsRemainingMillisecondsToPulses();
         BattlePumpHandlesAttackClockWrap();
         PlayerBattleStateDoesNotAutoAttack();
+        BattleStopsTheOldChaseWhenTheVictimComesWithinReach();
+        BattleStopHonoursCallbacksAndKeepsAnOutOfRangeChase();
         BattleSurvivesDestructionInsideAttack();
     } catch (const std::exception& e) {
         std::cerr << "FAIL: threw: " << e.what() << std::endl;

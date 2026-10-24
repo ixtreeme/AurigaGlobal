@@ -7636,6 +7636,22 @@ bool Follow(entt::entity self, entt::entity target, float minDistance)
     float fx = 0.0f;
     float fy = 0.0f;
 
+    const auto moveTo = [&](int32_t destinationX, int32_t destinationY) {
+        // Goto returns false for an unchanged destination. That is a successful
+        // ongoing chase, not a reason for GotoNearTarget to try its other radius.
+        // Otherwise a stationary victim makes the mob alternate between the
+        // 80% and 90% stand-off points and reset its movement clock every pulse.
+        const auto* destination = g_registry.try_get<ecs::MovementDestination>(self);
+        const auto* movement = g_registry.try_get<ecs::MovementState>(self);
+        if (destination && movement && movement->moveDuration > 0 &&
+            destination->x == destinationX && destination->y == destinationY)
+            return true;
+        if (!ecs::MovementSystem::Goto(self, destinationX, destinationY))
+            return false;
+        ecs::MovementSystem::SendMovePacket(self, FUNC_WAIT, 0, 0, 0, 0);
+        return true;
+    };
+
     if (IsChangeAttackPosition(self, target) &&
         ecs::PlayerRuntime::GetMobRank(self) < MOB_RANK_BOSS) {
         SetChangeAttackPositionTime(self);
@@ -7662,17 +7678,12 @@ bool Follow(entt::entity self, entt::entity target, float minDistance)
                 break;
         }
 
-        if (!ecs::MovementSystem::Goto(self, dx, dy))
-            return false;
+        return moveTo(dx, dy);
     } else {
         GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(self), distance - minDistance, &fx, &fy);
 
-        if (!ecs::MovementSystem::Goto(self, selfX + static_cast<int>(fx), selfY + static_cast<int>(fy)))
-            return false;
+        return moveTo(selfX + static_cast<int>(fx), selfY + static_cast<int>(fy));
     }
-
-    ecs::MovementSystem::SendMovePacket(self, FUNC_WAIT, 0, 0, 0, 0);
-    return true;
 }
 
 } // namespace CombatSystem

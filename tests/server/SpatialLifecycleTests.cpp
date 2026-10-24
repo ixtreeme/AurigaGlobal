@@ -10,6 +10,7 @@
 #include "../../SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/VisibilitySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/CharacterFrame.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/AIHelpers.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
@@ -1396,6 +1397,91 @@ void NativeMovementCommands() {
     Check(!ecs::MovementSystem::Goto(stale, 5, 5), "stale Goto accepted");
     ecs::MovementSystem::Stop(stale);
 }
+void RetargetingCannotStarveTheCharacterFrame() {
+    // The live ranged-monkey trace alternated its 80%/90% stand-off points
+    // every pulse. AI also retargets every pulse when a player keeps moving.
+    // Both must advance the OLD segment before replacing its start time.
+    for (int scenario = 0; scenario < 3; ++scenario) {
+        Reset(); MapFixture map;
+        if (scenario == 2) clockNow = UINT32_MAX - 200;
+        const auto mob = Moving(1000, 1000, 1001, 1000, 200, true);
+        ecs::MovementSystem::SyncDestinationClear(mob);
+        Check(ecs::MovementSystem::Goto(mob, 4000, 1000), "initial chase did not start");
+        const auto first = g_registry.get<ecs::Position>(mob);
+        int lastSeen = first.x;
+        for (int frame = 0; frame < 50; ++frame) {
+            clockNow += 40;
+            ecs::UpdateCharacterFrame(g_registry, clockNow, [&] {
+                const auto position = g_registry.get<ecs::Position>(mob);
+                Check(position.x > lastSeen,
+                    "AI retargeting starved movement: character still at previous frame's position");
+                lastSeen = position.x;
+                const int goal = scenario == 1 ? 4000 + frame * 5 : 4000 + (frame % 2 ? 80 : 0);
+                ecs::MovementSystem::Goto(mob, goal, 1000);
+            });
+        }
+        Check(lastSeen > first.x + 400 && lastSeen < first.x + 800,
+            "retargeted mob did not make speed-bounded progress over two seconds");
+    }
+}
+
+void NativeAttackMovementStop() {
+    Reset(); MapFixture map;
+    const auto mob = Moving(1000, 1000, 200, 1000, 150, true);
+    const auto victim = Entity(ecs::SpatialKind::Character);
+    g_registry.emplace<ecs::CombatTarget>(mob, victim, 0u);
+    g_registry.emplace<ecs::CombatActiveTag>(mob);
+    g_registry.emplace<ecs::AIStateMachine>(mob).current = ecs::AIFSMState::Battle;
+    auto& movement = g_registry.get<ecs::MovementState>(mob);
+    movement.isWalking = true;
+    movement.moveSpeed = 360;
+    movement.walkPreference = true;
+    const auto position = g_registry.get<ecs::Position>(mob);
+
+    Check(ecs::MovementSystem::StopForAttack(mob), "attack stop failed");
+    const auto stopped = g_registry.get<ecs::MovementState>(mob);
+    Check(!g_registry.all_of<ecs::MovementDestination>(mob) &&
+        stopped.moveStartTime == 0 && stopped.moveDuration == 0 &&
+        stopped.moveSpeed == 0 && !stopped.isWalking && stopped.stopTime == clockNow,
+        "attack stop left an active interpolation");
+    Check(CombatSystem::GetVictim(mob) == victim &&
+        g_registry.all_of<ecs::CombatActiveTag>(mob) &&
+        g_registry.get<ecs::AIStateMachine>(mob).current == ecs::AIFSMState::Battle &&
+        stopped.walkPreference && transitions.empty(), "attack stop discarded combat/AI/preferences");
+    MovementSystem_Update(g_registry, clockNow + 10000);
+    const auto after = g_registry.get<ecs::Position>(mob);
+    Check(after.x == position.x && after.y == position.y,
+        "movement pump carried a stopped attacker toward its old stand-off point");
+
+    Check(ecs::MovementSystem::Goto(mob, 1800, 1000), "next chase could not start");
+    g_registry.remove<ecs::DirtyTag>(mob);
+    bool nested = false;
+    Callback retarget {[&](entt::registry&, entt::entity changed) {
+        if (changed == mob && !nested) {
+            nested = true;
+            Check(ecs::MovementSystem::Goto(mob, 2500, 1000), "nested chase could not start");
+        }
+    }};
+    entt::scoped_connection connection =
+        g_registry.on_construct<ecs::DirtyTag>().connect<&Callback::Run>(retarget);
+    Check(!ecs::MovementSystem::StopForAttack(mob) && nested &&
+        g_registry.get<ecs::MovementDestination>(mob).x == 2500 &&
+        g_registry.get<ecs::MovementState>(mob).moveDuration > 0,
+        "attack stop overwrote a replacement chase from its preparation callback");
+    connection.release();
+
+    g_registry.remove<ecs::DirtyTag>(mob);
+    Callback retire {[&](entt::registry& reg, entt::entity changed) {
+        if (changed == mob) reg.destroy(mob);
+    }};
+    connection = g_registry.on_construct<ecs::DirtyTag>().connect<&Callback::Run>(retire);
+    Check(!ecs::MovementSystem::StopForAttack(mob) && !g_registry.valid(mob),
+        "attack stop accessed an attacker retired during preparation");
+    connection.release();
+    Check(!ecs::MovementSystem::StopForAttack(entt::null) &&
+        !ecs::MovementSystem::StopForAttack(Entity()), "attack stop accepted a non-character");
+}
+
 void NativeMotionSelection() {
     Reset(); MapFixture map;
     const auto e = Moving(100, 100, 101, 100);
@@ -1960,6 +2046,7 @@ int main() {
         NativeMovement(); MovementPacketInitializesTheCommand(); ElapsedMovementTiming(); WalkModeOwnership(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
+        RetargetingCannotStarveTheCharacterFrame(); NativeAttackMovementStop();
         NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations();
         DungeonReturnLocationKeepsMembership(); ShowHeightSentinel();
         ShownMountFollowAndRemoval();

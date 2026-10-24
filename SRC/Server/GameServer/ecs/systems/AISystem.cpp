@@ -21,6 +21,7 @@
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include "../components/movement_components.hpp"
 #include <Core/Logging.hpp>
 #include "CombatSystem.hpp"
 #include "../../core/utils.h"
@@ -424,6 +425,28 @@ void StateBattle(entt::entity e)
         if (GotoNearTarget(e, victim))
             AIHelpers::SetStateDuration(e, 1);
         return;
+    }
+
+    // AI and movement run independently. Entering attack range must cancel the
+    // old stand-off destination, including while the next swing is cooling down;
+    // otherwise the movement pump carries the mob past an approaching player.
+    // Stop() also clears combat, so use the movement-only stop here.
+    if (g_registry.all_of<ecs::MovementDestination>(e)) {
+        if (!ecs::MovementSystem::StopForAttack(e)) {
+            if (g_registry.valid(e)) AIHelpers::SetStateDuration(e, 1);
+            return;
+        }
+        const auto stillFighting = [&] {
+            return g_registry.valid(e) && g_registry.valid(victim) &&
+                CombatSystem::GetVictim(e) == victim && !CombatSystem::IsDead(e) &&
+                !CombatSystem::IsDead(victim) &&
+                !g_registry.all_of<ecs::MovementDestination>(e);
+        };
+        if (!stillFighting()) return;
+        ecs::MovementSystem::SetRotationToXY(e,
+            ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim));
+        ecs::MovementSystem::SendMovePacket(e, FUNC_WAIT, 0, 0, 0, 0);
+        if (!stillFighting()) return;
     }
 
     const entt::entity party = ecs::SocialSystem::GetParty(e);
