@@ -116,9 +116,12 @@ nem mentett kapcsolati útvonalnál az app előbb a megfelelő profil kiválaszt
   szerint csoportosulnak. Listasor másolható, hozzáadható, törölhető;
   a beágyazott csoportok dupla kattintással vagy a **Sor részletei** gombbal
   nyithatók meg. VNUM szerinti keresés az értékekre is működik.
-- **Questek és Lua:** források, runtime Lua, quest object állományok és
+- **Questek és Lua:** questforrások, Lua-könyvtárak és
   questmetadata. Az eredeti UTF-8/BOM/Latin1 kódolást és sortörést megőrzi.
   Az új szerver a questforrásokat közvetlenül tölti be; nem kell objecteket fordítani.
+  A régi `data/quest/object` mappa nem jelenik meg a szerkesztőben, és tartalma
+  közvetlen fájlmegnyitással sem módosítható. Sikeres migráció után a csomagból
+  eltávolítható; a korábbi állapotazonosítók ellenőrzéséhez őrizd meg a mentését.
 - **Naplók:** core-onkénti naplók és az ellenőrzések eredménye, frissülő,
   méretkorlátozott nézetben. Az ismert konfigurációs jelszavakat kitakarja.
 - **Korábbi mentés:** ugyanahhoz a fájlhoz tartozó korábbi verzió betöltése

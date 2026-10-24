@@ -2571,3 +2571,7 @@ tartozó core nem jelenik meg kétszer, a sor és a választó ugyanarra a fájl
 mutat, az archivált bináris kiválasztása megmarad. A lista frissítése megtartja
 az aktuális debuggerjelentést és a kézzel megadott programot; megváltozott core
 fájlnál a régi jelentést elveti, core nélküli eseménynél törli a korábbi célt.
+
+A `ServerManagerTests.py` questlista-próbája a régi `data/quest/object` fa
+elrejtését és a közvetlen szerkesztési kísérletek elutasítását is ellenőrzi;
+a `quest_list` és az aktív források továbbra is megnyithatók.

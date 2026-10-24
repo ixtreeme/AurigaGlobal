@@ -269,6 +269,24 @@ class ServerManagerTests(unittest.TestCase):
         for relative in ('data/quest/Quest/demo.quest', 'data/quest/quest_list', 'data/quest/questnpc.json', 'data/quest/questlib.lua'):
             self.assertTrue(api.hotreload_file(relative), relative)
 
+    def test_generated_quest_objects_are_hidden_and_cannot_be_edited(self):
+        obsolete=self.root/'data/quest/object'
+        (obsolete/'state').mkdir(parents=True)
+        (obsolete/'npc').mkdir()
+        (obsolete/'state/old_quest').write_text('old_quest={start=0}')
+        (obsolete/'npc/login.lua').write_text('return 1')
+        (obsolete/'npc/login.start').write_text('return 1')
+        source=self.root/'data/quest/Quest/demo.lua';source.parent.mkdir();source.write_text('quest demo begin state start begin end end')
+        (self.root/'data/quest/quest_list').write_text('Quest/demo.lua\n')
+        files=api.file_list(self.root,quests=True)
+        self.assertIn('data/quest/Quest/demo.lua',files)
+        self.assertIn('data/quest/quest_list',files)
+        self.assertFalse(any('/object/' in path for path in files))
+        for path in obsolete.rglob('*'):
+            if path.is_file():
+                with self.subTest(path=path),self.assertRaisesRegex(api.EditorError,'quest object'):
+                    api.Document(self.root,path.relative_to(self.root).as_posix())
+
     def test_redaction_covers_passwords_and_peer_child_tokens(self):
         config = api.strict_json((self.root / 'server.json').read_text())
         config['common']['sql']['player']['password'] = 'private-password-xyz'

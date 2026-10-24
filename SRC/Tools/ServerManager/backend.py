@@ -99,9 +99,10 @@ def editable_path(root, relative):
         return path
     if rel.parts[0] != 'data':
         raise EditorError('Itt csak a server.json és a data szöveges állományai szerkeszthetők.')
+    if rel.parts[:3] == ('data', 'quest', 'object'):
+        raise EditorError('A régi quest object mappát a szerver már nem használja. A quest_list fájlban felsorolt questforrásokat szerkeszd.')
     suffix = path.suffix.lower()
-    lua_state = rel.as_posix().startswith('data/quest/object/state/')
-    if suffix not in ('.json', '.lua', '.quest', '.txt', '.start', '.script', '.when') and not lua_state and rel.as_posix() != 'data/quest/quest_list':
+    if suffix not in ('.json', '.lua', '.quest', '.txt', '.start', '.script', '.when') and rel.as_posix() != 'data/quest/quest_list':
         raise EditorError('Ez az állomány nem szerkeszthető szövegként.')
     return path
 
@@ -419,7 +420,7 @@ def validate_candidate(root, relative, candidate):
     if language_for(relative) == 'quest':
         checker = root / 'bin' / ('ServerPackageCheck.exe' if os.name == 'nt' else 'ServerPackageCheck')
         return native(root, [checker, '--check-quest', candidate])
-    runtime_lua = original.suffix in ('.start', '.script', '.when') or relative.startswith('data/quest/object/state/')
+    runtime_lua = original.suffix in ('.start', '.script', '.when')
     runtime_lua = runtime_lua or (original.suffix == '.lua' and not relative.startswith(('data/quest/Quest/', 'data/quest/pre_qc/')))
     if original.suffix != '.json' and not runtime_lua:
         return 'Szöveg ellenőrizve.\n'

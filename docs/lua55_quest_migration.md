@@ -26,6 +26,12 @@ Az azonos questnevet deklaráló két külön forrás indulási hibát okoz.
 Ez korábban csendes felülírás volt; migrációkor külön jelentés készül róla.
 A listán kívüli régi objectek többé nem aktiválnak elfelejtett eseményeket.
 
+A sikeresen migrált szervercsomagból a `data/quest/object` mappa elhagyható.
+Sem az induláskori közvetlen betöltés, sem a hotreload nem használja. A régi
+`object/state` táblák csak a migrációs eszköz állapotazonosító-ellenőrzéséhez
+szükségesek; a mentésben megőrizhetők. A szerverkezelő nem listázza és nem
+szerkeszti a régi generált mappát.
+
 ## Kompatibilitás és futtatás
 
 A szükséges `table.getn`, `table.foreach`, `table.foreachi`, `math.mod`,
