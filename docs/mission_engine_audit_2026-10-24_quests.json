@@ -1,0 +1,3337 @@
+{
+  "source_root": "D:\\AurigaGlobal\\Server2-Local\\data\\quest",
+  "classification_is_provisional": true,
+  "quests": [
+    {
+      "path": "Quest/dungeon/catacombe.lua",
+      "quest_name": "catacombe",
+      "sha256": "cfe90c0f427ef691c181a3f6602062dd313b0f8de2cb79f743b43ecdb4f8bbd2",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "catacombe_complete.server_timer",
+        "2597.kill with pc.in_dungeon()",
+        "2598.kill with pc.in_dungeon()",
+        "catacombe_warp.server_timer",
+        "catacombe_end.server_timer",
+        "catacombe_prepare.server_timer",
+        "logout",
+        "login",
+        "20367.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "catacombe.clear",
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.jump_all",
+        "d.kill_all",
+        "d.notice",
+        "d.remove_item",
+        "d.set_regen_file",
+        "d.setf",
+        "d.spawn_mob",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "math.random",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format"
+      ],
+      "flag_names": [
+        "catacombe",
+        "dungeon_bonus"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/christmas_zone1.lua",
+      "quest_name": "christmas_zone1",
+      "sha256": "66fdf2d802fd24d2ada7d6ca91e1f66e56d03ebc078d866ad9d2cf9b9260e2f2",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "christmas_zone1_complete.server_timer",
+        "christmas_zone1_end.server_timer",
+        "4081.kill with pc.in_dungeon()",
+        "9298.take with pc.in_dungeon() and item.get_vnum() == 30777",
+        "9293.chat.\"Hei!\" with pc.in_dungeon()",
+        "8456.kill with pc.in_dungeon()",
+        "christmas_zone1_loop.server_timer",
+        "9296.take with pc.in_dungeon() and item.get_vnum() == 30773",
+        "4080.kill with pc.in_dungeon()",
+        "4079.kill with pc.in_dungeon()",
+        "9295.click with pc.in_dungeon()",
+        "christmas_zone1_warp.server_timer",
+        "9294.take with pc.in_dungeon() and item.get_vnum() == 30772",
+        "4071.kill or 4072.kill or 4073.kill or 4074.kill with pc.in_dungeon()",
+        "christmas_zone1_wave.server_timer",
+        "8455.kill with pc.in_dungeon()",
+        "christmas_zone1_prepare.server_timer",
+        "logout",
+        "login",
+        "9293.chat.\"A new territory?!?\" with pc.get_map_index() == 219"
+      ],
+      "api_calls": [
+        "christmas_zone1.clear",
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.count_monster",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.jump_all",
+        "d.kill_all",
+        "d.kill_all_monsters",
+        "d.notice",
+        "d.regen_file",
+        "d.remove_item",
+        "d.set_regen_file",
+        "d.setf",
+        "d.spawn_mob",
+        "game.drop_item",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "item.get_vnum",
+        "item.remove",
+        "math.floor",
+        "math.random",
+        "npc.get_vid",
+        "npc.kill",
+        "npc.purge",
+        "party.get_leader_name",
+        "party.is_leader",
+        "party.is_party",
+        "pc.count_item",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.give_item2",
+        "pc.in_dungeon",
+        "pc.remove_item",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": [
+        "christmas_zone1"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/christmas_zone2.lua",
+      "quest_name": "christmas_zone2",
+      "sha256": "12fdcf69e13845a5869710feb40510d7965a2ce087cacec6026f93a1c8e4c2fd",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "christmas_zone2_complete.server_timer",
+        "christmas_zone2_end.server_timer",
+        "4479.kill with pc.in_dungeon()",
+        "9430.take with pc.in_dungeon() and item.get_vnum() == 30892",
+        "4478.kill with pc.in_dungeon()",
+        "30891.use with pc.in_dungeon()",
+        "9425.take with pc.in_dungeon() and item.get_vnum() == 30890",
+        "4477.kill with pc.in_dungeon()",
+        "9424.take with pc.in_dungeon() and item.get_vnum() == 30889",
+        "9426.take with pc.in_dungeon() and item.get_vnum() == 30890",
+        "christmas_zone2_warp.server_timer",
+        "8715.kill with pc.in_dungeon()",
+        "9427.take with pc.in_dungeon() and item.get_vnum() == 30890",
+        "4071.kill with pc.in_dungeon()",
+        "christmas_zone2_check.server_timer",
+        "8714.kill with pc.in_dungeon()",
+        "christmas_zone2_first_stone.server_timer",
+        "christmas_zone2_prepare.server_timer",
+        "logout",
+        "login",
+        "9423.chat.\"A new territory?!?\" with pc.get_map_index() == 219"
+      ],
+      "api_calls": [
+        "christmas_zone2.clear",
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.count_monster",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.jump_all",
+        "d.kill_all",
+        "d.kill_all_monsters",
+        "d.notice",
+        "d.regen_file",
+        "d.remove_item",
+        "d.setf",
+        "d.spawn_mob",
+        "game.drop_item",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "item.get_vnum",
+        "item.remove",
+        "math.floor",
+        "npc.get_vid",
+        "npc.kill",
+        "npc.purge",
+        "npc.set_vid_attack_mul",
+        "npc.set_vid_damage_mul",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.remove_item",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": [
+        "christmas_zone2"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/deviltower_zone.lua",
+      "quest_name": "deviltower_zone",
+      "sha256": "b1f7a76f9343f4eb6409736c6f5401def959da5580140511c4190f5d594d2b8b",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "deviltower_complete.server_timer",
+        "deviltower_end.server_timer",
+        "1093.kill with pc.in_dungeon()",
+        "20366.take with pc.in_dungeon() and item.get_vnum() == 30304",
+        "1040.kill with pc.in_dungeon()",
+        "30302.use with pc.in_dungeon()",
+        "8019.kill with pc.in_dungeon()",
+        "8018.kill with pc.in_dungeon()",
+        "20074.chat.\"Hey!\" or 20075.chat.\"Hey!\" or 20076.chat.\"Hey!\" with pc.in_dungeon()",
+        "1092.kill with pc.in_dungeon()",
+        "20073.take with pc.in_dungeon() and item.get_vnum() == 50084",
+        "1032.kill with pc.in_dungeon()",
+        "8017.kill with pc.in_dungeon()",
+        "8016.kill with pc.in_dungeon()",
+        "1091.kill with pc.in_dungeon()",
+        "deviltower_warp.server_timer",
+        "deviltower_checker.server_timer",
+        "deviltower_prepare.server_timer",
+        "logout",
+        "login",
+        "20348.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.count_monster",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.jump_all",
+        "d.kill_all",
+        "d.notice",
+        "d.regen_file",
+        "d.remove_item",
+        "d.set_regen_file",
+        "d.setf",
+        "d.spawn_mob",
+        "deviltower_zone.clear",
+        "game.drop_item",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "item.get_vnum",
+        "item.remove",
+        "math.floor",
+        "math.random",
+        "npc.get_race",
+        "npc.get_vid",
+        "npc.purge",
+        "party.get_leader_name",
+        "party.give_blacksmith",
+        "party.is_party",
+        "pc.count_item",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.remove_item",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": [
+        "deviltower_zone",
+        "dungeon_bonus"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/dragonlair_zone.lua",
+      "quest_name": "dragonlair_zone",
+      "sha256": "335e938afeb936bf7fdaf39778d4a22da4946e76010a418d55b9f8428f46120f",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "dragonlair_complete.server_timer",
+        "2493.kill with pc.in_dungeon()",
+        "8031.kill or 8032.kill or 8033.kill or 8034.kill with pc.in_dungeon()",
+        "dragonlair_end.server_timer",
+        "dragonlair_prepare.server_timer",
+        "logout",
+        "login",
+        "30121.chat.\"Beran-Setaou Dungeon\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.kill_all",
+        "d.notice",
+        "d.regen_file",
+        "d.remove_item",
+        "d.set_vid_invincible",
+        "d.setf",
+        "d.spawn_mob",
+        "dragonlair_zone.clear",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "math.random",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format"
+      ],
+      "flag_names": [
+        "dragonlair_zone",
+        "dungeon_bonus"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/dungeon_spider.lua",
+      "quest_name": "dungeon_spider",
+      "sha256": "6c0d66578a1996c9fec57812bdca853c470493a6412d7596f64ed2746ea03f2c",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "spider_complete.server_timer",
+        "2092.kill with pc.in_dungeon()",
+        "2095.kill with pc.in_dungeon()",
+        "spider_end.server_timer",
+        "spider_prepare.server_timer",
+        "logout",
+        "login",
+        "30130.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.kill_all",
+        "d.notice",
+        "d.remove_item",
+        "d.set_vid_invincible",
+        "d.setf",
+        "d.spawn_mob",
+        "dungeon_spider.clear",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "math.random",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "dungeon_spider"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/enchanted_forest.lua",
+      "quest_name": "enchanted_forest",
+      "sha256": "8c0d6c5b3cd6e59ea9d260b270d691c4bc08db07589c466a51c615b9dcc8718d",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "enchanted_forest_complete.server_timer",
+        "6192.kill with pc.in_dungeon()",
+        "6408.kill with pc.in_dungeon()",
+        "enchanted_forest_end.server_timer",
+        "enchanted_forest_prepare.server_timer",
+        "logout",
+        "login",
+        "20412.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.kill_all",
+        "d.notice",
+        "d.remove_item",
+        "d.setf",
+        "d.spawn_mob",
+        "enchanted_forest.clear",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "math.random",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "enchanted_forest"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/meleylair_zone.lua",
+      "quest_name": "meleylair_zone",
+      "sha256": "eb5a580cc7497fa637c06bc193f073852002130a51e9a9d8ac660db7b7632cee",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "meleylair_stone_limit.server_timer",
+        "meleylair_complete.server_timer",
+        "6118.take with pc.in_dungeon() and item.get_vnum() == 30341",
+        "6116.kill with pc.in_dungeon()",
+        "20422.kill with pc.in_dungeon()",
+        "meleylair_stone_spawn1.server_timer",
+        "meleylair_stone_spawn2.server_timer",
+        "meleylair_checker.server_timer",
+        "20420.chat.\"Reward\" with pc.in_dungeon()",
+        "meleylair_kill_boss.server_timer",
+        "meleylair_checker_loop.server_timer",
+        "meleylair_end.server_timer",
+        "meleylair_prepare.server_timer",
+        "logout",
+        "login",
+        "20419.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "d.attack_meley",
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.kill_all",
+        "d.kill_all_monsters",
+        "d.kill_meley",
+        "d.notice",
+        "d.remove_item",
+        "d.remove_item_meley",
+        "d.set_meley_last_statue",
+        "d.set_regen_file",
+        "d.set_vid_invincible",
+        "d.setf",
+        "d.spawn_mob",
+        "game.drop_item",
+        "game.get_event_flag",
+        "guild.get_id",
+        "item.get_vnum",
+        "item.remove",
+        "math.floor",
+        "math.random",
+        "meleylair_zone.clear",
+        "npc.get_vid",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.can_drop",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.get_player_id",
+        "pc.getf",
+        "pc.give_item2",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "meleylair_zone",
+        "nemere_zone"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/monkey_tower_razor93.lua",
+      "quest_name": "monkey_tower_razor93",
+      "sha256": "c57b2969ef37bd5e8383a0a9b61c18acef16b2f76fccb3ed30e01550155129bd",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "monkey_tower_razor93_checker.server_timer",
+        "monkey_tower_razor93_complete.server_timer",
+        "monkey_tower_razor93_end.server_timer",
+        "8061.kill with pc.in_dungeon()",
+        "monkey_tower_razor93_warp.server_timer",
+        "monkey_tower_razor93_prepare.server_timer",
+        "5121.kill or 5122.kill with pc.in_dungeon()",
+        "30111.kill with pc.in_dungeon()",
+        "8059.kill with pc.in_dungeon()",
+        "5125.kill with pc.in_dungeon()",
+        "20460.take with pc.in_dungeon() and item.get_vnum() == 50090",
+        "5126.kill with pc.in_dungeon()",
+        "2832.kill with pc.in_dungeon()",
+        "logout",
+        "login",
+        "20009.chat.\"Monkey Dungeon\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.count_monster",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.jump_all",
+        "d.kill_all",
+        "d.notice",
+        "d.regen_file",
+        "d.remove_item",
+        "d.set_regen_file",
+        "d.set_vid_invincible",
+        "d.setf",
+        "d.spawn_mob",
+        "game.drop_item",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "item.get_vnum",
+        "item.remove",
+        "math.floor",
+        "math.random",
+        "monkey_tower_razor93.check_floor",
+        "monkey_tower_razor93.clear",
+        "npc.get_vid",
+        "npc.npc_decrease_hp_by_percent_razor93",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.count_item",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.remove_item",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "monkey_tower_razor93"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/nemere_zone.lua",
+      "quest_name": "nemere_zone",
+      "sha256": "ce8acd43f498af4cc7053327df943560d04ce869b080059dd313dd5af247eabb",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "nemere_zone_complete.server_timer",
+        "6191.kill with pc.in_dungeon()",
+        "nemere_zone_end.server_timer",
+        "nemere_zone_prepare.server_timer",
+        "logout",
+        "login",
+        "20395.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.kill_all",
+        "d.notice",
+        "d.remove_item",
+        "d.setf",
+        "d.spawn_mob",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "math.random",
+        "nemere_zone.clear",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "nemere_zone"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/owl_zone_razor93.lua",
+      "quest_name": "owl_zone_razor93",
+      "sha256": "6dc6eca4279b6e5fed323533176e735165f4b8a06db505f972583fce2d247a60",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "owl_zone_razor93_complete.server_timer",
+        "owl_zone_razor93_end.server_timer",
+        "719.kill with pc.in_dungeon()",
+        "20366.take with pc.in_dungeon() and item.get_vnum() == 30707",
+        "716.kill with pc.in_dungeon()",
+        "30708.use with pc.in_dungeon()",
+        "8038.kill with pc.in_dungeon()",
+        "8425.kill with pc.in_dungeon()",
+        "9228.chat.\"Next floor!\" with pc.in_dungeon()",
+        "718.kill with pc.in_dungeon()",
+        "9226.take with pc.in_dungeon() and item.get_vnum() == 30709",
+        "712.kill with pc.in_dungeon()",
+        "8426.kill with pc.in_dungeon()",
+        "8026.kill with pc.in_dungeon()",
+        "8427.kill with pc.in_dungeon()",
+        "owl_zone_razor93_warp.server_timer",
+        "owl_zone_razor93_checker.server_timer",
+        "owl_zone_razor93_prepare.server_timer",
+        "logout",
+        "login",
+        "9225.chat.\"Owl Dungeon\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.count_monster",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.jump_all",
+        "d.kill_all",
+        "d.notice",
+        "d.regen_file",
+        "d.remove_item",
+        "d.set_regen_file",
+        "d.setf",
+        "d.spawn_mob",
+        "game.drop_item",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "item.get_vnum",
+        "item.remove",
+        "math.floor",
+        "math.random",
+        "npc.get_race",
+        "npc.get_vid",
+        "npc.purge",
+        "owl_zone_razor93.clear",
+        "party.get_leader_name",
+        "party.give_blacksmith",
+        "party.is_party",
+        "pc.count_item",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.remove_item",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "owl_zone_razor93"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/razador_zone.lua",
+      "quest_name": "razador_zone",
+      "sha256": "37904bb9cd8bfa25b9d7ab9fd930f60f3e0c6b2996e39a978109d4f604c8b608",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "razador_zone_complete.server_timer",
+        "6091.kill with pc.in_dungeon()",
+        "razador_zone_end.server_timer",
+        "razador_zone_prepare.server_timer",
+        "logout",
+        "login",
+        "20394.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.kill_all",
+        "d.notice",
+        "d.remove_item",
+        "d.setf",
+        "d.spawn_mob",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "math.random",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "razador_zone.clear",
+        "string.format"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "razador_zone"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/slime_dungeon.lua",
+      "quest_name": "slime_dungeon",
+      "sha256": "3067ab86e61436e3bf414f3ea931995a52e417d22c076b93834b051ca6314f6a",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "slime_complete.server_timer",
+        "768.kill with pc.in_dungeon()",
+        "slime_end.server_timer",
+        "slime_prepare.server_timer",
+        "logout",
+        "login",
+        "9236.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.kill_all",
+        "d.notice",
+        "d.remove_item",
+        "d.setf",
+        "d.spawn_mob",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "math.random",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "slime_dungeon.clear",
+        "string.format"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "slime_dungeon"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/temple_ochao.lua",
+      "quest_name": "temple_ochao",
+      "sha256": "08b829ce9c65bf347c5ecfe2243fc54a967ca29b18d2d7a6e13ba09fe88bbaff",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "temple_ochao_complete.server_timer",
+        "6393.kill with pc.in_dungeon()",
+        "temple_ochao_end.server_timer",
+        "8035.kill with pc.in_dungeon()",
+        "6391.kill with pc.in_dungeon()",
+        "3301.kill or 3302.kill or 3303.kill or 3304.kill or 3305.kill or 3101.kill or 3102.kill or 3103.kill or 3104.kill or 3105.kill or 3801.kill or 3802.kill or 3803.kill or 3804.kill or 3805.kill",
+        "temple_ochao_check.server_timer",
+        "temple_ochao_prepare.server_timer",
+        "logout",
+        "login",
+        "20408.chat.\"A new territory?!?\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.kill_all",
+        "d.notice",
+        "d.regen_file",
+        "d.remove_item",
+        "d.setf",
+        "d.spawn_mob",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "math.random",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format",
+        "temple_ochao.clear"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "temple_ochao"
+      ]
+    },
+    {
+      "path": "Quest/dungeon/underwater_zone.lua",
+      "quest_name": "underwater_zone",
+      "sha256": "9506bdf74c9fa9b33e2e177652e4028d43da74419dcd57cd7b2c642cce04bed4",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "underwater_complete.server_timer",
+        "underwater_end.server_timer",
+        "3962.kill with pc.in_dungeon()",
+        "20362.take with pc.in_dungeon() and item.get_vnum() == 30304",
+        "2005.kill with pc.in_dungeon()",
+        "30302.use with pc.in_dungeon()",
+        "3965.kill with pc.in_dungeon()",
+        "395.kill with pc.in_dungeon()",
+        "20090.chat.\"To Next floor!\" with pc.in_dungeon()",
+        "3956.kill with pc.in_dungeon()",
+        "9425.take with pc.in_dungeon() and item.get_vnum() == 50089",
+        "2001.kill with pc.in_dungeon()",
+        "394.kill with pc.in_dungeon()",
+        "3691.kill with pc.in_dungeon()",
+        "3690.kill with pc.in_dungeon()",
+        "underwater_warp.server_timer",
+        "underwater_checker.server_timer",
+        "underwater_prepare.server_timer",
+        "logout",
+        "login",
+        "20013.chat.\"UnderWater Run\""
+      ],
+      "api_calls": [
+        "d.check_entrance",
+        "d.clear_regen",
+        "d.complete",
+        "d.count_monster",
+        "d.exit_all_lobby",
+        "d.find",
+        "d.getf",
+        "d.join_cords",
+        "d.jump_all",
+        "d.kill_all",
+        "d.notice",
+        "d.regen_file",
+        "d.remove_item",
+        "d.set_regen_file",
+        "d.setf",
+        "d.spawn_mob",
+        "game.drop_item",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "item.get_vnum",
+        "item.remove",
+        "math.floor",
+        "npc.get_race",
+        "npc.get_vid",
+        "npc.purge",
+        "party.get_leader_name",
+        "party.is_party",
+        "pc.count_item",
+        "pc.get_channel_id",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_name",
+        "pc.getf",
+        "pc.give_item2",
+        "pc.in_dungeon",
+        "pc.remove_item",
+        "pc.set_warp_location",
+        "pc.setf",
+        "pc.warp",
+        "string.format",
+        "table.getn",
+        "underwater_zone.clear"
+      ],
+      "flag_names": [
+        "underwater_zone"
+      ]
+    },
+    {
+      "path": "Quest/events/auto_events.lua",
+      "quest_name": "auto_events",
+      "sha256": "4ced53125de68cf4709a8c662b14ccd0d64bb0b5b33c3eb8866277e53755b20e",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20086.chat.\"teszt notice\" with pc.is_gm()",
+        "20086.chat.\"auto event\" with pc.is_gm()",
+        "auto_event_timer.server_timer"
+      ],
+      "api_calls": [
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "os.date",
+        "pc.get_name",
+        "pc.is_gm"
+      ],
+      "flag_names": [
+        "autoevent"
+      ]
+    },
+    {
+      "path": "Quest/events/auto_events_notice.lua",
+      "quest_name": "auto_events_notice",
+      "sha256": "41e1fd2f674f7f645f9e5e7be1f0a04f4babaf0dae92e58cbd7404cd4e270e8a",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20086.chat.\"auto event notice\" with pc.is_gm()",
+        "auto_event_timer_notice.server_timer"
+      ],
+      "api_calls": [
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "os.date",
+        "pc.get_name",
+        "pc.is_gm"
+      ],
+      "flag_names": [
+        "autoevent_notice"
+      ]
+    },
+    {
+      "path": "Quest/events/drop2.quest",
+      "quest_name": "drop2",
+      "sha256": "40e7c9b628ff75425cad59af42143f328616639172ade6763514d7283ef40c2b",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "8001.kill or 8002.kill or 8003.kill or 8004.kill or 8005.kill or 8006.kill or 8007.kill or 8008.kill or 8009.kill or 8010.kill or 8011.kill or 8012.kill or 8013.kill or 8014.kill or 20432.kill or 8015.kill or 8016.kill or 8017.kill or 8018.kill or 8019.kill or 8037.kill or 8430.kill or 353.kill or 394.kill or 395.kill with not npc.is_pc() and game.get_event_flag(\"focdxla\") == 1"
+      ],
+      "api_calls": [
+        "game.drop_item_with_ownership",
+        "game.get_event_flag",
+        "npc.is_pc"
+      ],
+      "flag_names": [
+        "focdxla"
+      ]
+    },
+    {
+      "path": "Quest/events/drop3.quest",
+      "quest_name": "drop3",
+      "sha256": "911e554083fb982ee09bf31e1f05e53bfbf17662375a68fc6e8e96a46bfa6221",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "kill with not npc.is_pc() and game.get_event_flag(\"holdxla\") == 1"
+      ],
+      "api_calls": [
+        "game.drop_item_with_ownership",
+        "game.get_event_flag",
+        "math.random",
+        "npc.is_pc"
+      ],
+      "flag_names": [
+        "holdxla"
+      ]
+    },
+    {
+      "path": "Quest/events/drop4.quest",
+      "quest_name": "drop4",
+      "sha256": "da04b24c2371f8d6deda3714dc82ffc38af4d6111c6a52a426e2aa142c2dd838",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "kill with not npc.is_pc() and game.get_event_flag(\"hatszoglada\") == 1"
+      ],
+      "api_calls": [
+        "game.drop_item_with_ownership",
+        "game.get_event_flag",
+        "math.random",
+        "npc.is_pc"
+      ],
+      "flag_names": [
+        "hatszoglada"
+      ]
+    },
+    {
+      "path": "Quest/events/dupa_run_pont.quest",
+      "quest_name": "dupla_run_pont",
+      "sha256": "10f7c57074e72067468c9a9fc6caf90c4847e22a9d8d2711cc17da353e93dba0",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "3832.kill or 693.kill or 6191.kill or 768.kill or 3491.kill or 2493.kill or 4158.kill or 4203.kill or 2598.kill or 719.kill or 6393.kill or 6192.kill or 6091.kill or 2092.kill or 20432.kill or 4011.kill or 6193.kill or 3960.kill with not npc.is_pc() and game.get_event_flag(\"dupladildo\") == 1"
+      ],
+      "api_calls": [
+        "game.drop_item_with_ownership",
+        "game.get_event_flag",
+        "npc.is_pc"
+      ],
+      "flag_names": [
+        "dupladildo"
+      ]
+    },
+    {
+      "path": "Quest/events/event_map_control.lua",
+      "quest_name": "event_map_control",
+      "sha256": "f041a2eb7cf9498874622ad04b144a4b06aeac65677aa7cce850c86ef2b6a1af",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20011.chat.\"Event Map Megnyit�sa\" with pc.is_gm()",
+        "20011.chat.\"Event Map Lez�r�sa\" with pc.is_gm()",
+        "login or enter",
+        "20011.chat.\"Bel�pek az Event Mapra\""
+      ],
+      "api_calls": [
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "pc.get_map_index",
+        "pc.is_gm",
+        "pc.warp"
+      ],
+      "flag_names": [
+        "event_map_open"
+      ]
+    },
+    {
+      "path": "Quest/events/events_mgr.lua",
+      "quest_name": "events_mgr",
+      "sha256": "163611b11486155dbc8e51ce7732e2ddd7c163d3003449acc2e9be329ffe8950",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20011.chat.\"Shop\"",
+        "20011.chat.\"OX-verseny\"",
+        "login",
+        "71056.use",
+        "20023.chat.\":EVENTEK!\" with pc.is_gm()",
+        "20023.chat.\":RAZOR:EZT HAGYJ�TOK!\" with pc.is_gm()"
+      ],
+      "api_calls": [
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "mob.spawn",
+        "npc.open_shop",
+        "oxevent.close",
+        "oxevent.end_event",
+        "oxevent.get_attender",
+        "oxevent.get_status",
+        "oxevent.give_item",
+        "oxevent.open",
+        "oxevent.quiz",
+        "pc.get_job",
+        "pc.get_language",
+        "pc.get_map_index",
+        "pc.get_sex",
+        "pc.give_item2",
+        "pc.is_gm",
+        "pc.remove_item",
+        "pc.warp",
+        "string.format"
+      ],
+      "flag_names": [
+        "dungeon_bonus",
+        "oxevent_status"
+      ]
+    },
+    {
+      "path": "Quest/events/gm_quiz.lua",
+      "quest_name": "gm_quiz",
+      "sha256": "c09e6e798d302261fa06dab388225ea9fe87c04d859a8b0ceebafeca393b1953",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20086.chat.\"Kviz mester\"",
+        "gm_quiz_timeout.server_timer"
+      ],
+      "api_calls": [
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "gm_quiz.ask_question",
+        "gm_quiz.choose_reward",
+        "gm_quiz.clear",
+        "pc.is_gm",
+        "string.format"
+      ],
+      "flag_names": [
+        "quiz_active",
+        "quiz_announced",
+        "quiz_answer",
+        "quiz_count",
+        "quiz_item",
+        "quiz_max",
+        "quiz_min"
+      ]
+    },
+    {
+      "path": "Quest/events/halloween.lua",
+      "quest_name": "metin_event",
+      "sha256": "9178dff67382d5be0dda135eb733982db92a9f8879f98f3bfcbdc9b4ef81378d",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority",
+        "instance/global timers"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20023.chat.\"Helloween Event ind�t�sa\"",
+        "kill with not npc.is_pc() and npc.get_race() == 8060 and game.get_event_flag(\"metin_event_active\") == 1",
+        "20023.chat.\"Helloween Event le�ll�t�sa\"",
+        "respawn_8060.server_timer"
+      ],
+      "api_calls": [
+        "game.drop_item_with_ownership",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "metin_event.MAP_DATA",
+        "metin_event.METIN_VNUM",
+        "metin_event.get_random_coord",
+        "npc.get_race",
+        "npc.is_pc",
+        "pc.get_map_index",
+        "pc.is_gm",
+        "table.getn"
+      ],
+      "flag_names": [
+        "metin_event_active"
+      ]
+    },
+    {
+      "path": "Quest/events/kari_event.lua",
+      "quest_name": "kari_event",
+      "sha256": "8c1388c83cfd99521f8737c05fc069569ab4be16a9b51979ddaea30475a4b04c",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "9293.chat.\"Christmas Event\" with pc.get_map_index() == 41"
+      ],
+      "api_calls": [
+        "npc.open_shop",
+        "pc.get_level",
+        "pc.get_map_index",
+        "pc.warp",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/events/miki_event.lua",
+      "quest_name": "random_50010_take",
+      "sha256": "38efa0c00b292b5733bafb0be96666409cdd77ca947e43a45f768ff1e8dffa2e",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20384.chat.\"Zoknik/Socks\"",
+        "20384.take with item.vnum == 50010"
+      ],
+      "api_calls": [
+        "pc.count_item",
+        "pc.get_name",
+        "pc.give_item2",
+        "pc.remove_item",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/events/tanaka.lua",
+      "quest_name": "tanaka",
+      "sha256": "9563336e97caa347148c320a6387962127b7908ebeadad358fe37a350c7420a4",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "5000.kill"
+      ],
+      "api_calls": [
+        "game.drop_item_with_ownership",
+        "table.getn"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/events/valentin_event.lua",
+      "quest_name": "valentin_event",
+      "sha256": "fa18139ec9f422e9a067493b43154ced3e5b532f7454d3663ec6559766a8573f",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "9006.chat.\"Shop Open\"",
+        "8001.kill with pc.get_level() >= 1 and pc.get_level() <= 35 and game.get_event_flag(\"valentin\") == 1",
+        "8002.kill or 8006.kill with pc.get_level() >= 30 and pc.get_level() <= 50 and game.get_event_flag(\"valentin\") == 1",
+        "8003.kill or 8004.kill with pc.get_level() >= 40 and pc.get_level() <= 65 and game.get_event_flag(\"valentin\") == 1",
+        "8037.kill or 8430.kill with pc.get_level() >= 85 and pc.get_level() <= 115 and game.get_event_flag(\"valentin\") == 1",
+        "20432.kill with pc.get_level() >= 115 and pc.get_level() <= 140 and game.get_event_flag(\"valentin\") == 1",
+        "353.kill or 394.kill or 395.kill with pc.get_level() >= 140 and pc.get_level() <= 175 and game.get_event_flag(\"valentin\") == 1"
+      ],
+      "api_calls": [
+        "game.get_event_flag",
+        "math.random",
+        "mob.spawn",
+        "npc.open_shop",
+        "pc.get_level",
+        "pc.get_local_x",
+        "pc.get_local_y"
+      ],
+      "flag_names": [
+        "valentin"
+      ]
+    },
+    {
+      "path": "Quest/gilda/crea_gilda.lua",
+      "quest_name": "crea_gilda",
+      "sha256": "da67a22761085ea1e5f348e0a96404791cd9c405c72c080c902c8c6f63799172",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "11000.chat.\"Leave the guild\" or 11002.chat.\"Leave the guild\" or 11004.chat.\"Leave the guild\" with pc.hasguild() and not pc.isguildmaster()",
+        "11000.chat.\"Disband the guild\" or 11002.chat.\"Disband the guild\" or 11004.chat.\"Disband the guild\" with pc.hasguild() and pc.isguildmaster()",
+        "11000.chat.\"Create a guild\" or 11002.chat.\"Create a guild\" or 11004.chat.\"Create a guild\" with not pc.hasguild() and not pc.isguildmaster()"
+      ],
+      "api_calls": [
+        "npc.get_race",
+        "pc.change_gold",
+        "pc.destroy_guild",
+        "pc.get_gold",
+        "pc.get_language",
+        "pc.get_level",
+        "pc.hasguild",
+        "pc.isguildmaster",
+        "pc.make_guild0",
+        "pc.remove_from_guild",
+        "pc.setqf",
+        "string.format",
+        "string.gsub",
+        "string.len"
+      ],
+      "flag_names": [
+        "new_disband_time",
+        "new_withdraw_time"
+      ]
+    },
+    {
+      "path": "Quest/gilda/create_ore.lua",
+      "quest_name": "heavenly_refine",
+      "sha256": "815b2e4e35b6a88f3ac06b1c70914b88c692e37e3111529c568b5d2a7caeca3e",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20072.chat.\"Refine Stones\""
+      ],
+      "api_calls": [
+        "heavenly_refine.ask_refine",
+        "heavenly_refine.refine",
+        "pc.change_gold",
+        "pc.count_item",
+        "pc.get_gold",
+        "pc.give_item2",
+        "pc.remove_item",
+        "string.format",
+        "table.getn",
+        "table.insert"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/gilda/guild_building.quest",
+      "quest_name": "guild_building",
+      "sha256": "bf3a014c06d7d2274acf58f8d7d4f5cc9cc384534de7690b4f5b24f9d53c72a2",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20040.click"
+      ],
+      "api_calls": [
+        "building.get_land_id",
+        "building.get_land_info",
+        "building.has_land",
+        "building.set_land_owner",
+        "guild.level",
+        "guild.name",
+        "pc.changegold",
+        "pc.get_guild",
+        "pc.get_map_index",
+        "pc.get_x",
+        "pc.get_y",
+        "pc.is_guild_master"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/gilda/guild_building_alter_of_power.lua",
+      "quest_name": "alter_of_power",
+      "sha256": "0812b4fc94684367d3d6a9e2768db8acf68844741a28ce8b87aedae2783eba6a",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20077.click with npc.get_guild() == pc.get_guild() and pc.is_guild_master()",
+        "20078.click with npc.get_guild() == pc.get_guild() and pc.is_guild_master()",
+        "20079.click with npc.get_guild() == pc.get_guild() and pc.is_guild_master()",
+        "20077.click or 20078.click or 20079.click with npc.get_guild() == pc.get_guild() and pc.is_guild_master() != true"
+      ],
+      "api_calls": [
+        "building.reconstruct",
+        "guild.level",
+        "npc.get_guild",
+        "npc.get_race",
+        "pc.change_gold",
+        "pc.count_item",
+        "pc.get_gold",
+        "pc.get_guild",
+        "pc.get_language",
+        "pc.getqf",
+        "pc.is_guild_master",
+        "pc.remove_item",
+        "pc.setqf",
+        "string.format"
+      ],
+      "flag_names": [
+        "build_level"
+      ]
+    },
+    {
+      "path": "Quest/gilda/guild_building_npc.quest",
+      "quest_name": "guild_building_npc",
+      "sha256": "0554e3d2afa1db8025caade462100ad571052729950758220d8d436b460f57c2",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20044.click",
+        "20045.click",
+        "20046.click"
+      ],
+      "api_calls": [
+        "npc.get_guild",
+        "pc.get_guild"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/gilda/guild_rank.lua",
+      "quest_name": "guild_rank",
+      "sha256": "25b1416301db15e10a7a6dcbc12d723f8fc73c595f0c285e53074547aea4f629",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "privileged legacy API"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "11000.chat.\" Guild Rank system\" with pc.hasguild()",
+        "login",
+        "button or info"
+      ],
+      "api_calls": [
+        "game.mysql_query",
+        "guild.get_wins",
+        "pc.get_language",
+        "pc.getqf",
+        "pc.give_gaya",
+        "pc.has_guild",
+        "pc.hasguild",
+        "pc.setqf",
+        "q.getcurrentquestindex",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": [
+        "guild_rewards"
+      ]
+    },
+    {
+      "path": "Quest/gilda/guild_rank_manager.lua",
+      "quest_name": "guild_rank_manager",
+      "sha256": "7c5c1cb0a86a7e13f6adb9bda314dcadbc84fa2da08e3d686bd3545ce4227fa8",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "instance/global timers",
+        "privileged legacy API"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "letter",
+        "info or button",
+        "guild_rank_manager.server_timer"
+      ],
+      "api_calls": [
+        "game.give_guild_reward",
+        "game.mysql_query",
+        "game.reset_guild_war_stats",
+        "pc.get_language",
+        "pc.is_gm",
+        "string.format",
+        "table.getn"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/gilda/guild_war_join.lua",
+      "quest_name": "guild_war_join",
+      "sha256": "35b4b2b10a2e9c981f6d7e8ae970b8db4a33b97c4c5e6d0b7050865a6863c482",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "letter",
+        "button or info"
+      ],
+      "api_calls": [
+        "guild.get_any_war",
+        "guild.name",
+        "guild.war_enter",
+        "pc.get_language",
+        "pc.get_war_map",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/gilda/guild_war_observer.lua",
+      "quest_name": "guild_war_observer",
+      "sha256": "57b4d45201b2c9333b832d0e0ef5d84b1b186d78103dc3e6a1338f60d218dfee",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "11001.chat.\"Look at the list of guild wars\" or 11003.chat.\"Look at the list of guild wars\" or 11005.chat.\"Look at the list of guild wars\""
+      ],
+      "api_calls": [
+        "guild.get_name",
+        "guild.get_warp_war_list",
+        "npc.get_race",
+        "pc.get_language",
+        "pc.warp_to_guild_war_observer_position",
+        "string.format",
+        "table.foreachi",
+        "table.getn"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/item/change_yang.lua",
+      "quest_name": "change_yang",
+      "sha256": "ce59f889c35f3523e8c57dc85dd6ef3ca6572aa185db7640098edd1f7b78b336",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "30094.use",
+        "30095.use",
+        "30096.use",
+        "90013.use"
+      ],
+      "api_calls": [
+        "pc.can_warp",
+        "pc.change_gold",
+        "pc.get_language",
+        "pc.give_item2",
+        "pc.remove_item"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/item/cooldown_reset.lua",
+      "quest_name": "cooldown_reset",
+      "sha256": "c3fad283ffe5fcc3e04168f145e1b8230addc112a224a3a39e5740c38eb8b0fb",
+      "same_as_live": true,
+      "candidate_class": "B",
+      "reasons": [
+        "bespoke procedural logic; graph extraction needs manual review"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "89105.use"
+      ],
+      "api_calls": [
+        "math.floor",
+        "pc.getf",
+        "pc.in_dungeon",
+        "pc.remove_item",
+        "pc.setf",
+        "string.format",
+        "table.getn",
+        "table.insert"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/item/lvl_back.lua",
+      "quest_name": "leveldown_66_to_65",
+      "sha256": "3db4d45fc2b18143ab81f9d589c9ac10d05424c503d55d3f3df5ef159693e4aa",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "39084.use"
+      ],
+      "api_calls": [
+        "pc.get_level",
+        "pc.get_map_index",
+        "pc.get_wear",
+        "pc.remove_item",
+        "pc.set_level"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/item/skill_140.lua",
+      "quest_name": "m1_to_g1",
+      "sha256": "a0f4a99682c9bab9d73983e108f2eb7e6337008bb3396c5d497f75067cf46804",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native progression/crafting/character mutation"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20011.chat.\"M1 -> G1\""
+      ],
+      "api_calls": [
+        "pc.get_level",
+        "pc.get_skill_level",
+        "pc.set_skill_level",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/item/teleportgyuru.quest",
+      "quest_name": "teleportgyuru",
+      "sha256": "7db3c1c54c5add0d46c3b73cf332af11a0f0e467ebac76b1bb31aaf4f97fcb88",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "30897.use"
+      ],
+      "api_calls": [
+        "pc.get_level",
+        "pc.warp"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/login/baule_start.lua",
+      "quest_name": "baule_start",
+      "sha256": "822134782d7b634f4ce447699e96d71e1ccaf1e68ea37267e9681e0e25458cf6",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "50187.use",
+        "50190.use",
+        "50192.use",
+        "50194.use",
+        "50195.use",
+        "50196.use"
+      ],
+      "api_calls": [
+        "pc.can_warp",
+        "pc.get_job",
+        "pc.get_language",
+        "pc.get_level",
+        "pc.get_name",
+        "pc.get_sex",
+        "pc.give_item2",
+        "pc.remove_item",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/login/begin_weapons.lua",
+      "quest_name": "beginer_weapons",
+      "sha256": "5502646dfaa62138eb5cfc8a4781b0744515afdf37ac6183eb4b311deb02f8f8",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "50188.use"
+      ],
+      "api_calls": [
+        "pc.can_warp",
+        "pc.get_job",
+        "pc.get_language",
+        "pc.get_level",
+        "pc.give_item2",
+        "pc.remove_item"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/login/levelup.lua",
+      "quest_name": "levelup",
+      "sha256": "e9ea99668e742eff539aad2a89d7c94a14c4aeaa93dbf322b99f5a978911cb51",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "levelup"
+      ],
+      "api_calls": [
+        "pc.get_level",
+        "pc.get_name"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/login/mley_notice.lua",
+      "quest_name": "meley_worldboss_timer",
+      "sha256": "fada94133f53343a0fef80fb967e414fa67acc81a99615a06afc1d8309de601c",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "201.kill",
+        "login with pc.is_gm()",
+        "meley_timer_tick_ch1.timer",
+        "meley_timer_tick_ch2.timer",
+        "meley_timer_tick_ch3.timer",
+        "meley_timer_tick_ch4.timer"
+      ],
+      "api_calls": [
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "meley_worldboss_timer.check_timer",
+        "pc.get_channel_id",
+        "pc.get_map_index",
+        "pc.is_gm"
+      ],
+      "flag_names": [
+        "meley_boss_next_spawn_ch"
+      ]
+    },
+    {
+      "path": "Quest/login/show_server_time.lua",
+      "quest_name": "show_server_time",
+      "sha256": "5c1713a800e405be973fbbab2b72ca6971a2ef7bc20b53530d268dae0c19ab27",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "login",
+        "button or info"
+      ],
+      "api_calls": [
+        "os.date",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/login/wold_boss_notice.lua",
+      "quest_name": "desert_worldboss_timer",
+      "sha256": "69de9ca258f121bdfa272f0c7df954b939f8c6e9f7a8cd50f004d38dbfc5bddb",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "331.kill",
+        "login with pc.is_gm()",
+        "desert_timer_tick_ch1.timer",
+        "desert_timer_tick_ch2.timer",
+        "desert_timer_tick_ch3.timer",
+        "desert_timer_tick_ch4.timer"
+      ],
+      "api_calls": [
+        "desert_worldboss_timer.check_timer",
+        "game.get_event_flag",
+        "game.set_event_flag",
+        "math.floor",
+        "pc.get_channel_id",
+        "pc.get_map_index",
+        "pc.is_gm"
+      ],
+      "flag_names": [
+        "desert_boss_next_spawn_ch"
+      ]
+    },
+    {
+      "path": "Quest/npc/darkforest.lua",
+      "quest_name": "darkforest",
+      "sha256": "7db505d325854348cc0217f5c4ecae084ccd074beb607a3437445210a66f46b3",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20355.chat.\"To Otherside\""
+      ],
+      "api_calls": [
+        "pc.get_level",
+        "pc.get_map_index",
+        "pc.warp"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/npc/fisher.lua",
+      "quest_name": "fisher",
+      "sha256": "94d512809a7567188a503d8e91f5c75113281f6d149d8055f6d763acfb152261",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "9009.take"
+      ],
+      "api_calls": [
+        "item.get_cell",
+        "item.get_socket",
+        "item.get_value",
+        "item.get_vnum",
+        "npc.get_race",
+        "pc.get_language",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/npc/marriage_manage.lua",
+      "quest_name": "marriage_manage",
+      "sha256": "4b69d6677b62ad12ec4065e1d1c75b8de196074a6615a1a82ce2189f56083976",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "9006.click",
+        "9011.click",
+        "11000.chat.\"Agreed Divorce\" or 11002.chat.\"Agreed Divorce\" or 11004.chat.\"Agreed Divorce\" with pc.is_married()",
+        "11000.chat.\"Unilateral Divorce\" or 11002.chat.\"Unilateral Divorce\" or 11004.chat.\"Unilateral Divorce\" with pc.is_married()"
+      ],
+      "api_calls": [
+        "marriage.end_wedding",
+        "marriage.engage_to",
+        "marriage.find_married_vid",
+        "marriage.get_married_time",
+        "marriage.in_my_wedding",
+        "marriage.join_wedding",
+        "marriage.remove",
+        "marriage.set_to_marriage",
+        "marriage.warp_to_my_marriage_map",
+        "marriage.wedding_dark",
+        "marriage.wedding_is_playing_music",
+        "marriage.wedding_music",
+        "marriage.wedding_snow",
+        "marriage_manage.get_wedding_dress",
+        "marriage_manage.is_equip_wedding_dress",
+        "npc.get_race",
+        "npc.is_near_vid",
+        "npc.lock",
+        "npc.open_shop",
+        "npc.unlock",
+        "pc.change_gold",
+        "pc.change_money",
+        "pc.countitem",
+        "pc.get_armor",
+        "pc.get_gold",
+        "pc.get_job",
+        "pc.get_language",
+        "pc.get_level",
+        "pc.get_money",
+        "pc.get_sex",
+        "pc.get_vid",
+        "pc.give_item2",
+        "pc.is_engaged",
+        "pc.is_engaged_or_married",
+        "pc.is_married",
+        "pc.removeitem",
+        "pc.select",
+        "string.format",
+        "table.foreachi",
+        "table.getn"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/npc/sd5.lua",
+      "quest_name": "sd5",
+      "sha256": "cbfbd5d557be8bb46f26561d2b9f9cf5849f97be6013489899c1408189610552",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20432.kill"
+      ],
+      "api_calls": [
+        "pc.get_level",
+        "pc.give_exp2"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/pda_perfetta/pda_perf_quest.lua",
+      "quest_name": "pda_perf_quest",
+      "sha256": "8d9a0f15ea4bace66bacfea7a7332ac5262d79d54d6d6e0db5c240dc14f74b51",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native progression/crafting/character mutation"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "50525.use"
+      ],
+      "api_calls": [
+        "item.get_vnum",
+        "pc.can_warp",
+        "pc.get_job",
+        "pc.get_language",
+        "pc.get_skill_group",
+        "pc.get_skill_level",
+        "pc.remove_item",
+        "pc.set_skill_level",
+        "pda_perf_quest.GetSkillList",
+        "string.format",
+        "table.getn",
+        "table.insert"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/skill/pda_quest.lua",
+      "quest_name": "pda_quest",
+      "sha256": "654c86650ac56d3fe7bfa4e40f1578f430992b8c287cc92bd090f56fdec863de",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "50513.use"
+      ],
+      "api_calls": [
+        "math.floor",
+        "pc.can_warp",
+        "pc.get_job",
+        "pc.get_language",
+        "pc.get_real_alignment",
+        "pc.get_skill_group",
+        "pc.get_skill_level",
+        "pc.getf",
+        "pc.is_skill_book_no_delay",
+        "pc.learn_grand_master_skill",
+        "pc.remove_item",
+        "pc.remove_skill_book_no_delay",
+        "pc.setf",
+        "pda_quest.GetSkillList",
+        "string.format",
+        "table.getn",
+        "table.insert"
+      ],
+      "flag_names": [
+        "pda_quest"
+      ]
+    },
+    {
+      "path": "Quest/skill/reset_scroll.lua",
+      "quest_name": "reset_scroll",
+      "sha256": "0dd8d8419b90fe039eb4379f8f4943ba33e1923d1f2b9ed4b4b473d4731b08b1",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services",
+        "native progression/crafting/character mutation"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "71054.use",
+        "71002.use",
+        "71048.use",
+        "71099.use",
+        "71103.use or 71104.use or 71105.use or 71106.use",
+        "71100.use",
+        "71055.use"
+      ],
+      "api_calls": [
+        "ResetScroll.CheckRequisites",
+        "ResetScroll.ShowRequisites",
+        "affect.remove_collect",
+        "guild.change_master",
+        "guild.get_id0",
+        "guild.get_name",
+        "horse.is_riding",
+        "horse.is_summon",
+        "horse.set_level",
+        "horse.unride",
+        "horse.unsummon",
+        "item.get_vnum",
+        "pc.can_warp",
+        "pc.change_empire",
+        "pc.change_name",
+        "pc.change_sex",
+        "pc.clear_skill",
+        "pc.get_empire",
+        "pc.get_job",
+        "pc.get_language",
+        "pc.get_name",
+        "pc.get_skill_group",
+        "pc.get_x",
+        "pc.get_y",
+        "pc.is_polymorphed",
+        "pc.polymorph",
+        "pc.remove_item",
+        "pc.reset_point",
+        "pc.reset_status",
+        "pc.set_skill_group",
+        "pc.set_skill_level",
+        "pc.warp",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/baule_pet.lua",
+      "quest_name": "baule_pet",
+      "sha256": "d26c92f22e9cd8d90f4201db90890dd3b0f1626bca6d5faba65a01599d47de9d",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "88967.use"
+      ],
+      "api_calls": [
+        "pc.can_warp",
+        "pc.get_language",
+        "pc.give_item2",
+        "pc.remove_item",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/costume_system.lua",
+      "quest_name": "costume_system",
+      "sha256": "faa7b12f71c68663da0c75f13eab408c4f6157289384f90e3f4998a1b8850cd0",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "31956.use",
+        "31957.use",
+        "31958.use",
+        "31959.use"
+      ],
+      "api_calls": [
+        "pc.can_warp",
+        "pc.count_item",
+        "pc.get_language",
+        "pc.give_item2",
+        "pc.remove_item"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/craft_new.lua",
+      "quest_name": "craft_new",
+      "sha256": "b9cae5bfa6031db5f422798a62af785e2ba83e0626df362085ee74fd83917bf6",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "privileged legacy API"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20092.chat.\"Craft something..\""
+      ],
+      "api_calls": [],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/doctrine.lua",
+      "quest_name": "doctrine",
+      "sha256": "021196628173736e6cced5563f29fcc1ab7b67300150a6af4424fcc09acb4d3f",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "login or levelup with pc.get_level() >= 5 and pc.get_skill_group() == 0"
+      ],
+      "api_calls": [
+        "pc.get_level",
+        "pc.get_skill_group"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/dungeon_mgr.lua",
+      "quest_name": "dungeon_mgr",
+      "sha256": "516af4a381d6bd7a6272acc0eb1dbc2bd60c4ccf88d188644c801175532ae79a",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "login",
+        "button"
+      ],
+      "api_calls": [
+        "dungeonlib.update",
+        "dungeonlib.update_ranking",
+        "pc.warp"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/meley_kill_announce.lua",
+      "quest_name": "meley_kill_announce",
+      "sha256": "a18c221b19f3441f5f64b959081bbd9a0367218d465a0b9c603cb0f3157633cf",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start",
+        "start"
+      ],
+      "handlers": [
+        "201.kill with pc.get_map_index() == 372",
+        "331.kill with pc.get_map_index() == 63"
+      ],
+      "api_calls": [
+        "pc.get_map_index",
+        "pc.get_name"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/mining.lua",
+      "quest_name": "mining",
+      "sha256": "513590b89cdc3aa72869e92c5e142ef35edc2d440560f237d2ba74dd55353cf6",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20015.take with item.vnum >= 29101 and item.vnum < 29110 and item.get_socket(0) == item.get_value(2)",
+        "20047.click or 20048.click or 20049.click or 20050.click or 20051.click or 20052.click or 20053.click or 20054.click or 20055.click or 20056.click or 20057.click or 20058.click or 20059.click or 30301.click or 30302.click or 30303.click or 30304.click or 30305.click or 30306.click"
+      ],
+      "api_calls": [
+        "item.get_cell",
+        "item.get_level",
+        "item.get_socket",
+        "item.get_value",
+        "item.get_vnum",
+        "npc.get_race",
+        "pc.get_language",
+        "pc.is_mount",
+        "pc.mining",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/passive_skills.lua",
+      "quest_name": "passive_skills",
+      "sha256": "f6c0a14f1845557c6edc681f0eb1017fb624fecd1fdefccbf9fbb55c91ddcc6b",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native global-event/drop/progression authority"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "50526.use",
+        "50527.use"
+      ],
+      "api_calls": [
+        "item.get_vnum",
+        "math.floor",
+        "pc.can_warp",
+        "pc.change_alignment",
+        "pc.get_language",
+        "pc.get_real_alignment",
+        "pc.get_skill_group",
+        "pc.get_skill_level",
+        "pc.getqf",
+        "pc.is_skill_book_no_delay",
+        "pc.learn_grand_master_skill",
+        "pc.remove_item",
+        "pc.remove_skill_book_no_delay",
+        "pc.setqf",
+        "string.format",
+        "table.getn",
+        "table.insert"
+      ],
+      "flag_names": [
+        "next_time_pda1",
+        "next_time_pda2"
+      ]
+    },
+    {
+      "path": "Quest/system/pet_system.lua",
+      "quest_name": "pet_system",
+      "sha256": "6d7196c9fd7494b396644cd239d2acfc2faa6a41183d046354cdb20187c83356",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "domain-specific native services"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "38200.use or 38201.use or 53006.use or 53007.use or 53008.use or 53009.use or 53010.use or 53011.use or 53012.use or 53013.use or 53014.use or 53015.use or 53016.use or 53017.use or 53018.use or 53019.use or 53020.use or 53021.use or 53022.use or 53023.use or 53024.use or 53025.use or 14591.use or 53218.use or 53219.use or 53220.use or 53221.use or 53222.use or 53223.use or 53224.use or 53225.use or 53226.use or 53227.use or 53228.use or 53229.use or 53230.use or 53231.use or 53232.use or 53233.use or 53234.use or 53235.use or 53236.use or 53237.use or 53238.use or 53239.use or 53240.use or 53241.use or 53256.use or 53263.use or 53264.use or 53282.use or 53283.use or 53284.use or 53026.use or 53027.use or 53028.use or 53029.use or 53030.use or 53031.use or 53248.use or 53249.use or 53250.use or 53251.use or 53252.use or 53253.use or 48301.use or 48311.use or 48321.use or 49010.use or 49050.use or 60101.use or 60102.use or 60103.use or 60104.use or 55701.use or 55702.use or 55703.use or 55704.use or 55705.use or 55706.use or 55707.use or 55708.use or 55709.use or 55710.use or 55711.use or 53290.use or 53291.use or 53292.use or 53293.use or 53294.use or 53295.use or 53296.use or 53297.use"
+      ],
+      "api_calls": [
+        "pc.can_warp",
+        "pc.get_language",
+        "pet.count_summoned",
+        "pet.is_summon",
+        "pet.spawn_effect",
+        "pet.summon",
+        "pet.unsummon",
+        "pet_system.get_pet_info",
+        "pet_system.get_spawn_effect_file"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/runesys.lua",
+      "quest_name": "rune",
+      "sha256": "d98dda5f7703f48f96c643e1aa6cb03bc2bffc3680d840323ee9415d3d2dba3d",
+      "same_as_live": true,
+      "candidate_class": "B",
+      "reasons": [
+        "bespoke procedural logic; graph extraction needs manual review"
+      ],
+      "states": [
+        "start",
+        "gotoremind",
+        "gotoinfo",
+        "__COMPLETE__"
+      ],
+      "handlers": [
+        "login or levelup with pc.get_level() >= 42",
+        "login or levelup with pc.get_level() >= 42",
+        "login",
+        "letter",
+        "button or info",
+        "login"
+      ],
+      "api_calls": [
+        "pc.get_language",
+        "pc.get_level",
+        "pc.give_item2"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/sash.lua",
+      "quest_name": "sash",
+      "sha256": "2766098b8835932245d6c72e254542825b2ae09d75795613f791f2114570ca76",
+      "same_as_live": true,
+      "candidate_class": "C",
+      "reasons": [
+        "native progression/crafting/character mutation"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "60003.chat.\"Combination\""
+      ],
+      "api_calls": [
+        "pc.get_language",
+        "pc.open_sash",
+        "string.format"
+      ],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/system/sash2.lua",
+      "quest_name": "sash2",
+      "sha256": "aca707c33b4bf91e129b195fd20b3fa07e2972418342cb217a1e43c760f3a5e4",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [],
+      "api_calls": [],
+      "flag_names": []
+    },
+    {
+      "path": "Quest/zodiaco/zodiaco_in_arrivo.lua",
+      "quest_name": "zodiaco_in_arrivo",
+      "sha256": "4d50b426ecb44b59f611ce239f0cc58e301a3284434f9dd35e2f68f7186423a3",
+      "same_as_live": true,
+      "candidate_class": "A",
+      "reasons": [
+        "candidate for standard event/condition/dialogue/action graph; requires equivalence fixture"
+      ],
+      "states": [
+        "start"
+      ],
+      "handlers": [
+        "20438.chat.\"Why this part is closed?\""
+      ],
+      "api_calls": [
+        "pc.get_language",
+        "string.format"
+      ],
+      "flag_names": []
+    }
+  ],
+  "libraries": [
+    {
+      "path": "libraries/dungeonlib.lua",
+      "sha256": "6083e5977b507340237debbde4759449790acbe0aeade7b09710441fa52af905"
+    },
+    {
+      "path": "libraries/Global.lua",
+      "sha256": "42abb5b81814105ad09d5c0f2889dfdd443743de2ab6cfc8fa3335799e4654bd"
+    },
+    {
+      "path": "libraries/ResetScrollLib.lua",
+      "sha256": "cad7116c4d33fee026bb53495f8edc0d57ac74f872c743d35d2ce02de2b96a86"
+    },
+    {
+      "path": "libraries/SkillNameList.lua",
+      "sha256": "2bbd8b5302f3a6b3dfc769c8a8536bfef9308f3dd6e7e2cedb7e09d9fa138854"
+    },
+    {
+      "path": "libraries/TeleportRingLib.lua",
+      "sha256": "89d34650a8bc44cbdf08473e5aa211b72c6b4765678e1ea583546eda2959c4e3"
+    },
+    {
+      "path": "libraries/WarpLib.lua",
+      "sha256": "ca7cb9c5e5ae0fa6d726025ced35461a5add74be091b9187ea0ab9a7f325f186"
+    },
+    {
+      "path": "locale.lua",
+      "sha256": "21b6df611b5772d1189f11b69040595db33f1c936e3c8dc7fae0c252a67cb10c"
+    },
+    {
+      "path": "questlib.lua",
+      "sha256": "8612dd2143dfd095ca397094404a40e2a4a03ec19388c0d38864a56f436098df"
+    }
+  ],
+  "counts": {
+    "listed": 69,
+    "live": 69,
+    "same_as_live": 69,
+    "classes": {
+      "C": 49,
+      "A": 18,
+      "B": 2
+    },
+    "stored_flag_rows": 52464,
+    "stored_namespaces": 153,
+    "namespaces_not_in_active_catalog": 128
+  },
+  "stored_namespaces_not_in_active_catalog": [
+    {
+      "namespace": "anti_afk",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "battle_pass",
+      "rows": 2,
+      "characters": 1
+    },
+    {
+      "namespace": "biologist",
+      "rows": 2320,
+      "characters": 1256
+    },
+    {
+      "namespace": "costume_option",
+      "rows": 698,
+      "characters": 361
+    },
+    {
+      "namespace": "desert_boss_next_spawn_ch1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "desert_boss_next_spawn_ch2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "desert_boss_next_spawn_ch3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "desert_boss_next_spawn_ch4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "dungeonorchi",
+      "rows": 4119,
+      "characters": 1292
+    },
+    {
+      "namespace": "dungeonpyramid_razor93",
+      "rows": 1228,
+      "characters": 393
+    },
+    {
+      "namespace": "dupladildo",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "easter_dungeon",
+      "rows": 13,
+      "characters": 3
+    },
+    {
+      "namespace": "event_map_open",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "event_spawn_left",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "exp",
+      "rows": 1033,
+      "characters": 1033
+    },
+    {
+      "namespace": "focdxla",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "game_option",
+      "rows": 57,
+      "characters": 35
+    },
+    {
+      "namespace": "guild_manage",
+      "rows": 549,
+      "characters": 517
+    },
+    {
+      "namespace": "halloween2022",
+      "rows": 18,
+      "characters": 6
+    },
+    {
+      "namespace": "horse_name",
+      "rows": 3420,
+      "characters": 3420
+    },
+    {
+      "namespace": "kamp",
+      "rows": 74,
+      "characters": 74
+    },
+    {
+      "namespace": "lock_extra",
+      "rows": 938,
+      "characters": 508
+    },
+    {
+      "namespace": "lostcastle",
+      "rows": 4,
+      "characters": 2
+    },
+    {
+      "namespace": "meley_boss_next_spawn_ch1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "meley_boss_next_spawn_ch2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "meley_boss_next_spawn_ch3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "meley_boss_next_spawn_ch4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "metin_event_active",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "metin_event_active_ch1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "mythical_peach",
+      "rows": 160,
+      "characters": 160
+    },
+    {
+      "namespace": "nightmare_zone_razor93_prepare",
+      "rows": 920,
+      "characters": 282
+    },
+    {
+      "namespace": "oxevent_status",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "pvp",
+      "rows": 402,
+      "characters": 402
+    },
+    {
+      "namespace": "quiz_active",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "quiz_announced",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "quiz_answer",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "quiz_count",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "quiz_item",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "quiz_max",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "quiz_min",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "razor93_357_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "razor93_357_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "razor93_357_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "razor93_357_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "reborn",
+      "rows": 4,
+      "characters": 4
+    },
+    {
+      "namespace": "refine",
+      "rows": 18,
+      "characters": 5
+    },
+    {
+      "namespace": "rune_zone",
+      "rows": 246,
+      "characters": 73
+    },
+    {
+      "namespace": "training_143",
+      "rows": 429,
+      "characters": 429
+    },
+    {
+      "namespace": "training_144",
+      "rows": 414,
+      "characters": 414
+    },
+    {
+      "namespace": "training_145",
+      "rows": 475,
+      "characters": 475
+    },
+    {
+      "namespace": "training_146",
+      "rows": 406,
+      "characters": 406
+    },
+    {
+      "namespace": "training_221",
+      "rows": 32,
+      "characters": 32
+    },
+    {
+      "namespace": "training_222",
+      "rows": 28,
+      "characters": 28
+    },
+    {
+      "namespace": "training_223",
+      "rows": 31,
+      "characters": 31
+    },
+    {
+      "namespace": "training_224",
+      "rows": 28,
+      "characters": 28
+    },
+    {
+      "namespace": "training_225",
+      "rows": 35,
+      "characters": 35
+    },
+    {
+      "namespace": "training_226",
+      "rows": 29,
+      "characters": 29
+    },
+    {
+      "namespace": "training_227",
+      "rows": 29,
+      "characters": 29
+    },
+    {
+      "namespace": "training_228",
+      "rows": 31,
+      "characters": 31
+    },
+    {
+      "namespace": "training_grandmaster_skill",
+      "rows": 863,
+      "characters": 596
+    },
+    {
+      "namespace": "tritontemple_razor93",
+      "rows": 2332,
+      "characters": 723
+    },
+    {
+      "namespace": "valentine_dungeon",
+      "rows": 1672,
+      "characters": 416
+    },
+    {
+      "namespace": "vikingdungeon_zone",
+      "rows": 18,
+      "characters": 6
+    },
+    {
+      "namespace": "ww_208_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_208_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_208_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_208_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_209_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_209_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_209_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_209_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_210_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_210_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_210_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_210_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_216_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_216_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_216_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_216_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_217_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_217_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_217_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_217_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_218_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_218_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_218_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_218_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_25_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_25_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_25_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_25_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_26_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_26_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_26_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_26_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_27_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_27_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_27_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_27_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_351_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_351_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_351_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_351_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_352_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_352_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_352_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_352_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_356_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_356_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_356_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_356_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_356_nightmare1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_356_nightmare2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_356_nightmare3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_356_nightmare4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_566_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_566_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_566_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_566_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_567_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_567_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_567_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_567_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_66_1",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_66_2",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_66_3",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "ww_66_4",
+      "rows": 1,
+      "characters": 1
+    },
+    {
+      "namespace": "xmas_snow",
+      "rows": 1,
+      "characters": 1
+    }
+  ],
+  "missing_live_paths": []
+}
