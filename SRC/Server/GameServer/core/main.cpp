@@ -9,6 +9,7 @@
 #include "../ecs/systems/WoodcuttingSystem.hpp"
 #include "../ecs/systems/HerbalismSystem.hpp"
 #include "../mission_pass/MissionPassSystem.hpp"
+#include "../story/SpyQuestSystem.hpp"
 #include "../ecs/systems/VisibilitySystem.hpp"
 #include <Core/Logging.hpp>
 #include <Core/tls.h>
@@ -245,6 +246,7 @@ unsigned int save_idx = 0;
 
 void heartbeat(LPHEART ht, int pulse)
 {
+    if(!g_bShutdown)SpyQuest::Tick();
     if (!(pulse % ht->passes_per_sec) && !g_bShutdown) {
         WoodcuttingSystem::Tick(get_dword_time());
         HerbalismSystem::Tick(get_dword_time());

@@ -1,5 +1,6 @@
 #include "../../core/stdafx.h"
 #include "VisibilitySystem.hpp"
+#include "../../story/SpyQuestSystem.hpp"
 #include "ViewSystem.hpp"
 #include "../../core/config.h"
 #include "../../world/sectree.h"
@@ -39,6 +40,7 @@ bool Active(entt::registry& reg, entt::entity e) {
     return tree && tree->Contains(e) && !tree->IsDestroying();
 }
 bool CanSee(entt::registry& reg, entt::entity source, entt::entity viewer) {
+    if(!SpyQuest::CanView(reg,source,viewer))return false;
     if (source == viewer || !Active(reg, source) || !Active(reg, viewer) ||
         reg.get<SpatialKindTag>(viewer).kind != SpatialKind::Character ||
         reg.get<MapIndex>(source).value != reg.get<MapIndex>(viewer).value) return false;
@@ -50,6 +52,11 @@ bool CanSee(entt::registry& reg, entt::entity source, entt::entity viewer) {
         return std::abs(int64_t(a.x / SECTREE_SIZE) - b.x / SECTREE_SIZE) <= 1 &&
             std::abs(int64_t(a.y / SECTREE_SIZE) - b.y / SECTREE_SIZE) <= 1;
     const auto dx = std::abs(int64_t(a.x) - b.x), dy = std::abs(int64_t(a.y) - b.y);
+    // The investigation's safe following band is outside the normal 50 m
+    // character view. Extend only this private owner/actor pair, never crowds.
+    const auto* sourceActor=reg.try_get<SpyQuest::Actor>(source);const auto* viewerActor=reg.try_get<SpyQuest::Actor>(viewer);
+    const auto* sourceId=reg.try_get<PlayerID>(source);const auto* viewerId=reg.try_get<PlayerID>(viewer);
+    if((sourceActor&&viewerId&&sourceActor->owner==viewerId->pid)||(viewerActor&&sourceId&&viewerActor->owner==sourceId->pid))return std::max(dx,dy)+std::min(dx,dy)/2<=10000;
     return std::max(dx, dy) + std::min(dx, dy) / 2 <= VIEW_RANGE + VIEW_BONUS_RANGE;
 }
 struct Snapshot {
@@ -111,6 +118,9 @@ void Refresh(entt::registry& reg, entt::entity e) {
     std::unordered_set<entt::entity> candidates;
     auto collect = [&](entt::entity other) { if (other != e) candidates.insert(other); };
     SectorOf(reg, e)->ForEachAround(collect);
+    // Explicitly include the private pair even across a sector-neighbour seam.
+    if(const auto* actor=reg.try_get<SpyQuest::Actor>(e))collect(PlayerRuntime::FindByPlayerID(actor->owner));
+    if(const auto* id=reg.try_get<PlayerID>(e))for(auto actor:reg.view<SpyQuest::Actor>())if(reg.get<SpyQuest::Actor>(actor).owner==id->pid)collect(actor);
     // Actual published edges are the baseline, not an inferred old position.
     // This also heals stationary/late-arriving viewers of newly dropped items.
     if (auto* view = reg.try_get<ViewMap>(e)) candidates.insert(view->visible.begin(), view->visible.end());

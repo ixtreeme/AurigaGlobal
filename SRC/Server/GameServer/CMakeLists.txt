@@ -694,6 +694,9 @@ add_test(NAME mission_pass_rules COMMAND MissionPassRulesTests
 
 # Build every registered server test explicitly, including EXCLUDE_FROM_ALL
 # executables. CTest is enabled at the root, also for a fresh checkout.
+add_executable(SpyQuestRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/SpyQuestRulesTests.cpp)
+target_link_libraries(SpyQuestRulesTests PRIVATE EnTT::EnTT)
+add_test(NAME spy_quest_rules COMMAND SpyQuestRulesTests)
 get_property(_server_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
 list(FILTER _server_test_targets INCLUDE REGEX "Tests$")
 add_custom_target(ServerTests DEPENDS ${_server_test_targets})

@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../story/SpyQuestSystem.hpp"
 #include "../../mission_pass/MissionPassEvents.hpp"
 #include "SessionSystem.hpp"
 #include "ViewSystem.hpp"
@@ -1555,6 +1556,7 @@ void SetRotationToXY(entt::entity e, int32_t x, int32_t y)
 // accessors, so the body moves here whole rather than being wrapped.
 bool CanMove(entt::entity e)
 {
+    if(SpyQuest::Locked(e))return false;
     if (e == entt::null || !g_registry.valid(e))
         return false;
     if (AffectSystem::IsAffectFlag(e, AFF_STUN))

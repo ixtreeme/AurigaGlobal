@@ -6,6 +6,7 @@
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/WoodcuttingSystem.hpp"
 #include "../ecs/systems/HerbalismSystem.hpp"
+#include "../story/SpyQuestSystem.hpp"
 #include <Core/Logging.hpp>
 #include "utils.h"
 #include "config.h"
@@ -228,6 +229,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
         }
     }
 
+    if (SpyQuest::Click(causer,target)) return;
     if (WoodcuttingSystem::Start(causer, target)) return;
     if (HerbalismSystem::Start(causer, target)) return;
     if (!SetQuestNPC(causer, target) || !IsPC(causer)) return;

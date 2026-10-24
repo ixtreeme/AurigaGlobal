@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../story/SpyQuestSystem.hpp"
 #include "../../mission_pass/MissionPassEvents.hpp"
 #include "MovementSystem.hpp"
 #include "ViewSystem.hpp"
@@ -2195,8 +2196,11 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	if (IsDead(victim))
 		return;
 
+
 	if (CombatSystem::GetInvincible(victim))
 		return;
+
+    if(SpyQuest::Hooks::death)SpyQuest::Hooks::death(victim,killer);
 
 	// LostCastle klonoknak nincs mob_proto (m_pkMobData == nullptr),
 	// ezert a normal !ecs::PlayerRuntime::IsPC(victim) reward/resurrection ag GetMobTable()-t hivna es crashelne.
@@ -3683,6 +3687,7 @@ namespace CombatSystem {
 // Everything a kill hands out: the experience, the gold and the drops.
 void Reward(entt::entity e, bool bItemDrop)
 {
+    if(g_registry.valid(e)&&g_registry.all_of<SpyQuest::Actor>(e))return;
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 
@@ -4665,6 +4670,7 @@ namespace CombatSystem {
 // was a read on the victim; that is what the entity in each call is.
 bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t damageType)
 {
+    if(!SpyQuest::AllowCombat(attacker,victim))return false;
     if (victim == entt::null || !g_registry.valid(victim))
         return false;
 

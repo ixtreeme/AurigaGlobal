@@ -3,6 +3,7 @@
 #include "PlayerRuntimeSystem.hpp"
 
 #include "AISystem.hpp"
+#include "../../story/SpyQuestSystem.hpp"
 
 #include "../../core/config.h"
 #include "../../entity/char_interface.hpp"
@@ -553,6 +554,7 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
     auto view = reg.view<ecs::VIDComponent>();
 
     for (auto entity : view) {
+        if(reg.all_of<SpyQuest::Actor>(entity))continue;
         // "Has a legacy object and is not a PC" was the old gate. The shell
         // pointer is out of this test; TagCharacter is the authority.
         if (!reg.all_of<ecs::TagCharacter>(entity) || ecs::PlayerRuntime::IsPC(entity)) {
