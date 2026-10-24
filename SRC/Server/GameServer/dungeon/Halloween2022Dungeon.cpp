@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
@@ -1046,6 +1047,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     {
         DungeonSystem::SetFlag(d, kFlagFinalBossActive, 0);
         DungeonSystem::SetFlag(d, kFlagCompleted, 1);
+        AurigaMissionPass::Events::Complete(idx);
         DungeonSystem::ClearRegen(d);
         DungeonSystem::KillAllMonsters(d);
 

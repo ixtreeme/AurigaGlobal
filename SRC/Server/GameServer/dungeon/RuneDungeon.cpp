@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -1128,6 +1129,7 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
         RuneDungeon_CompleteRankingForMap(idx);
+        AurigaMissionPass::Events::Complete(idx);
 
         // Notices
         DungeonSystem::Notice(d, 963, "", true);

@@ -1,0 +1,1089 @@
+{
+  "schema_version": 1,
+  "season_id": 1,
+  "enabled": false,
+  "premium_purchase_enabled": false,
+  "title_key": "MP_SEASON_SHADOWS",
+  "starts_at_utc": 1793577600,
+  "ends_at_utc": 1797206400,
+  "levels": 40,
+  "xp_per_level": 1000,
+  "missions": [
+    {
+      "id": 101,
+      "cadence": "daily",
+      "event": "mob_kill",
+      "goal": 100,
+      "xp": 100,
+      "name_key": "MP_M101_NAME",
+      "description_key": "MP_M101_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 102,
+      "cadence": "daily",
+      "event": "metin_kill",
+      "goal": 5,
+      "xp": 100,
+      "name_key": "MP_M102_NAME",
+      "description_key": "MP_M102_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 103,
+      "cadence": "daily",
+      "event": "boss_kill",
+      "goal": 1,
+      "xp": 100,
+      "name_key": "MP_M103_NAME",
+      "description_key": "MP_M103_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 104,
+      "cadence": "daily",
+      "event": "wood_gather",
+      "goal": 15,
+      "xp": 100,
+      "name_key": "MP_M104_NAME",
+      "description_key": "MP_M104_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 105,
+      "cadence": "daily",
+      "event": "herb_gather",
+      "goal": 3,
+      "xp": 100,
+      "name_key": "MP_M105_NAME",
+      "description_key": "MP_M105_DESC",
+      "group": "any",
+      "counting": "unique_subject",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": [
+        50701,
+        50702,
+        50703,
+        50704,
+        50705,
+        50706,
+        50707,
+        50708,
+        50709,
+        50710,
+        50711,
+        50712
+      ]
+    },
+    {
+      "id": 106,
+      "cadence": "daily",
+      "event": "ore_gather",
+      "goal": 10,
+      "xp": 100,
+      "name_key": "MP_M106_NAME",
+      "description_key": "MP_M106_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 107,
+      "cadence": "daily",
+      "event": "fish_catch",
+      "goal": 5,
+      "xp": 100,
+      "name_key": "MP_M107_NAME",
+      "description_key": "MP_M107_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 108,
+      "cadence": "daily",
+      "event": "dungeon_complete",
+      "goal": 1,
+      "xp": 150,
+      "name_key": "MP_M108_NAME",
+      "description_key": "MP_M108_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 109,
+      "cadence": "daily",
+      "event": "active_minute",
+      "goal": 30,
+      "xp": 100,
+      "name_key": "MP_M109_NAME",
+      "description_key": "MP_M109_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 110,
+      "cadence": "daily",
+      "event": "tool_training",
+      "goal": 10,
+      "xp": 100,
+      "name_key": "MP_M110_NAME",
+      "description_key": "MP_M110_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": [
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238
+      ]
+    },
+    {
+      "id": 201,
+      "cadence": "weekly",
+      "event": "mob_kill",
+      "goal": 1000,
+      "xp": 250,
+      "name_key": "MP_M201_NAME",
+      "description_key": "MP_M201_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 202,
+      "cadence": "weekly",
+      "event": "boss_kill",
+      "goal": 3,
+      "xp": 250,
+      "name_key": "MP_M202_NAME",
+      "description_key": "MP_M202_DESC",
+      "group": "any",
+      "counting": "unique_subject",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 203,
+      "cadence": "weekly",
+      "event": "metin_kill",
+      "goal": 30,
+      "xp": 250,
+      "name_key": "MP_M203_NAME",
+      "description_key": "MP_M203_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 204,
+      "cadence": "weekly",
+      "event": "dungeon_complete",
+      "goal": 2,
+      "xp": 300,
+      "name_key": "MP_M204_NAME",
+      "description_key": "MP_M204_DESC",
+      "group": "solo",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 205,
+      "cadence": "weekly",
+      "event": "dungeon_complete",
+      "goal": 3,
+      "xp": 300,
+      "name_key": "MP_M205_NAME",
+      "description_key": "MP_M205_DESC",
+      "group": "party",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 206,
+      "cadence": "weekly",
+      "event": "dungeon_complete",
+      "goal": 2,
+      "xp": 300,
+      "name_key": "MP_M206_NAME",
+      "description_key": "MP_M206_DESC",
+      "group": "guild_party",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 207,
+      "cadence": "weekly",
+      "event": "tree_felled",
+      "goal": 20,
+      "xp": 200,
+      "name_key": "MP_M207_NAME",
+      "description_key": "MP_M207_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 208,
+      "cadence": "weekly",
+      "event": "herb_gather",
+      "goal": 8,
+      "xp": 250,
+      "name_key": "MP_M208_NAME",
+      "description_key": "MP_M208_DESC",
+      "group": "any",
+      "counting": "unique_subject",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": [
+        50701,
+        50702,
+        50703,
+        50704,
+        50705,
+        50706,
+        50707,
+        50708,
+        50709,
+        50710,
+        50711,
+        50712
+      ]
+    },
+    {
+      "id": 209,
+      "cadence": "weekly",
+      "event": "ore_gather",
+      "goal": 75,
+      "xp": 200,
+      "name_key": "MP_M209_NAME",
+      "description_key": "MP_M209_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 210,
+      "cadence": "weekly",
+      "event": "fish_catch",
+      "goal": 30,
+      "xp": 200,
+      "name_key": "MP_M210_NAME",
+      "description_key": "MP_M210_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 211,
+      "cadence": "weekly",
+      "event": "active_minute",
+      "goal": 180,
+      "xp": 200,
+      "name_key": "MP_M211_NAME",
+      "description_key": "MP_M211_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 212,
+      "cadence": "weekly",
+      "event": "guild_exp",
+      "goal": 100000,
+      "xp": 200,
+      "name_key": "MP_M212_NAME",
+      "description_key": "MP_M212_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 301,
+      "cadence": "season",
+      "event": "mob_kill",
+      "goal": 10000,
+      "xp": 600,
+      "name_key": "MP_M301_NAME",
+      "description_key": "MP_M301_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 302,
+      "cadence": "season",
+      "event": "boss_kill",
+      "goal": 10,
+      "xp": 600,
+      "name_key": "MP_M302_NAME",
+      "description_key": "MP_M302_DESC",
+      "group": "any",
+      "counting": "unique_subject",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 303,
+      "cadence": "season",
+      "event": "metin_kill",
+      "goal": 200,
+      "xp": 600,
+      "name_key": "MP_M303_NAME",
+      "description_key": "MP_M303_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 304,
+      "cadence": "season",
+      "event": "dungeon_complete",
+      "goal": 5,
+      "xp": 600,
+      "name_key": "MP_M304_NAME",
+      "description_key": "MP_M304_DESC",
+      "group": "any",
+      "counting": "unique_subject",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 305,
+      "cadence": "season",
+      "event": "dungeon_complete",
+      "goal": 10,
+      "xp": 600,
+      "name_key": "MP_M305_NAME",
+      "description_key": "MP_M305_DESC",
+      "group": "solo",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 306,
+      "cadence": "season",
+      "event": "dungeon_complete",
+      "goal": 20,
+      "xp": 600,
+      "name_key": "MP_M306_NAME",
+      "description_key": "MP_M306_DESC",
+      "group": "party",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 307,
+      "cadence": "season",
+      "event": "wood_gather",
+      "goal": 500,
+      "xp": 500,
+      "name_key": "MP_M307_NAME",
+      "description_key": "MP_M307_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 308,
+      "cadence": "season",
+      "event": "herb_gather",
+      "goal": 12,
+      "xp": 600,
+      "name_key": "MP_M308_NAME",
+      "description_key": "MP_M308_DESC",
+      "group": "any",
+      "counting": "unique_subject",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": [
+        50701,
+        50702,
+        50703,
+        50704,
+        50705,
+        50706,
+        50707,
+        50708,
+        50709,
+        50710,
+        50711,
+        50712
+      ]
+    },
+    {
+      "id": 309,
+      "cadence": "season",
+      "event": "herb_gather",
+      "goal": 300,
+      "xp": 500,
+      "name_key": "MP_M309_NAME",
+      "description_key": "MP_M309_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": [
+        50701,
+        50702,
+        50703,
+        50704,
+        50705,
+        50706,
+        50707,
+        50708,
+        50709,
+        50710,
+        50711,
+        50712
+      ]
+    },
+    {
+      "id": 310,
+      "cadence": "season",
+      "event": "ore_gather",
+      "goal": 500,
+      "xp": 500,
+      "name_key": "MP_M310_NAME",
+      "description_key": "MP_M310_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 311,
+      "cadence": "season",
+      "event": "fish_catch",
+      "goal": 200,
+      "xp": 500,
+      "name_key": "MP_M311_NAME",
+      "description_key": "MP_M311_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 312,
+      "cadence": "season",
+      "event": "tool_upgrade",
+      "goal": 2,
+      "xp": 500,
+      "name_key": "MP_M312_NAME",
+      "description_key": "MP_M312_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": [
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239
+      ]
+    },
+    {
+      "id": 313,
+      "cadence": "season",
+      "event": "active_minute",
+      "goal": 1200,
+      "xp": 600,
+      "name_key": "MP_M313_NAME",
+      "description_key": "MP_M313_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    },
+    {
+      "id": 314,
+      "cadence": "season",
+      "event": "guild_exp",
+      "goal": 1000000,
+      "xp": 500,
+      "name_key": "MP_M314_NAME",
+      "description_key": "MP_M314_DESC",
+      "group": "any",
+      "counting": "quantity",
+      "minimum_level": 5,
+      "maximum_level_gap": 15,
+      "subjects": []
+    }
+  ],
+  "rewards": [
+    {
+      "level": 1,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 1,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 2,
+      "track": "free",
+      "item": 27006,
+      "count": 20
+    },
+    {
+      "level": 2,
+      "track": "premium",
+      "item": 27006,
+      "count": 40
+    },
+    {
+      "level": 3,
+      "track": "free",
+      "item": 50704,
+      "count": 3
+    },
+    {
+      "level": 3,
+      "track": "premium",
+      "item": 50704,
+      "count": 6
+    },
+    {
+      "level": 4,
+      "track": "free",
+      "item": 90011,
+      "count": 10
+    },
+    {
+      "level": 4,
+      "track": "premium",
+      "item": 90011,
+      "count": 20
+    },
+    {
+      "level": 5,
+      "track": "free",
+      "item": 27992,
+      "count": 1
+    },
+    {
+      "level": 5,
+      "track": "premium",
+      "item": 27992,
+      "count": 2
+    },
+    {
+      "level": 6,
+      "track": "free",
+      "item": 50707,
+      "count": 3
+    },
+    {
+      "level": 6,
+      "track": "premium",
+      "item": 50707,
+      "count": 6
+    },
+    {
+      "level": 7,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 7,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 8,
+      "track": "free",
+      "item": 90011,
+      "count": 10
+    },
+    {
+      "level": 8,
+      "track": "premium",
+      "item": 90011,
+      "count": 20
+    },
+    {
+      "level": 9,
+      "track": "free",
+      "item": 50710,
+      "count": 3
+    },
+    {
+      "level": 9,
+      "track": "premium",
+      "item": 50710,
+      "count": 6
+    },
+    {
+      "level": 10,
+      "track": "free",
+      "item": 76016,
+      "count": 1
+    },
+    {
+      "level": 10,
+      "track": "premium",
+      "item": 76016,
+      "count": 2
+    },
+    {
+      "level": 11,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 11,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 12,
+      "track": "free",
+      "item": 90011,
+      "count": 10
+    },
+    {
+      "level": 12,
+      "track": "premium",
+      "item": 90011,
+      "count": 20
+    },
+    {
+      "level": 13,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 13,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 14,
+      "track": "free",
+      "item": 27006,
+      "count": 20
+    },
+    {
+      "level": 14,
+      "track": "premium",
+      "item": 27006,
+      "count": 40
+    },
+    {
+      "level": 15,
+      "track": "free",
+      "item": 27994,
+      "count": 1
+    },
+    {
+      "level": 15,
+      "track": "premium",
+      "item": 27994,
+      "count": 2
+    },
+    {
+      "level": 16,
+      "track": "free",
+      "item": 90011,
+      "count": 10
+    },
+    {
+      "level": 16,
+      "track": "premium",
+      "item": 90011,
+      "count": 20
+    },
+    {
+      "level": 17,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 17,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 18,
+      "track": "free",
+      "item": 50707,
+      "count": 3
+    },
+    {
+      "level": 18,
+      "track": "premium",
+      "item": 50707,
+      "count": 6
+    },
+    {
+      "level": 19,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 19,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 20,
+      "track": "free",
+      "item": 71084,
+      "count": 1
+    },
+    {
+      "level": 20,
+      "track": "premium",
+      "item": 71084,
+      "count": 2
+    },
+    {
+      "level": 21,
+      "track": "free",
+      "item": 50710,
+      "count": 3
+    },
+    {
+      "level": 21,
+      "track": "premium",
+      "item": 50710,
+      "count": 6
+    },
+    {
+      "level": 22,
+      "track": "free",
+      "item": 27006,
+      "count": 20
+    },
+    {
+      "level": 22,
+      "track": "premium",
+      "item": 27006,
+      "count": 40
+    },
+    {
+      "level": 23,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 23,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 24,
+      "track": "free",
+      "item": 90011,
+      "count": 10
+    },
+    {
+      "level": 24,
+      "track": "premium",
+      "item": 90011,
+      "count": 20
+    },
+    {
+      "level": 25,
+      "track": "free",
+      "item": 27993,
+      "count": 1
+    },
+    {
+      "level": 25,
+      "track": "premium",
+      "item": 27993,
+      "count": 2
+    },
+    {
+      "level": 26,
+      "track": "free",
+      "item": 27006,
+      "count": 20
+    },
+    {
+      "level": 26,
+      "track": "premium",
+      "item": 27006,
+      "count": 40
+    },
+    {
+      "level": 27,
+      "track": "free",
+      "item": 50704,
+      "count": 3
+    },
+    {
+      "level": 27,
+      "track": "premium",
+      "item": 50704,
+      "count": 6
+    },
+    {
+      "level": 28,
+      "track": "free",
+      "item": 90011,
+      "count": 10
+    },
+    {
+      "level": 28,
+      "track": "premium",
+      "item": 90011,
+      "count": 20
+    },
+    {
+      "level": 29,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 29,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 30,
+      "track": "free",
+      "item": 71085,
+      "count": 1
+    },
+    {
+      "level": 30,
+      "track": "premium",
+      "item": 71085,
+      "count": 2
+    },
+    {
+      "level": 31,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 31,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 32,
+      "track": "free",
+      "item": 90011,
+      "count": 10
+    },
+    {
+      "level": 32,
+      "track": "premium",
+      "item": 90011,
+      "count": 20
+    },
+    {
+      "level": 33,
+      "track": "free",
+      "item": 50710,
+      "count": 3
+    },
+    {
+      "level": 33,
+      "track": "premium",
+      "item": 50710,
+      "count": 6
+    },
+    {
+      "level": 34,
+      "track": "free",
+      "item": 27006,
+      "count": 20
+    },
+    {
+      "level": 34,
+      "track": "premium",
+      "item": 27006,
+      "count": 40
+    },
+    {
+      "level": 35,
+      "track": "free",
+      "item": 27992,
+      "count": 1
+    },
+    {
+      "level": 35,
+      "track": "premium",
+      "item": 27992,
+      "count": 2
+    },
+    {
+      "level": 36,
+      "track": "free",
+      "item": 90011,
+      "count": 10
+    },
+    {
+      "level": 36,
+      "track": "premium",
+      "item": 90011,
+      "count": 20
+    },
+    {
+      "level": 37,
+      "track": "free",
+      "item": 27003,
+      "count": 20
+    },
+    {
+      "level": 37,
+      "track": "premium",
+      "item": 27003,
+      "count": 40
+    },
+    {
+      "level": 38,
+      "track": "free",
+      "item": 27006,
+      "count": 20
+    },
+    {
+      "level": 38,
+      "track": "premium",
+      "item": 27006,
+      "count": 40
+    },
+    {
+      "level": 39,
+      "track": "free",
+      "item": 50704,
+      "count": 3
+    },
+    {
+      "level": 39,
+      "track": "premium",
+      "item": 50704,
+      "count": 6
+    },
+    {
+      "level": 40,
+      "track": "free",
+      "item": 70039,
+      "count": 1
+    },
+    {
+      "level": 40,
+      "track": "premium",
+      "item": 70039,
+      "count": 2
+    }
+  ]
+}

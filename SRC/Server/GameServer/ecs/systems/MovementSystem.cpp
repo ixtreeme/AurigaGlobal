@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../mission_pass/MissionPassEvents.hpp"
 #include "SessionSystem.hpp"
 #include "ViewSystem.hpp"
 #include "VisibilitySystem.hpp"
@@ -495,6 +496,7 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
         return false;
     }
     // Commit membership changes only after a real destination was accepted.
+    AurigaMissionPass::Events::Enter(e,lMapIndex);
     // Saving an exit location must leave pc.in_dungeon() true during the run.
     if (ecs::PlayerRuntime::IsPC(e))
         ecs::SocialSystem::ClearDungeonIfOtherMap(e, lMapIndex);

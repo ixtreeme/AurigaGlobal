@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -488,6 +489,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
             OrcDungeon_CompleteRankingForMap(idx);
+            AurigaMissionPass::Events::Complete(idx);
 
 #ifdef TEXTS_IMPROVEMENT
             // Global notice with existing text IDs

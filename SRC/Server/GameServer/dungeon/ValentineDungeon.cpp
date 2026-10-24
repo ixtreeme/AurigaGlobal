@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
@@ -407,6 +408,7 @@ public:
         DungeonSystem::SetFlag(d, kFlagCompleted, 1);
 
         CancelEvent(m_evCheck, mapIndex);
+        AurigaMissionPass::Events::Complete(mapIndex);
         CancelEvent(m_evToF2, mapIndex);
 
         const time_t now = get_global_time();

@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
@@ -255,6 +256,7 @@ namespace
             DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
             CancelAll(mapIndex);
+            AurigaMissionPass::Events::Complete(mapIndex);
 
             DungeonSystem::KillAll(d);
             DungeonSystem::ClearRegen(d);

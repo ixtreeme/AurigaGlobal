@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../mission_pass/MissionPassSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -454,6 +455,7 @@ struct command_info cmd_info[] =
 	{ "mob",		do_mob,			0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "woodcut", do_woodcut, 0, POS_STANDING, GM_PLAYER },
     { "herbalism", do_herbalism, 0, POS_STANDING, GM_PLAYER },
+    { "missionpass", do_missionpass, 0, POS_DEAD, GM_PLAYER },
 	{ "mob_ld",		do_mob_ld,			0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "ma",		do_mob_aggresive,	0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "mc",		do_mob_coward,		0,			POS_DEAD,	GM_HIGH_WIZARD	},

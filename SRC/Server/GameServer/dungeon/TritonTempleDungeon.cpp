@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -490,6 +491,7 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             DungeonSystem::SetFlag(d, kFlagWasCompleted, 1);
 
             DungeonCompleteForMap(idx, kTritonOriginalMap, kBossVnum, kCooldownSeconds, kQfEnterTime, kQfCh, kQfCooldown);
+            AurigaMissionPass::Events::Complete(idx);
 
 #ifdef TEXTS_IMPROVEMENT
             if (const entt::entity killerParty = ecs::SocialSystem::GetParty(killer); killerParty != entt::null)

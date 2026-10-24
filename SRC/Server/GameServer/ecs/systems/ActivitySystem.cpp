@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../mission_pass/MissionPassEvents.hpp"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 
@@ -480,6 +481,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
         const entt::entity reward = ItemSystem::AutoGiveItemEcs(fisher, itemVnum, 1, -1, false);
         if (reward != entt::null)
         {
+            AurigaMissionPass::Events::Emit(fisher,AurigaMissionPass::Kind::FishCatch,itemVnum);
 #ifdef ENABLE_MULTI_NAMES
             uint8_t lang = 0;
             if (LPDESC d = ecs::PlayerRuntime::GetDesc(fisher))
