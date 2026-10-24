@@ -2658,3 +2658,17 @@ ellenőrzi. Hiányos Python-függőségnél a csomag változatlan marad; a Pytho
 tartozó kiegészítő tanúsítványtiltási adatfájl változatlanul bekerül. A kész
 csomag ellenőrzéséhez a telepített `AurigaServerManager.exe --worker ... check`
 útvonal és a mellékelt natív Lua-ellenőrző is szükséges.
+
+Az `AIStateTests` közelharci és távolsági mobnál is ellenőrzi, hogy a támadási
+távolság elérése megszakítja a korábbi üldözési mozgást, a támadás várakozási
+ideje alatt is. A célpont és a harci állapot megmarad, a kliens megkapja a
+megállást. A `SpatialLifecycleTests` a tényleges mozgási rendszerrel ellenőrzi,
+hogy a megállított mob a következő frissítéskor sem mozdul tovább, és egy
+visszahívásból indított új mozgást nem ír felül a korábbi megállítás.
+
+A `SpatialLifecycleTests` a szerver fő ciklusával közös `UpdateCharacterFrame`
+függvényen át folyamatos AI-újracélzás mellett is ellenőrzi a tényleges
+előrehaladást, váltakozó és mozgó céllal, valamint időszámláló-átfordulásnál.
+A `CombatStateTests` a tényleges `Follow` kóddal vizsgálja, hogy a már aktív,
+azonos célpontú üldözés nem indít tartalék célpontot, új mozgási órát vagy
+felesleges csomagot; a célpont változását viszont továbbra is követi.

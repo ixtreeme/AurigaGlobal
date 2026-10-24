@@ -1228,6 +1228,21 @@ void Stop(entt::entity e)
     if (!wasIdle && command.Current()) PlayerRuntime::MonsterLog(e, "[IDLE] stop");
 }
 
+bool StopForAttack(entt::entity e)
+{
+    MotionCommand command(e);
+    if (!command.started || !command.Prepare<ecs::DirtyTag>()) return false;
+    auto& state = g_registry.get<ecs::MovementState>(e);
+    state.moveStartTime = state.moveDuration = 0;
+    state.moveSpeed = 0.0f;
+    state.isWalking = false;
+    state.stopTime = get_dword_time();
+    g_registry.remove<ecs::MovementDestination>(e);
+    // A nested command wins. In particular, never publish a stale WAIT after
+    // an observer has started another chase or retired this character.
+    return command.Current() && !g_registry.all_of<ecs::MovementDestination>(e);
+}
+
 // Component-only writes for sync/spawn paths; these also supersede older commands.
 
 void SyncDestinationWrite(entt::entity e, int32_t x, int32_t y)

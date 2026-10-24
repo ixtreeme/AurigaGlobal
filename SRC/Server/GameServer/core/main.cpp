@@ -5,6 +5,7 @@
 #include <iostream>
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/Registry.hpp"
+#include "../ecs/CharacterFrame.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/WoodcuttingSystem.hpp"
 #include "../ecs/systems/HerbalismSystem.hpp"
@@ -809,12 +810,14 @@ int idle()
 	}
 
 	t = get_dword_time();
-	CHARACTER_MANAGER::instance().Update(thecore_heart->pulse);
-	// CharacterManager advances the entity-native AI state machines above.
+	ecs::UpdateCharacterFrame(g_registry, static_cast<uint32_t>(t), [] {
+		CHARACTER_MANAGER::instance().Update(thecore_heart->pulse);
+	});
+	// The frame advances movement before CharacterManager runs the AI, so AI
+	// reads current positions and cannot discard an unconsumed movement step.
 	// AI and client input dispatch real attacks; there is no second damage tick.
 	{
 		const uint32_t tick = static_cast<uint32_t>(get_dword_time());
-		MovementSystem_Update(g_registry, tick);
 		AffectSystem::UpdateAffect(g_registry, tick);
 		AffectSystem_Update(g_registry, tick);
 		// State owners publish protocol packets when their changes commit.

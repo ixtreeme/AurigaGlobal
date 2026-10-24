@@ -132,6 +132,8 @@ struct WeaponFixture {
     uint8_t type {ITEM_WEAPON}, subtype {WEAPON_SWORD};
     std::array<int, 6> values {0, 0, 0, 10, 10, 2};
 };
+struct FollowFixture { int acceptedMoves {0}, movePackets {0}; };
+bool followGeometry = false;
 int poisonCalls = 0, bleedingCalls = 0, affectCalls = 0;
 std::function<void(entt::entity)> onPoison, onAffect;
 int checks = 0, computes = 0, packets = 0;
@@ -166,7 +168,7 @@ void Reset() {
     onCompute = onPacket = {}; passes_per_sec = 25;
     onPoison = onAffect = {}; poisonCalls = bleedingCalls = affectCalls = 0;
     vids.clear(); viewPackets = spChanges = 0; lastFlyType = 0; onFly = {}; canMove = false;
-    mobProtoTable.clear();
+    mobProtoTable.clear(); followGeometry = false;
 }
 void AssertActor(entt::entity e) {
     Check(g_registry.valid(e) && g_registry.any_of<ecs::TagPC, ecs::TagNPC, ecs::TagMonster, ecs::TagStone>(e), "stale/non-character service call");
@@ -357,7 +359,10 @@ unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity e) { AssertActor(e); re
 bool ecs::PlayerRuntime::IsRaceFlag(entt::entity e,unsigned int) { AssertActor(e); return false; }
 uint64_t ecs::PlayerRuntime::GetHP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).hp; }
 int ecs::PlayerRuntime::GetHPPct(entt::entity) { UnexpectedService(__func__); }
-unsigned int ecs::PlayerRuntime::GetAIFlag(entt::entity) { UnexpectedService(__func__); }
+unsigned int ecs::PlayerRuntime::GetAIFlag(entt::entity e) {
+    if (!g_registry.all_of<FollowFixture>(e)) UnexpectedService(__func__);
+    return 0;
+}
 unsigned char ecs::PlayerRuntime::GetJob(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).job; }
 int ecs::PlayerRuntime::GetMapIndex(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).map; }
 int ecs::PlayerRuntime::GetX(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).x; }
@@ -400,7 +405,10 @@ void ecs::PointSystem::Change(entt::entity e,unsigned char point,int64_t amount,
     data.sp = static_cast<int32_t>(std::clamp<int64_t>(int64_t(data.sp) + amount, 0, data.maxSP));
 }
 entt::entity ecs::SocialSystem::GetParty(entt::entity) { return entt::null; }
-entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) { UnexpectedService(__func__); }
+entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity e) {
+    if (!g_registry.all_of<FollowFixture>(e)) UnexpectedService(__func__);
+    return entt::null;
+}
 int64_t ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
 void ecs::QuestSystem::SetFlag(entt::entity,std::string_view,int64_t) { UnexpectedService(__func__); }
 bool NetworkSyncSystem::SetSyncOwner(entt::entity,entt::entity,bool) { UnexpectedService(__func__); }
@@ -434,14 +442,28 @@ uint32_t ecs::PlayerRuntime::GetExp(entt::entity e) { AssertActor(e); return g_r
 void ecs::PlayerRuntime::SetExp(entt::entity e,uint32_t value) { AssertActor(e);g_registry.get<BattleFixture>(e).exp=value; }
 void AffectSystem::ClearAffect(entt::entity,bool) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetMonsterDrainSPPoint(entt::entity) { UnexpectedService(__func__); }
-void ecs::MovementSystem::SetRotationToXY(entt::entity, int, int) { UnexpectedService(__func__); }
-bool ecs::MovementSystem::Goto(entt::entity,int,int) { UnexpectedService(__func__); }
+void ecs::MovementSystem::SetRotationToXY(entt::entity e, int, int) {
+    if (!g_registry.all_of<FollowFixture>(e)) UnexpectedService(__func__);
+}
+bool ecs::MovementSystem::Goto(entt::entity e,int x,int y) {
+    if (!g_registry.all_of<FollowFixture>(e)) UnexpectedService(__func__);
+    const auto* destination = g_registry.try_get<ecs::MovementDestination>(e);
+    if (destination && destination->x == x && destination->y == y) return false;
+    ++g_registry.get<FollowFixture>(e).acceptedMoves;
+    g_registry.emplace_or_replace<ecs::MovementDestination>(e, x, y);
+    auto& movement = g_registry.get_or_emplace<ecs::MovementState>(e);
+    movement.moveStartTime = tick; movement.moveDuration = 1000;
+    return true;
+}
 bool ecs::MovementSystem::CanMove(entt::entity) { return canMove; }
 // CombatSystem asks the movement frame how recently this one moved.
 unsigned int ecs::MovementSystem::GetLastMoveTime(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).lastMove; }
 bool ecs::MovementSystem::Sync(entt::entity,int32_t,int32_t) { UnexpectedService(__func__); }
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }
-float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
+float ecs::PlayerRuntime::GetRotation(entt::entity e) {
+    if (!g_registry.all_of<FollowFixture>(e)) UnexpectedService(__func__);
+    return 0;
+}
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
 // The fixture sets postures on the component, so this reads it rather than
@@ -460,7 +482,10 @@ void ecs::MovementSystem::OnMove(entt::entity, bool) {}
 bool ecs::PlayerRuntime::IsPet(entt::entity) { return false; }
 bool ecs::PlayerRuntime::IsNewPet(entt::entity) { return false; }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedService(__func__); }
-void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
+void ecs::MovementSystem::SendMovePacket(entt::entity e,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) {
+    if (!g_registry.all_of<FollowFixture>(e)) UnexpectedService(__func__);
+    ++g_registry.get<FollowFixture>(e).movePackets;
+}
 void InventorySystem::SyncQuickslot(entt::entity,uint16_t,uint16_t,uint16_t) { UnexpectedService(__func__); }
 void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__); }
 void ecs::SocialSystem::SetDungeon(entt::entity, entt::entity) { UnexpectedService(__func__); }
@@ -573,7 +598,10 @@ bool ecs::PlayerRuntime::IsArenaObserverMode(entt::entity) { UnexpectedService(_
 CArena* ecs::PlayerRuntime::GetArena(entt::entity) { UnexpectedService(__func__); }
 void CArena::SendPacketToObserver(const void*,int) { UnexpectedService(__func__); }
 float GetDegreeFromPositionXY(int,int,int,int) { UnexpectedService(__func__); }
-void GetDeltaByDegree(float,float,float *,float *) { UnexpectedService(__func__); }
+void GetDeltaByDegree(float,float distance,float* x,float* y) {
+    if (!followGeometry) UnexpectedService(__func__);
+    *x = distance; *y = 0;
+}
 float GetDegreeDelta(float,float) { UnexpectedService(__func__); }
 bool marriage::MarriageSystem::IsNear(entt::entity) { UnexpectedService(__func__); }
 void marriage::MarriageSystem::Update(entt::entity, uint32_t) { UnexpectedService(__func__); }
@@ -1223,9 +1251,43 @@ void ZeroExpKillCreditChecks() {
     Check(C::DistributeExp(objective)==entt::null,"cleanup without contributions invented kill credit");
     Check(C::DistributeExp(entt::null)==entt::null,"invalid objective received credit");
 }
+void FollowingAnExistingDestinationDoesNotAlternateStandOffPoints() {
+    Reset(); followGeometry = true;
+    const auto mob = Actor(), victim = Actor();
+    g_registry.remove<ecs::TagPC>(mob);
+    g_registry.emplace<ecs::TagMonster>(mob);
+    g_registry.emplace<FollowFixture>(mob);
+    g_registry.emplace<ecs::AttackPositionTimer>(mob, tick);
+    g_registry.get<BattleFixture>(victim).x = 2000;
+    CMob prototype {};
+    prototype.m_table.dwVnum = 5122;
+    prototype.m_table.wAttackRange = 850;
+    prototype.m_table.bBattleType = BATTLE_TYPE_RANGE;
+    mobProtoTable[5122] = &prototype;
+    g_registry.emplace<ecs::MobDataRef>(mob, &prototype, 5122u);
+    Check(C::Follow(mob, victim, 680), "ranged pursuit did not start");
+    const auto start = g_registry.get<ecs::MovementState>(mob).moveStartTime;
+    for (int pulse = 0; pulse < 20; ++pulse) {
+        tick += 40;
+        const bool primary = C::Follow(mob, victim, 680);
+        if (!primary) C::Follow(mob, victim, 765); // GotoNearTarget's fallback.
+        Check(primary, "active primary chase was reported as a failure and invoked the fallback");
+    }
+    const auto& probe = g_registry.get<FollowFixture>(mob);
+    Check(probe.acceptedMoves == 1 && probe.movePackets == 1 &&
+        g_registry.get<ecs::MovementDestination>(mob).x == 1320 &&
+        g_registry.get<ecs::MovementState>(mob).moveStartTime == start,
+        "unchanged chase restarted its timer or spammed alternating movement packets");
+    g_registry.get<BattleFixture>(victim).x += 100;
+    Check(C::Follow(mob, victim, 680) && probe.acceptedMoves == 2 && probe.movePackets == 2 &&
+        g_registry.get<ecs::MovementDestination>(mob).x == 1420,
+        "a changed victim position could not retarget the chase");
+}
+
 int main() {
     try {
         CHARACTER_MANAGER characters;
+        FollowingAnExistingDestinationDoesNotAlternateStandOffPoints();
         ZeroExpKillCreditChecks();
         NativeSPRecoveryChecks(); AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
         BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();

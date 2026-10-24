@@ -67,6 +67,9 @@ bool Goto(entt::entity e, int32_t x, int32_t y);
 // capped server-side), no motion-file lookup.
 bool GotoWithDuration(entt::entity e, int32_t x, int32_t y, uint32_t clientDuration);
 void Stop(entt::entity e);
+// Interrupt an AI chase without dropping its victim or returning its FSM to idle.
+// False means a callback retired/replaced the move while the stop was prepared.
+bool StopForAttack(entt::entity e);
 uint32_t GetMotionMode(entt::entity e);
 float GetMoveMotionSpeed(entt::entity e);
 float GetMoveSpeed(entt::entity e);
