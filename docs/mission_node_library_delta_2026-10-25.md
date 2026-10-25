@@ -213,6 +213,11 @@ A DB-szerződés megelőzi az első live gameplay-hatást, hogy a P0 ne kapjon
 ideiglenes, duplázásveszélyes jutalmazást. A teljes vizuális katalógus és a
 P0 Unity end-to-end elfogadás még nincs készként megjelölve.
 
+A 2. lépés SQL-végrehajtási alapja elkészült: egy munkaként kezelt prepared
+tranzakció, teljes result-drain, bináris eredményhosszak és valódi MariaDB
+hibapróbák. A pontos szerződés és a még hátralévő domain store/ledger munka:
+[mission_persistence_sql_2026-10-25.md](mission_persistence_sql_2026-10-25.md).
+
 ## Ellenőrzések
 
 A natív mag és a csomagtesztek valódi C++ implementációt futtatnak. A csomag-

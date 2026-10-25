@@ -22,10 +22,19 @@ MYSQL_ROW SQLResult::FetchRow()
 	if (pSQLResult)
 		return mysql_fetch_row(pSQLResult);
 
-	if (preparedRowPos >= preparedRows.size())
+	preparedRowValid = preparedRowPos < preparedRows.size();
+	if (!preparedRowValid)
 		return nullptr;
 
 	return preparedRows[preparedRowPos++].data();
+}
+
+unsigned long * SQLResult::FetchLengths()
+{
+	if (pSQLResult)
+		return mysql_fetch_lengths(pSQLResult);
+	return preparedRowValid && preparedRowPos <= preparedLengths.size()
+		? preparedLengths[preparedRowPos - 1].data() : nullptr;
 }
 
 namespace
@@ -210,13 +219,13 @@ bool CAsyncSQL::Connect()
 	{
 		if (mysql_options(&m_hDB, MYSQL_SET_CHARSET_NAME, m_stLocale.c_str()) != 0)
 		{
-			std::print(stderr, "mysql_option failed : MYSQL_SET_CHARSET_NAME %s ", mysql_error(&m_hDB));
+			std::print(stderr, "mysql_option failed : MYSQL_SET_CHARSET_NAME {} ", mysql_error(&m_hDB));
 		}
 	}
 
 	if (!mysql_real_connect(&m_hDB, m_stHost.c_str(), m_stUser.c_str(), m_stPassword.c_str(), m_stDB.c_str(), m_iPort, nullptr, CLIENT_MULTI_STATEMENTS))
 	{
-		std::print(stderr, "mysql_real_connect: %s\n", mysql_error(&m_hDB));
+		std::print(stderr, "mysql_real_connect: {}\n", mysql_error(&m_hDB));
 		SetConnectionState(ConnectionState::Failed);
 		return false;
 	}
@@ -224,9 +233,9 @@ bool CAsyncSQL::Connect()
 	my_bool reconnect = true;
 
 	if (0 != mysql_options(&m_hDB, MYSQL_OPT_RECONNECT, &reconnect))
-		std::print(stderr, "mysql_option: %s\n", mysql_error(&m_hDB));
+		std::print(stderr, "mysql_option: {}\n", mysql_error(&m_hDB));
 
-	std::print(stdout, "AsyncSQL: connected to %s (reconnect %s)\n", m_stHost, &reconnect);
+	std::print(stdout, "AsyncSQL: connected to {} (reconnect {})\n", m_stHost, reconnect != 0);
 
 
 	m_ulThreadID = mysql_thread_id(&m_hDB);
@@ -256,6 +265,7 @@ bool CAsyncSQL::WaitForConnection(std::chrono::milliseconds timeout)
 bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char * c_pszPassword, const char * c_pszDB, const char * c_pszLocale, bool bNoThread, int iPort)
 {
 	SetConnectionState(ConnectionState::Connecting);
+	m_directConnection = bNoThread;
 	m_stHost = c_pszHost;
 	m_stUser = c_pszUser;
 	m_stPassword = c_pszPassword;
@@ -444,6 +454,13 @@ void CAsyncSQL::ReturnQuery(const char * c_pszQuery, void * pvUserData)
 
 bool CAsyncSQL::EnsureConnectionReady()
 {
+	if (m_inPreparedTransaction)
+		return m_mysqlInitialized && mysql_thread_id(&m_hDB) == m_transactionThreadId;
+	if (!m_mysqlInitialized || GetConnectionState() == ConnectionState::Failed)
+	{
+		if (m_mysqlInitialized) InvalidateConnection();
+		return Connect();
+	}
 	if (m_ulThreadID != mysql_thread_id(&m_hDB))
 	{
 		LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
@@ -455,6 +472,17 @@ bool CAsyncSQL::EnsureConnectionReady()
 		ClearPrepared();
 	}
 	return true;
+}
+
+void CAsyncSQL::InvalidateConnection()
+{
+	ClearPrepared();
+	if (m_mysqlInitialized)
+		mysql_close(&m_hDB);
+	m_mysqlInitialized = false;
+	m_hDB.host = nullptr;
+	m_ulThreadID = 0;
+	SetConnectionState(ConnectionState::Failed);
 }
 
 void CAsyncSQL::ClearPrepared()
@@ -481,7 +509,7 @@ void CAsyncSQL::DropPrepared(const std::string & sql)
 	m_map_prepared.erase(it);
 }
 
-MYSQL_STMT * CAsyncSQL::GetOrPrepare(const std::string & sql)
+MYSQL_STMT * CAsyncSQL::GetOrPrepare(const std::string & sql, uint32_t & error)
 {
 	const auto it = m_map_prepared.find(sql);
 
@@ -492,12 +520,16 @@ MYSQL_STMT * CAsyncSQL::GetOrPrepare(const std::string & sql)
 
 	if (!stmt)
 	{
+		error = mysql_errno(&m_hDB);
+		if (!error) error = CR_OUT_OF_MEMORY;
 		LOG_ERROR("AsyncSQL: mysql_stmt_init failed: {}", mysql_error(&m_hDB));
 		return nullptr;
 	}
 
 	if (mysql_stmt_prepare(stmt, sql.c_str(), static_cast<unsigned long>(sql.length())))
 	{
+		error = mysql_stmt_errno(stmt);
+		if (!error) error = CR_UNKNOWN_ERROR;
 		LOG_ERROR("AsyncSQL: mysql_stmt_prepare failed: {} (query: {})", mysql_stmt_error(stmt), sql.c_str());
 		mysql_stmt_close(stmt);
 		return nullptr;
@@ -511,17 +543,15 @@ bool CAsyncSQL::TryExecutePrepared(SQLMsg * p)
 {
 	if (!EnsureConnectionReady())
 	{
-		p->uiSQLErrno = mysql_errno(&m_hDB);
+		p->uiSQLErrno = m_inPreparedTransaction ? CR_SERVER_LOST : mysql_errno(&m_hDB);
+		if (!p->uiSQLErrno) p->uiSQLErrno = CR_UNKNOWN_ERROR;
 		return false;
 	}
 
-	MYSQL_STMT * stmt = GetOrPrepare(p->stQuery);
+	MYSQL_STMT * stmt = GetOrPrepare(p->stQuery, p->uiSQLErrno);
 
 	if (!stmt)
-	{
-		p->uiSQLErrno = mysql_errno(&m_hDB);
 		return false;
-	}
 
 	const size_t paramCount = static_cast<size_t>(mysql_stmt_param_count(stmt));
 
@@ -529,7 +559,7 @@ bool CAsyncSQL::TryExecutePrepared(SQLMsg * p)
 	{
 		LOG_ERROR("AsyncSQL: prepared statement parameter mismatch (expected {}, got {}, query: {})",
 			paramCount, p->vecParams.size(), p->stQuery.c_str());
-		p->uiSQLErrno = 0;
+		p->uiSQLErrno = CR_PARAMS_NOT_BOUND;
 		return false;
 	}
 
@@ -603,17 +633,43 @@ bool CAsyncSQL::TryExecutePrepared(SQLMsg * p)
 		return false;
 	}
 
-	MYSQL_RES * meta = mysql_stmt_result_metadata(stmt);
-
-	if (meta)
+	// CALL may return several row sets followed by a final OK packet. Every
+	// result must be consumed before this cached statement/connection is reused.
+	for (;;)
 	{
-		const bool stored = StorePreparedResult(p, stmt, meta);
-		mysql_free_result(meta);
-		return stored;
+		MYSQL_RES * meta = mysql_stmt_result_metadata(stmt);
+		bool stored = true;
+		if (meta)
+		{
+			stored = StorePreparedResult(p, stmt, meta);
+			mysql_free_result(meta);
+		}
+		else if (mysql_stmt_field_count(stmt))
+		{
+			p->uiSQLErrno = mysql_stmt_errno(stmt);
+			if (!p->uiSQLErrno) p->uiSQLErrno = CR_OUT_OF_MEMORY;
+			stored = false;
+		}
+		else
+			p->StorePrepared(static_cast<uint64_t>(mysql_stmt_affected_rows(stmt)),
+				static_cast<uint64_t>(mysql_stmt_insert_id(stmt)));
+		if (!stored)
+		{
+			if (!p->uiSQLErrno) p->uiSQLErrno = CR_UNKNOWN_ERROR;
+			InvalidateConnection(); // Unread packets must never leak into the next job.
+			return false;
+		}
+		const int next = mysql_stmt_next_result(stmt);
+		if (next == -1)
+			break;
+		if (next > 0)
+		{
+			p->uiSQLErrno = mysql_stmt_errno(stmt);
+			if (!p->uiSQLErrno) p->uiSQLErrno = CR_UNKNOWN_ERROR;
+			InvalidateConnection();
+			return false;
+		}
 	}
-
-	p->StorePrepared(static_cast<uint64_t>(mysql_stmt_affected_rows(stmt)),
-		static_cast<uint64_t>(mysql_stmt_insert_id(stmt)));
 	p->uiSQLErrno = 0;
 	return true;
 }
@@ -673,7 +729,10 @@ bool CAsyncSQL::StorePreparedResult(SQLMsg * p, MYSQL_STMT * stmt, MYSQL_RES * m
 		for (size_t i = 0; i < columnCount; ++i)
 		{
 			if (isNull[i])
+			{
+				lengths[i] = 0;
 				continue;
+			}
 
 			if (lengths[i] <= buffers[i].size())
 				pRes->preparedCells.emplace_back(buffers[i].data(), lengths[i]);
@@ -689,6 +748,7 @@ bool CAsyncSQL::StorePreparedResult(SQLMsg * p, MYSQL_STMT * stmt, MYSQL_RES * m
 			row[i] = pRes->preparedCells.back().data();
 		}
 
+		pRes->preparedLengths.push_back(lengths);
 		pRes->preparedRows.push_back(std::move(row));
 	}
 
@@ -965,13 +1025,15 @@ void CAsyncSQL::ChildLoop()
 
 			bool executed;
 
-			if (p->bPrepared)
+			if (p->bTransaction)
+				executed = TryExecuteTransaction(p);
+			else if (p->bPrepared)
 			{
 				executed = TryExecutePrepared(p);
 			}
 			else
 			{
-				executed = (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()) == 0);
+				executed = EnsureConnectionReady() && (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()) == 0);
 
 				if (!executed)
 				{
@@ -981,7 +1043,7 @@ void CAsyncSQL::ChildLoop()
 				}
 			}
 
-			if (!executed && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
+			if (!executed && !p->bTransaction && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
 			{
 				m_sem.Release();
 				LOG_ERROR("AsyncSQL: retrying");
@@ -1022,13 +1084,15 @@ void CAsyncSQL::ChildLoop()
 	{
 		bool executed;
 
-		if (p->bPrepared)
+		if (p->bTransaction)
+			executed = TryExecuteTransaction(p);
+		else if (p->bPrepared)
 		{
 			executed = TryExecutePrepared(p);
 		}
 		else
 		{
-			executed = (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()) == 0);
+			executed = EnsureConnectionReady() && (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()) == 0);
 
 			if (!executed)
 			{
@@ -1038,7 +1102,7 @@ void CAsyncSQL::ChildLoop()
 			}
 		}
 
-		if (!executed && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
+		if (!executed && !p->bTransaction && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
 			continue;
 
 		LOG_INFO("QUERY_FLUSH: {}", p->stQuery.c_str());

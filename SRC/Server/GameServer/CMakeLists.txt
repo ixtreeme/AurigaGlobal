@@ -457,6 +457,26 @@ if(WIN32)
 endif()
 add_test(NAME async_sql_prepared COMMAND AsyncSqlPreparedTests)
 
+# Opt-in real database tests. The runner creates its own datadir and loopback
+# port; it never connects to an existing MariaDB service.
+add_executable(AsyncSqlMariaDbTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.cpp
+)
+target_link_libraries(AsyncSqlMariaDbTests PRIVATE SERVER S_SQL S_Core)
+if(WIN32)
+    target_link_libraries(AsyncSqlMariaDbTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+set(AURIGA_TEST_MARIADB_BIN_DIR "" CACHE PATH "Isolated MariaDB test distribution bin directory (Windows)")
+if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME async_sql_mariadb_isolated
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
+            --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
+            --test-executable $<TARGET_FILE:AsyncSqlMariaDbTests>
+            --work-dir ${CMAKE_BINARY_DIR}/mission-sql-isolated
+    )
+endif()
+
 add_executable(MarriageLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MarriageLifecycleTests.cpp
     social/marriage.cpp
@@ -733,7 +753,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests OfflineShopSafeboxTests SocialRelationTests)
+    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests OfflineShopSafeboxTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
@@ -774,3 +794,6 @@ add_custom_target(ServerTests DEPENDS ${_server_test_targets})
 add_dependencies(ServerTests ServerPackageCheck MissionCheck MissionCompiler)
 get_property(_server_tests DIRECTORY PROPERTY TESTS)
 set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)
+if(TEST async_sql_mariadb_isolated)
+    set_tests_properties(async_sql_mariadb_isolated PROPERTIES TIMEOUT 180 LABELS "server;integration")
+endif()

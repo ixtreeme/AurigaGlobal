@@ -39,6 +39,8 @@ typedef struct _SQLResult
 	// Prepared statements have no MYSQL_RES; their rows are materialized
 	// as strings so FetchRow() behaves exactly like mysql_fetch_row().
 	MYSQL_ROW FetchRow();
+	// Byte lengths of the last fetched row, including embedded NUL bytes.
+	unsigned long * FetchLengths();
 
 	MYSQL_RES *	pSQLResult;
 	uint64_t		uiNumRows;
@@ -48,40 +50,12 @@ typedef struct _SQLResult
 	bool			bPrepared { false };
 	std::deque<std::string>			preparedCells;
 	std::vector<std::vector<char *>>	preparedRows;
+	std::vector<std::vector<unsigned long>> preparedLengths;
 	size_t			preparedRowPos { 0 };
+	bool preparedRowValid { false };
 } SQLResult;
 
-// Out-of-band parameter for server-side prepared statements. The value is
-// sent through the MySQL binary protocol, so no quoting/escaping is needed
-// and the statement text never changes between executions (statement cache).
-enum class SqlParamType : uint8_t
-{
-	Null,
-	Signed,
-	Unsigned,
-	Real,
-	Text,
-	Blob,
-};
-
-struct SqlParam
-{
-	SqlParamType	type { SqlParamType::Null };
-	int64_t		i64 { 0 };
-	uint64_t	u64 { 0 };
-	double		f64 { 0.0 };
-	std::string	bytes;
-
-	static SqlParam Null() { return SqlParam {}; }
-	static SqlParam Int(int64_t v) { SqlParam p; p.type = SqlParamType::Signed; p.i64 = v; return p; }
-	static SqlParam UInt(uint64_t v) { SqlParam p; p.type = SqlParamType::Unsigned; p.u64 = v; return p; }
-	static SqlParam Real(double v) { SqlParam p; p.type = SqlParamType::Real; p.f64 = v; return p; }
-	static SqlParam Text(std::string v) { SqlParam p; p.type = SqlParamType::Text; p.bytes = std::move(v); return p; }
-	static SqlParam Text(const char * v) { return v ? Text(std::string(v)) : Null(); }
-	static SqlParam Blob(std::string v) { SqlParam p; p.type = SqlParamType::Blob; p.bytes = std::move(v); return p; }
-};
-
-using SqlParams = std::vector<SqlParam>;
+#include "PreparedTransaction.h"
 
 typedef struct _SQLMsg
 {
@@ -160,6 +134,12 @@ typedef struct _SQLMsg
 	// statement and vecParams is bound with mysql_stmt_bind_param.
 	bool			bPrepared;
 	SqlParams		vecParams;
+
+	bool bTransaction { false };
+	SqlTransaction transaction;
+	SqlTransactionOutcome transactionOutcome { SqlTransactionOutcome::NotStarted };
+	size_t transactionFailedStep { SqlTransactionNoStep };
+	std::vector<size_t> transactionResultOffsets;
 } SQLMsg;
 
 class CAsyncSQL
@@ -193,6 +173,11 @@ class CAsyncSQL
 		void		ReturnQueryPrepared(const char * c_pszQuery, const SqlParams & params, void * pvUserData);
 		SQLMsg *	DirectQueryPrepared(const char * c_pszQuery, const SqlParams & params);
 
+		// One owned job: no queue interleaving, reconnect or automatic replay inside it.
+		// Direct variant requires Setup(..., bNoThread=true). Inspect transactionOutcome.
+		SQLMsg * DirectTransactionPrepared(SqlTransaction transaction);
+		void ReturnTransactionPrepared(SqlTransaction transaction, void * userData);
+
 		uint32_t		CountQuery();
 		uint32_t		CountResult();
 
@@ -215,7 +200,7 @@ class CAsyncSQL
 		// statement cache when the underlying connection changed.
 		bool		EnsureConnectionReady();
 
-		MYSQL_STMT *	GetOrPrepare(const std::string & sql);
+		MYSQL_STMT *	GetOrPrepare(const std::string & sql, uint32_t & error);
 		void		DropPrepared(const std::string & sql);
 		void		ClearPrepared();
 
@@ -223,6 +208,8 @@ class CAsyncSQL
 		// (SELECT) or the affected rows / insert id (write) into p and
 		// returns true.
 		bool		TryExecutePrepared(SQLMsg * p);
+		bool TryExecuteTransaction(SQLMsg * p);
+		void InvalidateConnection();
 
 		// Materializes a prepared result set into p as string cells.
 		bool		StorePreparedResult(SQLMsg * p, MYSQL_STMT * stmt, MYSQL_RES * meta);
@@ -274,6 +261,9 @@ class CAsyncSQL
 		bool m_retryConnectionErrors { true };
 		bool m_flushOnQuit { true };
 		bool m_mysqlInitialized { false };
+		bool m_directConnection { false };
+		bool m_inPreparedTransaction { false };
+		unsigned long m_transactionThreadId { 0 };
 
 #ifndef _WIN32
 		pthread_t m_hThread;
