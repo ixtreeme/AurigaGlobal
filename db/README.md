@@ -154,8 +154,18 @@ töröl vagy módosít régi BattlePass-/Mission Pass-/questtáblát. Hat saját
 `mission_engine_*` InnoDB-táblát hoz létre. A base schema alkalmazása önmagában
 ezt az opcionális modult még nem telepíti.
 
-A persistence réteg jelenleg elkülönített MariaDB-példányon tesztelt;
-a GameServer session-/gameplay-bekötése és a jutalomledger még következik.
+A második, ezután alkalmazandó migráció:
+`migrations/2026-10-25_mission_engine_actions.sql`. Két saját InnoDB-táblával
+egészíti ki az alapot az action outboxhoz és a szimbolikus jutalomjogosultság
+ledgeréhez; bővíti a saját operations CHECK-jét, majd 2-re emeli a sémaverziót.
+A jelenlegi program már mindkét migrációt követeli. A frissítés előtt minden
+Mission-írót le kell állítani, mert a DDL nem atomi. Régi migrációt jövőbeli
+sémaverzióra nem futtatunk automatikusan vissza.
+
+A persistence/action réteg elkülönített MariaDB-példányon tesztelt;
+a GameServer session-/gameplay-bekötése és a tényleges jutalomkézbesítés még következik.
+A ledger önmagában nem tárgy-, XP- vagy pénzkézbesítési nyugta.
 A migráció éles alkalmazása külön telepítési munkafázis. Részletek:
 `docs/mission_persistence_store_2026-10-25.md` a forrásgyökér alatt.
+Az action-réteg leírása: `docs/mission_actions_and_entitlements_2026-10-25.md`.
 

@@ -41,7 +41,7 @@ def packet(sock: socket.socket) -> tuple[bytes, bytes]:
 
 
 class CommitResponseProxy:
-    def __init__(self, backend_port: int):
+    def __init__(self, backend_port: int, drop_count: int = 1):
         self.backend_port = backend_port
         self.listener = socket.socket()
         self.listener.bind(("127.0.0.1", 0))
@@ -51,7 +51,9 @@ class CommitResponseProxy:
         self.stop = threading.Event()
         self.dropped = threading.Event()
         self.lock = threading.Lock()
-        self.claimed = False
+        self.drop_count = drop_count
+        self.claimed_count = 0
+        self.dropped_count = 0
         self.sockets: list[socket.socket] = []
         self.threads: list[threading.Thread] = []
         self.error: Exception | None = None
@@ -86,13 +88,15 @@ class CommitResponseProxy:
                 header, body = packet(source)
                 if client_direction and body == b"\x03COMMIT":
                     with self.lock:
-                        if not self.claimed:
-                            self.claimed = True
+                        if self.claimed_count < self.drop_count:
+                            self.claimed_count += 1
                             pending_commit.set()
                 if not client_direction and pending_commit.is_set():
                     if not body or body[0] != 0:
                         raise RuntimeError("COMMIT did not produce the expected MariaDB OK packet")
-                    self.dropped.set()
+                    with self.lock:
+                        self.dropped_count += 1
+                        self.dropped.set()
                     return  # Close both ends without forwarding the real commit acknowledgement.
                 destination.sendall(header + body)
         except (EOFError, ConnectionError, OSError):
@@ -126,7 +130,10 @@ def main() -> int:
     parser.add_argument("--test-argument", action="append", default=[])
     parser.add_argument("--followup-argument", action="append", default=[])
     parser.add_argument("--crash-server-before-followup", action="store_true")
+    parser.add_argument("--drop-commit-count", type=int, default=1)
     args = parser.parse_args()
+    if not 1 <= args.drop_commit_count <= 8:
+        parser.error("--drop-commit-count must be between 1 and 8")
     if args.crash_server_before_followup and not args.followup_argument:
         parser.error("--crash-server-before-followup requires a followup process")
     binaries = args.server_bin_dir.resolve(strict=True)
@@ -163,7 +170,7 @@ def main() -> int:
                     time.sleep(0.1)
             else:
                 raise TimeoutError(f"isolated MariaDB did not listen; inspect {log_path}")
-            proxy = CommitResponseProxy(port)
+            proxy = CommitResponseProxy(port, args.drop_commit_count)
             schema = "auriga_mission_sql_test_" + uuid.uuid4().hex
             # Connector/C 3.4 requires TLS verification by default. Only this
             # isolated child process talks plaintext to the packet fault proxy.
@@ -180,8 +187,8 @@ def main() -> int:
                 return result.returncode
             if proxy.error:
                 raise proxy.error
-            if not proxy.dropped.is_set():
-                raise RuntimeError("test did not exercise a lost real COMMIT acknowledgement")
+            if proxy.dropped_count != args.drop_commit_count:
+                raise RuntimeError("test did not exercise all configured lost real COMMIT acknowledgements")
             if args.followup_argument:
                 if args.crash_server_before_followup:
                     # Kill only the exact private process spawned above. Flush=1

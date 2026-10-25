@@ -301,7 +301,7 @@ void MissingArchiveAndCorruption(CAsyncSQL &sql, const DefinitionRegistry &regis
     Text(sql, "SET foreign_key_checks=1");
     Query(sql, {"UPDATE mission_engine_schema SET schema_version=99 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes), false);
-    Query(sql, {"UPDATE mission_engine_schema SET schema_version=1 WHERE singleton=1", {}});
+    Query(sql, {"UPDATE mission_engine_schema SET schema_version=2 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes));
 }
 void ConcurrentSaves(CAsyncSQL &admin, const DefinitionRegistry &registry)
@@ -491,6 +491,342 @@ void InFlightResolution(CAsyncSQL &admin, const DefinitionRegistry &registry)
               "in-flight resolution disagrees with durable state");
     }
 }
+db::ActionRead Action(CAsyncSQL &sql, db::Owner owner, const ActionKey &key)
+{
+    auto message = Query(sql, db::ReadAction(owner, key));
+    return db::DecodeAction(*message, owner, key);
+}
+ActionKey RewardKey(uint32_t character)
+{
+    return {character, "persist.story", 1, 10, "reward", "persist.reward"};
+}
+void DurableActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
+{
+    auto owner = Claim(sql, 60, 0, Token(60), Token(150));
+    auto checkpoint = Checkpoint(registry, 60);
+    auto key = RewardKey(60);
+    auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
+    Check(Action(sql, owner, key).status == db::ReadStatus::Missing, "unsaved action exists");
+    auto notSaved = db::RecordEntitlement(owner, key, 1, digest, Token(151));
+    Execute(sql, notSaved, false);
+    Check(Resolve(sql, notSaved).status == db::Resolution::Absent, "unsaved reward entitled");
+    auto saveCollision = db::Save(checkpoint, registry, owner, 0, Token(150));
+    Execute(sql, saveCollision, false);
+    Check(Resolve(sql, saveCollision).status == db::Resolution::TokenConflict &&
+              Snapshot(sql, owner).snapshot.bytes.empty() &&
+              Action(sql, owner, key).status == db::ReadStatus::Missing,
+          "late save receipt collision partly created checkpoint/outbox");
+    Execute(sql, db::Save(checkpoint, registry, owner, 0, Token(151)));
+    auto pending = Action(sql, owner, key);
+    Check(pending.status == db::ReadStatus::Found && pending.action.state == db::ActionState::Pending &&
+              pending.action.firstStorageRevision == 1 && pending.action.currentStorageRevision == 1 &&
+              pending.action.id == ActionIdentity(key) && pending.action.checkpoint == digest,
+          "checkpoint and outbox did not commit together");
+    auto wrongDigest = digest;
+    wrongDigest[0] ^= 1;
+    Execute(sql, db::RecordEntitlement(owner, key, 1, wrongDigest, Token(152)), false);
+    Execute(sql, db::RecordEntitlement(owner, key, 2, digest, Token(152)), false);
+    auto wrongKey = key;
+    wrongKey.reward = "persist.forged";
+    Execute(sql, db::RecordEntitlement(owner, wrongKey, 1, digest, Token(152)), false);
+    Check(!db::RecordEntitlement(owner, RewardKey(61), 1, digest, Token(152)) &&
+              !db::RecordEntitlement(owner, key, 0, digest, Token(152)) &&
+              !db::RecordEntitlement(owner, key, 1, digest, {}),
+          "invalid entitlement produced SQL");
+
+    MissionRuntime runtime(registry, {60, 17}, checkpoint.now);
+    Accepted(runtime.Restore(checkpoint, checkpoint.now));
+    Accepted(runtime.Acknowledge(key, 1003));
+    auto forged = db::Save(runtime.Save(), registry, owner, 1, Token(152));
+    Execute(sql, forged, false);
+    Check(Resolve(sql, forged).status == db::Resolution::Absent &&
+              Snapshot(sql, owner).snapshot.storageRevision == 1 &&
+              Action(sql, owner, key).action.state == db::ActionState::Pending,
+          "unbacked runtime receipt persisted completion");
+
+    // Reuse the earlier claim operation token. Failure occurs AFTER the ledger
+    // and outbox update; the entire transaction must roll back both.
+    auto collision = db::RecordEntitlement(owner, key, 1, digest, Token(150));
+    Execute(sql, collision, false);
+    Check(Resolve(sql, collision).status == db::Resolution::TokenConflict &&
+              Action(sql, owner, key).action.state == db::ActionState::Pending &&
+              Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
+                     {SqlParam::Blob(Binary(ActionIdentity(key)))}) == 0,
+          "late receipt collision partly granted entitlement");
+    auto entitlement = db::RecordEntitlement(owner, key, 1, digest, Token(152));
+    Execute(sql, entitlement);
+    Execute(sql, entitlement, false);
+    Check(Resolve(sql, entitlement).status == db::Resolution::Committed,
+          "entitlement replay lost its receipt");
+    auto duplicate = db::RecordEntitlement(owner, key, 1, digest, Token(153));
+    Execute(sql, duplicate, false);
+    Check(Resolve(sql, duplicate).status == db::Resolution::Absent, "new operation duplicated entitlement");
+    auto entitled = Action(sql, owner, key);
+    Check(entitled.status == db::ReadStatus::Found && entitled.action.state == db::ActionState::Entitled &&
+              entitled.action.entitlementEpoch == 1 && entitled.action.entitlementStorageRevision == 1,
+          "committed entitlement unreadable");
+
+    // Persist another pending snapshot before the memory acknowledgement. This
+    // happens on reconnect after a crash between issuance and acknowledgement.
+    ++checkpoint.revision;
+    checkpoint.facts.flags.insert("persist.awaiting_receipt");
+    Execute(sql, db::Save(checkpoint, registry, owner, 1, Token(153)));
+    MissionRuntime resumed(registry, {60, 18}, checkpoint.now);
+    Accepted(resumed.Restore(checkpoint, checkpoint.now));
+    Accepted(resumed.Acknowledge(key, 1003));
+    Execute(sql, db::Save(resumed.Save(), registry, owner, 2, Token(154)));
+    auto persisted = Snapshot(sql, owner);
+    auto decoded = DecodeCheckpoint(persisted.snapshot.bytes, registry);
+    Check(bool(decoded) && decoded.checkpoint->instances.at(10).status == MissionStatus::Completed &&
+              Action(sql, owner, key).action.state == db::ActionState::Entitled,
+          "backed acknowledgement failed to persist");
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
+                 {SqlParam::Blob(Binary(ActionIdentity(key)))}) == 1 &&
+              Number(sql, "SELECT marker FROM item_award WHERE id=1") == 789,
+          "symbolic entitlement changed real item delivery");
+    auto transferred = Claim(sql, 60, 1, Token(160), Token(155));
+    Check(Action(sql, owner, key).status == db::ReadStatus::Missing &&
+              Action(sql, transferred, key).status == db::ReadStatus::Found,
+          "action reads bypassed owner fence");
+    Execute(sql, db::RecordEntitlement(owner, key, 3, persisted.snapshot.metadata.digest, Token(156)), false);
+    auto read = Query(sql, db::ReadAction(transferred, key));
+    Check(db::DecodeAction(*read, transferred, wrongKey).status == db::ReadStatus::Invalid,
+          "wrong expected action accepted SQL result");
+}
+void CancelledActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
+{
+    auto owner = Claim(sql, 61, 0, Token(61), Token(157));
+    auto checkpoint = Checkpoint(registry, 61);
+    auto key = RewardKey(61);
+    Execute(sql, db::Save(checkpoint, registry, owner, 0, Token(158)));
+    auto oldDigest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
+    MissionRuntime runtime(registry, {61, 17}, checkpoint.now);
+    Accepted(runtime.Restore(checkpoint, checkpoint.now));
+    Accepted(runtime.Abandon(10, 1003));
+    const auto cancelled = runtime.Save();
+    Execute(sql, db::Save(cancelled, registry, owner, 1, Token(159)));
+    Check(Action(sql, owner, key).action.state == db::ActionState::Cancelled,
+          "abandon did not cancel outbox");
+    Execute(sql, db::RecordEntitlement(owner, key, 1, oldDigest, Token(160)), false);
+    auto currentDigest = EncodeCheckpoint(cancelled, registry).metadata.digest;
+    Execute(sql, db::RecordEntitlement(owner, key, 2, currentDigest, Token(160)), false);
+    checkpoint.revision = cancelled.revision + 1;
+    checkpoint.now = cancelled.now;
+    Execute(sql, db::Save(checkpoint, registry, owner, 2, Token(160)), false);
+    Check(Snapshot(sql, owner).snapshot.storageRevision == 2 &&
+              Action(sql, owner, key).action.state == db::ActionState::Cancelled,
+          "cancelled action ID reactivated or failed save partly committed");
+}
+std::array<SqlTransactionOutcome, 2> Race(const std::array<db::Plan, 2> &plans)
+{
+    std::array<SqlTransactionOutcome, 2> outcomes{};
+    std::array<std::exception_ptr, 2> errors{};
+    std::latch ready(2), start(1);
+    std::array<std::thread, 2> threads;
+    for (size_t i = 0; i < 2; ++i)
+        threads[i] = std::thread(
+            [&, i]
+            {
+                bool signaled = false;
+                try
+                {
+                    CAsyncSQL sql;
+                    sql.SetTimeouts(3);
+                    sql.SetRetryConnectionErrors(false);
+                    if (!sql.Setup("127.0.0.1", "root", "", database.c_str(), "utf8mb4", true, port))
+                        throw std::runtime_error("action race connection failed");
+                    ready.count_down();
+                    signaled = true;
+                    start.wait();
+                    Message result(sql.DirectTransactionPrepared(plans[i].statements));
+                    outcomes[i] = result->transactionOutcome;
+                }
+                catch (...)
+                {
+                    errors[i] = std::current_exception();
+                    if (!signaled)
+                        ready.count_down();
+                }
+            });
+    ready.wait();
+    start.count_down();
+    for (auto &thread : threads)
+        thread.join();
+    for (auto &error : errors)
+        if (error)
+            std::rethrow_exception(error);
+    return outcomes;
+}
+void ConcurrentActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
+{
+    auto owner = Claim(sql, 62, 0, Token(62), Token(161));
+    auto checkpoint = Checkpoint(registry, 62);
+    Execute(sql, db::Save(checkpoint, registry, owner, 0, Token(162)));
+    auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
+    auto key = RewardKey(62);
+    std::array<db::Plan, 2> grants{db::RecordEntitlement(owner, key, 1, digest, Token(163)),
+                                   db::RecordEntitlement(owner, key, 1, digest, Token(164))};
+    auto outcomes = Race(grants);
+    Check(
+        (outcomes[0] == SqlTransactionOutcome::Committed && outcomes[1] == SqlTransactionOutcome::Conflict) ||
+            (outcomes[1] == SqlTransactionOutcome::Committed &&
+             outcomes[0] == SqlTransactionOutcome::Conflict),
+        "two concurrent reward entitlements committed");
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
+                 {SqlParam::Blob(Binary(ActionIdentity(key)))}) == 1,
+          "entitlement race duplicated ledger");
+    auto a = Resolve(sql, grants[0]), b = Resolve(sql, grants[1]);
+    Check((a.status == db::Resolution::Committed && b.status == db::Resolution::Absent) ||
+              (b.status == db::Resolution::Committed && a.status == db::Resolution::Absent),
+          "entitlement race receipts disagree");
+
+    // Cancellation must never leave a pending row with a granted ledger. If
+    // issuance wins first, the already acquired right survives abandonment.
+    for (uint32_t character = 66; character < 70; ++character)
+    {
+        owner = Claim(sql, character, 0, Token(uint8_t(character)), db::NewToken());
+        checkpoint = Checkpoint(registry, character);
+        Execute(sql, db::Save(checkpoint, registry, owner, 0, db::NewToken()));
+        digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
+        key = RewardKey(character);
+        MissionRuntime runtime(registry, {character, 17}, checkpoint.now);
+        Accepted(runtime.Restore(checkpoint, checkpoint.now));
+        Accepted(runtime.Abandon(10, 1003));
+        std::array<db::Plan, 2> competing{db::RecordEntitlement(owner, key, 1, digest, db::NewToken()),
+                                          db::Save(runtime.Save(), registry, owner, 1, db::NewToken())};
+        outcomes = Race(competing);
+        auto action = Action(sql, owner, key);
+        Check(outcomes[1] == SqlTransactionOutcome::Committed && action.status == db::ReadStatus::Found &&
+                  action.action.state == (outcomes[0] == SqlTransactionOutcome::Committed
+                                              ? db::ActionState::Entitled
+                                              : db::ActionState::Cancelled),
+              "cancellation and entitlement disagree on ordering");
+        Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
+                     {SqlParam::Blob(Binary(ActionIdentity(key)))}) ==
+                  (action.action.state == db::ActionState::Entitled ? 1u : 0u),
+              "cancelled action acquired an inconsistent ledger");
+    }
+}
+void InterruptedEntitlement(CAsyncSQL &admin, const DefinitionRegistry &registry)
+{
+    auto owner = Claim(admin, 63, 0, Token(63), Token(165));
+    auto checkpoint = Checkpoint(registry, 63);
+    Execute(admin, db::Save(checkpoint, registry, owner, 0, Token(166)));
+    auto key = RewardKey(63);
+    auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
+    auto plan = db::RecordEntitlement(owner, key, 1, digest, Token(167));
+    auto interrupted = plan;
+    interrupted.statements.insert(interrupted.statements.begin() + 4, {"SELECT SLEEP(5)", {}, {}, {}});
+    CAsyncSQL worker;
+    Connect(worker, false);
+    const auto connection = mysql_thread_id(worker.GetSQLHandle());
+    worker.ReturnTransactionPrepared(interrupted.statements, nullptr);
+    bool sleeping = false;
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (std::chrono::steady_clock::now() < deadline)
+    {
+        sleeping = Number(admin,
+                          "SELECT COUNT(*) FROM information_schema.PROCESSLIST "
+                          "WHERE ID=? AND INFO='SELECT SLEEP(5)'",
+                          {SqlParam::UInt(connection)}) != 0;
+        if (sleeping)
+            break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    Check(sleeping, "did not interrupt the partially written reward ledger");
+    Text(admin, "KILL CONNECTION " + std::to_string(connection));
+    auto results = Wait(worker, 1);
+    worker.Quit();
+    Check(!db::Confirmed(*results[0]) && Resolve(admin, plan).status == db::Resolution::Absent &&
+              Action(admin, owner, key).action.state == db::ActionState::Pending &&
+              Number(admin, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
+                     {SqlParam::Blob(Binary(ActionIdentity(key)))}) == 0,
+          "interrupted issuance partly committed ledger/outbox");
+    Execute(admin, plan);
+}
+void LostEntitlementCommit(CAsyncSQL &admin, const DefinitionRegistry &registry, unsigned int proxyPort)
+{
+    auto owner = Claim(admin, 64, 0, Token(64), Token(168));
+    auto checkpoint = Checkpoint(registry, 64);
+    Execute(admin, db::Save(checkpoint, registry, owner, 0, Token(169)));
+    auto key = RewardKey(64);
+    auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
+    auto plan = db::RecordEntitlement(owner, key, 1, digest, Token(170));
+    CAsyncSQL proxy;
+    Connect(proxy, true, proxyPort);
+    auto result = Execute(proxy, plan, false);
+    Check(result->transactionOutcome == SqlTransactionOutcome::CommitUnknown &&
+              Resolve(admin, plan).status == db::Resolution::Committed,
+          "lost entitlement COMMIT was not reconciled");
+    Execute(admin, plan, false);
+    Check(Action(admin, owner, key).action.state == db::ActionState::Entitled &&
+              Number(admin, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
+                     {SqlParam::Blob(Binary(ActionIdentity(key)))}) == 1,
+          "unknown entitlement commit replay duplicated/lost right");
+}
+void BoundedActionBatch(CAsyncSQL &sql)
+{
+    Definition bulk;
+    bulk.id = "bulk.actions";
+    bulk.version = 1;
+    bulk.root = "root";
+    auto root = NodeOf("root", NodeKind::Parallel);
+    for (size_t index = 0; index < CheckpointActions; ++index)
+    {
+        auto reward = NodeOf("reward." + std::to_string(index), NodeKind::Reward);
+        reward.reward = "bulk.reward";
+        root.children.push_back(reward.id);
+        bulk.nodes.push_back(reward);
+    }
+    bulk.nodes.insert(bulk.nodes.begin(), root);
+    auto source = Source();
+    source.manifest.id = "bulk.actions.package";
+    source.missions = {bulk};
+    source.presentation.missions.clear();
+    source.presentation.missions[bulk.id] = {"story.title", "story.summary", {}};
+    auto package = CompilePackage(source);
+    Check(bool(package), "bulk action package invalid");
+    Execute(sql, db::ArchivePackage(package.bytes));
+    DefinitionRegistry registry;
+    Check(registry.Activate({bulk}).status == Publication::Status::Published, "bulk action registry invalid");
+    auto owner = Claim(sql, 70, 0, Token(70), db::NewToken());
+    MissionRuntime runtime(registry, {70, 1}, 0);
+    Accepted(runtime.Start(bulk.id, 1, 1, 0));
+    auto checkpoint = runtime.Save();
+    auto save = db::Save(checkpoint, registry, owner, 0, db::NewToken());
+    size_t parameters = 0;
+    for (const auto &statement : save.statements)
+        parameters += statement.params.size();
+    Check(parameters <= SqlTransactionLimits::Parameters &&
+              save.statements.size() <= SqlTransactionLimits::Steps,
+          "maximum action batch exceeded SQL executor bounds");
+    Execute(sql, save);
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_action_outbox WHERE character_id=70") ==
+              CheckpointActions,
+          "maximum action batch was truncated");
+    auto key = runtime.PendingActions().back();
+    Execute(sql, db::RecordEntitlement(owner, key, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest,
+                                       db::NewToken()));
+    Accepted(runtime.Acknowledge(key, 1));
+    Execute(sql, db::Save(runtime.Save(), registry, owner, 1, db::NewToken()));
+    Check(Number(
+              sql,
+              "SELECT COUNT(*) FROM mission_engine_action_outbox WHERE character_id=70 AND action_state=1") ==
+                  CheckpointActions - 1 &&
+              Action(sql, owner, key).action.state == db::ActionState::Entitled,
+          "mixed pending/acknowledged maximum batch failed");
+    bulk.version = 2;
+    auto extra = NodeOf("extra", NodeKind::Reward);
+    extra.reward = "bulk.reward";
+    bulk.nodes.push_back(extra);
+    bulk.nodes.front().children.push_back(extra.id);
+    Check(registry.Activate({bulk}).status == Publication::Status::Published, "excess graph invalid");
+    MissionRuntime excess(registry, {70, 1}, 0);
+    Accepted(excess.Start(bulk.id, 2, 2, 0));
+    auto rejected = db::Save(excess.Save(), registry, owner, 2, db::NewToken());
+    Check(!rejected && rejected.statements.empty() && Snapshot(sql, owner).snapshot.storageRevision == 2,
+          "over-capacity save produced a partial SQL plan");
+}
 void ColdProcess(CAsyncSQL &sql)
 {
     db::Owner owner{42, 1, Token(1)};
@@ -542,6 +878,36 @@ void ColdProcess(CAsyncSQL &sql)
     Check(duplicate.code == ResultCode::Duplicate, "cold dedup lost");
     Accepted(runtime.AdvanceTime(6001));
     Check(runtime.Inspect(20)->status == MissionStatus::Completed, "cold timer did not resume");
+    auto pending = Action(sql, owner, RewardKey(42));
+    Check(pending.status == db::ReadStatus::Found && pending.action.state == db::ActionState::Pending &&
+              pending.action.id == ActionIdentity(RewardKey(42)),
+          "cold outbox identity/state lost");
+    auto entitled = Action(sql, {64, 1, Token(64)}, RewardKey(64));
+    Check(entitled.status == db::ReadStatus::Found && entitled.action.state == db::ActionState::Entitled &&
+              entitled.action.entitlementStorageRevision == 1,
+          "cold reward ledger lost after real crash");
+    auto completed = Snapshot(sql, {60, 2, Token(160)});
+    auto completedCp = DecodeCheckpoint(completed.snapshot.bytes, registry);
+    Check(bool(completedCp) && completedCp.checkpoint->instances.at(10).status == MissionStatus::Completed &&
+              Action(sql, {60, 2, Token(160)}, RewardKey(60)).action.state == db::ActionState::Entitled,
+          "cold backed reward acknowledgement changed");
+    db::Owner recoveredOwner{64, 1, Token(64)};
+    auto issuedSnapshot = Snapshot(sql, recoveredOwner);
+    auto issuedKey = RewardKey(64);
+    auto recoveredPlan = db::RecordEntitlement(recoveredOwner, issuedKey, 1,
+                                               issuedSnapshot.snapshot.metadata.digest, Token(170));
+    Execute(sql, recoveredPlan, false);
+    Check(Resolve(sql, recoveredPlan).status == db::Resolution::Committed,
+          "cold replay did not reconcile pre-crash entitlement operation");
+    auto issuedCp = DecodeCheckpoint(issuedSnapshot.snapshot.bytes, registry);
+    Check(bool(issuedCp), "cold entitled checkpoint invalid");
+    MissionRuntime recovered(registry, {64, 999}, issuedCp.checkpoint->now);
+    Accepted(recovered.Restore(*issuedCp.checkpoint, issuedCp.checkpoint->now));
+    Accepted(recovered.Acknowledge(issuedKey, 1003));
+    Execute(sql, db::Save(recovered.Save(), registry, recoveredOwner, 1, db::NewToken()));
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
+                 {SqlParam::Blob(Binary(ActionIdentity(issuedKey)))}) == 1,
+          "cold acknowledgement duplicated entitlement");
 }
 } // namespace
 std::shared_ptr<spdlog::logger> logging::GetLogger()
@@ -558,17 +924,17 @@ int main(int argc, char **argv)
     std::cout << std::unitbuf;
     try
     {
-        if (argc != 5 && argc != 6)
-            throw std::runtime_error(
-                "usage: MissionPersistenceTests PORT FRESH_SCHEMA PROXY_PORT MIGRATION [--cold-check]");
+        if (argc != 6 && argc != 7)
+            throw std::runtime_error("usage: MissionPersistenceTests PORT FRESH_SCHEMA PROXY_PORT "
+                                     "STORE_MIGRATION ACTION_MIGRATION [--cold-check]");
         port = static_cast<unsigned int>(std::stoul(argv[1]));
         database = argv[2];
         Check(database.starts_with("auriga_mission_sql_test_") && database.size() <= 63 &&
                   database.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_") == database.npos,
               "isolated schema required");
-        if (argc == 6)
+        if (argc == 7)
         {
-            Check(std::string_view(argv[5]) == "--cold-check", "unknown child mode");
+            Check(std::string_view(argv[6]) == "--cold-check", "unknown child mode");
             CAsyncSQL sql;
             Connect(sql);
             ColdProcess(sql);
@@ -586,7 +952,16 @@ int main(int argc, char **argv)
         Text(sql, "INSERT INTO account_mission_pass VALUES(1,123)");
         Text(sql, "CREATE TABLE quest(id INT PRIMARY KEY,marker INT NOT NULL) ENGINE=InnoDB");
         Text(sql, "INSERT INTO quest VALUES(1,456)");
+        Text(sql, "CREATE TABLE item_award(id INT PRIMARY KEY,marker INT NOT NULL) ENGINE=InnoDB");
+        Text(sql, "INSERT INTO item_award VALUES(1,789)");
         Migration(sql, argv[4]);
+        Execute(sql, db::Claim(9999, 0, Token(99), Token(99)), false);
+        Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_characters") == 0,
+              "schema 1 writer bypassed mandatory action migration");
+        Migration(sql, argv[5]);
+        Migration(sql, argv[4]);
+        Check(Number(sql, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 2,
+              "old migration downgraded action schema");
         Archive(sql);
         DefinitionRegistry registry;
         Check(registry.Activate(Definitions()).status == Publication::Status::Published,
@@ -602,6 +977,12 @@ int main(int argc, char **argv)
         AsyncAndDisconnect(sql, registry);
         InFlightResolution(sql, registry);
         LostCommit(sql, registry, static_cast<unsigned int>(std::stoul(argv[3])));
+        DurableActions(sql, registry);
+        CancelledActions(sql, registry);
+        ConcurrentActions(sql, registry);
+        InterruptedEntitlement(sql, registry);
+        LostEntitlementCommit(sql, registry, static_cast<unsigned int>(std::stoul(argv[3])));
+        BoundedActionBatch(sql);
         std::cout << "Mission persistence: " << checks << " checks passed\n";
         return 0;
     }

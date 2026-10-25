@@ -1,4 +1,5 @@
 #pragma once
+#include "MissionActions.hpp"
 #include "MissionCheckpointCodec.hpp"
 #include "MissionPackage.hpp"
 #include <SQL/PreparedTransaction.h>
@@ -20,7 +21,8 @@ enum class Operation : uint8_t
 {
     Claim = 1,
     Save = 2,
-    Release = 3
+    Release = 3,
+    Entitle = 4
 };
 struct Plan
 {
@@ -94,6 +96,33 @@ Plan Claim(CharacterId character, uint64_t expectedEpoch, Token newOwner, Token 
 Plan Save(const MissionRuntime::Checkpoint &checkpoint, const DefinitionRegistry &registry, Owner owner,
           uint64_t expectedStorageRevision, Token operation);
 Plan Release(Owner owner, Token operation);
+// Commits a symbolic, immutable reward entitlement, NOT an inventory/XP/money
+// effect or delivery receipt. Only a trusted owner coordinator may call this,
+// after saving the current authoritative decision checkpoint. No player API.
+Plan RecordEntitlement(Owner owner, const ActionKey &action, uint64_t expectedStorageRevision,
+                       ContentDigest checkpointDigest, Token operation);
+enum class ActionState : uint8_t
+{
+    Pending = 1,
+    Cancelled = 2,
+    Entitled = 3
+};
+struct ActionRecord
+{
+    ActionKey key;
+    ContentDigest id{}, definition{};
+    ActionState state = ActionState::Pending;
+    uint64_t firstStorageRevision = 0, currentStorageRevision = 0;
+    uint64_t entitlementEpoch = 0, entitlementStorageRevision = 0;
+    ContentDigest checkpoint{};
+};
+struct ActionRead
+{
+    ReadStatus status = ReadStatus::Invalid;
+    ActionRecord action;
+};
+ReadCommand ReadAction(Owner owner, const ActionKey &action);
+ActionRead DecodeAction(_SQLMsg &message, Owner owner, const ActionKey &action);
 // A coordinator authorizes an explicit transfer; observing an epoch is not authorization.
 ReadCommand ReadHead(CharacterId character);
 HeadResult DecodeHead(_SQLMsg &message, CharacterId character);

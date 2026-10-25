@@ -71,16 +71,17 @@ SqlTransaction Preconditions()
 {
     // Version/engine/FK checks fail closed. A hand-created lookalike or a disabled
     // constraint session must not silently weaken archive/checkpoint references.
-    return {{"SELECT schema_version FROM mission_engine_schema WHERE singleton=1 AND schema_version=1 "
+    return {{"SELECT schema_version FROM mission_engine_schema WHERE singleton=1 AND schema_version=2 "
              "AND @@foreign_key_checks=1 AND @@check_constraint_checks=1 "
              "AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() "
              "AND ENGINE='InnoDB' AND TABLE_NAME IN ('mission_engine_schema','mission_engine_packages',"
              "'mission_engine_definitions','mission_engine_characters','mission_engine_checkpoint_refs',"
-             "'mission_engine_operations'))=6 "
+             "'mission_engine_operations','mission_engine_action_outbox','mission_engine_reward_ledger'))=8 "
              "AND (SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE "
              "CONSTRAINT_SCHEMA=DATABASE() "
              "AND CONSTRAINT_NAME IN ('me_definition_package','me_ref_character','me_ref_definition',"
-             "'me_operation_character_fk'))=4",
+             "'me_operation_character_fk','me_action_character','me_action_definition','me_entitlement_"
+             "action'))=7",
              {},
              {},
              1}};
@@ -102,6 +103,104 @@ Plan Invalid(const char *where, const std::exception &error)
     Plan plan;
     plan.errors.push_back({where, error.what()});
     return plan;
+}
+void ActionParams(SqlParams &params, const SavedAction &action)
+{
+    params.push_back(SqlParam::Blob(Bytes(action.id)));
+    params.push_back(SqlParam::Blob(action.key.mission));
+    params.push_back(SqlParam::UInt(action.key.version));
+    params.push_back(SqlParam::UInt(action.key.instance));
+    params.push_back(SqlParam::Blob(action.key.node));
+    params.push_back(SqlParam::Blob(action.key.reward));
+    params.push_back(SqlParam::Blob(Bytes(action.definition)));
+}
+void ActionSave(Plan &plan, const ActionBatch &batch, Owner owner, uint64_t previousRevision)
+{
+    SqlTransactionStep insert;
+    insert.query = "INSERT INTO mission_engine_action_outbox(action_id,character_id,mission_id,"
+                   "definition_version,instance_id,node_id,reward_id,definition_digest,"
+                   "first_storage_revision,action_state) VALUES ";
+    size_t pending = 0;
+    for (const auto &action : batch.actions)
+    {
+        if (action.acknowledged)
+            continue;
+        if (pending++)
+            insert.query += ',';
+        insert.query += "(?,?,?,?,?,?,?,?,?,1)";
+        insert.params.push_back(SqlParam::Blob(Bytes(action.id)));
+        insert.params.push_back(SqlParam::UInt(owner.character));
+        insert.params.push_back(SqlParam::Blob(action.key.mission));
+        insert.params.push_back(SqlParam::UInt(action.key.version));
+        insert.params.push_back(SqlParam::UInt(action.key.instance));
+        insert.params.push_back(SqlParam::Blob(action.key.node));
+        insert.params.push_back(SqlParam::Blob(action.key.reward));
+        insert.params.push_back(SqlParam::Blob(Bytes(action.definition)));
+        insert.params.push_back(SqlParam::UInt(*plan.storageRevision));
+    }
+    if (pending)
+    {
+        insert.query += " ON DUPLICATE KEY UPDATE action_id=action_id";
+        plan.statements.push_back(std::move(insert));
+    }
+    // Acknowledged nodes must already have a committed entitlement. Pending
+    // nodes may be entitled too: a crash can precede the runtime acknowledgement.
+    // Match the full tuple and graph, not just its cryptographic lookup key.
+    for (bool acknowledged : {false, true})
+    {
+        SqlTransactionStep check;
+        check.query = "SELECT o.action_id FROM mission_engine_action_outbox o "
+                      "LEFT JOIN mission_engine_reward_ledger l ON l.action_id=o.action_id "
+                      "WHERE o.character_id=? AND o.first_storage_revision<=? AND ";
+        check.params = {SqlParam::UInt(owner.character), SqlParam::UInt(*plan.storageRevision)};
+        if (!acknowledged)
+            check.query += "((o.action_state=1 AND l.action_id IS NULL) OR ";
+        check.query += "(o.action_state=3 AND l.owner_epoch>0 AND l.owner_epoch<=? AND "
+                       "l.storage_revision>=o.first_storage_revision AND l.storage_revision<=?)";
+        if (!acknowledged)
+            check.query += ')';
+        check.params.push_back(SqlParam::UInt(owner.epoch));
+        check.params.push_back(SqlParam::UInt(previousRevision));
+        check.query += " AND (";
+        size_t count = 0;
+        for (const auto &action : batch.actions)
+        {
+            if (action.acknowledged != acknowledged)
+                continue;
+            if (count++)
+                check.query += " OR ";
+            check.query += "(o.action_id=? AND o.mission_id=? AND o.definition_version=? AND "
+                           "o.instance_id=? AND o.node_id=? AND o.reward_id=? AND o.definition_digest=?)";
+            ActionParams(check.params, action);
+        }
+        if (count)
+        {
+            check.query += ") FOR UPDATE";
+            check.expectedResultRows = count;
+            plan.statements.push_back(std::move(check));
+        }
+    }
+    SqlTransactionStep cancel;
+    cancel.query = "UPDATE mission_engine_action_outbox SET action_state=2 WHERE character_id=? "
+                   "AND action_state=1";
+    cancel.params = {SqlParam::UInt(owner.character)};
+    if (pending)
+    {
+        cancel.query += " AND action_id NOT IN (";
+        size_t index = 0;
+        for (const auto &action : batch.actions)
+            if (!action.acknowledged)
+            {
+                if (index++)
+                    cancel.query += ',';
+                cancel.query += '?';
+                cancel.params.push_back(SqlParam::Blob(Bytes(action.id)));
+            }
+        cancel.query += ')';
+    }
+    // Cancellation and entitlement issuance lock the character first. Whichever
+    // commits first decides: cancelled IDs never reactivate; issued rights stay.
+    plan.statements.push_back(std::move(cancel));
 }
 struct Row
 {
@@ -264,6 +363,8 @@ Plan Save(const MissionRuntime::Checkpoint &checkpoint, const DefinitionRegistry
              "Invalid save identity/revision");
         auto encoded = EncodeCheckpoint(checkpoint, registry);
         Need(bool(encoded), "Invalid saved checkpoint");
+        const auto actions = CheckpointActionBatch(checkpoint, registry);
+        Need(bool(actions), "Invalid/over-capacity action checkpoint");
         Plan plan;
         plan.character = owner.character;
         plan.ownerEpoch = owner.epoch;
@@ -298,6 +399,7 @@ Plan Save(const MissionRuntime::Checkpoint &checkpoint, const DefinitionRegistry
                   SqlParam::UInt(reference.version), SqlParam::Blob(Bytes(reference.fingerprint))},
                  1,
                  {}});
+        ActionSave(plan, actions, owner, expectedStorageRevision);
         Receipt(plan);
         return plan;
     }
@@ -334,6 +436,124 @@ Plan Release(Owner owner, Token operation)
         return Invalid("release", error);
     }
 }
+Plan RecordEntitlement(Owner owner, const ActionKey &action, uint64_t expectedStorageRevision,
+                       ContentDigest checkpointDigest, Token operation)
+{
+    try
+    {
+        CheckOwner(owner);
+        Need(action.character == owner.character && expectedStorageRevision &&
+                 expectedStorageRevision < UINT64_MAX && Nonzero(operation),
+             "Invalid entitlement identity/revision");
+        const auto id = ActionIdentity(action);
+        Plan plan;
+        plan.character = owner.character;
+        plan.ownerEpoch = owner.epoch;
+        plan.storageRevision = expectedStorageRevision;
+        plan.operation = operation;
+        plan.kind = Operation::Entitle;
+        Request decision;
+        decision.Raw(checkpointDigest);
+        decision.Raw(id);
+        plan.request = RequestHash(plan.kind, owner.character, owner.epoch, owner.token, operation,
+                                   expectedStorageRevision, ContentHash(decision.bytes));
+        plan.statements = Preconditions();
+        plan.statements.push_back(
+            {"SELECT character_id FROM mission_engine_characters WHERE character_id=? AND owner_epoch=? "
+             "AND owner_token=? AND storage_revision=? AND checkpoint_digest=? FOR UPDATE",
+             {SqlParam::UInt(owner.character), SqlParam::UInt(owner.epoch),
+              SqlParam::Blob(Bytes(owner.token)), SqlParam::UInt(expectedStorageRevision),
+              SqlParam::Blob(Bytes(checkpointDigest))},
+             {},
+             1});
+        plan.statements.push_back(
+            {"SELECT action_id FROM mission_engine_action_outbox WHERE action_id=? AND character_id=? "
+             "AND mission_id=? AND definition_version=? AND instance_id=? AND node_id=? AND reward_id=? "
+             "AND action_state=1 AND first_storage_revision<=? FOR UPDATE",
+             {SqlParam::Blob(Bytes(id)), SqlParam::UInt(owner.character), SqlParam::Blob(action.mission),
+              SqlParam::UInt(action.version), SqlParam::UInt(action.instance), SqlParam::Blob(action.node),
+              SqlParam::Blob(action.reward), SqlParam::UInt(expectedStorageRevision)},
+             {},
+             1});
+        plan.statements.push_back(
+            {"INSERT INTO mission_engine_reward_ledger(action_id,owner_epoch,storage_revision) VALUES(?,?,?)",
+             {SqlParam::Blob(Bytes(id)), SqlParam::UInt(owner.epoch),
+              SqlParam::UInt(expectedStorageRevision)},
+             1,
+             {}});
+        plan.statements.push_back(
+            {"UPDATE mission_engine_action_outbox SET action_state=3 WHERE action_id=? AND action_state=1",
+             {SqlParam::Blob(Bytes(id))},
+             1,
+             {}});
+        Receipt(plan);
+        return plan;
+    }
+    catch (const std::exception &error)
+    {
+        return Invalid("entitlement", error);
+    }
+}
+ReadCommand ReadAction(Owner owner, const ActionKey &action)
+{
+    CheckOwner(owner);
+    Need(action.character == owner.character, "Action belongs to a different character");
+    const auto id = ActionIdentity(action);
+    return {"SELECT o.action_id,o.character_id,o.mission_id,o.definition_version,o.instance_id,o.node_id,"
+            "o.reward_id,o.definition_digest,o.action_state,o.first_storage_revision,c.storage_revision,"
+            "c.checkpoint_digest,l.owner_epoch,l.storage_revision "
+            "FROM mission_engine_characters c JOIN mission_engine_action_outbox o ON "
+            "o.character_id=c.character_id "
+            "LEFT JOIN mission_engine_reward_ledger l ON l.action_id=o.action_id "
+            "WHERE c.character_id=? AND c.owner_epoch=? AND c.owner_token=? AND o.action_id=?",
+            {SqlParam::UInt(owner.character), SqlParam::UInt(owner.epoch), SqlParam::Blob(Bytes(owner.token)),
+             SqlParam::Blob(Bytes(id))}};
+}
+ActionRead DecodeAction(Message &message, Owner owner, const ActionKey &action)
+{
+    if (message.uiSQLErrno)
+        return {ReadStatus::SqlError, {}};
+    try
+    {
+        CheckOwner(owner);
+        Need(action.character == owner.character, "Wrong action owner");
+        const auto id = ActionIdentity(action);
+        const auto row = ReadSingle(message, 14);
+        if (!row.cells)
+            return {ReadStatus::Missing, {}};
+        ActionRecord record;
+        record.id = row.Binary<32>(0);
+        record.key = {uint32_t(row.UInt(1, UINT32_MAX)), std::string(row.Text(2)),
+                      uint32_t(row.UInt(3, UINT32_MAX)), row.UInt(4),
+                      std::string(row.Text(5)),          std::string(row.Text(6))};
+        Need(record.key == action && record.id == id, "Action tuple/hash differs");
+        record.definition = row.Binary<32>(7);
+        const auto state = row.UInt(8, 3);
+        Need(state >= 1, "Invalid action state");
+        record.state = ActionState(state);
+        record.firstStorageRevision = row.UInt(9, UINT64_MAX - 1);
+        record.currentStorageRevision = row.UInt(10, UINT64_MAX - 1);
+        record.checkpoint = row.Binary<32>(11);
+        Need(record.firstStorageRevision && record.firstStorageRevision <= record.currentStorageRevision,
+             "Invalid action revision");
+        if (record.state == ActionState::Entitled)
+        {
+            record.entitlementEpoch = row.UInt(12);
+            record.entitlementStorageRevision = row.UInt(13);
+            Need(record.entitlementEpoch && record.entitlementEpoch <= owner.epoch &&
+                     record.entitlementStorageRevision >= record.firstStorageRevision &&
+                     record.entitlementStorageRevision <= record.currentStorageRevision,
+                 "Invalid entitlement receipt");
+        }
+        else
+            Need(!row.Present(12) && !row.Present(13), "Unexpected entitlement on pending/cancelled action");
+        return {ReadStatus::Found, std::move(record)};
+    }
+    catch (const std::exception &)
+    {
+        return {ReadStatus::Invalid, {}};
+    }
+}
 ReadCommand ReadHead(CharacterId character)
 {
     Need(character, "Invalid character head identity");
@@ -363,13 +583,13 @@ HeadResult DecodeHead(Message &message, CharacterId character)
 ReadCommand ReadSnapshot(Owner owner)
 {
     CheckOwner(owner);
-    return {
-        "SELECT character_id,owner_epoch,owner_token,storage_revision,runtime_revision,checkpoint_time,"
-        "checkpoint_digest,CASE WHEN checkpoint_bytes IS NULL OR OCTET_LENGTH(checkpoint_bytes) BETWEEN 64 AND ? "
-        "THEN checkpoint_bytes ELSE X'' END FROM mission_engine_characters WHERE character_id=? AND "
-        "owner_epoch=? AND owner_token=?",
-        {SqlParam::UInt(CheckpointBytes), SqlParam::UInt(owner.character), SqlParam::UInt(owner.epoch),
-         SqlParam::Blob(Bytes(owner.token))}};
+    return {"SELECT character_id,owner_epoch,owner_token,storage_revision,runtime_revision,checkpoint_time,"
+            "checkpoint_digest,CASE WHEN checkpoint_bytes IS NULL OR OCTET_LENGTH(checkpoint_bytes) BETWEEN "
+            "64 AND ? "
+            "THEN checkpoint_bytes ELSE X'' END FROM mission_engine_characters WHERE character_id=? AND "
+            "owner_epoch=? AND owner_token=?",
+            {SqlParam::UInt(CheckpointBytes), SqlParam::UInt(owner.character), SqlParam::UInt(owner.epoch),
+             SqlParam::Blob(Bytes(owner.token))}};
 }
 SnapshotResult DecodeSnapshot(Message &message, Owner owner)
 {
@@ -419,8 +639,8 @@ ReadCommand ReadDefinitionArchive(const DefinitionReference &reference)
         "THEN p.package_bytes ELSE X'' END FROM mission_engine_definitions d JOIN mission_engine_packages p "
         "ON p.package_digest=d.package_digest WHERE d.mission_id=? AND d.definition_version=? AND "
         "d.definition_digest=?",
-        {SqlParam::UInt(PackageLimits::Bytes), SqlParam::Blob(reference.mission), SqlParam::UInt(reference.version),
-         SqlParam::Blob(Bytes(reference.fingerprint))}};
+        {SqlParam::UInt(PackageLimits::Bytes), SqlParam::Blob(reference.mission),
+         SqlParam::UInt(reference.version), SqlParam::Blob(Bytes(reference.fingerprint))}};
 }
 PackageLoad DecodeDefinitionArchive(Message &message, const DefinitionReference &reference)
 {

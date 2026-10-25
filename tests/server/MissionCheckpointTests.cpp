@@ -1,3 +1,4 @@
+#include "../../SRC/Server/GameServer/mission/MissionActions.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionCheckpointCodec.hpp"
 #include "MissionPersistenceFixture.hpp"
 #include <algorithm>
@@ -186,6 +187,100 @@ void LargeCheckpoint()
     checkpoint.instances.at(1).nodes[0].subjects.insert("overflow");
     Check(!EncodeCheckpoint(checkpoint, registry), "distinct subject capacity exceeded");
 }
+void ActionIdentities()
+{
+    DefinitionRegistry registry;
+    Check(registry.Activate(Definitions()).status == Publication::Status::Published,
+          "action definitions rejected");
+    MissionRuntime runtime(registry, {42, 17}, 1000);
+    Progress(runtime, {42, 17});
+    auto batch = CheckpointActionBatch(runtime.Save(), registry);
+    Check(bool(batch) && batch.actions.size() == 1 && !batch.actions[0].acknowledged &&
+              batch.actions[0].key == runtime.PendingActions().front(),
+          "action projection differs from runtime");
+    const auto original = batch.actions.front();
+    std::string golden;
+    for (uint8_t byte : original.id)
+    {
+        golden += "0123456789abcdef"[byte >> 4];
+        golden += "0123456789abcdef"[byte & 15];
+    }
+    Check(golden == "61015101d36be1429ab831495faa358506b922cd945a37e064c60ebf88e991ee",
+          "stable action wire identity changed");
+    std::set<ContentDigest> ids{original.id};
+    for (size_t field = 0; field < 6; ++field)
+    {
+        auto key = original.key;
+        switch (field)
+        {
+        case 0:
+            ++key.character;
+            break;
+        case 1:
+            key.mission += ".other";
+            break;
+        case 2:
+            ++key.version;
+            break;
+        case 3:
+            ++key.instance;
+            break;
+        case 4:
+            key.node += ".other";
+            break;
+        case 5:
+            key.reward += ".other";
+            break;
+        }
+        Check(ids.insert(ActionIdentity(key)).second, "action identity omitted a tuple field");
+    }
+    auto left = original.key, right = original.key;
+    left.node = "ab";
+    left.reward = "c";
+    right.node = "a";
+    right.reward = "bc";
+    Check(ActionIdentity(left) != ActionIdentity(right), "ambiguous action string boundaries");
+    MissionRuntime resumed(registry, {42, 999}, 1002);
+    Accepted(resumed.Restore(runtime.Save(), 1002));
+    Check(CheckpointActionBatch(resumed.Save(), registry).actions.front().id == original.id,
+          "action identity depends on session");
+    Accepted(resumed.Acknowledge(original.key, 1003));
+    batch = CheckpointActionBatch(resumed.Save(), registry);
+    Check(bool(batch) && batch.actions.size() == 1 && batch.actions.front().acknowledged &&
+              batch.actions.front().id == original.id,
+          "acknowledgement changed action identity");
+    Accepted(runtime.Abandon(10, 1003));
+    Check(CheckpointActionBatch(runtime.Save(), registry).actions.empty(), "cancelled action stayed pending");
+
+    Definition bulk;
+    bulk.id = "bulk.actions";
+    bulk.version = 1;
+    bulk.root = "root";
+    auto root = NodeOf("root", NodeKind::Parallel);
+    root.parallel = ParallelPolicy::All;
+    for (size_t i = 0; i < CheckpointActions + 1; ++i)
+    {
+        auto reward = NodeOf("reward." + std::to_string(i), NodeKind::Reward);
+        reward.reward = "bulk.reward";
+        root.children.push_back(reward.id);
+        bulk.nodes.push_back(reward);
+    }
+    bulk.nodes.insert(bulk.nodes.begin(), root);
+    DefinitionRegistry many;
+    Check(many.Activate({bulk}).status == Publication::Status::Published, "bulk action graph invalid");
+    MissionRuntime overflowing(many, {43, 1}, 0);
+    Accepted(overflowing.Start(bulk.id, 1, 1, 0));
+    auto excess = CheckpointActionBatch(overflowing.Save(), many);
+    Check(!excess && excess.actions.empty(), "action capacity silently truncated a batch");
+    bulk.nodes.pop_back();
+    bulk.nodes.front().children.pop_back();
+    DefinitionRegistry bounded;
+    Check(bounded.Activate({bulk}).status == Publication::Status::Published, "bounded action graph invalid");
+    MissionRuntime maximum(bounded, {43, 1}, 0);
+    Accepted(maximum.Start(bulk.id, 1, 1, 0));
+    batch = CheckpointActionBatch(maximum.Save(), bounded);
+    Check(bool(batch) && batch.actions.size() == CheckpointActions, "exact action bound rejected");
+}
 } // namespace
 int main()
 {
@@ -194,6 +289,7 @@ int main()
         RoundTripAndHistory();
         InvalidAndMutated();
         LargeCheckpoint();
+        ActionIdentities();
         std::cout << "Mission checkpoint: " << checks << " checks passed\n";
         return 0;
     }

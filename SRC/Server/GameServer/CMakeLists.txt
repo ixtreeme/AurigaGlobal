@@ -91,6 +91,7 @@ set(_mission_persistence_sources
     mission/MissionRuntime.cpp
     mission/MissionCheckpoint.cpp
     mission/MissionCheckpointCodec.cpp
+    mission/MissionActions.cpp
 )
 add_executable(MissionCheckpointTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionCheckpointTests.cpp
@@ -512,6 +513,8 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --test-executable $<TARGET_FILE:MissionPersistenceTests>
             --work-dir ${CMAKE_BINARY_DIR}/mission-persistence-isolated
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_persistence.sql
+            --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_actions.sql
+            --drop-commit-count 2
             --followup-argument=--cold-check
             --crash-server-before-followup
     )
