@@ -66,7 +66,10 @@ fel. Ezt a `17a8314a` commit teljes result-drainnel és egy munkaként birtokolt
 prepared tranzakcióval javította; a részletes szerződés és a MariaDB-próbák a
 `mission_persistence_sql_2026-10-25.md` dokumentumban találhatók.
 A külön queue-ba küldött BEGIN/UPDATE/COMMIT továbbra sem használható
-biztonságos tranzakciós store-ként; a Mission-specifikus tartós store még következik.
+biztonságos tranzakciós store-ként. Az erre az alapra épített saját séma,
+checkpoint/archívum/store és fencing-primitívek a 4/B fázisban elkészültek;
+lásd a `mission_persistence_store_2026-10-25.md` dokumentumot. Az éles
+session-/gameplay-bekötés és a jutalomledger még következik.
 
 A `LuaOpenQuestLibraries`, `questlua_*.cpp`, `questmanager/questpc`, a régi
 questpacketek és a data gyökerében levő Lua-beállítások továbbra is valós
@@ -219,6 +222,11 @@ A 2. lépés SQL-végrehajtási alapja elkészült: egy munkaként kezelt prepar
 tranzakció, teljes result-drain, bináris eredményhosszak és valódi MariaDB
 hibapróbák. A pontos szerződés és a még hátralévő domain store/ledger munka:
 [mission_persistence_sql_2026-10-25.md](mission_persistence_sql_2026-10-25.md).
+
+A későbbi 4/B frissítésben a domain store, csomagarchívum és a fencing/CAS
+adatbázis-primitívek is elkészültek. Újraindítás, párhuzamos mentés és
+bizonytalan commit próbáik sikeresek. A következő új domain-rész az outbox és
+a jutalomledger; a session-koordináció és a gameplay-bekötés még külön feladat.
 
 ## Ellenőrzések
 

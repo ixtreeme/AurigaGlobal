@@ -5,6 +5,11 @@ csomagolás után elkészült a tartós mentéshez szükséges SQL-végrehajtás
 Ez még nem a kész Mission progress store vagy a játékosok jutalmazásának
 bekötése. A migráció és a domain adapterek a következő részfeladatok.
 
+**Későbbi bővítés ugyanazon a napon:** a checkpoint/archívum/store és a
+fencing-primitívek azóta elkészültek; lásd a
+`mission_persistence_store_2026-10-25.md` dokumentumot. A gameplay- és
+jutalmazási integráció továbbra is külön feladat.
+
 ## Megvalósítás
 
 | Fájl | Feladat |
@@ -71,8 +76,10 @@ továbbra sem megengedett.
 
 ### Korlátok és előfeltételek
 
-- Legfeljebb 128 lépés, összesen 4096 paraméter, 64 KiB SQL/lépés és
-  16 MiB összes SQL- és paraméterbájt.
+- A 4/B bővítéssel legfeljebb 512 lépés, összesen 4096 paraméter,
+  64 KiB SQL/lépés és 32 MiB összes SQL- és paraméterbájt.
+- A `SELECT` előfeltétele `expectedResultRows` lehet; módosító statementnél
+  továbbra is az ettől különálló `expectedAffectedRows` használható.
 - Csak rögzített, megbízható szerverkód adhat SQL-t. Az értékek `SqlParam`
   paraméterek; mission-csomag, kliens vagy Studio nem adhat tetszőleges SQL-t.
 - Engedélyezett kezdő műveletek: `SELECT`, `INSERT`, `UPDATE`, `DELETE`.

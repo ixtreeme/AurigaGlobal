@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-25
 - **Szerverág:** `codex/mission-engine`
-- **Az összesítő alapjául szolgáló kódcommit:** `17a8314a`
+- **Aktuális kódcommit:** `9d33889f`; az alap 4/B megvalósítás `b45ed489`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -12,11 +12,13 @@ tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
 Elkészült és tesztelt az önálló natív küldetésmotor magja, a verziózott
 `.aurmission` csomag fordítója/betöltője, az atomi katalógusaktiválás és a
 megbízható adatbázismentéshez szükséges prepared tranzakciós infrastruktúra.
+Elkészült a saját additív Mission-séma, a tartós checkpoint codec/store és
+a pontos régi csomagok/definíciók archívuma is, owner-fencinggel és mentési nyugtákkal.
 
 A teljes, játékosok által használható új küldetésrendszer még nincs bekötve.
-A Mission-specifikus adatbázisséma és tartós progress store, az egyszeri
-jutalmazás, a gameplay-események, az NPC-dialógus, az új Unity-felület és a
-Mission Studio a következő munkafázisok. A tesztelt alapok elkészülte nem
+A session-/core-életciklus persistence-bekötése, az egyszeri jutalmazás,
+a gameplay-események, az NPC-dialógus, az új Unity-felület és a
+Mission Studio a következő munkafázisok. A tesztelt rétegek elkészülte nem
 jelent kész kampányt vagy éles telepítési engedélyt.
 
 ## 2. Rögzített döntések
@@ -91,11 +93,12 @@ A jelenlegi végrehajtási modell strukturált fa, nem tetszőleges adatfolyamgr
 
 **Fontos határ:** a 32 típus nem 32 kész gameplay-szolgáltatás. A teljes
 208-as vizuális katalógus még nincs megvalósítva. A csomaghash nem digitális
-aláírás. A csomag-/definíciótörténet jelenleg memóriában marad meg; hideg
-újraindításhoz tartós archiválás kell. A production aktiválás a szükséges
+aláírás. A csomag-/definíciótörténethez már van tartós archívum és a pontos
+régi verziókat az aktív katalógus módosítása nélkül importáló `Retain` API.
+A production aktiválás a szükséges
 natív bindingok hiányában elutasítja a bekötetlen tartalmat.
 
-### 3.4. SQL-végrehajtási alap – legutóbb elkészült rész
+### 3.4. SQL-végrehajtási alap – 4/A
 
 - Egy queue-munkaként végrehajtott, tulajdonolt prepared tranzakciók.
 - A lépések közé nem kerül más SQL-munka; tranzakción belül nincs automatikus
@@ -110,10 +113,24 @@ natív bindingok hiányában elutasítja a bekötetlen tartalmat.
 - Bináris eredményhosszak kezelése beágyazott NUL-bájtokkal és nagy cellákkal.
 - Elkülönített MariaDB-tesztkörnyezet és COMMIT-választ eldobó tesztproxy.
 
-**Fontos határ:** ez a mentés infrastruktúrája. A saját `mission_sql_*`
-teszttáblák nem a végleges Mission-séma. A Mission-állapot, dedup és jutalom
-még nincs ezen keresztül tartósan elmentve. Az SQL-teszt receiptje nem a kész
-Mission-jutalomledger vagy inventory-kézbesítés.
+**Fontos határ:** a saját `mission_sql_*` teszttáblák továbbra is a generic
+SQL-alap próbái. A tényleges Mission store külön `mission_engine_*` sémát
+használ az alábbiak szerint. A mentési receipt nem jutalomledger.
+
+### 3.5. Tartós Mission store és csomagarchívum – 4/B
+
+- Hat saját InnoDB-tábla; régi táblák és játékosadatok módosítása nélkül.
+- Determinisztikus, hash-elt, korlátos checkpoint, pontos gráftartalom-lenyomatokkal.
+- Teljes progress, flag/choice, eseménydedup, időzítő és pending reward-kulcs visszatöltése.
+- Eredeti `.aurmission` csomagok és immutable mission ID/verzió/tartalom archiválása.
+- Claim/save/release prepared tervek, növekvő owner-epoch és 128 bites token.
+- Külön storage- és runtime-revízió, CAS, tartós műveletazonosító és kéréslenyomat.
+- Bizonytalan commit egyeztetése az eredeti írót megváró, aktuális zároló olvasással.
+- Valódi adatbázis-crash/restart után új C++ folyamatban ellenőrzött cold restore.
+
+**Fontos határ:** a persistence API kész, az éles session-/core-koordináció
+még nem hívja. Nincs automatikus lease/failover. Outbox, jutalomledger és
+tényleges jutalomkézbesítés még nincs. A réteg nem kapcsolja be magát játékosokra.
 
 ## 4. Ellenőrzött eredmények
 
@@ -122,11 +139,13 @@ Mission-jutalomledger vagy inventory-kézbesítés.
 | Windows x64 / RelWithDebInfo fordítás | GameServer, Database, LoginServer |
 | Natív Mission core | 8723 ellenőrzés |
 | Csomagkezelés | 4842 ellenőrzés |
-| SQL-egységtesztek | 2220 ellenőrzés |
-| Valódi, elkülönített MariaDB | 204 ellenőrzés |
-| Célzott regressziós CTest-kör | 25/25 sikeres |
-| Külön AddressSanitizer CTest-kör | 5/5 sikeres |
-| SQL-egységteszt és valódi MariaDB ASAN alatt | Sikeres |
+| Checkpoint codec | 3210 ellenőrzés |
+| SQL-egységtesztek | 2232 ellenőrzés |
+| Valódi SQL-infrastruktúra | 204 ellenőrzés |
+| Valódi Mission store és új folyamatban cold restore | 270 + 21 ellenőrzés a rögzített futásban |
+| Célzott regressziós CTest-kör | 27/27 sikeres |
+| Külön AddressSanitizer CTest-kör | 6/6 sikeres |
+| Mindkét valódi MariaDB-suite ASAN alatt | Sikeres, crash/restarttal is |
 
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
@@ -153,20 +172,23 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 | `89bf2d43` | `.aurmission` compiler/loader és atomi aktiválás |
 | `92e43a98` | Node-leltár, kampánymanifest és dokumentáció |
 | `17a8314a` | Prepared tranzakciós alap és valódi MariaDB hibapróbák |
+| `dc705479` | Az első állapotösszesítő és folytatási terv |
+| `b45ed489` | Tartós checkpoint, csomagarchívum és owner-fencing, valódi crash/cold-process próbákkal |
+| `9d33889f` | Bináris SQL-eredmények méretkorlátja már a kliensoldali pufferelés előtt |
 
 A korábbi Unity BattlePass-kivezetés rögzített változata: **Unity Version
 Control changeset 30**, `/main/codex-mission-engine` ág. Ez a régi felület
 kivezetése, nem az új Mission kliens elkészülte. A jelen összesítéshez nem
 történt új Unity-módosítás vagy checkin.
 
-A kód az összesítés megkezdésekor commitolva volt, a Git-munkafa tiszta.
-Ez az összesítő és a kapcsolódó dokumentációs pontosítás külön commitba kerül.
+A 4/B munkafázis elkészült megvalósítását és próbáit a
+`mission_persistence_store_2026-10-25.md` dokumentum részletezi.
 
 ## 6. Folytatás – javasolt, függőségek szerinti sorrend
 
 ### 1. Mission-séma, checkpoint codec és csomagarchívum
 
-**Ezzel folytatom a fejlesztést.**
+**A 4/B részfázisban elkészült**, az alábbi elfogadással együtt.
 
 - Külön, additív MariaDB-migráció; meglévő BattlePass-, Mission Pass- és
   játékosadatok törlése nélkül.
@@ -181,16 +203,25 @@ vissza; hiányzó vagy sérült verziót nem helyettesít csendben a legújabbal
 
 ### 2. Karaktertulajdonlás, revision és mentési egyeztetés
 
-- Tartós owner/session-fencing: egy régi core vagy kijelentkezett session
+**A DB-primitívek elkészültek:** owner-epoch/token, revision/CAS és tartós
+operation receipt/egyeztetés. A szerver session-/core-életciklusának hiteles
+koordinátora és az aszinkron callbackek bekötése még hátravan.
+
+- [x] Tartós DB-owner-fencing: egy korábbi owner késői írásának elutasítása.
+- [ ] Hiteles session-/core-koordináció: egy régi core vagy kijelentkezett session
   késői válasza ne írhassa felül az új tulajdonos állapotát.
-- Progress, dedup és stabil mentési műveletazonosító közös tranzakciója.
-- Revision/CAS alapú mentés és `CommitUnknown` egyeztetése friss kapcsolaton.
-- Aszinkron válasznál karakter/session/generáció újraellenőrzése az ECS elérése előtt.
+- [x] Progress, dedup és stabil mentési műveletazonosító közös tranzakciója.
+- [x] Revision/CAS alapú mentés és `CommitUnknown` egyeztetése friss kapcsolaton.
+- [ ] Aszinkron válasznál karakter/session/generáció újraellenőrzése az ECS elérése előtt.
 
 **Elfogadás:** két core versenyében egy állapot nyer; reconnect, régi callback
 vagy elveszett válasz nem okoz állapotvesztést vagy kétszeres eseménybeszámítást.
 
 ### 3. Action outbox és egyszeri jutalmazás
+
+**A következő új domain-munkarész.** Ezzel párhuzamosan a session-életciklus
+integrációját a kész fencing-primitívekre kell tervezni; gameplay-hatás csak
+az igazolt jutalmazás és koordináció után kapcsolható be.
 
 - Tartós action outbox és jutalomledger a progress mentésével közös tranzakcióban.
 - A még érvényes action, karakter, definícióverzió és revision ellenőrzése.
@@ -203,6 +234,10 @@ kézbesítés közbeni crash esetén sincs jutalomduplázás vagy elvesző jogos
 Az SQL-tranzakción kívüli ECS-hatásokhoz külön egyeztetési mechanizmus kell.
 
 ### 4. A valódi Mission store hibapróbái
+
+A checkpoint-/archívum-/fencing-réteg crash-, race-, reconnect- és hideg
+újraindítási próbái már sikeresek. A jutalomkézbesítési és outbox/ledger
+hibapróbák a következő réteggel együtt készülnek.
 
 - Hideg újraindítás, régi csomagverzió, hot reload és rollback együtt.
 - Crash a mentés előtt/után és a jutalomkézbesítés különböző pontjain.
@@ -252,5 +287,6 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Natív mag és futási szerződések](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_core_2026-10-25.md)
 - [Node Library átvezetés és csomagformátum](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_delta_2026-10-25.md)
 - [Prepared tranzakciós alap és hibapróbák](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_persistence_sql_2026-10-25.md)
+- [Tartós checkpoint/store, csomagarchívum és fencing](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_persistence_store_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
 - [80-as kampány tervezési manifestje](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_campaign_manifest_2026-10-25.json)

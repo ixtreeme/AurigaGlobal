@@ -145,3 +145,17 @@ A szerverek és a Unity kliens együtt frissítendők; éles adatbázis-migráci
 Az átállás utáni izolált MariaDB 12.2.2 ellenőrzés: **102 tábla, 365 előkészített és
 végrehajtott SQL, 169 sémainvariáns, 6 migrációs ellenőrzés, 0 feloldatlan hiba**.
 
+## Mission Engine persistence réteg
+
+Az új Mission Engine külön, additív migrációja:
+`migrations/2026-10-25_mission_engine_persistence.sql`. A konfigurált player
+adatbázist a hívónak kell kiválasztania; a fájl nem vált adatbázist és nem
+töröl vagy módosít régi BattlePass-/Mission Pass-/questtáblát. Hat saját
+`mission_engine_*` InnoDB-táblát hoz létre. A base schema alkalmazása önmagában
+ezt az opcionális modult még nem telepíti.
+
+A persistence réteg jelenleg elkülönített MariaDB-példányon tesztelt;
+a GameServer session-/gameplay-bekötése és a jutalomledger még következik.
+A migráció éles alkalmazása külön telepítési munkafázis. Részletek:
+`docs/mission_persistence_store_2026-10-25.md` a forrásgyökér alatt.
+

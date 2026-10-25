@@ -4,7 +4,9 @@ Az aznapi Node Library specifikációval bővített állapotot és a módosítot
 sorrendet a `mission_node_library_delta_2026-10-25.md` dokumentálja. Az új
 motorhoz nincs Lua-extension; a meglévő Lua csak a még nem migrált régi
 alrendszerek miatt marad. Az alábbi mag azóta `.aurmission` csomagolást,
-típusregisztert és katalógusaktiválást is kapott.
+típusregisztert és katalógusaktiválást is kapott. Az azóta elkészült külön
+tartós checkpoint/store réteget a `mission_persistence_store_2026-10-25.md`
+dokumentálja; a mag `Save()` hívása továbbra is memóriaértéket ad.
 
 ## Elkészült fázis
 
@@ -14,8 +16,9 @@ a küldetésfát, és indexelt eseményekből, tényekből, illetve határidőkb
 számít állapotátmeneteket. Játékvilág, SQL, EnTT registry és Lua VM nélkül
 tesztelhető.
 
-Ez még nem a játékba bekötött teljes Mission Engine. Nincs új klienspacket,
-adatbázis-migráció, tárgyjóváírás, NPC/dialógus adapter vagy Mission Studio.
+Ez még nem a játékba bekötött teljes Mission Engine. A külön additív
+adatbázis-migráció és persistence API már elkészült; új klienspacket,
+tárgyjóváírás, NPC/dialógus adapter és Mission Studio még nincs.
 A régi NPC-questmotor a tartalom igazolt átvezetéséig működik. A szezonális
 Mission Pass külön szolgáltatás marad.
 
