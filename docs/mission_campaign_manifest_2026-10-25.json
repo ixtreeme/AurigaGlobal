@@ -1,0 +1,748 @@
+{
+  "schema": 1,
+  "status": "verified_design_manifest_not_playable_content",
+  "source_sha256": "c4a2076b9e06cb4e406ed766d76844597767a1f89c0fe33eeed8830fb8395307",
+  "counts": {
+    "main": 10,
+    "side": 64,
+    "secret": 6
+  },
+  "act_counts": {
+    "1": 16,
+    "2": 16,
+    "3": 16,
+    "4": 16,
+    "5": 16
+  },
+  "m06_gate": {
+    "supported_policies": [
+      "any_of",
+      "at_least_n"
+    ],
+    "threshold_for_two_methods": 2,
+    "selected_policy": null,
+    "selection": "explicit authoring choice before campaign compilation"
+  },
+  "missions": [
+    {
+      "id": "M01",
+      "act": 1,
+      "title": "A névtelen levél",
+      "objective": "Speak to captain and inspect damaged royal letter.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "A01",
+      "act": 1,
+      "title": "A törött kard",
+      "objective": "Collect three iron fragments and repair courier sword.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "A02",
+      "act": 1,
+      "title": "A kovács pecsétje",
+      "objective": "Inspect sword maker's mark and identify original smith.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B01",
+      "act": 1,
+      "title": "A gyanús idegen",
+      "objective": "Identify stranger from three witness accounts.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B02",
+      "act": 1,
+      "title": "Árnyék a sikátorban",
+      "objective": "Tail suspect; on detection recover trail through clues.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C01",
+      "act": 1,
+      "title": "A megtámadott karaván",
+      "objective": "Defeat five bandits and rescue merchant.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C02",
+      "act": 1,
+      "title": "A banditavezér",
+      "objective": "Defeat leader using telegraphed combat patterns.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D01",
+      "act": 1,
+      "title": "Az ősi felirat",
+      "objective": "Locate three inscription fragments.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D02",
+      "act": 1,
+      "title": "A három rúna",
+      "objective": "Determine correct order of three runes.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "E01",
+      "act": 1,
+      "title": "A hiányzó szállítmány",
+      "objective": "Compare manifest and locate missing crate.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "F01",
+      "act": 1,
+      "title": "Az erdei jelzés",
+      "objective": "Follow four environmental markers to camp.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "G01",
+      "act": 1,
+      "title": "Az elveszett gyermek",
+      "objective": "Find missing child and escort home.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "S01",
+      "act": 1,
+      "title": "A levél második oldala",
+      "objective": "Reveal invisible ink and discover location.",
+      "kind": "secret",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "S02",
+      "act": 1,
+      "title": "A kereskedő tartozása",
+      "objective": "After C01 and G01 unlock merchant backstory.",
+      "kind": "secret",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M02",
+      "act": 1,
+      "title": "Az első bizonyíték",
+      "objective": "Obtain three distinct evidence sources and identify seal.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "H01",
+      "act": 1,
+      "title": "A tiltott amulett",
+      "objective": "After D02 choose to retain or surrender artifact.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M03",
+      "act": 2,
+      "title": "A tanács meghívása",
+      "objective": "Meet representatives of three alliances.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "A03",
+      "act": 2,
+      "title": "A mester próbája",
+      "objective": "Craft two different lock parts.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "A04",
+      "act": 2,
+      "title": "Az elfeledett tervrajz",
+      "objective": "Obtain blueprint through D02 or F01; craft test key.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B03",
+      "act": 2,
+      "title": "Az informátor ára",
+      "objective": "Obtain two credible intelligence items.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B04",
+      "act": 2,
+      "title": "Kettős ügynök",
+      "objective": "Identify double agent from contradictions.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C03",
+      "act": 2,
+      "title": "A három bajnok",
+      "objective": "Defeat three combat styles.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C04",
+      "act": 2,
+      "title": "A bajnok esküje",
+      "objective": "Earn support by duel or prior assistance.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D03",
+      "act": 2,
+      "title": "A könyvtár titka",
+      "objective": "Locate a book from archival clues.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D04",
+      "act": 2,
+      "title": "Az elveszett krónika",
+      "objective": "Reconstruct event chronology from five clues.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "E02",
+      "act": 2,
+      "title": "Az alku",
+      "objective": "Choose suitable offer from three trade contracts.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "E03",
+      "act": 2,
+      "title": "A kereskedők bizalma",
+      "objective": "Resolve logistics conflict via diplomacy or assistance.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "G02",
+      "act": 2,
+      "title": "A falu tanácsa",
+      "objective": "Help three villagers and win council support.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "S03",
+      "act": 2,
+      "title": "A negyedik szövetség",
+      "objective": "B04 + D04 reveal secret society.",
+      "kind": "secret",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "S04",
+      "act": 2,
+      "title": "A névtelen támogató",
+      "objective": "S02 or H01 reveals secret patron.",
+      "kind": "secret",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M04",
+      "act": 2,
+      "title": "A szövetség pecsétje",
+      "objective": "Gain two distinct alliances' support.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "H02",
+      "act": 2,
+      "title": "A fekete szerződés",
+      "objective": "Accept or reject forbidden contract.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M05",
+      "act": 3,
+      "title": "A lezárt kapu",
+      "objective": "Examine gate and identify three opening methods.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "A05",
+      "act": 3,
+      "title": "A mesterkulcs",
+      "objective": "Craft key using A03 and A04.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "A06",
+      "act": 3,
+      "title": "A törhetetlen zár",
+      "objective": "Solve mechanical lock puzzle; fallback on failure.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B05",
+      "act": 3,
+      "title": "A titkos átjáró",
+      "objective": "Discover secret entrance from informant clues.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B06",
+      "act": 3,
+      "title": "Az őrség megtévesztése",
+      "objective": "Pass guards via forged orders or stealth.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C05",
+      "act": 3,
+      "title": "A kapu őrzője",
+      "objective": "Defeat three-phase mini-boss.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C06",
+      "act": 3,
+      "title": "A gyenge pont",
+      "objective": "Neutralize two empowering crystals.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D05",
+      "act": 3,
+      "title": "A pecsétek nyelve",
+      "objective": "Decode four magical symbols.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D06",
+      "act": 3,
+      "title": "A mágikus zár",
+      "objective": "Break magical seal using acquired knowledge.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "F02",
+      "act": 3,
+      "title": "A régi térkép",
+      "objective": "Assemble four map fragments.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "F03",
+      "act": 3,
+      "title": "A föld alatti út",
+      "objective": "Discover passage and disarm two traps.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "H03",
+      "act": 3,
+      "title": "Az átok megtörése",
+      "objective": "Cleanse curse or accept story consequences.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "S05",
+      "act": 3,
+      "title": "A kapu mögötti hang",
+      "objective": "H01 + D06 unlock spectral dialogue.",
+      "kind": "secret",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "S06",
+      "act": 3,
+      "title": "Az ötödik pecsét",
+      "objective": "F03 + D05 uncover hidden seal.",
+      "kind": "secret",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M06",
+      "act": 3,
+      "title": "A kapu megnyitása",
+      "objective": "Apply two distinct valid gate-opening preparations.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "G03",
+      "act": 3,
+      "title": "A sérült expedíció",
+      "objective": "Heal or rescue three explorers.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M07",
+      "act": 4,
+      "title": "A megtalált vallomás",
+      "objective": "Inspect confession and identify three suspects.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B07",
+      "act": 4,
+      "title": "A három hazugság",
+      "objective": "Compare three accounts with four pieces of evidence.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B08",
+      "act": 4,
+      "title": "A hamis bizonyíték",
+      "objective": "Prove forgery or pursue alternate lead.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D07",
+      "act": 4,
+      "title": "A megszakított krónika",
+      "objective": "Restore missing timeline events.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D08",
+      "act": 4,
+      "title": "A király utolsó parancsa",
+      "objective": "Decode message and choose disclosure.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "E04",
+      "act": 4,
+      "title": "A titkos finanszírozó",
+      "objective": "Trace three commercial transactions.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "E05",
+      "act": 4,
+      "title": "A kereskedő vallomása",
+      "objective": "Confront merchant or offer protection for testimony.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "G04",
+      "act": 4,
+      "title": "A tanúk védelme",
+      "objective": "Protect two witnesses in ambush.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "G05",
+      "act": 4,
+      "title": "A falu ítélete",
+      "objective": "Decide using evidence vs political expedience.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C07",
+      "act": 4,
+      "title": "A palota ostroma",
+      "objective": "Disable three defenses and defeat guard captain.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C08",
+      "act": 4,
+      "title": "Az áruló testőre",
+      "objective": "Duel bodyguard or persuade using prior oath.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "F04",
+      "act": 4,
+      "title": "A titkos menekülőút",
+      "objective": "Find abandoned tunnel exit.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "F05",
+      "act": 4,
+      "title": "A rejtett találkozó",
+      "objective": "Track clandestine meeting via environment.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "H04",
+      "act": 4,
+      "title": "A tiltott igazság",
+      "objective": "Decide whether to use cursed intelligence.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M08",
+      "act": 4,
+      "title": "Az áruló leleplezése",
+      "objective": "Identify suspect using three independent evidence groups.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "A07",
+      "act": 4,
+      "title": "A hamis pecsét",
+      "objective": "Craft or identify counterfeit royal seal.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M09",
+      "act": 5,
+      "title": "A koronaterem",
+      "objective": "Reach crown chamber with three preparation advantages.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "A08",
+      "act": 5,
+      "title": "A korona helyreállítása",
+      "objective": "Restore crown fitting using acquired blueprints.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B09",
+      "act": 5,
+      "title": "Az utolsó informátor",
+      "objective": "Learn final boss weakness.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "B10",
+      "act": 5,
+      "title": "A titkos egyezség",
+      "objective": "Negotiate with or expose enemy ally.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C09",
+      "act": 5,
+      "title": "A királyi őrség",
+      "objective": "Defeat elite guards or use earned support.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "C10",
+      "act": 5,
+      "title": "A korona őrzője",
+      "objective": "Multi-phase boss modified by prior side quests.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D09",
+      "act": 5,
+      "title": "Az örökség megfejtése",
+      "objective": "Solve last crown mystery.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "D10",
+      "act": 5,
+      "title": "A valódi örökös",
+      "objective": "Choose rightful heir from evidence.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "E06",
+      "act": 5,
+      "title": "Az utolsó szállítmány",
+      "objective": "Secure expedition resources.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "E07",
+      "act": 5,
+      "title": "A kereskedők serege",
+      "objective": "Gain logistics support from earlier alliances.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "F06",
+      "act": 5,
+      "title": "Az elfeledett bejárat",
+      "objective": "Find alternate crown chamber entrance.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "F07",
+      "act": 5,
+      "title": "A titkos kamra",
+      "objective": "Discover king's private journal.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "G06",
+      "act": 5,
+      "title": "A nép választása",
+      "objective": "Gain popular support or face consequences.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "G07",
+      "act": 5,
+      "title": "Az új rend",
+      "objective": "Decide future roles of allied factions.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "H05",
+      "act": 5,
+      "title": "A korona átka",
+      "objective": "Break curse or follow forbidden legacy.",
+      "kind": "side",
+      "implementation": "design_only",
+      "content_bindings": null
+    },
+    {
+      "id": "M10",
+      "act": 5,
+      "title": "Az elveszett korona",
+      "objective": "Resolve story based on evidence and prior choices.",
+      "kind": "main",
+      "implementation": "design_only",
+      "content_bindings": null
+    }
+  ]
+}
