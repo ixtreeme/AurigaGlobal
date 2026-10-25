@@ -155,29 +155,13 @@ std::set<TItemAward *> * ItemAwardManager::GetByLogin(const char * c_pszLogin)
 	return &it->second;
 }
 
-void ItemAwardManager::Taken(uint32_t dwAwardID, uint32_t dwItemID)
+void ItemAwardManager::MarkTaken(uint32_t dwAwardID)
 {
-	auto it = m_map_award.find(dwAwardID);
-
-	if (it == m_map_award.end())
-	{
-		LOG_INFO("ITEM_AWARD: Taken ID not exist {}", dwAwardID);
-		return;
-	}
-
-	TItemAward * k = it->second;
-	k->bTaken = true;
-
-	//
-	// Update taken_time in database to prevent not to give him again.
-	//
-	char szQuery[QUERY_MAX_LEN];
-
-	snprintf(szQuery, sizeof(szQuery),
-			"UPDATE item_award SET taken_time=NOW(),item_id=%u WHERE id=%u AND taken_time IS NULL",
-			dwItemID, dwAwardID);
-
-	CDBManager::instance().ReturnQuery(szQuery, QID_ITEM_AWARD_TAKEN, 0, nullptr);
+    const auto it = m_map_award.find(dwAwardID);
+    if (it != m_map_award.end())
+        it->second->bTaken = true;
+    // The database receipt was committed with the item. Never enqueue a second,
+    // independently acknowledged taken UPDATE here.
 }
 
 std::map<uint32_t, TItemAward *>& ItemAwardManager::GetMapAward()

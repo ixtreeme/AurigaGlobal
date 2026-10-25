@@ -42,7 +42,8 @@ class ItemAwardManager : public singleton<ItemAwardManager>
 	void				Load(SQLMsg * pMsg);
 	std::set<TItemAward *> *	GetByLogin(const char * c_pszLogin);
 
-	void				Taken(uint32_t dwAwardID, uint32_t dwItemID);
+	// Cache only: call after confirmed atomic delivery or a settled Taken receipt.
+	void				MarkTaken(uint32_t dwAwardID);
 	
 #ifdef ENABLE_EXTEND_ITEM_AWARD
 		void 				CheckItemAddonType(TItemAward & pkItemAward, const TItemTable & pkItemTable);

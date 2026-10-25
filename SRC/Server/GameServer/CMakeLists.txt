@@ -503,6 +503,24 @@ if(WIN32)
 endif()
 add_test(NAME async_sql_prepared COMMAND AsyncSqlPreparedTests)
 
+# Canonical item_award -> item materialization, including lost COMMIT, real
+# item schema without auto-increment, full boxes and a cold process after crash.
+add_executable(ItemAwardDeliveryTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ItemAwardDeliveryTests.cpp
+    ../Database/ItemAwardDelivery.cpp
+)
+target_link_libraries(ItemAwardDeliveryTests PRIVATE SERVER S_SQL S_Core)
+if(WIN32)
+    target_link_libraries(ItemAwardDeliveryTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    add_custom_command(TARGET ItemAwardDeliveryTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:ItemAwardDeliveryTests>"
+    )
+endif()
+add_test(NAME item_award_delivery COMMAND ItemAwardDeliveryTests --unit)
+
 # Opt-in real database tests. The runner creates its own datadir and loopback
 # port; it never connects to an existing MariaDB service.
 add_executable(AsyncSqlMariaDbTests EXCLUDE_FROM_ALL
@@ -529,6 +547,15 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_persistence.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_actions.sql
             --drop-commit-count 2
+            --followup-argument=--cold-check
+            --crash-server-before-followup
+    )
+    add_test(NAME item_award_delivery_mariadb
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
+            --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
+            --test-executable $<TARGET_FILE:ItemAwardDeliveryTests>
+            --work-dir ${CMAKE_BINARY_DIR}/item-award-delivery-isolated
+            --test-argument ${CMAKE_SOURCE_DIR}/db/schema.sql
             --followup-argument=--cold-check
             --crash-server-before-followup
     )
@@ -854,4 +881,5 @@ set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)
 if(TEST async_sql_mariadb_isolated)
     set_tests_properties(async_sql_mariadb_isolated PROPERTIES TIMEOUT 180 LABELS "server;integration")
     set_tests_properties(mission_persistence_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
+    set_tests_properties(item_award_delivery_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
 endif()

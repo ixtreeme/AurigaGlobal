@@ -201,6 +201,12 @@ SQLMsg * CDBManager::DirectQueryPrepared(const char * c_pszSql, const SqlParams 
 	return m_directSQL[iSlot]->DirectQueryPrepared(c_pszSql, params);
 }
 
+SQLMsg * CDBManager::DirectTransactionPrepared(SqlTransaction transaction, int iSlot)
+{
+	assert(iSlot >= 0 && iSlot < SQL_MAX_NUM);
+	return m_directSQL[iSlot]->DirectTransactionPrepared(std::move(transaction));
+}
+
 unsigned long CDBManager::EscapeString(void *to, const void *from, unsigned long length, int iSlot)
 {
 	assert(iSlot < SQL_MAX_NUM);

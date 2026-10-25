@@ -48,6 +48,8 @@ class CDBManager : public singleton<CDBManager>
 	void			QueryPrepared(const char * c_pszSql, const SqlParams & params, int iSlot = SQL_PLAYER);
 	void			ReturnQueryPrepared(const char * c_pszSql, const SqlParams & params, int iType, uint32_t dwIdent, void * pvData, int iSlot = SQL_PLAYER);
 	SQLMsg *		DirectQueryPrepared(const char * c_pszSql, const SqlParams & params, int iSlot = SQL_PLAYER);
+	// Owns the complete commit boundary; never separate BEGIN/COMMIT queue jobs.
+	SQLMsg *		DirectTransactionPrepared(SqlTransaction transaction, int iSlot = SQL_PLAYER);
 	//SQLMsg *		DirectQuery_ItemShop(const char * c_pszQuery, int iSlot = SQL_ITEMSHOP);
 
 	SQLMsg *		PopResult();

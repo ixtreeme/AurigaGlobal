@@ -22,6 +22,8 @@
 #include "PrivManager.h"
 #include "MoneyLog.h"
 #include "ItemAwardManager.h"
+#include "ItemAwardDelivery.hpp"
+#include <bit>
 #include "Marriage.h"
 #include "ItemIDRangeManager.h"
 #include "Cache.h"
@@ -738,6 +740,55 @@ void CClientManager::QUERY_SAFEBOX_LOAD(CPeer * pkPeer, uint32_t dwHandle, TSafe
 	CDBManager::instance().ReturnQuery(szQuery, QID_SAFEBOX_LOAD, pkPeer->GetHandle(), pi);
 }
 
+namespace
+{
+// One fresh item snapshot after an uncertain/conflicting delivery. The retry
+// does not claim awards, so stale rows can never be published as a loaded box.
+void QuerySafeboxItems(CPeer *pkPeer, CClientManager::ClientHandleInfo *pi, bool allowAwards)
+{
+	char szQuery[QUERY_MAX_LEN];
+	snprintf(szQuery, sizeof(szQuery),
+		"SELECT id, window+0, pos, count, vnum, "
+#ifdef ATTR_LOCK
+		"lockedattr, "
+#endif
+		"socket0, socket1, socket2, "
+		"attrtype0, attrvalue0, "
+		"attrtype1, attrvalue1, "
+		"attrtype2, attrvalue2, "
+		"attrtype3, attrvalue3, "
+		"attrtype4, attrvalue4, "
+		"attrtype5, attrvalue5, "
+		"attrtype6, attrvalue6, "
+		"attrtype7, attrvalue7 "
+
+		"FROM item%s WHERE owner_id=%d AND window='%s'",
+		GetTablePostfix(), pi->account_id, pi->ip[0] == 0 ? "SAFEBOX" : "MALL");
+
+	pi->account_index = allowAwards ? 1 : 2;
+
+	CDBManager::instance().ReturnQuery(szQuery, QID_SAFEBOX_LOAD, pkPeer->GetHandle(), pi);
+}
+
+namespace award_delivery = auriga::item_award;
+award_delivery::Source AwardSource(const TItemAward &award)
+{
+	award_delivery::Source source;
+	source.id = award.dwID;
+	source.login = award.szLogin;
+	source.vnum = award.dwVnum;
+	source.count = award.dwCount;
+	source.mall = award.bMall;
+	source.sockets = {award.dwSocket0, award.dwSocket1, award.dwSocket2};
+#ifdef ENABLE_EXTEND_ITEM_AWARD
+	static_assert(ITEM_ATTRIBUTE_MAX_NUM == 8);
+	for (size_t i = 0; i < source.attributes.size(); ++i)
+		source.attributes[i] = {award.aAttr[i].bType, award.aAttr[i].sValue};
+#endif
+	return source;
+}
+} // namespace
+
 void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 {
 	CQueryInfo * qi = (CQueryInfo *) msg->pvUserData;
@@ -811,28 +862,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 		pi->pSafebox = pSafebox;
 
-		char szQuery[QUERY_MAX_LEN];
-		snprintf(szQuery, sizeof(szQuery),
-				"SELECT id, window+0, pos, count, vnum, "
-#ifdef ATTR_LOCK
-				"lockedattr, "
-#endif
-				"socket0, socket1, socket2, "
-				"attrtype0, attrvalue0, "
-				"attrtype1, attrvalue1, "
-				"attrtype2, attrvalue2, "
-				"attrtype3, attrvalue3, "
-				"attrtype4, attrvalue4, "
-				"attrtype5, attrvalue5, "
-				"attrtype6, attrvalue6, "
-				"attrtype7, attrvalue7 "
-
-				"FROM item%s WHERE owner_id=%d AND window='%s'",
-				GetTablePostfix(), pi->account_id, pi->ip[0] == 0 ? "SAFEBOX" : "MALL");
-
-		pi->account_index = 1;
-
-		CDBManager::instance().ReturnQuery(szQuery, QID_SAFEBOX_LOAD, pkPeer->GetHandle(), pi);
+		QuerySafeboxItems(pkPeer, pi, true);
 	}
 	else
 	{
@@ -856,7 +886,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 		std::set<TItemAward *> * pSet = ItemAwardManager::instance().GetByLogin(pi->login);
 
-		if (pSet && !m_vec_itemTable.empty())
+		if (pi->account_index == 1 && pSet && !m_vec_itemTable.empty())
 		{
 			CGrid grid(5, MAX(1, pi->pSafebox->bSize) * 9);
 			bool bEscape = false;
@@ -872,20 +902,25 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 					break;
 				}
 
-				grid.Put(r.pos, 1, it->second->bSize);
+				if (!grid.Put(r.pos, 1, it->second->bSize))
+				{
+					bEscape = true;
+					LOG_ERROR("Invalid or overlapping safebox placement for item {}", r.id);
+					break;
+				}
 			}
 
 			if (!bEscape)
 			{
-				std::vector<std::pair<uint32_t, uint32_t> > vec_dwFinishedAwardID;
-
 				auto it = pSet->begin();
-
-				char szQuery[QUERY_MAX_LEN];
 
 				while (it != pSet->end())
 				{
-					TItemAward * pItemAward = *it++;
+					// Normalize a local copy. The cache must retain the original SQL
+					// values for retry/content verification after any failure.
+					TItemAward normalized = **it++;
+					TItemAward *pItemAward = &normalized;
+					const auto source = AwardSource(normalized);
 					const uint32_t& dwItemVnum = pItemAward->dwVnum;
 
 					if (pItemAward->bTaken)
@@ -1022,62 +1057,68 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 						ItemAwardManager::instance().CheckItemAttributes(*pItemAward, *pItemTable, m_vec_itemAttrTable);
 						#endif
 						
-						// START_OF_AUTO_QUERY
-						char szColumns[QUERY_MAX_LEN], szValues[QUERY_MAX_LEN];
-						
-						int	iLen = snprintf(szColumns, sizeof(szColumns), "id, owner_id, window, pos, vnum, count");
-						int	iValueLen = snprintf(szValues, sizeof(szValues), "%u, %u, '%s', %d, %u, %u", GainItemID(), pi->account_id, pi->ip[0] == 0 ? "SAFEBOX" : "MALL", iPos, pItemAward->dwVnum, pItemAward->dwCount);
-
-						iLen += snprintf(szColumns + iLen, sizeof(szColumns) - iLen, ", socket0, socket1, socket2");
-						iValueLen += snprintf(szValues + iValueLen, sizeof(szValues) - iValueLen, ", %u, %u, %u", pItemAward->dwSocket0, pItemAward->dwSocket1, dwSocket2);
-
-						for (size_t i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-						{
-							iLen += snprintf(szColumns + iLen, sizeof(szColumns) - iLen, ", attrtype%llu, attrvalue%llu", i, i);
-							iValueLen += snprintf(szValues + iValueLen, sizeof(szValues) - iValueLen, ", %d, %d", pItemAward->aAttr[i].bType, pItemAward->aAttr[i].sValue);
-						}
-						// END_OF_AUTO_QUERY
-						
-						snprintf(szQuery, sizeof(szQuery), "INSERT INTO item%s (%s) VALUES(%s)", GetTablePostfix(), szColumns, szValues);
-#else
-						snprintf(szQuery, sizeof(szQuery),
-								"INSERT INTO item%s (id, owner_id, window, pos, vnum, count, socket0, socket1, socket2) "
-								"VALUES(%u, %u, '%s', %d, %u, %u, %u, %u, %u)",
-								GetTablePostfix(),
-								GainItemID(),
-								pi->account_id,
-								pi->ip[0] == 0 ? "SAFEBOX" : "MALL",
-								iPos,
-								pItemAward->dwVnum, pItemAward->dwCount, pItemAward->dwSocket0, pItemAward->dwSocket1, dwSocket2);
 #endif
 					}
-					
-					std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
-					SQLResult * pRes = pmsg->Get();
-					LOG_INFO("SAFEBOX Query : [{}]", szQuery);
-
-					if (pRes->uiAffectedRows == 0 || pRes->uiInsertID == 0 || pRes->uiAffectedRows == (uint32_t)-1)
-						break;
-
-					item.id = pmsg->Get()->uiInsertID;
-					item.window = pi->ip[0] == 0 ? SAFEBOX : MALL,
+					item.id = GainItemID();
+#ifdef ATTR_LOCK
+					item.lockedattr = -1;
+#endif
+					item.window = pi->ip[0] == 0 ? SAFEBOX : MALL;
 					item.pos = iPos;
 					item.count = pItemAward->dwCount;
 					item.vnum = pItemAward->dwVnum;
-					item.alSockets[0] = pItemAward->dwSocket0;
-					item.alSockets[1] = pItemAward->dwSocket1;
-					item.alSockets[2] = dwSocket2;
+					item.alSockets[0] = std::bit_cast<int32_t>(pItemAward->dwSocket0);
+					item.alSockets[1] = std::bit_cast<int32_t>(pItemAward->dwSocket1);
+					item.alSockets[2] = std::bit_cast<int32_t>(dwSocket2);
 #ifdef ENABLE_EXTEND_ITEM_AWARD
 					memcpy(&item.aAttr, pItemAward->aAttr, sizeof(item.aAttr));
 #endif
+					award_delivery::Request request;
+					request.source = source;
+					request.item.id = item.id;
+					request.item.account = pi->account_id;
+					request.item.vnum = item.vnum;
+					request.item.count = item.count;
+					request.item.position = item.pos;
+					for (size_t socket = 0; socket < request.item.sockets.size(); ++socket)
+						request.item.sockets[socket] = item.alSockets[socket];
+					for (size_t attr = 0; attr < request.item.attributes.size(); ++attr)
+						request.item.attributes[attr] = {item.aAttr[attr].bType, item.aAttr[attr].sValue};
+					request.rows = MAX(1, pi->pSafebox->bSize) * 9;
+					request.itemHeight = pItemTable->bSize;
+					for (const auto &stored : s_items)
+					{
+						const auto proto = m_map_itemTableByVnum.find(stored.vnum);
+						if (proto == m_map_itemTableByVnum.end() || !proto->second)
+							break; // Deliver rejects the incomplete snapshot against SQL.
+						request.storage.push_back({stored.id, stored.vnum, stored.pos, proto->second->bSize});
+					}
+					const auto delivery = award_delivery::Deliver(request, GetTablePostfix());
+					if (!delivery)
+					{
+						LOG_ERROR("Item award {} rejected: {}", source.id, delivery.errors.front());
+						break;
+					}
+					std::unique_ptr<SQLMsg> delivered(
+						CDBManager::instance().DirectTransactionPrepared(delivery.statements));
+					if (!award_delivery::Confirmed(*delivered))
+					{
+						// Resolve only; do not reinsert, even if COMMIT's reply was lost.
+						std::unique_ptr<SQLMsg> resolved(CDBManager::instance().DirectTransactionPrepared(
+							award_delivery::Resolve(source, GetTablePostfix())));
+						const auto receipt = award_delivery::DecodeReceipt(*resolved);
+						if (receipt.state == award_delivery::ReceiptState::Taken)
+							ItemAwardManager::instance().MarkTaken(source.id);
+						LOG_ERROR("Item award {} delivery not confirmed (SQL {}, outcome {}, receipt {}); "
+								  "reloading stored items without further claims",
+								  source.id, delivered->uiSQLErrno, int(delivered->transactionOutcome), int(receipt.state));
+						QuerySafeboxItems(pkPeer, pi, false);
+						return;
+					}
+					ItemAwardManager::instance().MarkTaken(source.id);
 					s_items.push_back(item);
-
-					vec_dwFinishedAwardID.emplace_back(pItemAward->dwID, item.id);
-					grid.Put(iPos, 1, it->second->bSize);
+					grid.Put(iPos, 1, pItemTable->bSize);
 				}
-
-				for (const auto& i : vec_dwFinishedAwardID)
-					ItemAwardManager::instance().Taken(i.first, i.second);
 			}
 		}
 
