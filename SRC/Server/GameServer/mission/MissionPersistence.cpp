@@ -365,9 +365,11 @@ ReadCommand ReadSnapshot(Owner owner)
     CheckOwner(owner);
     return {
         "SELECT character_id,owner_epoch,owner_token,storage_revision,runtime_revision,checkpoint_time,"
-        "checkpoint_digest,checkpoint_bytes FROM mission_engine_characters WHERE character_id=? AND "
+        "checkpoint_digest,CASE WHEN checkpoint_bytes IS NULL OR OCTET_LENGTH(checkpoint_bytes) BETWEEN 64 AND ? "
+        "THEN checkpoint_bytes ELSE X'' END FROM mission_engine_characters WHERE character_id=? AND "
         "owner_epoch=? AND owner_token=?",
-        {SqlParam::UInt(owner.character), SqlParam::UInt(owner.epoch), SqlParam::Blob(Bytes(owner.token))}};
+        {SqlParam::UInt(CheckpointBytes), SqlParam::UInt(owner.character), SqlParam::UInt(owner.epoch),
+         SqlParam::Blob(Bytes(owner.token))}};
 }
 SnapshotResult DecodeSnapshot(Message &message, Owner owner)
 {
@@ -413,10 +415,11 @@ ReadCommand ReadDefinitionArchive(const DefinitionReference &reference)
     Need(IsIdentifier(reference.mission) && reference.version, "Invalid definition reference");
     return {
         "SELECT d.mission_id,d.definition_version,d.definition_digest,p.package_digest,p.package_id,"
-        "p.content_version,p.package_bytes FROM mission_engine_definitions d JOIN mission_engine_packages p "
+        "p.content_version,CASE WHEN OCTET_LENGTH(p.package_bytes) BETWEEN 64 AND ? "
+        "THEN p.package_bytes ELSE X'' END FROM mission_engine_definitions d JOIN mission_engine_packages p "
         "ON p.package_digest=d.package_digest WHERE d.mission_id=? AND d.definition_version=? AND "
         "d.definition_digest=?",
-        {SqlParam::Blob(reference.mission), SqlParam::UInt(reference.version),
+        {SqlParam::UInt(PackageLimits::Bytes), SqlParam::Blob(reference.mission), SqlParam::UInt(reference.version),
          SqlParam::Blob(Bytes(reference.fingerprint))}};
 }
 PackageLoad DecodeDefinitionArchive(Message &message, const DefinitionReference &reference)

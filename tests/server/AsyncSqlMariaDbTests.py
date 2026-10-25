@@ -148,7 +148,7 @@ def main() -> int:
         server = subprocess.Popen([str(binaries / "mariadbd.exe"), "--no-defaults", f"--basedir={binaries.parent}",
                                    f"--datadir={datadir}", "--bind-address=127.0.0.1", f"--port={port}",
                                    "--skip-log-bin", "--skip-ssl", "--innodb-buffer-pool-size=64M", "--innodb-log-file-size=16M",
-                                   "--innodb-flush-log-at-trx-commit=1", "--console"],
+                                   "--innodb-flush-log-at-trx-commit=1", "--max-allowed-packet=64M", "--console"],
                                   stdout=log, stderr=subprocess.STDOUT, creationflags=flags)
         proxy = None
         try:

@@ -261,6 +261,41 @@ void MissingArchiveAndCorruption(CAsyncSQL &sql, const DefinitionRegistry &regis
         sql.DirectQueryPrepared("DELETE FROM mission_engine_packages WHERE content_version=1", {}));
     Check(blocked->uiSQLErrno == ER_ROW_IS_REFERENCED_2, "referenced package could be deleted");
 
+    // Simulate a corrupt/imported row whose original CHECK constraints were
+    // bypassed. The read query must refuse it before CAsyncSQL buffers the blob.
+    std::string oversized(CheckpointBytes + 1, 'x');
+    Text(sql, "SET check_constraint_checks=0");
+    Query(sql, {"UPDATE mission_engine_characters SET checkpoint_bytes=? WHERE character_id=48",
+                {SqlParam::Blob(oversized)}});
+    Text(sql, "SET check_constraint_checks=1");
+    auto tooLarge = Query(sql, db::ReadSnapshot(owner));
+    Check(tooLarge->Get()->preparedRows.size() == 1 && tooLarge->Get()->preparedLengths[0][7] == 0,
+          "oversized checkpoint transferred to client");
+    Check(db::DecodeSnapshot(*tooLarge, owner).status == db::ReadStatus::Invalid,
+          "oversized checkpoint silently became fresh state");
+    Query(sql, {"UPDATE mission_engine_characters SET checkpoint_bytes=? WHERE character_id=48",
+                {SqlParam::Blob(Binary(original.snapshot.bytes))}});
+
+    Text(sql, "SET check_constraint_checks=0");
+    Query(sql, {"UPDATE mission_engine_packages SET package_bytes=? WHERE content_version=1",
+                {SqlParam::Blob(std::move(oversized))}});
+    Text(sql, "SET check_constraint_checks=1");
+    tooLarge = Query(sql, db::ReadDefinitionArchive(reference));
+    Check(tooLarge->Get()->preparedRows.size() == 1 && tooLarge->Get()->preparedLengths[0][6] == 0,
+          "oversized package transferred to client");
+    Check(!db::DecodeDefinitionArchive(*tooLarge, reference), "oversized package accepted");
+    Query(sql, {"UPDATE mission_engine_packages SET package_bytes=? WHERE content_version=1",
+                {SqlParam::Blob(Binary(bytes))}});
+
+    auto emptyOwner = Claim(sql, 54, 0, Token(54), Token(130));
+    Text(sql, "SET check_constraint_checks=0");
+    Query(sql, {"UPDATE mission_engine_characters SET checkpoint_bytes=? WHERE character_id=54",
+                {SqlParam::Blob(std::string(CheckpointBytes + 1, 'x'))}});
+    Text(sql, "SET check_constraint_checks=1");
+    Check(Snapshot(sql, emptyOwner).status == db::ReadStatus::Invalid,
+          "oversized blob with empty metadata became fresh state");
+    Query(sql, {"UPDATE mission_engine_characters SET checkpoint_bytes=NULL WHERE character_id=54", {}});
+
     Text(sql, "SET foreign_key_checks=0");
     Execute(sql, db::ArchivePackage(bytes), false);
     Text(sql, "SET foreign_key_checks=1");
