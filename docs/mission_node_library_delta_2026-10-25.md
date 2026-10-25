@@ -61,10 +61,12 @@ jelölt is natív kiegészítést igényel; semelyik quest nincs még konvertál
 | SQL | `CAsyncSQL` prepared API-k, `SqlParam`, `SQLResult::FetchRow` | Egy munkaként birtokolt tranzakció, CAS, reconnect-határok és teljes result-drain |
 | Jutalom | `Database/ItemAwardManager.cpp`, `item_award` | Ledger és award egy tranzakcióban; tényleges kézbesítési crash/retry tesztek |
 
-Az `AsyncSQL.cpp::TryExecutePrepared` jelenleg egy resultsetet dolgoz fel.
-A külön queue-ba küldött BEGIN/UPDATE/COMMIT nem biztonságos tranzakciós store.
-Ezt a következő tartóssági fázisban kell megoldani; nem másolunk át vakon egy
-prepared CALL-t azzal a feltételezéssel, hogy minden eredményt kezel.
+Az audit idején az `AsyncSQL.cpp::TryExecutePrepared` egy resultsetet dolgozott
+fel. Ezt a `17a8314a` commit teljes result-drainnel és egy munkaként birtokolt
+prepared tranzakcióval javította; a részletes szerződés és a MariaDB-próbák a
+`mission_persistence_sql_2026-10-25.md` dokumentumban találhatók.
+A külön queue-ba küldött BEGIN/UPDATE/COMMIT továbbra sem használható
+biztonságos tranzakciós store-ként; a Mission-specifikus tartós store még következik.
 
 A `LuaOpenQuestLibraries`, `questlua_*.cpp`, `questmanager/questpc`, a régi
 questpacketek és a data gyökerében levő Lua-beállítások továbbra is valós
