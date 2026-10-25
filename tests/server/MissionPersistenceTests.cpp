@@ -141,7 +141,7 @@ void Archive(CAsyncSQL &sql)
     Check(conflict->transactionOutcome == SqlTransactionOutcome::Conflict,
           "package version content conflict not rejected");
     auto changed = Source(4, 1);
-    changed.missions[0].nodes.back().reward = "persist.altered";
+    ++changed.missions[0].rewards.begin()->second.gold;
     auto changedBytes = CompilePackage(changed);
     Check(bool(changedBytes), "changed archive fixture invalid");
     conflict = Execute(sql, db::ArchivePackage(changedBytes.bytes), false);
@@ -496,6 +496,19 @@ db::ActionRead Action(CAsyncSQL &sql, db::Owner owner, const ActionKey &key)
     auto message = Query(sql, db::ReadAction(owner, key));
     return db::DecodeAction(*message, owner, key);
 }
+PinnedReward Pin(const DefinitionRegistry &registry, const ActionKey &key)
+{
+    const auto graph = registry.Get(key.mission, key.version);
+    Check(bool(graph), "reward pin graph missing");
+    auto pinned = PinReward(key, FingerprintDefinition(*graph), *graph);
+    Check(bool(pinned), "typed reward pin failed");
+    return *pinned.reward;
+}
+db::Plan Entitle(const DefinitionRegistry &registry, db::Owner owner, const ActionKey &key, uint64_t revision,
+                 ContentDigest digest, db::Token operation)
+{
+    return db::RecordEntitlement(owner, Pin(registry, key), revision, digest, operation);
+}
 ActionKey RewardKey(uint32_t character)
 {
     return {character, "persist.story", 1, 10, "reward", "persist.reward"};
@@ -507,7 +520,7 @@ void DurableActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
     auto key = RewardKey(60);
     auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
     Check(Action(sql, owner, key).status == db::ReadStatus::Missing, "unsaved action exists");
-    auto notSaved = db::RecordEntitlement(owner, key, 1, digest, Token(151));
+    auto notSaved = Entitle(registry, owner, key, 1, digest, Token(151));
     Execute(sql, notSaved, false);
     Check(Resolve(sql, notSaved).status == db::Resolution::Absent, "unsaved reward entitled");
     auto saveCollision = db::Save(checkpoint, registry, owner, 0, Token(150));
@@ -524,14 +537,21 @@ void DurableActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
           "checkpoint and outbox did not commit together");
     auto wrongDigest = digest;
     wrongDigest[0] ^= 1;
-    Execute(sql, db::RecordEntitlement(owner, key, 1, wrongDigest, Token(152)), false);
-    Execute(sql, db::RecordEntitlement(owner, key, 2, digest, Token(152)), false);
+    Execute(sql, Entitle(registry, owner, key, 1, wrongDigest, Token(152)), false);
+    Execute(sql, Entitle(registry, owner, key, 2, digest, Token(152)), false);
     auto wrongKey = key;
     wrongKey.reward = "persist.forged";
-    Execute(sql, db::RecordEntitlement(owner, wrongKey, 1, digest, Token(152)), false);
-    Check(!db::RecordEntitlement(owner, RewardKey(61), 1, digest, Token(152)) &&
-              !db::RecordEntitlement(owner, key, 0, digest, Token(152)) &&
-              !db::RecordEntitlement(owner, key, 1, digest, {}),
+    const auto graph = registry.Get(key.mission, key.version);
+    Check(!PinReward(wrongKey, FingerprintDefinition(*graph), *graph), "forged reward key pinned");
+    auto altered = Definitions();
+    ++altered.front().rewards.begin()->second.gold;
+    DefinitionRegistry wrongPayload;
+    Check(wrongPayload.Activate(altered).status == Publication::Status::Published,
+          "altered reward fixture invalid");
+    Execute(sql, Entitle(wrongPayload, owner, key, 1, digest, Token(152)), false);
+    Check(!Entitle(registry, owner, RewardKey(61), 1, digest, Token(152)) &&
+              !Entitle(registry, owner, key, 0, digest, Token(152)) &&
+              !Entitle(registry, owner, key, 1, digest, {}),
           "invalid entitlement produced SQL");
 
     MissionRuntime runtime(registry, {60, 17}, checkpoint.now);
@@ -546,19 +566,19 @@ void DurableActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
 
     // Reuse the earlier claim operation token. Failure occurs AFTER the ledger
     // and outbox update; the entire transaction must roll back both.
-    auto collision = db::RecordEntitlement(owner, key, 1, digest, Token(150));
+    auto collision = Entitle(registry, owner, key, 1, digest, Token(150));
     Execute(sql, collision, false);
     Check(Resolve(sql, collision).status == db::Resolution::TokenConflict &&
               Action(sql, owner, key).action.state == db::ActionState::Pending &&
               Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
                      {SqlParam::Blob(Binary(ActionIdentity(key)))}) == 0,
           "late receipt collision partly granted entitlement");
-    auto entitlement = db::RecordEntitlement(owner, key, 1, digest, Token(152));
+    auto entitlement = Entitle(registry, owner, key, 1, digest, Token(152));
     Execute(sql, entitlement);
     Execute(sql, entitlement, false);
     Check(Resolve(sql, entitlement).status == db::Resolution::Committed,
           "entitlement replay lost its receipt");
-    auto duplicate = db::RecordEntitlement(owner, key, 1, digest, Token(153));
+    auto duplicate = Entitle(registry, owner, key, 1, digest, Token(153));
     Execute(sql, duplicate, false);
     Check(Resolve(sql, duplicate).status == db::Resolution::Absent, "new operation duplicated entitlement");
     auto entitled = Action(sql, owner, key);
@@ -588,7 +608,7 @@ void DurableActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
     Check(Action(sql, owner, key).status == db::ReadStatus::Missing &&
               Action(sql, transferred, key).status == db::ReadStatus::Found,
           "action reads bypassed owner fence");
-    Execute(sql, db::RecordEntitlement(owner, key, 3, persisted.snapshot.metadata.digest, Token(156)), false);
+    Execute(sql, Entitle(registry, owner, key, 3, persisted.snapshot.metadata.digest, Token(156)), false);
     auto read = Query(sql, db::ReadAction(transferred, key));
     Check(db::DecodeAction(*read, transferred, wrongKey).status == db::ReadStatus::Invalid,
           "wrong expected action accepted SQL result");
@@ -607,9 +627,9 @@ void CancelledActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
     Execute(sql, db::Save(cancelled, registry, owner, 1, Token(159)));
     Check(Action(sql, owner, key).action.state == db::ActionState::Cancelled,
           "abandon did not cancel outbox");
-    Execute(sql, db::RecordEntitlement(owner, key, 1, oldDigest, Token(160)), false);
+    Execute(sql, Entitle(registry, owner, key, 1, oldDigest, Token(160)), false);
     auto currentDigest = EncodeCheckpoint(cancelled, registry).metadata.digest;
-    Execute(sql, db::RecordEntitlement(owner, key, 2, currentDigest, Token(160)), false);
+    Execute(sql, Entitle(registry, owner, key, 2, currentDigest, Token(160)), false);
     checkpoint.revision = cancelled.revision + 1;
     checkpoint.now = cancelled.now;
     Execute(sql, db::Save(checkpoint, registry, owner, 2, Token(160)), false);
@@ -664,8 +684,8 @@ void ConcurrentActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
     Execute(sql, db::Save(checkpoint, registry, owner, 0, Token(162)));
     auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
     auto key = RewardKey(62);
-    std::array<db::Plan, 2> grants{db::RecordEntitlement(owner, key, 1, digest, Token(163)),
-                                   db::RecordEntitlement(owner, key, 1, digest, Token(164))};
+    std::array<db::Plan, 2> grants{Entitle(registry, owner, key, 1, digest, Token(163)),
+                                   Entitle(registry, owner, key, 1, digest, Token(164))};
     auto outcomes = Race(grants);
     Check(
         (outcomes[0] == SqlTransactionOutcome::Committed && outcomes[1] == SqlTransactionOutcome::Conflict) ||
@@ -692,7 +712,7 @@ void ConcurrentActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
         MissionRuntime runtime(registry, {character, 17}, checkpoint.now);
         Accepted(runtime.Restore(checkpoint, checkpoint.now));
         Accepted(runtime.Abandon(10, 1003));
-        std::array<db::Plan, 2> competing{db::RecordEntitlement(owner, key, 1, digest, db::NewToken()),
+        std::array<db::Plan, 2> competing{Entitle(registry, owner, key, 1, digest, db::NewToken()),
                                           db::Save(runtime.Save(), registry, owner, 1, db::NewToken())};
         outcomes = Race(competing);
         auto action = Action(sql, owner, key);
@@ -714,7 +734,7 @@ void InterruptedEntitlement(CAsyncSQL &admin, const DefinitionRegistry &registry
     Execute(admin, db::Save(checkpoint, registry, owner, 0, Token(166)));
     auto key = RewardKey(63);
     auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
-    auto plan = db::RecordEntitlement(owner, key, 1, digest, Token(167));
+    auto plan = Entitle(registry, owner, key, 1, digest, Token(167));
     auto interrupted = plan;
     interrupted.statements.insert(interrupted.statements.begin() + 4, {"SELECT SLEEP(5)", {}, {}, {}});
     CAsyncSQL worker;
@@ -751,7 +771,7 @@ void LostEntitlementCommit(CAsyncSQL &admin, const DefinitionRegistry &registry,
     Execute(admin, db::Save(checkpoint, registry, owner, 0, Token(169)));
     auto key = RewardKey(64);
     auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
-    auto plan = db::RecordEntitlement(owner, key, 1, digest, Token(170));
+    auto plan = Entitle(registry, owner, key, 1, digest, Token(170));
     CAsyncSQL proxy;
     Connect(proxy, true, proxyPort);
     auto result = Execute(proxy, plan, false);
@@ -779,6 +799,9 @@ void BoundedActionBatch(CAsyncSQL &sql)
         bulk.nodes.push_back(reward);
     }
     bulk.nodes.insert(bulk.nodes.begin(), root);
+    RewardBundle bulkReward;
+    bulkReward.items = {{50011, 1}};
+    bulk.rewards.emplace("bulk.reward", bulkReward);
     auto source = Source();
     source.manifest.id = "bulk.actions.package";
     source.missions = {bulk};
@@ -805,8 +828,8 @@ void BoundedActionBatch(CAsyncSQL &sql)
               CheckpointActions,
           "maximum action batch was truncated");
     auto key = runtime.PendingActions().back();
-    Execute(sql, db::RecordEntitlement(owner, key, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest,
-                                       db::NewToken()));
+    Execute(sql, Entitle(registry, owner, key, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest,
+                         db::NewToken()));
     Accepted(runtime.Acknowledge(key, 1));
     Execute(sql, db::Save(runtime.Save(), registry, owner, 1, db::NewToken()));
     Check(Number(
@@ -882,6 +905,11 @@ void ColdProcess(CAsyncSQL &sql)
     Check(pending.status == db::ReadStatus::Found && pending.action.state == db::ActionState::Pending &&
               pending.action.id == ActionIdentity(RewardKey(42)),
           "cold outbox identity/state lost");
+    const auto oldGraph = registry.Get("persist.story", 1);
+    const auto oldReward = PinReward(RewardKey(42), pending.action.definition, *oldGraph);
+    Check(bool(oldReward) && oldReward.reward->Payload().items.at(50011) == 2 &&
+              registry.Latest("persist.story")->Source().rewards.at("persist.reward").items.at(50011) == 3,
+          "cold reward payload was replaced by the active version");
     auto entitled = Action(sql, {64, 1, Token(64)}, RewardKey(64));
     Check(entitled.status == db::ReadStatus::Found && entitled.action.state == db::ActionState::Entitled &&
               entitled.action.entitlementStorageRevision == 1,
@@ -894,8 +922,8 @@ void ColdProcess(CAsyncSQL &sql)
     db::Owner recoveredOwner{64, 1, Token(64)};
     auto issuedSnapshot = Snapshot(sql, recoveredOwner);
     auto issuedKey = RewardKey(64);
-    auto recoveredPlan = db::RecordEntitlement(recoveredOwner, issuedKey, 1,
-                                               issuedSnapshot.snapshot.metadata.digest, Token(170));
+    auto recoveredPlan =
+        Entitle(registry, recoveredOwner, issuedKey, 1, issuedSnapshot.snapshot.metadata.digest, Token(170));
     Execute(sql, recoveredPlan, false);
     Check(Resolve(sql, recoveredPlan).status == db::Resolution::Committed,
           "cold replay did not reconcile pre-crash entitlement operation");

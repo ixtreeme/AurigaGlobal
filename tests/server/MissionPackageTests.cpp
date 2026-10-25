@@ -366,7 +366,7 @@ void MalformedAndMutationChecks()
     Rehash(bad);
     Check(!LoadPackage(bad), "future format accepted");
     bad = valid;
-    bad[16] = 2;
+    bad[16] = 3;
     Rehash(bad);
     Check(!LoadPackage(bad), "future graph schema accepted");
     bad = valid;

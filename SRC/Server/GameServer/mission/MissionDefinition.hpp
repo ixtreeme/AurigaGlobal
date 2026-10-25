@@ -1,4 +1,5 @@
 #pragma once
+#include "MissionRewardPayload.hpp"
 
 #include <compare>
 #include <cstddef>
@@ -131,6 +132,9 @@ struct Definition
     std::map<std::string, Condition> predicates;
     std::map<std::string, std::vector<std::string>> choices;
     std::vector<Node> nodes;
+    // Empty is permitted for old domain-only graphs. A populated table must
+    // cover every reward key exactly; it is part of this definition's identity.
+    std::map<std::string, RewardBundle> rewards;
     bool operator==(const Definition &) const = default;
 };
 

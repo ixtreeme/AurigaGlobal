@@ -70,10 +70,10 @@ struct Writer
         for (const auto &value : values)
             Text(value);
     }
-    void AddSection(Section id, const Writer &data)
+    void AddSection(Section id, const Writer &data, uint16_t version = 1)
     {
         U16(uint16_t(id));
-        U16(1);
+        U16(version);
         U32(Required);
         U32(uint32_t(data.bytes.size()));
         Raw(data.bytes);
@@ -359,7 +359,49 @@ Node ReadNode(Reader &r, size_t &conditions)
     }
     return n;
 }
-Writer WriteDefinition(const Definition &d)
+void WriteReward(Writer &w, const RewardBundle &bundle)
+{
+    Need(ValidRewardBundle(bundle), "Invalid reward payload");
+    w.U16(bundle.schema);
+    const auto items = [&](const auto &table)
+    {
+        w.U32(uint32_t(table.size()));
+        for (const auto &[vnum, count] : table)
+        {
+            w.U32(vnum);
+            w.U32(count);
+        }
+    };
+    items(bundle.items);
+    w.U64(bundle.experience);
+    w.U64(bundle.gold);
+    items(bundle.consumeItems);
+}
+RewardBundle ReadReward(Reader &r)
+{
+    RewardBundle bundle;
+    bundle.schema = r.U16();
+    Need(bundle.schema == 1, "Unsupported reward payload schema");
+    const auto items = [&](auto &table)
+    {
+        const auto entries = r.Count(RewardLimits::ItemEntries);
+        uint32_t previous = 0;
+        for (size_t i = 0; i < entries; ++i)
+        {
+            const auto vnum = r.U32(), count = r.U32();
+            Need(vnum > previous, "Noncanonical/duplicate reward item prototype");
+            previous = vnum;
+            table.emplace(vnum, count);
+        }
+    };
+    items(bundle.items);
+    bundle.experience = r.U64();
+    bundle.gold = r.U64();
+    items(bundle.consumeItems);
+    Need(ValidRewardBundle(bundle), "Invalid reward payload");
+    return bundle;
+}
+Writer WriteDefinition(const Definition &d, uint16_t graphSchema = 1)
 {
     Writer w;
     w.Text(d.id);
@@ -382,10 +424,19 @@ Writer WriteDefinition(const Definition &d)
     w.U32(uint32_t(d.nodes.size()));
     for (const auto &node : d.nodes)
         WriteNode(w, node);
+    if (graphSchema == 2)
+    {
+        w.U32(uint32_t(d.rewards.size()));
+        for (const auto &[key, bundle] : d.rewards)
+        {
+            w.Text(key);
+            WriteReward(w, bundle);
+        }
+    }
     Need(w.bytes.size() <= PackageLimits::GraphBytes, "Graph byte limit");
     return w;
 }
-Definition ReadDefinition(Reader &r)
+Definition ReadDefinition(Reader &r, uint16_t graphSchema, size_t &packageItems)
 {
     Definition d;
     d.id = r.Key();
@@ -411,6 +462,26 @@ Definition ReadDefinition(Reader &r)
     const auto nodes = r.Count(Limits::Nodes);
     for (size_t i = 0; i < nodes; ++i)
         d.nodes.push_back(ReadNode(r, conditions));
+    if (graphSchema == 2)
+    {
+        const auto bundles = r.Count(RewardLimits::Bundles);
+        std::string previous;
+        size_t definitionItems = 0;
+        for (size_t i = 0; i < bundles; ++i)
+        {
+            auto key = r.Key();
+            Need(key > previous, "Noncanonical/duplicate reward key");
+            previous = key;
+            auto bundle = ReadReward(r);
+            const auto items = bundle.items.size() + bundle.consumeItems.size();
+            Need(items <= RewardLimits::DefinitionItems - definitionItems &&
+                     items <= RewardLimits::PackageItems - packageItems,
+                 "Decoded reward item memory limit");
+            definitionItems += items;
+            packageItems += items;
+            d.rewards.emplace(std::move(key), std::move(bundle));
+        }
+    }
     r.End();
     return d;
 }
@@ -485,7 +556,19 @@ PresentationCatalog ReadPresentation(Reader &r)
 } // namespace
 ContentDigest FingerprintDefinition(const CompiledDefinition &definition)
 {
-    return ContentHash(WriteDefinition(definition.Source()).bytes);
+    const auto &source = definition.Source();
+    if (source.rewards.empty())
+        return ContentHash(WriteDefinition(source).bytes); // Preserve all v1 archive/checkpoint pins.
+    constexpr std::array<uint8_t, 8> domain{'M', 'E', 'G', 'R', 'A', 'P', 'H', 2};
+    const auto bytes = WriteDefinition(source, 2).bytes;
+    return ContentHashParts({domain, bytes});
+}
+ContentDigest FingerprintReward(const RewardBundle &bundle)
+{
+    Writer payload;
+    WriteReward(payload, bundle);
+    constexpr std::array<uint8_t, 8> domain{'M', 'E', 'R', 'E', 'W', 'A', 'R', 1};
+    return ContentHashParts({domain, payload.bytes});
 }
 
 struct PackageCodec
@@ -502,6 +585,7 @@ struct PackageCodec
         p->presentation_ = source.presentation;
         std::set<std::string> ids;
         NativeRequirements derived;
+        size_t rewardItems = 0;
         // Also validates cross-definition persistent choice domains atomically.
         DefinitionRegistry probe;
         const auto publish = probe.Activate(source.missions);
@@ -510,6 +594,11 @@ struct PackageCodec
                                        : publish.errors.front().path + ": " + publish.errors.front().message);
         for (const auto &definition : source.missions)
         {
+            for (const auto &[key, bundle] : definition.rewards)
+            {
+                rewardItems += bundle.items.size() + bundle.consumeItems.size();
+                Need(rewardItems <= RewardLimits::PackageItems, "Package reward item memory limit");
+            }
             Need(ids.insert(definition.id).second, "Duplicate mission ID");
             p->graphs_.push_back(probe.Get(definition.id, definition.version));
             for (const auto &[type, version] : RequiredNativeTypes(definition))
@@ -599,16 +688,21 @@ struct PackageCodec
                 requirements.U16(version);
             }
             Writer graphs;
+            const uint16_t graphSchema =
+                std::any_of(package->graphs_.begin(), package->graphs_.end(),
+                            [](const auto &graph) { return !graph->Source().rewards.empty(); })
+                    ? 2
+                    : 1;
             graphs.U32(uint32_t(package->graphs_.size()));
             for (const auto &graph : package->graphs_)
             {
-                const auto data = WriteDefinition(graph->Source());
+                const auto data = WriteDefinition(graph->Source(), graphSchema);
                 graphs.U32(uint32_t(data.bytes.size()));
                 graphs.Raw(data.bytes);
             }
             Writer payload;
             payload.AddSection(Section::Manifest, manifest);
-            payload.AddSection(Section::Graphs, graphs);
+            payload.AddSection(Section::Graphs, graphs, graphSchema);
             payload.AddSection(Section::Requirements, requirements);
             payload.AddSection(Section::Presentation, WritePresentation(package->presentation_));
             Writer w;
@@ -616,7 +710,7 @@ struct PackageCodec
             w.U16(Format);
             w.U16(HeaderSize);
             w.U32(uint32_t(payload.bytes.size()));
-            w.U16(Schema);
+            w.U16(graphSchema);
             w.U16(Schema);
             w.U32(4);
             w.Raw(std::array<uint8_t, 32>{});
@@ -645,7 +739,9 @@ struct PackageCodec
             Need(r.U16() == Format && r.U16() == HeaderSize, "Unsupported package format/header version");
             const auto payloadSize = r.U32();
             Need(payloadSize == bytes.size() - HeaderSize, "Package length mismatch");
-            Need(r.U16() == Schema && r.U16() == Schema, "Unsupported graph/native registry schema");
+            const auto graphSchema = r.U16();
+            Need((graphSchema == 1 || graphSchema == 2) && r.U16() == Schema,
+                 "Unsupported graph/native registry schema");
             const auto sections = r.U32();
             Need(sections <= PackageLimits::Sections, "Section count limit");
             std::array<uint8_t, 32> expected{};
@@ -664,7 +760,8 @@ struct PackageCodec
                 auto part = r.Part(PackageLimits::Bytes);
                 if (type >= uint16_t(Section::Manifest) && type <= uint16_t(Section::Presentation))
                 {
-                    Need(version == 1 && flags == Required, "Unsupported/malformed required section");
+                    const auto supported = type == uint16_t(Section::Graphs) ? graphSchema : 1;
+                    Need(version == supported && flags == Required, "Unsupported/malformed required section");
                     parts.emplace(type, part.bytes);
                 }
                 else
@@ -692,10 +789,11 @@ struct PackageCodec
             requirements.End();
             Reader graphs{parts.at(uint16_t(Section::Graphs))};
             const auto missions = graphs.Count(PackageLimits::Missions);
+            size_t rewardItems = 0;
             for (size_t i = 0; i < missions; ++i)
             {
                 auto graph = graphs.Part(PackageLimits::GraphBytes);
-                source.missions.push_back(ReadDefinition(graph));
+                source.missions.push_back(ReadDefinition(graph, graphSchema, rewardItems));
             }
             graphs.End();
             Reader presentation{parts.at(uint16_t(Section::Presentation))};

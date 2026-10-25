@@ -436,12 +436,13 @@ Plan Release(Owner owner, Token operation)
         return Invalid("release", error);
     }
 }
-Plan RecordEntitlement(Owner owner, const ActionKey &action, uint64_t expectedStorageRevision,
+Plan RecordEntitlement(Owner owner, const PinnedReward &reward, uint64_t expectedStorageRevision,
                        ContentDigest checkpointDigest, Token operation)
 {
     try
     {
         CheckOwner(owner);
+        const auto &action = reward.Action();
         Need(action.character == owner.character && expectedStorageRevision &&
                  expectedStorageRevision < UINT64_MAX && Nonzero(operation),
              "Invalid entitlement identity/revision");
@@ -455,6 +456,8 @@ Plan RecordEntitlement(Owner owner, const ActionKey &action, uint64_t expectedSt
         Request decision;
         decision.Raw(checkpointDigest);
         decision.Raw(id);
+        decision.Raw(reward.DefinitionDigest());
+        decision.Raw(reward.PayloadDigest());
         plan.request = RequestHash(plan.kind, owner.character, owner.epoch, owner.token, operation,
                                    expectedStorageRevision, ContentHash(decision.bytes));
         plan.statements = Preconditions();
@@ -469,10 +472,11 @@ Plan RecordEntitlement(Owner owner, const ActionKey &action, uint64_t expectedSt
         plan.statements.push_back(
             {"SELECT action_id FROM mission_engine_action_outbox WHERE action_id=? AND character_id=? "
              "AND mission_id=? AND definition_version=? AND instance_id=? AND node_id=? AND reward_id=? "
-             "AND action_state=1 AND first_storage_revision<=? FOR UPDATE",
+             "AND definition_digest=? AND action_state=1 AND first_storage_revision<=? FOR UPDATE",
              {SqlParam::Blob(Bytes(id)), SqlParam::UInt(owner.character), SqlParam::Blob(action.mission),
               SqlParam::UInt(action.version), SqlParam::UInt(action.instance), SqlParam::Blob(action.node),
-              SqlParam::Blob(action.reward), SqlParam::UInt(expectedStorageRevision)},
+              SqlParam::Blob(action.reward), SqlParam::Blob(Bytes(reward.DefinitionDigest())),
+              SqlParam::UInt(expectedStorageRevision)},
              {},
              1});
         plan.statements.push_back(

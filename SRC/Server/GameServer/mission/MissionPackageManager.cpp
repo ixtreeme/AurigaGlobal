@@ -26,8 +26,9 @@ std::optional<PresentedMission> ProjectPresentation(const MissionPackage &packag
     return view;
 }
 MissionPackageManager::MissionPackageManager(DefinitionRegistry &registry, Mode mode,
-                                             NativeRequirements bindings)
-    : registry_(registry), thread_(std::this_thread::get_id()), mode_(mode), bindings_(std::move(bindings))
+                                             NativeRequirements bindings, RewardBindingPolicy rewards)
+    : registry_(registry), thread_(std::this_thread::get_id()), mode_(mode), bindings_(std::move(bindings)),
+      rewards_(std::move(rewards))
 {
     if (mode_ != Mode::Gameplay && mode_ != Mode::DomainSimulation)
         throw std::invalid_argument("Unknown package activation mode");
@@ -52,10 +53,12 @@ MissionPackageManager::Result
 MissionPackageManager::Select(const std::shared_ptr<const MissionPackage> &package)
 {
     if (mode_ == Mode::Gameplay)
+    {
         for (const auto &[type, version] : package->Manifest().requiresTypes)
         {
             const auto *schema = FindNativeSchema(type);
-            if (schema->category == NativeCategory::Event || type == NativeType(NodeKind::Reward))
+            if (schema->category == NativeCategory::Event ||
+                schema->category == NativeCategory::RewardPayload || type == NativeType(NodeKind::Reward))
             {
                 const auto binding = bindings_.find(type);
                 if (binding == bindings_.end() || binding->second != version)
@@ -64,6 +67,30 @@ MissionPackageManager::Select(const std::shared_ptr<const MissionPackage> &packa
                         {{"bindings", "Missing verified gameplay binding: " + std::string(schema->name)}}};
             }
         }
+        for (const auto &graph : package->Graphs())
+        {
+            for (const auto &node : graph->Nodes())
+                if (node.value.kind == NodeKind::Reward &&
+                    !graph->Source().rewards.contains(node.value.reward))
+                    return {Status::Invalid, {{"rewards", "Symbolic reward has no typed payload"}}};
+            for (const auto &[key, bundle] : graph->Source().rewards)
+            {
+                if (!rewards_.atomicBundles || bundle.experience > rewards_.maxExperience ||
+                    bundle.gold > rewards_.maxGold)
+                    return {Status::Invalid, {{"rewards/" + key, "Unverified atomic reward/amount binding"}}};
+                for (bool consume : {false, true})
+                    for (const auto &[vnum, count] : consume ? bundle.consumeItems : bundle.items)
+                    {
+                        const auto binding = rewards_.items.find(vnum);
+                        if (binding == rewards_.items.end() ||
+                            count >
+                                (consume ? binding->second.maxConsumeCount : binding->second.maxGrantCount))
+                            return {Status::Invalid,
+                                    {{"rewards/" + key, "Unknown item or unverified count binding"}}};
+                    }
+            }
+        }
+    }
     std::vector<Definition> definitions;
     for (const auto &graph : package->Graphs())
         definitions.push_back(graph->Source());

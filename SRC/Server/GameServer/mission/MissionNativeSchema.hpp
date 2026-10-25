@@ -11,7 +11,8 @@ enum class NativeCategory : uint8_t
 {
     Flow = 1,
     Predicate = 2,
-    Event = 3
+    Event = 3,
+    RewardPayload = 4
 };
 enum class PortType : uint16_t
 {
@@ -74,6 +75,7 @@ const NativeSchema *FindNativeSchema(uint32_t typeId);
 uint32_t NativeType(NodeKind kind);
 uint32_t NativeType(ConditionKind kind);
 uint32_t NativeType(EventKind kind);
+uint32_t NativeType(RewardPayloadKind kind);
 NodeKind NativeNode(uint32_t typeId, uint16_t version);
 ConditionKind NativeCondition(uint32_t typeId, uint16_t version);
 EventKind NativeEvent(uint32_t typeId, uint16_t version);

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
+#include <tuple>
 
 namespace auriga::mission
 {
@@ -101,6 +102,31 @@ std::vector<NativeSchema> MakeSchemas()
     event(0x3007, EventKind::BossDefeated, "event.boss_defeated");
     event(0x3008, EventKind::PuzzleSolved, "event.puzzle_solved");
     event(0x3009, EventKind::EscortCompleted, "event.escort_completed");
+    // Payload schemas are separate from the future 0x400x action handlers.
+    // Serialization/validation exists; no gameplay effect is advertised as bound.
+    for (const auto &[id, kind, name] :
+         std::vector<std::tuple<uint32_t, RewardPayloadKind, std::string_view>>{
+             {0x5001, RewardPayloadKind::Item, "payload.reward_item"},
+             {0x5002, RewardPayloadKind::Experience, "payload.reward_experience"},
+             {0x5003, RewardPayloadKind::Gold, "payload.reward_gold"},
+             {0x5004, RewardPayloadKind::ConsumeItem, "payload.consume_item"}})
+    {
+        const bool item = kind == RewardPayloadKind::Item || kind == RewardPayloadKind::ConsumeItem;
+        std::vector<NativeParameter> parameters;
+        if (item)
+            parameters.push_back({10, "vnum", PortType::ItemProtoId, true, false, 1, UINT32_MAX});
+        parameters.push_back({11, "amount", PortType::Int64, true, false, 1,
+                              item ? RewardLimits::ItemCount : int64_t(RewardLimits::Amount)});
+        schemas.push_back({id,
+                           1,
+                           NativeCategory::RewardPayload,
+                           uint8_t(kind),
+                           name,
+                           name,
+                           {},
+                           std::move(parameters),
+                           false});
+    }
     return schemas;
 }
 uint32_t Type(NativeCategory category, uint8_t kind)
@@ -142,6 +168,10 @@ uint32_t NativeType(EventKind k)
 {
     return Type(NativeCategory::Event, uint8_t(k));
 }
+uint32_t NativeType(RewardPayloadKind k)
+{
+    return Type(NativeCategory::RewardPayload, uint8_t(k));
+}
 NodeKind NativeNode(uint32_t id, uint16_t v)
 {
     return NodeKind(Kind(id, v, NativeCategory::Flow));
@@ -176,6 +206,17 @@ NativeRequirements RequiredNativeTypes(const Definition &definition)
         for (const auto &arm : node.branches)
             condition(condition, arm.when);
     }
+    for (const auto &[key, bundle] : definition.rewards)
+    {
+        if (!bundle.items.empty())
+            required.emplace(NativeType(RewardPayloadKind::Item), 1);
+        if (bundle.experience)
+            required.emplace(NativeType(RewardPayloadKind::Experience), 1);
+        if (bundle.gold)
+            required.emplace(NativeType(RewardPayloadKind::Gold), 1);
+        if (!bundle.consumeItems.empty())
+            required.emplace(NativeType(RewardPayloadKind::ConsumeItem), 1);
+    }
     return required;
 }
 std::string ExportNativeSchemas()
@@ -186,6 +227,12 @@ std::string ExportNativeSchemas()
     output["arbitrary_port_edges"] = false;
     output["condition_representation"] = "embedded_typed_ast";
     output["parallel_policies"] = {{"all", 0}, {"any", 1}, {"race", 2}, {"first_terminal", 3}};
+    output["reward_payloads"] = {{"schema", 1},
+                                 {"graph_schema", 2},
+                                 {"atomic_bundle", true},
+                                 {"delivery_implemented", false},
+                                 {"max_item_entries", RewardLimits::ItemEntries},
+                                 {"max_item_count", RewardLimits::ItemCount}};
     output["port_types"] = nlohmann::json::array();
     for (const auto &[type, name] :
          std::vector<std::pair<PortType, std::string_view>>{{PortType::Exec, "Exec"},
@@ -200,7 +247,8 @@ std::string ExportNativeSchemas()
                                                             {PortType::EventType, "EventType"},
                                                             {PortType::RewardKey, "RewardKey"},
                                                             {PortType::EventPayload, "EventPayload"},
-                                                            {PortType::BranchArm, "BranchArm"}})
+                                                            {PortType::BranchArm, "BranchArm"},
+                                                            {PortType::ItemProtoId, "ItemProtoId"}})
         output["port_types"].push_back({{"type_id", uint16_t(type)}, {"name", name}});
     output["composite_types"] = {
         {"branch_arm",

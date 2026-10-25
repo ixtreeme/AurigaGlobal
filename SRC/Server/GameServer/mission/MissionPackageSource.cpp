@@ -128,12 +128,19 @@ PackageSourceResult ParsePackageSource(std::string_view text)
         }
         Need(j.at("missions").is_array() && j.at("missions").size() <= PackageLimits::Missions,
              "Source mission count limit");
+        size_t rewardItems = 0;
         for (const auto &entry : j.at("missions"))
         {
             auto parsed = ParseDefinition(entry.dump());
             if (!parsed)
                 throw std::invalid_argument(parsed.errors.front().path + ": " +
                                             parsed.errors.front().message);
+            for (const auto &[key, bundle] : parsed.value.rewards)
+            {
+                const auto items = bundle.items.size() + bundle.consumeItems.size();
+                Need(items <= RewardLimits::PackageItems - rewardItems, "Source reward item memory limit");
+                rewardItems += items;
+            }
             source.missions.push_back(std::move(parsed.value));
         }
         const auto &presentation = j.at("presentation");

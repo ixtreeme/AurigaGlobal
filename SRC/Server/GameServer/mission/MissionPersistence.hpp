@@ -2,6 +2,7 @@
 #include "MissionActions.hpp"
 #include "MissionCheckpointCodec.hpp"
 #include "MissionPackage.hpp"
+#include "MissionRewardBinding.hpp"
 #include <SQL/PreparedTransaction.h>
 
 struct _SQLMsg;
@@ -99,7 +100,7 @@ Plan Release(Owner owner, Token operation);
 // Commits a symbolic, immutable reward entitlement, NOT an inventory/XP/money
 // effect or delivery receipt. Only a trusted owner coordinator may call this,
 // after saving the current authoritative decision checkpoint. No player API.
-Plan RecordEntitlement(Owner owner, const ActionKey &action, uint64_t expectedStorageRevision,
+Plan RecordEntitlement(Owner owner, const PinnedReward &reward, uint64_t expectedStorageRevision,
                        ContentDigest checkpointDigest, Token operation);
 enum class ActionState : uint8_t
 {

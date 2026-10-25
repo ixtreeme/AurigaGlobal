@@ -1,6 +1,6 @@
 #pragma once
-#include "MissionNativeSchema.hpp"
 #include "MissionContentHash.hpp"
+#include "MissionNativeSchema.hpp"
 #include <array>
 #include <filesystem>
 #include <thread>
@@ -103,6 +103,20 @@ PackageLoad LoadPackage(std::span<const uint8_t> bytes);
 PackageLoad LoadPackageFile(const std::filesystem::path &path);
 // Canonical typed graph bytes, including ID/version; independent of its enclosing package.
 ContentDigest FingerprintDefinition(const CompiledDefinition &definition);
+ContentDigest FingerprintReward(const RewardBundle &bundle);
+
+// Trusted adapter attestations, not client permissions. No live adapter sets
+// these yet. Payload decoding alone must never enable gameplay effects.
+struct RewardItemBinding
+{
+    uint32_t maxGrantCount = 0, maxConsumeCount = 0;
+};
+struct RewardBindingPolicy
+{
+    std::map<uint32_t, RewardItemBinding> items;
+    uint64_t maxExperience = 0, maxGold = 0;
+    bool atomicBundles = false;
+};
 
 struct PresentedMission
 {
@@ -141,7 +155,8 @@ class MissionPackageManager final
         std::vector<Diagnostic> errors;
     };
     explicit MissionPackageManager(DefinitionRegistry &registry, Mode mode = Mode::Gameplay,
-                                   NativeRequirements verifiedGameplayBindings = {});
+                                   NativeRequirements verifiedGameplayBindings = {},
+                                   RewardBindingPolicy rewardBindings = {});
     // Call at an authoritative safe point. Staging/decoding can happen off-thread.
     Result Activate(const PackageLoad &staged);
     Result Rollback();
@@ -154,6 +169,7 @@ class MissionPackageManager final
     std::thread::id thread_;
     Mode mode_;
     NativeRequirements bindings_;
+    RewardBindingPolicy rewards_;
     std::shared_ptr<const MissionPackage> active_, previous_;
     std::map<std::string, uint32_t> highest_;
 };

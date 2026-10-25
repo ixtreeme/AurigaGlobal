@@ -32,6 +32,11 @@ inline std::vector<Definition> Definitions(uint32_t version = 1)
     reward.reward = "persist.reward";
     reward.completionFlags = {"persist.finished"};
     story.nodes = {root, collect, choose, reward};
+    RewardBundle bundle;
+    bundle.items = {{50011, version == 1 ? 2u : 3u}};
+    bundle.experience = 1000;
+    bundle.gold = version == 1 ? 100 : 200;
+    story.rewards.emplace("persist.reward", bundle);
     Definition timer;
     timer.id = "persist.timer";
     timer.version = version;

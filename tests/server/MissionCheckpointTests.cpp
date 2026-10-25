@@ -82,7 +82,7 @@ void RoundTripAndHistory()
               !archiveOnly.Latest("persist.story"),
           "multiple historical versions activated or collided");
     auto changed = Definitions();
-    changed[0].nodes.back().reward = "persist.different_reward";
+    ++changed[0].rewards.begin()->second.gold;
     DefinitionRegistry wrong;
     Check(wrong.Activate(changed).status == Publication::Status::Published,
           "changed definition fixture invalid");

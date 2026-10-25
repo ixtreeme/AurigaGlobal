@@ -167,6 +167,15 @@ struct DefinitionCompiler
             Need(!source.nodes.empty() && source.nodes.size() <= Limits::Nodes, "nodes", "node count limit");
             Need(source.predicates.size() <= Limits::Conditions && source.choices.size() <= Limits::Choices,
                  "definition", "table limit");
+            Need(source.rewards.size() <= RewardLimits::Bundles, "rewards", "reward bundle count limit");
+            size_t rewardItems = 0;
+            for (const auto &[key, bundle] : source.rewards)
+            {
+                Need(IsIdentifier(key) && ValidRewardBundle(bundle), "rewards/" + key,
+                     "invalid reward key, schema, item, amount or empty bundle");
+                rewardItems += bundle.items.size() + bundle.consumeItems.size();
+                Need(rewardItems <= RewardLimits::DefinitionItems, "rewards", "reward item memory limit");
+            }
             for (const auto &[key, values] : source.choices)
             {
                 Need(IsIdentifier(key) && values.size() >= 2 && values.size() <= Limits::ChoiceValues,
@@ -245,6 +254,18 @@ struct DefinitionCompiler
                          p, "misplaced objective data");
             }
             Need(indices.contains(source.root), "root", "missing root node");
+            if (!source.rewards.empty())
+            {
+                std::set<std::string> used;
+                for (const auto &node : source.nodes)
+                    if (node.kind == NodeKind::Reward)
+                    {
+                        Need(source.rewards.contains(node.reward), "nodes/" + node.id,
+                             "missing typed reward bundle");
+                        used.insert(node.reward);
+                    }
+                Need(used.size() == source.rewards.size(), "rewards", "unused reward bundle");
+            }
             // Resolve all references before copying/compiling the immutable payload.
             std::vector<std::vector<NodeIndex>> edges(source.nodes.size());
             std::vector<NodeIndex> parents(source.nodes.size(), NoNode);

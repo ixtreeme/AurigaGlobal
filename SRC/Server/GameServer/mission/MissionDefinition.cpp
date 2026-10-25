@@ -125,6 +125,37 @@ bool Boolean(const Json &j, const std::string &path)
         Bad(path, "expected boolean");
     return j.get<bool>();
 }
+RewardBundle ReadRewardBundle(const Json &j, const std::string &path)
+{
+    Fields(j, path, {"schema"}, {"items", "experience", "gold", "consume_items"});
+    RewardBundle bundle;
+    bundle.schema = uint16_t(Number(j.at("schema"), path + "/schema", UINT16_MAX));
+    for (const auto &[field, table] :
+         std::initializer_list<std::pair<std::string_view, std::map<uint32_t, uint32_t> *>>{
+             {"items", &bundle.items}, {"consume_items", &bundle.consumeItems}})
+    {
+        if (!j.contains(field))
+            continue;
+        const auto &entries = j.at(field);
+        if (!entries.is_array() || entries.size() > RewardLimits::ItemEntries)
+            Bad(path, "reward item entry limit");
+        for (const auto &item : entries)
+        {
+            Fields(item, path, {"vnum", "count"});
+            const auto vnum = uint32_t(Number(item.at("vnum"), path + "/vnum", UINT32_MAX));
+            const auto count = uint32_t(Number(item.at("count"), path + "/count", RewardLimits::ItemCount));
+            if (!table->emplace(vnum, count).second)
+                Bad(path, "duplicate reward item prototype");
+        }
+    }
+    if (j.contains("experience"))
+        bundle.experience = Number(j.at("experience"), path + "/experience", RewardLimits::Amount);
+    if (j.contains("gold"))
+        bundle.gold = Number(j.at("gold"), path + "/gold", RewardLimits::Amount);
+    if (!ValidRewardBundle(bundle))
+        Bad(path, "invalid, empty or unsupported reward bundle");
+    return bundle;
+}
 template <class Enum>
 Enum Named(const Json &j, const std::string &path,
            std::initializer_list<std::pair<std::string_view, Enum>> values)
@@ -324,13 +355,34 @@ DefinitionParseResult ParseDefinition(std::string_view text)
         };
         const auto j = Json::parse(text.begin(), text.end(), callback);
         Fields(j, "definition", {"schema", "mission", "version", "root", "nodes"},
-               {"repeatable", "prerequisite", "predicates", "choices"});
-        if (Number(j.at("schema"), "schema") != 1)
+               {"repeatable", "prerequisite", "predicates", "choices", "rewards"});
+        const auto schema = Number(j.at("schema"), "schema");
+        if (schema != 1 && schema != 2)
             Bad("schema", "unsupported schema version");
+        if (j.contains("rewards") && schema != 2)
+            Bad("schema", "reward payloads require definition schema 2");
         auto &d = result.value;
         d.id = Text(j.at("mission"), "mission");
         d.version = uint32_t(Number(j.at("version"), "version", UINT32_MAX));
         d.root = Text(j.at("root"), "root");
+        if (j.contains("rewards"))
+        {
+            const auto &rewards = j.at("rewards");
+            if (!rewards.is_object() || rewards.size() > RewardLimits::Bundles)
+                Bad("rewards", "invalid reward table");
+            size_t rewardItems = 0;
+            for (auto it = rewards.begin(); it != rewards.end(); ++it)
+            {
+                if (!IsIdentifier(it.key()))
+                    Bad("rewards", "invalid reward key");
+                auto bundle = ReadRewardBundle(it.value(), "rewards/" + it.key());
+                const auto items = bundle.items.size() + bundle.consumeItems.size();
+                if (items > RewardLimits::DefinitionItems - rewardItems)
+                    Bad("rewards", "definition reward item memory limit");
+                rewardItems += items;
+                d.rewards.emplace(it.key(), std::move(bundle));
+            }
+        }
         if (j.contains("repeatable"))
             d.repeatable = Boolean(j.at("repeatable"), "repeatable");
         if (j.contains("prerequisite"))

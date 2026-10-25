@@ -92,6 +92,7 @@ set(_mission_persistence_sources
     mission/MissionCheckpoint.cpp
     mission/MissionCheckpointCodec.cpp
     mission/MissionActions.cpp
+    mission/MissionRewardBinding.cpp
 )
 add_executable(MissionCheckpointTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionCheckpointTests.cpp
@@ -104,6 +105,19 @@ if(TARGET auriga_sanitizers)
 endif()
 add_test(NAME mission_checkpoint COMMAND MissionCheckpointTests)
 
+add_executable(MissionRewardsTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MissionRewardsTests.cpp
+    ${_mission_persistence_sources}
+)
+target_include_directories(MissionRewardsTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+target_link_libraries(MissionRewardsTests PRIVATE Threads::Threads OpenSSL::Crypto)
+if(TARGET auriga_sanitizers)
+    target_link_libraries(MissionRewardsTests PRIVATE auriga_sanitizers)
+endif()
+add_test(NAME mission_rewards COMMAND MissionRewardsTests
+    ${CMAKE_SOURCE_DIR}/tests/server/fixtures/mission_package_v1.aurmission
+    ${CMAKE_SOURCE_DIR}/config/mission_engine_reward_package.example.json)
+
 add_executable(MissionPersistenceTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionPersistenceTests.cpp
     ${_mission_persistence_sources}
@@ -115,7 +129,7 @@ if(WIN32)
     target_link_libraries(MissionPersistenceTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests MissionCheckpointTests MissionPersistenceTests)
+    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests MissionCheckpointTests MissionPersistenceTests MissionRewardsTests)
         add_custom_command(TARGET ${_mission_tool} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${_mission_tool}>"
