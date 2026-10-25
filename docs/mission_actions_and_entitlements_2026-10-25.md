@@ -1,6 +1,7 @@
 # Mission Engine – tartós action outbox és jutalomjogosultság
 
 **Dátum:** 2026-10-25. **Részfázis:** 4/C. Előzménye a 4/B checkpoint/store réteg.
+**Kódcommit:** `5a8b13b5`.
 
 ## Elkészült és még hiányzó képességek
 

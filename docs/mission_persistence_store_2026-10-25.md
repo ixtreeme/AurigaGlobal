@@ -2,6 +2,12 @@
 
 **Dátum:** 2026-10-25. A 4/B réteg kódcommitja `b45ed489`, SQL-olvasási méretvédelme `9d33889f`.
 
+**Frissítés, 4/C (`5a8b13b5`):** az outbox és a szimbolikus jutalomjogosultság-ledger azóta
+elkészült. A jelen kódhoz a második, `mission_engine_actions.sql` migráció is
+kötelező: sémaverzió 2, nyolc tábla, hét FK. Az alábbi 4/B eredmények a korábbi
+alapot dokumentálják; az új réteget és határait a
+[4/C leírás](mission_actions_and_entitlements_2026-10-25.md) részletezi.
+
 ## Elkészült réteg
 
 A Mission Engine saját, additív MariaDB-sémát, verziózott checkpoint codecet,
@@ -11,8 +17,8 @@ adatbázis-primitívjei is elkészültek.
 
 Ez önálló persistence réteg. A GameServer bejelentkezési/kijelentkezési és
 core-váltási életciklusa még nem hívja; az új Mission Engine továbbra sincs
-játékosokra bekapcsolva. A reward outbox, a jutalomledger és a tényleges
-inventory/XP/pénz kézbesítés a következő külön munkarész.
+játékosokra bekapcsolva. A 4/B után elkészült outbox/entitlement réteghez képest
+a tényleges inventory/XP/pénz kézbesítés továbbra is külön munkarész.
 
 ## 1. Additív séma
 
@@ -24,7 +30,7 @@ a MariaDB DDL nem válik az alkalmazás prepared tranzakciójának részévé.
 
 | Tábla | Tartalom |
 |---|---|
-| `mission_engine_schema` | A támogatott adatbázisséma verziója, jelenleg 1 |
+| `mission_engine_schema` | A 4/B alap verziója 1; a jelenlegi 4/C kód 2-t követel |
 | `mission_engine_packages` | Pontos `.aurmission` bájtok, package ID/verzió és digest |
 | `mission_engine_definitions` | Mission ID/verzió → gráflenyomat és eredeti csomag |
 | `mission_engine_characters` | Tulajdonosi epoch/token, tárolási revízió, runtime-revízió, checkpoint |
@@ -36,8 +42,9 @@ szövegkolláció nem olvaszthat össze eltérő missionkulcsokat. Négy idegenk
 védi az archívum és a checkpoint-hivatkozások kapcsolatát. Nincs automatikus
 kaszkádos törlés. A séma újrafuttatása nem nullázza a magasabb verziójelölőt.
 
-A műveletek induláskor ellenőrzik a sémaverziót, a hat InnoDB-táblát, a négy
-idegenkulcs jelenlétét és a bekapcsolt constraint-ellenőrzéseket. Hibás
+A 4/B műveletek a sémaverziót, hat InnoDB-táblát és négy idegenkulcsot
+ellenőriztek; a jelenlegi 4/C kód már nyolc táblát és hét FK-t követel.
+Mindkettő ellenőrzi a bekapcsolt constraint-ellenőrzéseket. Hibás
 előfeltételnél nem írnak progress-t. Ez nem helyettesíti a telepítési
 sémaellenőrzést vagy a megfelelő DB-jogosultságokat.
 
@@ -259,14 +266,14 @@ változaton. A nagy tesztblobokhoz csak a privát tesztszerver kapott 64 MiB-os
 
 ## 8. Következő feladatok
 
-1. Action outbox és jutalomledger, a checkpointtal közös tartós tranzakcióval;
-   az item/XP/pénz és fogyasztás pontos idempotens hatásszerződése.
+1. Az outbox és a szimbolikus entitlement-ledger a 4/C-ben elkészült;
+   az item/XP/pénz és fogyasztás pontos idempotens hatásszerződése még hátravan.
 2. A tényleges kézbesítési réteg crash/retry/full-inventory próbái.
 3. Authoritative session-/core-koordináció és a persistence callback-életciklus
    bekötése; ezek a jogosultsági rétegek még nem következnek automatikusan a DB-fence-ből.
 4. Natív gameplay adapterek és az első NPC → célok → választás → jutalom szelet.
 5. Unity presentation/dialógus, majd Mission Studio és tartalommigráció.
 
-A jutalomledger/outbox hiányában a teljes Mission Engine játékosokra való
-bekapcsolása még nem kész feladat. Az éles telepítés és a régi rendszerek
+A tényleges kézbesítő és session-koordinátor hiányában a teljes Mission Engine
+játékosokra való bekapcsolása még nem kész feladat. Az éles telepítés és a régi rendszerek
 adatainak migrációja külön ellenőrzést és visszaállítási tervet igényel.

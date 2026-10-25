@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-25
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `9d33889f`; az alap 4/B megvalósítás `b45ed489`.
+- **Aktuális kódcommit:** `5a8b13b5`; előző lezárt állapot: `de45f7cd`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -14,6 +14,8 @@ Elkészült és tesztelt az önálló natív küldetésmotor magja, a verziózot
 megbízható adatbázismentéshez szükséges prepared tranzakciós infrastruktúra.
 Elkészült a saját additív Mission-séma, a tartós checkpoint codec/store és
 a pontos régi csomagok/definíciók archívuma is, owner-fencinggel és mentési nyugtákkal.
+Elkészült a checkpointtal közösen mentett action outbox és az egyszer rögzíthető,
+szimbolikus jutalomjogosultság-ledger is; ez még nem tényleges jutalomkézbesítés.
 
 A teljes, játékosok által használható új küldetésrendszer még nincs bekötve.
 A session-/core-életciklus persistence-bekötése, az egyszeri jutalmazás,
@@ -129,35 +131,53 @@ használ az alábbiak szerint. A mentési receipt nem jutalomledger.
 - Valódi adatbázis-crash/restart után új C++ folyamatban ellenőrzött cold restore.
 
 **Fontos határ:** a persistence API kész, az éles session-/core-koordináció
-még nem hívja. Nincs automatikus lease/failover. Outbox, jutalomledger és
-tényleges jutalomkézbesítés még nincs. A réteg nem kapcsolja be magát játékosokra.
+még nem hívja. Nincs automatikus lease/failover. A réteg nem kapcsolja be magát játékosokra.
+
+### 3.6. Action outbox és jutalomjogosultság – 4/C
+
+- Sémaverzió 2, összesen nyolc saját InnoDB-tábla és hét FK.
+- A checkpointtal közösen mentett outbox, stabil teljes actionkulccsal és gráflenyomattal.
+- Tartós megszakítás; cancelled action ID nem aktiválható újra.
+- Owner/revízió/checkpoint-hash ellenőrzése mellett egyszer rögzített entitlement.
+- Ledger nélküli reward-nyugtázás elutasítása a teljes mentés visszagörgetésével.
+- Külön mentési és entitlement COMMIT-vesztés, verseny, félbeírás és cold restart próbák.
+- Teljes 128-as, bound paraméteres SQL-köteg és kapacitástúllépés elutasítása.
+
+**Fontos határ:** a ledger szimbolikus jogosultság, nem inventory/XP/pénz
+hatásnyugta. A meglévő item_award útban az item INSERT és a taken UPDATE külön
+művelet; erre még nem kötjük rá az új motort. A verziózott reward-payload,
+biztonságos kézbesítő és hiteles session-/core-életciklus továbbra is hátravan.
 
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
 |---|---|
-| Windows x64 / RelWithDebInfo fordítás | GameServer, Database, LoginServer |
+| Windows x64 / RelWithDebInfo fordítás | GameServer normál és ASAN alatt; a 4/B-ben Database és LoginServer is |
 | Natív Mission core | 8723 ellenőrzés |
 | Csomagkezelés | 4842 ellenőrzés |
-| Checkpoint codec | 3210 ellenőrzés |
+| Checkpoint codec és action identity | 3227 ellenőrzés |
 | SQL-egységtesztek | 2232 ellenőrzés |
 | Valódi SQL-infrastruktúra | 204 ellenőrzés |
-| Valódi Mission store és új folyamatban cold restore | 270 + 21 ellenőrzés a rögzített futásban |
+| Valódi Mission store/action és új folyamatban cold restore | 529 + 39 ellenőrzés a rögzített végső normál körben; ASAN alatt is sikeres |
 | Célzott regressziós CTest-kör | 27/27 sikeres |
 | Külön AddressSanitizer CTest-kör | 6/6 sikeres |
 | Mindkét valódi MariaDB-suite ASAN alatt | Sikeres, crash/restarttal is |
 
+A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
 commit előtti kapcsolatmegszakítást és egy már commitolt tranzakció elveszett
-válaszát. Az új próbák elkülönített helyi adatbázison futottak.
+válaszát, az outbox/ledger versenyét és a ledger nélküli nyugtázás tiltását.
+Az új próbák elkülönített helyi adatbázison futottak. A 27-es kör után még egy
+késői mentési tokenütközést ellenőrző próba került a tesztbe; a bővített
+Mission-suite külön normál és ASAN körben is újrafutott, változatlan production kóddal.
 
 Ez a célzott regressziós kör eredménye; nem állítja az összes létező
 szerverteszt vagy az összes játékbeli quest elfogadását. Ebben a Mission
 részfázisban nem történt FreeBSD build, Unity end-to-end elfogadás vagy
 az új Mission Engine éles/távoli telepítése.
 
-Az előző fázis hash-ellenőrzése szerint a szezonális Mission Pass 34 védett
+A jelen fázis hash-ellenőrzése szerint a szezonális Mission Pass 34 védett
 fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 ## 5. Commitok és rögzített Unity-munka
@@ -175,6 +195,8 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 | `dc705479` | Az első állapotösszesítő és folytatási terv |
 | `b45ed489` | Tartós checkpoint, csomagarchívum és owner-fencing, valódi crash/cold-process próbákkal |
 | `9d33889f` | Bináris SQL-eredmények méretkorlátja már a kliensoldali pufferelés előtt |
+| `de45f7cd` | A 4/B tartós mentési réteg lezárt állapotösszesítése |
+| `5a8b13b5` | Tartós action outbox, fenced szimbolikus jutalomjogosultság és crash/retry/race próbák |
 
 A korábbi Unity BattlePass-kivezetés rögzített változata: **Unity Version
 Control changeset 30**, `/main/codex-mission-engine` ág. Ez a régi felület
@@ -183,6 +205,8 @@ történt új Unity-módosítás vagy checkin.
 
 A 4/B munkafázis elkészült megvalósítását és próbáit a
 `mission_persistence_store_2026-10-25.md` dokumentum részletezi.
+A 4/C outbox/entitlement réteg részletei és kézbesítési határai:
+`mission_actions_and_entitlements_2026-10-25.md`.
 
 ## 6. Folytatás – javasolt, függőségek szerinti sorrend
 
@@ -219,15 +243,15 @@ vagy elveszett válasz nem okoz állapotvesztést vagy kétszeres eseménybeszá
 
 ### 3. Action outbox és egyszeri jutalmazás
 
-**A következő új domain-munkarész.** Ezzel párhuzamosan a session-életciklus
-integrációját a kész fencing-primitívekre kell tervezni; gameplay-hatás csak
-az igazolt jutalmazás és koordináció után kapcsolható be.
+**Az outbox és a szimbolikus jogosultság a 4/C-ben elkészült.** Következő a
+verziózott natív reward-payload és a tényleges kézbesítés biztonságossá tétele.
+Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció után kapcsolható be.
 
-- Tartós action outbox és jutalomledger a progress mentésével közös tranzakcióban.
-- A még érvényes action, karakter, definícióverzió és revision ellenőrzése.
-- Az `item_award` és a meglévő inventory/ECS szolgáltatásokkal összehangolt,
+- [x] Tartós action outbox a progress mentésével közös tranzakcióban és külön entitlement-ledger.
+- [x] A mentett action, karakter, definícióverzió, owner, revision és checkpoint-hash ellenőrzése.
+- [ ] Verziózott és archivált natív reward-payload, valamint az `item_award`/inventory/ECS réteggel összehangolt,
   idempotens kézbesítés; az item, XP, pénz és fogyasztás külön hatásszerződése.
-- Restart/retry során ugyanaz a művelet ne adhasson vagy vehessen el újra tárgyat.
+- [ ] Restart/retry során ugyanaz a művelet ne adhasson vagy vehessen el újra tárgyat.
 
 **Elfogadás:** tele inventory, újraküldött kérés, hálózati timeout és a
 kézbesítés közbeni crash esetén sincs jutalomduplázás vagy elvesző jogosultság.
@@ -235,9 +259,9 @@ Az SQL-tranzakción kívüli ECS-hatásokhoz külön egyeztetési mechanizmus ke
 
 ### 4. A valódi Mission store hibapróbái
 
-A checkpoint-/archívum-/fencing-réteg crash-, race-, reconnect- és hideg
-újraindítási próbái már sikeresek. A jutalomkézbesítési és outbox/ledger
-hibapróbák a következő réteggel együtt készülnek.
+A checkpoint-/archívum-/fencing-réteg és az outbox/entitlement réteg crash-, race-,
+reconnect- és hideg újraindítási próbái már sikeresek. A valódi tárgykézbesítés
+hibapróbái a következő réteggel együtt készülnek.
 
 - Hideg újraindítás, régi csomagverzió, hot reload és rollback együtt.
 - Crash a mentés előtt/után és a jutalomkézbesítés különböző pontjain.
@@ -288,5 +312,6 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Node Library átvezetés és csomagformátum](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_delta_2026-10-25.md)
 - [Prepared tranzakciós alap és hibapróbák](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_persistence_sql_2026-10-25.md)
 - [Tartós checkpoint/store, csomagarchívum és fencing](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_persistence_store_2026-10-25.md)
+- [Action outbox és szimbolikus jutalomjogosultság](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_actions_and_entitlements_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
 - [80-as kampány tervezési manifestje](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_campaign_manifest_2026-10-25.json)
