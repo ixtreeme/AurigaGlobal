@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "package": "demo.campaign",
+  "version": 1,
+  "default_locale": "hu",
+  "missions": [
+    {
+      "schema": 1,
+      "mission": "demo.core",
+      "version": 1,
+      "root": "story",
+      "choices": {
+        "demo.suspect": [
+          "captain",
+          "merchant"
+        ]
+      },
+      "predicates": {
+        "correct_suspect": {
+          "op": "choice_is",
+          "key": "demo.suspect",
+          "value": "captain"
+        }
+      },
+      "nodes": [
+        {
+          "id": "story",
+          "kind": "sequence",
+          "children": [
+            "gather",
+            "choose",
+            "resolve",
+            "reward"
+          ]
+        },
+        {
+          "id": "gather",
+          "kind": "objective",
+          "objective": {
+            "event": "item_collected",
+            "subject": "demo.iron",
+            "goal": 3
+          },
+          "completion_flags": [
+            "demo.fragments_found"
+          ]
+        },
+        {
+          "id": "choose",
+          "kind": "objective",
+          "objective": {
+            "event": "dialogue_choice",
+            "subject": "demo.suspect",
+            "goal": 1
+          }
+        },
+        {
+          "id": "resolve",
+          "kind": "recovery",
+          "children": [
+            "evidence",
+            "recover_lead"
+          ]
+        },
+        {
+          "id": "evidence",
+          "kind": "branch",
+          "branches": [
+            {
+              "when": {
+                "op": "subgraph",
+                "key": "correct_suspect"
+              },
+              "child": "identified"
+            }
+          ],
+          "fallback": "wrong_accusation"
+        },
+        {
+          "id": "identified",
+          "kind": "success",
+          "completion_flags": [
+            "demo.evidence_resolved"
+          ]
+        },
+        {
+          "id": "wrong_accusation",
+          "kind": "failure"
+        },
+        {
+          "id": "recover_lead",
+          "kind": "objective",
+          "objective": {
+            "event": "puzzle_solved",
+            "subject": "demo.second_lead",
+            "goal": 1
+          },
+          "completion_flags": [
+            "demo.evidence_resolved"
+          ]
+        },
+        {
+          "id": "reward",
+          "kind": "reward",
+          "reward": "demo.reward",
+          "completion_flags": [
+            "demo.finished"
+          ]
+        }
+      ]
+    }
+  ],
+  "presentation": {
+    "locales": {
+      "hu": {
+        "demo.title": "A második nyom",
+        "demo.summary": "Gyűjts három vasdarabot, azonosítsd a gyanúsítottat, és szükség esetén keress új bizonyítékot.",
+        "demo.gather": "Gyűjts három vasdarabot",
+        "demo.choose": "Válassz gyanúsítottat",
+        "demo.recover": "Találj második bizonyítékot"
+      }
+    },
+    "missions": {
+      "demo.core": {
+        "title": "demo.title",
+        "summary": "demo.summary",
+        "objectives": [
+          {
+            "node": "gather",
+            "title": "demo.gather"
+          },
+          {
+            "node": "choose",
+            "title": "demo.choose"
+          },
+          {
+            "node": "recover_lead",
+            "title": "demo.recover"
+          }
+        ]
+      }
+    }
+  }
+}

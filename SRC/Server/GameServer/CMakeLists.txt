@@ -52,8 +52,38 @@ target_link_libraries(MissionCheck PRIVATE Threads::Threads)
 if(TARGET auriga_sanitizers)
     target_link_libraries(MissionCheck PRIVATE auriga_sanitizers)
 endif()
+set(_mission_package_sources
+    mission/MissionDefinition.cpp
+    mission/MissionCatalog.cpp
+    mission/MissionValidator.cpp
+    mission/MissionNativeSchema.cpp
+    mission/MissionPackageCodec.cpp
+    mission/MissionPackageSource.cpp
+    mission/MissionPackageManager.cpp
+)
+add_executable(MissionCompiler EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/SRC/Tools/MissionCompiler.cpp
+    ${_mission_package_sources}
+)
+add_executable(MissionPackageTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MissionPackageTests.cpp
+    ${_mission_package_sources}
+    mission/MissionConditionEvaluator.cpp
+    mission/MissionEventRouter.cpp
+    mission/MissionRuntime.cpp
+    mission/MissionCheckpoint.cpp
+)
+foreach(_mission_package_target MissionCompiler MissionPackageTests)
+    target_include_directories(${_mission_package_target} PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+    target_link_libraries(${_mission_package_target} PRIVATE Threads::Threads OpenSSL::Crypto)
+    if(TARGET auriga_sanitizers)
+        target_link_libraries(${_mission_package_target} PRIVATE auriga_sanitizers)
+    endif()
+endforeach()
+add_test(NAME mission_package COMMAND MissionPackageTests
+    ${CMAKE_SOURCE_DIR}/config/mission_engine_package.example.json)
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_mission_tool MissionCoreTests MissionCheck)
+    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests)
         add_custom_command(TARGET ${_mission_tool} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${_mission_tool}>"
@@ -110,6 +140,10 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
+    add_test(NAME mission_package_tools COMMAND ${Python3_EXECUTABLE} -B
+        ${CMAKE_SOURCE_DIR}/tests/server/MissionPackageToolsTests.py
+        --compiler $<TARGET_FILE:MissionCompiler>
+        --source ${CMAKE_SOURCE_DIR}/config/mission_engine_package.example.json)
     add_test(NAME server_config_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerConfigToolsTests.py)
     add_test(NAME server_package_tools COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerPackageToolsTests.py --checker $<TARGET_FILE:ServerPackageCheck>)
     add_test(NAME quest_source_migration COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/QuestSourceMigrationTests.py --checker $<TARGET_FILE:ServerPackageCheck>)
@@ -737,6 +771,6 @@ add_test(NAME mission_pass_rules COMMAND MissionPassRulesTests
 get_property(_server_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
 list(FILTER _server_test_targets INCLUDE REGEX "Tests$")
 add_custom_target(ServerTests DEPENDS ${_server_test_targets})
-add_dependencies(ServerTests ServerPackageCheck MissionCheck)
+add_dependencies(ServerTests ServerPackageCheck MissionCheck MissionCompiler)
 get_property(_server_tests DIRECTORY PROPERTY TESTS)
 set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)
