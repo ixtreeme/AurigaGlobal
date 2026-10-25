@@ -4,12 +4,12 @@ Dátum: 2026-10-25. Ág: `codex/mission-engine`.
 
 ## Felosztás
 
-Az új történetalapú Mission Engine kilenc saját táblája a külön **mission**
+Az új történetalapú Mission Engine tíz saját táblája a külön **mission**
 adatbázisba kerül. A player, account, common és log meglévő sémája változatlan.
 A szezonális Mission Pass és a régi Lua quest-adatok a jelenlegi helyükön maradnak.
 
 A Mission-sémában van a csomag-/definícióarchívum, a karakter-checkpoint,
-az owner/revízió, a mentési műveletnyugta, az action outbox, az entitlement-ledger és a konkrét award-mapping.
+az owner/revízió, a mentési műveletnyugta, az action outbox, az entitlement-ledger a konkrét award-mapping és az erőforrástervek archívuma.
 A tényleges tárgy, raktár és item_award a player adatbázisban marad.
 
 A motornak nem kell új szolgáltatás vagy külön folyamat. A persistence-tervek
@@ -57,7 +57,9 @@ Indítás előtti ellenőrzések:
 
 Az önálló `db/mission_schema.sql` teljesen minősített neveket használ:
 `mission.mission_engine_*`. Az adminisztrátori import alapértelmezett
-adatbázistól független; nincs USE és nincs régi táblák törlése. A sémaverzió 3.
+adatbázistól független; nincs USE és nincs régi táblák törlése. A sémaverzió 4. A negyedik additív migráció erőforrás-javaslatokat tárol;
+önmagában nem hajt végre XP/pénz/item módosítást. A részletek a
+`mission_resource_preparation_2026-10-25.md` dokumentumban vannak.
 A DDL forrása továbbra is a három meglévő Mission-migráció; a Python-generátor
 és a teszt biztosítja, hogy az önálló SQL ne térjen el tőlük.
 

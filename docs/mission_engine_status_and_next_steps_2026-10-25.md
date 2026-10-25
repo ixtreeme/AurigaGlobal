@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-25
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `ec084d4e`; előző lezárt állapot: `6ac2819a`.
+- **Aktuális kódcommit:** `20e1dd77`; előző lezárt állapot: `d7752695`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -22,6 +22,9 @@ Elkészült a közös item_award → item kézbesítő javítása is: a konkrét
 az átvételi nyugta együtt commitol, valódi tárgysémás crash/retry próbával.
 Elkészült a kizárólag tárgyakat adó Mission ledger → award adapter, tartós mappinggel
 és a tényleges itemig végigfutó próbával. A cache a commit-sorrendtől függetlenül találja meg az awardokat.
+Elkészült a kevert XP/pénz/tárgyfogyasztás determinisztikus előkészítése és a
+bemenet/szabály/sorsolás/eredmény tartós archívuma is (4/D–4a). Ez még nem
+változtatja meg a karakter erőforrásait; az élő író és a hatásnyugta következik.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
 kezeli; külön player/mission sémán közös commit/rollback/crash próba is sikeres.
@@ -193,7 +196,7 @@ közvetlen Database ág blokkoló; az új Mission dispatchernek aszinkron műkö
 - `common.sql.mission`, öröklés, részleges felülírás és típusos natív konfiguráció.
 - A playerrel azonos MariaDB-végpont, külön sémanév; minden core közös Mission-célja.
 - Régi konfigurációnál dedikált `mission` cél képzése, player-adatbázisra visszaesés nélkül.
-- Önálló `db/mission_schema.sql`, a meglévő migrációkból generálva; a 4/D–3 óta kilenc tábla.
+- Önálló `db/mission_schema.sql`, a meglévő migrációkból generálva; a 4/D–4a óta tíz tábla.
 - Új csomag bootstrap és explicit `init-mission-db`, privát hitelesítési fájlokkal.
 - Qt **SQL · Küldetések** oldal, ötödik SQL-szerep ellenőrzése és közös mentési csoport.
 - Mission-progress mellett a négyadatbázisos legacy import, illetve a régi négyes SQL-
@@ -223,32 +226,58 @@ awardonként atomikusan készülnek. XP/pénz/fogyasztás esetén az egész bund
 elutasításra kerül. Az aszinkron élő dispatcher, session/core-koordinátor és a
 Gameplay binding engedélyezése még hátravan. Futó szerver és valódi játékosadat nem változott.
 
+### 3.11. Kevert erőforrások előkészítése és archívuma (4/D–4a)
+
+- Teljes csomagot elfogadó/elutasító, mellékhatásmentes natív erőforrástervező.
+- Determinisztikus fogyasztás meglévő, alkalmas stackekből; grant nem fizethet costot.
+- XP/szint/negyedszint/stat/skill/random HP/SP számítás, explicit archivált sorsolással.
+- XP-blokkolás, maximumszint, pénzplafon és mezőtúlcsordulás teljes csomagos ellenőrzése.
+- Kanonikus `AURRES01` formátum, SHA-256, méret-/mélység-/elemszám-korlát és teljes újraszámítás.
+- Owner/revision/checkpoint/pending-action ellenőrzött SQL-archiválás és pontos műveletnyugta.
+- Sémaverzió **4**, tíz saját InnoDB-tábla, kilenc FK; negyedik additív migráció.
+- Az új nyugtákat tartalmazó adatbázison a régi migráció újrafuttatása sem szűkíti vissza a művelettípusokat.
+- Lost COMMIT, rollback, cancelled action, tokenütközés, korlátos blobolvasás,
+  párhuzamos REPEATABLE READ limitellenőrzés és valódi DB-crash utáni új folyamat próbája.
+
+**Határ:** az archivált terv nem erőforrás-hatásnyugta és nem alkalmazási engedély.
+A `Before`/`After` gazdasági/progressziós átmenet; az új jutalomtárgyak elhelyezése,
+a teljes vitals/ECS frissítés és a szintlépési értesítések még a későbbi adapter feladatai.
+Nincs bekötött tartós resource revision vagy cache-fence az élő karakteríróban.
+A tényleges XP/pénz/fogyasztás közös commitja, a Database/GameServer átadás és
+az élő koordinátor következik. A Gameplay kapu továbbra is zárt.
+
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
 |---|---|
-| Windows x64 / RelWithDebInfo fordítás | GameServer, Database és LoginServer normál/ASAN |
+| Windows x64 / RelWithDebInfo fordítás | GameServer és Database normál/ASAN; LoginServer az előző körben |
 | Natív Mission core | 8723 ellenőrzés |
 | Csomagkezelés | 4856 ellenőrzés |
 | Checkpoint codec és action identity | 3227 ellenőrzés |
 | Verziózott reward-payload suite | 2109 ellenőrzés, normál és ASAN alatt |
+| Kevert erőforrástervező / codec / alkalmazási egyeztetés | 1562 ellenőrzés, normál és ASAN |
 | SQL-egységtesztek | 2232 ellenőrzés |
 | Valódi SQL-infrastruktúra | 204 ellenőrzés |
-| Valódi Mission store/action/item, három séma és cold restore | Normál/ASAN: 1063 + 91 a rögzített körökben |
+| Valódi Mission store/action/item/resource archive, három séma és cold restore | Normál és ASAN: 1299 + 102 a végső rögzített körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 34/34 sikeres |
-| Külön AddressSanitizer CTest-kör | 11/11 sikeres |
+| Célzott regressziós CTest-kör | 21/21 sikeres a jelen részfázisban |
+| Külön AddressSanitizer CTest-kör | 12/12 sikeres |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
 | Valódi MariaDB-suite-ok ASAN alatt | Az új item-award suite is sikeres, crash/restarttal |
+
+A 4/D–4a végső kódján az utolsó változásokkal érintett natív erőforrás- és
+valódi DB-suite külön ismét sikeres: normál 2/2, ASAN erőforrás 1/1, valamint
+külön ASAN MariaDB crash/restart. A telepítő újrafuttatása meglévő kind-5
+műveletnyugtákkal is sikeres; a kapcsolódó migráció/csomag/telepítő kör 4/4.
 
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
 commit előtti kapcsolatmegszakítást és egy már commitolt tranzakció elveszett
 válaszát, az outbox/ledger versenyét és a ledger nélküli nyugtázás tiltását.
-Az új próbák elkülönített helyi adatbázison futottak. A 34-es regressziós és a
+Az új próbák elkülönített helyi adatbázison futottak. A korábbi 34-es regressziós és
 11-es ASAN kör után a Mission/legacy sémanévütközés-ellenőrzés szigorításának
 konfigurációs próbái külön ismét sikeresek: normál 4/4, ASAN 3/3.
 A valódi DB-próbák az aktív új gráf mellett a régi konkrét jutalomtartalmat és
@@ -266,6 +295,7 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `20e1dd77` | Determinisztikus kevert erőforrástervek, codec, tartós archívum és sémaverzió 4 |
 | `e9d1ca90` | Mission Engine audit és migrációs terv |
 | `c6e80183` | Régi BattlePass kivezetése, szezonális Mission Pass megtartása |
 | `9ab0b12c` | Régi launcher BattlePass-exportjainak kivezetése |
@@ -338,7 +368,8 @@ vagy elveszett válasz nem okoz állapotvesztést vagy kétszeres eseménybeszá
 **Az outbox és a jogosultság a 4/C-ben, a verziózott payload a 4/D–1-ben,
 a közös item-award kézbesítő a 4/D–2-ben, a Mission → award mapping és a
 commit-sorrenddel szemben helyes cache a 4/D–3-ban elkészült.** Következő
-az XP/pénz/tárgyfogyasztás közös erőforrásprotokollja, majd az élő koordinátor.
+a tényleges XP/pénz/tárgyfogyasztás erőforrásírója és az élő koordinátor.
+Az előkészítés és a tartós tervarchívum a 4/D–4a-ban elkészült.
 Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció után kapcsolható be.
 
 - [x] Tartós action outbox a progress mentésével közös tranzakcióban és külön entitlement-ledger.
@@ -350,6 +381,9 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Mission ledger → award közös tranzakció és stabil action/payload → award mapping tárgycsomagokra.
 - [x] Commit-sorrendtől független, korlátos oldalakból álló award-cache és helyes ikonnyugtázás.
 - [x] Tárgycsomag teljes útjának valódi kernel/SQL/cache/item crash/retry/telt raktár próbája.
+- [x] Kevert erőforrás-átmenet determinisztikus előkészítése és tartós, korlátos tervarchívuma.
+- [ ] Egyetlen hiteles erőforrásíró: tartós revision/fence, régi cache és függő mentések kiürítése.
+- [ ] Teljes XP/pénz/cost/award csomag közös commitja és tartós resource-effect nyugtája.
 - [ ] Az `item_award`/inventory/ECS réteggel összehangolt,
   idempotens kézbesítés; az item, XP, pénz és fogyasztás külön hatásszerződése.
 - [ ] Restart/retry során ugyanaz a művelet ne adhasson vagy vehessen el újra tárgyat.
@@ -363,7 +397,8 @@ Az SQL-tranzakción kívüli ECS-hatásokhoz külön egyeztetési mechanizmus ke
 A checkpoint-/archívum-/fencing-réteg, az outbox/entitlement és az egyedi
 item-award → item réteg crash-, race-, reconnect- és hideg újraindítási próbái
 sikeresek. A teljes Mission → award → item út próbái is sikeresek; a kevert
-erőforráshatások és az élő session/core-protokoll próbái még hátravannak.
+csomagok előkészítési/archiválási hibapróbái is sikeresek. A tényleges erőforráshatások
+és az élő session/core-protokoll próbái még hátravannak.
 
 - Hideg újraindítás, régi csomagverzió, hot reload és rollback együtt.
 - Crash a mentés előtt/után és a jutalomkézbesítés különböző pontjain.
@@ -418,6 +453,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Verziózott natív jutalomcsomagok és binding-szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_reward_payloads_2026-10-25.md)
 - [Kanonikus item-award kézbesítő és valódi tárgysémás hibapróbák](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_item_award_delivery_2026-10-25.md)
 - [Mission tárgyjutalom, stabil award-mapping és teljes út hibapróbái](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_item_awards_2026-10-25.md)
+- [Kevert erőforrások előkészítése és tartós archívuma](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_resource_preparation_2026-10-25.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
