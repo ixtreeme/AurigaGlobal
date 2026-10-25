@@ -4,6 +4,7 @@
 #include "../../SRC/Server/GameServer/mission/MissionPersistence.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionValidator.hpp"
 #include "MissionPersistenceFixture.hpp"
+#include "MissionResourceFixture.hpp"
 #include <Core/Logging.hpp>
 #include <SQL/AsyncSQL.h>
 #include <algorithm>
@@ -314,7 +315,7 @@ void MissingArchiveAndCorruption(CAsyncSQL &sql, const DefinitionRegistry &regis
     Text(sql, "SET foreign_key_checks=1");
     Query(sql, {"UPDATE mission_engine_schema SET schema_version=99 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes), false);
-    Query(sql, {"UPDATE mission_engine_schema SET schema_version=3 WHERE singleton=1", {}});
+    Query(sql, {"UPDATE mission_engine_schema SET schema_version=4 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes));
 }
 void ConcurrentSaves(CAsyncSQL &admin, const DefinitionRegistry &registry)
@@ -892,13 +893,13 @@ void QualifiedInstall(CAsyncSQL &sql, const char *migration)
     }
     Check(Number(sql,
                  "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND ENGINE='InnoDB'",
-                 {SqlParam::Text(installed)}) == 9,
-          "qualified installer did not create nine dedicated InnoDB tables");
+                 {SqlParam::Text(installed)}) == 10,
+          "qualified installer did not create ten dedicated InnoDB tables");
     CAsyncSQL target;
     Check(target.Setup("127.0.0.1", "root", "", installed.c_str(), "utf8mb4", true, port),
           "custom Mission database connection failed");
     Execute(target, db::Claim(900, 0, Token(90), Token(91)));
-    Check(Number(target, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 3,
+    Check(Number(target, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 4,
           "qualified custom-schema installer is not usable by the real store");
 }
 void CrossSchema(CAsyncSQL &sql, const DefinitionRegistry &registry, unsigned int proxy)
@@ -1357,6 +1358,222 @@ void MissionItems(CAsyncSQL &sql, unsigned int proxy)
     Check(db::DecodeItemAwards(*unbackedResult, unbacked).status == db::ItemAwardsStatus::Invalid,
           "symbolic entitlement was mistaken for a delivered item bundle");
 }
+namespace resources = resource_fixture;
+MissionRuntime::Checkpoint ResourceCheckpoint(const DefinitionRegistry &registry, uint32_t character)
+{
+    MissionRuntime runtime(registry, {character, 17}, 1000);
+    Accepted(runtime.Start("resource.story", 1, 10, 1000));
+    Accepted(runtime.Dispatch({{character, 17}, {1, 1}, 1001, EventKind::MobKilled, "monkey", 1, {}}, 1001));
+    Check(runtime.PendingActions() == std::vector<ActionKey>{resources::Key(character)},
+          "resource action missing");
+    return runtime.Save();
+}
+db::ResourceRead ResourceArchive(CAsyncSQL &sql, db::Owner owner, const PinnedReward &pin,
+                                 ContentDigest digest)
+{
+    auto message = Query(sql, db::ReadResources(owner, pin, digest));
+    return db::DecodeResourceArchive(*message, owner, pin, digest);
+}
+void ResourcePlans(CAsyncSQL &sql, unsigned int proxy)
+{
+    const auto source = resources::Source();
+    Execute(sql, db::ArchivePackage(CompilePackage(source).bytes));
+    DefinitionRegistry registry;
+    Check(registry.Activate(source.missions).status == Publication::Status::Published,
+          "resource graph invalid");
+    const auto owner = Claim(sql, 100, 0, Token(100), db::NewToken());
+    const auto checkpoint = ResourceCheckpoint(registry, 100);
+    Execute(sql, db::Save(checkpoint, registry, owner, 0, db::NewToken()));
+    const auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
+    const auto pin = resources::Pin();
+    auto prepared = PrepareResources(pin, resources::Snapshot(), resources::Rules(), resources::Rolls());
+    Check(bool(prepared), "mixed resource preparation failed");
+    const auto plan = db::ArchiveResources(owner, pin, *prepared.plan, 1, digest, Token(200));
+    const auto awards = Number(sql, ("SELECT COUNT(*) FROM " + Player("item_award")).c_str());
+    const auto items = Number(sql, ("SELECT COUNT(*) FROM " + Player("item")).c_str());
+    const auto ledger = Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger");
+    // Real canonical data, deliberately distinct from the captured proposal.
+    // Archival must not apply the captured economic transition to either.
+    Text(sql, "INSERT INTO " + Player("player") +
+                  "(id,account_id,name,gold,exp,level) VALUES(100,900,'resource100',77,12,9)");
+    Text(sql, "INSERT INTO " + Player("item") +
+                  "(id,owner_id,window,pos,count,vnum) VALUES(800100,100,'INVENTORY',3,5,50010)");
+    Check(ResourceArchive(sql, owner, pin, prepared.plan->Digest()).status == db::ReadStatus::Missing,
+          "unarchived resources found");
+    Execute(sql, plan);
+    Check(Resolve(sql, plan).status == db::Resolution::Committed, "resource operation not durable");
+    Execute(sql, plan, false);
+    Check(Resolve(sql, plan).status == db::Resolution::Committed, "retry lost original proposal receipt");
+    Execute(sql, db::ArchiveResources(owner, pin, *prepared.plan, 1, digest, db::NewToken()));
+    auto read = ResourceArchive(sql, owner, pin, prepared.plan->Digest());
+    Check(read.status == db::ReadStatus::Found && read.plan->Bytes() == prepared.plan->Bytes(),
+          "archived inputs/results changed");
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_resource_plans") == 1,
+          "duplicate proposal inserted");
+    Check(Number(sql, ("SELECT gold FROM " + Player("player") + " WHERE id=100").c_str()) == 77 &&
+              Number(sql, ("SELECT exp FROM " + Player("player") + " WHERE id=100").c_str()) == 12 &&
+              Number(sql, ("SELECT count FROM " + Player("item") + " WHERE id=800100").c_str()) == 5 &&
+              Number(sql, ("SELECT COUNT(*) FROM " + Player("item_award")).c_str()) == awards &&
+              Number(sql, ("SELECT COUNT(*) FROM " + Player("item")).c_str()) == items + 1 &&
+              Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger") == ledger &&
+              Number(sql, "SELECT action_state FROM mission_engine_action_outbox WHERE action_id=?",
+                     {SqlParam::Blob(Binary(ActionIdentity(pin.Action())))}) == 1,
+          "proposal archival changed live resources/entitlement/pending action");
+    auto wrong = digest;
+    wrong[0] ^= 1;
+    Execute(sql, db::ArchiveResources(owner, pin, *prepared.plan, 1, wrong, db::NewToken()), false);
+    Execute(sql, db::ArchiveResources(owner, pin, *prepared.plan, 2, digest, db::NewToken()), false);
+    auto old = owner;
+    ++old.epoch;
+    Execute(sql, db::ArchiveResources(old, pin, *prepared.plan, 1, digest, db::NewToken()), false);
+    Check(ResourceArchive(sql, old, pin, prepared.plan->Digest()).status == db::ReadStatus::Missing,
+          "wrong owner read proposal");
+    auto source2 = resources::Snapshot();
+    ++source2.gold;
+    auto different = PrepareResources(pin, source2, resources::Rules(), resources::Rolls());
+    auto collision = db::ArchiveResources(owner, pin, *different.plan, 1, digest, plan.operation);
+    Execute(sql, collision, false);
+    Check(Resolve(sql, collision).status == db::Resolution::TokenConflict &&
+              ResourceArchive(sql, owner, pin, different.plan->Digest()).status == db::ReadStatus::Missing,
+          "token collision persisted a partial alternative");
+    auto payload = pin.Payload();
+    ++payload.gold;
+    Check(!db::ArchiveResources(owner, resources::Pin(payload), *prepared.plan, 1, digest, db::NewToken()),
+          "wrong pinned payload accepted");
+    // Valid digest is not sufficient: storage corruption must fail decoding.
+    Query(sql, {"UPDATE mission_engine_resource_plans SET plan_bytes=CONCAT(CHAR(0),SUBSTRING(plan_bytes,2)) "
+                "WHERE action_id=?",
+                {SqlParam::Blob(Binary(ActionIdentity(pin.Action())))}});
+    Check(ResourceArchive(sql, owner, pin, prepared.plan->Digest()).status == db::ReadStatus::Invalid,
+          "corrupt archived envelope accepted");
+    Query(sql, {"UPDATE mission_engine_resource_plans SET plan_bytes=? WHERE action_id=?",
+                {SqlParam::Blob(Binary(prepared.plan->Bytes())),
+                 SqlParam::Blob(Binary(ActionIdentity(pin.Action())))}});
+    Text(sql, "SET SESSION check_constraint_checks=0");
+    Query(sql, {"UPDATE mission_engine_resource_plans SET plan_bytes=REPEAT('x',2097153) WHERE action_id=?",
+                {SqlParam::Blob(Binary(ActionIdentity(pin.Action())))}});
+    Text(sql, "SET SESSION check_constraint_checks=1");
+    auto bounded = Query(sql, db::ReadResources(owner, pin, prepared.plan->Digest()));
+    Check(bounded->Get()->preparedRows.size() == 1 && bounded->Get()->preparedLengths[0][5] == 0,
+          "oversized archive materialized before decoder limit");
+    Check(db::DecodeResourceArchive(*bounded, owner, pin, prepared.plan->Digest()).status ==
+              db::ReadStatus::Invalid,
+          "oversized resource archive accepted");
+    Query(sql, {"UPDATE mission_engine_resource_plans SET plan_bytes=? WHERE action_id=?",
+                {SqlParam::Blob(Binary(prepared.plan->Bytes())),
+                 SqlParam::Blob(Binary(ActionIdentity(pin.Action())))}});
+    for (unsigned int i = 1; i < 15; ++i)
+    {
+        source2 = resources::Snapshot();
+        source2.gold += i;
+        auto alternative = PrepareResources(pin, source2, resources::Rules(), resources::Rolls());
+        Execute(sql, db::ArchiveResources(owner, pin, *alternative.plan, 1, digest, db::NewToken()));
+    }
+    source2.gold += 2;
+    auto excess = PrepareResources(pin, source2, resources::Rules(), resources::Rolls());
+    auto overBudget = db::ArchiveResources(owner, pin, *excess.plan, 1, digest, db::NewToken());
+    // Freeze a REPEATABLE READ view at 15 proposals, then let another writer
+    // occupy slot 16 before the contender acquires its character fence.
+    const auto gate = database + "_resource_gate";
+    Check(Number(sql, "SELECT GET_LOCK(?,10)", {SqlParam::Text(gate)}) == 1, "resource barrier lock failed");
+    auto concurrent = overBudget.statements;
+    concurrent.insert(concurrent.begin() + 1,
+                      {"SELECT COUNT(*) FROM mission_engine_resource_plans WHERE action_id=?",
+                       {SqlParam::Blob(Binary(ActionIdentity(pin.Action())))},
+                       {},
+                       1});
+    concurrent.insert(concurrent.begin() + 2, {"SELECT GET_LOCK(?,10)", {SqlParam::Text(gate)}, {}, 1});
+    CAsyncSQL contender;
+    Connect(contender, false);
+    contender.ReturnTransactionPrepared(concurrent, nullptr);
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    bool waiting = false;
+    while (!waiting && std::chrono::steady_clock::now() < deadline)
+    {
+        waiting = Number(sql,
+                         "SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE DB=? "
+                         "AND ID<>CONNECTION_ID() AND INFO LIKE 'SELECT GET_LOCK(%'",
+                         {SqlParam::Text(database)}) > 0;
+        if (!waiting)
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    Check(waiting, "resource contender did not reach frozen-view barrier");
+    source2 = resources::Snapshot();
+    source2.gold += 15;
+    auto lastSlot = PrepareResources(pin, source2, resources::Rules(), resources::Rolls());
+    Execute(sql, db::ArchiveResources(owner, pin, *lastSlot.plan, 1, digest, db::NewToken()));
+    Check(Number(sql, "SELECT RELEASE_LOCK(?)", {SqlParam::Text(gate)}) == 1,
+          "resource barrier release failed");
+    auto raced = Wait(contender, 1);
+    contender.Quit();
+    Check(!db::Confirmed(*raced.front()), "stale read view bypassed proposal budget");
+    Execute(sql, overBudget, false);
+    Check(Resolve(sql, overBudget).status == db::Resolution::Absent &&
+              Number(sql, "SELECT COUNT(*) FROM mission_engine_resource_plans") == 16,
+          "proposal budget bypassed");
+    Execute(sql, db::ArchiveResources(owner, pin, *prepared.plan, 1, digest, db::NewToken()));
+    const auto cancelOwner = Claim(sql, 101, 0, Token(101), db::NewToken());
+    auto cancelledCheckpoint = ResourceCheckpoint(registry, 101);
+    Execute(sql, db::Save(cancelledCheckpoint, registry, cancelOwner, 0, db::NewToken()));
+    auto cancelPin = resources::Pin(pin.Payload(), 101);
+    auto cancelPrepared =
+        PrepareResources(cancelPin, resources::Snapshot(101), resources::Rules(), resources::Rolls());
+    MissionRuntime cancelled(registry, {101, 17}, 1001);
+    Accepted(cancelled.Restore(cancelledCheckpoint, cancelledCheckpoint.now));
+    Accepted(cancelled.Abandon(10, 1002));
+    auto empty = cancelled.Save();
+    Execute(sql, db::Save(empty, registry, cancelOwner, 1, db::NewToken()));
+    Execute(sql,
+            db::ArchiveResources(cancelOwner, cancelPin, *cancelPrepared.plan, 2,
+                                 EncodeCheckpoint(empty, registry).metadata.digest, db::NewToken()),
+            false);
+    const auto restartOwner = Claim(sql, 103, 0, Token(103), db::NewToken());
+    auto restartCheckpoint = ResourceCheckpoint(registry, 103);
+    Execute(sql, db::Save(restartCheckpoint, registry, restartOwner, 0, db::NewToken()));
+    auto restartPin = resources::Pin(pin.Payload(), 103);
+    auto restartPrepared =
+        PrepareResources(restartPin, resources::Snapshot(103), resources::Rules(), resources::Rolls());
+    auto restartPlan =
+        db::ArchiveResources(restartOwner, restartPin, *restartPrepared.plan, 1,
+                             EncodeCheckpoint(restartCheckpoint, registry).metadata.digest, Token(203));
+    auto interrupted = restartPlan;
+    interrupted.statements.insert(interrupted.statements.end() - 1, {"SELECT 1 WHERE 1=0", {}, {}, 1});
+    Execute(sql, interrupted, false);
+    Check(Resolve(sql, restartPlan).status == db::Resolution::Absent &&
+              ResourceArchive(sql, restartOwner, restartPin, restartPrepared.plan->Digest()).status ==
+                  db::ReadStatus::Missing,
+          "failed transaction left its proposal behind");
+    CAsyncSQL lost;
+    Connect(lost, true, proxy);
+    Message unknown(lost.DirectTransactionPrepared(restartPlan.statements));
+    Check(unknown->transactionOutcome == SqlTransactionOutcome::CommitUnknown,
+          "resource COMMIT response not lost");
+    Check(Resolve(sql, restartPlan).status == db::Resolution::Committed,
+          "unknown resource commit not resolved");
+    Execute(sql, restartPlan, false);
+    Check(ResourceArchive(sql, restartOwner, restartPin, restartPrepared.plan->Digest()).status ==
+              db::ReadStatus::Found,
+          "unknown/retry lost durable proposal");
+}
+void ColdResources(CAsyncSQL &sql)
+{
+    for (uint32_t character : {100u, 103u})
+    {
+        db::Owner owner{character, 1, Token(uint8_t(character))};
+        auto checkpoint = Snapshot(sql, owner);
+        Check(checkpoint.status == db::ReadStatus::Found, "resource checkpoint missing after crash");
+        auto pin = resources::Pin(resources::Pin().Payload(), character);
+        auto prepared =
+            PrepareResources(pin, resources::Snapshot(character), resources::Rules(), resources::Rolls());
+        auto read = ResourceArchive(sql, owner, pin, prepared.plan->Digest());
+        Check(read.status == db::ReadStatus::Found && read.plan->Bytes() == prepared.plan->Bytes() &&
+                  InspectResourceApplication(*read.plan, resources::Snapshot(character)) ==
+                      ResourceApplication::Ready,
+              "cold resource decision changed or was mistaken for an applied effect");
+    }
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_resource_plans") == 17,
+          "cold proposal count changed");
+}
 void ColdProcess(CAsyncSQL &sql)
 {
     db::Owner owner{42, 1, Token(1)};
@@ -1503,6 +1720,7 @@ int main(int argc, char **argv)
             CAsyncSQL sql;
             Connect(sql);
             ColdProcess(sql);
+            ColdResources(sql);
             std::cout << "Mission persistence cold-process: " << checks << " checks passed\n";
             return 0;
         }
@@ -1549,8 +1767,13 @@ int main(int argc, char **argv)
                   (std::filesystem::path(argv[5]).parent_path() / "2026-10-25_mission_engine_item_awards.sql")
                       .string()
                       .c_str());
+        Execute(sql, db::Claim(9999, 0, Token(99), Token(99)), false);
+        Migration(sql, (std::filesystem::path(argv[5]).parent_path() /
+                        "2026-10-25_mission_engine_resource_plans.sql")
+                           .string()
+                           .c_str());
         Migration(sql, argv[4]);
-        Check(Number(sql, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 3,
+        Check(Number(sql, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 4,
               "old migration downgraded action schema");
         QualifiedInstall(sql, argv[4]);
         Archive(sql);
@@ -1576,6 +1799,15 @@ int main(int argc, char **argv)
         BoundedActionBatch(sql);
         CrossSchema(sql, registry, static_cast<unsigned int>(std::stoul(argv[3])));
         MissionItems(sql, static_cast<unsigned int>(std::stoul(argv[3])));
+        ResourcePlans(sql, static_cast<unsigned int>(std::stoul(argv[3])));
+        // A complete installer must preserve schema-4 proposals AND kind-5
+        // receipts when it reapplies the older actions migration.
+        Migration(sql, argv[5]);
+        Migration(sql, (std::filesystem::path(argv[5]).parent_path() /
+                        "2026-10-25_mission_engine_resource_plans.sql")
+                           .string()
+                           .c_str());
+        ColdResources(sql);
         std::cout << "Mission persistence: " << checks << " checks passed\n";
         return 0;
     }

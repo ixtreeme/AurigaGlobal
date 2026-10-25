@@ -2,6 +2,7 @@
 #include "MissionActions.hpp"
 #include "MissionCheckpointCodec.hpp"
 #include "MissionPackage.hpp"
+#include "MissionResourcePlan.hpp"
 #include "MissionRewardBinding.hpp"
 #include <SQL/PreparedTransaction.h>
 
@@ -23,7 +24,8 @@ enum class Operation : uint8_t
     Claim = 1,
     Save = 2,
     Release = 3,
-    Entitle = 4
+    Entitle = 4,
+    PrepareResources = 5
 };
 struct Plan
 {
@@ -106,6 +108,19 @@ Plan Release(Owner owner, Token operation);
 // after saving the current authoritative decision checkpoint. No player API.
 Plan RecordEntitlement(Owner owner, const PinnedReward &reward, uint64_t expectedStorageRevision,
                        ContentDigest checkpointDigest, Token operation);
+// Durable PROPOSAL only. Does not freeze the resource writer, create an
+// entitlement, acknowledge an action or change player/item/ECS state.
+// At most 16 distinct proposals per action; identical content is reusable.
+Plan ArchiveResources(Owner owner, const PinnedReward &reward, const PreparedResources &resources,
+                      uint64_t expectedStorageRevision, ContentDigest checkpointDigest, Token operation);
+struct ResourceRead
+{
+    ReadStatus status = ReadStatus::Invalid;
+    std::optional<PreparedResources> plan;
+};
+ReadCommand ReadResources(Owner owner, const PinnedReward &reward, ContentDigest decision);
+ResourceRead DecodeResourceArchive(_SQLMsg &message, Owner owner, const PinnedReward &reward,
+                                   ContentDigest decision);
 enum class ActionState : uint8_t
 {
     Pending = 1,

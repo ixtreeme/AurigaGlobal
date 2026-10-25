@@ -93,6 +93,7 @@ set(_mission_persistence_sources
     mission/MissionCheckpointCodec.cpp
     mission/MissionActions.cpp
     mission/MissionRewardBinding.cpp
+    mission/MissionResourcePlan.cpp
 )
 add_executable(MissionCheckpointTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionCheckpointTests.cpp
@@ -126,13 +127,24 @@ add_executable(MissionPersistenceTests EXCLUDE_FROM_ALL
     ../Database/ItemAwardDelivery.cpp
     ../Database/ItemAwardScan.cpp
 )
+
+add_executable(MissionResourceTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MissionResourceTests.cpp
+    ${_mission_persistence_sources}
+)
+target_include_directories(MissionResourceTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+target_link_libraries(MissionResourceTests PRIVATE Threads::Threads OpenSSL::Crypto)
+if(TARGET auriga_sanitizers)
+    target_link_libraries(MissionResourceTests PRIVATE auriga_sanitizers)
+endif()
+add_test(NAME mission_resources COMMAND MissionResourceTests)
 target_include_directories(MissionPersistenceTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
 target_link_libraries(MissionPersistenceTests PRIVATE SERVER S_SQL S_Core Threads::Threads OpenSSL::Crypto)
 if(WIN32)
     target_link_libraries(MissionPersistenceTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests MissionCheckpointTests MissionPersistenceTests MissionRewardsTests)
+    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests MissionCheckpointTests MissionPersistenceTests MissionRewardsTests MissionResourceTests)
         add_custom_command(TARGET ${_mission_tool} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${_mission_tool}>"
@@ -553,7 +565,7 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_persistence.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_actions.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/schema.sql
-            --drop-commit-count 4
+            --drop-commit-count 5
             --followup-argument=--cold-check
             --crash-server-before-followup
     )

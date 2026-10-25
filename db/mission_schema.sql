@@ -114,9 +114,13 @@ CREATE TABLE IF NOT EXISTS `mission`.`mission_engine_reward_ledger` (
         REFERENCES `mission`.`mission_engine_action_outbox` (action_id) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
-ALTER TABLE `mission`.`mission_engine_operations`
-    DROP CONSTRAINT IF EXISTS me_operation_kind,
-    ADD CONSTRAINT me_operation_kind CHECK (operation_kind IN (1, 2, 3, 4));
+SET @me_action_upgrade = IF(
+    (SELECT schema_version FROM `mission`.`mission_engine_schema` WHERE singleton=1) IN (1, 2, 3),
+    'ALTER TABLE `mission`.`mission_engine_operations` DROP CONSTRAINT IF EXISTS me_operation_kind, ADD CONSTRAINT me_operation_kind CHECK (operation_kind IN (1, 2, 3, 4))',
+    'DO 0');
+PREPARE me_action_upgrade_statement FROM @me_action_upgrade;
+EXECUTE me_action_upgrade_statement;
+DEALLOCATE PREPARE me_action_upgrade_statement;
 
 UPDATE `mission`.`mission_engine_schema` SET schema_version=2 WHERE singleton=1 AND schema_version=1;
 
@@ -142,3 +146,24 @@ CREATE TABLE IF NOT EXISTS `mission`.`mission_engine_item_awards` (
 ) ENGINE=InnoDB;
 
 UPDATE `mission`.`mission_engine_schema` SET schema_version=3 WHERE singleton=1 AND schema_version=2;
+
+CREATE TABLE IF NOT EXISTS `mission`.`mission_engine_resource_plans` (
+    action_id BINARY(32) NOT NULL,
+    decision_digest BINARY(32) NOT NULL,
+    definition_digest BINARY(32) NOT NULL,
+    payload_digest BINARY(32) NOT NULL,
+    source_revision BIGINT UNSIGNED NOT NULL,
+    plan_bytes MEDIUMBLOB NOT NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (action_id, decision_digest),
+    CONSTRAINT me_resource_bounds CHECK (source_revision BETWEEN 1 AND 18446744073709551613
+        AND OCTET_LENGTH(plan_bytes) BETWEEN 64 AND 2097152),
+    CONSTRAINT me_resource_action FOREIGN KEY (action_id)
+        REFERENCES `mission`.`mission_engine_action_outbox` (action_id) ON UPDATE RESTRICT ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+ALTER TABLE `mission`.`mission_engine_operations`
+    DROP CONSTRAINT IF EXISTS me_operation_kind,
+    ADD CONSTRAINT me_operation_kind CHECK (operation_kind IN (1, 2, 3, 4, 5));
+
+UPDATE `mission`.`mission_engine_schema` SET schema_version=4 WHERE singleton=1 AND schema_version=3;

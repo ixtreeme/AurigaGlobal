@@ -39,9 +39,15 @@ CREATE TABLE IF NOT EXISTS mission_engine_reward_ledger (
         REFERENCES mission_engine_action_outbox (action_id) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
-ALTER TABLE mission_engine_operations
-    DROP CONSTRAINT IF EXISTS me_operation_kind,
-    ADD CONSTRAINT me_operation_kind CHECK (operation_kind IN (1, 2, 3, 4));
+-- A full installer reapplies old migrations too. Never narrow a newer
+-- operation constraint: schema 4 already contains resource operation receipts.
+SET @me_action_upgrade = IF(
+    (SELECT schema_version FROM mission_engine_schema WHERE singleton=1) IN (1, 2, 3),
+    'ALTER TABLE mission_engine_operations DROP CONSTRAINT IF EXISTS me_operation_kind, ADD CONSTRAINT me_operation_kind CHECK (operation_kind IN (1, 2, 3, 4))',
+    'DO 0');
+PREPARE me_action_upgrade_statement FROM @me_action_upgrade;
+EXECUTE me_action_upgrade_statement;
+DEALLOCATE PREPARE me_action_upgrade_statement;
 
 -- Reapplying cannot reset a future schema or overwrite any entitlement.
 UPDATE mission_engine_schema SET schema_version=2 WHERE singleton=1 AND schema_version=1;

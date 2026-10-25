@@ -4,9 +4,10 @@ import re
 
 TABLES = ('mission_engine_schema', 'mission_engine_packages', 'mission_engine_definitions',
           'mission_engine_characters', 'mission_engine_checkpoint_refs', 'mission_engine_operations',
-          'mission_engine_action_outbox', 'mission_engine_reward_ledger', 'mission_engine_item_awards')
+          'mission_engine_action_outbox', 'mission_engine_reward_ledger', 'mission_engine_item_awards',
+          'mission_engine_resource_plans')
 MIGRATIONS = ('2026-10-25_mission_engine_persistence.sql', '2026-10-25_mission_engine_actions.sql',
-              '2026-10-25_mission_engine_item_awards.sql')
+              '2026-10-25_mission_engine_item_awards.sql', '2026-10-25_mission_engine_resource_plans.sql')
 
 
 def identifier(value):
