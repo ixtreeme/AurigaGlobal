@@ -396,6 +396,8 @@ void CClientManager::ItemAward(CPeer * peer,char* login)
 	while(it != pSet->end() )
 	{
 		TItemAward * pItemAward = *it++;
+        if (pItemAward->bTaken || pItemAward->bGiftDismissed)
+            continue;
 		char* whyStr = pItemAward->szWhy;
 		char cmdStr[100] = "";
 		strcpy(cmdStr,whyStr);

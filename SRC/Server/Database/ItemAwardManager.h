@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include "Peer.h"
+#include "ItemAwardScan.hpp"
 
 #ifdef ENABLE_EXTEND_ITEM_AWARD
 enum
@@ -27,6 +28,7 @@ typedef struct SItemAward
     char	szWhy[ITEM_AWARD_WHY_MAX_LEN+1];
     bool	bTaken;
     bool	bMall;
+    bool bGiftDismissed;
 #ifdef ENABLE_EXTEND_ITEM_AWARD
 	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 #endif
@@ -57,10 +59,10 @@ class ItemAwardManager : public singleton<ItemAwardManager>
 #endif
 	
 	
-	// gift notify
-	std::map<uint32_t, TItemAward *>& GetMapAward();
-	std::map<std::string, std::set<TItemAward *> >& GetMapkSetAwardByLogin();
+    void DismissGift(uint32_t id);
     private:
+    auriga::item_award::Scan m_scan;
+    std::set<uint32_t> m_seenAwards;
 	// ID, ItemAward pair
 	std::map<uint32_t, TItemAward *>			m_map_award;
 	// PID, ItemAward pair

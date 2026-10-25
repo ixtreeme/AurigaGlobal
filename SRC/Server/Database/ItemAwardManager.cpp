@@ -48,41 +48,40 @@ inline float gauss_random(const float fAverage, const float sigma)
 
 
 
-uint32_t g_dwLastCachedItemAwardID = 0;
 ItemAwardManager::ItemAwardManager()
 {
 }
 
 ItemAwardManager::~ItemAwardManager()
 {
+    for (const auto &[id, award] : m_map_award)
+        delete award;
 }
 
 void ItemAwardManager::RequestLoad()
 {
-	char szQuery[QUERY_MAX_LEN];
-#ifdef ENABLE_EXTEND_ITEM_AWARD	
-	snprintf(szQuery, sizeof(szQuery), "SELECT id, login, vnum, count, socket0, socket1, socket2, "
-			"attrtype0, attrvalue0, "
-			"attrtype1, attrvalue1, "
-			"attrtype2, attrvalue2, "
-			"attrtype3, attrvalue3, "
-			"attrtype4, attrvalue4, "
-			"attrtype5, attrvalue5, "
-			"attrtype6, attrvalue6, "
-			"attrtype7, attrvalue7, "
-			"mall, why "
-			"FROM item_award WHERE taken_time IS NULL and id > %d", g_dwLastCachedItemAwardID);
+#ifdef ENABLE_EXTEND_ITEM_AWARD
+    constexpr bool extended = true;
 #else
-	snprintf(szQuery, sizeof(szQuery), "SELECT id,login,vnum,count,socket0,socket1,socket2,mall,why FROM item_award WHERE taken_time IS NULL and id > %d", g_dwLastCachedItemAwardID);
+    constexpr bool extended = false;
 #endif
-	CDBManager::instance().ReturnQuery(szQuery, QID_ITEM_AWARD_LOAD, 0, nullptr);
+    if (auto query = m_scan.Request(extended))
+        CDBManager::instance().ReturnQuery(query->c_str(), QID_ITEM_AWARD_LOAD, 0, nullptr);
 }
 
 void ItemAwardManager::Load(SQLMsg * pMsg)
 {
-	MYSQL_RES * pRes = pMsg->Get()->pSQLResult;
+    if (!pMsg)
+        return;
+    const auto scan = m_scan.Complete(*pMsg);
+    if (!scan.success)
+    {
+        LOG_ERROR("ITEM_AWARD scan failed; current page will be retried");
+        return;
+    }
+    MYSQL_RES *pRes = pMsg->Get()->pSQLResult;
 
-	for (uint64_t i = 0; i < pMsg->Get()->uiNumRows; ++i)
+    for (uint64_t i = 0; scan.page && i < pMsg->Get()->uiNumRows; ++i)
 	{
 		MYSQL_ROW row = mysql_fetch_row(pRes);
 		int col = 0;
@@ -90,7 +89,8 @@ void ItemAwardManager::Load(SQLMsg * pMsg)
 		uint32_t dwID = 0;
 		str_to_number(dwID, row[col++]);
 
-		if (m_map_award.contains(dwID))
+        m_seenAwards.insert(dwID);
+        if (m_map_award.contains(dwID))
 			continue;
 
 		TItemAward * kData = new TItemAward;
@@ -140,9 +140,33 @@ void ItemAwardManager::Load(SQLMsg * pMsg)
 		std::set<TItemAward *> & kSet = m_map_kSetAwardByLogin[kData->szLogin];
 		kSet.insert(kData);
 
-		if (dwID > g_dwLastCachedItemAwardID)
-			g_dwLastCachedItemAwardID = dwID;
 	}
+    if (scan.sweepComplete)
+    {
+        // Complete successful sweep only: never evict on a failed/partial read.
+        for (auto it = m_map_award.begin(); it != m_map_award.end();)
+        {
+            if (m_seenAwards.contains(it->first))
+            {
+                ++it;
+                continue;
+            }
+            auto login = m_map_kSetAwardByLogin.find(it->second->szLogin);
+            if (login != m_map_kSetAwardByLogin.end())
+            {
+                login->second.erase(it->second);
+                if (login->second.empty())
+                    m_map_kSetAwardByLogin.erase(login);
+            }
+            delete it->second;
+            it = m_map_award.erase(it);
+        }
+        m_seenAwards.clear();
+    }
+    // Ceiling lookup is tiny; immediately schedule its first bounded page.
+    // Other pages share the existing five-second refresh budget.
+    if (!scan.page && !scan.sweepComplete)
+        RequestLoad();
 }
 
 std::set<TItemAward *> * ItemAwardManager::GetByLogin(const char * c_pszLogin)
@@ -164,17 +188,13 @@ void ItemAwardManager::MarkTaken(uint32_t dwAwardID)
     // independently acknowledged taken UPDATE here.
 }
 
-std::map<uint32_t, TItemAward *>& ItemAwardManager::GetMapAward()
+void ItemAwardManager::DismissGift(uint32_t id)
 {
-	return m_map_award;
+    // Dismissing an icon must not remove a still-pending delivery from cache:
+    // cyclic discovery would recreate it and send the same notification again.
+    if (const auto it = m_map_award.find(id); it != m_map_award.end())
+        it->second->bGiftDismissed = true;
 }
-
-std::map<std::string, std::set<TItemAward *> >& ItemAwardManager::GetMapkSetAwardByLogin()
-{
-	return m_map_kSetAwardByLogin;
-}
-
-
 
 #ifdef USE_ITEM_AWARD_CHECK_ATTRIBUTES
 /*******************************************************************\

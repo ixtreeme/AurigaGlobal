@@ -510,6 +510,7 @@ add_test(NAME async_sql_prepared COMMAND AsyncSqlPreparedTests)
 add_executable(ItemAwardDeliveryTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemAwardDeliveryTests.cpp
     ../Database/ItemAwardDelivery.cpp
+    ../Database/ItemAwardScan.cpp
 )
 target_link_libraries(ItemAwardDeliveryTests PRIVATE SERVER S_SQL S_Core)
 if(WIN32)

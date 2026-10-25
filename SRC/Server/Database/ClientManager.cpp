@@ -3917,19 +3917,7 @@ void CClientManager::DeleteLoginKey(TPacketDC *data)
 // delete gift notify icon
 void CClientManager::DeleteAwardId(TPacketDeleteAwardID *data)
 {
-	//LOG_INFO("data from game server arrived {}", data->dwID);
-	if (const auto it = ItemAwardManager::Instance().GetMapAward().find(data->dwID); it != ItemAwardManager::Instance().GetMapAward().end() )
-	{
-		std::set<TItemAward *> & kSet = ItemAwardManager::Instance().GetMapkSetAwardByLogin()[it->second->szLogin];
-		if(kSet.erase(it->second))
-			LOG_INFO("erase ItemAward id: {} from cache", data->dwID);
-		ItemAwardManager::Instance().GetMapAward().erase(data->dwID);
-	}
-	else
-	{
-		LOG_INFO("DELETE_AWARDID : could not find the id: {}", data->dwID);
-	}
-
+    ItemAwardManager::Instance().DismissGift(data->dwID);
 }
 
 void CClientManager::UpdateChannelStatus(TChannelStatus* pData)

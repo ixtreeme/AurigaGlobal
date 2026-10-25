@@ -1,4 +1,6 @@
 #include "../../SRC/Server/Database/ItemAwardDelivery.hpp"
+#include "../../SRC/Server/Database/ItemAwardScan.hpp"
+#include <set>
 #include <Core/Logging.hpp>
 #include <SQL/AsyncSQL.h>
 #include <algorithm>
@@ -498,6 +500,72 @@ void LostCommit(CAsyncSQL &admin, unsigned int proxy)
     Check(Number(admin, "SELECT COUNT(*) FROM item WHERE owner_id=14") == 1,
           "lost COMMIT retry duplicated item");
 }
+void ScanRegression(CAsyncSQL &sql)
+{
+    CAsyncSQL delayed;
+    Connect(delayed);
+    Text(delayed, "START TRANSACTION");
+    Text(delayed, "INSERT INTO item_award(login,vnum,count,why) VALUES('late',50011,2,'[GIFT]late')");
+    const auto lower = Number(delayed, "SELECT LAST_INSERT_ID()");
+    Text(sql, "INSERT INTO item_award(login,vnum,count) VALUES('early',50011,3)");
+    const auto higher = Number(sql, "SELECT LAST_INSERT_ID()");
+    Check(lower < higher, "fixture did not allocate IDs in opposite commit order");
+    std::string batch = "INSERT INTO item_award(login,vnum,count) VALUES";
+    for (size_t i = 0; i < 600; ++i)
+        batch += (i ? "," : "") + std::string("('bulk',50011,1)");
+    Text(sql, batch);
+    award::Scan scan;
+    const auto sweep = [&](bool growth, bool expectLower)
+    {
+        std::set<uint32_t> seen;
+        size_t pages = 0;
+        bool done = false;
+        while (!done)
+        {
+            auto query = scan.Request(true);
+            Check(query.has_value(), "scan did not release its outstanding request");
+            Check(!scan.Request(true), "scan queued overlapping requests");
+            Message response(sql.DirectQuery(query->c_str()));
+            auto result = scan.Complete(*response);
+            Check(result.success, "production scan rejected real raw MYSQL_RES");
+            if (result.page)
+            {
+                ++pages;
+                Check(response->Get()->uiNumRows <= award::Scan::PageSize, "scan exceeded page budget");
+                while (auto row = mysql_fetch_row(response->Get()->pSQLResult))
+                    Check(seen.insert(uint32_t(std::stoul(row[0]))).second, "sweep repeated an award ID");
+                if (growth)
+                    Text(sql, "INSERT INTO item_award(login,vnum,count) VALUES('growth',50011,1)");
+            }
+            done = result.sweepComplete;
+            Check(pages <= 4, "new inserts prevented bounded scan from wrapping");
+        }
+        Check(seen.contains(uint32_t(higher)), "scan missed committed higher ID");
+        Check(seen.contains(uint32_t(lower)) == expectLower, "late lower ID discovery mismatch");
+        return seen;
+    };
+    sweep(true, false);
+    Text(delayed, "COMMIT");
+    const auto discovered = sweep(false, true);
+    Check(discovered == sweep(false, true), "repeated sweep changed stable pending awards");
+    Text(sql, "UPDATE item_award SET taken_time=NOW(),item_id=123 WHERE id=" + std::to_string(lower));
+    const auto pending = sweep(false, false);
+    Check(pending.size() + 1 == discovered.size(), "taken award remained in pending discovery");
+    // A failed query retries the exact same cursor/phase instead of skipping it.
+    auto query = scan.Request(false);
+    SQLMsg failure;
+    failure.uiSQLErrno = 2013;
+    Check(!scan.Complete(failure).success, "failed scan was accepted");
+    Check(query == scan.Request(false), "failed scan advanced its cursor");
+    Message ceiling(sql.DirectQuery(query->c_str()));
+    Check(scan.Complete(*ceiling).success, "ceiling retry failed");
+    query = scan.Request(false);
+    Message malformed(sql.DirectQuery("SELECT 1 AS id"));
+    Check(!scan.Complete(*malformed).success && query == scan.Request(false),
+          "malformed page skipped pending awards");
+    Message retry(sql.DirectQuery(query->c_str()));
+    Check(scan.Complete(*retry).success, "legacy non-extended page rejected");
+}
 void Cold(CAsyncSQL &sql)
 {
     for (uint32_t id : {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
@@ -576,6 +644,7 @@ int main(int argc, char **argv)
         Interrupted(sql);
         ResolutionBarrier(sql);
         LostCommit(sql, static_cast<unsigned int>(std::stoul(argv[3])));
+        ScanRegression(sql);
         Check(Number(sql, "SELECT marker FROM account_mission_pass WHERE account_id=1") == 123,
               "seasonal Mission Pass sentinel changed");
         std::cout << "Item award delivery MariaDB: " << checks << " checks passed\n";
