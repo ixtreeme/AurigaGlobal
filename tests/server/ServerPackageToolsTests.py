@@ -27,6 +27,17 @@ CHECKER = None
 
 
 class PackageToolsTests(unittest.TestCase):
+    def read_live_state(self, path):
+        # Windows can briefly deny an open during the supervisor's atomic replace.
+        # Retry only the sharing error; malformed JSON and persistent errors fail.
+        deadline = time.monotonic() + 1
+        while True:
+            try:
+                return json.loads(path.read_text(encoding='utf-8'))
+            except PermissionError:
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(.01)
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='auriga-package-tests-')
         self.root = Path(self.temp.name).resolve()
@@ -319,7 +330,7 @@ manage.supervise([1])
             deadline = time.monotonic() + 15
             while time.monotonic() < deadline:
                 if process.poll() is not None: self.fail((self.root / 'worker.log').read_text())
-                if state.exists() and json.loads(state.read_text())['phase'] == 'listening': break
+                if state.exists() and self.read_live_state(state)['phase'] == 'listening': break
                 time.sleep(0.05)
             else: self.fail('Supervisor readiness deadline')
             manage.stop()
@@ -350,7 +361,7 @@ manage.supervise([1])
             deadline = time.monotonic() + 15
             while time.monotonic() < deadline:
                 if process.poll() is not None: self.fail((self.root / 'worker.log').read_text())
-                if state.exists() and json.loads(state.read_text())['phase'] == 'listening': break
+                if state.exists() and self.read_live_state(state)['phase'] == 'listening': break
                 time.sleep(0.05)
             else: self.fail('The core listening on 127.0.0.2 was never found ready')
             manage.stop()
@@ -366,14 +377,14 @@ manage.supervise([1])
         deadline = time.monotonic() + 15
         while time.monotonic() < deadline:
             if process.poll() is not None: self.fail((self.root / 'worker.log').read_text())
-            if state.exists() and json.loads(state.read_text())['phase'] == 'listening': return state
+            if state.exists() and self.read_live_state(state)['phase'] == 'listening': return state
             time.sleep(0.05)
         self.fail('Supervisor readiness deadline')
     def test_supervisor_starts_and_stops_cores_one_by_one(self):
         process, log = self.supervised_fixture()
         try:
             state = self.wait_listening(process)
-            names = lambda: [child['name'] for child in json.loads(state.read_text())['children']]
+            names = lambda: [child['name'] for child in self.read_live_state(state)['children']]
             self.assertNotIn('ch2-core1', names())
             output = io.StringIO()
             with contextlib.redirect_stdout(output): manage.control_cores('start', instances=['ch2-core1'])
@@ -385,7 +396,7 @@ manage.supervise([1])
             self.assertIn('ch1-core1: stopped', stopped.getvalue())
             self.assertEqual(names(), ['database', 'ch2-core1', 'login'])
             self.assertIsNone(process.poll(), 'stopping one core keeps the stack running')
-            self.assertEqual(json.loads(state.read_text())['phase'], 'listening')
+            self.assertEqual(self.read_live_state(state)['phase'], 'listening')
             self.assertFalse(list((self.root/'run/crashes').glob('*/event.json')), 'a requested stop is not a crash')
             with self.assertRaisesRegex(RuntimeError, 'Not a configured game core: database'):
                 manage.control_cores('stop', instances=['database'])
@@ -406,7 +417,7 @@ manage.supervise([1])
                     manage.control_cores('start', instances=['ch2-core1'])
             self.assertIn('ch2-core1 exited during startup (code 3)', output.getvalue())
             self.assertIsNone(process.poll(), 'a core failing later does not stop the stack')
-            self.assertEqual([child['name'] for child in json.loads(state.read_text())['children']], ['database', 'ch1-core1', 'login'])
+            self.assertEqual([child['name'] for child in self.read_live_state(state)['children']], ['database', 'ch1-core1', 'login'])
             reports = list((self.root/'run/crashes').glob('*/event.json'))
             self.assertEqual(len(reports), 1)
             event = json.loads(reports[0].read_text())
@@ -425,7 +436,7 @@ manage.supervise([1])
         process, log = self.supervised_fixture()
         try:
             state = self.wait_listening(process)
-            original = json.loads(state.read_text())['children']
+            original = self.read_live_state(state)['children']
             conflict = self.root/'run/ch2-core1'
             conflict.write_text('This runtime directory is currently a file')
             with contextlib.redirect_stdout(io.StringIO()) as output:
@@ -439,7 +450,7 @@ manage.supervise([1])
                     manage.control_cores('start', instances=['ch2-core1'])
             self.assertIn('Injected process launch failure', output.getvalue())
             self.assertIsNone(process.poll())
-            self.assertEqual(json.loads(state.read_text())['children'], original)
+            self.assertEqual(self.read_live_state(state)['children'], original)
             self.assertTrue(all(manage.owned(child['identity']) for child in original))
             injected.unlink()
             with contextlib.redirect_stdout(io.StringIO()) as output:
@@ -453,7 +464,7 @@ manage.supervise([1])
         thread, errors = None, []
         try:
             state = self.wait_listening(process)
-            original = json.loads(state.read_text())['children']
+            original = self.read_live_state(state)['children']
             def stop_core():
                 try: manage.control_cores('stop', instances=['ch1-core1'])
                 except RuntimeError as error: errors.append(str(error))
@@ -461,11 +472,11 @@ manage.supervise([1])
             deadline = time.monotonic() + 10
             while not (self.root/'stop-blocked-ch1-core1').exists() and time.monotonic() < deadline: time.sleep(.02)
             self.assertTrue((self.root/'stop-blocked-ch1-core1').exists())
-            self.assertEqual(json.loads(state.read_text())['children'], original, 'a stopping core keeps its recovery identity')
+            self.assertEqual(self.read_live_state(state)['children'], original, 'a stopping core keeps its recovery identity')
             (self.root/'crash.request').write_text('login')
             deadline = time.monotonic() + 10
-            while json.loads(state.read_text())['phase'] != 'stopping' and time.monotonic() < deadline: time.sleep(.02)
-            self.assertEqual(json.loads(state.read_text())['phase'], 'stopping')
+            while self.read_live_state(state)['phase'] != 'stopping' and time.monotonic() < deadline: time.sleep(.02)
+            self.assertEqual(self.read_live_state(state)['phase'], 'stopping')
             self.assertTrue(all(manage.owned(child['identity']) for child in original if child['name'] != 'login'))
             hold.unlink()
             self.assertNotEqual(process.wait(timeout=15), 0)
@@ -499,7 +510,7 @@ manage.supervise([1])
             deadline = time.monotonic() + 15
             while time.monotonic() < deadline:
                 if process.poll() is not None: self.fail((self.root / 'worker.log').read_text())
-                if state.exists() and json.loads(state.read_text())['phase'] == 'listening': break
+                if state.exists() and self.read_live_state(state)['phase'] == 'listening': break
                 time.sleep(.05)
             else: self.fail('Supervisor readiness deadline')
             (self.root/'crash.request').write_text('ch1-core1')
@@ -518,7 +529,7 @@ manage.supervise([1])
             deadline = time.monotonic() + 10
             while time.monotonic() < deadline:
                 if process.poll() is not None: self.fail((self.root / 'worker.log').read_text())
-                if state.exists() and len(json.loads(state.read_text())['children']) == 2: break
+                if state.exists() and len(self.read_live_state(state)['children']) == 2: break
                 time.sleep(0.05)
             else: self.fail('Did not reach the pending listener')
             manage.stop()
