@@ -594,7 +594,7 @@ class ExternalSqlTests(unittest.TestCase):
             return SimpleNamespace(returncode=0, stdout='1\n' + 'requirement\tREADY\n' * count, stderr='')
         with mock.patch.object(manage.shutil, 'which', return_value='/usr/local/bin/mariadb'), mock.patch.object(manage, 'native', side_effect=client):
             manage.external_database_check()
-        self.assertEqual(len(calls), 4)
+        self.assertEqual(len(calls), 5)
         player = next(query for content, query in calls if 'database="player"' in content)
         common = next(query for content, query in calls if 'database="common"' in content)
         self.assertIn('FROM `mob_proto_realm`', player)

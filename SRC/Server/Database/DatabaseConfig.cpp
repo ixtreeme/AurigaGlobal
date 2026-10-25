@@ -78,6 +78,8 @@ bool DatabaseConfig::Load(const auriga::config::Section& input, std::string& err
 
 			if (sqlDoc.contains("common"))
 				LoadSqlConnection(sqlDoc.at("common"), sql.common);
+			if (sqlDoc.contains("mission"))
+				LoadSqlConnection(sqlDoc.at("mission"), sql.mission);
 		}
 
 		if (doc.contains("cache"))

@@ -89,7 +89,11 @@ struct Resolved
     uint64_t ownerEpoch = 0, storageRevision = 0;
 };
 
-// Pure owned commands/plans: submit to CAsyncSQL::ReturnQueryPrepared or
+// Pure owned commands/plans: the connection's default database MUST be the
+// resolved sql.mission database, never sql.player. Mission tables and internal
+// foreign keys live entirely there. A future reward writer must use this SAME
+// connection/transaction with qualified player tables on the same MariaDB.
+// Submit to CAsyncSQL::ReturnQueryPrepared or
 // ReturnTransactionPrepared. Only the authoritative caller may apply completions
 // to a re-found matching character/session. No main-thread blocking SQL here.
 Plan ArchivePackage(std::span<const uint8_t> bytes);

@@ -1,4 +1,4 @@
--- Mission Engine persistence schema 1. Select the configured player database
+-- Mission Engine persistence schema 1. Select the configured mission database
 -- before running this additive migration. No USE/DROP/legacy table changes.
 -- MariaDB/InnoDB required. DDL is not transactionally rolled back: take a backup
 -- and validate the schema before a later production rollout.

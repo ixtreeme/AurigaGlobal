@@ -4,6 +4,7 @@
 #include <SQL/AsyncSQL.h>
 #include <array>
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <latch>
@@ -19,7 +20,11 @@ namespace
 {
 using Message = std::unique_ptr<SQLMsg>;
 unsigned int port = 0;
-std::string database;
+std::string database, playerDatabase;
+std::string Player(const char *table)
+{
+    return "`" + playerDatabase + "`.`" + table + "`";
+}
 size_t checks = 0;
 void Check(bool condition, std::string_view why,
            const std::source_location line = std::source_location::current())
@@ -120,9 +125,11 @@ void Migration(CAsyncSQL &sql, const char *path)
             if (statement.find_first_not_of(" \r\n\t") != statement.npos)
                 Text(sql, statement);
     }
-    Check(Number(sql, "SELECT marker FROM account_mission_pass WHERE account_id=1") == 123,
+    Check(Number(sql,
+                 ("SELECT marker FROM " + Player("account_mission_pass") + " WHERE account_id=1").c_str()) ==
+              123,
           "additive migration changed seasonal pass sentinel");
-    Check(Number(sql, "SELECT marker FROM quest WHERE id=1") == 456,
+    Check(Number(sql, ("SELECT marker FROM " + Player("quest") + " WHERE id=1").c_str()) == 456,
           "migration changed legacy quest sentinel");
 }
 void Archive(CAsyncSQL &sql)
@@ -602,7 +609,7 @@ void DurableActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
           "backed acknowledgement failed to persist");
     Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
                  {SqlParam::Blob(Binary(ActionIdentity(key)))}) == 1 &&
-              Number(sql, "SELECT marker FROM item_award WHERE id=1") == 789,
+              Number(sql, ("SELECT vnum FROM " + Player("item_award") + " WHERE id=1").c_str()) == 789,
           "symbolic entitlement changed real item delivery");
     auto transferred = Claim(sql, 60, 1, Token(160), Token(155));
     Check(Action(sql, owner, key).status == db::ReadStatus::Missing &&
@@ -850,6 +857,120 @@ void BoundedActionBatch(CAsyncSQL &sql)
     Check(!rejected && rejected.statements.empty() && Snapshot(sql, owner).snapshot.storageRevision == 2,
           "over-capacity save produced a partial SQL plan");
 }
+// Infrastructure proof only: this deliberately composes a test-only canonical
+// award INSERT with the real entitlement plan. It is NOT a registered gameplay
+// handler or an implementation of mixed item/XP/gold bundle effects.
+void QualifiedInstall(CAsyncSQL &sql, const char *migration)
+{
+    const auto file = std::filesystem::path(migration).parent_path().parent_path() / "mission_schema.sql";
+    std::ifstream input(file, std::ios::binary);
+    Check(bool(input), "fully qualified Mission installer missing");
+    std::string source, line;
+    while (std::getline(input, line))
+        if (!line.starts_with("--"))
+            source += line + '\n';
+    const std::string installed = database + "_i";
+    size_t offset = 0;
+    while ((offset = source.find("`mission`", offset)) != source.npos)
+    {
+        source.replace(offset, 9, '`' + installed + '`');
+        offset += installed.size() + 2;
+    }
+    for (int repeat = 0; repeat < 2; ++repeat)
+    {
+        std::istringstream statements(source);
+        std::string statement;
+        while (std::getline(statements, statement, ';'))
+            if (statement.find_first_not_of(" \r\n\t") != statement.npos)
+                Text(sql, statement);
+    }
+    Check(Number(sql,
+                 "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND ENGINE='InnoDB'",
+                 {SqlParam::Text(installed)}) == 8,
+          "qualified installer did not create eight dedicated InnoDB tables");
+    CAsyncSQL target;
+    Check(target.Setup("127.0.0.1", "root", "", installed.c_str(), "utf8mb4", true, port),
+          "custom Mission database connection failed");
+    Execute(target, db::Claim(900, 0, Token(90), Token(91)));
+    Check(Number(target, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 2,
+          "qualified custom-schema installer is not usable by the real store");
+}
+void CrossSchema(CAsyncSQL &sql, const DefinitionRegistry &registry, unsigned int proxy)
+{
+    for (uint32_t character : {80u, 81u})
+    {
+        const auto owner = Claim(sql, character, 0, Token(uint8_t(character)), db::NewToken());
+        const auto checkpoint = Checkpoint(registry, character);
+        Execute(sql, db::Save(checkpoint, registry, owner, 0, db::NewToken()));
+        auto plan = Entitle(registry, owner, RewardKey(character), 1,
+                            Snapshot(sql, owner).snapshot.metadata.digest, Token(uint8_t(character + 100)));
+        plan.statements.push_back(
+            {"INSERT INTO " + Player("item_award") + "(id,login,vnum,count) VALUES(?,'cross.schema',50011,2)",
+             {SqlParam::UInt(character + 1000)},
+             1,
+             {}});
+        if (character == 80)
+        {
+            auto fail = plan;
+            fail.statements.push_back({"SELECT 1 WHERE 0", {}, {}, 1});
+            Execute(sql, fail, false);
+            Check(Resolve(sql, plan).status == db::Resolution::Absent &&
+                      Action(sql, owner, RewardKey(character)).action.state == db::ActionState::Pending &&
+                      Number(sql, ("SELECT COUNT(*) FROM " + Player("item_award") + " WHERE id=?").c_str(),
+                             {SqlParam::UInt(character + 1000)}) == 0,
+                  "cross-schema failure left a partial entitlement/award");
+            Execute(sql, plan);
+        }
+        else
+        {
+            CAsyncSQL faulty;
+            Connect(faulty, true, proxy);
+            auto result = Execute(faulty, plan, false);
+            Check(result->transactionOutcome == SqlTransactionOutcome::CommitUnknown,
+                  "cross-schema lost COMMIT was not uncertain");
+        }
+        Check(Resolve(sql, plan).status == db::Resolution::Committed &&
+                  Action(sql, owner, RewardKey(character)).action.state == db::ActionState::Entitled,
+              "cross-schema ledger/operation did not commit");
+        Execute(sql, plan, false);
+        Check(Number(sql,
+                     ("SELECT COUNT(*) FROM " + Player("item_award") +
+                      " WHERE id=? AND vnum=50011 AND count=2 AND taken_time IS NULL")
+                         .c_str(),
+                     {SqlParam::UInt(character + 1000)}) == 1,
+              "cross-schema retry duplicated or changed canonical award");
+    }
+    Check(Number(sql,
+                 "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=? "
+                 "AND TABLE_NAME LIKE 'mission_engine_%'",
+                 {SqlParam::Text(playerDatabase)}) == 0 &&
+              Number(sql, "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() "
+                          "AND TABLE_NAME IN ('item_award','quest','account_mission_pass')") == 0,
+          "Mission and legacy tables were not physically separated");
+    // Mission-only credentials must not leave a ledger receipt behind when the
+    // player-side write is denied. Grant only the missing insert privilege and
+    // repeat the exact request: both schemas must then commit together.
+    Text(sql, "CREATE USER 'mission_writer_test'@'127.0.0.1' IDENTIFIED BY ''");
+    Text(sql, "GRANT ALL ON `" + database + "`.* TO 'mission_writer_test'@'127.0.0.1'");
+    CAsyncSQL restricted;
+    Check(restricted.Setup("127.0.0.1", "mission_writer_test", "", database.c_str(), "utf8mb4", true, port),
+          "restricted Mission connection failed");
+    const auto owner = Claim(sql, 82, 0, Token(82), db::NewToken());
+    Execute(sql, db::Save(Checkpoint(registry, 82), registry, owner, 0, db::NewToken()));
+    auto plan =
+        Entitle(registry, owner, RewardKey(82), 1, Snapshot(sql, owner).snapshot.metadata.digest, Token(182));
+    plan.statements.push_back(
+        {"INSERT INTO " + Player("item_award") + "(id,login,vnum,count) VALUES(1082,'cross.schema',50011,2)",
+         {},
+         1,
+         {}});
+    Execute(restricted, plan, false);
+    Check(Resolve(sql, plan).status == db::Resolution::Absent &&
+              Action(sql, owner, RewardKey(82)).action.state == db::ActionState::Pending,
+          "denied player-side write left a committed Mission receipt");
+    Text(sql, "GRANT INSERT ON " + Player("item_award") + " TO 'mission_writer_test'@'127.0.0.1'");
+    Execute(restricted, plan);
+}
 void ColdProcess(CAsyncSQL &sql)
 {
     db::Owner owner{42, 1, Token(1)};
@@ -936,6 +1057,17 @@ void ColdProcess(CAsyncSQL &sql)
     Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_reward_ledger WHERE action_id=?",
                  {SqlParam::Blob(Binary(ActionIdentity(issuedKey)))}) == 1,
           "cold acknowledgement duplicated entitlement");
+    for (uint32_t character : {80u, 81u, 82u})
+    {
+        Check(Action(sql, {character, 1, Token(uint8_t(character))}, RewardKey(character)).action.state ==
+                      db::ActionState::Entitled &&
+                  Number(sql,
+                         ("SELECT COUNT(*) FROM " + Player("item_award") +
+                          " WHERE id=? AND count=2 AND taken_time IS NULL")
+                             .c_str(),
+                         {SqlParam::UInt(character + 1000)}) == 1,
+              "cross-schema entitlement/award lost after real database crash");
+    }
 }
 } // namespace
 std::shared_ptr<spdlog::logger> logging::GetLogger()
@@ -952,17 +1084,18 @@ int main(int argc, char **argv)
     std::cout << std::unitbuf;
     try
     {
-        if (argc != 6 && argc != 7)
+        if (argc != 7 && argc != 8)
             throw std::runtime_error("usage: MissionPersistenceTests PORT FRESH_SCHEMA PROXY_PORT "
-                                     "STORE_MIGRATION ACTION_MIGRATION [--cold-check]");
+                                     "STORE_MIGRATION ACTION_MIGRATION CANONICAL_SCHEMA [--cold-check]");
         port = static_cast<unsigned int>(std::stoul(argv[1]));
-        database = argv[2];
+        database = std::string(argv[2]) + "_m";
+        playerDatabase = std::string(argv[2]) + "_p";
         Check(database.starts_with("auriga_mission_sql_test_") && database.size() <= 63 &&
                   database.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_") == database.npos,
               "isolated schema required");
-        if (argc == 7)
+        if (argc == 8)
         {
-            Check(std::string_view(argv[6]) == "--cold-check", "unknown child mode");
+            Check(std::string_view(argv[7]) == "--cold-check", "unknown child mode");
             CAsyncSQL sql;
             Connect(sql);
             ColdProcess(sql);
@@ -975,13 +1108,26 @@ int main(int argc, char **argv)
         Text(bootstrap, "CREATE DATABASE " + database + " CHARACTER SET utf8mb4 COLLATE utf8mb4_bin");
         CAsyncSQL sql;
         Connect(sql);
-        Text(sql, "CREATE TABLE account_mission_pass(account_id INT PRIMARY KEY,marker INT NOT NULL) "
-                  "ENGINE=InnoDB");
-        Text(sql, "INSERT INTO account_mission_pass VALUES(1,123)");
-        Text(sql, "CREATE TABLE quest(id INT PRIMARY KEY,marker INT NOT NULL) ENGINE=InnoDB");
-        Text(sql, "INSERT INTO quest VALUES(1,456)");
-        Text(sql, "CREATE TABLE item_award(id INT PRIMARY KEY,marker INT NOT NULL) ENGINE=InnoDB");
-        Text(sql, "INSERT INTO item_award VALUES(1,789)");
+        Text(sql, "CREATE DATABASE " + playerDatabase + " CHARACTER SET utf8mb4 COLLATE utf8mb4_bin");
+        Text(sql, "CREATE TABLE " + Player("account_mission_pass") +
+                      "(account_id INT PRIMARY KEY,marker INT NOT NULL) ENGINE=InnoDB");
+        Text(sql, "INSERT INTO " + Player("account_mission_pass") + " VALUES(1,123)");
+        Text(sql,
+             "CREATE TABLE " + Player("quest") + "(id INT PRIMARY KEY,marker INT NOT NULL) ENGINE=InnoDB");
+        Text(sql, "INSERT INTO " + Player("quest") + " VALUES(1,456)");
+        std::ifstream canonical(argv[6], std::ios::binary);
+        Check(bool(canonical), "canonical item-award schema missing");
+        std::string schema((std::istreambuf_iterator<char>(canonical)), {});
+        const auto begin = schema.find("CREATE TABLE IF NOT EXISTS `player`.`item_award` (");
+        Check(begin != schema.npos, "canonical item-award DDL missing");
+        auto awardDdl = schema.substr(begin, schema.find(';', begin) - begin);
+        awardDdl.replace(awardDdl.find("`player`.`item_award`"), 21, Player("item_award"));
+        Text(sql, awardDdl);
+        Text(sql, "INSERT INTO " + Player("item_award") + "(id,login,vnum,count) VALUES(1,'sentinel',789,1)");
+        CAsyncSQL wrongDatabase;
+        Check(wrongDatabase.Setup("127.0.0.1", "root", "", playerDatabase.c_str(), "utf8mb4", true, port),
+              "isolated player connection failed");
+        Execute(wrongDatabase, db::Claim(9998, 0, Token(98), Token(98)), false);
         Migration(sql, argv[4]);
         Execute(sql, db::Claim(9999, 0, Token(99), Token(99)), false);
         Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_characters") == 0,
@@ -990,6 +1136,7 @@ int main(int argc, char **argv)
         Migration(sql, argv[4]);
         Check(Number(sql, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 2,
               "old migration downgraded action schema");
+        QualifiedInstall(sql, argv[4]);
         Archive(sql);
         DefinitionRegistry registry;
         Check(registry.Activate(Definitions()).status == Publication::Status::Published,
@@ -1011,6 +1158,7 @@ int main(int argc, char **argv)
         InterruptedEntitlement(sql, registry);
         LostEntitlementCommit(sql, registry, static_cast<unsigned int>(std::stoul(argv[3])));
         BoundedActionBatch(sql);
+        CrossSchema(sql, registry, static_cast<unsigned int>(std::stoul(argv[3])));
         std::cout << "Mission persistence: " << checks << " checks passed\n";
         return 0;
     }

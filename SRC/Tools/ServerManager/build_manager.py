@@ -87,6 +87,7 @@ def main():
                '--workpath', str(work / 'cache'), '--specpath', str(work),
                '--paths', str(source), '--paths', str(source.parent),
                '--hidden-import', 'server_package.manage', '--hidden-import', 'run_server',
+               '--hidden-import', 'server_package.mission_database',
                '--hidden-import', 'ctypes.wintypes', '--exclude-module', 'PySide6.QtNetwork',
                '--add-data', str(source / 'remote_worker.py') + os.pathsep + '.',
                '--add-data', str(source / 'remote_deploy.py') + os.pathsep + '.',

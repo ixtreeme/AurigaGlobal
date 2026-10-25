@@ -118,7 +118,71 @@ def owned(record):
 
 def config():
     if not (ROOT / '.auriga-package.json').is_file(): raise RuntimeError('Not an owned Auriga package directory')
-    return read_json(ROOT / 'server.json')
+    value = read_json(ROOT / 'server.json')
+    sql = value.get('common', {}).get('sql', {})
+    if 'mission' in sql and 'player' in sql:
+        sql['mission'] = dict(dict(sql['player'], database='mission'), **sql['mission'])
+    return value
+
+
+def mission_module():
+    path = Path(__file__).with_name('mission_database.py')
+    if not path.is_file():
+        if getattr(sys, 'frozen', False):
+            from server_package import mission_database
+            return mission_database
+        raise RuntimeError('Package update required: missing mission_database.py')
+    spec = importlib.util.spec_from_file_location('_auriga_mission_database', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def init_mission_db():
+    """Explicit additive installation; never starts/reinitializes external SQL."""
+    state = ROOT / 'run/supervisor.json'
+    if state.is_file():
+        retained = read_json(state)
+        if owned(retained.get('supervisor')) or any(owned(child.get('identity')) for child in retained.get('children', [])):
+            raise RuntimeError('Stop the owned game server before installing the Mission schema')
+    module = mission_module()
+    target, player = module.connection(config())
+    ddl = module.install_sql(ROOT / 'db', target['database'])
+    # Do not silently start a fresh campaign beside an old experimental store.
+    statements = module.legacy_check(player['database'])
+    if os.name == 'nt' and (db_folder() / 'owner.json').is_file():
+        verify_datadir()
+        if sql(statements).strip() != '0':
+            raise RuntimeError('Legacy Mission tables exist in player; migrate their data before installing a new Mission store')
+        sql(ddl)
+        sql(module.local_grants(target, player))
+    else:
+        binary = shutil.which('mariadb') or shutil.which('mysql')
+        if not binary:
+            raise RuntimeError('Install a MariaDB command-line client to initialize the Mission database')
+        def quoted(value):
+            value = str(value)
+            if '\x00' in value:
+                raise ValueError('Invalid SQL connection setting')
+            return '"' + value.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r') + '"'
+        with tempfile.TemporaryDirectory(prefix='auriga-mission-install-') as directory:
+            options = Path(directory) / 'client.cnf'
+            descriptor = os.open(options, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            with os.fdopen(descriptor, 'w', encoding='utf-8') as handle:
+                handle.write('[client]\n' + '\n'.join(key + '=' + quoted(target.get(key, '')) for key in ('host', 'port', 'user', 'password')) + '\n')
+            argv = [binary, '--defaults-file=' + str(options), '--protocol=tcp', '--connect-timeout=5', '--batch', '--skip-column-names']
+            result = native(argv, input=statements, timeout=30)
+            if result.returncode or result.stdout.strip() != '0':
+                raise RuntimeError('Legacy Mission tables found or unable to inspect player; no new Mission database was installed')
+            result = native(argv, input=ddl, timeout=120)
+            if result.returncode:
+                log = ROOT / 'run/mission-install-error.log'
+                log.parent.mkdir(parents=True, exist_ok=True)
+                descriptor = os.open(log, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600)
+                with os.fdopen(descriptor, 'w', encoding='utf-8') as handle:
+                    handle.write(result.stderr)
+                raise RuntimeError('Mission schema installation failed; inspect run/mission-install-error.log')
+    print('MISSION_DATABASE_INITIALIZED ' + target['database'])
 
 
 def executable(name):
@@ -331,8 +395,12 @@ def init_db(explicit=None):
         for name in ('schema.sql','seed_core.sql','live_locale.sql','motion.sql'):
             path = ROOT / 'db' / name
             if path.is_file(): sql(path.read_text(encoding='utf-8'))
+        module = mission_module()
+        target, player = module.connection(cfg)
+        sql(module.install_sql(ROOT / 'db', target['database']))
         grants = []
-        for name, connection in cfg['common']['sql'].items():
+        connections = dict(cfg['common']['sql'], mission=target)
+        for name, connection in connections.items():
             user, password, database = connection['user'], connection['password'], connection['database']
             if not all(c.isalnum() or c == '_' for c in user + database): raise RuntimeError('Unsupported SQL identifier')
             if not all(c.isalnum() or c in '_-' for c in password): raise RuntimeError('Unsupported generated SQL password')
@@ -377,7 +445,10 @@ def external_database_check():
     postfix = cfg.get('common', {}).get('table_postfix', '')
     if not isinstance(postfix, str) or not re.fullmatch('[A-Za-z0-9_]*', postfix):
         raise RuntimeError('Unsupported SQL table postfix')
-    queries = {name: [] for name in cfg['common']['sql']}
+    connections = dict(cfg['common']['sql'])
+    if 'player' in connections:
+        connections['mission'] = mission_module().connection(cfg)[0]
+    queries = {name: [] for name in connections}
     readiness = ROOT / 'db/check_ready.sql'
     if not readiness.is_file():
         raise RuntimeError('The package is missing db/check_ready.sql')
@@ -397,7 +468,7 @@ def external_database_check():
         if '\x00' in text: raise RuntimeError('Invalid SQL connection setting')
         return '"' + text.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t') + '"'
     with tempfile.TemporaryDirectory(prefix='auriga-sql-check-') as directory:
-        for name, connection in cfg['common']['sql'].items():
+        for name, connection in connections.items():
             options = Path(directory) / 'client.cnf'
             descriptor = os.open(options, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600)
             with os.fdopen(descriptor, 'w', encoding='utf-8') as handle:
@@ -911,7 +982,7 @@ def status():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare','check','setup-db','init-db','import-db','start-db','stop-db','database-check','start','stop','status','reload-quests','quest-status','apply-quests','start-cores','stop-cores'])
+    parser.add_argument('action', choices=['prepare','check','setup-db','init-db','init-mission-db','import-db','start-db','stop-db','database-check','start','stop','status','reload-quests','quest-status','apply-quests','start-cores','stop-cores'])
     parser.add_argument('--channel', type=int, action='append')
     parser.add_argument('--instance', action='append')
     parser.add_argument('--all-channels', action='store_true')
@@ -922,6 +993,7 @@ def main():
         if args.action == 'prepare': prepare_package()
         elif args.action == 'check': file_check()
         elif args.action == 'init-db': init_db(args.mariadb_bin)
+        elif args.action == 'init-mission-db': init_mission_db()
         elif args.action == 'setup-db': setup_database(args.backup, args.mariadb_bin)
         elif args.action == 'import-db':
             if not args.backup: raise RuntimeError('import-db requires --backup <adapted backup directory>')

@@ -118,8 +118,9 @@ def build(source, output, build_dir, sql_port=3307):
     shutil.copy2(REPO / 'SRC/Tools/run_server.py', output / 'run_server.py')
     shutil.copy2(REPO / 'SRC/Tools/server_package/manage.py', output / 'manage.py')
     shutil.copy2(REPO / 'SRC/Tools/server_package/quest_reload.py', output / 'quest_reload.py')
+    shutil.copy2(REPO / 'SRC/Tools/server_package/mission_database.py', output / 'mission_database.py')
     shutil.copy2(REPO / 'SRC/Tools/server_package/backup_import.py', output / 'db/backup_import.py')
-    for name in ('schema.sql','seed_core.sql','check_ready.sql'):
+    for name in ('schema.sql','seed_core.sql','check_ready.sql','mission_schema.sql'):
         shutil.copy2(REPO / 'db' / name, output / 'db' / name)
     shutil.copytree(REPO / 'db/migrations', output / 'db/migrations')
     # The live skill curve wins over the example seed's curve.

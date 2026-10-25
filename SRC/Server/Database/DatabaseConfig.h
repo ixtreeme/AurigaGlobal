@@ -64,6 +64,7 @@ struct DatabaseConfig
 		SqlConnectionConfig	player;
 		SqlConnectionConfig	account;
 		SqlConnectionConfig	common;
+		SqlConnectionConfig	mission;
 	} sql;
 
 	struct CacheConfig

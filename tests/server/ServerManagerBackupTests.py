@@ -1,5 +1,6 @@
 """Backup integrity, restore transactions, SQL tooling and target-bound UI."""
 import io
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -51,6 +52,27 @@ class BackupTests(unittest.TestCase):
         self.assertIsNone(backups.pending(self.root))
         with backups.extracted(self.root,result['safety_backup']) as (_,stage):
             self.assertEqual((stage/'files/data/quest/new.lua').read_text(),'new file')
+
+    def test_sql_dump_contains_mission_with_player_and_refuses_an_older_four_schema_restore(self):
+        calls=[]
+        @contextlib.contextmanager
+        def access(*args):
+            yield '/client','/dump',[]
+        def run(argv,root,api,**kwargs):
+            calls.append(argv)
+            kwargs['target'].write(b'-- private fake SQL snapshot\n')
+        with mock.patch.object(backups,'sql_access',side_effect=access),mock.patch.object(backups,'sql_run',side_effect=run):
+            saved=backups._create(self.root,api,['sql'],'manual')
+        self.assertEqual(calls[0][-5:],['account','common','log','mission','player'])
+        self.assertIn('--lock-all-tables',calls[0])
+        self.assertEqual(saved['sql'][0]['databases'],['account','common','log','mission','player'])
+        original=api.sql_connections
+        def old_connections(config):
+            return [entry for entry in original(config) if entry['connection']['database']!='mission']
+        with mock.patch.object(backups,'sql_access',side_effect=access),mock.patch.object(backups,'sql_run',side_effect=run),mock.patch.object(api,'sql_connections',side_effect=old_connections):
+            old=backups._create(self.root,api,['sql'],'manual')
+        with mock.patch.object(api,'describe',return_value={'running':False}),self.assertRaisesRegex(ValueError,'adatbázisnevek eltérnek'):
+            backups.restore_plan(self.root,api,old['id'],['sql'])
 
     def test_stale_plan_and_corrupt_archive_refused_before_restore(self):
         saved=backups.create(self.root,api,['data'])

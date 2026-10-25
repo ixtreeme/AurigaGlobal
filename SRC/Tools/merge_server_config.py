@@ -84,7 +84,7 @@ def merge_configs(database, login, games, output):
     share('interserver_key', [db.setdefault('server', {}), auth] + cores)
     share('locale', [db['server'], auth] + [core['server'] for core in cores])
     share('table_postfix', [db['server']] + [core['server'] for core in cores])
-    for name in ('player', 'account', 'common', 'log'):
+    for name in ('player', 'account', 'common', 'log', 'mission'):
         locations = []
         for component in [db] + cores:
             if name in component.get('sql', {}): locations.append((component['sql'], name))

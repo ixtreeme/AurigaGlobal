@@ -186,6 +186,8 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
+    add_test(NAME mission_database_tools COMMAND ${Python3_EXECUTABLE} -B
+        ${CMAKE_SOURCE_DIR}/tests/server/MissionDatabaseToolsTests.py)
     add_test(NAME mission_package_tools COMMAND ${Python3_EXECUTABLE} -B
         ${CMAKE_SOURCE_DIR}/tests/server/MissionPackageToolsTests.py
         --compiler $<TARGET_FILE:MissionCompiler>
@@ -546,7 +548,8 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --work-dir ${CMAKE_BINARY_DIR}/mission-persistence-isolated
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_persistence.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_actions.sql
-            --drop-commit-count 2
+            --test-argument ${CMAKE_SOURCE_DIR}/db/schema.sql
+            --drop-commit-count 3
             --followup-argument=--cold-check
             --crash-server-before-followup
     )

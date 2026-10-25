@@ -8,7 +8,8 @@
       "player": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "player"},
       "account": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "account"},
       "common": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "common"},
-      "log": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "log"}
+      "log": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "log"},
+      "mission": {"host": "127.0.0.1", "port": 3306, "user": "auriga", "password": "REPLACE_ME", "database": "mission"}
     },
     "tls": {"cert_file": "tls/server.crt", "key_file": "tls/server.key"}
   },

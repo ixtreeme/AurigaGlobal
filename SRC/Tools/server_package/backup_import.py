@@ -93,6 +93,14 @@ def import_backup(manager, folder):
         mutated, before, journal = False, None, None
         try:
             manager.verify_datadir()
+            mission = manager.mission_module()
+            target, _ = mission.connection(cfg)
+            name = target['database']
+            present = manager.sql("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='" + name +
+                                  "' AND TABLE_NAME='mission_engine_characters';").strip()
+            if present != '0' and int(manager.sql('SELECT COUNT(*) FROM ' + mission.identifier(name) +
+                                                  '.mission_engine_characters;').strip()):
+                raise RuntimeError('Mission progress exists; restore a coherent player and mission SQL backup together')
             actual = set(line.replace('\t', '.') for line in manager.sql("SELECT TABLE_SCHEMA,TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA IN ('account','common','player','log');").splitlines())
             if actual != set(report['target_counts']):
                 raise RuntimeError('Local database tables differ from the adapted schema')

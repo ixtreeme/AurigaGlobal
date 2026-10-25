@@ -669,6 +669,13 @@ Hivatkozások: [GDB automatikus szkriptbetöltés](https://sourceware.org/gdb/cu
 
 ## Mentési központ
 
+Az új történetalapú Mission Engine külön `mission` adatbázisa a Beállítások
+oldalon **SQL · Küldetések** néven szerkeszthető. Az SQL-kapcsolatellenőrzés
+és a mentési központ ezt az ötödik adatkört is figyelembe veszi. A player és
+mission közös SQL-mentésben szerepel; a korábbi, csak négy adatbázisos SQL-
+mentés részleges visszaállítása elutasításra kerül. Telepítés és részletek:
+[külön Mission-adatbázis](mission_database_2026-10-25.md).
+
 A **Mentések** oldal a felső választóban kijelölt helyi vagy távoli csomagot
 kezeli. **Új mentés** előtt jelöld ki az összetevőket:
 

@@ -1,5 +1,5 @@
 -- Mission Engine schema 1 -> 2. Apply AFTER mission_engine_persistence.sql
--- to the selected player database. Additive: no legacy/seasonal tables touched.
+-- to the selected mission database. Additive: no legacy/seasonal tables touched.
 -- DDL is not atomic. The version marker changes LAST; until then the new
 -- executable refuses writes. Back up and validate before a production rollout.
 

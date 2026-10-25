@@ -111,7 +111,7 @@ def central_config(source, sql_port):
     postfix = db['server'].pop('table_postfix', '')
     password = secrets.token_urlsafe(32)
     sql = {name: dict(host='127.0.0.1', port=sql_port, user='auriga_local',
-                      password=password, database=name) for name in ('player', 'account', 'common', 'log')}
+                      password=password, database=name) for name in ('player', 'account', 'common', 'log', 'mission')}
     common = dict(locale=locale, table_postfix=postfix, sql=sql,
                   interserver_key=secrets.token_hex(32),
                   tls=dict(cert_file='tls/server.crt', key_file='tls/server.key'))

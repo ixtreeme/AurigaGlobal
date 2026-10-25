@@ -49,7 +49,7 @@ NAMES = {
     'mark_server': 'Céhjelek kiszolgálása', 'database_link': 'Database-kapcsolat',
     'account_sql': 'Fiókadatbázis', 'spam_block': 'Spamvédelem', 'item_destroy': 'Eldobott tárgyak eltűnése',
 }
-ROLES = {'player': 'Játékosadatok', 'account': 'Fiókok', 'common': 'Közös adatok', 'log': 'Naplóadatok'}
+ROLES = {'player': 'Játékosadatok', 'account': 'Fiókok', 'common': 'Közös adatok', 'log': 'Naplóadatok', 'mission': 'Küldetések'}
 HELP = {
     'common': 'Minden szerver közös beállításai. Az itt megadott értékeket a szerverek örökölhetik.',
     'database': 'A szerveroldali Database folyamat beállításai.',
@@ -113,7 +113,7 @@ def inherited(document, scope):
         if 'account' in sql:
             base['account_sql'] = copy.deepcopy(sql['account'])
     else:
-        roles = ('player', 'account', 'common') if role == 'database' else ('player', 'common', 'log')
+        roles = ('player', 'account', 'common', 'mission') if role == 'database' else ('player', 'common', 'log', 'mission')
         if any(key in sql for key in roles):
             base['sql'] = {key: copy.deepcopy(sql[key]) for key in roles if key in sql}
     if role != 'database' and 'tls' in common:
@@ -221,7 +221,8 @@ class ConfigForm(QWidget):
         self.build_groups()
 
     def effective(self):
-        return api.merge(inherited(self.value, self.scope), api.value_at(self.value, self.scope))
+        value = api.merge(inherited(self.value, self.scope), api.value_at(self.value, self.scope))
+        return api.with_mission_sql(value) if self.scope != ('login',) else value
 
     def build_groups(self):
         if not self.value or not contains(self.value, self.scope):

@@ -18,7 +18,7 @@ a verziózott konfigurációs alap a `.example` fájl.
 | Szekció | Tartalom |
 |---|---|
 | `schema_version` | Jelenleg kötelezően `1`. |
-| `common.sql` | `player`, `account`, `common`, `log` SQL-kapcsolatok. |
+| `common.sql` | `player`, `account`, `common`, `log`, `mission` SQL-kapcsolatok. |
 | `common.tls` | A LoginServer és a GameServerek alapértelmezett tanúsítvány-/kulcsfájlja. |
 | `common.interserver_key` | Database, LoginServer és GameServer közös peer-auth kulcsa. |
 | `common.locale` | Opcionális közös karakterkódolás. |
@@ -36,9 +36,19 @@ Külön SQL-jogosultságok és külön TLS-tanúsítványok továbbra is megadha
 komponens/példány saját szekciójában.
 
 A `common.sql.account` a LoginServer `account_sql` értékébe kerül. A Database
-a player/account/common, a GameServer a player/common/log kapcsolatokat kapja.
+a player/account/common/mission, a GameServer a player/common/log/mission kapcsolatokat kapja.
 A közös szerverkulcs a Database `server.interserver_key`, a másik két komponens
 `interserver_key` mezőjét tölti ki. Az eltérő effektív kulcs vagy táblanévutótag hibát okoz.
+
+A `mission` az új Mission Engine külön adatbázisa. Hiányzó beállításnál az
+adott komponens effektív player-kapcsolatának címét/portját/hitelesítését örökli,
+de az adatbázis neve **mission** lesz. Nem használja helyette a player tábláit.
+A Mission-beállítás részlegesen is felülírható; például
+`"mission": {"database": "story_mission"}`. A natív betöltő azonos player/mission
+célgépet és TCP-portot, külön adatbázisnevet, valamint a Database és minden
+GameServer közös Mission-célját követeli. A 0 és 3306 port egyenértékű.
+A LoginServer nem kap Mission-kapcsolatot. Részletek és telepítés:
+[külön Mission-adatbázis](mission_database_2026-10-25.md).
 
 A Database portjának forrása `database.network.bind_port`, alapból 5300.
 A többi komponens DB-linkje ezt örökli. A wildcard Database-cím helyett a

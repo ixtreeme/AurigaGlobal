@@ -116,6 +116,7 @@ struct GameConfig
 		GameSqlConfig	player;
 		GameSqlConfig	common;
 		GameSqlConfig	log;
+		GameSqlConfig	mission;
 	} sql;
 
 	std::string		interserverKey;

@@ -1,5 +1,6 @@
 #include "server_config.h"
 #include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <set>
@@ -47,6 +48,39 @@ void Sql(const Json& object) {
     Need(!String(object, "host").empty() && !String(object, "database").empty(), "SQL host and database are required");
     String(object, "user"); String(object, "password"); Integer(object, "port", 0, 0, 65535);
 }
+Json MissionSql(Json section) {
+    if (!section.contains("sql") || !section["sql"].contains("player")) return section;
+    auto& sql = section["sql"];
+    auto base = sql["player"];
+    base["database"] = "mission";
+    sql["mission"] = Merge(base, OptionalObject(sql, "mission"));
+    return section;
+}
+long long SqlPort(const Json& value) {
+    const auto port = Integer(value, "port", 0, 0, 65535);
+    return port ? port : 3306;
+}
+void MissionSqlCheck(const Json& section, const Json& shared) {
+    const auto& sql = section.at("sql");
+    const auto& mission = sql.at("mission");
+    const auto& player = sql.at("player");
+    Sql(mission);
+    const auto name = String(mission, "database");
+    Need(!name.empty() && name.size() <= 64 && name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") == std::string::npos,
+         "SQL mission database must be a simple identifier");
+    std::string lower = name;
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+    Need(std::set<std::string>{"mysql", "information_schema", "performance_schema", "sys"}.count(lower) == 0,
+         "SQL mission cannot use a system database");
+    for (const char* role : {"player", "account", "common", "log"}) {
+        if (!sql.contains(role) && !shared.contains(role)) continue;
+        auto other = String(sql.contains(role) ? sql.at(role) : shared.at(role), "database");
+        std::transform(other.begin(), other.end(), other.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+        Need(lower != other, "SQL mission must use a separate database");
+    }
+    Need(String(mission, "host") == String(player, "host") && SqlPort(mission) == SqlPort(player),
+         "SQL mission and player must use the same MariaDB endpoint");
+}
 void Tls(const Json& object) {
     Object(object, "TLS settings");
     Need(!String(object, "cert_file").empty() && !String(object, "key_file").empty(), "TLS cert_file and key_file are required");
@@ -65,13 +99,13 @@ Json Effective(const Json& root, Role role, const std::string& instance) {
     const auto& sql = OptionalObject(common, "sql");
     if (role == Role::Login) { if (sql.contains("account")) result["account_sql"] = sql.at("account"); }
     else {
-        for (const char* name : (role == Role::Database ? std::vector<const char*>{"player", "account", "common"} : std::vector<const char*>{"player", "common", "log"}))
+        for (const char* name : (role == Role::Database ? std::vector<const char*>{"player", "account", "common", "mission"} : std::vector<const char*>{"player", "common", "log", "mission"}))
             if (sql.contains(name)) result["sql"][name] = sql.at(name);
     }
     if (common.contains("tls") && role != Role::Database) {
         if (role == Role::Login) result["tls"] = common.at("tls"); else result["network"]["tls"] = common.at("tls");
     }
-    if (role == Role::Database) return Merge(result, root.at("database"));
+    if (role == Role::Database) return MissionSql(Merge(result, root.at("database")));
     const auto db = Effective(root, Role::Database, {});
     const auto& dbNetwork = OptionalObject(db, "network");
     Json link = {{"host", String(dbNetwork, "bind_ip", "127.0.0.1")}, {"port", Integer(dbNetwork, "bind_port", 5300, 1, 65535)}};
@@ -81,7 +115,7 @@ Json Effective(const Json& root, Role role, const std::string& instance) {
     result["network"]["db_addr"] = link.at("host"); result["network"]["db_port"] = link.at("port");
     result = Merge(result, OptionalObject(root, "game_defaults"));
     Need(root.at("game_servers").contains(instance), "unknown GameServer instance");
-    return Merge(result, root.at("game_servers").at(instance));
+    return MissionSql(Merge(result, root.at("game_servers").at(instance)));
 }
 void Validate(const Json& root) {
     Object(root, "server configuration");
@@ -97,7 +131,8 @@ void Validate(const Json& root) {
     for (const char* field : {"locale", "table_postfix", "interserver_key"}) String(common, field);
     const auto& sharedSql = OptionalObject(common, "sql");
     for (auto it = sharedSql.begin(); it != sharedSql.end(); ++it) {
-        Need(std::set<std::string>{"player", "account", "common", "log"}.count(it.key()) != 0, "unknown shared SQL role"); Sql(it.value());
+        Need(std::set<std::string>{"player", "account", "common", "log", "mission"}.count(it.key()) != 0, "unknown shared SQL role");
+        if (it.key() == "mission") Object(it.value(), "SQL mission"); else Sql(it.value());
     }
     if (common.contains("tls")) Tls(common.at("tls"));
     const auto db = Effective(root, Role::Database, {});
@@ -106,6 +141,7 @@ void Validate(const Json& root) {
     const auto dbPort = Integer(dbNetwork, "bind_port", 5300, 1, 65535);
     const auto& dbServer = OptionalObject(db, "server");
     for (const char* name : {"player", "account", "common"}) Sql(db.at("sql").at(name));
+    MissionSqlCheck(db, sharedSql);
     const auto& range = db.at("item_id_range");
     Need(range.is_array() && range.size() == 2, "database.item_id_range needs two IDs");
     Json ids = {{"first", range[0]}, {"last", range[1]}};
@@ -154,6 +190,11 @@ void Validate(const Json& root) {
         endpoint(String(network, "bind_ip"), Integer(network, "p2p_port", 50900, 1, 65535));
         Tls(network.at("tls"));
         for (const char* name : {"player", "common", "log"}) Sql(game.at("sql").at(name));
+        MissionSqlCheck(game, sharedSql);
+        Need(game.at("sql").at("mission").at("host") == db.at("sql").at("mission").at("host") &&
+             game.at("sql").at("mission").at("database") == db.at("sql").at("mission").at("database") &&
+             SqlPort(game.at("sql").at("mission")) == SqlPort(db.at("sql").at("mission")),
+             "GameServer and Database mission targets differ");
         if (game.contains("map_allow")) {
             Need(game.at("map_allow").is_array(), "map_allow must be an array");
             std::set<long long> maps;

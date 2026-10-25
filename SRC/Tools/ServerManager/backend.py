@@ -180,16 +180,26 @@ def sql_client():
     return None
 
 
+def with_mission_sql(section):
+    section = copy.deepcopy(section)
+    sql = section.setdefault('sql', {})
+    if 'player' in sql:
+        sql['mission'] = dict(dict(sql['player'], database='mission'), **sql.get('mission', {}))
+    return section
+
+
 def sql_connections(config):
     """Mirror native common/default/instance overrides; deduplicate credentials privately."""
     common = config.get('common', {}).get('sql', {})
-    sections = [('database', merge({'sql': {key:common[key] for key in ('player','account','common') if key in common}}, config['database']))]
+    sections = [('database', merge({'sql': {key:common[key] for key in ('player','account','common','mission') if key in common}}, config['database']))]
     sections.append(('login', {'sql': {'account': merge(common.get('account', {}), config['login'].get('account_sql', {}))}}))
     for name, core in config['game_servers'].items():
-        base = {'sql': {key:common[key] for key in ('player','common','log') if key in common}}
+        base = {'sql': {key:common[key] for key in ('player','common','log','mission') if key in common}}
         sections.append((name, merge(merge(base, config.get('game_defaults', {})), core)))
     connections = {}
     for instance, section in sections:
+        if instance != 'login':
+            section = with_mission_sql(section)
         for role, connection in section.get('sql', {}).items():
             value = {key:connection.get(key, default) for key, default in
                      (('host',''),('port',3306),('user',''),('password',''),('database',''))}

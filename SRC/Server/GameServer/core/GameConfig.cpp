@@ -97,6 +97,8 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 
 			if (sqlDoc.contains("log"))
 				LoadSqlConnection(sqlDoc.at("log"), sql.log);
+			if (sqlDoc.contains("mission"))
+				LoadSqlConnection(sqlDoc.at("mission"), sql.mission);
 		}
 
 		interserverKey = doc.value("interserver_key", std::string());

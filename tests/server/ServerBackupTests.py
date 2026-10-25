@@ -103,6 +103,8 @@ class NativeBackupTests(unittest.TestCase):
         shutil.copy2(ROOT / 'db/schema.sql', root / 'db/schema.sql')
         shutil.copy2(ROOT / 'db/seed_core.sql', root / 'db/seed_core.sql')
         shutil.copy2(ROOT / 'db/check_ready.sql', root / 'db/check_ready.sql')
+        shutil.copy2(ROOT / 'db/mission_schema.sql', root / 'db/mission_schema.sql')
+        shutil.copytree(ROOT / 'db/migrations', root / 'db/migrations')
         (root / '.auriga-package.json').write_text('{"version":1}')
         with socket.socket() as listener:
             listener.bind(('127.0.0.1', 0))

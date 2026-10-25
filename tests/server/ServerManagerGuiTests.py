@@ -104,6 +104,18 @@ class ServerManagerGuiTests(unittest.TestCase):
         self.assertFalse(self.window.console_panel.isVisible())
         self.assertFalse(self.window.config_editor.tabs.isTabVisible(1))
 
+    def test_dedicated_mission_sql_category_and_legacy_defaults(self):
+        form = self.form_page(('common',), 'sql.mission')
+        database = form.controls[('common', 'sql', 'mission', 'database')]
+        self.assertEqual(database.text(), 'mission')
+        password = form.controls[('common', 'sql', 'mission', 'password')]
+        self.assertEqual(password.echoMode(), QLineEdit.EchoMode.Password)
+        value = json.loads(json.dumps(form.value))
+        value['common']['sql'].pop('mission', None)
+        form.set_value(value)
+        form = self.form_page(('common',), 'sql.mission')
+        self.assertEqual(form.controls[('common', 'sql', 'mission', 'database')].text(), 'mission')
+
     def test_cores_start_and_stop_one_by_one_from_the_table(self):
         state = api.describe(self.root)
         state = dict(state, running=True, phase='Fut', core_control=True)

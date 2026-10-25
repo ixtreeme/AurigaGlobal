@@ -61,12 +61,31 @@ int main() {
         DatabaseConfig database; LoginConfig login;
         Check(auriga::config::Resolve(fixture, source, Role::Database, {}, section, error) && database.Load(section, error), "database section rejected");
         Check(database.network.bindPort == 5300 && database.sql.account.database == "account" && database.server.tablePostfix == "_fixture", "database shared mapping lost");
+        Check(database.sql.mission.database == "mission" && database.sql.mission.user == "fixture" &&
+              game.sql.mission.database == "mission", "legacy configuration did not derive a dedicated Mission database");
+        auto missionConfig = fixture;
+        missionConfig["common"]["sql"]["mission"] = {{"database", "story_mission"}};
+        Check(auriga::config::Resolve(missionConfig, source, Role::Game, "ch1-core1", section, error) &&
+              game.Load(section, error) && game.sql.mission.database == "story_mission" &&
+              game.sql.mission.password == "PASSWORD_DO_NOT_LOG", "partial Mission override lost player endpoint/credentials");
+        missionConfig["database"]["sql"]["mission"]["port"] = 0;
+        Check(auriga::config::Resolve(missionConfig, source, Role::Database, {}, section, error),
+              "default TCP port and explicit 3306 should identify the same Mission endpoint");
         Check(auriga::config::Resolve(fixture, source, Role::Login, {}, section, error) && LoadLoginConfig(section, login, error), "login section rejected");
         Check(login.listenPort == 30052 && login.dbLink.port == 5300 && login.tls.keyFile == (root / "tls/server.key").generic_string(), "login link/TLS paths lost");
         Check(!auriga::config::Resolve(fixture, source, Role::Game, "missing", section, error), "unknown core accepted");
         Check(section.instance == "login", "failed resolver changed previous section");
         auto reject = [&](Json changed) { Check(!auriga::config::Resolve(changed, source, Role::Game, "ch1-core1", section, error), "invalid central config accepted"); Check(error.find("PASSWORD_DO_NOT_LOG") == std::string::npos, "error leaks secret value"); };
         auto bad = fixture; bad["schema_version"] = 2; reject(bad);
+        for (const char* name : {"player", "common", "log", "account", "mysql", "PLAYER", "bad`name"}) {
+            bad = fixture; bad["common"]["sql"]["mission"] = {{"database", name}}; reject(bad);
+        }
+        bad = fixture; bad["common"]["sql"]["mission"] = {{"port", 3310}}; reject(bad);
+        bad = fixture; bad["common"]["sql"]["mission"] = {{"host", "192.0.2.1"}}; reject(bad);
+        bad = fixture; bad["game_servers"]["ch1-core2"]["sql"]["mission"] = {{"database", "other_mission"}}; reject(bad);
+        bad = fixture; bad["game_servers"] = Json::object(); bad["common"]["sql"]["mission"] = {{"database", "log"}};
+        Check(!auriga::config::Resolve(bad, source, Role::Database, {}, section, error),
+              "Mission shared a legacy log schema when no GameServer was configured");
         bad = fixture; bad["unexpected"] = true; reject(bad);
         bad = fixture; bad["common"]["sql"]["player"]["port"] = "PASSWORD_DO_NOT_LOG"; reject(bad);
         bad = fixture; bad["game_servers"]["ch1-core1"]["network"]["port"] = 65536; reject(bad);

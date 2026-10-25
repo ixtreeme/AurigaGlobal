@@ -53,7 +53,7 @@ class SqlStatusTests(unittest.TestCase):
 
     def test_effective_instance_overrides_are_checked_and_common_connections_are_deduplicated(self):
         entries = api.sql_connections(self.config)
-        self.assertEqual(len(entries),4)
+        self.assertEqual(len(entries),5)
         self.config['database']['sql'] = {'player': {'port': 3311}}
         self.config['login']['account_sql'] = {'port': 3312}
         self.config['game_defaults']['sql'] = {'log': {'port': 3313}}
@@ -78,7 +78,7 @@ class SqlStatusTests(unittest.TestCase):
         before = (self.root / 'server.json').read_bytes()
         with mock.patch.object(api,'sql_client',return_value='/client'),mock.patch.object(api.subprocess,'run',side_effect=client):
             result = api.external_sql_status(self.root,self.config)
-        self.assertEqual(result['status'],'available');self.assertEqual(len(calls),4)
+        self.assertEqual(result['status'],'available');self.assertEqual(len(calls),5)
         self.assertTrue(all(not path.exists() for path in temporary))
         self.assertNotIn('PRIVATE_SQL',json.dumps(result))
         self.assertNotIn('PRIVATE_SQL',(self.root / 'run/sql-status.json').read_text())
@@ -88,15 +88,15 @@ class SqlStatusTests(unittest.TestCase):
     def test_cache_expires_force_refreshes_and_configuration_changes_invalidate_it(self):
         with mock.patch.object(api,'sql_client',return_value='/client'),mock.patch.object(api,'probe_sql',side_effect=self.healthy) as probe:
             first = api.external_sql_status(self.root,self.config)
-            self.assertEqual(probe.call_count,4)
+            self.assertEqual(probe.call_count,5)
             self.assertEqual(api.external_sql_status(self.root,self.config),first)
-            self.assertEqual(probe.call_count,4)
-            api.external_sql_status(self.root,self.config,force=True);self.assertEqual(probe.call_count,8)
+            self.assertEqual(probe.call_count,5)
+            api.external_sql_status(self.root,self.config,force=True);self.assertEqual(probe.call_count,10)
             self.config['common']['sql']['account']['password'] = 'changed-password'
-            api.external_sql_status(self.root,self.config);self.assertEqual(probe.call_count,12)
+            api.external_sql_status(self.root,self.config);self.assertEqual(probe.call_count,15)
             with mock.patch.object(api.time,'time',return_value=first['checked_at']+40):
                 api.external_sql_status(self.root,self.config)
-            self.assertEqual(probe.call_count,16)
+            self.assertEqual(probe.call_count,20)
 
     def test_connection_failures_are_distinct_and_do_not_reveal_client_output(self):
         entry = api.sql_connections(self.config)[0]
