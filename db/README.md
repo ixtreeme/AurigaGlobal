@@ -7,7 +7,7 @@ definíciókat és a pozíció alapján olvasott rekordokat is figyelembe veszi.
 Valódi, elkülönített **MariaDB 13.0.2** példányon ellenőrizve.
 
 Az új Mission Engine külön, ötödik **`mission`** adatbázist használ.
-A [mission_schema.sql](mission_schema.sql) további nyolc InnoDB-táblát hoz létre;
+A [mission_schema.sql](mission_schema.sql) további kilenc InnoDB-táblát hoz létre;
 a régi négy adatbázist tartalmazó schema.sql változatlan marad. A csomag
 `init-db` művelete mindkettőt telepíti. Meglévő csomagnál a friss runtime
 `manage.py init-mission-db` parancsa használható, vagy az önálló SQL adminisztrátori
@@ -31,7 +31,7 @@ adatbázismentés-hiány a jelenlegi helyi csomagra már nem vonatkozik.
 | Fájl | Feladat |
 |---|---|
 | [schema.sql](schema.sql) | `player` (69), `common` (7), `account` (3), `log` (23) tábláinak létrehozása |
-| [mission_schema.sql](mission_schema.sql) | Külön `mission` adatbázis, nyolc saját tábla, sémaverzió 2 |
+| [mission_schema.sql](mission_schema.sql) | Külön `mission` adatbázis, kilenc saját tábla, sémaverzió 3 |
 | [seed_core.sql](seed_core.sql) | Két alap konfigurációs sor, meglévő értékek megőrzésével |
 | [check_ready.sql](check_ready.sql) | Konfiguráció és indulási referenciaadatok jelenlétének lekérdezése |
 | [db_schema_audit.md](db_schema_audit.md) | Forráskapcsolatok, javítások, ellenőrzési eredmények és korlátok |

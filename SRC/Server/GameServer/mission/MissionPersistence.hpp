@@ -140,6 +140,6 @@ PackageLoad DecodeDefinitionArchive(_SQLMsg &message, const DefinitionReference 
 // original character writer, the second is a current read even under REPEATABLE
 // READ. An ordinary nonlocking SELECT is not a safe absence barrier.
 SqlTransaction Resolve(const Plan &plan);
-Resolved DecodeResolution(_SQLMsg &message, const Plan &plan);
+Resolved DecodeResolution(_SQLMsg &message, const Plan &plan, size_t expectedSteps = 3);
 bool Confirmed(const _SQLMsg &message);
 } // namespace auriga::mission::persistence

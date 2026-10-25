@@ -122,6 +122,9 @@ add_executable(MissionPersistenceTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionPersistenceTests.cpp
     ${_mission_persistence_sources}
     mission/MissionPersistence.cpp
+    mission/MissionItemAwards.cpp
+    ../Database/ItemAwardDelivery.cpp
+    ../Database/ItemAwardScan.cpp
 )
 target_include_directories(MissionPersistenceTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
 target_link_libraries(MissionPersistenceTests PRIVATE SERVER S_SQL S_Core Threads::Threads OpenSSL::Crypto)
@@ -550,7 +553,7 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_persistence.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_actions.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/schema.sql
-            --drop-commit-count 3
+            --drop-commit-count 4
             --followup-argument=--cold-check
             --crash-server-before-followup
     )

@@ -4,7 +4,7 @@
 
 **Frissítés, 4/C (`5a8b13b5`):** az outbox és a szimbolikus jutalomjogosultság-ledger azóta
 elkészült. A jelen kódhoz a második, `mission_engine_actions.sql` migráció is
-kötelező: sémaverzió 2, nyolc tábla, hét FK. Az alábbi 4/B eredmények a korábbi
+kötelező: sémaverzió 3, kilenc tábla, nyolc FK (a 4/D–3 award-mappinggel). Az alábbi 4/B eredmények a korábbi
 alapot dokumentálják; az új réteget és határait a
 [4/C leírás](mission_actions_and_entitlements_2026-10-25.md) részletezi.
 

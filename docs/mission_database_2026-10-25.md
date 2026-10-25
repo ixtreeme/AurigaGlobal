@@ -4,12 +4,12 @@ Dátum: 2026-10-25. Ág: `codex/mission-engine`.
 
 ## Felosztás
 
-Az új történetalapú Mission Engine nyolc saját táblája a külön **mission**
+Az új történetalapú Mission Engine kilenc saját táblája a külön **mission**
 adatbázisba kerül. A player, account, common és log meglévő sémája változatlan.
 A szezonális Mission Pass és a régi Lua quest-adatok a jelenlegi helyükön maradnak.
 
 A Mission-sémában van a csomag-/definícióarchívum, a karakter-checkpoint,
-az owner/revízió, a mentési műveletnyugta, az action outbox és az entitlement-ledger.
+az owner/revízió, a mentési műveletnyugta, az action outbox, az entitlement-ledger és a konkrét award-mapping.
 A tényleges tárgy, raktár és item_award a player adatbázisban marad.
 
 A motornak nem kell új szolgáltatás vagy külön folyamat. A persistence-tervek
@@ -57,8 +57,8 @@ Indítás előtti ellenőrzések:
 
 Az önálló `db/mission_schema.sql` teljesen minősített neveket használ:
 `mission.mission_engine_*`. Az adminisztrátori import alapértelmezett
-adatbázistól független; nincs USE és nincs régi táblák törlése. A sémaverzió 2.
-A DDL forrása továbbra is a két meglévő Mission-migráció; a Python-generátor
+adatbázistól független; nincs USE és nincs régi táblák törlése. A sémaverzió 3.
+A DDL forrása továbbra is a három meglévő Mission-migráció; a Python-generátor
 és a teszt biztosítja, hogy az önálló SQL ne térjen el tőlük.
 
 Új szervercsomagnál a friss `manage.py init-db` a Mission-sémát is telepíti,
@@ -92,14 +92,14 @@ a szerverkezelő teljes SQL-mentési központja használható.
 ## Közös tranzakciók és jogosultság
 
 A két séma ugyanabban a MariaDB-példányban, InnoDB táblákon működik.
-Egy későbbi natív jutalomíró ugyanazon kapcsolat egyetlen tranzakciójába
+A natív tárgyjutalomíró ugyanazon kapcsolat egyetlen tranzakciójába
 teheti a Mission-ledgert és a teljes névvel hivatkozott player.item_award INSERT-et.
 Két egymástól független kapcsolat COMMIT-ja nem közös atomi művelet.
 
 A konfigurációban alapból közös SQL-felhasználó van. Külön Mission-felhasználónál
 a későbbi jutalomírónak megfelelő player-oldali jogosultság is kell; a helyi
 telepítő a Mission-séma mellett player.player SELECT és player.item_award
-SELECT/INSERT jogot készít elő. Ez nem implementálja a jutalomírót.
+SELECT/INSERT jogot készít elő. A jelenlegi tárgyadapter részletei külön dokumentumban vannak.
 Az élő ECS-ben történő XP-/pénz-/inventoryváltozás továbbra sem lesz ettől SQL-tranzakció.
 
 ## Mentési és visszaállítási szerződés
@@ -128,10 +128,19 @@ hozzáfűzött canonical award INSERT közös rollbackje, commitja, jogosultság
 újrapróbálása és elveszett COMMIT-válasza is ellenőrzött. Kényszerített MariaDB
 leállítás után új C++ folyamat mindkét séma rekordjait ellenőrzi.
 
-Ez infrastruktúra-bizonyíték. Nem regisztrál gameplay bindingot, nem váltja ki
-a stabil action/payload → award mappinget, és nem hajtja végre a kevert
-item/XP/pénz/cost bundle-t. A következő engine-fázis továbbra is ez a teljes,
-idempotens jutalomprotokoll és az award-cache commit-sorrendi helyessége.
+A 4/D–3 részfázisban elkészült a kizárólag tárgyakat adó natív jutalomadapter és a stabil
+mapping: a Mission ledger, a canonical awardok és a műveleti nyugta együtt
+commitolnak. A cache commit-sorrendi hibája is javítva. Részletek és az új,
+valódi itemig végigfutó próbák: `mission_item_awards_2026-10-25.md`.
+A kevert item/XP/pénz/cost bundle és az élő session/core-koordinátor továbbra is hátravan.
+
+A jelenlegi telepítő kilenc táblát, sémaverzió 3-at készít. Együtt elérhető
+account-adatbázis esetén az effektív account.account táblára is SELECT-jogot
+ad a saját helyi Mission-felhasználónak, a tárgyjutalom címzettellenőrzéséhez.
+Más végpontú account nem akadályozza a store telepítését; az új itemadapterhez
+külön hiteles identitásprotokoll nélkül ugyanazon SQL-példány szükséges.
+Az alábbi számszerű ellenőrzések a korábbi adatbázis-szétválasztás lezárt körét
+rögzítik; a jelenlegi 34/34 + ASAN 11/11 és a 13/13 bootstrap kör az új részletezőben van.
 
 ## Rögzített ellenőrzések
 

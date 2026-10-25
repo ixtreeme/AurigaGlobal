@@ -71,17 +71,17 @@ SqlTransaction Preconditions()
 {
     // Version/engine/FK checks fail closed. A hand-created lookalike or a disabled
     // constraint session must not silently weaken archive/checkpoint references.
-    return {{"SELECT schema_version FROM mission_engine_schema WHERE singleton=1 AND schema_version=2 "
+    return {{"SELECT schema_version FROM mission_engine_schema WHERE singleton=1 AND schema_version=3 "
              "AND @@foreign_key_checks=1 AND @@check_constraint_checks=1 "
              "AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() "
              "AND ENGINE='InnoDB' AND TABLE_NAME IN ('mission_engine_schema','mission_engine_packages',"
              "'mission_engine_definitions','mission_engine_characters','mission_engine_checkpoint_refs',"
-             "'mission_engine_operations','mission_engine_action_outbox','mission_engine_reward_ledger'))=8 "
+             "'mission_engine_operations','mission_engine_action_outbox','mission_engine_reward_ledger','mission_engine_item_awards'))=9 "
              "AND (SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE "
              "CONSTRAINT_SCHEMA=DATABASE() "
              "AND CONSTRAINT_NAME IN ('me_definition_package','me_ref_character','me_ref_definition',"
              "'me_operation_character_fk','me_action_character','me_action_definition','me_entitlement_"
-             "action'))=7",
+             "action','me_item_award_action'))=8",
              {},
              {},
              1}};
@@ -692,14 +692,14 @@ SqlTransaction Resolve(const Plan &plan)
                           {}});
     return statements;
 }
-Resolved DecodeResolution(Message &message, const Plan &plan)
+Resolved DecodeResolution(Message &message, const Plan &plan, size_t expectedSteps)
 {
     if (!Confirmed(message))
         return {Resolution::SqlError, 0, 0};
     try
     {
         Need(bool(plan) && plan.character && Nonzero(plan.operation) &&
-                 message.transactionResultOffsets.size() == 3,
+                 expectedSteps >= 3 && message.transactionResultOffsets.size() == expectedSteps,
              "Invalid resolution plan/result");
         const auto offset = message.transactionResultOffsets[2];
         Need(offset < message.vec_pkResult.size(), "Missing receipt result");

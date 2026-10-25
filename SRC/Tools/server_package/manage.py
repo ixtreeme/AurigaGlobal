@@ -154,8 +154,10 @@ def init_mission_db():
         verify_datadir()
         if sql(statements).strip() != '0':
             raise RuntimeError('Legacy Mission tables exist in player; migrate their data before installing a new Mission store')
+        account = dict(config()['common']['sql'].get('account', {}), **config().get('database', {}).get('sql', {}).get('account', {}))
+        grants = module.local_grants(target, player, account)
         sql(ddl)
-        sql(module.local_grants(target, player))
+        sql(grants)
     else:
         binary = shutil.which('mariadb') or shutil.which('mysql')
         if not binary:

@@ -1,7 +1,12 @@
+#include "../../SRC/Server/Database/ItemAwardDelivery.hpp"
+#include "../../SRC/Server/Database/ItemAwardScan.hpp"
+#include "../../SRC/Server/GameServer/mission/MissionItemAwards.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionPersistence.hpp"
+#include "../../SRC/Server/GameServer/mission/MissionValidator.hpp"
 #include "MissionPersistenceFixture.hpp"
 #include <Core/Logging.hpp>
 #include <SQL/AsyncSQL.h>
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <filesystem>
@@ -20,7 +25,8 @@ namespace
 {
 using Message = std::unique_ptr<SQLMsg>;
 unsigned int port = 0;
-std::string database, playerDatabase;
+std::string database, playerDatabase, accountDatabase;
+namespace award = auriga::item_award;
 std::string Player(const char *table)
 {
     return "`" + playerDatabase + "`.`" + table + "`";
@@ -308,7 +314,7 @@ void MissingArchiveAndCorruption(CAsyncSQL &sql, const DefinitionRegistry &regis
     Text(sql, "SET foreign_key_checks=1");
     Query(sql, {"UPDATE mission_engine_schema SET schema_version=99 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes), false);
-    Query(sql, {"UPDATE mission_engine_schema SET schema_version=2 WHERE singleton=1", {}});
+    Query(sql, {"UPDATE mission_engine_schema SET schema_version=3 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes));
 }
 void ConcurrentSaves(CAsyncSQL &admin, const DefinitionRegistry &registry)
@@ -886,13 +892,13 @@ void QualifiedInstall(CAsyncSQL &sql, const char *migration)
     }
     Check(Number(sql,
                  "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND ENGINE='InnoDB'",
-                 {SqlParam::Text(installed)}) == 8,
-          "qualified installer did not create eight dedicated InnoDB tables");
+                 {SqlParam::Text(installed)}) == 9,
+          "qualified installer did not create nine dedicated InnoDB tables");
     CAsyncSQL target;
     Check(target.Setup("127.0.0.1", "root", "", installed.c_str(), "utf8mb4", true, port),
           "custom Mission database connection failed");
     Execute(target, db::Claim(900, 0, Token(90), Token(91)));
-    Check(Number(target, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 2,
+    Check(Number(target, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 3,
           "qualified custom-schema installer is not usable by the real store");
 }
 void CrossSchema(CAsyncSQL &sql, const DefinitionRegistry &registry, unsigned int proxy)
@@ -970,6 +976,386 @@ void CrossSchema(CAsyncSQL &sql, const DefinitionRegistry &registry, unsigned in
           "denied player-side write left a committed Mission receipt");
     Text(sql, "GRANT INSERT ON " + Player("item_award") + " TO 'mission_writer_test'@'127.0.0.1'");
     Execute(restricted, plan);
+}
+PackageSource DeliverySource()
+{
+    auto source = Source(20, 1);
+    auto &definition = source.missions.front();
+    definition.id = "delivery.story";
+    definition.nodes.front().children = {"collect", "reward"};
+    definition.nodes.erase(definition.nodes.begin() + 2); // Remove unused choice objective.
+    definition.nodes[1].objective = {EventKind::MobKilled, "monkey", 1, false};
+    definition.rewards.begin()->second = RewardBundle{1, {{50011, 2}, {50012, 1}}, 0, 0, {}};
+    source.missions.resize(1);
+    source.presentation.missions.clear();
+    source.presentation.missions[definition.id] = {"story.title", "story.summary", {}};
+    return source;
+}
+ActionKey DeliveryKey(uint32_t character)
+{
+    return {character, "delivery.story", 1, 10, "reward", "persist.reward"};
+}
+MissionRuntime::Checkpoint DeliveryCheckpoint(const DefinitionRegistry &registry, uint32_t character)
+{
+    MissionRuntime runtime(registry, {character, 17}, 1000);
+    Accepted(runtime.Start("delivery.story", 1, 10, 1000));
+    Accepted(runtime.Dispatch({{character, 17}, {1, 1}, 1001, EventKind::MobKilled, "monkey", 1, {}}, 1001));
+    Check(runtime.PendingActions() == std::vector<ActionKey>{DeliveryKey(character)},
+          "real completion did not reach its reward barrier");
+    return runtime.Save();
+}
+db::ItemAwardsPlan Issue(const DefinitionRegistry &registry, db::Owner owner,
+                         const MissionRuntime::Checkpoint &checkpoint, db::Token operation)
+{
+    auto graph = registry.Get("delivery.story", 1);
+    auto pin = PinReward(DeliveryKey(owner.character), FingerprintDefinition(*graph), *graph);
+    Check(bool(pin), "item-only reward did not pin");
+    return db::IssueItemAwards(owner, *pin.reward, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest,
+                               operation, {playerDatabase, accountDatabase, ""}, {900, "delivery'bound"},
+                               {{50011, 50000}, {50012, 1}});
+}
+db::ItemAwardsReceipt ItemReceipt(CAsyncSQL &sql, const db::ItemAwardsPlan &plan)
+{
+    Message result(sql.DirectTransactionPrepared(db::ResolveItemAwards(plan)));
+    auto receipt = db::DecodeItemAwards(*result, plan);
+    Check(receipt.status != db::ItemAwardsStatus::SqlError && receipt.status != db::ItemAwardsStatus::Invalid,
+          "item-award receipt did not reconcile");
+    return receipt;
+}
+void MissionItems(CAsyncSQL &sql, unsigned int proxy)
+{
+    auto source = DeliverySource();
+    const auto package = CompilePackage(source);
+    Check(bool(package), "item-delivery package failed compile");
+    Execute(sql, db::ArchivePackage(package.bytes));
+    DefinitionRegistry registry;
+    Check(registry.Activate(source.missions).status == Publication::Status::Published,
+          "delivery graph invalid");
+    Query(sql, {"INSERT INTO `" + accountDatabase + "`.`account`(id,login) VALUES(900,?)",
+                {SqlParam::Text("delivery'bound")}});
+    for (uint32_t character = 90; character < 96; ++character)
+        Text(sql, "INSERT INTO " + Player("player") + "(id,account_id,name) VALUES(" +
+                      std::to_string(character) + ",900,'hero" + std::to_string(character) + "')");
+    const auto owner = Claim(sql, 90, 0, Token(90), db::NewToken());
+    auto checkpoint = DeliveryCheckpoint(registry, 90);
+    Execute(sql, db::Save(checkpoint, registry, owner, 0, db::NewToken()));
+    auto plan = Issue(registry, owner, checkpoint, db::NewToken());
+    Check(bool(plan) && ItemReceipt(sql, plan).status == db::ItemAwardsStatus::NotIssued,
+          "fresh action unexpectedly issued");
+    const auto graph = registry.Get("delivery.story", 1);
+    const auto pin = PinReward(DeliveryKey(90), FingerprintDefinition(*graph), *graph);
+    const auto reject =
+        [&](db::ItemAwardTarget target, db::ItemAwardRecipient recipient, std::map<uint32_t, uint32_t> caps)
+    {
+        auto rejected =
+            db::IssueItemAwards(owner, *pin.reward, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest,
+                                db::NewToken(), target, recipient, caps);
+        Check(!rejected && rejected.transaction.statements.empty(),
+              "invalid delivery left a partial SQL plan");
+    };
+    reject({"bad;SQL", accountDatabase, ""}, {900, "delivery'bound"}, {{50011, 2}, {50012, 1}});
+    reject({playerDatabase, accountDatabase, ""}, {0, "delivery'bound"}, {{50011, 2}, {50012, 1}});
+    reject({playerDatabase, accountDatabase, ""}, {900, "UPPER"}, {{50011, 2}, {50012, 1}});
+    reject({playerDatabase, accountDatabase, ""}, {900, "delivery'bound"}, {{50011, 1}, {50012, 1}});
+    reject({playerDatabase, accountDatabase, ""}, {900, "delivery'bound"}, {{50011, 2}});
+    auto mixed = Definitions().front();
+    auto compiled = CompileDefinition(mixed);
+    Check(bool(compiled), "mixed reward fixture invalid");
+    auto mixedPin =
+        PinReward(RewardKey(90), FingerprintDefinition(*compiled.definition), *compiled.definition);
+    Check(bool(mixedPin), "mixed payload failed to pin");
+    auto rejected = db::IssueItemAwards(
+        owner, *mixedPin.reward, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest, db::NewToken(),
+        {playerDatabase, accountDatabase, ""}, {900, "delivery'bound"}, {{50011, 50000}});
+    Check(!rejected && rejected.transaction.statements.empty(), "mixed reward partly issued item awards");
+    for (unsigned int kind = 0; kind < 3; ++kind)
+    {
+        auto unsupported = source.missions.front();
+        auto &bundle = unsupported.rewards.begin()->second;
+        if (kind == 0)
+            bundle.experience = 1;
+        if (kind == 1)
+            bundle.gold = 1;
+        if (kind == 2)
+            bundle.consumeItems = {{50010, 1}};
+        auto graph = CompileDefinition(unsupported);
+        Check(bool(graph), "unsupported adapter payload was not valid domain content");
+        auto pin = PinReward(DeliveryKey(90), FingerprintDefinition(*graph.definition), *graph.definition);
+        Check(bool(pin), "unsupported payload fixture did not pin");
+        const auto rejected = db::IssueItemAwards(
+            owner, *pin.reward, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest, db::NewToken(),
+            {playerDatabase, accountDatabase, ""}, {900, "delivery'bound"}, {{50011, 2}, {50012, 1}});
+        Check(!rejected && rejected.transaction.statements.empty(),
+              "unsupported effect was silently dropped");
+    }
+    auto maximum = source.missions.front();
+    auto &maximumItems = maximum.rewards.begin()->second.items;
+    maximumItems.clear();
+    for (uint32_t i = 1; i <= 32; ++i)
+        maximumItems[i] = 50000;
+    auto maximumGraph = CompileDefinition(maximum);
+    Check(bool(maximumGraph), "maximum item-only graph invalid");
+    auto maximumPin =
+        PinReward(DeliveryKey(90), FingerprintDefinition(*maximumGraph.definition), *maximumGraph.definition);
+    Check(bool(maximumPin), "maximum bundle did not pin");
+    auto maximumPlan = db::IssueItemAwards(
+        owner, *maximumPin.reward, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest, db::NewToken(),
+        {playerDatabase, accountDatabase, ""}, {900, "delivery'bound"}, maximumItems);
+    Check(bool(maximumPlan) && maximumPlan.transaction.statements.size() <= SqlTransactionLimits::Steps,
+          "maximum bundle exceeded step budget");
+    size_t parameterCount = 0;
+    for (const auto &step : maximumPlan.transaction.statements)
+    {
+        parameterCount += step.params.size();
+        Check(step.query.size() <= SqlTransactionLimits::QueryBytes, "maximum bundle exceeded query budget");
+    }
+    Check(parameterCount <= SqlTransactionLimits::Parameters, "maximum bundle exceeded parameter budget");
+    // Rollback before awards, between award and mapping, and after all writes.
+    std::vector<size_t> failurePoints;
+    for (size_t i = 0; i < plan.transaction.statements.size(); ++i)
+        if (plan.transaction.statements[i].query.starts_with("INSERT INTO " + Player("item_award")))
+            failurePoints.push_back(i + 1);
+    failurePoints.push_back(plan.transaction.statements.size());
+    failurePoints.push_back(4);
+    for (const auto point : failurePoints)
+    {
+        auto failed = plan.transaction;
+        failed.statements.insert(failed.statements.begin() + point, {"SELECT 1 WHERE 0", {}, {}, 1});
+        Execute(sql, failed, false);
+        Check(ItemReceipt(sql, plan).status == db::ItemAwardsStatus::NotIssued &&
+                  Number(sql, ("SELECT COUNT(*) FROM " + Player("item_award") + " WHERE login=?").c_str(),
+                         {SqlParam::Text("delivery'bound")}) == 0,
+              "failed bundle left a partial entitlement/mapping/award");
+    }
+    auto forged = plan;
+    forged = db::IssueItemAwards(
+        owner, *pin.reward, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest, db::NewToken(),
+        {playerDatabase, accountDatabase, ""}, {901, "delivery'bound"}, {{50011, 2}, {50012, 1}});
+    Execute(sql, forged.transaction, false);
+    forged = db::IssueItemAwards(
+        owner, *pin.reward, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest, db::NewToken(),
+        {playerDatabase, accountDatabase, ""}, {900, "another.login"}, {{50011, 2}, {50012, 1}});
+    Execute(sql, forged.transaction, false);
+    Text(sql, "ALTER TABLE " + Player("item_award") + " ENGINE=MyISAM");
+    Execute(sql, plan.transaction, false);
+    Check(ItemReceipt(sql, plan).status == db::ItemAwardsStatus::NotIssued,
+          "nontransactional award target left a Mission entitlement");
+    Text(sql, "ALTER TABLE " + Player("item_award") + " ENGINE=InnoDB");
+    Text(sql, "CREATE TRIGGER `" + playerDatabase + "`.`mission_award_trigger_test` BEFORE INSERT ON " +
+                  Player("item_award") + " FOR EACH ROW SET NEW.count=NEW.count");
+    Execute(sql, plan.transaction, false);
+    Check(ItemReceipt(sql, plan).status == db::ItemAwardsStatus::NotIssued,
+          "unverified award trigger was allowed to issue a reward");
+    Text(sql, "DROP TRIGGER `" + playerDatabase + "`.`mission_award_trigger_test`");
+    Execute(sql, plan.transaction);
+    const auto receipt = ItemReceipt(sql, plan);
+    Check(receipt.status == db::ItemAwardsStatus::Issued && receipt.awards.size() == 2 &&
+              receipt.awards[0].vnum == 50011 && receipt.awards[0].count == 2,
+          "whole item bundle missing from receipt");
+    Execute(sql, plan.transaction, false);
+    auto anotherToken = Issue(registry, owner, checkpoint, db::NewToken());
+    Execute(sql, anotherToken.transaction, false);
+    Check(ItemReceipt(sql, anotherToken).awards == receipt.awards,
+          "new request token did not recover the original award IDs");
+    auto wrongRecipient = anotherToken;
+    wrongRecipient.recipient.login = "another.login";
+    Message wrong(sql.DirectTransactionPrepared(db::ResolveItemAwards(wrongRecipient)));
+    Check(db::DecodeItemAwards(*wrong, wrongRecipient).status == db::ItemAwardsStatus::Invalid,
+          "mapping accepted a different recipient");
+    auto tokenConflict =
+        db::IssueItemAwards(owner, *pin.reward, 1, EncodeCheckpoint(checkpoint, registry).metadata.digest,
+                            plan.transaction.operation, {playerDatabase, accountDatabase, ""},
+                            {901, "delivery'bound"}, {{50011, 2}, {50012, 1}});
+    Check(ItemReceipt(sql, tokenConflict).status == db::ItemAwardsStatus::Conflict,
+          "reused operation ID accepted changed account binding");
+    Query(sql, {"UPDATE mission_engine_item_awards SET payload_digest=REPEAT(CHAR(0),32) WHERE action_id=? "
+                "AND ordinal=0",
+                {SqlParam::Blob(Binary(ActionIdentity(DeliveryKey(90))))}});
+    Message corrupt(sql.DirectTransactionPrepared(db::ResolveItemAwards(plan)));
+    Check(db::DecodeItemAwards(*corrupt, plan).status == db::ItemAwardsStatus::Invalid,
+          "corrupt receipt payload digest was accepted");
+    Query(sql, {"UPDATE mission_engine_item_awards SET payload_digest=? WHERE action_id=?",
+                {SqlParam::Blob(Binary(pin.reward->PayloadDigest())),
+                 SqlParam::Blob(Binary(ActionIdentity(DeliveryKey(90))))}});
+    MissionRuntime runtime(registry, {90, 999}, checkpoint.now);
+    Accepted(runtime.Restore(checkpoint, checkpoint.now));
+    Accepted(runtime.Acknowledge(DeliveryKey(90), 1002));
+    Execute(sql, db::Save(runtime.Save(), registry, owner, 1, db::NewToken()));
+    Check(runtime.Inspect(10)->status == MissionStatus::Completed, "issued reward did not complete runtime");
+    // Discover through the same bounded raw-result path used by Database.
+    CAsyncSQL player;
+    Check(player.Setup("127.0.0.1", "root", "", playerDatabase.c_str(), "utf8mb4", true, port),
+          "canonical delivery connection failed");
+    award::Scan scan;
+    std::set<uint32_t> discovered;
+    bool done = false;
+    for (size_t page = 0; !done && page < 10; ++page)
+    {
+        auto query = scan.Request(true);
+        Message rows(player.DirectQuery(query->c_str()));
+        auto outcome = scan.Complete(*rows);
+        Check(outcome.success, "Mission awards not visible to production discovery");
+        if (outcome.page)
+            while (auto row = mysql_fetch_row(rows->Get()->pSQLResult))
+                discovered.insert(uint32_t(std::stoul(row[0])));
+        done = outcome.sweepComplete;
+    }
+    Check(done && discovered.contains(receipt.awards[0].id) && discovered.contains(receipt.awards[1].id),
+          "Mission awards were unreachable through canonical cache scan");
+    award::Request delivery;
+    delivery.source = {receipt.awards[0].id, 50011, 2, "delivery'bound"};
+    delivery.item.id = 700090;
+    delivery.item.account = 900;
+    delivery.item.vnum = 50011;
+    delivery.item.count = 2;
+    delivery.rows = 9;
+    delivery.itemHeight = 1;
+    for (uint16_t pos = 0; pos < 45; ++pos)
+    {
+        Text(player, "INSERT INTO item(id,owner_id,window,pos,vnum,count) VALUES(" +
+                         std::to_string(800000 + pos) + ",900,'SAFEBOX'," + std::to_string(pos) +
+                         ",50010,1)");
+        delivery.storage.push_back({uint32_t(800000 + pos), 50010, pos, 1});
+    }
+    Check(!award::Deliver(delivery), "full storage accepted a mission item");
+    Check(ItemReceipt(sql, plan).awards == receipt.awards, "full box changed stable Mission receipt");
+    Text(player, "DELETE FROM item WHERE id=800044");
+    delivery.storage.pop_back();
+    delivery.item.position = 44;
+    Message delivered(player.DirectTransactionPrepared(award::Deliver(delivery).statements));
+    Check(award::Confirmed(*delivered), "Mission award did not become a canonical item");
+    Message retry(player.DirectTransactionPrepared(award::Deliver(delivery).statements));
+    Check(!award::Confirmed(*retry), "repeated Mission claim duplicated an item");
+    Text(player, "DELETE FROM item WHERE id=700090");
+    Check(ItemReceipt(sql, anotherToken).awards == receipt.awards,
+          "consuming item changed original action award IDs");
+    Message stillTaken(player.DirectTransactionPrepared(award::Resolve(delivery.source)));
+    Check(award::DecodeReceipt(*stillTaken).state == award::ReceiptState::Taken,
+          "consumed Mission item lost its delivery receipt");
+    // Actual lost COMMIT acknowledgement for the complete production plan.
+    const auto lostOwner = Claim(sql, 91, 0, Token(91), db::NewToken());
+    checkpoint = DeliveryCheckpoint(registry, 91);
+    Execute(sql, db::Save(checkpoint, registry, lostOwner, 0, db::NewToken()));
+    auto lost = Issue(registry, lostOwner, checkpoint, Token(191));
+    CAsyncSQL faulty;
+    Connect(faulty, true, proxy);
+    auto unknown = Execute(faulty, lost.transaction, false);
+    Check(unknown->transactionOutcome == SqlTransactionOutcome::CommitUnknown,
+          "actual award COMMIT acknowledgement was not dropped");
+    const auto recovered = ItemReceipt(sql, lost);
+    Check(recovered.status == db::ItemAwardsStatus::Issued && recovered.awards.size() == 2,
+          "uncertain commit did not recover whole bundle");
+    auto repeated = Issue(registry, lostOwner, checkpoint, db::NewToken());
+    Execute(sql, repeated.transaction, false);
+    Check(ItemReceipt(sql, repeated).awards == recovered.awards, "uncertain commit issued new award IDs");
+    // Concurrent different operation tokens for the same action share one mapping.
+    const auto raceOwner = Claim(sql, 93, 0, Token(93), db::NewToken());
+    checkpoint = DeliveryCheckpoint(registry, 93);
+    Execute(sql, db::Save(checkpoint, registry, raceOwner, 0, db::NewToken()));
+    auto first = Issue(registry, raceOwner, checkpoint, db::NewToken());
+    auto second = Issue(registry, raceOwner, checkpoint, db::NewToken());
+    auto outcomes = Race({first.transaction, second.transaction});
+    Check((outcomes[0] == SqlTransactionOutcome::Committed) !=
+              (outcomes[1] == SqlTransactionOutcome::Committed),
+          "two competing action issuers both committed");
+    Check(ItemReceipt(sql, first).awards == ItemReceipt(sql, second).awards,
+          "competing operation tokens disagreed on stable awards");
+    // Stale owner and cancelled action cannot issue awards.
+    const auto staleOwner = Claim(sql, 94, 0, Token(94), db::NewToken());
+    checkpoint = DeliveryCheckpoint(registry, 94);
+    Execute(sql, db::Save(checkpoint, registry, staleOwner, 0, db::NewToken()));
+    auto stale = Issue(registry, staleOwner, checkpoint, db::NewToken());
+    const auto current = Claim(sql, 94, 1, Token(194), db::NewToken());
+    Execute(sql, stale.transaction, false);
+    MissionRuntime cancelled(registry, {94, 888}, checkpoint.now);
+    Accepted(cancelled.Restore(checkpoint, checkpoint.now));
+    Accepted(cancelled.Abandon(10, 1002));
+    Execute(sql, db::Save(cancelled.Save(), registry, current, 1, db::NewToken()));
+    Check(ItemReceipt(sql, stale).status == db::ItemAwardsStatus::Cancelled, "cancelled action got an award");
+    // Interrupt after the actual award INSERT, before its mapping, while a resolver waits.
+    const auto interruptedOwner = Claim(sql, 92, 0, Token(92), db::NewToken());
+    checkpoint = DeliveryCheckpoint(registry, 92);
+    Execute(sql, db::Save(checkpoint, registry, interruptedOwner, 0, db::NewToken()));
+    auto interrupted = Issue(registry, interruptedOwner, checkpoint, db::NewToken());
+    auto writes = interrupted.transaction.statements;
+    auto insert = std::find_if(writes.begin(), writes.end(), [&](const auto &step)
+                               { return step.query.starts_with("INSERT INTO " + Player("item_award")); });
+    Check(insert != writes.end(), "production award INSERT missing");
+    writes.insert(insert + 1, {"SELECT SLEEP(15)", {}, {}, 1});
+    CAsyncSQL worker, resolver;
+    Connect(worker, false);
+    Connect(resolver, false);
+    worker.ReturnTransactionPrepared(writes, nullptr);
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    uint64_t connection = 0;
+    while (!connection && std::chrono::steady_clock::now() < deadline)
+    {
+        connection = Number(sql,
+                            "SELECT COALESCE(MAX(ID),0) FROM information_schema.PROCESSLIST "
+                            "WHERE DB=? AND ID<>CONNECTION_ID() AND INFO LIKE 'SELECT SLEEP(15)%'",
+                            {SqlParam::Text(database)});
+        if (!connection)
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    Check(connection != 0, "partial award writer did not reach interruption barrier");
+    resolver.ReturnTransactionPrepared(db::ResolveItemAwards(interrupted), nullptr);
+    bool waiting = false;
+    while (!waiting && std::chrono::steady_clock::now() < deadline)
+    {
+        waiting = Number(sql,
+                         "SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE DB=? "
+                         "AND INFO LIKE 'SELECT character_id FROM mission_engine_characters WHERE "
+                         "character_id=%FOR UPDATE'",
+                         {SqlParam::Text(database)}) > 0;
+        if (!waiting)
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    Check(waiting, "item-award resolver did not wait for original writer");
+    SQLMsg *early = nullptr;
+    Check(!resolver.PopResult(&early), "resolver declared absence before original writer settled");
+    Text(sql, "KILL CONNECTION " + std::to_string(connection));
+    auto resolved = Wait(resolver, 1);
+    auto stopped = Wait(worker, 1);
+    worker.Quit();
+    resolver.Quit();
+    Check(!db::Confirmed(*stopped[0]) &&
+              db::DecodeItemAwards(*resolved[0], interrupted).status == db::ItemAwardsStatus::NotIssued,
+          "interrupted award/mapping partly committed");
+    Execute(sql, interrupted.transaction);
+    Check(ItemReceipt(sql, interrupted).awards.size() == 2, "rollback retry lost part of the bundle");
+    Text(sql, "CREATE USER 'mission_item_writer'@'127.0.0.1' IDENTIFIED BY ''");
+    Text(sql, "GRANT ALL ON `" + database + "`.* TO 'mission_item_writer'@'127.0.0.1'");
+    for (const auto &table : {Player("player"), Player("item_award"), "`" + accountDatabase + "`.`account`"})
+        Text(sql, "GRANT SELECT ON " + table + " TO 'mission_item_writer'@'127.0.0.1'");
+    CAsyncSQL restricted;
+    Check(restricted.Setup("127.0.0.1", "mission_item_writer", "", database.c_str(), "utf8mb4", true, port),
+          "least-privilege item writer failed to connect");
+    const auto restrictedOwner = Claim(sql, 95, 0, Token(95), db::NewToken());
+    checkpoint = DeliveryCheckpoint(registry, 95);
+    Execute(sql, db::Save(checkpoint, registry, restrictedOwner, 0, db::NewToken()));
+    auto denied = Issue(registry, restrictedOwner, checkpoint, db::NewToken());
+    Execute(restricted, denied.transaction, false);
+    Check(ItemReceipt(sql, denied).status == db::ItemAwardsStatus::NotIssued,
+          "denied canonical INSERT partly committed the Mission ledger");
+    Text(sql, "GRANT INSERT ON " + Player("item_award") + " TO 'mission_item_writer'@'127.0.0.1'");
+    Execute(restricted, denied.transaction);
+    Check(ItemReceipt(restricted, denied).awards.size() == 2,
+          "minimum verified cross-schema privileges could not issue the bundle");
+    // An old symbolic entitlement is not evidence that any item was issued.
+    Text(sql, "INSERT INTO " + Player("player") + "(id,account_id,name) VALUES(96,900,'hero96')");
+    const auto symbolicOwner = Claim(sql, 96, 0, Token(96), db::NewToken());
+    checkpoint = DeliveryCheckpoint(registry, 96);
+    Execute(sql, db::Save(checkpoint, registry, symbolicOwner, 0, db::NewToken()));
+    auto symbolicPin = PinReward(DeliveryKey(96), FingerprintDefinition(*graph), *graph);
+    Check(bool(symbolicPin), "symbolic entitlement fixture failed to pin");
+    Execute(sql,
+            db::RecordEntitlement(symbolicOwner, *symbolicPin.reward, 1,
+                                  EncodeCheckpoint(checkpoint, registry).metadata.digest, db::NewToken()));
+    auto unbacked = Issue(registry, symbolicOwner, checkpoint, db::NewToken());
+    Execute(sql, unbacked.transaction, false);
+    Message unbackedResult(sql.DirectTransactionPrepared(db::ResolveItemAwards(unbacked)));
+    Check(db::DecodeItemAwards(*unbackedResult, unbacked).status == db::ItemAwardsStatus::Invalid,
+          "symbolic entitlement was mistaken for a delivered item bundle");
 }
 void ColdProcess(CAsyncSQL &sql)
 {
@@ -1068,6 +1454,23 @@ void ColdProcess(CAsyncSQL &sql)
                          {SqlParam::UInt(character + 1000)}) == 1,
               "cross-schema entitlement/award lost after real database crash");
     }
+    DefinitionRegistry deliveryRegistry;
+    Check(deliveryRegistry.Activate(DeliverySource().missions).status == Publication::Status::Published,
+          "cold item reward registry failed");
+    for (uint32_t character : {90u, 91u, 92u, 93u, 95u})
+    {
+        auto cp = DeliveryCheckpoint(deliveryRegistry, character);
+        auto plan = Issue(deliveryRegistry, {character, 1, Token(uint8_t(character))}, cp,
+                          character == 91 ? Token(191) : db::NewToken());
+        auto receipt = ItemReceipt(sql, plan);
+        Check(receipt.status == db::ItemAwardsStatus::Issued && receipt.awards.size() == 2,
+              "cold Mission mapping lost after actual MariaDB crash");
+        Execute(sql, plan.transaction, false);
+    }
+    Check(Number(sql, ("SELECT COUNT(*) FROM " + Player("item") + " WHERE id=700090").c_str()) == 0,
+          "cold retry recreated consumed Mission item");
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_item_awards") == 10,
+          "cold retries duplicated item-award mappings");
 }
 } // namespace
 std::shared_ptr<spdlog::logger> logging::GetLogger()
@@ -1090,6 +1493,7 @@ int main(int argc, char **argv)
         port = static_cast<unsigned int>(std::stoul(argv[1]));
         database = std::string(argv[2]) + "_m";
         playerDatabase = std::string(argv[2]) + "_p";
+        accountDatabase = std::string(argv[2]) + "_a";
         Check(database.starts_with("auriga_mission_sql_test_") && database.size() <= 63 &&
                   database.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_") == database.npos,
               "isolated schema required");
@@ -1118,11 +1522,19 @@ int main(int argc, char **argv)
         std::ifstream canonical(argv[6], std::ios::binary);
         Check(bool(canonical), "canonical item-award schema missing");
         std::string schema((std::istreambuf_iterator<char>(canonical)), {});
-        const auto begin = schema.find("CREATE TABLE IF NOT EXISTS `player`.`item_award` (");
-        Check(begin != schema.npos, "canonical item-award DDL missing");
-        auto awardDdl = schema.substr(begin, schema.find(';', begin) - begin);
-        awardDdl.replace(awardDdl.find("`player`.`item_award`"), 21, Player("item_award"));
-        Text(sql, awardDdl);
+        Text(sql, "CREATE DATABASE " + accountDatabase + " CHARACTER SET utf8mb4 COLLATE utf8mb4_bin");
+        for (const auto &name : {"player", "item_award", "item", "safebox", "account"})
+        {
+            const std::string schemaName = std::string(name) == "account" ? "account" : "player";
+            const std::string original = "`" + schemaName + "`.`" + name + "`";
+            const auto begin = schema.find("CREATE TABLE IF NOT EXISTS " + original + " (");
+            Check(begin != schema.npos, "canonical item/identity DDL missing");
+            auto ddl = schema.substr(begin, schema.find(';', begin) - begin);
+            const auto table =
+                std::string(name) == "account" ? "`" + accountDatabase + "`.`account`" : Player(name);
+            ddl.replace(ddl.find(original), original.size(), table);
+            Text(sql, ddl);
+        }
         Text(sql, "INSERT INTO " + Player("item_award") + "(id,login,vnum,count) VALUES(1,'sentinel',789,1)");
         CAsyncSQL wrongDatabase;
         Check(wrongDatabase.Setup("127.0.0.1", "root", "", playerDatabase.c_str(), "utf8mb4", true, port),
@@ -1133,8 +1545,12 @@ int main(int argc, char **argv)
         Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_characters") == 0,
               "schema 1 writer bypassed mandatory action migration");
         Migration(sql, argv[5]);
+        Migration(sql,
+                  (std::filesystem::path(argv[5]).parent_path() / "2026-10-25_mission_engine_item_awards.sql")
+                      .string()
+                      .c_str());
         Migration(sql, argv[4]);
-        Check(Number(sql, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 2,
+        Check(Number(sql, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 3,
               "old migration downgraded action schema");
         QualifiedInstall(sql, argv[4]);
         Archive(sql);
@@ -1159,6 +1575,7 @@ int main(int argc, char **argv)
         LostEntitlementCommit(sql, registry, static_cast<unsigned int>(std::stoul(argv[3])));
         BoundedActionBatch(sql);
         CrossSchema(sql, registry, static_cast<unsigned int>(std::stoul(argv[3])));
+        MissionItems(sql, static_cast<unsigned int>(std::stoul(argv[3])));
         std::cout << "Mission persistence: " << checks << " checks passed\n";
         return 0;
     }

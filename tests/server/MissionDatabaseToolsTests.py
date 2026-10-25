@@ -27,7 +27,7 @@ class MissionDatabaseTests(unittest.TestCase):
     def setUp(self):
         self.config = json.loads((ROOT / 'config/server.json.example').read_text(encoding='utf-8'))
 
-    def test_default_sql_is_generated_from_both_real_migrations(self):
+    def test_default_sql_is_generated_from_real_migrations(self):
         expected = '-- Generated from Mission migrations by mission_database.install_sql. MariaDB/InnoDB.\n'
         expected += mission.install_sql(ROOT / 'db', 'mission')
         self.assertEqual((ROOT / 'db/mission_schema.sql').read_text(encoding='utf-8'), expected)
@@ -41,7 +41,7 @@ class MissionDatabaseTests(unittest.TestCase):
         sql = mission.install_sql(ROOT / 'db', 'story_02')
         self.assertIn('CREATE DATABASE IF NOT EXISTS `story_02`', sql)
         self.assertNotIn('`mission`.', sql)
-        self.assertNotIn('item_award', sql)
+        self.assertNotIn('`.`item_award`', sql)
 
     def test_unsafe_or_system_identifiers_are_rejected(self):
         for value in ('', 'mysql', 'SYS', 'information_schema', 'a`b', 'a.b', ' a', 'a;DROP', 'a' * 65, None):
@@ -91,6 +91,20 @@ class MissionDatabaseTests(unittest.TestCase):
         self.assertIn("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES'", grants)
         self.assertIn("'mission''writer'@'127.0.0.1'", grants)
         self.assertIn("'back\\slash''password'", grants)
+        self.assertIn('GRANT SELECT,INSERT ON `player`.`item_award`', grants)
+        self.assertIn('GRANT SELECT ON `account`.`account`', grants)
+
+    def test_grants_use_the_effective_account_schema(self):
+        target, player = mission.connection(self.config)
+        account = dict(player, database='custom_accounts')
+        self.assertIn('GRANT SELECT ON `custom_accounts`.`account`',
+                      mission.local_grants(target, player, account))
+
+    def test_remote_account_does_not_block_persistence_or_receive_local_grants(self):
+        target, player = mission.connection(self.config)
+        account = dict(player, host='192.0.2.15', database='remote_accounts')
+        grants = mission.local_grants(target, player, account)
+        self.assertNotIn('remote_accounts', grants)
         self.assertIn('GRANT SELECT,INSERT ON `player`.`item_award`', grants)
 
     def install(self, response='0\n', error=False):
@@ -165,8 +179,8 @@ class OwnedBootstrapTests(unittest.TestCase):
             try:
                 manage.init_db(BINARIES)
                 manage.start_db()
-                self.assertEqual(manage.sql('SELECT schema_version FROM mission.mission_engine_schema;').strip(), '2')
-                self.assertEqual(manage.sql("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='mission';").strip(), '8')
+                self.assertEqual(manage.sql('SELECT schema_version FROM mission.mission_engine_schema;').strip(), '3')
+                self.assertEqual(manage.sql("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='mission';").strip(), '9')
                 manage.sql('INSERT INTO mission.mission_engine_characters(character_id) VALUES(7);')
                 cfg['common']['sql']['mission'].update(user='mission_upgrade_writer', password="quoted\\and'password")
                 (root / 'server.json').write_text(json.dumps(cfg), encoding='utf-8')

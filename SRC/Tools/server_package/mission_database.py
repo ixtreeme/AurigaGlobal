@@ -4,8 +4,9 @@ import re
 
 TABLES = ('mission_engine_schema', 'mission_engine_packages', 'mission_engine_definitions',
           'mission_engine_characters', 'mission_engine_checkpoint_refs', 'mission_engine_operations',
-          'mission_engine_action_outbox', 'mission_engine_reward_ledger')
-MIGRATIONS = ('2026-10-25_mission_engine_persistence.sql', '2026-10-25_mission_engine_actions.sql')
+          'mission_engine_action_outbox', 'mission_engine_reward_ledger', 'mission_engine_item_awards')
+MIGRATIONS = ('2026-10-25_mission_engine_persistence.sql', '2026-10-25_mission_engine_actions.sql',
+              '2026-10-25_mission_engine_item_awards.sql')
 
 
 def identifier(value):
@@ -61,15 +62,19 @@ def legacy_check(player):
             player + "' AND TABLE_NAME IN (" + names + ');')
 
 
-def local_grants(target, player):
+def local_grants(target, player, account=None):
     """For an already verified, owned local SQL instance, using its admin client."""
     for value in (target.get('user'), target.get('password')):
         if not isinstance(value, str) or '\x00' in value:
             raise ValueError('Invalid Mission SQL credentials')
+    account = account or dict(player, database='account')
     literal = lambda value: "'" + value.replace("'", "''") + "'"
     user = literal(target['user']) + "@'127.0.0.1'"
+    account_grant = ''
+    if (account.get('host'), account.get('port') or 3306) == (target.get('host'), target.get('port') or 3306):
+        account_grant = 'GRANT SELECT ON ' + identifier(account['database']) + '.`account` TO ' + user + ';\n'
     return ("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';\nCREATE USER IF NOT EXISTS " + user +
             ' IDENTIFIED BY ' + literal(target['password']) + ';\nGRANT ALL ON ' +
             identifier(target['database']) + '.* TO ' + user + ';\nGRANT SELECT ON ' +
-            identifier(player['database']) + '.`player` TO ' + user + ';\nGRANT SELECT,INSERT ON ' +
+            identifier(player['database']) + '.`player` TO ' + user + ';\n' + account_grant + 'GRANT SELECT,INSERT ON ' +
             identifier(player['database']) + '.`item_award` TO ' + user + ';\n')
