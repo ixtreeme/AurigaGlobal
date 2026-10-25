@@ -123,7 +123,12 @@ def main() -> int:
     parser.add_argument("--server-bin-dir", type=Path, required=True)
     parser.add_argument("--test-executable", type=Path, required=True)
     parser.add_argument("--work-dir", type=Path, required=True)
+    parser.add_argument("--test-argument", action="append", default=[])
+    parser.add_argument("--followup-argument", action="append", default=[])
+    parser.add_argument("--crash-server-before-followup", action="store_true")
     args = parser.parse_args()
+    if args.crash_server_before_followup and not args.followup_argument:
+        parser.error("--crash-server-before-followup requires a followup process")
     binaries = args.server_bin_dir.resolve(strict=True)
     executable = args.test_executable.resolve(strict=True)
     suffix = ".exe" if (binaries / "mariadbd.exe").exists() else ""
@@ -164,7 +169,7 @@ def main() -> int:
             # isolated child process talks plaintext to the packet fault proxy.
             # Production connector options and the parent environment stay intact.
             child_environment = dict(os.environ, MARIADB_TLS_DISABLE_PEER_VERIFICATION="1")
-            result = subprocess.run([str(executable), str(port), schema, str(proxy.port)],
+            result = subprocess.run([str(executable), str(port), schema, str(proxy.port), *args.test_argument],
                                     timeout=90, creationflags=flags, capture_output=True, env=child_environment)
             print(result.stdout.decode("utf-8", errors="replace"), end="", flush=True)
             print(result.stderr.decode("utf-8", errors="replace"), end="", flush=True)
@@ -177,6 +182,37 @@ def main() -> int:
                 raise proxy.error
             if not proxy.dropped.is_set():
                 raise RuntimeError("test did not exercise a lost real COMMIT acknowledgement")
+            if args.followup_argument:
+                if args.crash_server_before_followup:
+                    # Kill only the exact private process spawned above. Flush=1
+                    # makes the subsequent cold process exercise InnoDB recovery
+                    # of acknowledged commits, not just a reconnect to cached data.
+                    command = server.args
+                    server.kill()
+                    server.wait(timeout=10)
+                    log.flush()
+                    log.seek(0, os.SEEK_END)
+                    server = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, creationflags=flags)
+                    restart_deadline = time.monotonic() + 45
+                    while time.monotonic() < restart_deadline:
+                        if server.poll() is not None:
+                            raise RuntimeError(f"isolated MariaDB recovery failed; inspect {log_path}")
+                        try:
+                            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                                break
+                        except OSError:
+                            time.sleep(0.1)
+                    else:
+                        raise TimeoutError(f"isolated MariaDB recovery did not listen; inspect {log_path}")
+                    print("Isolated MariaDB crash/restart completed.", flush=True)
+                followup = subprocess.run([str(executable), str(port), schema, str(proxy.port),
+                                           *args.test_argument, *args.followup_argument],
+                                          timeout=90, creationflags=flags, capture_output=True, env=child_environment)
+                print(followup.stdout.decode("utf-8", errors="replace"), end="", flush=True)
+                print(followup.stderr.decode("utf-8", errors="replace"), end="", flush=True)
+                if followup.returncode:
+                    print(f"Cold-process executable failed: {followup.returncode}", flush=True)
+                    return followup.returncode
             print(f"Isolated MariaDB and lost-COMMIT proxy checks passed. Logs: {root}", flush=True)
             return 0
         finally:

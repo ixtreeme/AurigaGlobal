@@ -53,6 +53,7 @@ if(TARGET auriga_sanitizers)
     target_link_libraries(MissionCheck PRIVATE auriga_sanitizers)
 endif()
 set(_mission_package_sources
+    mission/MissionContentHash.cpp
     mission/MissionDefinition.cpp
     mission/MissionCatalog.cpp
     mission/MissionValidator.cpp
@@ -82,8 +83,38 @@ foreach(_mission_package_target MissionCompiler MissionPackageTests)
 endforeach()
 add_test(NAME mission_package COMMAND MissionPackageTests
     ${CMAKE_SOURCE_DIR}/config/mission_engine_package.example.json)
+
+set(_mission_persistence_sources
+    ${_mission_package_sources}
+    mission/MissionConditionEvaluator.cpp
+    mission/MissionEventRouter.cpp
+    mission/MissionRuntime.cpp
+    mission/MissionCheckpoint.cpp
+    mission/MissionCheckpointCodec.cpp
+)
+add_executable(MissionCheckpointTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MissionCheckpointTests.cpp
+    ${_mission_persistence_sources}
+)
+target_include_directories(MissionCheckpointTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+target_link_libraries(MissionCheckpointTests PRIVATE Threads::Threads OpenSSL::Crypto)
+if(TARGET auriga_sanitizers)
+    target_link_libraries(MissionCheckpointTests PRIVATE auriga_sanitizers)
+endif()
+add_test(NAME mission_checkpoint COMMAND MissionCheckpointTests)
+
+add_executable(MissionPersistenceTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MissionPersistenceTests.cpp
+    ${_mission_persistence_sources}
+    mission/MissionPersistence.cpp
+)
+target_include_directories(MissionPersistenceTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+target_link_libraries(MissionPersistenceTests PRIVATE SERVER S_SQL S_Core Threads::Threads OpenSSL::Crypto)
+if(WIN32)
+    target_link_libraries(MissionPersistenceTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests)
+    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests MissionCheckpointTests MissionPersistenceTests)
         add_custom_command(TARGET ${_mission_tool} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${_mission_tool}>"
@@ -475,6 +506,15 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --test-executable $<TARGET_FILE:AsyncSqlMariaDbTests>
             --work-dir ${CMAKE_BINARY_DIR}/mission-sql-isolated
     )
+    add_test(NAME mission_persistence_mariadb
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
+            --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
+            --test-executable $<TARGET_FILE:MissionPersistenceTests>
+            --work-dir ${CMAKE_BINARY_DIR}/mission-persistence-isolated
+            --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_persistence.sql
+            --followup-argument=--cold-check
+            --crash-server-before-followup
+    )
 endif()
 
 add_executable(MarriageLifecycleTests EXCLUDE_FROM_ALL
@@ -796,4 +836,5 @@ get_property(_server_tests DIRECTORY PROPERTY TESTS)
 set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)
 if(TEST async_sql_mariadb_isolated)
     set_tests_properties(async_sql_mariadb_isolated PROPERTIES TIMEOUT 180 LABELS "server;integration")
+    set_tests_properties(mission_persistence_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
 endif()

@@ -15,6 +15,8 @@ struct SqlTransactionStep
     std::string query;
     SqlParams params;
     std::optional<uint64_t> expectedAffectedRows;
+    // SELECT preconditions are current/locking reads when concurrency matters.
+    std::optional<uint64_t> expectedResultRows;
 };
 
 using SqlTransaction = std::vector<SqlTransactionStep>;
@@ -37,8 +39,8 @@ inline constexpr size_t SqlTransactionNoStep = static_cast<size_t>(-1);
 
 namespace SqlTransactionLimits
 {
-inline constexpr size_t Steps = 128;
+inline constexpr size_t Steps = 512;
 inline constexpr size_t Parameters = 4096;
 inline constexpr size_t QueryBytes = 65536;
-inline constexpr size_t TotalBytes = 16 * 1024 * 1024;
+inline constexpr size_t TotalBytes = 32 * 1024 * 1024;
 } // namespace SqlTransactionLimits

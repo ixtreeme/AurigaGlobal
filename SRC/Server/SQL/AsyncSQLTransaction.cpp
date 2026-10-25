@@ -52,6 +52,7 @@ bool Valid(const SqlTransaction &transaction)
         if (end == text.size() || !std::isspace(static_cast<unsigned char>(text[end])) ||
             (verb != "SELECT" && verb != "INSERT" && verb != "UPDATE" && verb != "DELETE") ||
             (verb == "SELECT" && step.expectedAffectedRows) || text.find_first_of(";#") != text.npos ||
+            (verb != "SELECT" && step.expectedResultRows) ||
             text.find('\0') != text.npos || text.find("/*") != text.npos || text.find("--") != text.npos)
             return false;
     }
@@ -190,8 +191,9 @@ bool CAsyncSQL::TryExecuteTransaction(SQLMsg *message)
         result.stQuery = step.query;
         result.vecParams = step.params;
         const bool executed = TryExecutePrepared(&result);
-        const bool conflict = executed && step.expectedAffectedRows &&
-                              (!result.Get() || result.Get()->uiAffectedRows != *step.expectedAffectedRows);
+        const bool conflict = executed &&
+            ((step.expectedAffectedRows && (!result.Get() || result.Get()->uiAffectedRows != *step.expectedAffectedRows)) ||
+             (step.expectedResultRows && (!result.Get() || result.Get()->uiNumRows != *step.expectedResultRows)));
         message->transactionResultOffsets.push_back(message->vec_pkResult.size());
         message->vec_pkResult.insert(message->vec_pkResult.end(), result.vec_pkResult.begin(),
                                      result.vec_pkResult.end());

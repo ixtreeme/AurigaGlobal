@@ -417,6 +417,33 @@ void TransactionFaults()
     }
 }
 
+void SelectTransactionPreconditions()
+{
+    connectSucceeds = true;
+    for (int scenario = 0; scenario < 3; ++scenario) {
+        tx.emplace();
+        {
+            CAsyncSQL sql;
+            Check(sql.Setup("test", "user", "secret", "mission", "ascii", true), "select guard connection failed");
+            tx->calls.clear();
+            Load(scenario == 0 ? Rows{{std::string("1")}} : Rows{});
+            resultSets = 2;
+            SqlTransaction statements{{"SELECT guard FROM mission_guard", {}, {}, scenario == 2 ? 0u : 1u}};
+            if (scenario == 1) statements.push_back({"UPDATE must_not_execute SET n=1", {}, {}, {}});
+            std::unique_ptr<SQLMsg> result(sql.DirectTransactionPrepared(std::move(statements)));
+            Check(result->transactionOutcome == (scenario == 1 ? SqlTransactionOutcome::Conflict : SqlTransactionOutcome::Committed),
+                "SELECT expected row count ignored");
+            Check(tx->executed == 1 && Calls("commit") == (scenario == 1 ? 0u : 1u),
+                "failed SELECT guard executed later writes");
+            resultSets = 1;
+            std::unique_ptr<SQLMsg> invalid(sql.DirectTransactionPrepared({{"UPDATE t SET n=1", {}, {}, 1}}));
+            Check(invalid->uiSQLErrno == SqlTransactionInvalid && tx->executed == 1,
+                "DML accepted a SELECT row-count expectation");
+        }
+        tx.reset();
+    }
+}
+
 void RejectUnsafeTransactions()
 {
     tx.emplace();
@@ -555,6 +582,7 @@ int main()
         TransactionFaults();
         RejectUnsafeTransactions();
         QueuedTransactions();
+        SelectTransactionPreconditions();
     } catch (const std::exception& error) {
         std::cerr << "FAILED: " << error.what() << "\n";
         return 1;

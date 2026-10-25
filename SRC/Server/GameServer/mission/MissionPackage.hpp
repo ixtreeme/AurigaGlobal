@@ -1,5 +1,6 @@
 #pragma once
 #include "MissionNativeSchema.hpp"
+#include "MissionContentHash.hpp"
 #include <array>
 #include <filesystem>
 #include <thread>
@@ -100,6 +101,8 @@ struct PackageLoad
 PackageBuild CompilePackage(const PackageSource &source);
 PackageLoad LoadPackage(std::span<const uint8_t> bytes);
 PackageLoad LoadPackageFile(const std::filesystem::path &path);
+// Canonical typed graph bytes, including ID/version; independent of its enclosing package.
+ContentDigest FingerprintDefinition(const CompiledDefinition &definition);
 
 struct PresentedMission
 {

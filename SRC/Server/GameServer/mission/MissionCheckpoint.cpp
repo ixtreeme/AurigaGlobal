@@ -14,9 +14,9 @@ bool Known(MissionStatus s)
     return s >= MissionStatus::Active && s <= MissionStatus::Abandoned;
 }
 } // namespace
-bool MissionRuntime::ValidCheckpoint(const Checkpoint &c) const
+bool MissionRuntime::ValidateCheckpoint(const DefinitionRegistry &registry, const Checkpoint &c)
 {
-    if (c.format != 1 || c.now < 0 || c.revision == UINT64_MAX || c.instances.size() > Limits::Instances ||
+    if (c.format != 1 || !c.character || c.now < 0 || c.revision == UINT64_MAX || c.instances.size() > Limits::Instances ||
         c.facts.flags.size() > Limits::Flags || c.facts.choices.size() > Limits::Flags ||
         c.streams.size() > Limits::Streams)
         return false;
@@ -24,7 +24,7 @@ bool MissionRuntime::ValidCheckpoint(const Checkpoint &c) const
         if (!IsIdentifier(flag))
             return false;
     for (const auto &[key, value] : c.facts.choices)
-        if (!IsIdentifier(key) || !IsIdentifier(value) || !registry_.IsChoiceValue(key, value))
+        if (!IsIdentifier(key) || !IsIdentifier(value) || !registry.IsChoiceValue(key, value))
             return false;
     for (const auto &[stream, window] : c.streams)
     {
@@ -41,7 +41,7 @@ bool MissionRuntime::ValidCheckpoint(const Checkpoint &c) const
     {
         if (!id || saved.id != id || !Known(saved.status))
             return false;
-        const auto definition = registry_.Get(saved.mission, saved.version);
+        const auto definition = registry.Get(saved.mission, saved.version);
         if (!definition || saved.nodes.size() != definition->Nodes().size())
             return false;
         if (saved.status == MissionStatus::Active && !active.insert(saved.mission).second)

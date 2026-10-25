@@ -725,7 +725,7 @@ OperationResult MissionRuntime::Restore(const Checkpoint &checkpoint, Timestamp 
     if (checkpoint.character != owner_.character)
         return Result(ResultCode::WrongOwner);
     if (!instances_.empty() || !streams_.empty() || !facts_.flags.empty() || !facts_.choices.empty() ||
-        revision_ || !ValidCheckpoint(checkpoint))
+        revision_ || !ValidateCheckpoint(registry_, checkpoint))
         return Result(ResultCode::InvalidInput);
     if (now < checkpoint.now || now < now_)
         return Result(ResultCode::InvalidTime);

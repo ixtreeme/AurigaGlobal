@@ -483,6 +483,10 @@ PresentationCatalog ReadPresentation(Reader &r)
     return p;
 }
 } // namespace
+ContentDigest FingerprintDefinition(const CompiledDefinition &definition)
+{
+    return ContentHash(WriteDefinition(definition.Source()).bytes);
+}
 
 struct PackageCodec
 {

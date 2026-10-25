@@ -231,11 +231,14 @@ class DefinitionRegistry final
     // Whole-catalog activation. Retains exact old versions for running instances;
     // reusing an ID/version with different content or a choice domain is rejected.
     Publication Activate(const std::vector<Definition> &definitions);
+    // Atomic history import. Does not activate archived versions or alter Latest().
+    Publication Retain(const std::vector<Definition> &definitions);
     std::shared_ptr<const CompiledDefinition> Get(std::string_view id, uint32_t version) const;
     std::shared_ptr<const CompiledDefinition> Latest(std::string_view id) const;
     bool IsChoiceValue(std::string_view key, std::string_view value) const;
 
   private:
+    Publication StoreCatalog(const std::vector<Definition> &definitions, bool activate);
     std::map<std::string, std::map<uint32_t, std::shared_ptr<const CompiledDefinition>>, std::less<>>
         definitions_;
     size_t versions_ = 0;

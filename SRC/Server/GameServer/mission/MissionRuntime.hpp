@@ -163,6 +163,7 @@ class MissionRuntime final
         uint32_t version = 0;
         MissionStatus status = MissionStatus::Active;
         std::vector<NodeProgress> nodes;
+        bool operator==(const SavedInstance &) const = default;
     };
     struct Checkpoint
     {
@@ -173,8 +174,11 @@ class MissionRuntime final
         StoryFacts facts;
         std::map<InstanceId, SavedInstance> instances;
         std::map<uint64_t, EventWindow> streams;
+        bool operator==(const Checkpoint &) const = default;
     };
     Checkpoint Save() const;
+    // Pure validation; does not restore, advance time or acknowledge actions.
+    static bool ValidateCheckpoint(const DefinitionRegistry &registry, const Checkpoint &checkpoint);
     // All definitions must still exist at their exact versions. No latest-version fallback.
     OperationResult Restore(const Checkpoint &checkpoint, Timestamp now);
 
@@ -215,6 +219,5 @@ class MissionRuntime final
     void Index(InstanceId id, Timestamp observedAt);
     void RemoveIndex(InstanceId id);
     ActionKey Key(NodeToken token) const;
-    bool ValidCheckpoint(const Checkpoint &checkpoint) const;
 };
 } // namespace auriga::mission
