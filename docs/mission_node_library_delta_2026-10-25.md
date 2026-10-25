@@ -1,5 +1,9 @@
 # Mission Engine – Node Library átvezetés, 2026-10-25
 
+**Későbbi frissítés:** a 4/B-ben elkészült a tartós archívum/checkpoint, a 4/C-ben az
+outbox/entitlement, a 4/D–1-ben a [verziózott jutalompayload](mission_reward_payloads_2026-10-25.md).
+Az alábbi eredeti audit ettől még nem jelent gameplay-elfogadást.
+
 ## Új követelmények és rögzített döntések
 
 Forrás: a felhasználó által átadott
@@ -37,8 +41,9 @@ Gépi mellékletek:
 
 A node-leltár jelenlegi osztályozása: **19** domain-primitív/makró-leképezés,
 **7** még be nem kötött domain-esemény, **22** részleges megoldás és **160**
-tervezett kiterjesztés. A 32 exportált natív típus nem 32 külön kész gameplay
-szolgáltatást jelent: 11 flow, 12 predikátum és 9 eseménytípus közös magja.
+tervezett kiterjesztés. A 32 kernel-típus: 11 flow, 12 predikátum és 9 eseménytípus
+közös magja. Azóta négy külön payload-séma is exportált; ezek nem gameplay
+action-handlerek. A 36 séma nem 36 kész gameplay-szolgáltatást jelent.
 
 A Lua API-leltár feltételes fordítási regisztrációkat és megnyitott standard
 könyvtárakat is tartalmaz; nem az aktuális bináris preprocesszált exportszáma.
@@ -162,10 +167,10 @@ explicit **DomainSimulation** módban futnak; ez nem éles bypass kapcsoló.
 A későbbi engine bootstrap ténylegesen létrehozott producer-/service-registryből
 adhatja a verified binding listát, nem a csomag vagy a kliens állítja azt.
 
-A rollback és a történeti verziók most **memóriában** élnek. Folyamat-újraindítás
-utáni helyreállításhoz a következő DB-fázisnak a csomag/definícióverziókat is
-archiválnia kell. Az új csomag egyfájlos telepítése nem jelenti a futó régi
-verziók háttértárolási törlését.
+A rollback és a történeti verziók kezdetben csak memóriában éltek. A 4/B-ben
+elkészült a tartós csomag/definícióarchívum és cold restore, a 4/D–1-ben ez már
+a konkrét jutalompayloadot is megőrzi. Az új csomag egyfájlos telepítése nem
+jelenti a futó régi verziók háttértárolási törlését.
 
 ### Unity presentation előkészítés
 

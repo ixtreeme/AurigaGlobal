@@ -3,6 +3,10 @@
 **Dátum:** 2026-10-25. **Részfázis:** 4/C. Előzménye a 4/B checkpoint/store réteg.
 **Kódcommit:** `5a8b13b5`.
 
+**Frissítés, 4/D–1 (`bd3a2fd1`):** azóta elkészült a verziózott reward-payload és a `PinnedReward`
+tartalomkötés. A `RecordEntitlement` most ezt követeli a puszta ActionKey helyett.
+A részletes jelenlegi szerződés: [natív jutalomcsomagok](mission_reward_payloads_2026-10-25.md).
+
 ## Elkészült és még hiányzó képességek
 
 Az action outbox a checkpointtal közös InnoDB-tranzakcióban mentődik. A motor
@@ -12,9 +16,9 @@ nyugtázhat olyan jutalom-node-ot, amelyhez nincs már commitolt jogosultság.
 
 **A ledger jogosultságot igazol, nem kézbesítést.** Nem készül tárgy, nem
 változik XP, pénz vagy inventory, és nem fogy erőforrás. A gráfban továbbra is
-szimbolikus reward-kulcs szerepel. A tényleges hatáshoz még verziózott natív
-jutalomcsomag-kötés, idempotens kézbesítési szolgáltatás és külön hatásnyugta
-kell. Az új API nem kérhető a klienstől, és nem helyettesíti ezt a szolgáltatást.
+szimbolikus reward-kulcs szerepel; ehhez a 4/D–1-ben már konkrét payload is köthető.
+A tényleges hatáshoz továbbra is idempotens kézbesítési szolgáltatás és külön hatásnyugta
+kell. Az API nem kérhető a klienstől, és nem helyettesíti ezt a szolgáltatást.
 
 A GameServer session-/core-koordinátora és a gameplay-bekötés még nincs kész.
 A csomagok ellenőrzött gameplay-kötéseinek kapuja továbbra is zárt. A
@@ -115,10 +119,10 @@ a 128-as köteg a prepared végrehajtó korlátain belül marad.
 
 A megbízható owner-koordinátornak előbb az aktuális runtime-időt, deadline-okat
 és érvényes actiont kell rendeznie, majd ezt a döntési checkpointot mentenie.
-A `RecordEntitlement(owner, action, storageRevision, checkpointDigest, operation)`:
+A jelenlegi `RecordEntitlement(owner, pinnedReward, storageRevision, checkpointDigest, operation)`:
 
 1. zárolja a karaktert, és ellenőrzi az exact epoch/token/revízió/checkpoint-hasht;
-2. ellenőrzi a mentett, még pending action teljes kulcsát;
+2. ellenőrzi a mentett, még pending action teljes kulcsát és a pin gráflenyomatát;
 3. egyedi action ID-val beírja a jogosultságot a ledgerbe;
 4. entitled állapotba állítja az outbox-sort;
 5. ugyanabban a tranzakcióban rögzíti a 4-es operation nyugtát.
@@ -207,8 +211,8 @@ mert nincs kézbesítési adapter. Ez nem teljes, egyszeri jutalomkézbesítési
 
 ## 7. Következő sorrend
 
-1. Verziózott, archivált natív jutalompayload és binding: item/XP/pénz/fogyasztás
-   képességek explicit támogatása és elutasítása.
+1. A verziózott, archivált natív jutalompayload és binding-szerződés a 4/D–1-ben elkészült;
+   az item/XP/pénz/fogyasztás tényleges natív hatásai még hátravannak.
 2. A meglévő tárgykézbesítés auditált claim-/előállítási résének rendezése vagy
    saját, ugyanahhoz a kanonikus item-tárolóhoz kapcsolódó, tartós kézbesítő.
 3. Valódi item-sémás full-inventory, crash, retry és két-core-os kézbesítési próbák.

@@ -1,6 +1,7 @@
 # Mission Engine – verziózott natív jutalomcsomagok
 
 **Dátum:** 2026-10-25. **Részfázis:** 4/D–1, az outbox/entitlement réteg után.
+**Kódcommit:** `bd3a2fd1`.
 
 ## Eredmény és határ
 
