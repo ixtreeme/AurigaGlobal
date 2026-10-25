@@ -23,6 +23,46 @@ add_executable(ServerConfigTests EXCLUDE_FROM_ALL
 target_link_libraries(ServerConfigTests PRIVATE SERVER S_Core)
 add_test(NAME server_config COMMAND ServerConfigTests)
 
+# Independent Mission Engine domain kernel; no live ECS, SQL, Lua or client hooks.
+find_path(AURIGA_MISSION_JSON_INCLUDE NAMES nlohmann/json.hpp REQUIRED)
+find_package(Threads REQUIRED)
+target_include_directories(GameServer PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+add_executable(MissionCoreTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MissionCoreTests.cpp
+    mission/MissionDefinition.cpp
+    mission/MissionValidator.cpp
+    mission/MissionConditionEvaluator.cpp
+    mission/MissionEventRouter.cpp
+    mission/MissionRuntime.cpp
+    mission/MissionCheckpoint.cpp
+)
+target_include_directories(MissionCoreTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+target_link_libraries(MissionCoreTests PRIVATE Threads::Threads)
+if(TARGET auriga_sanitizers)
+    target_link_libraries(MissionCoreTests PRIVATE auriga_sanitizers)
+endif()
+add_test(NAME mission_core COMMAND MissionCoreTests)
+add_executable(MissionCheck EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/SRC/Tools/MissionCheck.cpp
+    mission/MissionDefinition.cpp
+    mission/MissionValidator.cpp
+)
+target_include_directories(MissionCheck PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+target_link_libraries(MissionCheck PRIVATE Threads::Threads)
+if(TARGET auriga_sanitizers)
+    target_link_libraries(MissionCheck PRIVATE auriga_sanitizers)
+endif()
+if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    foreach(_mission_tool MissionCoreTests MissionCheck)
+        add_custom_command(TARGET ${_mission_tool} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${_mission_tool}>"
+        )
+    endforeach()
+endif()
+add_test(NAME mission_definition_example COMMAND MissionCheck
+    ${CMAKE_SOURCE_DIR}/config/mission_engine_core.example.json)
+
 add_executable(LoggingShutdownTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/LoggingShutdownTests.cpp
 )
@@ -697,6 +737,6 @@ add_test(NAME mission_pass_rules COMMAND MissionPassRulesTests
 get_property(_server_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
 list(FILTER _server_test_targets INCLUDE REGEX "Tests$")
 add_custom_target(ServerTests DEPENDS ${_server_test_targets})
-add_dependencies(ServerTests ServerPackageCheck)
+add_dependencies(ServerTests ServerPackageCheck MissionCheck)
 get_property(_server_tests DIRECTORY PROPERTY TESTS)
 set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)
