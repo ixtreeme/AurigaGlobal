@@ -3,6 +3,12 @@
 **Dátum:** 2026-10-25. **Részfázis:** 4/D–1, az outbox/entitlement réteg után.
 **Kódcommit:** `bd3a2fd1`.
 
+Későbbi lépés: a `71abb5d7` commit elkészítette a közös item_award → item
+kézbesítő atomi javítását, valódi tárgysémás crash/retry próbákkal.
+Részletek: [4/D–2 kézbesítő](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_item_award_delivery_2026-10-25.md).
+A jelen dokumentum a 4/D–1 adatleírási réteget rögzíti. A Mission ledger és az
+award létrehozása még nincs összekötve; a kevert jutalomcsomag nem fut élőben.
+
 ## Eredmény és határ
 
 A reward-node szimbolikus kulcsa most egy típusos, a küldetés pontos verziójában
