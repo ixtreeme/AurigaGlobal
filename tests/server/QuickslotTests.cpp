@@ -2592,6 +2592,145 @@ void MoveAdmissionGuards()
         Check(admission::Prepare(owner, key, key.request).has_value(), "split leaked admission after return");
     }
 }
+void EquipmentAdmissionGuards()
+{
+    namespace admission = ecs::resource_admission;
+    namespace gate = auriga::resource_admission;
+    using Clock = std::chrono::steady_clock;
+    {
+        Reset(); const auto owner = PlacementOwner(), item = Gear(owner);
+        const auto key = MoveAdmissionKey(owner);
+        auto pause = admission::Prepare(owner, key, key.request);
+        Check(pause && admission::StorePreparation(owner, key, std::move(*pause), Clock::now() + std::chrono::seconds(10)),
+            "equipment preparation failed");
+        const int oldSaves = saves, oldPackets = storagePackets;
+        onService = [](const char*) { Unexpected(); };
+        Check(!ItemSystem::EquipItemEcs(owner, item), "paused direct equip entered");
+        AssertPlaced(owner, item, TItemPos(INVENTORY, 0));
+        Check(saves == oldSaves && storagePackets == oldPackets && !ItemSystem::IsItemEquipped(item),
+            "paused equip changed inventory or published");
+        onService = {};
+        admission::ReleasePreparation(owner, key);
+        Check(ItemSystem::EquipItemEcs(owner, item), "released equip failed");
+        AssertWorn(owner, item, WEAR_BODY);
+        pause = admission::Prepare(owner, key, key.request);
+        Check(pause && admission::StorePreparation(owner, key, std::move(*pause), Clock::now() + std::chrono::seconds(10)),
+            "unequip preparation failed");
+        const int equippedSaves = saves, equippedPackets = storagePackets;
+        onService = [](const char*) { Unexpected(); };
+        Check(!ItemSystem::UnequipItemEcs(owner, item) &&
+            !ItemSystem::UnequipItemToEcs(owner, item, TItemPos(INVENTORY, 5)), "paused direct unequip entered");
+        AssertWorn(owner, item, WEAR_BODY);
+        Check(saves == equippedSaves && storagePackets == equippedPackets, "paused unequip published changes");
+        onService = {};
+        admission::ReleasePreparation(owner, key);
+        Check(ItemSystem::UnequipItemToEcs(owner, item, TItemPos(INVENTORY, 5)), "released explicit unequip failed");
+        AssertPlaced(owner, item, TItemPos(INVENTORY, 5));
+    }
+    // Equipment-only pause still permits ordinary inventory movement, while a
+    // drag to a wear slot must pass the nested equipment admission as well.
+    {
+        Reset(); const auto owner = PlacementOwner(), item = Gear(owner);
+        const auto key = MoveAdmissionKey(owner);
+        Check(admission::Prepare(owner, key, key.request).has_value(), "equipment mask setup");
+        auto& actor = g_registry.get<ecs::NativeResourceAdmission>(owner).actor;
+        std::array actors{&actor};
+        auto pause = gate::TryPause(actors, uint8_t(gate::Operation::Equipment), key.request);
+        Check(pause && InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 0),
+            "equipment pause blocked unrelated relocation");
+        Check(!InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 1), TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + WEAR_BODY), 0),
+            "drag bypassed equipment pause");
+        AssertPlaced(owner, item, TItemPos(INVENTORY, 1));
+        pause.reset();
+        Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 1), TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + WEAR_BODY), 0),
+            "released equipment drag failed");
+        AssertWorn(owner, item, WEAR_BODY);
+    }
+    // Both anonymous and already-native operations exclude a cache capture
+    // throughout effects, timer/socket initialization, saves and publication.
+    for (bool nativeSession : {false, true})
+    {
+        Reset(); const auto owner = PlacementOwner(), item = Gear(owner);
+        const auto key = MoveAdmissionKey(owner);
+        if (nativeSession) Check(admission::Prepare(owner, key, key.request).has_value(), "native gear binding");
+        Meta(item).proto.cLimitRealTimeFirstUseIndex = 0;
+        Meta(item).proto.aLimits[0] = {LIMIT_REAL_TIME_START_FIRST_USE, 60};
+        int callbacks = 0;
+        const auto checkBusy = [&] {
+            ++callbacks;
+            Check(!admission::Prepare(owner, key, key.request), "callback captured an active equipment operation");
+        };
+        onService = [&](const char*) { checkBusy(); };
+        onSave = [&](entt::entity) { checkBusy(); };
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) { checkBusy(); };
+        onPacket = [&](entt::entity) { checkBusy(); };
+        Check(ItemSystem::EquipItemEcs(owner, item), "admitted equip failed");
+        AssertWorn(owner, item, WEAR_BODY);
+        Check(ItemSystem::GetItemSocket(item, 1) == 1 && callbacks >= 8, "equipment finalization not exercised");
+        Check(admission::Prepare(owner, key, key.request).has_value(), "equip leaked activity");
+        const auto beforeUnequip = callbacks;
+        Actor(owner).points[POINT_HP] = 150;
+        Check(ItemSystem::UnequipItemEcs(owner, item), "admitted unequip failed");
+        Check(!ItemSystem::IsItemEquipped(item) && callbacks > beforeUnequip && Actor(owner).points[POINT_HP] == 100,
+            "unequip publication or point clamp not exercised");
+        Check(admission::Prepare(owner, key, key.request).has_value(), "unequip leaked activity");
+    }
+    // If scope is cancelled between the legs of a swap, the existing detached
+    // item recovery must still finish. It does not acquire a fresh admission.
+    for (bool afterOutgoing : {false, true})
+    {
+        Reset(); const auto owner = PlacementOwner(), old = Gear(owner), item = Gear(owner, 1);
+        Check(ItemSystem::EquipItemEcs(owner, old), "cancelled swap setup");
+        const auto key = MoveAdmissionKey(owner);
+        Check(admission::Prepare(owner, key, key.request).has_value(), "cancelled swap native binding");
+        bool cancelled = false;
+        const auto cancel = [&] {
+            if (cancelled) return;
+            cancelled = true;
+            admission::Invalidate(owner);
+        };
+        onSave = [&](entt::entity e) {
+            if (!afterOutgoing && e == item && RawOwner(item) == entt::null) cancel();
+            Check(!admission::Prepare(owner, key, key.request), "swap recovery admitted a new native capture");
+        };
+        onService = [&](const char* stage) {
+            if (afterOutgoing && std::string_view(stage) == "battle-points" && !ItemSystem::IsItemEquipped(old)) cancel();
+            Check(!admission::Prepare(owner, key, key.request), "swap callback escaped active admission");
+        };
+        Check(!ItemSystem::EquipItemEcs(owner, item) && cancelled, "cancelled swap committed replacement");
+        AssertWorn(owner, old, WEAR_BODY);
+        AssertPlaced(owner, item, TItemPos(INVENTORY, 1));
+        onService = {}; onSave = {};
+        Check(admission::Prepare(owner, key, key.request).has_value(), "cancelled swap leaked activity");
+        Check(ItemSystem::EquipItemEcs(owner, item), "cancelled swap did not recover for a later retry");
+    }
+    {
+        Reset(); const auto owner = PlacementOwner(), item = Gear(owner);
+        const auto key = MoveAdmissionKey(owner);
+        bool cancelled = false;
+        onService = [&](const char* stage) {
+            if (!cancelled && std::string_view(stage) == "buff-add") {
+                cancelled = true; admission::Invalidate(owner);
+            }
+            Check(!admission::Prepare(owner, key, key.request), "committed equip released activity before publication ended");
+        };
+        Check(ItemSystem::EquipItemEcs(owner, item) && cancelled, "committed equip was reported as uncommitted");
+        AssertWorn(owner, item, WEAR_BODY);
+        onService = {};
+        Check(admission::Prepare(owner, key, key.request).has_value(), "post-commit cancellation leaked activity");
+    }
+    for (bool removeOwner : {false, true})
+    {
+        Reset(); const auto owner = PlacementOwner(), item = Gear(owner);
+        ConstructionCallback callback {[&](entt::registry& registry, entt::entity) {
+            registry.destroy(removeOwner ? owner : item);
+            (void)registry.create();
+        }};
+        entt::scoped_connection connection =
+            g_registry.on_construct<ecs::NativeResourceAdmission>().connect<&ConstructionCallback::OnConstruct>(callback);
+        Check(!ItemSystem::EquipItemEcs(owner, item), "admission construction reused a retired equipment participant");
+    }
+}
 }
 int main() {
     try {
@@ -2606,6 +2745,7 @@ int main() {
         CSwitchbotManager switchbots;
 #endif
         MoveAdmissionGuards();
+        EquipmentAdmissionGuards();
         GroundPlacementAndRemoval(); GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
         CompanionSplitTransactions();

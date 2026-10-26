@@ -15,7 +15,7 @@ struct State
     mutable std::mutex mutex;
     bool valid = true;
     std::optional<Scope> scope;
-    std::array<uint32_t, 2> active{};
+    std::array<uint32_t, Operations.size()> active{};
     Mask paused = 0;
     player_session::Token challenge{};
 };
@@ -78,7 +78,7 @@ bool Actor::Bind(Scope scope)
         return false;
     if (old->valid && old->scope == scope)
         return true;
-    if (old->active[0] || old->active[1])
+    if (std::any_of(old->active.begin(), old->active.end(), [](auto count) { return count != 0; }))
         return false;
     auto replacement = std::make_shared<State>(scope.entity);
     replacement->scope = scope;
@@ -113,7 +113,8 @@ bool Actor::RecoverLegacy(uint64_t entity)
         return false;
     if (old->valid)
         return true;
-    if (old->active[0] || old->active[1] || old->paused)
+    if (old->paused ||
+        std::any_of(old->active.begin(), old->active.end(), [](auto count) { return count != 0; }))
         return false;
     state_.store(std::make_shared<State>(entity));
     return true;
@@ -129,7 +130,8 @@ void Actor::Invalidate()
 std::optional<Permit> Enter(std::span<Actor *const> actors, Operation operation)
 {
     const auto mask = static_cast<Mask>(operation);
-    if (actors.empty() || actors.size() > MaximumActors || (mask != 1 && mask != 2))
+    const auto known = std::find(Operations.begin(), Operations.end(), operation);
+    if (actors.empty() || actors.size() > MaximumActors || known == Operations.end())
         return {};
     Batch batch;
     for (auto *actor : actors)
@@ -138,7 +140,7 @@ std::optional<Permit> Enter(std::span<Actor *const> actors, Operation operation)
             return {};
         batch.states[batch.count++] = actor->state_.load();
     }
-    const size_t domain = mask == 1 ? 0 : 1;
+    const size_t domain = size_t(known - Operations.begin());
     if (!batch.Lock())
         return {};
     for (size_t i = 0; i < batch.count; ++i)
@@ -165,9 +167,11 @@ std::optional<Pause> TryPause(std::span<Actor *const> actors, Mask domains, play
     for (size_t i = 0; i < batch.count; ++i)
     {
         const auto &state = *batch.states[i];
-        if (!state.scope || state.paused || ((domains & 1) && state.active[0]) ||
-            ((domains & 2) && state.active[1]))
+        if (!state.scope || state.paused)
             return {};
+        for (size_t domain = 0; domain < Operations.size(); ++domain)
+            if ((domains & static_cast<Mask>(Operations[domain])) && state.active[domain])
+                return {};
     }
     for (size_t i = 0; i < batch.count; ++i)
     {

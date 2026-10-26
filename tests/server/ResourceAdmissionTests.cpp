@@ -128,6 +128,40 @@ void Lifetimes()
     Check(moved.RecoverLegacy(7) && gate::Enter(relocated, gate::Operation::Exchange).has_value(),
           "idle legacy recovery left gameplay blocked");
 }
+void OperationDomains()
+{
+    // Every published domain must participate in both activity checks and the
+    // preparation pause. In particular equipment is not an inventory drag.
+    for (auto operation : gate::Operations)
+    {
+        gate::Actor first(1), second(2);
+        std::array one{&first};
+        std::array pair{&first, &second};
+        auto active = gate::Enter(one, operation);
+        Check(active && !first.Bind({Key(), 1}), "domain activity allowed first native bind");
+        active.reset();
+        Check(first.Bind({Key(), 1}) && second.Bind({Key(101), 2}), "domain binding failed");
+        active = gate::Enter(one, operation);
+        Check(!gate::TryPause(pair, gate::Supported, Token(4)), "active domain escaped full pause");
+        std::array right{&second};
+        Check(gate::Enter(right, operation).has_value(), "busy full pause partly froze another actor");
+        active.reset();
+        for (int mask = 1; mask <= gate::Supported; ++mask)
+        {
+            auto pause = gate::TryPause(pair, uint8_t(mask), Token(4));
+            const bool covered = (mask & uint8_t(operation)) != 0;
+            Check(pause && gate::Enter(pair, operation).has_value() != covered,
+                  "operation pause mask crossed or missed a domain");
+        }
+        active = gate::Enter(one, operation);
+        first.Invalidate();
+        Check(!active->Current() && !first.Bind({Key(100, 2), 1}) && !first.RecoverLegacy(1),
+              "cancelled domain rebound before its callback finished");
+        active.reset();
+        Check(first.RecoverLegacy(1) && !gate::TryPause(one, gate::Supported, Token(4)),
+              "domain recovery restored native authority");
+    }
+}
 void InvalidAndCapacity()
 {
     gate::Actor actor(1);
@@ -159,7 +193,8 @@ void InvalidAndCapacity()
         const bool allowed = mask > 0 && mask <= gate::Supported;
         Check(gate::TryPause(one, uint8_t(mask), Token(4)).has_value() == allowed,
               "invalid domain mask accepted");
-        Check(gate::Enter(one, static_cast<gate::Operation>(mask)).has_value() == (mask == 1 || mask == 2),
+        Check(gate::Enter(one, static_cast<gate::Operation>(mask)).has_value() ==
+                  (mask == 1 || mask == 2 || mask == 4),
               "invalid operation accepted");
     }
     Check(!gate::TryPause(one, gate::Supported, {}), "zero preparation challenge accepted");
@@ -270,6 +305,36 @@ void NativeConstruction()
           "failed participant construction left the surviving actor busy");
     connection.release();
     g_registry.clear();
+    for (bool prepare : {false, true})
+    {
+        for (bool removeOnly : {false, true})
+        {
+            const auto current = g_registry.create();
+            g_registry.emplace<ecs::PlayerID>(current, 100u);
+            struct SelfRemoval
+            {
+                bool removeOnly;
+                void Construct(entt::registry &registry, entt::entity entity)
+                {
+                    if (removeOnly)
+                        registry.remove<ecs::NativeResourceAdmission>(entity);
+                    else
+                        registry.destroy(entity);
+                }
+            } self{removeOnly};
+            entt::scoped_connection selfConnection =
+                g_registry.on_construct<ecs::NativeResourceAdmission>().connect<&SelfRemoval::Construct>(
+                    self);
+            const bool entered = prepare ? native::Prepare(current, Key(), Token(4)).has_value()
+                                         : native::Enter({current}, gate::Operation::Equipment).has_value();
+            Check(!entered, "self-removing admission construction succeeded");
+            selfConnection.release();
+            if (removeOnly)
+                Check(native::Prepare(current, Key(), Token(4)).has_value(),
+                      "removed admission could not be retried");
+            g_registry.clear();
+        }
+    }
 }
 } // namespace
 int main()
@@ -278,6 +343,7 @@ int main()
     {
         Activity();
         Lifetimes();
+        OperationDomains();
         InvalidAndCapacity();
         NativePreparation();
         NativeConstruction();

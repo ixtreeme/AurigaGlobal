@@ -8,10 +8,12 @@ namespace auriga::resource_admission
 enum class Operation : uint8_t
 {
     Exchange = 1,
-    InventoryMove = 2
+    InventoryMove = 2,
+    Equipment = 4
 };
 using Mask = uint8_t;
-inline constexpr Mask Supported = 3;
+inline constexpr std::array Operations{Operation::Exchange, Operation::InventoryMove, Operation::Equipment};
+inline constexpr Mask Supported = 7;
 inline constexpr size_t MaximumActors = 8;
 struct Scope
 {

@@ -2202,14 +2202,15 @@ void RestoreDetached(entt::entity owner, entt::entity item, TItemPos position) {
     LOG_ERROR("Equipment recovery failed: owner {} item {} window {} cell {}",
         entt::to_integral(owner), entt::to_integral(item), position.window_type, position.cell);
 }
-bool UnequipAction(entt::entity owner, entt::entity item, TItemPos preferred = NPOS) {
-    if (!WornBy(owner, item) || !InventorySystem::CanUnequipNow(owner, item)) return false;
+bool UnequipAction(entt::entity owner, entt::entity item,
+    const auriga::resource_admission::Permit& permission, TItemPos preferred = NPOS) {
+    if (!permission.Current() || !WornBy(owner, item) || !InventorySystem::CanUnequipNow(owner, item)) return false;
     const uint16_t wearCell = GetItemCell(item);
-    const auto unchanged = [&] { return WornBy(owner, item) && GetItemCell(item) == wearCell; };
+    const auto unchanged = [&] { return permission.Current() && WornBy(owner, item) && GetItemCell(item) == wearCell; };
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
     if (wearCell == INVENTORY_MAX_NUM + WEAR_WEAPON) {
         const auto costume = GetWearItem(owner, WEAR_COSTUME_WEAPON);
-        if (costume != entt::null && (!UnequipAction(owner, costume) || !unchanged())) return false;
+        if (costume != entt::null && (!UnequipAction(owner, costume, permission) || !unchanged())) return false;
     }
 #endif
     if (!unchanged()) return false;
@@ -2258,18 +2259,26 @@ void FinishEquip(entt::entity owner, entt::entity item);
 
 bool UnequipItemEcs(entt::entity owner, entt::entity item) {
     if (!g_registry.valid(owner) || !IsValidItem(item)) return false;
+    const auto permission = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::Equipment);
+    if (!permission || !permission->Current() || !g_registry.valid(owner) || !IsValidItem(item)) return false;
     const EquipmentAction action(owner);
-    return action.entered && UnequipAction(owner, item);
+    return action.entered && UnequipAction(owner, item, *permission);
 }
 
 bool UnequipItemToEcs(entt::entity owner, entt::entity item, TItemPos destination) {
+    if (!g_registry.valid(owner) || !IsValidItem(item)) return false;
+    const auto permission = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::Equipment);
+    if (!permission || !permission->Current()) return false;
     if (!g_registry.valid(owner) || !IsValidItem(item) || destination.window_type != StorageWindow(item) ||
         !InventorySystem::IsEmptyItemGrid(owner, destination, GetItemSize(item))) return false;
     const EquipmentAction action(owner);
-    return action.entered && UnequipAction(owner, item, destination);
+    return action.entered && UnequipAction(owner, item, *permission, destination);
 }
 
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
+    if (!g_registry.valid(owner) || !IsValidItem(item)) return false;
+    const auto permission = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::Equipment);
+    if (!permission || !permission->Current()) return false;
     if (!g_registry.valid(owner) || !g_registry.all_of<ecs::PlayerID>(owner) || !IsValidItem(item) ||
         IsItemExchanging(item) || IsItemLocked(item) || IsItemEquipped(item) || !EquipmentType(item)) return false;
     const auto rawOwner = [&] {
@@ -2278,7 +2287,7 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
     }();
     if (rawOwner != entt::null && rawOwner != owner) return false;
     const EquipmentAction action(owner);
-    if (!action.entered || !InventorySystem::CanEquipNow(owner, item)) return false;
+    if (!action.entered || !InventorySystem::CanEquipNow(owner, item) || !permission->Current()) return false;
     const int wear = FindEquipCell(owner, item, candidateCell);
     if (wear < 0 || wear >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX ||
         (candidateCell >= 0 && candidateCell != wear)) return false;
@@ -2313,7 +2322,7 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
 #endif
         ))) return false;
     const auto sourceUnchanged = [&] {
-        if (!g_registry.valid(owner) || !IsValidItem(item) || IsItemEquipped(item) ||
+        if (!permission->Current() || !g_registry.valid(owner) || !IsValidItem(item) || IsItemEquipped(item) ||
             IsItemExchanging(item) || IsItemLocked(item)) return false;
         return carried ? InventorySystem::At(owner, item, original) &&
             InventorySystem::VisitStorage(owner, original, [&](const auto& inventory, int) {
@@ -2335,7 +2344,7 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
         const auto costume = GetWearItem(owner, WEAR_COSTUME_WEAPON);
         if (costume != entt::null && !IsValidItem(costume)) return false;
         if (costume != entt::null && (GetItemType(item) != ITEM_WEAPON || GetItemValue(costume, 3) != GetItemSubType(item))) {
-            if (!UnequipAction(owner, costume) || !sourceUnchanged()) return false;
+            if (!UnequipAction(owner, costume, *permission) || !sourceUnchanged()) return false;
         }
     } else if (wear == WEAR_COSTUME_WEAPON) {
         const auto weapon = GetWearItem(owner, WEAR_WEAPON);
@@ -2354,16 +2363,16 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
         if (!IsValidItem(displaced) || IsDragonSoulItem(item) || !WornBy(owner, displaced) ||
             !InventorySystem::CanUnequipNow(owner, displaced, false) || GetItemWearFlag(item) == WEARABLE_ABILITY)
             return false;
-        if (!carried || !FitsReplacement(owner, item, displaced, original)) return false;
+        if (!carried || !FitsReplacement(owner, item, displaced, original) || !sourceUnchanged()) return false;
         // Both identities and the full-width source cell are retained across
         // effect/save callbacks. Rollback only touches still-detached originals.
         if (InventorySystem::RemoveFromCharacter(item) == entt::null || !InventorySystem::Detached(item)) return false;
-        if (!WornBy(owner, displaced) || GetItemCell(displaced) != INVENTORY_MAX_NUM + wear ||
+        if (!permission->Current() || !WornBy(owner, displaced) || GetItemCell(displaced) != INVENTORY_MAX_NUM + wear ||
             !InventorySystem::CanUnequipNow(owner, displaced, false) ||
             InventorySystem::RemoveFromCharacter(displaced) == entt::null || !InventorySystem::Detached(displaced)) {
             RestoreDetached(owner, item, original); return false;
         }
-        if (!InventorySystem::EquipTo(item, owner, wear) || !WornBy(owner, item) || GetItemCell(item) != INVENTORY_MAX_NUM + wear) {
+        if (!permission->Current() || !InventorySystem::EquipTo(item, owner, wear) || !WornBy(owner, item) || GetItemCell(item) != INVENTORY_MAX_NUM + wear) {
             RestoreDetached(owner, displaced, TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wear));
             RestoreDetached(owner, item, original); return false;
         }

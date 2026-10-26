@@ -4,6 +4,7 @@
 #include <Core/resource_admission.h>
 #include <chrono>
 #include <initializer_list>
+#include <iterator>
 
 namespace ecs
 {
@@ -18,6 +19,20 @@ struct NativeResourceAdmission
 namespace resource_admission
 {
 namespace native = auriga::resource_admission;
+inline bool EnsureActor(entt::entity entity)
+{
+    if (!g_registry.valid(entity))
+        return false;
+    if (!g_registry.all_of<NativeResourceAdmission>(entity))
+    {
+        NativeResourceAdmission value(entity);
+        // emplace/get_or_emplace calls get AFTER on_construct, even if its
+        // returned reference is discarded. A listener may destroy that actor.
+        // A single-element move insert publishes without returning a reference.
+        g_registry.insert<NativeResourceAdmission>(&entity, &entity + 1, std::make_move_iterator(&value));
+    }
+    return g_registry.valid(entity) && g_registry.all_of<NativeResourceAdmission>(entity);
+}
 inline std::optional<native::Permit> Existing(std::initializer_list<entt::entity> entities,
                                               native::Operation operation)
 {
@@ -45,9 +60,8 @@ inline std::optional<native::Permit> Enter(std::initializer_list<entt::entity> e
     // retaining any component address, and revalidate the complete participant set.
     for (auto entity : entities)
     {
-        if (!g_registry.valid(entity))
+        if (!EnsureActor(entity))
             return {};
-        (void)g_registry.get_or_emplace<NativeResourceAdmission>(entity, entity);
     }
     // An aborted preparation/disconnected native session must not leave legacy
     // gameplay permanently blocked. Recover only as anonymous activity, after
@@ -69,7 +83,8 @@ inline std::optional<native::Pause> Prepare(entt::entity entity, const auriga::p
     const auto *pid = g_registry.valid(entity) ? g_registry.try_get<PlayerID>(entity) : nullptr;
     if (!pid || pid->pid != key.character)
         return {};
-    (void)g_registry.get_or_emplace<NativeResourceAdmission>(entity, entity);
+    if (!EnsureActor(entity))
+        return {};
     auto *component =
         g_registry.valid(entity) ? g_registry.try_get<NativeResourceAdmission>(entity) : nullptr;
     pid = g_registry.valid(entity) ? g_registry.try_get<PlayerID>(entity) : nullptr;
