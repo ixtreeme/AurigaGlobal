@@ -1,5 +1,7 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/quest_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/ResourceAdmission.hpp"
 #include "../../SRC/Server/GameServer/item/safebox.h"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
@@ -48,6 +50,7 @@ entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 int g_bItemCountLimit = 200;
 int g_aiItemDestroyTime[ITEM_DESTROY_TIME_MAX] = {300, 150, 30};
+uint32_t g_GoldDropTimeLimitValue = 0;
 
 namespace {
 int checks = 0;
@@ -63,7 +66,8 @@ struct PlacementActor {
     DESC* desc = nullptr; uint32_t pid = 37;
     uint8_t job = JOB_WARRIOR, sex = SEX_MALE;
     int level = 100, maxHP = 100, maxSP = 100;
-    bool duelBlock = false, poly = false, riding = false, deck = false;
+    bool duelBlock = false, poly = false, riding = false, deck = false, dead = false;
+    int32_t x = 100, y = 200, map = 1;
     std::array<int64_t, POINT_MAX_NUM> points {};
     std::string name = "fixture-owner";
 };
@@ -107,6 +111,12 @@ std::function<void(entt::entity, const TPacketGCItemOwnership&)> onOwnershipPack
 std::function<void()> onTimerCreate;
 std::function<void(entt::entity)> onGroundRetire;
 bool rejectTimer = false, rejectGroundRetirement = false;
+bool dropping = false, rejectDropInsertion = false, missingDropQuest = false;
+uint32_t dropClock = 10000;
+int dropLogs = 0, dropSaves = 0, dropFlushes = 0, dropHacks = 0;
+std::vector<TPacketGCPointChange> goldPackets;
+std::function<void(entt::entity)> onDropPreparation;
+std::function<void()> onGoldPacket;
 int groundRetired = 0, timerPulse = 1000;
 void Service(const char* name) { if (onService) { auto f = onService; f(name); } }
 PlacementMeta& Meta(entt::entity e) {
@@ -147,6 +157,8 @@ void Send(entt::entity owner, Packet packet) {
     if (callback) callback(owner);
 }
 entt::entity Reset() {
+    dropping = rejectDropInsertion = missingDropQuest = false; dropClock = 10000; g_GoldDropTimeLimitValue = 0;
+    dropLogs = dropSaves = dropFlushes = dropHacks = 0; goldPackets.clear(); onDropPreparation = {}; onGoldPacket = {};
     onOwnershipPacket = {}; onTimerCreate = {}; onGroundRetire = {};
     rejectTimer = rejectGroundRetirement = false; groundRetired = 0; timerPulse = 1000;
     groundTimers.clear(); groundDelays.clear(); ownershipPackets.clear();
@@ -510,7 +522,7 @@ bool DepositGuildMoney(entt::entity, CGuild&, int64_t) { Unexpected(); }
 }
 uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
 void DESC::Destroy() { Unexpected(); }
-void DESC::SetPhase(int) { Unexpected(); }
+void DESC::SetPhase(int phase) { Check(dropping && phase == PHASE_CLOSE, "unexpected descriptor close"); Service("drop-close"); }
 void DESC::OnInput() { Unexpected(); }
 void DESC::OnPeerGone() { Unexpected(); }
 void DESC::OnBytesWritten(std::size_t) { Unexpected(); }
@@ -542,6 +554,15 @@ CPacketInfoGG::~CPacketInfoGG() {}
 
 void DESC::Packet(const void* data, int size) {
     const auto header = *static_cast<const uint8_t*>(data);
+    if (header == HEADER_GC_CHARACTER_POINT_CHANGE) {
+        Check(dropping && size == sizeof(TPacketGCPointChange), "unexpected gold packet");
+        const auto packet = *static_cast<const TPacketGCPointChange*>(data);
+        Check(packet.type == POINT_GOLD && packet.value == g_registry.get<ecs::GoldAmount>(GetEntity()).amount &&
+            packet.amount < 0, "gold packet preceded debit");
+        goldPackets.push_back(packet);
+        if (onGoldPacket) { auto callback = onGoldPacket; callback(); }
+        return;
+    }
     TItemPos pos;
     if (header == HEADER_GC_ITEM_SET) {
         Check(size == sizeof(TPacketGCItemSet), "item set wire size");
@@ -590,6 +611,7 @@ void DBManager::SendMoneyLog(uint8_t type, uint32_t vnum, int64_t count) {
 }
 void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char* action, const char* hint) {
     Actor(owner); Meta(item);
+    if (dropping && std::string_view(action) == "DROP") { ++dropLogs; Service("drop-log"); return; }
     if (giving) {
         Check(std::string_view(action) == "SYSTEM" || std::string_view(action) == "SYSTEM_DROP", "wrong reward log action");
         Check(hint != nullptr, "reward log has no name"); ++rewardLogs;
@@ -650,9 +672,18 @@ void CSwitchbotManager::UnregisterItem(uint32_t, uint16_t) {
 #endif
 bool ecs::PlayerRuntime::IsValid(entt::entity e) { return g_registry.valid(e); }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<PlacementActor>(e); }
-int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) { Actor(e); return 1; }
-int32_t ecs::PlayerRuntime::GetX(entt::entity e) { Actor(e); return 100; }
-int32_t ecs::PlayerRuntime::GetY(entt::entity e) { Actor(e); return 200; }
+int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) { return Actor(e).map; }
+int32_t ecs::PlayerRuntime::GetX(entt::entity e) { return Actor(e).x; }
+int32_t ecs::PlayerRuntime::GetY(entt::entity e) { return Actor(e).y; }
+int32_t ecs::PlayerRuntime::GetZ(entt::entity e) { Actor(e); return 0; }
+uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity e) { Actor(e); return entt::to_integral(e) + 1; }
+bool CombatSystem::IsDead(entt::entity e) { return !g_registry.valid(e) || Actor(e).dead; }
+int64_t ecs::PointSystem::GetGold(entt::entity e) { Actor(e); return g_registry.get<ecs::GoldAmount>(e).amount; }
+uint32_t get_dword_time() { return dropClock; }
+void ecs::SessionSystem::Save(entt::entity e) { Check(dropping, "unexpected character save"); Actor(e); ++dropSaves; Service("drop-save"); }
+bool ItemSystem::FlushDelayedSaveEcs(entt::entity e) { Check(dropping, "unexpected item flush"); Meta(e); ++dropFlushes; Service("drop-flush"); return true; }
+void LogManager::CharLog(entt::entity e, uint32_t, const char*, const char*) { Check(dropping, "unexpected gold log"); Actor(e); ++dropLogs; Service("drop-gold-log"); }
+void LogManager::HackLog(const char*, entt::entity e) { Check(dropping, "unexpected hack log"); Actor(e); ++dropHacks; }
 entt::entity ItemSystem::MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item) {
     Check(giving, "unexpected reward merge"); Actor(owner); Meta(item); ++rewardMerges;
     if (onRewardMerge) { auto callback = onRewardMerge; return callback(owner, item); }
@@ -807,6 +838,32 @@ bool ecs::SpatialService::InsertEntity(entt::registry& reg, entt::entity item, u
     reg.emplace_or_replace<ecs::Position>(item, x, y, z);
     reg.emplace_or_replace<ecs::MapIndex>(item, int32_t(map));
     reg.emplace<ecs::SectorPlacement>(item, ecs::SectorPlacement {int32_t(map), uint32_t(x), uint32_t(y)});
+    ++reg.get<ecs::SpatialRevision>(item).value;
+    return true;
+}
+bool ecs::SpatialService::InsertItemWithCommit(entt::registry& reg, entt::entity item, uint32_t map,
+    int x, int y, int z, const std::function<bool()>& commit) {
+    Check(dropping, "unexpected companion spatial insertion");
+    if (rejectGround || map != 1 || !reg.valid(item)) return false;
+    // Controlled spatial seam. The real sector reservation is exercised by
+    // SpatialLifecycleTests; every construction here precedes the companion.
+    const auto prepare = [&]<class T>() {
+        if (!reg.valid(item)) return false;
+        if (!reg.all_of<T>(item)) reg.insert<T>(&item, &item + 1);
+        return reg.valid(item) && reg.all_of<T>(item);
+    };
+    const bool ready = prepare.template operator()<ecs::SpatialEntity>() &&
+        prepare.template operator()<ecs::Position>() && prepare.template operator()<ecs::MapIndex>() &&
+        prepare.template operator()<ecs::SectorPlacement>();
+        if (reg.valid(item) && onDropPreparation) { auto callback = onDropPreparation; callback(item); }
+    if (!ready || !reg.valid(item) || rejectDropInsertion || !commit()) {
+        if (reg.valid(item)) reg.remove<ecs::SectorPlacement, ecs::SpatialEntity>(item);
+        return false;
+    }
+    Check(RawOwner(item) == entt::null && ItemSystem::GetItemWindow(item) == GROUND &&
+        bool(reg.get<ecs::ItemEvents>(item).destroy), "companion did not install a complete ground item");
+    reg.get<ecs::Position>(item) = {x, y, z}; reg.get<ecs::MapIndex>(item).value = int32_t(map);
+    reg.get<ecs::SectorPlacement>(item) = {int32_t(map), uint32_t(x), uint32_t(y)};
     ++reg.get<ecs::SpatialRevision>(item).value;
     return true;
 }
@@ -1182,6 +1239,17 @@ quest::NPC::NPC() = default;
 quest::NPC::~NPC() = default;
 quest::PC::PC() : m_RunningQuestState(nullptr) {}
 quest::PC::~PC() = default;
+quest::PC* quest::CQuestManager::GetPCForce(unsigned int pid) {
+    Check(dropping, "unexpected quest preflight");
+    if (missingDropQuest) return nullptr;
+    for (auto owner : g_registry.view<PlacementActor, ecs::PlayerID>()) {
+        if (g_registry.get<ecs::PlayerID>(owner).pid != pid) continue;
+        auto& state = g_registry.get_or_emplace<ecs::QuestPCState>(owner);
+        if (!state.pc) state.pc = std::make_unique<quest::PC>();
+        return state.pc.get();
+    }
+    return nullptr;
+}
 bool quest::CQuestManager::UseItem(unsigned int, entt::entity item, bool) { Meta(item); Service("quest-use"); return true; }
 
 int ecs::PlayerRuntime::GetDuelOption(entt::entity e, const char*) { return Actor(e).duelBlock; }
@@ -2731,6 +2799,255 @@ void EquipmentAdmissionGuards()
         Check(!ItemSystem::EquipItemEcs(owner, item), "admission construction reused a retired equipment participant");
     }
 }
+struct DropFixture {
+    entt::entity owner, item;
+    TItemPos source;
+    std::vector<entt::entity> created;
+    explicit DropFixture(TItemPos cell = TItemPos(INVENTORY, 0)) : source(cell) {
+        Reset(); dropping = true; owner = PlacementOwner(); item = StackAt(owner, source, 7);
+        g_registry.emplace<ecs::GoldAmount>(owner, 100);
+        g_registry.emplace<ecs::QuestPCState>(owner).pc = std::make_unique<quest::PC>();
+        if (HasBinding())
+            g_registry.emplace<ecs::QuickSlots>(owner).slots[0] = {
+                uint8_t(source.window_type == EXTRA_INVENTORY ? QUICKSLOT_TYPE_ITEM_EXTRA : QUICKSLOT_TYPE_ITEM), uint8_t(source.cell)};
+        EnableSplitting(item);
+        const auto create = onCreate;
+        onCreate = [this, create](uint32_t vnum, uint32_t count) {
+            entt::entity result;
+            if (vnum == 1) {
+                result = PlacementItem(); Meta(result).proto.bType = ITEM_ELK;
+                Meta(result).proto.dwVnum = 1;
+                g_registry.get<ecs::ItemIdentity>(result).vnum = 1;
+                g_registry.get<ecs::ItemCount>(result).count = int(count);
+            } else result = create(vnum, count);
+            created.push_back(result); return result;
+        };
+    }
+    bool Drop(int count = 0) { return ItemSystem::DropItem(owner, source, count); }
+    bool HasBinding() const { return source.cell <= UINT8_MAX &&
+        (source.window_type == INVENTORY || source.window_type == EXTRA_INVENTORY); }
+    entt::entity Ground() const {
+        for (auto entity : g_registry.view<ecs::ItemLocation>())
+            if (g_registry.get<ecs::ItemLocation>(entity).window == GROUND) return entity;
+        return entt::null;
+    }
+    void Unchanged() const {
+        AssertPlaced(owner, item, source);
+        Check(ItemSystem::GetItemCount(item) == 7 && g_registry.get<ecs::GoldAmount>(owner).amount == 100 &&
+            Ground() == entt::null && goldPackets.empty(), "failed drop debited inventory/wallet or published ground loot");
+        if (HasBinding()) Check(Read(owner, 0).type != 0 && Read(owner, 0).pos == source.cell,
+            "failed drop cleared a quickslot");
+    }
+};
+void GroundDropFailures() {
+    {
+        DropFixture fixture;
+        const auto key = MoveAdmissionKey(fixture.owner);
+        auto pause = ecs::resource_admission::Prepare(fixture.owner, key, key.request);
+        Check(pause && !fixture.Drop(3) && !ItemSystem::DropGold(fixture.owner, 10), "paused drop reached preparation");
+        fixture.Unchanged();
+        pause.reset();
+        Check(fixture.Drop(3), "released drop was not retryable");
+    }
+    for (int count : {0, 3}) {
+        for (int failure = 0; failure < 4; ++failure) {
+            DropFixture fixture;
+            const auto create = onCreate;
+            if (failure == 0 && count) onCreate = [](uint32_t, uint32_t) { return entt::entity(entt::null); };
+            if (failure == 0 && !count) missingDropQuest = true;
+            if (failure == 1) rejectGround = true;
+            if (failure == 2) rejectDropInsertion = true;
+            if (failure == 3) rejectTimer = true;
+            const auto beforeSaves = saves, beforePackets = storagePackets;
+            Check(!fixture.Drop(count), "failed drop reported successful");
+            fixture.Unchanged();
+            Check(saves == beforeSaves && storagePackets == beforePackets && dropFlushes == 0 && dropLogs == 0 &&
+                g_registry.get<ecs::DropLimiter>(fixture.owner).itemDropCount == 0,
+                "failed drop saved/published resources or spent its rate slot");
+            for (auto clone : fixture.created) Check(!g_registry.valid(clone), "failed drop leaked prepared clone");
+            onCreate = create; rejectGround = rejectDropInsertion = rejectTimer = missingDropQuest = false;
+            Check(fixture.Drop(count), "failed drop was not retryable");
+            const auto ground = fixture.Ground();
+            Check(ground != entt::null && ItemSystem::GetItemCount(ground) == (count ? 3u : 7u), "drop retry quantity changed");
+        }
+    }
+    for (int count : {-1, 1}) {
+        DropFixture fixture;
+        if (count == 1) Meta(fixture.item).proto.dwFlags &= ~ITEM_FLAG_STACKABLE;
+        Check(!fixture.Drop(count), "negative/non-stackable split accepted"); fixture.Unchanged();
+    }
+    for (int failure = 0; failure < 5; ++failure) {
+        DropFixture fixture;
+        const auto create = onCreate;
+        onCreate = [&, create](uint32_t vnum, uint32_t count) {
+            const auto result = create(vnum, count);
+            if (failure == 0) g_registry.get<ecs::ItemCount>(result).count = 2;
+            if (failure == 1) g_registry.get<ecs::ItemIdentity>(result).id = ItemSystem::GetItemID(fixture.item);
+            if (failure == 2) Meta(result).locked = true;
+            if (failure == 3) g_registry.emplace_or_replace<ecs::ItemLocation>(result, ecs::ItemLocation{SAFEBOX, 0});
+            if (failure == 4) return fixture.item;
+            return result;
+        };
+        Check(!fixture.Drop(3), "invalid prepared drop clone accepted"); fixture.Unchanged();
+        Check(ItemSystem::IsValidItem(fixture.item), "factory alias retired the source item");
+    }
+}
+void GroundDropQuantities() {
+    for (TItemPos cell : {TItemPos(INVENTORY, 0), TItemPos(INVENTORY, INVENTORY_MAX_NUM - 1),
+        TItemPos(DRAGON_SOUL_INVENTORY, 0), TItemPos(EXTRA_INVENTORY, 500)}) {
+        for (int count : {0, 3, 999}) {
+            DropFixture fixture(cell);
+            const auto originalID = ItemSystem::GetItemID(fixture.item);
+            auto& id = g_registry.get<ecs::ItemIdentity>(fixture.item);
+            id.sigVnum = 55; id.transmutationVnum = 77;
+            g_registry.get<ecs::ItemSockets>(fixture.item).sockets[0] = 123456;
+            g_registry.get<ecs::ItemAttributes>(fixture.item).attrs[0] = {APPLY_STR, 17};
+            // Timer allocation and spatial preparation see the unmodified source.
+            onTimerCreate = [&] { AssertPlaced(fixture.owner, fixture.item, cell); Check(ItemSystem::GetItemCount(fixture.item) == 7, "timer allocation preceded drop debit"); };
+            onDropPreparation = [&](entt::entity) {
+                AssertPlaced(fixture.owner, fixture.item, cell);
+                Check(ItemSystem::GetItemCount(fixture.item) == 7, "spatial preparation saw an already-debited source");
+            };
+            Check(fixture.Drop(count), "valid item drop failed");
+            const bool split = count == 3;
+            const auto ground = fixture.Ground();
+            Check(ground != entt::null && RawOwner(ground) == entt::null &&
+                ItemSystem::GetItemCount(ground) == (split ? 3u : 7u) &&
+                g_registry.get<ecs::ItemSockets>(ground).sockets[0] == 123456 &&
+                g_registry.get<ecs::ItemAttributes>(ground).attrs[0].sValue == 17 &&
+                g_registry.get<ecs::ItemIdentity>(ground).sigVnum == 55 &&
+                g_registry.get<ecs::ItemIdentity>(ground).transmutationVnum == 77 &&
+                bool(g_registry.get<ecs::ItemEvents>(ground).destroy), "drop lost payload/quantity/expiry timer");
+            Check((ground == fixture.item) != split && (ItemSystem::GetItemID(ground) == originalID) != split,
+                "full drop changed identity or split reused the source id");
+            if (split) {
+                AssertPlaced(fixture.owner, fixture.item, cell);
+                Check(ItemSystem::GetItemCount(fixture.item) == 4, "split drop lost its remainder");
+            } else Check(ItemSystem::GetItem(fixture.owner, cell) == entt::null, "full drop retained its inventory anchor");
+            if (fixture.HasBinding()) Check((Read(fixture.owner, 0).type != 0) == split,
+                "drop cleared a partial stack binding or retained a full-stack binding");
+            Check(dropLogs == 1 && dropFlushes == (split ? 2 : 1), "drop audit/persistence missed a committed row");
+        }
+    }
+#ifdef ENABLE_ANTICHEAT
+    {
+        DropFixture fixture;
+        for (int i = 0; i < 4; ++i) Check(fixture.Drop(1), "allowed drop rate was rejected");
+        Check(!fixture.Drop(1) && ItemSystem::GetItemCount(fixture.item) == 3 && dropHacks == 1,
+            "drop rate bypassed the limiter or lost quantity");
+        timerPulse += 25;
+        Check(fixture.Drop(1) && ItemSystem::GetItemCount(fixture.item) == 2 &&
+            g_registry.get<ecs::DropLimiter>(fixture.owner).itemDropCount == 1, "item-drop rate did not recover after its window");
+    }
+#endif
+}
+void GroundDropCallbacks() {
+    for (int stage = 0; stage < 3; ++stage) {
+        for (bool cancel : {false, true}) {
+            DropFixture fixture;
+            const auto key = MoveAdmissionKey(fixture.owner);
+            Check(ecs::resource_admission::Prepare(fixture.owner, key, key.request).has_value(), "drop callback native binding");
+            int callbacks = 0;
+            const auto callback = [&] {
+                ++callbacks;
+                Check(!fixture.Drop(3) && !ItemSystem::DropGold(fixture.owner, 10) &&
+                    !InventorySystem::MoveItem(fixture.owner, fixture.source, TItemPos(INVENTORY, 2), 0),
+                    "preparing drop reentered another resource operation");
+                Check(!ecs::resource_admission::Prepare(fixture.owner, key, key.request), "drop callback captured an active source");
+                if (cancel) ecs::resource_admission::Invalidate(fixture.owner);
+            };
+            if (stage == 0) {
+                const auto create = onCreate;
+                onCreate = [&, create](uint32_t vnum, uint32_t count) { callback(); return create(vnum, count); };
+            } else if (stage == 1) onTimerCreate = callback;
+            else onDropPreparation = [&](entt::entity) { callback(); };
+            Check(fixture.Drop(3) != cancel && callbacks == 1, "drop scope cancellation did not control commit");
+            if (cancel) fixture.Unchanged();
+            onTimerCreate = {}; onDropPreparation = {};
+            Check(ecs::resource_admission::Prepare(fixture.owner, key, key.request).has_value(), "drop leaked activity after callback");
+        }
+    }
+    for (int mutation = 0; mutation < 4; ++mutation) {
+        DropFixture fixture;
+        onDropPreparation = [&](entt::entity) {
+            if (mutation == 0) g_registry.get<ecs::ItemCount>(fixture.item).count = 6;
+            if (mutation == 1) Actor(fixture.owner).x += 100;
+            if (mutation == 2) Meta(fixture.item).locked = true;
+            if (mutation == 3) g_registry.destroy(fixture.owner);
+        };
+        Check(!fixture.Drop(3) && fixture.Ground() == entt::null, "changed source/origin committed a stale drop plan");
+        if (mutation != 3) Check(ItemSystem::GetItemCount(fixture.item) == (mutation == 0 ? 6u : 7u),
+            "drop rollback overwrote a callback's source quantity");
+    }
+    DropFixture fixture;
+    const auto other = PlacementOwner();
+    onReward = [&](const char* stage, entt::entity dropped) {
+        if (std::string_view(stage) != "ground") return;
+        onReward = {};
+        Check(InventorySystem::RemoveFromGround(dropped) == dropped &&
+            ItemSystem::PlaceItemEcs(other, dropped, INVENTORY, 9), "post-commit pickup fixture");
+    };
+    Check(fixture.Drop(3) && ItemSystem::GetItemCount(fixture.item) == 4 &&
+        ItemSystem::GetItem(other, TItemPos(INVENTORY, 9)) != entt::null,
+        "committed drop was refunded or stolen after callback pickup");
+}
+void GroundGoldDrops() {
+    for (int failure = 0; failure < 5; ++failure) {
+        DropFixture fixture;
+        if (failure == 0) onCreate = [](uint32_t, uint32_t) { return entt::entity(entt::null); };
+        if (failure == 1) rejectGround = true;
+        if (failure == 2) rejectTimer = true;
+        if (failure == 3) rejectDropInsertion = true;
+        if (failure == 4) {
+            const auto create = onCreate;
+            onCreate = [create](uint32_t vnum, uint32_t count) { const auto item = create(vnum, count); g_registry.get<ecs::ItemCount>(item).count = 9; return item; };
+        }
+        Check(!ItemSystem::DropGold(fixture.owner, 10), "failed gold drop reported successful");
+        fixture.Unchanged();
+        Check(dropSaves == 0 && g_registry.get<ecs::DropLimiter>(fixture.owner).lastGoldDropTime == 0,
+            "failed gold drop saved or consumed its cooldown");
+        for (auto clone : fixture.created) Check(!g_registry.valid(clone), "failed gold drop leaked an unplaced item");
+    }
+    for (int64_t amount : {int64_t(-1), int64_t(0), int64_t(INT_MAX) + 1, int64_t(101)}) {
+        DropFixture fixture;
+        Check(!ItemSystem::DropGold(fixture.owner, amount), "invalid/unrepresentable gold drop accepted"); fixture.Unchanged();
+    }
+    {
+        DropFixture fixture; g_GoldDropTimeLimitValue = 5000;
+        onGoldPacket = [&] { Check(fixture.Ground() != entt::null, "gold packet preceded ground commit"); };
+        Check(ItemSystem::DropGold(fixture.owner, 10) && g_registry.get<ecs::GoldAmount>(fixture.owner).amount == 90 &&
+            ItemSystem::GetItemCount(fixture.Ground()) == 10 && goldPackets.size() == 1 && dropSaves == 1,
+            "gold drop did not debit/place/publish exactly once");
+        Check(!ItemSystem::DropGold(fixture.owner, 10), "gold cooldown ignored");
+        dropClock += 5000;
+        Check(ItemSystem::DropGold(fixture.owner, 10) && g_registry.get<ecs::GoldAmount>(fixture.owner).amount == 80,
+            "gold cooldown did not expire");
+    }
+    {
+        DropFixture fixture; g_GoldDropTimeLimitValue = 50;
+        g_registry.emplace<ecs::DropLimiter>(fixture.owner).lastGoldDropTime = UINT32_MAX - 25;
+        dropClock = 10;
+        Check(!ItemSystem::DropGold(fixture.owner, 10), "wrapped gold clock bypassed cooldown");
+        dropClock = 30;
+        Check(ItemSystem::DropGold(fixture.owner, 10), "wrapped gold cooldown never expired");
+    }
+    for (bool cancel : {false, true}) {
+        DropFixture fixture;
+        onDropPreparation = [&](entt::entity) {
+            if (cancel) ecs::resource_admission::Invalidate(fixture.owner);
+            else g_registry.get<ecs::GoldAmount>(fixture.owner).amount = 97;
+        };
+        Check(!ItemSystem::DropGold(fixture.owner, 10) && fixture.Ground() == entt::null &&
+            g_registry.get<ecs::GoldAmount>(fixture.owner).amount == (cancel ? 100 : 97),
+            "stale gold plan overwrote a callback's balance");
+    }
+    {
+        DropFixture fixture;
+        onGoldPacket = [&] { g_registry.get<ecs::GoldAmount>(fixture.owner).amount += 7; };
+        Check(ItemSystem::DropGold(fixture.owner, 10) && g_registry.get<ecs::GoldAmount>(fixture.owner).amount == 97,
+            "post-commit gold callback was overwritten/refunded");
+    }
+}
 }
 int main() {
     try {
@@ -2746,6 +3063,7 @@ int main() {
 #endif
         MoveAdmissionGuards();
         EquipmentAdmissionGuards();
+        GroundDropFailures(); GroundDropQuantities(); GroundDropCallbacks(); GroundGoldDrops();
         GroundPlacementAndRemoval(); GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
         CompanionSplitTransactions();

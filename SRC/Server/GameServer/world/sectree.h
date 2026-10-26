@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 #include <type_traits>
+#include <functional>
 
 enum ESectree
 {
@@ -81,6 +82,9 @@ class SECTREE
 		SECTREEID			GetID();
 
         bool InsertEntity(entt::entity entity);
+        // Item-only companion: no services/allocation/callbacks; false leaves
+        // state unchanged, true installs detached GROUND item metadata.
+        bool InsertItemWithCommit(entt::entity entity, const std::function<bool()>& commit);
         void RemoveEntity(entt::entity entity);
         bool Contains(entt::entity entity) const;
         bool IsDestroying() const { return m_destroying || m_closed; }
@@ -107,6 +111,7 @@ class SECTREE
 		void				RemoveAttribute(uint32_t x, uint32_t y, uint32_t dwAttr);
 
 	private:
+		bool InsertEntityImpl(entt::entity entity, const std::function<bool()>& commit);
 		static void OnPlacementDestroyed(entt::registry& registry, entt::entity entity);
 		SECTREEID			m_id;
 		std::unordered_map<entt::entity, bool> m_entities; // value: counted as PC

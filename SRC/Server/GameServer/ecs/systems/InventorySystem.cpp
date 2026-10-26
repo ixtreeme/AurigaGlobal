@@ -1,5 +1,6 @@
 #include "../../core/stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
+#include "SessionSystem.hpp"
 #include "PointSystem.hpp"
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
@@ -51,6 +52,7 @@
 #include "../components/inventory_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/visibility_components.hpp"
+#include "../components/quest_components.hpp"
 #include <Core/Logging.hpp>
 #include <unordered_set>
 
@@ -1278,17 +1280,19 @@ bool Anchored(entt::entity owner, entt::entity item, TItemPos pos)
 {
     return At(owner, item, pos) && SlotAt(owner, pos) == item;
 }
-bool MoveSource(entt::entity owner, entt::entity item, TItemPos source, int count)
+bool MoveSource(entt::entity owner, entt::entity item, TItemPos source, int count,
+                bool stagedGround = false, bool quiet = false)
 {
     if (!g_registry.valid(owner) || !g_registry.all_of<ecs::PlayerID>(owner) || count < 0 ||
         !Anchored(owner, item, source) ||
         ItemSystem::IsItemConsumptionPending(item) || ItemSystem::IsItemLocked(item) ||
         ItemSystem::IsItemExchanging(item) ||
-        g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item)) return false;
+        (stagedGround ? ecs::SectorOf(g_registry, item) != nullptr :
+            g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item))) return false;
     if (!CanHandleItems(owner))
     {
 #ifdef TEXTS_IMPROVEMENT
-        if (DragonSoulSystem::CanRefine(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
+        if (!quiet && DragonSoulSystem::CanRefine(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
 #endif
         return false;
     }
@@ -1303,7 +1307,7 @@ bool MoveSource(entt::entity owner, entt::entity item, TItemPos source, int coun
         CSwitchbotManager::instance().IsActive(ecs::PlayerRuntime::GetPlayerID(owner), source.cell))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 690, "");
+        if (!quiet) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 690, "");
 #endif
         return false;
     }
@@ -1746,6 +1750,258 @@ bool SplitItemWithCommit(entt::entity owner, entt::entity item, int count, TItem
 
 namespace InventorySystem {
 
+namespace {
+struct DropOrigin {
+    uint32_t pid;
+    int32_t map;
+    PIXEL_POSITION position;
+    explicit DropOrigin(entt::entity owner) : pid(ecs::PlayerRuntime::GetPlayerID(owner)),
+        map(ecs::PlayerRuntime::GetMapIndex(owner)), position{ecs::PlayerRuntime::GetX(owner),
+            ecs::PlayerRuntime::GetY(owner), ecs::PlayerRuntime::GetZ(owner)} {}
+    bool Current(entt::entity owner) const {
+        return ecs::PlayerRuntime::IsPC(owner) && g_registry.all_of<ecs::PlayerID>(owner) &&
+            ecs::PlayerRuntime::GetPlayerID(owner) == pid && !CombatSystem::IsDead(owner) &&
+            CanHandleItems(owner) && ecs::PlayerRuntime::GetMapIndex(owner) == map &&
+            ecs::PlayerRuntime::GetX(owner) == position.x && ecs::PlayerRuntime::GetY(owner) == position.y &&
+            ecs::PlayerRuntime::GetZ(owner) == position.z;
+    }
+};
+bool DropQuestIdle(entt::entity owner) {
+    const auto* state = g_registry.valid(owner) ? g_registry.try_get<ecs::QuestPCState>(owner) : nullptr;
+    return state && state->pc && !state->pc->IsRunning();
+}
+bool ItemDropRate(entt::entity owner, int64_t pulse, bool report = false) {
+#ifdef ENABLE_ANTICHEAT
+    const auto* limit = g_registry.valid(owner) ? g_registry.try_get<ecs::DropLimiter>(owner) : nullptr;
+    if (!limit || pulse < 0 || pulse > INT32_MAX) return false;
+    if (pulse < int64_t(limit->lastItemDropPulse) + 25 && limit->itemDropCount >= 4) {
+        if (report) {
+            if (auto* desc = ecs::PlayerRuntime::GetDesc(owner)) {
+                LogManager::instance().HackLog("DROP_HACK", owner);
+                desc->SetPhase(PHASE_CLOSE);
+            }
+        }
+        return false;
+    }
+#endif
+    return true;
+}
+void CommitItemDropRate(entt::entity owner, int64_t pulse) {
+#ifdef ENABLE_ANTICHEAT
+    auto& limit = g_registry.get<ecs::DropLimiter>(owner);
+    if (pulse >= int64_t(limit.lastItemDropPulse) + 25) limit.itemDropCount = 0;
+    limit.lastItemDropPulse = int32_t(pulse);
+    ++limit.itemDropCount;
+#endif
+}
+bool GoldDropRate(entt::entity owner, uint32_t now) {
+    const auto* limit = g_registry.valid(owner) ? g_registry.try_get<ecs::DropLimiter>(owner) : nullptr;
+    return limit && (!g_GoldDropTimeLimitValue || uint32_t(now - limit->lastGoldDropTime) >= g_GoldDropTimeLimitValue);
+}
+struct PreparedGroundTimer {
+    LPEVENT timer;
+    ~PreparedGroundTimer() { if (timer) event_cancel(&timer); }
+};
+// The sector reserves membership before the companion's first resource write.
+// The companion is component-only: no services, allocation or partial failure.
+bool DropGround(entt::entity item, const DropOrigin& origin, int seconds,
+    const std::function<bool()>& commit, const std::function<void()>& publish)
+{
+    if (origin.map <= 0 || !ItemSystem::IsValidItem(item) ||
+        !EnsureComponent<ecs::ItemOwner>(item) || !EnsureComponent<ecs::ItemLocation>(item) ||
+        !EnsureComponent<ecs::ItemEquipped>(item) || !EnsureComponent<ecs::ItemGroundPosition>(item) ||
+        !EnsureComponent<ecs::ItemEvents>(item) || !EnsureComponent<ecs::SpatialRevision>(item)) return false;
+    const auto* events = g_registry.try_get<ecs::ItemEvents>(item);
+    const auto delay = GroundTimerDelay(seconds);
+    if (!delay || !events || events->destroy || events->ownership) return false;
+    auto* info = AllocEventInfo<item_event_info>(); info->item = item;
+    PreparedGroundTimer prepared{event_create(GroundItemExpired, info, delay)};
+    if (!prepared.timer || !ItemSystem::IsValidItem(item)) return false;
+    const auto* version = g_registry.try_get<ecs::SpatialRevision>(item);
+    if (!version) return false;
+    const uint64_t revision = version->value;
+    if (!ecs::SpatialService::InsertItemWithCommit(g_registry, item, uint32_t(origin.map),
+        origin.position.x, origin.position.y, origin.position.z, [&] {
+            if (!g_registry.valid(item) || !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation,
+                ecs::ItemEquipped, ecs::ItemGroundPosition, ecs::ItemEvents, ecs::SpatialRevision>(item)) return false;
+            const auto& timer = g_registry.get<ecs::ItemEvents>(item);
+            if (timer.destroy || timer.ownership || g_registry.get<ecs::SpatialRevision>(item).value != revision ||
+                !commit()) return false;
+            auto& owner = g_registry.get<ecs::ItemOwner>(item);
+            if (owner.ownerPID) owner.lastOwnerPID = owner.ownerPID;
+            owner.owner = entt::null; owner.ownerPID = owner.ownershipPID = 0;
+            g_registry.get<ecs::ItemLocation>(item) = {GROUND, 0};
+            g_registry.get<ecs::ItemEquipped>(item) = {};
+            g_registry.get<ecs::ItemGroundPosition>(item) = {origin.position.x, origin.position.y, origin.position.z};
+            g_registry.get<ecs::ItemEvents>(item).destroy = std::move(prepared.timer);
+            return true;
+        })) return false;
+    const auto current = [&] {
+        if (!ItemSystem::IsValidItem(item) || !GroundTimerCandidate(item, true)) return false;
+        const auto* now = g_registry.try_get<ecs::SpatialRevision>(item);
+        const auto* position = g_registry.try_get<ecs::ItemGroundPosition>(item);
+        const auto* map = g_registry.try_get<ecs::MapIndex>(item);
+        return now && now->value == revision + 1 && map && map->value == origin.map &&
+            ecs::SectorOf(g_registry, item) && position && position->x == origin.position.x &&
+            position->y == origin.position.y && position->z == origin.position.z;
+    };
+    publish();
+    if (current()) ecs::SpatialService::UpdateSectree(g_registry, item);
+    if (current()) ItemSystem::SaveItem(item);
+    if (current()) ItemSystem::FlushDelayedSaveEcs(item);
+    return true;
+}
+} // namespace
+
+bool DropItemImpl(entt::entity owner, TItemPos source, int requested)
+{
+    if (requested < 0 || !NormalizeMovePosition(source) || source.window_type == EQUIPMENT ||
+        !ecs::PlayerRuntime::IsPC(owner)) return false;
+    const auto permission = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::GroundDrop);
+    if (!permission || !permission->Current() || !ecs::PlayerRuntime::IsPC(owner)) return false;
+    const MoveAction action(owner);
+    if (!action.entered || !EnsureComponent<ecs::DropLimiter>(owner) || !EnsureComponent<ecs::DirtyTag>(owner)) return false;
+    const auto item = SlotAt(owner, source);
+    if (!MoveSource(owner, item, source, 0) || ItemSystem::IsItemEquipped(item) || CombatSystem::IsDead(owner)) return false;
+    if (ItemSystem::GetItemAntiFlag(item) & (ITEM_ANTIFLAG_DROP | ITEM_ANTIFLAG_GIVE)) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 353, "");
+#endif
+        return false;
+    }
+    if (!quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(owner)) || !DropQuestIdle(owner)) return false;
+    const int64_t pulse = thecore_pulse();
+    if (!ItemDropRate(owner, pulse, true) || !permission->Current() || !MoveSource(owner, item, source, 0) ||
+        !g_registry.all_of<ecs::ItemIdentity, ecs::ItemSockets, ecs::ItemAttributes>(item)) return false;
+    const SplitPayload payload(item);
+    const int count = requested == 0 || requested > payload.count ? payload.count : requested;
+    const bool split = count < payload.count;
+    if (count <= 0 || (split && (!IsSplitRequest(item, count) || BeltPosition(source) ||
+        ItemSystem::GetItemType(item) == ITEM_ELK))) return false;
+    const DropOrigin origin(owner);
+    PreparedSplit prepared;
+    entt::entity dropped = item;
+    if (split) {
+        const auto clone = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemVnum(item), uint32_t(count));
+        if (clone == item) return false;
+        prepared.item = clone;
+        if (!ItemSystem::IsValidItem(clone) || !PrepareSplit(clone) || !Unowned(clone) ||
+            ItemSystem::GetItemWindow(clone) != RESERVED_WINDOW || ItemSystem::GetItemCount(clone) != uint32_t(count) ||
+            ItemSystem::GetItemVnum(clone) != payload.identity.vnum || ItemSystem::GetItemSize(clone) != payload.size ||
+            !ItemSystem::GetItemID(clone) || ItemSystem::GetItemID(clone) == payload.identity.id ||
+            !permission->Current() || !payload.Unchanged(item)) return false;
+        payload.CopyTo(clone);
+        dropped = clone;
+    }
+    if (!PrepareSplit(dropped) || !permission->Current()) return false;
+    const SplitPayload groundPayload(dropped);
+    MovedQuickslots quickslots;
+#ifdef ENABLE_NEWSTUFF
+    const int seconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM];
+#else
+    const int seconds = 300;
+#endif
+    const bool committed = DropGround(dropped, origin, seconds, [&] {
+        if (!permission->Current() || !origin.Current(owner) || !DropQuestIdle(owner) ||
+            !MoveSource(owner, item, source, count, !split, true) || !payload.Unchanged(item) ||
+            !groundPayload.Unchanged(dropped) || !g_registry.all_of<ecs::DropLimiter, ecs::DirtyTag>(owner) ||
+            !ItemDropRate(owner, thecore_pulse()) ||
+            (ItemSystem::GetItemAntiFlag(item) & (ITEM_ANTIFLAG_DROP | ITEM_ANTIFLAG_GIVE))) return false;
+        if (split) {
+            const auto& detached = g_registry.get<ecs::ItemOwner>(dropped);
+            if (detached.owner != entt::null || detached.ownerPID || ItemSystem::GetItemWindow(dropped) != RESERVED_WINDOW ||
+                ItemSystem::IsItemConsumptionPending(dropped) || ItemSystem::IsItemLocked(dropped) ||
+                ItemSystem::IsItemExchanging(dropped)) return false;
+            g_registry.get<ecs::ItemCount>(item).count -= count;
+            prepared.committed = true;
+        } else {
+            VisitStorage(owner, source, [&](auto& storage, int) {
+                storage.items[source.cell] = entt::null;
+                if constexpr (requires { storage.itemGrid; })
+                    for (auto& anchor : storage.itemGrid) if (anchor == source.cell + 1) anchor = 0;
+                return true;
+            });
+            quickslots.Commit(owner, source, NPOS);
+        }
+        CommitItemDropRate(owner, thecore_pulse());
+        return true;
+    }, [&] {
+        quickslots.Publish(owner);
+#ifdef ENABLE_SWITCHBOT
+        if (!split && source.window_type == SWITCHBOT && g_registry.valid(owner) && SlotAt(owner, source) == entt::null)
+            CSwitchbotManager::instance().UnregisterItem(origin.pid, source.cell);
+#endif
+        if (split && Anchored(owner, item, source)) {
+            char hint[80]; snprintf(hint, sizeof(hint), "%u %u %u %u", groundPayload.identity.id,
+                uint32_t(count), uint32_t(payload.count - count), uint32_t(payload.count));
+            LogManager::instance().ItemLogEntity(owner, item, "ITEM_SPLIT", hint);
+            if (Anchored(owner, item, source)) ItemSystem::SaveItem(item);
+            if (Anchored(owner, item, source)) ItemSystem::FlushDelayedSaveEcs(item);
+        }
+        SendStorageSlot(owner, source, false);
+        PublishBeltMove(owner, source, NPOS, split, payload.identity.vnum);
+    });
+    if (!committed) return false;
+    if (ecs::PlayerRuntime::IsPC(owner) && ItemSystem::IsValidItem(dropped) && GroundTimerCandidate(dropped, true)) {
+        char hint[80]; snprintf(hint, sizeof(hint), "%u %u %u", ItemSystem::GetItemVnum(dropped), uint32_t(count), ItemSystem::GetItemID(dropped));
+        LogManager::instance().ItemLogEntity(owner, dropped, "DROP", hint);
+    }
+#ifdef TEXTS_IMPROVEMENT
+    if (ecs::PlayerRuntime::IsPC(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 321, "%d", seconds);
+#endif
+    return true;
+}
+
+bool DropGoldImpl(entt::entity owner, int64_t amount)
+{
+    if (amount <= 0 || amount > INT_MAX || !ecs::PlayerRuntime::IsPC(owner)) return false;
+    const auto permission = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::GroundDrop);
+    if (!permission || !permission->Current() || !ecs::PlayerRuntime::IsPC(owner)) return false;
+    const MoveAction action(owner);
+    if (!action.entered || !EnsureComponent<ecs::DropLimiter>(owner) || !EnsureComponent<ecs::DirtyTag>(owner) ||
+        !g_registry.all_of<ecs::GoldAmount, ecs::PlayerID>(owner)) return false;
+    const DropOrigin origin(owner);
+    const auto balance = g_registry.get<ecs::GoldAmount>(owner).amount;
+    if (!origin.Current(owner) || balance < amount || !GoldDropRate(owner, get_dword_time())) return false;
+    PreparedSplit prepared;
+    prepared.item = ITEM_MANAGER::instance().CreateItem(1, uint32_t(amount));
+    const auto item = prepared.item;
+    if (!ItemSystem::IsValidItem(item) || !PrepareSplit(item) || !Unowned(item) ||
+        ItemSystem::GetItemWindow(item) != RESERVED_WINDOW || ItemSystem::GetItemType(item) != ITEM_ELK ||
+        ItemSystem::GetItemVnum(item) != 1 || ItemSystem::GetItemCount(item) != uint32_t(amount)) return false;
+    const SplitPayload payload(item);
+#ifdef ENABLE_NEWSTUFF
+    const int seconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD];
+#else
+    const int seconds = 300;
+#endif
+    return DropGround(item, origin, seconds, [&] {
+        if (!permission->Current() || !origin.Current(owner) || !payload.Unchanged(item) ||
+            !g_registry.all_of<ecs::GoldAmount, ecs::DropLimiter, ecs::DirtyTag>(owner) ||
+            g_registry.get<ecs::GoldAmount>(owner).amount != balance || !GoldDropRate(owner, get_dword_time())) return false;
+        const auto& detached = g_registry.get<ecs::ItemOwner>(item);
+        if (detached.owner != entt::null || detached.ownerPID || ItemSystem::GetItemWindow(item) != RESERVED_WINDOW ||
+            ItemSystem::IsItemConsumptionPending(item) || ItemSystem::IsItemLocked(item) || ItemSystem::IsItemExchanging(item)) return false;
+        g_registry.get<ecs::GoldAmount>(owner).amount = balance - amount;
+        g_registry.get<ecs::DropLimiter>(owner).lastGoldDropTime = get_dword_time();
+        prepared.committed = true;
+        return true;
+    }, [&] {
+        if (ecs::PlayerRuntime::IsPC(owner)) {
+            TPacketGCPointChange packet{};
+            packet.header = HEADER_GC_CHARACTER_POINT_CHANGE;
+            packet.dwVID = ecs::PlayerRuntime::GetPacketVID(owner); packet.type = POINT_GOLD;
+            packet.amount = -amount; packet.value = ecs::PointSystem::GetGold(owner);
+            if (auto* desc = ecs::PlayerRuntime::GetDesc(owner)) desc->Packet(&packet, sizeof(packet));
+        }
+        if (ecs::PlayerRuntime::IsPC(owner)) ecs::SessionSystem::Save(owner);
+        if (ecs::PlayerRuntime::IsPC(owner) && amount > 1000) LogManager::instance().CharLog(owner, amount, "DROP_GOLD", "");
+#ifdef TEXTS_IMPROVEMENT
+        if (ecs::PlayerRuntime::IsPC(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 321, "%d", seconds);
+#endif
+    });
+}
+
 bool Unequip(entt::entity itemEntity)
 {
     if (!ItemSystem::IsValidItem(itemEntity) ||
@@ -2139,6 +2395,21 @@ entt::entity RemoveFromCharacter(entt::entity item)
 } // namespace InventorySystem
 
 namespace ItemSystem {
+
+bool DropItem(entt::entity owner, TItemPos source,
+#ifdef ENABLE_NEW_STACK_LIMIT
+    int
+#else
+    uint8_t
+#endif
+    count)
+{
+    return InventorySystem::DropItemImpl(owner, source, count);
+}
+bool DropGold(entt::entity owner, int64_t amount)
+{
+    return InventorySystem::DropGoldImpl(owner, amount);
+}
 
 entt::entity GetWearItem(entt::entity owner, uint8_t slot)
 {

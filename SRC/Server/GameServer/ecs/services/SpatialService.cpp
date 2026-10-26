@@ -28,7 +28,9 @@
 
 namespace ecs::SpatialService {
 
-bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y, int32_t z)
+namespace {
+bool InsertEntityImpl(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y, int32_t z,
+                      const std::function<bool()>& commit)
 {
     if (!reg.valid(e) || reg.all_of<ecs::SpatialRetiring>(e) || mapIndex == 0 || mapIndex > INT32_MAX ||
         ecs::VisibilitySystem::IsRemoving(reg, e)) return false;
@@ -39,6 +41,7 @@ bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_
     const bool hadSpatial = reg.all_of<ecs::SpatialEntity>(e);
     const bool hadView = reg.all_of<ecs::ViewActiveTag>(e);
     const bool hadDirty = reg.all_of<ecs::VisibilityDirty>(e);
+    const bool hadPlacement = reg.all_of<ecs::SectorPlacement>(e);
     bool committed = false;
     const auto rollback = [&] {
         const auto ours = [&] {
@@ -49,6 +52,7 @@ bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_
         if (ours() && !hadSpatial) reg.remove<ecs::SpatialEntity>(e);
         if (ours() && !hadView) reg.remove<ecs::ViewActiveTag>(e);
         if (ours() && !hadDirty) reg.remove<ecs::VisibilityDirty>(e);
+        if (ours() && !hadPlacement) reg.remove<ecs::SectorPlacement>(e);
     };
     struct Rollback {
         const decltype(rollback)& fn;
@@ -58,7 +62,7 @@ bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_
         if (!reg.valid(e) || reg.all_of<ecs::SpatialRetiring>(e) || ecs::SectorOf(reg, e)) return false;
         const auto* version = reg.try_get<ecs::SpatialRevision>(e);
         if ((version ? version->value : 0) != revision) return false;
-        if (reg.all_of<ecs::ItemIdentity>(e)) {
+        if (!commit && reg.all_of<ecs::ItemIdentity>(e)) {
             const auto* owner = reg.try_get<ecs::ItemOwner>(e);
             const auto* location = reg.try_get<ecs::ItemLocation>(e);
             const auto* equipped = reg.try_get<ecs::ItemEquipped>(e);
@@ -97,11 +101,23 @@ bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_
     reg.get<ecs::Position>(e) = {x, y, z};
     reg.get<ecs::PositionZ>(e).z = z;
     reg.get<ecs::MapIndex>(e).value = int32_t(mapIndex);
-    if (!tree->InsertEntity(e)) return false;
+    if (commit ? !tree->InsertItemWithCommit(e, commit) : !tree->InsertEntity(e)) return false;
     committed = true;
     // Membership is committed. The caller publishes with UpdateSectree after
     // installing its timers/state; insertion itself sends no network packets.
     return true;
+}
+} // namespace
+bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y, int32_t z)
+{
+    return InsertEntityImpl(reg, e, mapIndex, x, y, z, {});
+}
+bool InsertItemWithCommit(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y,
+                          int32_t z, const std::function<bool()>& commit)
+{
+    if (!commit || &reg != &g_registry || !reg.valid(e) || !reg.all_of<ecs::ItemIdentity>(e) ||
+        reg.all_of<ecs::TagPC>(e)) return false;
+    return InsertEntityImpl(reg, e, mapIndex, x, y, z, commit);
 }
 
 void RemoveEntity(entt::registry& reg, entt::entity e)

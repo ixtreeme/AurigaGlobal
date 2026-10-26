@@ -137,6 +137,14 @@ void SECTREE::DecreasePC() {
     }
 }
 bool SECTREE::InsertEntity(entt::entity e) {
+    return InsertEntityImpl(e, {});
+}
+bool SECTREE::InsertItemWithCommit(entt::entity e, const std::function<bool()>& commit) {
+    if (!commit || !g_registry.valid(e) || !g_registry.all_of<ecs::ItemIdentity>(e) ||
+        g_registry.all_of<ecs::TagPC>(e) || ecs::SectorOf(g_registry, e)) return false;
+    return InsertEntityImpl(e, commit);
+}
+bool SECTREE::InsertEntityImpl(entt::entity e, const std::function<bool()>& commit) {
     if (IsDestroying() || !g_registry.valid(e) || g_registry.all_of<ecs::SpatialRetiring>(e) ||
         ecs::VisibilitySystem::IsRemoving(g_registry, e)) return false;
     Relocation action(e);
@@ -145,7 +153,7 @@ bool SECTREE::InsertEntity(entt::entity e) {
     if (previous == this && Contains(e)) return false;
     const auto eligible = [&] {
         if (IsDestroying() || !g_registry.valid(e) || g_registry.all_of<ecs::SpatialRetiring>(e)) return false;
-        if (g_registry.all_of<ecs::ItemIdentity>(e)) {
+        if (!commit && g_registry.all_of<ecs::ItemIdentity>(e)) {
             const auto* owner = g_registry.try_get<ecs::ItemOwner>(e);
             const auto* location = g_registry.try_get<ecs::ItemLocation>(e);
             if ((owner && (owner->owner != entt::null || owner->ownerPID != 0)) ||
@@ -171,7 +179,22 @@ bool SECTREE::InsertEntity(entt::entity e) {
     const bool pc = g_registry.all_of<ecs::TagPC>(e);
     const auto position = g_registry.get<ecs::Position>(e);
     const auto map = g_registry.get<ecs::MapIndex>(e).value;
-    m_entities.emplace(e, pc); // Allocate before modifying previous membership.
+    const bool inserted = m_entities.emplace(e, pc).second;
+    if (!inserted) return false;
+    // Reserve membership storage before the companion's first resource write.
+    // No callback or fallible operation follows a successful item companion.
+    bool accepted = false;
+    struct Reservation {
+        SECTREE& tree; entt::entity entity; bool& accepted;
+        ~Reservation() { if (!accepted) tree.m_entities.erase(entity); }
+    } reservation{*this, e, accepted};
+    if (commit && !commit()) {
+        m_entities.erase(e);
+        if (!hadPlacement && g_registry.valid(e) && !ecs::SectorOf(g_registry, e))
+            g_registry.remove<ecs::SectorPlacement>(e);
+        return false;
+    }
+    accepted = true;
     bool previousPC = false;
     if (previous) {
         if (auto it = previous->m_entities.find(e); it != previous->m_entities.end()) {

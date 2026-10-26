@@ -13,6 +13,11 @@ namespace ecs::SpatialService {
 
 // Commit native membership; call UpdateSectree after installing spawn state.
 bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y, int32_t z);
+// Item-only prepared insertion. The companion runs after every construction
+// callback and membership allocation, before publication. It must not call out,
+// allocate or fail after changing state; true installs unowned GROUND metadata.
+bool InsertItemWithCommit(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y,
+                          int32_t z, const std::function<bool()>& commit);
 void RemoveEntity(entt::registry& reg, entt::entity e);
 void UpdateSectree(entt::registry& reg, entt::entity e);
 

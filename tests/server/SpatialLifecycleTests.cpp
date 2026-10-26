@@ -877,6 +877,66 @@ void NativeShopPendingRetirementBatch() {
     Check(pending.empty(), "empty pending batch changed state");
 }
 
+void ItemCompanionInsertion() {
+    for (int outcome = 0; outcome < 3; ++outcome) {
+        Reset(); MapFixture map;
+        const auto owner = Entity(ecs::SpatialKind::Character), item = Entity();
+        g_registry.emplace<ecs::ItemOwner>(item, ecs::ItemOwner{owner, 123, 123, 0});
+        g_registry.get<ecs::ItemLocation>(item) = {INVENTORY, 7};
+        int quantity = 10, calls = 0;
+        bool threw = false, result = false;
+        try {
+            result = ecs::SpatialService::InsertItemWithCommit(g_registry, item, 1, 100, 100, 0, [&] {
+                ++calls;
+                Check(quantity == 10 && g_registry.get<ecs::ItemOwner>(item).owner == owner &&
+                    g_registry.get<ecs::ItemLocation>(item).window == INVENTORY &&
+                    g_registry.all_of<ecs::SectorPlacement>(item) && !ecs::SectorOf(g_registry, item) &&
+                    map.At()->Contains(item) && packets.empty(), "companion ran before preparation/reservation or after publication");
+                if (outcome == 1) return false;
+                if (outcome == 2) throw std::runtime_error("companion pre-commit failure");
+                quantity -= 3;
+                g_registry.get<ecs::ItemOwner>(item) = {};
+                g_registry.get<ecs::ItemLocation>(item) = {GROUND, 0};
+                return true;
+            });
+        } catch (const std::runtime_error& error) {
+            if (std::string_view(error.what()) != "companion pre-commit failure") throw;
+            threw = true;
+        }
+        Check(calls == 1 && result == (outcome == 0) && threw == (outcome == 2) &&
+            quantity == (outcome == 0 ? 7 : 10) && packets.empty(), "companion insertion lost its commit result");
+        if (outcome == 0) {
+            Check(ecs::SectorOf(g_registry, item) == map.At() && map.At()->Contains(item) &&
+                g_registry.get<ecs::SpatialRevision>(item).value == 1, "companion failed to install native membership");
+        } else {
+            Check(!map.At()->Contains(item) && !g_registry.any_of<ecs::SectorPlacement, ecs::SpatialEntity>(item) &&
+                g_registry.get<ecs::ItemOwner>(item).owner == owner &&
+                g_registry.get<ecs::ItemLocation>(item).cell == 7, "failed companion left membership or lost stored ownership");
+            Check(ecs::SpatialService::InsertItemWithCommit(g_registry, item, 1, 100, 100, 0, [&] {
+                g_registry.get<ecs::ItemOwner>(item) = {};
+                g_registry.get<ecs::ItemLocation>(item) = {GROUND, 0}; return true;
+            }), "failed companion could not be retried");
+        }
+    }
+    for (bool retire : {false, true}) {
+        Reset(); MapFixture map;
+        const auto item = Entity(); int calls = 0;
+        Callback callback {[&](entt::registry& registry, entt::entity current) {
+            if (current != item) return;
+            if (retire) registry.destroy(item); else map.At()->Destroy();
+        }};
+        entt::scoped_connection connection = g_registry.on_construct<ecs::SectorPlacement>().connect<&Callback::Run>(callback);
+        Check(!ecs::SpatialService::InsertItemWithCommit(g_registry, item, 1, 100, 100, 0, [&] {
+            ++calls; return true;
+        }) && calls == 0 && !map.At()->Contains(item), "failed sector preparation reached resource companion");
+    }
+    Reset(); MapFixture map;
+    const auto pc = Entity(ecs::SpatialKind::Character), item = Entity(); int calls = 0;
+    Check(!ecs::SpatialService::InsertItemWithCommit(g_registry, pc, 1, 100, 100, 0, [&] { ++calls; return true; }) &&
+        !ecs::SpatialService::InsertItemWithCommit(g_registry, item, 1, 100, 100, 0, {}) && calls == 0,
+        "non-item/empty companion accepted");
+}
+
 void RemovalCallbacksAndTeardown() {
     Reset(); MapFixture map;
     const auto player = Entity(ecs::SpatialKind::Character), item = Entity();
@@ -2023,6 +2083,7 @@ int main() {
         ecs::VisibilitySystem::Init(g_registry);
         auto recoveryConnection = entt::scoped_connection(g_dispatcher.sink<ecs::EvRecovery>().connect<&Recovered>());
         AttributeSharing();
+        ItemCompanionInsertion();
         MembershipAndSnapshots(); VisibilityRoundTrip(); ViewCallbacks(); PreparationAndPCs();
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
         NativeBuildingIdentityAndPlacement(); NativeShopAvatarLifecycle(); NativeShopPreparationCallbacks();
