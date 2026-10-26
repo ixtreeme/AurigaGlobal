@@ -51,6 +51,7 @@ entt::dispatcher g_dispatcher;
 int g_bItemCountLimit = 200;
 int g_aiItemDestroyTime[ITEM_DESTROY_TIME_MAX] = {300, 150, 30};
 uint32_t g_GoldDropTimeLimitValue = 0;
+uint32_t g_BuySellTimeLimitValue = 0;
 
 namespace {
 int checks = 0;
@@ -112,6 +113,8 @@ std::function<void()> onTimerCreate;
 std::function<void(entt::entity)> onGroundRetire;
 bool rejectTimer = false, rejectGroundRetirement = false;
 bool dropping = false, rejectDropInsertion = false, missingDropQuest = false;
+bool trading = false, rejectTradePreparation = false, rejectTradeCleanup = false;
+std::vector<entt::entity> tradeRetirements;
 uint32_t dropClock = 10000;
 int dropLogs = 0, dropSaves = 0, dropFlushes = 0, dropHacks = 0;
 std::vector<TPacketGCPointChange> goldPackets;
@@ -157,6 +160,7 @@ void Send(entt::entity owner, Packet packet) {
     if (callback) callback(owner);
 }
 entt::entity Reset() {
+    trading = rejectTradePreparation = rejectTradeCleanup = false; tradeRetirements.clear(); g_BuySellTimeLimitValue = 0;
     dropping = rejectDropInsertion = missingDropQuest = false; dropClock = 10000; g_GoldDropTimeLimitValue = 0;
     dropLogs = dropSaves = dropFlushes = dropHacks = 0; goldPackets.clear(); onDropPreparation = {}; onGoldPacket = {};
     onOwnershipPacket = {}; onTimerCreate = {}; onGroundRetire = {};
@@ -555,10 +559,10 @@ CPacketInfoGG::~CPacketInfoGG() {}
 void DESC::Packet(const void* data, int size) {
     const auto header = *static_cast<const uint8_t*>(data);
     if (header == HEADER_GC_CHARACTER_POINT_CHANGE) {
-        Check(dropping && size == sizeof(TPacketGCPointChange), "unexpected gold packet");
+        Check((dropping || trading) && size == sizeof(TPacketGCPointChange), "unexpected gold packet");
         const auto packet = *static_cast<const TPacketGCPointChange*>(data);
         Check(packet.type == POINT_GOLD && packet.value == g_registry.get<ecs::GoldAmount>(GetEntity()).amount &&
-            packet.amount < 0, "gold packet preceded debit");
+            (trading || packet.amount < 0), "gold packet preceded debit");
         goldPackets.push_back(packet);
         if (onGoldPacket) { auto callback = onGoldPacket; callback(); }
         return;
@@ -604,6 +608,7 @@ LogManager::~LogManager() = default;
 DBManager::DBManager() = default;
 DBManager::~DBManager() = default;
 void DBManager::SendMoneyLog(uint8_t type, uint32_t vnum, int64_t count) {
+    if (trading) { Check(type == MONEY_LOG_SHOP, "wrong NPC trade money log"); ++moneyLogs; Service("trade-money-log"); return; }
     Check(giving && type == MONEY_LOG_DROP && vnum == rewardProto.dwVnum && count == factoryCount,
         "reward money log lost normalized quantity");
     ++moneyLogs;
@@ -611,6 +616,16 @@ void DBManager::SendMoneyLog(uint8_t type, uint32_t vnum, int64_t count) {
 }
 void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char* action, const char* hint) {
     Actor(owner); Meta(item);
+    if (trading) {
+        unsigned qty = 0, first = 0, second = 0;
+        if (std::string_view(action) == "BUY")
+            Check(sscanf(hint, "qty=%u placed=%u merged=%u", &qty, &first, &second) == 3 &&
+                qty > 0 && first + second == qty, "NPC purchase audit lost original quantity");
+        else
+            Check(sscanf(hint, "qty=%u before=%u after=%u", &qty, &first, &second) == 3 &&
+                qty > 0 && first >= qty && second == first - qty, "NPC cost audit lost consumed quantity");
+        Service(action); return;
+    }
     if (dropping && std::string_view(action) == "DROP") { ++dropLogs; Service("drop-log"); return; }
     if (giving) {
         Check(std::string_view(action) == "SYSTEM" || std::string_view(action) == "SYSTEM_DROP", "wrong reward log action");
@@ -625,6 +640,7 @@ void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char
         "split audit precedes commit or lost quantity");
     Service("split-log");
 }
+void LogManager::GoldBarLog(uint32_t, uint32_t, GOLDBAR_HOW, const char*) { Check(trading, "unexpected gold bar audit"); Service("trade-goldbar-log"); }
 entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool magic, int rare, bool skip) {
     if (giving) {
         Check(!id && magic && !skip && count > 0, "reward factory flags changed");
@@ -640,7 +656,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
         if (onReward) { auto callback = onReward; callback("create", item); }
         return item;
     }
-    Check(id == 0 && !magic && rare == -1 && !skip, "split factory changed creation flags");
+    Check(id == 0 && (trading ? magic : !magic) && rare == -1 && !skip, "split/NPC factory changed creation flags");
     if (!onCreate) Unexpected();
     auto callback = onCreate; return callback(vnum, count);
 }
@@ -680,8 +696,8 @@ uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity e) { Actor(e); return ent
 bool CombatSystem::IsDead(entt::entity e) { return !g_registry.valid(e) || Actor(e).dead; }
 int64_t ecs::PointSystem::GetGold(entt::entity e) { Actor(e); return g_registry.get<ecs::GoldAmount>(e).amount; }
 uint32_t get_dword_time() { return dropClock; }
-void ecs::SessionSystem::Save(entt::entity e) { Check(dropping, "unexpected character save"); Actor(e); ++dropSaves; Service("drop-save"); }
-bool ItemSystem::FlushDelayedSaveEcs(entt::entity e) { Check(dropping, "unexpected item flush"); Meta(e); ++dropFlushes; Service("drop-flush"); return true; }
+void ecs::SessionSystem::Save(entt::entity e) { Check(dropping || trading, "unexpected character save"); Actor(e); ++dropSaves; Service("drop-save"); }
+bool ItemSystem::FlushDelayedSaveEcs(entt::entity e) { Check(dropping || trading, "unexpected item flush"); Meta(e); ++dropFlushes; Service("drop-flush"); return true; }
 void LogManager::CharLog(entt::entity e, uint32_t, const char*, const char*) { Check(dropping, "unexpected gold log"); Actor(e); ++dropLogs; Service("drop-gold-log"); }
 void LogManager::HackLog(const char*, entt::entity e) { Check(dropping, "unexpected hack log"); Actor(e); ++dropHacks; }
 entt::entity ItemSystem::MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item) {
@@ -753,6 +769,13 @@ uint32_t ItemSystem::GetItemWearFlag(entt::entity e) { return Meta(e).proto.dwWe
 int ItemSystem::FindEquipCell(entt::entity owner, entt::entity e, int) { Actor(owner); return Meta(e).wear; }
 SItemTable const * ItemSystem::GetItemProto(entt::entity e) { return &Meta(e).proto; }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity e, char const * reason) {
+    if (trading && std::string_view(reason) == "COMMITTED_ITEM_COST") {
+        Check(Meta(e).pending && GetItemCount(e) == 0 && RawOwner(e) == entt::null, "trade retired a live source");
+        Service("trade-retire");
+        if (rejectTradeCleanup) return false;
+        if (g_registry.valid(e)) g_registry.destroy(e);
+        return true;
+    }
     if (std::string_view(reason) == "ITEM_DESTROY_EVENT") {
         Meta(e);
         Check(RawOwner(e) == entt::null && GetItemWindow(e) == GROUND &&
@@ -791,6 +814,45 @@ int ItemSystem::GetItemAttributeType(entt::entity e, int i) { return GetItemAttr
 bool ItemSystem::SetItemSocket(entt::entity e, int i, uint32_t value, bool) { g_registry.get<ecs::ItemSockets>(e).sockets[i] = value; Service("set-socket"); return true; }
 void ItemSystem::ClearMountAttributeAndAffect(entt::entity) { Unexpected(); }
 void ItemSystem::SaveItem(entt::entity e) { Meta(e); ++saves; if (onSave) { auto f = onSave; f(e); } }
+int64_t ItemSystem::GetItemShopBuyPrice(entt::entity e) { return Meta(e).proto.dwShopBuyPrice; }
+void ItemSystem::PublishItemCount(entt::entity e) { if (IsValidItem(e) && !IsItemConsumptionPending(e)) SaveItem(e); }
+bool ItemSystem::HaveSameStackPayload(entt::entity a, entt::entity b, bool) {
+    if (!IsItemStackable(a) || !IsItemStackable(b) || IsDragonSoulItem(a) || IsDragonSoulItem(b) || IsRuneItem(a) || IsRuneItem(b) ||
+        GetItemType(a) != GetItemType(b) || GetItemSubType(a) != GetItemSubType(b) || GetItemVnum(a) != GetItemVnum(b) ||
+        (GetItemAntiFlag(a) & ITEM_ANTIFLAG_STACK) || (GetItemAntiFlag(b) & ITEM_ANTIFLAG_STACK) ||
+        g_registry.get<ecs::ItemSockets>(a).sockets != g_registry.get<ecs::ItemSockets>(b).sockets) return false;
+    const auto& x = g_registry.get<ecs::ItemAttributes>(a).attrs;
+    const auto& y = g_registry.get<ecs::ItemAttributes>(b).attrs;
+    for (size_t i = 0; i < x.size(); ++i) if (x[i].bType != y[i].bType || x[i].sValue != y[i].sValue) return false;
+    return true;
+}
+void ItemSystem::ProcessPendingItemConsumptions() {
+    for (size_t i = 0; i < tradeRetirements.size();) {
+        const auto item = tradeRetirements[i];
+        if (IsValidItem(item)) DestroyItemEntityEcs(item, "COMMITTED_ITEM_COST");
+        if (!g_registry.valid(item)) tradeRetirements.erase(tradeRetirements.begin() + i); else ++i;
+    }
+}
+bool ItemSystem::ConsumeOwnedItemCostsWithCommit(entt::entity owner, std::span<const ItemCost> costs,
+    const std::function<bool()>& commit, const std::function<void()>& publish, std::span<const entt::entity> detached) {
+    Check(trading, "unexpected trade companion");
+    if (rejectTradePreparation) return false;
+    for (const auto& row : costs) if (!IsValidItem(row.item) || RawOwner(row.item) != owner || Meta(row.item).pending ||
+        Meta(row.item).locked || Meta(row.item).exchanging || GetItemCount(row.item) < row.amount) return false;
+    std::vector<entt::entity> zero;
+    for (const auto& row : costs) if (row.amount == GetItemCount(row.item)) zero.push_back(row.item);
+    zero.insert(zero.end(), detached.begin(), detached.end());
+    tradeRetirements.reserve(tradeRetirements.size() + zero.size());
+    if (!commit()) return false;
+    for (const auto& row : costs) g_registry.get<ecs::ItemCount>(row.item).count -= int(row.amount);
+    for (const auto item : zero) {
+        g_registry.get<ecs::ItemCount>(item).count = 0; Meta(item).pending = true; tradeRetirements.push_back(item);
+    }
+    publish();
+    for (const auto& row : costs) if (IsValidItem(row.item) && GetItemCount(row.item)) PublishItemCount(row.item);
+    ProcessPendingItemConsumptions();
+    return true;
+}
 void ItemSystem::SetItemOwnerEntity(entt::entity, entt::entity) { Unexpected(); }
 void ItemSystem::SetItemLastOwnerPID(entt::entity item, uint32_t pid) {
     Check(giving, "unexpected last-owner write"); Meta(item); g_registry.get<ecs::ItemOwner>(item).lastOwnerPID = pid;
@@ -2839,6 +2901,259 @@ struct DropFixture {
             "failed drop cleared a quickslot");
     }
 };
+struct NpcFixture {
+    entt::entity owner;
+    std::vector<entt::entity> created;
+    NpcFixture() {
+        Reset(); trading = true; g_bItemCountLimit = 200;
+        owner = PlacementOwner(); g_registry.emplace<ecs::GoldAmount>(owner, 1000);
+        onCreate = [this](uint32_t vnum, uint32_t count) {
+            const auto item = PlacementItem();
+            Meta(item).proto.dwVnum = vnum; Meta(item).proto.dwFlags = ITEM_FLAG_STACKABLE;
+            g_registry.get<ecs::ItemIdentity>(item).vnum = vnum;
+            g_registry.get<ecs::ItemCount>(item).count = int(count);
+            created.push_back(item); return item;
+        };
+    }
+    entt::entity Stack(uint16_t cell, int count, uint32_t vnum = 500, uint8_t window = INVENTORY) {
+        const auto item = StackAt(owner, TItemPos(window, cell), count);
+        g_registry.get_or_emplace<ecs::ItemFlags>(item).flags = ITEM_FLAG_STACKABLE;
+        g_registry.get<ecs::ItemIdentity>(item).vnum = vnum;
+        Meta(item).proto.dwVnum = vnum; Meta(item).proto.dwShopBuyPrice = 10;
+        return item;
+    }
+    InventorySystem::NpcPurchase Request() const {
+        InventorySystem::NpcPurchase request; request.vnum = 100; request.count = 5; request.gold = 100;
+        return request;
+    }
+    auto Buy(const InventorySystem::NpcPurchase& request, const std::function<bool()>& guard = [] { return true; }) {
+        return InventorySystem::BuyFromNpc(owner, request, guard);
+    }
+};
+
+void NpcTransactions() {
+    using Result = InventorySystem::NpcTradeResult;
+    for (uint32_t paid : {1u, 3u, 7u}) {
+        NpcFixture f;
+        const auto currency = f.Stack(0, 7);
+        g_registry.emplace<ecs::QuickSlots>(f.owner).slots[0] = {QUICKSLOT_TYPE_ITEM, 0};
+        const InventorySystem::NpcItemPrice price{500, paid};
+        auto request = f.Request(); request.items = std::span(&price, 1);
+        int observed = 0;
+        const auto observe = [&] {
+            ++observed;
+            Check(g_registry.get<ecs::GoldAmount>(f.owner).amount == 900, "NPC publication preceded wallet debit");
+            Check(!f.created.empty() && ItemSystem::GetItemOwner(f.created.back()) == f.owner,
+                "NPC publication preceded placement");
+            if (paid == 7) Check(!g_registry.valid(currency) || (Meta(currency).pending &&
+                ItemSystem::GetItemCount(currency) == 0 && RawOwner(currency) == entt::null), "NPC full cost not retired");
+            else Check(ItemSystem::GetItemCount(currency) == 7 - paid, "NPC publication preceded all cost counts");
+            Check(Read(f.owner, 0).type == (paid == 7 ? 0 : QUICKSLOT_TYPE_ITEM), "NPC quickslot did not commit with costs");
+            const auto key = MoveAdmissionKey(f.owner);
+            Check(!ecs::resource_admission::Prepare(f.owner, key, key.request), "NPC publication allowed native pause");
+            Check(!InventorySystem::MoveItem(f.owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 5), 0),
+                "NPC publication reentered inventory movement");
+        };
+        onGoldPacket = observe; onSave = [&](entt::entity) { observe(); };
+        onService = [&](const char*) { observe(); };
+        Check(f.Buy(request) == Result::Committed && observed > 2 && moneyLogs == 1, "NPC purchase failed");
+        onGoldPacket = {}; onSave = {}; onService = {};
+        Check(paid == 7 ? !g_registry.valid(currency) : ItemSystem::GetItemCount(currency) == 7 - paid,
+            "NPC purchase lost cost result");
+    }
+    for (int defect = 0; defect < 7; ++defect) {
+        NpcFixture f; const auto currency = f.Stack(0, 7);
+        const InventorySystem::NpcItemPrice price{500, 3};
+        auto request = f.Request(); request.items = std::span(&price, 1);
+        if (defect == 0) request.gold = 2000;
+        if (defect == 1) request.count = 0;
+        if (defect == 2) Meta(currency).locked = true;
+        if (defect == 3) rejectTradePreparation = true;
+        if (defect == 4) onCreate = [](uint32_t, uint32_t) { return entt::null; };
+        if (defect == 5) request.gold = -1;
+        auto pause = defect == 6 ? ecs::resource_admission::Prepare(f.owner, MoveAdmissionKey(f.owner),
+            MoveAdmissionKey(f.owner).request) : std::optional<auriga::resource_admission::Pause>{};
+        const int oldSaves = saves, oldPackets = storagePackets;
+        Check(f.Buy(request) != Result::Committed && g_registry.get<ecs::GoldAmount>(f.owner).amount == 1000 &&
+            ItemSystem::GetItemCount(currency) == 7 && moneyLogs == 0 && saves == oldSaves && storagePackets == oldPackets,
+            "rejected NPC purchase changed resources");
+    }
+    for (uint32_t amount : {1u, 7u}) {
+        NpcFixture f; const auto item = f.Stack(0, 7);
+        g_registry.emplace<ecs::QuickSlots>(f.owner).slots[0] = {QUICKSLOT_TYPE_ITEM, 0};
+        bool observed = false;
+        onGoldPacket = [&] {
+            observed = true;
+            Check(g_registry.get<ecs::GoldAmount>(f.owner).amount == 1000 + 10 * amount &&
+                ItemSystem::GetItemCount(item) == 7 - amount, "NPC sale published a partial commit");
+            if (amount == 7) Check(Meta(item).pending && RawOwner(item) == entt::null && Read(f.owner, 0).type == 0,
+                "NPC sale left full cost live or shortcut bound");
+        };
+        Check(InventorySystem::SellToNpc(f.owner, TItemPos(INVENTORY, 0), amount, 10 * amount, [] { return true; }) &&
+            observed && moneyLogs == 1, "NPC sale failed");
+        onGoldPacket = {};
+    }
+}
+
+void NpcMergesAndPayments() {
+    using Result = InventorySystem::NpcTradeResult;
+    for (int mode = 0; mode < 4; ++mode) {
+        NpcFixture f;
+        const auto target = f.Stack(0, mode == 0 ? 195 : 199, 100);
+        if (mode == 0 || mode == 2) g_registry.get<ecs::MainInventoryRuntimeComponent>(f.owner).itemGrid.fill(1);
+        if (mode == 3) g_registry.get<ecs::ItemAttributes>(target).attrs[0] = {APPLY_MAX_HP, 17};
+        const auto result = f.Buy(f.Request());
+        if (mode == 2) {
+            Check(result == Result::InventoryFull && ItemSystem::GetItemCount(target) == 199 &&
+                g_registry.get<ecs::GoldAmount>(f.owner).amount == 1000, "failed partial NPC merge debited resources");
+            continue;
+        }
+        Check(result == Result::Committed && g_registry.get<ecs::GoldAmount>(f.owner).amount == 900, "NPC merge failed");
+        if (mode == 0) Check(ItemSystem::GetItemCount(target) == 200 && !g_registry.valid(f.created.back()),
+            "full-inventory merge lost quantity or leaked fresh clone");
+        if (mode == 1) Check(ItemSystem::GetItemCount(target) == 200 &&
+            ItemSystem::GetItemCount(f.created.back()) == 4 && ItemSystem::GetItemOwner(f.created.back()) == f.owner,
+            "partial NPC merge lost remainder");
+        if (mode == 3) Check(ItemSystem::GetItemCount(target) == 199 && ItemSystem::GetItemCount(f.created.back()) == 5,
+            "NPC merge destroyed distinct attribute payload");
+    }
+    {
+        NpcFixture f; const auto cost = f.Stack(0, 7);
+        const std::array prices{InventorySystem::NpcItemPrice{500, 3}, InventorySystem::NpcItemPrice{500, 2}};
+        auto request = f.Request(); request.items = prices;
+        Check(f.Buy(request) == Result::Committed && ItemSystem::GetItemCount(cost) == 2,
+            "duplicate NPC currency rows lost their shared debit");
+    }
+    {
+        NpcFixture f; const auto cost = f.Stack(0, 7);
+        Meta(cost).proto.bType = ITEM_SECONDARY_COIN;
+        auto request = f.Request(); request.gold = 0; request.secondaryCoins = 4;
+        Check(f.Buy(request) == Result::Committed && ItemSystem::GetItemCount(cost) == 3 &&
+            g_registry.get<ecs::GoldAmount>(f.owner).amount == 1000 && goldPackets.empty(),
+            "secondary-coin NPC purchase altered gold or lost cost");
+    }
+    for (int kind = 0; kind < 4; ++kind) {
+        NpcFixture f; auto create = onCreate;
+        onCreate = [create, kind](uint32_t vnum, uint32_t count) {
+            const auto item = create(vnum, count);
+            Meta(item).dragon = kind == 0; Meta(item).extra = kind == 1; Meta(item).rune = kind == 2;
+            if (kind == 1) Meta(item).category = 2;
+            if (kind == 3) {
+                Meta(item).proto.bType = ITEM_COSTUME; Meta(item).proto.bSubType = COSTUME_ACCE;
+                Meta(item).proto.alValues[ACCE_GRADE_VALUE_FIELD] = 2;
+            }
+            return item;
+        };
+        extraUnlock = INT_MAX;
+        if (kind == 3) onService = [&](const char* action) {
+            Check(std::string_view(action) != "set-socket", "NPC accessory preparation published a socket change");
+            Check(g_registry.get<ecs::GoldAmount>(f.owner).amount == 900 &&
+                ItemSystem::GetItemOwner(f.created.back()) == f.owner,
+                "NPC accessory published before complete payment and placement");
+        };
+        Check(f.Buy(f.Request()) == Result::Committed, "NPC special-window purchase failed");
+        const auto item = f.created.back();
+        if (kind == 0) AssertPlaced(f.owner, item, TItemPos(DRAGON_SOUL_INVENTORY, 0));
+        if (kind == 1) AssertPlaced(f.owner, item, TItemPos(EXTRA_INVENTORY, 2 * EXTRA_INVENTORY_CATEGORY_MAX_NUM));
+        if (kind == 2) AssertWorn(f.owner, item, WEAR_BODY);
+        if (kind == 3) {
+            AssertPlaced(f.owner, item, TItemPos(INVENTORY, 0));
+            Check(ItemSystem::GetItemSocket(item, ACCE_ABSORPTION_SOCKET) == ACCE_GRADE_2_ABS,
+                "NPC accessory absorption was not initialized");
+        }
+    }
+    for (TItemPos cell : {TItemPos(INVENTORY, 256), TItemPos(EXTRA_INVENTORY, 500), TItemPos(DRAGON_SOUL_INVENTORY, 0)}) {
+        NpcFixture f; const auto item = f.Stack(cell.cell, 7, 500, cell.window_type);
+        Check(InventorySystem::SellToNpc(f.owner, cell, 7, 70, [] { return true; }) && !g_registry.valid(item) &&
+            g_registry.get<ecs::GoldAmount>(f.owner).amount == 1070, "NPC sale truncated a special-window cell");
+    }
+}
+
+void NpcCallbacksAndCleanup() {
+    using Result = InventorySystem::NpcTradeResult;
+    for (int mutation = 0; mutation < 7; ++mutation) {
+        NpcFixture f; const auto cost = f.Stack(0, 7);
+        const InventorySystem::NpcItemPrice price{500, 3};
+        auto request = f.Request(); request.items = std::span(&price, 1);
+        bool gate = true; const auto create = onCreate;
+        onCreate = [&, create](uint32_t vnum, uint32_t count) {
+            const auto item = create(vnum, count);
+            if (mutation == 0) ecs::resource_admission::Invalidate(f.owner);
+            if (mutation == 1) g_registry.get<ecs::ItemCount>(cost).count = 6;
+            if (mutation == 2) g_registry.get<ecs::GoldAmount>(f.owner).amount = 999;
+            if (mutation == 3) gate = false;
+            if (mutation == 4) g_registry.get<ecs::ItemCount>(item).count = 4;
+            if (mutation == 5) g_registry.get<ecs::MainInventoryRuntimeComponent>(f.owner).items[2] = cost;
+            if (mutation == 6) g_registry.destroy(f.owner);
+            return item;
+        };
+        Check(f.Buy(request, [&] { return gate; }) != Result::Committed && !g_registry.valid(f.created.back()) &&
+            ItemSystem::GetItemCount(cost) == (mutation == 1 ? 6u : 7u) && moneyLogs == 0,
+            "stale NPC plan committed or leaked a fresh clone");
+        if (mutation != 6) Check(g_registry.get<ecs::GoldAmount>(f.owner).amount == (mutation == 2 ? 999 : 1000),
+            "stale NPC plan overwrote external wallet mutation");
+    }
+    {
+        NpcFixture f; const auto create = onCreate;
+        onCreate = [&, create](uint32_t vnum, uint32_t count) {
+            Check(f.Buy(f.Request()) == Result::Rejected, "NPC factory reentered the same transaction");
+            return create(vnum, count);
+        };
+        Check(f.Buy(f.Request()) == Result::Committed && f.created.size() == 1,
+            "NPC reentrancy guard consumed outer operation");
+    }
+    for (bool sell : {false, true}) {
+        NpcFixture f; const auto cost = f.Stack(0, 7);
+        rejectTradeCleanup = true;
+        const InventorySystem::NpcItemPrice price{500, 7};
+        auto request = f.Request(); request.items = std::span(&price, 1);
+        const bool committed = sell ? InventorySystem::SellToNpc(f.owner, TItemPos(INVENTORY, 0), 7, 70, [] { return true; }) :
+            f.Buy(request) == Result::Committed;
+        Check(committed && Meta(cost).pending && ItemSystem::GetItemCount(cost) == 0 && RawOwner(cost) == entt::null &&
+            ItemSystem::GetItem(f.owner, TItemPos(INVENTORY, 0)) == entt::null,
+            "failed NPC cleanup left reusable inventory currency");
+        const auto gold = g_registry.get<ecs::GoldAmount>(f.owner).amount;
+        rejectTradeCleanup = false; ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(cost) && g_registry.get<ecs::GoldAmount>(f.owner).amount == gold && moneyLogs == 1,
+            "NPC cleanup retry repeated payment");
+    }
+    {
+        NpcFixture f;
+        onGoldPacket = [&] { g_registry.get<ecs::GoldAmount>(f.owner).amount += 50; };
+        Check(f.Buy(f.Request()) == Result::Committed && g_registry.get<ecs::GoldAmount>(f.owner).amount == 950,
+            "NPC publication restored an obsolete wallet snapshot");
+    }
+    {
+        NpcFixture f; const auto cost = f.Stack(0, 7);
+        InventorySystem::NpcItemPrice price{500, 3};
+        auto request = f.Request(); request.items = std::span(&price, 1);
+        const auto create = onCreate;
+        onCreate = [&, create](uint32_t vnum, uint32_t count) {
+            const auto item = create(vnum, count);
+            request.gold = 500; request.count = 9; price.count = 7;
+            return item;
+        };
+        Check(f.Buy(request) == Result::Committed && g_registry.get<ecs::GoldAmount>(f.owner).amount == 900 &&
+            ItemSystem::GetItemCount(cost) == 4 && ItemSystem::GetItemCount(f.created.back()) == 5,
+            "NPC purchase retained mutable caller price/payload references");
+    }
+    {
+        NpcFixture f; const auto cost = f.Stack(0, 7);
+        const InventorySystem::NpcItemPrice price{500, 7};
+        auto request = f.Request(); request.items = std::span(&price, 1);
+        onSave = [](entt::entity) { throw std::runtime_error("trade-publication-test"); };
+        bool threw = false;
+        try { (void)f.Buy(request); } catch (const std::runtime_error& error) {
+            if (std::string_view(error.what()) != "trade-publication-test") throw;
+            threw = true;
+        }
+        Check(threw && g_registry.get<ecs::GoldAmount>(f.owner).amount == 900 && Meta(cost).pending &&
+            ItemSystem::GetItemOwner(f.created.back()) == f.owner, "NPC publication exception rolled back only part of commit");
+        onSave = {}; ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(cost), "NPC exception lost pending cleanup");
+    }
+}
+
 void GroundDropFailures() {
     {
         DropFixture fixture;
@@ -3063,6 +3378,8 @@ int main() {
 #endif
         MoveAdmissionGuards();
         EquipmentAdmissionGuards();
+        NpcTransactions();
+        NpcMergesAndPayments(); NpcCallbacksAndCleanup();
         GroundDropFailures(); GroundDropQuantities(); GroundDropCallbacks(); GroundGoldDrops();
         GroundPlacementAndRemoval(); GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
@@ -3072,6 +3389,7 @@ int main() {
         EquipmentPolicies(); EquipmentRoundTripAndSwap(); EquipmentCallbacks(); EquipmentDragonSoulAndTimers();
         PlacementWindows(); PlacementValidation(); PlacementQueries(); PlacementCallbacks(); NativeUnequip(); RemovalCallbacksAndAliases(); PurePlacementRules();
         InventoryGuards(); InventoryGrids(); Basic(); DuplicatesAndValidation(); SyncAndLifetime(); ValueRanges(); ClientValidation(); HydrationAndRelocation();
+        Reset(); // Destroy test descriptors while the Asio engine still exists.
         std::cout << "Quickslot checks passed: " << checks << '\n'; return 0; }
-    catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
+    catch (const std::exception& error) { std::cerr << error.what() << '\n'; Reset(); return 1; }
 }

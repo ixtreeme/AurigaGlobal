@@ -271,7 +271,7 @@ void CShopManager::Buy(entt::entity ch, uint8_t pos)
 
 	int ret = ShopSystem::Buy(pkShop, ch, pos);
 #ifdef ENABLE_NEWSTUFF
-	if (ret == SHOP_SUBHEADER_GC_OK && ecs::PlayerRuntime::IsPC(ch))
+	if (ret == SHOP_SUBHEADER_GC_OK && ecs::PlayerRuntime::IsPC(ch) && ShopSystem::IsPCShop(pkShop))
 		ecs::SocialSystem::SetLastBuySellTime(ch, get_dword_time());
 #endif
 
@@ -466,18 +466,20 @@ uint8_t bCount
 	}
 
 	if (!permit->Current()) return;
-	const auto vnum = ItemSystem::GetItemVnum(itemEntity);
-	const bool sold = (amount == itemCount)
-		? ItemSystem::DestroyItemEntityEcs(itemEntity, "SELL")
-		: ItemSystem::ConsumeItemEcs(itemEntity, amount);
-	if (!sold)
-		return;
-
-#ifdef ENABLE_NEWSTUFF
-	if (ecs::PlayerRuntime::IsPC(owner)) ecs::SocialSystem::SetLastBuySellTime(owner, get_dword_time());
+	const auto pid = ecs::PlayerRuntime::GetPlayerID(owner);
+#ifndef ENABLE_EXTRA_INVENTORY
+	const TItemPos Cell(INVENTORY, bCell);
 #endif
-	ecs::PointSystem::Change(owner, POINT_GOLD, dwPrice, false);
-	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, vnum, dwPrice);
+	InventorySystem::SellToNpc(owner, Cell, amount, dwPrice, [&] {
+		const auto* current = ShopSystem::Find(pkShop);
+		return permit->Current() && ecs::PlayerRuntime::IsPC(owner) && ecs::PlayerRuntime::GetPlayerID(owner) == pid &&
+			current && current->owner == entt::null && current->guests.contains(owner) &&
+			ecs::SocialSystem::GetShop(owner) == pkShop && ecs::SocialSystem::GetShopOwner(owner) == shopKeeper &&
+			ecs::PlayerRuntime::IsValid(shopKeeper) &&
+			ecs::PlayerRuntime::GetMapIndex(owner) == ecs::PlayerRuntime::GetMapIndex(shopKeeper) &&
+			DISTANCE_APPROX(ecs::PlayerRuntime::GetX(owner) - ecs::PlayerRuntime::GetX(shopKeeper),
+				ecs::PlayerRuntime::GetY(owner) - ecs::PlayerRuntime::GetY(shopKeeper)) <= 2000;
+	});
 }
 
 bool CompareShopItemName(const SShopItemTable& lhs, const SShopItemTable& rhs)

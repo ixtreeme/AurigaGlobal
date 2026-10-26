@@ -25,6 +25,21 @@ bool MoveItem(entt::entity owner, TItemPos source, TItemPos destination, int cou
 // A committed split stays successful even if publication removes its entities.
 bool SplitItemWithCommit(entt::entity owner, entt::entity item, int count, TItemPos destination,
     const std::function<bool(entt::entity)>& commit);
+enum class NpcTradeResult { Committed, Rejected, NotEnoughGold, NotEnoughItems, InventoryFull, FactoryFailed };
+struct NpcItemPrice { uint32_t vnum, count; };
+struct NpcPurchase {
+    uint32_t vnum = 0, count = 0;
+    int64_t gold = 0;
+    std::span<const NpcItemPrice> items;
+    uint32_t secondaryCoins = 0;
+    bool merge = true;
+    bool rateLimit = true;
+};
+// The guard is a read-only live offer/session check. These operations prepare
+// all resources, commit components together, then publish. No durable SQL lease.
+NpcTradeResult BuyFromNpc(entt::entity owner, const NpcPurchase& purchase, const std::function<bool()>& guard);
+bool SellToNpc(entt::entity owner, TItemPos source, uint32_t amount, int64_t credit,
+    const std::function<bool()>& guard);
 int GetInventorySize(entt::entity owner);
 // Destroys every carried item without saving it: teardown of a character
 // with no mob proto.

@@ -54,6 +54,7 @@
 #include "../components/visibility_components.hpp"
 #include "../components/quest_components.hpp"
 #include <Core/Logging.hpp>
+#include <Core/shop_limits.h>
 #include <unordered_set>
 
 namespace
@@ -2002,6 +2003,304 @@ bool DropGoldImpl(entt::entity owner, int64_t amount)
     });
 }
 
+namespace {
+void PublishEquipmentInsertion(entt::entity item, entt::entity owner, uint8_t wear, bool wearTimer);
+bool TradePlayer(entt::entity owner, uint32_t pid) {
+    return ecs::PlayerRuntime::IsPC(owner) && ecs::PlayerRuntime::GetPlayerID(owner) == pid;
+}
+bool TradePayload(entt::entity item) {
+    return ItemSystem::IsValidItem(item) && ItemSystem::GetItemID(item) != 0 &&
+        g_registry.all_of<ecs::ItemIdentity, ecs::ItemCount, ecs::ItemSockets, ecs::ItemAttributes,
+            ecs::ItemOwner, ecs::ItemLocation, ecs::ItemEquipped, ecs::ItemFlags>(item);
+}
+bool TradeSource(entt::entity owner, entt::entity item, TItemPos pos, int amount) {
+    return TradePayload(item) && NormalizeMovePosition(pos) && pos.window_type != EQUIPMENT &&
+        MoveSource(owner, item, pos, amount, false, true) &&
+        g_registry.get<ecs::ItemOwner>(item).ownerPID == ecs::PlayerRuntime::GetPlayerID(owner);
+}
+struct TradeStack {
+    entt::entity item;
+    TItemPos pos;
+    uint32_t amount;
+    SplitPayload payload;
+    TradeStack(entt::entity e, TItemPos p, uint32_t n) : item(e), pos(p), amount(n), payload(e) {}
+    bool Current(entt::entity owner, bool debit = true) const {
+        return TradeSource(owner, item, pos, debit ? int(amount) : 0) && payload.Unchanged(item);
+    }
+};
+std::vector<std::pair<TItemPos, entt::entity>> TradeCandidates(entt::entity owner) {
+    std::vector<std::pair<TItemPos, entt::entity>> result;
+    const auto add = [&](uint8_t window, const auto* storage, size_t limit) {
+        if (storage) for (size_t cell = 0; cell < std::min(limit, storage->items.size()); ++cell)
+            if (storage->items[cell] != entt::null) result.emplace_back(TItemPos(window, uint16_t(cell)), storage->items[cell]);
+    };
+    add(INVENTORY, g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner), INVENTORY_MAX_NUM);
+#ifdef ENABLE_EXTRA_INVENTORY
+    add(EXTRA_INVENTORY, g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner), EXTRA_INVENTORY_MAX_NUM);
+#endif
+    return result;
+}
+bool SelectTradeCosts(entt::entity owner, const NpcPurchase& request, std::vector<TradeStack>& costs) {
+    const auto candidates = TradeCandidates(owner);
+    const auto select = [&](uint32_t vnum, uint32_t amount, bool secondary) {
+        uint32_t remaining = amount;
+        for (const auto& [pos, item] : candidates) {
+            if (!remaining) break;
+            if (!TradeSource(owner, item, pos, 0) ||
+                (secondary ? pos.window_type != INVENTORY || ItemSystem::GetItemType(item) != ITEM_SECONDARY_COIN :
+                    ItemSystem::GetItemVnum(item) != vnum)) continue;
+            auto found = std::find_if(costs.begin(), costs.end(), [item](const auto& row) { return row.item == item; });
+            const auto used = found == costs.end() ? 0 : found->amount;
+            const auto count = ItemSystem::GetItemCount(item);
+            if (used >= count) continue;
+            const auto take = std::min(remaining, count - used);
+            if (found == costs.end()) {
+                if (costs.size() == 64) return false;
+                costs.emplace_back(item, pos, take);
+            } else found->amount += take;
+            remaining -= take;
+        }
+        return remaining == 0;
+    };
+    for (const auto& price : request.items)
+        if (!price.vnum || !price.count || !select(price.vnum, price.count, false)) return false;
+    return !request.secondaryCoins || select(0, request.secondaryCoins, true);
+}
+void DetachTradeCosts(entt::entity owner, const std::vector<TradeStack>& costs, MovedQuickslots& quickslots) {
+    for (const auto& row : costs) if (row.amount == uint32_t(row.payload.count)) {
+        VisitStorage(owner, row.pos, [&](auto& storage, int) {
+            storage.items[row.pos.cell] = entt::null;
+            if constexpr (requires { storage.itemGrid; })
+                for (auto& anchor : storage.itemGrid) if (anchor == row.pos.cell + 1) anchor = 0;
+            return true;
+        });
+        quickslots.Commit(owner, row.pos, NPOS);
+        auto& binding = g_registry.get<ecs::ItemOwner>(row.item);
+        binding.lastOwnerPID = binding.ownerPID;
+        binding.owner = entt::null; binding.ownerPID = binding.ownershipPID = 0;
+        g_registry.get<ecs::ItemLocation>(row.item) = {RESERVED_WINDOW, 0};
+        g_registry.get<ecs::ItemEquipped>(row.item) = {};
+    }
+}
+void PublishTradeGold(entt::entity owner, uint32_t pid, int64_t delta) {
+    if (!delta || !TradePlayer(owner, pid)) return;
+    TPacketGCPointChange packet{};
+    packet.header = HEADER_GC_CHARACTER_POINT_CHANGE; packet.type = POINT_GOLD;
+    packet.dwVID = ecs::PlayerRuntime::GetPacketVID(owner);
+    packet.amount = delta; packet.value = ecs::PointSystem::GetGold(owner);
+    if (auto* desc = ecs::PlayerRuntime::GetDesc(owner)) desc->Packet(&packet, sizeof(packet));
+}
+void PublishTradeCosts(entt::entity owner, uint32_t pid, const std::vector<TradeStack>& costs,
+    const MovedQuickslots& quickslots, const char* reason) {
+    quickslots.Publish(owner);
+    for (const auto& row : costs) {
+        if (!TradePlayer(owner, pid)) break;
+        SendStorageSlot(owner, row.pos, false);
+        if (ItemSystem::IsValidItem(row.item)) {
+            char hint[96];
+            snprintf(hint, sizeof(hint), "qty=%u before=%u after=%u", row.amount,
+                uint32_t(row.payload.count), uint32_t(row.payload.count) - row.amount);
+            LogManager::instance().ItemLogEntity(owner, row.item, reason, hint);
+        }
+        PublishBeltMove(owner, row.pos, NPOS, row.amount < uint32_t(row.payload.count), row.payload.identity.vnum);
+    }
+}
+bool TradeReward(entt::entity item, const NpcPurchase& request) {
+    if (!TradePayload(item) || !Unowned(item) || ItemSystem::GetItemWindow(item) != RESERVED_WINDOW ||
+        g_registry.get<ecs::ItemOwner>(item).ownerPID || !ItemSystem::GetItemID(item) ||
+        ItemSystem::GetItemVnum(item) != request.vnum || ItemSystem::GetItemCount(item) != request.count ||
+        !ItemSystem::GetItemSize(item) || ItemSystem::IsItemConsumptionPending(item) ||
+        ItemSystem::IsItemLocked(item) || ItemSystem::IsItemExchanging(item)) return false;
+    const auto* events = g_registry.try_get<ecs::ItemEvents>(item);
+    return events && !events->destroy && !events->ownership;
+}
+bool TradeReady(entt::entity owner, const DropOrigin& origin, int64_t balance,
+    const auriga::resource_admission::Permit& permit, const std::function<bool()>& guard, bool rateLimit) {
+    return permit.Current() && origin.Current(owner) &&
+        g_registry.all_of<ecs::GoldAmount, ecs::DirtyTag, ecs::ShopTimers>(owner) &&
+        g_registry.get<ecs::GoldAmount>(owner).amount == balance &&
+        (!rateLimit || auriga::shop_limits::Ready(get_dword_time(),
+            g_registry.get<ecs::ShopTimers>(owner).lastBuySellTime, g_BuySellTimeLimitValue)) && guard();
+}
+} // namespace
+
+NpcTradeResult BuyFromNpc(entt::entity owner, const NpcPurchase& input, const std::function<bool()>& guard)
+{
+    using Result = NpcTradeResult;
+    if (input.items.size() > MAX_SHOP_PRICES) return Result::Rejected;
+    std::array<NpcItemPrice, MAX_SHOP_PRICES> prices{};
+    std::copy(input.items.begin(), input.items.end(), prices.begin());
+    NpcPurchase request = input;
+    request.items = std::span(prices.data(), input.items.size());
+    if (!guard || !request.vnum || !request.count || request.count > INT_MAX || request.items.size() > MAX_SHOP_PRICES ||
+        request.gold < 0 || request.gold >= GOLD_MAX || !ecs::PlayerRuntime::IsPC(owner)) return Result::Rejected;
+    const auto permit = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::Shop);
+    const MoveAction action(owner);
+    if (!permit || !action.entered || !g_registry.all_of<ecs::GoldAmount>(owner)) return Result::Rejected;
+    const DropOrigin origin(owner);
+    const auto balance = g_registry.get<ecs::GoldAmount>(owner).amount;
+    if (balance < 0 || balance >= GOLD_MAX) return Result::Rejected;
+    if (balance < request.gold) return Result::NotEnoughGold;
+    if (!EnsureComponent<ecs::DirtyTag>(owner) || !EnsureComponent<ecs::ShopTimers>(owner) ||
+        !TradeReady(owner, origin, balance, *permit, guard, request.rateLimit)) return Result::Rejected;
+    std::vector<TradeStack> costs;
+    if (!SelectTradeCosts(owner, request, costs)) return Result::NotEnoughItems;
+    PreparedSplit prepared;
+    prepared.item = ITEM_MANAGER::instance().CreateItem(request.vnum, request.count, 0, true);
+    const auto item = prepared.item;
+    if (!ItemSystem::IsValidItem(item)) return Result::FactoryFailed;
+    if (!PrepareSplit(item) || !EnsureComponent<ecs::ItemEvents>(item) || !TradeReward(item, request)) return Result::Rejected;
+#ifdef ENABLE_ACCE_SYSTEM
+    if (ItemSystem::GetItemType(item) == ITEM_COSTUME && ItemSystem::GetItemSubType(item) == COSTUME_ACCE &&
+        ItemSystem::GetItemSocket(item, ACCE_ABSORPTION_SOCKET) == 0) {
+        int absorption = ACCE_GRADE_1_ABS;
+        switch (ItemSystem::GetItemValue(item, ACCE_GRADE_VALUE_FIELD)) {
+        case 2: absorption = ACCE_GRADE_2_ABS; break;
+        case 3: absorption = ACCE_GRADE_3_ABS; break;
+        case 4: absorption = number(ACCE_GRADE_4_ABS_MIN, ACCE_GRADE_4_ABS_MAX_COMB); break;
+        }
+        // This clone is still private preparation; SetItemSocket saves/publishes.
+        g_registry.get<ecs::ItemSockets>(item).sockets[ACCE_ABSORPTION_SOCKET] = absorption;
+    }
+#endif
+    if (!TradeReward(item, request) || !TradeReady(owner, origin, balance, *permit, guard, request.rateLimit)) return Result::Rejected;
+    const SplitPayload payload(item);
+    std::vector<TradeStack> merges;
+    uint32_t remaining = request.count;
+    if (request.merge && g_bItemCountLimit > 0) for (const auto& [pos, candidate] : TradeCandidates(owner)) {
+        if (!remaining) break;
+        if (!TradeSource(owner, candidate, pos, 0) ||
+            std::any_of(costs.begin(), costs.end(), [candidate](const auto& row) { return row.item == candidate; }) ||
+            !ItemSystem::HaveSameStackPayload(item, candidate)) continue;
+        const auto count = ItemSystem::GetItemCount(candidate);
+        if (count >= uint32_t(g_bItemCountLimit)) continue;
+        const auto take = std::min(remaining, uint32_t(g_bItemCountLimit) - count);
+        merges.emplace_back(candidate, pos, take); remaining -= take;
+    }
+    TItemPos destination = NPOS;
+    bool rune = false, wearTimer = false;
+#ifdef ENABLE_RUNE_SYSTEM
+    rune = ItemSystem::IsRuneItem(item);
+#endif
+    if (remaining) {
+        if (rune) {
+            const int wear = ItemSystem::FindEquipCell(owner, item);
+            if (wear < 0 || wear >= WEAR_MAX_NUM) return Result::InventoryFull;
+            destination = TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wear);
+            if (!EnsureStorage(owner, INVENTORY)) return Result::Rejected;
+            const auto* proto = ItemSystem::GetItemProto(item);
+            if (!proto) return Result::Rejected;
+            wearTimer = proto->cLimitTimerBasedOnWearIndex != -1;
+        } else {
+            const uint8_t window = ItemSystem::IsDragonSoulItem(item) ? DRAGON_SOUL_INVENTORY :
+#ifdef ENABLE_EXTRA_INVENTORY
+                ItemSystem::IsExtraItem(item) ? EXTRA_INVENTORY :
+#endif
+                INVENTORY;
+            if (!EnsureStorage(owner, window)) return Result::Rejected;
+            const int cell = ItemSystem::GetEmptyInventoryPositionEcs(owner, item);
+            if (cell < 0 || cell > UINT16_MAX) return Result::InventoryFull;
+            destination = TItemPos(window, uint16_t(cell));
+        }
+    }
+    const auto fits = [&] {
+        if (!remaining) return true;
+        if (!rune) return DestinationFits(owner, item, destination);
+        const auto* storage = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
+        return storage && destination.cell < storage->items.size() && storage->items[destination.cell] == entt::null &&
+            storage->itemGrid[destination.cell] == 0 && !HasInventoryReference(owner, item) &&
+            ItemSystem::FindEquipCell(owner, item) == destination.cell - INVENTORY_MAX_NUM;
+    };
+    std::vector<ItemSystem::ItemCost> debits;
+    for (const auto& row : costs) debits.push_back({row.item, row.amount});
+    MovedQuickslots quickslots;
+    const std::span<const entt::entity> retire = remaining ? std::span<const entt::entity>{} : std::span(&item, 1);
+    const bool committed = ItemSystem::ConsumeOwnedItemCostsWithCommit(owner, debits, [&] {
+        if (!TradeReady(owner, origin, balance, *permit, guard, request.rateLimit) ||
+            !TradeReward(item, request) || !payload.Unchanged(item) || !fits()) return false;
+        for (const auto& row : costs) if (!row.Current(owner) || row.payload.identity.id == payload.identity.id) return false;
+        for (const auto& row : merges) if (!row.Current(owner, false) || row.payload.identity.id == payload.identity.id ||
+            !ItemSystem::HaveSameStackPayload(item, row.item) || g_bItemCountLimit <= 0 ||
+            uint64_t(row.payload.count) + row.amount > uint32_t(g_bItemCountLimit)) return false;
+        DetachTradeCosts(owner, costs, quickslots);
+        g_registry.get<ecs::GoldAmount>(owner).amount = balance - request.gold;
+        g_registry.get<ecs::ShopTimers>(owner).lastBuySellTime = get_dword_time();
+        g_registry.get<ecs::ShopTimers>(owner).lastBuyPulse = thecore_pulse();
+        for (const auto& row : merges) g_registry.get<ecs::ItemCount>(row.item).count += int(row.amount);
+        if (remaining) {
+            g_registry.get<ecs::ItemCount>(item).count = int(remaining);
+            if (!rune) CommitRelocation(owner, item, NPOS, destination, true);
+            else {
+                auto& storage = g_registry.get<ecs::MainInventoryRuntimeComponent>(owner);
+                storage.items[destination.cell] = item; storage.itemGrid[destination.cell] = destination.cell + 1;
+                auto& binding = g_registry.get<ecs::ItemOwner>(item);
+                binding.owner = owner; binding.ownerPID = binding.lastOwnerPID = origin.pid;
+                g_registry.get<ecs::ItemLocation>(item) = {EQUIPMENT, destination.cell};
+                g_registry.get<ecs::ItemEquipped>(item) = {true, uint8_t(destination.cell - INVENTORY_MAX_NUM)};
+            }
+        } else g_registry.get<ecs::ItemFlags>(item).skipSave = true;
+        prepared.committed = true;
+        return true;
+    }, [&] {
+        if (TradePlayer(owner, origin.pid) && ItemSystem::IsValidItem(item)) {
+            char hint[96];
+            snprintf(hint, sizeof(hint), "qty=%u placed=%u merged=%u", request.count,
+                remaining, request.count - remaining);
+            LogManager::instance().ItemLogEntity(owner, item, "BUY", hint);
+        }
+        if (request.vnum >= 80003 && request.vnum <= 80007)
+            LogManager::instance().GoldBarLog(origin.pid, payload.identity.id, PERSONAL_SHOP_BUY, "");
+        PublishTradeGold(owner, origin.pid, -request.gold);
+        PublishTradeCosts(owner, origin.pid, costs, quickslots, "SHOP_PAYMENT");
+        for (const auto& row : merges) if (Anchored(owner, row.item, row.pos)) ItemSystem::PublishItemCount(row.item);
+        if (remaining && Anchored(owner, item, destination)) {
+            if (rune) PublishEquipmentInsertion(item, owner, uint8_t(destination.cell - INVENTORY_MAX_NUM), wearTimer);
+            else { ItemSystem::SaveItem(item); SendStorageSlot(owner, destination, true); }
+            if (Anchored(owner, item, destination)) ItemSystem::FlushDelayedSaveEcs(item);
+        }
+        if (TradePlayer(owner, origin.pid)) ecs::SessionSystem::Save(owner);
+        DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, request.vnum, -request.gold);
+    }, retire);
+    return committed ? Result::Committed : Result::Rejected;
+}
+
+bool SellToNpc(entt::entity owner, TItemPos source, uint32_t amount, int64_t credit, const std::function<bool()>& guard)
+{
+    if (!guard || !amount || amount > INT_MAX || credit < 0 || credit >= GOLD_MAX ||
+        !NormalizeMovePosition(source) || source.window_type == EQUIPMENT || !ecs::PlayerRuntime::IsPC(owner)) return false;
+    const auto permit = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::Shop);
+    const MoveAction action(owner);
+    if (!permit || !action.entered || !g_registry.all_of<ecs::GoldAmount>(owner)) return false;
+    const DropOrigin origin(owner);
+    const auto balance = g_registry.get<ecs::GoldAmount>(owner).amount;
+    if (balance < 0 || balance >= GOLD_MAX || credit >= GOLD_MAX - balance ||
+        !EnsureComponent<ecs::DirtyTag>(owner) || !EnsureComponent<ecs::ShopTimers>(owner) ||
+        !TradeReady(owner, origin, balance, *permit, guard, true)) return false;
+    const auto item = SlotAt(owner, source);
+    if (!TradeSource(owner, item, source, int(amount)) || (ItemSystem::GetItemAntiFlag(item) & ITEM_ANTIFLAG_SELL)) return false;
+    const auto unit = ItemSystem::GetItemShopBuyPrice(item);
+    const auto quote = unit < 0 ? std::optional<int64_t>{} : (ItemSystem::GetItemFlags(item) & ITEM_FLAG_COUNT_PER_1GOLD) ?
+        std::optional<int64_t>{unit ? amount / unit : amount} : auriga::shop_limits::Multiply(unit, amount);
+    if (!quote || *quote != credit) return false;
+    std::vector<TradeStack> costs; costs.emplace_back(item, source, amount);
+    const ItemSystem::ItemCost debit{item, amount, source.window_type == DRAGON_SOUL_INVENTORY ?
+        ItemSystem::ItemCostStorage::DragonSoulInventory : ItemSystem::ItemCostStorage::Inventory};
+    MovedQuickslots quickslots;
+    return ItemSystem::ConsumeOwnedItemCostsWithCommit(owner, std::span(&debit, 1), [&] {
+        if (!TradeReady(owner, origin, balance, *permit, guard, true) || !costs.front().Current(owner) ||
+            ItemSystem::GetItemShopBuyPrice(item) != unit || (ItemSystem::GetItemAntiFlag(item) & ITEM_ANTIFLAG_SELL)) return false;
+        DetachTradeCosts(owner, costs, quickslots);
+        g_registry.get<ecs::GoldAmount>(owner).amount = balance + credit;
+        g_registry.get<ecs::ShopTimers>(owner).lastBuySellTime = get_dword_time();
+        return true;
+    }, [&] {
+        PublishTradeGold(owner, origin.pid, credit);
+        PublishTradeCosts(owner, origin.pid, costs, quickslots, "SELL");
+        if (TradePlayer(owner, origin.pid)) ecs::SessionSystem::Save(owner);
+        DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, costs.front().payload.identity.vnum, credit);
+    });
+}
+
 bool Unequip(entt::entity itemEntity)
 {
     if (!ItemSystem::IsValidItem(itemEntity) ||
@@ -2140,6 +2439,103 @@ bool Unequip(entt::entity itemEntity)
     return true;
 }
 
+namespace {
+void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell, bool hasWearTimer)
+{
+    const auto target = TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + bWearCell);
+    const auto stillWorn = [&] {
+        if (!At(charEntity, itemEntity, target) || !ItemSystem::IsItemEquipped(itemEntity)) return false;
+        const auto* current = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(charEntity);
+        return current && current->items[target.cell] == itemEntity;
+    };
+	if (!stillWorn()) return;
+
+#ifndef ENABLE_IMMUNE_FIX
+	uint32_t dwImmuneFlag = 0;
+
+	for (int i = 0; i < WEAR_MAX_NUM; ++i)
+	{
+		const entt::entity item = ItemSystem::GetWearItem(charEntity, i);
+		if (ItemSystem::IsValidItem(item))
+		{
+			SET_BIT(dwImmuneFlag, ItemSystem::GetItemImmuneFlags(item));
+		}
+	}
+
+	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
+#endif
+
+	if (!stillWorn()) return;
+	if (ItemSystem::IsDragonSoulItem(itemEntity))
+	{
+		DSManager::instance().ActivateDragonSoul(itemEntity);
+	}
+	else
+	{
+#ifdef ENABLE_RUNE_SYSTEM
+		if (!ItemSystem::IsRuneItem(itemEntity))
+			ItemSystem::ModifyPoints(itemEntity, true);
+		else if (ItemSystem::GetItemSocket(itemEntity, 1) == 1)
+			ItemSystem::ModifyPoints(itemEntity, true);
+#else
+		ItemSystem::ModifyPoints(itemEntity, true);
+#endif
+		if (!stillWorn()) return;
+		ItemSystem::StartUniqueExpireEvent(itemEntity);
+        if (!stillWorn()) return;
+		if (hasWearTimer)
+			ItemSystem::StartTimerBasedOnWearExpireEvent(itemEntity);
+
+		// ACCESSORY_REFINE
+		if (!stillWorn()) return;
+		ItemSystem::StartAccessorySocketExpireEvent(itemEntity);
+		// END_OF_ACCESSORY_REFINE
+	}
+
+	if (!stillWorn()) return;
+	ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(charEntity, itemEntity);
+
+	if (!stillWorn()) return;
+	ecs::PointSystem::ComputeBattlePoints(charEntity);
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+	if (!stillWorn()) return;
+	if (ItemSystem::IsMountItem(itemEntity))
+		MountSystem::MountSummon(charEntity, itemEntity);
+#endif
+	if (!stillWorn()) return;
+	NetworkSyncSystem::UpdatePacket(charEntity);
+#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
+    if (!stillWorn()) return;
+    if (bWearCell == WEAR_BELT)
+        NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
+#endif
+
+#ifdef ENABLE_COSTUME_PET
+	if (!stillWorn()) return;
+	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
+		if (!stillWorn()) return;
+		MountSystem::UpdatePetSkin(charEntity);
+	}
+#endif
+#ifdef ENABLE_COSTUME_MOUNT
+    if (!stillWorn()) return;
+	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
+		if (!stillWorn()) return;
+		MountSystem::UpdateMountSkin(charEntity);
+	}
+#endif
+
+    if (!stillWorn()) return;
+    SendStorageSlot(charEntity, target, false);
+    if (!stillWorn()) return;
+    g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
+    if (stillWorn()) ItemSystem::SaveItem(itemEntity);
+    return;
+}
+
+} // namespace
+
 bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell)
 {
 	if (!ecs::PlayerRuntime::IsValid(charEntity) || !g_registry.all_of<ecs::PlayerID>(charEntity) ||
@@ -2208,93 +2604,7 @@ bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell
     if (pid) owner.lastOwnerPID = pid;
     g_registry.get<ecs::ItemLocation>(itemEntity) = {EQUIPMENT, target.cell};
     g_registry.get<ecs::ItemEquipped>(itemEntity) = {true, bWearCell};
-    const auto stillWorn = [&] {
-        if (!At(charEntity, itemEntity, target) || !ItemSystem::IsItemEquipped(itemEntity)) return false;
-        const auto* current = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(charEntity);
-        return current && current->items[target.cell] == itemEntity;
-    };
-
-#ifndef ENABLE_IMMUNE_FIX
-	uint32_t dwImmuneFlag = 0;
-
-	for (int i = 0; i < WEAR_MAX_NUM; ++i)
-	{
-		const entt::entity item = ItemSystem::GetWearItem(charEntity, i);
-		if (ItemSystem::IsValidItem(item))
-		{
-			SET_BIT(dwImmuneFlag, ItemSystem::GetItemImmuneFlags(item));
-		}
-	}
-
-	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
-#endif
-
-	if (!stillWorn()) return true;
-	if (ItemSystem::IsDragonSoulItem(itemEntity))
-	{
-		DSManager::instance().ActivateDragonSoul(itemEntity);
-	}
-	else
-	{
-#ifdef ENABLE_RUNE_SYSTEM
-		if (!ItemSystem::IsRuneItem(itemEntity))
-			ItemSystem::ModifyPoints(itemEntity, true);
-		else if (ItemSystem::GetItemSocket(itemEntity, 1) == 1)
-			ItemSystem::ModifyPoints(itemEntity, true);
-#else
-		ItemSystem::ModifyPoints(itemEntity, true);
-#endif
-		if (!stillWorn()) return true;
-		ItemSystem::StartUniqueExpireEvent(itemEntity);
-        if (!stillWorn()) return true;
-		if (hasWearTimer)
-			ItemSystem::StartTimerBasedOnWearExpireEvent(itemEntity);
-
-		// ACCESSORY_REFINE
-		if (!stillWorn()) return true;
-		ItemSystem::StartAccessorySocketExpireEvent(itemEntity);
-		// END_OF_ACCESSORY_REFINE
-	}
-
-	if (!stillWorn()) return true;
-	ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(charEntity, itemEntity);
-
-	if (!stillWorn()) return true;
-	ecs::PointSystem::ComputeBattlePoints(charEntity);
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (!stillWorn()) return true;
-	if (ItemSystem::IsMountItem(itemEntity))
-		MountSystem::MountSummon(charEntity, itemEntity);
-#endif
-	if (!stillWorn()) return true;
-	NetworkSyncSystem::UpdatePacket(charEntity);
-#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-    if (!stillWorn()) return true;
-    if (bWearCell == WEAR_BELT)
-        NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
-#endif
-
-#ifdef ENABLE_COSTUME_PET
-	if (!stillWorn()) return true;
-	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
-		if (!stillWorn()) return true;
-		MountSystem::UpdatePetSkin(charEntity);
-	}
-#endif
-#ifdef ENABLE_COSTUME_MOUNT
-    if (!stillWorn()) return true;
-	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
-		if (!stillWorn()) return true;
-		MountSystem::UpdateMountSkin(charEntity);
-	}
-#endif
-
-    if (!stillWorn()) return true;
-    SendStorageSlot(charEntity, target, false);
-    if (!stillWorn()) return true;
-    g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
-    if (stillWorn()) ItemSystem::SaveItem(itemEntity);
+    PublishEquipmentInsertion(itemEntity, charEntity, bWearCell, hasWearTimer);
     return true;
 }
 

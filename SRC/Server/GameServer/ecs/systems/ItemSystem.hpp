@@ -6,6 +6,7 @@
 #include <vector>
 #include <string_view>
 #include <span>
+#include <functional>
 
 #include <entt/entt.hpp>
 
@@ -256,6 +257,15 @@ bool SetItemAttributesWithItemCosts(entt::entity owner, entt::entity target,
 // Same batch debit/retirement contract without an attribute target. Dragon-soul
 // inventory costs require explicit opt-in; equipped and foreign items are rejected.
 bool ConsumeOwnedItemCosts(entt::entity owner, std::span<const ItemCost> costs);
+// Reserves retirement storage before the companion runs. The companion must
+// only write prepared components, with no callbacks/allocation; false changes
+// nothing. It must leave cost quantities/entities intact for the cost commit.
+// publish runs after every cost and companion store, before any cost callback.
+// Empty costs are allowed here. This is an in-memory commit, not durable SQL.
+bool ConsumeOwnedItemCostsWithCommit(entt::entity owner, std::span<const ItemCost> costs,
+    const std::function<bool()>& commit, const std::function<void()>& publish,
+    std::span<const entt::entity> retireDetached = {});
+bool HaveSameStackPayload(entt::entity source, entt::entity target, bool reward = false);
 bool IsItemConsumptionPending(entt::entity item);
 void ProcessPendingItemConsumptions();
 // Publish the current component, never reapply an earlier count snapshot.

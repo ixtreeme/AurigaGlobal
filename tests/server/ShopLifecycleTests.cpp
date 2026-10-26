@@ -16,6 +16,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
 #include <Core/Logging.hpp>
 #include <Core/shop_limits.h>
@@ -27,7 +28,8 @@
 #include <vector>
 
 // Real shop.cpp + shop_manager.cpp with entity-only fixtures. Descriptors,
-// items, points, sessions and the DB are doubles.
+// items, points, sessions and the DB are doubles. NPC inventory commits are
+// a controlled boundary here; QuickslotTests runs the actual transaction.
 entt::registry g_registry;
 int passes_per_sec = 25;
 int test_server = 0;
@@ -272,6 +274,37 @@ bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position, bo
 bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos pos) { return AddToCharacter(item, owner, pos, false); }
 entt::entity RemoveFromCharacter(entt::entity) { return entt::null; }
 void SyncQuickslot(entt::entity, uint16_t, uint16_t, uint16_t) {}
+NpcTradeResult BuyFromNpc(entt::entity buyer, const NpcPurchase& request, const std::function<bool()>& guard) {
+    if (!guard()) return NpcTradeResult::Rejected;
+    const auto item = item_manager.CreateItem(request.vnum, request.count);
+    if (!ItemSystem::IsValidItem(item)) return NpcTradeResult::FactoryFailed;
+    const auto abort = [&](NpcTradeResult result) {
+        if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null)
+            ItemSystem::DestroyItemEntityEcs(item, "SHOP_ABORT");
+        return result;
+    };
+    if (!guard()) return abort(NpcTradeResult::Rejected);
+    const int cell = GetEmptyInventory(buyer, 1);
+    if (cell < 0) return abort(NpcTradeResult::InventoryFull);
+    if (!guard()) return abort(NpcTradeResult::Rejected);
+    if (playerGold < request.gold) return abort(NpcTradeResult::NotEnoughGold);
+    ecs::PointSystem::Change(buyer, POINT_GOLD, -request.gold, false);
+    AddToCharacter(item, buyer, TItemPos(INVENTORY, uint16_t(cell)), true);
+    ecs::SocialSystem::SetLastBuySellTime(buyer, get_dword_time());
+    ecs::SessionSystem::Save(buyer);
+    return NpcTradeResult::Committed;
+}
+bool SellToNpc(entt::entity owner, TItemPos source, uint32_t amount, int64_t credit, const std::function<bool()>& guard) {
+    if (!guard()) return false;
+    const auto item = ItemSystem::GetItem(owner, source);
+    const bool consumed = amount == ItemSystem::GetItemCount(item) ?
+        ItemSystem::DestroyItemEntityEcs(item, "SELL") : ItemSystem::ConsumeItemEcs(item, amount);
+    if (!consumed) return false;
+    ecs::SocialSystem::SetLastBuySellTime(owner, get_dword_time());
+    ecs::PointSystem::Change(owner, POINT_GOLD, credit, false);
+    ++moneyLogs;
+    return true;
+}
 }
 
 namespace ecs::PointSystem {

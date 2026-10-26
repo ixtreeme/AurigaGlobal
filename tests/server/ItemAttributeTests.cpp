@@ -1992,6 +1992,61 @@ void TransferPaymentAndCommit()
         saves == 1 && updates == 1 && transferLogs == 1, "cleanup retry recharged or republished transaction");
 }
 
+void CompanionCostCommit()
+{
+    using Cost = ItemSystem::ItemCost;
+    for (bool accept : {false, true}) {
+        TransferFixture f;
+        const std::array costs{Cost{f.material, 1}, Cost{f.donor, 1}};
+        int wallet = 100, publications = 0;
+        const auto observe = [&](entt::entity) {
+            ++publications;
+            Check(wallet == 75 && ItemSystem::GetItemCount(f.material) == 1 &&
+                (!g_registry.valid(f.donor) || ItemSystem::GetItemCount(f.donor) == 0),
+                "cost companion published partial resource state");
+        };
+        onSave = onUpdate = onDestroy = observe;
+        Check(ItemSystem::ConsumeOwnedItemCostsWithCommit(f.owner, costs, [&] {
+            Check(ItemSystem::GetItemCount(f.material) == 2 && ItemSystem::GetItemCount(f.donor) == 1 && wallet == 100,
+                "cost companion ran after debit");
+            if (!accept) return false;
+            wallet = 75; return true;
+        }, [&] { observe(f.material); }) == accept, "cost companion result lost");
+        Check(wallet == (accept ? 75 : 100) && (accept ? publications > 1 : publications == 0),
+            "cost companion rejection changed resources");
+        if (!accept) Check(ItemSystem::GetItemCount(f.material) == 2 && ItemSystem::GetItemCount(f.donor) == 1 &&
+            !ItemSystem::IsItemConsumptionPending(f.donor), "rejected companion left a pending cost");
+    }
+    {
+        TransferFixture f; int writes = 0;
+        Check(ItemSystem::ConsumeOwnedItemCostsWithCommit(f.owner, {}, [&] { ++writes; return true; }, [&] {
+            Check(writes == 1, "empty-cost companion published before commit");
+        }) && writes == 1, "pure wallet companion rejected");
+        Check(!ItemSystem::ConsumeOwnedItemCostsWithCommit(f.owner, {}, {}, [] {}) &&
+            !ItemSystem::ConsumeOwnedItemCostsWithCommit(f.owner, {}, [] { return true; }, {}),
+            "empty callbacks accepted");
+    }
+    {
+        TransferFixture f; int writes = 0;
+        const auto detached = f.Material(50001, 4, 8);
+        inventory.erase({f.owner, INVENTORY, 8});
+        g_registry.get<ecs::ItemOwner>(detached) = {};
+        g_registry.get<ecs::ItemLocation>(detached) = {RESERVED_WINDOW, 0};
+        rejectDestruction.insert(detached);
+        const Cost cost{f.material, 1};
+        Check(ItemSystem::ConsumeOwnedItemCostsWithCommit(f.owner, std::span(&cost, 1), [&] {
+            ++writes; return true;
+        }, [&] {
+            Check(writes == 1 && ItemSystem::GetItemCount(f.material) == 1 && ItemSystem::GetItemCount(detached) == 0 &&
+                ItemSystem::IsItemConsumptionPending(detached), "detached retirement was not part of commit");
+        }, std::span(&detached, 1)), "detached companion retirement failed");
+        Check(ItemSystem::IsItemConsumptionPending(detached), "failed detached cleanup lost pending entry");
+        rejectDestruction.clear(); ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(detached) && writes == 1 && ItemSystem::GetItemCount(f.material) == 1,
+            "detached retirement retry repeated debit");
+    }
+}
+
 void BatchCostValidation()
 {
     using Cost = ItemSystem::ItemCost;
@@ -3613,6 +3668,7 @@ int main()
         TransferItemGuards();
         TransferPaymentAndCommit();
         BatchCostValidation();
+        CompanionCostCommit();
         BatchReentrancyAndRetirement();
         CountValidationAndLimits(); CountDestructionAndCallbacks();
         StackMergeBoundaries(); StackMergeGuards(); StackMergeCallbacks(); GroundStackMerges(); AutomaticStackMerges();

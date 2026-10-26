@@ -493,6 +493,18 @@ namespace ShopSystem
 
 	namespace
 	{
+		int64_t TradeResponse(InventorySystem::NpcTradeResult result, bool secondary = false)
+		{
+			using Result = InventorySystem::NpcTradeResult;
+			switch (result) {
+			case Result::Committed: return SHOP_SUBHEADER_GC_OK;
+			case Result::NotEnoughGold: return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
+			case Result::NotEnoughItems: return secondary ? SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX : SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
+			case Result::InventoryFull: return SHOP_SUBHEADER_GC_INVENTORY_FULL;
+			case Result::FactoryFailed: return SHOP_SUBHEADER_GC_SOLD_OUT;
+			default: return SHOP_SUBHEADER_GC_END;
+			}
+		}
 		bool SameOffer(const ecs::ShopItem& a, const ecs::ShopItem& b)
 		{
 			if (a.vnum != b.vnum || a.price != b.price || a.count != b.count || a.item != b.item || a.itemid != b.itemid)
@@ -538,17 +550,6 @@ namespace ShopSystem
 			if (!permit || !permit->Current() || !shop || shop->owner != seller || !shop->guests.contains(buyer)) return {};
 			return permit;
 		}
-		struct PreparedShopItem
-		{
-			entt::entity item;
-			bool committed = false;
-			~PreparedShopItem()
-			{
-				if (!committed && ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null &&
-					ItemSystem::GetItemWindow(item) == RESERVED_WINDOW)
-					ItemSystem::DestroyItemEntityEcs(item, "SHOP_ABORT");
-			}
-		};
 		int64_t BuyNormal(entt::entity shopEntity, ecs::ShopData& shop, entt::entity ch, uint8_t pos,
 			const auriga::resource_admission::Permit& permit
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
@@ -635,8 +636,22 @@ namespace ShopSystem
 			if (!HasPrices(ch, r_item, 1)) return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 #endif
 
-			entt::entity itemEntity = seller != entt::null ? r_item.item : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
-			PreparedShopItem prepared{seller == entt::null ? itemEntity : entt::null};
+			if (seller == entt::null) {
+#ifdef ENABLE_SHOP_BLACKLIST
+				if ((r_item.vnum == 70024 || r_item.vnum == 70035) &&
+					quest::CQuestManager::instance().GetEventFlag("hivalue_item_sell") == 0)
+					return SHOP_SUBHEADER_GC_END;
+#endif
+				std::vector<InventorySystem::NpcItemPrice> prices;
+#ifdef ENABLE_BUY_WITH_ITEM
+				for (const auto& price : r_item.itemprice) if (price.vnum) prices.push_back({price.vnum, price.count});
+#endif
+				InventorySystem::NpcPurchase request;
+				request.vnum = r_item.vnum; request.count = uint32_t(r_item.count);
+				request.gold = dwPrice; request.items = prices; request.rateLimit = !ismultiple;
+				return TradeResponse(InventorySystem::BuyFromNpc(ch, request, selectionCurrent));
+			}
+			entt::entity itemEntity = r_item.item;
 			if (!ItemSystem::IsValidItem(itemEntity))
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
 			if (!selectionCurrent()) return SHOP_SUBHEADER_GC_END;
@@ -888,132 +903,6 @@ namespace ShopSystem
 
 				ecs::PointSystem::Change(seller, POINT_GOLD, dwPrice, false);
 			}
-			else
-			{
-				if (ItemSystem::IsDragonSoulItem(itemEntity)) {
-					InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
-				}
-#ifdef ENABLE_EXTRA_INVENTORY
-				else if (ItemSystem::IsExtraItem(itemEntity)) {
-#ifdef ENABLE_25082021
-					if (ItemSystem::IsItemStackable(itemEntity) && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
-#ifdef ENABLE_NEW_STACK_LIMIT
-						int
-#else
-						uint8_t
-#endif
-						bCount = ItemSystem::GetItemCount(itemEntity);
-						for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-							const entt::entity item2 = ItemSystem::GetExtraInventoryItem(ch, i);
-							if (!ItemSystem::IsValidItem(item2))
-								continue;
-
-							if (ItemSystem::GetItemVnum(item2) == ItemSystem::GetItemVnum(itemEntity)) {
-								int j = 0;
-								for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-									if (ItemSystem::GetItemSocket(item2, j) != ItemSystem::GetItemSocket(itemEntity, j))
-										break;
-
-								if (j != ITEM_SOCKET_MAX_NUM)
-									continue;
-
-#ifdef ENABLE_NEW_STACK_LIMIT
-								int
-#else
-								uint8_t
-#endif
-								bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount);
-								bCount -= bCount2;
-
-								ItemSystem::AddItemCountEcs(
-										item2,
-										bCount2);
-								if (bCount == 0) {
-									ItemSystem::DestroyItemEntityEcs(
-										itemEntity,
-										"SHOP_TRANSACTION");
-									itemEntity = entt::null;
-									break;
-								}
-							}
-						}
-
-						if (ItemSystem::IsValidItem(itemEntity)) {
-							ItemSystem::SetItemCountEcs(
-								itemEntity,
-								bCount);
-							InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
-						}
-					} else {
-						InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
-					}
-#else
-					InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
-#endif
-				}
-#endif
-				else {
-#ifdef ENABLE_25082021
-					if (ItemSystem::IsItemStackable(itemEntity) && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
-#ifdef ENABLE_NEW_STACK_LIMIT
-						int
-#else
-						uint8_t
-#endif
-						bCount = ItemSystem::GetItemCount(itemEntity);
-						for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-							const entt::entity item2 = ItemSystem::GetInventoryItem(ch, i);
-							if (!ItemSystem::IsValidItem(item2))
-								continue;
-
-							if (ItemSystem::GetItemVnum(item2) == ItemSystem::GetItemVnum(itemEntity)) {
-								int j = 0;
-								for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-									if (ItemSystem::GetItemSocket(item2, j) != ItemSystem::GetItemSocket(itemEntity, j))
-										break;
-
-								if (j != ITEM_SOCKET_MAX_NUM)
-									continue;
-
-#ifdef ENABLE_NEW_STACK_LIMIT
-								int
-#else
-								uint8_t
-#endif
-								bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount);
-								bCount -= bCount2;
-
-								ItemSystem::AddItemCountEcs(
-										item2,
-										bCount2);
-								if (bCount == 0) {
-									ItemSystem::DestroyItemEntityEcs(
-										itemEntity,
-										"SHOP_TRANSACTION");
-									itemEntity = entt::null;
-									break;
-								}
-							}
-						}
-
-						if (ItemSystem::IsValidItem(itemEntity)) {
-							ItemSystem::SetItemCountEcs(
-								itemEntity,
-								bCount);
-							InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
-						}
-					} else {
-						InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
-					}
-#else
-					InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
-#endif
-				}
-
-				if (ItemSystem::IsValidItem(itemEntity)) {
-					ItemSystem::FlushDelayedSaveEcs(itemEntity);
-				}
-			}
 
 
 			if (!ismultiple) {
@@ -1023,7 +912,6 @@ namespace ShopSystem
 				ecs::SessionSystem::Save(ch);
 			}
 
-			prepared.committed = true;
 			return (SHOP_SUBHEADER_GC_OK);
 		}
 
@@ -1103,92 +991,15 @@ namespace ShopSystem
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
 			}
 
-			entt::entity item = entt::null;
-
-			item = ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count);
-			PreparedShopItem prepared{item};
-
-			if (!ItemSystem::IsValidItem(item))
-				return SHOP_SUBHEADER_GC_SOLD_OUT;
-			if (!selectionCurrent()) return SHOP_SUBHEADER_GC_END;
-
-			int iEmptyPos;
-			if (ItemSystem::IsDragonSoulItem(item))
-			{
-				iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(ch, item);
+			InventorySystem::NpcPurchase request;
+			request.vnum = r_item.vnum; request.count = uint32_t(r_item.count);
+			request.merge = false; // Extended shops historically keep separate purchased stacks.
+			if (shopTab.coinType == SHOP_COIN_TYPE_GOLD) request.gold = dwPrice;
+			else {
+				if (dwPrice > INT_MAX) return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
+				request.secondaryCoins = uint32_t(dwPrice);
 			}
-#ifdef ENABLE_EXTRA_INVENTORY
-			else if (ItemSystem::IsExtraItem(item))
-			{
-				iEmptyPos = ItemSystem::GetEmptyExtraInventory(ch, item);
-			}
-#endif
-			else
-			{
-				iEmptyPos = InventorySystem::GetEmptyInventory(ch, ItemSystem::GetItemSize(item));
-			}
-
-			if (iEmptyPos < 0)
-			{
-				LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemSize(item));
-				return SHOP_SUBHEADER_GC_INVENTORY_FULL;
-			}
-
-			if (!selectionCurrent() || !ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != entt::null ||
-				ItemSystem::GetItemVnum(item) != r_item.vnum || ItemSystem::GetItemCount(item) != uint32_t(r_item.count))
-				return SHOP_SUBHEADER_GC_END;
-			if (shopTab.coinType == SHOP_COIN_TYPE_GOLD && ecs::PointSystem::GetGold(ch) < dwPrice)
-				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
-			if (shopTab.coinType == SHOP_COIN_TYPE_SECONDARY_COIN && ItemSystem::CountTypeItem(ch, ITEM_SECONDARY_COIN) < dwPrice)
-				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
-			switch (shopTab.coinType)
-			{
-			case SHOP_COIN_TYPE_GOLD:
-				ecs::PointSystem::Change(ch, POINT_GOLD, -dwPrice, false);
-				break;
-			case SHOP_COIN_TYPE_SECONDARY_COIN:
-				ItemSystem::RemoveSpecifyTypeItem(ch, ITEM_SECONDARY_COIN, dwPrice);
-				break;
-			}
-
-
-			if (ItemSystem::IsDragonSoulItem(item))
-				InventorySystem::AddToCharacter(item, ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
-#ifdef ENABLE_EXTRA_INVENTORY
-			else if (ItemSystem::IsExtraItem(item))
-				InventorySystem::AddToCharacter(item, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
-#endif
-			else
-				InventorySystem::AddToCharacter(item, ch, TItemPos(INVENTORY, iEmptyPos));
-
-			ItemSystem::FlushDelayedSaveEcs(item);
-			LogManager::instance().ItemLogEntity(ch, item, "BUY", ItemSystem::GetItemName(item));
-
-			if (ItemSystem::GetItemVnum(item) >= 80003 && ItemSystem::GetItemVnum(item) <= 80007)
-			{
-				LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(ch)), ItemSystem::GetItemID(item), PERSONAL_SHOP_BUY, "");
-			}
-
-			DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(item), -dwPrice);
-
-			if (ItemSystem::IsValidItem(item))
-				LOG_INFO("ShopEx: BUY: name {} {}(x {}):{} price {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item), ItemSystem::GetItemID(item), dwPrice);
-
-#ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
-			{
-				ecs::SessionSystem::SaveReal(ch);
-				db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
-				uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(ch));
-				db_clientdesc->Packet(&pid, sizeof(uint32_t));
-			}
-#else
-			{
-				ecs::SessionSystem::Save(ch);
-			}
-#endif
-
-			prepared.committed = true;
-			return (SHOP_SUBHEADER_GC_OK);
+			return TradeResponse(InventorySystem::BuyFromNpc(ch, request, selectionCurrent), request.secondaryCoins != 0);
 		}
 	}
 

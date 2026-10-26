@@ -933,6 +933,11 @@ bool SameStackPayload(entt::entity source, entt::entity target, bool reward)
 struct StackDeliveries { std::set<entt::entity> active; };
 }
 
+bool HaveSameStackPayload(entt::entity source, entt::entity target, bool reward)
+{
+    return IsValidItem(source) && IsValidItem(target) && SameStackPayload(source, target, reward);
+}
+
 StackMergeResult MergeItemStacksEcs(entt::entity owner, entt::entity source,
     entt::entity target, uint32_t amount, StackSource storage)
 {
@@ -1138,6 +1143,39 @@ bool ConsumeOwnedItemCosts(entt::entity owner, std::span<const ItemCost> costs)
     if (!prepared.Prepare(owner, costs)) return false;
     prepared.Commit();
     prepared.Publish();
+    return true;
+}
+
+bool ConsumeOwnedItemCostsWithCommit(entt::entity owner, std::span<const ItemCost> costs,
+    const std::function<bool()>& commit, const std::function<void()>& publish,
+    std::span<const entt::entity> retireDetached)
+{
+    if (!commit || !publish || !ecs::PlayerRuntime::IsPC(owner) || retireDetached.size() > 1) return false;
+    PreparedCosts prepared;
+    if (!costs.empty() && !prepared.Prepare(owner, costs)) return false;
+    PendingConsumptions* pending = nullptr;
+    const auto retired = retireDetached.empty() ? entt::null : retireDetached.front();
+    if (!retireDetached.empty()) {
+        const auto item = retired;
+        if (!DetachedStackSource(item) ||
+            g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item)) return false;
+        for (const auto& cost : costs) if (cost.item == item) return false;
+        pending = g_registry.ctx().find<PendingConsumptions>();
+        if (!pending) pending = &g_registry.ctx().emplace<PendingConsumptions>();
+        // PreparedCosts may enqueue every cost after the companion returns.
+        if (costs.size() + 1 > pending->items.max_size() - pending->items.size()) return false;
+        pending->items.reserve(pending->items.size() + costs.size() + 1);
+    }
+    if (!commit()) return false;
+    // Every potentially allocating operation preceded the companion's stores.
+    prepared.Commit();
+    if (pending) {
+        g_registry.get<ecs::ItemCount>(retired).count = 0;
+        pending->items.push_back({retired});
+    }
+    publish();
+    if (!costs.empty()) prepared.Publish();
+    else if (pending) ProcessPendingItemConsumptions();
     return true;
 }
 
