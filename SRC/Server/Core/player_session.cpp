@@ -286,6 +286,16 @@ std::optional<Lease> Authority::Find(uint32_t account) const
         return {};
     return it->second.lease;
 }
+bool Authority::Loaded(const Lease &lease) const
+{
+    if (!Matches(lease)) return false;
+    uint32_t required = 1 | 4 | 8 | 16;
+#ifdef __SKILL_COLOR_SYSTEM__
+    required |= 64;
+#endif
+    const auto parts = accounts_.at(lease.key.account).parts;
+    return (parts & required) == required && !(parts & 2);
+}
 void Authority::InvalidateAccount(uint32_t account)
 {
     auto it = accounts_.find(account);

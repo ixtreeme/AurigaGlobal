@@ -62,6 +62,7 @@ class Authority final
                               Token link = {}, Token request = {});
     bool Matches(const Lease &lease) const;
     bool TakePart(const Lease &lease, uint8_t header);
+    bool Loaded(const Lease &lease) const;
     std::optional<Lease> Find(uint32_t account) const;
     void InvalidateAccount(uint32_t account);
     void InvalidatePeer(uint32_t peer);

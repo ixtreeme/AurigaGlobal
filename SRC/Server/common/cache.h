@@ -3,6 +3,27 @@
 #include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <atomic>
+#include <limits>
+#include <stdexcept>
+
+struct CacheVersion
+{
+	uint64_t instance = 0, mutation = 0;
+	bool operator==(const CacheVersion&) const = default;
+};
+
+inline uint64_t NextCacheInstance()
+{
+	static std::atomic<uint64_t> next{0};
+	auto value = next.load(std::memory_order_relaxed);
+	for (;;)
+	{
+		if (value == (std::numeric_limits<uint64_t>::max)())
+			throw std::overflow_error("Cache instance generation exhausted");
+		if (next.compare_exchange_weak(value, value + 1, std::memory_order_relaxed)) return value + 1;
+	}
+}
 
 // TTL cache. A lejarati idok monoton oraval (steady_clock) szamolodnak,
 // igy a falora ugralasa (NTP/DST/kezi allitas) nem jar le/el koran
@@ -19,6 +40,11 @@ template <typename T> class cache
 			memset( &m_data, 0, sizeof(m_data) );
 		}
 
+		cache(const cache&) = delete;
+		cache& operator=(const cache&) = delete;
+		CacheVersion Version() const { return {m_instance, m_mutation}; }
+		bool HasPendingQuery() const { return m_bNeedQuery; }
+
 		T * Get(bool bUpdateTime = true)
 		{
 			if (bUpdateTime)
@@ -29,6 +55,7 @@ template <typename T> class cache
 
 		void Put(T * pNew, bool bSkipQuery = false)
 		{
+			Changed();
 			memcpy(&m_data, pNew, sizeof(T));
 			m_lastUpdateTime = std::chrono::steady_clock::now();
 
@@ -72,6 +99,16 @@ template <typename T> class cache
 		virtual void OnFlush() = 0;
 
 
+	protected:
+		void Changed()
+		{
+			if (m_mutation == (std::numeric_limits<uint64_t>::max)())
+				throw std::overflow_error("Cache mutation generation exhausted");
+			++m_mutation;
+		}
+	private:
+		const uint64_t m_instance = NextCacheInstance();
+		uint64_t m_mutation = 0;
 	protected:
 		T       m_data;
 		bool    m_bNeedQuery;

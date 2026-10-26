@@ -40,19 +40,6 @@
 #undef max
 #endif
 
-const char* GetItemWindowName(uint8_t window)
-{
-	static const char* const s_names[] = {
-		"INVENTORY", "INVENTORY", "EQUIPMENT", "SAFEBOX", "MALL",
-		"MOUNT_INVENTORY", "DRAGON_SOUL_INVENTORY", "BELT_INVENTORY",
-		"EXTRA_INVENTORY", "SWITCHBOT", "GROUND", "NEW_OFFSHOP", "SHOP_SAFEBOX"
-	};
-
-	if (window < sizeof(s_names) / sizeof(s_names[0]))
-		return s_names[window];
-
-	return "INVENTORY";
-}
 
 #if defined(ENABLE_EXTEND_ITEM_AWARD)
 #include <float.h>
@@ -3609,6 +3596,9 @@ int CClientManager::Process()
 	// Runs the accept/read/write completions the io thread handed over
 	// since the previous pulse. Everything runs on this thread.
 	auriga::net::DrainCompletions();
+
+    std::erase_if(m_playerCacheDrains, [this](const auto &entry)
+        { return !m_playerSessions.Matches(entry.second.Session()); });
 
 	// Deferred deletion of peers whose aborted operations have finished.
 	CollectPendingDeletes();

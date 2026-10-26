@@ -1,6 +1,7 @@
 #pragma once
 #include <common/cache.h>
 #include <common/service.h>
+#include <common/tables.h>
 
 class CItemCache : public cache<TPlayerItem>
 {

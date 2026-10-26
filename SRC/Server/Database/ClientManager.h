@@ -3,6 +3,7 @@
 
 #include <Core/asio_engine.h>
 #include <Core/player_session.h>
+#include "player_cache_drain.h"
 
 #include <common/stl.h>
 #include <common/building.h>
@@ -150,6 +151,11 @@ public:
 
 	CItemCache* GetItemCache(uint32_t id);
 	void			PutItemCache(TPlayerItem* pNew, bool bSkipQuery = false);
+	// Native-only preparation API. No source-stop or Mission writer authority is implied.
+	bool BeginPlayerCacheDrain(const auriga::player_session::Lease& lease,
+		const auriga::player_session::Token& challenge);
+	std::optional<auriga::player_cache::Receipt> PollPlayerCacheDrain(
+		const auriga::player_session::Lease& lease, const auriga::player_session::Token& challenge);
 	bool			DeleteItemCache(uint32_t id);
 
 #ifdef __SKILL_COLOR_SYSTEM__
@@ -438,6 +444,9 @@ private:
 	// LoginKey, LoginData pair
 	typedef std::unordered_map<uint32_t, CLoginData*> TLoginDataByLoginKey;
 	auriga::player_session::Authority m_playerSessions;
+	std::map<uint32_t, auriga::player_cache::Drain> m_playerCacheDrains;
+	bool PlayerCacheDrainCurrent(const auriga::player_session::Lease& lease);
+	bool PlayerCacheDrainView(uint32_t player, CPlayerTableCache*& cache, std::vector<CItemCache*>& items);
 	TLoginDataByLoginKey			m_map_pkLoginData;
 
 	// Login LoginData pair

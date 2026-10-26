@@ -6,6 +6,20 @@
 #include "ClientManager.h"
 #include "Main.h"
 
+const char* GetItemWindowName(uint8_t window)
+{
+	static const char* const s_names[] = {
+		"INVENTORY", "INVENTORY", "EQUIPMENT", "SAFEBOX", "MALL",
+		"MOUNT_INVENTORY", "DRAGON_SOUL_INVENTORY", "BELT_INVENTORY",
+		"EXTRA_INVENTORY", "SWITCHBOT", "GROUND", "NEW_OFFSHOP", "SHOP_SAFEBOX"
+	};
+
+	if (window < sizeof(s_names) / sizeof(s_names[0]))
+		return s_names[window];
+
+	return "INVENTORY";
+}
+
 extern CPacketInfo g_item_info;
 extern int g_iPlayerCacheFlushSeconds;
 extern int g_iItemCacheFlushSeconds;
@@ -91,6 +105,7 @@ void CItemCache::Delete()
 	if (m_data.vnum == 0)
 		return;
 
+	Changed();
 	if (g_test_server)
 		LOG_INFO("ItemCache::Delete : DELETE {}", m_data.id);
 

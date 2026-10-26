@@ -411,6 +411,26 @@ if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
 endif()
 add_test(NAME player_session COMMAND PlayerSessionTests)
 
+add_executable(PlayerCacheDrainTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PlayerCacheDrainTests.cpp
+    ../Database/player_cache_drain.cpp
+    ../Database/Cache.cpp
+    ../Database/player_save.cpp
+)
+target_link_libraries(PlayerCacheDrainTests PRIVATE SERVER S_Core S_SQL)
+if(WIN32)
+    target_link_libraries(PlayerCacheDrainTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+if(TARGET auriga_sanitizers)
+    target_link_libraries(PlayerCacheDrainTests PRIVATE auriga_sanitizers)
+endif()
+if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    add_custom_command(TARGET PlayerCacheDrainTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:PlayerCacheDrainTests>")
+endif()
+add_test(NAME player_cache_drain COMMAND PlayerCacheDrainTests)
+
 add_executable(LoginByKeyTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/LoginByKeyTests.cpp
     ../Database/login_validation.cpp
@@ -587,6 +607,15 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --drop-commit-count 0
     )
     set_tests_properties(player_session_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
+    add_test(NAME player_cache_drain_mariadb
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
+            --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
+            --test-executable $<TARGET_FILE:PlayerCacheDrainTests>
+            --work-dir ${CMAKE_BINARY_DIR}/player-cache-drain-isolated
+            --test-argument ${CMAKE_SOURCE_DIR}/db/schema.sql
+            --drop-commit-count 0
+    )
+    set_tests_properties(player_cache_drain_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
     add_test(NAME mission_persistence_mariadb
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
             --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
@@ -929,6 +958,7 @@ get_property(_server_tests DIRECTORY PROPERTY TESTS)
 set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)
 if(TEST async_sql_mariadb_isolated)
     set_tests_properties(async_sql_mariadb_isolated PROPERTIES TIMEOUT 180 LABELS "server;integration")
+    set_tests_properties(player_session_mariadb player_cache_drain_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
     set_tests_properties(mission_persistence_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
     set_tests_properties(item_award_delivery_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
 endif()
