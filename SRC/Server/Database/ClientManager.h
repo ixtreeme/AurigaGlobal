@@ -446,6 +446,7 @@ private:
 	auriga::player_session::Authority m_playerSessions;
 	std::map<uint32_t, auriga::player_cache::Drain> m_playerCacheDrains;
 	bool PlayerCacheDrainCurrent(const auriga::player_session::Lease& lease);
+	void HandlePlayerCacheRequest(CPeer* peer, uint32_t descriptor, std::span<const uint8_t> bytes);
 	bool PlayerCacheDrainView(uint32_t player, CPlayerTableCache*& cache, std::vector<CItemCache*>& items);
 	TLoginDataByLoginKey			m_map_pkLoginData;
 

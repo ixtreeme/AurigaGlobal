@@ -11,6 +11,7 @@
 
 namespace pc = auriga::player_cache;
 namespace ps = auriga::player_session;
+namespace wire = auriga::player_cache_wire;
 namespace
 {
 int checks = 0;
@@ -284,7 +285,15 @@ void Integration(unsigned port, const std::string &schema, const char *path)
         };
         auto drain = pc::Drain::Begin(f.authority, f.lease, Token(20), f.View(), origins, enqueueActual);
         Check(drain.has_value(), "valid native cache drain refused");
+        wire::Client game;
+        Check(game.Begin(f.lease.key, 12345, Token(20)), "native cache request could not start");
+        const auto request = wire::DecodeRequest(wire::Encode(*game.Next()));
+        Check(request && request->key == f.lease.key && request->challenge == drain->Challenge(),
+              "native wire request lost session/challenge context");
         auto pending = drain->Poll(f.authority, f.View());
+        const auto pendingWire = wire::DecodeReceipt(wire::Encode(pc::ToWire(pending)));
+        Check(pendingWire && game.Accept(*pendingWire, f.lease.key, 12345),
+              "pending Database receipt did not reach native client");
         Check(pending.status == (scenario == 11 ? pc::Status::Blocked : pc::Status::Pending) &&
                   pending.challenge == Token(20) && pending.lease == f.lease,
               "flush claimed success before both workers finished");
@@ -336,6 +345,19 @@ void Integration(unsigned port, const std::string &schema, const char *path)
         }
         Check(Number(admin, "SELECT RELEASE_LOCK('" + lock + "')") == 1, "test unlock failed");
         const auto result = Await(*drain, f);
+        const auto wireResult = wire::DecodeReceipt(wire::Encode(pc::ToWire(result)));
+        Check(wireResult && wireResult->key == f.lease.key && wireResult->challenge == Token(20),
+              "real SQL completion lost native wire context");
+        if (scenario == 4 || scenario == 8)
+        {
+            game.Invalidate();
+            Check(!game.Accept(*wireResult, f.lease.key, 12345), "old wire completion survived native disconnect");
+        }
+        else if (scenario == 11)
+            Check(!game.Accept(*wireResult, f.lease.key, 12345), "terminal blocked receipt applied twice");
+        else
+            Check(game.Accept(*wireResult, f.lease.key, 12345) && !game.Waiting(),
+                  "real SQL completion was not accepted once by native client");
         if (scenario == 0 || scenario == 9 || scenario == 10 || scenario == 12)
         {
             Check(result.status == pc::Status::Flushed && result.failure == pc::Failure::None &&

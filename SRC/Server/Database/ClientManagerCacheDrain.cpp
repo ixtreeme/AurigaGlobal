@@ -1,5 +1,27 @@
 #include "stdafx.h"
 #include "ClientManager.h"
+#include <Core/peer_auth.h>
+
+void CClientManager::HandlePlayerCacheRequest(CPeer *peer, uint32_t descriptor, std::span<const uint8_t> bytes)
+{
+    namespace wire = auriga::player_cache_wire;
+    const auto request = wire::DecodeRequest(bytes);
+    if (!PeerAuth::HasKey() || !peer->IsAuthenticated() || !request ||
+        request->key.link != peer->PlayerSessionLink()) return;
+    wire::Receipt result{request->key, request->challenge, wire::Status::Stale};
+    const auto lease = m_playerSessions.Find(request->key.account);
+    if (lease && lease->key == request->key && lease->peer == peer->GetHandle() && lease->descriptor == descriptor)
+    {
+        if (request->action == wire::Action::Begin && !BeginPlayerCacheDrain(*lease, request->challenge))
+            result.status = wire::Status::Rejected;
+        else if (const auto receipt = PollPlayerCacheDrain(*lease, request->challenge))
+            result = auriga::player_cache::ToWire(*receipt);
+        else result.status = wire::Status::Rejected;
+    }
+    const auto frame = wire::Encode(result);
+    peer->EncodeHeader(HEADER_DG_PLAYER_CACHE_RECEIPT, descriptor, frame.size());
+    peer->Encode(frame.data(), frame.size());
+}
 
 bool CClientManager::PlayerCacheDrainCurrent(const auriga::player_session::Lease &lease)
 {

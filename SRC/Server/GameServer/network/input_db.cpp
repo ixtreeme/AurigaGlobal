@@ -2358,6 +2358,28 @@ bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesPro
                 d->SetPhase(PHASE_CLOSE);
                 return false;
             }
+            db_clientdesc->NegotiatePlayerCache();
+        }
+        else if (bHeader == HEADER_DG_PLAYER_CACHE_HELLO)
+        {
+            auto link = auriga::player_cache_wire::DecodeHello(
+                {reinterpret_cast<const uint8_t*>(pRealData), size_t(iSize)}, true);
+            if (d != db_clientdesc || !link || !db_clientdesc->AcceptPlayerCacheHello(*link))
+            {
+                d->SetPhase(PHASE_CLOSE);
+                return false;
+            }
+        }
+        else if (bHeader == HEADER_DG_PLAYER_CACHE_RECEIPT)
+        {
+            auto receipt = auriga::player_cache_wire::DecodeReceipt(
+                {reinterpret_cast<const uint8_t*>(pRealData), size_t(iSize)});
+            if (d != db_clientdesc || !receipt || receipt->key.link != db_clientdesc->PlayerSessionLink())
+            {
+                d->SetPhase(PHASE_CLOSE);
+                return false;
+            }
+            db_clientdesc->AcceptPlayerCacheReceipt(m_dwHandle, *receipt);
         }
         else if (bHeader == HEADER_DG_PLAYER_SESSION_REPLY)
         {

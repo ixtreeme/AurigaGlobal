@@ -1,6 +1,7 @@
 #pragma once
 #include "Cache.h"
 #include <Core/player_session.h>
+#include <Core/player_cache_protocol.h>
 #include <SQL/QueueDrain.h>
 #include <array>
 #include <functional>
@@ -40,6 +41,7 @@ struct Receipt
     Failure failure = Failure::None;
     std::array<SqlQueueDrainResult, 2> lanes;
 };
+player_cache_wire::Receipt ToWire(const Receipt &receipt);
 // Confirms only a captured player/item cache flush. It is NOT a source-stop,
 // resource fence, Mission owner claim, or permission to release a live writer.
 class Drain final

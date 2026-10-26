@@ -181,6 +181,7 @@ void Lifetimes()
     Check(game.BindEntity(19) && !game.BindEntity(20) && game.MatchesEntity(lease->key, 19) &&
               !game.MatchesEntity(lease->key, 20),
           "ECS entity generation was not pinned");
+    Check(!game.Loaded(), "player-only state reported a completed load");
     for (uint8_t part : {uint8_t(HEADER_DG_ITEM_LOAD), uint8_t(HEADER_DG_QUEST_LOAD)})
     {
         auto bytes = Data(uint32_t(0));
@@ -189,6 +190,19 @@ void Lifetimes()
         Check(r && authority.TakePart(*lease, part) && game.Accept(*r), "load part refused");
         Check(!authority.TakePart(*lease, part) && !game.Accept(*r), "duplicate load part accepted");
     }
+    Check(!game.Loaded(), "load completed without affect/skill-color parts");
+    auto affect = Data(uint32_t(100));
+    auto count = Data(uint32_t(0));
+    affect.insert(affect.end(), count.begin(), count.end());
+    auto affectFrame = Frame(lease->key, HEADER_DG_AFFECT_LOAD, affect);
+    Check(game.Accept(*session::DecodeReply(affectFrame)), "affect load not accepted");
+#ifdef __SKILL_COLOR_SYSTEM__
+    Check(!game.Loaded(), "load completed without skill-color part");
+    std::vector<uint8_t> colors(sizeof(TSkillColor::dwSkillColor));
+    auto colorFrame = Frame(lease->key, HEADER_DG_SKILL_COLOR_LOAD, colors);
+    Check(game.Accept(*session::DecodeReply(colorFrame)), "skill-color load not accepted");
+#endif
+    Check(game.Loaded(), "complete entity-bound native load not recognized");
     auto forged = *lease;
     forged.peer++;
     Check(!authority.Matches(forged), "foreign peer lease accepted");

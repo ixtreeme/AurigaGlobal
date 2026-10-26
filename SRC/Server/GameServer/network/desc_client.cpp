@@ -50,9 +50,13 @@ void CLIENT_DESC::Destroy()
 
     m_playerSessionLink = {};
     m_playerSessionsReady = false;
+    m_playerCacheReady = m_playerCacheHelloSent = false;
+    m_playerCachePolls.clear();
+    m_playerCacheWatched.clear();
 	if (this == db_clientdesc)
 	{
-        for (auto *client : DESC_MANAGER::instance().GetClientSet()) client->PlayerSession().Reset();
+        for (auto *client : DESC_MANAGER::instance().GetClientSet())
+        { client->PlayerSession().Reset(); client->PlayerCacheDrain().Invalidate(); }
 		CPartyManager::instance().DeleteAllParty();
 		CPartyManager::instance().DisablePCParty();
 		CGuildManager::instance().StopAllGuildWar();
@@ -275,6 +279,9 @@ void CLIENT_DESC::SetPhase(int iPhase)
 
 				DBPacket(HEADER_GD_SETUP, 0, buf.read_peek(), buf.size());
                 m_playerSessionsReady = false;
+                m_playerCacheReady = m_playerCacheHelloSent = false;
+                m_playerCachePolls.clear();
+                m_playerCacheWatched.clear();
                 m_playerSessionLink = {};
                 if (PeerAuth::HasKey())
                 {
@@ -313,6 +320,7 @@ void CLIENT_DESC::SetPhase(int iPhase)
 
 void CLIENT_DESC::DBPacketHeader(uint8_t bHeader, uint32_t dwHandle, uint32_t dwSize)
 {
+	ObservePlayerCacheWrite(bHeader);
 	buffer_write(m_lpOutputBuffer, encode_byte(bHeader), sizeof(uint8_t));
 	buffer_write(m_lpOutputBuffer, encode_4bytes(dwHandle), sizeof(uint32_t));
 	buffer_write(m_lpOutputBuffer, encode_4bytes(dwSize), sizeof(uint32_t));
@@ -350,6 +358,7 @@ bool CLIENT_DESC::IsRetryWhenClosed()
 
 void CLIENT_DESC::Update(uint32_t t)
 {
+	PollPlayerCacheDrains();
 	{
 		UpdateChannelStatus(t, false);
 	}

@@ -2,6 +2,8 @@
 #define __CLIENT_H__
 
 #include "desc.h"
+#include <chrono>
+#include <map>
 
 class CLIENT_DESC : public DESC
 {
@@ -39,12 +41,24 @@ class CLIENT_DESC : public DESC
 			m_playerSessionsReady = true;
 			return true;
 		}
+		void NegotiatePlayerCache();
+		bool AcceptPlayerCacheHello(auriga::player_session::Token link);
+		// Native preparation only; caller must submit its final snapshots first.
+		bool RequestPlayerCacheDrain(LPDESC target, auriga::player_session::Token challenge);
+		void AcceptPlayerCacheReceipt(uint32_t descriptor, const auriga::player_cache_wire::Receipt& receipt);
+		std::optional<auriga::player_cache_wire::Receipt> PlayerCacheReceipt(LPDESC target);
 
 	private:
 		void InitializeBuffers();
 		void StartConnect();
 		void SendAuthResponse(const uint8_t nonce[16], uint64_t timestamp);
 		void HandleAuthInput();
+		void PollPlayerCacheDrains();
+		void ObservePlayerCacheWrite(uint8_t gdHeader);
+		bool m_playerCacheReady = false, m_playerCacheHelloSent = false;
+		struct CachePoll { std::chrono::steady_clock::time_point started, next; };
+		std::map<uint32_t, CachePoll> m_playerCachePolls;
+		std::map<uint32_t, auriga::player_session::Key> m_playerCacheWatched;
 
 	protected:
 		int			m_iPhaseWhenSucceed;

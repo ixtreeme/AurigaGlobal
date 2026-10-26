@@ -2640,6 +2640,20 @@ void CClientManager::ProcessPackets(CPeer * peer)
                 peer->Encode(reply.data(), reply.size());
                 break;
             }
+            case HEADER_GD_PLAYER_CACHE_HELLO:
+            {
+                auto link = auriga::player_cache_wire::DecodeHello(
+                    {reinterpret_cast<const uint8_t*>(data), dwLength}, false);
+                if (!PeerAuth::HasKey() || !peer->IsAuthenticated() || !link ||
+                    *link != peer->PlayerSessionLink()) break;
+                const auto frame = auriga::player_cache_wire::Hello(*link, true);
+                peer->EncodeHeader(HEADER_DG_PLAYER_CACHE_HELLO, 0, frame.size());
+                peer->Encode(frame.data(), frame.size());
+                break;
+            }
+            case HEADER_GD_PLAYER_CACHE_REQUEST:
+                HandlePlayerCacheRequest(peer, dwHandle, {reinterpret_cast<const uint8_t*>(data), dwLength});
+                break;
             case HEADER_GD_PLAYER_LOAD_SESSION:
             {
                 auto request = auriga::player_session::DecodeRequest(

@@ -38,6 +38,14 @@ uint32_t Part(uint8_t header)
         return 0;
     }
 }
+uint32_t RequiredParts()
+{
+    uint32_t mask = 1 | 4 | 8 | 16;
+#ifdef __SKILL_COLOR_SYSTEM__
+    mask |= 64;
+#endif
+    return mask;
+}
 void U32(std::vector<uint8_t> &out, uint32_t n)
 {
     for (int i = 0; i < 4; ++i)
@@ -289,12 +297,8 @@ std::optional<Lease> Authority::Find(uint32_t account) const
 bool Authority::Loaded(const Lease &lease) const
 {
     if (!Matches(lease)) return false;
-    uint32_t required = 1 | 4 | 8 | 16;
-#ifdef __SKILL_COLOR_SYSTEM__
-    required |= 64;
-#endif
     const auto parts = accounts_.at(lease.key.account).parts;
-    return (parts & required) == required && !(parts & 2);
+    return (parts & RequiredParts()) == RequiredParts() && !(parts & 2);
 }
 void Authority::InvalidateAccount(uint32_t account)
 {
@@ -356,6 +360,10 @@ bool GameSession::BindEntity(uint64_t entity)
         return false;
     entity_ = entity;
     return true;
+}
+bool GameSession::Loaded() const
+{
+    return key_ && Matches(*key_) && entity_ && (parts_ & RequiredParts()) == RequiredParts();
 }
 bool GameSession::MatchesEntity(const Key &key, uint64_t entity) const
 {

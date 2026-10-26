@@ -4,6 +4,41 @@
 
 namespace auriga::player_cache
 {
+player_cache_wire::Receipt ToWire(const Receipt &receipt)
+{
+    namespace wire = player_cache_wire;
+    wire::Receipt out{receipt.lease.key, receipt.challenge};
+    switch (receipt.status)
+    {
+        case Status::Pending: out.status = wire::Status::Pending; break;
+        case Status::Flushed: out.status = wire::Status::Flushed; break;
+        case Status::Blocked: out.status = wire::Status::Blocked; break;
+        case Status::Stale: out.status = wire::Status::Stale; break;
+    }
+    switch (receipt.failure)
+    {
+        case Failure::None: out.failure = wire::Failure::None; break;
+        case Failure::CacheChanged: out.failure = wire::Failure::CacheChanged; break;
+        case Failure::SqlUnconfirmed: out.failure = wire::Failure::SqlUnconfirmed; break;
+        case Failure::Cancelled: out.failure = wire::Failure::Cancelled; break;
+        case Failure::InvalidLanes: out.failure = wire::Failure::InvalidLanes; break;
+    }
+    for (size_t i=0;i<2;++i)
+    {
+        const auto &lane = receipt.lanes[i];
+        auto &target = out.lanes[i];
+        target.id=lane.position.lane; target.sequence=lane.position.sequence;
+        target.unconfirmed=lane.position.unconfirmed; target.lastUnconfirmed=lane.position.lastUnconfirmedSequence;
+        target.sqlError=lane.position.lastSqlError;
+        switch (lane.status)
+        {
+            case SqlQueueDrainStatus::Pending: target.status=wire::LaneStatus::Pending; break;
+            case SqlQueueDrainStatus::Complete: target.status=wire::LaneStatus::Complete; break;
+            case SqlQueueDrainStatus::Cancelled: target.status=wire::LaneStatus::Cancelled; break;
+        }
+    }
+    return out;
+}
 std::optional<Drain::Stamp> Drain::Inspect(View view, uint32_t character, bool clean)
 {
     if (!view.player || view.items.size() > MaximumItems || view.player->Get(false)->id != character ||

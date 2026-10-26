@@ -86,6 +86,7 @@ class GameSession final
     bool Begin(Request request);
     bool Accept(const Reply &reply);
     bool Matches(const Key &key) const;
+    bool Loaded() const;
     bool BindEntity(uint64_t entity);
     bool MatchesEntity(const Key &key, uint64_t entity) const;
     bool Versioned() const

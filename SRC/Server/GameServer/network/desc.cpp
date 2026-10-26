@@ -45,6 +45,7 @@ DESC::~DESC()
 void DESC::Initialize()
 {
     m_playerSession.Reset();
+    m_playerCacheDrain.Reset();
 	m_bDestroyed = false;
 
 	m_pInputProcessor = nullptr;
@@ -108,6 +109,7 @@ void DESC::Destroy()
 	}
 	m_bDestroyed = true;
     m_playerSession.Reset();
+    m_playerCacheDrain.Reset();
 
 	if (m_pkLoginKey)
 		m_pkLoginKey->Expire();
@@ -362,7 +364,7 @@ void DESC::LargePacket(const void * c_pvData, int iSize)
 
 void DESC::SetPhase(int _phase)
 {
-    if (_phase == PHASE_CLOSE || _phase == PHASE_SELECT) m_playerSession.Reset();
+    if (_phase == PHASE_CLOSE || _phase == PHASE_SELECT) { m_playerSession.Reset(); m_playerCacheDrain.Reset(); }
 	m_iPhase = _phase;
 
 	TPacketGCPhase pack;

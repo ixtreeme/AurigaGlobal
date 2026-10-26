@@ -5,6 +5,7 @@
 
 #include <Core/peer_session.h>
 #include <Core/player_session.h>
+#include <Core/player_cache_protocol.h>
 
 #include <fstream>
 #include <vector>
@@ -139,6 +140,7 @@ class DESC : public PeerSession
 
 		void			BindCharacter(entt::entity character);
 		auriga::player_session::GameSession &PlayerSession() { return m_playerSession; }
+		auriga::player_cache_wire::Client &PlayerCacheDrain() { return m_playerCacheDrain; }
         entt::entity        GetEntity() const      { return m_entity; }
         void                SetEntity(entt::entity e) { m_entity = e; }
 
@@ -235,6 +237,7 @@ class DESC : public PeerSession
         entt::entity        m_entity { entt::null };
 		TAccountTable		m_accountTable;
 		auriga::player_session::GameSession m_playerSession;
+		auriga::player_cache_wire::Client m_playerCacheDrain;
 
 		struct sockaddr_in	m_SockAddr;
 		struct sockaddr_in 	m_UDPSockAddr;
