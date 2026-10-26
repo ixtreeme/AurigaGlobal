@@ -1,8 +1,8 @@
 # AurigaGlobal Mission Engine – állapot és folytatási terv
 
-- **Dátum:** 2026-10-25
+- **Dátum:** 2026-10-26
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `20e1dd77`; előző lezárt állapot: `d7752695`.
+- **Aktuális kódcommit:** `d2155e5c`; előző lezárt állapot: `1cf10ce2`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -23,14 +23,17 @@ az átvételi nyugta együtt commitol, valódi tárgysémás crash/retry próbá
 Elkészült a kizárólag tárgyakat adó Mission ledger → award adapter, tartós mappinggel
 és a tényleges itemig végigfutó próbával. A cache a commit-sorrendtől függetlenül találja meg az awardokat.
 Elkészült a kevert XP/pénz/tárgyfogyasztás determinisztikus előkészítése és a
-bemenet/szabály/sorsolás/eredmény tartós archívuma is (4/D–4a). Ez még nem
-változtatja meg a karakter erőforrásait; az élő író és a hatásnyugta következik.
+bemenet/szabály/sorsolás/eredmény tartós archívuma is (4/D–4a).
+Elkészült a teljes erőforráscsomag SQL-írója, tartós hatásnyugtája,
+a két SQL-sorhoz kötött fence és a külön publikálási protokoll (4/D–4b).
+Ezek a backend API-k izolált adatbázison teszteltek; az élő cache/session
+útvonalak még nem használják őket. A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
 kezeli; külön player/mission sémán közös commit/rollback/crash próba is sikeres.
 
 A teljes, játékosok által használható új küldetésrendszer még nincs bekötve.
-A session-/core-életciklus persistence-bekötése, a kevert erőforrás-jutalmazás,
+A session-/core-életciklus persistence-bekötése, a kevert jutalmazás élő adapterei,
 a gameplay-események, az NPC-dialógus, az új Unity-felület és a
 Mission Studio a következő munkafázisok. A tesztelt rétegek elkészülte nem
 jelent kész kampányt vagy éles telepítési engedélyt.
@@ -196,7 +199,7 @@ közvetlen Database ág blokkoló; az új Mission dispatchernek aszinkron műkö
 - `common.sql.mission`, öröklés, részleges felülírás és típusos natív konfiguráció.
 - A playerrel azonos MariaDB-végpont, külön sémanév; minden core közös Mission-célja.
 - Régi konfigurációnál dedikált `mission` cél képzése, player-adatbázisra visszaesés nélkül.
-- Önálló `db/mission_schema.sql`, a meglévő migrációkból generálva; a 4/D–4a óta tíz tábla.
+- Önálló `db/mission_schema.sql`, a meglévő migrációkból generálva; a 4/D–4b óta tizenkét tábla.
 - Új csomag bootstrap és explicit `init-mission-db`, privát hitelesítési fájlokkal.
 - Qt **SQL · Küldetések** oldal, ötödik SQL-szerep ellenőrzése és közös mentési csoport.
 - Mission-progress mellett a négyadatbázisos legacy import, illetve a régi négyes SQL-
@@ -205,9 +208,11 @@ közvetlen Database ág blokkoló; az új Mission dispatchernek aszinkron műkö
 - Friss Qt6/PyInstaller alkalmazáscsomag és headless frozen worker-próba.
 
 **Fontos határ:** az eredeti adatbázis-szétválasztási teszt csak infrastruktúra-bizonyíték
-volt. A 4/D–3 már a tényleges natív item-adaptert futtatja; a kevert erőforráscsomag
-és az élő session/core-dispatcher továbbra is hátravan.
-Futó helyi/távoli játékszerver vagy játékosadatbázis frissítése nem történt.
+volt. A 4/D–3 már a tényleges natív item-adaptert, a 4/D–4b a teljes
+erőforráscsomag SQL-íróját futtatja. Az élő session/core-dispatcher még hiányzik.
+A felhasználó kérésére a külön helyi `mission` nézegethető adatbázis települt
+a Server2-Local csomagban, 4-es sémával, játékosprogress nélkül. A mostani
+5-ös séma csak izolált tesztadatbázisokra került, nem a helyi/távoli játékadatokra.
 
 ### 3.10. Mission tárgyjutalom és commit-sorrendtől független award-cache (4/D–3)
 
@@ -243,8 +248,27 @@ Gameplay binding engedélyezése még hátravan. Futó szerver és valódi ját�
 A `Before`/`After` gazdasági/progressziós átmenet; az új jutalomtárgyak elhelyezése,
 a teljes vitals/ECS frissítés és a szintlépési értesítések még a későbbi adapter feladatai.
 Nincs bekötött tartós resource revision vagy cache-fence az élő karakteríróban.
-A tényleges XP/pénz/fogyasztás közös commitja, a Database/GameServer átadás és
-az élő koordinátor következik. A Gameplay kapu továbbra is zárt.
+A tényleges XP/pénz/fogyasztás közös SQL-commitja a következő, 4/D–4b
+részfázisban elkészült. A Database/GameServer átadás és az élő koordinátor
+továbbra is hátravan. A Gameplay kapu zárt.
+
+### 3.12. Atomi SQL erőforrásíró és publikálás (4/D–4b)
+
+- `ResourceFence`: session/core/writer-generáció, source-stop és két külön SQL-queue barrierje.
+- Teljes kanonikus player/item pillanatkép zárolása; korlátos `JSON_TABLE` alapú, 1024 tárgyas ellenőrzés.
+- XP/pénz/cost/award/ledger/operation közös tranzakciója, eredeti award ID-kat őrző hatásnyugtával.
+- Tartós resource revision és guarded cache-DML; az A → B → A átmenet is revisiont növel.
+- `Pending` / `Published` / `Superseded` visszaolvasás; történeti receipt nem játszhat vissza régi postimage-et.
+- Külön, generációhoz kötött rebase és publikálás; vitals/pending-feloldás közös commitja.
+- Sémaverzió **5**, tizenkét saját InnoDB-tábla, tizenkét FK; ötödik additív migráció.
+- Valódi két FIFO worker, párhuzamos grant, MyISAM-elutasítás, részleges cost/vitals rollback,
+  hét elveszett COMMIT-válasz, restart és 128 új-tokenes történeti egyeztetés próbája.
+
+**Határ:** a fence-állapotgép és SQL-tervkészítők készek. Az élő karakterforrás
+megállítása, korábbi flushok eredménykövetése, a legacy cache-DML átvezetése,
+lease-átadás, ECS-rebase, vitals-számítás és értesítések még nincsenek bekötve.
+Az egyszeri ASAN-visszaolvasási eltérés oka nyitott; részletek az ellenőrzéseknél.
+A Gameplay aktiválása ezért továbbra is zárt.
 
 ## 4. Ellenőrzött eredmények
 
@@ -255,22 +279,30 @@ az élő koordinátor következik. A Gameplay kapu továbbra is zárt.
 | Csomagkezelés | 4856 ellenőrzés |
 | Checkpoint codec és action identity | 3227 ellenőrzés |
 | Verziózott reward-payload suite | 2109 ellenőrzés, normál és ASAN alatt |
-| Kevert erőforrástervező / codec / alkalmazási egyeztetés | 1562 ellenőrzés, normál és ASAN |
+| Kevert erőforrástervező / codec / fence | 1606 ellenőrzés, normál és ASAN |
 | SQL-egységtesztek | 2232 ellenőrzés |
 | Valódi SQL-infrastruktúra | 204 ellenőrzés |
-| Valódi Mission store/action/item/resource archive, három séma és cold restore | Normál és ASAN: 1299 + 102 a végső rögzített körökben |
+| Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2952 + 155 a legutóbbi stresszkörökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
 | Célzott regressziós CTest-kör | 21/21 sikeres a jelen részfázisban |
 | Külön AddressSanitizer CTest-kör | 12/12 sikeres |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
-| Valódi MariaDB-suite-ok ASAN alatt | Az új item-award suite is sikeres, crash/restarttal |
+| Valódi MariaDB-suite-ok ASAN alatt | Az erőforrásíró is sikeres crash/restarttal; egy korábbi, egyszeri visszaolvasási eltérés nyitott |
 
-A 4/D–4a végső kódján az utolsó változásokkal érintett natív erőforrás- és
-valódi DB-suite külön ismét sikeres: normál 2/2, ASAN erőforrás 1/1, valamint
-külön ASAN MariaDB crash/restart. A telepítő újrafuttatása meglévő kind-5
-műveletnyugtákkal is sikeres; a kapcsolódó migráció/csomag/telepítő kör 4/4.
+A 4/D–4b végső kódján az érintett natív erőforrás- és valódi DB-suite külön
+ismét sikeres: normál 2/2; a külön ASAN MariaDB crash/restart próbák is sikeresek.
+A telepítő újrafuttatása meglévő kind-5 és kind-8 műveletnyugtákkal is sikeres.
+
+**Nyitott ellenőrzési észlelés:** az első ASAN DB-kör egyszer elbukott egy már
+commitolt, 1024 tárgyas jutalom új-tokenes történeti visszaolvasásánál. A hiba
+akkor még nem közölte, hogy SQL- vagy dekódolási eltérés történt; memóriahibát
+jelző ASAN-riport nem volt. A megőrzött adatbázisban az eredeti jutalom, head és
+award ID-k megvoltak, és friss folyamatból visszaolvashatók. Bővített diagnosztika,
+128 ismételt egyeztetés és több új ASAN-kör után nem ismétlődött. Az ok nincs
+bizonyítva, ezért ezt nem tekintjük javítottnak; az élő aktiválás előtti nyitott
+vizsgálati tétel. A részletes dokumentum a megőrzött naplókat is felsorolja.
 
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
@@ -295,6 +327,7 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `d2155e5c` | Atomi erőforrás-hatások, két SQL-soros fence, publikálás és sémaverzió 5 |
 | `20e1dd77` | Determinisztikus kevert erőforrástervek, codec, tartós archívum és sémaverzió 4 |
 | `e9d1ca90` | Mission Engine audit és migrációs terv |
 | `c6e80183` | Régi BattlePass kivezetése, szezonális Mission Pass megtartása |
@@ -367,9 +400,10 @@ vagy elveszett válasz nem okoz állapotvesztést vagy kétszeres eseménybeszá
 
 **Az outbox és a jogosultság a 4/C-ben, a verziózott payload a 4/D–1-ben,
 a közös item-award kézbesítő a 4/D–2-ben, a Mission → award mapping és a
-commit-sorrenddel szemben helyes cache a 4/D–3-ban elkészült.** Következő
-a tényleges XP/pénz/tárgyfogyasztás erőforrásírója és az élő koordinátor.
-Az előkészítés és a tartós tervarchívum a 4/D–4a-ban elkészült.
+commit-sorrenddel szemben helyes cache a 4/D–3-ban elkészült.**
+Az előkészítés és tervarchívum a 4/D–4a-ban, a tényleges XP/pénz/cost SQL-írója
+és publikálási protokollja a 4/D–4b-ben elkészült. Következő az élő koordinátor
+és az összes érintett cache/session író átvezetése.
 Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció után kapcsolható be.
 
 - [x] Tartós action outbox a progress mentésével közös tranzakcióban és külön entitlement-ledger.
@@ -382,8 +416,11 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Commit-sorrendtől független, korlátos oldalakból álló award-cache és helyes ikonnyugtázás.
 - [x] Tárgycsomag teljes útjának valódi kernel/SQL/cache/item crash/retry/telt raktár próbája.
 - [x] Kevert erőforrás-átmenet determinisztikus előkészítése és tartós, korlátos tervarchívuma.
-- [ ] Egyetlen hiteles erőforrásíró: tartós revision/fence, régi cache és függő mentések kiürítése.
-- [ ] Teljes XP/pénz/cost/award csomag közös commitja és tartós resource-effect nyugtája.
+- [x] Tartós resource revision, két SQL-soros fence-protokoll és guarded DML backend.
+- [x] Teljes XP/pénz/cost/award csomag közös SQL-commitja és tartós resource-effect nyugtája.
+- [ ] Élő source-stop, régi cache és függő mentések ellenőrzött kiürítése; minden legacy író átvezetése.
+- [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
+- [ ] Az egyszeri ASAN történeti visszaolvasási eltérés okának tisztázása, aktiválás előtt.
 - [ ] Az `item_award`/inventory/ECS réteggel összehangolt,
   idempotens kézbesítés; az item, XP, pénz és fogyasztás külön hatásszerződése.
 - [ ] Restart/retry során ugyanaz a művelet ne adhasson vagy vehessen el újra tárgyat.
@@ -397,8 +434,9 @@ Az SQL-tranzakción kívüli ECS-hatásokhoz külön egyeztetési mechanizmus ke
 A checkpoint-/archívum-/fencing-réteg, az outbox/entitlement és az egyedi
 item-award → item réteg crash-, race-, reconnect- és hideg újraindítási próbái
 sikeresek. A teljes Mission → award → item út próbái is sikeresek; a kevert
-csomagok előkészítési/archiválási hibapróbái is sikeresek. A tényleges erőforráshatások
-és az élő session/core-protokoll próbái még hátravannak.
+csomagok előkészítési/archiválási és tényleges SQL-hatáspróbái is lefutottak.
+Az egyszeri ASAN-eltérés oka nyitott; az élő session/core-protokoll próbái is
+hátravannak. A backend stresszpróbája nem helyettesíti ezeket.
 
 - Hideg újraindítás, régi csomagverzió, hot reload és rollback együtt.
 - Crash a mentés előtt/után és a jutalomkézbesítés különböző pontjain.
@@ -454,6 +492,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Kanonikus item-award kézbesítő és valódi tárgysémás hibapróbák](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_item_award_delivery_2026-10-25.md)
 - [Mission tárgyjutalom, stabil award-mapping és teljes út hibapróbái](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_item_awards_2026-10-25.md)
 - [Kevert erőforrások előkészítése és tartós archívuma](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_resource_preparation_2026-10-25.md)
+- [Atomi SQL erőforrásíró, fence és publikálás](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_resource_writer_2026-10-26.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)

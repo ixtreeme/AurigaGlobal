@@ -1,15 +1,17 @@
 # Külön Mission-adatbázis
 
-Dátum: 2026-10-25. Ág: `codex/mission-engine`.
+Frissítve: 2026-10-26. Ág: `codex/mission-engine`.
 
 ## Felosztás
 
-Az új történetalapú Mission Engine tíz saját táblája a külön **mission**
+Az új történetalapú Mission Engine tizenkét saját táblája a külön **mission**
 adatbázisba kerül. A player, account, common és log meglévő sémája változatlan.
 A szezonális Mission Pass és a régi Lua quest-adatok a jelenlegi helyükön maradnak.
 
 A Mission-sémában van a csomag-/definícióarchívum, a karakter-checkpoint,
-az owner/revízió, a mentési műveletnyugta, az action outbox, az entitlement-ledger a konkrét award-mapping és az erőforrástervek archívuma.
+az owner/revízió, a mentési műveletnyugta, az action outbox, az entitlement-ledger,
+a konkrét award-mapping, az erőforrástervek archívuma, a tartós resource head
+és a tényleges gazdasági hatásnyugta.
 A tényleges tárgy, raktár és item_award a player adatbázisban marad.
 
 A motornak nem kell új szolgáltatás vagy külön folyamat. A persistence-tervek
@@ -57,10 +59,12 @@ Indítás előtti ellenőrzések:
 
 Az önálló `db/mission_schema.sql` teljesen minősített neveket használ:
 `mission.mission_engine_*`. Az adminisztrátori import alapértelmezett
-adatbázistól független; nincs USE és nincs régi táblák törlése. A sémaverzió 4. A negyedik additív migráció erőforrás-javaslatokat tárol;
-önmagában nem hajt végre XP/pénz/item módosítást. A részletek a
-`mission_resource_preparation_2026-10-25.md` dokumentumban vannak.
-A DDL forrása továbbra is a három meglévő Mission-migráció; a Python-generátor
+adatbázistól független; nincs USE és nincs régi táblák törlése. A sémaverzió **5**.
+A negyedik additív migráció erőforrás-javaslatokat tárol; az ötödik a tartós
+resource headet és tényleges hatásnyugtát készíti elő. Egyik DDL sem változtat
+XP/pénz/item adatot. A részletek a `mission_resource_preparation_2026-10-25.md`
+és `mission_resource_writer_2026-10-26.md` dokumentumokban vannak.
+A DDL forrása az öt Mission-migráció; a Python-generátor
 és a teszt biztosítja, hogy az önálló SQL ne térjen el tőlük.
 
 Új szervercsomagnál a friss `manage.py init-db` a Mission-sémát is telepíti,
@@ -99,9 +103,11 @@ teheti a Mission-ledgert és a teljes névvel hivatkozott player.item_award INSE
 Két egymástól független kapcsolat COMMIT-ja nem közös atomi művelet.
 
 A konfigurációban alapból közös SQL-felhasználó van. Külön Mission-felhasználónál
-a későbbi jutalomírónak megfelelő player-oldali jogosultság is kell; a helyi
-telepítő a Mission-séma mellett player.player SELECT és player.item_award
-SELECT/INSERT jogot készít elő. A jelenlegi tárgyadapter részletei külön dokumentumban vannak.
+az erőforrásírónak megfelelő player-oldali jogosultság is kell; a helyi
+telepítő a Mission-séma mellett player.player SELECT/UPDATE, player.item
+SELECT/INSERT/UPDATE/DELETE és player.item_award SELECT/INSERT jogot készít elő.
+A player táblákra nem ad általános DDL-jogot. A részletes writer dokumentum
+rögzíti a még hiányzó élő adaptereket és az aktiválás feltételeit.
 Az élő ECS-ben történő XP-/pénz-/inventoryváltozás továbbra sem lesz ettől SQL-tranzakció.
 
 ## Mentési és visszaállítási szerződés
@@ -134,15 +140,21 @@ A 4/D–3 részfázisban elkészült a kizárólag tárgyakat adó natív jutalo
 mapping: a Mission ledger, a canonical awardok és a műveleti nyugta együtt
 commitolnak. A cache commit-sorrendi hibája is javítva. Részletek és az új,
 valódi itemig végigfutó próbák: `mission_item_awards_2026-10-25.md`.
-A kevert item/XP/pénz/cost bundle és az élő session/core-koordinátor továbbra is hátravan.
+A kevert item/XP/pénz/cost bundle SQL-írója és publikálási backendje a 4/D–4b-ben
+elkészült. Az élő session/core-koordinátor és a cache/ECS adapter továbbra is hátravan.
 
-A jelenlegi telepítő kilenc táblát, sémaverzió 3-at készít. Együtt elérhető
+A jelenlegi telepítő tizenkét táblát, sémaverzió 5-öt készít. Együtt elérhető
 account-adatbázis esetén az effektív account.account táblára is SELECT-jogot
 ad a saját helyi Mission-felhasználónak, a tárgyjutalom címzettellenőrzéséhez.
 Más végpontú account nem akadályozza a store telepítését; az új itemadapterhez
 külön hiteles identitásprotokoll nélkül ugyanazon SQL-példány szükséges.
 Az alábbi számszerű ellenőrzések a korábbi adatbázis-szétválasztás lezárt körét
-rögzítik; a jelenlegi 34/34 + ASAN 11/11 és a 13/13 bootstrap kör az új részletezőben van.
+rögzítik; a legutóbbi 21/21 + ASAN 12/12, a 13/13 bootstrap és az egyszeri,
+nyitott ASAN-visszaolvasási észlelés a központi állapotdokumentumban szerepel.
+
+A felhasználó kérésére a Server2-Local saját MariaDB-jén létrejött a külön
+`mission` adatbázis, 4-es sémával, üres játékosprogresszel. A mostani 5-ös
+fejlesztői séma nem került automatikusan rá; csak az izolált tesztek telepítették.
 
 ## Rögzített ellenőrzések
 
@@ -159,7 +171,9 @@ eredménnyel külön ismét lefutott. A csomagolt alkalmazás headless worker-pr
 az új beépített Mission-modul elérhetőségét és a hibás rendszerséma SQL előtti
 elutasítását is ellenőrizte.
 A binárisok és a Qt-csomag a build mappában készültek el; futó helyi/távoli
-játékszerver vagy tényleges játékosadatbázis telepítése ebben a fázisban nem történt.
+játékszerver vagy tényleges játékosadatbázis telepítése ebben az eredeti,
+adatbázis-szétválasztási fázisban nem történt. A későbbi helyi nézegethető
+Mission-adatbázis telepítését a fenti bekezdés külön rögzíti.
 A 34 védett szezonális Mission Pass fájl változatlan maradt.
 
 Naplók: `build/mission-database-regression-tests.log`,
