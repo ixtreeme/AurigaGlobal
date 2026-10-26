@@ -62,6 +62,10 @@ class ResourceFence final
     {
         return challenge_;
     }
+    const std::array<uint64_t, 2> &Barriers() const
+    {
+        return barriers_;
+    }
     const std::optional<ResourcePublicationVitals> &Vitals() const
     {
         return vitals_;

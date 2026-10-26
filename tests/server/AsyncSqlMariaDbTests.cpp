@@ -223,6 +223,83 @@ void WorkerOrder(CAsyncSQL &admin)
     Check(Number(admin, "SELECT revision FROM mission_sql_state WHERE id=3") == 2, "queued progress lost");
 }
 
+SqlQueueDrainResult Drain(CAsyncSQL &sql)
+{
+    auto ticket = sql.DrainQueue();
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (ticket.Poll().status == SqlQueueDrainStatus::Pending &&
+           std::chrono::steady_clock::now() < deadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Check(ticket.Poll().status == SqlQueueDrainStatus::Complete, "actual SQL queue did not drain");
+    return ticket.Poll();
+}
+void QueueDrains(CAsyncSQL &admin)
+{
+    CAsyncSQL main, async;
+    Connect(main, false);
+    Connect(async, false);
+    const auto baseline = main.QueueOrigin(), otherBaseline = async.QueueOrigin();
+    main.AsyncQuery("SELECT 1; SELECT 2; SELECT 3");
+    main.ReturnQueryPrepared("SELECT 19", {}, reinterpret_cast<void *>(19));
+    auto first = Drain(main);
+    auto success = Wait(main, 1);
+    Check(!success[0]->uiSQLErrno && std::string(success[0]->Get()->FetchRow()[0]) == "19" &&
+              first.position.ConfirmsSince(baseline),
+          "fire-and-forget results poisoned the next query");
+    // A successful SELECT after a failed non-returning cache write is not a
+    // substitute for a verified drain receipt.
+    main.AsyncQuery("INSERT INTO mission_sql_nonexistent VALUES(1)");
+    main.ReturnQuery("SELECT 23", nullptr);
+    auto result = Wait(main, 1);
+    auto failed = Drain(main);
+    Check(!result[0]->uiSQLErrno && failed.position.unconfirmed == 1 &&
+              failed.position.lastSqlError == ER_NO_SUCH_TABLE && !failed.position.ConfirmsSince(baseline),
+          "ordinary barrier hid a failed fire-and-forget cache write");
+    async.AsyncQueryPrepared("SELECT FROM", {});
+    async.ReturnQueryPrepared("SELECT 29", {}, nullptr);
+    auto asyncSuccess = Wait(async, 1);
+    auto failedAsync = Drain(async);
+    Check(!asyncSuccess[0]->uiSQLErrno && failedAsync.position.unconfirmed == 1 &&
+              failedAsync.position.lastSqlError == ER_PARSE_ERROR &&
+              !failedAsync.position.ConfirmsSince(otherBaseline),
+          "prepared async error disappeared at drain");
+    Check(!failed.position.ConfirmsSince(otherBaseline), "other worker confirmed a foreign baseline");
+
+    main.ReturnQuery("SELECT 31; SELECT * FROM mission_sql_nonexistent", nullptr);
+    main.ReturnQueryPrepared("SELECT 37", {}, nullptr);
+    auto late = Wait(main, 2);
+    Check(late[0]->uiSQLErrno == ER_NO_SUCH_TABLE && late[0]->vec_pkResult.size() == 1 &&
+              !late[1]->uiSQLErrno && std::string(late[1]->Get()->FetchRow()[0]) == "37",
+          "late text result error lost or next query poisoned");
+    auto afterLate = Drain(main);
+    Check(afterLate.position.unconfirmed == 2 && afterLate.position.lastSqlError == ER_NO_SUCH_TABLE &&
+              !afterLate.position.ConfirmsSince(failed.position),
+          "late result error not included in drain");
+    // Stored-procedure late errors must be recorded even with no returned SQLMsg.
+    main.AsyncQuery("CALL mission_sql_late_error()");
+    main.ReturnQueryPrepared("SELECT 41", {}, nullptr);
+    auto afterCall = Wait(main, 1);
+    auto callDrain = Drain(main);
+    Check(!afterCall[0]->uiSQLErrno && callDrain.position.unconfirmed == 3 &&
+              callDrain.position.lastSqlError == 1644,
+          "non-returning procedure error was invisible");
+    // The full rollback still means the requested cache batch was NOT saved.
+    main.ReturnTransactionPrepared(Save(3, 9999, "drain-must-conflict"), nullptr);
+    auto conflict = Wait(main, 1);
+    auto afterConflict = Drain(main);
+    Check(conflict[0]->transactionOutcome == Outcome::Conflict && afterConflict.position.unconfirmed == 4 &&
+              !afterConflict.position.ConfirmsSince(callDrain.position),
+          "rolled back work looked drained successfully");
+    auto final = Drain(main);
+    Check(final.position.ConfirmsSince(afterConflict.position) && !final.position.ConfirmsSince(baseline),
+          "new drain silently cleared old failures");
+    SQLMsg *unexpected = nullptr;
+    Check(!main.PopResult(&unexpected), "drain was mixed into legacy SQL callbacks");
+    Check(Number(admin,
+                 "SELECT COUNT(*) FROM mission_sql_receipt WHERE operation_id='drain-must-conflict'") == 0,
+          "failed drain test changed canonical progress");
+}
+
 void DisconnectBeforeCommit(CAsyncSQL &admin)
 {
     CAsyncSQL sql;
@@ -321,6 +398,8 @@ int main(int argc, char **argv)
         ConcurrentOwners(sql);
         std::cout << "worker ordering\n";
         WorkerOrder(sql);
+        std::cout << "verified queue drains\n";
+        QueueDrains(sql);
         std::cout << "disconnect before commit\n";
         DisconnectBeforeCommit(sql);
         std::cout << "lost commit acknowledgement\n";

@@ -2,6 +2,7 @@
 #include "../../SRC/Server/Database/ItemAwardScan.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionItemAwards.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionPersistence.hpp"
+#include "../../SRC/Server/GameServer/mission/MissionResourceDrain.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionResourceEffects.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionValidator.hpp"
 #include "MissionPersistenceFixture.hpp"
@@ -1685,27 +1686,72 @@ void ResourceEffects(CAsyncSQL &sql, unsigned int proxy)
         auto fence = ReadyEffectFence(owner, prepared);
         if (character == 110)
         {
-            // Real legacy SQL queues: old cache DML is before a barrier on
-            // each FIFO. Both acknowledgements are required before applying.
-            fence = db::ResourceFence(EffectWriter(owner), prepared, Token(210), {11, 12});
-            Check(fence.SourceStopped(fence.Identity(), fence.Challenge()), "source stop failed");
+            // Actual worker-owned receipts, not SELECT 1 stand-ins. Failed
+            // fire-and-forget writes must poison the corresponding baseline.
             CAsyncSQL mainLane, asyncLane;
             Connect(mainLane, false);
             Connect(asyncLane, false);
-            mainLane.ReturnTransactionPrepared(
-                {{"UPDATE " + Player("player") + " SET gold=1000 WHERE id=110", {}, {}, {}}}, nullptr);
-            asyncLane.ReturnTransactionPrepared(
-                {{"UPDATE " + Player("item") + " SET socket0=999 WHERE owner_id=110", {}, {}, {}}}, nullptr);
-            for (auto *lane : {&mainLane, &asyncLane})
-                lane->ReturnTransactionPrepared({{"SELECT 1", {}, {}, 1}}, nullptr);
-            Check(!EffectPlan(fence, digest, db::NewToken()), "undrained queues produced an effect plan");
-            auto first = Wait(mainLane, 2);
-            Check(db::Confirmed(*first[0]) && fence.LaneDrained(0, 11, first[1]->transactionOutcome) &&
-                      fence.Stage() == db::ResourceFenceStage::Draining,
-                  "one actual lane thawed fence");
-            auto second = Wait(asyncLane, 2);
-            Check(db::Confirmed(*second[0]) && fence.LaneDrained(1, 12, second[1]->transactionOutcome),
-                  "second actual lane failed");
+            const std::array baselines{mainLane.QueueOrigin(), asyncLane.QueueOrigin()};
+            mainLane.AsyncQuery(("UPDATE " + Player("player") + " SET gold=1000 WHERE id=110").c_str());
+            asyncLane.AsyncQuery(
+                ("UPDATE " + Player("item") + " SET socket0=999 WHERE owner_id=110").c_str());
+            asyncLane.AsyncQuery("SELECT SLEEP(0.15)");
+            const std::array tickets{mainLane.DrainQueue(), asyncLane.DrainQueue()};
+            const std::array<uint64_t, 2> barriers{tickets[0].Sequence(), tickets[1].Sequence()};
+            fence = db::ResourceFence(EffectWriter(owner), prepared, Token(210), barriers);
+            db::ResourceDrain drain(fence, baselines, tickets);
+            Check(drain.Poll(fence) == db::ResourceDrainStatus::Pending &&
+                      !EffectPlan(fence, digest, db::NewToken()),
+                  "queue drain implicitly stopped source");
+            auto staleIdentity = fence.Identity();
+            ++staleIdentity.sessionGeneration;
+            auto stale = db::ResourceFence(staleIdentity, prepared, Token(210), barriers);
+            Check(drain.Poll(stale) == db::ResourceDrainStatus::Stale,
+                  "real SQL tickets crossed native session generation");
+            auto otherChallenge = db::ResourceFence(fence.Identity(), prepared, Token(211), barriers);
+            Check(drain.Poll(otherChallenge) == db::ResourceDrainStatus::Stale,
+                  "real SQL tickets crossed resource challenge");
+            auto invalidated = fence;
+            invalidated.Invalidate();
+            Check(drain.Poll(invalidated) == db::ResourceDrainStatus::Stale,
+                  "invalidated native source accepted drain callback");
+            bool duplicateRejected = false;
+            try
+            {
+                db::ResourceDrain wrong(fence, {baselines[0], baselines[0]}, {tickets[0], tickets[0]});
+            }
+            catch (const std::invalid_argument &)
+            {
+                duplicateRejected = true;
+            }
+            Check(duplicateRejected, "same SQL lane was accepted twice");
+            Check(fence.SourceStopped(fence.Identity(), fence.Challenge()), "source stop failed");
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+            while (drain.Poll(fence) == db::ResourceDrainStatus::Pending &&
+                   std::chrono::steady_clock::now() < deadline)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            Check(drain.Poll(fence) == db::ResourceDrainStatus::Ready,
+                  "both actual verified SQL lanes did not release the fence");
+            Check(tickets[0].Poll().position.ConfirmsSince(baselines[0]) &&
+                      tickets[1].Poll().position.ConfirmsSince(baselines[1]),
+                  "drain lost actual worker evidence");
+
+            mainLane.AsyncQuery("INSERT INTO missing_legacy_resource_cache VALUES(1)");
+            mainLane.ReturnQueryPrepared("SELECT 1", {}, nullptr);
+            auto apparentSuccess = Wait(mainLane, 1);
+            Check(!apparentSuccess[0]->uiSQLErrno, "following SELECT did not succeed");
+            const std::array failedTickets{mainLane.DrainQueue(), asyncLane.DrainQueue()};
+            auto failedFence = db::ResourceFence(EffectWriter(owner), prepared, Token(212),
+                                                 {failedTickets[0].Sequence(), failedTickets[1].Sequence()});
+            db::ResourceDrain failedDrain(failedFence, baselines, failedTickets);
+            failedFence.SourceStopped(failedFence.Identity(), failedFence.Challenge());
+            const auto failedDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+            while (failedDrain.Poll(failedFence) == db::ResourceDrainStatus::Pending &&
+                   std::chrono::steady_clock::now() < failedDeadline)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            Check(failedDrain.Poll(failedFence) == db::ResourceDrainStatus::Blocked &&
+                      !EffectPlan(failedFence, digest, db::NewToken()),
+                  "successful barrier hid failed legacy save and permitted reward effects");
             mainLane.Quit();
             asyncLane.Quit();
         }

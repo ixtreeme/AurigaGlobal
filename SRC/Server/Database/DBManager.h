@@ -5,6 +5,7 @@
 #include <mysql/mysql.h>
 
 #include <SQL/AsyncSQL.h>
+#include <array>
 
 class CQueryInfo
 {
@@ -50,6 +51,10 @@ class CDBManager : public singleton<CDBManager>
 	SQLMsg *		DirectQueryPrepared(const char * c_pszSql, const SqlParams & params, int iSlot = SQL_PLAYER);
 	// Owns the complete commit boundary; never separate BEGIN/COMMIT queue jobs.
 	SQLMsg *		DirectTransactionPrepared(SqlTransaction transaction, int iSlot = SQL_PLAYER);
+	// Both legacy player write lanes must be drained. These tickets never enter
+	// PopResult()/CQueryInfo and are polled by the authoritative coordinator.
+	std::array<SqlQueuePosition, 2> PlayerQueueOrigins() const;
+	std::array<SqlQueueDrain, 2> DrainPlayerWrites();
 	//SQLMsg *		DirectQuery_ItemShop(const char * c_pszQuery, int iSlot = SQL_ITEMSHOP);
 
 	SQLMsg *		PopResult();

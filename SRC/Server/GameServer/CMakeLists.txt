@@ -126,6 +126,7 @@ add_executable(MissionPersistenceTests EXCLUDE_FROM_ALL
     mission/MissionItemAwards.cpp
     mission/MissionResourceEffects.cpp
     mission/MissionResourceFence.cpp
+    mission/MissionResourceDrain.cpp
     ../Database/ItemAwardDelivery.cpp
     ../Database/ItemAwardScan.cpp
 )

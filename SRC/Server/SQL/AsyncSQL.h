@@ -17,6 +17,7 @@
 #include <mysql/mysqld_error.h>
 
 #include "Semaphore.h"
+#include "QueueDrain.h"
 
 #define QUERY_MAX_LEN 8192
 
@@ -65,6 +66,7 @@ typedef struct _SQLMsg
 
 	~_SQLMsg()
 	{
+		queueDrain.Cancel();
 		auto first = vec_pkResult.begin();
 		auto past = vec_pkResult.end();
 
@@ -76,6 +78,7 @@ typedef struct _SQLMsg
 
 	void Store()
 	{
+		int next = -1;
 		do
 		{
 			SQLResult * pRes = new SQLResult;
@@ -94,7 +97,19 @@ typedef struct _SQLMsg
 			}
 
 			vec_pkResult.push_back(pRes);
-		} while (!mysql_next_result(m_pkSQL));
+			if (!pRes->pSQLResult && mysql_field_count(m_pkSQL))
+			{
+				uiSQLErrno = mysql_errno(m_pkSQL);
+				if (!uiSQLErrno) uiSQLErrno = CR_UNKNOWN_ERROR;
+				return;
+			}
+			next = mysql_next_result(m_pkSQL);
+		} while (next == 0);
+		if (next > 0)
+		{
+			uiSQLErrno = mysql_errno(m_pkSQL);
+			if (!uiSQLErrno) uiSQLErrno = CR_UNKNOWN_ERROR;
+		}
 	}
 
 	SQLResult * Get()
@@ -140,6 +155,9 @@ typedef struct _SQLMsg
 	SqlTransactionOutcome transactionOutcome { SqlTransactionOutcome::NotStarted };
 	size_t transactionFailedStep { SqlTransactionNoStep };
 	std::vector<size_t> transactionResultOffsets;
+	uint64_t queueSequence = 0;
+	bool queueUnconfirmed = false;
+	SqlQueueDrain queueDrain;
 } SQLMsg;
 
 class CAsyncSQL
@@ -177,6 +195,11 @@ class CAsyncSQL
 		// Direct variant requires Setup(..., bNoThread=true). Inspect transactionOutcome.
 		SQLMsg * DirectTransactionPrepared(SqlTransaction transaction);
 		void ReturnTransactionPrepared(SqlTransaction transaction, void * userData);
+		// Enqueued after the source is stopped and its dirty caches are flushed.
+		// Compare the completed position with the last VERIFIED baseline. A new
+		// barrier does not erase old errors or ambiguous/retried write attempts.
+		SqlQueueDrain DrainQueue();
+		SqlQueuePosition QueueOrigin() const { return {m_queueLane, 0, 0, 0, 0}; }
 
 		uint32_t		CountQuery();
 		uint32_t		CountResult();
@@ -209,6 +232,9 @@ class CAsyncSQL
 		// returns true.
 		bool		TryExecutePrepared(SQLMsg * p);
 		bool TryExecuteTransaction(SQLMsg * p);
+		bool ExecuteQueued(SQLMsg *p);
+		void RecordQueueFailure(SQLMsg *p);
+		void CancelQueuedDrains();
 		void InvalidateConnection();
 
 		// Materializes a prepared result set into p as string cells.
@@ -264,6 +290,9 @@ class CAsyncSQL
 		bool m_directConnection { false };
 		bool m_inPreparedTransaction { false };
 		unsigned long m_transactionThreadId { 0 };
+		const uint64_t m_queueLane;
+		uint64_t m_queueSequence = 0; // Assigned under the producer queue mutex.
+		SqlQueuePosition m_queuePosition; // Worker only; published through drain state.
 
 #ifndef _WIN32
 		pthread_t m_hThread;

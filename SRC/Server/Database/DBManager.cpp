@@ -207,6 +207,18 @@ SQLMsg * CDBManager::DirectTransactionPrepared(SqlTransaction transaction, int i
 	return m_directSQL[iSlot]->DirectTransactionPrepared(std::move(transaction));
 }
 
+std::array<SqlQueuePosition, 2> CDBManager::PlayerQueueOrigins() const
+{
+	if (!m_mainSQL[SQL_PLAYER] || !m_asyncSQL[SQL_PLAYER]) return {};
+	return {m_mainSQL[SQL_PLAYER]->QueueOrigin(), m_asyncSQL[SQL_PLAYER]->QueueOrigin()};
+}
+
+std::array<SqlQueueDrain, 2> CDBManager::DrainPlayerWrites()
+{
+	if (!m_mainSQL[SQL_PLAYER] || !m_asyncSQL[SQL_PLAYER]) return {};
+	return {m_mainSQL[SQL_PLAYER]->DrainQueue(), m_asyncSQL[SQL_PLAYER]->DrainQueue()};
+}
+
 unsigned long CDBManager::EscapeString(void *to, const void *from, unsigned long length, int iSlot)
 {
 	assert(iSlot < SQL_MAX_NUM);

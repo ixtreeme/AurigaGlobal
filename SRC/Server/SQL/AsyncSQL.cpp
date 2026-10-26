@@ -3,6 +3,7 @@
 #include <cstring>
 #include <string>
 #include <print>
+#include <stdexcept>
 #include <mysql/mysql.h>
 
 #include "AsyncSQL.h"
@@ -39,6 +40,17 @@ unsigned long * SQLResult::FetchLengths()
 
 namespace
 {
+    uint64_t NextQueueLane()
+    {
+        static std::atomic<uint64_t> next{1};
+        auto lane = next.load();
+        do
+        {
+            if (!lane || lane == UINT64_MAX)
+                throw std::overflow_error("SQL queue lane identity exhausted");
+        } while (!next.compare_exchange_weak(lane, lane + 1));
+        return lane;
+    }
 	bool IsConnectionError(uint32_t uiSQLErrno)
 	{
 		switch (uiSQLErrno)
@@ -98,7 +110,7 @@ namespace
 
 CAsyncSQL::CAsyncSQL()
 	: m_stHost(""), m_stUser(""), m_stPassword(""), m_stDB(""), m_stLocale(""),
-	m_iMsgCount(0), m_iPort(0), m_bEnd(false),
+	m_iMsgCount(0), m_iPort(0), m_bEnd(false), m_queueLane(NextQueueLane()),
 #ifndef _WIN32
 	m_hThread(0), 
 #else
@@ -108,6 +120,7 @@ CAsyncSQL::CAsyncSQL()
 	m_iQueryFinished(0), m_ulThreadID(0), m_iCopiedQuery(0)
 {
 	memset( &m_hDB, 0, sizeof(m_hDB) );
+    m_queuePosition = QueueOrigin();
 }
 
 CAsyncSQL::~CAsyncSQL()
@@ -251,6 +264,7 @@ void CAsyncSQL::SetConnectionState(ConnectionState state)
 		m_connectionState = state;
 	}
 	m_connectionChanged.notify_all();
+    if (state == ConnectionState::Failed) CancelQueuedDrains();
 }
 
 bool CAsyncSQL::WaitForConnection(std::chrono::milliseconds timeout)
@@ -349,6 +363,7 @@ void CAsyncSQL::Quit()
 		m_hThread = INVALID_HANDLE_VALUE;
 	}
 #endif
+    CancelQueuedDrains();
 }
 
 SQLMsg * CAsyncSQL::DirectQuery(const char * c_pszQuery)
@@ -795,34 +810,125 @@ bool CAsyncSQL::PopResult(SQLMsg ** pp)
 	*pp = m_queue_result.front();
 	m_queue_result.pop();
 	MUTEX_UNLOCK(m_mtxResult);
-	return true;
+        return true;
 }
 
-void CAsyncSQL::PushQuery(SQLMsg * p)
+SqlQueueDrain CAsyncSQL::DrainQueue()
 {
-	MUTEX_LOCK(m_mtxQuery);
-
-	m_queue_query.push(p);
-	//m_map_kSQLMsgUnfinished.insert(std::make_pair(p->iID, p));
-
-	m_sem.Release();
-
-	MUTEX_UNLOCK(m_mtxQuery);
+    SqlQueueDrain ticket(m_queueLane);
+    if (!m_mtxQuery || m_directConnection || m_bEnd)
+    {
+        ticket.Cancel();
+        return ticket;
+    }
+    auto *message = new SQLMsg;
+    message->queueDrain = ticket;
+    PushQuery(message);
+    return ticket;
 }
 
-bool CAsyncSQL::PeekQuery(SQLMsg ** pp)
+void CAsyncSQL::CancelQueuedDrains()
 {
-	MUTEX_LOCK(m_mtxQuery);
+    if (!m_mtxQuery)
+        return;
+    MUTEX_LOCK(m_mtxQuery);
+    auto pending = m_queue_query;
+    while (!pending.empty())
+    {
+        pending.front()->queueDrain.Cancel();
+        pending.pop();
+    }
+    MUTEX_UNLOCK(m_mtxQuery);
+    // Only called on the worker or after Quit() joined it.
+    auto copied = m_queue_query_copy;
+    while (!copied.empty())
+    {
+        copied.front()->queueDrain.Cancel();
+        copied.pop();
+    }
+}
 
-	if (m_queue_query.empty())
-	{
-		MUTEX_UNLOCK(m_mtxQuery);
-		return false;
-	}
+void CAsyncSQL::RecordQueueFailure(SQLMsg *message)
+{
+    if (message->queueUnconfirmed)
+        return;
+    message->queueUnconfirmed = true;
+    if (m_queuePosition.unconfirmed < UINT64_MAX)
+        ++m_queuePosition.unconfirmed;
+    m_queuePosition.lastUnconfirmedSequence = message->queueSequence;
+    m_queuePosition.lastSqlError = message->uiSQLErrno ? message->uiSQLErrno : CR_UNKNOWN_ERROR;
+}
 
-	*pp = m_queue_query.front();
-	MUTEX_UNLOCK(m_mtxQuery);
-	return true;
+bool CAsyncSQL::ExecuteQueued(SQLMsg *message)
+{
+    for (auto *result : message->vec_pkResult)
+        delete result;
+    message->vec_pkResult.clear();
+    message->uiResultPos = 0;
+    message->uiSQLErrno = 0;
+    if (message->bTransaction)
+        return TryExecuteTransaction(message);
+    if (message->bPrepared)
+        return TryExecutePrepared(message);
+    if (!EnsureConnectionReady() ||
+        mysql_real_query(&m_hDB, message->stQuery.c_str(), message->stQuery.size()))
+    {
+        message->uiSQLErrno = mysql_errno(&m_hDB);
+        if (!message->uiSQLErrno)
+            message->uiSQLErrno = CR_UNKNOWN_ERROR;
+        LOG_ERROR("AsyncSQL: query failed: {} (query: {} errno: {})", mysql_error(&m_hDB), message->stQuery,
+                  message->uiSQLErrno);
+        return false;
+    }
+    // Consume EVERY result, including fire-and-forget queries and later errors
+    // in multi-statement/procedure calls, before declaring this FIFO job done.
+    message->Store();
+    if (message->uiSQLErrno)
+    {
+        InvalidateConnection();
+        return false;
+    }
+    return true;
+}
+
+void CAsyncSQL::PushQuery(SQLMsg *p)
+{
+    MUTEX_LOCK(m_mtxQuery);
+    if (m_queueSequence < UINT64_MAX)
+        ++m_queueSequence;
+    p->queueSequence = m_queueSequence;
+    if (p->queueDrain.state_)
+    {
+        p->queueDrain.Sequence(p->queueSequence);
+        if (m_bEnd || GetConnectionState() == ConnectionState::Failed)
+        {
+            p->queueDrain.Cancel();
+            MUTEX_UNLOCK(m_mtxQuery);
+            delete p;
+            return;
+        }
+    }
+    m_queue_query.push(p);
+    // m_map_kSQLMsgUnfinished.insert(std::make_pair(p->iID, p));
+
+    m_sem.Release();
+
+    MUTEX_UNLOCK(m_mtxQuery);
+}
+
+bool CAsyncSQL::PeekQuery(SQLMsg **pp)
+{
+    MUTEX_LOCK(m_mtxQuery);
+
+    if (m_queue_query.empty())
+    {
+        MUTEX_UNLOCK(m_mtxQuery);
+        return false;
+    }
+
+    *pp = m_queue_query.front();
+    MUTEX_UNLOCK(m_mtxQuery);
+    return true;
 }
 
 bool CAsyncSQL::PopQuery(int iID)
@@ -855,7 +961,7 @@ int CAsyncSQL::CopyQuery()
 {
 	MUTEX_LOCK(m_mtxQuery);
 
-	if (m_queue_query.empty())
+	if (m_queue_query.empty() && m_queue_query_copy.empty())
 	{
 		MUTEX_UNLOCK(m_mtxQuery);
 		return -1;
@@ -1001,136 +1107,124 @@ private:
 
 void CAsyncSQL::ChildLoop()
 {
-	cProfiler profiler(500000);
+    cProfiler profiler(500000);
 
-	while (!m_bEnd)
-	{
-		m_sem.Wait();
+    while (!m_bEnd)
+    {
+        m_sem.Wait();
 
-		int count = CopyQuery();
+        int count = CopyQuery();
 
-		if (count <= 0)
-			continue;
+        if (count <= 0)
+            continue;
 
-		AddCopiedQueryCount(count);
+        AddCopiedQueryCount(count);
 
-		SQLMsg * p;
+        SQLMsg *p;
 
-		while (count-- && (!m_bEnd || m_flushOnQuit))
-		{
-			profiler.Start();
+        while (count-- && (!m_bEnd || m_flushOnQuit))
+        {
+            profiler.Start();
 
-			if (!PeekQueryFromCopyQueue(&p))
-				continue;
+            if (!PeekQueryFromCopyQueue(&p))
+                continue;
 
-			bool executed;
+            if (p->queueDrain.state_)
+            {
+                m_queuePosition.sequence = p->queueSequence;
+                p->queueDrain.Complete(m_queuePosition);
+                PopQueryFromCopyQueue();
+                delete p;
+                ++m_iQueryFinished;
+                continue;
+            }
+            const bool executed = ExecuteQueued(p);
+            if (!executed || p->uiSQLErrno)
+                RecordQueueFailure(p);
 
-			if (p->bTransaction)
-				executed = TryExecuteTransaction(p);
-			else if (p->bPrepared)
-			{
-				executed = TryExecutePrepared(p);
-			}
-			else
-			{
-				executed = EnsureConnectionReady() && (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()) == 0);
+            if (!executed && !p->bTransaction && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
+            {
+                m_sem.Release();
+                LOG_ERROR("AsyncSQL: retrying");
+                continue;
+            }
 
-				if (!executed)
-				{
-					p->uiSQLErrno = mysql_errno(&m_hDB);
+            profiler.Stop();
 
-					LOG_ERROR("AsyncSQL: query failed: {} (query: {} errno: {})", mysql_error(&m_hDB), p->stQuery.c_str(), p->uiSQLErrno);
-				}
-			}
+            if (!profiler.IsOk())
+                LOG_INFO("[QUERY : LONG INTERVAL(OverSec {}.{})] : {}", profiler.GetResultSec(),
+                         profiler.GetResultUSec(), p->stQuery.c_str());
 
-			if (!executed && !p->bTransaction && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
-			{
-				m_sem.Release();
-				LOG_ERROR("AsyncSQL: retrying");
-				continue;
-			}
+            PopQueryFromCopyQueue();
 
-			profiler.Stop();
-			
-			if (!profiler.IsOk())
-				LOG_INFO("[QUERY : LONG INTERVAL(OverSec {}.{})] : {}", profiler.GetResultSec(), profiler.GetResultUSec(), p->stQuery.c_str());
+            m_queuePosition.sequence = p->queueSequence;
+            if (p->bReturn)
+            {
+                if (!executed && p->vec_pkResult.empty())
+                    p->StorePrepared(0, 0);
+                PushResult(p);
+            }
+            else
+                delete p;
 
-			PopQueryFromCopyQueue();
+            ++m_iQueryFinished;
+        }
+    }
 
-			if (p->bReturn)
-			{
-				if (p->bPrepared)
-				{
-					if (!executed)
-						p->StorePrepared(0, 0);
-				}
-				else
-					p->Store();
+    if (!m_flushOnQuit)
+        return;
+    SQLMsg *p;
 
-				PushResult(p);
-			}
-			else
-				delete p;
+    for (;;)
+    {
+        // A retry can exhaust the copied batch's iteration count while work
+        // remains in that FIFO. Shutdown must flush it before the producer queue.
+        const bool copied = PeekQueryFromCopyQueue(&p);
+        if (!copied && !PeekQuery(&p))
+            break;
+        if (p->queueDrain.state_)
+        {
+            m_queuePosition.sequence = p->queueSequence;
+            p->queueDrain.Complete(m_queuePosition);
+            if (copied)
+                PopQueryFromCopyQueue();
+            else
+                PopQuery(p->iID);
+            delete p;
+            ++m_iQueryFinished;
+            continue;
+        }
+        const bool executed = ExecuteQueued(p);
+        if (!executed || p->uiSQLErrno)
+            RecordQueueFailure(p);
 
-			++m_iQueryFinished;
-		}
-	}
+        if (!executed && !p->bTransaction && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
+            continue;
 
-	if (!m_flushOnQuit)
-		return;
-	SQLMsg * p;
+        LOG_INFO("QUERY_FLUSH: {}", p->stQuery.c_str());
 
-	while (PeekQuery(&p))
-	{
-		bool executed;
+        if (copied)
+            PopQueryFromCopyQueue();
+        else
+            PopQuery(p->iID);
 
-		if (p->bTransaction)
-			executed = TryExecuteTransaction(p);
-		else if (p->bPrepared)
-		{
-			executed = TryExecutePrepared(p);
-		}
-		else
-		{
-			executed = EnsureConnectionReady() && (mysql_real_query(&m_hDB, p->stQuery.c_str(), p->stQuery.length()) == 0);
+        m_queuePosition.sequence = p->queueSequence;
+        if (p->bReturn)
+        {
+            if (!executed && p->vec_pkResult.empty())
+                p->StorePrepared(0, 0);
+            PushResult(p);
+        }
+        else
+            delete p;
 
-			if (!executed)
-			{
-				p->uiSQLErrno = mysql_errno(&m_hDB);
-
-				LOG_ERROR("AsyncSQL::ChildLoop : mysql_query error: {}:\nquery: {}", mysql_error(&m_hDB), p->stQuery.c_str());
-			}
-		}
-
-		if (!executed && !p->bTransaction && m_retryConnectionErrors && IsConnectionError(p->uiSQLErrno))
-			continue;
-
-		LOG_INFO("QUERY_FLUSH: {}", p->stQuery.c_str());
-
-		PopQuery(p->iID);
-
-		if (p->bReturn)
-		{
-			if (p->bPrepared)
-			{
-				if (!executed)
-					p->StorePrepared(0, 0);
-			}
-			else
-				p->Store();
-
-			PushResult(p);
-		}
-		else
-			delete p;
-
-		++m_iQueryFinished;
-	}
+        ++m_iQueryFinished;
+    }
 }
 
 int CAsyncSQL::CountQueryFinished()
 {
-	return m_iQueryFinished;
+    return m_iQueryFinished;
 }
 
 void CAsyncSQL::ResetQueryFinished()

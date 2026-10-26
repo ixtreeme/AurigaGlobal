@@ -85,6 +85,7 @@ bool CopyCell(MYSQL_BIND& bind, const Cell& cell, unsigned long offset)
 class PreparedHarness : public CAsyncSQL
 {
 public:
+    int CopyPendingForWorker() { return CopyQuery(); }
     bool Store(SQLMsg& msg)
     {
         return StorePreparedResult(&msg, reinterpret_cast<MYSQL_STMT*>(&script), reinterpret_cast<MYSQL_RES*>(&script));
@@ -111,6 +112,7 @@ extern "C" {
 my_ulonglong STDCALL mysql_affected_rows(MYSQL*) { Unexpected("mysql_affected_rows"); }
 void STDCALL mysql_close(MYSQL*) { ++closedConnections; if (tx) tx->calls.push_back("close"); }
 unsigned int STDCALL mysql_errno(MYSQL*) { return CR_SERVER_GONE_ERROR; }
+unsigned int STDCALL mysql_field_count(MYSQL*) { Unexpected("mysql_field_count"); }
 unsigned long* STDCALL mysql_fetch_lengths(MYSQL_RES*) { Unexpected("mysql_fetch_lengths"); }
 const char* STDCALL mysql_error(MYSQL*) { return "scripted connection failure"; }
 MYSQL_ROW STDCALL mysql_fetch_row(MYSQL_RES*) { Unexpected("mysql_fetch_row"); }
@@ -524,6 +526,83 @@ void QueuedTransactions()
     tx.reset();
 }
 
+SqlQueueDrainResult Drain(CAsyncSQL &sql)
+{
+    auto ticket = sql.DrainQueue();
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (ticket.Poll().status == SqlQueueDrainStatus::Pending && std::chrono::steady_clock::now() < deadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Check(ticket.Poll().status != SqlQueueDrainStatus::Pending, "queue drain stranded");
+    return ticket.Poll();
+}
+void QueueDrainBoundaries()
+{
+    {
+        // With no live worker, model the exact queue state left by a retry:
+        // producer queue empty, copied FIFO still contains unexecuted work.
+        connectSucceeds = false;
+        PreparedHarness sql;
+        Check(sql.Setup("test", "user", "secret", "mission", "ascii") &&
+              !sql.WaitForConnection(std::chrono::seconds(1)), "failed-worker harness setup failed");
+        sql.Quit(); // Join before the harness manually drives the copied FIFO.
+        sql.AsyncQueryPrepared("UPDATE pending_after_retry SET n=1", {});
+        Check(sql.CopyPendingForWorker() == 1 && sql.CopyPendingForWorker() == 1,
+              "retry stranded the copied FIFO when no new producer work arrived");
+    }
+    connectSucceeds = true;
+    CAsyncSQL absent;
+    Check(absent.DrainQueue().Poll().status == SqlQueueDrainStatus::Cancelled,
+          "unstarted worker returned a valid boundary");
+    Check(!SqlQueuePosition{}.ConfirmsSince({}), "invalid lanes confirmed each other");
+    const auto origin = absent.QueueOrigin();
+    CAsyncSQL other;
+    Check(origin.lane && other.QueueOrigin().lane != origin.lane, "SQL worker lane identity reused");
+    {
+        CAsyncSQL direct;
+        Check(direct.Setup("test", "user", "secret", "mission", "ascii", true), "direct setup failed");
+        Check(direct.DrainQueue().Poll().status == SqlQueueDrainStatus::Cancelled,
+              "direct connection pretended to be a FIFO worker");
+    }
+    {
+        CAsyncSQL sql;
+        Check(sql.Setup("test", "user", "secret", "mission", "ascii") &&
+              sql.WaitForConnection(std::chrono::seconds(1)), "drain worker startup failed");
+        const auto initial = sql.QueueOrigin();
+        auto first = Drain(sql);
+        Check(first.status == SqlQueueDrainStatus::Complete && first.position.ConfirmsSince(initial),
+              "empty healthy lane failed to drain");
+        // The first execution loses its acknowledgement; the legacy retry
+        // eventually succeeds. That MUST NOT erase the ambiguous attempt.
+        executeConnectionFailure = true; executeCalls = 0; prepareCalls = 0;
+        sql.AsyncQueryPrepared("UPDATE legacy_cache SET n=1", {});
+        auto retry = Drain(sql);
+        executeConnectionFailure = false;
+        Check(retry.status == SqlQueueDrainStatus::Complete && retry.position.unconfirmed == 1 &&
+              retry.position.lastSqlError == CR_SERVER_LOST && !retry.position.ConfirmsSince(initial),
+              "successful legacy retry erased an uncertain write");
+        Check(executeCalls == 2 && retry.position.lastUnconfirmedSequence < retry.position.sequence,
+              "retry drain raced preceding SQL work");
+        auto later = Drain(sql);
+        Check(!later.position.ConfirmsSince(initial) && later.position.ConfirmsSince(retry.position),
+              "new boundary cleared failure history or could not follow a verified baseline");
+        Check(!later.position.ConfirmsSince(other.QueueOrigin()) && !later.position.ConfirmsSince(later.position),
+              "foreign/future boundary accepted");
+        SQLMsg *unexpected = nullptr;
+        Check(!sql.PopResult(&unexpected), "drain metadata entered the legacy result queue");
+        sql.Quit();
+        Check(first.position.ConfirmsSince(initial), "retained completion changed after worker shutdown");
+    }
+    {
+        CAsyncSQL sql;
+        sql.SetFlushOnQuit(false);
+        Check(sql.Setup("test", "user", "secret", "mission", "ascii"), "discard startup failed");
+        auto pending = sql.DrainQueue();
+        sql.Quit();
+        Check(pending.Poll().status != SqlQueueDrainStatus::Pending,
+              "shutdown without flush stranded its drain ticket");
+    }
+}
+
 void ConnectionStartupAndQueryFailure()
 {
     for (bool success : {false, true}) {
@@ -534,11 +613,17 @@ void ConnectionStartupAndQueryFailure()
             Check(sql.GetConnectionState() == CAsyncSQL::ConnectionState::NotStarted, "new SQL connection already ready");
             sql.SetTimeouts(5);
             Check(sql.Setup("test", "user", "secret", "account", "ascii"), "worker did not start");
+            auto startupDrain = sql.DrainQueue();
             Check(!sql.WaitForConnection(std::chrono::milliseconds(1)), "thread startup reported SQL ready");
             Check(sql.WaitForConnection(std::chrono::seconds(1)) == success, "initial connection outcome lost");
             Check(sql.GetConnectionState() == (success ? CAsyncSQL::ConnectionState::Ready : CAsyncSQL::ConnectionState::Failed),
                 "wrong SQL startup state");
             Check(timeoutOptions == 3, "connect/read/write timeouts missing");
+            sql.Quit();
+            Check(startupDrain.Poll().status == (success ? SqlQueueDrainStatus::Complete : SqlQueueDrainStatus::Cancelled),
+                  "startup drain did not settle/cancel");
+            Check(sql.DrainQueue().Poll().status == SqlQueueDrainStatus::Cancelled,
+                  "stopped worker accepted a new drain");
         }
         Check(closedConnections == closed + 1, "initialized connector leaked on startup/shutdown");
     }
@@ -582,6 +667,7 @@ int main()
         TransactionFaults();
         RejectUnsafeTransactions();
         QueuedTransactions();
+        QueueDrainBoundaries();
         SelectTransactionPreconditions();
     } catch (const std::exception& error) {
         std::cerr << "FAILED: " << error.what() << "\n";
