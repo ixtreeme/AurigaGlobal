@@ -1,4 +1,5 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
+#include "../../SRC/Server/GameServer/story/CaravanQuestSystem.hpp"
 #include "../../SRC/Server/GameServer/world/sectree_manager.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
 #include "../../SRC/Server/GameServer/network/desc_manager.h"
@@ -258,6 +259,9 @@ DESC* ecs::PlayerRuntime::GetDesc(entt::entity e) {
 // SetPosition, sectree relocation and visibility run their production code.
 uint32_t get_dword_time() { return clockNow; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.all_of<ecs::TagPC>(e); }
+bool CaravanQuest::Locked(entt::entity) { return false; }
+bool CaravanQuest::Defending(entt::entity) { return false; }
+entt::entity ecs::PlayerRuntime::FindByPlayerID(uint32_t) { Unexpected(); }
 bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs::StoneAITag>(e); }
 unsigned char ecs::PlayerRuntime::GetCharType(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::MonsterLog(entt::entity e, const char*) {
@@ -1768,6 +1772,10 @@ void ShownMountFollowAndRemoval() {
         Check(!g_registry.all_of<ecs::SectorPlacement>(e), "factory fixture already placed");
         Check(ecs::MovementSystem::Show(e, 3, x, 100, 0), "real Show rejected factory-shaped actor");
         Check(SectreeMember(e, map.At(x, 100)), "Show did not commit native membership");
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+        Check(bool(g_registry.get<ecs::LegacyCharEvents>(e).battlePassStayOnline) == pc,
+            "real Show installed an online-player timer on an NPC/mount");
+#endif
         return e;
     };
     const auto owner = character(true, 7000), observer = character(true, 6800);
@@ -1783,6 +1791,17 @@ void ShownMountFollowAndRemoval() {
     entt::entity previous = entt::null;
     for (int cycle = 0; cycle < 2; ++cycle) {
         const auto follower = character(false, 6200);
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+        // Exercise the production callback against an old invalid owner, as well
+        // as the Show admission guard: obsolete timers must stop, not requeue.
+        auto* staleInfo = AllocEventInfo<char_event_info>();staleInfo->ch = follower;
+        auto orphan = event_create(g_registry.get<ecs::LegacyCharEvents>(owner).battlePassStayOnline->func, staleInfo, 1);
+        g_registry.get<ecs::LegacyCharEvents>(follower).battlePassStayOnline = orphan;
+        const int pending = event_count();++recoveryHeart.pulse;event_process(recoveryHeart.pulse);
+        Check(!g_registry.get<ecs::LegacyCharEvents>(follower).battlePassStayOnline &&
+            !orphan->q_el && event_count() == pending - 1,
+            "obsolete NPC online timer requeued instead of terminating");
+#endif
         Check(previous == entt::null || follower != previous, "follow cycle reused entity generation");
         Check(awake.contains(follower), "shown follower did not join native state list");
         const auto viewers = ecs::VisibilityService::GetViewersOf(g_registry, follower);

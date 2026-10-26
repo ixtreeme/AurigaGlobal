@@ -1,5 +1,6 @@
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
+#include "../../story/CaravanQuestSystem.hpp"
 #include "../../mission_pass/MissionPassEvents.hpp"
 #include "SessionSystem.hpp"
 #include "ViewSystem.hpp"
@@ -428,8 +429,16 @@ EVENTFUNC(battle_pass_stay_online_event_session){
 
 	const entt::entity character = info->ch;
 
-    if (!ecs::PlayerRuntime::GetDesc(character))
-        return PASSES_PER_SEC(60);
+    // Show also places every mob, metin and NPC. They must not own an online
+    // player timer; old instances otherwise reschedule forever without a desc.
+    if (!g_registry.valid(character) || !ecs::PlayerRuntime::IsPC(character) ||
+        !ecs::PlayerRuntime::GetDesc(character)) {
+        if (g_registry.valid(character) && ecs::PlayerRuntime::GetCharEvent(character,
+            ecs::PlayerRuntime::CharEvent::BattlePassStayOnline) == event)
+            ecs::PlayerRuntime::SetCharEvent(character,
+                ecs::PlayerRuntime::CharEvent::BattlePassStayOnline, nullptr);
+        return 0;
+    }
 
     const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(character);
     if (!bBattlePassId)
@@ -502,7 +511,8 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
     if (ecs::PlayerRuntime::IsPC(e))
         ecs::SocialSystem::ClearDungeonIfOtherMap(e, lMapIndex);
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-    if (!ecs::PlayerRuntime::GetCharEvent(e, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
+    if (ecs::PlayerRuntime::IsPC(e) &&
+        !ecs::PlayerRuntime::GetCharEvent(e, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
     {
         char_event_info* info = AllocEventInfo<char_event_info>();
         info->ch = e;
@@ -1572,6 +1582,7 @@ void SetRotationToXY(entt::entity e, int32_t x, int32_t y)
 bool CanMove(entt::entity e)
 {
     if(SpyQuest::Locked(e))return false;
+    if(CaravanQuest::Locked(e)&&!CaravanQuest::Defending(e))return false;
     if (e == entt::null || !g_registry.valid(e))
         return false;
     if (AffectSystem::IsAffectFlag(e, AFF_STUN))

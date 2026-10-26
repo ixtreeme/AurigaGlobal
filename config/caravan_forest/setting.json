@@ -1,0 +1,16 @@
+{
+  "script_type": "MapSetting",
+  "cell_scale": 200,
+  "height_scale": 0.5,
+  "view_radius": 128,
+  "map_size": [
+    3,
+    3
+  ],
+  "base_position": [
+    4096000,
+    4096000
+  ],
+  "texture_set": "textureset/metin2_C1.txt",
+  "environment": "C1.msenv"
+}

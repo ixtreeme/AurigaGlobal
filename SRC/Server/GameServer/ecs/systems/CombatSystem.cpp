@@ -1,5 +1,6 @@
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
+#include "../../story/CaravanQuestSystem.hpp"
 #include "../../mission_pass/MissionPassEvents.hpp"
 #include "MovementSystem.hpp"
 #include "ViewSystem.hpp"
@@ -2201,6 +2202,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		return;
 
     if(SpyQuest::Hooks::death)SpyQuest::Hooks::death(victim,killer);
+    CaravanQuest::OnDeath(victim,killer);
 
 	// LostCastle klonoknak nincs mob_proto (m_pkMobData == nullptr),
 	// ezert a normal !ecs::PlayerRuntime::IsPC(victim) reward/resurrection ag GetMobTable()-t hivna es crashelne.
@@ -3688,6 +3690,7 @@ namespace CombatSystem {
 void Reward(entt::entity e, bool bItemDrop)
 {
     if(g_registry.valid(e)&&g_registry.all_of<SpyQuest::Actor>(e))return;
+    if(g_registry.valid(e)&&g_registry.all_of<CaravanQuest::Actor>(e))return;
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 
@@ -4671,6 +4674,7 @@ namespace CombatSystem {
 bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t damageType)
 {
     if(!SpyQuest::AllowCombat(attacker,victim))return false;
+    if(!CaravanQuest::AllowCombat(attacker,victim))return false;
     if (victim == entt::null || !g_registry.valid(victim))
         return false;
 

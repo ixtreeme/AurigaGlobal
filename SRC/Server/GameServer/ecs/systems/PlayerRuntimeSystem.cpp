@@ -1,5 +1,6 @@
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
+#include "../../story/CaravanQuestSystem.hpp"
 #include "../../world/arena.h"
 #include "../components/activity_components.hpp"
 #include "../AIHelpers.hpp"
@@ -3391,6 +3392,7 @@ void ecs::PlayerRuntime::SetProto(entt::entity e, const CMob* pkMob)
 const CMob* ecs::PlayerRuntime::GetProto(entt::entity e)
 {
     if(const auto* prototype=SpyQuest::Prototype(e))return prototype;
+    if(const auto* prototype=CaravanQuest::Prototype(e))return prototype;
     const auto* ref = g_registry.valid(e) ? g_registry.try_get<ecs::MobDataRef>(e) : nullptr;
 
     if (!ref || !ref->data || ref->vnum == 0)

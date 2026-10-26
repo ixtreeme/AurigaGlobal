@@ -1,6 +1,7 @@
 #include "../../core/stdafx.h"
 #include "VisibilitySystem.hpp"
 #include "../../story/SpyQuestSystem.hpp"
+#include "../../story/CaravanQuestSystem.hpp"
 #include "ViewSystem.hpp"
 #include "../../core/config.h"
 #include "../../world/sectree.h"
@@ -57,6 +58,7 @@ bool CanSee(entt::registry& reg, entt::entity source, entt::entity viewer) {
     const auto* sourceActor=reg.try_get<SpyQuest::Actor>(source);const auto* viewerActor=reg.try_get<SpyQuest::Actor>(viewer);
     const auto* sourceId=reg.try_get<PlayerID>(source);const auto* viewerId=reg.try_get<PlayerID>(viewer);
     if((sourceActor&&viewerId&&sourceActor->owner==viewerId->pid)||(viewerActor&&sourceId&&viewerActor->owner==sourceId->pid))return std::max(dx,dy)+std::min(dx,dy)/2<=10000;
+    if((viewerId&&reg.any_of<CaravanQuest::Actor,CaravanQuest::Rider>(source))||(sourceId&&reg.any_of<CaravanQuest::Actor,CaravanQuest::Rider>(viewer)))return std::max(dx,dy)+std::min(dx,dy)/2<=10000;
     return std::max(dx, dy) + std::min(dx, dy) / 2 <= VIEW_RANGE + VIEW_BONUS_RANGE;
 }
 struct Snapshot {
@@ -121,6 +123,8 @@ void Refresh(entt::registry& reg, entt::entity e) {
     // Explicitly include the private pair even across a sector-neighbour seam.
     if(const auto* actor=reg.try_get<SpyQuest::Actor>(e))collect(PlayerRuntime::FindByPlayerID(actor->owner));
     if(const auto* id=reg.try_get<PlayerID>(e))for(auto actor:reg.view<SpyQuest::Actor>())if(reg.get<SpyQuest::Actor>(actor).owner==id->pid)collect(actor);
+    if(reg.any_of<CaravanQuest::Actor,CaravanQuest::Rider>(e))for(auto player:reg.view<PlayerID>())collect(player);
+    if(reg.all_of<PlayerID>(e)){for(auto actor:reg.view<CaravanQuest::Actor>())collect(actor);for(auto rider:reg.view<CaravanQuest::Rider>())collect(rider);}
     // Actual published edges are the baseline, not an inferred old position.
     // This also heals stationary/late-arriving viewers of newly dropped items.
     if (auto* view = reg.try_get<ViewMap>(e)) candidates.insert(view->visible.begin(), view->visible.end());

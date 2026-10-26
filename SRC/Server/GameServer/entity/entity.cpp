@@ -6,6 +6,7 @@
 #include "../ecs/services/VisibilityService.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
+#include "../story/CaravanQuestSystem.hpp"
 
 namespace ecs::ViewSystem {
 
@@ -24,6 +25,11 @@ void PacketView(entt::entity self, const void* data, int bytes, entt::entity exc
             const auto dy=std::abs(int64_t(ecs::PlayerRuntime::GetY(owner))-ecs::PlayerRuntime::GetY(self));
             if(std::max(dx,dy)+std::min(dx,dy)/2<=10000)ecs::VisibilityService::PushUnique(recipients,owner);
         }
+    }
+    if(g_registry.any_of<CaravanQuest::Actor,CaravanQuest::Rider>(self))for(auto viewer:g_registry.view<ecs::PlayerID>()){
+        if(ecs::PlayerRuntime::GetMapIndex(viewer)!=ecs::PlayerRuntime::GetMapIndex(self))continue;
+        const auto dx=std::abs(int64_t(ecs::PlayerRuntime::GetX(viewer))-ecs::PlayerRuntime::GetX(self)),dy=std::abs(int64_t(ecs::PlayerRuntime::GetY(viewer))-ecs::PlayerRuntime::GetY(self));
+        if(std::max(dx,dy)+std::min(dx,dy)/2<=10000)ecs::VisibilityService::PushUnique(recipients,viewer);
     }
     for (auto target : recipients) {
         if (!g_registry.valid(self)) return;

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "../story/SpyQuestSystem.hpp"
+#include "../story/CaravanQuestSystem.hpp"
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/Registry.hpp"
@@ -80,6 +81,7 @@ void CInputMain::Position(entt::entity character, const char * data)
 void CInputMain::Move(entt::entity character, const char * data)
 {
     if(SpyQuest::Locked(character))return;
+    if(CaravanQuest::Locked(character))return;
 	if (!ecs::IsCharacter(character))
 		return;
 
