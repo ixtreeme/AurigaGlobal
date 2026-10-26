@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-26
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `f9ae65c3`; előző lezárt állapot: `10d4cc43`.
+- **Aktuális kódcommit:** `8f88b9e0`; előző lezárt állapot: `80853604`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -48,6 +48,11 @@ Elkészült a játékoscsere és az inventory-mozgatás/split műveleti belépé
 atomikus védelme, valamint e két csoport időkorlátos pause-a a natív
 cache-előkészítés alatt (4/D–4h). A nyitott csere és a még futó callbackek
 is követettek. A többi gazdasági író miatt ez továbbra sem teljes source-stop.
+Elkészült a közvetlen felszerelés/levétel és felszereléscsere külön admission
+csoportja is (4/D–4i), az effekt-/timer-/mentési callbackek és a hibás csere
+helyreállításának teljes élettartamára. A saját konstrukciós callbackjében
+megszűnő admission komponens kezelése is javult. A közvetlen, alacsony szintű
+placement/equip primitívek és a többi gazdasági forrás még rendezendők.
 A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
@@ -402,6 +407,23 @@ Nincs automatikus gameplay-hívó vagy új Mission-jutalmazás. A teljes DB/live
 inventory-egyeztetés és ECS/cache rebase továbbra is hiányzik.
 Részletek: `mission_operation_admission_2026-10-26.md`.
 
+### 3.19. Közvetlen felszerelés és levétel (4/D–4i)
+
+- Külön Equipment műveletcsoport a közvetlen EquipItemEcs, UnequipItemEcs és UnequipItemToEcs belépésekhez; a cache-előkészítés már mindhárom ismert csoportot pause-olja.
+- Az inventoryból delegált felszerelés mindkét admission feltételét teljesíti; az Equipment-only pause nem tiltja a szokásos inventory-áthelyezést.
+- Az engedély az effekt-, pont-, socket-, timer-, save- és publikálási callbackek, valamint a hibás csere helyreállításának végéig él.
+- Megszűnt scope esetén egy még el nem kezdett csereláb nem indul; a leválasztott eredeti tárgyak a meglévő recoveryvel térhetnek vissza.
+- Az EnTT konstrukciós callbackje közben önmagát törlő komponens/karakter assertionje reprodukálva és javítva: referencia-visszaadás nélküli move-insert és friss lookup a közös admission konstrukciójában.
+- A pause, domainmaszk, anonim/natív session, félbeszakadt swap, véglegesített felszerelés és entity-újrahasznosítás tényleges kóddal tesztelt.
+
+**Határ:** a magas szintű felszerelési műveletek követettek. A külön hívott
+EquipTo/Unequip/placement primitívek általános zárolása, pickup több
+kedvezményezettje, use/drop dispatcher, bolt, timer és más gazdasági/SQL-író
+továbbra is külön feladat. Az admission nem új, minden effektet visszagörgető
+felszerelési tranzakció. Nincs teljes SourceStopped nyugta, writer-handoff,
+új Mission-jutalmazás vagy automatikus előkészítési gameplay-hívó.
+Részletek: `mission_equipment_admission_2026-10-26.md`.
+
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
@@ -417,16 +439,16 @@ Részletek: `mission_operation_admission_2026-10-26.md`.
 | Cache GD/DG codec és natív descriptorállapot | 1507 ellenőrzés, normál/ASAN |
 | Natív snapshot/framing és kapacitás | 4426 ellenőrzés, normál/ASAN |
 | ItemManager lifecycle és kétirányú snapshot capture | 8947 ellenőrzés, normál/ASAN |
-| Core/ECS műveleti admission és pause | 1081 ellenőrzés, normál/ASAN |
+| Core/ECS műveleti admission, pause és konstrukciós hibautak | 1126 ellenőrzés, normál/ASAN |
 | Tényleges játékoscsere és callback-élettartam | 14736 ellenőrzés, normál/ASAN |
-| Tényleges inventory/quickslot és split | 821002 ellenőrzés, normál/ASAN |
+| Tényleges inventory/quickslot, split és felszerelés | 823662 ellenőrzés, normál/ASAN |
 | SQL-egységtesztek | 2256 ellenőrzés; az új queue/retry/lifecycle próbákkal |
 | Valódi SQL-infrastruktúra | 234 ellenőrzés; a valódi drain és késői szöveges SQL-hibák próbáival |
 | Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 44/44 a 4/D–4h részfázisban; öt izolált MariaDB-integrációval |
-| Külön AddressSanitizer CTest-kör | 32/32 natív próba a 4/D–4h részfázisban; új ASAN MariaDB-kör nélkül |
+| Célzott regressziós CTest-kör | 44/44 a 4/D–4i részfázisban; öt izolált MariaDB-integrációval |
+| Külön AddressSanitizer CTest-kör | 32/32 natív próba a 4/D–4i részfázisban; új ASAN MariaDB-kör nélkül |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
 | Valódi MariaDB-suite-ok ASAN alatt | Az erőforrásíró is sikeres crash/restarttal; egy korábbi, egyszeri visszaolvasási eltérés nyitott |
@@ -504,6 +526,17 @@ változatlan. Ez a két ismert műveletcsoport pause-át igazolja; teljes source
 writer-handoffot vagy élő Mission-jutalmazást nem. Naplók és pontos scope:
 `mission_operation_admission_2026-10-26.md`.
 
+A 4/D–4i végső kódján a normál CTest-kör **44/44**, a natív ASAN-kör
+**32/32** sikeres. A bővült Core/ECS admission **1126**, a termelési
+inventory/quickslot/felszerelés **823662** ellenőrzéssel sikeres mindkét
+konfigurációban. A normál kör öt izolált MariaDB-integrációt tartalmaz;
+új ASAN MariaDB-kör nem futott. A GameServer, Database és LoginServer
+normál/ASAN buildje elkészült. A védett 34 szezonális és nyolc Unity-fájl
+változatlan. Az új konstrukciós regresszió javítása a korábbi admission
+belépéseket is érinti. Három ismert csoport követett, teljes source-stop
+és Mission-jutalmazás továbbra sincs aktiválva. Részletek és naplók:
+`mission_equipment_admission_2026-10-26.md`.
+
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
@@ -527,6 +560,7 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `8f88b9e0` | Közvetlen felszerelés/levétel/swap admission, callback/recovery próbák és az önmagát törlő ECS-konstrukció javítása |
 | `f9ae65c3` | Csere és inventory-mozgatás atomikus admission rétege, cache-előkészítési pause és tényleges műveleti hibapróbák |
 | `3829456d` | Natív player/item pillanatkép, kétirányú ECS-ellenőrzés és kötelező mentések → Begin sorrend |
 | `d27406a7` | Tizenkét legacy SQL-teszthelyettesítő lane-inicializálása és a valódi drain cancellation helper bekötése |
@@ -631,6 +665,7 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Egyeztetett GD/DG cache-drain, scope-hoz kötött nyugta és későbbi GD-mentések felismerése.
 - [x] Natív GameServer player/carried-item pillanatkép és ellenőrzött mentések → Begin sorrend.
 - [x] Játékoscsere és inventory-mozgatás/split atomikus műveleti belépése és időkorlátos cache-előkészítési pause-a.
+- [x] Közvetlen felszerelés/levétel/swap külön admission csoportja, callbackek és helyreállítás alatti aktivitással.
 - [ ] Élő GameServer producer-stop, teljes DB/live inventory-egyeztetés és minden legacy/külön SQL-író átvezetése.
 - [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
 - [ ] Az egyszeri ASAN történeti visszaolvasási eltérés okának tisztázása, aktiválás előtt.
@@ -712,6 +747,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Folyamatközi cache-drain, GD-írófigyelő és source-stop leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_cache_protocol_2026-10-26.md)
 - [Natív player/item pillanatkép és mentési sorrend](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_final_snapshot_2026-10-26.md)
 - [Csere és inventory-mozgatás műveleti engedélyei](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_operation_admission_2026-10-26.md)
+- [Közvetlen felszerelés/levétel, callbackek és konstrukciós javítás](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_equipment_admission_2026-10-26.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
