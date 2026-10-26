@@ -12,12 +12,14 @@ enum class Operation : uint8_t
     Equipment = 4,
     Pickup = 8,
     ItemUse = 16,
-    GroundDrop = 32
+    GroundDrop = 32,
+    Shop = 64
 };
 using Mask = uint8_t;
 inline constexpr std::array Operations{Operation::Exchange, Operation::InventoryMove, Operation::Equipment,
-                                       Operation::Pickup,   Operation::ItemUse,       Operation::GroundDrop};
-inline constexpr Mask Supported = 63;
+                                       Operation::Pickup,   Operation::ItemUse,       Operation::GroundDrop,
+                                       Operation::Shop};
+inline constexpr Mask Supported = 127;
 inline constexpr size_t MaximumActors = 8;
 struct Scope
 {

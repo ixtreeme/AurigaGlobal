@@ -28,6 +28,8 @@
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
+#include "../ecs/ResourceAdmission.hpp"
+#include <Core/shop_limits.h>
 
 //#define ENABLE_SHOP_BLACKLIST
 /* ------------------------------------------------------------------------------------ */
@@ -491,12 +493,70 @@ namespace ShopSystem
 
 	namespace
 	{
-		int64_t BuyNormal(entt::entity shopEntity, ecs::ShopData& shop, entt::entity ch, uint8_t pos
+		bool SameOffer(const ecs::ShopItem& a, const ecs::ShopItem& b)
+		{
+			if (a.vnum != b.vnum || a.price != b.price || a.count != b.count || a.item != b.item || a.itemid != b.itemid)
+				return false;
+#ifdef ENABLE_BUY_WITH_ITEM
+			for (size_t i = 0; i < MAX_SHOP_PRICES; ++i)
+				if (a.itemprice[i].vnum != b.itemprice[i].vnum || a.itemprice[i].count != b.itemprice[i].count)
+					return false;
+#endif
+			return true;
+		}
+#ifdef ENABLE_BUY_WITH_ITEM
+		bool HasPrices(entt::entity buyer, const ecs::ShopItem& row, uint32_t multiplier)
+		{
+			// Duplicate price rows share one balance; checking them independently
+			// could accept an amount which cannot pay the complete offer.
+			for (size_t i = 0; i < MAX_SHOP_PRICES; ++i) {
+				const auto vnum = row.itemprice[i].vnum;
+				if (!vnum) { if (row.itemprice[i].count) return false; continue; }
+				uint64_t total = 0;
+				for (const auto& cost : row.itemprice) {
+					if (cost.vnum != vnum) continue;
+					if (!cost.count) return false;
+					total += uint64_t(cost.count) * multiplier;
+					if (total > INT_MAX) return false; // CountItem and the legacy remover use int.
+				}
+				const auto available = ItemSystem::CountItem(buyer, vnum);
+				if (available < 0 || uint64_t(available) < total) return false;
+			}
+			return true;
+		}
+#endif
+		std::optional<auriga::resource_admission::Permit> Admit(entt::entity shopEntity, entt::entity buyer)
+		{
+			const auto* shop = Find(shopEntity);
+			if (!shop || !ecs::PlayerRuntime::IsPC(buyer)) return {};
+			const auto seller = shop->owner;
+			if (seller != entt::null && (!ecs::PlayerRuntime::IsPC(seller) || seller == buyer)) return {};
+			auto permit = seller == entt::null
+				? ecs::resource_admission::Enter({buyer}, auriga::resource_admission::Operation::Shop)
+				: ecs::resource_admission::Enter({buyer, seller}, auriga::resource_admission::Operation::Shop);
+			shop = Find(shopEntity); // Admission component construction may retire or change the shop.
+			if (!permit || !permit->Current() || !shop || shop->owner != seller || !shop->guests.contains(buyer)) return {};
+			return permit;
+		}
+		struct PreparedShopItem
+		{
+			entt::entity item;
+			bool committed = false;
+			~PreparedShopItem()
+			{
+				if (!committed && ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null &&
+					ItemSystem::GetItemWindow(item) == RESERVED_WINDOW)
+					ItemSystem::DestroyItemEntityEcs(item, "SHOP_ABORT");
+			}
+		};
+		int64_t BuyNormal(entt::entity shopEntity, ecs::ShopData& shop, entt::entity ch, uint8_t pos,
+			const auriga::resource_admission::Permit& permit
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 			, bool multiple
 #endif
 		)
 		{
+			const entt::entity seller = shop.owner;
 			if (!ecs::IsCharacter(ch))
 				return SHOP_SUBHEADER_GC_END;
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
@@ -522,7 +582,7 @@ namespace ShopSystem
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 			else
 			{
-				if (shop.owner != entt::null)
+				if (seller != entt::null)
 				{
 					return SHOP_SUBHEADER_GC_OK;
 				}
@@ -540,16 +600,24 @@ namespace ShopSystem
 				return SHOP_SUBHEADER_GC_END;
 			}
 
-			ecs::ShopItem& r_item = shop.items[pos];
+			const ecs::ShopItem r_item = shop.items[pos];
+			const auto selectionCurrent = [&] {
+				const auto* current = Find(shopEntity);
+				return permit.Current() && ecs::PlayerRuntime::IsPC(ch) && current && !current->extended &&
+					current->owner == seller && current->guests.contains(ch) && pos < current->items.size() &&
+					SameOffer(current->items[pos], r_item);
+			};
+			if (!r_item.vnum || r_item.count <= 0) return SHOP_SUBHEADER_GC_SOLD_OUT;
+			if (r_item.price < 0 || r_item.price >= GOLD_MAX) return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 			if (!ismultiple) {
 				const entt::entity selectedItem = r_item.item;
 
 				if (IsPCShop(shopEntity)) {
 					if (selectedItem == entt::null || !ItemSystem::IsValidItem(selectedItem)) {
-						LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(shop.owner));
+						LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(seller));
 						return SHOP_SUBHEADER_GC_SOLD_OUT;
-					} else if (ItemSystem::GetItemOwner(selectedItem) != shop.owner) {
-						LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(shop.owner));
+					} else if (ItemSystem::GetItemOwner(selectedItem) != seller) {
+						LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(seller));
 						return SHOP_SUBHEADER_GC_SOLD_OUT;
 					}
 				}
@@ -564,26 +632,17 @@ namespace ShopSystem
 			}
 
 #ifdef ENABLE_BUY_WITH_ITEM
-			uint32_t dwPriceVnum = 0, dwPriceCount = 0, dwHaveCount = 0;
-			for (int i = 0; i < MAX_SHOP_PRICES; i++) {
-				dwPriceVnum = r_item.itemprice[i].vnum;
-				if (dwPriceVnum > 0) {
-					dwPriceCount = r_item.itemprice[i].count;
-					dwHaveCount = ItemSystem::CountItem(ch, dwPriceVnum);
-					if (dwHaveCount < dwPriceCount) {
-						LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(ch).data(), dwHaveCount, dwPriceCount);
-						return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
-					}
-				}
-			}
+			if (!HasPrices(ch, r_item, 1)) return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 #endif
 
-			entt::entity itemEntity = shop.owner != entt::null ? r_item.item : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
+			entt::entity itemEntity = seller != entt::null ? r_item.item : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
+			PreparedShopItem prepared{seller == entt::null ? itemEntity : entt::null};
 			if (!ItemSystem::IsValidItem(itemEntity))
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
+			if (!selectionCurrent()) return SHOP_SUBHEADER_GC_END;
 
 #ifdef ENABLE_SHOP_BLACKLIST
-			if (shop.owner == entt::null)
+			if (seller == entt::null)
 			{
 				if (quest::CQuestManager::instance().GetEventFlag("hivalue_item_sell") == 0)
 				{
@@ -614,7 +673,7 @@ namespace ShopSystem
 
 			if (iEmptyPos < 0)
 			{
-				if (shop.owner != entt::null)
+				if (seller != entt::null)
 				{
 					LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemSize(itemEntity));
 					return SHOP_SUBHEADER_GC_INVENTORY_FULL;
@@ -622,22 +681,26 @@ namespace ShopSystem
 				else
 				{
 					LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemSize(itemEntity));
-					ItemSystem::DestroyItemEntityEcs(
-						itemEntity,
-						"SHOP_TRANSACTION");
 					return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 				}
 			}
 
+			if (!selectionCurrent() || !ItemSystem::IsValidItem(itemEntity) ||
+				ItemSystem::GetItemVnum(itemEntity) != r_item.vnum || ItemSystem::GetItemCount(itemEntity) != uint32_t(r_item.count) ||
+				ItemSystem::GetItemOwner(itemEntity) != seller) return SHOP_SUBHEADER_GC_END;
+			if (ecs::PointSystem::GetGold(ch) < dwPrice) return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
+#ifdef ENABLE_BUY_WITH_ITEM
+			if (!HasPrices(ch, r_item, 1)) return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
+#endif
 			if (dwPrice > 0) {
 				ecs::PointSystem::Change(ch, POINT_GOLD, -dwPrice, false);
 			}
 
 #ifdef ENABLE_BUY_WITH_ITEM
 			for (int i = 0; i < MAX_SHOP_PRICES; i++) {
-				dwPriceVnum = r_item.itemprice[i].vnum;
+				const auto dwPriceVnum = r_item.itemprice[i].vnum;
 				if (dwPriceVnum > 0) {
-					dwPriceCount = r_item.itemprice[i].count;
+					const auto dwPriceCount = r_item.itemprice[i].count;
 					if (dwPriceCount > 0) {
 						ItemSystem::RemoveSpecifyItemEcs(ch, dwPriceVnum, r_item.itemprice[i].count);
 					}
@@ -669,16 +732,16 @@ namespace ShopSystem
 			}
 
 			// Personal shop sale: the seller is paid the taxed price.
-			if (shop.owner != entt::null)
+			if (seller != entt::null)
 			{
 #ifdef ENABLE_EXTRA_INVENTORY
 				if (ItemSystem::IsExtraItem(itemEntity)) {
-					InventorySystem::SyncQuickslot(shop.owner, QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(itemEntity), 255);
+					InventorySystem::SyncQuickslot(seller, QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(itemEntity), 255);
 				} else {
-					InventorySystem::SyncQuickslot(shop.owner, QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
+					InventorySystem::SyncQuickslot(seller, QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
 				}
 #else
-				InventorySystem::SyncQuickslot(shop.owner, QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
+				InventorySystem::SyncQuickslot(seller, QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
 #endif
 
 				{
@@ -686,9 +749,9 @@ namespace ShopSystem
 
 					if (ItemSystem::GetItemVnum(itemEntity) >= 80003 && ItemSystem::GetItemVnum(itemEntity) <= 80007)
 					{
-						snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(shop.owner), dwPrice);
+						snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(seller), dwPrice);
 						LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemID(itemEntity), SHOP_BUY, buf);
-						LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(shop.owner), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
+						LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(seller), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
 					}
 
 					InventorySystem::RemoveFromCharacter(itemEntity);
@@ -818,10 +881,12 @@ namespace ShopSystem
 					}
 				}
 
-				r_item.item = entt::null;
+				if (auto* current = Find(shopEntity); current && pos < current->items.size() &&
+					current->owner == seller && SameOffer(current->items[pos], r_item))
+					current->items[pos].item = entt::null;
 				BroadcastUpdateItem(shopEntity, pos);
 
-				ecs::PointSystem::Change(shop.owner, POINT_GOLD, dwPrice, false);
+				ecs::PointSystem::Change(seller, POINT_GOLD, dwPrice, false);
 			}
 			else
 			{
@@ -958,12 +1023,14 @@ namespace ShopSystem
 				ecs::SessionSystem::Save(ch);
 			}
 
+			prepared.committed = true;
 			return (SHOP_SUBHEADER_GC_OK);
 		}
 
 		// The extended shop buys from its tabs; the window never holds item
 		// entities.
-		int64_t BuyExtended(entt::entity shopEntity, ecs::ShopData& shop, entt::entity ch, uint8_t pos)
+		int64_t BuyExtended(entt::entity shopEntity, ecs::ShopData& shop, entt::entity ch, uint8_t pos,
+			const auriga::resource_admission::Permit& permit)
 		{
 			if (!ecs::IsCharacter(ch))
 				return SHOP_SUBHEADER_GC_END;
@@ -982,8 +1049,20 @@ namespace ShopSystem
 			if (it == shop.guests.end())
 				return SHOP_SUBHEADER_GC_END;
 
-			TShopTableEx& shopTab = shop.tabs[tabIdx];
-			TShopItemTable& r_item = shopTab.items[slotPos];
+			const TShopTableEx shopTab = shop.tabs[tabIdx];
+			const TShopItemTable r_item = shopTab.items[slotPos];
+			const bool otherEmpire = it->second;
+			const auto selectionCurrent = [&] {
+				const auto* current = Find(shopEntity);
+				if (!permit.Current() || !ecs::PlayerRuntime::IsPC(ch) || !current || !current->extended ||
+					current->owner != entt::null || tabIdx >= current->tabs.size()) return false;
+				const auto guest = current->guests.find(ch);
+				const auto& tab = current->tabs[tabIdx];
+				const auto& row = tab.items[slotPos];
+				return guest != current->guests.end() && guest->second == otherEmpire && tab.coinType == shopTab.coinType &&
+					row.vnum == r_item.vnum && row.count == r_item.count && row.price == r_item.price;
+			};
+			if (!r_item.vnum || r_item.count <= 0) return SHOP_SUBHEADER_GC_SOLD_OUT;
 
 			if (r_item.price <= 0)
 			{
@@ -996,8 +1075,12 @@ namespace ShopSystem
 			switch (shopTab.coinType)
 			{
 			case SHOP_COIN_TYPE_GOLD:
-				if (it->second)	// if other empire, price is triple
-					dwPrice *= 3;
+				if (otherEmpire) { // if other empire, price is triple
+					const auto triple = auriga::shop_limits::Multiply(dwPrice, 3);
+					if (!triple) return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
+					dwPrice = *triple;
+				}
+				if (dwPrice >= GOLD_MAX) return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 
 				if (ecs::PointSystem::GetGold(ch) < dwPrice)
 				{
@@ -1016,14 +1099,18 @@ namespace ShopSystem
 					}
 				}
 				break;
+			default:
+				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
 			}
 
 			entt::entity item = entt::null;
 
 			item = ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count);
+			PreparedShopItem prepared{item};
 
 			if (!ItemSystem::IsValidItem(item))
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
+			if (!selectionCurrent()) return SHOP_SUBHEADER_GC_END;
 
 			int iEmptyPos;
 			if (ItemSystem::IsDragonSoulItem(item))
@@ -1044,12 +1131,16 @@ namespace ShopSystem
 			if (iEmptyPos < 0)
 			{
 				LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemSize(item));
-				ItemSystem::DestroyItemEntityEcs(
-					item,
-					"SHOP_EX_TRANSACTION");
 				return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 			}
 
+			if (!selectionCurrent() || !ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != entt::null ||
+				ItemSystem::GetItemVnum(item) != r_item.vnum || ItemSystem::GetItemCount(item) != uint32_t(r_item.count))
+				return SHOP_SUBHEADER_GC_END;
+			if (shopTab.coinType == SHOP_COIN_TYPE_GOLD && ecs::PointSystem::GetGold(ch) < dwPrice)
+				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
+			if (shopTab.coinType == SHOP_COIN_TYPE_SECONDARY_COIN && ItemSystem::CountTypeItem(ch, ITEM_SECONDARY_COIN) < dwPrice)
+				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
 			switch (shopTab.coinType)
 			{
 			case SHOP_COIN_TYPE_GOLD:
@@ -1096,6 +1187,7 @@ namespace ShopSystem
 			}
 #endif
 
+			prepared.committed = true;
 			return (SHOP_SUBHEADER_GC_OK);
 		}
 	}
@@ -1106,14 +1198,16 @@ namespace ShopSystem
 #endif
 	)
 	{
+		const auto permit = Admit(shopEntity, ch);
+		if (!permit) return SHOP_SUBHEADER_GC_END;
 		ecs::ShopData* shop = Find(shopEntity);
 		if (!shop)
 			return SHOP_SUBHEADER_GC_END;
 
 		if (shop->extended)
-			return BuyExtended(shopEntity, *shop, ch, pos);
+			return BuyExtended(shopEntity, *shop, ch, pos, *permit);
 
-		return BuyNormal(shopEntity, *shop, ch, pos
+		return BuyNormal(shopEntity, *shop, ch, pos, *permit
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 			, multiple
 #endif
@@ -1122,14 +1216,17 @@ namespace ShopSystem
 
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 	uint8_t MultipleBuy(entt::entity shopEntity, entt::entity ch, uint8_t p, uint8_t c) {
+		const auto permit = Admit(shopEntity, ch);
+		if (!permit) return SHOP_SUBHEADER_GC_END;
 		ecs::ShopData* shop = Find(shopEntity);
 		if (!shop)
 			return SHOP_SUBHEADER_GC_END;
+		if (shop->extended) return SHOP_SUBHEADER_GC_INVALID_POS;
 
 		if (!ecs::IsCharacter(ch))
 			return SHOP_SUBHEADER_GC_END;
-		if (p < 0 || c <= 0 || c > MULTIPLE_BUY_LIMIT) {
-			return SHOP_SUBHEADER_GC_OK;
+		if (c <= 0 || c > MULTIPLE_BUY_LIMIT) {
+			return SHOP_SUBHEADER_GC_INVALID_POS;
 		}
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -1159,40 +1256,28 @@ namespace ShopSystem
 			return SHOP_SUBHEADER_GC_END;
 		}
 
-		ecs::ShopItem& r_item = shop->items[p];
+		const ecs::ShopItem r_item = shop->items[p];
 
-		int64_t price = r_item.price * c;
+		if (!r_item.vnum || r_item.count <= 0) return SHOP_SUBHEADER_GC_SOLD_OUT;
+		const auto total = auriga::shop_limits::Multiply(r_item.price, c);
+		if (!total || *total >= GOLD_MAX) return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
+		const int64_t price = *total;
 
 		if (ecs::PointSystem::GetGold(ch) < price) {
 			return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 		}
 
 #ifdef ENABLE_BUY_WITH_ITEM
-		int32_t price_vnum = 0, price_count = 0, have_count = 0;
-		for (int32_t i = 0; i < MAX_SHOP_PRICES; i++) {
-			price_vnum = r_item.itemprice[i].vnum;
-			if (price_vnum > 0) {
-				price_count = r_item.itemprice[i].count * c;
-				have_count = ItemSystem::CountItem(ch, price_vnum);
-				if (have_count < price_count) {
-					LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(ch).data(), have_count, price_count);
-					return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
-				}
-			}
-		}
+		if (!HasPrices(ch, r_item, c)) return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 #endif
 
 
-		int64_t r;
+		int64_t r = SHOP_SUBHEADER_GC_END;
 
 		while (c > 0) {
+			if (!permit->Current()) { r = SHOP_SUBHEADER_GC_END; break; }
 			r = Buy(shopEntity, ch, p, true);
-			if (r == SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY ||
-#ifdef ENABLE_BUY_WITH_ITEM
-				r == SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM ||
-#endif
-				r == SHOP_SUBHEADER_GC_INVENTORY_FULL ||
-				r == SHOP_SUBHEADER_GC_END) {
+			if (r != SHOP_SUBHEADER_GC_OK) {
 				break;
 			} else {
 				c--;

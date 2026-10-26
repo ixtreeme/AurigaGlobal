@@ -194,7 +194,7 @@ void InvalidAndCapacity()
         Check(gate::TryPause(one, uint8_t(mask), Token(4)).has_value() == allowed,
               "invalid domain mask accepted");
         Check(gate::Enter(one, static_cast<gate::Operation>(mask)).has_value() ==
-                  (mask == 1 || mask == 2 || mask == 4 || mask == 8 || mask == 16 || mask == 32),
+                  (mask == 1 || mask == 2 || mask == 4 || mask == 8 || mask == 16 || mask == 32 || mask == 64),
               "invalid operation accepted");
     }
     Check(!gate::TryPause(one, gate::Supported, {}), "zero preparation challenge accepted");

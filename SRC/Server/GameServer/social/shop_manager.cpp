@@ -28,6 +28,8 @@
 #include "shop_manager.h"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/Registry.hpp"
+#include "../ecs/ResourceAdmission.hpp"
+#include <Core/shop_limits.h>
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "json_group_tree.h"
@@ -228,6 +230,8 @@ void CShopManager::StopShopping(entt::entity ch)
 // Buy.
 void CShopManager::Buy(entt::entity ch, uint8_t pos)
 {
+	const auto permit = ecs::resource_admission::Enter({ch}, auriga::resource_admission::Operation::Shop);
+	if (!permit || !permit->Current() || !ecs::PlayerRuntime::IsPC(ch)) return;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(ch) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch) < GM_IMPLEMENTOR) {
 		return;
@@ -236,7 +240,7 @@ void CShopManager::Buy(entt::entity ch, uint8_t pos)
 #ifdef ENABLE_NEWSTUFF
 	if (0 != g_BuySellTimeLimitValue)
 	{
-		if (get_dword_time() < ecs::SocialSystem::GetLastBuySellTime(ch)+g_BuySellTimeLimitValue)
+		if (!auriga::shop_limits::Ready(get_dword_time(), ecs::SocialSystem::GetLastBuySellTime(ch), g_BuySellTimeLimitValue))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
@@ -245,7 +249,6 @@ void CShopManager::Buy(entt::entity ch, uint8_t pos)
 		}
 	}
 
-	ecs::SocialSystem::SetLastBuySellTime(ch, get_dword_time());
 #endif
 	const entt::entity pkShop = ecs::SocialSystem::GetShop(ch);
 	if (pkShop == entt::null)
@@ -267,6 +270,10 @@ void CShopManager::Buy(entt::entity ch, uint8_t pos)
 	//END_PREVENT_ITEM_COPY
 
 	int ret = ShopSystem::Buy(pkShop, ch, pos);
+#ifdef ENABLE_NEWSTUFF
+	if (ret == SHOP_SUBHEADER_GC_OK && ecs::PlayerRuntime::IsPC(ch))
+		ecs::SocialSystem::SetLastBuySellTime(ch, get_dword_time());
+#endif
 
 	if (SHOP_SUBHEADER_GC_OK != ret) // Tell the buyer why it failed.
 	{
@@ -276,12 +283,14 @@ void CShopManager::Buy(entt::entity ch, uint8_t pos)
 		pack.subheader	= ret;
 		pack.size	= sizeof(TPacketGCShop);
 
-		ecs::PlayerRuntime::GetDesc(ch)->Packet(&pack, sizeof(pack));
+		if (auto* desc = ecs::PlayerRuntime::GetDesc(ch)) desc->Packet(&pack, sizeof(pack));
 	}
 }
 
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 void CShopManager::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
+	const auto permit = ecs::resource_admission::Enter({ch}, auriga::resource_admission::Operation::Shop);
+	if (!permit || !permit->Current() || !ecs::PlayerRuntime::IsPC(ch)) return;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(ch) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch) < GM_IMPLEMENTOR) {
 		return;
@@ -313,7 +322,7 @@ void CShopManager::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
 		pack.subheader = ret;
 		pack.size = sizeof(TPacketGCShop);
 
-		ecs::PlayerRuntime::GetDesc(ch)->Packet(&pack, sizeof(pack));
+		if (auto* desc = ecs::PlayerRuntime::GetDesc(ch)) desc->Packet(&pack, sizeof(pack));
 	}
 }
 #endif
@@ -336,6 +345,8 @@ uint8_t bCount
 )
 #endif
 {
+	const auto permit = ecs::resource_admission::Enter({ch}, auriga::resource_admission::Operation::Shop);
+	if (!permit || !permit->Current() || !ecs::PlayerRuntime::IsPC(ch)) return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(ch) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch) < GM_IMPLEMENTOR) {
@@ -345,7 +356,7 @@ uint8_t bCount
 #ifdef ENABLE_NEWSTUFF
 	if (0 != g_BuySellTimeLimitValue)
 	{
-		if (get_dword_time() < ecs::SocialSystem::GetLastBuySellTime(ch)+g_BuySellTimeLimitValue)
+		if (!auriga::shop_limits::Ready(get_dword_time(), ecs::SocialSystem::GetLastBuySellTime(ch), g_BuySellTimeLimitValue))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
@@ -354,7 +365,6 @@ uint8_t bCount
 		}
 	}
 
-	ecs::SocialSystem::SetLastBuySellTime(ch, get_dword_time());
 #endif
 	const entt::entity pkShop = ecs::SocialSystem::GetShop(ch);
 	if (pkShop == entt::null)
@@ -369,13 +379,11 @@ uint8_t bCount
 
 	if (ShopSystem::IsPCShop(pkShop))
 		return;
-
-	/*
-	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(ch)-ecs::PlayerRuntime::GetX(shopKeeper), ecs::PlayerRuntime::GetY(ch)-ecs::PlayerRuntime::GetY(shopKeeper))>2000)
-	{
-		return;
-	}
-	*/
+	const auto* shop = ShopSystem::Find(pkShop);
+	if (!shop || !shop->guests.contains(ch) || !ecs::PlayerRuntime::IsValid(shopKeeper) ||
+		ecs::PlayerRuntime::GetMapIndex(ch) != ecs::PlayerRuntime::GetMapIndex(shopKeeper) ||
+		DISTANCE_APPROX(ecs::PlayerRuntime::GetX(ch) - ecs::PlayerRuntime::GetX(shopKeeper),
+			ecs::PlayerRuntime::GetY(ch) - ecs::PlayerRuntime::GetY(shopKeeper)) > 2000) return;
 
 	const entt::entity owner = ch;
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -386,6 +394,11 @@ uint8_t bCount
 
 	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
+	if (ItemSystem::GetItemOwner(itemEntity) != owner || ItemSystem::IsItemConsumptionPending(itemEntity) ||
+		ItemSystem::IsItemExchanging(itemEntity)) return;
+#ifdef ENABLE_EXTRA_INVENTORY
+	if (ItemSystem::GetItemWindow(itemEntity) != Cell.window_type || ItemSystem::GetItemCell(itemEntity) != Cell.cell) return;
+#endif
 
 	if (ItemSystem::IsItemEquipped(itemEntity) == true)
 	{
@@ -406,20 +419,24 @@ uint8_t bCount
 	const uint32_t itemCount = ItemSystem::GetItemCount(itemEntity);
 	if (itemCount == 0)
 		return;
-	if (bCount == 0 || bCount > itemCount)
-		bCount = static_cast<decltype(bCount)>(itemCount);
+	const uint32_t amount = bCount == 0 || bCount > itemCount ? itemCount : bCount;
 
 	int64_t dwPrice = ItemSystem::GetItemShopBuyPrice(itemEntity);
+	if (dwPrice < 0) return;
 
 	if (IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_COUNT_PER_1GOLD))
 	{
 		if (dwPrice == 0)
-			dwPrice = bCount;
+			dwPrice = amount;
 		else
-			dwPrice = bCount / dwPrice;
+			dwPrice = amount / dwPrice;
 	}
 	else
-		dwPrice *= bCount;
+	{
+		const auto total = auriga::shop_limits::Multiply(dwPrice, amount);
+		if (!total) return;
+		dwPrice = *total;
+	}
 
 /* 	dwPrice /= 5;
 
@@ -436,7 +453,7 @@ uint8_t bCount
 		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemID(itemEntity));
 
 	const int64_t currentGold = ecs::PointSystem::GetGold(owner);
-	if (dwPrice < 0 || currentGold >= GOLD_MAX || dwPrice >= GOLD_MAX - currentGold)
+	if (currentGold < 0 || currentGold >= GOLD_MAX || dwPrice >= GOLD_MAX - currentGold)
 	{
 		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetName(ch).data(), ecs::PointSystem::GetGold(ch));
 #ifdef TEXTS_IMPROVEMENT
@@ -448,14 +465,19 @@ uint8_t bCount
 		return;
 	}
 
-	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(itemEntity), dwPrice);
-	const bool sold = (bCount == itemCount)
+	if (!permit->Current()) return;
+	const auto vnum = ItemSystem::GetItemVnum(itemEntity);
+	const bool sold = (amount == itemCount)
 		? ItemSystem::DestroyItemEntityEcs(itemEntity, "SELL")
-		: ItemSystem::ConsumeItemEcs(itemEntity, bCount);
+		: ItemSystem::ConsumeItemEcs(itemEntity, amount);
 	if (!sold)
 		return;
 
+#ifdef ENABLE_NEWSTUFF
+	if (ecs::PlayerRuntime::IsPC(owner)) ecs::SocialSystem::SetLastBuySellTime(owner, get_dword_time());
+#endif
 	ecs::PointSystem::Change(owner, POINT_GOLD, dwPrice, false);
+	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, vnum, dwPrice);
 }
 
 bool CompareShopItemName(const SShopItemTable& lhs, const SShopItemTable& rhs)
