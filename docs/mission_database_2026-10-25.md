@@ -149,7 +149,7 @@ ad a saját helyi Mission-felhasználónak, a tárgyjutalom címzettellenőrzés
 Más végpontú account nem akadályozza a store telepítését; az új itemadapterhez
 külön hiteles identitásprotokoll nélkül ugyanazon SQL-példány szükséges.
 Az alábbi számszerű ellenőrzések a korábbi adatbázis-szétválasztás lezárt körét
-rögzítik; a legutóbbi 21/21 + ASAN 12/12, a 13/13 bootstrap és az egyszeri,
+rögzítik; a legutóbbi 22/22 + ASAN 12/12, a korábbi 13/13 bootstrap és az egyszeri,
 nyitott ASAN-visszaolvasási észlelés a központi állapotdokumentumban szerepel.
 
 A felhasználó kérésére a Server2-Local saját MariaDB-jén létrejött a külön

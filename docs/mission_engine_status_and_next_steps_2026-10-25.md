@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-26
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `d2155e5c`; előző lezárt állapot: `1cf10ce2`.
+- **Aktuális kódcommit:** `8044061f`; előző lezárt állapot: `a7320612`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -27,7 +27,10 @@ bemenet/szabály/sorsolás/eredmény tartós archívuma is (4/D–4a).
 Elkészült a teljes erőforráscsomag SQL-írója, tartós hatásnyugtája,
 a két SQL-sorhoz kötött fence és a külön publikálási protokoll (4/D–4b).
 Ezek a backend API-k izolált adatbázison teszteltek; az élő cache/session
-útvonalak még nem használják őket. A jelenlegi Mission-séma 5-ös, 12 táblával.
+útvonalak még nem használják őket. Elkészült a tényleges SQL-workerig érő,
+hibás/újrapróbált mentéseket is követő két-lane-es drain adapter (4/D–4c).
+A teljes GameServer/Database source-stop és cache-átadás még hátravan.
+A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
 kezeli; külön player/mission sémán közös commit/rollback/crash próba is sikeres.
@@ -270,6 +273,22 @@ lease-átadás, ECS-rebase, vitals-számítás és értesítések még nincsenek
 Az egyszeri ASAN-visszaolvasási eltérés oka nyitott; részletek az ellenőrzéseknél.
 A Gameplay aktiválása ezért továbbra is zárt.
 
+### 3.13. Valódi legacy SQL-sorürítés (4/D–4c)
+
+- Minden queued SQL-munkához worker-lane és monoton sorszám; külön pollolható FIFO-ticket.
+- Nem visszatérő, prepared, rollbackelt és bizonytalanul újrapróbált mentés hibanyomának megőrzése.
+- Két valódi player-workerhez kapcsolt Database API és session/challenge/barrier szerint ellenőrzött `ResourceDrain`.
+- A nem visszatérő szöveges SQL minden eredményét kiolvassuk, a késői multi-result/procedure hibát is.
+- Javítva a retry után a másolt FIFO-ban bent maradó munka és annak shutdown-flush útja.
+- Tényleges worker-adapteres Mission-próba a demonstrációs SELECT-barrierek helyett;
+  hibás régi mentés után az új jutalomterv tiltva marad.
+
+**Határ:** a baseline hibanyoma lane-szintű és folyamaton belüli. A karakterenkénti
+flush/mentésattribúció, a source megállítása és a két szerverfolyamat közötti hiteles
+GD/DG üzenetprotokoll még hátravan. A ticket nem küldhető át folyamatközi mutatóként.
+Távoli gépen ebben a munkafázisban semmilyen művelet nem történt; a próbák izolált,
+loopbackre kötött helyi MariaDB-példányokat használnak. Az élő Gameplay kapu zárt.
+
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
@@ -280,12 +299,12 @@ A Gameplay aktiválása ezért továbbra is zárt.
 | Checkpoint codec és action identity | 3227 ellenőrzés |
 | Verziózott reward-payload suite | 2109 ellenőrzés, normál és ASAN alatt |
 | Kevert erőforrástervező / codec / fence | 1606 ellenőrzés, normál és ASAN |
-| SQL-egységtesztek | 2232 ellenőrzés |
-| Valódi SQL-infrastruktúra | 204 ellenőrzés |
-| Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2952 + 155 a legutóbbi stresszkörökben |
+| SQL-egységtesztek | 2256 ellenőrzés; az új queue/retry/lifecycle próbákkal |
+| Valódi SQL-infrastruktúra | 234 ellenőrzés; a valódi drain és késői szöveges SQL-hibák próbáival |
+| Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 21/21 sikeres a jelen részfázisban |
+| Célzott regressziós CTest-kör | 22/22 sikeres a 4/D–4c részfázisban |
 | Külön AddressSanitizer CTest-kör | 12/12 sikeres |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
@@ -303,6 +322,14 @@ award ID-k megvoltak, és friss folyamatból visszaolvashatók. Bővített diagn
 128 ismételt egyeztetés és több új ASAN-kör után nem ismétlődött. Az ok nincs
 bizonyítva, ezért ezt nem tekintjük javítottnak; az élő aktiválás előtti nyitott
 vizsgálati tétel. A részletes dokumentum a megőrzött naplókat is felsorolja.
+
+A 4/D–4c végső kódján a normál regressziós kör **22/22**, az ASAN natív kör
+**12/12** sikeres. A normál és ASAN GameServer, Database és LoginServer build is
+elkészült. A külön ASAN SQL-infrastruktúra 234 ellenőrzéssel, a Mission store
+2959 + 155 ellenőrzéssel sikeres; az utóbbi hét elveszett COMMIT-választ és
+kényszerített DB-restartot tartalmaz. Az új drain-teszt közben előkerült retry-FIFO
+hiba külön, determinisztikus regressziós próbát és javítást kapott; ez nem bizonyítja
+a korábbi, különálló hatásnyugta-visszaolvasási észlelés okát.
 
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
@@ -327,6 +354,7 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `8044061f` | Valódi SQL-worker drain, hibás mentések nyoma, eredménykiolvasás és retry-FIFO javítása |
 | `d2155e5c` | Atomi erőforrás-hatások, két SQL-soros fence, publikálás és sémaverzió 5 |
 | `20e1dd77` | Determinisztikus kevert erőforrástervek, codec, tartós archívum és sémaverzió 4 |
 | `e9d1ca90` | Mission Engine audit és migrációs terv |
@@ -417,6 +445,7 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Tárgycsomag teljes útjának valódi kernel/SQL/cache/item crash/retry/telt raktár próbája.
 - [x] Kevert erőforrás-átmenet determinisztikus előkészítése és tartós, korlátos tervarchívuma.
 - [x] Tartós resource revision, két SQL-soros fence-protokoll és guarded DML backend.
+- [x] Valódi két-lane-es FIFO-drain, hibanyom és session/challenge szerint ellenőrzött adapter.
 - [x] Teljes XP/pénz/cost/award csomag közös SQL-commitja és tartós resource-effect nyugtája.
 - [ ] Élő source-stop, régi cache és függő mentések ellenőrzött kiürítése; minden legacy író átvezetése.
 - [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
@@ -493,6 +522,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Mission tárgyjutalom, stabil award-mapping és teljes út hibapróbái](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_item_awards_2026-10-25.md)
 - [Kevert erőforrások előkészítése és tartós archívuma](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_resource_preparation_2026-10-25.md)
 - [Atomi SQL erőforrásíró, fence és publikálás](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_resource_writer_2026-10-26.md)
+- [Valódi legacy SQL-sorürítés és retry-hibák](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_sql_drain_2026-10-26.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
