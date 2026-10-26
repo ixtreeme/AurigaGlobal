@@ -92,6 +92,8 @@ class MissionDatabaseTests(unittest.TestCase):
         self.assertIn("'mission''writer'@'127.0.0.1'", grants)
         self.assertIn("'back\\slash''password'", grants)
         self.assertIn('GRANT SELECT,INSERT ON `player`.`item_award`', grants)
+        self.assertIn('GRANT SELECT,UPDATE ON `player`.`player`', grants)
+        self.assertIn('GRANT SELECT,INSERT,UPDATE,DELETE ON `player`.`item`', grants)
         self.assertIn('GRANT SELECT ON `account`.`account`', grants)
 
     def test_grants_use_the_effective_account_schema(self):
@@ -179,15 +181,17 @@ class OwnedBootstrapTests(unittest.TestCase):
             try:
                 manage.init_db(BINARIES)
                 manage.start_db()
-                self.assertEqual(manage.sql('SELECT schema_version FROM mission.mission_engine_schema;').strip(), '4')
-                self.assertEqual(manage.sql("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='mission';").strip(), '10')
+                self.assertEqual(manage.sql('SELECT schema_version FROM mission.mission_engine_schema;').strip(), '5')
+                self.assertEqual(manage.sql("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='mission';").strip(), '12')
                 manage.sql('INSERT INTO mission.mission_engine_characters(character_id) VALUES(7);')
                 manage.sql("INSERT INTO mission.mission_engine_operations(operation_id,character_id,operation_kind,request_digest,owner_epoch,storage_revision) VALUES(UNHEX(REPEAT('ab',16)),7,5,UNHEX(REPEAT('cd',32)),1,0);")
+                manage.sql("INSERT INTO mission.mission_engine_operations(operation_id,character_id,operation_kind,request_digest,owner_epoch,storage_revision) VALUES(UNHEX(REPEAT('ef',16)),7,8,UNHEX(REPEAT('cd',32)),1,0);")
                 cfg['common']['sql']['mission'].update(user='mission_upgrade_writer', password="quoted\\and'password")
                 (root / 'server.json').write_text(json.dumps(cfg), encoding='utf-8')
                 manage.init_mission_db()
                 self.assertEqual(manage.sql('SELECT COUNT(*) FROM mission.mission_engine_characters;').strip(), '1')
                 self.assertEqual(manage.sql('SELECT COUNT(*) FROM mission.mission_engine_operations WHERE operation_kind=5;').strip(), '1')
+                self.assertEqual(manage.sql('SELECT COUNT(*) FROM mission.mission_engine_operations WHERE operation_kind=8;').strip(), '1')
                 entry = dict(connection=cfg['common']['sql']['mission'], roles=['database/mission'])
                 status = backend.probe_sql(str(BINARIES / 'mariadb.exe'), entry)
                 self.assertEqual(status['status'], 'available')

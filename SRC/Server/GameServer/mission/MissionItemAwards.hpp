@@ -58,5 +58,5 @@ struct ItemAwardsReceipt
 // token after reconnect: a complete matching action receipt still returns the
 // original IDs. Historical receipt != authorization to mutate a live session.
 SqlTransaction ResolveItemAwards(const ItemAwardsPlan &plan);
-ItemAwardsReceipt DecodeItemAwards(_SQLMsg &message, const ItemAwardsPlan &plan);
+ItemAwardsReceipt DecodeItemAwards(_SQLMsg &message, const ItemAwardsPlan &plan, size_t expectedSteps = 4);
 } // namespace auriga::mission::persistence

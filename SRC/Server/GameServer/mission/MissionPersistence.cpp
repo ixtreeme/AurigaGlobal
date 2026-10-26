@@ -1,4 +1,5 @@
 #include "MissionPersistence.hpp"
+#include "MissionPersistenceInternal.hpp"
 #include <SQL/AsyncSQL.h>
 #include <algorithm>
 #include <charconv>
@@ -71,18 +72,21 @@ SqlTransaction Preconditions()
 {
     // Version/engine/FK checks fail closed. A hand-created lookalike or a disabled
     // constraint session must not silently weaken archive/checkpoint references.
-    return {{"SELECT schema_version FROM mission_engine_schema WHERE singleton=1 AND schema_version=4 "
+    return {{"SELECT schema_version FROM mission_engine_schema WHERE singleton=1 AND schema_version=5 "
              "AND @@foreign_key_checks=1 AND @@check_constraint_checks=1 "
+             "AND NOT EXISTS(SELECT 1 FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=DATABASE()) "
              "AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() "
              "AND ENGINE='InnoDB' AND TABLE_NAME IN ('mission_engine_schema','mission_engine_packages',"
              "'mission_engine_definitions','mission_engine_characters','mission_engine_checkpoint_refs',"
              "'mission_engine_operations','mission_engine_action_outbox','mission_engine_reward_ledger','"
-             "mission_engine_item_awards','mission_engine_resource_plans'))=10 "
+             "mission_engine_item_awards','mission_engine_resource_plans','mission_engine_resource_heads',"
+             "'mission_engine_resource_effects'))=12 "
              "AND (SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE "
              "CONSTRAINT_SCHEMA=DATABASE() "
              "AND CONSTRAINT_NAME IN ('me_definition_package','me_ref_character','me_ref_definition',"
              "'me_operation_character_fk','me_action_character','me_action_definition','me_entitlement_"
-             "action','me_item_award_action','me_resource_action'))=9",
+             "action','me_item_award_action','me_resource_action','me_resource_head_character',"
+             "'me_effect_plan','me_effect_entitlement'))=12",
              {},
              {},
              1}};
@@ -257,6 +261,33 @@ Row ReadSingle(Message &message, size_t fields)
 }
 } // namespace
 
+namespace detail
+{
+Plan ResourceOperation(Owner owner, Operation kind, Token operation, ContentDigest request)
+{
+    CheckOwner(owner);
+    Need(Nonzero(operation) && (kind == Operation::ResourceWrite || kind == Operation::PublishResources),
+         "Invalid resource operation");
+    Plan plan;
+    plan.character = owner.character;
+    plan.ownerEpoch = owner.epoch;
+    plan.operation = operation;
+    plan.kind = kind;
+    plan.request = RequestHash(kind, owner.character, owner.epoch, owner.token, operation, 0, request);
+    plan.statements = Preconditions();
+    plan.statements.push_back(
+        {"SELECT character_id FROM mission_engine_characters WHERE character_id=? AND owner_epoch=? AND "
+         "owner_token=? FOR UPDATE",
+         {SqlParam::UInt(owner.character), SqlParam::UInt(owner.epoch), SqlParam::Blob(Bytes(owner.token))},
+         {},
+         1});
+    return plan;
+}
+void FinishResourceOperation(Plan &plan)
+{
+    Receipt(plan);
+}
+} // namespace detail
 Token NewToken()
 {
     Token token{};

@@ -2,6 +2,7 @@
 #include "../../SRC/Server/Database/ItemAwardScan.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionItemAwards.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionPersistence.hpp"
+#include "../../SRC/Server/GameServer/mission/MissionResourceEffects.hpp"
 #include "../../SRC/Server/GameServer/mission/MissionValidator.hpp"
 #include "MissionPersistenceFixture.hpp"
 #include "MissionResourceFixture.hpp"
@@ -315,7 +316,7 @@ void MissingArchiveAndCorruption(CAsyncSQL &sql, const DefinitionRegistry &regis
     Text(sql, "SET foreign_key_checks=1");
     Query(sql, {"UPDATE mission_engine_schema SET schema_version=99 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes), false);
-    Query(sql, {"UPDATE mission_engine_schema SET schema_version=4 WHERE singleton=1", {}});
+    Query(sql, {"UPDATE mission_engine_schema SET schema_version=5 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes));
 }
 void ConcurrentSaves(CAsyncSQL &admin, const DefinitionRegistry &registry)
@@ -893,13 +894,13 @@ void QualifiedInstall(CAsyncSQL &sql, const char *migration)
     }
     Check(Number(sql,
                  "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND ENGINE='InnoDB'",
-                 {SqlParam::Text(installed)}) == 10,
-          "qualified installer did not create ten dedicated InnoDB tables");
+                 {SqlParam::Text(installed)}) == 12,
+          "qualified installer did not create twelve dedicated InnoDB tables");
     CAsyncSQL target;
     Check(target.Setup("127.0.0.1", "root", "", installed.c_str(), "utf8mb4", true, port),
           "custom Mission database connection failed");
     Execute(target, db::Claim(900, 0, Token(90), Token(91)));
-    Check(Number(target, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 4,
+    Check(Number(target, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 5,
           "qualified custom-schema installer is not usable by the real store");
 }
 void CrossSchema(CAsyncSQL &sql, const DefinitionRegistry &registry, unsigned int proxy)
@@ -1571,8 +1572,382 @@ void ColdResources(CAsyncSQL &sql)
                       ResourceApplication::Ready,
               "cold resource decision changed or was mistaken for an applied effect");
     }
-    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_resource_plans") == 17,
+    Check(Number(sql,
+                 "SELECT COUNT(*) FROM mission_engine_resource_plans r JOIN mission_engine_action_outbox "
+                 "o ON o.action_id=r.action_id WHERE o.character_id IN (100,103)") == 17,
           "cold proposal count changed");
+}
+PackageSource CurrencySource()
+{
+    auto source = resources::Source();
+    source.manifest.id = "currency.campaign";
+    source.missions[0].id = "currency.story";
+    source.missions[0].rewards.begin()->second = RewardBundle{1, {}, 0, 1, {}};
+    source.presentation.missions.clear();
+    source.presentation.missions["currency.story"] = {"story.title", "story.summary", {}};
+    return source;
+}
+PinnedReward EffectPin(uint32_t character)
+{
+    if (character != 114)
+        return resources::Pin(resources::Pin().Payload(), character);
+    const auto graph = CompileDefinition(CurrencySource().missions.front());
+    auto pin = PinReward({114, "currency.story", 1, 10, "reward", "persist.reward"},
+                         FingerprintDefinition(*graph.definition), *graph.definition);
+    Check(bool(pin), "currency effect pin missing");
+    return *pin.reward;
+}
+ResourceSnapshot EffectSource(uint32_t character)
+{
+    auto source = resources::Snapshot(character);
+    source.items.clear();
+    const size_t count = character == 114 ? 0 : character == 115 ? 1024 : 2;
+    for (size_t i = 0; i < count; ++i)
+        source.items.push_back(
+            {uint32_t(10000000 + character * 2000 + i), character, 50010, uint32_t(count == 2 ? i + 2 : 1),
+             i == 1 && count == 2 ? ResourceWindow::ExtraInventory : ResourceWindow::Inventory, 0,
+             uint16_t(i), 0});
+    return source;
+}
+PreparedResources EffectPreparation(uint32_t character)
+{
+    auto prepared =
+        PrepareResources(EffectPin(character), EffectSource(character), resources::Rules(),
+                         character == 114 ? std::vector<ResourceLevelRoll>{} : resources::Rolls());
+    Check(bool(prepared), "resource effect preparation invalid");
+    return *prepared.plan;
+}
+db::ResourceWriterIdentity EffectWriter(db::Owner owner)
+{
+    return {owner, 41, 7, Token(uint8_t(owner.character))};
+}
+db::ResourceFence ReadyEffectFence(db::Owner owner, PreparedResources prepared)
+{
+    db::ResourceFence fence(EffectWriter(owner), std::move(prepared), Token(210), {11, 12});
+    Check(fence.SourceStopped(fence.Identity(), fence.Challenge()) &&
+              fence.LaneDrained(0, 11, SqlTransactionOutcome::Committed) &&
+              fence.LaneDrained(1, 12, SqlTransactionOutcome::Committed),
+          "effect fence did not seal");
+    return fence;
+}
+db::ResourceEffectsPlan EffectPlan(const db::ResourceFence &fence, ContentDigest checkpoint,
+                                   db::Token operation)
+{
+    return db::ApplyResourceEffects(fence, EffectPin(fence.Identity().owner.character), 1, checkpoint,
+                                    operation, {playerDatabase, accountDatabase, ""}, {900, "delivery'bound"},
+                                    fence.Identity().owner.character == 114
+                                        ? std::map<uint32_t, uint32_t>{}
+                                        : std::map<uint32_t, uint32_t>{{50011, 2}});
+}
+db::ResourceEffectsReceipt EffectReceipt(CAsyncSQL &sql, const db::ResourceEffectsPlan &plan)
+{
+    Message message(sql.DirectTransactionPrepared(db::ResolveResourceEffects(plan)));
+    auto receipt = db::DecodeResourceEffects(*message, plan);
+    if (receipt.status == db::ReadStatus::Invalid || receipt.status == db::ReadStatus::SqlError)
+        for (const auto &error : receipt.errors)
+            std::cerr << "Effect receipt character " << plan.awards.action.character << ": " << error.message
+                      << '\n';
+    return receipt;
+}
+void ResourceEffects(CAsyncSQL &sql, unsigned int proxy)
+{
+    const auto currency = CurrencySource();
+    Execute(sql, db::ArchivePackage(CompilePackage(currency).bytes));
+    DefinitionRegistry registry;
+    auto definitions = resources::Source().missions;
+    definitions.push_back(currency.missions.front());
+    Check(registry.Activate(definitions).status == Publication::Status::Published, "effect graphs invalid");
+    for (uint32_t character = 110; character <= 115; ++character)
+    {
+        const auto owner = Claim(sql, character, 0, Token(uint8_t(character)), db::NewToken());
+        const auto pin = EffectPin(character);
+        const auto prepared = EffectPreparation(character);
+        MissionRuntime runtime(registry, {character, 17}, 1000);
+        Accepted(runtime.Start(pin.Action().mission, 1, 10, 1000));
+        Accepted(
+            runtime.Dispatch({{character, 17}, {1, 1}, 1001, EventKind::MobKilled, "monkey", 1, {}}, 1001));
+        auto checkpoint = runtime.Save();
+        Execute(sql, db::Save(checkpoint, registry, owner, 0, db::NewToken()));
+        auto digest = EncodeCheckpoint(checkpoint, registry).metadata.digest;
+        Execute(sql, db::ArchiveResources(owner, pin, prepared, 1, digest, db::NewToken()));
+        Text(sql, "INSERT INTO " + Player("player") +
+                      "(id,account_id,name,gold,level,level_step,exp,stat_point,skill_point,sub_skill_point,"
+                      "random_hp,random_sp,job,skill_group,hp,mp,stamina) VALUES(" +
+                      std::to_string(character) + ",900,'effect" + std::to_string(character) +
+                      "',1000,9,3,900,10,4,2,40,20,0,1,123,99,44)");
+        for (const auto &item : prepared.Before().items)
+            Text(sql, "INSERT INTO " + Player("item") +
+                          "(id,owner_id,vnum,count,window,pos,socket0,attrtype0,attrvalue0) VALUES(" +
+                          std::to_string(item.id) + "," + std::to_string(character) + ",50010," +
+                          std::to_string(item.count) + ",'" +
+                          (item.window == ResourceWindow::ExtraInventory ? "EXTRA_INVENTORY" : "INVENTORY") +
+                          "'," + std::to_string(item.cell) + ",999,1,9)");
+        auto fence = ReadyEffectFence(owner, prepared);
+        if (character == 110)
+        {
+            // Real legacy SQL queues: old cache DML is before a barrier on
+            // each FIFO. Both acknowledgements are required before applying.
+            fence = db::ResourceFence(EffectWriter(owner), prepared, Token(210), {11, 12});
+            Check(fence.SourceStopped(fence.Identity(), fence.Challenge()), "source stop failed");
+            CAsyncSQL mainLane, asyncLane;
+            Connect(mainLane, false);
+            Connect(asyncLane, false);
+            mainLane.ReturnTransactionPrepared(
+                {{"UPDATE " + Player("player") + " SET gold=1000 WHERE id=110", {}, {}, {}}}, nullptr);
+            asyncLane.ReturnTransactionPrepared(
+                {{"UPDATE " + Player("item") + " SET socket0=999 WHERE owner_id=110", {}, {}, {}}}, nullptr);
+            for (auto *lane : {&mainLane, &asyncLane})
+                lane->ReturnTransactionPrepared({{"SELECT 1", {}, {}, 1}}, nullptr);
+            Check(!EffectPlan(fence, digest, db::NewToken()), "undrained queues produced an effect plan");
+            auto first = Wait(mainLane, 2);
+            Check(db::Confirmed(*first[0]) && fence.LaneDrained(0, 11, first[1]->transactionOutcome) &&
+                      fence.Stage() == db::ResourceFenceStage::Draining,
+                  "one actual lane thawed fence");
+            auto second = Wait(asyncLane, 2);
+            Check(db::Confirmed(*second[0]) && fence.LaneDrained(1, 12, second[1]->transactionOutcome),
+                  "second actual lane failed");
+            mainLane.Quit();
+            asyncLane.Quit();
+        }
+        auto effect = EffectPlan(fence, digest, Token(uint8_t(character + 100)));
+        Check(bool(effect) && effect.awards.transaction.statements.size() < 64,
+              "invalid/unbounded resource effect plan");
+        Check(EffectReceipt(sql, effect).status == db::ReadStatus::Missing, "effect existed before issuance");
+        const auto awardsBefore = Number(sql, ("SELECT COUNT(*) FROM " + Player("item_award")).c_str());
+        if (character == 112)
+        {
+            auto interrupted = effect.awards.transaction;
+            auto afterCost =
+                std::find_if(interrupted.statements.begin(), interrupted.statements.end(),
+                             [](const auto &step) { return step.query.starts_with("DELETE i FROM "); });
+            Check(afterCost != interrupted.statements.end(), "cost delete step missing");
+            interrupted.statements.insert(afterCost + 1, {"SELECT 1 WHERE 1=0", {}, {}, 1});
+            Execute(sql, interrupted, false);
+            Check(Number(sql, ("SELECT gold FROM " + Player("player") + " WHERE id=112").c_str()) == 1000 &&
+                      Number(sql,
+                             ("SELECT SUM(count) FROM " + Player("item") + " WHERE owner_id=112").c_str()) ==
+                          5 &&
+                      Number(sql, ("SELECT COUNT(*) FROM " + Player("item_award")).c_str()) == awardsBefore &&
+                      EffectReceipt(sql, effect).status == db::ReadStatus::Missing,
+                  "failed mixed bundle left partial resources/awards/ledger");
+        }
+        if (character == 113)
+        {
+            Text(sql, "ALTER TABLE " + Player("item") + " ENGINE=MyISAM");
+            Execute(sql, effect.awards.transaction, false);
+            Check(EffectReceipt(sql, effect).status == db::ReadStatus::Missing &&
+                      Number(sql, ("SELECT COUNT(*) FROM " + Player("item_award")).c_str()) == awardsBefore,
+                  "nontransactional cost storage partly committed reward");
+            Text(sql, "ALTER TABLE " + Player("item") + " ENGINE=InnoDB");
+            Query(sql, {"UPDATE " + Player("item") + " SET count=count+1 WHERE id=?",
+                        {SqlParam::UInt(prepared.Before().items.front().id)}});
+            Execute(sql, effect.awards.transaction, false);
+            Check(EffectReceipt(sql, effect).status == db::ReadStatus::Missing,
+                  "stale canonical cost snapshot was accepted");
+            Query(sql, {"UPDATE " + Player("item") + " SET count=count-1 WHERE id=?",
+                        {SqlParam::UInt(prepared.Before().items.front().id)}});
+        }
+        Check(fence.Submitted(effect.awards.transaction.operation), "effect submit failed");
+        if (character == 111)
+        {
+            CAsyncSQL lost;
+            Connect(lost, true, proxy);
+            Message outcome(lost.DirectTransactionPrepared(effect.awards.transaction.statements));
+            Check(outcome->transactionOutcome == SqlTransactionOutcome::CommitUnknown,
+                  "mixed COMMIT response was not lost");
+            Check(fence.Complete(fence.Identity(), effect.awards.transaction.operation,
+                                 outcome->transactionOutcome),
+                  "unknown commit callback rejected");
+        }
+        else if (character == 113)
+        {
+            auto other = EffectPlan(ReadyEffectFence(owner, prepared), digest, db::NewToken());
+            const auto outcomes = Race({effect.awards.transaction, other.awards.transaction});
+            Check((outcomes[0] == SqlTransactionOutcome::Committed &&
+                   outcomes[1] == SqlTransactionOutcome::Conflict) ||
+                      (outcomes[1] == SqlTransactionOutcome::Committed &&
+                       outcomes[0] == SqlTransactionOutcome::Conflict),
+                  "mixed reward race had no unique winner");
+            Check(fence.Complete(fence.Identity(), effect.awards.transaction.operation, outcomes[0]),
+                  "mixed race callback rejected");
+        }
+        else
+        {
+            auto outcome = Execute(sql, effect.awards.transaction);
+            Check(fence.Complete(fence.Identity(), effect.awards.transaction.operation,
+                                 outcome->transactionOutcome),
+                  "effect commit callback rejected");
+        }
+        const auto receipt = EffectReceipt(sql, effect);
+        Check(receipt.status == db::ReadStatus::Found && receipt.effect &&
+                  receipt.awards.size() == (character == 114 ? 0 : 1) &&
+                  receipt.publication == db::ResourcePublicationStatus::Pending,
+              "mixed effect receipt incomplete");
+        if (fence.Stage() == db::ResourceFenceStage::Reconciling)
+            Check(fence.Reconciled(fence.Identity(), effect.awards.transaction.operation,
+                                   Resolve(sql, effect.awards.transaction).status, receipt.effect),
+                  "mixed unknown/racing commit did not reconcile");
+        Check(Number(sql, ("SELECT COUNT(*) FROM " + Player("item_award")).c_str()) ==
+                  awardsBefore + receipt.awards.size(),
+              "mixed reward duplicated physical awards");
+        Check(
+            Number(sql, ("SELECT gold FROM " + Player("player") + " WHERE id=" + std::to_string(character))
+                            .c_str()) == uint64_t(prepared.After().gold) &&
+                Number(sql,
+                       ("SELECT level FROM " + Player("player") + " WHERE id=" + std::to_string(character))
+                           .c_str()) == prepared.After().progress.level &&
+                Number(sql, ("SELECT exp FROM " + Player("player") + " WHERE id=" + std::to_string(character))
+                                .c_str()) == prepared.After().progress.experience &&
+                Number(sql, ("SELECT COUNT(*) FROM " + Player("item") +
+                             " WHERE owner_id=" + std::to_string(character))
+                                .c_str()) == prepared.After().items.size(),
+            "canonical postimage differs");
+        Check(
+            Number(sql, "SELECT publication_pending FROM mission_engine_resource_heads WHERE character_id=?",
+                   {SqlParam::UInt(character)}) == 1 &&
+                Number(sql, ("SELECT hp FROM " + Player("player") + " WHERE id=" + std::to_string(character))
+                                .c_str()) == 123,
+            "SQL commit published gameplay/vitals early");
+        auto cache = [&](uint64_t revision, int64_t gold, db::Token operation)
+        {
+            return db::GuardResourceWrites(fence.Identity(), revision, operation,
+                                           {playerDatabase, accountDatabase, ""},
+                                           {{"UPDATE " + Player("player") + " SET gold=? WHERE id=?",
+                                             {SqlParam::Int(gold), SqlParam::UInt(character)},
+                                             1,
+                                             {}}});
+        };
+        Execute(sql, cache(78, prepared.After().gold + 1, db::NewToken()), false);
+        Check(!db::PublishResourceEffects(fence, effect, db::NewToken()),
+              "unrebased postimage could publish");
+        auto oldSession = fence.Identity();
+        ++oldSession.sessionGeneration;
+        Check(!fence.Rebased(oldSession, prepared.Digest(), 78, {777, 444, 100}),
+              "stale ECS callback rebased resources");
+        const db::ResourcePublicationVitals vitals = prepared.RefillVitals()
+                                                         ? db::ResourcePublicationVitals{777, 444, 100}
+                                                         : db::ResourcePublicationVitals{123, 99, 44};
+        Check(fence.Rebased(fence.Identity(), prepared.Digest(), 78, vitals),
+              "resource rebase acknowledgement failed");
+        auto publish = db::PublishResourceEffects(fence, effect, db::NewToken());
+        if (character == 112)
+        {
+            auto interrupted = publish;
+            interrupted.statements.insert(interrupted.statements.end() - 1,
+                                          {"SELECT 1 WHERE 1=0", {}, {}, 1});
+            Execute(sql, interrupted, false);
+            Check(Number(sql, ("SELECT hp FROM " + Player("player") + " WHERE id=112").c_str()) == 123 &&
+                      Number(sql, "SELECT publication_pending FROM mission_engine_resource_heads WHERE "
+                                  "character_id=112") == 1,
+                  "failed publication partly persisted vitals/unfroze source");
+        }
+        if (character == 111)
+        {
+            CAsyncSQL lost;
+            Connect(lost, true, proxy);
+            Message outcome(lost.DirectTransactionPrepared(publish.statements));
+            Check(outcome->transactionOutcome == SqlTransactionOutcome::CommitUnknown &&
+                      fence.Stage() == db::ResourceFenceStage::Rebased,
+                  "lost publication COMMIT resumed source early");
+        }
+        else
+            Execute(sql, publish);
+        Check(Resolve(sql, publish).status == db::Resolution::Committed &&
+                  fence.Published(fence.Identity(), prepared.Digest(), 78),
+              "resource publication not durable");
+        Check(
+            Number(sql, ("SELECT hp FROM " + Player("player") + " WHERE id=" + std::to_string(character))
+                            .c_str()) == vitals.hp &&
+                Number(sql, ("SELECT mp FROM " + Player("player") + " WHERE id=" + std::to_string(character))
+                                .c_str()) == vitals.sp,
+            "publication lost rebased HP/SP");
+        Execute(sql, effect.awards.transaction, false);
+        auto retryFence = ReadyEffectFence(owner, prepared);
+        auto newOperation = EffectPlan(retryFence, digest, db::NewToken());
+        const auto historical = EffectReceipt(sql, newOperation);
+        Check(historical.status == db::ReadStatus::Found && historical.awards == receipt.awards,
+              "new retry token lost original effect/award IDs");
+        Check(historical.publication == db::ResourcePublicationStatus::Published,
+              "published receipt was mistaken for pending postimage");
+        if (character == 115)
+            for (size_t retry = 0; retry < 128; ++retry)
+            {
+                const auto repeated = EffectPlan(retryFence, digest, db::NewToken());
+                const auto read = EffectReceipt(sql, repeated);
+                Check(read.status == db::ReadStatus::Found && read.awards == receipt.awards,
+                      "repeated mixed effect reconciliation changed original IDs");
+            }
+        Execute(sql, cache(77, 1000, db::NewToken()),
+                false); // A late old cache save cannot erase the reward.
+        if (character == 110)
+        {
+            auto staleCore = fence.Identity();
+            ++staleCore.coreGeneration;
+            auto staleSession = fence.Identity();
+            ++staleSession.sessionGeneration;
+            for (const auto &stale : {staleCore, staleSession})
+                Execute(sql,
+                        db::GuardResourceWrites(
+                            stale, 78, db::NewToken(), {playerDatabase, accountDatabase, ""},
+                            {{"UPDATE " + Player("player") + " SET gold=0 WHERE id=110", {}, 1, {}}}),
+                        false);
+            auto save = cache(78, prepared.After().gold + 5, Token(230));
+            Execute(sql, save);
+            Execute(sql, cache(78, 1000, db::NewToken()), false);
+            Execute(sql, cache(79, prepared.After().gold, Token(231)));
+            Execute(sql, cache(78, 1000, db::NewToken()), false); // A -> B -> A still advances revision.
+            Check(Number(
+                      sql,
+                      "SELECT resource_revision FROM mission_engine_resource_heads WHERE character_id=110") ==
+                      80,
+                  "source cache revision did not advance");
+            auto conflict = cache(78, prepared.After().gold + 6, Token(230));
+            Check(Resolve(sql, conflict).status == db::Resolution::TokenConflict,
+                  "changed native cache batch reused receipt");
+            const auto old = fence.Identity();
+            Claim(sql, 110, 1, Token(211), db::NewToken());
+            Execute(sql,
+                    db::GuardResourceWrites(
+                        old, 80, db::NewToken(), {playerDatabase, accountDatabase, ""},
+                        {{"UPDATE " + Player("player") + " SET gold=0 WHERE id=110", {}, 1, {}}}),
+                    false);
+        }
+        if (character == 111)
+        {
+            const auto cost = prepared.After().items.front();
+            Check(
+                Number(sql, ("SELECT socket0 FROM " + Player("item") + " WHERE id=" + std::to_string(cost.id))
+                                .c_str()) == 999 &&
+                    Number(sql, ("SELECT attrvalue0 FROM " + Player("item") +
+                                 " WHERE id=" + std::to_string(cost.id))
+                                    .c_str()) == 9,
+                "cost mutation lost socket/attribute data");
+        }
+    }
+}
+void ColdEffects(CAsyncSQL &sql)
+{
+    for (uint32_t character = 110; character <= 115; ++character)
+    {
+        const db::Owner owner{character, character == 110 ? 2u : 1u,
+                              Token(uint8_t(character == 110 ? 211 : character))};
+        const auto prepared = EffectPreparation(character);
+        auto fence = ReadyEffectFence(owner, prepared);
+        auto saved = Snapshot(sql, owner);
+        Check(saved.status == db::ReadStatus::Found, "cold resource effect checkpoint missing");
+        auto plan = EffectPlan(fence, saved.snapshot.metadata.digest, db::NewToken());
+        const auto receipt = EffectReceipt(sql, plan);
+        Check(receipt.status == db::ReadStatus::Found && receipt.effect &&
+                  receipt.effect->appliedRevision == 78 &&
+                  receipt.publication == (character == 110 ? db::ResourcePublicationStatus::Superseded
+                                                           : db::ResourcePublicationStatus::Published),
+              "resource effects lost actual receipt after DB crash/new process");
+        Check(Number(sql, ("SELECT gold FROM " + Player("player") + " WHERE id=" + std::to_string(character))
+                              .c_str()) == uint64_t(prepared.After().gold),
+              "cold resource grant duplicated or vanished");
+    }
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_resource_effects") == 6,
+          "cold mixed effect count changed");
 }
 void ColdProcess(CAsyncSQL &sql)
 {
@@ -1686,7 +2061,8 @@ void ColdProcess(CAsyncSQL &sql)
     }
     Check(Number(sql, ("SELECT COUNT(*) FROM " + Player("item") + " WHERE id=700090").c_str()) == 0,
           "cold retry recreated consumed Mission item");
-    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_item_awards") == 10,
+    Check(Number(sql, "SELECT COUNT(*) FROM mission_engine_item_awards m JOIN mission_engine_action_outbox o "
+                      "ON o.action_id=m.action_id WHERE o.mission_id='delivery.story'") == 10,
           "cold retries duplicated item-award mappings");
 }
 } // namespace
@@ -1721,6 +2097,7 @@ int main(int argc, char **argv)
             Connect(sql);
             ColdProcess(sql);
             ColdResources(sql);
+            ColdEffects(sql);
             std::cout << "Mission persistence cold-process: " << checks << " checks passed\n";
             return 0;
         }
@@ -1772,8 +2149,13 @@ int main(int argc, char **argv)
                         "2026-10-25_mission_engine_resource_plans.sql")
                            .string()
                            .c_str());
+        Execute(sql, db::Claim(9999, 0, Token(99), Token(99)), false);
+        Migration(sql, (std::filesystem::path(argv[5]).parent_path() /
+                        "2026-10-26_mission_engine_resource_effects.sql")
+                           .string()
+                           .c_str());
         Migration(sql, argv[4]);
-        Check(Number(sql, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 4,
+        Check(Number(sql, "SELECT schema_version FROM mission_engine_schema WHERE singleton=1") == 5,
               "old migration downgraded action schema");
         QualifiedInstall(sql, argv[4]);
         Archive(sql);
@@ -1800,6 +2182,7 @@ int main(int argc, char **argv)
         CrossSchema(sql, registry, static_cast<unsigned int>(std::stoul(argv[3])));
         MissionItems(sql, static_cast<unsigned int>(std::stoul(argv[3])));
         ResourcePlans(sql, static_cast<unsigned int>(std::stoul(argv[3])));
+        ResourceEffects(sql, static_cast<unsigned int>(std::stoul(argv[3])));
         // A complete installer must preserve schema-4 proposals AND kind-5
         // receipts when it reapplies the older actions migration.
         Migration(sql, argv[5]);

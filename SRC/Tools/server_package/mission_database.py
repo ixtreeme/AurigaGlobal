@@ -5,9 +5,10 @@ import re
 TABLES = ('mission_engine_schema', 'mission_engine_packages', 'mission_engine_definitions',
           'mission_engine_characters', 'mission_engine_checkpoint_refs', 'mission_engine_operations',
           'mission_engine_action_outbox', 'mission_engine_reward_ledger', 'mission_engine_item_awards',
-          'mission_engine_resource_plans')
+          'mission_engine_resource_plans', 'mission_engine_resource_heads', 'mission_engine_resource_effects')
 MIGRATIONS = ('2026-10-25_mission_engine_persistence.sql', '2026-10-25_mission_engine_actions.sql',
-              '2026-10-25_mission_engine_item_awards.sql', '2026-10-25_mission_engine_resource_plans.sql')
+              '2026-10-25_mission_engine_item_awards.sql', '2026-10-25_mission_engine_resource_plans.sql',
+              '2026-10-26_mission_engine_resource_effects.sql')
 
 
 def identifier(value):
@@ -76,6 +77,7 @@ def local_grants(target, player, account=None):
         account_grant = 'GRANT SELECT ON ' + identifier(account['database']) + '.`account` TO ' + user + ';\n'
     return ("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';\nCREATE USER IF NOT EXISTS " + user +
             ' IDENTIFIED BY ' + literal(target['password']) + ';\nGRANT ALL ON ' +
-            identifier(target['database']) + '.* TO ' + user + ';\nGRANT SELECT ON ' +
-            identifier(player['database']) + '.`player` TO ' + user + ';\n' + account_grant + 'GRANT SELECT,INSERT ON ' +
+            identifier(target['database']) + '.* TO ' + user + ';\nGRANT SELECT,UPDATE ON ' +
+            identifier(player['database']) + '.`player` TO ' + user + ';\nGRANT SELECT,INSERT,UPDATE,DELETE ON ' +
+            identifier(player['database']) + '.`item` TO ' + user + ';\n' + account_grant + 'GRANT SELECT,INSERT ON ' +
             identifier(player['database']) + '.`item_award` TO ' + user + ';\n')

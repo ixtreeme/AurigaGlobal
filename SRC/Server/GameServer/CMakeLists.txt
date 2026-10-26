@@ -124,6 +124,8 @@ add_executable(MissionPersistenceTests EXCLUDE_FROM_ALL
     ${_mission_persistence_sources}
     mission/MissionPersistence.cpp
     mission/MissionItemAwards.cpp
+    mission/MissionResourceEffects.cpp
+    mission/MissionResourceFence.cpp
     ../Database/ItemAwardDelivery.cpp
     ../Database/ItemAwardScan.cpp
 )
@@ -131,8 +133,9 @@ add_executable(MissionPersistenceTests EXCLUDE_FROM_ALL
 add_executable(MissionResourceTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionResourceTests.cpp
     ${_mission_persistence_sources}
+    mission/MissionResourceFence.cpp
 )
-target_include_directories(MissionResourceTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+target_include_directories(MissionResourceTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE} ${CMAKE_SOURCE_DIR}/SRC/Server)
 target_link_libraries(MissionResourceTests PRIVATE Threads::Threads OpenSSL::Crypto)
 if(TARGET auriga_sanitizers)
     target_link_libraries(MissionResourceTests PRIVATE auriga_sanitizers)
@@ -565,7 +568,7 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_persistence.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_actions.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/schema.sql
-            --drop-commit-count 5
+            --drop-commit-count 7
             --followup-argument=--cold-check
             --crash-server-before-followup
     )

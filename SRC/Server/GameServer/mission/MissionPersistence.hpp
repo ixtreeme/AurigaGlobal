@@ -25,7 +25,10 @@ enum class Operation : uint8_t
     Save = 2,
     Release = 3,
     Entitle = 4,
-    PrepareResources = 5
+    PrepareResources = 5,
+    ApplyResources = 6,
+    ResourceWrite = 7,
+    PublishResources = 8
 };
 struct Plan
 {

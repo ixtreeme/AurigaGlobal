@@ -15,8 +15,12 @@ CREATE TABLE IF NOT EXISTS mission_engine_resource_plans (
         REFERENCES mission_engine_action_outbox (action_id) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
-ALTER TABLE mission_engine_operations
-    DROP CONSTRAINT IF EXISTS me_operation_kind,
-    ADD CONSTRAINT me_operation_kind CHECK (operation_kind IN (1, 2, 3, 4, 5));
+SET @me_resource_upgrade = IF(
+    (SELECT schema_version FROM mission_engine_schema WHERE singleton=1) IN (3, 4),
+    'ALTER TABLE mission_engine_operations DROP CONSTRAINT IF EXISTS me_operation_kind, ADD CONSTRAINT me_operation_kind CHECK (operation_kind IN (1,2,3,4,5))',
+    'DO 0');
+PREPARE me_resource_upgrade_statement FROM @me_resource_upgrade;
+EXECUTE me_resource_upgrade_statement;
+DEALLOCATE PREPARE me_resource_upgrade_statement;
 
 UPDATE mission_engine_schema SET schema_version=4 WHERE singleton=1 AND schema_version=3;

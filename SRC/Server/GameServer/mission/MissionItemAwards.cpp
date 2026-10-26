@@ -1,4 +1,5 @@
 #include "MissionItemAwards.hpp"
+#include "MissionPersistenceInternal.hpp"
 #include <SQL/AsyncSQL.h>
 #include <algorithm>
 #include <charconv>
@@ -57,18 +58,16 @@ uint64_t Number(std::string_view cell, uint64_t maximum = UINT64_MAX)
     return value;
 }
 } // namespace
-ItemAwardsPlan IssueItemAwards(Owner owner, const PinnedReward &reward, uint64_t storageRevision,
-                               ContentDigest checkpoint, Token operation, ItemAwardTarget target,
-                               ItemAwardRecipient recipient,
-                               const std::map<uint32_t, uint32_t> &verifiedMaximumCounts)
+ItemAwardsPlan detail::DraftItemAwards(Owner owner, const PinnedReward &reward, uint64_t storageRevision,
+                                       ContentDigest checkpoint, Token operation, ItemAwardTarget target,
+                                       ItemAwardRecipient recipient,
+                                       const std::map<uint32_t, uint32_t> &verifiedMaximumCounts)
 {
     ItemAwardsPlan result;
     try
     {
         const auto &payload = reward.Payload();
-        Need(ValidRewardBundle(payload) && !payload.items.empty() && !payload.experience && !payload.gold &&
-                 payload.consumeItems.empty(),
-             "Adapter requires an entirely item-only reward bundle");
+        Need(ValidRewardBundle(payload), "Invalid reward bundle");
         Identifier(target.playerSchema);
         Identifier(target.accountSchema);
         for (auto schema : {target.playerSchema, target.accountSchema})
@@ -172,6 +171,21 @@ ItemAwardsPlan IssueItemAwards(Owner owner, const PinnedReward &reward, uint64_t
         return result;
     }
 }
+ItemAwardsPlan IssueItemAwards(Owner owner, const PinnedReward &reward, uint64_t revision,
+                               ContentDigest checkpoint, Token operation, ItemAwardTarget target,
+                               ItemAwardRecipient recipient, const std::map<uint32_t, uint32_t> &caps)
+{
+    const auto &payload = reward.Payload();
+    if (payload.items.empty() || payload.experience || payload.gold || !payload.consumeItems.empty())
+    {
+        ItemAwardsPlan rejected;
+        rejected.transaction.errors.push_back(
+            {"item_awards", "Adapter requires an entirely item-only reward bundle"});
+        return rejected;
+    }
+    return detail::DraftItemAwards(owner, reward, revision, checkpoint, operation, std::move(target),
+                                   std::move(recipient), caps);
+}
 SqlTransaction ResolveItemAwards(const ItemAwardsPlan &plan)
 {
     Need(bool(plan), "Cannot resolve invalid item-award plan");
@@ -192,13 +206,13 @@ SqlTransaction ResolveItemAwards(const ItemAwardsPlan &plan)
          {}});
     return statements;
 }
-ItemAwardsReceipt DecodeItemAwards(_SQLMsg &message, const ItemAwardsPlan &plan)
+ItemAwardsReceipt DecodeItemAwards(_SQLMsg &message, const ItemAwardsPlan &plan, size_t expectedSteps)
 {
     if (!Confirmed(message))
         return {ItemAwardsStatus::SqlError, {}};
     try
     {
-        const auto operation = DecodeResolution(message, plan.transaction, 4);
+        const auto operation = DecodeResolution(message, plan.transaction, expectedSteps);
         if (operation.status == Resolution::TokenConflict)
             return {ItemAwardsStatus::Conflict, {}};
         Need(operation.status == Resolution::Committed || operation.status == Resolution::Absent,
@@ -233,6 +247,14 @@ ItemAwardsReceipt DecodeItemAwards(_SQLMsg &message, const ItemAwardsPlan &plan)
                          operation.status == Resolution::Absent,
                      "Unissued action has effects");
                 return {state == 1 ? ItemAwardsStatus::NotIssued : ItemAwardsStatus::Cancelled, {}};
+            }
+            if (state == 3 && plan.items.empty() && plan.transaction.kind == Operation::ApplyResources)
+            {
+                Need(rows->uiNumRows == 1 && Number(cell(2)) && Number(cell(3)),
+                     "Invalid currency-only entitlement");
+                for (size_t column = 4; column < 15; ++column)
+                    Need(!row[column], "Unexpected item mapping on currency-only effect");
+                return result;
             }
             Need(state == 3 && Number(cell(2)) && Number(cell(3)) && rows->uiNumRows == plan.items.size() &&
                      item != plan.items.end(),

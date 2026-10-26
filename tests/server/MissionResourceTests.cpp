@@ -1,4 +1,5 @@
 #include "../../SRC/Server/GameServer/mission/MissionActions.hpp"
+#include "../../SRC/Server/GameServer/mission/MissionResourceFence.hpp"
 #include "MissionResourceFixture.hpp"
 #include <algorithm>
 #include <iostream>
@@ -294,6 +295,77 @@ void ProgressionBoundaries()
 }
 } // namespace
 static_assert(!std::is_default_constructible_v<PreparedResources>);
+void FenceProtocol()
+{
+    namespace db = auriga::mission::persistence;
+    db::Token token{};
+    token[0] = 8;
+    db::ResourceWriterIdentity identity{{100, 1, token}, 3, 7, token};
+    auto prepared = PrepareResources(f::Pin(), f::Snapshot(), f::Rules(), f::Rolls());
+    auto make = [&]() { return db::ResourceFence(identity, *prepared.plan, token, {11, 12}); };
+    auto fence = make();
+    Check(!fence.Submitted(token), "unfenced SQL submission accepted");
+    auto stale = identity;
+    ++stale.sessionGeneration;
+    Check(!fence.SourceStopped(stale, token), "old/new mismatched session stopped producers");
+    Check(!fence.LaneDrained(0, 12, SqlTransactionOutcome::Committed), "wrong lane barrier accepted");
+    Check(fence.LaneDrained(1, 12, SqlTransactionOutcome::Committed), "second drain lane rejected");
+    Check(fence.SourceStopped(identity, token) && fence.Stage() == db::ResourceFenceStage::Draining,
+          "one lane was sufficient");
+    Check(fence.LaneDrained(0, 11, SqlTransactionOutcome::Committed) &&
+              fence.Stage() == db::ResourceFenceStage::Ready,
+          "two-lane freeze failed");
+    Check(fence.Submitted(token) && !fence.Submitted(token), "duplicate submission allowed");
+    Check(!fence.Complete(stale, token, SqlTransactionOutcome::Committed), "stale callback accepted");
+    Check(fence.Complete(identity, token, SqlTransactionOutcome::CommitUnknown) && !fence.Submitted(token),
+          "unknown commit resumed/retried");
+    Check(!fence.Reconciled(identity, token, db::Resolution::SqlError) &&
+              fence.Stage() == db::ResourceFenceStage::Reconciling,
+          "SQL error thawed source");
+    Check(fence.Reconciled(identity, token, db::Resolution::Absent) &&
+              fence.Stage() == db::ResourceFenceStage::Ready,
+          "confirmed absence did not permit retry");
+    Check(fence.Submitted(token) && fence.Complete(identity, token, SqlTransactionOutcome::CommitUnknown),
+          "retry submit failed");
+    auto receipt =
+        ResourceEffectReceipt{ActionIdentity(prepared.plan->Action()), prepared.plan->Digest(), 78};
+    Check(fence.Reconciled(identity, token, db::Resolution::Committed, receipt),
+          "durable effect receipt rejected");
+    Check(!fence.Published(stale, prepared.plan->Digest(), 78), "stale session published effects");
+    Check(!fence.Published(identity, prepared.plan->Digest(), 78), "commit alone published effects");
+    Check(!fence.Rebased(stale, prepared.plan->Digest(), 78, {777, 444, 100}),
+          "stale session rebased effects");
+    Check(fence.Rebased(identity, prepared.plan->Digest(), 78, {777, 444, 100}),
+          "confirmed postimage rebase failed");
+    Check(fence.Published(identity, prepared.plan->Digest(), 78) &&
+              !fence.Published(identity, prepared.plan->Digest(), 78),
+          "publication is not single-use");
+    fence = make();
+    fence.Invalidate();
+    Check(!fence.SourceStopped(identity, token) &&
+              !fence.LaneDrained(0, 11, SqlTransactionOutcome::Committed),
+          "invalidated fence revived");
+    fence = make();
+    Check(!fence.LaneDrained(0, 11, SqlTransactionOutcome::CommitUnknown) &&
+              fence.Stage() == db::ResourceFenceStage::Blocked,
+          "unknown drain barrier accepted");
+    for (size_t order = 0; order < 6; ++order)
+    {
+        fence = make();
+        std::array<size_t, 3> actions{0, 1, 2};
+        for (size_t i = 0; i < order; ++i)
+            std::next_permutation(actions.begin(), actions.end());
+        for (auto action : actions)
+        {
+            if (action == 2)
+                Check(fence.SourceStopped(identity, token), "source stop order rejected");
+            else
+                Check(fence.LaneDrained(action, 11 + action, SqlTransactionOutcome::Committed),
+                      "lane completion order rejected");
+        }
+        Check(fence.Stage() == db::ResourceFenceStage::Ready, "barrier order changed readiness");
+    }
+}
 int main()
 {
     try
@@ -302,6 +374,7 @@ int main()
         Rejections();
         Decoding();
         ProgressionBoundaries();
+        FenceProtocol();
         std::cout << "Mission resources: " << checks << " checks passed\n";
         return 0;
     }
