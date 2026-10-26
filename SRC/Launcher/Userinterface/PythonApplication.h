@@ -41,9 +41,6 @@
 #include "ServerStateChecker.h"
 #include "AbstractApplication.h"
 #include "MovieMan.h"
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "PythonOfflineshop.h"
-#endif
 
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
 #include "PythonCubeRenewal.h"
@@ -378,9 +375,6 @@ class CPythonApplication : public CMSApplication, public CInputKeyboard, public 
 #ifdef NEW_PET_SYSTEM
 		CPythonSkillPet				m_pySkillPet;
 #endif	
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-		CPythonOfflineshop			m_pyOfflineshop;
-#endif
 		CPythonResource				m_pyRes;
 		CPythonQuest				m_pyQuest;
 		CPythonMessenger			m_pyManager;

@@ -153,11 +153,6 @@ void CPythonPlayer::__OnPressSmart(CInstanceBase& rkInstMain, bool isAuto)
 	bool isPickedItemID=__GetPickedItemID(&dwPickedItemID);
 	bool isPickedActorID=__GetPickedActorID(&dwPickedActorID);
 	bool isPickedGroundPos=__GetPickedGroundPos(&kPPosPickedGround);
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	uint32_t dwPickedShopVID=0;
-#endif
-#endif
 
 	if (isPickedItemID)
 	{
@@ -167,12 +162,6 @@ void CPythonPlayer::__OnPressSmart(CInstanceBase& rkInstMain, bool isAuto)
 	{
 		__OnPressActor(rkInstMain, dwPickedActorID, isAuto);
 	}
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#	ifdef ENABLE_NEW_SHOP_IN_CITIES
-	else if (CPythonTextTail::instance().GetPickedNewShop(&dwPickedShopVID))
-		return;
-#	endif
-#endif
 	else if (isPickedGroundPos)
 	{
 		__OnPressGround(rkInstMain, kPPosPickedGround);
@@ -188,11 +177,6 @@ void CPythonPlayer::__OnClickSmart(CInstanceBase& rkInstMain, bool isAuto)
 	uint32_t dwPickedItemID;
 	uint32_t dwPickedActorID;
 	TPixelPosition kPPosPickedGround;
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#	ifdef ENABLE_NEW_SHOP_IN_CITIES
-	uint32_t dwPickedShopVID=0;
-#	endif
-#endif
 	if (__GetPickedItemID(&dwPickedItemID))
 	{
 		__OnClickItem(rkInstMain, dwPickedItemID);
@@ -201,16 +185,6 @@ void CPythonPlayer::__OnClickSmart(CInstanceBase& rkInstMain, bool isAuto)
 	{
 		__OnClickActor(rkInstMain, dwPickedActorID, isAuto);
 	}
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#	ifdef ENABLE_NEW_SHOP_IN_CITIES
-	else if (CPythonTextTail::instance().GetPickedNewShop(&dwPickedShopVID))
-	{
-		CPythonNetworkStream::instance().SendOfflineshopOnClickShopEntity(dwPickedShopVID);
-		CPythonOfflineshop::instance().EnableGuiRefreshSymbol();
-		OFFSHOP_DEBUG("is picked %u ", dwPickedShopVID);
-	}
-#	endif
-#endif
 	else if (__GetPickedGroundPos(&kPPosPickedGround))
 	{
 		__OnClickGround(rkInstMain, kPPosPickedGround);

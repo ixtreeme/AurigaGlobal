@@ -214,16 +214,6 @@ CClientManager::CClientManager() = default;
 CClientManager::~CClientManager() = default;
 CDBManager::CDBManager() = default;
 CDBManager::~CDBManager() = default;
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-offlineshop::CShopCache::CShopCache() = default;
-offlineshop::CShopCache::~CShopCache() = default;
-offlineshop::CSafeboxCache::CSafeboxCache() = default;
-offlineshop::CSafeboxCache::~CSafeboxCache() = default;
-offlineshop::COfferCache::COfferCache() = default;
-offlineshop::COfferCache::~COfferCache() = default;
-offlineshop::CAuctionCache::CAuctionCache() = default;
-offlineshop::CAuctionCache::~CAuctionCache() = default;
-#endif
 const char* GetTablePostfix() { return "_test"; }
 uint64_t CClientManager::GetCurrentTime() { return now; }
 void CClientManager::ForwardPacket(uint8_t header, const void* data, int size, uint8_t, CPeer*) { Capture(header, data, size); }

@@ -711,7 +711,6 @@ WIKI_CATEGORIES = [
 			#[localeinfo.WIKI_SUBCATEGORY_TRANSLATE, ("systems/translate.txt",)],
 			#[localeinfo.WIKI_SUBCATEGORY_GAYA, ("systems/gaya.txt",)],
 			#[localeinfo.WIKI_SUBCATEGORY_GUILD, ("systems/guilds.txt",)],
-			[localeinfo.WIKI_SUBCATEGORY_OFFLINESHOP, ("systems/offlineshop.txt",)]
 		]
 	],
 	[

@@ -227,6 +227,5 @@
 #define ENABLE_ITEM_ON_TITLE_RAZOR93				// Item on title system (equip title item shows as "[tag]Name")
 #define DISABLE_SKILL_BOOK_NEED_EXP
 #define ENABLE_DROP_INSTANT_INVENTORY
-#define ENABLE_OFFLINESHOP_CLEAR_CHACHE
 #define ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
 #endif

@@ -19,13 +19,6 @@
 class CWheelDestiny;
 class CArena;
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-namespace offlineshop {
-class CShop;
-class CAuction;
-class CShopSafebox;
-}
-#endif
 
 namespace ecs {
 
@@ -163,16 +156,6 @@ struct ShopState {
     entt::entity shopOwner { entt::null };
     // The personal shop this character owns, if any.
     entt::entity myShop { entt::null };
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-    // The offline shop this character owns, and the one being browsed.
-    offlineshop::CShop* offlineShop { nullptr };
-    offlineshop::CShop* offlineShopGuest { nullptr };
-    offlineshop::CShopSafebox* shopSafebox { nullptr };
-    offlineshop::CAuction* auction { nullptr };
-    offlineshop::CAuction* auctionGuest { nullptr };
-    int offlineShopUseTime { 0 };
-    bool lookingOfferList { false };
-#endif
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
     std::shared_ptr<CWheelDestiny> wheelDestiny {};
 #endif

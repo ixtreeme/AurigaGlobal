@@ -48,12 +48,6 @@ class CPythonTextTail : public CSingleton<CPythonTextTail>
 
 			float fHeight = 0.0f;
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#   ifdef ENABLE_NEW_SHOP_IN_CITIES
-			bool bIsShop = false;
-			bool bRender = false;
-#   endif
-#endif
 
 #if defined(WJ_SHOW_MOB_INFO)
 			bool bIsPC = FALSE;
@@ -113,13 +107,6 @@ class CPythonTextTail : public CSingleton<CPythonTextTail>
 			void UpdateItemOnTitleTextTail(uint32_t dwVID);
 		#endif
 		void DeleteItemTextTail(uint32_t VirtualID);
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-		void RegisterShopInstanceTextTail(uint32_t dwVirtualID, const char* c_szName, CGraphicObjectInstance* pOwner);
-		void DeleteShopTextTail(uint32_t VirtualID);
-		TTextTail * RegisterShopTextTail(uint32_t dwVirtualID, const char * c_szText, CGraphicObjectInstance * pOwner);
-		void SetShopTextTailColor(uint32_t dwVirtualID, const D3DXCOLOR& c_rColor);
-		bool GetPickedNewShop(uint32_t* pdwVID);
-#endif
 
 		int Pick(int ixMouse, int iyMouse);
 		void SelectItemName(uint32_t dwVirtualID);
@@ -153,9 +140,6 @@ class CPythonTextTail : public CSingleton<CPythonTextTail>
 		TTextTailMap				m_CharacterTextTailMap;
 		TTextTailMap				m_ItemTextTailMap;
 		TChatTailMap				m_ChatTailMap;
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-		TTextTailMap				m_ShopTextTailMap;
-#endif
 
 		TTextTailList				m_CharacterTextTailList;
 		TTextTailList				m_ItemTextTailList;

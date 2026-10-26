@@ -66,8 +66,6 @@
 #include "../../SRC/Server/GameServer/ecs/VIDRegistry.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ActivitySystem.hpp"
 #include "../../SRC/Server/GameServer/dungeon/LostCastleDungeon.h"
-#include "../../SRC/Server/GameServer/social/new_offlineshop.h"
-#include "../../SRC/Server/GameServer/social/new_offlineshop_manager.h"
 #include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
 #include "../../SRC/Server/GameServer/core/constants.h"
 #include <Core/Logging.hpp>
@@ -981,11 +979,6 @@ int ItemSystem::GetEmptyDragonSoulInventory(entt::entity,entt::entity) { Unexpec
 int ItemSystem::GetEmptyExtraInventory(entt::entity,entt::entity) { Unexpected(); }
 bool ItemSystem::ModifyItemPointsEcs(entt::entity,bool) { Unexpected(); }
 int ActivitySystem::RefineFishingRod(entt::entity,entt::entity) { Unexpected(); }
-char const * offlineshop::CShop::GetName(void)const { Unexpected(); }
-offlineshop::CShop * offlineshop::CShopManager::GetShopByOwnerID(unsigned int) { Unexpected(); }
-void offlineshop::CShopManager::SendShopForceCloseDBPacket(unsigned int) { Unexpected(); }
-void offlineshop::CShopManager::SendShopChangeNameDBPacket(unsigned int,char const *) { Unexpected(); }
-offlineshop::CShopManager & offlineshop::GetManager(void) { Unexpected(); }
 bool DragonSoulSystem::ActivateDeck(entt::entity,int) { Unexpected(); }
 void DragonSoulSystem::DeactivateAll(entt::entity) { Unexpected(); }
 void intrusive_ptr_add_ref(event *) { Unexpected(); }

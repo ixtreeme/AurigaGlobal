@@ -218,9 +218,6 @@ bool RunMainScript(CPythonLauncherIxtreeme& pyLauncher, const char* lpCmdLine)
 	inituiscriptlibManager();
 #endif
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	initofflineshop();
-#endif
 
 
 	PyObject* builtins = PyImport_ImportModule("__builtin__");

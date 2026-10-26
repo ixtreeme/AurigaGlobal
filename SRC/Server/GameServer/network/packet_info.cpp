@@ -214,9 +214,6 @@ CPacketInfoCG::CPacketInfoCG()
 #ifdef ENABLE_OPENSHOP_PACKET
 	Set(HEADER_CG_OPENSHOP, sizeof(TPacketOpenShop), "OpenShop", true);
 #endif
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	Set(HEADER_CG_NEW_OFFLINESHOP, sizeof(TPacketCGNewOfflineShop), "NewOfflineshop", false);
-#endif
 
 
 #ifdef ENABLE_ACCE_SYSTEM

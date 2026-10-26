@@ -421,9 +421,6 @@ bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLo
 
 
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	OfflineshopLoadShopSafebox(peer, packet->player_id);
-#endif
     return true;
 }
 
@@ -1087,14 +1084,6 @@ void CClientManager::__QUERY_PLAYER_DELETE(CPeer* peer, uint32_t dwHandle, TPlay
 		// }
 	}
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	if (IsUsingOfflineshopSystem(packet->player_id)) {
-		LOG_INFO("PLAYER_DELETE FAILED {} IS USING OFFLINESHOP SYSTEM", packet->player_id);
-		peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, dwHandle, 1);
-		peer->EncodeBYTE(packet->account_index);
-		return;
-	}
-#endif
 
 	char szQuery[128];
 	snprintf(szQuery, sizeof(szQuery), "SELECT p.id, p.level, p.name FROM player_index%s AS i, player%s AS p WHERE pid%u=%u AND pid%u=p.id",

@@ -264,10 +264,6 @@ ACMD (do_all_skill_master);
 ACMD (do_use_item);
 ACMD (do_dragon_soul);
 ACMD (do_clear_affect);
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-ACMD(do_offshop_change_shop_name);
-ACMD(do_offshop_force_close_shop);
-#endif
 
 #ifdef ENABLE_NEWSTUFF
 ACMD(do_change_rare_attr);
@@ -742,10 +738,6 @@ struct command_info cmd_info[] =
 	{ "force_logout",		do_force_logout,			0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "poison",				do_poison,					0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "rewarp",				do_rewarp,					0,			POS_DEAD,	GM_IMPLEMENTOR	},
-#endif
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	{ "offshop_change_shop_name", do_offshop_change_shop_name, 0,  POS_DEAD, GM_IMPLEMENTOR },
-	{ "offshop_force_close_shop", do_offshop_force_close_shop, 0,  POS_DEAD, GM_IMPLEMENTOR },
 #endif
 #ifdef ENABLE_GAYA_SYSTEM
 	{ "w_gaya",							do_gaya_system,					0,	POS_DEAD,	GM_PLAYER },

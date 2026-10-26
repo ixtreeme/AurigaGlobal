@@ -208,11 +208,6 @@ void CPythonApplication::RenderGame()
 				pMain->GetGraphicThingInstanceRef().Show();
 		}
 
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-		if (!CPythonSystem::instance().GetHideMode4Status()) {
-			m_pyOfflineshop.DeformEntities();
-		}
-#endif
 		m_kChrMgr.Deform();
 		////#ifndef ENABLE_BUGFIXES
 		m_kEftMgr.Update();
@@ -243,11 +238,6 @@ void CPythonApplication::RenderGame()
 		m_pyBackground.Render();
 
 		m_pyBackground.SetCharacterDirLight();
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-		if (!CPythonSystem::instance().GetHideMode4Status()) {
-			m_pyOfflineshop.RenderEntities();
-		}
-#endif
 		m_kChrMgr.Render();
 
 		if (CPythonWikiRenderTarget::instance().CanRenderWikiModules()) {
@@ -321,11 +311,6 @@ void CPythonApplication::RenderGame()
 
 	m_pyBackground.SetCharacterDirLight();
 	uint32_t t10 = ELTimer_GetMSec();
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	if (!CPythonSystem::instance().GetHideMode4Status()) {
-		m_pyOfflineshop.RenderEntities();
-	}
-#endif
 	m_kChrMgr.Render();
 	uint32_t t11 = ELTimer_GetMSec();
 
@@ -420,13 +405,6 @@ void CPythonApplication::UpdateGame()
 
 	uint32_t t6 = ELTimer_GetMSec();
 	m_kChrMgr.Update();
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	if (!CPythonSystem::instance().GetHideMode4Status()) {
-		m_pyOfflineshop.UpdateEntities();
-	}
-#endif
-#endif
 	uint32_t t7 = ELTimer_GetMSec();
 	////#ifdef ENABLE_BUGFIXES
 	////	m_kEftMgr.Update();

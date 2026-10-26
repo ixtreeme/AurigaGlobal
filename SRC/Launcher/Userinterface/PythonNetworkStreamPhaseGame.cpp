@@ -832,11 +832,6 @@ case HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE:
 			break;
 #endif
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-		case HEADER_GC_NEW_OFFLINESHOP:
-			ret = RecvOfflineshopPacket();
-			break;
-#endif
 #ifdef TEXTS_IMPROVEMENT
 		case HEADER_GC_CHAT_NEW:
 			ret = RecvChatPacketNew();
@@ -1079,11 +1074,6 @@ void CPythonNetworkStream::__LeaveGamePhase()
 
 	CPythonItem& rkItemMgr = CPythonItem::Instance();
 	rkItemMgr.Destroy();
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	CPythonOfflineshop::instance().DeleteEntities();
-#endif
-#endif
 }
 
 void CPythonNetworkStream::SetGamePhase()

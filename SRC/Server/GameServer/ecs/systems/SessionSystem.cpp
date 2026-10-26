@@ -9,7 +9,6 @@
 #include "../CharacterAccessors.hpp"
 
 #include "SessionSystem.hpp"
-#include "OfflineShopSystem.hpp"
 #include "SocialSystem.hpp"
 #include "SkillSystem.hpp"
 #include "AffectSystem.hpp"
@@ -70,10 +69,6 @@
 #include "../../dungeon/Halloween2022Dungeon.h"
 #include "../../dungeon/VikingDungeon.h"
 #include "../../dungeon/EasterDungeon.h"
-#endif
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "../../social/new_offlineshop.h"
-#include "../../social/new_offlineshop_manager.h"
 #endif
 #ifdef ENABLE_SWITCHBOT
 #include "../../social/new_switchbot.h"
@@ -669,7 +664,6 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     if (e == entt::null || !g_registry.valid(e))
         return;
 
-    // The offline shop is entity-native now; guests leave by handle.
     if (!ecs::IsCharacter(e))
         return;
 
@@ -720,22 +714,6 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     if (ecs::SocialSystem::GetWeddingMap(e) != entt::null)
         ecs::SocialSystem::SetWeddingMap(e, entt::null);
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-    // The cached safebox is value-stored in the manager map, so the erase
-    // destroys it. The component points at it and clearing the component writes
-    // the safebox back pointer, so the clear must come first.
-    ecs::OfflineShopSystem::SetShopSafebox(e, nullptr);
-    offlineshop::GetManager().RemoveSafeboxFromCache(ecs::PlayerRuntime::GetPlayerID(e));
-    offlineshop::GetManager().RemoveGuestFromShops(e);
-
-    if (auto* auctionGuest = ecs::OfflineShopSystem::GetAuctionGuest(e))
-        auctionGuest->RemoveGuest(e);
-
-    ecs::OfflineShopSystem::SetOfflineShop(e, nullptr);
-    ecs::OfflineShopSystem::SetAuction(e, nullptr);
-    ecs::OfflineShopSystem::SetAuctionGuest(e, nullptr);
-    ecs::OfflineShopSystem::SetLookingOfferList(e, false);
-#endif
 
     if (ecs::SocialSystem::GetGuild(e))
         ecs::SocialSystem::GetGuild(e)->LogoutMember(e);

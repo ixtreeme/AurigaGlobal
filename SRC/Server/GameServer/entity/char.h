@@ -45,13 +45,6 @@ eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew);
 const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
 
 	
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-namespace offlineshop
-{
-		class CShopSafebox;
-	class CAuction;
-}
-#endif
 #define INSTANT_FLAG_DEATH_PENALTY		(1 << 0)
 #define INSTANT_FLAG_SHOP			(1 << 1)
 #define INSTANT_FLAG_EXCHANGE			(1 << 2)

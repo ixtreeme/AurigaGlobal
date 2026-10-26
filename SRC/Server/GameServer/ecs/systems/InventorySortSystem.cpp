@@ -8,7 +8,6 @@
 #include "ItemSystem.hpp"
 #include "ChatSystem.hpp"
 #include "CombatSystem.hpp"
-#include "OfflineShopSystem.hpp"
 #include "SessionSystem.hpp"
 #include "SocialSystem.hpp"
 #include "../CharacterAccessors.hpp"
@@ -99,14 +98,6 @@ bool IsSortBlocked(entt::entity ch)
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 540, "");
-#endif
-        return true;
-    }
-
-    if (ecs::OfflineShopSystem::GetOfflineShopGuest(ch) || ecs::OfflineShopSystem::GetAuctionGuest(ch))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 782, "");
 #endif
         return true;
     }

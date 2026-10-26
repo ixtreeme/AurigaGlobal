@@ -47,9 +47,6 @@ import uiscriptlocale
 import event
 import whispermanager
 import localeinfo
-if app.__ENABLE_NEW_OFFLINESHOP__:
-	import offlineshop
-	import uiofflineshop
 if app.ENABLE_SWITCHBOT:
 	import uiswitchbot
 if app.ENABLE_MELEY_LAIR_DUNGEON:
@@ -230,7 +227,6 @@ class Interface(object):
 			self.openLinkQuestionDlg = None
 		if app.__BL_PICK_FILTER__:
 			self.wndPickUpFilter = None
-		self.wndOfflineshop = None
 		if app.ENABLE_NEW_FISHING_SYSTEM:
 			self.wndFishingWindow = None
 		if app.ENABLE_EXTRA_INVENTORY:
@@ -338,7 +334,6 @@ class Interface(object):
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_INVENTORY, ui.__mem_func__(self.ToggleInventoryWindow))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_MESSENGER, ui.__mem_func__(self.ToggleMessenger))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_SYSTEM, ui.__mem_func__(self.ToggleSystemDialog))
-		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_WEBOVE_STRANKY, ui.__mem_func__(self.OtevritWeb))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_EXTENDED_INV, ui.__mem_func__(self.ExtInvRazor93))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_SWITCHBOT, ui.__mem_func__(self.ToggleSwitchbotWindow))
 		self.wndTaskBar.SetToggleButtonEvent(uitaskbar.TaskBar.BUTTON_RANKING, ui.__mem_func__(self.OpenRanking))
@@ -390,12 +385,6 @@ class Interface(object):
 					self.wndDoctrine.Open()
 
 
-	def OtevritWeb(self):
-		if self.wndOfflineshop.IsShow():
-			self.wndOfflineshop.Close()
-		else:
-			self.wndOfflineshop.Open()
-
 	def ExtInvRazor93(self):
 		if not player.IsObserverMode():
 			if not self.wndExtraInventory.IsShow():
@@ -441,7 +430,6 @@ class Interface(object):
 			wndDragonSoulRefine = None
 		if app.ENABLE_SWITCHBOT:
 			self.wndSwitchbot = uiswitchbot.SwitchbotWindow()
-		self.wndOfflineshop = uiofflineshop.NewOfflineShopBoard()
 		wndMiniMap = uiminimap.MiniMap()
 		
 		wndSafebox = uisafebox.SafeboxWindow()
@@ -953,10 +941,6 @@ class Interface(object):
 			if self.wndSwitchbot:
 				self.wndSwitchbot.Destroy()
 
-		if self.wndOfflineshop:
-			self.wndOfflineshop.Destroy()
-
-		# ITEM_MALL
 		if self.mallPageDlg:
 			self.mallPageDlg.Destroy()
 		# END_OF_ITEM_MALL
@@ -1080,7 +1064,6 @@ class Interface(object):
 		if app.ENABLE_SWITCHBOT:
 			del self.wndSwitchbot
 
-		del self.wndOfflineshop
 
 		if app.ENABLE_DUNGEON_INFO_SYSTEM:
 			if self.wndDungeonInfo:
@@ -1562,9 +1545,6 @@ class Interface(object):
 			if self.wndSwitchbot:
 				self.wndSwitchbot.Hide()
 
-		if self.wndOfflineshop:
-			self.wndOfflineshop.Hide()
-
 		if app.ENABLE_DUNGEON_INFO_SYSTEM:
 			if self.wndDungeonInfo:
 				self.wndDungeonInfo.Hide()
@@ -1886,12 +1866,6 @@ class Interface(object):
 			if self.wndSwitchbot and self.wndSwitchbot.IsShow():
 				self.wndSwitchbot.RefreshSwitchbotItem(slot)
 
-	def OnPressBtnOfflineshop(self):
-		if self.wndOfflineshop.IsShow():
-			self.wndOfflineshop.Close()
-		else:
-			self.wndOfflineshop.Open()
-
 	def CheckGameButton(self):
 		if self.wndGameButton:
 			self.wndGameButton.CheckGameButton()
@@ -2104,9 +2078,6 @@ class Interface(object):
 		
 		if app.ENABLE_SWITCHBOT and self.wndSwitchbot:
 			hideWindows += self.wndSwitchbot,
-
-		if self.wndOfflineshop:
-			hideWindows += self.wndOfflineshop,
 
 		if app.ENABLE_DUNGEON_INFO_SYSTEM:
 			if self.wndDungeonInfo:

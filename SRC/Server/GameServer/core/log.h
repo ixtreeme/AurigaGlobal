@@ -82,9 +82,6 @@ class LogManager : public singleton<LogManager>
 #ifdef ENABLE_ACCE_SYSTEM
 		void		AcceLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t item_vnum, uint32_t item_uid, int item_count, int abs_chance, bool success);
 #endif
-#ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-		void		OfflineshopLog(const uint32_t dwOwnerID, const uint32_t dwItemID, const char* fmt, ...);
-#endif
 #ifdef ENABLE_ANTICHEAT
 		void	CheatLog(int32_t pid, std::string hostname, std::string reason);
 #endif

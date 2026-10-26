@@ -96,8 +96,6 @@ bool InsertEntityImpl(entt::registry& reg, entt::entity e, uint32_t mapIndex, in
         reg.get<ecs::SpatialKindTag>(e).kind = ecs::SpatialKind::Item;
     else if (reg.all_of<ecs::BuildingState>(e))
         reg.get<ecs::SpatialKindTag>(e).kind = ecs::SpatialKind::Building;
-    else if (reg.all_of<ecs::OfflineShopState>(e))
-        reg.get<ecs::SpatialKindTag>(e).kind = ecs::SpatialKind::OfflineShop;
     reg.get<ecs::Position>(e) = {x, y, z};
     reg.get<ecs::PositionZ>(e).z = z;
     reg.get<ecs::MapIndex>(e).value = int32_t(mapIndex);

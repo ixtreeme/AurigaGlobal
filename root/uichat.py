@@ -385,7 +385,6 @@ class ChatLine(ui.EditLine):
 		def _log(msg):
 			try:
 				import chat
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
 				chat.AppendChat(chat.CHAT_TYPE_INFO, "[ShopLinkDBG] %s" % msg)
 			except:
 				pass
@@ -427,28 +426,6 @@ class ChatLine(ui.EditLine):
 			except Exception as e:
 				dbg.TraceError("ALT paste EXC: %s" % e)
 			return True
-	
-		# OFFLINESHOP shoplink (item:vnum:flag:socket0:socket1:socket2:transmute)
-		if isinstance(hyperlink, str) and hyperlink.startswith("item:"):
-			try:
-				parts = hyperlink.split(":")
-				dbg.TraceError("parts(%d)=%r" % (len(parts), parts))
-	
-				# socket0=owner_id, socket1=sentinel
-				if len(parts) >= 6:
-					owner_id = _parse_num(parts[3])   # socket0
-					sentinel = _parse_num(parts[4])   # socket1
-					dbg.TraceError("parsed owner_id=%r sentinel=%r" % (owner_id, sentinel))
-	
-					if sentinel == 0x0BADF00D and owner_id and owner_id > 0:
-						dbg.TraceError("SENTINEL OK -> SendOpenShop(%d)" % owner_id)
-						import offlineshop
-						offlineshop.SendOpenShop(owner_id)
-						return True
-					else:
-						dbg.TraceError("NOT shoplink (sentinel mismatch)")
-			except Exception as e:
-				dbg.TraceError("parse EXC: %s" % e)
 	
 		# ha nem shoplink, akkor normal tooltip
 		dbg.TraceError("fallback tooltip")
@@ -2127,28 +2104,6 @@ class ChatLogWindow(ui.Window):
 			except Exception as e:
 				dbg.TraceError("ALT paste EXC: %s" % e)
 			return True
-	
-		# OFFLINESHOP shoplink (item:vnum:flag:socket0:socket1:socket2:transmute)
-		if isinstance(hyperlink, str) and hyperlink.startswith("item:"):
-			try:
-				parts = hyperlink.split(":")
-				dbg.TraceError("parts(%d)=%r" % (len(parts), parts))
-	
-				# socket0=owner_id, socket1=sentinel
-				if len(parts) >= 6:
-					owner_id = _parse_num(parts[3])   # socket0
-					sentinel = _parse_num(parts[4])   # socket1
-					dbg.TraceError("parsed owner_id=%r sentinel=%r" % (owner_id, sentinel))
-	
-					if sentinel == 0x0BADF00D and owner_id and owner_id > 0:
-						dbg.TraceError("SENTINEL OK -> SendOpenShop(%d)" % owner_id)
-						import offlineshop
-						offlineshop.SendOpenShop(owner_id)
-						return True
-					else:
-						dbg.TraceError("NOT shoplink (sentinel mismatch)")
-			except Exception as e:
-				dbg.TraceError("parse EXC: %s" % e)
 	
 		# ha nem shoplink, akkor normal tooltip
 		dbg.TraceError("fallback tooltip")

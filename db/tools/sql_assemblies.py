@@ -37,17 +37,4 @@ def assembled(row, kind):
         return formatted_sql(sql) + 'skill_level=?, quickslot=? WHERE id=?'
     if kind == 'mount_save':
         return insert('account_mount_inventory', ['id','account_id','slot','vnum','count'] + sockets + attributes(), 'REPLACE')
-    shop_columns = ['item_id','owner_id','price_yang','vnum','count'] + sockets + attributes('attr','attrval') + ['is_sold','locked_attr','expiration']
-    safebox_columns = ['item_id','owner_id','vnum','count'] + sockets + attributes('attr','attrval') + ['locked_attr','expiration']
-    auction_columns = ['owner_id','duration','name','vnum','count','init_yang'] + sockets + attributes('attr','attrval') + ['locked_attr','expiration']
-    if kind == 'shop_insert': return insert('player.offlineshop_shop_items', shop_columns)
-    if kind == 'safebox_insert': return insert('player.offlineshop_safebox_items', safebox_columns)
-    if kind == 'auction_insert': return insert('player.offlineshop_auctions', auction_columns)
-    if kind == 'shop_select':
-        return 'SELECT ' + ','.join(shop_columns) + ' FROM player.offlineshop_shop_items'
-    if kind == 'auction_select':
-        columns = ['owner_id','duration','name','init_yang','vnum','count'] + sockets + attributes('attr','attrval') + ['locked_attr','expiration']
-        return 'SELECT ' + ','.join(columns) + ' FROM player.offlineshop_auctions'
-    if kind == 'safebox_select':
-        return 'SELECT ' + ','.join(c for c in safebox_columns if c != 'owner_id') + ' FROM player.offlineshop_safebox_items WHERE owner_id=?'
     raise ValueError('Unknown assembly kind: ' + kind)

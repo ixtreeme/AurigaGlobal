@@ -213,15 +213,6 @@ const std::string& __SnapString(const std::string& c_rstSrc, std::string& rstTem
 	rstTemp = c_rstSrc.substr(uLeftCut, uRightCut - uLeftCut);
 	return rstTemp;
 }
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-void CItemManager::GetItemsNameMap(std::map<uint32_t, std::string>& inMap)
-{
-	inMap.clear();
-
-	for (auto& it : m_ItemMap)
-		inMap.insert(std::make_pair(it.first, it.second->GetName()));
-}
-#endif
 
 bool CItemManager::LoadItemDesc(const char* c_szFileName)
 {

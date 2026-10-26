@@ -11,9 +11,6 @@
 #include "Peer.h"
 #include "DBManager.h"
 #include "LoginData.h"
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "OfflineshopCache.h"
-#endif
 #include <unordered_map>
 #include <chrono>
 #include <unordered_set>
@@ -551,101 +548,6 @@ public:
 	uint32_t GetItemID();
 	uint32_t GainItemID();
 	TItemIDRangeTable GetItemRange() { return m_itemRange; }
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-public:
-	//booting
-	bool	InitializeOfflineshopTable();
-	void	SendOfflineshopTable(CPeer* peer);
-
-
-	//packets exchanging
-	void	RecvOfflineShopPacket(CPeer* peer, const char* data);
-	bool	RecvOfflineShopBuyItemPacket(const char* data);
-	bool	RecvOfflineShopLockBuyItem(CPeer* peer, const char* data);
-	bool	RecvOfflineShopCannotBuyLockItem(const char* data); //topatch
-	bool	RecvOfflineShopEditItemPacket(const char* data);
-	bool	RecvOfflineShopRemoveItemPacket(const char* data);
-	bool	RecvOfflineShopAddItemPacket(const char* data);
-
-	bool	RecvOfflineShopForceClose(const char* data);
-	bool	RecvOfflineShopCreateNew(const char* data);
-	bool	RecvOfflineShopChangeName(const char* data);
-
-	bool	RecvOfflineShopOfferCreate(const char* data);
-	bool	RecvOfflineShopOfferNotified(const char* data);
-	bool	RecvOfflineShopOfferAccepted(const char* data);
-	bool	RecvOfflineshopOfferCancel(const char* data);
-
-	bool	RecvOfflineShopSafeboxGetItem(const char* data);
-	bool	RecvOfflineShopSafeboxGetValutes(const char* data);
-	bool	RecvOfflineShopSafeboxAddItem(const char* data);
-
-
-	//AUCTION
-	bool	RecvOfflineShopAuctionCreate(const char* data);
-	bool	RecvOfflineShopAuctionAddOffer(const char* data);
-	bool	RecvOfflineShopAuctionClose(const char* data);
-
-	bool	SendOfflineShopBuyItemPacket(uint32_t dwOwner, uint32_t dwGuest, uint32_t dwItem);
-	bool	SendOfflineShopBuyLockedItemPacket(CPeer* peer, uint32_t dwOwner, uint32_t dwGuest, uint32_t dwItem);
-	bool	SendOfflineShopEditItemPacket(uint32_t dwOwner, uint32_t dwItem, const offlineshop::TPriceInfo& price);
-	bool	SendOfflineShopRemoveItemPacket(uint32_t dwOwner, uint32_t dwItem);
-	bool	SendOfflineShopAddItemPacket(uint32_t dwOwner, uint32_t dwItemID, const offlineshop::TItemInfo& rInfo);
-
-	bool	SendOfflineShopForceClose(uint32_t dwOwnerID);
-	bool	SendOfflineShopCreateNew(const offlineshop::TShopInfo& shop, const std::vector<offlineshop::TItemInfo>& vec);
-	bool	SendOfflineShopChangeName(uint32_t dwOwnerID, const char* szName);
-	bool	SendOfflineshopShopExpired(uint32_t dwOwnerID);
-
-	bool	SendOfflineShopOfferCreate(const offlineshop::TOfferInfo& offer);
-	bool	SendOfflineShopOfferNotified(uint32_t dwOwnerID, uint32_t dwOfferID);
-	bool	SendOfflineShopOfferAccepted(uint32_t dwOwnerID, uint32_t dwOfferID);
-
-	//offlineshop-updated 05/08/19
-	void	SendOfflineShopOfferCancel(uint32_t dwOwnerID, uint32_t dwOfferID, bool isRemovingItem);
-
-	void	SendOfflineshopSafeboxAddItem(uint32_t dwOwnerID, uint32_t dwItem, const offlineshop::TItemInfoEx& item);
-	void	SendOfflineshopSafeboxAddValutes(uint32_t dwOwnerID, const offlineshop::TValutesInfo& valute);
-	void	SendOfflineshopSafeboxLoad(CPeer* peer, uint32_t dwOwnerID, const offlineshop::TValutesInfo& valute, const std::vector<offlineshop::TItemInfoEx>& items, const std::vector<uint32_t>& ids);
-	//patch 08-03-2020
-	void	SendOfflineshopSafeboxExpiredItem(uint32_t dwOwnerID, uint32_t itemID);
-
-	//AUCTION
-	void	SendOfflineshopAuctionCreate(const offlineshop::TAuctionInfo& auction);
-	void	SendOfflineshopAuctionAddOffer(const offlineshop::TAuctionOfferInfo& offer);
-	void	SendOfflineshopAuctionExpired(uint32_t dwOwnerID);
-
-	void	OfflineShopResultQuery(CPeer* peer, SQLMsg* msg, CQueryInfo* pQueryInfo);
-	void	OfflineShopResultAddItemQuery(CPeer* peer, SQLMsg* msg, CQueryInfo* pQueryInfo);
-	void	OfflineShopResultCreateShopQuery(CPeer* peer, SQLMsg* msg, CQueryInfo* pQueryInfo);
-	void	OfflineShopResultCreateShopAddItemQuery(CPeer* peer, SQLMsg* msg, CQueryInfo* pQueryInfo);
-	void	OfflineShopResultOfferAddQuery(CPeer* peer, SQLMsg* msg, CQueryInfo* pQueryInfo);
-	void	OfflineShopResultSafeboxAddItemQuery(CPeer* peer, SQLMsg* msg, CQueryInfo* pQueryInfo);
-
-
-	void	OfflineshopDurationProcess();
-	void	OfflineshopExpiredShop(uint32_t dwID);
-	void	OfflineshopExpiredAuction(uint32_t dwID);
-	void	OfflineshopLoadShopSafebox(CPeer* peer, uint32_t dwID);
-	//patch 08-03-2020
-	void	OfflineshopExpiredAuctionItem(uint32_t dwOwnerID);
-
-	//updated 15-01-2020
-	bool	IsUsingOfflineshopSystem(uint32_t dwID);
-
-#ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-	void	OfflineshopLog(const uint32_t dwOwnerID, const uint32_t dwItemID, const char* fmt, ...);
-#endif
-
-	//patch offerlist loading fix
-	void	RemoveOfferOnShopItem(uint32_t dwItemID);
-
-private:
-	offlineshop::CShopCache			m_offlineshopShopCache;
-	offlineshop::CSafeboxCache		m_offlineshopSafeboxCache;
-	offlineshop::COfferCache		m_offlineshopOfferCache;
-	offlineshop::CAuctionCache		m_offlineshopAuctionCache;
-#endif
 
 	//BOOT_LOCALIZATION
 public:

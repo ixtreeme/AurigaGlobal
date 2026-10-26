@@ -8,6 +8,8 @@
 
 const char* GetItemWindowName(uint8_t window)
 {
+	// Historical SQL ENUM ordinals remain readable for archived rows. These
+	// labels do not enable the retired shop runtime or accept client requests.
 	static const char* const s_names[] = {
 		"INVENTORY", "INVENTORY", "EQUIPMENT", "SAFEBOX", "MALL",
 		"MOUNT_INVENTORY", "DRAGON_SOUL_INVENTORY", "BELT_INVENTORY",

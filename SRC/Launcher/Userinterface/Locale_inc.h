@@ -143,11 +143,7 @@
 #define ENABLE_PVP_ADVANCED
 #define EQUIP_ENABLE_VIEW_SASH
 #define ENABLE_MULTI_LANGUAGE				// MultiLanguage
-//OFFSHOP
 #define __ENABLE_EMOJI_SYSTEM__
-#define __ENABLE_NEW_OFFLINESHOP__
-#define ENABLE_OFFLINESHOP_DEBUG
-#define ENABLE_NEW_SHOP_IN_CITIES
 #define BLOCK_AUTO_ATTACK_PLAYER
 
 
@@ -158,11 +154,6 @@
 
 #define ENABLE_ATTR_TRANSFER_SYSTEM
 #define ENABLE_ATTR_COSTUMES
-#if defined(ENABLE_OFFLINESHOP_DEBUG) && defined(_DEBUG)
-#define OFFSHOP_DEBUG(fmt , ...) Tracenf("%s:%d >> " fmt , __FUNCTION__ , __LINE__, __VA_ARGS__)
-#else
-#define OFFSHOP_DEBUG(...)   
-#endif
 
 #define ENABLE_DUNGEON_INFO_SYSTEM
 #define ENABLE_LOCKED_EXTRA_INVENTORY

@@ -518,6 +518,7 @@ add_test(NAME privilege_time COMMAND PrivilegeTimeTests)
 add_executable(PacketStringTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/PacketStringTests.cpp
     network/packet_validation.cpp
+    network/packet_info.cpp
 )
 target_link_libraries(PacketStringTests PRIVATE SERVER S_Core EnTT::EnTT)
 add_test(NAME packet_strings COMMAND PacketStringTests)
@@ -731,13 +732,6 @@ add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
 target_link_libraries(MountLifecycleTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME mount_lifecycle COMMAND MountLifecycleTests)
 
-add_executable(OfflineShopSafeboxTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/OfflineShopSafeboxTests.cpp
-    ecs/systems/OfflineShopSystem.cpp
-)
-target_link_libraries(OfflineShopSafeboxTests PRIVATE SERVER EnTT::EnTT)
-add_test(NAME offline_shop_safebox COMMAND OfflineShopSafeboxTests)
-
 add_executable(SocialRelationTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/SocialRelationTests.cpp
     ecs/systems/SocialSystem.cpp
@@ -795,7 +789,6 @@ add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     entity/movement_input.cpp
     world/sectree.cpp
     ecs/CBuildingRegistry.cpp
-    ecs/OfflineShopEntityRegistry.cpp
     ecs/services/SpatialService.cpp
     ecs/systems/VisibilitySystem.cpp
     ecs/systems/MovementSystem.cpp
@@ -964,7 +957,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests OfflineShopSafeboxTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
+    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

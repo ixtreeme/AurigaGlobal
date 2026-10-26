@@ -10,8 +10,7 @@
 // Expiring items keep their cells. Stackables are re-created so equal stacks
 // merge; every other item is moved as the same entity. Quickslots that pointed
 // at a moved item follow it. Each command has its own 30 second cooldown and is
-// rejected while dead, trading, shopping, using a safebox/cube or visiting an
-// offline shop / auction.
+// rejected while dead, trading, shopping or using a safebox/cube.
 namespace InventorySortSystem {
 
 void SortInventory(entt::entity character);

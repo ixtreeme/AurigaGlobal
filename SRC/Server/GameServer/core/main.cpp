@@ -76,11 +76,6 @@
 #include "../ecs/systems/ActivitySystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include <boost/bind.hpp>
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "new_offlineshop.h"
-#include "new_offlineshop_manager.h"
-#include "Core/Logging.hpp"
-#endif
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 	#include "whisper_admin.h"
@@ -394,7 +389,6 @@ int main(int argc, char **argv)
         }
     }
 
-//		LOG_ERROR("Cannot initialize correctly offlineshop library!");
 #ifdef ENABLE_GOOGLE_TEST
 #ifndef _WIN32
 	// <Factor> start unit tests if option is set
@@ -485,9 +479,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	offlineshop::CShopManager offshopManager;
-#endif
 	quest::CQuestManager quest_manager;
     quest_manager.ConfigureReloadControl(section.source.parent_path().generic_string(), section.instance,
         LocaleService_GetBasePath(), g_stQuestDir);
@@ -533,10 +524,6 @@ int main(int argc, char **argv)
 	g_bShutdown = true;
 	AurigaMissionPass::Flush();
 	g_bNoMoreClient = true;
-
-//#ifdef __ENABLE_NEW_OFFLINESHOP__
-//	Offlineshop_CleanUpLibrary();
-//#endif
 
 	LOG_INFO("<shutdown> Destroying CArenaManager...");
 	arena_manager.Destroy();

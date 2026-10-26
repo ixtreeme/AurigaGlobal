@@ -93,9 +93,6 @@ class CItemManager : public CSingleton<CItemManager>
 		CItemData::TItemExtraProto* GetExtraProto(uint32_t vnum);
 #endif
 		CItemData *		MakeItemData(uint32_t dwIndex);
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-		void			GetItemsNameMap(std::map<uint32_t, std::string>& inMap);
-#endif
 
 #ifdef ENABLE_ACCE_SYSTEM
 		bool			LoadItemScale(const char* c_szFileName);

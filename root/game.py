@@ -62,10 +62,6 @@ if app.ENABLE_PVP_ADVANCED:
 # END_OF_TEXTTAIL_LIVINGTIME_CONTROL
 
 # SCREENSHOT_CWDSAVE
-if app.__ENABLE_NEW_OFFLINESHOP__:
-	import uiofflineshop
-	import offlineshop
-	
 if app.NEW_PET_SYSTEM:
 	import uipetsystem
 	
@@ -113,11 +109,6 @@ class GameWindow(ui.ScriptWindow):
 		
 		if app.AUTO_SHOUT:
 			self.shouttime = 0
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			offlineshop.HideShopNames()
-			self.Offlineshop = uiofflineshop.NewOfflineShopBoard()
-			self.Offlineshop.Hide()
-
 		self.stream=stream
 		self.interface = interfacemodule.Interface()
 		
@@ -327,12 +318,6 @@ class GameWindow(ui.ScriptWindow):
 				self.wndWiki.Hide()
 				self.wndWiki = None
 		
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if self.Offlineshop:
-				self.Offlineshop.Destroy()
-				self.Offlineshop = None
-		
-		# UNKNOWN_UPDATE
 		self.itemDropQuestionDialog = None
 		# END_OF_UNKNOWN_UPDATE
 
@@ -521,12 +506,6 @@ class GameWindow(ui.ScriptWindow):
 		onPressKeyDict[app.DIK_H]			= lambda : self.__PressHKey()
 		onPressKeyDict[app.DIK_B]			= lambda : self.__PressBKey()
 		onPressKeyDict[app.DIK_F]			= lambda : self.__PressFKey()
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			onPressKeyDict[app.DIK_Y]		= lambda : self.__PressYKey()
-#		if app.NEW_PET_SYSTEM:
-#			onPressKeyDict[app.DIK_P] = lambda: self.OpenPetMainGui()
-
-		# CUBE_TEST
 		onPressKeyDict[app.DIK_K]			= lambda : self.interface.ToggleSwitchbotWindow()
 		# CUBE_TEST_END
 		self.onPressKeyDict = onPressKeyDict
@@ -561,10 +540,6 @@ class GameWindow(ui.ScriptWindow):
 		#	onClickKeyDict[app.DIK_B] = lambda: self.ChangePKMode()
 
 		self.onClickKeyDict=onClickKeyDict
-
-	if app.__ENABLE_NEW_OFFLINESHOP__:
-		def __PressYKey(self):
-			self.interface.OnPressBtnOfflineshop()
 
 	if app.ENABLE_NEW_FISHING_SYSTEM:
 		def OnFishingStart(self, have, need):
@@ -1325,9 +1300,6 @@ class GameWindow(ui.ScriptWindow):
 
 	def ShowName(self):
 		self.ShowNameFlag = True
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			offlineshop.ShowShopNames()
-
 		self.playerGauge.EnableShowAlways()
 		player.SetQuickPage(self.quickSlotPageIndex+1)
 
@@ -1347,10 +1319,6 @@ class GameWindow(ui.ScriptWindow):
 		self.ShowNameFlag = False
 		self.playerGauge.DisableShowAlways()
 		player.SetQuickPage(self.quickSlotPageIndex)
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			offlineshop.HideShopNames()
-
-
 	def ShowMouseImage(self):
 		self.interface.ShowMouseImage()
 
@@ -1451,14 +1419,6 @@ class GameWindow(ui.ScriptWindow):
 			attachedItemIndex = mousemodule.mouseController.GetAttachedItemIndex()
 			attachedItemSlotPos = mousemodule.mouseController.GetAttachedSlotNumber()
 			attachedItemCount = mousemodule.mouseController.GetAttachedItemCount()
-			if app.__ENABLE_NEW_OFFLINESHOP__:
-				if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(player.SlotTypeToInvenType(attachedType), attachedItemSlotPos): #toupdate
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-					return
-
-
-
-			## QuickSlot
 			if player.SLOT_TYPE_QUICK_SLOT == attachedType:
 				player.RequestDeleteGlobalQuickSlot(attachedItemSlotPos)
 
@@ -2432,7 +2392,6 @@ class GameWindow(ui.ScriptWindow):
 		if app.KASMIR_PAKET_SYSTEM:
 			serverCommandList.update({
 				"OpenPrivateShopKasmir" : self.Kasmir_Paketi_Open,
-				"RefreshOfflineShop" : self.RefreshOfflineShop,
 			})
 		
 		if app.NEW_PET_SYSTEM:
@@ -3002,13 +2961,6 @@ class GameWindow(ui.ScriptWindow):
 		self.interface.OpenPrivateShopInputNameDialog()
 
 	if app.KASMIR_PAKET_SYSTEM:
-		def RefreshOfflineShop(self):
-			if not app.__ENABLE_NEW_OFFLINESHOP__:
-				return
-			else:
-				if self.Offlineshop:
-					self.Offlineshop.OpeningFailded()
-
 		def __PrivateShop_Kasmir_Open(self):
 			self.interface.OpenPrivateShopKasmirInputNameDialog()
 

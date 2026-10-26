@@ -18,7 +18,6 @@ enum class SpatialKind : uint8_t {
     Character = 0,
     Item = 1,
     Building = 2,
-    OfflineShop = 3,
 };
 
 struct SpatialKindTag {
@@ -61,14 +60,6 @@ struct BuildingState {
     bool destroying { false };
     bool attributesApplied { false };
     uint32_t effectGuildId { 0 };
-};
-
-struct OfflineShopState {
-    uint32_t vid { 0 };
-    uint32_t race { 0 };
-    int shopType { 0 };
-    std::string name {};
-    uint32_t ownerPID { 0 };
 };
 
 } // namespace ecs

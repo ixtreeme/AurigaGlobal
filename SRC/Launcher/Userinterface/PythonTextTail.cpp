@@ -8,9 +8,6 @@
 #include "PythonGuild.h"
 #include "Locale.h"
 #include "MarkManager.h"
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-#include "PythonApplication.h"
-#endif
 #include "PythonSystem.h"
 
 
@@ -101,10 +98,6 @@ void CPythonTextTail::UpdateAllTextTail()
 		{
 			UpdateDistance(pixelPos, itorMap->second);
 		}
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-		for (itorMap = m_ShopTextTailMap.begin(); itorMap != m_ShopTextTailMap.end(); ++itorMap)
-			UpdateDistance(pixelPos, itorMap->second);
-#endif
 
 		for (TChatTailMap::iterator itorChat = m_ChatTailMap.begin(); itorChat != m_ChatTailMap.end(); ++itorChat)
 		{
@@ -135,11 +128,6 @@ void CPythonTextTail::UpdateShowingTextTail()
 	{
 		UpdateTextTail(itorChat->second);
 	}
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	for (auto itorMap = m_ShopTextTailMap.begin(); itorMap != m_ShopTextTailMap.end(); ++itorMap)
-		if (itorMap->second->bRender)
-			UpdateTextTail(itorMap->second);
-#endif
 
 	for (itor = m_CharacterTextTailList.begin(); itor != m_CharacterTextTailList.end(); ++itor)
 	{
@@ -286,45 +274,6 @@ void CPythonTextTail::ArrangeTextTail()
 #endif
 
 	}
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	for (auto itorMap = m_ShopTextTailMap.begin(); itorMap != m_ShopTextTailMap.end(); ++itorMap)
-	{
-		if (!itorMap->second->bRender)
-			continue;
-
-		TTextTail* pInsertTextTail = itorMap->second;
-
-		if (pInsertTextTail->pOwnerTextInstance)
-		{
-			pInsertTextTail->pOwnerTextInstance->SetPosition(pInsertTextTail->x, pInsertTextTail->y, pInsertTextTail->z);
-			pInsertTextTail->pOwnerTextInstance->Update();
-
-			pInsertTextTail->pTextInstance->SetColor(pInsertTextTail->Color.r, pInsertTextTail->Color.g, pInsertTextTail->Color.b);
-			pInsertTextTail->pTextInstance->SetPosition(pInsertTextTail->x, pInsertTextTail->y + 15.0f, pInsertTextTail->z);
-			pInsertTextTail->pTextInstance->Update();
-#ifdef ENABLE_FAKE_SHOP_HEADER//x
-
-			pInsertTextTail->pMountCountInstance->SetColor(pInsertTextTail->Color.r, pInsertTextTail->Color.g, pInsertTextTail->Color.b);
-			pInsertTextTail->pMountCountInstance->SetPosition(pInsertTextTail->x, pInsertTextTail->y + 15.0f, pInsertTextTail->z);
-			pInsertTextTail->pMountCountInstance->Update();
-
-#endif
-
-		}
-		else
-		{
-			pInsertTextTail->pTextInstance->SetColor(pInsertTextTail->Color.r, pInsertTextTail->Color.g, pInsertTextTail->Color.b);
-			pInsertTextTail->pTextInstance->SetPosition(pInsertTextTail->x, pInsertTextTail->y, pInsertTextTail->z);
-			pInsertTextTail->pTextInstance->Update();
-#ifdef ENABLE_FAKE_SHOP_HEADERd//x
-			pInsertTextTail->pMountCountInstance->SetColor(pInsertTextTail->Color.r, pInsertTextTail->Color.g, pInsertTextTail->Color.b);
-			pInsertTextTail->pMountCountInstance->SetPosition(pInsertTextTail->x, pInsertTextTail->y, pInsertTextTail->z);
-			pInsertTextTail->pMountCountInstance->Update();
-#endif
-		}
-
-	}
-#endif
 
 	for (itor = m_CharacterTextTailList.begin(); itor != m_CharacterTextTailList.end(); ++itor)
 	{
@@ -544,22 +493,6 @@ void CPythonTextTail::Render()
 			pTextTail->pOwnerTextInstance->Render();
 	}
 
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	if (!CPythonSystem::Instance().GetHideMode5Status()) {
-		for (auto itorMap = m_ShopTextTailMap.begin(); itorMap != m_ShopTextTailMap.end(); ++itorMap)
-		{
-			if (!itorMap->second->bRender)
-				continue;
-
-			TTextTail* pTextTail = itorMap->second;
-
-			RenderTextTailBox(pTextTail);
-			pTextTail->pTextInstance->Render();
-			if (pTextTail->pOwnerTextInstance)
-				pTextTail->pOwnerTextInstance->Render();
-		}
-	}
-#endif
 
 	for (auto itorChat = m_ChatTailMap.begin(); itorChat != m_ChatTailMap.end(); ++itorChat)
 	{
@@ -571,29 +504,6 @@ void CPythonTextTail::Render()
 
 void CPythonTextTail::RenderTextTailBox(TTextTail* pTextTail)
 {
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	if (pTextTail->bIsShop)
-	{
-		CPythonGraphic::Instance().SetDiffuseColor(0.0f, 0.0f, 0.0f, 1.0f);
-		CPythonGraphic::Instance().RenderBox2d(pTextTail->x + pTextTail->xStart - 10.f,
-			pTextTail->y + pTextTail->yStart - 10.f,
-			pTextTail->x + pTextTail->xEnd + 10.f,
-			pTextTail->y + pTextTail->yEnd + 10.f,
-			pTextTail->z);
-
-		
-		CPythonGraphic::Instance().SetDiffuseColor(0.0f, 0.0f, 0.0f, 0.3f);
-		CPythonGraphic::Instance().RenderBar2d(pTextTail->x + pTextTail->xStart - 10.f,
-			pTextTail->y + pTextTail->yStart - 10.f,
-			pTextTail->x + pTextTail->xEnd + 10.f,
-			pTextTail->y + pTextTail->yEnd + 10.f,
-			pTextTail->z);
-
-		return;
-	}
-#	endif
-#endif
 	CPythonGraphic::Instance().SetDiffuseColor(0.0f, 0.0f, 0.0f, 1.0f);
 	CPythonGraphic::Instance().RenderBox2d(pTextTail->x + pTextTail->xStart,
 		pTextTail->y + pTextTail->yStart,
@@ -633,10 +543,6 @@ void CPythonTextTail::HideAllTextTail()
 {
 	m_CharacterTextTailList.clear();
 	m_ItemTextTailList.clear();
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	for (auto& iter : m_ShopTextTailMap)
-		iter.second->bRender = false;
-#endif
 }
 
 void CPythonTextTail::UpdateDistance(const TPixelPosition& c_rCenterPosition, TTextTail* pTextTail)
@@ -663,20 +569,6 @@ void CPythonTextTail::ShowAllTextTail()
 			ShowItemTextTail(itor->first);
 		}
 	}
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	//OFFSHOP_DEBUG("ShopTextTailMap size %u ",m_ShopTextTailMap.size());
-	for (itor = m_ShopTextTailMap.begin(); itor != m_ShopTextTailMap.end(); ++itor)
-	{
-		TTextTail* pTextTail = itor->second;
-		if (pTextTail->fDistanceFromPlayer < 3500.f) {
-#ifdef OUTLINE_NAMES_TEXTLINE
-			pTextTail->pTextInstance->SetOutline(CPythonSystem::Instance().GetNamesType());
-
-#endif
-			pTextTail->bRender = true;
-		}
-	}
-#endif
 }
 
 void CPythonTextTail::ShowCharacterTextTail(uint32_t VirtualID)
@@ -1014,29 +906,6 @@ void CPythonTextTail::RegisterItemTextTail(uint32_t VirtualID, const char* c_szT
 	m_ItemTextTailMap.insert(TTextTailMap::value_type(VirtualID, pTextTail));
 #endif
 }
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-void CPythonTextTail::RegisterShopInstanceTextTail(uint32_t dwVirtualID, const char* c_szName, CGraphicObjectInstance* pOwner)
-{
-	TTextTail* pTextTail = RegisterShopTextTail(dwVirtualID, c_szName, pOwner);
-	m_ShopTextTailMap.insert(TTextTailMap::value_type(dwVirtualID, pTextTail));
-}
-
-void CPythonTextTail::SetShopTextTailColor(uint32_t dwVirtualID, const D3DXCOLOR& c_rColor)
-{
-	const auto itor = m_ShopTextTailMap.find(dwVirtualID);
-	if (m_ShopTextTailMap.end() == itor)
-		return;
-
-	TTextTail* pTextTail = itor->second;
-	if (!pTextTail || !pTextTail->pTextInstance)
-		return;
-
-	pTextTail->Color = c_rColor;
-	pTextTail->pTextInstance->SetColor(c_rColor.r, c_rColor.g, c_rColor.b);
-	pTextTail->pTextInstance->Update();
-}
-
-#endif
 
 void CPythonTextTail::RegisterChatTail(uint32_t VirtualID, const char* c_szChat)
 {
@@ -1300,21 +1169,6 @@ void CPythonTextTail::DeleteMountCountTextTail(uint32_t dwVID)
 
 #endif
 
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-void CPythonTextTail::DeleteShopTextTail(uint32_t VirtualID)
-{
-	TTextTailMap::iterator itor = m_ShopTextTailMap.find(VirtualID);
-
-	if (m_ShopTextTailMap.end() == itor)
-	{
-		Tracef(" CPythonTextTail::DeleteShopTextTail - None Item Text Tail\n");
-		return;
-	}
-
-	DeleteTextTail(itor->second);
-	m_ShopTextTailMap.erase(itor);
-}
-#endif
 
 void CPythonTextTail::DeleteItemTextTail(uint32_t VirtualID)
 {
@@ -1334,12 +1188,6 @@ CPythonTextTail::TTextTail* CPythonTextTail::RegisterTextTail(uint32_t dwVirtual
 {
 	TTextTail* pTextTail = m_TextTailPool.Alloc();
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#	ifdef ENABLE_NEW_SHOP_IN_CITIES
-	pTextTail->bIsShop = false;
-	pTextTail->bRender = false;
-#	endif
-#endif
 	pTextTail->dwVirtualID = dwVirtualID;
 	pTextTail->pOwner = pOwner;
 	pTextTail->pTextInstance = CGraphicTextInstance::New();
@@ -1381,87 +1229,6 @@ CPythonTextTail::TTextTail* CPythonTextTail::RegisterTextTail(uint32_t dwVirtual
 #endif
 	return pTextTail;
 }
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-CPythonTextTail::TTextTail* CPythonTextTail::RegisterShopTextTail(uint32_t dwVirtualID, const char* c_szText, CGraphicObjectInstance* pOwner)
-{
-
-	const D3DXCOLOR& c_rColor = D3DXCOLOR(1.0, 1.0, 0.5, 1.0);
-
-	TTextTail* pTextTail = m_TextTailPool.Alloc();
-
-	pTextTail->bIsShop = true;
-
-	pTextTail->dwVirtualID = dwVirtualID;
-	pTextTail->pOwner = pOwner;
-	pTextTail->pTextInstance = CGraphicTextInstance::New();
-	pTextTail->pOwnerTextInstance = nullptr;
-	pTextTail->fHeight = 180.f;
-
-	pTextTail->pTextInstance->SetTextPointer(ms_pFont);
-	pTextTail->pTextInstance->SetHorizonalAlign(CGraphicTextInstance::HORIZONTAL_ALIGN_CENTER);
-	pTextTail->pTextInstance->SetValue(c_szText);
-	pTextTail->pTextInstance->SetColor(c_rColor.r, c_rColor.g, c_rColor.b);
-	pTextTail->pTextInstance->Update();
-
-	int xSize, ySize;
-	pTextTail->pTextInstance->GetTextSize(&xSize, &ySize);
-	pTextTail->xStart = (float)(-xSize / 2 - 2);
-	pTextTail->yStart = -2.0f;
-	pTextTail->xEnd = (float)(xSize / 2 + 2);
-	pTextTail->yEnd = (float)ySize;
-	pTextTail->Color = c_rColor;
-	pTextTail->fDistanceFromPlayer = 0.0f;
-	pTextTail->x = -100.0f;
-	pTextTail->y = -100.0f;
-	pTextTail->z = 0.0f;
-	pTextTail->pMarkInstance = nullptr;
-	pTextTail->pGuildNameTextInstance = nullptr;
-	pTextTail->pTitleTextInstance = nullptr;
-	pTextTail->pLevelTextInstance = nullptr;
-#ifdef ENABLE_FAKE_SHOP_HEADER
-	pTextTail->pMountCountInstance = nullptr;
-#endif
-#ifdef ENABLE_MULTI_LANGUAGE
-	pTextTail->pLanguageInstance = nullptr;
-#endif
-#ifdef ENABLE_FAKE_SHOP_HEADER//icon
-	pTextTail->pMountCountIconInstance = nullptr;
-
-#endif
-	return pTextTail;
-}
-
-bool CPythonTextTail::GetPickedNewShop(uint32_t* pdwVID)
-{
-	*pdwVID = 0;
-
-	if (!CPythonOfflineshop::instance().GetShowNameFlag() && !CPythonSystem::instance().IsAlwaysShowName())
-		return false;
-
-	long ixMouse = 0, iyMouse = 0;
-
-	POINT p;
-	CPythonApplication::Instance().GetMousePosition(&p);
-
-	ixMouse = p.x;
-	iyMouse = p.y;
-
-	for (auto itor = m_ShopTextTailMap.begin(); itor != m_ShopTextTailMap.end(); ++itor)
-	{
-		TTextTail* pTextTail = itor->second;
-
-		if (ixMouse >= pTextTail->x + (pTextTail->xStart - 10) && ixMouse <= pTextTail->x + (pTextTail->xEnd + 10) &&
-			iyMouse >= pTextTail->y + (pTextTail->yStart - 10) && iyMouse <= pTextTail->y + (pTextTail->yEnd + 10))
-		{
-			*pdwVID = itor->first;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-#endif
 
 void CPythonTextTail::DeleteTextTail(TTextTail* pTextTail)
 {
@@ -1802,9 +1569,6 @@ void CPythonTextTail::Clear()
 	m_CharacterTextTailList.clear();
 	m_ItemTextTailMap.clear();
 	m_ItemTextTailList.clear();
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-	m_ShopTextTailMap.clear();
-#endif
 	m_ChatTailMap.clear();
 
 	m_TextTailPool.Clear();

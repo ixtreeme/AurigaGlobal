@@ -622,9 +622,6 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 #ifdef ENABLE_EVENT_MANAGER
 	SendEventData(peer);
 #endif
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	SendOfflineshopTable(peer);
-#endif
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 	SendItemExtraProtoTable(peer);
 #endif
@@ -3002,11 +2999,6 @@ void CClientManager::ProcessPackets(CPeer * peer)
 			case HEADER_GD_REQUEST_CHANNELSTATUS:
 				RequestChannelStatus(peer, dwHandle);
 				break;
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-			case HEADER_GD_NEW_OFFLINESHOP:
-				RecvOfflineShopPacket(peer, data);
-				break;
-#endif
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
 			case HEADER_GD_FIND_CHANNEL:
 				FindChannel(peer, dwHandle, (TPacketChangeChannel*)data);
@@ -3251,39 +3243,6 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
     }
 	if (!peer)
 	{
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-		switch (qi->iType)
-		{
-		case QID_OFFLINESHOP_ADD_ITEM:
-		case QID_OFFLINESHOP_EDIT_ITEM:
-		case QID_OFFLINESHOP_DELETE_SHOP:
-		case QID_OFFLINESHOP_DELETE_SHOP_ITEM:
-		case QID_OFFLINESHOP_REMOVE_ITEM:
-		case QID_OFFLINESHOP_UPDATE_SOLD_ITEM:
-		case QID_OFFLINESHOP_CREATE_SHOP:
-		case QID_OFFLINESHOP_CREATE_SHOP_ADD_ITEM:
-		case QID_OFFLINESHOP_SHOP_CHANGE_NAME:
-		case QID_OFFLINESHOP_SHOP_UPDATE_DURATION:
-		case QID_OFFLINESHOP_SAFEBOX_DELETE_ITEM:
-		case QID_OFFLINESHOP_SAFEBOX_ADD_ITEM:
-		case QID_OFFLINESHOP_SAFEBOX_UPDATE_VALUTES:
-		case QID_OFFLINESHOP_SAFEBOX_INSERT_VALUTES:
-		case QID_OFFLINESHOP_SAFEBOX_UPDATE_VALUTES_ADDING:
-		case QID_OFFLINESHOP_OFFER_ADD:
-		case QID_OFFLINESHOP_OFFER_UPDATE_NOTIFIED:
-		case QID_OFFLINESHOP_OFFER_UPDATE_ACCEPTED:
-		case QID_OFFLINESHOP_OFFER_DELETE_BY_SHOP:
-		case QID_OFFLINESHOP_AUCTION_INSERT:
-		case QID_OFFLINESHOP_AUCTION_INSERT_OFFER:
-		case QID_OFFLINESHOP_AUCTION_DELETE:
-		case QID_OFFLINESHOP_AUCTION_DELETE_OFFERS:
-		case QID_OFFLINESHOP_AUCTION_UPDATE_DURATION:
-			OfflineShopResultQuery(peer, msg, qi);
-			break;
-
-		default: break;
-		}
-#endif
 		//LOG_ERROR("CClientManager::AnalyzeQueryResult: peer not exist anymore. (ident: {})", qi->dwIdent);
 		delete qi;
 		return true;
@@ -3365,33 +3324,6 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 		case QID_ITEMPRICE_LOAD:
 			RESULT_PRICELIST_LOAD(peer, msg);
 			break;
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-		case QID_OFFLINESHOP_ADD_ITEM:
-		case QID_OFFLINESHOP_EDIT_ITEM:
-		case QID_OFFLINESHOP_DELETE_SHOP:
-		case QID_OFFLINESHOP_DELETE_SHOP_ITEM:
-		case QID_OFFLINESHOP_CREATE_SHOP:
-		case QID_OFFLINESHOP_CREATE_SHOP_ADD_ITEM:
-		case QID_OFFLINESHOP_SHOP_CHANGE_NAME:
-		case QID_OFFLINESHOP_SAFEBOX_DELETE_ITEM:
-		case QID_OFFLINESHOP_SAFEBOX_ADD_ITEM:
-		case QID_OFFLINESHOP_REMOVE_ITEM:
-		case QID_OFFLINESHOP_SAFEBOX_UPDATE_VALUTES:
-		case QID_OFFLINESHOP_SAFEBOX_INSERT_VALUTES:
-		case QID_OFFLINESHOP_SAFEBOX_UPDATE_VALUTES_ADDING:
-		case QID_OFFLINESHOP_OFFER_ADD:
-		case QID_OFFLINESHOP_OFFER_UPDATE_NOTIFIED:
-		case QID_OFFLINESHOP_OFFER_UPDATE_ACCEPTED:
-		case QID_OFFLINESHOP_OFFER_DELETE_BY_SHOP:
-		case QID_OFFLINESHOP_AUCTION_INSERT:
-		case QID_OFFLINESHOP_AUCTION_INSERT_OFFER:
-		case QID_OFFLINESHOP_AUCTION_DELETE:
-		case QID_OFFLINESHOP_AUCTION_DELETE_OFFERS:
-		case QID_OFFLINESHOP_AUCTION_UPDATE_DURATION:
-			OfflineShopResultQuery(peer, msg, qi);
-			break;
-
-#endif
 			// END_OF_MYSHOP_PRICE_LIST
 
 		default:
@@ -3524,10 +3456,6 @@ int CClientManager::Process()
 		{
 			ItemAwardManager::instance().RequestLoad();
 		}
-#endif
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-		if (thecore_heart->pulse % (thecore_heart->passes_per_sec * 60) == thecore_heart->passes_per_sec*30) //to be async relative to the money log
-			OfflineshopDurationProcess();
 #endif
 		if (!(thecore_heart->pulse % (thecore_heart->passes_per_sec * 10)))
 		{
@@ -4118,20 +4046,6 @@ void CClientManager::OfflineMessageGarbage()
 }
 #endif
 
-#ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-void CClientManager::OfflineshopLog(const uint32_t dwOwnerID, const uint32_t dwItemID, const char* fmt, ...) {
-	static char szLog[1024] = "\0";
-
-	va_list args;
-	va_start(args, fmt);
-	vsnprintf(szLog, sizeof(szLog), fmt, args);
-	va_end(args);
-
-	CDBManager::instance().QueryPrepared(
-		"INSERT INTO `player`.`offlineshop_logs` (`owner_id`, `item_id`, `what`, `when`) VALUES(?, ?, ?, NOW())",
-		{ SqlParam::UInt(dwOwnerID), SqlParam::UInt(dwItemID), SqlParam::Text(szLog) });
-}
-#endif
 
 #ifdef ENABLE_HWID
 void CClientManager::BlockHwid(THwidRequest * pack) {

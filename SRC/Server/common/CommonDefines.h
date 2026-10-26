@@ -95,26 +95,10 @@ enum eCommonDefines {
 
 
 
-//OFFLINESHOP
-#define __ENABLE_NEW_OFFLINESHOP__
-#define ENABLE_NEW_OFFLINESHOP_LOGS
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#define ENABLE_NEW_SHOP_IN_CITIES
-#endif
 
 
 
 /*** Ikarus Defines ***/
-//#define ENABLE_OFFLINESHOP_DEBUG
-#ifdef ENABLE_OFFLINESHOP_DEBUG
-#	ifdef _WIN32
-#		define OFFSHOP_DEBUG(fmt , ...) LOG_TRACE("{}:{} >> {}", __FUNCTION__ , __LINE__, fmt::sprintf(fmt, __VA_ARGS__))
-#	else
-#		define OFFSHOP_DEBUG(fmt , args...) LOG_TRACE("{}:{} >> {}", __FUNCTION__ , __LINE__, fmt::sprintf(fmt, ##args))
-#	endif
-#else
-#	define OFFSHOP_DEBUG(...)   
-#endif
 #define __ENABLE_LARGE_DYNAMIC_PACKET__
 
 

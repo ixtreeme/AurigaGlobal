@@ -2022,11 +2022,7 @@ void initapp()
 	PyModule_AddIntConstant(poModule, "__ENABLE_NEW_EFFECT_CIANITE_WEAPON__", 0);
 #endif
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	PyModule_AddIntConstant(poModule, "__ENABLE_NEW_OFFLINESHOP__", 1);
-#else
 	PyModule_AddIntConstant(poModule, "__ENABLE_NEW_OFFLINESHOP__", 0);
-#endif
 
 
 #ifdef ENABLE_EXTRA_INVENTORY

@@ -5,6 +5,7 @@
 #include <common/Headers/Header_CG.h>
 #include <common/Headers/CG_Packet.h>
 #include "../../SRC/Server/GameServer/network/packet_validation.h"
+#include "../../SRC/Server/GameServer/network/packet_info.h"
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -32,6 +33,14 @@ void Field(uint8_t header, char (Packet::*member)[N])
 int main()
 {
     try {
+        CPacketInfoCG packets;
+        int size = 0;
+        const char* name = nullptr;
+        Check(!packets.Get(119, &size, &name), "retired offline shop header is still accepted");
+        Check(packets.Get(HEADER_CG_SHOP, &size, &name) && size == sizeof(TPacketCGShop),
+            "NPC and online shop packet registration lost");
+        Check(packets.Get(HEADER_CG_MYSHOP, &size, &name) && size == sizeof(TPacketCGMyShop),
+            "online personal shop creation registration lost");
         Field(HEADER_CG_LOGIN, &TPacketCGLogin::login);
         Field(HEADER_CG_LOGIN, &TPacketCGLogin::passwd);
         Field(HEADER_CG_LOGIN2, &TPacketCGLogin2::login);
@@ -52,16 +61,6 @@ int main()
         Field(HEADER_CG_ANSWER_MAKE_GUILD, &TPacketCGAnswerMakeGuild::guild_name);
         Field(HEADER_CG_HACK, &TPacketCGHack::szBuf);
         Field(HEADER_CG_MYSHOP, &TPacketCGMyShop::szSign);
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-        auto shop = std::make_unique<TSubPacketCGShopCreate>();
-        std::memset(shop.get(), 'a', sizeof(*shop));
-        Check(!packet_string::IsTerminated(shop->shop.szName), "unterminated offline shop name accepted");
-        shop->shop.szName[sizeof(shop->shop.szName) - 1] = '\0';
-        Check(packet_string::IsTerminated(shop->shop.szName), "terminated offline shop name rejected");
-        auto rename = std::make_unique<TSubPacketCGShopChangeName>();
-        std::memset(rename.get(), 'a', sizeof(*rename));
-        Check(!packet_string::IsTerminated(rename->szName), "unterminated offline shop rename accepted");
-#endif
 #ifdef __NEWPET_SYSTEM__
         Field(HEADER_CG_PetSetName, &TPacketCGRequestPetName::petname);
 #endif

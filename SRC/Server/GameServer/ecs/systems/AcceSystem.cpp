@@ -3,7 +3,6 @@
 #include <common/stole_length.h>
 
 #include "AcceSystem.hpp"
-#include "OfflineShopSystem.hpp"
 #include "ItemSystem.hpp"
 #include "InventorySystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -556,8 +555,6 @@ uint8_t CanRefine(entt::entity e)
 		return 0;
 
 	auto& acce = g_registry.get_or_emplace<ecs::AcceWindowComponent>(e);
-    if (ecs::OfflineShopSystem::GetOfflineShopGuest(e) || ecs::OfflineShopSystem::GetAuctionGuest(e))
-        return 0;
 
     if (ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e) != entt::null || (ecs::SocialSystem::GetShopOwner(e) != entt::null) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e)
 #ifdef __ATTR_TRANSFER_SYSTEM__

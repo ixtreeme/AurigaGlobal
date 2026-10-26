@@ -204,9 +204,6 @@ bool CanTrade(entt::entity participant)
         return false;
     if (const auto* shop = g_registry.try_get<ecs::ShopState>(participant);
         shop && (shop->myShop != entt::null || shop->currentShop != entt::null || shop->shopOwner != entt::null
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-            || shop->offlineShopGuest || shop->auctionGuest
-#endif
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
             || shop->wheelDestiny
 #endif

@@ -112,9 +112,6 @@ void CPythonNetworkStream::LoadingPhase()
 			if (RecvQuickSlotAddPacket())
 				return;
 			break;
-//#ifdef __ENABLE_NEW_OFFLINESHOP__
-//		case HEADER_GC_NEW_OFFLINESHOP:
-//			RecvOfflineshopPacket();
 //			return;
 //#endif
 		default:

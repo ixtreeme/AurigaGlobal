@@ -7,7 +7,6 @@
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
-#include "../ecs/systems/OfflineShopSystem.hpp"
 #include "../ecs/systems/QuestSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
@@ -50,10 +49,6 @@
 #include "horsename_manager.h"
 #include "MarkManager.h"
 #include <common/CommonDefines.h>
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "new_offlineshop.h"
-#include "new_offlineshop_manager.h"
-#endif
 #ifdef ENABLE_SWITCHBOT
 #include "new_switchbot.h"
 #endif
@@ -903,18 +898,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	}
 #endif
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	if (ecs::PlayerRuntime::IsPC(ch))
-	{
-		offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(ch));
-		if (pkShop)
-			ecs::OfflineShopSystem::SetOfflineShop(ch, pkShop);
-
-		offlineshop::CAuction* auction = offlineshop::GetManager().GetAuctionByOwnerID(ecs::PlayerRuntime::GetPlayerID(ch));
-		if (auction)
-			ecs::OfflineShopSystem::SetAuction(ch, auction);
-	}
-#endif
 
 #ifdef ENABLE_SWITCHBOT
 	CSwitchbotManager::Instance().EnterGame(d->GetEntity());

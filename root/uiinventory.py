@@ -23,9 +23,6 @@ import uimountinventory
 import dbg
 dbg.TraceError("[RZ] uiinventory.py LOADED")
 
-if app.__ENABLE_NEW_OFFLINESHOP__:
-	import offlineshop
-	import uiofflineshop
 if app.ENABLE_CAPITALE_SYSTEM:
 	import uitooltip
 	
@@ -502,10 +499,6 @@ class InventoryWindow(ui.ScriptWindow):
 		if self.interface:
 			self.interface.ToggleSwitchbotWindow()
 
-	def OpenOfflineshop(self):
-		if self.interface:
-			self.interface.OnPressBtnOfflineshop()
-
 	def ClickAnimalButton(self):
 		import constinfo
 	
@@ -743,7 +736,6 @@ class InventoryWindow(ui.ScriptWindow):
 		btn_rune = _reparent(getattr(self, "RuneButton", None))
 		btn_exinv = _reparent(getattr(self, "ExtendIntentory", None))
 		btn_rank = _reparent(getattr(self, "RankingButton", None))
-		btn_shop = _reparent(getattr(self, "OfflineshopButton", None))
 		btn_switch = _reparent(getattr(self, "SwitchbotButton", None))
 
 		ROOT = "d:/ymir work/ui/game/"
@@ -838,7 +830,7 @@ class InventoryWindow(ui.ScriptWindow):
 		order = []
 		if getattr(self, "btnBeltInv", None):
 			order.append(self.btnBeltInv)
-		for b in (btn_mount, btn_rune, btn_exinv, btn_rank, btn_shop, btn_switch):
+		for b in (btn_mount, btn_rune, btn_exinv, btn_rank, btn_switch):
 			if b: order.append(b)
 		for b in (self.btnEventCal, self.btnWiki, self.btnDungeon, self.btnBiolog, self.btnDailyGift, self.btnAutoShout, self.btnSavepoint):
 			if b: order.append(b)
@@ -950,7 +942,6 @@ class InventoryWindow(ui.ScriptWindow):
 				self.ExtendIntentory.SetEvent(self.OpenExtraInventory)
 			self.costumeButton = self.GetChild2("CostumeButton")
 			self.animalButton = self.GetChild2("AnimalButton")
-			self.OfflineshopButton = self.GetChild2("OfflineShop")
 			self.SwitchbotButton = self.GetChild2("SwitchbotButton")
 			self.RankingButton = self.GetChild2("RankingButton")
 			#if app.ENABLE_SORT_INVEN:
@@ -1088,9 +1079,6 @@ class InventoryWindow(ui.ScriptWindow):
 			else:
 				self.RuneButton.Show()
 
-		if self.OfflineshopButton:
-			self.OfflineshopButton.SetEvent(ui.__mem_func__(self.OpenOfflineshop))
-
 		if self.animalButton:
 			self.animalButton.SetEvent(ui.__mem_func__(self.ClickAnimalButton))
 
@@ -1166,7 +1154,6 @@ class InventoryWindow(ui.ScriptWindow):
 		#	self.separateButton = None
 		self.DSSButton = None
 		self.RuneButton = None
-		self.OfflineshopButton = None
 		if app.__ENABLE_EXTEND_INVEN_SYSTEM__:
 			self.EX_INVEN_COVER_IMG_CLOSE = None
 			self.EX_INVEN_COVER_IMG_OPEN = None
@@ -1330,7 +1317,6 @@ class InventoryWindow(ui.ScriptWindow):
 					self.bkImg.LoadImage("d:/ymir work/ui/equipment_bg_with_talisman.tga")
 					self.DSSButton.Show()
 					self.RuneButton.Show()
-					self.OfflineshopButton.Show()
 					self.SwitchbotButton.Show()
 					self.RankingButton.Show()
 					self.ExtendIntentory.Show()
@@ -1342,7 +1328,6 @@ class InventoryWindow(ui.ScriptWindow):
 					self.bkImg.LoadImage("d:/ymir work/ui/costumi_bg.tga")
 					self.DSSButton.Show()
 					self.RuneButton.Show()
-					self.OfflineshopButton.Show()
 					self.SwitchbotButton.Show()
 					self.RankingButton.Show()
 					self.ExtendIntentory.Show()
@@ -1361,12 +1346,6 @@ class InventoryWindow(ui.ScriptWindow):
 
 	if app.ENABLE_SORT_INVEN:
 		def Sort_Inventory(self):
-			#prevent offlineshop invalid position
-			if app.__ENABLE_NEW_OFFLINESHOP__:
-				if uiofflineshop.IsBuildingShop() or uiofflineshop.IsBuildingAuction():
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-					return
-			
 			net.SendChatPacket("/item_check")
 
 		def Sort_InventoryDone(self):
@@ -1417,11 +1396,6 @@ class InventoryWindow(ui.ScriptWindow):
 
 	def OnPickItem(self, count):
 		itemSlotIndex = self.dlgPickMoney.itemGlobalSlotIndex
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(player.INVENTORY, itemSlotIndex):
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-		
 		division = self.dlgPickMoney.division
 		if division:
 			net.SendItemDivisionPacket(itemSlotIndex, player.INVENTORY)
@@ -1799,11 +1773,6 @@ class InventoryWindow(ui.ScriptWindow):
 		self.tooltipItem = tooltipItem
 
 	def SellItem(self):
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(player.INVENTORY, self.sellingSlotNumber):
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-
 		if self.sellingSlotitemIndex == player.GetItemIndex(self.sellingSlotNumber):
 			if self.sellingSlotitemCount == player.GetItemCount(self.sellingSlotNumber):
 				## 용혼석도 팔리게 하는 기능 추가하면서 인자 type 추가
@@ -1843,13 +1812,6 @@ class InventoryWindow(ui.ScriptWindow):
 			attachedSlotPos = mousemodule.mouseController.GetAttachedSlotNumber()
 			attachedItemCount = mousemodule.mouseController.GetAttachedItemCount()
 			attachedItemIndex = mousemodule.mouseController.GetAttachedItemIndex()
-			if app.__ENABLE_NEW_OFFLINESHOP__:
-				if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(player.SlotTypeToInvenType(attachedSlotType),attachedSlotPos):
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-					return
-			
-
-
 			if player.SLOT_TYPE_INVENTORY == attachedSlotType:
 				#@fixme011 BEGIN (block ds equip)
 				attachedInvenType = player.SlotTypeToInvenType(attachedSlotType)
@@ -2061,11 +2023,6 @@ class InventoryWindow(ui.ScriptWindow):
 			if srcItemSlotPos == dstItemSlotPos:
 				return
 		
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop() and (uiofflineshop.IsSaleSlot(player.INVENTORY, srcItemSlotPos) or uiofflineshop.IsSaleSlot(player.INVENTORY , dstItemSlotPos)):
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-
 		bSourceExtra = (srcWindow == player.SLOT_TYPE_EXTRA_INVENTORY)
 		
 		if app.NEW_PET_SYSTEM:
@@ -2259,12 +2216,6 @@ class InventoryWindow(ui.ScriptWindow):
 				self.removeAttrDialog = None
 
 	def __SellItem(self, itemSlotPos):
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop():
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-		
-		
 		if not player.IsEquipmentSlot(itemSlotPos):
 			self.sellingSlotNumber = itemSlotPos
 			itemIndex = player.GetItemIndex(itemSlotPos)
@@ -2308,13 +2259,6 @@ class InventoryWindow(ui.ScriptWindow):
 		self.pop = None
 
 	def RefineItem(self, scrollSlotPos, targetSlotPos, srcWindow = player.SLOT_TYPE_INVENTORY):
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop():
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-		
-
-
 		if srcWindow == player.SLOT_TYPE_EXTRA_INVENTORY:
 			scrollIndex = player.GetItemIndex(player.EXTRA_INVENTORY, scrollSlotPos)
 		else:
@@ -2848,21 +2792,6 @@ class InventoryWindow(ui.ScriptWindow):
 		if None != self.tooltipItem:
 			self.tooltipItem.SetInventoryItem(slotIndex)
 
-			if app.__ENABLE_NEW_OFFLINESHOP__:
-				if uiofflineshop.IsBuildingShop() or uiofflineshop.IsBuildingAuction():
-					self.__AddTooltipSaleMode(slotIndex)
-	if app.__ENABLE_NEW_OFFLINESHOP__:
-		def __AddTooltipSaleMode(self, slot):
-			if player.IsEquipmentSlot(slot):
-				return
-
-			itemIndex = player.GetItemIndex(slot)
-			if itemIndex !=0:
-				item.SelectItem(itemIndex)
-				if item.IsAntiFlag(item.ANTIFLAG_MYSHOP) or item.IsAntiFlag(item.ANTIFLAG_GIVE):
-					return
-				
-				self.tooltipItem.AddRightClickForSale()
 	def OnTop(self):
 		if None != self.tooltipItem:
 			self.tooltipItem.SetTop()
@@ -2882,35 +2811,6 @@ class InventoryWindow(ui.ScriptWindow):
 			constinfo.DRAG_SOURCE_TYPE = -1
 			constinfo.DRAG_SOURCE_SLOT_INDEX = -1
 			return
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop():
-				globalSlot 	= self.__InventoryLocalSlotPosToGlobalSlotPos(slotIndex)
-				itemIndex 	= player.GetItemIndex(globalSlot)
-				
-				item.SelectItem(itemIndex)
-				
-				if not item.IsAntiFlag(item.ANTIFLAG_GIVE) and not item.IsAntiFlag(item.ANTIFLAG_MYSHOP):
-					offlineshop.ShopBuilding_AddInventoryItem(globalSlot)
-				
-				else:
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				
-				return
-
-			elif uiofflineshop.IsBuildingAuction():
-				globalSlot = self.__InventoryLocalSlotPosToGlobalSlotPos(slotIndex)
-				itemIndex = player.GetItemIndex(globalSlot)
-
-				item.SelectItem(itemIndex)
-
-				if not item.IsAntiFlag(item.ANTIFLAG_GIVE) and not item.IsAntiFlag(item.ANTIFLAG_MYSHOP):
-					offlineshop.AuctionBuilding_AddInventoryItem(globalSlot)
-				else:
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-
-				return
-		
-		
 		curCursorNum = app.GetCursor()
 		if app.SELL == curCursorNum:
 			return
@@ -2962,11 +2862,6 @@ class InventoryWindow(ui.ScriptWindow):
 			self.__UseItemQuestionDialog_OnCancel()
 
 	def __UseItem(self, slotIndex):
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(player.INVENTORY, slotIndex):
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-
 		ItemVNum = player.GetItemIndex(slotIndex)
 		item.SelectItem(ItemVNum)
 		if app.__ENABLE_EXTEND_INVEN_SYSTEM__:

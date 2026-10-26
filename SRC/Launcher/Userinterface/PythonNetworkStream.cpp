@@ -222,13 +222,6 @@ class CMainPacketHeaderMap : public CNetworkPacketHeaderMap
 #endif
 
 			Set(HEADER_GC_UNK_213, TPacketType(sizeof(TPacketGCUnk213), STATIC_SIZE_PACKET)); // @fixme007
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#ifdef __ENABLE_LARGE_DYNAMIC_PACKET__
-			Set(HEADER_GC_NEW_OFFLINESHOP,	TPacketType(sizeof(TPacketGCNewOfflineshop), LARGE_DYNAMIC_SIZE_PACKET));
-#else
-			Set(HEADER_GC_NEW_OFFLINESHOP,	CNetworkPacketHeaderMap::TPacketType(sizeof(TPacketGCNewOfflineshop), DYNAMIC_SIZE_PACKET));
-#endif
-#endif
 
 #ifdef ENABLE_ACCE_SYSTEM
 			Set(HEADER_GC_ACCE, TPacketType(sizeof(TPacketAcce), STATIC_SIZE_PACKET));

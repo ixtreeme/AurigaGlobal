@@ -134,13 +134,6 @@ bool CClientManager::InitializeTables()
 #endif
 
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	if (!InitializeOfflineshopTable())
-	{
-		LOG_ERROR("InitializeOfflineshopTable FAILED");
-		return false;
-	}
-#endif
 
 
 #ifdef ENABLE_ITEM_EXTRA_PROTO

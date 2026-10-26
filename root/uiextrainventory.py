@@ -14,10 +14,6 @@ import uipickmoney
 import localeinfo
 import wiki
 
-if app.__ENABLE_NEW_OFFLINESHOP__:
-	import offlineshop
-	import uiofflineshop
-
 class ExtraInventoryWindow(ui.ScriptWindow):
 	if app.WJ_ENABLE_TRADABLE_ICON:
 		bindWnds = []
@@ -270,11 +266,6 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 
 	def OnPickItem(self, count):
 		itemSlotIndex = self.dlgPickMoney.itemGlobalSlotIndex
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(player.EXTRA_INVENTORY, itemSlotIndex):
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-		
 		division = self.dlgPickMoney.division
 		if division:
 			net.SendItemDivisionPacket(itemSlotIndex, player.EXTRA_INVENTORY)
@@ -443,13 +434,6 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 		self.tooltipItem = tooltipItem
 
 	def SellItem(self):
-		
-		# offlineshop-updated 04/08/19
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(player.EXTRA_INVENTORY, self.sellingSlotNumber):
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-		
 		if self.sellingSlotitemIndex == player.GetItemIndex(player.EXTRA_INVENTORY, self.sellingSlotNumber):
 			if self.sellingSlotitemCount == player.GetItemCount(player.EXTRA_INVENTORY, self.sellingSlotNumber):
 				net.SendShopSellPacketNew(self.sellingSlotNumber, self.questionDialog.count, player.EXTRA_INVENTORY)
@@ -474,13 +458,6 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 			attachedSlotType = mousemodule.mouseController.GetAttachedType()
 			attachedSlotPos = mousemodule.mouseController.GetAttachedSlotNumber()
 			attachedCount = mousemodule.mouseController.GetAttachedItemCount()
-			
-			# offlineshop-updated 04/08/19
-			if app.__ENABLE_NEW_OFFLINESHOP__:
-				if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(attachedSlotType,attachedSlotPos):
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-					return
-			
 			if player.SLOT_TYPE_EXTRA_INVENTORY == attachedSlotType:
 				self.__SendMoveItemPacket(attachedSlotPos, selectedSlotPos, attachedCount)
 			elif player.SLOT_TYPE_SAFEBOX == attachedSlotType:
@@ -600,23 +577,12 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 
 
 	def __DropSrcItemToDestItemInInventory(self, srcItemVID, srcItemSlotPos, dstItemSlotPos):
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop() and (uiofflineshop.IsSaleSlot(player.EXTRA_INVENTORY, srcItemSlotPos) or uiofflineshop.IsSaleSlot(player.EXTRA_INVENTORY , dstItemSlotPos)):
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-		
-		
 		if item.IsKey(srcItemVID):
 			self.__SendUseItemToItemPacket(srcItemSlotPos, dstItemSlotPos)
 		else:
 			self.__SendMoveItemPacket(srcItemSlotPos, dstItemSlotPos, 0)
 
 	def __SellItem(self, itemSlotPos):
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop():
-				chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				return
-		
 		self.sellingSlotNumber = itemSlotPos
 		
 		itemIndex = player.GetItemIndex(player.EXTRA_INVENTORY, itemSlotPos)
@@ -692,20 +658,6 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 	def ShowToolTip(self, slotIndex):
 		if None != self.tooltipItem:
 			self.tooltipItem.SetInventoryItem(slotIndex, player.EXTRA_INVENTORY)
-			if app.__ENABLE_NEW_OFFLINESHOP__:
-				if uiofflineshop.IsBuildingShop() or uiofflineshop.IsBuildingAuction():
-					self.__AddTooltipSaleMode(slotIndex)
-	
-	if app.__ENABLE_NEW_OFFLINESHOP__:
-		def __AddTooltipSaleMode(self, slot):
-			itemIndex = player.GetItemIndex(player.EXTRA_INVENTORY,slot)
-			if itemIndex !=0:
-				item.SelectItem(itemIndex)
-				if item.IsAntiFlag(item.ANTIFLAG_MYSHOP) or item.IsAntiFlag(item.ANTIFLAG_GIVE):
-					return
-				
-				self.tooltipItem.AddRightClickForSale()
-
 	def OnTop(self):
 		if None != self.tooltipItem:
 			self.tooltipItem.SetTop()
@@ -739,32 +691,6 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 				self.wndDragonSoulRefine.AutoSetItem((player.EXTRA_INVENTORY, slotIndex), 1)
 				return
 			
-		if app.__ENABLE_NEW_OFFLINESHOP__:
-			if uiofflineshop.IsBuildingShop():
-				itemIndex 	= player.GetItemIndex(player.EXTRA_INVENTORY, slotIndex)
-				
-				item.SelectItem(itemIndex)
-				
-				if not item.IsAntiFlag(item.ANTIFLAG_GIVE) and not item.IsAntiFlag(item.ANTIFLAG_MYSHOP):
-					offlineshop.ShopBuilding_AddItem(player.EXTRA_INVENTORY, slotIndex)
-				
-				else:
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-				
-				return
-
-			elif uiofflineshop.IsBuildingAuction():
-				itemIndex = player.GetItemIndex(player.EXTRA_INVENTORY,slotIndex)
-
-				item.SelectItem(itemIndex)
-
-				if not item.IsAntiFlag(item.ANTIFLAG_GIVE) and not item.IsAntiFlag(item.ANTIFLAG_MYSHOP):
-					offlineshop.AuctionBuilding_AddItem(player.EXTRA_INVENTORY,slotIndex)
-				else:
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-
-				return		
-		
 		if app.IsPressed(app.DIK_LCONTROL) or app.IsPressed(app.DIK_RCONTROL):
 				itemCount = player.GetItemCount(player.EXTRA_INVENTORY, slotIndex)
 				if not itemCount:

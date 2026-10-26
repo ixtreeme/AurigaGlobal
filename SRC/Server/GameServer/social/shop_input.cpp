@@ -25,8 +25,6 @@
 #include "messenger_manager.h"
 #include "shop.h"
 #include "shop_manager.h"
-#include "new_offlineshop.h"
-#include "new_offlineshop_manager.h"
 #include "new_switchbot.h"
 #include "priv_manager.h"
 #include "buffer_manager.h"

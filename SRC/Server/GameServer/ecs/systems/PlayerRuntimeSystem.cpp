@@ -78,7 +78,6 @@
 #include "../../world/mining.h"
 #include "../../entity/mob_manager.h"
 #include "../../pet/MountInventory.h"
-#include "../../social/new_offlineshop.h"
 #include "../../pet/New_PetSystem.h"
 #include "../components/pet_mount_components.hpp"
 #include "../../pet/PetSystem.h"
@@ -1090,13 +1089,6 @@ bool CanWarp(entt::entity e)
 		return false;
 #endif
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	if (shop && (shop->offlineShopGuest || shop->auctionGuest))
-		return false;
-
-	if (shop && (iPulse - shop->offlineShopUseTime) < limitTime)
-		return false;
-#endif
 
 	return true;
 }
@@ -2295,8 +2287,6 @@ int CombatSystem::GetSoulItemDamage(entt::entity attacker, entt::entity victim, 
 // normal close path and stayed pointing at the NPC. Eleven "is this
 // player busy" guards read this getter, so one closed shop left the
 // player unable to open anything at all.
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#endif
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 std::shared_ptr<CWheelDestiny> ecs::PlayerRuntime::GetWheelDestiny(entt::entity e)
@@ -2433,8 +2423,6 @@ bool InventorySystem::ExpandInventory(entt::entity e)
 }
 #endif
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#endif
 
 #ifdef __NEWPET_SYSTEM__
 

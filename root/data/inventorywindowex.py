@@ -187,18 +187,6 @@ window = {
 											"over_image" : "d:/ymir work/ui/rune/none.tga",
 											"down_image" : "d:/ymir work/ui/rune/none.tga",
 										},
-										##Offline Shop
-										{
-											"name" : "OfflineShop",
-											"type" : "button",
-
-											"x" : 2,
-											"y" : 2+16,
-
-											"default_image" : "d:/ymir work/ui/rune/none.tga",
-											"over_image" : "d:/ymir work/ui/rune/none.tga",
-											"down_image" : "d:/ymir work/ui/rune/none.tga",
-										},
 										##Switchbot Systemm
 
 									)
@@ -417,20 +405,6 @@ window = {
 								"default_image" : "d:/ymir work/ui/game/taskbar/Opt1.png",
 								"over_image" : "d:/ymir work/ui/game/taskbar/Opt2.png",
 								"down_image" : "d:/ymir work/ui/game/taskbar/Opt3.png",
-							},
-							{
-								"name" : "OfflineShop",
-								"type" : "button",
-
-								"x" : 77,
-								"y" : 100,
-
-								"tooltip_text" : "Offline Shop",
-								"tooltip_x" : 6,
-								"tooltip_y" : - 12,
-								"default_image" : "d:/ymir work/ui/game/taskbar/OffShop1.png",
-								"over_image" : "d:/ymir work/ui/game/taskbar/OffShop2.png",
-								"down_image" : "d:/ymir work/ui/game/taskbar/OffShop3.png",
 							},
 						),
 					},

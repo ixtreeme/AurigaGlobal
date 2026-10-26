@@ -57,10 +57,6 @@
 #include "../ecs/systems/ActivitySystem.hpp"
 #include <common/CommonDefines.h>
 #include "LostCastleDungeon.h"
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "new_offlineshop.h"
-#include "new_offlineshop_manager.h"
-#endif
 
 #ifdef __NEWPET_SYSTEM__
 #include "New_PetSystem.h"
@@ -4449,82 +4445,6 @@ ACMD (do_dragon_soul)
 	}
 }
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-std::string GetNewShopName(std::string_view oldname, std::string_view newname) {
-	auto nameindex = oldname.find('@');
-	if (nameindex == std::string_view::npos)
-		return std::string(newname);
-
-	else {
-		std::string playername(oldname.substr(0, nameindex));
-		playername += '@';
-		playername.append(newname);
-		return playername;
-	}
-}
-
-
-ACMD(do_offshop_change_shop_name) {
-	char arg1[50]; char arg2[256];
-	argument = one_argument(argument, arg1, sizeof(arg1));
-	argument = one_argument(argument, arg2, sizeof(arg2));
-
-	if (arg1[0] != 0 && isdigit(arg1[0]) && arg2[0] != 0) {
-		uint32_t id = 0;
-		str_to_number(id, arg1);
-
-		if (id == 0) {
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "syntax : offshop_change_shop_name  <player-id>  <new-name> ");
-			return;
-		} else {
-			offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(id);
-			if (!pkShop) {
-				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Cannot find shop by id %u ", id);
-				return;
-			} else {
-				std::string oldname = pkShop->GetName();
-				offlineshop::GetManager().SendShopChangeNameDBPacket(id, GetNewShopName(oldname, arg2).c_str());
-				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "shop's name changed.");
-			}
-		}
-
-	} else {
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO , "syntax : offshop_change_shop_name  <player-id>  <new-name> ");
-		return;
-	}
-}
-
-
-ACMD(do_offshop_force_close_shop) {
-	char arg1[50];
-	argument = one_argument(argument, arg1, sizeof(arg1));
-	if (arg1[0] != 0 && isdigit(arg1[0])) {
-
-		uint32_t id = 0;
-		str_to_number(id, arg1);
-
-		if (id == 0) {
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "syntax : offshop_force_close_shop  <player-id>  ");
-			return;
-		}
-		else {
-			offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(id);
-			if (!pkShop) {
-				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Cannot find shop by id %u ", id);
-				return;
-			}
-			else {
-				offlineshop::GetManager().SendShopForceCloseDBPacket(id);
-				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "shop closed successfully.");
-			}
-		}
-
-	} else {
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "syntax : offshop_force_close_shop  <player-id>  ");
-		return;
-	}
-}
-#endif
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 ACMD(do_open_whispersys) {

@@ -6,7 +6,6 @@
 #include "../ecs/systems/AcceSystem.hpp"
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
-#include "../ecs/systems/OfflineShopSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "constants.h"
@@ -31,10 +30,6 @@
 #include <limits>
 #include <nlohmann/json.hpp>
 
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "new_offlineshop.h"
-#include "new_offlineshop_manager.h"
-#endif
 #ifdef ENABLE_STOLE_COSTUME
 #include <common/stole_length.h>
 #include "../ecs/systems/SessionSystem.hpp"
@@ -343,9 +338,6 @@ void Cube_open (entt::entity chEntity)
 	if (ecs::SocialSystem::HasExchange(chEntity) || ecs::SocialSystem::GetMyShop(chEntity) != entt::null || ecs::SocialSystem::GetShopOwner(chEntity) != entt::null || ecs::SessionSystem::IsSafeboxOpen(chEntity) || ecs::SessionSystem::IsCubeOpen(chEntity)
 #ifdef ENABLE_ACCE_SYSTEM
 		 || ecs::AcceSystem::IsOpen(chEntity)
-#endif
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-		 || ecs::OfflineShopSystem::GetOfflineShopGuest(chEntity) || ecs::OfflineShopSystem::GetAuctionGuest(chEntity)
 #endif
 #ifdef __ATTR_TRANSFER_SYSTEM__
 		 || AttrTransfer_is_open(chEntity)

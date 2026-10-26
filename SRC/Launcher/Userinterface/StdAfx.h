@@ -54,10 +54,6 @@ enum
 #else
 	PLAYER_NAME_MAX_LEN = 12,
 #endif
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	OFFLINE_SHOP_NAME_MAX_LEN = 40 + CHARACTER_NAME_MAX_LEN +1,
-	OFFLINE_SHOP_ITEM_MAX_LEN = 48,
-#endif
 };
 
 void initudp();
@@ -101,9 +97,6 @@ void initcfg();
 void initsafebox();
 void initguild();
 void initMessenger();
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-void initofflineshop();
-#endif
 #ifdef ENABLE_ACCE_SYSTEM
 void initAcce();
 #endif

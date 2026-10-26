@@ -137,65 +137,6 @@ void NativeBuildingPackets() {
     Check(wire.empty(), "building sent to missing viewer session");
     g_registry.clear();
 }
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-template<class T> T ShopPayload(const DESC& desc, size_t index, uint8_t subheader) {
-    const auto& bytes = wire.at(&desc).at(index);
-    Check(bytes.size() == sizeof(TPacketGCNewOfflineshop) + sizeof(T), "wrong shop framed packet length");
-    TPacketGCNewOfflineshop header {};
-    std::memcpy(&header, bytes.data(), sizeof(header));
-    Check(header.bHeader == HEADER_GC_NEW_OFFLINESHOP && header.bSubHeader == subheader && header.wSize == bytes.size(),
-        "wrong shop main header, subheader or advertised length");
-    T result {};
-    std::memcpy(&result, bytes.data() + sizeof(header), sizeof(result));
-    return result;
-}
-void NativeShopPackets() {
-    DESC desc;
-    const auto viewer = Character(3000, true, &desc);
-    const auto shop = WorldObject(ecs::SpatialKind::OfflineShop, 3001);
-    ecs::OfflineShopState state {};
-    state.vid = 3001; state.race = 30003; state.shopType = 2;
-    state.name = std::string(200, 'n'); state.ownerPID = 77;
-    g_registry.emplace<ecs::OfflineShopState>(shop, state);
-    ecs::EntityNetworkDispatch::SendInsert(g_registry, shop, viewer);
-    ecs::EntityNetworkDispatch::SendRemove(g_registry, shop, viewer);
-    Check(wire.at(&desc).size() == 2 && bufferedWire.empty(), "shop header/payload pairing incomplete");
-    const auto add = ShopPayload<TSubPacketGCInsertShopEntity>(desc, 0, offlineshop::SUBHEADER_GC_INSERT_SHOP_ENTITY);
-    const auto del = ShopPayload<TSubPacketGCRemoveShopEntity>(desc, 1, offlineshop::SUBHEADER_GC_REMOVE_SHOP_ENTITY);
-    Check(add.dwVID == 3001 && del.dwVID == 3001 && add.iType == 2,
-        "shop ADD/DEL identity or type mismatch");
-    Check(add.x == 12500 && add.y == 678 && add.z == 22, "shop position mismatch");
-    Check(add.szName[sizeof(add.szName) - 1] == '\0' &&
-        std::string(add.szName) == std::string(sizeof(add.szName) - 1, 'n'), "shop name not safely truncated");
-#ifdef KASMIR_PAKET_SYSTEM
-    Check(add.dwKasmirNpc == 30003, "shop race lost on the wire");
-#endif
-    wire.clear();
-    g_registry.remove<ecs::Position>(shop);
-    ecs::EntityNetworkDispatch::SendInsert(g_registry, shop, viewer);
-    Check(wire.empty() && bufferedWire.empty(), "shop without position emitted partial ADD");
-    g_registry.emplace<ecs::Position>(shop, 12500, 678, 22);
-    g_registry.remove<ecs::OfflineShopState>(shop);
-    ecs::EntityNetworkDispatch::SendInsert(g_registry, shop, viewer);
-    ecs::EntityNetworkDispatch::SendRemove(g_registry, shop, viewer);
-    Check(wire.empty() && bufferedWire.empty(), "shop without state emitted packets");
-    g_registry.destroy(shop);
-    const auto replacement = WorldObject(ecs::SpatialKind::OfflineShop, 3002);
-    state.vid = 3002; g_registry.emplace<ecs::OfflineShopState>(replacement, state);
-    Check(replacement != shop, "shop generation did not advance");
-    ecs::EntityNetworkDispatch::SendInsert(g_registry, shop, viewer);
-    ecs::EntityNetworkDispatch::SendRemove(g_registry, shop, viewer);
-    Check(wire.empty() && bufferedWire.empty(), "retired shop emitted replacement generation packets");
-    ecs::EntityNetworkDispatch::SendInsert(g_registry, replacement, viewer);
-    Check(ShopPayload<TSubPacketGCInsertShopEntity>(desc, 0, offlineshop::SUBHEADER_GC_INSERT_SHOP_ENTITY).dwVID == 3002,
-        "replacement shop reused retired wire identity");
-    wire.clear(); g_registry.get<ecs::NetworkSession>(viewer).desc = nullptr;
-    ecs::EntityNetworkDispatch::SendInsert(g_registry, replacement, viewer);
-    ecs::EntityNetworkDispatch::SendRemove(g_registry, replacement, viewer);
-    Check(wire.empty() && bufferedWire.empty(), "shop sent to missing viewer session");
-    g_registry.clear();
-}
-#endif
 void MountWireRoundTrip() {
     DESC ownerDesc, observerDesc;
     const auto owner = Character(500, true, &ownerDesc);
@@ -564,6 +505,18 @@ int GetLevel(entt::entity e) { Live(e); return 30; }
 uint32_t MountSystem::GetMountVnum(entt::entity e) { Live(e); return g_registry.get<ecs::MountState>(e).mountVnum; }
 void MountSystem::UpdateMountInventoryCountOverhead(entt::entity source, entt::entity viewer) { Live(source); Live(viewer); }
 
+// These viewers have no gathering nodes or equipped tools. Keep the controlled
+// service boundary current with the production character packet builder.
+namespace WoodcuttingSystem {
+void SendSnapshot(entt::entity source, entt::entity viewer) { Live(source); Live(viewer); }
+}
+namespace HerbalismSystem {
+void SendSnapshot(entt::entity source, entt::entity viewer) { Live(source); Live(viewer); }
+}
+entt::entity ItemSystem::GetWearItem(entt::entity owner, uint8_t) { Live(owner); return entt::null; }
+bool ItemSystem::IsValidItem(entt::entity item) { return item != entt::null && g_registry.valid(item); }
+uint32_t ItemSystem::GetItemVnum(entt::entity) { Unexpected(); }
+
 // Unrelated entry points in the complete production translation units remain
 // linked, but must never supply behavior to these direct encoding tests.
 int VIEW_RANGE = 5000, VIEW_BONUS_RANGE = 500;
@@ -620,9 +573,6 @@ int main() {
     try {
         CHARACTER_MANAGER characters; SECTREE_MANAGER maps;
         NativeBuildingPackets();
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-        NativeShopPackets();
-#endif
         MountWireRoundTrip(); ExpiredAndMissingSession();
         UpdateAfterVisibilityRemoval();
         NativeMoveBroadcastRouting();

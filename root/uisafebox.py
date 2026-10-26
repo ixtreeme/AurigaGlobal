@@ -9,9 +9,6 @@ import chat
 import uiscriptlocale
 import localeinfo
 
-if app.__ENABLE_NEW_OFFLINESHOP__:
-	import uiofflineshop
-
 class PasswordDialog(ui.ScriptWindow):
 	def __init__(self):
 		ui.ScriptWindow.__init__(self)

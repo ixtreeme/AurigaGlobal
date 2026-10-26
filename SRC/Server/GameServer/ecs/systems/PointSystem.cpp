@@ -79,10 +79,6 @@
 #include "../../combat/skill_power.h"
 #include "../../combat/buff_on_attributes.h"
 #include "../../core/constants.h"
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "../../social/new_offlineshop.h"
-#include "../../social/new_offlineshop_manager.h"
-#endif
 
 
 #ifdef __PET_SYSTEM__

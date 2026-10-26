@@ -361,21 +361,6 @@ void LogManager::AttrTransferLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_
 }
 #endif
 
-#ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-void LogManager::OfflineshopLog(const uint32_t dwOwnerID, const uint32_t dwItemID, const char* fmt, ...) {
-	static char szLog[1024]="\0";
-
-	va_list args;
-	va_start(args, fmt);
-	vsnprintf(szLog, sizeof(szLog), fmt, args);
-	va_end(args);
-
-	static char szEscaped[2048] = "\0";
-	m_sql.EscapeString(szEscaped, sizeof(szEscaped), szLog, strlen(szLog));
-
-	Query("INSERT INTO `player`.`offlineshop_logs` (`owner_id`, `item_id`, `what`, `when`) VALUES( %u, %u, '%s', NOW())", dwOwnerID, dwItemID, szEscaped);
-}
-#endif
 
 #ifdef ENABLE_ANTICHEAT
 void LogManager::CheatLog(int32_t pid, std::string hostname, std::string reason) {

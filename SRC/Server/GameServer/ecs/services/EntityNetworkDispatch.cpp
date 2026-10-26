@@ -389,53 +389,6 @@ void SendBuildingRemove(entt::registry& reg, entt::entity building, entt::entity
     ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
 }
 
-void SendShopInsert(entt::registry& reg, entt::entity shop, entt::entity viewer)
-{
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-    const auto* state = reg.try_get<ecs::OfflineShopState>(shop);
-    const auto* position = reg.try_get<ecs::Position>(shop);
-    if (!state || !position)
-        return;
-
-    TPacketGCNewOfflineshop header {};
-    header.bHeader = HEADER_GC_NEW_OFFLINESHOP;
-    header.bSubHeader = offlineshop::SUBHEADER_GC_INSERT_SHOP_ENTITY;
-    header.wSize = sizeof(header) + sizeof(TSubPacketGCInsertShopEntity);
-
-    TSubPacketGCInsertShopEntity payload {};
-    payload.dwVID = state->vid;
-    payload.iType = state->shopType;
-    payload.x = position->x;
-    payload.y = position->y;
-    payload.z = position->z;
-#ifdef KASMIR_PAKET_SYSTEM
-    payload.dwKasmirNpc = state->race;
-#endif
-    strlcpy(payload.szName, state->name.c_str(), sizeof(payload.szName));
-
-    ecs::NetworkService::SendBufferedPair(viewer, &header, sizeof(header), &payload, sizeof(payload));
-#endif
-}
-
-void SendShopRemove(entt::registry& reg, entt::entity shop, entt::entity viewer)
-{
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-    const auto* state = reg.try_get<ecs::OfflineShopState>(shop);
-    if (!state)
-        return;
-
-    TPacketGCNewOfflineshop header {};
-    header.bHeader = HEADER_GC_NEW_OFFLINESHOP;
-    header.bSubHeader = offlineshop::SUBHEADER_GC_REMOVE_SHOP_ENTITY;
-    header.wSize = sizeof(header) + sizeof(TSubPacketGCRemoveShopEntity);
-
-    TSubPacketGCRemoveShopEntity payload {};
-    payload.dwVID = state->vid;
-
-    ecs::NetworkService::SendBufferedPair(viewer, &header, sizeof(header), &payload, sizeof(payload));
-#endif
-}
-
 } // namespace
 
 namespace ecs::EntityNetworkDispatch {
@@ -477,9 +430,6 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
     case ecs::SpatialKind::Building:
         SendBuildingInsert(reg, source, viewer);
         break;
-    case ecs::SpatialKind::OfflineShop:
-        SendShopInsert(reg, source, viewer);
-        break;
     default:
         // CEntity::EncodeInsertPacket used to be pure virtual, so a new entity
         // kind could not compile without saying how it announces itself. That
@@ -517,9 +467,6 @@ void SendRemove(entt::registry& reg, entt::entity source, entt::entity viewer)
         break;
     case ecs::SpatialKind::Building:
         SendBuildingRemove(reg, source, viewer);
-        break;
-    case ecs::SpatialKind::OfflineShop:
-        SendShopRemove(reg, source, viewer);
         break;
     default:
         // CEntity::EncodeRemovePacket used to be pure virtual, so a new entity

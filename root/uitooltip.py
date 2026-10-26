@@ -17,9 +17,6 @@ import mousemodule
 import constinfo
 import localeinfo
 import dbg
-if app.__ENABLE_NEW_OFFLINESHOP__:
-	import uiofflineshop
-
 if app.ENABLE_ACCE_SYSTEM:
 	import acce
 
@@ -2153,10 +2150,6 @@ class ItemToolTip(ToolTip):
 		self.AppendDescription(itemDesc, 26)
 		self.AppendDescription(itemSummary, 26, self.CONDITION_COLOR)
 
-	if app.__ENABLE_NEW_OFFLINESHOP__:
-		def AddRightClickForSale(self):
-			self.AppendTextLine(localeinfo.OFFLINESHOP_TOOLTIP_RIGHT_CLICK_FOR_SALE, uiofflineshop.COLOR_TEXT_SHORTCUT)
-	
 	if app.NEW_PET_SYSTEM:
 		def check_sigillo(self, item_vnum):
 			for x in range(55701,55711+1):
@@ -4374,34 +4367,6 @@ class HyperlinkItemToolTip(ItemToolTip):
 			dbg.TraceError("SetHyperlinkItem() - sockets: 0=%d, 1=%d, 2=%d" % (
 				metinSlot[0], metinSlot[1], metinSlot[2]))
 	
-			# --- OFFLINESHOP CLICKABLE LINK INTERCEPT ---
-			# Encodings supported:
-			#   - flag == 0x0BADF00D (tokens[2])
-			#   - socket1 == 0x0BADF00D (metinSlot[1])
-			# Owner id is socket0 (metinSlot[0]).
-			try:
-				_flag = int(flag, 16)
-			except:
-				_flag = 0
-	
-			SENTINEL = 0x0BADF00D
-			if _flag == SENTINEL or metinSlot[1] == SENTINEL:
-				try:
-					import offlineshop
-					owner_id = metinSlot[0]
-					dbg.TraceError("OFFSHOP LINK -> opening shop for owner_id=%d (flag=%d socket1=%d)" % (owner_id, _flag, metinSlot[1]))
-					offlineshop.SendOpenShop(owner_id)
-				except Exception as e:
-					try:
-						dbg.TraceError("OFFSHOP LINK -> failed to open shop: %s" % str(e))
-					except:
-						pass
-				try:
-					self.Hide()
-				except:
-					pass
-				return
-			# --- END OFFLINESHOP INTERCEPT ---
 	
 			if app.ENABLE_MULTI_LANGUAGE:
 				rests = tokens[7:]

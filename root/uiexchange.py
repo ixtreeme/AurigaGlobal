@@ -14,9 +14,6 @@ import uipickmoney
 import playersettingmodule
 import localeinfo
 
-if app.__ENABLE_NEW_OFFLINESHOP__:
-	import uiofflineshop
-
 NEW_YANG_LIMIT = 1
 
 class ExchangeDialog(ui.ScriptWindow):
@@ -306,11 +303,6 @@ class ExchangeDialog(ui.ScriptWindow):
 			attachedSlotType = mousemodule.mouseController.GetAttachedType()
 			if (player.SLOT_TYPE_INVENTORY == attachedSlotType or player.SLOT_TYPE_DRAGON_SOUL_INVENTORY == attachedSlotType):
 				attachedInvenType = player.SlotTypeToInvenType(attachedSlotType)
-				if app.__ENABLE_NEW_OFFLINESHOP__:
-					if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(attachedInvenType, mousemodule.mouseController.GetAttachedSlotNumber()):
-						chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-						return
-				
 				SrcSlotNumber = mousemodule.mouseController.GetAttachedSlotNumber()
 				DstSlotNumber = SlotIndex
 				itemID = player.GetItemIndex(attachedInvenType, SrcSlotNumber)
@@ -325,13 +317,6 @@ class ExchangeDialog(ui.ScriptWindow):
 					attachedInvenType = player.SlotTypeToInvenType(attachedSlotType)
 					SrcSlotNumber = mousemodule.mouseController.GetAttachedSlotNumber()
 					DstSlotNumber = SlotIndex
-				
-					#offlineshop-updated 09/08/2019
-					if app.__ENABLE_NEW_OFFLINESHOP__:
-						if uiofflineshop.IsBuildingShop() and uiofflineshop.IsSaleSlot(attachedSlotType, mousemodule.mouseController.GetAttachedSlotNumber()):
-							chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
-							return
-					
 					itemID = player.GetItemIndex(attachedInvenType, SrcSlotNumber)
 					item.SelectItem(itemID)
 
