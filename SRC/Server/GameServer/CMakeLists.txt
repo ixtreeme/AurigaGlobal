@@ -444,6 +444,20 @@ if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
 endif()
 add_test(NAME player_cache_protocol COMMAND PlayerCacheProtocolTests)
 
+add_executable(PlayerCacheSnapshotTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PlayerCacheSnapshotTests.cpp)
+target_link_libraries(PlayerCacheSnapshotTests PRIVATE SERVER S_Core)
+if(TARGET auriga_sanitizers)
+    target_link_libraries(PlayerCacheSnapshotTests PRIVATE auriga_sanitizers)
+endif()
+if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    add_custom_command(TARGET PlayerCacheSnapshotTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:PlayerCacheSnapshotTests>")
+endif()
+add_test(NAME player_cache_snapshot COMMAND PlayerCacheSnapshotTests)
+
+
 add_executable(LoginByKeyTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/LoginByKeyTests.cpp
     ../Database/login_validation.cpp

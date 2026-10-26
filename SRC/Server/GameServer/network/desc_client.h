@@ -43,7 +43,8 @@ class CLIENT_DESC : public DESC
 		}
 		void NegotiatePlayerCache();
 		bool AcceptPlayerCacheHello(auriga::player_session::Token link);
-		// Native preparation only; caller must submit its final snapshots first.
+		// Captures player/carried items, sends owned save batch, then requests drain.
+        // Still requires a real producer stop before use by a Mission writer.
 		bool RequestPlayerCacheDrain(LPDESC target, auriga::player_session::Token challenge);
 		void AcceptPlayerCacheReceipt(uint32_t descriptor, const auriga::player_cache_wire::Receipt& receipt);
 		std::optional<auriga::player_cache_wire::Receipt> PlayerCacheReceipt(LPDESC target);

@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "desc_client.h"
 #include "desc_manager.h"
+#include "../ecs/systems/SessionSystem.hpp"
+#include "../ecs/systems/InventorySystem.hpp"
+#include "../social/exchange.h"
+#include "../item/item_manager.h"
+#include <Core/player_cache_snapshot.h>
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 
@@ -33,7 +38,6 @@ bool CLIENT_DESC::AcceptPlayerCacheHello(auriga::player_session::Token link)
 }
 bool CLIENT_DESC::RequestPlayerCacheDrain(LPDESC target, auriga::player_session::Token challenge)
 {
-    namespace wire = auriga::player_cache_wire;
     if (this != db_clientdesc || !IsConnected() || !m_playerCacheReady || !target)
         return false;
     const auto key = target->PlayerSession().Current();
@@ -47,18 +51,45 @@ bool CLIENT_DESC::RequestPlayerCacheDrain(LPDESC target, auriga::player_session:
         m_playerCachePolls.erase(target->GetHandle());
     }
     auto &state = target->PlayerCacheDrain();
-    if (!state.Begin(*key, entt::to_integral(target->GetEntity()), challenge))
+    const auto entity = target->GetEntity();
+    const auto handle = target->GetHandle();
+    const auto stillCurrent = [&]
+    {
+        return DESC_MANAGER::instance().FindByHandle(handle) == target && CurrentCacheTarget(target, *key) &&
+               target->GetEntity() == entity;
+    };
+    if (state.Matches(*key, entt::to_integral(entity)))
+    {
+        // Same operation is idempotent. Never refresh a snapshot under an old
+        // Begin challenge, even while waiting for its first acknowledgement.
+        const auto request = state.Next();
+        const auto receipt = state.Result(*key, entt::to_integral(entity));
+        return (request && request->challenge == challenge) || (receipt && receipt->challenge == challenge);
+    }
+    if (state.Started() || !target->IsPhase(PHASE_GAME) || !InventorySystem::IsItemLoaded(entity) ||
+        !InventorySystem::CanHandleItems(entity) || ExchangeSystem::IsActive(entity) ||
+        !auriga::player_session::Nonzero(challenge) || ecs::SessionSystem::GetSkipSave(entity) ||
+        ecs::SessionSystem::GetSafebox(entity) != entt::null ||
+        ecs::SessionSystem::GetMall(entity) != entt::null || ecs::SessionSystem::IsSafeboxLoading(entity))
         return false;
-    const auto request = state.Next();
-    if (!request)
-        return true; // Same completed operation; do not start a second flush.
-    if (m_playerCachePolls.contains(target->GetHandle()))
-        return true;
+    auriga::player_cache_snapshot::Snapshot snapshot;
+    snapshot.account = key->account;
+    ecs::SessionSystem::CreatePlayerProto(entity, snapshot.player);
+    if (!stillCurrent() || !ITEM_MANAGER::instance().BuildPlayerCacheSnapshot(entity, snapshot.items))
+        return false;
+    const auto batch = auriga::player_cache_snapshot::Batch(*key, challenge, handle, snapshot);
+    if (!batch || !IsConnected() || !m_playerCacheReady || key->link != PlayerSessionLink() ||
+        !stillCurrent())
+        return false;
+    // Invalidate existing proofs before the save batch, then watch this new
+    // operation. Packet appends the whole owned batch before starting output.
+    ObservePlayerCacheWrite(HEADER_GD_PLAYER_SAVE);
+    if (!state.Begin(*key, entt::to_integral(entity), challenge))
+        return false;
     const auto now = std::chrono::steady_clock::now();
     m_playerCacheWatched.insert_or_assign(target->GetHandle(), *key);
     m_playerCachePolls.emplace(target->GetHandle(), CachePoll{now, now + std::chrono::milliseconds(200)});
-    const auto frame = wire::Encode(*request);
-    DBPacket(HEADER_GD_PLAYER_CACHE_REQUEST, target->GetHandle(), frame.data(), frame.size());
+    Packet(batch->data(), static_cast<int>(batch->size()));
     return true;
 }
 void CLIENT_DESC::PollPlayerCacheDrains()

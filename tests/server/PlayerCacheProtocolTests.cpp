@@ -145,11 +145,13 @@ void Lifecycle()
 {
     constexpr uint64_t entity = 0x01000001, replacementEntity = 0x02000001;
     wire::Client client;
-    Check(!client.Next() && !client.Result(Key(), entity), "empty cache operation has authority");
+    Check(!client.Started() && !client.Next() && !client.Result(Key(), entity),
+          "empty cache operation has authority");
     Check(client.Begin(Key(), entity, Token(4)) && client.Begin(Key(), entity, Token(4)) &&
               !client.Begin(Key(), replacementEntity, Token(4)) && !client.Begin(Key(), entity, Token(5)),
           "cache begin is not scoped/idempotent");
-    Check(client.Next()->action == wire::Action::Begin && client.Next()->action == wire::Action::Begin,
+    Check(client.Started() && client.Next()->action == wire::Action::Begin &&
+              client.Next()->action == wire::Action::Begin,
           "unacknowledged cache begin cannot be retried");
     auto pending = Pending();
     for (int field = 0; field < 8; ++field)
@@ -182,8 +184,10 @@ void Lifecycle()
         for (size_t field = 0; field < 4; ++field)
         {
             auto wrong = status == wire::Status::Pending ? pending : complete;
-            if (field % 2) wrong.lanes[field / 2].sequence += 10;
-            else wrong.lanes[field / 2].id += 10;
+            if (field % 2)
+                wrong.lanes[field / 2].sequence += 10;
+            else
+                wrong.lanes[field / 2].id += 10;
             Check(wire::Valid(wrong) && !client.Accept(wrong, Key(), entity),
                   "cache operation changed its acknowledged SQL lane/boundary");
         }
@@ -211,9 +215,10 @@ void Lifecycle()
     client.Reset();
     client.Begin(Key(), entity, Token(4));
     client.Invalidate();
-    Check(!client.Accept(complete, Key(), entity) && !client.Result(Key(), entity),
+    Check(client.Started() && !client.Accept(complete, Key(), entity) && !client.Result(Key(), entity),
           "timeout/disconnect revived cache authority");
     client.Reset();
+    Check(!client.Started(), "new login did not reset snapshot preparation");
     auto next = Key();
     next.generation++;
     next.session = Token(8);

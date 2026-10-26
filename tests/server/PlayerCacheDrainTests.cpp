@@ -3,6 +3,7 @@
 #include "../../SRC/Server/Database/DBManager.h"
 #include "../../SRC/Server/Database/player_cache_drain.h"
 #include <Core/Logging.hpp>
+#include <Core/player_cache_snapshot.h>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -243,6 +244,65 @@ pc::Receipt Await(pc::Drain &drain, Fixture &f)
     Check(result.status != pc::Status::Pending, "cache SQL drain timed out");
     return result;
 }
+void SnapshotBatch(Fixture &f)
+{
+    namespace snapshot = auriga::player_cache_snapshot;
+    snapshot::Snapshot state;
+    state.account = f.lease.key.account;
+    state.player = *f.player.Get(false);
+    state.items = {*f.item.Get(false)};
+    state.player.gold = 777;
+    state.player.exp = 4321;
+    state.items[0].count = 9;
+    state.items[0].alSockets[0] = 42;
+    state.items[0].aAttr[0] = {1, 25};
+    const auto batch = snapshot::Batch(f.lease.key, Token(20), f.lease.descriptor, state);
+    Check(batch.has_value(), "native snapshot batch unavailable");
+    size_t at = 0, count = 0;
+    const auto integer = [&]
+    {
+        Check(at + 4 <= batch->size(), "truncated snapshot header");
+        uint32_t n = 0;
+        for (int shift = 0; shift < 32; shift += 8)
+            n |= uint32_t((*batch)[at++]) << shift;
+        return n;
+    };
+    while (at < batch->size())
+    {
+        const auto header = (*batch)[at++];
+        const auto descriptor = integer(), size = integer();
+        Check(size <= batch->size() - at, "snapshot body exceeds batch");
+        if (count == 0)
+        {
+            Check(header == HEADER_GD_PLAYER_SAVE && descriptor == f.lease.descriptor &&
+                      size == sizeof(TPlayerTable),
+                  "player snapshot not first");
+            TPlayerTable row{};
+            std::memcpy(&row, batch->data() + at, sizeof(row));
+            f.player.Put(&row);
+        }
+        else if (count == 1)
+        {
+            Check(header == HEADER_GD_ITEM_SAVE && descriptor == 0 && size == sizeof(TPlayerItem),
+                  "item snapshot missing before drain");
+            TPlayerItem row{};
+            std::memcpy(&row, batch->data() + at, sizeof(row));
+            f.item.Put(&row);
+        }
+        else
+        {
+            const auto request = wire::DecodeRequest({batch->data() + at, size});
+            Check(header == HEADER_GD_PLAYER_CACHE_REQUEST && descriptor == f.lease.descriptor && request &&
+                      request->key == f.lease.key && request->challenge == Token(20) &&
+                      request->action == wire::Action::Begin && at + size == batch->size(),
+                  "drain preceded snapshot or lost native identity");
+        }
+        at += size;
+        ++count;
+    }
+    Check(count == 3, "snapshot/drain batch had unexpected frames");
+}
+
 void Integration(unsigned port, const std::string &schema, const char *path)
 {
     Check(schema.starts_with("auriga_mission_sql_test_") &&
@@ -254,13 +314,15 @@ void Integration(unsigned port, const std::string &schema, const char *path)
     Text(admin, "USE " + schema);
     Schema(admin, path);
     escapeConnection = &admin;
-    for (int scenario = 0; scenario < 13; ++scenario)
+    for (int scenario = 0; scenario < 14; ++scenario)
     {
         CAsyncSQL main, async;
         Connect(main, port, schema, false);
         Connect(async, port, schema, false);
         mainWorker = &main;
         Fixture f;
+        if (scenario == 13)
+            SnapshotBatch(f);
         const std::array origins{main.QueueOrigin(), async.QueueOrigin()};
         const auto enqueue = [&] { return std::array{main.DrainQueue(), async.DrainQueue()}; };
         // Hold BOTH real workers before their FIFO boundaries. No timing-only sleep assertion.
@@ -297,7 +359,8 @@ void Integration(unsigned port, const std::string &schema, const char *path)
         Check(pending.status == (scenario == 11 ? pc::Status::Blocked : pc::Status::Pending) &&
                   pending.challenge == Token(20) && pending.lease == f.lease,
               "flush claimed success before both workers finished");
-        Check(!f.player.HasPendingQuery() && !f.item.HasPendingQuery() && f.item.Get(false)->count == 3,
+        Check(!f.player.HasPendingQuery() && !f.item.HasPendingQuery() &&
+                  f.item.Get(false)->count == (scenario == 13 ? 9 : 3),
               "drain evicted cache or failed to submit dirty rows");
         if (scenario == 1)
         {
@@ -351,24 +414,32 @@ void Integration(unsigned port, const std::string &schema, const char *path)
         if (scenario == 4 || scenario == 8)
         {
             game.Invalidate();
-            Check(!game.Accept(*wireResult, f.lease.key, 12345), "old wire completion survived native disconnect");
+            Check(!game.Accept(*wireResult, f.lease.key, 12345),
+                  "old wire completion survived native disconnect");
         }
         else if (scenario == 11)
             Check(!game.Accept(*wireResult, f.lease.key, 12345), "terminal blocked receipt applied twice");
         else
             Check(game.Accept(*wireResult, f.lease.key, 12345) && !game.Waiting(),
                   "real SQL completion was not accepted once by native client");
-        if (scenario == 0 || scenario == 9 || scenario == 10 || scenario == 12)
+        if (scenario == 0 || scenario == 9 || scenario == 10 || scenario == 12 || scenario == 13)
         {
             Check(result.status == pc::Status::Flushed && result.failure == pc::Failure::None &&
                       result.lanes[0].position.sequence && result.lanes[1].position.sequence &&
                       result.lanes[0].position.lane != result.lanes[1].position.lane,
                   "successful cache flush not confirmed by both workers");
-            Check(Number(admin, "SELECT gold FROM player_cache_drain WHERE id=100") == 500 &&
+            Check(Number(admin, "SELECT gold FROM player_cache_drain WHERE id=100") ==
+                          (scenario == 13 ? 777 : 500) &&
                       (scenario == 10
                            ? Number(admin, "SELECT COUNT(*) FROM item_cache_drain WHERE id=200") == 0
-                           : Number(admin, "SELECT count FROM item_cache_drain WHERE id=200") == 3),
+                           : Number(admin, "SELECT count FROM item_cache_drain WHERE id=200") ==
+                                 (scenario == 13 ? 9 : 3)),
                   "confirmed production cache DML did not persist canonical rows");
+            if (scenario == 13)
+                Check(Number(admin, "SELECT exp FROM player_cache_drain WHERE id=100") == 4321 &&
+                          Number(admin, "SELECT socket0 FROM item_cache_drain WHERE id=200") == 42 &&
+                          Number(admin, "SELECT attrvalue0 FROM item_cache_drain WHERE id=200") == 25,
+                      "snapshot resource/item fields were not persisted by production DML");
             if (scenario == 9)
             {
                 CPlayerTableCache replacement;

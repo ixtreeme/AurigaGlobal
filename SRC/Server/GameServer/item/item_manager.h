@@ -391,6 +391,9 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		void FlushDelayedSaveByOwner(entt::entity owner);
 		// True when sent or already retired; false keeps a delayed save pending.
 		bool			SaveSingleItem(entt::entity item);
+        // Pure capture: never flushes/erases pending saves or changes item ownership.
+        bool BuildPlayerCacheSnapshot(entt::entity owner, std::vector<TPlayerItem> &output) const;
+        bool BuildItemSave(entt::entity item, TPlayerItem &output) const;
 
 		entt::entity            CreateItem(uint32_t vnum, uint32_t count = 1, uint32_t dwID = 0, bool bTryMagic = false, int iRarePct = -1, bool bSkipSave = false);
 		void DestroyItem(entt::entity item);

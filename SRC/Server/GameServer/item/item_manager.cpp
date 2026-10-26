@@ -24,6 +24,9 @@
 #include "blend_item.h"
 #include "dev_log.h"
 #include <Core/Logging.hpp>
+#include <Core/player_cache_snapshot.h>
+#include <unordered_set>
+#include "../ecs/components/inventory_components.hpp"
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
@@ -590,53 +593,147 @@ bool ITEM_MANAGER::SaveSingleItem(entt::entity item)
 
 	LOG_INFO("ITEM_SAVE {} in window {}", ItemSystem::GetItemID(item), ItemSystem::GetItemWindow(item));
 
-	TPlayerItem t{};
+    TPlayerItem t{};
+    if (!BuildItemSave(item, t))
+        return false;
+    db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_SAVE, 0, sizeof(TPlayerItem));
+    db_clientdesc->Packet(&t, sizeof(TPlayerItem));
+    return true;
+}
 
-	t.id = ItemSystem::GetItemID(item);
-	t.window = ItemSystem::GetItemWindow(item);
+bool ITEM_MANAGER::BuildItemSave(entt::entity item, TPlayerItem &t) const
+{
+    if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) == entt::null)
+        return false;
+    t = {};
+
+    t.id = ItemSystem::GetItemID(item);
+    t.window = ItemSystem::GetItemWindow(item);
 #ifdef ATTR_LOCK
-	t.lockedattr = ItemSystem::GetItemLockedAttr(item);
+    t.lockedattr = ItemSystem::GetItemLockedAttr(item);
 #endif
-	switch (t.window)
-	{
-	case EQUIPMENT:
-		t.pos = ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM;
-		break;
+    switch (t.window)
+    {
+    case EQUIPMENT:
+        t.pos = ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM;
+        break;
 #ifdef ENABLE_BELT_INVENTORY_EX
-	case INVENTORY:
-		if (BELT_INVENTORY_SLOT_START <= ItemSystem::GetItemCell(item) && BELT_INVENTORY_SLOT_END > ItemSystem::GetItemCell(item))
-		{
-			t.window = BELT_INVENTORY;
-			t.pos = ItemSystem::GetItemCell(item) - BELT_INVENTORY_SLOT_START;
-			break;
-		}
+    case INVENTORY:
+        if (BELT_INVENTORY_SLOT_START <= ItemSystem::GetItemCell(item) &&
+            BELT_INVENTORY_SLOT_END > ItemSystem::GetItemCell(item))
+        {
+            t.window = BELT_INVENTORY;
+            t.pos = ItemSystem::GetItemCell(item) - BELT_INVENTORY_SLOT_START;
+            break;
+        }
 #endif
-	default:
-		t.pos = ItemSystem::GetItemCell(item);
-		break;
-	}
-	t.count = ItemSystem::GetItemCount(item);
-	t.vnum = ItemSystem::GetItemOriginalVnum(item);
-	const entt::entity owner = ItemSystem::GetItemOwner(item);
-	if (t.window == SAFEBOX || t.window == MALL)
-	{
-		LPDESC desc = ecs::PlayerRuntime::GetDesc(owner);
-		if (!desc) {
-			LOG_ERROR("ITEM_SAVE failed: owner has no descriptor (item_id={})", t.id);
-			return false;
-		}
-		t.owner = desc->GetAccountTable().id;
-	}
-	else
-		t.owner = ecs::PlayerRuntime::GetPlayerID(owner);
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		t.alSockets[i] = ItemSystem::GetItemSocket(item, i);
-	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-		t.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
+    default:
+        t.pos = ItemSystem::GetItemCell(item);
+        break;
+    }
+    t.count = ItemSystem::GetItemCount(item);
+    t.vnum = ItemSystem::GetItemOriginalVnum(item);
+    const entt::entity owner = ItemSystem::GetItemOwner(item);
+    if (t.window == SAFEBOX || t.window == MALL)
+    {
+        LPDESC desc = ecs::PlayerRuntime::GetDesc(owner);
+        if (!desc)
+        {
+            LOG_ERROR("ITEM_SAVE failed: owner has no descriptor (item_id={})", t.id);
+            return false;
+        }
+        t.owner = desc->GetAccountTable().id;
+    }
+    else
+        t.owner = ecs::PlayerRuntime::GetPlayerID(owner);
+    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+        t.alSockets[i] = ItemSystem::GetItemSocket(item, i);
+    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+        t.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
 
-	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_SAVE, 0, sizeof(TPlayerItem));
-	db_clientdesc->Packet(&t, sizeof(TPlayerItem));
-	return true;
+    return true;
+}
+
+bool ITEM_MANAGER::BuildPlayerCacheSnapshot(entt::entity owner, std::vector<TPlayerItem> &output) const
+{
+    namespace snapshot = auriga::player_cache_snapshot;
+    output.clear();
+    if (!ecs::PlayerRuntime::IsValid(owner) || !ecs::PlayerRuntime::IsPC(owner))
+        return false;
+    const auto pid = ecs::PlayerRuntime::GetPlayerID(owner);
+    if (!pid)
+        return false;
+    // Read both directions. An item with a missing owner link must not disappear
+    // merely because the owner scan cannot find it; recycled entities are stale.
+    std::unordered_set<entt::entity> carried;
+    const auto collect = [&](const auto &items, uint8_t window)
+    {
+        for (size_t cell = 0; cell < items.size(); ++cell)
+        {
+            const auto item = items[cell];
+            if (item == entt::null)
+                continue;
+            if (!g_registry.valid(item) || !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation>(item))
+                return false;
+            const auto &location = g_registry.get<ecs::ItemLocation>(item);
+            const bool sameWindow =
+                location.window == window || (window == INVENTORY && location.window == EQUIPMENT);
+            if (g_registry.get<ecs::ItemOwner>(item).owner != owner || !sameWindow || location.cell != cell ||
+                !carried.insert(item).second || carried.size() > snapshot::MaximumItems)
+                return false;
+        }
+        return true;
+    };
+    if (const auto *inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
+        inventory && !collect(inventory->items, INVENTORY))
+        return false;
+    if (const auto *inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner);
+        inventory && !collect(inventory->items, DRAGON_SOUL_INVENTORY))
+        return false;
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (const auto *inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner);
+        inventory && !collect(inventory->items, EXTRA_INVENTORY))
+        return false;
+#endif
+#ifdef ENABLE_SWITCHBOT
+    if (const auto *inventory = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(owner);
+        inventory && !collect(inventory->items, SWITCHBOT))
+        return false;
+#endif
+    std::vector<TPlayerItem> rows;
+    std::unordered_set<uint32_t> ids;
+    for (auto item : g_registry.view<ecs::ItemOwner>())
+    {
+        const auto &ownership = g_registry.get<ecs::ItemOwner>(item);
+        if (ownership.owner != owner && ownership.ownerPID != pid)
+        {
+            // A detached, dropped or transferred dirty row still needs its
+            // legacy write. Do not hide it or acknowledge this preparation.
+            if (ownership.lastOwnerPID == pid && m_set_pkItemForDelayedSave.contains(item))
+                return false;
+            continue;
+        }
+        if (ownership.owner != owner || ownership.ownerPID != pid || !carried.erase(item) ||
+            !g_registry.all_of<ecs::ItemIdentity, ecs::ItemCount, ecs::ItemFlags>(item))
+            return false;
+        const auto &flags = g_registry.get<ecs::ItemFlags>(item);
+        if (flags.skipSave || flags.exchanging || flags.isLocked || m_itemsBeingDestroyed.contains(item) ||
+            ItemSystem::IsItemConsumptionPending(item))
+            return false;
+        TPlayerItem row{};
+        if (!BuildItemSave(item, row) || !snapshot::ValidItem(row, pid) || !ids.insert(row.id).second)
+            return false;
+        const auto indexed = m_map_pkItemByID.find(row.id);
+        if (indexed == m_map_pkItemByID.end() || indexed->second != item ||
+            rows.size() >= snapshot::MaximumItems)
+            return false;
+        rows.push_back(row);
+    }
+    if (!carried.empty())
+        return false;
+    std::sort(rows.begin(), rows.end(), [](const auto &a, const auto &b) { return a.id < b.id; });
+    output = std::move(rows);
+    return true;
 }
 
 void ITEM_MANAGER::Update()

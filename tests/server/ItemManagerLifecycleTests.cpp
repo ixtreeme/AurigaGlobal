@@ -30,6 +30,8 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include <Core/Logging.hpp>
+#include <Core/player_cache_snapshot.h>
+#include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -324,8 +326,14 @@ bool DestroyItemEntityEcs(entt::entity item, const char* reason) {
 int16_t GetItemLockedAttr(entt::entity) { Check(persistenceTest, "unexpected saved locked attribute"); return -1; }
 void StartUniqueExpireEvent(entt::entity item) { CreationStage("unique", item); }
 void StartTimerBasedOnWearExpireEvent(entt::entity) { Unexpected(); }
-uint32_t GetItemSocket(entt::entity, int) { return 0; }
-TPlayerItemAttribute GetItemAttribute(entt::entity, int) { return {}; }
+uint32_t GetItemSocket(entt::entity item, int index) {
+    const auto* sockets = g_registry.try_get<ecs::ItemSockets>(item);
+    return sockets ? sockets->sockets[index] : 0;
+}
+TPlayerItemAttribute GetItemAttribute(entt::entity item, int index) {
+    const auto* attrs = g_registry.try_get<ecs::ItemAttributes>(item);
+    return attrs ? attrs->attrs[index] : TPlayerItemAttribute{};
+}
 bool SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected(); }
 bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_t value) {
     g_registry.get<ecs::ItemAttributes>(item).attrs[index] = {type, value}; CreationStage("attribute", item); return true;
@@ -1129,6 +1137,122 @@ void DeferredSavePolicies() {
         db_clientdesc = nullptr;
     }
 }
+void PlayerCacheSnapshotCapture() {
+    namespace snapshot = auriga::player_cache_snapshot;
+    for (int scenario = 0; scenario < 22; ++scenario) {
+        Reset(); Manager manager; persistenceTest = true;
+        const auto item = Item(manager, 20); const auto owner = Owner(item, INVENTORY, 5);
+        g_registry.get<ecs::ItemOwner>(item).ownerPID = 1234;
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        g_registry.get<ecs::ItemIdentity>(item).originalVnum = 100;
+        g_registry.emplace<ecs::ItemSockets>(item).sockets[0] = 123;
+        g_registry.emplace<ecs::ItemAttributes>(item).attrs[0] = {1, 25};
+        g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner).items[5] = item;
+        switch (scenario) {
+            case 0: break;
+            case 1: g_registry.get<ecs::ItemFlags>(item).skipSave = true; break;
+            case 2: g_registry.get<ecs::ItemFlags>(item).exchanging = true; break;
+            case 3: g_registry.get<ecs::ItemFlags>(item).isLocked = true; break;
+            case 4: g_registry.get<ecs::ItemCount>(item).count = 0; break;
+            case 5: g_registry.get<ecs::ItemCount>(item).count = -1; break;
+            case 6: g_registry.get<ecs::ItemIdentity>(item).id = 0; break;
+            case 7: g_registry.get<ecs::ItemIdentity>(item).originalVnum = 0; break;
+            case 8: g_registry.get<ecs::ItemOwner>(item).ownerPID = 999; break;
+            case 9: g_registry.get<ecs::ItemOwner>(item).owner = entt::null; break;
+            case 10: g_registry.remove<ecs::ItemOwner>(item); break;
+            case 11: g_registry.remove<ecs::ItemCount>(item); break;
+            case 12: g_registry.get<ecs::ItemLocation>(item).cell = 6; break;
+            case 13: g_registry.get<ecs::ItemLocation>(item).window = SAFEBOX; break;
+            case 14: g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[5] = entt::null; break;
+            case 15: g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[6] = item; break;
+            case 16: { const auto stale = g_registry.create(); g_registry.destroy(stale);
+                g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[5] = stale; break; }
+            case 17: { const auto other = Item(manager, 99);
+                auto& ownership = g_registry.get<ecs::ItemOwner>(other);
+                ownership.lastOwnerPID = 1234; break; }
+            case 18: { const auto other = Item(manager, 99);
+                auto& ownership = g_registry.get<ecs::ItemOwner>(other);
+                ownership.ownerPID = 999; ownership.lastOwnerPID = 1234;
+                ownership.owner = g_registry.create(); break; }
+            case 19: { const auto other = Item(manager, 20, 99);
+                auto& ownership = g_registry.get<ecs::ItemOwner>(other);
+                ownership.owner = owner; ownership.ownerPID = 1234;
+                g_registry.get<ecs::ItemLocation>(other) = {INVENTORY, 6};
+                g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[6] = other; break; }
+            case 20: g_registry.get<ecs::ItemLocation>(item).window = MOUNT_INVENTORY; break;
+            case 21: g_registry.remove<ecs::ItemIdentity>(item); break;
+        }
+        std::vector<TPlayerItem> rows(1);
+        const auto captured = manager.BuildPlayerCacheSnapshot(owner, rows);
+        Check(captured == (scenario == 0), "invalid/incomplete native inventory capture accepted");
+        Check(persistedHeaders.empty() && persistedPayloads.empty() && manager.PendingSave(item),
+            "snapshot capture flushed or discarded delayed saves");
+        if (captured) Check(rows.size() == 1 && rows[0].owner == 1234 && rows[0].id == 20 &&
+            rows[0].pos == 5 && rows[0].count == 1 && rows[0].alSockets[0] == 123 &&
+            rows[0].aAttr[0].bType == 1 && rows[0].aAttr[0].sValue == 25,
+            "snapshot serialization lost native item fields");
+        else Check(rows.empty(), "failed snapshot exposed partial output");
+    }
+    for (int window : {INVENTORY, EQUIPMENT, BELT_INVENTORY, DRAGON_SOUL_INVENTORY
+#ifdef ENABLE_EXTRA_INVENTORY
+        , EXTRA_INVENTORY
+#endif
+#ifdef ENABLE_SWITCHBOT
+        , SWITCHBOT
+#endif
+    }) {
+        Reset(); Manager manager; persistenceTest = true;
+        const auto item = Item(manager); const auto owner = Owner(item);
+        g_registry.get<ecs::ItemOwner>(item).ownerPID = 1234;
+        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+        g_registry.get<ecs::ItemIdentity>(item).originalVnum = 100;
+        const auto rawWindow = window == BELT_INVENTORY ? INVENTORY : window;
+        const auto cell = static_cast<uint16_t>(window == EQUIPMENT ? INVENTORY_MAX_NUM + 1 :
+            window == BELT_INVENTORY ? BELT_INVENTORY_SLOT_START + 1 : 1);
+        g_registry.get<ecs::ItemLocation>(item) = {static_cast<uint8_t>(rawWindow), cell};
+        if (rawWindow == INVENTORY || window == EQUIPMENT)
+            g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner).items[cell] = item;
+        if (window == DRAGON_SOUL_INVENTORY)
+            g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner).items[cell] = item;
+#ifdef ENABLE_EXTRA_INVENTORY
+        if (window == EXTRA_INVENTORY)
+            g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner).items[cell] = item;
+#endif
+#ifdef ENABLE_SWITCHBOT
+        if (window == SWITCHBOT)
+            g_registry.emplace<ecs::SwitchbotRuntimeComponent>(owner).items[cell] = item;
+#endif
+        std::vector<TPlayerItem> rows;
+        Check(manager.BuildPlayerCacheSnapshot(owner, rows) && rows.size() == 1 &&
+            rows[0].window == window && rows[0].pos == 1, "normalized native inventory window failed");
+        TPlayerItem legacy{};
+        Check(manager.BuildItemSave(item, legacy) && std::memcmp(&legacy, &rows[0], sizeof(legacy)) == 0,
+            "final snapshot diverged from legacy item serializer");
+    }
+    {
+        Reset(); Manager manager; persistenceTest = true;
+        const auto owner = g_registry.create(); g_registry.emplace<Player>(owner);
+        std::vector<TPlayerItem> rows;
+        Check(manager.BuildPlayerCacheSnapshot(owner, rows) && rows.empty(), "empty native inventory failed");
+        Check(!manager.BuildPlayerCacheSnapshot(entt::null, rows), "stale character captured");
+        auto& slots = g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner).items;
+        for (size_t i = 0; i <= snapshot::MaximumItems; ++i) {
+            const auto item = Item(manager, 1000 + static_cast<uint32_t>(i), 2000 + static_cast<uint32_t>(i));
+            auto& ownership = g_registry.get<ecs::ItemOwner>(item);
+            ownership.owner = owner; ownership.ownerPID = 1234;
+            g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+            g_registry.get<ecs::ItemIdentity>(item).originalVnum = 100;
+            g_registry.get<ecs::ItemLocation>(item) = {DRAGON_SOUL_INVENTORY, static_cast<uint16_t>(i)};
+            slots[i] = item;
+            if (i + 1 == snapshot::MaximumItems)
+                Check(manager.BuildPlayerCacheSnapshot(owner, rows) && rows.size() == snapshot::MaximumItems,
+                    "native snapshot rejected capacity boundary");
+        }
+        Check(!manager.BuildPlayerCacheSnapshot(owner, rows) && rows.empty(), "oversized native snapshot accepted");
+        Check(persistedHeaders.empty(), "oversized capture sent partial saves");
+    }
+}
+
 }
 
 namespace {
@@ -1189,7 +1313,7 @@ int main() {
         NativeLifecycle(); ReentryAndExceptions(); FactoryFailures(); RecycledAndTransferred(); SlotAndPersistenceGuards();
         NativeRemoval(); RemovalCallbacks(); RemovalFailures(); StorageRemovalIntegration();
         DuplicateLoadRetirement(); DuplicateLoadFailuresAndReentry(); DuplicateLoadTransfersAndGenerations();
-        NativeShutdownAndReload(); DeferredSavePolicies();
+        NativeShutdownAndReload(); DeferredSavePolicies(); PlayerCacheSnapshotCapture();
         std::cout << "Item-manager lifecycle checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

@@ -76,6 +76,10 @@ class Client final
     {
         return waiting_;
     }
+    bool Started() const
+    {
+        return request_.has_value();
+    }
     void Invalidate();
     void ObservePacket(uint8_t gdHeader);
     void Reset();
