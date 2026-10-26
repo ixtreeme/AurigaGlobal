@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-26
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `870378a1`; előző lezárt állapot: `a4e174d5`.
+- **Aktuális kódcommit:** `0e95b91d`; előző lezárt állapot: `0b61a69a`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -58,6 +58,11 @@ közös admissionje, valamint a natív/legacy használat és földre dobás fő
 belépési pontjainak követése is (4/D–4j). Hat konkrét csoport pause-olható.
 A nagy legacy dispatcherek belső hibautai és a külön gazdasági írók ettől
 még nem váltak igazolt teljes source-stoppá vagy tranzakciós recoveryvé.
+Elkészült a tényleges tárgy-/aranyeldobás helyi integritási javítása is
+(4/D–4k): a forrásdebit csak a klón, timer és világkomponensek előkészítése,
+valamint a szektortagság tárhelyének lefoglalása után történhet. A teljes
+stack az eredeti ID-val kerül a földre, a split megtartja a maradékot és a
+quickslotot. Ez memóriabeli commit, nem új tartós inventory/world SQL-tranzakció.
 A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
@@ -446,6 +451,22 @@ pet, timer, harc/quest/XP/pénz és közvetlen SQL továbbra is bekötendő.
 Nincs teljes SourceStopped nyugta, tartós writer-handoff vagy új Mission-jutalmazás.
 Részletek: `mission_pickup_use_drop_admission_2026-10-26.md`.
 
+### 3.21. Tárgy- és aranyeldobás közös világ/resource commitja (4/D–4k)
+
+- A DropItem/DropGold tényleges implementációja a natív InventorySystem.cpp-be került; a legacy API és hívók változatlanok.
+- Gyártási, timer- vagy illesztési hiba előtt nincs stackfogyasztás, pénzlevonás, quickslot-törlés vagy sikeres limit/cooldown-felhasználás.
+- Item-only SpatialService/SECTREE companion: minden konstrukció és tagsági foglalás megelőzi az első végleges forrásírást; a véglegesítésig nincs világpublikálás.
+- Friss admission/PID/map/pozíció, teljes payload, inventory-ankor/footprint, quest és limit ellenőrzése a commitnál.
+- Teljes dobás az eredeti ID-val; split új ID-val, socket/attribútum/flag/megjelenítési adatokkal és megmaradó forrásquickslottal.
+- GoldAmount debit a világpublikálás előtt; pontosan egyező földi darabszám, INT_MAX felett elutasítás, uint32-körbefordulást kezelő cooldown.
+- A már commitolt dobás callbackes pickup/áthelyezés után is commitolt eredmény; későbbi egyenleget nem ír vissza a régi snapshotból.
+- Tényleges InventorySystem és SpatialService/sectree próbák gyártási hibával, timer/illesztési hibával, megszakítással, kivétellel, retryjal és publikálási callbackekkel.
+
+**Határ:** ez a memóriabeli drop integritása. Nincs új tartós ground-loot
+SQL-tranzakció, teljes SourceStopped nyugta, Mission-jutalmazás vagy
+writer-handoff. A teljes producerlefedés és ECS/cache-rebase még hátravan.
+Részletek: `mission_ground_drop_integrity_2026-10-26.md`.
+
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
@@ -464,14 +485,15 @@ Részletek: `mission_pickup_use_drop_admission_2026-10-26.md`.
 | Core/ECS műveleti admission, hat domain, pause és konstrukciós hibautak | 1501 ellenőrzés, normál/ASAN |
 | Natív tárgyfutásidő, pickup-kedvezményezett és use-dispatch | 389 ellenőrzés, normál/ASAN |
 | Tényleges játékoscsere és callback-élettartam | 14736 ellenőrzés, normál/ASAN |
-| Tényleges inventory/quickslot, split és felszerelés | 823662 ellenőrzés, normál/ASAN |
+| Tényleges inventory/quickslot, split, felszerelés és eldobás | 830019 ellenőrzés, normál/ASAN |
+| Tényleges SpatialService/sectree lifecycle és item companion | 1189 ellenőrzés, normál/ASAN |
 | SQL-egységtesztek | 2256 ellenőrzés; az új queue/retry/lifecycle próbákkal |
 | Valódi SQL-infrastruktúra | 234 ellenőrzés; a valódi drain és késői szöveges SQL-hibák próbáival |
 | Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 44/44 a 4/D–4j részfázisban; öt izolált MariaDB-integrációval |
-| Külön AddressSanitizer CTest-kör | 32/32 natív próba a 4/D–4j részfázisban; új ASAN MariaDB-kör nélkül |
+| Célzott regressziós CTest-kör | 45/45 a 4/D–4k részfázisban; öt izolált MariaDB-integrációval |
+| Külön AddressSanitizer CTest-kör | 33/33 natív próba a 4/D–4k részfázisban; új ASAN MariaDB-kör nélkül |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
 | Valódi MariaDB-suite-ok ASAN alatt | Az erőforrásíró is sikeres crash/restarttal; egy korábbi, egyszeri visszaolvasási eltérés nyitott |
@@ -571,6 +593,16 @@ A védett 34 szezonális és nyolc Unity-fájl változatlan. A legacy dispatcher
 Mission-jutalmazást nem aktivál. Naplók és pontos határ:
 `mission_pickup_use_drop_admission_2026-10-26.md`.
 
+A 4/D–4k végső kódján a normál CTest-kör **45/45**, a natív ASAN-kör
+**33/33** sikeres. A tényleges inventory/quickslot/eldobási suite **830019**,
+a SpatialService/sectree suite **1189** ellenőrzéssel sikeres mindkét
+konfigurációban. A normál kör öt izolált MariaDB-integrációt tartalmaz;
+új ASAN MariaDB-kör nem futott. A GameServer, Database és LoginServer
+normál/ASAN buildje elkészült. A 34 védett szezonális fájl és a nyolc korábbi
+Unity-fájl hash-e változatlan. A tényleges Server2-Local adatbázis és a távoli
+gép változatlan; nincs új Mission-jutalmazás, sémafrissítés vagy telepítés.
+Részletek és naplók: `mission_ground_drop_integrity_2026-10-26.md`.
+
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
@@ -594,6 +626,7 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `0e95b91d` | Előkészített item/gold drop és közös resource/world commit; tényleges inventory/spatial hibapróbák |
 | `870378a1` | Pickup kezdeményező/kedvezményezett admission, use/drop belépési őrök és natív callback/claim próbák |
 | `8f88b9e0` | Közvetlen felszerelés/levétel/swap admission, callback/recovery próbák és az önmagát törlő ECS-konstrukció javítása |
 | `f9ae65c3` | Csere és inventory-mozgatás atomikus admission rétege, cache-előkészítési pause és tényleges műveleti hibapróbák |
@@ -641,14 +674,13 @@ A 4/C outbox/entitlement réteg részletei és kézbesítési határai:
 
 ## 6. Folytatás – javasolt, függőségek szerinti sorrend
 
-**Legközelebbi konkrét munka a 4j után:** a legacy tárgy-/aranyeldobás
-split/create/ground-placement hibautainak tényleges kódot futtató izolált
-próbái és javítása. A jelenlegi DropItem részleges dobásnál a gyártás előtt
-fogyaszt, és a földre helyezés hibájánál is eljuthat sikeres visszatérésig;
-ennek rendezése külön műveleti integritási feladat, nem puszta admission.
-Ezután a boltok/raktár/pet, a timer/quest/harci/XP/pénz források és a külön
-SQL-írók következnek. A teljes source-stop csak a még nyitott írók és recovery
-szerződések rendezése után igazolható. Az alábbi nagy fázissorrend megmarad.
+**Legközelebbi konkrét munka a 4k után:** a bolti vásárlás/eladás, majd a
+játékosok közötti bolti átadások belépései, foglalásai és hibautai. A drop
+split/create/ground-placement hibautai a 4k-ban rendezve, tényleges inventory-
+és sectree-próbákkal. Ezt követi a raktár/pet, a timer/quest/harci/XP/pénz
+források és a külön SQL-írók összehangolása. A teljes source-stop csak a még
+nyitott írók és recovery szerződések rendezése után igazolható. Az alábbi
+nagy fázissorrend megmarad.
 
 ### 1. Mission-séma, checkpoint codec és csomagarchívum
 
@@ -711,6 +743,7 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Játékoscsere és inventory-mozgatás/split atomikus műveleti belépése és időkorlátos cache-előkészítési pause-a.
 - [x] Közvetlen felszerelés/levétel/swap külön admission csoportja, callbackek és helyreállítás alatti aktivitással.
 - [x] Pickup kezdeményező/kedvezményezett közös admissionje; natív/legacy use és drop fő belépési pontjainak követése.
+- [x] Tényleges item/gold drop hibautak és memóriabeli source/world companion commit, timer/klón előkészítéssel.
 - [ ] Élő GameServer producer-stop, teljes DB/live inventory-egyeztetés és minden legacy/külön SQL-író átvezetése.
 - [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
 - [ ] Az egyszeri ASAN történeti visszaolvasási eltérés okának tisztázása, aktiválás előtt.
@@ -794,6 +827,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Csere és inventory-mozgatás műveleti engedélyei](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_operation_admission_2026-10-26.md)
 - [Közvetlen felszerelés/levétel, callbackek és konstrukciós javítás](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_equipment_admission_2026-10-26.md)
 - [Felvétel, tényleges kedvezményezett, használat és földre dobás](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_pickup_use_drop_admission_2026-10-26.md)
+- [Tárgy-/aranyeldobás integritása és közös világ/resource commit](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_ground_drop_integrity_2026-10-26.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
