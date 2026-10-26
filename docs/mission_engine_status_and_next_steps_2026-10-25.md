@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-26
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `45473766`; előző lezárt állapot: `dd369d1a`.
+- **Aktuális kódcommit:** `f3a1f6d1`; előző lezárt állapot: `4737e725`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -32,6 +32,10 @@ hibás/újrapróbált mentéseket is követő két-lane-es drain adapter (4/D–
 Elkészült a tényleges GameServer–Database karakterbetöltés verziózott sessioncsatornája,
 a Database aktuális peer/account/slot ellenőrzése és a GameServer descriptor/ECS
 generációhoz kötött válaszkezelése (4/D–4d). A source-stop és cache-átadás még hátravan.
+Elkészült a Database-oldali, cache-t megtartó player/item flush és két valódi
+SQL-lane eredményét ellenőrző natív adapter is (4/D–4e). Saját cache-példány- és
+módosításgeneráció védi az A → B → A változástól és a cache újragyártásától.
+Ez előkészítési API; nem ad source-stopot vagy Mission-írási jogosultságot.
 A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
@@ -309,6 +313,25 @@ DML, ECS-rebase és reconnect-helyreállítás következik. Nincs élő Mission-
 A régi/aszimmetrikus peer- vagy kulcs nélküli fallback nem használható Mission-ownerként.
 A Gameplay kapu továbbra is zárt. Távoli kapcsolat vagy telepítés nem történt.
 
+### 3.15. Natív Database cache-flush és két-lane-es nyugta (4/D–4e)
+
+- A teljesen betöltött natív login/peer/account/karakter/descriptor/lease ellenőrzése.
+- Saját challenge, egy előkészítés/login, idempotens retry, 256 bejegyzéses korlát és stale takarítás.
+- A valódi player-cache és a teljes item-cache map karakterhez tartozó sorainak ellenőrzése, legfeljebb 1024 tárgyig.
+- Meglévő termelési player/item DML és ablaknév-leképezés; csak dirty flush, eviction nélkül.
+- Folyamaton belül nem újrahasznált cache-példányazonosító, monoton Put/Delete generáció és A → B → A felismerése.
+- Mindkét tényleges player-worker owned ticketje; kizárólag az eredeti worker-origóból értékelt SQL-hibanyom.
+- Másik/lejárt session, cache-változás, törlés, újragyártás, SQL-hiba és hibás lane elutasítása.
+- Két valódi SQL-workerrel és a canonical player/item DDL-lel végzett, advisory lockkal vezérelt próba.
+
+**Határ:** ez kizárólag natív Database cache-előkészítés. A `Flushed` nyugta nem
+source-stop, nem canonical resource-revision és nem writer-lease. Nincs új GD/DG
+parancs és automatikus gameplay hívó; a ResourceFence nem nyílik meg ettől.
+A következő rész a GameServer termelőinek megállítása/final snapshotja és a
+folyamatközi protokoll; utána a tartós handoff, guarded DML és ECS-rebase.
+A későbbi/direkt/másik SQL-kapcsolatos írásokat külön át kell vezetni.
+A helyi játékadatbázis, Unity és távoli gép nem módosult; a Gameplay kapu zárt.
+
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
@@ -320,13 +343,14 @@ A Gameplay kapu továbbra is zárt. Távoli kapcsolat vagy telepítés nem tört
 | Verziózott reward-payload suite | 2109 ellenőrzés, normál és ASAN alatt |
 | Kevert erőforrástervező / codec / fence | 1606 ellenőrzés, normál és ASAN |
 | Natív player/session protokoll és életciklus | 810 ellenőrzés; izolált async SQL-lel 818, normál/ASAN |
+| Natív player/item cache-flush és generáció | 38 natív; izolált két-worker SQL-lel 339, normál/ASAN |
 | SQL-egységtesztek | 2256 ellenőrzés; az új queue/retry/lifecycle próbákkal |
 | Valódi SQL-infrastruktúra | 234 ellenőrzés; a valódi drain és késői szöveges SQL-hibák próbáival |
 | Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 27/27 sikeres a 4/D–4d részfázisban |
-| Külön AddressSanitizer CTest-kör | 16/16 sikeres a 4/D–4d részfázisban |
+| Célzott regressziós CTest-kör | 29/29 sikeres a 4/D–4e részfázisban |
+| Külön AddressSanitizer CTest-kör | 17/17 sikeres a 4/D–4e részfázisban; külön cache-drain MariaDB-próba is sikeres |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
 | Valódi MariaDB-suite-ok ASAN alatt | Az erőforrásíró is sikeres crash/restarttal; egy korábbi, egyszeri visszaolvasási eltérés nyitott |
@@ -360,6 +384,16 @@ a Database mindkét változata ismét lefordult. Ez nem két folyamat közötti
 Unity/gameplay elfogadási próba. A naplókat és a pontos határt a
 `mission_session_bridge_2026-10-26.md` dokumentum sorolja fel.
 
+A 4/D–4e végső kódján a normál regresszió **29/29**, a natív ASAN-regresszió
+**17/17** sikeres. A tényleges cache/player-save adapter **38** natív, illetve
+két valódi SQL-workerrel **339** ellenőrzéssel sikeres mindkét konfigurációban.
+Az ASAN MariaDB-próba külön futott; az ASAN buildben nincs konfigurálva az
+integrációs MariaDB-bináriskönyvtár, ezért nem része a 17-es CTest-körnek.
+A GameServer, Database és LoginServer normál/ASAN buildje és az érintett
+DatabaseTimeTests újrafordítása sikeres. A pontos scope és a naplók:
+`mission_cache_drain_2026-10-26.md`. A cache-drain nem igazolja a még hiányzó
+GameServer source-stopot vagy a tartós writer-lease átadását.
+
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
@@ -383,6 +417,7 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `f3a1f6d1` | Natív Database cache-drain, cache-generáció és tényleges player/item SQL-próbák |
 | `45473766` | Natív GameServer–Database sessioncsatorna, owned load-callbackok és EnTT-generáció ellenőrzése |
 | `8044061f` | Valódi SQL-worker drain, hibás mentések nyoma, eredménykiolvasás és retry-FIFO javítása |
 | `d2155e5c` | Atomi erőforrás-hatások, két SQL-soros fence, publikálás és sémaverzió 5 |
@@ -478,7 +513,8 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Tartós resource revision, két SQL-soros fence-protokoll és guarded DML backend.
 - [x] Valódi két-lane-es FIFO-drain, hibanyom és session/challenge szerint ellenőrzött adapter.
 - [x] Teljes XP/pénz/cost/award csomag közös SQL-commitja és tartós resource-effect nyugtája.
-- [ ] Élő source-stop, régi cache és függő mentések ellenőrzött kiürítése; minden legacy író átvezetése.
+- [x] Natív Database oldali, cache-t megtartó dirty player/item flush és két-worker nyugta, session/cache-generáció ellenőrzéssel.
+- [ ] Élő GameServer source-stop, final snapshot és folyamatközi drain-nyugták; minden legacy író átvezetése.
 - [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
 - [ ] Az egyszeri ASAN történeti visszaolvasási eltérés okának tisztázása, aktiválás előtt.
 - [ ] Az `item_award`/inventory/ECS réteggel összehangolt,
@@ -555,6 +591,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Atomi SQL erőforrásíró, fence és publikálás](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_resource_writer_2026-10-26.md)
 - [Valódi legacy SQL-sorürítés és retry-hibák](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_sql_drain_2026-10-26.md)
 - [Natív session- és betöltési híd](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_session_bridge_2026-10-26.md)
+- [Natív Database cache-flush és két-lane-es nyugta](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_cache_drain_2026-10-26.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)

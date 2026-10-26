@@ -142,7 +142,8 @@ commitolnak. A cache commit-sorrendi hibája is javítva. Részletek és az új,
 valódi itemig végigfutó próbák: `mission_item_awards_2026-10-25.md`.
 A kevert item/XP/pénz/cost bundle SQL-írója és publikálási backendje a 4/D–4b-ben
 elkészült. A natív karakterbetöltés sessionazonosítási része a 4/D–4d-ben elkészült;
-a teljes erőforrás/session/core-koordinátor és a cache/ECS adapter továbbra is hátravan.
+a 4/D–4e Database cache-flush/drain adaptere is elkészült. A teljes source-stop/
+erőforrás/session/core-koordinátor és a cache/ECS-rebase továbbra is hátravan.
 
 A jelenlegi telepítő tizenkét táblát, sémaverzió 5-öt készít. Együtt elérhető
 account-adatbázis esetén az effektív account.account táblára is SELECT-jogot
@@ -150,7 +151,7 @@ ad a saját helyi Mission-felhasználónak, a tárgyjutalom címzettellenőrzés
 Más végpontú account nem akadályozza a store telepítését; az új itemadapterhez
 külön hiteles identitásprotokoll nélkül ugyanazon SQL-példány szükséges.
 Az alábbi számszerű ellenőrzések a korábbi adatbázis-szétválasztás lezárt körét
-rögzítik; a legutóbbi 27/27 + ASAN 16/16, a korábbi 13/13 bootstrap és az egyszeri,
+rögzítik; a legutóbbi 29/29 + natív ASAN 17/17, a korábbi 13/13 bootstrap és az egyszeri,
 nyitott ASAN-visszaolvasási észlelés a központi állapotdokumentumban szerepel.
 
 A felhasználó kérésére a Server2-Local saját MariaDB-jén létrejött a külön
