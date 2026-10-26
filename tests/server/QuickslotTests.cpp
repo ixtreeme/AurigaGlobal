@@ -1,5 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/ResourceAdmission.hpp"
 #include "../../SRC/Server/GameServer/item/safebox.h"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
@@ -2537,6 +2538,61 @@ void GroundDestroyTimers()
 
 } // namespace
 
+namespace {
+auriga::player_session::Key MoveAdmissionKey(entt::entity owner)
+{
+    auriga::player_session::Token token{}; token.fill(9);
+    return {token, token, token, 1, 900, Actor(owner).pid};
+}
+void MoveAdmissionGuards()
+{
+    namespace admission = ecs::resource_admission;
+    using Clock = std::chrono::steady_clock;
+    {
+        Reset(); const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 7);
+        EnableSplitting(item);
+        const auto key = MoveAdmissionKey(owner);
+        auto pause = admission::Prepare(owner, key, key.request);
+        Check(pause && admission::StorePreparation(owner, key, std::move(*pause), Clock::now() + std::chrono::seconds(10)),
+            "native move preparation failed");
+        const auto create = onCreate;
+        onCreate = [](uint32_t, uint32_t) -> entt::entity { Unexpected(); };
+        for (int count : {0, 3})
+            Check(!InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), count) &&
+                ItemSystem::GetItemCount(item) == 7 && RawOwner(item) == owner &&
+                g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[0] == item &&
+                g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[1] == entt::null,
+                "paused move/split changed live inventory");
+        onCreate = create;
+        admission::ReleasePreparation(owner, key);
+        onSave = [&](entt::entity) {
+            Check(!admission::Prepare(owner, key, key.request), "save callback paused a running move");
+        };
+        Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 0),
+            "released native move failed");
+        onSave = {};
+        Check(admission::Prepare(owner, key, key.request).has_value(), "move leaked active admission");
+    }
+    for (bool invalidate : {false, true})
+    {
+        Reset(); const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 7);
+        EnableSplitting(item);
+        const auto key = MoveAdmissionKey(owner);
+        const auto create = onCreate;
+        onCreate = [&, create](uint32_t vnum, uint32_t count) {
+            Check(!admission::Prepare(owner, key, key.request), "split factory bound source during legacy move");
+            if (invalidate) admission::Invalidate(owner);
+            return create(vnum, count);
+        };
+        Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 3) != invalidate,
+            "source invalidation did not control pre-commit split");
+        Check(ItemSystem::GetItemCount(item) == (invalidate ? 7 : 4), "source invalidation lost item quantity");
+        if (invalidate) Check(retiredSplits == 1, "invalidated split leaked prepared item");
+        onCreate = create;
+        Check(admission::Prepare(owner, key, key.request).has_value(), "split leaked admission after return");
+    }
+}
+}
 int main() {
     try {
         DSManager dragonSouls;
@@ -2549,6 +2605,7 @@ int main() {
 #ifdef ENABLE_SWITCHBOT
         CSwitchbotManager switchbots;
 #endif
+        MoveAdmissionGuards();
         GroundPlacementAndRemoval(); GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
         CompanionSplitTransactions();

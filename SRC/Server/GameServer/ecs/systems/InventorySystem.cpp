@@ -22,6 +22,7 @@
 #include "NetworkSyncSystem.hpp"
 #include "ViewSystem.hpp"
 #include "../CharacterAccessors.hpp"
+#include "../ResourceAdmission.hpp"
 
 #include "../../core/config.h"
 #include "../../entity/char.h"
@@ -1628,12 +1629,16 @@ static bool MoveItemImpl(entt::entity owner, TItemPos source, TItemPos dest, int
 {
     if (!NormalizeMovePosition(source) || !NormalizeMovePosition(dest) || source == dest || count < 0 ||
         !g_registry.valid(owner)) return false;
+    const auto permission = ecs::resource_admission::Enter({owner},
+        auriga::resource_admission::Operation::InventoryMove);
+    if (!permission) return false;
     const MoveAction action(owner);
     if (!action.entered) return false;
     const auto item = SlotAt(owner, source);
     if (!MoveSource(owner, item, source, count) || !MoveDestination(owner, item, source, dest)) return false;
     if (commit && (source.window_type == EQUIPMENT || dest.window_type == EQUIPMENT ||
         SlotAt(owner, dest) != entt::null || !IsSplitRequest(item, count))) return false;
+    if (!permission->Current()) return false;
     if (dest.window_type == EQUIPMENT)
     {
         if (SlotAt(owner, dest) != entt::null)
@@ -1667,7 +1672,7 @@ static bool MoveItemImpl(entt::entity owner, TItemPos source, TItemPos dest, int
     if (!EnsureStorage(owner, dest.window_type) ||
         !EnsureComponent<ecs::ItemEquipped>(item) ||
         (g_registry.valid(owner) && g_registry.all_of<ecs::QuickSlots>(owner) && !EnsureComponent<ecs::DirtyTag>(owner)) ||
-        !MoveSource(owner, item, source, count) || !MoveDestination(owner, item, source, dest) ||
+        !permission->Current() || !MoveSource(owner, item, source, count) || !MoveDestination(owner, item, source, dest) ||
         split != IsSplitRequest(item, count) ||
         !MoveFits(owner, item, source, dest, split)) return false;
     const auto vnum = ItemSystem::GetItemVnum(item);
@@ -1693,7 +1698,7 @@ static bool MoveItemImpl(entt::entity owner, TItemPos source, TItemPos dest, int
     }
     // Allocation, component construction and timer cancellation can all call out.
     // Revalidate both entities and the complete source payload before any debit.
-    if (!MoveSource(owner, item, source, count) || !payload.Unchanged(item) ||
+    if (!permission->Current() || !MoveSource(owner, item, source, count) || !payload.Unchanged(item) ||
         !ItemSystem::IsItemStackable(item) || (ItemSystem::GetItemAntiFlag(item) & ITEM_ANTIFLAG_STACK) ||
         !MoveDestination(owner, item, source, dest) || !MoveFits(owner, item, source, dest, true) ||
         !DestinationFits(owner, prepared.item, dest) ||
@@ -1710,7 +1715,7 @@ static bool MoveItemImpl(entt::entity owner, TItemPos source, TItemPos dest, int
         uint32_t(count), uint32_t(payload.count - count), uint32_t(payload.count));
     // The caller's component-only writes and the split form one observable
     // commit. No callback or fallible preparation may be added below this gate.
-    if (commit && !commit(prepared.item)) return false;
+    if (!permission->Current() || (commit && !commit(prepared.item))) return false;
     g_registry.get<ecs::ItemCount>(item).count -= count;
     CommitRelocation(owner, prepared.item, source, dest, true);
     prepared.committed = true;

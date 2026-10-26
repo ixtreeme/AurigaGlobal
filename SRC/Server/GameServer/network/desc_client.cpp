@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../ecs/ResourceAdmission.hpp"
 #include <Core/Logging.hpp>
 #include <Core/peer_auth.h>
 #include "config.h"
@@ -56,7 +57,7 @@ void CLIENT_DESC::Destroy()
 	if (this == db_clientdesc)
 	{
         for (auto *client : DESC_MANAGER::instance().GetClientSet())
-        { client->PlayerSession().Reset(); client->PlayerCacheDrain().Invalidate(); }
+        { ecs::resource_admission::Invalidate(client->GetEntity()); client->PlayerSession().Reset(); client->PlayerCacheDrain().Invalidate(); }
 		CPartyManager::instance().DeleteAllParty();
 		CPartyManager::instance().DisablePCParty();
 		CGuildManager::instance().StopAllGuildWar();

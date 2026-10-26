@@ -1,6 +1,7 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/social/exchange.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
+#include "../../SRC/Server/GameServer/ecs/ResourceAdmission.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/character_runtime_components.hpp"
@@ -573,11 +574,93 @@ void AdditionalFailureTests() {
         "64-bit balances preserved");
 }
 }
+namespace {
+auriga::player_session::Key AdmissionKey(entt::entity owner)
+{
+    auriga::player_session::Token token{};
+    token.fill(9);
+    return {token, token, token, 1, 900, A(owner).pid};
+}
+void AdmissionGuards()
+{
+    namespace admission = ecs::resource_admission;
+    using Clock = std::chrono::steady_clock;
+    for (int side = 0; side < 2; ++side)
+    {
+        Reset(); const auto a = ActorEntity(), b = ActorEntity(); const auto item = Item(a);
+        const auto blocked = side ? b : a;
+        g_registry.emplace<ecs::PlayerID>(blocked, A(blocked).pid);
+        const auto key = AdmissionKey(blocked);
+        auto pause = admission::Prepare(blocked, key, key.request);
+        Check(pause && admission::StorePreparation(blocked, key, std::move(*pause), Clock::now() + std::chrono::seconds(10)),
+            "native exchange preparation failed");
+        onQuest = [] { Unexpected("paused exchange called the quest producer"); };
+        Check(!ExchangeSystem::Start(a, b) && !ExchangeSystem::IsActive(a) && !ExchangeSystem::IsActive(b) &&
+            ItemSystem::GetItemOwner(item) == a && ecs::PointSystem::GetGold(a) == 10000 &&
+            ecs::PointSystem::GetGold(b) == 10000 && sent.empty(), "paused exchange changed either participant");
+        onQuest = {}; admission::ReleasePreparation(blocked, key);
+        Check(ExchangeSystem::Start(a, b), "released exchange could not start");
+        Check(!admission::Prepare(blocked, key, key.request), "open exchange lost persistent admission");
+        ExchangeSystem::Cancel(a);
+        Check(admission::Prepare(blocked, key, key.request).has_value(), "closed exchange retained activity");
+    }
+    {
+        Reset(); const auto a = ActorEntity(), b = ActorEntity();
+        g_registry.emplace<ecs::PlayerID>(a, A(a).pid);
+        onQuest = [&] { Check(!admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request),
+            "nested quest callback bound native source during legacy Start"); };
+        Check(ExchangeSystem::Start(a, b), "tracked legacy Start failed");
+        onQuest = {};
+        onPacket = [&](auto, auto, uint8_t sub) {
+            if (sub == EXCHANGE_SUBHEADER_GC_END)
+                Check(!admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request),
+                    "END publication released admission before operation completion");
+        };
+        ExchangeSystem::Cancel(a); onPacket = {};
+        Check(admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request).has_value(), "cancel leaked admission");
+    }
+    {
+        Reset(); const auto a = ActorEntity(), b = ActorEntity();
+        g_registry.emplace<ecs::PlayerID>(a, A(a).pid);
+        onPacket = [&](auto, auto, uint8_t sub) {
+            if (sub != EXCHANGE_SUBHEADER_GC_START) return;
+            onPacket = {};
+            ExchangeSystem::Cancel(a);
+            Check(!admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request),
+                "session retirement inside START escaped root admission");
+        };
+        Check(!ExchangeSystem::Start(a, b) && !ExchangeSystem::IsActive(b), "cancelled START retained session");
+        Check(admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request).has_value(), "START leaked admission");
+    }
+    {
+        Reset(); const auto a = ActorEntity(), b = ActorEntity();
+        g_registry.emplace<ecs::PlayerID>(a, A(a).pid);
+        onQuest = [&] { admission::Invalidate(a); };
+        Check(!ExchangeSystem::Start(a, b) && !ExchangeSystem::IsActive(a) && !ExchangeSystem::IsActive(b),
+            "invalidated source continued exchange construction");
+        onQuest = {};
+        Check(admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request).has_value(), "failed START leaked admission");
+    }
+    {
+        Reset(); const auto a = ActorEntity(), b = ActorEntity(); const auto item = Item(a);
+        g_registry.emplace<ecs::PlayerID>(a, A(a).pid);
+        Check(ExchangeSystem::Start(a, b) && ExchangeSystem::AddItem(a, TItemPos(INVENTORY, 0), 0), "transfer fixture failed");
+        onSave = [&] {
+            onSave = {};
+            ExchangeSystem::Cancel(a);
+            Check(!admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request),
+                "committed transfer publication lost root admission");
+        };
+        Check(Finish(a, b) && ItemSystem::GetItemOwner(item) == b, "admission changed committed transfer result");
+        Check(admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request).has_value(), "transfer leaked admission");
+    }
+}
+}
 int main() {
     try {
         CLIENT_DESC db; db_clientdesc = &db;
         CHARACTER_MANAGER characters; DSManager dragons; quest::CQuestManager quests; LogManager logs;
-        LifecycleTests(); StartGuards(); OffersAndValidation(); TransferTests(); GoldTests();
+        AdmissionGuards(); LifecycleTests(); StartGuards(); OffersAndValidation(); TransferTests(); GoldTests();
         InventoryKinds(); ReentrancyTests(); RetiredCardItemsAreOrdinary(); AdditionalFailureTests();
         Reset(); db_clientdesc = nullptr;
         std::cout << "Exchange tests passed: " << checks << " checks\n";

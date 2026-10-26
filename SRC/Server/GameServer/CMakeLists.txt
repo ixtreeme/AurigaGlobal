@@ -457,6 +457,19 @@ if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
 endif()
 add_test(NAME player_cache_snapshot COMMAND PlayerCacheSnapshotTests)
 
+add_executable(ResourceAdmissionTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ResourceAdmissionTests.cpp)
+target_link_libraries(ResourceAdmissionTests PRIVATE SERVER S_Core EnTT::EnTT Threads::Threads)
+if(TARGET auriga_sanitizers)
+    target_link_libraries(ResourceAdmissionTests PRIVATE auriga_sanitizers)
+endif()
+if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    add_custom_command(TARGET ResourceAdmissionTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:ResourceAdmissionTests>")
+endif()
+add_test(NAME resource_admission COMMAND ResourceAdmissionTests)
+
 
 add_executable(LoginByKeyTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/LoginByKeyTests.cpp

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "exchange.h"
 #include "../ecs/Registry.hpp"
+#include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/components/character_runtime_components.hpp"
 #include "../ecs/components/dirty_components.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
@@ -37,10 +38,25 @@ using Session = ecs::ExchangeSession;
 using Offer = ecs::ExchangeOffer;
 using OfferedItem = ecs::ExchangeItem;
 using Phase = ecs::ExchangePhase;
+namespace admission = ecs::resource_admission;
+using AdmissionOperation = auriga::resource_admission::Operation;
+struct SessionAdmission
+{
+    explicit SessionAdmission(auriga::resource_admission::Permit value) : permit(std::move(value)) {}
+    auriga::resource_admission::Permit permit;
+};
 
 Session* FindSession(entt::entity session)
 {
     return g_registry.valid(session) ? g_registry.try_get<Session>(session) : nullptr;
+}
+
+std::optional<auriga::resource_admission::Permit> AdmitSession(entt::entity session)
+{
+    const auto *state = FindSession(session);
+    if (!state)
+        return {};
+    return admission::Existing({state->offers[0].owner, state->offers[1].owner}, AdmissionOperation::Exchange);
 }
 
 int SideOf(const Session& state, entt::entity participant)
@@ -133,6 +149,9 @@ void Close(entt::entity session, bool destroySession = true)
     auto* state = FindSession(session);
     if (!state || state->phase == Phase::Closing)
         return;
+    // Keep a local hold even when registry teardown destroys the session's
+    // persistent admission component before its other components.
+    const auto closingAdmission = AdmitSession(session);
     const Session snapshot = *state;
     state->phase = Phase::Closing;
     ++state->revision;
@@ -521,6 +540,9 @@ bool Complete(entt::entity session)
     const auto* live = FindSession(session);
     if (!live || live->phase != Phase::Open)
         return false;
+    const auto permission = AdmitSession(session);
+    if (!permission)
+        return false;
     const Session snapshot = *live;
     const auto first = snapshot.offers[0].owner, second = snapshot.offers[1].owner;
     if (!CanTrade(first) || !CanTrade(second) || !Near(first, second) ||
@@ -598,6 +620,8 @@ bool Complete(entt::entity session)
         if (!Unchanged(transfer.from, transfer.selection))
             return false;
 
+    if (!permission->Current())
+        return false;
     // No failure path or external callback after the first live store write.
     // A transferred item never becomes temporarily ownerless, and additions do
     // not rerun creation/autoequip/random-accessory initialization rules.
@@ -753,6 +777,10 @@ bool Start(entt::entity initiator, entt::entity target)
         Packet(initiator, EXCHANGE_SUBHEADER_GC_ALREADY);
         return false;
     }
+    const auto permission = admission::Enter({initiator, target}, AdmissionOperation::Exchange);
+    if (!permission || !permission->Current() || !CanTrade(initiator) || !CanTrade(target) ||
+        IsActive(initiator) || IsActive(target) || !Near(initiator, target))
+        return false;
     if (!SafeboxDelayPassed(initiator) || !SafeboxDelayPassed(target))
         return false;
 #ifdef ENABLE_PVP_ADVANCED
@@ -776,7 +804,7 @@ bool Start(entt::entity initiator, entt::entity target)
 #endif
     if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(initiator), target))
         return false;
-    if (!CanTrade(initiator) || !CanTrade(target) || IsActive(initiator) || IsActive(target) || !Near(initiator, target))
+    if (!permission->Current() || !CanTrade(initiator) || !CanTrade(target) || IsActive(initiator) || IsActive(target) || !Near(initiator, target))
         return false;
     EnsureLifecycle();
     // Install empty reservations before creating the session. Construction
@@ -787,16 +815,25 @@ bool Start(entt::entity initiator, entt::entity target)
         (void)g_registry.get_or_emplace<ecs::ExchangeRef>(owner);
         TouchExchangeTime(owner);
     }
-    if (!CanTrade(initiator) || !CanTrade(target) || IsActive(initiator) || IsActive(target) ||
+    if (!permission->Current() || !CanTrade(initiator) || !CanTrade(target) || IsActive(initiator) || IsActive(target) ||
         !g_registry.all_of<ecs::ExchangeRef>(initiator) || !g_registry.all_of<ecs::ExchangeRef>(target) ||
         !Near(initiator, target))
         return false;
+    auto persistentPermission = admission::Existing({initiator, target}, AdmissionOperation::Exchange);
+    if (!persistentPermission)
+        return false;
     const auto session = g_registry.create();
+    g_registry.emplace<SessionAdmission>(session, std::move(*persistentPermission));
+    if (!g_registry.valid(session) || !permission->Current())
+    {
+        if (g_registry.valid(session)) g_registry.destroy(session);
+        return false;
+    }
     Session state;
     state.offers[0].owner = initiator;
     state.offers[1].owner = target;
     g_registry.emplace<Session>(session, state);
-    if (!Current(session, 0) || !CanTrade(initiator) || !CanTrade(target) ||
+    if (!permission->Current() || !Current(session, 0) || !CanTrade(initiator) || !CanTrade(target) ||
         IsActive(initiator) || IsActive(target) || !g_registry.all_of<ecs::ExchangeRef>(initiator) ||
         !g_registry.all_of<ecs::ExchangeRef>(target))
     {
@@ -819,6 +856,9 @@ bool AddItem(entt::entity participant, TItemPos position, uint32_t display)
     const auto session = GetSession(participant);
     auto* state = FindSession(session);
     if (!state || state->phase != Phase::Open)
+        return false;
+    const auto permission = AdmitSession(session);
+    if (!permission)
         return false;
     const int side = SideOf(*state, participant);
     if (state->offers[1 - side].accepted)
@@ -847,6 +887,9 @@ bool RemoveItem(entt::entity participant, uint32_t slot)
     auto* state = FindSession(session);
     if (!state || state->phase != Phase::Open || slot >= EXCHANGE_ITEM_MAX_NUM)
         return false;
+    const auto permission = AdmitSession(session);
+    if (!permission)
+        return false;
     const int side = SideOf(*state, participant);
     if (state->offers[1 - side].accepted)
         return false;
@@ -872,6 +915,9 @@ bool AddGold(entt::entity participant, int64_t amount)
     const auto session = GetSession(participant);
     auto* state = FindSession(session);
     if (!state || state->phase != Phase::Open || amount <= 0 || amount >= GOLD_MAX)
+        return false;
+    const auto permission = AdmitSession(session);
+    if (!permission)
         return false;
     const int side = SideOf(*state, participant);
     if (state->offers[1 - side].accepted || state->offers[side].gold != 0)
@@ -901,6 +947,9 @@ bool Accept(entt::entity participant, bool accepted)
     const auto session = GetSession(participant);
     auto* state = FindSession(session);
     if (!state || state->phase != Phase::Open)
+        return false;
+    const auto permission = AdmitSession(session);
+    if (!permission)
         return false;
     const int side = SideOf(*state, participant);
     if (state->offers[side].accepted == accepted)

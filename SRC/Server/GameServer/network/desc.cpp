@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
@@ -108,6 +109,7 @@ void DESC::Destroy()
 		return;
 	}
 	m_bDestroyed = true;
+    ecs::resource_admission::Invalidate(GetEntity());
     m_playerSession.Reset();
     m_playerCacheDrain.Reset();
 
@@ -364,7 +366,7 @@ void DESC::LargePacket(const void * c_pvData, int iSize)
 
 void DESC::SetPhase(int _phase)
 {
-    if (_phase == PHASE_CLOSE || _phase == PHASE_SELECT) { m_playerSession.Reset(); m_playerCacheDrain.Reset(); }
+    if (_phase == PHASE_CLOSE || _phase == PHASE_SELECT) { ecs::resource_admission::Invalidate(GetEntity()); m_playerSession.Reset(); m_playerCacheDrain.Reset(); }
 	m_iPhase = _phase;
 
 	TPacketGCPhase pack;

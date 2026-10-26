@@ -7,6 +7,7 @@
 #include "../item/item_manager.h"
 #include <Core/player_cache_snapshot.h>
 #include "../ecs/CharacterAccessors.hpp"
+#include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 
 namespace
@@ -72,14 +73,17 @@ bool CLIENT_DESC::RequestPlayerCacheDrain(LPDESC target, auriga::player_session:
         ecs::SessionSystem::GetSafebox(entity) != entt::null ||
         ecs::SessionSystem::GetMall(entity) != entt::null || ecs::SessionSystem::IsSafeboxLoading(entity))
         return false;
+    auto pause = ecs::resource_admission::Prepare(entity, *key, challenge);
+    if (!pause)
+        return false;
     auriga::player_cache_snapshot::Snapshot snapshot;
     snapshot.account = key->account;
     ecs::SessionSystem::CreatePlayerProto(entity, snapshot.player);
     if (!stillCurrent() || !ITEM_MANAGER::instance().BuildPlayerCacheSnapshot(entity, snapshot.items))
         return false;
     const auto batch = auriga::player_cache_snapshot::Batch(*key, challenge, handle, snapshot);
-    if (!batch || !IsConnected() || !m_playerCacheReady || key->link != PlayerSessionLink() ||
-        !stillCurrent())
+    if (!batch || !pause->Current() || !IsConnected() || !m_playerCacheReady ||
+        key->link != PlayerSessionLink() || !stillCurrent())
         return false;
     // Invalidate existing proofs before the save batch, then watch this new
     // operation. Packet appends the whole owned batch before starting output.
@@ -87,6 +91,12 @@ bool CLIENT_DESC::RequestPlayerCacheDrain(LPDESC target, auriga::player_session:
     if (!state.Begin(*key, entt::to_integral(entity), challenge))
         return false;
     const auto now = std::chrono::steady_clock::now();
+    if (!ecs::resource_admission::StorePreparation(entity, *key, std::move(*pause),
+                                                   now + std::chrono::seconds(10)))
+    {
+        state.Invalidate();
+        return false;
+    }
     m_playerCacheWatched.insert_or_assign(target->GetHandle(), *key);
     m_playerCachePolls.emplace(target->GetHandle(), CachePoll{now, now + std::chrono::milliseconds(200)});
     Packet(batch->data(), static_cast<int>(batch->size()));
@@ -94,15 +104,28 @@ bool CLIENT_DESC::RequestPlayerCacheDrain(LPDESC target, auriga::player_session:
 }
 void CLIENT_DESC::PollPlayerCacheDrains()
 {
-    std::erase_if(m_playerCacheWatched,
-                  [](const auto &entry)
-                  {
-                      auto *target = DESC_MANAGER::instance().FindByHandle(entry.first);
-                      return !CurrentCacheTarget(target, entry.second) ||
-                             !target->PlayerCacheDrain().Matches(entry.second,
-                                                                 entt::to_integral(target->GetEntity()));
-                  });
     const auto now = std::chrono::steady_clock::now();
+    std::erase_if(
+        m_playerCacheWatched,
+        [&](const auto &entry)
+        {
+            auto *target = DESC_MANAGER::instance().FindByHandle(entry.first);
+            if (!IsConnected() || !m_playerCacheReady || entry.second.link != PlayerSessionLink() ||
+                !CurrentCacheTarget(target, entry.second) ||
+                !target->PlayerCacheDrain().Matches(entry.second, entt::to_integral(target->GetEntity())) ||
+                !ecs::resource_admission::PreparationCurrent(target->GetEntity(), entry.second, now))
+            {
+                if (target)
+                {
+                    if (target->PlayerCacheDrain().Matches(entry.second,
+                                                           entt::to_integral(target->GetEntity())))
+                        target->PlayerCacheDrain().Invalidate();
+                    ecs::resource_admission::ReleasePreparation(target->GetEntity(), entry.second);
+                }
+                return true;
+            }
+            return false;
+        });
     for (auto it = m_playerCachePolls.begin(); it != m_playerCachePolls.end();)
     {
         auto *target = DESC_MANAGER::instance().FindByHandle(it->first);
@@ -112,6 +135,8 @@ void CLIENT_DESC::PollPlayerCacheDrains()
         {
             if (target && target->PlayerCacheDrain().Waiting())
                 target->PlayerCacheDrain().Invalidate();
+            if (target && request)
+                ecs::resource_admission::ReleasePreparation(target->GetEntity(), request->key);
             m_playerCacheWatched.erase(it->first);
             it = m_playerCachePolls.erase(it);
             continue;
@@ -135,20 +160,37 @@ void CLIENT_DESC::AcceptPlayerCacheReceipt(uint32_t descriptor,
     if (watched == m_playerCacheWatched.end() || watched->second != receipt.key ||
         !CurrentCacheTarget(target, receipt.key))
         return;
-    target->PlayerCacheDrain().Accept(receipt, receipt.key, entt::to_integral(target->GetEntity()));
+    if (!target->PlayerCacheDrain().Accept(receipt, receipt.key, entt::to_integral(target->GetEntity())))
+        return;
     if (!target->PlayerCacheDrain().Waiting())
+    {
         m_playerCachePolls.erase(descriptor);
+        if (receipt.status != auriga::player_cache_wire::Status::Flushed)
+        {
+            ecs::resource_admission::ReleasePreparation(target->GetEntity(), receipt.key);
+            m_playerCacheWatched.erase(descriptor);
+        }
+    }
 }
 std::optional<auriga::player_cache_wire::Receipt> CLIENT_DESC::PlayerCacheReceipt(LPDESC target)
 {
     if (this != db_clientdesc || !m_playerCacheReady || !IsConnected() || !target)
         return {};
     const auto key = target->PlayerSession().Current();
-    const auto watched = m_playerCacheWatched.find(target->GetHandle());
-    if (!key || key->link != PlayerSessionLink() || !CurrentCacheTarget(target, *key) ||
-        watched == m_playerCacheWatched.end() || watched->second != *key)
+    if (!key || key->link != PlayerSessionLink() || !CurrentCacheTarget(target, *key))
         return {};
-    return target->PlayerCacheDrain().Result(*key, entt::to_integral(target->GetEntity()));
+    const auto result = target->PlayerCacheDrain().Result(*key, entt::to_integral(target->GetEntity()));
+    if (!result)
+        return {};
+    if (result->status != auriga::player_cache_wire::Status::Flushed &&
+        result->status != auriga::player_cache_wire::Status::Pending)
+        return result; // Terminal failures need no held operation pause.
+    const auto watched = m_playerCacheWatched.find(target->GetHandle());
+    if (watched == m_playerCacheWatched.end() || watched->second != *key ||
+        !ecs::resource_admission::PreparationCurrent(target->GetEntity(), *key,
+                                                     std::chrono::steady_clock::now()))
+        return {};
+    return result;
 }
 void CLIENT_DESC::ObservePlayerCacheWrite(uint8_t header)
 {
@@ -156,8 +198,12 @@ void CLIENT_DESC::ObservePlayerCacheWrite(uint8_t header)
         !auriga::player_cache_wire::MayMutateCache(header))
         return;
     for (const auto &[handle, key] : m_playerCacheWatched)
-        if (auto *target = DESC_MANAGER::instance().FindByHandle(handle); CurrentCacheTarget(target, key))
-            target->PlayerCacheDrain().ObservePacket(header);
+        if (auto *target = DESC_MANAGER::instance().FindByHandle(handle))
+        {
+            if (target->PlayerCacheDrain().Matches(key, entt::to_integral(target->GetEntity())))
+                target->PlayerCacheDrain().ObservePacket(header);
+            ecs::resource_admission::ReleasePreparation(target->GetEntity(), key);
+        }
     m_playerCacheWatched.clear();
     m_playerCachePolls.clear();
 }
