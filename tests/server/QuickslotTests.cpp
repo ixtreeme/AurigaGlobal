@@ -573,7 +573,7 @@ bool DSManager::PullOutEcs(entt::entity owner, TItemPos pos, entt::entity& stone
 }
 ITEM_MANAGER::ITEM_MANAGER() = default;
 ITEM_MANAGER::~ITEM_MANAGER() = default;
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;

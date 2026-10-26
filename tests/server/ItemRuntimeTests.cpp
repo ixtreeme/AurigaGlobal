@@ -228,7 +228,7 @@ LogManager::LogManager() : m_bIsConnect(false) {}
 LogManager::~LogManager() = default;
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 quest::NPC::~NPC() = default;
 bool quest::CQuestManager::TakeItem(unsigned int, unsigned int, entt::entity) { Unexpected(); }

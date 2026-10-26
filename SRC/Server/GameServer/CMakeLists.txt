@@ -921,6 +921,15 @@ add_executable(ExchangeTests EXCLUDE_FROM_ALL
 target_link_libraries(ExchangeTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 add_test(NAME exchange COMMAND ExchangeTests)
 
+# These suites replace the SQL connection/worker, but SQLMsg destruction still
+# uses the production drain cancellation helper. Do not link a live SQL worker.
+foreach(_sql_seam_test DailyRewardTests DungeonLifecycleTests ExchangeTests GuildMemberLifecycleTests
+        ItemAttributeTests ItemManagerLifecycleTests ItemRuntimeTests LoginAuthTests LoginSessionTests
+        MountLifecycleTests QuickslotTests ShopLifecycleTests)
+    target_sources(${_sql_seam_test} PRIVATE ../SQL/QueueDrain.cpp)
+    target_link_libraries(${_sql_seam_test} PRIVATE Threads::Threads)
+endforeach()
+
 # Exercise the same generation-aware diagnostic implementation as GameServer.
 # The isolated event/refine-window suites have no diagnostic dependency.
 foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests)

@@ -204,7 +204,7 @@ ITEM_MANAGER::ITEM_MANAGER() {}
 ITEM_MANAGER::~ITEM_MANAGER() {}
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 LogManager::LogManager() : m_bIsConnect(false) {}
 LogManager::~LogManager() = default;

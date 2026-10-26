@@ -110,7 +110,7 @@ const char* get_table_postfix() { return ""; }
 
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 DBManager::DBManager() = default;
 DBManager::~DBManager() = default;

@@ -345,7 +345,7 @@ void LoginSession::SendAuthSuccess(uint32_t key) { successes.push_back(key); }
 
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 LoginDB::LoginDB() = default;
 LoginDB::~LoginDB() = default;

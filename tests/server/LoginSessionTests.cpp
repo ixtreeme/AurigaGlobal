@@ -189,7 +189,7 @@ void Scenario(const Pem& pem, const std::vector<size_t>& loginPieces, bool retir
 // Database and link seams; the session and the auth are real.
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 LoginDB::LoginDB() = default;
 LoginDB::~LoginDB() = default;

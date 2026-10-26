@@ -181,7 +181,7 @@ void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) { Unexpecte
 void DESC::Packet(const void*, int) { Unexpected(); }
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 CPoly::CPoly() = default;
 CPoly::~CPoly() = default;

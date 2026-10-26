@@ -215,7 +215,7 @@ quest::PC* quest::CQuestManager::GetPCForce(unsigned int) { static quest::PC pc;
 bool quest::CQuestManager::GiveItemToPC(unsigned int, entt::entity target) { A(target); Call(onQuest); return questConsumes; }
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 LogManager::LogManager() : m_bIsConnect(false) {}
 LogManager::~LogManager() = default;

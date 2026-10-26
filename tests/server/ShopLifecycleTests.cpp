@@ -151,7 +151,7 @@ void LogManager::ItemLogEntity(entt::entity, entt::entity, const char*, const ch
 void LogManager::GoldBarLog(uint32_t, uint32_t, GOLDBAR_HOW, const char*) {}
 void LogManager::HackLog(const char*, entt::entity) {}
 void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t) {}
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;

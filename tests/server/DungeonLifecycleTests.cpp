@@ -331,7 +331,7 @@ void BroadcastNotice(const char*, bool) {}
 void BroadcastNoticeNew(uint8_t, uint8_t, int, uint32_t, const char*, ...) {}
 
 // SQL completion is observed at the controller boundary, never sent anywhere.
-CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
