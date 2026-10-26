@@ -2,6 +2,11 @@
 
 Dátum: 2026-10-26. Részfázis: **4/D–4m**. Csak helyi fejlesztés és ellenőrzés.
 
+**Tervmódosítás 2026-10-27:** a régi offline shop kikerül a rendszerből;
+ennek további DB/resource integrációját nem kell megvalósítani. A dokumentum
+alábbi offline folytatási tétele a korábbi terv része. Az online játékosbolt
+folytatása megmarad. Lásd: `offline_shop_retirement_2026-10-27.md`.
+
 ## Miért kapcsolódik a Mission Engine-hez?
 
 A Mission erőforrás-átadásának egyetlen hiteles player/item állapotból kell

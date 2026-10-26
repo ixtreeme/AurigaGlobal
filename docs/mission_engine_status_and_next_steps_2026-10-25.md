@@ -1,8 +1,9 @@
 # AurigaGlobal Mission Engine – állapot és folytatási terv
 
-- **Dátum:** 2026-10-26
+- **Dátum:** 2026-10-27
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `541ea976`; előző lezárt állapot: `61855588`.
+- **Aktuális kódcommit:** `1f75cff0`; előző lezárt állapot: `93d7ef82`.
+- **Unity-kivezetés:** changeset `33`, `/main/codex-mission-engine` ág.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -73,6 +74,10 @@ elkészült: az arany, tárgyköltség, merge, elhelyezés, quickslot és sikere
 cooldown együtt változik, és csak utána indulnak callbackek. A nulla/pending
 fizető stack takarítása nem ismételheti a debitálást. Ez helyi memóriabeli
 integritás; a legacy DB-mentések tartós atomikussága ebből még nem következik.
+A 2026-10-27-i döntés alapján a régi offline shop nem kerül át az új gazdasági
+koordinációba. A szerver/Database és a repóban lévő legacy launcher offline
+runtime kivezetése külön munkafázis; az új offline shop későbbi önálló fejlesztés.
+Az online személyes boltok és az NPC-boltok megmaradnak.
 A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
@@ -517,8 +522,26 @@ Részletek: `mission_shop_admission_2026-10-26.md`.
 
 **Határ:** memóriabeli NPC-adásvétel. Nincs új tartós trade SQL-tranzakció,
 teljes source-stop, writer-handoff vagy Mission-aktiválás. A vevő/eladó online
-átadása és az offline boltok aszinkron DB-koordinációja külön következik.
+átadása külön következik. Az offline boltok átvezetését a 2026-10-27-i
+kivezetési döntés törölte a tervből; lásd a következő szakaszt.
 Részletek: `mission_npc_trade_commit_2026-10-26.md`.
+
+### 3.24. A régi offline shop kivezetése (2026-10-27)
+
+- A GameServer/Database manager, cache, aukció, ajánlat, bolti raktár,
+  hálózati csomagok és ECS-entitások ténylegesen kikerültek a forrásból.
+- A belépési, kilépési, warp-, csere-, cube-, inventory-rendezési és GM/chat
+  függőségek megszűntek; az offline feature nem kapcsolható vissza flaggel.
+- A régi launcher C++/Python modulja, felületei és shoplinkjei kikerültek.
+- A normál NPC- és online személyes bolt megmarad; a CG 119 nincs regisztrálva.
+- Régi adatokat nem törlünk vagy osztunk vissza automatikusan. A történeti
+  SQL-tárolók/címkék mentéskompatibilitási archívumként megmaradnak.
+
+**Határ:** helyi szerverforrás, legacy launcher és a külön Unity workspace
+offline UI/API-kivezetése. Az archivált javak rendezése még telepítés
+előtti feladat. Nincs telepítés vagy távoli módosítás. Az új offline shop
+önálló későbbi fejlesztés, nem a Mission Engine régi producer-integrációja.
+Részletek: `offline_shop_retirement_2026-10-27.md`.
 
 ## 4. Ellenőrzött eredmények
 
@@ -541,14 +564,17 @@ Részletek: `mission_npc_trade_commit_2026-10-26.md`.
 | Tényleges játékoscsere és callback-élettartam | 14736 ellenőrzés, normál/ASAN |
 | Tényleges inventory/quickslot, split, felszerelés, eldobás és NPC-adásvétel | 834829 ellenőrzés, normál/ASAN |
 | Natív attribútum/költség/retirement és companion commit | 17752 ellenőrzés, normál/ASAN |
-| Tényleges SpatialService/sectree lifecycle és item companion | 1189 ellenőrzés, normál/ASAN |
+| Tényleges SpatialService/sectree lifecycle és item companion | 1118 ellenőrzés, normál/ASAN; az offline shop kizárólagos esetei kivezetve |
 | SQL-egységtesztek | 2256 ellenőrzés; az új queue/retry/lifecycle próbákkal |
 | Valódi SQL-infrastruktúra | 234 ellenőrzés; a valódi drain és késői szöveges SQL-hibák próbáival |
 | Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 45/45 a 4/D–4m részfázisban; öt izolált MariaDB-integrációval |
-| Külön AddressSanitizer CTest-kör | 33/33 natív próba a 4/D–4m részfázisban; új ASAN MariaDB-kör nélkül |
+| Célzott regressziós CTest-kör | 49/49 az offline shop kivezetésekor; öt izolált MariaDB-integrációval |
+| Külön AddressSanitizer CTest-kör | 37/37 az offline shop kivezetésekor; új ASAN MariaDB-kör nélkül |
+| Unity offline shop kivezetési próba | 30 ellenőrzés a tényleges 2022.3.62f3 Editorban |
+| Unity meglévő protokoll / desktop és mobil hozzáférési próbák | Sikeres; 13 sidebar- és 38 mobil menübejegyzés |
+| Unity Windows/Android/iOS runtime és Editor fordítás | Sikeres; mobilon compile-only |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
 | Valódi MariaDB-suite-ok ASAN alatt | Az erőforrásíró is sikeres crash/restarttal; egy korábbi, egyszeri visszaolvasási eltérés nyitott |
@@ -679,6 +705,17 @@ gép változatlan. Az NPC-ág memóriabeli commitja elkészült; a tartós trade
 recovery, teljes writer-handoff és új élő Mission-jutalmazás továbbra is hátravan.
 Részletek és naplók: `mission_npc_trade_commit_2026-10-26.md`.
 
+Az offline shop kivezetésénél **49/49 normál** és **37/37 ASAN** szerverteszt
+sikeres, elkészült a három szerverbináris mindkét buildje. A tényleges Unity
+Editorban a 30 ellenőrzéses kivezetési, a protokoll- és a desktop/mobil
+hozzáférési validátor sikeres. A runtime Windows-, Android- és iOS-kódága,
+valamint az Editor assembly lefordult; ez nem eszközbuild vagy játékbeli
+hálózati elfogadás. A korábbi hét Unity-módosítás hash-e változatlan.
+Az archivált offline javak rendezése telepítés előtt még szükséges.
+Nincs játékadatbázis-módosítás vagy távoli telepítés.
+Részletek és a külön ismert grafikai tesztkörnyezeti hiba:
+`offline_shop_retirement_2026-10-27.md`.
+
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
@@ -695,13 +732,17 @@ szerverteszt vagy az összes játékbeli quest elfogadását. Ebben a Mission
 részfázisban nem történt FreeBSD build, Unity end-to-end elfogadás vagy
 az új Mission Engine éles/távoli telepítése.
 
-A jelen fázis hash-ellenőrzése szerint a szezonális Mission Pass 34 védett
-fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
+A 4/D–4m hash-ellenőrzése szerint a szezonális Mission Pass 34 védett
+fájlja és a nyolc korábbi Unity-módosítás változatlan maradt. Az offline shop
+kivezetésekor a 34 szezonális fájl ismét változatlan. A külön Unity workspace
+offline UI-ja is kikerült a felhasználó kifejezett pontosítása szerint;
+az ott előzőleg meglévő hét változás külön megőrzött munka.
 
 ## 5. Commitok és rögzített Unity-munka
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `1f75cff0` | Régi offline shop szerver/Database/legacy launcher runtime kivezetése, adatok megőrzése és kapcsolódó regressziók |
 | `541ea976` | NPC-vétel/eladás közös memóriabeli pénz/költség/tárgy commitja, merge/rune/retirement és callback-hibapróbák |
 | `461f93ef` | Bolti admission, online vevő/eladó közös belépése, ár-/darabszámhatárok és preflight hibapróbák |
 | `0e95b91d` | Előkészített item/gold drop és közös resource/world commit; tényleges inventory/spatial hibapróbák |
@@ -742,8 +783,13 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 A korábbi Unity BattlePass-kivezetés rögzített változata: **Unity Version
 Control changeset 30**, `/main/codex-mission-engine` ág. Ez a régi felület
-kivezetése, nem az új Mission kliens elkészülte. A jelen összesítéshez nem
-történt új Unity-módosítás vagy checkin.
+kivezetése, nem az új Mission kliens elkészülte.
+
+A jelenlegi offline shop Unity-kivezetése külön **changeset 33** ugyanazon
+az ágon. A hálózati/UI/runtime kivezetés és a saját regressziók rögzítve vannak;
+a közös boltfelirat-script/meta átnevezése valódi move. A hét korábbi helyi
+Unity-változás hash-e változatlan, azok kimaradtak a checkinből. A részletes
+közös lezárás: `offline_shop_retirement_2026-10-27.md`.
 
 A 4/B munkafázis elkészült megvalósítását és próbáit a
 `mission_persistence_store_2026-10-25.md` dokumentum részletezi.
@@ -756,11 +802,14 @@ A 4/C outbox/entitlement réteg részletei és kézbesítési határai:
 pénzének és ugyanazon tárgy átadásának közös commitja. Az NPC-vásárlás/eladás
 memóriabeli resource/inventory commitja elkészült; az online legacy ág még
 külön debit/eltávolítás/elhelyezés/merge/kredit hívásokat használ.
-Ezután az offline boltok aszinkron DB-koordinációja következik.
-Ezt követi a raktár/pet, a timer/quest/harci/XP/pénz
+Ezután a raktár/pet, a timer/quest/harci/XP/pénz
 források és a külön SQL-írók összehangolása. A teljes source-stop csak a még
 nyitott írók és recovery szerződések rendezése után igazolható. Az alábbi
 nagy fázissorrend megmarad.
+
+**Módosítás 2026-10-27:** a régi offline shop nem integrációs feladat többé.
+Kivezetjük a Unity-felületekkel együtt; új utódja későbbi, önálló projekt.
+A régi bolti javak megőrzésének/rendezésének lezárása telepítés előtt szükséges.
 
 ### 1. Mission-séma, checkpoint codec és csomagarchívum
 
@@ -826,7 +875,11 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Tényleges item/gold drop hibautak és memóriabeli source/world companion commit, timer/klón előkészítéssel.
 - [x] Bolti vétel/eladás admission, online vevő/eladó közös belépése és első mutáció előtti ajánlat-/ár-/darabszámhatárok.
 - [x] NPC-vétel/eladás közös memóriabeli resource/inventory commit, előkészített költség- és retirement-tervvel.
-- [ ] Online játékosbolt közös átadása és offline boltok DB-koordinációja; tartós trade recovery.
+- [ ] Online játékosbolt közös átadása és tartós trade recovery.
+- [x] A régi offline shop szerver/Database és legacy launcher runtime kivezetése; adatok megőrzése.
+- [x] A külön Unity workspace offline UI-jának és hálózati küldőinek kivezetése, közös személyesbolti és teleportdialógus-elemek megőrzésével.
+- [ ] A régi bolti javak telepítés előtti, mentés alapján ellenőrzött rendezése.
+- [ ] Későbbi önálló fejlesztés: teljesen új offline shop, az új erőforrás-koordináció szerződésével.
 - [ ] Élő GameServer producer-stop, teljes DB/live inventory-egyeztetés és minden legacy/külön SQL-író átvezetése.
 - [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
 - [ ] Az egyszeri ASAN történeti visszaolvasási eltérés okának tisztázása, aktiválás előtt.
@@ -913,6 +966,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Tárgy-/aranyeldobás integritása és közös világ/resource commit](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_ground_drop_integrity_2026-10-26.md)
 - [Bolti admission és ajánlat-/árhatárok](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_shop_admission_2026-10-26.md)
 - [NPC-vétel/eladás közös resource/inventory commitja](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_npc_trade_commit_2026-10-26.md)
+- [A régi offline shop kivezetése és adatmegőrzési határai](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/offline_shop_retirement_2026-10-27.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
