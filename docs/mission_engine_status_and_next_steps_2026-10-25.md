@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-26
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `9b8d6371`; előző lezárt állapot: `1dc0dc9b`.
+- **Aktuális kódcommit:** `3829456d`; előző lezárt állapot: `7d386bf3`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -40,6 +40,10 @@ Elkészült a sessionhöz és EnTT-generációhoz kötött GameServer–Database
 cache-drain csatorna is (4/D–4f), külön képességegyeztetéssel. A későbbi GD-írások
 – a kettébontott header/payload mentések is – visszavonják a korábbi nyugtát.
 Ez a csatorna sem állítja meg az ECS gazdasági termelőit és nem aktivál Mission-jutalmat.
+Elkészült a GameServer-oldali player/carried-item pillanatkép összeállítása
+és a mentések → Begin kötelező sorrendje is (4/D–4g). A hordott tárgyak kétirányú
+ECS-/ID-index ellenőrzése közös legacy szerializálót használ; hibánál nem indul
+előkészítés és a delayed-save munkák megmaradnak. Ez sem ad source-stop nyugtát.
 A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
@@ -358,6 +362,24 @@ producer-stop, majd a tartós writer-handoff/guarded DML/ECS-rebase.
 A tényleges socketes két teljes szerverfolyamatos és Unity-elfogadás még hátravan.
 Nem történt távoli művelet vagy helyi játékadatbázis-módosítás; Gameplay zárt.
 
+### 3.17. Natív player/item pillanatkép és mentési sorrend (4/D–4g)
+
+- A RequestPlayerCacheDrain maga készíti a player és a hordott tárgyak birtokolt pillanatképét; Begin csak a sorok után kerülhet a kimeneti adatfolyamba.
+- Csak teljesen betöltött, aktuális GAME/session/EnTT scope; descriptor-nyilvántartás újraellenőrzése a capture után.
+- Csere, raktár/mall, függő betöltés és tiltott inventory-állapot esetén nincs új előkészítés.
+- A tényleges inventory-tömbök és az ItemOwner/ID-index kétirányú ellenőrzése; duplikált, stale, hiányos, lezárt vagy még átadás alatt álló tárgy elutasítása.
+- A SaveSingleItem és a snapshot ugyanazt az item-szerializálót használja; felszerelés/öv pozíció, socket és attribútum együtt ellenőrzött.
+- Legfeljebb 1024 tárgy, ID és ablak/pozíció egyediség; sem részleges capture-output, sem eldobott delayed-save munka.
+- Ismételt challenge nem küld új pillanatképet; érvénytelenített előkészítés nem éleszthető újra.
+- A snapshot keretei → termelési cache/DML → két valódi SQL-worker → wire/client út külön MariaDB-próbája elkészült.
+
+**Határ:** ez a pillanatkép nem állítja meg az ECS-termelőket, nem igazol teljes
+DB/live inventory-halmazegyezést és nem ad tartós writer-lease-t. A fiókszintű
+mount-raktár külön GameServer SQL-író, nem a player cache-drain része. Nincs
+új automatikus gameplay-hívó vagy jutalmazás. A tényleges producer-stop,
+cross-character/külön SQL-írók, writer-handoff és rebase továbbra is hátravan.
+Részletek: `mission_final_snapshot_2026-10-26.md`.
+
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
@@ -369,15 +391,17 @@ Nem történt távoli művelet vagy helyi játékadatbázis-módosítás; Gamepl
 | Verziózott reward-payload suite | 2109 ellenőrzés, normál és ASAN alatt |
 | Kevert erőforrástervező / codec / fence | 1606 ellenőrzés, normál és ASAN |
 | Natív player/session protokoll és életciklus | 818 ellenőrzés; izolált async SQL-lel 826, normál/ASAN |
-| Natív player/item cache-flush és generáció | 38 natív; izolált két-worker SQL-/wire-úttal 404, normál/ASAN |
-| Cache GD/DG codec és natív descriptorállapot | 1506 ellenőrzés, normál/ASAN |
+| Natív player/item cache-flush és generáció | 38 natív; izolált snapshot/két-worker SQL-/wire-úttal 455, normál/ASAN |
+| Cache GD/DG codec és natív descriptorállapot | 1507 ellenőrzés, normál/ASAN |
+| Natív snapshot/framing és kapacitás | 4426 ellenőrzés, normál/ASAN |
+| ItemManager lifecycle és kétirányú snapshot capture | 8947 ellenőrzés, normál/ASAN |
 | SQL-egységtesztek | 2256 ellenőrzés; az új queue/retry/lifecycle próbákkal |
 | Valódi SQL-infrastruktúra | 234 ellenőrzés; a valódi drain és késői szöveges SQL-hibák próbáival |
 | Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 30/30 sikeres a 4/D–4f részfázisban |
-| Külön AddressSanitizer CTest-kör | 18/18 sikeres a 4/D–4f részfázisban; külön cache-drain/session MariaDB-próbák is sikeresek |
+| Célzott regressziós CTest-kör | 31/31 + 12/12, összesen 43/43 a 4/D–4g részfázisban |
+| Külön AddressSanitizer CTest-kör | 19/19 + 12/12, összesen 31/31; külön cache-drain/session MariaDB-próbák is sikeresek |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
 | Valódi MariaDB-suite-ok ASAN alatt | Az erőforrásíró is sikeres crash/restarttal; egy korábbi, egyszeri visszaolvasási eltérés nyitott |
@@ -432,6 +456,19 @@ GameServer, Database, LoginServer és DatabaseTimeTests mindkét konfigurációb
 és a codec/SQL út próbája nem helyettesíti a két teljes folyamat socketes vagy
 Unity-elfogadását. Részletek: `mission_cache_protocol_2026-10-26.md`.
 
+A 4/D–4g végső kódján a normál CTest-körök **31/31 + 12/12**, összesen
+**43/43**; a natív ASAN-körök **19/19 + 12/12**, összesen **31/31** sikeresek.
+A snapshot/framing **4426**, a tényleges ItemManager **8947**, a cache-client
+**1507** ellenőrzéssel sikeres. Az új snapshot → cache → valódi SQL → wire
+próba **455**, a késleltetett session-válasz **826** ellenőrzéssel sikeres
+normál/ASAN MariaDB-n. A két ASAN MariaDB-suite külön futott, nem része a
+31-es CTest-számnak. A korábbi FIFO-fejlesztésből kimaradt tizenkét legacy
+SQL-teszthelyettesítő lane-inicializálása és a valódi cancellation helper
+bekötése is elkészült; ezek frissen fordítva futottak. A GameServer,
+Database és LoginServer normál/ASAN buildje sikeres. A source-stop, teljes
+DB/live inventory-egyeztetés és writer-handoff továbbra sincs aktiválva.
+Részletek és naplók: `mission_final_snapshot_2026-10-26.md`.
+
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
@@ -455,6 +492,8 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `3829456d` | Natív player/item pillanatkép, kétirányú ECS-ellenőrzés és kötelező mentések → Begin sorrend |
+| `d27406a7` | Tizenkét legacy SQL-teszthelyettesítő lane-inicializálása és a valódi drain cancellation helper bekötése |
 | `9b8d6371` | Hiteles GD/DG cache-drain, descriptoros poller és későbbi mentések felismerése |
 | `f3a1f6d1` | Natív Database cache-drain, cache-generáció és tényleges player/item SQL-próbák |
 | `45473766` | Natív GameServer–Database sessioncsatorna, owned load-callbackok és EnTT-generáció ellenőrzése |
@@ -554,7 +593,8 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Teljes XP/pénz/cost/award csomag közös SQL-commitja és tartós resource-effect nyugtája.
 - [x] Natív Database oldali, cache-t megtartó dirty player/item flush és két-worker nyugta, session/cache-generáció ellenőrzéssel.
 - [x] Egyeztetett GD/DG cache-drain, scope-hoz kötött nyugta és későbbi GD-mentések felismerése.
-- [ ] Élő GameServer producer-stop, final snapshot és minden legacy/külön SQL-író átvezetése.
+- [x] Natív GameServer player/carried-item pillanatkép és ellenőrzött mentések → Begin sorrend.
+- [ ] Élő GameServer producer-stop, teljes DB/live inventory-egyeztetés és minden legacy/külön SQL-író átvezetése.
 - [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
 - [ ] Az egyszeri ASAN történeti visszaolvasási eltérés okának tisztázása, aktiválás előtt.
 - [ ] Az `item_award`/inventory/ECS réteggel összehangolt,
@@ -633,6 +673,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Natív session- és betöltési híd](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_session_bridge_2026-10-26.md)
 - [Natív Database cache-flush és két-lane-es nyugta](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_cache_drain_2026-10-26.md)
 - [Folyamatközi cache-drain, GD-írófigyelő és source-stop leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_cache_protocol_2026-10-26.md)
+- [Natív player/item pillanatkép és mentési sorrend](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_final_snapshot_2026-10-26.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
