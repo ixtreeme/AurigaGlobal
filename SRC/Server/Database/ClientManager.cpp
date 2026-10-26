@@ -2110,6 +2110,7 @@ void CClientManager::InsertLoginData(CLoginData * pkLD)
 
 void CClientManager::DeleteLoginData(CLoginData * pkLD)
 {
+    m_playerSessions.InvalidateAccount(pkLD->GetAccountRef().id);
 	m_map_pkLoginData.erase(pkLD->GetKey());
 	m_map_pkLoginDataByLogin.erase(pkLD->GetAccountRef().login);
 	m_map_pkLoginDataByAID.erase(pkLD->GetAccountRef().id);
@@ -2638,18 +2639,46 @@ void CClientManager::ProcessPackets(CPeer * peer)
 
 			case HEADER_GD_LOGOUT:
 				//LOG_INFO("HEADER_GD_LOGOUT (handle: {} length: {})", dwHandle, dwLength);
+                if (dwLength != sizeof(TLogoutPacket)) break;
 				QUERY_LOGOUT(peer, dwHandle, data);
 				break;
 
-			case HEADER_GD_PLAYER_LOAD:
-				LOG_TRACE("HEADER_GD_PLAYER_LOAD (handle: {} length: {})", dwHandle, dwLength);
-				QUERY_PLAYER_LOAD(peer, dwHandle, (TPlayerLoadPacket *) data);
-
+            case HEADER_GD_PLAYER_SESSION_HELLO:
+            {
+                auto link = auriga::player_session::DecodeHello(
+                    {reinterpret_cast<const uint8_t*>(data), dwLength}, false);
+                if (!PeerAuth::HasKey() || !peer->GetChannel() || !link || !peer->EnablePlayerSessions(*link)) break;
+                const auto reply = auriga::player_session::Hello(*link, true);
+                peer->EncodeHeader(HEADER_DG_PLAYER_SESSION_HELLO, 0, reply.size());
+                peer->Encode(reply.data(), reply.size());
+                break;
+            }
+            case HEADER_GD_PLAYER_LOAD_SESSION:
+            {
+                auto request = auriga::player_session::DecodeRequest(
+                    {reinterpret_cast<const uint8_t*>(data), dwLength});
+                if (!PeerAuth::HasKey() || !request || request->link != peer->PlayerSessionLink()) break;
+                TPlayerLoadPacket packet{};
+                packet.account_id = request->account;
+                packet.player_id = request->character;
+                packet.account_index = request->slot;
+                if (QUERY_PLAYER_LOAD(peer, dwHandle, &packet, request->link, request->request))
+                {
 #ifdef __SKILL_COLOR_SYSTEM__
-				QUERY_SKILL_COLOR_LOAD(peer, dwHandle, (TPlayerLoadPacket*)data);
+                    QUERY_SKILL_COLOR_LOAD(peer, dwHandle, &packet);
 #endif
-
-				break;
+                }
+                break;
+            }
+            case HEADER_GD_PLAYER_LOAD:
+                if (dwLength != sizeof(TPlayerLoadPacket)) break;
+                if (QUERY_PLAYER_LOAD(peer, dwHandle, (TPlayerLoadPacket*)data))
+                {
+#ifdef __SKILL_COLOR_SYSTEM__
+                    QUERY_SKILL_COLOR_LOAD(peer, dwHandle, (TPlayerLoadPacket*)data);
+#endif
+                }
+                break;
 
 			case HEADER_GD_PLAYER_SAVE:
 #ifdef HEADER_GD_PLAYER_SAVE_SIZE_CHECK
@@ -3109,6 +3138,7 @@ void CClientManager::CollectPendingDeletes()
 
 void CClientManager::RemovePeer(CPeer * pPeer)
 {
+    m_playerSessions.InvalidatePeer(pPeer->GetHandle());
 	if (m_pkAuthPeer == pPeer)
 	{
 		m_pkAuthPeer = nullptr;
@@ -3208,6 +3238,16 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 			// END_OF_MYSHOP_PRICE_LIST
 	}
 
+    if (!peer && (qi->iType == QID_PLAYER || qi->iType == QID_ITEM || qi->iType == QID_QUEST || qi->iType == QID_AFFECT
+#ifdef __SKILL_COLOR_SYSTEM__
+        || qi->iType == QID_SKILL_COLOR
+#endif
+        ))
+    {
+        RESULT_COMPOSITE_PLAYER(nullptr, msg, qi->iType); // Frees the owned load context even after peer loss.
+        delete qi;
+        return true;
+    }
 	if (!peer)
 	{
 #ifdef __ENABLE_NEW_OFFLINESHOP__

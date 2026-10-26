@@ -2348,7 +2348,64 @@ bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesPro
 
 		const char * pRealData = (c_pData + 9);
 
-		if (Analyze(d, bHeader, pRealData) < 0)
+        int analyzed = 0;
+        if (bHeader == HEADER_DG_PLAYER_SESSION_HELLO)
+        {
+            auto link = auriga::player_session::DecodeHello(
+                {reinterpret_cast<const uint8_t*>(pRealData), size_t(iSize)}, true);
+            if (d != db_clientdesc || !link || !db_clientdesc->AcceptPlayerSessionHello(*link))
+            {
+                d->SetPhase(PHASE_CLOSE);
+                return false;
+            }
+        }
+        else if (bHeader == HEADER_DG_PLAYER_SESSION_REPLY)
+        {
+            auto reply = auriga::player_session::DecodeReply(
+                {reinterpret_cast<const uint8_t*>(pRealData), size_t(iSize)});
+            if (d != db_clientdesc || !db_clientdesc->PlayerSessionsReady() || !reply ||
+                reply->key.link != db_clientdesc->PlayerSessionLink())
+            {
+                d->SetPhase(PHASE_CLOSE);
+                return false;
+            }
+            auto *target = DESC_MANAGER::instance().FindByHandle(m_dwHandle);
+            bool ownsCharacter = false;
+            if (target && !target->IsPhase(PHASE_CLOSE) && target->GetAccountTable().id == reply->key.account)
+                for (const auto &player : target->GetAccountTable().players)
+                    ownsCharacter |= player.dwID == reply->key.character;
+            if (ownsCharacter && reply->header != HEADER_DG_PLAYER_LOAD_SUCCESS &&
+                reply->header != HEADER_DG_PLAYER_LOAD_FAILED)
+            {
+                const auto entity = target->GetEntity();
+                ownsCharacter = ecs::IsCharacter(entity) &&
+                    ecs::PlayerRuntime::GetPlayerID(entity) == reply->key.character &&
+                    target->PlayerSession().MatchesEntity(reply->key, entt::to_integral(entity));
+            }
+            if (ownsCharacter && target->PlayerSession().Accept(*reply))
+            {
+                if (reply->header == HEADER_DG_PLAYER_LOAD_FAILED) target->SetPhase(PHASE_CLOSE);
+                else
+                {
+                    analyzed = Analyze(d, reply->header, reinterpret_cast<const char*>(reply->payload.data()));
+                    if (reply->header == HEADER_DG_PLAYER_LOAD_SUCCESS)
+                    {
+                        const auto entity = target->GetEntity();
+                        if (!ecs::IsCharacter(entity) || ecs::PlayerRuntime::GetPlayerID(entity) != reply->key.character ||
+                            !target->PlayerSession().BindEntity(entt::to_integral(entity)))
+                            target->SetPhase(PHASE_CLOSE);
+                    }
+                }
+            }
+        }
+        else
+        {
+            auto *target = DESC_MANAGER::instance().FindByHandle(m_dwHandle);
+            // A legacy/unscoped late reply cannot bypass an already versioned request.
+            if (!(auriga::player_session::IsLoadHeader(bHeader) && target && target->PlayerSession().Versioned()))
+                analyzed = Analyze(d, bHeader, pRealData);
+        }
+        if (analyzed < 0)
 		{
 			LOG_ERROR("in InputDB: UNKNOWN HEADER: {}, LAST HEADER: {}({}), REMAIN BYTES: {}, DESC: {}", bHeader, bLastHeader, iLastPacketLen, m_iBufferLeft, d->GetSocket());
 

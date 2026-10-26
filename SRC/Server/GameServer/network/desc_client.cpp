@@ -48,8 +48,11 @@ void CLIENT_DESC::Destroy()
 {
 	P2P_MANAGER::instance().UnregisterConnector(this);
 
+    m_playerSessionLink = {};
+    m_playerSessionsReady = false;
 	if (this == db_clientdesc)
 	{
+        for (auto *client : DESC_MANAGER::instance().GetClientSet()) client->PlayerSession().Reset();
 		CPartyManager::instance().DeleteAllParty();
 		CPartyManager::instance().DisablePCParty();
 		CGuildManager::instance().StopAllGuildWar();
@@ -271,6 +274,14 @@ void CLIENT_DESC::SetPhase(int iPhase)
 				
 
 				DBPacket(HEADER_GD_SETUP, 0, buf.read_peek(), buf.size());
+                m_playerSessionsReady = false;
+                m_playerSessionLink = {};
+                if (PeerAuth::HasKey())
+                {
+                    m_playerSessionLink = auriga::player_session::NewToken();
+                    const auto hello = auriga::player_session::Hello(m_playerSessionLink, false);
+                    DBPacket(HEADER_GD_PLAYER_SESSION_HELLO, 0, hello.data(), hello.size());
+                }
 				m_pInputProcessor = &m_inputDB;
 			}
 			break;

@@ -31,6 +31,14 @@ class CLIENT_DESC : public DESC
 
 		// Non-destructive close for reuse
 		void Reset();
+		const auriga::player_session::Token &PlayerSessionLink() const { return m_playerSessionLink; }
+		bool PlayerSessionsReady() const { return m_playerSessionsReady; }
+		bool AcceptPlayerSessionHello(auriga::player_session::Token link)
+		{
+			if (!auriga::player_session::Nonzero(link) || link != m_playerSessionLink) return false;
+			m_playerSessionsReady = true;
+			return true;
+		}
 
 	private:
 		void InitializeBuffers();
@@ -44,6 +52,8 @@ class CLIENT_DESC : public DESC
 		bool		m_connectPending;
 		bool		m_bAwaitingAuth;
 		bool		m_bAuthResponseSent;
+		auriga::player_session::Token m_playerSessionLink{};
+		bool m_playerSessionsReady = false;
 		uint64_t		m_LastTryToConnectTime;
 		uint64_t		m_tLastChannelStatusUpdateTime;
 

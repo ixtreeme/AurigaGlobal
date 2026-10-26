@@ -4,6 +4,7 @@
 #include <entt/entt.hpp>
 
 #include <Core/peer_session.h>
+#include <Core/player_session.h>
 
 #include <fstream>
 #include <vector>
@@ -137,6 +138,7 @@ class DESC : public PeerSession
 		TAccountTable &		GetAccountTable()	{ return m_accountTable; }
 
 		void			BindCharacter(entt::entity character);
+		auriga::player_session::GameSession &PlayerSession() { return m_playerSession; }
         entt::entity        GetEntity() const      { return m_entity; }
         void                SetEntity(entt::entity e) { m_entity = e; }
 
@@ -232,6 +234,7 @@ class DESC : public PeerSession
 		entt::entity	m_lpCharacter{ entt::null };
         entt::entity        m_entity { entt::null };
 		TAccountTable		m_accountTable;
+		auriga::player_session::GameSession m_playerSession;
 
 		struct sockaddr_in	m_SockAddr;
 		struct sockaddr_in 	m_UDPSockAddr;

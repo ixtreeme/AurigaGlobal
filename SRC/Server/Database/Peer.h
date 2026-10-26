@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/peer_auth.h>
+#include <Core/player_session.h>
 
 #include "PeerBase.h"
 #include <common/CommonDefines.h>
@@ -43,6 +44,14 @@ class CPeer : public CPeerBase
 	void	SetUserCount(uint32_t dwCount);
 
 	bool	IsAuthenticated() const	{ return m_bAuthenticated; }
+	const auriga::player_session::Token &PlayerSessionLink() const { return m_playerSessionLink; }
+	bool EnablePlayerSessions(auriga::player_session::Token link)
+	{
+		if (!auriga::player_session::Nonzero(link) ||
+			(auriga::player_session::Nonzero(m_playerSessionLink) && m_playerSessionLink != link)) return false;
+		m_playerSessionLink = link;
+		return true;
+	}
 	void	SetAuthenticated(bool b);
 
 	void	SendAuthChallenge();
@@ -71,6 +80,7 @@ class CPeer : public CPeerBase
     private:
 	int	m_state;
 	bool	m_bAuthenticated { false };
+	auriga::player_session::Token m_playerSessionLink{};
 	bool	m_bAuthChallengeSent { false };
 	uint8_t	m_authNonce[PeerAuth::NONCE_SIZE] {};
 	uint64_t m_authTimestamp { 0 };

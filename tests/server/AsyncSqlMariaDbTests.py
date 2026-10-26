@@ -132,8 +132,8 @@ def main() -> int:
     parser.add_argument("--crash-server-before-followup", action="store_true")
     parser.add_argument("--drop-commit-count", type=int, default=1)
     args = parser.parse_args()
-    if not 1 <= args.drop_commit_count <= 8:
-        parser.error("--drop-commit-count must be between 1 and 8")
+    if not 0 <= args.drop_commit_count <= 8:
+        parser.error("--drop-commit-count must be between 0 and 8")
     if args.crash_server_before_followup and not args.followup_argument:
         parser.error("--crash-server-before-followup requires a followup process")
     binaries = args.server_bin_dir.resolve(strict=True)

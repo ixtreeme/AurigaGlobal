@@ -135,12 +135,17 @@ void CClientManager::PutPlayerCache(TPlayerTable * pNew)
 #ifdef __SKILL_COLOR_SYSTEM__
 void CClientManager::QUERY_SKILL_COLOR_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerLoadPacket * packet)
 {
+    auto lease = m_playerSessions.Find(packet->account_id);
+    ClientHandleInfo info(dwHandle, packet->player_id, packet->account_id);
+    info.account_index = packet->account_index;
+    info.playerSession = lease;
+    if (!PlayerSessionCurrent(peer, info)) return;
 	CSKillColorCache * c = GetSkillColorCache(packet->player_id);
 	TSkillColor * p;
-	if (c)
-	{
-		p = c->Get();
-		peer->EncodeHeader(HEADER_DG_SKILL_COLOR_LOAD, dwHandle, sizeof(p->dwSkillColor));
+    if (c && m_playerSessions.TakePart(*lease, HEADER_DG_SKILL_COLOR_LOAD))
+    {
+        p = c->Get();
+        EncodePlayerLoadHeader(peer, info, HEADER_DG_SKILL_COLOR_LOAD, sizeof(p->dwSkillColor));
 		peer->Encode(p->dwSkillColor, sizeof(p->dwSkillColor));
 	}
 	else
@@ -160,13 +165,46 @@ void CClientManager::QUERY_SKILL_COLOR_LOAD(CPeer * peer, uint32_t dwHandle, TPl
 			"s11_col1, s11_col2, s11_col3, s11_col4, s11_col5 "
 			"FROM skill_color%s WHERE player_id=%u",
 			GetTablePostfix(), packet->player_id);
-		CDBManager::instance().ReturnQuery(szQuery, QID_SKILL_COLOR, peer->GetHandle(), new ClientHandleInfo(dwHandle, packet->player_id));
+		CDBManager::instance().ReturnQuery(szQuery, QID_SKILL_COLOR, peer->GetHandle(), new ClientHandleInfo(info));
 	}
 }
 #endif
 
-void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerLoadPacket * packet)
+bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLoadPacket *packet,
+    auriga::player_session::Token link, auriga::player_session::Token request)
 {
+    namespace session = auriga::player_session;
+    auto reject = [&]()
+    {
+        ClientHandleInfo info(dwHandle, packet->player_id, packet->account_id);
+        if (session::Nonzero(link) && session::Nonzero(request))
+            info.playerSession = session::Lease{{link, request, session::NewToken(), 1,
+                packet->account_id, packet->player_id}, peer->GetHandle(), dwHandle};
+        EncodePlayerLoadHeader(peer, info, HEADER_DG_PLAYER_LOAD_FAILED, 0);
+        return false;
+    };
+    auto *login = GetLoginDataByAID(packet->account_id);
+    bool loggedOn = false;
+    if (login)
+    {
+        char normalized[LOGIN_MAX_LEN + 1];
+        trim_and_lower(login->GetAccountRef().login, normalized, sizeof(normalized));
+        const auto it = m_map_kLogonAccount.find(normalized);
+        loggedOn = it != m_map_kLogonAccount.end() && it->second == login;
+    }
+    if (!login || !dwHandle || !AuthorizePlayerLoad(login->GetAccountRef(), *packet,
+        {peer->GetHandle(), login->GetConnectedPeerHandle(), peer->IsAuthenticated(), loggedOn,
+         login->IsPlay(), login->IsDeleted()})) return reject();
+    auto lease = m_playerSessions.Open(peer->GetHandle(), dwHandle, packet->account_id, packet->player_id, link, request);
+    if (!lease) return reject();
+    auto makeInfo = [&]()
+    {
+        auto *info = new ClientHandleInfo(dwHandle, packet->player_id, packet->account_id);
+        info->account_index = packet->account_index;
+        info->playerSession = lease;
+        return info;
+    };
+    const std::unique_ptr<ClientHandleInfo> loadInfo(makeInfo());
 	if (CLoginData * pLoginData = GetLoginDataByAID(packet->account_id))
 	{
 		for (const auto& player : pLoginData->GetAccountRef().players)
@@ -181,16 +219,18 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 		if (!pkLD || pkLD->IsPlay())
 		{
 			LOG_INFO("PLAYER_LOAD_ERROR: LoginData {} IsPlay {}", static_cast<const void*>(pkLD), pkLD ? pkLD->IsPlay() : 0);
-			peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_FAILED, dwHandle, 0);
-			return;
+			FailPlayerLoad(peer, *loadInfo);
+            return false;
 		}
 
 		TPlayerTable* pTab = c->Get();
+        if (pTab->id != packet->player_id) { FailPlayerLoad(peer, *loadInfo); return false; }
 
+        if (!m_playerSessions.TakePart(*lease, HEADER_DG_PLAYER_LOAD_SUCCESS)) return false;
 		pkLD->SetPlay(true);
 		memcpy(pTab->aiPremiumTimes, pkLD->GetPremiumPtr(), sizeof(pTab->aiPremiumTimes));
 
-		peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_SUCCESS, dwHandle, sizeof(TPlayerTable));
+		EncodePlayerLoadHeader(peer, *loadInfo, HEADER_DG_PLAYER_LOAD_SUCCESS, sizeof(TPlayerTable));
 		peer->Encode(pTab, sizeof(TPlayerTable));
 
 		if (packet->player_id != pkLD->GetLastPlayerID())
@@ -200,7 +240,7 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 
 			pkLD->SetLastPlayerID( packet->player_id );
 
-			peer->EncodeHeader( HEADER_DG_NEED_LOGIN_LOG, dwHandle, sizeof(TPacketNeedLoginLogInfo) );
+			EncodePlayerLoadHeader(peer, *loadInfo, HEADER_DG_NEED_LOGIN_LOG, sizeof(TPacketNeedLoginLogInfo) );
 			peer->Encode( &logInfo, sizeof(TPacketNeedLoginLogInfo) );
 		}
 
@@ -233,7 +273,8 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 			if (g_test_server)
 				LOG_INFO("ITEM_CACHE: HIT! {} count: {}", pTab->name, dwCount);
 
-			peer->EncodeHeader(HEADER_DG_ITEM_LOAD, dwHandle, sizeof(uint32_t) + sizeof(TPlayerItem) * dwCount);
+			m_playerSessions.TakePart(*lease, HEADER_DG_ITEM_LOAD);
+            EncodePlayerLoadHeader(peer, *loadInfo, HEADER_DG_ITEM_LOAD, sizeof(uint32_t) + sizeof(TPlayerItem) * dwCount);
 			peer->EncodeDWORD(dwCount);
 
 			if (dwCount)
@@ -244,14 +285,14 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 					"SELECT dwPID,szName,szState,lValue FROM quest%s WHERE dwPID=%u AND lValue<>0",
 					GetTablePostfix(), pTab->id);
 
-			CDBManager::instance().ReturnQuery(szQuery, QID_QUEST, peer->GetHandle(), new ClientHandleInfo(dwHandle,0,packet->account_id));
+			CDBManager::instance().ReturnQuery(szQuery, QID_QUEST, peer->GetHandle(), makeInfo());
 
 			// Affect
 			snprintf(szQuery, sizeof(szQuery),
 					"SELECT dwPID,bType,bApplyOn,lApplyValue,dwFlag,lDuration,lSPCost FROM affect%s WHERE dwPID=%u",
 					GetTablePostfix(), pTab->id);
 			// @fixme402 ClientHandleInfo+pTab->id
-			CDBManager::instance().ReturnQuery(szQuery, QID_AFFECT, peer->GetHandle(), new ClientHandleInfo(dwHandle, pTab->id));
+			CDBManager::instance().ReturnQuery(szQuery, QID_AFFECT, peer->GetHandle(), makeInfo());
 		}
 
 		else
@@ -275,7 +316,7 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 			CDBManager::instance().ReturnQuery(szQuery,
 					QID_ITEM,
 					peer->GetHandle(),
-					new ClientHandleInfo(dwHandle, pTab->id));
+					makeInfo());
 			snprintf(szQuery, sizeof(szQuery),
 					"SELECT dwPID, szName, szState, lValue FROM quest%s WHERE dwPID=%u",
 					GetTablePostfix(), pTab->id);
@@ -283,7 +324,7 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 			CDBManager::instance().ReturnQuery(szQuery,
 					QID_QUEST,
 					peer->GetHandle(),
-					new ClientHandleInfo(dwHandle, pTab->id));
+					makeInfo());
 			snprintf(szQuery, sizeof(szQuery),
 					"SELECT dwPID, bType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost FROM affect%s WHERE dwPID=%u",
 					GetTablePostfix(), pTab->id);
@@ -291,7 +332,7 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 			CDBManager::instance().ReturnQuery(szQuery,
 					QID_AFFECT,
 					peer->GetHandle(),
-					new ClientHandleInfo(dwHandle, pTab->id));
+					makeInfo());
 		}
 		//ljw
 		//return;
@@ -343,11 +384,10 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 				"r18, "
 				"r19 "
 #endif
-				"FROM player%s WHERE id=%u",
-				GetTablePostfix(), packet->player_id);
+				"FROM player%s WHERE id=%u AND account_id=%u",
+                GetTablePostfix(), packet->player_id, packet->account_id);
 
-		auto pkInfo = new ClientHandleInfo(dwHandle, packet->player_id);
-		pkInfo->account_id = packet->account_id;
+		auto pkInfo = makeInfo();
 		CDBManager::instance().ReturnQuery(queryStr, QID_PLAYER, peer->GetHandle(), pkInfo);
 
 		snprintf(queryStr, sizeof(queryStr),
@@ -365,18 +405,18 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 #endif
 				"))",
 				GetTablePostfix(), packet->player_id);
-		CDBManager::instance().ReturnQuery(queryStr, QID_ITEM, peer->GetHandle(), new ClientHandleInfo(dwHandle, packet->player_id));
+		CDBManager::instance().ReturnQuery(queryStr, QID_ITEM, peer->GetHandle(), makeInfo());
 
 
 		snprintf(queryStr, sizeof(queryStr),
 				"SELECT dwPID,szName,szState,lValue FROM quest%s WHERE dwPID=%u",
 				GetTablePostfix(), packet->player_id);
-		CDBManager::instance().ReturnQuery(queryStr, QID_QUEST, peer->GetHandle(), new ClientHandleInfo(dwHandle, packet->player_id,packet->account_id));
+		CDBManager::instance().ReturnQuery(queryStr, QID_QUEST, peer->GetHandle(), makeInfo());
 
 		snprintf(queryStr, sizeof(queryStr),
 				"SELECT dwPID,bType,bApplyOn,lApplyValue,dwFlag,lDuration,lSPCost FROM affect%s WHERE dwPID=%u",
 				GetTablePostfix(), packet->player_id);
-		CDBManager::instance().ReturnQuery(queryStr, QID_AFFECT, peer->GetHandle(), new ClientHandleInfo(dwHandle, packet->player_id));
+		CDBManager::instance().ReturnQuery(queryStr, QID_AFFECT, peer->GetHandle(), makeInfo());
 	}
 
 
@@ -384,7 +424,9 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 	OfflineshopLoadShopSafebox(peer, packet->player_id);
 #endif
+    return true;
 }
+
 void CClientManager::ItemAward(CPeer * peer,char* login)
 {
 	char login_t[LOGIN_MAX_LEN + 1] = "";
@@ -527,15 +569,61 @@ bool CreatePlayerTableFromRes(MYSQL_RES * res, TPlayerTable * pkTab)
 	return true;
 }
 
+bool CClientManager::PlayerSessionCurrent(CPeer *peer, const ClientHandleInfo &info)
+{
+    if (!peer || !peer->IsAuthenticated() || !info.playerSession || !m_playerSessions.Matches(*info.playerSession) ||
+        info.playerSession->peer != peer->GetHandle() || info.playerSession->descriptor != info.dwHandle) return false;
+    auto *login = GetLoginDataByAID(info.account_id);
+    if (!login || login->IsDeleted() || login->GetConnectedPeerHandle() != peer->GetHandle() ||
+        info.account_index >= PLAYER_PER_ACCOUNT || login->GetAccountRef().players[info.account_index].dwID != info.player_id) return false;
+    char normalized[LOGIN_MAX_LEN + 1];
+    trim_and_lower(login->GetAccountRef().login, normalized, sizeof(normalized));
+    const auto it = m_map_kLogonAccount.find(normalized);
+    return it != m_map_kLogonAccount.end() && it->second == login &&
+        info.playerSession->key.account == info.account_id && info.playerSession->key.character == info.player_id;
+}
+void CClientManager::EncodePlayerLoadHeader(CPeer *peer, const ClientHandleInfo &info, uint8_t header, uint32_t size)
+{
+    if (info.playerSession && info.playerSession->key.Versioned())
+    {
+        const auto prefix = auriga::player_session::ReplyPrefix(info.playerSession->key, header, size);
+        peer->EncodeHeader(HEADER_DG_PLAYER_SESSION_REPLY, info.dwHandle, uint32_t(prefix.size()) + size);
+        peer->Encode(prefix.data(), prefix.size());
+    }
+    else peer->EncodeHeader(header, info.dwHandle, size);
+}
+void CClientManager::FailPlayerLoad(CPeer *peer, const ClientHandleInfo &info)
+{
+    if (!PlayerSessionCurrent(peer, info)) return;
+    EncodePlayerLoadHeader(peer, info, HEADER_DG_PLAYER_LOAD_FAILED, 0);
+    m_playerSessions.Invalidate(*info.playerSession);
+}
+
 void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32_t dwQID)
 {
 	auto qi = (CQueryInfo *) pMsg->pvUserData;
 	const std::unique_ptr<ClientHandleInfo> info((ClientHandleInfo *) qi->pvData);
 
-	MYSQL_RES * pSQLResult = pMsg->Get()->pSQLResult;
-	if (!pSQLResult)
+	if (!info || !PlayerSessionCurrent(peer, *info)) return;
+    uint8_t part = 0;
+    switch (dwQID)
+    {
+        case QID_PLAYER: part = HEADER_DG_PLAYER_LOAD_SUCCESS; break;
+        case QID_ITEM: part = HEADER_DG_ITEM_LOAD; break;
+        case QID_QUEST: part = HEADER_DG_QUEST_LOAD; break;
+        case QID_AFFECT: part = HEADER_DG_AFFECT_LOAD; break;
+#ifdef __SKILL_COLOR_SYSTEM__
+        case QID_SKILL_COLOR: part = HEADER_DG_SKILL_COLOR_LOAD; break;
+#endif
+        default: return;
+    }
+    // Reject repeated callbacks before SQL-error handling or any cache/logon side effect.
+    if (!m_playerSessions.TakePart(*info->playerSession, part)) return;
+    MYSQL_RES *pSQLResult = pMsg->Get() ? pMsg->Get()->pSQLResult : nullptr;
+	if (pMsg->uiSQLErrno || !pSQLResult)
 	{
-		LOG_ERROR("null MYSQL_RES QID {}", dwQID);
+		LOG_ERROR("Player load SQL failed QID {} errno {}", dwQID, pMsg->uiSQLErrno);
+        FailPlayerLoad(peer, *info);
 		return;
 	}
 
@@ -549,21 +637,21 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 
 		case QID_ITEM:
 			LOG_INFO("QID_ITEM {}", info->dwHandle);
-			RESULT_ITEM_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
+			RESULT_ITEM_LOAD(peer, pSQLResult, *info);
 			break;
 
 
 #ifdef __SKILL_COLOR_SYSTEM__
 		case QID_SKILL_COLOR:
 			LOG_INFO("QID_SKILL_COLOR {} {}", info->dwHandle, info->player_id);
-			RESULT_SKILL_COLOR_LOAD(peer, pSQLResult, info->dwHandle);
+			RESULT_SKILL_COLOR_LOAD(peer, pSQLResult, *info);
 			break;
 #endif
 
 		case QID_QUEST:
 			{
 				LOG_INFO("QID_QUEST {}", info->dwHandle);
-				RESULT_QUEST_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
+				RESULT_QUEST_LOAD(peer, pSQLResult, *info);
 				ClientHandleInfo*  temp1 = info.get();
 				if (temp1 == nullptr)
 					break;
@@ -583,7 +671,7 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 		case QID_AFFECT:
 			LOG_INFO("QID_AFFECT {}", info->dwHandle);
 			// @fixme402 RESULT_AFFECT_LOAD+info->player_id
-			RESULT_AFFECT_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
+			RESULT_AFFECT_LOAD(peer, pSQLResult, *info);
 			break;
 			/*
 			   case QID_PLAYER_ITEM_QUEST_AFFECT:
@@ -598,7 +686,7 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 
 			   case QID_ITEM_QUEST_AFFECT:
 			   LOG_INFO("QID_ITEM_QUEST_AFFECT {}", info->dwHandle);
-			   RESULT_ITEM_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
+			   RESULT_ITEM_LOAD(peer, pSQLResult, *info);
 
 			   if (!pMsg->Next())
 			   {
@@ -629,23 +717,23 @@ void CClientManager::RESULT_PLAYER_LOAD(CPeer * peer, MYSQL_RES * pRes, ClientHa
 
 	if (!CreatePlayerTableFromRes(pRes, &tab))
 	{
-		peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_FAILED, pkInfo->dwHandle, 0);
+		FailPlayerLoad(peer, *pkInfo);
 		return;
 	}
 
 	CLoginData * pkLD = GetLoginDataByAID(pkInfo->account_id);
 
-	if (!pkLD || pkLD->IsPlay())
+	if (!pkLD || !PlayerSessionCurrent(peer, *pkInfo) || pkLD->IsPlay() || tab.id != pkInfo->player_id)
 	{
 		LOG_INFO("PLAYER_LOAD_ERROR: LoginData {} IsPlay {}", static_cast<const void*>(pkLD), pkLD ? pkLD->IsPlay() : 0);
-		peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_FAILED, pkInfo->dwHandle, 0);
+		FailPlayerLoad(peer, *pkInfo);
 		return;
 	}
 
 	pkLD->SetPlay(true);
 	memcpy(tab.aiPremiumTimes, pkLD->GetPremiumPtr(), sizeof(tab.aiPremiumTimes));
 
-	peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_SUCCESS, pkInfo->dwHandle, sizeof(TPlayerTable));
+	EncodePlayerLoadHeader(peer, *pkInfo, HEADER_DG_PLAYER_LOAD_SUCCESS, sizeof(TPlayerTable));
 	peer->Encode(&tab, sizeof(TPlayerTable));
 
 	if (tab.id != pkLD->GetLastPlayerID())
@@ -655,18 +743,19 @@ void CClientManager::RESULT_PLAYER_LOAD(CPeer * peer, MYSQL_RES * pRes, ClientHa
 
 		pkLD->SetLastPlayerID( tab.id );
 
-		peer->EncodeHeader( HEADER_DG_NEED_LOGIN_LOG, pkInfo->dwHandle, sizeof(TPacketNeedLoginLogInfo) );
+		EncodePlayerLoadHeader(peer, *pkInfo, HEADER_DG_NEED_LOGIN_LOG, sizeof(TPacketNeedLoginLogInfo) );
 		peer->Encode( &logInfo, sizeof(TPacketNeedLoginLogInfo) );
 	}
 }
 
-void CClientManager::RESULT_ITEM_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t dwHandle, uint32_t dwPID)
+void CClientManager::RESULT_ITEM_LOAD(CPeer *peer, MYSQL_RES *pRes, const ClientHandleInfo &info)
 {
+    const uint32_t dwPID = info.player_id;
 	std::vector<TPlayerItem> s_items;
 	CreateItemTableFromRes(pRes, &s_items, dwPID);
 	uint32_t dwCount = (uint32_t)s_items.size();
 
-	peer->EncodeHeader(HEADER_DG_ITEM_LOAD, dwHandle, sizeof(uint32_t) + sizeof(TPlayerItem) * dwCount);
+	EncodePlayerLoadHeader(peer, info, HEADER_DG_ITEM_LOAD, sizeof(uint32_t) + sizeof(TPlayerItem) * dwCount);
 	peer->EncodeDWORD(dwCount);
 
 	CreateItemCacheSet(dwPID);
@@ -685,21 +774,23 @@ void CClientManager::RESULT_ITEM_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t d
 }
 
 #ifdef __SKILL_COLOR_SYSTEM__
-void CClientManager::RESULT_SKILL_COLOR_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t dwHandle)
+void CClientManager::RESULT_SKILL_COLOR_LOAD(CPeer *peer, MYSQL_RES *pRes, const ClientHandleInfo &info)
 {
+
 	uint32_t dwSkillColor[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
 	memset(dwSkillColor, 0, sizeof(dwSkillColor));
 
 	CreateSkillColorTableFromRes(pRes, *dwSkillColor);
 	LOG_INFO("SKILL_COLOR_LOAD {}, {}, {}, {},", dwSkillColor[0][0], dwSkillColor[1][1], dwSkillColor[2][2], dwSkillColor[3][3]);
-	peer->EncodeHeader(HEADER_DG_SKILL_COLOR_LOAD, dwHandle, sizeof(dwSkillColor));
+	EncodePlayerLoadHeader(peer, info, HEADER_DG_SKILL_COLOR_LOAD, sizeof(dwSkillColor));
 	peer->Encode(&dwSkillColor, sizeof(dwSkillColor));
 }
 #endif
 
 // @fixme402 (RESULT_AFFECT_LOAD +dwRealPID)
-void CClientManager::RESULT_AFFECT_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t dwHandle, uint32_t dwRealPID)
+void CClientManager::RESULT_AFFECT_LOAD(CPeer *peer, MYSQL_RES *pRes, const ClientHandleInfo &info)
 {
+    const uint32_t dwRealPID = info.player_id;
 	uint64_t iNumRows;
 
 	if ((iNumRows = mysql_num_rows(pRes)) == 0)
@@ -712,7 +803,7 @@ void CClientManager::RESULT_AFFECT_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t
 		//dwPID = dwRealPID;
 		LOG_INFO("AFFECT_LOAD: count {}  RealPID {}", dwCount, dwRealPID);
 
-		peer->EncodeHeader(HEADER_DG_AFFECT_LOAD, dwHandle, sizeof(uint32_t) + sizeof(uint32_t) + sizeof(TPacketAffectElement) * dwCount);
+		EncodePlayerLoadHeader(peer, info, HEADER_DG_AFFECT_LOAD, sizeof(uint32_t) + sizeof(uint32_t) + sizeof(TPacketAffectElement) * dwCount);
 		peer->Encode(&dwRealPID, sizeof(uint32_t));
 		peer->Encode(&dwCount, sizeof(uint32_t));
 		//peer->Encode(&paeTable, sizeof(TPacketAffectElement) * dwCount);
@@ -745,20 +836,21 @@ void CClientManager::RESULT_AFFECT_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t
 
 	uint32_t dwCount = (uint32_t)s_elements.size();
 
-	peer->EncodeHeader(HEADER_DG_AFFECT_LOAD, dwHandle, sizeof(uint32_t) + sizeof(uint32_t) + sizeof(TPacketAffectElement) * dwCount);
+	EncodePlayerLoadHeader(peer, info, HEADER_DG_AFFECT_LOAD, sizeof(uint32_t) + sizeof(uint32_t) + sizeof(TPacketAffectElement) * dwCount);
 	peer->Encode(&dwPID, sizeof(uint32_t));
 	peer->Encode(&dwCount, sizeof(uint32_t));
 	peer->Encode(s_elements.data(), sizeof(TPacketAffectElement) * dwCount);
 }
 
-void CClientManager::RESULT_QUEST_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t dwHandle, uint32_t pid)
+void CClientManager::RESULT_QUEST_LOAD(CPeer *peer, MYSQL_RES *pRes, const ClientHandleInfo &info)
 {
+    const uint32_t pid = info.player_id;
 	uint64_t i_num_rows;
 
 	if ((i_num_rows = mysql_num_rows(pRes)) == 0)
 	{
 		uint32_t dwCount = 0;
-		peer->EncodeHeader(HEADER_DG_QUEST_LOAD, dwHandle, sizeof(uint32_t));
+		EncodePlayerLoadHeader(peer, info, HEADER_DG_QUEST_LOAD, sizeof(uint32_t));
 		peer->Encode(&dwCount, sizeof(uint32_t));
 		return;
 	}
@@ -782,7 +874,7 @@ void CClientManager::RESULT_QUEST_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t 
 
 	uint32_t dwCount = (uint32_t)s_table.size();
 
-	peer->EncodeHeader(HEADER_DG_QUEST_LOAD, dwHandle, sizeof(uint32_t) + sizeof(TQuestTable) * dwCount);
+	EncodePlayerLoadHeader(peer, info, HEADER_DG_QUEST_LOAD, sizeof(uint32_t) + sizeof(TQuestTable) * dwCount);
 	peer->Encode(&dwCount, sizeof(uint32_t));
 	peer->Encode(s_table.data(), sizeof(TQuestTable) * dwCount);
 }

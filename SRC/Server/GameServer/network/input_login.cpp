@@ -287,7 +287,16 @@ void CInputLogin::CharacterSelect(LPDESC d, const char* data)
 		d->DelayedDisconnect(0);
 		return;
 	}//--
-	db_clientdesc->DBPacket(HEADER_GD_PLAYER_LOAD, d->GetHandle(), &player_load_packet, sizeof(TPlayerLoadPacket));
+    if (db_clientdesc->PlayerSessionsReady())
+    {
+        auriga::player_session::Request request{db_clientdesc->PlayerSessionLink(),
+            auriga::player_session::NewToken(), player_load_packet.account_id,
+            player_load_packet.player_id, player_load_packet.account_index};
+        if (!d->PlayerSession().Begin(request)) return; // One pending/live character load per descriptor.
+        const auto bytes = auriga::player_session::EncodeRequest(request);
+        db_clientdesc->DBPacket(HEADER_GD_PLAYER_LOAD_SESSION, d->GetHandle(), bytes.data(), bytes.size());
+    }
+    else db_clientdesc->DBPacket(HEADER_GD_PLAYER_LOAD, d->GetHandle(), &player_load_packet, sizeof(TPlayerLoadPacket));
 }
 
 bool NewPlayerTable(TPlayerTable* table,

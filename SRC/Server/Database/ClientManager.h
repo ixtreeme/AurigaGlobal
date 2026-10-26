@@ -2,6 +2,7 @@
 
 
 #include <Core/asio_engine.h>
+#include <Core/player_session.h>
 
 #include <common/stl.h>
 #include <common/building.h>
@@ -66,6 +67,7 @@ public:
 		uint32_t	account_id;
 		uint32_t	player_id;
 		uint8_t	account_index;
+		std::optional<auriga::player_session::Lease> playerSession;
 		char	login[LOGIN_MAX_LEN + 1];
 		char	safebox_password[SAFEBOX_PASSWORD_MAX_LEN + 1];
 		char	ip[MAX_HOST_LENGTH + 1];
@@ -277,18 +279,22 @@ protected:
 
 	void		RESULT_LOGIN(CPeer* peer, SQLMsg* msg);
 
-	void		QUERY_PLAYER_LOAD(CPeer* peer, uint32_t dwHandle, TPlayerLoadPacket*);
+	bool QUERY_PLAYER_LOAD(CPeer* peer, uint32_t dwHandle, TPlayerLoadPacket*,
+		auriga::player_session::Token link = {}, auriga::player_session::Token request = {});
+	bool PlayerSessionCurrent(CPeer* peer, const ClientHandleInfo& info);
+	void EncodePlayerLoadHeader(CPeer* peer, const ClientHandleInfo& info, uint8_t header, uint32_t size);
+	void FailPlayerLoad(CPeer* peer, const ClientHandleInfo& info);
 	void		RESULT_COMPOSITE_PLAYER(CPeer* peer, SQLMsg* pMsg, uint32_t dwQID);
 	void		RESULT_PLAYER_LOAD(CPeer* peer, MYSQL_RES* pRes, ClientHandleInfo* pkInfo);
-	void		RESULT_ITEM_LOAD(CPeer* peer, MYSQL_RES* pRes, uint32_t dwHandle, uint32_t dwPID);
-	void		RESULT_QUEST_LOAD(CPeer* pkPeer, MYSQL_RES* pRes, uint32_t dwHandle, uint32_t dwPID);
+	void RESULT_ITEM_LOAD(CPeer* peer, MYSQL_RES* pRes, const ClientHandleInfo& info);
+	void RESULT_QUEST_LOAD(CPeer* peer, MYSQL_RES* pRes, const ClientHandleInfo& info);
 	// @fixme402 (RESULT_AFFECT_LOAD +dwRealPID)
-	void		RESULT_AFFECT_LOAD(CPeer* pkPeer, MYSQL_RES* pRes, uint32_t dwHandle, uint32_t dwRealPID);
+	void RESULT_AFFECT_LOAD(CPeer* peer, MYSQL_RES* pRes, const ClientHandleInfo& info);
 
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	void		QUERY_SKILL_COLOR_LOAD(CPeer* peer, uint32_t dwHandle, TPlayerLoadPacket* packet);
-	void		RESULT_SKILL_COLOR_LOAD(CPeer* peer, MYSQL_RES* pRes, uint32_t dwHandle);
+	void RESULT_SKILL_COLOR_LOAD(CPeer* peer, MYSQL_RES* pRes, const ClientHandleInfo& info);
 #endif
 
 	// PLAYER_INDEX_CREATE_BUG_FIX
@@ -431,6 +437,7 @@ private:
 
 	// LoginKey, LoginData pair
 	typedef std::unordered_map<uint32_t, CLoginData*> TLoginDataByLoginKey;
+	auriga::player_session::Authority m_playerSessions;
 	TLoginDataByLoginKey			m_map_pkLoginData;
 
 	// Login LoginData pair

@@ -393,6 +393,24 @@ add_executable(PlayerLoadTests EXCLUDE_FROM_ALL
 target_link_libraries(PlayerLoadTests PRIVATE SERVER)
 add_test(NAME player_load COMMAND PlayerLoadTests)
 
+add_executable(PlayerSessionTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PlayerSessionTests.cpp
+    ../Database/player_load.cpp
+)
+target_link_libraries(PlayerSessionTests PRIVATE SERVER S_Core S_SQL)
+if(WIN32)
+    target_link_libraries(PlayerSessionTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+if(TARGET auriga_sanitizers)
+    target_link_libraries(PlayerSessionTests PRIVATE auriga_sanitizers)
+endif()
+if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    add_custom_command(TARGET PlayerSessionTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:PlayerSessionTests>")
+endif()
+add_test(NAME player_session COMMAND PlayerSessionTests)
+
 add_executable(LoginByKeyTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/LoginByKeyTests.cpp
     ../Database/login_validation.cpp
@@ -561,6 +579,14 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --test-executable $<TARGET_FILE:AsyncSqlMariaDbTests>
             --work-dir ${CMAKE_BINARY_DIR}/mission-sql-isolated
     )
+    add_test(NAME player_session_mariadb
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
+            --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
+            --test-executable $<TARGET_FILE:PlayerSessionTests>
+            --work-dir ${CMAKE_BINARY_DIR}/player-session-isolated
+            --drop-commit-count 0
+    )
+    set_tests_properties(player_session_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
     add_test(NAME mission_persistence_mariadb
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
             --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}

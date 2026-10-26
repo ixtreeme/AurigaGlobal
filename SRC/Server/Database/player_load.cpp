@@ -22,3 +22,12 @@ void NormalizeSecondarySkills(TPlayerTable& player)
 #endif
     player.sub_skill_point = player.level - 9 - spent;
 }
+
+bool AuthorizePlayerLoad(const TAccountTable& account, const TPlayerLoadPacket& request,
+                         const PlayerLoadContext& context)
+{
+    return context.authenticated && context.loggedOn && !context.playing && !context.deleted &&
+           context.peer && context.peer == context.accountPeer && account.id && account.id == request.account_id &&
+           request.account_index < PLAYER_PER_ACCOUNT && request.player_id &&
+           account.players[request.account_index].dwID == request.player_id;
+}

@@ -28,6 +28,7 @@ bool CClientManager::InsertLogonAccount(const char * c_pszLogin, uint32_t dwHand
 	if (!pkLD)
 		return false;
 
+    m_playerSessions.InvalidateAccount(pkLD->GetAccountRef().id);
 	pkLD->SetConnectedPeerHandle(dwHandle);
 	pkLD->SetIP(c_pszIP);
 
@@ -53,6 +54,7 @@ bool CClientManager::DeleteLogonAccount(const char * c_pszLogin, uint32_t dwHand
 		return false;
 	}
 
+    m_playerSessions.InvalidateAccount(pkLD->GetAccountRef().id);
 	if (pkLD->IsPlay())
 	{
 		pkLD->SetPlay(false);
@@ -503,42 +505,19 @@ void CClientManager::RESULT_LOGIN(CPeer * peer, SQLMsg * msg)
 	}
 }
 
-void CClientManager::QUERY_LOGOUT(CPeer * peer, uint32_t dwHandle,const char * data)
+void CClientManager::QUERY_LOGOUT(CPeer *peer, uint32_t dwHandle, const char *data)
 {
-	TLogoutPacket* packet = (TLogoutPacket*)data;
-
-	if (!*packet->login)
-		return;
-
-	CLoginData * pLoginData = GetLoginDataByLogin(packet->login);
-
-	if (pLoginData == nullptr)
-		return;
-
-	int pid[PLAYER_PER_ACCOUNT];
-
-	for (int n = 0; n < PLAYER_PER_ACCOUNT; ++n)
-	{
-		if (pLoginData->GetAccountRef().players[n].dwID == 0)
-		{
-			if (g_test_server)
-				LOG_INFO("LOGOUT {} {}", packet->login, pLoginData->GetAccountRef().players[n].dwID);
-			continue;
-		}
-
-		pid[n] = pLoginData->GetAccountRef().players[n].dwID;
-
-		if (g_log)
-			LOG_INFO("LOGOUT InsertLogoutPlayer {} {}", packet->login, pid[n]);
-
-		InsertLogoutPlayer(pid[n]);
-	}
-
-	if (DeleteLogonAccount(packet->login, peer->GetHandle()))
-	{
-		if (g_log)
-			LOG_INFO("LOGOUT {} ", packet->login);
-	}
+    const auto *packet = reinterpret_cast<const TLogoutPacket*>(data);
+    if (!packet_string::IsTerminated(packet->login) || !*packet->login) return;
+    char login[LOGIN_MAX_LEN + 1];
+    trim_and_lower(packet->login, login, sizeof(login));
+    const auto it = m_map_kLogonAccount.find(login);
+    if (it == m_map_kLogonAccount.end() || it->second->GetConnectedPeerHandle() != peer->GetHandle()) return;
+    std::array<uint32_t, PLAYER_PER_ACCOUNT> players{};
+    for (size_t i=0;i<players.size();++i) players[i] = it->second->GetAccountRef().players[i].dwID;
+    if (!DeleteLogonAccount(login, peer->GetHandle())) return;
+    // A stale/foreign peer must not even alter the logout/cache eviction list.
+    for (auto player : players) if (player) InsertLogoutPlayer(player);
 }
 
 void CClientManager::QUERY_CHANGE_NAME(CPeer * peer, uint32_t dwHandle, TPacketGDChangeName * p)
