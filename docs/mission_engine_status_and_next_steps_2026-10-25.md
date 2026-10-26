@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-26
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `461f93ef`; előző lezárt állapot: `b0000b34`.
+- **Aktuális kódcommit:** `541ea976`; előző lezárt állapot: `61855588`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -66,8 +66,13 @@ quickslotot. Ez memóriabeli commit, nem új tartós inventory/world SQL-tranzak
 Elkészült a bolti vétel/eladás külön admissionje és az ajánlatok első mutáció
 előtti ellenőrzése is (4/D–4l). Hét ismert csoport pause-olható. Az online
 játékosbolt vevője/eladója együtt kap engedélyt; az ár-, darabszám- és batch
-hibautak javultak. A teljes adásvétel közös resource/inventory commitja még
-nincs kész; a különálló legacy szolgáltatáshívások átvezetése következik.
+hibautak javultak. Ez még belépési/preflight fázis volt; az adásvétel belső
+lépéseinek közös commitja további feladatként maradt utána.
+Az NPC-bolti ág tényleges resource/inventory commitja a 4/D–4m részfázisban
+elkészült: az arany, tárgyköltség, merge, elhelyezés, quickslot és sikeres
+cooldown együtt változik, és csak utána indulnak callbackek. A nulla/pending
+fizető stack takarítása nem ismételheti a debitálást. Ez helyi memóriabeli
+integritás; a legacy DB-mentések tartós atomikussága ebből még nem következik.
 A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
@@ -488,11 +493,32 @@ Részletek: `mission_ground_drop_integrity_2026-10-26.md`.
 - Sikertelen vétel/eladás nem fogyaszt manager cooldown-t; az időellenőrzés
   uint32-wrap mellett is helyes. Eladási pénznapló csak sikeres fogyasztás után.
 
-**Határ:** admission és preflight, nem teljes atomikus adásvétel. A legacy
-pénz-/tárgypénznem-fogyasztás, merge/elhelyezés, eladói kredit és mentés még
-külön hívás; ezek közös commitja és recoveryje, valamint az offline boltok
-DB-koordinációja külön feladat. Nincs teljes source-stop vagy Mission-aktiválás.
+**A 4l határa:** admission és preflight; a pénz-/tárgypénznem-fogyasztás,
+merge/elhelyezés, eladói kredit és mentés ekkor még külön hívás volt.
+Az NPC-ág memóriabeli commitját a következő 4m részfázis rendezi;
+az online átadás, tartós recovery és offline DB-koordináció továbbra is
+külön feladat. Nincs teljes source-stop vagy Mission-aktiválás.
 Részletek: `mission_shop_admission_2026-10-26.md`.
+
+### 3.23. NPC-bolti pénz/költség/tárgy közös commitja (4/D–4m)
+
+- A normál és extended NPC-vétel, valamint a manager NPC-eladása natív
+  InventorySystem tranzakciót hív. Az online játékosbolt legacy ága külön marad.
+- Saját ár-/payloadmásolat, kanonikus fizető stackek, wallet, aktuális ajánlat,
+  PID/map/pozíció, slot/grid és merge-terv előkészítése az első írás előtt.
+- Közös pénz-, költség-, merge-, árutulajdonos-/slot-, quickslot- és cooldown
+  komponenscommit; csak utána mentés, csomag, napló és retirement.
+- A tényleges PreparedCosts/PendingConsumptions API companionje előre foglal;
+  üres költséglista és egy teljesen merge-ölt új gyártmány is kezelhető.
+- Teljes költség leválik a leltárból, nulla/pending állapotban retry-olható;
+  részleges fizetés megőrzi a maradékot és quickslotot. Legfeljebb 64 fizető stack.
+- A normál bolt stackelése, az extended külön-stack és a rune automatikus
+  felszerelése megmarad; az equip-publikálás közös függvénye a commit után fut.
+
+**Határ:** memóriabeli NPC-adásvétel. Nincs új tartós trade SQL-tranzakció,
+teljes source-stop, writer-handoff vagy Mission-aktiválás. A vevő/eladó online
+átadása és az offline boltok aszinkron DB-koordinációja külön következik.
+Részletek: `mission_npc_trade_commit_2026-10-26.md`.
 
 ## 4. Ellenőrzött eredmények
 
@@ -513,15 +539,16 @@ Részletek: `mission_shop_admission_2026-10-26.md`.
 | Tényleges shop/manager lifecycle, admission és ajánlathatárok | 50207 ellenőrzés, normál/ASAN |
 | Natív tárgyfutásidő, pickup-kedvezményezett és use-dispatch | 389 ellenőrzés, normál/ASAN |
 | Tényleges játékoscsere és callback-élettartam | 14736 ellenőrzés, normál/ASAN |
-| Tényleges inventory/quickslot, split, felszerelés és eldobás | 830019 ellenőrzés, normál/ASAN |
+| Tényleges inventory/quickslot, split, felszerelés, eldobás és NPC-adásvétel | 834829 ellenőrzés, normál/ASAN |
+| Natív attribútum/költség/retirement és companion commit | 17752 ellenőrzés, normál/ASAN |
 | Tényleges SpatialService/sectree lifecycle és item companion | 1189 ellenőrzés, normál/ASAN |
 | SQL-egységtesztek | 2256 ellenőrzés; az új queue/retry/lifecycle próbákkal |
 | Valódi SQL-infrastruktúra | 234 ellenőrzés; a valódi drain és késői szöveges SQL-hibák próbáival |
 | Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 45/45 a 4/D–4l részfázisban; öt izolált MariaDB-integrációval |
-| Külön AddressSanitizer CTest-kör | 33/33 natív próba a 4/D–4l részfázisban; új ASAN MariaDB-kör nélkül |
+| Célzott regressziós CTest-kör | 45/45 a 4/D–4m részfázisban; öt izolált MariaDB-integrációval |
+| Külön AddressSanitizer CTest-kör | 33/33 natív próba a 4/D–4m részfázisban; új ASAN MariaDB-kör nélkül |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
 | Valódi MariaDB-suite-ok ASAN alatt | Az erőforrásíró is sikeres crash/restarttal; egy korábbi, egyszeri visszaolvasási eltérés nyitott |
@@ -641,6 +668,17 @@ játékadatbázis és a távoli gép változatlan. A teljes bolti resource/inven
 commit, writer-handoff és élő Mission-jutalmazás nincs aktiválva.
 Részletek és naplók: `mission_shop_admission_2026-10-26.md`.
 
+A 4/D–4m végső kódján a normál CTest-kör **45/45**, a natív ASAN-kör
+**33/33** sikeres. A tényleges inventory/quickslot/NPC suite **834829**,
+a költség/retirement suite **17752**, a shop/manager suite **50207**
+ellenőrzéssel sikeres mindkét konfigurációban. A normál kör öt izolált
+MariaDB-integrációt tartalmaz; új ASAN MariaDB-kör nem futott. A GameServer,
+Database és LoginServer normál/ASAN buildje elkészült. A 34 védett szezonális
+és nyolc Unity-fájl változatlan. A tényleges helyi játékadatbázis és a távoli
+gép változatlan. Az NPC-ág memóriabeli commitja elkészült; a tartós trade
+recovery, teljes writer-handoff és új élő Mission-jutalmazás továbbra is hátravan.
+Részletek és naplók: `mission_npc_trade_commit_2026-10-26.md`.
+
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
@@ -664,6 +702,7 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `541ea976` | NPC-vétel/eladás közös memóriabeli pénz/költség/tárgy commitja, merge/rune/retirement és callback-hibapróbák |
 | `461f93ef` | Bolti admission, online vevő/eladó közös belépése, ár-/darabszámhatárok és preflight hibapróbák |
 | `0e95b91d` | Előkészített item/gold drop és közös resource/world commit; tényleges inventory/spatial hibapróbák |
 | `870378a1` | Pickup kezdeményező/kedvezményezett admission, use/drop belépési őrök és natív callback/claim próbák |
@@ -713,12 +752,12 @@ A 4/C outbox/entitlement réteg részletei és kézbesítési határai:
 
 ## 6. Folytatás – javasolt, függőségek szerinti sorrend
 
-**Legközelebbi konkrét munka a 4l után:** az NPC-bolti vásárlás/eladás teljes
-resource/inventory commitja. A belépési admission, a numerikus árhatárok és
-az első terhelés előtti friss ajánlatellenőrzés elkészült; a pénz, költség,
-slot/merge, tárgyfogyasztás és publikálás még külön legacy lépések.
-Ezután az online játékosbolt közös átadása és az offline boltok DB-koordinációja
-következik. Ezt követi a raktár/pet, a timer/quest/harci/XP/pénz
+**Legközelebbi konkrét munka a 4m után:** az online játékosbolt vevő/eladó
+pénzének és ugyanazon tárgy átadásának közös commitja. Az NPC-vásárlás/eladás
+memóriabeli resource/inventory commitja elkészült; az online legacy ág még
+külön debit/eltávolítás/elhelyezés/merge/kredit hívásokat használ.
+Ezután az offline boltok aszinkron DB-koordinációja következik.
+Ezt követi a raktár/pet, a timer/quest/harci/XP/pénz
 források és a külön SQL-írók összehangolása. A teljes source-stop csak a még
 nyitott írók és recovery szerződések rendezése után igazolható. Az alábbi
 nagy fázissorrend megmarad.
@@ -786,7 +825,8 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Pickup kezdeményező/kedvezményezett közös admissionje; natív/legacy use és drop fő belépési pontjainak követése.
 - [x] Tényleges item/gold drop hibautak és memóriabeli source/world companion commit, timer/klón előkészítéssel.
 - [x] Bolti vétel/eladás admission, online vevő/eladó közös belépése és első mutáció előtti ajánlat-/ár-/darabszámhatárok.
-- [ ] Teljes NPC/online/offline adásvételi resource/inventory commit és recovery.
+- [x] NPC-vétel/eladás közös memóriabeli resource/inventory commit, előkészített költség- és retirement-tervvel.
+- [ ] Online játékosbolt közös átadása és offline boltok DB-koordinációja; tartós trade recovery.
 - [ ] Élő GameServer producer-stop, teljes DB/live inventory-egyeztetés és minden legacy/külön SQL-író átvezetése.
 - [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
 - [ ] Az egyszeri ASAN történeti visszaolvasási eltérés okának tisztázása, aktiválás előtt.
@@ -872,6 +912,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Felvétel, tényleges kedvezményezett, használat és földre dobás](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_pickup_use_drop_admission_2026-10-26.md)
 - [Tárgy-/aranyeldobás integritása és közös világ/resource commit](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_ground_drop_integrity_2026-10-26.md)
 - [Bolti admission és ajánlat-/árhatárok](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_shop_admission_2026-10-26.md)
+- [NPC-vétel/eladás közös resource/inventory commitja](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_npc_trade_commit_2026-10-26.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
