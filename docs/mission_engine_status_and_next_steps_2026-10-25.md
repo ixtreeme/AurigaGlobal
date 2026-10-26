@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-26
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `f3a1f6d1`; előző lezárt állapot: `4737e725`.
+- **Aktuális kódcommit:** `9b8d6371`; előző lezárt állapot: `1dc0dc9b`.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
 tartozó csomagformátum és a későbbi Mission Studio/Unity-integráció.
@@ -36,6 +36,10 @@ Elkészült a Database-oldali, cache-t megtartó player/item flush és két val�
 SQL-lane eredményét ellenőrző natív adapter is (4/D–4e). Saját cache-példány- és
 módosításgeneráció védi az A → B → A változástól és a cache újragyártásától.
 Ez előkészítési API; nem ad source-stopot vagy Mission-írási jogosultságot.
+Elkészült a sessionhöz és EnTT-generációhoz kötött GameServer–Database
+cache-drain csatorna is (4/D–4f), külön képességegyeztetéssel. A későbbi GD-írások
+– a kettébontott header/payload mentések is – visszavonják a korábbi nyugtát.
+Ez a csatorna sem állítja meg az ECS gazdasági termelőit és nem aktivál Mission-jutalmat.
 A jelenlegi Mission-séma 5-ös, 12 táblával.
 Az új Mission-adatok külön, ötödik `mission` adatbázisba kerülnek. A
 konfiguráció, telepítő, Qt-beállítások, SQL-ellenőrzés és mentési központ ezt
@@ -332,6 +336,28 @@ folyamatközi protokoll; utána a tartós handoff, guarded DML és ECS-rebase.
 A későbbi/direkt/másik SQL-kapcsolatos írásokat külön át kell vezetni.
 A helyi játékadatbázis, Unity és távoli gép nem módosult; a Gameplay kapu zárt.
 
+### 3.16. Folyamatközi cache-drain és új mentések felismerése (4/D–4f)
+
+- Külön Hello/ACK képességegyeztetés a meglévő HMAC-hitelesített session-linken; régi Database mellett nincs cache-kérés.
+- Fix hosszú, explicit little-endian ACD1 Begin/Poll/Receipt codec, négy új belső GD/DG headerrel.
+- Database oldalon a tényleges peer/descriptor és a teljes natív session ellenőrzése, majd a meglévő cache-drain hívása.
+- GameServer oldalon teljes betöltés, account/PID és EnTT-generáció ellenőrzése, értéket birtokló descriptorállapottal.
+- Idempotens Begin retry, Pending után Poll, 200 ms ütemezés, 256-os korlát és 10 másodperces érvénytelenítés.
+- Stale/idegen/duplikált válasz elutasítása; a sikerhez két külön, hibamentes, befejezett SQL-lane szükséges.
+- Az első Pending lane- és barriersorszámai rögzülnek; a későbbi pozitív nyugta nem cserélheti le őket.
+- A közös DBPacketHeader ponton a későbbi módosítást okozható kérés érvényteleníti a nyugtát; az adatmentés továbbmegy.
+- A tényleges két-worker SQL-nyugta ToWire/codec/natív Client lánca is tesztelt.
+- Kódszintű forrásleltár a tényleges producer-stophoz: point/item, harc/quest/timer, átadás, külön SQL, raktár/offlineshop.
+
+**Határ:** a cache-nyugta nem source-stop és nem writer-lease. Nincs automatikus
+RequestPlayerCacheDrain gameplay-hívó, ResourceFence-ready vagy jutalmazás.
+A GD-figyelő core-szintű, konzervatív; a még nem mentett ECS-változás és a
+külön GameServer DBManager/AccountDB írásai külön rendezendők. A következő
+rész a safe ponton működő karakter-koordinátor és az eseményeket megőrző
+producer-stop, majd a tartós writer-handoff/guarded DML/ECS-rebase.
+A tényleges socketes két teljes szerverfolyamatos és Unity-elfogadás még hátravan.
+Nem történt távoli művelet vagy helyi játékadatbázis-módosítás; Gameplay zárt.
+
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
@@ -342,15 +368,16 @@ A helyi játékadatbázis, Unity és távoli gép nem módosult; a Gameplay kapu
 | Checkpoint codec és action identity | 3227 ellenőrzés |
 | Verziózott reward-payload suite | 2109 ellenőrzés, normál és ASAN alatt |
 | Kevert erőforrástervező / codec / fence | 1606 ellenőrzés, normál és ASAN |
-| Natív player/session protokoll és életciklus | 810 ellenőrzés; izolált async SQL-lel 818, normál/ASAN |
-| Natív player/item cache-flush és generáció | 38 natív; izolált két-worker SQL-lel 339, normál/ASAN |
+| Natív player/session protokoll és életciklus | 818 ellenőrzés; izolált async SQL-lel 826, normál/ASAN |
+| Natív player/item cache-flush és generáció | 38 natív; izolált két-worker SQL-/wire-úttal 404, normál/ASAN |
+| Cache GD/DG codec és natív descriptorállapot | 1506 ellenőrzés, normál/ASAN |
 | SQL-egységtesztek | 2256 ellenőrzés; az új queue/retry/lifecycle próbákkal |
 | Valódi SQL-infrastruktúra | 234 ellenőrzés; a valódi drain és késői szöveges SQL-hibák próbáival |
 | Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 29/29 sikeres a 4/D–4e részfázisban |
-| Külön AddressSanitizer CTest-kör | 17/17 sikeres a 4/D–4e részfázisban; külön cache-drain MariaDB-próba is sikeres |
+| Célzott regressziós CTest-kör | 30/30 sikeres a 4/D–4f részfázisban |
+| Külön AddressSanitizer CTest-kör | 18/18 sikeres a 4/D–4f részfázisban; külön cache-drain/session MariaDB-próbák is sikeresek |
 | Mission SQL-eszközök és saját helyi bootstrap/upgrade | 13/13 sikeres |
 | Qt mentési központ / Mission GUI-csoport | 15/15 + 1/1 sikeres |
 | Valódi MariaDB-suite-ok ASAN alatt | Az erőforrásíró is sikeres crash/restarttal; egy korábbi, egyszeri visszaolvasási eltérés nyitott |
@@ -394,6 +421,17 @@ DatabaseTimeTests újrafordítása sikeres. A pontos scope és a naplók:
 `mission_cache_drain_2026-10-26.md`. A cache-drain nem igazolja a még hiányzó
 GameServer source-stopot vagy a tartós writer-lease átadását.
 
+A 4/D–4f végső kódján a normál regresszió **30/30**, a natív ASAN-regresszió
+**18/18** sikeres. Az új codec/client suite **1506** ellenőrzéssel sikeres.
+A cache/DML → két worker → ToWire/codec → natív Client út **404**, a teljesebb
+session-betöltés/életciklus **818**, izolált késleltetett SQL-lel **826**
+ellenőrzéssel sikeres normál és ASAN alatt. A két ASAN MariaDB-próba külön
+futott, nem része a 18-as CTest-körnek. A végső lane/barrier-pinning után a
+GameServer, Database, LoginServer és DatabaseTimeTests mindkét konfigurációban
+újra elkészült. A nyugta nem source-stop; a natív packetkezelő teljes buildje
+és a codec/SQL út próbája nem helyettesíti a két teljes folyamat socketes vagy
+Unity-elfogadását. Részletek: `mission_cache_protocol_2026-10-26.md`.
+
 A SQL-polling miatt a diagnosztikai ellenőrzések száma futásonként eltérhet.
 A próbák többek között lefedik a hibás csomagokat, verzióütközéseket,
 rollbacket, eseményduplázást, két valódi SQL-kapcsolat revisionversenyét,
@@ -417,6 +455,7 @@ fájlja és a nyolc korábbi Unity-módosítás változatlan maradt.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `9b8d6371` | Hiteles GD/DG cache-drain, descriptoros poller és későbbi mentések felismerése |
 | `f3a1f6d1` | Natív Database cache-drain, cache-generáció és tényleges player/item SQL-próbák |
 | `45473766` | Natív GameServer–Database sessioncsatorna, owned load-callbackok és EnTT-generáció ellenőrzése |
 | `8044061f` | Valódi SQL-worker drain, hibás mentések nyoma, eredménykiolvasás és retry-FIFO javítása |
@@ -514,7 +553,8 @@ Gameplay-hatás csak az igazolt jutalmazás és session-/core-koordináció utá
 - [x] Valódi két-lane-es FIFO-drain, hibanyom és session/challenge szerint ellenőrzött adapter.
 - [x] Teljes XP/pénz/cost/award csomag közös SQL-commitja és tartós resource-effect nyugtája.
 - [x] Natív Database oldali, cache-t megtartó dirty player/item flush és két-worker nyugta, session/cache-generáció ellenőrzéssel.
-- [ ] Élő GameServer source-stop, final snapshot és folyamatközi drain-nyugták; minden legacy író átvezetése.
+- [x] Egyeztetett GD/DG cache-drain, scope-hoz kötött nyugta és későbbi GD-mentések felismerése.
+- [ ] Élő GameServer producer-stop, final snapshot és minden legacy/külön SQL-író átvezetése.
 - [ ] Új login/core writer-lease átadása, hiteles ECS/cache rebase és publikálás.
 - [ ] Az egyszeri ASAN történeti visszaolvasási eltérés okának tisztázása, aktiválás előtt.
 - [ ] Az `item_award`/inventory/ECS réteggel összehangolt,
@@ -592,6 +632,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Valódi legacy SQL-sorürítés és retry-hibák](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_sql_drain_2026-10-26.md)
 - [Natív session- és betöltési híd](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_session_bridge_2026-10-26.md)
 - [Natív Database cache-flush és két-lane-es nyugta](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_cache_drain_2026-10-26.md)
+- [Folyamatközi cache-drain, GD-írófigyelő és source-stop leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_cache_protocol_2026-10-26.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
 - [Gépi node-/API-leltár](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_node_library_coverage_2026-10-25.json)
