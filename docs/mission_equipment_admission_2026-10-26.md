@@ -62,8 +62,9 @@ vagy writer-lease e részfázisban továbbra sincs.
 A teljes source-stop még nem kész. A következő csoportok külön munkát igényelnek:
 
 - Felvétel: az összes tényleges kedvezményezett követése. A pickupot kezdeményező
-  karakter helyett másik partytag is kaphat tárgyat; az arany szétosztása további
-  karakterek pénzét módosíthatja.
+  karakter helyett másik partytag is kaphat tárgyat vagy aranyat. Utólagos
+  pontosítás a 4j forrásellenőrzése alapján: a party-aranyosztás kommentben van,
+  a jelenlegi GiveGold kizárólag a kiválasztott karaktert írja jóvá.
 - Tárgyhasználat és eldobás: a natív belépések mellett a nagy legacy dispatcher,
   külön quest/consume/átadás és földre helyezési hibautak rendezése.
 - Közvetlen, más rendszerekből hívott equip/unequip/placement primitívek,

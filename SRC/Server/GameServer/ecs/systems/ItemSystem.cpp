@@ -20,6 +20,7 @@
 #include <charconv>
 #include "../ItemInvariants.hpp"
 #include "../VIDRegistry.hpp"
+#include "../ResourceAdmission.hpp"
 
 #include "../../core/utils.h"
 #include "../../core/config.h"
@@ -469,6 +470,10 @@ bool RefreshItemPrototype(entt::entity item, const TItemTable* proto)
 
 bool PickupItem(entt::entity character, uint32_t vid)
 {
+    if (!ecs::PlayerRuntime::IsPC(character)) return false;
+    const auto initiating = ecs::resource_admission::Enter({character},
+        auriga::resource_admission::Operation::Pickup);
+    if (!initiating || !initiating->Current()) return false;
     if (!ecs::PlayerRuntime::IsPC(character) || CombatSystem::IsDead(character) ||
         ecs::PlayerRuntime::IsObserverMode(character)) return false;
     const entt::entity item = CItemRegistry::Instance().FindByVID(vid);
@@ -500,17 +505,31 @@ bool PickupItem(entt::entity character, uint32_t vid)
             return false;
         }
     }
-    entt::entity owner = character;
-    if (!IsOwnership(item, owner)) {
-        if (GetItemAntiFlags(item) & (ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_DROP)) return false;
+    const auto selectOwner = [&]() -> entt::entity {
+        if (!ground()) return entt::null;
+        if (IsOwnership(item, character)) return character;
+        if (GetItemAntiFlags(item) & (ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_DROP)) return entt::null;
         const entt::entity party = ecs::SocialSystem::GetParty(character);
-        if (party == entt::null) return false;
-        owner = entt::null;
-        const auto findOwner = [&](entt::entity member) { if (IsOwnership(item, member)) owner = member; };
+        if (party == entt::null) return entt::null;
+        entt::entity result = entt::null;
+        const auto findOwner = [&](entt::entity member) { if (IsOwnership(item, member)) result = member; };
         PartySystem::ForEachOnlineMember(party, findOwner);
-        if (!ecs::PlayerRuntime::IsPC(owner)) return false;
-    }
-    if (!ground()) return false;
+        return result;
+    };
+    entt::entity owner = selectOwner();
+    if (!ecs::PlayerRuntime::IsPC(owner)) return false;
+    const auto selectedOwner = owner;
+    // Component construction may call out, relocate storage or change a party
+    // claim. Admit both full entities before any merge/retirement/detachment,
+    // then resolve the beneficiary again instead of retaining a borrowed row.
+    const auto recipients = ecs::resource_admission::Enter({character, owner},
+        auriga::resource_admission::Operation::Pickup);
+    const auto current = [&] {
+        return initiating->Current() && recipients && recipients->Current() &&
+            ecs::PlayerRuntime::IsPC(character) && !CombatSystem::IsDead(character) &&
+            !ecs::PlayerRuntime::IsObserverMode(character) && ecs::PlayerRuntime::IsPC(owner);
+    };
+    if (!current() || selectOwner() != owner || !ground()) return false;
     if (GetItemType(item) == ITEM_ELK) {
         const uint32_t count = GetItemCount(item);
         if (!DestroyItemEntityEcs(item, "PICKUP_GOLD")) return false;
@@ -555,7 +574,7 @@ bool PickupItem(entt::entity character, uint32_t vid)
 #endif
             INVENTORY_MAX_NUM;
         for (int cell = 0; cell < slots; ++cell) {
-            if (!ground() || !ecs::PlayerRuntime::IsPC(owner) || !IsOwnership(item, owner)) return false;
+            if (!current() || !ground() || selectOwner() != owner) return false;
             const auto target =
 #ifdef ENABLE_EXTRA_INVENTORY
                 extra ? GetExtraInventoryItem(owner, cell) :
@@ -568,7 +587,7 @@ bool PickupItem(entt::entity character, uint32_t vid)
             if (merged.sourceDepleted) { notify(merged.transferred, name); return true; }
         }
     }
-    if (!ground() || !ecs::PlayerRuntime::IsPC(owner) || !IsOwnership(item, owner)) return false;
+    if (!current() || !ground() || selectOwner() != owner) return false;
     const uint8_t window = IsDragonSoulItem(item) ? DRAGON_SOUL_INVENTORY :
 #ifdef ENABLE_EXTRA_INVENTORY
         extra ? EXTRA_INVENTORY :
@@ -599,6 +618,9 @@ bool PickupItem(entt::entity character, uint32_t vid)
 #endif
         return false;
     }
+    // The legacy fallback (when enabled) can only choose the initiating actor,
+    // which was included in the same admission. No new beneficiary is added.
+    if (!current() || !ground() || (owner == selectedOwner && selectOwner() != owner)) return false;
     const uint32_t count = GetItemCount(item);
     const std::string name = nameForOwner(item);
     const uint32_t originalVnum = GetItemOriginalVnum(item);
@@ -606,7 +628,7 @@ bool PickupItem(entt::entity character, uint32_t vid)
     const PIXEL_POSITION position {ecs::PlayerRuntime::GetX(item), ecs::PlayerRuntime::GetY(item), ecs::PlayerRuntime::GetZ(item)};
     InventorySystem::RemoveFromGround(item);
     if (!IsValidItem(item)) return false;
-    if (!InventorySystem::AddToCharacter(item, owner, TItemPos(window, cell))) {
+    if (!current() || !InventorySystem::AddToCharacter(item, owner, TItemPos(window, cell))) {
         // Restore only our still-detached item, never a callback-transferred one.
         if (PlaceItemOnGround(item, map, position)) SetGroundOwnership(item, owner);
         return false;
@@ -1001,6 +1023,11 @@ static bool IsSimpleEquipToggleType(uint8_t type)
 bool UseItemEcs(entt::entity owner, entt::entity item, TItemPos destCell)
 {
     if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
+        return false;
+
+    const auto permission = ecs::resource_admission::Enter({owner},
+        auriga::resource_admission::Operation::ItemUse);
+    if (!permission || !permission->Current() || !g_registry.valid(owner) || !IsValidItem(item))
         return false;
 
     const uint8_t itemType = GetItemType(item);

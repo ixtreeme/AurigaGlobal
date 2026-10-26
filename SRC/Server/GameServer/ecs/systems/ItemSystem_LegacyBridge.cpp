@@ -20,6 +20,7 @@
 #include "NetworkSyncSystem.hpp"
 #include "../EntityFactory.hpp"
 #include "../VIDRegistry.hpp"
+#include "../ResourceAdmission.hpp"
 
 #include "../../core/utils.h"
 #include "../../core/config.h"
@@ -419,6 +420,9 @@ bool ItemSystem::DropItem(entt::entity e, TItemPos Cell,
 	if (!ecs::IsCharacter(e))
 		return false;
 
+	const auto permission = ecs::resource_admission::Enter({e}, auriga::resource_admission::Operation::GroundDrop);
+	if (!permission || !permission->Current() || !ecs::IsCharacter(e)) return false;
+
 	bool stupid = false;
 	if (bCount < 0)
 	{
@@ -568,6 +572,8 @@ bool ItemSystem::DropGold(entt::entity e, int64_t gold)
 {
 	if (!ecs::IsCharacter(e))
 		return false;
+	const auto permission = ecs::resource_admission::Enter({e}, auriga::resource_admission::Operation::GroundDrop);
+	if (!permission || !permission->Current() || !ecs::IsCharacter(e)) return false;
 
 	if (gold <= 0 || gold > ecs::PointSystem::GetGold(e))
 		return false;
@@ -3412,6 +3418,9 @@ namespace ItemSystem {
 // that is what the drop means, otherwise use the item.
 bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 {
+	if (!ecs::IsCharacter(e)) return false;
+	const auto permission = ecs::resource_admission::Enter({e}, auriga::resource_admission::Operation::ItemUse);
+	if (!permission || !permission->Current() || !ecs::IsCharacter(e)) return false;
 
 #ifdef ENABLE_USEITEM_COOLDOWN
 	if (ecs::PlayerRuntime::GetMapIndex(e) == 113) {
@@ -3703,6 +3712,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 {
 	if (!ecs::IsCharacter(e))
 		return false;
+	const auto permission = ecs::resource_admission::Enter({e}, auriga::resource_admission::Operation::ItemUse);
+	if (!permission || !permission->Current() || !ecs::IsCharacter(e) || !IsValidItem(item)) return false;
 
     // A tool's sockets are authoritative training, not metin-stone slots. Do
     // not let generic tuning/socket/attribute consumables overwrite them.

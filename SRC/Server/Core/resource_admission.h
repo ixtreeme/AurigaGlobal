@@ -9,11 +9,15 @@ enum class Operation : uint8_t
 {
     Exchange = 1,
     InventoryMove = 2,
-    Equipment = 4
+    Equipment = 4,
+    Pickup = 8,
+    ItemUse = 16,
+    GroundDrop = 32
 };
 using Mask = uint8_t;
-inline constexpr std::array Operations{Operation::Exchange, Operation::InventoryMove, Operation::Equipment};
-inline constexpr Mask Supported = 7;
+inline constexpr std::array Operations{Operation::Exchange, Operation::InventoryMove, Operation::Equipment,
+                                       Operation::Pickup,   Operation::ItemUse,       Operation::GroundDrop};
+inline constexpr Mask Supported = 63;
 inline constexpr size_t MaximumActors = 8;
 struct Scope
 {

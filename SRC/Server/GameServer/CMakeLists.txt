@@ -776,7 +776,7 @@ add_executable(ItemRuntimeTests EXCLUDE_FROM_ALL
     ecs/systems/ItemSystem.cpp
     ecs/ItemRegistry.cpp
 )
-target_link_libraries(ItemRuntimeTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(ItemRuntimeTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
 if(MSVC)
     target_compile_options(ItemRuntimeTests PRIVATE /Gy)
     target_link_options(ItemRuntimeTests PRIVATE /OPT:REF /OPT:NOICF)
