@@ -872,6 +872,13 @@ class ItemPage(QWidget):
         key_form.add('child', 'lock_id', 'Zárazonosító', range=(1, 65535), hint='Az azonos zárazonosítójú, kulccsal nyíló ládákat nyitja.')
         key_form.note('A kulcs a láda kinyitásakor egy darabot fogy, a ládával együtt.')
         key_form.finish()
+        token_form = Form(changed)
+        token_form.add('child', 'wallet_currency', 'Pénznem', 'choice', choices=[(1, 'Yang'), (2, 'Sárkányérme')])
+        token_form.add('child', 'amount_per_unit', 'Érték darabonként', unit='egység', range=(1, 2 ** 63 - 1),
+                       hint='Ennyit ír jóvá a pénztárcában egy beváltott darab.')
+        token_form.note('Használatkor a halomból annyi darab váltódik be, amennyi értéke még belefér a pénztárcába; '
+                        'a többi darab megmarad. Egy darab sem fogy el úgy, hogy az értéke elveszne.')
+        token_form.finish()
         potion = QWidget(); potion_layout = QVBoxLayout(potion)
         recovery = Form(changed)
         self.delivery_field = recovery.add('recovery', 'delivery_kind', 'Hatás módja', 'choice',
@@ -909,9 +916,10 @@ class ItemPage(QWidget):
             self.effect_forms[kind] = form; self.effects.addWidget(form)
         self.delivery_field.widget.currentIndexChanged.connect(lambda *_: self.effects.setCurrentWidget(self.effect_forms[int(self.delivery_field.value())]))
         potion_layout.addWidget(self.effects); potion_layout.addStretch()
-        self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 8: container_form, 18: key_form}
+        self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 8: container_form,
+                               16: token_form, 18: key_form}
         self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 5: scroll(potion), 6: scroll(material),
-                               8: container, 18: scroll(key_form)}
+                               8: container, 16: scroll(token_form), 18: scroll(key_form)}
         self.refinement = RefinementPanel(changed)
         self.bonuses = BonusTable(changed, '1')
         bonus_page = QWidget(); bonus_layout = QVBoxLayout(bonus_page)

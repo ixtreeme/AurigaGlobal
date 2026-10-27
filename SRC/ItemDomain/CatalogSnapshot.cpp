@@ -194,6 +194,9 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
         s.containers.push_back({r.Key(),static_cast<ContainerKind>(r.U8(2)),r.OptionalId(3),r.U16(4)});
     });
     Each(source, Table::ContainerKeys, [&](const Reader& r) { s.containerKeys.push_back({r.Key(),r.U16(2)}); });
+    Each(source, Table::CurrencyTokens, [&](const Reader& r) {
+        s.currencyTokens.push_back({r.Key(),static_cast<WalletCurrency>(r.U8(2)),r.U64(3)});
+    });
     return s;
 }
 }

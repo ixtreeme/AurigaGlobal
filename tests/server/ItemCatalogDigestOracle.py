@@ -1,4 +1,4 @@
-"""Independent Python encoder for the v6 container fixture (not a runtime reader)."""
+"""Independent Python encoder for the v7 currency token fixture (not a runtime reader)."""
 import argparse
 import hashlib
 import json
@@ -22,7 +22,7 @@ def fixture_digest():
         numbers('B', value is not None)
         if value is not None:
             numbers('I', value)
-    text("auriga.item_catalog.v6"); numbers("I", 6)
+    text("auriga.item_catalog.v7"); numbers("I", 7)
     table(1, 3); identity(1, "use.equipment"); numbers("BBB", 15, 3, 1)
     identity(2, "use.material"); numbers("BBB", 15, 3, 0)
     identity(3, "use.recovery"); numbers("BBB", 15, 3, 1)
@@ -45,7 +45,7 @@ def fixture_digest():
             if kind == 4 and level:
                 bonus = 5 if level == 15 else 4
             optional(bonus)
-    table(8, 13)
+    table(8, 15)
     for category, local, prefix, code, height, stack, grams, minimum, use, refine, appearance, bonus, buy, sell in [
         (1, 1, "weapon", "iron_sword", 3, 1, 1200, 1, 1, 2, 1, 1, 100, 50),
         (2, 1, "armor", "iron_armor", 2, 1, 5000, 5, 1, 3, 2, None, 200, 100),
@@ -59,6 +59,8 @@ def fixture_digest():
         (8, 1, "container", "gift_box", 1, 50, 100, 0, 2, 1, None, None, 0, 0),
         (8, 2, "container", "iron_chest", 1, 10, 100, 0, 2, 1, None, None, 0, 0),
         (8, 3, "container", "quest_box", 1, 1, 100, 0, 2, 1, None, None, 0, 0),
+        (16, 1, "currency_token", "gold_bar", 1, 200, 100, 0, 2, 1, None, None, 0, 0),
+        (16, 2, "currency_token", "coin_voucher", 1, 200, 100, 0, 2, 1, None, None, 0, 0),
         (18, 1, "container_key", "iron_key", 1, 20, 100, 0, 2, 1, None, None, 0, 0),
     ]:
         numbers("HI", category, local)
@@ -140,6 +142,8 @@ def fixture_digest():
     for local, kind, loot, lock in [(1, 1, 1, 0), (2, 2, 2, 7), (3, 3, None, 0)]:
         numbers('HIB', 8, local, kind); optional(loot); numbers('H', lock)
     table(21, 1); numbers('HIH', 18, 1, 7)
+    # Currency tokens: wallet 1 gold / 2 dragon coin, value per unit.
+    table(22, 2); numbers('HIBQ', 16, 1, 1, 5000000); numbers('HIBQ', 16, 2, 2, 100)
     return hashlib.sha256(data).hexdigest()
 
 
@@ -148,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--catalog-executable", type=Path, required=True)
     args = parser.parse_args()
     expected = fixture_digest()
-    if expected != "aebb86e8bc7c37a241aaa177c1055534a04de1221c1f3615a12949cfcc96164d":
+    if expected != "3a75716361d8bc094b671625bfa0fc98536396ca9710a4972db3a8974a2a5928":
         raise SystemExit("Python canonical fixture changed without a schema/golden review")
     result = subprocess.run([str(args.catalog_executable.resolve(strict=True)), "--hash-fixture"],
                             capture_output=True, check=True, timeout=30)

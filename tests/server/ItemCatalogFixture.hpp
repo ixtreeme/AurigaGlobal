@@ -18,7 +18,9 @@ inline ItemKey GiftBox() { return ItemKey::Create(ItemCategory::Container, 1).va
 inline ItemKey IronChest() { return ItemKey::Create(ItemCategory::Container, 2).value(); }
 inline ItemKey QuestBox() { return ItemKey::Create(ItemCategory::Container, 3).value(); }
 inline ItemKey IronKey() { return ItemKey::Create(ItemCategory::ContainerKey, 1).value(); }
-inline constexpr std::size_t FixtureItems = 13;
+inline ItemKey GoldBar() { return ItemKey::Create(ItemCategory::CurrencyToken, 1).value(); }
+inline ItemKey CoinVoucher() { return ItemKey::Create(ItemCategory::CurrencyToken, 2).value(); }
+inline constexpr std::size_t FixtureItems = 15;
 inline AccessorySocketProfile SocketProfile()
 {
     return {1, "socket.copper", 3, 1, 1,
@@ -123,7 +125,8 @@ inline ItemCatalogSource Catalog()
             {4, LootRewardKind::Poison, {}, 0, 100, 0}}},
     };
     for (auto [key, code, stack] : {std::tuple{GiftBox(), "container.gift_box", 50u}, {IronChest(), "container.iron_chest", 10u},
-            {QuestBox(), "container.quest_box", 1u}, {IronKey(), "container_key.iron_key", 20u}})
+            {QuestBox(), "container.quest_box", 1u}, {IronKey(), "container_key.iron_key", 20u},
+            {GoldBar(), "currency_token.gold_bar", 200u}, {CoinVoucher(), "currency_token.coin_voucher", 200u}})
     {
         ItemBaseRow row {key};
         const std::string name = std::string(code).substr(std::string(code).find('.') + 1);
@@ -134,6 +137,7 @@ inline ItemCatalogSource Catalog()
     }
     source.containers = {{GiftBox(), ContainerKind::Use, 1, 0}, {IronChest(), ContainerKind::Locked, 2, 7}, {QuestBox(), ContainerKind::Scripted, {}, 0}};
     source.containerKeys = {{IronKey(), 7}};
+    source.currencyTokens = {{GoldBar(), WalletCurrency::Gold, 5'000'000}, {CoinVoucher(), WalletCurrency::DragonCoin, 100}};
     return source;
 }
 }

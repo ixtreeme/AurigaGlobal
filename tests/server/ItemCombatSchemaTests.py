@@ -35,11 +35,12 @@ class CategorySchemaTests(unittest.TestCase):
             for name in ("000_protos_database.sql", "001_category_registry.sql", "002_category_seed.sql",
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
-                         "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql"):
+                         "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
+                         "013_currency_tokens.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
-            for fixture_path in ("v5/recovery_consumables.sql", "v6/containers.sql"):
+            for fixture_path in ("v5/recovery_consumables.sql", "v6/containers.sql", "v7/currency_tokens.sql"):
                 fixture = (ROOT / "tests/fixtures/item_combat" / fixture_path).read_text(encoding="utf-8")
                 for statement in statements(fixture):
                     cls.connection.query(statement)
@@ -190,7 +191,7 @@ class CategorySchemaTests(unittest.TestCase):
                         user="catalog_runtime", password="isolated_fixture_only")
         try:
             self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_category"), [["18"]])
-            self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_base"), [["13"]])
+            self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_base"), [["15"]])
             for sql in ["UPDATE protos.item_category SET code='edited' WHERE category_id=1",
                         "DELETE FROM protos.item_category WHERE category_id=1",
                         "UPDATE protos.item_local_id_sequence SET next_local_id=30 WHERE category_id=1",
@@ -232,7 +233,7 @@ class CategorySchemaTests(unittest.TestCase):
     def test_typed_equipment_and_refinement_golden(self):
         self.assertEqual(self.q("SELECT category_id,local_id FROM protos.item_base ORDER BY category_id,local_id"),
                          [["1","1"],["2","1"],["3","1"],["5","1"],["5","2"],["5","3"],["6","1"],["6","2"],["6","3"],
-                          ["8","1"],["8","2"],["8","3"],["18","1"]])
+                          ["8","1"],["8","2"],["8","3"],["16","1"],["16","2"],["18","1"]])
         self.assertEqual(self.q("""SELECT w.physical_attack_base_raw+r.physical_attack_gain_raw,
             w.magical_attack_base_raw+r.magical_attack_gain_raw FROM protos.item_weapon w
             JOIN protos.item_base b ON b.category_id=w.category_id AND b.local_id=w.local_id
@@ -485,7 +486,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["6", "auriga.item_catalog.v6"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["7", "auriga.item_catalog.v7"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
@@ -496,6 +497,8 @@ class CategorySchemaTests(unittest.TestCase):
                          [["ck_item_base_category"], ["ck_item_base_non_equipment"], ["ck_item_base_stack"]])
         self.assertEqual(self.q("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
                                 "AND TABLE_NAME='item_base' AND CHECK_CLAUSE LIKE '%in (1,2,3,5,6)%'"), [["0"]])
+        self.assertEqual(self.q("SELECT CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
+                                "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,5,6,8,16,18)"]])
 
     def test_container_sql_constraints(self):
         for sql, code in [
@@ -534,6 +537,24 @@ class CategorySchemaTests(unittest.TestCase):
             self.q("UPDATE protos.item_base SET max_stack=500 WHERE category_id IN (8,18)")
         finally:
             self.q("ROLLBACK")
+
+    def test_currency_token_rows_and_constraints(self):
+        self.assertEqual(self.q("SELECT category_id,local_id,wallet_currency,amount_per_unit FROM protos.item_currency_token ORDER BY local_id"),
+                         [["16","1","1","5000000"],["16","2","2","100"]])
+        for sql, code in [
+            ("UPDATE protos.item_currency_token SET wallet_currency=3 WHERE local_id=1", "4025"),
+            ("UPDATE protos.item_currency_token SET wallet_currency=0 WHERE local_id=1", "4025"),
+            ("UPDATE protos.item_currency_token SET amount_per_unit=0 WHERE local_id=1", "4025"),
+            ("UPDATE protos.item_currency_token SET amount_per_unit=9223372036854775808 WHERE local_id=1", "4025"),
+            ("INSERT INTO protos.item_currency_token VALUES(16,999,1,1)", "1452"),
+            ("INSERT INTO protos.item_currency_token VALUES(6,1,1,1)", "4025"),
+            ("INSERT INTO protos.item_currency_token VALUES(16,1,1,1)", "1062"),
+            ("UPDATE protos.item_base SET binding_policy=3 WHERE category_id=16", "4025"),
+            ("UPDATE protos.item_base SET appearance_profile_id=1 WHERE category_id=16", "4025"),
+            ("DELETE FROM protos.item_base WHERE category_id=16 AND local_id=1", "1451"),
+        ]:
+            with self.subTest(sql=sql), self.assertRaisesRegex(RuntimeError, "^" + code + ":"):
+                self.q(sql)
 
 
 if __name__ == "__main__":

@@ -126,7 +126,7 @@ unsigned KeyColumns(T table) {
     switch(table) {
     case T::Items:case T::Weapons:case T::Armors:case T::Accessories:case T::Materials:case T::Consumables:
     case T::BonusEntries:case T::RefinementLevels:case T::SocketGrades:
-    case T::LootEntries:case T::Containers:case T::ContainerKeys:return 2;
+    case T::LootEntries:case T::Containers:case T::ContainerKeys:case T::CurrencyTokens:return 2;
     case T::SocketMaterials:return 4;
     default:return 1;
     }
@@ -176,7 +176,7 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
     constexpr T order[]={T::UsePolicies,T::TradePolicies,T::Appearances,T::Attacks,T::AmmoPolicies,T::Resistances,
         T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
         T::Cooldowns,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::LootProfiles,T::Items,T::Weapons,T::Armors,T::Materials,
-        T::Accessories,T::Consumables,T::Containers,T::ContainerKeys,T::LootEntries,T::SocketMaterials};
+        T::Accessories,T::Consumables,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::LootEntries,T::SocketMaterials};
     static_assert(std::size(order)==db::TableCount-3,"every editable table needs a commit position");
     for(T table:{T::Format,T::Categories,T::BonusDefinitions})Require(before.rows[table]==after[table],"A rendszerregiszter nem szerkesztheto.");
     SqlTransaction plan;

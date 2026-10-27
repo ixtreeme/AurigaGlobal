@@ -346,7 +346,10 @@ class PageCase(unittest.TestCase):
                 dict(reward_kind='8', item_category_id=None, item_local_id=None, amount='0', weight='9', rare_attribute_chance_bp='0')])
         packet = catalog.blank(TOOL)
         keys = {}
-        for category, change in ((1, weapon), (2, armor), (3, accessory), (5, potion), (6, material), (8, chest),
+        def token(d):
+            d['base'].update(max_stack='500')
+            d['child'].update(wallet_currency='2', amount_per_unit='1000000000000')
+        for category, change in ((1, weapon), (2, armor), (3, accessory), (5, potion), (6, material), (8, chest), (16, token),
                                  (18, lambda d: d['child'].update(lock_id='12'))):
             packet, keys[category] = create(packet, category, change)
         return packet, keys

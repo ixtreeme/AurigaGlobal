@@ -39,7 +39,7 @@ void ValidSnapshot()
     auto source = item_catalog_fixture::Catalog();
     const auto snapshot = BuildItemCatalog(source).value();
     const auto sword = item_catalog_fixture::Sword(), armor = item_catalog_fixture::Armor();
-    Check(snapshot->Size() == item_catalog_fixture::FixtureItems && snapshot->Revision() == 1, "seven categories and thirteen typed composite prototypes published");
+    Check(snapshot->Size() == item_catalog_fixture::FixtureItems && snapshot->Revision() == 1, "eight categories and fifteen typed composite prototypes published");
     Check(snapshot->RefinedBaseStats(sword, 3).value() == ItemBaseStats{150000, 42000, 0, 0}, "weapon golden");
     Check(snapshot->RefinedBaseStats(armor, 2).value() == ItemBaseStats{0, 0, 50000, 24000}, "armor golden");
     Check(snapshot->RefinedBaseStats(sword, 10).error() == ItemCatalogLookupError::InvalidRefinementLevel, "no fallback refinement");
@@ -92,6 +92,7 @@ void InvalidCatalogs()
     Reject([](auto& s) { s.schemaVersion = 3; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 4; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 5; }, ItemCatalogErrorCode::InvalidVersion);
+    Reject([](auto& s) { s.schemaVersion = 6; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.usePolicies.resize(ItemCatalogLimits::ProfilesPerKind + 1); }, ItemCatalogErrorCode::LimitExceeded);
     Reject([](auto& s) { s.usePolicies.push_back(s.usePolicies[0]); }, ItemCatalogErrorCode::DuplicateProfile);
     Reject([](auto& s) { s.appearances[1].code = s.appearances[0].code; }, ItemCatalogErrorCode::DuplicateProfile);

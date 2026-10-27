@@ -20,11 +20,12 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Gyógyító ital', 6: 'Alapanyag', 8: 'Tároló', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Gyógyító ital', 6: 'Alapanyag', 8: 'Tároló', 16: 'Pénzjegy', 18: 'Kulcs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 5: 'item_consumable', 6: 'item_material',
-                8: 'item_container', 18: 'item_container_key'}
-CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 5: 'consumable', 6: 'material', 8: 'container', 18: 'container_key'}
-STACKABLE = (5, 6, 8, 18)
+                8: 'item_container', 16: 'item_currency_token', 18: 'item_container_key'}
+CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 5: 'consumable', 6: 'material', 8: 'container',
+               16: 'currency_token', 18: 'container_key'}
+STACKABLE = (5, 6, 8, 16, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile'}
@@ -158,6 +159,8 @@ class Catalog:
             item['child'].update(container_kind='1', loot_profile_id=None, lock_id='0')
             item['loot'] = dict(pick_mode='1', entries=[dict(entry_no='1', reward_kind='2', item_category_id=None, item_local_id=None,
                                                              amount='1', weight='1', rare_attribute_chance_bp='0')])
+        if category == 16:
+            item['child'].update(wallet_currency='1', amount_per_unit='1')
         if category == 18:
             item['child']['lock_id'] = '1'
         return item
@@ -343,7 +346,7 @@ FIELDS = {
     'base_plus_gain': 'alapérték + fejlesztés', 'use_policy': 'használat', 'trade_policy': 'kereskedelem',
     'appearance': 'megjelenés', 'attack': 'támadási profil', 'ammo': 'lőszerszabály', 'resistance': 'ellenállás',
     'container': 'tároló', 'container.kind': 'tároló', 'container.loot': 'tárolótartalom', 'container_key': 'kulcs',
-    'container_key.lock': 'kulcs', 'loot': 'tárolótartalom', 'loot.item': 'tárolótartalom', 'loot.entries': 'tárolótartalom',
+    'container_key.lock': 'kulcs', 'currency_token': 'pénzjegy', 'loot': 'tárolótartalom', 'loot.item': 'tárolótartalom', 'loot.entries': 'tárolótartalom',
 }
 CATALOG_TEXT = {
     'DuplicateContentCode': 'Ez a tartalomkód már foglalt egy másik tárgynál.',

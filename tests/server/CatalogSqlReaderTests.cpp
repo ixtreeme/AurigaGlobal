@@ -123,8 +123,8 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& reader) {
     Execute(reader,"SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");
     Reject(reader,E::IsolationRequired);
     Execute(reader,"SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-    Execute(admin,"UPDATE protos.catalog_format SET schema_version=5");Reject(reader,E::FormatMismatch);
-    Execute(admin,"UPDATE protos.catalog_format SET schema_version=6");
+    Execute(admin,"UPDATE protos.catalog_format SET schema_version=6");Reject(reader,E::FormatMismatch);
+    Execute(admin,"UPDATE protos.catalog_format SET schema_version=7");
     Execute(admin,"UPDATE protos.item_category SET prototype_table='wrong' WHERE category_id=1");Reject(reader,E::RegistryMismatch);
     Execute(admin,"UPDATE protos.item_category SET prototype_table='item_weapon' WHERE category_id=1");
     Execute(admin,"UPDATE protos.bonus_definition SET display_key='tampered' WHERE bonus_id=1");Reject(reader,E::RegistryMismatch);

@@ -40,7 +40,8 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
     if (source.items.size() > ItemCatalogLimits::Items || source.weapons.size() > ItemCatalogLimits::Items ||
         source.armors.size() > ItemCatalogLimits::Items || source.accessories.size() > ItemCatalogLimits::Items ||
         source.materials.size() > ItemCatalogLimits::Items || source.consumables.size() > ItemCatalogLimits::Items ||
-        source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items)
+        source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items ||
+        source.currencyTokens.size() > ItemCatalogLimits::Items)
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "items"));
     std::size_t textBytes = 0;
     auto add = [&](std::size_t length) {
@@ -78,11 +79,12 @@ ItemBaseStats BaseStats(const ItemMaterialRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemConsumableRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemContainerRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemContainerKeyRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemCurrencyTokenRow&) { return {}; }
 }
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 6 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 7 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     if (auto r = Profiles(source.usePolicies, "use_policy", [](const auto& row) {
         return row.allowedClasses > 0 && row.allowedClasses <= 15 && row.allowedSexes > 0 && row.allowedSexes <= 3;
@@ -182,6 +184,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::ranges::sort(source.consumables, {}, &ItemConsumableRow::key);
     std::ranges::sort(source.containers, {}, &ItemContainerRow::key);
     std::ranges::sort(source.containerKeys, {}, &ItemContainerKeyRow::key);
+    std::ranges::sort(source.currencyTokens, {}, &ItemCurrencyTokenRow::key);
     std::set<std::string> codes;
     std::map<ItemKey, const ItemWeaponRow*> weapons;
     std::map<ItemKey, const ItemArmorRow*> armors;
@@ -190,6 +193,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::map<ItemKey, const ItemConsumableRow*> consumables;
     std::map<ItemKey, const ItemContainerRow*> containers;
     std::map<ItemKey, const ItemContainerKeyRow*> containerKeys;
+    std::map<ItemKey, const ItemCurrencyTokenRow*> currencyTokens;
     for (const auto& row : source.weapons)
     {
         if (row.key.Category() != ItemCategory::Weapon) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "weapon", row.key));
@@ -251,6 +255,14 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (!containerKeys.emplace(row.key, &row).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow, "container_key", row.key));
         if (!row.lockId) return std::unexpected(Error(ItemCatalogErrorCode::InvalidContainer, "container_key.lock", row.key));
     }
+    for (const auto& row : source.currencyTokens)
+    {
+        if (row.key.Category() != ItemCategory::CurrencyToken) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "currency_token", row.key));
+        if (!currencyTokens.emplace(row.key, &row).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow, "currency_token", row.key));
+        if (row.currency < WalletCurrency::Gold || row.currency > WalletCurrency::DragonCoin ||
+            !row.amountPerUnit || row.amountPerUnit > MaxTokenUnitAmount)
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "currency_token", row.key));
+    }
     std::optional<ItemKey> previous;
     for (const auto& row : source.items)
     {
@@ -261,7 +273,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool consumable = category == ItemCategory::Consumable;
         const bool container = category == ItemCategory::Container;
         const bool containerKey = category == ItemCategory::ContainerKey;
-        const bool stackable = material || consumable || container || containerKey;
+        const bool currencyToken = category == ItemCategory::CurrencyToken;
+        const bool stackable = material || consumable || container || containerKey || currencyToken;
         if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
@@ -298,6 +311,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (consumable && consumables.contains(row.key)) child = *consumables.at(row.key);
         if (container && containers.contains(row.key)) child = *containers.at(row.key);
         if (containerKey && containerKeys.contains(row.key)) child = *containerKeys.at(row.key);
+        if (currencyToken && currencyTokens.contains(row.key)) child = *currencyTokens.at(row.key);
         if (!child) return std::unexpected(Error(ItemCatalogErrorCode::MissingCategoryRow, "category", row.key));
         if (consumable && catalog->FindRecovery(consumables.at(row.key)->recoveryProfile)->Data().unitsPerUse > row.maxStack)
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.stack_below_use_units", row.key));
@@ -321,6 +335,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "container", row.key));
     for (const auto& row : source.containerKeys)
         if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "container_key", row.key));
+    for (const auto& row : source.currencyTokens)
+        if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "currency_token", row.key));
     // Item rewards are ordinary, live, stack-sized grants of a published item.
     for (const auto& profile : source.lootProfiles)
         for (const auto& reward : profile.entries)

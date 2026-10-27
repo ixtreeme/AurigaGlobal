@@ -39,6 +39,7 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::LootEntries, "loot_entry", "profile_id,entry_no,reward_kind,item_category_id,item_local_id,amount,weight,rare_attribute_chance_bp", Profiles * MaxLootEntries},
     {Table::Containers, "item_container", "category_id,local_id,container_kind,loot_profile_id,lock_id", Items},
     {Table::ContainerKeys, "item_container_key", "category_id,local_id,lock_id", Items},
+    {Table::CurrencyTokens, "item_currency_token", "category_id,local_id,wallet_currency,amount_per_unit", Items},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

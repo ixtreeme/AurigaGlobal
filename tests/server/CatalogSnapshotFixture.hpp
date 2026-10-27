@@ -83,6 +83,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     }
     for (const auto& r : source.containers) Add(s,T::Containers,r.key.Category(),r.key.LocalId(),r.kind,r.lootProfile,r.lockId);
     for (const auto& r : source.containerKeys) Add(s,T::ContainerKeys,r.key.Category(),r.key.LocalId(),r.lockId);
+    for (const auto& r : source.currencyTokens) Add(s,T::CurrencyTokens,r.key.Category(),r.key.LocalId(),r.currency,r.amountPerUnit);
     return s;
 }
 } // namespace catalog_snapshot_fixture

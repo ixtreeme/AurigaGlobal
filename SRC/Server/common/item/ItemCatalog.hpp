@@ -4,6 +4,7 @@
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
 #include "Containers.hpp"
+#include "CurrencyTokens.hpp"
 #include <array>
 #include <cstdint>
 #include <expected>
@@ -136,11 +137,17 @@ struct ItemContainerKeyRow
     ItemKey key;
     std::uint16_t lockId = 0; // Opens Locked containers with the same lock id.
 };
+struct ItemCurrencyTokenRow
+{
+    ItemKey key;
+    WalletCurrency currency{};      // Required; no implicit gold.
+    std::uint64_t amountPerUnit = 0; // 1..MaxTokenUnitAmount, credited per redeemed unit
+};
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 6;
+    std::uint32_t schemaVersion = 7;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -162,6 +169,7 @@ struct ItemCatalogSource
     std::vector<LootProfile> lootProfiles;
     std::vector<ItemContainerRow> containers;
     std::vector<ItemContainerKeyRow> containerKeys;
+    std::vector<ItemCurrencyTokenRow> currencyTokens;
 };
 struct ItemCatalogLimits
 {
@@ -208,7 +216,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
 // Immutable, owning snapshot. No borrowed proto rows, lazy cache or live registry.
 // Supports weapon/armor, wrist/neck/ear accessories with optional timed/permanent
 // socket profiles, ordinary materials, recovery consumables, containers and their
-// keys with typed loot profiles. Unsupported categories and
+// keys with typed loot profiles, and wallet currency tokens. Unsupported categories and
 // behaviors fail closed during publication; this is not a runtime stat builder.
 class ItemCatalog final
 {

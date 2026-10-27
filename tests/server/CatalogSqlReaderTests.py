@@ -25,9 +25,10 @@ def main():
         sandbox.start()
         sandbox.verify()
         migrations = sorted((ROOT / "db/migrations/item_combat").glob("[0-9][0-9][0-9]_*.sql"))
-        if [int(path.name[:3]) for path in migrations] != list(range(13)):
-            raise RuntimeError("the native fixture requires schema drafts 000 through 012")
-        fixtures = [ROOT / "tests/fixtures/item_combat/v5/recovery_consumables.sql", ROOT / "tests/fixtures/item_combat/v6/containers.sql"]
+        if [int(path.name[:3]) for path in migrations] != list(range(14)):
+            raise RuntimeError("the native fixture requires schema drafts 000 through 013")
+        fixtures = [ROOT / "tests/fixtures/item_combat" / name for name in
+                    ("v5/recovery_consumables.sql", "v6/containers.sql", "v7/currency_tokens.sql")]
         for path in [*migrations, *fixtures]:
             for statement in statements(path.read_text(encoding="utf-8")):
                 sandbox.client.query(statement)
@@ -38,7 +39,7 @@ def main():
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],
                     "isolation": sandbox.client.query("SELECT @@tx_isolation")[0][0],
                     "owned_datadir_verified": True, "read_only_loader_account": True,
-                    "fixture": "v5/recovery_consumables.sql + v6/containers.sql", "schema_drafts": len(migrations)}
+                    "fixture": "v5 + v6/containers.sql + v7/currency_tokens.sql", "schema_drafts": len(migrations)}
         (sandbox.work / "environment.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
         result = subprocess.run([str(args.test_executable.resolve()), "--owned-sandbox"],
                                 input=f"{sandbox.port}\n{sandbox.password}\n{token}\n",

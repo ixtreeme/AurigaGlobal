@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v6");
+    out.Text("auriga.item_catalog.v7");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -234,6 +234,11 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     }
     out.Table(21, source.containerKeys.size());
     for (const auto& row : source.containerKeys) { out.Key(row.key); out.Integer(row.lockId); }
+    out.Table(22, source.currencyTokens.size());
+    for (const auto& row : source.currencyTokens)
+    {
+        out.Key(row.key); out.Integer(static_cast<std::uint8_t>(row.currency)); out.Integer(row.amountPerUnit);
+    }
     return out.Finish();
 }
 } // namespace auriga::item::detail

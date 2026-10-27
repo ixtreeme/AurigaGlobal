@@ -287,3 +287,13 @@ A 8-as Tároló és a 18-as Kulcs kategória típusos tartalomprofillal elkész�
 minden rétegén (v6). A régi `special_item_group` dobozlogika két hibáját (részleges kiosztás
 újranyitható dobozzal, inicializálatlan visszatérés) az új tervező nem örökli.
 [IC-013](../adr/item_combat_013_containers.md), [jelentés](../reports/item_combat/2026-10-27_containers.md).
+
+## 2026-10-27 — F2: használati tárgyak leképezése, 1. szelet
+
+A `UseItemEx` USE-ágainak altípusonkénti auditja alapján az IC-014 rögzíti
+mind a 36 nem ital jellegű altípus és a `USE_SPECIAL` vnum-eseteinek új helyét,
+szeletsorrenddel. Az 1. szelet, a 16-os Pénzjegy, elkészült (v7). A régi
+utalvány-ág részleges jóváírásnál is teljes halmot fogyasztó hibáját az új
+beváltási terv nem örökli.
+[IC-014](../adr/item_combat_014_use_items.md),
+[jelentés](../reports/item_combat/2026-10-27_use_items_slice1_currency_tokens.md).
