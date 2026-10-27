@@ -89,7 +89,6 @@
 #endif
 #include <boost/algorithm/string/find.hpp>
 
-#include "../../dungeon/DragonSoul.h"
 #include <Core/Logging.hpp>
 #include <common/CommonDefines.h>
 
@@ -1062,7 +1061,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_NORMAL_HIT_DAMAGE_BONUS:
 	case POINT_SKILL_DEFEND_BONUS:
 	case POINT_NORMAL_HIT_DEFEND_BONUS:
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
 	case POINT_RUNE_MONSTERS:
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
@@ -1707,7 +1706,7 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_ATTBONUS_MEDI_PVM:
 #endif
 	case APPLY_PVM_CRITICAL_PCT:
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
 	case APPLY_RUNE_MONSTERS:
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES

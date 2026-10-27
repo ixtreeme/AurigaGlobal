@@ -105,7 +105,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_LOGIN, sizeof(TPacketCGLogin), "Login", true);
 	Set(HEADER_CG_LOGIN2, sizeof(TPacketCGLogin2), "Login2", true);
 	Set(HEADER_CG_LOGIN3, sizeof(TPacketCGLogin3), "Login3", true);
-	
+
 	Set(HEADER_CG_ATTACK, sizeof(TPacketCGAttack), "Attack", true);
 	Set(HEADER_CG_CHAT, sizeof(TPacketCGChat), "Chat", true);
 	Set(HEADER_CG_WHISPER, sizeof(TPacketCGWhisper), "Whisper", true);
@@ -197,10 +197,6 @@ CPacketInfoCG::CPacketInfoCG()
 
 	Set(HEADER_CG_SCRIPT_SELECT_ITEM, sizeof(TPacketCGScriptSelectItem), "ScriptSelectItem", true);
 
-	Set(HEADER_CG_DRAGON_SOUL_REFINE, sizeof(TPacketCGDragonSoulRefine), "DragonSoulRefine", false);
-#ifdef ENABLE_DS_REFINE_ALL
-	Set(HEADER_CG_DRAGON_SOUL_REFINE_ALL, sizeof(TPacketDragonSoulRefineAll), "DragonSoulRefineAll", false);
-#endif
 	Set(HEADER_CG_STATE_CHECKER, sizeof(uint8_t), "ServerStateCheck", false);
 
 #if defined(__SLOT_MACHINE_SYSTEM__)
@@ -276,7 +272,7 @@ CPacketInfoGG::CPacketInfoGG()
 	Set(HEADER_GG_MESSENGER_REMOVE,	sizeof(TPacketGGMessenger),	"MessengerRemove", false);
 	Set(HEADER_GG_FIND_POSITION,	sizeof(TPacketGGFindPosition),	"FindPosition", false);
 	Set(HEADER_GG_WARP_CHARACTER,	sizeof(TPacketGGWarpCharacter),	"WarpCharacter", false);
-	
+
 	Set(HEADER_GG_GUILD_WAR_ZONE_MAP_INDEX, sizeof(TPacketGGGuildWarMapIndex), "GuildWarMapIndex", false);
 	Set(HEADER_GG_TRANSFER,		sizeof(TPacketGGTransfer),	"Transfer", false);
 	Set(HEADER_GG_RELOAD_CRC_LIST,	sizeof(uint8_t),			"ReloadCRCList", false);

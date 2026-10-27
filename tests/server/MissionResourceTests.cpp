@@ -101,7 +101,7 @@ void Rejections()
               "partial/invalid plan escaped");
     };
     auto before = f::Snapshot();
-    for (auto window : {ResourceWindow::Equipment, ResourceWindow::DragonSoul, ResourceWindow::Belt,
+    for (auto window : {ResourceWindow::Reserved4, ResourceWindow::Equipment, ResourceWindow::Belt,
                         ResourceWindow::Safebox, ResourceWindow::Mall, ResourceWindow::Ground})
     {
         auto changed = before;
@@ -222,6 +222,8 @@ void Decoding()
     }
     Check(!DecodeResources(Changed(*p.plan, [](auto &j) { j["before"]["gold"] = -1; }), pin),
           "negative gold decoded");
+    Check(!DecodeResources(Changed(*p.plan, [](auto &j) { j["before"]["items"][0][4] = 4; }), pin),
+          "retired inventory window decoded");
     Check(!DecodeResources(Changed(*p.plan, [](auto &j) { j["before"]["revision"] = 1.5; }), pin),
           "fraction revision decoded");
     Check(!DecodeResources(Changed(*p.plan, [](auto &j) { j["rolls"][0][0] = 10; }), pin),

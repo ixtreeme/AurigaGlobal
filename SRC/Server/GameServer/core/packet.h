@@ -370,38 +370,14 @@ struct TPacketHandshakeCompleted
 
 
 
-enum EDragonSoulRefineWindowRefineType
-{
-	DragonSoulRefineWindow_UPGRADE,
-	DragonSoulRefineWindow_IMPROVEMENT,
-	DragonSoulRefineWindow_REFINE,
-};
 
-enum EPacketCGDragonSoulSubHeaderType
-{
-	DS_SUB_HEADER_OPEN,
-	DS_SUB_HEADER_CLOSE,
-	DS_SUB_HEADER_DO_REFINE_GRADE,
-	DS_SUB_HEADER_DO_REFINE_STEP,
-	DS_SUB_HEADER_DO_REFINE_STRENGTH,
-	DS_SUB_HEADER_REFINE_FAIL,
-	DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE,
-	DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL,
-	DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY,
-	DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL,
-	DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL,
-	DS_SUB_HEADER_REFINE_SUCCEED,
-};
+
+
 typedef struct SPacketGGCheckAwakeness
 {
 	uint8_t bHeader;
 } TPacketGGCheckAwakeness;
 
-#ifdef ENABLE_DS_REFINE_ALL
-typedef struct SPacketDragonSoulRefineAll {
-	uint8_t header, subheader, type, grade;
-} TPacketDragonSoulRefineAll;
-#endif
 
 
 

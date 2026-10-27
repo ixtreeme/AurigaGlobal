@@ -16,8 +16,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
 #include "../../SRC/Server/GameServer/network/desc_client.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
-#include "../../SRC/Server/GameServer/dungeon/DragonSoul.h"
-#include "../../SRC/Server/GameServer/dungeon/dragon_soul_table.h"
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
 #include "../../SRC/Server/GameServer/core/log.h"
 #include "../../SRC/Server/GameServer/network/db.h"
@@ -51,8 +49,7 @@ struct Actor {
 };
 struct ItemMeta {
     uint8_t size = 1, category = 0;
-    bool dragon = false, extra = false;
-    uint16_t dragonBase = 0;
+    bool extra = false;
     uint32_t anti = 0;
 };
 struct WirePacket { entt::entity recipient; uint8_t header, sub; };
@@ -77,7 +74,6 @@ template<class F> decltype(auto) Inventory(entt::entity owner, uint8_t window, F
 #ifdef ENABLE_EXTRA_INVENTORY
     if (window == EXTRA_INVENTORY) return f(g_registry.get<ecs::ExtraInventoryRuntimeComponent>(owner));
 #endif
-    if (window == DRAGON_SOUL_INVENTORY) return f(g_registry.get<ecs::DragonSoulInventoryComponent>(owner));
     return f(g_registry.get<ecs::MainInventoryRuntimeComponent>(owner));
 }
 entt::entity ActorEntity() {
@@ -89,7 +85,6 @@ entt::entity ActorEntity() {
     std::strcpy(desc->GetAccountTable().login, "account");
     descriptors.push_back(std::move(desc));
     g_registry.emplace<ecs::MainInventoryRuntimeComponent>(e);
-    g_registry.emplace<ecs::DragonSoulInventoryComponent>(e);
 #ifdef ENABLE_EXTRA_INVENTORY
     g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(e);
 #endif
@@ -102,7 +97,7 @@ entt::entity ActorEntity() {
 entt::entity Item(entt::entity owner, int cell = 0, uint8_t size = 1, uint8_t window = INVENTORY) {
     const auto e = g_registry.create();
     auto& meta = g_registry.emplace<ItemMeta>(e); meta.size = size;
-    meta.dragon = window == DRAGON_SOUL_INVENTORY;
+
 #ifdef ENABLE_EXTRA_INVENTORY
     meta.extra = window == EXTRA_INVENTORY;
     if (meta.extra) meta.category = cell / EXTRA_INVENTORY_CATEGORY_MAX_NUM;
@@ -118,7 +113,7 @@ entt::entity Item(entt::entity owner, int cell = 0, uint8_t size = 1, uint8_t wi
     g_registry.emplace<ecs::ItemSockets>(e);
     g_registry.emplace<ecs::ItemAttributes>(e);
     g_registry.emplace<ecs::ItemLockedAttribute>(e);
-    const int columns = window == DRAGON_SOUL_INVENTORY ? DRAGON_SOUL_BOX_COLUMN_NUM : INVENTORY_PAGE_COLUMN;
+    const int columns = INVENTORY_PAGE_COLUMN;
     Inventory(owner, window, [&](auto& inv) {
         Check(cell >= 0 && cell + (size - 1) * columns < inv.items.size(), "fixture bounds");
         inv.items[cell] = e;
@@ -202,10 +197,6 @@ void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) {
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 void CHARACTER_MANAGER::DelayedSave(entt::entity e) { A(e); ++characterSaves; }
-DSManager::DSManager() = default;
-DSManager::~DSManager() = default;
-DragonSoulTable::~DragonSoulTable() = default;
-uint16_t DSManager::GetBasePosition(entt::entity e) const { return I(e).dragonBase; }
 quest::CQuestManager::CQuestManager() = default;
 quest::CQuestManager::~CQuestManager() = default;
 quest::NPC::NPC() = default;
@@ -283,7 +274,6 @@ uint32_t GetItemAntiFlag(entt::entity e) { return I(e).anti; }
 uint32_t GetItemSocket(entt::entity e, int index) { I(e); return g_registry.get<ecs::ItemSockets>(e).sockets.at(index); }
 TPlayerItemAttribute GetItemAttribute(entt::entity e, int index) { I(e); return g_registry.get<ecs::ItemAttributes>(e).attrs.at(index); }
 int16_t GetItemLockedAttributeIndex(entt::entity e) { I(e); return g_registry.get<ecs::ItemLockedAttribute>(e).index; }
-bool IsDragonSoulItem(entt::entity e) { return I(e).dragon; }
 bool IsExtraItem(entt::entity e) { return I(e).extra; }
 uint8_t GetItemExtraCategory(entt::entity e) { return I(e).category; }
 bool SaveItemEcs(entt::entity e, bool flush) { I(e); Check(flush, "immediate item persistence"); ++saves; Call(onSave); return true; }
@@ -478,12 +468,6 @@ void InventoryKinds() {
     Check(ItemSystem::GetItemOwner(item) == a, "locked failure retains owner"); AssertClosed(a, b);
 #endif
 #endif
-    Reset(); auto a2 = ActorEntity(), b2 = ActorEntity();
-    auto dragon = Item(a2, 0, 1, DRAGON_SOUL_INVENTORY); I(dragon).dragonBase = DRAGON_SOUL_BOX_SIZE;
-    Check(ExchangeSystem::Start(a2, b2), "dragon start"); Offer(a2, dragon);
-    Check(Finish(a2, b2), "dragon transfer");
-    Check(ItemSystem::GetItemWindow(dragon) == DRAGON_SOUL_INVENTORY &&
-        ItemSystem::GetItemCell(dragon) == DRAGON_SOUL_BOX_SIZE, "dragon box selection");
 }
 void ReentrancyTests() {
     Reset(); auto a = ActorEntity(), b = ActorEntity(); auto x = Item(a), y = Item(b);
@@ -544,7 +528,7 @@ void AdditionalFailureTests() {
         switch (scenario) {
         case 0: noQuest = true; break;
         case 1: db_clientdesc = nullptr; break;
-        case 2: g_registry.remove<ecs::DragonSoulInventoryComponent>(b); break;
+        case 2: g_registry.remove<ecs::MainInventoryRuntimeComponent>(b); break;
         case 3: g_registry.get<ecs::WarpBlockState>(b).safeboxLoadTime = pulse; break;
         case 4: A(b).canHandle = false; break;
         case 5: g_registry.get<ecs::MainInventoryRuntimeComponent>(a).items[10] = item; break;
@@ -659,7 +643,7 @@ void AdmissionGuards()
 int main() {
     try {
         CLIENT_DESC db; db_clientdesc = &db;
-        CHARACTER_MANAGER characters; DSManager dragons; quest::CQuestManager quests; LogManager logs;
+        CHARACTER_MANAGER characters; quest::CQuestManager quests; LogManager logs;
         AdmissionGuards(); LifecycleTests(); StartGuards(); OffersAndValidation(); TransferTests(); GoldTests();
         InventoryKinds(); ReentrancyTests(); RetiredCardItemsAreOrdinary(); AdditionalFailureTests();
         Reset(); db_clientdesc = nullptr;

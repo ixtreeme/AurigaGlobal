@@ -21,7 +21,6 @@
 #include "db.h"
 #include "desc.h"
 #include "desc_client.h"
-#include "DragonSoul.h"
 #include "log.h"
 #include "packet.h"
 #include "questmanager.h"
@@ -238,8 +237,6 @@ bool SourceWindow(TItemPos position)
 {
     if (position.window_type == INVENTORY)
         return position.cell < INVENTORY_MAX_NUM || position.IsBeltInventoryPosition();
-    if (position.window_type == DRAGON_SOUL_INVENTORY)
-        return position.cell < DRAGON_SOUL_INVENTORY_MAX_NUM;
 #ifdef ENABLE_EXTRA_INVENTORY
     if (position.window_type == EXTRA_INVENTORY)
         return position.cell < EXTRA_INVENTORY_MAX_NUM;
@@ -331,7 +328,6 @@ void PublishAccepts(entt::entity session, uint64_t revision)
 struct Inventories
 {
     ecs::MainInventoryRuntimeComponent main;
-    ecs::DragonSoulInventoryComponent dragonSoul;
 #ifdef ENABLE_EXTRA_INVENTORY
     ecs::ExtraInventoryRuntimeComponent extra;
 #endif
@@ -340,7 +336,7 @@ struct Inventories
 bool HasInventories(entt::entity owner)
 {
     return g_registry.valid(owner) && g_registry.all_of<ecs::MainInventoryRuntimeComponent,
-        ecs::DragonSoulInventoryComponent, ecs::GoldAmount>(owner)
+        ecs::GoldAmount>(owner)
 #ifdef ENABLE_EXTRA_INVENTORY
         && g_registry.all_of<ecs::ExtraInventoryRuntimeComponent>(owner)
 #endif
@@ -351,7 +347,6 @@ Inventories Snapshot(entt::entity owner)
 {
     Inventories result;
     if (const auto* value = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner)) result.main = *value;
-    if (const auto* value = g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner)) result.dragonSoul = *value;
 #ifdef ENABLE_EXTRA_INVENTORY
     if (const auto* value = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner)) result.extra = *value;
 #endif
@@ -362,8 +357,7 @@ bool Matches(entt::entity owner, const Inventories& saved)
 {
     if (!HasInventories(owner)) return false;
     const auto current = Snapshot(owner);
-    return current.main.items == saved.main.items && current.main.itemGrid == saved.main.itemGrid &&
-        current.dragonSoul.items == saved.dragonSoul.items && current.dragonSoul.itemGrid == saved.dragonSoul.itemGrid
+    return current.main.items == saved.main.items && current.main.itemGrid == saved.main.itemGrid
 #ifdef ENABLE_EXTRA_INVENTORY
         && current.extra.items == saved.extra.items && current.extra.itemGrid == saved.extra.itemGrid
 #endif
@@ -372,8 +366,7 @@ bool Matches(entt::entity owner, const Inventories& saved)
 
 size_t References(const Inventories& inventories, entt::entity item)
 {
-    return std::count(inventories.main.items.begin(), inventories.main.items.end(), item) +
-        std::count(inventories.dragonSoul.items.begin(), inventories.dragonSoul.items.end(), item)
+    return std::count(inventories.main.items.begin(), inventories.main.items.end(), item)
 #ifdef ENABLE_EXTRA_INVENTORY
         + std::count(inventories.extra.items.begin(), inventories.extra.items.end(), item)
 #endif
@@ -386,8 +379,6 @@ bool WithInventory(Inventories& inventories, TItemPos position, Function&& funct
     if (position.window_type == INVENTORY)
         return function(inventories.main, position.IsBeltInventoryPosition() ? 1 : INVENTORY_PAGE_COLUMN,
             position.IsBeltInventoryPosition() ? INVENTORY_AND_EQUIP_SLOT_MAX : INVENTORY_PAGE_SIZE);
-    if (position.window_type == DRAGON_SOUL_INVENTORY)
-        return function(inventories.dragonSoul, DRAGON_SOUL_BOX_COLUMN_NUM, DRAGON_SOUL_BOX_SIZE);
 #ifdef ENABLE_EXTRA_INVENTORY
     if (position.window_type == EXTRA_INVENTORY)
         return function(inventories.extra, EXTRA_INVENTORY_PAGE_COLUMN, EXTRA_INVENTORY_PAGE_SIZE);
@@ -441,16 +432,8 @@ TItemPos Place(Inventories& inventories, entt::entity owner, const OfferedItem& 
 {
     int begin = 0, end = InventorySystem::GetInventorySize(owner);
     uint8_t window = INVENTORY;
-    if (ItemSystem::IsDragonSoulItem(selection.item))
-    {
-        window = DRAGON_SOUL_INVENTORY;
-        begin = DSManager::instance().GetBasePosition(selection.item);
-        if (begin == std::numeric_limits<uint16_t>::max() || begin + DRAGON_SOUL_BOX_SIZE > DRAGON_SOUL_INVENTORY_MAX_NUM)
-            return NPOS;
-        end = begin + DRAGON_SOUL_BOX_SIZE;
-    }
 #ifdef ENABLE_EXTRA_INVENTORY
-    else if (ItemSystem::IsExtraItem(selection.item))
+    if (ItemSystem::IsExtraItem(selection.item))
     {
         const int category = ItemSystem::GetItemExtraCategory(selection.item);
         if (category < 0 || category >= 6)
@@ -626,7 +609,6 @@ bool Complete(entt::entity session)
     {
         const auto owner = snapshot.offers[side].owner;
         g_registry.get<ecs::MainInventoryRuntimeComponent>(owner) = planned[side].main;
-        g_registry.get<ecs::DragonSoulInventoryComponent>(owner) = planned[side].dragonSoul;
 #ifdef ENABLE_EXTRA_INVENTORY
         g_registry.get<ecs::ExtraInventoryRuntimeComponent>(owner) = planned[side].extra;
 #endif
@@ -653,8 +635,7 @@ bool Complete(entt::entity session)
             for (const auto& transfer : transfers)
             {
                 if (transfer.from != snapshot.offers[side].owner ||
-                    transfer.selection.source.cell > UINT8_MAX ||
-                    transfer.selection.source.window_type == DRAGON_SOUL_INVENTORY)
+                    transfer.selection.source.cell > UINT8_MAX)
                     continue;
                 uint8_t type = QUICKSLOT_TYPE_ITEM;
 #ifdef ENABLE_EXTRA_INVENTORY

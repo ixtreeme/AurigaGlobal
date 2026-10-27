@@ -57,17 +57,7 @@ struct CubeWindowComponent {
     CubeWindowComponent() { items.fill(entt::null); }
 };
 
-struct DragonSoulInventoryComponent {
-    std::array<entt::entity, DRAGON_SOUL_INVENTORY_MAX_NUM> items;
-    std::array<uint16_t, DRAGON_SOUL_INVENTORY_MAX_NUM> itemGrid {};
 
-    DragonSoulInventoryComponent() { items.fill(entt::null); }
-};
-
-struct DragonSoulRuntimeStateComponent {
-    int32_t activeDeck { -1 };
-    entt::entity refineWindowOpener { entt::null };
-};
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
 struct AttrTransferWindowComponent {

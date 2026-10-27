@@ -657,7 +657,6 @@ namespace quest
 		RegisterOXEventFunctionTable();
 		RegisterBattleArenaFunctionTable();
 		RegisterDanceEventFunctionTable();
-		RegisterDragonSoulFunctionTable();
 
 		{
 			luaL_reg member_functions[] =

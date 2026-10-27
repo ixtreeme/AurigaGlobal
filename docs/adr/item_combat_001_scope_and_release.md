@@ -8,7 +8,7 @@ A felhasználó a kategóriás itemmodellt és determinisztikus harcrendszert a 
 
 ## Döntés
 
-- A migráció P0 auditból indul. A régi BattlePass és offline shop kivezetése érvényben marad; nem készül hozzájuk új modell vagy runtime-integráció.
+- A migráció P0 auditból indul. A régi BattlePass és offline shop kivezetése érvényben marad; nem készül hozzájuk új modell vagy runtime-integráció. A későbbi felhasználói döntés alapján ugyanez vonatkozik a DragonSoul rendszerre; lásd IC-010.
 - A megmaradó online boltok, NPC shop, trade, szezonális Mission Pass, Lua questek, C++ dungeonok és Spy/Caravan küldetések funkcióit az új szerződésekre kell portolni.
 - Nincs runtime vnum adapter, kompatibilitási proto, dual write, két harcmotor, régi motorra visszakapcsoló feature flag vagy éles shadow-evaluation.
 - Az új domain/kernel/tool tesztcélok izoláltan építhetők fejlesztés közben. Félkész modellből nem készül támogatott játék-runtime release. Ez nem engedély a régi és új modell production összekötésére.

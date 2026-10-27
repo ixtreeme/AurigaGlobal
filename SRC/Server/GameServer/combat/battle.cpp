@@ -351,7 +351,7 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 
 	if (ecs::PlayerRuntime::IsNPC(victim))
 	{
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_RUNE))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_RUNE_MONSTERS)) / 100;
 #endif

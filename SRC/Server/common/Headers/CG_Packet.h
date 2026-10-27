@@ -612,16 +612,7 @@ typedef struct command_script_select_item
 	uint32_t selection;
 } TPacketCGScriptSelectItem;
 
-typedef struct SPacketCGDragonSoulRefine
-{
-	SPacketCGDragonSoulRefine() : header(HEADER_CG_DRAGON_SOUL_REFINE), bSubType(0)
-	{
-	}
 
-	uint8_t header;
-	uint8_t bSubType;
-	TItemPos ItemGrid[DRAGON_SOUL_REFINE_GRID_SIZE];
-} TPacketCGDragonSoulRefine;
 
 typedef struct SPacketCGStateCheck
 {

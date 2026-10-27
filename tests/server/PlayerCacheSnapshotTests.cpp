@@ -142,7 +142,7 @@ void Invalid()
               "invalid identity/ownership/duplicate accepted");
     }
     for (uint8_t window :
-         {uint8_t(INVENTORY), uint8_t(EQUIPMENT), uint8_t(BELT_INVENTORY), uint8_t(DRAGON_SOUL_INVENTORY)
+         {uint8_t(INVENTORY), uint8_t(EQUIPMENT), uint8_t(BELT_INVENTORY)
 #ifdef ENABLE_EXTRA_INVENTORY
                                                                                ,
           uint8_t(EXTRA_INVENTORY)
@@ -161,6 +161,19 @@ void Invalid()
         Check(firstInvalid > 0 && !snapshot::ValidItem(item, 100), "window boundary not enforced");
         item.pos = firstInvalid - 1;
         Check(snapshot::ValidItem(item, 100), "last valid persisted position rejected");
+    }
+    for (uint16_t cell : {uint16_t(0), uint16_t(1), uint16_t(100), uint16_t(UINT16_MAX)})
+    {
+        auto item = state.items.front();
+        item.window = RETIRED_WINDOW_6;
+        item.pos = cell;
+        Check(!snapshot::ValidItem(item, 100), "retired window persisted in a player snapshot");
+    }
+    {
+        auto item = state.items.front();
+        item.window = EQUIPMENT;
+        item.pos = WEAR_MAX_NUM;
+        Check(!snapshot::ValidItem(item, 100), "retired equipment slot persisted");
     }
     for (int window = 0; window < 256; ++window)
     {
@@ -193,12 +206,12 @@ void Capacity()
     auto state = State();
     state.items.clear();
     Frames(state);
-    for (uint16_t pos = 0; pos < DRAGON_SOUL_INVENTORY_MAX_NUM && state.items.size() < snapshot::MaximumItems;
+    for (uint16_t pos = 0; pos < EXTRA_INVENTORY_MAX_NUM && state.items.size() < snapshot::MaximumItems;
          ++pos)
     {
         auto item = State().items.front();
         item.id += pos;
-        item.window = DRAGON_SOUL_INVENTORY;
+        item.window = EXTRA_INVENTORY;
         item.pos = pos;
         state.items.push_back(item);
     }

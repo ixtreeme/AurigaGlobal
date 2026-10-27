@@ -42,6 +42,8 @@
 #include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/WoodcuttingSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/HerbalismSystem.hpp"
+#include "../../SRC/Server/GameServer/story/SpyQuestSystem.hpp"
+#include "../../SRC/Server/GameServer/story/CaravanQuestSystem.hpp"
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -60,6 +62,10 @@ int test_server=0;
 // continue to its quest handlers, as for an NPC without a gathering action.
 namespace WoodcuttingSystem { bool Start(entt::entity, entt::entity) { return false; } }
 namespace HerbalismSystem { bool Start(entt::entity, entt::entity) { return false; } }
+// This fixture has no active story encounters. Their rule suites cover the
+// story admission; these seams let the real trigger reach ordinary quests.
+bool SpyQuest::Click(entt::entity, entt::entity) { return false; }
+bool CaravanQuest::Click(entt::entity, entt::entity) { return false; }
 namespace quest {
 int npc_lock(lua_State*);
 int npc_unlock(lua_State*);

@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include <common/retired_content.h>
 #include "PlayerRuntimeSystem.hpp"
 #include "SessionSystem.hpp"
 #include "QuestSystem.hpp"
@@ -63,7 +64,6 @@
 #ifdef ENABLE_SWITCHBOT
 #include "../../social/new_switchbot.h"
 #endif
-#include "../../dungeon/DragonSoul.h"
 #include "../../combat/buff_on_attributes.h"
 #include "../../item/ItemUse.h"
 #ifdef __NEWPET_SYSTEM__
@@ -135,7 +135,7 @@ static int GetMainInventoryLimit(entt::entity e)
 
 static entt::entity GetMainInventoryItem(entt::entity e, uint16_t cell)
 {
-    if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
+    if (!TItemPos(INVENTORY, cell).IsValidItemPosition())
         return entt::null;
 
     const auto* comp = TryGetMainInventoryRuntimeComponent(e);
@@ -196,8 +196,7 @@ bool IsExtraEnchantUseSubtype(uint8_t subtype)
 	case USE_ADD_ATTR_COSTUME2:
 	case USE_REMOVE_ATTR_COSTUME:
 #endif
-#ifdef ENABLE_DS_ENCHANT
-	case USE_DS_ENCHANT:
+#ifdef ENABLE_STOLE_COSTUME
 	case USE_ENCHANT_STOLE:
 #endif
 		return true;
@@ -365,6 +364,7 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, const TItemTab
 {
     // Item indexes and runtime services belong to the world registry.
     if (&reg != &g_registry || !proto || !vnum || !vid || !proto->bSize ||
+        auriga::retired_content::Item(proto->bType, proto->bSubType) ||
         (proto->bType != ITEM_ELK && !id)) return entt::null;
     auto& index = CItemRegistry::Instance();
     if (index.Find(id) != entt::null || index.FindByVID(vid) != entt::null) return entt::null;
@@ -459,6 +459,7 @@ bool RefreshItemPrototype(entt::entity item, const TItemTable* proto)
 {
     if (!IsValidItem(item) ||
         !g_registry.all_of<ecs::ItemProtoRef, ecs::ItemPrototypeMeta, ecs::ItemFlags>(item)) return false;
+    if (proto && auriga::retired_content::Item(proto->bType, proto->bSubType)) proto = nullptr;
     // Existing component writes only: no callbacks can observe mixed old/new
     // prototype fields, and a removed prototype clears every borrowed reference.
     const auto snapshot = MakeItemPrototype(proto, GetItemVnum(item));
@@ -588,13 +589,12 @@ bool PickupItem(entt::entity character, uint32_t vid)
         }
     }
     if (!current() || !ground() || selectOwner() != owner) return false;
-    const uint8_t window = IsDragonSoulItem(item) ? DRAGON_SOUL_INVENTORY :
+    const uint8_t window =
 #ifdef ENABLE_EXTRA_INVENTORY
         extra ? EXTRA_INVENTORY :
 #endif
         INVENTORY;
     const auto emptyCell = [&] {
-        if (window == DRAGON_SOUL_INVENTORY) return GetEmptyDragonSoulInventory(owner, item);
 #ifdef ENABLE_EXTRA_INVENTORY
         if (window == EXTRA_INVENTORY) return GetEmptyExtraInventory(owner, item);
 #endif
@@ -652,14 +652,9 @@ entt::entity GetItem(entt::entity e, TItemPos cell)
     case INVENTORY:
         return GetMainInventoryItem(e, cell.cell);
     case EQUIPMENT:
-        if (cell.cell >= INVENTORY_AND_EQUIP_SLOT_MAX - INVENTORY_MAX_NUM)
+        if (cell.cell >= WEAR_MAX_NUM)
             return entt::null;
         return GetMainInventoryItem(e, static_cast<uint16_t>(INVENTORY_MAX_NUM + cell.cell));
-    case DRAGON_SOUL_INVENTORY:
-        if (cell.cell < DRAGON_SOUL_INVENTORY_MAX_NUM)
-            if (const auto* inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(e))
-                return IsValidItem(inventory->items[cell.cell]) ? inventory->items[cell.cell] : entt::null;
-        return entt::null;
 #ifdef ENABLE_EXTRA_INVENTORY
     case EXTRA_INVENTORY:
         if (cell.cell < EXTRA_INVENTORY_MAX_NUM)
@@ -1013,7 +1008,6 @@ static bool IsSimpleEquipToggleType(uint8_t type)
     case ITEM_RING:
     case ITEM_BELT:
     case ITEM_PICK:
-    case ITEM_SPECIAL_DS:
         return true;
     default:
         return false;
@@ -1078,11 +1072,6 @@ bool OnAfterCreatedItem(entt::entity item)
             return false;
 #endif
     return IsValidItem(item);
-}
-
-bool IsDragonSoulItem(entt::entity item)
-{
-    return IsValidItem(item) && GetItemType(item) == ITEM_DS;
 }
 
 bool IsExtraItem(entt::entity item)
@@ -2706,11 +2695,6 @@ bool IsItemInExtraInventory(entt::entity item)
 #endif
 }
 
-bool IsItemInDragonSoulInventory(entt::entity item)
-{
-    return GetItemWindow(item) == DRAGON_SOUL_INVENTORY;
-}
-
 static uint32_t EntityPlayerID(entt::entity e);
 
 bool IsItemVnumStackable(uint32_t vnum)
@@ -2873,28 +2857,10 @@ int FindEquipCell(entt::entity ownerEntity, entt::entity item, int iCandidateCel
 		return ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, wearCell));
 	};
 
-	if ((0 == GetItemWearFlag(item) || ITEM_TOTEM == GetItemType(item)) && ITEM_COSTUME != GetItemType(item) && ITEM_DS != GetItemType(item) && ITEM_SPECIAL_DS != GetItemType(item) && ITEM_RING != GetItemType(item) && ITEM_BELT != GetItemType(item))
+	if ((0 == GetItemWearFlag(item) || ITEM_TOTEM == GetItemType(item)) && ITEM_COSTUME != GetItemType(item) && ITEM_RING != GetItemType(item) && ITEM_BELT != GetItemType(item))
 		return -1;
 
-	if (GetItemType(item) == ITEM_DS || GetItemType(item) == ITEM_SPECIAL_DS)
-	{
-		if (iCandidateCell < 0)
-		{
-			return WEAR_MAX_NUM + GetItemSubType(item);
-		}
-		else
-		{
-			for (int i = 0; i < DRAGON_SOUL_DECK_MAX_NUM; i++)
-			{
-				if (WEAR_MAX_NUM + i * DS_SLOT_MAX + GetItemSubType(item) == iCandidateCell)
-				{
-					return iCandidateCell;
-				}
-			}
-			return -1;
-		}
-	}
-	else if (GetItemType(item) == ITEM_COSTUME)
+	if (GetItemType(item) == ITEM_COSTUME)
 	{
 		if (GetItemSubType(item) == COSTUME_BODY)
 			return WEAR_COSTUME_BODY;

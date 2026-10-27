@@ -309,7 +309,6 @@ int InventorySystem::GetEmptyInventory(entt::entity owner, uint8_t) {
     if (onPickupFindCell) onPickupFindCell(owner);
     return pickupCell;
 }
-int ItemSystem::GetEmptyDragonSoulInventory(entt::entity, entt::entity) { return pickupCell; }
 int ItemSystem::GetEmptyExtraInventory(entt::entity, entt::entity) { return pickupCell; }
 entt::entity InventorySystem::RemoveFromGround(entt::entity item) {
     Check(pickupTest && ItemSystem::IsValidItem(item), "pickup detached stale entity");
@@ -352,7 +351,14 @@ void NativeInventoryAndUse() {
         "equipment offset wrapped into inventory");
     Check(ItemSystem::GetInventoryItem(owner, INVENTORY_AND_EQUIP_SLOT_MAX) == entt::null,
         "out of bounds inventory access accepted");
-    g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner).items[0] = f.item;
+    const auto retiredCell = uint16_t(INVENTORY_MAX_NUM + WEAR_MAX_NUM);
+    main.items[retiredCell] = f.item;
+    Check(ItemSystem::GetInventoryItem(owner, retiredCell) == entt::null &&
+        ItemSystem::GetItem(owner, TItemPos(INVENTORY, retiredCell)) == entt::null &&
+        ItemSystem::GetItem(owner, TItemPos(EQUIPMENT, WEAR_MAX_NUM)) == entt::null &&
+        ItemSystem::GetItem(owner, TItemPos(RETIRED_WINDOW_6, 0)) == entt::null,
+        "retired storage remained readable through an alias");
+    main.items[retiredCell] = entt::null;
 #ifdef ENABLE_EXTRA_INVENTORY
     g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner).items[0] = f.item;
     Check(ItemSystem::GetExtraInventoryItem(owner, 0) == f.item, "native extra item lookup failed");
@@ -360,14 +366,12 @@ void NativeInventoryAndUse() {
 #ifdef ENABLE_SWITCHBOT
     g_registry.emplace<ecs::SwitchbotRuntimeComponent>(owner).items[0] = f.item;
 #endif
-    Check(ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, 0)) == f.item,
-        "native dragon soul item lookup failed");
     onUse = [](entt::entity item) { g_registry.get<ecs::ItemIdentity>(item).vnum = 4321; return true; };
     Check(ItemSystem::UseItemEcs(owner, f.item, TItemPos(INVENTORY, 1)) && ItemSystem::GetItemVnum(f.item) == 4321,
         "native use result was overwritten by legacy synchronization");
     onUse = [](entt::entity item) { g_registry.destroy(item); return true; };
     Check(ItemSystem::UseItemEcs(owner, f.item, TItemPos(INVENTORY, 1)), "consumed use lost its handled result");
-    for (uint8_t window : {uint8_t(INVENTORY), uint8_t(EQUIPMENT), uint8_t(DRAGON_SOUL_INVENTORY)
+    for (uint8_t window : {uint8_t(INVENTORY), uint8_t(EQUIPMENT)
 #ifdef ENABLE_EXTRA_INVENTORY
         , uint8_t(EXTRA_INVENTORY)
 #endif
@@ -696,6 +700,15 @@ void NativeFactory() {
         EntityFactory::CreateItemEntity(g_registry, &proto, 100, 0, 2) == entt::null &&
         EntityFactory::CreateItemEntity(g_registry, &proto, 100, 1, 0) == entt::null,
         "invalid native factory input was accepted");
+    for (const auto [type, subtype] : std::array<std::pair<uint8_t, uint8_t>, 9>{{
+            {29, 0}, {30, 0}, {31, 0}, {ITEM_MATERIAL, 5}, {ITEM_MATERIAL, 6}, {ITEM_MATERIAL, 7},
+            {ITEM_USE, 27}, {ITEM_USE, 28}, {ITEM_USE, 42}}}) {
+        proto.bType = type; proto.bSubType = subtype;
+        Check(EntityFactory::CreateItemEntity(g_registry, &proto, 100, 903, 904) == entt::null &&
+            CItemRegistry::Instance().Find(903) == entt::null && CItemRegistry::Instance().FindByVID(904) == entt::null,
+            "retired prototype created or registered a native item");
+    }
+    proto.bSubType = 0;
     proto.bType = ITEM_ELK;
     const auto gold = EntityFactory::CreateItemEntity(g_registry, &proto, 1, 0, 905);
     Check(ItemSystem::IsValidItem(gold) && CItemRegistry::Instance().FindByVID(905) == gold &&
@@ -733,6 +746,10 @@ void NativePrototypeRefresh() {
         ItemSystem::IsItemExchanging(item) && ItemSystem::GetItemSkipSave(item) &&
         g_registry.get<ecs::ItemAttributes>(item).attrs[0].sValue == 900,
         "reload overwrote runtime item state");
+    auto retired = updated; retired.bType = ITEM_RETIRED_29;
+    Check(ItemSystem::RefreshItemPrototype(item, &retired) && !ItemSystem::GetItemProto(item) &&
+        ItemSystem::GetItemType(item) == 0 && ItemSystem::GetItemCount(item) == 73,
+        "retired prototype reload reactivated an item");
     Check(ItemSystem::RefreshItemPrototype(item, nullptr) && !ItemSystem::GetItemProto(item) &&
         ItemSystem::GetItemSize(item) == 0 && ItemSystem::GetItemType(item) == 0 &&
         ItemSystem::GetItemFlags(item) == 0 && ItemSystem::GetItemCount(item) == 73,
@@ -858,12 +875,11 @@ struct PickupFixture {
         bool Pickup() { return ItemSystem::PickupItem(owner, 1502); }
 };
 void NativePickups() {
-    for (uint8_t type : {ITEM_WEAPON, ITEM_MATERIAL, ITEM_DS}) {
+    for (uint8_t type : {ITEM_WEAPON, ITEM_MATERIAL}) {
         PickupFixture f(type);
         Check(f.Pickup() && ItemSystem::GetItemOwner(f.item) == f.owner && pickupDetaches == 1 &&
-            pickupPlacements == 1 && lastPickupWindow == (type == ITEM_DS ? DRAGON_SOUL_INVENTORY :
-                type == ITEM_MATERIAL ? EXTRA_INVENTORY : INVENTORY),
-            "native pickup lost its normal/extra/dragon-soul window");
+            pickupPlacements == 1 && lastPickupWindow == (type == ITEM_MATERIAL ? EXTRA_INVENTORY : INVENTORY),
+            "native pickup lost its normal/extra window");
         Check(!f.Pickup() && pickupPlacements == 1, "stored item picked twice");
     }
     for (int invalid = 0; invalid < 8; ++invalid) {

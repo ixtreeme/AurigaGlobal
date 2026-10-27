@@ -12,7 +12,7 @@ const char* GetItemWindowName(uint8_t window)
 	// labels do not enable the retired shop runtime or accept client requests.
 	static const char* const s_names[] = {
 		"INVENTORY", "INVENTORY", "EQUIPMENT", "SAFEBOX", "MALL",
-		"MOUNT_INVENTORY", "DRAGON_SOUL_INVENTORY", "BELT_INVENTORY",
+		"MOUNT_INVENTORY", "RETIRED_WINDOW_6", "BELT_INVENTORY",
 		"EXTRA_INVENTORY", "SWITCHBOT", "GROUND", "NEW_OFFSHOP", "SHOP_SAFEBOX"
 	};
 

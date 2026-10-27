@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include <common/retired_content.h>
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../CharacterAccessors.hpp"
@@ -25,8 +26,6 @@
 #include "../../network/desc.h"
 #include "../../network/desc_client.h"
 #include "../../combat/battle.h"
-#include "../../dungeon/DragonSoul.h"
-#include "DragonSoulSystem.hpp"
 #include "../../guild/guild.h"
 #include "../../pet/horsename_manager.h"
 #include "../../item/item.h"
@@ -580,7 +579,7 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
 AffectId Attach(entt::entity e, const CAffect& value)
 {
     auto* state = AffectState(e);
-    if (!state || value.bApplyOn >= POINT_MAX_NUM)
+    if (!state || value.bApplyOn >= POINT_MAX_NUM || auriga::retired_content::Affect(value.dwType))
         return 0;
     const AffectId affect = NextAffectId();
     state->affects.push_back({affect, value});
@@ -1061,6 +1060,8 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
 	{
+		if (auriga::retired_content::Affect(pElements->dwType))
+			continue;
 		////if (pElements->dwType == SKILL_MUYEONG)
 		////	continue;
 		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
@@ -1186,9 +1187,6 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 		return;
 	AffectState(entity)->isLoaded = true;
 
-	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_BEGIN pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
-	DragonSoulSystem::Initialize(entity);
-	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_END pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
 
 	// @fixme118 (regain affect hp/mp)
 	if (!CombatSystem::IsDead(e))
@@ -1311,7 +1309,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube)
 {
-    if (!AffectState(e) || applyOn >= POINT_MAX_NUM)
+    if (!AffectState(e) || applyOn >= POINT_MAX_NUM || auriga::retired_content::Affect(type))
         return false;
     if (duration == 0)
         duration = 1;

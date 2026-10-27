@@ -671,12 +671,8 @@ namespace ShopSystem
 #endif
 
 			int iEmptyPos;
-			if (ItemSystem::IsDragonSoulItem(itemEntity))
-			{
-				iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(ch, itemEntity);
-			}
 #ifdef ENABLE_EXTRA_INVENTORY
-			else if (ItemSystem::IsExtraItem(itemEntity))
+			if (ItemSystem::IsExtraItem(itemEntity))
 			{
 				iEmptyPos = ItemSystem::GetEmptyExtraInventory(ch, itemEntity);
 			}
@@ -771,11 +767,8 @@ namespace ShopSystem
 
 					InventorySystem::RemoveFromCharacter(itemEntity);
 
-					if (ItemSystem::IsDragonSoulItem(itemEntity)) {
-						InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
-					}
 #ifdef ENABLE_EXTRA_INVENTORY
-					else if (ItemSystem::IsExtraItem(itemEntity)) {
+					if (ItemSystem::IsExtraItem(itemEntity)) {
 #ifdef ENABLE_25082021
 						if (ItemSystem::IsItemStackable(itemEntity) && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT

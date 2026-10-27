@@ -5,6 +5,7 @@
 #include "Main.h"
 #include "CsvReader.h"
 #include "ProtoReader.h"
+#include <common/retired_content.h>
 #include <algorithm>
 #include "Core/Logging.hpp"
 
@@ -40,6 +41,13 @@ bool CClientManager::InitializeTables()
 		LOG_ERROR("InitializeItemTable FAILED");
 		return false;
 	}
+	std::erase_if(m_vec_itemTable, [](const TItemTable& item) {
+		return auriga::retired_content::Item(item.bType, item.bSubType);
+	});
+	// Erasure changes element addresses; rebuild all borrowed indexes afterwards.
+	m_map_itemTableByVnum.clear();
+	for (auto& item : m_vec_itemTable)
+		m_map_itemTableByVnum.emplace(item.dwVnum, &item);
 
 #ifdef ENABLE_PROTO_FROM_DB
 	extern bool g_bMirror2DB;
@@ -1861,9 +1869,6 @@ bool CClientManager::InitializeItemTableFromDB()
 
 #if !defined(ENABLE_AUTODETECT_VNUMRANGE)
 			VERIFY_IFIELD(IProto::vnum_range, item_table->dwVnumRange);
-#else
-			if (item_table->bType == ITEM_DS)
-				item_table->dwVnumRange = 99;
 #endif
 
 		m_map_itemTableByVnum.insert(std::map<uint32_t, TItemTable*>::value_type(item_table->dwVnum, item_table));

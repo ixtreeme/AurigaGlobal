@@ -984,16 +984,7 @@ typedef struct SPacketGCSpecificEffect
 	char effect_file[MAX_EFFECT_FILE_NAME];
 } TPacketGCSpecificEffect;
 
-typedef struct SPacketGCDragonSoulRefine
-{
-	SPacketGCDragonSoulRefine() : header(HEADER_GC_DRAGON_SOUL_REFINE), bSubType(0)
-	{
-	}
 
-	uint8_t header;
-	uint8_t bSubType;
-	TItemPos Pos;
-} TPacketGCDragonSoulRefine;
 
 typedef struct SPacketGCStateCheck
 {

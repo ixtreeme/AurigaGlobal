@@ -18,7 +18,7 @@ enum eCommonDefines {
 
 #define ENABLE_DICE_SYSTEM
 #define ENABLE_EXTEND_INVEN_SYSTEM
-#define __ENABLE_EXTEND_INVEN_SYSTEM__	
+#define __ENABLE_EXTEND_INVEN_SYSTEM__
 #define ENABLE_MOUNT_COSTUME_SYSTEM
 #define ENABLE_WEAPON_COSTUME_SYSTEM
 
@@ -54,7 +54,6 @@ enum eCommonDefines {
 
 #define ENABLE_GAYA_SYSTEM									// Gaya System Metin2
 #define	__ENABLE_RANGE_ALCHEMY__							// Open shop everywhere
-#define __ENABLE_REFINE_ALCHEMY__							// Open Refine Window everywhere
 #define	ENABLE_STRONG_BOSS									// Bonus strong against Boss
 #define ENABLE_STRONG_METIN									// Bonus strong against Metin
 #define ENABLE_RESIST_MONSTER								// New Bonus Resist Monster
@@ -71,7 +70,7 @@ enum eCommonDefines {
 #define __VIEW_TARGET_PLAYER_HP__							// Show Decimal HP
 #ifdef __VIEW_TARGET_PLAYER_HP__							//
 	#define __VIEW_TARGET_DECIMAL_HP__						//
-#endif	
+#endif
 #define ENABLE_ITEMAWARD_REFRESH
 
 #define ENABLE_CHANNEL_SWITCH_SYSTEM							// Instant Change Channel

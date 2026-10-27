@@ -5,7 +5,6 @@
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
 #include "AffectSystem.hpp"
-#include "DragonSoulSystem.hpp"
 #include "CombatSystem.hpp"
 #include "../../combat/skill.h"
 #include "../../social/marriage.h"
@@ -37,7 +36,6 @@
 #ifdef ENABLE_SWITCHBOT
 #include "../../social/new_switchbot.h"
 #endif
-#include "../../dungeon/DragonSoul.h"
 #include "../../core/packet.h"
 #include "../../world/sectree_manager.h"
 #include "../../../common/VnumHelper.h"
@@ -232,14 +230,6 @@ bool CanEquipNow(entt::entity owner, entt::entity itemEntity)
 	}
 #endif
 
-#ifdef ENABLE_DS_SET
-	if ((DragonSoulSystem::IsDeckActivated(owner)) && (ItemSystem::IsDragonSoulItem(itemEntity))) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 76, "");
-#endif
-		return false;
-	}
-#endif
 
 	return true;
 }
@@ -270,15 +260,6 @@ bool CanUnequipNow(entt::entity owner, entt::entity item, bool requireSpace)
 #endif
         return false;
     }
-#ifdef ENABLE_DS_SET
-    if (ItemSystem::IsDragonSoulItem(item) && DragonSoulSystem::IsDeckActivated(owner))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 76, "");
-#endif
-        return false;
-    }
-#endif
     return true;
 }
 
@@ -295,9 +276,6 @@ bool CanHandleItems(entt::entity owner, bool skipRefine, bool skipObserver)
         return false;
     const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(owner);
     if (cube && g_registry.valid(cube->npc))
-        return false;
-    const auto* dragonSoul = g_registry.try_get<ecs::DragonSoulRuntimeStateComponent>(owner);
-    if (dragonSoul && g_registry.valid(dragonSoul->refineWindowOpener))
         return false;
 #ifdef __ATTR_TRANSFER_SYSTEM__
     const auto* transfer = g_registry.try_get<ecs::AttrTransferWindowComponent>(owner);
@@ -380,10 +358,6 @@ bool IsEmptyItemGrid(entt::entity owner, TItemPos position, uint8_t size, int ex
             }
             return fits(inventory, GetInventorySize(owner), INVENTORY_PAGE_COLUMN, INVENTORY_PAGE_SIZE);
         }
-        case DRAGON_SOUL_INVENTORY:
-            return fits(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner),
-                        DRAGON_SOUL_INVENTORY_MAX_NUM, DRAGON_SOUL_BOX_COLUMN_NUM,
-                        DRAGON_SOUL_INVENTORY_MAX_NUM);
 #ifdef ENABLE_EXTRA_INVENTORY
         case EXTRA_INVENTORY:
         {
@@ -995,10 +969,6 @@ bool VisitStorage(entt::entity owner, TItemPos position, Function&& function)
         if (auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner))
             return function(*inventory, position.IsBeltInventoryPosition() ? 1 : INVENTORY_PAGE_COLUMN);
         break;
-    case DRAGON_SOUL_INVENTORY:
-        if (auto* inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner))
-            return function(*inventory, DRAGON_SOUL_BOX_COLUMN_NUM);
-        break;
 #ifdef ENABLE_EXTRA_INVENTORY
     case EXTRA_INVENTORY:
         if (auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner))
@@ -1020,7 +990,6 @@ bool EnsureStorage(entt::entity owner, uint8_t window)
     switch (window)
     {
     case INVENTORY: return EnsureComponent<ecs::MainInventoryRuntimeComponent>(owner);
-    case DRAGON_SOUL_INVENTORY: return EnsureComponent<ecs::DragonSoulInventoryComponent>(owner);
 #ifdef ENABLE_EXTRA_INVENTORY
     case EXTRA_INVENTORY: return EnsureComponent<ecs::ExtraInventoryRuntimeComponent>(owner);
 #endif
@@ -1089,8 +1058,7 @@ bool HasInventoryReference(entt::entity owner, entt::entity item)
     const auto contains = [item](const auto* storage) {
         return storage && std::find(storage->items.begin(), storage->items.end(), item) != storage->items.end();
     };
-    return contains(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner)) ||
-        contains(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner))
+    return contains(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner))
 #ifdef ENABLE_EXTRA_INVENTORY
         || contains(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner))
 #endif
@@ -1106,14 +1074,6 @@ bool DestinationFits(entt::entity owner, entt::entity item, TItemPos position)
         !g_registry.all_of<ecs::PlayerID>(owner) || HasInventoryReference(owner, item)) return false;
     const uint8_t size = ItemSystem::GetItemSize(item);
     if (!IsEmptyItemGrid(owner, position, size)) return false;
-    if (position.window_type == DRAGON_SOUL_INVENTORY)
-    {
-        if (!ItemSystem::IsDragonSoulItem(item)) return false;
-        const uint16_t base = DSManager::instance().GetBasePosition(item);
-        if (base == WORD_MAX || position.cell < base ||
-            uint32_t(position.cell) + uint32_t(size - 1) * DRAGON_SOUL_BOX_COLUMN_NUM >= uint32_t(base) + DRAGON_SOUL_BOX_SIZE)
-            return false;
-    }
 #ifdef ENABLE_EXTRA_INVENTORY
     if (position.window_type == EXTRA_INVENTORY &&
         (!ItemSystem::IsExtraItem(item) || position.cell / EXTRA_INVENTORY_CATEGORY_MAX_NUM != ItemSystem::GetItemExtraCategory(item)))
@@ -1196,7 +1156,7 @@ bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position)
 #endif
 {
 #ifndef __HIGHLIGHT_SYSTEM__
-    const bool highlight = position.window_type == DRAGON_SOUL_INVENTORY;
+    const bool highlight = false;
 #endif
     if (!Unowned(item) || !ecs::PlayerRuntime::IsValid(owner) || !g_registry.all_of<ecs::PlayerID>(owner)) return false;
 
@@ -1242,7 +1202,7 @@ bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position)
 }
 
 namespace {
-// SItemPos's historical belt/DS predicates also match other windows with the
+// SItemPos's historical belt predicate also matches other windows with the
 // same numeric cell. Packet routing must validate the window before the cell.
 bool NormalizeMovePosition(TItemPos& pos)
 {
@@ -1251,12 +1211,11 @@ bool NormalizeMovePosition(TItemPos& pos)
     case INVENTORY:
     case EQUIPMENT:
         if (pos.cell >= INVENTORY_MAX_NUM &&
-            pos.cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
+            pos.cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM)
             pos.window_type = EQUIPMENT;
         else if (pos.window_type != INVENTORY ||
             !(pos.cell < INVENTORY_MAX_NUM || pos.IsBeltInventoryPosition())) return false;
         return true;
-    case DRAGON_SOUL_INVENTORY: return pos.cell < DRAGON_SOUL_INVENTORY_MAX_NUM;
 #ifdef ENABLE_EXTRA_INVENTORY
     case EXTRA_INVENTORY: return pos.cell < EXTRA_INVENTORY_MAX_NUM;
 #endif
@@ -1293,7 +1252,6 @@ bool MoveSource(entt::entity owner, entt::entity item, TItemPos source, int coun
     if (!CanHandleItems(owner))
     {
 #ifdef TEXTS_IMPROVEMENT
-        if (!quiet && DragonSoulSystem::CanRefine(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
 #endif
         return false;
     }
@@ -1319,7 +1277,6 @@ bool MoveSource(entt::entity owner, entt::entity item, TItemPos source, int coun
         if (storage) references += std::count(storage->items.begin(), storage->items.end(), item);
     };
     scan(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner));
-    scan(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner));
 #ifdef ENABLE_EXTRA_INVENTORY
     scan(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner));
 #endif
@@ -1362,15 +1319,6 @@ bool MoveDestination(entt::entity owner, entt::entity item, TItemPos source, TIt
         return true;
 #endif
     }
-    if (ItemSystem::IsDragonSoulItem(item))
-    {
-        if (dest.window_type != DRAGON_SOUL_INVENTORY) return false;
-        const auto base = DSManager::instance().GetBasePosition(item);
-        if (base == WORD_MAX || dest.cell < base ||
-            uint32_t(dest.cell) + uint32_t(ItemSystem::GetItemSize(item) - 1) * DRAGON_SOUL_BOX_COLUMN_NUM >=
-            uint32_t(base) + DRAGON_SOUL_BOX_SIZE) return false;
-    }
-    else if (dest.window_type == DRAGON_SOUL_INVENTORY) return false;
 #ifdef ENABLE_EXTRA_INVENTORY
     if (ItemSystem::IsExtraItem(item))
     {
@@ -1657,11 +1605,6 @@ static bool MoveItemImpl(entt::entity owner, TItemPos source, TItemPos dest, int
     }
     if (source.window_type == EQUIPMENT)
     {
-        if (ItemSystem::IsDragonSoulItem(item))
-        {
-            auto stone = item;
-            return DSManager::instance().PullOutEcs(owner, dest, stone);
-        }
         const auto vnum = ItemSystem::GetItemVnum(item);
         const bool committed = ItemSystem::UnequipItemToEcs(owner, item, dest);
         if (committed) PublishBeltMove(owner, source, dest, false, vnum);
@@ -2192,7 +2135,7 @@ NpcTradeResult BuyFromNpc(entt::entity owner, const NpcPurchase& input, const st
             if (!proto) return Result::Rejected;
             wearTimer = proto->cLimitTimerBasedOnWearIndex != -1;
         } else {
-            const uint8_t window = ItemSystem::IsDragonSoulItem(item) ? DRAGON_SOUL_INVENTORY :
+            const uint8_t window =
 #ifdef ENABLE_EXTRA_INVENTORY
                 ItemSystem::IsExtraItem(item) ? EXTRA_INVENTORY :
 #endif
@@ -2283,8 +2226,7 @@ bool SellToNpc(entt::entity owner, TItemPos source, uint32_t amount, int64_t cre
         std::optional<int64_t>{unit ? amount / unit : amount} : auriga::shop_limits::Multiply(unit, amount);
     if (!quote || *quote != credit) return false;
     std::vector<TradeStack> costs; costs.emplace_back(item, source, amount);
-    const ItemSystem::ItemCost debit{item, amount, source.window_type == DRAGON_SOUL_INVENTORY ?
-        ItemSystem::ItemCostStorage::DragonSoulInventory : ItemSystem::ItemCostStorage::Inventory};
+    const ItemSystem::ItemCost debit{item, amount, ItemSystem::ItemCostStorage::Inventory};
     MovedQuickslots quickslots;
     return ItemSystem::ConsumeOwnedItemCostsWithCommit(owner, std::span(&debit, 1), [&] {
         if (!TradeReady(owner, origin, balance, *permit, guard, true) || !costs.front().Current(owner) ||
@@ -2316,7 +2258,7 @@ bool Unequip(entt::entity itemEntity)
 	const entt::entity charEntity = ItemSystem::GetItemOwner(itemEntity);
     const auto originalCell = ItemSystem::GetItemCell(itemEntity);
     const auto originalWindow = ItemSystem::GetItemWindow(itemEntity);
-    if (originalCell >= INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
+    if (originalCell >= INVENTORY_MAX_NUM + WEAR_MAX_NUM)
         return false;
     const auto unchanged = [&] {
         return g_registry.valid(charEntity) && ItemSystem::IsValidItem(itemEntity) &&
@@ -2345,12 +2287,8 @@ bool Unequip(entt::entity itemEntity)
 		ItemSystem::ClearMountAttributeAndAffect(itemEntity);
 
 	if (!unchanged()) return false;
-	if (ItemSystem::IsDragonSoulItem(itemEntity))
-	{
-		DSManager::instance().DeactivateDragonSoul(itemEntity);
-	}
 #ifdef ENABLE_RUNE_SYSTEM
-	else if (ItemSystem::IsRuneItem(itemEntity)) {
+	if (ItemSystem::IsRuneItem(itemEntity)) {
 		if (ItemSystem::GetItemSocket(itemEntity, 1) == 1)
 			ItemSystem::ModifyPoints(itemEntity, false);
 	}
@@ -2466,11 +2404,6 @@ void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity,
 #endif
 
 	if (!stillWorn()) return;
-	if (ItemSystem::IsDragonSoulItem(itemEntity))
-	{
-		DSManager::instance().ActivateDragonSoul(itemEntity);
-	}
-	else
 	{
 #ifdef ENABLE_RUNE_SYSTEM
 		if (!ItemSystem::IsRuneItem(itemEntity))
@@ -2546,15 +2479,6 @@ bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell
 		return false;
 	}
 
-	if (ItemSystem::IsDragonSoulItem(itemEntity))
-	{
-		if (bWearCell < WEAR_MAX_NUM || bWearCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
-		{
-			LOG_ERROR("EquipTo: invalid dragon soul cell (item: #{} {} wearflag: {} cell: {})", ItemSystem::GetItemOriginalVnum(itemEntity), ItemSystem::GetItemName(itemEntity), ItemSystem::GetItemSubType(itemEntity), bWearCell - WEAR_MAX_NUM);
-			return false;
-		}
-	}
-	else
 	{
 		if (bWearCell >= WEAR_MAX_NUM)
 		{
@@ -2664,7 +2588,6 @@ entt::entity RemoveFromCharacter(entt::entity item)
     if (g_registry.valid(owner))
     {
         collectStorage(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner), INVENTORY);
-        collectStorage(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner), DRAGON_SOUL_INVENTORY);
 #ifdef ENABLE_EXTRA_INVENTORY
         collectStorage(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner), EXTRA_INVENTORY);
 #endif
@@ -2723,9 +2646,8 @@ bool DropGold(entt::entity owner, int64_t amount)
 
 entt::entity GetWearItem(entt::entity owner, uint8_t slot)
 {
-    // Dragon-soul decks occupy the wear range immediately after ordinary gear,
-    // just as CHARACTER::GetWear did. They must not be reported as empty.
-    if (!g_registry.valid(owner) || slot >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
+    // The retired deck positions are outside the ordinary wear range.
+    if (!g_registry.valid(owner) || slot >= WEAR_MAX_NUM)
         return entt::null;
     const auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
     return inventory ? inventory->items[INVENTORY_MAX_NUM + slot] : entt::null;
@@ -2744,19 +2666,18 @@ bool WornBy(entt::entity owner, entt::entity item) {
         !IsItemEquipped(item) || GetItemWindow(item) != EQUIPMENT) return false;
     const auto cell = GetItemCell(item);
     const auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
-    return inventory && cell >= INVENTORY_MAX_NUM && cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX &&
+    return inventory && cell >= INVENTORY_MAX_NUM && cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM &&
         inventory->items[cell] == item;
 }
 bool EquipmentType(entt::entity item) {
     switch (GetItemType(item)) {
     case ITEM_COSTUME: case ITEM_ARMOR: case ITEM_WEAPON: case ITEM_ROD:
-    case ITEM_PICK: case ITEM_UNIQUE: case ITEM_DS: case ITEM_SPECIAL_DS: case ITEM_RING: return true;
+    case ITEM_PICK: case ITEM_UNIQUE: case ITEM_RING: return true;
     case ITEM_BELT: return GetItemValue(item, 5) == 1;
     default: return false;
     }
 }
 uint8_t StorageWindow(entt::entity item) {
-    if (IsDragonSoulItem(item)) return DRAGON_SOUL_INVENTORY;
 #ifdef ENABLE_EXTRA_INVENTORY
     if (IsExtraItem(item)) return EXTRA_INVENTORY;
 #endif
@@ -2772,7 +2693,7 @@ bool CarryDetached(entt::entity owner, entt::entity item, TItemPos preferred) {
 void RestoreDetached(entt::entity owner, entt::entity item, TItemPos position) {
     if (!g_registry.valid(owner) || !InventorySystem::Detached(item)) return;
     if (position.window_type == EQUIPMENT) {
-        if (position.cell >= INVENTORY_MAX_NUM && position.cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX &&
+        if (position.cell >= INVENTORY_MAX_NUM && position.cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM &&
             InventorySystem::EquipTo(item, owner, position.cell - INVENTORY_MAX_NUM)) return;
         // A callback can legitimately occupy the old wear slot. Preserve its
         // occupant and recover our detached item into its carrying inventory.
@@ -2870,7 +2791,7 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
     const EquipmentAction action(owner);
     if (!action.entered || !InventorySystem::CanEquipNow(owner, item) || !permission->Current()) return false;
     const int wear = FindEquipCell(owner, item, candidateCell);
-    if (wear < 0 || wear >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX ||
+    if (wear < 0 || wear >= WEAR_MAX_NUM ||
         (candidateCell >= 0 && candidateCell != wear)) return false;
     const uint32_t vnum = GetItemVnum(item);
     if (wear == WEAR_BODY && MountSystem::IsRiding(owner) && vnum >= 11901 && vnum <= 11904) {
@@ -2897,7 +2818,7 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
         !InventorySystem::VisitStorage(owner, original, [&](const auto& inventory, int) {
             return original.cell < inventory.items.size() && inventory.items[original.cell] == item;
         }) ||
-        (original.window_type != INVENTORY && original.window_type != DRAGON_SOUL_INVENTORY
+        (original.window_type != INVENTORY
 #ifdef ENABLE_EXTRA_INVENTORY
          && original.window_type != EXTRA_INVENTORY
 #endif
@@ -2941,7 +2862,7 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
     const auto displaced = GetWearItem(owner, wear);
     if (displaced != entt::null) {
         if (!InventorySystem::CanHandleItems(owner)) return false;
-        if (!IsValidItem(displaced) || IsDragonSoulItem(item) || !WornBy(owner, displaced) ||
+        if (!IsValidItem(displaced) || !WornBy(owner, displaced) ||
             !InventorySystem::CanUnequipNow(owner, displaced, false) || GetItemWearFlag(item) == WEARABLE_ABILITY)
             return false;
         if (!carried || !FitsReplacement(owner, item, displaced, original) || !sourceUnchanged()) return false;
@@ -3137,8 +3058,6 @@ int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item)
     if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
         return -1;
 
-    if (IsDragonSoulItem(item))
-        return GetEmptyDragonSoulInventory(owner, item);
 #ifdef ENABLE_EXTRA_INVENTORY
     if (IsExtraItem(item))
         return FindEmptyExtraInventoryPosition(
@@ -3159,46 +3078,6 @@ bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum)
         return false;
 
     return FindEmptyMainInventoryPosition(owner, proto->bSize) != -1;
-}
-
-int GetEmptyDragonSoulInventory(entt::entity owner, entt::entity item)
-{
-    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item) || !IsDragonSoulItem(item))
-        return -1;
-
-    const auto* inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner);
-    if (!inventory)
-        return -1;
-
-    const uint8_t itemSize = GetItemSize(item);
-    const uint16_t baseCell = DSManager::instance().GetBasePosition(item);
-    if (itemSize == 0 || baseCell == WORD_MAX ||
-        baseCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-        return -1;
-
-    const int boxEnd = std::min<int>(baseCell + DRAGON_SOUL_BOX_SIZE,
-                                     DRAGON_SOUL_INVENTORY_MAX_NUM);
-    for (int cell = baseCell; cell < boxEnd; ++cell)
-    {
-        if (inventory->itemGrid[cell] != 0 || inventory->items[cell] != entt::null)
-            continue;
-
-        bool fits = true;
-        for (int row = 1; row < itemSize; ++row)
-        {
-            const int occupiedCell = cell + (DRAGON_SOUL_BOX_COLUMN_NUM * row);
-            if (occupiedCell >= boxEnd || inventory->itemGrid[occupiedCell] != 0 || inventory->items[occupiedCell] != entt::null)
-            {
-                fits = false;
-                break;
-            }
-        }
-
-        if (fits)
-            return cell;
-    }
-
-    return -1;
 }
 
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell)
@@ -3806,7 +3685,7 @@ bool GiveReceipt(entt::entity owner, entt::entity item)
     const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
     if (!location) return false;
     const uint8_t window = location->window;
-    if (window != INVENTORY && window != EQUIPMENT && window != DRAGON_SOUL_INVENTORY
+    if (window != INVENTORY && window != EQUIPMENT
 #ifdef ENABLE_EXTRA_INVENTORY
         && window != EXTRA_INVENTORY
 #endif
@@ -3877,7 +3756,7 @@ entt::entity DeliverItem(entt::entity owner, entt::entity item, bool longOwnersh
     if (!GiveOwner(owner) || !GiveDetached(item)) return entt::null;
     if (cell >= 0 && cell <= UINT16_MAX)
     {
-        const uint8_t window = IsDragonSoulItem(item) ? DRAGON_SOUL_INVENTORY :
+        const uint8_t window =
 #ifdef ENABLE_EXTRA_INVENTORY
             IsExtraItem(item) ? EXTRA_INVENTORY :
 #endif
@@ -3945,15 +3824,6 @@ void AutoGiveItem(entt::entity owner, entt::entity item, bool longOwnership
     bool committed = false;
     DeliverItem(owner, item, longOwnership, false, highlight, committed);
 }
-#ifdef ENABLE_DS_REFINE_ALL
-bool AutoGiveDS(entt::entity owner, entt::entity item, bool longOwnership)
-{
-    if (!IsDragonSoulItem(item)) return false;
-    bool committed = false;
-    const auto receipt = DeliverItem(owner, item, longOwnership, false, true, committed);
-    return committed || receipt != entt::null;
-}
-#endif
 
 entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t vnum, uint32_t count,
     int rarePct, bool message, bool highlight)

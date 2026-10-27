@@ -14,8 +14,6 @@
 #include "../../SRC/Server/GameServer/social/priv_manager.h"
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
 #include "../../SRC/Server/GameServer/item/blend_item.h"
-#include "../../SRC/Server/GameServer/dungeon/DragonSoul.h"
-#include "../../SRC/Server/GameServer/dungeon/dragon_soul_table.h"
 #include "../../SRC/Server/GameServer/item/unique_item.h"
 #include "../../SRC/Server/GameServer/item/refine.h"
 #include "../../SRC/Server/GameServer/item/item_manager_private_types.h"
@@ -51,7 +49,7 @@ bool dropPreviewTest = false;
 struct PreviewMob { bool stone; uint32_t race; };
 std::vector<uint8_t> persistedHeaders;
 std::vector<std::vector<uint8_t>> persistedPayloads;
-bool rejectRune = false, rejectDS = false, rejectTimer = false, blendExists = false;
+bool rejectRune = false, rejectTimer = false, blendExists = false;
 bool highDraw = false;
 uint32_t nextItemID = 1000;
 int creationSaves = 0, allocations = 0;
@@ -105,7 +103,7 @@ void Reset() {
     dropPreviewTest = false;
     persistenceTest = false; db_clientdesc = nullptr; persistedHeaders.clear(); persistedPayloads.clear();
     onCreation = {}; creationTest = rejectAllocation = rejectCount = false;
-    rejectRune = rejectDS = rejectTimer = blendExists = highDraw = false;
+    rejectRune = rejectTimer = blendExists = highDraw = false;
     nextItemID = 1000; creationSaves = allocations = 0; creationStages.clear(); availableSkills.clear();
     g_bItemCountLimit = 200;
     g_registry.clear(); inventory.clear();
@@ -189,9 +187,6 @@ CPoly::CPoly() = default;
 CPoly::~CPoly() = default;
 CSkillManager::CSkillManager() = default;
 CSkillManager::~CSkillManager() = default;
-DSManager::DSManager() = default;
-DSManager::~DSManager() = default;
-DragonSoulTable::~DragonSoulTable() = default;
 LogManager::LogManager() : m_bIsConnect(false) {}
 LogManager::~LogManager() = default;
 // Supply the key virtual functions of service doubles on the Itanium ABI too.
@@ -307,7 +302,6 @@ void MountSystem::UpdateMountCountOverheadToViewers(entt::entity owner) { Check(
 namespace ItemSystem {
 bool IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
 bool IsEquipUniqueGroup(entt::entity, uint32_t) { Check(dropPreviewTest, "unexpected preview glove query"); return false; }
-bool IsDragonSoulItem(entt::entity item) { return GetItemType(item) == ITEM_DS; }
 uint32_t GetItemVnum(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).vnum; }
 uint32_t GetItemOriginalVnum(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).originalVnum; }
 void SetItemExtraProto(entt::entity item, TItemExtraProto*) { CreationStage("extra", item); }
@@ -424,7 +418,6 @@ bool ItemSystem::RefreshItemPrototype(entt::entity item, const TItemTable* proto
     g_registry.emplace_or_replace<CreationProto>(item, proto ? *proto : TItemTable{});
     return true;
 }
-bool DSManager::DragonSoulItemInitialize(entt::entity item) { CreationStage("dragon-soul", item); return !rejectDS; }
 const TRefineTable* CRefineManager::GetRefineRecipe(uint32_t) { Unexpected(); }
 
 namespace {
@@ -501,7 +494,7 @@ void CreationQuantitiesAndIdentity() {
     }
 }
 void CreationPayloads() {
-    for (int scenario = 0; scenario < 11; ++scenario) {
+    for (int scenario : {0, 1, 2, 3, 4, 5, 8, 9, 10}) {
         CreationFixture f;
         auto& proto = f.manager.Prototype();
         proto.alValues[0] = 1234;
@@ -511,8 +504,6 @@ void CreationPayloads() {
         if (scenario == 3) proto.aLimits[0] = {LIMIT_TIMER_BASED_ON_WEAR, 876};
         if (scenario == 4) proto.aLimits[0] = {LIMIT_TIMER_BASED_ON_WEAR, 0};
         if (scenario == 5) proto.bGainSocketPct = 255;
-        if (scenario == 6) { proto.bType = ITEM_USE; proto.bSubType = USE_TIME_CHARGE_PER; }
-        if (scenario == 7) proto.dwVnum = 100000;
         if (scenario == 8) { proto.bType = ITEM_SOUL; proto.alValues[2] = 777; proto.aLimits[1].lValue = 10; }
         if (scenario == 9) { proto.bType = ITEM_USE; proto.bSubType = USE_NEW_POTIION; proto.aLimits[0].lValue = 555; }
         if (scenario == 10) { proto.bType = ITEM_SOUL; proto.alValues[2] = 100000; proto.aLimits[1].lValue = 10; }
@@ -530,8 +521,6 @@ void CreationPayloads() {
         if (scenario == 2) Check(sockets[2] == 1234, "auto-potion capacity missing");
         if (scenario == 3 || scenario == 4) Check(sockets[0] == (scenario == 3 ? 876 : 36000), "wear duration/default missing");
         if (scenario == 5) Check(std::all_of(sockets.begin(), sockets.end(), [](auto v) { return v == 1; }), "socket holes overflow/missing");
-        if (scenario == 6) Check(sockets[0] == 1234, "DS percent potion payload missing");
-        if (scenario == 7) Check(sockets[ITEM_SOCKET_CHARGING_AMOUNT_IDX] == 1234, "DS charge missing");
         if (scenario == 8) Check(f.Stage("soul") && sockets[2] == 777, "soul initialization missing");
         if (scenario == 9) Check(sockets[0] == 555 && sockets[1] == 0, "new potion initialization missing");
         if (scenario == 10) Check(!f.Stage("soul") && sockets[2] == 100000, "fully charged soul was rejected or restarted");
@@ -603,7 +592,7 @@ void CreationFailuresAndCallbacks() {
         if (stage == 0) rejectAllocation = true;
         if (stage == 1) rejectCount = true;
         if (stage == 2) rejectRune = true;
-        if (stage == 3) { rejectDS = true; f.manager.Prototype().bType = ITEM_DS; }
+        if (stage == 3) { f.manager.Prototype().bType = ITEM_RETIRED_29; }
         if (stage == 4) { rejectTimer = true; f.manager.Prototype().aLimits[0] = {LIMIT_REAL_TIME, 100}; }
         if (stage == 5) { rejectTimer = true; f.manager.Prototype().bType = ITEM_SOUL; f.manager.Prototype().aLimits[1].lValue = 10; }
         Check(f.Create() == entt::null && creationSaves == 0 && retirements == allocations, "failed creation leaked entity or saved partial item");
@@ -672,7 +661,7 @@ void CreationRollbackTransfers() {
 }
 void NativeRemoval() {
 
-    for (const uint8_t window : {INVENTORY, EQUIPMENT, EXTRA_INVENTORY, DRAGON_SOUL_INVENTORY, SWITCHBOT, MOUNT_INVENTORY}) {
+    for (const uint8_t window : {INVENTORY, EQUIPMENT, EXTRA_INVENTORY, SWITCHBOT, MOUNT_INVENTORY}) {
         Reset(); Manager manager; const auto item = Item(manager);
         const uint16_t cell = window == EQUIPMENT ? INVENTORY_MAX_NUM + WEAR_BODY : 300;
         const auto owner = Owner(item, window, cell);
@@ -1070,6 +1059,24 @@ void NativeShutdownAndReload() {
     }
 }
 
+void RetiredPrototypeReload() {
+    Reset(); Manager manager;
+    std::vector<TItemTable> rows(5);
+    for (size_t i = 0; i < rows.size(); ++i) {
+        rows[i].dwVnum = uint32_t(100 + i); rows[i].bSize = 1;
+        rows[i].bType = i < 3 ? uint8_t(29 + i) : uint8_t(ITEM_WEAPON);
+    }
+#ifdef ENABLE_SOUL_SYSTEM
+    rows.back().bType = ITEM_SOUL;
+#endif
+    Check(manager.Initialize(rows.data(), int(rows.size())), "mixed prototype reload rejected");
+    for (uint32_t vnum : {100u, 101u, 102u})
+        Check(manager.GetTable(vnum) == nullptr && !manager.GetVIDMap().contains(vnum),
+            "retired prototype remained in the catalogue");
+    Check(manager.GetTable(103) && manager.GetTable(104) && manager.GetVIDMap().size() == 2,
+        "retirement filtered unrelated prototypes or broke the index");
+}
+
 void DeferredSavePolicies() {
     for (int path = 0; path < 5; ++path) for (const bool disconnected : {false, true}) {
         Reset(); Manager manager; const auto item = Item(manager); const auto owner = Owner(item);
@@ -1193,7 +1200,7 @@ void PlayerCacheSnapshotCapture() {
             "snapshot serialization lost native item fields");
         else Check(rows.empty(), "failed snapshot exposed partial output");
     }
-    for (int window : {INVENTORY, EQUIPMENT, BELT_INVENTORY, DRAGON_SOUL_INVENTORY
+    for (int window : {INVENTORY, EQUIPMENT, BELT_INVENTORY
 #ifdef ENABLE_EXTRA_INVENTORY
         , EXTRA_INVENTORY
 #endif
@@ -1212,8 +1219,6 @@ void PlayerCacheSnapshotCapture() {
         g_registry.get<ecs::ItemLocation>(item) = {static_cast<uint8_t>(rawWindow), cell};
         if (rawWindow == INVENTORY || window == EQUIPMENT)
             g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner).items[cell] = item;
-        if (window == DRAGON_SOUL_INVENTORY)
-            g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner).items[cell] = item;
 #ifdef ENABLE_EXTRA_INVENTORY
         if (window == EXTRA_INVENTORY)
             g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner).items[cell] = item;
@@ -1235,14 +1240,14 @@ void PlayerCacheSnapshotCapture() {
         std::vector<TPlayerItem> rows;
         Check(manager.BuildPlayerCacheSnapshot(owner, rows) && rows.empty(), "empty native inventory failed");
         Check(!manager.BuildPlayerCacheSnapshot(entt::null, rows), "stale character captured");
-        auto& slots = g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner).items;
+        auto& slots = g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner).items;
         for (size_t i = 0; i <= snapshot::MaximumItems; ++i) {
             const auto item = Item(manager, 1000 + static_cast<uint32_t>(i), 2000 + static_cast<uint32_t>(i));
             auto& ownership = g_registry.get<ecs::ItemOwner>(item);
             ownership.owner = owner; ownership.ownerPID = 1234;
             g_registry.get<ecs::ItemFlags>(item).skipSave = false;
             g_registry.get<ecs::ItemIdentity>(item).originalVnum = 100;
-            g_registry.get<ecs::ItemLocation>(item) = {DRAGON_SOUL_INVENTORY, static_cast<uint16_t>(i)};
+            g_registry.get<ecs::ItemLocation>(item) = {EXTRA_INVENTORY, static_cast<uint16_t>(i)};
             slots[i] = item;
             if (i + 1 == snapshot::MaximumItems)
                 Check(manager.BuildPlayerCacheSnapshot(owner, rows) && rows.size() == snapshot::MaximumItems,
@@ -1306,14 +1311,14 @@ int main() {
     try {
         LogManager log;
         CSkillManager skills;
-        DSManager dragonSouls;
+
         TargetDropPreview();
         CreationQuantitiesAndIdentity(); CreationPayloads(); SkillBookSelection(); CreationFailuresAndCallbacks();
         CreationRollbackTransfers();
         NativeLifecycle(); ReentryAndExceptions(); FactoryFailures(); RecycledAndTransferred(); SlotAndPersistenceGuards();
         NativeRemoval(); RemovalCallbacks(); RemovalFailures(); StorageRemovalIntegration();
         DuplicateLoadRetirement(); DuplicateLoadFailuresAndReentry(); DuplicateLoadTransfersAndGenerations();
-        NativeShutdownAndReload(); DeferredSavePolicies(); PlayerCacheSnapshotCapture();
+        NativeShutdownAndReload(); RetiredPrototypeReload(); DeferredSavePolicies(); PlayerCacheSnapshotCapture();
         std::cout << "Item-manager lifecycle checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

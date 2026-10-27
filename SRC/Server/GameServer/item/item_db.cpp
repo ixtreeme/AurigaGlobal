@@ -111,7 +111,6 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			switch (p->window)
 			{
 				case INVENTORY:
-				case DRAGON_SOUL_INVENTORY:
 #ifdef ENABLE_EXTRA_INVENTORY
 				case EXTRA_INVENTORY:
 #endif

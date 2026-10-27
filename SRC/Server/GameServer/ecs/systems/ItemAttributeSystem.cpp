@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include <common/retired_content.h>
 #include "ItemSystem.hpp"
 #include "InventorySystem.hpp"
 #include "NetworkSyncSystem.hpp"
@@ -634,7 +635,7 @@ bool CanModifyOwnedAttributes(entt::entity item)
 bool IsOwnedAttributeTarget(entt::entity character, entt::entity item)
 {
     if (!ecs::PlayerRuntime::IsPC(character) || !CanModifyOwnedAttributes(item) ||
-        GetItemOwner(item) != character)
+        GetItemOwner(item) != character || auriga::retired_content::Item(GetItemType(item), GetItemSubType(item)))
         return false;
     const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
     return location && GetItem(character, TItemPos(location->window, location->cell)) == item;
@@ -794,11 +795,7 @@ bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amo
     if (GetItemOwner(material) != owner)
         return false;
     const uint8_t window = GetItemWindow(material);
-    if (storage == ItemCostStorage::DragonSoulInventory)
-    {
-        if (window != DRAGON_SOUL_INVENTORY || !IsDragonSoulItem(material)) return false;
-    }
-    else if (storage != ItemCostStorage::Inventory || (window != INVENTORY
+    if (storage != ItemCostStorage::Inventory || (window != INVENTORY
 #ifdef ENABLE_EXTRA_INVENTORY
         && window != EXTRA_INVENTORY
 #endif
@@ -902,7 +899,7 @@ bool StackablePayload(entt::entity item, bool reward)
     const auto& meta = g_registry.get<ecs::ItemPrototypeMeta>(item);
     const auto& flags = g_registry.get<ecs::ItemFlags>(item);
     const auto& proto = g_registry.get<ecs::ItemProtoRef>(item);
-    return meta.type != ITEM_NONE && meta.type != ITEM_ELK && meta.type != ITEM_DS && meta.type != ITEM_SPECIAL_DS &&
+    return meta.type != ITEM_NONE && meta.type != ITEM_ELK && !auriga::retired_content::Item(meta.type, meta.subType) &&
         !(proto.anti_flags & ITEM_ANTIFLAG_STACK) &&
         ((flags.flags & ITEM_FLAG_STACKABLE) || (reward && meta.type == ITEM_BLEND));
 }
@@ -995,7 +992,7 @@ entt::entity MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item)
         entt::entity item;
         ~Guard() { deliveries.active.erase(item); }
     } guard {*deliveries, item};
-    // Nonstackable equipment/DS rewards need no inventory scan. Keep this after
+    // Nonstackable equipment rewards need no inventory scan. Keep this after
     // the delivery guard so a callback cannot bypass it by changing item flags.
     if (!StackablePayload(item, true)) return item;
     const uint8_t window =
@@ -1401,8 +1398,7 @@ void SetItemLockedAttr(entt::entity item, short index)
 AttributeLockResult UseItemAttributeLock(entt::entity character, entt::entity item, entt::entity material)
 {
     using Result = AttributeLockResult;
-    if (!IsOwnedAttributeTarget(character, item) || GetItemType(item) == ITEM_COSTUME ||
-        GetItemType(item) == ITEM_DS)
+    if (!IsOwnedAttributeTarget(character, item) || GetItemType(item) == ITEM_COSTUME)
         return Result::InvalidTarget;
     if (!CanPayItemAttributeCost(item, material) || GetItemType(material) != ITEM_USE)
         return Result::InvalidMaterial;

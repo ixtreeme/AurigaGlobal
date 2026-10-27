@@ -223,7 +223,6 @@ uint32_t GetItemSocket(entt::entity, int) { return 0; }
 TPlayerItemAttribute GetItemAttribute(entt::entity, int) { return {}; }
 int16_t GetItemLockedAttributeIndex(entt::entity) { return -1; }
 uint16_t GetItemCell(entt::entity e) { return g_registry.get<TestItem>(e).cell; }
-bool IsDragonSoulItem(entt::entity) { return false; }
 bool IsExtraItem(entt::entity) { return false; }
 bool IsItemStackable(entt::entity) { return false; }
 bool IsItemEquipped(entt::entity) { return false; }
@@ -233,7 +232,6 @@ bool IsItemExchanging(entt::entity e) { return g_registry.get<TestItem>(e).excha
 uint32_t GetItemAntiFlag(entt::entity) { return 0; }
 int32_t GetItemFlags(entt::entity e) { return g_registry.get<TestItem>(e).flags; }
 int64_t GetItemShopBuyPrice(entt::entity e) { return g_registry.get<TestItem>(e).price; }
-int GetEmptyDragonSoulInventory(entt::entity, entt::entity) { return inventoryFull ? -1 : 0; }
 int GetEmptyExtraInventory(entt::entity, entt::entity) { return inventoryFull ? -1 : 0; }
 int CountItem(entt::entity, uint32_t vnum) { return currencyItems[vnum]; }
 int CountTypeItem(entt::entity, uint8_t) { return 0; }

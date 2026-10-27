@@ -64,7 +64,6 @@
 #ifdef ENABLE_SWITCHBOT
 #include "../../social/new_switchbot.h"
 #endif
-#include "../../dungeon/DragonSoul.h"
 #include "../../combat/buff_on_attributes.h"
 #include "../../item/ItemUse.h"
 
@@ -80,7 +79,6 @@
 #endif
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 #include "../../dungeon/RuneDungeon.h"
-#include "DragonSoulSystem.hpp"
 #include "../../dungeon/Halloween2022Dungeon.h"
 #include "../../dungeon/VikingDungeon.h"
 #endif
@@ -163,18 +161,6 @@ static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent
 
 #endif
 
-static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::DragonSoulInventoryComponent>(character))
-        return comp;
-
-    return &g_registry.emplace<ecs::DragonSoulInventoryComponent>(character);
-}
-
-
 static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity character)
 {
     if (character == entt::null || !g_registry.valid(character))
@@ -243,8 +229,7 @@ bool IsExtraEnchantUseSubtype(uint8_t subtype)
 	case USE_ADD_ATTR_COSTUME2:
 	case USE_REMOVE_ATTR_COSTUME:
 #endif
-#ifdef ENABLE_DS_ENCHANT
-	case USE_DS_ENCHANT:
+#ifdef ENABLE_STOLE_COSTUME
 	case USE_ENCHANT_STOLE:
 #endif
 		return true;
@@ -334,7 +319,7 @@ namespace ecs::PlayerRuntime {
 
 void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
 {
-	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
+	if (bCell >= WEAR_MAX_NUM)
 	{
 		LOG_ERROR("SetWear: invalid item cell {}", bCell);
 		return;
@@ -858,9 +843,6 @@ bool ItemSystem::DestroyItem(entt::entity e, TItemPos Cell)
 	entt::entity item = entt::null;
 	if (!InventorySystem::CanHandleItems(e)) {
 #ifdef TEXTS_IMPROVEMENT
-		if (DragonSoulSystem::CanRefine(e)) {
-			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 232, "");
-		}
 #endif
 
 		return false;
@@ -1004,7 +986,7 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 	case INVENTORY:
 	{
 		const uint16_t storageCell = wCell;
-		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
+		if (!Cell.IsValidItemPosition())
 		{
 			LOG_ERROR("PlayerRuntime::SetItem: invalid item cell {}", storageCell);
 			return;
@@ -1086,55 +1068,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 			pMainInventory->itemGrid[storageCell] = storageCell + 1;
 
 		pMainInventory->items[storageCell] = itemEntity;
-	}
-	break;
-	case DRAGON_SOUL_INVENTORY:
-	{
-		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-		{
-			LOG_ERROR("PlayerRuntime::SetItem: invalid DS item cell {}", wCell);
-			return;
-		}
-
-		auto* pDragonSoulInventory = EnsureDragonSoulInventoryComponent(e);
-		if (!pDragonSoulInventory)
-		{
-			LOG_ERROR("PlayerRuntime::SetItem: missing DragonSoulInventoryComponent");
-			return;
-		}
-
-		const entt::entity pOld = pDragonSoulInventory->items[wCell];
-
-		if (pOld != entt::null)
-		{
-			for (int i = 0; i < ItemSystem::GetItemSize(pOld); ++i)
-			{
-				int p = wCell + (i * DRAGON_SOUL_BOX_COLUMN_NUM);
-
-				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-					continue;
-
-				if (pDragonSoulInventory->items[p] != entt::null && pDragonSoulInventory->items[p] != pOld)
-					continue;
-
-				pDragonSoulInventory->itemGrid[p] = 0;
-			}
-		}
-
-		if (hasItem)
-		{
-			for (int i = 0; i < ItemSystem::GetItemSize(itemEntity); ++i)
-			{
-				int p = wCell + (i * DRAGON_SOUL_BOX_COLUMN_NUM);
-
-				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-					continue;
-
-				pDragonSoulInventory->itemGrid[p] = wCell + 1;
-			}
-		}
-
-		pDragonSoulInventory->items[wCell] = itemEntity;
 	}
 	break;
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -1256,7 +1189,7 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 #ifdef __HIGHLIGHT_SYSTEM__
 			pack.highlight = isHighLight;
 #else
-			pack.highlight = (Cell.window_type == DRAGON_SOUL_INVENTORY);
+			pack.highlight = false;
 #endif
 
 			// Per index rather than memcpy: the components are the source now, and
@@ -1314,9 +1247,6 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 		case EQUIPMENT:
 			ItemSystem::SetItemWindow(itemEntity, EQUIPMENT);
 			break;
-		case DRAGON_SOUL_INVENTORY:
-			ItemSystem::SetItemWindow(itemEntity, DRAGON_SOUL_INVENTORY);
-			break;
 #ifdef ENABLE_EXTRA_INVENTORY
 		case EXTRA_INVENTORY:
 			ItemSystem::SetItemWindow(itemEntity, EXTRA_INVENTORY);
@@ -1353,20 +1283,6 @@ void InventorySystem::ClearItem(entt::entity e)
 			InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, i, 255);
 		}
 	}
-	for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-	{
-		if (ItemSystem::IsValidItem(item = ItemSystem::GetItem(e, TItemPos(DRAGON_SOUL_INVENTORY, i))))
-		{
-			ItemSystem::SetItemSkipSave(item, true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
-
-			InventorySystem::RemoveFromCharacter(item);
-			ItemSystem::DestroyItemEntityEcs(
-				item,
-				"CLEAR_ITEM_DRAGON_SOUL");
-		}
-	}
-
 #ifdef ENABLE_EXTRA_INVENTORY
 	for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 	{
@@ -1547,57 +1463,6 @@ void AffectSystem::AutoRecallProcess(entt::entity e)
 
 #
 
-namespace ItemSystem {
-
-int GiveMoreTime_Per(entt::entity item, float fPercent)
-{
-	if (ItemSystem::IsDragonSoulItem(item))
-	{
-		uint32_t duration = DSManager::instance().GetDuration(item);
-		uint32_t remain_sec = ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC);
-		uint32_t given_time = fPercent * duration / 100u;
-		if (remain_sec == duration)
-			return false;
-		if ((given_time + remain_sec) >= duration)
-		{
-			ItemSystem::SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, duration);
-			return duration - remain_sec;
-		}
-		else
-		{
-			ItemSystem::SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, given_time + remain_sec);
-			return given_time;
-		}
-	}
-	else
-		return 0;
-}
-
-int GiveMoreTime_Fix(entt::entity item, uint32_t dwTime)
-{
-	if (ItemSystem::IsDragonSoulItem(item))
-	{
-		uint32_t duration = DSManager::instance().GetDuration(item);
-		uint32_t remain_sec = ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC);
-		if (remain_sec == duration)
-			return false;
-		if ((dwTime + remain_sec) >= duration)
-		{
-			ItemSystem::SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, duration);
-			return duration - remain_sec;
-		}
-		else
-		{
-			ItemSystem::SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, dwTime + remain_sec);
-			return dwTime;
-		}
-	}
-	else
-		return 0;
-}
-
-} // namespace ItemSystem
-
 EVENTFUNC(unique_expire_event)
 {
 	auto info = dynamic_cast<item_event_info*>(event->info);
@@ -1686,11 +1551,6 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 		ItemSystem::GetItemEvents(itemEntity).timerBasedOnWearExpire = nullptr;
 		ItemSystem::SetItemSocket(itemEntity, ITEM_SOCKET_REMAIN_SEC, 0);
 
-		if (ItemSystem::IsDragonSoulItem(itemEntity))
-		{
-			DSManager::instance().DeactivateDragonSoul(itemEntity);
-		}
-		else
 		{
 			ITEM_MANAGER::instance().RemoveItem(itemEntity, "TIMER_BASED_ON_WEAR_EXPIRE");
 		}
@@ -1952,7 +1812,7 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 	int prob = number(1, 100);
 
 
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
 	if (ecs::SocialSystem::IsRefineThroughGuild(e) || bMoneyOnly)
 	{
 		prob -= 10;
@@ -1966,7 +1826,7 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 
 #endif
 	// END_OF_REFINE_COST
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
 	if (prob <= success_prob)
 #else
 	if (prob <= prt->prob)
@@ -2031,7 +1891,7 @@ bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
 // Refining with a scroll rather than materials.
 bool DoRefineWithScroll(entt::entity e, entt::entity item)
 {
-	
+
 
 	if (!InventorySystem::CanHandleItems(e, true))
 	{
@@ -2084,7 +1944,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 	// MUSIN_SCROLL
 	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL)
 	{
-		
+
 	}
 	// END_OF_MUSIC_SCROLL
 
@@ -2192,7 +2052,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 	// DETAIL_REFINE_LOG
 	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL)
 	{
-		
+
 		success_prob += 100;
 		if (success_prob > 100)
 			success_prob = 100;
@@ -2211,7 +2071,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 		szRefineType = "BDRAGON_SCROLL";
 	}
 
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
 	success_prob += CRefineManager::instance().Result(e);
 
 #endif
@@ -2257,7 +2117,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 					GetItemSocket(pkNewItem, 1),
 					GetItemSocket(pkNewItem, 2),
 					0, // transmute
-					0  // transmute2 
+					0  // transmute2
 				);
 
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
@@ -2298,7 +2158,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 					GetItemSocket(pkNewItem, 1),
 					GetItemSocket(pkNewItem, 2),
 					0, // transmute
-					0  // transmute2 
+					0  // transmute2
 				);
 
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
@@ -2559,7 +2419,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 		szRefineType = "BDRAGON_SCROLL";
 	}
 
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
 	success_prob += CRefineManager::instance().Result(e);
 
 #endif
@@ -2605,7 +2465,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 					GetItemSocket(pkNewItem, 1),
 					GetItemSocket(pkNewItem, 2),
 					0, // transmute
-					0  // transmute2 
+					0  // transmute2
 				);
 
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
@@ -2646,7 +2506,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 					GetItemSocket(pkNewItem, 1),
 					GetItemSocket(pkNewItem, 2),
 					0, // transmute
-					0  // transmute2 
+					0  // transmute2
 				);
 
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
@@ -3167,8 +3027,6 @@ bool IsValidItemPosition(entt::entity owner, TItemPos Pos)
 	case EQUIPMENT:
 		return cell < (INVENTORY_AND_EQUIP_SLOT_MAX);
 
-	case DRAGON_SOUL_INVENTORY:
-		return cell < (DRAGON_SOUL_INVENTORY_MAX_NUM);
 #ifdef ENABLE_SWITCHBOT
 	case SWITCHBOT:
 		return cell < SWITCHBOT_SLOT_COUNT;
@@ -3304,7 +3162,7 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 		return false;
 	}
 
-#ifdef ENABLE_PVP_ADVANCED	
+#ifdef ENABLE_PVP_ADVANCED
 	if ((ecs::PlayerRuntime::GetDuelOption(e, "BlockPotion")) && IS_POTION_PVP_BLOCKED(GetItemVnum(item)))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3312,7 +3170,7 @@ bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
 #endif
 		return false;
 	}
-#endif	
+#endif
 
 	//PREVENT_TRADE_WINDOW
 	if (IS_SUMMON_ITEM(GetItemVnum(item)))
@@ -4124,14 +3982,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 		else
 			UnequipItemEcs(e, item);
 		break;
-	case ITEM_DS:
-	{
-		if (!IsItemEquipped(item))
-			return false;
-		return DSManager::instance().PullOutEcs(e, NPOS, itemEntity);
-		break;
-	}
-	case ITEM_SPECIAL_DS:
 		if (!IsItemEquipped(item))
 			EquipItemEcs(e, item);
 		else
@@ -4668,150 +4518,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 		}
-		case USE_TIME_CHARGE_PER:
-		{
-			const entt::entity pDestItem = GetItem(e, DestCell);
-			if (pDestItem == entt::null)
-			{
-				return false;
-			}
-			if (IsDragonSoulItem(pDestItem))
-			{
-#ifdef ENABLE_DS_POTION_DIFFRENT
-				if (GetItemCount(item) > 1) {
-					int pos = InventorySystem::GetEmptyInventory(e, GetItemSize(item));
-					if (pos == -1) {
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 366, "");
-#endif
-						return false;
-					}
-
-					ConsumeItemEcs(itemEntity);
-					const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(GetItemVnum(item), 1);
-					if (!IsValidItem(item2))
-						return false;
-
-					InventorySystem::AddToCharacter(item2, e, TItemPos(INVENTORY, pos), false);
-					itemEntity = item2;
-				}
-
-				if (GetItemSocket(item, 0) <= 0) {
-					InventorySystem::RemoveFromCharacter(item);
-					return false;
-				}
-				else {
-					uint32_t duration = DSManager::instance().GetDuration(pDestItem);
-					uint32_t remain_sec = GetItemSocket(pDestItem, ITEM_SOCKET_REMAIN_SEC);
-					if (remain_sec == duration)
-						return false;
-
-					uint32_t dwBottlePercent = GetItemSocket(item, 0);
-					uint32_t dwOnePercent = duration / 100;
-					uint32_t dwRemainPercent = remain_sec / dwOnePercent;
-					uint32_t dif = 100 - dwRemainPercent;
-					dif = dif > dwBottlePercent ? dwBottlePercent : dif;
-					uint32_t add = dwOnePercent * dif;
-					if (remain_sec + add >= 86400) {
-						SetItemSocket(pDestItem, ITEM_SOCKET_REMAIN_SEC, duration);
-					}
-					else {
-						SetItemSocket(pDestItem, ITEM_SOCKET_REMAIN_SEC, remain_sec + add);
-					}
-
-					SetItemSocket(item, 0, dwBottlePercent - dif);
-					if (GetItemSocket(item, 0) < 1)
-						InventorySystem::RemoveFromCharacter(item);
-
-					return true;
-				}
-#else
-				int ret;
-				char buf[128];
-				if (GetItemVnum(item) == DRAGON_HEART_VNUM)
-				{
-					ret = GiveMoreTime_Per(pDestItem, (float)GetItemSocket(item, ITEM_SOCKET_CHARGING_AMOUNT_IDX));
-				}
-				else
-				{
-					ret = GiveMoreTime_Per(pDestItem, (float)GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
-				}
-				if (ret > 0)
-				{
-					if (GetItemVnum(item) == DRAGON_HEART_VNUM)
-					{
-						sprintf(buf, "Inc %ds by item{VN:%d SOC%d:%u}", ret, GetItemVnum(item), ITEM_SOCKET_CHARGING_AMOUNT_IDX, GetItemSocket(item, ITEM_SOCKET_CHARGING_AMOUNT_IDX));
-					}
-					else
-					{
-						sprintf(buf, "Inc %ds by item{VN:%d VAL%d:%d}", ret, GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
-					}
-
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 670, "%s#%d", GetItemName(pDestItem), ret);
-#endif
-					ConsumeItemEcs(itemEntity);
-					LogManager::instance().ItemLogEntity(e, item, "DS_CHARGING_SUCCESS", buf);
-					return true;
-				}
-				else
-				{
-					if (GetItemVnum(item) == DRAGON_HEART_VNUM)
-					{
-						sprintf(buf, "No change by item{VN:%d SOC%d:%u}", GetItemVnum(item), ITEM_SOCKET_CHARGING_AMOUNT_IDX, GetItemSocket(item, ITEM_SOCKET_CHARGING_AMOUNT_IDX));
-					}
-					else
-					{
-						sprintf(buf, "No change by item{VN:%d VAL%d:%d}", GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
-					}
-
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 671, "%s", GetItemName(pDestItem));
-#endif
-					LogManager::instance().ItemLogEntity(e, item, "DS_CHARGING_FAILED", buf);
-					return false;
-				}
-#endif
-			}
-			else
-				return false;
-		}
-		break;
-		case USE_TIME_CHARGE_FIX:
-		{
-			const entt::entity pDestItem = GetItem(e, DestCell);
-			if (pDestItem == entt::null)
-			{
-				return false;
-			}
-			if (IsDragonSoulItem(pDestItem))
-			{
-				int ret = GiveMoreTime_Fix(pDestItem, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
-				char buf[128];
-				if (ret)
-				{
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 670, "%s#%d", GetItemName(pDestItem), ret);
-#endif
-					sprintf(buf, "Increase %ds by item{VN:%d VAL%d:%d}", ret, GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
-					LogManager::instance().ItemLogEntity(e, item, "DS_CHARGING_SUCCESS", buf);
-					ConsumeItemEcs(itemEntity);
-					return true;
-				}
-				else
-				{
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 671, "%s", GetItemName(pDestItem));
-#endif
-					sprintf(buf, "No change by item{VN:%d VAL%d:%d}", GetItemVnum(item), ITEM_VALUE_CHARGING_AMOUNT_IDX, GetItemValue(item, ITEM_VALUE_CHARGING_AMOUNT_IDX));
-					LogManager::instance().ItemLogEntity(e, item, "DS_CHARGING_FAILED", buf);
-					return false;
-				}
-			}
-			else
-				return false;
-		}
-		break;
 #ifdef ENABLE_NEW_USE_POTION
 		case USE_NEW_POTIION: {
 			uint32_t dwType = GetItemValue(item, 0);
@@ -5689,7 +5395,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 					return false;
 				}
 
-				uint32_t add_value = GetItemValue(item, 0); 
+				uint32_t add_value = GetItemValue(item, 0);
 				uint32_t remaining = max_limit - current;
 
 				uint32_t real_add = std::min(add_value, remaining);
@@ -5869,7 +5575,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				if (freeSpace < unitPrice)
 					break;
 
-				 
+
 				uint32_t canUse = (uint32_t)(freeSpace / unitPrice);
 				if (canUse > count)
 					canUse = count;
@@ -5879,10 +5585,10 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 				const uint64_t canAdd = unitPrice * (uint64_t)canUse;
 
-				 
+
 				GiveGold(e, (long long)canAdd);
 
-				 
+
 				ConsumeItemEcs(itemEntity, canUse);
 			}
 			break;
@@ -7243,39 +6949,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			break;
 		}
 #endif
-#ifdef ENABLE_DS_ENCHANT
-		case USE_DS_ENCHANT: {
-			if (!InventorySystem::IsValidItemPosition(e, DestCell))
-				return false;
-			const entt::entity character = e;
-			const entt::entity target = GetItem(character, DestCell);
-			const uint32_t materialID = GetItemID(itemEntity);
-			const uint32_t materialVnum = GetItemOriginalVnum(itemEntity);
-			using Result = DSManager::EnchantResult;
-			const auto result = DSManager::instance().EnchantWithItemCost(character, target, itemEntity);
-			if (result != Result::Success) {
-#ifdef TEXTS_IMPROVEMENT
-				uint32_t message = 0;
-				if (result == Result::InvalidTarget) message = 73;
-				else if (result == Result::Active) message = 76;
-				else if (result == Result::InvalidGrade) message = 75;
-				if (message)
-					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, message, "");
-#endif
-				return false;
-			}
-			char buf[21];
-			snprintf(buf, sizeof(buf), "%u", GetItemID(target));
-			auto* desc = ecs::PlayerRuntime::GetDesc(character);
-			LogManager::instance().ItemLog(ecs::PlayerRuntime::GetPlayerID(character),
-				ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), materialID,
-				"USE_DS_ENCHANT", buf, desc ? desc->GetHostName() : "", materialVnum);
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 74, "");
-#endif
-			break;
-		}
-#endif
 #ifdef ENABLE_REMOTE_ATTR_SASH_REMOVE
 		case USE_ATTR_SASH_REMOVE: {
 			entt::entity item2 = entt::null;
@@ -7513,7 +7186,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 		}
 		break;
-#ifdef ATTR_LOCK						
+#ifdef ATTR_LOCK
 		case USE_ADD_ATTRIBUTE_LOCK:
 		case USE_CHANGE_ATTRIBUTE_LOCK:
 		case USE_DELETE_ATTRIBUTE_LOCK:
@@ -8194,7 +7867,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				{
 					ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "You can't add new slot's to belt items");
 					return false;
-					
+
 				}
 				if (IsAccessoryForSocket(item2))
 				{
@@ -8521,7 +8194,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			const int32_t insV5 = GetItemValue(item, 5);
 			const int32_t insV4 = GetItemValue(item, 4);
 
-			
+
 				const int32_t exV5 = p->alValues[5];
 			const int32_t exV4 = p->alValues[4];
 
@@ -8664,34 +8337,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 		}
 		break;
-	case ITEM_EXTRACT:
-	{
-		const entt::entity pDestItem = GetItem(e, DestCell);
-		if (pDestItem == entt::null)
-		{
-			return false;
-		}
-		switch (GetItemSubType(item))
-		{
-		case EXTRACT_DRAGON_SOUL:
-			if (IsDragonSoulItem(pDestItem))
-			{
-				entt::entity destItemEntity = pDestItem;
-				return DSManager::instance().PullOutEcs(e, NPOS, destItemEntity, itemEntity);
-			}
-			return false;
-		case EXTRACT_DRAGON_HEART:
-			if (IsDragonSoulItem(pDestItem))
-			{
-				return DSManager::instance().ExtractDragonHeartEcs(e, pDestItem, itemEntity);
-			}
-			return false;
-		default:
-			return false;
-		}
-	}
-	break;
-
 #ifdef ENABLE_SOUL_SYSTEM
 	case ITEM_SOUL:
 	{
@@ -9115,7 +8760,7 @@ void AutoRecoveryItemProcess(entt::entity e, int type)
 	if (false == ecs::PlayerRuntime::IsPC(e))
 		return;
 
-#ifdef ENABLE_PVP_ADVANCED	
+#ifdef ENABLE_PVP_ADVANCED
 	if (
 #ifdef ENABLE_NEW_USE_POTION
 	((type == AFFECT_AUTO_HP_RECOVERY2) ||

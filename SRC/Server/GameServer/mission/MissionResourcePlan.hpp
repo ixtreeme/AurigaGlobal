@@ -8,7 +8,7 @@ enum class ResourceWindow : uint8_t
     Inventory = 1,
     ExtraInventory,
     Equipment,
-    DragonSoul,
+    Reserved4, // Retired storage code; never reuse.
     Belt,
     Safebox,
     Mall,

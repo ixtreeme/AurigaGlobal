@@ -264,7 +264,6 @@ ACMD (do_item_full_set);
 ACMD (do_attr_full_set);
 ACMD (do_all_skill_master);
 ACMD (do_use_item);
-ACMD (do_dragon_soul);
 ACMD (do_clear_affect);
 
 #ifdef ENABLE_NEWSTUFF
@@ -284,9 +283,6 @@ ACMD(do_gaya_system);
 
 #ifdef __ENABLE_RANGE_ALCHEMY__
 ACMD(do_extend_range_npc);
-#endif
-#ifdef __ENABLE_REFINE_ALCHEMY__
-ACMD(do_refine_window_alchemy);
 #endif
 
 
@@ -722,7 +718,6 @@ struct command_info cmd_info[] =
 	{ "all_skill_master",	do_all_skill_master,	0,	POS_DEAD,	GM_HIGH_WIZARD},
 	{ "use_item",		do_use_item,	0, POS_DEAD,		GM_HIGH_WIZARD},
 
-	{ "dragon_soul",				do_dragon_soul,				0,	POS_DEAD,	GM_PLAYER	},
 	{ "do_clear_affect", do_clear_affect, 	0, POS_DEAD,		GM_IMPLEMENTOR},
 #ifdef __NEWPET_SYSTEM__
 	{ "cubepetadd", 		do_CubePetAdd,	0,			POS_DEAD,	GM_PLAYER },
@@ -751,9 +746,6 @@ struct command_info cmd_info[] =
 	{ "open_range_npc",		do_extend_range_npc,			0,			POS_DEAD,	GM_PLAYER		},
 #endif
 
-#ifdef __ENABLE_REFINE_ALCHEMY__
-	{ "open_refine_window_alchemy",	do_refine_window_alchemy,	0,		POS_DEAD,	GM_PLAYER		},
-#endif
 
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
 	{"channel", 					do_change_channel, 			0, 		POS_DEAD, 	GM_PLAYER		},

@@ -69,7 +69,6 @@
 #include "MarkManager.h"
 #include "spam.h"
 #include "skill_power.h"
-#include "DragonSoul.h"
 #include "../ecs/Registry.hpp"
 #include "../ecs/EventDispatcher.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
@@ -470,7 +469,6 @@ int main(int argc, char **argv)
 	CBattleArena	ba;
 	COver9RefineManager	o9r;
 	SpamManager		spam_mgr;
-	DSManager dsManager;
 #ifdef ENABLE_HWID
 	CHwidManager	hwid_manager;
 #endif

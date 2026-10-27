@@ -1,6 +1,5 @@
 #ifndef __INC_METIN2_ITEM_LENGTH_H__
 #define __INC_METIN2_ITEM_LENGTH_H__
-
 #include "CommonDefines.h"
 #include <string>
 #include "service.h"
@@ -43,14 +42,7 @@ enum EItemMisc
 const uint8_t ITEM_SOCKET_REMAIN_SEC = 0;
 enum EItemValueIdice
 {
-	ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX = 0,
-	ITEM_VALUE_CHARGING_AMOUNT_IDX = 0,
 	ITEM_VALUE_SECONDARY_COIN_UNIT_IDX = 0,
-};
-enum EItemDragonSoulSockets
-{
-	ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX = 2,
-	ITEM_SOCKET_CHARGING_AMOUNT_IDX = 2,
 };
 enum EItemUniqueSockets
 {
@@ -89,13 +81,13 @@ enum EItemTypes
     ITEM_TOTEM,
 	ITEM_BLEND,
 	ITEM_COSTUME,
-	ITEM_DS,
-	ITEM_SPECIAL_DS,
-	ITEM_EXTRACT,
+	ITEM_RETIRED_29,
+	ITEM_RETIRED_30,
+	ITEM_RETIRED_31,
 	ITEM_SECONDARY_COIN,
 	ITEM_RING,
 	ITEM_BELT,
-	ITEM_SOUL,	
+	ITEM_SOUL,
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	ITEM_TRANSFER_SCROLL,
 #endif
@@ -188,16 +180,7 @@ enum ESoulSubTypes
 };
 #endif
 
-enum EDragonSoulSubType
-{
-	DS_SLOT1,
-	DS_SLOT2,
-	DS_SLOT3,
-	DS_SLOT4,
-	DS_SLOT5,
-	DS_SLOT6,
-	DS_SLOT_MAX,
-};
+
 
 #ifdef ENABLE_ACCE_SYSTEM
 enum EAcceInfo
@@ -231,35 +214,11 @@ enum EAcceInfo
 };
 #endif
 
-enum EDragonSoulGradeTypes
-{
-	DRAGON_SOUL_GRADE_NORMAL,
-	DRAGON_SOUL_GRADE_BRILLIANT,
-	DRAGON_SOUL_GRADE_RARE,
-	DRAGON_SOUL_GRADE_ANCIENT,
-	DRAGON_SOUL_GRADE_LEGENDARY,
-#ifdef ENABLE_DS_GRADE_MYTH
-	DRAGON_SOUL_GRADE_MYTH,
-#endif
-	DRAGON_SOUL_GRADE_MAX,
 
-};
 
-enum EDragonSoulStepTypes
-{
-	DRAGON_SOUL_STEP_LOWEST,
-	DRAGON_SOUL_STEP_LOW,
-	DRAGON_SOUL_STEP_MID,
-	DRAGON_SOUL_STEP_HIGH,
-	DRAGON_SOUL_STEP_HIGHEST,
-	DRAGON_SOUL_STEP_MAX,
-};
-#define DRAGON_SOUL_STRENGTH_MAX 7
 
-enum EDSInventoryMaxNum
-{
-	DRAGON_SOUL_INVENTORY_MAX_NUM = 300 + (DS_SLOT_MAX * DRAGON_SOUL_GRADE_MAX * DRAGON_SOUL_BOX_SIZE),
-};
+
+
 
 enum EFishSubTypes
 {
@@ -324,8 +283,8 @@ enum EUseSubTypes
 	USE_CHANGE_ATTRIBUTE2,
 	USE_BIND,
 	USE_UNBIND,
-	USE_TIME_CHARGE_PER,
-	USE_TIME_CHARGE_FIX,				// 28
+	USE_RETIRED_27,
+	USE_RETIRED_28,
 	USE_PUT_INTO_BELT_SOCKET,
 	USE_PUT_INTO_RING_SOCKET,
 	USE_CHANGE_COSTUME_ATTR,			// 31
@@ -343,9 +302,7 @@ enum EUseSubTypes
 	USE_ADD_ATTR_COSTUME2,				// 40
 	USE_REMOVE_ATTR_COSTUME,			// 41
 #endif
-#ifdef ENABLE_DS_ENCHANT
-	USE_DS_ENCHANT,						// 42
-#endif
+	USE_RETIRED_42, // Reserved subtype; never reuse.
 #ifdef ENABLE_NEW_PET_EDITS
 	USE_PET_REVIVE,						// 43
 	USE_PET_ENCHANT,					// 44
@@ -365,11 +322,7 @@ enum EUseSubTypes
 	USE_FISH,							// 49
 };
 
-enum EExtractSubTypes
-{
-	EXTRACT_DRAGON_SOUL,
-	EXTRACT_DRAGON_HEART,
-};
+
 
 enum EAutoUseSubTypes
 {
@@ -388,9 +341,9 @@ enum EMaterialSubTypes
 	MATERIAL_ROOT,
 	MATERIAL_NEEDLE,
 	MATERIAL_JEWEL,
-	MATERIAL_DS_REFINE_NORMAL,
-	MATERIAL_DS_REFINE_BLESSED,
-	MATERIAL_DS_REFINE_HOLLY,
+	MATERIAL_RETIRED_5,
+	MATERIAL_RETIRED_6,
+	MATERIAL_RETIRED_7,
 };
 
 enum ESpecialSubTypes
@@ -549,7 +502,7 @@ enum class EItemExtraProto {
 	//add new values here:
 
 
-	//this is always the last 
+	//this is always the last
 	//value of the enum
 	ITEM_EXTRA_PROTO_FIELD_COUNT,
 };

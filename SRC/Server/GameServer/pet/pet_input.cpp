@@ -139,7 +139,7 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 	}
 
 	const TItemPos originalPos = p->ItemPos;
-	const bool clearQuickslot = !ItemSystem::IsDragonSoulItem(itemEntity) && !ItemSystem::IsExtraItem(itemEntity);
+	const bool clearQuickslot = !ItemSystem::IsExtraItem(itemEntity);
 	if (!ItemSystem::RemoveItemEcs(itemEntity))
 		return;
 

@@ -352,7 +352,7 @@ void AddMaterial(entt::entity e, TItemPos tPos, uint8_t bPos)
 	const entt::entity item = ItemSystem::GetItem(e, tPos);
 	if (item == entt::null)
 		return;
-	else if ((ItemSystem::GetItemCell(item) >= INVENTORY_MAX_NUM) || ItemSystem::IsItemEquipped(item) || tPos.IsBeltInventoryPosition() || ItemSystem::GetItemType(item) == ITEM_DS)
+	else if ((ItemSystem::GetItemCell(item) >= INVENTORY_MAX_NUM) || ItemSystem::IsItemEquipped(item) || tPos.IsBeltInventoryPosition())
 		return;
 	else if ((ItemSystem::GetItemType(item) != ITEM_COSTUME) && (acce.combinationOpen))
 		return;

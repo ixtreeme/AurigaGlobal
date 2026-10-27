@@ -3317,10 +3317,8 @@ static bool __TryAutoGiveRewardItem(entt::entity owner, entt::entity itemEntity,
 		return false;
 
 	uint8_t window = INVENTORY;
-	if (ItemSystem::IsDragonSoulItem(itemEntity))
-		window = DRAGON_SOUL_INVENTORY;
 #ifdef ENABLE_EXTRA_INVENTORY
-	else if (ItemSystem::IsExtraItem(itemEntity))
+	if (ItemSystem::IsExtraItem(itemEntity))
 		window = EXTRA_INVENTORY;
 #endif
 
@@ -4735,7 +4733,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	//
 	//
 
-#if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
+#if defined(ENABLE_RUNE_DUNGEON) || defined(ENABLE_MELEY_LAIR)
 	int32_t itakehp = 0;
 #endif
 
@@ -4960,14 +4958,14 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (ecs::PlayerRuntime::GetHP(victim) > 0) && (iHP > 0)) {
 						CombatSystem::CreateFly(victim, FLY_HP_MEDIUM, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
-#if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
+#if defined(ENABLE_RUNE_DUNGEON) || defined(ENABLE_MELEY_LAIR)
 						int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(victim);
 						if (
-#if defined(ENABLE_DS_RUNE)
+#if defined(ENABLE_RUNE_DUNGEON)
 							racevnum == 3996 || racevnum == 3997 || racevnum == 3998 || racevnum == 4011 || racevnum == 4012 || racevnum == 4013
 #endif
 #if defined(ENABLE_MELEY_LAIR)
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
 							|| racevnum == 6118
 #else
 							racevnum == 6118
@@ -5016,13 +5014,13 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					{
 						CombatSystem::CreateFly(victim, FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
-#if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
+#if defined(ENABLE_RUNE_DUNGEON) || defined(ENABLE_MELEY_LAIR)
 						if (
-#if defined(ENABLE_DS_RUNE)
+#if defined(ENABLE_RUNE_DUNGEON)
 							racevnum == 3996 || racevnum == 3997 || racevnum == 3998 || racevnum == 4011 || racevnum == 4012 || racevnum == 4013
 #endif
 #if defined(ENABLE_MELEY_LAIR)
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
 							|| racevnum == 6118
 #else
 							racevnum == 6118
@@ -5342,14 +5340,14 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		dam = tempDam * damMul + 0.5f;
 
 
-#if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
+#if defined(ENABLE_RUNE_DUNGEON) || defined(ENABLE_MELEY_LAIR)
 		if (!ecs::PlayerRuntime::IsPC(victim) && attackerIsCharacter && ecs::PlayerRuntime::IsPC(attacker))
 		{
 			int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(victim);
 			const entt::entity dungeon = ecs::SocialSystem::GetDungeon(victim);
 			if (dungeon != entt::null)
 			{
-#if defined(ENABLE_DS_RUNE)
+#if defined(ENABLE_RUNE_DUNGEON)
 				if (racevnum == 3996 || racevnum == 3997 || racevnum == 3998 || racevnum == 4011 || racevnum == 4012 || racevnum == 4013)
 				{
 					int32_t type = DungeonSystem::GetFlag(dungeon, "type");

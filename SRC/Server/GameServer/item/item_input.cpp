@@ -39,7 +39,6 @@
 #include "desc_client.h"
 #include "gm.h"
 #include "input_item_helpers.hpp"
-#include "DragonSoul.h"
 #include "questmanager.h"
 #include "../ecs/systems/AcceSystem.hpp"
 
@@ -295,7 +294,7 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 	}
 
 	const TItemPos originalPos = p->ItemPos;
-	const bool clearQuickslot = !ItemSystem::IsDragonSoulItem(itemEntity) && !ItemSystem::IsExtraItem(itemEntity);
+	const bool clearQuickslot = !ItemSystem::IsExtraItem(itemEntity);
 	if (!ItemSystem::RemoveItemEcs(itemEntity))
 		return;
 
@@ -356,40 +355,8 @@ void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, b
 	if (!InventorySystem::IsEmptyItemGrid(character, destination, ItemSystem::GetItemSize(itemEntity)))
 		return;
 
-	if (ItemSystem::IsDragonSoulItem(itemEntity))
-	{
-		if (bMall)
-		{
-			DSManager::instance().DragonSoulItemInitialize(itemEntity);
-			if (SafeboxSystem::Get(character, window) != safebox ||
-				!IsInputItemAt(character, itemEntity, TItemPos(window, p->bSafePos)))
-				return;
-		}
-
-		if (destination.window_type != DRAGON_SOUL_INVENTORY)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 643, "");
-#endif
-			return;
-		}
-
-		if (!DSManager::instance().IsValidCellForThisItem(itemEntity, destination))
-		{
-			const int emptyCell =
-				ItemSystem::GetEmptyDragonSoulInventory(ownerEntity, itemEntity);
-			if (emptyCell < 0)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 644, "");
-#endif
-				return;
-			}
-			destination = TItemPos(DRAGON_SOUL_INVENTORY, emptyCell);
-		}
-	}
 #ifdef ENABLE_EXTRA_INVENTORY
-	else if (ItemSystem::IsExtraItem(itemEntity))
+	if (ItemSystem::IsExtraItem(itemEntity))
 	{
 		if (destination.window_type != EXTRA_INVENTORY)
 		{

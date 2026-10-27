@@ -1963,7 +1963,7 @@ EVENTFUNC(recovery_event)
         const auto percent = mob->bRegenPercent;
         const int cycle = PASSES_PER_SEC(std::max<int>(1, mob->bRegenCycle));
         if (AffectSystem::IsAffectFlag(character, AFF_POISON)) return cycle;
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
         if (race == 3996 || race == 8202) {
             const entt::entity dungeon = ecs::SocialSystem::GetDungeon(character);
             const int floor = dungeon != entt::null ? DungeonSystem::GetFlag(dungeon, "floor") : 0;

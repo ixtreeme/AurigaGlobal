@@ -6,7 +6,6 @@
 #include "ItemSystem.hpp"
 #include "MountSystem.hpp"
 #include "SkillSystem.hpp"
-#include "DragonSoulSystem.hpp"
 #include "AffectSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "../Registry.hpp"
@@ -18,7 +17,6 @@
 #include "../../core/constants.h"
 #include "../../entity/char_manager.h"
 #include "../../combat/skill.h"
-#include "../../dungeon/DragonSoul.h"
 #include "../../pet/PetSystem.h"
 #include "../../pet/horse_rider.h"
 #include <Core/Logging.hpp>
@@ -219,16 +217,6 @@ void Compute(entt::entity e)
     CHARACTER_MANAGER::instance().CheckBonusEvent(e);
     if (!HasPointState(e)) return;
 #endif
-    const int deck = DragonSoulSystem::GetActiveDeck(e);
-    if (DragonSoulSystem::IsDeckActivated(e) && deck >= 0 && deck < DRAGON_SOUL_DECK_MAX_NUM) {
-        for (int slot = WEAR_MAX_NUM + DS_SLOT_MAX * deck; slot < WEAR_MAX_NUM + DS_SLOT_MAX * (deck + 1); ++slot) {
-            const auto item = ItemSystem::GetWearItem(e, slot);
-            if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == e &&
-                applied.insert(item).second && DSManager::instance().IsTimeLeftDragonSoul(item))
-                ItemSystem::ModifyPoints(item, true);
-            if (!HasPointState(e)) return;
-        }
-    }
     SkillSystem::ComputeSkillPoints(e);
     if (!HasPointState(e)) return;
     // Existing leaf services; their full lifecycle migration is separate.

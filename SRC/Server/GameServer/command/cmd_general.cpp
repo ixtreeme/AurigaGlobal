@@ -71,7 +71,6 @@ bool ParseCommandNumber(std::string_view input, T& value)
 #endif
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 #include "../ecs/systems/GayaSystem.hpp"
-#include "../ecs/systems/DragonSoulSystem.hpp"
 #endif
 
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
@@ -3312,13 +3311,6 @@ ACMD(do_extend_range_npc)
 
 
 
-#ifdef __ENABLE_REFINE_ALCHEMY__
-ACMD(do_refine_window_alchemy) {
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	DragonSoulSystem::OpenRefineWindow(character, character);
-}
-#endif
 
 
 

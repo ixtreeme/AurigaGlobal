@@ -221,13 +221,12 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME server_manager_backups COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ServerManagerBackupTests.py)
 endif()
 
-# Headless regression checks compile the production attribute, switchbot and DS
+# Headless regression checks compile the production attribute and switchbot
 # sources with service test doubles; no server/DB startup is needed.
 add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemAttributeTests.cpp
     ecs/systems/ItemAttributeSystem.cpp
     social/new_switchbot.cpp
-    dungeon/DragonSoul.cpp
     item/attr_transfer.cpp
 )
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
@@ -908,12 +907,6 @@ if(WIN32)
 endif()
 add_test(NAME character_manager COMMAND CharacterManagerTests)
 
-add_executable(RefineWindowTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/RefineWindowTests.cpp
-    ecs/systems/DragonSoulSystem.cpp
-)
-target_link_libraries(RefineWindowTests PRIVATE SERVER EnTT::EnTT)
-add_test(NAME refine_window COMMAND RefineWindowTests)
 
 add_executable(GmCommandTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/GmCommandTests.cpp
@@ -945,19 +938,19 @@ add_test(NAME exchange COMMAND ExchangeTests)
 # uses the production drain cancellation helper. Do not link a live SQL worker.
 foreach(_sql_seam_test CombatStateTests DailyRewardTests DungeonLifecycleTests ExchangeTests GuildMemberLifecycleTests
         ItemAttributeTests ItemManagerLifecycleTests ItemRuntimeTests LoginAuthTests LoginSessionTests
-        MountLifecycleTests QuickslotTests ShopLifecycleTests)
+        MotionTimingTests MountLifecycleTests OXEventTests QuickslotTests ShopLifecycleTests)
     target_sources(${_sql_seam_test} PRIVATE ../SQL/QueueDrain.cpp)
     target_link_libraries(${_sql_seam_test} PRIVATE Threads::Threads)
 endforeach()
 
 # Exercise the same generation-aware diagnostic implementation as GameServer.
-# The isolated event/refine-window suites have no diagnostic dependency.
+# The isolated event suite has no diagnostic dependency.
 foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests)
     target_sources(${_ecs_test} PRIVATE ecs/EcsDiagnostics.cpp)
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
+    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
@@ -982,6 +975,15 @@ target_compile_definitions(GameServer PRIVATE
 add_executable(HerbalismRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/HerbalismRulesTests.cpp)
 add_test(NAME herbalism_rules COMMAND HerbalismRulesTests)
+
+add_executable(RetiredContentTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/RetiredContentTests.cpp)
+target_link_libraries(RetiredContentTests PRIVATE SERVER)
+add_test(NAME retired_content COMMAND RetiredContentTests)
+if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
+    add_custom_command(TARGET RetiredContentTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${AURIGA_ASAN_RUNTIME_DLL}"
+            "$<TARGET_FILE_DIR:RetiredContentTests>")
+endif()
 
 add_executable(MissionPassRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionPassRulesTests.cpp)

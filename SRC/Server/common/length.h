@@ -35,7 +35,7 @@ enum EMisc
 #endif
 
 	INVENTORY_MAX_NUM		= INVENTORY_PAGE_SIZE*INVENTORY_PAGE_COUNT, // 90 (default)
-	
+
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	EXTRA_INVENTORY_PAGE_COLUMN = 5,
@@ -45,8 +45,8 @@ enum EMisc
 	EXTRA_INVENTORY_MAX_NUM = EXTRA_INVENTORY_PAGE_SIZE * EXTRA_INVENTORY_PAGE_COUNT,
 	EXTRA_INVENTORY_CATEGORY_MAX_NUM = EXTRA_INVENTORY_PAGE_SIZE * 8,
 #endif
-	
-	
+
+
 	ABILITY_MAX_NUM			= 50,
 	EMPIRE_MAX_NUM			= 4,
 	BANWORD_MAX_LEN			= 24,
@@ -99,10 +99,6 @@ enum EMisc
 	MOB_SKILL_MAX_NUM		= 5,
 
 	POINT_MAX_NUM = 255,
-	DRAGON_SOUL_BOX_SIZE = 32,
-	DRAGON_SOUL_BOX_COLUMN_NUM = 8,
-	DRAGON_SOUL_BOX_ROW_NUM = DRAGON_SOUL_BOX_SIZE / DRAGON_SOUL_BOX_COLUMN_NUM,
-	DRAGON_SOUL_REFINE_GRID_SIZE = 15,
 	MAX_AMOUNT_OF_MALL_BONUS	= 20,
 
 #ifdef ENABLE_RUNE_SYSTEM
@@ -239,14 +235,7 @@ enum EWearPositions
 #endif
 };
 
-enum EDragonSoulDeckType
-{
-	DRAGON_SOUL_DECK_0,
-	DRAGON_SOUL_DECK_1,
-	DRAGON_SOUL_DECK_MAX_NUM = 2,
 
-	DRAGON_SOUL_DECK_RESERVED_MAX_NUM = 3,
-};
 
 enum ESex
 {
@@ -321,7 +310,7 @@ enum ERaceFlags
 	RACE_FLAG_ATT_EARTH	= (1 << 15),
 	RACE_FLAG_ATT_DARK	= (1 << 16),
 #endif
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
 	RACE_FLAG_RUNE = (1 << 17),
 #endif
 };
@@ -607,7 +596,7 @@ enum EApplyTypes
 	APPLY_ATTBONUS_MEDI_PVM			= 119,
 #endif
 	APPLY_PVM_CRITICAL_PCT = 120,
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
 	APPLY_RUNE_MONSTERS = 121,
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
@@ -661,7 +650,7 @@ enum EWindows
 	SAFEBOX,
 	MALL,
 	MOUNT_INVENTORY,
-	DRAGON_SOUL_INVENTORY,
+	RETIRED_WINDOW_6, // Never reuse this wire/SQL enum position.
 	BELT_INVENTORY,
 #ifdef ENABLE_EXTRA_INVENTORY
 	EXTRA_INVENTORY,
@@ -911,16 +900,10 @@ enum SPECIAL_EFFECT
 #include "item_length.h"
 
 
-enum EDragonSoulRefineWindowSize
-{
-	DRAGON_SOUL_REFINE_GRID_MAX = 15,
-};
+
 
 enum EMisc2
 {
-	DRAGON_SOUL_EQUIP_SLOT_START = INVENTORY_MAX_NUM + WEAR_MAX_NUM, // 212
-	DRAGON_SOUL_EQUIP_SLOT_END = DRAGON_SOUL_EQUIP_SLOT_START + (DS_SLOT_MAX * DRAGON_SOUL_DECK_MAX_NUM), // 224
-	DRAGON_SOUL_EQUIP_RESERVED_SLOT_END = DRAGON_SOUL_EQUIP_SLOT_END + (DS_SLOT_MAX * DRAGON_SOUL_DECK_RESERVED_MAX_NUM),
 
 	BELT_INVENTORY_SLOT_START = 500,
 	BELT_INVENTORY_SLOT_END = BELT_INVENTORY_SLOT_START + BELT_INVENTORY_SLOT_COUNT,
@@ -953,11 +936,11 @@ typedef struct SItemPos
 		case RESERVED_WINDOW:
 			return false;
 		case INVENTORY:
+			return cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM || IsBeltInventoryPosition();
 		case EQUIPMENT:
+			return cell >= INVENTORY_MAX_NUM && cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM;
 		case BELT_INVENTORY:
-			return cell < INVENTORY_AND_EQUIP_SLOT_MAX;
-		case DRAGON_SOUL_INVENTORY:
-			return cell < (DRAGON_SOUL_INVENTORY_MAX_NUM);
+			return IsBeltInventoryPosition();
 		case SAFEBOX:
 		case MALL:
 			return false;
@@ -980,18 +963,7 @@ typedef struct SItemPos
 
 	bool IsEquipPosition() const
 	{
-		return ((INVENTORY == window_type || EQUIPMENT == window_type) && cell >= INVENTORY_MAX_NUM && cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM)
-			|| IsDragonSoulEquipPosition();
-	}
-
-	bool IsDragonSoulEquipPosition() const
-	{
-#ifdef ENABLE_EXTRA_INVENTORY
-		if (window_type == EXTRA_INVENTORY)
-			return false;
-#endif
-		
-		return (DRAGON_SOUL_EQUIP_SLOT_START <= cell) && (DRAGON_SOUL_EQUIP_SLOT_END > cell);
+		return ((INVENTORY == window_type || EQUIPMENT == window_type) && cell >= INVENTORY_MAX_NUM && cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM);
 	}
 
 	bool IsBeltInventoryPosition() const
@@ -1000,7 +972,7 @@ typedef struct SItemPos
 		if (window_type == EXTRA_INVENTORY)
 			return false;
 #endif
-		
+
 		return (BELT_INVENTORY_SLOT_START <= cell) && (BELT_INVENTORY_SLOT_END > cell);
 	}
 	bool IsDefaultInventoryPosition() const
@@ -1057,11 +1029,11 @@ enum ELanguages
 {
 	LANGUAGE_DEFAULT,		// 0
 	LANGUAGE_EN,            // 1
-	LANGUAGE_RO,            // 2   
-	LANGUAGE_IT,            // 3   
-	LANGUAGE_TR,            // 4   
-	LANGUAGE_DE,            // 5   
-	LANGUAGE_PL,            // 6   
+	LANGUAGE_RO,            // 2
+	LANGUAGE_IT,            // 3
+	LANGUAGE_TR,            // 4
+	LANGUAGE_DE,            // 5
+	LANGUAGE_PL,            // 6
 	LANGUAGE_PT,            // 7
 	LANGUAGE_ES,			// 8
 	LANGUAGE_CZ,			// 9

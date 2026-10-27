@@ -108,6 +108,13 @@ int get_Item_Type_Value(string inputString)
 
 int get_Item_SubType_Value(unsigned int type_value, string inputString)
 {
+	// Recognize obsolete input tokens only so the row can be discarded by
+	// InitializeTables. None of these codes has a runtime implementation.
+	const auto token = trim(inputString);
+	if (type_value == ITEM_MATERIAL && (token == "MATERIAL_DS_REFINE_NORMAL" ||
+		token == "MATERIAL_DS_REFINE_BLESSED" || token == "MATERIAL_DS_REFINE_HOLLY"))
+		return MATERIAL_RETIRED_5;
+	if (type_value == ITEM_USE && token == "USE_DS_ENCHANT") return USE_RETIRED_42;
 	static string arSub1[] = { "WEAPON_SWORD", "WEAPON_DAGGER", "WEAPON_BOW", "WEAPON_TWO_HANDED",
 				"WEAPON_BELL", "WEAPON_FAN", "WEAPON_ARROW", "WEAPON_MOUNT_SPEAR", "WEAPON_CLAW", "WEAPON_QUIVER", "WEAPON_BOUQUET"};
 	static string arSub2[] = { "ARMOR_BODY", "ARMOR_HEAD", "ARMOR_SHIELD", "ARMOR_WRIST", "ARMOR_FOOTS",
@@ -129,9 +136,8 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 				"USE_ADD_ATTR_COSTUME2",
 				"USE_REMOVE_ATTR_COSTUME",
 #endif
-#ifdef ENABLE_DS_ENCHANT
-				"USE_DS_ENCHANT",
-#endif
+				"USE_RETIRED_42",
+
 #ifdef ENABLE_NEW_PET_EDITS
 				"USE_PET_REVIVE",
 				"USE_PET_ENCHANT",
@@ -152,7 +158,7 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 	
 	static string arSub4[] = { "AUTOUSE_POTION", "AUTOUSE_ABILITY_UP", "AUTOUSE_BOMB", "AUTOUSE_GOLD", "AUTOUSE_MONEYBAG", "AUTOUSE_TREASURE_BOX"};
 	static string arSub5[] = { "MATERIAL_LEATHER", "MATERIAL_BLOOD", "MATERIAL_ROOT", "MATERIAL_NEEDLE", "MATERIAL_JEWEL",
-		"MATERIAL_DS_REFINE_NORMAL", "MATERIAL_DS_REFINE_BLESSED", "MATERIAL_DS_REFINE_HOLLY"};
+		"MATERIAL_RETIRED_5", "MATERIAL_RETIRED_6", "MATERIAL_RETIRED_7"};
 	static string arSub6[] = { "SPECIAL_MAP", "SPECIAL_KEY", "SPECIAL_DOC", "SPECIAL_SPIRIT"};
 	static string arSub7[] = { "TOOL_FISHING_ROD" };
 	static string arSub8[] = { "LOTTERY_TICKET", "LOTTERY_INSTANT" };
@@ -199,8 +205,6 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 #endif
 	};
 	
-	static string arSub29[] = { "DS_SLOT1", "DS_SLOT2", "DS_SLOT3", "DS_SLOT4", "DS_SLOT5", "DS_SLOT6" };
-	static string arSub31[] = { "EXTRACT_DRAGON_SOUL", "EXTRACT_DRAGON_HEART" };
 	static string arSub38[] = { "RED_SOUL", "BLUE_SOUL" };
 	
 
@@ -233,9 +237,9 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 		nullptr,			//26
 		nullptr,			//27
 		arSub28,	//28
-		arSub29,		//29
-		arSub29,	//30
-		arSub31,	//31
+		nullptr,		//29
+		nullptr,	//30
+		nullptr,	//31
 		nullptr,			//32
 		nullptr,
 		nullptr,
@@ -275,9 +279,9 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 		0,
 		0,
 		sizeof(arSub28)/sizeof(arSub28[0]),
-		sizeof(arSub29)/sizeof(arSub29[0]),
-		sizeof(arSub29)/sizeof(arSub29[0]),
-		sizeof(arSub31)/sizeof(arSub31[0]),
+		0,
+		0,
+		0,
 		0, // 32
 		0,
 		0,
@@ -642,7 +646,7 @@ int get_Mob_RaceFlag_Value(string inputString)
 							"ATT_EARTH",
 							"ATT_DARK"
 #endif
-#ifdef ENABLE_DS_RUNE
+#ifdef ENABLE_RUNE_DUNGEON
 							,"RUNE"
 #endif
 	};

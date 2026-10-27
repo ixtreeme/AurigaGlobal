@@ -58,7 +58,6 @@
 #include "motion.h"
 #include "OXEvent.h"
 #include "locale_service.h"
-#include "DragonSoul.h"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/EntityFactory.hpp"
 #ifdef __NEWPET_SYSTEM__
@@ -93,7 +92,6 @@
 #include "mob_manager.h"
 #endif
 #include <common/CommonDefines.h>
-#include "../ecs/systems/DragonSoulSystem.hpp"
 
 
 #define ENABLE_CHECK_GHOSTMODE
@@ -127,7 +125,7 @@ void CInputMain::SetSkillColor(entt::entity character, const char* pcData)
 
 bool IsInputInventoryPosition(TItemPos position)
 {
-    return position.window_type == INVENTORY || position.window_type == DRAGON_SOUL_INVENTORY
+    return position.window_type == INVENTORY
 #ifdef ENABLE_EXTRA_INVENTORY
         || position.window_type == EXTRA_INVENTORY
 #endif
@@ -535,38 +533,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_MAP_TELEPORTER:
 			MapTeleporter(character, (TPacketCGMapTeleporter*) c_pData);
 			break;
-#endif
-		case HEADER_CG_DRAGON_SOUL_REFINE:
-			{
-				TPacketCGDragonSoulRefine* p = reinterpret_cast <TPacketCGDragonSoulRefine*>((void*)c_pData);
-				switch(p->bSubType)
-				{
-				case DS_SUB_HEADER_CLOSE:
-					DragonSoulSystem::CloseRefineWindow(character);
-					break;
-				case DS_SUB_HEADER_DO_REFINE_GRADE:
-					{
-						DSManager::instance().DoRefineGradeEcs(character, p->ItemGrid);
-					}
-					break;
-				case DS_SUB_HEADER_DO_REFINE_STEP:
-					{
-						DSManager::instance().DoRefineStepEcs(character, p->ItemGrid);
-					}
-					break;
-				case DS_SUB_HEADER_DO_REFINE_STRENGTH:
-					{
-						DSManager::instance().DoRefineStrengthEcs(character, p->ItemGrid);
-					}
-					break;
-				}
-			}
-			break;
-#ifdef ENABLE_DS_REFINE_ALL
-		case HEADER_CG_DRAGON_SOUL_REFINE_ALL: {
-			TPacketDragonSoulRefineAll* p = reinterpret_cast <TPacketDragonSoulRefineAll*>((void*)c_pData);
-			DSManager::instance().DoRefineAllEcs(character, p->subheader, p->type, p->grade);
-		} break;
 #endif
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
 		case HEADER_CG_CUBE_RENEWAL:

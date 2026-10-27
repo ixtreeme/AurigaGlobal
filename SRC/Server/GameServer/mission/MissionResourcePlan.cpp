@@ -174,7 +174,8 @@ void Validate(const ResourceSnapshot &snapshot, const ResourceRules &rules)
     for (const auto &item : snapshot.items)
         Need(item.id && item.owner == snapshot.character && item.vnum && item.count &&
                  item.count <= RewardLimits::ItemCount && uint8_t(item.window) >= 1 &&
-                 uint8_t(item.window) <= 8 && item.flags <= 15 && ids.insert(item.id).second &&
+                 uint8_t(item.window) <= 8 && item.window != ResourceWindow::Reserved4 &&
+                 item.flags <= 15 && ids.insert(item.id).second &&
                  cells.emplace(uint8_t(item.window), item.category, item.cell).second,
              "Invalid/duplicate resource item identity/placement");
 }

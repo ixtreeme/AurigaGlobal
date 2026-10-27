@@ -90,13 +90,11 @@
 #include "../../social/shop.h"
 #include "../../social/shop_manager.h"
 #include "../../world/start_position.h"
-#include "DragonSoulSystem.hpp"
 #include "GayaSystem.hpp"
 #include "../../combat/skill_power.h"
 #include "../../entity/target.h"
 #include "../../world/war_map.h"
 #include "../../social/wedding.h"
-#include "../../dungeon/DragonSoul.h"
 
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
 
@@ -2211,13 +2209,8 @@ bool InventorySystem::CanTakeInventoryItem(entt::entity e, entt::entity item, TI
     if (iEmpty == -1)
         return false;
 
-    if (ItemSystem::IsDragonSoulItem(item))
-    {
-        cell->window_type = DRAGON_SOUL_INVENTORY;
-    }
-
 #ifdef ENABLE_EXTRA_INVENTORY
-    else if (ItemSystem::IsExtraItem(item))
+    if (ItemSystem::IsExtraItem(item))
     {
         cell->window_type = EXTRA_INVENTORY;
     }
@@ -2739,7 +2732,6 @@ void DestroyCharacterStatePre(entt::entity character)
 
     if (nullptr == ecs::PlayerRuntime::GetMobTable(character))
     {
-        DragonSoulSystem::CleanUp(character);
         InventorySystem::ClearItem(character);
     }
 

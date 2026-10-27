@@ -22,7 +22,7 @@ namespace quest
 	extern void RegisterPetFunctionTable();
 #ifdef __NEWPET_SYSTEM__
 	extern void RegisterNewPetFunctionTable();
-#endif	
+#endif
 	extern void RegisterGuildFunctionTable();
 	extern void RegisterGameFunctionTable();
 	extern void RegisterArenaFunctionTable();
@@ -30,7 +30,6 @@ namespace quest
 	extern void RegisterOXEventFunctionTable();
 	extern void RegisterBattleArenaFunctionTable();
 	extern void RegisterDanceEventFunctionTable();
-	extern void RegisterDragonSoulFunctionTable();
 
 	extern void combine_lua_string(lua_State* L, std::ostringstream &s);
 

@@ -4,8 +4,6 @@
 #include "../../SRC/Server/GameServer/core/config.h"
 #include "../../SRC/Server/GameServer/combat/skill.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
-#include "../../SRC/Server/GameServer/dungeon/DragonSoul.h"
-#include "../../SRC/Server/GameServer/dungeon/dragon_soul_table.h"
 #include "../../SRC/Server/GameServer/pet/PetSystem.h"
 #include "../../SRC/Server/GameServer/core/utils.h"
 #include "../../SRC/Server/GameServer/entity/mob_manager.h"
@@ -27,7 +25,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
@@ -65,7 +62,7 @@ const TApplyInfo aApplyInfo[MAX_APPLY_NUM] {
 int test_server = 0, gPlayerMaxLevel = 150, g_iStatusPointGetLevelLimit = 115;
 namespace P = ecs::PointSystem;
 namespace {
-int checks = 0, modifies = 0, packets = 0, supportLevel = 0, activeDeck = -1;
+int checks = 0, modifies = 0, packets = 0, supportLevel = 0;
 int64_t mountHP = 0;
 entt::entity connected = entt::null;
 LPDESC DescToken() { static int token; return reinterpret_cast<LPDESC>(&token); }
@@ -102,7 +99,7 @@ entt::entity Wear(entt::entity owner, int slot = WEAR_BODY) {
     g_registry.emplace<Gear>(item); equipment[{owner, slot}] = item; return item;
 }
 void Reset() {
-    g_registry.clear(); equipment.clear(); inventory.clear(); modifies = packets = supportLevel = 0; activeDeck = -1; mountHP = 0;
+    g_registry.clear(); equipment.clear(); inventory.clear(); modifies = packets = supportLevel = 0; mountHP = 0;
     onItem = onAffect = onPacket = onMovement = {};
     connected = entt::null; pointPackets.clear(); pointBroadcasts = 0;
     for (auto& job : JobInitialPoints) {
@@ -126,9 +123,6 @@ CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 void CHARACTER_MANAGER::CheckBonusEvent(entt::entity) {}
 void PetSystem::RefreshBuff(entt::entity) {}
-DSManager::DSManager() = default;
-DSManager::~DSManager() = default;
-DragonSoulTable::~DragonSoulTable() = default;
 // Native singleton diagnostics reference RTTI even when these services are
 // isolated by test doubles and never constructed in this fixture.
 LogManager::~LogManager() = default;
@@ -138,8 +132,6 @@ CMobManager::~CMobManager() = default;
 CAsyncSQL::~CAsyncSQL() = default;
 CSemaphore::~CSemaphore() = default;
 void intrusive_ptr_release(event*) { Unexpected(); }
-bool DSManager::IsTimeLeftDragonSoul(entt::entity) const { return true; }
-
 namespace ecs::PlayerRuntime {
 bool IsValid(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Actor>(e); }
 // The played-time cap reads the session start from LoginInfo now, not from
@@ -208,10 +200,6 @@ int GetSkillPower(entt::entity, uint32_t, uint8_t) { return 0; }
 int GetSkillLevel(entt::entity, uint32_t) { return supportLevel; }
 uint8_t GetSkillGroup(entt::entity) { return 0; }
 void ComputeSkillPoints(entt::entity) {}
-}
-namespace DragonSoulSystem {
-int GetActiveDeck(entt::entity) { return activeDeck; }
-bool IsDeckActivated(entt::entity) { return activeDeck >= 0; }
 }
 namespace AffectSystem {
 bool IsPolymorphed(entt::entity) { return false; }
@@ -351,6 +339,12 @@ void PointPublicationChecks() {
 }
 void FormulaChecks() {
     Reset(); const auto e = ActorEntity();
+#ifdef ENABLE_RUNE_DUNGEON
+    P::Change(e, POINT_RUNE_MONSTERS, 25);
+    Check(P::Get(e, POINT_RUNE_MONSTERS) == 25, "independent rune-dungeon bonus was retired");
+    P::Change(e, POINT_RUNE_MONSTERS, -25);
+    Check(P::Get(e, POINT_RUNE_MONSTERS) == 0, "rune-dungeon bonus could not be removed");
+#endif
     P::SetReal(e, POINT_MAX_HP, 1000); P::Set(e, POINT_MAX_HP, 300);
     P::Set(e, POINT_MAX_HP_PCT, 20);
     P::Change(e, POINT_MAX_HP, 0);
@@ -409,11 +403,6 @@ void SourceChecks() {
     P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 2364, "rune duplicated");
     g_registry.get<ecs::ItemOwner>(rune).owner = ActorEntity();
     P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1670, "foreign equipment applied");
-
-    Reset(); e = ActorEntity(); activeDeck = 0; Wear(e, WEAR_MAX_NUM);
-    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 2364, "active dragon soul missing");
-    activeDeck = DRAGON_SOUL_DECK_MAX_NUM;
-    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1670, "invalid dragon soul deck applied");
 
     Reset(); e = ActorEntity(); const auto belt = Wear(e); equipment.clear(); mountHP = 100;
     g_registry.get<ecs::ItemIdentity>(belt).vnum = 18000;
@@ -501,7 +490,7 @@ void CallbackChecks() {
 }
 int main() {
     try {
-        CSkillManager skills; CHARACTER_MANAGER characters; DSManager dragonSouls;
+        CSkillManager skills; CHARACTER_MANAGER characters;
         NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SkillPointSpendChecks(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

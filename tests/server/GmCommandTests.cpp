@@ -59,14 +59,12 @@
 #include "../../SRC/Server/GameServer/world/BattleArena.h"
 #include "../../SRC/Server/GameServer/core/log.h"
 #include "../../SRC/Server/GameServer/item/unique_item.h"
-#include "../../SRC/Server/GameServer/dungeon/DragonSoul.h"
 #include "../../SRC/Server/GameServer/ecs/AIHelpers.hpp"
 #include "../../SRC/Server/GameServer/ecs/CharacterAccessors.hpp"
 #include "../../SRC/Server/GameServer/ecs/EntityFactory.hpp"
 #include "../../SRC/Server/GameServer/ecs/VIDRegistry.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ActivitySystem.hpp"
 #include "../../SRC/Server/GameServer/dungeon/LostCastleDungeon.h"
-#include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
 #include "../../SRC/Server/GameServer/core/constants.h"
 #include <Core/Logging.hpp>
 
@@ -137,25 +135,24 @@ entt::entity Give(entt::entity owner, uint8_t window = INVENTORY, uint16_t cell 
     return e;
 }
 void PurgeChecks() {
-    for (const char* arg : {"", "alligator", "invjunk", "equipmentjunk", "dsjunk", "beltjunk"}) {
+    for (const char* arg : {"", "alligator", "invjunk", "equipmentjunk", "ds", "dragonsoul", "dsjunk", "beltjunk"}) {
         Reset(); const auto owner = Actor(), item = Give(owner);
         do_item_purge(owner, arg, 0, 0);
         Check(g_registry.valid(item) && destroyed.empty(), "invalid purge selector accepted");
     }
-    for (const char* arg : {"inv", "inventory", "equip", "equipment", "ds", "dragonsoul", "belt", "extra", "all"}) {
+    for (const char* arg : {"inv", "inventory", "equip", "equipment", "belt", "extra", "all"}) {
         Reset(); const auto owner = Actor();
         const auto inv = Give(owner), equip = Give(owner, INVENTORY, INVENTORY_MAX_NUM);
         const auto belt = Give(owner, INVENTORY, BELT_INVENTORY_SLOT_START);
-        const auto ds = Give(owner, DRAGON_SOUL_INVENTORY), extra = Give(owner, EXTRA_INVENTORY);
+        const auto extra = Give(owner, EXTRA_INVENTORY);
         do_item_purge(owner, arg, 0, 0);
         const std::string_view mode(arg);
         const bool all = mode == "all";
         Check(!g_registry.valid(inv) == (all || mode == "inv" || mode == "inventory"), "inventory selection");
         Check(!g_registry.valid(equip) == (all || mode == "equip" || mode == "equipment"), "equipment selection");
         Check(!g_registry.valid(belt) == (all || mode == "belt"), "belt selection");
-        Check(!g_registry.valid(ds) == (all || mode == "ds" || mode == "dragonsoul"), "DS selection");
         Check(!g_registry.valid(extra) == (all || mode == "extra"), "extra selection");
-        Check(quickslots.size() == (all ? 4 : mode == "ds" || mode == "dragonsoul" ? 0 : 1), "quickslot windows");
+        Check(quickslots.size() == (all ? 4 : 1), "quickslot windows");
     }
     Reset(); auto owner = Actor(), item = Give(owner);
     activePet = true;
@@ -960,7 +957,6 @@ entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { Unexpected();
 bool ItemSystem::UnequipItemEcs(entt::entity,entt::entity) { Unexpected(); }
 bool ItemSystem::UseItemEcs(entt::entity,entt::entity,SItemPos) { Unexpected(); }
 entt::entity ItemSystem::AutoGiveItemEcs(entt::entity,unsigned int,unsigned int,int,bool,bool) { Unexpected(); }
-bool ItemSystem::IsDragonSoulItem(entt::entity) { Unexpected(); }
 bool ItemSystem::IsExtraItem(entt::entity) { Unexpected(); }
 unsigned int ItemSystem::GetItemID(entt::entity) { Unexpected(); }
 char const * ItemSystem::GetItemName(entt::entity) { Unexpected(); }
@@ -975,12 +971,9 @@ bool ItemSystem::ChangeItemRareAttributeEcs(entt::entity) { Unexpected(); }
 bool ItemSystem::ClearItemAttributesEcs(entt::entity) { Unexpected(); }
 unsigned short ItemSystem::GetItemCell(entt::entity) { Unexpected(); }
 int ItemSystem::GetEmptyInventoryPositionEcs(entt::entity,entt::entity) { Unexpected(); }
-int ItemSystem::GetEmptyDragonSoulInventory(entt::entity,entt::entity) { Unexpected(); }
 int ItemSystem::GetEmptyExtraInventory(entt::entity,entt::entity) { Unexpected(); }
 bool ItemSystem::ModifyItemPointsEcs(entt::entity,bool) { Unexpected(); }
 int ActivitySystem::RefineFishingRod(entt::entity,entt::entity) { Unexpected(); }
-bool DragonSoulSystem::ActivateDeck(entt::entity,int) { Unexpected(); }
-void DragonSoulSystem::DeactivateAll(entt::entity) { Unexpected(); }
 void intrusive_ptr_add_ref(event *) { Unexpected(); }
 void intrusive_ptr_release(event *) { Unexpected(); }
 boost::intrusive_ptr<event> event_create_ex(int (__cdecl*)(boost::intrusive_ptr<event>,int),event_info_data *,int) { Unexpected(); }

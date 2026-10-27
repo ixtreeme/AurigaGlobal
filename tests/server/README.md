@@ -1395,18 +1395,15 @@ storage persistence, party requests, logging/block mode, observer cleanup,
 legacy cube and disabled guild-renewal branches still need further migration.
 No parallel production command implementation was added.
 
-Cube NPC and dragon-soul refine opener state now store versioned entities;
+Cube NPC opener state stores versioned entities;
 every existing reader was updated. Safebox-open and preferred walk/run mode
 are component-owned, with CHARACTER compatibility accessors delegating inward.
 Quest current-PC/NPC entity getters no longer resolve CHARACTER pointers.
 Duel option access goes directly through entity quest flags, preserving the
 boolean GetDuel contract (including BetMoney).
 
-RefineWindowTests compiles the complete production DragonSoulSystem.cpp. It
-covers entity-only open/self-open/reopen/close, missing descriptors, null/stale
-owners/openers, recycled indices, failed-open permissions, packet-time owner or
-NPC destruction, nested close and component-pool growth. Packet/descriptor,
-item and affect services are doubles; deck operations fail fast if invoked.
+The DragonSoul refine-window suite was retired on 2026-10-27 together with
+its production implementation; see the retirement note below.
 PointCalculationTests executes the real stamina point-change branch, verifying
 that exhaustion preserves the player's preference and recovery restores it
 instead of the current movement tick's isWalking flag. Walking packet delivery
@@ -1421,9 +1418,9 @@ disconnect/relog. Craft reward/payment ordering and multi-material pet costs
 are not converted into an atomic inventory/DB transaction by this change.
 
 ```powershell
-cmake --build build --config Release --target GameServer RefineWindowTests PointCalculationTests
+cmake --build build --config Release --target GameServer PointCalculationTests
 ctest --test-dir build -C Release --output-on-failure
-cmake --build build-asan --config RelWithDebInfo --target RefineWindowTests PointCalculationTests
+cmake --build build-asan --config RelWithDebInfo --target PointCalculationTests
 ctest --test-dir build-asan -C RelWithDebInfo --output-on-failure
 ```
 
@@ -1878,7 +1875,7 @@ that closing unloads runtime items without deleting their stored DB rows.
 ## Item attributes
 
 The `ItemAttributeTests` target compiles the production `ItemAttributeSystem.cpp`
-and the complete `new_switchbot.cpp` and `DragonSoul.cpp` with an EnTT registry and headless inventory,
+and the complete `new_switchbot.cpp` with an EnTT registry and headless inventory,
 payment, persistence, network, and RNG doubles. Items
 in the fixtures have no `CItem`/`LegacyItemPtr`, and no database is started.
 Switchbot implementation and declarations stay in `new_switchbot.cpp/.h`;
@@ -1940,23 +1937,6 @@ including rejection on equipped items, lock preservation during subsequent
 bonus rerolls, and persistence after relog. The item-use dispatcher and its
 chat/buff side effects are not executed by these headless tests.
 
-Dragon-soul checks cover entity-only initialization, bonus refresh and paid
-enchant, missing/failed table loads, reload ownership, invalid counts/weights,
-NaN/infinity/narrowing bounds, weighted sampling without replacement (including
-zero weights and both RNG endpoints), stale handles and rejected payments.
-The original bonuses remain unchanged until preparation and payment succeed;
-one complete update clears obsolete additional slots. Active stones are
-rejected, while inactive equipped stones retain the legacy allowance. Tests
-cover the absolute main-inventory cell used for equipped dragon souls.
-
-The DS table loader/accessors are doubles, not the real text parser or deployed
-balance tables. Refinement/extraction/activation services fail immediately if
-entered; the tests call the real attribute refresh, not the complete strength
-refinement flow. Before deployment, verify the live DS table, new stone creation,
-enchant in the DS bag and inactive equipment, active-deck rejection, strength
-refinement, and relog. Failed new-stone initialization now returns no item after
-cleanup; the actual item-manager creation/destruction path needs in-game testing.
-
 The doubles verify save/update calls, not the DB packet encoding or a live
 client session. Test in-game inventory, relog, bonus changers, rune items and
 mount attributes separately before deploying.
@@ -1967,94 +1947,28 @@ validated stack (the current switchbot cost is one item). The tests do not run
 the switchbot timer/UI, shop listings, rank/Battle Pass side effects, the actual
 inventory destruction path, or the legacy `ChangeKKAK` special-case path.
 
-## Dragon-soul extraction and pull-out
+## DragonSoul retirement (2026-10-27)
 
-The per-stone ActivateDragonSoul/DeactivateDragonSoul operations now also use
-only entity ownership/wear-slot checks and native logging. Their redundant Ecs
-resync wrappers and the final CHARACTER-based DSManager state refresh were
-removed. Active socket writes use existing components without emitting a
-callback before the point operation. Repeated/reentrant toggles do not apply
-points twice, and activation does not restart a timer after nested deactivation.
-The tests cover deck/slot/owner validation, signed lifetime bounds, expired and
-permanent stones, failure compensation, callback cancellation, owner/item
-destruction, recycled generations and preservation of another active stone.
+The server-side feature, table loader, quest/command/packet entry points and
+DS-only positive tests have been removed. RefineWindowTests no longer exists.
+The independent Soul item, costume rune and stole features remain.
 
-Point modification and wear timers are service doubles in these checks; the
-internals of ModifyPoints and the real timer scheduler are not made atomic or
-fully reentrancy-safe by this change. Live bonus arithmetic, expiry, relog and
-deck switching still need integration testing. Deck orchestration is a separate
-migration step from these individual item operations.
+RetiredContentTests verifies reserved persisted codes and all 65,536 cells
+of the retired window plus ordinary equipment/inventory/belt boundaries.
+ItemRuntimeTests and ItemManagerLifecycleTests verify factory/catalog reload
+rejection; AffectLifecycleTests prevents retired bonuses from being attached;
+PlayerCacheSnapshotTests rejects retired inventory/equipment positions, and
+MissionResourceTests rejects the retired resource window in plans and decoding.
+The ordinary native inventory, trade, bonus and timer suites remain active.
 
-DragonSoulSystem deck orchestration now uses fresh component lookups after
-callbacks, scoped owner-operation guards and component-destruction tracking.
-Read-only deck queries no longer create runtime state. Constructor callbacks
-may destroy an owner without leaving a dangling emplace return value. Nested
-disable/logout requests cancel in-progress activation; explicit disable clears
-selection/affects, while logout preserves them. Hydration resets all loaded
-active flags before publication, and repeated hydration removes existing
-runtime bonuses first. Set bonuses require the same complete, active, unexpired
-set before and after each affect callback, not stale vnums from earlier slots.
+```powershell
+cmake --build build --config RelWithDebInfo --target ServerTests
+ctest --test-dir build -C RelWithDebInfo -L server --output-on-failure
+```
 
-The existing RefineWindowTests now also exercises both decks, same-deck
-idempotence, switch/cleanup/disable, partial and expired sets, failed affects,
-nested activation/cancellation, removed/replaced stones, destroyed/replaced
-runtime components, constructor/dirty-tag destruction and repeated login
-hydration. Its stone activation, affect, save and network services are doubles;
-these tests complement, but do not combine, the real per-stone tests above.
-LoadAffect calls Initialize with its existing entity; the CHARACTER initializer
-shim was removed. Live login/logout, set-affect arithmetic and timers still
-require a client/server integration test.
-
-Deck verification on 2026-09-08: GameServer Release build and all 13/13 tests
-passed in Release and ASAN RelWithDebInfo; RefineWindowTests ran 2,516 checks.
-
-Verified on 2026-09-08 with Windows/MSVC x64: GameServer Release build, all
-13/13 headless tests in Release and AddressSanitizer RelWithDebInfo, including
-3,632 checks in ItemAttributeTests. No live server/client/DB test was performed.
-
-`ExtractDragonHeartEcs` and `PullOutEcs` now contain the implementation in the
-existing `DragonSoul.cpp`; the CHARACTER-taking methods and their legacy-state
-resync wrappers were removed. The four still-legacy use/move callers hand off
-the owner entity at that boundary. This does not migrate the main MoveItem or
-UseItemEx dispatchers, the other DS refinement wrappers, or the whole DS system.
-
-`ItemAttributeTests` executes both complete extraction algorithms with no
-CHARACTER/CItem fixtures. Coverage includes ownership and slot anchors, stale
-owners/materials, aliasing, equipment/lock/exchange restrictions, extractor
-subtypes, blocked inventory handling, malformed probabilities/charging values,
-failed output creation/socket initialization, callbacks invalidating inputs,
-occupied/full destinations, rejected placement and equipment recovery, source
-destruction during removal, recursive extraction, last-unit costs, deferred
-destruction/retry, and post-commit owner destruction without an orphaned reward.
-
-Both costs commit together through the existing shared item-cost/retirement
-engine before its first save/packet/destruction callback. Dragon-soul inventory
-consumption is explicit opt-in; ordinary attribute costs retain their previous
-inventory policy. Equipped stones are moved to validated DS storage before
-charging or retiring them. A failed placement/payment attempts to restore only
-the original live item, never a replacement or an item transferred by a
-callback. Occupied original wear slots are not overwritten; a detached stone
-falls back to a free DS cell, with unresolved recovery logged.
-
-The deployed extractor rules are preserved: pull-out uses the extractor's
-chance instead of adding it to the base chance; a missing pull-out row allows
-free guaranteed removal; ENABLE_DS_EDITS takes heart charge from the extractor.
-Invalid nonfinite/out-of-range configuration is rejected. Byproducts are
-prepared before destructive changes, so allocation failure leaves inputs intact.
-
-Only the algorithms and batch commit/retirement engine are real in this target.
-Table loading, RNG, inventory/equipment mutation, creation, destruction,
-automatic reward delivery, logs, chat and persistence are controlled doubles.
-Inventory/equipment engines have separate QuickslotTests coverage, but live
-DS deactivation/bonus/timer callbacks and reward delivery are not integrated
-here. A committed cost is not refunded after a later callback destroys its
-owner; undeliverable detached outputs are logged and cleaned up. This is not a
-durable DB transaction or recovery from a process crash.
-
-Before deployment test equip/pull-out in both decks, all grades, full DS bags,
-both extractor types, success/failure/no-table-row behaviour, heart charging,
-byproducts, ground delivery with full ordinary inventory, disconnect and relog
-against the actual DS table, client, timers and DB.
+See `docs/adr/item_combat_010_dragonsoul_retirement.md` and
+`docs/audits/dragonsoul_retirement_2026-10-27.md` for scope and fresh evidence.
+Historical test counts elsewhere in this document describe their dated state.
 
 ## Costume attribute transfer
 

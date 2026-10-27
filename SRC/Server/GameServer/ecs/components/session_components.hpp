@@ -43,9 +43,5 @@ struct AntiFlood {
     uint32_t itemUseCount;
 };
 
-struct DragonSoulState {
-    int activeDeck { -1 };
-    int32_t lastRefineTime { 0 };
-};
 
 } // namespace ecs

@@ -155,7 +155,7 @@ int passes_per_sec=25;
 uint32_t g_start_position[4][2]={{0,0},{100,200},{300,400},{500,600}};
 void ContinueOnFatalError() {throw std::runtime_error("fatal event");}
 void ShutdownOnFatalError() {throw std::runtime_error("shutdown");}
-CAsyncSQL::CAsyncSQL()=default;CAsyncSQL::~CAsyncSQL()=default;
+CAsyncSQL::CAsyncSQL():m_queueLane(0){}CAsyncSQL::~CAsyncSQL()=default;
 CSemaphore::CSemaphore()=default;CSemaphore::~CSemaphore()=default;
 LogManager::LogManager():m_bIsConnect(false){} LogManager::~LogManager()=default;
 void LogManager::CharLog(entt::entity e,uint32_t,const char*,const char*) {Data(e);winners.push_back(e);Invoke(onLog,e);}

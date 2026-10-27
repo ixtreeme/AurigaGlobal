@@ -540,7 +540,6 @@ entt::entity ItemSystem::FindSpecifyItem(entt::entity,unsigned int,bool) { Unexp
 entt::entity ItemSystem::GetWearItem(entt::entity e,unsigned char) { AssertActor(e); return g_registry.get<BattleFixture>(e).weapon; }
 bool ItemSystem::EquipItemEcs(entt::entity,entt::entity,int) { UnexpectedService(__func__); }
 bool ItemSystem::IsValidItem(entt::entity e) { return e != entt::null && g_registry.valid(e) && g_registry.all_of<WeaponFixture>(e); }
-bool ItemSystem::IsDragonSoulItem(entt::entity) { UnexpectedService(__func__); }
 bool ItemSystem::IsExtraItem(entt::entity) { UnexpectedService(__func__); }
 unsigned int ItemSystem::GetItemVnum(entt::entity) { UnexpectedService(__func__); }
 unsigned int ItemSystem::GetItemOriginalVnum(entt::entity) { UnexpectedService(__func__); }

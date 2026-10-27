@@ -187,9 +187,6 @@ void FlushDelayedSaveItem(entt::entity e)
         if (const entt::entity item = ItemSystem::GetInventoryItem(owner, i); item != entt::null)
             ITEM_MANAGER::instance().SaveSingleItem(item);
 
-    for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, i)); item != entt::null)
-            ITEM_MANAGER::instance().SaveSingleItem(item);
 #ifdef ENABLE_EXTRA_INVENTORY
     for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
         if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(EXTRA_INVENTORY, i)); item != entt::null)

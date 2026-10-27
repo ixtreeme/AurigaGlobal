@@ -37,8 +37,6 @@
 #include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/network/desc_client.h"
 #include "../../SRC/Server/GameServer/combat/battle.h"
-#include "../../SRC/Server/GameServer/dungeon/DragonSoul.h"
-#include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
 #include "../../SRC/Server/GameServer/guild/guild.h"
 #include "../../SRC/Server/GameServer/pet/horsename_manager.h"
 #include "../../SRC/Server/GameServer/item/item.h"
@@ -316,6 +314,13 @@ void ResetPublication() {
 }
 void AddChecks() {
     auto e = Actor();
+    const int retiredSchedules = schedules, retiredComputes = computes;
+    for (uint32_t type : {540u, 541u, 542u, 563u, 564u, 565u, 566u}) {
+        Check(!A::Attach(e, Value(type)) && !Add(e, 1000, type), "retired affect reactivated");
+        Check(A::Snapshot(e).empty() && ecs::PointSystem::Get(e, POINT_ST) == 0 &&
+            schedules == retiredSchedules && computes == retiredComputes,
+            "retired affect changed points or started a timer");
+    }
     const int before = schedules;
     Check(Add(e), "entity-only add without descriptor");
     Check(ecs::PointSystem::Get(e, POINT_ST) == 10, "native add points");
@@ -807,7 +812,6 @@ void SkillSystem::StopGyeongGongEvent(entt::entity) { UnexpectedService(__func__
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ItemSystem::AutoRecoveryItemProcess(entt::entity, int) { UnexpectedService(__func__); }
 void AffectSystem::AutoRecallProcess(entt::entity) { UnexpectedService(__func__); }
-void DragonSoulSystem::Initialize(entt::entity) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetDropStatus(entt::entity) { UnexpectedService(__func__); }
 bool MountSystem::StopRiding(entt::entity) { UnexpectedService(__func__); }
 void ecs::VisibilitySystem::Reencode(entt::registry &,entt::entity) { UnexpectedService(__func__); }

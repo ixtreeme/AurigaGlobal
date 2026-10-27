@@ -53,9 +53,6 @@ void AutoGiveItem(entt::entity e, entt::entity item, bool longOwnerShip = false
                   , bool isHighLight = true
 #endif
 );
-#ifdef ENABLE_DS_REFINE_ALL
-bool AutoGiveDS(entt::entity e, entt::entity item, bool longOwnerShip = false);
-#endif
 // One normalized item/stack (CreateItem count limits). A receipt may disappear
 // after committed publication; a null handle must not automatically replay rewards.
 entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
@@ -65,7 +62,6 @@ bool PickupItem(entt::entity character, uint32_t vid);
 bool IsValidItem(entt::entity item);
 // Atomically refresh existing proto components; nullptr clears removed prototypes.
 bool RefreshItemPrototype(entt::entity item, const TItemTable* proto);
-bool IsDragonSoulItem(entt::entity item);
 bool IsExtraItem(entt::entity item);
 bool CheckItemUseLevel(entt::entity item, int level);
 bool OnAfterCreatedItem(entt::entity item);
@@ -168,8 +164,6 @@ void SetItemExtraProto(entt::entity item, TItemExtraProto* proto);
 short GetItemLockedAttr(entt::entity item);
 int GetItemAccessorySocketMaxGrade(entt::entity item);
 int GetItemAccessorySocketGrade(entt::entity item);
-int GiveMoreTime_Per(entt::entity item, float fPercent);
-int GiveMoreTime_Fix(entt::entity item, uint32_t dwTime);
 uint16_t GetItemRefineSet(entt::entity item);
 bool IsItemStackable(entt::entity item);
 uint32_t GetItemRefinedVnum(entt::entity item);
@@ -241,7 +235,7 @@ bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities = nullpt
 // one validated stack (or the owner's wallet), then publish the new attributes.
 bool CanPayItemAttributeCost(entt::entity item, entt::entity material, uint32_t amount = 1);
 // Material validation shared by transactions whose target equip rules differ.
-enum class ItemCostStorage { Inventory, DragonSoulInventory };
+enum class ItemCostStorage { Inventory };
 bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amount = 1,
     ItemCostStorage storage = ItemCostStorage::Inventory);
 struct ItemCost {
@@ -254,7 +248,7 @@ struct ItemCost {
 // Empty, duplicate and more than 64 costs are rejected. Not a DB transaction.
 bool SetItemAttributesWithItemCosts(entt::entity owner, entt::entity target,
     const ecs::ItemAttributes& attributes, std::span<const ItemCost> costs);
-// Same batch debit/retirement contract without an attribute target. Dragon-soul
+// Same batch debit/retirement contract without an attribute target.
 // inventory costs require explicit opt-in; equipped and foreign items are rejected.
 bool ConsumeOwnedItemCosts(entt::entity owner, std::span<const ItemCost> costs);
 // Reserves retirement storage before the companion runs. The companion must
@@ -334,7 +328,6 @@ uint16_t GetItemCell(entt::entity item);
 bool IsItemEquipped(entt::entity item);
 bool IsItemInInventory(entt::entity item);
 bool IsItemInExtraInventory(entt::entity item);
-bool IsItemInDragonSoulInventory(entt::entity item);
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell);
 bool RemoveItemEcs(entt::entity item);
 int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item);
@@ -345,7 +338,6 @@ bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum);
 bool PlaceItemOnGround(entt::entity item, int32_t mapIndex,
                                      const PIXEL_POSITION& position,
                                      int destroySeconds = 300);
-int GetEmptyDragonSoulInventory(entt::entity owner, entt::entity item);
 #ifdef ENABLE_EXTRA_INVENTORY
 int GetEmptyExtraInventory(entt::entity owner, entt::entity item);
 #endif

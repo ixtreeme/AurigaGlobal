@@ -65,8 +65,6 @@ std::string Window(ResourceWindow window)
         return "EXTRA_INVENTORY";
     case ResourceWindow::Equipment:
         return "EQUIPMENT";
-    case ResourceWindow::DragonSoul:
-        return "DRAGON_SOUL_INVENTORY";
     case ResourceWindow::Belt:
         return "BELT_INVENTORY";
     case ResourceWindow::Ground:
@@ -76,7 +74,7 @@ std::string Window(ResourceWindow window)
     }
 }
 constexpr const char *Scope =
-    "('INVENTORY','EXTRA_INVENTORY','EQUIPMENT','DRAGON_SOUL_INVENTORY','BELT_INVENTORY','GROUND')";
+    "('INVENTORY','EXTRA_INVENTORY','EQUIPMENT','BELT_INVENTORY','GROUND')";
 std::string ItemRows(const ResourceSnapshot &source)
 {
     Json rows = Json::array();

@@ -303,7 +303,7 @@ bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLo
 					"lockedattr,"
 #endif
 					"socket0,socket1,socket2,attrtype0,attrvalue0,attrtype1,attrvalue1,attrtype2,attrvalue2,attrtype3,attrvalue3,attrtype4,attrvalue4,attrtype5,attrvalue5,attrtype6,attrvalue6,attrtype7,attrvalue7 "
-					"FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','DRAGON_SOUL_INVENTORY','BELT_INVENTORY'"
+					"FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','BELT_INVENTORY'"
 #ifdef ENABLE_EXTRA_INVENTORY
 					",'EXTRA_INVENTORY'"
 #endif
@@ -396,7 +396,7 @@ bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLo
 				"lockedattr,"
 #endif
 				"socket0,socket1,socket2,attrtype0,attrvalue0,attrtype1,attrvalue1,attrtype2,attrvalue2,attrtype3,attrvalue3,attrtype4,attrvalue4,attrtype5,attrvalue5,attrtype6,attrvalue6,attrtype7,attrvalue7 "
-				"FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','DRAGON_SOUL_INVENTORY','BELT_INVENTORY'"
+				"FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','BELT_INVENTORY'"
 #ifdef ENABLE_EXTRA_INVENTORY
 				",'EXTRA_INVENTORY'"
 #endif
@@ -1198,7 +1198,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM player%s WHERE id=%d", GetTablePostfix(), pi->player_id);
 		CDBManager::instance().AsyncQuery(queryStr);
 
-		snprintf(queryStr, sizeof(queryStr), "DELETE FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','DRAGON_SOUL_INVENTORY','BELT_INVENTORY'"
+		snprintf(queryStr, sizeof(queryStr), "DELETE FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','BELT_INVENTORY'"
 #ifdef ENABLE_EXTRA_INVENTORY
 		",'EXTRA_INVENTORY'"
 #endif

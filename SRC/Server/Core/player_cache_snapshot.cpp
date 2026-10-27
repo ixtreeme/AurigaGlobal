@@ -12,11 +12,9 @@ bool ValidItem(const TPlayerItem &item, uint32_t character)
     case INVENTORY:
         return item.pos < INVENTORY_MAX_NUM;
     case EQUIPMENT:
-        return item.pos < DRAGON_SOUL_EQUIP_RESERVED_SLOT_END - INVENTORY_MAX_NUM;
+        return item.pos < WEAR_MAX_NUM;
     case BELT_INVENTORY:
         return item.pos < BELT_INVENTORY_SLOT_COUNT;
-    case DRAGON_SOUL_INVENTORY:
-        return item.pos < DRAGON_SOUL_INVENTORY_MAX_NUM;
 #ifdef ENABLE_EXTRA_INVENTORY
     case EXTRA_INVENTORY:
         return item.pos < EXTRA_INVENTORY_MAX_NUM;

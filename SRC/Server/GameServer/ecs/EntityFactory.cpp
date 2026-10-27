@@ -507,8 +507,6 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(entity, ecs::ExtraInventoryRuntimeComponent {});
 #endif
     reg.emplace_or_replace<ecs::CubeWindowComponent>(entity, ecs::CubeWindowComponent {});
-    reg.emplace_or_replace<ecs::DragonSoulInventoryComponent>(entity, ecs::DragonSoulInventoryComponent {});
-    reg.emplace_or_replace<ecs::DragonSoulRuntimeStateComponent>(entity, ecs::DragonSoulRuntimeStateComponent {});
 #ifdef __ATTR_TRANSFER_SYSTEM__
     reg.emplace_or_replace<ecs::AttrTransferWindowComponent>(entity, ecs::AttrTransferWindowComponent {});
 #endif

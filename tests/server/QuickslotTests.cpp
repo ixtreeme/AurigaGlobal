@@ -5,7 +5,6 @@
 #include "../../SRC/Server/GameServer/ecs/ResourceAdmission.hpp"
 #include "../../SRC/Server/GameServer/item/safebox.h"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
 #include "../../SRC/Server/GameServer/social/marriage.h"
@@ -24,7 +23,6 @@
 #include "../../SRC/Server/GameServer/network/desc_client.h"
 #include "../../SRC/Server/GameServer/core/packet.h"
 #include "../../SRC/Server/GameServer/social/new_switchbot.h"
-#include "../../SRC/Server/GameServer/dungeon/dragon_soul_table.h"
 #include "../../SRC/Server/GameServer/ecs/components/transform_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/spatial_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
@@ -34,7 +32,6 @@
 #include "../../SRC/Server/GameServer/core/config.h"
 #include "../../SRC/Server/GameServer/core/log.h"
 #include "../../SRC/Server/GameServer/pet/MountInventory.h"
-#include "../../SRC/Server/GameServer/dungeon/DragonSoul.h"
 #include "../../SRC/Server/GameServer/world/sectree_manager.h"
 #include "../../SRC/Server/GameServer/core/utils.h"
 #include <Core/Logging.hpp>
@@ -81,8 +78,7 @@ PlacementActor& Actor(entt::entity e) {
 struct PlacementMeta {
     TItemTable proto {};
     uint8_t category = 0;
-    uint16_t dragonBase = 0;
-    bool extra = false, dragon = false, rune = false, locked = false, exchanging = false, pending = false;
+    bool extra = false, rune = false, locked = false, exchanging = false, pending = false;
     int wear = WEAR_BODY, group = 0;
 };
 std::vector<std::unique_ptr<DESC>> descriptors;
@@ -203,7 +199,6 @@ entt::entity GetItem(entt::entity owner, TItemPos pos) {
         };
         switch (pos.window_type) {
         case INVENTORY: case EQUIPMENT: return lookup(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner));
-        case DRAGON_SOUL_INVENTORY: return lookup(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner));
 #ifdef ENABLE_EXTRA_INVENTORY
         case EXTRA_INVENTORY: return lookup(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner));
 #endif
@@ -397,9 +392,6 @@ void InventoryGuards()
     cube.npc = replacement;
     Check(!InventorySystem::CanHandleItems(owner, true, true), "cube bypassed");
     cube.npc = entt::null;
-    auto& dragonSoul = g_registry.emplace<ecs::DragonSoulRuntimeStateComponent>(owner);
-    dragonSoul.refineWindowOpener = replacement;
-    Check(!InventorySystem::CanHandleItems(owner), "dragon soul window ignored");
     g_registry.destroy(replacement);
     Check(InventorySystem::CanHandleItems(owner), "stale window still blocks inventory");
 #ifdef __ATTR_TRANSFER_SYSTEM__
@@ -465,14 +457,6 @@ void InventoryGrids()
     Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, 0), 2, 0), "move exception ignored");
     Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, 0), 2, INT32_MAX), "invalid exception accepted");
     main.itemGrid[5] = 0;
-    auto& ds = g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner);
-    ds.itemGrid[DRAGON_SOUL_BOX_COLUMN_NUM] = 7;
-    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(DRAGON_SOUL_INVENTORY, 0), 2),
-          "dragon soul checked empty main grid instead of its own");
-    Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(DRAGON_SOUL_INVENTORY, 0), 2, 6),
-          "dragon soul exception ignored");
-    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(DRAGON_SOUL_INVENTORY, DRAGON_SOUL_INVENTORY_MAX_NUM), 1),
-          "dragon soul out of bounds");
 #ifdef ENABLE_EXTRA_INVENTORY
     auto& extra = g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner);
     const int cell = EXTRA_INVENTORY_CATEGORY_MAX_NUM * 2;
@@ -587,15 +571,6 @@ void DESC::Packet(const void* data, int size) {
     }
     ++storagePackets;
     if (onStoragePacket) { auto f = onStoragePacket; f(GetEntity(), header, pos); }
-}
-DSManager::DSManager() = default;
-DSManager::~DSManager() = default;
-DragonSoulTable::~DragonSoulTable() = default;
-uint16_t DSManager::GetBasePosition(entt::entity e) const { return Meta(e).dragonBase; }
-bool DSManager::PullOutEcs(entt::entity owner, TItemPos pos, entt::entity& stone, entt::entity extractor) {
-    Check(extractor == entt::null, "drag unexpectedly supplied an extractor");
-    if (!onPullOut) Unexpected();
-    auto callback = onPullOut; return callback(owner, pos, stone);
 }
 ITEM_MANAGER::ITEM_MANAGER() = default;
 ITEM_MANAGER::~ITEM_MANAGER() = default;
@@ -752,7 +727,6 @@ void MountSystem::MountSummon(entt::entity, entt::entity) { Unexpected(); }
 entt::entity MountSystem::GetMountInventory(entt::entity) { Unexpected(); }
 bool MountSystem::RemoveMountInventoryItemByEntity(entt::entity, entt::entity, bool) { Unexpected(); }
 void MountSystem::MountCostume(entt::entity, entt::entity) { Unexpected(); }
-bool ItemSystem::IsDragonSoulItem(entt::entity e) { return Meta(e).dragon; }
 bool ItemSystem::IsExtraItem(entt::entity e) { return Meta(e).extra; }
 bool ItemSystem::IsRideItem(entt::entity e) { Meta(e); return false; }
 bool ItemSystem::IsMountItem(entt::entity e) { Meta(e); return false; }
@@ -817,7 +791,7 @@ void ItemSystem::SaveItem(entt::entity e) { Meta(e); ++saves; if (onSave) { auto
 int64_t ItemSystem::GetItemShopBuyPrice(entt::entity e) { return Meta(e).proto.dwShopBuyPrice; }
 void ItemSystem::PublishItemCount(entt::entity e) { if (IsValidItem(e) && !IsItemConsumptionPending(e)) SaveItem(e); }
 bool ItemSystem::HaveSameStackPayload(entt::entity a, entt::entity b, bool) {
-    if (!IsItemStackable(a) || !IsItemStackable(b) || IsDragonSoulItem(a) || IsDragonSoulItem(b) || IsRuneItem(a) || IsRuneItem(b) ||
+    if (!IsItemStackable(a) || !IsItemStackable(b) || IsRuneItem(a) || IsRuneItem(b) ||
         GetItemType(a) != GetItemType(b) || GetItemSubType(a) != GetItemSubType(b) || GetItemVnum(a) != GetItemVnum(b) ||
         (GetItemAntiFlag(a) & ITEM_ANTIFLAG_STACK) || (GetItemAntiFlag(b) & ITEM_ANTIFLAG_STACK) ||
         g_registry.get<ecs::ItemSockets>(a).sockets != g_registry.get<ecs::ItemSockets>(b).sockets) return false;
@@ -891,8 +865,6 @@ void ecs::ViewSystem::PacketView(entt::entity item, void const* data, int size, 
 SItemTable * ITEM_MANAGER::GetTable(uint32_t vnum) { Check(giving, "unexpected prototype lookup"); return vnum == rewardProto.dwVnum ? &rewardProto : nullptr; }
 CSpecialItemGroup const * ITEM_MANAGER::GetSpecialItemGroup(uint32_t) { Unexpected(); }
 CSpecialAttrGroup const * ITEM_MANAGER::GetSpecialAttrGroup(uint32_t) { Unexpected(); }
-bool DSManager::ActivateDragonSoul(entt::entity e) { Meta(e); Service("ds-activate"); return true; }
-bool DSManager::DeactivateDragonSoul(entt::entity e, bool) { Meta(e); Service("ds-deactivate"); return true; }
 bool ecs::SpatialService::InsertEntity(entt::registry& reg, entt::entity item, uint32_t map, int x, int y, int z) {
     Check(map == 1 && RawOwner(item) == entt::null && ItemSystem::GetItemWindow(item) == GROUND,
         "invalid native ground insertion");
@@ -962,7 +934,6 @@ template<class F> decltype(auto) Storage(entt::entity owner, uint8_t window, F&&
 #ifdef ENABLE_SWITCHBOT
     if (window == SWITCHBOT) return f(g_registry.get<ecs::SwitchbotRuntimeComponent>(owner));
 #endif
-    if (window == DRAGON_SOUL_INVENTORY) return f(g_registry.get<ecs::DragonSoulInventoryComponent>(owner));
     return f(g_registry.get<ecs::MainInventoryRuntimeComponent>(owner));
 }
 void AssertPlaced(entt::entity owner, entt::entity item, TItemPos pos) {
@@ -985,7 +956,7 @@ void AssertDetached(entt::entity owner, entt::entity item, uint8_t window) {
     });
 }
 void PlacementWindows() {
-    std::vector<uint8_t> windows {INVENTORY, DRAGON_SOUL_INVENTORY};
+    std::vector<uint8_t> windows {INVENTORY};
 #ifdef ENABLE_EXTRA_INVENTORY
     windows.push_back(EXTRA_INVENTORY);
 #endif
@@ -995,7 +966,6 @@ void PlacementWindows() {
     for (auto window : windows) {
         Reset(); extraUnlock = INT32_MAX;
         const auto owner = PlacementOwner(), item = PlacementItem(2);
-        Meta(item).dragon = window == DRAGON_SOUL_INVENTORY;
 #ifdef ENABLE_EXTRA_INVENTORY
         Meta(item).extra = window == EXTRA_INVENTORY;
 #endif
@@ -1041,11 +1011,6 @@ void PlacementValidation() {
         Check(!ItemSystem::PlaceItemEcs(owner, item, window, 0), "unsupported window accepted");
     Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, INVENTORY_PAGE_SIZE - 1), "item crossed main page");
     Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, BELT_INVENTORY_SLOT_START), "tall item in belt");
-    Check(!ItemSystem::PlaceItemEcs(owner, item, DRAGON_SOUL_INVENTORY, 0), "non-DS item in DS inventory");
-    Meta(item).dragon = true; Meta(item).dragonBase = DRAGON_SOUL_BOX_SIZE;
-    Check(!ItemSystem::PlaceItemEcs(owner, item, DRAGON_SOUL_INVENTORY, 0), "wrong DS box accepted");
-    Check(!ItemSystem::PlaceItemEcs(owner, item, DRAGON_SOUL_INVENTORY, 2 * DRAGON_SOUL_BOX_SIZE - 1), "DS item crosses box");
-    Meta(item).dragon = false;
 #ifdef ENABLE_EXTRA_INVENTORY
     Meta(item).extra = true; Meta(item).category = 2;
     Check(!ItemSystem::PlaceItemEcs(owner, item, EXTRA_INVENTORY, 0), "wrong extra category accepted");
@@ -1060,9 +1025,9 @@ void PlacementValidation() {
     inv.items[INVENTORY_PAGE_COLUMN] = entt::null; inv.itemGrid[INVENTORY_PAGE_COLUMN] = 17;
     Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "secondary grid ignored");
     inv.itemGrid[INVENTORY_PAGE_COLUMN] = 0;
-    g_registry.get<ecs::DragonSoulInventoryComponent>(owner).items[0] = item;
+    g_registry.get_or_emplace<ecs::ExtraInventoryRuntimeComponent>(owner).items[0] = item;
     Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "cross-window alias accepted");
-    g_registry.get<ecs::DragonSoulInventoryComponent>(owner).items[0] = entt::null;
+    g_registry.get<ecs::ExtraInventoryRuntimeComponent>(owner).items[0] = entt::null;
     g_registry.emplace<ecs::SectorPlacement>(item);
     Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "ground item inserted without removal");
     g_registry.remove<ecs::SectorPlacement>(item);
@@ -1099,17 +1064,8 @@ void PlacementQueries() {
         "unlock stage gated extra query");
     Meta(item).extra = false;
 #endif
-    auto& ds = g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner);
-    Meta(item).dragon = true; Meta(item).proto.bSize = 2;
-    Meta(item).dragonBase = DRAGON_SOUL_BOX_SIZE;
-    ds.items[DRAGON_SOUL_BOX_SIZE] = blocker;
-    ds.items[DRAGON_SOUL_BOX_SIZE + 1 + DRAGON_SOUL_BOX_COLUMN_NUM] = blocker;
-    Check(ItemSystem::GetEmptyDragonSoulInventory(owner, item) == DRAGON_SOUL_BOX_SIZE + 2, "DS query ignored anchors");
-    ds.items.fill(blocker);
-    Check(ItemSystem::GetEmptyInventoryPositionEcs(owner, item) == -1, "full DS query ignored anchors");
     g_registry.destroy(owner);
-    Check(ItemSystem::GetEmptyDragonSoulInventory(owner, item) == -1 &&
-        ItemSystem::GetEmptyInventoryPositionEcs(owner, item) == -1, "query accepted stale owner");
+    Check(ItemSystem::GetEmptyInventoryPositionEcs(owner, item) == -1, "query accepted stale owner");
 }
 struct ConstructionCallback {
     std::function<void(entt::registry&, entt::entity)> callback;
@@ -1236,13 +1192,13 @@ void RemovalCallbacksAndAliases() {
     Check(ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "alias fixture insertion");
     auto& main = g_registry.get<ecs::MainInventoryRuntimeComponent>(owner);
     main.items[2] = item; main.itemGrid[2] = main.itemGrid[7] = 3;
-    auto& ds = g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner);
-    ds.items[3] = item; ds.itemGrid[3] = 4;
+    auto& extraAlias = g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner);
+    extraAlias.items[3] = item; extraAlias.itemGrid[3] = 4;
     onSave = [&](entt::entity e) {
-        AssertDetached(owner, e, INVENTORY); AssertDetached(owner, e, DRAGON_SOUL_INVENTORY);
+        AssertDetached(owner, e, INVENTORY); AssertDetached(owner, e, EXTRA_INVENTORY);
     };
     Check(ItemSystem::RemoveItemEcs(item), "alias removal failed");
-    AssertDetached(owner, item, INVENTORY); AssertDetached(owner, item, DRAGON_SOUL_INVENTORY);
+    AssertDetached(owner, item, INVENTORY); AssertDetached(owner, item, EXTRA_INVENTORY);
 
     Reset();
     const auto actor = PlacementOwner(), moved = PlacementItem();
@@ -1332,11 +1288,6 @@ bool ItemSystem::IsSameSpecialGroup(entt::entity a, entt::entity b) {
 bool ItemSystem::IsItemLocked(entt::entity e) { return Meta(e).locked; }
 bool ItemSystem::IsItemExchanging(entt::entity e) { return Meta(e).exchanging; }
 bool ItemSystem::StartRealTimeExpireEventEcs(entt::entity e) { Meta(e); Service("real-time"); return true; }
-bool DragonSoulSystem::IsDeckActivated(entt::entity e) { return Actor(e).deck; }
-bool DragonSoulSystem::CanRefine(entt::entity e) {
-    const auto* state = g_registry.try_get<ecs::DragonSoulRuntimeStateComponent>(e);
-    return state && g_registry.valid(state->refineWindowOpener);
-}
 bool AffectSystem::IsPolymorphed(entt::entity e) { return Actor(e).poly; }
 bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t) { Actor(e); return false; }
 bool AffectSystem::RemoveAffect(entt::entity e, uint32_t) { Actor(e); Service("affect-remove"); return true; }
@@ -1574,30 +1525,9 @@ void EquipmentCallbacks() {
     Check(ItemSystem::EquipItemEcs(owner, item), "committed equip rejected destroyed actor");
     Check(!g_registry.valid(owner), "actor callback not executed");
 }
-void EquipmentDragonSoulAndTimers() {
+void EquipmentTimers() {
     Reset();
     const auto owner = PlacementOwner(), item = PlacementItem();
-    Meta(item).dragon = true; Meta(item).proto.bType = ITEM_DS; Meta(item).wear = WEAR_MAX_NUM;
-    Check(ItemSystem::PlaceItemEcs(owner, item, DRAGON_SOUL_INVENTORY, 0), "DS equipment fixture");
-#ifdef ENABLE_DS_SET
-    Actor(owner).deck = true;
-    Check(!ItemSystem::EquipItemEcs(owner, item), "active deck accepted equip");
-    Actor(owner).deck = false;
-#endif
-    Check(ItemSystem::EquipItemEcs(owner, item), "DS equip failed");
-    AssertWorn(owner, item, WEAR_MAX_NUM);
-    Check(ItemSystem::GetWearItem(owner, WEAR_MAX_NUM) == item, "DS wear query reported an empty slot");
-    Check(ItemSystem::GetWearItem(owner, WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX) == entt::null,
-        "out-of-range wear query accepted");
-    Check(ItemSystem::GetWearItem(entt::null, WEAR_MAX_NUM) == entt::null, "null wear owner accepted");
-#ifdef ENABLE_DS_SET
-    Actor(owner).deck = true;
-    Check(!ItemSystem::UnequipItemEcs(owner, item), "active deck accepted unequip");
-    Actor(owner).deck = false;
-#endif
-    Check(ItemSystem::UnequipItemEcs(owner, item), "DS unequip failed");
-    AssertPlaced(owner, item, TItemPos(DRAGON_SOUL_INVENTORY, 0));
-    Reset();
     const auto actor = PlacementOwner(), timer = Gear(actor);
     Meta(timer).proto.cLimitRealTimeFirstUseIndex = 0; Meta(timer).proto.aLimits[0] = {LIMIT_REAL_TIME_START_FIRST_USE, 60};
     Check(ItemSystem::EquipItemEcs(actor, timer), "first use equip failed");
@@ -1628,8 +1558,6 @@ entt::entity StackAt(entt::entity owner, TItemPos pos, int count = 7, uint8_t si
 {
     const auto item = PlacementItem(size);
     Meta(item).proto.dwFlags |= ITEM_FLAG_STACKABLE;
-    Meta(item).dragon = pos.window_type == DRAGON_SOUL_INVENTORY;
-    Meta(item).dragonBase = (pos.cell / DRAGON_SOUL_BOX_SIZE) * DRAGON_SOUL_BOX_SIZE;
 #ifdef ENABLE_EXTRA_INVENTORY
     Meta(item).extra = pos.window_type == EXTRA_INVENTORY;
     Meta(item).category = pos.cell / EXTRA_INVENTORY_CATEGORY_MAX_NUM;
@@ -1643,7 +1571,6 @@ struct RewardFixture {
     RewardFixture() {
         Reset(); giving = true; owner = PlacementOwner();
         g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner);
-        g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner);
 #ifdef ENABLE_EXTRA_INVENTORY
         g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner);
 #endif
@@ -1703,13 +1630,9 @@ void RewardQuantitiesAndPlacement() {
         Check(f.Give(invalid == 6 ? 0 : 7) == entt::null && rewardCreates == 0 && moneyLogs == 0,
             "invalid reward input had creation/logging side effects");
     }
-    for (int kind = 0; kind < 3; ++kind) {
+    for (int kind = 1; kind < 3; ++kind) {
         if (kind == 2 && INVENTORY_MAX_NUM <= UINT8_MAX) continue;
         RewardFixture f;
-        if (kind == 0) {
-            rewardProto.bType = ITEM_DS; rewardProto.dwFlags = 0;
-            onReward = [](const char* stage, entt::entity item) { if (std::string_view(stage) == "create") Meta(item).dragon = true; };
-        }
         if (kind == 1) {
             extraUnlock = INT32_MAX;
             onReward = [](const char* stage, entt::entity item) {
@@ -1722,7 +1645,6 @@ void RewardQuantitiesAndPlacement() {
         }
         const auto item = f.Give();
         Check(item != entt::null && packets.empty(), "foreign/wide inventory slot wrapped into main shortcut");
-        if (kind == 0) AssertPlaced(f.owner, item, TItemPos(DRAGON_SOUL_INVENTORY, 0));
         if (kind == 1) AssertPlaced(f.owner, item, TItemPos(EXTRA_INVENTORY, 2 * EXTRA_INVENTORY_CATEGORY_MAX_NUM));
         if (kind == 2) AssertPlaced(f.owner, item, TItemPos(INVENTORY, UINT8_MAX + 1));
     }
@@ -1867,14 +1789,6 @@ void RewardGroundAndAcquisition() {
             ItemSystem::GetWearItem(f.owner, WEAR_RUNE1) == item, "reward bypassed rune auto-equip");
     }
 #endif
-#ifdef ENABLE_DS_REFINE_ALL
-    {
-        RewardFixture f; const auto item = f.Existing(); Meta(item).dragon = true; Meta(item).proto.bType = ITEM_DS;
-        onSave = [&](entt::entity current) { Check(current == item, "wrong DS reward"); g_registry.destroy(current); };
-        Check(ItemSystem::AutoGiveDS(f.owner, item, true) && !g_registry.valid(item) && rewardCreates == 0,
-            "committed DS publication was reported as failed delivery");
-    }
-#endif
     for (int action = 0; action < 3; ++action) {
         RewardFixture f; const auto other = PlacementOwner(); f.Full(); rejectGround = rejectRewardRetirement = true;
         onReward = [&](const char* stage, entt::entity item) {
@@ -1892,7 +1806,7 @@ void RewardGroundAndAcquisition() {
 
 void NativeMoves()
 {
-    std::vector<TItemPos> positions {TItemPos(INVENTORY, 0), TItemPos(DRAGON_SOUL_INVENTORY, 576)};
+    std::vector<TItemPos> positions {TItemPos(INVENTORY, 0)};
 #ifdef ENABLE_EXTRA_INVENTORY
     positions.emplace_back(EXTRA_INVENTORY, EXTRA_INVENTORY_CATEGORY_MAX_NUM * 4);
 #endif
@@ -1911,7 +1825,7 @@ void NativeMoves()
         onSave = {};
         AssertPlaced(owner, item, to);
         // A move may overlap its own footprint. A split may not.
-        const int columns = from.window_type == DRAGON_SOUL_INVENTORY ? DRAGON_SOUL_BOX_COLUMN_NUM : INVENTORY_PAGE_COLUMN;
+        const int columns = INVENTORY_PAGE_COLUMN;
         const TItemPos overlap(to.window_type, to.cell + columns);
         Check(InventorySystem::MoveItem(owner, to, overlap, 0), "overlapping footprint move rejected");
         AssertPlaced(owner, item, overlap);
@@ -1953,7 +1867,7 @@ void MoveRejections()
     }
     for (unsigned cell = INVENTORY_AND_EQUIP_SLOT_MAX; cell <= UINT16_MAX; ++cell)
         Check(!InventorySystem::MoveItem(owner, from, TItemPos(INVENTORY, uint16_t(cell)), 0), "oversized target cell");
-    Check(!InventorySystem::MoveItem(owner, from, TItemPos(DRAGON_SOUL_INVENTORY, 0), 0), "ordinary item in DS");
+    Check(!InventorySystem::MoveItem(owner, from, TItemPos(RETIRED_WINDOW_6, 0), 0), "retired inventory window accepted");
     Check(!InventorySystem::MoveItem(owner, from, TItemPos(INVENTORY, INVENTORY_PAGE_SIZE - 1), 0), "cross-page drag");
     for (auto flag : {&PlacementMeta::locked, &PlacementMeta::exchanging, &PlacementMeta::pending})
     {
@@ -2037,15 +1951,10 @@ void MoveSpecialWindows()
     Check(InventorySystem::MoveItem(beltOwner, beltPos, TItemPos(INVENTORY, 0), 0), "belt removal failed");
     Check(computes == 2 && affects == 1, "belt points/affect refresh omitted");
     Reset();
-    const auto dsOwner = PlacementOwner(), ds = StackAt(dsOwner, TItemPos(DRAGON_SOUL_INVENTORY, 576));
-    Check(!InventorySystem::MoveItem(dsOwner, TItemPos(DRAGON_SOUL_INVENTORY, 576), TItemPos(INVENTORY, 0), 0), "DS escaped inventory");
-    Check(!InventorySystem::MoveItem(dsOwner, TItemPos(DRAGON_SOUL_INVENTORY, 576), TItemPos(DRAGON_SOUL_INVENTORY, 0), 0), "DS wrong box");
-    Check(InventorySystem::MoveItem(dsOwner, TItemPos(DRAGON_SOUL_INVENTORY, 576), TItemPos(DRAGON_SOUL_INVENTORY, 577), 0),
-        "DS cell mistaken for belt/equipment");
 }
 void NativeSplits()
 {
-    std::vector<TItemPos> positions {TItemPos(INVENTORY, 0), TItemPos(DRAGON_SOUL_INVENTORY, 576)};
+    std::vector<TItemPos> positions {TItemPos(INVENTORY, 0)};
 #ifdef ENABLE_EXTRA_INVENTORY
     positions.emplace_back(EXTRA_INVENTORY, 360);
 #endif
@@ -2322,15 +2231,6 @@ void MoveCallbacksAndDispatch()
     Check(!InventorySystem::MoveItem(owner, wear, TItemPos(EQUIPMENT, wear.cell), 0), "equipment aliases not normalized");
     Check(InventorySystem::MoveItem(owner, wear, TItemPos(INVENTORY, 9), 0), "unequip drag failed");
     AssertPlaced(owner, source, TItemPos(INVENTORY, 9));
-    Meta(source).dragon = true; Meta(source).wear = WEAR_MAX_NUM;
-    Meta(source).proto.bType = ITEM_DS;
-    Check(ItemSystem::EquipItemEcs(owner, source), "DS dispatch setup");
-    onPullOut = [&](entt::entity e, TItemPos pos, entt::entity& stone) {
-        Check(e == owner && stone == source && pos == TItemPos(DRAGON_SOUL_INVENTORY, 2), "DS extraction dispatch changed");
-        return true;
-    };
-    Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, INVENTORY_MAX_NUM + WEAR_MAX_NUM),
-        TItemPos(DRAGON_SOUL_INVENTORY, 2), 0), "DS extraction not dispatched");
 }
 } // namespace
 
@@ -2491,7 +2391,7 @@ void GroundClaimValidation()
         !g_registry.get<ecs::ItemOwner>(item).ownershipPID &&
         g_registry.get<ecs::ItemOwnershipDisplay>(item).ownerName.empty(), "failed scheduling left a claim");
     rejectTimer = false;
-    for (auto window : {INVENTORY, EQUIPMENT, SAFEBOX, MALL, DRAGON_SOUL_INVENTORY})
+    for (auto window : {INVENTORY, EQUIPMENT, SAFEBOX, MALL})
     {
         g_registry.get<ecs::ItemLocation>(item).window = window;
         Check(!ItemSystem::SetGroundOwnership(item, owner), "stored item claimed");
@@ -3032,11 +2932,11 @@ void NpcMergesAndPayments() {
             g_registry.get<ecs::GoldAmount>(f.owner).amount == 1000 && goldPackets.empty(),
             "secondary-coin NPC purchase altered gold or lost cost");
     }
-    for (int kind = 0; kind < 4; ++kind) {
+    for (int kind = 1; kind < 4; ++kind) {
         NpcFixture f; auto create = onCreate;
         onCreate = [create, kind](uint32_t vnum, uint32_t count) {
             const auto item = create(vnum, count);
-            Meta(item).dragon = kind == 0; Meta(item).extra = kind == 1; Meta(item).rune = kind == 2;
+            Meta(item).extra = kind == 1; Meta(item).rune = kind == 2;
             if (kind == 1) Meta(item).category = 2;
             if (kind == 3) {
                 Meta(item).proto.bType = ITEM_COSTUME; Meta(item).proto.bSubType = COSTUME_ACCE;
@@ -3053,7 +2953,6 @@ void NpcMergesAndPayments() {
         };
         Check(f.Buy(f.Request()) == Result::Committed, "NPC special-window purchase failed");
         const auto item = f.created.back();
-        if (kind == 0) AssertPlaced(f.owner, item, TItemPos(DRAGON_SOUL_INVENTORY, 0));
         if (kind == 1) AssertPlaced(f.owner, item, TItemPos(EXTRA_INVENTORY, 2 * EXTRA_INVENTORY_CATEGORY_MAX_NUM));
         if (kind == 2) AssertWorn(f.owner, item, WEAR_BODY);
         if (kind == 3) {
@@ -3062,7 +2961,7 @@ void NpcMergesAndPayments() {
                 "NPC accessory absorption was not initialized");
         }
     }
-    for (TItemPos cell : {TItemPos(INVENTORY, 256), TItemPos(EXTRA_INVENTORY, 500), TItemPos(DRAGON_SOUL_INVENTORY, 0)}) {
+    for (TItemPos cell : {TItemPos(INVENTORY, 256), TItemPos(EXTRA_INVENTORY, 500)}) {
         NpcFixture f; const auto item = f.Stack(cell.cell, 7, 500, cell.window_type);
         Check(InventorySystem::SellToNpc(f.owner, cell, 7, 70, [] { return true; }) && !g_registry.valid(item) &&
             g_registry.get<ecs::GoldAmount>(f.owner).amount == 1070, "NPC sale truncated a special-window cell");
@@ -3209,7 +3108,7 @@ void GroundDropFailures() {
 }
 void GroundDropQuantities() {
     for (TItemPos cell : {TItemPos(INVENTORY, 0), TItemPos(INVENTORY, INVENTORY_MAX_NUM - 1),
-        TItemPos(DRAGON_SOUL_INVENTORY, 0), TItemPos(EXTRA_INVENTORY, 500)}) {
+        TItemPos(EXTRA_INVENTORY, 500)}) {
         for (int count : {0, 3, 999}) {
             DropFixture fixture(cell);
             const auto originalID = ItemSystem::GetItemID(fixture.item);
@@ -3366,7 +3265,7 @@ void GroundGoldDrops() {
 }
 int main() {
     try {
-        DSManager dragonSouls;
+
         SECTREE_MANAGER sectors;
         ITEM_MANAGER items;
         LogManager logs;
@@ -3386,7 +3285,7 @@ int main() {
         CompanionSplitTransactions();
         RewardQuantitiesAndPlacement(); RewardMergeAndReentry(); RewardCallbacksAndFailures(); RewardGroundAndAcquisition();
         RewardQuickslotConstruction();
-        EquipmentPolicies(); EquipmentRoundTripAndSwap(); EquipmentCallbacks(); EquipmentDragonSoulAndTimers();
+        EquipmentPolicies(); EquipmentRoundTripAndSwap(); EquipmentCallbacks(); EquipmentTimers();
         PlacementWindows(); PlacementValidation(); PlacementQueries(); PlacementCallbacks(); NativeUnequip(); RemovalCallbacksAndAliases(); PurePlacementRules();
         InventoryGuards(); InventoryGrids(); Basic(); DuplicatesAndValidation(); SyncAndLifetime(); ValueRanges(); ClientValidation(); HydrationAndRelocation();
         Reset(); // Destroy test descriptors while the Asio engine still exists.

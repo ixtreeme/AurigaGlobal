@@ -44,7 +44,6 @@
 #include "BattleArena.h"
 #include "log.h"
 #include "unique_item.h"
-#include "DragonSoul.h"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/CharacterAccessors.hpp"
@@ -61,7 +60,6 @@
 #ifdef __NEWPET_SYSTEM__
 #include "New_PetSystem.h"
 #include "../ecs/CharacterAccessors.hpp"
-#include "../ecs/systems/DragonSoulSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #endif
 
@@ -529,34 +527,8 @@ ACMD(do_item)
 
 	if (ItemSystem::IsValidItem(item))
 	{
-		if (ItemSystem::IsDragonSoulItem(item))
-		{
-			int iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(character, item);
-
-			if (iEmptyPos != -1)
-			{
-				if (!InventorySystem::AddToCharacter(item, character, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos)))
-                {
-                    if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null)
-                        ItemSystem::DestroyItemEntityEcs(item, "GM_CMD_ADD_FAILED");
-                    return;
-                }
-                if (ecs::PlayerRuntime::IsPC(character) && ItemSystem::IsValidItem(item)
-                    && ItemSystem::GetItemOwner(item) == character)
-                    LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
-			}
-			else
-			{
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 626, "");
-#endif
-			}
-		}
 #ifdef ENABLE_EXTRA_INVENTORY
-		else if (ItemSystem::IsExtraItem(item))
+		if (ItemSystem::IsExtraItem(item))
 		{
 			int iEmptyPos = ItemSystem::GetEmptyExtraInventory(character, item);
 
@@ -975,17 +947,16 @@ ACMD(do_item_purge)
     const bool all = window == "all";
     const bool inventory = window == "inventory" || window == "inv";
     const bool equipment = window == "equipment" || window == "equip";
-    const bool dragonSoul = window == "dragonsoul" || window == "ds";
     const bool belt = window == "belt";
 #ifdef ENABLE_EXTRA_INVENTORY
     const bool extra = window == "extra";
 #else
     const bool extra = false;
 #endif
-    if (!(all || inventory || equipment || dragonSoul || belt || extra))
+    if (!(all || inventory || equipment || belt || extra))
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO,
-            "Usage: ipurge <all|inventory|equipment|dragonsoul|belt|extra>");
+            "Usage: ipurge <all|inventory|equipment|belt|extra>");
         return;
     }
 #ifdef __NEWPET_SYSTEM__
@@ -1017,7 +988,6 @@ ACMD(do_item_purge)
     else if (equipment) collect(INVENTORY, INVENTORY_MAX_NUM, INVENTORY_MAX_NUM + WEAR_MAX_NUM, QUICKSLOT_TYPE_ITEM);
     else if (belt) collect(INVENTORY, BELT_INVENTORY_SLOT_START,
         BELT_INVENTORY_SLOT_START + BELT_INVENTORY_SLOT_COUNT, QUICKSLOT_TYPE_ITEM);
-    if (all || dragonSoul) collect(DRAGON_SOUL_INVENTORY, 0, DRAGON_SOUL_INVENTORY_MAX_NUM, QUICKSLOT_TYPE_NONE);
 #ifdef ENABLE_EXTRA_INVENTORY
     if (all || extra) collect(EXTRA_INVENTORY, 0, EXTRA_INVENTORY_MAX_NUM, QUICKSLOT_TYPE_ITEM_EXTRA);
 #endif
@@ -4417,34 +4387,6 @@ ACMD (do_clear_affect)
 		return;
 	AffectSystem::ClearAffect(character, true);
 }
-
-ACMD (do_dragon_soul)
-{
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	char arg1[512];
-	const char* rest = one_argument (argument, arg1, sizeof(arg1));
-	switch (arg1[0])
-	{
-	case 'a':
-		{
-			one_argument (rest, arg1, sizeof(arg1));
-			int deck_idx = 0;
-			if (str_to_number(deck_idx, arg1) == false)
-			{
-				return;
-			}
-			DragonSoulSystem::ActivateDeck(character, deck_idx);
-		}
-		break;
-	case 'd':
-		{
-			DragonSoulSystem::DeactivateAll(character);
-		}
-		break;
-	}
-}
-
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 ACMD(do_open_whispersys) {

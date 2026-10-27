@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <common/retired_content.h>
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
@@ -35,7 +36,6 @@
 #include "../ecs/ItemRegistry.hpp"
 
 #include <common/VnumHelper.h>
-#include "DragonSoul.h"
 #ifndef ENABLE_CUBE_RENEWAL_WORLDARD
 #include "cube.h"
 #else
@@ -125,6 +125,8 @@ bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 	if (size < 0 || (size && !table)) return false;
 	std::vector<TItemTable> incoming;
 	if (size) incoming.assign(table, table + size);
+	std::erase_if(incoming, [](const TItemTable& row) { return auriga::retired_content::Item(row.bType, row.bSubType); });
+	size = static_cast<int>(incoming.size());
 	// Retain old storage until every live entity has been rebound below.
 	m_vec_prototype.swap(incoming);
 	m_vec_item_vnum_range_info.clear();
@@ -272,7 +274,7 @@ const uint32_t GetRandomSkillVnum(uint8_t job)
 entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool bTryMagic, int iRarePct, bool bSkipSave)
 {
     const TItemTable* table = vnum ? GetTable(vnum) : nullptr;
-    if (!table || table->bSize == 0) return entt::null;
+    if (!table || table->bSize == 0 || auriga::retired_content::Item(table->bType, table->bSubType)) return entt::null;
     const TItemTable proto = *table; // Never retain a borrowed table across initialization callbacks.
     const bool isNew = id == 0;
     const bool gold = proto.bType == ITEM_ELK;
@@ -402,10 +404,6 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
             socket(0, duration ? duration : limit.lValue ? limit.lValue : 60 * 60 * 10);
         }
     }
-#ifdef ENABLE_DS_EDITS
-    if (displayVnum == 100000 || displayVnum == 100001 || displayVnum == 100002)
-        socket(ITEM_SOCKET_CHARGING_AMOUNT_IDX, proto.alValues[0]);
-#endif
 #ifdef ENABLE_SOUL_SYSTEM
     if (proto.bType == ITEM_SOUL) { socket(2, proto.alValues[2]); soulTimer = true; }
 #endif
@@ -476,10 +474,6 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
         }
 #endif
         g_registry.get<ecs::ItemIdentity>(item).sigVnum = sig;
-        if (isNew && ItemSystem::IsDragonSoulItem(item))
-        {
-            if (!DSManager::instance().DragonSoulItemInitialize(item) || !live()) return entt::null;
-        }
 #ifdef ENABLE_RUNE_SYSTEM
         if (isNew && (!ItemSystem::InitializeRuneItem(item) || !live())) return entt::null;
 #endif
@@ -498,9 +492,6 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
                         stoleInfoTable[index][number(grade * 4 - 3, grade * 4)]) || !live()) return entt::null;
                 }
         }
-#endif
-#ifdef ENABLE_DS_POTION_DIFFRENT
-        if (isNew && proto.bType == ITEM_USE && proto.bSubType == USE_TIME_CHARGE_PER) socket(0, proto.alValues[0]);
 #endif
     }
 
@@ -686,9 +677,6 @@ bool ITEM_MANAGER::BuildPlayerCacheSnapshot(entt::entity owner, std::vector<TPla
     };
     if (const auto *inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
         inventory && !collect(inventory->items, INVENTORY))
-        return false;
-    if (const auto *inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner);
-        inventory && !collect(inventory->items, DRAGON_SOUL_INVENTORY))
         return false;
 #ifdef ENABLE_EXTRA_INVENTORY
     if (const auto *inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner);
@@ -1915,10 +1903,7 @@ bool ITEM_MANAGER::IsExtraItem(uint32_t vnum)
 			subtype == USE_ADD_ATTR_COSTUME2 ||
 			subtype == USE_REMOVE_ATTR_COSTUME ||
 #endif
-#ifdef ENABLE_DS_ENCHANT
-			subtype == USE_DS_ENCHANT ||
-#endif
-#ifdef ENABLE_DS_ENCHANT
+#ifdef ENABLE_STOLE_COSTUME
 			subtype == USE_ENCHANT_STOLE ||
 #endif
 			subtype == USE_POTION ||
