@@ -68,6 +68,8 @@ def main():
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--validators', type=Path, required=True,
                         help='Directory containing ServerPackageCheck syntax-check binaries')
+    parser.add_argument('--item-tools', type=Path,
+                        help='Directory containing CatalogEditorTool (default: the matching SRC/ItemDomain build folder)')
     args = parser.parse_args()
     source = Path(__file__).resolve().parent
     # The frozen app carries its API index; stale suggestions must not silently ship.
@@ -77,6 +79,10 @@ def main():
     for name in ('ServerPackageCheck',):
         if not (validators / (name + suffix)).is_file():
             parser.error('Missing native syntax checker: ' + name)
+    # The item page validates and commits through the game's own catalog builder.
+    item_tools = (args.item_tools or validators.parents[2] / 'ItemDomain' / validators.name).resolve()
+    if not (item_tools / ('CatalogEditorTool' + suffix)).is_file():
+        parser.error('Missing native item catalog editor: ' + str(item_tools / ('CatalogEditorTool' + suffix)))
     output, work = args.output.resolve(), args.work.resolve()
     if output.exists() or work.exists():
         parser.error('Output and work must be new directories')
@@ -98,6 +104,7 @@ def main():
                '--add-data', str(source / 'backup_tools.py') + os.pathsep + 'remote_support',
                '--add-data', str(source / 'editor_checks.py') + os.pathsep + 'remote_support',
                '--add-binary', str(validators / ('ServerPackageCheck' + suffix)) + os.pathsep + 'validators',
+               '--add-binary', str(item_tools / ('CatalogEditorTool' + suffix)) + os.pathsep + 'validators',
                '--exclude-module', 'PySide6.QtQml', '--exclude-module', 'PySide6.QtQuick',
                str(source / 'app.py')]
     code = subprocess.call(command, cwd=source)

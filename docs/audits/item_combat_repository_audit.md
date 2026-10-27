@@ -237,3 +237,31 @@ Az új 5-ös kategória recovery-only profiljai és tiszta azonnali terve:
 [Friss helyi tesztlelet](../reports/item_combat/2026-10-27_recovery_consumables.md).
 A reserve/continuous ütemező, többi fogyasztható behavior, tényleges
 HP/anyag/cooldown/receipt commit és teljes régi konverzió nem készült el.
+
+## 2026-10-27 — új katalógus SQL-betöltése
+
+A `CAsyncSQL::DirectTransactionPrepared`, `SQLMsg` és prepared eredménytárolás
+közvetlenül újrahasznált; az SQL-motor implementációja nem változott.
+Az új `CatalogSqlReader::PrepareRead/ReadCatalog/ReadCompleted` egyetlen,
+REPEATABLE READ / InnoDB, sor- és byte-keretes SELECT tranzakcióból épít
+ellenőrzött snapshotot. A tiszta `DecodeSnapshot` ugyanazt a
+`BuildItemCatalog` validátort és kanonikus hash-t használja.
+
+A `011_catalog_format.sql` friss draft metadata-tábla; a kanonikus formátum v5
+maradt. Kétkapcsolatos, determinisztikus fixture-próba ellenőrzi az egységes
+read view-t és a kapcsolatmegszakítás elutasítását. A valódi SQL-fixture
+betöltve is egy prototípussal kezeli a +9/+10/+30 szinteket.
+A regiszter minden mezője a fordított definícióhoz ellenőrzött.
+[Szerződés](../adr/item_combat_011_catalog_sql_reader.md),
+[aktuális lelet és határok](../reports/item_combat/2026-10-27_catalog_sql_reader.md).
+Az öt implementált kategórián túli tartalom, runtime factory, tartós instance-
+és gazdasági commit, offline migráció és Unity továbbra is nyitott.
+
+## 2026-10-27 — tárgyszerkesztő a szerverkezelőben
+
+A szerverkezelő **Tárgyak** oldala a helyi `protos` katalógus öt betölthető
+kategóriáját szerkeszti a natív `CatalogEditorTool`-on keresztül, a játék saját
+katalógusellenőrzőjével. Megosztott profil csak másolással változik; mentés
+egyetlen, hash- és számlálóvédett tranzakcióban. A meglévő sorok frissítése
+`ON DUPLICATE KEY UPDATE` helyett sima `UPDATE`.
+[Jelentés](../reports/item_combat/2026-10-27_catalog_editor.md).

@@ -35,7 +35,7 @@ class CategorySchemaTests(unittest.TestCase):
             for name in ("000_protos_database.sql", "001_category_registry.sql", "002_category_seed.sql",
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
-                         "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql"):
+                         "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)

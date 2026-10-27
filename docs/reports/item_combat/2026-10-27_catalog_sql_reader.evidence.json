@@ -1,0 +1,144 @@
+{
+  "timestamp_utc": "2026-10-27T16:46:08.275301+00:00",
+  "repository": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal",
+  "branch": "codex/mission-engine",
+  "head": "9dfb1def1b6c679ba778fe994969842a3f95beb4",
+  "worktree_state": "uncommitted catalog SQL-reader implementation on top of DragonSoul retirement",
+  "source_sha256": {
+    "SRC/ItemDomain/CMakeLists.txt": "7e481425f2ef3df3a6f2f4b7ccac7ece3a50d7257b37ff29de4fbde84598eb50",
+    "SRC/ItemDomain/CatalogSnapshot.cpp": "eef436878b15296a8094466f1a8c27cb54eae83c6cf7b2565da82b2f7656bbab",
+    "SRC/ItemDomain/CatalogSnapshot.hpp": "73bdec3a27304de7101933c079eb64098596553dc2ad9997822a5e01d121e8e5",
+    "SRC/ItemDomain/CatalogTables.cpp": "abaf7b779ad6f2e651ba53d5966fe4ddbac8d8cd0888eaa2ae2baf4db959ffb6",
+    "SRC/ItemDomain/CatalogSqlReader.cpp": "c01a4d6767c4d069be7bf7338ef78f2df97e3513d574b3875f734e5d1fd67499",
+    "SRC/ItemDomain/CatalogSqlReader.hpp": "fe17a92da5753e46216f7a9882f1191325efe7c27af1b3a105395aa0f8e72d70",
+    "SRC/Server/GameServer/CMakeLists.txt": "2264750896c3c4384c55da9d59ec820f790e3eb7156da3c3daa907c40a0e14c3",
+    "db/migrations/item_combat/011_catalog_format.sql": "3d7c875ba6dbae586c0c0e38c70e40121c40938365291a9c7ae22b04031fc3a7",
+    "docs/adr/item_combat_006_category_refinement_priority.md": "55b0a9f84de69af993ab2e82efa4810fa1f5e7949d997bf883e87de8d0a1fa29",
+    "docs/adr/item_combat_011_catalog_sql_reader.md": "8f026eb70c164395f553c5dadf8d76a9bc139e2c7ff8ade6b454e6c95c972dc8",
+    "docs/audits/item_combat_repository_audit.md": "8c9c6463955ceab6a663cf9f4fd789d690ab44fd871360e3a4a5efcb25f757cf",
+    "docs/reports/item_combat/2026-10-27_catalog_sql_reader.md": "a70352df4412856fd2e2a1659184ee9c96f621c456812dbddff3d2f7e534ae3f",
+    "tests/server/CatalogSnapshotFixture.hpp": "b0abfe98bc268fd00f15bcf1223404b9f09c1948861db465085643cbb11c7500",
+    "tests/server/CatalogSnapshotTests.cpp": "b81fa2470b435860150f427af0d6acad7dbcb10ed6301b4b5b6dc0de73fc67c7",
+    "tests/server/CatalogSqlReaderTests.cpp": "ea7a73c64fafe4c7b705ac90e289638df8bd08227e2673ce1019eb249ceb8125",
+    "tests/server/CatalogSqlReaderTests.py": "0a4ffd580dd327c6a1ac3a17f4e2cce10525fa6df054fd3d4117cca266cc3c74",
+    "tests/server/ItemCombatSchemaTests.py": "c11772591edcb3c529b1e22ee67e56f03c61affe041458fd6a5a3240ab1c1b5c"
+  },
+  "original_spec_sha256": "bb17b3307409f465c5a020c6d1d7c7eb643d4e7d4449c09ba544e0693d2839eb",
+  "tests": {
+    "normal": {
+      "log": "build/item-sql-full-ctest.log",
+      "tests": 98,
+      "failed": 0,
+      "sha256": "427c3cb7bfc8fd52fd17d416a8845cfdf4fbd6b83f43a3276e5c9f56d53e69e4"
+    },
+    "asan": {
+      "log": "build-asan/item-sql-ctest.log",
+      "tests": 11,
+      "failed": 0,
+      "sha256": "1dbf629f04222937a9aa1200e1c2e0ff132830bef8fa88f7a7d636ee7da4ed02"
+    },
+    "standalone": {
+      "log": "build/item-catalog-standalone-20261027/sql-loader-ctest.log",
+      "tests": 10,
+      "failed": 0,
+      "sha256": "c0598669a9318f8eca5c451640949913d48d4164de0d1e48d9c86bab7d072716"
+    },
+    "owned_sql": [
+      {
+        "environment": {
+          "version": "11.4.13-MariaDB",
+          "isolation": "REPEATABLE-READ",
+          "owned_datadir_verified": true,
+          "read_only_loader_account": true,
+          "fixture": "v5/recovery_consumables.sql",
+          "schema_drafts": 12
+        },
+        "environment_file": "build/SRC/ItemDomain/catalog-loader-sql-isolated/8e11349828a54109ac40e55da92def19/environment.json",
+        "log": "build/SRC/ItemDomain/catalog-loader-sql-isolated/8e11349828a54109ac40e55da92def19/native-test.log",
+        "result": "AsyncSQL: connected to 127.0.0.1 (reconnect true)\nAsyncSQL: connected to 127.0.0.1 (reconnect true)\nCatalogue SQL reader: 148 checks passed",
+        "sha256": "3ebad7f212f81d3451196f0a44d2caff031e87a127abdc523544f972776aec36"
+      },
+      {
+        "environment": {
+          "version": "11.4.13-MariaDB",
+          "isolation": "REPEATABLE-READ",
+          "owned_datadir_verified": true,
+          "read_only_loader_account": true,
+          "fixture": "v5/recovery_consumables.sql",
+          "schema_drafts": 12
+        },
+        "environment_file": "build-asan/catalog-loader-sql-isolated/4bb19bc78af64f83a3b82a1de0de353e/environment.json",
+        "log": "build-asan/catalog-loader-sql-isolated/4bb19bc78af64f83a3b82a1de0de353e/native-test.log",
+        "result": "AsyncSQL: connected to 127.0.0.1 (reconnect true)\nAsyncSQL: connected to 127.0.0.1 (reconnect true)\nCatalogue SQL reader: 148 checks passed",
+        "sha256": "3ebad7f212f81d3451196f0a44d2caff031e87a127abdc523544f972776aec36"
+      }
+    ],
+    "pure_snapshot_checks": 105,
+    "completion_boundary_checks": 20
+  },
+  "build_logs": [
+    "build/item-sql-server-tests-build.log",
+    "build-asan/item-sql-final-build.log",
+    "build/item-catalog-standalone-20261027/sql-loader-build.log"
+  ],
+  "compiler_versions": [
+    "19.51.36248.0"
+  ],
+  "dependency_project_references": {
+    "build/SRC/Server/GameServer/GameServer.vcxproj": [
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\ZERO_CHECK.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\3rd\\LUA55\\LUA.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\Server\\Base\\S_Base.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\Server\\Core\\S_Core.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\Server\\Poly\\S_Poly.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\Server\\SQL\\S_SQL.vcxproj"
+    ],
+    "build/SRC/Server/Database/Database.vcxproj": [
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\ZERO_CHECK.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\Server\\Base\\S_Base.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\Server\\Core\\S_Core.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\Server\\Poly\\S_Poly.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\SRC\\Server\\SQL\\S_SQL.vcxproj"
+    ],
+    "build/item-catalog-standalone-20261027/AurigaItemCatalog.vcxproj": [
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\item-catalog-standalone-20261027\\ZERO_CHECK.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\item-catalog-standalone-20261027\\AurigaItemDomain.vcxproj",
+      "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\item-catalog-standalone-20261027\\ItemBonusRegistryCheck.vcxproj"
+    ]
+  },
+  "asan_instrumented": [
+    "AurigaItemCatalog",
+    "AurigaItemCatalogSql",
+    "CatalogSnapshotTests",
+    "CatalogSqlReaderTests"
+  ],
+  "canonical": {
+    "schema_version": 5,
+    "domain": "auriga.item_catalog.v5",
+    "fixture_items": 9,
+    "sha256": "ecffcba2e2774c3f67f54c4e95b58075bf2755663f2f8e905836298f29fb0c59"
+  },
+  "limits": {
+    "capture_bytes": 268435456,
+    "cell_estimated_overhead_bytes": 160,
+    "tables_read": 27,
+    "profiles_per_kind": 4096,
+    "items": 100000,
+    "rss_bound": false
+  },
+  "scope": {
+    "runtime_wired": false,
+    "existing_database_modified": false,
+    "remote_modified": false,
+    "unity_modified": false,
+    "legacy_adapter": false,
+    "release_allocator": false,
+    "supported_categories": [
+      1,
+      2,
+      3,
+      5,
+      6
+    ]
+  }
+}

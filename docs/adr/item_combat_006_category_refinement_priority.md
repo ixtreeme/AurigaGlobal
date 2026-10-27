@@ -57,3 +57,12 @@ próba ugyanazon ItemKey mellett, független maximum két kategórián és hián
 +10-es lépcső elutasítása. Ezt C++ domain-, katalógus- és izolált SQL-próba
 ellenőrzi. A későbbi instance/Unity integrációban a fejlesztés → mentés →
 újrabelépés → megjelenítés azonosságát is bizonyítani kell.
+
+## 2026-10-27 — részleges SQL-kapu teljesítve
+
+Az öt már implementált kategória SQL-betöltője elkészült. Valódi, saját
+MariaDB-fixture-ből is ellenőrzött a +9→+10→+30 görbe és a hiányzó +10
+elutasítása, szintenként új proto nélkül. A teljes kategórialeltár és runtime
+csere ettől még nyitott. [IC-011](item_combat_011_catalog_sql_reader.md)
+rögzíti a read-view/ownership/format határt; a következő kapcsolódó kapu
+a tartós instance- és fejlesztési művelet.
