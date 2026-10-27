@@ -2,7 +2,7 @@
 
 - **Dátum:** 2026-10-27
 - **Szerverág:** `codex/mission-engine`
-- **Aktuális kódcommit:** `1f75cff0`; előző lezárt állapot: `93d7ef82`.
+- **Aktuális kódcommit:** `28bca673`; előző lezárt állapot: `c273291f`.
 - **Unity-kivezetés:** changeset `33`, `/main/codex-mission-engine` ág.
 
 **Hatókör:** a régi BattlePass-t kiváltó történetalapú Mission Engine, a hozzá
@@ -543,11 +543,32 @@ előtti feladat. Nincs telepítés vagy távoli módosítás. Az új offline sho
 önálló későbbi fejlesztés, nem a Mission Engine régi producer-integrációja.
 Részletek: `offline_shop_retirement_2026-10-27.md`.
 
+### 3.25. ECS + BGFX ág szinkronizálása (2026-10-27)
+
+- Az `origin/ECS_+_BGFX` `0e0535ff` állapota bekerült a Mission Engine ágba;
+  a merge commit `a0c04c83`, a korábbi Mission-fejlesztések megmaradtak.
+- Átkerült a társ kém- és karavánküldetése, natív story rendszereikkel,
+  navigációs adatokkal, konfigurációkkal és szerveres bekötésekkel együtt.
+- A régi BattlePass-időzítő ütközésénél a már kivezetett kód törlése maradt meg;
+  az offline shop sem került vissza. A szezonális Mission Pass megmarad.
+- A karaván Windows SDK-makróival ütköző lokális változónevei javultak;
+  az izolált harci/ló/packet tesztfüggőségek igazodtak az új story hívásokhoz.
+
+Ezek önálló natív C++ küldetések, nem az új Mission Engine `.aurmission`
+tartalmai. A merge nem aktiválja az élő Mission jutalmazási útvonalat,
+és nem módosítja a tényleges szervercsomag konfigurációját vagy a távoli gépet.
+Részletek: `ecs_bgfx_merge_2026-10-27.md`.
+
+A lezárt ellenőrzés **53/53 normál** és **41/41 ASAN** teszt. A normál
+kör öt izolált MariaDB-integrációt tartalmaz. A három szerverbináris normál
+buildje elkészült; ebben a részfázisban az ASAN-kör a tesztbinárisokra
+vonatkozik. A forráságon maradt, még be nem olvasztott commitok száma nulla.
+
 ## 4. Ellenőrzött eredmények
 
 | Ellenőrzés | Legutóbbi sikeres eredmény |
 |---|---|
-| Windows x64 / RelWithDebInfo fordítás | GameServer, Database és LoginServer normál/ASAN |
+| Windows x64 / RelWithDebInfo fordítás | GameServer, Database és LoginServer normál; az új regressziós tesztbinárisok normál/ASAN |
 | Natív Mission core | 8723 ellenőrzés |
 | Csomagkezelés | 4856 ellenőrzés |
 | Checkpoint codec és action identity | 3227 ellenőrzés |
@@ -570,8 +591,9 @@ Részletek: `offline_shop_retirement_2026-10-27.md`.
 | Valódi Mission store/action/item/resource effects, három séma és cold restore | Normál és ASAN: 2959 + 155 a legutóbbi drain-adapteres körökben |
 | Kanonikus item-award terv-/határteszt | 41 ellenőrzés, normál és ASAN |
 | Valódi item-award delivery/cache/cold-process | Normál: 2823 + 111; ASAN: 2827 + 111 ellenőrzés |
-| Célzott regressziós CTest-kör | 49/49 az offline shop kivezetésekor; öt izolált MariaDB-integrációval |
-| Külön AddressSanitizer CTest-kör | 37/37 az offline shop kivezetésekor; új ASAN MariaDB-kör nélkül |
+| Célzott regressziós CTest-kör | 53/53 az ECS + BGFX merge után; öt izolált MariaDB-integrációval |
+| Külön AddressSanitizer CTest-kör | 41/41 a merge után; új ASAN MariaDB-kör nélkül |
+| Kém- és karavánküldetés szabálytesztje | 2/2 normál és ASAN; a karaván Windows SDK makrók mellett is fordul |
 | Unity offline shop kivezetési próba | 30 ellenőrzés a tényleges 2022.3.62f3 Editorban |
 | Unity meglévő protokoll / desktop és mobil hozzáférési próbák | Sikeres; 13 sidebar- és 38 mobil menübejegyzés |
 | Unity Windows/Android/iOS runtime és Editor fordítás | Sikeres; mobilon compile-only |
@@ -742,6 +764,8 @@ az ott előzőleg meglévő hét változás külön megőrzött munka.
 
 | Commit | Elkészült munkafolyamat |
 |---|---|
+| `28bca673` | Karaván Windows-makróütközés javítása és a story-integráció izolált tesztfüggőségeinek rendezése; 53/41 regresszió |
+| `a0c04c83` | ECS + BGFX ág beolvasztása a kém- és karavánküldetéssel, a korábbi Mission-munka megőrzésével |
 | `1f75cff0` | Régi offline shop szerver/Database/legacy launcher runtime kivezetése, adatok megőrzése és kapcsolódó regressziók |
 | `541ea976` | NPC-vétel/eladás közös memóriabeli pénz/költség/tárgy commitja, merge/rune/retirement és callback-hibapróbák |
 | `461f93ef` | Bolti admission, online vevő/eladó közös belépése, ár-/darabszámhatárok és preflight hibapróbák |
@@ -966,6 +990,7 @@ mentési, migrációs, visszaállítási és telepítési munkafázis.
 - [Tárgy-/aranyeldobás integritása és közös világ/resource commit](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_ground_drop_integrity_2026-10-26.md)
 - [Bolti admission és ajánlat-/árhatárok](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_shop_admission_2026-10-26.md)
 - [NPC-vétel/eladás közös resource/inventory commitja](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_npc_trade_commit_2026-10-26.md)
+- [ECS + BGFX merge, új küldetések és regressziók](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/ecs_bgfx_merge_2026-10-27.md)
 - [A régi offline shop kivezetése és adatmegőrzési határai](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/offline_shop_retirement_2026-10-27.md)
 - [Commit-sorrendtől független award-cache](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_award_discovery_2026-10-25.md)
 - [Külön Mission-adatbázis, telepítés és mentési szerződés](D:/AurigaGlobal/LiveWork/AurigaGlobal/docs/mission_database_2026-10-25.md)
