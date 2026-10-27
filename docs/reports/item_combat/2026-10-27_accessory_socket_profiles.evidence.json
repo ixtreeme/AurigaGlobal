@@ -1,0 +1,734 @@
+{
+  "captured_utc": "2026-10-27T10:53:09.113767+00:00",
+  "base_head": "ac4a7cf3aa9820745c3901039d7cee16ac0b1ec5",
+  "branch": "codex/mission-engine",
+  "phase": "four-category staged catalog; timed/permanent accessory socket profiles and pure state proposals; full P0/P1/P2 incomplete",
+  "files": {
+    "config/item_combat/bonus_registry.json": {
+      "bytes": 14991,
+      "sha256": "b333411a6ddb21dfbf5dfe81117329e6b1f9576f684ddedba58c737310c5f7e4"
+    },
+    "config/item_combat/category_registry.json": {
+      "bytes": 1616,
+      "sha256": "0b605d9be12f36b87d5213002803aace6b70aa386d64a1ad3b50ef99cea740f4"
+    },
+    "db/migrations/item_combat/000_protos_database.sql": {
+      "bytes": 367,
+      "sha256": "652c041cd195477675aa58ec0d5ac03a2db0e758374f4d0a378a940a5e56c01b"
+    },
+    "db/migrations/item_combat/001_category_registry.sql": {
+      "bytes": 1275,
+      "sha256": "af3f5cf78db091eee7633b3170fee13dfdb530a1e88c814c1a5c4ee86cc9b72c"
+    },
+    "db/migrations/item_combat/002_category_seed.sql": {
+      "bytes": 1342,
+      "sha256": "bb3a08a0870dacd85019709923d6b4411a8289f2b75a410b8ae8f5aa3e89fbe6"
+    },
+    "db/migrations/item_combat/003_equipment_profiles.sql": {
+      "bytes": 4240,
+      "sha256": "950e4579e6b125b1eeee3161e588f3ca34e41f9cc18cc4241c7d610e3e69169c"
+    },
+    "db/migrations/item_combat/004_refinement_profiles.sql": {
+      "bytes": 1697,
+      "sha256": "e9427ba63f3a9bc9b294b3073d62df7a3b38402f0254ae4dafb564bcbf137b23"
+    },
+    "db/migrations/item_combat/005_weapon_armor_catalog.sql": {
+      "bytes": 4174,
+      "sha256": "07331dc859371de772714d6ca587e95c71d9647c872ea7b7277383e47bd08f90"
+    },
+    "db/migrations/item_combat/006_bonus_profiles.sql": {
+      "bytes": 2337,
+      "sha256": "b66e7f2ee3526e4ee1a4858d526d3e7063f732ef17074ace337f86a7874c576c"
+    },
+    "db/migrations/item_combat/007_bonus_registry_seed.sql": {
+      "bytes": 2974,
+      "sha256": "70024c1fa3438b55ec88c8335ac9f51f7fc03c2dad61fe974ead0118a162ed1e"
+    },
+    "db/migrations/item_combat/008_accessory_material_catalog.sql": {
+      "bytes": 1266,
+      "sha256": "61552f047e2c6cf03b92c247633e9979edfb14f5b54743045ef2ec8a3534ff2a"
+    },
+    "db/migrations/item_combat/009_accessory_socket_profiles.sql": {
+      "bytes": 2634,
+      "sha256": "84291e1d91d993c4c9eeeec0c61d0af4ba6f53d339882a35b46157567e88fcc7"
+    },
+    "docs/adr/item_combat_002_identity_and_catalog.md": {
+      "bytes": 2960,
+      "sha256": "9b6774d1559f0b9cb33d1a0446cbe2397e5aa33a8867664a3f007309553ce82d"
+    },
+    "docs/adr/item_combat_005_bonus_profiles.md": {
+      "bytes": 7138,
+      "sha256": "a20426694cb77213ac69b33ea4d1868cd79cf66aea7f74075d9eeb7968e2ec3d"
+    },
+    "docs/adr/item_combat_006_category_refinement_priority.md": {
+      "bytes": 3836,
+      "sha256": "888f3f06611b4987413b9823c6e62b52f9c0a3b1d35a47923abf4a9751186f21"
+    },
+    "docs/adr/item_combat_007_accessory_material_catalog.md": {
+      "bytes": 6802,
+      "sha256": "e47166b335c6b1c8dc06c3cf4a6b00f31d06a2a6b05331bf6bbab88dac49112d"
+    },
+    "docs/adr/item_combat_008_accessory_socket_profiles.md": {
+      "bytes": 8504,
+      "sha256": "ada1c4b0f97d01217d41da094653e33dae06c2ecbcdf354772edf2856e5ae5e5"
+    },
+    "docs/audits/item_combat_repository_audit.md": {
+      "bytes": 20275,
+      "sha256": "dbd00bc6589d6de1af56746a290381fce05a225b87ede1e7adae6df2a9313d8d"
+    },
+    "docs/audits/item_reference_inventory.csv": {
+      "bytes": 16279,
+      "sha256": "9b38ebba080add942a281226cf7cced8e05c89186d82b4f4f5bde1764ab493d6"
+    },
+    "docs/reports/item_combat/2026-10-27_accessory_material_catalog.md": {
+      "bytes": 3346,
+      "sha256": "664f3d027a7edd4205ae9f1bb9e425e056007fb2f0685f023dd9fcb7865a4ae3"
+    },
+    "docs/reports/item_combat/2026-10-27_accessory_socket_profiles.md": {
+      "bytes": 4438,
+      "sha256": "ad2d4356cb41e2b819fb847d80fa696b2e7ae14d37c9c005e76f08d7bfb50f32"
+    },
+    "SRC/CMakeLists.txt": {
+      "bytes": 737,
+      "sha256": "061cabddee2c5350f00cf5ee8278e55519f70658883da782e3bb559f7615de6d"
+    },
+    "SRC/ItemDomain/AccessorySockets.cpp": {
+      "bytes": 8143,
+      "sha256": "0ceffe5e48f9e3832d29603057146706eb2483f45a13405845a3d7672df09421"
+    },
+    "SRC/ItemDomain/BonusProfiles.cpp": {
+      "bytes": 2199,
+      "sha256": "4ae68ca7775829443b22973bc962a76a6b356abad1da477a6cd013ad33ee82f8"
+    },
+    "SRC/ItemDomain/CatalogHash.cpp": {
+      "bytes": 9303,
+      "sha256": "c5a29c58f8b7686a9a7461f46fa3fa8cb769b7c7b656038477287cd75be0e6c5"
+    },
+    "SRC/ItemDomain/CatalogHash.hpp": {
+      "bytes": 191,
+      "sha256": "05a44694fc9d502c7e88ddbaf5fdb09a02552f53d3af6f9b44b0ca9ef878147c"
+    },
+    "SRC/ItemDomain/CMakeLists.txt": {
+      "bytes": 5868,
+      "sha256": "62642c02826de0dfebb94e639116c939deb0fdb97aabcff9bd52bb1b58ee6cf8"
+    },
+    "SRC/ItemDomain/ContentValidation.hpp": {
+      "bytes": 1399,
+      "sha256": "6dabf1a9a87c2804625540293e1b710a0011e38ff312873f1f90033de7aa8be9"
+    },
+    "SRC/ItemDomain/ItemCatalog.cpp": {
+      "bytes": 20276,
+      "sha256": "6fc4fa8946e3f5785d1e7411f1c07fc3d420dc3cf654ed2c0f5a764ca2b4038d"
+    },
+    "SRC/ItemDomain/ItemWireCodec.cpp": {
+      "bytes": 1837,
+      "sha256": "3ef4298778f60f81313182d132d6716c478ba68a8b8f5479c414889a6ef0d843"
+    },
+    "SRC/ItemDomain/RefinementProfiles.cpp": {
+      "bytes": 5374,
+      "sha256": "270a16a8bca9f0e1d1838e22e35c38ceb7f2924b1078f40029968a203776967b"
+    },
+    "SRC/Server/common/item/AccessorySockets.hpp": {
+      "bytes": 3862,
+      "sha256": "1f1a81aaf4ab85bfa28024c27829cc6f81ef9fed633e315b6b646f3ca89b2bfd"
+    },
+    "SRC/Server/common/item/BonusProfiles.hpp": {
+      "bytes": 1688,
+      "sha256": "db84e317affd8c7526b6b588e005877856a605e795002eb1724e8dd08d7e023f"
+    },
+    "SRC/Server/common/item/BonusRegistry.hpp": {
+      "bytes": 9307,
+      "sha256": "43e545b1796bb73ccc27004e2b40be82f3f2df96a4553d1ff05199873c269640"
+    },
+    "SRC/Server/common/item/BonusTypes.hpp": {
+      "bytes": 2704,
+      "sha256": "2905c367a57c1e70df7e4f0cfbe951f22bedfef0e6718b9e8a525110b5f5c7c7"
+    },
+    "SRC/Server/common/item/ItemCatalog.hpp": {
+      "bytes": 8770,
+      "sha256": "289d8f5c62b76f0a44508579cd317659a19c8bae8f7c15c9ee63365c79ead1e0"
+    },
+    "SRC/Server/common/item/ItemCategory.hpp": {
+      "bytes": 2228,
+      "sha256": "28f067fa090a36256bbe4cadf7475de4d11b538668a15617d299bb660d16c71c"
+    },
+    "SRC/Server/common/item/ItemInstanceId.hpp": {
+      "bytes": 875,
+      "sha256": "7bdffdbfe467538c813582b5a161965a8796704226599f35ae73f4a5e412df70"
+    },
+    "SRC/Server/common/item/ItemKey.hpp": {
+      "bytes": 2327,
+      "sha256": "f67024b9be2a165763c26f734278e4e3d18c0d6d70ce3ffc2a0a5301044f187f"
+    },
+    "SRC/Server/common/item/ItemWireCodec.hpp": {
+      "bytes": 923,
+      "sha256": "11d8513c10fc59b9f4ec2649fa152e64114d51d2adab3e4898c19ff01a56f809"
+    },
+    "SRC/Server/common/item/RefinementProfiles.hpp": {
+      "bytes": 3027,
+      "sha256": "277f2348a3cc7121fe1641898fcdcf4372c039492b6d40a93258b9c1b229bce6"
+    },
+    "SRC/Server/GameServer/CMakeLists.txt": {
+      "bytes": 45636,
+      "sha256": "55c7c165ec9116732ba4fa362bb2bca1139ba17fcd5f4ecbdb61314798fd4e6c"
+    },
+    "SRC/Tools/ItemCatalogBuilder/generate_bonus_registry.py": {
+      "bytes": 11326,
+      "sha256": "f7f625c842feec122bb5a1f5e81786914c271788530b69f0c3cc95a442f7b4be"
+    },
+    "SRC/Tools/ItemCatalogBuilder/generate_item_categories.py": {
+      "bytes": 6436,
+      "sha256": "9916a1687d59778f7f992903317f3d0648ac81596f2de958e429d119ff8f8dd2"
+    },
+    "tests/fixtures/item_combat/v1/weapon_armor.sql": {
+      "bytes": 1910,
+      "sha256": "d4f52075d09388cabf7a6f207aae9f3b8117750654ca7de4e35b848af9d62d8b"
+    },
+    "tests/fixtures/item_combat/v2/weapon_armor_bonus.sql": {
+      "bytes": 2441,
+      "sha256": "32e4c835044323d76db19bfa22590aeb2d26f4469ed97c8a4fa7c8551086faaa"
+    },
+    "tests/fixtures/item_combat/v3/four_categories.sql": {
+      "bytes": 5021,
+      "sha256": "999d724219b4659f9dd18071b9abed33c55019a3b6e8deefb7dfdb2bb4be554b"
+    },
+    "tests/fixtures/item_combat/v4/accessory_sockets.sql": {
+      "bytes": 6207,
+      "sha256": "57a6fac3c67a30d411455cf14476ef19d145891c8d9f521b09994cc358de8c49"
+    },
+    "tests/server/AccessorySocketTests.cpp": {
+      "bytes": 18863,
+      "sha256": "9771dbfc567296725dd2aa3a0b68f8116736ad9269cad4313c784d3447cecc64"
+    },
+    "tests/server/BonusProfileTests.cpp": {
+      "bytes": 6354,
+      "sha256": "f464a4bc51904f637a89d981734c90b3f9008519ab03c520e16bce69522177bc"
+    },
+    "tests/server/ItemBonusGeneratorTests.py": {
+      "bytes": 4941,
+      "sha256": "299682326daf44a65de8578cdd95c504770f4c79311535bd4758249f10056da3"
+    },
+    "tests/server/ItemCatalogDigestOracle.py": {
+      "bytes": 7046,
+      "sha256": "c27641472d9ed9cd22ff46dd24fcc7acd9685d08f650a9d906d5970261072e2a"
+    },
+    "tests/server/ItemCatalogFixture.hpp": {
+      "bytes": 6113,
+      "sha256": "2df087233444bb286df535b5c3e0ef5cb65090834bc1047e118d7e59910d1286"
+    },
+    "tests/server/ItemCatalogTests.cpp": {
+      "bytes": 28477,
+      "sha256": "e4e5e21ca27332c2fa2361d008c48ca995582e0040eed7c806dd66c36909d622"
+    },
+    "tests/server/ItemCategoryGeneratorTests.py": {
+      "bytes": 6152,
+      "sha256": "74679910b4d32adce3fdbf9fba0c0a8c9b46179e4272a0f93359bed4dc14a1e2"
+    },
+    "tests/server/ItemCombatSchemaTests.py": {
+      "bytes": 29372,
+      "sha256": "00c3ca6970d6199ed3bcff77a3318e9cecfe0f19bda065c986ab3544bb1b05b6"
+    },
+    "tests/server/ItemKeyTests.cpp": {
+      "bytes": 8127,
+      "sha256": "bf56a950d23ec0eb8e39901682843ac4a56c4a75e2cc1c7fb0c727f6d679b71a"
+    },
+    "tests/server/README.md": {
+      "bytes": 176623,
+      "sha256": "17ccf84e95d31347ff7d2f86f782e6b041b0a43157c3c2946a649a54d26c0b28"
+    },
+    "tests/server/RefinementProfileTests.cpp": {
+      "bytes": 8718,
+      "sha256": "8a37273cead204f4b85b483ab226b98b7c6ead99597699baef0d3c38f25bb5fd"
+    }
+  },
+  "audit_sources": {
+    "SRC/Server/common/item_length.h": {
+      "bytes": 11527,
+      "sha256": "24205615a616d940ef5b5f0d3f0e47f48f9923eda717755a630d02ed970dca9b"
+    },
+    "SRC/Server/GameServer/ecs/systems/InventorySystem.cpp": {
+      "bytes": 180521,
+      "sha256": "b94c88b737aecc1e0e62674ffb08fdc239f6f32317c7fb46ee352412bdcf6a7a"
+    },
+    "SRC/Server/GameServer/ecs/systems/ItemSystem.cpp": {
+      "bytes": 105969,
+      "sha256": "d443d13ec8a074863c6e9f56d5f6b2e071a0247260f0afb26003c62da6cc3c19"
+    },
+    "SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp": {
+      "bytes": 256031,
+      "sha256": "a4735af283d5e579e251b6be4c3717c0638c8b81cf0e741626af05c47412cc1f"
+    },
+    "SRC/Server/GameServer/ecs/systems/ItemAttributeSystem.cpp": {
+      "bytes": 71498,
+      "sha256": "4a64168c07d746bb8cdd6dd99e8f9130fcb7bfe92bbf6ba5a7c900de53852e9c"
+    },
+    "SRC/Server/GameServer/ecs/systems/PointSystem.cpp": {
+      "bytes": 49672,
+      "sha256": "29faf3e65595c642242cd31544df50935896e351eba4440e222743648066b0d1"
+    },
+    "SRC/Server/GameServer/dungeon/DragonSoul.cpp": {
+      "bytes": 50345,
+      "sha256": "6ac5ea90ff06d7d222dc7d5af6f411eb36a404fba1430d4de75a88f38bdcda62"
+    },
+    "SRC/Server/GameServer/dungeon/dragon_soul_table.cpp": {
+      "bytes": 26762,
+      "sha256": "eba94708d27a80e7b90c2c79d995e085473d123c677684f89c27da7a8f9ad746"
+    },
+    "SRC/Server/GameServer/core/constants.cpp": {
+      "bytes": 51557,
+      "sha256": "a45cc9ab3eb18109e0c5128b3c49e3cc850112ee93ce1617aa404fa31f19ed2e"
+    },
+    "SRC/Server/common/service.h": {
+      "bytes": 7268,
+      "sha256": "c231f43a9808f4b48d55210f4c0e9a25a0377b92a6dc19c4a794a283de0d0f94"
+    }
+  },
+  "logs": {
+    "build/item-accessory-sockets-20261027/normal-tests.log": {
+      "bytes": 1179,
+      "sha256": "07d7b98c653bea1e840b80a3c89608042903d35fd9e878862f954375a4412850",
+      "passed": 9
+    },
+    "build/item-accessory-sockets-20261027/asan-tests.log": {
+      "bytes": 1022,
+      "sha256": "a74961fc645dbb52ec5940606e93c94f8a3135c5600534e8ed77b3945dd06b28",
+      "passed": 8
+    },
+    "build/item-accessory-sockets-20261027/standalone-tests.log": {
+      "bytes": 1050,
+      "sha256": "33213515410460bed07c046ebf52b1e6197e37d85ec15db6fec7a8cae39a435d",
+      "passed": 8
+    },
+    "build/item-accessory-sockets-20261027/normal-build.log": {
+      "bytes": 3583,
+      "sha256": "86296751459281d9141ca593d30ffbec5b8433087994f72a7910a8f163097921"
+    },
+    "build/item-accessory-sockets-20261027/asan-build.log": {
+      "bytes": 3217,
+      "sha256": "3a3c8ebcf4d560b650623d4caccc350d6b8b2eaff4d4a218c6588f3d4e2aa4ac"
+    },
+    "build/item-accessory-sockets-20261027/standalone-build.log": {
+      "bytes": 2559,
+      "sha256": "27d3b12f4fb01a91f3909685b2e27a7e498e69f8eef5e69c1a5a70b5204e65f9"
+    },
+    "build/item-accessory-sockets-20261027/normal-fixture-fix-build.log": {
+      "bytes": 802,
+      "sha256": "260923503b9a84c949fa24f0fdbb79f835a13261d9ed022bf051893189754101"
+    },
+    "build/item-accessory-sockets-20261027/asan-fixture-fix-build.log": {
+      "bytes": 708,
+      "sha256": "9b4ccc5d93ebd96587c1233b4e99d5fe594a24816f2d66e276240de5eb5ad690"
+    },
+    "build/item-accessory-sockets-20261027/standalone-fixture-fix-build.log": {
+      "bytes": 536,
+      "sha256": "82f2f76c583b6ea22e22481b877831afe0a4a6ed44852395c555b5ee043ba54a"
+    },
+    "build/item-accessory-sockets-20261027/asan-tests-before-fixture-fix.log": {
+      "bytes": 7573,
+      "sha256": "294e186266aac18fd3c2dde56c273110aec6ace50d1ae1285b68247bbf82077a",
+      "historical_failure": "test fixture self-reference across vector assign; fixed before final successful run"
+    },
+    "build/item-accessory-sockets-20261027/asan-last-test-before-fixture-fix.log": {
+      "bytes": 12754,
+      "sha256": "d1809dfc5c1637805e93bee05732a30ed2d09ba722a6875a423c6bf8188d8b43",
+      "historical_failure": "test fixture self-reference across vector assign; fixed before final successful run"
+    }
+  },
+  "test_names": {
+    "normal-tests.log": [
+      "item_key",
+      "item_catalog",
+      "refinement_profiles",
+      "bonus_profiles",
+      "accessory_sockets",
+      "item_bonus_generator",
+      "item_catalog_digest",
+      "item_category_generator",
+      "item_combat_schema_foundation"
+    ],
+    "asan-tests.log": [
+      "item_key",
+      "item_catalog",
+      "refinement_profiles",
+      "bonus_profiles",
+      "accessory_sockets",
+      "item_bonus_generator",
+      "item_catalog_digest",
+      "item_category_generator"
+    ],
+    "standalone-tests.log": [
+      "item_key",
+      "item_catalog",
+      "refinement_profiles",
+      "bonus_profiles",
+      "accessory_sockets",
+      "item_bonus_generator",
+      "item_catalog_digest",
+      "item_category_generator"
+    ]
+  },
+  "native_check_counts": {
+    "catalog": 178,
+    "refinement": 457,
+    "bonus": 229,
+    "key": 197442,
+    "accessory_socket": 208
+  },
+  "isolated_sql_cases": 15,
+  "catalog_schema": 4,
+  "canonical_fixture_sha256": "42cbc346a51d732e04fd8b64bfaa2c5c2444f3309488ebf5e4fb9e17c49b78ca",
+  "supported_categories": {
+    "weapon": 1,
+    "armor": 2,
+    "accessory": 3,
+    "material": 6
+  },
+  "accessory_scope": [
+    "wrist",
+    "neck",
+    "ear"
+  ],
+  "material_scope": [
+    "leather",
+    "blood",
+    "root",
+    "needle",
+    "jewel"
+  ],
+  "database_environment": {
+    "version": "11.4.13-MariaDB",
+    "session_sql_mode": "STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION",
+    "global_sql_mode": "STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION",
+    "database_path_verified": true,
+    "fresh_sequences": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "1"
+      ],
+      [
+        "4",
+        "1"
+      ],
+      [
+        "5",
+        "1"
+      ],
+      [
+        "6",
+        "1"
+      ],
+      [
+        "7",
+        "1"
+      ],
+      [
+        "8",
+        "1"
+      ],
+      [
+        "9",
+        "1"
+      ],
+      [
+        "10",
+        "1"
+      ],
+      [
+        "11",
+        "1"
+      ],
+      [
+        "12",
+        "1"
+      ],
+      [
+        "13",
+        "1"
+      ],
+      [
+        "14",
+        "1"
+      ],
+      [
+        "15",
+        "1"
+      ],
+      [
+        "16",
+        "1"
+      ],
+      [
+        "17",
+        "1"
+      ],
+      [
+        "18",
+        "1"
+      ]
+    ],
+    "scope": "staged four-category catalog with equipped-time and permanent accessory socket profiles; not full P1/P2"
+  },
+  "database_environment_artifact": {
+    "path": "build/SRC/ItemDomain/item-combat-sql-isolated/037b3f3cb9524ed0baeb737e927de92b/item-combat-environment.json",
+    "bytes": 1152,
+    "sha256": "8d5a3bb378f0800ad703b6ffbae97b9109bd521f209769a9613e33a70cd33b90"
+  },
+  "new_schema_tables": [
+    "protos.item_category",
+    "protos.item_local_id_sequence",
+    "protos.item_use_policy",
+    "protos.item_trade_policy",
+    "protos.item_appearance_profile",
+    "protos.item_attack_profile",
+    "protos.item_ammo_policy",
+    "protos.item_resistance_profile",
+    "protos.bonus_profile",
+    "protos.refinement_profile",
+    "protos.refinement_level",
+    "protos.item_base",
+    "protos.item_weapon",
+    "protos.item_armor",
+    "protos.bonus_definition",
+    "protos.bonus_profile_entry",
+    "protos.item_accessory",
+    "protos.item_material",
+    "protos.accessory_socket_profile",
+    "protos.accessory_socket_grade",
+    "protos.accessory_socket_material"
+  ],
+  "dependency_inspection": {
+    "build:AurigaItemDomain": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "ItemCategoryRegistryCheck.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build:AurigaItemCatalog": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemDomain.vcxproj",
+        "ItemBonusRegistryCheck.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build:ItemKeyTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build:ItemCatalogTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build:RefinementProfileTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build:BonusProfileTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build:AccessorySocketTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build:ItemCategoryRegistryCheck": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build:ItemBonusRegistryCheck": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:AurigaItemDomain": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "ItemCategoryRegistryCheck.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:AurigaItemCatalog": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemDomain.vcxproj",
+        "ItemBonusRegistryCheck.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:ItemKeyTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:ItemCatalogTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:RefinementProfileTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:BonusProfileTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:AccessorySocketTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:ItemCategoryRegistryCheck": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build-asan:ItemBonusRegistryCheck": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:AurigaItemDomain": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "ItemCategoryRegistryCheck.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:AurigaItemCatalog": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemDomain.vcxproj",
+        "ItemBonusRegistryCheck.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:ItemKeyTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:ItemCatalogTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:RefinementProfileTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:BonusProfileTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:AccessorySocketTests": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj",
+        "AurigaItemCatalog.vcxproj",
+        "AurigaItemDomain.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:ItemCategoryRegistryCheck": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj"
+      ],
+      "inherited_directory_build": false
+    },
+    "build/item-catalog-standalone-20261027:ItemBonusRegistryCheck": {
+      "project_dependencies": [
+        "ZERO_CHECK.vcxproj"
+      ],
+      "inherited_directory_build": false
+    }
+  },
+  "runtime_does_not_link_catalog": true,
+  "accessory_socket_scope": {
+    "typed_profiles": true,
+    "material_key_compatibility": true,
+    "pure_unlock_charge_plans": true,
+    "equipped_time_transitions": true,
+    "permanent_charge_state": true,
+    "actual_bonus_multiplication": false,
+    "runtime_timers": false,
+    "persistent_state": false,
+    "owner_material_receipt_transaction": false
+  },
+  "scope_limits": {
+    "ring_belt_unique": false,
+    "DS_catalyst_and_soul": false,
+    "other_categories_implemented": false,
+    "sql_to_catalog_loader": false,
+    "public_projection": false,
+    "persistent_instances": false,
+    "runtime_combat": false,
+    "Unity_changes": false,
+    "full_server_build": false,
+    "FreeBSD_build": false,
+    "approved_balance": false
+  },
+  "existing_gameplay_database_modified": false,
+  "remote_contacted": false
+}

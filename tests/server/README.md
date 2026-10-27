@@ -1,5 +1,109 @@
 # Server ECS regression tests
 
+## Item/combat domain foundation (2026-10-27)
+
+`ItemKeyTests` exercises the new isolated `AurigaItemDomain`: composite category
+keys, strict little-endian encoding, unknown categories/reserved bits and full
+64-bit item instance identities. `ServerTests` builds this executable too.
+`item_category_generator` checks the shared draft registry and generated C++/SQL
+against malformed input and content drift. The domain has no SERVER/ECS/SQL/Lua
+dependency and is not linked into the live server yet.
+
+`item_combat_schema_foundation` is registered on Windows when
+`AURIGA_TEST_MARIADB_BIN_DIR` is supplied. It always spawns an owned private
+MariaDB using the existing `db/tools/backup_sandbox.py` helper; no existing
+endpoint or datadir is accepted. It checks the new category DDL, per-category
+row-locked reservations, concurrent publishing, cross-database FK/transactions,
+read-only catalog permissions and the exhausted ID boundary. The cross-database
+item tables are fixtures, not the finished item schema. The runtime migration,
+catalog and new damage engine remain separate work.
+
+```powershell
+cmake --build build --config RelWithDebInfo --target ItemKeyTests
+ctest --test-dir build -C RelWithDebInfo -R "^(item_key|item_category_generator|item_combat_schema_foundation)$" --output-on-failure
+```
+
+[Implementation report](../../docs/reports/item_combat/2026-10-27_domain_foundation.md)
+
+`ItemCatalogTests` and `RefinementProfileTests` now cover the staged five-category
+catalog: complete category/profile references, cumulative stat gains and overflow
+refusal, immutable snapshot ownership, concurrent reads and canonical hashing.
+`item_catalog_digest` verifies the C++ hash against an independent Python encoder.
+The SQL sandbox suite also imports the actual typed equipment DDL and checks
+profile FKs, stat bounds and reference golden values. Other categories and
+unregistered bonus semantics fail publication until their typed implementations exist.
+
+`BonusProfileTests` covers the closed draft BonusRegistry, typed raw/bp records,
+all individual boundaries, duplicate/unknown entries and refinement source context.
+`item_bonus_generator` verifies C++/SQL generation from the single edited registry;
+the build refuses stale outputs. Base/refinement profiles are validated before
+snapshot publication. Only the selected level's complete extra bonus is returned.
+Catalog schema/hash v5 also commits every definition's units, filters and policies;
+v1/v2/v3/v4 are rejected. This is not the StatBuilder or a runtime SQL catalog loader.
+The SQL sandbox imports the bonus definition/entry tables and tests read-only
+permissions, references and current-level fixture values. SQL checks do not
+replace the C++ cross-row profile/source/range validation.
+
+```powershell
+cmake --build build --config RelWithDebInfo --target ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests --parallel 2
+ctest --test-dir build -C RelWithDebInfo -R "^(item_key|item_catalog|refinement_profiles|bonus_profiles|item_bonus_generator|item_catalog_digest|item_category_generator|item_combat_schema_foundation)$" --output-on-failure
+```
+
+[Bonus-profile report and remaining gates](../../docs/reports/item_combat/2026-10-27_bonus_profiles.md).
+
+The profile-defined refinement ceiling is explicitly tested beyond +9.
+`RefinementProfileTests` checks +9→+10 and every configured step through +15,
++30, +100 and the current structural limit +255. `ItemCatalogTests` uses one
+weapon prototype through +30 alongside an armor profile capped at +15; missing
+step +10 fails publication. `ItemCombatSchemaTests.py` checks the same ItemKey
+and golden +9/+10/+15/+30 values in a rolled-back private DB fixture.
+`NextRefinementLevel` only resolves an allowed level; resource/instance commit
+and Unity integration remain separate work. See [priority and contract](../../docs/adr/item_combat_006_category_refinement_priority.md).
+
+The catalog regression also uses two test-local concrete item holders sharing
+one weapon prototype: both start at zero, one advances to +30 while the other
+remains at zero, then the second advances to +5. Their instance IDs and prototype
+keys stay unchanged, their stats differ, and catalog size/hash are unchanged.
+This proves catalog/level independence; the holders are fixtures, not the final
+ECS ownership, acquisition or persistence implementation.
+
+The historical v3 fixture added plain wrist/neck/ear accessories and ordinary leather/blood/
+root/needle/jewel materials. Accessory refinement is bonus-only and can exceed
+nine; ordinary materials use the explicit None profile and may stack. Category
+rows cannot silently default to a valid slot/kind. Wrong profile kinds, equip
+state on materials, missing/duplicate/orphan rows and old schemas fail publication.
+The SQL suite additionally checks both child tables and read-only permissions.
+The subsequent v4 socket model is described below. Belt/ring/unique and
+DS-catalyst behavior remain unported, not implicitly converted ordinary rows.
+[Four-category report](../../docs/reports/item_combat/2026-10-27_accessory_material_catalog.md).
+
+`AccessorySocketTests` covers validated complete profiles, explicit material
+compatibility, capacity/charge proposals, recorded economic outcomes, worn-time
+degradation, missed-tick carry, partition independence and UINT64_MAX intervals.
+Permanent charges have a separate lifetime flag and disjoint compatibility list;
+timed and permanent active charges cannot be mixed. The current fixture has six
+prototypes in four categories. Canonical hash v4 includes these profiles/lists;
+the SQL sandbox imports 009 and tests the actual three tables plus accessory FK.
+The plans do not commit inventory/resources, own ECS state, persist time or apply
+socket bonus multipliers. SQL loader, StatBuilder and runtime/Unity work remain.
+[Socket profile report](../../docs/reports/item_combat/2026-10-27_accessory_socket_profiles.md).
+
+`ConsumableTests` covers instant/reserve/periodic typed recovery profiles and the
+pure instant-use plan: bounded pools/math, per-pool clamp, separate flat/percent
+rounding, potion bonus cap, class/sex/level/combat/context/PvP admission, quantity,
+shared cooldown and no-effect refusal. Scheduled deliveries cannot execute as
+instant recovery. The v5 fixture has nine prototypes in five categories and six
+new typed SQL tables, including delivery-constrained FKs. Python independently
+encodes the complete hash. Only recovery consumables are supported so far;
+reserve/periodic scheduling, actual HP/material/cooldown commit, receipt, map quota,
+SQL loader, other active behaviors and runtime/Unity remain unimplemented.
+[Recovery consumable report](../../docs/reports/item_combat/2026-10-27_recovery_consumables.md).
+
+The standalone catalog build additionally needs OpenSSL Crypto; on Windows pass
+the installed vcpkg toolchain explicitly. Its MSBuild targets refuse inherited
+Directory.Build.props/targets so unrelated static autolink dependencies cannot
+contaminate an isolated build. [Catalog report](../../docs/reports/item_combat/2026-10-27_equipment_catalog.md).
+
 ## Server audit fixes (2026-10-18)
 
 CTest is enabled at the project root. With Python available, 53 server tests

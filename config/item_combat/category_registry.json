@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "draft",
+  "categories": [
+    {"id": 1, "code": "weapon", "cpp_name": "Weapon", "table": "item_weapon"},
+    {"id": 2, "code": "armor", "cpp_name": "Armor", "table": "item_armor"},
+    {"id": 3, "code": "accessory", "cpp_name": "Accessory", "table": "item_accessory"},
+    {"id": 4, "code": "costume", "cpp_name": "Costume", "table": "item_costume"},
+    {"id": 5, "code": "consumable", "cpp_name": "Consumable", "table": "item_consumable"},
+    {"id": 6, "code": "material", "cpp_name": "Material", "table": "item_material"},
+    {"id": 7, "code": "socket_stone", "cpp_name": "SocketStone", "table": "item_socket_stone"},
+    {"id": 8, "code": "container", "cpp_name": "Container", "table": "item_container"},
+    {"id": 9, "code": "skill_book", "cpp_name": "SkillBook", "table": "item_skill_book"},
+    {"id": 10, "code": "quest", "cpp_name": "Quest", "table": "item_quest"},
+    {"id": 11, "code": "tool", "cpp_name": "Tool", "table": "item_tool"},
+    {"id": 12, "code": "fishing", "cpp_name": "Fishing", "table": "item_fishing"},
+    {"id": 13, "code": "polymorph", "cpp_name": "Polymorph", "table": "item_polymorph"},
+    {"id": 14, "code": "soul", "cpp_name": "Soul", "table": "item_soul"},
+    {"id": 15, "code": "companion", "cpp_name": "Companion", "table": "item_companion"},
+    {"id": 16, "code": "currency_token", "cpp_name": "CurrencyToken", "table": "item_currency_token"},
+    {"id": 17, "code": "special", "cpp_name": "Special", "table": "item_special"},
+    {"id": 18, "code": "container_key", "cpp_name": "ContainerKey", "table": "item_container_key"}
+  ]
+}

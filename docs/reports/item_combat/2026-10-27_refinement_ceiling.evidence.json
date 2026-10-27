@@ -1,0 +1,173 @@
+{
+  "captured_utc": "2026-10-27T09:59:05.775130+00:00",
+  "base_head": "ac4a7cf3aa9820745c3901039d7cee16ac0b1ec5",
+  "files": {
+    "SRC/Server/common/item/RefinementProfiles.hpp": {
+      "bytes": 3012,
+      "sha256": "dc36138b6446749e497e8182394142cc502ed8aed0748239f9ce8338cb9da7df"
+    },
+    "SRC/ItemDomain/RefinementProfiles.cpp": {
+      "bytes": 5233,
+      "sha256": "ca6cfd9fcf0c7089d7e44546c09e49209318660ed02299e0cc1f39c032d15004"
+    },
+    "tests/server/RefinementProfileTests.cpp": {
+      "bytes": 7433,
+      "sha256": "49cd5a71361e0be63d7fd9de1fa1fcd7e198a847159922bab628c6b8bc72090c"
+    },
+    "tests/server/ItemCatalogTests.cpp": {
+      "bytes": 14984,
+      "sha256": "9544b0670b1e0a75197ea36ee1b85a444c1c69b21b5a22e5cebda5f9ecd56669"
+    },
+    "tests/server/ItemCombatSchemaTests.py": {
+      "bytes": 21262,
+      "sha256": "24ae769787a467a8d895bb4434f5415f1c58e729db8cd1cc80c055d05aaafd69"
+    },
+    "tests/server/README.md": {
+      "bytes": 174571,
+      "sha256": "29ad25be236ddf2f1254673bd0fd3bd7e545956444f4e6c56469daea719944ff"
+    },
+    "docs/adr/item_combat_006_category_refinement_priority.md": {
+      "bytes": 3156,
+      "sha256": "65f11a5a5826530b74f70e35b88da5a59a9b365f5e78327c5490ce07b5567095"
+    },
+    "docs/audits/item_combat_repository_audit.md": {
+      "bytes": 17656,
+      "sha256": "d6e3e6bf59f7248d2cb1d4e54eea22283806fe00080b9f31f03041e8a483fd0f"
+    },
+    "docs/reports/item_combat/2026-10-27_refinement_ceiling.md": {
+      "bytes": 2266,
+      "sha256": "877234f3f7cfcdc1129dd50dad5a409d1449397adc725ade2a173e2df4279a3d"
+    }
+  },
+  "logs": {
+    "build/item-refinement-20261027/normal-tests.log": {
+      "bytes": 1077,
+      "sha256": "e9aa5b12c62c4432c422f2bf9e1f93974911e03b42e92e6f2e09863b5e297509",
+      "passed": 8
+    },
+    "build/item-refinement-20261027/asan-tests.log": {
+      "bytes": 920,
+      "sha256": "928e76458a46c468b08dac1305faaed87356c5af9748dc8ba1aa30bb1e20dd21",
+      "passed": 7
+    },
+    "build/item-refinement-20261027/normal-build.log": {
+      "bytes": 2450,
+      "sha256": "53ba9e2594958ada24b3280aadd08da0ca2013b593d12fc091d84ffe7309e083"
+    },
+    "build/item-refinement-20261027/asan-build.log": {
+      "bytes": 2168,
+      "sha256": "64e6f103a7454334f466cc223e4466ac744323121e6d5bb7bccd8dcd469e5b68"
+    }
+  },
+  "native_check_counts": {
+    "refinement": 451,
+    "catalog": 96,
+    "bonus": 229,
+    "key": 197442
+  },
+  "isolated_sql_cases": 10,
+  "technical_profile_range": [
+    0,
+    255
+  ],
+  "tested_profile_maxima": [
+    15,
+    30,
+    100,
+    255
+  ],
+  "same_item_key_through_level_30": true,
+  "independent_armor_maximum": 15,
+  "database_environment": {
+    "version": "11.4.13-MariaDB",
+    "session_sql_mode": "STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION",
+    "global_sql_mode": "STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION",
+    "database_path_verified": true,
+    "fresh_sequences": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "1"
+      ],
+      [
+        "4",
+        "1"
+      ],
+      [
+        "5",
+        "1"
+      ],
+      [
+        "6",
+        "1"
+      ],
+      [
+        "7",
+        "1"
+      ],
+      [
+        "8",
+        "1"
+      ],
+      [
+        "9",
+        "1"
+      ],
+      [
+        "10",
+        "1"
+      ],
+      [
+        "11",
+        "1"
+      ],
+      [
+        "12",
+        "1"
+      ],
+      [
+        "13",
+        "1"
+      ],
+      [
+        "14",
+        "1"
+      ],
+      [
+        "15",
+        "1"
+      ],
+      [
+        "16",
+        "1"
+      ],
+      [
+        "17",
+        "1"
+      ],
+      [
+        "18",
+        "1"
+      ]
+    ],
+    "scope": "category foundation, staged weapon/armor/bonus catalog and isolated cross-database fixture; not full P1/P2"
+  },
+  "database_environment_artifact": {
+    "path": "build/SRC/ItemDomain/item-combat-sql-isolated/4d71c2242b0942da98c7b3b43b159f8d/item-combat-environment.json",
+    "bytes": 1155,
+    "sha256": "1f0fd888d6df901e0fefecc0a06d3a5ac319f9eb2543fcfb556d71dd211ab9a1"
+  },
+  "priority": "category split and profile-defined refinement ceiling before further standalone bonus expansion",
+  "existing_gameplay_database_modified": false,
+  "remote_contacted": false,
+  "unity_modified": false,
+  "runtime_refinement_migrated": false,
+  "persistent_refinement_transaction_implemented": false
+}

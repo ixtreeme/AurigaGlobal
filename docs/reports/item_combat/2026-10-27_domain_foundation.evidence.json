@@ -1,0 +1,192 @@
+{
+  "captured_utc": "2026-10-27T08:09:10.366933+00:00",
+  "base_head": "ac4a7cf3aa9820745c3901039d7cee16ac0b1ec5",
+  "branch": "codex/mission-engine",
+  "status": "isolated key/codec and category schema foundation; P0/P1 incomplete",
+  "source_files": {
+    "SRC/CMakeLists.txt": {
+      "bytes": 737,
+      "sha256": "061cabddee2c5350f00cf5ee8278e55519f70658883da782e3bb559f7615de6d"
+    },
+    "SRC/Server/GameServer/CMakeLists.txt": {
+      "bytes": 45557,
+      "sha256": "9a7bd36cd0d5311157f3f13a7a344a909cf1f7251578450fd6047a5db6c10944"
+    },
+    "SRC/ItemDomain/CMakeLists.txt": {
+      "bytes": 2853,
+      "sha256": "ebead794de2edf4c587de57839d61153bedf78a1b73cb03804798a657ee547af"
+    },
+    "SRC/ItemDomain/ItemWireCodec.cpp": {
+      "bytes": 1837,
+      "sha256": "3ef4298778f60f81313182d132d6716c478ba68a8b8f5479c414889a6ef0d843"
+    },
+    "SRC/Server/common/item/ItemCategory.hpp": {
+      "bytes": 2228,
+      "sha256": "28f067fa090a36256bbe4cadf7475de4d11b538668a15617d299bb660d16c71c"
+    },
+    "SRC/Server/common/item/ItemInstanceId.hpp": {
+      "bytes": 875,
+      "sha256": "7bdffdbfe467538c813582b5a161965a8796704226599f35ae73f4a5e412df70"
+    },
+    "SRC/Server/common/item/ItemKey.hpp": {
+      "bytes": 2327,
+      "sha256": "f67024b9be2a165763c26f734278e4e3d18c0d6d70ce3ffc2a0a5301044f187f"
+    },
+    "SRC/Server/common/item/ItemWireCodec.hpp": {
+      "bytes": 923,
+      "sha256": "11d8513c10fc59b9f4ec2649fa152e64114d51d2adab3e4898c19ff01a56f809"
+    },
+    "SRC/Tools/ItemCatalogBuilder/generate_item_categories.py": {
+      "bytes": 6436,
+      "sha256": "9916a1687d59778f7f992903317f3d0648ac81596f2de958e429d119ff8f8dd2"
+    },
+    "config/item_combat/category_registry.json": {
+      "bytes": 1616,
+      "sha256": "0b605d9be12f36b87d5213002803aace6b70aa386d64a1ad3b50ef99cea740f4"
+    },
+    "db/migrations/item_combat/000_protos_database.sql": {
+      "bytes": 367,
+      "sha256": "652c041cd195477675aa58ec0d5ac03a2db0e758374f4d0a378a940a5e56c01b"
+    },
+    "db/migrations/item_combat/001_category_registry.sql": {
+      "bytes": 1275,
+      "sha256": "af3f5cf78db091eee7633b3170fee13dfdb530a1e88c814c1a5c4ee86cc9b72c"
+    },
+    "db/migrations/item_combat/002_category_seed.sql": {
+      "bytes": 1342,
+      "sha256": "bb3a08a0870dacd85019709923d6b4411a8289f2b75a410b8ae8f5aa3e89fbe6"
+    },
+    "tests/server/ItemKeyTests.cpp": {
+      "bytes": 8127,
+      "sha256": "bf56a950d23ec0eb8e39901682843ac4a56c4a75e2cc1c7fb0c727f6d679b71a"
+    },
+    "tests/server/ItemCategoryGeneratorTests.py": {
+      "bytes": 6152,
+      "sha256": "74679910b4d32adce3fdbf9fba0c0a8c9b46179e4272a0f93359bed4dc14a1e2"
+    },
+    "tests/server/ItemCombatSchemaTests.py": {
+      "bytes": 12880,
+      "sha256": "35f2623d63730fa5a5a91028a102b870407810688b85bc32a4f4bd6af0eacc9a"
+    }
+  },
+  "tests": {
+    "normal_ctest_passed": 8,
+    "asan_ctest_passed": 7,
+    "key_checks": 197442,
+    "python_generator_cases": 5,
+    "private_mariadb_cases": 5
+  },
+  "logs": {
+    "build/item-domain-20261027/integrated-tests.log": {
+      "bytes": 1077,
+      "sha256": "6449689f474c5e8f431c43756aad962472324e03e8eb26c30904c3407f5c717f"
+    },
+    "build/item-domain-20261027/integrated-asan-tests.log": {
+      "bytes": 918,
+      "sha256": "74d0b7202c18409f9ea5b0480a334c5f8fa40930518e102c18eaf4a92b0293a0"
+    }
+  },
+  "sql_environment": {
+    "version": "11.4.13-MariaDB",
+    "session_sql_mode": "STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION",
+    "global_sql_mode": "STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION",
+    "database_path_verified": true,
+    "fresh_sequences": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "1"
+      ],
+      [
+        "4",
+        "1"
+      ],
+      [
+        "5",
+        "1"
+      ],
+      [
+        "6",
+        "1"
+      ],
+      [
+        "7",
+        "1"
+      ],
+      [
+        "8",
+        "1"
+      ],
+      [
+        "9",
+        "1"
+      ],
+      [
+        "10",
+        "1"
+      ],
+      [
+        "11",
+        "1"
+      ],
+      [
+        "12",
+        "1"
+      ],
+      [
+        "13",
+        "1"
+      ],
+      [
+        "14",
+        "1"
+      ],
+      [
+        "15",
+        "1"
+      ],
+      [
+        "16",
+        "1"
+      ],
+      [
+        "17",
+        "1"
+      ],
+      [
+        "18",
+        "1"
+      ]
+    ],
+    "scope": "category foundation and isolated cross-database fixture; not full P1"
+  },
+  "sql_environment_file": {
+    "path": "build/SRC/ItemDomain/item-combat-sql-isolated/55d73b08341b41d583603870f6740cb9/item-combat-environment.json",
+    "bytes": 1117,
+    "sha256": "3c87c78f5cd4a0733e50e29570cf6af873a945eecb344beb59b4ba664b3ee1ca"
+  },
+  "dependency_inspection": {
+    "domain_has_no_legacy_sql_lua_core_project": true,
+    "runtime_does_not_link_domain": true,
+    "ServerTests_builds_ItemKeyTests": true
+  },
+  "unity_modified": false,
+  "existing_gameplay_database_modified": false,
+  "remote_contacted": false,
+  "not_verified": [
+    "full P0 semantic coverage",
+    "full P1 typed schema/catalog",
+    "CatalogBuilder bound SQL publisher",
+    "new combat kernel/runtime",
+    "FreeBSD",
+    "Unity migration",
+    "migration/restore/benchmark"
+  ]
+}
