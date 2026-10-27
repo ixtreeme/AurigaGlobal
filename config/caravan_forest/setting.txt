@@ -1,0 +1,5 @@
+ScriptType MapSetting
+CellScale 200
+HeightScale 0.5
+MapSize 3 3
+BasePosition 4096000 4096000

@@ -1,4 +1,5 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
+#include "../../SRC/Server/GameServer/story/CaravanQuestSystem.hpp"
 #include "../../SRC/Server/GameServer/world/sectree_manager.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
 #include "../../SRC/Server/GameServer/network/desc_manager.h"
@@ -255,6 +256,9 @@ DESC* ecs::PlayerRuntime::GetDesc(entt::entity e) {
 // SetPosition, sectree relocation and visibility run their production code.
 uint32_t get_dword_time() { return clockNow; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.all_of<ecs::TagPC>(e); }
+bool CaravanQuest::Locked(entt::entity) { return false; }
+bool CaravanQuest::Defending(entt::entity) { return false; }
+entt::entity ecs::PlayerRuntime::FindByPlayerID(uint32_t) { Unexpected(); }
 bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs::StoneAITag>(e); }
 unsigned char ecs::PlayerRuntime::GetCharType(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::MonsterLog(entt::entity e, const char*) {

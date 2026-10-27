@@ -6,6 +6,7 @@
 #include <entt/entt.hpp>
 
 #include "SpatialService.hpp"
+#include "../../story/SpyQuestSystem.hpp"
 #include "../../core/config.h"
 #include "../../world/sectree.h"
 #include "../../core/utils.h"
@@ -51,7 +52,7 @@ inline std::vector<entt::entity> GetEntitiesInRange(entt::registry& reg, entt::e
         if (!kind || kind->kind != ecs::SpatialKind::Character || !pos || !map || map->value != mapIndex) return;
         const auto dx = std::abs(int64_t(pos->x) - origin.x), dy = std::abs(int64_t(pos->y) - origin.y);
         if (e != source && std::max(dx, dy) + std::min(dx, dy) / 2 > range) return;
-        PushUnique(result, e);
+        if(SpyQuest::CanView(reg,source,e))PushUnique(result, e);
     };
     sectree->ForEachAround(collect);
     PushUnique(result, source);

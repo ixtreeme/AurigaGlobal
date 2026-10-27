@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../story/CaravanQuestSystem.hpp"
 #include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "CombatSystem.hpp"
@@ -549,6 +550,7 @@ uint32_t GetMountVnum(entt::entity rider)
 
 void SetMountVnum(entt::entity rider, uint32_t vnum)
 {
+    if(vnum!=0&&CaravanQuest::Locked(rider))return;
     if (rider == entt::null || !g_registry.valid(rider))
         return;
 
@@ -1000,6 +1002,7 @@ void SummonCostumeMount(entt::entity rider, entt::entity mountItem, bool spawnFa
 
 void MountCostume(entt::entity rider, entt::entity mountItem)
 {
+    if(CaravanQuest::Locked(rider))return;
     if (rider == entt::null || !g_registry.valid(rider) ||
         !ItemSystem::IsValidItem(mountItem) ||
         ItemSystem::GetItemOwner(mountItem) != rider)

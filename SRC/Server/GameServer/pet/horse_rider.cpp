@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../story/CaravanQuestSystem.hpp"
 #include "horse_rider.h"
 #include "utils.h"
 #include "config.h"
@@ -299,6 +300,7 @@ bool ReviveHorse(entt::entity rider) {
     return true;
 }
 bool StartRiding(entt::entity rider) {
+    if(CaravanQuest::Locked(rider))return false;
     if (!ecs::PlayerRuntime::IsPC(rider) || IsRiding(rider)) return false;
 #if defined(BLOCK_RIDING_INSIDE_WAR) || defined(ENABLE_NEWSTUFF)
     if (ecs::SocialSystem::GetWarMap(rider)

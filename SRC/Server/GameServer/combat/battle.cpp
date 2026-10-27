@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "../story/SpyQuestSystem.hpp"
+#include "../story/CaravanQuestSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
@@ -96,6 +98,8 @@ bool timed_event_cancel(entt::entity character)
 
 bool battle_is_attackable(entt::entity character, entt::entity victim)
 {
+    if(!SpyQuest::AllowCombat(character,victim))return false;
+    if(!CaravanQuest::AllowCombat(character,victim))return false;
     if (!IsBattlePair(character, victim) || character == victim)
         return false;
 	if (CombatSystem::IsDead(victim))
