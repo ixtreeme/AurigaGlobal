@@ -265,3 +265,18 @@ katalógusellenőrzőjével. Megosztott profil csak másolással változik; ment
 egyetlen, hash- és számlálóvédett tranzakcióban. A meglévő sorok frissítése
 `ON DUPLICATE KEY UPDATE` helyett sima `UPDATE`.
 [Jelentés](../reports/item_combat/2026-10-27_catalog_editor.md).
+
+## 2026-10-27 — célállapot: a tárgyrendszer élesítése (IC-012)
+
+A felhasználó döntése szerint a tárgyrendszer a harcmag előtt kerül élesre,
+offline konverzióval. A régi harcképletek az új statforrásból számolnak.
+[IC-012](../adr/item_combat_012_item_runtime_first.md).
+
+Az F1 leltár besorolta a helyi DB mind a 10 714 `item_proto` sorát és
+3 084 játékos-példányát. Karanténba került a kikapcsolt kódú talizmán és
+karom; kivezetett a DragonSoul.
+Fő kockázatok:
+- tartományokon átívelő fejlesztési láncok (+169-ig);
+- a 0-s típusú esemény-/questvaluták;
+- a beégetett vnum-hivatkozások.
+[Leltár és leképezés](../reports/item_combat/2026-10-27_legacy_item_inventory.md).
