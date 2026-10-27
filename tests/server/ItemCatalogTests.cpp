@@ -39,7 +39,7 @@ void ValidSnapshot()
     auto source = item_catalog_fixture::Catalog();
     const auto snapshot = BuildItemCatalog(source).value();
     const auto sword = item_catalog_fixture::Sword(), armor = item_catalog_fixture::Armor();
-    Check(snapshot->Size() == 9 && snapshot->Revision() == 1, "five categories and nine typed composite prototypes published");
+    Check(snapshot->Size() == item_catalog_fixture::FixtureItems && snapshot->Revision() == 1, "seven categories and thirteen typed composite prototypes published");
     Check(snapshot->RefinedBaseStats(sword, 3).value() == ItemBaseStats{150000, 42000, 0, 0}, "weapon golden");
     Check(snapshot->RefinedBaseStats(armor, 2).value() == ItemBaseStats{0, 0, 50000, 24000}, "armor golden");
     Check(snapshot->RefinedBaseStats(sword, 10).error() == ItemCatalogLookupError::InvalidRefinementLevel, "no fallback refinement");
@@ -91,6 +91,7 @@ void InvalidCatalogs()
     Reject([](auto& s) { s.schemaVersion = 2; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 3; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 4; }, ItemCatalogErrorCode::InvalidVersion);
+    Reject([](auto& s) { s.schemaVersion = 5; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.usePolicies.resize(ItemCatalogLimits::ProfilesPerKind + 1); }, ItemCatalogErrorCode::LimitExceeded);
     Reject([](auto& s) { s.usePolicies.push_back(s.usePolicies[0]); }, ItemCatalogErrorCode::DuplicateProfile);
     Reject([](auto& s) { s.appearances[1].code = s.appearances[0].code; }, ItemCatalogErrorCode::DuplicateProfile);
@@ -186,7 +187,7 @@ void DeterministicHash()
     const std::vector<std::function<void(ItemCatalogSource&)>> changes {
         [](auto& s) { ++s.weapons[0].physicalAttackBaseRaw; }, [](auto& s) { ++s.armors[0].magicalDefenseBaseRaw; },
         [](auto& s) { ++s.items[0].weightGrams; }, [](auto& s) { ++s.items[0].buyAmount; },
-        [](auto& s) { s.items[0].retired = true; }, [](auto& s) { s.items[0].iconAsset = "icons/changed.png"; },
+        [](auto& s) { s.items[1].retired = true; }, [](auto& s) { s.items[0].iconAsset = "icons/changed.png"; },
         [](auto& s) { s.tradePolicies[0].allowTrade = false; }, [](auto& s) { ++s.attacks[0].reachMillimeters; },
         [](auto& s) { ++s.ammoPolicies[1].unitsPerHit; }, [](auto& s) { ++s.resistances[0].iceBp; },
         [](auto& s) { s.appearances[0].modelAsset = "models/changed.model"; },
@@ -231,7 +232,7 @@ void ExtendedRefinementKeepsOnePrototype()
         armor.levels.push_back({level, {0, 0, 5000LL * level, 2000LL * level}, {}});
     const auto catalog = BuildItemCatalog(source).value();
     const auto sword = item_catalog_fixture::Sword(), suit = item_catalog_fixture::Armor();
-    Check(catalog->Size() == 9, "higher refinement levels do not create additional prototypes");
+    Check(catalog->Size() == item_catalog_fixture::FixtureItems, "higher refinement levels do not create additional prototypes");
     Check(catalog->RefinedBaseStats(sword, 10).value() == ItemBaseStats{220000, 70000, 0, 0}, "+10 stats resolved on the original ItemKey");
     Check(catalog->RefinedBaseStats(sword, 15).value() == ItemBaseStats{270000, 90000, 0, 0}, "+15 stats resolved on the original ItemKey");
     Check(catalog->RefinedBaseStats(sword, 30).value() == ItemBaseStats{420000, 150000, 0, 0}, "+30 stats resolved on the original ItemKey");
@@ -264,7 +265,7 @@ void ExtendedRefinementKeepsOnePrototype()
           "the second copy uses its own level's gain");
     Check(playerASword.id.Value() == 1001 && playerBSword.id.Value() == 1002 && playerASword.prototype == sword && playerBSword.prototype == sword,
           "neither prototype key nor instance identity changes while refining");
-    Check(catalog->ContentHash() == initialHash && catalog->Find(sword) == sharedPrototype && catalog->Size() == 9,
+    Check(catalog->ContentHash() == initialHash && catalog->Find(sword) == sharedPrototype && catalog->Size() == item_catalog_fixture::FixtureItems,
           "concrete copies do not mutate or duplicate catalog prototypes");
 
     source.refinements[1].levels.erase(source.refinements[1].levels.begin() + 10);

@@ -48,7 +48,7 @@ void CompletionBoundary() {
     const auto expected = BuildItemCatalog(item_catalog_fixture::Catalog()).value()->ContentHash();
     auto good = CompletedFixture();
     auto catalog = db::ReadCompleted(*good,{4,expected});
-    Check(catalog && (*catalog)->Size()==9,"complete prepared rows differ from catalogue");
+    Check(catalog && (*catalog)->Size()==item_catalog_fixture::FixtureItems,"complete prepared rows differ from catalogue");
     good.reset();
     Check((*catalog)->ContentHash()==expected,"catalogue borrowed a destroyed SQL result");
     for (const auto outcome : {SqlTransactionOutcome::NotStarted,SqlTransactionOutcome::Failed,
@@ -112,7 +112,7 @@ void Reject(CAsyncSQL& reader,E code) {
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& reader) {
     const auto reference=BuildItemCatalog(item_catalog_fixture::Catalog()).value();
     const auto good=Load(reader,reference->ContentHash());
-    Check(good->Size()==9 && good->Revision()==8,"real SQL catalogue has wrong identity");
+    Check(good->Size()==item_catalog_fixture::FixtureItems && good->Revision()==8,"real SQL catalogue has wrong identity");
     auto wrong=good->ContentHash();wrong[0]^=1;
     auto rejected=db::ReadCatalog(reader,{9,wrong});
     Check(!rejected && rejected.error().code==E::HashMismatch,"expected hash was ignored");
@@ -123,8 +123,8 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& reader) {
     Execute(reader,"SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");
     Reject(reader,E::IsolationRequired);
     Execute(reader,"SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-    Execute(admin,"UPDATE protos.catalog_format SET schema_version=4");Reject(reader,E::FormatMismatch);
-    Execute(admin,"UPDATE protos.catalog_format SET schema_version=5");
+    Execute(admin,"UPDATE protos.catalog_format SET schema_version=5");Reject(reader,E::FormatMismatch);
+    Execute(admin,"UPDATE protos.catalog_format SET schema_version=6");
     Execute(admin,"UPDATE protos.item_category SET prototype_table='wrong' WHERE category_id=1");Reject(reader,E::RegistryMismatch);
     Execute(admin,"UPDATE protos.item_category SET prototype_table='item_weapon' WHERE category_id=1");
     Execute(admin,"UPDATE protos.bonus_definition SET display_key='tampered' WHERE bonus_id=1");Reject(reader,E::RegistryMismatch);
@@ -149,7 +149,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& reader) {
     const auto extended=Load(reader);
     for (std::uint16_t level : {9,10,15,30})
         Check(extended->RefinedBaseStats(item_catalog_fixture::Sword(),level)->physicalAttackRaw==120000+10000LL*level,"real SQL refinement kept +9 ceiling");
-    Check(extended->Size()==9 && !extended->RefinedBaseStats(item_catalog_fixture::Sword(),31),"refinement duplicated a prototype or ignored its maximum");
+    Check(extended->Size()==item_catalog_fixture::FixtureItems && !extended->RefinedBaseStats(item_catalog_fixture::Sword(),31),"refinement duplicated a prototype or ignored its maximum");
     Execute(admin,"DELETE FROM protos.refinement_level WHERE profile_id=2 AND level=10");Reject(reader,E::InvalidCatalog);
     Execute(admin,"START TRANSACTION");
     Execute(admin,"DELETE FROM protos.refinement_level WHERE profile_id=2 AND level>9");

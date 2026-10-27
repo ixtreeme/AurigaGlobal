@@ -280,3 +280,10 @@ Fő kockázatok:
 - a 0-s típusú esemény-/questvaluták;
 - a beégetett vnum-hivatkozások.
 [Leltár és leképezés](../reports/item_combat/2026-10-27_legacy_item_inventory.md).
+
+## 2026-10-27 — F2: tároló és kulcs
+
+A 8-as Tároló és a 18-as Kulcs kategória típusos tartalomprofillal elkészült a katalógus
+minden rétegén (v6). A régi `special_item_group` dobozlogika két hibáját (részleges kiosztás
+újranyitható dobozzal, inicializálatlan visszatérés) az új tervező nem örökli.
+[IC-013](../adr/item_combat_013_containers.md), [jelentés](../reports/item_combat/2026-10-27_containers.md).

@@ -11,7 +11,7 @@ namespace
 {
 ItemCatalogError Error(ItemCatalogErrorCode code, std::string field, std::optional<ItemKey> key = {}, std::uint32_t id = 0)
 {
-    return {code, std::move(field), key, id, {}, {}, {}, {}};
+    return {code, std::move(field), key, id, {}, {}, {}, {}, {}};
 }
 template <typename T> const T* FindProfile(const std::vector<T>& rows, std::uint32_t id) noexcept
 {
@@ -39,7 +39,8 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
 {
     if (source.items.size() > ItemCatalogLimits::Items || source.weapons.size() > ItemCatalogLimits::Items ||
         source.armors.size() > ItemCatalogLimits::Items || source.accessories.size() > ItemCatalogLimits::Items ||
-        source.materials.size() > ItemCatalogLimits::Items || source.consumables.size() > ItemCatalogLimits::Items)
+        source.materials.size() > ItemCatalogLimits::Items || source.consumables.size() > ItemCatalogLimits::Items ||
+        source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items)
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "items"));
     std::size_t textBytes = 0;
     auto add = [&](std::size_t length) {
@@ -54,8 +55,12 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
     };
     if (!profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
         !profiles(source.attacks) || !profiles(source.ammoPolicies) || !profiles(source.resistances) || !profiles(source.refinements) ||
-        !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns))
+        !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
+        !profiles(source.lootProfiles))
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "profiles"));
+    for (const auto& profile : source.lootProfiles)
+        if (profile.entries.size() > MaxLootEntries)
+            return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "loot.entries", {}, profile.id));
     for (const auto& profile : source.bonuses)
         if (profile.entries.size() > MaxBonusEntriesPerProfile)
             return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "bonus.entries", {}, profile.id));
@@ -71,11 +76,13 @@ ItemBaseStats BaseStats(const ItemArmorRow& row) { return {0, 0, row.physicalDef
 ItemBaseStats BaseStats(const ItemAccessoryRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemMaterialRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemConsumableRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemContainerRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemContainerKeyRow&) { return {}; }
 }
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 5 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 6 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     if (auto r = Profiles(source.usePolicies, "use_policy", [](const auto& row) {
         return row.allowedClasses > 0 && row.allowedClasses <= 15 && row.allowedSexes > 0 && row.allowedSexes <= 3;
@@ -96,6 +103,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     if (auto r = Profiles(source.accessorySockets, "accessory_socket", [](const auto&) { return true; }); !r) return std::unexpected(r.error());
     if (auto r = Profiles(source.recoveries, "recovery", [](const auto&) { return true; }); !r) return std::unexpected(r.error());
     if (auto r = Profiles(source.consumableCooldowns, "consumable_cooldown", ValidConsumableCooldown); !r) return std::unexpected(r.error());
+    if (auto r = Profiles(source.lootProfiles, "loot", [](const auto&) { return true; }); !r) return std::unexpected(r.error());
 
     auto catalog = std::unique_ptr<ItemCatalog>(new ItemCatalog());
     for (auto& row : source.recoveries)
@@ -112,6 +120,19 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (row.cooldownProfile && !FindProfile(source.consumableCooldowns, *row.cooldownProfile))
             return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "recovery.cooldown", {}, *row.cooldownProfile));
         catalog->recoveries_.emplace(id, std::move(*validated));
+    }
+    for (auto& row : source.lootProfiles)
+    {
+        const auto id = row.id;
+        auto validated = ValidateLootProfile(std::move(row));
+        if (!validated)
+        {
+            auto error = Error(ItemCatalogErrorCode::InvalidLootProfile, "loot", {}, id);
+            error.lootError = validated.error();
+            return std::unexpected(std::move(error));
+        }
+        row = validated->Data(); // normalized entry order also feeds canonical hashing
+        catalog->loots_.emplace(id, std::move(*validated));
     }
     for (auto& row : source.accessorySockets)
     {
@@ -159,12 +180,16 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::ranges::sort(source.accessories, {}, &ItemAccessoryRow::key);
     std::ranges::sort(source.materials, {}, &ItemMaterialRow::key);
     std::ranges::sort(source.consumables, {}, &ItemConsumableRow::key);
+    std::ranges::sort(source.containers, {}, &ItemContainerRow::key);
+    std::ranges::sort(source.containerKeys, {}, &ItemContainerKeyRow::key);
     std::set<std::string> codes;
     std::map<ItemKey, const ItemWeaponRow*> weapons;
     std::map<ItemKey, const ItemArmorRow*> armors;
     std::map<ItemKey, const ItemAccessoryRow*> accessories;
     std::map<ItemKey, const ItemMaterialRow*> materials;
     std::map<ItemKey, const ItemConsumableRow*> consumables;
+    std::map<ItemKey, const ItemContainerRow*> containers;
+    std::map<ItemKey, const ItemContainerKeyRow*> containerKeys;
     for (const auto& row : source.weapons)
     {
         if (row.key.Category() != ItemCategory::Weapon) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "weapon", row.key));
@@ -209,6 +234,23 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (!catalog->FindRecovery(row.recoveryProfile))
             return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "consumable.recovery", row.key, row.recoveryProfile));
     }
+    for (const auto& row : source.containers)
+    {
+        if (row.key.Category() != ItemCategory::Container) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "container", row.key));
+        if (!containers.emplace(row.key, &row).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow, "container", row.key));
+        const bool scripted = row.kind == ContainerKind::Scripted;
+        if (row.kind < ContainerKind::Use || row.kind > ContainerKind::Scripted || scripted == row.lootProfile.has_value() ||
+            (row.kind == ContainerKind::Locked) != (row.lockId > 0))
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidContainer, "container.kind", row.key));
+        if (row.lootProfile && !catalog->FindLoot(*row.lootProfile))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "container.loot", row.key, *row.lootProfile));
+    }
+    for (const auto& row : source.containerKeys)
+    {
+        if (row.key.Category() != ItemCategory::ContainerKey) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "container_key", row.key));
+        if (!containerKeys.emplace(row.key, &row).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow, "container_key", row.key));
+        if (!row.lockId) return std::unexpected(Error(ItemCatalogErrorCode::InvalidContainer, "container_key.lock", row.key));
+    }
     std::optional<ItemKey> previous;
     for (const auto& row : source.items)
     {
@@ -217,7 +259,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const auto category = row.key.Category();
         const bool material = category == ItemCategory::Material;
         const bool consumable = category == ItemCategory::Consumable;
-        const bool stackable = material || consumable;
+        const bool container = category == ItemCategory::Container;
+        const bool containerKey = category == ItemCategory::ContainerKey;
+        const bool stackable = material || consumable || container || containerKey;
         if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
@@ -252,6 +296,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (category == ItemCategory::Accessory && accessories.contains(row.key)) child = *accessories.at(row.key);
         if (material && materials.contains(row.key)) child = *materials.at(row.key);
         if (consumable && consumables.contains(row.key)) child = *consumables.at(row.key);
+        if (container && containers.contains(row.key)) child = *containers.at(row.key);
+        if (containerKey && containerKeys.contains(row.key)) child = *containerKeys.at(row.key);
         if (!child) return std::unexpected(Error(ItemCatalogErrorCode::MissingCategoryRow, "category", row.key));
         if (consumable && catalog->FindRecovery(consumables.at(row.key)->recoveryProfile)->Data().unitsPerUse > row.maxStack)
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.stack_below_use_units", row.key));
@@ -271,6 +317,22 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "material", row.key));
     for (const auto& row : source.consumables)
         if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "consumable", row.key));
+    for (const auto& row : source.containers)
+        if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "container", row.key));
+    for (const auto& row : source.containerKeys)
+        if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "container_key", row.key));
+    // Item rewards are ordinary, live, stack-sized grants of a published item.
+    for (const auto& profile : source.lootProfiles)
+        for (const auto& reward : profile.entries)
+        {
+            if (reward.kind != LootRewardKind::Item) continue;
+            const auto* target = catalog->Find(*reward.item);
+            if (!target || target->base.retired || reward.amount > target->base.maxStack)
+            {
+                auto error = Error(ItemCatalogErrorCode::InvalidLootReward, "loot.item", *reward.item, profile.id);
+                return std::unexpected(std::move(error));
+            }
+        }
     for (const auto& profile : source.accessorySockets)
     {
         for (const auto& key : profile.unlockMaterials)
@@ -324,6 +386,11 @@ const ValidatedRecoveryProfile* ItemCatalog::FindRecovery(std::uint32_t id) cons
 const ConsumableCooldownProfile* ItemCatalog::FindConsumableCooldown(std::uint32_t id) const noexcept
 {
     return FindProfile(source_.consumableCooldowns, id);
+}
+const ValidatedLootProfile* ItemCatalog::FindLoot(std::uint32_t id) const noexcept
+{
+    const auto found = loots_.find(id);
+    return found == loots_.end() ? nullptr : &found->second;
 }
 std::expected<ItemBonusProfiles, ItemCatalogLookupError> ItemCatalog::BonusProfilesAt(ItemKey key, std::uint16_t level) const noexcept
 {

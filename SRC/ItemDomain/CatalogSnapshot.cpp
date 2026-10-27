@@ -181,6 +181,19 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source, Table::Periodic, [&](const Reader& r) { recoveryChild(r,3).effect=PeriodicRecovery{r.I64(2),r.I64(3),r.U64(4),r.U64(5)}; });
     if (children.size() != s.recoveries.size()) throw ReadError{ReadErrorCode::InvalidChild,Table::Recoveries};
     Each(source, Table::Consumables, [&](const Reader& r) { s.consumables.push_back({r.Key(),r.U32(2)}); });
+    Each(source, Table::LootProfiles, [&](const Reader& r) { s.lootProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<LootPickMode>(r.U8(2)),{}}); });
+    const auto loots = Index(s.lootProfiles, Table::LootProfiles);
+    Each(source, Table::LootEntries, [&](const Reader& r) {
+        // The reward item is one optional composite key: both columns or neither.
+        if (r.row[3].has_value() != r.row[4].has_value()) r.Fail(ReadErrorCode::InvalidKey, 3);
+        std::optional<ItemKey> item;
+        if (r.row[3]) item = r.Key(3);
+        Parent(s.lootProfiles, loots, r).entries.push_back({r.U16(1),static_cast<LootRewardKind>(r.U8(2)),item,r.U64(5),r.U32(6),r.U16(7)});
+    });
+    Each(source, Table::Containers, [&](const Reader& r) {
+        s.containers.push_back({r.Key(),static_cast<ContainerKind>(r.U8(2)),r.OptionalId(3),r.U16(4)});
+    });
+    Each(source, Table::ContainerKeys, [&](const Reader& r) { s.containerKeys.push_back({r.Key(),r.U16(2)}); });
     return s;
 }
 }

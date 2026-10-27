@@ -37,12 +37,12 @@ constexpr std::array<const char*,19> ReadNames{"InvalidPin","RowLimit","ByteBudg
     "InvalidText","InvalidKey","RegistryMismatch","FormatMismatch","OrphanRow","DuplicateRow","InvalidChild","InvalidCatalog",
     "HashMismatch","SqlFailure","IsolationRequired","SnapshotUnconfirmed","ResultShape"};
 static_assert(static_cast<std::size_t>(db::ReadErrorCode::ResultShape)==ReadNames.size()-1);
-constexpr std::array<const char*,23> CatalogNames{"InvalidVersion","LimitExceeded","InvalidIdentity","DuplicateProfile",
+constexpr std::array<const char*,26> CatalogNames{"InvalidVersion","LimitExceeded","InvalidIdentity","DuplicateProfile",
     "InvalidProfile","MissingProfile","InvalidRefinement","DuplicateItem","DuplicateContentCode","InvalidBase",
     "UnsupportedCategory","InvalidBonusProfile","WrongBonusSource","WrongCategory","DuplicateCategoryRow","MissingCategoryRow",
     "OrphanCategoryRow","WrongRefinementKind","StatOutOfRange","HashFailure","InvalidSocketProfile","InvalidSocketMaterial",
-    "InvalidRecoveryProfile"};
-static_assert(static_cast<std::size_t>(ItemCatalogErrorCode::InvalidRecoveryProfile)==CatalogNames.size()-1);
+    "InvalidRecoveryProfile","InvalidLootProfile","InvalidLootReward","InvalidContainer"};
+static_assert(static_cast<std::size_t>(ItemCatalogErrorCode::InvalidContainer)==CatalogNames.size()-1);
 constexpr std::array<const char*,13> RefinementNames{"InvalidIdentity","InvalidKind","InvalidLevelRange","IncompleteLevels",
     "InvalidGain","NonzeroLevelZero","NonMonotonicGain","WrongStatKind","MissingBonusProfile","WrongBonusSource",
     "InvalidBonusContext","StatOutOfRange","AtMaximumLevel"};
@@ -53,6 +53,9 @@ static_assert(static_cast<std::size_t>(BonusProfileError::SourceNotAllowed)==Bon
 constexpr std::array<const char*,9> RecoveryNames{"InvalidIdentity","InvalidUnits","InvalidContexts","InvalidCooldown",
     "InvalidAmount","EmptyEffect","InvalidInterval","InvalidDuration","MultiplePools"};
 static_assert(static_cast<std::size_t>(RecoveryProfileError::MultiplePools)==RecoveryNames.size()-1);
+constexpr std::array<const char*,10> LootNames{"InvalidIdentity","InvalidMode","EmptyProfile","TooManyEntries","InvalidEntryOrder",
+    "InvalidReward","InvalidAmount","InvalidWeight","InvalidRareChance","WeightOverflow"};
+static_assert(static_cast<std::size_t>(LootProfileError::WeightOverflow)==LootNames.size()-1);
 
 Json Detail(const db::ReadError& error)
 {
@@ -65,6 +68,7 @@ Json Detail(const db::ReadError& error)
         if(c->refinementError)out["refinement"]=Name(*c->refinementError,RefinementNames);
         if(c->bonusError)out["bonus"]=Name(*c->bonusError,BonusNames);
         if(c->recoveryError)out["recovery"]=Name(*c->recoveryError,RecoveryNames);
+        if(c->lootError)out["loot"]=Name(*c->lootError,LootNames);
         if(c->socketError)out["socket"]=static_cast<int>(*c->socketError);
     }
     return out;
@@ -121,7 +125,8 @@ std::shared_ptr<const ItemCatalog> Validate(const db::Snapshot& snapshot) {
 unsigned KeyColumns(T table) {
     switch(table) {
     case T::Items:case T::Weapons:case T::Armors:case T::Accessories:case T::Materials:case T::Consumables:
-    case T::BonusEntries:case T::RefinementLevels:case T::SocketGrades:return 2;
+    case T::BonusEntries:case T::RefinementLevels:case T::SocketGrades:
+    case T::LootEntries:case T::Containers:case T::ContainerKeys:return 2;
     case T::SocketMaterials:return 4;
     default:return 1;
     }
@@ -170,8 +175,9 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
     // profile contents without changing their category/delivery discriminator.
     constexpr T order[]={T::UsePolicies,T::TradePolicies,T::Appearances,T::Attacks,T::AmmoPolicies,T::Resistances,
         T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
-        T::Cooldowns,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::Items,T::Weapons,T::Armors,T::Materials,
-        T::Accessories,T::Consumables,T::SocketMaterials};
+        T::Cooldowns,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::LootProfiles,T::Items,T::Weapons,T::Armors,T::Materials,
+        T::Accessories,T::Consumables,T::Containers,T::ContainerKeys,T::LootEntries,T::SocketMaterials};
+    static_assert(std::size(order)==db::TableCount-3,"every editable table needs a commit position");
     for(T table:{T::Format,T::Categories,T::BonusDefinitions})Require(before.rows[table]==after[table],"A rendszerregiszter nem szerkesztheto.");
     SqlTransaction plan;
     const auto oldItems=Index(before.rows[T::Items],2),newItems=Index(after[T::Items],2);

@@ -20,9 +20,12 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Gyógyító ital', 6: 'Alapanyag'}
-CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 5: 'item_consumable', 6: 'item_material'}
-CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 5: 'consumable', 6: 'material'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Gyógyító ital', 6: 'Alapanyag', 8: 'Tároló', 18: 'Kulcs'}
+CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 5: 'item_consumable', 6: 'item_material',
+                8: 'item_container', 18: 'item_container_key'}
+CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 5: 'consumable', 6: 'material', 8: 'container', 18: 'container_key'}
+STACKABLE = (5, 6, 8, 18)
+LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile'}
 RESISTANCES = ['physical_bp','magical_bp','sword_bp','dagger_bp','bow_bp','two_handed_bp',
@@ -40,6 +43,7 @@ PROFILES = {
     'refinement_profile': ('profile_id', [('item_base', 'refinement_profile_id')], ['refinement_level']),
     'consumable_cooldown_profile': ('profile_id', [('recovery_profile', 'cooldown_profile_id')], []),
     'recovery_profile': ('profile_id', [('item_consumable', 'recovery_profile_id')], list(EFFECT_TABLES.values())),
+    'loot_profile': ('profile_id', [('item_container', 'loot_profile_id')], ['loot_entry']),
 }
 
 
@@ -107,7 +111,16 @@ class Catalog:
             recovery = self.linked('recovery_profile', child, 'recovery_profile_id')
             result.update(recovery=recovery, effect=copy.deepcopy(self.row(EFFECT_TABLES[int(recovery['delivery_kind'])], recovery['profile_id'])),
                           cooldown=self.linked('consumable_cooldown_profile', recovery, 'cooldown_profile_id'))
+        if category == 8:
+            loot = self.linked('loot_profile', child, 'loot_profile_id')
+            if loot is not None:
+                loot['entries'] = self.loot_entries(loot['profile_id'])
+            result['loot'] = loot
         return result
+
+    def loot_entries(self, profile_id):
+        rows = [r for r in self.tables['loot_entry'] if r['profile_id'] == str(profile_id)]
+        return [{name: row[name] for name in LOOT_FIELDS} for row in sorted(rows, key=lambda r: int(r['entry_no']))]
 
     def new(self, category):
         if category not in CATEGORIES: raise api.EditorError('Ez a kategória még nem szerkeszthető.')
@@ -116,7 +129,7 @@ class Catalog:
         code = f'{CODE_PREFIX[category]}.new_item_{local}'
         base = dict(category_id=str(category), local_id=str(local), content_code=code, name_key=f'item.{code}.name',
                     description_key=f'item.{code}.description', icon_asset='icons/item.png', inventory_width='1', inventory_height='1',
-                    max_stack='200' if category in (5, 6) else '1', weight_grams='0', min_level='0', binding_policy='1',
+                    max_stack='200' if category in STACKABLE else '1', weight_grams='0', min_level='0', binding_policy='1',
                     use_policy_id=None, trade_policy_id=None, refinement_profile_id=None, appearance_profile_id=None, base_bonus_profile_id=None,
                     currency_kind='1', buy_amount='0', sell_amount='0', retired='0')
         item = dict(base=base, child=dict(category_id=str(category), local_id=str(local)),
@@ -140,6 +153,13 @@ class Catalog:
                         effect=dict(delivery_kind='1', hp_raw='1000', sp_raw='0', max_hp_bp='0', max_sp_bp='0', flat_bonus_cap_bp='10000'),
                         cooldown=None)
             item['child']['recovery_profile_id'] = None
+        if category == 8:
+            # A usable placeholder box: one weighted gold entry until real contents are entered.
+            item['child'].update(container_kind='1', loot_profile_id=None, lock_id='0')
+            item['loot'] = dict(pick_mode='1', entries=[dict(entry_no='1', reward_kind='2', item_category_id=None, item_local_id=None,
+                                                             amount='1', weight='1', rare_attribute_chance_bp='0')])
+        if category == 18:
+            item['child']['lock_id'] = '1'
         return item
 
     # --- low-level table edits -------------------------------------------
@@ -193,6 +213,24 @@ class Catalog:
                      [dict(profile_id=identity, bonus_id=b, value_scaled=v) for b, v in wanted])
         return identity
 
+    def loot(self, loot, old_id, key):
+        """Loot profile of one container. Entries are numbered in document
+        order; a profile used by another box is copied, never edited in place."""
+        if not loot: return None
+        mode = str(loot['pick_mode'])
+        wanted = [{name: text(entry.get(name)) for name in LOOT_FIELDS} for entry in loot['entries']]
+        for number, entry in enumerate(wanted, 1): entry['entry_no'] = str(number)
+        old = self.row('loot_profile', old_id)
+        if old and old['pick_mode'] == mode and self.loot_entries(old_id) == wanted: return old_id
+        users = [(int(r['category_id']), int(r['local_id'])) for _, r in self.references('loot_profile', old_id)] if old else []
+        if old and all(user == key for user in users): identity = old_id
+        else:
+            identity = self.allocate('loot_profile')
+            old = dict(code=f'editor.loot.{identity}')
+        self.replace('loot_profile', {'profile_id': identity}, [dict(profile_id=identity, code=old['code'], pick_mode=mode)])
+        self.replace('loot_entry', {'profile_id': identity}, [dict(entry, profile_id=identity) for entry in wanted])
+        return identity
+
     @staticmethod
     def owner(table, row):
         return (row['category_id'], row['local_id']) if table == 'item_base' else (row['profile_id'], row['level'])
@@ -240,6 +278,9 @@ class Catalog:
         if category in (2, 3):
             child['resistance_profile_id'] = self.profile('item_resistance_profile', document['resistance'], child.get('resistance_profile_id'))
         if category == 5: self.apply_recovery(document, child, key)
+        if category == 8:
+            scripted = str(child.get('container_kind')) == '3'
+            child['loot_profile_id'] = None if scripted else self.loot(document.get('loot'), child.get('loot_profile_id'), key)
         self.replace('item_base', {'category_id': key[0], 'local_id': key[1]}, [base])
         self.replace(CHILD_TABLES[category], {'category_id': key[0], 'local_id': key[1]}, [child])
         self.prune(before)
@@ -301,6 +342,8 @@ FIELDS = {
     'consumable_cooldown': 'várakozási idő', 'item_base.bonus': 'bónuszok', 'bonus': 'bónuszok', 'bonus.entries': 'bónuszok',
     'base_plus_gain': 'alapérték + fejlesztés', 'use_policy': 'használat', 'trade_policy': 'kereskedelem',
     'appearance': 'megjelenés', 'attack': 'támadási profil', 'ammo': 'lőszerszabály', 'resistance': 'ellenállás',
+    'container': 'tároló', 'container.kind': 'tároló', 'container.loot': 'tárolótartalom', 'container_key': 'kulcs',
+    'container_key.lock': 'kulcs', 'loot': 'tárolótartalom', 'loot.item': 'tárolótartalom', 'loot.entries': 'tárolótartalom',
 }
 CATALOG_TEXT = {
     'DuplicateContentCode': 'Ez a tartalomkód már foglalt egy másik tárgynál.',
@@ -313,6 +356,19 @@ CATALOG_TEXT = {
     'UnsupportedCategory': 'Ez a kategória még nem tölthető be.',
     'LimitExceeded': 'Túl sok adat egy katalógusban.',
     'InvalidSocketProfile': 'Hibás foglalatprofil.', 'InvalidSocketMaterial': 'Hibás foglalatanyag.',
+    'InvalidLootReward': 'A tárgyjutalom nem létező vagy kivezetett tárgyra mutat, vagy több, mint amennyi a tárgyból egy halomban lehet.',
+    'InvalidContainer': 'Használatkor nyíló és kulcsos ládához tartalom kell, quest által nyitotthoz nem; '
+                        'kulcsos ládánál és kulcsnál a zárazonosító legalább 1, máshol 0.',
+}
+LOOT_TEXT = {
+    'InvalidIdentity': 'Érvénytelen tartalomkód.', 'InvalidMode': 'Ismeretlen sorsolási mód.',
+    'EmptyProfile': 'A tartalomlista üres: adj meg legalább egy jutalmat.', 'TooManyEntries': 'Legfeljebb 256 jutalomsor lehet.',
+    'InvalidEntryOrder': 'A jutalomsorok számozása hiányos.',
+    'InvalidReward': 'Tárgyjutalomhoz tárgyat kell választani, más jutalomhoz nem.',
+    'InvalidAmount': 'A mennyiség kívül esik a tartományon (lassítás és HP-szívás legfeljebb 100%, mérgezésé 0).',
+    'InvalidWeight': 'A súly legalább 1; soronkénti esélynél legfeljebb 100%.',
+    'InvalidRareChance': 'Ritka bónusz esélye csak tárgyjutalomnál adható, legfeljebb 100%.',
+    'WeightOverflow': 'A súlyok összege túl nagy.',
 }
 BASE_TEXT = {
     'item_base': 'Hibás alapadat. A kódok kisbetűvel kezdődjenek (a–z, 0–9, _ és .), az ikon útvonala ne legyen üres, '
@@ -362,12 +418,13 @@ def describe(detail, columns=None):
         if code == 'InvalidRefinement': message = REFINEMENT_TEXT.get(detail.get('refinement'), 'Hibás fejlesztési profil.')
         elif code == 'InvalidBonusProfile': message = BONUS_TEXT.get(detail.get('bonus'), 'Hibás bónuszprofil.')
         elif code == 'InvalidRecoveryProfile': message = RECOVERY_TEXT.get(detail.get('recovery'), 'Hibás gyógyító hatás.')
+        elif code == 'InvalidLootProfile': message = LOOT_TEXT.get(detail.get('loot'), 'Hibás tárolótartalom.')
         elif code == 'InvalidBase': message = BASE_TEXT.get(field, 'Hibás alapadat.')
         elif code in CATALOG_TEXT: message = CATALOG_TEXT[code]
         elif code in ('InvalidProfile',): message = 'Érvénytelen érték.'
         else: message = 'A kategóriaadatok hiányosak vagy hibásak.'
         where = FIELDS.get(field)
-        if where and code not in ('DuplicateContentCode', 'InvalidBase'): message = where[0].upper() + where[1:] + ': ' + message[0].lower() + message[1:]
+        if where and code not in ('DuplicateContentCode', 'InvalidBase', 'InvalidContainer'): message = where[0].upper() + where[1:] + ': ' + message[0].lower() + message[1:]
         if detail.get('key'): message += ' (tárgy: %s:%s)' % tuple(detail['key'])
         return message
     read = detail.get('read')

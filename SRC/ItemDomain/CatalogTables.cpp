@@ -35,6 +35,10 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::Reserve, "reserve_recovery_profile", "profile_id,delivery_kind,hp_raw,sp_raw,flat_bonus_cap_bp,tick_interval_ms,max_pool_per_tick_bp", Profiles},
     {Table::Periodic, "periodic_recovery_profile", "profile_id,delivery_kind,hp_per_tick_raw,sp_per_tick_raw,tick_interval_ms,duration_ms", Profiles},
     {Table::Consumables, "item_consumable", "category_id,local_id,recovery_profile_id", Items},
+    {Table::LootProfiles, "loot_profile", "profile_id,code,pick_mode", Profiles},
+    {Table::LootEntries, "loot_entry", "profile_id,entry_no,reward_kind,item_category_id,item_local_id,amount,weight,rare_attribute_chance_bp", Profiles * MaxLootEntries},
+    {Table::Containers, "item_container", "category_id,local_id,container_kind,loot_profile_id,lock_id", Items},
+    {Table::ContainerKeys, "item_container_key", "category_id,local_id,lock_id", Items},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

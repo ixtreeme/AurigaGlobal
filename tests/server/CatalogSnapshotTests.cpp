@@ -24,7 +24,7 @@ void RoundTrip() {
     const auto expected = BuildItemCatalog(item_catalog_fixture::Catalog()).value();
     const auto loaded = db::DecodeSnapshot(f::Snapshot(),{77,expected->ContentHash()});
     Check(loaded.has_value() && (*loaded)->Revision()==77 && (*loaded)->ContentHash()==expected->ContentHash(),"SQL row projection changed the canonical catalogue");
-    Check((*loaded)->Size()==9 && (*loaded)->Find(item_catalog_fixture::Sword()) && (*loaded)->Find(item_catalog_fixture::Armor()),"category-local ID collision lost an item");
+    Check((*loaded)->Size()==item_catalog_fixture::FixtureItems && (*loaded)->Find(item_catalog_fixture::Sword()) && (*loaded)->Find(item_catalog_fixture::Armor()),"category-local ID collision lost an item");
     const auto before = (*loaded)->ContentHash();
     auto reversed = f::Snapshot(); for (auto& rows : reversed.tables) std::ranges::reverse(rows);
     Check(db::DecodeSnapshot(std::move(reversed),{78,before}).value()->ContentHash()==before,"SQL result order affected catalogue identity");
@@ -105,7 +105,7 @@ void AboveNine() {
     const auto loaded=db::DecodeSnapshot(f::Snapshot(source),{123,{}});
     Check(loaded.has_value(),"SQL projection retained a universal +9 ceiling");
     const auto key=item_catalog_fixture::Sword();
-    Check((*loaded)->Find(key)->base.key==key && (*loaded)->Size()==9,"refinement duplicated the prototype");
+    Check((*loaded)->Find(key)->base.key==key && (*loaded)->Size()==item_catalog_fixture::FixtureItems,"refinement duplicated the prototype");
     for (std::uint16_t level : {9,10,15,30})
         Check((*loaded)->RefinedBaseStats(key,level)->physicalAttackRaw==120'000+10'000LL*level,"loaded level curve differs");
     Check(!(*loaded)->RefinedBaseStats(key,31),"configured maximum was ignored");

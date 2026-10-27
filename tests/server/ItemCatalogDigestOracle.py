@@ -1,4 +1,4 @@
-"""Independent Python encoder for the v5 recovery fixture (not a runtime reader)."""
+"""Independent Python encoder for the v6 container fixture (not a runtime reader)."""
 import argparse
 import hashlib
 import json
@@ -22,7 +22,7 @@ def fixture_digest():
         numbers('B', value is not None)
         if value is not None:
             numbers('I', value)
-    text("auriga.item_catalog.v5"); numbers("I", 5)
+    text("auriga.item_catalog.v6"); numbers("I", 6)
     table(1, 3); identity(1, "use.equipment"); numbers("BBB", 15, 3, 1)
     identity(2, "use.material"); numbers("BBB", 15, 3, 0)
     identity(3, "use.recovery"); numbers("BBB", 15, 3, 1)
@@ -45,7 +45,7 @@ def fixture_digest():
             if kind == 4 and level:
                 bonus = 5 if level == 15 else 4
             optional(bonus)
-    table(8, 9)
+    table(8, 13)
     for category, local, prefix, code, height, stack, grams, minimum, use, refine, appearance, bonus, buy, sell in [
         (1, 1, "weapon", "iron_sword", 3, 1, 1200, 1, 1, 2, 1, 1, 100, 50),
         (2, 1, "armor", "iron_armor", 2, 1, 5000, 5, 1, 3, 2, None, 200, 100),
@@ -56,6 +56,10 @@ def fixture_digest():
         (6, 1, "material", "leather", 1, 200, 10, 0, 2, 1, None, None, 0, 0),
         (6, 2, "material", "amber", 1, 200, 5, 0, 2, 1, None, None, 0, 0),
         (6, 3, "material", "socket_drill", 1, 20, 30, 0, 2, 1, None, None, 0, 0),
+        (8, 1, "container", "gift_box", 1, 50, 100, 0, 2, 1, None, None, 0, 0),
+        (8, 2, "container", "iron_chest", 1, 10, 100, 0, 2, 1, None, None, 0, 0),
+        (8, 3, "container", "quest_box", 1, 1, 100, 0, 2, 1, None, None, 0, 0),
+        (18, 1, "container_key", "iron_key", 1, 20, 100, 0, 2, 1, None, None, 0, 0),
     ]:
         numbers("HI", category, local)
         text(prefix + "." + code)
@@ -119,6 +123,23 @@ def fixture_digest():
     numbers('qqQQ', 25000, 0, 1000, 60000)
     table(18, 3)
     for local, profile in [(1,1),(2,2),(3,3)]: numbers('HII', 5, local, profile)
+    # Loot: mode 1 weighted / 2 independent bp; reward 1 item, 2 gold, 3 exp, 5 group, 8 poison.
+    table(19, 2)
+    for id, code, mode, entries in [
+        (1, 'loot.gift_box', 1, [(1, 1, (6, 1), 5, 70, 0), (2, 2, None, 1000, 20, 0), (3, 1, (1, 1), 1, 10, 500)]),
+        (2, 'loot.iron_chest', 2, [(1, 1, (5, 2), 3, 10000, 0), (2, 3, None, 5000, 2500, 0), (3, 5, None, 101, 500, 0),
+                                   (4, 8, None, 0, 100, 0)]),
+    ]:
+        identity(id, code); numbers('BI', mode, len(entries))
+        for entry, kind, item, amount, weight, rare in entries:
+            numbers('HBB', entry, kind, item is not None)
+            if item is not None:
+                numbers('HI', *item)
+            numbers('QIH', amount, weight, rare)
+    table(20, 3)
+    for local, kind, loot, lock in [(1, 1, 1, 0), (2, 2, 2, 7), (3, 3, None, 0)]:
+        numbers('HIB', 8, local, kind); optional(loot); numbers('H', lock)
+    table(21, 1); numbers('HIH', 18, 1, 7)
     return hashlib.sha256(data).hexdigest()
 
 
@@ -127,7 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("--catalog-executable", type=Path, required=True)
     args = parser.parse_args()
     expected = fixture_digest()
-    if expected != "ecffcba2e2774c3f67f54c4e95b58075bf2755663f2f8e905836298f29fb0c59":
+    if expected != "aebb86e8bc7c37a241aaa177c1055534a04de1221c1f3615a12949cfcc96164d":
         raise SystemExit("Python canonical fixture changed without a schema/golden review")
     result = subprocess.run([str(args.catalog_executable.resolve(strict=True)), "--hash-fixture"],
                             capture_output=True, check=True, timeout=30)

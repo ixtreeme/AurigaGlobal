@@ -7,6 +7,7 @@ import copy
 import re
 
 from PySide6.QtCore import QThread, Qt, Signal
+from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout,
     QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox, QPushButton, QScrollArea,
     QSpinBox, QSplitter, QStackedWidget, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget)
@@ -351,6 +352,149 @@ class FillDialog(QDialog):
 
     def revert(self):
         self.reverted = True; self.reject()
+
+
+REWARD_KINDS = [(1, 'Tárgy'), (2, 'Yang'), (3, 'Tapasztalat'), (4, 'Szörny idézése'), (5, 'Szörnycsoport idézése'),
+                (6, 'Lassítás'), (7, 'HP-szívás'), (8, 'Mérgezés')]
+# Display scale and unit of the amount per reward kind; drain HP is bp of max HP.
+AMOUNT_UNITS = {1: (1, 'db'), 2: (1, 'Yang'), 3: (1, 'TP'), 4: (1, 'szörny vnum'), 5: (1, 'csoport-ID'), 6: (1, 'pont'),
+                7: (100, '% max HP'), 8: (1, '')}
+
+
+class LootTable(QWidget):
+    """Rewards of one container. Weighted mode shows relative weights and the
+    resulting chance; independent mode shows each row's own chance in %."""
+    COLUMNS = ['Jutalom', 'Tárgy', 'Mennyiség', 'Súly', 'Ritka bónusz %', 'Esély']
+
+    def __init__(self, changed):
+        super().__init__(); self.changed = changed; self.mode = '1'; self.items = QStandardItemModel(self)
+        layout = QVBoxLayout(self); layout.setContentsMargins(0, 0, 0, 0)
+        self.table = QTableWidget(0, len(self.COLUMNS)); self.table.setHorizontalHeaderLabels(self.COLUMNS)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        for column, width in ((0, 170), (2, 110), (3, 90), (4, 110), (5, 80)): self.table.setColumnWidth(column, width)
+        self.table.verticalHeader().hide(); self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        layout.addWidget(self.table, 1)
+        row = QHBoxLayout()
+        add, remove = QPushButton('Jutalom hozzáadása'), QPushButton('Kijelölt törlése')
+        add.clicked.connect(lambda: (self.append(dict(reward_kind='1', amount='1', weight='1' if self.mode == '1' else '10000')), self.changed()))
+        remove.clicked.connect(self.remove)
+        self.total = QLabel(); self.total.setObjectName('Subtle')
+        row.addWidget(add); row.addWidget(remove); row.addWidget(self.total, 1); layout.addLayout(row)
+
+    def set_items(self, rows):
+        self.items.clear()
+        for row in rows:
+            key = '%s:%s' % (row['category_id'], row['local_id'])
+            entry = QStandardItem('%s  %s%s' % (key, row['content_code'], '  (kivezetve)' if row['retired'] == '1' else ''))
+            entry.setData(key, Qt.ItemDataRole.UserRole); self.items.appendRow(entry)
+
+    def row_of(self, widget, column):
+        for index in range(self.table.rowCount()):
+            if self.table.cellWidget(index, column) is widget: return index
+        return -1
+
+    def append(self, entry):
+        row = self.table.rowCount(); self.table.insertRow(row)
+        kind = QComboBox()
+        for value, text in REWARD_KINDS: kind.addItem(text, str(value))
+        kind.setCurrentIndex(max(0, kind.findData(str(entry.get('reward_kind') or '1'))))
+        item = QComboBox(); item.setModel(self.items); item.setEditable(True); item.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        item.completer().setFilterMode(Qt.MatchFlag.MatchContains); item.completer().setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        if entry.get('item_category_id') is not None:
+            key = '%s:%s' % (entry['item_category_id'], entry['item_local_id'])
+            index = item.findData(key)
+            if index < 0:
+                missing = QStandardItem(key + '  (nem létező tárgy)'); missing.setData(key, Qt.ItemDataRole.UserRole); self.items.appendRow(missing)
+                index = item.findData(key)
+            item.setCurrentIndex(index)
+        else:
+            item.setCurrentIndex(-1)
+        amount, weight, rare = QLineEdit(), QLineEdit(), QLineEdit()
+        chance = QTableWidgetItem(''); chance.setFlags(Qt.ItemFlag.ItemIsEnabled)
+        for column, widget in ((0, kind), (1, item), (2, amount), (3, weight), (4, rare)): self.table.setCellWidget(row, column, widget)
+        self.table.setItem(row, 5, chance)
+        reward = int(kind.currentData()); scale = AMOUNT_UNITS[reward][0]
+        amount.setText(catalog.display(entry.get('amount') or 0, scale) if scale > 1 else str(entry.get('amount') or '0'))
+        weight.setText(self.show_weight(int(entry.get('weight') or 0)))
+        rare.setText(catalog.display(entry.get('rare_attribute_chance_bp') or 0, 100))
+        def kind_changed(*_):
+            self.kind_state(self.row_of(kind, 0)); self.changed()
+        kind.currentIndexChanged.connect(kind_changed)
+        item.currentIndexChanged.connect(lambda *_: self.changed())
+        for edit in (amount, rare): edit.textEdited.connect(lambda *_: self.changed())
+        weight.textEdited.connect(lambda *_: (self.refresh(), self.changed()))
+        self.kind_state(row); self.refresh()
+
+    def kind_state(self, row):
+        kind = int(self.table.cellWidget(row, 0).currentData())
+        item, amount, rare = (self.table.cellWidget(row, column) for column in (1, 2, 4))
+        item.setEnabled(kind == 1)
+        if kind != 1: item.setCurrentIndex(-1); rare.setText('0')
+        rare.setEnabled(kind == 1)
+        amount.setEnabled(kind != 8)
+        if kind == 8: amount.setText('0')
+        amount.setPlaceholderText(AMOUNT_UNITS[kind][1]); amount.setToolTip(AMOUNT_UNITS[kind][1])
+
+    def show_weight(self, raw):
+        return str(raw) if self.mode == '1' else catalog.display(raw, 100)
+
+    def raw_weight(self, row, mode=None):
+        text = self.table.cellWidget(row, 3).text().strip()
+        try: return catalog.scaled(text, 1 if (mode or self.mode) == '1' else 100)
+        except api.EditorError: return None
+
+    def set_mode(self, mode):
+        raws = [self.raw_weight(row) for row in range(self.table.rowCount())]
+        self.mode = str(mode)
+        self.table.horizontalHeaderItem(3).setText('Súly' if self.mode == '1' else 'Esély %')
+        for row, raw in enumerate(raws):
+            if raw is not None: self.table.cellWidget(row, 3).setText(self.show_weight(raw))
+        self.refresh()
+
+    def refresh(self):
+        raws = [self.raw_weight(row) for row in range(self.table.rowCount())]
+        total = sum(raw for raw in raws if raw)
+        for row, raw in enumerate(raws):
+            if raw is None: text = '?'
+            elif self.mode == '1': text = '%.2f%%' % (100.0 * raw / total) if total else '—'
+            else: text = catalog.display(raw, 100) + '%'
+            self.table.item(row, 5).setText(text)
+        self.total.setText(('Súlyok összege: %d — pontosan egy jutalom nyer.' % total) if self.mode == '1'
+                           else 'Minden sor a saját esélyével, egymástól függetlenül nyer (lehet, hogy egy sem).')
+
+    def remove(self):
+        rows = sorted({index.row() for index in self.table.selectedIndexes()}, reverse=True)
+        for row in rows: self.table.removeRow(row)
+        if rows: self.refresh(); self.changed()
+
+    def load(self, entries, mode):
+        self.table.setRowCount(0); self.mode = str(mode)
+        self.table.horizontalHeaderItem(3).setText('Súly' if self.mode == '1' else 'Esély %')
+        for entry in entries or []: self.append(entry)
+        self.refresh()
+
+    def entries(self):
+        result = []
+        for row in range(self.table.rowCount()):
+            where = '%d. jutalomsor' % (row + 1)
+            kind = int(self.table.cellWidget(row, 0).currentData())
+            entry = dict(reward_kind=str(kind), item_category_id=None, item_local_id=None)
+            if kind == 1:
+                key = self.table.cellWidget(row, 1).currentData()
+                if not key: raise api.EditorError(where + ': válassz tárgyat.')
+                entry['item_category_id'], entry['item_local_id'] = key.split(':')
+            scale = AMOUNT_UNITS[kind][0]
+            text = self.table.cellWidget(row, 2).text().strip()
+            try: entry['amount'] = str(catalog.scaled(text, scale) if scale > 1 else int(text if re.fullmatch(r'[0-9]+', text) else 'x'))
+            except (ValueError, api.EditorError): raise api.EditorError(where + ', mennyiség: érvénytelen szám (' + (text or 'üres') + ').') from None
+            raw = self.raw_weight(row)
+            if raw is None: raise api.EditorError(where + ', ' + ('súly' if self.mode == '1' else 'esély') + ': érvénytelen szám.')
+            entry['weight'] = str(raw)
+            try: entry['rare_attribute_chance_bp'] = str(catalog.scaled(self.table.cellWidget(row, 4).text() or '0', 100)) if kind == 1 else '0'
+            except api.EditorError: raise api.EditorError(where + ', ritka bónusz: érvénytelen szám.') from None
+            result.append(entry)
+        return result
 
 
 class RefinementPanel(QWidget):
@@ -708,6 +852,26 @@ class ItemPage(QWidget):
         material.add('child', 'material_kind', 'Alapanyag típusa', 'choice', choices=[(1, 'Bőr'), (2, 'Vér'), (3, 'Gyökér'), (4, 'Tű'), (5, 'Ékkő')])
         material.note('Az alapanyag nem fejleszthető, nem köthető felszereléskor, és nem kap bónuszt vagy megjelenést.')
         material.finish()
+        container = QWidget(); container_layout = QVBoxLayout(container)
+        container_form = Form(changed)
+        self.container_kind_field = container_form.add('child', 'container_kind', 'Nyitás', 'choice',
+            choices=[(1, 'Használatkor nyílik'), (2, 'Kulccsal nyílik'), (3, 'Quest nyitja (beépített tartalom nélkül)')])
+        self.lock_field = container_form.add('child', 'lock_id', 'Zárazonosító', range=(0, 65535),
+            hint='Kulccsal nyíló ládánál legalább 1; az a kulcs nyitja, amelynek ugyanez a zárazonosítója.')
+        container_form.finish(); container_layout.addWidget(container_form)
+        mode_row = QHBoxLayout(); mode_row.addWidget(QLabel('Sorsolás:'))
+        self.loot_mode = QComboBox(); self.loot_mode.addItem('Pontosan egy jutalom, súly szerint', '1')
+        self.loot_mode.addItem('Minden sor külön, saját esélyével', '2')
+        self.loot_mode.currentIndexChanged.connect(lambda *_: (self.loot_table.set_mode(self.loot_mode.currentData()), changed()))
+        mode_row.addWidget(self.loot_mode); mode_row.addStretch(); container_layout.addLayout(mode_row)
+        self.loot_table = LootTable(changed); container_layout.addWidget(self.loot_table, 1)
+        self.loot_hint = QLabel('A questdoboz tartalmát a quest adja; itt nincs beépített jutalom.')
+        self.loot_hint.setObjectName('FieldHint'); self.loot_hint.setWordWrap(True); container_layout.addWidget(self.loot_hint)
+        self.container_kind_field.widget.currentIndexChanged.connect(lambda *_: self.container_kind_changed())
+        key_form = Form(changed)
+        key_form.add('child', 'lock_id', 'Zárazonosító', range=(1, 65535), hint='Az azonos zárazonosítójú, kulccsal nyíló ládákat nyitja.')
+        key_form.note('A kulcs a láda kinyitásakor egy darabot fogy, a ládával együtt.')
+        key_form.finish()
         potion = QWidget(); potion_layout = QVBoxLayout(potion)
         recovery = Form(changed)
         self.delivery_field = recovery.add('recovery', 'delivery_kind', 'Hatás módja', 'choice',
@@ -745,8 +909,9 @@ class ItemPage(QWidget):
             self.effect_forms[kind] = form; self.effects.addWidget(form)
         self.delivery_field.widget.currentIndexChanged.connect(lambda *_: self.effects.setCurrentWidget(self.effect_forms[int(self.delivery_field.value())]))
         potion_layout.addWidget(self.effects); potion_layout.addStretch()
-        self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material}
-        self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 5: scroll(potion), 6: scroll(material)}
+        self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 8: container_form, 18: key_form}
+        self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 5: scroll(potion), 6: scroll(material),
+                               8: container, 18: scroll(key_form)}
         self.refinement = RefinementPanel(changed)
         self.bonuses = BonusTable(changed, '1')
         bonus_page = QWidget(); bonus_layout = QVBoxLayout(bonus_page)
@@ -757,6 +922,13 @@ class ItemPage(QWidget):
     def add_resistances(self, form):
         for column, label in zip(catalog.RESISTANCES, RESISTANCE_LABELS):
             form.add('resistance', column, label + ' ellenállás', 'scaled', scale=100, unit='%', range=(-10000, 10000))
+
+    def container_kind_changed(self):
+        kind = self.container_kind_field.value()
+        self.lock_field.widget.setEnabled(kind == '2')
+        if kind != '2' and not self.loading: self.lock_field.edit.setText('0')
+        for widget in (self.loot_mode, self.loot_table): widget.setEnabled(kind != '3')
+        self.loot_hint.setVisible(kind == '3')
 
     def cooldown_toggled(self):
         self.cooldown_edit.setEnabled(self.cooldown_check.isChecked())
@@ -850,6 +1022,7 @@ class ItemPage(QWidget):
         self.socket_field.widget.addItem('Nincs foglalat', '')
         for pid, code in model.choices('accessory_socket_profile'): self.socket_field.widget.addItem(code + '  (#' + pid + ')', pid)
         self.socket_field.widget.blockSignals(False)
+        self.loot_table.set_items(model.items())
         items = model.items()
         retired = sum(row['retired'] == '1' for row in items)
         self.status.setText('%d tárgy (%d kivezetve) • katalógus-hash %s… • helyi protos adatbázis' % (len(items), retired, packet['hash'][:12]))
@@ -935,6 +1108,11 @@ class ItemPage(QWidget):
         else:
             document = dict(document, child=dict(document['child'], socket_profile_id=document['child'].get('socket_profile_id') or ''))
             self.category_forms[category].load(document)
+        if category == 8:
+            loot = document.get('loot') or dict(pick_mode='1', entries=[])
+            self.loot_mode.blockSignals(True); self.loot_mode.setCurrentIndex(max(0, self.loot_mode.findData(str(loot['pick_mode'])))); self.loot_mode.blockSignals(False)
+            self.loot_table.load(loot['entries'], loot['pick_mode'])
+            self.container_kind_changed()
         if equipment:
             self.refinement.set_category(category, self.packet['bonuses'] if self.packet else [])
             self.refinement.load(document['refinement'], document['levels'])
@@ -961,6 +1139,9 @@ class ItemPage(QWidget):
         else:
             self.category_forms[category].collect(document)
             if category == 3: document['child']['socket_profile_id'] = document['child']['socket_profile_id'] or None
+            if category == 8:
+                scripted = document['child']['container_kind'] == '3'
+                document['loot'] = None if scripted else dict(pick_mode=self.loot_mode.currentData(), entries=self.loot_table.entries())
         if category in (1, 2, 3):
             self.refinement.collect(document)
             document['bonuses'] = self.bonuses.entries()

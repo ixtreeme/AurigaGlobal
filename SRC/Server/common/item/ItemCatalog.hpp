@@ -3,6 +3,7 @@
 #include "RefinementProfiles.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
+#include "Containers.hpp"
 #include <array>
 #include <cstdint>
 #include <expected>
@@ -123,10 +124,23 @@ struct ItemConsumableRow
     // Currently only typed recovery effects are publishable in this category.
     std::uint32_t recoveryProfile = 0;
 };
-using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow>;
+struct ItemContainerRow
+{
+    ItemKey key;
+    ContainerKind kind{};                     // Required; no implicit "use".
+    std::optional<std::uint32_t> lootProfile; // Use/Locked: required; Scripted: none
+    std::uint16_t lockId = 0;                 // Locked: >0; otherwise 0
+};
+struct ItemContainerKeyRow
+{
+    ItemKey key;
+    std::uint16_t lockId = 0; // Opens Locked containers with the same lock id.
+};
+using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
+                                     ItemContainerRow, ItemContainerKeyRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 5;
+    std::uint32_t schemaVersion = 6;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -145,6 +159,9 @@ struct ItemCatalogSource
     std::vector<ItemConsumableRow> consumables;
     std::vector<RecoveryProfile> recoveries;
     std::vector<ConsumableCooldownProfile> consumableCooldowns;
+    std::vector<LootProfile> lootProfiles;
+    std::vector<ItemContainerRow> containers;
+    std::vector<ItemContainerKeyRow> containerKeys;
 };
 struct ItemCatalogLimits
 {
@@ -157,6 +174,7 @@ enum class ItemCatalogErrorCode
     InvalidRefinement, DuplicateItem, DuplicateContentCode, InvalidBase, UnsupportedCategory,
     InvalidBonusProfile, WrongBonusSource, WrongCategory, DuplicateCategoryRow, MissingCategoryRow, OrphanCategoryRow,
     WrongRefinementKind, StatOutOfRange, HashFailure, InvalidSocketProfile, InvalidSocketMaterial, InvalidRecoveryProfile,
+    InvalidLootProfile, InvalidLootReward, InvalidContainer,
 };
 struct ItemCatalogError
 {
@@ -168,6 +186,7 @@ struct ItemCatalogError
     std::optional<BonusProfileError> bonusError;
     std::optional<AccessorySocketError> socketError;
     std::optional<RecoveryProfileError> recoveryError;
+    std::optional<LootProfileError> lootError;
 };
 struct ItemCatalogEntry
 {
@@ -188,7 +207,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
 
 // Immutable, owning snapshot. No borrowed proto rows, lazy cache or live registry.
 // Supports weapon/armor, wrist/neck/ear accessories with optional timed/permanent
-// socket profiles, ordinary materials and recovery consumables. Unsupported categories and
+// socket profiles, ordinary materials, recovery consumables, containers and their
+// keys with typed loot profiles. Unsupported categories and
 // behaviors fail closed during publication; this is not a runtime stat builder.
 class ItemCatalog final
 {
@@ -208,6 +228,7 @@ public:
     const ValidatedAccessorySocketProfile* FindAccessorySocket(std::uint32_t id) const noexcept;
     const ValidatedRecoveryProfile* FindRecovery(std::uint32_t id) const noexcept;
     const ConsumableCooldownProfile* FindConsumableCooldown(std::uint32_t id) const noexcept;
+    const ValidatedLootProfile* FindLoot(std::uint32_t id) const noexcept;
     std::expected<ItemBaseStats, ItemCatalogLookupError> RefinedBaseStats(ItemKey key, std::uint16_t level) const noexcept;
     // Exactly the current level's cumulative bonus profile, never a sum of
     // profiles from all preceding refinement steps. This does not apply stats.
@@ -224,6 +245,7 @@ private:
     std::vector<ValidatedBonusProfile> bonuses_;
     std::map<std::uint32_t, ValidatedAccessorySocketProfile> accessorySockets_;
     std::map<std::uint32_t, ValidatedRecoveryProfile> recoveries_;
+    std::map<std::uint32_t, ValidatedLootProfile> loots_;
     ItemCatalogDigest digest_ {};
 };
 } // namespace auriga::item

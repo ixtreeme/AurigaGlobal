@@ -14,6 +14,11 @@ inline ItemKey SocketDrill() { return ItemKey::Create(ItemCategory::Material, 3)
 inline ItemKey InstantPotion() { return ItemKey::Create(ItemCategory::Consumable, 1).value(); }
 inline ItemKey ReservePotion() { return ItemKey::Create(ItemCategory::Consumable, 2).value(); }
 inline ItemKey PeriodicPotion() { return ItemKey::Create(ItemCategory::Consumable, 3).value(); }
+inline ItemKey GiftBox() { return ItemKey::Create(ItemCategory::Container, 1).value(); }
+inline ItemKey IronChest() { return ItemKey::Create(ItemCategory::Container, 2).value(); }
+inline ItemKey QuestBox() { return ItemKey::Create(ItemCategory::Container, 3).value(); }
+inline ItemKey IronKey() { return ItemKey::Create(ItemCategory::ContainerKey, 1).value(); }
+inline constexpr std::size_t FixtureItems = 13;
 inline AccessorySocketProfile SocketProfile()
 {
     return {1, "socket.copper", 3, 1, 1,
@@ -106,6 +111,29 @@ inline ItemCatalogSource Catalog()
         potion.usePolicy = 3; potion.tradePolicy = 1; potion.refinementProfile = 1;
         source.items.push_back(std::move(potion)); source.consumables.push_back({key, profile});
     }
+    source.lootProfiles = {
+        {1, "loot.gift_box", LootPickMode::WeightedOne, {
+            {1, LootRewardKind::Item, Leather(), 5, 70, 0},
+            {2, LootRewardKind::Gold, {}, 1000, 20, 0},
+            {3, LootRewardKind::Item, Sword(), 1, 10, 500}}},
+        {2, "loot.iron_chest", LootPickMode::IndependentChance, {
+            {1, LootRewardKind::Item, ReservePotion(), 3, 10000, 0},
+            {2, LootRewardKind::Experience, {}, 5000, 2500, 0},
+            {3, LootRewardKind::SpawnMonsterGroup, {}, 101, 500, 0},
+            {4, LootRewardKind::Poison, {}, 0, 100, 0}}},
+    };
+    for (auto [key, code, stack] : {std::tuple{GiftBox(), "container.gift_box", 50u}, {IronChest(), "container.iron_chest", 10u},
+            {QuestBox(), "container.quest_box", 1u}, {IronKey(), "container_key.iron_key", 20u}})
+    {
+        ItemBaseRow row {key};
+        const std::string name = std::string(code).substr(std::string(code).find('.') + 1);
+        row.contentCode = code; row.nameKey = "item." + name + ".name"; row.descriptionKey = "item." + name + ".description";
+        row.iconAsset = "icons/" + name + ".png"; row.maxStack = stack; row.weightGrams = 100;
+        row.usePolicy = 2; row.tradePolicy = 1; row.refinementProfile = 1;
+        source.items.push_back(std::move(row));
+    }
+    source.containers = {{GiftBox(), ContainerKind::Use, 1, 0}, {IronChest(), ContainerKind::Locked, 2, 7}, {QuestBox(), ContainerKind::Scripted, {}, 0}};
+    source.containerKeys = {{IronKey(), 7}};
     return source;
 }
 }

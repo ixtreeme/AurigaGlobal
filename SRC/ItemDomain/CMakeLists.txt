@@ -30,13 +30,13 @@ if(NOT TARGET OpenSSL::Crypto)
     find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 endif()
 find_package(Threads REQUIRED)
-add_library(AurigaItemCatalog STATIC EXCLUDE_FROM_ALL ItemCatalog.cpp RefinementProfiles.cpp BonusProfiles.cpp AccessorySockets.cpp Consumables.cpp CatalogHash.cpp CatalogSnapshot.cpp CatalogTables.cpp)
+add_library(AurigaItemCatalog STATIC EXCLUDE_FROM_ALL ItemCatalog.cpp RefinementProfiles.cpp BonusProfiles.cpp AccessorySockets.cpp Consumables.cpp Containers.cpp CatalogHash.cpp CatalogSnapshot.cpp CatalogTables.cpp)
 target_include_directories(AurigaItemCatalog PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 add_dependencies(AurigaItemCatalog ItemBonusRegistryCheck)
 target_link_libraries(AurigaItemCatalog PUBLIC AurigaItemDomain PRIVATE OpenSSL::Crypto)
 target_compile_features(AurigaItemCatalog PUBLIC cxx_std_23)
 set_target_properties(AurigaItemCatalog PROPERTIES CXX_EXTENSIONS OFF FOLDER "ItemCombat")
-foreach(_catalog_test ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests CatalogSnapshotTests)
+foreach(_catalog_test ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests ContainerTests CatalogSnapshotTests)
     add_executable(${_catalog_test} EXCLUDE_FROM_ALL "${_item_repository}/tests/server/${_catalog_test}.cpp")
     target_link_libraries(${_catalog_test} PRIVATE AurigaItemCatalog)
 endforeach()
@@ -53,10 +53,11 @@ if(TARGET auriga_sanitizers)
     target_link_libraries(BonusProfileTests PRIVATE auriga_sanitizers)
     target_link_libraries(AccessorySocketTests PRIVATE auriga_sanitizers)
     target_link_libraries(ConsumableTests PRIVATE auriga_sanitizers)
+    target_link_libraries(ContainerTests PRIVATE auriga_sanitizers)
     target_link_libraries(CatalogSnapshotTests PRIVATE auriga_sanitizers)
 endif()
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_item_test ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests CatalogSnapshotTests)
+    foreach(_item_test ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests ContainerTests CatalogSnapshotTests)
         add_custom_command(TARGET ${_item_test} POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${_item_test}>" VERBATIM)
@@ -68,6 +69,7 @@ add_test(NAME refinement_profiles COMMAND RefinementProfileTests)
 add_test(NAME bonus_profiles COMMAND BonusProfileTests)
 add_test(NAME accessory_sockets COMMAND AccessorySocketTests)
 add_test(NAME consumables COMMAND ConsumableTests)
+add_test(NAME containers COMMAND ContainerTests)
 add_test(NAME catalog_sql_snapshot COMMAND CatalogSnapshotTests)
 add_test(NAME item_bonus_generator COMMAND "${Python3_EXECUTABLE}" -B
     "${_item_repository}/tests/server/ItemBonusGeneratorTests.py")
@@ -75,14 +77,14 @@ add_test(NAME item_catalog_digest COMMAND "${Python3_EXECUTABLE}" -B
     "${_item_repository}/tests/server/ItemCatalogDigestOracle.py" --catalog-executable "$<TARGET_FILE:ItemCatalogTests>")
 add_test(NAME item_category_generator COMMAND "${Python3_EXECUTABLE}" -B
     "${_item_repository}/tests/server/ItemCategoryGeneratorTests.py")
-set_tests_properties(item_key item_catalog refinement_profiles bonus_profiles accessory_sockets consumables catalog_sql_snapshot item_bonus_generator item_catalog_digest item_category_generator PROPERTIES LABELS server TIMEOUT 60)
+set_tests_properties(item_key item_catalog refinement_profiles bonus_profiles accessory_sockets consumables containers catalog_sql_snapshot item_bonus_generator item_catalog_digest item_category_generator PROPERTIES LABELS server TIMEOUT 60)
 
 # A standalone build can be nested below the main build directory. Do not
 # inherit its Directory.Build.props/targets and implicitly autolink unrelated
 # vcpkg libraries or override the selected CRT. CMake owns this module's complete
 # dependency graph; the vcpkg toolchain still performs explicit app-local copies.
 if(MSVC)
-    foreach(_item_target AurigaItemDomain AurigaItemCatalog ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests CatalogSnapshotTests ItemCategoryRegistryCheck ItemBonusRegistryCheck)
+    foreach(_item_target AurigaItemDomain AurigaItemCatalog ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests ContainerTests CatalogSnapshotTests ItemCategoryRegistryCheck ItemBonusRegistryCheck)
         set_target_properties(${_item_target} PROPERTIES
             VS_GLOBAL_ImportDirectoryBuildProps false
             VS_GLOBAL_ImportDirectoryBuildTargets false)

@@ -71,7 +71,7 @@ class OfflineModelTests(unittest.TestCase):
             catalog.validate(packet, document, executable=TOOL)
             packet = saved(packet, catalog.Catalog(packet).apply(document), key_of(document))
         self.check(packet)
-        self.assertEqual(len(rows(packet, 'item_base')), 5)
+        self.assertEqual(len(rows(packet, 'item_base')), len(catalog.CATEGORIES))
         self.assertEqual(catalog.Catalog(packet).new(1)['base']['local_id'], '2')
 
     def test_editing_one_item_never_changes_an_item_sharing_its_profile(self):
@@ -215,6 +215,60 @@ class OfflineModelTests(unittest.TestCase):
         with self.assertRaises(api.EditorError):
             catalog.Catalog(packet).apply(document, key)
 
+    def test_container_loot_is_private_and_scripted_boxes_drop_it(self):
+        packet, leather = create(self.blank, 6)
+        def chest(document):
+            document['child'].update(container_kind='2', lock_id='7')
+            document['loot'] = dict(pick_mode='2', entries=[
+                dict(reward_kind='1', item_category_id='6', item_local_id=str(leather[1]), amount='5', weight='10000', rare_attribute_chance_bp='0'),
+                dict(reward_kind='3', item_category_id=None, item_local_id=None, amount='5000', weight='2500', rare_attribute_chance_bp='0'),
+                dict(reward_kind='8', item_category_id=None, item_local_id=None, amount='0', weight='100', rare_attribute_chance_bp='0')])
+        packet, first = create(packet, 8, chest)
+        packet, key = create(packet, 18, lambda d: d['child'].update(lock_id='7'))
+        self.check(packet)
+        document = catalog.Catalog(packet).item(first)
+        self.assertEqual([e['entry_no'] for e in document['loot']['entries']], ['1', '2', '3'])
+        self.assertEqual(document['loot']['pick_mode'], '2')
+        # A second box sharing the same contents (imported content) is copied before editing.
+        packet, second = create(packet, 8)
+        tables = copy.deepcopy(packet['tables'])
+        column = packet['columns']['item_container'].index('loot_profile_id')
+        shared = rows(packet, 'item_container')[0]['loot_profile_id']
+        own = rows(packet, 'item_container')[1]['loot_profile_id']
+        tables['item_container'][1][column] = shared
+        tables['loot_entry'] = [row for row in tables['loot_entry'] if row[0] != own]
+        tables['loot_profile'] = [row for row in tables['loot_profile'] if row[0] != own]
+        packet = saved(packet, tables)
+        self.check(packet)
+        document = catalog.Catalog(packet).item(second)
+        document['loot']['entries'][1]['amount'] = '9000'
+        packet = saved(packet, catalog.Catalog(packet).apply(document, second))
+        self.check(packet)
+        model = catalog.Catalog(packet)
+        self.assertEqual(model.item(first)['loot']['entries'][1]['amount'], '5000')
+        self.assertEqual(model.item(second)['loot']['entries'][1]['amount'], '9000')
+        # Turning a box into a quest-opened one removes its now unused private contents.
+        before = len(rows(packet, 'loot_profile'))
+        document = model.item(second)
+        document['child']['container_kind'] = '3'
+        packet = saved(packet, catalog.Catalog(packet).apply(document, second))
+        self.check(packet)
+        self.assertIsNone(catalog.Catalog(packet).item(second)['loot'])
+        self.assertEqual(len(rows(packet, 'loot_profile')), before - 1)
+        # Content rules come back from the game's validator in Hungarian.
+        for change, expected in [
+            (lambda d: d['child'].update(lock_id='0'), 'zárazonosító'),
+            (lambda d: d['loot']['entries'].clear(), 'üres'),
+            (lambda d: d['loot']['entries'][0].update(amount='201'), 'halomban'),
+            (lambda d: d['loot']['entries'][2].update(amount='1'), 'mérgezésé 0'),
+        ]:
+            document = catalog.Catalog(packet).item(first)
+            change(document)
+            with self.assertRaises(api.EditorError) as raised:
+                catalog.validate(packet, document, first, TOOL)
+            self.assertIn(expected, str(raised.exception))
+        self.assertEqual(catalog.Catalog(packet).item(key)['child']['lock_id'], '7')
+
     def test_unit_conversion_is_exact(self):
         self.assertEqual(catalog.scaled('12,5'), 12500)
         self.assertEqual(catalog.display(12500), '12.5')
@@ -277,9 +331,23 @@ class PageCase(unittest.TestCase):
         def material(d):
             d['child'].update(material_kind='5')
             d['base'].update(max_stack='250')
+        def chest(d):
+            d['base'].update(max_stack='40')
+            d['child'].update(container_kind='2', lock_id='12')
+            d['loot'] = dict(pick_mode='2', entries=[
+                dict(reward_kind='1', item_category_id='6', item_local_id='1', amount='25', weight='10000', rare_attribute_chance_bp='0'),
+                dict(reward_kind='1', item_category_id='1', item_local_id='1', amount='1', weight='1250', rare_attribute_chance_bp='750'),
+                dict(reward_kind='2', item_category_id=None, item_local_id=None, amount='150000', weight='5000', rare_attribute_chance_bp='0'),
+                dict(reward_kind='3', item_category_id=None, item_local_id=None, amount='2500', weight='3333', rare_attribute_chance_bp='0'),
+                dict(reward_kind='4', item_category_id=None, item_local_id=None, amount='101', weight='5', rare_attribute_chance_bp='0'),
+                dict(reward_kind='5', item_category_id=None, item_local_id=None, amount='202', weight='6', rare_attribute_chance_bp='0'),
+                dict(reward_kind='6', item_category_id=None, item_local_id=None, amount='30', weight='7', rare_attribute_chance_bp='0'),
+                dict(reward_kind='7', item_category_id=None, item_local_id=None, amount='2550', weight='8', rare_attribute_chance_bp='0'),
+                dict(reward_kind='8', item_category_id=None, item_local_id=None, amount='0', weight='9', rare_attribute_chance_bp='0')])
         packet = catalog.blank(TOOL)
         keys = {}
-        for category, change in ((1, weapon), (2, armor), (3, accessory), (5, potion), (6, material)):
+        for category, change in ((1, weapon), (2, armor), (3, accessory), (5, potion), (6, material), (8, chest),
+                                 (18, lambda d: d['child'].update(lock_id='12'))):
             packet, keys[category] = create(packet, category, change)
         return packet, keys
 
@@ -289,7 +357,7 @@ class EditorPageTests(PageCase):
     def test_every_field_round_trips_through_the_form(self):
         packet, keys = self.fixture()
         self.page.loaded(packet)
-        self.assertEqual(self.page.list.rowCount(), 5)
+        self.assertEqual(self.page.list.rowCount(), len(keys))
         for category, key in keys.items():
             self.page.open_item(key)
             self.assertFalse(self.page.dirty)
@@ -298,6 +366,38 @@ class EditorPageTests(PageCase):
             self.assertEqual(ordered(catalog.Catalog(packet).apply(document, key)), ordered(expected), catalog.CATEGORIES[category])
             self.assertEqual(ordered(expected), ordered(packet['tables']))
         self.assertEqual(self.owner.errors, [])
+
+    def test_container_kind_and_pick_mode_switches(self):
+        packet, keys = self.fixture()
+        self.page.loaded(packet)
+        self.page.open_item(keys[8])
+        loot = self.page.loot_table
+        self.assertTrue(self.page.lock_field.widget.isEnabled())
+        self.assertEqual([loot.table.item(row, 5).text() for row in range(3)], ['100%', '12.5%', '50%'])
+        # Switching to weighted keeps the stored numbers and shows the resulting share.
+        self.page.loot_mode.setCurrentIndex(self.page.loot_mode.findData('1'))
+        self.assertEqual(loot.table.cellWidget(1, 3).text(), '1250')
+        document = self.page.collect()
+        self.assertEqual(document['loot']['pick_mode'], '1')
+        self.assertEqual([e['weight'] for e in document['loot']['entries']][:3], ['10000', '1250', '5000'])
+        catalog.validate(packet, document, keys[8], TOOL)
+        # A quest-opened box drops its built-in contents and its lock.
+        self.page.container_kind_field.widget.setCurrentIndex(self.page.container_kind_field.widget.findData('3'))
+        self.assertFalse(loot.isEnabled())
+        self.assertEqual(self.page.lock_field.edit.text(), '0')
+        document = self.page.collect()
+        self.assertIsNone(document['loot'])
+        packet = saved(packet, catalog.Catalog(packet).apply(document, keys[8]))
+        catalog.run_tool(dict(action='validate', tables=packet['tables']), packet['columns'], TOOL)
+        self.assertEqual(rows(packet, 'loot_profile'), [])
+        # An item reward without a chosen item is caught before the validator runs.
+        self.page.loaded(packet, keys[8])
+        self.page.container_kind_field.widget.setCurrentIndex(self.page.container_kind_field.widget.findData('1'))
+        loot.append(dict(reward_kind='1', amount='1', weight='1'))
+        with self.assertRaises(api.EditorError) as raised:
+            self.page.collect()
+        self.assertIn('válassz tárgyat', str(raised.exception))
+        self.page.dirty = False
 
     def test_form_edits_reach_the_validator(self):
         packet, keys = self.fixture()

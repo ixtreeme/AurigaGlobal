@@ -20,7 +20,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
 {
     db::Snapshot s;
     using T = db::Table;
-    Add(s,T::Format,1,5,db::CanonicalDomain);
+    Add(s,T::Format,1,db::CatalogSchemaVersion,db::CanonicalDomain);
     for (const auto& r : ItemCategories) Add(s,T::Categories,r.category,r.code,r.table);
     for (const auto& d : BonusDefinitions)
         Add(s,T::BonusDefinitions,d.id,d.code,d.displayKey,d.unit,d.target,d.stage,d.channel,d.action,d.mode,d.family,d.rank,
@@ -71,6 +71,18 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
         },r.effect);
     }
     for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile);
+    for (const auto& r : source.lootProfiles) {
+        Add(s,T::LootProfiles,r.id,r.code,r.mode);
+        for (const auto& e : r.entries) {
+            db::Row row{Cell(r.id),Cell(e.entry),Cell(e.kind)};
+            row.push_back(e.item ? Cell(e.item->Category()) : db::Cell{});
+            row.push_back(e.item ? Cell(e.item->LocalId()) : db::Cell{});
+            row.push_back(Cell(e.amount)); row.push_back(Cell(e.weight)); row.push_back(Cell(e.rareAttributeChanceBp));
+            s[T::LootEntries].push_back(std::move(row));
+        }
+    }
+    for (const auto& r : source.containers) Add(s,T::Containers,r.key.Category(),r.key.LocalId(),r.kind,r.lootProfile,r.lockId);
+    for (const auto& r : source.containerKeys) Add(s,T::ContainerKeys,r.key.Category(),r.key.LocalId(),r.lockId);
     return s;
 }
 } // namespace catalog_snapshot_fixture

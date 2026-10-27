@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v5");
+    out.Text("auriga.item_catalog.v6");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -214,6 +214,26 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     }
     out.Table(18, source.consumables.size());
     for (const auto& row : source.consumables) { out.Key(row.key); out.Integer(row.recoveryProfile); }
+    out.Table(19, source.lootProfiles.size());
+    for (const auto& row : source.lootProfiles)
+    {
+        out.Identity(row.id, row.code); out.Integer(static_cast<std::uint8_t>(row.mode));
+        out.Integer<std::uint32_t>(static_cast<std::uint32_t>(row.entries.size()));
+        for (const auto& entry : row.entries)
+        {
+            out.Integer(entry.entry); out.Integer(static_cast<std::uint8_t>(entry.kind));
+            out.Boolean(entry.item.has_value());
+            if (entry.item) out.Key(*entry.item);
+            out.Integer(entry.amount); out.Integer(entry.weight); out.Integer(entry.rareAttributeChanceBp);
+        }
+    }
+    out.Table(20, source.containers.size());
+    for (const auto& row : source.containers)
+    {
+        out.Key(row.key); out.Integer(static_cast<std::uint8_t>(row.kind)); out.Optional(row.lootProfile); out.Integer(row.lockId);
+    }
+    out.Table(21, source.containerKeys.size());
+    for (const auto& row : source.containerKeys) { out.Key(row.key); out.Integer(row.lockId); }
     return out.Finish();
 }
 } // namespace auriga::item::detail

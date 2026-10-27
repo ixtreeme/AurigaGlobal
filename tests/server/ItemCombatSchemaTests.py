@@ -35,13 +35,14 @@ class CategorySchemaTests(unittest.TestCase):
             for name in ("000_protos_database.sql", "001_category_registry.sql", "002_category_seed.sql",
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
-                         "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql"):
+                         "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
-            fixture = (ROOT / "tests/fixtures/item_combat/v5/recovery_consumables.sql").read_text(encoding="utf-8")
-            for statement in statements(fixture):
-                cls.connection.query(statement)
+            for fixture_path in ("v5/recovery_consumables.sql", "v6/containers.sql"):
+                fixture = (ROOT / "tests/fixtures/item_combat" / fixture_path).read_text(encoding="utf-8")
+                for statement in statements(fixture):
+                    cls.connection.query(statement)
             # New fixture schemas/tables in this exact private DB process.
             cls.connection.query("CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
             cls.connection.query("""CREATE TABLE protos.ic_audit_key (
@@ -65,7 +66,7 @@ class CategorySchemaTests(unittest.TestCase):
                 "global_sql_mode": cls.connection.query("SELECT @@GLOBAL.sql_mode")[0][0],
                 "database_path_verified": True,
                 "fresh_sequences": initial,
-                "scope": "staged five-category catalog with recovery consumables and accessory socket profiles; not full P1/P2",
+                "scope": "staged seven-category catalog with recovery consumables, accessory socket profiles, containers and keys; not full P1/P2",
             }
             (cls.sandbox.work / "item-combat-environment.json").write_text(
                 json.dumps(cls.metadata, indent=2) + "\n", encoding="utf-8")
@@ -189,7 +190,7 @@ class CategorySchemaTests(unittest.TestCase):
                         user="catalog_runtime", password="isolated_fixture_only")
         try:
             self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_category"), [["18"]])
-            self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_base"), [["9"]])
+            self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_base"), [["13"]])
             for sql in ["UPDATE protos.item_category SET code='edited' WHERE category_id=1",
                         "DELETE FROM protos.item_category WHERE category_id=1",
                         "UPDATE protos.item_local_id_sequence SET next_local_id=30 WHERE category_id=1",
@@ -230,7 +231,8 @@ class CategorySchemaTests(unittest.TestCase):
 
     def test_typed_equipment_and_refinement_golden(self):
         self.assertEqual(self.q("SELECT category_id,local_id FROM protos.item_base ORDER BY category_id,local_id"),
-                         [["1","1"],["2","1"],["3","1"],["5","1"],["5","2"],["5","3"],["6","1"],["6","2"],["6","3"]])
+                         [["1","1"],["2","1"],["3","1"],["5","1"],["5","2"],["5","3"],["6","1"],["6","2"],["6","3"],
+                          ["8","1"],["8","2"],["8","3"],["18","1"]])
         self.assertEqual(self.q("""SELECT w.physical_attack_base_raw+r.physical_attack_gain_raw,
             w.magical_attack_base_raw+r.magical_attack_gain_raw FROM protos.item_weapon w
             JOIN protos.item_base b ON b.category_id=w.category_id AND b.local_id=w.local_id
@@ -481,6 +483,57 @@ class CategorySchemaTests(unittest.TestCase):
         ]:
             with self.subTest(sql=sql), self.assertRaisesRegex(RuntimeError, "^" + code + ":"):
                 self.q(sql)
+
+    def test_containers_keys_and_loot(self):
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["6", "auriga.item_catalog.v6"]])
+        self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
+                         [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
+        self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
+        self.assertEqual(self.q("SELECT profile_id,COUNT(*),SUM(weight) FROM protos.loot_entry GROUP BY profile_id ORDER BY profile_id"),
+                         [["1","3","100"],["2","4","13100"]])
+        self.assertEqual(self.q("SELECT CONSTRAINT_NAME FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
+                                "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME LIKE 'ck_item_base_%' ORDER BY 1"),
+                         [["ck_item_base_category"], ["ck_item_base_non_equipment"], ["ck_item_base_stack"]])
+        self.assertEqual(self.q("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
+                                "AND TABLE_NAME='item_base' AND CHECK_CLAUSE LIKE '%in (1,2,3,5,6)%'"), [["0"]])
+
+    def test_container_sql_constraints(self):
+        for sql, code in [
+            ("UPDATE protos.item_container SET container_kind=4 WHERE local_id=1", "4025"),
+            ("UPDATE protos.item_container SET loot_profile_id=NULL WHERE local_id=1", "4025"),
+            ("UPDATE protos.item_container SET loot_profile_id=1 WHERE local_id=3", "4025"),
+            ("UPDATE protos.item_container SET lock_id=0 WHERE local_id=2", "4025"),
+            ("UPDATE protos.item_container SET lock_id=3 WHERE local_id=1", "4025"),
+            ("UPDATE protos.item_container SET loot_profile_id=999 WHERE local_id=1", "1452"),
+            ("INSERT INTO protos.item_container VALUES(8,999,3,NULL,0)", "1452"),
+            ("INSERT INTO protos.item_container VALUES(6,1,3,NULL,0)", "4025"),
+            ("UPDATE protos.item_container_key SET lock_id=0", "4025"),
+            ("UPDATE protos.loot_profile SET pick_mode=3 WHERE profile_id=1", "4025"),
+            ("UPDATE protos.loot_entry SET weight=0 WHERE profile_id=1 AND entry_no=1", "4025"),
+            ("UPDATE protos.loot_entry SET item_category_id=NULL WHERE profile_id=1 AND entry_no=1", "4025"),
+            ("UPDATE protos.loot_entry SET item_local_id=999 WHERE profile_id=1 AND entry_no=1", "1452"),
+            ("UPDATE protos.loot_entry SET amount=0 WHERE profile_id=1 AND entry_no=1", "4025"),
+            ("UPDATE protos.loot_entry SET rare_attribute_chance_bp=10001 WHERE profile_id=1 AND entry_no=3", "4025"),
+            ("UPDATE protos.loot_entry SET rare_attribute_chance_bp=1 WHERE profile_id=1 AND entry_no=2", "4025"),
+            ("UPDATE protos.loot_entry SET amount=1 WHERE profile_id=2 AND entry_no=4", "4025"),
+            ("INSERT INTO protos.loot_entry VALUES(1,4,7,NULL,NULL,10001,1,0)", "4025"),
+            ("INSERT INTO protos.loot_entry VALUES(1,4,9,NULL,NULL,1,1,0)", "4025"),
+            ("INSERT INTO protos.loot_entry VALUES(1,4,2,6,1,1,1,0)", "4025"),
+            ("UPDATE protos.item_base SET binding_policy=3 WHERE category_id=8 AND local_id=1", "4025"),
+            ("UPDATE protos.item_base SET appearance_profile_id=1 WHERE category_id=18", "4025"),
+            ("INSERT INTO protos.item_base VALUES(4,1,'costume.unported','item.c.name','item.c.description','icons/c.png',"
+             "1,1,1,0,0,1,1,1,1,NULL,NULL,1,0,0,0)", "4025"),
+            ("DELETE FROM protos.loot_profile WHERE profile_id=1", "1451"),
+            ("DELETE FROM protos.item_base WHERE category_id=6 AND local_id=1", "1451"),
+        ]:
+            with self.subTest(sql=sql), self.assertRaisesRegex(RuntimeError, "^" + code + ":"):
+                self.q(sql)
+        # Stackable boxes and keys are allowed above one unit.
+        self.q("START TRANSACTION")
+        try:
+            self.q("UPDATE protos.item_base SET max_stack=500 WHERE category_id IN (8,18)")
+        finally:
+            self.q("ROLLBACK")
 
 
 if __name__ == "__main__":
