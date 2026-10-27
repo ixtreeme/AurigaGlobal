@@ -943,7 +943,7 @@ add_test(NAME exchange COMMAND ExchangeTests)
 
 # These suites replace the SQL connection/worker, but SQLMsg destruction still
 # uses the production drain cancellation helper. Do not link a live SQL worker.
-foreach(_sql_seam_test DailyRewardTests DungeonLifecycleTests ExchangeTests GuildMemberLifecycleTests
+foreach(_sql_seam_test CombatStateTests DailyRewardTests DungeonLifecycleTests ExchangeTests GuildMemberLifecycleTests
         ItemAttributeTests ItemManagerLifecycleTests ItemRuntimeTests LoginAuthTests LoginSessionTests
         MountLifecycleTests QuickslotTests ShopLifecycleTests)
     target_sources(${_sql_seam_test} PRIVATE ../SQL/QueueDrain.cpp)

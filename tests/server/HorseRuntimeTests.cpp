@@ -19,6 +19,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
+#include "../../SRC/Server/GameServer/story/CaravanQuestSystem.hpp"
 #include <Core/Logging.hpp>
 #include <functional>
 #include <iostream>
@@ -27,6 +28,8 @@
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
+// The horse fixture does not create a caravan run.
+bool CaravanQuest::Locked(entt::entity) { return false; }
 namespace {
 HEART horseHeart {};
 int checks = 0, packets = 0, computes = 0, skillPackets = 0, unmounts = 0, summons = 0;

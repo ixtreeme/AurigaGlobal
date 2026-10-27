@@ -481,6 +481,12 @@ CPacketInfoGG::~CPacketInfoGG() = default;
 void intrusive_ptr_add_ref(EVENT* event) { ++event->ref_count; }
 void intrusive_ptr_release(EVENT* event) { if (--event->ref_count == 0) delete event; }
 namespace ecs::PlayerRuntime {
+int32_t GetMapIndex(entt::entity e) { Live(e); return g_registry.get<ecs::MapIndex>(e).value; }
+entt::entity FindByPlayerID(uint32_t pid) {
+    for (auto e : g_registry.view<ecs::PlayerID>())
+        if (g_registry.get<ecs::PlayerID>(e).pid == pid) return e;
+    return entt::null;
+}
 LPDESC GetDesc(entt::entity e) { Live(e); const auto* s = g_registry.try_get<ecs::NetworkSession>(e); return s ? s->desc : nullptr; }
 bool IsPC(entt::entity e) { Live(e); return g_registry.all_of<ecs::TagPC>(e); }
 bool IsNPCType(entt::entity e) { Live(e); return g_registry.get<ecs::CharacterType>(e).value == CHAR_TYPE_NPC; }

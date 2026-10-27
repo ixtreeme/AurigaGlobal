@@ -33,6 +33,7 @@
 #include "../../SRC/Server/GameServer/ecs/SpatialHelpers.hpp"
 #include "../../SRC/Server/GameServer/ecs/events.hpp"
 #include "../../SRC/Server/GameServer/ecs/EventDispatcher.hpp"
+#include "../../SRC/Server/GameServer/story/CaravanQuestSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/EntityFactory.hpp"
 #include "../../SRC/Server/GameServer/ecs/EntityInvariants.hpp"
 #include "../../SRC/Server/GameServer/ecs/NetworkService.hpp"
@@ -87,6 +88,10 @@
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
+// This isolated combat world has no active story encounters. The story rule
+// suites cover their admission; keep the external encounter boundary explicit.
+bool CaravanQuest::AllowCombat(entt::entity, entt::entity) { return true; }
+void CaravanQuest::OnDeath(entt::entity, entt::entity) {}
 // Out-of-line keys emit RTTI for the service doubles on Clang/ELF too.
 // None of these services is constructed or connected by this fixture.
 CMobManager::~CMobManager() = default;

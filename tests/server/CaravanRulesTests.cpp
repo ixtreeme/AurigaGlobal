@@ -1,3 +1,10 @@
+#if defined(_WIN32)
+// Exercise the same SDK macro environment as the production GameServer.
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
+#endif
 #include "../../SRC/Server/GameServer/story/CaravanRules.hpp"
 #include "../../SRC/Server/GameServer/story/CaravanEncounterRules.hpp"
 #include "../../SRC/Server/GameServer/story/CaravanVoiceTiming.hpp"

@@ -35,12 +35,12 @@ struct Vehicle {
 // without pulling the driver back onto the centre line at every packet.
 template<class Point> float RoadHeading(const std::vector<Point>& road,size_t closest,float x,float y,float speed){
  auto sample=[&](size_t index){std::array<float,2> p{};size_t first=index>4?index-4:0,last=std::min(road.size()-1,index+4);for(size_t k=first;k<=last;k++){p[0]+=road[k].x+.5f;p[1]+=road[k].y+.5f;}float n=float(last-first+1);p[0]/=n;p[1]/=n;return p;};
- float ahead=std::clamp(10.f+speed*2.f,12.f,20.f),travel=0;size_t far=closest;
- while(far+1<road.size()&&travel<ahead){travel+=std::hypot(float(road[far+1].x-road[far].x),float(road[far+1].y-road[far].y));far++;}
- auto near=sample(closest),goal=sample(far);float dx=goal[0]-near[0],dy=goal[1]-near[1],length=std::hypot(dx,dy);
+ float ahead=std::clamp(10.f+speed*2.f,12.f,20.f),travel=0;size_t aheadIndex=closest;
+ while(aheadIndex+1<road.size()&&travel<ahead){travel+=std::hypot(float(road[aheadIndex+1].x-road[aheadIndex].x),float(road[aheadIndex+1].y-road[aheadIndex].y));aheadIndex++;}
+ auto origin=sample(closest),goal=sample(aheadIndex);float dx=goal[0]-origin[0],dy=goal[1]-origin[1],length=std::hypot(dx,dy);
  if(length<.01f)return std::atan2(goal[0]-x,y-goal[1])*180.f/3.14159265358979323846f;
- float offset=std::hypot(x-near[0],y-near[1]),correction=std::clamp((offset-3.f)/5.f,0.f,1.f);
- dx-=(x-near[0])*correction;dy-=(y-near[1])*correction;
+ float offset=std::hypot(x-origin[0],y-origin[1]),correction=std::clamp((offset-3.f)/5.f,0.f,1.f);
+ dx-=(x-origin[0])*correction;dy-=(y-origin[1])*correction;
  return std::atan2(dx,-dy)*180.f/3.14159265358979323846f;
 }
 inline bool ReadyToStart(int participants,int ready,bool present){return participants>=1&&participants<=3&&ready==participants&&present;}

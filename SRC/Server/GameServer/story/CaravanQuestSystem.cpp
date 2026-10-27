@@ -104,7 +104,7 @@ void Send(Run& r,bool force=false){uint32_t now=get_dword_time();if(!force&&now-
  auto giver=Valid(r.giver)?P::GetPacketVID(r.giver):0,receiver=Valid(r.receiver)?P::GetPacketVID(r.receiver):0,cart=Valid(r.cart)?P::GetPacketVID(r.cart):0;
  std::set<uint32_t> seen;for(auto p:g_registry.view<ecs::PlayerID>()){
   if(!P::GetDesc(p)||P::GetMapIndex(p)!=r.map)continue;auto pid=P::GetPlayerID(p);auto* own=Participant(r,pid);
-  bool near=Valid(r.cart)?Distance(p,r.cart)<90:Distance(p,r.giver)<90;if(!own&&!near)continue;seen.insert(pid);
+  bool nearby=Valid(r.cart)?Distance(p,r.cart)<90:Distance(p,r.giver)<90;if(!own&&!nearby)continue;seen.insert(pid);
   ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"cv_frame %u %d %u %d %d %d %d %d %d %u %u %u",r.id,int(r.phase),cart,int(r.x),int(r.y),int(r.vehicle.yaw*100),int(r.vehicle.speed*100),r.vehicle.hp,int(r.vehicle.risk*100),giver,receiver,now-r.changedTick);
   if(!r.failure.empty())ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"cv_reason %u %s",r.id,r.failure.c_str());
   if(r.phase==Phase::Arrival)ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"cv_stage %u %d",r.id,r.arrivalStage);
