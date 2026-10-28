@@ -26,7 +26,7 @@ INSERT_ORDER = (
     'recovery_profile','instant_recovery_profile','reserve_recovery_profile','periodic_recovery_profile','automatic_recovery_profile',
     'loot_profile','item_base','item_weapon','item_armor','item_material','item_accessory','item_consumable',
     'item_skill_book','item_container','item_container_key','item_currency_token','loot_entry','accessory_socket_material',
-    'item_quest','item_socket_stone','refinement_recipe','refinement_ingredient',
+    'item_quest','item_socket_stone','item_costume','item_costume_visual','refinement_recipe','refinement_ingredient',
 )
 REGISTRIES=('catalog_format','item_category','bonus_definition')
 
@@ -71,7 +71,7 @@ def stage(candidate_file,helper,work,binaries):
     if expected!=candidate['hash']:raise MigrationError('Candidate hash mismatch')
     sandbox=Sandbox(work,binaries)
     migrations=sorted((ROOT/'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
-    if [int(p.name[:3]) for p in migrations]!=list(range(21)):raise MigrationError('Unexpected catalog migration chain')
+    if [int(p.name[:3]) for p in migrations]!=list(range(22)):raise MigrationError('Unexpected catalog migration chain')
     try:
         sandbox.start();sandbox.verify()
         for path in migrations:

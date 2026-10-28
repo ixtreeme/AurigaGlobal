@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog,
 import backend as api
 import item_catalog as catalog
 from skill_book_editor import SkillBookPanel
+from costume_editor import CostumePanel
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 BONUS_LABELS = {
@@ -511,7 +512,7 @@ class RefinementPanel(QWidget):
     """
     STAT_COLUMNS = {1: [('physical_attack_gain_raw', 'Fizikai támadás +'), ('magical_attack_gain_raw', 'Mágikus támadás +')],
                     2: [('physical_defense_gain_raw', 'Fizikai védekezés +'), ('magical_defense_gain_raw', 'Mágikus védekezés +')],
-                    3: [], 7: []}
+                    3: [], 4: [], 7: []}
 
     def __init__(self, changed):
         super().__init__(); self.changed = changed; self.category = 1; self.levels = []; self.definitions = []; self.loading = False
@@ -539,7 +540,7 @@ class RefinementPanel(QWidget):
         self.category = category; self.definitions = definitions
         self.kind.blockSignals(True); self.kind.clear()
         self.kind.addItem('Nincs fejlesztés', '1')
-        self.kind.addItem({1: 'Fegyverfejlesztés', 2: 'Páncélfejlesztés', 3: 'Ékszerfejlesztés', 7: 'Foglalatkő-fejlesztés'}[category], str(catalog.REFINEMENT_KIND[category]))
+        self.kind.addItem({1: 'Fegyverfejlesztés', 2: 'Páncélfejlesztés', 3: 'Ékszerfejlesztés', 4: 'Kosztümfejlesztés', 7: 'Foglalatkő-fejlesztés'}[category], str(catalog.REFINEMENT_KIND[category]))
         self.kind.blockSignals(False)
 
     def load(self, refinement, levels):
@@ -960,9 +961,10 @@ class ItemPage(QWidget):
         self.delivery_field.widget.currentIndexChanged.connect(lambda *_: (self.effects.setCurrentWidget(self.effect_forms[int(self.delivery_field.value())]), self.recovery_controls()))
         potion_layout.addWidget(self.effects); potion_layout.addStretch()
         self.book_panel = SkillBookPanel(changed, Form)
+        self.costume_panel = CostumePanel(changed)
         self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
                                10: quest_form, 16: token_form, 18: key_form}
-        self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 5: scroll(potion), 6: scroll(material),
+        self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
                                7: scroll(stone_form), 8: container, 9: self.book_panel, 10: scroll(quest_form), 16: scroll(token_form), 18: scroll(key_form)}
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
@@ -1269,7 +1271,7 @@ class ItemPage(QWidget):
             self.heading.setText('Nincs kijelölt tárgy'); self.loading = False; self.update_badge(); self.controls(); return
         base = document['base']; category = int(base['category_id'])
         self.heading.setText('%s %s:%s — %s' % (catalog.CATEGORIES[category], base['category_id'], base['local_id'], base['content_code']))
-        equipment = category in (1, 2, 3)
+        equipment = category in (1, 2, 3, 4)
         refinable = equipment or category==7
         self.tabs.addTab(self.base_page, 'Alapadatok')
         self.tabs.addTab(self.use_page, 'Használat és kereskedelem')
@@ -1323,6 +1325,8 @@ class ItemPage(QWidget):
             self.consumable_kind.setCurrentIndex(selected_kind)
             self.consumable_pages.setCurrentIndex(selected_kind)
             self.recovery_controls()
+        elif category == 4:
+            self.costume_panel.load(document)
         elif category == 9:
             self.book_panel.load(document)
         else:
@@ -1382,6 +1386,8 @@ class ItemPage(QWidget):
                 document['cooldown'] = dict(duration_ms=str(duration))
             else:
                 document['cooldown'] = None
+        elif category == 4:
+            self.costume_panel.collect(document)
         elif category == 9:
             self.book_panel.collect(document)
         else:
@@ -1391,7 +1397,7 @@ class ItemPage(QWidget):
             if category == 8:
                 scripted = document['child']['container_kind'] == '3'
                 document['loot'] = None if scripted else dict(pick_mode=self.loot_mode.currentData(), entries=self.loot_table.entries())
-        if category in (1, 2, 3, 7):
+        if category in (1, 2, 3, 4, 7):
             self.refinement.collect(document)
             document['bonuses'] = self.bonuses.entries()
         else:

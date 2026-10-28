@@ -20,14 +20,14 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 16: 'Pénzjegy', 18: 'Kulcs'}
-CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 5: 'item_consumable', 6: 'item_material',
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 16: 'Pénzjegy', 18: 'Kulcs'}
+CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
                 7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 16: 'item_currency_token', 18: 'item_container_key'}
-CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest',
+CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest',
                7: 'socket_stone', 16: 'currency_token', 18: 'container_key'}
 STACKABLE = (5, 6, 7, 8, 9, 10, 16, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
-REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 7: 5}
+REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
 RESISTANCES = ['physical_bp','magical_bp','sword_bp','dagger_bp','bow_bp','two_handed_bp',
                'bell_bp','fan_bp','mount_spear_bp','fire_bp','electric_bp','ice_bp','wind_bp','earth_bp','dark_bp']
@@ -107,6 +107,9 @@ class Catalog:
                       trade=self.linked('item_trade_policy', base, 'trade_policy_id', 'policy_id'),
                       appearance=self.linked('item_appearance_profile', base, 'appearance_profile_id'),
                       refinement=refinement, levels=levels, bonuses=self.entries(base['base_bonus_profile_id']))
+        if category == 4:
+            result['visuals'] = [{k: r[k] for k in ('character_class', 'sex', 'model_asset')} for r in self.tables['item_costume_visual']
+                                 if r['category_id'] == base['category_id'] and r['local_id'] == base['local_id']]
         if category == 1:
             result.update(attack=self.linked('item_attack_profile', child, 'attack_profile_id'),
                           ammo=self.linked('item_ammo_policy', child, 'ammo_policy_id', 'policy_id'))
@@ -190,6 +193,9 @@ class Catalog:
             item['child'].update(equip_slot='2' if category == 2 else '6', resistance_profile_id=None)
         if category == 2: item['child'].update(physical_defense_base_raw='0', magical_defense_base_raw='0')
         if category == 3: item['child']['socket_profile_id'] = None
+        if category == 4:
+            item['child'].update(costume_kind='1', weapon_subtype=None, clock_kind='1', duration_ms='0')
+            item['visuals'] = [dict(character_class=str(c), sex=str(s), model_asset='models/costume_body.model') for c in range(1,5) for s in range(1,3)]
         if category == 6: item['child']['material_kind'] = '1'
         if category == 7: item['child'].update(stone_kind='1', allowed_targets='1', minimum_socket_grade='1', primary_group='', secondary_group='')
         if category == 5:
@@ -392,6 +398,9 @@ class Catalog:
             scripted = str(child.get('container_kind')) == '3'
             child['loot_profile_id'] = None if scripted else self.loot(document.get('loot'), child.get('loot_profile_id'), key)
         self.replace('item_base', {'category_id': key[0], 'local_id': key[1]}, [base])
+        if category == 4:
+            self.replace('item_costume_visual', {'category_id': base['category_id'], 'local_id': base['local_id']},
+                         [dict(v, category_id=base['category_id'], local_id=base['local_id']) for v in document['visuals']])
         self.replace(CHILD_TABLES[category], {'category_id': key[0], 'local_id': key[1]}, [child])
         self.prune(before)
         return self.encode()
@@ -517,6 +526,8 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'costume': 'kosztüm típusa, fegyverfeltétele és időkezelése',
+    'costume.visual': 'kosztüm megjelenése (osztály és nem)',
     'socket_stone': 'foglalatkő szabályai',
     'quest_item': 'küldetéstárgy használati szabályai',
     'skill_book': 'képességkönyv szabályai', 'skill_book.children': 'könyv céljai és szintlépései',
@@ -620,6 +631,8 @@ def describe(detail, columns=None):
         elif code == 'InvalidLootProfile': message = LOOT_TEXT.get(detail.get('loot'), 'Hibás tárolótartalom.')
         elif code == 'InvalidBase': message = BASE_TEXT.get(field, 'Hibás alapadat.')
         elif code in CATALOG_TEXT: message = CATALOG_TEXT[code]
+        elif field == 'costume.visual' and code == 'MissingCategoryRow':
+            message = 'A használati szabályokban engedélyezett minden osztályhoz és nemhez adj meg modellt.'
         elif code in ('InvalidProfile',): message = 'Érvénytelen érték.'
         else: message = 'A kategóriaadatok hiányosak vagy hibásak.'
         where = FIELDS.get(field)

@@ -4,6 +4,7 @@
 #include "RefinementRecipes.hpp"
 #include "QuestItems.hpp"
 #include "SocketStones.hpp"
+#include "Costumes.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
 #include "TimedEffects.hpp"
@@ -29,7 +30,6 @@ enum class EquipmentSlot : std::uint8_t
 {
     Weapon = 1, Body = 2, Head = 3, Shield = 4, Feet = 5, Wrist = 6, Neck = 7, Ear = 8,
 };
-enum class WeaponSubtype : std::uint8_t { Sword = 1, Dagger = 2, Bow = 3, TwoHanded = 4, Bell = 5, Fan = 6, MountSpear = 7 };
 enum class AmmoKind : std::uint8_t { None = 1, ConsumeStack = 2 };
 // Plain crafting inputs. Soul-refinement catalysts/resources need their own
 // typed behavior and are deliberately not accepted as these ordinary materials.
@@ -157,10 +157,10 @@ struct ItemSkillBookRow
     std::uint32_t profile = 0;
 };
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 14;
+    std::uint32_t schemaVersion = 15;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -192,6 +192,8 @@ struct ItemCatalogSource
     std::vector<RefinementRecipe> refinementRecipes;
     std::vector<ItemQuestRow> questItems;
     std::vector<ItemSocketStoneRow> socketStones;
+    std::vector<ItemCostumeRow> costumes;
+    std::vector<CostumeVisualRow> costumeVisuals;
 };
 struct ItemCatalogLimits
 {
@@ -238,7 +240,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
 // Immutable, owning snapshot. No borrowed proto rows, lazy cache or live registry.
 // Supports weapon/armor, wrist/neck/ear accessories with optional timed/permanent
 // socket profiles, ordinary materials, recovery/timed consumables, containers and their
-// keys with typed loot profiles, skill books, and wallet currency tokens. Unsupported categories and
+// keys with typed loot profiles, skill books, socket stones, ordinary costumes
+// with class/sex visuals, and wallet currency tokens. Unsupported categories and
 // behaviors fail closed during publication; this is not a runtime stat builder.
 class ItemCatalog final
 {
@@ -247,6 +250,7 @@ public:
     std::size_t Size() const noexcept { return items_.size(); }
     const ItemCatalogDigest& ContentHash() const noexcept { return digest_; }
     const ItemCatalogEntry* Find(ItemKey key) const noexcept;
+    const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
     const ItemUsePolicy* FindUsePolicy(std::uint32_t id) const noexcept;
     const ItemTradePolicy* FindTradePolicy(std::uint32_t id) const noexcept;

@@ -235,6 +235,8 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
         Parent(s.refinementRecipes,recipes,r).ingredients.push_back({r.Key(1),r.U16(3),r.U32(4)});
     });
     Each(source,Table::QuestItems,[&](const Reader& r){s.questItems.push_back({r.Key(),static_cast<QuestItemDispatch>(r.U8(2)),r.Text(3,96),r.U8(4),r.Bool(5)});});
+    Each(source,Table::Costumes,[&](const Reader& r){s.costumes.push_back({r.Key(),static_cast<CostumeKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<WeaponSubtype>(r.U8(3))} : std::nullopt,static_cast<CostumeClock>(r.U8(4)),r.U64(5)});});
+    Each(source,Table::CostumeVisuals,[&](const Reader& r){s.costumeVisuals.push_back({r.Key(),r.U8(2),r.U8(3),r.Text(4)});});
     Each(source,Table::SocketStones,[&](const Reader& r){s.socketStones.push_back({r.Key(),static_cast<SocketStoneKind>(r.U8(2)),r.U8(3),r.U8(4),r.Text(5,96),r.Text(6,96)});});
     return s;
 }

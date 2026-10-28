@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v14");
+    out.Text("auriga.item_catalog.v15");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -298,6 +298,10 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     for(const auto& r:source.questItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.dispatch));out.Text(r.groupCode);out.Integer(r.allowedContexts);out.Boolean(r.allowObserver);}
     out.Table(31,source.socketStones.size());
     for(const auto& r:source.socketStones){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.allowedTargets);out.Integer(r.minimumSocketGrade);out.Text(r.primaryGroup);out.Text(r.secondaryGroup);}
+    out.Table(32,source.costumes.size());
+    for(const auto& r:source.costumes){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Boolean(r.weapon.has_value());if(r.weapon)out.Integer(static_cast<std::uint8_t>(*r.weapon));out.Integer(static_cast<std::uint8_t>(r.clock));out.Integer(r.durationMs);}
+    out.Table(33,source.costumeVisuals.size());
+    for(const auto& r:source.costumeVisuals){out.Key(r.key);out.Integer(r.characterClass);out.Integer(r.sex);out.Text(r.modelAsset);}
     return out.Finish();
 }
 } // namespace auriga::item::detail

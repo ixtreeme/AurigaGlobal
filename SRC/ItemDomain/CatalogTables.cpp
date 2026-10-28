@@ -53,6 +53,8 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::RefinementIngredients, "refinement_ingredient", "recipe_id,category_id,local_id,refinement_level,amount", MaxRefinementRecipes * MaxRefinementIngredients},
     {Table::QuestItems, "item_quest", "category_id,local_id,dispatch_kind,group_code,allowed_contexts,allow_observer", Items},
     {Table::SocketStones, "item_socket_stone", "category_id,local_id,stone_kind,allowed_targets,minimum_socket_grade,primary_group,secondary_group", Items},
+    {Table::Costumes, "item_costume", "category_id,local_id,costume_kind,weapon_subtype,clock_kind,duration_ms", Items},
+    {Table::CostumeVisuals, "item_costume_visual", "category_id,local_id,character_class,sex,model_asset", Items*8},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

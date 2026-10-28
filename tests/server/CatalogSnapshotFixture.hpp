@@ -102,6 +102,8 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     }
     for(const auto& r:source.questItems)Add(s,T::QuestItems,r.key.Category(),r.key.LocalId(),r.dispatch,r.groupCode,r.allowedContexts,r.allowObserver);
     for(const auto& r:source.socketStones)Add(s,T::SocketStones,r.key.Category(),r.key.LocalId(),r.kind,r.allowedTargets,r.minimumSocketGrade,r.primaryGroup,r.secondaryGroup);
+    for(const auto& r:source.costumes)Add(s,T::Costumes,r.key.Category(),r.key.LocalId(),r.kind,r.weapon,r.clock,r.durationMs);
+    for(const auto& r:source.costumeVisuals)Add(s,T::CostumeVisuals,r.key.Category(),r.key.LocalId(),r.characterClass,r.sex,r.modelAsset);
     return s;
 }
 } // namespace catalog_snapshot_fixture

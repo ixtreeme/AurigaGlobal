@@ -65,6 +65,28 @@ def toggle(document):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_costume_variants_timers_copy_and_refinement(self):
+        def change(d):
+            d['child'].update(costume_kind='3', weapon_subtype='3', clock_kind='3', duration_ms='604800000')
+            d['refinement']['max_level']='30'
+            d['levels']=[dict(level=str(i), **{k:'0' for k in catalog.GAINS}, extra_bonus_profile_id=None,
+                              bonuses=[dict(bonus_id='21',value_scaled=str(i*10))] if i else []) for i in range(31)]
+        packet,key=create(self.blank,4,change);self.check(packet)
+        original=catalog.Catalog(packet).item(key)
+        self.assertEqual(len(original['visuals']),8)
+        self.assertEqual(original['refinement']['profile_kind'],'6')
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['visuals'][0]['model_asset']='models/another_costume.model'
+        clone['child'].update(costume_kind='2',weapon_subtype=None,clock_kind='1',duration_ms='0')
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other);self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(len(rows(packet,'item_costume_visual')),16)
+        modified=catalog.Catalog(packet).item(other)
+        for mutate in (lambda d:d['visuals'].pop(), lambda d:d['child'].update(weapon_subtype='1'),
+                       lambda d:d['child'].update(duration_ms='1'),lambda d:d['base'].update(max_stack='2')):
+            bad=copy.deepcopy(modified);mutate(bad)
+            with self.assertRaises(api.EditorError):catalog.validate(packet,bad,other,TOOL)
+
     def test_stone_refinement_and_clone_keep_one_prototype_per_item(self):
         def change(d):
             d['child'].update(allowed_targets='3',primary_group='stone.test',secondary_group='stone.other')
@@ -595,6 +617,36 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_costume_form_visuals_clock_and_bonus_curve(self):
+        packet,key=create(catalog.blank(TOOL),4)
+        self.page.loaded(packet,key);panel=self.page.costume_panel
+        panel.kind.setCurrentIndex(panel.kind.findData('3'))
+        self.assertTrue(panel.weapon.isEnabled())
+        panel.weapon.setCurrentIndex(panel.weapon.findData('3'))
+        panel.clock.setCurrentIndex(panel.clock.findData('3'));panel.duration.setText('604800.123')
+        panel.visuals.item(0,2).setText('models/warrior_costume.model')
+        self.page.refinement.maximum.setValue(30)
+        document=self.page.collect();catalog.validate(packet,document,key,TOOL)
+        self.assertEqual(document['child']['duration_ms'],'604800123')
+        self.assertEqual(document['child']['weapon_subtype'],'3')
+        self.assertEqual(document['refinement']['max_level'],'30')
+        self.assertEqual(document['visuals'][0]['model_asset'],'models/warrior_costume.model')
+        panel.kind.setCurrentIndex(panel.kind.findData('2'))
+        self.assertFalse(panel.weapon.isEnabled())
+        panel.clock.setCurrentIndex(panel.clock.findData('1'))
+        self.assertFalse(panel.duration.isEnabled())
+        document=self.page.collect();catalog.validate(packet,document,key,TOOL)
+        self.assertIsNone(document['child']['weapon_subtype'])
+        self.assertEqual(document['child']['duration_ms'],'0')
+        # Switching the clock back preserves the typed duration until saved.
+        panel.clock.setCurrentIndex(panel.clock.findData('4'))
+        self.assertEqual(self.page.collect()['child']['duration_ms'],'604800123')
+        panel.visuals.item(7,2).setText('')
+        with self.assertRaises(api.EditorError):catalog.validate(packet,self.page.collect(),key,TOOL)
+        panel.visuals.item(7,2).setText('models/last.model');panel.duration.setText('0.0001')
+        with self.assertRaises(api.EditorError):self.page.collect()
+        self.page.dirty=False
+
     def test_socket_stone_form_bonus_curve_and_shard_mode(self):
         packet,key=create(catalog.blank(TOOL),7)
         self.page.loaded(packet);self.page.open_item(key)
@@ -1068,6 +1120,25 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzz_costume_visual_edit_copy_and_atomic_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(4);key=key_of(d)
+        d['child'].update(costume_kind='3',weapon_subtype='1',clock_kind='2',duration_ms='100000')
+        packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['visuals'][0]['model_asset']='models/costume_sql_clone.model'
+        packet=self.commit(packet,clone)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        updated=catalog.Catalog(packet).item(other)
+        updated['visuals'][0]['model_asset']='models/costume_sql_edited.model'
+        packet=self.commit(packet,updated,other)
+        self.assertEqual(catalog.Catalog(packet).item(other)['visuals'][0]['model_asset'],'models/costume_sql_edited.model')
+        new=catalog.Catalog(packet).new(4)
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_costume BEFORE INSERT ON protos.item_costume_visual FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test costume visual write failure'")
+        try:
+            with self.assertRaises(api.EditorError):self.commit(packet,new)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_costume')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+
     def test_zzz_stone_native_commit_curve_and_failed_write_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(7);key=key_of(d)
         d['child'].update(primary_group='stone.sql_test',secondary_group='stone.sql_second')
