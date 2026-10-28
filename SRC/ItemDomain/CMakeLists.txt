@@ -82,6 +82,12 @@ add_test(NAME toggle_effects COMMAND ToggleEffectTests)
 add_test(NAME skill_books COMMAND SkillBookTests)
 add_test(NAME refinement_recipes COMMAND RefinementRecipeTests)
 add_test(NAME quest_items COMMAND QuestItemTests)
+add_test(NAME legacy_item_migration COMMAND "${Python3_EXECUTABLE}" -B "${_item_repository}/tests/server/LegacyItemMigrationTests.py")
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    add_test(NAME quest_token_migration COMMAND "${Python3_EXECUTABLE}" -B
+        "${_item_repository}/tests/server/QuestTokenMigrationTests.py" --helper "$<TARGET_FILE:CatalogEditorTool>")
+    set_tests_properties(quest_token_migration PROPERTIES LABELS server TIMEOUT 60)
+endif()
 add_test(NAME containers COMMAND ContainerTests)
 add_test(NAME currency_tokens COMMAND CurrencyTokenTests)
 add_test(NAME catalog_sql_snapshot COMMAND CatalogSnapshotTests)
@@ -91,7 +97,7 @@ add_test(NAME item_catalog_digest COMMAND "${Python3_EXECUTABLE}" -B
     "${_item_repository}/tests/server/ItemCatalogDigestOracle.py" --catalog-executable "$<TARGET_FILE:ItemCatalogTests>" --refinement-executable "$<TARGET_FILE:RefinementRecipeTests>" --quest-executable "$<TARGET_FILE:QuestItemTests>")
 add_test(NAME item_category_generator COMMAND "${Python3_EXECUTABLE}" -B
     "${_item_repository}/tests/server/ItemCategoryGeneratorTests.py")
-set_tests_properties(item_key item_catalog refinement_profiles bonus_profiles accessory_sockets consumables automatic_recovery timed_effects toggle_effects skill_books refinement_recipes quest_items containers currency_tokens catalog_sql_snapshot item_bonus_generator item_catalog_digest item_category_generator PROPERTIES LABELS server TIMEOUT 60)
+set_tests_properties(item_key item_catalog refinement_profiles bonus_profiles accessory_sockets consumables automatic_recovery timed_effects toggle_effects skill_books refinement_recipes quest_items legacy_item_migration containers currency_tokens catalog_sql_snapshot item_bonus_generator item_catalog_digest item_category_generator PROPERTIES LABELS server TIMEOUT 60)
 
 # A standalone build can be nested below the main build directory. Do not
 # inherit its Directory.Build.props/targets and implicitly autolink unrelated
