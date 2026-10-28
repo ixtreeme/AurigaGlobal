@@ -1,0 +1,12 @@
+{
+  "audit_utc": "2026-10-28T09:10:55.787074+00:00",
+  "head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "sources": {
+    "SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp": "78554379c6687eacff287662d7ae5f39b71dfae83ce6e2cb07fe4b1de46bdf14",
+    "SRC/Server/GameServer/ecs/systems/AffectSystem.cpp": "4c22ddd37d716f3286f0e2ef7ec3ec89868fffc9b022bb0e88a3d616a18428b5",
+    "SRC/Server/common/item/BonusTypes.hpp": "2905c367a57c1e70df7e4f0cfbe951f22bedfef0e6718b9e8a525110b5f5c7c7",
+    "SRC/ItemDomain/BonusProfiles.cpp": "4ae68ca7775829443b22973bc962a76a6b356abad1da477a6cd013ad33ee82f8",
+    "SRC/Server/common/item/ItemCatalog.hpp": "30ba90d8c62d226ca9dc453f3aa9181eaefedd60666dd238f1d2ba5597f31ad5"
+  },
+  "scope": "IC-014 timed stat effects; local only; no gameplay DB writes"
+}

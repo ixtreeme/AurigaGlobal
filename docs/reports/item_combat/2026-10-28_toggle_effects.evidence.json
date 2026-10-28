@@ -1,0 +1,168 @@
+{
+  "recorded_at": "2026-10-28T11:56:57.953884+01:00",
+  "head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "schema_version": 10,
+  "canonical_domain": "auriga.item_catalog.v10",
+  "physical_tables": 38,
+  "snapshot_tables": 37,
+  "fixture_sha256": "7ed6989da20419bfdbf9930d644498870714207a3647495ce4bc8c8df9bb3b17",
+  "toolchain": {
+    "cpp": "MSVC 19.51.36248.0 x64 C++23; Visual Studio 18",
+    "cmake": "4.3.2",
+    "qt_python": "3.12.14",
+    "base_python": "3.14.5",
+    "mariadb": "11.4.13 owned disposable instances"
+  },
+  "checks": [
+    {
+      "name": "normal_ctest",
+      "passed": 105,
+      "failed": 0,
+      "path": "build/toggle-verified-ctest.log",
+      "bytes": 12155,
+      "sha256": "c54fe9fcdabd5c9727d558f333fe84d8388252c166b743bbb14d9215d9e5c649",
+      "tail": [
+        "105/105 Test #105: caravan_rules ....................   Passed    0.02 sec",
+        "",
+        "100% tests passed, 0 tests failed out of 105",
+        "",
+        "Label Time Summary:",
+        "integration    =  39.17 sec*proc (8 tests)",
+        "server         =  93.29 sec*proc (105 tests)",
+        "",
+        "Total Test time (real) =  93.40 sec"
+      ]
+    },
+    {
+      "name": "editor_normal",
+      "passed": 35,
+      "failed": 0,
+      "path": "build/toggle-editor-verified.log",
+      "bytes": 5149,
+      "sha256": "a11834302628e8167d00b57d581bb061acd24b0bd58333db07f3b45d3f402041",
+      "tail": [
+        "test_invalid_document_writes_nothing (__main__.SqlCommitTests.test_invalid_document_writes_nothing) ... ok",
+        "test_timed_effect_sql_commit_replace_type_and_group_guard (__main__.SqlCommitTests.test_timed_effect_sql_commit_replace_type_and_group_guard) ... ok",
+        "test_z_automatic_and_arena_commit_type_switch_and_capacity (__main__.SqlCommitTests.test_z_automatic_and_arena_commit_type_switch_and_capacity) ... ok",
+        "test_z_toggle_sql_round_trip_replacement_and_group_guard (__main__.SqlCommitTests.test_z_toggle_sql_round_trip_replacement_and_group_guard) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 35 tests in 13.966s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "asan_ctest",
+      "passed": 16,
+      "failed": 0,
+      "path": "build-asan/toggle-verified-tests.log",
+      "bytes": 1923,
+      "sha256": "71024c340ddf01b2ff9123333f1fc24e34b836ca8954b70da0890af180b14326",
+      "tail": [
+        "      Start 16: catalog_sql_completion",
+        "16/16 Test #16: catalog_sql_completion ...........   Passed    0.28 sec",
+        "",
+        "100% tests passed, 0 tests failed out of 16",
+        "",
+        "Label Time Summary:",
+        "server    =   4.29 sec*proc (16 tests)",
+        "",
+        "Total Test time (real) =   4.33 sec"
+      ]
+    },
+    {
+      "name": "editor_asan",
+      "passed": 35,
+      "failed": 0,
+      "path": "build-asan/toggle-editor-verified.log",
+      "bytes": 5149,
+      "sha256": "7993b8b41724979635fdb1ebb144fa23739b280d53319eb203a615a63219e3ec",
+      "tail": [
+        "test_invalid_document_writes_nothing (__main__.SqlCommitTests.test_invalid_document_writes_nothing) ... ok",
+        "test_timed_effect_sql_commit_replace_type_and_group_guard (__main__.SqlCommitTests.test_timed_effect_sql_commit_replace_type_and_group_guard) ... ok",
+        "test_z_automatic_and_arena_commit_type_switch_and_capacity (__main__.SqlCommitTests.test_z_automatic_and_arena_commit_type_switch_and_capacity) ... ok",
+        "test_z_toggle_sql_round_trip_replacement_and_group_guard (__main__.SqlCommitTests.test_z_toggle_sql_round_trip_replacement_and_group_guard) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 35 tests in 26.929s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "manager_gui",
+      "passed": 14,
+      "failed": 0,
+      "path": "build/toggle-manager-gui-tests.log",
+      "bytes": 119,
+      "sha256": "f542d3f3fa464e223613af7894a27960cd572369ae94b71380678b80dd522cb4",
+      "tail": [
+        "..............",
+        "----------------------------------------------------------------------",
+        "Ran 14 tests in 29.573s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "hungarian_normal",
+      "passed": 1,
+      "failed": 0,
+      "path": "build/toggle-hungarian-error-test.log",
+      "bytes": 257,
+      "sha256": "94cf4496d3072adb3658ba4ea390f0511c0c1da1e64246730220a00b5ef7fee0",
+      "tail": [
+        "test_toggle_copy_on_write_groups_and_three_effect_switches (__main__.OfflineModelTests.test_toggle_copy_on_write_groups_and_three_effect_switches) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 1 test in 0.222s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "hungarian_asan",
+      "passed": 1,
+      "failed": 0,
+      "path": "build-asan/toggle-hungarian-error-test.log",
+      "bytes": 257,
+      "sha256": "7b07ba724708bc8cfbd6d650a2c3321231868752eeb68758e6a832ba4a49f713",
+      "tail": [
+        "test_toggle_copy_on_write_groups_and_three_effect_switches (__main__.OfflineModelTests.test_toggle_copy_on_write_groups_and_three_effect_switches) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 1 test in 0.513s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "toggle_domain",
+      "passed": 1065,
+      "failed": 0,
+      "stdout": "1065 toggle effect checks passed"
+    }
+  ],
+  "visual_previews": [
+    {
+      "path": "build/toggle-effect-editor.png",
+      "bytes": 82095,
+      "sha256": "62cd2a303a8db9032bd9b30914f8eb8078dacf5df1dbed14da87cd163fd84972"
+    },
+    {
+      "path": "build/toggle-effect-editor-small.png",
+      "bytes": 78293,
+      "sha256": "d86fb7dbba607c7fbc15ebfe469890323be917468b908c9b856baa1a56b21fd9"
+    }
+  ],
+  "visually_inspected": "build/toggle-effect-editor-small.png",
+  "code_review": [
+    "No duplicate Python class methods",
+    "Strong ItemKey/ItemInstanceId; no runtime vnum adapter",
+    "Owned output bonuses; no borrowed pointer escapes",
+    "Finite time bounded at INT64_MAX; saturated subtraction",
+    "Existing prepared SQL budgets and immutable group guard retained"
+  ],
+  "report_sha256": "1877bd9ed6e3a637833005d8ce939322ade049a6344d6e0915ed5fa66c1895f5"
+}

@@ -1,0 +1,13 @@
+{
+  "audit_utc": "2026-10-28T09:58:21.296183+00:00",
+  "head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "dirty_worktree": true,
+  "scope": "IC-016 automatic recovery and arena quota; local isolated tests only",
+  "source_sha256": {
+    "SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp": "78554379c6687eacff287662d7ae5f39b71dfae83ce6e2cb07fe4b1de46bdf14",
+    "SRC/Server/GameServer/ecs/systems/AffectSystem.cpp": "4c22ddd37d716f3286f0e2ef7ec3ec89868fffc9b022bb0e88a3d616a18428b5",
+    "SRC/Server/GameServer/item/item_manager.cpp": "a82a36c6d43c003ace28c5706e94c5af054f7aca1d302b2f40e9cb7b67caa272",
+    "SRC/Server/common/item/Consumables.hpp": "11429687ab130f8d809d9202d6bf54b94ca16e7548dc07aedc11419b8a7a3aaf",
+    "SRC/ItemDomain/Consumables.cpp": "a989947e0a1ed9e2292af22422eed5a5d685cc3eb038a66bd8c5c84246f78c28"
+  }
+}

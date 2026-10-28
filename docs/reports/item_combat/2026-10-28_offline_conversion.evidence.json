@@ -1,0 +1,188 @@
+{
+  "date": "2026-10-28",
+  "captured_at": "2026-10-28T15:41:25.391177+00:00",
+  "head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "branch": "codex/mission-engine",
+  "scope": "Local offline snapshot/mapping, v12 economic refinement catalog and pure plan; full conversion and game cutover INCOMPLETE",
+  "active_database": {
+    "unchanged": true,
+    "tables": 33,
+    "schema_version": 7,
+    "existing_items": 1,
+    "game_running": false
+  },
+  "checkpoint": {
+    "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source-v2",
+    "manifest_sha256": "cbea5d90f7df366dc387d9804680a58113686973dd89f1710e8e06862b41b33f",
+    "sql_sha256": "e4b18df41e6aa9e9cfa91d93060e641790be643c91fb2410f46b8c1790792005",
+    "restore_verification_sha256": "891f28350846d38afe21948d7efc974a9806be2b169d9c2749e7e6d1f12d5207",
+    "restored_tables": 145,
+    "exact_tables": 55
+  },
+  "proposal": {
+    "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-full-proposal-final.json",
+    "sha256": "d7ca3a28279a3debe68ca3e083f22a2c6656991414dac9e8e21075f8be00d1a5",
+    "canonical_hash": "2fb4f594c9000c9d27c4e53df3365d13ef209aaf227386bfe256ec97ef4ac9d1",
+    "summary": {
+      "source_prototypes": 10714,
+      "proposed_prototypes": 5243,
+      "merged_source_rows": 5471,
+      "prototype_status": {
+        "candidate": 9260,
+        "quarantine": 1354,
+        "retired": 100
+      },
+      "source_instances": 3130,
+      "mapped_instance_count": 3130,
+      "instance_stores": {
+        "player.account_mount_inventory": 5,
+        "player.guild_renewal_storage": 41,
+        "player.item": 3084
+      },
+      "owner_status": {
+        "missing": 49,
+        "valid": 3081
+      },
+      "instance_status": {
+        "candidate": 3079,
+        "owner_quarantine": 49,
+        "quarantine": 2
+      },
+      "source_recipes": 1175,
+      "refinement_edges": 5996,
+      "transitions": 5950,
+      "preserved_catalog_items": 1,
+      "diagnostics": {
+        "family_missing_level_zero_or_steps": 295,
+        "missing_instance_owner": 49,
+        "missing_recipe_material": 3,
+        "missing_used_refinement_recipe": 171,
+        "recipe_material_after_zero_slot": 1,
+        "self_refinement_reference": 46
+      },
+      "category_proposals": {
+        "1": 261,
+        "2": 404,
+        "3": 460,
+        "4": 1392,
+        "5": 501,
+        "6": 571,
+        "7": 188,
+        "8": 362,
+        "9": 79,
+        "10": 724,
+        "11": 14,
+        "12": 88,
+        "13": 6,
+        "14": 10,
+        "15": 19,
+        "16": 2,
+        "17": 57,
+        "18": 4
+      },
+      "source_total_quantity": 320077,
+      "mapped_total_quantity": 320077,
+      "ordinary_smith_recipe_drafts": 4532,
+      "refinement_draft_blockers": {
+        "dedicated_refinement_behavior_required": 96,
+        "missing_or_unavailable_material": 10,
+        "missing_recipe": 8,
+        "retired_or_quarantined_content": 1304
+      },
+      "relational_reference_rows": {
+        "player.shop_item": 922,
+        "player.myshop_pricelist": 29,
+        "player.item_extra_proto": 312,
+        "player.item_award": 1,
+        "player.daily_reward_items": 0,
+        "player.quest_item_proto": 0,
+        "player.ishop_data": 517,
+        "mission.mission_engine_item_awards": 0
+      },
+      "relational_reference_blockers": 46
+    },
+    "installable": false,
+    "repeated_equal": true
+  },
+  "ownership_supplement": {
+    "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\item-migration-final-restore-20261028\\ownership-supplement.json",
+    "sha256": "d3f6a8da986b15716a83d840c7c33a24981362faae2a4012384847eee4a02316"
+  },
+  "validation": {
+    "normal_full_initial": {
+      "total": 108,
+      "passed": 107,
+      "failed": [
+        "catalog_sql_mariadb"
+      ]
+    },
+    "corrected_sql_loader_passed": true,
+    "normal_changed_targets": 3,
+    "asan_configuration_targets": 19,
+    "asan_changed_targets": 3,
+    "python_offline_tests": 44,
+    "normal_editor_tests": 39,
+    "asan_helper_editor_tests": 39,
+    "refinement_checks": 180,
+    "normal_golden": "6d386c17abdde5c9cd5f1d605ba72b65b82b6d117252fb5a8dc15dff62a62ecb",
+    "refinement_golden": "fa3407069b9c262f49f16203b0dfb829f22cb949d190901fd0f40a7f377d5fab"
+  },
+  "phase_files": {
+    "SRC/Tools/ItemCatalogBuilder/capture_legacy_items.py": "349c95fd29c90131df0ae005d8804a64a38025f0635dc78b966e1f53fb6edf97",
+    "SRC/Tools/ItemCatalogBuilder/verify_item_checkpoint.py": "1fb94c10e7a7290eb9bfd11021817458fe90d214e6ae7ea79ba01a5547acc81f",
+    "SRC/Tools/ItemCatalogBuilder/legacy_item_migration.py": "973cd561cdd76534269fa6b757e1ef8897e5d7effb193ff8cde53840b9387c52",
+    "SRC/Tools/ItemCatalogBuilder/upgrade_exported_catalog.py": "80ada3a83544b8481666278205556ef3d380b41ba44ae53f9e7c37f2d5e75693",
+    "SRC/Tools/ItemCatalogBuilder/stage_exported_catalog.py": "793c599f856df0ffe8a7af00ba146f99eeb0ccb4aa14c729b0a0c3055aed9289",
+    "SRC/Server/common/item/RefinementRecipes.hpp": "a5d6ce16ca8bc57c25ae8beb7f12a71d26377e7c635ab7f4487b4d3e021750b8",
+    "SRC/ItemDomain/RefinementRecipes.cpp": "b24239c123c88de9caf8b53c43e377012676f1ec37dd6c0c51ff7b60378dd552",
+    "SRC/Server/common/item/ItemCatalog.hpp": "40d0c5da3d40245616d4223424c4c89aa51328e81a98edf89e68c9317d3c405b",
+    "SRC/ItemDomain/ItemCatalog.cpp": "e8fbbb674d8e752c95511b15598f7d7efae3c00bb00ea77078789c9e2920f369",
+    "SRC/ItemDomain/CatalogHash.cpp": "b17a44e10fa4355eea374938cbb5251631c35f29a9dd955eda8a42b388ce0f2a",
+    "SRC/ItemDomain/CatalogSnapshot.cpp": "4038b8e8ba08cbddf4fdc192194b330394e26bfcbf8393fc606c1d4ccca1bf1e",
+    "SRC/ItemDomain/CatalogSnapshot.hpp": "4aadb4e0d41406b5298894ea9d89f795c6370e4fd8a8614c7b3797f143f66872",
+    "SRC/ItemDomain/CatalogTables.cpp": "1fc3f3a9053479403732e49aa022a7d54fb8622d9df0d6ef3410d90bd8308718",
+    "SRC/ItemDomain/CatalogEditorTool.cpp": "8e66743e98c3f0baa16420dcf57220beed16c6055ac4474fe351b69dd3d8c803",
+    "SRC/ItemDomain/CMakeLists.txt": "2268910eff4df25d356168afbd97f183a23df3c6471482ae148065f7f3410844",
+    "SRC/Server/GameServer/CMakeLists.txt": "4e9f553c81dd862a60d13ac5794084d62bd15494862f8006ea9a2bddcb9a77b2",
+    "SRC/Tools/ServerManager/item_catalog.py": "73e2d5e16d9190ea0a5241b8f79fc90f8cc4699890bf8b2f7c4803fb938a805f",
+    "db/migrations/item_combat/018_refinement_recipes.sql": "5602d8cdcbdc437b04db43ae003e21a7561f3a90071d8c502568309ce677d4d6",
+    "tests/server/LegacyItemMigrationTests.py": "0740c6a0a2225dd70ffbfc4c07fc6aa8e8ef4dedc76c3af0c8eacb80f737a00f",
+    "tests/server/RefinementRecipeTests.cpp": "1e4afded01eded7e0ac197e787026eea7be077a82e9abdb50ff8112ad582af79",
+    "tests/server/CatalogSnapshotFixture.hpp": "29513ebe82736af25b74a0e3e57ffef44bd19c0d8ee02a3697ad7fea6729e56d",
+    "tests/server/ItemCatalogDigestOracle.py": "d488e0fdb9e8ff86e6a19bf69450fb297d17ba7f3127cca763c19a5520d4b2fc",
+    "tests/server/ItemCatalogTests.cpp": "e6ab9c69cf0bccb494ab0c34e7b47cf8a91f5ec4195018f1dbfb59ab5bcb3b6e",
+    "tests/server/ItemCombatSchemaTests.py": "ecf374c35a3b6e780f629828b6e4d44fc4496c8d46f3262a735804c52259c1ab",
+    "tests/server/CatalogEditorTests.py": "8d08effa23124ef69d4f8bfe0c20a55ffbeef1adcc52813ad89a068bdd8f1af4",
+    "tests/server/CatalogSqlReaderTests.cpp": "56dd7f934cb15a0d7c00be8145f361790ffa7968d46337d57bdf9810157aae1b",
+    "tests/server/CatalogSqlReaderTests.py": "bc31e2e8be2e4741303ffa8b87c7484cb6c57ea3b17614ff759737cbbe724833",
+    "docs/adr/item_combat_019_offline_conversion_and_refinement.md": "815da84693de0bbfc6a17153a2cc2dca88043ca7245189f0c48bec2feed3932f",
+    "docs/reports/item_combat/2026-10-28_offline_conversion.md": "ca73d08e83fb3d502b12835d106b22d1f9aedc8420ce1bf33b26181fc5c0c4b6"
+  },
+  "logs": {
+    "build/item-migration-server-tests-build.log": "78187f2db00b989396569c489438a966ca7c370de2f9d9c2f9e4c415907cd319",
+    "build/item-migration-full-ctest-console.log": "c05cf04cfd17735c8244abafb0b2575528c4d58b9530db10a7680a3cbc4333ca",
+    "build/item-migration-loader-final.log": "03d0b1329c9ca3eec39dff5339765fc4ba30c47fcafa051508f49f9390375597",
+    "build/item-migration-final-changed-tests.log": "a2a1b23392bc4cff4ef982b11ca48814002401c18e96fa1b5c8e888e3779bd88",
+    "build/item-migration-editor-final.log": "fe34dbe8d121f603cdfe635461fbcf08322a7a9c4e2e65b68402579fb81c97a0",
+    "build/item-migration-offline-tests.log": "341c64e689d90d6d42ed00af1ffe9322c794966adc0f5faaa9b07bcbe76ae7d5",
+    "build/item-migration-digest-final.log": "2aac16092c25ef54e3d1448c0283832c44f226fc2afd54b41b6ceb6a0229c464",
+    "build/item-migration-final-restore.log": "958bc42e9b5a154db014d599c5b0370f82495d8c8496da0f2a4c076d32886d84",
+    "build/item-migration-original-owner-counts.json": "121fd5d409b25dc3e1a220a89dc3a3ab9539d7970a1c12ecfe686066704dace9",
+    "build/item-migration-live-state-check.json": "e115bc7d6ff741d06e7f83d3a24fb4c2f8056532125822804001180dce0415ac",
+    "build/item-migration-final-restore-20261028/restore-verification.json": "891f28350846d38afe21948d7efc974a9806be2b169d9c2749e7e6d1f12d5207",
+    "build/item-migration-user-catalog-stage/catalog-stage-result.json": "a36151557dba3854da993bf8ada35474ce340c368748b8bf87e09fc2921588cd",
+    "build-asan/item-migration-build.log": "24cde1607f0982b184fd3e961d10008aa099ac5c92d9d7d5761925695610a065",
+    "build-asan/item-migration-tests.log": "3a2a37ead567cb9d162120a6fee6d28c5024adbb3e740ed59408df7c0be874bd",
+    "build-asan/item-migration-final-changed-tests.log": "d46bacb57da1ea98ee41708b47473c74eadd2ace29a2226975b665841bcc0f92",
+    "build-asan/item-migration-editor-final.log": "4afa36e1e91cca6b43a250cae6b363094d70b1960e98d032838f5d9ae8f0f2e3"
+  },
+  "remaining": [
+    "reviewed_explicit_mapping",
+    "complete_typed_content_conversion",
+    "complete_instance_state_conversion",
+    "all_content_references_converted",
+    "native_catalog_validation",
+    "new_server_database_and_unity_runtime",
+    "local_closed_smoke"
+  ]
+}

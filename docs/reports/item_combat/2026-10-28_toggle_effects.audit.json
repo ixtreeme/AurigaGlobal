@@ -1,0 +1,417 @@
+{
+  "recorded_at": "2026-10-28T11:56:57.703127+01:00",
+  "repository": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal",
+  "head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "branch": "codex/mission-engine",
+  "workspace_was_already_dirty": true,
+  "working_tree": [
+    "M SRC/ItemDomain/BonusProfiles.cpp",
+    " M SRC/ItemDomain/CMakeLists.txt",
+    " M SRC/ItemDomain/CatalogEditorTool.cpp",
+    " M SRC/ItemDomain/CatalogHash.cpp",
+    " M SRC/ItemDomain/CatalogSnapshot.cpp",
+    " M SRC/ItemDomain/CatalogSnapshot.hpp",
+    " M SRC/ItemDomain/CatalogTables.cpp",
+    " M SRC/ItemDomain/Consumables.cpp",
+    " M SRC/ItemDomain/Containers.cpp",
+    " M SRC/ItemDomain/CurrencyTokens.cpp",
+    " M SRC/ItemDomain/ItemCatalog.cpp",
+    " M SRC/Server/GameServer/CMakeLists.txt",
+    " M SRC/Server/common/item/BonusRegistry.hpp",
+    " M SRC/Server/common/item/BonusTypes.hpp",
+    " M SRC/Server/common/item/Consumables.hpp",
+    " M SRC/Server/common/item/Containers.hpp",
+    " M SRC/Server/common/item/CurrencyTokens.hpp",
+    " M SRC/Server/common/item/ItemCatalog.hpp",
+    " M SRC/Tools/ItemCatalogBuilder/generate_bonus_registry.py",
+    " M SRC/Tools/ServerManager/item_catalog.py",
+    " M SRC/Tools/ServerManager/item_page.py",
+    " M config/item_combat/bonus_registry.json",
+    " M db/migrations/item_combat/003_equipment_profiles.sql",
+    " M db/migrations/item_combat/006_bonus_profiles.sql",
+    " M db/migrations/item_combat/007_bonus_registry_seed.sql",
+    " M db/migrations/item_combat/010_recovery_consumables.sql",
+    " M docs/adr/item_combat_014_use_items.md",
+    " M docs/server_manager.md",
+    " M tests/fixtures/item_combat/v5/recovery_consumables.sql",
+    " M tests/server/BonusProfileTests.cpp",
+    " M tests/server/CatalogEditorTests.py",
+    " M tests/server/CatalogSnapshotFixture.hpp",
+    " M tests/server/CatalogSnapshotTests.cpp",
+    " M tests/server/CatalogSqlReaderTests.cpp",
+    " M tests/server/CatalogSqlReaderTests.py",
+    " M tests/server/ConsumableTests.cpp",
+    " M tests/server/ContainerTests.cpp",
+    " M tests/server/CurrencyTokenTests.cpp",
+    " M tests/server/ItemBonusGeneratorTests.py",
+    " M tests/server/ItemCatalogDigestOracle.py",
+    " M tests/server/ItemCatalogFixture.hpp",
+    " M tests/server/ItemCatalogTests.cpp",
+    " M tests/server/ItemCombatSchemaTests.py",
+    "?? SRC/ItemDomain/AutomaticRecovery.cpp",
+    "?? SRC/ItemDomain/RecoveryMath.hpp",
+    "?? SRC/ItemDomain/TimedEffects.cpp",
+    "?? SRC/ItemDomain/ToggleEffects.cpp",
+    "?? SRC/Server/common/item/AutomaticRecovery.hpp",
+    "?? SRC/Server/common/item/TimedEffects.hpp",
+    "?? SRC/Server/common/item/ToggleEffects.hpp",
+    "?? db/migrations/item_combat/014_timed_consumables.sql",
+    "?? db/migrations/item_combat/015_automatic_recovery.sql",
+    "?? db/migrations/item_combat/016_toggle_effects.sql",
+    "?? docs/adr/item_combat_015_timed_consumables.md",
+    "?? docs/adr/item_combat_016_automatic_recovery.md",
+    "?? docs/adr/item_combat_017_toggle_effects.md",
+    "?? docs/reports/item_combat/2026-10-28_automatic_recovery.audit.json",
+    "?? docs/reports/item_combat/2026-10-28_automatic_recovery.evidence.json",
+    "?? docs/reports/item_combat/2026-10-28_automatic_recovery.md",
+    "?? docs/reports/item_combat/2026-10-28_claude_review.evidence.json",
+    "?? docs/reports/item_combat/2026-10-28_claude_review.md",
+    "?? docs/reports/item_combat/2026-10-28_timed_consumables.audit.json",
+    "?? docs/reports/item_combat/2026-10-28_timed_consumables.evidence.json",
+    "?? docs/reports/item_combat/2026-10-28_timed_consumables.md",
+    "?? docs/reports/item_combat/2026-10-28_toggle_effects.md",
+    "?? tests/fixtures/item_combat/v8/",
+    "?? tests/fixtures/item_combat/v9/",
+    "?? tests/server/AutomaticRecoveryTests.cpp",
+    "?? tests/server/TimedEffectTests.cpp",
+    "?? tests/server/ToggleEffectTests.cpp"
+  ],
+  "scope": "IC-014 F2 slice 3 extension; isolated item-bound toggle effects; no runtime integration",
+  "legacy_sources": [
+    {
+      "path": "SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp",
+      "bytes": 236117,
+      "sha256": "78554379c6687eacff287662d7ae5f39b71dfae83ce6e2cb07fe4b1de46bdf14",
+      "symbols": "UseItemEx / USE_NEW_POTIION; real_time_expire_event"
+    },
+    {
+      "path": "SRC/Server/GameServer/ecs/systems/ItemSystem.cpp",
+      "bytes": 101429,
+      "sha256": "c4ab24ae73176213c0ab3a0ae772e4e56bd4a31fbf9730446392b14c1d9d1bbf",
+      "symbols": "StartRealTimeExpireEventEcs"
+    },
+    {
+      "path": "SRC/Server/GameServer/ecs/systems/AffectSystem.cpp",
+      "bytes": 58627,
+      "sha256": "4c22ddd37d716f3286f0e2ef7ec3ec89868fffc9b022bb0e88a3d616a18428b5",
+      "symbols": "LoadAffect; IsNoSaveAffect"
+    },
+    {
+      "path": "SRC/Server/GameServer/ecs/systems/SocialSystem.cpp",
+      "bytes": 46215,
+      "sha256": "ed126d5e69e62930975504f6297b5e82b559476e45fee246233c51258de6d25f",
+      "symbols": "SetParty"
+    },
+    {
+      "path": "SRC/Server/GameServer/social/marriage.cpp",
+      "bytes": 24957,
+      "sha256": "3eeae0ea4cbc304e49494f89dd36c751f210f90a3ad043e37a52d92174388c90",
+      "symbols": "CManager::Remove"
+    },
+    {
+      "path": "SRC/Server/GameServer/item/item_manager.cpp",
+      "bytes": 67140,
+      "sha256": "a82a36c6d43c003ace28c5706e94c5af054f7aca1d302b2f40e9cb7b67caa272",
+      "symbols": "CreateItem: new potion socket initialization"
+    },
+    {
+      "path": "SRC/Server/GameServer/combat/affect.h",
+      "bytes": 7409,
+      "sha256": "63b5efeabaa85782547b9c5cd58d22bca20f3dde3e249bc31417820214fe0291",
+      "symbols": "AFFECT_NEW_POTION1..31"
+    }
+  ],
+  "source_fingerprints": [
+    {
+      "path": "SRC/ItemDomain/AutomaticRecovery.cpp",
+      "bytes": 7006,
+      "sha256": "f108247934ec03a5ad1053f8ae5856d9c84e8a7c775eb2a3109dcc72d244b757"
+    },
+    {
+      "path": "SRC/ItemDomain/BonusProfiles.cpp",
+      "bytes": 2244,
+      "sha256": "809cb4c8e8a5be88ba5692b4e9530bd5ed14b6dcacc749918d27ab0b96a48bbe"
+    },
+    {
+      "path": "SRC/ItemDomain/CMakeLists.txt",
+      "bytes": 10947,
+      "sha256": "1acacf0fadc3cf91b91eea177a3dba820658dc00fb29a6f47d7c3ad248a2c1dd"
+    },
+    {
+      "path": "SRC/ItemDomain/CatalogEditorTool.cpp",
+      "bytes": 19498,
+      "sha256": "2a3f5afa0f331a5cec2e1f05df0d81bc633ea752eb0736ba21e225626cbf01e0"
+    },
+    {
+      "path": "SRC/ItemDomain/CatalogHash.cpp",
+      "bytes": 13946,
+      "sha256": "8760fc23a4d4647518ac4a0712dc66492647f7b360db4de921ad4f4f0ffd4d6b"
+    },
+    {
+      "path": "SRC/ItemDomain/CatalogSnapshot.cpp",
+      "bytes": 15381,
+      "sha256": "30a56c33e718b86b130a7f72208c2bda51cc07f7fc29665611801fe1cd2a88e0"
+    },
+    {
+      "path": "SRC/ItemDomain/CatalogSnapshot.hpp",
+      "bytes": 2839,
+      "sha256": "6c74bdae2735c5eabbf5ecdd54a10ad1f0fec748cdd5b829a9d8fddfb2bd75f3"
+    },
+    {
+      "path": "SRC/ItemDomain/CatalogTables.cpp",
+      "bytes": 6008,
+      "sha256": "d09cf67b414cbc8bec364d379ed3911477d7965958f57315d0a42ca3723f1c5e"
+    },
+    {
+      "path": "SRC/ItemDomain/Consumables.cpp",
+      "bytes": 8618,
+      "sha256": "c7fccd831cc41e68b45726f676be927b048a438cdb6a253ca72286ab0ba97783"
+    },
+    {
+      "path": "SRC/ItemDomain/Containers.cpp",
+      "bytes": 6274,
+      "sha256": "f15770c29fb8cdc15be3e1fbe632dcf1c68a44952f5c5d7df40b324299b6823e"
+    },
+    {
+      "path": "SRC/ItemDomain/CurrencyTokens.cpp",
+      "bytes": 1331,
+      "sha256": "ca7256c04f6dea8d6034c37b8d738528b8d6100f3c8a245f06b1577dec670ac6"
+    },
+    {
+      "path": "SRC/ItemDomain/ItemCatalog.cpp",
+      "bytes": 33945,
+      "sha256": "51afbd3b81e222948d440b93346e56a57d67c3dc33a7ee0dbe4f276b97457e53"
+    },
+    {
+      "path": "SRC/ItemDomain/RecoveryMath.hpp",
+      "bytes": 640,
+      "sha256": "7f0577a34b77ff9ff76f85f8889f2d4f96f77a88fb10a1afe90c23028a4c7bed"
+    },
+    {
+      "path": "SRC/ItemDomain/TimedEffects.cpp",
+      "bytes": 4234,
+      "sha256": "7f8438a01ee651254de9f63692162dca27fce1bbe6d4d4bc61a81f34c0a951db"
+    },
+    {
+      "path": "SRC/ItemDomain/ToggleEffects.cpp",
+      "bytes": 6481,
+      "sha256": "cf462c47ba36f72fc0da9f9c2ab8ff16e600240ff28e357ebbe5ee69ef71fb0d"
+    },
+    {
+      "path": "SRC/Server/GameServer/CMakeLists.txt",
+      "bytes": 44980,
+      "sha256": "2a827428420f2e92e75e974144ff5f2ee69b088a1710046ca95e6e4c2e21106a"
+    },
+    {
+      "path": "SRC/Server/common/item/AutomaticRecovery.hpp",
+      "bytes": 2859,
+      "sha256": "f32f55f373d3446bb897259b59d1f3bb4a91e849fda9c1d7b913a52a28c2f387"
+    },
+    {
+      "path": "SRC/Server/common/item/BonusRegistry.hpp",
+      "bytes": 12259,
+      "sha256": "2f2c79f9a406e0e95d6d75075b1cdc8df6dfe4b31f5064b3fafd46505982d1e3"
+    },
+    {
+      "path": "SRC/Server/common/item/BonusTypes.hpp",
+      "bytes": 2994,
+      "sha256": "64355918fb204531403069f3ae8c6bdc9173745a02724e4d46c7b54823d53b68"
+    },
+    {
+      "path": "SRC/Server/common/item/Consumables.hpp",
+      "bytes": 5034,
+      "sha256": "69b4c809dd568073483ff3ce3bf07fc1303f5c1e2ba875847fa0c41bf81e34f8"
+    },
+    {
+      "path": "SRC/Server/common/item/Containers.hpp",
+      "bytes": 4357,
+      "sha256": "65d318cd3b40a4aa7491ecfe6d7b7e62f8c971cf2a8db573fbd39d441f8b6d5a"
+    },
+    {
+      "path": "SRC/Server/common/item/CurrencyTokens.hpp",
+      "bytes": 1226,
+      "sha256": "4b864e4f707cd2014ea26b52088b247448b581d06d201271ef21faad4bf8587d"
+    },
+    {
+      "path": "SRC/Server/common/item/ItemCatalog.hpp",
+      "bytes": 11475,
+      "sha256": "31ff50994218e9c33df9d21f313f6f241f1bcb5459c8d18b4df91599c44334d9"
+    },
+    {
+      "path": "SRC/Server/common/item/TimedEffects.hpp",
+      "bytes": 2591,
+      "sha256": "26d49654adc8f23f289ea14d3576645d47f2608ec3c467dc6a6a30bd60a2722f"
+    },
+    {
+      "path": "SRC/Server/common/item/ToggleEffects.hpp",
+      "bytes": 3376,
+      "sha256": "cacd749d0c8c92ab940557f304fd7db73d813d8267245a1c05d2591a3d0b1d1a"
+    },
+    {
+      "path": "SRC/Tools/ItemCatalogBuilder/generate_bonus_registry.py",
+      "bytes": 12264,
+      "sha256": "8ffac26c896f8b698b0b573317bbf041af8b4342efee137945902c86ba33e5a5"
+    },
+    {
+      "path": "SRC/Tools/ServerManager/item_catalog.py",
+      "bytes": 44841,
+      "sha256": "437d1058b4e4d0b4e4e77db61807596d96ae352a090e2c9f9d8ede53e302f99a"
+    },
+    {
+      "path": "SRC/Tools/ServerManager/item_page.py",
+      "bytes": 90914,
+      "sha256": "6285fc48ac5f29c09c148ee0ee3f3559c14aa8d9f30c609b5c1671decc3fb2f5"
+    },
+    {
+      "path": "config/item_combat/bonus_registry.json",
+      "bytes": 21090,
+      "sha256": "6895a51e130b123348ffbd4c58fc4be8dfd657efc2308d3e54cda076494cc86d"
+    },
+    {
+      "path": "db/migrations/item_combat/003_equipment_profiles.sql",
+      "bytes": 4242,
+      "sha256": "4ee2f43803c02c80c00c3c69a04d358aef4e66a2e3f44d881a451c4481d19964"
+    },
+    {
+      "path": "db/migrations/item_combat/006_bonus_profiles.sql",
+      "bytes": 2337,
+      "sha256": "66a13de421c1c4074f0581a1625ed3b09b4966fc11a9383b5f28ad5dc7e6109e"
+    },
+    {
+      "path": "db/migrations/item_combat/007_bonus_registry_seed.sql",
+      "bytes": 3908,
+      "sha256": "11885a81861aeaf60cb9b60e68457c8a030c4a93bfa61c597bceb1eb7414467e"
+    },
+    {
+      "path": "db/migrations/item_combat/010_recovery_consumables.sql",
+      "bytes": 4083,
+      "sha256": "e9f0bee398b33083e96b2c040d6c01dc97af7b53c7f0c6f18263644c98291db0"
+    },
+    {
+      "path": "db/migrations/item_combat/014_timed_consumables.sql",
+      "bytes": 2173,
+      "sha256": "6f32ffb43be1222bd64f11396ff0f06c9316013fed492d249a75aec09ee6ffb3"
+    },
+    {
+      "path": "db/migrations/item_combat/015_automatic_recovery.sql",
+      "bytes": 1436,
+      "sha256": "a1c1191f6a49ddce225acc130c6eac9242d1d9ad12cceab981e241d04b560305"
+    },
+    {
+      "path": "db/migrations/item_combat/016_toggle_effects.sql",
+      "bytes": 2028,
+      "sha256": "0c28e9adb6512859777ee0bb10c163c52ab9188a07ef1dcc4f93371d09779b69"
+    },
+    {
+      "path": "tests/fixtures/item_combat/v5/recovery_consumables.sql",
+      "bytes": 7748,
+      "sha256": "3d37d27139f236eade79e6d514506e4c4f4068e3fad02c4b6d833bc453b8e18f"
+    },
+    {
+      "path": "tests/fixtures/item_combat/v8/timed_consumables.sql",
+      "bytes": 697,
+      "sha256": "3b2db7783ac907fcc860ad48de28212a48ef3a197d816512ff2872fa2ebbb2cf"
+    },
+    {
+      "path": "tests/fixtures/item_combat/v9/automatic_recovery.sql",
+      "bytes": 498,
+      "sha256": "fc368b3e2cae64f3d29aff03cbaab9480f0eef432f1b3c31faef91d2bffb7783"
+    },
+    {
+      "path": "tests/server/AutomaticRecoveryTests.cpp",
+      "bytes": 13762,
+      "sha256": "f859755789206f19c3c3015983b57ebc384a6fb3c39d77ca11eb35ed959f3424"
+    },
+    {
+      "path": "tests/server/BonusProfileTests.cpp",
+      "bytes": 6380,
+      "sha256": "ca472c6cb2d2871b26a59d113ed84162ad73d3cff13e2fb107920d4f2b5d9029"
+    },
+    {
+      "path": "tests/server/CatalogEditorTests.py",
+      "bytes": 63066,
+      "sha256": "d314b6ed242b1c449507c40f6dacfdfa8a18e95958d2edc17006946dd2ef9662"
+    },
+    {
+      "path": "tests/server/CatalogSnapshotFixture.hpp",
+      "bytes": 7218,
+      "sha256": "ec85be7cb87fd9e6e5a4f19b5be47ad2c569b472c34907060a9946f2208346ec"
+    },
+    {
+      "path": "tests/server/CatalogSnapshotTests.cpp",
+      "bytes": 8818,
+      "sha256": "b0bcf492583525f2845745aac43afb9b661e0b9fbc11cf2d5ace4d671a39043c"
+    },
+    {
+      "path": "tests/server/CatalogSqlReaderTests.cpp",
+      "bytes": 16654,
+      "sha256": "9a82e4713dc83f821e0e956d1e02726f2162855e2afd1458c53f5e45f070c54e"
+    },
+    {
+      "path": "tests/server/CatalogSqlReaderTests.py",
+      "bytes": 3107,
+      "sha256": "bb497e217bd27c02d0f206983e8c8ed41e4c2e9945216fca7f80ee582ea5429d"
+    },
+    {
+      "path": "tests/server/ConsumableTests.cpp",
+      "bytes": 17047,
+      "sha256": "ebb13e55666fe0a13af2338ed6189fbdd577cecb54ce3811e4d8565fc17e834d"
+    },
+    {
+      "path": "tests/server/ContainerTests.cpp",
+      "bytes": 13153,
+      "sha256": "049f0e70f586773013d82518c87308eb4b553c23068fe7010d54037eab1cb982"
+    },
+    {
+      "path": "tests/server/CurrencyTokenTests.cpp",
+      "bytes": 6401,
+      "sha256": "f8d9882a6f38c46199851554be7969b75153d8af1d2f2c0600841c42d13711fc"
+    },
+    {
+      "path": "tests/server/ItemBonusGeneratorTests.py",
+      "bytes": 5174,
+      "sha256": "e5f34b15ba222a321cdfd084619e810445f9801e9d07ee03bea7e87e13ca8e7c"
+    },
+    {
+      "path": "tests/server/ItemCatalogDigestOracle.py",
+      "bytes": 10511,
+      "sha256": "758261b56972dc378e6d6232b5c3c3cd626900df6cc00f8160516831fec2d6df"
+    },
+    {
+      "path": "tests/server/ItemCatalogFixture.hpp",
+      "bytes": 11567,
+      "sha256": "e5585cc98e712c2600c2ddc86e9c0d6dee46b4add5510bbc2416266b42e4291c"
+    },
+    {
+      "path": "tests/server/ItemCatalogTests.cpp",
+      "bytes": 29109,
+      "sha256": "b53a4716a4827dcad95061018c3f833309f37425f05929b5e22d820faebba8d2"
+    },
+    {
+      "path": "tests/server/ItemCombatSchemaTests.py",
+      "bytes": 47689,
+      "sha256": "753fcf5caf5011029abd036b78b2cac2b19d6b7f4838fdcb61b3c463b3efee51"
+    },
+    {
+      "path": "tests/server/TimedEffectTests.cpp",
+      "bytes": 8663,
+      "sha256": "82bb41392edd4a88ba83966a78a73266a0fd90b631499bc325f3c89fcb39ecf4"
+    },
+    {
+      "path": "tests/server/ToggleEffectTests.cpp",
+      "bytes": 12637,
+      "sha256": "ec55249a121d2a632d66bec57443ab9bf98ad656290e2d276ac786b9b072d798"
+    }
+  ],
+  "unverified": [
+    "Complete old APPLY/content mapping",
+    "F3/F4 instance persistence and owner atomic commit",
+    "Live GameServer/Database/Unity behavior",
+    "Upgrade/restore of existing user v7 catalog",
+    "FreeBSD toolchain/build"
+  ],
+  "existing_local_catalog_modified": false,
+  "installed_manager_modified": false,
+  "remote_operations": false,
+  "committed": false
+}

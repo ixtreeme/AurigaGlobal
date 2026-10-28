@@ -1,0 +1,64 @@
+{
+  "created_utc": "2026-10-28T08:47:00.812858+00:00",
+  "head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "reviewed_commits": [
+    "94d29303",
+    "290f8460",
+    "c4ccb126",
+    "45e76b23"
+  ],
+  "source_sha256": {
+    "SRC/ItemDomain/CMakeLists.txt": "e8c7b700de6f1dd60e6f8387366511502cd854b050fa0f940c00db6625b78c84",
+    "SRC/ItemDomain/CatalogEditorTool.cpp": "a7ed7aace99d3a0dcdebd6def880a147130673a53e8c839863259f5c21155feb",
+    "SRC/ItemDomain/Containers.cpp": "f15770c29fb8cdc15be3e1fbe632dcf1c68a44952f5c5d7df40b324299b6823e",
+    "SRC/ItemDomain/CurrencyTokens.cpp": "ca7256c04f6dea8d6034c37b8d738528b8d6100f3c8a245f06b1577dec670ac6",
+    "SRC/Server/common/item/Containers.hpp": "65d318cd3b40a4aa7491ecfe6d7b7e62f8c971cf2a8db573fbd39d441f8b6d5a",
+    "SRC/Server/common/item/CurrencyTokens.hpp": "4b864e4f707cd2014ea26b52088b247448b581d06d201271ef21faad4bf8587d",
+    "SRC/Tools/ServerManager/item_catalog.py": "0e6a537292c9ffab2e467879195d0d36bea76ed56c2509ec5b0f764d4ec8fecd",
+    "SRC/Tools/ServerManager/item_page.py": "661fcc594d0fa6ebb4e614556478e1bbf1e971ae2d6109460f598e35b118a7c0",
+    "docs/server_manager.md": "cb45dc42fbfc3ded490803a9dbc7973a6070b0d81bbf0d444a902c5555e29a78",
+    "tests/server/CatalogEditorTests.py": "39aca972de90d0a0af5179cd8a5d91c783c43bb512b10c8acb31f5ec71f4d727",
+    "tests/server/ContainerTests.cpp": "049f0e70f586773013d82518c87308eb4b553c23068fe7010d54037eab1cb982",
+    "tests/server/CurrencyTokenTests.cpp": "f8d9882a6f38c46199851554be7969b75153d8af1d2f2c0600841c42d13711fc",
+    "docs/reports/item_combat/2026-10-28_claude_review.md": "5283baf1e9d99bc3a1f409e3206192b78f0468a18322aaa3397eeb43e063ca48"
+  },
+  "tests": [
+    {
+      "path": "build/claude-review-final-ctest.log",
+      "passed": 102,
+      "sha256": "674520e499da03bd1d4a171a64788ef32364d6c438db5d84d42cee447b0264ab"
+    },
+    {
+      "path": "build/claude-review-all-editor.log",
+      "passed": 23,
+      "sha256": "ce7bf827da10240ba51bfe72118c663b756f0015732db1aef79e6d0485257ef1"
+    },
+    {
+      "path": "build-asan/claude-review-ctest.log",
+      "passed": 13,
+      "sha256": "ef4e05a3190d00c8c34d6a3b8ee82fffe607c0af431028c2d0d524e94a6e6a17"
+    },
+    {
+      "path": "build-asan/claude-review-editor.log",
+      "passed": 23,
+      "sha256": "17a74200f1007034d629ad040b66da8b6c6a47fee2c605cc0a34d8fb0d48c83f"
+    },
+    {
+      "path": "build/claude-review-manager-gui.log",
+      "passed": 14,
+      "sha256": "6a77da0db14de388381fd58a3443efa39d71b6549abe89404c27dda7975151be"
+    }
+  ],
+  "pre_fix_reproduction": "build/claude-review-curve-repro.log",
+  "native_asan_instrumentation_verified": true,
+  "sql_transport": "Bound JSON_TABLE batches of at most 100 rows; existing prepared engine; unchanged SQL budgets",
+  "schema_version": 7,
+  "existing_database_writes": false,
+  "remote_modified": false,
+  "runtime_wired": false,
+  "gui_install_log": "GUI_UPDATED files=47 previous_gui=D:\\AurigaGlobal\\Server2-Local\\run\\manager-updates\\20261028T084604-77d1cae7",
+  "installed_package": "D:\\AurigaGlobal\\Server2-Local",
+  "bundle": "build\\server-manager-item-review-20261028\\AurigaServerManager",
+  "frozen_smoke_log": "build/claude-review-frozen-smoke.log",
+  "preview": "build/claude-review-item-editor.png"
+}

@@ -1,0 +1,192 @@
+{
+  "recorded_at": "2026-10-28T15:08:38.408928+01:00",
+  "head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "schema_version": 11,
+  "canonical_domain": "auriga.item_catalog.v11",
+  "physical_tables": 42,
+  "snapshot_tables": 41,
+  "fixture_sha256": "609c3bf0adc44ff0012cb6934bd6c0e0edf0be0ff4c5e4092256a2eb4aaf3005",
+  "toolchain": {
+    "cpp": "MSVC 19.51.36248.0 x64 C++23; Visual Studio 18",
+    "cmake": "4.3.2",
+    "qt_python": "3.12.14",
+    "base_python": "3.14.5",
+    "mariadb": "11.4.13 owned disposable instances"
+  },
+  "checks": [
+    {
+      "name": "normal_ctest",
+      "passed": 106,
+      "failed": 0,
+      "path": "build/skill-books-final-ctest.log",
+      "bytes": 12263,
+      "sha256": "6410d7256251e42bf6d96331898530d863b7212ecb22c66119bcd071d286a1e1",
+      "tail": [
+        "106/106 Test #106: caravan_rules ....................   Passed    0.01 sec",
+        "",
+        "100% tests passed, 0 tests failed out of 106",
+        "",
+        "Label Time Summary:",
+        "integration    =  40.28 sec*proc (8 tests)",
+        "server         =  98.16 sec*proc (106 tests)",
+        "",
+        "Total Test time (real) = 101.33 sec"
+      ]
+    },
+    {
+      "name": "editor_normal",
+      "passed": 38,
+      "failed": 0,
+      "path": "build/skill-books-editor-final.log",
+      "bytes": 5607,
+      "sha256": "cb2fd70d4a24b4464df5db433833bd80ff0e14ee45f991026f171a0fe2982156",
+      "tail": [
+        "test_timed_effect_sql_commit_replace_type_and_group_guard (__main__.SqlCommitTests.test_timed_effect_sql_commit_replace_type_and_group_guard) ... ok",
+        "test_z_automatic_and_arena_commit_type_switch_and_capacity (__main__.SqlCommitTests.test_z_automatic_and_arena_commit_type_switch_and_capacity) ... ok",
+        "test_z_skill_book_full_rules_commit_copy_and_operation_change (__main__.SqlCommitTests.test_z_skill_book_full_rules_commit_copy_and_operation_change) ... ok",
+        "test_z_toggle_sql_round_trip_replacement_and_group_guard (__main__.SqlCommitTests.test_z_toggle_sql_round_trip_replacement_and_group_guard) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 38 tests in 16.305s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "asan_ctest",
+      "passed": 17,
+      "failed": 0,
+      "path": "build-asan/skill-books-final-tests.log",
+      "bytes": 2025,
+      "sha256": "edb326372a3d2310183d3acd93d3f65ee463866c26a93016be3b379ac3cc8feb",
+      "tail": [
+        "      Start 17: catalog_sql_completion",
+        "17/17 Test #17: catalog_sql_completion ...........   Passed    0.38 sec",
+        "",
+        "100% tests passed, 0 tests failed out of 17",
+        "",
+        "Label Time Summary:",
+        "server    =   4.72 sec*proc (17 tests)",
+        "",
+        "Total Test time (real) =   5.09 sec"
+      ]
+    },
+    {
+      "name": "editor_asan",
+      "passed": 38,
+      "failed": 0,
+      "path": "build-asan/skill-books-editor-final.log",
+      "bytes": 5607,
+      "sha256": "eefd5e75001914a157b58e2e5509d3253f229574054ee7bf614a0d5d63ef40c5",
+      "tail": [
+        "test_timed_effect_sql_commit_replace_type_and_group_guard (__main__.SqlCommitTests.test_timed_effect_sql_commit_replace_type_and_group_guard) ... ok",
+        "test_z_automatic_and_arena_commit_type_switch_and_capacity (__main__.SqlCommitTests.test_z_automatic_and_arena_commit_type_switch_and_capacity) ... ok",
+        "test_z_skill_book_full_rules_commit_copy_and_operation_change (__main__.SqlCommitTests.test_z_skill_book_full_rules_commit_copy_and_operation_change) ... ok",
+        "test_z_toggle_sql_round_trip_replacement_and_group_guard (__main__.SqlCommitTests.test_z_toggle_sql_round_trip_replacement_and_group_guard) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 38 tests in 33.345s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "last_panel_normal",
+      "passed": 9,
+      "failed": 0,
+      "path": "build/skill-books-panel-regression.log",
+      "bytes": 1290,
+      "sha256": "02433ef4f43e639bb39a1a13ae14dad2b0613dba1b448748a02ce9408d433a68",
+      "tail": [
+        "test_form_edits_reach_the_validator (__main__.EditorPageTests.test_form_edits_reach_the_validator) ... ok",
+        "test_form_is_locked_during_background_work_and_copy_is_a_new_draft (__main__.EditorPageTests.test_form_is_locked_during_background_work_and_copy_is_a_new_draft) ... ok",
+        "test_timed_form_switches_group_rules_and_round_trips (__main__.EditorPageTests.test_timed_form_switches_group_rules_and_round_trips) ... ok",
+        "test_toggle_form_round_trip_and_type_switches (__main__.EditorPageTests.test_toggle_form_round_trip_and_type_switches) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 9 tests in 1.967s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "last_panel_asan",
+      "passed": 9,
+      "failed": 0,
+      "path": "build-asan/skill-books-panel-regression.log",
+      "bytes": 1290,
+      "sha256": "7d92f0fa2f43b3173503b310b16524f142da09f89516101287e38fc23d7d739d",
+      "tail": [
+        "test_form_edits_reach_the_validator (__main__.EditorPageTests.test_form_edits_reach_the_validator) ... ok",
+        "test_form_is_locked_during_background_work_and_copy_is_a_new_draft (__main__.EditorPageTests.test_form_is_locked_during_background_work_and_copy_is_a_new_draft) ... ok",
+        "test_timed_form_switches_group_rules_and_round_trips (__main__.EditorPageTests.test_timed_form_switches_group_rules_and_round_trips) ... ok",
+        "test_toggle_form_round_trip_and_type_switches (__main__.EditorPageTests.test_toggle_form_round_trip_and_type_switches) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 9 tests in 3.870s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "manager_gui",
+      "passed": 14,
+      "failed": 0,
+      "path": "build/skill-books-manager-gui-tests.log",
+      "bytes": 119,
+      "sha256": "ad03e545a6a9df0e7ced66150af9596a9d1346bc194fb1dc304b3cba271a6a31",
+      "tail": [
+        "..............",
+        "----------------------------------------------------------------------",
+        "Ran 14 tests in 30.388s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "skill_book_domain",
+      "passed": 1100,
+      "failed": 0,
+      "path": "build/skill-books-domain-final.log",
+      "bytes": 31,
+      "sha256": "c9959dfd45f7b38ecad64e33c519bc438a7a350b47e93cdcc0a2b6af0b504724",
+      "stdout": "1100 skill book checks passed"
+    }
+  ],
+  "visual_previews": [
+    {
+      "path": "build/skill-book-editor-rules.png",
+      "bytes": 80888,
+      "sha256": "3d21e0d62d5de525f211018e94ea4667c4f8dd8f37e32f4fcc61feef9f471eb2"
+    },
+    {
+      "path": "build/skill-book-editor-rules-small.png",
+      "bytes": 77731,
+      "sha256": "de5b7a7adb7190c95eb7dba747f1955264534375d4ebaad92f2e747d9b4eb0f1"
+    },
+    {
+      "path": "build/skill-book-editor-levels.png",
+      "bytes": 90820,
+      "sha256": "16cb91a0b41005ca5a7ee697dac9009603a7713e5f40a893242433719359bedb"
+    },
+    {
+      "path": "build/skill-book-editor-levels-small.png",
+      "bytes": 88732,
+      "sha256": "c615006b645ba1fca14026a7bd0e7f7423b2a973c45fce71b98f000eb6e48963"
+    }
+  ],
+  "visually_inspected": [
+    "build/skill-book-editor-rules-small.png",
+    "build/skill-book-editor-levels-small.png"
+  ],
+  "code_review": [
+    "No duplicate Python class methods",
+    "Only skill-domain ID bounds/allowlist; owner flags fail closed for cross-domain rules",
+    "Owning admitted request; output retains prototype/profile/revision",
+    "No hidden RNG/registry/SQL/skill callbacks in pure module",
+    "Existing prepared transaction budgets unchanged",
+    "Copy-on-write profile with children; forced failure rolls back key allocation",
+    "Final UI-only changes retested across all 9 form cases normal and ASAN"
+  ],
+  "report_sha256": "c4d838b3e7765efa7918df036a5263fdcabac6c79eae409dcac7fb3663d77559"
+}

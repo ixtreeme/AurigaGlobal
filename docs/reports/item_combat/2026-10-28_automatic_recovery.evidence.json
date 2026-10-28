@@ -1,0 +1,123 @@
+{
+  "created_utc": "2026-10-28T10:26:40.021537+00:00",
+  "repository": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal",
+  "branch": "codex/mission-engine",
+  "base_head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "commit_created": false,
+  "scope": "IC-016 automatic HP/SP recovery, charge state and arena quota; local isolated tests",
+  "schema_version": 9,
+  "canonical_domain": "auriga.item_catalog.v9",
+  "golden_fixture_sha256": "b02a500eca103be1d37fc1c16155e34f36103753af353d968a05f9f1677a9889",
+  "toolchain": {
+    "cpp": "C++23",
+    "compiler": "MSVC 19.51.36248.0",
+    "cmake": "4.3.2",
+    "python": "3.14.5",
+    "qt_python": "3.12.14",
+    "mariadb": "11.4.13"
+  },
+  "checks": {
+    "server_ctest": {
+      "passed": 104,
+      "log": "build/automatic-recovery-final-ctest.log",
+      "sha256": "1fa48fab2514076d220b028f42bace3c24b8068a8e735d646b8e0101238101da"
+    },
+    "catalog_editor_qt_sql": {
+      "passed": 32,
+      "log": "build/automatic-editor-final.log",
+      "sha256": "90b9bb725f6572802d3538fc6dd012fe55d65ac5206f44713939d19870ce140c"
+    },
+    "asan_catalog_ctest": {
+      "passed": 15,
+      "log": "build-asan/automatic-recovery-final-tests.log",
+      "sha256": "60d3b48b8306b36e87484d1f01b7c152ea8eca4c8bcf5d87bb6e8deadcac9a7e"
+    },
+    "asan_catalog_editor_qt_sql": {
+      "passed": 32,
+      "log": "build-asan/automatic-editor-final.log",
+      "sha256": "7632062b24186490974d85187bc7829f1e08cf028da75c21b06b3c4a40295514"
+    },
+    "manager_gui": {
+      "passed": 14,
+      "log": "build/automatic-manager-gui-tests.log",
+      "sha256": "ee58c7aa28e9976bdab93c5a11428fdd3fe137f18ea7c3d9d4cece94252cef60"
+    }
+  },
+  "source_sha256": {
+    "SRC/ItemDomain/AutomaticRecovery.cpp": "f108247934ec03a5ad1053f8ae5856d9c84e8a7c775eb2a3109dcc72d244b757",
+    "SRC/ItemDomain/BonusProfiles.cpp": "809cb4c8e8a5be88ba5692b4e9530bd5ed14b6dcacc749918d27ab0b96a48bbe",
+    "SRC/ItemDomain/CMakeLists.txt": "f0c4761feb2bc2ca206639a8fbbcced5e7b0aaf74fc822a3762381eeee772b53",
+    "SRC/ItemDomain/CatalogEditorTool.cpp": "8ffb6c69bb31dbbdbcfe8476439ebf119f4165952312f0d52b8439803c393856",
+    "SRC/ItemDomain/CatalogHash.cpp": "c037c37c6e0899cbd451cf9af906d62e73d28bd5ff4ef61b4ce56e617ed367bf",
+    "SRC/ItemDomain/CatalogSnapshot.cpp": "09370376220af0a5a7bd6c49f05963ec85b597810a19362409c4eea38f2857fd",
+    "SRC/ItemDomain/CatalogSnapshot.hpp": "7bfd15ed6c5e5963f7ba705526e8b6b15dffc337f6d354d065217b739a27dcac",
+    "SRC/ItemDomain/CatalogTables.cpp": "e887f2e32134cd61034db7068fad400ce7be603b0e331e3cd8b32600fa4f3f1a",
+    "SRC/ItemDomain/Consumables.cpp": "c7fccd831cc41e68b45726f676be927b048a438cdb6a253ca72286ab0ba97783",
+    "SRC/ItemDomain/Containers.cpp": "f15770c29fb8cdc15be3e1fbe632dcf1c68a44952f5c5d7df40b324299b6823e",
+    "SRC/ItemDomain/CurrencyTokens.cpp": "ca7256c04f6dea8d6034c37b8d738528b8d6100f3c8a245f06b1577dec670ac6",
+    "SRC/ItemDomain/ItemCatalog.cpp": "c3ba99ed46de436f5b5aefb7efdca08ebe88f17c6699f710bb89482c60062128",
+    "SRC/ItemDomain/RecoveryMath.hpp": "7f0577a34b77ff9ff76f85f8889f2d4f96f77a88fb10a1afe90c23028a4c7bed",
+    "SRC/ItemDomain/TimedEffects.cpp": "7f8438a01ee651254de9f63692162dca27fce1bbe6d4d4bc61a81f34c0a951db",
+    "SRC/Server/GameServer/CMakeLists.txt": "3b41f39d6d1f2b8e0b73c7d4178caedd7ed079ae38879da4ccedfb69609e3f5a",
+    "SRC/Server/common/item/AutomaticRecovery.hpp": "f32f55f373d3446bb897259b59d1f3bb4a91e849fda9c1d7b913a52a28c2f387",
+    "SRC/Server/common/item/BonusRegistry.hpp": "2f2c79f9a406e0e95d6d75075b1cdc8df6dfe4b31f5064b3fafd46505982d1e3",
+    "SRC/Server/common/item/BonusTypes.hpp": "64355918fb204531403069f3ae8c6bdc9173745a02724e4d46c7b54823d53b68",
+    "SRC/Server/common/item/Consumables.hpp": "69b4c809dd568073483ff3ce3bf07fc1303f5c1e2ba875847fa0c41bf81e34f8",
+    "SRC/Server/common/item/Containers.hpp": "65d318cd3b40a4aa7491ecfe6d7b7e62f8c971cf2a8db573fbd39d441f8b6d5a",
+    "SRC/Server/common/item/CurrencyTokens.hpp": "4b864e4f707cd2014ea26b52088b247448b581d06d201271ef21faad4bf8587d",
+    "SRC/Server/common/item/ItemCatalog.hpp": "39a4935eec4992fa605a2767df29d0261d63ecd107cf43a1d6fdcdbe3eecc9e8",
+    "SRC/Server/common/item/TimedEffects.hpp": "26d49654adc8f23f289ea14d3576645d47f2608ec3c467dc6a6a30bd60a2722f",
+    "SRC/Tools/ItemCatalogBuilder/generate_bonus_registry.py": "8ffac26c896f8b698b0b573317bbf041af8b4342efee137945902c86ba33e5a5",
+    "SRC/Tools/ServerManager/item_catalog.py": "2d5a12fe05015be7626530443d041968b38526ef962cdfd32fb6806cd7281347",
+    "SRC/Tools/ServerManager/item_page.py": "1ef76b2f422d9236aa930a02900143909b322f0ef7990dc7bfd9acd1fe925671",
+    "config/item_combat/bonus_registry.json": "6895a51e130b123348ffbd4c58fc4be8dfd657efc2308d3e54cda076494cc86d",
+    "db/migrations/item_combat/003_equipment_profiles.sql": "4ee2f43803c02c80c00c3c69a04d358aef4e66a2e3f44d881a451c4481d19964",
+    "db/migrations/item_combat/006_bonus_profiles.sql": "66a13de421c1c4074f0581a1625ed3b09b4966fc11a9383b5f28ad5dc7e6109e",
+    "db/migrations/item_combat/007_bonus_registry_seed.sql": "11885a81861aeaf60cb9b60e68457c8a030c4a93bfa61c597bceb1eb7414467e",
+    "db/migrations/item_combat/010_recovery_consumables.sql": "e9f0bee398b33083e96b2c040d6c01dc97af7b53c7f0c6f18263644c98291db0",
+    "db/migrations/item_combat/014_timed_consumables.sql": "6f32ffb43be1222bd64f11396ff0f06c9316013fed492d249a75aec09ee6ffb3",
+    "db/migrations/item_combat/015_automatic_recovery.sql": "a1c1191f6a49ddce225acc130c6eac9242d1d9ad12cceab981e241d04b560305",
+    "docs/adr/item_combat_014_use_items.md": "40d4ba331493bb0026182ecbf2b36fededdbdccfe0d5f9876d3d73102bfb2ed7",
+    "docs/adr/item_combat_015_timed_consumables.md": "fc52cbc0d74038e4b1559e2cbeba5a0aa0af1994a8bf758621e86727a1000a40",
+    "docs/adr/item_combat_016_automatic_recovery.md": "f29ef860f95f97eb6cf920b3a4f321129f59c56faf8c6d7dcc9d719db8a0c518",
+    "tests/fixtures/item_combat/v5/recovery_consumables.sql": "3d37d27139f236eade79e6d514506e4c4f4068e3fad02c4b6d833bc453b8e18f",
+    "tests/fixtures/item_combat/v8/timed_consumables.sql": "658b7b05ffc5c0ba3a336badddef27f96d7aef8cc3e9c2d6787b05e1c5a1976a",
+    "tests/fixtures/item_combat/v9/automatic_recovery.sql": "bd31d341e523bc8508b9407ef76171046939086b27bff0fa859c70755cce0b3f",
+    "tests/server/AutomaticRecoveryTests.cpp": "f859755789206f19c3c3015983b57ebc384a6fb3c39d77ca11eb35ed959f3424",
+    "tests/server/BonusProfileTests.cpp": "ca472c6cb2d2871b26a59d113ed84162ad73d3cff13e2fb107920d4f2b5d9029",
+    "tests/server/CatalogEditorTests.py": "afccb82ab1c4830e10bc12a6f686abc0e33cc5a64f420898eeffc88f508be172",
+    "tests/server/CatalogSnapshotFixture.hpp": "28929b44417fcf5a2669774b21937594480a78ad1d0032f9a64b16474d7d22b3",
+    "tests/server/CatalogSnapshotTests.cpp": "b0bcf492583525f2845745aac43afb9b661e0b9fbc11cf2d5ace4d671a39043c",
+    "tests/server/CatalogSqlReaderTests.cpp": "d9405d3d9be6c186c29c06714f03f2b65f6f823ef4fc74d5561d2f14740769f3",
+    "tests/server/CatalogSqlReaderTests.py": "6149cedac3bf6d8cce5d1908eea0a721cbd170a8d1e20848672cfb0567a6feac",
+    "tests/server/ConsumableTests.cpp": "ebb13e55666fe0a13af2338ed6189fbdd577cecb54ce3811e4d8565fc17e834d",
+    "tests/server/ContainerTests.cpp": "049f0e70f586773013d82518c87308eb4b553c23068fe7010d54037eab1cb982",
+    "tests/server/CurrencyTokenTests.cpp": "f8d9882a6f38c46199851554be7969b75153d8af1d2f2c0600841c42d13711fc",
+    "tests/server/ItemBonusGeneratorTests.py": "e5f34b15ba222a321cdfd084619e810445f9801e9d07ee03bea7e87e13ca8e7c",
+    "tests/server/ItemCatalogDigestOracle.py": "ec24b986d1d263ebc1f29019e26dbf5c0731781ca6b8785904c71c176ffc1b45",
+    "tests/server/ItemCatalogFixture.hpp": "e5585cc98e712c2600c2ddc86e9c0d6dee46b4add5510bbc2416266b42e4291c",
+    "tests/server/ItemCatalogTests.cpp": "7f1dee1081be29a6b739087da2ffc0c7d9f90dfbf20854ae1aa3f2f9e1e580de",
+    "tests/server/ItemCombatSchemaTests.py": "8353aafccf4303900aa4ad358e33428dc5937ea859a25bc98fae9d2a1081070d",
+    "tests/server/TimedEffectTests.cpp": "82bb41392edd4a88ba83966a78a73266a0fd90b631499bc325f3c89fcb39ecf4"
+  },
+  "binary_sha256": {
+    "build/SRC/ItemDomain/RelWithDebInfo/CatalogEditorTool.exe": "ed58584b8aae0642d710660e6ef6b26054a713f5196d79f989c706b5cd56cd0e",
+    "build/SRC/ItemDomain/RelWithDebInfo/AutomaticRecoveryTests.exe": "ee27685c9e79d918cb149b56fcede58e0f3b1bdcc2cced0cd4b480a511978d77",
+    "build-asan/SRC/ItemDomain/RelWithDebInfo/CatalogEditorTool.exe": "1460ea3ebaf5ccabfebfecee2be07405027b1627a3d60c4fbb08543e37d7f04e",
+    "build-asan/SRC/ItemDomain/RelWithDebInfo/AutomaticRecoveryTests.exe": "23ec9db5bee2030f55d54c46eae6c9a96517250330fbeebf9e3f8b22a332fecd"
+  },
+  "previews": [
+    "build/automatic-recovery-editor.png",
+    "build/automatic-recovery-editor-small.png"
+  ],
+  "existing_database_modified": false,
+  "installed_application_modified": false,
+  "remote_modified": false,
+  "not_runtime_integrated": [
+    "GameServer/Database/Unity",
+    "ECS ownership and timers",
+    "item/HP/stat/quota/cooldown operation receipt commit",
+    "offline socket/stack conversion",
+    "existing catalogue upgrade"
+  ]
+}

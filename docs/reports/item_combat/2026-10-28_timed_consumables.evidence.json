@@ -1,0 +1,113 @@
+{
+  "created_utc": "2026-10-28T09:47:38.303772+00:00",
+  "repository": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal",
+  "branch": "codex/mission-engine",
+  "base_head": "45e76b230f83a9adc2a244881f488786679ef7e7",
+  "commit_created": false,
+  "scope": "IC-014 slice 2 timed stat effects (IC-015); local-only isolated tests",
+  "schema_version": 8,
+  "canonical_domain": "auriga.item_catalog.v8",
+  "golden_fixture_sha256": "e7f086fd194f534776c75a8943a950a1705bfac60cae6bab53d8df341b65605a",
+  "toolchain": {
+    "cpp": "C++23",
+    "compiler": "MSVC 19.51.36248.0",
+    "cmake": "4.3.2",
+    "python": "3.14.5",
+    "qt_python": "3.12.14",
+    "mariadb": "11.4.13"
+  },
+  "checks": {
+    "server_ctest": {
+      "passed": 103,
+      "log": "build/timed-consumables-final-ctest.log",
+      "sha256": "1de81900b48cce3df7bb88b371c8be4972915933159262c8614832cde90c666f"
+    },
+    "catalog_editor_qt_sql": {
+      "passed": 27,
+      "log": "build/timed-editor-final.log",
+      "sha256": "125d765784526bcb8effa7b830bfd39ad82c2716378d666be71511f109662a9a"
+    },
+    "asan_catalog_ctest": {
+      "passed": 14,
+      "log": "build-asan/timed-consumables-final-tests.log",
+      "sha256": "37e935968b9714f38367b48b4b581123870f1d5304e5e72c08263ee99796d4f2"
+    },
+    "asan_editor_qt_sql": {
+      "passed": 27,
+      "log": "build-asan/timed-editor-final.log",
+      "sha256": "86f7749df18849d27c95b6af561951b846cc04cfd6e7c31976a9205dc76d8b48"
+    },
+    "manager_gui": {
+      "passed": 14,
+      "log": "build/timed-manager-gui-tests.log",
+      "sha256": "5a9747ad3af3a3cef5e9a8ef994e4008ca445ea465e2adc1407035f0092f363e"
+    }
+  },
+  "source_sha256": {
+    "SRC/ItemDomain/BonusProfiles.cpp": "809cb4c8e8a5be88ba5692b4e9530bd5ed14b6dcacc749918d27ab0b96a48bbe",
+    "SRC/ItemDomain/CMakeLists.txt": "6080287af609c695b207a565d4c2936f2058c5976f359f0cc34b1580a0f1a4b5",
+    "SRC/ItemDomain/CatalogEditorTool.cpp": "e3ec7737c35b204160882c6f6e2cd0b238e16e0b0697efaadb50831f1931cfc3",
+    "SRC/ItemDomain/CatalogHash.cpp": "bba9be2f8a83ecc3197d21370978ae3221f6a8077d98380246bb818a8bba1ca6",
+    "SRC/ItemDomain/CatalogSnapshot.cpp": "3e054909e864bff04b053ba8ca62e7337c53df9f531aa69a1bccaa8789bd6d78",
+    "SRC/ItemDomain/CatalogSnapshot.hpp": "9392d66b132d1e33e506e8fccac993a80a18943d8bfd4afb5af14487725c63fe",
+    "SRC/ItemDomain/CatalogTables.cpp": "540da7d6c2fc82fbe48a81040e95ba4e3bc0f4086415ac33d8825d2b640b9d49",
+    "SRC/ItemDomain/Consumables.cpp": "a989947e0a1ed9e2292af22422eed5a5d685cc3eb038a66bd8c5c84246f78c28",
+    "SRC/ItemDomain/Containers.cpp": "f15770c29fb8cdc15be3e1fbe632dcf1c68a44952f5c5d7df40b324299b6823e",
+    "SRC/ItemDomain/CurrencyTokens.cpp": "ca7256c04f6dea8d6034c37b8d738528b8d6100f3c8a245f06b1577dec670ac6",
+    "SRC/ItemDomain/ItemCatalog.cpp": "2978938915cefd64d4b9106e637357c4d281c3049214cf047e3087bbbd87273e",
+    "SRC/ItemDomain/TimedEffects.cpp": "7f8438a01ee651254de9f63692162dca27fce1bbe6d4d4bc61a81f34c0a951db",
+    "SRC/Server/GameServer/CMakeLists.txt": "9d6c82a9b88add07ac01645e70a61164ef64bb491dddc587aced2a063704efe8",
+    "SRC/Server/common/item/BonusRegistry.hpp": "2f2c79f9a406e0e95d6d75075b1cdc8df6dfe4b31f5064b3fafd46505982d1e3",
+    "SRC/Server/common/item/BonusTypes.hpp": "64355918fb204531403069f3ae8c6bdc9173745a02724e4d46c7b54823d53b68",
+    "SRC/Server/common/item/Containers.hpp": "65d318cd3b40a4aa7491ecfe6d7b7e62f8c971cf2a8db573fbd39d441f8b6d5a",
+    "SRC/Server/common/item/CurrencyTokens.hpp": "4b864e4f707cd2014ea26b52088b247448b581d06d201271ef21faad4bf8587d",
+    "SRC/Server/common/item/ItemCatalog.hpp": "607cf94206600c9fcd8f475a16dc6af681fc85b7186f8fa453a7586abbe7d7b7",
+    "SRC/Server/common/item/TimedEffects.hpp": "26d49654adc8f23f289ea14d3576645d47f2608ec3c467dc6a6a30bd60a2722f",
+    "SRC/Tools/ItemCatalogBuilder/generate_bonus_registry.py": "8ffac26c896f8b698b0b573317bbf041af8b4342efee137945902c86ba33e5a5",
+    "SRC/Tools/ServerManager/item_catalog.py": "9a9fa5a50f74835140641eac5fcd5a76634612de276d24c7d812c8cf082662d1",
+    "SRC/Tools/ServerManager/item_page.py": "e4163807b005b8d0dfade62c0fc7592b0823b3ff69c78c27d4451640bf123e97",
+    "config/item_combat/bonus_registry.json": "6895a51e130b123348ffbd4c58fc4be8dfd657efc2308d3e54cda076494cc86d",
+    "db/migrations/item_combat/003_equipment_profiles.sql": "4ee2f43803c02c80c00c3c69a04d358aef4e66a2e3f44d881a451c4481d19964",
+    "db/migrations/item_combat/006_bonus_profiles.sql": "66a13de421c1c4074f0581a1625ed3b09b4966fc11a9383b5f28ad5dc7e6109e",
+    "db/migrations/item_combat/007_bonus_registry_seed.sql": "11885a81861aeaf60cb9b60e68457c8a030c4a93bfa61c597bceb1eb7414467e",
+    "db/migrations/item_combat/014_timed_consumables.sql": "6f32ffb43be1222bd64f11396ff0f06c9316013fed492d249a75aec09ee6ffb3",
+    "docs/adr/item_combat_014_use_items.md": "7a465b6953643eaec8540fed64ab2af13401ff5e271490912d6ea5d40e40fcee",
+    "docs/adr/item_combat_015_timed_consumables.md": "fc52cbc0d74038e4b1559e2cbeba5a0aa0af1994a8bf758621e86727a1000a40",
+    "tests/fixtures/item_combat/v5/recovery_consumables.sql": "1d60f9f7771f620ec088f53fb3907c8de3a9cbc9005af0ad686961f93af86e8a",
+    "tests/fixtures/item_combat/v8/timed_consumables.sql": "658b7b05ffc5c0ba3a336badddef27f96d7aef8cc3e9c2d6787b05e1c5a1976a",
+    "tests/server/BonusProfileTests.cpp": "ca472c6cb2d2871b26a59d113ed84162ad73d3cff13e2fb107920d4f2b5d9029",
+    "tests/server/CatalogEditorTests.py": "42d4da95ea813805fe84b64283075e839e89fcbbdd69248b320351b914afd927",
+    "tests/server/CatalogSnapshotFixture.hpp": "b6e0ab2c8f013014baf426cfe0f8d449965747ea1cc2fd047fb03423d5700d33",
+    "tests/server/CatalogSnapshotTests.cpp": "bd6b20dec0bce48ec9b94358b59d4ae186419f0f2a8ff3f3abf4edee1bb93f78",
+    "tests/server/CatalogSqlReaderTests.cpp": "39112313fb0b2fd7d697601f6e7f8a7d11f89bf704c5db2f8fa1728b7d77c94b",
+    "tests/server/CatalogSqlReaderTests.py": "51a78af9c4db5201e843f054d7b67996502e9cce24826acb31b6cf710f789faf",
+    "tests/server/ConsumableTests.cpp": "ebb13e55666fe0a13af2338ed6189fbdd577cecb54ce3811e4d8565fc17e834d",
+    "tests/server/ContainerTests.cpp": "049f0e70f586773013d82518c87308eb4b553c23068fe7010d54037eab1cb982",
+    "tests/server/CurrencyTokenTests.cpp": "f8d9882a6f38c46199851554be7969b75153d8af1d2f2c0600841c42d13711fc",
+    "tests/server/ItemBonusGeneratorTests.py": "e5f34b15ba222a321cdfd084619e810445f9801e9d07ee03bea7e87e13ca8e7c",
+    "tests/server/ItemCatalogDigestOracle.py": "0f9dc2a7d15cea11c4c85396acbba026bdb87f242793a794f1922b20c916ad98",
+    "tests/server/ItemCatalogFixture.hpp": "4adba9e46286f920f11f70c13724823046781281e45c9f76780833a9d90110a9",
+    "tests/server/ItemCatalogTests.cpp": "2df7adac8effcc8f617413536f4ee890763fe11b584108459bae2300ac86f717",
+    "tests/server/ItemCombatSchemaTests.py": "878d3b0549dff54030f357736680cd01b31bc47c7c1981f22cf9e41a94eb8d13",
+    "tests/server/TimedEffectTests.cpp": "7535b770d9a5c28f501199fa1a9b1c03de771911ad25ea1c696f1ebdde65eb99"
+  },
+  "binary_sha256": {
+    "build/SRC/ItemDomain/RelWithDebInfo/CatalogEditorTool.exe": "2a973288fb92e0428caf0e5338ee4532ea071aa5691253480c402765320a587e",
+    "build-asan/SRC/ItemDomain/RelWithDebInfo/CatalogEditorTool.exe": "a0c37fcd4308ed34e6ff19219d4c03c8b5918db9cf06d73a05c38f183a371445"
+  },
+  "previews": [
+    "build/timed-consumables-editor.png",
+    "build/timed-consumables-editor-small.png"
+  ],
+  "existing_database_modified": false,
+  "installed_application_modified": false,
+  "remote_modified": false,
+  "not_runtime_integrated": [
+    "GameServer",
+    "Database",
+    "Unity",
+    "ECS timed effect owner and expiry",
+    "offline legacy content conversion",
+    "existing v7 catalogue upgrade"
+  ]
+}
