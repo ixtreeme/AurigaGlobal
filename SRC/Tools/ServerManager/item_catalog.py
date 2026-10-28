@@ -20,15 +20,15 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Gyógyító ital', 6: 'Alapanyag', 8: 'Tároló', 16: 'Pénzjegy', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Fogyasztható', 6: 'Alapanyag', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 16: 'Pénzjegy', 18: 'Kulcs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 5: 'item_consumable', 6: 'item_material',
-                8: 'item_container', 16: 'item_currency_token', 18: 'item_container_key'}
-CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 5: 'consumable', 6: 'material', 8: 'container',
+                8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 16: 'item_currency_token', 18: 'item_container_key'}
+CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest',
                16: 'currency_token', 18: 'container_key'}
-STACKABLE = (5, 6, 8, 16, 18)
+STACKABLE = (5, 6, 8, 9, 10, 16, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4}
-EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile'}
+EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
 RESISTANCES = ['physical_bp','magical_bp','sword_bp','dagger_bp','bow_bp','two_handed_bp',
                'bell_bp','fan_bp','mount_spear_bp','fire_bp','electric_bp','ice_bp','wind_bp','earth_bp','dark_bp']
 GAINS = ['physical_attack_gain_raw','magical_attack_gain_raw','physical_defense_gain_raw','magical_defense_gain_raw']
@@ -40,10 +40,13 @@ PROFILES = {
     'item_attack_profile': ('profile_id', [('item_weapon', 'attack_profile_id')], []),
     'item_ammo_policy': ('policy_id', [('item_weapon', 'ammo_policy_id')], []),
     'item_resistance_profile': ('profile_id', [('item_armor', 'resistance_profile_id'), ('item_accessory', 'resistance_profile_id')], []),
-    'bonus_profile': ('profile_id', [('item_base', 'base_bonus_profile_id'), ('refinement_level', 'extra_bonus_profile_id')], ['bonus_profile_entry']),
+    'bonus_profile': ('profile_id', [('item_base', 'base_bonus_profile_id'), ('refinement_level', 'extra_bonus_profile_id'), ('timed_effect_profile', 'bonus_profile_id'), ('toggle_effect_profile', 'bonus_profile_id')], ['bonus_profile_entry']),
     'refinement_profile': ('profile_id', [('item_base', 'refinement_profile_id')], ['refinement_level']),
-    'consumable_cooldown_profile': ('profile_id', [('recovery_profile', 'cooldown_profile_id')], []),
+    'consumable_cooldown_profile': ('profile_id', [('recovery_profile', 'cooldown_profile_id'), ('timed_effect_profile', 'cooldown_profile_id'), ('toggle_effect_profile', 'cooldown_profile_id')], []),
     'recovery_profile': ('profile_id', [('item_consumable', 'recovery_profile_id')], list(EFFECT_TABLES.values())),
+    'timed_effect_profile': ('profile_id', [('item_consumable', 'timed_effect_profile_id')], []),
+    'toggle_effect_profile': ('profile_id', [('item_consumable', 'toggle_effect_profile_id')], []),
+    'skill_book_profile': ('profile_id', [('item_skill_book', 'profile_id')], ['skill_book_target', 'skill_book_step']),
     'loot_profile': ('profile_id', [('item_container', 'loot_profile_id')], ['loot_entry']),
 }
 
@@ -109,9 +112,27 @@ class Catalog:
                           ammo=self.linked('item_ammo_policy', child, 'ammo_policy_id', 'policy_id'))
         if category in (2, 3): result['resistance'] = self.linked('item_resistance_profile', child, 'resistance_profile_id')
         if category == 5:
-            recovery = self.linked('recovery_profile', child, 'recovery_profile_id')
-            result.update(recovery=recovery, effect=copy.deepcopy(self.row(EFFECT_TABLES[int(recovery['delivery_kind'])], recovery['profile_id'])),
-                          cooldown=self.linked('consumable_cooldown_profile', recovery, 'cooldown_profile_id'))
+            result.update(toggle=None, toggle_group=None, toggle_bonuses=[])
+            if child.get('toggle_effect_profile_id') is not None:
+                toggle = self.linked('toggle_effect_profile', child, 'toggle_effect_profile_id')
+                result.update(toggle=toggle, toggle_group=self.linked('toggle_effect_group', toggle, 'group_id', 'group_id'),
+                              toggle_bonuses=self.entries(toggle['bonus_profile_id']), recovery=None, effect=None,
+                              timed=None, timed_group=None, timed_bonuses=[],
+                              cooldown=self.linked('consumable_cooldown_profile', toggle, 'cooldown_profile_id'))
+            elif child.get('timed_effect_profile_id') is not None:
+                timed = self.linked('timed_effect_profile', child, 'timed_effect_profile_id')
+                result.update(timed=timed, timed_group=self.linked('timed_effect_group', timed, 'group_id', 'group_id'),
+                              timed_bonuses=self.entries(timed['bonus_profile_id']), recovery=None, effect=None,
+                              cooldown=self.linked('consumable_cooldown_profile', timed, 'cooldown_profile_id'))
+            else:
+                recovery = self.linked('recovery_profile', child, 'recovery_profile_id')
+                result.update(recovery=recovery, effect=copy.deepcopy(self.row(EFFECT_TABLES[int(recovery['delivery_kind'])], recovery['profile_id'])),
+                              timed=None, timed_group=None, timed_bonuses=[],
+                              cooldown=self.linked('consumable_cooldown_profile', recovery, 'cooldown_profile_id'))
+        if category == 9:
+            book = self.linked('skill_book_profile', child, 'profile_id')
+            result.update(book=book, book_targets=self.book_rows('skill_book_target', book['profile_id'], 'skill_id'),
+                          book_steps=self.book_rows('skill_book_step', book['profile_id'], 'current_level'))
         if category == 8:
             loot = self.linked('loot_profile', child, 'loot_profile_id')
             if loot is not None:
@@ -119,9 +140,30 @@ class Catalog:
             result['loot'] = loot
         return result
 
+    def book_rows(self, table, profile_id, order):
+        return [dict(r) for r in sorted(self.tables[table], key=lambda r: int(r[order])) if r['profile_id'] == str(profile_id)]
+
     def loot_entries(self, profile_id):
         rows = [r for r in self.tables['loot_entry'] if r['profile_id'] == str(profile_id)]
         return [{name: row[name] for name in LOOT_FIELDS} for row in sorted(rows, key=lambda r: int(r['entry_no']))]
+
+    def duplicate(self, key):
+        """A new prototype based on a saved item. Its key/code are new; the
+        normal copy-on-write path protects every shared source profile."""
+        document = self.item(key)
+        category = int(document['base']['category_id'])
+        fresh = self.new(category)['base']
+        local = fresh['local_id']
+        existing = {row['content_code'] for row in self.tables['item_base']}
+        number = 1
+        while True:
+            suffix = '_copy_' + local + (('_' + str(number)) if number > 1 else '')
+            code = document['base']['content_code'][:96-len(suffix)].rstrip('.') + suffix
+            if code not in existing: break
+            number += 1
+        document['base'].update(local_id=local, content_code=code, retired='0')
+        document['child'].update(local_id=local)
+        return document
 
     def new(self, category):
         if category not in CATEGORIES: raise api.EditorError('Ez a kategória még nem szerkeszthető.')
@@ -150,20 +192,71 @@ class Catalog:
         if category == 3: item['child']['socket_profile_id'] = None
         if category == 6: item['child']['material_kind'] = '1'
         if category == 5:
-            item.update(recovery=dict(delivery_kind='1', units_per_use='1', allowed_contexts='15', allow_during_pvp='1', cooldown_profile_id=None),
+            item.update(recovery=dict(delivery_kind='1', units_per_use='1', allowed_contexts='15', allow_during_pvp='1', cooldown_profile_id=None, arena_quota_cost='0'),
                         effect=dict(delivery_kind='1', hp_raw='1000', sp_raw='0', max_hp_bp='0', max_sp_bp='0', flat_bonus_cap_bp='10000'),
                         cooldown=None)
-            item['child']['recovery_profile_id'] = None
+            item['child'].update(recovery_profile_id=None, timed_effect_profile_id=None, toggle_effect_profile_id=None)
+            item.update(timed=None, timed_group=None, timed_bonuses=[], toggle=None, toggle_group=None, toggle_bonuses=[])
         if category == 8:
             # A usable placeholder box: one weighted gold entry until real contents are entered.
             item['child'].update(container_kind='1', loot_profile_id=None, lock_id='0')
             item['loot'] = dict(pick_mode='1', entries=[dict(entry_no='1', reward_kind='2', item_category_id=None, item_local_id=None,
                                                              amount='1', weight='1', rare_attribute_chance_bp='0')])
+        if category == 9:
+            item['child']['profile_id'] = None
+            item.update(self.book_defaults())
+        if category == 10:
+            item['child'].update(dispatch_kind='1', group_code='', allowed_contexts='0', allow_observer='0')
         if category == 16:
             item['child'].update(wallet_currency='1', amount_per_unit='1')
         if category == 18:
             item['child']['lock_id'] = '1'
         return item
+
+    @staticmethod
+    def book_defaults(template='master'):
+        kind = {'forget': '2', 'horse': '3'}.get(template, '1')
+        book = dict(operation_kind=kind, target_mode='2' if kind == '2' else '3' if kind == '3' else '1',
+                    units_per_use='1', allowed_masteries='2', allow_delay_bypass='1', bonus_policy='2')
+        targets = [dict(skill_id='1', refund_pool='0', forbidden_empire='0')]
+        levels = list(range(20, 30)); delay = (64800000, 108000000)
+        required = {}; next_levels = {}; minimum = {}; chance, boosted = 7000, 10000
+        if template == 'leadership':
+            targets[0]['skill_id'] = '121'; levels = list(range(40)); book['allowed_masteries'] = '7'; delay = (18000000, 18000000)
+        elif template == 'combo':
+            targets[0]['skill_id'] = '122'; levels = [0, 1]; book['allowed_masteries'] = '1'; minimum = {0: 30, 1: 50}; chance, boosted = 5000, 7500
+        elif template == 'language':
+            targets[0].update(skill_id='126', forbidden_empire='1'); levels = list(range(20)); book['allowed_masteries'] = '1'; chance, boosted = 5000, 7500
+        elif template == 'support':
+            targets[0]['skill_id'] = '143'; levels = list(range(10)); book['allowed_masteries'] = '1'; required = {i: i + 2 for i in levels}; chance, boosted = 7000, 9000; delay = (10800000, 10800000)
+        elif template == 'passive':
+            targets[0]['skill_id'] = '221'; levels = list(range(11)) + list(range(20, 30)); book['allowed_masteries'] = '3'; minimum = {i: 90 for i in levels}
+            old = [1,1,1,2,2,2,3,3,3,4,0,0,0,0,0,0,0,0,0,0,4,5,6,7,8,9,10,13,15,19]
+            required = {i: old[i] + 1 for i in levels}; next_levels[10] = 20; chance, boosted = 7000, 8000
+        elif template == 'forget':
+            book.update(allowed_masteries='1', allow_delay_bypass='0', bonus_policy='1'); levels = list(range(1,20)); delay = (0,0); chance = boosted = 10000
+            targets[0]['refund_pool'] = '1'; next_levels = {i: i - 1 for i in levels}
+        elif template == 'horse':
+            book.update(allowed_masteries='0', bonus_policy='1'); targets = []; levels = list(range(20)); minimum = {i: 50 for i in levels}; chance = boosted = 5000
+        steps = [dict(current_level=str(i), next_level=str(next_levels.get(i, i + 1)), min_character_level=str(minimum.get(i, 0)),
+                      required_successes=str(required.get(i, 1)), success_chance_bp=str(chance), boosted_chance_bp=str(boosted),
+                      experience_cost='0', delay_minimum_ms=str(delay[0]), delay_maximum_ms=str(delay[1]),
+                      delay_on_failure='0' if kind in ('2','3') else '1') for i in levels]
+        return dict(book=book, book_targets=targets, book_steps=steps)
+
+    @staticmethod
+    def toggle_defaults(local):
+        return dict(toggle=dict(group_id=None, bonus_profile_id=None, variant_id='1', duration_ms='3600000',
+                                requirements='0', allowed_contexts='9', allow_during_pvp='0', cooldown_profile_id=None),
+                    toggle_group=dict(group_id=None, code=f'toggle.item_{local}', remove_on_death='0'),
+                    toggle_bonuses=[dict(bonus_id='26', value_scaled='1500')])
+
+    @staticmethod
+    def timed_defaults(local):
+        return dict(timed=dict(group_id=None, bonus_profile_id=None, duration_ms='60000', units_per_use='1',
+                               allowed_contexts='15', allow_during_pvp='1', cooldown_profile_id=None),
+                    timed_group=dict(group_id=None, code=f'effect.item_{local}', reapply_kind='1', clock_kind='1', remove_on_death='1'),
+                    timed_bonuses=[dict(bonus_id='26', value_scaled='1500')])
 
     # --- low-level table edits -------------------------------------------
     def replace(self, table, key, values):
@@ -236,7 +329,9 @@ class Catalog:
 
     @staticmethod
     def owner(table, row):
-        return (row['category_id'], row['local_id']) if table == 'item_base' else (row['profile_id'], row['level'])
+        if table == 'item_base': return row['category_id'], row['local_id']
+        if table in ('timed_effect_profile', 'toggle_effect_profile'): return row['profile_id']
+        return row['profile_id'], row['level']
 
     def referenced(self):
         return {(table, row[spec[0]]) for table, spec in PROFILES.items() for row in self.tables[table]
@@ -267,6 +362,13 @@ class Catalog:
             # A new document must never silently replace an issued item.
             raise api.EditorError('Ez a tárgykulcs már foglalt. Frissítsd a listát, majd hozd létre újra.')
         if original_key is not None and not exists: raise api.EditorError('A tárgy már nem található; frissítsd a listát.')
+        if not exists:
+            # A copied document may carry the source item's IDs. Its simple
+            # profiles have no owner key in profile(), so new items must enter
+            # the deduplication path instead of updating the source in place.
+            for field in ('use_policy_id', 'trade_policy_id', 'appearance_profile_id'): base[field] = None
+            for field in ('attack_profile_id', 'ammo_policy_id', 'resistance_profile_id'):
+                if field in child: child[field] = None
         before = self.referenced()
         base['use_policy_id'] = self.profile('item_use_policy', document['use'], base.get('use_policy_id'), idcol='policy_id')
         base['trade_policy_id'] = self.profile('item_trade_policy', document['trade'], base.get('trade_policy_id'), idcol='policy_id')
@@ -280,7 +382,11 @@ class Catalog:
             child['ammo_policy_id'] = self.profile('item_ammo_policy', document['ammo'], child.get('ammo_policy_id'), idcol='policy_id')
         if category in (2, 3):
             child['resistance_profile_id'] = self.profile('item_resistance_profile', document['resistance'], child.get('resistance_profile_id'))
-        if category == 5: self.apply_recovery(document, child, key)
+        if category == 5:
+            if document.get('toggle') is not None: self.apply_toggle(document, child, key)
+            elif document.get('timed') is not None: self.apply_timed(document, child, key)
+            else: self.apply_recovery(document, child, key)
+        if category == 9: self.apply_book(document, child, key)
         if category == 8:
             scripted = str(child.get('container_kind')) == '3'
             child['loot_profile_id'] = None if scripted else self.loot(document.get('loot'), child.get('loot_profile_id'), key)
@@ -325,11 +431,84 @@ class Catalog:
         if any(r.get('recovery_profile_id') == profile and (int(r['category_id']), int(r['local_id'])) != key for r in self.tables['item_consumable']):
             profile = self.allocate('recovery_profile')
             self.replace('recovery_profile', {'profile_id': profile}, [dict(recovery, profile_id=profile, code=f'editor.recovery.{profile}')])
-        child['recovery_profile_id'] = profile
+        child.update(recovery_profile_id=profile, timed_effect_profile_id=None, toggle_effect_profile_id=None)
         table = EFFECT_TABLES[int(recovery['delivery_kind'])]
         for other in EFFECT_TABLES.values():
             if other != table: self.replace(other, {'profile_id': profile}, [])
         self.replace(table, {'profile_id': profile}, [dict(document['effect'], profile_id=profile, delivery_kind=recovery['delivery_kind'])])
+
+    def apply_timed(self, document, child, key):
+        timed = document['timed']
+        group = document['timed_group']
+        old_group = self.row('timed_effect_group', group.get('group_id'), 'group_id')
+        fields = ('code', 'reapply_kind', 'clock_kind', 'remove_on_death')
+        if old_group:
+            if any(str(group.get(f)) != old_group[f] for f in fields):
+                raise api.EditorError('Meglévő hatáscsoport szabályai nem módosíthatók tárgyszerkesztéssel. Válassz új csoportot.')
+            group_id = old_group['group_id']
+        else:
+            matching = next((r for r in self.tables['timed_effect_group'] if r['code'] == group['code']), None)
+            if matching:
+                if any(str(group.get(f)) != matching[f] for f in fields):
+                    raise api.EditorError('A hatáscsoport kódja már más szabályokkal foglalt.')
+                group_id = matching['group_id']
+            else:
+                group_id = self.allocate('timed_effect_group', 'group_id')
+                self.replace('timed_effect_group', {'group_id': group_id}, [dict(group, group_id=group_id)])
+        old = child.get('timed_effect_profile_id')
+        previous = self.row('timed_effect_profile', old)
+        users = [row for _, row in self.references('timed_effect_profile', old)] if old else []
+        private = bool(previous) and all((int(r['category_id']), int(r['local_id'])) == key for r in users)
+        timed['group_id'] = group_id
+        timed['bonus_profile_id'] = self.bonus(document.get('timed_bonuses'), previous['bonus_profile_id'] if private else None,
+                                               '3', ('timed_effect_profile', str(old)))
+        cooldown = document.get('cooldown')
+        timed['cooldown_profile_id'] = self.profile('consumable_cooldown_profile', cooldown, timed.get('cooldown_profile_id'),
+                                                   reuse=private) if cooldown else None
+        child.update(recovery_profile_id=None, toggle_effect_profile_id=None, timed_effect_profile_id=self.profile('timed_effect_profile', timed, old if private else None))
+
+    def apply_toggle(self, document, child, key):
+        toggle = document['toggle']
+        group = document['toggle_group']
+        old_group = self.row('toggle_effect_group', group.get('group_id'), 'group_id')
+        fields = ('code', 'remove_on_death')
+        if old_group:
+            if any(str(group.get(f)) != old_group[f] for f in fields):
+                raise api.EditorError('Meglévő hatáscsoport szabályai nem módosíthatók tárgyszerkesztéssel. Válassz új csoportot.')
+            group_id = old_group['group_id']
+        else:
+            matching = next((r for r in self.tables['toggle_effect_group'] if r['code'] == group['code']), None)
+            if matching:
+                if any(str(group.get(f)) != matching[f] for f in fields):
+                    raise api.EditorError('A hatáscsoport kódja már más szabályokkal foglalt.')
+                group_id = matching['group_id']
+            else:
+                group_id = self.allocate('toggle_effect_group', 'group_id')
+                self.replace('toggle_effect_group', {'group_id': group_id}, [dict(group, group_id=group_id)])
+        old = child.get('toggle_effect_profile_id')
+        previous = self.row('toggle_effect_profile', old)
+        users = [row for _, row in self.references('toggle_effect_profile', old)] if old else []
+        private = bool(previous) and all((int(r['category_id']), int(r['local_id'])) == key for r in users)
+        toggle['group_id'] = group_id
+        toggle['bonus_profile_id'] = self.bonus(document.get('toggle_bonuses'), previous['bonus_profile_id'] if private else None,
+                                               '3', ('toggle_effect_profile', str(old)))
+        cooldown = document.get('cooldown')
+        toggle['cooldown_profile_id'] = self.profile('consumable_cooldown_profile', cooldown, toggle.get('cooldown_profile_id'),
+                                                   reuse=private) if cooldown else None
+        child.update(recovery_profile_id=None, timed_effect_profile_id=None, toggle_effect_profile_id=self.profile('toggle_effect_profile', toggle, old if private else None))
+
+    def apply_book(self, document, child, key):
+        head, old = document['book'], child.get('profile_id')
+        previous = self.row('skill_book_profile', old)
+        users = [row for _, row in self.references('skill_book_profile', old)] if old else []
+        private = bool(previous) and all((int(r['category_id']), int(r['local_id'])) == key for r in users)
+        profile = self.profile('skill_book_profile', head, old if private else None)
+        if any((int(r['category_id']), int(r['local_id'])) != key for _, r in self.references('skill_book_profile', profile)):
+            profile = self.allocate('skill_book_profile')
+            self.replace('skill_book_profile', {'profile_id': profile}, [dict(head, profile_id=profile, code=f'editor.skill_book.{profile}')])
+        child['profile_id'] = profile
+        self.replace('skill_book_target', {'profile_id': profile}, [dict(r, profile_id=profile) for r in document['book_targets']])
+        self.replace('skill_book_step', {'profile_id': profile}, [dict(r, profile_id=profile) for r in document['book_steps']])
 
     def encode(self):
         return {name: [[row[column] for column in self.packet['columns'][name]] for row in rows] for name, rows in self.tables.items()}
@@ -337,11 +516,20 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'quest_item': 'küldetéstárgy használati szabályai',
+    'skill_book': 'képességkönyv szabályai', 'skill_book.children': 'könyv céljai és szintlépései',
     'item_base': 'alapadatok', 'content_code': 'tartalomkód', 'refinement': 'fejlesztés', 'category': 'kategóriaadatok',
     'material.kind': 'alapanyag típusa', 'weapon.type': 'fegyvertípus', 'weapon.ammo': 'lőszerszabály', 'weapon': 'fegyverprofilok',
     'armor.slot': 'páncél helye', 'armor.resistance': 'ellenállás', 'accessory.slot': 'ékszer helye',
     'accessory.resistance': 'ellenállás', 'accessory.socket': 'foglalatprofil', 'accessory_socket': 'foglalatprofil',
-    'consumable.recovery': 'gyógyító hatás', 'recovery': 'gyógyító hatás', 'recovery.cooldown': 'várakozási idő',
+    'toggle_effect': 'kapcsolható harmat', 'toggle_effect_group': 'harmat hatáscsoportja',
+    'toggle_effect.group': 'harmat hatáscsoportja', 'toggle_effect.bonus': 'harmat bónuszai',
+    'toggle_effect.empty_bonus': 'harmat üres bónuszlistája', 'toggle_effect.cooldown': 'harmat várakozási ideje',
+    'consumable.toggle_effect': 'kapcsolható harmat',
+    'consumable.effect': 'fogyasztható hatásválasztása', 'consumable.timed_effect': 'időzített hatás',
+    'timed_effect': 'időzített hatás', 'timed_effect.group': 'hatáscsoport', 'timed_effect.bonus': 'hatás bónuszai',
+    'timed_effect.empty_bonus': 'üres hatás', 'timed_effect.cooldown': 'hatás várakozási ideje',
+    'timed_effect_group': 'hatáscsoport', 'consumable.recovery': 'gyógyító hatás', 'recovery': 'gyógyító hatás', 'recovery.cooldown': 'várakozási idő',
     'consumable_cooldown': 'várakozási idő', 'item_base.bonus': 'bónuszok', 'bonus': 'bónuszok', 'bonus.entries': 'bónuszok',
     'base_plus_gain': 'alapérték + fejlesztés', 'use_policy': 'használat', 'trade_policy': 'kereskedelem',
     'appearance': 'megjelenés', 'attack': 'támadási profil', 'ammo': 'lőszerszabály', 'resistance': 'ellenállás',
@@ -354,8 +542,9 @@ CATALOG_TEXT = {
     'InvalidIdentity': 'Érvénytelen kód: kisbetűvel kezdődjön, és csak a–z, 0–9, _ és . (nem kettőzött) legyen benne.',
     'MissingProfile': 'A hivatkozott profil hiányzik.',
     'WrongRefinementKind': 'A fejlesztési profil típusa nem illik a kategóriához.',
+    'InvalidRefinementRecipe': 'Hibás fejlesztési recept: a tárgyak, szintek, alapanyagok, pénzköltség vagy a sikertelen fejlesztés szabálya nem megfelelő.',
     'StatOutOfRange': 'Az alapérték és a legmagasabb szint növekménye együtt túl nagy.',
-    'WrongBonusSource': 'A bónuszprofil forrása nem megfelelő (alap vagy fejlesztési bónusz).',
+    'WrongBonusSource': 'A bónuszprofil forrása nem megfelelő (alap, fejlesztés vagy aktív hatás).',
     'UnsupportedCategory': 'Ez a kategória még nem tölthető be.',
     'LimitExceeded': 'Túl sok adat egy katalógusban.',
     'InvalidSocketProfile': 'Hibás foglalatprofil.', 'InvalidSocketMaterial': 'Hibás foglalatanyag.',
@@ -374,6 +563,9 @@ LOOT_TEXT = {
     'WeightOverflow': 'A súlyok összege túl nagy.',
 }
 BASE_TEXT = {
+    'skill_book.stack_below_use_units': 'A halmozási korlát kisebb a könyv használatonkénti darabszámánál.',
+    'consumable.toggle_stack': 'A kapcsolható harmat nem halmozható; a maximális halomméret 1 legyen.',
+    'consumable.automatic_stack': 'Az automata palack nem halmozható; a maximális halomméret 1 legyen.',
     'item_base': 'Hibás alapadat. A kódok kisbetűvel kezdődjenek (a–z, 0–9, _ és .), az ikon útvonala ne legyen üres, '
                  'a méret és a halmozás legalább 1 legyen; felszerelés nem halmozható.',
     'non_equipment.equipment_state': 'Alapanyag és ital nem köthető felszereléskor, és nem kaphat megjelenést vagy bónuszt.',
@@ -404,6 +596,8 @@ RECOVERY_TEXT = {
     'InvalidInterval': 'Érvénytelen tick-időköz.',
     'InvalidDuration': 'Az időtartam a tick-időköz egész számú többszöröse legyen.',
     'MultiplePools': 'Az időszakos hatás vagy HP-t, vagy SP-t töltsön, a kettőt egyszerre nem.',
+    'InvalidAutomatic': 'Hibás automata palack: egy pool, véges pozitív vagy végtelen nulla kapacitás, egy darab és arénán kívüli használat szükséges.',
+    'InvalidArenaQuota': 'Arénakvóta-költség csak akkor adható meg, ha a tárgy arénában is használható.',
 }
 READ_TEXT = {
     'InvalidNumber': 'Érvénytelen szám', 'NullValue': 'Kötelező érték hiányzik', 'InvalidText': 'Érvénytelen szöveg',

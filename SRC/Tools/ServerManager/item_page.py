@@ -14,9 +14,14 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog,
 
 import backend as api
 import item_catalog as catalog
+from skill_book_editor import SkillBookPanel
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 BONUS_LABELS = {
+    'bonus.movement_speed_percent': 'Mozgási sebesség', 'bonus.attack_speed_percent': 'Támadási sebesség',
+    'bonus.cast_speed_percent': 'Varázslási sebesség', 'bonus.strength': 'Erő', 'bonus.dexterity': 'Ügyesség',
+    'bonus.constitution': 'Életerő', 'bonus.intelligence': 'Intelligencia',
+    'bonus.experience_percent': 'Tapasztalatbónusz', 'bonus.global_outgoing': 'Általános sebzésbónusz',
     'physical_attack.flat': 'Fizikai támadás', 'magical_attack.flat': 'Mágikus támadás',
     'physical_defense.flat': 'Fizikai védekezés', 'magical_defense.flat': 'Mágikus védekezés',
     'physical_attack.percent': 'Fizikai támadás %', 'magical_attack.percent': 'Mágikus támadás %',
@@ -31,13 +36,14 @@ BONUS_LABELS = {
     'critical.multiplier_extra': 'Kritikus szorzó', 'block.reduction': 'Blokkolás', 'accuracy.evasion': 'Kitérés',
 }
 # Display scale per bonus unit: raw values are 1000/point, bp is 1/100 percent.
-UNITS = {1: (1000, 'pont'), 2: (100, '%'), 3: (1, 'db')}
+UNITS = {1: (1000, 'pont'), 2: (100, '%'), 3: (1, 'pont')}
 RESISTANCE_LABELS = ['Fizikai', 'Mágikus', 'Kard', 'Tőr', 'Íj', 'Kétkezes', 'Csengő', 'Legyező', 'Lovas lándzsa',
                      'Tűz', 'Villám', 'Jég', 'Szél', 'Föld', 'Sötétség']
 EFFECT_DEFAULTS = {
     1: dict(hp_raw='1000', sp_raw='0', max_hp_bp='0', max_sp_bp='0', flat_bonus_cap_bp='10000'),
     2: dict(hp_raw='1000', sp_raw='0', flat_bonus_cap_bp='10000', tick_interval_ms='1000', max_pool_per_tick_bp='1000'),
     3: dict(hp_per_tick_raw='100', sp_per_tick_raw='0', tick_interval_ms='1000', duration_ms='10000'),
+    4: dict(pool_kind='1', supply_kind='1', capacity_raw='1000000', tick_interval_ms='1000', max_pool_per_tick_bp='700', active_max_pool_bonus_bp='0'),
 }
 
 
@@ -176,7 +182,7 @@ class BonusTable(QWidget):
         row.addWidget(add); row.addWidget(remove); row.addStretch(); layout.addLayout(row)
 
     def set_definitions(self, definitions):
-        bit = 1 if self.source == '1' else 2
+        bit = 1 << (int(self.source) - 1)
         self.definitions = [d for d in definitions if int(d['sources']) & bit]
 
     def definition(self, bonus_id):
@@ -752,11 +758,12 @@ class ItemPage(QWidget):
         bar = QHBoxLayout(); title = QLabel('Tárgyak'); title.setObjectName('SectionTitle'); bar.addWidget(title, 1)
         self.start_db_button = QPushButton('Adatbázis indítása'); self.start_db_button.clicked.connect(self.start_database)
         self.reload_button = QPushButton('Lista frissítése'); self.reload_button.clicked.connect(self.reload)
+        self.copy_button = QPushButton('Másolat új tárgyként'); self.copy_button.clicked.connect(self.duplicate)
         self.new_button = QToolButton(); self.new_button.setText('Új tárgy'); self.new_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         menu = QMenu(self.new_button)
         for category, name in catalog.CATEGORIES.items(): menu.addAction(name, lambda c=category: self.create(c))
         self.new_button.setMenu(menu)
-        for widget in (self.start_db_button, self.reload_button, self.new_button): bar.addWidget(widget)
+        for widget in (self.start_db_button, self.reload_button, self.copy_button, self.new_button): bar.addWidget(widget)
         layout.addLayout(bar)
         self.status = QLabel('Válassz helyi szervercsomagot.'); self.status.setWordWrap(True); self.status.setObjectName('Subtle')
         layout.addWidget(self.status)
@@ -822,7 +829,7 @@ class ItemPage(QWidget):
         use.add('trade', 'allow_drop', 'Eldobás', 'bool', text='Földre dobható')
         use.add('trade', 'allow_sell', 'Eladás', 'bool', text='NPC-nek eladható')
         self.appearance_field = use.add('appearance', 'model_asset', 'Megjelenési modell', 'text', optional=True,
-                                        placeholder='Üres = nincs külön modell', hint='Felszerelés kliensoldali modellje.')
+                                        placeholder='Üres = nincs külön modell', hint='Felszerelés modellje; küldetéstárgynál a földre dobott tárgy modellje.')
         use.finish(); self.use_form = use
         weapon = Form(changed)
         weapon.add('child', 'weapon_subtype', 'Fegyvertípus', 'choice',
@@ -879,13 +886,26 @@ class ItemPage(QWidget):
         token_form.note('Használatkor a halomból annyi darab váltódik be, amennyi értéke még belefér a pénztárcába; '
                         'a többi darab megmarad. Egy darab sem fogy el úgy, hogy az értéke elveszne.')
         token_form.finish()
+        quest_form = Form(changed)
+        self.quest_dispatch_field = quest_form.add('child','dispatch_kind','Használat','choice',choices=[
+            (1,'Gyűjthető token (közvetlenül nem használható)'),(2,'Első megfelelő quest kezelése'),(3,'Minden megfelelő quest kezelése')])
+        self.quest_group_field = quest_form.add('child','group_code','Küldetéscsoport','text',optional=True,
+            hint='Üresen a tárgyhoz kötött questek kezelik. Megadva ennek a csoportnak a kezelői kapják a használatot.')
+        self.quest_contexts_field = quest_form.add('child','allowed_contexts','Használható','bits',names=['Világ','Párbaj','Aréna','Céhháború'])
+        self.quest_observer_field = quest_form.add('child','allow_observer','Megfigyelő','bool',text='Megfigyelőként is használható')
+        quest_form.note('A használat önmagában nem fogyasztja el a tárgyat. A quest dönti el, hogy kell-e belőle levonni vagy jutalmat adni.')
+        quest_form.finish()
+        self.quest_dispatch_field.widget.currentIndexChanged.connect(lambda *_: self.quest_controls())
         potion = QWidget(); potion_layout = QVBoxLayout(potion)
         recovery = Form(changed)
         self.delivery_field = recovery.add('recovery', 'delivery_kind', 'Hatás módja', 'choice',
-                                           choices=[(1, 'Azonnali'), (2, 'Tartalék (adagolva tölt)'), (3, 'Időszakos')])
-        recovery.add('recovery', 'units_per_use', 'Egység használatonként', range=(1, 65535))
-        recovery.add('recovery', 'allowed_contexts', 'Használható', 'bits', names=['Világ', 'Párbaj', 'Aréna', 'Céhháború'])
+                                           choices=[(1, 'Azonnali'), (2, 'Tartalék (adagolva tölt)'), (3, 'Időszakos'), (4, 'Automata palack')])
+        self.recovery_units_field = recovery.add('recovery', 'units_per_use', 'Egység használatonként', range=(1, 65535))
+        self.recovery_contexts_field = recovery.add('recovery', 'allowed_contexts', 'Használható', 'bits', names=['Világ', 'Párbaj', 'Aréna', 'Céhháború'])
         recovery.add('recovery', 'allow_during_pvp', 'PvP', 'bool', text='PvP közben is használható')
+        self.arena_cost_field = recovery.add('recovery', 'arena_quota_cost', 'Arénakvóta használatonként', range=(0, 65535),
+            hint='0: kvótamentes. Pozitív költség csak arénát engedő tárgyhoz; a mérkőzés tiltása minden italra érvényes.')
+        for box in self.recovery_contexts_field.boxes: box.toggled.connect(lambda *_: self.recovery_controls())
         self.cooldown_check = QCheckBox('Várakozási idő használat után'); self.cooldown_check.toggled.connect(lambda *_: (self.cooldown_toggled(), changed()))
         self.cooldown_edit = QLineEdit(); self.cooldown_edit.textEdited.connect(lambda *_: changed())
         cooldown = QHBoxLayout(); cooldown.addWidget(self.cooldown_check); cooldown.addWidget(self.cooldown_edit); cooldown.addWidget(QLabel('mp')); cooldown.addStretch()
@@ -912,20 +932,104 @@ class ItemPage(QWidget):
         periodic.add('effect', 'duration_ms', 'Időtartam', 'scaled', scale=1000, unit='mp', range=(1, 2 ** 63 - 1))
         periodic.note('Időszakos hatás vagy HP-t, vagy SP-t tölt. Az időtartam az időköz egész számú többszöröse.')
         periodic.finish()
-        for kind, form in ((1, instant), (2, reserve), (3, periodic)):
+        automatic = Form(changed)
+        automatic.add('effect', 'pool_kind', 'Mit tölt?', 'choice', choices=[(1, 'Életerő (HP)'), (2, 'Mana (SP)')])
+        self.supply_field = automatic.add('effect', 'supply_kind', 'Ellátás', 'choice', choices=[(1, 'Véges töltet'), (2, 'Végtelen')])
+        self.capacity_field = automatic.add('effect', 'capacity_raw', 'Teljes kapacitás', 'scaled', scale=1000, unit='pont', range=(0, 10 ** 15),
+            hint='Új palack induló töltete. Végtelen ellátásnál 0; a megmaradt töltet palackonként külön változik.')
+        automatic.add('effect', 'tick_interval_ms', 'Visszatöltés időköze', 'scaled', scale=1000, unit='mp', range=(1, 2 ** 63 - 1))
+        automatic.add('effect', 'max_pool_per_tick_bp', 'Maximum visszatöltés időközönként', 'scaled', scale=100, unit='%', range=(1, 10000))
+        automatic.add('effect', 'active_max_pool_bonus_bp', 'Aktív maximális HP/SP bónusz', 'scaled', scale=100, unit='%', range=(0, 10000),
+                      hint='Ugyanannak a poolnak a maximumát növeli, amelyet a palack tölt. Kikapcsoláskor megszűnik.')
+        automatic.note('Az automata palack egyenként kezelhető, arénában tiltott. Bekapcsoláskor nem fogy el; csak a '
+                       'tényleges helyreállítás csökkenti a töltetét. Az üres véges palack eltűnik.')
+        automatic.finish()
+        self.supply_field.widget.currentIndexChanged.connect(lambda *_: self.recovery_controls())
+        for kind, form in ((1, instant), (2, reserve), (3, periodic), (4, automatic)):
             self.effect_forms[kind] = form; self.effects.addWidget(form)
-        self.delivery_field.widget.currentIndexChanged.connect(lambda *_: self.effects.setCurrentWidget(self.effect_forms[int(self.delivery_field.value())]))
+        self.delivery_field.widget.currentIndexChanged.connect(lambda *_: (self.effects.setCurrentWidget(self.effect_forms[int(self.delivery_field.value())]), self.recovery_controls()))
         potion_layout.addWidget(self.effects); potion_layout.addStretch()
+        self.book_panel = SkillBookPanel(changed, Form)
         self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 8: container_form,
-                               16: token_form, 18: key_form}
+                               10: quest_form, 16: token_form, 18: key_form}
         self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 5: scroll(potion), 6: scroll(material),
-                               8: container, 16: scroll(token_form), 18: scroll(key_form)}
+                               8: container, 9: self.book_panel, 10: scroll(quest_form), 16: scroll(token_form), 18: scroll(key_form)}
+        # Timed stat effects are another typed consumable, never a recovery subtype.
+        timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
+        self.timed_form = Form(changed)
+        self.timed_form.add('timed', 'duration_ms', 'Időtartam', 'scaled', scale=1000, unit='mp', range=(1, 2 ** 63 - 1))
+        self.timed_form.add('timed', 'units_per_use', 'Darab használatonként', range=(1, 65535))
+        self.timed_form.add('timed', 'allowed_contexts', 'Használható', 'bits', names=['Világ', 'Párbaj', 'Aréna', 'Céhháború'])
+        self.timed_form.add('timed', 'allow_during_pvp', 'PvP', 'bool', text='PvP közben is használható')
+        self.timed_group_field = self.timed_form.add('timed', 'group_id', 'Hatáscsoport', 'choice', choices=[('', 'Új hatáscsoport')])
+        self.timed_form.finish(); timed_layout.addWidget(self.timed_form)
+        self.timed_group_form = Form(changed)
+        self.timed_group_form.add('timed_group', 'code', 'Csoport kódja', 'text')
+        self.timed_group_form.add('timed_group', 'reapply_kind', 'Ismételt használat', 'choice',
+                                  choices=[(1, 'Elutasítás, amíg a csoport hatása aktív'), (2, 'A teljes aktív hatás lecserélése')])
+        self.timed_group_form.add('timed_group', 'clock_kind', 'Idő számítása', 'choice',
+                                  choices=[(1, 'Csak bejelentkezve telik'), (2, 'Kijelentkezve is telik')])
+        self.timed_group_form.add('timed_group', 'remove_on_death', 'Halál', 'bool', text='Halálkor megszűnik')
+        self.timed_group_form.note('Egy csoportból egyszerre egy hatás aktív. Meglévő csoport szabályai közösek és itt nem módosíthatók; '
+                                    'más szabályokhoz válassz új csoportot.')
+        self.timed_group_form.finish(); timed_layout.addWidget(self.timed_group_form)
+        timed_cooldown = QHBoxLayout()
+        self.timed_cooldown_check = QCheckBox('Várakozási idő használat után')
+        self.timed_cooldown_edit = QLineEdit('1')
+        self.timed_cooldown_check.toggled.connect(lambda on: (self.timed_cooldown_edit.setEnabled(on), changed()))
+        self.timed_cooldown_edit.textEdited.connect(lambda *_: changed())
+        timed_cooldown.addWidget(self.timed_cooldown_check); timed_cooldown.addWidget(self.timed_cooldown_edit)
+        timed_cooldown.addWidget(QLabel('mp')); timed_cooldown.addStretch(); timed_layout.addLayout(timed_cooldown)
+        timed_layout.addWidget(QLabel('A hatás bónuszai (együtt kerülnek fel és együtt szűnnek meg):'))
+        self.timed_bonuses = BonusTable(changed, '3'); timed_layout.addWidget(self.timed_bonuses, 1)
+        toggle_page = QWidget(); toggle_layout = QVBoxLayout(toggle_page)
+        self.toggle_form = Form(changed)
+        self.toggle_form.add('toggle', 'duration_ms', 'Összes aktív idő', 'scaled', scale=1000, unit='mp', range=(1, 2 ** 63 - 1))
+        self.toggle_form.add('toggle', 'variant_id', 'Variáns', range=(1, 65535))
+        self.toggle_form.add('toggle', 'requirements', 'Feltételek', 'bits', names=['Házas karakter', 'Csoportvezető'])
+        self.toggle_form.add('toggle', 'allowed_contexts', 'Használható', 'bits', names=['Világ', 'Párbaj', 'Aréna', 'Céhháború'])
+        self.toggle_form.add('toggle', 'allow_during_pvp', 'PvP', 'bool', text='PvP közben is használható')
+        self.toggle_group_field = self.toggle_form.add('toggle', 'group_id', 'Hatáscsoport', 'choice', choices=[('', 'Új hatáscsoport')])
+        self.toggle_form.finish(); toggle_layout.addWidget(self.toggle_form)
+        self.toggle_group_form = Form(changed)
+        self.toggle_group_form.add('toggle_group', 'code', 'Csoport kódja', 'text')
+        self.toggle_group_form.add('toggle_group', 'remove_on_death', 'Halál', 'bool', text='Halálkor megszűnik')
+        self.toggle_group_form.note('Csak bekapcsolva és bejelentkezve fogy az idő. Egy csoportban egy tárgy aktív: azonos variáns másik példánya tiltott, eltérő variáns lecseréli. A harmat nem halmozható.')
+        self.toggle_group_form.finish(); toggle_layout.addWidget(self.toggle_group_form)
+        toggle_cooldown = QHBoxLayout()
+        self.toggle_cooldown_check = QCheckBox('Várakozási idő bekapcsolás után')
+        self.toggle_cooldown_edit = QLineEdit('1')
+        self.toggle_cooldown_check.toggled.connect(lambda on: (self.toggle_cooldown_edit.setEnabled(on), changed()))
+        self.toggle_cooldown_edit.textEdited.connect(lambda *_: changed())
+        toggle_cooldown.addWidget(self.toggle_cooldown_check); toggle_cooldown.addWidget(self.toggle_cooldown_edit)
+        toggle_cooldown.addWidget(QLabel('mp')); toggle_cooldown.addStretch(); toggle_layout.addLayout(toggle_cooldown)
+        toggle_layout.addWidget(QLabel('A hatás bónuszai (együtt kerülnek fel és együtt szűnnek meg):'))
+        self.toggle_bonuses = BonusTable(changed, '3'); toggle_layout.addWidget(self.toggle_bonuses, 1)
+        wrapper = QWidget(); wrapper_layout = QVBoxLayout(wrapper)
+        kind_row = QHBoxLayout(); kind_row.addWidget(QLabel('Fogyasztható típusa:'))
+        self.consumable_kind = QComboBox(); self.consumable_kind.addItem('Gyógyítás / regeneráció', '1')
+        self.consumable_kind.addItem('Időzített stat-hatás', '2'); self.consumable_kind.addItem('Kapcsolható harmat', '3'); kind_row.addWidget(self.consumable_kind); kind_row.addStretch()
+        wrapper_layout.addLayout(kind_row)
+        self.consumable_pages = QStackedWidget(); self.consumable_pages.addWidget(potion); self.consumable_pages.addWidget(timed_page); self.consumable_pages.addWidget(toggle_page)
+        wrapper_layout.addWidget(self.consumable_pages, 1)
+        self.category_pages[5] = scroll(wrapper)
+        self.consumable_kind.currentIndexChanged.connect(lambda index: (self.consumable_pages.setCurrentIndex(index), self.recovery_controls(), changed()))
+        self.timed_group_field.widget.currentIndexChanged.connect(lambda *_: self.timed_group_changed())
+        self.toggle_group_field.widget.currentIndexChanged.connect(lambda *_: self.toggle_group_changed())
         self.refinement = RefinementPanel(changed)
         self.bonuses = BonusTable(changed, '1')
         bonus_page = QWidget(); bonus_layout = QVBoxLayout(bonus_page)
         hint = QLabel('Az alap bónuszok minden fejlesztési szinten érvényesek. Szintenkénti bónuszt a Fejlesztés lapon adhatsz meg.')
         hint.setWordWrap(True); hint.setObjectName('FieldHint'); bonus_layout.addWidget(hint); bonus_layout.addWidget(self.bonuses, 1)
         self.base_page, self.use_page, self.bonus_page = scroll(base), scroll(use), bonus_page
+
+    def quest_controls(self):
+        usable=self.quest_dispatch_field.value()!='1'
+        for field in (self.quest_group_field,self.quest_contexts_field,self.quest_observer_field):field.widget.setEnabled(usable)
+        if not self.loading:
+            if not usable:
+                self.quest_group_field.load('');self.quest_contexts_field.load('0');self.quest_observer_field.load('0')
+            elif self.quest_contexts_field.value()=='0':self.quest_contexts_field.load('1')
 
     def add_resistances(self, form):
         for column, label in zip(catalog.RESISTANCES, RESISTANCE_LABELS):
@@ -937,6 +1041,46 @@ class ItemPage(QWidget):
         if kind != '2' and not self.loading: self.lock_field.edit.setText('0')
         for widget in (self.loot_mode, self.loot_table): widget.setEnabled(kind != '3')
         self.loot_hint.setVisible(kind == '3')
+
+    def recovery_controls(self):
+        automatic = self.consumable_kind.currentData() == '1' and self.delivery_field.value() == '4'
+        toggle = self.consumable_kind.currentData() == '3'
+        self.stack_field.edit.setEnabled(not (automatic or toggle))
+        self.recovery_units_field.widget.setEnabled(not automatic)
+        self.recovery_contexts_field.boxes[2].setEnabled(not automatic)
+        unlimited = self.supply_field.value() == '2'
+        self.capacity_field.widget.setEnabled(not unlimited)
+        if not self.loading:
+            if toggle: self.stack_field.edit.setText('1')
+            if automatic:
+                self.stack_field.edit.setText('1'); self.recovery_units_field.edit.setText('1')
+                self.recovery_contexts_field.boxes[2].setChecked(False)
+            if unlimited:
+                finite = self.capacity_field.edit.text().strip()
+                if finite not in ('', '0'): self.finite_capacity_text = finite
+                self.capacity_field.edit.setText('0')
+            elif self.capacity_field.edit.text().strip() in ('', '0'):
+                self.capacity_field.edit.setText(getattr(self, 'finite_capacity_text', '1000'))
+            if not self.recovery_contexts_field.boxes[2].isChecked(): self.arena_cost_field.edit.setText('0')
+        self.arena_cost_field.widget.setEnabled(not automatic and self.recovery_contexts_field.boxes[2].isChecked())
+
+    def timed_group_changed(self):
+        selected = self.timed_group_field.value()
+        if not self.loading and self.document is not None:
+            group = catalog.Catalog(self.packet).row('timed_effect_group', selected, 'group_id') if selected else None
+            if group is None: group = catalog.Catalog.timed_defaults(self.document['base']['local_id'])['timed_group']
+            self.timed_group_form.load(dict(timed_group=group))
+            self.mark_dirty()
+        self.timed_group_form.setEnabled(not bool(selected))
+
+    def toggle_group_changed(self):
+        selected = self.toggle_group_field.value()
+        if not self.loading and self.document is not None:
+            group = catalog.Catalog(self.packet).row('toggle_effect_group', selected, 'group_id') if selected else None
+            if group is None: group = catalog.Catalog.toggle_defaults(self.document['base']['local_id'])['toggle_group']
+            self.toggle_group_form.load(dict(toggle_group=group))
+            self.mark_dirty()
+        self.toggle_group_form.setEnabled(not bool(selected))
 
     def cooldown_toggled(self):
         self.cooldown_edit.setEnabled(self.cooldown_check.isChecked())
@@ -986,6 +1130,8 @@ class ItemPage(QWidget):
         self.new_button.setEnabled(local and db and not busy and self.packet is not None)
         self.list.setEnabled(not busy and self.packet is not None)
         has = self.document is not None
+        self.tabs.setEnabled(has and not busy)
+        self.copy_button.setEnabled(local and db and not busy and has and self.original_key is not None)
         self.check_button.setEnabled(has and not busy and self.packet is not None)
         running = bool(state.get('running'))
         can_save = has and not busy and db and not running and (self.dirty or self.original_key is None)
@@ -1026,6 +1172,8 @@ class ItemPage(QWidget):
         self.packet = packet
         model = catalog.Catalog(packet)
         self.bonuses.set_definitions(packet['bonuses'])
+        self.timed_bonuses.set_definitions(packet['bonuses'])
+        self.toggle_bonuses.set_definitions(packet['bonuses'])
         self.socket_field.widget.blockSignals(True); self.socket_field.widget.clear()
         self.socket_field.widget.addItem('Nincs foglalat', '')
         for pid, code in model.choices('accessory_socket_profile'): self.socket_field.widget.addItem(code + '  (#' + pid + ')', pid)
@@ -1085,6 +1233,16 @@ class ItemPage(QWidget):
         self.show_document(document)
         self.tabs.setCurrentIndex(0)
 
+    def duplicate(self):
+        if self.packet is None or self.original_key is None or not self.may_discard(): return
+        try: document = catalog.Catalog(self.packet).duplicate(self.original_key)
+        except api.EditorError as error: self.owner.error(str(error)); return
+        self.original_key = None
+        self.list.blockSignals(True); self.list.clearSelection(); self.list.blockSignals(False)
+        self.show_document(document)
+        self.tabs.setCurrentIndex(0)
+        self.status.setText('Új, még nem mentett másolat. A név, megjelenés és beállítások átvehetők; az eredeti tárgy változatlan.')
+
     # --- document <-> forms ------------------------------------------------------
     def show_document(self, document):
         self.loading = True; self.document = copy.deepcopy(document); self.dirty = False
@@ -1101,18 +1259,54 @@ class ItemPage(QWidget):
         if equipment:
             self.tabs.addTab(self.refinement, 'Fejlesztés'); self.tabs.addTab(self.bonus_page, 'Bónuszok')
         self.stack_field.edit.setEnabled(not equipment)
-        self.appearance_field.widget.setEnabled(equipment)
+        self.appearance_field.widget.setEnabled(equipment or category == 10)
         self.base_form.load(document); self.use_form.load(document)
         if category == 5:
-            self.category_forms[5].load(document)
-            kind = int(document['recovery']['delivery_kind'])
+            timed = document.get('timed') is not None
+            toggle = document.get('toggle') is not None
+            recovery_doc = document if not (timed or toggle) else catalog.Catalog(self.packet).new(5)
+            self.category_forms[5].load(recovery_doc)
+            kind = int(recovery_doc['recovery']['delivery_kind'])
+            self.finite_capacity_text = catalog.display(recovery_doc['effect']['capacity_raw']) if kind == 4 and recovery_doc['effect']['supply_kind'] == '1' else '1000'
             for value, form in self.effect_forms.items():
-                form.load(dict(effect=document['effect'] if value == kind else EFFECT_DEFAULTS[value]))
+                form.load(dict(effect=recovery_doc['effect'] if value == kind else EFFECT_DEFAULTS[value]))
             self.effects.setCurrentWidget(self.effect_forms[kind])
             cooldown = document.get('cooldown')
-            self.cooldown_check.setChecked(bool(cooldown))
-            self.cooldown_edit.setText(catalog.display(cooldown['duration_ms']) if cooldown else '1')
+            self.cooldown_check.setChecked(bool(cooldown) and not (timed or toggle))
+            self.cooldown_edit.setText(catalog.display(cooldown['duration_ms']) if cooldown and not (timed or toggle) else '1')
             self.cooldown_toggled()
+            timed_doc = copy.deepcopy(document) if timed else dict(document, **catalog.Catalog.timed_defaults(base['local_id']))
+            combo = self.timed_group_field.widget
+            combo.blockSignals(True); combo.clear(); combo.addItem('Új hatáscsoport', '')
+            for gid, code in catalog.Catalog(self.packet).choices('timed_effect_group', 'group_id'):
+                combo.addItem(code + ' (#' + gid + ')', gid)
+            combo.blockSignals(False)
+            timed_doc['timed']['group_id'] = timed_doc['timed'].get('group_id') or ''
+            self.timed_form.load(timed_doc); self.timed_group_form.load(timed_doc)
+            self.timed_group_changed()
+            self.timed_bonuses.load(timed_doc['timed_bonuses'])
+            self.timed_cooldown_check.setChecked(bool(cooldown) and timed)
+            self.timed_cooldown_edit.setText(catalog.display(cooldown['duration_ms']) if cooldown and timed else '1')
+            self.timed_cooldown_edit.setEnabled(self.timed_cooldown_check.isChecked())
+            toggle_doc = copy.deepcopy(document) if toggle else dict(document, **catalog.Catalog.toggle_defaults(base['local_id']))
+            combo = self.toggle_group_field.widget
+            combo.blockSignals(True); combo.clear(); combo.addItem('Új hatáscsoport', '')
+            for gid, code in catalog.Catalog(self.packet).choices('toggle_effect_group', 'group_id'):
+                combo.addItem(code + ' (#' + gid + ')', gid)
+            combo.blockSignals(False)
+            toggle_doc['toggle']['group_id'] = toggle_doc['toggle'].get('group_id') or ''
+            self.toggle_form.load(toggle_doc); self.toggle_group_form.load(toggle_doc)
+            self.toggle_group_changed()
+            self.toggle_bonuses.load(toggle_doc['toggle_bonuses'])
+            self.toggle_cooldown_check.setChecked(bool(cooldown) and toggle)
+            self.toggle_cooldown_edit.setText(catalog.display(cooldown['duration_ms']) if cooldown and toggle else '1')
+            self.toggle_cooldown_edit.setEnabled(self.toggle_cooldown_check.isChecked())
+            selected_kind = 2 if toggle else 1 if timed else 0
+            self.consumable_kind.setCurrentIndex(selected_kind)
+            self.consumable_pages.setCurrentIndex(selected_kind)
+            self.recovery_controls()
+        elif category == 9:
+            self.book_panel.load(document)
         else:
             document = dict(document, child=dict(document['child'], socket_profile_id=document['child'].get('socket_profile_id') or ''))
             self.category_forms[category].load(document)
@@ -1121,6 +1315,7 @@ class ItemPage(QWidget):
             self.loot_mode.blockSignals(True); self.loot_mode.setCurrentIndex(max(0, self.loot_mode.findData(str(loot['pick_mode'])))); self.loot_mode.blockSignals(False)
             self.loot_table.load(loot['entries'], loot['pick_mode'])
             self.container_kind_changed()
+        if category == 10:self.quest_controls()
         if equipment:
             self.refinement.set_category(category, self.packet['bonuses'] if self.packet else [])
             self.refinement.load(document['refinement'], document['levels'])
@@ -1133,19 +1328,45 @@ class ItemPage(QWidget):
         self.base_form.collect(document); self.use_form.collect(document)
         if not document['appearance'].get('model_asset'): document['appearance'] = None
         if category == 5:
-            self.category_forms[5].collect(document)
-            kind = int(document['recovery']['delivery_kind'])
-            holder = {}; self.effect_forms[kind].collect(holder)
-            document['effect'] = dict(holder['effect'], delivery_kind=str(kind))
-            if self.cooldown_check.isChecked():
-                try: duration = catalog.scaled(self.cooldown_edit.text())
+            if self.consumable_kind.currentData() == '3':
+                if document.get('toggle') is None: document.update(catalog.Catalog.toggle_defaults(document['base']['local_id']))
+                self.toggle_form.collect(document); self.toggle_group_form.collect(document)
+                document['toggle']['group_id'] = document['toggle']['group_id'] or None
+                document['toggle_group']['group_id'] = document['toggle']['group_id']
+                document['toggle_bonuses'] = self.toggle_bonuses.entries()
+                document['recovery'] = None; document['effect'] = None; document['timed'] = None
+                check, edit = self.toggle_cooldown_check, self.toggle_cooldown_edit
+            elif self.consumable_kind.currentData() == '2':
+                if document.get('timed') is None: document.update(catalog.Catalog.timed_defaults(document['base']['local_id']))
+                self.timed_form.collect(document); self.timed_group_form.collect(document)
+                document['timed']['group_id'] = document['timed']['group_id'] or None
+                document['timed_group']['group_id'] = document['timed']['group_id']
+                document['timed_bonuses'] = self.timed_bonuses.entries()
+                document['recovery'] = None; document['effect'] = None
+                document['toggle'] = None
+                check, edit = self.timed_cooldown_check, self.timed_cooldown_edit
+            else:
+                document['timed'] = None; document['toggle'] = None
+                if document.get('recovery') is None:
+                    fresh = catalog.Catalog(self.packet).new(5)
+                    document.update(recovery=fresh['recovery'], effect=fresh['effect'])
+                self.category_forms[5].collect(document)
+                kind = int(document['recovery']['delivery_kind'])
+                holder = {}; self.effect_forms[kind].collect(holder)
+                document['effect'] = dict(holder['effect'], delivery_kind=str(kind))
+                check, edit = self.cooldown_check, self.cooldown_edit
+            if check.isChecked():
+                try: duration = catalog.scaled(edit.text())
                 except api.EditorError: raise api.EditorError('Várakozási idő: érvénytelen szám.') from None
-                if duration < 1: raise api.EditorError('Várakozási idő: legalább 0,001 mp legyen.')
+                if not 1 <= duration <= 2 ** 63 - 1: raise api.EditorError('Várakozási idő: 0,001 mp és a megengedett maximum között legyen.')
                 document['cooldown'] = dict(duration_ms=str(duration))
             else:
                 document['cooldown'] = None
+        elif category == 9:
+            self.book_panel.collect(document)
         else:
             self.category_forms[category].collect(document)
+            if category == 10:document['child']['group_code']=document['child']['group_code'] or ''
             if category == 3: document['child']['socket_profile_id'] = document['child']['socket_profile_id'] or None
             if category == 8:
                 scripted = document['child']['container_kind'] == '3'

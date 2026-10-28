@@ -18,9 +18,10 @@ ENUMS = {
     "unit": ("BonusUnit", ["Raw", "BasisPoints", "Integer"]),
     "target": ("BonusTarget", ["PhysicalAttack", "MagicalAttack", "PhysicalDefense", "MagicalDefense",
                                "OutgoingDamage", "IncomingDamage", "FlatPenetration", "PercentPenetration",
-                               "Resistance", "CritChance", "CritResistance", "CritMultiplierExtra", "BlockReduction", "Evasion"]),
+                               "Resistance", "CritChance", "CritResistance", "CritMultiplierExtra", "BlockReduction", "Evasion", "MovementSpeed", "AttackSpeed", "CastSpeed",
+                               "Strength", "Dexterity", "Constitution", "Intelligence", "Experience"]),
     "stage": ("BonusStage", ["StatFlat", "StatPercent", "OutgoingAction", "OutgoingMode", "Penetration",
-                             "Resistance", "Critical", "IncomingAction", "IncomingMode", "Block", "Accuracy"]),
+                             "Resistance", "Critical", "IncomingAction", "IncomingMode", "Block", "Accuracy", "OutgoingGlobal", "Reward"]),
     "channel": ("BonusChannel", ["Any", "Physical", "Magical"]),
     "action": ("BonusAction", ["Any", "Normal", "Skill"]),
     "mode": ("BonusMode", ["Any", "Pve", "Pvp"]),
@@ -28,9 +29,9 @@ ENUMS = {
     "stacking": ("BonusStack", ["Add", "Max", "ReplaceByPriority", "UniqueSource"]),
     "aggregate_cap": ("BonusCap", ["RawStat", "StatPercent", "Outgoing", "Incoming", "FlatPenetration",
                                   "PercentPenetration", "Resistance", "CritChance", "CritResistance",
-                                  "CritMultiplierExtra", "Block", "Accuracy"]),
+                                  "CritMultiplierExtra", "Block", "Accuracy", "Speed", "Attribute", "Experience"]),
 }
-SOURCES = {"ItemBase": 1, "Refinement": 2}
+SOURCES = {"ItemBase": 1, "Refinement": 2, "TimedEffect": 4}
 FIELDS = {"id", "cpp_name", "code", "display_key", "allowed_sources", "minimum", "maximum", *ENUMS}
 
 
@@ -56,10 +57,22 @@ def semantic_contract(row):
         unit, cap, expected_channel = "BasisPoints", direction, "Any"
         if stage == direction + "Action" and row["action"] in ("Normal", "Skill"):
             expected_action = row["action"]
+        elif target == "OutgoingDamage" and stage == "OutgoingGlobal":
+            pass
         elif stage == direction + "Mode" and row["mode"] in ("Pve", "Pvp"):
             expected_mode = row["mode"]
         else:
             raise ValueError("damage bonus needs exactly one action or mode filter")
+    elif target in ("MovementSpeed", "AttackSpeed", "CastSpeed", "Strength", "Dexterity", "Constitution", "Intelligence", "Experience"):
+        expected_channel = "Any"
+        if target in ("MovementSpeed", "AttackSpeed", "CastSpeed"):
+            unit, expected_stage, cap = "BasisPoints", "StatPercent", "Speed"
+        elif target == "Experience":
+            unit, expected_stage, cap = "BasisPoints", "Reward", "Experience"
+        else:
+            unit, expected_stage, cap = "Integer", "StatFlat", "Attribute"
+        if stage != expected_stage:
+            raise ValueError("timed stat target/stage mismatch")
     else:
         contracts = {
             "FlatPenetration": ("Raw", "Penetration", "FlatPenetration"),

@@ -96,7 +96,7 @@ struct ContainerOpenPlan
 enum class ContainerOpenError
 {
     MissingItem, NotContainer, RetiredItem, ScriptedContainer, KeyRequired, KeyNotAccepted,
-    NotKey, WrongKey, InsufficientUnits, DrawOutOfRange,
+    NotKey, WrongKey, InsufficientUnits, DrawOutOfRange, InvalidStack,
 };
 // Pure proposal. Nothing is consumed or granted here: the future writer must
 // check capacity for every item reward and then commit consumption and all

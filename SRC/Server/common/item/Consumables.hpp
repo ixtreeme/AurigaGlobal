@@ -11,7 +11,9 @@ namespace auriga::item
 {
 // New domain codes, never casts of USE_* or POINT_* values.
 enum class RecoveryContext : std::uint8_t { World = 1, Duel = 2, Arena = 4, GuildWar = 8 };
-enum class RecoveryDelivery : std::uint8_t { Instant = 1, Reserve = 2, Periodic = 3 };
+enum class RecoveryDelivery : std::uint8_t { Instant = 1, Reserve = 2, Periodic = 3, Automatic = 4 };
+enum class RecoveryPool : std::uint8_t { Hp = 1, Sp = 2 };
+enum class RecoverySupply : std::uint8_t { Finite = 1, Unlimited = 2 };
 struct ConsumableCooldownProfile
 {
     std::uint32_t id = 0;
@@ -39,7 +41,15 @@ struct PeriodicRecovery
     // pool, including another profile's rate/duration; it never stacks by item.
     // Persisted scheduling and group ownership are not implemented here.
 };
-using RecoveryEffect = std::variant<InstantRecovery, ReserveRecovery, PeriodicRecovery>;
+struct AutomaticRecovery
+{
+    RecoveryPool pool{};
+    RecoverySupply supply{};
+    std::int64_t capacityRaw = 0; // Finite: >0; unlimited: exactly zero.
+    std::uint64_t tickIntervalMs = 0;
+    std::uint16_t maxPoolPerTickBp = 0, activeMaxPoolBonusBp = 0;
+};
+using RecoveryEffect = std::variant<InstantRecovery, ReserveRecovery, PeriodicRecovery, AutomaticRecovery>;
 struct RecoveryProfile
 {
     std::uint32_t id = 0;
@@ -49,9 +59,10 @@ struct RecoveryProfile
     bool allowDuringPvp = false;
     std::optional<std::uint32_t> cooldownProfile;
     RecoveryEffect effect;
+    std::uint16_t arenaQuotaCost = 0; // Only charged in a limited arena; 0 is exempt.
     RecoveryDelivery Delivery() const noexcept { return static_cast<RecoveryDelivery>(effect.index() + 1); }
 };
-enum class RecoveryProfileError { InvalidIdentity, InvalidUnits, InvalidContexts, InvalidCooldown, InvalidAmount, EmptyEffect, InvalidInterval, InvalidDuration, MultiplePools };
+enum class RecoveryProfileError { InvalidIdentity, InvalidUnits, InvalidContexts, InvalidCooldown, InvalidAmount, EmptyEffect, InvalidInterval, InvalidDuration, MultiplePools, InvalidAutomatic, InvalidArenaQuota };
 class ValidatedRecoveryProfile;
 std::expected<ValidatedRecoveryProfile, RecoveryProfileError> ValidateRecoveryProfile(RecoveryProfile source);
 bool ValidConsumableCooldown(const ConsumableCooldownProfile& source) noexcept;
@@ -68,6 +79,11 @@ struct RecoveryPools
 {
     std::int64_t hpRaw = 0, maxHpRaw = 0, spRaw = 0, maxSpRaw = 0;
 };
+struct RecoveryArenaAdmission
+{
+    bool potionsAllowed = false;
+    std::optional<std::uint32_t> remainingUses; // null = unlimited, zero = exhausted
+};
 struct InstantRecoveryAdmission
 {
     RecoveryPools pools;
@@ -78,6 +94,7 @@ struct InstantRecoveryAdmission
     std::uint16_t level = 0;
     std::uint8_t classIndex = 0, sexIndex = 0;
     std::uint32_t availableUnits = 0;
+    std::optional<RecoveryArenaAdmission> arena;
 };
 struct ConsumableCooldownStart { std::uint32_t profileId; std::uint64_t durationMs; };
 struct InstantRecoveryPlan
@@ -85,13 +102,18 @@ struct InstantRecoveryPlan
     std::int64_t hpRestoredRaw = 0, spRestoredRaw = 0;
     std::uint16_t unitsToConsume = 0;
     std::optional<ConsumableCooldownStart> cooldown;
+    std::uint16_t arenaQuotaToConsume = 0;
 };
 enum class RecoveryUseError
 {
     MissingItem, WrongCategory, WrongDelivery, RetiredItem, InvalidState, DeadCharacter,
     ContextDenied, PvpDenied, CombatDenied, LevelDenied, ClassDenied, SexDenied,
-    OnCooldown, InsufficientUnits, NoEffect,
+    OnCooldown, InsufficientUnits, NoEffect, ArenaDenied, ArenaQuotaExceeded,
 };
+// Common match admission, also required by future reserve/periodic writers.
+// A positive result is only a proposed quota decrement; it changes no state.
+std::expected<std::uint16_t, RecoveryUseError> PlanRecoveryArena(
+    RecoveryContext context, const std::optional<RecoveryArenaAdmission>& state, std::uint16_t cost) noexcept;
 class ItemCatalog;
 // Pure server-input proposal. Owner/lock/revision, map-specific quota and actual
 // resource/HP/cooldown commit + operation receipt belong to the future writer.

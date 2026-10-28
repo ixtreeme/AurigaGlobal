@@ -68,5 +68,5 @@ CREATE TABLE protos.bonus_profile (
     profile_id INT UNSIGNED NOT NULL PRIMARY KEY,
     code VARCHAR(96) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
     source_kind TINYINT UNSIGNED NOT NULL,
-    CHECK (profile_id > 0), CHECK (CHAR_LENGTH(code) > 0), CHECK (source_kind IN (1,2))
+    CHECK (profile_id > 0), CHECK (CHAR_LENGTH(code) > 0), CHECK (source_kind IN (1,2,3))
 ) ENGINE=InnoDB;

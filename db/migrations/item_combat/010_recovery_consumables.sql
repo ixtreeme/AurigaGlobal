@@ -15,7 +15,7 @@ CREATE TABLE protos.recovery_profile (
     cooldown_profile_id INT UNSIGNED NULL,
     UNIQUE KEY uq_recovery_delivery(profile_id,delivery_kind),
     FOREIGN KEY(cooldown_profile_id) REFERENCES protos.consumable_cooldown_profile(profile_id),
-    CHECK(profile_id>0), CHECK(CHAR_LENGTH(code)>0), CHECK(delivery_kind IN (1,2,3)),
+    CHECK(profile_id>0), CHECK(CHAR_LENGTH(code)>0), CHECK(delivery_kind IN (1,2,3,4)),
     CHECK(units_per_use>0), CHECK(allowed_contexts BETWEEN 1 AND 15), CHECK(allow_during_pvp IN (0,1))
 ) ENGINE=InnoDB;
 CREATE TABLE protos.instant_recovery_profile (

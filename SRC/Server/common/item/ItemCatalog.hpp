@@ -1,8 +1,13 @@
 #pragma once
 #include "ItemKey.hpp"
 #include "RefinementProfiles.hpp"
+#include "RefinementRecipes.hpp"
+#include "QuestItems.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
+#include "TimedEffects.hpp"
+#include "ToggleEffects.hpp"
+#include "SkillBooks.hpp"
 #include "Containers.hpp"
 #include "CurrencyTokens.hpp"
 #include <array>
@@ -122,8 +127,10 @@ struct ItemMaterialRow
 struct ItemConsumableRow
 {
     ItemKey key;
-    // Currently only typed recovery effects are publishable in this category.
+    // Exactly one of recovery, consumed timed effect, item-bound toggle effect.
     std::uint32_t recoveryProfile = 0;
+    std::optional<std::uint32_t> timedEffectProfile;
+    std::optional<std::uint32_t> toggleEffectProfile;
 };
 struct ItemContainerRow
 {
@@ -143,11 +150,16 @@ struct ItemCurrencyTokenRow
     WalletCurrency currency{};      // Required; no implicit gold.
     std::uint64_t amountPerUnit = 0; // 1..MaxTokenUnitAmount, credited per redeemed unit
 };
+struct ItemSkillBookRow
+{
+    ItemKey key;
+    std::uint32_t profile = 0;
+};
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 7;
+    std::uint32_t schemaVersion = 13;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -170,6 +182,14 @@ struct ItemCatalogSource
     std::vector<ItemContainerRow> containers;
     std::vector<ItemContainerKeyRow> containerKeys;
     std::vector<ItemCurrencyTokenRow> currencyTokens;
+    std::vector<TimedEffectGroup> timedEffectGroups;
+    std::vector<TimedEffectProfile> timedEffects;
+    std::vector<ToggleEffectGroup> toggleEffectGroups;
+    std::vector<ToggleEffectProfile> toggleEffects;
+    std::vector<SkillBookProfile> skillBookProfiles;
+    std::vector<ItemSkillBookRow> skillBooks;
+    std::vector<RefinementRecipe> refinementRecipes;
+    std::vector<ItemQuestRow> questItems;
 };
 struct ItemCatalogLimits
 {
@@ -182,7 +202,7 @@ enum class ItemCatalogErrorCode
     InvalidRefinement, DuplicateItem, DuplicateContentCode, InvalidBase, UnsupportedCategory,
     InvalidBonusProfile, WrongBonusSource, WrongCategory, DuplicateCategoryRow, MissingCategoryRow, OrphanCategoryRow,
     WrongRefinementKind, StatOutOfRange, HashFailure, InvalidSocketProfile, InvalidSocketMaterial, InvalidRecoveryProfile,
-    InvalidLootProfile, InvalidLootReward, InvalidContainer,
+    InvalidLootProfile, InvalidLootReward, InvalidContainer, InvalidRefinementRecipe,
 };
 struct ItemCatalogError
 {
@@ -215,8 +235,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
 
 // Immutable, owning snapshot. No borrowed proto rows, lazy cache or live registry.
 // Supports weapon/armor, wrist/neck/ear accessories with optional timed/permanent
-// socket profiles, ordinary materials, recovery consumables, containers and their
-// keys with typed loot profiles, and wallet currency tokens. Unsupported categories and
+// socket profiles, ordinary materials, recovery/timed consumables, containers and their
+// keys with typed loot profiles, skill books, and wallet currency tokens. Unsupported categories and
 // behaviors fail closed during publication; this is not a runtime stat builder.
 class ItemCatalog final
 {
@@ -237,6 +257,12 @@ public:
     const ValidatedRecoveryProfile* FindRecovery(std::uint32_t id) const noexcept;
     const ConsumableCooldownProfile* FindConsumableCooldown(std::uint32_t id) const noexcept;
     const ValidatedLootProfile* FindLoot(std::uint32_t id) const noexcept;
+    const TimedEffectGroup* FindTimedEffectGroup(std::uint32_t id) const noexcept;
+    const TimedEffectProfile* FindTimedEffect(std::uint32_t id) const noexcept;
+    const ToggleEffectGroup* FindToggleEffectGroup(std::uint32_t id) const noexcept;
+    const ToggleEffectProfile* FindToggleEffect(std::uint32_t id) const noexcept;
+    const SkillBookProfile* FindSkillBook(std::uint32_t id) const noexcept;
+    const RefinementRecipe* FindRefinementRecipe(std::uint32_t id) const noexcept;
     std::expected<ItemBaseStats, ItemCatalogLookupError> RefinedBaseStats(ItemKey key, std::uint16_t level) const noexcept;
     // Exactly the current level's cumulative bonus profile, never a sum of
     // profiles from all preceding refinement steps. This does not apply stats.

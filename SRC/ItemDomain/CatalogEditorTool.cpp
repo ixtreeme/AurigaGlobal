@@ -37,12 +37,12 @@ constexpr std::array<const char*,19> ReadNames{"InvalidPin","RowLimit","ByteBudg
     "InvalidText","InvalidKey","RegistryMismatch","FormatMismatch","OrphanRow","DuplicateRow","InvalidChild","InvalidCatalog",
     "HashMismatch","SqlFailure","IsolationRequired","SnapshotUnconfirmed","ResultShape"};
 static_assert(static_cast<std::size_t>(db::ReadErrorCode::ResultShape)==ReadNames.size()-1);
-constexpr std::array<const char*,26> CatalogNames{"InvalidVersion","LimitExceeded","InvalidIdentity","DuplicateProfile",
+constexpr std::array<const char*,27> CatalogNames{"InvalidVersion","LimitExceeded","InvalidIdentity","DuplicateProfile",
     "InvalidProfile","MissingProfile","InvalidRefinement","DuplicateItem","DuplicateContentCode","InvalidBase",
     "UnsupportedCategory","InvalidBonusProfile","WrongBonusSource","WrongCategory","DuplicateCategoryRow","MissingCategoryRow",
     "OrphanCategoryRow","WrongRefinementKind","StatOutOfRange","HashFailure","InvalidSocketProfile","InvalidSocketMaterial",
-    "InvalidRecoveryProfile","InvalidLootProfile","InvalidLootReward","InvalidContainer"};
-static_assert(static_cast<std::size_t>(ItemCatalogErrorCode::InvalidContainer)==CatalogNames.size()-1);
+    "InvalidRecoveryProfile","InvalidLootProfile","InvalidLootReward","InvalidContainer","InvalidRefinementRecipe"};
+static_assert(static_cast<std::size_t>(ItemCatalogErrorCode::InvalidRefinementRecipe)==CatalogNames.size()-1);
 constexpr std::array<const char*,13> RefinementNames{"InvalidIdentity","InvalidKind","InvalidLevelRange","IncompleteLevels",
     "InvalidGain","NonzeroLevelZero","NonMonotonicGain","WrongStatKind","MissingBonusProfile","WrongBonusSource",
     "InvalidBonusContext","StatOutOfRange","AtMaximumLevel"};
@@ -50,9 +50,9 @@ static_assert(static_cast<std::size_t>(RefinementError::AtMaximumLevel)==Refinem
 constexpr std::array<const char*,8> BonusNames{"InvalidIdentity","InvalidSource","EmptyProfile","TooManyEntries","UnknownBonus",
     "DuplicateBonus","ValueOutOfRange","SourceNotAllowed"};
 static_assert(static_cast<std::size_t>(BonusProfileError::SourceNotAllowed)==BonusNames.size()-1);
-constexpr std::array<const char*,9> RecoveryNames{"InvalidIdentity","InvalidUnits","InvalidContexts","InvalidCooldown",
-    "InvalidAmount","EmptyEffect","InvalidInterval","InvalidDuration","MultiplePools"};
-static_assert(static_cast<std::size_t>(RecoveryProfileError::MultiplePools)==RecoveryNames.size()-1);
+constexpr std::array<const char*,11> RecoveryNames{"InvalidIdentity","InvalidUnits","InvalidContexts","InvalidCooldown",
+    "InvalidAmount","EmptyEffect","InvalidInterval","InvalidDuration","MultiplePools","InvalidAutomatic","InvalidArenaQuota"};
+static_assert(static_cast<std::size_t>(RecoveryProfileError::InvalidArenaQuota)==RecoveryNames.size()-1);
 constexpr std::array<const char*,10> LootNames{"InvalidIdentity","InvalidMode","EmptyProfile","TooManyEntries","InvalidEntryOrder",
     "InvalidReward","InvalidAmount","InvalidWeight","InvalidRareChance","WeightOverflow"};
 static_assert(static_cast<std::size_t>(LootProfileError::WeightOverflow)==LootNames.size()-1);
@@ -125,9 +125,9 @@ std::shared_ptr<const ItemCatalog> Validate(const db::Snapshot& snapshot) {
 unsigned KeyColumns(T table) {
     switch(table) {
     case T::Items:case T::Weapons:case T::Armors:case T::Accessories:case T::Materials:case T::Consumables:
-    case T::BonusEntries:case T::RefinementLevels:case T::SocketGrades:
-    case T::LootEntries:case T::Containers:case T::ContainerKeys:case T::CurrencyTokens:return 2;
-    case T::SocketMaterials:return 4;
+    case T::BonusEntries:case T::RefinementLevels:case T::SocketGrades:case T::BookTargets:case T::BookSteps:case T::SkillBooks:
+    case T::LootEntries:case T::Containers:case T::ContainerKeys:case T::CurrencyTokens:case T::QuestItems:return 2;
+    case T::SocketMaterials:case T::RefinementIngredients:return 4;
     default:return 1;
     }
 }
@@ -170,15 +170,60 @@ Json Result(CAsyncSQL& sql,const db::CapturedCatalog& current) {
     while(auto row=message->Get()->FetchRow()) {Require(row[0] && row[1],"Hibas azonosito-szamlalo.");sequences[row[0]]=row[1];}
     return Packet(current.rows,*current.catalog,std::move(sequences));
 }
+// A bounded batch is one bound value, not one transaction step per cell/row.
+// JSON is transport only; the destination remains the typed SQL columns.
+// This keeps a +255 curve with distinct level bonuses within the existing
+// SQL engine's step/parameter budgets. No generic SQL limits are increased.
+void AddBatches(SqlTransaction& plan,const db::TableSpec& spec,const db::Rows& rows,char action) {
+    constexpr std::size_t batchSize=100;
+    const auto columns=Columns(spec.columns);const auto keys=KeyColumns(spec.table);
+    const auto width=action=='D'?keys:columns.size();
+    for(std::size_t start=0;start<rows.size();start+=batchSize) {
+        Json payload=Json::array();
+        for(std::size_t i=start;i<(std::min)(rows.size(),start+batchSize);++i) {
+            Json row=Json::array();for(std::size_t c=0;c<width;++c)row.push_back(rows[i][c]?Json(*rows[i][c]):Json(nullptr));
+            payload.push_back(std::move(row));
+        }
+        std::string source="JSON_TABLE(?, '$[*]' COLUMNS (";
+        for(std::size_t c=0;c<width;++c) {
+            if(c)source+=",";
+            // Domain validation bounds all mutable text cells to <=192 bytes.
+            source+="`"+columns[c]+"` VARCHAR(192) PATH '$["+std::to_string(c)+"]' ERROR ON EMPTY ERROR ON ERROR";
+        }
+        source+=")) AS incoming";
+        const std::string table="protos.`"+std::string(spec.name)+"`";
+        std::string query;
+        if(action=='I') {
+            query="INSERT INTO "+table+" ("+std::string(spec.columns)+") SELECT ";
+            for(std::size_t c=0;c<width;++c){if(c)query+=",";query+="incoming.`"+columns[c]+"`";}
+            query+=" FROM "+source;
+        } else {
+            query=(action=='D'?"DELETE target FROM ":"UPDATE ")+table+" AS target JOIN "+source+" ON ";
+            for(std::size_t c=0;c<keys;++c){if(c)query+=" AND ";query+="target.`"+columns[c]+"`=incoming.`"+columns[c]+"`";}
+            if(action=='U') {
+                query+=" SET ";
+                for(std::size_t c=keys;c<width;++c){if(c>keys)query+=",";query+="target.`"+columns[c]+"`=incoming.`"+columns[c]+"`";}
+            }
+        }
+        plan.push_back({std::move(query),{SqlParam::Text(payload.dump())},payload.size(),{}});
+    }
+}
 void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot& after) {
     // Parents before children. Deletes use the reverse order. The UI edits
     // profile contents without changing their category/delivery discriminator.
     constexpr T order[]={T::UsePolicies,T::TradePolicies,T::Appearances,T::Attacks,T::AmmoPolicies,T::Resistances,
-        T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
-        T::Cooldowns,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::LootProfiles,T::Items,T::Weapons,T::Armors,T::Materials,
-        T::Accessories,T::Consumables,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::LootEntries,T::SocketMaterials};
+        T::BookProfiles,T::BookTargets,T::BookSteps,T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
+        T::Cooldowns,T::TimedEffectGroups,T::TimedEffects,T::ToggleEffectGroups,T::ToggleEffects,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::Automatic,T::LootProfiles,T::Items,T::Weapons,T::Armors,T::Materials,
+        T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients};
     static_assert(std::size(order)==db::TableCount-3,"every editable table needs a commit position");
     for(T table:{T::Format,T::Categories,T::BonusDefinitions})Require(before.rows[table]==after[table],"A rendszerregiszter nem szerkesztheto.");
+    // Published group IDs own common conflict/lifecycle rules. Item edits may
+    // add groups, but cannot silently change an existing group's behavior.
+    for(T table:{T::TimedEffectGroups,T::ToggleEffectGroups}) {
+        const auto oldGroups=Index(before.rows[table],1),newGroups=Index(after[table],1);
+        for(const auto& [key,row]:oldGroups)
+            Require(newGroups.contains(key) && row==newGroups.at(key),"A meglevo hatascsoport nem modosithato vagy torolheto; hozz letre uj csoportot.");
+    }
     SqlTransaction plan;
     const auto oldItems=Index(before.rows[T::Items],2),newItems=Index(after[T::Items],2);
     Require(newItems.size()>=oldItems.size(),"Targyat kivezetessel torolj; tartos kulcsot nem torlunk fizikailag.");
@@ -193,37 +238,24 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
         const auto& spec=db::Tables()[static_cast<std::size_t>(table)];
         const auto keys=KeyColumns(table);
         auto old=Index(before.rows[table],keys),fresh=Index(after[table],keys);
-        auto names=Columns(spec.columns);
+        db::Rows inserted,updated;
         for(const auto& [key,row]:fresh) {
             const auto found=old.find(key);
             if(found!=old.end() && found->second==row)continue;
-            if(found==old.end()) {
-                // A plain INSERT: a unique-code collision fails the whole
-                // transaction instead of silently rewriting another row.
-                std::string query="INSERT INTO protos.`"+std::string(spec.name)+"` ("+std::string(spec.columns)+") VALUES (";
-                for(std::size_t i=0;i<row.size();++i){if(i)query+=",";query+="?";}query+=")";
-                plan.push_back({std::move(query),Parameters(row),1,{}});
-                continue;
-            }
-            std::string query="UPDATE protos.`"+std::string(spec.name)+"` SET ";
-            SqlParams params;
-            for(std::size_t i=keys;i<names.size();++i) {
-                if(i>keys)query+=",";
-                query+="`"+names[i]+"`=?";params.push_back(row[i]?SqlParam::Text(*row[i]):SqlParam::Null());
-            }
-            query+=" WHERE ";
-            for(std::size_t i=0;i<keys;++i){if(i)query+=" AND ";query+="`"+names[i]+"`=?";params.push_back(SqlParam::Text(*key[i]));}
-            plan.push_back({std::move(query),std::move(params),{},{}});
+            (found==old.end()?inserted:updated).push_back(row);
         }
+        // Plain INSERT preserves unique-code conflict semantics. UPDATE has
+        // an exact affected-row precondition; a missing row rolls back.
+        AddBatches(plan,spec,inserted,'I');AddBatches(plan,spec,updated,'U');
     }
     for(auto it=std::rbegin(order);it!=std::rend(order);++it) {
-        const auto& spec=db::Tables()[static_cast<std::size_t>(*it)];auto names=Columns(spec.columns);
+        const auto& spec=db::Tables()[static_cast<std::size_t>(*it)];
         auto old=Index(before.rows[*it],KeyColumns(*it)),fresh=Index(after[*it],KeyColumns(*it));
+        db::Rows removed;
         for(const auto& [key,row]:old)if(!fresh.contains(key)) {
-            std::string query="DELETE FROM protos.`"+std::string(spec.name)+"` WHERE ";
-            for(std::size_t i=0;i<key.size();++i){if(i)query+=" AND ";query+="`"+names[i]+"`=?";}
-            plan.push_back({std::move(query),Parameters(key),1,{}});
+            removed.push_back(row);
         }
+        AddBatches(plan,spec,removed,'D');
     }
     if(plan.empty())return;
     Require(plan.size()<=SqlTransactionLimits::Steps,"Tul sok valtozas egy menteshez.");

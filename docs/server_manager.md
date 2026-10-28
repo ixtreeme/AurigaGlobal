@@ -834,6 +834,163 @@ manifest szerint saját GUI-fájlokat frissíti; a `server.json` és a játékad
 felhasználói módosításai megmaradnak. A lecserélt GUI-fájlok a
 `run/manager-updates` mappába kerülnek. A futó alkalmazást a frissítő nem állítja le.
 
+## Tárgymásolás és mentésvédelem — 2026-10-28
+
+A **Tárgyak → Másolat új tárgyként** gomb a kijelölt, mentett prototípust
+új helyi azonosítóval és egyedi tartalomkóddal nyitja meg. A név-/leíráskulcs,
+megjelenés, alapadatok, fejlesztési görbe és bónuszok átvehetők. A másolat
+mentéséig az adatbázis nem változik; a forrástárgy profiljai módosításkor
+védettek maradnak. A még nem mentett másolatot az Elvetés gombbal eldobhatod.
+
+Ellenőrzés vagy mentés idejére a tárgyadatlap zárolódik, így a háttérművelet
+visszaolvasása nem írhat felül közben begépelt értékeket. A teljes +0…+255
+görbe egyedi szintbónuszokkal is menthető, egyetlen prototípussal. A natív
+segédprogram csoportos prepared műveleteket használ egy tranzakción belül;
+adatbázishibánál a profilok és az új tárgyazonosító léptetése együtt gördülnek
+vissza. A mentés továbbra is csak a helyi, leállított játék saját `protos`
+adatbázisát kezeli; a futó játék és Unity átállítása külön fejlesztési fázis.
+
 Alapul szolgáló hivatalos Qt-dokumentáció:
 [Qt for Python](https://doc.qt.io/qtforpython-6/),
 [QProcess](https://doc.qt.io/qtforpython-6/PySide6/QtCore/QProcess.html).
+
+
+### Időzített fogyasztható tárgyak — v8 fejlesztői katalógus
+
+A **Fogyasztható** lapon a **Fogyasztható típusa** választóval válthatsz a
+helyreállítás és az időzített stat-hatás között. Az utóbbinál megadható az
+időtartam, a fogyó darabszám, a használati környezet, a PvP-szabály, a várakozási
+idő és a teljes bónuszcsomag (például mozgási sebesség + erő + XP).
+Az idő másodpercben, a százalék két tizedessel, az attribútum egész pontban
+szerkeszthető; a mentett adatok továbbra is pontos egész számok.
+
+A **hatáscsoport** dönti el, hogy az új használat elutasítást vagy teljes cserét
+jelent, online vagy kijelentkezve is telő idővel, illetve halálkor megszűnéssel.
+Meglévő csoport kiválasztásakor ezek közös, zárolt szabályok. Más szabályokhoz
+válassz **Új hatáscsoport**-ot, és adj új kódot. Azonos kód eltérő szabályokkal
+nem menthető. A bónuszokat a rendszer együtt kezeli; nincs csoporton belüli
+részleges csere vagy időtartam-összeadás.
+
+Egy megosztott hatás vagy bónusz szerkesztése másolatot készít, és nem írja át
+más tárgy tartalmát. Gyógyításra váltáskor az árván maradó privát hatásprofil
+és bónuszprofil törlődik, a kiadott hatáscsoport megmarad.
+
+Ez a funkció **v8 fejlesztői katalógust** igényel. A friss draft migrációlánc
+nem meglévő v7-adatbázis automatikus frissítése. Ebben a fejlesztési körben
+csak külön tesztadatbázisokon ellenőriztük: a telepített helyi appot és a valódi
+helyi katalógust nem cseréltük le. A játékbeli alkalmazás/időzítés az item
+runtime későbbi integrációjához tartozik.
+
+
+### Automata palack és arénakvóta — v9 fejlesztői katalógus
+
+A **Fogyasztható → Gyógyítás / regeneráció → Hatás módja → Automata palack**
+mezőivel kiválasztható HP vagy SP, véges/végtelen ellátás, induló kapacitás,
+visszatöltési időköz, maximum-poolhoz viszonyított arány és aktív maximum-bónusz.
+Az automata egyenként kezelhető: a halmozás 1-re áll, az aréna nem választható.
+Végtelen ellátásnál a kapacitás 0 és nem szerkeszthető. A még nem mentett
+véges kapacitást a választó oda-vissza kapcsolása megőrzi.
+
+Az **Arénakvóta használatonként** a többi recovery típuson állítható,
+ha az Aréna jelölve van. 0 kvótamentes, pozitív érték ennyi kvótát igényel
+korlátozott mérkőzésen. Az aréna kikapcsolásakor a költség is 0 lesz.
+A mérkőzés általános tiltása a kvótamentes italokra is érvényes.
+
+A kapacitás közös prototípusadat, a megmaradt töltet a későbbi játékbeli
+példányállapot része. Prototípus módosítása nem játékosfeltöltési művelet.
+A mostani fejlesztés nem tölt be régi socketeket és nem ír át játékosadatot.
+A v9 draft és az új felület külön tesztadatbázisokon ellenőrzött forrás;
+a telepített app és meglévő v7/v8 katalógus frissítése külön, adatmegőrző lépés.
+
+
+### Kapcsolható harmatok — v10 fejlesztői katalógus
+
+A **Fogyasztható → Kapcsolható harmat** űrlapon az összes aktív idő,
+a variáns, a házasság/csoportvezető feltétel, a használati környezet és a PvP
+állítható. A halmozási korlát automatikusan 1. A bónuszlista a bekapcsolt
+példányhoz tartozó hatásokat írja le, nem felszerelés nélküli alapbónusz.
+A várakozási idő csak a bekapcsolásra vonatkozik; kikapcsolást nem blokkol.
+
+Egy hatáscsoporton belül egy példány lehet aktív. Azonos variáns másik
+példánya elutasított, eltérő variáns a korábbit lecseréli. Egymástól független
+harmatokhoz külön csoport kell. Meglévő csoport halálszabálya zárolt; eltérő
+szabályhoz válassz új csoportot. A kiadott csoport akkor is megmarad, ha az
+utolsó rá hivatkozó tárgyat más hatásra állítod.
+
+Az idő csak bekapcsolva és bejelentkezve fogy. A prototípus a kezdeti időt
+határozza meg; a későbbi játékbeli példány tárolja a maradékot. Lejáratkor
+levétel és példánytörlés javaslat keletkezik. Halálkor a csoportszabály szerint
+kikapcsol, vagy aktív marad és tovább fogy az ideje.
+
+A másolás és szerkesztés a megosztott bónusz/profil módosítása előtt külön
+példányt készít a profilból; más tárgy szabályait nem írja át. Gyógyító,
+időzített és kapcsolható típus között is lehet váltani. Az ellenőrző mindig
+pontosan egy hatást fogad el. A meglévő tárgykulcs tartósan megmarad.
+
+Ez jelenleg tesztelt forrás és izolált katalógusfunkció. A játékbeli alkalmazás
+és a telepített app/adatbázis adatmegőrző frissítése további lépés; a meglévő
+helyi katalógushoz a fejlesztés nem írt hozzá.
+
+
+### Küldetéstárgyak — v13 fejlesztői katalógus
+
+Az **Új tárgy → Küldetéstárgy** a 10-es kategóriában hoz létre prototípust.
+A **Gyűjthető token** közvetlenül nem használható. Ebben a módban a
+küldetéscsoport, használati környezet és megfigyelő beállításai inaktívak.
+Az **Első megfelelő quest kezelése** és **Minden megfelelő quest kezelése**
+mód használati szándékot ad a questkezelőnek. Üres csoportnál a tárgy saját
+ItemKey kulcsa az útválasztás alapja; megadott csoportnál stabil tartalomkódot
+kell használni, például `quest.horse_training`. Régi tárgyazonosító és Lua-fájl
+elérési útja nem csoportkód.
+
+A használat önmagában nem fogyaszt tárgyat és nem ad jutalmat. Ezek a quest
+külön, szerver által ellenőrzött műveletei. A környezet, megfigyelőállapot,
+karakterszint és harc közbeni tiltás a használat előtt ellenőrzött. A modell
+itt a földre dobott tárgy megjelenése; nem teszi felszerelhetővé a tokent.
+
+A kategória, SQL-betöltő, natív validátor és Qt-űrlap fejlesztői forrásban
+elkészült, izolált adatbázison tesztelt. A telepített helyi app/katalógus még
+v7; a játékbeli questbekötés és a teljes adatkonverzió további munka.
+Részletek: [küldetéstárgy- és konverziós jelentés](reports/item_combat/2026-10-28_quest_items.md).
+
+### Képességkönyvek — v11 fejlesztői katalógus
+
+Az **Új tárgy → Képességkönyv** a 9-es kategóriában hoz létre egy prototípust.
+A **Cél és használat** lapon tanulás, felejtés/pontvisszaadás vagy lóképességpont
+választható. Fix célhoz egy képességsort adj meg; példányhoz kötött célzásnál
+az engedélylistát szerkeszted, a konkrét kötést a későbbi játékbeli példány tárolja.
+A képességazonosító 1..254 és nem tárgyazonosító. A szervernek ezen felül
+ellenőriznie kell a képesség létezését, kaszt/csoport és előfeltétel szabályait.
+
+Felejtésnél választható a visszaadott pont készlete. Nyelvkönyvnél a tiltott
+saját birodalmat adhatod meg. Lópont esetén nincs célképesség, a célmezők
+inaktívak. A próbálkozásonkénti darabszámot és a használható képességfokozatokat
+is ez a lap tartalmazza.
+
+A **Szintenkénti szabályok** lapon a bal oldali listából válaszd ki az aktuális
+szintet. Jobbra a következő szint, karakterminimum, szükséges sikeres olvasások,
+sikeresély, olvasási bónusszal erősített esély, XP-költség és olvasási idő
+szerkeszthető. A szintlépés lehet például 10→20 is. A szükséges olvasásszám
+elérésekor egyszer emel, majd nulláz; a sikertelen próba nem növeli a számlálót,
+de az elfogadott próbálkozás elfogyasztja a könyvet. Az erősített esély nem
+lehet kisebb a normálnál. 0% biztos kudarc, 100% biztos siker.
+
+A 0/0 olvasási idő várakozásmentes; eltérő pozitív minimum/maximum közül a
+szerver választ. Beállítható, hogy sikertelen olvasás után is kelljen-e várni.
+A várakozás a képességhez tartozik, másik könyvpéldányra váltva is megmarad.
+Felejtést nem blokkol a tanulási idő; felejtéskor a megkezdett olvasásszámláló
+is megszűnik. A lópontkönyv legfeljebb 20 szabad pontig, illetve mindkét
+alternatív kiosztás 60-as határáig használható.
+
+Nyolc minta érhető el: mester, vezetés, kombó, nyelv, új support, anti-passzív,
+felejtés, lópont. A **Szabályminta betöltése** kifejezetten lecseréli a könyv
+céljait és szintszabályait. Ezek ellenőrizendő fejlesztői kiinduló adatok,
+nem végleges balance vagy a régi adatbázis automatikus konverziója.
+A műveletválasztó oda-vissza kapcsolása a még nem mentett szerkesztést megőrzi.
+Érvénytelen szintmezőnél a lista nem dobja el a beírt értéket.
+
+Másolás és közös profil szerkesztése nem változtat más könyveken. A 40-es
+képességszint a jelenlegi skill domain határa; nem korlátozza a tárgyak
+külön fejlesztési profilját. A könyv több szintlépése egyetlen prototípus része.
+A futó GameServer/Database/Unity bekötése és a meglévő katalógus adatmegőrző
+frissítése továbbra is későbbi lépés; ez a fejlesztés nem telepített átállás.

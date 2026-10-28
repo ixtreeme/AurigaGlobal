@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v7");
+    out.Text("auriga.item_catalog.v13");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -196,10 +196,16 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     for (const auto& row : source.recoveries)
     {
         out.Identity(row.id, row.code); out.Integer(row.unitsPerUse); out.Integer(row.allowedContexts);
-        out.Boolean(row.allowDuringPvp); out.Optional(row.cooldownProfile); out.Integer(static_cast<std::uint8_t>(row.Delivery()));
+        out.Boolean(row.allowDuringPvp); out.Optional(row.cooldownProfile); out.Integer(row.arenaQuotaCost); out.Integer(static_cast<std::uint8_t>(row.Delivery()));
         std::visit([&](const auto& effect) {
             using T = std::decay_t<decltype(effect)>;
-            if constexpr (std::is_same_v<T, PeriodicRecovery>)
+            if constexpr (std::is_same_v<T, AutomaticRecovery>)
+            {
+                out.Integer(static_cast<std::uint8_t>(effect.pool)); out.Integer(static_cast<std::uint8_t>(effect.supply));
+                out.Integer(static_cast<std::uint64_t>(effect.capacityRaw)); out.Integer(effect.tickIntervalMs);
+                out.Integer(effect.maxPoolPerTickBp); out.Integer(effect.activeMaxPoolBonusBp);
+            }
+            else if constexpr (std::is_same_v<T, PeriodicRecovery>)
             {
                 out.Integer(static_cast<std::uint64_t>(effect.hpPerTickRaw)); out.Integer(static_cast<std::uint64_t>(effect.spPerTickRaw));
                 out.Integer(effect.tickIntervalMs); out.Integer(effect.durationMs);
@@ -213,7 +219,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
         }, row.effect);
     }
     out.Table(18, source.consumables.size());
-    for (const auto& row : source.consumables) { out.Key(row.key); out.Integer(row.recoveryProfile); }
+    for (const auto& row : source.consumables) { out.Key(row.key); out.Optional(row.recoveryProfile ? std::optional{row.recoveryProfile} : std::nullopt); out.Optional(row.timedEffectProfile); out.Optional(row.toggleEffectProfile); }
     out.Table(19, source.lootProfiles.size());
     for (const auto& row : source.lootProfiles)
     {
@@ -239,6 +245,57 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     {
         out.Key(row.key); out.Integer(static_cast<std::uint8_t>(row.currency)); out.Integer(row.amountPerUnit);
     }
+    out.Table(23, source.timedEffectGroups.size());
+    for (const auto& row : source.timedEffectGroups)
+    {
+        out.Identity(row.id, row.code); out.Integer(static_cast<std::uint8_t>(row.reapply));
+        out.Integer(static_cast<std::uint8_t>(row.clock)); out.Boolean(row.removeOnDeath);
+    }
+    out.Table(24, source.timedEffects.size());
+    for (const auto& row : source.timedEffects)
+    {
+        out.Identity(row.id, row.code); out.Integer(row.group); out.Integer(row.bonusProfile);
+        out.Integer(row.durationMs); out.Integer(row.unitsPerUse); out.Integer(row.allowedContexts);
+        out.Boolean(row.allowDuringPvp); out.Optional(row.cooldownProfile);
+    }
+    out.Table(25, source.toggleEffectGroups.size());
+    for (const auto& r : source.toggleEffectGroups) { out.Identity(r.id, r.code); out.Boolean(r.removeOnDeath); }
+    out.Table(26, source.toggleEffects.size());
+    for (const auto& r : source.toggleEffects)
+    {
+        out.Identity(r.id, r.code); out.Integer(r.group); out.Integer(r.bonusProfile); out.Integer(r.variant);
+        out.Integer(r.durationMs); out.Integer(r.requirements); out.Integer(r.allowedContexts);
+        out.Boolean(r.allowDuringPvp); out.Optional(r.cooldownProfile);
+    }
+    out.Table(27, source.skillBookProfiles.size());
+    for (const auto& p : source.skillBookProfiles)
+    {
+        out.Identity(p.id,p.code); out.Integer(static_cast<std::uint8_t>(p.operation));
+        out.Integer(static_cast<std::uint8_t>(p.targetMode));out.Integer(p.unitsPerUse);out.Integer(p.allowedMasteries);
+        out.Boolean(p.allowDelayBypass);out.Integer(static_cast<std::uint8_t>(p.bonus));
+        out.Integer(static_cast<std::uint32_t>(p.targets.size()));
+        for (const auto& t:p.targets) {out.Integer(t.skillId);out.Integer(static_cast<std::uint8_t>(t.refundPool));out.Integer(t.forbiddenEmpire);}
+        out.Integer(static_cast<std::uint32_t>(p.steps.size()));
+        for (const auto& s:p.steps)
+        {
+            out.Integer(s.currentLevel);out.Integer(s.nextLevel);out.Integer(s.minimumCharacterLevel);
+            out.Integer(s.requiredSuccessfulReads);out.Integer(s.successChanceBp);out.Integer(s.boostedChanceBp);
+            out.Integer(s.experienceCost);out.Integer(s.delayMinimumMs);out.Integer(s.delayMaximumMs);out.Boolean(s.delayOnFailure);
+        }
+    }
+    out.Table(28, source.skillBooks.size());
+    for (const auto& row:source.skillBooks) {out.Key(row.key);out.Integer(row.profile);}
+    out.Table(29, source.refinementRecipes.size());
+    for (const auto& r : source.refinementRecipes)
+    {
+        out.Identity(r.id,r.code);out.Key(r.source);out.Integer(r.sourceLevel);out.Key(r.target);out.Integer(r.targetLevel);
+        out.Integer(r.goldCost);out.Integer(r.successChanceBp);out.Integer(static_cast<std::uint8_t>(r.failure));
+        out.Boolean(r.failureLevel.has_value());if(r.failureLevel)out.Integer(*r.failureLevel);
+        out.Integer(static_cast<std::uint32_t>(r.ingredients.size()));
+        for(const auto& i:r.ingredients){out.Key(i.key);out.Integer(i.refinementLevel);out.Integer(i.count);}
+    }
+    out.Table(30,source.questItems.size());
+    for(const auto& r:source.questItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.dispatch));out.Text(r.groupCode);out.Integer(r.allowedContexts);out.Boolean(r.allowObserver);}
     return out.Finish();
 }
 } // namespace auriga::item::detail

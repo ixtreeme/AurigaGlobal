@@ -170,12 +170,22 @@ void CatalogRules()
     auto relock = f::Catalog(); relock.containers[1].lockId = 8; relock.containerKeys[0].lockId = 8;
     Check(BuildItemCatalog(std::move(relock)).value()->ContentHash() != original, "lock ids participate in catalogue identity");
 }
+void StackGuards()
+{
+    const auto catalog = BuildItemCatalog(f::Catalog()).value();
+    Script unused{{0}};
+    Check(PlanContainerOpen(*catalog, {f::GiftBox(), {}, catalog->Find(f::GiftBox())->base.maxStack + 1, 0}, unused.Draw()).error() ==
+          ContainerOpenError::InvalidStack, "oversized container stack is rejected before RNG");
+    Check(PlanContainerOpen(*catalog, {f::IronChest(), f::IronKey(), 1, catalog->Find(f::IronKey())->base.maxStack + 1}, unused.Draw()).error() ==
+          ContainerOpenError::InvalidStack, "oversized key stack is rejected before RNG");
+    Check(unused.bounds.empty(), "invalid stack consumed a loot decision");
+}
 }
 int main()
 {
     try
     {
-        Profiles(); Picking(); Opening(); CatalogRules();
+        Profiles(); Picking(); Opening(); CatalogRules(); StackGuards();
         std::cout << "Container checks passed: " << checks << '\n'; return 0;
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

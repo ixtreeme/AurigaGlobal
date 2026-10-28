@@ -14,7 +14,7 @@ template <typename T> db::Cell Cell(T value) {
     if constexpr (std::is_enum_v<T>) return std::to_string(static_cast<std::underlying_type_t<T>>(value));
     else return std::to_string(value);
 }
-inline db::Cell Cell(std::optional<std::uint32_t> value) { return value ? Cell(*value) : std::nullopt; }
+template <typename T> db::Cell Cell(std::optional<T> value) { return value ? Cell(*value) : std::nullopt; }
 template <typename... T> void Add(db::Snapshot& s, db::Table table, T... values) { s[table].push_back({Cell(values)...}); }
 inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixture::Catalog())
 {
@@ -61,16 +61,17 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     }
     for (const auto& r : source.consumableCooldowns) Add(s,T::Cooldowns,r.id,r.code,r.durationMs);
     for (const auto& r : source.recoveries) {
-        const auto delivery = std::holds_alternative<InstantRecovery>(r.effect) ? 1 : std::holds_alternative<ReserveRecovery>(r.effect) ? 2 : 3;
-        Add(s,T::Recoveries,r.id,r.code,delivery,r.unitsPerUse,r.allowedContexts,r.allowDuringPvp,r.cooldownProfile);
+        const auto delivery = static_cast<std::uint8_t>(r.Delivery());
+        Add(s,T::Recoveries,r.id,r.code,delivery,r.unitsPerUse,r.allowedContexts,r.allowDuringPvp,r.cooldownProfile,r.arenaQuotaCost);
         std::visit([&](const auto& e) {
             using E = std::decay_t<decltype(e)>;
             if constexpr (std::is_same_v<E,InstantRecovery>) Add(s,T::Instant,r.id,1,e.hpRaw,e.spRaw,e.maxHpBp,e.maxSpBp,e.flatBonusCapBp);
             else if constexpr (std::is_same_v<E,ReserveRecovery>) Add(s,T::Reserve,r.id,2,e.hpRaw,e.spRaw,e.flatBonusCapBp,e.tickIntervalMs,e.maxPoolPerTickBp);
-            else Add(s,T::Periodic,r.id,3,e.hpPerTickRaw,e.spPerTickRaw,e.tickIntervalMs,e.durationMs);
+            else if constexpr (std::is_same_v<E,PeriodicRecovery>) Add(s,T::Periodic,r.id,3,e.hpPerTickRaw,e.spPerTickRaw,e.tickIntervalMs,e.durationMs);
+            else Add(s,T::Automatic,r.id,4,e.pool,e.supply,e.capacityRaw,e.tickIntervalMs,e.maxPoolPerTickBp,e.activeMaxPoolBonusBp);
         },r.effect);
     }
-    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile);
+    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile);
     for (const auto& r : source.lootProfiles) {
         Add(s,T::LootProfiles,r.id,r.code,r.mode);
         for (const auto& e : r.entries) {
@@ -84,6 +85,22 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for (const auto& r : source.containers) Add(s,T::Containers,r.key.Category(),r.key.LocalId(),r.kind,r.lootProfile,r.lockId);
     for (const auto& r : source.containerKeys) Add(s,T::ContainerKeys,r.key.Category(),r.key.LocalId(),r.lockId);
     for (const auto& r : source.currencyTokens) Add(s,T::CurrencyTokens,r.key.Category(),r.key.LocalId(),r.currency,r.amountPerUnit);
+    for (const auto& r : source.timedEffectGroups) Add(s,T::TimedEffectGroups,r.id,r.code,r.reapply,r.clock,r.removeOnDeath);
+    for (const auto& r : source.timedEffects) Add(s,T::TimedEffects,r.id,r.code,r.group,r.bonusProfile,r.durationMs,r.unitsPerUse,r.allowedContexts,r.allowDuringPvp,r.cooldownProfile);
+    for (const auto& r : source.toggleEffectGroups) Add(s,T::ToggleEffectGroups,r.id,r.code,r.removeOnDeath);
+    for (const auto& r : source.toggleEffects) Add(s,T::ToggleEffects,r.id,r.code,r.group,r.bonusProfile,r.variant,r.durationMs,r.requirements,r.allowedContexts,r.allowDuringPvp,r.cooldownProfile);
+    for (const auto& p:source.skillBookProfiles) {
+        Add(s,T::BookProfiles,p.id,p.code,p.operation,p.targetMode,p.unitsPerUse,p.allowedMasteries,p.allowDelayBypass,p.bonus);
+        for (const auto& t:p.targets) Add(s,T::BookTargets,p.id,t.skillId,t.refundPool,t.forbiddenEmpire);
+        for (const auto& r:p.steps) Add(s,T::BookSteps,p.id,r.currentLevel,r.nextLevel,r.minimumCharacterLevel,r.requiredSuccessfulReads,r.successChanceBp,r.boostedChanceBp,r.experienceCost,r.delayMinimumMs,r.delayMaximumMs,r.delayOnFailure);
+    }
+    for(const auto& r:source.skillBooks) Add(s,T::SkillBooks,r.key.Category(),r.key.LocalId(),r.profile);
+    for(const auto& r:source.refinementRecipes) {
+        Add(s,T::RefinementRecipes,r.id,r.code,r.source.Category(),r.source.LocalId(),r.sourceLevel,
+            r.target.Category(),r.target.LocalId(),r.targetLevel,r.goldCost,r.successChanceBp,r.failure,r.failureLevel);
+        for(const auto& i:r.ingredients) Add(s,T::RefinementIngredients,r.id,i.key.Category(),i.key.LocalId(),i.refinementLevel,i.count);
+    }
+    for(const auto& r:source.questItems)Add(s,T::QuestItems,r.key.Category(),r.key.LocalId(),r.dispatch,r.groupCode,r.allowedContexts,r.allowObserver);
     return s;
 }
 } // namespace catalog_snapshot_fixture

@@ -12,6 +12,7 @@ std::expected<TokenRedeemPlan, TokenRedeemError> PlanTokenRedeem(const ItemCatal
     if (!token) return std::unexpected(TokenRedeemError::NotToken);
     if (entry->base.retired) return std::unexpected(TokenRedeemError::RetiredItem);
     if (!request.unitsInStack) return std::unexpected(TokenRedeemError::EmptyStack);
+    if (request.unitsInStack > entry->base.maxStack) return std::unexpected(TokenRedeemError::InvalidStack);
     if (request.walletBalance > request.walletCap) return std::unexpected(TokenRedeemError::InvalidWallet);
     const auto units = std::min<std::uint64_t>(request.unitsInStack, (request.walletCap - request.walletBalance) / token->amountPerUnit);
     if (!units) return std::unexpected(TokenRedeemError::WalletFull);

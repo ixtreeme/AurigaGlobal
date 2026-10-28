@@ -97,6 +97,19 @@ void ChildCoverage() {
     Reject([](auto& s){s[T::SocketMaterials][0][1]="4";},E::InvalidChild);
     Reject([](auto& s){s[T::Items].push_back(s[T::Items][0]);},E::InvalidCatalog);
     Reject([](auto& s){s[T::BonusEntries].push_back(s[T::BonusEntries][0]);},E::InvalidCatalog);
+    Reject([](auto& s){s[T::TimedEffects][0][2]="999";},E::InvalidCatalog);
+    Reject([](auto& s){s[T::TimedEffects][0][3]="1";},E::InvalidCatalog);
+    Reject([](auto& s){s[T::TimedEffects][0][4]="0";},E::InvalidCatalog);
+    Reject([](auto& s){s[T::Consumables][3][2]="1";},E::InvalidCatalog);
+    Reject([](auto& s){s[T::Consumables][3][2]="0";},E::InvalidNumber);
+    Reject([](auto& s){s[T::Consumables][3][3]=std::nullopt;},E::InvalidCatalog);
+    Reject([](auto& s){s[T::TimedEffectGroups][0][4]="2";},E::InvalidNumber);
+    Reject([](auto& s){s[T::Automatic][0][0]="999";},E::OrphanRow);
+    Reject([](auto& s){s[T::Automatic].clear();},E::InvalidChild);
+    Reject([](auto& s){s[T::Automatic][0][1]="1";},E::InvalidChild);
+    Reject([](auto& s){s[T::Automatic][0][4]="0";},E::InvalidCatalog);
+    Reject([](auto& s){s[T::Automatic][0][4]="9223372036854775808";},E::InvalidNumber);
+    Reject([](auto& s){s[T::Recoveries][0][7]="65536";},E::InvalidNumber);
 }
 void AboveNine() {
     auto source=item_catalog_fixture::Catalog();

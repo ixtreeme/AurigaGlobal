@@ -36,11 +36,11 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
-            for fixture_path in ("v5/recovery_consumables.sql", "v6/containers.sql", "v7/currency_tokens.sql"):
+            for fixture_path in ("v5/recovery_consumables.sql", "v6/containers.sql", "v7/currency_tokens.sql", "v8/timed_consumables.sql", "v9/automatic_recovery.sql"):
                 fixture = (ROOT / "tests/fixtures/item_combat" / fixture_path).read_text(encoding="utf-8")
                 for statement in statements(fixture):
                     cls.connection.query(statement)
@@ -191,7 +191,7 @@ class CategorySchemaTests(unittest.TestCase):
                         user="catalog_runtime", password="isolated_fixture_only")
         try:
             self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_category"), [["18"]])
-            self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_base"), [["15"]])
+            self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_base"), [["17"]])
             for sql in ["UPDATE protos.item_category SET code='edited' WHERE category_id=1",
                         "DELETE FROM protos.item_category WHERE category_id=1",
                         "UPDATE protos.item_local_id_sequence SET next_local_id=30 WHERE category_id=1",
@@ -232,7 +232,7 @@ class CategorySchemaTests(unittest.TestCase):
 
     def test_typed_equipment_and_refinement_golden(self):
         self.assertEqual(self.q("SELECT category_id,local_id FROM protos.item_base ORDER BY category_id,local_id"),
-                         [["1","1"],["2","1"],["3","1"],["5","1"],["5","2"],["5","3"],["6","1"],["6","2"],["6","3"],
+                         [["1","1"],["2","1"],["3","1"],["5","1"],["5","2"],["5","3"],["5","4"],["5","5"],["6","1"],["6","2"],["6","3"],
                           ["8","1"],["8","2"],["8","3"],["16","1"],["16","2"],["18","1"]])
         self.assertEqual(self.q("""SELECT w.physical_attack_base_raw+r.physical_attack_gain_raw,
             w.magical_attack_base_raw+r.magical_attack_gain_raw FROM protos.item_weapon w
@@ -266,7 +266,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_bonus_registry_and_current_level_profiles(self):
-        self.assertEqual(self.q("SELECT COUNT(*) FROM protos.bonus_definition"), [["25"]])
+        self.assertEqual(self.q("SELECT COUNT(*) FROM protos.bonus_definition"), [["34"]])
         self.assertEqual(self.q("""SELECT bonus_id,unit_kind,stage_kind,channel_filter,action_filter,mode_filter,
             minimum_value,maximum_value FROM protos.bonus_definition WHERE bonus_id IN (1,7,9,17,24) ORDER BY bonus_id"""), [
                 ["1","1","1","2","1","1","-1000000000000000","1000000000000000"],
@@ -275,7 +275,7 @@ class CategorySchemaTests(unittest.TestCase):
                 ["17","2","5","2","1","1","0","10000"],
                 ["24","2","10","2","1","1","0","10000"]])
         self.assertEqual(self.q("SELECT profile_id,source_kind FROM protos.bonus_profile ORDER BY profile_id"),
-                         [["1","1"],["2","2"],["3","2"],["4","2"],["5","2"],["6","1"]])
+                         [["1","1"],["2","2"],["3","2"],["4","2"],["5","2"],["6","1"],["7","3"]])
         self.assertEqual(self.q("""SELECT r.level,e.bonus_id,e.value_scaled FROM protos.refinement_level r
             JOIN protos.bonus_profile_entry e ON e.profile_id=r.extra_bonus_profile_id
             WHERE r.profile_id=2 AND r.level IN (3,9) ORDER BY r.level,e.bonus_id"""),
@@ -295,7 +295,7 @@ class CategorySchemaTests(unittest.TestCase):
             ("UPDATE protos.bonus_profile SET source_kind=0 WHERE profile_id=1", "4025"),
             ("UPDATE protos.bonus_definition SET unit_kind=4 WHERE bonus_id=1", "4025"),
             ("UPDATE protos.bonus_definition SET family_filter=1 WHERE bonus_id=1", "4025"),
-            ("UPDATE protos.bonus_definition SET allowed_sources=4 WHERE bonus_id=1", "4025"),
+            ("UPDATE protos.bonus_definition SET allowed_sources=8 WHERE bonus_id=1", "4025"),
             ("UPDATE protos.bonus_definition SET minimum_value=1,maximum_value=0 WHERE bonus_id=1", "4025"),
             ("DELETE FROM protos.bonus_definition WHERE bonus_id=1", "1451"),
             ("UPDATE protos.refinement_level SET extra_bonus_profile_id=0 WHERE profile_id=2 AND level=3", "1452"),
@@ -408,9 +408,9 @@ class CategorySchemaTests(unittest.TestCase):
         self.assertEqual(self.q("SELECT material_kind FROM protos.item_material WHERE category_id=6 AND local_id=1"), [["1"]])
 
     def test_recovery_profiles_and_typed_delivery(self):
-        self.assertEqual(self.q("SELECT category_id,local_id,recovery_profile_id FROM protos.item_consumable ORDER BY local_id"),
+        self.assertEqual(self.q("SELECT category_id,local_id,recovery_profile_id FROM protos.item_consumable WHERE recovery_profile_id IN (1,2,3) ORDER BY local_id"),
                          [["5","1","1"],["5","2","2"],["5","3","3"]])
-        self.assertEqual(self.q("SELECT profile_id,delivery_kind,units_per_use,allowed_contexts,allow_during_pvp,cooldown_profile_id FROM protos.recovery_profile ORDER BY profile_id"),
+        self.assertEqual(self.q("SELECT profile_id,delivery_kind,units_per_use,allowed_contexts,allow_during_pvp,cooldown_profile_id FROM protos.recovery_profile WHERE delivery_kind<4 ORDER BY profile_id"),
                          [["1","1","1","15","1","1"],["2","2","1","9","0","1"],["3","3","1","15","0",None]])
         self.assertEqual(self.q("SELECT hp_raw,sp_raw,max_hp_bp,max_sp_bp,flat_bonus_cap_bp FROM protos.instant_recovery_profile"),
                          [["300000","100000","500","1000","10000"]])
@@ -420,7 +420,64 @@ class CategorySchemaTests(unittest.TestCase):
                          [["25000","0","1000","60000"]])
         self.assertEqual(self.q("SELECT duration_ms FROM protos.consumable_cooldown_profile"), [["1000"]])
         self.assertEqual(self.q("""SELECT COUNT(*) FROM protos.item_base b JOIN protos.refinement_profile r
-            ON b.refinement_profile_id=r.profile_id WHERE b.category_id=5 AND r.profile_kind=1 AND r.max_level=0"""), [["3"]])
+            ON b.refinement_profile_id=r.profile_id WHERE b.category_id=5 AND r.profile_kind=1 AND r.max_level=0"""), [["5"]])
+
+    def test_timed_stat_profiles_and_source_registry(self):
+        self.assertEqual(self.q("SELECT group_id,reapply_kind,clock_kind,remove_on_death FROM protos.timed_effect_group"), [["1","2","2","0"]])
+        self.assertEqual(self.q("SELECT group_id,bonus_profile_id,duration_ms,units_per_use,allowed_contexts,allow_during_pvp,cooldown_profile_id FROM protos.timed_effect_profile"),
+                         [["1","7","60000","1","9","0","1"]])
+        self.assertEqual(self.q("SELECT recovery_profile_id,timed_effect_profile_id FROM protos.item_consumable WHERE local_id=4"), [[None,"1"]])
+        self.assertEqual(self.q("SELECT bonus_id,value_scaled FROM protos.bonus_profile_entry WHERE profile_id=7 ORDER BY bonus_id"),
+                         [["26","1500"],["29","5"],["33","2000"]])
+        self.assertEqual(self.q("SELECT bonus_id,unit_kind,stage_kind,aggregate_cap,allowed_sources FROM protos.bonus_definition WHERE bonus_id IN(26,29,33,34) ORDER BY bonus_id"),
+                         [["26","2","2","13","7"],["29","3","1","14","7"],["33","2","13","15","7"],["34","2","12","3","7"]])
+
+    def test_timed_stat_sql_constraints(self):
+        for sql, code in [
+            ("UPDATE protos.timed_effect_group SET reapply_kind=0", "4025"),
+            ("UPDATE protos.timed_effect_group SET clock_kind=3", "4025"),
+            ("UPDATE protos.timed_effect_group SET remove_on_death=2", "4025"),
+            ("UPDATE protos.timed_effect_profile SET duration_ms=0", "4025"),
+            ("UPDATE protos.timed_effect_profile SET duration_ms=9223372036854775808", "4025"),
+            ("UPDATE protos.timed_effect_profile SET units_per_use=0", "4025"),
+            ("UPDATE protos.timed_effect_profile SET group_id=99", "1452"),
+            ("UPDATE protos.timed_effect_profile SET bonus_profile_id=99", "1452"),
+            ("UPDATE protos.timed_effect_profile SET cooldown_profile_id=99", "1452"),
+            ("UPDATE protos.item_consumable SET recovery_profile_id=NULL WHERE local_id=1", "4025"),
+            ("UPDATE protos.item_consumable SET recovery_profile_id=1 WHERE local_id=4", "4025"),
+            ("UPDATE protos.item_consumable SET timed_effect_profile_id=99 WHERE local_id=4", "1452"),
+        ]:
+            with self.subTest(sql=sql), self.assertRaisesRegex(RuntimeError,"^"+code+":"):
+                self.q(sql)
+
+    def test_automatic_recovery_and_arena_fields(self):
+        self.assertEqual(self.q("SELECT pool_kind,supply_kind,capacity_raw,tick_interval_ms,max_pool_per_tick_bp,active_max_pool_bonus_bp FROM protos.automatic_recovery_profile"),
+                         [["1","1","5000000","1000","700","0"]])
+        self.assertEqual(self.q("SELECT delivery_kind,units_per_use,allowed_contexts,arena_quota_cost FROM protos.recovery_profile WHERE profile_id=4"), [["4","1","9","0"]])
+        self.assertEqual(self.q("SELECT max_stack FROM protos.item_base WHERE category_id=5 AND local_id=5"), [["1"]])
+        self.q("START TRANSACTION")
+        try:
+            self.q("UPDATE protos.automatic_recovery_profile SET supply_kind=2,capacity_raw=0,active_max_pool_bonus_bp=400")
+            self.q("UPDATE protos.recovery_profile SET arena_quota_cost=3 WHERE profile_id=1")
+            self.assertEqual(self.q("SELECT supply_kind,capacity_raw FROM protos.automatic_recovery_profile"), [["2","0"]])
+            self.assertEqual(self.q("SELECT arena_quota_cost FROM protos.recovery_profile WHERE profile_id=1"), [["3"]])
+        finally: self.q("ROLLBACK")
+
+    def test_automatic_recovery_sql_constraints(self):
+        for sql,code in [
+            ("UPDATE protos.automatic_recovery_profile SET delivery_kind=3", "4025"),
+            ("INSERT INTO protos.automatic_recovery_profile VALUES(1,4,1,1,1000,1000,700,0)", "1452"),
+            ("UPDATE protos.automatic_recovery_profile SET pool_kind=3", "4025"),
+            ("UPDATE protos.automatic_recovery_profile SET supply_kind=3", "4025"),
+            ("UPDATE protos.automatic_recovery_profile SET capacity_raw=0", "4025"),
+            ("UPDATE protos.automatic_recovery_profile SET capacity_raw=1000000000000001", "4025"),
+            ("UPDATE protos.automatic_recovery_profile SET supply_kind=2", "4025"),
+            ("UPDATE protos.automatic_recovery_profile SET tick_interval_ms=0", "4025"),
+            ("UPDATE protos.automatic_recovery_profile SET max_pool_per_tick_bp=10001", "4025"),
+            ("UPDATE protos.automatic_recovery_profile SET active_max_pool_bonus_bp=10001", "4025"),
+            ("UPDATE protos.recovery_profile SET arena_quota_cost=1 WHERE profile_id=2", "4025"),
+        ]:
+            with self.subTest(sql=sql), self.assertRaisesRegex(RuntimeError,"^"+code+":"): self.q(sql)
 
     def test_recovery_sql_constraints(self):
         for sql,code in [
@@ -441,8 +498,8 @@ class CategorySchemaTests(unittest.TestCase):
             ("UPDATE protos.periodic_recovery_profile SET duration_ms=999 WHERE profile_id=3","4025"),
             ("UPDATE protos.periodic_recovery_profile SET duration_ms=60001 WHERE profile_id=3","4025"),
             ("UPDATE protos.item_consumable SET recovery_profile_id=999 WHERE local_id=1","1452"),
-            ("INSERT INTO protos.item_consumable VALUES(5,999,1)","1452"),
-            ("INSERT INTO protos.item_consumable VALUES(5,1,1)","1062"),
+            ("INSERT INTO protos.item_consumable(category_id,local_id,recovery_profile_id,timed_effect_profile_id) VALUES(5,999,1,NULL)","1452"),
+            ("INSERT INTO protos.item_consumable(category_id,local_id,recovery_profile_id,timed_effect_profile_id) VALUES(5,1,1,NULL)","1062"),
             ("UPDATE protos.item_base SET binding_policy=3 WHERE category_id=5","4025"),
             ("UPDATE protos.item_base SET base_bonus_profile_id=1 WHERE category_id=5","4025"),
             ("UPDATE protos.item_base SET appearance_profile_id=1 WHERE category_id=5","4025"),
@@ -462,7 +519,7 @@ class CategorySchemaTests(unittest.TestCase):
         finally:
             self.q("ROLLBACK")
         self.assertEqual(self.q("SELECT hp_raw FROM protos.instant_recovery_profile WHERE profile_id=1"), [["300000"]])
-        self.assertEqual(self.q("SELECT COUNT(*) FROM protos.item_base WHERE category_id=5"), [["3"]])
+        self.assertEqual(self.q("SELECT COUNT(*) FROM protos.item_base WHERE category_id=5"), [["5"]])
 
     def test_accessory_socket_sql_constraints(self):
         for sql, code in [
@@ -486,7 +543,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["7", "auriga.item_catalog.v7"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["13", "auriga.item_catalog.v13"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
@@ -498,7 +555,7 @@ class CategorySchemaTests(unittest.TestCase):
         self.assertEqual(self.q("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
                                 "AND TABLE_NAME='item_base' AND CHECK_CLAUSE LIKE '%in (1,2,3,5,6)%'"), [["0"]])
         self.assertEqual(self.q("SELECT CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
-                                "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,5,6,8,16,18)"]])
+                            "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,5,6,8,9,10,16,18)"]])
 
     def test_container_sql_constraints(self):
         for sql, code in [
@@ -555,6 +612,116 @@ class CategorySchemaTests(unittest.TestCase):
         ]:
             with self.subTest(sql=sql), self.assertRaisesRegex(RuntimeError, "^" + code + ":"):
                 self.q(sql)
+
+    def test_toggle_effect_sql_constraints(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.toggle_effect_group VALUES(1,'toggle.test',0)")
+            self.q("INSERT INTO protos.toggle_effect_profile VALUES(1,'toggle.test',1,7,1,60000,0,9,0,NULL)")
+            self.q("UPDATE protos.item_consumable SET timed_effect_profile_id=NULL,toggle_effect_profile_id=1 WHERE local_id=4")
+            self.assertEqual(self.q("SELECT recovery_profile_id,timed_effect_profile_id,toggle_effect_profile_id FROM protos.item_consumable WHERE local_id=4"), [[None,None,'1']])
+            for query, code in [
+                ('UPDATE protos.toggle_effect_profile SET duration_ms=0', '4025'),
+                ('UPDATE protos.toggle_effect_profile SET duration_ms=9223372036854775808', '4025'),
+                ('UPDATE protos.toggle_effect_profile SET variant_id=0', '4025'),
+                ('UPDATE protos.toggle_effect_profile SET requirements=4', '4025'),
+                ('UPDATE protos.toggle_effect_profile SET allowed_contexts=0', '4025'),
+                ('UPDATE protos.toggle_effect_profile SET group_id=99', '1452'),
+                ('UPDATE protos.toggle_effect_profile SET bonus_profile_id=99', '1452'),
+                ('UPDATE protos.toggle_effect_profile SET cooldown_profile_id=99', '1452'),
+                ('UPDATE protos.toggle_effect_group SET remove_on_death=2', '4025'),
+                ('UPDATE protos.item_consumable SET timed_effect_profile_id=1 WHERE local_id=4', '4025'),
+                ('UPDATE protos.item_consumable SET toggle_effect_profile_id=NULL WHERE local_id=4', '4025'),
+            ]:
+                with self.subTest(query=query), self.assertRaisesRegex(RuntimeError, '^'+code+':'):
+                    self.q(query)
+        finally:
+            self.q('ROLLBACK')
+
+    def test_skill_book_sql_constraints_and_category(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.skill_book_profile VALUES(1,'book.test',1,1,1,2,1,2)")
+            self.q("INSERT INTO protos.skill_book_target VALUES(1,1,0,0)")
+            self.q("INSERT INTO protos.skill_book_step VALUES(1,20,21,0,1,7000,10000,0,1000,2000,1)")
+            self.q("INSERT INTO protos.item_base SELECT 9,1,'skill_book.test',name_key,description_key,icon_asset,inventory_width,inventory_height,max_stack,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,appearance_profile_id,base_bonus_profile_id,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=5 AND local_id=1")
+            self.q('INSERT INTO protos.item_skill_book VALUES(9,1,1)')
+            self.assertEqual(self.q('SELECT profile_id FROM protos.item_skill_book'), [['1']])
+            for query, code in [
+                ('UPDATE protos.skill_book_profile SET operation_kind=0', '4025'),
+                ('UPDATE protos.skill_book_profile SET units_per_use=0', '4025'),
+                ('UPDATE protos.skill_book_profile SET allowed_masteries=8', '4025'),
+                ('UPDATE protos.skill_book_profile SET target_mode=3', '4025'),
+                ('UPDATE protos.skill_book_target SET skill_id=0', '4025'),
+                ('UPDATE protos.skill_book_target SET skill_id=255', '4025'),
+                ('UPDATE protos.skill_book_target SET profile_id=99', '1452'),
+                ('UPDATE protos.skill_book_target SET forbidden_empire=4', '4025'),
+                ('UPDATE protos.skill_book_step SET current_level=40', '4025'),
+                ('UPDATE protos.skill_book_step SET required_successes=0', '4025'),
+                ('UPDATE protos.skill_book_step SET success_chance_bp=10001', '4025'),
+                ('UPDATE protos.skill_book_step SET boosted_chance_bp=6999', '4025'),
+                ('UPDATE protos.skill_book_step SET experience_cost=9223372036854775808', '4025'),
+                ('UPDATE protos.skill_book_step SET delay_minimum_ms=0', '4025'),
+                ('UPDATE protos.skill_book_step SET delay_on_failure=2', '4025'),
+                ('UPDATE protos.item_skill_book SET profile_id=99', '1452'),
+                ('DELETE FROM protos.skill_book_profile WHERE profile_id=1', '1451'),
+                ('UPDATE protos.item_base SET base_bonus_profile_id=1 WHERE category_id=9', '4025'),
+            ]:
+                with self.subTest(query=query), self.assertRaisesRegex(RuntimeError, '^'+code+':'):
+                    self.q(query)
+        finally:
+            self.q('ROLLBACK')
+
+
+
+
+    def test_refinement_recipe_constraints_and_references(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.refinement_recipe VALUES(1,'refine.test',1,1,8,1,1,9,5000,7500,2,NULL)")
+            self.q('INSERT INTO protos.refinement_ingredient VALUES(1,6,1,0,7)')
+            self.assertEqual(self.q('SELECT gold_cost,success_chance_bp,failure_kind FROM protos.refinement_recipe'), [['5000','7500','2']])
+            for query,code in [
+                ('UPDATE protos.refinement_recipe SET recipe_id=0','4025'),
+                ('UPDATE protos.refinement_recipe SET source_level=256','4025'),
+                ('UPDATE protos.refinement_recipe SET target_level=8','4025'),
+                ('UPDATE protos.refinement_recipe SET target_local_id=99999','1452'),
+                ('UPDATE protos.refinement_recipe SET gold_cost=9223372036854775808','4025'),
+                ('UPDATE protos.refinement_recipe SET success_chance_bp=10001','4025'),
+                ('UPDATE protos.refinement_recipe SET failure_kind=0','4025'),
+                ('UPDATE protos.refinement_recipe SET failure_kind=3','4025'),
+                ('UPDATE protos.refinement_recipe SET failure_level=7','4025'),
+                ('UPDATE protos.refinement_ingredient SET amount=0','4025'),
+                ('UPDATE protos.refinement_ingredient SET refinement_level=256','4025'),
+                ('UPDATE protos.refinement_ingredient SET local_id=99999','1452'),
+                ('DELETE FROM protos.refinement_recipe WHERE recipe_id=1','1451'),
+            ]:
+                with self.subTest(query=query),self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
+            self.q('UPDATE protos.refinement_recipe SET source_level=254,target_level=255,failure_kind=3,failure_level=0,gold_cost=9223372036854775807')
+            self.assertEqual(self.q('SELECT target_level,failure_level FROM protos.refinement_recipe'),[['255','0']])
+            # SQL covers structural bounds; publication rejects levels absent
+            # from the particular source/target profiles.
+        finally:
+            self.q('ROLLBACK')
+
+
+    def test_quest_item_constraints_and_kind(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.item_base SELECT 10,1,'quest.test',name_key,description_key,icon_asset,inventory_width,inventory_height,max_stack,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,appearance_profile_id,base_bonus_profile_id,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=5 AND local_id=1")
+            self.q("INSERT INTO protos.item_quest VALUES(10,1,1,'',0,0)")
+            for query,code in [
+                ('UPDATE protos.item_quest SET dispatch_kind=0','4025'),
+                ('UPDATE protos.item_quest SET allowed_contexts=1','4025'),
+                ("UPDATE protos.item_quest SET group_code='quest.group'",'4025'),
+                ('UPDATE protos.item_quest SET allow_observer=1','4025'),
+                ('UPDATE protos.item_quest SET local_id=9999','1452'),
+                ('UPDATE protos.item_base SET binding_policy=3 WHERE category_id=10','4025')]:
+                with self.subTest(query=query),self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
+            self.q("UPDATE protos.item_quest SET dispatch_kind=3,group_code='quest.group',allowed_contexts=15,allow_observer=1")
+            self.assertEqual(self.q('SELECT dispatch_kind,group_code,allowed_contexts,allow_observer FROM protos.item_quest'),[['3','quest.group','15','1']])
+            with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.item_quest SET allowed_contexts=16')
+        finally:self.q('ROLLBACK')
 
 
 if __name__ == "__main__":

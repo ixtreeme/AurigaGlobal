@@ -25,7 +25,7 @@ struct TokenRedeemPlan
     std::uint32_t unitsToConsume = 0;
     std::uint64_t amountToCredit = 0;
 };
-enum class TokenRedeemError { MissingItem, NotToken, RetiredItem, EmptyStack, InvalidWallet, WalletFull };
+enum class TokenRedeemError { MissingItem, NotToken, RetiredItem, EmptyStack, InvalidWallet, WalletFull, InvalidStack };
 // Redeems as many whole units of the stack as fit under the wallet cap and
 // consumes only those. Never consumes a unit whose value would be lost.
 std::expected<TokenRedeemPlan, TokenRedeemError> PlanTokenRedeem(const ItemCatalog& catalog, const TokenRedeemRequest& request);

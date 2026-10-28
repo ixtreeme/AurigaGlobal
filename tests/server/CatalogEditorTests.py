@@ -51,7 +51,33 @@ def rows(packet, table):
     return [dict(zip(columns, row)) for row in packet['tables'][table]]
 
 
+def automatic(document):
+    document['base']['max_stack'] = '1'
+    document['recovery'].update(delivery_kind='4', units_per_use='1', allowed_contexts='9', arena_quota_cost='0')
+    document['effect'] = dict(delivery_kind='4', pool_kind='1', supply_kind='1', capacity_raw='5000000',
+                              tick_interval_ms='1000', max_pool_per_tick_bp='700', active_max_pool_bonus_bp='400')
+
+
+def toggle(document):
+    document['base']['max_stack'] = '1'
+    document.update(catalog.Catalog.toggle_defaults(document['base']['local_id']))
+    document.update(recovery=None, effect=None, timed=None)
+
+
 class OfflineModelTests(unittest.TestCase):
+    def test_quest_token_and_group_dispatch_copy_are_independent(self):
+        packet,key=create(self.blank,10)
+        token=catalog.Catalog(packet).item(key)
+        self.assertEqual(token['child']['dispatch_kind'],'1')
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['child'].update(dispatch_kind='3',group_code='quest.horse_training',allowed_contexts='9',allow_observer='0')
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other)
+        self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(key),token)
+        self.assertEqual(catalog.Catalog(packet).item(other)['child']['group_code'],'quest.horse_training')
+        bad=catalog.Catalog(packet).item(other);bad['child']['allowed_contexts']='0'
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,other,TOOL)
+
     def setUp(self):
         self.blank = catalog.blank(TOOL)
 
@@ -269,12 +295,208 @@ class OfflineModelTests(unittest.TestCase):
             self.assertIn(expected, str(raised.exception))
         self.assertEqual(catalog.Catalog(packet).item(key)['child']['lock_id'], '7')
 
+    def test_automatic_profiles_copy_without_sharing_charge_capacity_edits(self):
+        packet, first = create(self.blank, 5, automatic)
+        original = catalog.Catalog(packet).item(first)
+        clone = catalog.Catalog(packet).duplicate(first)
+        second = key_of(clone)
+        clone['effect']['capacity_raw'] = '9000000'
+        packet = saved(packet, catalog.Catalog(packet).apply(clone), second)
+        self.check(packet)
+        model = catalog.Catalog(packet)
+        self.assertEqual(model.item(first), original)
+        self.assertEqual(model.item(second)['effect']['capacity_raw'], '9000000')
+        d = model.item(second)
+        d['effect'].update(supply_kind='2', capacity_raw='0', pool_kind='2')
+        packet = saved(packet, model.apply(d, second))
+        self.check(packet)
+        d = catalog.Catalog(packet).item(second)
+        self.assertEqual(d['effect']['capacity_raw'], '0')
+        d['base']['max_stack'] = '2'
+        with self.assertRaisesRegex(api.EditorError, 'nem halmozható'):
+            catalog.validate(packet, d, second, TOOL)
+        d['base']['max_stack'] = '1'
+        d['effect']['capacity_raw'] = '1'
+        with self.assertRaises(api.EditorError): catalog.validate(packet, d, second, TOOL)
+        d['effect']['capacity_raw'] = '0'
+        old = d['child']['recovery_profile_id']
+        defaults = model.new(5)
+        d.update(recovery=defaults['recovery'], effect=defaults['effect'])
+        packet = saved(packet, catalog.Catalog(packet).apply(d, second))
+        self.check(packet)
+        self.assertIsNone(catalog.Catalog(packet).row('automatic_recovery_profile', old))
+        self.assertEqual(catalog.Catalog(packet).item(first), original)
+
+    def test_arena_quota_is_explicit_and_requires_arena_context(self):
+        packet, key = create(self.blank, 5, lambda d: d['recovery'].update(arena_quota_cost='3'))
+        self.check(packet)
+        d = catalog.Catalog(packet).item(key)
+        self.assertEqual(d['recovery']['arena_quota_cost'], '3')
+        d['recovery']['allowed_contexts'] = '1'
+        with self.assertRaisesRegex(api.EditorError, '[Aa]rénakvóta'):
+            catalog.validate(packet, d, key, TOOL)
+        d['recovery']['arena_quota_cost'] = '0'
+        catalog.validate(packet, d, key, TOOL)
+
     def test_unit_conversion_is_exact(self):
         self.assertEqual(catalog.scaled('12,5'), 12500)
         self.assertEqual(catalog.display(12500), '12.5')
         self.assertEqual(catalog.display(12000), '12')
         with self.assertRaises(api.EditorError):
             catalog.scaled('0.0001')
+
+    def test_duplicate_uses_new_key_and_copy_on_write(self):
+        packet, original = create(self.blank, 1)
+        before = catalog.Catalog(packet).item(original)
+        document = catalog.Catalog(packet).duplicate(original)
+        copied = key_of(document)
+        self.assertNotEqual(original, copied)
+        self.assertNotEqual(document['base']['content_code'], before['base']['content_code'])
+        self.assertEqual(document['base']['name_key'], before['base']['name_key'])
+        document['attack']['reach_millimeters'] = '4500'
+        catalog.validate(packet, document, executable=TOOL)
+        packet = saved(packet, catalog.Catalog(packet).apply(document), copied)
+        model = catalog.Catalog(packet)
+        self.assertEqual(model.item(original), before)
+        self.assertEqual(model.item(copied)['attack']['reach_millimeters'], '4500')
+        self.assertNotEqual(model.item(original)['child']['attack_profile_id'], model.item(copied)['child']['attack_profile_id'])
+
+    def test_timed_effect_profiles_are_private_and_type_switch_prunes(self):
+        def timed(d):
+            d.update(catalog.Catalog.timed_defaults(d['base']['local_id']))
+            d['cooldown'] = dict(duration_ms='1000')
+        packet, first = create(self.blank, 5, timed)
+        original = catalog.Catalog(packet).item(first)
+        clone = catalog.Catalog(packet).duplicate(first)
+        second = key_of(clone)
+        packet = saved(packet, catalog.Catalog(packet).apply(clone), second)
+        # Simulate imported items sharing one complete effect profile.
+        model = catalog.Catalog(packet)
+        child = next(r for r in model.tables['item_consumable'] if r['local_id'] == str(second[1]))
+        child['timed_effect_profile_id'] = original['child']['timed_effect_profile_id']
+        packet = saved(packet, model.encode())
+        self.check(packet)
+        changed = catalog.Catalog(packet).item(second)
+        changed['timed']['duration_ms'] = '120000'
+        changed['timed_bonuses'][0]['value_scaled'] = '2500'
+        changed['cooldown']['duration_ms'] = '3000'
+        packet = saved(packet, catalog.Catalog(packet).apply(changed, second))
+        self.check(packet)
+        model = catalog.Catalog(packet)
+        self.assertEqual(model.item(first), original)
+        self.assertEqual(model.item(second)['timed_bonuses'][0]['value_scaled'], '2500')
+        self.assertEqual(model.item(second)['cooldown']['duration_ms'], '3000')
+        # A complete type switch removes its old private profile and bonus.
+        changed = model.item(second)
+        old_profile = changed['child']['timed_effect_profile_id']
+        old_bonus = changed['timed']['bonus_profile_id']
+        defaults = model.new(5)
+        changed.update(timed=None, recovery=defaults['recovery'], effect=defaults['effect'], cooldown=None)
+        packet = saved(packet, model.apply(changed, second))
+        self.check(packet)
+        model = catalog.Catalog(packet)
+        self.assertIsNone(model.item(second)['child']['timed_effect_profile_id'])
+        self.assertIsNone(model.row('timed_effect_profile', old_profile))
+        self.assertIsNone(model.row('bonus_profile', old_bonus))
+        self.assertEqual(model.item(first), original)
+
+    def test_timed_group_is_explicit_shared_identity(self):
+        packet, key = create(self.blank, 5, lambda d: d.update(catalog.Catalog.timed_defaults(d['base']['local_id'])))
+        d = catalog.Catalog(packet).item(key)
+        d['timed_group']['reapply_kind'] = '2'
+        with self.assertRaisesRegex(api.EditorError, 'Meglévő hatáscsoport'):
+            catalog.Catalog(packet).apply(d, key)
+        d['timed_group']['group_id'] = None
+        d['timed_group']['code'] = 'effect.other'
+        d['timed']['group_id'] = None
+        packet = saved(packet, catalog.Catalog(packet).apply(d, key))
+        self.check(packet)
+        self.assertEqual(len(rows(packet, 'timed_effect_group')), 2)
+        d = catalog.Catalog(packet).item(key)
+        d['timed_bonuses'] = []
+        with self.assertRaises(api.EditorError): catalog.validate(packet, d, key, TOOL)
+        d['timed_bonuses'] = [dict(bonus_id='26', value_scaled='0')]
+        with self.assertRaises(api.EditorError): catalog.validate(packet, d, key, TOOL)
+
+    def test_toggle_copy_on_write_groups_and_three_effect_switches(self):
+        packet, first = create(self.blank, 5, toggle)
+        self.check(packet)
+        original = catalog.Catalog(packet).item(first)
+        clone = catalog.Catalog(packet).duplicate(first)
+        second = key_of(clone)
+        clone['toggle']['duration_ms'] = '75000'
+        clone['toggle_bonuses'][0]['value_scaled'] = '2500'
+        packet = saved(packet, catalog.Catalog(packet).apply(clone), second)
+        self.check(packet)
+        model = catalog.Catalog(packet)
+        self.assertEqual(model.item(first), original)
+        document = model.item(second)
+        self.assertEqual(document['toggle']['duration_ms'], '75000')
+        self.assertEqual(document['toggle_bonuses'][0]['value_scaled'], '2500')
+        document['base']['max_stack'] = '2'
+        with self.assertRaisesRegex(api.EditorError, 'nem halmozható'):
+            catalog.validate(packet, document, second, TOOL)
+        document['base']['max_stack'] = '1'
+        duration = document['toggle']['duration_ms']
+        document['toggle']['duration_ms'] = '0'
+        with self.assertRaisesRegex(api.EditorError, '[Kk]apcsolható harmat'):
+            catalog.validate(packet, document, second, TOOL)
+        document['toggle']['duration_ms'] = duration
+        document['toggle_group']['remove_on_death'] = '1'
+        with self.assertRaisesRegex(api.EditorError, 'hatáscsoport szabályai'): model.apply(document, second)
+        document = model.item(second)
+        group_id = document['toggle']['group_id']
+        document.update(catalog.Catalog.timed_defaults(second[1]))
+        document['toggle'] = None
+        packet = saved(packet, catalog.Catalog(packet).apply(document, second))
+        self.check(packet)
+        self.assertIsNone(catalog.Catalog(packet).item(second)['toggle'])
+        document = catalog.Catalog(packet).item(second)
+        fresh = catalog.Catalog(packet).new(5)
+        document.update(timed=None, recovery=fresh['recovery'], effect=fresh['effect'])
+        packet = saved(packet, catalog.Catalog(packet).apply(document, second))
+        self.check(packet)
+        self.assertIsNotNone(catalog.Catalog(packet).row('toggle_effect_group', group_id, 'group_id'))
+        self.assertEqual(catalog.Catalog(packet).item(first), original)
+
+    def test_book_templates_and_shared_profile_edits_are_isolated(self):
+        for template in ('master', 'leadership', 'combo', 'language', 'support', 'passive', 'forget', 'horse'):
+            document = catalog.Catalog(self.blank).new(9)
+            document.update(catalog.Catalog.book_defaults(template))
+            with self.subTest(template=template): catalog.validate(self.blank, document, executable=TOOL)
+        packet, first = create(self.blank, 9)
+        original = catalog.Catalog(packet).item(first)
+        clone = catalog.Catalog(packet).duplicate(first)
+        second = key_of(clone)
+        packet = saved(packet, catalog.Catalog(packet).apply(clone), second)
+        # Imported catalogs may intentionally share the full profile.
+        model = catalog.Catalog(packet)
+        model.row('item_skill_book', second[1], 'local_id')['profile_id'] = original['child']['profile_id']
+        packet = saved(packet, model.encode())
+        document = catalog.Catalog(packet).item(second)
+        document['book_steps'][0].update(required_successes='3', boosted_chance_bp='9000')
+        document['book_targets'][0]['skill_id'] = '2'
+        packet = saved(packet, catalog.Catalog(packet).apply(document, second))
+        self.check(packet)
+        model = catalog.Catalog(packet)
+        self.assertEqual(model.item(first), original)
+        self.assertNotEqual(model.item(second)['child']['profile_id'], original['child']['profile_id'])
+        document = model.item(second)
+        old = document['child']['profile_id']
+        document.update(catalog.Catalog.book_defaults('forget'))
+        packet = saved(packet, model.apply(document, second))
+        self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(second)['book']['operation_kind'], '2')
+        self.assertEqual(len(catalog.Catalog(packet).book_rows('skill_book_step', old, 'current_level')), 19)
+        document = catalog.Catalog(packet).item(second)
+        document.update(catalog.Catalog.book_defaults('horse'))
+        packet = saved(packet, catalog.Catalog(packet).apply(document, second))
+        self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(first), original)
+        self.assertFalse(catalog.Catalog(packet).item(second)['book_targets'])
+
+
+
 
 
 class PageCase(unittest.TestCase):
@@ -349,13 +571,54 @@ class PageCase(unittest.TestCase):
         def token(d):
             d['base'].update(max_stack='500')
             d['child'].update(wallet_currency='2', amount_per_unit='1000000000000')
-        for category, change in ((1, weapon), (2, armor), (3, accessory), (5, potion), (6, material), (8, chest), (16, token),
+        for category, change in ((1, weapon), (2, armor), (3, accessory), (5, potion), (6, material), (8, chest), (9, None), (16, token),
                                  (18, lambda d: d['child'].update(lock_id='12'))):
             packet, keys[category] = create(packet, category, change)
         return packet, keys
 
 class EditorPageTests(PageCase):
     """Form <-> document round trip of the Qt page."""
+
+    def test_quest_token_fields_and_dispatch_modes_round_trip(self):
+        packet,key=create(catalog.blank(TOOL),10)
+        self.page.dirty=False;self.page.loaded(packet,key)
+        self.assertFalse(self.page.quest_group_field.widget.isEnabled())
+        self.page.quest_dispatch_field.widget.setCurrentIndex(2)
+        self.assertTrue(self.page.quest_group_field.widget.isEnabled())
+        self.assertEqual(self.page.quest_contexts_field.value(),'1')
+        self.page.quest_group_field.edit.setText('quest.test_group')
+        self.page.quest_contexts_field.load('9')
+        document=self.page.collect()
+        self.assertEqual(document['child']['dispatch_kind'],'3')
+        self.assertEqual(document['child']['group_code'],'quest.test_group')
+        catalog.validate(packet,document,key,TOOL)
+        self.page.quest_dispatch_field.widget.setCurrentIndex(0)
+        token=self.page.collect()
+        self.assertEqual(token['child']['group_code'],'')
+        self.assertEqual(token['child']['allowed_contexts'],'0')
+        self.assertFalse(self.page.quest_observer_field.widget.isEnabled())
+        catalog.validate(packet,token,key,TOOL)
+        self.page.dirty=False
+
+    def test_form_is_locked_during_background_work_and_copy_is_a_new_draft(self):
+        from unittest import mock
+        packet, keys = self.fixture()
+        self.page.loaded(packet, keys[1])
+        self.assertTrue(self.page.tabs.isEnabled())
+        with mock.patch.object(self.owner, 'busy', return_value=True):
+            self.page.controls()
+            self.assertFalse(self.page.tabs.isEnabled())
+            self.assertFalse(self.page.save_button.isEnabled())
+            self.assertFalse(self.page.copy_button.isEnabled())
+        self.page.controls()
+        self.assertTrue(self.page.tabs.isEnabled())
+        self.page.duplicate()
+        self.assertIsNone(self.page.original_key)
+        copied = self.page.collect()
+        self.assertNotEqual(key_of(copied), keys[1])
+        self.assertEqual(copied['child']['physical_attack_base_raw'], '15500')
+        catalog.validate(packet, copied, executable=TOOL)
+        self.page.discard()
 
     def test_every_field_round_trips_through_the_form(self):
         packet, keys = self.fixture()
@@ -402,6 +665,51 @@ class EditorPageTests(PageCase):
         self.assertIn('válassz tárgyat', str(raised.exception))
         self.page.dirty = False
 
+    def test_automatic_form_controls_stack_supply_and_arena(self):
+        packet, keys = self.fixture()
+        self.page.loaded(packet, keys[5])
+        self.page.delivery_field.widget.setCurrentIndex(3)
+        self.assertFalse(self.page.stack_field.edit.isEnabled())
+        self.assertFalse(self.page.recovery_contexts_field.boxes[2].isEnabled())
+        d = self.page.collect()
+        self.assertEqual(d['base']['max_stack'], '1')
+        self.assertEqual(d['recovery']['units_per_use'], '1')
+        self.assertFalse(int(d['recovery']['allowed_contexts']) & 4)
+        catalog.validate(packet, d, keys[5], TOOL)
+        self.page.capacity_field.edit.setText('9,5')
+        self.page.supply_field.widget.setCurrentIndex(1)
+        self.assertFalse(self.page.capacity_field.widget.isEnabled())
+        d = self.page.collect()
+        self.assertEqual(d['effect']['capacity_raw'], '0')
+        catalog.validate(packet, d, keys[5], TOOL)
+        self.page.supply_field.widget.setCurrentIndex(0)
+        self.assertEqual(self.page.collect()['effect']['capacity_raw'], '9500')
+        self.page.supply_field.widget.setCurrentIndex(1)
+        packet = saved(packet, catalog.Catalog(packet).apply(d, keys[5]))
+        self.page.loaded(packet, keys[5])
+        self.assertEqual(ordered(catalog.Catalog(packet).apply(self.page.collect(), keys[5])), ordered(packet['tables']))
+        self.page.supply_field.widget.setCurrentIndex(0)
+        self.assertTrue(self.page.capacity_field.widget.isEnabled())
+        self.assertGreater(int(self.page.collect()['effect']['capacity_raw']), 0)
+        self.page.consumable_kind.setCurrentIndex(1)
+        self.assertTrue(self.page.stack_field.edit.isEnabled())
+        catalog.validate(packet, self.page.collect(), keys[5], TOOL)
+        self.page.dirty = False
+
+    def test_arena_quota_form_tracks_context(self):
+        packet, keys = self.fixture()
+        self.page.loaded(packet, keys[5])
+        self.page.recovery_contexts_field.boxes[2].setChecked(True)
+        self.assertTrue(self.page.arena_cost_field.widget.isEnabled())
+        self.page.arena_cost_field.edit.setText('2')
+        d = self.page.collect()
+        self.assertEqual(d['recovery']['arena_quota_cost'], '2')
+        catalog.validate(packet, d, keys[5], TOOL)
+        self.page.recovery_contexts_field.boxes[2].setChecked(False)
+        self.assertFalse(self.page.arena_cost_field.widget.isEnabled())
+        self.assertEqual(self.page.collect()['recovery']['arena_quota_cost'], '0')
+        self.page.dirty = False
+
     def test_form_edits_reach_the_validator(self):
         packet, keys = self.fixture()
         self.page.loaded(packet)
@@ -422,6 +730,118 @@ class EditorPageTests(PageCase):
             self.page.collect()
         self.assertIn('Fizikai támadás', str(raised.exception))
         self.page.dirty = False
+
+    def test_timed_form_switches_group_rules_and_round_trips(self):
+        packet, keys = self.fixture()
+        self.page.loaded(packet, keys[5])
+        self.page.consumable_kind.setCurrentIndex(1)
+        self.assertTrue(self.page.dirty)
+        d = self.page.collect()
+        self.assertEqual(d['timed']['duration_ms'], '60000')
+        self.assertEqual(d['timed_bonuses'], [dict(bonus_id='26', value_scaled='1500')])
+        catalog.validate(packet, d, keys[5], TOOL)
+        packet = saved(packet, catalog.Catalog(packet).apply(d, keys[5]))
+        self.page.loaded(packet, keys[5])
+        self.assertFalse(self.page.timed_group_form.isEnabled())
+        self.assertEqual(self.page.consumable_kind.currentData(), '2')
+        self.assertEqual(ordered(catalog.Catalog(packet).apply(self.page.collect(), keys[5])), ordered(packet['tables']))
+        self.page.timed_group_field.widget.setCurrentIndex(0)
+        self.assertTrue(self.page.timed_group_form.isEnabled())
+        code = next(f for f in self.page.timed_group_form.fields if f.column == 'code')
+        code.edit.setText('effect.new_rules')
+        d = self.page.collect()
+        catalog.validate(packet, d, keys[5], TOOL)
+        packet = saved(packet, catalog.Catalog(packet).apply(d, keys[5]))
+        self.page.loaded(packet, keys[5])
+        self.page.consumable_kind.setCurrentIndex(0)
+        d = self.page.collect()
+        self.assertIsNone(d['timed'])
+        catalog.validate(packet, d, keys[5], TOOL)
+        self.page.dirty = False
+
+    def test_toggle_form_round_trip_and_type_switches(self):
+        packet, keys = self.fixture()
+        self.page.loaded(packet, keys[5])
+        self.page.consumable_kind.setCurrentIndex(2)
+        self.assertFalse(self.page.stack_field.edit.isEnabled())
+        d = self.page.collect()
+        self.assertEqual(d['base']['max_stack'], '1')
+        self.assertEqual(d['toggle']['duration_ms'], '3600000')
+        self.assertEqual(d['toggle']['variant_id'], '1')
+        self.assertIsNone(d['recovery'])
+        self.assertIsNone(d['timed'])
+        catalog.validate(packet, d, keys[5], TOOL)
+        packet = saved(packet, catalog.Catalog(packet).apply(d, keys[5]))
+        self.page.loaded(packet, keys[5])
+        self.assertFalse(self.page.toggle_group_form.isEnabled())
+        self.assertEqual(ordered(catalog.Catalog(packet).apply(self.page.collect(), keys[5])), ordered(packet['tables']))
+        # Switching an already saved non-recovery item used to collect into None.
+        for index in [0, 1, 2, 0]:
+            self.page.consumable_kind.setCurrentIndex(index)
+            d = self.page.collect()
+            catalog.validate(packet, d, keys[5], TOOL)
+            self.assertEqual(sum(d.get(k) is not None for k in ('recovery', 'timed', 'toggle')), 1)
+        self.page.dirty = False
+
+    def test_book_panel_keeps_step_edits_and_switches_operation(self):
+        packet, keys = self.fixture()
+        self.page.loaded(packet, keys[9])
+        panel = self.page.book_panel
+        self.assertFalse(panel.add_target.isEnabled())
+        panel.target_mode.widget.setCurrentIndex(1)
+        panel.add_target_row()
+        self.assertEqual([r['skill_id'] for r in self.page.collect()['book_targets']], ['1', '2'])
+        panel.targets.selectRow(1); panel.delete_target()
+        panel.target_mode.widget.setCurrentIndex(0)
+        panel.add_step()
+        self.assertEqual(len(panel.steps), 10)
+        panel.delete_step(); panel.add_step()
+        self.assertEqual(panel.steps[panel.current]['current_level'], '20')
+        edited = self.page.collect()
+        packet = saved(packet, catalog.Catalog(packet).apply(edited, keys[9]))
+        self.page.loaded(packet, keys[9])
+        self.assertEqual(panel.current, 0)
+        count = next(f for f in panel.step.fields if f.column == 'required_successes')
+        count.edit.setText('3')
+        panel.step_list.setCurrentRow(1)
+        panel.step_list.setCurrentRow(0)
+        self.assertEqual(count.edit.text(), '3')
+        document = self.page.collect()
+        self.assertEqual(document['book_steps'][0]['required_successes'], '3')
+        catalog.validate(packet, document, keys[9], TOOL)
+        panel.bonus.widget.setCurrentIndex(0)
+        no_bonus = self.page.collect()
+        self.assertTrue(all(r['boosted_chance_bp'] == r['success_chance_bp'] for r in no_bonus['book_steps']))
+        catalog.validate(packet, no_bonus, keys[9], TOOL)
+        panel.bonus.widget.setCurrentIndex(1)
+        self.assertEqual(self.page.collect()['book_steps'][0]['boosted_chance_bp'], '10000')
+        count.edit.setText('bad')
+        panel.step_list.setCurrentRow(1)
+        self.assertEqual(panel.current, 0)
+        self.assertTrue(panel.problem.text())
+        count.edit.setText('3')
+        panel.operation.widget.setCurrentIndex(1)
+        document = self.page.collect()
+        self.assertEqual(document['book']['operation_kind'], '2')
+        self.assertEqual(document['book_targets'][0]['refund_pool'], '1')
+        catalog.validate(packet, document, keys[9], TOOL)
+        panel.operation.widget.setCurrentIndex(0)
+        self.assertEqual(self.page.collect()['book_steps'][0]['required_successes'], '3')
+        panel.operation.widget.setCurrentIndex(1)
+        self.assertEqual(len(self.page.collect()['book_steps']), 19)
+        panel.operation.widget.setCurrentIndex(2)
+        self.assertFalse(panel.targets.isEnabled())
+        document = self.page.collect()
+        self.assertEqual(document['book']['operation_kind'], '3')
+        self.assertFalse(document['book_targets'])
+        catalog.validate(packet, document, keys[9], TOOL)
+        packet = saved(packet, catalog.Catalog(packet).apply(document, keys[9]))
+        self.page.loaded(packet, keys[9])
+        self.assertEqual(ordered(catalog.Catalog(packet).apply(self.page.collect(), keys[9])), ordered(packet['tables']))
+        self.page.dirty = False
+
+
+
 
 
 class RefinementPanelTests(PageCase):
@@ -607,6 +1027,24 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zz_quest_native_commit_copy_and_rollback(self):
+        packet=self.call('read');document=catalog.Catalog(packet).new(10);key=key_of(document)
+        packet=self.commit(packet,document);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['child'].update(dispatch_kind='2',group_code='quest.sql_group',allowed_contexts='1',allow_observer='0')
+        packet=self.commit(packet,clone)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(catalog.Catalog(packet).item(other)['child']['group_code'],'quest.sql_group')
+        bad=catalog.Catalog(packet).item(other);bad['child']['group_code']='../script.lua'
+        with self.assertRaises(api.EditorError):self.commit(packet,bad,other)
+        self.assertEqual(self.call('read')['hash'],packet['hash'])
+        new=catalog.Catalog(packet).new(10)
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_quest BEFORE INSERT ON protos.item_quest FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test quest write failure'")
+        try:
+            with self.assertRaises(api.EditorError):self.commit(packet,new)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_quest')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+
     @classmethod
     def setUpClass(cls):
         if not MARIADB:
@@ -683,6 +1121,68 @@ class SqlCommitTests(unittest.TestCase):
             self.call('commit', tables=tables, expected_hash=packet['hash'])
         self.assertEqual(self.call('read')['hash'], packet['hash'])
 
+    def test_timed_effect_sql_commit_replace_type_and_group_guard(self):
+        packet = self.call('read')
+        document = catalog.Catalog(packet).new(5)
+        document.update(catalog.Catalog.timed_defaults(document['base']['local_id']))
+        key = key_of(document)
+        document['timed']['duration_ms'] = str(2 ** 63 - 1)
+        document['timed_bonuses'] += [dict(bonus_id='29', value_scaled='7'), dict(bonus_id='33', value_scaled='2500')]
+        packet = self.commit(packet, document)
+        actual = catalog.Catalog(self.call('read')).item(key)
+        self.assertEqual(actual['timed_bonuses'], document['timed_bonuses'])
+        self.assertEqual(actual['timed']['duration_ms'], str(2 ** 63 - 1))
+        group_id = actual['timed']['group_id']
+        # The native writer also protects group identity, independent of the UI.
+        model = catalog.Catalog(packet)
+        model.row('timed_effect_group', group_id, 'group_id')['clock_kind'] = '2'
+        with self.assertRaises(api.EditorError):
+            self.call('commit', tables=model.encode(), expected_hash=packet['hash'])
+        self.assertEqual(self.call('read')['hash'], packet['hash'])
+        clone = catalog.Catalog(packet).duplicate(key)
+        other = key_of(clone)
+        packet = self.commit(packet, clone)
+        document = catalog.Catalog(packet).item(other)
+        document['timed_bonuses'][0]['value_scaled'] = '4500'
+        document['cooldown'] = dict(duration_ms='1250')
+        packet = self.commit(packet, document, other)
+        self.assertEqual(catalog.Catalog(packet).item(key), actual)
+        document = catalog.Catalog(packet).item(other)
+        defaults = catalog.Catalog(packet).new(5)
+        document.update(timed=None, recovery=defaults['recovery'], effect=defaults['effect'], cooldown=None)
+        packet = self.commit(packet, document, other)
+        self.assertIsNone(catalog.Catalog(packet).item(other)['timed'])
+        document = catalog.Catalog(packet).item(other)
+        document.update(catalog.Catalog.timed_defaults(document['base']['local_id']))
+        packet = self.commit(packet, document, other)
+        self.assertIsNotNone(catalog.Catalog(packet).item(other)['timed'])
+
+    def test_z_automatic_and_arena_commit_type_switch_and_capacity(self):
+        packet = self.call('read')
+        document = catalog.Catalog(packet).new(5)
+        automatic(document)
+        key = key_of(document)
+        packet = self.commit(packet, document)
+        before = catalog.Catalog(packet).item(key)
+        self.assertEqual(before['effect']['capacity_raw'], '5000000')
+        clone = catalog.Catalog(packet).duplicate(key)
+        other = key_of(clone)
+        clone['effect'].update(supply_kind='2', capacity_raw='0', pool_kind='2')
+        packet = self.commit(packet, clone)
+        self.assertEqual(catalog.Catalog(packet).item(key), before)
+        document = catalog.Catalog(packet).item(other)
+        old = document['child']['recovery_profile_id']
+        defaults = catalog.Catalog(packet).new(5)
+        document.update(recovery=defaults['recovery'], effect=defaults['effect'])
+        document['recovery']['arena_quota_cost'] = '3'
+        packet = self.commit(packet, document, other)
+        self.assertEqual(catalog.Catalog(packet).item(other)['recovery']['arena_quota_cost'], '3')
+        self.assertIsNone(catalog.Catalog(packet).row('automatic_recovery_profile', old))
+        document = catalog.Catalog(packet).item(key)
+        document['base']['max_stack'] = '2'
+        with self.assertRaises(api.EditorError): self.commit(packet, document, key)
+        self.assertEqual(self.call('read')['hash'], packet['hash'])
+
     def test_invalid_document_writes_nothing(self):
         packet = self.call('read')
         document = catalog.Catalog(packet).new(2)
@@ -691,6 +1191,166 @@ class SqlCommitTests(unittest.TestCase):
             self.commit(packet, document)
         self.assertIn('Semmi nem lett mentve', str(raised.exception))
         self.assertEqual(self.call('read')['hash'], packet['hash'])
+
+    def test_full_refinement_curve_with_unique_bonuses_commits_atomically(self):
+        packet = self.call('read')
+        document = catalog.Catalog(packet).new(1)
+        definitions = {d['code']: str(d['id']) for d in packet['bonuses']}
+        bonus = definitions['physical_attack.flat']
+        document['refinement']['max_level'] = '255'
+        document['levels'] = [dict(level=str(level), physical_attack_gain_raw=str(level * 1000),
+                                  magical_attack_gain_raw='0', physical_defense_gain_raw='0', magical_defense_gain_raw='0',
+                                  extra_bonus_profile_id=None, bonuses=[] if level == 0 else
+                                  [dict(bonus_id=definitions[code], value_scaled=str(level * scale)) for code, scale in
+                                   [('physical_attack.flat', 2000), ('magical_attack.flat', 3000), ('critical.chance', 1)]]) for level in range(256)]
+        key = key_of(document)
+        catalog.validate(packet, document, executable=TOOL)
+        packet = self.commit(packet, document)
+        loaded = catalog.Catalog(packet).item(key)
+        self.assertEqual(len(loaded['levels']), 256)
+        self.assertEqual(next(e['value_scaled'] for e in loaded['levels'][255]['bonuses'] if e['bonus_id']==bonus), '510000')
+        self.assertEqual(len(loaded['levels'][255]['bonuses']), 3)
+        # Updating a complete curve and removing its private bonus profiles
+        # must obey the same transaction bounds without partial writes.
+        for level in loaded['levels']:
+            level['physical_attack_gain_raw'] = str(int(level['level']) * 3000)
+            for entry in level['bonuses']: entry['value_scaled'] = str(int(entry['value_scaled']) * 2)
+        packet = self.commit(packet, loaded, key)
+        loaded = catalog.Catalog(packet).item(key)
+        self.assertEqual(loaded['levels'][255]['physical_attack_gain_raw'], '765000')
+        loaded['refinement']['max_level'] = '0'
+        loaded['levels'] = loaded['levels'][:1]
+        packet = self.commit(packet, loaded, key)
+        self.assertEqual(len(catalog.Catalog(packet).item(key)['levels']), 1)
+
+    def test_database_rejection_rolls_back_batched_profiles_and_id_allocation(self):
+        packet = self.call('read')
+        document = catalog.Catalog(packet).new(1)
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_weapon BEFORE INSERT ON protos.item_weapon "
+                                  "FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test only failure'")
+        try:
+            with self.assertRaises(api.EditorError): self.commit(packet, document)
+        finally:
+            self.sandbox.client.query('DROP TRIGGER protos.ic_reject_weapon')
+        result = self.call('read')
+        self.assertEqual(result['hash'], packet['hash'])
+        self.assertEqual(result['sequences'], packet['sequences'])
+
+    def test_z_toggle_sql_round_trip_replacement_and_group_guard(self):
+        packet = self.call('read')
+        document = catalog.Catalog(packet).new(5)
+        toggle(document)
+        document['toggle'].update(duration_ms=str(2 ** 63 - 1), requirements='3', variant_id='65535')
+        document['cooldown'] = dict(duration_ms='1250')
+        key = key_of(document)
+        packet = self.commit(packet, document)
+        original = catalog.Catalog(self.call('read')).item(key)
+        self.assertEqual(original['toggle']['duration_ms'], str(2 ** 63 - 1))
+        self.assertEqual(original['toggle']['requirements'], '3')
+        self.assertEqual(original['toggle']['variant_id'], '65535')
+        model = catalog.Catalog(packet)
+        model.row('toggle_effect_group', original['toggle']['group_id'], 'group_id')['remove_on_death'] = '1'
+        with self.assertRaises(api.EditorError):
+            self.call('commit', tables=model.encode(), expected_hash=packet['hash'])
+        self.assertEqual(self.call('read')['hash'], packet['hash'])
+        clone = catalog.Catalog(packet).duplicate(key)
+        other = key_of(clone)
+        packet = self.commit(packet, clone)
+        document = catalog.Catalog(packet).item(other)
+        document['toggle_bonuses'][0]['value_scaled'] = '2500'
+        packet = self.commit(packet, document, other)
+        self.assertEqual(catalog.Catalog(packet).item(key), original)
+        document = catalog.Catalog(packet).item(other)
+        document.update(catalog.Catalog.timed_defaults(other[1]))
+        document['toggle'] = None
+        packet = self.commit(packet, document, other)
+        self.assertIsNone(catalog.Catalog(packet).item(other)['toggle'])
+        document = catalog.Catalog(packet).item(other)
+        fresh = catalog.Catalog(packet).new(5)
+        document.update(timed=None, recovery=fresh['recovery'], effect=fresh['effect'])
+        packet = self.commit(packet, document, other)
+        self.assertIsNotNone(catalog.Catalog(packet).item(other)['recovery'])
+        self.assertEqual(catalog.Catalog(packet).item(key), original)
+
+    def test_z_skill_book_full_rules_commit_copy_and_operation_change(self):
+        packet = self.call('read')
+        document = catalog.Catalog(packet).new(9)
+        key = key_of(document)
+        document['book'].update(target_mode='2', allowed_masteries='7')
+        document['book_targets'] = [dict(skill_id=str(i), refund_pool='0', forbidden_empire='0') for i in range(1,255)]
+        document['book_steps'] = [dict(document['book_steps'][0], current_level=str(i), next_level=str(i+1),
+                                       required_successes='65535', experience_cost=str(2 ** 63 - 1),
+                                       delay_minimum_ms=str(2 ** 63 - 1), delay_maximum_ms=str(2 ** 63 - 1)) for i in range(40)]
+        packet = self.commit(packet, document)
+        actual = catalog.Catalog(self.call('read')).item(key)
+        self.assertEqual(len(actual['book_targets']), 254)
+        self.assertEqual(len(actual['book_steps']), 40)
+        self.assertEqual(actual['book_steps'][39]['experience_cost'], str(2 ** 63 - 1))
+        clone = catalog.Catalog(packet).duplicate(key)
+        other = key_of(clone)
+        packet = self.commit(packet, clone)
+        d = catalog.Catalog(packet).item(other)
+        d.update(catalog.Catalog.book_defaults('forget'))
+        packet = self.commit(packet, d, other)
+        self.assertEqual(catalog.Catalog(packet).item(key), actual)
+        d = catalog.Catalog(packet).item(other)
+        self.assertEqual(len(d['book_steps']), 19)
+        d.update(catalog.Catalog.book_defaults('horse'))
+        packet = self.commit(packet, d, other)
+        self.assertEqual(catalog.Catalog(packet).item(key), actual)
+        self.assertFalse(catalog.Catalog(packet).item(other)['book_targets'])
+        # A storage rejection leaves profile rows and key allocation unchanged.
+        d = catalog.Catalog(packet).new(9)
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_book BEFORE INSERT ON protos.item_skill_book "
+                                  "FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test only book failure'")
+        try:
+            with self.assertRaises(api.EditorError): self.commit(packet, d)
+        finally:
+            self.sandbox.client.query('DROP TRIGGER protos.ic_reject_book')
+        after = self.call('read')
+        self.assertEqual(after['hash'], packet['hash'])
+        self.assertEqual(after['sequences'], packet['sequences'])
+
+
+
+
+    def test_z_refinement_recipe_commit_validation_and_rollback(self):
+        packet=self.call('read')
+        document=catalog.Catalog(packet).new(1)
+        document['refinement']['max_level']='30'
+        document['levels']=[dict(level=str(i),physical_attack_gain_raw=str(i*1000),magical_attack_gain_raw='0',
+                                 physical_defense_gain_raw='0',magical_defense_gain_raw='0',extra_bonus_profile_id=None,bonuses=[]) for i in range(31)]
+        weapon=('1',document['base']['local_id'])
+        packet=self.commit(packet,document)
+        material=catalog.Catalog(packet).new(6);material_key=('6',material['base']['local_id'])
+        packet=self.commit(packet,material)
+        model=catalog.Catalog(packet)
+        recipe=dict(recipe_id='1',code='refine.sql_test',source_category_id=weapon[0],source_local_id=weapon[1],source_level='9',
+                    target_category_id=weapon[0],target_local_id=weapon[1],target_level='10',gold_cost='5000',
+                    success_chance_bp='7500',failure_kind='2',failure_level=None)
+        model.tables['refinement_recipe'].append(recipe)
+        model.tables['refinement_ingredient'].append(dict(recipe_id='1',category_id=material_key[0],local_id=material_key[1],refinement_level='0',amount='7'))
+        previous=packet['hash']
+        packet=self.call('commit',tables=model.encode(),expected_hash=previous)
+        self.assertNotEqual(packet['hash'],previous)
+        self.assertEqual(catalog.Catalog(packet).tables['refinement_ingredient'][0]['amount'],'7')
+        # Refine recipe data now participates in native validation, commit and
+        # retirement rules; an item edit cannot leave an orphan recipe behind.
+        changed=catalog.Catalog(packet).item(tuple(map(int,material_key)));changed['base']['retired']='1'
+        with self.assertRaises(api.EditorError):self.commit(packet,changed,tuple(map(int,material_key)))
+        self.assertEqual(self.call('read')['hash'],packet['hash'])
+        model=catalog.Catalog(packet);model.tables['refinement_recipe'][0]['gold_cost']='6000'
+        changed=self.call('commit',tables=model.encode(),expected_hash=packet['hash'])
+        self.assertNotEqual(changed['hash'],packet['hash'])
+        # An identical retry is idempotent; a different stale edit must fail.
+        self.assertEqual(self.call('commit',tables=model.encode(),expected_hash=packet['hash'])['hash'],changed['hash'])
+        model.tables['refinement_recipe'][0]['gold_cost']='6500'
+        with self.assertRaises(api.EditorError):self.call('commit',tables=model.encode(),expected_hash=packet['hash'])
+        self.assertEqual(self.call('read')['hash'],changed['hash'])
+        model=catalog.Catalog(changed);model.tables['refinement_recipe']=[];model.tables['refinement_ingredient']=[]
+        removed=self.call('commit',tables=model.encode(),expected_hash=changed['hash'])
+        self.assertEqual(catalog.Catalog(removed).tables['refinement_recipe'],[])
+
 
 
 def main():

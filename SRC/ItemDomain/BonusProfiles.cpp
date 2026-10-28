@@ -7,7 +7,7 @@ namespace auriga::item
 std::expected<ValidatedBonusProfile, BonusProfileError> ValidateBonusProfile(BonusProfile source)
 {
     if (!source.id || !detail::ContentCode(source.code)) return std::unexpected(BonusProfileError::InvalidIdentity);
-    if (source.source != BonusSource::ItemBase && source.source != BonusSource::Refinement)
+    if (source.source != BonusSource::ItemBase && source.source != BonusSource::Refinement && source.source != BonusSource::TimedEffect)
         return std::unexpected(BonusProfileError::InvalidSource);
     if (source.entries.empty()) return std::unexpected(BonusProfileError::EmptyProfile);
     if (source.entries.size() > MaxBonusEntriesPerProfile) return std::unexpected(BonusProfileError::TooManyEntries);

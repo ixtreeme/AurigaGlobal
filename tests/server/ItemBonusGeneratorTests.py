@@ -17,7 +17,7 @@ class BonusRegistryTests(unittest.TestCase):
         self.doc = json.loads((ROOT / 'config/item_combat/bonus_registry.json').read_text(encoding='utf-8'))
 
     def test_current_contract_and_order(self):
-        self.assertEqual(len(generator.validate(self.doc)), 25)
+        self.assertEqual(len(generator.validate(self.doc)), 34)
         header, sql = generator.render(self.doc), generator.render_sql(self.doc)
         self.assertEqual(header, (ROOT / 'SRC/Server/common/item/BonusRegistry.hpp').read_bytes())
         self.assertEqual(sql, (ROOT / 'db/migrations/item_combat/007_bonus_registry_seed.sql').read_bytes())
@@ -25,7 +25,7 @@ class BonusRegistryTests(unittest.TestCase):
         self.assertEqual(header, generator.render(self.doc))
         self.assertEqual(sql, generator.render_sql(self.doc))
         self.doc['bonuses'] = self.doc['bonuses'][:1] + self.doc['bonuses'][-1:]
-        self.assertIn(b'Evasion = 25,', generator.render(self.doc))
+        self.assertIn(b'GlobalOutgoing = 34,', generator.render(self.doc))
         self.assertIn(b'PhysicalAttackFlat = 1,', generator.render(self.doc))
 
     def test_invalid_values_and_semantic_combinations(self):
@@ -55,7 +55,9 @@ class BonusRegistryTests(unittest.TestCase):
 
     def test_filter_and_unit_contracts(self):
         for index, field, value in [(6, 'action', 'Any'), (6, 'mode', 'Pve'), (8, 'mode', 'Any'),
-                                    (8, 'action', 'Skill'), (14, 'channel', 'Any'), (23, 'channel', 'Any')]:
+                                    (8, 'action', 'Skill'), (14, 'channel', 'Any'), (23, 'channel', 'Any'),
+                                    (25, 'unit', 'Integer'), (28, 'unit', 'Raw'), (32, 'stage', 'StatPercent'),
+                                    (33, 'action', 'Normal'), (33, 'mode', 'Pve'), (33, 'stage', 'IncomingMode')]:
             doc = copy.deepcopy(self.doc)
             doc['bonuses'][index][field] = value
             with self.subTest(index=index, field=field), self.assertRaises(ValueError):

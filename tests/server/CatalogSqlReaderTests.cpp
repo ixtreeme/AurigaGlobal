@@ -124,11 +124,15 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& reader) {
     Reject(reader,E::IsolationRequired);
     Execute(reader,"SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
     Execute(admin,"UPDATE protos.catalog_format SET schema_version=6");Reject(reader,E::FormatMismatch);
-    Execute(admin,"UPDATE protos.catalog_format SET schema_version=7");
+    Execute(admin,"UPDATE protos.catalog_format SET schema_version="+std::to_string(db::CatalogSchemaVersion));
     Execute(admin,"UPDATE protos.item_category SET prototype_table='wrong' WHERE category_id=1");Reject(reader,E::RegistryMismatch);
     Execute(admin,"UPDATE protos.item_category SET prototype_table='item_weapon' WHERE category_id=1");
     Execute(admin,"UPDATE protos.bonus_definition SET display_key='tampered' WHERE bonus_id=1");Reject(reader,E::RegistryMismatch);
     Execute(admin,"UPDATE protos.bonus_definition SET display_key='"+std::string(FindBonusDefinition(1)->displayKey)+"' WHERE bonus_id=1");
+    Execute(admin,"UPDATE protos.recovery_profile SET units_per_use=2 WHERE profile_id=4");Reject(reader,E::InvalidCatalog);
+    Execute(admin,"UPDATE protos.recovery_profile SET units_per_use=1 WHERE profile_id=4");
+    Execute(admin,"UPDATE protos.item_base SET max_stack=2 WHERE category_id=5 AND local_id=5");Reject(reader,E::InvalidCatalog);
+    Execute(admin,"UPDATE protos.item_base SET max_stack=1 WHERE category_id=5 AND local_id=5");
     Execute(admin,"DELETE FROM protos.instant_recovery_profile WHERE profile_id=1");Reject(reader,E::InvalidChild);
     Execute(admin,"INSERT INTO protos.instant_recovery_profile VALUES(1,1,300000,100000,500,1000,10000)");
     Execute(admin,"UPDATE protos.item_weapon SET ammo_policy_id=2 WHERE category_id=1 AND local_id=1");Reject(reader,E::InvalidCatalog);

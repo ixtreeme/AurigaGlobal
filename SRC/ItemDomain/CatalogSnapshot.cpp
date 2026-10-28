@@ -166,7 +166,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source, Table::Recoveries, [&](const Reader& r) {
         const auto id = r.U32(0);
         if (!delivery.emplace(id, r.U8(2)).second) r.Fail(ReadErrorCode::DuplicateRow);
-        s.recoveries.push_back({id,r.Text(1,96),r.U16(3),r.U8(4),r.Bool(5),r.OptionalId(6),InstantRecovery{}});
+        s.recoveries.push_back({id,r.Text(1,96),r.U16(3),r.U8(4),r.Bool(5),r.OptionalId(6),InstantRecovery{},r.U16(7)});
     });
     const auto recoveries = Index(s.recoveries, Table::Recoveries);
     std::set<std::uint32_t> children;
@@ -179,8 +179,12 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source, Table::Instant, [&](const Reader& r) { recoveryChild(r,1).effect=InstantRecovery{r.I64(2),r.I64(3),r.U16(4),r.U16(5),r.U32(6)}; });
     Each(source, Table::Reserve, [&](const Reader& r) { recoveryChild(r,2).effect=ReserveRecovery{r.I64(2),r.I64(3),r.U32(4),r.U64(5),r.U16(6)}; });
     Each(source, Table::Periodic, [&](const Reader& r) { recoveryChild(r,3).effect=PeriodicRecovery{r.I64(2),r.I64(3),r.U64(4),r.U64(5)}; });
+    Each(source, Table::Automatic, [&](const Reader& r) { recoveryChild(r,4).effect=AutomaticRecovery{static_cast<RecoveryPool>(r.U8(2)),static_cast<RecoverySupply>(r.U8(3)),r.I64(4),r.U64(5),r.U16(6),r.U16(7)}; });
     if (children.size() != s.recoveries.size()) throw ReadError{ReadErrorCode::InvalidChild,Table::Recoveries};
-    Each(source, Table::Consumables, [&](const Reader& r) { s.consumables.push_back({r.Key(),r.U32(2)}); });
+    Each(source, Table::Consumables, [&](const Reader& r) {
+        if (r.row[2] && r.U32(2) == 0) r.Fail(ReadErrorCode::InvalidNumber, 2);
+        s.consumables.push_back({r.Key(),r.OptionalId(2).value_or(0),r.OptionalId(3),r.OptionalId(4)});
+    });
     Each(source, Table::LootProfiles, [&](const Reader& r) { s.lootProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<LootPickMode>(r.U8(2)),{}}); });
     const auto loots = Index(s.lootProfiles, Table::LootProfiles);
     Each(source, Table::LootEntries, [&](const Reader& r) {
@@ -197,6 +201,40 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source, Table::CurrencyTokens, [&](const Reader& r) {
         s.currencyTokens.push_back({r.Key(),static_cast<WalletCurrency>(r.U8(2)),r.U64(3)});
     });
+    Each(source, Table::TimedEffectGroups, [&](const Reader& r) {
+        s.timedEffectGroups.push_back({r.U32(0),r.Text(1,96),static_cast<TimedEffectReapply>(r.U8(2)),static_cast<TimedEffectClock>(r.U8(3)),r.Bool(4)});
+    });
+    Each(source, Table::TimedEffects, [&](const Reader& r) {
+        s.timedEffects.push_back({r.U32(0),r.Text(1,96),r.U32(2),r.U32(3),r.U64(4),r.U16(5),r.U8(6),r.Bool(7),r.OptionalId(8)});
+    });
+    Each(source, Table::ToggleEffectGroups, [&](const Reader& r) {
+        s.toggleEffectGroups.push_back({r.U32(0),r.Text(1,96),r.Bool(2)});
+    });
+    Each(source, Table::ToggleEffects, [&](const Reader& r) {
+        s.toggleEffects.push_back({r.U32(0),r.Text(1,96),r.U32(2),r.U32(3),r.U16(4),r.U64(5),r.U8(6),r.U8(7),r.Bool(8),r.OptionalId(9)});
+    });
+    Each(source, Table::BookProfiles, [&](const Reader& r) {
+        s.skillBookProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<SkillBookOperation>(r.U8(2)),static_cast<SkillBookTargetMode>(r.U8(3)),r.U16(4),r.U8(5),r.Bool(6),static_cast<SkillBookBonus>(r.U8(7)),{}, {}});
+    });
+    const auto books=Index(s.skillBookProfiles,Table::BookProfiles);
+    Each(source, Table::BookTargets, [&](const Reader& r) {
+        Parent(s.skillBookProfiles,books,r).targets.push_back({r.U16(1),static_cast<SkillPointPool>(r.U8(2)),r.U8(3)});
+    });
+    Each(source, Table::BookSteps, [&](const Reader& r) {
+        Parent(s.skillBookProfiles,books,r).steps.push_back({r.U8(1),r.U8(2),r.U16(3),r.U16(4),r.U16(5),r.U16(6),r.U64(7),r.U64(8),r.U64(9),r.Bool(10)});
+    });
+    Each(source, Table::SkillBooks, [&](const Reader& r) {s.skillBooks.push_back({r.Key(),r.U32(2)});});
+    Each(source, Table::RefinementRecipes, [&](const Reader& r) {
+        std::optional<std::uint16_t> failureLevel;
+        if(r.row[11])failureLevel=r.U16(11);
+        s.refinementRecipes.push_back({r.U32(0),r.Text(1,96),r.Key(2),r.U16(4),r.Key(5),r.U16(7),r.U64(8),r.U16(9),
+                                      static_cast<RefinementFailure>(r.U8(10)),failureLevel,{}});
+    });
+    const auto recipes=Index(s.refinementRecipes,Table::RefinementRecipes);
+    Each(source, Table::RefinementIngredients, [&](const Reader& r) {
+        Parent(s.refinementRecipes,recipes,r).ingredients.push_back({r.Key(1),r.U16(3),r.U32(4)});
+    });
+    Each(source,Table::QuestItems,[&](const Reader& r){s.questItems.push_back({r.Key(),static_cast<QuestItemDispatch>(r.U8(2)),r.Text(3,96),r.U8(4),r.Bool(5)});});
     return s;
 }
 }

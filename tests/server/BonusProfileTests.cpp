@@ -49,7 +49,7 @@ void ProfileRules()
     Reject([](auto& p) { p.entries[1].valueScaled = std::numeric_limits<std::int64_t>::max(); }, BonusProfileError::ValueOutOfRange);
     for (const auto& definition : BonusDefinitions)
     {
-        for (const auto kind : {BonusSource::ItemBase, BonusSource::Refinement})
+        for (const auto kind : {BonusSource::ItemBase, BonusSource::Refinement, BonusSource::TimedEffect})
         {
             for (const auto value : {definition.minimum, std::int64_t{0}, definition.maximum})
             {

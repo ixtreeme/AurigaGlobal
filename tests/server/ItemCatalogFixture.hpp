@@ -20,7 +20,9 @@ inline ItemKey QuestBox() { return ItemKey::Create(ItemCategory::Container, 3).v
 inline ItemKey IronKey() { return ItemKey::Create(ItemCategory::ContainerKey, 1).value(); }
 inline ItemKey GoldBar() { return ItemKey::Create(ItemCategory::CurrencyToken, 1).value(); }
 inline ItemKey CoinVoucher() { return ItemKey::Create(ItemCategory::CurrencyToken, 2).value(); }
-inline constexpr std::size_t FixtureItems = 15;
+inline ItemKey TimedPotion() { return ItemKey::Create(ItemCategory::Consumable, 4).value(); }
+inline ItemKey AutomaticPotion() { return ItemKey::Create(ItemCategory::Consumable, 5).value(); }
+inline constexpr std::size_t FixtureItems = 17;
 inline AccessorySocketProfile SocketProfile()
 {
     return {1, "socket.copper", 3, 1, 1,
@@ -138,6 +140,21 @@ inline ItemCatalogSource Catalog()
     source.containers = {{GiftBox(), ContainerKind::Use, 1, 0}, {IronChest(), ContainerKind::Locked, 2, 7}, {QuestBox(), ContainerKind::Scripted, {}, 0}};
     source.containerKeys = {{IronKey(), 7}};
     source.currencyTokens = {{GoldBar(), WalletCurrency::Gold, 5'000'000}, {CoinVoucher(), WalletCurrency::DragonCoin, 100}};
+    source.bonuses.push_back({7, "bonus.timed_ability", BonusSource::TimedEffect,
+        {{BonusId::MovementSpeedPercent, 1500}, {BonusId::Strength, 5}, {BonusId::ExperiencePercent, 2000}}});
+    source.timedEffectGroups = {{1, "effect.ability", TimedEffectReapply::Replace, TimedEffectClock::WallTime, false}};
+    source.timedEffects = {{1, "timed.ability", 1, 7, 60000, 1, 9, false, 1}};
+    ItemBaseRow timed = source.items[6]; // Recovery item base, new semantic prototype.
+    timed.key = TimedPotion(); timed.contentCode = "consumable.ability_flask"; timed.nameKey = "item.ability_flask.name";
+    timed.descriptionKey = "item.ability_flask.description"; timed.iconAsset = "icons/ability_flask.png";
+    source.items.push_back(timed); source.consumables.push_back({TimedPotion(), 0, 1});
+    source.recoveries.push_back({4, "recovery.automatic_hp", 1, 9, false, 1,
+        AutomaticRecovery{RecoveryPool::Hp, RecoverySupply::Finite, 5000000, 1000, 700, 0}});
+    ItemBaseRow automatic = timed; automatic.key = AutomaticPotion();
+    automatic.contentCode = "consumable.automatic_flask"; automatic.nameKey = "item.automatic_flask.name";
+    automatic.descriptionKey = "item.automatic_flask.description"; automatic.iconAsset = "icons/automatic_flask.png";
+    automatic.maxStack = 1; automatic.weightGrams = 100;
+    source.items.push_back(automatic); source.consumables.push_back({AutomaticPotion(), 4});
     return source;
 }
 }

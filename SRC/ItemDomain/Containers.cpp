@@ -87,6 +87,7 @@ std::expected<ContainerOpenPlan, ContainerOpenError> PlanContainerOpen(
     const auto* container = std::get_if<ItemContainerRow>(&entry->category);
     if (!container) return std::unexpected(ContainerOpenError::NotContainer);
     if (entry->base.retired) return std::unexpected(ContainerOpenError::RetiredItem);
+    if (request.containerUnits > entry->base.maxStack) return std::unexpected(ContainerOpenError::InvalidStack);
     if (container->kind == ContainerKind::Scripted) return std::unexpected(ContainerOpenError::ScriptedContainer);
     if (container->kind == ContainerKind::Use && request.key) return std::unexpected(ContainerOpenError::KeyNotAccepted);
     if (container->kind == ContainerKind::Locked)
@@ -97,6 +98,7 @@ std::expected<ContainerOpenPlan, ContainerOpenError> PlanContainerOpen(
         const auto* key = std::get_if<ItemContainerKeyRow>(&keyEntry->category);
         if (!key) return std::unexpected(ContainerOpenError::NotKey);
         if (keyEntry->base.retired) return std::unexpected(ContainerOpenError::RetiredItem);
+        if (request.keyUnits > keyEntry->base.maxStack) return std::unexpected(ContainerOpenError::InvalidStack);
         if (key->lockId != container->lockId) return std::unexpected(ContainerOpenError::WrongKey);
         if (request.keyUnits < 1) return std::unexpected(ContainerOpenError::InsufficientUnits);
     }

@@ -190,7 +190,7 @@ void CatalogPublication()
         {[](auto& s){s.consumableCooldowns[0].durationMs=0;},ItemCatalogErrorCode::InvalidProfile},
         {[](auto& s){s.consumableCooldowns.push_back(s.consumableCooldowns[0]);},ItemCatalogErrorCode::DuplicateProfile},
         {[](auto& s){s.recoveries.push_back(s.recoveries[0]);},ItemCatalogErrorCode::DuplicateProfile},
-        {[](auto& s){s.consumables[0].recoveryProfile=0;},ItemCatalogErrorCode::MissingProfile},
+        {[](auto& s){s.consumables[0].recoveryProfile=0;},ItemCatalogErrorCode::InvalidProfile},
         {[](auto& s){s.consumables.clear();},ItemCatalogErrorCode::MissingCategoryRow},
         {[](auto& s){s.consumables.push_back(s.consumables[0]);},ItemCatalogErrorCode::DuplicateCategoryRow},
         {[](auto& s){s.consumables[0].key=item_catalog_fixture::Sword();},ItemCatalogErrorCode::WrongCategory},

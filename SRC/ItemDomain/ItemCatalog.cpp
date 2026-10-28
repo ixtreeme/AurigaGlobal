@@ -41,7 +41,8 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         source.armors.size() > ItemCatalogLimits::Items || source.accessories.size() > ItemCatalogLimits::Items ||
         source.materials.size() > ItemCatalogLimits::Items || source.consumables.size() > ItemCatalogLimits::Items ||
         source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items ||
-        source.currencyTokens.size() > ItemCatalogLimits::Items)
+        source.currencyTokens.size() > ItemCatalogLimits::Items || source.skillBooks.size() > ItemCatalogLimits::Items ||
+        source.questItems.size() > ItemCatalogLimits::Items)
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "items"));
     std::size_t textBytes = 0;
     auto add = [&](std::size_t length) {
@@ -57,8 +58,16 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
     if (!profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
         !profiles(source.attacks) || !profiles(source.ammoPolicies) || !profiles(source.resistances) || !profiles(source.refinements) ||
         !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
-        !profiles(source.lootProfiles))
+        !profiles(source.lootProfiles) || !profiles(source.timedEffectGroups) || !profiles(source.timedEffects) || !profiles(source.toggleEffectGroups) || !profiles(source.toggleEffects) || !profiles(source.skillBookProfiles))
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "profiles"));
+    for (const auto& p : source.skillBookProfiles)
+        if (p.targets.size()>MaxSkillBookTargets || p.steps.size()>MaxSkillBookSteps)
+            return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "skill_book.children", {}, p.id));
+    if (source.refinementRecipes.size() > MaxRefinementRecipes)
+        return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "refinement_recipes"));
+    for (const auto& recipe : source.refinementRecipes)
+        if (recipe.ingredients.size() > MaxRefinementIngredients || !add(recipe.code.size()))
+            return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "refinement_recipe.ingredients", {}, recipe.id));
     for (const auto& profile : source.lootProfiles)
         if (profile.entries.size() > MaxLootEntries)
             return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "loot.entries", {}, profile.id));
@@ -70,6 +79,8 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
     for (const auto& row : source.items)
         if (!add(row.contentCode.size()) || !add(row.nameKey.size()) || !add(row.descriptionKey.size()) || !add(row.iconAsset.size()))
             return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "text"));
+    for (const auto& row : source.questItems)
+        if (!add(row.groupCode.size())) return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"quest_item.text",row.key));
     return {};
 }
 ItemBaseStats BaseStats(const ItemWeaponRow& row) { return {row.physicalAttackBaseRaw, row.magicalAttackBaseRaw, 0, 0}; }
@@ -80,11 +91,13 @@ ItemBaseStats BaseStats(const ItemConsumableRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemContainerRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemContainerKeyRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemCurrencyTokenRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemSkillBookRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemQuestRow&) { return {}; }
 }
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 7 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 13 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     if (auto r = Profiles(source.usePolicies, "use_policy", [](const auto& row) {
         return row.allowedClasses > 0 && row.allowedClasses <= 15 && row.allowedSexes > 0 && row.allowedSexes <= 3;
@@ -106,6 +119,20 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     if (auto r = Profiles(source.recoveries, "recovery", [](const auto&) { return true; }); !r) return std::unexpected(r.error());
     if (auto r = Profiles(source.consumableCooldowns, "consumable_cooldown", ValidConsumableCooldown); !r) return std::unexpected(r.error());
     if (auto r = Profiles(source.lootProfiles, "loot", [](const auto&) { return true; }); !r) return std::unexpected(r.error());
+
+    if (auto r = Profiles(source.timedEffectGroups, "timed_effect_group", ValidTimedEffectGroup); !r) return std::unexpected(r.error());
+    if (auto r = Profiles(source.timedEffects, "timed_effect", ValidTimedEffectProfile); !r) return std::unexpected(r.error());
+    if (auto r = Profiles(source.toggleEffectGroups, "toggle_effect_group", ValidToggleEffectGroup); !r) return std::unexpected(r.error());
+    if (auto r = Profiles(source.toggleEffects, "toggle_effect", ValidToggleEffectProfile); !r) return std::unexpected(r.error());
+    if (auto r = Profiles(source.skillBookProfiles, "skill_book", ValidSkillBookProfile); !r) return std::unexpected(r.error());
+    if (auto r = Profiles(source.refinementRecipes, "refinement_recipe", [](const auto&) { return true; }); !r) return std::unexpected(r.error());
+    for (auto& recipe : source.refinementRecipes)
+        std::ranges::sort(recipe.ingredients, {}, [](const auto& row) { return std::pair{row.key, row.refinementLevel}; });
+    for (auto& p : source.skillBookProfiles)
+    {
+        std::ranges::sort(p.targets, {}, &SkillBookTarget::skillId);
+        std::ranges::sort(p.steps, {}, &SkillBookStep::currentLevel);
+    }
 
     auto catalog = std::unique_ptr<ItemCatalog>(new ItemCatalog());
     for (auto& row : source.recoveries)
@@ -163,6 +190,32 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         row = validated->Data();
         catalog->bonuses_.push_back(std::move(*validated));
     }
+    for (const auto& row : source.timedEffects)
+    {
+        if (!FindProfile(source.timedEffectGroups, row.group))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "timed_effect.group", {}, row.group));
+        if (row.cooldownProfile && !FindProfile(source.consumableCooldowns, *row.cooldownProfile))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "timed_effect.cooldown", {}, *row.cooldownProfile));
+        const auto* bonus = FindBonusProfile(catalog->bonuses_, row.bonusProfile);
+        if (!bonus) return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "timed_effect.bonus", {}, row.bonusProfile));
+        if (!AcceptsBonusSource(*bonus, BonusSource::TimedEffect))
+            return std::unexpected(Error(ItemCatalogErrorCode::WrongBonusSource, "timed_effect.bonus", {}, row.bonusProfile));
+        if (std::ranges::none_of(bonus->Data().entries, [](const auto& b) { return b.valueScaled != 0; }))
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "timed_effect.empty_bonus", {}, row.id));
+    }
+    for (const auto& row : source.toggleEffects)
+    {
+        if (!FindProfile(source.toggleEffectGroups, row.group))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "toggle_effect.group", {}, row.group));
+        if (row.cooldownProfile && !FindProfile(source.consumableCooldowns, *row.cooldownProfile))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "toggle_effect.cooldown", {}, *row.cooldownProfile));
+        const auto* bonus = FindBonusProfile(catalog->bonuses_, row.bonusProfile);
+        if (!bonus) return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "toggle_effect.bonus", {}, row.bonusProfile));
+        if (!AcceptsBonusSource(*bonus, BonusSource::TimedEffect))
+            return std::unexpected(Error(ItemCatalogErrorCode::WrongBonusSource, "toggle_effect.bonus", {}, row.bonusProfile));
+        if (std::ranges::none_of(bonus->Data().entries, [](const auto& b) { return b.valueScaled != 0; }))
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "toggle_effect.empty_bonus", {}, row.id));
+    }
     for (auto& row : source.refinements)
     {
         const auto id = row.id;
@@ -185,6 +238,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::ranges::sort(source.containers, {}, &ItemContainerRow::key);
     std::ranges::sort(source.containerKeys, {}, &ItemContainerKeyRow::key);
     std::ranges::sort(source.currencyTokens, {}, &ItemCurrencyTokenRow::key);
+    std::ranges::sort(source.skillBooks, {}, &ItemSkillBookRow::key);
+    std::ranges::sort(source.questItems, {}, &ItemQuestRow::key);
     std::set<std::string> codes;
     std::map<ItemKey, const ItemWeaponRow*> weapons;
     std::map<ItemKey, const ItemArmorRow*> armors;
@@ -194,6 +249,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::map<ItemKey, const ItemContainerRow*> containers;
     std::map<ItemKey, const ItemContainerKeyRow*> containerKeys;
     std::map<ItemKey, const ItemCurrencyTokenRow*> currencyTokens;
+    std::map<ItemKey, const ItemSkillBookRow*> skillBooks;
+    std::map<ItemKey, const ItemQuestRow*> questItems;
     for (const auto& row : source.weapons)
     {
         if (row.key.Category() != ItemCategory::Weapon) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "weapon", row.key));
@@ -235,8 +292,15 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     {
         if (row.key.Category() != ItemCategory::Consumable) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "consumable", row.key));
         if (!consumables.emplace(row.key, &row).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow, "consumable", row.key));
-        if (!catalog->FindRecovery(row.recoveryProfile))
+        if (unsigned(row.recoveryProfile != 0) + row.timedEffectProfile.has_value() + row.toggleEffectProfile.has_value() != 1 ||
+            row.timedEffectProfile == 0 || row.toggleEffectProfile == 0)
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "consumable.effect", row.key));
+        if (row.recoveryProfile && !catalog->FindRecovery(row.recoveryProfile))
             return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "consumable.recovery", row.key, row.recoveryProfile));
+        if (row.timedEffectProfile && !FindProfile(source.timedEffects, *row.timedEffectProfile))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "consumable.timed_effect", row.key, *row.timedEffectProfile));
+        if (row.toggleEffectProfile && !FindProfile(source.toggleEffects, *row.toggleEffectProfile))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "consumable.toggle_effect", row.key, *row.toggleEffectProfile));
     }
     for (const auto& row : source.containers)
     {
@@ -264,6 +328,18 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "currency_token", row.key));
     }
     std::optional<ItemKey> previous;
+    for (const auto& row : source.skillBooks)
+    {
+        if (row.key.Category()!=ItemCategory::SkillBook) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory,"skill_book",row.key));
+        if (!skillBooks.emplace(row.key,&row).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"skill_book",row.key));
+        if (!FindProfile(source.skillBookProfiles,row.profile)) return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"skill_book",row.key,row.profile));
+    }
+    for (const auto& row : source.questItems)
+    {
+        if(row.key.Category()!=ItemCategory::Quest)return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory,"quest_item",row.key));
+        if(!questItems.emplace(row.key,&row).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"quest_item",row.key));
+        if(!ValidQuestItem(row))return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"quest_item",row.key));
+    }
     for (const auto& row : source.items)
     {
         if (previous == row.key) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateItem, "item_base", row.key));
@@ -274,7 +350,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool container = category == ItemCategory::Container;
         const bool containerKey = category == ItemCategory::ContainerKey;
         const bool currencyToken = category == ItemCategory::CurrencyToken;
-        const bool stackable = material || consumable || container || containerKey || currencyToken;
+        const bool skillBook = category == ItemCategory::SkillBook;
+        const bool questItem = category == ItemCategory::Quest;
+        const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem;
         if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
@@ -284,7 +362,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             row.currency != ItemCurrency::Gold || row.buyAmount > INT64_MAX || row.sellAmount > INT64_MAX)
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "item_base", row.key));
         if (!codes.insert(row.contentCode).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateContentCode, "content_code", row.key));
-        if (stackable && (row.binding == BindingPolicy::OnEquip || row.appearanceProfile || row.baseBonusProfile))
+        // Quest appearance is a ground-item visual only: no equipment slot,
+        // on-equip binding or passive stats are introduced by its model.
+        if (stackable && (row.binding == BindingPolicy::OnEquip || (row.appearanceProfile && !questItem) || row.baseBonusProfile))
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "non_equipment.equipment_state", row.key));
         if (row.baseBonusProfile)
         {
@@ -312,9 +392,25 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (container && containers.contains(row.key)) child = *containers.at(row.key);
         if (containerKey && containerKeys.contains(row.key)) child = *containerKeys.at(row.key);
         if (currencyToken && currencyTokens.contains(row.key)) child = *currencyTokens.at(row.key);
+        if (questItem && questItems.contains(row.key)) child = *questItems.at(row.key);
+        if (skillBook && skillBooks.contains(row.key))
+        {
+            child = *skillBooks.at(row.key);
+            if (FindProfile(source.skillBookProfiles,skillBooks.at(row.key)->profile)->unitsPerUse>row.maxStack)
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"skill_book.stack_below_use_units",row.key));
+        }
         if (!child) return std::unexpected(Error(ItemCatalogErrorCode::MissingCategoryRow, "category", row.key));
-        if (consumable && catalog->FindRecovery(consumables.at(row.key)->recoveryProfile)->Data().unitsPerUse > row.maxStack)
-            return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.stack_below_use_units", row.key));
+        if (consumable)
+        {
+            const auto& c = *consumables.at(row.key);
+            if (c.toggleEffectProfile && row.maxStack != 1)
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.toggle_stack", row.key));
+            const auto units = c.timedEffectProfile ? FindProfile(source.timedEffects, *c.timedEffectProfile)->unitsPerUse
+                                                   : c.toggleEffectProfile ? 1 : catalog->FindRecovery(c.recoveryProfile)->Data().unitsPerUse;
+            if (units > row.maxStack) return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.stack_below_use_units", row.key));
+            if (c.recoveryProfile && std::holds_alternative<AutomaticRecovery>(catalog->FindRecovery(c.recoveryProfile)->Data().effect) && row.maxStack != 1)
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.automatic_stack", row.key));
+        }
         const auto base = std::visit([](const auto& value) { return BaseStats(value); }, *child);
         // Gains are monotone; the maximum level proves the sum bound at all levels.
         if (!ResolveRefinedBaseStats(base, *profile, profile->Data().maxLevel))
@@ -337,6 +433,10 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "container_key", row.key));
     for (const auto& row : source.currencyTokens)
         if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow, "currency_token", row.key));
+    for (const auto& row : source.skillBooks)
+        if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"skill_book",row.key));
+    for (const auto& row : source.questItems)
+        if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"quest_item",row.key));
     // Item rewards are ordinary, live, stack-sized grants of a published item.
     for (const auto& profile : source.lootProfiles)
         for (const auto& reward : profile.entries)
@@ -360,6 +460,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             if (!materials.contains(key) || materials.at(key)->kind != MaterialKind::Jewel)
                 return std::unexpected(Error(ItemCatalogErrorCode::InvalidSocketMaterial, "socket.permanent_charge_material", key, profile.id));
     }
+    for (const auto& recipe : source.refinementRecipes)
+        if (!ValidateRefinementRecipe(recipe, *catalog))
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidRefinementRecipe, "refinement_recipe", recipe.source, recipe.id));
     auto digest = detail::CanonicalCatalogHash(source);
     if (!digest) return std::unexpected(Error(digest.error(), "content_hash"));
     catalog->digest_ = *digest;
@@ -378,6 +481,7 @@ const ValidatedRefinementProfile* ItemCatalog::FindRefinement(std::uint32_t id) 
     return found == refinements_.end() ? nullptr : &found->second;
 }
 const ItemUsePolicy* ItemCatalog::FindUsePolicy(std::uint32_t id) const noexcept { return FindProfile(source_.usePolicies, id); }
+const RefinementRecipe* ItemCatalog::FindRefinementRecipe(std::uint32_t id) const noexcept { return FindProfile(source_.refinementRecipes, id); }
 const ItemTradePolicy* ItemCatalog::FindTradePolicy(std::uint32_t id) const noexcept { return FindProfile(source_.tradePolicies, id); }
 const ItemAppearanceProfile* ItemCatalog::FindAppearance(std::uint32_t id) const noexcept { return FindProfile(source_.appearances, id); }
 const ItemAttackProfile* ItemCatalog::FindAttack(std::uint32_t id) const noexcept { return FindProfile(source_.attacks, id); }
@@ -407,6 +511,26 @@ const ValidatedLootProfile* ItemCatalog::FindLoot(std::uint32_t id) const noexce
 {
     const auto found = loots_.find(id);
     return found == loots_.end() ? nullptr : &found->second;
+}
+const SkillBookProfile* ItemCatalog::FindSkillBook(std::uint32_t id) const noexcept
+{
+    return FindProfile(source_.skillBookProfiles,id);
+}
+const ToggleEffectGroup* ItemCatalog::FindToggleEffectGroup(std::uint32_t id) const noexcept
+{
+    return FindProfile(source_.toggleEffectGroups, id);
+}
+const ToggleEffectProfile* ItemCatalog::FindToggleEffect(std::uint32_t id) const noexcept
+{
+    return FindProfile(source_.toggleEffects, id);
+}
+const TimedEffectGroup* ItemCatalog::FindTimedEffectGroup(std::uint32_t id) const noexcept
+{
+    return FindProfile(source_.timedEffectGroups, id);
+}
+const TimedEffectProfile* ItemCatalog::FindTimedEffect(std::uint32_t id) const noexcept
+{
+    return FindProfile(source_.timedEffects, id);
 }
 std::expected<ItemBonusProfiles, ItemCatalogLookupError> ItemCatalog::BonusProfilesAt(ItemKey key, std::uint16_t level) const noexcept
 {

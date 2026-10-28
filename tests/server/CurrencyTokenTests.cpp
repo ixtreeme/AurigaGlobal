@@ -35,6 +35,9 @@ void Redeeming()
     Check(PlanTokenRedeem(*catalog, {f::GoldBar(), 1, GoldMax + 1, GoldMax}).error() == TokenRedeemError::InvalidWallet,
           "a balance above the cap is an invalid state, not a full wallet");
     Check(PlanTokenRedeem(*catalog, {f::GoldBar(), 0, 0, GoldMax}).error() == TokenRedeemError::EmptyStack, "empty stack");
+    const auto limit = catalog->Find(f::GoldBar())->base.maxStack;
+    Check(PlanTokenRedeem(*catalog, {f::GoldBar(), limit + 1, 0, UINT64_MAX}).error() == TokenRedeemError::InvalidStack,
+          "overstacked token state cannot generate a redemption plan");
     // The old voucher branch consumed the whole stack even when the coin cap
     // clamped the credit. The plan applies the same whole-unit rule as gold.
     const auto coins = PlanTokenRedeem(*catalog, {f::CoinVoucher(), 200, 4'294'967'295ULL - 250, 4'294'967'295ULL}).value();
@@ -49,6 +52,7 @@ void Redeeming()
           TokenRedeemError::RetiredItem, "retired tokens are not redeemed");
     auto huge = f::Catalog();
     huge.currencyTokens[0].amountPerUnit = MaxTokenUnitAmount;
+    for (auto& row : huge.items) if (row.key == f::GoldBar()) row.maxStack = UINT32_MAX;
     const auto large = PlanTokenRedeem(*BuildItemCatalog(std::move(huge)).value(), {f::GoldBar(), UINT32_MAX, 0, UINT64_MAX}).value();
     Check(large.unitsToConsume == 2 && large.amountToCredit == 2 * MaxTokenUnitAmount, "large values do not overflow");
 }

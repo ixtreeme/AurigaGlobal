@@ -20,7 +20,8 @@
       "aggregate_cap": "RawStat",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -1000000000000000,
       "maximum": 1000000000000000
@@ -43,7 +44,8 @@
       "aggregate_cap": "RawStat",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -1000000000000000,
       "maximum": 1000000000000000
@@ -66,7 +68,8 @@
       "aggregate_cap": "RawStat",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -1000000000000000,
       "maximum": 1000000000000000
@@ -89,7 +92,8 @@
       "aggregate_cap": "RawStat",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -1000000000000000,
       "maximum": 1000000000000000
@@ -112,7 +116,8 @@
       "aggregate_cap": "StatPercent",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -135,7 +140,8 @@
       "aggregate_cap": "StatPercent",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -158,7 +164,8 @@
       "aggregate_cap": "Outgoing",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -181,7 +188,8 @@
       "aggregate_cap": "Outgoing",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -204,7 +212,8 @@
       "aggregate_cap": "Outgoing",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -227,7 +236,8 @@
       "aggregate_cap": "Outgoing",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -250,7 +260,8 @@
       "aggregate_cap": "Incoming",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -273,7 +284,8 @@
       "aggregate_cap": "Incoming",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -296,7 +308,8 @@
       "aggregate_cap": "Incoming",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -319,7 +332,8 @@
       "aggregate_cap": "Incoming",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -342,7 +356,8 @@
       "aggregate_cap": "FlatPenetration",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": 0,
       "maximum": 1000000000000000
@@ -365,7 +380,8 @@
       "aggregate_cap": "FlatPenetration",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": 0,
       "maximum": 1000000000000000
@@ -388,7 +404,8 @@
       "aggregate_cap": "PercentPenetration",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": 0,
       "maximum": 10000
@@ -411,7 +428,8 @@
       "aggregate_cap": "PercentPenetration",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": 0,
       "maximum": 10000
@@ -434,7 +452,8 @@
       "aggregate_cap": "Resistance",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -457,7 +476,8 @@
       "aggregate_cap": "Resistance",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -480,7 +500,8 @@
       "aggregate_cap": "CritChance",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -503,7 +524,8 @@
       "aggregate_cap": "CritResistance",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -526,7 +548,8 @@
       "aggregate_cap": "CritMultiplierExtra",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000
@@ -549,7 +572,8 @@
       "aggregate_cap": "Block",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": 0,
       "maximum": 10000
@@ -572,7 +596,224 @@
       "aggregate_cap": "Accuracy",
       "allowed_sources": [
         "ItemBase",
-        "Refinement"
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 26,
+      "cpp_name": "MovementSpeedPercent",
+      "code": "bonus.movement_speed_percent",
+      "display_key": "bonus.movement_speed_percent.name",
+      "unit": "BasisPoints",
+      "target": "MovementSpeed",
+      "stage": "StatPercent",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Speed",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 27,
+      "cpp_name": "AttackSpeedPercent",
+      "code": "bonus.attack_speed_percent",
+      "display_key": "bonus.attack_speed_percent.name",
+      "unit": "BasisPoints",
+      "target": "AttackSpeed",
+      "stage": "StatPercent",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Speed",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 28,
+      "cpp_name": "CastSpeedPercent",
+      "code": "bonus.cast_speed_percent",
+      "display_key": "bonus.cast_speed_percent.name",
+      "unit": "BasisPoints",
+      "target": "CastSpeed",
+      "stage": "StatPercent",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Speed",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 29,
+      "cpp_name": "Strength",
+      "code": "bonus.strength",
+      "display_key": "bonus.strength.name",
+      "unit": "Integer",
+      "target": "Strength",
+      "stage": "StatFlat",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Attribute",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 30,
+      "cpp_name": "Dexterity",
+      "code": "bonus.dexterity",
+      "display_key": "bonus.dexterity.name",
+      "unit": "Integer",
+      "target": "Dexterity",
+      "stage": "StatFlat",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Attribute",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 31,
+      "cpp_name": "Constitution",
+      "code": "bonus.constitution",
+      "display_key": "bonus.constitution.name",
+      "unit": "Integer",
+      "target": "Constitution",
+      "stage": "StatFlat",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Attribute",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 32,
+      "cpp_name": "Intelligence",
+      "code": "bonus.intelligence",
+      "display_key": "bonus.intelligence.name",
+      "unit": "Integer",
+      "target": "Intelligence",
+      "stage": "StatFlat",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Attribute",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 33,
+      "cpp_name": "ExperiencePercent",
+      "code": "bonus.experience_percent",
+      "display_key": "bonus.experience_percent.name",
+      "unit": "BasisPoints",
+      "target": "Experience",
+      "stage": "Reward",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Experience",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
+      ],
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    {
+      "id": 34,
+      "cpp_name": "GlobalOutgoing",
+      "code": "bonus.global_outgoing",
+      "display_key": "bonus.global_outgoing.name",
+      "unit": "BasisPoints",
+      "target": "OutgoingDamage",
+      "stage": "OutgoingGlobal",
+      "channel": "Any",
+      "action": "Any",
+      "mode": "Any",
+      "family": "Any",
+      "rank": "Any",
+      "element": "Any",
+      "stacking": "Add",
+      "aggregate_cap": "Outgoing",
+      "allowed_sources": [
+        "ItemBase",
+        "Refinement",
+        "TimedEffect"
       ],
       "minimum": -100000,
       "maximum": 100000

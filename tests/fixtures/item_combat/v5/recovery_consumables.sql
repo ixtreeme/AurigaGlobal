@@ -78,7 +78,7 @@ UPDATE protos.item_accessory SET socket_profile_id=1 WHERE category_id=3 AND loc
 -- V5 recovery-only consumable fixtures; not a legacy content import.
 INSERT INTO protos.item_use_policy VALUES(3,'use.recovery',15,3,1);
 INSERT INTO protos.consumable_cooldown_profile VALUES(1,'cooldown.recovery',1000);
-INSERT INTO protos.recovery_profile VALUES
+INSERT INTO protos.recovery_profile(profile_id,code,delivery_kind,units_per_use,allowed_contexts,allow_during_pvp,cooldown_profile_id) VALUES
  (1,'recovery.instant',1,1,15,1,1),
  (2,'recovery.reserve',2,1,9,0,1),
  (3,'recovery.periodic',3,1,15,0,NULL);
@@ -88,12 +88,12 @@ INSERT INTO protos.periodic_recovery_profile VALUES(3,3,25000,0,1000,60000);
 INSERT INTO protos.item_base VALUES
  (5,1,'consumable.instant_flask','item.instant_flask.name','item.instant_flask.description','icons/instant_flask.png',
   1,1,200,50,10,1,3,1,1,NULL,NULL,1,0,0,0);
-INSERT INTO protos.item_consumable VALUES(5,1,1);
+INSERT INTO protos.item_consumable(category_id,local_id,recovery_profile_id) VALUES(5,1,1);
 INSERT INTO protos.item_base VALUES
  (5,2,'consumable.reserve_flask','item.reserve_flask.name','item.reserve_flask.description','icons/reserve_flask.png',
   1,1,200,50,10,1,3,1,1,NULL,NULL,1,0,0,0);
-INSERT INTO protos.item_consumable VALUES(5,2,2);
+INSERT INTO protos.item_consumable(category_id,local_id,recovery_profile_id) VALUES(5,2,2);
 INSERT INTO protos.item_base VALUES
  (5,3,'consumable.regeneration_flask','item.regeneration_flask.name','item.regeneration_flask.description','icons/regeneration_flask.png',
   1,1,200,50,10,1,3,1,1,NULL,NULL,1,0,0,0);
-INSERT INTO protos.item_consumable VALUES(5,3,3);
+INSERT INTO protos.item_consumable(category_id,local_id,recovery_profile_id) VALUES(5,3,3);
