@@ -4,7 +4,7 @@ CREATE TABLE protos.refinement_profile (
     profile_kind TINYINT UNSIGNED NOT NULL,
     max_level SMALLINT UNSIGNED NOT NULL,
     CHECK (profile_id > 0), CHECK (CHAR_LENGTH(code) > 0),
-    CHECK (profile_kind IN (1,2,3,4)), CHECK (max_level <= 255),
+    CONSTRAINT ck_refinement_profile_kind CHECK (profile_kind IN (1,2,3,4)), CHECK (max_level <= 255),
     CHECK (profile_kind <> 1 OR max_level=0)
 ) ENGINE=InnoDB;
 

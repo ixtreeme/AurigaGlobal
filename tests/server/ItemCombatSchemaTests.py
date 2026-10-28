@@ -36,7 +36,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -543,7 +543,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["13", "auriga.item_catalog.v13"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["14", "auriga.item_catalog.v14"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
@@ -555,7 +555,7 @@ class CategorySchemaTests(unittest.TestCase):
         self.assertEqual(self.q("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
                                 "AND TABLE_NAME='item_base' AND CHECK_CLAUSE LIKE '%in (1,2,3,5,6)%'"), [["0"]])
         self.assertEqual(self.q("SELECT CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
-                            "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,5,6,8,9,10,16,18)"]])
+                            "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,5,6,7,8,9,10,16,18)"]])
 
     def test_container_sql_constraints(self):
         for sql, code in [
@@ -704,6 +704,29 @@ class CategorySchemaTests(unittest.TestCase):
         finally:
             self.q('ROLLBACK')
 
+
+    def test_socket_stone_constraints_and_refinement_kind(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.refinement_profile VALUES(9000,'refine.stone_test',5,0)")
+            self.q('INSERT INTO protos.refinement_level VALUES(9000,0,0,0,0,0,NULL)')
+            self.q("INSERT INTO protos.item_base SELECT 7,1,'socket_stone.test',name_key,description_key,icon_asset,inventory_width,inventory_height,max_stack,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,9000,appearance_profile_id,base_bonus_profile_id,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=5 AND local_id=1")
+            self.q("INSERT INTO protos.item_socket_stone VALUES(7,1,1,3,1,'stone.one','stone.two')")
+            self.q('UPDATE protos.item_base SET base_bonus_profile_id=1 WHERE category_id=7')
+            for query,code in [
+                ('UPDATE protos.item_socket_stone SET allowed_targets=0','4025'),
+                ('UPDATE protos.item_socket_stone SET allowed_targets=4','4025'),
+                ('UPDATE protos.item_socket_stone SET minimum_socket_grade=0','4025'),
+                ('UPDATE protos.item_socket_stone SET minimum_socket_grade=3','4025'),
+                ("UPDATE protos.item_socket_stone SET secondary_group='stone.one'",'4025'),
+                ('UPDATE protos.item_socket_stone SET stone_kind=2','4025'),
+                ('UPDATE protos.item_socket_stone SET local_id=9999','1452'),
+                ('UPDATE protos.refinement_profile SET profile_kind=6 WHERE profile_id=9000','4025'),
+                ('UPDATE protos.item_base SET binding_policy=3 WHERE category_id=7','4025')]:
+                with self.subTest(query=query),self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
+            self.q("UPDATE protos.item_socket_stone SET stone_kind=2,allowed_targets=0,minimum_socket_grade=0,primary_group='',secondary_group=''")
+            self.assertEqual(self.q('SELECT stone_kind,allowed_targets,minimum_socket_grade FROM protos.item_socket_stone'),[['2','0','0']])
+        finally:self.q('ROLLBACK')
 
     def test_quest_item_constraints_and_kind(self):
         self.q('START TRANSACTION')

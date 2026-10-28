@@ -42,7 +42,7 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         source.materials.size() > ItemCatalogLimits::Items || source.consumables.size() > ItemCatalogLimits::Items ||
         source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items ||
         source.currencyTokens.size() > ItemCatalogLimits::Items || source.skillBooks.size() > ItemCatalogLimits::Items ||
-        source.questItems.size() > ItemCatalogLimits::Items)
+        source.questItems.size() > ItemCatalogLimits::Items || source.socketStones.size()>ItemCatalogLimits::Items)
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "items"));
     std::size_t textBytes = 0;
     auto add = [&](std::size_t length) {
@@ -81,6 +81,9 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
             return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "text"));
     for (const auto& row : source.questItems)
         if (!add(row.groupCode.size())) return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"quest_item.text",row.key));
+    for (const auto& row : source.socketStones)
+        if (!add(row.primaryGroup.size()) || !add(row.secondaryGroup.size()))
+            return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"socket_stone.text",row.key));
     return {};
 }
 ItemBaseStats BaseStats(const ItemWeaponRow& row) { return {row.physicalAttackBaseRaw, row.magicalAttackBaseRaw, 0, 0}; }
@@ -93,11 +96,12 @@ ItemBaseStats BaseStats(const ItemContainerKeyRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemCurrencyTokenRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemSkillBookRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemQuestRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemSocketStoneRow&) { return {}; }
 }
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 13 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 14 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     if (auto r = Profiles(source.usePolicies, "use_policy", [](const auto& row) {
         return row.allowedClasses > 0 && row.allowedClasses <= 15 && row.allowedSexes > 0 && row.allowedSexes <= 3;
@@ -240,6 +244,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::ranges::sort(source.currencyTokens, {}, &ItemCurrencyTokenRow::key);
     std::ranges::sort(source.skillBooks, {}, &ItemSkillBookRow::key);
     std::ranges::sort(source.questItems, {}, &ItemQuestRow::key);
+    std::ranges::sort(source.socketStones, {}, &ItemSocketStoneRow::key);
     std::set<std::string> codes;
     std::map<ItemKey, const ItemWeaponRow*> weapons;
     std::map<ItemKey, const ItemArmorRow*> armors;
@@ -251,6 +256,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::map<ItemKey, const ItemCurrencyTokenRow*> currencyTokens;
     std::map<ItemKey, const ItemSkillBookRow*> skillBooks;
     std::map<ItemKey, const ItemQuestRow*> questItems;
+    std::map<ItemKey, const ItemSocketStoneRow*> socketStones;
     for (const auto& row : source.weapons)
     {
         if (row.key.Category() != ItemCategory::Weapon) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "weapon", row.key));
@@ -340,6 +346,12 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if(!questItems.emplace(row.key,&row).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"quest_item",row.key));
         if(!ValidQuestItem(row))return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"quest_item",row.key));
     }
+    for(const auto& row:source.socketStones)
+    {
+        if(row.key.Category()!=ItemCategory::SocketStone)return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory,"socket_stone",row.key));
+        if(!socketStones.emplace(row.key,&row).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"socket_stone",row.key));
+        if(!ValidSocketStone(row))return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"socket_stone",row.key));
+    }
     for (const auto& row : source.items)
     {
         if (previous == row.key) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateItem, "item_base", row.key));
@@ -352,7 +364,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool currencyToken = category == ItemCategory::CurrencyToken;
         const bool skillBook = category == ItemCategory::SkillBook;
         const bool questItem = category == ItemCategory::Quest;
-        const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem;
+        const bool socketStone = category == ItemCategory::SocketStone;
+        const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone;
         if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
@@ -362,9 +375,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             row.currency != ItemCurrency::Gold || row.buyAmount > INT64_MAX || row.sellAmount > INT64_MAX)
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "item_base", row.key));
         if (!codes.insert(row.contentCode).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateContentCode, "content_code", row.key));
-        // Quest appearance is a ground-item visual only: no equipment slot,
-        // on-equip binding or passive stats are introduced by its model.
-        if (stackable && (row.binding == BindingPolicy::OnEquip || (row.appearanceProfile && !questItem) || row.baseBonusProfile))
+        // Quest/stone appearance is a ground-item visual only. Stone bonuses
+        // are resolved for installed stones; the inventory stone is not gear.
+        if (stackable && (row.binding == BindingPolicy::OnEquip || (row.appearanceProfile && !questItem && !socketStone) || (row.baseBonusProfile && !socketStone)))
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "non_equipment.equipment_state", row.key));
         if (row.baseBonusProfile)
         {
@@ -380,7 +393,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (!profile) return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile, "refinement", row.key, row.refinementProfile));
         const auto expectedKind = category == ItemCategory::Weapon ? RefinementKind::Weapon :
             category == ItemCategory::Armor ? RefinementKind::Armor :
-            category == ItemCategory::Accessory ? RefinementKind::Accessory : RefinementKind::None;
+            category == ItemCategory::Accessory ? RefinementKind::Accessory :
+            socketStone ? RefinementKind::SocketStone : RefinementKind::None;
         if (profile->Data().kind != RefinementKind::None && profile->Data().kind != expectedKind)
             return std::unexpected(Error(ItemCatalogErrorCode::WrongRefinementKind, "refinement", row.key, row.refinementProfile));
         std::optional<ItemCategoryRow> child;
@@ -393,6 +407,12 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (containerKey && containerKeys.contains(row.key)) child = *containerKeys.at(row.key);
         if (currencyToken && currencyTokens.contains(row.key)) child = *currencyTokens.at(row.key);
         if (questItem && questItems.contains(row.key)) child = *questItems.at(row.key);
+        if (socketStone && socketStones.contains(row.key))
+        {
+            child=*socketStones.at(row.key);
+            if(socketStones.at(row.key)->kind==SocketStoneKind::BrokenShard && (row.baseBonusProfile || profile->Data().maxLevel))
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"socket_stone.broken_effect",row.key));
+        }
         if (skillBook && skillBooks.contains(row.key))
         {
             child = *skillBooks.at(row.key);
@@ -437,6 +457,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"skill_book",row.key));
     for (const auto& row : source.questItems)
         if (!catalog->Find(row.key)) return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"quest_item",row.key));
+    for(const auto& row:source.socketStones)
+        if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"socket_stone",row.key));
     // Item rewards are ordinary, live, stack-sized grants of a published item.
     for (const auto& profile : source.lootProfiles)
         for (const auto& reward : profile.entries)

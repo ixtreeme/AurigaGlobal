@@ -101,6 +101,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
         for(const auto& i:r.ingredients) Add(s,T::RefinementIngredients,r.id,i.key.Category(),i.key.LocalId(),i.refinementLevel,i.count);
     }
     for(const auto& r:source.questItems)Add(s,T::QuestItems,r.key.Category(),r.key.LocalId(),r.dispatch,r.groupCode,r.allowedContexts,r.allowObserver);
+    for(const auto& r:source.socketStones)Add(s,T::SocketStones,r.key.Category(),r.key.LocalId(),r.kind,r.allowedTargets,r.minimumSocketGrade,r.primaryGroup,r.secondaryGroup);
     return s;
 }
 } // namespace catalog_snapshot_fixture

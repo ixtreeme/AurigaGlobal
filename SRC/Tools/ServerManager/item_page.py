@@ -511,7 +511,7 @@ class RefinementPanel(QWidget):
     """
     STAT_COLUMNS = {1: [('physical_attack_gain_raw', 'Fizikai támadás +'), ('magical_attack_gain_raw', 'Mágikus támadás +')],
                     2: [('physical_defense_gain_raw', 'Fizikai védekezés +'), ('magical_defense_gain_raw', 'Mágikus védekezés +')],
-                    3: []}
+                    3: [], 7: []}
 
     def __init__(self, changed):
         super().__init__(); self.changed = changed; self.category = 1; self.levels = []; self.definitions = []; self.loading = False
@@ -539,7 +539,7 @@ class RefinementPanel(QWidget):
         self.category = category; self.definitions = definitions
         self.kind.blockSignals(True); self.kind.clear()
         self.kind.addItem('Nincs fejlesztés', '1')
-        self.kind.addItem({1: 'Fegyverfejlesztés', 2: 'Páncélfejlesztés', 3: 'Ékszerfejlesztés'}[category], str(catalog.REFINEMENT_KIND[category]))
+        self.kind.addItem({1: 'Fegyverfejlesztés', 2: 'Páncélfejlesztés', 3: 'Ékszerfejlesztés', 7: 'Foglalatkő-fejlesztés'}[category], str(catalog.REFINEMENT_KIND[category]))
         self.kind.blockSignals(False)
 
     def load(self, refinement, levels):
@@ -829,7 +829,7 @@ class ItemPage(QWidget):
         use.add('trade', 'allow_drop', 'Eldobás', 'bool', text='Földre dobható')
         use.add('trade', 'allow_sell', 'Eladás', 'bool', text='NPC-nek eladható')
         self.appearance_field = use.add('appearance', 'model_asset', 'Megjelenési modell', 'text', optional=True,
-                                        placeholder='Üres = nincs külön modell', hint='Felszerelés modellje; küldetéstárgynál a földre dobott tárgy modellje.')
+                                        placeholder='Üres = nincs külön modell', hint='Felszerelés modellje; foglalatkőnél és küldetéstárgynál a földre dobott tárgy modellje.')
         use.finish(); self.use_form = use
         weapon = Form(changed)
         weapon.add('child', 'weapon_subtype', 'Fegyvertípus', 'choice',
@@ -895,6 +895,16 @@ class ItemPage(QWidget):
         self.quest_observer_field = quest_form.add('child','allow_observer','Megfigyelő','bool',text='Megfigyelőként is használható')
         quest_form.note('A használat önmagában nem fogyasztja el a tárgyat. A quest dönti el, hogy kell-e belőle levonni vagy jutalmat adni.')
         quest_form.finish()
+        stone_form=Form(changed)
+        self.stone_kind_field=stone_form.add('child','stone_kind','Típus','choice',choices=[(1,'Behelyezhető kő'),(2,'Kőszilánk')])
+        self.stone_targets_field=stone_form.add('child','allowed_targets','Célfelszerelés','bits',names=['Fegyver','Testpáncél'])
+        self.stone_grade_field=stone_form.add('child','minimum_socket_grade','Legalacsonyabb foglalat','choice',choices=[(1,'Normál'),(2,'Arany')])
+        self.stone_group_fields=[stone_form.add('child',name,label,'text',optional=True,
+            hint='Azonos vagy kereszteződő csoportú kövek nem tehetők ugyanabba a felszerelésbe.')
+            for name,label in [('primary_group','Első kizárócsoport'),('secondary_group','Második kizárócsoport')]]
+        stone_form.note('A kő bónuszai behelyezve hatnak. A sikeresély a szerver szabálya. Sikertelen behelyezéskor egy kő fogy el és törött foglalat marad. A szilánk nem helyezhető be, és nem ad bónuszt.')
+        stone_form.finish()
+        self.stone_kind_field.widget.currentIndexChanged.connect(self.stone_controls)
         self.quest_dispatch_field.widget.currentIndexChanged.connect(lambda *_: self.quest_controls())
         potion = QWidget(); potion_layout = QVBoxLayout(potion)
         recovery = Form(changed)
@@ -950,10 +960,10 @@ class ItemPage(QWidget):
         self.delivery_field.widget.currentIndexChanged.connect(lambda *_: (self.effects.setCurrentWidget(self.effect_forms[int(self.delivery_field.value())]), self.recovery_controls()))
         potion_layout.addWidget(self.effects); potion_layout.addStretch()
         self.book_panel = SkillBookPanel(changed, Form)
-        self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 8: container_form,
+        self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
                                10: quest_form, 16: token_form, 18: key_form}
         self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 5: scroll(potion), 6: scroll(material),
-                               8: container, 9: self.book_panel, 10: scroll(quest_form), 16: scroll(token_form), 18: scroll(key_form)}
+                               7: scroll(stone_form), 8: container, 9: self.book_panel, 10: scroll(quest_form), 16: scroll(token_form), 18: scroll(key_form)}
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
         self.timed_form = Form(changed)
@@ -1022,6 +1032,13 @@ class ItemPage(QWidget):
         hint = QLabel('Az alap bónuszok minden fejlesztési szinten érvényesek. Szintenkénti bónuszt a Fejlesztés lapon adhatsz meg.')
         hint.setWordWrap(True); hint.setObjectName('FieldHint'); bonus_layout.addWidget(hint); bonus_layout.addWidget(self.bonuses, 1)
         self.base_page, self.use_page, self.bonus_page = scroll(base), scroll(use), bonus_page
+
+    def stone_controls(self, *_):
+        usable=self.stone_kind_field.value()=='1'
+        for field in (self.stone_targets_field,self.stone_grade_field,*self.stone_group_fields):field.widget.setEnabled(usable)
+        self.refinement.setEnabled(usable);self.bonuses.setEnabled(usable)
+        if not self.loading and usable and not int(self.stone_targets_field.value()):
+            self.stone_targets_field.load({'child':{'allowed_targets':'1'}})
 
     def quest_controls(self):
         usable=self.quest_dispatch_field.value()!='1'
@@ -1253,13 +1270,14 @@ class ItemPage(QWidget):
         base = document['base']; category = int(base['category_id'])
         self.heading.setText('%s %s:%s — %s' % (catalog.CATEGORIES[category], base['category_id'], base['local_id'], base['content_code']))
         equipment = category in (1, 2, 3)
+        refinable = equipment or category==7
         self.tabs.addTab(self.base_page, 'Alapadatok')
         self.tabs.addTab(self.use_page, 'Használat és kereskedelem')
         self.tabs.addTab(self.category_pages[category], catalog.CATEGORIES[category])
-        if equipment:
+        if refinable:
             self.tabs.addTab(self.refinement, 'Fejlesztés'); self.tabs.addTab(self.bonus_page, 'Bónuszok')
         self.stack_field.edit.setEnabled(not equipment)
-        self.appearance_field.widget.setEnabled(equipment or category == 10)
+        self.appearance_field.widget.setEnabled(equipment or category in (7,10))
         self.base_form.load(document); self.use_form.load(document)
         if category == 5:
             timed = document.get('timed') is not None
@@ -1316,10 +1334,12 @@ class ItemPage(QWidget):
             self.loot_table.load(loot['entries'], loot['pick_mode'])
             self.container_kind_changed()
         if category == 10:self.quest_controls()
-        if equipment:
+        if refinable:
+            self.refinement.setEnabled(True);self.bonuses.setEnabled(True)
             self.refinement.set_category(category, self.packet['bonuses'] if self.packet else [])
             self.refinement.load(document['refinement'], document['levels'])
             self.bonuses.load(document.get('bonuses'))
+        if category==7:self.stone_controls()
         self.tabs.setCurrentIndex(min(max(current, 0), self.tabs.count() - 1))
         self.loading = False; self.update_badge(); self.controls()
 
@@ -1371,11 +1391,17 @@ class ItemPage(QWidget):
             if category == 8:
                 scripted = document['child']['container_kind'] == '3'
                 document['loot'] = None if scripted else dict(pick_mode=self.loot_mode.currentData(), entries=self.loot_table.entries())
-        if category in (1, 2, 3):
+        if category in (1, 2, 3, 7):
             self.refinement.collect(document)
             document['bonuses'] = self.bonuses.entries()
         else:
             document['bonuses'] = []
+        if category==7:
+            for field in ('primary_group','secondary_group'):document['child'][field]=document['child'][field] or ''
+            if document['child']['stone_kind']=='2':
+                document['child'].update(allowed_targets='0',minimum_socket_grade='0',primary_group='',secondary_group='')
+                document['bonuses']=[];document['refinement']=dict(profile_kind='1',max_level='0')
+                document['levels']=[dict(level='0',**{field:'0' for field in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[])]
         return document
 
     def check(self):

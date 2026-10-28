@@ -1,0 +1,83 @@
+{
+  "artifacts": {
+    "D:/AurigaGlobal/Server2-Local/run/item-migration/20261028-user-catalog-v14.json": "3cec022de5fe6fc9bf0eb1f2e26531b3c9e285875e380fdeaee5c2a48eff7b67",
+    "build-asan/SRC/ItemDomain/RelWithDebInfo/CatalogEditorTool.exe": "c1c62dfcb2d4001560aed8f6361882c29dfadbcf090bdd9ed1eaa15e65eae222",
+    "build-asan/socket-stones-editor.log": "b0fe90ab78bbf056dbc14ec8d61ac84a27ea144e39f7ccc01dbf750df7136b0f",
+    "build-asan/socket-stones-final-build.log": "864d178edc19bf8435a91de59932f73bff8e786dae79b12c86e8b375875a51c1",
+    "build-asan/socket-stones-final-tests.log": "208c89c232272e036e855e661f5f56d1a928c6228af7430e577577fd04f078a8",
+    "build/SRC/ItemDomain/RelWithDebInfo/CatalogEditorTool.exe": "75d1cf8425bd80b895b8433f4ab1da67ce3dc52f7c6e898dd5cd30f995ff95b0",
+    "build/item-migration-user-v14-stage/catalog-stage-result.json": "0f5b2e3467c8fa3078897779298271400d6aacc79bcf7c44f60fd29243e49192",
+    "build/socket-stones-editor.log": "a215492dad344e2771b2c4866408c411736586e97fa64b5c1c4cb372902c0ba1",
+    "build/socket-stones-final-build.log": "e5b82a803c44a64f7fba5695c61d400cd43455cc109afe3fd3d2be905f882708",
+    "build/socket-stones-final-tests.log": "bfca7749e04d8b124c8e8c34357d596492ece1aa6b9eb0dfe6edc027e513e82e",
+    "build/socket-stones-full-ctest.log": "356e113548b620c0e9aa59abc8d0d5a061b920940cba9acd1f741d222624c1e3",
+    "build/socket-stones-live-state-check.json": "34289fc06f785a55cd1e939bdb7df4c0d00f77ef17075ef1b7c9141de0c3b485"
+  },
+  "canonical_stone_fixture": "e3e6f8207e067f31ae3143be9f2e0f9ac96302ccfa67c5f4eae5e486051e9376",
+  "created_at_utc": "2026-10-28T20:19:13.538963+00:00",
+  "game_installed": false,
+  "isolated_sql_stage_verified": true,
+  "live_state_check": {
+    "existing_items": 1,
+    "schema_version": 7,
+    "tables": 33,
+    "unchanged": true
+  },
+  "preserved_user_catalog_hash": "1505725c26666c5a4d28a3c4a293a34bc15e9e5c05be04b9473088dad46c18fb",
+  "remote_modified": false,
+  "schema_version": 14,
+  "source_audit_summary": {
+    "by_status": {
+      "insertion_semantics_identified": 185,
+      "known_broken_shard": 1,
+      "unusable_target_mask_requires_review": 3
+    },
+    "dual_group_rows": 14,
+    "source_prototypes": 189,
+    "source_recipes": 8,
+    "source_refine_edges": 8
+  },
+  "source_files": {
+    "SRC/ItemDomain/CMakeLists.txt": "2b321f5dcb1bf6a7a4809cf1a23444fb1219dda9285d1782f92703213a4ce7c1",
+    "SRC/ItemDomain/CatalogEditorTool.cpp": "49385de415605f48f5c1be069b7e27ba9f46bdd5fbaa35f968dc95e829a6b51e",
+    "SRC/ItemDomain/CatalogHash.cpp": "385e64a7586419f68f07c81754e9bd7c57f5fbc9111cf4bbc19cb38f633c9378",
+    "SRC/ItemDomain/CatalogSnapshot.cpp": "dad8b5f8e76621d07d5ae23d8907c6adcac9a85551661756792749659f4d1963",
+    "SRC/ItemDomain/CatalogSnapshot.hpp": "396d9e8aa5ee0889fbb7463571c806400e7a0b39a524fc7612312fdc6317f46b",
+    "SRC/ItemDomain/CatalogTables.cpp": "a2b21725a99f38c156aff04da8b61ec626c272d5dee99f27d11805182defb29e",
+    "SRC/ItemDomain/ItemCatalog.cpp": "343bafdcc52931613e2307df7f284277e2b42643d792d318c1867ae71eea4a8a",
+    "SRC/ItemDomain/RefinementProfiles.cpp": "2b21b2f3690f6897d43bbbbcc834e6b5baad08feabf702842be09d59710e2af2",
+    "SRC/ItemDomain/RefinementRecipes.cpp": "f08ddea29dd810ae15f8c481dc4e728f491c76a5927b4565033c8172b0578ec6",
+    "SRC/ItemDomain/SocketStones.cpp": "6f81f186420b62e92925ac011bfa60006d90da61311082a0152413ccfea4f29c",
+    "SRC/Server/GameServer/CMakeLists.txt": "3713f063f4b77eeaff560334d372f1aae30e658926f3480e6245a90f0879dce8",
+    "SRC/Server/common/item/ItemCatalog.hpp": "b8219fcce66f7ea816941b3fc8b5297f874d2fc0981be5ed96742abec908a98f",
+    "SRC/Server/common/item/RefinementProfiles.hpp": "dc20adc48f1547895fd452578e080ae7fc139c1ace063d1a4159747d5b329f01",
+    "SRC/Server/common/item/SocketStones.hpp": "72f5ab3ca9a796f5ade3a464710806a53ba0d075247d63a849d68f902428beb9",
+    "SRC/Tools/ItemCatalogBuilder/stage_exported_catalog.py": "ac93b6d02fad700a51afd7f31dcb1c5820f0232b33b2d9bde604e504044d37a6",
+    "SRC/Tools/ServerManager/item_catalog.py": "a14acc7b797dab5596910f2ca6c79e95518b6e4b798202719b35b8ca8feee3b3",
+    "SRC/Tools/ServerManager/item_page.py": "f128f882fcb7ab440eb1b6448fb1b2cdc7c4682b2fb0cbd1567dde182fa53768",
+    "db/migrations/item_combat/004_refinement_profiles.sql": "9e6175f002ef8f3a20a9ae2a0f3d68781dfb45dd48797a17c986e1e58815a66e",
+    "db/migrations/item_combat/020_socket_stones.sql": "99bcf60e7b33dc9fbd5beca250e2534e7c3bfaed8ea79ad46f5f0d4eb4bbc828",
+    "docs/adr/item_combat_021_socket_stones.md": "50500ab728f49b29c17bcf40b7df233de0fd3b268aaadefb6ca504b7f2d5c6c4",
+    "docs/reports/item_combat/2026-10-28_socket_stones.audit.json": "ac451cd35d9334a097fed703d8c3a138eced54fb15a3bc1db499b95409dd9e86",
+    "docs/reports/item_combat/2026-10-28_socket_stones.md": "b53e166aebd178e7af8e844b5cf47dd2566e898ca5bff9108e3ce4307d3090e3",
+    "docs/server_manager.md": "e9899dad0da7e4a70290aee102dab9041ddd270e5d77dc2f98251b7a43d152d8",
+    "tests/server/CatalogEditorTests.py": "55e4a9a981f68aacdc76a8bad012cb41a5ff71e7670538b415202c2cb5e794ef",
+    "tests/server/CatalogSnapshotFixture.hpp": "7ee5ad60c6e6b0f56e4810d5f11af726d4678b3b0828417ef0ceae84950e60cf",
+    "tests/server/CatalogSqlReaderTests.py": "71cc4eb79ffed8db1749ca87ecdb3a297f251e640d78be3e6004b3a23a508f00",
+    "tests/server/ItemCatalogDigestOracle.py": "8e0e9b77b91fa28576daee5d86b0dba4b7f644443152c1f55526fcbf97cfa4f9",
+    "tests/server/ItemCatalogTests.cpp": "9bf5b4991518dd13decb71d226f99e16223afcb6dab5575da26ddad29c048ffd",
+    "tests/server/ItemCombatSchemaTests.py": "6b1643228f91d8e7983501c69bf8e1f102d734aed310500aae723120acb896c1",
+    "tests/server/SocketStoneTests.cpp": "b1e5c28302aabebe2233ab059f5651398486f358f5208ee87725e55983c27eb2"
+  },
+  "source_stones_fully_converted": false,
+  "starting_head": "bedd499e",
+  "tests": {
+    "final_asan_affected": 8,
+    "final_normal_affected": 7,
+    "full_normal_ctest": 111,
+    "qt_sql_asan": 45,
+    "qt_sql_normal": 45,
+    "stone_checks": 85
+  },
+  "unity_modified": false
+}

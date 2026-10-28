@@ -3,6 +3,7 @@
 #include "RefinementProfiles.hpp"
 #include "RefinementRecipes.hpp"
 #include "QuestItems.hpp"
+#include "SocketStones.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
 #include "TimedEffects.hpp"
@@ -156,10 +157,10 @@ struct ItemSkillBookRow
     std::uint32_t profile = 0;
 };
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 13;
+    std::uint32_t schemaVersion = 14;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -190,6 +191,7 @@ struct ItemCatalogSource
     std::vector<ItemSkillBookRow> skillBooks;
     std::vector<RefinementRecipe> refinementRecipes;
     std::vector<ItemQuestRow> questItems;
+    std::vector<ItemSocketStoneRow> socketStones;
 };
 struct ItemCatalogLimits
 {

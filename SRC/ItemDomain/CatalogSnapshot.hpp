@@ -13,7 +13,7 @@ enum class Table : std::uint8_t
     Attacks, AmmoPolicies, Resistances, BonusProfiles, BonusEntries, Refinements,
     RefinementLevels, Items, Weapons, Armors, Accessories, Materials, SocketProfiles,
     SocketGrades, SocketMaterials, Cooldowns, Recoveries, Instant, Reserve, Periodic,
-    Consumables, LootProfiles, LootEntries, Containers, ContainerKeys, CurrencyTokens, TimedEffectGroups, TimedEffects, Automatic, ToggleEffectGroups, ToggleEffects, BookProfiles, BookTargets, BookSteps, SkillBooks, RefinementRecipes, RefinementIngredients, QuestItems, Count,
+    Consumables, LootProfiles, LootEntries, Containers, ContainerKeys, CurrencyTokens, TimedEffectGroups, TimedEffects, Automatic, ToggleEffectGroups, ToggleEffects, BookProfiles, BookTargets, BookSteps, SkillBooks, RefinementRecipes, RefinementIngredients, QuestItems, SocketStones, Count,
 };
 struct TableSpec
 {
@@ -24,8 +24,8 @@ struct TableSpec
 inline constexpr std::size_t TableCount = static_cast<std::size_t>(Table::Count);
 inline constexpr std::size_t CapturedByteBudget = 256 * 1024 * 1024;
 inline constexpr std::size_t CellBudgetOverhead = 160;
-inline constexpr std::uint32_t CatalogSchemaVersion = 13;
-inline constexpr std::string_view CanonicalDomain = "auriga.item_catalog.v13";
+inline constexpr std::uint32_t CatalogSchemaVersion = 14;
+inline constexpr std::string_view CanonicalDomain = "auriga.item_catalog.v14";
 std::span<const TableSpec, TableCount> Tables() noexcept;
 std::size_t ColumnCount(const TableSpec& spec) noexcept;
 

@@ -20,14 +20,14 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Fogyasztható', 6: 'Alapanyag', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 16: 'Pénzjegy', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 16: 'Pénzjegy', 18: 'Kulcs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 5: 'item_consumable', 6: 'item_material',
-                8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 16: 'item_currency_token', 18: 'item_container_key'}
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 16: 'item_currency_token', 18: 'item_container_key'}
 CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest',
-               16: 'currency_token', 18: 'container_key'}
-STACKABLE = (5, 6, 8, 9, 10, 16, 18)
+               7: 'socket_stone', 16: 'currency_token', 18: 'container_key'}
+STACKABLE = (5, 6, 7, 8, 9, 10, 16, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
-REFINEMENT_KIND = {1: 2, 2: 3, 3: 4}
+REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 7: 5}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
 RESISTANCES = ['physical_bp','magical_bp','sword_bp','dagger_bp','bow_bp','two_handed_bp',
                'bell_bp','fan_bp','mount_spear_bp','fire_bp','electric_bp','ice_bp','wind_bp','earth_bp','dark_bp']
@@ -191,6 +191,7 @@ class Catalog:
         if category == 2: item['child'].update(physical_defense_base_raw='0', magical_defense_base_raw='0')
         if category == 3: item['child']['socket_profile_id'] = None
         if category == 6: item['child']['material_kind'] = '1'
+        if category == 7: item['child'].update(stone_kind='1', allowed_targets='1', minimum_socket_grade='1', primary_group='', secondary_group='')
         if category == 5:
             item.update(recovery=dict(delivery_kind='1', units_per_use='1', allowed_contexts='15', allow_during_pvp='1', cooldown_profile_id=None, arena_quota_cost='0'),
                         effect=dict(delivery_kind='1', hp_raw='1000', sp_raw='0', max_hp_bp='0', max_sp_bp='0', flat_bonus_cap_bp='10000'),
@@ -516,6 +517,7 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'socket_stone': 'foglalatkő szabályai',
     'quest_item': 'küldetéstárgy használati szabályai',
     'skill_book': 'képességkönyv szabályai', 'skill_book.children': 'könyv céljai és szintlépései',
     'item_base': 'alapadatok', 'content_code': 'tartalomkód', 'refinement': 'fejlesztés', 'category': 'kategóriaadatok',

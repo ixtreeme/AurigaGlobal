@@ -1,4 +1,4 @@
-"""Independent Python encoder for the v13 typed item fixture (not a runtime reader)."""
+"""Independent Python encoder for the v14 typed item fixture (not a runtime reader)."""
 import argparse
 import hashlib
 import json
@@ -7,7 +7,7 @@ import struct
 import subprocess
 
 
-def fixture_digest(with_refinement_recipe=False, with_quest_items=False):
+def fixture_digest(with_refinement_recipe=False, with_quest_items=False, with_socket_stones=False):
     data = bytearray()
     def numbers(format, *values):
         data.extend(struct.pack("<" + format, *values))
@@ -22,7 +22,7 @@ def fixture_digest(with_refinement_recipe=False, with_quest_items=False):
         numbers('B', value is not None)
         if value is not None:
             numbers('I', value)
-    text("auriga.item_catalog.v13"); numbers("I", 13)
+    text("auriga.item_catalog.v14"); numbers("I", 14)
     table(1, 3); identity(1, "use.equipment"); numbers("BBB", 15, 3, 1)
     identity(2, "use.material"); numbers("BBB", 15, 3, 0)
     identity(3, "use.recovery"); numbers("BBB", 15, 3, 1)
@@ -35,8 +35,10 @@ def fixture_digest(with_refinement_recipe=False, with_quest_items=False):
     identity(1, "ammo.none"); numbers("BH", 1, 0)
     identity(2, "ammo.arrow"); numbers("BH", 2, 1)
     table(6, 1); identity(1, "resistance.none"); numbers("15i", *([0] * 15))
-    table(7, 4)
-    for id, code, kind, maximum in [(1, "refine.none", 1, 0), (2, "refine.weapon_linear", 2, 9), (3, "refine.armor", 3, 2), (4, "refine.accessory", 4, 15)]:
+    profiles=[(1, "refine.none", 1, 0), (2, "refine.weapon_linear", 2, 9), (3, "refine.armor", 3, 2), (4, "refine.accessory", 4, 15)]
+    if with_socket_stones:profiles.append((5,'refine.stone',5,30))
+    table(7, len(profiles))
+    for id, code, kind, maximum in profiles:
         if with_refinement_recipe and kind == 2:
             maximum = 30
         identity(id, code); numbers("BHI", kind, maximum, maximum + 1)
@@ -46,6 +48,7 @@ def fixture_digest(with_refinement_recipe=False, with_quest_items=False):
             bonus = 2 if kind == 2 and level == 3 else 3 if kind == 2 and level == 9 else None
             if kind == 4 and level:
                 bonus = 5 if level == 15 else 4
+            if kind==5 and level==10:bonus=2
             optional(bonus)
     base_items = [
         (1, 1, "weapon", "iron_sword", 3, 1, 1200, 1, 1, 2, 1, 1, 100, 50),
@@ -70,11 +73,14 @@ def fixture_digest(with_refinement_recipe=False, with_quest_items=False):
         base_items.extend([
             (10,1,'quest','soul_orb',1,200,10,0,2,1,None,None,0,0),
             (10,2,'quest','horse_scroll',1,200,10,50,2,1,None,None,0,0)])
+    if with_socket_stones:
+        base_items.extend([(7,1,'socket_stone','precision',1,200,10,0,2,5,None,1,0,0),
+                           (7,2,'socket_stone','shard',1,200,10,0,2,1,None,None,0,0)])
     table(8, len(base_items))
     for category, local, prefix, code, height, stack, grams, minimum, use, refine, appearance, bonus, buy, sell in sorted(base_items):
         numbers("HI", category, local)
         text(prefix + "." + code)
-        text("item." + code + ".name"); text("item." + code + ".description"); text("icons/" + ('leather' if category==10 else code) + ".png")
+        text("item." + code + ".name"); text("item." + code + ".description"); text("icons/" + ('leather' if category in (7,10) else code) + ".png")
         numbers("BBIIH", 1, height, stack, grams, minimum)
         numbers("BIII", 1, use, 1, refine)
         optional(appearance); optional(bonus)
@@ -170,6 +176,10 @@ def fixture_digest(with_refinement_recipe=False, with_quest_items=False):
     if with_quest_items:
         numbers('HIB',10,1,1);text('');numbers('BB',0,0)
         numbers('HIB',10,2,2);text('quest.horse_training');numbers('BB',9,0)
+    table(31,2 if with_socket_stones else 0)
+    if with_socket_stones:
+        numbers('HIBBB',7,1,1,3,1);text('stone.precision');text('stone.penetration')
+        numbers('HIBBB',7,2,2,0,0);text('');text('')
     return hashlib.sha256(data).hexdigest()
 
 
@@ -178,9 +188,10 @@ if __name__ == "__main__":
     parser.add_argument("--catalog-executable", type=Path, required=True)
     parser.add_argument("--refinement-executable", type=Path)
     parser.add_argument("--quest-executable", type=Path)
+    parser.add_argument("--stone-executable", type=Path)
     args = parser.parse_args()
     expected = fixture_digest()
-    if expected != "64b820148914caa6f78b60dd3c5ed44312f64bcc0ae0f2cd7bb1809c810312b1":
+    if expected != "91a8bd2127f36d0529f217959b9ab8a497018a7fea1a66bf8f91b1d61c62e2f6":
         raise SystemExit("Python canonical fixture changed without a schema/golden review")
     result = subprocess.run([str(args.catalog_executable.resolve(strict=True)), "--hash-fixture"],
                             capture_output=True, check=True, timeout=30)
@@ -190,7 +201,7 @@ if __name__ == "__main__":
     print("Independent canonical SHA-256 fixture passed: " + expected)
     if args.refinement_executable:
         expected=fixture_digest(True)
-        if expected!='9be1180946f18cf18da42d3cbde378c7f3cc291650313b2dfbec1681bf20a653':
+        if expected!='2cf24b9bcccd4b22ed6b9fe4faf1401c89e873b84b3e99d95ccbcbbe82b6820d':
             raise SystemExit('Refinement fixture changed without a schema/golden review')
         result=subprocess.run([str(args.refinement_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:
@@ -198,9 +209,15 @@ if __name__ == "__main__":
         print('Independent refinement SHA-256 fixture passed: '+expected)
     if args.quest_executable:
         expected=fixture_digest(with_quest_items=True)
-        if expected!='fbae0855a1b9f72438ca193f6c737c6d97edfc7517276f5af2ab6ffeabb241ed':
+        if expected!='ccf722ff6529402791927e7c4d1ae97053d1ab121c98aacf381fa20e2849442e':
             raise SystemExit('Quest fixture changed without a schema/golden review: '+expected)
         result=subprocess.run([str(args.quest_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:
             raise SystemExit('Quest item digest disagrees with independent Python encoding')
         print('Independent quest SHA-256 fixture passed: '+expected)
+    if args.stone_executable:
+        expected=fixture_digest(with_socket_stones=True)
+        if expected!='e3e6f8207e067f31ae3143be9f2e0f9ac96302ccfa67c5f4eae5e486051e9376':raise SystemExit('Stone fixture changed without a schema/golden review: '+expected)
+        result=subprocess.run([str(args.stone_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
+        if result.stdout.decode('ascii').strip()!=expected:raise SystemExit('Stone digest disagrees with independent Python encoding')
+        print('Independent stone SHA-256 fixture passed: '+expected)

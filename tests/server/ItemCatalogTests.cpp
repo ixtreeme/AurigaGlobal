@@ -99,6 +99,7 @@ void InvalidCatalogs()
     Reject([](auto& s) { s.schemaVersion = 10; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 11; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 12; }, ItemCatalogErrorCode::InvalidVersion);
+    Reject([](auto& s) { s.schemaVersion = 13; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.usePolicies.resize(ItemCatalogLimits::ProfilesPerKind + 1); }, ItemCatalogErrorCode::LimitExceeded);
     Reject([](auto& s) { s.usePolicies.push_back(s.usePolicies[0]); }, ItemCatalogErrorCode::DuplicateProfile);
     Reject([](auto& s) { s.appearances[1].code = s.appearances[0].code; }, ItemCatalogErrorCode::DuplicateProfile);

@@ -65,6 +65,24 @@ def toggle(document):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_stone_refinement_and_clone_keep_one_prototype_per_item(self):
+        def change(d):
+            d['child'].update(allowed_targets='3',primary_group='stone.test',secondary_group='stone.other')
+            d['refinement']['max_level']='30'
+            d['levels']=[dict(level=str(i),**{k:'0' for k in catalog.GAINS},extra_bonus_profile_id=None,
+                              bonuses=[dict(bonus_id='21',value_scaled=str(i*10))] if i else []) for i in range(31)]
+            d['bonuses']=[dict(bonus_id='21',value_scaled='100')]
+        packet,key=create(self.blank,7,change);self.check(packet)
+        original=catalog.Catalog(packet).item(key)
+        self.assertEqual(original['refinement']['max_level'],'30')
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['levels'][10]['bonuses'][0]['value_scaled']='500'
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other);self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(len(rows(packet,'item_socket_stone')),2)
+        bad=catalog.Catalog(packet).item(other);bad['child']['secondary_group']='stone.test'
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,other,TOOL)
+
     def test_quest_token_and_group_dispatch_copy_are_independent(self):
         packet,key=create(self.blank,10)
         token=catalog.Catalog(packet).item(key)
@@ -577,6 +595,29 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_socket_stone_form_bonus_curve_and_shard_mode(self):
+        packet,key=create(catalog.blank(TOOL),7)
+        self.page.loaded(packet);self.page.open_item(key)
+        self.assertEqual(self.page.refinement.category,7)
+        self.page.refinement.maximum.setValue(30)
+        self.page.stone_group_fields[0].widget.setText('stone.test')
+        document=self.page.collect()
+        self.assertEqual(document['refinement']['max_level'],'30')
+        self.assertEqual(len(document['levels']),31)
+        self.assertEqual(document['child']['primary_group'],'stone.test')
+        catalog.validate(packet,document,key,TOOL)
+        self.page.stone_kind_field.widget.setCurrentIndex(self.page.stone_kind_field.widget.findData('2'))
+        shard=self.page.collect()
+        self.assertEqual(shard['child']['allowed_targets'],'0')
+        self.assertEqual(shard['child']['minimum_socket_grade'],'0')
+        self.assertEqual(shard['child']['primary_group'],'')
+        self.assertEqual(shard['refinement']['max_level'],'0')
+        self.assertEqual(shard['bonuses'],[])
+        self.assertFalse(self.page.refinement.isEnabled())
+        self.assertFalse(self.page.stone_targets_field.widget.isEnabled())
+        catalog.validate(packet,shard,key,TOOL)
+        self.page.dirty=False
+
     """Form <-> document round trip of the Qt page."""
 
     def test_quest_token_fields_and_dispatch_modes_round_trip(self):
@@ -1027,6 +1068,25 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzz_stone_native_commit_curve_and_failed_write_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(7);key=key_of(d)
+        d['child'].update(primary_group='stone.sql_test',secondary_group='stone.sql_second')
+        d['refinement']['max_level']='30'
+        d['levels']=[dict(level=str(i),**{k:'0' for k in catalog.GAINS},extra_bonus_profile_id=None,
+                          bonuses=[dict(bonus_id='21',value_scaled=str(i*10))] if i else []) for i in range(31)]
+        packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['levels'][10]['bonuses'][0]['value_scaled']='2000'
+        packet=self.commit(packet,clone)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(catalog.Catalog(packet).item(other)['refinement']['max_level'],'30')
+        new=catalog.Catalog(packet).new(7)
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_stone BEFORE INSERT ON protos.item_socket_stone FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test stone write failure'")
+        try:
+            with self.assertRaises(api.EditorError):self.commit(packet,new)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_stone')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+
     def test_zz_quest_native_commit_copy_and_rollback(self):
         packet=self.call('read');document=catalog.Catalog(packet).new(10);key=key_of(document)
         packet=self.commit(packet,document);original=catalog.Catalog(packet).item(key)

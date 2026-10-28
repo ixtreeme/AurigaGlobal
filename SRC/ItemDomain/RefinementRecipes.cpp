@@ -17,6 +17,11 @@ bool LevelExists(const ItemCatalog& catalog, ItemKey key, std::uint16_t level)
     const auto* profile = catalog.FindRefinement(item->base.refinementProfile);
     return profile && profile->FindLevel(level);
 }
+bool RefinableInstance(const ItemCatalogEntry& item)
+{
+    const auto* stone=std::get_if<ItemSocketStoneRow>(&item.category);
+    return item.base.maxStack==1 || (stone && stone->kind==SocketStoneKind::Insertable);
+}
 }
 std::expected<void, RefinementRecipeError> ValidateRefinementRecipe(const RefinementRecipe& recipe, const ItemCatalog& catalog)
 {
@@ -25,7 +30,9 @@ std::expected<void, RefinementRecipeError> ValidateRefinementRecipe(const Refine
     const auto* target = catalog.Find(recipe.target);
     if (!source || !target) return std::unexpected(RefinementRecipeError::MissingItem);
     if (source->base.retired || target->base.retired) return std::unexpected(RefinementRecipeError::RetiredItem);
-    if (source->base.maxStack != 1 || target->base.maxStack != 1) return std::unexpected(RefinementRecipeError::InvalidTransition);
+    // A stackable stone can be refined only as a concrete count-one instance.
+    // PrepareRefinement still rejects count>1; no entire stack is upgraded.
+    if (!RefinableInstance(*source) || !RefinableInstance(*target)) return std::unexpected(RefinementRecipeError::InvalidTransition);
     if (!LevelExists(catalog, recipe.source, recipe.sourceLevel) || !LevelExists(catalog, recipe.target, recipe.targetLevel))
         return std::unexpected(RefinementRecipeError::InvalidLevel);
     if (recipe.source == recipe.target && recipe.targetLevel != recipe.sourceLevel + 1u)

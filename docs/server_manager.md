@@ -932,6 +932,26 @@ Ez jelenleg tesztelt forrás és izolált katalógusfunkció. A játékbeli alka
 helyi katalógushoz a fejlesztés nem írt hozzá.
 
 
+### Foglalatkövek — v14 fejlesztői katalógus
+
+Az **Új tárgy → Foglalatkő** menüben behelyezhető követ vagy kőszilánkot
+hozhatsz létre. A cél fegyver, testpáncél vagy mindkettő, a minimum foglalat
+normál vagy arany lehet. Két kizárócsoport adható meg stabil kóddal, például
+`stone.penetration`. Ha bármelyik csoport egyezik egy már beépített kő
+bármelyik csoportjával, a behelyezés tiltott. Üres csoport nem tilt.
+
+Az alapbónuszok és a **Fejlesztés** lap szintbónuszai a beépített kő hatását
+adják. Egyetlen prototípushoz állítható a maximum és a teljes görbe;
+nem kell külön +0…+9 sort felvenni. A halmozási korlát külön állítható.
+Fejlesztési próbához a konkrét kőpéldánynak egyetlen darabot kell tartalmaznia.
+A behelyezés sikeresélye a szerver szabálya, a sikertelen próba is egy követ
+fogyaszt és törött foglalatot hagy. Szilánk nem helyezhető be és nem ad bónuszt;
+ennek kiválasztásakor az érintett mezők inaktívak.
+
+Ez jelenleg helyben tesztelt fejlesztői kategória és szerkesztő, a játékbeli
+átállás még külön folyamat. A v7 katalógus és a telepített app nem frissül
+automatikusan a draft sémalépésektől.
+
 ### Küldetéstárgyak — v13 fejlesztői katalógus
 
 Az **Új tárgy → Küldetéstárgy** a 10-es kategóriában hoz létre prototípust.
