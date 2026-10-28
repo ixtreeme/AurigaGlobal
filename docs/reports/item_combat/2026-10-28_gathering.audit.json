@@ -1,0 +1,2813 @@
+{
+  "audited_at_utc": "2026-10-28T22:24:45.219357+00:00",
+  "findings": [
+    "Tool training is instance state, separate from refinement and socket stones.",
+    "Axe/shears are recognized by current runtime IDs although their prototypes are weapons. Combat/appearance semantics still require review before conversion.",
+    "Rod families contain self-refinement links. No automatic published recipes are emitted.",
+    "world/fishing.cpp defines ENABLE_FISHINGROD_RENEWAL locally; ActivitySystem.cpp tests that macro in a different translation unit. Exact production preprocessing remains a conversion gate.",
+    "Fish processing/grilling currently depends on fishing.json plus vnum arithmetic; native rows use explicit target ItemKeys.",
+    "Campfire spawn behavior and legacy ITEM_TOOL noop dispatch are not supplied by this ordinary gathering implementation."
+  ],
+  "fishing_json_sha256": "63d90dfd96df7a2cdd27bfb2c7a1fb075510fbb49c233aa50a09ebf05d38efef",
+  "installed_to_game": false,
+  "manifest_sha256": "cbea5d90f7df366dc387d9804680a58113686973dd89f1710e8e06862b41b33f",
+  "rows": [
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 3,
+      "refine_set": 1,
+      "refined_edge": 211,
+      "self_refinement": false,
+      "source_row_sha256": "806fbd1b3317a384c1ee726e87497a0821805327404239c6eefc577e573e30a4",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 210,
+      "values": [
+        0,
+        10,
+        35,
+        38,
+        60,
+        210
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 2,
+      "refined_edge": 212,
+      "self_refinement": false,
+      "source_row_sha256": "afb8da47de3e38b581c0efd1226d6742afb02bc5d4103f0a6c0a284c0b638d97",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 211,
+      "values": [
+        0,
+        0,
+        0,
+        7,
+        7,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 3,
+      "refined_edge": 213,
+      "self_refinement": false,
+      "source_row_sha256": "0022d3a11f15be9d29de9e642351c30daa102e24157c281a6d78f57ee1fa4426",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 212,
+      "values": [
+        0,
+        0,
+        0,
+        14,
+        14,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 4,
+      "refined_edge": 214,
+      "self_refinement": false,
+      "source_row_sha256": "b68c3f71c8de07ea5d2c9a5408684310719c90095d378233582fb1e082814fa3",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 213,
+      "values": [
+        0,
+        0,
+        0,
+        21,
+        21,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 5,
+      "refined_edge": 215,
+      "self_refinement": false,
+      "source_row_sha256": "5aa8c3dfe5434a98db7c68296049ddde96299396889497e9aaae4cc27ece42f8",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 214,
+      "values": [
+        0,
+        0,
+        0,
+        28,
+        28,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 6,
+      "refined_edge": 216,
+      "self_refinement": false,
+      "source_row_sha256": "1a6c8083edc26442b03038fd41ff1efedf12885cfa413454dcaa67813c375de6",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 215,
+      "values": [
+        0,
+        0,
+        0,
+        35,
+        35,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 7,
+      "refined_edge": 217,
+      "self_refinement": false,
+      "source_row_sha256": "7fd27cd1e3681ff138c69c79081809fcb555276d86863c687517ff73e479a551",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 216,
+      "values": [
+        0,
+        0,
+        0,
+        42,
+        42,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 8,
+      "refined_edge": 218,
+      "self_refinement": false,
+      "source_row_sha256": "8f649030429765e8c3ad54a95b5efcede04c25216f2f87deee2015fc7bbcbe6d",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 217,
+      "values": [
+        0,
+        0,
+        0,
+        49,
+        49,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 9,
+      "refined_edge": 219,
+      "self_refinement": false,
+      "source_row_sha256": "bc6c500bc627f712f08e0bcebe21fbdae2dedf9635ed5eea7b367229a213a9c0",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 218,
+      "values": [
+        0,
+        0,
+        0,
+        56,
+        56,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "axe_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "5fc6f0f792141649a96d8cb8c248e5ce328acb5d1ebcaad78e57cbb59358b768",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 219,
+      "values": [
+        0,
+        0,
+        0,
+        63,
+        63,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 82,
+      "refined_edge": 231,
+      "self_refinement": false,
+      "source_row_sha256": "983fd5fe830a05752fdb3555f9f5ed3b997ea84260b126c637a638cc8dce51e4",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 230,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 83,
+      "refined_edge": 232,
+      "self_refinement": false,
+      "source_row_sha256": "b3e52ec5ae867c2a58c9f762e8c2fa142300beb075fc9e336b4a98d8bed34ae6",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 231,
+      "values": [
+        0,
+        0,
+        0,
+        7,
+        7,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 84,
+      "refined_edge": 233,
+      "self_refinement": false,
+      "source_row_sha256": "22a97e224e7aa39c1dbf0ca231b9f8242bce93d4dd3e5ad724e37a0e3b749c33",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 232,
+      "values": [
+        0,
+        0,
+        0,
+        14,
+        14,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 85,
+      "refined_edge": 234,
+      "self_refinement": false,
+      "source_row_sha256": "b3c57feb32450328398bb046fca41953ab03e6ffac3f9abcfba6b2572560bf3b",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 233,
+      "values": [
+        0,
+        0,
+        0,
+        21,
+        21,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 86,
+      "refined_edge": 235,
+      "self_refinement": false,
+      "source_row_sha256": "eb002b0da977ce89b919a2afa62b1458eb95669f4c8255f9e8de21a9bb59a544",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 234,
+      "values": [
+        0,
+        0,
+        0,
+        28,
+        28,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 87,
+      "refined_edge": 236,
+      "self_refinement": false,
+      "source_row_sha256": "b34a2b8a03fb56c3db8636aae87e6c0ac7174603b7a8f2a57c17fd22ec0216aa",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 235,
+      "values": [
+        0,
+        0,
+        0,
+        35,
+        35,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 25,
+      "refined_edge": 237,
+      "self_refinement": false,
+      "source_row_sha256": "7a9035e0e5511e311eed4fc6acef51c4777370976dfbcda7bcd0499bee57ab33",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 236,
+      "values": [
+        0,
+        0,
+        0,
+        42,
+        42,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 26,
+      "refined_edge": 238,
+      "self_refinement": false,
+      "source_row_sha256": "53c43ef0e66fbbd7dea57bca38508dc63ea9981db34bbf2bcc4f9b9df1ae07eb",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 237,
+      "values": [
+        0,
+        0,
+        0,
+        49,
+        49,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 27,
+      "refined_edge": 239,
+      "self_refinement": false,
+      "source_row_sha256": "5d6aa7834d1261ee180f460b68748bb449d992ac60d66432c0ad51ae7a4c9386",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 238,
+      "values": [
+        0,
+        0,
+        0,
+        56,
+        56,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "shears_by_runtime_rules",
+      "nonzero_applies": 1,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "21accdef0d07a6144363fdbd1668db4ab01c8eddf7358b5e943be6b9e708eff2",
+      "source_subtype": 0,
+      "source_type": 1,
+      "source_vnum": 239,
+      "values": [
+        0,
+        0,
+        0,
+        63,
+        63,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "8629d5010d60fd8c41cc997d6c7bd1cb460b9234b866ef35a2be6ea1f58ae3ab",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27200,
+      "values": [
+        10,
+        5,
+        20,
+        100,
+        27200,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27210,
+      "self_refinement": true,
+      "source_row_sha256": "d3859c86d58aa08498609d51db49c3244bd12a60ad2b541d15fcc5ddabcaae3b",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27210,
+      "values": [
+        20,
+        10,
+        25,
+        39,
+        27210,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27220,
+      "self_refinement": true,
+      "source_row_sha256": "2a2d56442381af32559507f5632354043f0b7050107b6a08cacd0a99a1ca5909",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27220,
+      "values": [
+        30,
+        20,
+        30,
+        39,
+        27220,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27230,
+      "self_refinement": true,
+      "source_row_sha256": "ebef8b5b26dfd5c439d80b245eb428c3541131c1ef3057d89ceba6b5fb00bf03",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27230,
+      "values": [
+        40,
+        40,
+        35,
+        39,
+        27230,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27240,
+      "self_refinement": true,
+      "source_row_sha256": "63e4ee52c4115b677cf21db42f186e5297685f04f48beef8e6ab51e7e8c707a8",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27240,
+      "values": [
+        50,
+        60,
+        40,
+        39,
+        27240,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27250,
+      "self_refinement": true,
+      "source_row_sha256": "40a90f50729226428c5125b4e7fc7b7492bfdebe195948a54a31f0269e999189",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27250,
+      "values": [
+        60,
+        70,
+        50,
+        39,
+        27250,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27260,
+      "self_refinement": true,
+      "source_row_sha256": "b0ca9a347829e4f664515bffdd8252fd2cdd1cff7c18c6533d04d988ed28746a",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27260,
+      "values": [
+        70,
+        80,
+        60,
+        39,
+        27260,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27280,
+      "self_refinement": false,
+      "source_row_sha256": "54ce18c49278cfa6d653a876a9c6e906a5f485e830a3e8ed8cdefdb280d17767",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27270,
+      "values": [
+        80,
+        90,
+        70,
+        39,
+        27270,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27290,
+      "self_refinement": false,
+      "source_row_sha256": "02e09fddcce38b90b0603c31400b255ccc912d3824573250ae9045abfa620f6e",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27280,
+      "values": [
+        90,
+        100,
+        75,
+        39,
+        27280,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27300,
+      "self_refinement": false,
+      "source_row_sha256": "3bdf03caecbc7cdefbb73f293b544bccebd6080e0ed9836245aa4762e2dda00c",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27290,
+      "values": [
+        100,
+        110,
+        80,
+        39,
+        27290,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27310,
+      "self_refinement": false,
+      "source_row_sha256": "48847dedd34d64c51c702e47fff5f317d48088bbfaf6fe52dad1d7abe92d833d",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27300,
+      "values": [
+        110,
+        5,
+        85,
+        100,
+        27300,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27320,
+      "self_refinement": false,
+      "source_row_sha256": "fb0000a44df2f68ee026801e736f3480856b5c5492b0e336e160de579e9bb649",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27310,
+      "values": [
+        120,
+        10,
+        90,
+        39,
+        27310,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27330,
+      "self_refinement": false,
+      "source_row_sha256": "d90ff4bf1d14aa64368a9049bb156c1f7f9ec0b429693e7b0dd656b6d030500e",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27320,
+      "values": [
+        130,
+        20,
+        95,
+        39,
+        27320,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27340,
+      "self_refinement": false,
+      "source_row_sha256": "7bd234d25f62fbf2f8d85415f016d1b9faee41605a3b0db0f91feae51151bf5c",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27330,
+      "values": [
+        140,
+        40,
+        100,
+        39,
+        27330,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27350,
+      "self_refinement": false,
+      "source_row_sha256": "d86308498bccb3c8e283139fa9436e72a3a57823bd374be75bbb9c297ad11611",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27340,
+      "values": [
+        150,
+        60,
+        120,
+        39,
+        27340,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27360,
+      "self_refinement": false,
+      "source_row_sha256": "671346e41696969f93f85f75c5299a91df88c3fb59a55e409ea7ce6fef2c47b7",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27350,
+      "values": [
+        160,
+        70,
+        140,
+        39,
+        27350,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27370,
+      "self_refinement": false,
+      "source_row_sha256": "06aa2406ea35accc0d78e869feaa610fc1336dec94ac0c590d40be2f6efa3a43",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27360,
+      "values": [
+        170,
+        80,
+        160,
+        39,
+        27360,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27380,
+      "self_refinement": false,
+      "source_row_sha256": "28ad4a8927a5eeb3405f3dbb3f9a9fa1d1d8345288739105659a8a366335b99f",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27370,
+      "values": [
+        180,
+        90,
+        200,
+        39,
+        27370,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27390,
+      "self_refinement": false,
+      "source_row_sha256": "1db21534c0d4b31f971d2998fb717d3ef446f65d54121722eea5af827ae41206",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27380,
+      "values": [
+        190,
+        100,
+        220,
+        39,
+        27380,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "b3420532ce3eb4bdb0f382179d6ce31218a94491b1b6c6bbe0483f3c19a0e65f",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27390,
+      "values": [
+        200,
+        110,
+        0,
+        39,
+        27390,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27410,
+      "self_refinement": false,
+      "source_row_sha256": "74d3e3123af776d2903e99dac8fbb5b040439bc51c6b6cc192ce34287634452e",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27400,
+      "values": [
+        10,
+        5,
+        10,
+        100,
+        27400,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27420,
+      "self_refinement": false,
+      "source_row_sha256": "480dc21e65b45b2b43622396771c43656f7f9ad332d9f464495c5172f341eb8f",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27410,
+      "values": [
+        20,
+        10,
+        15,
+        50,
+        27410,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27430,
+      "self_refinement": false,
+      "source_row_sha256": "6b7a063f1845d54fcad4fb20aa8577cb0512068025a9502024fef699015dea47",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27420,
+      "values": [
+        30,
+        20,
+        20,
+        50,
+        27420,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27440,
+      "self_refinement": false,
+      "source_row_sha256": "866cbdf25c011d6a7dcfe7bc6ad1f895971ee7bbae632b473936da9900326649",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27430,
+      "values": [
+        40,
+        40,
+        25,
+        50,
+        27430,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27450,
+      "self_refinement": false,
+      "source_row_sha256": "90fdb083cef9f11a30a3f5ed79ee855af8cf8a1bc1415887d735a07e4c1afb03",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27440,
+      "values": [
+        50,
+        60,
+        30,
+        50,
+        27440,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27460,
+      "self_refinement": false,
+      "source_row_sha256": "4f4d302afebc7eb10aac403a00f5923f2acf59d8055ebfb345a78927c953ffb9",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27450,
+      "values": [
+        60,
+        70,
+        35,
+        50,
+        27450,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27470,
+      "self_refinement": false,
+      "source_row_sha256": "3cd229a1c7c3a8fadbfef3196c001141fa20a836f8a51f2fe16942606eb442d6",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27460,
+      "values": [
+        70,
+        80,
+        40,
+        50,
+        27460,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27480,
+      "self_refinement": false,
+      "source_row_sha256": "190bde4a9545431f115b0561fce6e90068f77306c47c693c2e31c67185e5efa7",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27470,
+      "values": [
+        80,
+        90,
+        50,
+        50,
+        27470,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27490,
+      "self_refinement": false,
+      "source_row_sha256": "fe29446902d02f4721c572a6ceb1d1b1b3c098cb1852667c36021b8ec06ce371",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27480,
+      "values": [
+        90,
+        100,
+        60,
+        50,
+        27480,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27500,
+      "self_refinement": false,
+      "source_row_sha256": "8ea821e09f2088261e92bc8c6e19ae763aa0d175cdce9821b87dd692d64fca48",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27490,
+      "values": [
+        100,
+        110,
+        70,
+        50,
+        27490,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27510,
+      "self_refinement": false,
+      "source_row_sha256": "76ccd91688293e0ecef0675436be9ee831a33613f3bc57aa55b39d028e4b42bf",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27500,
+      "values": [
+        110,
+        120,
+        80,
+        50,
+        27490,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27520,
+      "self_refinement": false,
+      "source_row_sha256": "22c4d23764ccc218709552ffdb67daea66636c53f95f5851f2f30f09f8d29aec",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27510,
+      "values": [
+        120,
+        130,
+        90,
+        50,
+        27500,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27530,
+      "self_refinement": false,
+      "source_row_sha256": "830901223a1cddb1745f8ef2ad3ae0cf078a17b3dbbb66ad15868cd089f03952",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27520,
+      "values": [
+        130,
+        140,
+        100,
+        50,
+        27510,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27540,
+      "self_refinement": false,
+      "source_row_sha256": "a2023ce670a81e6016458ebb80d88998beeedd6ec3ebafce0ca47e106671e536",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27530,
+      "values": [
+        140,
+        150,
+        110,
+        50,
+        27520,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27550,
+      "self_refinement": false,
+      "source_row_sha256": "db66372d86d2684371f4cf14a998de28e531af30b3428f04bda3420bedb7e3d5",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27540,
+      "values": [
+        150,
+        160,
+        120,
+        50,
+        27530,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27560,
+      "self_refinement": false,
+      "source_row_sha256": "cece1a480648e4e414408028c177fdf46069912315e483a87736e6ec9d05797c",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27550,
+      "values": [
+        160,
+        170,
+        130,
+        50,
+        27540,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27570,
+      "self_refinement": false,
+      "source_row_sha256": "bddde3f29978757f40e51ea64ce8c537c04367dc6a63ccd3a54e4eedf54f8a3e",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27560,
+      "values": [
+        170,
+        180,
+        140,
+        50,
+        27550,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27580,
+      "self_refinement": false,
+      "source_row_sha256": "af4d2e1ac3c3db837ecefc0266f1fac956658610a66186614232a354237450dc",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27570,
+      "values": [
+        180,
+        190,
+        150,
+        50,
+        27560,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 27590,
+      "self_refinement": false,
+      "source_row_sha256": "f7f48cafdf96f9b7fa678a42acea59f5ecd13838f55ec8a4b1c033c2fb7b33bc",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27580,
+      "values": [
+        190,
+        200,
+        160,
+        50,
+        27570,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "rod",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "8975f9dc719b7b5221577741c05037fa6d0336556ae9ee3d15687274c22a93f2",
+      "source_subtype": 0,
+      "source_type": 13,
+      "source_vnum": 27590,
+      "values": [
+        200,
+        210,
+        200,
+        50,
+        27580,
+        10
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "campfire_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "4665cfaa92bd14f32096aab56cab9073caec4df990e569a77632b6bdb80df860",
+      "source_subtype": 0,
+      "source_type": 15,
+      "source_vnum": 27600,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "bait",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "7dbb3196964eb75fa11084d0a8c566e8e2fd438de641b65eebfa45e403beda97",
+      "source_subtype": 6,
+      "source_type": 3,
+      "source_vnum": 27798,
+      "values": [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "4ffdecc27ba41758649f310759846a8f9c7d9521a018133eab94e1899792394d",
+      "source_subtype": 0,
+      "source_type": 14,
+      "source_vnum": 27799,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "bait",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "bed843316f22bf1b41eecdf785222ce7d961075e4bfa1dc74ad88f68f59d3ebd",
+      "source_subtype": 6,
+      "source_type": 3,
+      "source_vnum": 27800,
+      "values": [
+        5,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "bait",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "eea8b79cfc31be65ebacca219bdcb7620ffe019679909d60533db86683ed55b5",
+      "source_subtype": 6,
+      "source_type": 3,
+      "source_vnum": 27801,
+      "values": [
+        8,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "bait",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "8a25242719ad840fd615ec50d048ce404067c2bb8c174097ba1baa60d913b57b",
+      "source_subtype": 6,
+      "source_type": 3,
+      "source_vnum": 27802,
+      "values": [
+        12,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "19a614a7b930b2ed7c8887d0dd5f571576a4f6036132a40df330a2b22c555b54",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27803,
+      "values": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "6dca99268ed5d051fa0f5bde3126ec6e331cb63db8bba1962452895c2f230bfa",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27804,
+      "values": [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "45a5ba54244215637a2927dadbfe1d303fcadc0ea649e30f68d66115757b9c28",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27805,
+      "values": [
+        5,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "d317691637f713bfe1e91fdd33f82e1855d4de9d0a4220baa1c67d4d8070a508",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27806,
+      "values": [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "926300ecdfe1e8d243ea2df9474099a624e7d5bd6f8500c1652e64d0c35204ce",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27807,
+      "values": [
+        7,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "9bdd94318c5776644917c17d4333d34788732452e8a18bc5f9137311777f50c3",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27808,
+      "values": [
+        8,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "d785f6d4192ce0dc955c186bdf51207df71481cb105373c6b532deb1d4b1f96a",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27809,
+      "values": [
+        9,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "3b73ff05dd7ce0cca7dc28db6093d15a57a108c7820874dfd9828cab147d98a7",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27810,
+      "values": [
+        10,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "403716e458c922fc5105f4fa1d5b2b386cf8e0b163b36682bc1ce5155aca3252",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27811,
+      "values": [
+        11,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "166404b336ae8b78a2cb4f30ca4573f4a4efb812a52f9fde63d7cf18786b4fea",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27812,
+      "values": [
+        12,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "911b6fcd1d54f10bc4b4f3cc9fe9efbab421c4c5ae2563fba65989ce43269299",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27813,
+      "values": [
+        13,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "f812af43670bc927b50c8fb6816d0d0cc3d6ce9664c25fd70730139edb6cd726",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27814,
+      "values": [
+        14,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "a73bb34b1f3e93241ee2be082f2d98abb18de6750299d6ce565748a49549f160",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27815,
+      "values": [
+        15,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "fe8bdde13b40663e88bceb00d0a8b94b92f47d620ee3f88a8bd5d13abc89b787",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27816,
+      "values": [
+        16,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "9b3fb2652fe655b6c7dd1d87b6d6758ee06e965757ed032b483a838722ddb7e5",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27817,
+      "values": [
+        17,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "ae3930b841dc979dfd2c4b28e00ae1f9d27118d63dbeb06a4ee107da1bf97259",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27818,
+      "values": [
+        18,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "7bde7052ef2a0360296a7ecf0080ff39f4c132d121e1e25bc85e8684cc4fe3c9",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27819,
+      "values": [
+        19,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "f0311b17e95a2d2eb21479847d962b9fb8586074c3b8f028ee3477cff375a17b",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27820,
+      "values": [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "afea99e6139b0306568d8ca77b85f364922a566bad34d2e920c218ac02096b58",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27821,
+      "values": [
+        21,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "e51def961928578deff113c4a897c8786bde6034a64fdfb6b844d3ecd0f16092",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27822,
+      "values": [
+        22,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "d07937d5a220c7ba66179fcb845520a0a3835c47fe97e3f5b23e5208c22f6ace",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27823,
+      "values": [
+        23,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "0ca86e9dfe84c4bf1cc4db0a79f177978f4d541a3811bfea0859d00cd22d412c",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27824,
+      "values": [
+        24,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "dd8acbb48935c7245913afbf3add018baf2d627a50a073cd9ee8026078815c7e",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27825,
+      "values": [
+        25,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "ca679451e5ea81e9bb94c40dc412eceb61ac70d6155234cab09b2bf977f67675",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27826,
+      "values": [
+        26,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "live_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "dd03c6dcd54cb4ab87596cfd625a267366d4131f5177354e4839ac306df3cf54",
+      "source_subtype": 0,
+      "source_type": 12,
+      "source_vnum": 27827,
+      "values": [
+        27,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "bb0d2cc53d23248df02946c76649fcb5a7a5e95fd7aff7a81cd8a8001d3510ac",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27833,
+      "values": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "3ea619439d3d486e0aa9d1e113aa1bdedc88194c618ec53303f9fd15f143e8a7",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27834,
+      "values": [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "3325e6b3c58484a2d29fca2a6651861442b00b3707838f1dbc5dc2d5fd365784",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27835,
+      "values": [
+        5,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "8bea7c3d57db9cacbe42218a7a269f92f1dfd748792a50be3492cce5f35f62d3",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27836,
+      "values": [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "2410dfd7f74dba9719694e2cbb8c654df3830c1a9f550a2fce7d04b9cd0b23a6",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27837,
+      "values": [
+        7,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "e87fbe7a3e69ccff3f64f2dcca9083370518bf86dfde1d3ea9ea1739e4ea8613",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27838,
+      "values": [
+        8,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "5558bffe49deccfbcd55fa16f5310089c0f5cb534f4c1029824858cbc5805020",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27839,
+      "values": [
+        9,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "41055bce35f315c330bcc9e8e25540aee95790e0090e9f394c9103459b317e6c",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27840,
+      "values": [
+        10,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "8fb300af87e7b6af24cc7a4051e27be392c54ca4cb09c23ad18337ddec74dcb4",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27841,
+      "values": [
+        11,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "644e9920152b8a8e902ae03083d43500426a7abbc3a7546abe3bfa3c3cac2902",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27842,
+      "values": [
+        12,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "c54b586d8fd1f96bce939b0bbbf0d868175238994c61ad5df0321a532d44371a",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27843,
+      "values": [
+        13,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "f713f2f3c9b63cf662e2246755327dcce779c1d7fd4e172f6aeb801558598bdb",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27844,
+      "values": [
+        14,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "faa6e04d3d86f0b024c6d8108138fb6ca31459aa77226c2935003a80a0ff7eed",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27845,
+      "values": [
+        15,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "022dcf6f81aa68dd79bc47fc035e0edbe7cd35a93f2d34d92da8e4b626e2f56c",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27846,
+      "values": [
+        16,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "91acdf3f9fd7687189efc37932299a083d3b4bc66aaba6d5a78f9a033b17295b",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27847,
+      "values": [
+        17,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "156a70e392601dd255cc4c7a927c48950bcb9558384985bb7302afa1402d0286",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27848,
+      "values": [
+        18,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "bd188ad29731545e4e4e273b2eb1b10e8835689a547b759b28c1136d3048e23f",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27849,
+      "values": [
+        19,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "ce8f109ae8af189290ad5ee84385d286743f6df5ba27c0db1fcd09767763ab11",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27850,
+      "values": [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "b7bfbcb94be50ae215c53a6e0aca745dd6fc3b739c85f649d1d04b27bfd268ed",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27851,
+      "values": [
+        21,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "897b63339c7d73eef813c221a39fdaf4e51408175c546463b11744f00cc649f0",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27852,
+      "values": [
+        22,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "ad6abc3983060a75f04170cf782fec2d1a9fa926482035a6f9142954d3e487b7",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27853,
+      "values": [
+        23,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "c052a38ca57dd849d96299e7561bb789aef65086b387d951f6786f6befe1dd1c",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27854,
+      "values": [
+        24,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "1d30a25aa910242f9ee546fe66b103c0ae021ebb0bb41ec2c686e4e897ef710c",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27855,
+      "values": [
+        25,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "dfa060e9589e6ec5c75f97187ad254624280c1d3ed7b4130423b6da4c3f8d727",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27856,
+      "values": [
+        26,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "dead_fish",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "b31a3addaec29dda7a9b927aa84ab6b94c885951a9cd117d5f257248563da564",
+      "source_subtype": 1,
+      "source_type": 12,
+      "source_vnum": 27857,
+      "values": [
+        27,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "2ff9f6c978b890ca2322e55bcb6282525007c20ccd2ae7ecea5f6ebde16ccf32",
+      "source_subtype": 1,
+      "source_type": 14,
+      "source_vnum": 27990,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "8033f918d2cab271d71a4413ac06f3c0736916651bac8034bc9c4c4f594465a7",
+      "source_subtype": 2,
+      "source_type": 14,
+      "source_vnum": 27991,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29102,
+      "self_refinement": false,
+      "source_row_sha256": "f2197035e0e17d74b9f7a033096c6b5aa097a1923a1ee2529844321eff5a4256",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29101,
+      "values": [
+        10,
+        1,
+        6000,
+        100,
+        29101,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29103,
+      "self_refinement": false,
+      "source_row_sha256": "d2df5056ae86c648e192b9af02a375eaa1a6b9fdb3124ce02e673cbac5103ea7",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29102,
+      "values": [
+        10,
+        1,
+        6000,
+        100,
+        29101,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29104,
+      "self_refinement": false,
+      "source_row_sha256": "c840efdc4ebc7704df8894aa7f37a061b444cef9da5b87d94d74c26ed99cce8c",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29103,
+      "values": [
+        30,
+        1,
+        24000,
+        77,
+        29102,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29105,
+      "self_refinement": false,
+      "source_row_sha256": "dacee1a4e8a1f2c0bb3587d1656d8b41e6e73246a7ffe1bcdd893d4e930e01a1",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29104,
+      "values": [
+        40,
+        1,
+        48000,
+        66,
+        29103,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29106,
+      "self_refinement": false,
+      "source_row_sha256": "53da3fef48cf7e2356eac23925edd28472a9596e825d5d0ffa1dc2395f07a440",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29105,
+      "values": [
+        50,
+        1,
+        96000,
+        55,
+        29104,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29107,
+      "self_refinement": false,
+      "source_row_sha256": "c1187ccbad63ed740b2c7492925a3f44f878bd1d8c53b0e5b2638fc6bdbf86ae",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29106,
+      "values": [
+        60,
+        1,
+        192000,
+        44,
+        29105,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29108,
+      "self_refinement": false,
+      "source_row_sha256": "d3095c8b9a574741e0767e2652603837482ccd91fc9bfe9b03cb01d8de07da0c",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29107,
+      "values": [
+        70,
+        1,
+        384000,
+        33,
+        29106,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29109,
+      "self_refinement": false,
+      "source_row_sha256": "ca3da0f662ebca72c95a5e3ac90f6aecab8b0c5268997763e2545a3a27f16aba",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29108,
+      "values": [
+        80,
+        1,
+        768000,
+        33,
+        29107,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 29110,
+      "self_refinement": false,
+      "source_row_sha256": "cf6e3b950021ef42c53eaae19683160ff1f09b585e5dd0d3a2a0421c235bc6c8",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29109,
+      "values": [
+        90,
+        1,
+        1536000,
+        33,
+        29108,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "pick",
+      "nonzero_applies": 0,
+      "refine_set": 1000,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "82f885fa7632cac98d9ae56f250b376a3ef84c4baf0a7484b1ad9ae475d81c2a",
+      "source_subtype": 0,
+      "source_type": 24,
+      "source_vnum": 29110,
+      "values": [
+        90,
+        0,
+        0,
+        33,
+        29109,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "7f2fb2106e29f66bfc364ba13531e441de21899471e113ac36221a7d793ebdca",
+      "source_subtype": 0,
+      "source_type": 14,
+      "source_vnum": 40143,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "27e7eeaa51fcf9ec59bab39dc8bc0db764e01c71e8bdb61af978130191fc9d99",
+      "source_subtype": 0,
+      "source_type": 14,
+      "source_vnum": 40144,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "d3e2ef9b52105cb7bdbe2269cf7f017817cfa0132b674dec8fab929f31db92d7",
+      "source_subtype": 6,
+      "source_type": 14,
+      "source_vnum": 90002,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "8d2ce8a37f5643a83c6f0e9fc05a414603216bf82a3c81d35e120281fb4026ab",
+      "source_subtype": 7,
+      "source_type": 14,
+      "source_vnum": 90003,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "6b1801aa03b60642139af96d8247cfa1c967451a2afb98a63954314787263656",
+      "source_subtype": 8,
+      "source_type": 14,
+      "source_vnum": 90004,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "1c5983492891729ffc375176bffa6dc871a69c33c3bf6b0e46c21b3e418fd356",
+      "source_subtype": 9,
+      "source_type": 14,
+      "source_vnum": 90005,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "6bb527892359709be8733781652e4daf00ff099ad28a09bfb3f8c9b7df12ba65",
+      "source_subtype": 10,
+      "source_type": 14,
+      "source_vnum": 90006,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "84b62e5b330d7c20507940ca36a6cb7670143b42ce7c309bd75c5e572ce848c7",
+      "source_subtype": 11,
+      "source_type": 14,
+      "source_vnum": 90007,
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "1142310100064b8435e9cb7ac813b01ea75dc69ac9d729f6a54ba6b5814cb67c",
+      "source_subtype": 0,
+      "source_type": 14,
+      "source_vnum": 90010,
+      "values": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "4636563cbf29db3afed50da95b2e239b5606157f30d0ceaf9f518ee4366ab15c",
+      "source_subtype": 0,
+      "source_type": 14,
+      "source_vnum": 90011,
+      "values": [
+        2,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "converted": false,
+      "kind": "resource_material_behavior_deferred",
+      "nonzero_applies": 0,
+      "refine_set": 0,
+      "refined_edge": 0,
+      "self_refinement": false,
+      "source_row_sha256": "4d07681563dac42628d1e5f1d01e51d12d759c8cde80187c6fe57b9e05bfeb26",
+      "source_subtype": 0,
+      "source_type": 14,
+      "source_vnum": 90012,
+      "values": [
+        3,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "scope": "Offline source audit, not an installable conversion.",
+  "source_dump_sha256": "e4b18df41e6aa9e9cfa91d93060e641790be643c91fb2410f46b8c1790792005",
+  "summary": {
+    "by_kind": {
+      "axe_by_runtime_rules": 10,
+      "bait": 4,
+      "campfire_deferred": 1,
+      "dead_fish": 25,
+      "live_fish": 25,
+      "pick": 10,
+      "resource_material_behavior_deferred": 14,
+      "rod": 40,
+      "shears_by_runtime_rules": 10
+    },
+    "self_refining_rods": 6,
+    "source_rows": 139
+  }
+}

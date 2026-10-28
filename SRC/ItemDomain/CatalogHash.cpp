@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v15");
+    out.Text("auriga.item_catalog.v16");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -302,6 +302,16 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     for(const auto& r:source.costumes){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Boolean(r.weapon.has_value());if(r.weapon)out.Integer(static_cast<std::uint8_t>(*r.weapon));out.Integer(static_cast<std::uint8_t>(r.clock));out.Integer(r.durationMs);}
     out.Table(33,source.costumeVisuals.size());
     for(const auto& r:source.costumeVisuals){out.Key(r.key);out.Integer(r.characterClass);out.Integer(r.sex);out.Text(r.modelAsset);}
+    out.Table(34,source.toolProfiles.size());
+    for(const auto& p:source.toolProfiles)
+    {
+        out.Identity(p.id,p.code);out.Integer(static_cast<std::uint32_t>(p.levels.size()));
+        for(const auto& s:p.levels){out.Integer(s.level);out.Integer(s.power);out.Integer(s.gatherBonusBp);out.Integer(s.requiredPoints);out.Integer(s.practiceNumerator);out.Integer(s.practiceDenominator);out.Integer(s.refineChanceBp);out.Integer(static_cast<std::uint8_t>(s.failure));out.Boolean(s.failureLevel.has_value());if(s.failureLevel)out.Integer(*s.failureLevel);out.Integer(s.failureLossBp);}
+    }
+    out.Table(35,source.tools.size());
+    for(const auto& r:source.tools){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.profile);out.Integer(static_cast<std::uint8_t>(r.fishingPool));}
+    out.Table(36,source.fishingItems.size());
+    for(const auto& r:source.fishingItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Optional(r.useLootProfile);out.Boolean(r.grillResult.has_value());if(r.grillResult)out.Key(*r.grillResult);out.Integer(r.baitPower);}
     return out.Finish();
 }
 } // namespace auriga::item::detail

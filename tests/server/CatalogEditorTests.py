@@ -65,6 +65,30 @@ def toggle(document):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_tool_progression_copy_and_fishing_recipes(self):
+        def tool(d):
+            d['child'].update(tool_kind='2',fishing_pool='3')
+            d['refinement']['max_level']='30'
+            d['levels']=[dict(level=str(i),**{k:'0' for k in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[]) for i in range(31)]
+            d['tool_levels']=[catalog.Catalog.tool_level(i,i==30) for i in range(31)]
+            d['tool_levels'][10].update(power='55',required_points='100',practice_numerator='1',practice_denominator='5',failure_loss_bp='1000')
+        packet,key=create(self.blank,11,tool);self.check(packet);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone);clone['tool_levels'][10]['power']='66'
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other);self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(len(rows(packet,'tool_profile')),2)
+        bad=catalog.Catalog(packet).item(key);bad['tool_levels'][10]['practice_denominator']='0'
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,key,TOOL)
+        packet,cooked=create(packet,5)
+        packet,dead=create(packet,12,lambda d:d['child'].update(fishing_kind='2',bait_power='0',grill_category_id='5',grill_local_id=str(cooked[1])))
+        def live(d):
+            d['child'].update(fishing_kind='1',bait_power='0')
+            d['loot']=dict(pick_mode='1',entries=[dict(entry_no='1',reward_kind='1',item_category_id='12',item_local_id=str(dead[1]),amount='1',weight='31',rare_attribute_chance_bp='0')])
+        packet,fish=create(packet,12,live);self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(fish)['loot']['entries'][0]['item_local_id'],str(dead[1]))
+        bad=catalog.Catalog(packet).item(fish);bad['loot']['entries'][0].update(reward_kind='2',item_category_id=None,item_local_id=None)
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,fish,TOOL)
+
     def test_costume_variants_timers_copy_and_refinement(self):
         def change(d):
             d['child'].update(costume_kind='3', weapon_subtype='3', clock_kind='3', duration_ms='604800000')
@@ -617,6 +641,38 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_tool_and_fishing_forms_keep_progression_and_kind_rules(self):
+        from PySide6.QtCore import Qt
+        packet,key=create(catalog.blank(TOOL),11);self.page.loaded(packet,key)
+        panel=self.page.tool_panel;panel.kind.setCurrentIndex(panel.kind.findData('2'))
+        self.assertTrue(panel.pool.isEnabled());self.page.refinement.maximum.setValue(30)
+        self.assertEqual(panel.table.rowCount(),31)
+        panel.table.item(10,1).setText('55');panel.table.item(10,4).setText('1');panel.table.item(10,5).setText('5')
+        self.assertFalse(bool(panel.table.item(10,8).flags() & Qt.ItemFlag.ItemIsEditable))
+        panel.table.cellWidget(10,7).setCurrentIndex(1);panel.table.item(10,8).setText('2')
+        self.assertFalse(bool(panel.table.item(10,9).flags() & Qt.ItemFlag.ItemIsEditable))
+        document=self.page.collect();catalog.validate(packet,document,key,TOOL)
+        self.assertEqual(document['tool_levels'][10]['power'],'55')
+        self.assertEqual(document['tool_levels'][10]['failure_level'],'2')
+        self.assertEqual(document['tool_levels'][10]['failure_loss_bp'],'0')
+        self.assertEqual(document['tool_levels'][30]['required_points'],'0')
+        self.page.refinement.maximum.setValue(10);self.page.refinement.maximum.setValue(30)
+        self.assertEqual(self.page.collect()['tool_levels'][10]['power'],'55')
+        panel.kind.setCurrentIndex(panel.kind.findData('3'));self.assertFalse(panel.pool.isEnabled())
+        document=self.page.collect();self.assertEqual(document['child']['fishing_pool'],'1');catalog.validate(packet,document,key,TOOL)
+        packet,cooked=create(packet,5);packet,bait=create(packet,12);self.page.loaded(packet,bait)
+        fish=self.page.fishing_panel;self.assertTrue(fish.power.widget.isEnabled())
+        fish.kind.widget.setCurrentIndex(fish.kind.widget.findData('2'))
+        fish.grill.setCurrentIndex(fish.grill.findData('5:'+str(cooked[1])))
+        document=self.page.collect();catalog.validate(packet,document,bait,TOOL)
+        self.assertEqual(document['child']['grill_local_id'],str(cooked[1]));self.assertEqual(document['child']['bait_power'],'0')
+        fish.kind.widget.setCurrentIndex(fish.kind.widget.findData('1'))
+        fish.loot.append(dict(reward_kind='1',item_category_id='5',item_local_id=str(cooked[1]),amount='1',weight='1',rare_attribute_chance_bp='0'))
+        self.assertEqual(fish.loot.table.cellWidget(0,0).count(),1)
+        self.assertTrue(fish.loot.table.isColumnHidden(4))
+        document=self.page.collect();catalog.validate(packet,document,bait,TOOL)
+        self.page.dirty=False
+
     def test_costume_form_visuals_clock_and_bonus_curve(self):
         packet,key=create(catalog.blank(TOOL),4)
         self.page.loaded(packet,key);panel=self.page.costume_panel
@@ -1120,6 +1176,31 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzz_gathering_profiles_fish_and_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(11);key=key_of(d)
+        d['refinement']['max_level']='30'
+        d['levels']=[dict(level=str(i),**{k:'0' for k in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[]) for i in range(31)]
+        d['tool_levels']=[catalog.Catalog.tool_level(i,i==30) for i in range(31)]
+        d['tool_levels'][10].update(power='55',required_points='100',practice_numerator='1',practice_denominator='5',failure_kind='2',failure_level='2')
+        packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);clone['tool_levels'][0]['power']='77'
+        packet=self.commit(packet,clone);self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(original['tool_levels'][10]['failure_level'],'2')
+        bait=catalog.Catalog(packet).new(12);packet=self.commit(packet,bait)
+        cooked=catalog.Catalog(packet).new(5);cooked_key=key_of(cooked);packet=self.commit(packet,cooked)
+        dead=catalog.Catalog(packet).new(12);dead_key=key_of(dead)
+        dead['child'].update(fishing_kind='2',bait_power='0',grill_category_id='5',grill_local_id=str(cooked_key[1]));packet=self.commit(packet,dead)
+        live=catalog.Catalog(packet).new(12);live_key=key_of(live);live['child'].update(fishing_kind='1',bait_power='0')
+        live['loot']=dict(pick_mode='1',entries=[dict(entry_no='1',reward_kind='1',item_category_id='12',item_local_id=str(dead_key[1]),amount='1',weight='31',rare_attribute_chance_bp='0')])
+        packet=self.commit(packet,live)
+        self.assertEqual(catalog.Catalog(packet).item(live_key)['loot']['entries'][0]['item_local_id'],str(dead_key[1]))
+        new=catalog.Catalog(packet).new(11)
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_tool BEFORE INSERT ON protos.tool_level FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test tool write failure'")
+        try:
+            with self.assertRaises(api.EditorError):self.commit(packet,new)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_tool')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+
     def test_zzzz_costume_visual_edit_copy_and_atomic_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(4);key=key_of(d)
         d['child'].update(costume_kind='3',weapon_subtype='1',clock_kind='2',duration_ms='100000')

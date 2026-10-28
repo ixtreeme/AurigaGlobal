@@ -55,6 +55,10 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::SocketStones, "item_socket_stone", "category_id,local_id,stone_kind,allowed_targets,minimum_socket_grade,primary_group,secondary_group", Items},
     {Table::Costumes, "item_costume", "category_id,local_id,costume_kind,weapon_subtype,clock_kind,duration_ms", Items},
     {Table::CostumeVisuals, "item_costume_visual", "category_id,local_id,character_class,sex,model_asset", Items*8},
+    {Table::ToolProfiles,"tool_profile","profile_id,code",Profiles},
+    {Table::ToolLevels,"tool_level","profile_id,level,power,gather_bonus_bp,required_points,practice_numerator,practice_denominator,refine_chance_bp,failure_kind,failure_level,failure_loss_bp",Profiles*256},
+    {Table::Tools,"item_tool","category_id,local_id,tool_kind,profile_id,fishing_pool",Items},
+    {Table::FishingItems,"item_fishing","category_id,local_id,fishing_kind,use_loot_profile_id,grill_category_id,grill_local_id,bait_power",Items},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

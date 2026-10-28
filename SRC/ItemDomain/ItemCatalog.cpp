@@ -44,6 +44,7 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items ||
         source.currencyTokens.size() > ItemCatalogLimits::Items || source.skillBooks.size() > ItemCatalogLimits::Items ||
         source.questItems.size() > ItemCatalogLimits::Items || source.socketStones.size()>ItemCatalogLimits::Items ||
+        source.tools.size()>ItemCatalogLimits::Items || source.fishingItems.size()>ItemCatalogLimits::Items ||
         source.costumes.size()>ItemCatalogLimits::Items || source.costumeVisuals.size()>ItemCatalogLimits::Items*8)
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "items"));
     std::size_t textBytes = 0;
@@ -57,11 +58,13 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         for (const auto& row : rows) if (!add(row.code.size())) return false;
         return true;
     };
-    if (!profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
+    if (!profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
         !profiles(source.attacks) || !profiles(source.ammoPolicies) || !profiles(source.resistances) || !profiles(source.refinements) ||
         !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
         !profiles(source.lootProfiles) || !profiles(source.timedEffectGroups) || !profiles(source.timedEffects) || !profiles(source.toggleEffectGroups) || !profiles(source.toggleEffects) || !profiles(source.skillBookProfiles))
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "profiles"));
+    for(const auto& p:source.toolProfiles)
+        if(p.levels.size()>256)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"tool.levels",{},p.id));
     for (const auto& p : source.skillBookProfiles)
         if (p.targets.size()>MaxSkillBookTargets || p.steps.size()>MaxSkillBookSteps)
             return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "skill_book.children", {}, p.id));
@@ -102,13 +105,17 @@ ItemBaseStats BaseStats(const ItemSkillBookRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemQuestRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemSocketStoneRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemCostumeRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemToolRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemFishingRow&) { return {}; }
 auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.characterClass,row.sex}; }
 }
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 15 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 16 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
+    for(auto& p:source.toolProfiles)std::ranges::sort(p.levels,{},&ToolLevel::level);
+    if(auto r=Profiles(source.toolProfiles,"tool.profile",ValidToolProfile);!r)return std::unexpected(r.error());
     if (auto r = Profiles(source.usePolicies, "use_policy", [](const auto& row) {
         return row.allowedClasses > 0 && row.allowedClasses <= 15 && row.allowedSexes > 0 && row.allowedSexes <= 3;
     }); !r) return std::unexpected(r.error());
@@ -253,6 +260,31 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::ranges::sort(source.socketStones, {}, &ItemSocketStoneRow::key);
     std::ranges::sort(source.costumes, {}, &ItemCostumeRow::key);
     std::ranges::sort(source.costumeVisuals, {}, VisualKey);
+    std::ranges::sort(source.tools,{},&ItemToolRow::key);
+    std::ranges::sort(source.fishingItems,{},&ItemFishingRow::key);
+    std::map<ItemKey,const ItemToolRow*> tools;
+    std::map<ItemKey,const ItemFishingRow*> fishingItems;
+    for(const auto& r:source.tools)
+    {
+        if(r.key.Category()!=ItemCategory::Tool || r.kind<ToolKind::Pick || r.kind>ToolKind::Shears ||
+           r.fishingPool<FishingPool::None || r.fishingPool>FishingPool::Second ||
+           ((r.kind==ToolKind::Rod)==(r.fishingPool==FishingPool::None)))
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"tool",r.key));
+        if(!FindProfile(source.toolProfiles,r.profile))return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"tool.profile",r.key,r.profile));
+        if(!tools.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"tool",r.key));
+    }
+    for(const auto& r:source.fishingItems)
+    {
+        if(!ValidFishingItem(r))return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"fishing",r.key));
+        if(!fishingItems.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"fishing",r.key));
+        if(r.useLootProfile)
+        {
+            const auto* p=catalog->FindLoot(*r.useLootProfile);
+            if(!p)return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"fishing.loot",r.key));
+            for(const auto& e:p->Data().entries)if(e.kind!=LootRewardKind::Item || e.rareAttributeChanceBp)
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidLootReward,"fishing.loot",r.key));
+        }
+    }
     std::set<std::string> codes;
     std::map<ItemKey, const ItemWeaponRow*> weapons;
     std::map<ItemKey, const ItemArmorRow*> armors;
@@ -388,8 +420,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool questItem = category == ItemCategory::Quest;
         const bool socketStone = category == ItemCategory::SocketStone;
         const bool costume = category == ItemCategory::Costume;
-        const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone;
-        if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !stackable)
+        const bool tool = category == ItemCategory::Tool, fish = category == ItemCategory::Fishing;
+        const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish;
+        if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !tool && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
             !detail::ContentCode(row.descriptionKey, 128) || !detail::AssetReference(row.iconAsset) ||
@@ -417,7 +450,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const auto expectedKind = category == ItemCategory::Weapon ? RefinementKind::Weapon :
             category == ItemCategory::Armor ? RefinementKind::Armor :
             category == ItemCategory::Accessory ? RefinementKind::Accessory :
-            socketStone ? RefinementKind::SocketStone : costume ? RefinementKind::Costume : RefinementKind::None;
+            socketStone ? RefinementKind::SocketStone : costume ? RefinementKind::Costume : tool ? RefinementKind::Tool : RefinementKind::None;
         if (profile->Data().kind != RefinementKind::None && profile->Data().kind != expectedKind)
             return std::unexpected(Error(ItemCatalogErrorCode::WrongRefinementKind, "refinement", row.key, row.refinementProfile));
         std::optional<ItemCategoryRow> child;
@@ -432,6 +465,13 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
                 if((policy->allowedClasses&(1u<<(c-1))) && (policy->allowedSexes&(1u<<(s-1))) && !visuals.contains({row.key,c,s}))
                     return std::unexpected(Error(ItemCatalogErrorCode::MissingCategoryRow,"costume.visual",row.key));
         }
+        if(tool && tools.contains(row.key))
+        {
+            child=*tools.at(row.key);
+            if(FindProfile(source.toolProfiles,tools.at(row.key)->profile)->levels.size()!=std::size_t(profile->Data().maxLevel)+1)
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"tool.levels",row.key));
+        }
+        if(fish && fishingItems.contains(row.key))child=*fishingItems.at(row.key);
         if (material && materials.contains(row.key)) child = *materials.at(row.key);
         if (consumable && consumables.contains(row.key)) child = *consumables.at(row.key);
         if (container && containers.contains(row.key)) child = *containers.at(row.key);
@@ -492,6 +532,18 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"socket_stone",row.key));
     for(const auto& row:source.costumes)
         if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"costume",row.key));
+    for(const auto& row:source.tools)
+        if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"tool",row.key));
+    for(const auto& row:source.fishingItems)
+    {
+        if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"fishing",row.key));
+        if(row.grillResult)
+        {
+            const auto* target=catalog->Find(*row.grillResult);
+            if(!target || target->base.retired || row.grillResult->Category()!=ItemCategory::Consumable)
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"fishing.grill_result",row.key));
+        }
+    }
     // Item rewards are ordinary, live, stack-sized grants of a published item.
     for (const auto& profile : source.lootProfiles)
         for (const auto& reward : profile.entries)
@@ -541,6 +593,7 @@ const ValidatedRefinementProfile* ItemCatalog::FindRefinement(std::uint32_t id) 
     const auto found = refinements_.find(id);
     return found == refinements_.end() ? nullptr : &found->second;
 }
+const ToolProfile* ItemCatalog::FindToolProfile(std::uint32_t id) const noexcept { return FindProfile(source_.toolProfiles,id); }
 const ItemUsePolicy* ItemCatalog::FindUsePolicy(std::uint32_t id) const noexcept { return FindProfile(source_.usePolicies, id); }
 const RefinementRecipe* ItemCatalog::FindRefinementRecipe(std::uint32_t id) const noexcept { return FindProfile(source_.refinementRecipes, id); }
 const ItemTradePolicy* ItemCatalog::FindTradePolicy(std::uint32_t id) const noexcept { return FindProfile(source_.tradePolicies, id); }

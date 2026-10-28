@@ -16,6 +16,7 @@ import backend as api
 import item_catalog as catalog
 from skill_book_editor import SkillBookPanel
 from costume_editor import CostumePanel
+from gathering_editor import ToolPanel, FishingPanel
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 BONUS_LABELS = {
@@ -373,8 +374,8 @@ class LootTable(QWidget):
     resulting chance; independent mode shows each row's own chance in %."""
     COLUMNS = ['Jutalom', 'Tárgy', 'Mennyiség', 'Súly', 'Ritka bónusz %', 'Esély']
 
-    def __init__(self, changed):
-        super().__init__(); self.changed = changed; self.mode = '1'; self.items = QStandardItemModel(self)
+    def __init__(self, changed, allowed_kinds=None):
+        super().__init__(); self.changed = changed; self.mode = '1'; self.items = QStandardItemModel(self); self.allowed_kinds = allowed_kinds
         layout = QVBoxLayout(self); layout.setContentsMargins(0, 0, 0, 0)
         self.table = QTableWidget(0, len(self.COLUMNS)); self.table.setHorizontalHeaderLabels(self.COLUMNS)
         header = self.table.horizontalHeader()
@@ -404,7 +405,8 @@ class LootTable(QWidget):
     def append(self, entry):
         row = self.table.rowCount(); self.table.insertRow(row)
         kind = QComboBox()
-        for value, text in REWARD_KINDS: kind.addItem(text, str(value))
+        for value, text in REWARD_KINDS:
+            if self.allowed_kinds is None or value in self.allowed_kinds: kind.addItem(text, str(value))
         kind.setCurrentIndex(max(0, kind.findData(str(entry.get('reward_kind') or '1'))))
         item = QComboBox(); item.setModel(self.items); item.setEditable(True); item.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         item.completer().setFilterMode(Qt.MatchFlag.MatchContains); item.completer().setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -512,7 +514,7 @@ class RefinementPanel(QWidget):
     """
     STAT_COLUMNS = {1: [('physical_attack_gain_raw', 'Fizikai támadás +'), ('magical_attack_gain_raw', 'Mágikus támadás +')],
                     2: [('physical_defense_gain_raw', 'Fizikai védekezés +'), ('magical_defense_gain_raw', 'Mágikus védekezés +')],
-                    3: [], 4: [], 7: []}
+                    3: [], 4: [], 7: [], 11: []}
 
     def __init__(self, changed):
         super().__init__(); self.changed = changed; self.category = 1; self.levels = []; self.definitions = []; self.loading = False
@@ -540,7 +542,7 @@ class RefinementPanel(QWidget):
         self.category = category; self.definitions = definitions
         self.kind.blockSignals(True); self.kind.clear()
         self.kind.addItem('Nincs fejlesztés', '1')
-        self.kind.addItem({1: 'Fegyverfejlesztés', 2: 'Páncélfejlesztés', 3: 'Ékszerfejlesztés', 4: 'Kosztümfejlesztés', 7: 'Foglalatkő-fejlesztés'}[category], str(catalog.REFINEMENT_KIND[category]))
+        self.kind.addItem({1: 'Fegyverfejlesztés', 2: 'Páncélfejlesztés', 3: 'Ékszerfejlesztés', 4: 'Kosztümfejlesztés', 7: 'Foglalatkő-fejlesztés', 11: 'Eszközfejlesztés'}[category], str(catalog.REFINEMENT_KIND[category]))
         self.kind.blockSignals(False)
 
     def load(self, refinement, levels):
@@ -962,10 +964,12 @@ class ItemPage(QWidget):
         potion_layout.addWidget(self.effects); potion_layout.addStretch()
         self.book_panel = SkillBookPanel(changed, Form)
         self.costume_panel = CostumePanel(changed)
+        self.tool_panel=ToolPanel(changed)
+        self.fishing_panel=FishingPanel(changed,Form,LootTable)
         self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
                                10: quest_form, 16: token_form, 18: key_form}
         self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
-                               7: scroll(stone_form), 8: container, 9: self.book_panel, 10: scroll(quest_form), 16: scroll(token_form), 18: scroll(key_form)}
+                               7: scroll(stone_form), 8: container, 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 16: scroll(token_form), 18: scroll(key_form)}
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
         self.timed_form = Form(changed)
@@ -1029,6 +1033,7 @@ class ItemPage(QWidget):
         self.timed_group_field.widget.currentIndexChanged.connect(lambda *_: self.timed_group_changed())
         self.toggle_group_field.widget.currentIndexChanged.connect(lambda *_: self.toggle_group_changed())
         self.refinement = RefinementPanel(changed)
+        self.refinement.maximum.valueChanged.connect(lambda value: self.tool_panel.set_maximum(value) if not self.loading and self.document and int(self.document['base']['category_id'])==11 else None)
         self.bonuses = BonusTable(changed, '1')
         bonus_page = QWidget(); bonus_layout = QVBoxLayout(bonus_page)
         hint = QLabel('Az alap bónuszok minden fejlesztési szinten érvényesek. Szintenkénti bónuszt a Fejlesztés lapon adhatsz meg.')
@@ -1271,7 +1276,7 @@ class ItemPage(QWidget):
             self.heading.setText('Nincs kijelölt tárgy'); self.loading = False; self.update_badge(); self.controls(); return
         base = document['base']; category = int(base['category_id'])
         self.heading.setText('%s %s:%s — %s' % (catalog.CATEGORIES[category], base['category_id'], base['local_id'], base['content_code']))
-        equipment = category in (1, 2, 3, 4)
+        equipment = category in (1, 2, 3, 4, 11)
         refinable = equipment or category==7
         self.tabs.addTab(self.base_page, 'Alapadatok')
         self.tabs.addTab(self.use_page, 'Használat és kereskedelem')
@@ -1325,6 +1330,11 @@ class ItemPage(QWidget):
             self.consumable_kind.setCurrentIndex(selected_kind)
             self.consumable_pages.setCurrentIndex(selected_kind)
             self.recovery_controls()
+        elif category == 11:
+            self.tool_panel.load(document)
+        elif category == 12:
+            self.fishing_panel.set_items(catalog.Catalog(self.packet).items())
+            self.fishing_panel.load(document)
         elif category == 4:
             self.costume_panel.load(document)
         elif category == 9:
@@ -1386,6 +1396,10 @@ class ItemPage(QWidget):
                 document['cooldown'] = dict(duration_ms=str(duration))
             else:
                 document['cooldown'] = None
+        elif category == 11:
+            self.tool_panel.collect(document)
+        elif category == 12:
+            self.fishing_panel.collect(document)
         elif category == 4:
             self.costume_panel.collect(document)
         elif category == 9:
@@ -1397,11 +1411,13 @@ class ItemPage(QWidget):
             if category == 8:
                 scripted = document['child']['container_kind'] == '3'
                 document['loot'] = None if scripted else dict(pick_mode=self.loot_mode.currentData(), entries=self.loot_table.entries())
-        if category in (1, 2, 3, 4, 7):
+        if category in (1, 2, 3, 4, 7, 11):
             self.refinement.collect(document)
             document['bonuses'] = self.bonuses.entries()
         else:
             document['bonuses'] = []
+        if category==11 and len(document['tool_levels'])!=len(document['levels']):
+            raise api.EditorError('Az eszköz gyakorlási táblájának +0-tól a fejlesztési maximumig kell tartania.')
         if category==7:
             for field in ('primary_group','secondary_group'):document['child'][field]=document['child'][field] or ''
             if document['child']['stone_kind']=='2':

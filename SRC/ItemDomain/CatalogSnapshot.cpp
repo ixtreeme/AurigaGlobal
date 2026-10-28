@@ -238,6 +238,14 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::Costumes,[&](const Reader& r){s.costumes.push_back({r.Key(),static_cast<CostumeKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<WeaponSubtype>(r.U8(3))} : std::nullopt,static_cast<CostumeClock>(r.U8(4)),r.U64(5)});});
     Each(source,Table::CostumeVisuals,[&](const Reader& r){s.costumeVisuals.push_back({r.Key(),r.U8(2),r.U8(3),r.Text(4)});});
     Each(source,Table::SocketStones,[&](const Reader& r){s.socketStones.push_back({r.Key(),static_cast<SocketStoneKind>(r.U8(2)),r.U8(3),r.U8(4),r.Text(5,96),r.Text(6,96)});});
+    Each(source,Table::ToolProfiles,[&](const Reader& r){s.toolProfiles.push_back({r.U32(0),r.Text(1,96),{}});});
+    const auto toolIndex=Index(s.toolProfiles,Table::ToolProfiles);
+    Each(source,Table::ToolLevels,[&](const Reader& r){Parent(s.toolProfiles,toolIndex,r).levels.push_back({r.U16(1),r.U32(2),r.U16(3),r.U32(4),r.U32(5),r.U32(6),r.U16(7),static_cast<ToolFailure>(r.U8(8)),r.row[9] ? std::optional{r.U16(9)} : std::nullopt,r.U16(10)});});
+    Each(source,Table::Tools,[&](const Reader& r){s.tools.push_back({r.Key(),static_cast<ToolKind>(r.U8(2)),r.U32(3),static_cast<FishingPool>(r.U8(4))});});
+    Each(source,Table::FishingItems,[&](const Reader& r){
+        if(r.row[4].has_value()!=r.row[5].has_value())r.Fail(ReadErrorCode::InvalidChild,4);
+        s.fishingItems.push_back({r.Key(),static_cast<FishingKind>(r.U8(2)),r.OptionalId(3),r.row[4] ? std::optional{r.Key(4)} : std::nullopt,r.U32(6)});
+    });
     return s;
 }
 }

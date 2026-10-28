@@ -20,14 +20,14 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 16: 'Pénzjegy', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 16: 'Pénzjegy', 18: 'Kulcs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
-                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 16: 'item_currency_token', 18: 'item_container_key'}
-CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest',
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 16: 'item_currency_token', 18: 'item_container_key'}
+CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing',
                7: 'socket_stone', 16: 'currency_token', 18: 'container_key'}
-STACKABLE = (5, 6, 7, 8, 9, 10, 16, 18)
+STACKABLE = (5, 6, 7, 8, 9, 10, 12, 16, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
-REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5}
+REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
 RESISTANCES = ['physical_bp','magical_bp','sword_bp','dagger_bp','bow_bp','two_handed_bp',
                'bell_bp','fan_bp','mount_spear_bp','fire_bp','electric_bp','ice_bp','wind_bp','earth_bp','dark_bp']
@@ -47,7 +47,8 @@ PROFILES = {
     'timed_effect_profile': ('profile_id', [('item_consumable', 'timed_effect_profile_id')], []),
     'toggle_effect_profile': ('profile_id', [('item_consumable', 'toggle_effect_profile_id')], []),
     'skill_book_profile': ('profile_id', [('item_skill_book', 'profile_id')], ['skill_book_target', 'skill_book_step']),
-    'loot_profile': ('profile_id', [('item_container', 'loot_profile_id')], ['loot_entry']),
+    'loot_profile': ('profile_id', [('item_container', 'loot_profile_id'), ('item_fishing', 'use_loot_profile_id')], ['loot_entry']),
+    'tool_profile': ('profile_id', [('item_tool','profile_id')], ['tool_level']),
 }
 
 
@@ -136,8 +137,11 @@ class Catalog:
             book = self.linked('skill_book_profile', child, 'profile_id')
             result.update(book=book, book_targets=self.book_rows('skill_book_target', book['profile_id'], 'skill_id'),
                           book_steps=self.book_rows('skill_book_step', book['profile_id'], 'current_level'))
-        if category == 8:
-            loot = self.linked('loot_profile', child, 'loot_profile_id')
+        if category == 11:
+            result['tool'] = self.linked('tool_profile',child,'profile_id')
+            result['tool_levels'] = [{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('tool_level',child['profile_id'],'level')]
+        if category in (8,12):
+            loot = self.linked('loot_profile', child, 'loot_profile_id' if category==8 else 'use_loot_profile_id')
             if loot is not None:
                 loot['entries'] = self.loot_entries(loot['profile_id'])
             result['loot'] = loot
@@ -214,11 +218,23 @@ class Catalog:
             item.update(self.book_defaults())
         if category == 10:
             item['child'].update(dispatch_kind='1', group_code='', allowed_contexts='0', allow_observer='0')
+        if category == 11:
+            item['child'].update(tool_kind='1',profile_id=None,fishing_pool='1')
+            item.update(tool={},tool_levels=[self.tool_level(0,terminal=True)])
+        if category == 12:
+            item['child'].update(fishing_kind='3',use_loot_profile_id=None,grill_category_id=None,grill_local_id=None,bait_power='1')
+            item['loot']=None
         if category == 16:
             item['child'].update(wallet_currency='1', amount_per_unit='1')
         if category == 18:
             item['child']['lock_id'] = '1'
         return item
+
+    @staticmethod
+    def tool_level(level,terminal=False):
+        return dict(level=str(level),power='0',gather_bonus_bp='0',required_points='0' if terminal else '1',
+                    practice_numerator='0' if terminal else '1',practice_denominator='1',refine_chance_bp='0' if terminal else '10000',
+                    failure_kind='1',failure_level=None,failure_loss_bp='0')
 
     @staticmethod
     def book_defaults(template='master'):
@@ -394,6 +410,9 @@ class Catalog:
             elif document.get('timed') is not None: self.apply_timed(document, child, key)
             else: self.apply_recovery(document, child, key)
         if category == 9: self.apply_book(document, child, key)
+        if category == 11: self.apply_tool(document,child,key)
+        if category == 12:
+            child['use_loot_profile_id'] = self.loot(document.get('loot'),child.get('use_loot_profile_id'),key) if child['fishing_kind']=='1' else None
         if category == 8:
             scripted = str(child.get('container_kind')) == '3'
             child['loot_profile_id'] = None if scripted else self.loot(document.get('loot'), child.get('loot_profile_id'), key)
@@ -424,6 +443,18 @@ class Catalog:
                                                            ('refinement_level', (str(profile), str(row['level']))))
             levels.append(row)
         self.replace('refinement_level', {'profile_id': profile}, levels)
+
+    def apply_tool(self,document,child,key):
+        old=child.get('profile_id'); previous=self.row('tool_profile',old)
+        levels=[{k:text(v) for k,v in r.items() if k!='profile_id'} for r in document['tool_levels']]
+        current=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('tool_level',old,'level')] if previous else []
+        if previous and levels==current:return
+        users=[(int(r['category_id']),int(r['local_id'])) for _,r in self.references('tool_profile',old)] if previous else []
+        identity=old if previous and all(user==key for user in users) else self.allocate('tool_profile')
+        code=previous['code'] if identity==old else f'editor.tool.{identity}'
+        self.replace('tool_profile',{'profile_id':identity},[dict(profile_id=identity,code=code)])
+        self.replace('tool_level',{'profile_id':identity},[dict(r,profile_id=identity) for r in levels])
+        child['profile_id']=identity
 
     def apply_recovery(self, document, child, key):
         recovery, old = document['recovery'], child.get('recovery_profile_id')
@@ -526,6 +557,10 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'tool': 'eszköz típusa és halászati táblája', 'tool.profile': 'eszköz fejlődési szabályai',
+    'tool.levels': 'eszköz gyakorlási és fejlesztési szintjei',
+    'fishing': 'hal vagy csali szabályai', 'fishing.loot': 'élő hal feldolgozási eredménye',
+    'fishing.grill_result': 'sütés eredménytárgya',
     'costume': 'kosztüm típusa, fegyverfeltétele és időkezelése',
     'costume.visual': 'kosztüm megjelenése (osztály és nem)',
     'socket_stone': 'foglalatkő szabályai',

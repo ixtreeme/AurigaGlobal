@@ -104,6 +104,9 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for(const auto& r:source.socketStones)Add(s,T::SocketStones,r.key.Category(),r.key.LocalId(),r.kind,r.allowedTargets,r.minimumSocketGrade,r.primaryGroup,r.secondaryGroup);
     for(const auto& r:source.costumes)Add(s,T::Costumes,r.key.Category(),r.key.LocalId(),r.kind,r.weapon,r.clock,r.durationMs);
     for(const auto& r:source.costumeVisuals)Add(s,T::CostumeVisuals,r.key.Category(),r.key.LocalId(),r.characterClass,r.sex,r.modelAsset);
+    for(const auto& p:source.toolProfiles){Add(s,T::ToolProfiles,p.id,p.code);for(const auto& r:p.levels)Add(s,T::ToolLevels,p.id,r.level,r.power,r.gatherBonusBp,r.requiredPoints,r.practiceNumerator,r.practiceDenominator,r.refineChanceBp,r.failure,r.failureLevel,r.failureLossBp);}
+    for(const auto& r:source.tools)Add(s,T::Tools,r.key.Category(),r.key.LocalId(),r.kind,r.profile,r.fishingPool);
+    for(const auto& r:source.fishingItems)Add(s,T::FishingItems,r.key.Category(),r.key.LocalId(),r.kind,r.useLootProfile,r.grillResult ? std::optional{static_cast<std::uint16_t>(r.grillResult->Category())} : std::nullopt,r.grillResult ? std::optional{r.grillResult->LocalId()} : std::nullopt,r.baitPower);
     return s;
 }
 } // namespace catalog_snapshot_fixture

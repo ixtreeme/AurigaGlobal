@@ -5,6 +5,7 @@
 #include "QuestItems.hpp"
 #include "SocketStones.hpp"
 #include "Costumes.hpp"
+#include "GatheringItems.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
 #include "TimedEffects.hpp"
@@ -157,10 +158,10 @@ struct ItemSkillBookRow
     std::uint32_t profile = 0;
 };
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 15;
+    std::uint32_t schemaVersion = 16;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -194,6 +195,9 @@ struct ItemCatalogSource
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
     std::vector<CostumeVisualRow> costumeVisuals;
+    std::vector<ToolProfile> toolProfiles;
+    std::vector<ItemToolRow> tools;
+    std::vector<ItemFishingRow> fishingItems;
 };
 struct ItemCatalogLimits
 {
@@ -241,7 +245,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
 // Supports weapon/armor, wrist/neck/ear accessories with optional timed/permanent
 // socket profiles, ordinary materials, recovery/timed consumables, containers and their
 // keys with typed loot profiles, skill books, socket stones, ordinary costumes
-// with class/sex visuals, and wallet currency tokens. Unsupported categories and
+// with class/sex visuals, gathering tools, fish/bait and wallet currency tokens. Unsupported categories and
 // behaviors fail closed during publication; this is not a runtime stat builder.
 class ItemCatalog final
 {
@@ -252,6 +256,7 @@ public:
     const ItemCatalogEntry* Find(ItemKey key) const noexcept;
     const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
+    const ToolProfile* FindToolProfile(std::uint32_t id) const noexcept;
     const ItemUsePolicy* FindUsePolicy(std::uint32_t id) const noexcept;
     const ItemTradePolicy* FindTradePolicy(std::uint32_t id) const noexcept;
     const ItemAppearanceProfile* FindAppearance(std::uint32_t id) const noexcept;
