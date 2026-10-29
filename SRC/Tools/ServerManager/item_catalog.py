@@ -49,6 +49,7 @@ PROFILES = {
     'skill_book_profile': ('profile_id', [('item_skill_book', 'profile_id')], ['skill_book_target', 'skill_book_step']),
     'loot_profile': ('profile_id', [('item_container', 'loot_profile_id'), ('item_fishing', 'use_loot_profile_id')], ['loot_entry']),
     'polymorph_profile': ('profile_id',[('item_polymorph','profile_id')],['polymorph_skill_rule','polymorph_mastery_rule']),
+    'pet_hatch_profile': ('profile_id',[('item_container','hatch_profile_id')],[]),
     'growth_pet_profile': ('profile_id',[('item_companion','growth_profile_id')],['growth_pet_level','growth_pet_stage']),
     'soul_profile': ('profile_id',[('item_soul','profile_id')],['soul_level']),
     'tool_profile': ('profile_id', [('item_tool','profile_id')], ['tool_level']),
@@ -111,6 +112,8 @@ class Catalog:
                       trade=self.linked('item_trade_policy', base, 'trade_policy_id', 'policy_id'),
                       appearance=self.linked('item_appearance_profile', base, 'appearance_profile_id'),
                       refinement=refinement, levels=levels, bonuses=self.entries(base['base_bonus_profile_id']))
+        result['pet_food_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in sorted(self.tables['pet_feed_rule'],key=lambda r:int(r['service_kind'])) if (int(r['category_id']),int(r['local_id']))==tuple(key)]
+        if category==8:result['hatch']=self.linked('pet_hatch_profile',child,'hatch_profile_id')
         if category == 4:
             result['visuals'] = [{k: r[k] for k in ('character_class', 'sex', 'model_asset')} for r in self.tables['item_costume_visual']
                                  if r['category_id'] == base['category_id'] and r['local_id'] == base['local_id']]
@@ -216,6 +219,7 @@ class Catalog:
         if category == 4:
             item['child'].update(costume_kind='1', weapon_subtype=None, clock_kind='1', duration_ms='0')
             item['visuals'] = [dict(character_class=str(c), sex=str(s), model_asset='models/costume_body.model') for c in range(1,5) for s in range(1,3)]
+        item['pet_food_rules']=[]
         if category == 6: item['child']['material_kind'] = '1'
         if category == 7: item['child'].update(stone_kind='1', allowed_targets='1', minimum_socket_grade='1', primary_group='', secondary_group='')
         if category == 5:
@@ -226,7 +230,8 @@ class Catalog:
             item.update(timed=None, timed_group=None, timed_bonuses=[], toggle=None, toggle_group=None, toggle_bonuses=[])
         if category == 8:
             # A usable placeholder box: one weighted gold entry until real contents are entered.
-            item['child'].update(container_kind='1', loot_profile_id=None, lock_id='0')
+            item['child'].update(container_kind='1', loot_profile_id=None, lock_id='0',hatch_profile_id=None)
+            item['hatch']=None
             item['loot'] = dict(pick_mode='1', entries=[dict(entry_no='1', reward_kind='2', item_category_id=None, item_local_id=None,
                                                              amount='1', weight='1', rare_attribute_chance_bp='0')])
         if category == 9:
@@ -433,7 +438,7 @@ class Catalog:
             # profiles have no owner key in profile(), so new items must enter
             # the deduplication path instead of updating the source in place.
             for field in ('use_policy_id', 'trade_policy_id', 'appearance_profile_id'): base[field] = None
-            for field in ('attack_profile_id', 'ammo_policy_id', 'resistance_profile_id'):
+            for field in ('attack_profile_id', 'ammo_policy_id', 'resistance_profile_id', 'hatch_profile_id'):
                 if field in child: child[field] = None
         before = self.referenced()
         base['use_policy_id'] = self.profile('item_use_policy', document['use'], base.get('use_policy_id'), idcol='policy_id')
@@ -460,13 +465,18 @@ class Catalog:
         if category == 12:
             child['use_loot_profile_id'] = self.loot(document.get('loot'),child.get('use_loot_profile_id'),key) if child['fishing_kind']=='1' else None
         if category == 8:
-            scripted = str(child.get('container_kind')) == '3'
+            scripted = str(child.get('container_kind')) in ('3','4')
             child['loot_profile_id'] = None if scripted else self.loot(document.get('loot'), child.get('loot_profile_id'), key)
+            if child['container_kind']=='4' and not isinstance(document.get('hatch'),dict):
+                raise api.EditorError('A pettojás keltetési beállításai hiányoznak.')
+            child['hatch_profile_id']=self.profile('pet_hatch_profile',document.get('hatch'),child.get('hatch_profile_id')) if child['container_kind']=='4' else None
         self.replace('item_base', {'category_id': key[0], 'local_id': key[1]}, [base])
         if category == 4:
             self.replace('item_costume_visual', {'category_id': base['category_id'], 'local_id': base['local_id']},
                          [dict(v, category_id=base['category_id'], local_id=base['local_id']) for v in document['visuals']])
         self.replace(CHILD_TABLES[category], {'category_id': key[0], 'local_id': key[1]}, [child])
+        self.replace('pet_feed_rule',{'category_id':key[0],'local_id':key[1]},
+                     [dict(r,category_id=key[0],local_id=key[1]) for r in document.get('pet_food_rules',[])])
         self.prune(before)
         return self.encode()
 
@@ -504,6 +514,12 @@ class Catalog:
         elif document.get('riding_same_form'):child['riding_form_id']=child['form_id']
         if child['companion_kind']=='3':self.apply_growth(document,child,key)
         else:child['growth_profile_id']=None
+
+    @staticmethod
+    def hatch_defaults():
+        return dict(target_category_id=None,target_local_id=None,gold_cost='100000',
+                    hp_min='30',hp_max='40',hp_step='5',monster_min='10',monster_max='20',monster_step='5',
+                    pve_normal_min='10',pve_normal_max='20',pve_normal_step='5')
 
     @staticmethod
     def growth_defaults():
@@ -679,6 +695,7 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'pet.hatch': 'keltetési költség és születési értékek', 'pet.hatch_target': 'keltetett fejlődő pet', 'pet.feed': 'petetetés forrása, mennyisége és hatása',
     'growth_pet.profile': 'fejlődő pet szintjei és szakaszai', 'growth_pet.form': 'evolúciós szakasz formája',
     'companion': 'pet/mount típusa és időtartama', 'companion.form': 'követő vagy lovaglási forma', 'companion.equipment_state': 'pet kötése vagy megjelenési profilja',
     'soul': 'lélek vagy lélektekercs típusa', 'soul.profile': 'lélek töltési és sebzési szabályai', 'soul.levels': 'lélek szintenkénti szabályai és halommérete', 'soul.scroll': 'lélektekercs fejlesztése',

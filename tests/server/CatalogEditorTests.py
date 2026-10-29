@@ -64,6 +64,17 @@ def toggle(document):
     document.update(recovery=None, effect=None, timed=None)
 
 
+def egg(document, target):
+    document['child'].update(container_kind='4',loot_profile_id=None,lock_id='0',hatch_profile_id=None)
+    document['hatch']=dict(catalog.Catalog.hatch_defaults(),target_category_id=str(target[0]),target_local_id=str(target[1]))
+    document['loot']=None
+
+
+def food_rule(service='1'):
+    return dict(service_kind=service,food_kind='1' if service=='1' else '2',consumption_kind='1',units='1',
+                lifetime_fraction_bp='300' if service=='1' else '0',dead_recovery_bp='5000' if service=='2' else '0',experience_price_divisor='0')
+
+
 def growth(document, maximum=30):
     document['child'].update(companion_kind='3',riding_form_id=None,growth_profile_id=None,clock_kind='4',duration_ms='259200000')
     document['refinement'].update(profile_kind='1',max_level='0');document['levels']=document['levels'][:1]
@@ -74,6 +85,23 @@ def growth(document, maximum=30):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_pet_hatch_copy_food_contexts_and_invalid_content(self):
+        packet,pet=create(catalog.blank(TOOL),15,growth)
+        packet,key=create(packet,8,lambda d:egg(d,pet));original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone);clone['hatch']['hp_max']='45'
+        clone['pet_food_rules']=[food_rule(),food_rule('2')]
+        catalog.validate(packet,clone,None,TOOL);packet=saved(packet,catalog.Catalog(packet).apply(clone),other)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        changed=catalog.Catalog(packet).item(other);self.assertEqual(len(changed['pet_food_rules']),2)
+        self.assertNotEqual(changed['child']['hatch_profile_id'],original['child']['hatch_profile_id'])
+        for mutate in (lambda d:d.update(hatch=None),lambda d:d['hatch'].update(hp_step='0'),lambda d:d['hatch'].update(target_category_id='1'),
+                       lambda d:d['pet_food_rules'].append(d['pet_food_rules'][0]),lambda d:d['pet_food_rules'][0].update(food_kind='3')):
+            bad=copy.deepcopy(changed);mutate(bad)
+            with self.assertRaises(api.EditorError):catalog.validate(packet,bad,other,TOOL)
+        changed['child']['container_kind']='1';changed['loot']=catalog.Catalog(packet).new(8)['loot'];changed['hatch']['hp_step']='invalid inactive'
+        catalog.validate(packet,changed,other,TOOL)
+
+
     def test_growth_profile_copy_levels_and_gates(self):
         packet,key=create(catalog.blank(TOOL),15,growth)
         original=catalog.Catalog(packet).item(key);catalog.validate(packet,original,key,TOOL)
@@ -730,6 +758,30 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_pet_hatch_and_feeding_forms_ignore_inactive_fields(self):
+        packet,pet=create(catalog.blank(TOOL),15,growth);packet,key=create(packet,8,lambda d:egg(d,pet))
+        self.page.loaded(packet,key);hatch=self.page.pet_hatch_panel
+        self.assertTrue(self.page.loot_table.isHidden());self.assertTrue(self.page.loot_mode_row.isHidden())
+        self.assertFalse(self.page.pet_food_panel.kind.widget.model().item(self.page.pet_food_panel.kind.widget.findData('3')).isEnabled())
+        self.assertEqual(hatch.target.currentData(),f'{pet[0]}:{pet[1]}')
+        by_field={field.column:field for field in hatch.form.fields};by_field['hp_max'].edit.setText('4.5')
+        food=self.page.pet_food_panel;food.cube_enabled.setChecked(True)
+        food.cube_consumption.widget.setCurrentIndex(food.cube_consumption.widget.findData('2'))
+        food.cube_units.edit.setText('invalid inactive');food.divisor.edit.setText('invalid inactive')
+        food.dead_fraction.edit.setText('invalid inactive')
+        document=self.page.collect();self.assertEqual(document['hatch']['hp_max'],'45')
+        self.assertEqual(document['pet_food_rules'][0]['units'],'0');catalog.validate(packet,document,key,TOOL)
+        food.direct_enabled.setChecked(True)
+        with self.assertRaises(api.EditorError):self.page.collect()
+        food.dead_fraction.edit.setText('50');document=self.page.collect();self.assertEqual(len(document['pet_food_rules']),2);catalog.validate(packet,document,key,TOOL)
+        self.page.container_kind_field.widget.setCurrentIndex(self.page.container_kind_field.widget.findData('1'))
+        self.assertFalse(self.page.loot_table.isHidden());self.assertFalse(self.page.loot_mode_row.isHidden());self.assertTrue(hatch.isHidden())
+        by_field['hp_step'].edit.setText('invalid inactive');fresh=catalog.Catalog(packet).new(8)['loot']
+        self.page.loot_table.load(fresh['entries'],fresh['pick_mode'])
+        document=self.page.collect();self.assertIsNone(document['hatch']);catalog.validate(packet,document,key,TOOL)
+        self.page.dirty=False
+
+
     def test_growth_panel_profiles_gates_and_inactive_drafts(self):
         packet,key=create(catalog.blank(TOOL),15);self.page.loaded(packet,key)
         panel=self.page.companion_panel;panel.kind.widget.setCurrentIndex(panel.kind.widget.findData('3'))
@@ -1335,6 +1387,26 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzzzzzz_pet_hatch_food_copy_and_atomic_rollback(self):
+        packet=self.call('read');pet=catalog.Catalog(packet).new(15);growth(pet,3);pet_key=key_of(pet);packet=self.commit(packet,pet)
+        document=catalog.Catalog(packet).new(8);egg(document,pet_key);key=key_of(document)
+        document['pet_food_rules']=[food_rule(),food_rule('2')];packet=self.commit(packet,document)
+        original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone);clone['hatch']['hp_max']='45';packet=self.commit(packet,clone)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(len(catalog.Catalog(packet).item(other)['pet_food_rules']),2)
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_pet_food BEFORE INSERT ON protos.pet_feed_rule FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test pet food write failure'")
+        try:
+            fresh=catalog.Catalog(packet).new(8);egg(fresh,pet_key);fresh['hatch']['gold_cost']='123456';fresh['pet_food_rules']=[food_rule()]
+            with self.assertRaises(api.EditorError):self.commit(packet,fresh)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_pet_food')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+        self.assertEqual(ordered(after['tables']),ordered(packet['tables']))
+        changed=catalog.Catalog(packet).item(other);changed['child']['container_kind']='1';changed['loot']=catalog.Catalog(packet).new(8)['loot'];changed['pet_food_rules']=[]
+        packet=self.commit(packet,changed,other);self.assertIsNone(catalog.Catalog(packet).item(other)['child']['hatch_profile_id'])
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+
+
     def test_zzzzzzzzz_growth_profile_copy_and_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(15);growth(d,120);key=key_of(d)
         d['new_companion_form']=dict(code='growth.sql_young',mob_template_id='34041',model_asset='models/growth_young.model')

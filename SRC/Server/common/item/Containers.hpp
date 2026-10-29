@@ -17,6 +17,7 @@ enum class ContainerKind : std::uint8_t
     Use = 1,      // opened by using the item itself
     Locked = 2,   // opened by applying a key with the same lock id
     Scripted = 3, // no built-in contents; a quest/script decides
+    PetEgg = 4,   // explicit hatching transaction, not a loot draw
 };
 enum class LootPickMode : std::uint8_t
 {
@@ -95,7 +96,7 @@ struct ContainerOpenPlan
 };
 enum class ContainerOpenError
 {
-    MissingItem, NotContainer, RetiredItem, ScriptedContainer, KeyRequired, KeyNotAccepted,
+    MissingItem, NotContainer, RetiredItem, ScriptedContainer, PetEggRequiresHatching, KeyRequired, KeyNotAccepted,
     NotKey, WrongKey, InsufficientUnits, DrawOutOfRange, InvalidStack,
 };
 // Pure proposal. Nothing is consumed or granted here: the future writer must

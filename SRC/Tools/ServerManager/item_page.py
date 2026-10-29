@@ -10,7 +10,7 @@ from PySide6.QtCore import QThread, Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout,
     QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox, QPushButton, QScrollArea,
-    QSpinBox, QSplitter, QStackedWidget, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget)
+    QSizePolicy, QSpinBox, QSplitter, QStackedWidget, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget)
 
 import backend as api
 import item_catalog as catalog
@@ -20,6 +20,7 @@ from gathering_editor import ToolPanel, FishingPanel
 from polymorph_editor import PolymorphPanel
 from soul_editor import SoulPanel
 from companion_editor import CompanionPanel
+from pet_care_editor import PetHatchPanel,PetFoodPanel
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 BONUS_LABELS = {
@@ -866,18 +867,21 @@ class ItemPage(QWidget):
         material.note('Az alapanyag nem fejleszthető, nem köthető felszereléskor, és nem kap bónuszt vagy megjelenést.')
         material.finish()
         container = QWidget(); container_layout = QVBoxLayout(container)
+        container_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         container_form = Form(changed)
         self.container_kind_field = container_form.add('child', 'container_kind', 'Nyitás', 'choice',
-            choices=[(1, 'Használatkor nyílik'), (2, 'Kulccsal nyílik'), (3, 'Quest nyitja (beépített tartalom nélkül)')])
+            choices=[(1, 'Használatkor nyílik'), (2, 'Kulccsal nyílik'), (3, 'Quest nyitja (beépített tartalom nélkül)'), (4, 'Fejlődő pet tojása')])
         self.lock_field = container_form.add('child', 'lock_id', 'Zárazonosító', range=(0, 65535),
             hint='Kulccsal nyíló ládánál legalább 1; az a kulcs nyitja, amelynek ugyanez a zárazonosítója.')
-        container_form.finish(); container_layout.addWidget(container_form)
-        mode_row = QHBoxLayout(); mode_row.addWidget(QLabel('Sorsolás:'))
+        container_form.finish(); container_form.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum)
+        container_layout.addWidget(container_form)
+        self.loot_mode_row=QWidget(); mode_row = QHBoxLayout(self.loot_mode_row); mode_row.addWidget(QLabel('Sorsolás:'))
         self.loot_mode = QComboBox(); self.loot_mode.addItem('Pontosan egy jutalom, súly szerint', '1')
         self.loot_mode.addItem('Minden sor külön, saját esélyével', '2')
         self.loot_mode.currentIndexChanged.connect(lambda *_: (self.loot_table.set_mode(self.loot_mode.currentData()), changed()))
-        mode_row.addWidget(self.loot_mode); mode_row.addStretch(); container_layout.addLayout(mode_row)
+        mode_row.addWidget(self.loot_mode); mode_row.addStretch(); container_layout.addWidget(self.loot_mode_row)
         self.loot_table = LootTable(changed); container_layout.addWidget(self.loot_table, 1)
+        self.pet_hatch_panel=PetHatchPanel(changed,Form);container_layout.addWidget(self.pet_hatch_panel)
         self.loot_hint = QLabel('A questdoboz tartalmát a quest adja; itt nincs beépített jutalom.')
         self.loot_hint.setObjectName('FieldHint'); self.loot_hint.setWordWrap(True); container_layout.addWidget(self.loot_hint)
         self.container_kind_field.widget.currentIndexChanged.connect(lambda *_: self.container_kind_changed())
@@ -978,7 +982,7 @@ class ItemPage(QWidget):
         self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
                                10: quest_form, 16: token_form, 18: key_form}
         self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
-                               7: scroll(stone_form), 8: container, 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 13: self.poly_panel, 14: self.soul_panel, 15: scroll(self.companion_panel), 16: scroll(token_form), 18: scroll(key_form)}
+                               7: scroll(stone_form), 8: scroll(container), 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 13: self.poly_panel, 14: self.soul_panel, 15: scroll(self.companion_panel), 16: scroll(token_form), 18: scroll(key_form)}
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
         self.timed_form = Form(changed)
@@ -1043,6 +1047,7 @@ class ItemPage(QWidget):
         self.toggle_group_field.widget.currentIndexChanged.connect(lambda *_: self.toggle_group_changed())
         self.refinement = RefinementPanel(changed)
         self.refinement.maximum.valueChanged.connect(lambda value: self.tool_panel.set_maximum(value) if not self.loading and self.document and int(self.document['base']['category_id'])==11 else None)
+        self.pet_food_panel=PetFoodPanel(changed,Form);self.pet_food_page=scroll(self.pet_food_panel)
         self.bonuses = BonusTable(changed, '1')
         bonus_page = QWidget(); bonus_layout = QVBoxLayout(bonus_page)
         hint = QLabel('Az alap bónuszok minden fejlesztési szinten érvényesek. Szintenkénti bónuszt a Fejlesztés lapon adhatsz meg.')
@@ -1089,7 +1094,9 @@ class ItemPage(QWidget):
         kind = self.container_kind_field.value()
         self.lock_field.widget.setEnabled(kind == '2')
         if kind != '2' and not self.loading: self.lock_field.edit.setText('0')
-        for widget in (self.loot_mode, self.loot_table): widget.setEnabled(kind != '3')
+        for widget in (self.loot_mode, self.loot_table): widget.setEnabled(kind not in ('3','4'))
+        for widget in (self.loot_mode_row,self.loot_table): widget.setVisible(kind not in ('3','4'))
+        self.pet_hatch_panel.setVisible(kind=='4')
         self.loot_hint.setVisible(kind == '3')
 
     def recovery_controls(self):
@@ -1307,11 +1314,12 @@ class ItemPage(QWidget):
         self.tabs.addTab(self.base_page, 'Alapadatok')
         self.tabs.addTab(self.use_page, 'Használat és kereskedelem')
         self.tabs.addTab(self.category_pages[category], catalog.CATEGORIES[category])
+        if category!=15:self.tabs.addTab(self.pet_food_page,'Pet etetés')
         if refinable:
             self.tabs.addTab(self.refinement, 'Fejlesztés'); self.tabs.addTab(self.bonus_page, 'Bónuszok')
         self.stack_field.edit.setEnabled(not equipment)
         self.appearance_field.widget.setEnabled(category in (1,2,3,4,11,7,10))
-        self.base_form.load(document); self.use_form.load(document)
+        self.base_form.load(document); self.use_form.load(document);self.pet_food_panel.load(document)
         if category == 5:
             timed = document.get('timed') is not None
             toggle = document.get('toggle') is not None
@@ -1377,6 +1385,7 @@ class ItemPage(QWidget):
             document = dict(document, child=dict(document['child'], socket_profile_id=document['child'].get('socket_profile_id') or ''))
             self.category_forms[category].load(document)
         if category == 8:
+            self.pet_hatch_panel.set_targets(catalog.Catalog(self.packet));self.pet_hatch_panel.load(document)
             loot = document.get('loot') or dict(pick_mode='1', entries=[])
             self.loot_mode.blockSignals(True); self.loot_mode.setCurrentIndex(max(0, self.loot_mode.findData(str(loot['pick_mode'])))); self.loot_mode.blockSignals(False)
             self.loot_table.load(loot['entries'], loot['pick_mode'])
@@ -1451,7 +1460,9 @@ class ItemPage(QWidget):
             if category == 10:document['child']['group_code']=document['child']['group_code'] or ''
             if category == 3: document['child']['socket_profile_id'] = document['child']['socket_profile_id'] or None
             if category == 8:
-                scripted = document['child']['container_kind'] == '3'
+                scripted = document['child']['container_kind'] in ('3','4')
+                if document['child']['container_kind']=='4':self.pet_hatch_panel.collect(document)
+                else:document['hatch']=None
                 document['loot'] = None if scripted else dict(pick_mode=self.loot_mode.currentData(), entries=self.loot_table.entries())
         if category in (1, 2, 3, 4, 7, 11, 15):
             if category==15 and document['child']['companion_kind']=='3':
@@ -1469,6 +1480,8 @@ class ItemPage(QWidget):
                 document['child'].update(allowed_targets='0',minimum_socket_grade='0',primary_group='',secondary_group='')
                 document['bonuses']=[];document['refinement']=dict(profile_kind='1',max_level='0')
                 document['levels']=[dict(level='0',**{field:'0' for field in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[])]
+        if category!=15:self.pet_food_panel.collect(document)
+        else:document['pet_food_rules']=[]
         return document
 
     def check(self):

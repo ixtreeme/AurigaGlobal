@@ -40,8 +40,8 @@ CREATE TABLE protos.item_container (
     PRIMARY KEY(category_id, local_id),
     FOREIGN KEY(category_id, local_id) REFERENCES protos.item_base(category_id, local_id),
     FOREIGN KEY(loot_profile_id) REFERENCES protos.loot_profile(profile_id),
-    CHECK(category_id=8), CHECK(container_kind IN (1,2,3)),
-    CHECK((container_kind=3) = (loot_profile_id IS NULL)),
+    CHECK(category_id=8), CONSTRAINT ck_container_kind CHECK(container_kind IN (1,2,3)),
+    CONSTRAINT ck_container_loot CHECK((container_kind=3) = (loot_profile_id IS NULL)),
     CHECK((container_kind=2) = (lock_id>0))
 ) ENGINE=InnoDB;
 

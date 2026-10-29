@@ -13,5 +13,6 @@ INSERT INTO protos.item_base VALUES
 INSERT INTO protos.loot_entry VALUES
  (1,1,1,6,1,5,70,0),(1,2,2,NULL,NULL,1000,20,0),(1,3,1,1,1,1,10,500),
  (2,1,1,5,2,3,10000,0),(2,2,3,NULL,NULL,5000,2500,0),(2,3,5,NULL,NULL,101,500,0),(2,4,8,NULL,NULL,0,100,0);
-INSERT INTO protos.item_container VALUES(8,1,1,1,0),(8,2,2,2,7),(8,3,3,NULL,0);
+INSERT INTO protos.item_container(category_id,local_id,container_kind,loot_profile_id,lock_id)
+ VALUES(8,1,1,1,0),(8,2,2,2,7),(8,3,3,NULL,0);
 INSERT INTO protos.item_container_key VALUES(18,1,7);

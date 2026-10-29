@@ -22,6 +22,26 @@ from mariadb_client import Client, statements
 
 
 class CategorySchemaTests(unittest.TestCase):
+    def test_pet_hatch_and_food_constraints_rollback(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.item_base SELECT 15,9901,'care.sql_pet','item.care.name','item.care.desc',icon_asset,inventory_width,inventory_height,1,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,NULL,NULL,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=6 AND local_id=1")
+            self.q("INSERT INTO protos.pet_hatch_profile VALUES(9901,'hatch.sql_test',15,9901,100000,30,40,5,10,20,5,10,20,5)")
+            for update in ('hp_step=0','hp_max=32768','monster_step=3','pve_normal_step=0','gold_cost=9223372036854775808','target_category_id=1'):
+                with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.pet_hatch_profile SET '+update+' WHERE profile_id=9901')
+            self.q("INSERT INTO protos.item_base SELECT 8,9901,'care.sql_egg','item.care_egg.name','item.care_egg.desc',icon_asset,inventory_width,inventory_height,20,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,NULL,NULL,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=6 AND local_id=1")
+            self.q('INSERT INTO protos.item_container VALUES(8,9901,4,NULL,0,9901)')
+            for update in ('hatch_profile_id=NULL','lock_id=1','loot_profile_id=1'):
+                with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.item_container SET '+update+' WHERE local_id=9901')
+            self.q('INSERT INTO protos.pet_feed_rule VALUES(8,9901,1,1,1,1,300,0,0)')
+            self.q('INSERT INTO protos.pet_feed_rule VALUES(8,9901,2,2,1,1,0,5000,0)')
+            self.assertEqual(self.q('SELECT COUNT(*) FROM protos.pet_feed_rule WHERE local_id=9901'),[['2']])
+            for update in ('consumption_kind=0','units=0','food_kind=4','lifetime_fraction_bp=10001','dead_recovery_bp=1'):
+                with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.pet_feed_rule SET '+update+' WHERE local_id=9901 AND service_kind=1')
+        finally:self.q('ROLLBACK')
+        self.assertEqual(self.q('SELECT COUNT(*) FROM protos.pet_hatch_profile'),[['0']])
+
+
     def test_growth_pet_constraints_and_rollback(self):
         self.q('START TRANSACTION')
         try:
@@ -96,7 +116,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -603,7 +623,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["20", "auriga.item_catalog.v20"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["21", "auriga.item_catalog.v21"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
@@ -625,8 +645,8 @@ class CategorySchemaTests(unittest.TestCase):
             ("UPDATE protos.item_container SET lock_id=0 WHERE local_id=2", "4025"),
             ("UPDATE protos.item_container SET lock_id=3 WHERE local_id=1", "4025"),
             ("UPDATE protos.item_container SET loot_profile_id=999 WHERE local_id=1", "1452"),
-            ("INSERT INTO protos.item_container VALUES(8,999,3,NULL,0)", "1452"),
-            ("INSERT INTO protos.item_container VALUES(6,1,3,NULL,0)", "4025"),
+            ("INSERT INTO protos.item_container VALUES(8,999,3,NULL,0,NULL)", "1452"),
+            ("INSERT INTO protos.item_container VALUES(6,1,3,NULL,0,NULL)", "4025"),
             ("UPDATE protos.item_container_key SET lock_id=0", "4025"),
             ("UPDATE protos.loot_profile SET pick_mode=3 WHERE profile_id=1", "4025"),
             ("UPDATE protos.loot_entry SET weight=0 WHERE profile_id=1 AND entry_no=1", "4025"),

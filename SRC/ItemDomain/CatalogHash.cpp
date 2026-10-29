@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v20");
+    out.Text("auriga.item_catalog.v21");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -236,7 +236,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     out.Table(20, source.containers.size());
     for (const auto& row : source.containers)
     {
-        out.Key(row.key); out.Integer(static_cast<std::uint8_t>(row.kind)); out.Optional(row.lootProfile); out.Integer(row.lockId);
+        out.Key(row.key); out.Integer(static_cast<std::uint8_t>(row.kind)); out.Optional(row.lootProfile); out.Integer(row.lockId);out.Optional(row.hatchProfile);
     }
     out.Table(21, source.containerKeys.size());
     for (const auto& row : source.containerKeys) { out.Key(row.key); out.Integer(row.lockId); }
@@ -344,6 +344,16 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
         for(const auto& l:p.levels){out.Integer(l.level);out.Integer(l.mobExperience);out.Integer(l.itemExperience);}
         out.Integer(static_cast<std::uint32_t>(p.stages.size()));
         for(const auto& s:p.stages){out.Integer(s.stage);out.Integer(s.maximumLevel);out.Integer(s.form);}
+    }
+    out.Table(45,source.petHatchProfiles.size());
+    for(const auto& p:source.petHatchProfiles) {
+        out.Identity(p.id,p.code);out.Key(p.target);out.Integer(p.goldCost);
+        for(const auto range:{p.maximumHp,p.monsterDamage,p.pveNormalDamage}){out.Integer(range.minimum);out.Integer(range.maximum);out.Integer(range.step);}
+    }
+    out.Table(46,source.petFeedRules.size());
+    for(const auto& r:source.petFeedRules) {
+        out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.service));out.Integer(static_cast<std::uint8_t>(r.kind));
+        out.Integer(static_cast<std::uint8_t>(r.consumption));out.Integer(r.units);out.Integer(r.lifetimeFractionBp);out.Integer(r.deadRecoveryBp);out.Integer(r.experiencePriceDivisor);
     }
     return out.Finish();
 }

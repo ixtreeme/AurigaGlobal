@@ -24,9 +24,9 @@ INSERT_ORDER = (
     'accessory_socket_profile','accessory_socket_grade','consumable_cooldown_profile',
     'timed_effect_group','timed_effect_profile','toggle_effect_group','toggle_effect_profile',
     'recovery_profile','instant_recovery_profile','reserve_recovery_profile','periodic_recovery_profile','automatic_recovery_profile',
-    'loot_profile','item_base','item_weapon','item_armor','item_material','item_accessory','item_consumable',
+    'loot_profile','item_base','pet_hatch_profile','item_weapon','item_armor','item_material','item_accessory','item_consumable',
     'item_skill_book','item_container','item_container_key','item_currency_token','loot_entry','accessory_socket_material',
-    'companion_form','growth_pet_profile','growth_pet_level','growth_pet_stage','item_companion','soul_profile','soul_level','item_soul','polymorph_form','polymorph_profile','polymorph_skill_rule','polymorph_mastery_rule','item_polymorph','tool_profile','tool_level','item_tool','item_fishing','item_quest','item_socket_stone','item_costume','item_costume_visual','refinement_recipe','refinement_ingredient',
+    'pet_feed_rule','companion_form','growth_pet_profile','growth_pet_level','growth_pet_stage','item_companion','soul_profile','soul_level','item_soul','polymorph_form','polymorph_profile','polymorph_skill_rule','polymorph_mastery_rule','item_polymorph','tool_profile','tool_level','item_tool','item_fishing','item_quest','item_socket_stone','item_costume','item_costume_visual','refinement_recipe','refinement_ingredient',
 )
 REGISTRIES=('catalog_format','item_category','bonus_definition')
 
@@ -71,7 +71,7 @@ def stage(candidate_file,helper,work,binaries):
     if expected!=candidate['hash']:raise MigrationError('Candidate hash mismatch')
     sandbox=Sandbox(work,binaries)
     migrations=sorted((ROOT/'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
-    if [int(p.name[:3]) for p in migrations]!=list(range(27)):raise MigrationError('Unexpected catalog migration chain')
+    if [int(p.name[:3]) for p in migrations]!=list(range(28)):raise MigrationError('Unexpected catalog migration chain')
     try:
         sandbox.start();sandbox.verify()
         for path in migrations:

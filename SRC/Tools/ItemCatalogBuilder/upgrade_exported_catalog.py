@@ -45,7 +45,8 @@ def upgrade(tables, blank):
                         raise MigrationError('Existing bonus sources are no longer allowed')
                 elif (None if value is None else str(value)) != new[field]:
                     raise MigrationError('Existing registry meaning changed: '+table+'.'+field)
-    additions = {'item_consumable': {'timed_effect_profile_id': None, 'toggle_effect_profile_id': None}}
+    additions = {'item_consumable': {'timed_effect_profile_id': None, 'toggle_effect_profile_id': None},
+                 'item_container': {'hatch_profile_id': None}}
     counts = {}
     for qualified, rows in sorted(tables.items()):
         if not qualified.startswith('protos.'): continue

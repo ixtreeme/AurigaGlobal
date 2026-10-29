@@ -88,6 +88,7 @@ std::expected<ContainerOpenPlan, ContainerOpenError> PlanContainerOpen(
     if (!container) return std::unexpected(ContainerOpenError::NotContainer);
     if (entry->base.retired) return std::unexpected(ContainerOpenError::RetiredItem);
     if (request.containerUnits > entry->base.maxStack) return std::unexpected(ContainerOpenError::InvalidStack);
+    if (container->kind == ContainerKind::PetEgg) return std::unexpected(ContainerOpenError::PetEggRequiresHatching);
     if (container->kind == ContainerKind::Scripted) return std::unexpected(ContainerOpenError::ScriptedContainer);
     if (container->kind == ContainerKind::Use && request.key) return std::unexpected(ContainerOpenError::KeyNotAccepted);
     if (container->kind == ContainerKind::Locked)

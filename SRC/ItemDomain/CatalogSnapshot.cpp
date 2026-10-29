@@ -195,7 +195,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
         Parent(s.lootProfiles, loots, r).entries.push_back({r.U16(1),static_cast<LootRewardKind>(r.U8(2)),item,r.U64(5),r.U32(6),r.U16(7)});
     });
     Each(source, Table::Containers, [&](const Reader& r) {
-        s.containers.push_back({r.Key(),static_cast<ContainerKind>(r.U8(2)),r.OptionalId(3),r.U16(4)});
+        s.containers.push_back({r.Key(),static_cast<ContainerKind>(r.U8(2)),r.OptionalId(3),r.U16(4),r.OptionalId(5)});
     });
     Each(source, Table::ContainerKeys, [&](const Reader& r) { s.containerKeys.push_back({r.Key(),r.U16(2)}); });
     Each(source, Table::CurrencyTokens, [&](const Reader& r) {
@@ -262,6 +262,8 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     const auto soulIndex=Index(s.soulProfiles,Table::SoulProfiles);
     Each(source,Table::SoulLevels,[&](const Reader& r){Parent(s.soulProfiles,soulIndex,r).levels.push_back({r.U16(1),r.U32(2),r.U32(3),r.U32(4),r.U32(5),r.U32(6),r.U64(7),r.U32(8),r.U32(9),r.U32(10)});});
     Each(source,Table::SoulItems,[&](const Reader& r){s.soulItems.push_back({r.Key(),static_cast<SoulKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<SoulChannel>(r.U8(3))} : std::nullopt,r.OptionalId(4),r.U16(5)});});
+    Each(source,Table::PetHatchProfiles,[&](const Reader& r){s.petHatchProfiles.push_back({r.U32(0),r.Text(1,96),r.Key(2),r.U64(4),{r.U16(5),r.U16(6),r.U16(7)},{r.U16(8),r.U16(9),r.U16(10)},{r.U16(11),r.U16(12),r.U16(13)}});});
+    Each(source,Table::PetFeedRules,[&](const Reader& r){s.petFeedRules.push_back({r.Key(),static_cast<PetFeedingService>(r.U8(2)),static_cast<PetFoodKind>(r.U8(3)),static_cast<PetFoodConsumption>(r.U8(4)),r.U32(5),r.U16(6),r.U16(7),r.U32(8)});});
     return s;
 }
 }

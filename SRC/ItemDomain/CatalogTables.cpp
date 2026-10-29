@@ -37,7 +37,7 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::Consumables, "item_consumable", "category_id,local_id,recovery_profile_id,timed_effect_profile_id,toggle_effect_profile_id", Items},
     {Table::LootProfiles, "loot_profile", "profile_id,code,pick_mode", Profiles},
     {Table::LootEntries, "loot_entry", "profile_id,entry_no,reward_kind,item_category_id,item_local_id,amount,weight,rare_attribute_chance_bp", Profiles * MaxLootEntries},
-    {Table::Containers, "item_container", "category_id,local_id,container_kind,loot_profile_id,lock_id", Items},
+    {Table::Containers, "item_container", "category_id,local_id,container_kind,loot_profile_id,lock_id,hatch_profile_id", Items},
     {Table::ContainerKeys, "item_container_key", "category_id,local_id,lock_id", Items},
     {Table::CurrencyTokens, "item_currency_token", "category_id,local_id,wallet_currency,amount_per_unit", Items},
     {Table::TimedEffectGroups, "timed_effect_group", "group_id,code,reapply_kind,clock_kind,remove_on_death", Profiles},
@@ -72,6 +72,8 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::GrowthPetProfiles,"growth_pet_profile","profile_id,code,maximum_level,experience_policy",Profiles},
     {Table::GrowthPetLevels,"growth_pet_level","profile_id,level,mob_experience,item_experience",Profiles*255},
     {Table::GrowthPetStages,"growth_pet_stage","profile_id,stage,maximum_level,form_id",Profiles*16},
+    {Table::PetHatchProfiles,"pet_hatch_profile","profile_id,code,target_category_id,target_local_id,gold_cost,hp_min,hp_max,hp_step,monster_min,monster_max,monster_step,pve_normal_min,pve_normal_max,pve_normal_step",Profiles},
+    {Table::PetFeedRules,"pet_feed_rule","category_id,local_id,service_kind,food_kind,consumption_kind,units,lifetime_fraction_bp,dead_recovery_bp,experience_price_divisor",Items*2},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

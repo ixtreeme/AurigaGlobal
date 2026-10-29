@@ -10,6 +10,7 @@
 #include "SoulItems.hpp"
 #include "CompanionItems.hpp"
 #include "GrowthPets.hpp"
+#include "PetCare.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
 #include "TimedEffects.hpp"
@@ -144,6 +145,7 @@ struct ItemContainerRow
     ContainerKind kind{};                     // Required; no implicit "use".
     std::optional<std::uint32_t> lootProfile; // Use/Locked: required; Scripted: none
     std::uint16_t lockId = 0;                 // Locked: >0; otherwise 0
+    std::optional<std::uint32_t> hatchProfile; // PetEgg only
 };
 struct ItemContainerKeyRow
 {
@@ -165,7 +167,7 @@ using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryR
                                      ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 20;
+    std::uint32_t schemaVersion = 21;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -199,6 +201,8 @@ struct ItemCatalogSource
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
     std::vector<CostumeVisualRow> costumeVisuals;
+    std::vector<PetHatchProfile> petHatchProfiles;
+    std::vector<PetFeedRule> petFeedRules;
     std::vector<GrowthPetProfile> growthPetProfiles;
     std::vector<CompanionForm> companionForms;
     std::vector<ItemCompanionRow> companions;
@@ -268,6 +272,8 @@ public:
     const ItemCatalogEntry* Find(ItemKey key) const noexcept;
     const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
+    const PetHatchProfile* FindPetHatchProfile(std::uint32_t id) const noexcept;
+    const PetFeedRule* FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept;
     const GrowthPetProfile* FindGrowthPetProfile(std::uint32_t id) const noexcept;
     const CompanionForm* FindCompanionForm(std::uint32_t id) const noexcept;
     const SoulProfile* FindSoulProfile(std::uint32_t id) const noexcept;

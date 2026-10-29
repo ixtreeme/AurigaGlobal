@@ -82,7 +82,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
             s[T::LootEntries].push_back(std::move(row));
         }
     }
-    for (const auto& r : source.containers) Add(s,T::Containers,r.key.Category(),r.key.LocalId(),r.kind,r.lootProfile,r.lockId);
+    for (const auto& r : source.containers) Add(s,T::Containers,r.key.Category(),r.key.LocalId(),r.kind,r.lootProfile,r.lockId,r.hatchProfile);
     for (const auto& r : source.containerKeys) Add(s,T::ContainerKeys,r.key.Category(),r.key.LocalId(),r.lockId);
     for (const auto& r : source.currencyTokens) Add(s,T::CurrencyTokens,r.key.Category(),r.key.LocalId(),r.currency,r.amountPerUnit);
     for (const auto& r : source.timedEffectGroups) Add(s,T::TimedEffectGroups,r.id,r.code,r.reapply,r.clock,r.removeOnDeath);
@@ -119,6 +119,10 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
         for(const auto& l:p.levels)Add(s,T::GrowthPetLevels,p.id,l.level,l.mobExperience,l.itemExperience);
         for(const auto& stage:p.stages)Add(s,T::GrowthPetStages,p.id,stage.stage,stage.maximumLevel,stage.form);
     }
+    for(const auto& p:source.petHatchProfiles)Add(s,T::PetHatchProfiles,p.id,p.code,p.target.Category(),p.target.LocalId(),p.goldCost,
+        p.maximumHp.minimum,p.maximumHp.maximum,p.maximumHp.step,p.monsterDamage.minimum,p.monsterDamage.maximum,p.monsterDamage.step,
+        p.pveNormalDamage.minimum,p.pveNormalDamage.maximum,p.pveNormalDamage.step);
+    for(const auto& r:source.petFeedRules)Add(s,T::PetFeedRules,r.key.Category(),r.key.LocalId(),r.service,r.kind,r.consumption,r.units,r.lifetimeFractionBp,r.deadRecoveryBp,r.experiencePriceDivisor);
     return s;
 }
 } // namespace catalog_snapshot_fixture

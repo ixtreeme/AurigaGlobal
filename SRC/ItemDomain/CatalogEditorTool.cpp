@@ -127,6 +127,7 @@ unsigned KeyColumns(T table) {
     case T::Items:case T::Weapons:case T::Armors:case T::Accessories:case T::Materials:case T::Consumables:
     case T::BonusEntries:case T::RefinementLevels:case T::SocketGrades:case T::BookTargets:case T::BookSteps:case T::SkillBooks:
     case T::LootEntries:case T::Containers:case T::ContainerKeys:case T::CurrencyTokens:case T::QuestItems:case T::SocketStones:case T::Costumes:case T::Tools:case T::FishingItems:case T::ToolLevels:case T::PolymorphSkills:case T::PolymorphMasteries:case T::PolymorphItems:case T::SoulLevels:case T::SoulItems:case T::Companions:case T::GrowthPetLevels:case T::GrowthPetStages:return 2;
+    case T::PetFeedRules:return 3;
     case T::CostumeVisuals:return 4;
     case T::SocketMaterials:case T::RefinementIngredients:return 4;
     default:return 1;
@@ -214,8 +215,8 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
     // profile contents without changing their category/delivery discriminator.
     constexpr T order[]={T::UsePolicies,T::TradePolicies,T::Appearances,T::Attacks,T::AmmoPolicies,T::Resistances,
         T::CompanionForms,T::GrowthPetProfiles,T::GrowthPetLevels,T::GrowthPetStages,T::SoulProfiles,T::SoulLevels,T::PolymorphForms,T::PolymorphProfiles,T::PolymorphSkills,T::PolymorphMasteries,T::ToolProfiles,T::ToolLevels,T::BookProfiles,T::BookTargets,T::BookSteps,T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
-        T::Cooldowns,T::TimedEffectGroups,T::TimedEffects,T::ToggleEffectGroups,T::ToggleEffects,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::Automatic,T::LootProfiles,T::Items,T::Weapons,T::Armors,T::Materials,
-        T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::SocketStones,T::Costumes,T::CostumeVisuals,T::Tools,T::FishingItems,T::PolymorphItems,T::SoulItems,T::Companions,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients};
+        T::Cooldowns,T::TimedEffectGroups,T::TimedEffects,T::ToggleEffectGroups,T::ToggleEffects,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::Automatic,T::LootProfiles,T::Items,T::PetHatchProfiles,T::Weapons,T::Armors,T::Materials,
+        T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::SocketStones,T::Costumes,T::CostumeVisuals,T::Tools,T::FishingItems,T::PolymorphItems,T::SoulItems,T::Companions,T::PetFeedRules,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients};
     static_assert(std::size(order)==db::TableCount-3,"every editable table needs a commit position");
     for(T table:{T::Format,T::Categories,T::BonusDefinitions})Require(before.rows[table]==after[table],"A rendszerregiszter nem szerkesztheto.");
     // Published group IDs own common conflict/lifecycle rules. Item edits may
