@@ -48,6 +48,8 @@ NAMES = {
     'dir': 'Questek mappája', 'object_dir': 'Quest object mappák', 'mark_min_level': 'Céhjel minimális szintje',
     'mark_server': 'Céhjelek kiszolgálása', 'database_link': 'Database-kapcsolat',
     'account_sql': 'Fiókadatbázis', 'spam_block': 'Spamvédelem', 'item_destroy': 'Eldobott tárgyak eltűnése',
+    'items': 'Új tárgyrendszer', 'catalog': 'Új tárgykatalógus induláskor (off / required)',
+    'catalog_revision': 'Katalógus kiadási száma', 'catalog_sha256': 'Elvárt katalógus-hash (üres: bármely érvényes)',
 }
 ROLES = {'player': 'Játékosadatok', 'account': 'Fiókok', 'common': 'Közös adatok', 'log': 'Naplóadatok', 'mission': 'Küldetések'}
 HELP = {
@@ -59,6 +61,8 @@ HELP = {
     'tls': 'A titkosított klienskapcsolathoz használt tanúsítvány és kulcs elérési útja.',
     'map_allow': 'Ezeket a mapazonosítókat szolgálja ki a kiválasztott core. Vesszővel vagy soronként add meg őket.',
     'sql': 'A kiválasztott adatkör kapcsolati adatai. A jelszó rejtve marad.',
+    'items': 'off: a régi item_proto működik, az új katalógust a szerver nem olvassa. required: induláskor beolvassa és '
+             'ellenőrzi a protos katalógust, és hiba esetén nem indul el. A régi tárgyműködés egyelőre mindkét esetben változatlan.',
 }
 
 

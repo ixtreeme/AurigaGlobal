@@ -200,5 +200,15 @@ struct GameConfig
 		uint32_t	skillBookNextReadMax { 43200 };
 	} gameplay;
 
+	// Typed item catalog (item system F4). "off" keeps the legacy item_proto
+	// runtime untouched; "required" loads and validates protos at boot and
+	// refuses to start without it. The revision/hash identify the release.
+	struct ItemsConfig
+	{
+		std::string	catalog { "off" };
+		uint64_t	catalogRevision { 1 };
+		std::string	catalogSha256; // optional lowercase hex pin
+	} items;
+
 	bool Load(const auriga::config::Section& input, std::string& error);
 };

@@ -71,6 +71,20 @@ int main() {
               error.find("PASSWORD_DO_NOT_LOG") == std::string::npos,
               "routing overflow accepted, changed live config or leaked credentials");
         Check(game.Load(first, error), "valid config did not recover after routing overflow");
+        // Typed item catalog switch (F4): off by default, fail closed on bad values.
+        Check(game.items.catalog == "off" && game.items.catalogRevision == 1 && game.items.catalogSha256.empty(), "item catalog is not off by default");
+        auto items = first;
+        items.values["items"] = Json{{"catalog", "required"}, {"catalog_revision", 7}, {"catalog_sha256", std::string(64, 'a')}};
+        Check(game.Load(items, error) && game.items.catalog == "required" && game.items.catalogRevision == 7 &&
+              game.items.catalogSha256 == std::string(64, 'a'), "required item catalog settings lost");
+        for (const auto& [field, value] : std::vector<std::pair<std::string, Json>>{{"catalog", "on"}, {"catalog_revision", 0},
+                 {"catalog_sha256", std::string(64, 'A')}, {"catalog_sha256", "abc"}})
+        {
+            auto bad = items; bad.values["items"][field] = value;
+            Check(!game.Load(bad, error) && game.items.catalogRevision == 7 && error.find("items.") != std::string::npos,
+                  "invalid item catalog setting accepted or changed the live config");
+        }
+        Check(game.Load(first, error) && game.items.catalog == "off", "item catalog setting survived a reload without it");
         DatabaseConfig database; LoginConfig login;
         Check(auriga::config::Resolve(fixture, source, Role::Database, {}, section, error) && database.Load(section, error), "database section rejected");
         Check(database.network.bindPort == 5300 && database.sql.account.database == "account" && database.server.tablePostfix == "_fixture", "database shared mapping lost");

@@ -72,7 +72,8 @@
         "sql": {"$ref": "#/$defs/sqlRoles"},
         "interserver_key": {"type": "string"},
         "map_allow": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 1, "maximum": 2147483647}},
-        "quest": {"type": "object", "properties": {"dir": {"type": "string"}, "object_dir": {"deprecated": true, "description": "Ignored by the direct quest source loader", "type": "array", "items": {"type": "string"}}}}
+        "quest": {"type": "object", "properties": {"dir": {"type": "string"}, "object_dir": {"deprecated": true, "description": "Ignored by the direct quest source loader", "type": "array", "items": {"type": "string"}}}},
+        "items": {"type": "object", "additionalProperties": false, "description": "Typed item catalog (item system F4)", "properties": {"catalog": {"enum": ["off", "required"]}, "catalog_revision": {"type": "integer", "minimum": 1}, "catalog_sha256": {"type": "string", "pattern": "^([0-9a-f]{64})?$"}}}
       }
     }
   }

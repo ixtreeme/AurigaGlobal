@@ -24,6 +24,7 @@
 #include <Core/Logging.hpp>
 #include "db.h"
 #include "skill_power.h"
+#include "../item/ItemCatalogRuntime.hpp"
 #include "Core/Logging.hpp"
 #include <fmt/format.h>
 #include <fstream>
@@ -320,6 +321,22 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 	}
 
 	LOG_INFO("PlayerSQL connected");
+
+	{
+		namespace items = auriga::item::runtime;
+		const items::CatalogBootSettings settings { cfg.items.catalog == "required" ? items::CatalogMode::Required : items::CatalogMode::Off,
+			cfg.items.catalogRevision, cfg.items.catalogSha256 };
+		const auto loaded = items::LoadCatalogAtBoot(settings, cfg.sql.player);
+		if (!loaded)
+		{
+			LOG_ERROR("ItemCatalog: {} (items.catalog is \"required\")", loaded.error());
+			exit(1);
+		}
+		if (*loaded)
+			LOG_INFO("ItemCatalog: protos loaded, {} items, revision {}, sha256 {}", (*loaded)->items, (*loaded)->revision, (*loaded)->sha256);
+		else
+			LOG_INFO("ItemCatalog: off (legacy item_proto runtime)");
+	}
 
 	{
 		LogManager::instance().Connect(cfg.sql.log.host.c_str(), cfg.sql.log.port,

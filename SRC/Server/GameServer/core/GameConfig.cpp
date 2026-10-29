@@ -36,6 +36,7 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 	auto& version = parsed.version;
 	auto& itemDestroy = parsed.itemDestroy;
 	auto& gameplay = parsed.gameplay;
+	auto& items = parsed.items;
 	const auto& doc = input.values;
 	try
 	{
@@ -206,10 +207,37 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 			gameplay.skillBookNextReadMin = gp.value("skillbook_nextread_min", 28800u);
 			gameplay.skillBookNextReadMax = gp.value("skillbook_nextread_max", 43200u);
 		}
+
+		if (doc.contains("items"))
+		{
+			const auto& it = doc.at("items");
+			items.catalog = it.value("catalog", std::string("off"));
+			items.catalogRevision = it.value("catalog_revision", uint64_t { 1 });
+			items.catalogSha256 = it.value("catalog_sha256", std::string());
+		}
 	}
 	catch (const std::exception&)
 	{
 		error = "GameServer configuration contains an invalid field type";
+		return false;
+	}
+
+	if (items.catalog != "off" && items.catalog != "required")
+	{
+		error = "GameServer: 'items.catalog' must be \"off\" or \"required\"";
+		return false;
+	}
+
+	if (items.catalogRevision == 0)
+	{
+		error = "GameServer: 'items.catalog_revision' must be at least 1";
+		return false;
+	}
+
+	if (!items.catalogSha256.empty() && (items.catalogSha256.size() != 64 ||
+		items.catalogSha256.find_first_not_of("0123456789abcdef") != std::string::npos))
+	{
+		error = "GameServer: 'items.catalog_sha256' must be 64 lowercase hex characters";
 		return false;
 	}
 

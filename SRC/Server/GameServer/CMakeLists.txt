@@ -9,6 +9,8 @@ find_package(EnTT CONFIG REQUIRED)
 
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
+# Typed item catalog (item system F4): read and validated at boot when enabled.
+target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql)
 
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
@@ -1029,12 +1031,34 @@ add_executable(ICCRotfaceRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests
 add_test(NAME icc_rotface_runtime COMMAND ICCRotfaceRuntimeTests)
 add_executable(MapRoutingRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/MapRoutingRulesTests.cpp)
 add_test(NAME map_routing_rules COMMAND MapRoutingRulesTests)
+# Boot-time typed item catalog (item system F4, IC-034) against an owned MariaDB.
+add_executable(ItemCatalogRuntimeTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ItemCatalogRuntimeTests.cpp
+    item/ItemCatalogRuntime.cpp
+)
+target_link_libraries(ItemCatalogRuntimeTests PRIVATE SERVER S_Core S_SQL AurigaItemCatalogSql)
+if(WIN32)
+    target_link_libraries(ItemCatalogRuntimeTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR AND TARGET CatalogEditorTool)
+    add_test(NAME item_catalog_runtime_mariadb
+        COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ItemCatalogRuntimeTests.py
+            --mariadb-bin ${AURIGA_TEST_MARIADB_BIN_DIR}
+            --test-executable $<TARGET_FILE:ItemCatalogRuntimeTests>
+            --catalog-tool $<TARGET_FILE:CatalogEditorTool>
+            --work-dir ${CMAKE_BINARY_DIR}/item-catalog-runtime-isolated
+    )
+endif()
+
 get_property(_server_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
 list(FILTER _server_test_targets INCLUDE REGEX "Tests$")
 add_custom_target(ServerTests DEPENDS ${_server_test_targets})
 add_dependencies(ServerTests ServerPackageCheck MissionCheck MissionCompiler ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests AutomaticRecoveryTests TimedEffectTests ToggleEffectTests SkillBookTests RefinementRecipeTests QuestItemTests SocketStoneTests CostumeTests GatheringItemTests PolymorphItemTests SoulItemTests CompanionItemTests GrowthPetTests PetCareTests PetLifecycleTests SocketServiceTests InstanceAttributeTests PersistentItemTests ItemPersistenceSqlTests ItemBenchTool ContainerTests CurrencyTokenTests CatalogSnapshotTests CatalogSqlReaderTests CatalogEditorTool)
 get_property(_server_tests DIRECTORY PROPERTY TESTS)
 set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)
+if(TEST item_catalog_runtime_mariadb)
+    set_tests_properties(item_catalog_runtime_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
+endif()
 if(TEST async_sql_mariadb_isolated)
     set_tests_properties(async_sql_mariadb_isolated PROPERTIES TIMEOUT 180 LABELS "server;integration")
     set_tests_properties(player_session_mariadb player_cache_drain_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
