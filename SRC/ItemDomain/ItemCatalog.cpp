@@ -44,7 +44,7 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items ||
         source.currencyTokens.size() > ItemCatalogLimits::Items || source.skillBooks.size() > ItemCatalogLimits::Items ||
         source.questItems.size() > ItemCatalogLimits::Items || source.socketStones.size()>ItemCatalogLimits::Items ||
-        source.soulItems.size()>ItemCatalogLimits::Items || source.polymorphForms.size()>ItemCatalogLimits::Items || source.polymorphItems.size()>ItemCatalogLimits::Items ||
+        source.companions.size()>ItemCatalogLimits::Items || source.companionForms.size()>ItemCatalogLimits::Items || source.soulItems.size()>ItemCatalogLimits::Items || source.polymorphForms.size()>ItemCatalogLimits::Items || source.polymorphItems.size()>ItemCatalogLimits::Items ||
         source.tools.size()>ItemCatalogLimits::Items || source.fishingItems.size()>ItemCatalogLimits::Items ||
         source.costumes.size()>ItemCatalogLimits::Items || source.costumeVisuals.size()>ItemCatalogLimits::Items*8)
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "items"));
@@ -64,6 +64,8 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
         !profiles(source.lootProfiles) || !profiles(source.timedEffectGroups) || !profiles(source.timedEffects) || !profiles(source.toggleEffectGroups) || !profiles(source.toggleEffects) || !profiles(source.skillBookProfiles))
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "profiles"));
+    for(const auto& f:source.companionForms)
+        if(!add(f.code.size()) || !add(f.modelAsset.size()))return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"companion.form",{},f.id));
     for(const auto& p:source.soulProfiles)
         if(p.levels.size()>256)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"soul.levels",{},p.id));
     for(const auto& p:source.polymorphProfiles)
@@ -116,13 +118,24 @@ ItemBaseStats BaseStats(const ItemToolRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemFishingRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemPolymorphRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemSoulRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemCompanionRow&) { return {}; }
 auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.characterClass,row.sex}; }
 }
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 18 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 19 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
+    if(auto r=Profiles(source.companionForms,"companion.form",[](const CompanionForm& f){return f.mobTemplateId>0 && detail::AssetReference(f.modelAsset);});!r)return std::unexpected(r.error());
+    std::ranges::sort(source.companions,{},&ItemCompanionRow::key);
+    std::map<ItemKey,const ItemCompanionRow*> companions;
+    for(const auto& r:source.companions) {
+        if(r.key.Category()!=ItemCategory::Companion)return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory,"companion",r.key));
+        if(!companions.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"companion",r.key));
+        if(!ValidCompanion(r))return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"companion",r.key));
+        if(!FindProfile(source.companionForms,r.form) || (r.ridingForm && !FindProfile(source.companionForms,*r.ridingForm)))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"companion.form",r.key));
+    }
     for(auto& p:source.soulProfiles)std::ranges::sort(p.levels,{},&SoulLevel::level);
     if(auto r=Profiles(source.soulProfiles,"soul.profile",ValidSoulProfile);!r)return std::unexpected(r.error());
     for(auto& p:source.polymorphProfiles){std::ranges::sort(p.skills,{},&PolymorphSkillRule::skillLevel);std::ranges::sort(p.masteries,{},&PolymorphMasteryRule::mastery);}
@@ -460,9 +473,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool costume = category == ItemCategory::Costume;
         const bool tool = category == ItemCategory::Tool, fish = category == ItemCategory::Fishing;
         const bool polymorph = category == ItemCategory::Polymorph;
-        const bool soul = category == ItemCategory::Soul;
+        const bool soul = category == ItemCategory::Soul, companion = category == ItemCategory::Companion;
         const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish || polymorph;
-        if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !tool && !soul && !stackable)
+        if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !tool && !soul && !companion && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
             !detail::ContentCode(row.descriptionKey, 128) || !detail::AssetReference(row.iconAsset) ||
@@ -475,6 +488,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         // are resolved for installed stones; the inventory stone is not gear.
         if ((stackable || soul) && (row.binding == BindingPolicy::OnEquip || (row.appearanceProfile && !questItem && !socketStone) || (row.baseBonusProfile && !socketStone)))
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "non_equipment.equipment_state", row.key));
+        if(companion && (row.appearanceProfile || (row.binding==BindingPolicy::OnEquip && companions.contains(row.key) && companions.at(row.key)->kind==CompanionKind::Pet)))
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"companion.equipment_state",row.key));
         if (row.baseBonusProfile)
         {
             const auto* bonus = catalog->FindBonus(*row.baseBonusProfile);
@@ -490,10 +505,11 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const auto expectedKind = category == ItemCategory::Weapon ? RefinementKind::Weapon :
             category == ItemCategory::Armor ? RefinementKind::Armor :
             category == ItemCategory::Accessory ? RefinementKind::Accessory :
-            socketStone ? RefinementKind::SocketStone : costume ? RefinementKind::Costume : tool ? RefinementKind::Tool : soul && soulItems.contains(row.key) && soulItems.at(row.key)->kind==SoulKind::Core ? RefinementKind::Soul : RefinementKind::None;
+            companion ? RefinementKind::Companion : socketStone ? RefinementKind::SocketStone : costume ? RefinementKind::Costume : tool ? RefinementKind::Tool : soul && soulItems.contains(row.key) && soulItems.at(row.key)->kind==SoulKind::Core ? RefinementKind::Soul : RefinementKind::None;
         if (profile->Data().kind != RefinementKind::None && profile->Data().kind != expectedKind)
             return std::unexpected(Error(ItemCatalogErrorCode::WrongRefinementKind, "refinement", row.key, row.refinementProfile));
         std::optional<ItemCategoryRow> child;
+        if(companion && companions.contains(row.key))child=*companions.at(row.key);
         if(soul && soulItems.contains(row.key))
         {
             const auto* s=soulItems.at(row.key);child=*s;
@@ -562,6 +578,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             return std::unexpected(Error(ItemCatalogErrorCode::StatOutOfRange, "base_plus_gain", row.key));
         catalog->items_.emplace(row.key, ItemCatalogEntry{row, std::move(*child)});
     }
+    for(const auto& row:source.companions)
+        if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"companion",row.key));
     for(const auto& row:source.soulItems)
         if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"soul",row.key));
     for (const auto& row : source.weapons)
@@ -654,6 +672,7 @@ const ValidatedRefinementProfile* ItemCatalog::FindRefinement(std::uint32_t id) 
     const auto found = refinements_.find(id);
     return found == refinements_.end() ? nullptr : &found->second;
 }
+const CompanionForm* ItemCatalog::FindCompanionForm(std::uint32_t id) const noexcept { return FindProfile(source_.companionForms,id); }
 const SoulProfile* ItemCatalog::FindSoulProfile(std::uint32_t id) const noexcept { return FindProfile(source_.soulProfiles,id); }
 const PolymorphForm* ItemCatalog::FindPolymorphForm(std::uint32_t id) const noexcept { return FindProfile(source_.polymorphForms,id); }
 const PolymorphProfile* ItemCatalog::FindPolymorphProfile(std::uint32_t id) const noexcept { return FindProfile(source_.polymorphProfiles,id); }

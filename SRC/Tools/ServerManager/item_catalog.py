@@ -20,14 +20,14 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 16: 'Pénzjegy', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 18: 'Kulcs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
-                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 16: 'item_currency_token', 18: 'item_container_key'}
-CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul',
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 18: 'item_container_key'}
+CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul', 15: 'companion',
                7: 'socket_stone', 16: 'currency_token', 18: 'container_key'}
 STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
-REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7}
+REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7, 15: 9}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
 RESISTANCES = ['physical_bp','magical_bp','sword_bp','dagger_bp','bow_bp','two_handed_bp',
                'bell_bp','fan_bp','mount_spear_bp','fire_bp','electric_bp','ice_bp','wind_bp','earth_bp','dark_bp']
@@ -139,6 +139,7 @@ class Catalog:
             book = self.linked('skill_book_profile', child, 'profile_id')
             result.update(book=book, book_targets=self.book_rows('skill_book_target', book['profile_id'], 'skill_id'),
                           book_steps=self.book_rows('skill_book_step', book['profile_id'], 'current_level'))
+        if category == 15:result.update(new_companion_form=None,new_riding_form=None,riding_same_form=False)
         if category == 14:
             result['soul_levels']=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('soul_level',child['profile_id'],'level')] if child['profile_id'] else [self.soul_level(0)]
         if category == 13:
@@ -226,6 +227,11 @@ class Catalog:
             item.update(self.book_defaults())
         if category == 10:
             item['child'].update(dispatch_kind='1', group_code='', allowed_contexts='0', allow_observer='0')
+        if category == 15:
+            forms=self.tables['companion_form']
+            item['child'].update(companion_kind='1',form_id=forms[0]['form_id'] if forms else None,riding_form_id=None,clock_kind='1',duration_ms='0',dungeon_only_bonus='0')
+            identity=self.allocate('companion_form','form_id')
+            item.update(new_companion_form=None if forms else dict(code=f'companion.new_form_{identity}',mob_template_id='101',model_asset='models/companion.model'),new_riding_form=None,riding_same_form=False)
         if category == 14:
             item['base']['max_stack']='1';item['child'].update(soul_kind='1',damage_channel='1',profile_id=None,refine_chance_bp='0')
             item['refinement']['profile_kind']='8';item['soul_levels']=[self.soul_level(0)]
@@ -439,6 +445,7 @@ class Catalog:
             elif document.get('timed') is not None: self.apply_timed(document, child, key)
             else: self.apply_recovery(document, child, key)
         if category == 9: self.apply_book(document, child, key)
+        if category == 15:self.apply_companion(document,child)
         if category == 14:self.apply_soul(document,child,key)
         if category == 13:self.apply_polymorph(document,child,key)
         if category == 11: self.apply_tool(document,child,key)
@@ -474,6 +481,19 @@ class Catalog:
                                                            ('refinement_level', (str(profile), str(row['level']))))
             levels.append(row)
         self.replace('refinement_level', {'profile_id': profile}, levels)
+
+    def apply_companion(self,document,child):
+        for section,target in [('new_companion_form','form_id'),('new_riding_form','riding_form_id')]:
+            form=document.get(section)
+            if not form or target=='riding_form_id' and child['companion_kind']!='2':continue
+            fields=('code','mob_template_id','model_asset')
+            existing=next((r for r in self.tables['companion_form'] if r['code']==form['code']),None)
+            if existing and any(str(form[k])!=existing[k] for k in fields):raise api.EditorError('Ez a társformakód már más tartalommal foglalt. Új kódot adj meg.')
+            identity=existing['form_id'] if existing else self.allocate('companion_form','form_id')
+            if not existing:self.replace('companion_form',{'form_id':identity},[dict(form,form_id=identity)])
+            child[target]=identity
+        if child['companion_kind']=='1':child['riding_form_id']=None
+        elif document.get('riding_same_form'):child['riding_form_id']=child['form_id']
 
     def apply_soul(self,document,child,key):
         if child['soul_kind']=='2':child['profile_id']=None;return
@@ -626,6 +646,7 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'companion': 'pet/mount típusa és időtartama', 'companion.form': 'követő vagy lovaglási forma', 'companion.equipment_state': 'pet kötése vagy megjelenési profilja',
     'soul': 'lélek vagy lélektekercs típusa', 'soul.profile': 'lélek töltési és sebzési szabályai', 'soul.levels': 'lélek szintenkénti szabályai és halommérete', 'soul.scroll': 'lélektekercs fejlesztése',
     'polymorph': 'átváltoztató tárgy', 'polymorph.profile': 'átváltozási szabályok', 'polymorph.form': 'átváltozási forma',
     'polymorph.rules': 'átváltozási szintszabályok',

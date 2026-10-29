@@ -25,7 +25,7 @@ def main():
         sandbox.start()
         sandbox.verify()
         migrations = sorted((ROOT / "db/migrations/item_combat").glob("[0-9][0-9][0-9]_*.sql"))
-        if [int(path.name[:3]) for path in migrations] != list(range(25)):
+        if [int(path.name[:3]) for path in migrations] != list(range(26)):
             raise RuntimeError("the native fixture requires schema drafts 000 through 023")
         fixtures = [ROOT / "tests/fixtures/item_combat" / name for name in
                     ("v5/recovery_consumables.sql", "v6/containers.sql", "v7/currency_tokens.sql", "v8/timed_consumables.sql", "v9/automatic_recovery.sql")]

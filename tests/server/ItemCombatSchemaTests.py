@@ -22,6 +22,22 @@ from mariadb_client import Client, statements
 
 
 class CategorySchemaTests(unittest.TestCase):
+    def test_companion_constraints_and_rollback(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.companion_form VALUES(9881,'companion.sql_test',20110,'models/mount.model')")
+            self.q("INSERT INTO protos.item_base SELECT 15,9881,'companion.sql_seal','item.companion_sql.name','item.companion_sql.desc',icon_asset,inventory_width,inventory_height,1,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,NULL,NULL,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=6 AND local_id=1")
+            self.q('INSERT INTO protos.item_companion VALUES(15,9881,2,9881,9881,4,300000,0)')
+            for update,code in [('companion_kind=3','4025'),('riding_form_id=NULL','4025'),('form_id=9882','1452'),('riding_form_id=9882','1452'),('clock_kind=0','4025'),('clock_kind=1','4025'),('duration_ms=0','4025'),('duration_ms=9223372036854775808','4025'),('dungeon_only_bonus=2','4025')]:
+                with self.subTest(update=update),self.assertRaisesRegex(RuntimeError,'^'+code+':'):
+                    self.q('UPDATE protos.item_companion SET '+update+' WHERE local_id=9881')
+            for update in ('max_stack=2','appearance_profile_id=1'):
+                with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.item_base SET '+update+' WHERE category_id=15 AND local_id=9881')
+            self.q('UPDATE protos.item_companion SET companion_kind=1,riding_form_id=NULL,clock_kind=1,duration_ms=0 WHERE local_id=9881')
+            self.assertEqual(self.q('SELECT companion_kind,riding_form_id,clock_kind,duration_ms FROM protos.item_companion WHERE local_id=9881'),[['1',None,'1','0']])
+        finally:self.q('ROLLBACK')
+        self.assertEqual(self.q('SELECT COUNT(*) FROM protos.item_companion'),[['0']])
+
     def test_soul_typed_sql_constraints_and_rollback(self):
         self.q('START TRANSACTION')
         try:
@@ -59,7 +75,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -566,7 +582,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["18", "auriga.item_catalog.v18"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["19", "auriga.item_catalog.v19"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
@@ -574,11 +590,11 @@ class CategorySchemaTests(unittest.TestCase):
                          [["1","3","100"],["2","4","13100"]])
         self.assertEqual(self.q("SELECT CONSTRAINT_NAME FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
                                 "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME LIKE 'ck_item_base_%' ORDER BY 1"),
-                         [["ck_item_base_category"], ["ck_item_base_non_equipment"], ["ck_item_base_stack"]])
+                         [["ck_item_base_category"], ["ck_item_base_companion"], ["ck_item_base_non_equipment"], ["ck_item_base_stack"]])
         self.assertEqual(self.q("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
                                 "AND TABLE_NAME='item_base' AND CHECK_CLAUSE LIKE '%in (1,2,3,5,6)%'"), [["0"]])
         self.assertEqual(self.q("SELECT CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
-                        "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18)"]])
+                        "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18)"]])
 
     def test_container_sql_constraints(self):
         for sql, code in [
@@ -604,7 +620,7 @@ class CategorySchemaTests(unittest.TestCase):
             ("INSERT INTO protos.loot_entry VALUES(1,4,2,6,1,1,1,0)", "4025"),
             ("UPDATE protos.item_base SET binding_policy=3 WHERE category_id=8 AND local_id=1", "4025"),
             ("UPDATE protos.item_base SET appearance_profile_id=1 WHERE category_id=18", "4025"),
-            ("INSERT INTO protos.item_base VALUES(15,1,'companion.unported','item.c.name','item.c.description','icons/c.png',"
+            ("INSERT INTO protos.item_base VALUES(17,1,'special.unported','item.c.name','item.c.description','icons/c.png',"
              "1,1,1,0,0,1,1,1,1,NULL,NULL,1,0,0,0)", "4025"),
             ("DELETE FROM protos.loot_profile WHERE profile_id=1", "1451"),
             ("DELETE FROM protos.item_base WHERE category_id=6 AND local_id=1", "1451"),
@@ -744,7 +760,7 @@ class CategorySchemaTests(unittest.TestCase):
                 ("UPDATE protos.item_socket_stone SET secondary_group='stone.one'",'4025'),
                 ('UPDATE protos.item_socket_stone SET stone_kind=2','4025'),
                 ('UPDATE protos.item_socket_stone SET local_id=9999','1452'),
-                ('UPDATE protos.refinement_profile SET profile_kind=9 WHERE profile_id=9000','4025'),
+                ('UPDATE protos.refinement_profile SET profile_kind=10 WHERE profile_id=9000','4025'),
                 ('UPDATE protos.item_base SET binding_policy=3 WHERE category_id=7','4025')]:
                 with self.subTest(query=query),self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
             self.q("UPDATE protos.item_socket_stone SET stone_kind=2,allowed_targets=0,minimum_socket_grade=0,primary_group='',secondary_group=''")

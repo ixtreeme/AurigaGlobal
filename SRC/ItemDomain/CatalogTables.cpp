@@ -67,6 +67,8 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::SoulProfiles,"soul_profile","profile_id,code",Profiles},
     {Table::SoulLevels,"soul_level","profile_id,level,charge_capacity,cycle_charge_cost,strikes_per_cycle,initial_charge,initial_strikes,recharge_interval_ms,first_multiplier_bp,second_multiplier_bp,third_multiplier_bp",Profiles*256},
     {Table::SoulItems,"item_soul","category_id,local_id,soul_kind,damage_channel,profile_id,refine_chance_bp",Items},
+    {Table::CompanionForms,"companion_form","form_id,code,mob_template_id,model_asset",Items},
+    {Table::Companions,"item_companion","category_id,local_id,companion_kind,form_id,riding_form_id,clock_kind,duration_ms,dungeon_only_bonus",Items},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

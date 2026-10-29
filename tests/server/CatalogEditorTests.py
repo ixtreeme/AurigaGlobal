@@ -65,6 +65,23 @@ def toggle(document):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_companion_forms_copy_levels_and_rejections(self):
+        packet,key=create(catalog.blank(TOOL),15)
+        original=catalog.Catalog(packet).item(key);catalog.validate(packet,original,key,TOOL)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['child'].update(companion_kind='2',clock_kind='4',duration_ms='300000');clone['riding_same_form']=True
+        clone['refinement']['max_level']='30';clone['levels']=[dict(copy.deepcopy(clone['levels'][0]),level=str(i)) for i in range(31)]
+        clone['new_companion_form']=dict(code='companion.offline_mount',mob_template_id='20110',model_asset='models/mount.model')
+        catalog.validate(packet,clone,None,TOOL);tables=catalog.Catalog(packet).apply(clone);packet=saved(packet,tables,other)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        item=catalog.Catalog(packet).item(other);self.assertEqual(item['child']['form_id'],item['child']['riding_form_id'])
+        self.assertEqual(item['refinement']['max_level'],'30');self.assertEqual(len(rows(packet,'companion_form')),2)
+        for mutate in (lambda d:d['child'].update(riding_form_id=None),lambda d:d['base'].update(max_stack='2'),lambda d:d['child'].update(duration_ms='0')):
+            bad=copy.deepcopy(item);mutate(bad)
+            with self.assertRaises(api.EditorError):catalog.validate(packet,bad,other,TOOL)
+        bad=copy.deepcopy(item);bad['new_companion_form']=dict(code='companion.offline_mount',mob_template_id='20111',model_asset='models/mount.model')
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,other,TOOL)
+
     def test_soul_levels_scroll_copy_and_state_rules(self):
         def core(d):
             d['refinement']['max_level']='30'
@@ -688,6 +705,19 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_companion_panel_mount_pet_inactive_fields_and_maximum(self):
+        packet,key=create(catalog.blank(TOOL),15);self.page.dirty=False;self.page.loaded(packet,key);panel=self.page.companion_panel
+        self.assertFalse(self.page.stack_field.edit.isEnabled());self.assertFalse(self.page.appearance_field.widget.isEnabled())
+        self.page.refinement.maximum.setValue(30);panel.kind.widget.setCurrentIndex(1);panel.clock.widget.setCurrentIndex(2);panel.duration.edit.setText('2.5')
+        d=self.page.collect();self.assertEqual(d['refinement']['max_level'],'30');self.assertEqual(d['child']['duration_ms'],'2500')
+        catalog.validate(packet,d,key,TOOL);validated=catalog.Catalog(packet).apply(d,key)
+        self.assertEqual(catalog.Catalog(saved(packet,validated)).item(key)['child']['riding_form_id'],d['child']['form_id'])
+        panel.riding.setCurrentIndex(panel.riding.findData('new'))
+        panel.new_riding.fields[1].edit.setText('bad');panel.kind.widget.setCurrentIndex(0)
+        panel.clock.widget.setCurrentIndex(0);panel.duration.edit.setText('invalid inactive duration')
+        d=self.page.collect();self.assertIsNone(d['child']['riding_form_id']);self.assertEqual(d['child']['duration_ms'],'0')
+        self.assertIsNone(d['new_riding_form']);catalog.validate(packet,d,key,TOOL)
+
     def test_soul_panel_levels_scroll_and_inactive_fields(self):
         packet,key=create(catalog.blank(TOOL),14);self.page.dirty=False;self.page.loaded(packet,key);panel=self.page.soul_panel
         self.assertFalse(self.page.stack_field.edit.isEnabled())
@@ -1256,6 +1286,26 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzzzz_companion_copy_immutable_forms_and_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(15);key=key_of(d)
+        d['new_companion_form']=dict(code='companion.sql_pet',mob_template_id='34001',model_asset='models/pet.model')
+        packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['child'].update(companion_kind='2',clock_kind='3',duration_ms='5000');clone['riding_same_form']=True
+        clone['new_companion_form']=dict(code='companion.sql_mount',mob_template_id='20110',model_asset='models/mount.model')
+        packet=self.commit(packet,clone);self.assertEqual(catalog.Catalog(packet).item(key),original)
+        changed=catalog.Catalog(packet).item(other);changed['child'].update(companion_kind='1',riding_form_id=None,clock_kind='1',duration_ms='0')
+        packet=self.commit(packet,changed,other);self.assertIsNone(catalog.Catalog(packet).item(other)['child']['riding_form_id'])
+        altered=copy.deepcopy(packet['tables']);col=packet['columns']['companion_form'].index('mob_template_id');altered['companion_form'][0][col]='20199'
+        with self.assertRaises(api.EditorError):self.call('commit',expected_hash=packet['hash'],tables=altered)
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_companion BEFORE INSERT ON protos.item_companion FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test companion write failure'")
+        try:
+            fresh=catalog.Catalog(packet).new(15);fresh['new_companion_form']=dict(code='companion.rollback',mob_template_id='20111',model_asset='models/rollback.model')
+            with self.assertRaises(api.EditorError):self.commit(packet,fresh)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_companion')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+        self.assertEqual(rows(after,'companion_form'),rows(packet,'companion_form'))
+
     def test_zzzzzzz_soul_profile_copy_and_atomic_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(14);key=key_of(d)
         d['refinement']['max_level']='30'

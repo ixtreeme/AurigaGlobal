@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v18");
+    out.Text("auriga.item_catalog.v19");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -333,6 +333,10 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     }
     out.Table(41,source.soulItems.size());
     for(const auto& r:source.soulItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Boolean(r.channel.has_value());if(r.channel)out.Integer(static_cast<std::uint8_t>(*r.channel));out.Optional(r.profile);out.Integer(r.refineChanceBp);}
+    out.Table(42,source.companionForms.size());
+    for(const auto& f:source.companionForms){out.Identity(f.id,f.code);out.Integer(f.mobTemplateId);out.Text(f.modelAsset);}
+    out.Table(43,source.companions.size());
+    for(const auto& r:source.companions){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.form);out.Optional(r.ridingForm);out.Integer(static_cast<std::uint8_t>(r.clock));out.Integer(r.durationMs);out.Boolean(r.dungeonOnlyBonus);}
     return out.Finish();
 }
 } // namespace auriga::item::detail
