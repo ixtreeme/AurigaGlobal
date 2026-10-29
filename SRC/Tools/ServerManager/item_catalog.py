@@ -20,12 +20,12 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 16: 'Pénzjegy', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 16: 'Pénzjegy', 18: 'Kulcs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
-                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 16: 'item_currency_token', 18: 'item_container_key'}
-CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing',
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 16: 'item_currency_token', 18: 'item_container_key'}
+CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph',
                7: 'socket_stone', 16: 'currency_token', 18: 'container_key'}
-STACKABLE = (5, 6, 7, 8, 9, 10, 12, 16, 18)
+STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 16, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
@@ -48,6 +48,7 @@ PROFILES = {
     'toggle_effect_profile': ('profile_id', [('item_consumable', 'toggle_effect_profile_id')], []),
     'skill_book_profile': ('profile_id', [('item_skill_book', 'profile_id')], ['skill_book_target', 'skill_book_step']),
     'loot_profile': ('profile_id', [('item_container', 'loot_profile_id'), ('item_fishing', 'use_loot_profile_id')], ['loot_entry']),
+    'polymorph_profile': ('profile_id',[('item_polymorph','profile_id')],['polymorph_skill_rule','polymorph_mastery_rule']),
     'tool_profile': ('profile_id', [('item_tool','profile_id')], ['tool_level']),
 }
 
@@ -137,6 +138,10 @@ class Catalog:
             book = self.linked('skill_book_profile', child, 'profile_id')
             result.update(book=book, book_targets=self.book_rows('skill_book_target', book['profile_id'], 'skill_id'),
                           book_steps=self.book_rows('skill_book_step', book['profile_id'], 'current_level'))
+        if category == 13:
+            result.update(poly=self.linked('polymorph_profile',child,'profile_id'),
+                          poly_skills=self.book_rows('polymorph_skill_rule',child['profile_id'],'skill_level'),
+                          poly_masteries=self.book_rows('polymorph_mastery_rule',child['profile_id'],'mastery'),new_poly_form=None)
         if category == 11:
             result['tool'] = self.linked('tool_profile',child,'profile_id')
             result['tool_levels'] = [{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('tool_level',child['profile_id'],'level')]
@@ -218,6 +223,10 @@ class Catalog:
             item.update(self.book_defaults())
         if category == 10:
             item['child'].update(dispatch_kind='1', group_code='', allowed_contexts='0', allow_observer='0')
+        if category == 13:
+            item['base']['max_stack']='1'
+            item['child'].update(profile_id=None,fixed_form_id=None)
+            item.update(self.polymorph_defaults(),new_poly_form=None)
         if category == 11:
             item['child'].update(tool_kind='1',profile_id=None,fishing_pool='1')
             item.update(tool={},tool_levels=[self.tool_level(0,terminal=True)])
@@ -229,6 +238,16 @@ class Catalog:
         if category == 18:
             item['child']['lock_id'] = '1'
         return item
+
+    @staticmethod
+    def polymorph_defaults():
+        # Audited C++ initializers: 40 explicit entries; index 40 is zero-filled.
+        # These are authoring defaults, not an approved balance conversion.
+        powers=[10,11,11,12,13,13,14,15,16,17,18,19,20,22,23,24,26,27,29,31,33,35,37,39,41,44,46,49,52,55,59,62,66,70,74,79,84,89,94,100,0]
+        return dict(poly=dict(polymorph_kind='1',mob_level_grace='20',grace_loss_numerator='3',grace_loss_denominator='10',
+                              max_book_grade='0',practice_per_grade='0',book_chance_base_percent='0'),
+                    poly_skills=[dict(skill_level=str(i),duration_ms=str((5 if i==0 else 35 if i==40 else 10)*60000),
+                                      attack_bonus_bp=str((2+i//40)*10000),power_bp=str(powers[i]*100)) for i in range(41)],poly_masteries=[])
 
     @staticmethod
     def tool_level(level,terminal=False):
@@ -410,6 +429,7 @@ class Catalog:
             elif document.get('timed') is not None: self.apply_timed(document, child, key)
             else: self.apply_recovery(document, child, key)
         if category == 9: self.apply_book(document, child, key)
+        if category == 13:self.apply_polymorph(document,child,key)
         if category == 11: self.apply_tool(document,child,key)
         if category == 12:
             child['use_loot_profile_id'] = self.loot(document.get('loot'),child.get('use_loot_profile_id'),key) if child['fishing_kind']=='1' else None
@@ -443,6 +463,32 @@ class Catalog:
                                                            ('refinement_level', (str(profile), str(row['level']))))
             levels.append(row)
         self.replace('refinement_level', {'profile_id': profile}, levels)
+
+    def apply_polymorph(self,document,child,key):
+        form=document.get('new_poly_form')
+        if form:
+            fields=('code','mob_template_id','book_bonus')
+            existing=next((r for r in self.tables['polymorph_form'] if r['code']==form['code']),None)
+            if existing and any(str(form[k])!=existing[k] for k in fields):raise api.EditorError('Ez a formakód már más szabályokkal foglalt. Új kódot adj meg.')
+            identity=existing['form_id'] if existing else self.allocate('polymorph_form','form_id')
+            if not existing:self.replace('polymorph_form',{'form_id':identity},[dict(form,form_id=identity)])
+            if document.get('poly_target_fixed'):child['fixed_form_id']=identity
+        old=child.get('profile_id');previous=self.row('polymorph_profile',old)
+        fields=[k for k in self.packet['columns']['polymorph_profile'] if k not in ('profile_id','code')]
+        head={k:text(document['poly'][k]) for k in fields}
+        children={t:[{k:text(v) for k,v in r.items() if k!='profile_id'} for r in document[d]] for t,d in
+                  [('polymorph_skill_rule','poly_skills'),('polymorph_mastery_rule','poly_masteries')]}
+        equal=previous and all(previous[k]==head[k] for k in fields)
+        for table,order in [('polymorph_skill_rule','skill_level'),('polymorph_mastery_rule','mastery')]:
+            current=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows(table,old,order)] if previous else []
+            equal=equal and current==children[table]
+        if equal:return
+        users=[(int(r['category_id']),int(r['local_id'])) for _,r in self.references('polymorph_profile',old)] if previous else []
+        identity=old if previous and all(user==key for user in users) else self.allocate('polymorph_profile')
+        code=previous['code'] if identity==old else f'editor.polymorph.{identity}'
+        self.replace('polymorph_profile',{'profile_id':identity},[dict(head,profile_id=identity,code=code)])
+        for table,rows in children.items():self.replace(table,{'profile_id':identity},[dict(r,profile_id=identity) for r in rows])
+        child['profile_id']=identity
 
     def apply_tool(self,document,child,key):
         old=child.get('profile_id'); previous=self.row('tool_profile',old)
@@ -557,6 +603,8 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'polymorph': 'átváltoztató tárgy', 'polymorph.profile': 'átváltozási szabályok', 'polymorph.form': 'átváltozási forma',
+    'polymorph.rules': 'átváltozási szintszabályok',
     'tool': 'eszköz típusa és halászati táblája', 'tool.profile': 'eszköz fejlődési szabályai',
     'tool.levels': 'eszköz gyakorlási és fejlesztési szintjei',
     'fishing': 'hal vagy csali szabályai', 'fishing.loot': 'élő hal feldolgozási eredménye',
@@ -611,6 +659,7 @@ LOOT_TEXT = {
     'WeightOverflow': 'A súlyok összege túl nagy.',
 }
 BASE_TEXT = {
+    'polymorph.book_stack': 'A gyakorlókönyv nem halmozható; a maximális halomméret 1 legyen.',
     'skill_book.stack_below_use_units': 'A halmozási korlát kisebb a könyv használatonkénti darabszámánál.',
     'consumable.toggle_stack': 'A kapcsolható harmat nem halmozható; a maximális halomméret 1 legyen.',
     'consumable.automatic_stack': 'Az automata palack nem halmozható; a maximális halomméret 1 legyen.',
@@ -665,6 +714,7 @@ def describe(detail, columns=None):
         elif code == 'InvalidRecoveryProfile': message = RECOVERY_TEXT.get(detail.get('recovery'), 'Hibás gyógyító hatás.')
         elif code == 'InvalidLootProfile': message = LOOT_TEXT.get(detail.get('loot'), 'Hibás tárolótartalom.')
         elif code == 'InvalidBase': message = BASE_TEXT.get(field, 'Hibás alapadat.')
+        elif field=='loot.polymorph_binding': message='Példányhoz kötött formájú gömbhöz és gyakorlókönyvhöz külön példányadatok kellenek; általános ládajutalomként nem adhatók.'
         elif code in CATALOG_TEXT: message = CATALOG_TEXT[code]
         elif field == 'costume.visual' and code == 'MissingCategoryRow':
             message = 'A használati szabályokban engedélyezett minden osztályhoz és nemhez adj meg modellt.'

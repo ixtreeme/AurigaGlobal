@@ -44,6 +44,7 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items ||
         source.currencyTokens.size() > ItemCatalogLimits::Items || source.skillBooks.size() > ItemCatalogLimits::Items ||
         source.questItems.size() > ItemCatalogLimits::Items || source.socketStones.size()>ItemCatalogLimits::Items ||
+        source.polymorphForms.size()>ItemCatalogLimits::Items || source.polymorphItems.size()>ItemCatalogLimits::Items ||
         source.tools.size()>ItemCatalogLimits::Items || source.fishingItems.size()>ItemCatalogLimits::Items ||
         source.costumes.size()>ItemCatalogLimits::Items || source.costumeVisuals.size()>ItemCatalogLimits::Items*8)
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "items"));
@@ -58,11 +59,15 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         for (const auto& row : rows) if (!add(row.code.size())) return false;
         return true;
     };
-    if (!profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
+    if (!profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
         !profiles(source.attacks) || !profiles(source.ammoPolicies) || !profiles(source.resistances) || !profiles(source.refinements) ||
         !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
         !profiles(source.lootProfiles) || !profiles(source.timedEffectGroups) || !profiles(source.timedEffects) || !profiles(source.toggleEffectGroups) || !profiles(source.toggleEffects) || !profiles(source.skillBookProfiles))
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "profiles"));
+    for(const auto& p:source.polymorphProfiles)
+        if(p.skills.size()>41 || p.masteries.size()>4)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"polymorph.rules",{},p.id));
+    for(const auto& p:source.polymorphForms)
+        if(!add(p.code.size()))return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"polymorph.form",{},p.id));
     for(const auto& p:source.toolProfiles)
         if(p.levels.size()>256)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"tool.levels",{},p.id));
     for (const auto& p : source.skillBookProfiles)
@@ -107,13 +112,17 @@ ItemBaseStats BaseStats(const ItemSocketStoneRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemCostumeRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemToolRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemFishingRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemPolymorphRow&) { return {}; }
 auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.characterClass,row.sex}; }
 }
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 16 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 17 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
+    for(auto& p:source.polymorphProfiles){std::ranges::sort(p.skills,{},&PolymorphSkillRule::skillLevel);std::ranges::sort(p.masteries,{},&PolymorphMasteryRule::mastery);}
+    if(auto r=Profiles(source.polymorphProfiles,"polymorph.profile",ValidPolymorphProfile);!r)return std::unexpected(r.error());
+    if(auto r=Profiles(source.polymorphForms,"polymorph.form",[](const auto& f){return f.mobTemplate>=8 && f.bookBonus>=PolymorphBonus::None && f.bookBonus<=PolymorphBonus::Movement;});!r)return std::unexpected(r.error());
     for(auto& p:source.toolProfiles)std::ranges::sort(p.levels,{},&ToolLevel::level);
     if(auto r=Profiles(source.toolProfiles,"tool.profile",ValidToolProfile);!r)return std::unexpected(r.error());
     if (auto r = Profiles(source.usePolicies, "use_policy", [](const auto& row) {
@@ -262,6 +271,15 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     std::ranges::sort(source.costumeVisuals, {}, VisualKey);
     std::ranges::sort(source.tools,{},&ItemToolRow::key);
     std::ranges::sort(source.fishingItems,{},&ItemFishingRow::key);
+    std::ranges::sort(source.polymorphItems,{},&ItemPolymorphRow::key);
+    std::map<ItemKey,const ItemPolymorphRow*> polymorphItems;
+    for(const auto& r:source.polymorphItems)
+    {
+        if(r.key.Category()!=ItemCategory::Polymorph)return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory,"polymorph",r.key));
+        if(!polymorphItems.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"polymorph",r.key));
+        if(!FindProfile(source.polymorphProfiles,r.profile) || (r.fixedForm && !FindProfile(source.polymorphForms,*r.fixedForm)))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"polymorph",r.key));
+    }
     std::map<ItemKey,const ItemToolRow*> tools;
     std::map<ItemKey,const ItemFishingRow*> fishingItems;
     for(const auto& r:source.tools)
@@ -421,7 +439,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool socketStone = category == ItemCategory::SocketStone;
         const bool costume = category == ItemCategory::Costume;
         const bool tool = category == ItemCategory::Tool, fish = category == ItemCategory::Fishing;
-        const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish;
+        const bool polymorph = category == ItemCategory::Polymorph;
+        const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish || polymorph;
         if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !tool && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
@@ -472,6 +491,12 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
                 return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"tool.levels",row.key));
         }
         if(fish && fishingItems.contains(row.key))child=*fishingItems.at(row.key);
+        if(polymorph && polymorphItems.contains(row.key))
+        {
+            child=*polymorphItems.at(row.key);
+            if(FindProfile(source.polymorphProfiles,polymorphItems.at(row.key)->profile)->kind==PolymorphKind::PracticeBook && row.maxStack!=1)
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"polymorph.book_stack",row.key));
+        }
         if (material && materials.contains(row.key)) child = *materials.at(row.key);
         if (consumable && consumables.contains(row.key)) child = *consumables.at(row.key);
         if (container && containers.contains(row.key)) child = *containers.at(row.key);
@@ -544,6 +569,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
                 return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"fishing.grill_result",row.key));
         }
     }
+    for(const auto& row:source.polymorphItems)
+        if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"polymorph",row.key));
     // Item rewards are ordinary, live, stack-sized grants of a published item.
     for (const auto& profile : source.lootProfiles)
         for (const auto& reward : profile.entries)
@@ -555,6 +582,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
                 auto error = Error(ItemCatalogErrorCode::InvalidLootReward, "loot.item", *reward.item, profile.id);
                 return std::unexpected(std::move(error));
             }
+            if(const auto* poly=std::get_if<ItemPolymorphRow>(&target->category);poly &&
+               (!poly->fixedForm || FindProfile(source.polymorphProfiles,poly->profile)->kind==PolymorphKind::PracticeBook))
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidLootReward,"loot.polymorph_binding",*reward.item,profile.id));
         }
     for (const auto& profile : source.accessorySockets)
     {
@@ -593,6 +623,8 @@ const ValidatedRefinementProfile* ItemCatalog::FindRefinement(std::uint32_t id) 
     const auto found = refinements_.find(id);
     return found == refinements_.end() ? nullptr : &found->second;
 }
+const PolymorphForm* ItemCatalog::FindPolymorphForm(std::uint32_t id) const noexcept { return FindProfile(source_.polymorphForms,id); }
+const PolymorphProfile* ItemCatalog::FindPolymorphProfile(std::uint32_t id) const noexcept { return FindProfile(source_.polymorphProfiles,id); }
 const ToolProfile* ItemCatalog::FindToolProfile(std::uint32_t id) const noexcept { return FindProfile(source_.toolProfiles,id); }
 const ItemUsePolicy* ItemCatalog::FindUsePolicy(std::uint32_t id) const noexcept { return FindProfile(source_.usePolicies, id); }
 const RefinementRecipe* ItemCatalog::FindRefinementRecipe(std::uint32_t id) const noexcept { return FindProfile(source_.refinementRecipes, id); }

@@ -36,7 +36,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -543,7 +543,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["16", "auriga.item_catalog.v16"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["17", "auriga.item_catalog.v17"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
@@ -555,7 +555,7 @@ class CategorySchemaTests(unittest.TestCase):
         self.assertEqual(self.q("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
                                 "AND TABLE_NAME='item_base' AND CHECK_CLAUSE LIKE '%in (1,2,3,5,6)%'"), [["0"]])
         self.assertEqual(self.q("SELECT CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
-                        "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,4,5,6,7,8,9,10,11,12,16,18)"]])
+                        "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,4,5,6,7,8,9,10,11,12,13,16,18)"]])
 
     def test_container_sql_constraints(self):
         for sql, code in [
@@ -581,7 +581,7 @@ class CategorySchemaTests(unittest.TestCase):
             ("INSERT INTO protos.loot_entry VALUES(1,4,2,6,1,1,1,0)", "4025"),
             ("UPDATE protos.item_base SET binding_policy=3 WHERE category_id=8 AND local_id=1", "4025"),
             ("UPDATE protos.item_base SET appearance_profile_id=1 WHERE category_id=18", "4025"),
-            ("INSERT INTO protos.item_base VALUES(13,1,'polymorph.unported','item.c.name','item.c.description','icons/c.png',"
+            ("INSERT INTO protos.item_base VALUES(15,1,'companion.unported','item.c.name','item.c.description','icons/c.png',"
              "1,1,1,0,0,1,1,1,1,NULL,NULL,1,0,0,0)", "4025"),
             ("DELETE FROM protos.loot_profile WHERE profile_id=1", "1451"),
             ("DELETE FROM protos.item_base WHERE category_id=6 AND local_id=1", "1451"),
@@ -726,6 +726,33 @@ class CategorySchemaTests(unittest.TestCase):
                 with self.subTest(query=query),self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
             self.q("UPDATE protos.item_socket_stone SET stone_kind=2,allowed_targets=0,minimum_socket_grade=0,primary_group='',secondary_group=''")
             self.assertEqual(self.q('SELECT stone_kind,allowed_targets,minimum_socket_grade FROM protos.item_socket_stone'),[['2','0','0']])
+        finally:self.q('ROLLBACK')
+
+    def test_polymorph_constraints_and_foreign_keys(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.polymorph_form VALUES(9001,'form.sql_test',101,4)")
+            self.q("INSERT INTO protos.polymorph_profile VALUES(9001,'poly.sql_test',1,20,3,10,0,0,0)")
+            self.q('INSERT INTO protos.polymorph_skill_rule VALUES(9001,0,300000,20000,1000)')
+            self.q("INSERT INTO protos.item_base SELECT 13,1,'polymorph.test',name_key,description_key,icon_asset,inventory_width,inventory_height,1,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,appearance_profile_id,base_bonus_profile_id,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=5 AND local_id=1")
+            self.q('INSERT INTO protos.item_polymorph VALUES(13,1,9001,9001)')
+            for query,code in [
+                ('UPDATE protos.polymorph_form SET mob_template_id=7','4025'),
+                ('UPDATE protos.polymorph_form SET book_bonus=0','4025'),
+                ('UPDATE protos.polymorph_profile SET grace_loss_denominator=0','4025'),
+                ('UPDATE protos.polymorph_profile SET max_book_grade=256','4025'),
+                ('UPDATE protos.polymorph_profile SET max_book_grade=1','4025'),
+                ('UPDATE protos.polymorph_skill_rule SET skill_level=41','4025'),
+                ('UPDATE protos.polymorph_skill_rule SET duration_ms=9223372036854775808','4025'),
+                ('UPDATE protos.polymorph_skill_rule SET power_bp=10001','4025'),
+                ('UPDATE protos.item_polymorph SET fixed_form_id=99999','1452'),
+                ('UPDATE protos.item_polymorph SET profile_id=99999','1452'),
+                ('UPDATE protos.item_base SET binding_policy=3 WHERE category_id=13','4025')]:
+                with self.subTest(query=query),self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
+            self.q('UPDATE protos.polymorph_profile SET polymorph_kind=2,mob_level_grace=0,grace_loss_numerator=0,grace_loss_denominator=1,max_book_grade=30,practice_per_grade=50,book_chance_base_percent=-5')
+            self.q('INSERT INTO protos.polymorph_mastery_rule VALUES(9001,0,10000,9000)')
+            with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.polymorph_mastery_rule SET bonus_duration_ms=11000')
+            with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.polymorph_profile SET practice_per_grade=4294967295')
         finally:self.q('ROLLBACK')
 
     def test_gathering_constraints_and_foreign_keys(self):

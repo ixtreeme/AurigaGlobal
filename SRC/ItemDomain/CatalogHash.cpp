@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v16");
+    out.Text("auriga.item_catalog.v17");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -312,6 +312,19 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     for(const auto& r:source.tools){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.profile);out.Integer(static_cast<std::uint8_t>(r.fishingPool));}
     out.Table(36,source.fishingItems.size());
     for(const auto& r:source.fishingItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Optional(r.useLootProfile);out.Boolean(r.grillResult.has_value());if(r.grillResult)out.Key(*r.grillResult);out.Integer(r.baitPower);}
+    out.Table(37,source.polymorphForms.size());
+    for(const auto& f:source.polymorphForms){out.Identity(f.id,f.code);out.Integer(f.mobTemplate);out.Integer(static_cast<std::uint8_t>(f.bookBonus));}
+    out.Table(38,source.polymorphProfiles.size());
+    for(const auto& p:source.polymorphProfiles)
+    {
+        out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.kind));out.Integer(p.mobLevelGrace);out.Integer(p.graceLossNumerator);out.Integer(p.graceLossDenominator);out.Integer(p.maxBookGrade);out.Integer(p.practicePerGrade);out.Integer(static_cast<std::uint16_t>(p.bookChanceBasePercent));
+        out.Integer(static_cast<std::uint32_t>(p.skills.size()));
+        for(const auto& r:p.skills){out.Integer(r.skillLevel);out.Integer(r.durationMs);out.Integer(r.attackBonusBp);out.Integer(r.powerBp);}
+        out.Integer(static_cast<std::uint32_t>(p.masteries.size()));
+        for(const auto& r:p.masteries){out.Integer(r.mastery);out.Integer(r.durationMs);out.Integer(r.bonusDurationMs);}
+    }
+    out.Table(39,source.polymorphItems.size());
+    for(const auto& r:source.polymorphItems){out.Key(r.key);out.Integer(r.profile);out.Optional(r.fixedForm);}
     return out.Finish();
 }
 } // namespace auriga::item::detail

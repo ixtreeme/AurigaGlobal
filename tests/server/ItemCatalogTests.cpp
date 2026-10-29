@@ -102,6 +102,7 @@ void InvalidCatalogs()
     Reject([](auto& s) { s.schemaVersion = 13; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 14; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 15; }, ItemCatalogErrorCode::InvalidVersion);
+    Reject([](auto& s) { s.schemaVersion = 16; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.usePolicies.resize(ItemCatalogLimits::ProfilesPerKind + 1); }, ItemCatalogErrorCode::LimitExceeded);
     Reject([](auto& s) { s.usePolicies.push_back(s.usePolicies[0]); }, ItemCatalogErrorCode::DuplicateProfile);
     Reject([](auto& s) { s.appearances[1].code = s.appearances[0].code; }, ItemCatalogErrorCode::DuplicateProfile);
@@ -144,7 +145,7 @@ void InvalidCatalogs()
     Reject([](auto& s) { s.weapons[0].physicalAttackBaseRaw = -1; }, ItemCatalogErrorCode::StatOutOfRange);
     Reject([](auto& s) { s.weapons[0].physicalAttackBaseRaw = MaxItemStatRaw; }, ItemCatalogErrorCode::StatOutOfRange);
     Reject([](auto& s) { s.items.erase(s.items.begin()); }, ItemCatalogErrorCode::OrphanCategoryRow);
-    Reject([](auto& s) { s.items[0].key = ItemKey::Create(ItemCategory::Polymorph, 1).value(); }, ItemCatalogErrorCode::UnsupportedCategory);
+    Reject([](auto& s) { s.items[0].key = ItemKey::Create(ItemCategory::Companion, 1).value(); }, ItemCatalogErrorCode::UnsupportedCategory);
     Reject([](auto& s) { s.accessories.clear(); }, ItemCatalogErrorCode::MissingCategoryRow);
     Reject([](auto& s) { s.materials.clear(); }, ItemCatalogErrorCode::MissingCategoryRow);
     Reject([](auto& s) { s.accessories.push_back(s.accessories[0]); }, ItemCatalogErrorCode::DuplicateCategoryRow);

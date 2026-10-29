@@ -107,6 +107,9 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for(const auto& p:source.toolProfiles){Add(s,T::ToolProfiles,p.id,p.code);for(const auto& r:p.levels)Add(s,T::ToolLevels,p.id,r.level,r.power,r.gatherBonusBp,r.requiredPoints,r.practiceNumerator,r.practiceDenominator,r.refineChanceBp,r.failure,r.failureLevel,r.failureLossBp);}
     for(const auto& r:source.tools)Add(s,T::Tools,r.key.Category(),r.key.LocalId(),r.kind,r.profile,r.fishingPool);
     for(const auto& r:source.fishingItems)Add(s,T::FishingItems,r.key.Category(),r.key.LocalId(),r.kind,r.useLootProfile,r.grillResult ? std::optional{static_cast<std::uint16_t>(r.grillResult->Category())} : std::nullopt,r.grillResult ? std::optional{r.grillResult->LocalId()} : std::nullopt,r.baitPower);
+    for(const auto& r:source.polymorphForms)Add(s,T::PolymorphForms,r.id,r.code,r.mobTemplate,r.bookBonus);
+    for(const auto& p:source.polymorphProfiles){Add(s,T::PolymorphProfiles,p.id,p.code,p.kind,p.mobLevelGrace,p.graceLossNumerator,p.graceLossDenominator,p.maxBookGrade,p.practicePerGrade,p.bookChanceBasePercent);for(const auto& r:p.skills)Add(s,T::PolymorphSkills,p.id,r.skillLevel,r.durationMs,r.attackBonusBp,r.powerBp);for(const auto& r:p.masteries)Add(s,T::PolymorphMasteries,p.id,r.mastery,r.durationMs,r.bonusDurationMs);}
+    for(const auto& r:source.polymorphItems)Add(s,T::PolymorphItems,r.key.Category(),r.key.LocalId(),r.profile,r.fixedForm);
     return s;
 }
 } // namespace catalog_snapshot_fixture

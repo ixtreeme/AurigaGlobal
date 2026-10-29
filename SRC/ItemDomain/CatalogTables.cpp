@@ -59,6 +59,11 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::ToolLevels,"tool_level","profile_id,level,power,gather_bonus_bp,required_points,practice_numerator,practice_denominator,refine_chance_bp,failure_kind,failure_level,failure_loss_bp",Profiles*256},
     {Table::Tools,"item_tool","category_id,local_id,tool_kind,profile_id,fishing_pool",Items},
     {Table::FishingItems,"item_fishing","category_id,local_id,fishing_kind,use_loot_profile_id,grill_category_id,grill_local_id,bait_power",Items},
+    {Table::PolymorphForms,"polymorph_form","form_id,code,mob_template_id,book_bonus",Items},
+    {Table::PolymorphProfiles,"polymorph_profile","profile_id,code,polymorph_kind,mob_level_grace,grace_loss_numerator,grace_loss_denominator,max_book_grade,practice_per_grade,book_chance_base_percent",Profiles},
+    {Table::PolymorphSkills,"polymorph_skill_rule","profile_id,skill_level,duration_ms,attack_bonus_bp,power_bp",Profiles*41},
+    {Table::PolymorphMasteries,"polymorph_mastery_rule","profile_id,mastery,duration_ms,bonus_duration_ms",Profiles*4},
+    {Table::PolymorphItems,"item_polymorph","category_id,local_id,profile_id,fixed_form_id",Items},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

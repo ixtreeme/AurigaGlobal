@@ -246,6 +246,12 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
         if(r.row[4].has_value()!=r.row[5].has_value())r.Fail(ReadErrorCode::InvalidChild,4);
         s.fishingItems.push_back({r.Key(),static_cast<FishingKind>(r.U8(2)),r.OptionalId(3),r.row[4] ? std::optional{r.Key(4)} : std::nullopt,r.U32(6)});
     });
+    Each(source,Table::PolymorphForms,[&](const Reader& r){s.polymorphForms.push_back({r.U32(0),r.Text(1,96),r.U32(2),static_cast<PolymorphBonus>(r.U8(3))});});
+    Each(source,Table::PolymorphProfiles,[&](const Reader& r){s.polymorphProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<PolymorphKind>(r.U8(2)),r.U16(3),r.U16(4),r.U16(5),r.U16(6),r.U32(7),r.Number<std::int16_t>(8),{},{}});});
+    const auto polyIndex=Index(s.polymorphProfiles,Table::PolymorphProfiles);
+    Each(source,Table::PolymorphSkills,[&](const Reader& r){Parent(s.polymorphProfiles,polyIndex,r).skills.push_back({r.U8(1),r.U64(2),r.U32(3),r.U16(4)});});
+    Each(source,Table::PolymorphMasteries,[&](const Reader& r){Parent(s.polymorphProfiles,polyIndex,r).masteries.push_back({r.U8(1),r.U64(2),r.U64(3)});});
+    Each(source,Table::PolymorphItems,[&](const Reader& r){s.polymorphItems.push_back({r.Key(),r.U32(2),r.OptionalId(3)});});
     return s;
 }
 }

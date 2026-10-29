@@ -65,6 +65,32 @@ def toggle(document):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_polymorph_profiles_forms_and_copy_are_independent(self):
+        def orb(d):
+            d.update(poly_target_fixed=True,new_poly_form=dict(code='form.test_wolf',mob_template_id='101',book_bonus='4'))
+        packet,key=create(self.blank,13,orb);self.check(packet)
+        original=catalog.Catalog(packet).item(key);self.assertIsNotNone(original['child']['fixed_form_id'])
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['poly_skills'][40]['duration_ms']='3000000'
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other);self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(len(rows(packet,'polymorph_form')),1)
+        bad=catalog.Catalog(packet).item(other);bad['poly_skills'].pop()
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,other,TOOL)
+        conflicting=catalog.Catalog(packet).new(13)
+        conflicting['new_poly_form']=dict(code='form.test_wolf',mob_template_id='102',book_bonus='4')
+        with self.assertRaises(api.EditorError):catalog.Catalog(packet).apply(conflicting)
+
+    def test_polymorph_power_defaults_include_source_level_40_boundary(self):
+        import re
+        source=(ROOT/'SRC/Server/GameServer/core/constants.cpp').read_text(encoding='utf-8-sig')
+        body=re.search(r'aiPolymorphPowerByLevel[^=]*=\s*\{([^}]+)\}',source,re.S).group(1)
+        initialized=[int(v) for v in re.findall(r'\d+',re.sub(r'//[^\n]*','',body))]
+        self.assertEqual(len(initialized),40)
+        defaults=catalog.Catalog.polymorph_defaults()['poly_skills']
+        self.assertEqual([int(r['power_bp']) for r in defaults],[v*100 for v in initialized]+[0])
+        self.assertEqual(defaults[40]['duration_ms'],'2100000')
+
     def test_tool_progression_copy_and_fishing_recipes(self):
         def tool(d):
             d['child'].update(tool_kind='2',fishing_pool='3')
@@ -641,6 +667,23 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_polymorph_form_rules_and_book_mode(self):
+        packet,key=create(catalog.blank(TOOL),13);self.page.loaded(packet,key);p=self.page.poly_panel
+        p.target.setCurrentIndex(1);p.form.setCurrentIndex(p.form.findData('new'))
+        document=self.page.collect();catalog.validate(packet,document,key,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(document,key));self.page.loaded(packet,key)
+        self.assertIsNotNone(catalog.Catalog(packet).item(key)['child']['fixed_form_id'])
+        p=self.page.poly_panel;p.kind.widget.setCurrentIndex(p.kind.widget.findData('2'))
+        self.assertFalse(self.page.stack_field.edit.isEnabled())
+        self.assertTrue(p.skills.isColumnHidden(1));self.assertFalse(p.masteries.isHidden())
+        document=self.page.collect();catalog.validate(packet,document,key,TOOL)
+        self.assertEqual(document['poly']['max_book_grade'],'30')
+        self.assertEqual(document['poly_masteries'][0]['duration_ms'],'10000')
+        self.assertEqual(document['poly_masteries'][0]['bonus_duration_ms'],'9000')
+        p.masteries.item(1,2).setText('20')
+        with self.assertRaises(api.EditorError):catalog.validate(packet,self.page.collect(),key,TOOL)
+        self.page.dirty=False
+
     def test_tool_and_fishing_forms_keep_progression_and_kind_rules(self):
         from PySide6.QtCore import Qt
         packet,key=create(catalog.blank(TOOL),11);self.page.loaded(packet,key)
@@ -1176,6 +1219,32 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzz_polymorph_commit_copy_immutable_forms_and_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(13);key=key_of(d)
+        d.update(poly_target_fixed=True,new_poly_form=dict(code='form.sql_wolf',mob_template_id='101',book_bonus='4'))
+        packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);clone['poly_skills'][40]['duration_ms']='3000000'
+        other=key_of(clone);packet=self.commit(packet,clone);self.assertEqual(catalog.Catalog(packet).item(key),original)
+        book=catalog.Catalog(packet).item(other)
+        book['poly'].update(polymorph_kind='2',mob_level_grace='0',grace_loss_numerator='0',grace_loss_denominator='1',max_book_grade='30',practice_per_grade='50',book_chance_base_percent='-5')
+        book['base']['max_stack']='1'
+        for row in book['poly_skills']:row.update(duration_ms='0',attack_bonus_bp='0')
+        book['poly_masteries']=[dict(mastery=str(i),duration_ms=str(10000+i*5000),bonus_duration_ms=str(9000+i*5000)) for i in range(4)]
+        packet=self.commit(packet,book,other)
+        reread=catalog.Catalog(packet).item(other)
+        self.assertEqual(reread['poly']['book_chance_base_percent'],'-5')
+        self.assertEqual(reread['poly_masteries'][3]['duration_ms'],'25000')
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        altered=copy.deepcopy(packet['tables']);col=packet['columns']['polymorph_form'].index('mob_template_id');altered['polymorph_form'][0][col]='102'
+        with self.assertRaises(api.EditorError):self.call('commit',tables=altered,expected_hash=packet['hash'])
+        self.assertEqual(self.call('read')['hash'],packet['hash'])
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_poly BEFORE INSERT ON protos.polymorph_skill_rule FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test polymorph write failure'")
+        try:
+            new=catalog.Catalog(packet).new(13);new['poly_skills'][0]['duration_ms']='123000'
+            with self.assertRaises(api.EditorError):self.commit(packet,new)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_poly')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+
     def test_zzzzz_gathering_profiles_fish_and_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(11);key=key_of(d)
         d['refinement']['max_level']='30'
