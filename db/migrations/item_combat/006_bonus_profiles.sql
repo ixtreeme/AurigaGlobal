@@ -18,7 +18,7 @@ CREATE TABLE protos.bonus_definition (
     CHECK (action_filter BETWEEN 1 AND 3), CHECK (mode_filter BETWEEN 1 AND 3),
     CHECK (family_filter=0 AND rank_filter=0 AND element_filter=0),
     CHECK (stack_policy BETWEEN 1 AND 4), CHECK (aggregate_cap BETWEEN 1 AND 15),
-    CHECK (allowed_sources BETWEEN 1 AND 7), CHECK (minimum_value <= maximum_value),
+    CHECK (allowed_sources BETWEEN 1 AND 15), CHECK (minimum_value <= maximum_value),
     CHECK ((unit_kind=1 AND minimum_value>=-1000000000000000 AND maximum_value<=1000000000000000)
         OR (unit_kind IN (2,3) AND minimum_value>=-100000 AND maximum_value<=100000))
 ) ENGINE=InnoDB;

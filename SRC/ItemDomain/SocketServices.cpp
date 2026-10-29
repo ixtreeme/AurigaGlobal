@@ -12,10 +12,8 @@ bool ValidSocketServiceProfile(const SocketServiceProfile& p) noexcept
     return p.id && detail::ContentCode(p.code) && p.unitsPerUse &&
         p.kind>=SocketServiceKind::CleanBroken && p.kind<=SocketServiceKind::ExtractLast;
 }
-namespace
-{
 using E=SocketServiceError;
-std::expected<void,E> Admit(const ItemCatalog& catalog,const SocketItemPair& r)
+std::expected<void,E> ValidateItemOperationPair(const ItemCatalog& catalog,const SocketItemPair& r)
 {
     const auto& c=r.context;
     if(!c.admittedByServer || c.observer)return std::unexpected(E::Forbidden);
@@ -45,6 +43,8 @@ std::expected<void,E> Admit(const ItemCatalog& catalog,const SocketItemPair& r)
         return std::unexpected(E::Forbidden);
     return {};
 }
+namespace
+{
 E AccessoryError(AccessorySocketError e)
 {
     switch(e)
@@ -60,7 +60,7 @@ E AccessoryError(AccessorySocketError e)
 }
 std::expected<SocketServicePlan,SocketServiceError> PlanSocketService(const ItemCatalog& catalog,const SocketServiceRequest& r)
 {
-    if(auto v=Admit(catalog,r.items);!v)return std::unexpected(v.error());
+    if(auto v=ValidateItemOperationPair(catalog,r.items);!v)return std::unexpected(v.error());
     const auto* source=std::get_if<ItemConsumableRow>(&catalog.Find(r.items.source.item)->category);
     const auto* profile=source && source->socketServiceProfile ? catalog.FindSocketService(*source->socketServiceProfile) : nullptr;
     if(!profile)return std::unexpected(E::WrongSource);
@@ -93,7 +93,7 @@ std::expected<SocketServicePlan,SocketServiceError> PlanSocketService(const Item
 }
 std::expected<AccessoryServicePlan,SocketServiceError> PlanAccessoryService(const ItemCatalog& catalog,const AccessoryServiceRequest& r)
 {
-    if(auto v=Admit(catalog,r.items);!v)return std::unexpected(v.error());
+    if(auto v=ValidateItemOperationPair(catalog,r.items);!v)return std::unexpected(v.error());
     if(!std::holds_alternative<ItemMaterialRow>(catalog.Find(r.items.source.item)->category))return std::unexpected(E::WrongSource);
     const auto* target=std::get_if<ItemAccessoryRow>(&catalog.Find(r.items.target.item)->category);
     const auto* p=target && target->socketProfile ? catalog.FindAccessorySocket(*target->socketProfile) : nullptr;

@@ -108,3 +108,13 @@ ItemKey-ja és szintje megmarad; minden visszaadott kőhöz külön foglalás ke
 Ez nem zárja le a teljes 5. szeletet: bónuszhozzáadás/-váltás, zárolás,
 jelmez-/stólabónuszok és fejlesztési segédanyagok még külön portot igényelnek.
 Az atomi gazdasági végrehajtás F3/F4, a valódi forráskonverzió F6.
+
+## 5. szelet — példánybónuszok (2026-10-29)
+
+[IC-031](item_combat_031_instance_attributes.md): normál/ritka/nyolcadik
+pályák, típusos jelöltek és értékek, hozzáadás, csoportváltás és normál
+bónuszhely védelme/áthelyezése/törlése; v24 SQL-katalógus, explicit
+állapotcodec és Qt-szerkesztők. A kapcsolt Gauss-addon, jelmezreset és
+példányadatos bónusz-adók, stóla/rúna és fejlesztési segédanyagok továbbra
+is külön viselkedések. A meglevő játékospéldányok átvétele és a gazdasági
+végrehajtás még nincs aktiválva.

@@ -5,6 +5,7 @@
 #include "QuestItems.hpp"
 #include "SocketStones.hpp"
 #include "SocketServices.hpp"
+#include "InstanceAttributes.hpp"
 #include "Costumes.hpp"
 #include "GatheringItems.hpp"
 #include "PolymorphItems.hpp"
@@ -141,6 +142,7 @@ struct ItemConsumableRow
     std::optional<std::uint32_t> timedEffectProfile;
     std::optional<std::uint32_t> toggleEffectProfile;
     std::optional<std::uint32_t> socketServiceProfile;
+    std::optional<std::uint32_t> attributeServiceProfile;
 };
 struct ItemContainerRow
 {
@@ -170,7 +172,7 @@ using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryR
                                      ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 23;
+    std::uint32_t schemaVersion = 24;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -204,6 +206,9 @@ struct ItemCatalogSource
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
     std::vector<CostumeVisualRow> costumeVisuals;
+    std::vector<AttributeProfile> attributeProfiles;
+    std::vector<AttributeServiceProfile> attributeServices;
+    std::vector<ItemAttributeBinding> attributeBindings;
     std::vector<SocketServiceProfile> socketServiceProfiles;
     std::vector<PetTrainingProfile> petTrainingProfiles;
     std::vector<PetSupplyProfile> petSupplyProfiles;
@@ -279,6 +284,8 @@ public:
     const ItemCatalogEntry* Find(ItemKey key) const noexcept;
     const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
+    const AttributeProfile* FindItemAttributes(ItemKey) const noexcept;
+    const AttributeServiceProfile* FindAttributeService(std::uint32_t) const noexcept;
     const SocketServiceProfile* FindSocketService(std::uint32_t id) const noexcept;
     const PetHatchProfile* FindPetHatchProfile(std::uint32_t id) const noexcept;
     const PetFeedRule* FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept;

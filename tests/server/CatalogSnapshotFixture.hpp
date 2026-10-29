@@ -71,7 +71,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
             else Add(s,T::Automatic,r.id,4,e.pool,e.supply,e.capacityRaw,e.tickIntervalMs,e.maxPoolPerTickBp,e.activeMaxPoolBonusBp);
         },r.effect);
     }
-    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile,r.socketServiceProfile);
+    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile,r.socketServiceProfile,r.attributeServiceProfile);
     for (const auto& r : source.lootProfiles) {
         Add(s,T::LootProfiles,r.id,r.code,r.mode);
         for (const auto& e : r.entries) {
@@ -101,6 +101,9 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
         for(const auto& i:r.ingredients) Add(s,T::RefinementIngredients,r.id,i.key.Category(),i.key.LocalId(),i.refinementLevel,i.count);
     }
     for(const auto& p:source.socketServiceProfiles)Add(s,T::SocketServices,p.id,p.code,p.kind,p.unitsPerUse);
+    for(const auto& p:source.attributeProfiles){Add(s,T::AttributeProfiles,p.id,p.code,p.allowLock);for(const auto& g:p.groups)Add(s,T::AttributeGroups,p.id,g.pool,g.capacity,g.excludeStatic);for(const auto& a:p.candidates){Add(s,T::AttributeCandidates,p.id,a.pool,a.bonus,a.weight);for(const auto& v:a.values)Add(s,T::AttributeValues,p.id,a.pool,a.bonus,v.tier,v.value);}}
+    for(const auto& p:source.attributeServices){Add(s,T::AttributeServices,p.id,p.code,p.operation,p.pool,p.units,p.successBp,p.targetMask,p.minimumCount,p.maximumCount,p.addCount,p.maximumTargetLevel,p.consumeOnFailure);for(const auto& t:p.tiers)Add(s,T::AttributeTiers,p.id,t.tier,t.chanceBp);}
+    for(const auto& b:source.attributeBindings)Add(s,T::AttributeBindings,b.key.Category(),b.key.LocalId(),b.profile);
     for(const auto& r:source.questItems)Add(s,T::QuestItems,r.key.Category(),r.key.LocalId(),r.dispatch,r.groupCode,r.allowedContexts,r.allowObserver);
     for(const auto& r:source.socketStones)Add(s,T::SocketStones,r.key.Category(),r.key.LocalId(),r.kind,r.allowedTargets,r.minimumSocketGrade,r.primaryGroup,r.secondaryGroup);
     for(const auto& r:source.costumes)Add(s,T::Costumes,r.key.Category(),r.key.LocalId(),r.kind,r.weapon,r.clock,r.durationMs);

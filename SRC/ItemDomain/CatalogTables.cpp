@@ -34,7 +34,7 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::Instant, "instant_recovery_profile", "profile_id,delivery_kind,hp_raw,sp_raw,max_hp_bp,max_sp_bp,flat_bonus_cap_bp", Profiles},
     {Table::Reserve, "reserve_recovery_profile", "profile_id,delivery_kind,hp_raw,sp_raw,flat_bonus_cap_bp,tick_interval_ms,max_pool_per_tick_bp", Profiles},
     {Table::Periodic, "periodic_recovery_profile", "profile_id,delivery_kind,hp_per_tick_raw,sp_per_tick_raw,tick_interval_ms,duration_ms", Profiles},
-    {Table::Consumables, "item_consumable", "category_id,local_id,recovery_profile_id,timed_effect_profile_id,toggle_effect_profile_id,socket_service_profile_id", Items},
+    {Table::Consumables, "item_consumable", "category_id,local_id,recovery_profile_id,timed_effect_profile_id,toggle_effect_profile_id,socket_service_profile_id,attribute_service_profile_id", Items},
     {Table::LootProfiles, "loot_profile", "profile_id,code,pick_mode", Profiles},
     {Table::LootEntries, "loot_entry", "profile_id,entry_no,reward_kind,item_category_id,item_local_id,amount,weight,rare_attribute_chance_bp", Profiles * MaxLootEntries},
     {Table::Containers, "item_container", "category_id,local_id,container_kind,loot_profile_id,lock_id,hatch_profile_id", Items},
@@ -86,7 +86,14 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::PetSkinRules,"pet_skin_rule","profile_id,supply_kind,form_id,clock_kind,duration_ms",Profiles},
     {Table::PetSupplies,"item_special","category_id,local_id,behavior_kind,profile_id",Items},
     {Table::SocketServices,"socket_service_profile","profile_id,code,service_kind,units_per_use",Profiles},
-    }};
+        {Table::AttributeProfiles,"attribute_profile","profile_id,code,allow_lock",Profiles},
+    {Table::AttributeGroups,"attribute_group","profile_id,pool_kind,capacity,exclude_static",Profiles*3},
+    {Table::AttributeCandidates,"attribute_candidate","profile_id,pool_kind,bonus_id,weight",Profiles*MaxAttributeCandidates},
+    {Table::AttributeValues,"attribute_value","profile_id,pool_kind,bonus_id,tier,value_scaled",Profiles*MaxAttributeCandidates*MaxAttributeTiers},
+    {Table::AttributeBindings,"item_attribute_binding","category_id,local_id,profile_id",Items},
+    {Table::AttributeServices,"attribute_service_profile","profile_id,code,operation_kind,pool_kind,units_per_use,success_bp,target_mask,minimum_count,maximum_count,add_count,maximum_target_level,consume_on_failure",Profiles},
+    {Table::AttributeTiers,"attribute_tier_chance","profile_id,tier,chance_bp",Profiles*MaxAttributeTiers},
+}};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }
 std::span<const TableSpec, TableCount> Tables() noexcept { return Specs; }

@@ -22,6 +22,7 @@ from soul_editor import SoulPanel
 from companion_editor import CompanionPanel
 from pet_care_editor import PetHatchPanel,PetFoodPanel
 from pet_lifecycle_editor import PetSupplyPanel
+from attribute_editor import AttributePanel,AttributeServicePanel
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 BONUS_LABELS = {
@@ -1042,6 +1043,8 @@ class ItemPage(QWidget):
         self.consumable_kind = QComboBox(); self.consumable_kind.addItem('Gyógyítás / regeneráció', '1')
         self.consumable_kind.addItem('Időzített stat-hatás', '2'); self.consumable_kind.addItem('Kapcsolható harmat', '3'); kind_row.addWidget(self.consumable_kind); kind_row.addStretch()
         self.consumable_kind.addItem('Foglalattisztítás / kőkiemelés','4')
+        self.consumable_kind.addItem('Bónuszhozzáadás / váltás / védelem','5')
+        self.attribute_service_panel=AttributeServicePanel(changed,Form)
         self.socket_service_form=Form(changed)
         self.socket_service_form.add('socket_service','service_kind','Művelet','choice',choices=[
             ('1','Törött foglalatok tisztítása'),('2','Minden kő kiemelése — törött foglalat marad'),('3','Utolsó kő kiemelése — üres foglalat marad')])
@@ -1049,7 +1052,7 @@ class ItemPage(QWidget):
         self.socket_service_form.note('A foglalat helye és minősége megmarad. A kiemelt kövek tárgytípusa és fejlesztési szintje változatlan; helyhiány esetén a művelet nem végezhető el.')
         self.socket_service_form.finish()
         wrapper_layout.addLayout(kind_row)
-        self.consumable_pages = QStackedWidget(); self.consumable_pages.addWidget(potion); self.consumable_pages.addWidget(timed_page); self.consumable_pages.addWidget(toggle_page); self.consumable_pages.addWidget(self.socket_service_form)
+        self.consumable_pages = QStackedWidget(); self.consumable_pages.addWidget(potion); self.consumable_pages.addWidget(timed_page); self.consumable_pages.addWidget(toggle_page); self.consumable_pages.addWidget(self.socket_service_form);self.consumable_pages.addWidget(self.attribute_service_panel)
         wrapper_layout.addWidget(self.consumable_pages, 1)
         self.category_pages[5] = scroll(wrapper)
         self.consumable_kind.currentIndexChanged.connect(lambda index: (self.consumable_pages.setCurrentIndex(index), self.recovery_controls(), changed()))
@@ -1058,6 +1061,7 @@ class ItemPage(QWidget):
         self.refinement = RefinementPanel(changed)
         self.refinement.maximum.valueChanged.connect(lambda value: self.tool_panel.set_maximum(value) if not self.loading and self.document and int(self.document['base']['category_id'])==11 else None)
         self.pet_food_panel=PetFoodPanel(changed,Form);self.pet_food_page=scroll(self.pet_food_panel)
+        self.attribute_panel=AttributePanel(changed);self.attribute_page=scroll(self.attribute_panel)
         self.bonuses = BonusTable(changed, '1')
         bonus_page = QWidget(); bonus_layout = QVBoxLayout(bonus_page)
         hint = QLabel('Az alap bónuszok minden fejlesztési szinten érvényesek. Szintenkénti bónuszt a Fejlesztés lapon adhatsz meg.')
@@ -1335,12 +1339,16 @@ class ItemPage(QWidget):
         self.stack_field.edit.setEnabled(not equipment)
         self.appearance_field.widget.setEnabled(category in (1,2,3,4,11,7,10))
         self.base_form.load(document); self.use_form.load(document);self.pet_food_panel.load(document)
+        if category in (1,2,3,4):
+            self.tabs.addTab(self.attribute_page,'Példánybónuszok');self.attribute_panel.load(document,self.packet['bonuses'])
         if category == 5:
+            attribute_service=document.get('attribute_service') is not None
+            self.attribute_service_panel.load(document)
             service=document.get('socket_service') is not None
             self.socket_service_form.load(dict(socket_service=document.get('socket_service') or dict(service_kind='1',units_per_use='1')))
             timed = document.get('timed') is not None
             toggle = document.get('toggle') is not None
-            recovery_doc = document if not (timed or toggle or service) else catalog.Catalog(self.packet).new(5)
+            recovery_doc = document if not (timed or toggle or service or attribute_service) else catalog.Catalog(self.packet).new(5)
             self.category_forms[5].load(recovery_doc)
             kind = int(recovery_doc['recovery']['delivery_kind'])
             self.finite_capacity_text = catalog.display(recovery_doc['effect']['capacity_raw']) if kind == 4 and recovery_doc['effect']['supply_kind'] == '1' else '1000'
@@ -1377,7 +1385,7 @@ class ItemPage(QWidget):
             self.toggle_cooldown_check.setChecked(bool(cooldown) and toggle)
             self.toggle_cooldown_edit.setText(catalog.display(cooldown['duration_ms']) if cooldown and toggle else '1')
             self.toggle_cooldown_edit.setEnabled(self.toggle_cooldown_check.isChecked())
-            selected_kind = 3 if service else 2 if toggle else 1 if timed else 0
+            selected_kind = 4 if attribute_service else 3 if service else 2 if toggle else 1 if timed else 0
             self.consumable_kind.setCurrentIndex(selected_kind)
             self.consumable_pages.setCurrentIndex(selected_kind)
             self.recovery_controls()
@@ -1425,9 +1433,15 @@ class ItemPage(QWidget):
         document = copy.deepcopy(self.document); category = int(document['base']['category_id'])
         self.base_form.collect(document); self.use_form.collect(document)
         if not document['appearance'].get('model_asset'): document['appearance'] = None
+        if category in (1,2,3,4):self.attribute_panel.collect(document)
         if category == 5:
+            document['attribute_service']=None
             document['socket_service']=None
-            if self.consumable_kind.currentData()=='4':
+            if self.consumable_kind.currentData()=='5':
+                self.attribute_service_panel.collect(document)
+                document.update(recovery=None,effect=None,timed=None,toggle=None,cooldown=None)
+                check,edit=None,None
+            elif self.consumable_kind.currentData()=='4':
                 self.socket_service_form.collect(document)
                 document.update(recovery=None,effect=None,timed=None,toggle=None,cooldown=None)
                 check,edit=None,None

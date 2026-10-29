@@ -43,6 +43,8 @@ PROFILES = {
     'bonus_profile': ('profile_id', [('item_base', 'base_bonus_profile_id'), ('refinement_level', 'extra_bonus_profile_id'), ('timed_effect_profile', 'bonus_profile_id'), ('toggle_effect_profile', 'bonus_profile_id')], ['bonus_profile_entry']),
     'refinement_profile': ('profile_id', [('item_base', 'refinement_profile_id')], ['refinement_level']),
     'consumable_cooldown_profile': ('profile_id', [('recovery_profile', 'cooldown_profile_id'), ('timed_effect_profile', 'cooldown_profile_id'), ('toggle_effect_profile', 'cooldown_profile_id')], []),
+    'attribute_profile': ('profile_id',[('item_attribute_binding','profile_id')],['attribute_value','attribute_candidate','attribute_group']),
+    'attribute_service_profile': ('profile_id',[('item_consumable','attribute_service_profile_id')],['attribute_tier_chance']),
     'socket_service_profile': ('profile_id',[('item_consumable','socket_service_profile_id')],[]),
     'recovery_profile': ('profile_id', [('item_consumable', 'recovery_profile_id')], list(EFFECT_TABLES.values())),
     'timed_effect_profile': ('profile_id', [('item_consumable', 'timed_effect_profile_id')], []),
@@ -115,6 +117,7 @@ class Catalog:
                       trade=self.linked('item_trade_policy', base, 'trade_policy_id', 'policy_id'),
                       appearance=self.linked('item_appearance_profile', base, 'appearance_profile_id'),
                       refinement=refinement, levels=levels, bonuses=self.entries(base['base_bonus_profile_id']))
+        result.update(self.attribute_document(base))
         result['pet_food_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in sorted(self.tables['pet_feed_rule'],key=lambda r:int(r['service_kind'])) if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category==8:result['hatch']=self.linked('pet_hatch_profile',child,'hatch_profile_id')
         if category == 4:
@@ -125,8 +128,10 @@ class Catalog:
                           ammo=self.linked('item_ammo_policy', child, 'ammo_policy_id', 'policy_id'))
         if category in (2, 3): result['resistance'] = self.linked('item_resistance_profile', child, 'resistance_profile_id')
         if category == 5:
-            result.update(toggle=None, toggle_group=None, toggle_bonuses=[],socket_service=None)
-            if child.get('socket_service_profile_id') is not None:
+            result.update(toggle=None, toggle_group=None, toggle_bonuses=[],socket_service=None,attribute_service=None,attribute_tiers=[])
+            if child.get('attribute_service_profile_id') is not None:
+                result.update(attribute_service=self.linked('attribute_service_profile',child,'attribute_service_profile_id'),attribute_tiers=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('attribute_tier_chance',child['attribute_service_profile_id'],'tier')],recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
+            elif child.get('socket_service_profile_id') is not None:
                 result.update(socket_service=self.linked('socket_service_profile',child,'socket_service_profile_id'),recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
             elif child.get('toggle_effect_profile_id') is not None:
                 toggle = self.linked('toggle_effect_profile', child, 'toggle_effect_profile_id')
@@ -240,8 +245,9 @@ class Catalog:
             item.update(recovery=dict(delivery_kind='1', units_per_use='1', allowed_contexts='15', allow_during_pvp='1', cooldown_profile_id=None, arena_quota_cost='0'),
                         effect=dict(delivery_kind='1', hp_raw='1000', sp_raw='0', max_hp_bp='0', max_sp_bp='0', flat_bonus_cap_bp='10000'),
                         cooldown=None)
-            item['child'].update(recovery_profile_id=None, timed_effect_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None)
-            item['socket_service']=None
+            item['child'].update(recovery_profile_id=None, timed_effect_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None)
+            item.update(socket_service=None,attribute_service=None,attribute_tiers=[])
+            item['child']['attribute_service_profile_id']=None
             item.update(timed=None, timed_group=None, timed_bonuses=[], toggle=None, toggle_group=None, toggle_bonuses=[])
         if category == 8:
             # A usable placeholder box: one weighted gold entry until real contents are entered.
@@ -280,6 +286,7 @@ class Catalog:
             item.update(self.pet_supply_defaults())
         if category == 18:
             item['child']['lock_id'] = '1'
+        item.update(self.attribute_document(base))
         return item
 
     @staticmethod
@@ -471,10 +478,12 @@ class Catalog:
             child['ammo_policy_id'] = self.profile('item_ammo_policy', document['ammo'], child.get('ammo_policy_id'), idcol='policy_id')
         if category in (2, 3):
             child['resistance_profile_id'] = self.profile('item_resistance_profile', document['resistance'], child.get('resistance_profile_id'))
+        self.apply_attributes(document,key)
         if category == 5:
-            if document.get('socket_service') is not None:
+            if document.get('attribute_service') is not None:self.apply_attribute_service(document,child,key,exists)
+            elif document.get('socket_service') is not None:
                 identity=self.profile('socket_service_profile',document['socket_service'],child.get('socket_service_profile_id') if exists else None)
-                child.update(recovery_profile_id=None,timed_effect_profile_id=None,toggle_effect_profile_id=None,socket_service_profile_id=identity)
+                child.update(recovery_profile_id=None,timed_effect_profile_id=None,toggle_effect_profile_id=None,socket_service_profile_id=identity,attribute_service_profile_id=None)
             elif document.get('toggle') is not None: self.apply_toggle(document, child, key)
             elif document.get('timed') is not None: self.apply_timed(document, child, key)
             else: self.apply_recovery(document, child, key)
@@ -501,6 +510,56 @@ class Catalog:
                      [dict(r,category_id=key[0],local_id=key[1]) for r in document.get('pet_food_rules',[])])
         self.prune(before)
         return self.encode()
+
+    @staticmethod
+    def attribute_defaults():
+        candidates=[];values=[]
+        for pool,ids in [('1',range(1,9)),('2',range(21,24)),('3',range(21,24))]:
+            for identity in ids:
+                candidates.append(dict(pool_kind=pool,bonus_id=str(identity),weight='1'))
+                values.extend(dict(pool_kind=pool,bonus_id=str(identity),tier=str(tier),value_scaled=str(tier*100)) for tier in (1,2))
+        return dict(attribute_profile=None,attribute_groups=[dict(pool_kind=str(i),capacity=str(capacity),exclude_static='1' if i==1 else '0') for i,capacity in [(1,5),(2,2),(3,1)]],attribute_candidates=candidates,attribute_values=values)
+
+    @staticmethod
+    def attribute_service_defaults():
+        return dict(attribute_service=dict(operation_kind='1',pool_kind='1',units_per_use='1',success_bp='10000',target_mask='7',minimum_count='0',maximum_count='4',add_count='1',maximum_target_level='0',consume_on_failure='0'),attribute_tiers=[dict(tier='1',chance_bp='4000'),dict(tier='2',chance_bp='6000')])
+
+    def attribute_document(self,base):
+        result=self.attribute_defaults()
+        binding=next((r for r in self.tables['item_attribute_binding'] if r['category_id']==base['category_id'] and r['local_id']==base['local_id']),None)
+        if binding:
+            result['attribute_profile']=self.linked('attribute_profile',binding,'profile_id')
+            for field,table in [('attribute_groups','attribute_group'),('attribute_candidates','attribute_candidate'),('attribute_values','attribute_value')]:
+                result[field]=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.tables[table] if r['profile_id']==binding['profile_id']]
+        return result
+
+    def apply_attributes(self,document,key):
+        binding=dict(category_id=str(key[0]),local_id=str(key[1]));old=next((r['profile_id'] for r in self.tables['item_attribute_binding'] if all(r[k]==v for k,v in binding.items())),None)
+        head=document.get('attribute_profile')
+        if head is None:self.replace('item_attribute_binding',binding,[]);return
+        children={'attribute_group':document['attribute_groups'],'attribute_candidate':document['attribute_candidates'],'attribute_value':document['attribute_values']}
+        identity=self.owned_profile('attribute_profile',head,children,old,key)
+        self.replace('item_attribute_binding',binding,[dict(binding,profile_id=identity)])
+
+    def owned_profile(self,table,head,children,old,key):
+        previous=self.row(table,old);fields=[k for k in self.packet['columns'][table] if k not in ('profile_id','code')]
+        wanted={k:text(head[k]) for k in fields}
+        children={t:[{k:text(v) for k,v in r.items() if k!='profile_id'} for r in rows] for t,rows in children.items()}
+        sort=lambda rows:sorted(tuple(sorted(r.items())) for r in rows)
+        equal=previous and all(previous[k]==wanted[k] for k in fields)
+        for child,rows in children.items():equal=equal and sort(rows)==sort([{k:v for k,v in r.items() if k!='profile_id'} for r in self.tables[child] if r['profile_id']==old])
+        if equal:return old
+        users=[r for _,r in self.references(table,old)] if previous else []
+        private=previous and users and all((int(r['category_id']),int(r['local_id']))==key for r in users)
+        identity=old if private else self.allocate(table)
+        code=previous['code'] if private else f'editor.{table}.{identity}'
+        self.replace(table,{'profile_id':identity},[dict(wanted,profile_id=identity,code=code)])
+        for child,rows in children.items():self.replace(child,{'profile_id':identity},[dict(r,profile_id=identity) for r in rows])
+        return identity
+
+    def apply_attribute_service(self,document,child,key,exists):
+        identity=self.owned_profile('attribute_service_profile',document['attribute_service'],{'attribute_tier_chance':document['attribute_tiers']},child.get('attribute_service_profile_id') if exists else None,key)
+        child.update(recovery_profile_id=None,timed_effect_profile_id=None,toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=identity)
 
     def apply_refinement(self, document, base, key):
         refinement, old = document['refinement'], base.get('refinement_profile_id')
@@ -691,7 +750,7 @@ class Catalog:
         if any(r.get('recovery_profile_id') == profile and (int(r['category_id']), int(r['local_id'])) != key for r in self.tables['item_consumable']):
             profile = self.allocate('recovery_profile')
             self.replace('recovery_profile', {'profile_id': profile}, [dict(recovery, profile_id=profile, code=f'editor.recovery.{profile}')])
-        child.update(recovery_profile_id=profile, timed_effect_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None)
+        child.update(recovery_profile_id=profile, timed_effect_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None)
         table = EFFECT_TABLES[int(recovery['delivery_kind'])]
         for other in EFFECT_TABLES.values():
             if other != table: self.replace(other, {'profile_id': profile}, [])
@@ -725,7 +784,7 @@ class Catalog:
         cooldown = document.get('cooldown')
         timed['cooldown_profile_id'] = self.profile('consumable_cooldown_profile', cooldown, timed.get('cooldown_profile_id'),
                                                    reuse=private) if cooldown else None
-        child.update(recovery_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None, timed_effect_profile_id=self.profile('timed_effect_profile', timed, old if private else None))
+        child.update(recovery_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None, timed_effect_profile_id=self.profile('timed_effect_profile', timed, old if private else None))
 
     def apply_toggle(self, document, child, key):
         toggle = document['toggle']
@@ -755,7 +814,7 @@ class Catalog:
         cooldown = document.get('cooldown')
         toggle['cooldown_profile_id'] = self.profile('consumable_cooldown_profile', cooldown, toggle.get('cooldown_profile_id'),
                                                    reuse=private) if cooldown else None
-        child.update(recovery_profile_id=None, timed_effect_profile_id=None,socket_service_profile_id=None, toggle_effect_profile_id=self.profile('toggle_effect_profile', toggle, old if private else None))
+        child.update(recovery_profile_id=None, timed_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None, toggle_effect_profile_id=self.profile('toggle_effect_profile', toggle, old if private else None))
 
     def apply_book(self, document, child, key):
         head, old = document['book'], child.get('profile_id')
@@ -776,6 +835,7 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'attribute.profile':'példánybónuszok helyei, engedélyezett típusai és értékei', 'attribute.service':'bónuszhozzáadás, váltás vagy zárolás szabályai', 'attribute.binding':'tárgyhoz rendelt példánybónusz-profil', 'attribute.values':'bónuszértékek szintjei', 'attribute.tiers':'bónuszminőség esélyei',
     'socket.service':'foglalattisztítás vagy kőkiemelés típusa és mennyisége',
     'pet.training':'kor, helynyitás és képességszintek', 'pet.skills':'petképesség azonosítója, hatása és szintjei', 'pet.supply':'petellátmány típusa és beállításai', 'pet.supply_state':'szállítódoboz/skin halmozása vagy bónusza', 'pet.study_skill':'tanítható petképesség', 'pet.skin_form':'pet megjelenési formája',
     'pet.hatch': 'keltetési költség és születési értékek', 'pet.hatch_target': 'keltetett fejlődő pet', 'pet.feed': 'petetetés forrása, mennyisége és hatása',

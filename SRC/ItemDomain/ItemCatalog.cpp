@@ -59,11 +59,14 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         for (const auto& row : rows) if (!add(row.code.size())) return false;
         return true;
     };
-    if (!profiles(source.socketServiceProfiles) || !profiles(source.petTrainingProfiles) || !profiles(source.petSupplyProfiles) || !profiles(source.petHatchProfiles) || !profiles(source.growthPetProfiles) || !profiles(source.soulProfiles) || !profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
+    if (!profiles(source.attributeProfiles) || !profiles(source.attributeServices) || !profiles(source.socketServiceProfiles) || !profiles(source.petTrainingProfiles) || !profiles(source.petSupplyProfiles) || !profiles(source.petHatchProfiles) || !profiles(source.growthPetProfiles) || !profiles(source.soulProfiles) || !profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
         !profiles(source.attacks) || !profiles(source.ammoPolicies) || !profiles(source.resistances) || !profiles(source.refinements) ||
         !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
         !profiles(source.lootProfiles) || !profiles(source.timedEffectGroups) || !profiles(source.timedEffects) || !profiles(source.toggleEffectGroups) || !profiles(source.toggleEffects) || !profiles(source.skillBookProfiles))
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "profiles"));
+    for(const auto& p:source.attributeProfiles){if(p.groups.size()>3 || p.candidates.size()>MaxAttributeCandidates)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"attribute.profile"));for(const auto& a:p.candidates)if(a.values.size()>MaxAttributeTiers)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"attribute.values"));}
+    for(const auto& p:source.attributeServices)if(p.tiers.size()>MaxAttributeTiers)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"attribute.tiers"));
+    if(source.attributeBindings.size()>ItemCatalogLimits::Items)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"attribute.bindings"));
     for(const auto& p:source.petTrainingProfiles) {
         if(p.ages.size()>32 || p.slots.size()>4 || p.skills.size()>128)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"pet.training",{},p.id));
         for(const auto& skill:p.skills)if(skill.ranks.size()>255 || !add(skill.code.size()))return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"pet.skills",{},p.id));
@@ -131,8 +134,12 @@ auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.char
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 23 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 24 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
+    for(auto& p:source.attributeProfiles){std::ranges::sort(p.groups,{},&AttributeGroup::pool);std::ranges::sort(p.candidates,[](const auto& a,const auto& b){return std::pair{a.pool,a.bonus}<std::pair{b.pool,b.bonus};});for(auto& a:p.candidates)std::ranges::sort(a.values,{},&AttributeValue::tier);}
+    for(auto& p:source.attributeServices)std::ranges::sort(p.tiers,{},&AttributeTierChance::tier);
+    if(auto r=Profiles(source.attributeProfiles,"attribute.profile",ValidAttributeProfile);!r)return std::unexpected(r.error());
+    if(auto r=Profiles(source.attributeServices,"attribute.service",ValidAttributeService);!r)return std::unexpected(r.error());
     if(auto r=Profiles(source.socketServiceProfiles,"socket.service",ValidSocketServiceProfile);!r)return std::unexpected(r.error());
     if(auto r=Profiles(source.companionForms,"companion.form",[](const CompanionForm& f){return f.mobTemplateId>0 && detail::AssetReference(f.modelAsset);});!r)return std::unexpected(r.error());
     for(auto& p:source.growthPetProfiles) {
@@ -454,9 +461,10 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     {
         if (row.key.Category() != ItemCategory::Consumable) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "consumable", row.key));
         if (!consumables.emplace(row.key, &row).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow, "consumable", row.key));
-        if (unsigned(row.recoveryProfile != 0) + row.timedEffectProfile.has_value() + row.toggleEffectProfile.has_value() + row.socketServiceProfile.has_value() != 1 ||
-            row.timedEffectProfile == 0 || row.toggleEffectProfile == 0 || row.socketServiceProfile == 0)
+        if (unsigned(row.recoveryProfile != 0) + row.timedEffectProfile.has_value() + row.toggleEffectProfile.has_value() + row.socketServiceProfile.has_value() + row.attributeServiceProfile.has_value() != 1 ||
+            row.timedEffectProfile == 0 || row.toggleEffectProfile == 0 || row.socketServiceProfile == 0 || row.attributeServiceProfile == 0)
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "consumable.effect", row.key));
+        if(row.attributeServiceProfile && !FindProfile(source.attributeServices,*row.attributeServiceProfile))return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"attribute.service",row.key,*row.attributeServiceProfile));
         if (row.socketServiceProfile && !FindProfile(source.socketServiceProfiles,*row.socketServiceProfile))
             return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"socket.service",row.key,*row.socketServiceProfile));
         if (row.recoveryProfile && !catalog->FindRecovery(row.recoveryProfile))
@@ -629,6 +637,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             if (c.toggleEffectProfile && row.maxStack != 1)
                 return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.toggle_stack", row.key));
             const auto units = c.timedEffectProfile ? FindProfile(source.timedEffects, *c.timedEffectProfile)->unitsPerUse
+                                                   : c.attributeServiceProfile ? FindProfile(source.attributeServices,*c.attributeServiceProfile)->units
                                                    : c.socketServiceProfile ? FindProfile(source.socketServiceProfiles,*c.socketServiceProfile)->unitsPerUse
                                                    : c.toggleEffectProfile ? 1 : catalog->FindRecovery(c.recoveryProfile)->Data().unitsPerUse;
             if (units > row.maxStack) return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.stack_below_use_units", row.key));
@@ -732,6 +741,14 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     for (const auto& recipe : source.refinementRecipes)
         if (!ValidateRefinementRecipe(recipe, *catalog))
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidRefinementRecipe, "refinement_recipe", recipe.source, recipe.id));
+    std::ranges::sort(source.attributeBindings,{},&ItemAttributeBinding::key);
+    std::optional<ItemKey> priorAttributeKey;
+    for(const auto& b:source.attributeBindings){
+        const auto* item=catalog->Find(b.key);const auto category=static_cast<unsigned>(b.key.Category());
+        if(priorAttributeKey==b.key || !item || category<1 || category>4 || !FindProfile(source.attributeProfiles,b.profile) || item->base.maxStack!=1)
+            return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"attribute.binding",b.key,b.profile));
+        priorAttributeKey=b.key;
+    }
     auto digest = detail::CanonicalCatalogHash(source);
     if (!digest) return std::unexpected(Error(digest.error(), "content_hash"));
     catalog->digest_ = *digest;
@@ -788,6 +805,12 @@ const ValidatedAccessorySocketProfile* ItemCatalog::FindAccessorySocket(std::uin
     const auto found = accessorySockets_.find(id);
     return found == accessorySockets_.end() ? nullptr : &found->second;
 }
+const AttributeProfile* ItemCatalog::FindItemAttributes(ItemKey key) const noexcept
+{
+    const auto it=std::ranges::lower_bound(source_.attributeBindings,key,{},&ItemAttributeBinding::key);
+    return it==source_.attributeBindings.end() || it->key!=key ? nullptr : FindProfile(source_.attributeProfiles,it->profile);
+}
+const AttributeServiceProfile* ItemCatalog::FindAttributeService(std::uint32_t id) const noexcept {return FindProfile(source_.attributeServices,id);}
 const SocketServiceProfile* ItemCatalog::FindSocketService(std::uint32_t id) const noexcept
 { return FindProfile(source_.socketServiceProfiles,id); }
 const ValidatedRecoveryProfile* ItemCatalog::FindRecovery(std::uint32_t id) const noexcept

@@ -13,7 +13,7 @@ enum class Table : std::uint8_t
     Attacks, AmmoPolicies, Resistances, BonusProfiles, BonusEntries, Refinements,
     RefinementLevels, Items, Weapons, Armors, Accessories, Materials, SocketProfiles,
     SocketGrades, SocketMaterials, Cooldowns, Recoveries, Instant, Reserve, Periodic,
-    Consumables, LootProfiles, LootEntries, Containers, ContainerKeys, CurrencyTokens, TimedEffectGroups, TimedEffects, Automatic, ToggleEffectGroups, ToggleEffects, BookProfiles, BookTargets, BookSteps, SkillBooks, RefinementRecipes, RefinementIngredients, QuestItems, SocketStones, Costumes, CostumeVisuals, ToolProfiles, ToolLevels, Tools, FishingItems, PolymorphForms, PolymorphProfiles, PolymorphSkills, PolymorphMasteries, PolymorphItems, SoulProfiles, SoulLevels, SoulItems, CompanionForms, Companions, GrowthPetProfiles, GrowthPetLevels, GrowthPetStages, PetHatchProfiles, PetFeedRules, PetTrainingProfiles, PetAgeTiers, PetSlotRules, PetSkillDefinitions, PetSkillRanks, PetSupplyProfiles, PetStudyRules, PetExtensionRules, PetEnchantRules, PetSkinRules, PetSupplies, SocketServices, Count,
+    Consumables, LootProfiles, LootEntries, Containers, ContainerKeys, CurrencyTokens, TimedEffectGroups, TimedEffects, Automatic, ToggleEffectGroups, ToggleEffects, BookProfiles, BookTargets, BookSteps, SkillBooks, RefinementRecipes, RefinementIngredients, QuestItems, SocketStones, Costumes, CostumeVisuals, ToolProfiles, ToolLevels, Tools, FishingItems, PolymorphForms, PolymorphProfiles, PolymorphSkills, PolymorphMasteries, PolymorphItems, SoulProfiles, SoulLevels, SoulItems, CompanionForms, Companions, GrowthPetProfiles, GrowthPetLevels, GrowthPetStages, PetHatchProfiles, PetFeedRules, PetTrainingProfiles, PetAgeTiers, PetSlotRules, PetSkillDefinitions, PetSkillRanks, PetSupplyProfiles, PetStudyRules, PetExtensionRules, PetEnchantRules, PetSkinRules, PetSupplies, SocketServices, AttributeProfiles, AttributeGroups, AttributeCandidates, AttributeValues, AttributeBindings, AttributeServices, AttributeTiers, Count,
 };
 struct TableSpec
 {
@@ -24,8 +24,8 @@ struct TableSpec
 inline constexpr std::size_t TableCount = static_cast<std::size_t>(Table::Count);
 inline constexpr std::size_t CapturedByteBudget = 256 * 1024 * 1024;
 inline constexpr std::size_t CellBudgetOverhead = 160;
-inline constexpr std::uint32_t CatalogSchemaVersion = 23;
-inline constexpr std::string_view CanonicalDomain = "auriga.item_catalog.v23";
+inline constexpr std::uint32_t CatalogSchemaVersion = 24;
+inline constexpr std::string_view CanonicalDomain = "auriga.item_catalog.v24";
 std::span<const TableSpec, TableCount> Tables() noexcept;
 std::size_t ColumnCount(const TableSpec& spec) noexcept;
 

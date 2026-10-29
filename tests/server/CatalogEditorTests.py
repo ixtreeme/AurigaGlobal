@@ -88,7 +88,34 @@ def socket_service(document,kind=1):
     document.update(socket_service=dict(service_kind=str(kind),units_per_use='1'),recovery=None,effect=None,timed=None,toggle=None,cooldown=None)
 
 
+def attributes(document):
+    document.update(catalog.Catalog.attribute_defaults());document['attribute_profile']=dict(allow_lock='0' if document['base']['category_id']=='4' else '1')
+
+
+def attribute_service(document,operation='1',pool='1'):
+    document.update(catalog.Catalog.attribute_service_defaults());document.update(socket_service=None,recovery=None,effect=None,timed=None,toggle=None,cooldown=None)
+    head=document['attribute_service'];head.update(operation_kind=operation,pool_kind=pool,maximum_count='5' if pool=='1' else '2' if pool=='2' else '1')
+    if operation!='1':head.update(add_count='0')
+    if operation in ('3','4','5'):document['attribute_tiers']=[]
+
+
 class OfflineModelTests(unittest.TestCase):
+    def test_instance_attribute_profiles_services_and_copy(self):
+        packet,key=create(catalog.blank(TOOL),1,attributes);self.check(packet);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);clone['attribute_values'][0]['value_scaled']='3500';other=key_of(clone)
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other);self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        for operation,pool in [('1','1'),('2','1'),('3','1'),('4','1'),('5','1'),('1','2'),('2','3')]:
+            packet,service=create(packet,5,lambda d:attribute_service(d,operation,pool));self.check(packet)
+            self.assertEqual(catalog.Catalog(packet).item(service)['attribute_service']['operation_kind'],operation)
+        changed=catalog.Catalog(packet).item(other);changed['attribute_profile']=None;packet=saved(packet,catalog.Catalog(packet).apply(changed,other));self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertEqual(len(rows(packet,'attribute_profile')),1)
+        bad=catalog.Catalog(packet).item(key);bad['attribute_values'][0]['value_scaled']='0'
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,key,TOOL)
+        bad=catalog.Catalog(packet).new(5);attribute_service(bad);bad['attribute_tiers']=[dict(tier='1',chance_bp='10001')]
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,None,TOOL)
+
     def test_socket_services_copy_and_effect_switches(self):
         packet=catalog.blank(TOOL)
         for kind in range(1,4):
@@ -814,6 +841,18 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_instance_attribute_and_service_forms_ignore_inactive_drafts(self):
+        packet,key=create(catalog.blank(TOOL),1,attributes);self.page.loaded(packet,key);panel=self.page.attribute_panel
+        self.assertTrue(panel.enabled.isChecked());self.assertEqual(panel.values.rowCount(),28)
+        panel.values.item(0,4).setText('3.5');d=self.page.collect();self.assertEqual(d['attribute_values'][0]['value_scaled'],'3500');catalog.validate(packet,d,key,TOOL)
+        panel.enabled.setChecked(False);panel.values.item(0,4).setText('invalid inactive');d=self.page.collect();self.assertIsNone(d['attribute_profile']);catalog.validate(packet,d,key,TOOL)
+        packet,service=create(packet,5,attribute_service);self.page.loaded(packet,service);panel=self.page.attribute_service_panel
+        self.assertEqual(self.page.consumable_kind.currentData(),'5');panel.success.edit.setText('73')
+        d=self.page.collect();self.assertEqual(d['attribute_service']['success_bp'],'7300');catalog.validate(packet,d,service,TOOL)
+        panel.operation.widget.setCurrentIndex(panel.operation.widget.findData('3'));panel.success.edit.setText('invalid inactive');panel.add_count.edit.setText('invalid inactive');panel.tiers.item(0,1).setText('invalid inactive')
+        d=self.page.collect();self.assertEqual(d['attribute_service']['success_bp'],'10000');self.assertEqual(d['attribute_service']['add_count'],'0');self.assertFalse(d['attribute_tiers']);catalog.validate(packet,d,service,TOOL)
+        self.page.consumable_kind.setCurrentIndex(0);d=self.page.collect();self.assertIsNone(d['attribute_service']);catalog.validate(packet,d,service,TOOL);self.page.dirty=False
+
     def test_socket_service_form_switches_ignore_inactive_drafts(self):
         packet,key=create(catalog.blank(TOOL),5,lambda d:socket_service(d,2));self.page.loaded(packet,key)
         self.assertEqual(self.page.consumable_kind.currentData(),'4')
@@ -1477,6 +1516,22 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzzzzzzzzz_instance_attributes_atomic_copy_and_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(1);attributes(d);key=key_of(d);packet=self.commit(packet,d)
+        original=catalog.Catalog(packet).item(key);clone=catalog.Catalog(packet).duplicate(key);clone['attribute_values'][0]['value_scaled']='3500';packet=self.commit(packet,clone)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        service=catalog.Catalog(packet).new(5);attribute_service(service);service_key=key_of(service);packet=self.commit(packet,service)
+        for table in ('attribute_value','attribute_tier_chance','item_attribute_binding'):
+            self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_attributes BEFORE INSERT ON protos."+table+" FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test attribute write failure'")
+            try:
+                if table=='attribute_tier_chance':fresh=catalog.Catalog(packet).duplicate(service_key);fresh['attribute_tiers'][0]['chance_bp']='3900'
+                else:fresh=catalog.Catalog(packet).duplicate(key);fresh['attribute_values'][0]['value_scaled']='4900'
+                with self.assertRaises(api.EditorError):self.commit(packet,fresh)
+            finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_attributes')
+            after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences']);self.assertEqual(ordered(after['tables']),ordered(packet['tables']))
+        edited=catalog.Catalog(packet).item(service_key);edited.update(attribute_service=None,socket_service=dict(service_kind='1',units_per_use='1'));packet=self.commit(packet,edited,service_key)
+        self.assertIsNone(catalog.Catalog(packet).item(service_key)['attribute_service'])
+
     def test_zzzzzzzzzzzz_socket_service_commit_copy_and_atomic_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(5);socket_service(d,2);key=key_of(d)
         packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)

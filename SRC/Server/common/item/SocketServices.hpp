@@ -84,6 +84,8 @@ enum class SocketServiceError
     NoEffect, InvalidReservation, MaterialNotAllowed, InvalidDecision,
     OperationDisabled, LifetimeMismatch,
 };
+// Shared admission for owned, revision-pinned item-on-item operations.
+std::expected<void,SocketServiceError> ValidateItemOperationPair(const ItemCatalog&,const SocketItemPair&);
 // Pure, owning proposals. No registry, SQL, spawning, RNG, stat or inventory write.
 // The F3/F4 owner must commit receipt + consumption + complete socket replacement
 // + every reserved stone together. No AutoGive/ground fallback or partial return.

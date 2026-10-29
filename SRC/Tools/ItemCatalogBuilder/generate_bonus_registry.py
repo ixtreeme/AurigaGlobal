@@ -31,7 +31,7 @@ ENUMS = {
                                   "PercentPenetration", "Resistance", "CritChance", "CritResistance",
                                   "CritMultiplierExtra", "Block", "Accuracy", "Speed", "Attribute", "Experience"]),
 }
-SOURCES = {"ItemBase": 1, "Refinement": 2, "TimedEffect": 4}
+SOURCES = {"ItemBase": 1, "Refinement": 2, "TimedEffect": 4, "Instance": 8}
 FIELDS = {"id", "cpp_name", "code", "display_key", "allowed_sources", "minimum", "maximum", *ENUMS}
 
 

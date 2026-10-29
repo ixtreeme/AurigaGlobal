@@ -184,7 +184,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::SocketServices,[&](const Reader& r){s.socketServiceProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<SocketServiceKind>(r.U8(2)),r.U16(3)});});
     Each(source, Table::Consumables, [&](const Reader& r) {
         if (r.row[2] && r.U32(2) == 0) r.Fail(ReadErrorCode::InvalidNumber, 2);
-        s.consumables.push_back({r.Key(),r.OptionalId(2).value_or(0),r.OptionalId(3),r.OptionalId(4),r.OptionalId(5)});
+        s.consumables.push_back({r.Key(),r.OptionalId(2).value_or(0),r.OptionalId(3),r.OptionalId(4),r.OptionalId(5),r.OptionalId(6)});
     });
     Each(source, Table::LootProfiles, [&](const Reader& r) { s.lootProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<LootPickMode>(r.U8(2)),{}}); });
     const auto loots = Index(s.lootProfiles, Table::LootProfiles);
@@ -283,6 +283,15 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::PetEnchantRules,[&](const Reader& r){if(r.U8(1)!=6)r.Fail(ReadErrorCode::InvalidChild,1);Parent(s.petSupplyProfiles,supplyIndex,r).enchant=PetEnchantRule{r.U16(2),r.U16(3),{r.U16(4),r.U16(5),r.U16(6)}};});
     Each(source,Table::PetSkinRules,[&](const Reader& r){if(r.U8(1)!=8)r.Fail(ReadErrorCode::InvalidChild,1);Parent(s.petSupplyProfiles,supplyIndex,r).skin=PetSkinRule{r.U32(2),static_cast<CostumeClock>(r.U8(3)),r.U64(4)};});
     Each(source,Table::PetSupplies,[&](const Reader& r){if(r.U8(2)!=1)r.Fail(ReadErrorCode::InvalidChild,2);s.petSupplies.push_back({r.Key(),r.U32(3)});});
+    Each(source,Table::AttributeProfiles,[&](const Reader& r){s.attributeProfiles.push_back({r.U32(0),r.Text(1,96),r.Bool(2),{},{}});});
+    const auto attributeIndex=Index(s.attributeProfiles,Table::AttributeProfiles);
+    Each(source,Table::AttributeGroups,[&](const Reader& r){Parent(s.attributeProfiles,attributeIndex,r).groups.push_back({static_cast<AttributePool>(r.U8(1)),r.U8(2),r.Bool(3)});});
+    Each(source,Table::AttributeCandidates,[&](const Reader& r){Parent(s.attributeProfiles,attributeIndex,r).candidates.push_back({static_cast<AttributePool>(r.U8(1)),static_cast<BonusId>(r.U32(2)),r.U32(3),{}});});
+    Each(source,Table::AttributeValues,[&](const Reader& r){auto& rows=Parent(s.attributeProfiles,attributeIndex,r).candidates;auto it=std::ranges::find_if(rows,[&](const auto& a){return a.pool==static_cast<AttributePool>(r.U8(1)) && a.bonus==static_cast<BonusId>(r.U32(2));});if(it==rows.end())r.Fail(ReadErrorCode::InvalidChild,2);it->values.push_back({r.U8(3),r.I64(4)});});
+    Each(source,Table::AttributeBindings,[&](const Reader& r){s.attributeBindings.push_back({r.Key(),r.U32(2)});});
+    Each(source,Table::AttributeServices,[&](const Reader& r){s.attributeServices.push_back({r.U32(0),r.Text(1,96),static_cast<AttributeOperation>(r.U8(2)),static_cast<AttributePool>(r.U8(3)),r.U16(4),r.U16(5),r.U8(6),r.U8(7),r.U8(8),r.U8(9),r.U16(10),r.Bool(11),{}});});
+    const auto attributeServiceIndex=Index(s.attributeServices,Table::AttributeServices);
+    Each(source,Table::AttributeTiers,[&](const Reader& r){Parent(s.attributeServices,attributeServiceIndex,r).tiers.push_back({r.U8(1),r.U16(2)});});
     return s;
 }
 }

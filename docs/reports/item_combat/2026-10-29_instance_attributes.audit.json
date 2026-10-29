@@ -1,0 +1,428 @@
+{
+  "contracts": {
+    "coupled_addon": "Gaussian skill plus correlated normal damage; not represented by independent candidate draws",
+    "first_lock_requires_full_normal_group": true,
+    "locked_index_stable": true,
+    "normal_and_rare_may_repeat": true,
+    "normal_default_tier_chance_bp": [
+      0,
+      1000,
+      4000,
+      3500,
+      1500
+    ],
+    "normal_type_selection": "weighted after exclusions",
+    "rare_and_extra_share_uniqueness": true,
+    "rare_type_selection": "uniform with maximum permitted tier",
+    "slots": [
+      5,
+      2,
+      1
+    ],
+    "variant_unassigned_tier_chance_bp": 2700
+  },
+  "created_at_utc": "2026-10-29T17:01:49.962314+00:00",
+  "installed_to_game": false,
+  "prototype_rows": [
+    {
+      "converted": false,
+      "family": "add_rare",
+      "source_row_sha256": "043af960ba200047a9bea22d7650cc5afaa0527d9418016555c08193aab880ca",
+      "subtype": 10,
+      "vnum": 30617
+    },
+    {
+      "converted": false,
+      "family": "reroll_rare",
+      "source_row_sha256": "8e172122f0ec9caab0e767de030803159aeaf54f4945664dfa88877256623add",
+      "subtype": 10,
+      "vnum": 30618
+    },
+    {
+      "converted": false,
+      "family": "add_extra",
+      "source_row_sha256": "8644747785400cf6e71a2b2db368ac4754e357f632590922a46fcf5ffd1f15e2",
+      "subtype": 10,
+      "vnum": 30619
+    },
+    {
+      "converted": false,
+      "family": "reroll_extra",
+      "source_row_sha256": "e0645c49529b6f77f3b4fbd2d89749fe295c4d02db247e2f320919dbd6a0c230",
+      "subtype": 10,
+      "vnum": 30620
+    },
+    {
+      "converted": false,
+      "family": "add_fifth",
+      "source_row_sha256": "6510ce16d339a8586fea5bab696746936dc5fc5d5902804cb8e6c116b0bf7195",
+      "subtype": 22,
+      "vnum": 39004
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "16a6e9a9d2261a53eaa386c182ce242d711671f103ee293f727204a4aa7ecdba",
+      "subtype": 18,
+      "vnum": 39028
+    },
+    {
+      "converted": false,
+      "family": "add_normal",
+      "source_row_sha256": "83d28e7626faa27fed6d7dc4ecc8854bed4a6e6d0f66f61db8aaaa4160f58d96",
+      "subtype": 19,
+      "vnum": 39029
+    },
+    {
+      "converted": false,
+      "family": "add_fifth",
+      "source_row_sha256": "c51095bad15f6d1026cf8eb714b20e27128603e415f42074b182a06b823765dd",
+      "subtype": 22,
+      "vnum": 70024
+    },
+    {
+      "converted": false,
+      "family": "costume_reset",
+      "source_row_sha256": "2106de246e546a8afd13b9319756c1a1e0e93a60cf877ec9191b165b7aa57b84",
+      "subtype": 32,
+      "vnum": 70063
+    },
+    {
+      "converted": false,
+      "family": "costume_reroll",
+      "source_row_sha256": "b16a4f6c434c61b33341bfd6e5d3950c375ba4f6807178a68a623f3dbc196e95",
+      "subtype": 31,
+      "vnum": 70064
+    },
+    {
+      "converted": false,
+      "family": "costume_reroll",
+      "source_row_sha256": "3d887d32a8d3f836c7462c74191f209a995178956c0343763b803a33627de7ff",
+      "subtype": 38,
+      "vnum": 70401
+    },
+    {
+      "converted": false,
+      "family": "costume_explicit",
+      "source_row_sha256": "e2a4774764c2b5e5024594d9a0f6bcba64bcbccdc5b61bc99dad4ab77fc36340",
+      "subtype": 39,
+      "vnum": 70402
+    },
+    {
+      "converted": false,
+      "family": "costume_explicit",
+      "source_row_sha256": "e64f30405d92bcb655c66e0c98fba354cfdb7318ef9da1a3a39ea6c37711653f",
+      "subtype": 40,
+      "vnum": 70403
+    },
+    {
+      "converted": false,
+      "family": "costume_remove",
+      "source_row_sha256": "41ec3cba8c98e8001cfb9a5f416733e4ce3c6acb36ba5eaab971c209c54a03ff",
+      "subtype": 41,
+      "vnum": 70404
+    },
+    {
+      "converted": false,
+      "family": "lock",
+      "source_row_sha256": "456e3dc8ce536c917873df43e419f1a2cecd818b7872f2a277886771e6b9a034",
+      "subtype": 35,
+      "vnum": 70604
+    },
+    {
+      "converted": false,
+      "family": "relock",
+      "source_row_sha256": "367f802601d2899826e13b35f125f17374f98efbddcd440bce08ad1aa5643a4a",
+      "subtype": 36,
+      "vnum": 70605
+    },
+    {
+      "converted": false,
+      "family": "unlock",
+      "source_row_sha256": "db3f9d62abbc859927fb299ae261979dcc6288fca7b432b064d1b8605d281d59",
+      "subtype": 37,
+      "vnum": 70606
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "f4bf1dc6970fce72fa2052361dc5931a6b3a9729393faaebf3005feccd5feecf",
+      "subtype": 18,
+      "vnum": 71084
+    },
+    {
+      "converted": false,
+      "family": "add_normal",
+      "source_row_sha256": "17b833cd71d6a6d0c62c7fa4a93947dcabf78fc880c80c71ebaf2ccc14b10c52",
+      "subtype": 19,
+      "vnum": 71085
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "8667f203bb09b0c5e16a7e0b8f2f7491cf83ebb4f6620960a255ec0adad2e88b",
+      "subtype": 18,
+      "vnum": 71151
+    },
+    {
+      "converted": false,
+      "family": "add_normal",
+      "source_row_sha256": "e3541b11737d834ccb2fe176cc0419d4987371b2f1e78b305895823498808b13",
+      "subtype": 19,
+      "vnum": 71152
+    },
+    {
+      "converted": false,
+      "family": "add_fifth",
+      "source_row_sha256": "98f81c4d69209e9555e86cb4142907b0da713d415526f35c904ce0032595f950",
+      "subtype": 22,
+      "vnum": 72304
+    },
+    {
+      "converted": false,
+      "family": "add_normal",
+      "source_row_sha256": "8bfbce2ab81f129fe33297c8aec0d95c3e01d0e0c99e51cdf337dbc462fb3cfa",
+      "subtype": 19,
+      "vnum": 76013
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "9815ce9871dca945c3bfc139f0b0ac23b8168d7137356031dd022681a15a7a7b",
+      "subtype": 18,
+      "vnum": 76014
+    },
+    {
+      "converted": false,
+      "family": "add_fifth",
+      "source_row_sha256": "131066882f13a6eacec4894ca621da33482b5671bead600b000104dd4e52851b",
+      "subtype": 22,
+      "vnum": 76015
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "5814b918cebbe4e9c2397b80855a2f25ea2d027c69b3fec82acce77069e26ae8",
+      "subtype": 18,
+      "vnum": 76023
+    },
+    {
+      "converted": false,
+      "family": "add_normal",
+      "source_row_sha256": "4f51164fab7f7bbda75530f272472f09050f228a5878b24963d25ebd418de51e",
+      "subtype": 19,
+      "vnum": 76024
+    },
+    {
+      "converted": false,
+      "family": "add_normal",
+      "source_row_sha256": "1ce987beff6c6d514fabd1b5853992334083d9c508b1760fbf27883bda3ab84b",
+      "subtype": 19,
+      "vnum": 86050
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "e098c8d868f8d4edd213620bde60a35eb569fb5bf1a8cd7dda4657d328b25c7d",
+      "subtype": 18,
+      "vnum": 86051
+    },
+    {
+      "converted": false,
+      "family": "add_fifth",
+      "source_row_sha256": "f502e4a82db23176ceb7523d5c6945a8a828491c9f8acbfb039b6fa1f6b115ec",
+      "subtype": 22,
+      "vnum": 86052
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "12d4f5a1873f69fafcce2bc2ddc3923e487cb639481780ea0a7688d0753f2cf4",
+      "subtype": 18,
+      "vnum": 86060
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "5bec991082dabf556fb7eb722c1e3f45465431843232d9fd5fc9aca43c6541d9",
+      "subtype": 18,
+      "vnum": 88959
+    },
+    {
+      "converted": false,
+      "family": "costume_reroll",
+      "source_row_sha256": "0a6a1496c1a9bb46023ef1248da2459dcf7a7c8791da39b76d1fceb6348eb4bc",
+      "subtype": 38,
+      "vnum": 88963
+    },
+    {
+      "converted": false,
+      "family": "add_fifth",
+      "source_row_sha256": "f65c410061fb8016df077c1937b4b32c18f5c7537d44030c0b200200c451c78e",
+      "subtype": 22,
+      "vnum": 88964
+    },
+    {
+      "converted": false,
+      "family": "reroll_normal",
+      "source_row_sha256": "e3ef1ca4b54adde83fc8da1cf4eb42268b66059c069ecbd97e9a3c7122601fcf",
+      "subtype": 18,
+      "vnum": 88965
+    },
+    {
+      "converted": false,
+      "family": "add_normal",
+      "source_row_sha256": "5f1896fe82c376735a6ee05af02117057a3efaf757430d3a29bb0cdcf832f0fa",
+      "subtype": 19,
+      "vnum": 88966
+    }
+  ],
+  "remote_modified": false,
+  "runtime_sources": {
+    "SRC/Server/GameServer/ecs/detail/ItemAttributeRules.hpp": "2f6ba5917da154e40d58b0974a75045f8dddec594d5d50bf10ba8ca8e4168a69",
+    "SRC/Server/GameServer/ecs/systems/ItemAttributeSystem.cpp": "fa310c89ee63078fa7a8d58029fb020dcadf40b9b939fd914a5a34d59946a1af",
+    "SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp": "78554379c6687eacff287662d7ae5f39b71dfae83ce6e2cb07fe4b1de46bdf14",
+    "SRC/Server/common/item_length.h": "34acf53dde75ae018092cf7becf4f32d40db78956dffdd8f4661eb21f7351e1f",
+    "SRC/Server/common/service.h": "9cd18f84669b1aba1bb3af3130808e20e1890c23dd02223513e0a2f2da375dec"
+  },
+  "source_addon_proto_rows": 1587,
+  "source_attribute_tables": {
+    "player.item_attr": {
+      "row_hashes": [
+        "5cc7dfc54a9e4551a2043148dc88c89004a4c8f001f495a18b0b366d08edf4a2",
+        "9adc29106defe5848ea166e6effd9308146a709cddbb7e54a639fef8a1aac285",
+        "fd6a55ae289e4d52f5edd54639da5cde16f5f7c921b1ff1dc0ff9823e9e46a2e",
+        "e6872e0b953ab7b49396b5ebed23c5ffdb5f14cb48a2a6eea4780716ecce067a",
+        "94c15b5cb1026bb450c843b5f948b59bd4596a48e82a330fccd36451992b3dc9",
+        "d72710db5836aa51ab38b43934452288e9a77c1cd12a9e166de7b9dd3f4b904c",
+        "afd7af14615cd82b1cf0b540a2cfccbb303cb6d2b90c4580c0bc5a1718a3efc6",
+        "69a4cde3928e687bccf4bf4176e3ad66c1a76dd49051629927aee6db38e15ad1",
+        "46e122440637e06fa87d1527193518c60aaaf8f17060d3c900bf013f5c22659d",
+        "a5f2b244f70e380b40ddeff95f4892516f75e07ebf9bb012b5aafd3f828ab816",
+        "b5a8a17912b797cf35c6477c7b02f52e02beeedd59e3bb0c02d5e552ef5a9471",
+        "bee99c7c3ce7e647b003861d0fe83190a6ed4be7864e12d50cb40f312cff2eaa",
+        "7e728c2a3f2582845271281e9b2e96e1e10a4d19b5cd0a3a35455d1c7602885d",
+        "bb8e0350a44695b3655ca01a836c80a1ba2e94fd21fd6c76a94e267a165c8480",
+        "f73c9161cf24032c3bfb6ec2e1f4446ebbc297bc83b1eafecf40964be54c78db",
+        "0905fff7e811112d457d0e44c9c4548537b1d8f5de2611329171cd63b54bfc32",
+        "0180c82f0b2ca4aa9d7c2185730a5158231b704a0a7adee7b3e253be1daa901b",
+        "6bcfae12dbd5e21e192614fd09fe74c7c4f427eea34145e74b02a0dce21a3a63",
+        "a42dc5d2160eb1c326a8b02a09a2960ff58cac26a5f69f0d98b8af1b0780fd69",
+        "df9ee9b15f78eb05681482915565351c018dc1b218f81400eda15f2b98cbe683",
+        "bb2920fe65d68d9b974f760572facc7297a6fb082b0794322e0ada360323ef92",
+        "fafba357d7b8b66defcaf3970866d102b342f3170827d7316104fe4af1188e0a",
+        "7f1d91cf52cb1be6965b4d3aae47215afc3b634ab7ec668ae1d2033157b87fde",
+        "4b0782340876d2965b64dae76bcd408be87e3dc12ca080cf5b17da64404f1e50",
+        "dfb234c084ddb5147877b817bb2c9df42c147ab3e3119d8b6857dd438663f792",
+        "95b66496acf0af0b40fb762df393be437464f9e99ee36b28600b251a6c8d6787",
+        "4049c68feae36bc2ea44dec8b8eb0067f4cca08dd1e1d7a48fab67fe908bf3a7",
+        "d2d2f6790f82e40bef8f25baba324fb8dbaad232ad40ae77e4153f4304cef245",
+        "14f10ea817a17247db72af31d42cfef54169776fe082560e53214139080bcf80",
+        "db280169eb87eb84e58b26b9438be2c7a84e164c352e15e5ea8edddd6a32d418",
+        "841b2c340315279b6f83689589724ef91af4df71472ceb9c9307f75338dbfbc4",
+        "970cabc5c4c556d40569ef2f0b7eba0518e3950bbd936ecec8f8846292a60710",
+        "58f78a298fd0e430258c6d0a0e354c496ddf81e9f6b7e9d1974c57d0226ed1a6",
+        "560113bac032dde754fb17596bf43a1e1f188262843277784072ec8199e70d4a",
+        "06f7f63bc1b6485e3446e26687a19aefa38d4707c3ca4c54f8b6a87a92f73a50",
+        "f52c7ed41b2ebc499b7994a2b18d8ce15672159b19a220c4d17ad828393b5ee0",
+        "d4c6fa582d32cff3ddb1d2524aef5561bb2e5018f20294422ce0056e9d609848",
+        "12f8420d2482f2bbeab60962b30cb38635c2d8d0c76f5d43e91fcea2199973c6",
+        "ea00acb49c187c104772e2e4c37142268f9ae31e3e8c1f4742726656ef2c548b",
+        "ca1b6f7ff14d16f1f5cd531f8ac2073e05b0d03878c752bc75f60abd147b5c7f",
+        "cdf010a5fa8f4a006d23478d4fa19ab8e34349f66bbf82d5a9298ddab92754a2",
+        "a85c8242125d883f0afb7ee70eb41aad1d0a9fe567c0724180958bf4c4707054",
+        "8917470b0682d11f12d6854e76e6bc107da887f98fdf3f2c86158a8fad23ce41",
+        "969377e345e227cfead21e455aea1d9606bb635b0a9e0ab7c0b834d803106d9b",
+        "673ebc911602ea3926e4be85227d04693787b67d0cb5058d09d508591e992e96",
+        "64755a347cfdaf2a99cb9284abf6743d7e5428e8418dc3d7da91e500682e019f",
+        "a95a0a0752e69c9c982604ce10e9d3b2bd6f9fab85a538b161634a491b9d9aa5",
+        "698737c7c87ba1c61fb7cfa797f66f31d11f528c9d0158201b952af96e15c923",
+        "f17cf62f3e9ca77cc1a048cd3a4c8cabc401f9c1aeea60d09adff316b74cdcb6",
+        "f22177ca0976d1ced698905d7c5e55ecccff51ab8c47e81e332720da388de06d",
+        "d0401a306251248970aeb690d4d31f801bdd3d77cb608e007b6fdb21c94afc7d",
+        "ebe803dfdbdfcb8991ebe27ccde21b0d9aff7ac3756e09a86826e310fbafff82",
+        "d71b7882fd0d296a0609f8dffa961249db18621fe719ccd03594009d7fa370d0",
+        "2ee457eb449518cde18a3b17a99c29398210d82a52b99f987129d358a42dbd49",
+        "a5c3fbd3d82984cd2d1f94658457281c1c749742f4cf56250a1f5692c4d38780",
+        "7d927932b6d4321f593b0784c36b0ceb9b440454d8e63444fc43b66a3a7b2e7a",
+        "995161caaa6ffe9116cd2390e59157d462e47daf5017600bb2d9504692ca3efb",
+        "9fc2605ac8e84c9143cab166cde8e85dd31d459ca5a1ccee827edffdf9172152",
+        "a1272227c7058074e696719bf2493e3798175bfc912a88fe4d797e17ec4f1d27",
+        "d741a6ea6cd3e5361325176d25e2e520423e28b06d8074d3ee3d377b0d7c6235",
+        "e78e8e464c0ba60722b3f315dc747534c965d85c161ddaf3e264ccacf7c7a9ac",
+        "98a26aee4abc2b124c0a6a23f13a7e959b19039a866ef53b222b77b77487cca2",
+        "ace48f654c51406c0fa957328a7c954067ca714f65fb4e4de01b938828f5aa66",
+        "736f524db543ac7efb0396bdad363332bf2d785f108edd342337b07826460c63",
+        "0a4928ab927f56d993f2f7679d2858df784984dc88daaab3ede69cb43c0fff6a",
+        "eab6f5ae8973abe76ccd1d72a93942c291b8b42c1880da9ce79a39ca995cb9e6"
+      ],
+      "rows": 66,
+      "source_file_sha256": "97efcd81252de00e256843f9aeaaf01c2b352f3c8324f7ec0de93d0a176d7ef0"
+    },
+    "player.item_attr_rare": {
+      "row_hashes": [
+        "ebf1fed790b43ca72355f430cf9fde8978f9ca3a00a596c99f20f090770ff312",
+        "96c1864628e275b9b14673e0308f71712728bac2ba0c94c31d58bb8359693941",
+        "d071e7cf6dd61cd194107d10f0128d4dd9197fc8553cfd7567f5530dc13da050",
+        "f1fd11596f4ddb686a6ff7e5f8e2b6bfe7881b98c9581317c6a8a91803a93142",
+        "dcb4875666b07ae4cc32523f4d97edd8dee658f5c7bfa74963d69c74557f68e8",
+        "8f50a3e7fc80b5ec31969380285d7aab49e939172fb68850c269ef40b6ad5a7d",
+        "2298d429b989101f99a76adf2571f0ee2ac8058250807b22ba6c6a7a0112a0de",
+        "1138b0de9f2a8dd17da44884eeb215e8c1f1b153fab2e21e2a4d664ac4383d5e",
+        "024d300214e409d51e92ebbfa18944a56c00fcf2825e3e16acc454a66cfd2c2c",
+        "faee41d74c44adef4d0dca92642023ffd0a3feafdc2ad255db1ac39700f3e029",
+        "a5dc180bc41b78d5fd29f0f26e76d7ecd6dc980735b920c4c403d81a7250e5a3",
+        "0cb610c787190e4f87398b1abd3b403836659a54967c9d5eccb2388e3f3a3840",
+        "582ec211f1545df3c2762c1466a28f4a4dc3ac05b4793f0083073a42a639d092",
+        "fa5d85676fdeb2afccefa790cae99792f1da17bbdbf552a1387af80146230ec5",
+        "deb1bce6a54ebe025ec5844964e6787e4f06f734ce0472340b001d5a72368023"
+      ],
+      "rows": 15,
+      "source_file_sha256": "42bc5b639a4feb99916ed457bc8e1e63e96a9923c4eb5e57a5e3f4ef590fa630"
+    },
+    "player.item_attr_rare_8": {
+      "row_hashes": [
+        "c4f7af3c3d951215051d74949a92776905bac8638561c25712637625468d746d",
+        "7d391929f354f6f4cf95ec439b111325f153649b10b51a1e89018ce5e880bce1",
+        "905e7993b969cfa74bee20b835c1b6040de9ff2b8bc71829feb25d91a2e5b661",
+        "55bd8839e0fee628c2cfa59c68e2cbf1990c8ea59428fc3e2168a6f1c6c31086",
+        "7374ff983ec01e3f01e86c07f0f3319e35835f487184358491934994cb1dac71",
+        "cc75058a4f273c005f09b0c3358352f5237f7f56547cab5de017a6a136d51901",
+        "836e64d6901dd476907766f4c84944f304344c0bf85c2f331ff8fe89bafd011b"
+      ],
+      "rows": 7,
+      "source_file_sha256": "c60f00aa44bc888cb1c5e3f96b3c09128c9deb0e37626dc28bf053e81ee35213"
+    }
+  },
+  "source_content_converted": false,
+  "source_dump_sha256": "e4b18df41e6aa9e9cfa91d93060e641790be643c91fb2410f46b8c1790792005",
+  "source_instance_rows_with_attributes": 132,
+  "source_instance_rows_with_lock": 0,
+  "source_prototype_counts": {
+    "add_extra": 1,
+    "add_fifth": 6,
+    "add_normal": 7,
+    "add_rare": 1,
+    "costume_explicit": 2,
+    "costume_remove": 1,
+    "costume_reroll": 3,
+    "costume_reset": 1,
+    "lock": 1,
+    "relock": 1,
+    "reroll_extra": 1,
+    "reroll_normal": 9,
+    "reroll_normal_variant": 0,
+    "reroll_plus": 0,
+    "reroll_rare": 1,
+    "unlock": 1
+  },
+  "starting_head": "0c04033b1c4b0b6c94d16c69e0a968a64f259cbf",
+  "unity_modified": false,
+  "unresolved": [
+    "Full APPLY-to-BonusId semantic mapping is not complete; no live source attribute rows are converted.",
+    "Coupled Gaussian addon, source-item attribute count used by ENABLE_MAX_ADD_ATTRIBUTE, costume reset/explicit bonus tokens, stola and rune behaviors need separate audits/ports.",
+    "F3/F4 must atomically commit operation receipt, source payment and full instance attribute replacement; CommitUnknown requires reconciliation.",
+    "F6 must preserve all player IDs, owners, counts, locks and attributes; synthetic codec round trips do not prove real conversion.",
+    "FreeBSD, Unity gameplay and live item activation remain untested."
+  ]
+}

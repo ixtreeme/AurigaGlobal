@@ -37,7 +37,7 @@ enum class BonusCap : std::uint8_t
     PercentPenetration = 6, Resistance = 7, CritChance = 8, CritResistance = 9,
     CritMultiplierExtra = 10, Block = 11, Accuracy = 12, Speed = 13, Attribute = 14, Experience = 15,
 };
-enum class BonusSource : std::uint8_t { ItemBase = 1, Refinement = 2, TimedEffect = 3 };
+enum class BonusSource : std::uint8_t { ItemBase = 1, Refinement = 2, TimedEffect = 3, Instance = 4 };
 
 struct BonusDefinition
 {
@@ -54,12 +54,12 @@ struct BonusDefinition
     BonusElement element;
     BonusStack stacking;
     BonusCap aggregateCap;
-    std::uint8_t allowedSources; // bits 0 ItemBase, 1 Refinement, 2 TimedEffect
+    std::uint8_t allowedSources; // bits 0 ItemBase, 1 Refinement, 2 TimedEffect, 3 Instance
     std::int64_t minimum, maximum;
 };
 constexpr bool AllowsBonusSource(const BonusDefinition& definition, BonusSource source) noexcept
 {
-    if (source != BonusSource::ItemBase && source != BonusSource::Refinement && source != BonusSource::TimedEffect) return false;
+    if (source != BonusSource::ItemBase && source != BonusSource::Refinement && source != BonusSource::TimedEffect && source != BonusSource::Instance) return false;
     return (definition.allowedSources & (1u << (static_cast<unsigned>(source) - 1))) != 0;
 }
 } // namespace auriga::item

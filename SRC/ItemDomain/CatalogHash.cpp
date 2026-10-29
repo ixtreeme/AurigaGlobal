@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v23");
+    out.Text("auriga.item_catalog.v24");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -219,7 +219,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
         }, row.effect);
     }
     out.Table(18, source.consumables.size());
-    for (const auto& row : source.consumables) { out.Key(row.key); out.Optional(row.recoveryProfile ? std::optional{row.recoveryProfile} : std::nullopt); out.Optional(row.timedEffectProfile); out.Optional(row.toggleEffectProfile); out.Optional(row.socketServiceProfile); }
+    for (const auto& row : source.consumables) { out.Key(row.key); out.Optional(row.recoveryProfile ? std::optional{row.recoveryProfile} : std::nullopt); out.Optional(row.timedEffectProfile); out.Optional(row.toggleEffectProfile); out.Optional(row.socketServiceProfile);out.Optional(row.attributeServiceProfile); }
     out.Table(19, source.lootProfiles.size());
     for (const auto& row : source.lootProfiles)
     {
@@ -373,6 +373,11 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     out.Table(49,source.petSupplies.size());for(const auto& r:source.petSupplies){out.Key(r.key);out.Integer(r.profile);}
     out.Table(50,source.socketServiceProfiles.size());
     for(const auto& p:source.socketServiceProfiles){out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.kind));out.Integer(p.unitsPerUse);}
+    out.Table(51,source.attributeProfiles.size());
+    for(const auto& p:source.attributeProfiles){out.Identity(p.id,p.code);out.Boolean(p.allowLock);out.Integer(static_cast<std::uint32_t>(p.groups.size()));for(const auto& g:p.groups){out.Integer(static_cast<std::uint8_t>(g.pool));out.Integer(g.capacity);out.Boolean(g.excludeStatic);}out.Integer(static_cast<std::uint32_t>(p.candidates.size()));for(const auto& a:p.candidates){out.Integer(static_cast<std::uint8_t>(a.pool));out.Integer(static_cast<std::uint32_t>(a.bonus));out.Integer(a.weight);out.Integer(static_cast<std::uint32_t>(a.values.size()));for(const auto& v:a.values){out.Integer(v.tier);out.Integer(static_cast<std::uint64_t>(v.value));}}}
+    out.Table(52,source.attributeServices.size());
+    for(const auto& p:source.attributeServices){out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.operation));out.Integer(static_cast<std::uint8_t>(p.pool));out.Integer(p.units);out.Integer(p.successBp);out.Integer(p.targetMask);out.Integer(p.minimumCount);out.Integer(p.maximumCount);out.Integer(p.addCount);out.Integer(p.maximumTargetLevel);out.Boolean(p.consumeOnFailure);out.Integer(static_cast<std::uint32_t>(p.tiers.size()));for(const auto& t:p.tiers){out.Integer(t.tier);out.Integer(t.chanceBp);}}
+    out.Table(53,source.attributeBindings.size());for(const auto& b:source.attributeBindings){out.Key(b.key);out.Integer(b.profile);}
     return out.Finish();
 }
 } // namespace auriga::item::detail
