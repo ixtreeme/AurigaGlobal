@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../raid/EclipseRaidSystem.hpp"
 #include "SessionSystem.hpp"
 #include "ViewSystem.hpp"
 
@@ -781,6 +782,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (::CombatSystem::IsDead(e) || ::CombatSystem::IsStun(e))
 			return;
 
+		if(amount>0)amount=EclipseRaid::FilterHealing(e,amount);
 		int64_t prev_hp = Get(e, POINT_HP);
 
 		amount = std::min(static_cast<int64_t>(GetMaxHP(e)) - Get(e, POINT_HP), amount);

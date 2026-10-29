@@ -1,5 +1,6 @@
 #include "../../core/stdafx.h"
 #include "MovementSystem.hpp"
+#include "../../raid/EclipseRaidSystem.hpp"
 #include <Core/Logging.hpp>
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
@@ -3685,6 +3686,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster)
 {
+    if (EclipseRaid::MovementLocked(e)) return false;
 	if (!ecs::IsCharacter(e))
 		return false;
 

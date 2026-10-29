@@ -1231,7 +1231,7 @@ void CInputDB::MapLocations(const char * c_pData)
 
 	while (bCount--)
 	{
-		for (int i = 0; i < 32; ++i)
+		for (int i = 0; i < MAP_ALLOW_LIMIT; ++i)
 		{
 			if (0 == pLoc->alMaps[i])
 				break;

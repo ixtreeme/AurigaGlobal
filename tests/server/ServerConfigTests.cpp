@@ -2,6 +2,7 @@
 #include "../../SRC/Server/Database/DatabaseConfig.h"
 #include "../../SRC/Server/LoginServer/login_config.h"
 #include "../../SRC/Server/GameServer/core/GameConfig.h"
+#include "../../SRC/Server/common/CommonDefines.h"
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -58,6 +59,18 @@ int main() {
         Check(game.mapAllow == std::vector<int32_t>({65}) && game.quest.objectDir.size() == 1 && game.server.hostname == "core two", "reloading appends old arrays/state");
         auto malformed = section; malformed.values["server"]["max_level"] = "PASSWORD_DO_NOT_LOG";
         Check(!game.Load(malformed, error) && game.server.hostname == "core two" && error.find("PASSWORD_DO_NOT_LOG") == std::string::npos, "typed failure mutates live config or leaks a value");
+        auto routing = first;
+        routing.values["map_allow"] = Json::array();
+        for (int map = 1; map <= MAP_ALLOW_LIMIT; ++map)
+            routing.values["map_allow"].push_back(map);
+        Check(game.Load(routing, error) && game.mapAllow.size() == MAP_ALLOW_LIMIT &&
+              game.mapAllow.back() == MAP_ALLOW_LIMIT, "full routing capacity rejected or truncated");
+        routing.values["map_allow"].push_back(430);
+        Check(!game.Load(routing, error) && game.mapAllow.size() == MAP_ALLOW_LIMIT &&
+              game.mapAllow.back() == MAP_ALLOW_LIMIT && error.find("routing capacity") != std::string::npos &&
+              error.find("PASSWORD_DO_NOT_LOG") == std::string::npos,
+              "routing overflow accepted, changed live config or leaked credentials");
+        Check(game.Load(first, error), "valid config did not recover after routing overflow");
         DatabaseConfig database; LoginConfig login;
         Check(auriga::config::Resolve(fixture, source, Role::Database, {}, section, error) && database.Load(section, error), "database section rejected");
         Check(database.network.bindPort == 5300 && database.sql.account.database == "account" && database.server.tablePostfix == "_fixture", "database shared mapping lost");

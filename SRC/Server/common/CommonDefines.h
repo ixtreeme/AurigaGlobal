@@ -8,7 +8,7 @@
 #define ENABLE_PORT_SECURITY
 #define ENABLE_BELT_INVENTORY_EX
 enum eCommonDefines {
-	MAP_ALLOW_LIMIT = 32, // 32 default
+	MAP_ALLOW_LIMIT = 64, // Shared GameServer/Database/LoginServer routing wire capacity.
 };
 // ### General Features ###
 //////////////////////////////////////////////////////////////////////////

@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# The spell catalog records a SHA-256 of these exact source bytes.
+config/eclipse_raid_spells.json text eol=lf
+SRC/Server/GameServer/raid/icc/SpellRecords.generated.hpp text eol=lf

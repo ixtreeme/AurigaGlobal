@@ -1,0 +1,6635 @@
+{
+  "upstream": "AzerothCore ICC 3.3.5a, local source snapshot",
+  "modes": [
+    "10_normal",
+    "25_normal",
+    "10_heroic",
+    "25_heroic"
+  ],
+  "scope": "Inventory only. No script or mechanic is marked implemented by this report.",
+  "files": [
+    {
+      "file": "boss_blood_prince_council.cpp",
+      "sha256": "3dcdd81e3634403ea510bc6a8df7c2733462d1f828631f0d0d9a7ae03f806463",
+      "lines": 1737,
+      "events": [
+        {
+          "line": 280,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 10min);"
+        },
+        {
+          "line": 281,
+          "text": "events.ScheduleEvent(EVENT_SHADOW_RESONANCE, 10s, 15s);"
+        },
+        {
+          "line": 421,
+          "text": "events.ScheduleEvent(EVENT_SHADOW_RESONANCE, 10s, 15s);"
+        },
+        {
+          "line": 539,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 10min);"
+        },
+        {
+          "line": 540,
+          "text": "events.ScheduleEvent(EVENT_GLITTERING_SPARKS, 12s, 15s);"
+        },
+        {
+          "line": 541,
+          "text": "events.ScheduleEvent(EVENT_CONJURE_FLAME, 20s);"
+        },
+        {
+          "line": 693,
+          "text": "events.ScheduleEvent(EVENT_GLITTERING_SPARKS, 15s, 25s);"
+        },
+        {
+          "line": 699,
+          "text": "events.ScheduleEvent(EVENT_CONJURE_FLAME, 15s);"
+        },
+        {
+          "line": 704,
+          "text": "events.ScheduleEvent(EVENT_CONJURE_FLAME, 20s, 25s);"
+        },
+        {
+          "line": 830,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 10min);"
+        },
+        {
+          "line": 831,
+          "text": "events.ScheduleEvent(EVENT_KINETIC_BOMB, 18s, 24s);"
+        },
+        {
+          "line": 832,
+          "text": "events.ScheduleEvent(EVENT_SHOCK_VORTEX, 15s, 20s);"
+        },
+        {
+          "line": 833,
+          "text": "events.ScheduleEvent(EVENT_INVOCATION_OF_BLOOD, 45s);"
+        },
+        {
+          "line": 1025,
+          "text": "events.ScheduleEvent(EVENT_INVOCATION_OF_BLOOD, 46s);"
+        },
+        {
+          "line": 1037,
+          "text": "events.ScheduleEvent(EVENT_KINETIC_BOMB, me->GetMap()->Is25ManRaid() ? 20s + 500ms : 30s + 500ms);"
+        },
+        {
+          "line": 1044,
+          "text": "events.ScheduleEvent(EVENT_SHOCK_VORTEX, 30s);"
+        },
+        {
+          "line": 1050,
+          "text": "events.ScheduleEvent(EVENT_SHOCK_VORTEX, 18s, 23s);"
+        },
+        {
+          "line": 1123,
+          "text": "events.ScheduleEvent(EVENT_INTRO_1, 14s);"
+        },
+        {
+          "line": 1397,
+          "text": "events.RescheduleEvent(EVENT_BOMB_DESPAWN, 1min);"
+        },
+        {
+          "line": 1414,
+          "text": "events.RescheduleEvent(EVENT_BOMB_DESPAWN, 1s);"
+        },
+        {
+          "line": 1424,
+          "text": "events.RescheduleEvent(EVENT_CONTINUE_FALLING, 3s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 282,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 354,
+          "text": "if (damage > RAID_MODE<uint32>(23000, 25000, 23000, 25000))"
+        },
+        {
+          "line": 542,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 624,
+          "text": "if (damage > RAID_MODE<uint32>(23000, 25000, 23000, 25000))"
+        },
+        {
+          "line": 834,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 923,
+          "text": "if (damage > RAID_MODE<uint32>(23000, 25000, 23000, 25000))"
+        },
+        {
+          "line": 1037,
+          "text": "events.ScheduleEvent(EVENT_KINETIC_BOMB, me->GetMap()->Is25ManRaid() ? 20s + 500ms : 30s + 500ms);"
+        },
+        {
+          "line": 1353,
+          "text": "if (damage > RAID_MODE<uint32>(23000, 25000, 23000, 25000))"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 155,
+          "text": "class StandUpEvent : public BasicEvent"
+        },
+        {
+          "line": 170,
+          "text": "class ShockVortexExplodeEvent : public BasicEvent"
+        },
+        {
+          "line": 189,
+          "text": "class boss_prince_keleseth_icc : public CreatureScript"
+        },
+        {
+          "line": 451,
+          "text": "class boss_prince_taldaram_icc : public CreatureScript"
+        },
+        {
+          "line": 736,
+          "text": "class boss_prince_valanar_icc : public CreatureScript"
+        },
+        {
+          "line": 1081,
+          "text": "class npc_blood_queen_lana_thel : public CreatureScript"
+        },
+        {
+          "line": 1184,
+          "text": "class npc_dark_nucleus : public CreatureScript"
+        },
+        {
+          "line": 1261,
+          "text": "class npc_ball_of_flame : public CreatureScript"
+        },
+        {
+          "line": 1366,
+          "text": "class npc_kinetic_bomb : public CreatureScript"
+        },
+        {
+          "line": 1453,
+          "text": "class spell_blood_council_shadow_prison_aura : public AuraScript"
+        },
+        {
+          "line": 1476,
+          "text": "class spell_blood_council_shadow_prison_damage : public SpellScript"
+        },
+        {
+          "line": 1497,
+          "text": "class spell_taldaram_glittering_sparks : public SpellScript"
+        },
+        {
+          "line": 1513,
+          "text": "class spell_taldaram_summon_flame_ball : public SpellScript"
+        },
+        {
+          "line": 1539,
+          "text": "class spell_taldaram_ball_of_inferno_flame : public SpellScript"
+        },
+        {
+          "line": 1555,
+          "text": "class spell_taldaram_ball_of_inferno_flame_aura : public AuraScript"
+        },
+        {
+          "line": 1570,
+          "text": "class spell_valanar_kinetic_bomb : public SpellScript"
+        },
+        {
+          "line": 1589,
+          "text": "class spell_valanar_kinetic_bomb_aura : public AuraScript"
+        },
+        {
+          "line": 1619,
+          "text": "class spell_valanar_kinetic_bomb_absorb_aura : public AuraScript"
+        },
+        {
+          "line": 1636,
+          "text": "class spell_valanar_kinetic_bomb_knockback : public SpellScript"
+        },
+        {
+          "line": 1657,
+          "text": "class spell_valanar_kinetic_bomb_summon : public SpellScript"
+        },
+        {
+          "line": 1678,
+          "text": "class spell_blood_council_summon_shadow_resonance : public SpellScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 62,
+          "text": "SPELL_FEIGN_DEATH                   = 71598,"
+        },
+        {
+          "line": 63,
+          "text": "SPELL_OOC_INVOCATION_VISUAL         = 70934,"
+        },
+        {
+          "line": 64,
+          "text": "SPELL_INVOCATION_VISUAL_ACTIVE      = 71596,"
+        },
+        {
+          "line": 65,
+          "text": "SPELL_INVOCATION_OF_BLOOD_KELESETH  = 70981,"
+        },
+        {
+          "line": 66,
+          "text": "SPELL_INVOCATION_OF_BLOOD_TALDARAM  = 70982,"
+        },
+        {
+          "line": 67,
+          "text": "SPELL_INVOCATION_OF_BLOOD_VALANAR   = 70952,"
+        },
+        {
+          "line": 70,
+          "text": "SPELL_SHADOW_PRISON                 = 72998,"
+        },
+        {
+          "line": 71,
+          "text": "SPELL_SHADOW_PRISON_DAMAGE          = 72999,"
+        },
+        {
+          "line": 72,
+          "text": "SPELL_SHADOW_PRISON_DUMMY           = 73001,"
+        },
+        {
+          "line": 75,
+          "text": "SPELL_SHADOW_RESONANCE              = 71943,"
+        },
+        {
+          "line": 76,
+          "text": "SPELL_SHADOW_LANCE                  = 71405,"
+        },
+        {
+          "line": 77,
+          "text": "SPELL_EMPOWERED_SHADOW_LANCE        = 71815,"
+        },
+        {
+          "line": 80,
+          "text": "SPELL_SHADOW_RESONANCE_AURA         = 72980,"
+        },
+        {
+          "line": 81,
+          "text": "SPELL_SHADOW_RESONANCE_RESIST       = 71822,"
+        },
+        {
+          "line": 84,
+          "text": "SPELL_GLITTERING_SPARKS             = 71806,"
+        },
+        {
+          "line": 85,
+          "text": "SPELL_CONJURE_FLAME                 = 71718,"
+        },
+        {
+          "line": 86,
+          "text": "SPELL_CONJURE_EMPOWERED_FLAME       = 72040,"
+        },
+        {
+          "line": 89,
+          "text": "SPELL_FLAME_SPHERE_SPAWN_EFFECT     = 55891, // cast from creature_template_addon (needed cast before entering world)"
+        },
+        {
+          "line": 90,
+          "text": "SPELL_BALL_OF_FLAMES_VISUAL         = 71706,"
+        },
+        {
+          "line": 91,
+          "text": "SPELL_BALL_OF_FLAMES                = 71714,"
+        },
+        {
+          "line": 92,
+          "text": "SPELL_FLAMES                        = 71393,"
+        },
+        {
+          "line": 93,
+          "text": "SPELL_FLAME_SPHERE_DEATH_EFFECT     = 55947,"
+        },
+        {
+          "line": 96,
+          "text": "SPELL_BALL_OF_FLAMES_PROC           = 71756,"
+        },
+        {
+          "line": 97,
+          "text": "SPELL_BALL_OF_FLAMES_PERIODIC       = 71709,"
+        },
+        {
+          "line": 100,
+          "text": "SPELL_KINETIC_BOMB_TARGET           = 72053,"
+        },
+        {
+          "line": 101,
+          "text": "SPELL_KINETIC_BOMB                  = 72080,"
+        },
+        {
+          "line": 102,
+          "text": "SPELL_SHOCK_VORTEX                  = 72037,"
+        },
+        {
+          "line": 103,
+          "text": "SPELL_EMPOWERED_SHOCK_VORTEX        = 72039,"
+        },
+        {
+          "line": 104,
+          "text": "SPELL_REMOVE_EMPOWERED_BLOOD        = 72131,"
+        },
+        {
+          "line": 105,
+          "text": "SPELL_CLEAR_ALL_STATUS_AILMENTS     = 70939,"
+        },
+        {
+          "line": 108,
+          "text": "SPELL_UNSTABLE                      = 72059,"
+        },
+        {
+          "line": 109,
+          "text": "SPELL_KINETIC_BOMB_VISUAL           = 72054,"
+        },
+        {
+          "line": 110,
+          "text": "SPELL_KINETIC_BOMB_EXPLOSION        = 72052,"
+        },
+        {
+          "line": 111,
+          "text": "SPELL_KINETIC_BOMB_KNOCKBACK        = 72087,"
+        },
+        {
+          "line": 114,
+          "text": "SPELL_SHOCK_VORTEX_PERIODIC         = 71945,"
+        },
+        {
+          "line": 115,
+          "text": "SPELL_SHOCK_VORTEX_DUMMY            = 72633,"
+        }
+      ]
+    },
+    {
+      "file": "boss_blood_queen_lana_thel.cpp",
+      "sha256": "f2c24516cfd3cd1a8a8f3e5a41e6dabd5585e94a4fc357ce540d4fcd55aff581",
+      "lines": 942,
+      "events": [
+        {
+          "line": 215,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 330s);"
+        },
+        {
+          "line": 216,
+          "text": "events.ScheduleEvent(EVENT_VAMPIRIC_BITE, 15s);"
+        },
+        {
+          "line": 217,
+          "text": "events.ScheduleEvent(EVENT_BLOOD_MIRROR, 2500ms);"
+        },
+        {
+          "line": 218,
+          "text": "events.ScheduleEvent(EVENT_DELIRIOUS_SLASH, 10s, 12s);"
+        },
+        {
+          "line": 219,
+          "text": "events.ScheduleEvent(EVENT_PACT_OF_THE_DARKFALLEN, 20s);"
+        },
+        {
+          "line": 220,
+          "text": "events.ScheduleEvent(EVENT_SWARMING_SHADOWS, 30s);"
+        },
+        {
+          "line": 221,
+          "text": "events.ScheduleEvent(EVENT_TWILIGHT_BLOODBOLT, 15s, 25s);"
+        },
+        {
+          "line": 222,
+          "text": "events.ScheduleEvent(EVENT_AIR_PHASE, Is25ManRaid() ? 127s : 124s);"
+        },
+        {
+          "line": 305,
+          "text": "events.ScheduleEvent(EVENT_AIR_PHASE, Is25ManRaid() ? 100s : 120s);"
+        },
+        {
+          "line": 306,
+          "text": "events.ScheduleEvent(EVENT_AIR_START_FLYING, 2500ms);"
+        },
+        {
+          "line": 312,
+          "text": "events.ScheduleEvent(EVENT_AIR_FLY_DOWN, 7s);"
+        },
+        {
+          "line": 320,
+          "text": "events.RescheduleEvent(EVENT_PACT_OF_THE_DARKFALLEN, 5s);"
+        },
+        {
+          "line": 321,
+          "text": "events.RescheduleEvent(EVENT_SWARMING_SHADOWS, 20s);"
+        },
+        {
+          "line": 392,
+          "text": "events.ScheduleEvent(EVENT_BLOOD_MIRROR, 2500ms);"
+        },
+        {
+          "line": 408,
+          "text": "events.ScheduleEvent(EVENT_BLOOD_MIRROR, 2500ms);"
+        },
+        {
+          "line": 423,
+          "text": "events.ScheduleEvent(EVENT_DELIRIOUS_SLASH, 5s);"
+        },
+        {
+          "line": 427,
+          "text": "events.ScheduleEvent(EVENT_DELIRIOUS_SLASH, 20s, 24s);"
+        },
+        {
+          "line": 430,
+          "text": "events.ScheduleEvent(EVENT_DELIRIOUS_SLASH, 5s);"
+        },
+        {
+          "line": 447,
+          "text": "events.ScheduleEvent(EVENT_PACT_OF_THE_DARKFALLEN, 30s);"
+        },
+        {
+          "line": 450,
+          "text": "events.ScheduleEvent(EVENT_PACT_OF_THE_DARKFALLEN, 5s);"
+        },
+        {
+          "line": 453,
+          "text": "events.ScheduleEvent(EVENT_PACT_OF_THE_DARKFALLEN, 5s);"
+        },
+        {
+          "line": 474,
+          "text": "events.ScheduleEvent(EVENT_SWARMING_SHADOWS, 30s);"
+        },
+        {
+          "line": 477,
+          "text": "events.ScheduleEvent(EVENT_SWARMING_SHADOWS, 5s);"
+        },
+        {
+          "line": 493,
+          "text": "events.ScheduleEvent(EVENT_TWILIGHT_BLOODBOLT, 10s, 15s);"
+        },
+        {
+          "line": 496,
+          "text": "events.ScheduleEvent(EVENT_TWILIGHT_BLOODBOLT, 5s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 222,
+          "text": "events.ScheduleEvent(EVENT_AIR_PHASE, Is25ManRaid() ? 127s : 124s);"
+        },
+        {
+          "line": 241,
+          "text": "if (Is25ManRaid() && me->HasAura(SPELL_SHADOWS_FATE))"
+        },
+        {
+          "line": 252,
+          "text": "p->KilledMonsterCredit(Is25ManRaid() ? NPC_BLOOD_QUICKENING_CREDIT_25 : NPC_INFILTRATOR_MINCHAR_BQ);"
+        },
+        {
+          "line": 305,
+          "text": "events.ScheduleEvent(EVENT_AIR_PHASE, Is25ManRaid() ? 100s : 120s);"
+        },
+        {
+          "line": 402,
+          "text": "if (Is25ManRaid() && target->GetQuestStatus(QUEST_BLOOD_INFUSION) == QUEST_STATUS_INCOMPLETE &&"
+        },
+        {
+          "line": 441,
+          "text": "Acore::Containers::RandomResize(myList, Is25ManRaid() ? 3 : 2);"
+        },
+        {
+          "line": 489,
+          "text": "Acore::Containers::RandomResize(myList, uint32(Is25ManRaid() ? 4 : 2));"
+        },
+        {
+          "line": 612,
+          "text": "float herobonus = ((GetTarget()->FindMap() && GetTarget()->FindMap()->IsHeroic()) ? 0.2f : 0.0f);"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 130,
+          "text": "struct VampiricBiteTargetSelector"
+        },
+        {
+          "line": 155,
+          "text": "class boss_blood_queen_lana_thel : public CreatureScript"
+        },
+        {
+          "line": 596,
+          "text": "class spell_blood_queen_pact_of_the_darkfallen_dmg_aura : public AuraScript"
+        },
+        {
+          "line": 624,
+          "text": "class spell_blood_queen_pact_of_the_darkfallen : public SpellScript"
+        },
+        {
+          "line": 658,
+          "text": "class spell_blood_queen_pact_of_the_darkfallen_dmg_target : public SpellScript"
+        },
+        {
+          "line": 674,
+          "text": "class BloodboltHitCheck"
+        },
+        {
+          "line": 688,
+          "text": "class spell_blood_queen_bloodbolt : public SpellScript"
+        },
+        {
+          "line": 725,
+          "text": "class spell_blood_queen_frenzied_bloodthirst_aura : public AuraScript"
+        },
+        {
+          "line": 765,
+          "text": "class spell_blood_queen_essence_of_the_blood_queen_aura : public AuraScript"
+        },
+        {
+          "line": 795,
+          "text": "class spell_blood_queen_vampiric_bite : public SpellScript"
+        },
+        {
+          "line": 872,
+          "text": "class spell_blood_queen_swarming_shadows_floor_dmg : public SpellScript"
+        },
+        {
+          "line": 887,
+          "text": "class spell_blood_queen_presence_of_the_darkfallen : public SpellScript"
+        },
+        {
+          "line": 907,
+          "text": "class achievement_once_bitten_twice_shy : public AchievementCriteriaScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 48,
+          "text": "SPELL_SHROUD_OF_SORROW                  = 70986,"
+        },
+        {
+          "line": 49,
+          "text": "SPELL_FRENZIED_BLOODTHIRST_VISUAL       = 71949,"
+        },
+        {
+          "line": 50,
+          "text": "SPELL_VAMPIRIC_BITE                     = 71726,"
+        },
+        {
+          "line": 51,
+          "text": "SPELL_VAMPIRIC_BITE_DUMMY               = 71837,"
+        },
+        {
+          "line": 52,
+          "text": "SPELL_ESSENCE_OF_BLOOD_QUEEN            = 70867,"
+        },
+        {
+          "line": 53,
+          "text": "SPELL_ESSENCE_OF_THE_BLOOD_QUEEN_PLR    = 70879,"
+        },
+        {
+          "line": 54,
+          "text": "SPELL_ESSENCE_OF_THE_BLOOD_QUEEN_HEAL   = 70872,"
+        },
+        {
+          "line": 55,
+          "text": "SPELL_FRENZIED_BLOODTHIRST              = 70877,"
+        },
+        {
+          "line": 56,
+          "text": "SPELL_UNCONTROLLABLE_FRENZY             = 70923,"
+        },
+        {
+          "line": 57,
+          "text": "SPELL_PRESENCE_OF_THE_DARKFALLEN_DUMMY  = 70994,"
+        },
+        {
+          "line": 58,
+          "text": "SPELL_PRESENCE_OF_THE_DARKFALLEN_EFFECT = 70995,"
+        },
+        {
+          "line": 59,
+          "text": "SPELL_PRESENCE_OF_THE_DARKFALLEN_SE     = 71952,"
+        },
+        {
+          "line": 60,
+          "text": "SPELL_BLOOD_MIRROR_DAMAGE               = 70821,"
+        },
+        {
+          "line": 61,
+          "text": "SPELL_BLOOD_MIRROR_VISUAL               = 71510,"
+        },
+        {
+          "line": 62,
+          "text": "SPELL_BLOOD_MIRROR_DUMMY                = 70838,"
+        },
+        {
+          "line": 63,
+          "text": "SPELL_DELIRIOUS_SLASH                   = 71623,"
+        },
+        {
+          "line": 64,
+          "text": "SPELL_PACT_OF_THE_DARKFALLEN_TARGET     = 71336,"
+        },
+        {
+          "line": 65,
+          "text": "SPELL_PACT_OF_THE_DARKFALLEN            = 71340,"
+        },
+        {
+          "line": 66,
+          "text": "SPELL_PACT_OF_THE_DARKFALLEN_DAMAGE     = 71341,"
+        },
+        {
+          "line": 67,
+          "text": "SPELL_SWARMING_SHADOWS                  = 71264,"
+        },
+        {
+          "line": 68,
+          "text": "SPELL_TWILIGHT_BLOODBOLT_TARGET         = 71445,"
+        },
+        {
+          "line": 69,
+          "text": "SPELL_TWILIGHT_BLOODBOLT                = 71818,"
+        },
+        {
+          "line": 70,
+          "text": "SPELL_TWILIGHT_BLOODBOLT_FROM_WHIRL     = 71446,"
+        },
+        {
+          "line": 71,
+          "text": "SPELL_INCITE_TERROR                     = 73070,"
+        },
+        {
+          "line": 72,
+          "text": "SPELL_BLOODBOLT_WHIRL                   = 71772,"
+        },
+        {
+          "line": 73,
+          "text": "SPELL_ANNIHILATE                        = 71322,"
+        },
+        {
+          "line": 74,
+          "text": "SPELL_CLEAR_ALL_STATUS_AILMENTS         = 70939,"
+        },
+        {
+          "line": 80,
+          "text": "SPELL_BLOOD_INFUSION_CREDIT             = 72934,"
+        },
+        {
+          "line": 81,
+          "text": "SPELL_GUSHING_WOUND                     = 72132,"
+        },
+        {
+          "line": 82,
+          "text": "SPELL_THIRST_QUENCHED                   = 72154,"
+        }
+      ]
+    },
+    {
+      "file": "boss_deathbringer_saurfang.cpp",
+      "sha256": "056e385c3c1d7d0e08f1ad0d41dfb478f47ac8025b7ba6302ffedd7143825f11",
+      "lines": 1989,
+      "events": [
+        {
+          "line": 391,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_BLOOD_BEAST, 30s);"
+        },
+        {
+          "line": 392,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, (IsHeroic() ? 6min : 8min));"
+        },
+        {
+          "line": 393,
+          "text": "events.ScheduleEvent(EVENT_BOILING_BLOOD, 15s + 500ms, 0);"
+        },
+        {
+          "line": 394,
+          "text": "events.ScheduleEvent(EVENT_BLOOD_NOVA, 17s, 0);"
+        },
+        {
+          "line": 395,
+          "text": "events.ScheduleEvent(EVENT_RUNE_OF_BLOOD, 20s, 0);"
+        },
+        {
+          "line": 524,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_BLOOD_BEAST, 40s);"
+        },
+        {
+          "line": 526,
+          "text": "events.ScheduleEvent(EVENT_BLOOD_BEAST_SCENT_OF_BLOOD, 10s);"
+        },
+        {
+          "line": 535,
+          "text": "events.ScheduleEvent(EVENT_BLOOD_NOVA, 20s, 25s);"
+        },
+        {
+          "line": 540,
+          "text": "events.ScheduleEvent(EVENT_RUNE_OF_BLOOD, 20s, 25s);"
+        },
+        {
+          "line": 544,
+          "text": "events.ScheduleEvent(EVENT_BOILING_BLOOD, 15s, 20s);"
+        },
+        {
+          "line": 667,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_2, 5s, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 668,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_3, 21s + 400ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 685,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_DESCEND, 6s + 100ms);"
+        },
+        {
+          "line": 686,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_GUARDS_DESCEND, 8s + 100ms);"
+        },
+        {
+          "line": 687,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_MOURN, 9s + 300ms);"
+        },
+        {
+          "line": 688,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_KNEEL, 9s + 700ms);"
+        },
+        {
+          "line": 689,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_GUARDS_KNEEL, 14s + 500ms);"
+        },
+        {
+          "line": 690,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_WALK, 15s + 300ms);"
+        },
+        {
+          "line": 739,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_4, 8s + 500ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 740,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_5, 18s + 600ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 741,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_6, 35s + 400ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 742,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_7, 52s + 400ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 743,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_8, 56s, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 744,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_9, 57s + 200ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 745,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_10, 59s + 800ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 746,
+          "text": "events.ScheduleEvent(EVENT_INTRO_FINISH,  66s + 200ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 752,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_HORDE_WEEP, 2s + 700ms);"
+        },
+        {
+          "line": 753,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_HORDE_CEREMONY, 11s + 200ms);"
+        },
+        {
+          "line": 757,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_HORDE_HONOR, 2s + 300ms);"
+        },
+        {
+          "line": 798,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_QUESTION, 3s + 800ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 802,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_TALK, 3s, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 803,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_TALK, 6s + 700ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 807,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_TALK, 3s + 400ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 808,
+          "text": "events.ScheduleEvent(EVENT_INTRO_HORDE_NO, 7s + 100ms, 0, PHASE_INTRO_H);"
+        },
+        {
+          "line": 883,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_HORDE_PICKUP, 6s);"
+        },
+        {
+          "line": 895,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_HORDE_CARRY, 4s + 800ms);"
+        },
+        {
+          "line": 908,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_HORDE_LEAVE, 7s + 300ms);"
+        },
+        {
+          "line": 1006,
+          "text": "events.ScheduleEvent(EVENT_INTRO_ALLIANCE_2, 1s, 0, PHASE_INTRO_A);"
+        },
+        {
+          "line": 1007,
+          "text": "events.ScheduleEvent(EVENT_INTRO_ALLIANCE_3, 18s + 400ms, 0, PHASE_INTRO_A);"
+        },
+        {
+          "line": 1008,
+          "text": "events.ScheduleEvent(EVENT_INTRO_ALLIANCE_4, 24s + 500ms, 0, PHASE_INTRO_A);"
+        },
+        {
+          "line": 1025,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_DESCEND, 6s + 100ms);"
+        },
+        {
+          "line": 1026,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_MOURN, 9s + 300ms);"
+        },
+        {
+          "line": 1027,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_KNEEL, 9s + 700ms);"
+        },
+        {
+          "line": 1028,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_ZEPPELIN, 7s + 300ms);"
+        },
+        {
+          "line": 1029,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_GUARDS_KNEEL, 13s + 300ms);"
+        },
+        {
+          "line": 1030,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_WALK, 15s + 300ms);"
+        },
+        {
+          "line": 1031,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_DISTANCE, 27s + 500ms);"
+        },
+        {
+          "line": 1032,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_TAKE_POST, 31s + 100ms);"
+        },
+        {
+          "line": 1033,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_FALL_IN, 40s + 800ms);"
+        },
+        {
+          "line": 1034,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_READY, 43s + 600ms);"
+        },
+        {
+          "line": 1035,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_FORM_LINE, 45s + 600ms);"
+        },
+        {
+          "line": 1036,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_ARRIVES, 57s + 700ms);"
+        },
+        {
+          "line": 1085,
+          "text": "events.ScheduleEvent(EVENT_INTRO_ALLIANCE_5, 6s, 0, PHASE_INTRO_A);"
+        },
+        {
+          "line": 1086,
+          "text": "events.ScheduleEvent(EVENT_INTRO_ALLIANCE_6, 8s + 600ms, 0, PHASE_INTRO_A);"
+        },
+        {
+          "line": 1087,
+          "text": "events.ScheduleEvent(EVENT_INTRO_ALLIANCE_7, 11s + 300ms, 0, PHASE_INTRO_A);"
+        },
+        {
+          "line": 1088,
+          "text": "events.ScheduleEvent(EVENT_INTRO_FINISH, 15s + 600ms, 0, PHASE_INTRO_A);"
+        },
+        {
+          "line": 1218,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_ARRIVES, 1s);"
+        },
+        {
+          "line": 1235,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_MURADIN_HALT, 6s + 400ms);"
+        },
+        {
+          "line": 1239,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_DEMAND, 8s + 500ms);"
+        },
+        {
+          "line": 1244,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_READY, 3s + 700ms);"
+        },
+        {
+          "line": 1245,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_MURADIN_YIELD, 9s + 600ms);"
+        },
+        {
+          "line": 1253,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_PORTAL, 7s + 800ms);"
+        },
+        {
+          "line": 1257,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_ROYALS, 3s + 700ms);"
+        },
+        {
+          "line": 1272,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_STAND_DOWN, 3s + 600ms);"
+        },
+        {
+          "line": 1277,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_STEP_ASIDE, 6s + 100ms);"
+        },
+        {
+          "line": 1292,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_LOWER, 4s + 100ms);"
+        },
+        {
+          "line": 1298,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_TO_CORPSE, 1s + 200ms);"
+        },
+        {
+          "line": 1307,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_DISMISS, 1s);"
+        },
+        {
+          "line": 1316,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_KNEEL, WalkTimeTo(saurfang, corpse));"
+        },
+        {
+          "line": 1326,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_ORCISH, 1s + 800ms);"
+        },
+        {
+          "line": 1331,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_PICKUP, 6s);"
+        },
+        {
+          "line": 1348,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_AT_VARIAN, WalkTimeTo(saurfang, allianceVarianMeetPos));"
+        },
+        {
+          "line": 1351,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_DISMISS, 1s);"
+        },
+        {
+          "line": 1362,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_THANKS, 1s + 800ms);"
+        },
+        {
+          "line": 1368,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_EULOGY, 9s + 800ms);"
+        },
+        {
+          "line": 1373,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_TALK, 3s);"
+        },
+        {
+          "line": 1374,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_ZEPPELIN_RELEASE, 6s);"
+        },
+        {
+          "line": 1375,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_TALK, 6s + 600ms);"
+        },
+        {
+          "line": 1376,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_SALUTE, 10s + 500ms);"
+        },
+        {
+          "line": 1377,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_NOD, 19s);"
+        },
+        {
+          "line": 1378,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_LEAVE, 23s + 100ms);"
+        },
+        {
+          "line": 1401,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_GONE, WalkTimeTo(saurfang, allianceSaurfangExitPos));"
+        },
+        {
+          "line": 1404,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_SAURFANG_GONE, 1s);"
+        },
+        {
+          "line": 1415,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_TURN, 2s + 400ms);"
+        },
+        {
+          "line": 1416,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_ASK, 3s + 600ms);"
+        },
+        {
+          "line": 1417,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_JAINA_SOB, 6s + 500ms);"
+        },
+        {
+          "line": 1418,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_JAINA_TURN, 8s + 900ms);"
+        },
+        {
+          "line": 1419,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_JAINA_SMILE, 10s + 300ms);"
+        },
+        {
+          "line": 1420,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_JAINA_REPLY, 12s + 700ms);"
+        },
+        {
+          "line": 1421,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_ORDERS, 22s + 400ms);"
+        },
+        {
+          "line": 1422,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_VARIAN_FACE_MURADIN, 25s + 800ms);"
+        },
+        {
+          "line": 1423,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_MURADIN_ACK, 35s + 900ms);"
+        },
+        {
+          "line": 1424,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_A_DISMISS, 42s + 400ms);"
+        },
+        {
+          "line": 1662,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_GUARD_VANISH, 2s + 400ms);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 392,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, (IsHeroic() ? 6min : 8min));"
+        },
+        {
+          "line": 443,
+          "text": "if (!_frenzied && HealthBelowPct(31)) // AT 30%, not below"
+        },
+        {
+          "line": 456,
+          "text": "//if (IsHeroic())"
+        },
+        {
+          "line": 520,
+          "text": "if (Is25ManRaid())"
+        },
+        {
+          "line": 525,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 584,
+          "text": "if (_fallenChampionCastCount < RAID_MODE<uint32>(3, 5, 3, 5))"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 332,
+          "text": "class boss_deathbringer_saurfang : public CreatureScript"
+        },
+        {
+          "line": 618,
+          "text": "class npc_high_overlord_saurfang_icc : public CreatureScript"
+        },
+        {
+          "line": 955,
+          "text": "class npc_muradin_bronzebeard_icc : public CreatureScript"
+        },
+        {
+          "line": 1541,
+          "text": "class npc_saurfang_event : public CreatureScript"
+        },
+        {
+          "line": 1693,
+          "text": "class spell_deathbringer_blood_link_aura : public AuraScript"
+        },
+        {
+          "line": 1749,
+          "text": "class spell_deathbringer_blood_link : public SpellScript"
+        },
+        {
+          "line": 1772,
+          "text": "class spell_deathbringer_blood_power : public SpellScript"
+        },
+        {
+          "line": 1788,
+          "text": "class spell_deathbringer_blood_power_aura : public AuraScript"
+        },
+        {
+          "line": 1805,
+          "text": "class spell_deathbringer_blood_nova_targeting : public SpellScript"
+        },
+        {
+          "line": 1862,
+          "text": "class spell_deathbringer_boiling_blood : public SpellScript"
+        },
+        {
+          "line": 1893,
+          "text": "class achievement_ive_gone_and_made_a_mess : public AchievementCriteriaScript"
+        },
+        {
+          "line": 1909,
+          "text": "class npc_icc_blood_beast : public CreatureScript"
+        },
+        {
+          "line": 1954,
+          "text": "class spell_deathbringer_blood_beast_blood_link : public AuraScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 90,
+          "text": "SPELL_ZERO_POWER                    = 72242,"
+        },
+        {
+          "line": 91,
+          "text": "SPELL_GRIP_OF_AGONY                 = 70572, // Intro"
+        },
+        {
+          "line": 92,
+          "text": "SPELL_BLOOD_LINK                    = 72178,"
+        },
+        {
+          "line": 93,
+          "text": "SPELL_MARK_OF_THE_FALLEN_CHAMPION_S = 72256,"
+        },
+        {
+          "line": 94,
+          "text": "SPELL_RUNE_OF_BLOOD_S               = 72408,"
+        },
+        {
+          "line": 95,
+          "text": "SPELL_SUMMON_BLOOD_BEAST            = 72172,"
+        },
+        {
+          "line": 97,
+          "text": "SPELL_SUMMON_BLOOD_BEAST_25_MAN     = 72356, // Additional cast, does not replace"
+        },
+        {
+          "line": 98,
+          "text": "SPELL_FRENZY                        = 72737,"
+        },
+        {
+          "line": 99,
+          "text": "SPELL_BLOOD_NOVA_TRIGGER            = 72378,"
+        },
+        {
+          "line": 100,
+          "text": "SPELL_BLOOD_NOVA                    = 72380,"
+        },
+        {
+          "line": 101,
+          "text": "SPELL_BLOOD_POWER                   = 72371,"
+        },
+        {
+          "line": 102,
+          "text": "SPELL_BLOOD_LINK_POWER              = 72195,"
+        },
+        {
+          "line": 103,
+          "text": "SPELL_BLOOD_LINK_DUMMY              = 72202,"
+        },
+        {
+          "line": 104,
+          "text": "SPELL_MARK_OF_THE_FALLEN_CHAMPION   = 72293,"
+        },
+        {
+          "line": 105,
+          "text": "SPELL_BOILING_BLOOD                 = 72385,"
+        },
+        {
+          "line": 106,
+          "text": "SPELL_RUNE_OF_BLOOD                 = 72410,"
+        },
+        {
+          "line": 109,
+          "text": "SPELL_BLOOD_LINK_BEAST              = 72176,"
+        },
+        {
+          "line": 110,
+          "text": "SPELL_RESISTANT_SKIN                = 72723,"
+        },
+        {
+          "line": 111,
+          "text": "SPELL_SCENT_OF_BLOOD                = 72769, // Heroic only"
+        },
+        {
+          "line": 112,
+          "text": "SPELL_RIDE_VEHICLE                  = 70640, // Outro"
+        },
+        {
+          "line": 114,
+          "text": "SPELL_ACHIEVEMENT                   = 72928,"
+        },
+        {
+          "line": 115,
+          "text": "SPELL_SIMPLE_TELEPORT               = 12980, // Outro, Varian and Jaina stepping out of the portal"
+        }
+      ]
+    },
+    {
+      "file": "boss_festergut.cpp",
+      "sha256": "49e888637037f9daf61329470d7a432faf28c5fd93b1d356140a06b2d40189ce",
+      "lines": 496,
+      "events": [
+        {
+          "line": 123,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 5min);"
+        },
+        {
+          "line": 124,
+          "text": "events.ScheduleEvent(EVENT_INHALE_BLIGHT, 25s, 30s);"
+        },
+        {
+          "line": 125,
+          "text": "events.ScheduleEvent(EVENT_GAS_SPORE, 20s, 25s);"
+        },
+        {
+          "line": 126,
+          "text": "events.ScheduleEvent(EVENT_VILE_GAS, 30s, 40s, 1);"
+        },
+        {
+          "line": 127,
+          "text": "events.ScheduleEvent(EVENT_GASTRIC_BLOAT, 12s + 500ms, 15s);"
+        },
+        {
+          "line": 129,
+          "text": "events.ScheduleEvent(EVENT_FESTERGUT_GOO, 15s, 20s);"
+        },
+        {
+          "line": 204,
+          "text": "events.RescheduleEvent(EVENT_GAS_SPORE, 20s, 25s);"
+        },
+        {
+          "line": 215,
+          "text": "events.ScheduleEvent(EVENT_INHALE_BLIGHT, 34s);"
+        },
+        {
+          "line": 221,
+          "text": "events.ScheduleEvent(EVENT_GAS_SPORE, 40s, 45s);"
+        },
+        {
+          "line": 235,
+          "text": "events.ScheduleEvent(EVENT_VILE_GAS, 28s, 35s, 1);"
+        },
+        {
+          "line": 240,
+          "text": "events.ScheduleEvent(EVENT_GASTRIC_BLOAT, 15s, 17s + 500ms);"
+        },
+        {
+          "line": 246,
+          "text": "events.ScheduleEvent(EVENT_FESTERGUT_GOO, 15s, 20s);"
+        },
+        {
+          "line": 434,
+          "text": "events.ScheduleEvent(EVENT_DECIMATE, 20s, 25s);"
+        },
+        {
+          "line": 435,
+          "text": "events.ScheduleEvent(EVENT_MORTAL_WOUND, 1500ms, 2500ms);"
+        },
+        {
+          "line": 454,
+          "text": "events.ScheduleEvent(EVENT_DECIMATE, 20s, 25s);"
+        },
+        {
+          "line": 458,
+          "text": "events.ScheduleEvent(EVENT_MORTAL_WOUND, 1500ms, 2500ms);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 128,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 220,
+          "text": "me->CastCustomSpell(SPELL_GAS_SPORE, SPELLVALUE_MAX_TARGETS, RAID_MODE<int32>(2, 3, 2, 3), me);"
+        },
+        {
+          "line": 227,
+          "text": "uint32 minTargets = RAID_MODE<uint32>(3, 8, 3, 8);"
+        },
+        {
+          "line": 389,
+          "text": "uint32 questId = map->Is25ManRaid() ? QUEST_RESIDUE_RENDEZVOUS_25 : QUEST_RESIDUE_RENDEZVOUS_10;"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 84,
+          "text": "class boss_festergut : public CreatureScript"
+        },
+        {
+          "line": 275,
+          "text": "class spell_festergut_pungent_blight : public SpellScript"
+        },
+        {
+          "line": 315,
+          "text": "class spell_festergut_blighted_spores_aura : public AuraScript"
+        },
+        {
+          "line": 349,
+          "text": "class spell_festergut_gastric_bloat : public SpellScript"
+        },
+        {
+          "line": 374,
+          "text": "class spell_festergut_gaseous_blight : public SpellScript"
+        },
+        {
+          "line": 402,
+          "text": "class achievement_flu_shot_shortage : public AchievementCriteriaScript"
+        },
+        {
+          "line": 416,
+          "text": "class npc_stinky_icc : public CreatureScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 48,
+          "text": "SPELL_INHALE_BLIGHT         = 69165,"
+        },
+        {
+          "line": 49,
+          "text": "SPELL_PUNGENT_BLIGHT        = 69195,"
+        },
+        {
+          "line": 50,
+          "text": "SPELL_GASTRIC_BLOAT         = 72219, // 72214 is the proper way (with proc) but atm procs can't have cooldown for creatures"
+        },
+        {
+          "line": 51,
+          "text": "SPELL_GASTRIC_EXPLOSION     = 72227,"
+        },
+        {
+          "line": 52,
+          "text": "SPELL_GAS_SPORE             = 69278,"
+        },
+        {
+          "line": 53,
+          "text": "SPELL_VILE_GAS              = 69240,"
+        },
+        {
+          "line": 54,
+          "text": "SPELL_INOCULATED            = 69291,"
+        },
+        {
+          "line": 55,
+          "text": "SPELL_MALLABLE_GOO_H        = 72296,"
+        },
+        {
+          "line": 58,
+          "text": "SPELL_MORTAL_WOUND          = 71127,"
+        },
+        {
+          "line": 59,
+          "text": "SPELL_DECIMATE              = 71123,"
+        },
+        {
+          "line": 60,
+          "text": "SPELL_PLAGUE_STENCH         = 71805,"
+        }
+      ]
+    },
+    {
+      "file": "boss_icecrown_gunship_battle.cpp",
+      "sha256": "1e837b81d975a9379eade3e012569d69a466aa39dc9319bf0b375af1fa261906",
+      "lines": 2661,
+      "events": [
+        {
+          "line": 797,
+          "text": "events.ScheduleEvent(EVENT_INTRO_H_1, 5s);"
+        },
+        {
+          "line": 798,
+          "text": "events.ScheduleEvent(EVENT_INTRO_H_2, 16s);"
+        },
+        {
+          "line": 799,
+          "text": "events.ScheduleEvent(EVENT_INTRO_SUMMON_SKYBREAKER, 24s + 600ms);"
+        },
+        {
+          "line": 800,
+          "text": "events.ScheduleEvent(EVENT_INTRO_H_3, 29s + 600ms);"
+        },
+        {
+          "line": 801,
+          "text": "events.ScheduleEvent(EVENT_INTRO_H_4, 39s + 200ms);"
+        },
+        {
+          "line": 810,
+          "text": "events.CancelEvent(EVENT_CLEAVE);"
+        },
+        {
+          "line": 811,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE, 3s, 6s);"
+        },
+        {
+          "line": 835,
+          "text": "events.ScheduleEvent(EVENT_INTRO_H_5, 4s);"
+        },
+        {
+          "line": 836,
+          "text": "events.ScheduleEvent(EVENT_INTRO_H_6, 11s);"
+        },
+        {
+          "line": 837,
+          "text": "events.ScheduleEvent(EVENT_KEEP_PLAYER_IN_COMBAT, 1ms);"
+        },
+        {
+          "line": 851,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_MAGE, Seconds(_firstMageCooldown - now));"
+        },
+        {
+          "line": 853,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_MAGE, 1ms);"
+        },
+        {
+          "line": 857,
+          "text": "events.ScheduleEvent(EVENT_ADDS, 12s);"
+        },
+        {
+          "line": 858,
+          "text": "events.ScheduleEvent(EVENT_CHECK_RIFLEMAN, 13s);"
+        },
+        {
+          "line": 859,
+          "text": "events.ScheduleEvent(EVENT_CHECK_MORTAR, 13s);"
+        },
+        {
+          "line": 894,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_MAGE, 30s, 33s + 500ms);"
+        },
+        {
+          "line": 984,
+          "text": "events.ScheduleEvent(EVENT_KEEP_PLAYER_IN_COMBAT, 4s);"
+        },
+        {
+          "line": 1014,
+          "text": "events.ScheduleEvent(EVENT_ADDS_BOARD_YELL, 6s);"
+        },
+        {
+          "line": 1015,
+          "text": "events.ScheduleEvent(EVENT_ADDS, 1min);"
+        },
+        {
+          "line": 1030,
+          "text": "events.ScheduleEvent(EVENT_CHECK_RIFLEMAN, 1500ms);"
+        },
+        {
+          "line": 1041,
+          "text": "events.ScheduleEvent(EVENT_CHECK_MORTAR, 1500ms);"
+        },
+        {
+          "line": 1046,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE, 4s, 8s);"
+        },
+        {
+          "line": 1132,
+          "text": "events.ScheduleEvent(EVENT_INTRO_A_1, 5s);"
+        },
+        {
+          "line": 1133,
+          "text": "events.ScheduleEvent(EVENT_INTRO_A_2, 10s);"
+        },
+        {
+          "line": 1134,
+          "text": "events.ScheduleEvent(EVENT_INTRO_SUMMON_ORGRIMS_HAMMER, 28s);"
+        },
+        {
+          "line": 1135,
+          "text": "events.ScheduleEvent(EVENT_INTRO_A_3, 33s);"
+        },
+        {
+          "line": 1136,
+          "text": "events.ScheduleEvent(EVENT_INTRO_A_4, 39s);"
+        },
+        {
+          "line": 1137,
+          "text": "events.ScheduleEvent(EVENT_INTRO_A_5, 45s);"
+        },
+        {
+          "line": 1146,
+          "text": "events.CancelEvent(EVENT_CLEAVE);"
+        },
+        {
+          "line": 1147,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE, 3s, 6s);"
+        },
+        {
+          "line": 1171,
+          "text": "events.ScheduleEvent(EVENT_INTRO_A_6, 5s);"
+        },
+        {
+          "line": 1172,
+          "text": "events.ScheduleEvent(EVENT_INTRO_A_7, 11s);"
+        },
+        {
+          "line": 1173,
+          "text": "events.ScheduleEvent(EVENT_KEEP_PLAYER_IN_COMBAT, 1ms);"
+        },
+        {
+          "line": 1187,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_MAGE, Seconds(_firstMageCooldown - now));"
+        },
+        {
+          "line": 1189,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_MAGE, 1ms);"
+        },
+        {
+          "line": 1193,
+          "text": "events.ScheduleEvent(EVENT_ADDS, 12s);"
+        },
+        {
+          "line": 1194,
+          "text": "events.ScheduleEvent(EVENT_CHECK_RIFLEMAN, 13s);"
+        },
+        {
+          "line": 1195,
+          "text": "events.ScheduleEvent(EVENT_CHECK_MORTAR, 13s);"
+        },
+        {
+          "line": 1230,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_MAGE, 30s, 33s + 500ms);"
+        },
+        {
+          "line": 1323,
+          "text": "events.ScheduleEvent(EVENT_KEEP_PLAYER_IN_COMBAT, 4s);"
+        },
+        {
+          "line": 1353,
+          "text": "events.ScheduleEvent(EVENT_ADDS_BOARD_YELL, 6s);"
+        },
+        {
+          "line": 1354,
+          "text": "events.ScheduleEvent(EVENT_ADDS, 1min);"
+        },
+        {
+          "line": 1369,
+          "text": "events.ScheduleEvent(EVENT_CHECK_RIFLEMAN, 1500ms);"
+        },
+        {
+          "line": 1380,
+          "text": "events.ScheduleEvent(EVENT_CHECK_MORTAR, 1500ms);"
+        },
+        {
+          "line": 1385,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE, 4s, 8s);"
+        },
+        {
+          "line": 1695,
+          "text": "events.ScheduleEvent(EVENT_BLADESTORM, 13s, 18s);"
+        },
+        {
+          "line": 1696,
+          "text": "events.ScheduleEvent(EVENT_WOUNDING_STRIKE, 5s, 10s);"
+        },
+        {
+          "line": 1723,
+          "text": "events.ScheduleEvent(EVENT_BLADESTORM, 25s, 30s);"
+        },
+        {
+          "line": 1727,
+          "text": "events.ScheduleEvent(EVENT_WOUNDING_STRIKE, 7s, 13s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 389,
+          "text": "if (_level < (_creature->GetMap()->IsHeroic() ? 4 : 3))"
+        },
+        {
+          "line": 575,
+          "text": "if (!me->HealthBelowPctDamaged(90, damage))"
+        },
+        {
+          "line": 731,
+          "text": "if (me->GetMap()->Is25ManRaid())"
+        },
+        {
+          "line": 860,
+          "text": "if (Is25ManRaid())"
+        },
+        {
+          "line": 900,
+          "text": "if (me->HealthBelowPctDamaged(65, damage) && !me->HasAura(SPELL_TASTE_OF_BLOOD))"
+        },
+        {
+          "line": 995,
+          "text": "_controller.SummonCreatures(me, SLOT_MARINE_1, Is25ManRaid() ? SLOT_MARINE_4 : SLOT_MARINE_2);"
+        },
+        {
+          "line": 996,
+          "text": "_controller.SummonCreatures(me, SLOT_SERGEANT_1, Is25ManRaid() ? SLOT_SERGEANT_2 : SLOT_SERGEANT_1);"
+        },
+        {
+          "line": 1022,
+          "text": "if (_controller.SummonCreatures(me, SLOT_RIFLEMAN_1, Is25ManRaid() ? SLOT_RIFLEMAN_8 : SLOT_RIFLEMAN_4))"
+        },
+        {
+          "line": 1033,
+          "text": "if (_controller.SummonCreatures(me, SLOT_MORTAR_1, Is25ManRaid() ? SLOT_MORTAR_4 : SLOT_MORTAR_2))"
+        },
+        {
+          "line": 1196,
+          "text": "if (Is25ManRaid())"
+        },
+        {
+          "line": 1236,
+          "text": "if (me->HealthBelowPctDamaged(65, damage) && !me->HasAura(SPELL_TASTE_OF_BLOOD))"
+        },
+        {
+          "line": 1334,
+          "text": "_controller.SummonCreatures(me, SLOT_MARINE_1, Is25ManRaid() ? SLOT_MARINE_4 : SLOT_MARINE_2);"
+        },
+        {
+          "line": 1335,
+          "text": "_controller.SummonCreatures(me, SLOT_SERGEANT_1, Is25ManRaid() ? SLOT_SERGEANT_2 : SLOT_SERGEANT_1);"
+        },
+        {
+          "line": 1361,
+          "text": "if (_controller.SummonCreatures(me, SLOT_RIFLEMAN_1, Is25ManRaid() ? SLOT_RIFLEMAN_8 : SLOT_RIFLEMAN_4))"
+        },
+        {
+          "line": 1372,
+          "text": "if (_controller.SummonCreatures(me, SLOT_MORTAR_1, Is25ManRaid() ? SLOT_MORTAR_4 : SLOT_MORTAR_2))"
+        },
+        {
+          "line": 1601,
+          "text": "if (!me->HealthBelowPctDamaged(25, damage))"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 297,
+          "text": "struct SlotInfo"
+        },
+        {
+          "line": 372,
+          "text": "class BattleExperienceEvent : public BasicEvent"
+        },
+        {
+          "line": 407,
+          "text": "class PassengerController"
+        },
+        {
+          "line": 494,
+          "text": "class DelayedMovementEvent : public BasicEvent"
+        },
+        {
+          "line": 516,
+          "text": "class ResetEncounterEvent : public BasicEvent"
+        },
+        {
+          "line": 542,
+          "text": "class npc_gunship : public CreatureScript"
+        },
+        {
+          "line": 771,
+          "text": "class npc_high_overlord_saurfang_igb : public CreatureScript"
+        },
+        {
+          "line": 1106,
+          "text": "class npc_muradin_bronzebeard_igb : public CreatureScript"
+        },
+        {
+          "line": 1445,
+          "text": "class npc_zafod_boombox : public CreatureScript"
+        },
+        {
+          "line": 1470,
+          "text": "class npc_igb_ship_crew : public CreatureScript"
+        },
+        {
+          "line": 1504,
+          "text": "struct gunship_npc_AI : public ScriptedAI"
+        },
+        {
+          "line": 1566,
+          "text": "struct npc_gunship_boarding_addAI : public ScriptedAI"
+        },
+        {
+          "line": 1681,
+          "text": "class npc_gunship_boarding_leader : public CreatureScript"
+        },
+        {
+          "line": 1745,
+          "text": "class npc_gunship_boarding_add : public CreatureScript"
+        },
+        {
+          "line": 1787,
+          "text": "class npc_gunship_mage : public CreatureScript"
+        },
+        {
+          "line": 1852,
+          "text": "class npc_gunship_gunner : public CreatureScript"
+        },
+        {
+          "line": 1930,
+          "text": "class npc_gunship_rocketeer : public CreatureScript"
+        },
+        {
+          "line": 1981,
+          "text": "class spell_igb_rocket_pack_aura : public AuraScript"
+        },
+        {
+          "line": 2014,
+          "text": "class spell_igb_rocket_pack_useable_aura : public AuraScript"
+        },
+        {
+          "line": 2052,
+          "text": "class spell_igb_teleport_to_enemy_ship : public SpellScript"
+        },
+        {
+          "line": 2075,
+          "text": "class spell_igb_check_for_players : public SpellScript"
+        },
+        {
+          "line": 2118,
+          "text": "class spell_igb_gunship_fall_teleport : public SpellScript"
+        },
+        {
+          "line": 2147,
+          "text": "class spell_igb_explosion_main_aura : public AuraScript"
+        },
+        {
+          "line": 2172,
+          "text": "class IgbExplosionCheck"
+        },
+        {
+          "line": 2186,
+          "text": "class spell_igb_explosion : public SpellScript"
+        },
+        {
+          "line": 2202,
+          "text": "class IgbTeleportOnVictoryCheck"
+        },
+        {
+          "line": 2216,
+          "text": "class spell_igb_teleport_players_on_victory : public SpellScript"
+        },
+        {
+          "line": 2237,
+          "text": "class spell_igb_periodic_trigger_with_power_cost_aura : public AuraScript"
+        },
+        {
+          "line": 2253,
+          "text": "class spell_igb_overheat_aura : public AuraScript"
+        },
+        {
+          "line": 2298,
+          "text": "class spell_igb_cannon_blast : public SpellScript"
+        },
+        {
+          "line": 2354,
+          "text": "class spell_igb_incinerating_blast : public SpellScript"
+        },
+        {
+          "line": 2397,
+          "text": "class BurningPitchFilterCheck"
+        },
+        {
+          "line": 2413,
+          "text": "class spell_igb_burning_pitch_selector : public SpellScript"
+        },
+        {
+          "line": 2445,
+          "text": "class spell_igb_burning_pitch : public SpellScript"
+        },
+        {
+          "line": 2467,
+          "text": "class IgbArtilleryCheck"
+        },
+        {
+          "line": 2482,
+          "text": "class spell_igb_rocket_artillery : public SpellScript"
+        },
+        {
+          "line": 2520,
+          "text": "class spell_igb_rocket_artillery_explosion : public SpellScript"
+        },
+        {
+          "line": 2541,
+          "text": "class spell_igb_below_zero : public SpellScript"
+        },
+        {
+          "line": 2567,
+          "text": "class spell_igb_on_gunship_deck_aura : public AuraScript"
+        },
+        {
+          "line": 2602,
+          "text": "class achievement_im_on_a_boat : public AchievementCriteriaScript"
+        },
+        {
+          "line": 2614,
+          "text": "class spell_igb_battle_experience_check : public AuraScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 113,
+          "text": "SPELL_FRIENDLY_BOSS_DAMAGE_MOD          = 70339,"
+        },
+        {
+          "line": 114,
+          "text": "SPELL_CHECK_FOR_PLAYERS                 = 70332,"
+        },
+        {
+          "line": 115,
+          "text": "SPELL_GUNSHIP_FALL_TELEPORT             = 67335,"
+        },
+        {
+          "line": 116,
+          "text": "SPELL_TELEPORT_PLAYERS_ON_RESET_A       = 70446,"
+        },
+        {
+          "line": 117,
+          "text": "SPELL_TELEPORT_PLAYERS_ON_RESET_H       = 71284,"
+        },
+        {
+          "line": 118,
+          "text": "SPELL_TELEPORT_PLAYERS_ON_VICTORY       = 72340,"
+        },
+        {
+          "line": 119,
+          "text": "SPELL_ACHIEVEMENT                       = 72959,"
+        },
+        {
+          "line": 120,
+          "text": "SPELL_AWARD_REPUTATION_BOSS_KILL        = 73843,"
+        },
+        {
+          "line": 123,
+          "text": "SPELL_EXPLOSION_WIPE                    = 72134,"
+        },
+        {
+          "line": 124,
+          "text": "SPELL_EXPLOSION_VICTORY                 = 72137,"
+        },
+        {
+          "line": 125,
+          "text": "SPELL_BURNING_PITCH_A                   = 70403,"
+        },
+        {
+          "line": 126,
+          "text": "SPELL_BURNING_PITCH_H                   = 70397,"
+        },
+        {
+          "line": 127,
+          "text": "SPELL_BURNING_PITCH                     = 69660,"
+        },
+        {
+          "line": 128,
+          "text": "SPELL_BURNING_PITCH_DAMAGE_A            = 70383,"
+        },
+        {
+          "line": 129,
+          "text": "SPELL_BURNING_PITCH_DAMAGE_H            = 70374,"
+        },
+        {
+          "line": 133,
+          "text": "SPELL_CLEAVE                            = 15284,"
+        },
+        {
+          "line": 134,
+          "text": "SPELL_BATTLE_FURY                       = 69637,"
+        },
+        {
+          "line": 138,
+          "text": "SPELL_SHADOW_CHANNELING                 = 43897,"
+        },
+        {
+          "line": 142,
+          "text": "SPELL_SHOOT                             = 70162,"
+        },
+        {
+          "line": 143,
+          "text": "SPELL_HURL_AXE                          = 70161,"
+        },
+        {
+          "line": 147,
+          "text": "SPELL_BELOW_ZERO                        = 69705,"
+        },
+        {
+          "line": 151,
+          "text": "SPELL_ROCKET_ARTILLERY_A                = 70609,"
+        },
+        {
+          "line": 152,
+          "text": "SPELL_ROCKET_ARTILLERY_H                = 69678,"
+        },
+        {
+          "line": 156,
+          "text": "SPELL_RENDING_THROW                     = 70309,"
+        },
+        {
+          "line": 157,
+          "text": "SPELL_TASTE_OF_BLOOD                    = 69634,"
+        },
+        {
+          "line": 160,
+          "text": "SPELL_TELEPORT_TO_ENEMY_SHIP            = 70104,"
+        },
+        {
+          "line": 161,
+          "text": "SPELL_BATTLE_EXPERIENCE                 = 71201,"
+        },
+        {
+          "line": 162,
+          "text": "SPELL_EXPERIENCED                       = 71188,"
+        },
+        {
+          "line": 163,
+          "text": "SPELL_VETERAN                           = 71193,"
+        },
+        {
+          "line": 164,
+          "text": "SPELL_ELITE                             = 71195,"
+        },
+        {
+          "line": 165,
+          "text": "SPELL_ADDS_BERSERK                      = 72525,"
+        },
+        {
+          "line": 169,
+          "text": "SPELL_BLADESTORM                        = 69652,"
+        },
+        {
+          "line": 170,
+          "text": "SPELL_WOUNDING_STRIKE                   = 69651,"
+        },
+        {
+          "line": 171,
+          "text": "SPELL_DESPERATE_RESOLVE                 = 69647,"
+        },
+        {
+          "line": 174,
+          "text": "SPELL_LOCK_PLAYERS_AND_TAP_CHEST        = 72347,"
+        },
+        {
+          "line": 175,
+          "text": "SPELL_ON_SKYBREAKER_DECK                = 70120,"
+        },
+        {
+          "line": 176,
+          "text": "SPELL_ON_ORGRIMS_HAMMER_DECK            = 70121,"
+        },
+        {
+          "line": 179,
+          "text": "SPELL_CREATE_ROCKET_PACK                = 70055,"
+        },
+        {
+          "line": 180,
+          "text": "SPELL_ROCKET_PACK_DAMAGE                = 69193,"
+        },
+        {
+          "line": 181,
+          "text": "SPELL_ROCKET_BURST                      = 69192,"
+        },
+        {
+          "line": 182,
+          "text": "SPELL_ROCKET_PACK_USEABLE               = 70348,"
+        },
+        {
+          "line": 186,
+          "text": "SPELL_OVERHEAT                          = 69487,"
+        },
+        {
+          "line": 187,
+          "text": "SPELL_EJECT_ALL_PASSENGERS              = 68576,"
+        }
+      ]
+    },
+    {
+      "file": "boss_lady_deathwhisper.cpp",
+      "sha256": "165ea21d7fbf841a10944e2975d19801317f78cfd7433664f8e29563bfad10bb",
+      "lines": 1200,
+      "events": [
+        {
+          "line": 284,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 10min);"
+        },
+        {
+          "line": 285,
+          "text": "events.ScheduleEvent(EVENT_SPELL_DEATH_AND_DECAY, 10s);"
+        },
+        {
+          "line": 287,
+          "text": "events.ScheduleEvent(EVENT_SPELL_DOMINATE_MIND_25, 30s);"
+        },
+        {
+          "line": 288,
+          "text": "events.ScheduleEvent(EVENT_SPELL_SHADOW_BOLT, 2s, 0, PHASE_ONE);"
+        },
+        {
+          "line": 289,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_WAVE_P1, 5s, 0, PHASE_ONE);"
+        },
+        {
+          "line": 290,
+          "text": "events.ScheduleEvent(EVENT_EMPOWER_CULTIST, 20s, 30s, 0, PHASE_ONE);"
+        },
+        {
+          "line": 320,
+          "text": "events.ScheduleEvent(EVENT_SPELL_FROSTBOLT, 10s, 12s, 0, PHASE_TWO);"
+        },
+        {
+          "line": 321,
+          "text": "events.ScheduleEvent(EVENT_SPELL_FROSTBOLT_VOLLEY, 19s, 21s, 0, PHASE_TWO);"
+        },
+        {
+          "line": 322,
+          "text": "events.ScheduleEvent(EVENT_SPELL_TOUCH_OF_INSIGNIFICANCE, 6s, 9s, 0, PHASE_TWO);"
+        },
+        {
+          "line": 323,
+          "text": "events.ScheduleEvent(EVENT_SPELL_SUMMON_SHADE, 12s, 15s, 0, PHASE_TWO);"
+        },
+        {
+          "line": 328,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_WAVE_P2, 45s, 0, PHASE_TWO);"
+        },
+        {
+          "line": 372,
+          "text": "events.Repeat(22s, 30s);"
+        },
+        {
+          "line": 409,
+          "text": "events.Repeat(40s, 45s);"
+        },
+        {
+          "line": 415,
+          "text": "events.Repeat(2100ms);"
+        },
+        {
+          "line": 419,
+          "text": "events.Repeat(IsHeroic() ? 45s : 60s);"
+        },
+        {
+          "line": 423,
+          "text": "events.Repeat(18s, 25s);"
+        },
+        {
+          "line": 427,
+          "text": "events.Repeat(12s);"
+        },
+        {
+          "line": 431,
+          "text": "events.Repeat(13s, 15s);"
+        },
+        {
+          "line": 435,
+          "text": "events.Repeat(6s, 9s);"
+        },
+        {
+          "line": 439,
+          "text": "events.Repeat(45s);"
+        },
+        {
+          "line": 455,
+          "text": "events.Repeat(12s);"
+        },
+        {
+          "line": 561,
+          "text": "events.ScheduleEvent(EVENT_INTRO_2, 11s, 0, PHASE_INTRO);"
+        },
+        {
+          "line": 562,
+          "text": "events.ScheduleEvent(EVENT_INTRO_3, 21s, 0, PHASE_INTRO);"
+        },
+        {
+          "line": 563,
+          "text": "events.ScheduleEvent(EVENT_INTRO_4, 31s + 500ms, 0, PHASE_INTRO);"
+        },
+        {
+          "line": 564,
+          "text": "events.ScheduleEvent(EVENT_INTRO_5, 39s + 500ms, 0, PHASE_INTRO);"
+        },
+        {
+          "line": 565,
+          "text": "events.ScheduleEvent(EVENT_INTRO_6, 48s + 500ms, 0, PHASE_INTRO);"
+        },
+        {
+          "line": 566,
+          "text": "events.ScheduleEvent(EVENT_INTRO_7, 58s, 0, PHASE_INTRO);"
+        },
+        {
+          "line": 685,
+          "text": "events.ScheduleEvent(EVENT_SPELL_FANATIC_NECROTIC_STRIKE, 10s, 12s);"
+        },
+        {
+          "line": 686,
+          "text": "events.ScheduleEvent(EVENT_SPELL_FANATIC_SHADOW_CLEAVE, 14s, 16s);"
+        },
+        {
+          "line": 687,
+          "text": "events.ScheduleEvent(EVENT_SPELL_FANATIC_VAMPIRIC_MIGHT, 20s, 27s);"
+        },
+        {
+          "line": 716,
+          "text": "events.ScheduleEvent(EVENT_SPELL_CULTIST_DARK_MARTYRDOM, 5ms);"
+        },
+        {
+          "line": 737,
+          "text": "events.Repeat(11s, 13s);"
+        },
+        {
+          "line": 741,
+          "text": "events.Repeat(9500ms, 11s);"
+        },
+        {
+          "line": 745,
+          "text": "events.Repeat(20s, 27s);"
+        },
+        {
+          "line": 768,
+          "text": "events.ScheduleEvent(EVENT_CULTIST_DARK_MARTYRDOM_REVIVE, 6s);"
+        },
+        {
+          "line": 797,
+          "text": "events.ScheduleEvent(EVENT_SPELL_ADHERENT_FROST_FEVER, 10s, 12s);"
+        },
+        {
+          "line": 798,
+          "text": "events.ScheduleEvent(EVENT_SPELL_ADHERENT_DEATHCHILL, 14s, 16s);"
+        },
+        {
+          "line": 799,
+          "text": "events.ScheduleEvent(EVENT_SPELL_ADHERENT_CURSE_OF_TORPOR, 14s, 16s);"
+        },
+        {
+          "line": 800,
+          "text": "events.ScheduleEvent(EVENT_SPELL_ADHERENT_SHROUD_OF_THE_OCCULT, 32s, 39s);"
+        },
+        {
+          "line": 829,
+          "text": "events.ScheduleEvent(EVENT_SPELL_CULTIST_DARK_MARTYRDOM, 5ms);"
+        },
+        {
+          "line": 850,
+          "text": "events.Repeat(9s, 13s);"
+        },
+        {
+          "line": 857,
+          "text": "events.Repeat(9s, 13s);"
+        },
+        {
+          "line": 862,
+          "text": "events.Repeat(9s, 13s);"
+        },
+        {
+          "line": 866,
+          "text": "events.Repeat(27s, 32s);"
+        },
+        {
+          "line": 889,
+          "text": "events.ScheduleEvent(EVENT_CULTIST_DARK_MARTYRDOM_REVIVE, 6s);"
+        },
+        {
+          "line": 1013,
+          "text": "events.ScheduleEvent(EVENT_DARNAVAN_BLADESTORM, 10s);"
+        },
+        {
+          "line": 1014,
+          "text": "events.ScheduleEvent(EVENT_DARNAVAN_INTIMIDATING_SHOUT, 20s, 25s);"
+        },
+        {
+          "line": 1015,
+          "text": "events.ScheduleEvent(EVENT_DARNAVAN_MORTAL_STRIKE, 25s, 30s);"
+        },
+        {
+          "line": 1016,
+          "text": "events.ScheduleEvent(EVENT_DARNAVAN_SUNDER_ARMOR, 5s, 8s);"
+        },
+        {
+          "line": 1073,
+          "text": "events.ScheduleEvent(EVENT_DARNAVAN_SHATTERING_THROW, 30s);"
+        },
+        {
+          "line": 1081,
+          "text": "events.ScheduleEvent(EVENT_DARNAVAN_CHARGE, 20s);"
+        },
+        {
+          "line": 1089,
+          "text": "events.Repeat(90s, 100s);"
+        },
+        {
+          "line": 1096,
+          "text": "events.Repeat(90s, 120s);"
+        },
+        {
+          "line": 1100,
+          "text": "events.Repeat(15s, 30s);"
+        },
+        {
+          "line": 1107,
+          "text": "events.Repeat(3s, 7s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 195,
+          "text": "#define NPC_DARNAVAN        RAID_MODE<uint32>(NPC_DARNAVAN_10, NPC_DARNAVAN_25, NPC_DARNAVAN_10, NPC_DARNAVAN_25)"
+        },
+        {
+          "line": 196,
+          "text": "#define NPC_DARNAVAN_CREDIT RAID_MODE<uint32>(NPC_DARNAVAN_CREDIT_10, NPC_DARNAVAN_CREDIT_25, NPC_DARNAVAN_CREDIT_10, NPC_DARNAVAN_CREDIT_25)"
+        },
+        {
+          "line": 197,
+          "text": "#define QUEST_DEPROGRAMMING RAID_MODE<uint32>(QUEST_DEPROGRAMMING_10, QUEST_DEPROGRAMMING_25, QUEST_DEPROGRAMMING_10, QUEST_DEPROGRAMMING_25)"
+        },
+        {
+          "line": 324,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 403,
+          "text": "for (uint8 i = 0; i < RAID_MODE<uint8>(0, 1, 1, 3) && i < validPlayers.size(); i++)"
+        },
+        {
+          "line": 419,
+          "text": "events.Repeat(IsHeroic() ? 45s : 60s);"
+        },
+        {
+          "line": 583,
+          "text": "if (Is25ManRaid())"
+        },
+        {
+          "line": 596,
+          "text": "if (Is25ManRaid())"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 211,
+          "text": "class DaranavanMoveEvent : public BasicEvent"
+        },
+        {
+          "line": 241,
+          "text": "class boss_lady_deathwhisper : public CreatureScript"
+        },
+        {
+          "line": 670,
+          "text": "class npc_cult_fanatic : public CreatureScript"
+        },
+        {
+          "line": 782,
+          "text": "class npc_cult_adherent : public CreatureScript"
+        },
+        {
+          "line": 905,
+          "text": "class npc_vengeful_shade : public CreatureScript"
+        },
+        {
+          "line": 997,
+          "text": "class npc_darnavan : public CreatureScript"
+        },
+        {
+          "line": 1123,
+          "text": "class spell_deathwhisper_mana_barrier_aura : public AuraScript"
+        },
+        {
+          "line": 1145,
+          "text": "class spell_deathwhisper_dark_reckoning : public AuraScript"
+        },
+        {
+          "line": 1170,
+          "text": "class at_lady_deathwhisper_entrance : public AreaTriggerScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 58,
+          "text": "SPELL_SHADOW_CHANNELING           = 43897, // during intro"
+        },
+        {
+          "line": 59,
+          "text": "SPELL_MANA_BARRIER                = 70842,"
+        },
+        {
+          "line": 60,
+          "text": "SPELL_DEATH_AND_DECAY             = 71001,"
+        },
+        {
+          "line": 61,
+          "text": "SPELL_DOMINATE_MIND_25            = 71289,"
+        },
+        {
+          "line": 62,
+          "text": "SPELL_SHADOW_BOLT                 = 71254,"
+        },
+        {
+          "line": 63,
+          "text": "SPELL_DARK_MARTYRDOM_T            = 70897,"
+        },
+        {
+          "line": 64,
+          "text": "SPELL_DARK_TRANSFORMATION_T       = 70895,"
+        },
+        {
+          "line": 65,
+          "text": "SPELL_DARK_EMPOWERMENT_T          = 70896,"
+        },
+        {
+          "line": 66,
+          "text": "SPELL_FROSTBOLT                   = 71420,"
+        },
+        {
+          "line": 67,
+          "text": "SPELL_FROSTBOLT_VOLLEY            = 72905,"
+        },
+        {
+          "line": 68,
+          "text": "SPELL_TOUCH_OF_INSIGNIFICANCE     = 71204,"
+        },
+        {
+          "line": 69,
+          "text": "SPELL_SUMMON_SHADE                = 71363,"
+        },
+        {
+          "line": 72,
+          "text": "SPELL_NECROTIC_STRIKE             = 70659,"
+        },
+        {
+          "line": 73,
+          "text": "SPELL_SHADOW_CLEAVE               = 70670,"
+        },
+        {
+          "line": 74,
+          "text": "SPELL_VAMPIRIC_MIGHT              = 70674,"
+        },
+        {
+          "line": 75,
+          "text": "SPELL_DARK_MARTYRDOM_FANATIC      = 71236,"
+        },
+        {
+          "line": 76,
+          "text": "SPELL_DARK_MARTYRDOM_FANATIC_25N  = 72495,"
+        },
+        {
+          "line": 77,
+          "text": "SPELL_DARK_MARTYRDOM_FANATIC_10H  = 72496,"
+        },
+        {
+          "line": 78,
+          "text": "SPELL_DARK_MARTYRDOM_FANATIC_25H  = 72497,"
+        },
+        {
+          "line": 79,
+          "text": "SPELL_FANATIC_S_DETERMINATION     = 71235,"
+        },
+        {
+          "line": 80,
+          "text": "SPELL_DARK_TRANSFORMATION         = 70900,"
+        },
+        {
+          "line": 83,
+          "text": "SPELL_FROST_FEVER                 = 67767,"
+        },
+        {
+          "line": 84,
+          "text": "SPELL_DEATHCHILL_BOLT             = 70594,"
+        },
+        {
+          "line": 85,
+          "text": "SPELL_DEATHCHILL_BLAST            = 70906,"
+        },
+        {
+          "line": 86,
+          "text": "SPELL_CURSE_OF_TORPOR             = 71237,"
+        },
+        {
+          "line": 87,
+          "text": "SPELL_SHORUD_OF_THE_OCCULT        = 70768,"
+        },
+        {
+          "line": 88,
+          "text": "SPELL_DARK_MARTYRDOM_ADHERENT     = 70903,"
+        },
+        {
+          "line": 89,
+          "text": "SPELL_DARK_MARTYRDOM_ADHERENT_25N = 72498,"
+        },
+        {
+          "line": 90,
+          "text": "SPELL_DARK_MARTYRDOM_ADHERENT_10H = 72499,"
+        },
+        {
+          "line": 91,
+          "text": "SPELL_DARK_MARTYRDOM_ADHERENT_25H = 72500,"
+        },
+        {
+          "line": 92,
+          "text": "SPELL_ADHERENT_S_DETERMINATION    = 71234,"
+        },
+        {
+          "line": 93,
+          "text": "SPELL_DARK_EMPOWERMENT            = 70901,"
+        },
+        {
+          "line": 96,
+          "text": "SPELL_VENGEFUL_BLAST_PASSIVE      = 71494,"
+        },
+        {
+          "line": 97,
+          "text": "SPELL_VENGEFUL_BLAST_10N          = 71544,"
+        },
+        {
+          "line": 98,
+          "text": "SPELL_VENGEFUL_BLAST_25N          = 72010,"
+        },
+        {
+          "line": 99,
+          "text": "SPELL_VENGEFUL_BLAST_10H          = 72011,"
+        },
+        {
+          "line": 100,
+          "text": "SPELL_VENGEFUL_BLAST_25H          = 72012,"
+        },
+        {
+          "line": 103,
+          "text": "SPELL_BLADESTORM                  = 65947,"
+        },
+        {
+          "line": 104,
+          "text": "SPELL_CHARGE                      = 65927,"
+        },
+        {
+          "line": 105,
+          "text": "SPELL_INTIMIDATING_SHOUT          = 65930,"
+        },
+        {
+          "line": 106,
+          "text": "SPELL_MORTAL_STRIKE               = 65926,"
+        },
+        {
+          "line": 107,
+          "text": "SPELL_SHATTERING_THROW            = 65940,"
+        },
+        {
+          "line": 108,
+          "text": "SPELL_SUNDER_ARMOR                = 65936,"
+        },
+        {
+          "line": 111,
+          "text": "SPELL_FULL_HOUSE                  = 72827, // achievement"
+        },
+        {
+          "line": 112,
+          "text": "SPELL_TELEPORT_VISUAL             = 52096, // used by adds"
+        },
+        {
+          "line": 113,
+          "text": "SPELL_CLEAR_ALL_DEBUFFS           = 34098,"
+        },
+        {
+          "line": 114,
+          "text": "SPELL_FULL_HEAL                   = 17683,"
+        },
+        {
+          "line": 115,
+          "text": "SPELL_PERMANENT_FEIGN_DEATH       = 70628,"
+        }
+      ]
+    },
+    {
+      "file": "boss_lord_marrowgar.cpp",
+      "sha256": "436857feb73505f0a7929f77d5a5b1e50a2aca1fbab01fc608e0efa14e23ab8a",
+      "lines": 669,
+      "events": [
+        {
+          "line": 117,
+          "text": "events.ScheduleEvent(EVENT_ENABLE_BONE_SLICE, 10s);"
+        },
+        {
+          "line": 118,
+          "text": "events.ScheduleEvent(EVENT_SPELL_BONE_SPIKE_GRAVEYARD, 10s, 15s);"
+        },
+        {
+          "line": 119,
+          "text": "events.ScheduleEvent(EVENT_SPELL_COLDFLAME, 5s);"
+        },
+        {
+          "line": 120,
+          "text": "events.ScheduleEvent(EVENT_WARN_BONE_STORM, 45s, 50s);"
+        },
+        {
+          "line": 121,
+          "text": "events.ScheduleEvent(EVENT_ENRAGE, 10min);"
+        },
+        {
+          "line": 180,
+          "text": "events.Repeat(15s, 20s);"
+        },
+        {
+          "line": 186,
+          "text": "events.Repeat(5s);"
+        },
+        {
+          "line": 200,
+          "text": "events.Repeat(90s, 95s);"
+        },
+        {
+          "line": 201,
+          "text": "events.ScheduleEvent(EVENT_BEGIN_BONE_STORM, 3050ms);"
+        },
+        {
+          "line": 208,
+          "text": "events.ScheduleEvent(EVENT_BONE_STORM_MOVE, 0ms);"
+        },
+        {
+          "line": 209,
+          "text": "events.ScheduleEvent(EVENT_END_BONE_STORM, Milliseconds(_boneStormDuration + 1));"
+        },
+        {
+          "line": 216,
+          "text": "events.Repeat(1ms);"
+        },
+        {
+          "line": 219,
+          "text": "events.Repeat(5s);"
+        },
+        {
+          "line": 245,
+          "text": "events.CancelEvent(EVENT_BONE_STORM_MOVE);"
+        },
+        {
+          "line": 246,
+          "text": "events.ScheduleEvent(EVENT_ENABLE_BONE_SLICE, 10s);"
+        },
+        {
+          "line": 248,
+          "text": "events.RescheduleEvent(EVENT_SPELL_BONE_SPIKE_GRAVEYARD, 15s, 20s);"
+        },
+        {
+          "line": 276,
+          "text": "events.ScheduleEvent(EVENT_SPELL_COLDFLAME_BONE_STORM, 0ms);"
+        },
+        {
+          "line": 329,
+          "text": "events.ScheduleEvent(1, 450ms);"
+        },
+        {
+          "line": 330,
+          "text": "events.ScheduleEvent(2, 12s);"
+        },
+        {
+          "line": 354,
+          "text": "events.Repeat(450ms);"
+        },
+        {
+          "line": 437,
+          "text": "events.ScheduleEvent(1, 8s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 178,
+          "text": "if (IsHeroic() || !a)"
+        },
+        {
+          "line": 205,
+          "text": "uint32 _boneStormDuration = RAID_MODE<uint32>(20000, 30000, 20000, 30000);"
+        },
+        {
+          "line": 221,
+          "text": "SelectTargetList(targets, Is25ManRaid() ? 2 : 1, SelectTargetMethod::MaxDistance, 0, BoneStormMoveTargetSelector(me));"
+        },
+        {
+          "line": 247,
+          "text": "if (!IsHeroic())"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 75,
+          "text": "struct BoneStormMoveTargetSelector"
+        },
+        {
+          "line": 100,
+          "text": "struct boss_lord_marrowgar : public BossAI"
+        },
+        {
+          "line": 314,
+          "text": "class npc_coldflame : public CreatureScript"
+        },
+        {
+          "line": 370,
+          "text": "class npc_bone_spike : public CreatureScript"
+        },
+        {
+          "line": 483,
+          "text": "class spell_marrowgar_coldflame : public SpellScript"
+        },
+        {
+          "line": 528,
+          "text": "class spell_marrowgar_bone_spike_graveyard : public SpellScript"
+        },
+        {
+          "line": 579,
+          "text": "class spell_marrowgar_coldflame_bonestorm : public SpellScript"
+        },
+        {
+          "line": 608,
+          "text": "class spell_marrowgar_bone_storm : public SpellScript"
+        },
+        {
+          "line": 626,
+          "text": "class spell_marrowgar_bone_slice : public SpellScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 45,
+          "text": "SPELL_BONE_SLICE            = 69055,"
+        },
+        {
+          "line": 46,
+          "text": "SPELL_BONE_STORM            = 69076,"
+        },
+        {
+          "line": 47,
+          "text": "SPELL_BONE_SPIKE_GRAVEYARD  = 69057,"
+        },
+        {
+          "line": 48,
+          "text": "SPELL_COLDFLAME_NORMAL      = 69140,"
+        },
+        {
+          "line": 49,
+          "text": "SPELL_COLDFLAME_BONE_STORM  = 72705,"
+        },
+        {
+          "line": 52,
+          "text": "SPELL_IMPALED               = 69065,"
+        },
+        {
+          "line": 53,
+          "text": "SPELL_RIDE_VEHICLE          = 46598,"
+        },
+        {
+          "line": 56,
+          "text": "SPELL_COLDFLAME_PASSIVE     = 69145,"
+        },
+        {
+          "line": 57,
+          "text": "SPELL_COLDFLAME_SUMMON      = 69147,"
+        }
+      ]
+    },
+    {
+      "file": "boss_professor_putricide.cpp",
+      "sha256": "081cf04ba548691b1368d35479b8ed9c332e7a3988f1c361124a77caf6241899",
+      "lines": 1635,
+      "events": [
+        {
+          "line": 307,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 10min);"
+        },
+        {
+          "line": 308,
+          "text": "events.ScheduleEvent(EVENT_SLIME_PUDDLE, 10s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 309,
+          "text": "events.ScheduleEvent(EVENT_UNSTABLE_EXPERIMENT, 30s, 35s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 311,
+          "text": "events.ScheduleEvent(EVENT_UNBOUND_PLAGUE, 20s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 463,
+          "text": "events.ScheduleEvent(EVENT_TABLE_DRINK_STUFF, IsHeroic() ? 25s : 0ms);"
+        },
+        {
+          "line": 552,
+          "text": "events.ScheduleEvent(EVENT_SLIME_PUDDLE, 35s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 558,
+          "text": "events.ScheduleEvent(EVENT_UNSTABLE_EXPERIMENT, 35s, 40s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 571,
+          "text": "events.ScheduleEvent(EVENT_PHASE_TRANSITION, Milliseconds(sSpellMgr->GetSpellForDifficultyFromSpell(spell, me)->CalcCastTime() + 2250));"
+        },
+        {
+          "line": 578,
+          "text": "events.ScheduleEvent(EVENT_PHASE_TRANSITION, Milliseconds(sSpellMgr->GetSpellForDifficultyFromSpell(spell, me)->CalcCastTime() + 2250));"
+        },
+        {
+          "line": 594,
+          "text": "events.ScheduleEvent(EVENT_RESUME_ATTACK, 5500ms);"
+        },
+        {
+          "line": 601,
+          "text": "events.ScheduleEvent(EVENT_RESUME_ATTACK, 8500ms);"
+        },
+        {
+          "line": 625,
+          "text": "events.ScheduleEvent(EVENT_UNBOUND_PLAGUE, 90s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 628,
+          "text": "events.ScheduleEvent(EVENT_UNBOUND_PLAGUE, 3500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 651,
+          "text": "events.ScheduleEvent(EVENT_MALLEABLE_GOO, 25s, 30s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 656,
+          "text": "events.ScheduleEvent(EVENT_CHOKING_GAS_BOMB, 35s, 40s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 661,
+          "text": "events.ScheduleEvent(EVENT_MUTATED_PLAGUE, 10s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 686,
+          "text": "events.ScheduleEvent(EVENT_GO_TO_TABLE, 2500ms);"
+        },
+        {
+          "line": 725,
+          "text": "events.ScheduleEvent(EVENT_MALLEABLE_GOO, randtime(25s, 28s) + heroicDelay, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 726,
+          "text": "events.ScheduleEvent(EVENT_CHOKING_GAS_BOMB, randtime(35s, 40s) + heroicDelay, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 730,
+          "text": "events.CancelEvent(EVENT_UNSTABLE_EXPERIMENT);"
+        },
+        {
+          "line": 731,
+          "text": "events.ScheduleEvent(EVENT_MUTATED_PLAGUE, 10s, EVENT_GROUP_ABILITIES);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 310,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 347,
+          "text": "if (Is25ManRaid() && me->HasAura(SPELL_SHADOWS_FATE))"
+        },
+        {
+          "line": 403,
+          "text": "if (HealthAbovePct(80))"
+        },
+        {
+          "line": 409,
+          "text": "if (HealthAbovePct(35))"
+        },
+        {
+          "line": 463,
+          "text": "events.ScheduleEvent(EVENT_TABLE_DRINK_STUFF, IsHeroic() ? 25s : 0ms);"
+        },
+        {
+          "line": 631,
+          "text": "if (Is25ManRaid())"
+        },
+        {
+          "line": 634,
+          "text": "SelectTargetList(targets, (IsHeroic() ? 3 : 2), SelectTargetMethod::Random, 0, MalleableGooSelector(me));"
+        },
+        {
+          "line": 680,
+          "text": "Milliseconds heroicDelay = (IsHeroic() ? 25s : 0ms);"
+        },
+        {
+          "line": 683,
+          "text": "if (!IsHeroic())"
+        },
+        {
+          "line": 694,
+          "text": "if (Is25ManRaid())"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 154,
+          "text": "class AbominationDespawner"
+        },
+        {
+          "line": 184,
+          "text": "class UnboundPlagueTargetSelector"
+        },
+        {
+          "line": 207,
+          "text": "struct MalleableGooSelector"
+        },
+        {
+          "line": 226,
+          "text": "class boss_professor_putricide : public CreatureScript"
+        },
+        {
+          "line": 745,
+          "text": "class npc_putricide_oozeAI : public ScriptedAI"
+        },
+        {
+          "line": 834,
+          "text": "class npc_volatile_ooze : public CreatureScript"
+        },
+        {
+          "line": 857,
+          "text": "class npc_gas_cloud : public CreatureScript"
+        },
+        {
+          "line": 882,
+          "text": "struct npc_putricide_mutated_abomination : public VehicleAI"
+        },
+        {
+          "line": 915,
+          "text": "class spell_putricide_slime_puddle : public SpellScript"
+        },
+        {
+          "line": 945,
+          "text": "class spell_putricide_slime_puddle_spawn : public SpellScript"
+        },
+        {
+          "line": 965,
+          "text": "class spell_putricide_grow_stacker_aura : public AuraScript"
+        },
+        {
+          "line": 987,
+          "text": "class spell_putricide_unstable_experiment : public SpellScript"
+        },
+        {
+          "line": 1028,
+          "text": "class spell_putricide_tear_gas_effect : public SpellScript"
+        },
+        {
+          "line": 1048,
+          "text": "class spell_putricide_gaseous_bloat_aura : public AuraScript"
+        },
+        {
+          "line": 1092,
+          "text": "class spell_putricide_ooze_channel : public SpellScript"
+        },
+        {
+          "line": 1158,
+          "text": "class spell_putricide_ooze_eruption_searcher : public SpellScript"
+        },
+        {
+          "line": 1183,
+          "text": "class spell_putricide_mutated_plague_aura : public AuraScript"
+        },
+        {
+          "line": 1223,
+          "text": "class spell_putricide_unbound_plague : public SpellScript"
+        },
+        {
+          "line": 1286,
+          "text": "class spell_putricide_unbound_plague_dmg_aura : public AuraScript"
+        },
+        {
+          "line": 1305,
+          "text": "class spell_putricide_choking_gas_bomb : public SpellScript"
+        },
+        {
+          "line": 1329,
+          "text": "class spell_putricide_clear_aura_effect_value : public SpellScript"
+        },
+        {
+          "line": 1346,
+          "text": "class spell_putricide_mutation_init : public SpellScript"
+        },
+        {
+          "line": 1400,
+          "text": "class spell_putricide_mutation_init_aura : public AuraScript"
+        },
+        {
+          "line": 1419,
+          "text": "class spell_putricide_mutated_transformation : public SpellScript"
+        },
+        {
+          "line": 1489,
+          "text": "class spell_putricide_mutated_transformation_dismiss_aura : public AuraScript"
+        },
+        {
+          "line": 1505,
+          "text": "class spell_putricide_mutated_transformation_dmg : public SpellScript"
+        },
+        {
+          "line": 1521,
+          "text": "class spell_putricide_eat_ooze : public SpellScript"
+        },
+        {
+          "line": 1567,
+          "text": "class spell_putricide_regurgitated_ooze : public SpellScript"
+        },
+        {
+          "line": 1585,
+          "text": "class spell_putricide_ooze_tank_protection : public AuraScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 56,
+          "text": "SPELL_RELEASE_GAS_VISUAL                = 69125,"
+        },
+        {
+          "line": 57,
+          "text": "SPELL_GASEOUS_BLIGHT_LARGE              = 69157,"
+        },
+        {
+          "line": 58,
+          "text": "SPELL_GASEOUS_BLIGHT_MEDIUM             = 69162,"
+        },
+        {
+          "line": 59,
+          "text": "SPELL_GASEOUS_BLIGHT_SMALL              = 69164,"
+        },
+        {
+          "line": 64,
+          "text": "SPELL_SLIME_PUDDLE_TRIGGER              = 70341,"
+        },
+        {
+          "line": 65,
+          "text": "SPELL_MALLEABLE_GOO_BALCONY             = 72296,"
+        },
+        {
+          "line": 66,
+          "text": "SPELL_MALLEABLE_GOO                     = 70852,"
+        },
+        {
+          "line": 67,
+          "text": "SPELL_UNSTABLE_EXPERIMENT               = 70351,"
+        },
+        {
+          "line": 68,
+          "text": "SPELL_TEAR_GAS                          = 71617,    // phase transition"
+        },
+        {
+          "line": 69,
+          "text": "SPELL_TEAR_GAS_CREATURE                 = 71618,"
+        },
+        {
+          "line": 70,
+          "text": "SPELL_TEAR_GAS_CANCEL                   = 71620,"
+        },
+        {
+          "line": 71,
+          "text": "SPELL_TEAR_GAS_PERIODIC_TRIGGER         = 73170,"
+        },
+        {
+          "line": 72,
+          "text": "SPELL_CREATE_CONCOCTION                 = 71621,"
+        },
+        {
+          "line": 73,
+          "text": "SPELL_GUZZLE_POTIONS                    = 71893,"
+        },
+        {
+          "line": 74,
+          "text": "SPELL_OOZE_TANK_PROTECTION              = 71770,    // protects the tank"
+        },
+        {
+          "line": 75,
+          "text": "SPELL_CHOKING_GAS_BOMB                  = 71255,"
+        },
+        {
+          "line": 76,
+          "text": "SPELL_OOZE_VARIABLE                     = 74118,"
+        },
+        {
+          "line": 77,
+          "text": "SPELL_GAS_VARIABLE                      = 74119,"
+        },
+        {
+          "line": 78,
+          "text": "SPELL_UNBOUND_PLAGUE                    = 70911,"
+        },
+        {
+          "line": 79,
+          "text": "SPELL_UNBOUND_PLAGUE_SEARCHER           = 70917,"
+        },
+        {
+          "line": 80,
+          "text": "SPELL_PLAGUE_SICKNESS                   = 70953,"
+        },
+        {
+          "line": 81,
+          "text": "SPELL_UNBOUND_PLAGUE_PROTECTION         = 70955,"
+        },
+        {
+          "line": 82,
+          "text": "SPELL_MUTATED_PLAGUE                    = 72451,"
+        },
+        {
+          "line": 83,
+          "text": "SPELL_MUTATED_PLAGUE_CLEAR              = 72618,"
+        },
+        {
+          "line": 86,
+          "text": "SPELL_GROW_STACKER                      = 70345,"
+        },
+        {
+          "line": 87,
+          "text": "SPELL_GROW                              = 70347,"
+        },
+        {
+          "line": 88,
+          "text": "SPELL_SLIME_PUDDLE_AURA                 = 70343,"
+        },
+        {
+          "line": 91,
+          "text": "SPELL_GASEOUS_BLOAT_PROC                = 70215,"
+        },
+        {
+          "line": 92,
+          "text": "SPELL_GASEOUS_BLOAT                     = 70672,"
+        },
+        {
+          "line": 93,
+          "text": "SPELL_GASEOUS_BLOAT_PROTECTION          = 70812,"
+        },
+        {
+          "line": 94,
+          "text": "SPELL_EXPUNGED_GAS                      = 70701,"
+        },
+        {
+          "line": 97,
+          "text": "SPELL_OOZE_ERUPTION                     = 70492,"
+        },
+        {
+          "line": 98,
+          "text": "SPELL_VOLATILE_OOZE_ADHESIVE            = 70447,"
+        },
+        {
+          "line": 99,
+          "text": "SPELL_OOZE_ERUPTION_SEARCH_PERIODIC     = 70457,"
+        },
+        {
+          "line": 100,
+          "text": "SPELL_VOLATILE_OOZE_PROTECTION          = 70530,"
+        },
+        {
+          "line": 103,
+          "text": "SPELL_CHOKING_GAS_BOMB_PERIODIC         = 71259,"
+        },
+        {
+          "line": 104,
+          "text": "SPELL_CHOKING_GAS_EXPLOSION_TRIGGER     = 71280,"
+        },
+        {
+          "line": 107,
+          "text": "SPELL_ABOMINATION_VEHICLE_POWER_DRAIN   = 70385,"
+        },
+        {
+          "line": 108,
+          "text": "SPELL_MUTATED_TRANSFORMATION            = 70311,"
+        },
+        {
+          "line": 109,
+          "text": "SPELL_MUTATED_TRANSFORMATION_DAMAGE     = 70405,"
+        },
+        {
+          "line": 110,
+          "text": "SPELL_MUTATED_TRANSFORMATION_NAME       = 72401,"
+        },
+        {
+          "line": 113,
+          "text": "SPELL_UNHOLY_INFUSION                   = 71516,"
+        },
+        {
+          "line": 114,
+          "text": "SPELL_UNHOLY_INFUSION_CREDIT            = 71518,"
+        }
+      ]
+    },
+    {
+      "file": "boss_rotface.cpp",
+      "sha256": "f2a3b6127d6d6c653134d60fcdf11e44f3213e944dd75308c642d3e01bcc22ea",
+      "lines": 915,
+      "events": [
+        {
+          "line": 160,
+          "text": "events.ScheduleEvent(EVENT_SLIME_SPRAY, 20s);"
+        },
+        {
+          "line": 163,
+          "text": "events.ScheduleEvent(EVENT_HASTEN_INFECTIONS, 90s);"
+        },
+        {
+          "line": 164,
+          "text": "events.ScheduleEvent(EVENT_MUTATED_INFECTION, 14s);"
+        },
+        {
+          "line": 165,
+          "text": "events.ScheduleEvent(EVENT_ROTFACE_OOZE_FLOOD, 8s);"
+        },
+        {
+          "line": 167,
+          "text": "events.ScheduleEvent(EVENT_ROTFACE_VILE_GAS, 15s, 20s);"
+        },
+        {
+          "line": 287,
+          "text": "events.ScheduleEvent(EVENT_SLIME_SPRAY, 20s);"
+        },
+        {
+          "line": 288,
+          "text": "events.ScheduleEvent(EVENT_UNROOT, 0ms);"
+        },
+        {
+          "line": 294,
+          "text": "events.ScheduleEvent(EVENT_HASTEN_INFECTIONS, 90s);"
+        },
+        {
+          "line": 299,
+          "text": "events.ScheduleEvent(EVENT_MUTATED_INFECTION, infectionCooldown);"
+        },
+        {
+          "line": 309,
+          "text": "events.ScheduleEvent(EVENT_ROTFACE_OOZE_FLOOD, 25s);"
+        },
+        {
+          "line": 324,
+          "text": "events.ScheduleEvent(EVENT_ROTFACE_VILE_GAS, 15s, 20s);"
+        },
+        {
+          "line": 387,
+          "text": "events.ScheduleEvent(EVENT_STICKY_OOZE, 5s);"
+        },
+        {
+          "line": 406,
+          "text": "events.ScheduleEvent(EVENT_STICKY_OOZE, 15s);"
+        },
+        {
+          "line": 458,
+          "text": "events.CancelEvent(EVENT_STICKY_OOZE);"
+        },
+        {
+          "line": 472,
+          "text": "events.ScheduleEvent(EVENT_STICKY_OOZE, 5s);"
+        },
+        {
+          "line": 488,
+          "text": "events.ScheduleEvent(EVENT_STICKY_OOZE, 15s);"
+        },
+        {
+          "line": 828,
+          "text": "events.ScheduleEvent(EVENT_DECIMATE, 20s, 25s);"
+        },
+        {
+          "line": 829,
+          "text": "events.ScheduleEvent(EVENT_MORTAL_WOUND, 1500ms, 2500ms);"
+        },
+        {
+          "line": 830,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_ZOMBIES, 25s, 30s);"
+        },
+        {
+          "line": 870,
+          "text": "events.ScheduleEvent(EVENT_DECIMATE, 20s, 25s);"
+        },
+        {
+          "line": 874,
+          "text": "events.ScheduleEvent(EVENT_MORTAL_WOUND, 1500ms, 2500ms);"
+        },
+        {
+          "line": 880,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_ZOMBIES, 20s, 25s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 162,
+          "text": "if (Is25ManRaid())"
+        },
+        {
+          "line": 166,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 314,
+          "text": "uint32 minTargets = RAID_MODE<uint32>(3, 8, 3, 8);"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 111,
+          "text": "struct RotfaceHeightCheck"
+        },
+        {
+          "line": 121,
+          "text": "class boss_rotface : public CreatureScript"
+        },
+        {
+          "line": 340,
+          "text": "class npc_little_ooze : public CreatureScript"
+        },
+        {
+          "line": 424,
+          "text": "class npc_big_ooze : public CreatureScript"
+        },
+        {
+          "line": 509,
+          "text": "class spell_rotface_mutated_infection : public SpellScript"
+        },
+        {
+          "line": 560,
+          "text": "class spell_rotface_mutated_infection_aura : public AuraScript"
+        },
+        {
+          "line": 575,
+          "text": "class spell_rotface_little_ooze_combine : public SpellScript"
+        },
+        {
+          "line": 605,
+          "text": "class spell_rotface_large_ooze_combine : public SpellScript"
+        },
+        {
+          "line": 677,
+          "text": "class spell_rotface_large_ooze_buff_combine : public SpellScript"
+        },
+        {
+          "line": 734,
+          "text": "class spell_rotface_unstable_ooze_explosion_init : public SpellScript"
+        },
+        {
+          "line": 761,
+          "text": "class spell_rotface_unstable_ooze_explosion : public SpellScript"
+        },
+        {
+          "line": 787,
+          "text": "class spell_rotface_unstable_ooze_explosion_suicide_aura : public AuraScript"
+        },
+        {
+          "line": 810,
+          "text": "class npc_precious_icc : public CreatureScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 47,
+          "text": "SPELL_SLIME_SPRAY                       = 69508,    // every 20 seconds"
+        },
+        {
+          "line": 48,
+          "text": "SPELL_MUTATED_INFECTION                 = 69674,    // hastens every 1:30 in 25-man only"
+        },
+        {
+          "line": 49,
+          "text": "SPELL_VILE_GAS_H                        = 69240,"
+        },
+        {
+          "line": 53,
+          "text": "SPELL_OOZE_FLOOD_VISUAL                 = 69785,"
+        },
+        {
+          "line": 54,
+          "text": "SPELL_OOZE_FLOOD_PERIODIC               = 69788,"
+        },
+        {
+          "line": 57,
+          "text": "SPELL_LITTLE_OOZE_COMBINE               = 69537,    // combine 2 Small Oozes"
+        },
+        {
+          "line": 58,
+          "text": "SPELL_LARGE_OOZE_COMBINE                = 69552,    // combine 2 Large Oozes"
+        },
+        {
+          "line": 59,
+          "text": "SPELL_LARGE_OOZE_BUFF_COMBINE           = 69611,    // combine Large and Small Ooze"
+        },
+        {
+          "line": 60,
+          "text": "SPELL_OOZE_MERGE                        = 69889,    // 2 Small Oozes summon a Large Ooze"
+        },
+        {
+          "line": 61,
+          "text": "SPELL_WEAK_RADIATING_OOZE               = 69750,    // passive damage aura - small"
+        },
+        {
+          "line": 62,
+          "text": "SPELL_RADIATING_OOZE                    = 69760,    // passive damage aura - large"
+        },
+        {
+          "line": 63,
+          "text": "SPELL_UNSTABLE_OOZE                     = 69558,    // damage boost and counter for explosion"
+        },
+        {
+          "line": 64,
+          "text": "SPELL_GREEN_ABOMINATION_HITTIN__YA_PROC = 70001,    // prevents getting hit by infection"
+        },
+        {
+          "line": 65,
+          "text": "SPELL_UNSTABLE_OOZE_EXPLOSION           = 69839,"
+        },
+        {
+          "line": 66,
+          "text": "SPELL_STICKY_OOZE                       = 69774,"
+        },
+        {
+          "line": 67,
+          "text": "SPELL_UNSTABLE_OOZE_EXPLOSION_TRIGGER   = 69832,"
+        },
+        {
+          "line": 70,
+          "text": "SPELL_MORTAL_WOUND                      = 71127,"
+        },
+        {
+          "line": 71,
+          "text": "SPELL_DECIMATE                          = 71123,"
+        },
+        {
+          "line": 72,
+          "text": "SPELL_AWAKEN_PLAGUED_ZOMBIES            = 71159,"
+        }
+      ]
+    },
+    {
+      "file": "boss_sindragosa.cpp",
+      "sha256": "9f7547dbd1ad63aeb5ab05bfcad5eedf60f9435981bc5ba9c43d6b69b496590c",
+      "lines": 1847,
+      "events": [
+        {
+          "line": 336,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 10min);"
+        },
+        {
+          "line": 337,
+          "text": "events.ScheduleEvent(EVENT_AIR_PHASE, 50s);"
+        },
+        {
+          "line": 338,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE, 10s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 339,
+          "text": "events.ScheduleEvent(EVENT_TAIL_SMASH, 20s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 340,
+          "text": "events.ScheduleEvent(EVENT_FROST_BREATH, 8s, 12s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 341,
+          "text": "events.ScheduleEvent(EVENT_UNCHAINED_MAGIC, 9s, 14s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 342,
+          "text": "events.ScheduleEvent(EVENT_ICY_GRIP, 33s + 500ms, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 429,
+          "text": "events.ScheduleEvent(EVENT_AIR_MOVEMENT, 0ms);"
+        },
+        {
+          "line": 434,
+          "text": "events.ScheduleEvent(EVENT_AIR_MOVEMENT_FAR, 0ms);"
+        },
+        {
+          "line": 435,
+          "text": "events.ScheduleEvent(EVENT_FROST_BOMB, 7s);"
+        },
+        {
+          "line": 442,
+          "text": "events.ScheduleEvent(EVENT_LAND_GROUND, 0ms);"
+        },
+        {
+          "line": 469,
+          "text": "events.CancelEvent(EVENT_AIR_PHASE);"
+        },
+        {
+          "line": 470,
+          "text": "events.ScheduleEvent(EVENT_THIRD_PHASE_CHECK, 1s);"
+        },
+        {
+          "line": 526,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE, 10s, 15s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 534,
+          "text": "events.ScheduleEvent(EVENT_UNROOT, 0ms);"
+        },
+        {
+          "line": 535,
+          "text": "events.ScheduleEvent(EVENT_TAIL_SMASH, 22s, 27s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 543,
+          "text": "events.ScheduleEvent(EVENT_UNROOT, 0ms);"
+        },
+        {
+          "line": 544,
+          "text": "events.ScheduleEvent(EVENT_FROST_BREATH, 20s, 25s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 553,
+          "text": "events.ScheduleEvent(EVENT_UNCHAINED_MAGIC, 30s, 35s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 558,
+          "text": "events.ScheduleEvent(EVENT_BLISTERING_COLD, 1s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 560,
+          "text": "events.RescheduleEvent(EVENT_ICE_TOMB, 7s);"
+        },
+        {
+          "line": 565,
+          "text": "events.ScheduleEvent(EVENT_BLISTERING_COLD_YELL, 5s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 567,
+          "text": "events.RescheduleEvent(EVENT_ICY_GRIP, 65s, 70s);"
+        },
+        {
+          "line": 578,
+          "text": "events.CancelEvent(EVENT_UNROOT);"
+        },
+        {
+          "line": 595,
+          "text": "events.ScheduleEvent(EVENT_AIR_PHASE, 110s);"
+        },
+        {
+          "line": 629,
+          "text": "events.ScheduleEvent(EVENT_LAND, 5500ms);"
+        },
+        {
+          "line": 631,
+          "text": "events.ScheduleEvent(EVENT_FROST_BOMB, 6s);"
+        },
+        {
+          "line": 638,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE, 13s, 15s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 639,
+          "text": "events.ScheduleEvent(EVENT_TAIL_SMASH, 19s, 23s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 640,
+          "text": "events.ScheduleEvent(EVENT_FROST_BREATH, 7s, 10s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 641,
+          "text": "events.ScheduleEvent(EVENT_UNCHAINED_MAGIC, 12s, 17s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 642,
+          "text": "events.ScheduleEvent(EVENT_ICY_GRIP, 35s, 40s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 649,
+          "text": "events.ScheduleEvent(EVENT_ICE_TOMB, 7s, 10s);"
+        },
+        {
+          "line": 650,
+          "text": "events.RescheduleEvent(EVENT_ICY_GRIP, 35s, 40s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 654,
+          "text": "events.ScheduleEvent(EVENT_THIRD_PHASE_CHECK, 5s);"
+        },
+        {
+          "line": 663,
+          "text": "events.RescheduleEvent(EVENT_ICY_GRIP, 8s, EVENT_GROUP_LAND_PHASE);"
+        },
+        {
+          "line": 665,
+          "text": "events.ScheduleEvent(EVENT_ICE_TOMB, 18s, 22s);"
+        },
+        {
+          "line": 1211,
+          "text": "events.ScheduleEvent(EVENT_BELLOWING_ROAR, 20s, 25s);"
+        },
+        {
+          "line": 1212,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE_SPINESTALKER, 10s, 15s);"
+        },
+        {
+          "line": 1213,
+          "text": "events.ScheduleEvent(EVENT_TAIL_SWEEP, 8s, 12s);"
+        },
+        {
+          "line": 1292,
+          "text": "events.ScheduleEvent(EVENT_BELLOWING_ROAR, 25s, 30s);"
+        },
+        {
+          "line": 1296,
+          "text": "events.ScheduleEvent(EVENT_CLEAVE_SPINESTALKER, 10s, 15s);"
+        },
+        {
+          "line": 1300,
+          "text": "events.ScheduleEvent(EVENT_TAIL_SWEEP, 22s, 25s);"
+        },
+        {
+          "line": 1344,
+          "text": "events.ScheduleEvent(EVENT_FROST_BREATH_RIMEFANG, 12s, 15s);"
+        },
+        {
+          "line": 1345,
+          "text": "events.ScheduleEvent(EVENT_ICY_BLAST, 30s, 35s);"
+        },
+        {
+          "line": 1442,
+          "text": "events.ScheduleEvent(EVENT_FROST_BREATH_RIMEFANG, 20s, 25s);"
+        },
+        {
+          "line": 1445,
+          "text": "events.ScheduleEvent(EVENT_FROST_BREATH_RIMEFANG, 5s);"
+        },
+        {
+          "line": 1465,
+          "text": "events.Repeat(Milliseconds(uint32(moveTime) + urand(60000, 70000)));"
+        },
+        {
+          "line": 1466,
+          "text": "events.ScheduleEvent(EVENT_ICY_BLAST_CAST, Milliseconds(uint32(moveTime) + 250));"
+        },
+        {
+          "line": 1477,
+          "text": "events.ScheduleEvent(EVENT_ICY_BLAST_CAST, 3s);"
+        },
+        {
+          "line": 1591,
+          "text": "events.ScheduleEvent(EVENT_FROSTWARDEN_ORDER_WHELP, 3s);"
+        },
+        {
+          "line": 1592,
+          "text": "events.ScheduleEvent(EVENT_CONCUSSIVE_SHOCK, 8s, 10s);"
+        },
+        {
+          "line": 1595,
+          "text": "events.ScheduleEvent(EVENT_WHELP_FROST_BLAST, 3s, 6s);"
+        },
+        {
+          "line": 1655,
+          "text": "events.ScheduleEvent(EVENT_FROSTWARDEN_ORDER_WHELP, 3s);"
+        },
+        {
+          "line": 1659,
+          "text": "events.ScheduleEvent(EVENT_CONCUSSIVE_SHOCK, 10s, 13s);"
+        },
+        {
+          "line": 1663,
+          "text": "events.ScheduleEvent(EVENT_WHELP_FROST_BLAST, 5s, 8s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 309,
+          "text": "if (Is25ManRaid() && me->HasAura(SPELL_SHADOWS_FATE))"
+        },
+        {
+          "line": 432,
+          "text": "me->CastCustomSpell(SPELL_ICE_TOMB_TARGET, SPELLVALUE_MAX_TARGETS, RAID_MODE<int32>(2, 5, 2, 6), nullptr);"
+        },
+        {
+          "line": 466,
+          "text": "if (!HealthAbovePct(35))"
+        },
+        {
+          "line": 475,
+          "text": "if (!HealthAbovePct(20))"
+        },
+        {
+          "line": 1160,
+          "text": "if (GetStackAmount() >= (s->GetMap()->Is25ManRaid() ? 75 : 30))"
+        },
+        {
+          "line": 1449,
+          "text": "_icyBlastCounter = RAID_MODE<uint8>(5, 7, 6, 8);"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 176,
+          "text": "class FrostwyrmLandEvent : public BasicEvent"
+        },
+        {
+          "line": 192,
+          "text": "class FrostBombExplosion : public BasicEvent"
+        },
+        {
+          "line": 209,
+          "text": "class IceTombSummonEvent : public BasicEvent"
+        },
+        {
+          "line": 245,
+          "text": "struct LastPhaseIceTombTargetSelector"
+        },
+        {
+          "line": 273,
+          "text": "class boss_sindragosa : public CreatureScript"
+        },
+        {
+          "line": 691,
+          "text": "class npc_ice_tomb : public CreatureScript"
+        },
+        {
+          "line": 778,
+          "text": "class spell_sindragosa_s_fury : public SpellScript"
+        },
+        {
+          "line": 843,
+          "text": "class UnchainedMagicTargetSelector"
+        },
+        {
+          "line": 870,
+          "text": "class spell_sindragosa_unchained_magic : public SpellScript"
+        },
+        {
+          "line": 896,
+          "text": "class spell_sindragosa_permeating_chill_aura : public AuraScript"
+        },
+        {
+          "line": 911,
+          "text": "class spell_sindragosa_instability_aura : public AuraScript"
+        },
+        {
+          "line": 932,
+          "text": "class spell_sindragosa_icy_grip : public SpellScript"
+        },
+        {
+          "line": 956,
+          "text": "class spell_sindragosa_icy_grip_jump : public SpellScript"
+        },
+        {
+          "line": 986,
+          "text": "class spell_sindragosa_frost_beacon_aura : public AuraScript"
+        },
+        {
+          "line": 1008,
+          "text": "class SindragosaIceTombCheck"
+        },
+        {
+          "line": 1022,
+          "text": "class spell_sindragosa_ice_tomb_filter : public SpellScript"
+        },
+        {
+          "line": 1037,
+          "text": "class spell_sindragosa_ice_tomb_trap : public SpellScript"
+        },
+        {
+          "line": 1073,
+          "text": "class spell_sindragosa_ice_tomb_trap_aura : public AuraScript"
+        },
+        {
+          "line": 1107,
+          "text": "class MysticBuffetTargetFilter"
+        },
+        {
+          "line": 1132,
+          "text": "class spell_sindragosa_mystic_buffet : public SpellScript"
+        },
+        {
+          "line": 1147,
+          "text": "class spell_sindragosa_soul_preservation_aura : public AuraScript"
+        },
+        {
+          "line": 1175,
+          "text": "class achievement_all_you_can_eat : public AchievementCriteriaScript"
+        },
+        {
+          "line": 1188,
+          "text": "class npc_spinestalker : public CreatureScript"
+        },
+        {
+          "line": 1321,
+          "text": "class npc_rimefang : public CreatureScript"
+        },
+        {
+          "line": 1509,
+          "text": "class spell_rimefang_icy_blast : public SpellScript"
+        },
+        {
+          "line": 1532,
+          "text": "class at_sindragosa_lair : public AreaTriggerScript"
+        },
+        {
+          "line": 1562,
+          "text": "class npc_sindragosa_trash : public CreatureScript"
+        },
+        {
+          "line": 1684,
+          "text": "class OrderWhelpTargetSelector"
+        },
+        {
+          "line": 1700,
+          "text": "class spell_frostwarden_handler_order_whelp : public SpellScript"
+        },
+        {
+          "line": 1742,
+          "text": "class spell_frostwarden_handler_focus_fire : public SpellScript"
+        },
+        {
+          "line": 1759,
+          "text": "class spell_frostwarden_handler_focus_fire_aura : public AuraScript"
+        },
+        {
+          "line": 1779,
+          "text": "class spell_sindragosa_frost_breath : public SpellScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 52,
+          "text": "SPELL_SINDRAGOSA_S_FURY     = 70608,"
+        },
+        {
+          "line": 53,
+          "text": "SPELL_TANK_MARKER           = 71039,"
+        },
+        {
+          "line": 54,
+          "text": "SPELL_TANK_MARKER_AURA      = 71038,"
+        },
+        {
+          "line": 55,
+          "text": "SPELL_FROST_AURA            = 70084,"
+        },
+        {
+          "line": 56,
+          "text": "SPELL_PERMAEATING_CHILL     = 70109,"
+        },
+        {
+          "line": 57,
+          "text": "SPELL_CLEAVE                = 19983,"
+        },
+        {
+          "line": 58,
+          "text": "SPELL_TAIL_SMASH            = 71077,"
+        },
+        {
+          "line": 59,
+          "text": "SPELL_FROST_BREATH_P1       = 69649,"
+        },
+        {
+          "line": 60,
+          "text": "SPELL_FROST_BREATH_P2       = 73061,"
+        },
+        {
+          "line": 61,
+          "text": "SPELL_UNCHAINED_MAGIC       = 69762,"
+        },
+        {
+          "line": 62,
+          "text": "SPELL_INSTABILITY           = 69766,"
+        },
+        {
+          "line": 63,
+          "text": "SPELL_BACKLASH              = 69770,"
+        },
+        {
+          "line": 64,
+          "text": "SPELL_ICY_GRIP              = 70117,"
+        },
+        {
+          "line": 65,
+          "text": "SPELL_ICY_GRIP_JUMP         = 70122,"
+        },
+        {
+          "line": 66,
+          "text": "SPELL_BLISTERING_COLD       = 70123,"
+        },
+        {
+          "line": 67,
+          "text": "SPELL_FROST_BEACON          = 70126,"
+        },
+        {
+          "line": 68,
+          "text": "SPELL_ICE_TOMB_TARGET       = 69712,"
+        },
+        {
+          "line": 69,
+          "text": "SPELL_ICE_TOMB_DUMMY        = 69675,"
+        },
+        {
+          "line": 70,
+          "text": "SPELL_ICE_TOMB_UNTARGETABLE = 69700,"
+        },
+        {
+          "line": 71,
+          "text": "SPELL_ICE_TOMB_DAMAGE       = 70157,"
+        },
+        {
+          "line": 72,
+          "text": "SPELL_ASPHYXIATION          = 71665,"
+        },
+        {
+          "line": 73,
+          "text": "SPELL_FROST_BOMB_TRIGGER    = 69846,"
+        },
+        {
+          "line": 74,
+          "text": "SPELL_FROST_BOMB_VISUAL     = 70022,"
+        },
+        {
+          "line": 75,
+          "text": "SPELL_BIRTH_NO_VISUAL       = 40031,"
+        },
+        {
+          "line": 76,
+          "text": "SPELL_FROST_BOMB            = 69845,"
+        },
+        {
+          "line": 77,
+          "text": "SPELL_MYSTIC_BUFFET         = 70128,"
+        },
+        {
+          "line": 80,
+          "text": "SPELL_BELLOWING_ROAR        = 36922,"
+        },
+        {
+          "line": 81,
+          "text": "SPELL_CLEAVE_SPINESTALKER   = 40505,"
+        },
+        {
+          "line": 82,
+          "text": "SPELL_TAIL_SWEEP            = 71370,"
+        },
+        {
+          "line": 85,
+          "text": "SPELL_FROST_BREATH          = 71386,"
+        },
+        {
+          "line": 86,
+          "text": "SPELL_FROST_AURA_RIMEFANG   = 71387,"
+        },
+        {
+          "line": 87,
+          "text": "SPELL_ICY_BLAST             = 71376,"
+        },
+        {
+          "line": 88,
+          "text": "SPELL_ICY_BLAST_AREA        = 71380,"
+        },
+        {
+          "line": 91,
+          "text": "SPELL_FOCUS_FIRE            = 71350,"
+        },
+        {
+          "line": 92,
+          "text": "SPELL_ORDER_WHELP           = 71357,"
+        },
+        {
+          "line": 93,
+          "text": "SPELL_CONCUSSIVE_SHOCK      = 71337,"
+        },
+        {
+          "line": 99,
+          "text": "SPELL_FROST_INFUSION_CREDIT = 72289,"
+        },
+        {
+          "line": 100,
+          "text": "SPELL_FROST_IMBUED_BLADE    = 72290,"
+        },
+        {
+          "line": 101,
+          "text": "SPELL_FROST_INFUSION        = 72292,"
+        }
+      ]
+    },
+    {
+      "file": "boss_the_lich_king.cpp",
+      "sha256": "33fcfbd7298f602bbe152d0e654fce39c58310c17fa49cdbd0223769c6c911ad",
+      "lines": 3602,
+      "events": [
+        {
+          "line": 706,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 15min, EVENT_GROUP_BERSERK);"
+        },
+        {
+          "line": 707,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_SHAMBLING_HORROR, 15s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 708,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_DRUDGE_GHOUL, 10s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 709,
+          "text": "events.ScheduleEvent(EVENT_INFEST, 5s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 710,
+          "text": "events.ScheduleEvent(EVENT_NECROTIC_PLAGUE, 30s, 31s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 712,
+          "text": "events.ScheduleEvent(EVENT_SHADOW_TRAP, 15s + 500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 740,
+          "text": "events.ScheduleEvent(EVENT_START_ATTACK, 5250ms);"
+        },
+        {
+          "line": 752,
+          "text": "events.RescheduleEvent(EVENT_START_ATTACK, 1s);"
+        },
+        {
+          "line": 945,
+          "text": "events.ScheduleEvent(EVENT_QUAKE, 62s + 500ms);"
+        },
+        {
+          "line": 946,
+          "text": "events.ScheduleEvent(EVENT_PAIN_AND_SUFFERING, 3500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 947,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_ICE_SPHERE, 8s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 948,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_RAGING_SPIRIT, 4s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 957,
+          "text": "events.ScheduleEvent(EVENT_QUAKE_2, 62s + 500ms);"
+        },
+        {
+          "line": 958,
+          "text": "events.ScheduleEvent(EVENT_PAIN_AND_SUFFERING, 3500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 959,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_ICE_SPHERE, 8s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 960,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_RAGING_SPIRIT, 4s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1009,
+          "text": "events.RescheduleEvent(EVENT_DEFILE, 0ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1010,
+          "text": "events.RescheduleEvent(EVENT_SOUL_REAPER, 7s, 12s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1021,
+          "text": "events.ScheduleEvent(EVENT_INFEST, 14s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1022,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_VALKYR, 20s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1023,
+          "text": "events.ScheduleEvent(EVENT_SOUL_REAPER, 40s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1024,
+          "text": "events.ScheduleEvent(EVENT_DEFILE, 38s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1036,
+          "text": "events.ScheduleEvent(EVENT_SOUL_REAPER, 40s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1037,
+          "text": "events.ScheduleEvent(EVENT_DEFILE, 38s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1038,
+          "text": "events.ScheduleEvent(EVENT_VILE_SPIRITS, 20s, EVENT_GROUP_VILE_SPIRITS);"
+        },
+        {
+          "line": 1039,
+          "text": "events.ScheduleEvent(IsHeroic() ? EVENT_HARVEST_SOULS : EVENT_HARVEST_SOUL, 14s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1053,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_SHAMBLING_HORROR, 60s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1057,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_DRUDGE_GHOUL, 30s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1061,
+          "text": "events.ScheduleEvent(EVENT_INFEST, 22s + 500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1068,
+          "text": "events.ScheduleEvent(EVENT_NECROTIC_PLAGUE, 30s, 31s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1071,
+          "text": "events.ScheduleEvent(EVENT_NECROTIC_PLAGUE, 5s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1076,
+          "text": "events.ScheduleEvent(EVENT_SHADOW_TRAP, 15s + 500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1085,
+          "text": "events.Repeat((IsHeroic() ? randtime(1250ms, 1750ms) : randtime(1750ms, 2250ms)));"
+        },
+        {
+          "line": 1089,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_ICE_SPHERE, 7500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1094,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_RAGING_SPIRIT, (!HealthAbovePct(40) ? 15s : 20s), EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1108,
+          "text": "events.ScheduleEvent(EVENT_DEFILE, t + (Is25ManRaid() ? 5s : 4s), EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1114,
+          "text": "events.RescheduleEvent(EVENT_SUMMON_VALKYR, 5s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1123,
+          "text": "events.ScheduleEvent(EVENT_DEFILE, 32s + 500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1128,
+          "text": "events.ScheduleEvent(EVENT_DEFILE, 1s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1136,
+          "text": "events.ScheduleEvent(EVENT_SOUL_REAPER, 30s + 500ms, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1139,
+          "text": "events.ScheduleEvent(EVENT_SOUL_REAPER, 1s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1146,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_VALKYR, 45s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1152,
+          "text": "events.RescheduleEvent(EVENT_DEFILE, minTime, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1158,
+          "text": "events.ScheduleEvent(EVENT_VILE_SPIRITS, 30s, EVENT_GROUP_VILE_SPIRITS);"
+        },
+        {
+          "line": 1165,
+          "text": "events.ScheduleEvent(EVENT_HARVEST_SOUL, 75s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1168,
+          "text": "events.ScheduleEvent(EVENT_HARVEST_SOUL, 10s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1176,
+          "text": "events.ScheduleEvent(EVENT_START_ATTACK, 55s);"
+        },
+        {
+          "line": 1178,
+          "text": "events.CancelEvent(EVENT_DEFILE);"
+        },
+        {
+          "line": 1179,
+          "text": "events.CancelEvent(EVENT_SOUL_REAPER);"
+        },
+        {
+          "line": 1180,
+          "text": "events.ScheduleEvent(EVENT_FROSTMOURNE_HEROIC, 6s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1181,
+          "text": "events.ScheduleEvent(EVENT_HARVEST_SOULS, 100s, 110s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1317,
+          "text": "events.ScheduleEvent(EVENT_INTRO_LK_MOVE, 3s);"
+        },
+        {
+          "line": 1321,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_FORDRING_JUMP, 1ms);"
+        },
+        {
+          "line": 1331,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_TALK_1, 2600ms);"
+        },
+        {
+          "line": 1332,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_EMOTE_TALK, 6600ms);"
+        },
+        {
+          "line": 1333,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_EMOTE_TALK, 17s + 600ms);"
+        },
+        {
+          "line": 1334,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_TALK_2, 30s);"
+        },
+        {
+          "line": 1335,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_TALK_3, 39s);"
+        },
+        {
+          "line": 1336,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_EMOTE_CAST_SHOUT, 50s);"
+        },
+        {
+          "line": 1337,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_EMOTE_TALK, 54s);"
+        },
+        {
+          "line": 1338,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_MOVE_CENTER, 65s);"
+        },
+        {
+          "line": 1341,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_TALK_6, 2500ms);"
+        },
+        {
+          "line": 1342,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_SOUL_BARRAGE, 6500ms);"
+        },
+        {
+          "line": 1409,
+          "text": "events.ScheduleEvent(EVENT_INTRO_FORDRING_TALK_1, 11s);"
+        },
+        {
+          "line": 1417,
+          "text": "events.ScheduleEvent(EVENT_INTRO_LK_EMOTE_CAST_SHOUT, 7s);"
+        },
+        {
+          "line": 1418,
+          "text": "events.ScheduleEvent(EVENT_INTRO_LK_EMOTE_1, 13s);"
+        },
+        {
+          "line": 1419,
+          "text": "events.ScheduleEvent(EVENT_INTRO_LK_EMOTE_CAST_SHOUT, 18s);"
+        },
+        {
+          "line": 1420,
+          "text": "events.ScheduleEvent(EVENT_INTRO_LK_CAST_FREEZE, 31s);"
+        },
+        {
+          "line": 1436,
+          "text": "events.ScheduleEvent(EVENT_INTRO_FINISH, 1s);"
+        },
+        {
+          "line": 1442,
+          "text": "events.ScheduleEvent(EVENT_INTRO_LK_TALK_1, 9s);"
+        },
+        {
+          "line": 1443,
+          "text": "events.ScheduleEvent(EVENT_INTRO_FORDRING_TALK_2, 34s);"
+        },
+        {
+          "line": 1449,
+          "text": "events.ScheduleEvent(EVENT_INTRO_FORDRING_EMOTE_1, 2s);"
+        },
+        {
+          "line": 1450,
+          "text": "events.ScheduleEvent(EVENT_INTRO_FORDRING_CHARGE, 5s);"
+        },
+        {
+          "line": 1508,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_TALK_4, Milliseconds(1 + travelTime));"
+        },
+        {
+          "line": 1509,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_RAISE_DEAD, Milliseconds(1000 + travelTime));"
+        },
+        {
+          "line": 1510,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_TALK_5, Milliseconds(29000 + travelTime));"
+        },
+        {
+          "line": 1532,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_FORDRING_TALK_1, 7s);"
+        },
+        {
+          "line": 1533,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_FORDRING_BLESS, 18s);"
+        },
+        {
+          "line": 1534,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_FORDRING_REMOVE_ICE, 23s);"
+        },
+        {
+          "line": 1535,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_FORDRING_MOVE_1, 25s);"
+        },
+        {
+          "line": 1548,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_AFTER_SUMMON_BROKEN_FROSTMOURNE, 1s);"
+        },
+        {
+          "line": 1549,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_KNOCK_BACK, 3s);"
+        },
+        {
+          "line": 1569,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_AFTER_SOUL_BARRAGE, 3s);"
+        },
+        {
+          "line": 1574,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_SUMMON_TERENAS, 6s);"
+        },
+        {
+          "line": 1583,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_TERENAS_TALK_1, 2s);"
+        },
+        {
+          "line": 1584,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_TERENAS_TALK_2, 14s);"
+        },
+        {
+          "line": 1604,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_TALK_7, 7s);"
+        },
+        {
+          "line": 1605,
+          "text": "events.ScheduleEvent(EVENT_OUTRO_LK_TALK_8, 17s);"
+        },
+        {
+          "line": 1790,
+          "text": "events.ScheduleEvent(EVENT_SHOCKWAVE, 20s, 25s);"
+        },
+        {
+          "line": 1791,
+          "text": "events.ScheduleEvent(EVENT_ENRAGE, 11s, 14s);"
+        },
+        {
+          "line": 1817,
+          "text": "events.ScheduleEvent(EVENT_SHOCKWAVE, 20s, 25s);"
+        },
+        {
+          "line": 1821,
+          "text": "events.ScheduleEvent(EVENT_ENRAGE, 20s, 25s);"
+        },
+        {
+          "line": 2224,
+          "text": "events.ScheduleEvent(EVENT_RAGING_SPIRIT_UNROOT, 3s);"
+        },
+        {
+          "line": 2225,
+          "text": "events.ScheduleEvent(EVENT_SOUL_SHRIEK, 12s, 15s);"
+        },
+        {
+          "line": 2311,
+          "text": "events.ScheduleEvent(EVENT_SOUL_SHRIEK, 12s, 15s);"
+        },
+        {
+          "line": 2413,
+          "text": "events.ScheduleEvent(EVENT_GRAB_PLAYER, 2500ms);"
+        },
+        {
+          "line": 2437,
+          "text": "events.ScheduleEvent(EVENT_MOVE_TO_SIPHON_POS, 0ms);"
+        },
+        {
+          "line": 2493,
+          "text": "events.ScheduleEvent(EVENT_MOVE_TO_DROP_POS, 1s);"
+        },
+        {
+          "line": 2499,
+          "text": "events.ScheduleEvent(EVENT_GRAB_PLAYER, 500ms);"
+        },
+        {
+          "line": 2511,
+          "text": "events.ScheduleEvent(EVENT_MOVE_TO_DROP_POS, 0ms);"
+        },
+        {
+          "line": 2532,
+          "text": "events.ScheduleEvent(EVENT_MOVE_TO_SIPHON_POS, 0ms);"
+        },
+        {
+          "line": 2537,
+          "text": "events.ScheduleEvent(EVENT_LIFE_SIPHON, 2s);"
+        },
+        {
+          "line": 2562,
+          "text": "events.ScheduleEvent(EVENT_GRAB_PLAYER, 2s);"
+        },
+        {
+          "line": 2600,
+          "text": "events.ScheduleEvent(EVENT_LIFE_SIPHON, 2500ms);"
+        },
+        {
+          "line": 2623,
+          "text": "events.ScheduleEvent(EVENT_MOVE_TO_DROP_POS, 0ms);"
+        },
+        {
+          "line": 2960,
+          "text": "events.ScheduleEvent(EVENT_MOVE_TO_LICH_KING, 1s);"
+        },
+        {
+          "line": 2961,
+          "text": "events.ScheduleEvent(EVENT_TELEPORT, 6250ms);"
+        },
+        {
+          "line": 2962,
+          "text": "events.ScheduleEvent(EVENT_DESPAWN_SELF, 76s);"
+        },
+        {
+          "line": 3037,
+          "text": "events.RescheduleEvent(EVENT_DESPAWN_SELF, 0ms);"
+        },
+        {
+          "line": 3090,
+          "text": "events.ScheduleEvent(EVENT_FROSTMOURNE_TALK_1, 2s);"
+        },
+        {
+          "line": 3091,
+          "text": "events.ScheduleEvent(EVENT_FROSTMOURNE_TALK_2, 11s);"
+        },
+        {
+          "line": 3095,
+          "text": "events.ScheduleEvent(EVENT_DESTROY_SOUL, 1min);"
+        },
+        {
+          "line": 3096,
+          "text": "events.ScheduleEvent(EVENT_FROSTMOURNE_TALK_3, 25s);"
+        },
+        {
+          "line": 3120,
+          "text": "events.ScheduleEvent(EVENT_TELEPORT_BACK, 1s);"
+        },
+        {
+          "line": 3165,
+          "text": "events.ScheduleEvent(EVENT_TELEPORT_BACK, 1s);"
+        },
+        {
+          "line": 3288,
+          "text": "events.ScheduleEvent(EVENT_SOUL_RIP, 12s, 15s);"
+        },
+        {
+          "line": 3307,
+          "text": "events.ScheduleEvent(EVENT_SOUL_RIP, 23s, 27s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 711,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 755,
+          "text": "if (!IsHeroic() && _phase != PHASE_OUTRO && me->IsInCombat() && _lastTalkTimeBuff + 5 <= GameTime::GetGameTime().count())"
+        },
+        {
+          "line": 772,
+          "text": "if (_phase == PHASE_ONE && !HealthAbovePct(70) && !me->HasUnitState(UNIT_STATE_CASTING))"
+        },
+        {
+          "line": 783,
+          "text": "if (_phase == PHASE_TWO && !HealthAbovePct(40) && !me->HasUnitState(UNIT_STATE_CASTING))"
+        },
+        {
+          "line": 794,
+          "text": "if (_phase == PHASE_THREE && HealthBelowPct(10) && !me->HasUnitState(UNIT_STATE_CASTING))"
+        },
+        {
+          "line": 915,
+          "text": "if (spell->Id == sSpellMgr->GetSpellIdForDifficulty(SPELL_HARVESTED_SOUL_LK_BUFF, me) && me->IsInCombat() && !IsHeroic() && _phase != PHASE_OUTRO && _lastTalkTimeBuff + 5 <= GameTime::GetGameTime().count())"
+        },
+        {
+          "line": 1039,
+          "text": "events.ScheduleEvent(IsHeroic() ? EVENT_HARVEST_SOULS : EVENT_HARVEST_SOUL, 14s, EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1085,
+          "text": "events.Repeat((IsHeroic() ? randtime(1250ms, 1750ms) : randtime(1750ms, 2250ms)));"
+        },
+        {
+          "line": 1094,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_RAGING_SPIRIT, (!HealthAbovePct(40) ? 15s : 20s), EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1108,
+          "text": "events.ScheduleEvent(EVENT_DEFILE, t + (Is25ManRaid() ? 5s : 4s), EVENT_GROUP_ABILITIES);"
+        },
+        {
+          "line": 1145,
+          "text": "DoCastSelf(Is25ManRaid() ? SPELL_SUMMON_VALKYR_PERIODIC : SPELL_SUMMON_VALKYR);"
+        },
+        {
+          "line": 1150,
+          "text": "Milliseconds minTime = (Is25ManRaid() ? 5s : 4s);"
+        },
+        {
+          "line": 1294,
+          "text": "if (_instance->GetBossState(DATA_THE_LICH_KING) == DONE || (me->GetMap()->IsHeroic() && !_instance->GetData(DATA_LK_HC_AVAILABLE)))"
+        },
+        {
+          "line": 1366,
+          "text": "if (!(_instance->GetBossState(DATA_THE_LICH_KING) == DONE || (me->GetMap()->IsHeroic() && !_instance->GetData(DATA_LK_HC_AVAILABLE))))"
+        },
+        {
+          "line": 1376,
+          "text": "if (me->GetMap()->IsHeroic() && !_instance->GetData(DATA_LK_HC_AVAILABLE))"
+        },
+        {
+          "line": 1796,
+          "text": "if (!_frenzied && IsHeroic() && me->HealthBelowPctDamaged(20, damage))"
+        },
+        {
+          "line": 1848,
+          "text": "if (GetUnitOwner()->HealthAbovePct(90))"
+        },
+        {
+          "line": 2426,
+          "text": "bool IsHeroic() { return me->GetMap()->IsHeroic(); }"
+        },
+        {
+          "line": 2452,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 2460,
+          "text": "if (IsHeroic() && !didbelow50pct && !dropped && me->HealthBelowPctDamaged(50, damage))"
+        },
+        {
+          "line": 2522,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 2791,
+          "text": "_is25Man = GetUnitOwner()->GetMap()->Is25ManRaid();"
+        },
+        {
+          "line": 2969,
+          "text": "bool IsHeroic() { return me->GetMap()->IsHeroic(); }"
+        },
+        {
+          "line": 2997,
+          "text": "summoner->RemoveAurasDueToSpell(IsHeroic() ? SPELL_HARVEST_SOULS_TELEPORT : SPELL_HARVEST_SOUL_TELEPORT);"
+        },
+        {
+          "line": 3029,
+          "text": "if (!IsHeroic())"
+        },
+        {
+          "line": 3092,
+          "text": "if (!IsHeroic())"
+        },
+        {
+          "line": 3115,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 3147,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 3244,
+          "text": "target->RemoveAurasDueToSpell(target->GetMap()->IsHeroic() ? SPELL_HARVEST_SOULS_TELEPORT : SPELL_HARVEST_SOUL_TELEPORT);"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 378,
+          "text": "struct ShadowTrapLKTargetSelector"
+        },
+        {
+          "line": 404,
+          "text": "struct NonTankLKTargetSelector"
+        },
+        {
+          "line": 438,
+          "text": "struct DefileTargetSelector"
+        },
+        {
+          "line": 463,
+          "text": "class FrozenThroneResetWorker"
+        },
+        {
+          "line": 498,
+          "text": "class StartMovementEvent : public BasicEvent"
+        },
+        {
+          "line": 521,
+          "text": "class VileSpiritActivateEvent : public BasicEvent"
+        },
+        {
+          "line": 538,
+          "text": "class TriggerWickedSpirit : public BasicEvent"
+        },
+        {
+          "line": 564,
+          "text": "class LichKingDeathEvent : public BasicEvent"
+        },
+        {
+          "line": 580,
+          "text": "class LichKingMovieEvent : public BasicEvent"
+        },
+        {
+          "line": 595,
+          "text": "class NecroticPlagueTargetCheck"
+        },
+        {
+          "line": 617,
+          "text": "class HeightDifferenceCheck"
+        },
+        {
+          "line": 628,
+          "text": "class boss_the_lich_king : public CreatureScript"
+        },
+        {
+          "line": 1282,
+          "text": "class npc_tirion_fordring_tft : public CreatureScript"
+        },
+        {
+          "line": 1677,
+          "text": "class spell_the_lich_king_quake : public SpellScript"
+        },
+        {
+          "line": 1705,
+          "text": "class spell_the_lich_king_jump : public SpellScript"
+        },
+        {
+          "line": 1730,
+          "text": "class spell_the_lich_king_jump_remove_aura : public SpellScript"
+        },
+        {
+          "line": 1746,
+          "text": "class spell_the_lich_king_play_movie : public SpellScript"
+        },
+        {
+          "line": 1772,
+          "text": "class npc_shambling_horror_icc : public CreatureScript"
+        },
+        {
+          "line": 1842,
+          "text": "class spell_the_lich_king_infest_aura : public AuraScript"
+        },
+        {
+          "line": 1871,
+          "text": "class spell_the_lich_king_necrotic_plague_aura : public AuraScript"
+        },
+        {
+          "line": 1909,
+          "text": "class spell_the_lich_king_necrotic_plague_jump : public SpellScript"
+        },
+        {
+          "line": 1968,
+          "text": "class spell_the_lich_king_necrotic_plague_jump_aura : public AuraScript"
+        },
+        {
+          "line": 2042,
+          "text": "class spell_the_lich_king_shadow_trap_visual_aura : public AuraScript"
+        },
+        {
+          "line": 2063,
+          "text": "class spell_the_lich_king_shadow_trap_periodic : public SpellScript"
+        },
+        {
+          "line": 2090,
+          "text": "class spell_the_lich_king_ice_burst_target_search : public SpellScript"
+        },
+        {
+          "line": 2114,
+          "text": "class npc_icc_ice_sphere : public CreatureScript"
+        },
+        {
+          "line": 2192,
+          "text": "class spell_the_lich_king_raging_spirit : public SpellScript"
+        },
+        {
+          "line": 2209,
+          "text": "class npc_raging_spirit : public CreatureScript"
+        },
+        {
+          "line": 2337,
+          "text": "class VehicleCheck"
+        },
+        {
+          "line": 2346,
+          "text": "class spell_the_lich_king_defile : public SpellScript"
+        },
+        {
+          "line": 2379,
+          "text": "class spell_the_lich_king_soul_reaper_aura : public AuraScript"
+        },
+        {
+          "line": 2400,
+          "text": "class npc_valkyr_shadowguard : public CreatureScript"
+        },
+        {
+          "line": 2633,
+          "text": "class spell_the_lich_king_summon_into_air : public SpellScript"
+        },
+        {
+          "line": 2664,
+          "text": "class spell_the_lich_king_teleport_to_frostmourne_hc : public SpellScript"
+        },
+        {
+          "line": 2684,
+          "text": "class spell_the_lich_king_valkyr_target_search : public SpellScript"
+        },
+        {
+          "line": 2750,
+          "text": "class spell_the_lich_king_cast_back_to_caster : public SpellScript"
+        },
+        {
+          "line": 2765,
+          "text": "class spell_the_lich_king_life_siphon : public SpellScript"
+        },
+        {
+          "line": 2785,
+          "text": "class spell_the_lich_king_vile_spirits_aura : public AuraScript"
+        },
+        {
+          "line": 2810,
+          "text": "class spell_the_lich_king_vile_spirits_visual : public SpellScript"
+        },
+        {
+          "line": 2826,
+          "text": "class spell_the_lich_king_vile_spirit_move_target_search : public SpellScript"
+        },
+        {
+          "line": 2865,
+          "text": "class spell_the_lich_king_vile_spirit_damage_target_search : public SpellScript"
+        },
+        {
+          "line": 2900,
+          "text": "class spell_the_lich_king_harvest_soul_aura : public AuraScript"
+        },
+        {
+          "line": 2927,
+          "text": "class npc_strangulate_vehicle : public CreatureScript"
+        },
+        {
+          "line": 3070,
+          "text": "class npc_terenas_menethil : public CreatureScript"
+        },
+        {
+          "line": 3199,
+          "text": "class spell_the_lich_king_lights_favor_aura : public AuraScript"
+        },
+        {
+          "line": 3225,
+          "text": "class spell_the_lich_king_restore_soul : public SpellScript"
+        },
+        {
+          "line": 3273,
+          "text": "class npc_spirit_warden : public CreatureScript"
+        },
+        {
+          "line": 3320,
+          "text": "class spell_the_lich_king_dark_hunger_aura : public AuraScript"
+        },
+        {
+          "line": 3350,
+          "text": "class spell_the_lich_king_soul_rip_aura : public AuraScript"
+        },
+        {
+          "line": 3373,
+          "text": "class npc_icc_lk_checktarget : public CreatureScript"
+        },
+        {
+          "line": 3394,
+          "text": "class spell_the_lich_king_summon_spirit_bomb : public SpellScript"
+        },
+        {
+          "line": 3410,
+          "text": "class npc_lk_spirit_bomb : public CreatureScript"
+        },
+        {
+          "line": 3467,
+          "text": "class spell_the_lich_king_trigger_vile_spirit : public SpellScript"
+        },
+        {
+          "line": 3489,
+          "text": "class npc_lk_wicked_spirit : public CreatureScript"
+        },
+        {
+          "line": 3526,
+          "text": "class achievement_been_waiting_long_time : public AchievementCriteriaScript"
+        },
+        {
+          "line": 3540,
+          "text": "class achievement_neck_deep_in_vile : public AchievementCriteriaScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 83,
+          "text": "SPELL_PLAGUE_AVOIDANCE              = 72846,"
+        },
+        {
+          "line": 84,
+          "text": "SPELL_EMOTE_SIT_NO_SHEATH           = 73220,"
+        },
+        {
+          "line": 85,
+          "text": "SPELL_BOSS_HITTIN_YA                = 73878,"
+        },
+        {
+          "line": 86,
+          "text": "SPELL_BOSS_HITTIN_YA_AURA           = 73879,"
+        },
+        {
+          "line": 87,
+          "text": "SPELL_EMOTE_SHOUT_NO_SHEATH         = 73213,"
+        },
+        {
+          "line": 88,
+          "text": "SPELL_ICE_LOCK                      = 71614,"
+        },
+        {
+          "line": 91,
+          "text": "SPELL_FURY_OF_FROSTMOURNE           = 72350,"
+        },
+        {
+          "line": 92,
+          "text": "SPELL_FURY_OF_FROSTMOURNE_NO_REZ    = 72351,"
+        },
+        {
+          "line": 93,
+          "text": "SPELL_EMOTE_QUESTION_NO_SHEATH      = 73330,"
+        },
+        {
+          "line": 94,
+          "text": "SPELL_RAISE_DEAD                    = 71769,"
+        },
+        {
+          "line": 95,
+          "text": "SPELL_LIGHTS_BLESSING               = 71797,"
+        },
+        {
+          "line": 96,
+          "text": "SPELL_JUMP                          = 71809,"
+        },
+        {
+          "line": 97,
+          "text": "SPELL_JUMP_TRIGGERED                = 71811,"
+        },
+        {
+          "line": 98,
+          "text": "SPELL_JUMP_2                        = 72431,"
+        },
+        {
+          "line": 99,
+          "text": "SPELL_SUMMON_BROKEN_FROSTMOURNE     = 74081,"
+        },
+        {
+          "line": 100,
+          "text": "SPELL_SUMMON_BROKEN_FROSTMOURNE_2   = 72406,"
+        },
+        {
+          "line": 101,
+          "text": "SPELL_SUMMON_BROKEN_FROSTMOURNE_3   = 73017,"
+        },
+        {
+          "line": 102,
+          "text": "SPELL_BROKEN_FROSTMOURNE            = 72398,"
+        },
+        {
+          "line": 103,
+          "text": "SPELL_BROKEN_FROSTMOURNE_KNOCK      = 72405,"
+        },
+        {
+          "line": 104,
+          "text": "SPELL_SOUL_BARRAGE                  = 72305,"
+        },
+        {
+          "line": 105,
+          "text": "SPELL_SUMMON_TERENAS                = 72420,"
+        },
+        {
+          "line": 106,
+          "text": "SPELL_MASS_RESURRECTION             = 72429,"
+        },
+        {
+          "line": 107,
+          "text": "SPELL_MASS_RESURRECTION_REAL        = 72423,"
+        },
+        {
+          "line": 108,
+          "text": "SPELL_PLAY_MOVIE                    = 73159,"
+        },
+        {
+          "line": 111,
+          "text": "SPELL_REMORSELESS_WINTER_1          = 68981,"
+        },
+        {
+          "line": 112,
+          "text": "SPELL_REMORSELESS_WINTER_2          = 72259,"
+        },
+        {
+          "line": 113,
+          "text": "SPELL_QUAKE                         = 72262,"
+        },
+        {
+          "line": 114,
+          "text": "SPELL_PAIN_AND_SUFFERING            = 72133,"
+        },
+        {
+          "line": 115,
+          "text": "SPELL_SUMMON_ICE_SPHERE             = 69104,"
+        },
+        {
+          "line": 116,
+          "text": "SPELL_ICE_SPHERE                    = 69090,"
+        },
+        {
+          "line": 117,
+          "text": "SPELL_ICE_BURST_TARGET_SEARCH       = 69109,"
+        },
+        {
+          "line": 118,
+          "text": "SPELL_ICE_PULSE                     = 69091,"
+        },
+        {
+          "line": 119,
+          "text": "SPELL_ICE_BURST                     = 69108,"
+        },
+        {
+          "line": 120,
+          "text": "SPELL_RAGING_SPIRIT                 = 69200,"
+        },
+        {
+          "line": 121,
+          "text": "SPELL_RAGING_SPIRIT_VISUAL          = 69197,"
+        },
+        {
+          "line": 122,
+          "text": "SPELL_RAGING_SPIRIT_VISUAL_CLONE    = 69198,"
+        },
+        {
+          "line": 123,
+          "text": "SPELL_SOUL_SHRIEK                   = 69242,"
+        },
+        {
+          "line": 126,
+          "text": "SPELL_RISEN_WITCH_DOCTOR_SPAWN      = 69639,"
+        },
+        {
+          "line": 127,
+          "text": "SPELL_SUMMON_SHAMBLING_HORROR       = 70372,"
+        },
+        {
+          "line": 128,
+          "text": "SPELL_SUMMON_DRUDGE_GHOULS          = 70358,"
+        },
+        {
+          "line": 129,
+          "text": "SPELL_INFEST                        = 70541, //cast time 2 sec"
+        },
+        {
+          "line": 130,
+          "text": "SPELL_NECROTIC_PLAGUE               = 70337,"
+        },
+        {
+          "line": 131,
+          "text": "SPELL_NECROTIC_PLAGUE_JUMP          = 70338,"
+        },
+        {
+          "line": 132,
+          "text": "SPELL_PLAGUE_SIPHON                 = 74074,"
+        },
+        {
+          "line": 133,
+          "text": "SPELL_SHADOW_TRAP                   = 73539,"
+        },
+        {
+          "line": 134,
+          "text": "SPELL_SHADOW_TRAP_AURA              = 73525,"
+        },
+        {
+          "line": 135,
+          "text": "SPELL_SHADOW_TRAP_KNOCKBACK         = 73529,"
+        },
+        {
+          "line": 138,
+          "text": "SPELL_DEFILE                        = 72762, //cast time 2 sec"
+        },
+        {
+          "line": 139,
+          "text": "SPELL_DEFILE_AURA                   = 72743,"
+        },
+        {
+          "line": 140,
+          "text": "SPELL_DEFILE_GROW                   = 72756,"
+        },
+        {
+          "line": 141,
+          "text": "SPELL_SOUL_REAPER                   = 69409, // instant"
+        },
+        {
+          "line": 142,
+          "text": "SPELL_SOUL_REAPER_BUFF              = 69410,"
+        },
+        {
+          "line": 143,
+          "text": "SPELL_SUMMON_VALKYR                 = 69037, // instant"
+        },
+        {
+          "line": 144,
+          "text": "SPELL_SUMMON_VALKYR_PERIODIC        = 74361,"
+        },
+        {
+          "line": 145,
+          "text": "SPELL_WINGS_OF_THE_DAMNED           = 74352,"
+        },
+        {
+          "line": 146,
+          "text": "SPELL_VALKYR_TARGET_SEARCH          = 69030,"
+        },
+        {
+          "line": 147,
+          "text": "SPELL_HARVEST_SOUL_VALKYR           = 68985, // vehicle aura used by Val'kyr Shadowguard and Strangulate Vehicle"
+        },
+        {
+          "line": 148,
+          "text": "SPELL_CHARGE                        = 74399,"
+        },
+        {
+          "line": 149,
+          "text": "SPELL_VALKYR_CARRY                  = 74445,"
+        },
+        {
+          "line": 150,
+          "text": "SPELL_EJECT_ALL_PASSENGERS          = 68576,"
+        },
+        {
+          "line": 151,
+          "text": "SPELL_LIFE_SIPHON                   = 73488,"
+        },
+        {
+          "line": 152,
+          "text": "SPELL_LIFE_SIPHON_HEAL              = 73489,"
+        },
+        {
+          "line": 155,
+          "text": "SPELL_VILE_SPIRITS                  = 70498,"
+        },
+        {
+          "line": 156,
+          "text": "SPELL_VILE_SPIRIT_MOVE_SEARCH       = 70501,"
+        },
+        {
+          "line": 157,
+          "text": "SPELL_VILE_SPIRIT_DAMAGE_SEARCH     = 70502,"
+        },
+        {
+          "line": 158,
+          "text": "SPELL_SPIRIT_BURST                  = 70503,"
+        },
+        {
+          "line": 159,
+          "text": "SPELL_HARVEST_SOUL                  = 68980,"
+        },
+        {
+          "line": 160,
+          "text": "SPELL_HARVEST_SOUL_VEHICLE          = 68984,"
+        },
+        {
+          "line": 161,
+          "text": "SPELL_HARVEST_SOUL_VISUAL           = 71372,"
+        },
+        {
+          "line": 162,
+          "text": "SPELL_HARVEST_SOUL_TELEPORT         = 72546,"
+        },
+        {
+          "line": 163,
+          "text": "SPELL_HARVEST_SOUL_TELEPORT_BACK    = 72597,"
+        },
+        {
+          "line": 164,
+          "text": "SPELL_KILL_FROSTMOURNE_PLAYERS      = 75127,"
+        },
+        {
+          "line": 165,
+          "text": "SPELL_HARVESTED_SOUL_LK_BUFF        = 72679,"
+        },
+        {
+          "line": 166,
+          "text": "SPELL_HARVEST_SOULS                 = 73654,"
+        },
+        {
+          "line": 167,
+          "text": "SPELL_HARVEST_SOULS_TELEPORT        = 73655,"
+        },
+        {
+          "line": 171,
+          "text": "SPELL_LIGHTS_FAVOR                  = 69382,"
+        },
+        {
+          "line": 172,
+          "text": "SPELL_RESTORE_SOUL                  = 72595,"
+        },
+        {
+          "line": 173,
+          "text": "SPELL_RESTORE_SOULS                 = 73650,"
+        },
+        {
+          "line": 174,
+          "text": "SPELL_TERENAS_LOSES_INSIDE          = 72572,"
+        },
+        {
+          "line": 175,
+          "text": "SPELL_DESTROY_SOUL                  = 74086,"
+        },
+        {
+          "line": 176,
+          "text": "SPELL_DARK_HUNGER                   = 69383,    // Passive proc healing"
+        },
+        {
+          "line": 177,
+          "text": "SPELL_DARK_HUNGER_HEAL              = 69384,"
+        },
+        {
+          "line": 178,
+          "text": "SPELL_SOUL_RIP                      = 69397,    // Deals increasing damage"
+        },
+        {
+          "line": 179,
+          "text": "SPELL_SOUL_RIP_DAMAGE               = 69398,"
+        },
+        {
+          "line": 180,
+          "text": "SPELL_SUMMON_SPIRIT_BOMB_1          = 73581,"
+        },
+        {
+          "line": 181,
+          "text": "SPELL_SUMMON_SPIRIT_BOMB_2          = 74299,"
+        },
+        {
+          "line": 182,
+          "text": "SPELL_TRIGGER_VILE_SPIRIT_HEROIC    = 73582,"
+        },
+        {
+          "line": 183,
+          "text": "SPELL_EXPLOSION                     = 73576,"
+        },
+        {
+          "line": 186,
+          "text": "SPELL_SHOCKWAVE                     = 72149,"
+        },
+        {
+          "line": 187,
+          "text": "SPELL_ENRAGE                        = 72143,"
+        },
+        {
+          "line": 188,
+          "text": "SPELL_FRENZY                        = 28747,"
+        }
+      ]
+    },
+    {
+      "file": "boss_valithria_dreamwalker.cpp",
+      "sha256": "cae8bdfe8d37fd0ae60283b1dedb08b88d972b3d9a218f391368e8649cc12c1b",
+      "lines": 1423,
+      "events": [
+        {
+          "line": 319,
+          "text": "events.ScheduleEvent(EVENT_INTRO_TALK, 15s);"
+        },
+        {
+          "line": 320,
+          "text": "events.ScheduleEvent(EVENT_DREAM_PORTAL, 45s, 48s);"
+        },
+        {
+          "line": 322,
+          "text": "events.ScheduleEvent(EVENT_BERSERK, 7min);"
+        },
+        {
+          "line": 340,
+          "text": "events.ScheduleEvent(EVENT_DREAM_SLIP, 3500ms);"
+        },
+        {
+          "line": 444,
+          "text": "events.ScheduleEvent(EVENT_DREAM_PORTAL, 45s, 48s);"
+        },
+        {
+          "line": 591,
+          "text": "events.ScheduleEvent(EVENT_GLUTTONOUS_ABOMINATION_SUMMONER, 5s);"
+        },
+        {
+          "line": 592,
+          "text": "events.ScheduleEvent(EVENT_SUPPRESSER_SUMMONER, 10s);"
+        },
+        {
+          "line": 593,
+          "text": "events.ScheduleEvent(EVENT_BLISTERING_ZOMBIE_SUMMONER, 15s);"
+        },
+        {
+          "line": 594,
+          "text": "events.ScheduleEvent(EVENT_RISEN_ARCHMAGE_SUMMONER, 20s);"
+        },
+        {
+          "line": 595,
+          "text": "events.ScheduleEvent(EVENT_BLAZING_SKELETON_SUMMONER, 30s);"
+        },
+        {
+          "line": 674,
+          "text": "events.ScheduleEvent(EVENT_FROSTBOLT_VOLLEY, 5s, 15s);"
+        },
+        {
+          "line": 675,
+          "text": "events.ScheduleEvent(EVENT_MANA_VOID, 20s, 25s);"
+        },
+        {
+          "line": 676,
+          "text": "events.ScheduleEvent(EVENT_COLUMN_OF_FROST, 10s, 20s);"
+        },
+        {
+          "line": 733,
+          "text": "events.ScheduleEvent(EVENT_FROSTBOLT_VOLLEY, 8s, 15s);"
+        },
+        {
+          "line": 738,
+          "text": "events.ScheduleEvent(EVENT_MANA_VOID, 20s, 25s);"
+        },
+        {
+          "line": 743,
+          "text": "events.ScheduleEvent(EVENT_COLUMN_OF_FROST, 15s, 25s);"
+        },
+        {
+          "line": 813,
+          "text": "events.ScheduleEvent(EVENT_CHECK_PLAYER, 750ms);"
+        },
+        {
+          "line": 834,
+          "text": "events.ScheduleEvent(EVENT_EXPLODE, 500ms);"
+        },
+        {
+          "line": 836,
+          "text": "events.ScheduleEvent(EVENT_CHECK_PLAYER, 750ms);"
+        },
+        {
+          "line": 876,
+          "text": "events.ScheduleEvent(EVENT_FIREBALL, 2s, 4s);"
+        },
+        {
+          "line": 877,
+          "text": "events.ScheduleEvent(EVENT_LEY_WASTE, 15s, 20s);"
+        },
+        {
+          "line": 895,
+          "text": "events.ScheduleEvent(EVENT_FIREBALL, 2s, 4s);"
+        },
+        {
+          "line": 899,
+          "text": "events.ScheduleEvent(EVENT_LEY_WASTE, 15s, 20s);"
+        },
+        {
+          "line": 1048,
+          "text": "events.ScheduleEvent(EVENT_GUT_SPRAY, 10s, 13s);"
+        },
+        {
+          "line": 1078,
+          "text": "events.ScheduleEvent(EVENT_GUT_SPRAY, 10s, 13s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 286,
+          "text": "_instance(creature->GetInstanceScript()), _portalCount(RAID_MODE<uint32>(3, 8, 3, 8))"
+        },
+        {
+          "line": 321,
+          "text": "if (IsHeroic())"
+        },
+        {
+          "line": 332,
+          "text": "if (me->HealthAbovePctHealed(100, heal) && !_done)"
+        },
+        {
+          "line": 344,
+          "text": "else if (!_over75PercentTalkDone && me->HealthAbovePctHealed(75, heal))"
+        },
+        {
+          "line": 358,
+          "text": "if (me->HealthBelowPctDamaged(25, damage))"
+        },
+        {
+          "line": 440,
+          "text": "if (!IsHeroic())"
+        },
+        {
+          "line": 497,
+          "text": "if (Is25ManRaid())"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 157,
+          "text": "struct ManaVoidSelector"
+        },
+        {
+          "line": 171,
+          "text": "class DelayedCastEvent : public BasicEvent"
+        },
+        {
+          "line": 193,
+          "text": "class AuraRemoveEvent : public BasicEvent"
+        },
+        {
+          "line": 211,
+          "text": "class ValithriaDespawner : public BasicEvent"
+        },
+        {
+          "line": 278,
+          "text": "class boss_valithria_dreamwalker : public CreatureScript"
+        },
+        {
+          "line": 479,
+          "text": "class npc_green_dragon_combat_trigger : public CreatureScript"
+        },
+        {
+          "line": 565,
+          "text": "class npc_the_lich_king_controller : public CreatureScript"
+        },
+        {
+          "line": 654,
+          "text": "class npc_risen_archmage : public CreatureScript"
+        },
+        {
+          "line": 765,
+          "text": "class npc_valithria_portal : public CreatureScript"
+        },
+        {
+          "line": 798,
+          "text": "class npc_valithria_cloud : public CreatureScript"
+        },
+        {
+          "line": 862,
+          "text": "class npc_blazing_skeleton : public CreatureScript"
+        },
+        {
+          "line": 918,
+          "text": "class npc_suppresser : public CreatureScript"
+        },
+        {
+          "line": 969,
+          "text": "class npc_blistering_zombie : public CreatureScript"
+        },
+        {
+          "line": 1034,
+          "text": "class npc_gluttonous_abomination : public CreatureScript"
+        },
+        {
+          "line": 1097,
+          "text": "class spell_dreamwalker_summon_portal : public SpellScript"
+        },
+        {
+          "line": 1124,
+          "text": "class spell_dreamwalker_twisted_nightmares : public SpellScript"
+        },
+        {
+          "line": 1144,
+          "text": "class spell_dreamwalker_nightmare_cloud_aura : public AuraScript"
+        },
+        {
+          "line": 1169,
+          "text": "class spell_dreamwalker_mana_void_aura : public AuraScript"
+        },
+        {
+          "line": 1188,
+          "text": "class spell_dreamwalker_decay_periodic_timer_aura : public AuraScript"
+        },
+        {
+          "line": 1230,
+          "text": "class spell_dreamwalker_summoner : public SpellScript"
+        },
+        {
+          "line": 1274,
+          "text": "class spell_dreamwalker_summon_suppresser_aura : public AuraScript"
+        },
+        {
+          "line": 1314,
+          "text": "class spell_dreamwalker_summon_suppresser_effect : public SpellScript"
+        },
+        {
+          "line": 1340,
+          "text": "class spell_valithria_suppression_aura : public AuraScript"
+        },
+        {
+          "line": 1388,
+          "text": "class achievement_portal_jockey : public AchievementCriteriaScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 50,
+          "text": "SPELL_COPY_DAMAGE                   = 71948,"
+        },
+        {
+          "line": 51,
+          "text": "SPELL_DREAM_PORTAL_VISUAL_PRE       = 71304,"
+        },
+        {
+          "line": 52,
+          "text": "SPELL_NIGHTMARE_PORTAL_VISUAL_PRE   = 71986,"
+        },
+        {
+          "line": 53,
+          "text": "SPELL_NIGHTMARE_CLOUD               = 71970,"
+        },
+        {
+          "line": 54,
+          "text": "SPELL_NIGHTMARE_CLOUD_VISUAL        = 71939,"
+        },
+        {
+          "line": 55,
+          "text": "SPELL_PRE_SUMMON_DREAM_PORTAL       = 72224, // normal"
+        },
+        {
+          "line": 56,
+          "text": "SPELL_PRE_SUMMON_NIGHTMARE_PORTAL   = 72480, // heroic"
+        },
+        {
+          "line": 57,
+          "text": "SPELL_SUMMON_DREAM_PORTAL           = 71305,"
+        },
+        {
+          "line": 58,
+          "text": "SPELL_SUMMON_NIGHTMARE_PORTAL       = 71987,"
+        },
+        {
+          "line": 59,
+          "text": "SPELL_DREAMWALKERS_RAGE             = 71189,"
+        },
+        {
+          "line": 60,
+          "text": "SPELL_DREAM_SLIP                    = 71196,"
+        },
+        {
+          "line": 61,
+          "text": "SPELL_ACHIEVEMENT_CHECK             = 72706,"
+        },
+        {
+          "line": 62,
+          "text": "SPELL_CLEAR_ALL                     = 71721,"
+        },
+        {
+          "line": 63,
+          "text": "SPELL_AWARD_REPUTATION_BOSS_KILL    = 73843,"
+        },
+        {
+          "line": 64,
+          "text": "SPELL_CORRUPTION_VALITHRIA          = 70904,"
+        },
+        {
+          "line": 67,
+          "text": "SPELL_TIMER_GLUTTONOUS_ABOMINATION  = 70915,"
+        },
+        {
+          "line": 68,
+          "text": "SPELL_TIMER_SUPPRESSER              = 70912,"
+        },
+        {
+          "line": 69,
+          "text": "SPELL_TIMER_BLISTERING_ZOMBIE       = 70914,"
+        },
+        {
+          "line": 70,
+          "text": "SPELL_TIMER_RISEN_ARCHMAGE          = 70916,"
+        },
+        {
+          "line": 71,
+          "text": "SPELL_TIMER_BLAZING_SKELETON        = 70913,"
+        },
+        {
+          "line": 72,
+          "text": "SPELL_SUMMON_SUPPRESSER             = 70936,"
+        },
+        {
+          "line": 73,
+          "text": "SPELL_RECENTLY_SPAWNED              = 72954,"
+        },
+        {
+          "line": 74,
+          "text": "SPELL_SPAWN_CHEST                   = 71207,"
+        },
+        {
+          "line": 77,
+          "text": "SPELL_CORRUPTION                    = 70602,"
+        },
+        {
+          "line": 78,
+          "text": "SPELL_FROSTBOLT_VOLLEY              = 70759,"
+        },
+        {
+          "line": 79,
+          "text": "SPELL_MANA_VOID                     = 71179,"
+        },
+        {
+          "line": 80,
+          "text": "SPELL_COLUMN_OF_FROST               = 70704,"
+        },
+        {
+          "line": 81,
+          "text": "SPELL_COLUMN_OF_FROST_DAMAGE        = 70702,"
+        },
+        {
+          "line": 84,
+          "text": "SPELL_FIREBALL                      = 70754,"
+        },
+        {
+          "line": 85,
+          "text": "SPELL_LEY_WASTE                     = 69325,"
+        },
+        {
+          "line": 88,
+          "text": "SPELL_SUPPRESSION                   = 70588,"
+        },
+        {
+          "line": 91,
+          "text": "SPELL_ACID_BURST                    = 70744,"
+        },
+        {
+          "line": 94,
+          "text": "SPELL_GUT_SPRAY                     = 70633,"
+        },
+        {
+          "line": 95,
+          "text": "SPELL_ROT_WORM_SPAWNER              = 70675,"
+        },
+        {
+          "line": 98,
+          "text": "SPELL_EMERALD_VIGOR                 = 70873,"
+        },
+        {
+          "line": 101,
+          "text": "SPELL_TWISTED_NIGHTMARE             = 71941,"
+        }
+      ]
+    },
+    {
+      "file": "icecrown_citadel.cpp",
+      "sha256": "2841c6e246c8f7231b7f64951fa86ae75551bbe1403ca279c3b7ca194a7837fd",
+      "lines": 4487,
+      "events": [
+        {
+          "line": 485,
+          "text": "events.ScheduleEvent(EVENT_TIRION_INTRO_2, 4s);"
+        },
+        {
+          "line": 486,
+          "text": "events.ScheduleEvent(EVENT_TIRION_INTRO_3, 14s);"
+        },
+        {
+          "line": 487,
+          "text": "events.ScheduleEvent(EVENT_TIRION_INTRO_4, 18s);"
+        },
+        {
+          "line": 488,
+          "text": "events.ScheduleEvent(EVENT_TIRION_INTRO_5, 31s);"
+        },
+        {
+          "line": 489,
+          "text": "events.ScheduleEvent(EVENT_LK_INTRO_1, 35s);"
+        },
+        {
+          "line": 490,
+          "text": "events.ScheduleEvent(EVENT_TIRION_INTRO_6, 49s);"
+        },
+        {
+          "line": 491,
+          "text": "events.ScheduleEvent(EVENT_LK_INTRO_2, 58s);"
+        },
+        {
+          "line": 492,
+          "text": "events.ScheduleEvent(EVENT_LK_INTRO_3, 74s);"
+        },
+        {
+          "line": 493,
+          "text": "events.ScheduleEvent(EVENT_LK_INTRO_4, 86s);"
+        },
+        {
+          "line": 494,
+          "text": "events.ScheduleEvent(EVENT_BOLVAR_INTRO_1, 107s);"
+        },
+        {
+          "line": 495,
+          "text": "events.ScheduleEvent(EVENT_LK_INTRO_5, 113s);"
+        },
+        {
+          "line": 499,
+          "text": "events.ScheduleEvent(EVENT_SAURFANG_INTRO_1, 125s);"
+        },
+        {
+          "line": 500,
+          "text": "events.ScheduleEvent(EVENT_TIRION_INTRO_H_7, 134s);"
+        },
+        {
+          "line": 501,
+          "text": "events.ScheduleEvent(EVENT_SAURFANG_INTRO_2, 144s);"
+        },
+        {
+          "line": 502,
+          "text": "events.ScheduleEvent(EVENT_SAURFANG_INTRO_3, 155s);"
+        },
+        {
+          "line": 503,
+          "text": "events.ScheduleEvent(EVENT_SAURFANG_INTRO_4, 167s);"
+        },
+        {
+          "line": 504,
+          "text": "events.ScheduleEvent(EVENT_SAURFANG_RUN, 175s);"
+        },
+        {
+          "line": 508,
+          "text": "events.ScheduleEvent(EVENT_MURADIN_INTRO_1, 125s);"
+        },
+        {
+          "line": 509,
+          "text": "events.ScheduleEvent(EVENT_MURADIN_INTRO_2, 129s);"
+        },
+        {
+          "line": 510,
+          "text": "events.ScheduleEvent(EVENT_MURADIN_INTRO_3, 132s);"
+        },
+        {
+          "line": 511,
+          "text": "events.ScheduleEvent(EVENT_TIRION_INTRO_A_7, 141s);"
+        },
+        {
+          "line": 512,
+          "text": "events.ScheduleEvent(EVENT_MURADIN_INTRO_4, 149s);"
+        },
+        {
+          "line": 513,
+          "text": "events.ScheduleEvent(EVENT_MURADIN_INTRO_5, 156s);"
+        },
+        {
+          "line": 514,
+          "text": "events.ScheduleEvent(EVENT_MURADIN_RUN, 162s);"
+        },
+        {
+          "line": 670,
+          "text": "events.ScheduleEvent(EVENT_DEATH_PLAGUE, 15s);"
+        },
+        {
+          "line": 671,
+          "text": "events.ScheduleEvent(EVENT_STOMP, 5s, 8s);"
+        },
+        {
+          "line": 672,
+          "text": "events.ScheduleEvent(EVENT_ARCTIC_BREATH, 10s, 15s);"
+        },
+        {
+          "line": 700,
+          "text": "events.ScheduleEvent(EVENT_DEATH_PLAGUE, 15s);"
+        },
+        {
+          "line": 704,
+          "text": "events.ScheduleEvent(EVENT_STOMP, 15s, 18s);"
+        },
+        {
+          "line": 708,
+          "text": "events.ScheduleEvent(EVENT_ARCTIC_BREATH, 26s, 33s);"
+        },
+        {
+          "line": 746,
+          "text": "events.ScheduleEvent(EVENT_ACTIVATE_TRAP, Milliseconds(action));"
+        },
+        {
+          "line": 765,
+          "text": "events.ScheduleEvent(EVENT_ACTIVATE_TRAP, 22s);"
+        },
+        {
+          "line": 801,
+          "text": "events.ScheduleEvent(EVENT_SCOURGE_STRIKE, 7500ms, 12s + 500ms);"
+        },
+        {
+          "line": 802,
+          "text": "events.ScheduleEvent(EVENT_DEATH_STRIKE, 25s, 30s);"
+        },
+        {
+          "line": 822,
+          "text": "events.ScheduleEvent(EVENT_ARNATH_INTRO_2, 7s);"
+        },
+        {
+          "line": 823,
+          "text": "events.ScheduleEvent(EVENT_CROK_INTRO_3, 14s);"
+        },
+        {
+          "line": 824,
+          "text": "events.ScheduleEvent(EVENT_START_PATHING, 37s);"
+        },
+        {
+          "line": 969,
+          "text": "events.ScheduleEvent(EVENT_HEALTH_CHECK, 1s);"
+        },
+        {
+          "line": 1011,
+          "text": "events.ScheduleEvent(EVENT_SCOURGE_STRIKE, 10s, 14s);"
+        },
+        {
+          "line": 1016,
+          "text": "events.ScheduleEvent(EVENT_DEATH_STRIKE, 5s, 10s);"
+        },
+        {
+          "line": 1027,
+          "text": "events.ScheduleEvent(EVENT_HEALTH_CHECK, 1s);"
+        },
+        {
+          "line": 1125,
+          "text": "events.ScheduleEvent(EVENT_SVALNA_COMBAT, 9s);"
+        },
+        {
+          "line": 1126,
+          "text": "events.ScheduleEvent(EVENT_IMPALING_SPEAR, 15s, 20s);"
+        },
+        {
+          "line": 1166,
+          "text": "events.ScheduleEvent(EVENT_SVALNA_START, 25s);"
+        },
+        {
+          "line": 1169,
+          "text": "events.RescheduleEvent(EVENT_SVALNA_RESURRECT, 7s);"
+        },
+        {
+          "line": 1261,
+          "text": "events.ScheduleEvent(EVENT_IMPALING_SPEAR, 20s, 25s);"
+        },
+        {
+          "line": 1739,
+          "text": "events.ScheduleEvent(1, 10s, 15s);"
+        },
+        {
+          "line": 1740,
+          "text": "events.ScheduleEvent(2, 8s, 12s);"
+        },
+        {
+          "line": 1741,
+          "text": "events.ScheduleEvent(3, 6s, 10s);"
+        },
+        {
+          "line": 1743,
+          "text": "events.ScheduleEvent(4, 5s);"
+        },
+        {
+          "line": 1746,
+          "text": "events.ScheduleEvent(11, 6s);"
+        },
+        {
+          "line": 1749,
+          "text": "events.ScheduleEvent(21, 3s);"
+        },
+        {
+          "line": 1750,
+          "text": "events.ScheduleEvent(22, 8s, 12s);"
+        },
+        {
+          "line": 1753,
+          "text": "events.ScheduleEvent(31, 0ms);"
+        },
+        {
+          "line": 1754,
+          "text": "events.ScheduleEvent(32, 15s, 25s);"
+        },
+        {
+          "line": 1755,
+          "text": "events.ScheduleEvent(33, 15s, 30s);"
+        },
+        {
+          "line": 1760,
+          "text": "events.ScheduleEvent(41, 2500ms);"
+        },
+        {
+          "line": 1761,
+          "text": "events.ScheduleEvent(42, 5s);"
+        },
+        {
+          "line": 1796,
+          "text": "events.Repeat(35s, 40s);"
+        },
+        {
+          "line": 1800,
+          "text": "events.Repeat(25s, 30s);"
+        },
+        {
+          "line": 1808,
+          "text": "events.Repeat(25s, 35s);"
+        },
+        {
+          "line": 1811,
+          "text": "events.Repeat(2500ms);"
+        },
+        {
+          "line": 1819,
+          "text": "events.Repeat(6s);"
+        },
+        {
+          "line": 1823,
+          "text": "events.Repeat(3s);"
+        },
+        {
+          "line": 1827,
+          "text": "events.Repeat(15s, 25s);"
+        },
+        {
+          "line": 1835,
+          "text": "events.Repeat(40s, 50s);"
+        },
+        {
+          "line": 1839,
+          "text": "events.Repeat(35s, 50s);"
+        },
+        {
+          "line": 1843,
+          "text": "events.Repeat(2500ms);"
+        },
+        {
+          "line": 1847,
+          "text": "events.Repeat(45s);"
+        },
+        {
+          "line": 1972,
+          "text": "events.ScheduleEvent(EVENT_SOUL_MISSILE, 1s, 6s);"
+        },
+        {
+          "line": 1985,
+          "text": "events.ScheduleEvent(EVENT_SOUL_MISSILE, 5s, 7s);"
+        },
+        {
+          "line": 2065,
+          "text": "scheduler.Schedule(1s, [this](TaskContext /*initialize*/)\n            {\n                std::vector<Creature*> creatures;"
+        },
+        {
+          "line": 2087,
+          "text": "scheduler.Schedule(evading ? 5s : 1s, [this](TaskContext visual)\n            {\n                if (_minionGuids.empty())\n                    return;"
+        },
+        {
+          "line": 2354,
+          "text": "scheduler.Schedule(9s, [this](TaskContext /*leechingRoot*/)\n            {\n                DoCastVictim(SPELL_LEECHING_ROOT);"
+        },
+        {
+          "line": 2492,
+          "text": "scheduler.Schedule(3s, [this](TaskContext /*context*/)\n            {\n                me->Delete();"
+        },
+        {
+          "line": 3218,
+          "text": "events.ScheduleEvent(1, 5s, 15s);"
+        },
+        {
+          "line": 3219,
+          "text": "events.ScheduleEvent(2, 5s, 15s);"
+        },
+        {
+          "line": 3220,
+          "text": "events.ScheduleEvent(3, 5s, 15s);"
+        },
+        {
+          "line": 3221,
+          "text": "events.ScheduleEvent(4, 1s, 3s);"
+        },
+        {
+          "line": 3241,
+          "text": "events.Repeat(10s, 20s);"
+        },
+        {
+          "line": 3246,
+          "text": "events.Repeat(10s, 20s);"
+        },
+        {
+          "line": 3251,
+          "text": "events.Repeat(10s, 20s);"
+        },
+        {
+          "line": 3255,
+          "text": "events.Repeat(2s, 3s);"
+        },
+        {
+          "line": 3285,
+          "text": "events.ScheduleEvent(1, 5s, 10s);"
+        },
+        {
+          "line": 3286,
+          "text": "events.ScheduleEvent(2, 5s, 15s);"
+        },
+        {
+          "line": 3305,
+          "text": "events.Repeat(5s, 10s);"
+        },
+        {
+          "line": 3309,
+          "text": "events.Repeat(10s, 15s);"
+        },
+        {
+          "line": 3339,
+          "text": "events.ScheduleEvent(1, 5s, 15s);"
+        },
+        {
+          "line": 3340,
+          "text": "events.ScheduleEvent(2, 5s, 15s);"
+        },
+        {
+          "line": 3341,
+          "text": "events.ScheduleEvent(3, 1s, 3s);"
+        },
+        {
+          "line": 3361,
+          "text": "events.Repeat(10s, 20s);"
+        },
+        {
+          "line": 3366,
+          "text": "events.Repeat(10s, 20s);"
+        },
+        {
+          "line": 3370,
+          "text": "events.Repeat(2s, 3s);"
+        },
+        {
+          "line": 3400,
+          "text": "events.ScheduleEvent(1, 5s, 15s);"
+        },
+        {
+          "line": 3401,
+          "text": "events.ScheduleEvent(2, 5s, 15s);"
+        },
+        {
+          "line": 3402,
+          "text": "events.ScheduleEvent(3, 5s, 15s);"
+        },
+        {
+          "line": 3403,
+          "text": "events.ScheduleEvent(4, 1s, 3s);"
+        },
+        {
+          "line": 3423,
+          "text": "events.Repeat(10s, 20s);"
+        },
+        {
+          "line": 3428,
+          "text": "events.Repeat(20s, 30s);"
+        },
+        {
+          "line": 3433,
+          "text": "events.Repeat(10s, 20s);"
+        },
+        {
+          "line": 3437,
+          "text": "events.Repeat(3s, 4s);"
+        },
+        {
+          "line": 3469,
+          "text": "events.ScheduleEvent(1, 10s);"
+        },
+        {
+          "line": 3548,
+          "text": "events.Repeat(casted ? 25s : 5s);"
+        },
+        {
+          "line": 3634,
+          "text": "events.ScheduleEvent(i + 1, Milliseconds(sesi_spells[i].cooldown_ms / 4));"
+        },
+        {
+          "line": 3667,
+          "text": "events.Repeat(sesi_spells[e - 1].cooldown_ms);"
+        },
+        {
+          "line": 3723,
+          "text": "scheduler.Schedule(15s, 25s, [this](TaskContext context)\n        {\n            DoCastRandomTarget(SPELL_BLIZZARD);"
+        },
+        {
+          "line": 3838,
+          "text": "events.ScheduleEvent(1, 3s, 6s);"
+        },
+        {
+          "line": 3928,
+          "text": "events.Repeat(15s, 20s);"
+        },
+        {
+          "line": 3931,
+          "text": "events.Repeat(3s);"
+        },
+        {
+          "line": 4000,
+          "text": "events.ScheduleEvent(1, 3s, 10s);"
+        },
+        {
+          "line": 4001,
+          "text": "events.ScheduleEvent(2, 15s, 25s);"
+        },
+        {
+          "line": 4002,
+          "text": "events.ScheduleEvent(3, 8s, 15s);"
+        },
+        {
+          "line": 4056,
+          "text": "events.Repeat(20s, 30s);"
+        },
+        {
+          "line": 4060,
+          "text": "events.Repeat(20s, 30s);"
+        },
+        {
+          "line": 4065,
+          "text": "events.Repeat(20s, 30s);"
+        },
+        {
+          "line": 4110,
+          "text": "events.ScheduleEvent(EVENT_SUMMON_BROODLING, Milliseconds(10000 + i * 350));"
+        },
+        {
+          "line": 4164,
+          "text": "events.ScheduleEvent(EVENT_CHECK_FIGHT, 1s);"
+        },
+        {
+          "line": 4165,
+          "text": "events.ScheduleEvent(EVENT_GAUNTLET_PHASE1, 0ms);"
+        },
+        {
+          "line": 4209,
+          "text": "events.ScheduleEvent(EVENT_GAUNTLET_PHASE2, 0ms);"
+        },
+        {
+          "line": 4214,
+          "text": "events.ScheduleEvent(EVENT_GAUNTLET_PHASE3, 0ms);"
+        },
+        {
+          "line": 4234,
+          "text": "events.ScheduleEvent(EVENT_CHECK_FIGHT, 1s);"
+        },
+        {
+          "line": 4289,
+          "text": "events.ScheduleEvent(EVENT_CHECK_FIGHT, 1s);"
+        },
+        {
+          "line": 4294,
+          "text": "events.ScheduleEvent(EVENT_GAUNTLET_PHASE1, Seconds(i));"
+        },
+        {
+          "line": 4295,
+          "text": "events.ScheduleEvent(EVENT_GAUNTLET_PHASE2, 1min);"
+        },
+        {
+          "line": 4336,
+          "text": "events.ScheduleEvent(EVENT_CHECK_FIGHT, 1s);"
+        }
+      ],
+      "branches": [
+        {
+          "line": 956,
+          "text": "if (HealthBelowPct(10))"
+        },
+        {
+          "line": 1014,
+          "text": "if (HealthBelowPct(20))"
+        },
+        {
+          "line": 1019,
+          "text": "if (HealthAbovePct(25))"
+        },
+        {
+          "line": 1418,
+          "text": "if (Is25ManRaid() && IsUndead)"
+        },
+        {
+          "line": 1521,
+          "text": "if (HealthBelowPct(20))"
+        },
+        {
+          "line": 1742,
+          "text": "if (me->GetMap()->Is25ManRaid())"
+        },
+        {
+          "line": 3540,
+          "text": "uint8 count = me->GetMap()->Is25ManRaid() ? 4 : 2;"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 340,
+          "text": "class FrostwingVrykulSearcher"
+        },
+        {
+          "line": 373,
+          "text": "class FrostwingGauntletRespawner"
+        },
+        {
+          "line": 420,
+          "text": "class CaptainSurviveTalk : public BasicEvent"
+        },
+        {
+          "line": 436,
+          "text": "class npc_highlord_tirion_fordring_lh : public CreatureScript"
+        },
+        {
+          "line": 656,
+          "text": "class npc_rotting_frost_giant : public CreatureScript"
+        },
+        {
+          "line": 728,
+          "text": "class npc_frost_freeze_trap : public CreatureScript"
+        },
+        {
+          "line": 779,
+          "text": "class npc_crok_scourgebane : public CreatureScript"
+        },
+        {
+          "line": 1060,
+          "text": "class boss_sister_svalna : public CreatureScript"
+        },
+        {
+          "line": 1284,
+          "text": "struct npc_argent_captainAI : public ScriptedAI"
+        },
+        {
+          "line": 1400,
+          "text": "class npc_captain_arnath : public CreatureScript"
+        },
+        {
+          "line": 1480,
+          "text": "class npc_captain_brandon : public CreatureScript"
+        },
+        {
+          "line": 1549,
+          "text": "class npc_captain_grondel : public CreatureScript"
+        },
+        {
+          "line": 1617,
+          "text": "class npc_captain_rupert : public CreatureScript"
+        },
+        {
+          "line": 1688,
+          "text": "class npc_frostwing_vrykul : public CreatureScript"
+        },
+        {
+          "line": 1902,
+          "text": "class npc_impaling_spear : public CreatureScript"
+        },
+        {
+          "line": 1940,
+          "text": "class npc_alchemist_adrianna : public CreatureScript"
+        },
+        {
+          "line": 1955,
+          "text": "class npc_arthas_teleport_visual : public CreatureScript"
+        },
+        {
+          "line": 2018,
+          "text": "class ICCOrbControllerMinionSearch"
+        },
+        {
+          "line": 2059,
+          "text": "struct npc_icc_orb_controller : public ScriptedAI"
+        },
+        {
+          "line": 2193,
+          "text": "struct DarkFallenAI : public ScriptedAI"
+        },
+        {
+          "line": 2300,
+          "text": "struct npc_darkfallen_blood_knight : public DarkFallenAI"
+        },
+        {
+          "line": 2323,
+          "text": "struct npc_darkfallen_noble : public DarkFallenAI"
+        },
+        {
+          "line": 2347,
+          "text": "struct npc_vampiric_fiend : public ScriptedAI"
+        },
+        {
+          "line": 2385,
+          "text": "struct npc_darkfallen_archmage : public DarkFallenAI"
+        },
+        {
+          "line": 2415,
+          "text": "struct npc_darkfallen_advisor : public DarkFallenAI"
+        },
+        {
+          "line": 2437,
+          "text": "struct npc_darkfallen_tactician : public DarkFallenAI"
+        },
+        {
+          "line": 2461,
+          "text": "struct go_empowering_blood_orb : public GameObjectAI"
+        },
+        {
+          "line": 2520,
+          "text": "class spell_icc_empowered_blood : public AuraScript"
+        },
+        {
+          "line": 2547,
+          "text": "class spell_icc_empowered_blood_3 : public AuraScript"
+        },
+        {
+          "line": 2574,
+          "text": "class spell_icc_siphon_essence : public AuraScript"
+        },
+        {
+          "line": 2594,
+          "text": "class spell_darkfallen_blood_mirror : public SpellScript"
+        },
+        {
+          "line": 2648,
+          "text": "class spell_generic_remove_empowered_blood : public SpellScript"
+        },
+        {
+          "line": 2668,
+          "text": "class spell_icc_stoneform_aura : public AuraScript"
+        },
+        {
+          "line": 2701,
+          "text": "class spell_icc_sprit_alarm : public SpellScript"
+        },
+        {
+          "line": 2765,
+          "text": "class spell_icc_geist_alarm : public SpellScript"
+        },
+        {
+          "line": 2821,
+          "text": "class spell_frost_giant_death_plague : public SpellScript"
+        },
+        {
+          "line": 2865,
+          "text": "class spell_icc_harvest_blight_specimen : public SpellScript"
+        },
+        {
+          "line": 2887,
+          "text": "class AliveCheck"
+        },
+        {
+          "line": 2898,
+          "text": "class spell_svalna_revive_champion : public SpellScript"
+        },
+        {
+          "line": 2928,
+          "text": "class spell_svalna_remove_spear : public SpellScript"
+        },
+        {
+          "line": 2954,
+          "text": "class spell_icc_soul_missile : public SpellScript"
+        },
+        {
+          "line": 2970,
+          "text": "class at_icc_saurfang_portal : public AreaTriggerScript"
+        },
+        {
+          "line": 3013,
+          "text": "class at_icc_shutdown_traps : public AreaTriggerScript"
+        },
+        {
+          "line": 3026,
+          "text": "class at_icc_start_blood_quickening : public AreaTriggerScript"
+        },
+        {
+          "line": 3039,
+          "text": "class at_icc_start_frostwing_gauntlet : public AreaTriggerScript"
+        },
+        {
+          "line": 3066,
+          "text": "class spell_icc_web_wrap_aura : public AuraScript"
+        },
+        {
+          "line": 3088,
+          "text": "class spell_stinky_precious_decimate : public SpellScript"
+        },
+        {
+          "line": 3107,
+          "text": "class spell_icc_yf_frozen_orb_aura : public AuraScript"
+        },
+        {
+          "line": 3130,
+          "text": "class spell_icc_yh_volley_aura : public AuraScript"
+        },
+        {
+          "line": 3158,
+          "text": "class spell_icc_yd_summon_undead : public SpellScript"
+        },
+        {
+          "line": 3181,
+          "text": "class spell_icc_shattered_bones : public SpellScript"
+        },
+        {
+          "line": 3202,
+          "text": "class npc_icc_skybreaker_hierophant : public CreatureScript"
+        },
+        {
+          "line": 3269,
+          "text": "class npc_icc_skybreaker_marksman : public CreatureScript"
+        },
+        {
+          "line": 3323,
+          "text": "class npc_icc_skybreaker_vicar : public CreatureScript"
+        },
+        {
+          "line": 3384,
+          "text": "class npc_icc_skybreaker_luminary : public CreatureScript"
+        },
+        {
+          "line": 3451,
+          "text": "class npc_icc_valkyr_herald : public CreatureScript"
+        },
+        {
+          "line": 3563,
+          "text": "class SeveredEssenceSpellInfo"
+        },
+        {
+          "line": 3602,
+          "text": "class npc_icc_severed_essence : public CreatureScript"
+        },
+        {
+          "line": 3698,
+          "text": "struct npc_icc_spire_frostwyrm : public ScriptedAI"
+        },
+        {
+          "line": 3809,
+          "text": "class npc_icc_vengeful_fleshreaper : public CreatureScript"
+        },
+        {
+          "line": 3945,
+          "text": "class npc_icc_buff_switcher : public CreatureScript"
+        },
+        {
+          "line": 3973,
+          "text": "class npc_icc_nerubar_broodkeeper : public CreatureScript"
+        },
+        {
+          "line": 4091,
+          "text": "class npc_icc_gauntlet_controller : public CreatureScript"
+        },
+        {
+          "line": 4267,
+          "text": "class npc_icc_putricades_trap : public CreatureScript"
+        },
+        {
+          "line": 4367,
+          "text": "class at_icc_gauntlet_event : public AreaTriggerScript"
+        },
+        {
+          "line": 4382,
+          "text": "class at_icc_putricide_trap : public AreaTriggerScript"
+        },
+        {
+          "line": 4397,
+          "text": "class at_icc_spire_frostwyrm : public OnlyOnceAreaTriggerScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 106,
+          "text": "SPELL_DEATH_PLAGUE              = 72879,"
+        },
+        {
+          "line": 107,
+          "text": "SPELL_DEATH_PLAGUE_AURA         = 72865,"
+        },
+        {
+          "line": 108,
+          "text": "SPELL_RECENTLY_INFECTED         = 72884,"
+        },
+        {
+          "line": 109,
+          "text": "SPELL_DEATH_PLAGUE_KILL         = 72867,"
+        },
+        {
+          "line": 110,
+          "text": "SPELL_STOMP                     = 64652,"
+        },
+        {
+          "line": 111,
+          "text": "SPELL_ARCTIC_BREATH             = 72848,"
+        },
+        {
+          "line": 114,
+          "text": "SPELL_COLDFLAME_JETS            = 70460,"
+        },
+        {
+          "line": 117,
+          "text": "SPELL_HARVEST_BLIGHT_SPECIMEN   = 72155,"
+        },
+        {
+          "line": 118,
+          "text": "SPELL_HARVEST_BLIGHT_SPECIMEN25 = 72162,"
+        },
+        {
+          "line": 121,
+          "text": "SPELL_ICEBOUND_ARMOR            = 70714,"
+        },
+        {
+          "line": 122,
+          "text": "SPELL_SCOURGE_STRIKE            = 71488,"
+        },
+        {
+          "line": 123,
+          "text": "SPELL_DEATH_STRIKE              = 71489,"
+        },
+        {
+          "line": 126,
+          "text": "SPELL_CARESS_OF_DEATH           = 70078,"
+        },
+        {
+          "line": 127,
+          "text": "SPELL_IMPALING_SPEAR_KILL       = 70196,"
+        },
+        {
+          "line": 128,
+          "text": "SPELL_REVIVE_CHAMPION           = 70053,"
+        },
+        {
+          "line": 129,
+          "text": "SPELL_UNDEATH                   = 70089,"
+        },
+        {
+          "line": 130,
+          "text": "SPELL_IMPALING_SPEAR            = 71443,"
+        },
+        {
+          "line": 131,
+          "text": "SPELL_AETHER_SHIELD             = 71463,"
+        },
+        {
+          "line": 132,
+          "text": "SPELL_HURL_SPEAR                = 71466,"
+        },
+        {
+          "line": 135,
+          "text": "SPELL_DOMINATE_MIND             = 14515,"
+        },
+        {
+          "line": 136,
+          "text": "SPELL_FLASH_HEAL_NORMAL         = 71595,"
+        },
+        {
+          "line": 137,
+          "text": "SPELL_POWER_WORD_SHIELD_NORMAL  = 71548,"
+        },
+        {
+          "line": 138,
+          "text": "SPELL_SMITE_NORMAL              = 71546,"
+        },
+        {
+          "line": 139,
+          "text": "SPELL_FLASH_HEAL_UNDEAD         = 71782,"
+        },
+        {
+          "line": 140,
+          "text": "SPELL_POWER_WORD_SHIELD_UNDEAD  = 71780,"
+        },
+        {
+          "line": 141,
+          "text": "SPELL_SMITE_UNDEAD              = 71778,"
+        },
+        {
+          "line": 144,
+          "text": "SPELL_CRUSADER_STRIKE           = 71549,"
+        },
+        {
+          "line": 145,
+          "text": "SPELL_DIVINE_SHIELD             = 71550,"
+        },
+        {
+          "line": 146,
+          "text": "SPELL_JUDGEMENT_OF_COMMAND      = 71551,"
+        },
+        {
+          "line": 147,
+          "text": "SPELL_HAMMER_OF_BETRAYAL        = 71784,"
+        },
+        {
+          "line": 150,
+          "text": "SPELL_CHARGE                    = 71553,"
+        },
+        {
+          "line": 151,
+          "text": "SPELL_MORTAL_STRIKE             = 71552,"
+        },
+        {
+          "line": 152,
+          "text": "SPELL_SUNDER_ARMOR              = 71554,"
+        },
+        {
+          "line": 153,
+          "text": "SPELL_CONFLAGRATION             = 71785,"
+        },
+        {
+          "line": 156,
+          "text": "SPELL_FEL_IRON_BOMB_NORMAL      = 71592,"
+        },
+        {
+          "line": 157,
+          "text": "SPELL_MACHINE_GUN_NORMAL        = 71594,"
+        },
+        {
+          "line": 158,
+          "text": "SPELL_ROCKET_LAUNCH_NORMAL      = 71590,"
+        },
+        {
+          "line": 159,
+          "text": "SPELL_FEL_IRON_BOMB_UNDEAD      = 71787,"
+        },
+        {
+          "line": 160,
+          "text": "SPELL_MACHINE_GUN_UNDEAD        = 71788,"
+        },
+        {
+          "line": 161,
+          "text": "SPELL_ROCKET_LAUNCH_UNDEAD      = 71786,"
+        },
+        {
+          "line": 164,
+          "text": "SPELL_SOUL_MISSILE              = 72585,"
+        },
+        {
+          "line": 167,
+          "text": "SPELL_EMPOWERED_BLOOD_2         = 70232,"
+        },
+        {
+          "line": 168,
+          "text": "SPELL_EMPOWERED_BLOOD_3         = 70304,"
+        },
+        {
+          "line": 169,
+          "text": "SPELL_EMPOWERED_BLOOD_4         = 70320,"
+        },
+        {
+          "line": 170,
+          "text": "SPELL_ORB_CONTROLLER_ACTIVE     = 70293,"
+        },
+        {
+          "line": 173,
+          "text": "SPELL_BLOOD_ORB_VISUAL          = 72099,"
+        },
+        {
+          "line": 174,
+          "text": "SPELL_SIPHON_ESSENCE            = 70299,"
+        },
+        {
+          "line": 177,
+          "text": "SPELL_VAMPIRIC_AURA             = 71736,"
+        },
+        {
+          "line": 178,
+          "text": "SPELL_BLOOD_MIRROR              = 70450,"
+        },
+        {
+          "line": 179,
+          "text": "SPELL_BLOOD_MIRROR_2            = 70451,"
+        },
+        {
+          "line": 180,
+          "text": "SPELL_BLOOD_MIRROR_DAMAGE_SHARE = 70445,"
+        },
+        {
+          "line": 181,
+          "text": "SPELL_UNHOLY_STRIKE             = 70437,"
+        },
+        {
+          "line": 184,
+          "text": "SPELL_SHADOW_BOLT               = 72960,"
+        },
+        {
+          "line": 185,
+          "text": "SPELL_CHAINS_OF_SHADOW          = 70645,"
+        },
+        {
+          "line": 188,
+          "text": "SPELL_FIREBALL                  = 70409,"
+        },
+        {
+          "line": 189,
+          "text": "SPELL_AMPLIFY_MAGIC             = 70408,"
+        },
+        {
+          "line": 190,
+          "text": "SPELL_BLAST_WAVE                = 70407,"
+        },
+        {
+          "line": 191,
+          "text": "SPELL_POLYMORPH_ALLY            = 72106,"
+        },
+        {
+          "line": 192,
+          "text": "SPELL_POLYMORPH                 = 70410,"
+        },
+        {
+          "line": 195,
+          "text": "SPELL_LICH_SLAP                 = 72057,"
+        },
+        {
+          "line": 196,
+          "text": "SPELL_SHROUD_OF_SPELL_WARDING   = 72066,"
+        },
+        {
+          "line": 199,
+          "text": "SPELL_DISEASE_CLOUD             = 41290,"
+        },
+        {
+          "line": 200,
+          "text": "SPELL_LEECHING_ROOT             = 70671,"
+        },
+        {
+          "line": 203,
+          "text": "SPELL_SHADOWSTEP                = 70431,"
+        },
+        {
+          "line": 204,
+          "text": "SPELL_BLOOD_SAP                 = 70432"
+        },
+        {
+          "line": 1683,
+          "text": "SPELL_SPIRIT_STREAM                 = 69929,"
+        },
+        {
+          "line": 3691,
+          "text": "SPELL_BLIZZARD    = 70362,"
+        },
+        {
+          "line": 3692,
+          "text": "SPELL_CLEAVE      = 70361,"
+        },
+        {
+          "line": 3693,
+          "text": "SPELL_FROSTBREATH = 70116,"
+        }
+      ]
+    },
+    {
+      "file": "icecrown_citadel_teleport.cpp",
+      "sha256": "7feb943838abe9265d33fe300182176899c5e13839b5e28f3a51e4b10ba7db77",
+      "lines": 137,
+      "events": [],
+      "branches": [],
+      "scripts": [
+        {
+          "line": 39,
+          "text": "class icecrown_citadel_teleport : public GameObjectScript"
+        },
+        {
+          "line": 108,
+          "text": "class at_frozen_throne_teleport : public AreaTriggerScript"
+        }
+      ],
+      "spells": []
+    },
+    {
+      "file": "instance_icecrown_citadel.cpp",
+      "sha256": "51421dfc727d8b88f5d01f508e2100d4f33a8dc19ae749438363e159af589da8",
+      "lines": 2467,
+      "events": [],
+      "branches": [
+        {
+          "line": 326,
+          "text": "packet.Worldstates.emplace_back(WORLD_STATE_ICECROWN_CITADEL_SHOW_ATTEMPTS, 1); // instance->IsHeroic() ? 1 : 0"
+        },
+        {
+          "line": 823,
+          "text": "if (instance->Is25ManRaid())"
+        },
+        {
+          "line": 1041,
+          "text": "return (instance->IsHeroic() ? 1 : 0);"
+        },
+        {
+          "line": 1260,
+          "text": "if (state == DONE && !instance->IsHeroic() && LichKingHeroicAvailable)"
+        },
+        {
+          "line": 1272,
+          "text": "if (state == DONE && !instance->IsHeroic() && LichKingHeroicAvailable)"
+        },
+        {
+          "line": 1291,
+          "text": "if (state == DONE && !instance->IsHeroic() && LichKingHeroicAvailable)"
+        }
+      ],
+      "scripts": [
+        {
+          "line": 162,
+          "text": "struct WeeklyQuest"
+        },
+        {
+          "line": 249,
+          "text": "class RespawnEvent : public BasicEvent"
+        },
+        {
+          "line": 265,
+          "text": "class DelayedCastMincharEvent : public BasicEvent"
+        },
+        {
+          "line": 282,
+          "text": "class instance_icecrown_citadel : public InstanceMapScript"
+        }
+      ],
+      "spells": [
+        {
+          "line": 83,
+          "text": "SPELL_GAS_VARIABLE      = 74119,"
+        },
+        {
+          "line": 84,
+          "text": "SPELL_OOZE_VARIABLE     = 74118,"
+        },
+        {
+          "line": 90,
+          "text": "SPELL_SIMPLE_TELEPORT   = 12980     // the camp crew stepping off the teleporter pads"
+        }
+      ]
+    }
+  ]
+}

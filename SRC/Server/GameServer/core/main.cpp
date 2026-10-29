@@ -12,6 +12,7 @@
 #include "../mission_pass/MissionPassSystem.hpp"
 #include "../story/SpyQuestSystem.hpp"
 #include "../story/CaravanQuestSystem.hpp"
+#include "../raid/EclipseRaidSystem.hpp"
 #include "../ecs/systems/VisibilitySystem.hpp"
 #include <Core/Logging.hpp>
 #include <Core/tls.h>
@@ -241,6 +242,7 @@ void heartbeat(LPHEART ht, int pulse)
 {
     if(!g_bShutdown)SpyQuest::Tick();
     if(!g_bShutdown)CaravanQuest::Tick();
+    if(!g_bShutdown)EclipseRaid::Tick();
     if (!(pulse % ht->passes_per_sec) && !g_bShutdown) {
         WoodcuttingSystem::Tick(get_dword_time());
         HerbalismSystem::Tick(get_dword_time());

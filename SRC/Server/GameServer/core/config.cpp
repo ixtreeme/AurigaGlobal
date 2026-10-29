@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "MapRoutingRules.hpp"
 #include <Core/peer_auth.h>
 #include <string_view>
 #ifndef _WIN32
@@ -179,17 +180,8 @@ static void map_allow_add(int32_t index)
 
 void map_allow_copy(int32_t* pl, int size)
 {
-	int iCount = 0;
-	std::set<int>::iterator it = s_set_map_allows.begin();
-
-	while (it != s_set_map_allows.end())
-	{
-		int i = *(it++);
-		*(pl++) = i;
-
-		if (++iCount > size)
-			break;
-	}
+	const auto copied=auriga::CopyMapAllow(pl,size,s_set_map_allows);
+	if(copied!=s_set_map_allows.size())LOG_ERROR("MAP_ALLOW_OVERFLOW configured={} capacity={}",s_set_map_allows.size(),size);
 }
 
 #define ENABLE_AUTODETECT_INTERNAL_IP

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "template_index": 430,
+  "minimum_members": 1,
+  "maximum_instances": 16,
+  "duration_seconds": 5400,
+  "reward_yang": 0,
+  "note": "First-room GM-led playtest only. Other encounters and completion rewards are unavailable. Full ICC parity and multiplayer acceptance remain in progress.",
+  "difficulty_modes": [
+    "10_normal",
+    "25_normal",
+    "10_heroic",
+    "25_heroic"
+  ],
+  "gm_only": true,
+  "available_encounters": [
+    1
+  ]
+}

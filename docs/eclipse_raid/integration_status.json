@@ -1,0 +1,184 @@
+{
+  "main_client_map": {
+    "pass": true,
+    "mapIndex": 430,
+    "walkableMetres": 142318,
+    "bossActors": 14,
+    "testWarriorIncluded": false
+  },
+  "navigation": {
+    "pass": true,
+    "reachable_points": [
+      {
+        "x": 512,
+        "y": 210,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 512,
+        "y": 315,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 512,
+        "y": 430,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 512,
+        "y": 550,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 512,
+        "y": 665,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 287,
+        "y": 705,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 287,
+        "y": 855,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 122,
+        "y": 780,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 737,
+        "y": 745,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 902,
+        "y": 875,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 407,
+        "y": 930,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 612,
+        "y": 985,
+        "reachable": true,
+        "blocked": false
+      },
+      {
+        "x": 512,
+        "y": 1110,
+        "reachable": true,
+        "blocked": false
+      }
+    ],
+    "connected_cells": 140949,
+    "walkable_cells": 142318
+  },
+  "wow_source_cpp_lines": 26207,
+  "server_gameplay_ready": false,
+  "freebsd_full_build": true,
+  "freebsd_restart": true,
+  "freebsd_syntax_check": "EclipseRaidSystem.cpp passed in isolated /tmp using current server compile flags",
+  "domain_tests": [
+    "EclipseRaidRulesTests",
+    "ICCMarrowgarTests",
+    "ICCFestergutTests"
+  ],
+  "source_difficulty_selection": {
+    "modes": [
+      "10_normal",
+      "25_normal",
+      "10_heroic",
+      "25_heroic"
+    ],
+    "immutable_per_run": true,
+    "member_caps": [
+      10,
+      25,
+      10,
+      25
+    ],
+    "default": "10_normal",
+    "encounters_source_complete": false
+  },
+  "source_spell_catalog": {
+    "records": 1555,
+    "missing_records": 2,
+    "difficulty_fallback": "AzerothCore SpellMgr::GetSpellIdForDifficulty / GetSpellForDifficultyFromSpell",
+    "effect_handlers_complete": false,
+    "original_missing_eight_resolved_from_server_sql": true
+  },
+  "freebsd_domain_tests": [
+    "EclipseRaidRulesTests",
+    "ICCAuraLedgerTests",
+    "ICCCreatureCatalogTests",
+    "ICCSpellCatalogTests",
+    "ICCMarrowgarTests",
+    "ICCMarrowgarSpellsTests",
+    "ICCMarrowgarRuntimeTests",
+    "ICCFestergutTests",
+    "ICCFestergutRuntimeTests",
+    "ICCRotfaceTests",
+    "ICCRotfaceRuntimeTests"
+  ],
+  "freebsd_hook_syntax": {
+    "translation_units": 12,
+    "failures": 0,
+    "full_server_build": true,
+    "log": "D:/AurigaRaidWorkshop/Reports/ICCFreeBSDHooks.log"
+  },
+  "client_compile": {
+    "exit_code": 0,
+    "log": "Library/EclipseFirstRoomGraphics.log",
+    "playmode_test": false,
+    "spawn_and_graphics_proof": "Library/EclipseFirstRoomClientProof.json"
+  },
+  "live_enabled": true,
+  "server_restarted": true,
+  "first_room_playtest": {
+    "deployed": true,
+    "gm_only": true,
+    "available_encounters": [
+      1
+    ],
+    "map_index": 430,
+    "host": "ch1-core1",
+    "full_freebsd_build": true,
+    "raid_tests_passed": 11,
+    "client_spawn_render_proof": true,
+    "installed_binary_sha256": "67a14fbafd380ca652adfa6f0d99af23032dc05614182037d7610c023d850bd2",
+    "live_player_acceptance": "pending",
+    "full_raid_ready": false
+  },
+  "live_access_scope": "GM-led encounter 1 playtest only; public full-raid release remains disabled",
+  "routing_fix": {
+    "capacity": 64,
+    "dungeon_core": "ch1-core1",
+    "configured_maps_on_host": 33,
+    "all_four_binaries_verified": true,
+    "routes_confirmed_on": [
+      "ch1-core1",
+      "ch1-core2",
+      "ch99-core99"
+    ],
+    "configuration_routing_raid_tests_passed": 13,
+    "log": "Library/EclipseRoutingFinalVerify.log"
+  }
+}
