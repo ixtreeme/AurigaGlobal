@@ -26,6 +26,7 @@ import ssh_connection as ssh
 from crash_page import CrashPage
 from backup_page import BackupPage
 from item_page import ItemPage
+from bench_page import BenchPage
 
 PATH_ROLE = int(Qt.ItemDataRole.UserRole)
 VALUE_ROLE = PATH_ROLE + 1
@@ -851,7 +852,7 @@ class MainWindow(QMainWindow):
         self.main_splitter = main
         body = QSplitter()
         self.navigation = QListWidget()
-        self.navigation.addItems(['Áttekintés', 'Beállítások', 'Játékadatok', 'Questek és Lua', 'Naplók', 'Kapcsolatok és eszközök', 'Összeomlások', 'Mentések', 'Tárgyak'])
+        self.navigation.addItems(['Áttekintés', 'Beállítások', 'Játékadatok', 'Questek és Lua', 'Naplók', 'Kapcsolatok és eszközök', 'Összeomlások', 'Mentések', 'Tárgyak', 'Tárgyteszt'])
         self.navigation.setFixedWidth(176)
         self.pages = QStackedWidget()
         self.overview = self.dashboard()
@@ -862,9 +863,10 @@ class MainWindow(QMainWindow):
         self.crash_page = CrashPage(self)
         self.backup_page = BackupPage(self)
         self.item_page = ItemPage(self)
+        self.bench_page = BenchPage(self)
         self.profiles_changed()
         self.target_choice.currentIndexChanged.connect(self.target_selected)
-        for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page, self.crash_page, self.backup_page, self.item_page):
+        for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page, self.crash_page, self.backup_page, self.item_page, self.bench_page):
             self.pages.addWidget(page)
         body.addWidget(self.navigation)
         body.addWidget(self.pages)
@@ -1001,6 +1003,7 @@ class MainWindow(QMainWindow):
             bool(hasattr(self, 'crash_page') and self.crash_page.active()) or \
             bool(hasattr(self, 'backup_page') and self.backup_page.active()) or \
             bool(hasattr(self, 'item_page') and self.item_page.active()) or \
+            bool(hasattr(self, 'bench_page') and self.bench_page.active()) or \
             bool(self.remote_client and self.remote_client.busy()) or \
             bool(hasattr(self, 'remote_page') and (self.remote_page.work.active() or
                  (self.remote_page.probe_process and getattr(self.remote_page, 'probe_action', '') in ('reload-quests', 'apply-quests'))))
@@ -1072,7 +1075,7 @@ class MainWindow(QMainWindow):
 
     def may_switch_target(self):
         local_busy = self.process is not None and self.process.state() != QProcess.ProcessState.NotRunning
-        if local_busy or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active() or self.backup_page.active() or self.item_page.active():
+        if local_busy or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active() or self.backup_page.active() or self.item_page.active() or self.bench_page.active():
             self.error('Célgépváltás előtt várd meg a folyamatban lévő művelet végét.')
             return False
         return all(editor.may_discard() for editor in self.editors) and self.remote_page.may_discard() and self.item_page.may_discard()
@@ -1446,7 +1449,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, 'console'): return
         try:
             busy = self.busy()
-            switching_blocked = bool(self.process or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active() or self.backup_page.active() or self.item_page.active())
+            switching_blocked = bool(self.process or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active() or self.backup_page.active() or self.item_page.active() or self.bench_page.active())
             self.target_choice.setEnabled(not switching_blocked)
             self.choose_root_button.setEnabled(not switching_blocked)
             self.open_root_button.setEnabled(not self.is_remote() and bool(self.root))
@@ -1458,6 +1461,7 @@ class MainWindow(QMainWindow):
             self.crash_page.tick(state)
             self.backup_page.tick(state)
             self.item_page.tick(state)
+            self.bench_page.tick(state)
             busy = self.busy()
             actions = (self.prepare_button, self.check_button, self.start_button, self.stop_button, self.stop_db_button, self.setup_db_button, self.quest_reload_button, self.db_check_button,
                        self.start_cores_button, self.stop_cores_button)

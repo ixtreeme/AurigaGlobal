@@ -512,6 +512,253 @@ class LootTable(QWidget):
         return result
 
 
+FAILURE_KINDS = [('1', 'A tárgy megmarad (szintje nem változik)'), ('2', 'A tárgy megsemmisül'), ('3', 'Visszaesik a megadott szintre')]
+MAX_GOLD = 9223372036854775807
+MAX_INGREDIENTS = 32
+
+
+def item_model(model):
+    """Combo model of every item; the 'category:local' key is the user data."""
+    items = QStandardItemModel()
+    for row in model.items():
+        key = '%s:%s' % (row['category_id'], row['local_id'])
+        entry = QStandardItem('%s  %s%s' % (key, row['content_code'], '  (kivezetve)' if row['retired'] == '1' else ''))
+        entry.setData(key, Qt.ItemDataRole.UserRole); items.appendRow(entry)
+    return items
+
+
+def item_combo(items, key):
+    combo = QComboBox(); combo.setModel(items); combo.setEditable(True); combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+    combo.completer().setFilterMode(Qt.MatchFlag.MatchContains); combo.completer().setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+    index = combo.findData(key) if key else -1
+    if key and index < 0:
+        missing = QStandardItem(key + '  (nem létező tárgy)'); missing.setData(key, Qt.ItemDataRole.UserRole); items.appendRow(missing)
+        index = combo.findData(key)
+    combo.setCurrentIndex(index)
+    return combo
+
+
+def chosen_key(combo):
+    """Key of a searchable combo; typed text that names no item is no choice."""
+    index = combo.currentIndex()
+    if index < 0 or combo.currentText() != combo.itemText(index): return None
+    return tuple(int(part) for part in combo.currentData().split(':'))
+
+
+def recipe_text(recipe):
+    if not recipe: return 'Nincs recept — megadás…'
+    parts = ['%s Yang' % format(int(recipe['gold_cost']), ',').replace(',', ' '), catalog.display(recipe['success_chance_bp'], 100) + '%']
+    count = len(recipe.get('ingredients') or [])
+    if count: parts.append('%d hozzávaló' % count)
+    if int(recipe['success_chance_bp']) < 10000:
+        parts.append({'1': 'kudarcnál marad', '2': 'kudarcnál megsemmisül', '3': 'kudarcnál +%s' % recipe.get('failure_level')}[str(recipe['failure_kind'])])
+    return ' · '.join(parts)
+
+
+def moved_recipe(recipe, level):
+    """A copy of a chain recipe for target level `level`. A fall-back level
+    keeps its distance from the source level; at +0 there is nowhere to fall."""
+    result = copy.deepcopy(recipe); result.update(recipe_id=None, code=None, target_category_id=None, target_local_id=None,
+                                                  source_level=str(level - 1), target_level=str(level))
+    if str(result['failure_kind']) == '3':
+        distance = max(int(recipe['source_level']) - int(recipe['failure_level']), 1)
+        if level - 1 - distance >= 0: result['failure_level'] = str(level - 1 - distance)
+        else: result.update(failure_kind='1', failure_level=None)
+    return result
+
+
+class RecipeDialog(QDialog):
+    """Conditions of one refinement recipe: Yang, chance, failure rule and
+    ingredients. With `source_max` it also picks the source level and a target
+    item (transformation); otherwise the source level is fixed."""
+
+    def __init__(self, parent, title, recipe, items, levels_of, source_level=None, source_max=None, self_key=None):
+        super().__init__(parent); self.setWindowTitle(title); self.resize(700, 540)
+        self.items, self.levels_of, self.self_key = items, levels_of, self_key
+        self.transform = source_max is not None; self.fixed_source = source_level
+        self.original = copy.deepcopy(recipe) if recipe else None
+        recipe = copy.deepcopy(recipe) if recipe else dict(gold_cost='0', success_chance_bp='10000', failure_kind='1', failure_level=None, ingredients=[])
+        self.result_recipe = None; self.deleted = False
+        layout = QVBoxLayout(self); form = QFormLayout()
+        if self.transform:
+            self.source = QSpinBox(); self.source.setRange(0, source_max); self.source.setPrefix('+')
+            self.source.setValue(min(int(recipe.get('source_level') or 0), source_max))
+            target = '%s:%s' % (recipe['target_category_id'], recipe['target_local_id']) if recipe.get('target_category_id') else None
+            self.target = item_combo(items, target); self.target_level = QSpinBox(); self.target_level.setPrefix('+')
+            form.addRow('Forrásszint', self.source); form.addRow('Céltárgy', self.target); form.addRow('Célszint', self.target_level)
+            self.target.currentIndexChanged.connect(self.target_changed); self.target_changed()
+            self.target_level.setValue(int(recipe.get('target_level') or 0))
+        self.gold = QLineEdit(str(recipe.get('gold_cost') or '0'))
+        self.chance = QLineEdit(catalog.display(recipe.get('success_chance_bp') or '0', 100))
+        self.failure = QComboBox()
+        for value, label in FAILURE_KINDS: self.failure.addItem(label, value)
+        self.failure.setCurrentIndex(max(0, self.failure.findData(str(recipe.get('failure_kind') or '1'))))
+        self.fall = QSpinBox(); self.fall.setPrefix('+')
+        form.addRow('Yang-díj', self.gold); form.addRow('Sikeresély (%)', self.chance)
+        form.addRow('Sikertelenség esetén', self.failure); form.addRow('Visszaesés szintje', self.fall)
+        layout.addLayout(form)
+        self.failure.currentIndexChanged.connect(self.failure_changed)
+        if self.transform: self.source.valueChanged.connect(self.failure_changed)
+        self.failure_changed()
+        if recipe.get('failure_level') is not None: self.fall.setValue(int(recipe['failure_level']))
+        layout.addWidget(QLabel('Hozzávalók:'))
+        self.table = QTableWidget(0, 3); self.table.setHorizontalHeaderLabels(['Tárgy', 'Szint', 'Darab'])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.table.setColumnWidth(1, 80); self.table.setColumnWidth(2, 110)
+        self.table.verticalHeader().hide(); self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        layout.addWidget(self.table, 1)
+        for ingredient in recipe.get('ingredients') or []: self.append(ingredient)
+        row = QHBoxLayout(); add, remove = QPushButton('Hozzávaló hozzáadása'), QPushButton('Kijelölt törlése')
+        add.clicked.connect(lambda: self.append(None)); remove.clicked.connect(self.remove)
+        row.addWidget(add); row.addWidget(remove); row.addStretch(); layout.addLayout(row)
+        hint = QLabel('A Yang-díj és a hozzávalók sikertelenség esetén is elfogynak. 100%-os esélynél a fejlesztés mindig sikerül, '
+                      '0%-nál soha. A visszaesési szint a forrásszintnél kisebb legyen.')
+        hint.setWordWrap(True); hint.setObjectName('FieldHint'); layout.addWidget(hint)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText('Alkalmaz')
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText('Mégse')
+        if self.original:
+            delete = buttons.addButton('Recept törlése', QDialogButtonBox.ButtonRole.DestructiveRole)
+            delete.clicked.connect(self.delete)
+        buttons.accepted.connect(self.accept_recipe); buttons.rejected.connect(self.reject); layout.addWidget(buttons)
+
+    def source_level(self):
+        return self.source.value() if self.transform else self.fixed_source
+
+    def target_changed(self, *_):
+        key = chosen_key(self.target)
+        top = self.levels_of(key) if key else None
+        self.target_level.setRange(0, top or 0); self.target_level.setEnabled(top is not None)
+
+    def failure_changed(self, *_):
+        source = self.source_level()
+        self.fall.setRange(0, max(source - 1, 0)); self.fall.setEnabled(self.failure.currentData() == '3' and source > 0)
+
+    def append(self, ingredient):
+        row = self.table.rowCount(); self.table.insertRow(row)
+        key = '%s:%s' % (ingredient['category_id'], ingredient['local_id']) if ingredient else None
+        combo = item_combo(self.items, key); level = QSpinBox(); level.setPrefix('+'); amount = QSpinBox(); amount.setRange(1, 2 ** 31 - 1)
+        def limit(*_):
+            chosen = chosen_key(combo); level.setRange(0, (self.levels_of(chosen) or 0) if chosen else 0)
+        limit(); combo.currentIndexChanged.connect(limit)
+        if ingredient: level.setValue(int(ingredient['refinement_level'])); amount.setValue(int(ingredient['amount']))
+        for column, widget in enumerate((combo, level, amount)): self.table.setCellWidget(row, column, widget)
+
+    def remove(self):
+        for row in sorted({index.row() for index in self.table.selectedIndexes()}, reverse=True): self.table.removeRow(row)
+
+    def delete(self):
+        self.deleted = True; self.accept()
+
+    def collect(self):
+        try: gold = int(self.gold.text().strip().replace(' ', ''))
+        except ValueError: raise api.EditorError('A Yang-díj egész szám legyen.') from None
+        if not 0 <= gold <= MAX_GOLD: raise api.EditorError('A Yang-díj kívül esik a megengedett tartományon.')
+        chance = catalog.scaled(self.chance.text(), 100)
+        if not 0 <= chance <= 10000: raise api.EditorError('A sikeresély 0 és 100% között legyen.')
+        failure = self.failure.currentData(); source = self.source_level()
+        if failure == '3' and source == 0: raise api.EditorError('A +0 szintről nincs hová visszaesni; válassz másik kudarcszabályt.')
+        recipe = dict(recipe_id=(self.original or {}).get('recipe_id'), code=(self.original or {}).get('code'),
+                      gold_cost=str(gold), success_chance_bp=str(chance), failure_kind=failure,
+                      failure_level=str(self.fall.value()) if failure == '3' else None, ingredients=[])
+        if self.transform:
+            target = chosen_key(self.target)
+            if target is None: raise api.EditorError('Válaszd ki a céltárgyat.')
+            if self.levels_of(target) is None: raise api.EditorError('A céltárgy nem létezik.')
+            if target == tuple(self.self_key or ()) and self.target_level.value() != source + 1:
+                raise api.EditorError('Ugyanazon a tárgyon csak a következő szintre lehet fejleszteni.')
+            recipe.update(source_level=str(source), target_category_id=str(target[0]), target_local_id=str(target[1]),
+                          target_level=str(self.target_level.value()))
+        seen = set()
+        if self.table.rowCount() > MAX_INGREDIENTS: raise api.EditorError('Legfeljebb %d hozzávaló adható meg.' % MAX_INGREDIENTS)
+        for row in range(self.table.rowCount()):
+            key = chosen_key(self.table.cellWidget(row, 0))
+            if key is None: raise api.EditorError('%d. hozzávaló: válassz tárgyat a listából.' % (row + 1))
+            level = self.table.cellWidget(row, 1).value()
+            if (key, level) in seen: raise api.EditorError('%d. hozzávaló: ugyanaz a tárgy és szint kétszer szerepel.' % (row + 1))
+            seen.add((key, level))
+            recipe['ingredients'].append(dict(category_id=str(key[0]), local_id=str(key[1]), refinement_level=str(level),
+                                              amount=str(self.table.cellWidget(row, 2).value())))
+        return recipe
+
+    def accept_recipe(self):
+        try: self.result_recipe = self.collect()
+        except api.EditorError as error:
+            QMessageBox.warning(self, 'Fejlesztési recept', str(error)); return
+        self.accept()
+
+
+class TransformDialog(QDialog):
+    """Recipes that turn this item into another item (or another kind of
+    same-item recipe). The list is applied to the panel on Alkalmaz."""
+
+    def __init__(self, parent, recipes, items, levels_of, source_max, self_key):
+        super().__init__(parent); self.setWindowTitle('Átalakítások'); self.resize(760, 380)
+        self.recipes = copy.deepcopy(recipes); self.items, self.levels_of, self.source_max, self.self_key = items, levels_of, source_max, self_key
+        self.result_recipes = None
+        layout = QVBoxLayout(self)
+        hint = QLabel('Átalakítás: a tárgypéldány egy megadott szintről másik tárggyá válik (pl. kard +9 → hosszú kard +0). '
+                      'A példány azonosítója, bónuszai és kövei megmaradnak.')
+        hint.setWordWrap(True); hint.setObjectName('Subtle'); layout.addWidget(hint)
+        self.table = QTableWidget(0, 4); self.table.setHorizontalHeaderLabels(['Forrásszint', 'Céltárgy', 'Célszint', 'Feltételek'])
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        self.table.verticalHeader().hide(); self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.cellDoubleClicked.connect(lambda row, _: self.edit(row))
+        layout.addWidget(self.table, 1)
+        row = QHBoxLayout(); add, edit, remove = QPushButton('Új átalakítás…'), QPushButton('Szerkesztés…'), QPushButton('Kijelölt törlése')
+        add.clicked.connect(lambda: self.edit(None)); edit.clicked.connect(self.edit_selected)
+        remove.clicked.connect(self.remove)
+        for button in (add, edit, remove): row.addWidget(button)
+        row.addStretch(); layout.addLayout(row)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText('Alkalmaz')
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText('Mégse')
+        buttons.accepted.connect(self.accept_list); buttons.rejected.connect(self.reject); layout.addWidget(buttons)
+        self.render()
+
+    def label(self, recipe):
+        if recipe.get('target_category_id') is None: return 'ugyanez a tárgy'
+        key = '%s:%s' % (recipe['target_category_id'], recipe['target_local_id'])
+        for row in range(self.items.rowCount()):
+            if self.items.item(row).data(Qt.ItemDataRole.UserRole) == key: return self.items.item(row).text()
+        return key + '  (nem létező tárgy)'
+
+    def render(self):
+        self.table.setRowCount(len(self.recipes))
+        for row, recipe in enumerate(self.recipes):
+            for column, value in enumerate(('+' + str(recipe['source_level']), self.label(recipe), '+' + str(recipe['target_level']), recipe_text(recipe))):
+                self.table.setItem(row, column, QTableWidgetItem(value))
+
+    def current(self):
+        rows = {index.row() for index in self.table.selectedIndexes()}
+        return min(rows) if rows else None
+
+    def edit_selected(self):
+        index = self.current()
+        if index is not None: self.edit(index)
+
+    def edit(self, index):
+        recipe = self.recipes[index] if index is not None else None
+        if recipe is not None and recipe.get('target_category_id') is None:
+            recipe = dict(recipe, target_category_id=str(self.self_key[0]), target_local_id=str(self.self_key[1]))
+        dialog = RecipeDialog(self, 'Átalakítás', recipe, self.items, self.levels_of, source_max=self.source_max, self_key=self.self_key)
+        if dialog.exec() != QDialog.DialogCode.Accepted: return
+        if dialog.deleted: self.recipes.pop(index)
+        elif dialog.result_recipe is not None:
+            if index is None: self.recipes.append(dialog.result_recipe)
+            else: self.recipes[index] = dialog.result_recipe
+        self.render()
+
+    def remove(self):
+        for row in sorted({index.row() for index in self.table.selectedIndexes()}, reverse=True): self.recipes.pop(row)
+        self.render()
+
+    def accept_list(self):
+        self.result_recipes = self.recipes; self.accept()
+
+
 class RefinementPanel(QWidget):
     """Kind, maximum and the full cumulative +0..+max curve of one item.
 
@@ -525,6 +772,9 @@ class RefinementPanel(QWidget):
     def __init__(self, changed):
         super().__init__(); self.changed = changed; self.category = 1; self.levels = []; self.definitions = []; self.loading = False
         self.rules = {}
+        # Chain recipe per target level (+N row: +N-1 -> +N) and every other
+        # recipe of this item (transformations); see load()/collect().
+        self.recipes = {}; self.extra = []; self.items = QStandardItemModel(); self.levels_of = lambda key: None; self.self_key = None
         layout = QVBoxLayout(self)
         top = QHBoxLayout()
         self.kind = QComboBox(); self.kind.currentIndexChanged.connect(self.kind_changed)
@@ -540,9 +790,26 @@ class RefinementPanel(QWidget):
         hint.setWordWrap(True); hint.setObjectName('FieldHint'); layout.addWidget(hint)
         self.table = QTableWidget(0, 0); self.table.verticalHeader().hide(); self.table.itemChanged.connect(self.cell_changed)
         layout.addWidget(self.table, 1)
+        self.recipe_box = QWidget(); bottom = QHBoxLayout(self.recipe_box); bottom.setContentsMargins(0, 0, 0, 0)
+        self.recipe_hint = QLabel('A „Recept” oszlop a +N szint elérésének feltétele (+N-1 → +N): Yang, esély, kudarcszabály, '
+                                  'hozzávalók. Recept nélkül a szint fejlesztéssel nem érhető el.')
+        self.recipe_hint.setWordWrap(True); self.recipe_hint.setObjectName('FieldHint')
+        self.transform_button = QPushButton('Átalakítások…'); self.transform_button.clicked.connect(self.edit_transforms)
+        bottom.addWidget(self.recipe_hint, 1); bottom.addWidget(self.transform_button)
+        layout.addWidget(self.recipe_box)
 
     def stats(self):
         return self.STAT_COLUMNS[self.category]
+
+    def with_recipes(self):
+        return self.category in catalog.RECIPE_CATEGORIES
+
+    def recipe_column(self):
+        return len(self.stats()) + 2 if self.with_recipes() else None
+
+    def set_catalog(self, model, key):
+        """Item choices and level ranges for recipes, from the loaded catalog."""
+        self.items = item_model(model); self.levels_of = model.target_levels; self.self_key = tuple(key)
 
     def set_category(self, category, definitions):
         self.category = category; self.definitions = definitions
@@ -551,11 +818,18 @@ class RefinementPanel(QWidget):
         self.kind.addItem({1: 'Fegyverfejlesztés', 2: 'Páncélfejlesztés', 3: 'Ékszerfejlesztés', 4: 'Kosztümfejlesztés', 7: 'Foglalatkő-fejlesztés', 11: 'Eszközfejlesztés', 15: 'Társhívó fejlesztése'}[category], str(catalog.REFINEMENT_KIND[category]))
         self.kind.blockSignals(False)
 
-    def load(self, refinement, levels):
+    def load(self, refinement, levels, recipes=None):
         self.loading = True
-        self.rules = {}  # step per ('stat', column) / ('bonus', id), from the fill dialog
+        self.rules = {}  # step per ('stat', column) / ('bonus', id) / ('recipe', field), from the fill dialog
         self.kind.setCurrentIndex(max(0, self.kind.findData(str(refinement['profile_kind']))))
         self.levels = [copy.deepcopy(level) for level in levels]
+        self.recipes, self.extra = {}, []
+        for recipe in copy.deepcopy(recipes or []):
+            level = int(recipe['target_level'])
+            chain = recipe.get('target_category_id') is None and level == int(recipe['source_level']) + 1
+            if chain and level not in self.recipes: self.recipes[level] = recipe
+            else: self.extra.append(recipe)
+        self.recipe_box.setVisible(self.with_recipes()); self.update_transforms()
         self.maximum.blockSignals(True); self.maximum.setValue(int(refinement['max_level'])); self.maximum.blockSignals(False)
         self.render()
         self.kind_changed()
@@ -565,16 +839,19 @@ class RefinementPanel(QWidget):
         none = self.kind.currentData() == '1'
         if none and self.maximum.value():
             self.maximum.setValue(0)
-        self.maximum.setEnabled(not none); self.step_button.setEnabled(not none)
+        self.maximum.setEnabled(not none); self.step_button.setEnabled(not none); self.transform_button.setEnabled(not none)
         if not self.loading: self.changed()
 
     def render(self):
         stats = self.stats()
         self.table.blockSignals(True)
-        self.table.clear(); self.table.setColumnCount(2 + len(stats)); self.table.setRowCount(0)
-        self.table.setHorizontalHeaderLabels(['Szint', *[label + ' (pont)' for _, label in stats], 'Szintbónuszok'])
+        self.table.clear(); self.table.setColumnCount(2 + len(stats) + (1 if self.with_recipes() else 0)); self.table.setRowCount(0)
+        self.table.setHorizontalHeaderLabels(['Szint', *[label + ' (pont)' for _, label in stats], 'Szintbónuszok',
+                                              *(['Recept (előző szintről)'] if self.with_recipes() else [])])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        if self.with_recipes():  # the recipe summary is long; never cut it
+            self.table.horizontalHeader().setSectionResizeMode(self.recipe_column(), QHeaderView.ResizeMode.ResizeToContents)
         for row, level in enumerate(self.levels):
             self.add_row(row, [catalog.display(level.get(name, '0')) for name, _ in stats])
         self.table.blockSignals(False)
@@ -591,6 +868,42 @@ class RefinementPanel(QWidget):
         action.clicked.connect(lambda _=False, index=row: self.edit_bonuses(index))
         self.table.setCellWidget(row, len(stats) + 1, action)
         self.update_button(row)
+        if self.with_recipes():
+            recipe = QPushButton(); recipe.setEnabled(row > 0)
+            recipe.clicked.connect(lambda _=False, index=row: self.edit_recipe(index))
+            self.table.setCellWidget(row, self.recipe_column(), recipe)
+            self.update_recipe(row)
+
+    def update_recipe(self, row):
+        column = self.recipe_column()
+        if column is None or self.table.cellWidget(row, column) is None: return
+        button = self.table.cellWidget(row, column); recipe = self.recipes.get(row)
+        button.setText('—' if row == 0 else recipe_text(recipe))
+        names = []
+        for ingredient in (recipe or {}).get('ingredients') or []:
+            key = '%s:%s' % (ingredient['category_id'], ingredient['local_id'])
+            label = next((self.items.item(i).text() for i in range(self.items.rowCount()) if self.items.item(i).data(Qt.ItemDataRole.UserRole) == key), key)
+            names.append('%s +%s ×%s' % (label, ingredient['refinement_level'], ingredient['amount']))
+        button.setToolTip('\n'.join([recipe_text(recipe), *names]) if row and recipe else '')
+
+    def edit_recipe(self, index):
+        dialog = RecipeDialog(self, 'Recept: +%d → +%d' % (index - 1, index), self.recipes.get(index), self.items, self.levels_of,
+                              source_level=index - 1, self_key=self.self_key)
+        if dialog.exec() != QDialog.DialogCode.Accepted: return
+        if dialog.deleted: self.recipes.pop(index, None)
+        elif dialog.result_recipe is not None:
+            self.recipes[index] = dict(dialog.result_recipe, source_level=str(index - 1), target_level=str(index),
+                                       target_category_id=None, target_local_id=None)
+        else: return
+        self.update_recipe(index); self.changed()
+
+    def update_transforms(self):
+        self.transform_button.setText('Átalakítások… (%d)' % len(self.extra) if self.extra else 'Átalakítások…')
+
+    def edit_transforms(self):
+        dialog = TransformDialog(self, self.extra, self.items, self.levels_of, self.maximum.value(), self.self_key)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_recipes is not None:
+            self.extra = dialog.result_recipes; self.update_transforms(); self.changed()
 
     def update_button(self, row):
         action = self.table.cellWidget(row, len(self.stats()) + 1)
@@ -610,6 +923,7 @@ class RefinementPanel(QWidget):
         stats = self.stats()
         self.table.blockSignals(True)
         while len(self.levels) > maximum + 1:
+            self.recipes.pop(len(self.levels) - 1, None)
             self.levels.pop(); self.table.removeRow(self.table.rowCount() - 1)
         while len(self.levels) < maximum + 1:
             # A new level continues the current top level: its typed gains and
@@ -623,6 +937,7 @@ class RefinementPanel(QWidget):
             else:
                 previous = dict(**{g: '0' for g in catalog.GAINS}, extra_bonus_profile_id=None, bonuses=[]); texts = ['0'] * len(stats)
             previous['level'] = str(len(self.levels))
+            if self.with_recipes() and len(self.levels) >= 2: self.continue_recipe(len(self.levels))
             self.levels.append(previous)
             self.add_row(len(self.levels) - 1, texts)
         self.table.blockSignals(False)
@@ -661,8 +976,21 @@ class RefinementPanel(QWidget):
         low, high = (int(d['minimum']), int(d['maximum'])) if d else (value + step, value + step)
         return min(max(value + step, low), high)
 
+    def continue_recipe(self, level):
+        """The new top level's recipe continues the one below it: same
+        ingredients and failure distance, Yang and chance advanced by step."""
+        top = self.recipes.get(level - 1)
+        if top is None: return
+        below = self.recipes.get(level - 2) if level >= 3 else None
+        recipe = moved_recipe(top, level)
+        for field, high in (('gold_cost', MAX_GOLD), ('success_chance_bp', 10000)):
+            value = int(top[field]); step = self.step_for(('recipe', field), value, int(below[field]) if below else None)
+            recipe[field] = str(min(max(value + step, 0), high))
+        self.recipes[level] = recipe
+
     @staticmethod
     def rule_key(target):
+        if target['kind'] == 'recipe': return ('recipe', target['field'])
         return ('stat', target['column']) if target['kind'] == 'stat' else ('bonus', target['id'])
 
     def edit_bonuses(self, index):
@@ -684,33 +1012,52 @@ class RefinementPanel(QWidget):
                 scale, unit = UNITS.get(int(d['unit']), (1, ''))
                 targets.append(dict(label='Szintbónusz: ' + BONUS_LABELS.get(d['code'], d['code']), kind='bonus', id=str(d['id']),
                                     scale=scale, unit=unit, range=(int(d['minimum']), int(d['maximum']))))
+        recipes = [dict(label='Recept: Yang-díj', kind='recipe', field='gold_cost', scale=1, unit='Yang', range=(0, MAX_GOLD)),
+                   dict(label='Recept: sikeresély', kind='recipe', field='success_chance_bp', scale=100, unit='%', range=(0, 10000))]
         # Bonuses first: they are what a filled curve most often needs.
-        return [t for t in targets if t['kind'] == 'bonus'] + [t for t in targets if t['kind'] == 'stat']
+        return ([t for t in targets if t['kind'] == 'bonus'] + [t for t in targets if t['kind'] == 'stat'] +
+                (recipes if self.with_recipes() else []))
 
     def snapshot(self):
         columns = range(1, len(self.stats()) + 1)
-        return dict(levels=copy.deepcopy(self.levels),
+        return dict(levels=copy.deepcopy(self.levels), recipes=copy.deepcopy(self.recipes),
                     texts=[[self.table.item(row, column).text() for column in columns] for row in range(len(self.levels))])
 
     def restore(self, state):
-        self.levels = copy.deepcopy(state['levels'])
+        self.levels = copy.deepcopy(state['levels']); self.recipes = copy.deepcopy(state['recipes'])
         self.table.blockSignals(True)
         for row, texts in enumerate(state['texts']):
             for column, text in enumerate(texts, 1): self.table.item(row, column).setText(text)
-            self.update_button(row)
+            self.update_button(row); self.update_recipe(row)
         self.table.blockSignals(False)
 
     def current_value(self, target, level, state=None):
         state = state or self.snapshot()
+        if target['kind'] == 'recipe':
+            recipe = state['recipes'].get(level)
+            return int(recipe[target['field']]) if recipe else None
         if target['kind'] == 'stat':
             try: return catalog.scaled(state['texts'][level][target['column'] - 1])
             except api.EditorError: return None
         entry = next((e for e in state['levels'][level].get('bonuses') or [] if str(e['bonus_id']) == target['id']), None)
         return int(entry['value_scaled']) if entry else None
 
+    def recipe_for(self, level):
+        """Existing chain recipe, else a copy of the nearest one (below
+        first), else a free, always successful recipe without ingredients."""
+        if level in self.recipes: return self.recipes[level]
+        near = sorted(self.recipes, key=lambda other: (other > level, abs(other - level)))
+        self.recipes[level] = (moved_recipe(self.recipes[near[0]], level) if near else
+                               dict(recipe_id=None, code=None, source_level=str(level - 1), target_level=str(level), target_category_id=None,
+                                    target_local_id=None, gold_cost='0', success_chance_bp='10000', failure_kind='1', failure_level=None, ingredients=[]))
+        return self.recipes[level]
+
     def apply_fill(self, target, values, notify=True):
         self.table.blockSignals(True)
         for level, value in values.items():
+            if target['kind'] == 'recipe':
+                self.recipe_for(level)[target['field']] = str(value); self.update_recipe(level)
+                continue
             if target['kind'] == 'stat':
                 self.table.item(level, target['column']).setText(catalog.display(value, target['scale']))
                 continue
@@ -756,6 +1103,18 @@ class RefinementPanel(QWidget):
             levels.append(level)
         document['refinement'] = dict(document.get('refinement') or {}, profile_kind=self.kind.currentData(), max_level=str(self.maximum.value()))
         document['levels'] = levels
+        recipes = []
+        if self.with_recipes() and self.kind.currentData() != '1':
+            for level in range(1, len(self.levels)):
+                if level in self.recipes:
+                    recipes.append(dict(copy.deepcopy(self.recipes[level]), source_level=str(level - 1), target_level=str(level),
+                                        target_category_id=None, target_local_id=None))
+            for recipe in self.extra:
+                if int(recipe['source_level']) > self.maximum.value():
+                    raise api.EditorError('Átalakítás a +%s szintről: a tárgy legmagasabb szintje most +%d. Módosítsd vagy töröld '
+                                          'az átalakítást.' % (recipe['source_level'], self.maximum.value()))
+                recipes.append(copy.deepcopy(recipe))
+        document['recipes'] = recipes
 
 
 class ItemPage(QWidget):
@@ -1421,7 +1780,8 @@ class ItemPage(QWidget):
         if refinable:
             self.refinement.setEnabled(True);self.bonuses.setEnabled(True)
             self.refinement.set_category(category, self.packet['bonuses'] if self.packet else [])
-            self.refinement.load(document['refinement'], document['levels'])
+            if self.packet: self.refinement.set_catalog(catalog.Catalog(self.packet), (category, int(base['local_id'])))
+            self.refinement.load(document['refinement'], document['levels'], document.get('recipes'))
             self.bonuses.load(document.get('bonuses'))
         if category==7:self.stone_controls()
         if category==15:self.companion_controls()
@@ -1521,6 +1881,7 @@ class ItemPage(QWidget):
                 document['child'].update(allowed_targets='0',minimum_socket_grade='0',primary_group='',secondary_group='')
                 document['bonuses']=[];document['refinement']=dict(profile_kind='1',max_level='0')
                 document['levels']=[dict(level='0',**{field:'0' for field in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[])]
+                document['recipes']=[]
         if category!=15:self.pet_food_panel.collect(document)
         else:document['pet_food_rules']=[]
         return document

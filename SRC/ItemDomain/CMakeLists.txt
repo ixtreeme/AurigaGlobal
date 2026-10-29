@@ -170,7 +170,7 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set_tests_properties(catalog_sql_completion PROPERTIES LABELS server TIMEOUT 60)
     # Editor model, native validation and (when PySide6 is present) the Qt form.
     add_test(NAME catalog_editor COMMAND "${Python3_EXECUTABLE}" -B "${_item_repository}/tests/server/CatalogEditorTests.py"
-        --tool "$<TARGET_FILE:CatalogEditorTool>" OfflineModelTests EditorPageTests RefinementPanelTests)
+        --tool "$<TARGET_FILE:CatalogEditorTool>" OfflineModelTests RecipeModelTests EditorPageTests RefinementPanelTests RecipePanelTests BenchPageTests)
     set_tests_properties(catalog_editor PROPERTIES LABELS server TIMEOUT 120)
 endif()
 
@@ -215,6 +215,15 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:ItemPersistenceSqlTests>" VERBATIM)
     endif()
+    # Local test bench for the ServerManager: real planners + persistence writer.
+    add_executable(ItemBenchTool EXCLUDE_FROM_ALL ItemBenchTool.cpp)
+    target_link_libraries(ItemBenchTool PRIVATE AurigaItemPersistenceSql AurigaItemCatalogSql)
+    if(MSVC)
+        target_compile_options(ItemBenchTool PRIVATE /utf-8)
+    endif()
+    if(WIN32)
+        target_link_libraries(ItemBenchTool PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+    endif()
     add_test(NAME item_persistence_completion COMMAND ItemPersistenceSqlTests --completion-only)
     set_tests_properties(item_persistence_completion PROPERTIES LABELS server TIMEOUT 60)
     if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
@@ -224,5 +233,14 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
                 --test-executable "$<TARGET_FILE:ItemPersistenceSqlTests>"
                 --work-dir "${CMAKE_CURRENT_BINARY_DIR}/item-persistence-sql-isolated")
         set_tests_properties(item_persistence_mariadb PROPERTIES LABELS "server;integration" TIMEOUT 180)
+        if(TARGET CatalogEditorTool)
+            add_test(NAME item_bench_mariadb
+                COMMAND "${Python3_EXECUTABLE}" -B "${_item_repository}/tests/server/ItemBenchToolTests.py"
+                    --mariadb-bin "${AURIGA_TEST_MARIADB_BIN_DIR}"
+                    --bench-tool "$<TARGET_FILE:ItemBenchTool>"
+                    --catalog-tool "$<TARGET_FILE:CatalogEditorTool>"
+                    --work-dir "${CMAKE_CURRENT_BINARY_DIR}/item-bench-sql-isolated")
+            set_tests_properties(item_bench_mariadb PROPERTIES LABELS "server;integration" TIMEOUT 180)
+        endif()
     endif()
 endif()

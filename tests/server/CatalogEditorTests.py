@@ -70,6 +70,20 @@ def egg(document, target):
     document['loot']=None
 
 
+def curve(document, maximum):
+    document['refinement']['max_level'] = str(maximum)
+    document['levels'] = [dict(level=str(i), physical_attack_gain_raw=str(i * 1000), magical_attack_gain_raw='0',
+                               physical_defense_gain_raw='0', magical_defense_gain_raw='0', extra_bonus_profile_id=None, bonuses=[])
+                          for i in range(maximum + 1)]
+
+
+def chain_recipe(level, gold, chance='10000', failure='1', fall=None, ingredients=()):
+    return dict(recipe_id=None, code=None, source_level=str(level - 1), target_level=str(level), target_category_id=None,
+                target_local_id=None, gold_cost=str(gold), success_chance_bp=str(chance), failure_kind=failure,
+                failure_level=fall, ingredients=[dict(category_id=str(k[0]), local_id=str(k[1]), refinement_level='0', amount=str(n))
+                                                 for k, n in ingredients])
+
+
 def food_rule(service='1'):
     return dict(service_kind=service,food_kind='1' if service=='1' else '2',consumption_kind='1',units='1',
                 lifetime_fraction_bp='300' if service=='1' else '0',dead_recovery_bp='5000' if service=='2' else '0',experience_price_divisor='0')
@@ -752,6 +766,74 @@ class OfflineModelTests(unittest.TestCase):
 
 
 
+
+
+class RecipeModelTests(unittest.TestCase):
+    """Refinement recipes travel with their source item's document."""
+
+    def check(self, packet):
+        return catalog.run_tool(dict(action='validate', tables=packet['tables']), packet['columns'], TOOL)['hash']
+
+    def test_recipes_round_trip_keep_identity_copy_and_retire(self):
+        packet, material = create(catalog.blank(TOOL), 6)
+        packet, longsword = create(packet, 1, lambda d: curve(d, 2))
+        def sword(d):
+            curve(d, 3)
+            d['recipes'] = [chain_recipe(1, 100, ingredients=[(material, 2)]),
+                            chain_recipe(2, 250, '5000', '3', '0', [(material, 3)]),
+                            chain_recipe(3, 400, '2500', '2'),
+                            dict(chain_recipe(3, 900), source_level='3', target_category_id=str(longsword[0]),
+                                 target_local_id=str(longsword[1]), target_level='0')]
+        packet, key = create(packet, 1, sword); self.check(packet)
+        document = catalog.Catalog(packet).item(key)
+        recipes = document['recipes']
+        self.assertEqual([(r['source_level'], r['target_level'], r['target_category_id']) for r in recipes],
+                         [('0', '1', None), ('1', '2', None), ('2', '3', None), ('3', '0', '1')])
+        self.assertEqual(recipes[1]['failure_level'], '0'); self.assertIsNone(recipes[2]['failure_level'])
+        self.assertEqual(recipes[0]['ingredients'], [dict(category_id='6', local_id=str(material[1]), refinement_level='0', amount='2')])
+        stored = rows(packet, 'refinement_recipe')
+        self.assertEqual({(r['source_local_id'], r['target_local_id']) for r in stored},
+                         {(str(key[1]), str(key[1])), (str(key[1]), str(longsword[1]))})
+        # Unchanged save keeps IDs and codes; a dropped recipe takes its ingredients.
+        identities = [(r['recipe_id'], r['code']) for r in recipes]
+        packet = saved(packet, catalog.Catalog(packet).apply(document, key)); self.check(packet)
+        self.assertEqual([(r['recipe_id'], r['code']) for r in catalog.Catalog(packet).item(key)['recipes']], identities)
+        changed = catalog.Catalog(packet).item(key); changed['recipes'] = changed['recipes'][1:]
+        packet = saved(packet, catalog.Catalog(packet).apply(changed, key)); self.check(packet)
+        self.assertEqual(len(rows(packet, 'refinement_ingredient')), 1)
+        self.assertEqual([r['recipe_id'] for r in catalog.Catalog(packet).item(key)['recipes']], [i for i, _ in identities[1:]])
+        # A copy gets its own chain: new IDs, its own key as source and target.
+        clone = catalog.Catalog(packet).duplicate(key); other = key_of(clone)
+        packet = saved(packet, catalog.Catalog(packet).apply(clone), other); self.check(packet)
+        copied = catalog.Catalog(packet).item(other)['recipes']
+        self.assertEqual(len(copied), 3)
+        self.assertFalse({r['recipe_id'] for r in copied} & {i for i, _ in identities})
+        self.assertEqual(sum(1 for r in rows(packet, 'refinement_recipe') if r['source_local_id'] == r['target_local_id'] == str(other[1])), 2)
+        self.assertEqual(len(catalog.Catalog(packet).item(key)['recipes']), 3)
+        # A retired item offers no recipe; a document without the section keeps them.
+        partial = catalog.Catalog(packet).item(other); partial.pop('recipes')
+        packet = saved(packet, catalog.Catalog(packet).apply(partial, other)); self.check(packet)
+        self.assertEqual(len(catalog.Catalog(packet).item(other)['recipes']), 3)
+        retired = catalog.Catalog(packet).item(other); retired['base']['retired'] = '1'
+        packet = saved(packet, catalog.Catalog(packet).apply(retired, other)); self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(other)['recipes'], [])
+        self.assertEqual(len(catalog.Catalog(packet).item(key)['recipes']), 3)
+
+    def test_invalid_recipes_are_rejected_natively(self):
+        packet, material = create(catalog.blank(TOOL), 6)
+        packet, key = create(packet, 1, lambda d: curve(d, 2))
+        for recipes in ([chain_recipe(1, 100, '5000', '3', '0')],                       # +0 has nowhere to fall
+                        [dict(chain_recipe(1, 100), target_level='2')],                 # same item skips a level
+                        [chain_recipe(1, 100, '10001')],
+                        [chain_recipe(1, 100, ingredients=[(material, 0)])],
+                        [chain_recipe(1, 100, ingredients=[(material, 1), (material, 2)])]):
+            document = catalog.Catalog(packet).item(key); document['recipes'] = recipes
+            with self.assertRaises(api.EditorError): catalog.validate(packet, document, key, TOOL)
+        document = catalog.Catalog(packet).item(key); document['recipes'] = [chain_recipe(1, 100), chain_recipe(2, 200, '9000', '3', '0')]
+        catalog.validate(packet, document, key, TOOL)
+        self.assertEqual(catalog.Catalog(packet).target_levels(key), 2)
+        self.assertEqual(catalog.Catalog(packet).target_levels(material), 0)
+        self.assertIsNone(catalog.Catalog(packet).target_levels((1, 999)))
 
 
 class PageCase(unittest.TestCase):
@@ -1513,6 +1595,124 @@ class RefinementPanelTests(PageCase):
 
     def check(self, packet):
         return catalog.run_tool(dict(action='validate', tables=packet['tables']), packet['columns'], TOOL)['hash']
+
+
+class RecipePanelTests(PageCase):
+    """Recipe column, linear fill of Yang/chance, "+" continuation and the dialogs."""
+
+    def test_recipe_column_fill_plus_and_save(self):
+        from item_page import FillDialog, RecipeDialog
+        packet, keys = self.fixture()
+        self.page.loaded(packet)
+        self.page.open_item(keys[1])
+        panel = self.page.refinement
+        column = panel.recipe_column()
+        self.assertEqual(column, 4)
+        self.assertEqual(panel.table.cellWidget(1, column).text(), 'Nincs recept — megadás…')
+        dialog = RecipeDialog(panel, 'Recept', None, panel.items, panel.levels_of, source_level=0, self_key=panel.self_key)
+        dialog.gold.setText('1500'); dialog.chance.setText('90'); dialog.failure.setCurrentIndex(dialog.failure.findData('3'))
+        with self.assertRaises(api.EditorError): dialog.collect()          # +0 has nowhere to fall
+        dialog.failure.setCurrentIndex(dialog.failure.findData('1'))
+        dialog.append(dict(category_id=str(keys[6][0]), local_id=str(keys[6][1]), refinement_level='0', amount='4'))
+        dialog.append(dict(category_id=str(keys[6][0]), local_id=str(keys[6][1]), refinement_level='0', amount='1'))
+        with self.assertRaises(api.EditorError): dialog.collect()          # same ingredient twice
+        dialog.table.removeRow(1)
+        panel.recipes[1] = dict(dialog.collect(), source_level='0', target_level='1', target_category_id=None, target_local_id=None)
+        panel.update_recipe(1)
+        self.assertEqual(panel.table.cellWidget(1, column).text(), '1 500 Yang · 90% · 1 hozzávaló · kudarcnál marad')
+        targets = panel.fill_targets()
+        gold = next(t for t in targets if t['kind'] == 'recipe' and t['field'] == 'gold_cost')
+        chance = next(t for t in targets if t['kind'] == 'recipe' and t['field'] == 'success_chance_bp')
+        fill = FillDialog(panel, targets, 3, panel.current_value)
+        fill.target.setCurrentIndex(targets.index(gold)); fill.start.setValue(1)
+        self.assertEqual((fill.start.value(), fill.value.text()), (1, '1500'))
+        fill.step.setText('1000'); panel.apply_fill(*fill.values())
+        fill.target.setCurrentIndex(targets.index(chance)); fill.value.setText('90'); fill.step.setText('-10')
+        panel.apply_fill(*fill.values())
+        self.assertEqual([(panel.recipes[l]['gold_cost'], panel.recipes[l]['success_chance_bp']) for l in (1, 2, 3)],
+                         [('1500', '9000'), ('2500', '8000'), ('3500', '7000')])
+        self.assertEqual(panel.recipes[3]['ingredients'], panel.recipes[1]['ingredients'])
+        panel.maximum.stepUp()                                               # continues the top two recipes
+        self.assertEqual((panel.recipes[4]['gold_cost'], panel.recipes[4]['success_chance_bp']), ('4500', '6000'))
+        panel.recipes[4].update(failure_kind='3', failure_level='2')
+        panel.maximum.stepUp()                                               # fall distance stays one level
+        self.assertEqual((panel.recipes[5]['failure_kind'], panel.recipes[5]['failure_level']), ('3', '3'))
+        panel.maximum.stepDown()
+        self.assertNotIn(5, panel.recipes)
+        document = self.page.collect()
+        self.assertEqual([(r['source_level'], r['target_level']) for r in document['recipes']], [('0', '1'), ('1', '2'), ('2', '3'), ('3', '4')])
+        catalog.validate(packet, document, keys[1], TOOL)
+        saved_packet = saved(packet, catalog.Catalog(packet).apply(document, keys[1]))
+        reopened = catalog.Catalog(saved_packet).item(keys[1])['recipes']
+        self.assertEqual([r['gold_cost'] for r in reopened], ['1500', '2500', '3500', '4500'])
+        self.page.loaded(saved_packet); self.page.open_item(keys[1])
+        self.assertEqual(sorted(self.page.refinement.recipes), [1, 2, 3, 4])
+        self.assertEqual(self.page.refinement.table.cellWidget(4, column).text(), '4 500 Yang · 60% · 1 hozzávaló · kudarcnál +2')
+
+    def test_transformations_and_categories_without_recipes(self):
+        from item_page import RecipeDialog
+        packet, keys = self.fixture()
+        self.page.loaded(packet)
+        self.page.open_item(keys[1])
+        panel = self.page.refinement
+        dialog = RecipeDialog(panel, 'Átalakítás', None, panel.items, panel.levels_of, source_max=3, self_key=panel.self_key)
+        self.assertEqual(dialog.target.currentIndex(), -1)
+        with self.assertRaises(api.EditorError): dialog.collect()          # no target yet
+        dialog.target.setCurrentIndex(dialog.target.findData('%d:%d' % keys[1]))
+        dialog.source.setValue(3); dialog.target_level.setValue(0)
+        with self.assertRaises(api.EditorError): dialog.collect()          # same item must go one level up
+        dialog.target.setCurrentIndex(dialog.target.findData('%d:%d' % keys[2]))
+        self.assertEqual(dialog.target_level.maximum(), 0)
+        dialog.gold.setText('70000')
+        panel.extra = [dialog.collect()]; panel.update_transforms()
+        self.assertEqual(panel.transform_button.text(), 'Átalakítások… (1)')
+        document = self.page.collect()
+        self.assertEqual(document['recipes'][-1]['target_local_id'], str(keys[2][1]))
+        catalog.validate(packet, document, keys[1], TOOL)
+        panel.maximum.setValue(2)
+        with self.assertRaises(api.EditorError): self.page.collect()       # transformation source above the new maximum
+        self.page.open_item(keys[5])
+        self.page.open_item(keys[3])
+        self.assertEqual(self.page.refinement.recipe_column(), 2)
+
+
+class BenchPageTests(PageCase):
+    """Tárgyteszt page rendering from a bench state; no database."""
+
+    def test_grid_list_controls_and_recipe_choice(self):
+        import bench_page
+        packet, keys = self.fixture()
+        document = catalog.Catalog(packet).item(keys[1]); document['base']['inventory_height'] = '2'
+        document['recipes'] = [chain_recipe(1, 2500, '7500', ingredients=[(keys[6], 2)])]
+        packet = saved(packet, catalog.Catalog(packet).apply(document, keys[1]))
+        sword = dict(id='53480245633581057', category=1, local=keys[1][1], content_code='weapon.sword_iron', level=0, count=1, revision=1,
+                     destroyed=False, cell=6, attributes=[], locked_slot=None, stones=[], bound=False)
+        ore = dict(sword, id='53480245633581058', category=6, local=keys[6][1], content_code='material.new_item_1', count=9, cell=0)
+        gone = dict(ore, id='53480245633581059', destroyed=True, cell=None, count=0)
+        state = dict(owner=990001, session=1, revision=4, wallets=[dict(currency=1, balance=1234567, revision=2)],
+                     layout=dict(columns=5, rows=9, pages=4), items=[ore, sword, gone])
+        page = bench_page.BenchPage(self.owner)
+        page.loaded((packet, dict(installed=True, owner=True, pin_matches=True), dict(state=state, catalog_followed=True)))
+        self.assertEqual(page.summary.text(), '#990001 tesztkarakter • 1 234 567 Yang • 2 tárgy')
+        self.assertIn('átvette', page.log.toPlainText())
+        self.assertEqual(page.items.rowCount(), 2)
+        self.assertEqual(page.grid.item(0, 0).text(), 'new_item_1 ×9')
+        self.assertEqual((page.grid.item(1, 1).text(), page.grid.rowSpan(1, 1)), ('sword_iron', 2))
+        self.assertEqual(page.occupied(), {0, 6, 11})
+        self.assertFalse(page.refine_button.isEnabled())
+        page.items.selectRow(1)
+        self.assertEqual(page.selected_item()['id'], sword['id'])
+        self.assertTrue(page.refine_button.isEnabled()); self.assertFalse(page.attribute_button.isEnabled())
+        page.grid.setCurrentCell(2, 3)
+        self.assertEqual(page.grid_cell(), 13); self.assertTrue(page.move_button.isEnabled())
+        page.grid.setCurrentCell(0, 0); self.assertFalse(page.move_button.isEnabled())   # occupied by the ore
+        page.grid_clicked(0, 0); self.assertEqual(page.selected_item()['id'], ore['id'])
+        recipe = next(r for r in page.cached.tables['refinement_recipe'] if r['source_local_id'] == str(keys[1][1]))
+        self.assertEqual(page.recipe_label(recipe), '→ ugyanez +1 • 2 500 Yang · 75% · 1 hozzávaló · kudarcnál marad  [material.new_item_1 ×2]')
+        page.pages_bar.setCurrentIndex(1)
+        self.assertEqual(page.grid.item(0, 0).text(), '')
+        page.catalog_list.selectRow(0); page.grant_limits()
+        self.assertEqual((page.count.maximum(), page.level.maximum()), (1, 3))
 
 
 class SqlCommitTests(unittest.TestCase):

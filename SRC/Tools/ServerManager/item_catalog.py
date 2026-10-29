@@ -31,6 +31,10 @@ REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7, 15: 9}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
 RESISTANCES = ['physical_bp','magical_bp','sword_bp','dagger_bp','bow_bp','two_handed_bp',
                'bell_bp','fan_bp','mount_spear_bp','fire_bp','electric_bp','ice_bp','wind_bp','earth_bp','dark_bp']
+RECIPE_FIELDS = ['source_level', 'target_category_id', 'target_local_id', 'target_level', 'gold_cost', 'success_chance_bp', 'failure_kind', 'failure_level']
+INGREDIENT_FIELDS = ['category_id', 'local_id', 'refinement_level', 'amount']
+# Tools, polymorph, soul and companion items have their own training paths.
+RECIPE_CATEGORIES = (1, 2, 3, 4, 7)
 GAINS = ['physical_attack_gain_raw','magical_attack_gain_raw','physical_defense_gain_raw','magical_defense_gain_raw']
 # Profile table -> (id column, referencing (table, column) pairs, child tables).
 PROFILES = {
@@ -118,6 +122,7 @@ class Catalog:
                       appearance=self.linked('item_appearance_profile', base, 'appearance_profile_id'),
                       refinement=refinement, levels=levels, bonuses=self.entries(base['base_bonus_profile_id']))
         result.update(self.attribute_document(base))
+        result['recipes'] = self.recipes_of(key)
         result['pet_food_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in sorted(self.tables['pet_feed_rule'],key=lambda r:int(r['service_kind'])) if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category==8:result['hatch']=self.linked('pet_hatch_profile',child,'hatch_profile_id')
         if category == 4:
@@ -184,6 +189,57 @@ class Catalog:
                 loot['entries'] = self.loot_entries(loot['profile_id'])
             result['loot'] = loot
         return result
+
+    def recipes_of(self, key):
+        """Refinement recipes whose source is this item. A recipe that stays on
+        the same item has target None, so a copied item keeps its own chain."""
+        source = (str(key[0]), str(key[1]))
+        result = []
+        for row in sorted((r for r in self.tables['refinement_recipe'] if (r['source_category_id'], r['source_local_id']) == source),
+                          key=lambda r: (int(r['source_level']), int(r['recipe_id']))):
+            recipe = {name: row[name] for name in ('recipe_id', 'code', *RECIPE_FIELDS)}
+            if (row['target_category_id'], row['target_local_id']) == source: recipe.update(target_category_id=None, target_local_id=None)
+            recipe['ingredients'] = [{name: r[name] for name in INGREDIENT_FIELDS} for r in sorted(
+                (r for r in self.tables['refinement_ingredient'] if r['recipe_id'] == row['recipe_id']),
+                key=lambda r: (int(r['category_id']), int(r['local_id']), int(r['refinement_level'])))]
+            result.append(recipe)
+        return result
+
+    def apply_recipes(self, document, key, exists):
+        """Replace this item's own recipes. Saved recipes keep ID and code; a
+        copied or new item always gets new IDs. A retired item offers none."""
+        source = (str(key[0]), str(key[1]))
+        old = {r['recipe_id']: r for r in self.tables['refinement_recipe'] if (r['source_category_id'], r['source_local_id']) == source}
+        recipes = [] if document['base'].get('retired') == '1' else document.get('recipes') or []
+        following = max((int(r['recipe_id']) for r in self.tables['refinement_recipe']), default=0) + 1
+        codes = {r['code'] for r in self.tables['refinement_recipe'] if r['recipe_id'] not in old}
+        heads, children = [], []
+        for recipe in recipes:
+            identity = text(recipe.get('recipe_id'))
+            if not exists or identity not in old or any(h['recipe_id'] == identity for h in heads):
+                identity = str(following); following += 1
+            code = old[identity]['code'] if identity in old else 'editor.refinement_recipe.' + identity
+            if code in codes: raise api.EditorError('A receptkód már foglalt: ' + code)
+            codes.add(code)
+            target = (recipe.get('target_category_id'), recipe.get('target_local_id'))
+            if target[0] is None: target = source
+            head = {name: text(recipe.get(name)) for name in RECIPE_FIELDS}
+            head.update(recipe_id=identity, code=code, source_category_id=source[0], source_local_id=source[1],
+                        target_category_id=str(target[0]), target_local_id=str(target[1]))
+            if head['failure_kind'] != '3': head['failure_level'] = None
+            heads.append(head)
+            children.extend(dict({name: text(i.get(name)) for name in INGREDIENT_FIELDS}, recipe_id=identity) for i in recipe.get('ingredients') or [])
+        for identity in old: self.replace('refinement_ingredient', {'recipe_id': identity}, [])
+        self.replace('refinement_recipe', {'source_category_id': source[0], 'source_local_id': source[1]}, [])
+        for head in heads: self.replace('refinement_recipe', {'recipe_id': head['recipe_id']}, [head])
+        for child in children: self.tables['refinement_ingredient'].append({name: child.get(name) for name in self.packet['columns']['refinement_ingredient']})
+
+    def target_levels(self, key):
+        """Highest refinement level of an item, or None if it does not exist."""
+        base = next((r for r in self.tables['item_base'] if (int(r['category_id']), int(r['local_id'])) == tuple(map(int, key))), None)
+        if base is None: return None
+        profile = self.row('refinement_profile', base.get('refinement_profile_id'))
+        return int(profile['max_level']) if profile else 0
 
     def book_rows(self, table, profile_id, order):
         return [dict(r) for r in sorted(self.tables[table], key=lambda r: int(r[order])) if r['profile_id'] == str(profile_id)]
@@ -508,6 +564,8 @@ class Catalog:
         self.replace(CHILD_TABLES[category], {'category_id': key[0], 'local_id': key[1]}, [child])
         self.replace('pet_feed_rule',{'category_id':key[0],'local_id':key[1]},
                      [dict(r,category_id=key[0],local_id=key[1]) for r in document.get('pet_food_rules',[])])
+        # A document without the section (older callers) leaves recipes alone.
+        if 'recipes' in document or base.get('retired') == '1': self.apply_recipes(document, key, exists)
         self.prune(before)
         return self.encode()
 
