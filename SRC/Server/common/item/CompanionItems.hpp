@@ -26,6 +26,7 @@ struct ItemCompanionRow {
     std::uint64_t durationMs=0;
     bool dungeonOnlyBonus=false;
     std::optional<std::uint32_t> growthProfile;
+    std::optional<std::uint32_t> trainingProfile;
 };
 bool ValidCompanion(const ItemCompanionRow&) noexcept;
 struct CompanionLifetime {

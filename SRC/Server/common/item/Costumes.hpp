@@ -39,12 +39,17 @@ struct CostumeClockStep
     std::uint64_t nowUtcMs = 0, elapsedMs = 0; // Server UTC and monotonic delta.
     bool wasEquipped = false, useRequested = false; // Admitted use, even if equipment later fails.
 };
+// Shared item-clock mathematics; domain-specific callers validate their own
+// content identity. No synthetic costume prototype is needed for a pet skin.
+struct CostumeClockDefinition { CostumeClock clock; std::uint64_t durationMs; };
 struct CostumeLifetimePlan
 {
     CostumeLifetimeState after;
     bool removeItem = false, unequip = false;
 };
 enum class CostumeLifetimeError { InvalidDefinition, InvalidState, TimeOverflow };
+std::expected<CostumeLifetimeState,CostumeLifetimeError> MakeItemClock(CostumeClockDefinition,std::uint64_t createdAtUtcMs);
+std::expected<CostumeLifetimePlan,CostumeLifetimeError> AdvanceItemClock(CostumeClockDefinition,const CostumeLifetimeState&,CostumeClockStep);
 // Factory only: never reconstruct a saved instance with this function, since
 // that would refill its lifetime. The offline converter preserves saved state.
 std::expected<CostumeLifetimeState,CostumeLifetimeError> MakeCostumeLifetime(

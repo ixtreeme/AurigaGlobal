@@ -11,6 +11,7 @@
 #include "CompanionItems.hpp"
 #include "GrowthPets.hpp"
 #include "PetCare.hpp"
+#include "PetLifecycle.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
 #include "TimedEffects.hpp"
@@ -164,10 +165,10 @@ struct ItemSkillBookRow
     std::uint32_t profile = 0;
 };
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 21;
+    std::uint32_t schemaVersion = 22;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -201,6 +202,9 @@ struct ItemCatalogSource
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
     std::vector<CostumeVisualRow> costumeVisuals;
+    std::vector<PetTrainingProfile> petTrainingProfiles;
+    std::vector<PetSupplyProfile> petSupplyProfiles;
+    std::vector<ItemPetSupplyRow> petSupplies;
     std::vector<PetHatchProfile> petHatchProfiles;
     std::vector<PetFeedRule> petFeedRules;
     std::vector<GrowthPetProfile> growthPetProfiles;
@@ -276,6 +280,8 @@ public:
     const PetFeedRule* FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept;
     const GrowthPetProfile* FindGrowthPetProfile(std::uint32_t id) const noexcept;
     const CompanionForm* FindCompanionForm(std::uint32_t id) const noexcept;
+    const PetTrainingProfile* FindPetTrainingProfile(std::uint32_t id) const noexcept;
+    const PetSupplyProfile* FindPetSupplyProfile(std::uint32_t id) const noexcept;
     const SoulProfile* FindSoulProfile(std::uint32_t id) const noexcept;
     const PolymorphForm* FindPolymorphForm(std::uint32_t id) const noexcept;
     const PolymorphProfile* FindPolymorphProfile(std::uint32_t id) const noexcept;

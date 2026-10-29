@@ -30,13 +30,13 @@ if(NOT TARGET OpenSSL::Crypto)
     find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 endif()
 find_package(Threads REQUIRED)
-add_library(AurigaItemCatalog STATIC EXCLUDE_FROM_ALL ItemCatalog.cpp RefinementProfiles.cpp RefinementRecipes.cpp BonusProfiles.cpp AccessorySockets.cpp Consumables.cpp AutomaticRecovery.cpp TimedEffects.cpp ToggleEffects.cpp SkillBooks.cpp QuestItems.cpp SocketStones.cpp Costumes.cpp GatheringItems.cpp PolymorphItems.cpp SoulItems.cpp CompanionItems.cpp GrowthPets.cpp PetCare.cpp Containers.cpp CurrencyTokens.cpp CatalogHash.cpp CatalogSnapshot.cpp CatalogTables.cpp)
+add_library(AurigaItemCatalog STATIC EXCLUDE_FROM_ALL ItemCatalog.cpp RefinementProfiles.cpp RefinementRecipes.cpp BonusProfiles.cpp AccessorySockets.cpp Consumables.cpp AutomaticRecovery.cpp TimedEffects.cpp ToggleEffects.cpp SkillBooks.cpp QuestItems.cpp SocketStones.cpp Costumes.cpp GatheringItems.cpp PolymorphItems.cpp SoulItems.cpp CompanionItems.cpp GrowthPets.cpp PetCare.cpp PetLifecycle.cpp PetStateCodec.cpp Containers.cpp CurrencyTokens.cpp CatalogHash.cpp CatalogSnapshot.cpp CatalogTables.cpp)
 target_include_directories(AurigaItemCatalog PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 add_dependencies(AurigaItemCatalog ItemBonusRegistryCheck)
 target_link_libraries(AurigaItemCatalog PUBLIC AurigaItemDomain PRIVATE OpenSSL::Crypto)
 target_compile_features(AurigaItemCatalog PUBLIC cxx_std_23)
 set_target_properties(AurigaItemCatalog PROPERTIES CXX_EXTENSIONS OFF FOLDER "ItemCombat")
-foreach(_catalog_test ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests AutomaticRecoveryTests TimedEffectTests ToggleEffectTests SkillBookTests RefinementRecipeTests QuestItemTests SocketStoneTests CostumeTests GatheringItemTests PolymorphItemTests SoulItemTests CompanionItemTests GrowthPetTests PetCareTests ContainerTests CurrencyTokenTests CatalogSnapshotTests)
+foreach(_catalog_test ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests AutomaticRecoveryTests TimedEffectTests ToggleEffectTests SkillBookTests RefinementRecipeTests QuestItemTests SocketStoneTests CostumeTests GatheringItemTests PolymorphItemTests SoulItemTests CompanionItemTests GrowthPetTests PetCareTests PetLifecycleTests ContainerTests CurrencyTokenTests CatalogSnapshotTests)
     add_executable(${_catalog_test} EXCLUDE_FROM_ALL "${_item_repository}/tests/server/${_catalog_test}.cpp")
     target_link_libraries(${_catalog_test} PRIVATE AurigaItemCatalog)
 endforeach()
@@ -67,12 +67,13 @@ if(TARGET auriga_sanitizers)
     target_link_libraries(CompanionItemTests PRIVATE auriga_sanitizers)
     target_link_libraries(GrowthPetTests PRIVATE auriga_sanitizers)
     target_link_libraries(PetCareTests PRIVATE auriga_sanitizers)
+    target_link_libraries(PetLifecycleTests PRIVATE auriga_sanitizers)
     target_link_libraries(ContainerTests PRIVATE auriga_sanitizers)
     target_link_libraries(CurrencyTokenTests PRIVATE auriga_sanitizers)
     target_link_libraries(CatalogSnapshotTests PRIVATE auriga_sanitizers)
 endif()
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_item_test ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests AutomaticRecoveryTests TimedEffectTests ToggleEffectTests SkillBookTests RefinementRecipeTests QuestItemTests SocketStoneTests CostumeTests GatheringItemTests PolymorphItemTests SoulItemTests CompanionItemTests GrowthPetTests PetCareTests ContainerTests CurrencyTokenTests CatalogSnapshotTests)
+    foreach(_item_test ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests AutomaticRecoveryTests TimedEffectTests ToggleEffectTests SkillBookTests RefinementRecipeTests QuestItemTests SocketStoneTests CostumeTests GatheringItemTests PolymorphItemTests SoulItemTests CompanionItemTests GrowthPetTests PetCareTests PetLifecycleTests ContainerTests CurrencyTokenTests CatalogSnapshotTests)
         add_custom_command(TARGET ${_item_test} POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${_item_test}>" VERBATIM)
@@ -97,6 +98,7 @@ add_test(NAME soul_items COMMAND SoulItemTests)
 add_test(NAME companion_items COMMAND CompanionItemTests)
 add_test(NAME growth_pet_progression COMMAND GrowthPetTests)
 add_test(NAME pet_care COMMAND PetCareTests)
+add_test(NAME pet_lifecycle COMMAND PetLifecycleTests)
 add_test(NAME polymorph_items COMMAND PolymorphItemTests)
 add_test(NAME legacy_item_migration COMMAND "${Python3_EXECUTABLE}" -B "${_item_repository}/tests/server/LegacyItemMigrationTests.py")
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -110,17 +112,17 @@ add_test(NAME catalog_sql_snapshot COMMAND CatalogSnapshotTests)
 add_test(NAME item_bonus_generator COMMAND "${Python3_EXECUTABLE}" -B
     "${_item_repository}/tests/server/ItemBonusGeneratorTests.py")
 add_test(NAME item_catalog_digest COMMAND "${Python3_EXECUTABLE}" -B
-    "${_item_repository}/tests/server/ItemCatalogDigestOracle.py" --catalog-executable "$<TARGET_FILE:ItemCatalogTests>" --refinement-executable "$<TARGET_FILE:RefinementRecipeTests>" --quest-executable "$<TARGET_FILE:QuestItemTests>" --stone-executable "$<TARGET_FILE:SocketStoneTests>" --costume-executable "$<TARGET_FILE:CostumeTests>" --gathering-executable "$<TARGET_FILE:GatheringItemTests>" --polymorph-executable "$<TARGET_FILE:PolymorphItemTests>" --soul-executable "$<TARGET_FILE:SoulItemTests>" --companion-executable "$<TARGET_FILE:CompanionItemTests>" --growth-executable "$<TARGET_FILE:GrowthPetTests>" --pet-care-executable "$<TARGET_FILE:PetCareTests>")
+    "${_item_repository}/tests/server/ItemCatalogDigestOracle.py" --catalog-executable "$<TARGET_FILE:ItemCatalogTests>" --refinement-executable "$<TARGET_FILE:RefinementRecipeTests>" --quest-executable "$<TARGET_FILE:QuestItemTests>" --stone-executable "$<TARGET_FILE:SocketStoneTests>" --costume-executable "$<TARGET_FILE:CostumeTests>" --gathering-executable "$<TARGET_FILE:GatheringItemTests>" --polymorph-executable "$<TARGET_FILE:PolymorphItemTests>" --soul-executable "$<TARGET_FILE:SoulItemTests>" --companion-executable "$<TARGET_FILE:CompanionItemTests>" --growth-executable "$<TARGET_FILE:GrowthPetTests>" --pet-care-executable "$<TARGET_FILE:PetCareTests>" --pet-lifecycle-executable "$<TARGET_FILE:PetLifecycleTests>")
 add_test(NAME item_category_generator COMMAND "${Python3_EXECUTABLE}" -B
     "${_item_repository}/tests/server/ItemCategoryGeneratorTests.py")
-set_tests_properties(item_key item_catalog refinement_profiles bonus_profiles accessory_sockets consumables automatic_recovery timed_effects toggle_effects skill_books refinement_recipes quest_items socket_stones costumes gathering_items polymorph_items soul_items companion_items growth_pet_progression pet_care legacy_item_migration containers currency_tokens catalog_sql_snapshot item_bonus_generator item_catalog_digest item_category_generator PROPERTIES LABELS server TIMEOUT 60)
+set_tests_properties(item_key item_catalog refinement_profiles bonus_profiles accessory_sockets consumables automatic_recovery timed_effects toggle_effects skill_books refinement_recipes quest_items socket_stones costumes gathering_items polymorph_items soul_items companion_items growth_pet_progression pet_care pet_lifecycle legacy_item_migration containers currency_tokens catalog_sql_snapshot item_bonus_generator item_catalog_digest item_category_generator PROPERTIES LABELS server TIMEOUT 60)
 
 # A standalone build can be nested below the main build directory. Do not
 # inherit its Directory.Build.props/targets and implicitly autolink unrelated
 # vcpkg libraries or override the selected CRT. CMake owns this module's complete
 # dependency graph; the vcpkg toolchain still performs explicit app-local copies.
 if(MSVC)
-    foreach(_item_target AurigaItemDomain AurigaItemCatalog ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests AutomaticRecoveryTests TimedEffectTests ToggleEffectTests SkillBookTests RefinementRecipeTests QuestItemTests SocketStoneTests CostumeTests GatheringItemTests PolymorphItemTests SoulItemTests CompanionItemTests GrowthPetTests PetCareTests ContainerTests CurrencyTokenTests CatalogSnapshotTests ItemCategoryRegistryCheck ItemBonusRegistryCheck)
+    foreach(_item_target AurigaItemDomain AurigaItemCatalog ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests AutomaticRecoveryTests TimedEffectTests ToggleEffectTests SkillBookTests RefinementRecipeTests QuestItemTests SocketStoneTests CostumeTests GatheringItemTests PolymorphItemTests SoulItemTests CompanionItemTests GrowthPetTests PetCareTests PetLifecycleTests ContainerTests CurrencyTokenTests CatalogSnapshotTests ItemCategoryRegistryCheck ItemBonusRegistryCheck)
         set_target_properties(${_item_target} PROPERTIES
             VS_GLOBAL_ImportDirectoryBuildProps false
             VS_GLOBAL_ImportDirectoryBuildTargets false)

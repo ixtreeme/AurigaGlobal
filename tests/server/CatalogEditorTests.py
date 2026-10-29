@@ -85,6 +85,31 @@ def growth(document, maximum=30):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_pet_lifecycle_profiles_supply_matrix_and_copy(self):
+        def training(d):growth(d);d.update(catalog.Catalog.training_defaults())
+        packet,pet=create(catalog.blank(TOOL),15,training);original=catalog.Catalog(packet).item(pet)
+        catalog.validate(packet,original,pet,TOOL)
+        keys=[]
+        for kind in range(1,9):
+            d=catalog.Catalog(packet).new(17);d['supply']['supply_kind']=str(kind)
+            d['pet_study']['skill_id']='1';d['pet_skin']['form_id']=original['child']['form_id']
+            catalog.validate(packet,d,None,TOOL);key=key_of(d);packet=saved(packet,catalog.Catalog(packet).apply(d),key);keys.append(key)
+        clone=catalog.Catalog(packet).duplicate(pet);other=key_of(clone);clone['pet_skill_ranks'][0]['value_scaled']='250'
+        clone['pet_age_tiers'][0]['max_hp_flat']='600';catalog.validate(packet,clone,None,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other)
+        self.assertEqual(catalog.Catalog(packet).item(pet),original)
+        self.assertNotEqual(catalog.Catalog(packet).item(other)['child']['training_profile_id'],original['child']['training_profile_id'])
+        source=catalog.Catalog(packet).item(keys[0]);clone=catalog.Catalog(packet).duplicate(keys[0]);other_supply=key_of(clone)
+        clone['pet_study']['known_success_bp']='8000';catalog.validate(packet,clone,None,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other_supply);self.assertEqual(catalog.Catalog(packet).item(keys[0]),source)
+        edited=catalog.Catalog(packet).item(other_supply);edited['supply']['supply_kind']='7';edited['pet_study']=dict(invalid='inactive')
+        catalog.validate(packet,edited,other_supply,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(edited,other_supply));self.assertIsNone(catalog.Catalog(packet).item(other_supply)['pet_study'])
+        for mutate in (lambda d:d['pet_slot_rules'].pop(),lambda d:d['pet_skill_ranks'].pop(0),lambda d:d['pet_age_tiers'][0].update(minimum_age_ms='1')):
+            bad=copy.deepcopy(original);mutate(bad)
+            with self.assertRaises(api.EditorError):catalog.validate(packet,bad,pet,TOOL)
+
+
     def test_pet_hatch_copy_food_contexts_and_invalid_content(self):
         packet,pet=create(catalog.blank(TOOL),15,growth)
         packet,key=create(packet,8,lambda d:egg(d,pet));original=catalog.Catalog(packet).item(key)
@@ -681,6 +706,15 @@ class OfflineModelTests(unittest.TestCase):
 
 
 class PageCase(unittest.TestCase):
+    def setUp(self):
+        self.qt_signal_errors=[];previous=sys.excepthook
+        sys.excepthook=lambda kind,error,traceback:self.qt_signal_errors.append(f'{kind.__name__}: {error}')
+        self.addCleanup(setattr,sys,'excepthook',previous)
+
+    def tearDown(self):
+        self.app.processEvents()
+        self.assertFalse(self.qt_signal_errors,'Unhandled Qt signal errors: '+repr(self.qt_signal_errors))
+
     """Offscreen Qt page with a stand-in main window; no database."""
 
     @classmethod
@@ -758,6 +792,25 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_pet_training_and_supply_forms_keep_inactive_drafts(self):
+        packet,pet=create(catalog.blank(TOOL),15,growth);self.page.loaded(packet,pet)
+        panel=self.page.companion_panel.training;self.assertFalse(panel.enabled.isChecked());panel.enabled.setChecked(True)
+        document=self.page.collect();catalog.validate(packet,document,pet,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(document,pet));self.page.loaded(packet,pet)
+        panel.ranks.item(0,2).setText('2.5');document=self.page.collect();self.assertEqual(document['pet_skill_ranks'][0]['value_scaled'],'250');catalog.validate(packet,document,pet,TOOL)
+        panel.add_skill(dict(skill_id='2',code='pet.hp_test',effect_kind='1'));panel.ranks.item(0,0).setText('2')
+        self.assertEqual(panel.ranks.item(0,3).text(),'HP');panel.ranks.item(0,2).setText('500');self.assertEqual(self.page.collect()['pet_skill_ranks'][0]['value_scaled'],'500')
+        panel.ranks.item(0,0).setText('1');self.assertEqual(panel.ranks.item(0,3).text(),'%')
+        panel.enabled.setChecked(False);panel.ranks.item(0,2).setText('invalid inactive');document=self.page.collect();self.assertIsNone(document['training']);catalog.validate(packet,document,pet,TOOL)
+        d=catalog.Catalog(packet).new(17);d['supply']['supply_kind']='1';d['pet_study']['skill_id']='1';key=key_of(d)
+        packet=saved(packet,catalog.Catalog(packet).apply(d),key);self.page.loaded(packet,key);supply=self.page.pet_supply_panel
+        supply.known.widget.setChecked(False);supply.delay.edit.setText('invalid inactive');supply.chance.edit.setText('invalid inactive')
+        document=self.page.collect();self.assertEqual(document['pet_study']['known_success_bp'],'0');catalog.validate(packet,document,key,TOOL)
+        supply.kind.widget.setCurrentIndex(supply.kind.widget.findData('8'));supply.duration.edit.setText('invalid inactive')
+        document=self.page.collect();self.assertEqual(document['pet_skin']['duration_ms'],'0');self.assertEqual(document['base']['max_stack'],'1');catalog.validate(packet,document,key,TOOL)
+        self.assertFalse(self.page.stack_field.edit.isEnabled());self.page.dirty=False
+
+
     def test_pet_hatch_and_feeding_forms_ignore_inactive_fields(self):
         packet,pet=create(catalog.blank(TOOL),15,growth);packet,key=create(packet,8,lambda d:egg(d,pet))
         self.page.loaded(packet,key);hatch=self.page.pet_hatch_panel
@@ -1387,6 +1440,29 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzzzzzzz_pet_lifecycle_profiles_supply_and_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(15);growth(d);d.update(catalog.Catalog.training_defaults());pet=key_of(d);packet=self.commit(packet,d)
+        original=catalog.Catalog(packet).item(pet)
+        clone=catalog.Catalog(packet).duplicate(pet);clone['pet_skill_ranks'][0]['value_scaled']='250';packet=self.commit(packet,clone)
+        self.assertEqual(catalog.Catalog(packet).item(pet),original)
+        supplies=[]
+        for kind in range(1,9):
+            d=catalog.Catalog(packet).new(17);d['supply']['supply_kind']=str(kind);d['pet_study']['skill_id']='1';d['pet_skin']['form_id']=original['child']['form_id']
+            supplies.append(key_of(d));packet=self.commit(packet,d)
+        for table in ('pet_skill_rank','pet_enchant_rule'):
+            self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_lifecycle BEFORE INSERT ON protos."+table+" FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test lifecycle write failure'")
+            try:
+                if table=='pet_skill_rank':
+                    fresh=catalog.Catalog(packet).duplicate(pet);fresh['pet_skill_ranks'][1]['value_scaled']='299'
+                else:
+                    fresh=catalog.Catalog(packet).new(17);fresh['supply']['supply_kind']='6';fresh['pet_enchant']['step']='7'
+                with self.assertRaises(api.EditorError):self.commit(packet,fresh)
+            finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_lifecycle')
+            after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences']);self.assertEqual(ordered(after['tables']),ordered(packet['tables']))
+        d=catalog.Catalog(packet).item(supplies[0]);d['supply']['supply_kind']='8';d['pet_skin']=dict(form_id=original['child']['form_id'],clock_kind='4',duration_ms='10000')
+        packet=self.commit(packet,d,supplies[0]);saved_document=catalog.Catalog(packet).item(supplies[0]);self.assertIsNone(saved_document['pet_study']);self.assertEqual(saved_document['pet_skin']['duration_ms'],'10000')
+
+
     def test_zzzzzzzzzz_pet_hatch_food_copy_and_atomic_rollback(self):
         packet=self.call('read');pet=catalog.Catalog(packet).new(15);growth(pet,3);pet_key=key_of(pet);packet=self.commit(packet,pet)
         document=catalog.Catalog(packet).new(8);egg(document,pet_key);key=key_of(document)

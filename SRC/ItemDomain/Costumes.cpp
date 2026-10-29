@@ -7,7 +7,12 @@ namespace auriga::item
 namespace
 {
 constexpr std::uint64_t MaxTime=static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max());
-bool ValidState(const ItemCostumeRow& definition,const CostumeLifetimeState& state,bool equipped)
+bool ValidClock(CostumeClockDefinition definition)
+{
+    return definition.clock>=CostumeClock::Permanent && definition.clock<=CostumeClock::EquippedTime &&
+        definition.durationMs<=MaxTime && (definition.clock==CostumeClock::Permanent ? !definition.durationMs : definition.durationMs>0);
+}
+bool ValidState(CostumeClockDefinition definition,const CostumeLifetimeState& state,bool equipped)
 {
     if(state.deadlineUtcMs>MaxTime || state.remainingMs>MaxTime)return false;
     if(definition.clock==CostumeClock::Permanent)
@@ -35,6 +40,12 @@ std::expected<CostumeLifetimeState,CostumeLifetimeError> MakeCostumeLifetime(
 {
     if(!ValidCostume(definition))return std::unexpected(CostumeLifetimeError::InvalidDefinition);
     if(created>MaxTime)return std::unexpected(CostumeLifetimeError::TimeOverflow);
+    return MakeItemClock({definition.clock,definition.durationMs},created);
+}
+std::expected<CostumeLifetimeState,CostumeLifetimeError> MakeItemClock(CostumeClockDefinition definition,std::uint64_t created)
+{
+    if(!ValidClock(definition))return std::unexpected(CostumeLifetimeError::InvalidDefinition);
+    if(created>MaxTime)return std::unexpected(CostumeLifetimeError::TimeOverflow);
     CostumeLifetimeState state;
     if(definition.clock==CostumeClock::SinceCreation)
     {
@@ -48,6 +59,12 @@ std::expected<CostumeLifetimePlan,CostumeLifetimeError> AdvanceCostumeLifetime(
     const ItemCostumeRow& definition,const CostumeLifetimeState& before,CostumeClockStep step)
 {
     if(!ValidCostume(definition))return std::unexpected(CostumeLifetimeError::InvalidDefinition);
+    return AdvanceItemClock({definition.clock,definition.durationMs},before,step);
+}
+std::expected<CostumeLifetimePlan,CostumeLifetimeError> AdvanceItemClock(
+    CostumeClockDefinition definition,const CostumeLifetimeState& before,CostumeClockStep step)
+{
+    if(!ValidClock(definition))return std::unexpected(CostumeLifetimeError::InvalidDefinition);
     if(step.nowUtcMs>MaxTime || step.elapsedMs>MaxTime)return std::unexpected(CostumeLifetimeError::TimeOverflow);
     if(!ValidState(definition,before,step.wasEquipped))return std::unexpected(CostumeLifetimeError::InvalidState);
     auto state=before;

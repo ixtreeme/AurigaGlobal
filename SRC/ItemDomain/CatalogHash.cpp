@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v21");
+    out.Text("auriga.item_catalog.v22");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -336,7 +336,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     out.Table(42,source.companionForms.size());
     for(const auto& f:source.companionForms){out.Identity(f.id,f.code);out.Integer(f.mobTemplateId);out.Text(f.modelAsset);}
     out.Table(43,source.companions.size());
-    for(const auto& r:source.companions){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.form);out.Optional(r.ridingForm);out.Integer(static_cast<std::uint8_t>(r.clock));out.Integer(r.durationMs);out.Boolean(r.dungeonOnlyBonus);out.Optional(r.growthProfile);}
+    for(const auto& r:source.companions){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.form);out.Optional(r.ridingForm);out.Integer(static_cast<std::uint8_t>(r.clock));out.Integer(r.durationMs);out.Boolean(r.dungeonOnlyBonus);out.Optional(r.growthProfile);out.Optional(r.trainingProfile);}
     out.Table(44,source.growthPetProfiles.size());
     for(const auto& p:source.growthPetProfiles) {
         out.Identity(p.id,p.code);out.Integer(p.maximumLevel);out.Integer(static_cast<std::uint8_t>(p.experiencePolicy));
@@ -355,6 +355,22 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
         out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.service));out.Integer(static_cast<std::uint8_t>(r.kind));
         out.Integer(static_cast<std::uint8_t>(r.consumption));out.Integer(r.units);out.Integer(r.lifetimeFractionBp);out.Integer(r.deadRecoveryBp);out.Integer(r.experiencePriceDivisor);
     }
+    out.Table(47,source.petTrainingProfiles.size());
+    for(const auto& p:source.petTrainingProfiles) {
+        out.Identity(p.id,p.code);out.Integer(p.hpEvolutionPeriod);out.Integer(p.monsterEvolutionPeriod);out.Integer(p.pveEvolutionPeriod);out.Integer(p.evolutionMinimum);out.Integer(p.evolutionMaximum);
+        out.Integer(static_cast<std::uint32_t>(p.ages.size()));for(const auto& a:p.ages){out.Integer(a.minimumAgeMs);out.Integer(a.maximumHpFlat);out.Integer(a.monsterResistanceBp);out.Integer(a.humanResistanceBp);}
+        out.Integer(static_cast<std::uint32_t>(p.slots.size()));for(const auto& r:p.slots){out.Integer(r.slot);out.Integer(r.minimumStage);out.Integer(r.minimumAgeMs);}
+        out.Integer(static_cast<std::uint32_t>(p.skills.size()));for(const auto& s:p.skills){out.Identity(s.id,s.code);out.Integer(static_cast<std::uint8_t>(s.effect));out.Integer(static_cast<std::uint32_t>(s.ranks.size()));for(const auto& r:s.ranks){out.Integer(r.rank);out.Integer(static_cast<std::uint64_t>(r.value));}}
+    }
+    out.Table(48,source.petSupplyProfiles.size());
+    for(const auto& p:source.petSupplyProfiles) {
+        out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.kind));
+        if(p.study){const auto& r=*p.study;out.Integer(r.skill);out.Boolean(r.selectedAllowed);out.Boolean(r.knownAllowed);out.Integer(r.knownSuccessBp);out.Integer(r.knownCooldownMs);}
+        if(p.extension){out.Integer(p.extension->addedMs);out.Integer(p.extension->maximumCapacityMs);}
+        if(p.enchant){const auto& r=*p.enchant;out.Integer(r.successBp);out.Integer(r.step);out.Integer(r.limits.maximumHpPercentTenths);out.Integer(r.limits.monsterDamagePercentTenths);out.Integer(r.limits.pveNormalDamagePercentTenths);}
+        if(p.skin){out.Integer(p.skin->form);out.Integer(static_cast<std::uint8_t>(p.skin->clock));out.Integer(p.skin->durationMs);}
+    }
+    out.Table(49,source.petSupplies.size());for(const auto& r:source.petSupplies){out.Key(r.key);out.Integer(r.profile);}
     return out.Finish();
 }
 } // namespace auriga::item::detail

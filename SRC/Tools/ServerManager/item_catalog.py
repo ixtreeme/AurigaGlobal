@@ -20,12 +20,12 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 17: 'Különleges petellátmány', 18: 'Kulcs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
-                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 18: 'item_container_key'}
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 17: 'item_special', 18: 'item_container_key'}
 CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul', 15: 'companion',
-               7: 'socket_stone', 16: 'currency_token', 18: 'container_key'}
-STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 18)
+               7: 'socket_stone', 16: 'currency_token', 17: 'special', 18: 'container_key'}
+STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7, 15: 9}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
@@ -49,6 +49,8 @@ PROFILES = {
     'skill_book_profile': ('profile_id', [('item_skill_book', 'profile_id')], ['skill_book_target', 'skill_book_step']),
     'loot_profile': ('profile_id', [('item_container', 'loot_profile_id'), ('item_fishing', 'use_loot_profile_id')], ['loot_entry']),
     'polymorph_profile': ('profile_id',[('item_polymorph','profile_id')],['polymorph_skill_rule','polymorph_mastery_rule']),
+    'pet_training_profile': ('profile_id',[('item_companion','training_profile_id')],['pet_skill_rank','pet_skill_definition','pet_slot_rule','pet_age_tier']),
+    'pet_supply_profile': ('profile_id',[('item_special','profile_id')],['pet_study_rule','pet_extension_rule','pet_enchant_rule','pet_skin_rule']),
     'pet_hatch_profile': ('profile_id',[('item_container','hatch_profile_id')],[]),
     'growth_pet_profile': ('profile_id',[('item_companion','growth_profile_id')],['growth_pet_level','growth_pet_stage']),
     'soul_profile': ('profile_id',[('item_soul','profile_id')],['soul_level']),
@@ -143,9 +145,18 @@ class Catalog:
             book = self.linked('skill_book_profile', child, 'profile_id')
             result.update(book=book, book_targets=self.book_rows('skill_book_target', book['profile_id'], 'skill_id'),
                           book_steps=self.book_rows('skill_book_step', book['profile_id'], 'current_level'))
+        if category == 17:
+            result.update(supply=self.linked('pet_supply_profile',child,'profile_id'))
+            for name,table in [('pet_study','pet_study_rule'),('pet_extension','pet_extension_rule'),('pet_enchant','pet_enchant_rule'),('pet_skin','pet_skin_rule')]:result[name]=self.linked(table,child,'profile_id')
         if category == 15:
             result.update(new_companion_form=None,new_riding_form=None,riding_same_form=False)
             result.update(self.growth_defaults())
+            result['training']=self.linked('pet_training_profile',child,'training_profile_id')
+            if result['training']:
+                identity=result['training']['profile_id']
+                for name,table,keys in self.training_tables():
+                    result[name]=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.tables[table] if r['profile_id']==identity]
+                    result[name].sort(key=lambda row:tuple(int(row[k]) for k in keys))
             if child.get('growth_profile_id'):
                 result['growth']=self.linked('growth_pet_profile',child,'growth_profile_id')
                 result['growth_levels']=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('growth_pet_level',child['growth_profile_id'],'level')]
@@ -241,8 +252,8 @@ class Catalog:
             item['child'].update(dispatch_kind='1', group_code='', allowed_contexts='0', allow_observer='0')
         if category == 15:
             forms=self.tables['companion_form']
-            item['child'].update(companion_kind='1',form_id=forms[0]['form_id'] if forms else None,riding_form_id=None,clock_kind='1',duration_ms='0',dungeon_only_bonus='0',growth_profile_id=None)
-            item.update(self.growth_defaults())
+            item['child'].update(companion_kind='1',form_id=forms[0]['form_id'] if forms else None,riding_form_id=None,clock_kind='1',duration_ms='0',dungeon_only_bonus='0',growth_profile_id=None,training_profile_id=None)
+            item.update(self.growth_defaults(),training=None)
             identity=self.allocate('companion_form','form_id')
             item.update(new_companion_form=None if forms else dict(code=f'companion.new_form_{identity}',mob_template_id='101',model_asset='models/companion.model'),new_riding_form=None,riding_same_form=False)
         if category == 14:
@@ -260,6 +271,9 @@ class Catalog:
             item['loot']=None
         if category == 16:
             item['child'].update(wallet_currency='1', amount_per_unit='1')
+        if category == 17:
+            item['base']['max_stack']='1';item['child'].update(behavior_kind='1',profile_id=None)
+            item.update(self.pet_supply_defaults())
         if category == 18:
             item['child']['lock_id'] = '1'
         return item
@@ -458,6 +472,7 @@ class Catalog:
             elif document.get('timed') is not None: self.apply_timed(document, child, key)
             else: self.apply_recovery(document, child, key)
         if category == 9: self.apply_book(document, child, key)
+        if category == 17:self.apply_pet_supply(document,child,key)
         if category == 15:self.apply_companion(document,child,key)
         if category == 14:self.apply_soul(document,child,key)
         if category == 13:self.apply_polymorph(document,child,key)
@@ -512,8 +527,67 @@ class Catalog:
             child[target]=identity
         if child['companion_kind']!='2':child['riding_form_id']=None
         elif document.get('riding_same_form'):child['riding_form_id']=child['form_id']
-        if child['companion_kind']=='3':self.apply_growth(document,child,key)
-        else:child['growth_profile_id']=None
+        if child['companion_kind']=='3':
+            self.apply_growth(document,child,key);self.apply_training(document,child,key)
+        else:child['growth_profile_id']=None;child['training_profile_id']=None
+
+    @staticmethod
+    def training_tables():
+        return [('pet_age_tiers','pet_age_tier',('minimum_age_ms',)),('pet_slot_rules','pet_slot_rule',('slot',)),
+                ('pet_skills','pet_skill_definition',('skill_id',)),('pet_skill_ranks','pet_skill_rank',('skill_id','skill_rank'))]
+
+    @staticmethod
+    def training_defaults():
+        return dict(training=dict(hp_evolution_period='5',monster_evolution_period='7',pve_evolution_period='4',evolution_min='1',evolution_max='6'),
+            pet_age_tiers=[dict(minimum_age_ms=str(seconds*1000),max_hp_flat=str(hp),monster_resistance_bp=str(resist),human_resistance_bp=str(resist)) for seconds,hp,resist in [(0,500,200),(950400,1200,400),(2246400,2100,700),(4147200,3000,1000)]],
+            pet_slot_rules=[dict(slot=str(i),minimum_stage=str(i+1 if i<3 else 0),minimum_age_ms='0' if i<3 else '1296000000') for i in range(4)],
+            pet_skills=[dict(skill_id='1',code='pet.skill_1',effect_kind='7')],
+            pet_skill_ranks=[dict(skill_id='1',skill_rank=str(i),value_scaled=str(i*100)) for i in range(1,11)])
+
+    @staticmethod
+    def pet_supply_defaults():
+        return dict(supply=dict(supply_kind='7'),pet_study=dict(skill_id=None,selected_allowed='1',known_allowed='1',known_success_bp='7100',known_cooldown_ms='10800000'),
+            pet_extension=dict(added_ms='86400000',maximum_capacity_ms='31535940000'),
+            pet_enchant=dict(success_bp='3000',step='5',hp_limit='150',monster_limit='100',pve_limit='100'),
+            pet_skin=dict(form_id=None,clock_kind='1',duration_ms='0'))
+
+    def apply_training(self,document,child,key):
+        if document.get('training') is None:child['training_profile_id']=None;return
+        old=child.get('training_profile_id');previous=self.row('pet_training_profile',old)
+        head={k:text(document['training'].get(k)) for k in self.packet['columns']['pet_training_profile'] if k not in ('profile_id','code')}
+        children={table:[{k:text(v) for k,v in r.items() if k!='profile_id'} for r in document[name]] for name,table,_ in self.training_tables()}
+        equal=previous and all(previous[k]==head[k] for k in head)
+        for _,table,keys in self.training_tables():
+            current=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.tables[table] if r['profile_id']==old]
+            order=lambda row:tuple(int(row[k]) for k in keys)
+            equal=equal and sorted(children[table],key=order)==sorted(current,key=order)
+        if equal:return
+        users=[(int(r['category_id']),int(r['local_id'])) for _,r in self.references('pet_training_profile',old)] if previous else []
+        identity=old if previous and all(user==key for user in users) else self.allocate('pet_training_profile')
+        self.replace('pet_training_profile',{'profile_id':identity},[dict(head,profile_id=identity,code=previous['code'] if identity==old else f'editor.pet_training.{identity}')])
+        for table,values in children.items():self.replace(table,{'profile_id':identity},[dict(r,profile_id=identity) for r in values])
+        child['training_profile_id']=identity
+
+    def apply_pet_supply(self,document,child,key):
+        if child.get('behavior_kind')!='1':raise api.EditorError('Ismeretlen különleges tárgyviselkedés.')
+        old=child.get('profile_id');previous=self.row('pet_supply_profile',old);kind=text(document['supply']['supply_kind'])
+        tables=[('pet_study','pet_study_rule','1'),('pet_extension','pet_extension_rule','4'),('pet_enchant','pet_enchant_rule','6'),('pet_skin','pet_skin_rule','8')]
+        children={}
+        for name,table,active in tables:
+            values=[]
+            if active==kind:
+                data=document.get(name)
+                if not isinstance(data,dict):raise api.EditorError('A petellátmány típusos beállításai hiányoznak.')
+                values=[dict({k:text(data.get(k)) for k in self.packet['columns'][table] if k not in ('profile_id','supply_kind')},supply_kind=kind)]
+            children[table]=values
+        equal=previous and previous['supply_kind']==kind
+        for table,values in children.items():equal=equal and values==[{k:v for k,v in r.items() if k!='profile_id'} for r in self.tables[table] if r['profile_id']==old]
+        if equal:return
+        users=[(int(r['category_id']),int(r['local_id'])) for _,r in self.references('pet_supply_profile',old)] if previous else []
+        identity=old if previous and previous['supply_kind']==kind and all(user==key for user in users) else self.allocate('pet_supply_profile')
+        self.replace('pet_supply_profile',{'profile_id':identity},[dict(profile_id=identity,code=previous['code'] if identity==old else f'editor.pet_supply.{identity}',supply_kind=kind)])
+        for table,values in children.items():self.replace(table,{'profile_id':identity},[dict(r,profile_id=identity) for r in values])
+        child['profile_id']=identity
 
     @staticmethod
     def hatch_defaults():
@@ -695,6 +769,7 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'pet.training':'kor, helynyitás és képességszintek', 'pet.skills':'petképesség azonosítója, hatása és szintjei', 'pet.supply':'petellátmány típusa és beállításai', 'pet.supply_state':'szállítódoboz/skin halmozása vagy bónusza', 'pet.study_skill':'tanítható petképesség', 'pet.skin_form':'pet megjelenési formája',
     'pet.hatch': 'keltetési költség és születési értékek', 'pet.hatch_target': 'keltetett fejlődő pet', 'pet.feed': 'petetetés forrása, mennyisége és hatása',
     'growth_pet.profile': 'fejlődő pet szintjei és szakaszai', 'growth_pet.form': 'evolúciós szakasz formája',
     'companion': 'pet/mount típusa és időtartama', 'companion.form': 'követő vagy lovaglási forma', 'companion.equipment_state': 'pet kötése vagy megjelenési profilja',

@@ -37,6 +37,8 @@ const ItemCompanionRow* Growth(const ItemCatalogEntry& item) {
     return row && row->kind==CompanionKind::GrowthPet ? row : nullptr;
 }
 bool ValidLife(const ItemCompanionRow& row,const GrowthPetLife& life) {
+    if(life.permanentGrant)return row.clock==CompanionClock::ActiveTime &&
+        life.clock==CompanionClock::Permanent && !life.capacityMs && !life.remainingMs;
     if(life.clock!=row.clock || life.capacityMs>INT64_MAX || life.remainingMs>life.capacityMs)return false;
     if(life.clock==CompanionClock::Permanent)return !life.capacityMs && !life.remainingMs;
     return life.clock==CompanionClock::ActiveTime && life.capacityMs>0;
@@ -70,6 +72,8 @@ std::uint64_t Fraction(std::uint64_t value,std::uint16_t bp) {
     return (value/10000)*bp+((value%10000)*bp)/10000;
 }
 }
+bool ValidGrowthPetLife(const ItemCompanionRow& row,const GrowthPetLife& life) noexcept {return ValidLife(row,life);}
+bool ValidPetName(std::string_view name) noexcept {return ValidName(name);}
 bool ValidPetHatchProfile(const PetHatchProfile& p) noexcept {
     return p.target.Category()==ItemCategory::Companion && p.goldCost<=INT64_MAX &&
         ValidRange(p.maximumHp) && ValidRange(p.monsterDamage) && ValidRange(p.pveNormalDamage);
@@ -97,7 +101,7 @@ std::expected<PetHatchPlan,PetCareError> PlanPetHatch(const ItemCatalog& c,const
     if(!ContextIdentity(r.context) || !r.walletRevision || r.walletRevision==UINT64_MAX || r.gold>INT64_MAX ||
        !r.newInstanceId || r.newInstanceId==r.egg.instanceId || !r.newInstanceReservedByServer)return std::unexpected(E::InvalidOperation);
     auto source=Snapshot(c,r.egg,r.context.actorId);if(!source)return std::unexpected(source.error());
-    if(r.egg.hasPetState || r.egg.active)return std::unexpected(E::PetStateSource);
+    if(r.egg.hasPetState || r.egg.containsPet || r.egg.active)return std::unexpected(E::PetStateSource);
     const auto* egg=std::get_if<ItemContainerRow>(&(*source)->category);
     if(!egg || egg->kind!=ContainerKind::PetEgg)return std::unexpected(E::NotPetEgg);
     const auto* hatch=c.FindPetHatchProfile(*egg->hatchProfile);const auto* target=c.Find(hatch->target);
@@ -137,7 +141,7 @@ std::expected<PetFeedPlan,PetCareError> PlanPetFeed(const ItemCatalog& c,const P
     auto target=Snapshot(c,r.target,r.context.actorId);if(!target)return std::unexpected(target.error());
     const auto* row=Growth(**target);if(!row)return std::unexpected(E::NotGrowthPet);
     if(!ValidPetSnapshot(r.target,r.petRevision) || r.food.instanceId==r.target.instanceId)return std::unexpected(E::InvalidSnapshot);
-    if(r.food.hasPetState || r.food.active)return std::unexpected(E::PetStateSource);
+    if(r.food.hasPetState || r.food.containsPet || r.food.active)return std::unexpected(E::PetStateSource);
     if(!ValidLife(*row,r.life))return std::unexpected(E::InvalidLife);
     if(!CanUse(c,(*food)->base,r.context) || !CanUse(c,(*target)->base,r.context))return std::unexpected(E::Forbidden);
     if((r.service==PetFeedingService::Cube)!=r.target.active ||

@@ -2,6 +2,7 @@
 from PySide6.QtWidgets import QComboBox,QLabel,QVBoxLayout,QWidget,QSizePolicy
 import backend as api
 from growth_pet_editor import GrowthPetPanel
+from pet_lifecycle_editor import PetTrainingPanel
 
 
 class CompanionPanel(QWidget):
@@ -16,6 +17,7 @@ class CompanionPanel(QWidget):
                            'Felüléskor a követő eltűnik; leszálláskor egy követő tér vissza. A fejlődő pet saját szintjét és evolúcióját az alábbi külön táblák szabályozzák.')
         self.settings.finish();self.settings.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum);layout.addWidget(self.settings)
         self.growth=GrowthPetPanel(changed);layout.addWidget(self.growth)
+        self.training=PetTrainingPanel(changed,Form);layout.addWidget(self.training)
         self.follower=QComboBox();layout.addWidget(QLabel('Követő lény formája'));layout.addWidget(self.follower)
         self.follower_details=QLabel();self.follower_details.setWordWrap(True);self.follower_details.setObjectName('FieldHint');layout.addWidget(self.follower_details)
         self.new_follower=Form(changed);self.add_form_fields(self.new_follower,'new_companion_form');layout.addWidget(self.new_follower)
@@ -38,7 +40,7 @@ class CompanionPanel(QWidget):
         form.finish()
 
     def controls(self,*_):
-        mount=self.kind.value()=='2';growth=self.kind.value()=='3';self.growth.setVisible(growth)
+        mount=self.kind.value()=='2';growth=self.kind.value()=='3';self.growth.setVisible(growth);self.training.setVisible(growth)
         for value in ('2','3'):self.clock.widget.model().item(self.clock.widget.findData(value)).setEnabled(not growth)
         if growth and self.clock.value() in ('2','3'):self.clock.load('4')
         self.riding.setEnabled(mount);self.riding_label.setVisible(mount);self.riding.setVisible(mount)
@@ -61,7 +63,7 @@ class CompanionPanel(QWidget):
         self.growth.set_forms(rows);self.loading=was
 
     def load(self,document):
-        self.loading=True;child=document['child'];self.settings.load(document);self.growth.load(document)
+        self.loading=True;child=document['child'];self.settings.load(document);self.growth.load(document);self.training.load(document)
         self.follower.setCurrentIndex(max(0,self.follower.findData('new' if document.get('new_companion_form') else child['form_id'])))
         riding='new' if document.get('new_riding_form') else 'same' if not child.get('riding_form_id') or child['riding_form_id']==child['form_id'] else child['riding_form_id']
         self.riding.setCurrentIndex(max(0,self.riding.findData(riding)))
@@ -75,7 +77,7 @@ class CompanionPanel(QWidget):
         child=document['child'];child['companion_kind']=self.kind.value();child['clock_kind']=self.clock.value()
         child['duration_ms']='0' if child['clock_kind']=='1' else self.duration.value()
         child['dungeon_only_bonus']=self.dungeon.value()
-        if child['companion_kind']=='3':self.growth.collect(document)
+        if child['companion_kind']=='3':self.growth.collect(document);self.training.collect(document)
         form=self.follower.currentData()
         if form is None:raise api.EditorError('Válassz követőformát.')
         child['form_id']=None if form=='new' else form

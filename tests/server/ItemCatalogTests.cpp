@@ -21,12 +21,12 @@ void Check(bool condition, const char* message, const std::source_location locat
     ++checks;
     if (!condition) throw std::runtime_error(std::string(message) + " at line " + std::to_string(location.line()));
 }
-template <typename Mutate> void Reject(Mutate mutate, ItemCatalogErrorCode expected)
+template <typename Mutate> void Reject(Mutate mutate, ItemCatalogErrorCode expected,const std::source_location location=std::source_location::current())
 {
     auto source = item_catalog_fixture::Catalog();
     mutate(source);
     const auto result = BuildItemCatalog(std::move(source));
-    Check(!result && result.error().code == expected, "invalid catalog must not publish a snapshot");
+    Check(!result && result.error().code == expected, "invalid catalog must not publish a snapshot",location);
 }
 std::string Hex(const ItemCatalogDigest& digest)
 {
@@ -106,6 +106,7 @@ void InvalidCatalogs()
     Reject([](auto& s) { s.schemaVersion = 17; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 18; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 19; }, ItemCatalogErrorCode::InvalidVersion);
+    Reject([](auto& s) { s.schemaVersion = 21; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.schemaVersion = 20; }, ItemCatalogErrorCode::InvalidVersion);
     Reject([](auto& s) { s.usePolicies.resize(ItemCatalogLimits::ProfilesPerKind + 1); }, ItemCatalogErrorCode::LimitExceeded);
     Reject([](auto& s) { s.usePolicies.push_back(s.usePolicies[0]); }, ItemCatalogErrorCode::DuplicateProfile);
@@ -149,7 +150,7 @@ void InvalidCatalogs()
     Reject([](auto& s) { s.weapons[0].physicalAttackBaseRaw = -1; }, ItemCatalogErrorCode::StatOutOfRange);
     Reject([](auto& s) { s.weapons[0].physicalAttackBaseRaw = MaxItemStatRaw; }, ItemCatalogErrorCode::StatOutOfRange);
     Reject([](auto& s) { s.items.erase(s.items.begin()); }, ItemCatalogErrorCode::OrphanCategoryRow);
-    Reject([](auto& s) { s.items[0].key = ItemKey::Create(ItemCategory::Special, 1).value(); }, ItemCatalogErrorCode::UnsupportedCategory);
+    Reject([](auto& s) { s.items[0].key = ItemKey::Create(ItemCategory::Special, 1).value(); }, ItemCatalogErrorCode::InvalidBase);
     Reject([](auto& s) { s.accessories.clear(); }, ItemCatalogErrorCode::MissingCategoryRow);
     Reject([](auto& s) { s.materials.clear(); }, ItemCatalogErrorCode::MissingCategoryRow);
     Reject([](auto& s) { s.accessories.push_back(s.accessories[0]); }, ItemCatalogErrorCode::DuplicateCategoryRow);

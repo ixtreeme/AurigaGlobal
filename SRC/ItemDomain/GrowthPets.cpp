@@ -35,6 +35,7 @@ const GrowthPetProfile* Profile(const ItemCatalog& catalog,const ItemCatalogEntr
         catalog.FindGrowthPetProfile(*companion->growthProfile) : nullptr;
 }
 }
+bool ValidGrowthPetProgress(const GrowthPetProfile& p,const GrowthPetProgress& s) noexcept {return ValidProgress(p,s);}
 std::expected<GrowthPetProgress,GrowthPetError> MakeGrowthPetProgress(const ItemCatalog& c,ItemKey key) {
     const auto* entry=c.Find(key);if(!entry)return std::unexpected(GrowthPetError::MissingItem);
     if(!Profile(c,*entry))return std::unexpected(GrowthPetError::NotGrowthPet);

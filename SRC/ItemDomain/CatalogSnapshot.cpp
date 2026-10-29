@@ -253,7 +253,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::PolymorphMasteries,[&](const Reader& r){Parent(s.polymorphProfiles,polyIndex,r).masteries.push_back({r.U8(1),r.U64(2),r.U64(3)});});
     Each(source,Table::PolymorphItems,[&](const Reader& r){s.polymorphItems.push_back({r.Key(),r.U32(2),r.OptionalId(3)});});
     Each(source,Table::CompanionForms,[&](const Reader& r){s.companionForms.push_back({r.U32(0),r.Text(1,96),r.U32(2),r.Text(3,192)});});
-    Each(source,Table::Companions,[&](const Reader& r){s.companions.push_back({r.Key(),static_cast<CompanionKind>(r.U8(2)),r.U32(3),r.OptionalId(4),static_cast<CompanionClock>(r.U8(5)),r.U64(6),r.Bool(7),r.OptionalId(8)});});
+    Each(source,Table::Companions,[&](const Reader& r){s.companions.push_back({r.Key(),static_cast<CompanionKind>(r.U8(2)),r.U32(3),r.OptionalId(4),static_cast<CompanionClock>(r.U8(5)),r.U64(6),r.Bool(7),r.OptionalId(8),r.OptionalId(9)});});
     Each(source,Table::GrowthPetProfiles,[&](const Reader& r){s.growthPetProfiles.push_back({r.U32(0),r.Text(1,96),r.U16(2),static_cast<GrowthExpPolicy>(r.U8(3)),{}, {}});});
     const auto growthIndex=Index(s.growthPetProfiles,Table::GrowthPetProfiles);
     Each(source,Table::GrowthPetLevels,[&](const Reader& r){Parent(s.growthPetProfiles,growthIndex,r).levels.push_back({r.U16(1),r.U64(2),r.U64(3)});});
@@ -264,6 +264,24 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::SoulItems,[&](const Reader& r){s.soulItems.push_back({r.Key(),static_cast<SoulKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<SoulChannel>(r.U8(3))} : std::nullopt,r.OptionalId(4),r.U16(5)});});
     Each(source,Table::PetHatchProfiles,[&](const Reader& r){s.petHatchProfiles.push_back({r.U32(0),r.Text(1,96),r.Key(2),r.U64(4),{r.U16(5),r.U16(6),r.U16(7)},{r.U16(8),r.U16(9),r.U16(10)},{r.U16(11),r.U16(12),r.U16(13)}});});
     Each(source,Table::PetFeedRules,[&](const Reader& r){s.petFeedRules.push_back({r.Key(),static_cast<PetFeedingService>(r.U8(2)),static_cast<PetFoodKind>(r.U8(3)),static_cast<PetFoodConsumption>(r.U8(4)),r.U32(5),r.U16(6),r.U16(7),r.U32(8)});});
+    Each(source,Table::PetTrainingProfiles,[&](const Reader& r){s.petTrainingProfiles.push_back({r.U32(0),r.Text(1,96),r.U16(2),r.U16(3),r.U16(4),r.U16(5),r.U16(6),{},{},{}});});
+    const auto trainingIndex=Index(s.petTrainingProfiles,Table::PetTrainingProfiles);
+    Each(source,Table::PetAgeTiers,[&](const Reader& r){Parent(s.petTrainingProfiles,trainingIndex,r).ages.push_back({r.U64(1),r.U32(2),r.U16(3),r.U16(4)});});
+    Each(source,Table::PetSlotRules,[&](const Reader& r){Parent(s.petTrainingProfiles,trainingIndex,r).slots.push_back({r.U8(1),r.U8(2),r.U64(3)});});
+    Each(source,Table::PetSkillDefinitions,[&](const Reader& r){Parent(s.petTrainingProfiles,trainingIndex,r).skills.push_back({r.U32(1),r.Text(2,96),static_cast<PetEffect>(r.U8(3)),{}});});
+    Each(source,Table::PetSkillRanks,[&](const Reader& r){
+        auto& skills=Parent(s.petTrainingProfiles,trainingIndex,r).skills;
+        auto skill=std::ranges::find(skills,r.U32(1),&PetSkillDefinition::id);
+        if(skill==skills.end())r.Fail(ReadErrorCode::InvalidChild,1);
+        skill->ranks.push_back({r.U16(2),r.Number<std::int64_t>(3)});
+    });
+    Each(source,Table::PetSupplyProfiles,[&](const Reader& r){s.petSupplyProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<PetSupplyKind>(r.U8(2))});});
+    const auto supplyIndex=Index(s.petSupplyProfiles,Table::PetSupplyProfiles);
+    Each(source,Table::PetStudyRules,[&](const Reader& r){if(r.U8(1)!=1)r.Fail(ReadErrorCode::InvalidChild,1);Parent(s.petSupplyProfiles,supplyIndex,r).study=PetStudyRule{r.U32(2),r.Bool(3),r.Bool(4),r.U16(5),r.U64(6)};});
+    Each(source,Table::PetExtensionRules,[&](const Reader& r){if(r.U8(1)!=4)r.Fail(ReadErrorCode::InvalidChild,1);Parent(s.petSupplyProfiles,supplyIndex,r).extension=PetExtensionRule{r.U64(2),r.U64(3)};});
+    Each(source,Table::PetEnchantRules,[&](const Reader& r){if(r.U8(1)!=6)r.Fail(ReadErrorCode::InvalidChild,1);Parent(s.petSupplyProfiles,supplyIndex,r).enchant=PetEnchantRule{r.U16(2),r.U16(3),{r.U16(4),r.U16(5),r.U16(6)}};});
+    Each(source,Table::PetSkinRules,[&](const Reader& r){if(r.U8(1)!=8)r.Fail(ReadErrorCode::InvalidChild,1);Parent(s.petSupplyProfiles,supplyIndex,r).skin=PetSkinRule{r.U32(2),static_cast<CostumeClock>(r.U8(3)),r.U64(4)};});
+    Each(source,Table::PetSupplies,[&](const Reader& r){if(r.U8(2)!=1)r.Fail(ReadErrorCode::InvalidChild,2);s.petSupplies.push_back({r.Key(),r.U32(3)});});
     return s;
 }
 }

@@ -34,6 +34,7 @@ struct GrowthPetProgress {
     std::uint64_t mobExperience=0,itemExperience=0;
     bool operator==(const GrowthPetProgress&) const=default;
 };
+bool ValidGrowthPetProgress(const GrowthPetProfile&,const GrowthPetProgress&) noexcept;
 enum class GrowthPetAction : std::uint8_t { AwardMobExperience=1,AwardItemExperience=2,Evolve=3 };
 struct GrowthPetRequest {
     ItemKey key;

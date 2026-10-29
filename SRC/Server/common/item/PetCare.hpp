@@ -6,6 +6,7 @@
 #include <expected>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace auriga::item {
 struct PetBirthRange {
@@ -41,8 +42,11 @@ bool ValidPetFeedRule(const PetFeedRule&) noexcept;
 struct GrowthPetLife {
     CompanionClock clock{};
     std::uint64_t capacityMs=0,remainingMs=0;
+    bool permanentGrant=false; // Durable grant from an explicit pet service.
     bool operator==(const GrowthPetLife&) const=default;
 };
+bool ValidGrowthPetLife(const ItemCompanionRow&,const GrowthPetLife&) noexcept;
+bool ValidPetName(std::string_view) noexcept;
 struct PetCareItemSnapshot {
     ItemKey key;
     std::uint64_t instanceId=0,revision=0,ownerId=0;
@@ -50,6 +54,7 @@ struct PetCareItemSnapshot {
     std::uint16_t refinementLevel=0;
     bool lockedByOther=false,exchanging=false,equipped=false,hasPetState=false,active=false;
     std::uint64_t actorGeneration=0;
+    bool containsPet=false;
 };
 struct PetCareContext {
     std::array<std::uint8_t,16> operationId{};

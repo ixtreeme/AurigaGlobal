@@ -38,7 +38,7 @@ std::expected<void, ItemCatalogError> Profiles(std::vector<T>& rows, std::string
 }
 std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
 {
-    if (source.petFeedRules.size()>ItemCatalogLimits::Items*2 || source.items.size() > ItemCatalogLimits::Items || source.weapons.size() > ItemCatalogLimits::Items ||
+    if (source.petSupplies.size()>ItemCatalogLimits::Items || source.petFeedRules.size()>ItemCatalogLimits::Items*2 || source.items.size() > ItemCatalogLimits::Items || source.weapons.size() > ItemCatalogLimits::Items ||
         source.armors.size() > ItemCatalogLimits::Items || source.accessories.size() > ItemCatalogLimits::Items ||
         source.materials.size() > ItemCatalogLimits::Items || source.consumables.size() > ItemCatalogLimits::Items ||
         source.containers.size() > ItemCatalogLimits::Items || source.containerKeys.size() > ItemCatalogLimits::Items ||
@@ -59,11 +59,15 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         for (const auto& row : rows) if (!add(row.code.size())) return false;
         return true;
     };
-    if (!profiles(source.petHatchProfiles) || !profiles(source.growthPetProfiles) || !profiles(source.soulProfiles) || !profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
+    if (!profiles(source.petTrainingProfiles) || !profiles(source.petSupplyProfiles) || !profiles(source.petHatchProfiles) || !profiles(source.growthPetProfiles) || !profiles(source.soulProfiles) || !profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
         !profiles(source.attacks) || !profiles(source.ammoPolicies) || !profiles(source.resistances) || !profiles(source.refinements) ||
         !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
         !profiles(source.lootProfiles) || !profiles(source.timedEffectGroups) || !profiles(source.timedEffects) || !profiles(source.toggleEffectGroups) || !profiles(source.toggleEffects) || !profiles(source.skillBookProfiles))
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "profiles"));
+    for(const auto& p:source.petTrainingProfiles) {
+        if(p.ages.size()>32 || p.slots.size()>4 || p.skills.size()>128)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"pet.training",{},p.id));
+        for(const auto& skill:p.skills)if(skill.ranks.size()>255 || !add(skill.code.size()))return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"pet.skills",{},p.id));
+    }
     for(const auto& p:source.growthPetProfiles)
         if(p.levels.size()>255 || p.stages.size()>16)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"growth_pet.profile",{},p.id));
     for(const auto& f:source.companionForms)
@@ -121,12 +125,13 @@ ItemBaseStats BaseStats(const ItemFishingRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemPolymorphRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemSoulRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemCompanionRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemPetSupplyRow&) { return {}; }
 auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.characterClass,row.sex}; }
 }
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 21 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 22 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     if(auto r=Profiles(source.companionForms,"companion.form",[](const CompanionForm& f){return f.mobTemplateId>0 && detail::AssetReference(f.modelAsset);});!r)return std::unexpected(r.error());
     for(auto& p:source.growthPetProfiles) {
@@ -136,6 +141,36 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     for(const auto& p:source.growthPetProfiles)for(const auto& stage:p.stages)
         if(!FindProfile(source.companionForms,stage.form))return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"growth_pet.form",{},p.id));
     if(auto r=Profiles(source.petHatchProfiles,"pet.hatch",ValidPetHatchProfile);!r)return std::unexpected(r.error());
+    std::map<std::uint32_t,std::pair<std::string,PetEffect>> issuedPetSkills;
+    std::map<std::string,std::uint32_t> issuedPetSkillCodes;
+    for(auto& p:source.petTrainingProfiles) {
+        std::ranges::sort(p.ages,{},&PetAgeTier::minimumAgeMs);std::ranges::sort(p.slots,{},&PetSlotRule::slot);
+        std::ranges::sort(p.skills,{},&PetSkillDefinition::id);
+        std::set<std::string> codes;
+        for(auto& s:p.skills) {
+            if(!detail::ContentCode(s.code) || !codes.insert(s.code).second)return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"pet.skills",{},p.id));
+            std::ranges::sort(s.ranks,{},&PetSkillRank::rank);
+            const auto meaning=std::pair{s.code,s.effect};
+            if((issuedPetSkills.contains(s.id) && issuedPetSkills.at(s.id)!=meaning) ||
+               (issuedPetSkillCodes.contains(s.code) && issuedPetSkillCodes.at(s.code)!=s.id))
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"pet.skills",{},p.id));
+            issuedPetSkills.emplace(s.id,meaning);issuedPetSkillCodes.emplace(s.code,s.id);
+        }
+    }
+    if(auto r=Profiles(source.petTrainingProfiles,"pet.training",ValidPetTrainingProfile);!r)return std::unexpected(r.error());
+    if(auto r=Profiles(source.petSupplyProfiles,"pet.supply",ValidPetSupplyProfile);!r)return std::unexpected(r.error());
+    for(const auto& p:source.petSupplyProfiles) {
+        if(p.skin && !FindProfile(source.companionForms,p.skin->form))return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"pet.skin_form",{},p.id));
+        if(p.study && !std::ranges::any_of(source.petTrainingProfiles,[&](const auto& t){return std::ranges::any_of(t.skills,[&](const auto& s){return s.id==p.study->skill;});}))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"pet.study_skill",{},p.id));
+    }
+    std::ranges::sort(source.petSupplies,{},&ItemPetSupplyRow::key);
+    std::map<ItemKey,const ItemPetSupplyRow*> petSupplies;
+    for(const auto& r:source.petSupplies) {
+        if(r.key.Category()!=ItemCategory::Special)return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory,"pet.supply",r.key));
+        if(!petSupplies.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"pet.supply",r.key));
+        if(!FindProfile(source.petSupplyProfiles,r.profile))return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"pet.supply",r.key));
+    }
     std::ranges::sort(source.companions,{},&ItemCompanionRow::key);
     std::map<ItemKey,const ItemCompanionRow*> companions;
     for(const auto& r:source.companions) {
@@ -145,6 +180,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             const auto* p=FindProfile(source.growthPetProfiles,*r.growthProfile);
             if(!p || p->stages.front().form!=r.form)return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"growth_pet.profile",r.key));
         }
+        if(r.trainingProfile && (r.kind!=CompanionKind::GrowthPet || !FindProfile(source.petTrainingProfiles,*r.trainingProfile)))
+            return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"pet.training",r.key));
         if(!ValidCompanion(r))return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"companion",r.key));
         if(!FindProfile(source.companionForms,r.form) || (r.ridingForm && !FindProfile(source.companionForms,*r.ridingForm)))
             return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"companion.form",r.key));
@@ -490,7 +527,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool tool = category == ItemCategory::Tool, fish = category == ItemCategory::Fishing;
         const bool polymorph = category == ItemCategory::Polymorph;
         const bool soul = category == ItemCategory::Soul, companion = category == ItemCategory::Companion;
-        const bool stackable = material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish || polymorph;
+        const bool petSupply=category==ItemCategory::Special;
+        const bool stackable = petSupply || material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish || polymorph;
         if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !tool && !soul && !companion && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
@@ -525,6 +563,11 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (profile->Data().kind != RefinementKind::None && profile->Data().kind != expectedKind)
             return std::unexpected(Error(ItemCatalogErrorCode::WrongRefinementKind, "refinement", row.key, row.refinementProfile));
         std::optional<ItemCategoryRow> child;
+        if(petSupply && petSupplies.contains(row.key)) {
+            const auto* p=FindProfile(source.petSupplyProfiles,petSupplies.at(row.key)->profile);child=*petSupplies.at(row.key);
+            if(row.baseBonusProfile || ((p->kind==PetSupplyKind::Carrier || p->kind==PetSupplyKind::Skin) && row.maxStack!=1))
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"pet.supply_state",row.key));
+        }
         if(companion && companions.contains(row.key))child=*companions.at(row.key);
         if(soul && soulItems.contains(row.key))
         {
@@ -594,6 +637,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             return std::unexpected(Error(ItemCatalogErrorCode::StatOutOfRange, "base_plus_gain", row.key));
         catalog->items_.emplace(row.key, ItemCatalogEntry{row, std::move(*child)});
     }
+    for(const auto& row:source.petSupplies)
+        if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"pet.supply",row.key));
     for(const auto& row:source.companions)
         if(!catalog->Find(row.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"companion",row.key));
     for(const auto& row:source.soulItems)
@@ -706,6 +751,8 @@ const ValidatedRefinementProfile* ItemCatalog::FindRefinement(std::uint32_t id) 
     const auto found = refinements_.find(id);
     return found == refinements_.end() ? nullptr : &found->second;
 }
+const PetTrainingProfile* ItemCatalog::FindPetTrainingProfile(std::uint32_t id) const noexcept {return FindProfile(source_.petTrainingProfiles,id);}
+const PetSupplyProfile* ItemCatalog::FindPetSupplyProfile(std::uint32_t id) const noexcept {return FindProfile(source_.petSupplyProfiles,id);}
 const PetHatchProfile* ItemCatalog::FindPetHatchProfile(std::uint32_t id) const noexcept { return FindProfile(source_.petHatchProfiles,id); }
 const PetFeedRule* ItemCatalog::FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept {
     const auto wanted=std::pair{key,service};

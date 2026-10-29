@@ -21,6 +21,7 @@ from polymorph_editor import PolymorphPanel
 from soul_editor import SoulPanel
 from companion_editor import CompanionPanel
 from pet_care_editor import PetHatchPanel,PetFoodPanel
+from pet_lifecycle_editor import PetSupplyPanel
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 BONUS_LABELS = {
@@ -979,10 +980,12 @@ class ItemPage(QWidget):
         self.poly_panel.kind.widget.currentIndexChanged.connect(lambda *_:self.poly_controls())
         self.tool_panel=ToolPanel(changed)
         self.fishing_panel=FishingPanel(changed,Form,LootTable)
+        self.pet_supply_panel=PetSupplyPanel(changed,Form)
+        self.pet_supply_panel.kind.widget.currentIndexChanged.connect(lambda *_:self.pet_supply_controls())
         self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
                                10: quest_form, 16: token_form, 18: key_form}
         self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
-                               7: scroll(stone_form), 8: scroll(container), 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 13: self.poly_panel, 14: self.soul_panel, 15: scroll(self.companion_panel), 16: scroll(token_form), 18: scroll(key_form)}
+                               7: scroll(stone_form), 8: scroll(container), 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 13: self.poly_panel, 14: self.soul_panel, 15: scroll(self.companion_panel), 16: scroll(token_form), 17: scroll(self.pet_supply_panel), 18: scroll(key_form)}
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
         self.timed_form = Form(changed)
@@ -1066,6 +1069,11 @@ class ItemPage(QWidget):
         self.refinement.setEnabled(usable);self.bonuses.setEnabled(usable)
         if not self.loading and usable and not int(self.stone_targets_field.value()):
             self.stone_targets_field.load({'child':{'allowed_targets':'1'}})
+
+    def pet_supply_controls(self):
+        if not self.document or int(self.document['base']['category_id'])!=17:return
+        single=self.pet_supply_panel.kind.value() in ('7','8');self.stack_field.edit.setEnabled(not single)
+        if single and not self.loading:self.stack_field.edit.setText('1')
 
     def soul_controls(self):
         if not self.document or int(self.document['base']['category_id'])!=14:return
@@ -1379,6 +1387,8 @@ class ItemPage(QWidget):
             self.fishing_panel.load(document)
         elif category == 4:
             self.costume_panel.load(document)
+        elif category == 17:
+            self.pet_supply_panel.set_catalog(catalog.Catalog(self.packet));self.pet_supply_panel.load(document)
         elif category == 9:
             self.book_panel.load(document)
         else:
@@ -1398,6 +1408,7 @@ class ItemPage(QWidget):
             self.bonuses.load(document.get('bonuses'))
         if category==7:self.stone_controls()
         if category==15:self.companion_controls()
+        if category==17:self.pet_supply_controls()
         self.tabs.setCurrentIndex(min(max(current, 0), self.tabs.count() - 1))
         self.loading = False; self.update_badge(); self.controls()
 
@@ -1453,6 +1464,8 @@ class ItemPage(QWidget):
             self.fishing_panel.collect(document)
         elif category == 4:
             self.costume_panel.collect(document)
+        elif category == 17:
+            self.pet_supply_panel.collect(document)
         elif category == 9:
             self.book_panel.collect(document)
         else:

@@ -113,7 +113,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for(const auto& p:source.soulProfiles){Add(s,T::SoulProfiles,p.id,p.code);for(const auto& r:p.levels)Add(s,T::SoulLevels,p.id,r.level,r.chargeCapacity,r.cycleChargeCost,r.strikesPerCycle,r.initialCharge,r.initialStrikes,r.rechargeIntervalMs,r.firstMultiplierBp,r.secondMultiplierBp,r.thirdMultiplierBp);}
     for(const auto& r:source.soulItems)Add(s,T::SoulItems,r.key.Category(),r.key.LocalId(),r.kind,r.channel,r.profile,r.refineChanceBp);
     for(const auto& r:source.companionForms)Add(s,T::CompanionForms,r.id,r.code,r.mobTemplateId,r.modelAsset);
-    for(const auto& r:source.companions)Add(s,T::Companions,r.key.Category(),r.key.LocalId(),r.kind,r.form,r.ridingForm,r.clock,r.durationMs,r.dungeonOnlyBonus,r.growthProfile);
+    for(const auto& r:source.companions)Add(s,T::Companions,r.key.Category(),r.key.LocalId(),r.kind,r.form,r.ridingForm,r.clock,r.durationMs,r.dungeonOnlyBonus,r.growthProfile,r.trainingProfile);
     for(const auto& p:source.growthPetProfiles) {
         Add(s,T::GrowthPetProfiles,p.id,p.code,p.maximumLevel,p.experiencePolicy);
         for(const auto& l:p.levels)Add(s,T::GrowthPetLevels,p.id,l.level,l.mobExperience,l.itemExperience);
@@ -123,6 +123,20 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
         p.maximumHp.minimum,p.maximumHp.maximum,p.maximumHp.step,p.monsterDamage.minimum,p.monsterDamage.maximum,p.monsterDamage.step,
         p.pveNormalDamage.minimum,p.pveNormalDamage.maximum,p.pveNormalDamage.step);
     for(const auto& r:source.petFeedRules)Add(s,T::PetFeedRules,r.key.Category(),r.key.LocalId(),r.service,r.kind,r.consumption,r.units,r.lifetimeFractionBp,r.deadRecoveryBp,r.experiencePriceDivisor);
+    for(const auto& p:source.petTrainingProfiles) {
+        Add(s,T::PetTrainingProfiles,p.id,p.code,p.hpEvolutionPeriod,p.monsterEvolutionPeriod,p.pveEvolutionPeriod,p.evolutionMinimum,p.evolutionMaximum);
+        for(const auto& a:p.ages)Add(s,T::PetAgeTiers,p.id,a.minimumAgeMs,a.maximumHpFlat,a.monsterResistanceBp,a.humanResistanceBp);
+        for(const auto& r:p.slots)Add(s,T::PetSlotRules,p.id,r.slot,r.minimumStage,r.minimumAgeMs);
+        for(const auto& skill:p.skills) {Add(s,T::PetSkillDefinitions,p.id,skill.id,skill.code,skill.effect);for(const auto& rank:skill.ranks)Add(s,T::PetSkillRanks,p.id,skill.id,rank.rank,rank.value);}
+    }
+    for(const auto& p:source.petSupplyProfiles) {
+        Add(s,T::PetSupplyProfiles,p.id,p.code,p.kind);
+        if(p.study){const auto& r=*p.study;Add(s,T::PetStudyRules,p.id,1,r.skill,r.selectedAllowed,r.knownAllowed,r.knownSuccessBp,r.knownCooldownMs);}
+        if(p.extension){const auto& r=*p.extension;Add(s,T::PetExtensionRules,p.id,4,r.addedMs,r.maximumCapacityMs);}
+        if(p.enchant){const auto& r=*p.enchant;Add(s,T::PetEnchantRules,p.id,6,r.successBp,r.step,r.limits.maximumHpPercentTenths,r.limits.monsterDamagePercentTenths,r.limits.pveNormalDamagePercentTenths);}
+        if(p.skin){const auto& r=*p.skin;Add(s,T::PetSkinRules,p.id,8,r.form,r.clock,r.durationMs);}
+    }
+    for(const auto& r:source.petSupplies)Add(s,T::PetSupplies,r.key.Category(),r.key.LocalId(),1,r.profile);
     return s;
 }
 } // namespace catalog_snapshot_fixture
