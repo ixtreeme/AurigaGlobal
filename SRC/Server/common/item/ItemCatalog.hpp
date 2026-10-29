@@ -7,6 +7,7 @@
 #include "Costumes.hpp"
 #include "GatheringItems.hpp"
 #include "PolymorphItems.hpp"
+#include "SoulItems.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
 #include "TimedEffects.hpp"
@@ -159,10 +160,10 @@ struct ItemSkillBookRow
     std::uint32_t profile = 0;
 };
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 17;
+    std::uint32_t schemaVersion = 18;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -196,6 +197,8 @@ struct ItemCatalogSource
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
     std::vector<CostumeVisualRow> costumeVisuals;
+    std::vector<SoulProfile> soulProfiles;
+    std::vector<ItemSoulRow> soulItems;
     std::vector<ToolProfile> toolProfiles;
     std::vector<ItemToolRow> tools;
     std::vector<ItemFishingRow> fishingItems;
@@ -260,6 +263,7 @@ public:
     const ItemCatalogEntry* Find(ItemKey key) const noexcept;
     const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
+    const SoulProfile* FindSoulProfile(std::uint32_t id) const noexcept;
     const PolymorphForm* FindPolymorphForm(std::uint32_t id) const noexcept;
     const PolymorphProfile* FindPolymorphProfile(std::uint32_t id) const noexcept;
     const ToolProfile* FindToolProfile(std::uint32_t id) const noexcept;

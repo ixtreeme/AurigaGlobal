@@ -20,7 +20,7 @@ bool LevelExists(const ItemCatalog& catalog, ItemKey key, std::uint16_t level)
 bool RefinableInstance(const ItemCatalogEntry& item)
 {
     const auto* stone=std::get_if<ItemSocketStoneRow>(&item.category);
-    if(std::holds_alternative<ItemToolRow>(item.category) || std::holds_alternative<ItemPolymorphRow>(item.category))return false; // Dedicated training/refinement path; never bypass its required points.
+    if(std::holds_alternative<ItemToolRow>(item.category) || std::holds_alternative<ItemPolymorphRow>(item.category) || std::holds_alternative<ItemSoulRow>(item.category))return false; // Dedicated training/refinement path; never bypass its required points.
     return item.base.maxStack==1 || (stone && stone->kind==SocketStoneKind::Insertable);
 }
 }

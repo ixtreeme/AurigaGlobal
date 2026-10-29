@@ -252,6 +252,10 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::PolymorphSkills,[&](const Reader& r){Parent(s.polymorphProfiles,polyIndex,r).skills.push_back({r.U8(1),r.U64(2),r.U32(3),r.U16(4)});});
     Each(source,Table::PolymorphMasteries,[&](const Reader& r){Parent(s.polymorphProfiles,polyIndex,r).masteries.push_back({r.U8(1),r.U64(2),r.U64(3)});});
     Each(source,Table::PolymorphItems,[&](const Reader& r){s.polymorphItems.push_back({r.Key(),r.U32(2),r.OptionalId(3)});});
+    Each(source,Table::SoulProfiles,[&](const Reader& r){s.soulProfiles.push_back({r.U32(0),r.Text(1,96),{}});});
+    const auto soulIndex=Index(s.soulProfiles,Table::SoulProfiles);
+    Each(source,Table::SoulLevels,[&](const Reader& r){Parent(s.soulProfiles,soulIndex,r).levels.push_back({r.U16(1),r.U32(2),r.U32(3),r.U32(4),r.U32(5),r.U32(6),r.U64(7),r.U32(8),r.U32(9),r.U32(10)});});
+    Each(source,Table::SoulItems,[&](const Reader& r){s.soulItems.push_back({r.Key(),static_cast<SoulKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<SoulChannel>(r.U8(3))} : std::nullopt,r.OptionalId(4),r.U16(5)});});
     return s;
 }
 }

@@ -26,7 +26,7 @@ struct ItemBaseStats
     bool operator==(const ItemBaseStats&) const = default;
 };
 
-enum class RefinementKind : std::uint8_t { None = 1, Weapon = 2, Armor = 3, Accessory = 4, SocketStone = 5, Costume = 6, Tool = 7 };
+enum class RefinementKind : std::uint8_t { None = 1, Weapon = 2, Armor = 3, Accessory = 4, SocketStone = 5, Costume = 6, Tool = 7, Soul = 8 };
 struct RefinementLevel
 {
     std::uint16_t level = 0;

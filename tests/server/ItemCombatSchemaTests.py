@@ -22,6 +22,29 @@ from mariadb_client import Client, statements
 
 
 class CategorySchemaTests(unittest.TestCase):
+    def test_soul_typed_sql_constraints_and_rollback(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.soul_profile VALUES(9871,'soul.sql_test')")
+            self.q('INSERT INTO protos.soul_level VALUES(9871,0,180,60,500,0,500,60000,15000,18000,25000)')
+            for update in ('cycle_charge_cost=0','charge_capacity=181','strikes_per_cycle=0','initial_strikes=501',
+                           'initial_charge=181','recharge_interval_ms=0','recharge_interval_ms=9223372036854775808',
+                           'first_multiplier_bp=9999','third_multiplier_bp=1000001','level=256'):
+                with self.subTest(update=update),self.assertRaisesRegex(RuntimeError,'^4025:'):
+                    self.q('UPDATE protos.soul_level SET '+update+' WHERE profile_id=9871')
+            self.q("INSERT INTO protos.item_base SELECT 14,9871,'soul.sql_core','item.soul_sql.name','item.soul_sql.desc',icon_asset,inventory_width,inventory_height,1,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,NULL,NULL,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=6 AND local_id=1")
+            self.q('INSERT INTO protos.item_soul VALUES(14,9871,1,1,9871,0)')
+            for update,code in [('damage_channel=NULL','4025'),('damage_channel=3','4025'),('profile_id=NULL','4025'),
+                                ('profile_id=9872','1452'),('refine_chance_bp=1','4025'),('soul_kind=2','4025')]:
+                with self.subTest(update=update),self.assertRaisesRegex(RuntimeError,'^'+code+':'):
+                    self.q('UPDATE protos.item_soul SET '+update+' WHERE local_id=9871')
+            for update in ('binding_policy=3','appearance_profile_id=1','base_bonus_profile_id=1'):
+                with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.item_base SET '+update+' WHERE category_id=14')
+            self.q('UPDATE protos.item_soul SET soul_kind=2,damage_channel=NULL,profile_id=NULL,refine_chance_bp=7500 WHERE local_id=9871')
+            self.assertEqual(self.q('SELECT soul_kind,damage_channel,profile_id,refine_chance_bp FROM protos.item_soul WHERE local_id=9871'),[['2',None,None,'7500']])
+        finally:self.q('ROLLBACK')
+        self.assertEqual(self.q('SELECT COUNT(*) FROM protos.soul_profile'),[['0']])
+
     binary_dir = None
     work_dir = None
 
@@ -36,7 +59,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -543,7 +566,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["17", "auriga.item_catalog.v17"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["18", "auriga.item_catalog.v18"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
@@ -555,7 +578,7 @@ class CategorySchemaTests(unittest.TestCase):
         self.assertEqual(self.q("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
                                 "AND TABLE_NAME='item_base' AND CHECK_CLAUSE LIKE '%in (1,2,3,5,6)%'"), [["0"]])
         self.assertEqual(self.q("SELECT CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
-                        "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,4,5,6,7,8,9,10,11,12,13,16,18)"]])
+                        "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18)"]])
 
     def test_container_sql_constraints(self):
         for sql, code in [
@@ -721,7 +744,7 @@ class CategorySchemaTests(unittest.TestCase):
                 ("UPDATE protos.item_socket_stone SET secondary_group='stone.one'",'4025'),
                 ('UPDATE protos.item_socket_stone SET stone_kind=2','4025'),
                 ('UPDATE protos.item_socket_stone SET local_id=9999','1452'),
-                ('UPDATE protos.refinement_profile SET profile_kind=8 WHERE profile_id=9000','4025'),
+                ('UPDATE protos.refinement_profile SET profile_kind=9 WHERE profile_id=9000','4025'),
                 ('UPDATE protos.item_base SET binding_policy=3 WHERE category_id=7','4025')]:
                 with self.subTest(query=query),self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
             self.q("UPDATE protos.item_socket_stone SET stone_kind=2,allowed_targets=0,minimum_socket_grade=0,primary_group='',secondary_group=''")

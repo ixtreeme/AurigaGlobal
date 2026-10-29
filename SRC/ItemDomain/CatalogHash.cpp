@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v17");
+    out.Text("auriga.item_catalog.v18");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -325,6 +325,14 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     }
     out.Table(39,source.polymorphItems.size());
     for(const auto& r:source.polymorphItems){out.Key(r.key);out.Integer(r.profile);out.Optional(r.fixedForm);}
+    out.Table(40,source.soulProfiles.size());
+    for(const auto& p:source.soulProfiles)
+    {
+        out.Identity(p.id,p.code);out.Integer(static_cast<std::uint32_t>(p.levels.size()));
+        for(const auto& r:p.levels){out.Integer(r.level);out.Integer(r.chargeCapacity);out.Integer(r.cycleChargeCost);out.Integer(r.strikesPerCycle);out.Integer(r.initialCharge);out.Integer(r.initialStrikes);out.Integer(r.rechargeIntervalMs);out.Integer(r.firstMultiplierBp);out.Integer(r.secondMultiplierBp);out.Integer(r.thirdMultiplierBp);}
+    }
+    out.Table(41,source.soulItems.size());
+    for(const auto& r:source.soulItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Boolean(r.channel.has_value());if(r.channel)out.Integer(static_cast<std::uint8_t>(*r.channel));out.Optional(r.profile);out.Integer(r.refineChanceBp);}
     return out.Finish();
 }
 } // namespace auriga::item::detail

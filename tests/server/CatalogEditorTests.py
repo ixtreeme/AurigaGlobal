@@ -65,6 +65,27 @@ def toggle(document):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_soul_levels_scroll_copy_and_state_rules(self):
+        def core(d):
+            d['refinement']['max_level']='30'
+            d['levels']=[dict(level=str(i),**{k:'0' for k in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[]) for i in range(31)]
+            d['soul_levels']=[catalog.Catalog.soul_level(i) for i in range(31)]
+            d['soul_levels'][11].update(charge_capacity='180',strikes_per_cycle='1000',initial_strikes='1000',third_multiplier_bp='25000')
+        packet,key=create(self.blank,14,core);self.check(packet);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone);clone['soul_levels'][11]['recharge_interval_ms']='5000'
+        packet=saved(packet,catalog.Catalog(packet).apply(clone),other);self.check(packet)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        scroll=catalog.Catalog(packet).item(other);scroll['child'].update(soul_kind='2',damage_channel=None,profile_id=None,refine_chance_bp='7500')
+        scroll['base']['max_stack']='200';scroll['refinement'].update(profile_kind='1',max_level='0');scroll['levels']=scroll['levels'][:1];scroll['soul_levels']=[]
+        packet=saved(packet,catalog.Catalog(packet).apply(scroll,other));self.check(packet)
+        self.assertIsNone(catalog.Catalog(packet).item(other)['child']['profile_id'])
+        self.assertEqual(len(rows(packet,'soul_profile')),1)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        for change in (lambda d:d['soul_levels'].pop(),lambda d:d['soul_levels'][0].update(cycle_charge_cost='0'),
+                       lambda d:d['base'].update(max_stack='2'),lambda d:d['child'].update(damage_channel=None)):
+            bad=copy.deepcopy(original);change(bad)
+            with self.assertRaises(api.EditorError):catalog.validate(packet,bad,key,TOOL)
+
     def test_polymorph_profiles_forms_and_copy_are_independent(self):
         def orb(d):
             d.update(poly_target_fixed=True,new_poly_form=dict(code='form.test_wolf',mob_template_id='101',book_bonus='4'))
@@ -667,6 +688,22 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_soul_panel_levels_scroll_and_inactive_fields(self):
+        packet,key=create(catalog.blank(TOOL),14);self.page.dirty=False;self.page.loaded(packet,key);panel=self.page.soul_panel
+        self.assertFalse(self.page.stack_field.edit.isEnabled())
+        panel.max_level.setValue(30);panel.table.item(11,1).setText('180');panel.table.item(11,9).setText('250')
+        panel.max_level.setValue(10);panel.max_level.setValue(30)
+        d=self.page.collect();self.assertEqual(d['refinement']['max_level'],'30');self.assertEqual(len(d['soul_levels']),31)
+        self.assertEqual(d['soul_levels'][11]['third_multiplier_bp'],'25000');catalog.validate(packet,d,key,TOOL)
+        panel.kind.widget.setCurrentIndex(panel.kind.widget.findData('2'));panel.chance.edit.setText('75')
+        self.assertTrue(self.page.stack_field.edit.isEnabled());self.assertFalse(panel.channel.widget.isEnabled());self.assertFalse(panel.core.isVisible())
+        self.page.stack_field.edit.setText('200');scroll=self.page.collect()
+        self.assertEqual(scroll['child']['damage_channel'],None);self.assertEqual(scroll['child']['refine_chance_bp'],'7500')
+        self.assertEqual(scroll['refinement']['profile_kind'],'1');self.assertEqual(scroll['refinement']['max_level'],'0');catalog.validate(packet,scroll,key,TOOL)
+        panel.chance.edit.setText('hibás, de inaktív');panel.kind.widget.setCurrentIndex(0);self.assertFalse(self.page.stack_field.edit.isEnabled());d=self.page.collect()
+        self.assertEqual(d['base']['max_stack'],'1');self.assertEqual(d['refinement']['max_level'],'30');catalog.validate(packet,d,key,TOOL)
+        self.page.dirty=False
+
     def test_polymorph_form_rules_and_book_mode(self):
         packet,key=create(catalog.blank(TOOL),13);self.page.loaded(packet,key);p=self.page.poly_panel
         p.target.setCurrentIndex(1);p.form.setCurrentIndex(p.form.findData('new'))
@@ -1219,6 +1256,37 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzzz_soul_profile_copy_and_atomic_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(14);key=key_of(d)
+        d['refinement']['max_level']='30'
+        d['levels']=[dict(level=str(i),**{k:'0' for k in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[]) for i in range(31)]
+        d['soul_levels']=[catalog.Catalog.soul_level(i) for i in range(31)]
+        d['soul_levels'][30].update(charge_capacity='180',strikes_per_cycle='1000',initial_strikes='1000',recharge_interval_ms='5000',third_multiplier_bp='25000')
+        packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)
+        self.assertEqual(original['soul_levels'][30]['recharge_interval_ms'],'5000')
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone);clone['child']['damage_channel']='2';clone['soul_levels'][30]['third_multiplier_bp']='30000'
+        packet=self.commit(packet,clone);self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertNotEqual(catalog.Catalog(packet).item(other)['child']['profile_id'],original['child']['profile_id'])
+        changed=catalog.Catalog(packet).item(other);changed['child'].update(soul_kind='2',damage_channel=None,profile_id=None,refine_chance_bp='2500')
+        changed['refinement'].update(profile_kind='1',max_level='0');changed['levels']=changed['levels'][:1];changed['soul_levels']=[]
+        packet=self.commit(packet,changed,other)
+        self.assertEqual(catalog.Catalog(packet).item(other)['child']['profile_id'],None)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        restored=catalog.Catalog(packet).item(other);restored['child'].update(soul_kind='1',damage_channel='2',refine_chance_bp='0')
+        restored['refinement'].update(profile_kind='8',max_level='0');restored['soul_levels']=[catalog.Catalog.soul_level(0)]
+        packet=self.commit(packet,restored,other)
+        self.assertEqual(catalog.Catalog(packet).item(other)['child']['damage_channel'],'2')
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        scroll=catalog.Catalog(packet).new(14);scroll['child'].update(soul_kind='2',damage_channel=None,profile_id=None,refine_chance_bp='7500')
+        scroll['base']['max_stack']='200';scroll['refinement'].update(profile_kind='1',max_level='0');scroll['soul_levels']=[]
+        packet=self.commit(packet,scroll);self.assertEqual(catalog.Catalog(packet).item(key_of(scroll))['child']['refine_chance_bp'],'7500')
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_soul BEFORE INSERT ON protos.soul_level FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test Soul write failure'")
+        try:
+            fresh=catalog.Catalog(packet).new(14)
+            with self.assertRaises(api.EditorError):self.commit(packet,fresh)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_soul')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+
     def test_zzzzzz_polymorph_commit_copy_immutable_forms_and_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(13);key=key_of(d)
         d.update(poly_target_fixed=True,new_poly_form=dict(code='form.sql_wolf',mob_template_id='101',book_bonus='4'))

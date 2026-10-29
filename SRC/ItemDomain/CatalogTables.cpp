@@ -64,6 +64,9 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::PolymorphSkills,"polymorph_skill_rule","profile_id,skill_level,duration_ms,attack_bonus_bp,power_bp",Profiles*41},
     {Table::PolymorphMasteries,"polymorph_mastery_rule","profile_id,mastery,duration_ms,bonus_duration_ms",Profiles*4},
     {Table::PolymorphItems,"item_polymorph","category_id,local_id,profile_id,fixed_form_id",Items},
+    {Table::SoulProfiles,"soul_profile","profile_id,code",Profiles},
+    {Table::SoulLevels,"soul_level","profile_id,level,charge_capacity,cycle_charge_cost,strikes_per_cycle,initial_charge,initial_strikes,recharge_interval_ms,first_multiplier_bp,second_multiplier_bp,third_multiplier_bp",Profiles*256},
+    {Table::SoulItems,"item_soul","category_id,local_id,soul_kind,damage_channel,profile_id,refine_chance_bp",Items},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

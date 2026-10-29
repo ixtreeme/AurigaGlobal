@@ -20,12 +20,12 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 16: 'Pénzjegy', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 16: 'Pénzjegy', 18: 'Kulcs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
-                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 16: 'item_currency_token', 18: 'item_container_key'}
-CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph',
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 16: 'item_currency_token', 18: 'item_container_key'}
+CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul',
                7: 'socket_stone', 16: 'currency_token', 18: 'container_key'}
-STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 16, 18)
+STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 18)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
@@ -49,6 +49,7 @@ PROFILES = {
     'skill_book_profile': ('profile_id', [('item_skill_book', 'profile_id')], ['skill_book_target', 'skill_book_step']),
     'loot_profile': ('profile_id', [('item_container', 'loot_profile_id'), ('item_fishing', 'use_loot_profile_id')], ['loot_entry']),
     'polymorph_profile': ('profile_id',[('item_polymorph','profile_id')],['polymorph_skill_rule','polymorph_mastery_rule']),
+    'soul_profile': ('profile_id',[('item_soul','profile_id')],['soul_level']),
     'tool_profile': ('profile_id', [('item_tool','profile_id')], ['tool_level']),
 }
 
@@ -138,6 +139,8 @@ class Catalog:
             book = self.linked('skill_book_profile', child, 'profile_id')
             result.update(book=book, book_targets=self.book_rows('skill_book_target', book['profile_id'], 'skill_id'),
                           book_steps=self.book_rows('skill_book_step', book['profile_id'], 'current_level'))
+        if category == 14:
+            result['soul_levels']=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('soul_level',child['profile_id'],'level')] if child['profile_id'] else [self.soul_level(0)]
         if category == 13:
             result.update(poly=self.linked('polymorph_profile',child,'profile_id'),
                           poly_skills=self.book_rows('polymorph_skill_rule',child['profile_id'],'skill_level'),
@@ -223,6 +226,9 @@ class Catalog:
             item.update(self.book_defaults())
         if category == 10:
             item['child'].update(dispatch_kind='1', group_code='', allowed_contexts='0', allow_observer='0')
+        if category == 14:
+            item['base']['max_stack']='1';item['child'].update(soul_kind='1',damage_channel='1',profile_id=None,refine_chance_bp='0')
+            item['refinement']['profile_kind']='8';item['soul_levels']=[self.soul_level(0)]
         if category == 13:
             item['base']['max_stack']='1'
             item['child'].update(profile_id=None,fixed_form_id=None)
@@ -238,6 +244,10 @@ class Catalog:
         if category == 18:
             item['child']['lock_id'] = '1'
         return item
+
+    @staticmethod
+    def soul_level(level):
+        return dict(level=str(level),charge_capacity='60',cycle_charge_cost='60',strikes_per_cycle='500',initial_charge='0',initial_strikes='500',recharge_interval_ms='60000',first_multiplier_bp='12000',second_multiplier_bp='12000',third_multiplier_bp='12000')
 
     @staticmethod
     def polymorph_defaults():
@@ -429,6 +439,7 @@ class Catalog:
             elif document.get('timed') is not None: self.apply_timed(document, child, key)
             else: self.apply_recovery(document, child, key)
         if category == 9: self.apply_book(document, child, key)
+        if category == 14:self.apply_soul(document,child,key)
         if category == 13:self.apply_polymorph(document,child,key)
         if category == 11: self.apply_tool(document,child,key)
         if category == 12:
@@ -463,6 +474,18 @@ class Catalog:
                                                            ('refinement_level', (str(profile), str(row['level']))))
             levels.append(row)
         self.replace('refinement_level', {'profile_id': profile}, levels)
+
+    def apply_soul(self,document,child,key):
+        if child['soul_kind']=='2':child['profile_id']=None;return
+        old=child.get('profile_id');previous=self.row('soul_profile',old)
+        levels=[{k:text(v) for k,v in r.items() if k!='profile_id'} for r in document['soul_levels']]
+        current=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('soul_level',old,'level')] if previous else []
+        if previous and levels==current:return
+        users=[(int(r['category_id']),int(r['local_id'])) for _,r in self.references('soul_profile',old)] if previous else []
+        identity=old if previous and all(user==key for user in users) else self.allocate('soul_profile')
+        code=previous['code'] if identity==old else f'editor.soul.{identity}'
+        self.replace('soul_profile',{'profile_id':identity},[dict(profile_id=identity,code=code)])
+        self.replace('soul_level',{'profile_id':identity},[dict(r,profile_id=identity) for r in levels]);child['profile_id']=identity
 
     def apply_polymorph(self,document,child,key):
         form=document.get('new_poly_form')
@@ -603,6 +626,7 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'soul': 'lélek vagy lélektekercs típusa', 'soul.profile': 'lélek töltési és sebzési szabályai', 'soul.levels': 'lélek szintenkénti szabályai és halommérete', 'soul.scroll': 'lélektekercs fejlesztése',
     'polymorph': 'átváltoztató tárgy', 'polymorph.profile': 'átváltozási szabályok', 'polymorph.form': 'átváltozási forma',
     'polymorph.rules': 'átváltozási szintszabályok',
     'tool': 'eszköz típusa és halászati táblája', 'tool.profile': 'eszköz fejlődési szabályai',

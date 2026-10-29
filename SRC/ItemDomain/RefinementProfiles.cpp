@@ -9,7 +9,7 @@ std::expected<ValidatedRefinementProfile, RefinementError> ValidateRefinementPro
 {
     if (!source.id || !detail::ContentCode(source.code)) return std::unexpected(RefinementError::InvalidIdentity);
     if (source.kind != RefinementKind::None && source.kind != RefinementKind::Weapon &&
-        source.kind != RefinementKind::Armor && source.kind != RefinementKind::Accessory && source.kind != RefinementKind::SocketStone && source.kind != RefinementKind::Costume && source.kind != RefinementKind::Tool)
+        source.kind != RefinementKind::Armor && source.kind != RefinementKind::Accessory && source.kind != RefinementKind::SocketStone && source.kind != RefinementKind::Costume && source.kind != RefinementKind::Tool && source.kind != RefinementKind::Soul)
         return std::unexpected(RefinementError::InvalidKind);
     if (source.maxLevel > 255 || (source.kind == RefinementKind::None && source.maxLevel != 0))
         return std::unexpected(RefinementError::InvalidLevelRange);
@@ -37,6 +37,7 @@ std::expected<ValidatedRefinementProfile, RefinementError> ValidateRefinementPro
             if (value < 0 || value > MaxItemStatRaw) return std::unexpected(RefinementError::InvalidGain);
         if (i == 0 && (step.gain != ItemBaseStats{} || step.extraBonusProfile))
             return std::unexpected(RefinementError::NonzeroLevelZero);
+        if (source.kind==RefinementKind::Soul && step.extraBonusProfile) return std::unexpected(RefinementError::WrongStatKind);
         if (step.extraBonusProfile)
         {
             const auto found = std::ranges::lower_bound(bonusIndex, *step.extraBonusProfile, {}, id);
@@ -63,7 +64,7 @@ std::expected<ItemBaseStats, RefinementError> ResolveRefinedBaseStats(
     if (!step) return std::unexpected(RefinementError::InvalidLevelRange);
     if ((profile.Data().kind == RefinementKind::Weapon && (base.physicalDefenseRaw || base.magicalDefenseRaw)) ||
         (profile.Data().kind == RefinementKind::Armor && (base.physicalAttackRaw || base.magicalAttackRaw)) ||
-        ((profile.Data().kind == RefinementKind::Accessory || profile.Data().kind == RefinementKind::SocketStone || profile.Data().kind == RefinementKind::Costume || profile.Data().kind == RefinementKind::Tool) && base != ItemBaseStats{}))
+        ((profile.Data().kind == RefinementKind::Accessory || profile.Data().kind == RefinementKind::SocketStone || profile.Data().kind == RefinementKind::Costume || profile.Data().kind == RefinementKind::Tool || profile.Data().kind == RefinementKind::Soul) && base != ItemBaseStats{}))
         return std::unexpected(RefinementError::WrongStatKind);
     const auto bases = base.Values();
     const auto gains = step->gain.Values();
