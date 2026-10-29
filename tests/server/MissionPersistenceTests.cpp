@@ -82,19 +82,23 @@ void Text(CAsyncSQL &sql, const std::string &query)
         std::cerr << "setup SQL errno=" << result->uiSQLErrno << '\n';
     Check(!result->uiSQLErrno, "isolated setup statement failed");
 }
-Message Execute(CAsyncSQL &sql, const db::Plan &plan, bool success = true)
+Message Execute(CAsyncSQL &sql, const db::Plan &plan, bool success = true,const std::source_location location=std::source_location::current())
 {
     Check(bool(plan), "invalid persistence plan");
     Message result(sql.DirectTransactionPrepared(plan.statements));
-    Check(db::Confirmed(*result) == success, "unexpected persistence outcome");
+    if(db::Confirmed(*result)!=success)
+        std::cerr << "persistence SQL errno=" << result->uiSQLErrno << " outcome=" << static_cast<unsigned>(result->transactionOutcome) << " expected=" << success << '\n';
+    Check(db::Confirmed(*result) == success, "unexpected persistence outcome",location);
     return result;
 }
-db::Resolved Resolve(CAsyncSQL &sql, const db::Plan &plan)
+db::Resolved Resolve(CAsyncSQL &sql, const db::Plan &plan,const std::source_location location=std::source_location::current())
 {
     Message result(sql.DirectTransactionPrepared(db::Resolve(plan)));
     auto resolved = db::DecodeResolution(*result, plan);
+    if(resolved.status==db::Resolution::SqlError || resolved.status==db::Resolution::Invalid)
+        std::cerr << "resolution status=" << static_cast<unsigned>(resolved.status) << " SQL errno=" << result->uiSQLErrno << '\n';
     Check(resolved.status != db::Resolution::SqlError && resolved.status != db::Resolution::Invalid,
-          "resolution failed");
+          "resolution failed",location);
     return resolved;
 }
 db::SnapshotResult Snapshot(CAsyncSQL &sql, db::Owner owner)
