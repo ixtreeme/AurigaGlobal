@@ -34,7 +34,7 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::Instant, "instant_recovery_profile", "profile_id,delivery_kind,hp_raw,sp_raw,max_hp_bp,max_sp_bp,flat_bonus_cap_bp", Profiles},
     {Table::Reserve, "reserve_recovery_profile", "profile_id,delivery_kind,hp_raw,sp_raw,flat_bonus_cap_bp,tick_interval_ms,max_pool_per_tick_bp", Profiles},
     {Table::Periodic, "periodic_recovery_profile", "profile_id,delivery_kind,hp_per_tick_raw,sp_per_tick_raw,tick_interval_ms,duration_ms", Profiles},
-    {Table::Consumables, "item_consumable", "category_id,local_id,recovery_profile_id,timed_effect_profile_id,toggle_effect_profile_id", Items},
+    {Table::Consumables, "item_consumable", "category_id,local_id,recovery_profile_id,timed_effect_profile_id,toggle_effect_profile_id,socket_service_profile_id", Items},
     {Table::LootProfiles, "loot_profile", "profile_id,code,pick_mode", Profiles},
     {Table::LootEntries, "loot_entry", "profile_id,entry_no,reward_kind,item_category_id,item_local_id,amount,weight,rare_attribute_chance_bp", Profiles * MaxLootEntries},
     {Table::Containers, "item_container", "category_id,local_id,container_kind,loot_profile_id,lock_id,hatch_profile_id", Items},
@@ -85,7 +85,8 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::PetEnchantRules,"pet_enchant_rule","profile_id,supply_kind,success_bp,step,hp_limit,monster_limit,pve_limit",Profiles},
     {Table::PetSkinRules,"pet_skin_rule","profile_id,supply_kind,form_id,clock_kind,duration_ms",Profiles},
     {Table::PetSupplies,"item_special","category_id,local_id,behavior_kind,profile_id",Items},
-}};
+    {Table::SocketServices,"socket_service_profile","profile_id,code,service_kind,units_per_use",Profiles},
+    }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }
 std::span<const TableSpec, TableCount> Tables() noexcept { return Specs; }

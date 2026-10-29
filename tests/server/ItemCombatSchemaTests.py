@@ -22,6 +22,23 @@ from mariadb_client import Client, statements
 
 
 class CategorySchemaTests(unittest.TestCase):
+    def test_socket_service_constraints_and_rollback(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.socket_service_profile VALUES(9912,'socket.sql_fixture',2,1)")
+            self.q('UPDATE protos.item_consumable SET recovery_profile_id=NULL,socket_service_profile_id=9912 WHERE local_id=1')
+            for query,code in [('UPDATE protos.socket_service_profile SET service_kind=0 WHERE profile_id=9912','4025'),
+                ('UPDATE protos.socket_service_profile SET service_kind=4 WHERE profile_id=9912','4025'),
+                ('UPDATE protos.socket_service_profile SET units_per_use=0 WHERE profile_id=9912','4025'),
+                ('UPDATE protos.item_consumable SET recovery_profile_id=1 WHERE local_id=1','4025'),
+                ('UPDATE protos.item_consumable SET socket_service_profile_id=NULL WHERE local_id=1','4025'),
+                ('UPDATE protos.item_consumable SET socket_service_profile_id=9999 WHERE local_id=1','1452'),
+                ('DELETE FROM protos.socket_service_profile WHERE profile_id=9912','1451')]:
+                with self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
+        finally:self.q('ROLLBACK')
+        self.assertEqual(self.q('SELECT COUNT(*) FROM protos.socket_service_profile'),[['0']])
+
+
     def test_pet_lifecycle_discriminators_and_rollback(self):
         self.q('START TRANSACTION')
         try:
@@ -137,7 +154,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -644,7 +661,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["22", "auriga.item_catalog.v22"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["23", "auriga.item_catalog.v23"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])

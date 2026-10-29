@@ -4,6 +4,7 @@
 #include "RefinementRecipes.hpp"
 #include "QuestItems.hpp"
 #include "SocketStones.hpp"
+#include "SocketServices.hpp"
 #include "Costumes.hpp"
 #include "GatheringItems.hpp"
 #include "PolymorphItems.hpp"
@@ -135,10 +136,11 @@ struct ItemMaterialRow
 struct ItemConsumableRow
 {
     ItemKey key;
-    // Exactly one of recovery, consumed timed effect, item-bound toggle effect.
+    // Exactly one recovery, timed effect, toggle or named socket service.
     std::uint32_t recoveryProfile = 0;
     std::optional<std::uint32_t> timedEffectProfile;
     std::optional<std::uint32_t> toggleEffectProfile;
+    std::optional<std::uint32_t> socketServiceProfile;
 };
 struct ItemContainerRow
 {
@@ -168,7 +170,7 @@ using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryR
                                      ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 22;
+    std::uint32_t schemaVersion = 23;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -202,6 +204,7 @@ struct ItemCatalogSource
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
     std::vector<CostumeVisualRow> costumeVisuals;
+    std::vector<SocketServiceProfile> socketServiceProfiles;
     std::vector<PetTrainingProfile> petTrainingProfiles;
     std::vector<PetSupplyProfile> petSupplyProfiles;
     std::vector<ItemPetSupplyRow> petSupplies;
@@ -263,7 +266,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
 
 // Immutable, owning snapshot. No borrowed proto rows, lazy cache or live registry.
 // Supports weapon/armor, wrist/neck/ear accessories with optional timed/permanent
-// socket profiles, ordinary materials, recovery/timed consumables, containers and their
+// socket profiles, ordinary materials, recovery/timed consumables and socket services, containers and their
 // keys with typed loot profiles, skill books, socket stones, ordinary costumes
 // with class/sex visuals, gathering tools, fish/bait and wallet currency tokens. Unsupported categories and
 // behaviors fail closed during publication; this is not a runtime stat builder.
@@ -276,6 +279,7 @@ public:
     const ItemCatalogEntry* Find(ItemKey key) const noexcept;
     const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
+    const SocketServiceProfile* FindSocketService(std::uint32_t id) const noexcept;
     const PetHatchProfile* FindPetHatchProfile(std::uint32_t id) const noexcept;
     const PetFeedRule* FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept;
     const GrowthPetProfile* FindGrowthPetProfile(std::uint32_t id) const noexcept;

@@ -1,0 +1,337 @@
+{
+  "absent_last_extract_proto": [
+    72719
+  ],
+  "contracts": {
+    "accessory": "existing typed target profile defines material/chance/units/time; no second writer/rules table",
+    "clean": "all broken slots; one unit; old compaction replaced with stable slot/grade retention",
+    "extract_all": "all occupied slots; returned stones; broken slots remain; no partial return in new owner contract",
+    "extract_last": "highest occupied slot; empty slot remains; new domain preserves original grade",
+    "recovery": "known retired embedded keys remain recoverable; unknown keys fail closed"
+  },
+  "converted": false,
+  "created_at_utc": "2026-10-29T16:20:09.950355+00:00",
+  "installed_to_game": false,
+  "prototype_rows": [
+    {
+      "converted": false,
+      "family": "extract_all",
+      "source_row_sha256": "b186378f176e4fdd2c2579be2e19baceee5ba382c8dea5a8a560ee91de4fe34f",
+      "vnum": 25100
+    },
+    {
+      "converted": false,
+      "family": "clean_broken",
+      "source_row_sha256": "70c621a9e190cb343bac4134f6e7f513eaff49449b7d54f45bc6d2164f61780b",
+      "vnum": 39027
+    },
+    {
+      "converted": false,
+      "family": "accessory_unlock",
+      "source_row_sha256": "cc0a7e324586f7a636c8d08c4e18b41c1c34a1419fd20387607cb29484c8b751",
+      "vnum": 50621
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "88085433416dedfda8c6c67f50a51413be2ecbf8871d9eee71eaa3285a2a279e",
+      "vnum": 50622
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "ae076b4a6f2dbe184b2889f13818636c21969d8c5dd02907087f5e41ff386c97",
+      "vnum": 50623
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "ca9c1232b19762993afdbb380816a41567648ced08216bcb4a1ecd526a2f517c",
+      "vnum": 50624
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "efcd6983a95926078e3c8103c0e2faa9522a8ed8ddab31982f908eebfb844775",
+      "vnum": 50625
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "61e60491fa4e196f3118d6b27cf724ac564db3185c04c924b91b7fa435f2805a",
+      "vnum": 50626
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "edc98efad5b55dfd764324d0742495fe30c43710db702defcd90dd495d9fb511",
+      "vnum": 50627
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "8d90cefe147ea0d4f39695a394b870840c074584f4e681d2acaf8db90d715305",
+      "vnum": 50628
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "e276353d90d8cbf073443ad9c581a85ec13f54c57efb2fd898e247458a56b64c",
+      "vnum": 50629
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "ea9de78cb6cbb083d33a2741776acedff1e69b87e5b51946f067cc530220f145",
+      "vnum": 50630
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "8358379641b9e79d5c707da8b21d5e7d83125a0a816ed0eb97cabb9f3d2d0480",
+      "vnum": 50631
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "68a4d649c8d9801e9d1d806b7be79411018e74200ace9f5846b33923b8296484",
+      "vnum": 50632
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "76a24984eeef068b82b5da0f22b9584e528a720c0ab4b6c5a9047a72c6813250",
+      "vnum": 50633
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "bc4c6eaa08ac2c6ca38a4971bfc9f1cb252d017a0efb45cb677fd970c70e15eb",
+      "vnum": 50634
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "acc22545611b0580e022e146e8eec2b5b695f62261c7fba90ef73690f3018fc4",
+      "vnum": 50635
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "d4f36f1d5871f311fc209856af771f7f0810cd8d5ac2ee0534596a0b71b09dd9",
+      "vnum": 50636
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "e5c98c35148eaf6f3893f331ca296499de58f614edbc8cf9e01b24e113e5fb26",
+      "vnum": 50637
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "8424a19a88aa49d3e8bbe1dddf554dac6151e28f7fbc930e79d6af2ae8f4d0a5",
+      "vnum": 50638
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "004327bd41697a63fa9cfe67617170d44ca7c641a302fe8613fab13b3c75acbc",
+      "vnum": 50639
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "423bda4c8762323320f531f21b9cd6a7c25c579a9f988cf8e5a4b08a9ed507f4",
+      "vnum": 50640
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "757afd19d25e9395655a8990417615bd07b66e8996f75e049556e4f5ad89315f",
+      "vnum": 50641
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "d3af19d367f26d55cb39878345efb0e1a011d7b27555682418884a2025c836da",
+      "vnum": 50642
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "e496b5dbceb08db270dfcb2b2e85918754c2d837caa3cb34484a451b9b9b991a",
+      "vnum": 50643
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "78dc2f9a3d037bb14dade5894cbd341e973a1628e9957306257ac95a55032ccb",
+      "vnum": 50644
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "b4220963c630f6ccf2c293d9321bc9d316e69d9107451ec5b5bdb9a88b37b34c",
+      "vnum": 50645
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "c732b717434518da6b4da17e9dffbabd365782e1598fd8781f1d1b70c59ce324",
+      "vnum": 50646
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "6da4066c8fc5a1a8dbb5ddbc5028eb6939bc17d3861376c87feda8246e28985c",
+      "vnum": 50672
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "c1d6fe9723316e2d3b5717293b9560d20ef9bfdaea71f26a0eceffead1021231",
+      "vnum": 50673
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "20ef8a5b4709c8f71b2277271c8cda006a4db1c4d13c6a9a3cf49116412a66de",
+      "vnum": 50674
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "805fb6e8453ee273e63981b918d9c713bb9620a1e3d4532b3f8aca996dfc561a",
+      "vnum": 50675
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "b81a6bba1038dc93887fb881c6cb515159ad8bad6c9f58836cf8c5ecbc30481b",
+      "vnum": 50676
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "a3bd995350fb0b30a806c6751c5490dd53b0a347bf4e2c27dc59100dd2e6e8a1",
+      "vnum": 50677
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "2461a023f6e5db135e84117b1abc02ea902d3d9f27aa638cb3d84b34f5ea2c85",
+      "vnum": 50678
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "f8d290e1d0c34d9b6ca19a105698a1261d203bb80825e8a6c731d8deed05b12e",
+      "vnum": 50679
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "7b2b7ec837947ab56bb38b05c4a36910362068bc033f8a6ea155701fa9911538",
+      "vnum": 50680
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "4aed85123cc1368ba3a54752fb94ba0444e8fe3e96f8f723d64def78550b2b90",
+      "vnum": 50681
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "041e832a958516625e82fd4ab264fcebf85d1a708c9f37c90f89cbd7c512e2e7",
+      "vnum": 50682
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "391daf81235dc2337b3505df041ada7b44a292694eba1a08531c84d210fad3e3",
+      "vnum": 50683
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "8ab89c7c76565582f89b2698eac72bcde1e03efe987e5e96aa78ad0b5cac461e",
+      "vnum": 50684
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "2fff9a3000c908526df14a2aba19ed92d07b52e9d4c4e1ee8feeab2057a08e33",
+      "vnum": 50685
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "917bb0bdc8c43b725265a291be197339b32368eae82c4a5e73c211d251df435d",
+      "vnum": 50686
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "b4972e997700e479b73749b77cd3400a1c84887a4810b8e1d787dcf5af08ac6a",
+      "vnum": 50687
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "7e7df16e4a8c9a953c0dad70220473aaf9bc5f106990f345269e0d90baf99119",
+      "vnum": 50688
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "86d360bdc123c7ff93b19aa05e65c2148a49b747e4c615f9e1810807cdbaaa45",
+      "vnum": 50689
+    },
+    {
+      "converted": false,
+      "family": "accessory_charge",
+      "source_row_sha256": "779a5bdbcfea2d45c414e613425494a19b8c909133076ff6c2c99c90d6de91de",
+      "vnum": 50690
+    },
+    {
+      "converted": false,
+      "family": "clean_broken",
+      "source_row_sha256": "522d23a9f86eccab073870b011f1e344f48f4b01e292520488588952afd8b194",
+      "vnum": 71083
+    },
+    {
+      "converted": false,
+      "family": "extract_last",
+      "source_row_sha256": "f3d1584a5733f91ca42d3376c91d70259cc6e148255c581646323afc0f3a2b0c",
+      "vnum": 71109
+    }
+  ],
+  "remote_modified": false,
+  "runtime_sources": {
+    "SRC/Server/GameServer/ecs/systems/ItemAttributeSystem.cpp": "fa310c89ee63078fa7a8d58029fb020dcadf40b9b939fd914a5a34d59946a1af",
+    "SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp": "78554379c6687eacff287662d7ae5f39b71dfae83ce6e2cb07fe4b1de46bdf14",
+    "SRC/Server/common/item_length.h": "34acf53dde75ae018092cf7becf4f32d40db78956dffdd8f4661eb21f7351e1f",
+    "SRC/Server/common/service.h": "9cd18f84669b1aba1bb3af3130808e20e1890c23dd02223513e0a2f2da375dec"
+  },
+  "source_dump_sha256": "e4b18df41e6aa9e9cfa91d93060e641790be643c91fb2410f46b8c1790792005",
+  "source_embedded_stone_candidates": 1,
+  "source_prototype_counts": {
+    "accessory_charge": 44,
+    "accessory_unlock": 1,
+    "clean_broken": 2,
+    "extract_all": 1,
+    "extract_last": 1
+  },
+  "source_tool_instance_rows": 0,
+  "starting_head": "501ca1f80948677ae915bc5e68512efe11a3687a",
+  "unity_modified": false,
+  "unresolved": [
+    "F3/F4 must validate actual inventory reservations and atomically commit receipt, source decrement, all returned instances and the full target socket state.",
+    "Old socket sentinel/grade/stone refinement conversion remains F6, including every equipment and storage consumer.",
+    "Known source proto membership alone does not prove a safe complete conversion of prices, flags, bonuses or player instances.",
+    "Accessory attribute-cleaning, rerolls/locks and other item-target operations remain separately typed work.",
+    "FreeBSD and Unity gameplay not tested in this package."
+  ]
+}

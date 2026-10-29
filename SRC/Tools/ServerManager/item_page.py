@@ -1041,8 +1041,15 @@ class ItemPage(QWidget):
         kind_row = QHBoxLayout(); kind_row.addWidget(QLabel('Fogyasztható típusa:'))
         self.consumable_kind = QComboBox(); self.consumable_kind.addItem('Gyógyítás / regeneráció', '1')
         self.consumable_kind.addItem('Időzített stat-hatás', '2'); self.consumable_kind.addItem('Kapcsolható harmat', '3'); kind_row.addWidget(self.consumable_kind); kind_row.addStretch()
+        self.consumable_kind.addItem('Foglalattisztítás / kőkiemelés','4')
+        self.socket_service_form=Form(changed)
+        self.socket_service_form.add('socket_service','service_kind','Művelet','choice',choices=[
+            ('1','Törött foglalatok tisztítása'),('2','Minden kő kiemelése — törött foglalat marad'),('3','Utolsó kő kiemelése — üres foglalat marad')])
+        self.socket_service_form.add('socket_service','units_per_use','Felhasznált darab',range=(1,65535))
+        self.socket_service_form.note('A foglalat helye és minősége megmarad. A kiemelt kövek tárgytípusa és fejlesztési szintje változatlan; helyhiány esetén a művelet nem végezhető el.')
+        self.socket_service_form.finish()
         wrapper_layout.addLayout(kind_row)
-        self.consumable_pages = QStackedWidget(); self.consumable_pages.addWidget(potion); self.consumable_pages.addWidget(timed_page); self.consumable_pages.addWidget(toggle_page)
+        self.consumable_pages = QStackedWidget(); self.consumable_pages.addWidget(potion); self.consumable_pages.addWidget(timed_page); self.consumable_pages.addWidget(toggle_page); self.consumable_pages.addWidget(self.socket_service_form)
         wrapper_layout.addWidget(self.consumable_pages, 1)
         self.category_pages[5] = scroll(wrapper)
         self.consumable_kind.currentIndexChanged.connect(lambda index: (self.consumable_pages.setCurrentIndex(index), self.recovery_controls(), changed()))
@@ -1329,9 +1336,11 @@ class ItemPage(QWidget):
         self.appearance_field.widget.setEnabled(category in (1,2,3,4,11,7,10))
         self.base_form.load(document); self.use_form.load(document);self.pet_food_panel.load(document)
         if category == 5:
+            service=document.get('socket_service') is not None
+            self.socket_service_form.load(dict(socket_service=document.get('socket_service') or dict(service_kind='1',units_per_use='1')))
             timed = document.get('timed') is not None
             toggle = document.get('toggle') is not None
-            recovery_doc = document if not (timed or toggle) else catalog.Catalog(self.packet).new(5)
+            recovery_doc = document if not (timed or toggle or service) else catalog.Catalog(self.packet).new(5)
             self.category_forms[5].load(recovery_doc)
             kind = int(recovery_doc['recovery']['delivery_kind'])
             self.finite_capacity_text = catalog.display(recovery_doc['effect']['capacity_raw']) if kind == 4 and recovery_doc['effect']['supply_kind'] == '1' else '1000'
@@ -1368,7 +1377,7 @@ class ItemPage(QWidget):
             self.toggle_cooldown_check.setChecked(bool(cooldown) and toggle)
             self.toggle_cooldown_edit.setText(catalog.display(cooldown['duration_ms']) if cooldown and toggle else '1')
             self.toggle_cooldown_edit.setEnabled(self.toggle_cooldown_check.isChecked())
-            selected_kind = 2 if toggle else 1 if timed else 0
+            selected_kind = 3 if service else 2 if toggle else 1 if timed else 0
             self.consumable_kind.setCurrentIndex(selected_kind)
             self.consumable_pages.setCurrentIndex(selected_kind)
             self.recovery_controls()
@@ -1417,7 +1426,12 @@ class ItemPage(QWidget):
         self.base_form.collect(document); self.use_form.collect(document)
         if not document['appearance'].get('model_asset'): document['appearance'] = None
         if category == 5:
-            if self.consumable_kind.currentData() == '3':
+            document['socket_service']=None
+            if self.consumable_kind.currentData()=='4':
+                self.socket_service_form.collect(document)
+                document.update(recovery=None,effect=None,timed=None,toggle=None,cooldown=None)
+                check,edit=None,None
+            elif self.consumable_kind.currentData() == '3':
                 if document.get('toggle') is None: document.update(catalog.Catalog.toggle_defaults(document['base']['local_id']))
                 self.toggle_form.collect(document); self.toggle_group_form.collect(document)
                 document['toggle']['group_id'] = document['toggle']['group_id'] or None
@@ -1444,7 +1458,7 @@ class ItemPage(QWidget):
                 holder = {}; self.effect_forms[kind].collect(holder)
                 document['effect'] = dict(holder['effect'], delivery_kind=str(kind))
                 check, edit = self.cooldown_check, self.cooldown_edit
-            if check.isChecked():
+            if check is not None and check.isChecked():
                 try: duration = catalog.scaled(edit.text())
                 except api.EditorError: raise api.EditorError('Várakozási idő: érvénytelen szám.') from None
                 if not 1 <= duration <= 2 ** 63 - 1: raise api.EditorError('Várakozási idő: 0,001 mp és a megengedett maximum között legyen.')

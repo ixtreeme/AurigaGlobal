@@ -181,9 +181,10 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source, Table::Periodic, [&](const Reader& r) { recoveryChild(r,3).effect=PeriodicRecovery{r.I64(2),r.I64(3),r.U64(4),r.U64(5)}; });
     Each(source, Table::Automatic, [&](const Reader& r) { recoveryChild(r,4).effect=AutomaticRecovery{static_cast<RecoveryPool>(r.U8(2)),static_cast<RecoverySupply>(r.U8(3)),r.I64(4),r.U64(5),r.U16(6),r.U16(7)}; });
     if (children.size() != s.recoveries.size()) throw ReadError{ReadErrorCode::InvalidChild,Table::Recoveries};
+    Each(source,Table::SocketServices,[&](const Reader& r){s.socketServiceProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<SocketServiceKind>(r.U8(2)),r.U16(3)});});
     Each(source, Table::Consumables, [&](const Reader& r) {
         if (r.row[2] && r.U32(2) == 0) r.Fail(ReadErrorCode::InvalidNumber, 2);
-        s.consumables.push_back({r.Key(),r.OptionalId(2).value_or(0),r.OptionalId(3),r.OptionalId(4)});
+        s.consumables.push_back({r.Key(),r.OptionalId(2).value_or(0),r.OptionalId(3),r.OptionalId(4),r.OptionalId(5)});
     });
     Each(source, Table::LootProfiles, [&](const Reader& r) { s.lootProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<LootPickMode>(r.U8(2)),{}}); });
     const auto loots = Index(s.lootProfiles, Table::LootProfiles);

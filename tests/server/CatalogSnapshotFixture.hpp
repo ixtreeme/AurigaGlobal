@@ -71,7 +71,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
             else Add(s,T::Automatic,r.id,4,e.pool,e.supply,e.capacityRaw,e.tickIntervalMs,e.maxPoolPerTickBp,e.activeMaxPoolBonusBp);
         },r.effect);
     }
-    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile);
+    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile,r.socketServiceProfile);
     for (const auto& r : source.lootProfiles) {
         Add(s,T::LootProfiles,r.id,r.code,r.mode);
         for (const auto& e : r.entries) {
@@ -100,6 +100,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
             r.target.Category(),r.target.LocalId(),r.targetLevel,r.goldCost,r.successChanceBp,r.failure,r.failureLevel);
         for(const auto& i:r.ingredients) Add(s,T::RefinementIngredients,r.id,i.key.Category(),i.key.LocalId(),i.refinementLevel,i.count);
     }
+    for(const auto& p:source.socketServiceProfiles)Add(s,T::SocketServices,p.id,p.code,p.kind,p.unitsPerUse);
     for(const auto& r:source.questItems)Add(s,T::QuestItems,r.key.Category(),r.key.LocalId(),r.dispatch,r.groupCode,r.allowedContexts,r.allowObserver);
     for(const auto& r:source.socketStones)Add(s,T::SocketStones,r.key.Category(),r.key.LocalId(),r.kind,r.allowedTargets,r.minimumSocketGrade,r.primaryGroup,r.secondaryGroup);
     for(const auto& r:source.costumes)Add(s,T::Costumes,r.key.Category(),r.key.LocalId(),r.kind,r.weapon,r.clock,r.durationMs);

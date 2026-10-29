@@ -38,6 +38,45 @@ bool Snapshot(const StoneItemSnapshot& item,std::uint64_t owner)
         item.ownerId==owner && !item.locked && !item.equipped && !item.exchanging;
 }
 }
+std::expected<void,SocketStoneError> ValidateEquipmentStoneSockets(const ItemCatalog& catalog,ItemKey targetKey,
+    const std::array<StoneSocketSlot,EquipmentStoneSockets>& sockets)
+{
+    using E=SocketStoneError;
+    const auto* target=catalog.Find(targetKey);
+    const auto mask=target ? TargetMask(*target) : 0;
+    if(!mask)return std::unexpected(E::IncompatibleTarget);
+    std::array<const ItemSocketStoneRow*,EquipmentStoneSockets> installed{};
+    for(std::size_t i=0;i<sockets.size();++i)
+    {
+        const auto& socket=sockets[i];
+        if(socket.state==StoneSocketState::Closed)
+        {
+            if(socket.grade || socket.stone || socket.refinementLevel)return std::unexpected(E::InvalidSocketState);
+            continue;
+        }
+        if(socket.grade<1 || socket.grade>2)return std::unexpected(E::InvalidSocketState);
+        if(socket.state==StoneSocketState::Occupied)
+        {
+            if(!socket.stone)return std::unexpected(E::InvalidSocketState);
+            const auto* existing=catalog.Find(*socket.stone);
+            const auto* row=existing ? std::get_if<ItemSocketStoneRow>(&existing->category) : nullptr;
+            if(!row || row->kind!=SocketStoneKind::Insertable || !(row->allowedTargets&mask) ||
+               row->minimumSocketGrade>socket.grade ||
+               !catalog.FindRefinement(existing->base.refinementProfile)->FindLevel(socket.refinementLevel))
+                return std::unexpected(E::InvalidSocketState);
+            for(std::size_t j=0;j<i;++j)
+                if(installed[j] && Conflicts(*row,*installed[j]))return std::unexpected(E::InvalidSocketState);
+            installed[i]=row;
+        }
+        else
+        {
+            if(socket.stone || socket.refinementLevel ||
+               (socket.state!=StoneSocketState::Empty && socket.state!=StoneSocketState::Broken))
+                return std::unexpected(E::InvalidSocketState);
+        }
+    }
+    return {};
+}
 std::expected<SocketStoneInsertPlan,SocketStoneError> PrepareSocketStoneInsert(
     const ItemCatalog& catalog,const SocketStoneInsertRequest& request)
 {
@@ -60,39 +99,19 @@ std::expected<SocketStoneInsertPlan,SocketStoneError> PrepareSocketStoneInsert(
     if(request.inCombat && !catalog.FindUsePolicy(stone->base.usePolicy)->useDuringCombat)return std::unexpected(E::Forbidden);
     const auto mask=TargetMask(*target);
     if(!mask || !(definition->allowedTargets&mask))return std::unexpected(E::IncompatibleTarget);
+    if(auto valid=ValidateEquipmentStoneSockets(catalog,request.target.item,request.sockets);!valid)
+        return std::unexpected(valid.error());
     std::optional<std::uint8_t> selected;
-    std::array<const ItemSocketStoneRow*,EquipmentStoneSockets> installed{};
     for(std::size_t i=0;i<request.sockets.size();++i)
     {
         const auto& socket=request.sockets[i];
-        if(socket.state==StoneSocketState::Closed)
-        {
-            if(socket.grade || socket.stone || socket.refinementLevel)return std::unexpected(E::InvalidSocketState);
-            continue;
-        }
-        if(socket.grade<1 || socket.grade>2)return std::unexpected(E::InvalidSocketState);
         if(socket.state==StoneSocketState::Occupied)
         {
-            if(!socket.stone)return std::unexpected(E::InvalidSocketState);
-            const auto* existing=catalog.Find(*socket.stone);
-            const auto* row=existing ? std::get_if<ItemSocketStoneRow>(&existing->category) : nullptr;
-            if(!row || row->kind!=SocketStoneKind::Insertable || !(row->allowedTargets&mask) ||
-               row->minimumSocketGrade>socket.grade ||
-               !catalog.FindRefinement(existing->base.refinementProfile)->FindLevel(socket.refinementLevel))
-                return std::unexpected(E::InvalidSocketState);
-            for(std::size_t j=0;j<i;++j)
-                if(installed[j] && Conflicts(*row,*installed[j]))return std::unexpected(E::InvalidSocketState);
-            installed[i]=row;
-            if(Conflicts(*definition,*row))return std::unexpected(E::ConflictingGroup);
+            const auto& row=std::get<ItemSocketStoneRow>(catalog.Find(*socket.stone)->category);
+            if(Conflicts(*definition,row))return std::unexpected(E::ConflictingGroup);
         }
-        else
-        {
-            if(socket.stone || socket.refinementLevel ||
-               (socket.state!=StoneSocketState::Empty && socket.state!=StoneSocketState::Broken))
-                return std::unexpected(E::InvalidSocketState);
-            if(!selected && socket.state==StoneSocketState::Empty && socket.grade>=definition->minimumSocketGrade)
-                selected=static_cast<std::uint8_t>(i);
-        }
+        else if(!selected && socket.state==StoneSocketState::Empty && socket.grade>=definition->minimumSocketGrade)
+            selected=static_cast<std::uint8_t>(i);
     }
     if(!selected)return std::unexpected(E::NoEmptySocket);
     if(!request.chanceBp || *request.chanceBp>10000)return std::unexpected(E::InvalidDecision);

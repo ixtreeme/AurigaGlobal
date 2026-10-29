@@ -84,7 +84,29 @@ def growth(document, maximum=30):
         growth_stages=[dict(stage='0',maximum_level=str(maximum),form_id=None)])
 
 
+def socket_service(document,kind=1):
+    document.update(socket_service=dict(service_kind=str(kind),units_per_use='1'),recovery=None,effect=None,timed=None,toggle=None,cooldown=None)
+
+
 class OfflineModelTests(unittest.TestCase):
+    def test_socket_services_copy_and_effect_switches(self):
+        packet=catalog.blank(TOOL)
+        for kind in range(1,4):
+            packet,key=create(packet,5,lambda d:socket_service(d,kind))
+            self.check(packet);original=catalog.Catalog(packet).item(key)
+            self.assertEqual(original['socket_service']['service_kind'],str(kind))
+            clone=catalog.Catalog(packet).duplicate(key);clone['socket_service']['units_per_use']='2'
+            second=key_of(clone);packet=saved(packet,catalog.Catalog(packet).apply(clone),second);self.check(packet)
+            self.assertEqual(catalog.Catalog(packet).item(key),original)
+            changed=catalog.Catalog(packet).item(second);fresh=catalog.Catalog(packet).new(5)
+            changed.update(recovery=fresh['recovery'],effect=fresh['effect'],socket_service=None)
+            packet=saved(packet,catalog.Catalog(packet).apply(changed,second));self.check(packet)
+            self.assertIsNone(catalog.Catalog(packet).item(second)['socket_service'])
+        bad=catalog.Catalog(packet).new(5);socket_service(bad);bad['socket_service']['units_per_use']='201'
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,None,TOOL)
+        bad['socket_service'].update(units_per_use='1',service_kind='4')
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,None,TOOL)
+
     def test_pet_lifecycle_profiles_supply_matrix_and_copy(self):
         def training(d):growth(d);d.update(catalog.Catalog.training_defaults())
         packet,pet=create(catalog.blank(TOOL),15,training);original=catalog.Catalog(packet).item(pet)
@@ -792,6 +814,21 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_socket_service_form_switches_ignore_inactive_drafts(self):
+        packet,key=create(catalog.blank(TOOL),5,lambda d:socket_service(d,2));self.page.loaded(packet,key)
+        self.assertEqual(self.page.consumable_kind.currentData(),'4')
+        fields={f.column:f for f in self.page.socket_service_form.fields}
+        fields['service_kind'].widget.setCurrentIndex(fields['service_kind'].widget.findData('3'))
+        fields['units_per_use'].edit.setText('2')
+        self.page.cooldown_check.setChecked(True);self.page.cooldown_edit.setText('invalid inactive')
+        self.page.effect_forms[1].fields[0].edit.setText('invalid inactive')
+        d=self.page.collect();self.assertEqual(d['socket_service'],dict(service_kind='3',units_per_use='2'))
+        self.assertIsNone(d['cooldown']);catalog.validate(packet,d,key,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(d,key));self.page.loaded(packet,key)
+        self.page.consumable_kind.setCurrentIndex(0);fields['units_per_use'].edit.setText('invalid inactive')
+        d=self.page.collect();self.assertIsNone(d['socket_service']);catalog.validate(packet,d,key,TOOL)
+        self.page.dirty=False
+
     def test_pet_training_and_supply_forms_keep_inactive_drafts(self):
         packet,pet=create(catalog.blank(TOOL),15,growth);self.page.loaded(packet,pet)
         panel=self.page.companion_panel.training;self.assertFalse(panel.enabled.isChecked());panel.enabled.setChecked(True)
@@ -1440,6 +1477,22 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzzzzzzzz_socket_service_commit_copy_and_atomic_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(5);socket_service(d,2);key=key_of(d)
+        packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)
+        clone=catalog.Catalog(packet).duplicate(key);clone['socket_service']['units_per_use']='3'
+        packet=self.commit(packet,clone);self.assertEqual(catalog.Catalog(packet).item(key),original)
+        for table in ('socket_service_profile','item_consumable'):
+            self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_socket_service BEFORE INSERT ON protos."+table+" FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test socket service write failure'")
+            try:
+                fresh=catalog.Catalog(packet).new(5);socket_service(fresh,3);fresh['socket_service']['units_per_use']='7'
+                with self.assertRaises(api.EditorError):self.commit(packet,fresh)
+            finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_socket_service')
+            after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+            self.assertEqual(ordered(after['tables']),ordered(packet['tables']))
+        original['socket_service']['service_kind']='1';packet=self.commit(packet,original,key)
+        self.assertEqual(catalog.Catalog(packet).item(key)['socket_service']['service_kind'],'1')
+
     def test_zzzzzzzzzzz_pet_lifecycle_profiles_supply_and_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(15);growth(d);d.update(catalog.Catalog.training_defaults());pet=key_of(d);packet=self.commit(packet,d)
         original=catalog.Catalog(packet).item(pet)

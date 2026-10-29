@@ -63,6 +63,10 @@ enum class SocketStoneError
     ConflictingGroup, NoEmptySocket, InvalidDecision,
 };
 class ItemCatalog;
+// Complete shape, target compatibility, refinement and cross-group validation.
+// Retired but still known embedded stones remain readable/recoverable.
+std::expected<void,SocketStoneError> ValidateEquipmentStoneSockets(const ItemCatalog&,ItemKey target,
+    const std::array<StoneSocketSlot,EquipmentStoneSockets>&);
 // No registry, SQL, Lua, RNG or mutation. The owner must bind the session and
 // class/sex checks, then atomically receipt+consume+replace the exact slot state.
 // CommitUnknown requires operation-ID reconciliation before retrying.

@@ -43,6 +43,7 @@ PROFILES = {
     'bonus_profile': ('profile_id', [('item_base', 'base_bonus_profile_id'), ('refinement_level', 'extra_bonus_profile_id'), ('timed_effect_profile', 'bonus_profile_id'), ('toggle_effect_profile', 'bonus_profile_id')], ['bonus_profile_entry']),
     'refinement_profile': ('profile_id', [('item_base', 'refinement_profile_id')], ['refinement_level']),
     'consumable_cooldown_profile': ('profile_id', [('recovery_profile', 'cooldown_profile_id'), ('timed_effect_profile', 'cooldown_profile_id'), ('toggle_effect_profile', 'cooldown_profile_id')], []),
+    'socket_service_profile': ('profile_id',[('item_consumable','socket_service_profile_id')],[]),
     'recovery_profile': ('profile_id', [('item_consumable', 'recovery_profile_id')], list(EFFECT_TABLES.values())),
     'timed_effect_profile': ('profile_id', [('item_consumable', 'timed_effect_profile_id')], []),
     'toggle_effect_profile': ('profile_id', [('item_consumable', 'toggle_effect_profile_id')], []),
@@ -124,8 +125,10 @@ class Catalog:
                           ammo=self.linked('item_ammo_policy', child, 'ammo_policy_id', 'policy_id'))
         if category in (2, 3): result['resistance'] = self.linked('item_resistance_profile', child, 'resistance_profile_id')
         if category == 5:
-            result.update(toggle=None, toggle_group=None, toggle_bonuses=[])
-            if child.get('toggle_effect_profile_id') is not None:
+            result.update(toggle=None, toggle_group=None, toggle_bonuses=[],socket_service=None)
+            if child.get('socket_service_profile_id') is not None:
+                result.update(socket_service=self.linked('socket_service_profile',child,'socket_service_profile_id'),recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
+            elif child.get('toggle_effect_profile_id') is not None:
                 toggle = self.linked('toggle_effect_profile', child, 'toggle_effect_profile_id')
                 result.update(toggle=toggle, toggle_group=self.linked('toggle_effect_group', toggle, 'group_id', 'group_id'),
                               toggle_bonuses=self.entries(toggle['bonus_profile_id']), recovery=None, effect=None,
@@ -237,7 +240,8 @@ class Catalog:
             item.update(recovery=dict(delivery_kind='1', units_per_use='1', allowed_contexts='15', allow_during_pvp='1', cooldown_profile_id=None, arena_quota_cost='0'),
                         effect=dict(delivery_kind='1', hp_raw='1000', sp_raw='0', max_hp_bp='0', max_sp_bp='0', flat_bonus_cap_bp='10000'),
                         cooldown=None)
-            item['child'].update(recovery_profile_id=None, timed_effect_profile_id=None, toggle_effect_profile_id=None)
+            item['child'].update(recovery_profile_id=None, timed_effect_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None)
+            item['socket_service']=None
             item.update(timed=None, timed_group=None, timed_bonuses=[], toggle=None, toggle_group=None, toggle_bonuses=[])
         if category == 8:
             # A usable placeholder box: one weighted gold entry until real contents are entered.
@@ -468,7 +472,10 @@ class Catalog:
         if category in (2, 3):
             child['resistance_profile_id'] = self.profile('item_resistance_profile', document['resistance'], child.get('resistance_profile_id'))
         if category == 5:
-            if document.get('toggle') is not None: self.apply_toggle(document, child, key)
+            if document.get('socket_service') is not None:
+                identity=self.profile('socket_service_profile',document['socket_service'],child.get('socket_service_profile_id') if exists else None)
+                child.update(recovery_profile_id=None,timed_effect_profile_id=None,toggle_effect_profile_id=None,socket_service_profile_id=identity)
+            elif document.get('toggle') is not None: self.apply_toggle(document, child, key)
             elif document.get('timed') is not None: self.apply_timed(document, child, key)
             else: self.apply_recovery(document, child, key)
         if category == 9: self.apply_book(document, child, key)
@@ -684,7 +691,7 @@ class Catalog:
         if any(r.get('recovery_profile_id') == profile and (int(r['category_id']), int(r['local_id'])) != key for r in self.tables['item_consumable']):
             profile = self.allocate('recovery_profile')
             self.replace('recovery_profile', {'profile_id': profile}, [dict(recovery, profile_id=profile, code=f'editor.recovery.{profile}')])
-        child.update(recovery_profile_id=profile, timed_effect_profile_id=None, toggle_effect_profile_id=None)
+        child.update(recovery_profile_id=profile, timed_effect_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None)
         table = EFFECT_TABLES[int(recovery['delivery_kind'])]
         for other in EFFECT_TABLES.values():
             if other != table: self.replace(other, {'profile_id': profile}, [])
@@ -718,7 +725,7 @@ class Catalog:
         cooldown = document.get('cooldown')
         timed['cooldown_profile_id'] = self.profile('consumable_cooldown_profile', cooldown, timed.get('cooldown_profile_id'),
                                                    reuse=private) if cooldown else None
-        child.update(recovery_profile_id=None, toggle_effect_profile_id=None, timed_effect_profile_id=self.profile('timed_effect_profile', timed, old if private else None))
+        child.update(recovery_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None, timed_effect_profile_id=self.profile('timed_effect_profile', timed, old if private else None))
 
     def apply_toggle(self, document, child, key):
         toggle = document['toggle']
@@ -748,7 +755,7 @@ class Catalog:
         cooldown = document.get('cooldown')
         toggle['cooldown_profile_id'] = self.profile('consumable_cooldown_profile', cooldown, toggle.get('cooldown_profile_id'),
                                                    reuse=private) if cooldown else None
-        child.update(recovery_profile_id=None, timed_effect_profile_id=None, toggle_effect_profile_id=self.profile('toggle_effect_profile', toggle, old if private else None))
+        child.update(recovery_profile_id=None, timed_effect_profile_id=None,socket_service_profile_id=None, toggle_effect_profile_id=self.profile('toggle_effect_profile', toggle, old if private else None))
 
     def apply_book(self, document, child, key):
         head, old = document['book'], child.get('profile_id')
@@ -769,6 +776,7 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'socket.service':'foglalattisztítás vagy kőkiemelés típusa és mennyisége',
     'pet.training':'kor, helynyitás és képességszintek', 'pet.skills':'petképesség azonosítója, hatása és szintjei', 'pet.supply':'petellátmány típusa és beállításai', 'pet.supply_state':'szállítódoboz/skin halmozása vagy bónusza', 'pet.study_skill':'tanítható petképesség', 'pet.skin_form':'pet megjelenési formája',
     'pet.hatch': 'keltetési költség és születési értékek', 'pet.hatch_target': 'keltetett fejlődő pet', 'pet.feed': 'petetetés forrása, mennyisége és hatása',
     'growth_pet.profile': 'fejlődő pet szintjei és szakaszai', 'growth_pet.form': 'evolúciós szakasz formája',

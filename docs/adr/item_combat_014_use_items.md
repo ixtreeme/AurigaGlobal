@@ -98,3 +98,13 @@ nyolc szabálymintával. A minták nem jóváhagyott balance vagy valódi tartal
 Az owner kötelezően ellenőrzi a külön skill-tartalom létezését, maximumát,
 kaszt/csoport és előfeltétel szabályait. Ez a keresztellenőrzés és a tartós
 item/skill/pont/cooldown/receipt commit továbbra is az F3/F4 kapu része.
+
+## 5. szelet — foglalatkarbantartás (2026-10-29)
+
+[IC-030](item_combat_030_socket_services.md): tisztítás, minden/utolsó kő
+kiemelése, valamint az ékszerfoglalat-nyitás és -töltés teljes befogadási
+terve elkészült, v23 katalógussal és Qt-szerkesztéssel. A beépített kő
+ItemKey-ja és szintje megmarad; minden visszaadott kőhöz külön foglalás kell.
+Ez nem zárja le a teljes 5. szeletet: bónuszhozzáadás/-váltás, zárolás,
+jelmez-/stólabónuszok és fejlesztési segédanyagok még külön portot igényelnek.
+Az atomi gazdasági végrehajtás F3/F4, a valódi forráskonverzió F6.

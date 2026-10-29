@@ -21,7 +21,7 @@ INSERT_ORDER = (
     'item_use_policy','item_trade_policy','item_appearance_profile','item_attack_profile',
     'item_ammo_policy','item_resistance_profile','skill_book_profile','skill_book_target','skill_book_step',
     'bonus_profile','bonus_profile_entry','refinement_profile','refinement_level',
-    'accessory_socket_profile','accessory_socket_grade','consumable_cooldown_profile',
+    'accessory_socket_profile','accessory_socket_grade','socket_service_profile','consumable_cooldown_profile',
     'timed_effect_group','timed_effect_profile','toggle_effect_group','toggle_effect_profile',
     'recovery_profile','instant_recovery_profile','reserve_recovery_profile','periodic_recovery_profile','automatic_recovery_profile',
     'loot_profile','item_base','pet_hatch_profile','item_weapon','item_armor','item_material','item_accessory','item_consumable',
@@ -71,7 +71,7 @@ def stage(candidate_file,helper,work,binaries):
     if expected!=candidate['hash']:raise MigrationError('Candidate hash mismatch')
     sandbox=Sandbox(work,binaries)
     migrations=sorted((ROOT/'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
-    if [int(p.name[:3]) for p in migrations]!=list(range(29)):raise MigrationError('Unexpected catalog migration chain')
+    if [int(p.name[:3]) for p in migrations]!=list(range(30)):raise MigrationError('Unexpected catalog migration chain')
     try:
         sandbox.start();sandbox.verify()
         for path in migrations:
