@@ -402,6 +402,27 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 
 bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_pszFileName, TMapSetting & r_setting)
 {
+    // The raid exports the same blocked cells to Unity and the server. This
+    // explicit little-endian byte grid avoids an editor dependency on LZO.
+    if (r_setting.iIndex == 430) {
+        auto raw = auriga::OpenFile((std::string(c_pszFileName)+".raw").c_str(), "rb");
+        char magic[4]{}; uint32_t width=0,height=0;
+        if(!raw || fread(magic,1,4,raw.get())!=4 || memcmp(magic,"AER1",4)!=0 ||
+           fread(&width,4,1,raw.get())!=1 || fread(&height,4,1,raw.get())!=1 || width!=2048 || height!=2560) {
+            LOG_ERROR("ECLIPSE_ATTRIBUTE_INVALID {}", c_pszFileName); return false;
+        }
+        std::vector<uint8_t> grid(size_t(width)*height);
+        if(fread(grid.data(),1,grid.size(),raw.get())!=grid.size())return false;
+        constexpr int side=SECTREE_SIZE/CELL_SIZE;
+        std::vector<uint32_t> page(side*side);
+        for(uint32_t sy=0;sy<height/side;sy++)for(uint32_t sx=0;sx<width/side;sx++){
+            SECTREEID id;id.coord.x=r_setting.iBaseX/SECTREE_SIZE+sx;id.coord.y=r_setting.iBaseY/SECTREE_SIZE+sy;
+            auto* tree=pkMapSectree->Find(id.package);if(!tree)return false;
+            for(int y=0;y<side;y++)for(int x=0;x<side;x++)page[y*side+x]=grid[(sy*side+y)*width+sx*side+x]?ATTR_BLOCK:0;
+            tree->BindAttribute(new CAttribute(page.data(),side,side));
+        }
+        LOG_INFO("ECLIPSE_ATTRIBUTE_OK {}x{}",width,height);return true;
+    }
 	auriga::FilePtr fp = auriga::OpenFile(c_pszFileName, "rb");
 
 	if (!fp)

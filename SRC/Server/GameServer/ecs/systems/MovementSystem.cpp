@@ -1,5 +1,6 @@
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
+#include "../../raid/EclipseRaidSystem.hpp"
 #include "../../story/CaravanQuestSystem.hpp"
 #include "../../mission_pass/MissionPassEvents.hpp"
 #include "SessionSystem.hpp"
@@ -1581,7 +1582,7 @@ void SetRotationToXY(entt::entity e, int32_t x, int32_t y)
 // accessors, so the body moves here whole rather than being wrapped.
 bool CanMove(entt::entity e)
 {
-    if(SpyQuest::Locked(e))return false;
+    if(SpyQuest::Locked(e)||EclipseRaid::MovementLocked(e))return false;
     if(CaravanQuest::Locked(e)&&!CaravanQuest::Defending(e))return false;
     if (e == entt::null || !g_registry.valid(e))
         return false;
@@ -1710,6 +1711,7 @@ float GetMoveMotionSpeed(entt::entity e)
     // Monster/mount path only: players send their animation duration in the
     // move packet and never reach this lookup.
     if (!IsValid(e)) return 300.0f;
+    if (float raidSpeed=EclipseRaid::MovementSpeed(e);raidSpeed>0) return raidSpeed;
     const uint32_t vnum = PlayerRuntime::GetRaceNum(e);
     const bool attached = PlayerRuntime::GetDesc(e) != nullptr;
     if (!attached && FixedMovementRace(vnum)) return 100.0f;

@@ -1,6 +1,7 @@
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
 #include "../../story/CaravanQuestSystem.hpp"
+#include "../../raid/EclipseRaidSystem.hpp"
 #include "../../mission_pass/MissionPassEvents.hpp"
 #include "MovementSystem.hpp"
 #include "ViewSystem.hpp"
@@ -2203,6 +2204,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
     if(SpyQuest::Hooks::death)SpyQuest::Hooks::death(victim,killer);
     CaravanQuest::OnDeath(victim,killer);
+    EclipseRaid::OnDeath(victim,killer);
 
 	// LostCastle klonoknak nincs mob_proto (m_pkMobData == nullptr),
 	// ezert a normal !ecs::PlayerRuntime::IsPC(victim) reward/resurrection ag GetMobTable()-t hivna es crashelne.
@@ -4675,6 +4677,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 {
     if(!SpyQuest::AllowCombat(attacker,victim))return false;
     if(!CaravanQuest::AllowCombat(attacker,victim))return false;
+    if(!EclipseRaid::AllowCombat(attacker,victim))return false;
+    const auto raidDamage=EclipseRaid::FilterDamage(attacker,victim,dam);
+    if(dam>0&&raidDamage==0)return false;
+    dam=raidDamage;
     if (victim == entt::null || !g_registry.valid(victim))
         return false;
 

@@ -88,4 +88,5 @@ void CMapLocation::Insert(int32_t lIndex, const char * c_pszHost, uint16_t wPort
 #endif
 
 	LOG_TRACE("MapLocation::Insert : {} {} {}", lIndex, c_pszHost, wPort);
+	if(lIndex==430)LOG_INFO("ECLIPSE_ROUTE_REGISTERED map={} host={} port={}",lIndex,c_pszHost,wPort);
 }

@@ -16,6 +16,8 @@
 #include <unordered_set>
 
 #include "../../combat/affect.h"
+#include "../../raid/ICCTransientAffects.hpp"
+#include "../../raid/EclipseRaidSystem.hpp"
 #include "../../world/arena.h"
 #include "../../core/buffer_manager.h"
 #include "../../entity/char.h"
@@ -314,7 +316,7 @@ void PublishAffectRemoval(entt::entity e, const CAffect& value)
 
 bool IsNoSaveAffect(uint32_t type)
 {
-    return type == AFFECT_WAR_FLAG || type == AFFECT_REVIVE_INVISIBLE ||
+    return EclipseRaid::TransientAffect(type) || type == AFFECT_WAR_FLAG || type == AFFECT_REVIVE_INVISIBLE ||
         (type >= AFFECT_PREMIUM_START && type <= AFFECT_PREMIUM_END);
 }
 
@@ -403,7 +405,7 @@ EVENTFUNC(load_affect_login_event)
 }
 
 
-#define IS_NO_SAVE_AFFECT(type) ((type) == AFFECT_WAR_FLAG || (type) == AFFECT_REVIVE_INVISIBLE || ((type) >= AFFECT_PREMIUM_START && (type) <= AFFECT_PREMIUM_END))
+#define IS_NO_SAVE_AFFECT(type) (EclipseRaid::TransientAffect(type) || (type) == AFFECT_WAR_FLAG || (type) == AFFECT_REVIVE_INVISIBLE || ((type) >= AFFECT_PREMIUM_START && (type) <= AFFECT_PREMIUM_END))
 #define IS_NO_CLEAR_ON_DEATH_AFFECT(type) ((type) == AFFECT_PVM_RACE || (type) == AFFECT_BLOCK_CHAT || ((type) >= 500 && (type) < 600) || ((type) >= 564 && (type) < 566) || ((type) >= NEW_AFFECT_BIOLOGIST_1 && (type) <= NEW_AFFECT_BIOLOGIST_16))
 
 void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count)
@@ -1461,6 +1463,7 @@ bool RemoveAffect(entt::entity e, CAffect* affect)
 
 void RemoveBadAffects(entt::entity e)
 {
+    EclipseRaid::Dispel(e);
     if (!AffectState(e))
         return;
     RemovePoison(e);

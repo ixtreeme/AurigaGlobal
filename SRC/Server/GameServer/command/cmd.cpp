@@ -20,6 +20,7 @@
 ACMD(do_user_horse_ride);
 ACMD(do_spyquest);
 ACMD(do_caravan);
+ACMD(do_eclipseraid);
 ACMD(do_user_horse_back);
 ACMD(do_user_horse_feed);
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
@@ -460,6 +461,7 @@ struct command_info cmd_info[] =
     { "missionpass", do_missionpass, 0, POS_DEAD, GM_PLAYER },
     { "spyquest", do_spyquest, 0, POS_DEAD, GM_PLAYER },
     { "caravan", do_caravan, 0, POS_DEAD, GM_PLAYER },
+    { "eclipseraid", do_eclipseraid, 0, POS_DEAD, GM_PLAYER },
 	{ "mob_ld",		do_mob_ld,			0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "ma",		do_mob_aggresive,	0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "mc",		do_mob_coward,		0,			POS_DEAD,	GM_HIGH_WIZARD	},

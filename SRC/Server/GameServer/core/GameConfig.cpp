@@ -1,4 +1,6 @@
 #include "GameConfig.h"
+#include "../../common/CommonDefines.h"
+#include <stdexcept>
 
 #include <Core/server_config.h>
 
@@ -105,6 +107,7 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 		{
 			for (const auto& v : doc.at("map_allow"))
 				mapAllow.push_back(v.get<int32_t>());
+			if(mapAllow.size()>MAP_ALLOW_LIMIT)throw std::runtime_error("map_allow exceeds the interserver routing capacity of "+std::to_string(MAP_ALLOW_LIMIT));
 		}
 
 		if (doc.contains("events"))
