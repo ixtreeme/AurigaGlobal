@@ -253,7 +253,11 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::PolymorphMasteries,[&](const Reader& r){Parent(s.polymorphProfiles,polyIndex,r).masteries.push_back({r.U8(1),r.U64(2),r.U64(3)});});
     Each(source,Table::PolymorphItems,[&](const Reader& r){s.polymorphItems.push_back({r.Key(),r.U32(2),r.OptionalId(3)});});
     Each(source,Table::CompanionForms,[&](const Reader& r){s.companionForms.push_back({r.U32(0),r.Text(1,96),r.U32(2),r.Text(3,192)});});
-    Each(source,Table::Companions,[&](const Reader& r){s.companions.push_back({r.Key(),static_cast<CompanionKind>(r.U8(2)),r.U32(3),r.OptionalId(4),static_cast<CompanionClock>(r.U8(5)),r.U64(6),r.Bool(7)});});
+    Each(source,Table::Companions,[&](const Reader& r){s.companions.push_back({r.Key(),static_cast<CompanionKind>(r.U8(2)),r.U32(3),r.OptionalId(4),static_cast<CompanionClock>(r.U8(5)),r.U64(6),r.Bool(7),r.OptionalId(8)});});
+    Each(source,Table::GrowthPetProfiles,[&](const Reader& r){s.growthPetProfiles.push_back({r.U32(0),r.Text(1,96),r.U16(2),static_cast<GrowthExpPolicy>(r.U8(3)),{}, {}});});
+    const auto growthIndex=Index(s.growthPetProfiles,Table::GrowthPetProfiles);
+    Each(source,Table::GrowthPetLevels,[&](const Reader& r){Parent(s.growthPetProfiles,growthIndex,r).levels.push_back({r.U16(1),r.U64(2),r.U64(3)});});
+    Each(source,Table::GrowthPetStages,[&](const Reader& r){Parent(s.growthPetProfiles,growthIndex,r).stages.push_back({r.U8(1),r.U16(2),r.U32(3)});});
     Each(source,Table::SoulProfiles,[&](const Reader& r){s.soulProfiles.push_back({r.U32(0),r.Text(1,96),{}});});
     const auto soulIndex=Index(s.soulProfiles,Table::SoulProfiles);
     Each(source,Table::SoulLevels,[&](const Reader& r){Parent(s.soulProfiles,soulIndex,r).levels.push_back({r.U16(1),r.U32(2),r.U32(3),r.U32(4),r.U32(5),r.U32(6),r.U64(7),r.U32(8),r.U32(9),r.U32(10)});});

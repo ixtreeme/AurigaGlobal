@@ -59,11 +59,13 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         for (const auto& row : rows) if (!add(row.code.size())) return false;
         return true;
     };
-    if (!profiles(source.soulProfiles) || !profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
+    if (!profiles(source.growthPetProfiles) || !profiles(source.soulProfiles) || !profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
         !profiles(source.attacks) || !profiles(source.ammoPolicies) || !profiles(source.resistances) || !profiles(source.refinements) ||
         !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
         !profiles(source.lootProfiles) || !profiles(source.timedEffectGroups) || !profiles(source.timedEffects) || !profiles(source.toggleEffectGroups) || !profiles(source.toggleEffects) || !profiles(source.skillBookProfiles))
         return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "profiles"));
+    for(const auto& p:source.growthPetProfiles)
+        if(p.levels.size()>255 || p.stages.size()>16)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"growth_pet.profile",{},p.id));
     for(const auto& f:source.companionForms)
         if(!add(f.code.size()) || !add(f.modelAsset.size()))return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"companion.form",{},f.id));
     for(const auto& p:source.soulProfiles)
@@ -124,14 +126,24 @@ auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.char
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 19 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 20 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     if(auto r=Profiles(source.companionForms,"companion.form",[](const CompanionForm& f){return f.mobTemplateId>0 && detail::AssetReference(f.modelAsset);});!r)return std::unexpected(r.error());
+    for(auto& p:source.growthPetProfiles) {
+        std::ranges::sort(p.levels,{},&GrowthPetLevel::level);std::ranges::sort(p.stages,{},&GrowthPetStage::stage);
+    }
+    if(auto r=Profiles(source.growthPetProfiles,"growth_pet.profile",ValidGrowthPetProfile);!r)return std::unexpected(r.error());
+    for(const auto& p:source.growthPetProfiles)for(const auto& stage:p.stages)
+        if(!FindProfile(source.companionForms,stage.form))return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"growth_pet.form",{},p.id));
     std::ranges::sort(source.companions,{},&ItemCompanionRow::key);
     std::map<ItemKey,const ItemCompanionRow*> companions;
     for(const auto& r:source.companions) {
         if(r.key.Category()!=ItemCategory::Companion)return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory,"companion",r.key));
         if(!companions.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow,"companion",r.key));
+        if(r.kind==CompanionKind::GrowthPet && r.growthProfile) {
+            const auto* p=FindProfile(source.growthPetProfiles,*r.growthProfile);
+            if(!p || p->stages.front().form!=r.form)return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"growth_pet.profile",r.key));
+        }
         if(!ValidCompanion(r))return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"companion",r.key));
         if(!FindProfile(source.companionForms,r.form) || (r.ridingForm && !FindProfile(source.companionForms,*r.ridingForm)))
             return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"companion.form",r.key));
@@ -488,7 +500,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         // are resolved for installed stones; the inventory stone is not gear.
         if ((stackable || soul) && (row.binding == BindingPolicy::OnEquip || (row.appearanceProfile && !questItem && !socketStone) || (row.baseBonusProfile && !socketStone)))
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "non_equipment.equipment_state", row.key));
-        if(companion && (row.appearanceProfile || (row.binding==BindingPolicy::OnEquip && companions.contains(row.key) && companions.at(row.key)->kind==CompanionKind::Pet)))
+        if(companion && (row.appearanceProfile || (row.binding==BindingPolicy::OnEquip && companions.contains(row.key) && companions.at(row.key)->kind!=CompanionKind::Mount)))
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"companion.equipment_state",row.key));
         if (row.baseBonusProfile)
         {
@@ -505,7 +517,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const auto expectedKind = category == ItemCategory::Weapon ? RefinementKind::Weapon :
             category == ItemCategory::Armor ? RefinementKind::Armor :
             category == ItemCategory::Accessory ? RefinementKind::Accessory :
-            companion ? RefinementKind::Companion : socketStone ? RefinementKind::SocketStone : costume ? RefinementKind::Costume : tool ? RefinementKind::Tool : soul && soulItems.contains(row.key) && soulItems.at(row.key)->kind==SoulKind::Core ? RefinementKind::Soul : RefinementKind::None;
+            companion ? (companions.contains(row.key) && companions.at(row.key)->kind==CompanionKind::GrowthPet ? RefinementKind::None : RefinementKind::Companion) : socketStone ? RefinementKind::SocketStone : costume ? RefinementKind::Costume : tool ? RefinementKind::Tool : soul && soulItems.contains(row.key) && soulItems.at(row.key)->kind==SoulKind::Core ? RefinementKind::Soul : RefinementKind::None;
         if (profile->Data().kind != RefinementKind::None && profile->Data().kind != expectedKind)
             return std::unexpected(Error(ItemCatalogErrorCode::WrongRefinementKind, "refinement", row.key, row.refinementProfile));
         std::optional<ItemCategoryRow> child;
@@ -672,6 +684,7 @@ const ValidatedRefinementProfile* ItemCatalog::FindRefinement(std::uint32_t id) 
     const auto found = refinements_.find(id);
     return found == refinements_.end() ? nullptr : &found->second;
 }
+const GrowthPetProfile* ItemCatalog::FindGrowthPetProfile(std::uint32_t id) const noexcept { return FindProfile(source_.growthPetProfiles,id); }
 const CompanionForm* ItemCatalog::FindCompanionForm(std::uint32_t id) const noexcept { return FindProfile(source_.companionForms,id); }
 const SoulProfile* ItemCatalog::FindSoulProfile(std::uint32_t id) const noexcept { return FindProfile(source_.soulProfiles,id); }
 const PolymorphForm* ItemCatalog::FindPolymorphForm(std::uint32_t id) const noexcept { return FindProfile(source_.polymorphForms,id); }

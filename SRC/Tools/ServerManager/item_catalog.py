@@ -49,6 +49,7 @@ PROFILES = {
     'skill_book_profile': ('profile_id', [('item_skill_book', 'profile_id')], ['skill_book_target', 'skill_book_step']),
     'loot_profile': ('profile_id', [('item_container', 'loot_profile_id'), ('item_fishing', 'use_loot_profile_id')], ['loot_entry']),
     'polymorph_profile': ('profile_id',[('item_polymorph','profile_id')],['polymorph_skill_rule','polymorph_mastery_rule']),
+    'growth_pet_profile': ('profile_id',[('item_companion','growth_profile_id')],['growth_pet_level','growth_pet_stage']),
     'soul_profile': ('profile_id',[('item_soul','profile_id')],['soul_level']),
     'tool_profile': ('profile_id', [('item_tool','profile_id')], ['tool_level']),
 }
@@ -139,7 +140,13 @@ class Catalog:
             book = self.linked('skill_book_profile', child, 'profile_id')
             result.update(book=book, book_targets=self.book_rows('skill_book_target', book['profile_id'], 'skill_id'),
                           book_steps=self.book_rows('skill_book_step', book['profile_id'], 'current_level'))
-        if category == 15:result.update(new_companion_form=None,new_riding_form=None,riding_same_form=False)
+        if category == 15:
+            result.update(new_companion_form=None,new_riding_form=None,riding_same_form=False)
+            result.update(self.growth_defaults())
+            if child.get('growth_profile_id'):
+                result['growth']=self.linked('growth_pet_profile',child,'growth_profile_id')
+                result['growth_levels']=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('growth_pet_level',child['growth_profile_id'],'level')]
+                result['growth_stages']=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('growth_pet_stage',child['growth_profile_id'],'stage')]
         if category == 14:
             result['soul_levels']=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('soul_level',child['profile_id'],'level')] if child['profile_id'] else [self.soul_level(0)]
         if category == 13:
@@ -229,7 +236,8 @@ class Catalog:
             item['child'].update(dispatch_kind='1', group_code='', allowed_contexts='0', allow_observer='0')
         if category == 15:
             forms=self.tables['companion_form']
-            item['child'].update(companion_kind='1',form_id=forms[0]['form_id'] if forms else None,riding_form_id=None,clock_kind='1',duration_ms='0',dungeon_only_bonus='0')
+            item['child'].update(companion_kind='1',form_id=forms[0]['form_id'] if forms else None,riding_form_id=None,clock_kind='1',duration_ms='0',dungeon_only_bonus='0',growth_profile_id=None)
+            item.update(self.growth_defaults())
             identity=self.allocate('companion_form','form_id')
             item.update(new_companion_form=None if forms else dict(code=f'companion.new_form_{identity}',mob_template_id='101',model_asset='models/companion.model'),new_riding_form=None,riding_same_form=False)
         if category == 14:
@@ -445,7 +453,7 @@ class Catalog:
             elif document.get('timed') is not None: self.apply_timed(document, child, key)
             else: self.apply_recovery(document, child, key)
         if category == 9: self.apply_book(document, child, key)
-        if category == 15:self.apply_companion(document,child)
+        if category == 15:self.apply_companion(document,child,key)
         if category == 14:self.apply_soul(document,child,key)
         if category == 13:self.apply_polymorph(document,child,key)
         if category == 11: self.apply_tool(document,child,key)
@@ -482,7 +490,7 @@ class Catalog:
             levels.append(row)
         self.replace('refinement_level', {'profile_id': profile}, levels)
 
-    def apply_companion(self,document,child):
+    def apply_companion(self,document,child,key):
         for section,target in [('new_companion_form','form_id'),('new_riding_form','riding_form_id')]:
             form=document.get(section)
             if not form or target=='riding_form_id' and child['companion_kind']!='2':continue
@@ -492,8 +500,33 @@ class Catalog:
             identity=existing['form_id'] if existing else self.allocate('companion_form','form_id')
             if not existing:self.replace('companion_form',{'form_id':identity},[dict(form,form_id=identity)])
             child[target]=identity
-        if child['companion_kind']=='1':child['riding_form_id']=None
+        if child['companion_kind']!='2':child['riding_form_id']=None
         elif document.get('riding_same_form'):child['riding_form_id']=child['form_id']
+        if child['companion_kind']=='3':self.apply_growth(document,child,key)
+        else:child['growth_profile_id']=None
+
+    @staticmethod
+    def growth_defaults():
+        return dict(growth=dict(maximum_level='1',experience_policy='1'),
+                    growth_levels=[dict(level='1',mob_experience='0',item_experience='0')],
+                    growth_stages=[dict(stage='0',maximum_level='1',form_id=None)])
+
+    def apply_growth(self,document,child,key):
+        old=child.get('growth_profile_id');previous=self.row('growth_pet_profile',old)
+        fields=('maximum_level','experience_policy');head={k:text(document['growth'][k]) for k in fields}
+        levels=[{k:text(v) for k,v in r.items() if k!='profile_id'} for r in document['growth_levels']]
+        stages=[dict(stage=text(r['stage']),maximum_level=text(r['maximum_level']),form_id=text(r.get('form_id') or child['form_id'])) for r in document['growth_stages']]
+        equal=previous and all(previous[k]==head[k] for k in fields)
+        for table,values,order in [('growth_pet_level',levels,'level'),('growth_pet_stage',stages,'stage')]:
+            current=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows(table,old,order)] if previous else []
+            equal=equal and sorted(values,key=lambda r:int(r[order]))==current
+        if equal:return
+        users=[(int(r['category_id']),int(r['local_id'])) for _,r in self.references('growth_pet_profile',old)] if previous else []
+        identity=old if previous and all(user==key for user in users) else self.allocate('growth_pet_profile')
+        code=previous['code'] if identity==old else f'editor.growth_pet.{identity}'
+        self.replace('growth_pet_profile',{'profile_id':identity},[dict(head,profile_id=identity,code=code)])
+        self.replace('growth_pet_level',{'profile_id':identity},[dict(r,profile_id=identity) for r in levels])
+        self.replace('growth_pet_stage',{'profile_id':identity},[dict(r,profile_id=identity) for r in stages]);child['growth_profile_id']=identity
 
     def apply_soul(self,document,child,key):
         if child['soul_kind']=='2':child['profile_id']=None;return
@@ -646,6 +679,7 @@ class Catalog:
 
 # --- error text ------------------------------------------------------------
 FIELDS = {
+    'growth_pet.profile': 'fejlődő pet szintjei és szakaszai', 'growth_pet.form': 'evolúciós szakasz formája',
     'companion': 'pet/mount típusa és időtartama', 'companion.form': 'követő vagy lovaglási forma', 'companion.equipment_state': 'pet kötése vagy megjelenési profilja',
     'soul': 'lélek vagy lélektekercs típusa', 'soul.profile': 'lélek töltési és sebzési szabályai', 'soul.levels': 'lélek szintenkénti szabályai és halommérete', 'soul.scroll': 'lélektekercs fejlesztése',
     'polymorph': 'átváltoztató tárgy', 'polymorph.profile': 'átváltozási szabályok', 'polymorph.form': 'átváltozási forma',

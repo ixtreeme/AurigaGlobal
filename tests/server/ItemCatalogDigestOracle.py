@@ -1,4 +1,4 @@
-"""Independent Python encoder for the v19 typed item fixture (not a runtime reader)."""
+"""Independent Python encoder for the v20 typed item fixture (not a runtime reader)."""
 import argparse
 import hashlib
 import json
@@ -7,7 +7,7 @@ import struct
 import subprocess
 
 
-def fixture_digest(with_refinement_recipe=False, with_quest_items=False, with_socket_stones=False, with_costumes=False, with_gathering=False, with_polymorph=False, with_souls=False, with_companions=False):
+def fixture_digest(with_refinement_recipe=False, with_quest_items=False, with_socket_stones=False, with_costumes=False, with_gathering=False, with_polymorph=False, with_souls=False, with_companions=False, with_growth=False):
     data = bytearray()
     def numbers(format, *values):
         data.extend(struct.pack("<" + format, *values))
@@ -22,7 +22,7 @@ def fixture_digest(with_refinement_recipe=False, with_quest_items=False, with_so
         numbers('B', value is not None)
         if value is not None:
             numbers('I', value)
-    text("auriga.item_catalog.v19"); numbers("I", 19)
+    text("auriga.item_catalog.v20"); numbers("I", 20)
     table(1, 3); identity(1, "use.equipment"); numbers("BBB", 15, 3, 1)
     identity(2, "use.material"); numbers("BBB", 15, 3, 0)
     identity(3, "use.recovery"); numbers("BBB", 15, 3, 1)
@@ -89,6 +89,7 @@ def fixture_digest(with_refinement_recipe=False, with_quest_items=False, with_so
     if with_polymorph:base_items.extend([(13,1,'polymorph','orb',1,200,10,0,1,1,None,None,0,0),(13,2,'polymorph','book',1,1,10,0,1,1,None,None,0,0)])
     if with_souls:base_items.extend([(14,i,'soul','item_'+str(i),1,200 if i==3 else 1,10,0,1,1 if i==3 else 5,None,None,0,0) for i in range(1,4)])
     if with_companions:base_items.extend([(15,i,'companion','item_'+str(i),1,1,10,0,1,5,None,None,0,0) for i in range(1,3)])
+    if with_growth:base_items.append((15,1,'companion','item_1',1,1,10,0,1,1,None,None,0,0))
     table(8, len(base_items))
     for category, local, prefix, code, height, stack, grams, minimum, use, refine, appearance, bonus, buy, sell in sorted(base_items):
         numbers("HI", category, local)
@@ -240,14 +241,25 @@ def fixture_digest(with_refinement_recipe=False, with_quest_items=False, with_so
             numbers('HIBB',14,local,kind,channel is not None)
             if channel is not None:numbers('B',channel)
             optional(1 if kind==1 else None);numbers('H',7500 if kind==2 else 0)
-    table(42,2 if with_companions else 0)
+    table(42,2 if with_companions or with_growth else 0)
     if with_companions:
         identity(1,'companion.pet');numbers('I',34001);text('models/pet.model')
         identity(2,'companion.mount');numbers('I',20110);text('models/mount.model')
-    table(43,2 if with_companions else 0)
+    if with_growth:
+        identity(1,'growth.young');numbers('I',34041);text('models/growth_young.model')
+        identity(2,'growth.adult');numbers('I',34042);text('models/growth_adult.model')
+    table(43,2 if with_companions else 1 if with_growth else 0)
     if with_companions:
-        numbers('HIBI',15,1,1,1);optional(None);numbers('BQB',3,3000,1)
-        numbers('HIBI',15,2,2,2);optional(2);numbers('BQB',4,5000,0)
+        numbers('HIBI',15,1,1,1);optional(None);numbers('BQB',3,3000,1);optional(None)
+        numbers('HIBI',15,2,2,2);optional(2);numbers('BQB',4,5000,0);optional(None)
+    if with_growth:
+        numbers('HIBI',15,1,3,1);optional(None);numbers('BQB',4,259200000,0);optional(1)
+    table(44,1 if with_growth else 0)
+    if with_growth:
+        identity(1,'growth.standard');numbers('HB',120,1);numbers('I',120)
+        for level in range(1,121):numbers('HQQ',level,0 if level==120 else level*1000,0 if level==120 else level*100)
+        numbers('I',4)
+        for stage,maximum,form in [(0,40,1),(1,60,1),(2,80,1),(3,120,2)]:numbers('BHI',stage,maximum,form)
     return hashlib.sha256(data).hexdigest()
 
 
@@ -262,9 +274,10 @@ if __name__ == "__main__":
     parser.add_argument("--polymorph-executable", type=Path)
     parser.add_argument("--soul-executable", type=Path)
     parser.add_argument("--companion-executable", type=Path)
+    parser.add_argument('--growth-executable',type=Path)
     args = parser.parse_args()
     expected = fixture_digest()
-    if expected != "be2f576b188867b44542fd2fe7d20864a77d2c99dc35d30ebb808aae82cc9001":
+    if expected != "9beab7f02de89230c63cea91f0ff0e1adca0182d5adeb51e60e2bf57814efd25":
         raise SystemExit("Python canonical fixture changed without a schema/golden review")
     result = subprocess.run([str(args.catalog_executable.resolve(strict=True)), "--hash-fixture"],
                             capture_output=True, check=True, timeout=30)
@@ -274,7 +287,7 @@ if __name__ == "__main__":
     print("Independent canonical SHA-256 fixture passed: " + expected)
     if args.refinement_executable:
         expected=fixture_digest(True)
-        if expected!='4b5cf0105f5def40ffeb0717dd2e20586d6388870a354c63ace37efabc7adb59':
+        if expected!='045d4c407db6c323a60d12a66ba873f4723e72c2b20636d68896c6dd12cd923d':
             raise SystemExit('Refinement fixture changed without a schema/golden review')
         result=subprocess.run([str(args.refinement_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:
@@ -282,7 +295,7 @@ if __name__ == "__main__":
         print('Independent refinement SHA-256 fixture passed: '+expected)
     if args.quest_executable:
         expected=fixture_digest(with_quest_items=True)
-        if expected!='aa6a5df43e88c77ddf40169631639af7e92ece638761340f32ce814847d1f7f0':
+        if expected!='f68b2eb619875c7f988f492d3ef9ec13049592f9928cbe2b9f60ea964a3d8cf3':
             raise SystemExit('Quest fixture changed without a schema/golden review: '+expected)
         result=subprocess.run([str(args.quest_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:
@@ -290,42 +303,49 @@ if __name__ == "__main__":
         print('Independent quest SHA-256 fixture passed: '+expected)
     if args.stone_executable:
         expected=fixture_digest(with_socket_stones=True)
-        if expected!='0b2e2676121aa535afc019a9dbb71fceff18eec44cd450e467ac34e936b9de2d':raise SystemExit('Stone fixture changed without a schema/golden review: '+expected)
+        if expected!='63d12a30ecf21f7abec0e2ba0436dbab46ff208bd2f632cc2af7391b13f240a8':raise SystemExit('Stone fixture changed without a schema/golden review: '+expected)
         result=subprocess.run([str(args.stone_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:raise SystemExit('Stone digest disagrees with independent Python encoding')
         print('Independent stone SHA-256 fixture passed: '+expected)
 
     if args.costume_executable:
         expected=fixture_digest(with_costumes=True)
-        if expected!='ac44a5775d68d0c0b2c3127dca183effd8cd1b6650bcab2255dc60c61d216c45':raise SystemExit('Costume fixture changed without a schema/golden review: '+expected)
+        if expected!='fa60c8db7647e5bfcaa4f7c155614824f1bccc5e85497261c16b03fd2606c5ab':raise SystemExit('Costume fixture changed without a schema/golden review: '+expected)
         result=subprocess.run([str(args.costume_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:raise SystemExit('Costume digest disagrees with independent Python encoding')
         print('Independent costume SHA-256 fixture passed: '+expected)
 
     if args.gathering_executable:
         expected=fixture_digest(with_gathering=True)
-        if expected!='339c37da20cd63351f9318d2c3929abd3766ce5ef3cb277041ab7c94c308d738':raise SystemExit('Gathering fixture changed without a schema/golden review: '+expected)
+        if expected!='c356d681f1a1163d12bed8798a036601c083b2f5576e7db8da486c94ac6356ae':raise SystemExit('Gathering fixture changed without a schema/golden review: '+expected)
         result=subprocess.run([str(args.gathering_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:raise SystemExit('Gathering digest disagrees with independent Python encoding')
         print('Independent gathering SHA-256 fixture passed: '+expected)
 
     if args.polymorph_executable:
         expected=fixture_digest(with_polymorph=True)
-        if expected!='9e272e24a0463d4e464e1b2e6c10f88934c700254e0f73ae8cbd45b361988602':raise SystemExit('Polymorph fixture changed without a schema/golden review: '+expected)
+        if expected!='6ff846f94a2b3866e710fd79bfd4a52981f846fc97852017a54d1a4bbde2c249':raise SystemExit('Polymorph fixture changed without a schema/golden review: '+expected)
         result=subprocess.run([str(args.polymorph_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:raise SystemExit('Polymorph digest disagrees with independent Python encoding')
         print('Independent polymorph SHA-256 fixture passed: '+expected)
 
     if args.soul_executable:
         expected=fixture_digest(with_souls=True)
-        if expected!='a5f03f30be1d13bd7ffb0cda103acbcc3b7b6e45e46ab255b2658c65fb05ef1a':raise SystemExit('Soul fixture changed without a schema/golden review: '+expected)
+        if expected!='fe5992a10f44bfefd8655e84a6f48109041ce2505999fcc8dcf6fc6cc2fe1412':raise SystemExit('Soul fixture changed without a schema/golden review: '+expected)
         result=subprocess.run([str(args.soul_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:raise SystemExit('Soul digest disagrees with independent Python encoding')
         print('Independent Soul SHA-256 fixture passed: '+expected)
 
     if args.companion_executable:
         expected=fixture_digest(with_companions=True)
-        if expected!='630b99480d6ffcc7600fece3c01dcca932a69a40849dfdeb62bfc404ad89079d':raise SystemExit('Companion fixture changed without a schema/golden review: '+expected)
+        if expected!='c3abaa8689db9782ee84ec477f2d24ad869de1ec0545e2fa846e196e7f7ad1d8':raise SystemExit('Companion fixture changed without a schema/golden review: '+expected)
         result=subprocess.run([str(args.companion_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
         if result.stdout.decode('ascii').strip()!=expected:raise SystemExit('Companion digest disagrees with independent Python encoding')
         print('Independent Companion SHA-256 fixture passed: '+expected)
+
+    if args.growth_executable:
+        expected=fixture_digest(with_growth=True)
+        if expected!='ebea12e743b34d17045adcd8865e2eb0e3cf48d1b82a2b27d888a6d372058b58':raise SystemExit('Growth fixture changed without a schema/golden review: '+expected)
+        result=subprocess.run([str(args.growth_executable.resolve(strict=True)), '--hash-fixture'],capture_output=True,check=True,timeout=30)
+        if result.stdout.decode('ascii').strip()!=expected:raise SystemExit('Growth pet digest disagrees with independent Python encoding')
+        print('Independent growth pet SHA-256 fixture passed: '+expected)

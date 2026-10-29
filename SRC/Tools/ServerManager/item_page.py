@@ -968,6 +968,7 @@ class ItemPage(QWidget):
         self.book_panel = SkillBookPanel(changed, Form)
         self.costume_panel = CostumePanel(changed)
         self.companion_panel=CompanionPanel(changed,Form)
+        self.companion_panel.kind.widget.currentIndexChanged.connect(self.companion_controls)
         self.soul_panel=SoulPanel(changed,Form)
         self.soul_panel.kind.widget.currentIndexChanged.connect(lambda *_:self.soul_controls())
         self.poly_panel=PolymorphPanel(changed,Form)
@@ -1047,6 +1048,12 @@ class ItemPage(QWidget):
         hint = QLabel('Az alap bónuszok minden fejlesztési szinten érvényesek. Szintenkénti bónuszt a Fejlesztés lapon adhatsz meg.')
         hint.setWordWrap(True); hint.setObjectName('FieldHint'); bonus_layout.addWidget(hint); bonus_layout.addWidget(self.bonuses, 1)
         self.base_page, self.use_page, self.bonus_page = scroll(base), scroll(use), bonus_page
+
+    def companion_controls(self,*_):
+        if not self.document or int(self.document['base']['category_id'])!=15:return
+        growth=self.companion_panel.kind.value()=='3'
+        if growth and not self.loading:self.refinement.kind.setCurrentIndex(self.refinement.kind.findData('1'))
+        self.refinement.setEnabled(not growth)
 
     def stone_controls(self, *_):
         usable=self.stone_kind_field.value()=='1'
@@ -1381,6 +1388,7 @@ class ItemPage(QWidget):
             self.refinement.load(document['refinement'], document['levels'])
             self.bonuses.load(document.get('bonuses'))
         if category==7:self.stone_controls()
+        if category==15:self.companion_controls()
         self.tabs.setCurrentIndex(min(max(current, 0), self.tabs.count() - 1))
         self.loading = False; self.update_badge(); self.controls()
 
@@ -1446,7 +1454,10 @@ class ItemPage(QWidget):
                 scripted = document['child']['container_kind'] == '3'
                 document['loot'] = None if scripted else dict(pick_mode=self.loot_mode.currentData(), entries=self.loot_table.entries())
         if category in (1, 2, 3, 4, 7, 11, 15):
-            self.refinement.collect(document)
+            if category==15 and document['child']['companion_kind']=='3':
+                document['refinement']=dict(profile_kind='1',max_level='0')
+                document['levels']=[dict(level='0',**{field:'0' for field in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[])]
+            else:self.refinement.collect(document)
             document['bonuses'] = self.bonuses.entries()
         else:
             document['bonuses'] = []

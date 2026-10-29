@@ -113,7 +113,12 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for(const auto& p:source.soulProfiles){Add(s,T::SoulProfiles,p.id,p.code);for(const auto& r:p.levels)Add(s,T::SoulLevels,p.id,r.level,r.chargeCapacity,r.cycleChargeCost,r.strikesPerCycle,r.initialCharge,r.initialStrikes,r.rechargeIntervalMs,r.firstMultiplierBp,r.secondMultiplierBp,r.thirdMultiplierBp);}
     for(const auto& r:source.soulItems)Add(s,T::SoulItems,r.key.Category(),r.key.LocalId(),r.kind,r.channel,r.profile,r.refineChanceBp);
     for(const auto& r:source.companionForms)Add(s,T::CompanionForms,r.id,r.code,r.mobTemplateId,r.modelAsset);
-    for(const auto& r:source.companions)Add(s,T::Companions,r.key.Category(),r.key.LocalId(),r.kind,r.form,r.ridingForm,r.clock,r.durationMs,r.dungeonOnlyBonus);
+    for(const auto& r:source.companions)Add(s,T::Companions,r.key.Category(),r.key.LocalId(),r.kind,r.form,r.ridingForm,r.clock,r.durationMs,r.dungeonOnlyBonus,r.growthProfile);
+    for(const auto& p:source.growthPetProfiles) {
+        Add(s,T::GrowthPetProfiles,p.id,p.code,p.maximumLevel,p.experiencePolicy);
+        for(const auto& l:p.levels)Add(s,T::GrowthPetLevels,p.id,l.level,l.mobExperience,l.itemExperience);
+        for(const auto& stage:p.stages)Add(s,T::GrowthPetStages,p.id,stage.stage,stage.maximumLevel,stage.form);
+    }
     return s;
 }
 } // namespace catalog_snapshot_fixture

@@ -9,6 +9,7 @@
 #include "PolymorphItems.hpp"
 #include "SoulItems.hpp"
 #include "CompanionItems.hpp"
+#include "GrowthPets.hpp"
 #include "AccessorySockets.hpp"
 #include "Consumables.hpp"
 #include "TimedEffects.hpp"
@@ -164,7 +165,7 @@ using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryR
                                      ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 19;
+    std::uint32_t schemaVersion = 20;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -198,6 +199,7 @@ struct ItemCatalogSource
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
     std::vector<CostumeVisualRow> costumeVisuals;
+    std::vector<GrowthPetProfile> growthPetProfiles;
     std::vector<CompanionForm> companionForms;
     std::vector<ItemCompanionRow> companions;
     std::vector<SoulProfile> soulProfiles;
@@ -266,6 +268,7 @@ public:
     const ItemCatalogEntry* Find(ItemKey key) const noexcept;
     const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
+    const GrowthPetProfile* FindGrowthPetProfile(std::uint32_t id) const noexcept;
     const CompanionForm* FindCompanionForm(std::uint32_t id) const noexcept;
     const SoulProfile* FindSoulProfile(std::uint32_t id) const noexcept;
     const PolymorphForm* FindPolymorphForm(std::uint32_t id) const noexcept;

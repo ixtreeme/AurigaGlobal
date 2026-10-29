@@ -23,8 +23,10 @@ bool ValidState(const ItemCompanionRow& row,const CompanionState& state) {
 }
 bool ValidCompanion(const ItemCompanionRow& row) noexcept {
     return row.key.Category()==ItemCategory::Companion &&
-        (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount) && row.form &&
+        (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount || row.kind==CompanionKind::GrowthPet) && row.form &&
         (row.kind==CompanionKind::Mount ? row.ridingForm && *row.ridingForm : !row.ridingForm) &&
+        (row.kind==CompanionKind::GrowthPet ? row.growthProfile && *row.growthProfile &&
+            (row.clock==CompanionClock::Permanent || row.clock==CompanionClock::ActiveTime) : !row.growthProfile) &&
         row.clock>=CompanionClock::Permanent && row.clock<=CompanionClock::ActiveTime &&
         row.durationMs<=MaxTime && (row.clock==CompanionClock::Permanent ? !row.durationMs : row.durationMs>0);
 }
@@ -32,6 +34,7 @@ std::expected<CompanionState,CompanionError> MakeCompanionState(const ItemCatalo
     if(created>MaxTime)return std::unexpected(CompanionError::InvalidTime);
     const auto* entry=catalog.Find(key);if(!entry)return std::unexpected(CompanionError::MissingItem);
     const auto* row=std::get_if<ItemCompanionRow>(&entry->category);if(!row)return std::unexpected(CompanionError::NotCompanion);
+    if(row->kind==CompanionKind::GrowthPet)return std::unexpected(CompanionError::NotCompanion);
     CompanionState state;
     if(row->clock==CompanionClock::SinceCreation) {
         if(row->durationMs>MaxTime-created)return std::unexpected(CompanionError::TimeOverflow);
@@ -49,6 +52,7 @@ std::expected<CompanionPlan,CompanionError> PlanCompanion(const ItemCatalog& cat
     if(r.lockedByOther || r.exchanging)return std::unexpected(E::Forbidden);
     const auto* entry=catalog.Find(r.key);if(!entry)return std::unexpected(E::MissingItem);
     const auto* row=std::get_if<ItemCompanionRow>(&entry->category);if(!row)return std::unexpected(E::NotCompanion);
+    if(row->kind==CompanionKind::GrowthPet)return std::unexpected(E::NotCompanion);
     const auto* refinement=catalog.FindRefinement(entry->base.refinementProfile);
     const auto* level=refinement->FindLevel(r.refinementLevel);if(!level)return std::unexpected(E::InvalidLevel);
     if(!ValidState(*row,r.state) || (r.state.activeFormId && !catalog.FindCompanionForm(r.state.activeFormId)))return std::unexpected(E::InvalidState);

@@ -64,7 +64,32 @@ def toggle(document):
     document.update(recovery=None, effect=None, timed=None)
 
 
+def growth(document, maximum=30):
+    document['child'].update(companion_kind='3',riding_form_id=None,growth_profile_id=None,clock_kind='4',duration_ms='259200000')
+    document['refinement'].update(profile_kind='1',max_level='0');document['levels']=document['levels'][:1]
+    document['levels'][0]['bonuses']=[]
+    document.update(growth=dict(maximum_level=str(maximum),experience_policy='1'),
+        growth_levels=[dict(level=str(i),mob_experience=str(0 if i==maximum else i*1000),item_experience=str(0 if i==maximum else i*100)) for i in range(1,maximum+1)],
+        growth_stages=[dict(stage='0',maximum_level=str(maximum),form_id=None)])
+
+
 class OfflineModelTests(unittest.TestCase):
+    def test_growth_profile_copy_levels_and_gates(self):
+        packet,key=create(catalog.blank(TOOL),15,growth)
+        original=catalog.Catalog(packet).item(key);catalog.validate(packet,original,key,TOOL)
+        self.assertEqual(original['growth']['maximum_level'],'30');self.assertEqual(len(original['growth_levels']),30)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone)
+        clone['growth_levels'][0]['mob_experience']='2000'
+        tables=catalog.Catalog(packet).apply(clone);packet=saved(packet,tables,other)
+        self.assertEqual(catalog.Catalog(packet).item(key),original)
+        changed=catalog.Catalog(packet).item(other);self.assertNotEqual(changed['child']['growth_profile_id'],original['child']['growth_profile_id'])
+        catalog.validate(packet,changed,other,TOOL)
+        for mutate in (lambda d:d['growth_levels'].pop(),lambda d:d['growth_stages'][0].update(maximum_level='29'),
+                       lambda d:d['child'].update(clock_kind='3'),lambda d:d['refinement'].update(profile_kind='9')):
+            bad=copy.deepcopy(changed);mutate(bad)
+            with self.assertRaises(api.EditorError):catalog.validate(packet,bad,other,TOOL)
+
+
     def test_companion_forms_copy_levels_and_rejections(self):
         packet,key=create(catalog.blank(TOOL),15)
         original=catalog.Catalog(packet).item(key);catalog.validate(packet,original,key,TOOL)
@@ -705,6 +730,30 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_growth_panel_profiles_gates_and_inactive_drafts(self):
+        packet,key=create(catalog.blank(TOOL),15);self.page.loaded(packet,key)
+        panel=self.page.companion_panel;panel.kind.widget.setCurrentIndex(panel.kind.widget.findData('3'))
+        self.assertFalse(self.page.refinement.isEnabled());self.assertFalse(panel.riding.isEnabled())
+        g=panel.growth;g.maximum.setValue(120)
+        for ceiling in (40,60,80):
+            g.stages.item(g.stages.rowCount()-1,1).setText(str(ceiling));g.add_stage()
+        g.levels.item(79,1).setText('7999');g.maximum.setValue(30);g.maximum.setValue(120)
+        self.assertEqual(g.levels.item(79,1).text(),'7999')
+        document=self.page.collect();self.assertEqual(document['refinement']['profile_kind'],'1')
+        self.assertEqual(document['growth']['maximum_level'],'120');self.assertEqual(len(document['growth_stages']),4)
+        catalog.validate(packet,document,key,TOOL)
+        self.assertFalse(g.stages.cellWidget(0,2).isEnabled())
+        panel.follower.setCurrentIndex(panel.follower.findData('new'))
+        panel.new_follower.fields[0].edit.setText('growth.ui_new_initial')
+        document=self.page.collect();self.assertIsNone(document['growth_stages'][0]['form_id'])
+        catalog.validate(packet,document,key,TOOL)
+        g.levels.item(0,1).setText('bad EXP')
+        with self.assertRaises(api.EditorError):self.page.collect()
+        panel.kind.widget.setCurrentIndex(panel.kind.widget.findData('1'))
+        fixed=self.page.collect();catalog.validate(packet,fixed,key,TOOL)
+        self.page.dirty=False
+
+
     def test_companion_panel_mount_pet_inactive_fields_and_maximum(self):
         packet,key=create(catalog.blank(TOOL),15);self.page.dirty=False;self.page.loaded(packet,key);panel=self.page.companion_panel
         self.assertFalse(self.page.stack_field.edit.isEnabled());self.assertFalse(self.page.appearance_field.widget.isEnabled())
@@ -1286,6 +1335,25 @@ class RefinementPanelTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzzzzz_growth_profile_copy_and_rollback(self):
+        packet=self.call('read');d=catalog.Catalog(packet).new(15);growth(d,120);key=key_of(d)
+        d['new_companion_form']=dict(code='growth.sql_young',mob_template_id='34041',model_asset='models/growth_young.model')
+        packet=self.commit(packet,d);original=catalog.Catalog(packet).item(key)
+        self.assertEqual(len(original['growth_levels']),120)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone);clone['growth_levels'][0]['mob_experience']='2500'
+        packet=self.commit(packet,clone);self.assertEqual(catalog.Catalog(packet).item(key),original)
+        self.assertNotEqual(catalog.Catalog(packet).item(other)['child']['growth_profile_id'],original['child']['growth_profile_id'])
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_growth BEFORE INSERT ON protos.growth_pet_stage FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test growth write failure'")
+        try:
+            fresh=catalog.Catalog(packet).new(15);growth(fresh,60)
+            fresh['new_companion_form']=dict(code='growth.sql_rollback',mob_template_id='34042',model_asset='models/growth_adult.model')
+            with self.assertRaises(api.EditorError):self.commit(packet,fresh)
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_growth')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(after['sequences'],packet['sequences'])
+        for table in ('companion_form','growth_pet_profile','growth_pet_level','growth_pet_stage','item_companion'):
+            self.assertEqual(rows(after,table),rows(packet,table))
+
+
     def test_zzzzzzzz_companion_copy_immutable_forms_and_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(15);key=key_of(d)
         d['new_companion_form']=dict(code='companion.sql_pet',mob_template_id='34001',model_asset='models/pet.model')

@@ -20,7 +20,7 @@ CREATE TABLE protos.item_companion (
     FOREIGN KEY(form_id) REFERENCES protos.companion_form(form_id),
     FOREIGN KEY(riding_form_id) REFERENCES protos.companion_form(form_id),
     CHECK(category_id=15), CHECK(local_id>0), CHECK(dungeon_only_bonus IN(0,1)),
-    CHECK((companion_kind=1 AND riding_form_id IS NULL) OR (companion_kind=2 AND riding_form_id IS NOT NULL)),
+    CONSTRAINT ck_companion_kind CHECK((companion_kind=1 AND riding_form_id IS NULL) OR (companion_kind=2 AND riding_form_id IS NOT NULL)),
     CHECK(clock_kind IN(1,2,3,4)), CHECK(duration_ms<=9223372036854775807),
     CHECK((clock_kind=1 AND duration_ms=0) OR (clock_kind<>1 AND duration_ms>0))
 ) ENGINE=InnoDB;

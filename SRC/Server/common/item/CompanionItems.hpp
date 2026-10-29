@@ -7,9 +7,9 @@
 #include <string>
 
 namespace auriga::item {
-// Fixed summons only. Growth pets, their eggs/skills/feeding and skins are not
-// admitted as fixed companions. A creature template is not an item identifier.
-enum class CompanionKind : std::uint8_t { Pet=1, Mount=2 };
+// Growth seals carry their own progression profile. Fixed-summon planning
+// never admits them. A creature template is not an item identifier.
+enum class CompanionKind : std::uint8_t { Pet=1, Mount=2, GrowthPet=3 };
 enum class CompanionClock : std::uint8_t { Permanent=1, SinceCreation=2, SinceFirstUse=3, ActiveTime=4 };
 struct CompanionForm {
     std::uint32_t id=0;
@@ -25,6 +25,7 @@ struct ItemCompanionRow {
     CompanionClock clock=CompanionClock::Permanent;
     std::uint64_t durationMs=0;
     bool dungeonOnlyBonus=false;
+    std::optional<std::uint32_t> growthProfile;
 };
 bool ValidCompanion(const ItemCompanionRow&) noexcept;
 struct CompanionLifetime {
