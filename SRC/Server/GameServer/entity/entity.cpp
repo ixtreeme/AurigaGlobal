@@ -13,6 +13,14 @@ namespace ecs::ViewSystem {
 void PacketView(entt::entity self, const void* data, int bytes, entt::entity except)
 {
     if (!g_registry.valid(self) || !ecs::SectorOf(g_registry, self)) return;
+    // Same rule as NetworkService::BroadcastToView: once ViewCleanup has taken
+    // SpatialEntity away (DestroyCharacter, until StatePost leaves the sector),
+    // every client has dropped this source. Only its own client remains.
+    if (!g_registry.all_of<ecs::SpatialEntity>(self)) {
+        if (self != except)
+            if (auto* desc = ecs::PlayerRuntime::GetDesc(self)) desc->Packet(data, bytes);
+        return;
+    }
     const auto* revision = g_registry.try_get<ecs::SpatialRevision>(self);
     const uint64_t version = revision ? revision->value : 0;
     auto recipients = ecs::VisibilityService::GetViewersOf(g_registry, self);

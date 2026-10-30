@@ -8,6 +8,8 @@ namespace ecs::ViewSystem {
 // Implementations live with the common visibility reconciliation engine.
 void ViewCleanup(entt::entity self);
 void ViewReencode(entt::entity self);
+// Shutdown: VisibilitySystem::RetireCharacters on the global registry.
+void RetireAllCharacters();
 
 // Broadcast to current nearby viewers. Recipients and identity are snapshotted.
 void PacketView(entt::entity self, const void* data, int bytes,

@@ -1893,6 +1893,35 @@ void NativeRecoveryTimers() {
     Check(event_count() == 0, "non-character/null entity started recovery");
 }
 
+// CHARACTER_MANAGER::Destroy retires every character's view state in one pass
+// before the per-character teardown. A character's own ViewCleanup is then
+// free (no range scan, no REMOVE); sector membership stays for StatePost.
+void BulkCharacterRetirement() {
+    Reset(); MapFixture map;
+    const auto pc = Entity(ecs::SpatialKind::Character);
+    const auto npc = Entity(ecs::SpatialKind::Character);
+    g_registry.remove<ecs::TagPC>(npc);
+    g_registry.get<ecs::CharacterType>(npc).value = CHAR_TYPE_MONSTER;
+    const auto item = Entity();
+    Check(Spawn(pc) && Spawn(npc) && Spawn(item), "retirement fixture spawn");
+    Check(Visible(npc, pc) && Visible(pc, npc) && Visible(item, pc), "retirement fixture visibility");
+    packets.clear();
+    ecs::VisibilitySystem::RetireCharacters(g_registry);
+    Check(packets.empty(), "bulk retirement sent packets");
+    for (const auto e : {pc, npc, item})
+        Check(!g_registry.any_of<ecs::ViewMap, ecs::ViewerMap, ecs::ViewAgeMap>(e), "bulk retirement left a view edge");
+    for (const auto e : {pc, npc})
+        Check(!g_registry.any_of<ecs::SpatialEntity, ecs::ViewActiveTag, ecs::VisibilityDirty>(e) && map.At()->Contains(e),
+            "character kept view activity or left its sector early");
+    Check(g_registry.all_of<ecs::SpatialEntity>(item), "item lost its spatial identity");
+    ecs::ViewSystem::ViewCleanup(npc);
+    ecs::VisibilitySystem::Remove(g_registry, pc);
+    Check(packets.empty(), "retired character resent REMOVE");
+    const auto late = Entity();
+    Check(Spawn(late) && packets.empty() && !Visible(late, pc), "late item published to a retired character");
+    ecs::SpatialService::RemoveEntity(g_registry, npc);
+    Check(!map.At()->Contains(npc) && packets.empty(), "retired character sector removal sent REMOVE");
+}
 }
 int main() {
     try {
@@ -1912,6 +1941,7 @@ int main() {
         DungeonReturnLocationKeepsMembership(); ShowHeightSentinel();
         ShownMountFollowAndRemoval();
         NativeRecoveryTimers();
+        BulkCharacterRetirement();
         Reset(); ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

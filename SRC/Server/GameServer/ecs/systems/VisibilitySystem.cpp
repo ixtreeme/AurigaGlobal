@@ -144,6 +144,9 @@ void Refresh(entt::registry& reg, entt::entity e) {
 
 void Remove(entt::registry& reg, entt::entity e) {
     if (!reg.valid(e)) return;
+    // SpatialEntity goes only after the edges are cleared (below, or in
+    // RetireCharacters), and edges need it on both ends: already retired.
+    if (!reg.all_of<SpatialEntity>(e)) return;
     Removal action(reg, e);
     if (!action.entered) return;
     const auto* initialTree = SectorOf(reg, e);
@@ -176,6 +179,20 @@ void Remove(entt::registry& reg, entt::entity e) {
 
 bool IsRemoving(const entt::registry& reg, entt::entity e) {
     return removing.contains({&reg, e});
+}
+
+void RetireCharacters(entt::registry& reg) {
+    // Viewers are always characters, so every directed edge ends at one and
+    // none survives this. Each later Remove of a character then returns at
+    // once: no range scan, no REMOVE fan-out, no per-viewer set erase.
+    reg.clear<ViewMap>();
+    reg.clear<ViewerMap>();
+    reg.clear<ViewAgeMap>();
+    std::vector<entt::entity> characters;
+    for (auto e : reg.view<SpatialEntity, SpatialKindTag>())
+        if (reg.get<SpatialKindTag>(e).kind == SpatialKind::Character)
+            characters.push_back(e);
+    reg.remove<SpatialEntity, ViewActiveTag, VisibilityDirty>(characters.begin(), characters.end());
 }
 
 void Reencode(entt::registry& reg, entt::entity e) {
@@ -240,5 +257,6 @@ void DriftSweep(entt::registry& reg) {
 
 namespace ecs::ViewSystem {
 void ViewCleanup(entt::entity entity) { VisibilitySystem::Remove(g_registry, entity); }
+void RetireAllCharacters() { VisibilitySystem::RetireCharacters(g_registry); }
 void ViewReencode(entt::entity entity) { VisibilitySystem::Reencode(g_registry, entity); }
 }

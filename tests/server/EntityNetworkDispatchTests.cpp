@@ -28,6 +28,7 @@
 #include "../../SRC/Server/GameServer/ecs/components/spatial_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/transform_components.hpp"
+#include <spdlog/sinks/ringbuffer_sink.h>
 #include <array>
 #include <cstring>
 #include <functional>
@@ -265,6 +266,72 @@ void UpdateAfterVisibilityRemoval() {
     updateMembers.clear(); updateSector = nullptr; g_registry.clear(); wire.clear();
     Check(afterRemoval == 0, "UpdatePacket emitted packets after visibility removal (ghost mount resurrection)");
     Check(activeAdditional == 0, "active UPDATE emitted append-only AdditionalInfo without ADD");
+}
+// DestroyCharacter runs ViewCleanup before state teardown, and the teardown
+// still broadcasts (ClearSync's ownership packet for every character). Clients
+// have dropped the VID by then. The 2026-10-30 shutdown sent each of those
+// broadcasts over the range scan and logged a BROADCAST_DRIFT line for each of
+// ~72k NPCs. A live source must keep both its range recipients and the check.
+size_t DriftLines(spdlog::sinks::ringbuffer_sink_mt& sink) {
+    size_t lines = 0;
+    for (const auto& line : sink.last_formatted())
+        lines += line.find("[BROADCAST_DRIFT]") != std::string::npos;
+    return lines;
+}
+void RetiredSourceBroadcasts() {
+    DESC viewerDesc, sourceDesc;
+    SECTREE tree;
+    updateSector = &tree;
+    const auto viewer = Character(1100, true, &viewerDesc);
+    const auto source = Character(1101, true, &sourceDesc);
+    const auto npc = Character(1102, false);
+    updateMembers = {viewer, source, npc};
+    for (const auto entity : updateMembers) {
+        g_registry.emplace<ecs::SectorPlacement>(entity, 3, 6200u, 100u);
+        g_registry.emplace<ecs::ViewActiveTag>(entity);
+    }
+    auto sink = std::make_shared<spdlog::sinks::ringbuffer_sink_mt>(16);
+    logging::GetLogger()->sinks().push_back(sink);
+    struct SinkGuard {
+        std::shared_ptr<spdlog::sinks::ringbuffer_sink_mt> sink;
+        ~SinkGuard() { std::erase(logging::GetLogger()->sinks(), sink); }
+    } guard {sink};
+
+    // Live source without a native ViewerMap mirror: range recipients get the
+    // packet, the source included, and the mismatch is still reported.
+    wire.clear();
+    NetworkSyncSystem::BroadcastEffect(g_registry, source, 7);
+    Check(wire.size() == 2 && wire.at(&viewerDesc).size() == 1 && wire.at(&sourceDesc).size() == 1,
+        "live broadcast missed a range recipient");
+#ifndef NDEBUG
+    Check(DriftLines(*sink) == 1, "live view drift was not reported");
+#endif
+
+    // The precise state ViewCleanup leaves behind (see UpdateAfterVisibilityRemoval).
+    g_registry.remove<ecs::SpatialEntity, ecs::ViewActiveTag>(source);
+    g_registry.remove<ecs::SpatialEntity, ecs::ViewActiveTag>(npc);
+    const size_t liveDrift = DriftLines(*sink);
+    wire.clear();
+    NetworkSyncSystem::BroadcastEffect(g_registry, source, 7);
+    Check(wire.size() == 1 && wire.at(&sourceDesc).size() == 1,
+        "retired source reached a viewer, or lost its own non-excluded copy");
+    wire.clear();
+    ecs::NetworkService::BroadcastToView(g_registry, source, &now, sizeof(now), true);
+    ecs::NetworkService::BroadcastToView(g_registry, npc, &now, sizeof(now), false);
+    Check(wire.empty(), "retired source broadcast reached the wire");
+    Check(DriftLines(*sink) == liveDrift, "retired source was reported as view drift");
+    // entity.cpp's PacketView is the other view broadcast; same rule.
+    ecs::ViewSystem::PacketView(source, &now, sizeof(now), source);
+    ecs::ViewSystem::PacketView(npc, &now, sizeof(now));
+    Check(wire.empty(), "retired PacketView reached the wire");
+    ecs::ViewSystem::PacketView(source, &now, sizeof(now));
+    Check(wire.size() == 1 && wire.at(&sourceDesc).size() == 1, "retired PacketView reached a viewer or skipped itself");
+    g_registry.emplace<ecs::SpatialEntity>(source);
+    wire.clear();
+    ecs::ViewSystem::PacketView(source, &now, sizeof(now));
+    Check(wire.size() == 2 && wire.at(&viewerDesc).size() == 1, "restored source lost its range viewers");
+    Check(g_registry.valid(viewer) && g_registry.all_of<ecs::SpatialEntity>(viewer), "fixture retired the viewer");
+    updateMembers.clear(); updateSector = nullptr; g_registry.clear(); wire.clear();
 }
 void NativeMoveBroadcastRouting() {
     DESC ownerDesc, observerDesc, sourceDesc;
@@ -581,6 +648,7 @@ int main() {
         NativeBuildingPackets();
         MountWireRoundTrip(); ExpiredAndMissingSession();
         UpdateAfterVisibilityRemoval();
+        RetiredSourceBroadcasts();
         NativeMoveBroadcastRouting();
         CommittedStatePublication();
         std::cout << "Entity wire checks passed: " << checks << '\n'; return 0;

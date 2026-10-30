@@ -10,6 +10,7 @@
 #include <Core/Logging.hpp>
 #include "Registry.hpp"
 #include "components/session_components.hpp"
+#include "components/spatial_components.hpp"
 #include "components/transform_components.hpp"
 #include "services/VisibilityService.hpp"
 
@@ -70,6 +71,19 @@ inline void Broadcast(entt::registry& reg, entt::entity source, const void* pack
 
 inline void BroadcastToView(entt::registry& reg, entt::entity source, const void* packet, std::size_t size, bool excludeSource = true)
 {
+    // ViewCleanup (VisibilitySystem::Remove) takes SpatialEntity away once it
+    // has sent REMOVE to every viewer, so from then on the source exists on no
+    // client: its view is empty, as the cleared m_map_view made it for legacy
+    // PacketView. Only its own client may still be addressed. Destroy teardown
+    // broadcasts from exactly this state (DestroyCharacter -> ClearSync); the
+    // range scan would reach clients that dropped the VID, and the drift check
+    // would report native=0 for every destroyed character.
+    if (source != entt::null && reg.valid(source) && !reg.all_of<ecs::SpatialEntity>(source)) {
+        if (!excludeSource)
+            Send(source, packet, size);
+        return;
+    }
+
     // Keep legacy/range visibility authoritative for live broadcasts until
     // LPENTITY native view ownership is proven under movement load. A stale
     // ViewerMap mirror causes visible multi-second client sync lag.
