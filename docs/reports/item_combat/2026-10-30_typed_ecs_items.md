@@ -34,7 +34,7 @@ Valódi MariaDB-n, két helyen (B core átvétele és a gyors újrabelépés ut�
 - 3 darab bőr;
 - időzített ékszer a csukló felszerelési helyén.
 
-A kerítés, a tárolók, a pénztárca és mind a három tárgy bájtra azonos.
+A kerítés, a tárolók, a pénztárca és mind a három tárgy minden mezőre azonos.
 
 Adatbázis nélkül:
 - négy tárgy, köztük kötött tárgy, eltérő revízióval;
