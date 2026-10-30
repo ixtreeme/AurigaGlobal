@@ -9,6 +9,8 @@ find_package(EnTT CONFIG REQUIRED)
 
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
+# F4.1 (IC-034): typed protos catalog at startup; pure domain + SQL reader.
+target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql)
 
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
@@ -668,6 +670,13 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --followup-argument=--cold-check
             --crash-server-before-followup
     )
+    add_test(NAME item_catalog_runtime_mariadb
+        COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ItemCatalogRuntimeTests.py
+            --mariadb-bin ${AURIGA_TEST_MARIADB_BIN_DIR}
+            --test-executable $<TARGET_FILE:ItemCatalogRuntimeTests>
+            --work-dir ${CMAKE_BINARY_DIR}/item-catalog-runtime-isolated
+    )
+    set_tests_properties(item_catalog_runtime_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
     add_test(NAME item_award_delivery_mariadb
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
             --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
@@ -775,6 +784,21 @@ if(MSVC)
     target_link_options(ItemRuntimeTests PRIVATE /OPT:REF /OPT:NOICF)
 endif()
 add_test(NAME item_runtime COMMAND ItemRuntimeTests)
+
+# F4.1 (IC-034): startup catalog pin and one-time immutable publication.
+add_executable(ItemCatalogRuntimeTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ItemCatalogRuntimeTests.cpp
+    item/ItemCatalogRuntime.cpp
+)
+target_link_libraries(ItemCatalogRuntimeTests PRIVATE AurigaItemCatalogSql)
+if(WIN32)
+    target_link_libraries(ItemCatalogRuntimeTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+if(TARGET auriga_sanitizers)
+    target_link_libraries(ItemCatalogRuntimeTests PRIVATE auriga_sanitizers)
+endif()
+add_test(NAME item_catalog_runtime COMMAND ItemCatalogRuntimeTests --completion-only)
+set_tests_properties(item_catalog_runtime PROPERTIES LABELS server TIMEOUT 60)
 
 add_executable(QuickslotTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuickslotTests.cpp
@@ -956,7 +980,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
+    foreach(_asan_target LuaSourceTests GameServer ItemCatalogRuntimeTests ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

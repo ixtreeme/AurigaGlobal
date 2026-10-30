@@ -23,6 +23,7 @@
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include "db.h"
+#include "ItemCatalogRuntime.hpp"
 #include "skill_power.h"
 #include "Core/Logging.hpp"
 #include <fmt/format.h>
@@ -278,6 +279,55 @@ bool GetIPInfo()
 	}
 }
 
+// F4.1 (IC-034): the typed protos catalog pinned by the durable item state.
+// Bounded blocking read during boot; no fallback to item_proto, no retry.
+static void __LoadItemCatalog(const GameConfig& cfg)
+{
+	namespace catalog = auriga::item::runtime;
+	// The pin and catalog SQL are fully qualified (player.*, protos.*).
+	if (cfg.sql.player.database != "player" || cfg.sql.protos.database != "protos")
+	{
+		LOG_ERROR("ItemCatalog: the typed item catalog needs the 'player' and 'protos' databases (configured '{}' and '{}')",
+				cfg.sql.player.database, cfg.sql.protos.database);
+		exit(1);
+	}
+
+	std::unique_ptr<SQLMsg> pinMessage(DBManager::instance().DirectQueryPrepared(catalog::PinQuery, {}));
+	const auto pin = catalog::DecodePin(pinMessage.get());
+	if (!pin)
+	{
+		LOG_ERROR("ItemCatalog: {}", catalog::Describe(pin.error()));
+		exit(1);
+	}
+
+	CAsyncSQL protos;
+	protos.SetTimeouts(60);
+	protos.SetRetryConnectionErrors(false);
+	if (!protos.Setup(cfg.sql.protos.host.c_str(), cfg.sql.protos.user.c_str(), cfg.sql.protos.password.c_str(),
+			cfg.sql.protos.database.c_str(), "utf8mb4", true, cfg.sql.protos.port))
+	{
+		LOG_ERROR("ItemCatalog: {}", catalog::Describe({catalog::StartupErrorCode::CatalogConnection}));
+		exit(1);
+	}
+
+	auto loaded = catalog::LoadPinnedCatalog(protos, *pin);
+	if (!loaded)
+	{
+		LOG_ERROR("ItemCatalog: {} (pinned revision {}, hash {})", catalog::Describe(loaded.error()),
+				pin->revision, catalog::HexDigest(pin->hash));
+		exit(1);
+	}
+
+	const auto items = (*loaded)->Size();
+	if (auto installed = catalog::Install(std::move(*loaded), *pin); !installed)
+	{
+		LOG_ERROR("ItemCatalog: {}", catalog::Describe(installed.error()));
+		exit(1);
+	}
+
+	LOG_INFO("ItemCatalog: revision {}, hash {}, {} items", pin->revision, catalog::HexDigest(pin->hash), items);
+}
+
 static void __ApplyConnectConfig(const GameConfig& cfg)
 {
 	g_stHostname = cfg.server.hostname;
@@ -320,6 +370,8 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 	}
 
 	LOG_INFO("PlayerSQL connected");
+
+	__LoadItemCatalog(cfg);
 
 	{
 		LogManager::instance().Connect(cfg.sql.log.host.c_str(), cfg.sql.log.port,

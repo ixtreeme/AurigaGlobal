@@ -100,6 +100,8 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 				LoadSqlConnection(sqlDoc.at("log"), sql.log);
 			if (sqlDoc.contains("mission"))
 				LoadSqlConnection(sqlDoc.at("mission"), sql.mission);
+			if (sqlDoc.contains("protos"))
+				LoadSqlConnection(sqlDoc.at("protos"), sql.protos);
 		}
 
 		interserverKey = doc.value("interserver_key", std::string());
@@ -228,6 +230,12 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 	if (!sql.log.IsValid())
 	{
 		error = "GameServer: 'sql.log' is missing";
+		return false;
+	}
+
+	if (!sql.protos.IsValid())
+	{
+		error = "GameServer: 'sql.protos' is missing";
 		return false;
 	}
 

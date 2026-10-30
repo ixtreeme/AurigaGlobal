@@ -117,6 +117,7 @@ struct GameConfig
 		GameSqlConfig	common;
 		GameSqlConfig	log;
 		GameSqlConfig	mission;
+		GameSqlConfig	protos; // typed item catalog, read-only (IC-034)
 	} sql;
 
 	std::string		interserverKey;

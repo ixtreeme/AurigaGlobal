@@ -18,7 +18,7 @@ a verziózott konfigurációs alap a `.example` fájl.
 | Szekció | Tartalom |
 |---|---|
 | `schema_version` | Jelenleg kötelezően `1`. |
-| `common.sql` | `player`, `account`, `common`, `log`, `mission` SQL-kapcsolatok. |
+| `common.sql` | `player`, `account`, `common`, `log`, `mission`, `protos` SQL-kapcsolatok. |
 | `common.tls` | A LoginServer és a GameServerek alapértelmezett tanúsítvány-/kulcsfájlja. |
 | `common.interserver_key` | Database, LoginServer és GameServer közös peer-auth kulcsa. |
 | `common.locale` | Opcionális közös karakterkódolás. |
@@ -36,7 +36,7 @@ Külön SQL-jogosultságok és külön TLS-tanúsítványok továbbra is megadha
 komponens/példány saját szekciójában.
 
 A `common.sql.account` a LoginServer `account_sql` értékébe kerül. A Database
-a player/account/common/mission, a GameServer a player/common/log/mission kapcsolatokat kapja.
+a player/account/common/mission, a GameServer a player/common/log/mission/protos kapcsolatokat kapja.
 A közös szerverkulcs a Database `server.interserver_key`, a másik két komponens
 `interserver_key` mezőjét tölti ki. Az eltérő effektív kulcs vagy táblanévutótag hibát okoz.
 
@@ -49,6 +49,18 @@ célgépet és TCP-portot, külön adatbázisnevet, valamint a Database és mind
 GameServer közös Mission-célját követeli. A 0 és 3306 port egyenértékű.
 A LoginServer nem kap Mission-kapcsolatot. Részletek és telepítés:
 [külön Mission-adatbázis](mission_database_2026-10-25.md).
+
+A `protos` a GameServer típusos tárgykatalógusa (IC-034, F4.1). Hiányzó
+beállításnál a GameServer effektív player-kapcsolatának címét/portját/
+hitelesítését örökli, az adatbázis neve **protos** lesz. Részlegesen
+felülírható, például külön, csak olvasó fiókkal:
+`"protos": {"user": "catalog_reader", "password": "..."}`. Az adatbázis neve
+csak `protos` lehet, és a player-rel azonos MariaDB-végpontot kell használnia,
+mert a katalógus- és mentési SQL teljesen minősített. A GameServer induláskor a
+`player.item_persistence_format` kötése szerinti katalógust tölti be,
+`REPEATABLE READ`, `READ ONLY` munkamenetben; hiba esetén nem indul.
+A Database és a LoginServer nem kap protos-kapcsolatot. Részletek:
+[IC-034](adr/item_combat_034_gameserver_runtime.md).
 
 A Database portjának forrása `database.network.bind_port`, alapból 5300.
 A többi komponens DB-linkje ezt örökli. A wildcard Database-cím helyett a

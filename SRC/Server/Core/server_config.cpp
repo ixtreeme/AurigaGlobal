@@ -56,6 +56,16 @@ Json MissionSql(Json section) {
     sql["mission"] = Merge(base, OptionalObject(sql, "mission"));
     return section;
 }
+// GameServer typed item catalog (IC-034). Inherits the player endpoint and
+// credentials; the reader's SQL is fully qualified, so the name stays protos.
+Json ProtosSql(Json section) {
+    if (!section.contains("sql") || !section["sql"].contains("player")) return section;
+    auto& sql = section["sql"];
+    auto base = sql["player"];
+    base["database"] = "protos";
+    sql["protos"] = Merge(base, OptionalObject(sql, "protos"));
+    return section;
+}
 long long SqlPort(const Json& value) {
     const auto port = Integer(value, "port", 0, 0, 65535);
     return port ? port : 3306;
@@ -81,6 +91,15 @@ void MissionSqlCheck(const Json& section, const Json& shared) {
     Need(String(mission, "host") == String(player, "host") && SqlPort(mission) == SqlPort(player),
          "SQL mission and player must use the same MariaDB endpoint");
 }
+void ProtosSqlCheck(const Json& section) {
+    const auto& sql = section.at("sql");
+    const auto& protos = sql.at("protos");
+    const auto& player = sql.at("player");
+    Sql(protos);
+    Need(String(protos, "database") == "protos", "SQL protos database must be named protos");
+    Need(String(protos, "host") == String(player, "host") && SqlPort(protos) == SqlPort(player),
+         "SQL protos and player must use the same MariaDB endpoint");
+}
 void Tls(const Json& object) {
     Object(object, "TLS settings");
     Need(!String(object, "cert_file").empty() && !String(object, "key_file").empty(), "TLS cert_file and key_file are required");
@@ -99,7 +118,7 @@ Json Effective(const Json& root, Role role, const std::string& instance) {
     const auto& sql = OptionalObject(common, "sql");
     if (role == Role::Login) { if (sql.contains("account")) result["account_sql"] = sql.at("account"); }
     else {
-        for (const char* name : (role == Role::Database ? std::vector<const char*>{"player", "account", "common", "mission"} : std::vector<const char*>{"player", "common", "log", "mission"}))
+        for (const char* name : (role == Role::Database ? std::vector<const char*>{"player", "account", "common", "mission"} : std::vector<const char*>{"player", "common", "log", "mission", "protos"}))
             if (sql.contains(name)) result["sql"][name] = sql.at(name);
     }
     if (common.contains("tls") && role != Role::Database) {
@@ -115,7 +134,7 @@ Json Effective(const Json& root, Role role, const std::string& instance) {
     result["network"]["db_addr"] = link.at("host"); result["network"]["db_port"] = link.at("port");
     result = Merge(result, OptionalObject(root, "game_defaults"));
     Need(root.at("game_servers").contains(instance), "unknown GameServer instance");
-    return MissionSql(Merge(result, root.at("game_servers").at(instance)));
+    return ProtosSql(MissionSql(Merge(result, root.at("game_servers").at(instance))));
 }
 void Validate(const Json& root) {
     Object(root, "server configuration");
@@ -131,8 +150,8 @@ void Validate(const Json& root) {
     for (const char* field : {"locale", "table_postfix", "interserver_key"}) String(common, field);
     const auto& sharedSql = OptionalObject(common, "sql");
     for (auto it = sharedSql.begin(); it != sharedSql.end(); ++it) {
-        Need(std::set<std::string>{"player", "account", "common", "log", "mission"}.count(it.key()) != 0, "unknown shared SQL role");
-        if (it.key() == "mission") Object(it.value(), "SQL mission"); else Sql(it.value());
+        Need(std::set<std::string>{"player", "account", "common", "log", "mission", "protos"}.count(it.key()) != 0, "unknown shared SQL role");
+        if (it.key() == "mission" || it.key() == "protos") Object(it.value(), it.key() == "mission" ? "SQL mission" : "SQL protos"); else Sql(it.value());
     }
     if (common.contains("tls")) Tls(common.at("tls"));
     const auto db = Effective(root, Role::Database, {});
@@ -195,6 +214,7 @@ void Validate(const Json& root) {
              game.at("sql").at("mission").at("database") == db.at("sql").at("mission").at("database") &&
              SqlPort(game.at("sql").at("mission")) == SqlPort(db.at("sql").at("mission")),
              "GameServer and Database mission targets differ");
+        ProtosSqlCheck(game);
         if (game.contains("map_allow")) {
             Need(game.at("map_allow").is_array(), "map_allow must be an array");
             std::set<long long> maps;

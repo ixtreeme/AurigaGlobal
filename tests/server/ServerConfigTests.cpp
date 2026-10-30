@@ -84,6 +84,22 @@ int main() {
         missionConfig["database"]["sql"]["mission"]["port"] = 0;
         Check(auriga::config::Resolve(missionConfig, source, Role::Database, {}, section, error),
               "default TCP port and explicit 3306 should identify the same Mission endpoint");
+        Check(auriga::config::Resolve(fixture, source, Role::Game, "ch1-core1", section, error) && game.Load(section, error) &&
+              game.sql.protos.database == "protos" && game.sql.protos.user == "fixture" &&
+              game.sql.protos.password == "PASSWORD_DO_NOT_LOG" && game.sql.protos.host == "127.0.0.1" && game.sql.protos.port == 3306,
+              "GameServer did not derive the protos catalog connection from player");
+        auto protosConfig = fixture;
+        protosConfig["common"]["sql"]["protos"] = {{"user", "catalog_reader"}, {"password", "CATALOG_READER_SECRET"}};
+        Check(auriga::config::Resolve(protosConfig, source, Role::Game, "ch1-core1", section, error) && game.Load(section, error) &&
+              game.sql.protos.user == "catalog_reader" && game.sql.protos.password == "CATALOG_READER_SECRET" &&
+              game.sql.protos.database == "protos" && game.sql.protos.host == "127.0.0.1" && game.sql.protos.port == 3306,
+              "partial protos override lost the player endpoint");
+        protosConfig["game_servers"]["ch1-core2"]["sql"]["protos"] = {{"user", "core_two_reader"}};
+        Check(auriga::config::Resolve(protosConfig, source, Role::Game, "ch1-core2", section, error) && game.Load(section, error) &&
+              game.sql.protos.user == "core_two_reader" && game.sql.protos.password == "CATALOG_READER_SECRET",
+              "per-core protos override was not applied");
+        Check(auriga::config::Resolve(protosConfig, source, Role::Database, {}, section, error) && !section.values.at("sql").contains("protos"),
+              "Database received a catalog connection it does not use yet");
         Check(auriga::config::Resolve(fixture, source, Role::Login, {}, section, error) && LoadLoginConfig(section, login, error), "login section rejected");
         Check(login.listenPort == 30052 && login.dbLink.port == 5300 && login.tls.keyFile == (root / "tls/server.key").generic_string(), "login link/TLS paths lost");
         Check(!auriga::config::Resolve(fixture, source, Role::Game, "missing", section, error), "unknown core accepted");
@@ -94,6 +110,13 @@ int main() {
             bad = fixture; bad["common"]["sql"]["mission"] = {{"database", name}}; reject(bad);
         }
         bad = fixture; bad["common"]["sql"]["mission"] = {{"port", 3310}}; reject(bad);
+        for (const char* name : {"player", "protos2", "PROTOS", "mission"}) {
+            bad = fixture; bad["common"]["sql"]["protos"] = {{"database", name}}; reject(bad);
+        }
+        bad = fixture; bad["common"]["sql"]["protos"] = {{"port", 3310}}; reject(bad);
+        bad = fixture; bad["common"]["sql"]["protos"] = {{"host", "192.0.2.1"}}; reject(bad);
+        bad = fixture; bad["common"]["sql"]["protos"] = "PASSWORD_DO_NOT_LOG"; reject(bad);
+        bad = fixture; bad["game_servers"]["ch1-core1"]["sql"]["protos"] = {{"database", "player"}}; reject(bad);
         bad = fixture; bad["common"]["sql"]["mission"] = {{"host", "192.0.2.1"}}; reject(bad);
         bad = fixture; bad["game_servers"]["ch1-core2"]["sql"]["mission"] = {{"database", "other_mission"}}; reject(bad);
         bad = fixture; bad["game_servers"] = Json::object(); bad["common"]["sql"]["mission"] = {{"database", "log"}};
