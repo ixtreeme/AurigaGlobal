@@ -4,6 +4,7 @@
 #include "PersistentItemFixture.hpp"
 #include "../../SRC/Server/GameServer/ecs/TypedItems.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_proto_components.hpp"
+#include <item/InventoryOperations.hpp>
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -187,6 +188,52 @@ void Rejects(const ItemCatalog& c)
     // The probe itself counts: a valid owner adds one owner and four item entities.
     Check(ti::Materialize(registry, c, Owner(), entt::null) && Entities(registry) == before + 5, "entity count probe");
 }
+// F4.4: a committed write set applied to the ECS, all or nothing.
+void Applies(const ItemCatalog& c)
+{
+    entt::registry registry;
+    const auto owner = ti::Materialize(registry, c, Owner(), entt::null).value();
+    const auto view = [&] { return ti::Project(registry, owner).value(); };
+    ItemOperationId op{};
+    op[0] = 1;
+    const auto start = view();
+    const ItemOwnerView v{start.fence, start.storages, start.items};
+
+    // Split: a new entity; then a move; both visible and consistent.
+    const auto split = MakeSplitCommit(c, v, op, ItemInstanceId::Create(2).value(), 2, {ItemStorageKind::Inventory, 1, 15},
+                                       ItemInstanceId::Create(700).value()).value();
+    Check(ti::Apply(registry, c, owner, split).has_value() && ti::Verify(registry, c, owner).has_value(), "split not applied");
+    const auto afterSplit = view();
+    Check(afterSplit.fence.revision == 4 && afterSplit.items.size() == 5 &&
+          ti::ItemAt(registry, owner, {Character, ItemStorageKind::Inventory, 1}, 15) == registry.get<ti::OwnerState>(owner).items.at(700),
+          "split state");
+    const auto before = Entities(registry);
+    Check(ti::Apply(registry, c, owner, split).error() == E::Diverged && Entities(registry) == before && Same(view(), afterSplit),
+          "stale commit applied twice");
+
+    // Destroy: the entity and its cells go away.
+    op[0] = 2;
+    const ItemOwnerView v2{afterSplit.fence, afterSplit.storages, afterSplit.items};
+    const auto destroy = MakeDestroyCommit(c, v2, op, f::Sword().id).value();
+    Check(ti::Apply(registry, c, owner, destroy).has_value() && ti::Verify(registry, c, owner).has_value(), "destroy not applied");
+    Check(ti::ItemAt(registry, owner, {Character, ItemStorageKind::Inventory, 1}, 0) == entt::null && view().items.size() == 4, "destroyed cells");
+
+    // Refused, unchanged: wrong fence, reused id, overlapping result.
+    const auto current = view();
+    const ItemOwnerView v3{current.fence, current.storages, current.items};
+    op[0] = 3;
+    auto stale = MakeConsumeCommit(c, v3, op, ItemInstanceId::Create(700).value(), 1).value();
+    stale.owners[0].revision--;
+    Check(ti::Apply(registry, c, owner, stale).error() == E::Diverged && Same(view(), current), "commit on another fence");
+    auto reused = MakeSplitCommit(c, v3, op, ItemInstanceId::Create(700).value(), 1, {ItemStorageKind::Inventory, 1, 20},
+                                  ItemInstanceId::Create(800).value()).value();
+    reused.items[1].after.id = ItemInstanceId::Create(3).value(); // the bound leather is live
+    Check(ti::Apply(registry, c, owner, reused).error() == E::Diverged && Same(view(), current), "new item with a live id");
+    auto overlap = MakeMoveCommit(c, v3, op, ItemInstanceId::Create(700).value(), {ItemStorageKind::Inventory, 1, 20}).value();
+    overlap.items[0].after.placement->anchor = 2; // the bound leather's cell
+    Check(ti::Apply(registry, c, owner, overlap).error() == E::Overlap && Same(view(), current), "overlapping result applied");
+    Check(ti::Apply(registry, c, entt::null, overlap).error() == E::NotAnOwner, "apply without an owner");
+}
 } // namespace
 
 int main()
@@ -196,6 +243,7 @@ int main()
         const auto catalog = BuildItemCatalog(f::Catalog()).value();
         RoundTrip(*catalog);
         Rejects(*catalog);
+        Applies(*catalog);
         std::cout << "TypedItemTests passed " << checks << " checks\n";
         return 0;
     }

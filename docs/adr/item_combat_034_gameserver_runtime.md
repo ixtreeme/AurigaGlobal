@@ -2,7 +2,7 @@
 
 2026-10-30. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
 Kiinduló HEAD: `235de385`.
-Állapot: **F4.1–F4.3 implementált; F4.4–F4.7 terv.** A tárgyakat a
+Állapot: **F4.1–F4.3 és F4.4a implementált; F4.4b és F4.5–F4.7 terv.** A tárgyakat a
 GameServer írja közvetlenül (a felhasználó döntése, 2026-10-30).
 
 ## Miért kell bontani
@@ -36,7 +36,8 @@ kiadási szabályából következik.
 | **F4.1** | A GameServer induláskor betölti a mentés által rögzített `protos` katalógust, és változtathatatlanul közzéteszi. Hiba esetén nem indul. | Kész (lásd lent). |
 | **F4.2** | Tárgytulajdonosi munkamenet: belépéskor/váltáskor tartós `session_generation` foglalás az `item_owner_fence`-ben, `LoadItemOwner`, kilépéskor a folyamatban lévő írások lezárása. Új karakternél tulajdonos, tárolók és pénztárca létrehozása. | Kész a mentési rétegben és a GameServer munkamenet-kezelőjében; az élő belépésbe kötés az F4.7 része (lásd lent). |
 | **F4.3** | ECS-példány a `PersistentItem`-ből: ItemInstanceId, ItemKey, szint, revízió, tulajdonos, hely, bónuszok, foglalatok. Nincs `TItemTable` pointer. | Kész: valódi MariaDB-betöltésen is azonos (lásd lent). |
-| **F4.4** | Tartós műveletek: aszinkron tárgyíró a meglévő `CAsyncSQL` workeren, művelet-ID, `CommitUnknown` egyeztetés. Mozgatás, halmozás, bontás, megsemmisítés, fejlesztés, bónusz- és foglalatszolgáltatás, fogyasztás. Az ECS csak sikeres commit után változik. | Újracsatlakozás és összeomlás után nincs dupla levonás vagy elveszett tárgy. |
+| **F4.4a** | Tárgyíró: aszinkron, tulajdonosonként sorba rendezett írás, művelet-ID, `CommitUnknown` egyeztetés, új példányazonosítók. Mozgatás/csere, halmozás, bontás, megsemmisítés, fogyasztás. Az ECS csak sikeres commit után változik. | Kész: elveszett visszaigazolás és összeomlás után sincs dupla írás vagy elveszett tárgy (lásd lent). |
+| **F4.4b** | Fejlesztés, bónusz- és foglalatszolgáltatás a játéklogikához (dobás, költség) kötve, ugyanazon az írón. | Ugyanaz a kapu a három műveletre. |
 | **F4.5** | Statok: a felszerelés a katalógusból (`RefinedBaseStats`, `BonusProfilesAt`) adja a régi harcképletek bemenetét. | Rögzített tárgykészletre a statok egyeznek a várt értékkel. |
 | **F4.6** | Gazdaság és tartalom: bolt (katalógusár), trade (két tulajdonos egy commitban), földre dobás és felvétel, mob-drop ItemKey-jel, quest Lua API, Mission `ItemRewardSpec`, raktár és itemshop. | Folyamatonkénti tesztek. |
 | **F4.7** | Átállás: a boot `item_proto`, a `TItemTable`, a vnum utak, a Database `player.item` cache és a régi ItemAward kivezetése. | IC-012 F4 kapu: a régi út nincs a runtime-ban, a tesztek zöldek vagy kiváltva. |
@@ -228,4 +229,63 @@ A tárolórács tárolónként változó méretű (a régi fix tömb helyett).
 
 A munkamenet (F4.2) Active eseménye után a bekötés `Materialize`-t hív, a
 `Close` előtt pedig `Release`-t (F4.7).
+
+## F4.4a döntés: a tárgyíró
+
+**Műveletek (`InventoryOperations`, tiszta tartomány).** Egy tulajdonos
+aktuális állapotából egy-egy teljes írási halmaz készül, amelyet a
+`ValidateItemCommit` elfogad:
+- **Mozgatás** szabad cellára. **Csere**, ha a cél pontosan egy tárgy
+  horgonya, és mindkettő elfér a másik helyén. Felszereléskor az `OnEquip`
+  tárgy kötötté válik; levételkor a kötés megmarad.
+- **Halmozás** azonos kulcs, szint, kötés, bónusz és kő esetén, a
+  halommaximumig. A kiürülő forrás sírkő lesz.
+- **Bontás** új példányazonosítóval, revízió 1.
+- **Megsemmisítés:** sírkő az utolsó teljes állapottal.
+- **Fogyasztás:** darabszám-csökkentés; az utolsó egység sírkövet hagy.
+
+**Új példányazonosítók.** Tartós számláló:
+`player.item_instance_id_allocator`
+(`db/migrations/item_instance/002_instance_id_allocator.sql`).
+- A GameServer 64-es blokkokat foglal egy tranzakcióban, így két szerver soha
+  nem ad ki azonos azonosítót.
+- A blokk fel nem használt maradéka újraindításkor kimarad; újra soha nem
+  adódik ki.
+- 64 bites túlcsordulás előtt `LimitExceeded`.
+- A telepítő a meglévő legnagyobb azonosító fölé állítja. Az F6 importnak
+  is mindig a legnagyobb importált azonosító fölé kell állítania.
+
+**Író (`ItemWriter`, GameServer).**
+- **Sorrend:** tulajdonosonként egy sáv, egyszerre egy SQL-írással. A
+  szándékból csak akkor lesz írási halmaz, amikor a sor elejére ér, és mindig
+  az ECS aktuális állapotából.
+- **Ellenőrzés:** az ECS kerítésének meg kell egyeznie a munkamenetével.
+- **Alkalmazás:** a sikeres commit után az `Apply` mindent vagy semmit
+  alkalmazza. A „before” állapotnak egyeznie kell az ECS-sel.
+- **Elveszett COMMIT-visszaigazolás (`CommitUnknown`):** nincs vak
+  újraküldés. Az egyeztetés zárolja a tulajdonos kerítését, így megvárja az
+  eredeti tranzakciót, majd aktuális olvasással nézi a nyugtát:
+  - van nyugta → a művelet pontosan egyszer alkalmazva;
+  - nincs nyugta → nem történt írás;
+  - eltérő nyugta → eltérés;
+  - háromszori SQL-hiba → eldönthetetlen.
+- **Kimenetek:**
+  - `Committed`;
+  - `Rejected`: szabálysértés, SQL nélkül;
+  - `NotCommitted`;
+  - `Superseded`: kerítésütközés, azaz egy újabb munkamenet;
+  - `Cancelled`;
+  - `Diverged`, `Unresolved`: a munkamenetet újra kell tölteni.
+
+  Ütközés, eltérés és eldönthetetlenség esetén a munkamenet átvettnek
+  számít, és a sor többi szándéka elmarad.
+- **Zárás:** a sorban várók törlődnek; az SQL-ben lévő írás befejeződik. A
+  munkamenet csak ezután zárul.
+
+**F4.7 kiegészítés:**
+- a szerverkezelő telepítője a 002-es sémát is telepíti, és a tárgyíró
+  UPDATE-jogot kap a számlálóra;
+- a főciklus az író végrehajtóját is pumpálja;
+- kilépéskor a sorrend: `ItemWriter::Close` → `ItemOwnerSessions::Close` →
+  a Closed esemény után `ecs::item::Release`.
 

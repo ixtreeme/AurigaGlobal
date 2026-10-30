@@ -7,6 +7,7 @@
 #include <Core/player_session.h>
 #include <ItemPersistenceSql.hpp>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -125,6 +126,7 @@ public:
     bool Submit(std::uint64_t ticket, SqlTransaction job) override;
     // Delivers every finished job; returns how many were delivered.
     std::size_t Pump(ItemOwnerSessions& sessions);
+    std::size_t Pump(const std::function<void(std::uint64_t, _SQLMsg&)>& deliver);
 
 private:
     CAsyncSQL& connection_;

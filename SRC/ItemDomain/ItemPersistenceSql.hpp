@@ -61,4 +61,27 @@ std::expected<ItemOwnerFence,ItemPersistenceError> ProvisionItemOwner(CAsyncSQL&
 std::expected<SqlTransaction,ItemPersistenceError> PrepareClaimItemOwner(const ItemCatalog&,ItemOwner);
 std::expected<ItemOwnerFence,ItemPersistenceError> ClaimItemOwnerCompleted(const ItemCatalog&,ItemOwner,_SQLMsg&);
 std::expected<ItemOwnerFence,ItemPersistenceError> ClaimItemOwner(CAsyncSQL&,const ItemCatalog&,ItemOwner);
+
+// --- New instance IDs and lost commit acknowledgements (F4.4, IC-034) ----
+// Reserves `count` fresh IDs from player.item_instance_id_allocator
+// (db/migrations/item_instance/002). The range [first, first+count) is used
+// by nobody else; an unused rest is skipped, never reissued.
+struct ItemInstanceIdRange
+{
+    std::uint64_t first=0;
+    std::uint32_t count=0;
+    bool operator==(const ItemInstanceIdRange&) const = default;
+};
+inline constexpr std::uint32_t MaxReservedItemInstanceIds=65536;
+std::expected<SqlTransaction,ItemPersistenceError> PrepareReserveItemInstanceIds(const ItemCatalog&,std::uint32_t count);
+std::expected<ItemInstanceIdRange,ItemPersistenceError> ReserveItemInstanceIdsCompleted(const ItemCatalog&,std::uint32_t count,_SQLMsg&);
+std::expected<ItemInstanceIdRange,ItemPersistenceError> ReserveItemInstanceIds(CAsyncSQL&,const ItemCatalog&,std::uint32_t count);
+
+// Decides a commit whose COMMIT acknowledgement was lost (CommitUnknown).
+// Locks every owner fence first, so it waits until the original transaction
+// has finished on the server; the receipt is then read as a current read.
+// A receipt means committed (exactly once); none means it never committed.
+std::expected<SqlTransaction,ItemPersistenceError> PrepareReconcileItemCommit(const ItemCatalog&,const ItemCommit&);
+std::expected<std::optional<ItemReceipt>,ItemPersistenceError> ReconcileItemCommitCompleted(const ItemCatalog&,const ItemCommit&,_SQLMsg&);
+std::expected<std::optional<ItemReceipt>,ItemPersistenceError> ReconcileItemCommit(CAsyncSQL&,const ItemCatalog&,const ItemCommit&);
 } // namespace auriga::item::persistence

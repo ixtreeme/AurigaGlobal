@@ -210,6 +210,117 @@ std::expected<void, E> Verify(entt::registry& registry, const domain::ItemCatalo
     return {};
 }
 
+namespace
+{
+void Write(entt::registry& registry, entt::entity entity, const domain::PersistentItem& item, entt::entity owner)
+{
+    registry.emplace_or_replace<Identity>(entity, item.id, item.key);
+    registry.emplace_or_replace<Refinement>(entity, item.refinementLevel);
+    registry.emplace_or_replace<Revision>(entity, item.revision);
+    registry.emplace_or_replace<Stack>(entity, item.count);
+    registry.emplace_or_replace<DurableOwner>(entity, item.owner, owner);
+    registry.emplace_or_replace<Binding>(entity, item.boundTo);
+    if (item.placement) registry.emplace_or_replace<Placement>(entity, *item.placement);
+    else registry.remove<Placement>(entity);
+    registry.emplace_or_replace<Attributes>(entity, item.attributes);
+    registry.emplace_or_replace<StoneSockets>(entity, item.stones);
+    if (item.accessory) registry.emplace_or_replace<AccessorySocket>(entity, *item.accessory);
+    else registry.remove<AccessorySocket>(entity);
+}
+} // namespace
+
+std::expected<void, E> Apply(entt::registry& registry, const domain::ItemCatalog& catalog, entt::entity owner, const domain::ItemCommit& commit)
+{
+    auto* state = registry.valid(owner) ? registry.try_get<OwnerState>(owner) : nullptr;
+    if (!state) return std::unexpected(E::NotAnOwner);
+    // One owner per loaded state; multi-owner commits (trade) are F4.6.
+    if (commit.owners.size() != 1 || commit.owners.front() != state->fence) return std::unexpected(E::Diverged);
+    for (const auto& layout : commit.storages)
+    {
+        const auto grid = GridIndex(state->storages, layout.storage);
+        if (!grid || state->storages[*grid].layout != layout) return std::unexpected(E::Diverged);
+    }
+    auto wallets = state->wallets;
+    for (const auto& change : commit.wallets)
+    {
+        const auto found = std::ranges::find(wallets, change.before.currency, &domain::ItemWallet::currency);
+        if (found == wallets.end() || *found != change.before || change.after.owner != state->fence.owner) return std::unexpected(E::Diverged);
+        *found = change.after;
+    }
+
+    std::set<std::uint64_t> changed;
+    for (const auto& change : commit.items)
+        if (!changed.insert(change.after.id.Value()).second) return std::unexpected(E::Diverged);
+
+    // Simulate the grids by instance id: release every "before" footprint,
+    // then take every "after" footprint.
+    std::vector<std::vector<std::uint64_t>> cells;
+    for (const auto& grid : state->storages)
+    {
+        std::vector<std::uint64_t> ids(grid.cells.size(), 0);
+        for (std::size_t i = 0; i < ids.size(); ++i)
+            if (grid.cells[i] != entt::null) ids[i] = registry.get<Identity>(grid.cells[i]).id.Value();
+        cells.push_back(std::move(ids));
+    }
+    for (const auto& change : commit.items)
+    {
+        const auto id = change.after.id.Value();
+        const auto existing = state->items.find(id);
+        if (!change.before)
+        {
+            if (existing != state->items.end()) return std::unexpected(E::Diverged);
+            continue;
+        }
+        if (existing == state->items.end()) return std::unexpected(E::Diverged);
+        const auto current = ProjectItem(registry, existing->second);
+        if (!current || *current != *change.before) return std::unexpected(E::Diverged);
+        const auto footprint = Footprint(catalog, *current, state->storages);
+        if (!footprint) return std::unexpected(E::Diverged);
+        for (const auto cell : footprint->second)
+        {
+            if (cells[footprint->first][cell] != id) return std::unexpected(E::Diverged);
+            cells[footprint->first][cell] = 0;
+        }
+    }
+    for (const auto& change : commit.items)
+    {
+        const auto& after = change.after;
+        if (after.owner != state->fence.owner) return std::unexpected(E::Diverged);
+        if (after.destroyed) continue;
+        if (!domain::ValidatePersistentItem(catalog, after)) return std::unexpected(E::InvalidItem);
+        const auto footprint = Footprint(catalog, after, state->storages);
+        if (!footprint) return std::unexpected(E::InvalidPlacement);
+        for (const auto cell : footprint->second)
+        {
+            auto& slot = cells[footprint->first][cell];
+            if (slot) return std::unexpected(E::Overlap);
+            slot = after.id.Value();
+        }
+    }
+
+    // Validated: mutate.
+    for (const auto& change : commit.items)
+    {
+        const auto id = change.after.id.Value();
+        const auto existing = state->items.find(id);
+        if (change.after.destroyed)
+        {
+            registry.destroy(existing->second);
+            state->items.erase(existing);
+            continue;
+        }
+        const auto entity = existing != state->items.end() ? existing->second : registry.create();
+        Write(registry, entity, change.after, owner);
+        state->items[id] = entity;
+    }
+    for (std::size_t g = 0; g < cells.size(); ++g)
+        for (std::size_t i = 0; i < cells[g].size(); ++i)
+            state->storages[g].cells[i] = cells[g][i] ? state->items.at(cells[g][i]) : entt::entity{entt::null};
+    state->wallets = std::move(wallets);
+    ++state->fence.revision;
+    return {};
+}
+
 bool Release(entt::registry& registry, entt::entity owner)
 {
     const auto* state = State(registry, owner);

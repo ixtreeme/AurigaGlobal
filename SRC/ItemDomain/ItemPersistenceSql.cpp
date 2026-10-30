@@ -135,6 +135,22 @@ template<std::size_t N> std::array<std::uint8_t,N> Array(const Cell& cell)
 std::vector<std::uint8_t> Payload(const Cell& cell)
 {if(!cell || cell->size()>MaxItemCommitResult)throw Invalid{};std::vector<std::uint8_t> out;for(auto b:*cell)out.push_back(static_cast<unsigned char>(b));return out;}
 }
+namespace
+{
+// The receipt row of `r` at `step`: absent, exactly this request, or a mismatch.
+std::expected<std::optional<ItemReceipt>,E> DecodeReceipt(SQLMsg& m,std::size_t step,const ItemCatalogDigest& digest,const ItemCommit& r)
+{
+    auto rows=Result(m,step,6,1);if(!rows)return std::unexpected(rows.error());if(rows->empty())return std::optional<ItemReceipt>{};
+    try
+    {
+        const auto& row=rows->front();const auto hash=Array<32>(row[0]);const auto code=Number<std::uint16_t>(row[4]);auto payload=Payload(row[5]);
+        if(hash!=digest || Number<std::uint64_t>(row[1])!=r.catalogRevision || Array<32>(row[2])!=r.catalogHash ||
+           Number<unsigned>(row[3])!=static_cast<unsigned>(r.kind) || code!=r.outcomeCode || payload!=r.result)return std::unexpected(E::ReceiptMismatch);
+        return std::optional<ItemReceipt>{ItemReceipt{hash,code,std::move(payload)}};
+    }
+    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
+}
 std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const ItemCommit& r)
 {
     const auto digest=ItemCommitDigest(c,r);if(!digest)return std::unexpected(digest.error());
@@ -249,15 +265,7 @@ std::expected<std::optional<ItemReceipt>,E> FindItemReceipt(CAsyncSQL& db,const 
     auto tx=Guards(c);
     tx.push_back({"SELECT request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload FROM player.item_operation_receipt WHERE operation_id=?",{U::Blob(Bytes(r.operationId))},{},{}});
     Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
-    auto rows=Result(*m,3,6,1);if(!rows)return std::unexpected(rows.error());if(rows->empty())return std::optional<ItemReceipt>{};
-    try
-    {
-        const auto& row=rows->front();const auto hash=Array<32>(row[0]);const auto code=Number<std::uint16_t>(row[4]);auto payload=Payload(row[5]);
-        if(hash!=*digest || Number<std::uint64_t>(row[1])!=r.catalogRevision || Array<32>(row[2])!=r.catalogHash ||
-           Number<unsigned>(row[3])!=static_cast<unsigned>(r.kind) || code!=r.outcomeCode || payload!=r.result)return std::unexpected(E::ReceiptMismatch);
-        return std::optional<ItemReceipt>{ItemReceipt{hash,code,std::move(payload)}};
-    }
-    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+    return DecodeReceipt(*m,3,*digest,r);
 }
 std::expected<ItemWriteResult,E> CommitItems(CAsyncSQL& db,const ItemCatalog& c,const ItemCommit& r)
 {
@@ -457,5 +465,66 @@ std::expected<ItemOwnerFence,E> ClaimItemOwner(CAsyncSQL& db,const ItemCatalog& 
     auto tx=PrepareClaimItemOwner(c,owner);if(!tx)return std::unexpected(tx.error());
     Message m(db.DirectTransactionPrepared(std::move(*tx)));if(!m)return std::unexpected(E::SqlFailure);
     return ClaimItemOwnerCompleted(c,owner,*m);
+}
+
+// --- New instance IDs and lost commit acknowledgements (F4.4) --------------
+std::expected<SqlTransaction,E> PrepareReserveItemInstanceIds(const ItemCatalog& c,std::uint32_t count)
+{
+    if(!count || count>MaxReservedItemInstanceIds)return std::unexpected(E::LimitExceeded);
+    auto tx=Guards(c);
+    tx.push_back({"UPDATE player.item_instance_id_allocator SET next_id=next_id+? WHERE singleton=1 AND next_id<=?",
+        {U::UInt(count),U::UInt(UINT64_MAX-count)},1,{}});
+    tx.push_back({"SELECT next_id FROM player.item_instance_id_allocator WHERE singleton=1 FOR UPDATE",{},{},1});
+    return tx;
+}
+std::expected<ItemInstanceIdRange,E> ReserveItemInstanceIdsCompleted(const ItemCatalog& c,std::uint32_t count,SQLMsg& m)
+{
+    const auto expected=PrepareReserveItemInstanceIds(c,count);if(!expected)return std::unexpected(expected.error());
+    if(!m.bTransaction)return std::unexpected(E::SqlFailure);
+    // No row updated: the counter would pass the 64-bit range.
+    if(m.transactionOutcome==SqlTransactionOutcome::Conflict && m.transactionFailedStep==3)return std::unexpected(E::LimitExceeded);
+    if(m.uiSQLErrno || m.transactionOutcome!=SqlTransactionOutcome::Committed)return std::unexpected(Failure(m));
+    if(!SameJob(*expected,m))return std::unexpected(E::InvalidStoredData);
+    auto rows=Result(m,4,1,1);if(!rows)return std::unexpected(rows.error());
+    try
+    {
+        if(rows->size()!=1)throw Invalid{};
+        const auto next=Number<std::uint64_t>((*rows)[0][0]);
+        if(next<=count)throw Invalid{};
+        return ItemInstanceIdRange{next-count,count};
+    }
+    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
+std::expected<ItemInstanceIdRange,E> ReserveItemInstanceIds(CAsyncSQL& db,const ItemCatalog& c,std::uint32_t count)
+{
+    auto tx=PrepareReserveItemInstanceIds(c,count);if(!tx)return std::unexpected(tx.error());
+    Message m(db.DirectTransactionPrepared(std::move(*tx)));if(!m)return std::unexpected(E::SqlFailure);
+    return ReserveItemInstanceIdsCompleted(c,count,*m);
+}
+std::expected<SqlTransaction,E> PrepareReconcileItemCommit(const ItemCatalog& c,const ItemCommit& r)
+{
+    const auto digest=ItemCommitDigest(c,r);if(!digest)return std::unexpected(digest.error());
+    auto tx=Guards(c);
+    auto owners=r.owners;std::ranges::sort(owners,{},&ItemOwnerFence::owner);
+    // The original transaction updates these rows first; locking them waits for it.
+    for(const auto& o:owners)
+        tx.push_back({"SELECT state_revision FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=? FOR UPDATE",Owner(o.owner),{},1});
+    tx.push_back({"SELECT request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload FROM player.item_operation_receipt WHERE operation_id=? LOCK IN SHARE MODE",
+        {U::Blob(Bytes(r.operationId))},{},{}});
+    return tx;
+}
+std::expected<std::optional<ItemReceipt>,E> ReconcileItemCommitCompleted(const ItemCatalog& c,const ItemCommit& r,SQLMsg& m)
+{
+    const auto expected=PrepareReconcileItemCommit(c,r);if(!expected)return std::unexpected(expected.error());
+    if(!m.bTransaction)return std::unexpected(E::SqlFailure);
+    if(m.uiSQLErrno || m.transactionOutcome!=SqlTransactionOutcome::Committed)return std::unexpected(Failure(m));
+    if(!SameJob(*expected,m))return std::unexpected(E::InvalidStoredData);
+    return DecodeReceipt(m,expected->size()-1,*ItemCommitDigest(c,r),r);
+}
+std::expected<std::optional<ItemReceipt>,E> ReconcileItemCommit(CAsyncSQL& db,const ItemCatalog& c,const ItemCommit& r)
+{
+    auto tx=PrepareReconcileItemCommit(c,r);if(!tx)return std::unexpected(tx.error());
+    Message m(db.DirectTransactionPrepared(std::move(*tx)));if(!m)return std::unexpected(E::SqlFailure);
+    return ReconcileItemCommitCompleted(c,r,*m);
 }
 } // namespace auriga::item::persistence

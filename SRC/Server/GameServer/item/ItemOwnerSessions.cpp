@@ -252,6 +252,11 @@ bool AsyncItemSqlExecutor::Submit(std::uint64_t ticket, SqlTransaction job)
 
 std::size_t AsyncItemSqlExecutor::Pump(ItemOwnerSessions& sessions)
 {
+    return Pump([&](std::uint64_t ticket, SQLMsg& message) { sessions.Complete(ticket, message); });
+}
+
+std::size_t AsyncItemSqlExecutor::Pump(const std::function<void(std::uint64_t, SQLMsg&)>& deliver)
+{
     std::size_t delivered = 0;
     SQLMsg* raw = nullptr;
     while (connection_.PopResult(&raw))
@@ -259,7 +264,7 @@ std::size_t AsyncItemSqlExecutor::Pump(ItemOwnerSessions& sessions)
         std::unique_ptr<SQLMsg> message(raw);
         std::unique_ptr<Ticket> ticket(static_cast<Ticket*>(message->pvUserData));
         message->pvUserData = nullptr;
-        if (ticket) sessions.Complete(ticket->value, *message);
+        if (ticket) deliver(ticket->value, *message);
         ++delivered;
     }
     return delivered;

@@ -22,6 +22,7 @@ enum class TypedItemError : std::uint8_t
     MissingComponent, // an item entity lost one of its typed components
     GridMismatch,     // stored cells differ from the items' footprints
     LegacyComponent,  // a typed item entity carries a legacy proto pointer
+    Diverged,         // a commit's "before" state is not the current ECS state
 };
 
 // Creates one owner entity and one entity per item, all or nothing: on any
@@ -39,6 +40,14 @@ std::expected<domain::PersistentItem, TypedItemError> ProjectItem(const entt::re
 // owner entity, has no legacy component, and the grids hold exactly the
 // footprints of the items.
 std::expected<void, TypedItemError> Verify(entt::registry& registry, const domain::ItemCatalog& catalog, entt::entity owner);
+
+// Applies a COMMITTED write set to the loaded owner, all or nothing (F4.4).
+// The commit must have been built on exactly this state: its fence, every
+// `before` item and wallet equal the ECS state, a new item id is unused.
+// Otherwise Diverged (or a placement error) and nothing changes. The fence
+// revision advances by one, as the database writer does.
+std::expected<void, TypedItemError> Apply(entt::registry& registry, const domain::ItemCatalog& catalog, entt::entity owner,
+                                          const domain::ItemCommit& commit);
 
 // Destroys the owner entity and all of its item entities.
 bool Release(entt::registry& registry, entt::entity owner);

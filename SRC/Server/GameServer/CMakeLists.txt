@@ -684,6 +684,13 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --work-dir ${CMAKE_BINARY_DIR}/item-owner-sessions-isolated
     )
     set_tests_properties(item_owner_sessions_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
+    add_test(NAME item_writer_mariadb
+        COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/tests/server/ItemWriterTests.py
+            --mariadb-bin ${AURIGA_TEST_MARIADB_BIN_DIR}
+            --test-executable $<TARGET_FILE:ItemWriterTests>
+            --work-dir ${CMAKE_BINARY_DIR}/item-writer-isolated
+    )
+    set_tests_properties(item_writer_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
     add_test(NAME item_award_delivery_mariadb
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
             --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
@@ -834,6 +841,23 @@ if(TARGET auriga_sanitizers)
 endif()
 add_test(NAME typed_items COMMAND TypedItemTests)
 set_tests_properties(typed_items PROPERTIES LABELS server TIMEOUT 60)
+
+# F4.4 (IC-034): durable item writer (lanes, reservations, lost acknowledgements).
+add_executable(ItemWriterTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ItemWriterTests.cpp
+    item/ItemWriter.cpp
+    item/ItemOwnerSessions.cpp
+    ecs/TypedItems.cpp
+)
+target_link_libraries(ItemWriterTests PRIVATE AurigaItemPersistenceSql AurigaItemCatalogSql S_Core SERVER EnTT::EnTT)
+if(WIN32)
+    target_link_libraries(ItemWriterTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+if(TARGET auriga_sanitizers)
+    target_link_libraries(ItemWriterTests PRIVATE auriga_sanitizers)
+endif()
+add_test(NAME item_writer COMMAND ItemWriterTests --completion-only)
+set_tests_properties(item_writer PROPERTIES LABELS server TIMEOUT 60)
 
 add_executable(QuickslotTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuickslotTests.cpp
@@ -1015,7 +1039,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target LuaSourceTests GameServer ItemCatalogRuntimeTests ItemOwnerSessionTests TypedItemTests ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
+    foreach(_asan_target LuaSourceTests GameServer ItemCatalogRuntimeTests ItemOwnerSessionTests TypedItemTests ItemWriterTests ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
