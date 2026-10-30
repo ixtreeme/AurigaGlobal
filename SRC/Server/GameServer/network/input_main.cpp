@@ -92,6 +92,7 @@
 #include "mob_manager.h"
 #endif
 #include <common/CommonDefines.h>
+#include "../item/TypedItemOps.hpp"
 
 
 #define ENABLE_CHECK_GHOSTMODE
@@ -425,6 +426,10 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 		case HEADER_CG_MOUNT_INVENTORY_ITEM_MOVE:
 			MountInventoryItemMove(character, c_pData);
+			break;
+
+		case HEADER_CG_TYPED_ITEM_MOVE:
+			HandleTypedItemMovePacket(character, c_pData);
 			break;
 
 		case HEADER_CG_PARTY_INVITE:

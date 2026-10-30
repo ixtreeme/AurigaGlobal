@@ -170,6 +170,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_MOUNT_INVENTORY_CHECKOUT, sizeof(TPacketCGMountInventoryCheckout), "MountInventoryCheckout", true);
 	Set(HEADER_CG_MOUNT_INVENTORY_CHECKIN, sizeof(TPacketCGMountInventoryCheckin), "MountInventoryCheckin", true);
 	Set(HEADER_CG_MOUNT_INVENTORY_ITEM_MOVE, sizeof(TPacketCGMountInventoryItemMove), "MountInventoryItemMove", true);
+	Set(HEADER_CG_TYPED_ITEM_MOVE, sizeof(TPacketCGTypedItemMove), "TypedItemMove", true);
 
 
 #ifdef __INGAME_WIKI__

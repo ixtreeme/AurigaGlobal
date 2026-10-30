@@ -39,6 +39,10 @@ def main():
             sandbox.client.query(statement)
         # The game account may claim sessions; only the importer (root here) provisions.
         sandbox.client.query("GRANT UPDATE ON player.item_owner_fence TO 'game_reader'@'localhost'")
+        # ...and write its typed items like the item writer (C3 moves), never the storages.
+        for table in ('item_owner_fence', 'item_wallet', 'item_operation_receipt', 'item_instance',
+                      'item_instance_attribute', 'item_instance_socket', 'item_occupied_cell'):
+            sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player." + table + " TO 'game_reader'@'localhost'")
         admin = dict(port=sandbox.port, user='root', password=sandbox.password)
         packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
         document = catalog.Catalog(packet).new(1)

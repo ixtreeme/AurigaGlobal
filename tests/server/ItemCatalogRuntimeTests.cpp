@@ -9,6 +9,7 @@
 #include <SQL/AsyncSQL.h>
 
 #include <chrono>
+#include <optional>
 #include <thread>
 #include <vector>
 
@@ -90,6 +91,40 @@ int main(int argc, char** argv)
 			}
 			const auto missing = "missing:error" + std::to_string(static_cast<int>(ItemPersistenceError::MissingOwner));
 			Check(order == std::vector<std::string> { "first:loaded2/777", missing, "relog:loaded3/777" }, "login loads out of order or wrong");
+			// C3: a move through the store is committed and answered with the reloaded state;
+			// a move built from an outdated state is refused and the reload stays authoritative.
+			{
+				auto owned = persistence::LoadItemOwner(importer, *catalog, provisioned, 3);
+				Check(owned.has_value(), "relogged owner loads at session 3");
+				PersistentItem sword { ItemInstanceId::Create(0x00C3000000000001ULL).value(), ItemKey::Create(1, 1).value(), provisioned };
+				sword.placement = ItemPlacement { ItemStorageKind::Inventory, 1, 0 };
+				ItemCommit grant; grant.operationId.fill(0x31); grant.catalogRevision = catalog->Revision(); grant.catalogHash = catalog->ContentHash();
+				grant.kind = ItemOperationKind::Grant; grant.owners = { owned->fence }; grant.storages = { bag };
+				grant.items.push_back({ std::nullopt, sword }); grant.outcomeCode = 1; grant.result = { 1 };
+				Check(persistence::CommitItems(importer, *catalog, grant).has_value(), "grant for the move test");
+				auto before = persistence::LoadItemOwner(importer, *catalog, provisioned, 3);
+				Check(before && before->items.size() == 1, "granted sword loads");
+				std::array<std::uint8_t, 16> op {}; op.fill(0x32);
+				auto move = MakeMoveCommit(*catalog, op, before->fence, before->storages, before->items, sword.id, ItemPlacement { ItemStorageKind::Inventory, 1, 7 });
+				Check(move.has_value(), "move commit built");
+				std::optional<runtime::CommitOutcome> got;
+				const auto wait = [&] { for (int spins = 0; !got && spins < 1000; ++spins) { store.Drain(); std::this_thread::sleep_for(std::chrono::milliseconds(10)); } };
+				Check(runtime::RequestCommit(provisioned, 3, *move, [&](runtime::CommitOutcome outcome) { got = std::move(outcome); }), "move not queued");
+				wait();
+				Check(got && got->write && !got->write->replay && got->state && got->state->items.at(0).placement->anchor == 7 &&
+				      got->state->items.at(0).revision == before->items.at(0).revision + 1, "move committed and reloaded");
+				op.fill(0x33);
+				auto stale = MakeMoveCommit(*catalog, op, before->fence, before->storages, before->items, sword.id, ItemPlacement { ItemStorageKind::Inventory, 1, 9 });
+				got.reset();
+				Check(stale && runtime::RequestCommit(provisioned, 3, *stale, [&](runtime::CommitOutcome outcome) { got = std::move(outcome); }), "stale move not queued");
+				wait();
+				Check(got && !got->write && got->state && got->state->items.at(0).placement->anchor == 7, "stale move refused, reload authoritative");
+				got.reset();
+				auto previousLogin = *move; previousLogin.operationId.fill(0x34); previousLogin.owners[0].sessionGeneration = 2;
+				Check(runtime::RequestCommit(provisioned, 2, previousLogin, [&](runtime::CommitOutcome outcome) { got = std::move(outcome); }), "old-session move not queued");
+				wait();
+				Check(got && !got->write && !got->state, "a previous login's session can neither write nor reload");
+			}
 			// Queued work is finished at stop; its completion is dropped, not run late.
 			bool ran = false, applied = false;
 			Check(store.Submit([&ran, &applied](CAsyncSQL&, const ItemCatalog&) { ran = true; return runtime::ItemStore::Completion { [&applied] { applied = true; } }; }), "work refused");

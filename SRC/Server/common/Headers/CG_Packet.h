@@ -406,6 +406,16 @@ typedef struct command_mount_inventory_item_move
 	uint16_t	wDestPos;
 } TPacketCGMountInventoryItemMove;
 
+// Typed item system (F4 C3): move one typed item to an inventory cell.
+typedef struct command_typed_item_move
+{
+	uint8_t		bHeader;
+	uint64_t	qwItemId;
+	uint8_t		bStorageKind;
+	uint64_t	qwStorageId;
+	uint32_t	dwCell;
+} TPacketCGTypedItemMove;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

@@ -73,6 +73,36 @@ void Run()
     Check(socketCommit && socketCommit->items[0].after.stones[1].state==StoneSocketState::Empty && socketCommit->items[1].after.destroyed,"clean broken socket and source consumption atomic");
     auto returns=*socketPlan;returns.returns.push_back({0,socket_service_fixture::Stone(),0,71,1});
     Check(!MakeSocketServiceCommit(c,returns,fence,storages,serviceInventory),"unimplemented returned-instance writer fails closed");
+    // F4 C3: moving inside the inventory, no swap/merge/equip.
+    {
+        const std::vector<ItemStorageLayout> bags{f::Inventory(),{{f::Character(),ItemStorageKind::Inventory,2},5,9,1},
+            {{f::Character(),ItemStorageKind::Equipment,1},32,1,1}};
+        const std::vector<PersistentItem> items{f::Sword(),f::Leather()};
+        std::array<std::uint8_t,16> op{};op[0]=0xC3;
+        const auto at=[](ItemStorageKind kind,std::uint64_t storage,std::uint32_t cell){return ItemPlacement{kind,storage,cell};};
+        auto moved=MakeMoveCommit(c,op,fence,bags,items,f::Sword().id,at(ItemStorageKind::Inventory,1,12));
+        Check(moved && moved->kind==ItemOperationKind::Move && moved->items.size()==1 && moved->items[0].after.placement->anchor==12 &&
+              moved->items[0].after.revision==f::Sword().revision+1 && moved->items[0].after.stones==f::Sword().stones && moved->storages.size()==1,"move inside one bag");
+        auto across=MakeMoveCommit(c,op,fence,bags,items,f::Leather().id,at(ItemStorageKind::Inventory,2,0));
+        Check(across && across->storages.size()==2,"move into a second inventory storage carries both layouts");
+        auto onto=MakeMoveCommit(c,op,fence,bags,items,f::Sword().id,at(ItemStorageKind::Inventory,1,1));
+        Check(!onto && onto.error()==ItemPersistenceError::InvalidPlacement,"occupied target refused (no swap)");
+        auto same=MakeMoveCommit(c,op,fence,bags,items,f::Sword().id,at(ItemStorageKind::Inventory,1,0));
+        Check(!same && same.error()==ItemPersistenceError::InvalidChange,"no-op move refused");
+        auto outside=MakeMoveCommit(c,op,fence,bags,items,f::Leather().id,at(ItemStorageKind::Inventory,1,5*9*2));
+        Check(!outside && outside.error()==ItemPersistenceError::InvalidPlacement,"cell outside the grid refused");
+        auto edge=MakeMoveCommit(c,op,fence,bags,items,f::Leather().id,at(ItemStorageKind::Inventory,1,9));
+        Check(edge.has_value(),"last column of a row accepted");
+        auto equip=MakeMoveCommit(c,op,fence,bags,items,f::Sword().id,at(ItemStorageKind::Equipment,1,0));
+        Check(!equip && equip.error()==ItemPersistenceError::UnsupportedState,"equipping is not a move");
+        auto missing=MakeMoveCommit(c,op,fence,bags,items,ItemInstanceId::Create(77).value(),at(ItemStorageKind::Inventory,1,12));
+        Check(!missing && missing.error()==ItemPersistenceError::MissingItem,"unknown item refused");
+        auto nowhere=MakeMoveCommit(c,op,fence,bags,items,f::Sword().id,at(ItemStorageKind::Inventory,9,0));
+        Check(!nowhere && nowhere.error()==ItemPersistenceError::InvalidStorage,"unknown storage refused");
+        Check(MakeMoveCommit(c,{},fence,bags,items,f::Sword().id,at(ItemStorageKind::Inventory,1,12)).error()==ItemPersistenceError::InvalidOperation,"null operation id refused");
+        auto foreign=fence;foreign.owner.id++;
+        Check(!MakeMoveCommit(c,op,foreign,bags,items,f::Sword().id,at(ItemStorageKind::Inventory,1,12)),"another owner's item refused");
+    }
 }
 }
 int main(){try{Run();std::cout<<checks<<" Persistent item checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

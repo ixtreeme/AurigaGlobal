@@ -289,4 +289,31 @@ std::expected<ItemCommit,E> MakeSocketServiceCommit(const ItemCatalog& c,const S
     commit->items[0].after.stones=plan.after;commit->outcomeCode=1;
     if(auto valid=ValidateItemCommit(c,*commit);!valid)return std::unexpected(valid.error());return commit;
 }
+std::expected<ItemCommit,E> MakeMoveCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,ItemPlacement target)
+{
+    if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
+    if(target.kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
+    const auto source=std::ranges::find_if(inventory,[&](const PersistentItem& i){return i.id==id && !i.destroyed;});
+    if(source==inventory.end() || source->owner!=owner.owner || !source->placement)return std::unexpected(E::MissingItem);
+    if(source->placement->kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
+    if(*source->placement==target)return std::unexpected(E::InvalidChange);
+    const auto layoutOf=[&](const ItemPlacement& p){return std::ranges::find_if(storages,[&](const ItemStorageLayout& l){
+        return l.storage==ItemStorage{owner.owner,p.kind,p.storageId};});};
+    const auto from=layoutOf(*source->placement),to=layoutOf(target);
+    if(from==storages.end() || to==storages.end())return std::unexpected(E::InvalidStorage);
+    auto moved=*source;moved.revision++;moved.placement=target;
+    const auto cells=OccupiedItemCells(c,moved,*to);if(!cells)return std::unexpected(cells.error());
+    for(const auto& other:inventory)
+    {
+        if(other.id==id || other.destroyed || !other.placement || other.placement->kind!=target.kind || other.placement->storageId!=target.storageId)continue;
+        const auto taken=OccupiedItemCells(c,other,*to);if(!taken)return std::unexpected(taken.error());
+        if(std::ranges::any_of(*cells,[&](auto cell){return std::ranges::find(*taken,cell)!=taken->end();}))return std::unexpected(E::InvalidPlacement);
+    }
+    ItemCommit r;r.operationId=operationId;r.catalogRevision=c.Revision();r.catalogHash=c.ContentHash();r.kind=ItemOperationKind::Move;
+    r.owners={owner};r.storages={*from};if(to!=from)r.storages.push_back(*to);
+    r.items.push_back({*source,moved});r.outcomeCode=1;r.result={static_cast<std::uint8_t>(ItemOperationKind::Move)};
+    if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
+    return r;
+}
 } // namespace auriga::item

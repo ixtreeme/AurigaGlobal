@@ -69,6 +69,16 @@ struct LoginLoad
 	std::expected<persistence::LoadedItemOwner, ItemPersistenceError> loaded;
 };
 bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done);
+
+// One typed-item operation of the current login: the prepared commit, then a
+// fresh reload of the owner in the same job, so the game thread always gets
+// back the authoritative state (also after a refused or conflicting commit).
+struct CommitOutcome
+{
+	std::expected<persistence::ItemWriteResult, ItemPersistenceError> write;
+	std::expected<persistence::LoadedItemOwner, ItemPersistenceError> state;
+};
+bool RequestCommit(ItemOwner owner, std::uint64_t session, ItemCommit commit, std::function<void(CommitOutcome)> done);
 } // namespace auriga::item::runtime
 
 namespace ecs
@@ -85,4 +95,7 @@ struct TypedItems
 {
 	auriga::item::persistence::LoadedItemOwner state;
 };
+// One typed operation of this character is in the item store; a second one
+// waits for its answer instead of building on a state about to change.
+struct TypedItemBusy {};
 } // namespace ecs

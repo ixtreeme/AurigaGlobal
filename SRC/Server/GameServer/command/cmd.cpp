@@ -18,6 +18,7 @@
 #include "desc.h"
 
 ACMD(do_user_horse_ride);
+ACMD(do_typed_move);
 ACMD(do_spyquest);
 ACMD(do_caravan);
 ACMD(do_eclipseraid);
@@ -451,6 +452,7 @@ struct command_info cmd_info[] =
 	{ "woodcut", do_woodcut, 0, POS_STANDING, GM_PLAYER },
     { "herbalism", do_herbalism, 0, POS_STANDING, GM_PLAYER },
     { "missionpass", do_missionpass, 0, POS_DEAD, GM_PLAYER },
+    { "typed_move", do_typed_move, 0, POS_DEAD, GM_PLAYER },
     { "spyquest", do_spyquest, 0, POS_DEAD, GM_PLAYER },
     { "caravan", do_caravan, 0, POS_DEAD, GM_PLAYER },
     { "eclipseraid", do_eclipseraid, 0, POS_DEAD, GM_PLAYER },

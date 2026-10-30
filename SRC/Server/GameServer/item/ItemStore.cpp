@@ -149,4 +149,12 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
 		return [done = std::move(done), result = std::move(result)]() mutable { done(std::move(result)); };
 	});
 }
+bool RequestCommit(ItemOwner owner, std::uint64_t session, ItemCommit commit, std::function<void(CommitOutcome)> done)
+{
+	return ItemStore::Instance().Submit([owner, session, commit = std::move(commit), done = std::move(done)](CAsyncSQL& sql, const ItemCatalog& catalog) mutable -> ItemStore::Completion {
+		CommitOutcome outcome { persistence::CommitItems(sql, catalog, commit), std::unexpected(ItemPersistenceError::SqlFailure) };
+		outcome.state = persistence::LoadItemOwner(sql, catalog, owner, session);
+		return [done = std::move(done), outcome = std::move(outcome)]() mutable { done(std::move(outcome)); };
+	});
+}
 } // namespace auriga::item::runtime

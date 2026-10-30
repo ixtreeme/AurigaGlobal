@@ -190,13 +190,63 @@ tesztkarakteren, vagy egy valódi karakter PID-jén.
 - **Felület:** a Tárgyteszt lapon karakterválasztó van (a ✓ jelzi a
   kiépített karaktert), és a valódi karakter kiépíthető.
 
+## C3 — áthelyezés az új rendszeren (2026-10-30)
+
+- **Tiszta építő:** `MakeMoveCommit` (`PersistentItems`).
+  - Egy elhelyezett tárgyat visz a tulajdonos ugyanazon vagy másik
+    inventory-tárolójának egy cellájára.
+  - Minden célcellának szabadnak kell lennie: nincs csere, halom-összevonás
+    vagy felszerelés; ezek külön szeletek.
+  - **Elutasítja:** a foglalt célt, a rácson kívüli cellát, a változás nélküli
+    áthelyezést, a felszerelést, az ismeretlen tárgyat vagy tárolót, az idegen
+    tulajdonost és a nulla műveletazonosítót.
+- **Tárgytároló:** `RequestCommit`. Egy feladatban fut a commit, majd a
+  tulajdonos friss újratöltése. A játékszál így mindig a mentett, irányadó
+  állapotot kapja vissza, elutasítás vagy ütközés után is.
+- **Játékszál** (`GameServer/item/TypedItemOps.*`):
+  - a kérést a karakter aktuális állapotából építi;
+  - karakterenként egyszerre egy művelet futhat (`ecs::TypedItemBusy`);
+  - az eredmény mindig egy friss `GC_TYPED_INVENTORY` pillanatkép, hiba esetén
+    magyar chatüzenet is.
+  - A belépési token itt is véd: egy kilépett vagy újra belépett
+    karakternél az eredmény elvész.
+- **Protokoll:** `CG_TYPED_ITEM_MOVE` (225), 22 bájt (méret
+  `static_assert`-tel rögzítve). Mezői: tárgyazonosító, tárolófajta,
+  tárolóazonosító, cella. A Unity oldalon
+  `Metin2TypedInventoryCodec.WriteMove` + validátor.
+- **Tesztparancs** a kliensfelület elkészültéig (F5):
+  `/typed_move <honnan cella> <hová cella>` a fő inventoryban.
+- **Ellenőrzés:**
+  - `PersistentItemTests`: 97 ellenőrzés, ebből 11 új áthelyezéses eset.
+  - `item_catalog_runtime_mariadb`: 30 ellenőrzés, ebből 10 új:
+    - a commit és az újratöltés lefut;
+    - a régi állapotból épített áthelyezést elutasítja, és az újratöltött
+      állapot az irányadó;
+    - egy korábbi belépés munkamenete sem írni, sem tölteni nem tud.
+
 ## Határ
 
-- **Helyi csomag:** még nincs bekapcsolva. A játékbeli próbához:
-  1. telepíteni kell az új GameServert;
-  2. a `game_defaults.items.catalog` értékét `"required"`-re kell állítani;
-  3. a Tárgyteszt lapon ki kell építeni egy karaktert, és tárgyat adni neki;
-  4. a Unity-klienst a módosított forrásból kell futtatni vagy buildelni.
+- **Helyi csomag (2026-10-30): bekapcsolva.**
+  - **Telepítés:** a GameServer, a Database, a LoginServer és a
+    ServerPackageCheck a `63bb29e1` buildből került a csomagba. Mentés:
+    `run/deployments/items-f4-20261030T180450-82b0395f`.
+  - **Konfiguráció:** `game_defaults.items.catalog = "required"`.
+  - **Adattisztítás:** az első indítás leállt, mert a csomag régi adatai a
+    9dfb1def óta kivezetett DragonSoul-tárgyakra hivatkoztak. Lásd
+    [IC-010](item_combat_010_dragonsoul_retirement.md) auditját.
+    - Kivett hivatkozások: `data/special_item_group.json` 22 bejegyzés és
+      1 csak DS-tartalmú csoport (`cor_draconis_antico`),
+      `data/mob_drop_item.json` 11 bejegyzés.
+    - Mentés: `run/deployments/retired-cleanup-20261030T180438-406e9b9e`.
+    - A `baule_start.lua` (kezdőláda: 88961) a közzétett quest-pillanatképből
+      fut, ezért változatlan maradt. Ez nem akadályozza az indítást.
+  - **Próbaindítás** az 1-es csatornával, `STACK_LISTENING`-ig: mindhárom
+    core betöltötte a katalógust, és elindította a tárgytárolót.
+  - **A játékbeli próba lépései:**
+    1. a Tárgyteszt lapon ki kell építeni egy karaktert, és tárgyat adni neki;
+    2. el kell indítani a szervert;
+    3. a módosított Unity-klienssel be kell lépni, majd megnyomni a
+       Ctrl+Shift+I-t.
 - **A műveletek még nem az új rendszeren futnak.** Az áthelyezés,
   felszerelés stb. a C3-tól kezdve kerül át.
 - **FreeBSD:** a GameServer mostantól linkeli az `AurigaItemCatalogSql`

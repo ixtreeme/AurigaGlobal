@@ -118,4 +118,9 @@ std::expected<ItemCommit,ItemPersistenceError> MakeAttributeCommit(const ItemCat
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>);
 std::expected<ItemCommit,ItemPersistenceError> MakeSocketServiceCommit(const ItemCatalog&,const SocketServicePlan&,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>);
+// Moves one placed item of the owner to another anchor, inside the same or
+// another inventory storage of that owner (F4 C3). Every target cell must be
+// free: no swap, no stack merge and no equipping here (each a later slice).
+std::expected<ItemCommit,ItemPersistenceError> MakeMoveCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,ItemPlacement target);
 } // namespace auriga::item
