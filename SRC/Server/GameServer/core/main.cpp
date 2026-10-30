@@ -116,6 +116,7 @@
 #ifdef ENABLE_HWID
 #include "hwidmanager.h"
 #endif
+#include "../item/ItemStore.hpp"
 
 
 #ifdef _WIN64
@@ -320,6 +321,7 @@ void heartbeat(LPHEART ht, int pulse)
 	s_dwProfiler[PROF_HEARTBEAT] += (get_dword_time() - t);
 
 	DBManager::instance().Process();
+	auriga::item::runtime::ItemStore::Instance().Drain();
 	AccountDB::instance().Process();
 	CPVPManager::instance().Process();
 
@@ -751,6 +753,10 @@ void destroy()
 {
 	LOG_INFO("<shutdown> Stopping AsioEngine...");
 	auriga::net::Stop();
+
+	// Finishes every queued typed-item job before the process goes away.
+	LOG_INFO("<shutdown> Stopping ItemStore...");
+	auriga::item::runtime::ItemStore::Instance().Stop();
 
 	LOG_INFO("<shutdown> Canceling ReloadSpamEvent...");
 	CancelReloadSpamEvent();

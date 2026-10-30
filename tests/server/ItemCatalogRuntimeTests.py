@@ -35,12 +35,18 @@ def main():
         sandbox.client.query("CREATE USER 'game_reader'@'localhost' IDENTIFIED BY '" + sandbox.password + "'")
         sandbox.client.query("GRANT SELECT ON protos.* TO 'game_reader'@'localhost'")
         sandbox.client.query("GRANT SELECT ON player.* TO 'game_reader'@'localhost'")
+        for statement in statements((ROOT / 'db/migrations/item_instance/001_item_persistence.sql').read_text(encoding='utf-8-sig')):
+            sandbox.client.query(statement)
+        # The game account may claim sessions; only the importer (root here) provisions.
+        sandbox.client.query("GRANT UPDATE ON player.item_owner_fence TO 'game_reader'@'localhost'")
         admin = dict(port=sandbox.port, user='root', password=sandbox.password)
         packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
         document = catalog.Catalog(packet).new(1)
         tables = catalog.Catalog(packet).apply(document)
         catalog.run_tool(dict(action='commit', connection=admin, tables=tables, expected_hash=packet['hash']), packet['columns'], args.catalog_tool)
         packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
+        if len(packet['hash']) != 64 or any(c not in '0123456789abcdef' for c in packet['hash']): raise SystemExit('unexpected hash')
+        sandbox.client.query("INSERT INTO player.item_persistence_format VALUES(1,1,1,UNHEX('" + packet['hash'] + "'))")
         stdin = '\n'.join([str(sandbox.port), sandbox.password, str(len(packet['tables']['item_base'])), packet['hash']]) + '\n'
         result = subprocess.run([str(args.test_executable.resolve()), '--owned-sandbox'], input=stdin, text=True, capture_output=True, timeout=120)
         output = (result.stdout + result.stderr).replace(sandbox.password, '[redacted]')

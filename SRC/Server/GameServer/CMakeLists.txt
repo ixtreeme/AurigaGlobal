@@ -10,7 +10,7 @@ find_package(EnTT CONFIG REQUIRED)
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 # Typed item catalog (item system F4): read and validated at boot when enabled.
-target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql)
+target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql AurigaItemPersistenceSql)
 
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
@@ -1035,8 +1035,9 @@ add_test(NAME map_routing_rules COMMAND MapRoutingRulesTests)
 add_executable(ItemCatalogRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemCatalogRuntimeTests.cpp
     item/ItemCatalogRuntime.cpp
+    item/ItemStore.cpp
 )
-target_link_libraries(ItemCatalogRuntimeTests PRIVATE SERVER S_Core S_SQL AurigaItemCatalogSql)
+target_link_libraries(ItemCatalogRuntimeTests PRIVATE SERVER S_Core S_SQL AurigaItemCatalogSql AurigaItemPersistenceSql)
 if(WIN32)
     target_link_libraries(ItemCatalogRuntimeTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()

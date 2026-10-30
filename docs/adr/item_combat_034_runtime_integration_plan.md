@@ -109,9 +109,36 @@ Saját MariaDB-s teszt (`item_persistence_mariadb`, `Sessions`):
   pontosan egyszer ír;
 - a generáció kimerülése után nincs átfordulás.
 
-Következik (C2b): háttérmunkás a GameServerben, belépéskor igénylés és
-betöltés a kiépített karaktereknél. Ez egyelőre csak olvasás, a régi út nem
-változik.
+## 2b. szelet — tárgytároló-munkás és betöltés belépéskor (C2b)
+
+- **`GameServer/item/ItemStore.*`:** egy háttérszál saját, közvetlen
+  SQL-kapcsolattal (`sql.player` fiók). Csak `items.catalog = "required"`
+  esetén indul, közvetlenül a katalógus után. Ha nem tud csatlakozni, a
+  szerver nem indul el.
+  - A játékszál csak feladatot ad le (`Submit`), és az eredményeket a fő
+    ciklusban, az `idle()` részében alkalmazza (`Drain`). SQL-re soha nem
+    vár.
+  - Leálláskor (`destroy`) a munkás minden sorban álló feladatot befejez,
+    írást sem hagy félbe. Az ezután visszajövő eredményeket eldobja.
+- **Belépés** (`CInputDB::PlayerLoad`): a munkás egy feladatban új
+  munkamenetet igényel, és betölti a karakter tárgyállapotát.
+  - Ha a karakter azóta kilépett vagy újra belépett, a belépési token
+    (`ecs::TypedItemLogin`) nem egyezik, és az eredmény elvész.
+  - Sikeres betöltésnél az állapot az `ecs::TypedItems` komponensbe kerül,
+    csak olvasható árnyékként.
+  - A nem kiépített karakternél ez csak egy nyomkövetési bejegyzés; minden
+    más hiba naplózódik.
+  - A régi tárgyműködés változatlan.
+- **Teszt** (`item_catalog_runtime_mariadb`, 20 ellenőrzés):
+  - nem indul hibás jelszóval, és kétszer sem indul;
+  - belépés, nem kiépített karakter és újrabelépés sorrendben fut, a 2. és
+    a 3. munkamenettel;
+  - az eredmény csak a hívó (játék) szálon fut;
+  - leálláskor a sorban álló munka elkészül, a késői eredmény elvész;
+  - leállás után nem fogad új munkát.
+
+A helyi bekapcsoláshoz a játékfióknak (`auriga_local`) UPDATE jog kell a
+`player.item_owner_fence` táblára.
 
 ## Határ
 

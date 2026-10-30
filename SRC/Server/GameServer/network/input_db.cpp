@@ -69,6 +69,7 @@
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/components/vital_components.hpp"
 #include "../ecs/components/inventory_components.hpp"
+#include "../item/ItemStore.hpp"
 #ifdef ENABLE_HWID
 #include "hwidmanager.h"
 #endif
@@ -525,6 +526,37 @@ void CInputDB::ChangeName(LPDESC d, const char * data)
 }
 
 //#define ENABLE_GOHOME_IF_MAP_NOT_EXIST
+// Typed items (item system F4, IC-034): claim a new session and load the
+// character's typed state on the item store thread. Read-only shadow while the
+// legacy item runtime is authoritative; characters never provisioned have none.
+static void LoadTypedItems(entt::entity character)
+{
+	namespace items = auriga::item::runtime;
+	if (!items::ItemStore::Instance().Running())
+		return;
+	static uint64_t s_lastToken = 0;
+	const uint64_t token = ++s_lastToken;
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
+	g_registry.emplace_or_replace<ecs::TypedItemLogin>(character, token);
+	const bool queued = items::RequestLoginLoad(pid, [pid, token](items::LoginLoad result) {
+		const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
+		const auto* login = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
+		if (!login || login->token != token)
+			return; // logged out, or a newer login owns the session now
+		if (result.loaded)
+		{
+			LOG_INFO("TypedItems: pid {} session {}: {} items", pid, result.session, result.loaded->items.size());
+			g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*result.loaded));
+		}
+		else if (result.loaded.error() == auriga::item::ItemPersistenceError::MissingOwner)
+			LOG_TRACE("TypedItems: pid {} has no typed items yet", pid);
+		else
+			LOG_ERROR("TypedItems: pid {} load failed (error {})", pid, static_cast<int>(result.loaded.error()));
+	});
+	if (!queued)
+		LOG_ERROR("TypedItems: pid {} load could not be queued", pid);
+}
+
 void CInputDB::PlayerLoad(LPDESC d, const char * data)
 {
 	TPlayerTable * pTab = (TPlayerTable *) data;
@@ -596,6 +628,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	d->BindCharacter(chEntity);
 	g_registry.get<ecs::Experience>(chEntity).next = ecs::PlayerRuntime::GetNextExp(chEntity);
 	LOG_INFO("ECS: PC entity created VID={} pid={}", ecs::PlayerRuntime::GetPacketVID(chEntity), ecs::PlayerRuntime::GetPlayerID(chEntity));
+	LoadTypedItems(chEntity);
 
 	{
 		// P2P Login
