@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string_view>
 
 namespace auriga::item::persistence
@@ -249,6 +250,62 @@ std::expected<ItemWriteResult,E> CommitItems(CAsyncSQL& db,const ItemCatalog& c,
     if(m->uiSQLErrno==1062 && m->transactionOutcome==SqlTransactionOutcome::RolledBack)
     {receipt=FindItemReceipt(db,c,r);if(!receipt)return std::unexpected(receipt.error());if(*receipt)return ItemWriteResult{**receipt,true};}
     return std::unexpected(result.error());
+}
+std::expected<std::uint64_t,E> ClaimOwnerSession(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner)
+{
+    if(!ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);
+    auto tx=Guards(c);const auto first=tx.size();
+    tx.push_back({"SELECT session_generation FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=? FOR UPDATE",Owner(owner),{},{}});
+    tx.push_back({"UPDATE player.item_owner_fence SET session_generation=session_generation+1 WHERE owner_kind=? AND owner_id=? AND session_generation<18446744073709551615",Owner(owner),{},{}});
+    tx.push_back({"SELECT session_generation FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=?",Owner(owner),{},{}});
+    Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
+    auto before=Result(*m,first,1,1),after=Result(*m,first+2,1,1);
+    if(!before)return std::unexpected(before.error());if(!after)return std::unexpected(after.error());
+    if(before->empty())return std::unexpected(E::MissingOwner);
+    try
+    {
+        const auto old=Number<std::uint64_t>((*before)[0][0]),now=Number<std::uint64_t>((*after).at(0)[0]);
+        if(now==old)return std::unexpected(E::LimitExceeded);
+        if(now!=old+1)return std::unexpected(E::InvalidStoredData);
+        return now;
+    }
+    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+    catch(const std::out_of_range&){return std::unexpected(E::InvalidStoredData);}
+}
+std::expected<bool,E> ProvisionOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner,std::span<const ItemStorageLayout> storages,std::span<const ItemWallet> wallets)
+{
+    if(!ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);
+    if(storages.empty() || storages.size()>MaxItemCommitStorages)return std::unexpected(E::InvalidStorage);
+    std::set<ItemStorage> uniqueStorages;
+    for(const auto& l:storages)if(!ValidItemStorage(l) || l.storage.owner!=owner || !uniqueStorages.insert(l.storage).second)return std::unexpected(E::InvalidStorage);
+    std::set<WalletCurrency> currencies;
+    for(const auto& w:wallets)
+        if(w.owner!=owner || !w.revision || w.balance>static_cast<std::uint64_t>(INT64_MAX) || !currencies.insert(w.currency).second ||
+           (w.currency==WalletCurrency::Gold ? owner.kind!=ItemOwnerKind::Character : w.currency!=WalletCurrency::DragonCoin || owner.kind!=ItemOwnerKind::Account))
+            return std::unexpected(E::InvalidWallet);
+    const auto exists=[&]()->std::expected<bool,E>{
+        auto tx=Guards(c);const auto step=tx.size();
+        tx.push_back({"SELECT 1 FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=?",Owner(owner),{},{}});
+        Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
+        auto rows=Result(*m,step,1,1);if(!rows)return std::unexpected(rows.error());return !rows->empty();};
+    if(auto found=exists();!found || *found)return found ? std::expected<bool,E>(false) : std::unexpected(found.error());
+    auto tx=Guards(c);
+    tx.push_back({"INSERT INTO player.item_owner_fence(owner_kind,owner_id,session_generation,state_revision) VALUES(?,?,1,1)",Owner(owner),1,{}});
+    for(const auto& l:storages)
+    {
+        auto p=Storage(l.storage);p.push_back(U::UInt(l.columns));p.push_back(U::UInt(l.rows));p.push_back(U::UInt(l.pages));
+        tx.push_back({"INSERT INTO player.item_storage(owner_kind,owner_id,storage_kind,storage_id,grid_columns,grid_rows,grid_pages) VALUES(?,?,?,?,?,?,?)",std::move(p),1,{}});
+    }
+    for(const auto& w:wallets)
+    {
+        auto p=Owner(owner);p.push_back(U::UInt(static_cast<unsigned>(w.currency)));p.push_back(U::UInt(w.revision));p.push_back(U::UInt(w.balance));
+        tx.push_back({"INSERT INTO player.item_wallet(owner_kind,owner_id,currency,state_revision,balance) VALUES(?,?,?,?,?)",std::move(p),1,{}});
+    }
+    Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
+    if(m->bTransaction && !m->uiSQLErrno && m->transactionOutcome==SqlTransactionOutcome::Committed)return true;
+    // A concurrent provisioner may have won; that owner is not ours to change.
+    if(auto found=exists();found && *found)return false;
+    return std::unexpected(Failure(*m));
 }
 std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner,std::uint64_t session)
 {

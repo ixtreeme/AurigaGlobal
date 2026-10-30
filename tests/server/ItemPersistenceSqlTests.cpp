@@ -97,6 +97,47 @@ std::string Fingerprint(CAsyncSQL& db)
     }
     return result;
 }
+// Login owner protocol: provisioning is explicit and privileged; every login
+// claims a new session generation and the previous login's writes then fail.
+void Sessions(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
+{
+    using E=ItemPersistenceError;
+    const ItemOwner fresh{ItemOwnerKind::Character,4242},account{ItemOwnerKind::Account,4242};
+    const ItemStorageLayout bag{{fresh,ItemStorageKind::Inventory,1},5,9,4},safe{{fresh,ItemStorageKind::Equipment,1},32,1,1};
+    const ItemWallet gold{fresh,WalletCurrency::Gold,1,5000};
+    auto claimed=p::ClaimOwnerSession(writer,c,fresh);Check(!claimed && claimed.error()==E::MissingOwner,"claim of an unprovisioned owner");
+    auto bad=p::ProvisionOwner(admin,c,fresh,{},std::span(&gold,1));Check(!bad && bad.error()==E::InvalidStorage,"owner without storage");
+    const ItemStorageLayout foreign{{account,ItemStorageKind::Inventory,1},5,9,4};
+    bad=p::ProvisionOwner(admin,c,fresh,std::span(&foreign,1),{});Check(!bad && bad.error()==E::InvalidStorage,"storage of another owner");
+    const ItemStorageLayout twice[]{bag,bag};bad=p::ProvisionOwner(admin,c,fresh,twice,{});Check(!bad && bad.error()==E::InvalidStorage,"duplicate storage");
+    const ItemWallet coins{fresh,WalletCurrency::DragonCoin,1,1};bad=p::ProvisionOwner(admin,c,fresh,std::span(&bag,1),std::span(&coins,1));
+    Check(!bad && bad.error()==E::InvalidWallet,"character dragon-coin wallet");
+    Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_owner_fence WHERE owner_id=4242")=="0","rejected provisioning wrote nothing");
+    // The item writer account has no storage privilege: it can never invent an owner.
+    bad=p::ProvisionOwner(writer,c,fresh,std::span(&bag,1),std::span(&gold,1));Check(!bad,"item writer cannot provision");
+    Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_owner_fence WHERE owner_id=4242")=="0","failed provisioning is atomic");
+    const ItemStorageLayout layouts[]{bag,safe};
+    auto made=p::ProvisionOwner(admin,c,fresh,layouts,std::span(&gold,1));
+    Check(made && *made,"owner provisioned");
+    const ItemWallet richer{fresh,WalletCurrency::Gold,1,999};
+    made=p::ProvisionOwner(admin,c,fresh,std::span(&bag,1),std::span(&richer,1));Check(made && !*made,"second provisioning reports existing owner");
+    Check(Scalar(admin,"SELECT CONCAT(COUNT(*),':',(SELECT balance FROM player.item_wallet WHERE owner_id=4242 AND owner_kind=1)) FROM player.item_storage WHERE owner_kind=1 AND owner_id=4242")=="2:5000",
+          "existing owner left untouched");
+    auto first=p::LoadItemOwner(writer,c,fresh,1);Check(first && first->items.empty() && first->storages.size()==2 && first->wallets.at(0).balance==5000,"provisioned owner loads at session 1");
+    claimed=p::ClaimOwnerSession(writer,c,fresh);Check(claimed && *claimed==2,"login claims session 2");
+    Check(!p::LoadItemOwner(writer,c,fresh,1),"previous login can no longer load");
+    auto second=p::LoadItemOwner(writer,c,fresh,2);Check(second.has_value(),"new login loads");
+    const auto spend=[&](const ItemOwnerFence& fence,const ItemWallet& before,std::uint8_t op){
+        ItemCommit r;r.operationId.fill(op);r.catalogRevision=c.Revision();r.catalogHash=c.ContentHash();r.kind=ItemOperationKind::Grant;
+        r.owners={fence};r.outcomeCode=1;r.result={1};auto after=before;after.revision++;after.balance-=100;r.wallets.push_back({before,after});
+        return p::CommitItems(writer,c,r);};
+    Check(!spend(first->fence,first->wallets.at(0),0xA1),"late write of the previous login is fenced off");
+    Check(Scalar(admin,"SELECT balance FROM player.item_wallet WHERE owner_kind=1 AND owner_id=4242")=="5000","fenced write changed nothing");
+    Check(spend(second->fence,second->wallets.at(0),0xA2).has_value(),"current login writes");
+    Check(Scalar(admin,"SELECT balance FROM player.item_wallet WHERE owner_kind=1 AND owner_id=4242")=="4900","current login wrote once");
+    Execute(admin,"UPDATE player.item_owner_fence SET session_generation=18446744073709551615 WHERE owner_kind=1 AND owner_id=4242");
+    claimed=p::ClaimOwnerSession(writer,c,fresh);Check(!claimed && claimed.error()==E::LimitExceeded,"exhausted generation is not wrapped");
+}
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     const auto source=f::Catalog();Populate(admin,source);const auto c=BuildItemCatalog(source).value();
@@ -213,6 +254,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     Execute(writer,"SET SESSION check_constraint_checks=0");Check(!p::LoadItemOwner(writer,*c,account,9),"CHECK-disabled connection denied");Execute(writer,"SET SESSION check_constraint_checks=1");
     Execute(writer,"SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");Check(!p::LoadItemOwner(writer,*c,account,9),"nonrepeatable read denied");Execute(writer,"SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
     Check(Scalar(writer,"SELECT @@autocommit")=="1","transaction not left open");
+    Sessions(admin,writer,*c);
 }
 }
 int main(int argc,char** argv)

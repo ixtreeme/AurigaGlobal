@@ -75,6 +75,44 @@ Futásidejű vnum-adapter és kettős írás továbbra sem lehet (IC-012). Az
   - rossz jelszó (a jelszó nem kerül a hibaüzenetbe);
   - érvénytelen hash-rögzítés.
 
+## B1 döntés — a futó szerver maga ír (2026-10-30)
+
+A felhasználó döntése: a karaktert birtokló GameServer saját, dedikált
+SQL-kapcsolaton írja az új tárgyakat. Minden művelet egy tranzakció (IC-032
+írója). A Database-folyamat az új tárgyakban nem vesz részt. Ez megegyezik
+a küldetésmotor felépítésével (`sql.mission`). A GameServer játékszála nem
+vár SQL-re: egy háttérmunkás végzi a betöltést és az írást, az eredményeket
+pedig a fő ciklus gyűjti be.
+
+## 2a. szelet — belépési munkamenet és kiépítés (C2a)
+
+`ItemPersistenceSql`:
+- **`ClaimOwnerSession`:** a belépés tulajdonosa minden belépéskor új
+  munkamenet-generációt kap, egy tranzakcióban. Az előző belépés késve
+  érkező írását a kerítése ezután elutasítja.
+  - Nem kiépített tulajdonosnál `MissingOwner` a hiba.
+  - Ha a generáció kimerült, `LimitExceeded` a hiba; az érték nem fordul át.
+- **`ProvisionOwner`:** a tulajdonost az importáló, a karakterlétrehozás vagy
+  egy tesztszerszám építi ki, soha nem a tárgyíró.
+  - Egy tranzakcióban jön létre a kerítés (1. munkamenet), a tárolók és a
+    pénztárcák.
+  - Meglévő tulajdonost nem módosít; ilyenkor `false` a válasz.
+  - A tárgyíró fióknak nincs jogosultsága a tárolókhoz, így tulajdonost
+    sem tud kitalálni.
+
+Saját MariaDB-s teszt (`item_persistence_mariadb`, `Sessions`):
+- a hibás kiépítések nem írnak semmit;
+- a kiépítés atomi;
+- az ismételt kiépítés nem módosít;
+- az 1. munkamenet betölthető;
+- az igénylés után a régi munkamenet sem betölteni, sem írni nem tud, az új
+  pontosan egyszer ír;
+- a generáció kimerülése után nincs átfordulás.
+
+Következik (C2b): háttérmunkás a GameServerben, belépéskor igénylés és
+betöltés a kiépített karaktereknél. Ez egyelőre csak olvasás, a régi út nem
+változik.
+
 ## Határ
 
 - **Helyi csomag:** még nincs bekapcsolva. A bekapcsoláshoz telepíteni kell

@@ -93,7 +93,7 @@ enum class ItemPersistenceError
     InvalidLevel, InvalidAttributes, InvalidSockets, InvalidPlacement,
     InvalidOperation, InvalidFence, InvalidChange, InvalidWallet, LimitExceeded,
     CatalogMismatch, HashFailure, SqlFailure, Conflict, CommitUnknown,
-    ReceiptMismatch, InvalidStoredData,
+    ReceiptMismatch, InvalidStoredData, MissingOwner,
 };
 bool ValidItemOwner(ItemOwner) noexcept;
 bool ValidItemStorage(const ItemStorageLayout&) noexcept;
