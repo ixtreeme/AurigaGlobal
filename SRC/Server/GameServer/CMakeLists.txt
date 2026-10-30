@@ -811,8 +811,9 @@ set_tests_properties(item_catalog_runtime PROPERTIES LABELS server TIMEOUT 60)
 add_executable(ItemOwnerSessionTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemOwnerSessionTests.cpp
     item/ItemOwnerSessions.cpp
+    ecs/TypedItems.cpp
 )
-target_link_libraries(ItemOwnerSessionTests PRIVATE AurigaItemPersistenceSql AurigaItemCatalogSql)
+target_link_libraries(ItemOwnerSessionTests PRIVATE AurigaItemPersistenceSql AurigaItemCatalogSql SERVER EnTT::EnTT)
 if(WIN32)
     target_link_libraries(ItemOwnerSessionTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
@@ -821,6 +822,18 @@ if(TARGET auriga_sanitizers)
 endif()
 add_test(NAME item_owner_sessions COMMAND ItemOwnerSessionTests --completion-only)
 set_tests_properties(item_owner_sessions PROPERTIES LABELS server TIMEOUT 60)
+
+# F4.3 (IC-034): typed item instances in the ECS (load -> entities -> model).
+add_executable(TypedItemTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/TypedItemTests.cpp
+    ecs/TypedItems.cpp
+)
+target_link_libraries(TypedItemTests PRIVATE SERVER EnTT::EnTT AurigaItemCatalog)
+if(TARGET auriga_sanitizers)
+    target_link_libraries(TypedItemTests PRIVATE auriga_sanitizers)
+endif()
+add_test(NAME typed_items COMMAND TypedItemTests)
+set_tests_properties(typed_items PROPERTIES LABELS server TIMEOUT 60)
 
 add_executable(QuickslotTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuickslotTests.cpp
@@ -1002,7 +1015,7 @@ foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests I
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target LuaSourceTests GameServer ItemCatalogRuntimeTests ItemOwnerSessionTests ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
+    foreach(_asan_target LuaSourceTests GameServer ItemCatalogRuntimeTests ItemOwnerSessionTests TypedItemTests ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

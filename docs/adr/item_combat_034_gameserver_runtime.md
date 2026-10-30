@@ -2,7 +2,7 @@
 
 2026-10-30. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
 Kiinduló HEAD: `235de385`.
-Állapot: **F4.1 és F4.2 implementált; F4.3–F4.7 terv.** A tárgyakat a
+Állapot: **F4.1–F4.3 implementált; F4.4–F4.7 terv.** A tárgyakat a
 GameServer írja közvetlenül (a felhasználó döntése, 2026-10-30).
 
 ## Miért kell bontani
@@ -35,7 +35,7 @@ kiadási szabályából következik.
 |---|---|---|
 | **F4.1** | A GameServer induláskor betölti a mentés által rögzített `protos` katalógust, és változtathatatlanul közzéteszi. Hiba esetén nem indul. | Kész (lásd lent). |
 | **F4.2** | Tárgytulajdonosi munkamenet: belépéskor/váltáskor tartós `session_generation` foglalás az `item_owner_fence`-ben, `LoadItemOwner`, kilépéskor a folyamatban lévő írások lezárása. Új karakternél tulajdonos, tárolók és pénztárca létrehozása. | Kész a mentési rétegben és a GameServer munkamenet-kezelőjében; az élő belépésbe kötés az F4.7 része (lásd lent). |
-| **F4.3** | ECS-példány a `PersistentItem`-ből: ItemInstanceId, ItemKey, szint, revízió, tulajdonos, hely, bónuszok, foglalatok. Nincs `TItemTable` pointer. | Betöltés → ECS → `PersistentItem` oda-vissza azonos. |
+| **F4.3** | ECS-példány a `PersistentItem`-ből: ItemInstanceId, ItemKey, szint, revízió, tulajdonos, hely, bónuszok, foglalatok. Nincs `TItemTable` pointer. | Kész: valódi MariaDB-betöltésen is azonos (lásd lent). |
 | **F4.4** | Tartós műveletek: aszinkron tárgyíró a meglévő `CAsyncSQL` workeren, művelet-ID, `CommitUnknown` egyeztetés. Mozgatás, halmozás, bontás, megsemmisítés, fejlesztés, bónusz- és foglalatszolgáltatás, fogyasztás. Az ECS csak sikeres commit után változik. | Újracsatlakozás és összeomlás után nincs dupla levonás vagy elveszett tárgy. |
 | **F4.5** | Statok: a felszerelés a katalógusból (`RefinedBaseStats`, `BonusProfilesAt`) adja a régi harcképletek bemenetét. | Rögzített tárgykészletre a statok egyeznek a várt értékkel. |
 | **F4.6** | Gazdaság és tartalom: bolt (katalógusár), trade (két tulajdonos egy commitban), földre dobás és felvétel, mob-drop ItemKey-jel, quest Lua API, Mission `ItemRewardSpec`, raktár és itemshop. | Folyamatonkénti tesztek. |
@@ -182,4 +182,50 @@ Ezért a bekötés az F4.7 átállás része, az F6 importtal együtt:
 `player`-re; INSERT/UPDATE/DELETE-et a mentési táblákra, a létrehozáshoz az
 `item_owner_fence`, `item_storage` és `item_wallet` táblákon is. A katalógust
 nem módosíthatja.
+
+## F4.3 döntés: típusos tárgypéldány az ECS-ben
+
+**Komponensek** (`ecs/components/typed_item_components.hpp`, `ecs::item`):
+- **tárgyanként egy entitás:** `Identity` (ItemInstanceId + ItemKey),
+  `Refinement`, `Revision`, `Stack`, `DurableOwner`, `Binding`, `Placement`,
+  `Attributes`, `StoneSockets`, valamint ékszerfoglalatnál `AccessorySocket`;
+- **tulajdonosonként egy entitás:** `OwnerState` (kerítés, pénztárcák,
+  tárolórácsok cellánként, példányindex) és `OwnerHolder` (az élő karakter
+  vagy munkamenet).
+
+A registry kontextusában egy `OwnerIndex` biztosítja, hogy egy tartós
+tulajdonosnak legfeljebb egy betöltött példánya legyen.
+
+Nincs vnum, `TItemTable`/proto pointer és katalóguspointer sem; a
+katalógusadatot az ItemKey alapján kell kikeresni. A típusos entitás nem kap
+régi `ecs::Item*` komponenst, így a régi rendszerek nézetei nem látják.
+A tárolórács tárolónként változó méretű (a régi fix tömb helyett).
+
+**Műveletek** (`ecs/TypedItems`):
+- **`Materialize`:** mindent vagy semmit. Előbb minden ellenőrzés lefut:
+  - kerítés;
+  - tárolók: saját, egyedi, érvényes;
+  - pénztárcák;
+  - tárgyak: egyedi azonosító, saját tulajdonos, nem sírkő, katalógus szerint
+    érvényes;
+  - lábnyom a rácson, átfedés nélkül.
+
+  Csak ezután jönnek létre az entitások. Hiba esetén a registry nem változik.
+  Ugyanaz a tulajdonos másodszor `AlreadyLoaded`.
+- **`Project`/`ProjectItem`:** az ECS állapotából `LoadedItemOwner` vagy
+  `PersistentItem`, kanonikus sorrendben (tároló, pénznem, példányazonosító).
+- **`Verify`:** teljes egyezésvizsgálat. Hiányzó komponens, régi proto-pointer,
+  idegen tulajdonos-entitás, katalógus szerint érvénytelen tárgy, illetve a
+  rács és a lábnyomok eltérése hibát ad; az eltérést nem javítja magától.
+- **`Release`:** egy tulajdonos és összes tárgyentitásának megszüntetése.
+  Más tulajdonost nem érint.
+- **Keresés:** `FindOwner`, `ItemAt`.
+
+**Még nem része:**
+- hálózati szinkron (F5);
+- statok (F4.5);
+- írás (F4.4).
+
+A munkamenet (F4.2) Active eseménye után a bekötés `Materialize`-t hív, a
+`Close` előtt pedig `Release`-t (F4.7).
 

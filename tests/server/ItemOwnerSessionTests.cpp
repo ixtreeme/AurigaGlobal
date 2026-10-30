@@ -7,6 +7,7 @@
 #include "PersistentItemFixture.hpp"
 #include "CatalogSqlPopulate.hpp"
 #include "../../SRC/Server/GameServer/item/ItemOwnerSessions.hpp"
+#include "../../SRC/Server/GameServer/ecs/TypedItems.hpp"
 #include <ItemPersistenceSql.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -344,15 +345,38 @@ void Settle(rt::AsyncItemSqlExecutor& executor, rt::ItemOwnerSessions& sessions)
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 }
-ItemCommit GrantWith(const ItemCatalog& c, ItemOwnerFence fence, const ItemStorageLayout& inventory, std::uint8_t op, std::vector<PersistentItem> items)
+ItemCommit GrantWith(const ItemCatalog& c, ItemOwnerFence fence, std::vector<ItemStorageLayout> storages, std::uint8_t op, std::vector<PersistentItem> items)
 {
     auto r = f::Grant(c, std::move(items));
     r.operationId = {};
     r.operationId[0] = op;
     r.operationId[15] = 0x42;
     r.owners = {fence};
-    r.storages = {inventory};
+    r.storages = std::move(storages);
     return r;
+}
+PersistentItem Bracelet()
+{
+    auto item = f::Leather(5);
+    item.key = item_catalog_fixture::Bracelet();
+    item.count = 1;
+    item.accessory = AccessorySocketState{3, 2, 1000, false};
+    item.placement = ItemPlacement{ItemStorageKind::Equipment, 1, static_cast<unsigned>(EquipmentSlot::Wrist) - 1};
+    return item;
+}
+// F4.3 gate on real SQL: database load -> ECS entities -> persistence model.
+void EcsRoundTrip(const ItemCatalog& c, const p::LoadedItemOwner& loaded, std::size_t items)
+{
+    auto canonical = loaded;
+    std::ranges::sort(canonical.storages, {}, [](const auto& l) { return l.storage; });
+    std::ranges::sort(canonical.wallets, {}, &ItemWallet::currency);
+    entt::registry registry;
+    const auto owner = ecs::item::Materialize(registry, c, loaded, entt::null);
+    Check(owner && ecs::item::Verify(registry, c, *owner).has_value(), "loaded owner not materialized");
+    const auto projected = ecs::item::Project(registry, *owner);
+    Check(projected && projected->fence == canonical.fence && projected->storages == canonical.storages &&
+          projected->wallets == canonical.wallets && projected->items == canonical.items && projected->items.size() == items,
+          "database load -> ECS -> model differs");
 }
 std::string Items(CAsyncSQL& db)
 {
@@ -401,22 +425,23 @@ void OwnedSandbox(unsigned port, const std::string& pw, const std::string& token
     Check(coreA.State(Owner) == S::Active && coreA.Fence(Owner, leaseA) == ItemOwnerFence{Owner, 2, 1}, "core A not active on generation 2");
     Check(coreA.TakeEvents().size() == 1, "core A events");
     Check(coreA.BeginWrite(Owner, leaseA), "core A write not admitted");
-    const auto grant = GrantWith(*c, *coreA.Fence(Owner, leaseA), inventory, 1, {f::Sword(), f::Leather()});
+    const auto grant = GrantWith(*c, *coreA.Fence(Owner, leaseA), fresh->storages, 1, {f::Sword(), f::Leather(), Bracelet()});
     Check(p::CommitItems(writer, *c, grant).has_value(), "core A grant failed");
     coreA.EndWrite(Owner, leaseA, ItemOwnerFence{Owner, 2, 2});
-    Check(coreA.Fence(Owner, leaseA)->revision == 2 && Items(admin) == "2", "core A grant not recorded");
+    Check(coreA.Fence(Owner, leaseA)->revision == 2 && Items(admin) == "3", "core A grant not recorded");
 
     // Core B takes the character over and sees A's committed state.
     Check(coreB.Open(Owner, leaseB) == O::Started, "core B did not start");
     Settle(execB, coreB);
     Check(coreB.State(Owner) == S::Active && coreB.Fence(Owner, leaseB) == ItemOwnerFence{Owner, 3, 2}, "core B not active on generation 3");
-    Check(coreB.Loaded(Owner, leaseB)->items.size() == 2, "core B did not see core A's grant");
+    Check(coreB.Loaded(Owner, leaseB)->items.size() == 3, "core B did not see core A's grant");
+    EcsRoundTrip(*c, *coreB.Loaded(Owner, leaseB), 3);
 
     // Late write and reload of A are refused by the database, not by A's memory.
     Check(coreA.State(Owner) == S::Active, "core A learned about B without SQL");
-    const auto late = GrantWith(*c, *coreA.Fence(Owner, leaseA), inventory, 2, {f::Leather(7)});
+    const auto late = GrantWith(*c, *coreA.Fence(Owner, leaseA), {inventory}, 2, {f::Leather(7)});
     const auto refused = p::CommitItems(writer, *c, late);
-    Check(!refused && refused.error() == E::Conflict && Items(admin) == "2", "late write of the old session committed");
+    Check(!refused && refused.error() == E::Conflict && Items(admin) == "3", "late write of the old session committed");
     Check(p::LoadItemOwner(writer, *c, Owner, 2).error() == E::StaleSession, "old session reloaded");
     coreA.Superseded(Owner, leaseA);
     Check(coreA.State(Owner) == S::Superseded && !coreA.BeginWrite(Owner, leaseA), "superseded core still admits");
@@ -434,7 +459,7 @@ void OwnedSandbox(unsigned port, const std::string& pw, const std::string& token
     Raw(blocker, "COMMIT");
     const auto waited = pending.get();
     Check(waited && *waited == ItemOwnerFence{Owner, 4, 3}, "claim did not see the in-flight writer's commit");
-    const auto oldB = GrantWith(*c, *coreB.Fence(Owner, leaseB), inventory, 3, {f::Leather(8)});
+    const auto oldB = GrantWith(*c, *coreB.Fence(Owner, leaseB), {inventory}, 3, {f::Leather(8)});
     Check(p::CommitItems(writer, *c, oldB).error() == E::Conflict, "write of core B accepted after a newer claim");
 
     // Same core: logout with a write in flight, fast relog queued behind it.
@@ -448,7 +473,8 @@ void OwnedSandbox(unsigned port, const std::string& pw, const std::string& token
     coreA.EndWrite(Owner, leaseA2, std::nullopt);
     Settle(execA, coreA);
     Check(coreA.State(Owner) == S::Active && coreA.Fence(Owner, leaseA3) == ItemOwnerFence{Owner, 6, 3} &&
-          coreA.Loaded(Owner, leaseA3)->items.size() == 2, "queued relog not active after the drain");
+          coreA.Loaded(Owner, leaseA3)->items.size() == 3, "queued relog not active after the drain");
+    EcsRoundTrip(*c, *coreA.Loaded(Owner, leaseA3), 3);
     Check(Scalar(admin, "SELECT session_generation FROM player.item_owner_fence WHERE owner_kind=1 AND owner_id=42") == "6", "durable generation differs");
 
     // The executor needs an asynchronous connection.
