@@ -20,9 +20,14 @@ using Json=nlohmann::json;
 using Message=std::unique_ptr<SQLMsg>;
 namespace
 {
-const ItemOwner BenchOwner{ItemOwnerKind::Character,990001};
-constexpr std::uint64_t BenchSession=1,BenchCatalogRevision=1,BenchIdBase=0x00BE000000000000ULL;
-const ItemStorageLayout Inventory{{BenchOwner,ItemStorageKind::Inventory,1},5,9,4};
+// The character a request works on: the dedicated test character by default,
+// or a real character (its PID) to prepare typed items for an in-game test.
+constexpr std::uint32_t TestCharacter=990001;
+ItemOwner BenchOwner{ItemOwnerKind::Character,TestCharacter};
+// Every working request claims a new session first, like a login does.
+std::uint64_t BenchSession=0;
+constexpr std::uint64_t BenchCatalogRevision=1,BenchIdBase=0x00BE000000000000ULL;
+ItemStorageLayout Inventory{{BenchOwner,ItemStorageKind::Inventory,1},5,9,4};
 
 struct Failure : std::runtime_error { using std::runtime_error::runtime_error; };
 void Require(bool condition,const std::string& reason){if(!condition)throw Failure(reason);}
@@ -166,27 +171,39 @@ SocketItemPair Pair(const PersistentItem& source,const PersistentItem& target,co
     pair.sourceInInventory=pair.targetInInventory=true;return pair;
 }
 
-// The item editor changes protos while the bench lives. Like the stopped
-// publisher, move the catalog pin only when the bench is the sole owner and
-// every stored instance loads and validates against the new catalog.
+// The item editor changes protos while typed items exist. Like the stopped
+// publisher, move the catalog pin only when EVERY stored owner (test and real
+// characters alike) loads and validates against the new catalog. Local only.
 bool FollowCatalog(CAsyncSQL& sql,const ItemCatalog& c)
 {
-    if(PinHash(sql)==Hex(c.ContentHash()))return false;
-    const auto owner=SqlParams{SqlParam::UInt(static_cast<unsigned>(BenchOwner.kind)),SqlParam::UInt(BenchOwner.id)};
-    Require(Rows(sql,"SELECT COUNT(*) FROM player.item_owner_fence WHERE NOT(owner_kind=? AND owner_id=?)",owner).at(0).at(0)=="0",
-        "A mentési táblákban a próbapadon kívül más tulajdonos is van: a katalóguskötés itt nem állítható át.");
+    const std::string digest(reinterpret_cast<const char*>(c.ContentHash().data()),c.ContentHash().size());
     const auto old=Rows(sql,"SELECT catalog_revision,catalog_sha256 FROM player.item_persistence_format WHERE singleton=1");
-    Require(old.size()==1,"Hiányzik a katalóguskötés.");
-    const auto pin=[&](std::uint64_t revision,const std::string& digest){
-        Query(sql,"UPDATE player.item_persistence_format SET catalog_revision=?,catalog_sha256=? WHERE singleton=1",{SqlParam::UInt(revision),SqlParam::Blob(digest)});};
-    pin(c.Revision(),std::string(reinterpret_cast<const char*>(c.ContentHash().data()),c.ContentHash().size()));
-    if(const auto loaded=p::LoadItemOwner(sql,c,BenchOwner,BenchSession))return true;
-    else
+    if(old.empty())
     {
-        pin(std::stoull(old[0][0]),old[0][1]);
-        throw Failure(std::string("A katalógus változott, és a próbapad tárgyai az új katalógussal nem érvényesek (")+PersistenceText(loaded.error())+
-            "). Állítsd vissza a próbapadot.");
+        Query(sql,"INSERT INTO player.item_persistence_format VALUES(1,1,?,?)",{SqlParam::UInt(c.Revision()),SqlParam::Blob(digest)});
+        return true;
     }
+    if(PinHash(sql)==Hex(c.ContentHash()))return false;
+    const auto pin=[&](std::uint64_t revision,const std::string& value){
+        Query(sql,"UPDATE player.item_persistence_format SET catalog_revision=?,catalog_sha256=? WHERE singleton=1",{SqlParam::UInt(revision),SqlParam::Blob(value)});};
+    pin(c.Revision(),digest);
+    for(const auto& row:Rows(sql,"SELECT owner_kind,owner_id,session_generation FROM player.item_owner_fence ORDER BY owner_kind,owner_id LIMIT 100000"))
+    {
+        const ItemOwner owner{static_cast<ItemOwnerKind>(std::stoul(row[0])),std::stoull(row[1])};
+        if(const auto loaded=p::LoadItemOwner(sql,c,owner,std::stoull(row[2]));!loaded)
+        {
+            pin(std::stoull(old[0][0]),old[0][1]);
+            throw Failure("A katalógus változott, és a #"+row[1]+" tulajdonos tárgyai az új katalógussal nem érvényesek ("+PersistenceText(loaded.error())+
+                "). Állítsd vissza azt a karaktert a próbapadon.");
+        }
+    }
+    return true;
+}
+void Claim(CAsyncSQL& sql,const ItemCatalog& c)
+{
+    const auto session=p::ClaimOwnerSession(sql,c,BenchOwner);
+    Require(session.has_value(),std::string("A karakter munkamenete nem igényelhető: ")+(session?"":PersistenceText(session.error()))+".");
+    BenchSession=*session;
 }
 
 // --- actions -------------------------------------------------------------------
@@ -198,9 +215,13 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     if(OwnerExists(sql) && !reset)
     {
         const bool followed=FollowCatalog(sql,*c);
+        Claim(sql,*c);
         return {{"state",State(*c,Load(sql,*c))},{"catalog_followed",followed}};
     }
     const auto gold=request.value("gold",std::uint64_t{1'000'000'000});
+    Require(gold<=static_cast<std::uint64_t>((std::numeric_limits<std::int64_t>::max)()),"Túl nagy összeg.");
+    // A reset removes this character's typed state FIRST: its items may be
+    // the very ones a changed catalog no longer accepts.
     const auto owner=SqlParams{SqlParam::UInt(static_cast<unsigned>(BenchOwner.kind)),SqlParam::UInt(BenchOwner.id)};
     SqlTransaction tx;
     const auto children=[&](const char* table){
@@ -208,23 +229,18 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     children("item_occupied_cell");children("item_instance_attribute");children("item_instance_socket");
     tx.push_back({"DELETE FROM player.item_occupied_cell WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_instance WHERE owner_kind=? AND owner_id=?",owner,{},{}});
-    tx.push_back({"DELETE FROM player.item_operation_receipt WHERE operation_id NOT IN (SELECT last_operation FROM player.item_instance)",{},{},{}});
     tx.push_back({"DELETE FROM player.item_wallet WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_storage WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=?",owner,{},{}});
-    tx.push_back({"DELETE FROM player.item_persistence_format",{},{},{}});
-    std::string digest(reinterpret_cast<const char*>(c->ContentHash().data()),c->ContentHash().size());
-    tx.push_back({"INSERT INTO player.item_persistence_format VALUES(1,1,?,?)",{SqlParam::UInt(c->Revision()),SqlParam::Blob(digest)},1,{}});
-    auto fence=owner;fence.push_back(SqlParam::UInt(BenchSession));
-    tx.push_back({"INSERT INTO player.item_owner_fence VALUES(?,?,?,1)",fence,1,{}});
-    auto storage=owner;for(std::uint64_t v:{std::uint64_t{1},std::uint64_t{1},std::uint64_t{Inventory.columns},std::uint64_t{Inventory.rows},std::uint64_t{Inventory.pages}})
-        storage.push_back(SqlParam::UInt(v));
-    tx.push_back({"INSERT INTO player.item_storage VALUES(?,?,?,?,?,?,?)",storage,1,{}});
-    auto wallet=owner;wallet.push_back(SqlParam::UInt(1));wallet.push_back(SqlParam::UInt(gold));
-    tx.push_back({"INSERT INTO player.item_wallet VALUES(?,?,1,?,?)",{wallet[0],wallet[1],wallet[2],wallet[3]},1,{}});
     Message result(sql.DirectTransactionPrepared(std::move(tx)));
-    Require(result && !result->uiSQLErrno && result->transactionOutcome==SqlTransactionOutcome::Committed,"A próbapad létrehozása nem sikerült.");
-    return {{"state",State(*c,Load(sql,*c))}};
+    Require(result && !result->uiSQLErrno && result->transactionOutcome==SqlTransactionOutcome::Committed,"A korábbi tárgyak törlése nem sikerült.");
+    const bool followed=FollowCatalog(sql,*c);
+    // The same provisioning the importer and character creation use.
+    const ItemWallet wallet{BenchOwner,WalletCurrency::Gold,1,gold};
+    auto made=p::ProvisionOwner(sql,*c,BenchOwner,std::span(&Inventory,1),std::span(&wallet,1));
+    Require(made && *made,std::string("A karakter kiépítése nem sikerült: ")+(made?"már létezik":PersistenceText(made.error()))+".");
+    Claim(sql,*c);
+    return {{"state",State(*c,Load(sql,*c))},{"catalog_followed",followed}};
 }
 Json Status(CAsyncSQL& sql)
 {
@@ -233,7 +249,26 @@ Json Status(CAsyncSQL& sql)
     if(!out["installed"].get<bool>())return out;
     const auto pin=PinHash(sql);out["owner"]=OwnerExists(sql);
     out["pin_matches"]=pin==Hex(c->ContentHash());
-    if(out["owner"].get<bool>() && out["pin_matches"].get<bool>())out["state"]=State(*c,Load(sql,*c));
+    // Status only reads: it uses the current session and never claims one.
+    if(out["owner"].get<bool>() && out["pin_matches"].get<bool>())
+    {
+        BenchSession=std::stoull(Rows(sql,"SELECT session_generation FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=?",
+            {SqlParam::UInt(static_cast<unsigned>(BenchOwner.kind)),SqlParam::UInt(BenchOwner.id)}).at(0).at(0));
+        out["state"]=State(*c,Load(sql,*c));
+    }
+    return out;
+}
+// Real characters of the local game DB, with whether they have typed items.
+Json Characters(CAsyncSQL& sql)
+{
+    Json out=Json::array();
+    try
+    {
+        for(const auto& row:Rows(sql,"SELECT p.id,p.name,f.owner_id IS NOT NULL FROM player.player p LEFT JOIN player.item_owner_fence f "
+            "ON f.owner_kind=1 AND f.owner_id=p.id ORDER BY p.id LIMIT 2000"))
+            out.push_back({{"id",std::stoull(row[0])},{"name",row[1]},{"provisioned",row[2]=="1"}});
+    }
+    catch(const Failure&){}
     return out;
 }
 Json Grant(CAsyncSQL& sql,const Json& request)
@@ -368,10 +403,16 @@ Json Run(const Json& request)
     const auto user=auth.at("user").get<std::string>(),password=auth.at("password").get<std::string>();
     Require(sql.Setup("127.0.0.1",user.c_str(),password.c_str(),"player","utf8mb4",true,auth.at("port").get<unsigned>()),"A helyi adatbázis nem érhető el.");
     const auto action=request.at("action").get<std::string>();
+    const auto pid=request.value("owner",std::uint64_t{TestCharacter});
+    Require(pid>0 && pid<=0xffffffffull,"Érvénytelen karakterazonosító.");
+    BenchOwner={ItemOwnerKind::Character,pid};Inventory.storage.owner=BenchOwner;
+    if(action=="characters")return {{"characters",Characters(sql)}};
     if(action=="status")return Status(sql);
     if(action=="setup")return Setup(sql,request);
-    Require(Installed(sql) && OwnerExists(sql),"Előbb hozd létre a próbapadot.");
-    const bool followed=FollowCatalog(sql,*Catalog(sql));
+    Require(Installed(sql) && OwnerExists(sql),"Előbb hozd létre a próbapadot (vagy építsd ki a karaktert).");
+    const auto catalog=Catalog(sql);
+    const bool followed=FollowCatalog(sql,*catalog);
+    Claim(sql,*catalog);
     auto result=Dispatch(sql,action,request);
     result["catalog_followed"]=followed;return result;
 }

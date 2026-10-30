@@ -1714,6 +1714,24 @@ class BenchPageTests(PageCase):
         page.catalog_list.selectRow(0); page.grant_limits()
         self.assertEqual((page.count.maximum(), page.level.maximum()), (1, 3))
 
+    def test_character_selector_lists_real_characters_and_keeps_choice(self):
+        import bench_page
+        packet, _ = self.fixture()
+        page = bench_page.BenchPage(self.owner)
+        characters = [dict(id=5, name='Teszt', provisioned=True), dict(id=6, name='Masik', provisioned=False)]
+        page.loaded((packet, dict(installed=True, owner=False, characters=characters), None))
+        self.assertEqual([page.character.itemText(i) for i in range(page.character.count())],
+                         ['Tesztkarakter (#990001)', 'Teszt (#5)  ✓', 'Masik (#6)'])
+        self.assertEqual(page.character_id, 990001)
+        page.character.setCurrentIndex(2)
+        self.assertEqual((page.character_id, page.bench, page.status_info), (6, None, None))
+        self.assertIn('Masik', page.log.toPlainText())
+        page.loaded((packet, dict(installed=True, owner=False, characters=characters), None))
+        self.assertEqual((page.character.currentData(), page.character_id), (6, 6))
+        self.assertIn('építsd ki', page.status.text())
+        page.status_info = dict(installed=True, owner=False); page.controls()
+        self.assertEqual(page.setup_button.text(), 'Karakter kiépítése…')
+
 
 class SqlCommitTests(unittest.TestCase):
     def test_zzzzzzzzzzzzz_instance_attributes_atomic_copy_and_rollback(self):

@@ -57,6 +57,11 @@ def use(action, **fields):
     return bench.run_tool(dict(fields, action=action, connection=auth()), ARGS.bench_tool)
 
 
+def stable(state):
+    # Every working request claims a new session, like a login: compare the rest.
+    return {k: v for k, v in state.items() if k != 'session'}
+
+
 def item(state, key):
     return next(i for i in state['items'] if (i['category'], i['local']) == tuple(key) and not i['destroyed'])
 
@@ -112,7 +117,7 @@ class BenchTests(unittest.TestCase):
         self.assertEqual((item(state, sword_key)['level'], item(state, material_key)['count']), (2, 1))
         before = use('load')['state']
         with self.assertRaises(api.EditorError): use('refine', item=blade['id'], recipe=recipes[3])          # one material left
-        self.assertEqual(use('load')['state'], before)
+        self.assertEqual(stable(use('load')['state']), stable(before))
         state = use('grant', category=6, local=material_key[1], count=5)['state']
         state = use('wallet', gold=10)['state']; self.assertEqual(state['wallets'][0]['balance'], 10)
         with self.assertRaises(api.EditorError): use('refine', item=blade['id'], recipe=recipes[3])          # not enough Yang
@@ -144,6 +149,35 @@ class BenchTests(unittest.TestCase):
         state = use('grant', category=6, local=material_key[1], count=2)['state']
         state = use('destroy', item=item(state, material_key)['id'])['state']
         self.assertTrue(all(i['destroyed'] for i in state['items']))
+        self.assertTrue(use('status')['pin_matches'])
+
+        # Real characters (D1c): listed, provisioned on request, claimed per action.
+        self.assertEqual(use('characters')['characters'], [])                   # no player table: empty, not an error
+        SANDBOX.client.query('CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL)')
+        SANDBOX.client.query("INSERT INTO player.player VALUES(5,'Teszt'),(6,'Masik')")
+        self.assertEqual([(c['id'], c['name'], c['provisioned']) for c in use('characters')['characters']], [(5, 'Teszt', False), (6, 'Masik', False)])
+        with self.assertRaises(api.EditorError): use('load', owner=5)          # not provisioned yet
+        with self.assertRaises(api.EditorError): use('load', owner=0)
+        first = use('setup', owner=5, gold=70)['state']
+        self.assertEqual((first['owner'], first['wallets'][0]['balance'], first['items']), (5, 70, []))
+        sessions = [use('load', owner=5)['state']['session'] for _ in range(2)]
+        self.assertEqual(sessions[1], sessions[0] + 1)
+        hero = use('grant', owner=5, category=1, local=sword_key[1], level=1)['state']
+        self.assertEqual([(i['level'], i['category']) for i in hero['items']], [(1, 1)])
+        self.assertEqual([c['provisioned'] for c in use('characters')['characters']], [True, False])
+        self.assertEqual(use('load')['state']['items'], [])                    # the test character is separate
+        # Every owner is checked before the catalog pin moves.
+        changed = catalog.Catalog(packet).item(sword_key); changed['base']['buy_amount'] = '778'
+        packet = commit(packet, changed, sword_key)
+        self.assertTrue(use('load', owner=5)['catalog_followed'])
+        lowered = catalog.Catalog(packet).item(sword_key)
+        lowered['refinement']['max_level'] = '0'; lowered['levels'] = lowered['levels'][:1]; lowered['recipes'] = []
+        packet = commit(packet, lowered, sword_key)
+        with self.assertRaises(api.EditorError) as refused: use('load')        # the TEST character is fine, #5 is not
+        self.assertIn('#5', str(refused.exception))
+        self.assertFalse(use('status')['pin_matches'])
+        reset = use('setup', owner=5, reset=True, gold=1)['state']
+        self.assertEqual((reset['items'], reset['wallets'][0]['balance']), ([], 1))
         self.assertTrue(use('status')['pin_matches'])
 
 

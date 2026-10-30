@@ -51,20 +51,28 @@ class BenchPage(QWidget):
         super().__init__(); self.owner = owner
         self.task = self.packet = self.bench = self.status_info = self.cached = None; self.bases = {}
         self.target = None; self.attempted = None; self.state = None; self.page_index = 0
+        self.character_id = bench.BENCH_OWNER; self.characters = []
         layout = QVBoxLayout(self); layout.setContentsMargins(0, 0, 0, 0)
         bar = QHBoxLayout(); title = QLabel('Tárgyteszt'); title.setObjectName('SectionTitle'); bar.addWidget(title, 1)
         self.start_db_button = QPushButton('Adatbázis indítása'); self.start_db_button.clicked.connect(self.start_database)
         self.reload_button = QPushButton('Frissítés'); self.reload_button.clicked.connect(self.reload)
         self.install_button = QPushButton('Mentési táblák telepítése…'); self.install_button.clicked.connect(self.install)
+        self.character = QComboBox(); self.character.setMinimumWidth(220)
+        self.character.addItem('Tesztkarakter (#%d)' % bench.BENCH_OWNER, bench.BENCH_OWNER)
+        self.character.currentIndexChanged.connect(self.character_changed)
         self.setup_button = QPushButton('Próbapad létrehozása'); self.setup_button.clicked.connect(self.setup)
         self.gold_button = QPushButton('Yang beállítása…'); self.gold_button.clicked.connect(self.set_gold)
+        bar.addWidget(QLabel('Karakter:')); bar.addWidget(self.character)
         for widget in (self.start_db_button, self.reload_button, self.install_button, self.setup_button, self.gold_button): bar.addWidget(widget)
         layout.addLayout(bar)
         self.status = QLabel('Válassz helyi szervercsomagot.'); self.status.setWordWrap(True); self.status.setObjectName('Subtle')
         layout.addWidget(self.status)
-        hint = QLabel('Az új tárgyrendszer próbája a #%d tesztkarakteren, a játék saját döntési és mentési kódjával. Csak az új '
-                      'mentési táblákat használja; a régi player.item és a karakterek változatlanok. A katalógus (Tárgyak lap) '
-                      'módosítása után a próbapad ellenőrzi és átveszi az új katalógust.' % bench.BENCH_OWNER)
+        hint = QLabel('Az új tárgyrendszer próbája a játék saját döntési és mentési kódjával, a #%d tesztkarakteren vagy egy '
+                      'kiválasztott valódi karakteren. Csak az új mentési táblákat használja; a régi player.item és a karakterek '
+                      'adatai változatlanok. Egy valódi karakter kiépítése után belépéskor a szerver (új katalógussal) elküldi ezt '
+                      'az inventoryt a kliensnek (Ctrl+Shift+I). Minden művelet új munkamenetet nyit, mint egy belépés: közben '
+                      'ne legyen a karakter játékban. A Tárgyak lapon végzett módosítás után a próbapad minden kiépített karakter '
+                      'tárgyait ellenőrzi, mielőtt átveszi az új katalógust.' % bench.BENCH_OWNER)
         hint.setWordWrap(True); hint.setObjectName('FieldHint'); layout.addWidget(hint)
         split = QSplitter()
         left = QWidget(); side = QVBoxLayout(left); side.setContentsMargins(0, 0, 0, 0)
@@ -148,7 +156,10 @@ class BenchPage(QWidget):
         self.install_button.setVisible(bool(self.status_info) and not info.get('installed'))
         self.install_button.setEnabled(local and db and not busy and not state.get('running'))
         self.setup_button.setVisible(bool(info.get('installed')))
-        self.setup_button.setText('Próbapad visszaállítása…' if info.get('owner') else 'Próbapad létrehozása')
+        test = self.character_id == bench.BENCH_OWNER
+        self.setup_button.setText(('Próbapad visszaállítása…' if test else 'Karakter visszaállítása…') if info.get('owner') else
+                                  ('Próbapad létrehozása' if test else 'Karakter kiépítése…'))
+        self.character.setEnabled(local and db and not busy)
         self.setup_button.setEnabled(local and db and not busy)
         self.gold_button.setEnabled(local and db and not busy and ready)
         self.grant_button.setEnabled(local and db and not busy and ready and self.chosen_catalog() is not None)
@@ -186,12 +197,14 @@ class BenchPage(QWidget):
     def reload(self):
         if not self.local() or self.active(): return
         root = self.owner.root
+        owner = self.character_id
         def fetch():
             packet = catalog.request(root)
-            info = bench.call(root, 'status'); info.pop('state', None)
+            info = bench.call(root, 'status', owner=owner); info.pop('state', None)
+            info['characters'] = bench.call(root, 'characters').get('characters', [])
             loaded = None
             if info.get('installed') and info.get('owner'):
-                try: loaded = bench.call(root, 'load')
+                try: loaded = bench.call(root, 'load', owner=owner)
                 except api.EditorError as error: info['load_error'] = str(error)
             return packet, info, loaded
         self.run(fetch, self.loaded, 'Katalógus és próbapad olvasása…')
@@ -202,8 +215,10 @@ class BenchPage(QWidget):
         self.bases = {(int(r['category_id']), int(r['local_id'])): r for r in self.cached.tables['item_base']}
         self.bench = loaded['state'] if loaded else None
         info = self.status_info
+        self.fill_characters(info.get('characters', []))
         if not info.get('installed'): text = 'Az új mentési táblák még nincsenek telepítve a helyi player adatbázisba.'
-        elif not info.get('owner'): text = 'A mentési táblák telepítve. Hozd létre a próbapadot.'
+        elif not info.get('owner'): text = ('A mentési táblák telepítve. Hozd létre a próbapadot.' if self.character_id == bench.BENCH_OWNER
+                                            else 'Ennek a karakternek még nincsenek új tárgyai: építsd ki.')
         elif info.get('load_error'): text = info['load_error']
         else: text = 'Próbapad kész • katalógus-hash %s…' % self.packet['hash'][:12]
         if loaded and loaded.get('catalog_followed'): self.write('A katalógus változott; a próbapad ellenőrizte a tárgyait és átvette az új katalógust.')
@@ -218,7 +233,26 @@ class BenchPage(QWidget):
             self.write(describe(result) if describe else message.rstrip('…') + ': kész.')
             self.status.setText('Próbapad kész • katalógus-hash %s…' % self.packet['hash'][:12] if self.packet else '')
             self.render()
-        self.run(lambda: bench.call(root, action, **fields), done, message)
+        owner = self.character_id
+        self.run(lambda: bench.call(root, action, owner=owner, **fields), done, message)
+
+    def fill_characters(self, characters):
+        self.characters = characters
+        self.character.blockSignals(True)
+        self.character.clear()
+        self.character.addItem('Tesztkarakter (#%d)' % bench.BENCH_OWNER, bench.BENCH_OWNER)
+        for row in characters:
+            self.character.addItem('%s (#%d)%s' % (row['name'], row['id'], '  ✓' if row.get('provisioned') else ''), int(row['id']))
+        index = self.character.findData(self.character_id)
+        self.character.setCurrentIndex(max(index, 0))
+        self.character.blockSignals(False)
+
+    def character_changed(self, *_):
+        chosen = self.character.currentData()
+        if chosen is None or chosen == self.character_id: return
+        self.character_id = int(chosen); self.bench = None; self.status_info = None; self.render()
+        self.write('Kiválasztott karakter: %s.' % self.character.currentText().replace('  ✓', ''))
+        self.reload()
 
     # --- catalog side ------------------------------------------------------------
     def base(self, category, local):
@@ -359,8 +393,9 @@ class BenchPage(QWidget):
 
     def setup(self):
         reset = bool((self.status_info or {}).get('owner'))
-        if reset and QMessageBox.question(self, 'Tárgyteszt', 'A próbapad minden tárgya és a pénze törlődik, és üres próbapad indul az aktuális '
-                                          'katalógussal. Folytatod?') != QMessageBox.StandardButton.Yes: return
+        who = self.character.currentText().replace('  ✓', '')
+        if reset and QMessageBox.question(self, 'Tárgyteszt', '%s minden új tárgya és új pénztárcája törlődik, és üresen indul újra az '
+                                          'aktuális katalógussal (a régi tárgyai nem változnak). Folytatod?' % who) != QMessageBox.StandardButton.Yes: return
         gold = self.ask_gold('Próbapad', 1000000000)
         if gold is None: return
         root = self.owner.root
@@ -368,7 +403,12 @@ class BenchPage(QWidget):
             self.bench = result['state']; self.status_info = dict(self.status_info or {}, owner=True, pin_matches=True); self.status_info.pop('load_error', None)
             self.write('Próbapad %s, %s Yang.' % ('visszaállítva' if reset else 'létrehozva', format(gold, ',').replace(',', ' ')))
             self.status.setText('Próbapad kész • katalógus-hash %s…' % self.packet['hash'][:12] if self.packet else ''); self.render()
-        self.run(lambda: bench.call(root, 'setup', reset=True, gold=gold), done, 'Próbapad előkészítése…')
+        owner = self.character_id
+        def made(result):
+            done(result)
+            if not any(row['id'] == owner and row.get('provisioned') for row in self.characters) and owner != bench.BENCH_OWNER:
+                self.fill_characters([dict(row, provisioned=row.get('provisioned') or row['id'] == owner) for row in self.characters])
+        self.run(lambda: bench.call(root, 'setup', owner=owner, reset=True, gold=gold), made, 'Karakter előkészítése…')
 
     def set_gold(self):
         wallet = next((w for w in self.bench['wallets'] if w['currency'] == 1), None)

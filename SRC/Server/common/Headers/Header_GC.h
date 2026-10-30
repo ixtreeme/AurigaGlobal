@@ -219,5 +219,7 @@ enum HEADER_GC
 #endif
 
 	HEADER_GC_MOUNT_INVENTORY = 224,
+	// Typed item system (F4 D1, IC-034): auriga::item::EncodeTypedInventory.
+	HEADER_GC_TYPED_INVENTORY = 225,
 
 };

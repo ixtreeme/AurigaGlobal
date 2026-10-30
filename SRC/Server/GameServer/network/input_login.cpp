@@ -66,6 +66,7 @@
 #include "VikingDungeon.h"
 #include "EasterDungeon.h"
 #include "../ecs/systems/SessionSystem.hpp"
+#include "../item/TypedInventorySync.hpp"
 #endif
 
 static void _send_bonus_info(entt::entity ch)
@@ -642,6 +643,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	// not leave stationary mounts/pets invisible until they leave view range.
 	// This replays only to this client, not to unrelated nearby players.
 	ecs::ViewSystem::ViewReencode(ch);
+	SendTypedInventory(ch); // the typed load may have finished during loading
 	SECTREE_MANAGER::instance().SendNPCPosition(ch);
 #ifdef ENABLE_ATLAS_BOSS
 	SECTREE_MANAGER::instance().SendBossPosition(ch);

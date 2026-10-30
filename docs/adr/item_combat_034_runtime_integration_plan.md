@@ -137,13 +137,67 @@ Saját MariaDB-s teszt (`item_persistence_mariadb`, `Sessions`):
   - leálláskor a sorban álló munka elkészül, a késői eredmény elvész;
   - leállás után nem fogad új munkát.
 
-A helyi bekapcsoláshoz a játékfióknak (`auriga_local`) UPDATE jog kell a
-`player.item_owner_fence` táblára.
+A játékfióknak SELECT jog kell a `protos`-ra, és UPDATE jog a
+`player.item_owner_fence` táblára. A helyi `auriga_local` ezt már megkapta:
+SELECT jogot a `protos`-ra, és ALL jogot a `player.*`-ra.
+
+## D1 — protokoll: az új inventory a kliensnek (2026-10-30)
+
+**Csomag.** `GC_TYPED_INVENTORY` (225). A fejléc 32 bites mérettel kezdődik,
+ezt egy 1-es verziójú, explicit little-endian bájtformátum követi. A
+formátum nem függ a C++-struktúrák elrendezésétől.
+- **Kódoló/dekódoló:** `SRC/Server/common/item/TypedInventoryWire.hpp` és
+  `SRC/ItemDomain/TypedInventoryWire.cpp`.
+- **Tartalom:**
+  - tárolók és pénztárcák;
+  - egy név minden különböző ItemKey-hez: a tartalomkód, amíg nincs
+    kliensoldali katalógus (F5);
+  - tárgyanként: azonosító, ItemKey, szint, darab, tároló és cella, kötés,
+    zárolt bónuszhely, bónuszok, a három kőfoglalat és az ékszerfoglalat.
+- **Elutasítás:** hibás csomagot egészében elutasít, soha nem dolgozza fel
+  részben. Ilyen a csonka, a túl hosszú, a rossz fejlécű, az ismeretlen
+  verziójú, a rossz méretű és az ismeretlen jelzőbitet tartalmazó csomag.
+- **Rögzített minta:** `tests/fixtures/item_combat/typed_inventory_v1.hex`.
+  A szerver (`TypedInventoryWireTests`, 20 ellenőrzés) és a Unity
+  (`Metin2ProtocolCodecValidator`) is ehhez a bájtsorhoz vizsgál.
+
+**Küldés.** `GameServer/item/TypedInventorySync.*`. A szerver akkor küldi,
+amikor a belépéskori betöltés elkészül, és akkor is, amikor a kliens
+játékba lép. Így mindig megérkezik, bármelyik történik később. Játékfázis
+előtt, és olyan karakternél, amelynek nincs új tárgya, nem küld semmit.
+
+**Unity** (`D:\Auriga-Unity\SRC\AurigaUnity`):
+- `Metin2TypedInventoryCodec.cs` (dekódoló, ugyanazokkal a szabályokkal);
+- a csomagkezelő regisztrációja (225, `DynamicAt32`);
+- `Metin2GameRuntime.TypedInventoryReceived`;
+- `Metin2TypedInventoryPanel`: tesztnézet, Ctrl+Shift+I.
+
+A Unity-projekt batch módban lefordul, és a `Metin2ProtocolCodecValidator`
+sikeresen lefut. Ikon és honosított név a kliensoldali katalógussal jön
+(F5).
+
+**Próbapad valódi karakterrel (D1c).** Az `ItemBenchTool` kérésenként
+választható karakteren dolgozik: alapértelmezésben a #990001-es
+tesztkarakteren, vagy egy valódi karakter PID-jén.
+- **Kiépítés:** ugyanaz a `ProvisionOwner`, amelyet az importáló és a
+  karakterlétrehozás is használ.
+- **Munkamenet:** minden munkaművelet új munkamenetet igényel, mint egy
+  belépés. Az állapotlekérdezés csak olvas.
+- **Katalóguskövetés:** a kötés csak akkor áll át, ha minden kiépített
+  tulajdonos tárgyai érvényesek az új katalógussal. Visszaállításkor a
+  karakter régi állapota előbb törlődik, így egy érvénytelenné vált karakter
+  is újraindítható.
+- **Felület:** a Tárgyteszt lapon karakterválasztó van (a ✓ jelzi a
+  kiépített karaktert), és a valódi karakter kiépíthető.
 
 ## Határ
 
-- **Helyi csomag:** még nincs bekapcsolva. A bekapcsoláshoz telepíteni kell
-  az új GameServert, és a `game_defaults.items.catalog` értékét
-  `"required"`-re kell állítani.
+- **Helyi csomag:** még nincs bekapcsolva. A játékbeli próbához:
+  1. telepíteni kell az új GameServert;
+  2. a `game_defaults.items.catalog` értékét `"required"`-re kell állítani;
+  3. a Tárgyteszt lapon ki kell építeni egy karaktert, és tárgyat adni neki;
+  4. a Unity-klienst a módosított forrásból kell futtatni vagy buildelni.
+- **A műveletek még nem az új rendszeren futnak.** Az áthelyezés,
+  felszerelés stb. a C3-tól kezdve kerül át.
 - **FreeBSD:** a GameServer mostantól linkeli az `AurigaItemCatalogSql`
   könyvtárat. A FreeBSD-build ezzel még nincs kipróbálva (F).
