@@ -94,6 +94,10 @@ enum class ItemPersistenceError
     InvalidOperation, InvalidFence, InvalidChange, InvalidWallet, LimitExceeded,
     CatalogMismatch, HashFailure, SqlFailure, Conflict, CommitUnknown,
     ReceiptMismatch, InvalidStoredData,
+    // Owner sessions (F4.2, IC-034). Appended: existing values keep their numbers.
+    MissingOwner,  // no item_owner_fence row: the owner was never provisioned
+    OwnerExists,   // provisioning found an existing owner; nothing was changed
+    StaleSession,  // a newer session claimed the owner after this one
 };
 bool ValidItemOwner(ItemOwner) noexcept;
 bool ValidItemStorage(const ItemStorageLayout&) noexcept;

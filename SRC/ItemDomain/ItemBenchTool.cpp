@@ -37,7 +37,8 @@ const char* PersistenceText(ItemPersistenceError e)
         "ez a kategória a mentés első fázisában még nem támogatott","a fejlesztési szint nincs a tárgy profiljában","érvénytelen bónuszállapot",
         "érvénytelen foglalatállapot","nincs hely, vagy ütközik egy másik tárggyal","érvénytelen művelet","elavult tulajdonos-kerítés",
         "érvénytelen változás","érvénytelen pénztárca-változás","túl sok adat egy műveletben","katalóguseltérés","hash-hiba","adatbázishiba",
-        "ütközés egy párhuzamos mentéssel (próbáld újra)","a mentés eredménye ismeretlen","nyugtaeltérés","sérült tárolt adat"};
+        "ütközés egy párhuzamos mentéssel (próbáld újra)","a mentés eredménye ismeretlen","nyugtaeltérés","sérült tárolt adat",
+        "a tárgytulajdonos nincs létrehozva","a tárgytulajdonos már létezik","egy újabb belépés átvette a tárgyakat"};
     const auto code=static_cast<std::size_t>(e);return code<std::size(texts)?texts[code]:"ismeretlen hiba";
 }
 const char* RefinementText(RefinementUseError e)

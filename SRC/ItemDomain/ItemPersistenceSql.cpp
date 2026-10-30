@@ -96,6 +96,26 @@ std::expected<Rows,E> Result(SQLMsg& m,std::size_t step,std::size_t columns,std:
     }
     return out;
 }
+// The completion is the exact owned job that was prepared: same statements,
+// bound values and row expectations, one confirmed result per step.
+bool SameJob(const SqlTransaction& expected,const SQLMsg& m)
+{
+    if(m.transaction.size()!=expected.size() || m.transactionResultOffsets.size()!=expected.size() || m.vec_pkResult.size()!=expected.size())return false;
+    for(std::size_t i=0;i<expected.size();++i)
+    {
+        const auto& a=expected[i];const auto& b=m.transaction[i];
+        if(m.transactionResultOffsets[i]!=i || !m.vec_pkResult[i] || !m.vec_pkResult[i]->bPrepared)return false;
+        const auto& result=*m.vec_pkResult[i];
+        if((a.expectedAffectedRows && result.uiAffectedRows!=*a.expectedAffectedRows) || (a.expectedResultRows && result.uiNumRows!=*a.expectedResultRows))return false;
+        if(a.query!=b.query || a.params.size()!=b.params.size() || a.expectedAffectedRows!=b.expectedAffectedRows || a.expectedResultRows!=b.expectedResultRows)return false;
+        for(std::size_t j=0;j<a.params.size();++j)
+        {
+            const auto& x=a.params[j];const auto& y=b.params[j];
+            if(x.type!=y.type || x.i64!=y.i64 || x.u64!=y.u64 || x.bytes!=y.bytes)return false;
+        }
+    }
+    return true;
+}
 struct Invalid {};
 template<class T> T Number(const Cell& cell)
 {
@@ -250,11 +270,13 @@ std::expected<ItemWriteResult,E> CommitItems(CAsyncSQL& db,const ItemCatalog& c,
     {receipt=FindItemReceipt(db,c,r);if(!receipt)return std::unexpected(receipt.error());if(*receipt)return ItemWriteResult{**receipt,true};}
     return std::unexpected(result.error());
 }
-std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner,std::uint64_t session)
+std::expected<SqlTransaction,E> PrepareLoadItemOwner(const ItemCatalog& c,ItemOwner owner,std::uint64_t session)
 {
     if(!ValidItemOwner(owner) || !session)return std::unexpected(E::InvalidOwner);
-    auto tx=Guards(c);auto ownerParams=Owner(owner);ownerParams.push_back(U::UInt(session));
-    tx.push_back({"SELECT state_revision FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=? AND session_generation=?",std::move(ownerParams),{},1});
+    auto tx=Guards(c);
+    // The generation is compared after the read, so a missing owner and a
+    // newer session are reported separately instead of as damaged data.
+    tx.push_back({"SELECT session_generation,state_revision FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=?",Owner(owner),{},{}});
     tx.push_back({"SELECT storage_kind,storage_id,grid_columns,grid_rows,grid_pages FROM player.item_storage WHERE owner_kind=? AND owner_id=? LIMIT 17",Owner(owner),{},{}});
     tx.push_back({"SELECT currency,state_revision,balance FROM player.item_wallet WHERE owner_kind=? AND owner_id=? LIMIT 3",Owner(owner),{},{}});
     tx.push_back({"SELECT "+std::string(Columns)+" FROM player.item_instance WHERE owner_kind=? AND owner_id=? AND destroyed=0 ORDER BY instance_id LIMIT 4097",Owner(owner),{},{}});
@@ -263,14 +285,24 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
     // Include orphan/wrong-owner reservations too, rather than silently hiding
     // them behind a join to an instance with a matching owner.
     tx.push_back({"SELECT c.storage_kind,c.storage_id,c.cell_index,c.instance_id,c.owner_kind,c.owner_id FROM player.item_occupied_cell c LEFT JOIN player.item_instance i ON i.instance_id=c.instance_id WHERE (c.owner_kind=? AND c.owner_id=?) OR (i.owner_kind=? AND i.owner_id=? AND i.destroyed=0) LIMIT 65537",[&]{auto p=Owner(owner);Append(p,Owner(owner));return p;}(),{},{}});
-    Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
-    auto fence=Result(*m,3,1,1),storageRows=Result(*m,4,5,MaxItemCommitStorages),walletRows=Result(*m,5,3,2),
+    return tx;
+}
+std::expected<LoadedItemOwner,E> LoadItemOwnerCompleted(const ItemCatalog& c,ItemOwner owner,std::uint64_t session,SQLMsg& completed)
+{
+    auto* m=&completed;
+    const auto expected=PrepareLoadItemOwner(c,owner,session);if(!expected)return std::unexpected(expected.error());
+    if(m->bTransaction && m->transactionOutcome==SqlTransactionOutcome::Committed && !SameJob(*expected,*m))return std::unexpected(E::InvalidStoredData);
+    auto fence=Result(*m,3,2,1),storageRows=Result(*m,4,5,MaxItemCommitStorages),walletRows=Result(*m,5,3,2),
         itemRows=Result(*m,6,20,MaxLoadedOwnerItems),attributes=Result(*m,7,4,MaxLoadedOwnerItems*8),stones=Result(*m,8,7,MaxLoadedOwnerItems*3),cells=Result(*m,9,6,65536);
     for(const auto* r:{&fence,&storageRows,&walletRows,&itemRows,&attributes,&stones,&cells})if(!*r)return std::unexpected(r->error());
     try
     {
-        if(fence->size()!=1)throw Invalid{};
-        LoadedItemOwner out;out.fence={owner,session,Number<std::uint64_t>((*fence)[0][0])};if(!out.fence.revision)throw Invalid{};
+        if(fence->empty())return std::unexpected(E::MissingOwner);
+        const auto stored=Number<std::uint64_t>((*fence)[0][0]);
+        if(!stored)throw Invalid{};
+        // Older: a newer session took the owner. Newer than stored: no claim ever issued it.
+        if(stored!=session)return std::unexpected(stored>session ? E::StaleSession : E::InvalidFence);
+        LoadedItemOwner out;out.fence={owner,session,Number<std::uint64_t>((*fence)[0][1])};if(!out.fence.revision)throw Invalid{};
         std::map<ItemStorage,ItemStorageLayout> layouts;
         for(const auto& row:*storageRows)
         {
@@ -327,5 +359,103 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
         if(actual!=expected)throw Invalid{};return out;
     }
     catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
+std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner,std::uint64_t session)
+{
+    auto tx=PrepareLoadItemOwner(c,owner,session);if(!tx)return std::unexpected(tx.error());
+    Message m(db.DirectTransactionPrepared(std::move(*tx)));if(!m)return std::unexpected(E::SqlFailure);
+    return LoadItemOwnerCompleted(c,owner,session,*m);
+}
+
+// --- Owner provisioning and sessions (F4.2) --------------------------------
+std::expected<SqlTransaction,E> PrepareProvisionItemOwner(const ItemCatalog& c,const ItemOwnerProvision& p)
+{
+    if(!ValidItemOwner(p.owner))return std::unexpected(E::InvalidOwner);
+    if(p.storages.empty() || p.storages.size()>MaxItemCommitStorages)return std::unexpected(E::InvalidStorage);
+    std::set<ItemStorage> storages;
+    for(const auto& l:p.storages)
+        if(!ValidItemStorage(l) || l.storage.owner!=p.owner || !storages.insert(l.storage).second)return std::unexpected(E::InvalidStorage);
+    if(p.wallets.size()>2)return std::unexpected(E::InvalidWallet);
+    std::set<WalletCurrency> currencies;
+    for(const auto& w:p.wallets)
+    {
+        const bool kind=w.currency==WalletCurrency::Gold ? p.owner.kind==ItemOwnerKind::Character
+            : w.currency==WalletCurrency::DragonCoin && p.owner.kind==ItemOwnerKind::Account;
+        if(w.owner!=p.owner || !kind || w.revision!=1 || w.balance>static_cast<std::uint64_t>(INT64_MAX) || !currencies.insert(w.currency).second)
+            return std::unexpected(E::InvalidWallet);
+    }
+    auto tx=Guards(c);
+    auto fence=Owner(p.owner);Append(fence,{U::UInt(1),U::UInt(1)});
+    tx.push_back({"INSERT INTO player.item_owner_fence(owner_kind,owner_id,session_generation,state_revision) VALUES(?,?,?,?)",std::move(fence),1,{}});
+    auto sorted=p.storages;std::ranges::sort(sorted,{},&ItemStorageLayout::storage);
+    std::string values;SqlParams params;
+    for(const auto& l:sorted)
+    {
+        if(!values.empty())values+=",";values+="(?,?,?,?,?,?,?)";
+        Append(params,Storage(l.storage));Append(params,{U::UInt(l.columns),U::UInt(l.rows),U::UInt(l.pages)});
+    }
+    tx.push_back({"INSERT INTO player.item_storage(owner_kind,owner_id,storage_kind,storage_id,grid_columns,grid_rows,grid_pages) VALUES"+values,std::move(params),sorted.size(),{}});
+    if(!p.wallets.empty())
+    {
+        auto wallets=p.wallets;std::ranges::sort(wallets,{},&ItemWallet::currency);
+        values.clear();params.clear();
+        for(const auto& w:wallets)
+        {
+            if(!values.empty())values+=",";values+="(?,?,?,?,?)";
+            Append(params,Owner(w.owner));Append(params,{U::UInt(static_cast<unsigned>(w.currency)),U::UInt(w.revision),U::UInt(w.balance)});
+        }
+        tx.push_back({"INSERT INTO player.item_wallet(owner_kind,owner_id,currency,state_revision,balance) VALUES"+values,std::move(params),wallets.size(),{}});
+    }
+    return tx;
+}
+std::expected<ItemOwnerFence,E> ProvisionItemOwnerCompleted(const ItemCatalog& c,const ItemOwnerProvision& p,SQLMsg& m)
+{
+    const auto expected=PrepareProvisionItemOwner(c,p);if(!expected)return std::unexpected(expected.error());
+    if(!m.bTransaction)return std::unexpected(E::SqlFailure);
+    // The fence row is the first insert: a duplicate key there means the owner
+    // already exists. The whole transaction was rolled back, nothing changed.
+    if(m.transactionOutcome==SqlTransactionOutcome::RolledBack && m.uiSQLErrno==1062 && m.transactionFailedStep==3)
+        return std::unexpected(E::OwnerExists);
+    if(m.uiSQLErrno || m.transactionOutcome!=SqlTransactionOutcome::Committed)return std::unexpected(Failure(m));
+    if(!SameJob(*expected,m))return std::unexpected(E::InvalidStoredData);
+    return ItemOwnerFence{p.owner,1,1};
+}
+std::expected<ItemOwnerFence,E> ProvisionItemOwner(CAsyncSQL& db,const ItemCatalog& c,const ItemOwnerProvision& p)
+{
+    auto tx=PrepareProvisionItemOwner(c,p);if(!tx)return std::unexpected(tx.error());
+    Message m(db.DirectTransactionPrepared(std::move(*tx)));if(!m)return std::unexpected(E::SqlFailure);
+    return ProvisionItemOwnerCompleted(c,p,*m);
+}
+std::expected<SqlTransaction,E> PrepareClaimItemOwner(const ItemCatalog& c,ItemOwner owner)
+{
+    if(!ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);
+    auto tx=Guards(c);
+    // A current (locking) write: it waits for an in-flight writer of this owner.
+    tx.push_back({"UPDATE player.item_owner_fence SET session_generation=session_generation+1 WHERE owner_kind=? AND owner_id=?",Owner(owner),1,{}});
+    tx.push_back({"SELECT session_generation,state_revision FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=? FOR UPDATE",Owner(owner),{},1});
+    return tx;
+}
+std::expected<ItemOwnerFence,E> ClaimItemOwnerCompleted(const ItemCatalog& c,ItemOwner owner,SQLMsg& m)
+{
+    const auto expected=PrepareClaimItemOwner(c,owner);if(!expected)return std::unexpected(expected.error());
+    if(!m.bTransaction)return std::unexpected(E::SqlFailure);
+    if(m.transactionOutcome==SqlTransactionOutcome::Conflict && m.transactionFailedStep==3)return std::unexpected(E::MissingOwner);
+    if(m.uiSQLErrno || m.transactionOutcome!=SqlTransactionOutcome::Committed)return std::unexpected(Failure(m));
+    if(!SameJob(*expected,m))return std::unexpected(E::InvalidStoredData);
+    auto rows=Result(m,4,2,1);if(!rows)return std::unexpected(rows.error());
+    try
+    {
+        if(rows->size()!=1)throw Invalid{};
+        const ItemOwnerFence fence{owner,Number<std::uint64_t>((*rows)[0][0]),Number<std::uint64_t>((*rows)[0][1])};
+        if(fence.sessionGeneration<2 || !fence.revision)throw Invalid{};
+        return fence;
+    }
+    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
+std::expected<ItemOwnerFence,E> ClaimItemOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner)
+{
+    auto tx=PrepareClaimItemOwner(c,owner);if(!tx)return std::unexpected(tx.error());
+    Message m(db.DirectTransactionPrepared(std::move(*tx)));if(!m)return std::unexpected(E::SqlFailure);
+    return ClaimItemOwnerCompleted(c,owner,*m);
 }
 } // namespace auriga::item::persistence

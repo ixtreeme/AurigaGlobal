@@ -85,3 +85,6 @@ A játékbeli használathoz az F4 kell: GameServer-indításkori katalógusbetö
 munkamenet-kerítés, a műveletek bekötése és a régi mentési út lecserélése.
 Ezen felül szükség van a jóváhagyott konverziós családtérképre (F6) és a
 Unity-protokollra (F5).
+
+2026-10-30: a tulajdonos létrehozása, a munkamenet-foglalás és az aszinkron
+betöltés elkészült ([IC-034](item_combat_034_gameserver_runtime.md), F4.2).

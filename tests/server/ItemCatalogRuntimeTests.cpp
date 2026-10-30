@@ -1,7 +1,7 @@
 // F4.1 (IC-034): GameServer startup catalog. --completion-only runs the pure
 // pin decoder and the one-time publication; --owned-sandbox runs the full
 // startup read against a new owned MariaDB (see ItemCatalogRuntimeTests.py).
-#include "CatalogSnapshotFixture.hpp"
+#include "CatalogSqlPopulate.hpp"
 #include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
@@ -173,47 +173,7 @@ void Connect(CAsyncSQL& db, unsigned port, const std::string& pw, const char* us
     db.SetRetryConnectionErrors(false);
     Check(db.Setup("127.0.0.1", user, pw.c_str(), schema, "utf8mb4", true, port), "owned SQL connection");
 }
-void Populate(CAsyncSQL& admin, const ItemCatalogSource& source)
-{
-    const auto snapshot = catalog_snapshot_fixture::Snapshot(source);
-    struct Pending { std::string query; SqlParams params; };
-    std::vector<Pending> pending;
-    for (const auto& spec : s::Tables())
-    {
-        // Installed by the schema drafts themselves.
-        if (spec.table == s::Table::Format || spec.table == s::Table::Categories || spec.table == s::Table::BonusDefinitions) continue;
-        for (const auto& row : snapshot[spec.table])
-        {
-            std::string marks;
-            SqlParams params;
-            for (const auto& cell : row)
-            {
-                if (!marks.empty()) marks += ",";
-                marks += "?";
-                params.push_back(cell ? U::Text(*cell) : U::Null());
-            }
-            pending.push_back({"INSERT INTO protos." + std::string(spec.name) + "(" + std::string(spec.columns) + ") VALUES(" + marks + ")", std::move(params)});
-        }
-    }
-    // Fixture-only FK ordering with every FK still enabled.
-    while (!pending.empty())
-    {
-        const auto old = pending.size();
-        std::vector<Pending> next;
-        for (auto& row : pending)
-        {
-            Message m(admin.DirectQueryPrepared(row.query.c_str(), row.params));
-            Check(m != nullptr, "fixture message");
-            if (m->uiSQLErrno)
-            {
-                Check(m->uiSQLErrno == 1452, "fixture error other than a missing parent");
-                next.push_back(std::move(row));
-            }
-        }
-        Check(next.size() < old, "fixture FK dependency cycle");
-        pending = std::move(next);
-    }
-}
+using catalog_sql_populate::Populate;
 std::expected<rt::CatalogPin, rt::StartupError> ReadPin(CAsyncSQL& player)
 {
     Message message(player.DirectQueryPrepared(rt::PinQuery, {}));
