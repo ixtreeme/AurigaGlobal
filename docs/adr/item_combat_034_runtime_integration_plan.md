@@ -331,6 +331,73 @@ modell még nem tárolja, ezért az továbbra is `UnsupportedState`. A
 - **Tartalom:** a helyi `protos` katalógusban még nincs gyógyital. A
   katalógusszerkesztővel (Új tárgytípus, fogyasztható) lehet létrehozni.
 
+## C6 — fejlesztés kovácsnál (2026-10-31)
+
+**Katalógus.** Új lekérdezés: `RefinementRecipesFrom(ItemKey, szint)`. Az
+adott tárgyállapotból induló összes receptet adja, receptazonosító szerint
+rendezve. Egy állapothoz több recept is tartozhat (más kovács, más tekercs).
+
+**`MakeOwnerRefinement`** (`PersistentItems`).
+- A tulajdonos betöltött állapotából tervez és épít egy lépésben:
+  `PrepareRefinement`, majd `MakeRefinementCommit`.
+- Csak az élő inventory-tárgyak vesznek részt. Felszerelt tárgy sem forrás,
+  sem alapanyag nem lehet; a `MakeRefinementCommit` különben az egész kérést
+  elutasítaná, ha bármi fel van szerelve.
+- Az arany-pénztárca fizet. A dobást és az engedélyt (`admitted`) a szerver
+  adja; ez a réteg nem dönt róluk.
+- A tervet is visszaadja, mert a kimenetelt (siker, szint, megsemmisülés) a
+  hívó jelzi a játékosnak.
+- **Elutasítja:** a nulla műveletazonosítót, a hiányzó vagy idegen tárgyat
+  (`MissingItem`), a felszerelt forrást (`UnsupportedState`), a hiányzó
+  arany-pénztárcát (`InvalidWallet`). A tervező hibái (`Forbidden`,
+  `MissingRecipe`, `InsufficientGold`, `InvalidDecision` stb.) változatlanul
+  átjönnek.
+
+**Szerver** (`GameServer/item/TypedItemOps.*`).
+- **Új csomag:** `CG_TYPED_ITEM_REFINE` (227), 17 bájt (`static_assert`):
+  tárgyazonosító, receptazonosító (0: az állapot egyetlen receptje) és a
+  kovács VID-je.
+- **Engedélyezés** (a régi fejlesztőablak szabályai):
+  - nincs nyitva csere, raktár, bolt, saját bolt, kocka vagy régi
+    fejlesztőablak (`CanHandleItems`);
+  - az `update_refine_time` eseményflag utáni 5 percben tilos;
+  - `ENABLE_RESTRICT_GM_PERMISSIONS` mellett a játékmester nem fejleszthet;
+  - normál kovács (20016 vagy 20091), ugyanazon a pályán, legfeljebb 2000
+    egységre: ugyanannyira, ahonnan a régi út NPC-nek ad tárgyat.
+- **Kívül esik:** a céhes kovács (más díj és esély, `ComputeRefineFee`), az
+  ördögtorony kovácsai és a tekercsek. Ezek saját szabályait egyik natív
+  recept sem hordozza még (IC-019); külön szeletek.
+- **Dobás:** 0% és 100% esélynél nincs (a tervező szabálya), különben 1..10000.
+- **Sorrend:** a tárolón át egy tranzakcióban megy a forrás, az alapanyagok és
+  az arany. Csak siker után jön a kliensnek a `RefineSuceeded` vagy
+  `RefineFailed` parancs (ahogy a régi úton) és a magyar chatüzenet; az
+  eredmény mindig friss `GC_TYPED_INVENTORY`.
+- **Tesztparancs:** `/typed_refine <inventory cella> [recept]`. A 2000-es
+  körön belüli normál kovácsot keresi meg.
+
+**Arany.** A fejlesztés az új rendszer pénztárcájából fizet, ahogy az IC-019
+és az IC-032 előírja. A régi `POINT_GOLD` csak a konverzióval (E) kerül át;
+addig az új rendszeren futó karakternek két egyenlege van. A próbapad a
+kiépítéskor tölti fel a pénztárcát.
+
+**Ellenőrzés.**
+- `RefinementRecipeTests`: a receptlekérdezés (két recept ugyanarról az
+  állapotról azonosító szerint, a szint választ, nincs recept → üres).
+- `PersistentItemTests`: 138 ellenőrzés (+13). Siker egy felszerelt tárgy
+  mellett (a felszerelés nincs az írási halmazban), kudarc megsemmisítéssel és
+  megtartással (az arany ekkor is elmegy), és az elutasítások.
+- `item_catalog_runtime_mariadb`: 61 ellenőrzés (+12). A keret egy alapanyagot
+  és két receptet tesz a kardra. A +0 → +1 a tárolón át elviszi a 100 aranyat
+  és a két alapanyagot; a biztos kudarcú +1 → +2 megsemmisíti a kardot, és az
+  50 arany ekkor is elmegy. Mindkettő újratöltéssel.
+- A teljes CTest: 139/139.
+
+**Nyitott.**
+- **Unity:** a `CG_TYPED_ITEM_REFINE` írója és a fejlesztőablak (F5).
+- **Céhes és ördögtornyos kovács, tekercsek:** külön díj- és esélyszabály.
+- **Napló:** a régi `RefineLog` 32 bites tárgyazonosítót vár; az új út a
+  nyugtát és egy szervernapló-sort ír.
+
 ## Határ
 
 - **Helyi csomag (2026-10-30): bekapcsolva.**
@@ -355,7 +422,8 @@ modell még nem tárolja, ezért az továbbra is `UnsupportedState`. A
     3. a módosított Unity-klienssel be kell lépni, majd megnyomni a
        Ctrl+Shift+I-t.
 - **Az új rendszeren futó műveletek:** áthelyezés (C3), felszerelés és
-  levétel (C4), azonnali gyógyital (C5). A többi használat, a fejlesztés, a
-  drop, a bolt és a trade még a régi úton megy.
+  levétel (C4), azonnali gyógyital (C5), fejlesztés normál kovácsnál (C6). A
+  többi használat, a céhes kovács és a tekercsek, a drop, a bolt és a trade
+  még a régi úton megy.
 - **FreeBSD:** a GameServer mostantól linkeli az `AurigaItemCatalogSql`
   könyvtárat. A FreeBSD-build ezzel még nincs kipróbálva (F).

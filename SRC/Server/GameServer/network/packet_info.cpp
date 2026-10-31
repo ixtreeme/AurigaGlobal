@@ -172,6 +172,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_MOUNT_INVENTORY_ITEM_MOVE, sizeof(TPacketCGMountInventoryItemMove), "MountInventoryItemMove", true);
 	Set(HEADER_CG_TYPED_ITEM_MOVE, sizeof(TPacketCGTypedItemMove), "TypedItemMove", true);
 	Set(HEADER_CG_TYPED_ITEM_USE, sizeof(TPacketCGTypedItemUse), "TypedItemUse", true);
+	Set(HEADER_CG_TYPED_ITEM_REFINE, sizeof(TPacketCGTypedItemRefine), "TypedItemRefine", true);
 
 
 #ifdef __INGAME_WIKI__

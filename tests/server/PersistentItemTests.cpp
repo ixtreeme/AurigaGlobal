@@ -185,6 +185,36 @@ void Run()
         auto spent=MakeConsumeCommit(c,op,fence,bags,items,potion.id,plan->unitsToConsume);
         Check(spent && spent->items[0].after.count==4,"the plan's units are spent");
     }
+    // F4 C6: refinement from the owner's state; equipment never takes part.
+    {
+        std::array<std::uint8_t,16> op{};op[0]=0xC6;
+        const std::vector<ItemStorageLayout> bags{f::Inventory(),{{f::Character(),ItemStorageKind::Equipment,1},8,1,1}};
+        PersistentItem worn{ItemInstanceId::Create(400).value(),f::LongSword(),f::Character()};worn.placement=ItemPlacement{ItemStorageKind::Equipment,1,0};
+        const std::vector<PersistentItem> items{f::Sword(),f::Leather(),worn};
+        const std::vector<ItemWallet> purse{f::Gold()};
+        const auto use=[](const auto& r,RefinementUseError e){return !r && std::holds_alternative<RefinementUseError>(r.error()) && std::get<RefinementUseError>(r.error())==e;};
+        const auto store=[](const auto& r,ItemPersistenceError e){return !r && std::holds_alternative<ItemPersistenceError>(r.error()) && std::get<ItemPersistenceError>(r.error())==e;};
+        auto done=MakeOwnerRefinement(c,fence,bags,items,purse,{op,f::Sword().id,1,0,true});
+        Check(done && done->plan.success && done->commit.kind==ItemOperationKind::Refine && done->commit.items.size()==2 &&
+              done->commit.items[0].after.refinementLevel==10 && done->commit.items[1].after.destroyed &&
+              done->commit.wallets.size()==1 && done->commit.wallets[0].after.balance==900,"refine with an equipped item beside it");
+        Check(done->commit.storages.size()==1 && done->commit.storages[0].storage.kind==ItemStorageKind::Inventory,"the equipment is not part of the write set");
+        auto lost=MakeOwnerRefinement(c,fence,bags,items,purse,{op,f::Sword().id,4,0,true});
+        Check(lost && !lost->plan.success && lost->commit.items[0].after.destroyed && lost->commit.outcomeCode==2,"a failed attempt under the destroy rule");
+        auto kept=MakeOwnerRefinement(c,fence,bags,items,purse,{op,f::Sword().id,3,0,true});
+        Check(kept && !kept->plan.success && kept->commit.items[0].after.refinementLevel==9 && kept->commit.wallets[0].after.balance==900,"a failed attempt under the keep rule still pays");
+        Check(use(MakeOwnerRefinement(c,fence,bags,items,purse,{op,f::Sword().id,1,0,false}),RefinementUseError::Forbidden),"the server's admission is required");
+        Check(use(MakeOwnerRefinement(c,fence,bags,items,purse,{op,f::Sword().id,1,5,true}),RefinementUseError::InvalidDecision),"a certain recipe takes no roll");
+        Check(use(MakeOwnerRefinement(c,fence,bags,items,purse,{op,f::Sword().id,900,0,true}),RefinementUseError::MissingRecipe),"unknown recipe");
+        auto poor=f::Gold();poor.balance=50;const std::vector<ItemWallet> thin{poor};
+        Check(use(MakeOwnerRefinement(c,fence,bags,items,thin,{op,f::Sword().id,1,0,true}),RefinementUseError::InsufficientGold),"not enough gold");
+        Check(store(MakeOwnerRefinement(c,fence,bags,items,{},{op,f::Sword().id,1,0,true}),ItemPersistenceError::InvalidWallet),"no gold wallet");
+        Check(store(MakeOwnerRefinement(c,fence,bags,items,purse,{op,worn.id,1,0,true}),ItemPersistenceError::UnsupportedState),"an equipped item is not refined");
+        Check(store(MakeOwnerRefinement(c,fence,bags,items,purse,{op,ItemInstanceId::Create(77).value(),1,0,true}),ItemPersistenceError::MissingItem),"missing item");
+        Check(store(MakeOwnerRefinement(c,fence,bags,items,purse,{{},f::Sword().id,1,0,true}),ItemPersistenceError::InvalidOperation),"null operation id");
+        auto foreign=fence;foreign.owner.id++;
+        Check(store(MakeOwnerRefinement(c,foreign,bags,items,purse,{op,f::Sword().id,1,0,true}),ItemPersistenceError::MissingItem),"another owner's item refused");
+    }
 }
 }
 int main(){try{Run();std::cout<<checks<<" Persistent item checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

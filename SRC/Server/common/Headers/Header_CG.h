@@ -113,6 +113,8 @@ enum HEADER_CG
 	HEADER_CG_TYPED_ITEM_MOVE = 225,
 	// Typed item system (F4 C5, IC-034): RequestTypedItemUse.
 	HEADER_CG_TYPED_ITEM_USE = 226,
+	// Typed item system (F4 C6, IC-034): RequestTypedItemRefine.
+	HEADER_CG_TYPED_ITEM_REFINE = 227,
 
 #ifdef __NEWPET_SYSTEM__
 	HEADER_CG_PetSetName = 146,

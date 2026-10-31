@@ -17,3 +17,9 @@ bool HandleTypedItemMovePacket(entt::entity character, const char* data);
 void RequestTypedItemUse(entt::entity character, std::uint64_t itemId);
 // CG_TYPED_ITEM_USE (226) payload.
 bool HandleTypedItemUsePacket(entt::entity character, const char* data);
+// Refines one typed inventory item with one catalog recipe at a normal smith
+// (F4 C6). recipeId 0 picks the only recipe of the item's state. The store
+// commits the item, the materials and the Gold wallet in one transaction.
+void RequestTypedItemRefine(entt::entity character, std::uint64_t itemId, std::uint32_t recipeId, std::uint32_t npcVid);
+// CG_TYPED_ITEM_REFINE (227) payload.
+bool HandleTypedItemRefinePacket(entt::entity character, const char* data);

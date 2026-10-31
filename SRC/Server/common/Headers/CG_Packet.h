@@ -423,6 +423,15 @@ typedef struct command_typed_item_use
 	uint64_t	qwItemId;
 } TPacketCGTypedItemUse;
 
+// Typed item system (F4 C6): refine one typed item with one recipe at a smith.
+typedef struct command_typed_item_refine
+{
+	uint8_t		bHeader;
+	uint64_t	qwItemId;
+	uint32_t	dwRecipeId;	// 0: the only recipe of the item's state
+	uint32_t	dwNpcVid;	// the smith the item is handed to
+} TPacketCGTypedItemRefine;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

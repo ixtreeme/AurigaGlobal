@@ -397,6 +397,29 @@ std::expected<ItemCommit,E> MakeConsumeCommit(const ItemCatalog& c,std::array<st
     if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
     return r;
 }
+std::expected<OwnerRefinement,OwnerRefinementError> MakeOwnerRefinement(const ItemCatalog& c,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> items,std::span<const ItemWallet> wallets,const OwnerRefinementRequest& request)
+{
+    if(std::ranges::all_of(request.operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
+    const auto* source=Placed(items,owner,request.source);if(!source)return std::unexpected(E::MissingItem);
+    if(source->placement->kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
+    const auto wallet=std::ranges::find_if(wallets,[&](const ItemWallet& w){return w.owner==owner.owner && w.currency==WalletCurrency::Gold;});
+    if(wallet==wallets.end())return std::unexpected(E::InvalidWallet);
+    // Equipment and tombstones are neither the source nor a material.
+    std::vector<PersistentItem> carried;std::vector<RefinementItemSnapshot> inventory;
+    for(const auto& i:items)
+        if(!i.destroyed && i.owner==owner.owner && i.placement && i.placement->kind==ItemStorageKind::Inventory)
+        {
+            carried.push_back(i);
+            inventory.push_back({i.id.Value(),i.revision,i.owner.id,i.key,i.refinementLevel,i.count,false});
+        }
+    auto plan=PrepareRefinement(c,request.recipeId,{request.operationId,owner.owner.id,wallet->revision,wallet->balance,request.admitted},
+        {source->id.Value(),source->revision,source->owner.id,source->key,source->refinementLevel,source->count,false},inventory,request.recordedRoll);
+    if(!plan)return std::unexpected(plan.error());
+    auto commit=MakeRefinementCommit(c,*plan,owner,storages,carried,*wallet);
+    if(!commit)return std::unexpected(commit.error());
+    return OwnerRefinement{std::move(*plan),std::move(*commit)};
+}
 std::expected<ItemCommit,E> MakeUnequipCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,ItemPlacement target)
 {

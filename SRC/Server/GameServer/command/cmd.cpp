@@ -22,6 +22,7 @@ ACMD(do_typed_move);
 ACMD(do_typed_equip);
 ACMD(do_typed_unequip);
 ACMD(do_typed_use);
+ACMD(do_typed_refine);
 ACMD(do_spyquest);
 ACMD(do_caravan);
 ACMD(do_eclipseraid);
@@ -459,6 +460,7 @@ struct command_info cmd_info[] =
     { "typed_equip", do_typed_equip, 0, POS_DEAD, GM_PLAYER },
     { "typed_unequip", do_typed_unequip, 0, POS_DEAD, GM_PLAYER },
     { "typed_use", do_typed_use, 0, POS_DEAD, GM_PLAYER },
+    { "typed_refine", do_typed_refine, 0, POS_DEAD, GM_PLAYER },
     { "spyquest", do_spyquest, 0, POS_DEAD, GM_PLAYER },
     { "caravan", do_caravan, 0, POS_DEAD, GM_PLAYER },
     { "eclipseraid", do_eclipseraid, 0, POS_DEAD, GM_PLAYER },

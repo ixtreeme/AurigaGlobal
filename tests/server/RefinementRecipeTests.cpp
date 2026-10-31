@@ -129,6 +129,19 @@ void RejectUses()
     const auto sourceOnly=std::vector{Source()};
     Check(PrepareRefinement(*c,1,Context(),Source(),sourceOnly,5000).error()==RefinementUseError::InsufficientMaterials,"source cannot pay its own ingredient cost");
 }
+void RecipesFromState()
+{
+    // The server offers the recipes that start from the item's exact state (F4 C6).
+    auto s=Fixture();
+    s.refinementRecipes.push_back({3,"refine.iron_sword_9_10_b",f::Sword(),9,f::Sword(),10,9000,10000,RefinementFailure::Keep,{},{{f::Leather(),0,1}}});
+    s.refinementRecipes.push_back({2,"refine.iron_sword_10_11",f::Sword(),10,f::Sword(),11,6000,5000,RefinementFailure::Keep,{},{{f::Leather(),0,8}}});
+    const auto catalog=BuildItemCatalog(s).value();
+    const auto nine=catalog->RefinementRecipesFrom(f::Sword(),9);
+    Check(nine.size()==2 && nine[0]->id==1 && nine[1]->id==3,"every recipe of the exact state, in recipe-ID order");
+    const auto ten=catalog->RefinementRecipesFrom(f::Sword(),10);
+    Check(ten.size()==1 && ten[0]->id==2,"the level selects the recipe");
+    Check(catalog->RefinementRecipesFrom(f::Sword(),8).empty() && catalog->RefinementRecipesFrom(f::Leather(),0).empty(),"no recipe, no offer");
+}
 void HashAndSnapshot()
 {
     auto source=Fixture();const auto original=BuildItemCatalog(source).value();
@@ -155,6 +168,6 @@ int main(int argc,char** argv)
         for(auto b:hash)std::cout<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];
         std::cout<<'\n';return 0;
     }
-    try {PrepareAndBoundaries();RejectRecipes();RejectUses();HashAndSnapshot();std::cout<<"Refinement recipe checks passed: "<<checks<<'\n';return 0;}
+    try {PrepareAndBoundaries();RejectRecipes();RejectUses();RecipesFromState();HashAndSnapshot();std::cout<<"Refinement recipe checks passed: "<<checks<<'\n';return 0;}
     catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

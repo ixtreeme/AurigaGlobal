@@ -54,6 +54,27 @@ def main():
         tables = catalog.Catalog(packet).apply(document)
         catalog.run_tool(dict(action='commit', connection=admin, tables=tables, expected_hash=packet['hash']), packet['columns'], args.catalog_tool)
         packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
+        # C6: a material (6/1), and two recipes on the sword (1/1): +0 -> +1 always
+        # succeeds for 100 gold and two materials; +1 -> +2 always fails and destroys.
+        document = catalog.Catalog(packet).new(6)
+        material = document['base']['local_id']
+        tables = catalog.Catalog(packet).apply(document)
+        catalog.run_tool(dict(action='commit', connection=admin, tables=tables, expected_hash=packet['hash']), packet['columns'], args.catalog_tool)
+        packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
+        editor = catalog.Catalog(packet)
+        document = editor.item((1, 1))
+        document['refinement']['max_level'] = '2'
+        document['levels'] = [dict(document['levels'][0], level=str(level)) for level in range(3)]
+        document['recipes'] = [
+            dict(source_level='0', target_category_id=None, target_local_id=None, target_level='1', gold_cost='100',
+                 success_chance_bp='10000', failure_kind='1', failure_level=None,
+                 ingredients=[dict(category_id='6', local_id=material, refinement_level='0', amount='2')]),
+            dict(source_level='1', target_category_id=None, target_local_id=None, target_level='2', gold_cost='50',
+                 success_chance_bp='0', failure_kind='2', failure_level=None, ingredients=[]),
+        ]
+        tables = editor.apply(document, (1, 1))
+        catalog.run_tool(dict(action='commit', connection=admin, tables=tables, expected_hash=packet['hash']), packet['columns'], args.catalog_tool)
+        packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
         if len(packet['hash']) != 64 or any(c not in '0123456789abcdef' for c in packet['hash']): raise SystemExit('unexpected hash')
         sandbox.client.query("INSERT INTO player.item_persistence_format VALUES(1,1,1,UNHEX('" + packet['hash'] + "'))")
         stdin = '\n'.join([str(sandbox.port), sandbox.password, str(len(packet['tables']['item_base'])), packet['hash']]) + '\n'

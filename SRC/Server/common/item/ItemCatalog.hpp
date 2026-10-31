@@ -314,6 +314,9 @@ public:
     const ToggleEffectProfile* FindToggleEffect(std::uint32_t id) const noexcept;
     const SkillBookProfile* FindSkillBook(std::uint32_t id) const noexcept;
     const RefinementRecipe* FindRefinementRecipe(std::uint32_t id) const noexcept;
+    // Every recipe that starts from exactly this item state, in recipe-ID order.
+    // Several smiths or scrolls may offer different recipes for the same state.
+    std::vector<const RefinementRecipe*> RefinementRecipesFrom(ItemKey source, std::uint16_t level) const;
     std::expected<ItemBaseStats, ItemCatalogLookupError> RefinedBaseStats(ItemKey key, std::uint16_t level) const noexcept;
     // Exactly the current level's cumulative bonus profile, never a sum of
     // profiles from all preceding refinement steps. This does not apply stats.

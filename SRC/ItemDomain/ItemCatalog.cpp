@@ -789,6 +789,14 @@ const PolymorphProfile* ItemCatalog::FindPolymorphProfile(std::uint32_t id) cons
 const ToolProfile* ItemCatalog::FindToolProfile(std::uint32_t id) const noexcept { return FindProfile(source_.toolProfiles,id); }
 const ItemUsePolicy* ItemCatalog::FindUsePolicy(std::uint32_t id) const noexcept { return FindProfile(source_.usePolicies, id); }
 const RefinementRecipe* ItemCatalog::FindRefinementRecipe(std::uint32_t id) const noexcept { return FindProfile(source_.refinementRecipes, id); }
+std::vector<const RefinementRecipe*> ItemCatalog::RefinementRecipesFrom(ItemKey source, std::uint16_t level) const
+{
+    std::vector<const RefinementRecipe*> out;
+    for (const auto& recipe : source_.refinementRecipes)
+        if (recipe.source == source && recipe.sourceLevel == level)
+            out.push_back(&recipe);
+    return out;
+}
 const ItemTradePolicy* ItemCatalog::FindTradePolicy(std::uint32_t id) const noexcept { return FindProfile(source_.tradePolicies, id); }
 const ItemAppearanceProfile* ItemCatalog::FindAppearance(std::uint32_t id) const noexcept { return FindProfile(source_.appearances, id); }
 const ItemAttackProfile* ItemCatalog::FindAttack(std::uint32_t id) const noexcept { return FindProfile(source_.attacks, id); }

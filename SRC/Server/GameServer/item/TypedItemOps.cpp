@@ -3,14 +3,20 @@
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedInventorySync.hpp"
+#include "refine.h"
 #include "../command/cmd.h"
 #include "../core/packet.h"
+#include "../core/utils.h"
 #include "../ecs/Registry.hpp"
+#include "../ecs/services/VisibilityService.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
+#include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
+#include "../ecs/systems/SessionSystem.hpp"
+#include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char_manager.h"
 #include "../combat/pvp.h"
 #include "../quest/questmanager.h"
@@ -26,6 +32,9 @@
 #include <chrono>
 #include <cstdlib>
 #include <random>
+#include <string>
+#include <type_traits>
+#include <variant>
 
 namespace
 {
@@ -42,9 +51,15 @@ const char* ErrorText(items::ItemPersistenceError e)
 	return code < std::size(texts) ? texts[code] : "ismeretlen hiba";
 }
 
-std::array<std::uint8_t, 16> NewOperationId()
+std::mt19937_64& Engine()
 {
 	static std::mt19937_64 engine { std::random_device {}() ^ (static_cast<std::uint64_t>(std::random_device {}()) << 32) };
+	return engine;
+}
+
+std::array<std::uint8_t, 16> NewOperationId()
+{
+	auto& engine = Engine();
 	std::array<std::uint8_t, 16> id {};
 	do
 		for (auto& byte : id) byte = static_cast<std::uint8_t>(engine());
@@ -406,4 +421,222 @@ ACMD(do_typed_use)
 		RequestTypedItemUse(character, item->id.Value());
 	else
 		Tell(character, "Ezen a cellán nincs új rendszerű tárgy.");
+}
+
+// ---------------------------------------------------------------------------
+// Refine (F4 C6): one inventory item, one catalog recipe, at a normal smith.
+// The game thread admits (the legacy refine window's rules and the smith's
+// range), rolls, and builds the complete write set with MakeOwnerRefinement;
+// the store commits the item, the materials and the Gold wallet together.
+// Guild and Devil Tower smiths and the scrolls have their own fee and chance
+// rules, which no native recipe carries yet: later slices.
+
+namespace
+{
+// How far an item can be handed to an NPC (CanReceiveItemEcs).
+constexpr std::int64_t SmithRange = 2000;
+
+const char* RefineErrorText(items::RefinementUseError e)
+{
+	using E = items::RefinementUseError;
+	switch (e)
+	{
+	case E::Forbidden: return "itt nem fejleszthetsz";
+	case E::InvalidContext: return "érvénytelen kérés";
+	case E::MissingRecipe: return "ehhez a tárgyhoz nincs ilyen fejlesztés";
+	case E::InvalidSource: return "ez a tárgy így nem fejleszthető";
+	case E::InvalidInventory: return "az inventory állapota érvénytelen";
+	case E::InsufficientGold: return "nincs elég aranyad";
+	case E::InsufficientMaterials: return "nincs elég alapanyagod";
+	case E::InvalidDecision: return "érvénytelen dobás";
+	}
+	return "ismeretlen hiba";
+}
+
+bool NormalSmithInRange(entt::entity character, entt::entity npc)
+{
+	if (npc == entt::null || !g_registry.valid(npc) || !ecs::PlayerRuntime::IsValid(npc) || ecs::PlayerRuntime::IsPC(npc))
+		return false;
+	const auto race = ecs::PlayerRuntime::GetRaceNum(npc);
+	if ((race != BLACKSMITH_MOB && race != BLACKSMITH2_MOB) || ecs::PlayerRuntime::GetMapIndex(npc) != ecs::PlayerRuntime::GetMapIndex(character))
+		return false;
+	const std::int64_t dx = std::abs(std::int64_t(ecs::PlayerRuntime::GetX(npc)) - ecs::PlayerRuntime::GetX(character));
+	const std::int64_t dy = std::abs(std::int64_t(ecs::PlayerRuntime::GetY(npc)) - ecs::PlayerRuntime::GetY(character));
+	return dx <= SmithRange && dy <= SmithRange && DISTANCE_APPROX(static_cast<int>(dx), static_cast<int>(dy)) <= SmithRange;
+}
+
+// The legacy refine window's rules (CG_REFINE and DoRefine); nullptr when allowed.
+const char* RefineRefusal(entt::entity character)
+{
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+	if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR)
+		return "játékmesterként nem fejleszthetsz";
+#endif
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) ||
+		ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SocialSystem::GetMyShop(character) != entt::null ||
+		ecs::SessionSystem::IsCubeOpen(character) || !InventorySystem::CanHandleItems(character))
+		return "előbb zárd be a nyitott ablakokat (csere, raktár, bolt, kocka, fejlesztés)";
+	const auto updated = quest::CQuestManager::instance().GetEventFlag("update_refine_time");
+	if (updated != 0 && get_global_time() < updated + 60 * 5)
+		return "a fejlesztés most átmenetileg szünetel";
+	return nullptr;
+}
+
+void TellRefineOutcome(entt::entity character, const items::RefinementPlan& plan)
+{
+	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, plan.success ? "RefineSuceeded" : "RefineFailed");
+	if (plan.success)
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Sikeres fejlesztés: +%u.", static_cast<unsigned>(plan.resultLevel.value_or(0)));
+	else if (!plan.result)
+		Tell(character, "A fejlesztés nem sikerült, a tárgy megsemmisült.");
+	else if (plan.resultLevel == plan.sourceLevel)
+		Tell(character, "A fejlesztés nem sikerült, a tárgy megmaradt.");
+	else
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A fejlesztés nem sikerült, a tárgy +%u lett.", static_cast<unsigned>(plan.resultLevel.value_or(0)));
+}
+
+void RefineAt(entt::entity character, std::uint64_t itemId, std::uint32_t recipeId, entt::entity smith)
+{
+	if (!g_registry.valid(character))
+		return;
+	auto* typed = g_registry.try_get<ecs::TypedItems>(character);
+	const auto* login = g_registry.try_get<ecs::TypedItemLogin>(character);
+	const auto catalog = items::runtime::CurrentCatalog();
+	if (!typed || !login || !catalog)
+	{
+		Tell(character, "Az új tárgyrendszer ennél a karakternél nincs bekapcsolva.");
+		return;
+	}
+	if (g_registry.all_of<ecs::TypedItemBusy>(character))
+	{
+		Tell(character, "Az előző tárgyművelet még folyamatban van.");
+		return;
+	}
+	if (const char* why = RefineRefusal(character))
+	{
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A fejlesztés nem lehetséges: %s.", why);
+		return;
+	}
+	if (!NormalSmithInRange(character, smith))
+	{
+		Tell(character, "A fejlesztéshez egy kovács közelében kell lenned.");
+		return;
+	}
+	const auto id = items::ItemInstanceId::Create(itemId);
+	const auto& state = typed->state;
+	const auto current = id ? std::ranges::find_if(state.items, [&](const items::PersistentItem& i) { return i.id == *id && !i.destroyed; }) : state.items.end();
+	if (current == state.items.end() || !current->placement)
+	{
+		Tell(character, "Ez a tárgy nincs nálad.");
+		SendTypedInventory(character);
+		return;
+	}
+	if (recipeId == 0)
+	{
+		const auto offers = catalog->RefinementRecipesFrom(current->key, current->refinementLevel);
+		if (offers.empty())
+		{
+			Tell(character, "Ez a tárgy nem fejleszthető tovább.");
+			return;
+		}
+		if (offers.size() > 1)
+		{
+			std::string ids;
+			for (const auto* offer : offers)
+				ids += (ids.empty() ? "" : ", ") + std::to_string(offer->id);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Több fejlesztés is van ehhez a tárgyhoz; add meg a receptet: %s.", ids.c_str());
+			return;
+		}
+		recipeId = offers.front()->id;
+	}
+	// 0% and 100% are decided without a roll (PrepareRefinement).
+	const auto* recipe = catalog->FindRefinementRecipe(recipeId);
+	const std::uint16_t roll = recipe && recipe->successChanceBp != 0 && recipe->successChanceBp != 10000
+		? static_cast<std::uint16_t>(std::uniform_int_distribution<int>(1, 10000)(Engine())) : 0;
+	auto made = items::MakeOwnerRefinement(*catalog, state.fence, state.storages, state.items, state.wallets,
+		{ NewOperationId(), *id, recipeId, roll, true });
+	if (!made)
+	{
+		const char* why = std::visit([](auto e) {
+			if constexpr (std::is_same_v<decltype(e), items::RefinementUseError>) return RefineErrorText(e);
+			else return ErrorText(e);
+		}, made.error());
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A fejlesztés nem lehetséges: %s.", why);
+		SendTypedInventory(character);
+		return;
+	}
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
+	const uint64_t token = login->token;
+	g_registry.emplace_or_replace<ecs::TypedItemBusy>(character);
+	const bool queued = items::runtime::RequestCommit(typed->state.fence.owner, typed->state.fence.sessionGeneration, std::move(made->commit),
+		[pid, token, plan = std::move(made->plan)](items::runtime::CommitOutcome outcome) {
+			const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
+			const auto* current = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
+			if (!current || current->token != token)
+				return; // that login is gone; the next login reloads anyway
+			g_registry.remove<ecs::TypedItemBusy>(entity);
+			if (outcome.state)
+				g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*outcome.state));
+			else
+				LOG_ERROR("TypedItems: pid {} reload after a refine failed (error {})", pid, static_cast<int>(outcome.state.error()));
+			if (outcome.write)
+			{
+				LOG_INFO("TypedItems: pid {} refine recipe {} roll {} {} (cost {})", pid, plan.recipeId, plan.recordedRoll,
+					plan.success ? "succeeded" : "failed", plan.goldCost);
+				TellRefineOutcome(entity, plan);
+			}
+			else
+			{
+				LOG_INFO("TypedItems: pid {} refine refused by the store (error {})", pid, static_cast<int>(outcome.write.error()));
+				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A fejlesztés nem sikerült: %s.", ErrorText(outcome.write.error()));
+			}
+			SendTypedInventory(entity);
+		});
+	if (!queued)
+	{
+		g_registry.remove<ecs::TypedItemBusy>(character);
+		Tell(character, "A tárgytároló nem fut; a fejlesztés nem lehetséges.");
+	}
+}
+} // namespace
+
+void RequestTypedItemRefine(entt::entity character, std::uint64_t itemId, std::uint32_t recipeId, std::uint32_t npcVid)
+{
+	RefineAt(character, itemId, recipeId, CHARACTER_MANAGER::instance().FindEntity(npcVid));
+}
+
+static_assert(sizeof(TPacketCGTypedItemRefine) == 17, "CG_TYPED_ITEM_REFINE wire size");
+
+bool HandleTypedItemRefinePacket(entt::entity character, const char* data)
+{
+	const auto* packet = reinterpret_cast<const TPacketCGTypedItemRefine*>(data);
+	RequestTypedItemRefine(character, packet->qwItemId, packet->dwRecipeId, packet->dwNpcVid);
+	return true;
+}
+
+// /typed_refine <inventory cell> [recipe]: refine at the nearest normal smith (C6 test command).
+ACMD(do_typed_refine)
+{
+	char cell[32], recipe[32];
+	two_arguments(argument, cell, sizeof(cell), recipe, sizeof(recipe));
+	const auto* typed = g_registry.valid(character) ? g_registry.try_get<ecs::TypedItems>(character) : nullptr;
+	if (!*cell || !typed)
+	{
+		Tell(character, "Használat: /typed_refine <inventory cella> [recept]  (új tárgyrendszer, egy kovács mellett)");
+		return;
+	}
+	const auto* item = ItemAt(*typed, items::ItemStorageKind::Inventory, static_cast<std::uint32_t>(std::strtoul(cell, nullptr, 10)));
+	if (!item)
+	{
+		Tell(character, "Ezen a cellán nincs új rendszerű tárgy.");
+		return;
+	}
+	entt::entity smith = entt::null;
+	for (const entt::entity nearby : ecs::VisibilityService::GetEntitiesInRange(g_registry, character, static_cast<std::int32_t>(SmithRange)))
+		if (NormalSmithInRange(character, nearby))
+		{
+			smith = nearby;
+			break;
+		}
+	RefineAt(character, item->id.Value(), static_cast<std::uint32_t>(std::strtoul(recipe, nullptr, 10)), smith);
 }

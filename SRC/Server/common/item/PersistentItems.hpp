@@ -3,6 +3,7 @@
 #include "ItemInstanceId.hpp"
 #include <optional>
 #include <span>
+#include <variant>
 
 namespace auriga::item
 {
@@ -146,4 +147,21 @@ std::expected<ItemCommit,ItemPersistenceError> MakeUnequipCommit(const ItemCatal
 // caller's own plan (e.g. PlanInstantRecovery); this only writes the item.
 std::expected<ItemCommit,ItemPersistenceError> MakeConsumeCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,std::uint32_t units);
+// Refines one inventory item of the owner with one catalog recipe (F4 C6).
+// Only the owner's live inventory items take part: an equipped item is never
+// the source or a material. The Gold wallet pays. The server supplies the
+// recorded roll, and `admitted` is its service, distance and state decision;
+// this layer does not decide them. The plan is returned for the outcome.
+struct OwnerRefinementRequest
+{
+    std::array<std::uint8_t,16> operationId{};
+    ItemInstanceId source;
+    std::uint32_t recipeId=0;
+    std::uint16_t recordedRoll=0;
+    bool admitted=false;
+};
+struct OwnerRefinement { RefinementPlan plan; ItemCommit commit; };
+using OwnerRefinementError=std::variant<RefinementUseError,ItemPersistenceError>;
+std::expected<OwnerRefinement,OwnerRefinementError> MakeOwnerRefinement(const ItemCatalog&,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,std::span<const ItemWallet>,const OwnerRefinementRequest&);
 } // namespace auriga::item

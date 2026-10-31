@@ -193,6 +193,54 @@ int main(int argc, char** argv)
 				Check(got && got->write && got->state && std::ranges::none_of(got->state->items, [](const PersistentItem& i) { return !i.destroyed; }),
 				      "the last unit left no live flask");
 			}
+			// C6: refinement through the store. +0 -> +1 spends the gold and the
+			// materials; the certain failure +1 -> +2 destroys the sword and still
+			// costs its gold. Each answer is the reloaded state.
+			{
+				const ItemOwner customer { ItemOwnerKind::Character, 7006 };
+				const ItemStorageLayout pack { { customer, ItemStorageKind::Inventory, 1 }, 5, 9, 4 };
+				const ItemWallet purse { customer, WalletCurrency::Gold, 1, 1000 };
+				auto made = persistence::ProvisionOwner(importer, *catalog, customer, std::span(&pack, 1), std::span(&purse, 1));
+				Check(made && *made, "smith customer provisioned");
+				const auto session = persistence::ClaimOwnerSession(importer, *catalog, customer);
+				Check(session.has_value(), "smith customer session claimed");
+				auto owned = persistence::LoadItemOwner(importer, *catalog, customer, *session);
+				PersistentItem blade { ItemInstanceId::Create(0x00C6000000000001ULL).value(), ItemKey::Create(1, 1).value(), customer };
+				blade.placement = ItemPlacement { ItemStorageKind::Inventory, 1, 0 };
+				PersistentItem ore { ItemInstanceId::Create(0x00C6000000000002ULL).value(), ItemKey::Create(6, 1).value(), customer };
+				ore.count = 3; ore.placement = ItemPlacement { ItemStorageKind::Inventory, 1, 20 };
+				ItemCommit grant; grant.operationId.fill(0x61); grant.catalogRevision = catalog->Revision(); grant.catalogHash = catalog->ContentHash();
+				grant.kind = ItemOperationKind::Grant; grant.owners = { owned->fence }; grant.storages = { pack };
+				grant.items.push_back({ std::nullopt, blade }); grant.items.push_back({ std::nullopt, ore }); grant.outcomeCode = 1; grant.result = { 1 };
+				Check(persistence::CommitItems(importer, *catalog, grant).has_value(), "grant for the refine test");
+				auto before = persistence::LoadItemOwner(importer, *catalog, customer, *session);
+				Check(before && before->items.size() == 2, "granted sword and ore load");
+				const auto first = catalog->RefinementRecipesFrom(blade.key, 0);
+				Check(first.size() == 1, "one recipe from +0");
+				std::array<std::uint8_t, 16> op {}; op.fill(0x62);
+				auto up = MakeOwnerRefinement(*catalog, before->fence, before->storages, before->items, before->wallets, { op, blade.id, first[0]->id, 0, true });
+				Check(up && up->plan.success, "refinement built");
+				std::optional<runtime::CommitOutcome> got;
+				const auto wait = [&] { for (int spins = 0; !got && spins < 1000; ++spins) { store.Drain(); std::this_thread::sleep_for(std::chrono::milliseconds(10)); } };
+				Check(runtime::RequestCommit(customer, *session, up->commit, [&](runtime::CommitOutcome outcome) { got = std::move(outcome); }), "refine not queued");
+				wait();
+				const auto live = [&](ItemInstanceId id) -> const PersistentItem* {
+					const auto it = std::ranges::find_if(got->state->items, [&](const PersistentItem& i) { return i.id == id && !i.destroyed; });
+					return it == got->state->items.end() ? nullptr : &*it;
+				};
+				Check(got && got->write && got->state && live(blade.id) && live(blade.id)->refinementLevel == 1 && live(ore.id) && live(ore.id)->count == 1 &&
+				      got->state->wallets.at(0).balance == 900, "+1 committed: gold and materials spent, reloaded");
+				const auto second = catalog->RefinementRecipesFrom(blade.key, 1);
+				Check(second.size() == 1, "one recipe from +1");
+				op.fill(0x63);
+				auto lost = MakeOwnerRefinement(*catalog, got->state->fence, got->state->storages, got->state->items, got->state->wallets, { op, blade.id, second[0]->id, 0, true });
+				Check(lost && !lost->plan.success, "certain failure built");
+				got.reset();
+				Check(runtime::RequestCommit(customer, *session, lost->commit, [&](runtime::CommitOutcome outcome) { got = std::move(outcome); }), "failed refine not queued");
+				wait();
+				Check(got && got->write && got->state && !live(blade.id) && live(ore.id) && got->state->wallets.at(0).balance == 850,
+				      "the failure destroyed the sword and still cost its gold");
+			}
 			// Queued work is finished at stop; its completion is dropped, not run late.
 			bool ran = false, applied = false;
 			Check(store.Submit([&ran, &applied](CAsyncSQL&, const ItemCatalog&) { ran = true; return runtime::ItemStore::Completion { [&applied] { applied = true; } }; }), "work refused");

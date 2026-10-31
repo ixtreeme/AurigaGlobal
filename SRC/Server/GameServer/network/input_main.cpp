@@ -436,6 +436,10 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			HandleTypedItemUsePacket(character, c_pData);
 			break;
 
+		case HEADER_CG_TYPED_ITEM_REFINE:
+			HandleTypedItemRefinePacket(character, c_pData);
+			break;
+
 		case HEADER_CG_PARTY_INVITE:
 			PartyInvite(character, c_pData);
 			break;
