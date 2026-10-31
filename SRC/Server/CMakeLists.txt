@@ -35,6 +35,17 @@ function(auriga_add_server_executable target)
 	source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${_module_sources})
 endfunction()
 
+# fmt and spdlog come from vcpkg on Windows and from the system packages
+# (devel/libfmt, devel/spdlog) on FreeBSD. Both are used header-only, as the
+# vendored copies were. The servers link the static CRT (/MT); under the
+# dynamic x64-windows triplet vcpkg's fmt and spdlog are DLLs on the dynamic
+# CRT, and a string allocated in fmt.dll would be freed on another heap.
+# spdlog's own header-only target links the compiled fmt, so only its include
+# directory is taken.
+find_package(fmt CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+get_target_property(AURIGA_SPDLOG_INCLUDE_DIRS spdlog::spdlog_header_only INTERFACE_INCLUDE_DIRECTORIES)
+
 add_library(SERVER INTERFACE)
 target_include_directories(SERVER INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}
@@ -51,11 +62,10 @@ target_include_directories(SERVER INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/GameServer/social
     ${CMAKE_CURRENT_LIST_DIR}/GameServer/dungeon
     ${CMAKE_CURRENT_LIST_DIR}/GameServer/command
-    ${CMAKE_SOURCE_DIR}/extern/fmt/include
-    ${CMAKE_SOURCE_DIR}/extern/spdlog/include
 )
+target_include_directories(SERVER SYSTEM INTERFACE ${AURIGA_SPDLOG_INCLUDE_DIRS})
+target_link_libraries(SERVER INTERFACE fmt::fmt-header-only)
 target_compile_definitions(SERVER INTERFACE
-    FMT_HEADER_ONLY=1
     SPDLOG_FMT_EXTERNAL=1
     SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
 )
