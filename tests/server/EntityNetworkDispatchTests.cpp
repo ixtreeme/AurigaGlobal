@@ -607,6 +607,11 @@ FCollectEntity SECTREE::SnapshotAround(int) const {
     for (const auto e : updateMembers) result.Add(e, this);
     return result;
 }
+void SECTREE::VisitAround(void (*visit)(void*, entt::entity), void* context) const {
+    Check(this == updateSector, "unexpected update broadcast sector");
+    for (const auto e : updateMembers)
+        if (SectreeMember(e, this)) visit(context, e);
+}
 SECTREE_MANAGER::SECTREE_MANAGER() = default;
 SECTREE_MANAGER::~SECTREE_MANAGER() = default;
 SECTREE* SECTREE_MANAGER::Get(int32_t map, int32_t, int32_t) { return map == 3 ? updateSector : nullptr; }

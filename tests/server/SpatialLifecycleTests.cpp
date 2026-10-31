@@ -47,6 +47,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <limits>
+#include <random>
 #include "../../SRC/Server/GameServer/pet/mount_inventory_helper.h"
 #include "../../SRC/Server/GameServer/world/map_location.h"
 #include "../../SRC/Server/GameServer/ecs/EcsDiagnostics.hpp"
@@ -1922,6 +1923,84 @@ void BulkCharacterRetirement() {
     ecs::SpatialService::RemoveEntity(g_registry, npc);
     Check(!map.At()->Contains(npc) && packets.empty(), "retired character sector removal sent REMOVE");
 }
+
+// The range query as it was before SECTREE::VisitAround: snapshot copy,
+// per-member revalidation and linear de-duplication. Kept as the oracle.
+std::vector<entt::entity> SnapshotEntitiesInRange(entt::entity source, int32_t range) {
+    std::vector<entt::entity> result;
+    const auto* sourcePos = g_registry.try_get<ecs::Position>(source);
+    const auto* sourceMap = g_registry.try_get<ecs::MapIndex>(source);
+    auto* tree = sourcePos && sourceMap ? ecs::SectorAt(sourceMap->value, sourcePos->x, sourcePos->y) : nullptr;
+    if (!tree) return result;
+    auto collect = [&](entt::entity e) {
+        const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(e);
+        const auto* pos = g_registry.try_get<ecs::Position>(e);
+        const auto* map = g_registry.try_get<ecs::MapIndex>(e);
+        if (!kind || kind->kind != ecs::SpatialKind::Character || !pos || !map || map->value != sourceMap->value) return;
+        const auto dx = std::abs(int64_t(pos->x) - sourcePos->x), dy = std::abs(int64_t(pos->y) - sourcePos->y);
+        if (e != source && std::max(dx, dy) + std::min(dx, dy) / 2 > range) return;
+        if (SpyQuest::CanView(g_registry, source, e)) ecs::VisibilityService::PushUnique(result, e);
+    };
+    tree->ForEachAround(collect);
+    ecs::VisibilityService::PushUnique(result, source);
+    return result;
+}
+
+// Every broadcast resolves its recipients through GetEntitiesInRange, so the
+// copy-free walk must give exactly the snapshot scan's answer, order included.
+void RangeQueryMatchesTheSnapshotScan() {
+    Reset(); MapFixture map; MapFixture other(2);
+    std::mt19937 rng(11);
+    std::uniform_int_distribution<int> anyX(0, 4 * SECTREE_SIZE - 1), anyY(0, 2 * SECTREE_SIZE - 1);
+    std::vector<entt::entity> sources;
+    for (int i = 0; i < 160; ++i) {
+        const auto e = Entity(ecs::SpatialKind::Character);
+        if (i % 3) { g_registry.remove<ecs::TagPC>(e); g_registry.get<ecs::CharacterType>(e).value = CHAR_TYPE_MONSTER; }
+        Check(Spawn(e, i % 8 ? 1 : 2, anyX(rng), anyY(rng)), "range fixture spawn");
+        sources.push_back(e);
+    }
+    for (int i = 0; i < 40; ++i) Check(Spawn(Entity(), 1, anyX(rng), anyY(rng)), "range fixture item spawn");
+    const auto owner = Entity(ecs::SpatialKind::Character), actor = Entity(ecs::SpatialKind::Character),
+        bystander = Entity(ecs::SpatialKind::Character);
+    Check(Spawn(owner, 1, 9000, 3000) && Spawn(actor, 1, 9100, 3000) && Spawn(bystander, 1, 9200, 3000),
+        "story fixture spawn");
+    // Added after spawning: the fixture's Refresh cannot resolve an actor's owner.
+    g_registry.emplace<ecs::PlayerID>(owner, 4242u);
+    g_registry.emplace<SpyQuest::Actor>(actor).owner = 4242;
+    const auto detached = Entity(ecs::SpatialKind::Character);
+    g_registry.emplace<ecs::Position>(detached, 9050, 3000, 0);
+    g_registry.emplace<ecs::MapIndex>(detached, 1);
+    for (const auto e : {owner, actor, bystander, detached}) sources.push_back(e);
+
+    for (const int range : {VIEW_RANGE + VIEW_BONUS_RANGE, 1500, 0})
+        for (const auto e : sources) {
+            const auto fast = ecs::VisibilityService::GetEntitiesInRange(g_registry, e, range);
+            Check(fast == SnapshotEntitiesInRange(e, range), "range query differs from the snapshot scan");
+            Check(std::count(fast.begin(), fast.end(), e) == 1, "range query lost or repeated its source");
+        }
+    const auto story = ecs::VisibilityService::GetEntitiesInRange(g_registry, actor, VIEW_RANGE);
+    Check(story.size() == 2 && story[0] == owner && story[1] == actor, "story actor reached someone besides its owner");
+    const auto loose = ecs::VisibilityService::GetEntitiesInRange(g_registry, detached, VIEW_RANGE);
+    Check(loose.back() == detached && std::count(loose.begin(), loose.end(), bystander) == 1,
+        "a source outside every sector lost its neighbours");
+
+    for (int x = 0; x < 4; ++x) for (int y = 0; y < 2; ++y) {
+        auto* tree = map.At(x * SECTREE_SIZE + 1, y * SECTREE_SIZE + 1);
+        std::vector<entt::entity> walked, snapshot;
+        tree->VisitAround([&](entt::entity e) { walked.push_back(e); });
+        auto record = [&](entt::entity e) { snapshot.push_back(e); };
+        tree->ForEachAround(record);
+        Check(!walked.empty() && walked == snapshot, "sector walk differs from the snapshot");
+    }
+    for (const auto e : sources) {
+        auto native = ecs::VisibilityService::GetViewersOfNative(g_registry, e);
+        const auto* viewers = g_registry.try_get<ecs::ViewerMap>(e);
+        Check(native.size() == (viewers ? viewers->viewers.size() : 0), "native viewer list size");
+        std::sort(native.begin(), native.end());
+        Check(std::adjacent_find(native.begin(), native.end()) == native.end(), "native viewer list repeated an entity");
+    }
+    g_registry.remove<SpyQuest::Actor>(actor);
+}
 }
 int main() {
     try {
@@ -1942,6 +2021,7 @@ int main() {
         ShownMountFollowAndRemoval();
         NativeRecoveryTimers();
         BulkCharacterRetirement();
+        RangeQueryMatchesTheSnapshotScan();
         Reset(); ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

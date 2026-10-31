@@ -27,6 +27,10 @@ inline void PushUnique(std::vector<entt::entity>& out, entt::entity e)
         out.push_back(e);
 }
 
+// Characters on the source's map within `range` of it, each once, in sector
+// walk order; the source itself is always included, last if the walk did not
+// list it. Runs for every broadcast, so the walk copies nothing and the
+// component pools are resolved once per call, not per member.
 inline std::vector<entt::entity> GetEntitiesInRange(entt::registry& reg, entt::entity source, int32_t range)
 {
     std::vector<entt::entity> result;
@@ -45,17 +49,25 @@ inline std::vector<entt::entity> GetEntitiesInRange(entt::registry& reg, entt::e
 
     const auto origin = *sourcePos;
     const int32_t mapIndex = sourceMap->value;
-    auto collect = [&](entt::entity e) {
-        const auto* kind = reg.try_get<ecs::SpatialKindTag>(e);
-        const auto* pos = reg.try_get<ecs::Position>(e);
-        const auto* map = reg.try_get<ecs::MapIndex>(e);
-        if (!kind || kind->kind != ecs::SpatialKind::Character || !pos || !map || map->value != mapIndex) return;
-        const auto dx = std::abs(int64_t(pos->x) - origin.x), dy = std::abs(int64_t(pos->y) - origin.y);
+    const auto& kinds = reg.storage<ecs::SpatialKindTag>();
+    const auto& positions = reg.storage<ecs::Position>();
+    const auto& maps = reg.storage<ecs::MapIndex>();
+    const bool storyActor = reg.all_of<SpyQuest::Actor>(source);
+    bool sourceListed = false;
+    // A sector lists each member once and every member resolves to exactly one
+    // sector (SECTREE::VisitAround), so the walk cannot repeat an entity.
+    sectree->VisitAround([&](entt::entity e) {
+        if (!kinds.contains(e) || kinds.get(e).kind != ecs::SpatialKind::Character) return;
+        if (!positions.contains(e) || !maps.contains(e) || maps.get(e).value != mapIndex) return;
+        const auto& pos = positions.get(e);
+        const auto dx = std::abs(int64_t(pos.x) - origin.x), dy = std::abs(int64_t(pos.y) - origin.y);
         if (e != source && std::max(dx, dy) + std::min(dx, dy) / 2 > range) return;
-        if(SpyQuest::CanView(reg,source,e))PushUnique(result, e);
-    };
-    sectree->ForEachAround(collect);
-    PushUnique(result, source);
+        if (storyActor && !SpyQuest::CanView(reg, source, e)) return;
+        result.push_back(e);
+        sourceListed = sourceListed || e == source;
+    });
+    if (!sourceListed)
+        result.push_back(source);
     return result;
 }
 
@@ -89,9 +101,10 @@ inline std::vector<entt::entity> GetVisibleEntitiesNative(entt::registry& reg, e
         return result;
 
     result.reserve(view->visible.size());
+    // The set already holds each entity once.
     for (const entt::entity visible : view->visible) {
         if (visible != entt::null && reg.valid(visible))
-            PushUnique(result, visible);
+            result.push_back(visible);
     }
     return result;
 }
@@ -107,9 +120,10 @@ inline std::vector<entt::entity> GetViewersOfNative(entt::registry& reg, entt::e
         return result;
 
     result.reserve(viewers->viewers.size());
+    // The set already holds each entity once.
     for (const entt::entity viewer : viewers->viewers) {
         if (viewer != entt::null && reg.valid(viewer))
-            PushUnique(result, viewer);
+            result.push_back(viewer);
     }
     return result;
 }

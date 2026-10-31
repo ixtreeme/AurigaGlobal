@@ -70,8 +70,9 @@ saját kérésétől számít.
 
 ## Nyitott
 
-- `VisibilityService::GetEntitiesInRange`: a `PushUnique` lineáris keresés (O(k²)), és a 9-sectoros snapshot
-  minden tagjára több hash-keresés jut; normál játékban is minden broadcastnál fut.
+- ~~`VisibilityService::GetEntitiesInRange`: a `PushUnique` lineáris keresés (O(k²)), és a 9-sectoros snapshot
+  minden tagjára több hash-keresés jut; normál játékban is minden broadcastnál fut.~~ Javítva:
+  [server_range_query_2026-10-31.md](server_range_query_2026-10-31.md).
 - `CleanupCombatReferences` `CombatTarget`-söprése O(harcolók száma) minden destroynál; a teljes megoldás
   fordított index lenne.
 - `CombatSystem::ClearStone` a destroyolt metinkő tagjait `Dead()`-del öli meg leállításkor is (legacy).

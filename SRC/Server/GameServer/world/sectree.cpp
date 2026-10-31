@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
+#include <algorithm>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Base/attribute.h>
 #include "sectree_manager.h"
@@ -33,6 +34,12 @@ void Wake(entt::entity e) {
     if (type && type->value != CHAR_TYPE_WARP && type->value != CHAR_TYPE_GOTO)
         CHARACTER_MANAGER::instance().AddToStateList(e);
 }
+// Open SECTREE::VisitAround walks. They iterate member maps in place, so
+// no membership may change until they return.
+int readOnlyWalks = 0;
+void AssertNotWalking() {
+    assert(readOnlyWalks == 0 && "sector membership changed inside SECTREE::VisitAround");
+}
 }
 
 bool SectreeMember(entt::entity e, const SECTREE* tree) {
@@ -54,6 +61,7 @@ void SECTREE::OnPlacementDestroyed(entt::registry& reg, entt::entity e) {
     if (!tree) return;
     auto it = tree->m_entities.find(e);
     if (it == tree->m_entities.end()) return;
+    AssertNotWalking();
     const bool pc = it->second;
     tree->m_entities.erase(it);
     if (pc) tree->DecreasePC();
@@ -83,8 +91,24 @@ FCollectEntity SECTREE::SnapshotAround(int rings) const {
     }
     return result;
 }
+void SECTREE::VisitAround(void (*visit)(void*, entt::entity), void* context) const {
+    ++readOnlyWalks;
+    struct Close { ~Close() { --readOnlyWalks; } } close;
+    const auto members = [&](const SECTREE* tree) {
+        for (const auto& [e, pc] : tree->m_entities)
+            if (g_registry.valid(e)) visit(context, e);
+    };
+    // SnapshotAround(1) order: this sector, then each distinct neighbour.
+    members(this);
+    for (auto it = m_neighbor_list.begin(); it != m_neighbor_list.end(); ++it) {
+        const SECTREE* neighbor = *it;
+        if (neighbor && neighbor != this && std::find(m_neighbor_list.begin(), it, neighbor) == it)
+            members(neighbor);
+    }
+}
 void SECTREE::Destroy() {
     if (m_destroying) return;
+    AssertNotWalking();
     m_destroying = true;
     const auto members = m_entities;
     for (const auto& [e, pc] : members) {
@@ -179,6 +203,7 @@ bool SECTREE::InsertEntityImpl(entt::entity e, const std::function<bool()>& comm
     const bool pc = g_registry.all_of<ecs::TagPC>(e);
     const auto position = g_registry.get<ecs::Position>(e);
     const auto map = g_registry.get<ecs::MapIndex>(e).value;
+    AssertNotWalking();
     const bool inserted = m_entities.emplace(e, pc).second;
     if (!inserted) return false;
     // Reserve membership storage before the companion's first resource write.
@@ -214,6 +239,7 @@ void SECTREE::RemoveEntity(entt::entity e) {
     if (!action.entered) return;
     const auto it = m_entities.find(e);
     if (it == m_entities.end()) return;
+    AssertNotWalking();
     const bool pc = it->second;
     m_entities.erase(it);
     if (g_registry.valid(e) && ecs::SectorOf(g_registry, e) == this) {

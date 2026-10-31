@@ -66,6 +66,23 @@ class SECTREE
         FCollectEntity SnapshotAround(int rings = 1) const;
         void Collect(FCollectEntity& out) const;
         template <class F> void ForEachAround(F& func) { auto list = SnapshotAround(); list.ForEach(func); }
+        // Read-only walk: the same members, in the same order, as ForEachAround,
+        // without the snapshot copy and the per-member SectreeMember() lookups.
+        // No revalidation is needed: a member always resolves to the sector that
+        // lists it, because InsertEntityImpl moves the listing and the placement
+        // together and only an item commit callback runs in between. The callback
+        // must not insert, move, remove or destroy any sector member, since that
+        // would invalidate the walk (asserted). Use ForEachAround for callbacks
+        // that can.
+        template <class F> void VisitAround(F&& func) const {
+            auto* target = std::addressof(func);
+            using Target = std::remove_pointer_t<decltype(target)>;
+            VisitAround([](void* context, entt::entity e) { (*static_cast<Target*>(context))(e); },
+                const_cast<void*>(static_cast<const void*>(target)));
+        }
+        // The walk itself, one plain function call per member; kept out of line
+        // so it has a single implementation that test doubles can replace.
+        void VisitAround(void (*visit)(void* context, entt::entity entity), void* context) const;
 #ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
         template <class F> void ForEachAroundPlus(F& func, int rings = 1) {
             auto list = SnapshotAround(rings); list.ForEach(func);
