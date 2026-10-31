@@ -1,4 +1,0 @@
-#include "resource.h"
-
-IDB_SPLASH_IMAGE   RCDATA   "Anti_Cheat_Banner_V2.jpg"
-IDR_IXAC_UPDATER   RCDATA   "IXAC_Updater.exe"

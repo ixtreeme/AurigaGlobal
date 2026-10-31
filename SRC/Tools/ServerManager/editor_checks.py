@@ -65,8 +65,7 @@ def native_program(name):
     # same binaries that are later included in the distributable bundle.
     choices = [base / 'validators' / (name + suffix)]
     repo = base.parents[2]
-    folder = 'Tools/QC' if name == 'QC' else 'Server/GameServer'
-    choices += [repo / 'build/SRC' / folder / config / (name + suffix)
+    choices += [repo / 'build/SRC/Server/GameServer' / config / (name + suffix)
                 for config in ('RelWithDebInfo', 'Release', 'Debug', '')]
     return next((p for p in choices if p.is_file()), None)
 

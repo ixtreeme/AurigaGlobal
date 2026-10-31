@@ -4,9 +4,8 @@
 
 A GameServer az ellenőrzött Lua 5.5.1 forrást használja, a vendorizált
 `SRC/3rd/LUA55` könyvtárból. A forrás eredete, SHA256 összege és a hivatalos
-hibajavítások az `UPSTREAM.md` fájlban találhatók. A régi VM kizárólag az
-opcionális történeti QC összehasonlító eszközhöz tartozik. Ez alapból nem épül;
-összehasonlításhoz `-DAURIGA_BUILD_LEGACY_QC=ON` kapcsolóval engedélyezhető.
+hibajavítások az `UPSTREAM.md` fájlban találhatók. A régi Lua 5.0 VM, a QC
+quest-fordító és a Pre_QC előfeldolgozó kikerült a forrásfából (2026-10-31).
 
 Induláskor a szerver a beállított questmappa `quest_list` fájlját olvassa.
 Minden aktív sor egy relatív forrásútvonal. A `quest … state … when … begin`
