@@ -99,7 +99,8 @@ bool ValidItemOwner(ItemOwner) noexcept;
 bool ValidItemStorage(const ItemStorageLayout&) noexcept;
 // Phase-one persistence deliberately refuses categories whose additional
 // lifetime/pet/tool/etc. state is not represented here. Never zero-fill them.
-bool SupportsPersistentItem(const ItemCatalogEntry&) noexcept;
+// Recovery consumables carry none, except the automatic kind's charge.
+bool SupportsPersistentItem(const ItemCatalog&,const ItemCatalogEntry&) noexcept;
 std::expected<void,ItemPersistenceError> ValidatePersistentItem(const ItemCatalog&,const PersistentItem&);
 std::expected<std::vector<std::uint32_t>,ItemPersistenceError> OccupiedItemCells(
     const ItemCatalog&,const PersistentItem&,const ItemStorageLayout&);
@@ -140,4 +141,9 @@ std::expected<ItemCommit,ItemPersistenceError> MakeEquipCommit(const ItemCatalog
 // Takes an equipped item off into free inventory cells.
 std::expected<ItemCommit,ItemPersistenceError> MakeUnequipCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,ItemPlacement target);
+// Uses up `units` of one inventory item (F4 C5). The last unit destroys it:
+// a tombstone with no count and no placement. The effect of the use is the
+// caller's own plan (e.g. PlanInstantRecovery); this only writes the item.
+std::expected<ItemCommit,ItemPersistenceError> MakeConsumeCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,std::uint32_t units);
 } // namespace auriga::item

@@ -416,6 +416,13 @@ typedef struct command_typed_item_move
 	uint32_t	dwCell;
 } TPacketCGTypedItemMove;
 
+// Typed item system (F4 C5): use one typed item (instant recovery so far).
+typedef struct command_typed_item_use
+{
+	uint8_t		bHeader;
+	uint64_t	qwItemId;
+} TPacketCGTypedItemUse;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

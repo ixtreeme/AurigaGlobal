@@ -158,6 +158,41 @@ int main(int argc, char** argv)
 				wait();
 				Check(got && got->write && got->state && got->state->items.at(0).placement == ItemPlacement { ItemStorageKind::Inventory, 1, 11 }, "taken off and reloaded");
 			}
+			// C5: a flask's units are spent through the store; the last one leaves no live item.
+			{
+				const ItemOwner drinker { ItemOwnerKind::Character, 7005 };
+				const ItemStorageLayout pack { { drinker, ItemStorageKind::Inventory, 1 }, 5, 9, 4 };
+				const ItemWallet purse { drinker, WalletCurrency::Gold, 1, 0 };
+				auto made = persistence::ProvisionOwner(importer, *catalog, drinker, std::span(&pack, 1), std::span(&purse, 1));
+				Check(made && *made, "drinker provisioned");
+				const auto session = persistence::ClaimOwnerSession(importer, *catalog, drinker);
+				Check(session.has_value(), "drinker session claimed");
+				auto owned = persistence::LoadItemOwner(importer, *catalog, drinker, *session);
+				PersistentItem flask { ItemInstanceId::Create(0x00C5000000000001ULL).value(), ItemKey::Create(5, 1).value(), drinker };
+				flask.count = 2; flask.placement = ItemPlacement { ItemStorageKind::Inventory, 1, 6 };
+				ItemCommit grant; grant.operationId.fill(0x51); grant.catalogRevision = catalog->Revision(); grant.catalogHash = catalog->ContentHash();
+				grant.kind = ItemOperationKind::Grant; grant.owners = { owned->fence }; grant.storages = { pack };
+				grant.items.push_back({ std::nullopt, flask }); grant.outcomeCode = 1; grant.result = { 1 };
+				Check(persistence::CommitItems(importer, *catalog, grant).has_value(), "grant for the consume test");
+				auto before = persistence::LoadItemOwner(importer, *catalog, drinker, *session);
+				Check(before && before->items.size() == 1 && before->items[0].count == 2, "granted flask loads");
+				std::array<std::uint8_t, 16> op {}; op.fill(0x52);
+				auto sip = MakeConsumeCommit(*catalog, op, before->fence, before->storages, before->items, flask.id, 1);
+				Check(sip.has_value(), "consume commit built");
+				std::optional<runtime::CommitOutcome> got;
+				const auto wait = [&] { for (int spins = 0; !got && spins < 1000; ++spins) { store.Drain(); std::this_thread::sleep_for(std::chrono::milliseconds(10)); } };
+				Check(runtime::RequestCommit(drinker, *session, *sip, [&](runtime::CommitOutcome outcome) { got = std::move(outcome); }), "consume not queued");
+				wait();
+				Check(got && got->write && got->state && got->state->items.at(0).count == 1, "one unit spent and reloaded");
+				op.fill(0x53);
+				auto last = MakeConsumeCommit(*catalog, op, got->state->fence, got->state->storages, got->state->items, flask.id, 1);
+				Check(last.has_value(), "last consume commit built");
+				got.reset();
+				Check(runtime::RequestCommit(drinker, *session, *last, [&](runtime::CommitOutcome outcome) { got = std::move(outcome); }), "last consume not queued");
+				wait();
+				Check(got && got->write && got->state && std::ranges::none_of(got->state->items, [](const PersistentItem& i) { return !i.destroyed; }),
+				      "the last unit left no live flask");
+			}
 			// Queued work is finished at stop; its completion is dropped, not run late.
 			bool ran = false, applied = false;
 			Check(store.Submit([&ran, &applied](CAsyncSQL&, const ItemCatalog&) { ran = true; return runtime::ItemStore::Completion { [&applied] { applied = true; } }; }), "work refused");

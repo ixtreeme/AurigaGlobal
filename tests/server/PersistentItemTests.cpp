@@ -1,4 +1,5 @@
 #include "PersistentItemFixture.hpp"
+#include <item/Consumables.hpp>
 #include <iostream>
 #include <source_location>
 #include <stdexcept>
@@ -149,6 +150,40 @@ void Run()
         auto small=items;small[3].placement=ItemPlacement{ItemStorageKind::Inventory,1,44};small[0].placement=ItemPlacement{ItemStorageKind::Equipment,1,0};small[0].boundTo=f::Character();
         auto tight=MakeEquipCommit(strict,op,fence,bags,small,spare.id,hero);
         Check(!tight && tight.error()==ItemPersistenceError::InvalidPlacement,"a worn item that does not fit back blocks the swap");
+    }
+    // F4 C5: using up units of an inventory item; the last unit destroys it.
+    {
+        std::array<std::uint8_t,16> op{};op[0]=0xC5;
+        PersistentItem potion{ItemInstanceId::Create(300).value(),item_catalog_fixture::InstantPotion(),f::Character()};
+        potion.count=5;potion.placement=ItemPlacement{ItemStorageKind::Inventory,1,30};
+        const std::vector<PersistentItem> items{f::Sword(),f::Leather(),potion};
+        const std::vector<ItemStorageLayout> bags{f::Inventory()};
+        Check(ValidatePersistentItem(c,potion).has_value(),"an instant potion is a persistent item");
+        auto automatic=potion;automatic.key=item_catalog_fixture::AutomaticPotion();automatic.count=1;
+        Check(ValidatePersistentItem(c,automatic).error()==ItemPersistenceError::UnsupportedState,"the automatic potion's charge is not stored yet");
+        auto sip=MakeConsumeCommit(c,op,fence,bags,items,potion.id,1);
+        Check(sip && sip->kind==ItemOperationKind::Consume && sip->items.size()==1 && sip->items[0].after.count==4 &&
+              sip->items[0].after.placement==potion.placement && sip->items[0].after.revision==potion.revision+1 &&
+              sip->storages.size()==1,"one unit used");
+        auto last=MakeConsumeCommit(c,op,fence,bags,items,potion.id,5);
+        Check(last && last->items[0].after.destroyed && !last->items[0].after.count && !last->items[0].after.placement,"the last unit destroys the item");
+        Check(MakeConsumeCommit(c,op,fence,bags,items,potion.id,6).error()==ItemPersistenceError::InvalidChange,"more units than carried");
+        Check(MakeConsumeCommit(c,op,fence,bags,items,potion.id,0).error()==ItemPersistenceError::InvalidChange,"zero units");
+        Check(MakeConsumeCommit(c,{},fence,bags,items,potion.id,1).error()==ItemPersistenceError::InvalidOperation,"null operation id");
+        Check(MakeConsumeCommit(c,op,fence,bags,items,ItemInstanceId::Create(77).value(),1).error()==ItemPersistenceError::MissingItem,"missing item");
+        auto worn=items;worn[0].placement=ItemPlacement{ItemStorageKind::Equipment,1,0};
+        const std::vector<ItemStorageLayout> withGear{f::Inventory(),{{f::Character(),ItemStorageKind::Equipment,1},8,1,1}};
+        Check(MakeConsumeCommit(c,op,fence,withGear,worn,f::Sword().id,1).error()==ItemPersistenceError::UnsupportedState,"an equipped item is not used up");
+        Check(MakeConsumeCommit(c,op,fence,{},items,potion.id,1).error()==ItemPersistenceError::InvalidStorage,"no storage layout");
+        auto foreign=fence;foreign.owner.id++;
+        Check(!MakeConsumeCommit(c,op,foreign,bags,items,potion.id,1),"another owner's item refused");
+        // The planner and the builder together: the plan's units are what is spent.
+        InstantRecoveryAdmission who;who.pools={1000000,3000000,0,1000000};who.context=RecoveryContext::World;
+        who.level=10;who.availableUnits=potion.count;
+        auto plan=PlanInstantRecovery(c,potion.key,who);
+        Check(plan && plan->hpRestoredRaw>0 && plan->unitsToConsume==1,"the fixture potion heals");
+        auto spent=MakeConsumeCommit(c,op,fence,bags,items,potion.id,plan->unitsToConsume);
+        Check(spent && spent->items[0].after.count==4,"the plan's units are spent");
     }
 }
 }

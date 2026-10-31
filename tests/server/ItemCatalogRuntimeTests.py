@@ -49,6 +49,11 @@ def main():
         tables = catalog.Catalog(packet).apply(document)
         catalog.run_tool(dict(action='commit', connection=admin, tables=tables, expected_hash=packet['hash']), packet['columns'], args.catalog_tool)
         packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
+        # C5: an instant recovery flask (5/1) for the consume test.
+        document = catalog.Catalog(packet).new(5)
+        tables = catalog.Catalog(packet).apply(document)
+        catalog.run_tool(dict(action='commit', connection=admin, tables=tables, expected_hash=packet['hash']), packet['columns'], args.catalog_tool)
+        packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
         if len(packet['hash']) != 64 or any(c not in '0123456789abcdef' for c in packet['hash']): raise SystemExit('unexpected hash')
         sandbox.client.query("INSERT INTO player.item_persistence_format VALUES(1,1,1,UNHEX('" + packet['hash'] + "'))")
         stdin = '\n'.join([str(sandbox.port), sandbox.password, str(len(packet['tables']['item_base'])), packet['hash']]) + '\n'

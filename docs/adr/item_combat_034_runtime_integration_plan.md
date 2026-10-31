@@ -265,6 +265,72 @@ cellákat, és két tárgy sosem fedi egymást.
 - `item_catalog_runtime_mariadb`: 39 ellenőrzés (+9: felszerelés, majd
   levétel a tárolón át, újratöltéssel).
 
+## C5 — azonnali gyógyital használata (2026-10-31)
+
+**Perzisztencia.** A fogyasztható kategóriából eddig csak a foglalat- és
+bónuszszolgáltatás tekercsei voltak tárolhatók. Most a gyógyitalok is azok,
+ha a profiljuk azonnali, tartalék vagy folyamatos: ezek a karakterre hatnak,
+a tárgynak nincs saját állapota. Az automatikus gyógyital maradék töltetét a
+modell még nem tárolja, ezért az továbbra is `UnsupportedState`. A
+`SupportsPersistentItem` ehhez a katalógust is megkapja.
+
+**`MakeConsumeCommit`** (`ItemOperationKind::Consume`).
+- Egy inventory-tárgyból `units` darabot használ el, a revízió eggyel nő.
+- Az utolsó darab megszünteti a tárgyat: darabszám és hely nélküli nyom
+  marad utána, ahogy a finomítás alapanyagainál.
+- **Elutasítja:**
+  - a nulla vagy a meglévőnél több darabot;
+  - a felszerelt tárgyat;
+  - a hiányzó tárgyat, tárolót vagy tulajdonost;
+  - a nulla műveletazonosítót.
+- A használat hatását nem számolja: azt a hívó saját terve adja.
+
+**Szerver** (`GameServer/item/TypedItemOps.*`).
+- **Új csomag:** `CG_TYPED_ITEM_USE` (226), 9 bájt (`static_assert`):
+  tárgyazonosító.
+- **Döntés:** a `PlanInstantRecovery` dönt (IC-009), a futó karakter
+  állapotából. A bemenet:
+  - HP és SP raw-ban (1000 raw = 1 pont);
+  - potion-bónusz: `POINT_POTION_BONUS` × 100 bp;
+  - kontextus: aréna-pálya → Arena, háborús pálya → GuildWar,
+    PvP-párbaj (`CPVPManager::IsFighting`) → Duel, különben World;
+  - PvP és harc (`POS_FIGHTING`);
+  - szint, kaszt, nem, darabszám;
+  - aréna-kvóta: az `arena_potion_limit*` eseményflagek és a potion-limit
+    alapján, ahogy a régi `USE_POTION_NODELAY`.
+- **Sorrend:**
+  1. a tárolón át elfogy a darab;
+  2. csak siker után jön a gyógyítás (`PointSystem::Change`, `SE_HPUP_RED`
+     és `SE_SPUP_BLUE` effekt), a cooldown és az aréna-kvóta levonása.
+
+  A gyógyítás a karakter akkori hiányára van korlátozva. Aki közben
+  meghalt, nem gyógyul, de a darab, a cooldown és a kvóta elmegy.
+- **Cooldown:** az `ecs::TypedItemCooldowns` tárolja, csak futás közben;
+  kijelentkezéskor elvész.
+- **Tesztparancs:** `/typed_use <inventory cella>`.
+
+**Ellenőrzés.**
+- `PersistentItemTests`: 125 ellenőrzés (+13). Lefedi:
+  - részleges és utolsó darab;
+  - túl sok és nulla darab, hiányzó, idegen és felszerelt tárgy;
+  - tároló nélküli hívás;
+  - az automatikus ital tilalmát;
+  - a tervező és az építő együttes útját.
+- Negatív kontroll: ha az utolsó darab nem szünteti meg a tárgyat, elbukik.
+- `item_catalog_runtime_mariadb`: 49 ellenőrzés (+10). A próbapad-katalógus
+  egy azonnali italt is kap (`.new(5)`). Két fogyasztás megy a tárolón át,
+  mindkettő újratöltéssel; a második után nem marad élő példány.
+
+**Nyitott.**
+- **Unity:** a `CG_TYPED_ITEM_USE` írója és a használat gombja (F5).
+- **Háborús pálya:** a potion-statisztika (`CWarMap::UsePotion`) még a régi
+  tárgyat várja.
+- **Más hatások:** tartalék, folyamatos és automatikus ital, időzített és
+  kapcsolós hatás. Mindegyikhez saját futási állapot és ütemező kell.
+- **Mentés:** a cooldown kijelentkezésen át nem maradt meg.
+- **Tartalom:** a helyi `protos` katalógusban még nincs gyógyital. A
+  katalógusszerkesztővel (Új tárgytípus, fogyasztható) lehet létrehozni.
+
 ## Határ
 
 - **Helyi csomag (2026-10-30): bekapcsolva.**
@@ -288,7 +354,8 @@ cellákat, és két tárgy sosem fedi egymást.
     2. el kell indítani a szervert;
     3. a módosított Unity-klienssel be kell lépni, majd megnyomni a
        Ctrl+Shift+I-t.
-- **A műveletek még nem az új rendszeren futnak.** Az áthelyezés,
-  felszerelés stb. a C3-tól kezdve kerül át.
+- **Az új rendszeren futó műveletek:** áthelyezés (C3), felszerelés és
+  levétel (C4), azonnali gyógyital (C5). A többi használat, a fejlesztés, a
+  drop, a bolt és a trade még a régi úton megy.
 - **FreeBSD:** a GameServer mostantól linkeli az `AurigaItemCatalogSql`
   könyvtárat. A FreeBSD-build ezzel még nincs kipróbálva (F).

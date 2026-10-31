@@ -16,6 +16,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <thread>
 
 struct GameSqlConfig;
@@ -98,4 +99,10 @@ struct TypedItems
 // One typed operation of this character is in the item store; a second one
 // waits for its answer instead of building on a state about to change.
 struct TypedItemBusy {};
+// When each consumable cooldown of this character ends, by cooldown profile,
+// in steady-clock milliseconds. Runtime only: not saved across logins yet.
+struct TypedItemCooldowns
+{
+	std::unordered_map<std::uint32_t, std::int64_t> readyAtMs;
+};
 } // namespace ecs

@@ -56,10 +56,15 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
         std::uint64_t{l.columns}*l.rows*l.pages<=65536 &&
         (l.storage.kind!=ItemStorageKind::Equipment || (l.rows==1 && l.pages==1));
 }
-bool SupportsPersistentItem(const ItemCatalogEntry& e) noexcept
+bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
     if(const auto* consumable=std::get_if<ItemConsumableRow>(&e.category))
-        return consumable->socketServiceProfile.has_value() || consumable->attributeServiceProfile.has_value();
+    {
+        if(consumable->socketServiceProfile.has_value() || consumable->attributeServiceProfile.has_value())return true;
+        // Instant, reserve and periodic recovery act on the character, not the item.
+        const auto* recovery=consumable->recoveryProfile ? c.FindRecovery(consumable->recoveryProfile) : nullptr;
+        return recovery && !std::holds_alternative<AutomaticRecovery>(recovery->Data().effect);
+    }
     return std::holds_alternative<ItemWeaponRow>(e.category) || std::holds_alternative<ItemArmorRow>(e.category) ||
         std::holds_alternative<ItemAccessoryRow>(e.category) || std::holds_alternative<ItemMaterialRow>(e.category) ||
         std::holds_alternative<ItemSocketStoneRow>(e.category) || std::holds_alternative<ItemCurrencyTokenRow>(e.category) ||
@@ -69,7 +74,7 @@ bool SupportsPersistentItem(const ItemCatalogEntry& e) noexcept
 std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const PersistentItem& p)
 {
     const auto* e=c.Find(p.key);if(!e)return std::unexpected(E::MissingItem);
-    if(!SupportsPersistentItem(*e))return std::unexpected(E::UnsupportedState);
+    if(!SupportsPersistentItem(c,*e))return std::unexpected(E::UnsupportedState);
     if(!ValidItemOwner(p.owner) || !p.revision || (p.boundTo && !ValidItemOwner(*p.boundTo)) ||
        (e->base.binding==BindingPolicy::OnAcquire && !p.boundTo) ||
        (p.destroyed ? (p.count || p.placement.has_value()) : (!p.count || p.count>e->base.maxStack || !p.placement)))return std::unexpected(E::InvalidItem);
@@ -374,6 +379,23 @@ std::expected<ItemCommit,E> MakeEquipCommit(const ItemCatalog& c,std::array<std:
         changes.push_back({*occupant,back});
     }
     return Relocate(c,operationId,owner,storages,inventory,std::move(changes));
+}
+std::expected<ItemCommit,E> MakeConsumeCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,std::uint32_t units)
+{
+    if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
+    const auto* source=Placed(inventory,owner,id);if(!source)return std::unexpected(E::MissingItem);
+    if(source->placement->kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
+    if(!units || units>source->count)return std::unexpected(E::InvalidChange);
+    const auto layout=std::ranges::find_if(storages,[&](const ItemStorageLayout& l){
+        return l.storage==ItemStorage{owner.owner,source->placement->kind,source->placement->storageId};});
+    if(layout==storages.end())return std::unexpected(E::InvalidStorage);
+    auto after=*source;after.revision++;after.count-=units;
+    if(!after.count){after.destroyed=true;after.placement.reset();}
+    ItemCommit r;r.operationId=operationId;r.catalogRevision=c.Revision();r.catalogHash=c.ContentHash();r.kind=ItemOperationKind::Consume;
+    r.owners={owner};r.storages={*layout};r.items={{*source,after}};r.outcomeCode=1;r.result={static_cast<std::uint8_t>(ItemOperationKind::Consume)};
+    if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
+    return r;
 }
 std::expected<ItemCommit,E> MakeUnequipCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,ItemPlacement target)
