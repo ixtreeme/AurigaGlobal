@@ -34,6 +34,25 @@ class PackagingTests(unittest.TestCase):
                 self.assertEqual((internal / 'validators' / name).read_bytes(), (native / name).read_bytes())
                 self.assertNotEqual((python / name).read_bytes(), (native / name).read_bytes())
 
+    def test_python_without_the_x64_suffix_keeps_both_pairs(self):
+        # CPython 3.14 ships libcrypto-3.dll; the native validators keep -x64.
+        with tempfile.TemporaryDirectory(prefix='auriga-openssl-bundle-') as temp:
+            root = Path(temp)
+            python, native, bundle = root / 'python', root / 'native', root / 'bundle'
+            internal = bundle / '_internal'
+            for directory in (python, native, internal / 'validators'):
+                directory.mkdir(parents=True)
+            for name in ('libcrypto-3.dll', 'libssl-3.dll'):
+                (python / name).write_bytes(('python-' + name).encode())
+            for name in ('libcrypto-3-x64.dll', 'libssl-3-x64.dll'):
+                (native / name).write_bytes(('native-' + name).encode())
+            build_manager.fix_windows_openssl(bundle, native, python)
+            for name in ('libcrypto-3.dll', 'libssl-3.dll'):
+                self.assertEqual((internal / name).read_bytes(), (python / name).read_bytes())
+            for name in ('libcrypto-3-x64.dll', 'libssl-3-x64.dll'):
+                self.assertEqual((internal / 'validators' / name).read_bytes(), (native / name).read_bytes())
+                self.assertFalse((internal / name).exists(), 'a native DLL leaked beside the Python modules')
+
     def test_missing_python_dependency_does_not_partly_change_the_bundle(self):
         with tempfile.TemporaryDirectory(prefix='auriga-openssl-bundle-') as temp:
             root = Path(temp)

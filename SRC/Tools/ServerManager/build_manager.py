@@ -36,6 +36,12 @@ def fix_windows_icu(bundle):
         print('QT_ICU_FIXED: using the Windows system ICU API')
 
 
+# CPython's own OpenSSL pair: python.org builds up to 3.13 name it with an
+# -x64 suffix, 3.14 drops the suffix. The native validators (vcpkg) keep it.
+PYTHON_OPENSSL_PAIRS = (('libcrypto-3-x64.dll', 'libssl-3-x64.dll'), ('libcrypto-3.dll', 'libssl-3.dll'))
+NATIVE_OPENSSL = ('libcrypto-3-x64.dll', 'libssl-3-x64.dll')
+
+
 def fix_windows_openssl(bundle, validators, python_dlls=None):
     # The native validator and CPython can use different OpenSSL builds with
     # identical DLL names. Keep each pair beside its own executable/module.
@@ -45,12 +51,16 @@ def fix_windows_openssl(bundle, validators, python_dlls=None):
     import ssl
     python_dlls = Path(python_dlls or Path(_ssl.__file__).resolve().parent)
     internal = Path(bundle).resolve() / '_internal'
-    names = ('libcrypto-3-x64.dll', 'libssl-3-x64.dll')
-    for name in names:
-        if not (python_dlls / name).is_file():
-            raise ValueError('Missing CPython OpenSSL dependency: ' + name)
+    # Check before copying anything, so a missing DLL leaves the bundle as it was.
+    found = [pair for pair in PYTHON_OPENSSL_PAIRS if any((python_dlls / name).is_file() for name in pair)]
+    names = next((pair for pair in found if all((python_dlls / name).is_file() for name in pair)), None)
+    if names is None:
+        pair = (found or PYTHON_OPENSSL_PAIRS)[0]
+        raise ValueError('Missing CPython OpenSSL dependency: '
+                         + next(name for name in pair if not (python_dlls / name).is_file()))
     for name in names:
         shutil.copy2(python_dlls / name, internal / name)
+    for name in NATIVE_OPENSSL:
         native = Path(validators) / name
         if native.is_file():
             shutil.copy2(native, internal / 'validators' / name)
