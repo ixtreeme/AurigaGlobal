@@ -13,13 +13,13 @@ az EXE mellett levő `_internal` tartalmazza a Qt6 és Python függőségeit.
 Külön Qt-/Python-telepítés nem kell az alkalmazás futtatásához.
 
 Induláskor a kezelő a mellette található szervercsomagot választja; másik
-csomag a **Helyi szervermappa…** gombbal nyitható meg. A választást és az
+csomag a **Szervermappa…** gombbal nyitható meg. A választást és az
 ablakméretet a felhasználó Qt-beállításaiban tárolja; jelszavakat nem tesz oda.
 
 ## Helyi és távoli célgép
 
-Az ablak tetején a **Kezelt szerver** választó tartalmazza a **Helyi szerver**
-lehetőséget és a mentett SSH-profilokat. A nagy **HELYI / TÁVOLI** jelzés,
+Az ablak tetején a szerverválasztó tartalmazza a **Helyi szerver**
+lehetőséget és a mentett SSH-profilokat. A **HELYI / TÁVOLI** jelzés,
 a célgép címe és a szervermappa minden oldalon látható. A választás az egész
 alkalmazásra érvényes:
 
@@ -88,10 +88,10 @@ nem mentett kapcsolati útvonalnál az app előbb a megfelelő profil kiválaszt
   `db/backup` mentést és a `tools/mariadb` futtatókörnyezetet használja.
   Ellenőrzi a teljes importot, és elutasítja meglévő adatok felülírását.
   Futó szervernél:
-  - A **Kijelölt core-ok indítása** és a **Kijelölt core-ok leállítása**
+  - A **Kijelöltek indítása** és a **Kijelöltek leállítása**
     gomb a táblában kijelölt game core-okat külön indítja vagy állítja le.
     A leállítás megerősítést kér, mert a rajta lévő játékosok kilépnek.
-  - A **Kijelölt csatornák indítása** a bejelölt csatornák core-jait
+  - A **Csatornák indítása** a bejelölt csatornák core-jait
     indítja a futó szerverhez.
   - A Database és a LoginServer a teljes stackhez tartozik.
   - Ha a szervermappa `manage.py` fájlja régebbi, a gombok tiltottak, és
@@ -133,6 +133,97 @@ az ablakból. A műveleti napló alapból összecsukott, ellenőrzéskor és men
 automatikusan kinyílik; kézzel a **Műveleti napló** gombbal nyitható/csukható.
 Ctrl+S az éppen szerkesztett táblázatcellát is menti. Hibás számérték blokkolja
 a mentést; az űrlap a javítandó bevitelt kategóriaváltáskor is megőrzi.
+
+## Áttekintés és navigáció — 2026-10-30
+
+Az oldalsáv a szerkesztési, üzemeltetési és tárgykezelési oldalakat külön
+csoportokban mutatja. A felső sávban minden oldalon látható a kiválasztott
+szerver és a mappája. Az egységes téma minden szerkesztőre és eszközre érvényes.
+
+Az Áttekintés három kártyán jelzi a szerver, a game core-ok és az adatbázis
+állapotát. Az alattuk látható teendősáv leírja az indítás akadályát, és közvetlen
+gombot ad a mentésekhez, a helyi telepítési eredményhez vagy a távoli telepítési
+eszközökhöz, az SQL-beállításokhoz és a naplóhoz. A folyamatban lévő visszaállítás és telepítés az indítási műveleteket
+futó szervernél is letiltja.
+
+A **Szervervezérlés** részben választhatók a csatornák. A fő gomb leállított
+szervernél **Szerver indítása**, futó szervernél **Csatornák indítása**.
+Csatornakijelölés nélkül az indítás tiltott; a kijelölést pipa és szöveges
+összesítő is mutatja. A teljes szerver leállítása külön gombot kapott.
+
+A **Folyamatok** lista név vagy csatorna szerint kereshető, és futó vagy
+leállított példányokra szűrhető. Több sor a Ctrl billentyűvel jelölhető ki.
+A frissítés a példány neve alapján őrzi meg a kijelölést; a szűréssel elrejtett
+sorok kijelölése megszűnik, így a vezérlés csak látható sorokra vonatkozik.
+A Database és a LoginServer a teljes szerverrel együtt vezérelhető.
+
+A ritkább műveletek az összecsukható **Karbantartás és ellenőrzések** részben
+találhatók: adatbázis-előkészítés, fájl- és SQL-ellenőrzés, előkészítés,
+MariaDB-leállítás és questfrissítés. Kis ablakban a nézet görgethető.
+Az indítási tiltás magyarázata az összecsukott eszközök mellett is látható.
+
+Az új felület interakcióit a `tests/server/ServerManagerDashboardTests.py`
+ellenőrzi izolált Qt-beállításokkal, szerver- és adatbázisindítás nélkül.
+
+### Tárgykatalógus és tárgypróbapad — részletes munkafolyamat
+
+A **Tárgykatalógus** egy tárgytípus szabályait szerkeszti: tulajdonságait,
+használatát, fejlesztését, receptjeit és bónuszszabályait. A **Tárgypróbapad**
+egy kiválasztott karakter konkrét tárgypéldányaival végez műveleteket.
+Az oldalsáv többi elnevezése is pontosabb: **Szerverállapot**,
+**Szerverbeállítások**, **Adatfájlok**, **Küldetések és Lua**,
+**Szervernaplók**, **Távoli elérés** és **Biztonsági mentések**.
+
+A katalógus böngészése és a tárgy szerkesztése külön munkanézet.
+Egy kattintás kijelöli a sort és összefoglalót ad; dupla kattintás vagy a
+**Szerkesztés megnyitása** gomb nyitja meg a tárgyat. A kereső a kódból képzett
+elnevezést, a kategóriát, a tartalomkódot, a fordítási kulcsot és az azonosítót
+is figyelembe veszi. Az elnevezés a belső kód olvasható változata; a kezelő
+nem állítja róla, hogy a kliens fordítása. A játékbeli név és leírás továbbra
+is kliensoldali fordítási kulcsból származik.
+
+Az **Új tárgytípus…** ablakban válassz kategóriát, ahol elérhető, tárgyfajtát,
+belső elnevezést és szükséges karakterszintet. Az elnevezésből ékezet nélküli
+tartalomkód készül, amely kézzel felülírható. A foglalt vagy hibás kódot az
+ablak helyben jelzi. A **Piszkozat létrehozása** szerkeszthető tárgyat nyit;
+az adatbázisba csak az **Új tárgytípus mentése** ír. A létrehozás mind a 18
+kategóriában a modell ellenőrzött alapértékeit használja.
+
+Az **Új tárgy ez alapján…** meglévő, mentett tárgyból készít piszkozatot.
+Új azonosítót és egyedi kódot kap, a többi tulajdonságot átveszi. A
+név-/leíráskulcs, ikon és modell is öröklődik; ezeket szükség szerint az
+**Azonosítók és megjelenés** szakaszban módosítsd.
+
+A szerkesztő bal oldalán végig olvashatók a szakaszok. Az **Áttekintés**
+mondatokban mutatja a működést, követelményt, méretet, harci értékeket és
+fejlesztést. A hétköznapi alapbeállítások, a típusfüggő működés, a használati
+szabályok, a fejlesztés, az állandó és a véletlen bónuszok, valamint a
+technikai azonosítók elkülönülnek. A **Mentés áttekintése** a mentett és az új
+értékeket egymás mellett, a megjelenített mértékegységekben mutatja. Hibás
+mező esetén a szerkesztő a javítandó szakaszhoz vezet és kiemeli a bevitelt.
+
+A **Katalógus** gomb megőrzi a megnyitott piszkozatot. A szűrés, keresés és
+visszatérés nem dobja el a szerkesztést; a **Mentetlen piszkozat folytatása**
+gomb visszavisz hozzá. Másik tárgy megnyitása vagy az alkalmazás bezárása
+egyértelműen megnevezett döntést kér a mentetlen szerkesztésről. Ctrl+S csak
+a látható tárgyszerkesztőt menti. Futó játékszervernél vagy hiányzó helyi
+adatbázisnál a mentés oka szövegesen is látszik.
+
+A **Fejlesztési értékek kitöltése** ablak élő előnézetet ad. Csak az
+**Alkalmazás a piszkozatban** fogadja el; a **Mégse**, az Esc és az ablak
+bezárása visszaállítja a korábbi értékeket. A katalógusba ezután is külön
+mentés szükséges.
+
+A próbapad külön részekben mutatja a karakter előkészítését, a
+tárgypéldány készítését és a karakter leltárát. A példányazonosító a
+részletekben érhető el, a listában az olvasható elnevezés kap elsőbbséget.
+A törlő és visszaállító ablak konkrétan megnevezi a műveletet; alapértelmezett
+választása a **Mégse**. Valódi karakterrel végzett próbánál a karakter legyen
+kijelentkezve.
+
+Ellenőrzés: `tests/server/ItemWorkflowTests.py` a létrehozást, másolást,
+kódütközést, azonosítókimerülést, piszkozatvédelmet, előnézetet, a változások
+áttekintését és a biztonságos párbeszédeket vizsgálja adatbázisírás nélkül.
 
 ## Forráskódszerkesztő
 
@@ -836,11 +927,11 @@ felhasználói módosításai megmaradnak. A lecserélt GUI-fájlok a
 
 ## Tárgymásolás és mentésvédelem — 2026-10-28
 
-A **Tárgyak → Másolat új tárgyként** gomb a kijelölt, mentett prototípust
+A **Tárgykatalógus → Új tárgy ez alapján…** gomb a kijelölt, mentett tárgytípust
 új helyi azonosítóval és egyedi tartalomkóddal nyitja meg. A név-/leíráskulcs,
 megjelenés, alapadatok, fejlesztési görbe és bónuszok átvehetők. A másolat
 mentéséig az adatbázis nem változik; a forrástárgy profiljai módosításkor
-védettek maradnak. A még nem mentett másolatot az Elvetés gombbal eldobhatod.
+védettek maradnak. A még nem mentett másolatot a **Piszkozat eldobása…** gombbal zárhatod be.
 
 Ellenőrzés vagy mentés idejére a tárgyadatlap zárolódik, így a háttérművelet
 visszaolvasása nem írhat felül közben begépelt értékeket. A teljes +0…+255

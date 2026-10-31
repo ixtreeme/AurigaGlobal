@@ -1462,7 +1462,7 @@ class RefinementPanelTests(PageCase):
         self.assertEqual([l['physical_attack_gain_raw'] for l in reopened['levels']], ['0', '2000', '3500', '5000', '6500'])
         self.page.dirty = False
 
-    def test_fill_dialog_previews_live_keeps_on_close_and_reverts_on_request(self):
+    def test_fill_dialog_previews_live_and_only_applies_on_accept(self):
         from PySide6.QtCore import QTimer
         from PySide6.QtWidgets import QDialogButtonBox
         from item_page import FillDialog
@@ -1500,14 +1500,14 @@ class RefinementPanelTests(PageCase):
         panel.fill()
         self.assertEqual(seen['live'], expected)
         self.assertFalse(seen['dirty_while_open'])
-        self.assertEqual(sorted(seen['buttons']), ['Kész', 'Visszavonás'])
+        self.assertEqual(sorted(seen['buttons']), ['Alkalmazás a piszkozatban', 'Mégse'])
         self.assertEqual(labels(), original)
         self.assertFalse(self.page.dirty)
-        # Closing with the window's X (or Esc) keeps what the table shows.
+        # Closing with the window's X (or Esc) cancels the preview.
         interact(lambda dialog, box: dialog.close())
         panel.fill()
-        self.assertEqual(labels(), expected)
-        self.assertTrue(self.page.dirty)
+        self.assertEqual(labels(), original)
+        self.assertFalse(self.page.dirty)
         interact(lambda dialog, box: box.button(QDialogButtonBox.StandardButton.Ok).click(), step='2')
         panel.fill()
         expected = ['Fizikai támadás %%: %d %%' % value for value in range(15, 26, 2)]
@@ -1696,8 +1696,8 @@ class BenchPageTests(PageCase):
         self.assertEqual(page.summary.text(), '#990001 tesztkarakter • 1 234 567 Yang • 2 tárgy')
         self.assertIn('átvette', page.log.toPlainText())
         self.assertEqual(page.items.rowCount(), 2)
-        self.assertEqual(page.grid.item(0, 0).text(), 'new_item_1 ×9')
-        self.assertEqual((page.grid.item(1, 1).text(), page.grid.rowSpan(1, 1)), ('sword_iron', 2))
+        self.assertEqual(page.grid.item(0, 0).text(), 'Alapanyag #1 ×9')
+        self.assertEqual((page.grid.item(1, 1).text(), page.grid.rowSpan(1, 1)), ('Sword iron', 2))
         self.assertEqual(page.occupied(), {0, 6, 11})
         self.assertFalse(page.refine_button.isEnabled())
         page.items.selectRow(1)
@@ -1705,6 +1705,10 @@ class BenchPageTests(PageCase):
         self.assertTrue(page.refine_button.isEnabled()); self.assertFalse(page.attribute_button.isEnabled())
         page.grid.setCurrentCell(2, 3)
         self.assertEqual(page.grid_cell(), 13); self.assertTrue(page.move_button.isEnabled())
+        page.inventory_views.setCurrentIndex(1)
+        self.assertIsNone(page.grid_cell()); self.assertFalse(page.move_button.isEnabled(), 'hidden inventory destinations cannot be used')
+        page.inventory_views.setCurrentIndex(0)
+        self.assertTrue(page.move_button.isEnabled())
         page.grid.setCurrentCell(0, 0); self.assertFalse(page.move_button.isEnabled())   # occupied by the ore
         page.grid_clicked(0, 0); self.assertEqual(page.selected_item()['id'], ore['id'])
         recipe = next(r for r in page.cached.tables['refinement_recipe'] if r['source_local_id'] == str(keys[1][1]))
@@ -1728,9 +1732,9 @@ class BenchPageTests(PageCase):
         self.assertIn('Masik', page.log.toPlainText())
         page.loaded((packet, dict(installed=True, owner=False, characters=characters), None))
         self.assertEqual((page.character.currentData(), page.character_id), (6, 6))
-        self.assertIn('építsd ki', page.status.text())
+        self.assertIn('készítsd elő', page.status.text())
         page.status_info = dict(installed=True, owner=False); page.controls()
-        self.assertEqual(page.setup_button.text(), 'Karakter kiépítése…')
+        self.assertEqual(page.setup_button.text(), 'Karakter tárgykezelésének előkészítése…')
 
 
 class SqlCommitTests(unittest.TestCase):

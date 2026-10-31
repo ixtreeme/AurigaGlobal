@@ -8,13 +8,15 @@ import copy
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QHeaderView,
-    QInputDialog, QLabel, QLineEdit, QMessageBox, QPlainTextEdit, QPushButton, QSpinBox, QSplitter, QTabBar, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget)
+    QInputDialog, QLabel, QLineEdit, QMessageBox, QPlainTextEdit, QPushButton, QSpinBox, QSplitter, QTabBar, QTabWidget, QTableWidget,
+    QTableWidgetItem, QToolButton, QVBoxLayout, QWidget)
 
 import backend as api
 import item_bench as bench
 import item_catalog as catalog
 from item_page import BONUS_LABELS, UNITS, Task, recipe_text
+from item_workflows import readable_name
+from manager_ui import card_layout, confirm_action
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 STONE_STATES = {0: 'üres', 1: 'kő', 2: 'törött'}
@@ -53,37 +55,39 @@ class BenchPage(QWidget):
         self.target = None; self.attempted = None; self.state = None; self.page_index = 0
         self.character_id = bench.BENCH_OWNER; self.characters = []
         layout = QVBoxLayout(self); layout.setContentsMargins(0, 0, 0, 0)
-        bar = QHBoxLayout(); title = QLabel('Tárgyteszt'); title.setObjectName('SectionTitle'); bar.addWidget(title, 1)
-        self.start_db_button = QPushButton('Adatbázis indítása'); self.start_db_button.clicked.connect(self.start_database)
-        self.reload_button = QPushButton('Frissítés'); self.reload_button.clicked.connect(self.reload)
-        self.install_button = QPushButton('Mentési táblák telepítése…'); self.install_button.clicked.connect(self.install)
+        setup_card, setup_layout = card_layout()
+        title = QLabel('Próbapad és karakter'); title.setObjectName('SectionTitle'); setup_layout.addWidget(title)
+        bar = QHBoxLayout()
+        self.start_db_button = QPushButton('Helyi adatbázis indítása'); self.start_db_button.clicked.connect(self.start_database)
+        self.reload_button = QPushButton('Karakter állapotának frissítése'); self.reload_button.clicked.connect(self.reload)
+        self.install_button = QPushButton('Próbapad előkészítése…'); self.install_button.clicked.connect(self.install)
         self.character = QComboBox(); self.character.setMinimumWidth(220)
         self.character.addItem('Tesztkarakter (#%d)' % bench.BENCH_OWNER, bench.BENCH_OWNER)
         self.character.currentIndexChanged.connect(self.character_changed)
-        self.setup_button = QPushButton('Próbapad létrehozása'); self.setup_button.clicked.connect(self.setup)
-        self.gold_button = QPushButton('Yang beállítása…'); self.gold_button.clicked.connect(self.set_gold)
-        bar.addWidget(QLabel('Karakter:')); bar.addWidget(self.character)
-        for widget in (self.start_db_button, self.reload_button, self.install_button, self.setup_button, self.gold_button): bar.addWidget(widget)
-        layout.addLayout(bar)
+        self.setup_button = QPushButton('Tesztkarakter előkészítése'); self.setup_button.clicked.connect(self.setup)
+        self.gold_button = QPushButton('Yang-egyenleg módosítása…'); self.gold_button.clicked.connect(self.set_gold)
+        bar.addWidget(QLabel('Kiválasztott karakter:')); bar.addWidget(self.character, 1)
+        for widget in (self.start_db_button, self.reload_button): bar.addWidget(widget)
+        setup_layout.addLayout(bar)
+        preparation = QHBoxLayout()
+        hint = QLabel('A műveletek a kiválasztott karakter konkrét tárgypéldányait módosítják. A karakter közben legyen kijelentkezve. Teszteléshez a tesztkaraktert válaszd.')
+        hint.setWordWrap(True); hint.setObjectName('FieldHint'); preparation.addWidget(hint, 1)
+        preparation.addWidget(self.install_button); preparation.addWidget(self.setup_button)
+        setup_layout.addLayout(preparation); layout.addWidget(setup_card)
         self.status = QLabel('Válassz helyi szervercsomagot.'); self.status.setWordWrap(True); self.status.setObjectName('Subtle')
         layout.addWidget(self.status)
-        hint = QLabel('Az új tárgyrendszer próbája a játék saját döntési és mentési kódjával, a #%d tesztkarakteren vagy egy '
-                      'kiválasztott valódi karakteren. Csak az új mentési táblákat használja; a régi player.item és a karakterek '
-                      'adatai változatlanok. Egy valódi karakter kiépítése után belépéskor a szerver (új katalógussal) elküldi ezt '
-                      'az inventoryt a kliensnek (Ctrl+Shift+I). Minden művelet új munkamenetet nyit, mint egy belépés: közben '
-                      'ne legyen a karakter játékban. A Tárgyak lapon végzett módosítás után a próbapad minden kiépített karakter '
-                      'tárgyait ellenőrzi, mielőtt átveszi az új katalógust.' % bench.BENCH_OWNER)
-        hint.setWordWrap(True); hint.setObjectName('FieldHint'); layout.addWidget(hint)
         split = QSplitter()
-        left = QWidget(); side = QVBoxLayout(left); side.setContentsMargins(0, 0, 0, 0)
-        side.addWidget(QLabel('Tárgy adása'))
-        filters = QHBoxLayout()
+        left, side = card_layout()
+        label = QLabel('Tárgypéldány készítése'); label.setObjectName('SectionTitle'); side.addWidget(label)
+        hint = QLabel('Válassz tárgytípust a katalógusból, majd darabszámot és fejlesztési szintet.')
+        hint.setWordWrap(True); hint.setObjectName('Subtle'); side.addWidget(hint)
         self.category = QComboBox(); self.category.addItem('Minden kategória', 0)
         for category, name in catalog.CATEGORIES.items(): self.category.addItem(name, category)
-        self.search = QLineEdit(); self.search.setPlaceholderText('Keresés…')
-        filters.addWidget(self.category); filters.addWidget(self.search, 1); side.addLayout(filters)
-        self.catalog_list = QTableWidget(0, 3); self.catalog_list.setHorizontalHeaderLabels(['Kulcs', 'Kategória', 'Tartalomkód'])
-        self.catalog_list.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.search = QLineEdit(); self.search.setPlaceholderText('Tárgy elnevezése vagy azonosítója…')
+        side.addWidget(self.category); side.addWidget(self.search)
+        self.catalog_list = QTableWidget(0, 3); self.catalog_list.setHorizontalHeaderLabels(['Elnevezés', 'Azonosító', 'Kategória'])
+        self.catalog_list.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.catalog_list.setColumnHidden(2, True)
         self.catalog_list.verticalHeader().hide(); self.catalog_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.catalog_list.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.catalog_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -91,39 +95,58 @@ class BenchPage(QWidget):
         side.addWidget(self.catalog_list, 1)
         give = QHBoxLayout()
         self.count = QSpinBox(); self.count.setRange(1, 1); self.count.setPrefix('Darab: ')
-        self.level = QSpinBox(); self.level.setRange(0, 0); self.level.setPrefix('Szint: +')
-        self.grant_button = QPushButton('Adás'); self.grant_button.setObjectName('Primary'); self.grant_button.clicked.connect(self.grant)
-        give.addWidget(self.count); give.addWidget(self.level); give.addWidget(self.grant_button); side.addLayout(give)
+        self.level = QSpinBox(); self.level.setRange(0, 0); self.level.setPrefix('Fejlesztés: +')
+        self.grant_button = QPushButton('Példány adása a karakternek'); self.grant_button.setObjectName('Primary'); self.grant_button.clicked.connect(self.grant)
+        give.addWidget(self.count); give.addWidget(self.level); side.addLayout(give); side.addWidget(self.grant_button)
         for signal in (self.category.currentIndexChanged, self.search.textChanged): signal.connect(lambda *_: self.fill_catalog())
         split.addWidget(left)
-        right = QWidget(); body = QVBoxLayout(right); body.setContentsMargins(8, 0, 0, 0)
-        self.summary = QLabel(''); self.summary.setObjectName('SectionTitle'); body.addWidget(self.summary)
-        self.pages_bar = QTabBar(); self.pages_bar.currentChanged.connect(self.page_changed); body.addWidget(self.pages_bar)
+        right, body = card_layout()
+        inventory_title = QHBoxLayout()
+        label = QLabel('Karakter tárgyai'); label.setObjectName('SectionTitle'); inventory_title.addWidget(label, 1)
+        inventory_title.addWidget(self.gold_button); body.addLayout(inventory_title)
+        self.summary = QLabel(''); self.summary.setObjectName('Subtle'); self.summary.setWordWrap(True); body.addWidget(self.summary)
+        self.inventory_views = QTabWidget()
+        grid_page = QWidget(); grid_layout = QVBoxLayout(grid_page); grid_layout.setContentsMargins(0, 6, 0, 0)
+        self.pages_bar = QTabBar(); self.pages_bar.currentChanged.connect(self.page_changed); grid_layout.addWidget(self.pages_bar)
         self.grid = QTableWidget(0, 0); self.grid.verticalHeader().hide(); self.grid.horizontalHeader().hide()
         self.grid.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.grid.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.grid.cellClicked.connect(self.grid_clicked); self.grid.itemSelectionChanged.connect(self.controls)
-        body.addWidget(self.grid, 2)
-        self.items = QTableWidget(0, 7); self.items.setHorizontalHeaderLabels(['ID', 'Tárgy', 'Szint', 'Darab', 'Cella', 'Bónuszok', 'Kövek'])
+        grid_layout.addWidget(self.grid, 1)
+        self.inventory_views.addTab(grid_page, 'Leltár')
+        self.items = QTableWidget(0, 7)
+        self.items.setHorizontalHeaderLabels(['Példányazonosító', 'Tárgypéldány', 'Fejlesztés', 'Darab', 'Leltárhely', 'Bónuszok', 'Kövek'])
+        self.items.setColumnHidden(0, True)
         self.items.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.items.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        self.items.horizontalHeader().setMinimumSectionSize(50)
+        for column, width in ((2, 85), (3, 55), (4, 75), (6, 85)): self.items.setColumnWidth(column, width)
         self.items.verticalHeader().hide(); self.items.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.items.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.items.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.items.itemSelectionChanged.connect(self.controls)
-        body.addWidget(self.items, 2)
+        self.inventory_views.addTab(self.items, 'Tárgylista')
+        body.addWidget(self.inventory_views, 1)
         actions = QHBoxLayout()
         self.refine_button = QPushButton('Fejlesztés…'); self.refine_button.clicked.connect(self.refine)
-        self.attribute_button = QPushButton('Bónuszszolgáltatás…'); self.attribute_button.clicked.connect(lambda: self.service('attribute'))
-        self.socket_button = QPushButton('Foglalatszolgáltatás…'); self.socket_button.clicked.connect(lambda: self.service('socket'))
-        self.move_button = QPushButton('Áthelyezés a kijelölt cellára'); self.move_button.clicked.connect(self.move)
-        self.destroy_button = QPushButton('Megsemmisítés'); self.destroy_button.clicked.connect(self.destroy)
-        for widget in (self.refine_button, self.attribute_button, self.socket_button, self.move_button, self.destroy_button): actions.addWidget(widget)
+        self.attribute_button = QPushButton('Véletlen bónuszok…'); self.attribute_button.clicked.connect(lambda: self.service('attribute'))
+        self.socket_button = QPushButton('Foglalatok és kövek…'); self.socket_button.clicked.connect(lambda: self.service('socket'))
+        self.move_button = QPushButton('Áthelyezés a kijelölt helyre'); self.move_button.clicked.connect(self.move)
+        self.destroy_button = QPushButton('Kijelölt példány törlése…'); self.destroy_button.setObjectName('Stop'); self.destroy_button.clicked.connect(self.destroy)
+        for widget in (self.refine_button, self.attribute_button, self.socket_button): actions.addWidget(widget)
         actions.addStretch(); body.addLayout(actions)
+        placement = QHBoxLayout(); placement.addWidget(self.move_button); placement.addStretch(); placement.addWidget(self.destroy_button); body.addLayout(placement)
         self.log = QPlainTextEdit(); self.log.setReadOnly(True); self.log.setMaximumBlockCount(500); self.log.setPlaceholderText('Műveletnapló')
-        body.addWidget(self.log, 1)
-        split.addWidget(right); split.setSizes([360, 760]); split.setStretchFactor(1, 1)
+        self.log.setMaximumHeight(120); self.log.hide()
+        self.log_toggle = QToolButton(); self.log_toggle.setObjectName('Disclosure')
+        self.log_toggle.setText('Próbapad műveleti naplója'); self.log_toggle.setCheckable(True)
+        self.log_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.log_toggle.setArrowType(Qt.ArrowType.RightArrow)
+        self.log_toggle.toggled.connect(lambda shown: (self.log.setVisible(shown), self.log_toggle.setArrowType(Qt.ArrowType.DownArrow if shown else Qt.ArrowType.RightArrow)))
+        body.addWidget(self.log_toggle); body.addWidget(self.log)
+        split.addWidget(right); split.setSizes([320, 760]); split.setStretchFactor(1, 1)
         layout.addWidget(split, 1)
+        self.inventory_views.currentChanged.connect(self.controls)
         self.render()
 
     # --- owner integration ------------------------------------------------------
@@ -157,8 +180,8 @@ class BenchPage(QWidget):
         self.install_button.setEnabled(local and db and not busy and not state.get('running'))
         self.setup_button.setVisible(bool(info.get('installed')))
         test = self.character_id == bench.BENCH_OWNER
-        self.setup_button.setText(('Próbapad visszaállítása…' if test else 'Karakter visszaállítása…') if info.get('owner') else
-                                  ('Próbapad létrehozása' if test else 'Karakter kiépítése…'))
+        self.setup_button.setText(('Tesztkarakter visszaállítása…' if test else 'Karakter tárgyainak visszaállítása…') if info.get('owner') else
+                                  ('Tesztkarakter előkészítése' if test else 'Karakter tárgykezelésének előkészítése…'))
         self.character.setEnabled(local and db and not busy)
         self.setup_button.setEnabled(local and db and not busy)
         self.gold_button.setEnabled(local and db and not busy and ready)
@@ -193,6 +216,7 @@ class BenchPage(QWidget):
 
     def write(self, text):
         self.log.appendPlainText(text)
+        self.log_toggle.setChecked(True)
 
     def reload(self):
         if not self.local() or self.active(): return
@@ -216,11 +240,11 @@ class BenchPage(QWidget):
         self.bench = loaded['state'] if loaded else None
         info = self.status_info
         self.fill_characters(info.get('characters', []))
-        if not info.get('installed'): text = 'Az új mentési táblák még nincsenek telepítve a helyi player adatbázisba.'
-        elif not info.get('owner'): text = ('A mentési táblák telepítve. Hozd létre a próbapadot.' if self.character_id == bench.BENCH_OWNER
-                                            else 'Ennek a karakternek még nincsenek új tárgyai: építsd ki.')
+        if not info.get('installed'): text = 'Első lépés: a Próbapad előkészítése gombbal hozd létre a tárgypéldányok tárolását.'
+        elif not info.get('owner'): text = ('Következő lépés: készítsd elő a tesztkaraktert.' if self.character_id == bench.BENCH_OWNER
+                                            else 'Következő lépés: készítsd elő a kiválasztott karakter tárgykezelését.')
         elif info.get('load_error'): text = info['load_error']
-        else: text = 'Próbapad kész • katalógus-hash %s…' % self.packet['hash'][:12]
+        else: text = 'A karakter készen áll a tárgypróbákra. Válassz tárgytípust, vagy jelölj ki egy meglévő példányt.'
         if loaded and loaded.get('catalog_followed'): self.write('A katalógus változott; a próbapad ellenőrizte a tárgyait és átvette az új katalógust.')
         self.status.setText(text)
         self.fill_catalog(); self.render()
@@ -231,7 +255,7 @@ class BenchPage(QWidget):
             self.bench = result['state']
             if result.get('catalog_followed'): self.write('A katalógus változott; a próbapad átvette az új katalógust.')
             self.write(describe(result) if describe else message.rstrip('…') + ': kész.')
-            self.status.setText('Próbapad kész • katalógus-hash %s…' % self.packet['hash'][:12] if self.packet else '')
+            self.status.setText('A művelet befejeződött. A karakter tárgyai frissültek.' if self.packet else '')
             self.render()
         owner = self.character_id
         self.run(lambda: bench.call(root, action, owner=owner, **fields), done, message)
@@ -263,13 +287,13 @@ class BenchPage(QWidget):
         if not self.packet: return
         category = self.category.currentData(); needle = self.search.text().strip().lower()
         rows = [r for r in self.cached.items() if r['retired'] != '1' and (not category or int(r['category_id']) == category)
-                and (not needle or needle in (r['content_code'] + ' ' + r['category_id'] + ':' + r['local_id']).lower())]
+                and (not needle or needle in (readable_name(r) + ' ' + r['content_code'] + ' ' + r['category_id'] + ':' + r['local_id']).lower())]
         self.catalog_list.setRowCount(len(rows))
         for index, row in enumerate(rows):
             key = (int(row['category_id']), int(row['local_id']))
-            for column, value in enumerate(('%d:%d' % key, catalog.CATEGORIES.get(key[0], str(key[0])), row['content_code'])):
-                cell = QTableWidgetItem(value); cell.setData(KEY_ROLE, key); self.catalog_list.setItem(index, column, cell)
-        self.catalog_list.resizeColumnToContents(0); self.catalog_list.resizeColumnToContents(1)
+            for column, value in enumerate((readable_name(row), '%d:%d' % key, catalog.CATEGORIES.get(key[0], str(key[0])))):
+                cell = QTableWidgetItem(value); cell.setData(KEY_ROLE, key); cell.setToolTip(row['content_code']); self.catalog_list.setItem(index, column, cell)
+        self.catalog_list.resizeColumnToContents(1)
 
     def chosen_catalog(self):
         cells = self.catalog_list.selectedItems()
@@ -282,7 +306,7 @@ class BenchPage(QWidget):
         self.level.setRange(0, top or 0); self.controls()
 
     def name(self, item):
-        return '%s  (%d:%d)' % (item.get('content_code') or '?', item['category'], item['local'])
+        return '%s  (%d:%d)' % (readable_name(self.base(item['category'], item['local']) or item), item['category'], item['local'])
 
     def bonus(self, bonus_id, value):
         d = next((d for d in (self.packet or {}).get('bonuses', []) if str(d['id']) == str(bonus_id)), None)
@@ -330,7 +354,7 @@ class BenchPage(QWidget):
         for item in live:
             if item['cell'] is None or not first <= item['cell'] < first + size: continue
             offset = item['cell'] - first; r, c = divmod(offset, columns); _, width, height = self.footprint(item)
-            label = (item.get('content_code') or '?').split('.')[-1]
+            label = readable_name(self.base(item['category'], item['local']) or item)
             text = label + (' +%d' % item['level'] if item['level'] else '') + (' ×%d' % item['count'] if item['count'] > 1 else '')
             cell = QTableWidgetItem(text); cell.setData(KEY_ROLE, item['id']); cell.setToolTip(self.name(item) + '\nCella %d' % item['cell'])
             cell.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -343,7 +367,9 @@ class BenchPage(QWidget):
             stones = ', '.join('kő %d:%d +%d' % (s['stone'][0], s['stone'][1], s['level']) if s['stone'] else STONE_STATES.get(s['state'], '?') for s in item['stones'])
             values = (item['id'], self.name(item), '+%d' % item['level'], str(item['count']), '' if item['cell'] is None else str(item['cell']), attributes, stones)
             for column, value in enumerate(values):
-                cell = QTableWidgetItem(value); cell.setData(KEY_ROLE, item['id']); self.items.setItem(index, column, cell)
+                cell = QTableWidgetItem(value); cell.setData(KEY_ROLE, item['id'])
+                cell.setToolTip('Példányazonosító: %s\nTartalomkód: %s' % (item['id'], item.get('content_code', '?')))
+                self.items.setItem(index, column, cell)
             if selected and item['id'] == selected['id']: self.items.selectRow(index)
         self.items.resizeColumnToContents(0)
         if self.bench:
@@ -356,6 +382,7 @@ class BenchPage(QWidget):
         self.page_index = max(index, 0); self.render()
 
     def grid_cell(self):
+        if self.inventory_views.currentIndex() != 0: return None
         cells = self.grid.selectedIndexes()
         if not cells: return None
         columns, rows, _ = self.layout_info()
@@ -376,8 +403,9 @@ class BenchPage(QWidget):
 
     # --- actions -----------------------------------------------------------------
     def install(self):
-        if QMessageBox.question(self, 'Tárgyteszt', 'A helyi player adatbázisba 9 új tábla kerül (a meglévőkhöz nem nyúl), előtte teljes '
-                                'mentés készül a player adatbázisról. Folytatod?') != QMessageBox.StandardButton.Yes: return
+        if not confirm_action(self, 'Tárgypróbapad előkészítése',
+            'A próbapad létrehozza a tárgypéldányok tárolásához szükséges táblákat. Előtte teljes mentés készül a helyi player adatbázisról.',
+            'Próbapad előkészítése'): return
         root = self.owner.root
         def done(result):
             self.write('Mentési táblák telepítve. Mentés: ' + result.get('folder', '—')); self.attempted = None; self.status_info = None; self.reload()
@@ -394,15 +422,16 @@ class BenchPage(QWidget):
     def setup(self):
         reset = bool((self.status_info or {}).get('owner'))
         who = self.character.currentText().replace('  ✓', '')
-        if reset and QMessageBox.question(self, 'Tárgyteszt', '%s minden új tárgya és új pénztárcája törlődik, és üresen indul újra az '
-                                          'aktuális katalógussal (a régi tárgyai nem változnak). Folytatod?' % who) != QMessageBox.StandardButton.Yes: return
-        gold = self.ask_gold('Próbapad', 1000000000)
+        if reset and not confirm_action(self, 'Karakter tárgyainak visszaállítása',
+            '%s próbapadon kezelt tárgypéldányai és pénztárcái törlődnek. A karakter üres leltárral és a következő lépésben megadott Yang-egyenleggel indul újra.' % who,
+            'Tárgyak törlése és visszaállítás', destructive=True): return
+        gold = self.ask_gold('A karakter induló Yang-egyenlege', 1000000000)
         if gold is None: return
         root = self.owner.root
         def done(result):
             self.bench = result['state']; self.status_info = dict(self.status_info or {}, owner=True, pin_matches=True); self.status_info.pop('load_error', None)
             self.write('Próbapad %s, %s Yang.' % ('visszaállítva' if reset else 'létrehozva', format(gold, ',').replace(',', ' ')))
-            self.status.setText('Próbapad kész • katalógus-hash %s…' % self.packet['hash'][:12] if self.packet else ''); self.render()
+            self.status.setText('A karakter tárgykezelése kész. Most már adhatsz neki tárgypéldányokat.' if self.packet else ''); self.render()
         owner = self.character_id
         def made(result):
             done(result)
@@ -429,7 +458,9 @@ class BenchPage(QWidget):
     def destroy(self):
         item = self.selected_item()
         if not item: return
-        if QMessageBox.question(self, 'Tárgyteszt', 'Megsemmisíted: %s?' % self.name(item)) != QMessageBox.StandardButton.Yes: return
+        if not confirm_action(self, 'Tárgypéldány törlése',
+            'A kiválasztott példány teljes mennyisége (%s darab) törlődik a karakter tárgyai közül.\n\n%s\nPéldányazonosító: %s' % (item['count'], self.name(item), item['id']),
+            'Kijelölt példány törlése', destructive=True): return
         self.act('destroy', 'Megsemmisítés…', lambda _: 'Megsemmisítve: %s.' % self.name(item), item=item['id'])
 
     def recipe_label(self, recipe):
@@ -449,8 +480,8 @@ class BenchPage(QWidget):
         recipes = [r for r in self.cached.tables['refinement_recipe'] if r['source_category_id'] == str(item['category'])
                    and r['source_local_id'] == str(item['local']) and r['source_level'] == str(item['level'])]
         if not recipes:
-            QMessageBox.information(self, 'Fejlesztés', 'Ehhez a tárgyhoz +%d szinten nincs fejlesztési recept. A Tárgyak lap Fejlesztés '
-                                    'fülén, a „Recept” oszlopban adhatsz meg.' % item['level']); return
+            QMessageBox.information(self, 'Nincs fejlesztési recept', 'Ehhez a tárgyhoz +%d szinten nincs fejlesztési recept. A Tárgykatalógusban nyisd meg a tárgytípust, '
+                                    'majd a Fejlesztés és receptek szakaszban állítsd be a receptet.' % item['level']); return
         dialog = RefineDialog(self, 'Fejlesztés: ' + self.name(item) + ' +%d' % item['level'], sorted(recipes, key=lambda r: int(r['recipe_id'])), self.recipe_label)
         if dialog.exec() != QDialog.DialogCode.Accepted: return
         def describe(result):

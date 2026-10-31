@@ -6,10 +6,10 @@ The page never builds SQL and never edits more than one item per save.
 import copy
 import re
 
-from PySide6.QtCore import QThread, Qt, Signal
+from PySide6.QtCore import QThread, Qt, QTimer, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout,
-    QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox, QPushButton, QScrollArea,
+    QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget, QMenu, QMessageBox, QPushButton, QScrollArea,
     QSizePolicy, QSpinBox, QSplitter, QStackedWidget, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget)
 
 import backend as api
@@ -23,6 +23,8 @@ from companion_editor import CompanionPanel
 from pet_care_editor import PetHatchPanel,PetFoodPanel
 from pet_lifecycle_editor import PetSupplyPanel
 from attribute_editor import AttributePanel,AttributeServicePanel
+from item_workflows import NewItemDialog, CATEGORY_HELP, SECTION_HELP, TYPE_SECTION, readable_name, summary_lines
+from manager_ui import card_layout, line_icon
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 BONUS_LABELS = {
@@ -89,11 +91,16 @@ class Field:
             if unit:
                 self.widget = QWidget(); row = QHBoxLayout(self.widget); row.setContentsMargins(0, 0, 0, 0)
                 row.addWidget(self.edit, 1); suffix = QLabel(unit); suffix.setObjectName('Subtle'); row.addWidget(suffix)
+                self.widget.setFocusProxy(self.edit)
             else:
                 self.widget = self.edit
         if options.get('hint'): self.widget.setToolTip(options['hint'])
 
     def load(self, value):
+        for control in (self.widget, getattr(self, 'edit', self.widget)):
+            if control.property('invalid'):
+                control.setProperty('invalid', False)
+                control.style().unpolish(control); control.style().polish(control)
         widgets = self.boxes if self.kind == 'bits' else [self.widget]
         for widget in widgets: widget.blockSignals(True)
         try:
@@ -112,6 +119,24 @@ class Field:
             for widget in widgets: widget.blockSignals(False)
 
     def value(self):
+        try:
+            value = self._value()
+        except api.EditorError:
+            self.widget.setProperty('invalid', True)
+            self.widget.style().unpolish(self.widget); self.widget.style().polish(self.widget)
+            if hasattr(self, 'edit') and self.edit is not self.widget:
+                self.edit.setProperty('invalid', True)
+                self.edit.style().unpolish(self.edit); self.edit.style().polish(self.edit)
+            raise
+        if self.widget.property('invalid'):
+            self.widget.setProperty('invalid', False)
+            self.widget.style().unpolish(self.widget); self.widget.style().polish(self.widget)
+            if hasattr(self, 'edit') and self.edit is not self.widget:
+                self.edit.setProperty('invalid', False)
+                self.edit.style().unpolish(self.edit); self.edit.style().polish(self.edit)
+        return value
+
+    def _value(self):
         if self.kind == 'bool': return '1' if self.widget.isChecked() else '0'
         if self.kind == 'choice': return self.widget.currentData()
         if self.kind == 'bits': return str(sum(1 << bit for bit, box in enumerate(self.boxes) if box.isChecked()))
@@ -152,6 +177,14 @@ class Form(QWidget):
         row = (self.count + self.columns - 1) // self.columns; self.count = (row + 1) * self.columns
         label = QLabel(text); label.setObjectName('FieldHint'); label.setWordWrap(True)
         self.grid.addWidget(label, row, 0, 1, self.columns * 2)
+
+    def section(self, title, hint=''):
+        row = (self.count + self.columns - 1) // self.columns
+        label = QLabel(title); label.setObjectName('SectionTitle')
+        self.grid.addWidget(label, row, 0, 1, self.columns * 2)
+        self.grid.setRowMinimumHeight(row, 36)
+        self.count = (row + 1) * self.columns
+        if hint: self.note(hint)
 
     def finish(self):
         self.grid.setRowStretch((self.count + self.columns - 1) // self.columns + 1, 1)
@@ -275,14 +308,12 @@ class BonusDialog(QDialog):
 class FillDialog(QDialog):
     """Linear fill: value(L) = start value + step * (L - start level), up to the maximum.
 
-    `preview` receives (target, values), or None for invalid input, on every
-    change, so the table behind the dialog shows the result while it is open.
-    The table is the edit: closing (Kész, X, Esc) keeps the last valid result;
-    only Visszavonás restores the original values.
+    `preview` updates the table behind the dialog. Only explicit acceptance
+    changes the draft; Cancel, X and Escape restore the original values.
     """
 
     def __init__(self, parent, targets, maximum, current, preview=None, steps=None):
-        super().__init__(parent); self.setWindowTitle('Egyenletes kitöltés'); self.resize(520, 300)
+        super().__init__(parent); self.setWindowTitle('Fejlesztési értékek kitöltése'); self.resize(580, 360)
         self.targets, self.maximum, self.current, self.on_preview = targets, maximum, current, preview
         self.steps = steps or (lambda target: None)
         layout = QVBoxLayout(self); form = QFormLayout()
@@ -299,13 +330,14 @@ class FillDialog(QDialog):
         form.addRow('Növekmény szintenként', with_unit(self.step, self.step_unit))
         layout.addLayout(form)
         self.preview = QLabel(); self.preview.setWordWrap(True); self.preview.setObjectName('Subtle'); layout.addWidget(self.preview)
-        hint = QLabel('A változás azonnal a táblázatba kerül, és bezáráskor is megmarad; a „Visszavonás” visszaállítja az '
-                      'eredeti értékeket. A növekményt a szerkesztő megjegyzi: a „+” gombbal hozzáadott új szintek ezzel '
-                      'folytatják a sort. A kezdőszint alatti szintek nem változnak.')
+        hint = QLabel('A táblázatban élő előnézetet látsz. Az „Alkalmazás a piszkozatban” veszi át az értékeket; '
+                      'a Mégse, az Esc és az ablak bezárása visszaállítja az eredeti értékeket. '
+                      'Az új szintek az elfogadott növekménnyel folytatják a sort. A kezdőszint alatti szintek megmaradnak.')
         hint.setWordWrap(True); hint.setObjectName('FieldHint'); layout.addWidget(hint); layout.addStretch()
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText('Kész')
-        self.revert_button = buttons.addButton('Visszavonás', QDialogButtonBox.ButtonRole.ResetRole)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText('Alkalmazás a piszkozatban')
+        self.revert_button = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        self.revert_button.setText('Mégse')
         self.revert_button.clicked.connect(self.revert)
         buttons.accepted.connect(self.accept_values); layout.addWidget(buttons)
         self.target.currentIndexChanged.connect(self.reset_target); self.start.valueChanged.connect(self.reset_value)
@@ -366,6 +398,11 @@ class FillDialog(QDialog):
 
     def revert(self):
         self.reverted = True; self.reject()
+
+    def reject(self):
+        self.reverted = True
+        if self.on_preview: self.on_preview(None)
+        super().reject()
 
 
 REWARD_KINDS = [(1, 'Tárgy'), (2, 'Yang'), (3, 'Tapasztalat'), (4, 'Szörny idézése'), (5, 'Szörnycsoport idézése'),
@@ -1081,12 +1118,10 @@ class RefinementPanel(QWidget):
             if result: self.apply_fill(*result, notify=False)
         dialog = FillDialog(self, targets, len(self.levels) - 1, lambda target, level: self.current_value(target, level, state), preview,
                             lambda target: self.rules.get(self.rule_key(target)))
-        dialog.exec()
-        # Whatever closed the dialog, keep its last valid result unless the
-        # user explicitly reverted. The return code is not relied upon. The
-        # step is remembered even when only +1 exists yet: "+" continues it.
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        # An accepted step is remembered even if only +1 exists yet.
         self.restore(state)
-        if not dialog.reverted and dialog.last is not None:
+        if accepted and not dialog.reverted and dialog.last is not None:
             self.rules[self.rule_key(dialog.last[0])] = dialog.last_step
             self.apply_fill(*dialog.last)
 
@@ -1122,103 +1157,390 @@ class ItemPage(QWidget):
         super().__init__(); self.owner = owner
         self.packet = self.document = self.original_key = self.task = None
         self.dirty = False; self.target = None; self.attempted = None; self.loading = False
+        self.checked_document = None
         layout = QVBoxLayout(self); layout.setContentsMargins(0, 0, 0, 0)
-        bar = QHBoxLayout(); title = QLabel('Tárgyak'); title.setObjectName('SectionTitle'); bar.addWidget(title, 1)
-        self.start_db_button = QPushButton('Adatbázis indítása'); self.start_db_button.clicked.connect(self.start_database)
-        self.reload_button = QPushButton('Lista frissítése'); self.reload_button.clicked.connect(self.reload)
-        self.copy_button = QPushButton('Másolat új tárgyként'); self.copy_button.clicked.connect(self.duplicate)
-        self.new_button = QToolButton(); self.new_button.setText('Új tárgy'); self.new_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        menu = QMenu(self.new_button)
-        for category, name in catalog.CATEGORIES.items(): menu.addAction(name, lambda c=category: self.create(c))
-        self.new_button.setMenu(menu)
-        for widget in (self.start_db_button, self.reload_button, self.copy_button, self.new_button): bar.addWidget(widget)
+        layout.setSpacing(12)
+        bar = QHBoxLayout()
+        purpose = QLabel('Tárgytípusok keresése, készítése és szerkesztése. Konkrét példányok kipróbálása: Tárgypróbapad.')
+        purpose.setWordWrap(True); purpose.setObjectName('Subtle'); bar.addWidget(purpose, 1)
+        self.start_db_button = QPushButton('Helyi adatbázis indítása'); self.start_db_button.clicked.connect(self.start_database)
+        self.reload_button = QPushButton('Katalógus újraolvasása'); self.reload_button.clicked.connect(self.reload)
+        self.reload_button.setIcon(line_icon('refresh'))
+        self.new_button = QPushButton('Új tárgytípus…'); self.new_button.setObjectName('Primary')
+        self.new_button.clicked.connect(self.new_item_wizard)
+        for widget in (self.start_db_button, self.reload_button, self.new_button): bar.addWidget(widget)
         layout.addLayout(bar)
         self.status = QLabel('Válassz helyi szervercsomagot.'); self.status.setWordWrap(True); self.status.setObjectName('Subtle')
+        self.status.setTextFormat(Qt.TextFormat.PlainText)
         layout.addWidget(self.status)
-        split = QSplitter(); self.split = split
-        left = QWidget(); side = QVBoxLayout(left); side.setContentsMargins(0, 0, 0, 0)
+        self.workspace = QStackedWidget(); layout.addWidget(self.workspace, 1)
+        self.catalog_page, side = card_layout()
+        browser_title = QHBoxLayout()
+        title = QLabel('Katalógus böngészése'); title.setObjectName('SectionTitle'); browser_title.addWidget(title)
+        self.result_count = QLabel(''); self.result_count.setObjectName('Subtle'); browser_title.addWidget(self.result_count)
+        browser_title.addStretch()
+        self.resume_button = QPushButton('Szerkesztés folytatása'); self.resume_button.clicked.connect(self.resume_editing)
+        browser_title.addWidget(self.resume_button); side.addLayout(browser_title)
         filters = QHBoxLayout()
         self.category_filter = QComboBox(); self.category_filter.addItem('Minden kategória', 0)
         for category, name in catalog.CATEGORIES.items(): self.category_filter.addItem(name, category)
-        self.search = QLineEdit(); self.search.setPlaceholderText('Keresés kódra, névkulcsra, kulcsra…')
-        filters.addWidget(self.category_filter); filters.addWidget(self.search, 1); side.addLayout(filters)
-        self.show_retired = QCheckBox('Kivezetett tárgyak is'); side.addWidget(self.show_retired)
-        self.list = QTableWidget(0, 4); self.list.setHorizontalHeaderLabels(['Kulcs', 'Kategória', 'Tartalomkód', 'Állapot'])
-        self.list.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.category_filter.setAccessibleName('Tárgykategória szűrése')
+        self.search = QLineEdit(); self.search.setPlaceholderText('Keresés elnevezésre, tartalomkódra vagy azonosítóra…')
+        self.search.setAccessibleName('Keresés a tárgykatalógusban')
+        self.clear_filter_button = QPushButton('Szűrők törlése'); self.clear_filter_button.clicked.connect(self.clear_filters)
+        filters.addWidget(self.search, 1); filters.addWidget(self.category_filter); filters.addWidget(self.clear_filter_button)
+        side.addLayout(filters)
+        filter_note = QHBoxLayout()
+        self.show_retired = QCheckBox('Kivezetett tárgytípusok megjelenítése'); filter_note.addWidget(self.show_retired)
+        filter_note.addStretch()
+        name_note = QLabel('Az elnevezés a belső kódból készül; a játékbeli fordítás külön adat.')
+        name_note.setObjectName('FieldHint'); name_note.setWordWrap(True); filter_note.addWidget(name_note)
+        side.addLayout(filter_note)
+        self.list = QTableWidget(0, 6)
+        self.list.setHorizontalHeaderLabels(['Elnevezés', 'Kategória', 'Azonosító', 'Szinttől', 'Állapot', 'Tartalomkód'])
+        self.list.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.list.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        for column in (1, 2, 3, 4): self.list.horizontalHeader().setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
         self.list.verticalHeader().hide(); self.list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.list.verticalHeader().setDefaultSectionSize(40)
+        self.list.setAlternatingRowColors(True); self.list.setShowGrid(False)
         self.list.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.list.itemSelectionChanged.connect(self.selected)
+        self.list.itemDoubleClicked.connect(lambda *_: self.edit_selected())
         side.addWidget(self.list, 1)
+        self.empty_list = QLabel('A katalógus betöltése után itt jelennek meg a tárgytípusok.')
+        self.empty_list.setObjectName('Subtle'); self.empty_list.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.empty_list.setWordWrap(True); side.addWidget(self.empty_list)
+        selection = QHBoxLayout()
+        self.selection_description = QLabel('Jelölj ki egy tárgytípust a részletekhez. Dupla kattintás: szerkesztés.')
+        self.selection_description.setWordWrap(True); self.selection_description.setObjectName('Subtle')
+        selection.addWidget(self.selection_description, 1)
+        self.copy_button = QPushButton('Új tárgy ez alapján…'); self.copy_button.clicked.connect(self.duplicate_wizard)
+        self.edit_button = QPushButton('Szerkesztés megnyitása'); self.edit_button.setObjectName('Primary')
+        self.edit_button.clicked.connect(self.edit_selected)
+        selection.addWidget(self.copy_button); selection.addWidget(self.edit_button); side.addLayout(selection)
         for signal in (self.category_filter.currentIndexChanged, self.search.textChanged, self.show_retired.toggled):
             signal.connect(lambda *_: self.fill_list())
-        split.addWidget(left)
-        right = QWidget(); body = QVBoxLayout(right); body.setContentsMargins(8, 0, 0, 0)
-        head = QHBoxLayout(); self.heading = QLabel('Nincs kijelölt tárgy'); self.heading.setObjectName('SectionTitle')
+        self.workspace.addWidget(self.catalog_page)
+        self.editor_page = QWidget(); body = QVBoxLayout(self.editor_page); body.setContentsMargins(0, 0, 0, 0)
+        head = QHBoxLayout()
+        self.back_button = QPushButton('← Katalógus'); self.back_button.clicked.connect(self.back_to_catalog); head.addWidget(self.back_button)
+        self.heading = QLabel('Nincs megnyitott tárgytípus'); self.heading.setObjectName('SectionTitle')
+        self.heading.setWordWrap(True); self.heading.setTextFormat(Qt.TextFormat.PlainText)
         self.badge = QLabel(''); self.badge.setObjectName('SavedBadge')
-        head.addWidget(self.heading, 1); head.addWidget(self.badge); body.addLayout(head)
-        self.tabs = QTabWidget(); body.addWidget(self.tabs, 1)
+        self.editor_copy_button = QPushButton('Új tárgy ez alapján…'); self.editor_copy_button.clicked.connect(self.duplicate_wizard)
+        head.addWidget(self.heading, 1); head.addWidget(self.badge); head.addWidget(self.editor_copy_button); body.addLayout(head)
+        self.identity_line = QLabel(); self.identity_line.setTextFormat(Qt.TextFormat.PlainText)
+        self.identity_line.setObjectName('Subtle'); self.identity_line.setWordWrap(True); body.addWidget(self.identity_line)
+        self.split = QSplitter()
+        self.section_nav = QListWidget(); self.section_nav.setObjectName('ItemSections'); self.section_nav.setMinimumWidth(185)
+        self.section_nav.setMaximumWidth(230); self.section_nav.setAccessibleName('Tárgyszerkesztő szakaszai')
+        self.split.addWidget(self.section_nav)
+        detail, detail_layout = card_layout()
+        self.section_title = QLabel(); self.section_title.setObjectName('SectionTitle'); detail_layout.addWidget(self.section_title)
+        self.section_hint = QLabel(); self.section_hint.setWordWrap(True); self.section_hint.setObjectName('Subtle'); detail_layout.addWidget(self.section_hint)
+        self.tabs = QTabWidget(); self.tabs.setObjectName('ItemEditorTabs'); self.tabs.tabBar().hide(); detail_layout.addWidget(self.tabs, 1)
+        self.split.addWidget(detail); self.split.setStretchFactor(1, 1); self.split.setSizes([205, 850])
+        body.addWidget(self.split, 1)
         self.build_forms()
+        self.overview_page = self.build_item_overview()
+        self.review_page = self.build_item_review()
+        self.section_nav.currentRowChanged.connect(self.tabs.setCurrentIndex)
+        self.tabs.currentChanged.connect(self.section_changed)
+        save_card, save_layout = card_layout()
+        self.inline_error = QLabel(); self.inline_error.setWordWrap(True); self.inline_error.setObjectName('InlineError'); self.inline_error.hide()
+        save_layout.addWidget(self.inline_error)
         actions = QHBoxLayout()
-        self.check_button = QPushButton('Ellenőrzés'); self.check_button.clicked.connect(self.check)
-        self.save_button = QPushButton('Mentés'); self.save_button.setObjectName('Primary'); self.save_button.clicked.connect(self.save)
-        self.discard_button = QPushButton('Elvetés'); self.discard_button.clicked.connect(self.discard)
+        self.check_button = QPushButton('Tárgy ellenőrzése'); self.check_button.clicked.connect(self.check)
+        self.save_button = QPushButton('Változtatások mentése'); self.save_button.setObjectName('Primary'); self.save_button.clicked.connect(self.save)
+        self.discard_button = QPushButton('Módosítások visszaállítása'); self.discard_button.clicked.connect(self.discard_requested)
         self.save_note = QLabel(''); self.save_note.setObjectName('Subtle'); self.save_note.setWordWrap(True)
-        for widget in (self.check_button, self.save_button, self.discard_button): actions.addWidget(widget)
-        actions.addWidget(self.save_note, 1); body.addLayout(actions)
-        split.addWidget(right); split.setSizes([380, 720]); split.setStretchFactor(1, 1)
-        layout.addWidget(split, 1)
+        actions.addWidget(self.save_note, 1)
+        for widget in (self.discard_button, self.check_button, self.save_button): actions.addWidget(widget)
+        save_layout.addLayout(actions); body.addWidget(save_card)
+        self.workspace.addWidget(self.editor_page)
+        self.preview_timer = QTimer(self); self.preview_timer.setSingleShot(True); self.preview_timer.setInterval(180)
+        self.preview_timer.timeout.connect(self.refresh_item_overview)
         self.show_document(None)
+
+    def build_item_overview(self):
+        page = QWidget(); layout = QVBoxLayout(page); layout.setSpacing(18)
+        self.overview_title = QLabel(); self.overview_title.setObjectName('Title')
+        self.overview_title.setTextFormat(Qt.TextFormat.PlainText); self.overview_title.setWordWrap(True)
+        layout.addWidget(self.overview_title)
+        self.overview_details = QLabel(); self.overview_details.setWordWrap(True)
+        self.overview_details.setTextFormat(Qt.TextFormat.PlainText)
+        self.overview_details.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        layout.addWidget(self.overview_details)
+        label = QLabel('Mit szeretnél beállítani?'); label.setObjectName('SectionTitle'); layout.addWidget(label)
+        self.overview_links = QVBoxLayout(); self.overview_links.setSpacing(8); layout.addLayout(self.overview_links)
+        help_text = QLabel('Ez a nézet egy tárgytípus szabályait mutatja. Egy játékosnál lévő konkrét példány darabszáma, '
+                           'fejlesztési szintje és véletlen bónuszai a Tárgypróbapadon vizsgálhatók.')
+        help_text.setObjectName('FieldHint'); help_text.setWordWrap(True); layout.addWidget(help_text)
+        layout.addStretch()
+        return scroll(page)
+
+    def build_item_review(self):
+        page = QWidget(); layout = QVBoxLayout(page)
+        self.review_summary = QLabel(); self.review_summary.setWordWrap(True); layout.addWidget(self.review_summary)
+        self.changes_table = QTableWidget(0, 3)
+        self.changes_table.setHorizontalHeaderLabels(['Változó beállítás', 'Mentett érték', 'Új érték'])
+        self.changes_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.changes_table.verticalHeader().hide(); self.changes_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.changes_table.setAlternatingRowColors(True); self.changes_table.setWordWrap(True)
+        layout.addWidget(self.changes_table, 1)
+        note = QLabel('A mentés egyetlen tárgytípust módosít a helyi katalógusban. A teljes katalógust a játék saját '
+                      'ellenőrzője vizsgálja. A többi tárgy által is használt profilok védettek maradnak.')
+        note.setObjectName('FieldHint'); note.setWordWrap(True); layout.addWidget(note)
+        return page
+
+    def chosen_key(self):
+        items = self.list.selectedItems()
+        return tuple(items[0].data(KEY_ROLE)) if items else None
+
+    def clear_filters(self):
+        for widget in (self.search, self.category_filter, self.show_retired): widget.blockSignals(True)
+        self.search.clear(); self.category_filter.setCurrentIndex(0); self.show_retired.setChecked(False)
+        for widget in (self.search, self.category_filter, self.show_retired): widget.blockSignals(False)
+        self.fill_list()
+
+    def back_to_catalog(self):
+        self.workspace.setCurrentWidget(self.catalog_page)
+        self.fill_list(); self.controls()
+
+    def resume_editing(self):
+        if self.document:
+            self.workspace.setCurrentWidget(self.editor_page)
+            self.refresh_item_overview()
+
+    def edit_selected(self):
+        key = self.chosen_key()
+        if key is None: return
+        if self.document is not None and self.original_key == key:
+            self.resume_editing(); return
+        if self.may_discard(): self.open_item(key)
+
+    def new_item_wizard(self):
+        if self.packet is None: return
+        dialog = NewItemDialog(self, self.packet, self.category_filter.currentData() or 1)
+        if dialog.exec() == QDialog.DialogCode.Accepted and self.may_discard():
+            self.open_draft(dialog.result_document)
+
+    def duplicate_wizard(self):
+        if self.packet is None: return
+        key = self.original_key if self.workspace.currentWidget() == self.editor_page else self.chosen_key()
+        if key is None: return
+        source = catalog.Catalog(self.packet).item(key)
+        dialog = NewItemDialog(self, self.packet, source=source)
+        if dialog.exec() == QDialog.DialogCode.Accepted and self.may_discard():
+            self.open_draft(dialog.result_document)
+
+    def open_draft(self, document):
+        self.original_key = None
+        self.list.blockSignals(True); self.list.clearSelection(); self.list.blockSignals(False)
+        self.show_document(document)
+        self.tabs.setCurrentWidget(self.overview_page)
+        self.status.setText('Új tárgytípus piszkozata. Állítsd be a működését, majd nézd át és mentsd a változtatásokat.')
+
+    def rebuild_sections(self, preferred=None):
+        self.section_nav.blockSignals(True); self.section_nav.clear()
+        for index in range(self.tabs.count()):
+            self.section_nav.addItem(self.tabs.tabText(index))
+            self.section_nav.item(index).setToolTip(self.tabs.tabToolTip(index))
+        index = self.tabs.indexOf(preferred) if preferred else 0
+        self.tabs.setCurrentIndex(max(0, index))
+        self.section_nav.setCurrentRow(self.tabs.currentIndex())
+        self.section_nav.blockSignals(False)
+        self.section_changed(self.tabs.currentIndex())
+
+    def section_changed(self, index):
+        if self.loading or index < 0: return
+        self.section_nav.blockSignals(True); self.section_nav.setCurrentRow(index); self.section_nav.blockSignals(False)
+        title = self.tabs.tabText(index)
+        self.section_title.setText(title)
+        self.section_hint.setText(SECTION_HELP.get(title, CATEGORY_HELP[int(self.document['base']['category_id'])][1] if self.document else ''))
+        if self.tabs.currentWidget() == self.review_page: self.refresh_review()
+        elif self.tabs.currentWidget() == self.overview_page: self.refresh_item_overview()
+
+    def refresh_item_overview(self, document=None):
+        if not self.document: return
+        if document is None and self.tabs.currentWidget() == self.overview_page:
+            try: document = self.collect()
+            except api.EditorError: pass
+        if document is None:
+            document = copy.deepcopy(self.document)
+            # Preview partially typed fields without validating or moving focus.
+            forms = [self.base_form, self.use_form]
+            category = int(document['base']['category_id'])
+            if category in self.category_forms and category not in (5, 9, 11, 12, 13, 14, 15, 17):
+                forms.append(self.category_forms[category])
+            for form in forms:
+                for field in form.fields:
+                    try:
+                        if field.kind in ('bool', 'choice', 'bits'): value = field._value()
+                        elif field.kind == 'scaled': value = str(catalog.scaled(field.edit.text(), field.options['scale']))
+                        else: value = field.edit.text().strip()
+                        document.setdefault(field.section, {})
+                        if document[field.section] is None: document[field.section] = {}
+                        document[field.section][field.column] = value
+                    except (api.EditorError, ValueError): pass
+            if category in (1, 2, 3, 4, 7, 11, 15):
+                document.setdefault('refinement', {})['max_level'] = str(self.refinement.maximum.value())
+                document['bonuses'] = [None] * self.bonuses.table.rowCount()
+        base = document['base']
+        self.overview_title.setText(readable_name(base))
+        self.overview_details.setText('\n'.join(summary_lines(document)))
+        self.heading.setText(readable_name(base) + ' · ' + catalog.CATEGORIES[int(base['category_id'])])
+        self.identity_line.setText('Tárgytípus %s:%s · %s · %s' % (base['category_id'], base['local_id'], base['content_code'],
+                                  'új, még nem mentett' if self.original_key is None else 'meglévő katalógusbejegyzés'))
+
+    def show_form_error(self, message):
+        self.inline_error.setText('Javítandó: ' + message); self.inline_error.show()
+        for widget in self.tabs.findChildren(QWidget):
+            if not widget.property('invalid'): continue
+            for index in range(self.tabs.count()):
+                page = self.tabs.widget(index)
+                if widget is page or page.isAncestorOf(widget):
+                    self.tabs.setCurrentIndex(index)
+                    if isinstance(page, QScrollArea): page.ensureWidgetVisible(widget)
+                    widget.setFocus()
+                    return
+
+    def refresh_review(self):
+        if not self.document: return
+        try: document = self.collect()
+        except api.EditorError as error:
+            self.review_summary.setText('A változtatások áttekintéséhez előbb javítsd a hibás vagy hiányzó mezőt.')
+            self.changes_table.setRowCount(0); self.show_form_error(str(error)); return
+        previous = catalog.Catalog(self.packet).item(self.original_key) if self.original_key else {}
+        labels = {field.column: field for form in self.findChildren(Form) for field in form.fields}
+        sections = {'base': 'Alapadatok', 'child': 'Tárgy működése', 'use': 'Használat', 'trade': 'Kereskedelem',
+                    'appearance': 'Megjelenés', 'refinement': 'Fejlesztés', 'levels': 'Fejlesztési szintek',
+                    'bonuses': 'Állandó bónuszok', 'recipes': 'Receptek', 'resistance': 'Ellenállások',
+                    'attack': 'Támadás', 'ammo': 'Lőszer', 'pet_food_rules': 'Pet táplálása'}
+        changes = []
+        def display(value, column, context=None):
+            if value is None: return 'Nincs'
+            field = labels.get(column)
+            if field:
+                if field.kind == 'bool': return 'Igen' if str(value) == '1' else 'Nem'
+                if field.kind == 'choice': return next((str(text) for key, text in field.options['choices'] if str(key) == str(value)), str(value))
+                if field.kind == 'scaled': return catalog.display(value, field.options['scale']) + ' ' + field.options.get('unit', '')
+            if column in ('bonus_id', 'value_scaled'):
+                bonus_id = value if column == 'bonus_id' else (context or {}).get('bonus_id')
+                definition = next((row for row in self.packet['bonuses'] if str(row['id']) == str(bonus_id)), None)
+                if definition:
+                    if column == 'bonus_id': return BONUS_LABELS.get(definition['code'], definition['code'])
+                    scale, unit = UNITS.get(int(definition['unit']), (1, ''))
+                    return catalog.display(value, scale) + ' ' + unit
+            if column.endswith('_raw'): return catalog.display(value) + ' pont'
+            if column.endswith('_bp'): return catalog.display(value, 100) + ' %'
+            if column.endswith('_ms'): return catalog.display(value, 1000) + ' mp'
+            return str(value)
+        def visit(before, after, path=(), before_context=None, after_context=None):
+            if before == after: return
+            if isinstance(after, dict) or isinstance(before, dict):
+                left, right = before or {}, after or {}
+                for key in dict.fromkeys([*left, *right]): visit(left.get(key), right.get(key), (*path, key), left, right)
+            elif isinstance(after, list) or isinstance(before, list):
+                left, right = before or [], after or []
+                for index in range(max(len(left), len(right))):
+                    visit(left[index] if index < len(left) else None, right[index] if index < len(right) else None, (*path, '+%d' % index if path and path[0] == 'levels' else '%d. sor' % (index + 1)))
+            else:
+                column = str(path[-1]); field = labels.get(column)
+                if column.endswith('_profile_id') or column in ('profile_id', 'category_id', 'local_id'): return
+                name = field.label if field else {'level': 'Szint', 'value_scaled': 'Bónusz értéke', 'bonus_id': 'Bónuszazonosító',
+                    'gold_cost': 'Yang-költség', 'success_chance_bp': 'Sikeresély', 'amount': 'Darabszám',
+                    'physical_attack_gain_raw': 'Fizikai támadás többlete', 'magical_attack_gain_raw': 'Mágikus támadás többlete',
+                    'physical_defense_gain_raw': 'Fizikai védekezés többlete', 'magical_defense_gain_raw': 'Mágikus védekezés többlete'}.get(column, column.replace('_', ' '))
+                group = sections.get(path[0], str(path[0]).replace('_', ' '))
+                changes.append((' · '.join([group, *map(str, path[1:-1]), name]), display(before, column, before_context), display(after, column, after_context)))
+        visit(previous, document)
+        self.review_summary.setText(('Új tárgytípus · %d beállítás kerül mentésre.' if self.original_key is None else
+                                     '%d megváltozott beállítás. A mentett tárgyhoz hasonlítjuk az aktuális piszkozatot.') % len(changes))
+        self.changes_table.setRowCount(len(changes))
+        for row, values in enumerate(changes):
+            for column, text in enumerate(values):
+                item = QTableWidgetItem(text); item.setToolTip(text); self.changes_table.setItem(row, column, item)
+        self.changes_table.resizeRowsToContents()
+
+    def discard_requested(self):
+        label = 'Új tárgy piszkozatának eldobása' if self.original_key is None else 'Mentetlen módosítások visszaállítása'
+        dialog = QMessageBox(QMessageBox.Icon.Question, label,
+            'A piszkozat bezárul, és az új tárgy nem kerül a katalógusba.' if self.original_key is None else
+            'A szerkesztő a tárgy utoljára betöltött, mentett értékeit tölti vissza.', parent=self)
+        discard = dialog.addButton('Piszkozat eldobása' if self.original_key is None else 'Módosítások visszaállítása', QMessageBox.ButtonRole.DestructiveRole)
+        cancel = dialog.addButton('Szerkesztés folytatása', QMessageBox.ButtonRole.RejectRole)
+        dialog.setDefaultButton(cancel); dialog.exec()
+        if dialog.clickedButton() is discard: self.discard()
 
     # --- forms -------------------------------------------------------------------
     def build_forms(self):
         changed = self.mark_dirty
+        identity = Form(changed)
+        identity.section('Belső azonosítás', 'A tartalomkód alapján találod meg a tárgyat a katalógusban és a játék szabályaiban.')
+        identity.add('base', 'content_code', 'Egyedi tartalomkód', 'text', hint='Állandó belső azonosító, pl. weapon.vaskard. Kisbetű, szám, _ és .')
+        identity.section('Játékbeli név és leírás', 'Ezek fordítási kulcsok. A hozzájuk tartozó megjelenő szöveget a kliens fordításai tartalmazzák.')
+        identity.add('base', 'name_key', 'Játékbeli név fordítási kulcsa', 'text', hint='A kliens ebből a fordítási kulcsból keresi ki a megjelenő nevet.')
+        identity.add('base', 'description_key', 'Leírás fordítási kulcsa', 'text')
+        identity.section('Ikon és modell', 'Kliensoldali erőforrás-útvonalak. A szerkesztő nem másolja át automatikusan ezeket az állományokat.')
+        identity.add('base', 'icon_asset', 'Leltárikon útvonala', 'text', hint='Kliensoldali útvonal, pl. icons/weapon/sword_iron.png')
+        self.appearance_field = identity.add('appearance', 'model_asset', 'Megjelenési modell útvonala', 'text', optional=True,
+                                        placeholder='Üres = nincs külön modell', hint='Felszerelés modellje; foglalatkőnél és küldetéstárgynál a földre dobott tárgy modellje.')
+        identity.finish(); self.identity_form = identity; self.identity_page = scroll(identity)
         base = Form(changed)
-        base.add('base', 'content_code', 'Tartalomkód', 'text', hint='Egyedi, állandó azonosító szöveg, pl. weapon.sword_iron. Kisbetű, szám, _ és .')
-        base.add('base', 'name_key', 'Névkulcs', 'text', hint='Fordítási kulcs, amelyből a kliens a megjelenő nevet veszi.')
-        base.add('base', 'description_key', 'Leíráskulcs', 'text')
-        base.add('base', 'icon_asset', 'Ikon', 'text', hint='Kliensoldali útvonal, pl. icons/weapon/sword_iron.png')
-        base.add('base', 'inventory_width', 'Szélesség (mező)', range=(1, 255))
-        base.add('base', 'inventory_height', 'Magasság (mező)', range=(1, 255))
-        self.stack_field = base.add('base', 'max_stack', 'Halmozás', range=(1, 4294967295), hint='Felszerelés nem halmozható (1).')
+        base.section('Használati követelmény')
+        base.add('base', 'min_level', 'Szükséges karakterszint', range=(0, 65535))
+        self.binding_field = base.add('base', 'binding_policy', 'Karakterhez kötés', 'choice', choices=[(1, 'Nincs kötés'), (2, 'Megszerzéskor kötődik'), (3, 'Felszereléskor kötődik')])
+        base.section('Helyfoglalás és darabszám')
+        base.add('base', 'inventory_width', 'Leltárszélesség', unit='mező', range=(1, 255))
+        base.add('base', 'inventory_height', 'Leltármagasság', unit='mező', range=(1, 255))
+        self.stack_field = base.add('base', 'max_stack', 'Legnagyobb halomméret', unit='darab', range=(1, 4294967295), hint='Ennyi példány fér egy leltárhelyre. Felszerelésnél mindig 1.')
         base.add('base', 'weight_grams', 'Súly (gramm)', range=(0, 4294967295))
-        base.add('base', 'min_level', 'Minimális szint', range=(0, 65535))
-        self.binding_field = base.add('base', 'binding_policy', 'Kötés', 'choice', choices=[(1, 'Nincs'), (2, 'Megszerzéskor'), (3, 'Felszereléskor')])
-        base.add('base', 'buy_amount', 'Vételár (Yang)', range=(0, 2 ** 63 - 1))
-        base.add('base', 'sell_amount', 'Eladási ár (Yang)', range=(0, 2 ** 63 - 1))
-        base.add('base', 'retired', 'Kivezetés', 'bool', text='Kivezetve — a kulcs megmarad, új példány nem készül')
+        base.section('Bolti érték')
+        base.add('base', 'buy_amount', 'Játékos vételára az NPC-nél', unit='Yang', range=(0, 2 ** 63 - 1))
+        base.add('base', 'sell_amount', 'Játékos eladási ára az NPC-nél', unit='Yang', range=(0, 2 ** 63 - 1))
+        base.section('Katalógusállapot')
+        base.add('base', 'retired', 'Új példányok készítése', 'bool', text='Letiltva: a tárgytípus kivezetett')
         base.note('A kategória és a helyi azonosító létrehozás után nem változik, és soha nem kerül újrahasznosításra.')
+        base.fields.extend(identity.fields)
         base.finish(); self.base_form = base
         use = Form(changed)
-        use.add('use', 'allowed_classes', 'Viselheti', 'bits', names=['Harcos', 'Nindzsa', 'Sura', 'Sámán'])
-        use.add('use', 'allowed_sexes', 'Nem', 'bits', names=['Férfi', 'Nő'])
+        use.section('Ki és mikor használhatja?')
+        use.add('use', 'allowed_classes', 'Engedélyezett kasztok', 'bits', names=['Harcos', 'Nindzsa', 'Sura', 'Sámán'])
+        use.add('use', 'allowed_sexes', 'Engedélyezett karakterek', 'bits', names=['Férfi', 'Nő'])
         use.add('use', 'use_during_combat', 'Harc közben', 'bool', text='Harc közben is használható')
+        use.section('Átadás, eldobás és eladás')
         use.add('trade', 'allow_trade', 'Kereskedés', 'bool', text='Játékosok között cserélhető')
         use.add('trade', 'allow_drop', 'Eldobás', 'bool', text='Földre dobható')
         use.add('trade', 'allow_sell', 'Eladás', 'bool', text='NPC-nek eladható')
-        self.appearance_field = use.add('appearance', 'model_asset', 'Megjelenési modell', 'text', optional=True,
-                                        placeholder='Üres = nincs külön modell', hint='Felszerelés modellje; foglalatkőnél és küldetéstárgynál a földre dobott tárgy modellje.')
         use.finish(); self.use_form = use
         weapon = Form(changed)
+        weapon.section('Fegyverfajta és alapértékek')
         weapon.add('child', 'weapon_subtype', 'Fegyvertípus', 'choice',
                    choices=[(1, 'Kard'), (2, 'Tőr'), (3, 'Íj'), (4, 'Kétkezes'), (5, 'Csengő'), (6, 'Legyező'), (7, 'Lovas lándzsa')])
         weapon.add('child', 'physical_attack_base_raw', 'Fizikai támadás', 'scaled', scale=1000, unit='pont', range=(0, 10 ** 15))
         weapon.add('child', 'magical_attack_base_raw', 'Mágikus támadás', 'scaled', scale=1000, unit='pont', range=(0, 10 ** 15))
+        weapon.section('Támadás működése')
         weapon.add('attack', 'interval_ticks', 'Támadási időköz', unit='tick', range=(1, 4294967295))
         weapon.add('attack', 'windup_ticks', 'Felkészülés', unit='tick', range=(0, 4294967295), hint='Nem lehet hosszabb a támadási időköznél.')
         weapon.add('attack', 'reach_millimeters', 'Hatótáv', 'scaled', scale=1000, unit='méter', range=(1, 4294967295))
         weapon.add('attack', 'max_targets', 'Célpontok száma', range=(1, 1024))
+        weapon.section('Lőszerhasználat')
         weapon.add('ammo', 'ammo_kind', 'Lőszer', 'choice', choices=[(1, 'Nem használ lőszert'), (2, 'Lőszert fogyaszt a halomból')])
         weapon.add('ammo', 'units_per_hit', 'Lőszer találatonként', range=(0, 65535), hint='Lőszer nélkül 0, lőszerrel legalább 1.')
         weapon.finish()
         armor = Form(changed, 2)
-        armor.add('child', 'equip_slot', 'Hely', 'choice', choices=[(2, 'Test'), (3, 'Fej'), (4, 'Pajzs'), (5, 'Láb')])
+        armor.section('Felszerelési hely és alapvédelem')
+        armor.add('child', 'equip_slot', 'Felszerelési hely', 'choice', choices=[(2, 'Testpáncél'), (3, 'Sisak'), (4, 'Pajzs'), (5, 'Cipő')])
         armor.add('child', 'physical_defense_base_raw', 'Fizikai védekezés', 'scaled', scale=1000, unit='pont', range=(0, 10 ** 15))
         armor.add('child', 'magical_defense_base_raw', 'Mágikus védekezés', 'scaled', scale=1000, unit='pont', range=(0, 10 ** 15))
         self.add_resistances(armor)
         armor.finish()
         accessory = Form(changed, 2)
-        accessory.add('child', 'equip_slot', 'Hely', 'choice', choices=[(6, 'Csukló'), (7, 'Nyak'), (8, 'Fül')])
+        accessory.section('Ékszerfajta és foglalatok')
+        accessory.add('child', 'equip_slot', 'Felszerelési hely', 'choice', choices=[(6, 'Karkötő'), (7, 'Nyaklánc'), (8, 'Fülbevaló')])
         self.socket_field = accessory.add('child', 'socket_profile_id', 'Foglalatprofil', 'choice', choices=[('', 'Nincs foglalat')])
         self.add_resistances(accessory)
         accessory.note('Ékszer alapértéket nem kap: a statokat bónuszok és szintbónuszok adják. A foglalatprofilok külön tartalmak.')
@@ -1465,6 +1787,7 @@ class ItemPage(QWidget):
             elif self.quest_contexts_field.value()=='0':self.quest_contexts_field.load('1')
 
     def add_resistances(self, form):
+        form.section('Ellenállások', 'Százalékos ellenállás a megfelelő sebzéstípus ellen. A negatív érték sérülékenységet jelent.')
         for column, label in zip(catalog.RESISTANCES, RESISTANCE_LABELS):
             form.add('resistance', column, label + ' ellenállás', 'scaled', scale=100, unit='%', range=(-10000, 10000))
 
@@ -1529,17 +1852,24 @@ class ItemPage(QWidget):
 
     def mark_dirty(self):
         if self.loading or self.document is None: return
+        self.checked_document = None
+        self.inline_error.hide()
         self.dirty = True; self.update_badge(); self.controls()
+        self.preview_timer.start()
 
     def update_badge(self):
-        self.badge.setProperty('dirty', 'true' if self.dirty else 'false')
-        self.badge.setText('Nem mentett módosítás' if self.dirty else ('Új, még nem mentett tárgy' if self.document and self.original_key is None else 'Mentve' if self.document else ''))
+        self.badge.setProperty('dirty', 'true' if self.dirty or (self.document and self.original_key is None) else 'false')
+        self.badge.setText('Új piszkozat' if self.document and self.original_key is None else 'Mentetlen módosítás' if self.dirty else 'Mentett tárgytípus' if self.document else '')
         self.badge.setVisible(bool(self.document)); self.badge.style().unpolish(self.badge); self.badge.style().polish(self.badge)
 
     def may_discard(self):
         if not self.dirty and not (self.document and self.original_key is None): return True
-        answer = QMessageBox.question(self, 'Tárgyszerkesztő', 'A tárgy módosításai nincsenek mentve. Elveted őket?')
-        if answer == QMessageBox.StandardButton.Yes:
+        dialog = QMessageBox(QMessageBox.Icon.Question, 'Mentetlen tárgyszerkesztés',
+            'A(z) „%s” tárgytípus szerkesztése még nincs mentve. Másik tárgy megnyitásához vagy az ablak bezárásához el kell döntened, mi legyen a piszkozattal.' % readable_name(self.document['base']), parent=self)
+        discard = dialog.addButton('Mentetlen szerkesztés eldobása', QMessageBox.ButtonRole.DestructiveRole)
+        keep = dialog.addButton('Szerkesztés folytatása', QMessageBox.ButtonRole.RejectRole)
+        dialog.setDefaultButton(keep); dialog.exec()
+        if dialog.clickedButton() is discard:
             self.dirty = False; return True
         return False
 
@@ -1566,14 +1896,30 @@ class ItemPage(QWidget):
         self.list.setEnabled(not busy and self.packet is not None)
         has = self.document is not None
         self.tabs.setEnabled(has and not busy)
-        self.copy_button.setEnabled(local and db and not busy and has and self.original_key is not None)
+        self.section_nav.setEnabled(has and not busy)
+        self.back_button.setEnabled(not busy)
+        self.copy_button.setEnabled(local and db and not busy and self.chosen_key() is not None)
+        self.editor_copy_button.setEnabled(local and db and not busy and has and self.original_key is not None and not self.dirty)
+        self.editor_copy_button.setToolTip('Készíts új tárgytípust a mentett beállítások alapján.' if not self.dirty else
+                                         'A másolat készítése előtt mentsd a jelenlegi módosításokat.')
+        self.edit_button.setEnabled(not busy and self.chosen_key() is not None)
+        self.resume_button.setVisible(has)
+        self.resume_button.setEnabled(not busy)
+        self.resume_button.setText('Mentetlen piszkozat folytatása' if self.dirty or (has and self.original_key is None) else 'Megnyitott tárgy folytatása')
         self.check_button.setEnabled(has and not busy and self.packet is not None)
         running = bool(state.get('running'))
         can_save = has and not busy and db and not running and (self.dirty or self.original_key is None)
         self.save_button.setEnabled(can_save)
+        self.save_button.setText('Új tárgytípus mentése' if has and self.original_key is None else 'Változtatások mentése')
         self.discard_button.setEnabled(has and not busy and (self.dirty or self.original_key is None))
+        self.discard_button.setText('Piszkozat eldobása…' if has and self.original_key is None else 'Módosítások visszaállítása…')
         self.save_note.setText('A mentéshez állítsd le a helyi játékszervert.' if has and running else
-                               'Mentés előtt a játék saját katalógusellenőrzője vizsgálja meg a teljes katalógust.' if has else '')
+                               'Művelet folyamatban…' if busy else 'Az adatbázis nem érhető el; a mentéshez indítsd el.' if has and not db else
+                               ('Ellenőrzés rendben. A piszkozat még nincs mentve.' if self.dirty or self.original_key is None else
+                                'Ellenőrzés rendben. A mentett értékek érvényesek.') if self.checked_document is not None else
+                               'Mentetlen piszkozat. Mentés előtt a teljes katalógust ellenőrizzük.' if has and (self.dirty or self.original_key is None) else
+                               'A tárgy betöltött értékei megegyeznek a mentett állapottal.' if has else '')
+        self.save_button.setToolTip(self.save_note.text() if not can_save else 'Ellenőrzés és mentés a helyi tárgykatalógusba.')
 
     # --- background work ---------------------------------------------------------
     def run(self, function, done, message):
@@ -1585,7 +1931,7 @@ class ItemPage(QWidget):
             if self.task is task: self.task = None
             task.deleteLater()
             if 'error' in outcome:
-                self.status.setText(outcome['error']); self.owner.error(outcome['error'])
+                self.status.setText(outcome['error']); self.show_form_error(outcome['error']); self.owner.error(outcome['error'])
             elif 'value' in outcome:
                 try: done(outcome['value'])
                 except Exception as error: self.status.setText(str(error)); self.owner.error(str(error))
@@ -1616,7 +1962,8 @@ class ItemPage(QWidget):
         self.loot_table.set_items(model.items())
         items = model.items()
         retired = sum(row['retired'] == '1' for row in items)
-        self.status.setText('%d tárgy (%d kivezetve) • katalógus-hash %s… • helyi protos adatbázis' % (len(items), retired, packet['hash'][:12]))
+        self.status.setText('Helyi tárgykatalógus · %d tárgytípus · %d kivezetett' % (len(items), retired))
+        self.status.setToolTip('Katalógus-ellenőrzőösszeg: ' + packet['hash'])
         self.dirty = False; self.document = None
         select = tuple(select) if select is not None else None
         if select is not None and any((int(r['category_id']), int(r['local_id'])) == select for r in items): self.open_item(select)
@@ -1625,31 +1972,36 @@ class ItemPage(QWidget):
 
     def fill_list(self):
         if self.packet is None: return
-        selected = self.original_key if self.document is not None else None
+        selected = self.chosen_key() or self.original_key
         category = self.category_filter.currentData(); needle = self.search.text().strip().lower()
         rows = [row for row in catalog.Catalog(self.packet).items()
                 if (not category or int(row['category_id']) == category) and (self.show_retired.isChecked() or row['retired'] != '1')
-                and (not needle or needle in (row['content_code'] + ' ' + row['name_key'] + ' ' + row['category_id'] + ':' + row['local_id']).lower())]
+                and (not needle or needle in (readable_name(row) + ' ' + row['content_code'] + ' ' + row['name_key'] + ' ' + catalog.CATEGORIES.get(int(row['category_id']), '') + ' ' + row['category_id'] + ':' + row['local_id']).lower())]
         self.list.blockSignals(True); self.list.setRowCount(len(rows)); target = -1
         for index, row in enumerate(rows):
             key = (int(row['category_id']), int(row['local_id']))
-            cells = ['%d:%d' % key, catalog.CATEGORIES.get(key[0], str(key[0])), row['content_code'], 'Kivezetve' if row['retired'] == '1' else 'Aktív']
+            cells = [readable_name(row), catalog.CATEGORIES.get(key[0], str(key[0])), '%d:%d' % key, row['min_level'], 'Kivezetett' if row['retired'] == '1' else 'Aktív', row['content_code']]
             for column, value in enumerate(cells):
-                item = QTableWidgetItem(value); item.setData(KEY_ROLE, key); self.list.setItem(index, column, item)
+                item = QTableWidgetItem(value); item.setData(KEY_ROLE, key)
+                item.setToolTip('%s\nAzonosító: %d:%d\nFordítási kulcs: %s' % (row['content_code'], *key, row['name_key']))
+                self.list.setItem(index, column, item)
             if selected is not None and key == tuple(selected): target = index
         self.list.clearSelection()
         if target >= 0: self.list.selectRow(target)
         self.list.blockSignals(False)
-        self.list.resizeColumnToContents(0); self.list.resizeColumnToContents(1)
+        self.result_count.setText('%d találat / %d tárgytípus' % (len(rows), len(catalog.Catalog(self.packet).items())))
+        self.empty_list.setText('Nincs találat. Módosítsd a keresést, vagy töröld a szűrőket.' if not rows else '')
+        self.empty_list.setVisible(not rows)
+        self.selected()
 
     def selected(self):
-        items = self.list.selectedItems()
-        if not items: return
-        key = items[0].data(KEY_ROLE)
-        if self.document is not None and self.original_key == tuple(key): return
-        if not self.may_discard():
-            self.fill_list(); return
-        self.open_item(tuple(key))
+        key = self.chosen_key()
+        if key and self.packet:
+            document = catalog.Catalog(self.packet).item(key)
+            self.selection_description.setText(readable_name(document['base']) + '\n' + summary_lines(document)[1])
+        else:
+            self.selection_description.setText('Jelölj ki egy tárgytípust a részletekhez. Dupla kattintás: szerkesztés.')
+        self.controls()
 
     def open_item(self, key):
         try:
@@ -1663,43 +2015,40 @@ class ItemPage(QWidget):
         if self.packet is None or not self.may_discard(): return
         try: document = catalog.Catalog(self.packet).new(category)
         except api.EditorError as error: self.owner.error(str(error)); return
-        self.original_key = None
-        self.list.blockSignals(True); self.list.clearSelection(); self.list.blockSignals(False)
-        self.show_document(document)
-        self.tabs.setCurrentIndex(0)
+        self.open_draft(document)
 
     def duplicate(self):
         if self.packet is None or self.original_key is None or not self.may_discard(): return
         try: document = catalog.Catalog(self.packet).duplicate(self.original_key)
         except api.EditorError as error: self.owner.error(str(error)); return
-        self.original_key = None
-        self.list.blockSignals(True); self.list.clearSelection(); self.list.blockSignals(False)
-        self.show_document(document)
-        self.tabs.setCurrentIndex(0)
+        self.open_draft(document)
         self.status.setText('Új, még nem mentett másolat. A név, megjelenés és beállítások átvehetők; az eredeti tárgy változatlan.')
 
     # --- document <-> forms ------------------------------------------------------
     def show_document(self, document):
         self.loading = True; self.document = copy.deepcopy(document); self.dirty = False
-        current = self.tabs.currentIndex()
+        self.checked_document = None
+        self.preview_timer.stop(); self.inline_error.hide()
+        current = self.tabs.currentWidget()
         while self.tabs.count(): self.tabs.removeTab(0)
         if document is None:
-            self.heading.setText('Nincs kijelölt tárgy'); self.loading = False; self.update_badge(); self.controls(); return
+            self.heading.setText('Nincs megnyitott tárgytípus'); self.identity_line.clear(); self.section_nav.clear()
+            self.workspace.setCurrentWidget(self.catalog_page)
+            self.loading = False; self.update_badge(); self.controls(); return
         base = document['base']; category = int(base['category_id'])
-        self.heading.setText('%s %s:%s — %s' % (catalog.CATEGORIES[category], base['category_id'], base['local_id'], base['content_code']))
         equipment = category in (1, 2, 3, 4, 11, 15)
         refinable = equipment or category==7
-        self.tabs.addTab(self.base_page, 'Alapadatok')
-        self.tabs.addTab(self.use_page, 'Használat és kereskedelem')
-        self.tabs.addTab(self.category_pages[category], catalog.CATEGORIES[category])
-        if category!=15:self.tabs.addTab(self.pet_food_page,'Pet etetés')
+        self.tabs.addTab(self.overview_page, 'Áttekintés')
+        self.tabs.addTab(self.base_page, 'Alapbeállítások')
+        self.tabs.addTab(self.category_pages[category], TYPE_SECTION[category])
+        self.tabs.addTab(self.use_page, 'Használat és csere')
         if refinable:
-            self.tabs.addTab(self.refinement, 'Fejlesztés'); self.tabs.addTab(self.bonus_page, 'Bónuszok')
+            self.tabs.addTab(self.refinement, 'Fejlesztés és receptek'); self.tabs.addTab(self.bonus_page, 'Állandó bónuszok')
         self.stack_field.edit.setEnabled(not equipment)
         self.appearance_field.widget.setEnabled(category in (1,2,3,4,11,7,10))
         self.base_form.load(document); self.use_form.load(document);self.pet_food_panel.load(document)
         if category in (1,2,3,4):
-            self.tabs.addTab(self.attribute_page,'Példánybónuszok');self.attribute_panel.load(document,self.packet['bonuses'])
+            self.tabs.addTab(self.attribute_page,'Véletlen bónuszok');self.attribute_panel.load(document,self.packet['bonuses'])
         if category == 5:
             attribute_service=document.get('attribute_service') is not None
             self.attribute_service_panel.load(document)
@@ -1786,8 +2135,24 @@ class ItemPage(QWidget):
         if category==7:self.stone_controls()
         if category==15:self.companion_controls()
         if category==17:self.pet_supply_controls()
-        self.tabs.setCurrentIndex(min(max(current, 0), self.tabs.count() - 1))
-        self.loading = False; self.update_badge(); self.controls()
+        if category != 15: self.tabs.addTab(self.pet_food_page, 'Pet táplálása')
+        self.tabs.addTab(self.identity_page, 'Azonosítók és megjelenés')
+        self.tabs.addTab(self.review_page, 'Mentés áttekintése')
+        for index in range(self.tabs.count()):
+            self.tabs.setTabToolTip(index, SECTION_HELP.get(self.tabs.tabText(index), CATEGORY_HELP[category][1]))
+        while self.overview_links.count():
+            item = self.overview_links.takeAt(0)
+            if item.widget(): item.widget().deleteLater()
+        for label, target in (('Típus és működés beállítása →', self.category_pages[category]),
+                              ('Szintkövetelmény, méret és árak →', self.base_page),
+                              ('Változtatások áttekintése mentés előtt →', self.review_page)):
+            link = QPushButton(label); link.setObjectName('Quiet')
+            link.clicked.connect(lambda _, page=target: self.tabs.setCurrentWidget(page))
+            self.overview_links.addWidget(link)
+        self.loading = False
+        self.rebuild_sections(current)
+        self.refresh_item_overview(); self.update_badge(); self.controls()
+        self.workspace.setCurrentWidget(self.editor_page)
 
     def collect(self):
         document = copy.deepcopy(self.document); category = int(document['base']['category_id'])
@@ -1887,24 +2252,36 @@ class ItemPage(QWidget):
         return document
 
     def check(self):
+        if self.document is None or self.packet is None or self.active() or self.owner.busy(): return
         try: document = self.collect()
-        except api.EditorError as error: self.owner.error(str(error)); return
+        except api.EditorError as error: self.show_form_error(str(error)); self.owner.error(str(error)); return
         packet, key = self.packet, self.original_key
-        self.run(lambda: catalog.validate(packet, document, key), lambda digest: self.status.setText(
-            'Ellenőrzés rendben: a teljes katalógus érvényes ezzel a tárggyal (új hash %s…). Még nincs mentve.' % digest[:12]),
+        def checked(digest):
+            self.checked_document = copy.deepcopy(document)
+            self.inline_error.hide()
+            self.status.setText('Ellenőrzés rendben. A teljes katalógus érvényes a tárgy beállításaival. A piszkozat még nincs mentve.')
+            self.refresh_item_overview(document)
+        self.run(lambda: catalog.validate(packet, document, key), checked,
             'A játék katalógusellenőrzője vizsgálja a tárgyat…')
 
     def save(self):
         if self.packet is None or self.document is None: return
+        if self.workspace.currentWidget() != self.editor_page or self.active() or self.owner.busy(): return
+        state = getattr(self, 'state', None) or {}
+        if not self.local() or not state.get('database_running') or state.get('running'):
+            self.show_form_error('A mentéshez válassz helyi szervert, indítsd el az adatbázist és állítsd le a játékszervert.')
+            return
+        if not self.dirty and self.original_key is not None: return
         try: document = self.collect()
-        except api.EditorError as error: self.owner.error(str(error)); return
+        except api.EditorError as error: self.show_form_error(str(error)); self.owner.error(str(error)); return
         root, packet, key = self.owner.root, self.packet, self.original_key
         new_key = (int(document['base']['category_id']), int(document['base']['local_id']))
         def done(result):
             self.dirty = False; self.document = None; self.original_key = None
             self.loaded(result, new_key)
-            self.owner.statusBar().showMessage('Tárgy mentve: %d:%d' % new_key, 6000)
-        self.run(lambda: catalog.save(root, packet, document, key), done, 'Mentés a helyi protos adatbázisba…')
+            self.status.setText('Mentve: %s · tárgytípus %d:%d. A katalógus a mentett értékeket mutatja.' % (readable_name(document['base']), *new_key))
+            self.owner.statusBar().showMessage('Tárgytípus mentve: %d:%d' % new_key, 6000)
+        self.run(lambda: catalog.save(root, packet, document, key), done, 'Tárgy ellenőrzése és mentése a helyi katalógusba…')
 
     def discard(self):
         if self.original_key is None:

@@ -14,7 +14,7 @@ from PySide6.QtGui import QColor, QDesktopServices, QFont, QFontDatabase, QKeySe
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
     QFileDialog, QFrame, QHBoxLayout, QHeaderView, QInputDialog, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMainWindow, QMessageBox, QPlainTextEdit,
-    QPushButton, QSizePolicy, QSplitter, QStackedWidget, QStyledItemDelegate, QTabWidget,
+    QPushButton, QScrollArea, QSizePolicy, QSplitter, QStackedWidget, QStyledItemDelegate, QTabWidget,
     QTableWidget, QTableWidgetItem, QToolButton, QMenu, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
 import backend as api
@@ -27,6 +27,7 @@ from crash_page import CrashPage
 from backup_page import BackupPage
 from item_page import ItemPage
 from bench_page import BenchPage
+from manager_ui import STYLE, ChannelBox, DashboardContent, NavigationDelegate, card_layout, line_icon, metric_card, tone
 
 PATH_ROLE = int(Qt.ItemDataRole.UserRole)
 VALUE_ROLE = PATH_ROLE + 1
@@ -50,50 +51,6 @@ LABELS = {
     'percent': 'Esély (%)', 'chance': 'Esély', 'category': 'Kategória',
     'count': 'Darabszám', 'name': 'Név', 'gold': 'Yang', 'map_index': 'Mapazonosító',
 }
-
-STYLE = '''
-QWidget { background: #111925; color: #e4eaf3; font-family: "Segoe UI"; font-size: 13px; }
-QLabel, QCheckBox { background: transparent; }
-QMainWindow, QStackedWidget { background: #111925; }
-QLabel#Title { font-size: 25px; font-weight: 650; }
-QLabel#Subtle { color: #96a6bd; }
-QLabel#SectionTitle { font-size: 20px; font-weight: 600; }
-QLabel#FieldHint { color: #8498b1; font-size: 11px; }
-QLabel#SavedBadge { background: #213b38; color: #8bdbc0; border-radius: 4px; padding: 5px 9px; }
-QLabel#SavedBadge[dirty="true"] { background: #4a3b25; color: #ffda95; }
-QWidget#FormCard { background: #182331; border-radius: 7px; }
-QWidget#FormField { background: transparent; }
-QTableWidget { alternate-background-color: #1d2b3b; }
-QListWidget#Categories { border: none; background: #141f2d; }
-QListWidget#Categories::item { padding: 12px 10px; border-radius: 4px; margin-bottom: 3px; }
-QListWidget#Categories::item:selected { background: #2c4c64; color: #ffffff; }
-QLineEdit[invalid="true"], QPlainTextEdit[invalid="true"] { border: 1px solid #e98383; }
-QLabel#Metric { font-size: 23px; font-weight: 650; color: #83d6c0; padding: 16px; background: #1b2939; border-radius: 8px; }
-QPushButton { background: #26374d; padding: 8px 14px; border: 1px solid #364960; border-radius: 5px; }
-QPushButton:hover { background: #314963; }
-QPushButton:disabled { color: #637188; background: #1c2735; border-color: #263345; }
-QPushButton#Primary { background: #287c67; border-color: #37967c; font-weight: 600; }
-QPushButton#Stop { background: #73434e; border-color: #945061; }
-QPushButton#Primary:disabled, QPushButton#Stop:disabled { background: #202d3b; border-color: #2e3e50; color: #8591a5; }
-QLineEdit, QPlainTextEdit, QTreeWidget, QListWidget, QTableWidget, QComboBox {
- background: #172231; border: 1px solid #2c3e54; border-radius: 5px; padding: 5px; selection-background-color: #305d70;
-}
-QTreeWidget::item, QListWidget::item { padding: 4px; }
-QTreeWidget::item:selected, QListWidget::item:selected, QTableWidget::item:selected { background: #30576d; color: #ffffff; }
-QHeaderView::section { background: #213147; padding: 7px; border: none; color: #acbdd2; }
-QTabBar::tab { background: #1a2738; padding: 8px 18px; }
-QTabBar::tab:selected { background: #305064; }
-QCheckBox { padding: 4px; }
-QToolButton { background: #24364a; border: 1px solid #364960; border-radius: 5px; padding: 8px 12px; }
-QToolButton:checked { background: #305064; }
-QMenu { background: #1b2939; border: 1px solid #364960; padding: 5px; }
-QMenu::item { padding: 8px 18px; }
-QMenu::item:selected { background: #305064; }
-QSplitter::handle { background: #233347; }
-QScrollBar:vertical { background: #15202c; width: 11px; }
-QScrollBar::handle:vertical { background: #3a4d64; min-height: 25px; }
-'''
-
 
 def button(text, callback, name=None):
     result = QPushButton(text)
@@ -811,49 +768,94 @@ class MainWindow(QMainWindow):
         self.settings = QSettings('Auriga', 'ServerManager')
         self.setWindowTitle('Auriga • Szerverkezelő')
         self.setMinimumSize(1100, 760)
-        self.resize(1320, 860)
+        self.resize(1440, 940)
         center = QWidget()
         self.setCentralWidget(center)
-        layout = QVBoxLayout(center)
-        layout.setContentsMargins(20, 18, 20, 14)
+        shell = QHBoxLayout(center)
+        shell.setContentsMargins(0, 0, 0, 0)
+        shell.setSpacing(0)
+        sidebar = QWidget()
+        sidebar.setObjectName('Sidebar')
+        sidebar.setFixedWidth(218)
+        rail = QVBoxLayout(sidebar)
+        rail.setContentsMargins(14, 24, 14, 16)
+        rail.setSpacing(12)
+        brand = QHBoxLayout()
+        mark = QLabel('A')
+        mark.setObjectName('BrandMark')
+        mark.setFixedSize(40, 40)
+        mark.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        brand.addWidget(mark)
+        brand_text = QVBoxLayout()
+        brand_text.setSpacing(2)
+        wordmark = QLabel('AURIGA')
+        wordmark.setObjectName('Brand')
+        brand_text.addWidget(wordmark)
+        brand_text.addWidget(note('Szerverkezelő'))
+        brand.addLayout(brand_text)
+        brand.addStretch()
+        rail.addLayout(brand)
+        rail.addSpacing(20)
+        caption = QLabel('MUNKATERÜLET')
+        caption.setObjectName('Eyebrow')
+        rail.addWidget(caption)
+        self.navigation = QListWidget()
+        self.navigation.setObjectName('Navigation')
+        self.navigation.setMouseTracking(True)
+        self.navigation.setItemDelegate(NavigationDelegate(self.navigation))
+        labels = ['Szerverállapot', 'Szerverbeállítások', 'Adatfájlok', 'Küldetések és Lua', 'Szervernaplók',
+                  'Távoli elérés és telepítés', 'Összeomlások', 'Biztonsági mentések', 'Tárgykatalógus', 'Tárgypróbapad']
+        icons = ['overview', 'settings', 'data', 'code', 'logs', 'remote', 'warning', 'backup', 'items', 'bench']
+        for label, icon in zip(labels, icons):
+            item = QListWidgetItem(line_icon(icon), 'Távoli elérés' if icon == 'remote' else label)
+            item.setToolTip(label)
+            self.navigation.addItem(item)
+        rail.addWidget(self.navigation, 1)
+        rail.addWidget(note('Minden művelet a kiválasztott szerverre vonatkozik.'))
+        shell.addWidget(sidebar)
+        workspace = QWidget()
+        layout = QVBoxLayout(workspace)
+        layout.setContentsMargins(24, 20, 24, 8)
+        layout.setSpacing(14)
+        shell.addWidget(workspace, 1)
         header = QHBoxLayout()
-        title = QLabel('Auriga szerverkezelő')
-        title.setObjectName('Title')
-        header.addWidget(title, 1)
-        self.choose_root_button = button('Helyi szervermappa…', self.choose_root)
-        self.open_root_button = button('Megnyitás Intézőben', self.open_root)
-        header.addWidget(self.choose_root_button)
-        header.addWidget(self.open_root_button)
-        layout.addLayout(header)
-        target_bar = QHBoxLayout()
-        target_bar.addWidget(QLabel('Kezelt szerver:'))
+        self.page_title = QLabel('Szerverállapot')
+        self.page_title.setObjectName('Title')
+        header.addWidget(self.page_title, 1)
+        self.target_badge = QLabel('HELYI')
+        self.target_badge.setObjectName('TargetBadge')
+        header.addWidget(self.target_badge)
         self.target_choice = QComboBox()
-        self.target_choice.setMinimumWidth(280)
+        self.target_choice.setAccessibleName('Kezelt szerver')
+        self.target_choice.setToolTip('A kiválasztott szerver minden oldalra érvényes.')
+        self.target_choice.setMinimumWidth(200)
+        self.target_choice.setMaximumWidth(290)
         self.target_choice.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.target_choice.setMinimumContentsLength(22)
-        target_bar.addWidget(self.target_choice, 1)
-        self.target_badge = QLabel('HELYI')
-        self.target_badge.setObjectName('Metric')
-        target_bar.addWidget(self.target_badge)
+        header.addWidget(self.target_choice)
         self.connect_button = button('Frissítés', self.reconnect_target)
-        target_bar.addWidget(self.connect_button)
-        target_bar.addWidget(button('SSH-profilok és eszközök', lambda: self.navigation.setCurrentRow(5)))
-        layout.addLayout(target_bar)
+        self.connect_button.setIcon(line_icon('refresh'))
+        header.addWidget(self.connect_button)
+        layout.addLayout(header)
+        target_bar = QHBoxLayout()
         self.location = ElidedLabel('Válassz szervercsomagot a kezdéshez.')
         self.location.setObjectName('Subtle')
         self.location.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        layout.addWidget(self.location)
+        target_bar.addWidget(self.location, 1)
+        self.choose_root_button = button('Szervermappa…', self.choose_root, 'Quiet')
+        self.open_root_button = button('Mappa megnyitása', self.open_root, 'Quiet')
+        self.open_root_button.setIcon(line_icon('folder'))
+        target_bar.addWidget(self.choose_root_button)
+        target_bar.addWidget(self.open_root_button)
+        layout.addLayout(target_bar)
         self.crash_alert = QLabel()
         self.crash_alert.setWordWrap(True)
-        self.crash_alert.setStyleSheet('background: #592d30; color: #ffd2cb; padding: 8px;')
+        self.crash_alert.setObjectName('CrashAlert')
         self.crash_alert.hide()
         layout.addWidget(self.crash_alert)
         main = QSplitter(Qt.Orientation.Vertical)
         self.main_splitter = main
         body = QSplitter()
-        self.navigation = QListWidget()
-        self.navigation.addItems(['Áttekintés', 'Beállítások', 'Játékadatok', 'Questek és Lua', 'Naplók', 'Kapcsolatok és eszközök', 'Összeomlások', 'Mentések', 'Tárgyak', 'Tárgyteszt'])
-        self.navigation.setFixedWidth(176)
         self.pages = QStackedWidget()
         self.overview = self.dashboard()
         self.config_editor = Editor(self)
@@ -868,12 +870,9 @@ class MainWindow(QMainWindow):
         self.target_choice.currentIndexChanged.connect(self.target_selected)
         for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page, self.crash_page, self.backup_page, self.item_page, self.bench_page):
             self.pages.addWidget(page)
-        body.addWidget(self.navigation)
         body.addWidget(self.pages)
-        body.setSizes([190, 1100])
-        body.setStretchFactor(0, 0)
-        body.setStretchFactor(1, 1)
         self.navigation.currentRowChanged.connect(self.pages.setCurrentIndex)
+        self.navigation.currentRowChanged.connect(lambda row: self.page_title.setText(labels[row]) if row >= 0 else None)
         self.navigation.setCurrentRow(0)
         main.addWidget(body)
         console_panel = QWidget()
@@ -893,6 +892,8 @@ class MainWindow(QMainWindow):
         logbar = QHBoxLayout()
         self.console_toggle = QToolButton()
         self.console_toggle.setText('Műveleti napló')
+        self.console_toggle.setIcon(line_icon('remote'))
+        self.console_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.console_toggle.setCheckable(True)
         self.console_toggle.toggled.connect(self.toggle_console)
         logbar.addWidget(self.console_toggle)
@@ -921,62 +922,304 @@ class MainWindow(QMainWindow):
         return [self.config_editor, self.data_page.editor, self.quest_page.editor]
 
     def dashboard(self):
-        page = QWidget()
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        page = DashboardContent()
+        scroll.setWidget(page)
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
         metrics = QHBoxLayout()
-        self.stack_metric, self.core_metric, self.db_metric = QLabel('Leállítva'), QLabel('0 core'), QLabel('SQL: később')
-        for metric in (self.stack_metric, self.core_metric, self.db_metric):
-            metric.setObjectName('Metric')
-            metrics.addWidget(metric)
+        metrics.setSpacing(12)
+        for name, caption, initial, hint in (
+                ('stack', 'SZERVER ÁLLAPOTA', 'Nincs szervercsomag', 'Válassz szervert a kezdéshez.'),
+                ('core', 'JÁTÉKSZERVER CORE-OK', '—', 'A játékot futtató folyamatok.'),
+                ('db', 'ADATBÁZIS', 'SQL: —', 'Adatbázis-kapcsolat állapota.')):
+            card, value, description = metric_card(caption, initial, hint)
+            setattr(self, name + '_metric', value)
+            setattr(self, name + '_description', description)
+            metrics.addWidget(card, 1)
         layout.addLayout(metrics)
+
+        self.guidance = QWidget()
+        self.guidance.setObjectName('Guidance')
+        guidance_layout = QHBoxLayout(self.guidance)
+        guidance_layout.setContentsMargins(16, 13, 16, 13)
+        guidance_layout.setSpacing(14)
+        self.guidance_icon = QLabel('i')
+        self.guidance_icon.setObjectName('GuidanceIcon')
+        self.guidance_icon.setFixedWidth(24)
+        self.guidance_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        guidance_layout.addWidget(self.guidance_icon)
+        guidance_text = QVBoxLayout()
+        guidance_text.setSpacing(5)
+        self.guidance_title = QLabel('Válassz szervert a kezdéshez')
+        self.guidance_title.setWordWrap(True)
+        self.guidance_title.setObjectName('SectionTitle')
+        guidance_text.addWidget(self.guidance_title)
+        self.target_hint = note('Nyiss meg egy helyi szervermappát, vagy válassz mentett SSH-profilt.')
+        self.target_hint.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        guidance_text.addWidget(self.target_hint)
+        guidance_layout.addLayout(guidance_text, 1)
+        self.guidance_action = button('Szervermappa…', self.follow_guidance, 'Quiet')
+        guidance_layout.addWidget(self.guidance_action)
+        layout.addWidget(self.guidance)
+
+        controls, controls_layout = card_layout()
+        title = QLabel('Szervervezérlés')
+        title.setObjectName('SectionTitle')
+        controls_layout.addWidget(title)
+        control_row = QHBoxLayout()
+        channel_column = QVBoxLayout()
+        channel_column.setSpacing(8)
+        channels = QWidget()
+        channels.setObjectName('Transparent')
+        self.channel_layout = QHBoxLayout(channels)
+        self.channel_layout.setContentsMargins(0, 0, 0, 0)
+        self.channel_layout.setSpacing(7)
+        self.channel_boxes = []
+        channel_column.addWidget(channels)
+        control_row.addLayout(channel_column, 1)
+        self.start_button = button('Szerver indítása', self.start_stack, 'Primary')
+        self.start_button.setIcon(line_icon('play', '#f5f3ff'))
+        self.stop_button = button('Leállítás', lambda: self.job(['stop']), 'Stop')
+        self.stop_button.setIcon(line_icon('stop', '#ffc0c4'))
+        action_column = QVBoxLayout()
+        action_column.addStretch()
+        action_row = QHBoxLayout()
+        action_row.addWidget(self.start_button)
+        action_row.addWidget(self.stop_button)
+        action_column.addLayout(action_row)
+        control_row.addLayout(action_column)
+        controls_layout.addLayout(control_row)
+        self.channel_summary = note('A közös CH99 automatikusan elindul a kijelölt csatornákkal.')
+        controls_layout.addWidget(self.channel_summary)
+        layout.addWidget(controls)
+
+        processes, process_layout = card_layout()
+        process_title = QHBoxLayout()
+        title = QLabel('Folyamatok')
+        title.setObjectName('SectionTitle')
+        process_title.addWidget(title)
+        self.process_count = note('0 példány')
+        process_title.addWidget(self.process_count)
+        process_title.addStretch()
+        self.core_search = QLineEdit()
+        self.core_search.setPlaceholderText('Példány vagy csatorna keresése…')
+        self.core_search.setAccessibleName('Folyamatok keresése')
+        self.core_search.setMaximumWidth(260)
+        self.core_search.textChanged.connect(self.filter_cores)
+        process_title.addWidget(self.core_search)
+        self.core_filter = QComboBox()
+        self.core_filter.addItems(['Minden állapot', 'Csak futó', 'Csak leállított'])
+        self.core_filter.setAccessibleName('Folyamatok szűrése állapot szerint')
+        self.core_filter.currentIndexChanged.connect(self.filter_cores)
+        process_title.addWidget(self.core_filter)
+        process_layout.addLayout(process_title)
+        self.core_table = QTableWidget(0, 4)
+        self.core_table.setObjectName('CoreTable')
+        self.core_table.setHorizontalHeaderLabels(['Példány', 'Csatorna', 'Port', 'Állapot'])
+        self.core_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.core_table.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.core_table.verticalHeader().hide()
+        self.core_table.verticalHeader().setDefaultSectionSize(36)
+        self.core_table.setShowGrid(False)
+        self.core_table.setAlternatingRowColors(True)
+        self.core_table.setWordWrap(False)
+        self.core_table.setMinimumHeight(100)
+        self.core_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.core_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.core_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.core_table.setAccessibleName('Szerverfolyamatok; több sor a Ctrl billentyűvel jelölhető ki')
+        process_layout.addWidget(self.core_table, 1)
+        self.process_empty = note('Nincs a szűrésnek megfelelő folyamat.')
+        self.process_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.process_empty.hide()
+        process_layout.addWidget(self.process_empty)
+        core_tools = QHBoxLayout()
+        self.core_selection_hint = note('Jelölj ki egy sort a külön vezérléshez. Több sor: Ctrl + kattintás.')
+        core_tools.addWidget(self.core_selection_hint, 1)
+        self.start_cores_button = button('Kijelöltek indítása', lambda: self.control_selected_cores('start'))
+        self.stop_cores_button = button('Kijelöltek leállítása', lambda: self.control_selected_cores('stop'), 'Stop')
+        core_tools.addWidget(self.start_cores_button)
+        core_tools.addWidget(self.stop_cores_button)
+        process_layout.addLayout(core_tools)
+        self.core_table.itemSelectionChanged.connect(self.update_core_buttons)
+        layout.addWidget(processes, 1)
+
+        self.maintenance_toggle = QToolButton()
+        self.maintenance_toggle.setObjectName('Disclosure')
+        self.maintenance_toggle.setText('Karbantartás és ellenőrzések')
+        self.maintenance_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.maintenance_toggle.setArrowType(Qt.ArrowType.RightArrow)
+        self.maintenance_toggle.setCheckable(True)
+        self.maintenance_toggle.toggled.connect(self.toggle_maintenance)
+        layout.addWidget(self.maintenance_toggle)
+        self.maintenance_panel, maintenance = card_layout()
         self.database_tools_panel = QWidget()
+        self.database_tools_panel.setObjectName('Transparent')
         database_tools = QHBoxLayout(self.database_tools_panel)
         database_tools.setContentsMargins(0, 0, 0, 0)
         self.setup_db_button = button('Adatbázis előkészítése', lambda: self.job(['setup-db']))
         database_tools.addWidget(self.setup_db_button)
-        database_tools.addWidget(note('Az első betöltés létrehozza a saját helyi SQL-példányt és betölti az ellenőrzött mentést. Meglévő adatokat megőriz.'), 1)
-        layout.addWidget(self.database_tools_panel)
+        database_tools.addWidget(note('Első használatkor létrehozza a helyi MariaDB-t és betölti az ellenőrzött mentést.'), 1)
+        maintenance.addWidget(self.database_tools_panel)
         tools = QHBoxLayout()
         self.prepare_button = button('Előkészítés', lambda: self.job(['prepare']))
         self.check_button = button('Fájlok ellenőrzése', lambda: self.job(['check']))
-        self.start_button = button('Kijelölt csatornák indítása', self.start_stack, 'Primary')
-        self.stop_button = button('Szerver leállítása', lambda: self.job(['stop']), 'Stop')
         self.stop_db_button = button('MariaDB leállítása', lambda: self.job(['stop-db']))
-        for item in (self.prepare_button, self.check_button, self.start_button, self.stop_button, self.stop_db_button):
+        self.db_check_button = button('SQL-kapcsolatok ellenőrzése', lambda: self.job(['database-check']))
+        for item in (self.check_button, self.db_check_button, self.prepare_button, self.stop_db_button):
             tools.addWidget(item)
-        layout.addLayout(tools)
+        tools.addStretch()
+        maintenance.addLayout(tools)
         quest_tools = QHBoxLayout()
         self.quest_reload_button = button('Questek frissítése', self.reload_quests)
         quest_tools.addWidget(self.quest_reload_button)
-        self.db_check_button = button('SQL-kapcsolatok ellenőrzése', lambda: self.job(['database-check']))
-        quest_tools.addWidget(self.db_check_button)
-        quest_tools.addWidget(note('A mentett questek és Lua-könyvtárak frissítése minden futó core-on, a játékosok kiléptetése nélkül.'), 1)
-        layout.addLayout(quest_tools)
-        layout.addWidget(note('A kijelölt csatornák mellett a közös CH99 is elindul. Az indítás előbb ellenőrzi a fájlokat és az adatbázist.'))
-        channels = QWidget()
-        self.channel_layout = QHBoxLayout(channels)
-        self.channel_layout.setContentsMargins(0, 0, 0, 0)
-        self.channel_boxes = []
-        layout.addWidget(channels)
-        self.core_table = QTableWidget(0, 4)
-        self.core_table.setHorizontalHeaderLabels(['Példány', 'Csatorna', 'Port', 'Állapot'])
-        self.core_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.core_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.core_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        layout.addWidget(self.core_table, 1)
-        core_tools = QHBoxLayout()
-        self.start_cores_button = button('Kijelölt core-ok indítása', lambda: self.control_selected_cores('start'))
-        self.stop_cores_button = button('Kijelölt core-ok leállítása', lambda: self.control_selected_cores('stop'), 'Stop')
-        core_tools.addWidget(self.start_cores_button)
-        core_tools.addWidget(self.stop_cores_button)
-        core_tools.addWidget(note('Futó szervernél a táblában kijelölt core-ok külön indíthatók és leállíthatók; '
-                                  'a többi core, a Database és a LoginServer tovább fut.'), 1)
-        layout.addLayout(core_tools)
-        self.core_table.itemSelectionChanged.connect(self.update_core_buttons)
-        self.target_hint = note('A beállítások és játékadatok módosításához leállítás szükséges. A questek külön, futás közben is frissíthetők.')
-        layout.addWidget(self.target_hint)
-        return page
+        quest_tools.addWidget(note('A mentett questek frissítése futás közben, a játékosok kiléptetése nélkül.'), 1)
+        maintenance.addLayout(quest_tools)
+        self.maintenance_panel.hide()
+        layout.addWidget(self.maintenance_panel)
+        return scroll
+
+    def toggle_maintenance(self, shown):
+        self.maintenance_panel.setVisible(shown)
+        self.maintenance_toggle.setArrowType(Qt.ArrowType.DownArrow if shown else Qt.ArrowType.RightArrow)
+
+    def follow_guidance(self):
+        action = self.guidance_action.property('action')
+        if action == 'backups': self.navigation.setCurrentRow(7)
+        elif action == 'deployment':
+            if self.is_remote():
+                self.navigation.setCurrentRow(5)
+                self.remote_page.tabs.setCurrentIndex(2)
+            else:
+                relative = (self.state() or {}).get('deployment_pending')
+                path = (self.root / relative).resolve() if self.root and relative else None
+                if path and path.is_relative_to(self.root) and path.is_file():
+                    text = api.tail(path)
+                    try: text = json.dumps(api.strict_json(text), indent=2, ensure_ascii=False)
+                    except api.EditorError: pass
+                    self.console_toggle.setChecked(True)
+                    self.console.setPlainText(api.redact(text, self.root))
+                else:
+                    self.error('A telepítési eredményfájl már nem érhető el. Frissítsd a szerver állapotát.')
+        elif action == 'settings':
+            self.navigation.setCurrentRow(1)
+            form = self.config_editor.config_form
+            scope = form.scopes.findData('common')
+            if scope >= 0:
+                form.scopes.setCurrentIndex(scope)
+                for index in range(form.categories.count()):
+                    if str(form.categories.item(index).data(Qt.ItemDataRole.UserRole)).startswith('sql.'):
+                        form.categories.setCurrentRow(index)
+                        break
+        elif action == 'logs': self.console_toggle.setChecked(True)
+        elif action == 'connect': self.reconnect_target()
+        elif action == 'setup':
+            self.maintenance_toggle.setChecked(True)
+            self.overview.ensureWidgetVisible(self.setup_db_button)
+            self.setup_db_button.setFocus()
+        else: self.choose_root()
+
+    def filter_cores(self):
+        if not hasattr(self, 'core_table'): return
+        text = self.core_search.text().strip().casefold()
+        mode = self.core_filter.currentIndex()
+        visible = 0
+        for row in range(self.core_table.rowCount()):
+            name, channel, _, status = [self.core_table.item(row, col) for col in range(4)]
+            if any(item is None for item in (name, channel, status)): continue
+            running = bool(status.data(VALUE_ROLE))
+            matches = (not text or text in (name.text() + ' ' + channel.text()).casefold()) and \
+                (mode == 0 or (mode == 1 and running) or (mode == 2 and not running))
+            self.core_table.setRowHidden(row, not matches)
+            if not matches and name.isSelected():
+                for col in range(4): self.core_table.item(row, col).setSelected(False)
+            visible += int(matches)
+        self.process_count.setText('%d / %d példány' % (visible, self.core_table.rowCount()) if text or mode else
+                                   '%d példány' % self.core_table.rowCount())
+        self.process_empty.setVisible(not visible)
+
+    def update_channel_summary(self):
+        selected = [box.text() for box in self.channel_boxes if box.isChecked()]
+        self.channel_summary.setText(('Kijelölve: ' + ', '.join(selected) + ' · A közös CH99 automatikusan indul.') if selected else
+                                     'Válassz legalább egy csatornát az indításhoz.')
+        self.refresh()
+
+    def update_guidance(self, state=None, starting=False, busy=False, failed_start=False):
+        """Show one actionable next step, with recovery taking precedence."""
+        action, label, color = '', 'Szervermappa…', 'neutral'
+        if not state:
+            title = 'Nincs kapcsolat a szerverrel' if self.is_remote() else 'Válassz szervert a kezdéshez'
+            hint = ('Csatlakozz újra a kiválasztott SSH-profilhoz az állapot lekéréséhez.' if self.is_remote() else
+                    'Nyiss meg egy helyi szervermappát, vagy válassz mentett SSH-profilt a felső listából.')
+            self.target_hint.setText(hint)
+            if self.is_remote(): action, label = 'connect', 'Újracsatlakozás'
+        elif state.get('backup_restore_pending'):
+            title, action, label, color = 'A visszaállítás befejezésére van szükség', 'backups', 'Mentések megnyitása', 'danger'
+        elif state.get('deployment_pending'):
+            title, action, label, color = ('Befejezetlen buildtelepítés · az indítás blokkolva', 'deployment',
+                                          'Telepítési eszközök' if self.is_remote() else 'Telepítési eredmény', 'warning')
+        elif failed_start:
+            title, action, label, color = 'A szerver indítása sikertelen', 'logs', 'Napló megnyitása', 'danger'
+        elif busy or starting or state['phase'] in ('Indulás', 'Leállás'):
+            title = 'Indítás folyamatban' if starting or state['phase'] == 'Indulás' else 'Művelet folyamatban'
+            self.target_hint.setText('A művelet eredménye a műveleti naplóban követhető. A vezérlés a befejezés után lesz elérhető.')
+            action, label = 'logs', 'Műveleti napló'
+        elif state.get('database_kind') == 'external' and state.get('database_status', {}).get('status') not in (None, 'available'):
+            title, action, label, color = 'Ellenőrizd az SQL-kapcsolatot', 'settings', 'SQL-beállítások', 'danger'
+        elif state.get('database_kind') != 'external' and not state['database_initialized']:
+            title, action, label, color = 'Első lépés: az adatbázis előkészítése', 'setup', 'Előkészítés megnyitása', 'warning'
+            self.target_hint.setText('Az indításhoz szükséges a helyi adatbázis. Az előkészítés betölti az ellenőrzött mentést.')
+            if not state.get('can_setup'):
+                title, action, label = 'Az adatbázis előkészítése még nem érhető el', 'logs', 'Műveleti napló'
+                self.target_hint.setText('Hiányzik a helyi adatbázishoz szükséges ellenőrzött mentés vagy futtatókörnyezet. Ellenőrizd a szervercsomagot.')
+        elif state['running']:
+            title = 'A szerver fut'
+            self.target_hint.setText('További csatornákat indíthatsz, vagy a táblázatban külön kezelheted a core-okat. A questek futás közben frissíthetők.')
+            if not state.get('core_control'):
+                title, action, label, color = 'A szerver fut · a külön core-vezérlés nem érhető el', 'logs', 'Műveleti napló', 'warning'
+                self.target_hint.setText('A külön vezérléshez friss manage.py és azzal újraindított felügyelő szükséges. A teljes szerver leállítható.')
+        elif not state.get('can_start', state['database_initialized']):
+            title, action, label, color = 'A szerver még nem indítható', 'logs', 'Műveleti napló', 'warning'
+            self.target_hint.setText('Az indítás feltételei még nem teljesülnek. A karbantartási eszközökkel ellenőrizd a fájlokat és az SQL-kapcsolatokat.')
+        else:
+            title = 'A szerver indításra kész'
+            self.target_hint.setText('Válaszd ki az indítandó csatornákat. Indításkor a rendszer ellenőrzi a fájlokat és az adatbázist is.')
+        self.guidance_title.setText(title)
+        self.guidance_icon.setText('!' if color in ('warning', 'danger') else 'i')
+        tone(self.guidance, color)
+        self.guidance_action.setProperty('action', action)
+        self.guidance_action.setText(label)
+        self.guidance_action.setVisible(bool(action) or not state)
+        self.guidance_action.setEnabled(not busy or action == 'logs')
+
+    def update_core_table(self, state):
+        selected = {self.core_table.item(index.row(), 0).text()
+                    for index in self.core_table.selectionModel().selectedRows()
+                    if self.core_table.item(index.row(), 0)}
+        self.core_table.blockSignals(True)
+        self.core_table.setRowCount(len(state['rows']))
+        for i, row in enumerate(state['rows']):
+            channel = 'Közös · CH99' if row['channel'] == 99 else 'CH%s' % row['channel'] if row['channel'] != '—' else 'Rendszer'
+            values = (row['name'], channel, str(row['port']), '●  Fut' if row['running'] else '○  Leállítva')
+            for j, value in enumerate(values):
+                item = self.core_table.item(i, j)
+                if item is None:
+                    item = QTableWidgetItem()
+                    self.core_table.setItem(i, j, item)
+                item.setText(value)
+                item.setSelected(row['name'] in selected)
+                if j == 3:
+                    item.setForeground(QColor('#79dbb0' if row['running'] else '#a3b1c7'))
+                    item.setData(VALUE_ROLE, row['running'])
+            system = row['name'] in ('database', 'login')
+            self.core_table.item(i, 0).setToolTip('A teljes szerverrel együtt vezérelhető rendszerfolyamat.' if system else
+                                               'Játékszerver core. Kijelölés után külön indítható és leállítható.')
+        self.filter_cores()
+        self.core_table.blockSignals(False)
 
     def logs_page(self):
         page = QWidget()
@@ -1275,14 +1518,16 @@ class MainWindow(QMainWindow):
             item = self.channel_layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
         self.channel_boxes = []
-        self.channel_layout.addWidget(QLabel('Indítandó csatornák:'))
         for channel in channels:
-            box = QCheckBox('CH%d' % channel)
+            box = ChannelBox('CH%d' % channel)
+            box.setObjectName('Channel')
             box.setProperty('channel', channel)
             box.setChecked(selected.get(channel, channel == channels[0]))
+            box.toggled.connect(self.update_channel_summary)
             self.channel_layout.addWidget(box)
             self.channel_boxes.append(box)
         self.channel_layout.addStretch()
+        self.update_channel_summary()
 
     def command(self, arguments, logfile):
         prefix = [] if getattr(sys, 'frozen', False) else ['-B', str(Path(__file__).with_name('app.py'))]
@@ -1392,11 +1637,14 @@ class MainWindow(QMainWindow):
 
     def core_control_ready(self, state):
         # Cores start and stop one by one only under a live supervisor whose manage.py knows how.
-        return bool(state and state['running'] and state.get('core_control') and state['phase'] == 'Fut' and not self.busy())
+        return bool(state and state['running'] and state.get('core_control') and state['phase'] == 'Fut' and
+                    not state.get('deployment_pending') and not state.get('backup_restore_pending') and not self.busy())
 
     def selected_cores(self, state):
-        rows = {index.row() for index in self.core_table.selectionModel().selectedRows()}
-        return [row for i, row in enumerate(state['rows']) if i in rows and row['name'] not in ('database', 'login')]
+        names = {self.core_table.item(index.row(), 0).text()
+                 for index in self.core_table.selectionModel().selectedRows()
+                 if not self.core_table.isRowHidden(index.row()) and self.core_table.item(index.row(), 0)}
+        return [row for row in state['rows'] if row['name'] in names and row['name'] not in ('database', 'login')]
 
     def update_core_buttons(self, state=None):
         if not hasattr(self, 'start_cores_button'): return
@@ -1405,6 +1653,8 @@ class MainWindow(QMainWindow):
             except (api.EditorError, OSError, ValueError, KeyError, TypeError): state = None
         ready = self.core_control_ready(state)
         selected = self.selected_cores(state) if state else []
+        self.core_selection_hint.setText('%d game core kijelölve · a rendszerfolyamatok külön nem vezérelhetők.' % len(selected) if selected else
+                                        'Jelölj ki egy sort a külön vezérléshez. Több sor: Ctrl + kattintás.')
         self.start_cores_button.setEnabled(ready and any(not row['running'] for row in selected))
         self.stop_cores_button.setEnabled(ready and any(row['running'] for row in selected))
         outdated = bool(state and state['running'] and not state.get('core_control'))
@@ -1455,7 +1705,7 @@ class MainWindow(QMainWindow):
             self.open_root_button.setEnabled(not self.is_remote() and bool(self.root))
             self.connect_button.setEnabled(not busy)
             self.connect_button.setText('Állapot frissítése' if self.is_remote() and self.remote_online else 'Újracsatlakozás' if self.is_remote() else 'Frissítés')
-            self.target_badge.setStyleSheet('background: #594124; color: #ffe0a5;' if self.is_remote() else 'background: #203f38; color: #a4e1ce;')
+            self.target_badge.setStyleSheet('background: #3c3244; color: #dcc3f2;' if self.is_remote() else 'background: #203b34; color: #9dd7bd;')
             self.remote_page.controls()
             state = self.state()
             self.crash_page.tick(state)
@@ -1467,9 +1717,18 @@ class MainWindow(QMainWindow):
                        self.start_cores_button, self.stop_cores_button)
             if not state:
                 for item in actions: item.setEnabled(False)
+                for box in self.channel_boxes: box.setEnabled(False)
                 self.core_table.setRowCount(0)
                 self.stack_metric.setText('Kapcsolódás…' if self.is_remote() and self.remote_client and self.remote_client.operation == 'connect' else 'Nincs kapcsolat' if self.is_remote() else 'Nincs szervercsomag')
                 self.core_metric.setText('Core-állapot: —'); self.db_metric.setText('SQL: —')
+                self.stack_metric.setToolTip(''); self.db_metric.setToolTip('')
+                self.stack_description.setText('Várakozás a szerver kiválasztására.' if not self.is_remote() else 'A távoli állapot nem érhető el.')
+                self.core_description.setText('A játékot futtató folyamatok.')
+                self.db_description.setText('Az állapot a csatlakozás után látható.')
+                for metric in (self.stack_metric, self.core_metric, self.db_metric): tone(metric, 'muted')
+                self.update_guidance(busy=busy)
+                self.filter_cores()
+                self.update_core_buttons(None)
                 for editor in self.editors: editor.save_button.setEnabled(False)
                 return
             if not self.is_remote(): self.read_action_log()
@@ -1478,28 +1737,36 @@ class MainWindow(QMainWindow):
             external = state.get('database_kind') == 'external'
             self.database_tools_panel.setVisible(not external)
             self.stop_db_button.setVisible(not external)
-            self.stack_metric.setText('Befejezetlen buildtelepítés' if state.get('deployment_pending') else
+            self.stack_metric.setText('Indítás blokkolva' if state.get('deployment_pending') or state.get('backup_restore_pending') else
                                      'Indítás…' if starting else state['phase'])
             start_job = state.get('start_job') if self.is_remote() else None
             failed_start = bool(start_job and start_job['status'] == 'failed' and not running)
-            self.stack_metric.setStyleSheet('color: #ffb4a7;' if failed_start else '')
+            blocked = bool(state.get('deployment_pending') or state.get('backup_restore_pending'))
+            tone(self.stack_metric, 'danger' if failed_start else 'warning' if blocked or starting else 'good' if running else 'muted')
+            self.stack_description.setText('Előbb fejezd be a helyreállítást.' if blocked else 'A részletek a műveleti naplóban láthatók.' if failed_start else
+                                           'A kiválasztott szerver működik.' if running else 'A szerverfolyamatok nem futnak.')
             self.stack_metric.setToolTip(start_job['output'] if failed_start else '')
-            self.core_metric.setText('%d / %d core fut' % (sum(row['running'] for row in state['rows'] if row['name'] not in ('database', 'login')), len(state['config']['game_servers'])))
+            core_count = sum(row['running'] for row in state['rows'] if row['name'] not in ('database', 'login'))
+            self.core_metric.setText('%d / %d fut' % (core_count, len(state['config']['game_servers'])))
+            tone(self.core_metric, 'good' if core_count else 'muted')
+            self.core_description.setText('%d csatorna + közös CH99' % len(self.channel_boxes))
             sql_status = state.get('database_status', {})
             if external:
                 self.db_metric.setText({'available':'SQL: elérhető', 'partial':'SQL: részben elérhető',
                     'unavailable':'SQL: nem elérhető', 'error':'SQL: kapcsolati hiba',
                     'unknown':'SQL: nem ellenőrizhető'}.get(sql_status.get('status'), 'SQL: ellenőrzés…'))
-                self.db_metric.setStyleSheet('color: ' + ('#83d6c0' if sql_status.get('status') == 'available' else
-                    '#ffb4a7' if sql_status.get('status') in ('unavailable','error') else '#edcf8e') + ';')
+                tone(self.db_metric, 'good' if sql_status.get('status') == 'available' else
+                     'danger' if sql_status.get('status') in ('unavailable', 'error') else 'warning')
+                self.db_description.setText('Külső SQL-szolgáltatás a célgépen.')
                 details = [sql_status['message']] if sql_status.get('message') else []
                 details += ['%s:%s / %s — %s' % (row['host'],row['port'],row['database'],row['message'])
                             for row in sql_status.get('connections', [])]
                 self.db_metric.setToolTip('\n'.join(details))
             else:
-                self.db_metric.setStyleSheet('')
+                tone(self.db_metric, 'good' if state['database_running'] else 'muted' if state['database_initialized'] else 'warning')
                 self.db_metric.setText('MariaDB: fut' if state['database_running'] else 'MariaDB: leállítva' if state['database_initialized'] else 'SQL: még nincs betöltve')
                 self.db_metric.setToolTip('A helyi csomag saját MariaDB-folyamatának állapota.')
+                self.db_description.setText('Saját helyi adatbázis.' if state['database_initialized'] else 'Az első indítás előtt előkészítés szükséges.')
             self.target_hint.setText(('A célgép külső SQL-szolgáltatását használjuk. A kapcsolatok a Beállítások oldalon szerkeszthetők; az indítás ellenőrzi őket. ' if external else '') +
                 'A beállítások és játékadatok mentéséhez leállítás szükséges. A questek külön, futás közben is frissíthetők.')
             if external and sql_status.get('status') not in (None, 'available'):
@@ -1512,20 +1779,20 @@ class MainWindow(QMainWindow):
                 self.target_hint.setText('Befejezetlen visszaállítás miatt az indítás tiltott. A Mentések oldalon állíts helyre egy ellenőrzött mentést.')
             if failed_start and not state.get('deployment_pending') and not state.get('backup_restore_pending'):
                 self.target_hint.setText('Az indítás hibával leállt. A pontos ok az alsó műveleti naplóban látható. Teljes napló: ' + start_job['log'])
-            self.core_table.setRowCount(len(state['rows']))
-            for i, row in enumerate(state['rows']):
-                for j, value in enumerate((row['name'], row['channel'], row['port'], 'Fut' if row['running'] else 'Leállítva')):
-                    item = QTableWidgetItem(str(value))
-                    if j == 3: item.setForeground(QColor('#83d6c0' if row['running'] else '#96a6bd'))
-                    self.core_table.setItem(i, j, item)
+            self.update_guidance(state, starting, busy, failed_start)
+            self.update_core_table(state)
             self.prepare_button.setEnabled(not busy and not running)
             self.setup_db_button.setEnabled(not busy and not running and not state['database_initialized'] and bool(state.get('can_setup')))
             self.check_button.setEnabled(not busy)
             self.db_check_button.setEnabled(not busy and (external or bool(state.get('can_start', state['database_initialized']))))
-            self.start_button.setEnabled(not busy and ((not running and bool(state.get('can_start', state['database_initialized'])))
-                                                       or self.core_control_ready(state)))
-            self.start_button.setToolTip('A bejelölt csatornák core-jainak indítása a futó szerverhez.' if running else
-                                         'Kijelölt csatornák és közös CH99 indítása a kiválasztott szerveren.')
+            selected_channels = any(box.isChecked() for box in self.channel_boxes)
+            self.start_button.setEnabled(not busy and not blocked and selected_channels and
+                                         ((not running and bool(state.get('can_start', state['database_initialized']))) or self.core_control_ready(state)))
+            self.start_button.setText('Csatornák indítása' if running else 'Szerver indítása')
+            self.start_button.setToolTip(('Válassz legalább egy csatornát.' if not selected_channels else self.guidance_title.text()) if not self.start_button.isEnabled() else
+                                        'A bejelölt csatornák core-jainak indítása a futó szerverhez.' if running else
+                                        'Kijelölt csatornák és közös CH99 indítása a kiválasztott szerveren.')
+            for box in self.channel_boxes: box.setEnabled(not busy and not starting)
             self.update_core_buttons(state)
             self.stop_button.setEnabled(not busy and state['running'])
             self.stop_db_button.setEnabled(not busy and not running and state['database_running'])
