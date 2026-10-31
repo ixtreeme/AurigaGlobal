@@ -3956,6 +3956,8 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 #endif
 	}
 
+	EclipseRaid::OnSkill(e, dwVnum);
+
 	if (dwVnum == SKILL_CHAIN)
 	{
 		SkillSystem::ResetChainLightningIndex(e);

@@ -5,16 +5,27 @@
   "minimum_members": 1,
   "maximum_instances": 16,
   "duration_seconds": 5400,
-  "reward_yang": 0,
-  "note": "First-room GM-led playtest only. Other encounters and completion rewards are unavailable. Full ICC parity and multiplayer acceptance remain in progress.",
+  "reward_yang": 500000,
+  "note": "All twelve source-backed encounters active. Placeholder completion reward: 500000 Yang per participating character; replace in this configuration.",
   "difficulty_modes": [
     "10_normal",
     "25_normal",
     "10_heroic",
     "25_heroic"
   ],
-  "gm_only": true,
+  "gm_only": false,
   "available_encounters": [
-    1
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
   ]
 }

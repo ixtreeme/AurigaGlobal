@@ -9,6 +9,7 @@ void Tick();
 bool MovementLocked(entt::entity player);
 float MovementSpeed(entt::entity actor);
 int64_t FilterHealing(entt::entity player,int64_t amount);
+void OnSkill(entt::entity player,uint32_t skill);
 void Dispel(entt::entity player);
 void Command(entt::entity player,const char* arguments);
 bool AllowCombat(entt::entity attacker,entt::entity victim);

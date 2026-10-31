@@ -4,6 +4,15 @@
 #include "EclipseVoiceTiming.hpp"
 #include "icc/Difficulty.hpp"
 #include "icc/Marrowgar.hpp"
+#include "icc/Deathwhisper.hpp"
+#include "icc/Gunship.hpp"
+#include "icc/Saurfang.hpp"
+#include "icc/Putricide.hpp"
+#include "icc/BloodCouncil.hpp"
+#include "icc/BloodQueen.hpp"
+#include "icc/Valithria.hpp"
+#include "icc/Sindragosa.hpp"
+#include "icc/LichKing.hpp"
 #include "icc/Festergut.hpp"
 #include "icc/Rotface.hpp"
 #include "icc/MarrowgarSpells.hpp"
@@ -43,8 +52,8 @@ namespace EclipseRaid {
 namespace {
 namespace P=ecs::PlayerRuntime;namespace M=ecs::MovementSystem;namespace Points=ecs::PointSystem;
 struct Member {uint32_t pid=0;bool ready=false,rewarded=false;uint32_t lastAction=0,missing=0;Mechanic aura=Mechanic::Strike;uint32_t auraEnd=0,object=0;int stacks=0;};
-struct SourceRuntime {virtual ~SourceRuntime()=default;virtual bool Update(uint32_t now)=0;virtual void Attacked(entt::entity attacker,int64_t damage)=0;virtual void Died(entt::entity actor)=0;virtual void Status(entt::entity){};virtual int64_t Outgoing(entt::entity,int64_t amount){return amount;};virtual int64_t Healing(entt::entity,int64_t amount){return amount;}virtual bool Dispel(entt::entity){return false;}virtual int64_t TargetDamage(entt::entity,entt::entity,int64_t amount){return amount;}};
-struct Run {std::shared_ptr<SourceRuntime> source;std::set<uint32_t> rooted;ICC::Difficulty mode=ICC::Difficulty::Normal10;uint32_t id=0,leader=0,started=0,changed=0,lastSend=0,emptyAt=0,combatAt=0,immuneUntil=0,countdownAt=0;int countdownEncounter=0;int map=0,encounter=0,empowered=0,resource=0,phase=0;uint16_t cleared=0;State state=State::Waiting;std::vector<Member> members;std::vector<entt::entity> actors,bosses;std::set<uint32_t> dead;std::vector<Hazard> hazards;Scheduler scheduler;uint32_t nextHazard=1;uint64_t barrier=0;bool completionPending=false;};
+struct SourceRuntime {virtual ~SourceRuntime()=default;virtual void Skill(entt::entity,uint32_t){}virtual bool Action(entt::entity,const std::string&,uint32_t){return false;}virtual bool Update(uint32_t now)=0;virtual void Attacked(entt::entity attacker,int64_t damage)=0;virtual void Died(entt::entity actor)=0;virtual void Status(entt::entity){};virtual int64_t Outgoing(entt::entity,int64_t amount){return amount;};virtual int64_t Healing(entt::entity,int64_t amount){return amount;}virtual bool Dispel(entt::entity){return false;}virtual int64_t TargetDamage(entt::entity,entt::entity,int64_t amount){return amount;}};
+struct Run {std::shared_ptr<SourceRuntime> source;std::set<uint32_t> rooted;ICC::Difficulty mode=ICC::Difficulty::Normal10;uint32_t id=0,leader=0,started=0,changed=0,lastSend=0,emptyAt=0,combatAt=0,immuneUntil=0,countdownAt=0;int countdownEncounter=0;int map=0,encounter=0,empowered=0,resource=0,phase=0;uint16_t cleared=0;State state=State::Waiting;std::vector<Member> members;std::vector<entt::entity> actors,bosses;std::set<uint32_t> dead;std::vector<Hazard> hazards;Scheduler scheduler;uint32_t nextHazard=1;uint64_t barrier=0;bool completionPending=false,gmTesting=false;};
 std::map<uint32_t,Run> runs;bool loaded=false,enabled=false,gmOnly=true;uint16_t availableEncounters=1;uint32_t previous=0;int maximumRuns=16,minimumMembers=1,durationSeconds=5400;int64_t rewardYang=500000;uint32_t sequence=1;
 bool Valid(entt::entity e){return e!=entt::null&&g_registry.valid(e);}
 Vec Position(entt::entity e){return {(P::GetX(e)-BaseX)*.01f,(P::GetY(e)-BaseY)*.01f};}
@@ -68,6 +77,7 @@ void StatePacket(Run& r,bool force=false){auto now=get_dword_time();if(!force&&n
  for(auto& m:r.members)if(m.ready)ready++;
  for(auto e:r.bosses)if(Valid(e)){maxHP+=Points::GetMaxHP(e);if(!CombatSystem::IsDead(e))hp+=P::GetHP(e);}
  for(auto& m:r.members){auto p=Player(m);if(!Present(r,p))continue;ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"er_state %u %d %d %u %d %d %llu %llu %llu %d %d %d",r.id,r.encounter,int(r.state),unsigned(r.cleared),ready,int(r.members.size()),(unsigned long long)hp,(unsigned long long)maxHP,(unsigned long long)r.barrier,r.resource,r.empowered,m.pid==r.leader?1:0);
+  ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"er_gm %u %d",r.id,P::GetGMLevel(p)>=GM_LOW_WIZARD?1:0);
   ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"er_mode %u %u",r.id,unsigned(r.mode));ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"er_available %u %u",r.id,unsigned(availableEncounters));
   ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"er_countdown %u %d %u",r.id,r.countdownEncounter,r.countdownAt&&!Due(now,r.countdownAt)?r.countdownAt-now:0);
   ecs::ChatSystem::Send(p,CHAT_TYPE_COMMAND,"er_root %d",r.rooted.count(m.pid)?1:0);
@@ -84,7 +94,7 @@ void Return(entt::entity p){if(!Valid(p)||!P::GetDesc(p))return;ecs::ChatSystem:
 void DestroyActors(Run& r){r.countdownAt=0;r.countdownEncounter=0;r.source.reset();r.rooted.clear();Broadcast(r,"er_root 0");for(auto e:r.actors)Destroy(e);r.actors.clear();r.bosses.clear();r.dead.clear();r.scheduler.Reset();r.hazards.clear();r.completionPending=false;Broadcast(r,"er_clear "+std::to_string(r.id));for(auto& m:r.members){m.aura=Mechanic::Strike;m.auraEnd=m.object=0;m.stacks=0;}}
 void Retire(Run& r){DestroyActors(r);r.state=State::Retiring;for(auto& m:r.members){auto p=Player(m);if(Present(r,p))Return(p);}r.changed=get_dword_time();}
 bool Walk(const Run& r,Vec p){auto* tree=SECTREE_MANAGER::instance().Get(r.map,BaseX+int(p.x*100),BaseY+int(p.y*100));return tree&&!(tree->GetAttribute(BaseX+int(p.x*100),BaseY+int(p.y*100))&(ATTR_BLOCK|ATTR_OBJECT));}
-void WarpCheckpoint(Run& r,entt::entity p){Vec checkpoint=r.encounter>0?Arenas[r.encounter-1].center:Arenas[0].center;checkpoint.y-=25;
+void WarpCheckpoint(Run& r,entt::entity p){int next=r.encounter>0?r.encounter:1;for(int n=1;n<=12;n++)if(Cleared(availableEncounters,n)&&Unlocked(r.cleared,n)&&!Cleared(r.cleared,n)){next=n;break;}Vec checkpoint=Arenas[next-1].center;checkpoint.y-=25;
  if(Present(r,p)&&Walk(r,checkpoint)){M::Sync(p,BaseX+int(checkpoint.x*100),BaseY+int(checkpoint.y*100));NetworkSyncSystem::BroadcastSyncPacket(g_registry,p);}
 }
 entt::entity Spawn(Run& r,uint32_t race,Vec point,int role=0,uint32_t owner=0,uint32_t sourceCreature=0){r.actors.erase(std::remove_if(r.actors.begin(),r.actors.end(),[](auto e){return !Valid(e);}),r.actors.end());if(r.actors.size()>=128||!Walk(r,point))return entt::null;
@@ -96,12 +106,13 @@ entt::entity Spawn(Run& r,uint32_t race,Vec point,int role=0,uint32_t owner=0,ui
 #else
  snprintf(t.szLocaleName,sizeof(t.szLocaleName),"%s",nameKey.c_str());
 #endif
- t.bType=role==2?CHAR_TYPE_NPC:CHAR_TYPE_MONSTER;t.bRank=role==0?MOB_RANK_BOSS:MOB_RANK_KNIGHT;t.bBattleType=BATTLE_TYPE_MELEE;t.bEmpire=0;t.bLevel=100;t.bStr=t.bDex=t.bCon=t.bInt=100;t.wDef=80;t.dwMaxHP=uint32_t(role==0?BossHealth(int(r.members.size()),r.encounter):80000*int(r.members.size()));t.dwDamageRange[0]=500;t.dwDamageRange[1]=1100;t.dwExp=t.dwGoldMin=t.dwGoldMax=t.dwDropItemVnum=t.dwResurrectionVnum=t.dwSummonVnum=0;t.dwAIFlag=0;t.bRegenPercent=0;t.sMovingSpeed=120;t.sAttackSpeed=100;t.wAttackRange=role==0?550:200;t.fDamMultiply=1;
+ t.bType=role==2||(role==0&&r.encounter==10)?CHAR_TYPE_NPC:CHAR_TYPE_MONSTER;t.bRank=role==0?MOB_RANK_BOSS:MOB_RANK_KNIGHT;t.bBattleType=BATTLE_TYPE_MELEE;t.bEmpire=0;t.bLevel=100;t.bStr=t.bDex=t.bCon=t.bInt=100;t.wDef=80;t.dwMaxHP=uint32_t(role==0?BossHealth(int(r.members.size()),r.encounter):80000*int(r.members.size()));t.dwDamageRange[0]=500;t.dwDamageRange[1]=1100;t.dwExp=t.dwGoldMin=t.dwGoldMax=t.dwDropItemVnum=t.dwResurrectionVnum=t.dwSummonVnum=0;t.dwAIFlag=0;t.bRegenPercent=0;t.sMovingSpeed=120;t.sAttackSpeed=100;t.wAttackRange=role==0?550:200;t.fDamMultiply=1;
  if(!sourceCreature&&role==0){sourceCreature=race==62013?37972:race==62014?37973:ICC::BossCreatureIDs[r.encounter-1];}
  if(auto data=ICC::Creatures().Resolve(sourceCreature,r.mode)){t.dwMaxHP=data->health;t.dwDamageRange[0]=uint32_t(std::max(0.f,data->minimumDamage));t.dwDamageRange[1]=uint32_t(std::max(data->minimumDamage,data->maximumDamage));t.bLevel=data->sourceLevel;t.sMovingSpeed=100;if(sourceCreature==36899)t.wAttackRange=500;}
- g_registry.emplace<Actor>(e,Actor{r.id,r.encounter,role,proto,get_dword_time()+2000,0,owner,sourceCreature});P::SetProto(e,proto.get());g_registry.get_or_emplace<ecs::RaceState>(e).baseRace=race;if(role==2){g_registry.remove<ecs::TagMonster>(e);g_registry.get_or_emplace<ecs::TagNPC>(e);}else{g_registry.remove<ecs::TagNPC>(e);g_registry.get_or_emplace<ecs::TagMonster>(e);}P::SetMaxHP(e,t.dwMaxHP);P::SetHP(e,t.dwMaxHP);M::SetNowWalking(e,false);
+ g_registry.emplace<Actor>(e,Actor{r.id,r.encounter,role,proto,get_dword_time()+2000,0,owner,sourceCreature});P::SetProto(e,proto.get());g_registry.get_or_emplace<ecs::RaceState>(e).baseRace=race;if(t.bType==CHAR_TYPE_NPC){g_registry.remove<ecs::TagMonster>(e);g_registry.get_or_emplace<ecs::TagNPC>(e);}else{g_registry.remove<ecs::TagNPC>(e);g_registry.get_or_emplace<ecs::TagMonster>(e);}P::SetMaxHP(e,t.dwMaxHP);P::SetHP(e,t.dwMaxHP);M::SetNowWalking(e,false);
  if(!M::Show(e,r.map,BaseX+int(point.x*100),BaseY+int(point.y*100),0,false)){Destroy(e);return entt::null;}r.actors.push_back(e);if(role==0)r.bosses.push_back(e);return e;
 }
+bool Place(Run& r,entt::entity p,Vec point){if(!Present(r,p)||!Walk(r,point))return false;M::Sync(p,BaseX+int(point.x*100),BaseY+int(point.y*100));NetworkSyncSystem::BroadcastSyncPacket(g_registry,p);return true;}
 std::vector<entt::entity> Living(Run& r){std::vector<entt::entity> list;for(auto& m:r.members){auto p=Player(m);if(Alive(r,p))list.push_back(p);}return list;}
 entt::entity Pick(Run& r){auto list=Living(r);if(list.empty())return entt::null;return list[(r.nextHazard+r.resource+get_dword_time()/1000)%list.size()];}
 void Hit(Run& r,entt::entity p,int percent,entt::entity source=entt::null){if(!Alive(r,p))return;if(!Valid(source)&&!r.bosses.empty())source=r.bosses.front();if(!Valid(source))return;CombatSystem::Damage(p,source,int64_t(Points::GetMaxHP(p))*std::clamp(percent,1,95)/100,DAMAGE_TYPE_SPECIAL);}
@@ -118,8 +129,8 @@ void Start(Run& r,int encounter){DestroyActors(r);r.encounter=encounter;r.state=
  r.source=CreateSource(r);if(!r.source)Schedule(r.scheduler,encounter,r.changed);for(auto& m:r.members)m.ready=false;Notice(r,"ER_ENGAGED");StatePacket(r,true);
 }
 void Complete(Run& r){int encounter=r.encounter;r.cleared=Clear(r.cleared,encounter);DestroyActors(r);r.state=RewardEligible(r.cleared)?State::Complete:State::Waiting;r.changed=get_dword_time();Notice(r,"ER_BOSS_DEFEATED");
- if(r.state==State::Complete){for(auto& m:r.members){auto p=Player(m);if(m.rewarded||!Present(r,p))continue;m.rewarded=true; // Mark before currency publication/reentrant callbacks.
-   if(P::GetQuestFlag(p,"eclipse.reward_run")!=int(r.id)){P::SetQuestFlag(p,"eclipse.reward_run",int(r.id));Points::Change(p,POINT_GOLD,rewardYang,true,true);P::SetQuestFlag(p,"eclipse.completed",int(get_global_time()));}Notice(p,"ER_COMPLETE");}}
+ if(r.state==State::Complete){for(auto& m:r.members){auto p=Player(m);if(r.gmTesting||m.rewarded||!Present(r,p))continue;m.rewarded=true; // Mark before currency publication/reentrant callbacks.
+   {P::SetQuestFlag(p,"eclipse.reward_run",int(r.id));Points::Change(p,POINT_GOLD,rewardYang,true,true);P::SetQuestFlag(p,"eclipse.completed",int(get_global_time()));}Notice(p,"ER_COMPLETE");}}
  StatePacket(r,true);
 }
 void Wipe(Run& r){DestroyActors(r);r.state=State::Waiting;r.changed=get_dword_time();r.barrier=0;for(auto& m:r.members)m.ready=false;Notice(r,"ER_WIPE");StatePacket(r,true);}
@@ -175,11 +186,21 @@ void Mechanics(Run& r,uint32_t now){
 }
 #include "EclipseMarrowgarRuntime.hpp"
 #include "EclipseFestergutRuntime.hpp"
+#include "EclipseDeathwhisperRuntime.hpp"
+#include "EclipseGunshipRuntime.hpp"
+#include "EclipseSaurfangRuntime.hpp"
 #include "EclipseRotfaceRuntime.hpp"
-std::shared_ptr<SourceRuntime> CreateSource(Run& r){if(r.encounter==1)return std::make_shared<MarrowgarRuntime>(r);if(r.encounter==5)return std::make_shared<FestergutRuntime>(r);if(r.encounter==6)return std::make_shared<RotfaceRuntime>(r);return {};}
+#include "EclipsePutricideRuntime.hpp"
+#include "EclipseBloodCouncilRuntime.hpp"
+#include "EclipseBloodQueenRuntime.hpp"
+#include "EclipseValithriaRuntime.hpp"
+#include "EclipseSindragosaRuntime.hpp"
+#include "EclipseLichKingRuntime.hpp"
+std::shared_ptr<SourceRuntime> CreateSource(Run& r){if(r.encounter==1)return std::make_shared<MarrowgarRuntime>(r);if(r.encounter==2)return std::make_shared<DeathwhisperRuntime>(r);if(r.encounter==3)return std::make_shared<GunshipRuntime>(r);if(r.encounter==4)return std::make_shared<SaurfangRuntime>(r);if(r.encounter==5)return std::make_shared<FestergutRuntime>(r);if(r.encounter==6)return std::make_shared<RotfaceRuntime>(r);if(r.encounter==7)return std::make_shared<PutricideRuntime>(r);if(r.encounter==8)return std::make_shared<BloodCouncilRuntime>(r);if(r.encounter==9)return std::make_shared<BloodQueenRuntime>(r);if(r.encounter==10)return std::make_shared<ValithriaRuntime>(r);if(r.encounter==11)return std::make_shared<SindragosaRuntime>(r);if(r.encounter==12)return std::make_shared<LichKingRuntime>(r);return {};}
 }
 bool MovementLocked(entt::entity player){if(!Valid(player)||!P::IsPC(player)||!IsMap(P::GetMapIndex(player)))return false;auto* r=For(player);return r&&Present(*r,player)&&r->state==State::Combat&&r->rooted.count(P::GetPlayerID(player));}
 int64_t FilterHealing(entt::entity player,int64_t amount){if(amount<=0||!Valid(player)||!P::IsPC(player)||!IsMap(P::GetMapIndex(player)))return amount;auto r=For(player);return r&&Present(*r,player)&&r->source?r->source->Healing(player,amount):amount;}
+void OnSkill(entt::entity player,uint32_t skill){if(!Valid(player)||!P::IsPC(player)||!IsMap(P::GetMapIndex(player)))return;if(auto r=For(player))if(r->state==State::Combat&&Present(*r,player)&&r->source)r->source->Skill(player,skill);}
 void Dispel(entt::entity player){if(!Valid(player)||!P::IsPC(player)||!IsMap(P::GetMapIndex(player)))return;if(auto r=For(player))if(Present(*r,player)&&r->source)r->source->Dispel(player);}
 float MovementSpeed(entt::entity actor){if(!Valid(actor))return 0;auto a=g_registry.try_get<Actor>(actor);if(!a||!a->sourceCreature)return 0;auto r=runs.find(a->run);if(r==runs.end())return 0;auto data=ICC::Creatures().Resolve(a->sourceCreature,r->second.mode);return data?data->runSpeed*100.f:0;}
 const CMob* Prototype(entt::entity e){if(Valid(e))if(auto* a=g_registry.try_get<Actor>(e))return a->prototype.get();return nullptr;}
@@ -187,13 +208,13 @@ bool AllowCombat(entt::entity attacker,entt::entity victim){if(MovementLocked(at
  if(a&&v)return a->run==v->run&&r->encounter==10&&v->role==0&&a->role!=0;
  auto pc=a?victim:attacker;if(!Alive(*r,pc)||!Participant(*r,P::GetPlayerID(pc)))return false;if(v&&(v->role==2||(r->encounter==10&&v->role==0)))return false;auto* m=Participant(*r,P::GetPlayerID(pc));if(!a&&(m->aura==Mechanic::Control||m->aura==Mechanic::IceTomb||m->aura==Mechanic::Spike))return false;return true;
 }
-int64_t FilterDamage(entt::entity attacker,entt::entity victim,int64_t amount){if(amount<=0)return amount;auto* a=Valid(victim)?g_registry.try_get<Actor>(victim):nullptr;if(!a)return amount;auto* r=Of(victim);if(!r)return 0;if(r->source)amount=r->source->TargetDamage(attacker,victim,amount);if(a->role!=0)return amount;if(!Due(get_dword_time(),r->immuneUntil))return 0;if(r->encounter==8){auto it=std::find(r->bosses.begin(),r->bosses.end(),victim);if(it-r->bosses.begin()!=r->empowered)return 0;}
- if(r->source&&Valid(attacker)){amount=r->source->Outgoing(attacker,amount);r->source->Attacked(attacker,amount);}
- if(r->barrier){auto absorbed=std::min<uint64_t>(r->barrier,uint64_t(amount));r->barrier-=absorbed;amount-=int64_t(absorbed);}
- if(Valid(attacker))if(auto* m=Participant(*r,P::GetPlayerID(attacker)))if(m->aura==Mechanic::Bite)amount+=amount/2;
+int64_t FilterDamage(entt::entity attacker,entt::entity victim,int64_t amount){if(amount<=0)return amount;auto* a=Valid(victim)?g_registry.try_get<Actor>(victim):nullptr;if(!a)return amount;auto* r=Of(victim);if(!r)return 0;if(r->source)amount=r->source->TargetDamage(attacker,victim,amount);if(r->source&&Valid(attacker)&&P::IsPC(attacker))amount=r->source->Outgoing(attacker,amount);if(a->role!=0)return amount;if(!Due(get_dword_time(),r->immuneUntil))return 0;if(r->encounter==8){auto it=std::find(r->bosses.begin(),r->bosses.end(),victim);if(it-r->bosses.begin()!=r->empowered)return 0;}
+ if(r->source&&Valid(attacker)&&P::IsPC(attacker))r->source->Attacked(attacker,amount);
+ if(r->barrier&&!(r->source&&r->encounter==2)){auto absorbed=std::min<uint64_t>(r->barrier,uint64_t(amount));r->barrier-=absorbed;amount-=int64_t(absorbed);}
+ if(!r->source&&Valid(attacker))if(auto* m=Participant(*r,P::GetPlayerID(attacker)))if(m->aura==Mechanic::Bite)amount+=amount/2;
  return amount;
 }
-void OnDeath(entt::entity victim,entt::entity){if(!Valid(victim))return;if(auto* run=Of(victim))if(run->source)run->source->Died(victim);auto* a=g_registry.try_get<Actor>(victim);if(!a)return;auto* r=Of(victim);if(!r)return;if(a->role==0){if(r->encounter==8)r->completionPending=true;r->dead.insert(P::GetPacketVID(victim));if(r->dead.size()>=r->bosses.size())r->completionPending=true;}if(a->role==3&&a->owner)if(auto* m=Participant(*r,a->owner)){m->aura=Mechanic::Strike;m->auraEnd=m->object=0;}}
+void OnDeath(entt::entity victim,entt::entity){if(!Valid(victim))return;if(auto* run=Of(victim))if(run->source)run->source->Died(victim);if(!Valid(victim))return;auto* a=g_registry.try_get<Actor>(victim);if(!a)return;auto* r=Of(victim);if(!r)return;if(a->role==0){if(r->encounter==10){r->completionPending=false;return;}if(r->encounter==8)r->completionPending=true;r->dead.insert(P::GetPacketVID(victim));if(r->dead.size()>=r->bosses.size())r->completionPending=true;}if(a->role==3&&a->owner)if(auto* m=Participant(*r,a->owner)){m->aura=Mechanic::Strike;m->auraEnd=m->object=0;}}
 void Command(entt::entity p,const char* arguments){if(!loaded)Load();if(!Valid(p)||!P::IsPC(p)||!P::GetDesc(p))return;std::istringstream input(arguments?arguments:"");std::string action;input>>action;auto* r=For(p);auto now=get_dword_time();
  if(action=="enter"){
   if(!r&&gmOnly&&P::GetGMLevel(p)<GM_LOW_WIZARD){Notice(p,"ER_GM_TEST_ONLY");return;}
@@ -209,11 +230,23 @@ void Command(entt::entity p,const char* arguments){if(!loaded)Load();if(!Valid(p
  if(action=="leave"){Return(p);return;}if(!Present(*r,p))return;if(action=="status"){StatePacket(*r,true);return;}if(action=="ready"){m->ready=!CombatSystem::IsDead(p);StatePacket(*r,true);return;}
  if(action=="engage"){int encounter=0;input>>encounter;if(m->pid!=r->leader||r->state!=State::Waiting||!Unlocked(r->cleared,encounter)||!Cleared(availableEncounters,encounter)||Cleared(r->cleared,encounter)){Notice(p,"ER_LOCKED");return;}for(auto& other:r->members){auto member=Player(other);if(!other.ready||!Alive(*r,member)||Distance(Position(member),Arenas[encounter-1].center)>55){Notice(p,"ER_NOT_READY");return;}}if(!r->countdownAt){r->countdownEncounter=encounter;r->countdownAt=now+BeginVoiceMilliseconds;}StatePacket(*r,true);return;}
  if(action=="checkpoint"&&r->state==State::Waiting){if(!CombatSystem::IsDead(p))WarpCheckpoint(*r,p);return;}
+ // Diagnostic navigation is server-authorized and disables completion rewards.
+ if(action=="skip"){
+  if(P::GetGMLevel(p)<GM_LOW_WIZARD){Notice(p,"ER_GM_TEST_ONLY");return;}
+  int destination=std::max(1,r->encounter+1);input>>destination;
+  if(destination<1||destination>12||!Cleared(availableEncounters,destination)){Notice(p,"ER_LOCKED");return;}
+  r->gmTesting=true;Wipe(*r);r->countdownAt=0;r->countdownEncounter=0;r->completionPending=false;
+  r->cleared=uint16_t((r->cleared|((1u<<(destination-1))-1))&~(1u<<(destination-1)));r->encounter=destination;
+  for(auto& member:r->members){auto player=Player(member);if(Alive(*r,player))Place(*r,player,{Arenas[destination-1].center.x,Arenas[destination-1].center.y-18});}
+  Notice(p,"ER_GM_SKIP_DONE");StatePacket(*r,true);return;
+ }
  if(action=="reset"&&P::GetGMLevel(p)>=GM_LOW_WIZARD){if(r->encounter>=1&&r->encounter<=12)r->cleared&=uint16_t(~(1u<<(r->encounter-1)));Wipe(*r);return;}
  // GM-only diagnostic. Raid targeting treats GM characters like ordinary players.
  // Tank exclusions remain unchanged, including for solo raid tests.
  if(action=="test_spike"){if(P::GetGMLevel(p)>=GM_LOW_WIZARD&&r->state==State::Combat&&r->encounter==1&&Alive(*r,p))if(auto source=std::dynamic_pointer_cast<MarrowgarRuntime>(r->source))source->TestSpike(m->pid);return;}
  if(r->state!=State::Combat||!Alive(*r,p)||now-m->lastAction<1500)return;m->lastAction=now;
+ if(r->source){std::istringstream copy(arguments?arguments:"");std::string ignored;uint32_t target=0;copy>>ignored>>target;if(r->source->Action(p,action,target))return;}
+ if(action=="interrupt"&&r->encounter==2){if(auto source=std::dynamic_pointer_cast<DeathwhisperRuntime>(r->source))if(!source->Interrupt(p))Notice(p,"ER_DW_INTERRUPT_UNAVAILABLE");return;}
  if(action=="heal"&&r->encounter==10&&!r->bosses.empty()){auto boss=r->bosses.front();if(Valid(boss)&&Distance(Position(p),Position(boss))<35&&P::GetSP(p)>=100){Points::Change(p,POINT_SP,-100);auto hp=std::min<uint64_t>(Points::GetMaxHP(boss),P::GetHP(boss)+Points::GetMaxHP(boss)*(m->aura==Mechanic::Heal?5:1)/100);P::SetHP(boss,hp);if(hp==Points::GetMaxHP(boss))r->completionPending=true;}return;}
  if(action=="cleanse"&&r->source){uint32_t pid=0;input>>pid;auto other=Participant(*r,pid);auto target=other?Player(*other):p;if(!Alive(*r,target)||Distance(Position(p),Position(target))>20||!SkillSystem::UseSkill(p,109,target))Notice(p,"ER_DISPEL_UNAVAILABLE");return;}
  if(action=="cleanse"){uint32_t pid=0;input>>pid;auto* other=Participant(*r,pid);if(!other)other=m;auto target=Player(*other);if(Alive(*r,target)&&Distance(Position(p),Position(target))<=20&&other->aura==Mechanic::Infection){Telegraph(*r,Mechanic::Infection,Position(target),5,10,1000,15000,Shape::Circle,{1,0},0,true);other->aura=Mechanic::Strike;other->auraEnd=0;}return;}
@@ -235,7 +268,7 @@ void Tick(){if(!loaded)Load();if(!enabled)return;auto now=get_dword_time();if(no
     else if(Due(now,r.countdownAt)){int encounter=r.countdownEncounter;Start(r,encounter);}
    }
    if(r.state==State::Combat){if(r.completionPending)Complete(r);else if(!alive)Wipe(r);else if(!r.source&&now-r.combatAt>720000){Notice(r,"ER_ENRAGE");for(auto p:Living(r))Hit(r,p,95);}else{
-     bool inArena=false;for(auto p:Living(r))if(Distance(Position(p),Arenas[r.encounter-1].center)<Arenas[r.encounter-1].radius+8)inArena=true;if(!inArena)Wipe(r);else if(r.source){auto source=r.source;if(!source->Update(now))Wipe(r);}else{r.scheduler.Poll(now,[&](Mechanic kind){if(r.state==State::Combat)Ability(r,kind);});if(r.state==State::Combat)Mechanics(r,now);}
+     bool inArena=false;for(auto p:Living(r))if(InCombatRoom(r.encounter,Position(p)))inArena=true;if(!inArena){Notice(r,"ER_OUTSIDE_ARENA");Wipe(r);}else if(r.source){auto source=r.source;if(!source->Update(now))Wipe(r);else r.hazards.erase(std::remove_if(r.hazards.begin(),r.hazards.end(),[&](auto& h){return Due(now,h.end);}),r.hazards.end());}else{r.scheduler.Poll(now,[&](Mechanic kind){if(r.state==State::Combat)Ability(r,kind);});if(r.state==State::Combat)Mechanics(r,now);}
     }}
    // Locked encounter rooms cannot be skipped by passing a client-side door.
    for(auto& m:r.members){auto p=Player(m);if(!Alive(r,p))continue;for(int n=1;n<=12;n++)if(!Unlocked(r.cleared,n)&&Distance(Position(p),Arenas[n-1].center)<Arenas[n-1].radius){WarpCheckpoint(r,p);Notice(p,"ER_LOCKED");break;}}
