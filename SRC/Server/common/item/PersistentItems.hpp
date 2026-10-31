@@ -93,7 +93,7 @@ enum class ItemPersistenceError
     InvalidLevel, InvalidAttributes, InvalidSockets, InvalidPlacement,
     InvalidOperation, InvalidFence, InvalidChange, InvalidWallet, LimitExceeded,
     CatalogMismatch, HashFailure, SqlFailure, Conflict, CommitUnknown,
-    ReceiptMismatch, InvalidStoredData, MissingOwner,
+    ReceiptMismatch, InvalidStoredData, MissingOwner, RequirementNotMet,
 };
 bool ValidItemOwner(ItemOwner) noexcept;
 bool ValidItemStorage(const ItemStorageLayout&) noexcept;
@@ -122,5 +122,22 @@ std::expected<ItemCommit,ItemPersistenceError> MakeSocketServiceCommit(const Ite
 // another inventory storage of that owner (F4 C3). Every target cell must be
 // free: no swap, no stack merge and no equipping here (each a later slice).
 std::expected<ItemCommit,ItemPersistenceError> MakeMoveCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,ItemPlacement target);
+// The character facts the equip rules read; the owner thread supplies them.
+struct EquipContext
+{
+    std::uint16_t level=0;
+    std::uint8_t characterClass=0; // 0..3: warrior, assassin, sura, shaman (use policy bits)
+    std::uint8_t sex=0;            // 0 male, 1 female
+};
+// Equips one inventory item into its own slot of the owner's equipment
+// storage 1 (weapon/armor/accessory row decides; F4 C4). An item already in
+// that slot swaps back into the freed inventory place when it fits there.
+// An OnEquip item binds to the owner. RequirementNotMet: level, class or sex.
+// Costumes and other categories are later slices (UnsupportedState).
+std::expected<ItemCommit,ItemPersistenceError> MakeEquipCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,EquipContext);
+// Takes an equipped item off into free inventory cells.
+std::expected<ItemCommit,ItemPersistenceError> MakeUnequipCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,ItemPlacement target);
 } // namespace auriga::item

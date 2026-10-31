@@ -103,6 +103,53 @@ void Run()
         auto foreign=fence;foreign.owner.id++;
         Check(!MakeMoveCommit(c,op,foreign,bags,items,f::Sword().id,at(ItemStorageKind::Inventory,1,12)),"another owner's item refused");
     }
+    // F4 C4: equip into the item's own slot (swap back when it fits), unequip into free cells.
+    {
+        const std::vector<ItemStorageLayout> bags{f::Inventory(),{{f::Character(),ItemStorageKind::Equipment,1},8,1,1}};
+        std::array<std::uint8_t,16> op{};op[0]=0xC4;
+        const EquipContext hero{10,0,0},novice{3,0,0};
+        PersistentItem armor{ItemInstanceId::Create(200).value(),item_catalog_fixture::Armor(),f::Character()};armor.placement=ItemPlacement{ItemStorageKind::Inventory,1,20};
+        PersistentItem spare{ItemInstanceId::Create(201).value(),f::LongSword(),f::Character()};spare.placement=ItemPlacement{ItemStorageKind::Inventory,1,3};
+        const std::vector<PersistentItem> items{f::Sword(),f::Leather(),armor,spare};
+        auto equip=MakeEquipCommit(c,op,fence,bags,items,f::Sword().id,hero);
+        Check(equip && equip->items.size()==1 && equip->items[0].after.placement==ItemPlacement{ItemStorageKind::Equipment,1,0} &&
+              !equip->items[0].after.boundTo && equip->storages.size()==2,"sword equipped into the weapon slot");
+        auto low=MakeEquipCommit(c,op,fence,bags,items,armor.id,novice);
+        Check(!low && low.error()==ItemPersistenceError::RequirementNotMet,"armor level requirement");
+        auto body=MakeEquipCommit(c,op,fence,bags,items,armor.id,hero);
+        Check(body && body->items[0].after.placement->anchor==1,"armor goes to the body slot");
+        Check(MakeEquipCommit(c,op,fence,bags,items,f::Leather().id,hero).error()==ItemPersistenceError::UnsupportedState,"material is not equipment");
+        // Swap: the worn sword takes the spare's freed place.
+        auto worn=items;worn[0].placement=ItemPlacement{ItemStorageKind::Equipment,1,0};
+        auto swap=MakeEquipCommit(c,op,fence,bags,worn,spare.id,hero);
+        Check(swap && swap->items.size()==2 && swap->items[0].after.placement==ItemPlacement{ItemStorageKind::Equipment,1,0} &&
+              swap->items[1].after.id==f::Sword().id && swap->items[1].after.placement==spare.placement,"equip swaps the worn item back");
+        auto off=MakeUnequipCommit(c,op,fence,bags,worn,f::Sword().id,ItemPlacement{ItemStorageKind::Inventory,1,12});
+        Check(off && off->items[0].after.placement->kind==ItemStorageKind::Inventory,"unequip into free cells");
+        auto blocked=MakeUnequipCommit(c,op,fence,bags,worn,f::Sword().id,ItemPlacement{ItemStorageKind::Inventory,1,1});
+        Check(!blocked && blocked.error()==ItemPersistenceError::InvalidPlacement,"unequip onto an occupied cell refused");
+        Check(MakeUnequipCommit(c,op,fence,bags,items,f::Sword().id,ItemPlacement{ItemStorageKind::Inventory,1,10}).error()==ItemPersistenceError::UnsupportedState,"unequip of a carried item refused");
+        Check(MakeUnequipCommit(c,op,fence,bags,worn,f::Sword().id,ItemPlacement{ItemStorageKind::Equipment,1,0}).error()==ItemPersistenceError::UnsupportedState,"unequip into equipment refused");
+        const std::vector<ItemStorageLayout> carryOnly{f::Inventory()};
+        Check(MakeEquipCommit(c,op,fence,carryOnly,items,f::Sword().id,hero).error()==ItemPersistenceError::InvalidStorage,"no equipment storage");
+        // Class/sex rules, OnEquip binding and a swap that does not fit back.
+        auto source=f::Catalog();
+        source.usePolicies[0].allowedClasses=0b0001;source.usePolicies[0].allowedSexes=0b01;
+        for(auto& base:source.items)
+        {
+            if(base.key==item_catalog_fixture::Sword())base.binding=BindingPolicy::OnEquip;
+            if(base.key==f::LongSword())base.height=1;
+        }
+        auto strictCatalog=BuildItemCatalog(source);Check(strictCatalog.has_value(),"strict fixture catalog");
+        const auto& strict=**strictCatalog;
+        Check(MakeEquipCommit(strict,op,fence,bags,items,f::Sword().id,EquipContext{10,2,0}).error()==ItemPersistenceError::RequirementNotMet,"class rule");
+        Check(MakeEquipCommit(strict,op,fence,bags,items,f::Sword().id,EquipContext{10,0,1}).error()==ItemPersistenceError::RequirementNotMet,"sex rule");
+        auto bound=MakeEquipCommit(strict,op,fence,bags,items,f::Sword().id,hero);
+        Check(bound && bound->items[0].after.boundTo==f::Character(),"OnEquip binds when equipped");
+        auto small=items;small[3].placement=ItemPlacement{ItemStorageKind::Inventory,1,44};small[0].placement=ItemPlacement{ItemStorageKind::Equipment,1,0};small[0].boundTo=f::Character();
+        auto tight=MakeEquipCommit(strict,op,fence,bags,small,spare.id,hero);
+        Check(!tight && tight.error()==ItemPersistenceError::InvalidPlacement,"a worn item that does not fit back blocks the swap");
+    }
 }
 }
 int main(){try{Run();std::cout<<checks<<" Persistent item checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

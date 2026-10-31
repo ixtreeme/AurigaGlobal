@@ -224,6 +224,47 @@ tesztkarakteren, vagy egy valódi karakter PID-jén.
       állapot az irányadó;
     - egy korábbi belépés munkamenete sem írni, sem tölteni nem tud.
 
+## C4 — felszerelés és levétel (2026-10-31)
+
+**`MakeEquipCommit`**
+- **Cél:** a tárgy a saját helyére kerül, a tulajdonos 1-es felszerelési
+  tárolójába (8 hely: fegyver, test, fej, pajzs, láb, csukló, nyak, fül, a
+  0–7. horgonyon). A helyet a fegyver-, páncél- vagy ékszersor adja.
+- **Feltételek:** minimális szint, a használati szabály kaszt- és nembitjei.
+  Ha nem teljesülnek: `RequirementNotMet` (új hibakód).
+- **Kötés:** egy `OnEquip` tárgy ekkor kötődik a tulajdonoshoz.
+- **Csere:** a helyen lévő tárgy a felszabaduló inventoryhelyre kerül, ha
+  elfér ott. Ha nem fér el, az egész kérés elutasított.
+- **Jelmez és más kategória:** későbbi szelet (`UnsupportedState`).
+
+**`MakeUnequipCommit`:** a levett tárgy szabad inventory-cellákba kerül.
+
+**Közös ellenőrzés.** Az áthelyezés, a felszerelés, a csere és a levétel
+egy közös segéden (`Relocate`) megy át. Ez minden érintett tárolót az összes
+változás után egészében ellenőriz, így a csere előbb felszabadítja a
+cellákat, és két tárgy sosem fedi egymást.
+
+**Szerver.**
+- Ugyanaz a `CG_TYPED_ITEM_MOVE` csomag a célhely szerint választ:
+  - felszerelési cél: felszerelés;
+  - felszerelt forrás: levétel;
+  - különben: áthelyezés.
+- A karakter szintje, kasztja és neme a futó ECS-ből jön.
+- **Tesztparancsok:** `/typed_equip <inventory cella>`,
+  `/typed_unequip <hely 1-8> <inventory cella>`.
+
+**Próbapad.**
+- Kiépítéskor a felszerelési tárolót is létrehozza.
+- A korábban kiépített karakterek a következő „létrehozás” lépésnél
+  (visszaállítás nélkül) kapják meg.
+- A felszerelt tárgy nem jelenik meg az inventoryrácson; helyette
+  `equipped_slot` mezőt kap.
+
+**Ellenőrzés.**
+- `PersistentItemTests`: 112 ellenőrzés (+15).
+- `item_catalog_runtime_mariadb`: 39 ellenőrzés (+9: felszerelés, majd
+  levétel a tárolón át, újratöltéssel).
+
 ## Határ
 
 - **Helyi csomag (2026-10-30): bekapcsolva.**

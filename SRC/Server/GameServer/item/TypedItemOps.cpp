@@ -8,6 +8,7 @@
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/PointSystem.hpp"
 #include "../entity/char_manager.h"
 
 #include <Core/Logging.hpp>
@@ -27,7 +28,7 @@ const char* ErrorText(items::ItemPersistenceError e)
 		"ez a kategória még nem támogatott", "érvénytelen szint", "érvénytelen bónusz", "érvénytelen foglalat",
 		"nincs hely, vagy ütközik egy másik tárggyal", "érvénytelen művelet", "elavult munkamenet (lépj be újra)",
 		"érvénytelen változás", "érvénytelen pénztárca", "túl sok adat", "katalóguseltérés", "hash-hiba", "adatbázishiba",
-		"ütközés egy párhuzamos mentéssel", "a mentés eredménye ismeretlen", "nyugtaeltérés", "sérült tárolt adat", "nincs kiépítve" };
+		"ütközés egy párhuzamos mentéssel", "a mentés eredménye ismeretlen", "nyugtaeltérés", "sérült tárolt adat", "nincs kiépítve", "a karakter nem felel meg a feltételeknek (szint, kaszt vagy nem)" };
 	const auto code = static_cast<std::size_t>(e);
 	return code < std::size(texts) ? texts[code] : "ismeretlen hiba";
 }
@@ -66,12 +67,28 @@ void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uin
 		return;
 	}
 	const auto id = items::ItemInstanceId::Create(itemId);
-	auto commit = id ? items::MakeMoveCommit(*catalog, NewOperationId(), typed->state.fence, typed->state.storages, typed->state.items, *id,
-		items::ItemPlacement { static_cast<items::ItemStorageKind>(storageKind), storageId, cell })
-	                 : std::unexpected(items::ItemPersistenceError::MissingItem);
+	const items::ItemPlacement target { static_cast<items::ItemStorageKind>(storageKind), storageId, cell };
+	const auto& state = typed->state;
+	const auto current = id ? std::ranges::find_if(state.items, [&](const items::PersistentItem& i) { return i.id == *id && !i.destroyed; }) : state.items.end();
+	std::expected<items::ItemCommit, items::ItemPersistenceError> commit = std::unexpected(items::ItemPersistenceError::MissingItem);
+	if (current != state.items.end() && current->placement)
+	{
+		// One request, three operations: equip into the item's own slot, take
+		// off into the inventory, or move inside the inventory (C3/C4).
+		if (target.kind == items::ItemStorageKind::Equipment)
+		{
+			const items::EquipContext who { static_cast<std::uint16_t>(std::max(0, ecs::PointSystem::GetLevel(character))),
+				ecs::PlayerRuntime::GetJob(character), ecs::PlayerRuntime::GetSex(character) };
+			commit = items::MakeEquipCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, *id, who);
+		}
+		else if (current->placement->kind == items::ItemStorageKind::Equipment)
+			commit = items::MakeUnequipCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, *id, target);
+		else
+			commit = items::MakeMoveCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, *id, target);
+	}
 	if (!commit)
 	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Az áthelyezés nem lehetséges: %s.", ErrorText(commit.error()));
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A tárgyművelet nem lehetséges: %s.", ErrorText(commit.error()));
 		SendTypedInventory(character); // the client reverts to the authoritative layout
 		return;
 	}
@@ -92,7 +109,7 @@ void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uin
 			if (!outcome.write)
 			{
 				LOG_INFO("TypedItems: pid {} move refused by the store (error {})", pid, static_cast<int>(outcome.write.error()));
-				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "Az áthelyezés nem sikerült: %s.", ErrorText(outcome.write.error()));
+				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A tárgyművelet nem sikerült: %s.", ErrorText(outcome.write.error()));
 			}
 			SendTypedInventory(entity);
 		});
@@ -134,4 +151,51 @@ ACMD(do_typed_move)
 			return;
 		}
 	Tell(character, "Ezen a cellán nincs új rendszerű tárgy.");
+}
+
+namespace
+{
+const items::PersistentItem* ItemAt(const ecs::TypedItems& typed, items::ItemStorageKind kind, std::uint32_t anchor)
+{
+	for (const auto& item : typed.state.items)
+		if (!item.destroyed && item.placement && item.placement->kind == kind && item.placement->storageId == 1 && item.placement->anchor == anchor)
+			return &item;
+	return nullptr;
+}
+}
+
+// /typed_equip <inventory cell>: equip into the item's own slot (C4 test command).
+ACMD(do_typed_equip)
+{
+	char from[32];
+	one_argument(argument, from, sizeof(from));
+	const auto* typed = g_registry.valid(character) ? g_registry.try_get<ecs::TypedItems>(character) : nullptr;
+	if (!*from || !typed)
+	{
+		Tell(character, "Használat: /typed_equip <inventory cella>  (új tárgyrendszer)");
+		return;
+	}
+	if (const auto* item = ItemAt(*typed, items::ItemStorageKind::Inventory, static_cast<std::uint32_t>(std::strtoul(from, nullptr, 10))))
+		RequestTypedItemMove(character, item->id.Value(), static_cast<std::uint8_t>(items::ItemStorageKind::Equipment), 1, 0);
+	else
+		Tell(character, "Ezen a cellán nincs új rendszerű tárgy.");
+}
+
+// /typed_unequip <slot 1-8> <inventory cell>: take an item off (C4 test command).
+ACMD(do_typed_unequip)
+{
+	char slot[32], to[32];
+	two_arguments(argument, slot, sizeof(slot), to, sizeof(to));
+	const auto* typed = g_registry.valid(character) ? g_registry.try_get<ecs::TypedItems>(character) : nullptr;
+	const auto number = static_cast<std::uint32_t>(std::strtoul(slot, nullptr, 10));
+	if (!*slot || !*to || !typed || number < 1 || number > 8)
+	{
+		Tell(character, "Használat: /typed_unequip <hely 1-8> <inventory cella>  (1 fegyver, 2 test, 3 fej, 4 pajzs, 5 láb, 6 csukló, 7 nyak, 8 fül)");
+		return;
+	}
+	if (const auto* item = ItemAt(*typed, items::ItemStorageKind::Equipment, number - 1))
+		RequestTypedItemMove(character, item->id.Value(), static_cast<std::uint8_t>(items::ItemStorageKind::Inventory), 1,
+			static_cast<std::uint32_t>(std::strtoul(to, nullptr, 10)));
+	else
+		Tell(character, "Ezen a helyen nincs felszerelt új rendszerű tárgy.");
 }

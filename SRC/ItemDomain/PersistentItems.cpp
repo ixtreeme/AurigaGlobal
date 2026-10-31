@@ -289,31 +289,100 @@ std::expected<ItemCommit,E> MakeSocketServiceCommit(const ItemCatalog& c,const S
     commit->items[0].after.stones=plan.after;commit->outcomeCode=1;
     if(auto valid=ValidateItemCommit(c,*commit);!valid)return std::unexpected(valid.error());return commit;
 }
+namespace
+{
+// Relocations of placed items (move, equip, swap, unequip): every touched
+// storage is re-checked as a whole after all changes, so a swap frees its
+// cells before they are taken and no two items ever overlap.
+std::expected<ItemCommit,E> Relocate(const ItemCatalog& c,const std::array<std::uint8_t,16>& operationId,const ItemOwnerFence& owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,std::vector<ItemChange> changes)
+{
+    if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
+    const auto layoutOf=[&](const ItemPlacement& p)->const ItemStorageLayout*{
+        const auto it=std::ranges::find_if(storages,[&](const ItemStorageLayout& l){return l.storage==ItemStorage{owner.owner,p.kind,p.storageId};});
+        return it==storages.end()?nullptr:&*it;};
+    std::vector<ItemStorageLayout> touched;
+    for(const auto& change:changes)
+        for(const auto* p:{&*change.before->placement,&*change.after.placement})
+        {
+            const auto* layout=layoutOf(*p);if(!layout)return std::unexpected(E::InvalidStorage);
+            if(std::ranges::find(touched,*layout)==touched.end())touched.push_back(*layout);
+        }
+    std::set<std::pair<ItemStorage,std::uint32_t>> taken;
+    for(const auto& item:inventory)
+    {
+        if(item.destroyed || !item.placement)continue;
+        const auto changed=std::ranges::find_if(changes,[&](const ItemChange& ch){return ch.after.id==item.id;});
+        const auto& placed=changed==changes.end()?item:changed->after;
+        const auto* layout=layoutOf(*placed.placement);
+        if(!layout || std::ranges::find(touched,*layout)==touched.end())continue;
+        const auto cells=OccupiedItemCells(c,placed,*layout);if(!cells)return std::unexpected(cells.error());
+        for(const auto cell:*cells)if(!taken.emplace(layout->storage,cell).second)return std::unexpected(E::InvalidPlacement);
+    }
+    ItemCommit r;r.operationId=operationId;r.catalogRevision=c.Revision();r.catalogHash=c.ContentHash();r.kind=ItemOperationKind::Move;
+    r.owners={owner};r.storages=std::move(touched);r.items=std::move(changes);r.outcomeCode=1;r.result={static_cast<std::uint8_t>(ItemOperationKind::Move)};
+    if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
+    return r;
+}
+const PersistentItem* Placed(std::span<const PersistentItem> inventory,const ItemOwnerFence& owner,ItemInstanceId id)
+{
+    const auto it=std::ranges::find_if(inventory,[&](const PersistentItem& i){return i.id==id && !i.destroyed;});
+    return it==inventory.end() || it->owner!=owner.owner || !it->placement?nullptr:&*it;
+}
+std::optional<EquipmentSlot> SlotOf(const ItemCatalogEntry& entry)
+{
+    if(const auto* w=std::get_if<ItemWeaponRow>(&entry.category))return w->slot;
+    if(const auto* a=std::get_if<ItemArmorRow>(&entry.category))return a->slot;
+    if(const auto* a=std::get_if<ItemAccessoryRow>(&entry.category))return a->slot;
+    return std::nullopt;
+}
+}
 std::expected<ItemCommit,E> MakeMoveCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,ItemPlacement target)
 {
     if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
     if(target.kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
-    const auto source=std::ranges::find_if(inventory,[&](const PersistentItem& i){return i.id==id && !i.destroyed;});
-    if(source==inventory.end() || source->owner!=owner.owner || !source->placement)return std::unexpected(E::MissingItem);
+    const auto* source=Placed(inventory,owner,id);if(!source)return std::unexpected(E::MissingItem);
     if(source->placement->kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
     if(*source->placement==target)return std::unexpected(E::InvalidChange);
-    const auto layoutOf=[&](const ItemPlacement& p){return std::ranges::find_if(storages,[&](const ItemStorageLayout& l){
-        return l.storage==ItemStorage{owner.owner,p.kind,p.storageId};});};
-    const auto from=layoutOf(*source->placement),to=layoutOf(target);
-    if(from==storages.end() || to==storages.end())return std::unexpected(E::InvalidStorage);
     auto moved=*source;moved.revision++;moved.placement=target;
-    const auto cells=OccupiedItemCells(c,moved,*to);if(!cells)return std::unexpected(cells.error());
-    for(const auto& other:inventory)
+    return Relocate(c,operationId,owner,storages,inventory,{{*source,moved}});
+}
+std::expected<ItemCommit,E> MakeEquipCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,EquipContext who)
+{
+    if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
+    const auto* source=Placed(inventory,owner,id);if(!source)return std::unexpected(E::MissingItem);
+    if(source->placement->kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
+    const auto* entry=c.Find(source->key);if(!entry)return std::unexpected(E::MissingItem);
+    const auto slot=SlotOf(*entry);if(!slot)return std::unexpected(E::UnsupportedState);
+    if(entry->base.minimumLevel>who.level || who.characterClass>3 || who.sex>1)return std::unexpected(E::RequirementNotMet);
+    if(entry->base.usePolicy)
     {
-        if(other.id==id || other.destroyed || !other.placement || other.placement->kind!=target.kind || other.placement->storageId!=target.storageId)continue;
-        const auto taken=OccupiedItemCells(c,other,*to);if(!taken)return std::unexpected(taken.error());
-        if(std::ranges::any_of(*cells,[&](auto cell){return std::ranges::find(*taken,cell)!=taken->end();}))return std::unexpected(E::InvalidPlacement);
+        const auto* policy=c.FindUsePolicy(entry->base.usePolicy);if(!policy)return std::unexpected(E::InvalidItem);
+        if(!(policy->allowedClasses>>who.characterClass & 1) || !(policy->allowedSexes>>who.sex & 1))return std::unexpected(E::RequirementNotMet);
     }
-    ItemCommit r;r.operationId=operationId;r.catalogRevision=c.Revision();r.catalogHash=c.ContentHash();r.kind=ItemOperationKind::Move;
-    r.owners={owner};r.storages={*from};if(to!=from)r.storages.push_back(*to);
-    r.items.push_back({*source,moved});r.outcomeCode=1;r.result={static_cast<std::uint8_t>(ItemOperationKind::Move)};
-    if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
-    return r;
+    const ItemPlacement target{ItemStorageKind::Equipment,1,static_cast<std::uint32_t>(*slot)-1};
+    auto equipped=*source;equipped.revision++;equipped.placement=target;
+    if(entry->base.binding==BindingPolicy::OnEquip && !equipped.boundTo)equipped.boundTo=owner.owner;
+    std::vector<ItemChange> changes{{*source,equipped}};
+    const auto occupant=std::ranges::find_if(inventory,[&](const PersistentItem& i){return !i.destroyed && i.placement && *i.placement==target;});
+    if(occupant!=inventory.end())
+    {
+        // The worn item takes the freed place; Relocate refuses it if it does not fit there.
+        auto back=*occupant;back.revision++;back.placement=source->placement;
+        changes.push_back({*occupant,back});
+    }
+    return Relocate(c,operationId,owner,storages,inventory,std::move(changes));
+}
+std::expected<ItemCommit,E> MakeUnequipCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,ItemPlacement target)
+{
+    if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
+    if(target.kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
+    const auto* source=Placed(inventory,owner,id);if(!source)return std::unexpected(E::MissingItem);
+    if(source->placement->kind!=ItemStorageKind::Equipment)return std::unexpected(E::UnsupportedState);
+    auto taken=*source;taken.revision++;taken.placement=target;
+    return Relocate(c,operationId,owner,storages,inventory,{{*source,taken}});
 }
 } // namespace auriga::item

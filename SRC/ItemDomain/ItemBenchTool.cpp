@@ -28,6 +28,8 @@ ItemOwner BenchOwner{ItemOwnerKind::Character,TestCharacter};
 std::uint64_t BenchSession=0;
 constexpr std::uint64_t BenchCatalogRevision=1,BenchIdBase=0x00BE000000000000ULL;
 ItemStorageLayout Inventory{{BenchOwner,ItemStorageKind::Inventory,1},5,9,4};
+// Slots 1..8 (weapon, body, head, shield, feet, wrist, neck, ear) at anchors 0..7.
+ItemStorageLayout Equipment{{BenchOwner,ItemStorageKind::Equipment,1},8,1,1};
 
 struct Failure : std::runtime_error { using std::runtime_error::runtime_error; };
 void Require(bool condition,const std::string& reason){if(!condition)throw Failure(reason);}
@@ -43,7 +45,7 @@ const char* PersistenceText(ItemPersistenceError e)
         "érvénytelen foglalatállapot","nincs hely, vagy ütközik egy másik tárggyal","érvénytelen művelet","elavult tulajdonos-kerítés",
         "érvénytelen változás","érvénytelen pénztárca-változás","túl sok adat egy műveletben","katalóguseltérés","hash-hiba","adatbázishiba",
         "ütközés egy párhuzamos mentéssel (próbáld újra)","a mentés eredménye ismeretlen","nyugtaeltérés","sérült tárolt adat",
-        "nincs ilyen tulajdonos (nincs kiépítve)"};
+        "nincs ilyen tulajdonos (nincs kiépítve)", "a karakter nem felel meg a feltételeknek (szint, kaszt vagy nem)" };
     const auto code=static_cast<std::size_t>(e);return code<std::size(texts)?texts[code]:"ismeretlen hiba";
 }
 const char* RefinementText(RefinementUseError e)
@@ -118,7 +120,8 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
                 {"stone",st.stone?Json::array({static_cast<unsigned>(st.stone->Category()),st.stone->LocalId()}):Json(nullptr)}});
         items.push_back({{"id",std::to_string(i.id.Value())},{"category",static_cast<unsigned>(i.key.Category())},{"local",i.key.LocalId()},
             {"content_code",e?e->base.contentCode:""},{"level",i.refinementLevel},{"count",i.count},{"revision",i.revision},
-            {"destroyed",i.destroyed},{"cell",i.placement?Json(i.placement->anchor):Json(nullptr)},{"attributes",attributes},
+            {"destroyed",i.destroyed},{"cell",i.placement && i.placement->kind==ItemStorageKind::Inventory?Json(i.placement->anchor):Json(nullptr)},
+            {"equipped_slot",i.placement && i.placement->kind==ItemStorageKind::Equipment?Json(i.placement->anchor+1):Json(nullptr)},{"attributes",attributes},
             {"locked_slot",i.attributes.lockedSlot?Json(*i.attributes.lockedSlot):Json(nullptr)},{"stones",stones},
             {"bound",i.boundTo.has_value()}});
     }
@@ -138,7 +141,8 @@ std::set<std::uint32_t> Occupied(const ItemCatalog& c,const p::LoadedItemOwner& 
     std::set<std::uint32_t> cells;
     for(const auto& i:o.items)
     {
-        if(i.destroyed || !i.placement || (except && i.id.Value()==*except))continue;
+        // Only the main inventory grid; equipped items live in their own slots.
+        if(i.destroyed || !i.placement || i.placement->kind!=ItemStorageKind::Inventory || i.placement->storageId!=1 || (except && i.id.Value()==*except))continue;
         auto footprint=OccupiedItemCells(c,i,Inventory);Require(footprint.has_value(),"Hibás tárolt elhelyezés.");
         cells.insert(footprint->begin(),footprint->end());
     }
@@ -214,6 +218,9 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     const bool reset=request.value("reset",false);
     if(OwnerExists(sql) && !reset)
     {
+        // Owners provisioned before equipping existed get their equipment storage now.
+        Query(sql,"INSERT IGNORE INTO player.item_storage VALUES(?,?,?,?,?,?,?)",{SqlParam::UInt(static_cast<unsigned>(BenchOwner.kind)),SqlParam::UInt(BenchOwner.id),
+            SqlParam::UInt(static_cast<unsigned>(ItemStorageKind::Equipment)),SqlParam::UInt(1),SqlParam::UInt(Equipment.columns),SqlParam::UInt(1),SqlParam::UInt(1)});
         const bool followed=FollowCatalog(sql,*c);
         Claim(sql,*c);
         return {{"state",State(*c,Load(sql,*c))},{"catalog_followed",followed}};
@@ -237,7 +244,8 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     const bool followed=FollowCatalog(sql,*c);
     // The same provisioning the importer and character creation use.
     const ItemWallet wallet{BenchOwner,WalletCurrency::Gold,1,gold};
-    auto made=p::ProvisionOwner(sql,*c,BenchOwner,std::span(&Inventory,1),std::span(&wallet,1));
+    const ItemStorageLayout layouts[]{Inventory,Equipment};
+    auto made=p::ProvisionOwner(sql,*c,BenchOwner,layouts,std::span(&wallet,1));
     Require(made && *made,std::string("A karakter kiépítése nem sikerült: ")+(made?"már létezik":PersistenceText(made.error()))+".");
     Claim(sql,*c);
     return {{"state",State(*c,Load(sql,*c))},{"catalog_followed",followed}};
@@ -405,7 +413,7 @@ Json Run(const Json& request)
     const auto action=request.at("action").get<std::string>();
     const auto pid=request.value("owner",std::uint64_t{TestCharacter});
     Require(pid>0 && pid<=0xffffffffull,"Érvénytelen karakterazonosító.");
-    BenchOwner={ItemOwnerKind::Character,pid};Inventory.storage.owner=BenchOwner;
+    BenchOwner={ItemOwnerKind::Character,pid};Inventory.storage.owner=BenchOwner;Equipment.storage.owner=BenchOwner;
     if(action=="characters")return {{"characters",Characters(sql)}};
     if(action=="status")return Status(sql);
     if(action=="setup")return Setup(sql,request);
