@@ -374,3 +374,6 @@ bgfx.cmake
 server.json
 /run/
 /config/run/
+
+# Claude Code session worktrees
+.claude/worktrees/
