@@ -12,6 +12,7 @@
 #   archivers/lz4                   (lz4.h)
 #   devel/boost-libs                (boost/unordered_map.hpp, ...)
 #   devel/nlohmann-json             (nlohmann/json.hpp, shared server config)
+#   devel/libfmt, devel/spdlog      (CMake configs, found by SRC/Server)
 #   databases/mariadb-connector-c   (mariadb/mysql.h, libmariadb)
 #     or databases/mysql80-client   (mysql/mysql.h, libmysqlclient)
 #   devel/pkgconf                   (optional, faster discovery)

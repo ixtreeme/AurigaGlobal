@@ -390,20 +390,10 @@ void CleanupCombatReferences(entt::registry& reg, entt::entity victim)
         }
     }
 
-    auto aggroView = reg.view<ecs::AggroTable>();
-    for (auto other : aggroView) {
-        auto& aggro = aggroView.get<ecs::AggroTable>(other);
-        auto& entries = aggro.entries;
-        entries.erase(
-            std::remove_if(entries.begin(), entries.end(), [victim](const auto& entry) {
-                return entry.first == victim;
-            }),
-            entries.end());
-
-        if (aggro.stoneOwner == victim) {
-            aggro.stoneOwner = entt::null;
-        }
-    }
+    // AggroTable is not swept here: nothing writes its entries or stoneOwner,
+    // yet every mob carries one, so the sweep found nothing and cost a pass
+    // over every mob per destroyed entity - O(N^2) over a shutdown, 12 minutes
+    // for ~72k NPCs. See the note on AggroTable before giving it a writer.
 }
 
 } // namespace

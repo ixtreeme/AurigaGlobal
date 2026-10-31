@@ -22,7 +22,7 @@
 #include "config.h"
 #include "crash_report.h"
 #include "event.h"
-#include "minilzo.h"
+#include <lzo/lzo1x.h>
 #include "packet.h"
 #include "desc_manager.h"
 #include "../ecs/CharacterAccessors.hpp"

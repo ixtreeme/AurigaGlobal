@@ -2,8 +2,8 @@ Lua 5.5.1 from https://www.lua.org/ftp/lua-5.5.1.tar.gz
 
 SHA256: `1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce`
 
-The vendored source is built as C++ for exception unwinding. The legacy
-quest compiler has a separate Lua 5.0 library; no executable links both VMs.
+The vendored source is built as C++ for exception unwinding. It stays
+vendored while vcpkg's lua port is the older 5.5.0 without these fixes.
 
 Applied runtime-only official fixes listed at https://www.lua.org/bugs.html:
 - https://github.com/lua/lua/commit/0b29f408433e92953cc72b1d3e06c7ac8139e439

@@ -12,6 +12,10 @@ void Remove(entt::registry& reg, entt::entity entity);
 // Blocks insertion from on_destroy signals until tag cleanup has completed.
 // Released before network callbacks, where a new spawn is legal.
 bool IsRemoving(const entt::registry& reg, entt::entity entity);
+// Shutdown only, before every character is destroyed: drops all view edges and
+// retires every character's visibility in one pass. Sends no packets; sector
+// membership stays until each character's own teardown.
+void RetireCharacters(entt::registry& reg);
 void Reencode(entt::registry& reg, entt::entity character);
 void Reencode(entt::entity character);
 

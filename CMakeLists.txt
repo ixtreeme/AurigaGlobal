@@ -87,30 +87,24 @@ endif()
 # vcpkg csomagok telepitese
 # ============================================================
 if(AURIGA_USE_VCPKG)
+    # Every server dependency comes from here. The client-only packages left
+    # with the old client; Lua 5.5.1 stays vendored in SRC/3rd/LUA55, because
+    # the vcpkg port is the older 5.5.0 without the official fixes.
     vcpkg_require(
         stb
         lzo
         lz4
-        curl
-        zstd
-        xxhash
-        python2
         OpenSSL
-        libconfig
-        libsodium
-        rapidjson
-        miniaudio
-        directxsdk
         entt
-        discord-rpc
-        libjpeg-turbo
+        fmt
+        spdlog
         nlohmann-json
         boost-asio
-        boost-foreach
-        boost-exception
+        boost-bind
+        boost-unordered
         boost-algorithm
-        boost-property-tree
-        mariadb-connector-cpp
+        boost-smart-ptr
+        libmariadb
     )
 else()
     include(cmake/AurigaSystemDeps.cmake)

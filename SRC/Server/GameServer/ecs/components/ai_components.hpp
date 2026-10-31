@@ -61,6 +61,10 @@ struct WarFlagState {
     bool isBaseFlag;
 };
 
+// Nothing writes entries or stoneOwner yet, and EntityFactory::Destroy no
+// longer sweeps them. A writer must also remove its handle when the referenced
+// entity is destroyed, through a reverse index on that entity: a registry-wide
+// sweep per destroy is O(N^2) at shutdown.
 struct AggroTable {
     std::vector<std::pair<entt::entity, int32_t>> entries;
     entt::entity stoneOwner { entt::null };

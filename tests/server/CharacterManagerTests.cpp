@@ -34,7 +34,8 @@ uint8_t g_bChannel = 1;
 namespace {
 HEART despawnHeart {};
 std::function<void(entt::entity)> onVictim;
-int checks = 0, destroys = 0, views = 0, resets = 0, updates = 0, creates = 0, saves = 0;
+int checks = 0, destroys = 0, views = 0, resets = 0, updates = 0, creates = 0, saves = 0, retires = 0;
+std::function<void()> onRetire;
 bool rejectItem = false;
 std::function<void(entt::entity)> onView, onDestroy, onUpdate, onSave;
 std::vector<int> randomBounds;
@@ -64,12 +65,12 @@ entt::entity Item(uint32_t vnum, uint32_t count = 1) {
     return e;
 }
 void Reset(CHARACTER_MANAGER& manager) {
-    onView = onDestroy = onUpdate = onSave = onVictim = {};
+    onView = onDestroy = onUpdate = onSave = onVictim = {}; onRetire = {};
     event_destroy(); despawnHeart.pulse = 0; despawnHeart.passes_per_sec = 25;
     manager.ClearEventData();
     manager.Destroy();
     g_registry.clear();
-    destroys = views = resets = updates = creates = saves = 0;
+    destroys = views = resets = updates = creates = saves = retires = 0;
     rejectItem = false; randomBounds.clear();
 }
 void Event(CHARACTER_MANAGER& manager, std::initializer_list<uint8_t> types) {
@@ -135,6 +136,19 @@ void DestroyChecks(CHARACTER_MANAGER& manager) {
     Check(manager.FindPCEntity("player22") == entt::null, "incomplete name component");
     manager.DestroyCharacter(current);
     Check(!g_registry.valid(current) && manager.GetPCMap().empty(), "incomplete actor teardown");
+}
+// Shutdown retires every view once, before any character's own teardown,
+// and an empty manager (the destructor after shutdown) does not retire again.
+void ShutdownChecks(CHARACTER_MANAGER& manager) {
+    Reset(manager);
+    const auto pc = Actor(manager, 31), npc = Actor(manager, 32, false);
+    int viewsAtRetire = -1;
+    onRetire = [&] { viewsAtRetire = views; };
+    manager.Destroy();
+    Check(retires == 1 && viewsAtRetire == 0 && views == 2 && destroys == 2 &&
+        !g_registry.valid(pc) && !g_registry.valid(npc), "shutdown did not retire views once before teardown");
+    manager.Destroy();
+    Check(retires == 1, "empty shutdown retired views again");
 }
 void SaveChecks(CHARACTER_MANAGER& manager) {
     Reset(manager);
@@ -282,6 +296,7 @@ uint8_t GetSkillGroup(entt::entity e) { return g_registry.get<ActorData>(e).grou
 }
 namespace ecs::ViewSystem {
 void ViewCleanup(entt::entity e) { ++views; if (onView) onView(e); }
+void RetireAllCharacters() { ++retires; if (onRetire) onRetire(); }
 }
 void EntityFactory::Destroy(entt::registry& reg, entt::entity e) {
     ++destroys;
@@ -534,7 +549,7 @@ int main() {
         CHARACTER_MANAGER manager;
         ITEM_MANAGER items;
         CShutdownManager shutdown;
-        DespawnChecks(manager); LookupChecks(manager); DestroyChecks(manager); SaveChecks(manager); UpdateChecks(manager); DropChecks(manager);
+        DespawnChecks(manager); LookupChecks(manager); DestroyChecks(manager); ShutdownChecks(manager); SaveChecks(manager); UpdateChecks(manager); DropChecks(manager);
         Reset(manager);
         std::cout << "Character manager checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

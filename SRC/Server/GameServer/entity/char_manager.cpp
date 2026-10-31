@@ -54,8 +54,27 @@
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/components/identity_components.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
+#include <chrono>
 namespace
 {
+	// Shutdown timing, reported once by CHARACTER_MANAGER::Destroy. Phases are
+	// timed on outermost destroys only; a cascade counts in its parent's phase.
+	struct TeardownProfile
+	{
+		size_t characters = 0;
+		std::chrono::steady_clock::duration view {}, statePre {}, statePost {};
+	};
+	TeardownProfile* s_teardown = nullptr;
+
+	struct TeardownLap
+	{
+		std::chrono::steady_clock::duration* sink;
+		std::chrono::steady_clock::time_point start;
+		explicit TeardownLap(std::chrono::steady_clock::duration* phase)
+			: sink(phase), start(phase ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {}) {}
+		~TeardownLap() { if (sink) *sink += std::chrono::steady_clock::now() - start; }
+	};
+
 	void InitializeSpawnArchetype(const TMobTable& proto, int x, int y, int map, uint32_t vid)
 	{
 		// Point calculation needs the complete archetype before SetProto.
@@ -367,6 +386,21 @@ void CHARACTER_MANAGER::Destroy()
 	// Shutdown must drain deferred requests before walking the live index.
 	FlushPendingDestroy();
 
+	if (CVIDRegistry::Instance().Snapshot().empty())
+		return;
+
+	using Clock = std::chrono::steady_clock;
+	TeardownProfile profile;
+	s_teardown = &profile;
+	struct ProfileScope { ~ProfileScope() { s_teardown = nullptr; } } profileScope;
+	const auto started = Clock::now();
+
+	// Every character goes and no client reads another packet. Retiring all
+	// views at once spares each character its own range scan and REMOVE
+	// fan-out, ~0.9 ms per NPC in the asserts-on build (91 s for ~100k).
+	ecs::ViewSystem::RetireAllCharacters();
+	const auto retired = Clock::now();
+
 	// Destroying a character can cascade (dungeon, rider, pet), so sweep
 	// until the live index is empty. The snapshot is taken once per sweep:
 	// the previous shape re-snapshotted after every single entity, which is
@@ -398,6 +432,12 @@ void CHARACTER_MANAGER::Destroy()
 				DestroyCharacter(character);
 		}
 	}
+
+	const auto ms = [](Clock::duration d) { return std::chrono::duration_cast<std::chrono::milliseconds>(d).count(); };
+	LOG_INFO("<shutdown> CHARACTER_MANAGER destroyed {} characters in {} ms "
+		"(view retire {} ms; per character: view {} ms, state {} ms, teardown {} ms)",
+		profile.characters, ms(Clock::now() - started), ms(retired - started),
+		ms(profile.view), ms(profile.statePre), ms(profile.statePost));
 }
 
 void CHARACTER_MANAGER::GracefulShutdown()
@@ -490,6 +530,9 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character)
 		~DestroyGuard() { active.erase(character); }
 	} guard { m_destroyingCharacters, character };
 	m_set_pkChrPendingDestroy.erase(character);
+	TeardownProfile* const profile = s_teardown && m_destroyingCharacters.size() == 1 ? s_teardown : nullptr;
+	if (s_teardown)
+		++s_teardown->characters;
 
 	// Rider and dungeon notification run on components; there is no shell left
 	// to resolve. The components must outlive state cleanup.
@@ -523,15 +566,21 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character)
 	UnregisterRaceNumMap(character);
 	RemoveFromStateList(character);
 	UnregisterForMonsterLog(character);
-	ecs::ViewSystem::ViewCleanup(character);
+	{
+		TeardownLap lap(profile ? &profile->view : nullptr);
+		ecs::ViewSystem::ViewCleanup(character);
+	}
 
 	if (!g_registry.valid(character))
 		return;
 	// The state functions release inventory, mount and session state, then
 	// retire the registry entry. Nothing here needs a shell anymore.
-	DestroyCharacterStatePre(character);
+	{
+		TeardownLap lap(profile ? &profile->statePre : nullptr);
+		DestroyCharacterStatePre(character);
+	}
+	TeardownLap lap(profile ? &profile->statePost : nullptr);
 	DestroyCharacterStatePost(character);
-
 }
 
 entt::entity CHARACTER_MANAGER::FindEntity(uint32_t dwVID)
