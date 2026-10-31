@@ -147,6 +147,21 @@ std::expected<ItemCommit,ItemPersistenceError> MakeUnequipCommit(const ItemCatal
 // caller's own plan (e.g. PlanInstantRecovery); this only writes the item.
 std::expected<ItemCommit,ItemPersistenceError> MakeConsumeCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,std::uint32_t units);
+// Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
+// a purchase or a reward. Stackable units first top up the owner's matching
+// inventory stacks (same key, level and binding, no instance state), in storage
+// and cell order; the rest become new items in the first free cells, taking
+// IDs from the front of `ids` (the commit's new items say how many). All or
+// nothing: InvalidPlacement when it does not fit, LimitExceeded when `ids`
+// runs short. An OnAcquire item binds to the owner.
+struct ItemGrant
+{
+    ItemKey key;
+    std::uint16_t refinementLevel=0;
+    std::uint32_t count=1;
+};
+std::expected<ItemCommit,ItemPersistenceError> MakeGrantCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const ItemGrant&,std::span<const ItemInstanceId> ids);
 // Refines one inventory item of the owner with one catalog recipe (F4 C6).
 // Only the owner's live inventory items take part: an equipped item is never
 // the source or a material. The Gold wallet pays. The server supplies the

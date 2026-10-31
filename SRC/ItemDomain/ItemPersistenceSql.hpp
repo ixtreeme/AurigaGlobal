@@ -42,4 +42,11 @@ std::expected<std::uint64_t,ItemPersistenceError> ClaimOwnerSession(CAsyncSQL&,c
 // atomically. An owner that already exists is left untouched: false.
 std::expected<bool,ItemPersistenceError> ProvisionOwner(CAsyncSQL&,const ItemCatalog&,ItemOwner,
     std::span<const ItemStorageLayout>,std::span<const ItemWallet>);
+// Runtime-created items take their IDs from blocks reserved here, so several
+// writers (game cores, the test bench) never collide (F4 C7a). One transaction
+// moves the shared counter; IDs a writer leaves unused are never handed out
+// again. The half-open range [first, end) holds exactly `count` IDs.
+struct ItemInstanceIdBlock { std::uint64_t first=0, end=0; };
+inline constexpr std::uint32_t MaxItemInstanceIdBlock=1'000'000;
+std::expected<ItemInstanceIdBlock,ItemPersistenceError> ReserveItemInstanceIds(CAsyncSQL&,const ItemCatalog&,std::uint32_t count);
 } // namespace auriga::item::persistence

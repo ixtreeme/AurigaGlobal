@@ -138,6 +138,24 @@ void Sessions(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
     Execute(admin,"UPDATE player.item_owner_fence SET session_generation=18446744073709551615 WHERE owner_kind=1 AND owner_id=4242");
     claimed=p::ClaimOwnerSession(writer,c,fresh);Check(!claimed && claimed.error()==E::LimitExceeded,"exhausted generation is not wrapped");
 }
+// Runtime instance IDs (F4 C7a): disjoint blocks from one shared counter, also
+// across connections; never below 2^32 and never wrapped.
+void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned port,const std::string& pw)
+{
+    using E=ItemPersistenceError;
+    constexpr std::uint64_t floor=std::uint64_t{1}<<32;
+    Check(std::stoull(Scalar(admin,"SELECT next_instance_id FROM player.item_instance_id_allocator"))>=floor,"the counter starts above the legacy ID space");
+    auto a=p::ReserveItemInstanceIds(writer,c,100),b=p::ReserveItemInstanceIds(writer,c,5);
+    Check(a && b && a->first>=floor && a->end-a->first==100 && b->end-b->first==5 && b->first==a->end,"consecutive blocks are disjoint");
+    CAsyncSQL other;Setup(other,port,pw,"item_writer");
+    auto d=p::ReserveItemInstanceIds(other,c,7);Check(d && d->first==b->end && d->end-d->first==7,"another writer's block follows, never overlaps");
+    Check(Scalar(admin,"SELECT next_instance_id FROM player.item_instance_id_allocator")==std::to_string(d->end),"the counter holds the next free ID");
+    Check(p::ReserveItemInstanceIds(writer,c,0).error()==E::LimitExceeded && p::ReserveItemInstanceIds(writer,c,p::MaxItemInstanceIdBlock+1).error()==E::LimitExceeded,
+          "an empty or oversized block is refused");
+    Execute(admin,"UPDATE player.item_instance_id_allocator SET next_instance_id=18446744073709551610");
+    Check(p::ReserveItemInstanceIds(writer,c,10).error()==E::LimitExceeded,"the counter never wraps");
+    Check(Scalar(admin,"SELECT next_instance_id FROM player.item_instance_id_allocator")=="18446744073709551610","a refused block moves nothing");
+}
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     const auto source=f::Catalog();Populate(admin,source);const auto c=BuildItemCatalog(source).value();
@@ -255,6 +273,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     Execute(writer,"SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");Check(!p::LoadItemOwner(writer,*c,account,9),"nonrepeatable read denied");Execute(writer,"SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
     Check(Scalar(writer,"SELECT @@autocommit")=="1","transaction not left open");
     Sessions(admin,writer,*c);
+    Allocator(admin,writer,*c,port,pw);
 }
 }
 int main(int argc,char** argv)

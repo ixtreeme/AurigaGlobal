@@ -7,7 +7,9 @@
 // operation per character at a time; the client always gets the result as a
 // fresh GC_TYPED_INVENTORY snapshot (also after a refusal).
 #include <cstdint>
+#include <expected>
 #include <entt/entity/fwd.hpp>
+#include <item/PersistentItems.hpp>
 
 void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uint8_t storageKind, std::uint64_t storageId, std::uint32_t cell);
 // CG_TYPED_ITEM_MOVE (225) payload; false when the packet is malformed.
@@ -23,3 +25,8 @@ bool HandleTypedItemUsePacket(entt::entity character, const char* data);
 void RequestTypedItemRefine(entt::entity character, std::uint64_t itemId, std::uint32_t recipeId, std::uint32_t npcVid);
 // CG_TYPED_ITEM_REFINE (227) payload.
 bool HandleTypedItemRefinePacket(entt::entity character, const char* data);
+// Gives new units of one item state to the character's inventory (F4 C7a):
+// the path drops, purchases and rewards take. The new items' IDs come from the
+// store's reserved pool. Nothing is queued when it is refused.
+enum class TypedGrantRefusal { NotEnabled, Busy, Invalid, NoRoom, NoIds };
+std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity character, const auriga::item::ItemGrant& grant);

@@ -31,7 +31,7 @@ def setUpModule():
     SANDBOX.client.query('CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin')
     paths = sorted((ROOT / 'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
     if [int(path.name[:3]) for path in paths] != list(range(len(paths))): raise RuntimeError('incomplete catalog migrations')
-    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql']:
+    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql']:
         for statement in statements(path.read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
 
 
@@ -100,6 +100,10 @@ class BenchTests(unittest.TestCase):
         with self.assertRaises(api.EditorError): use('grant', category=1, local=sword_key[1], level=4)       # no such level
         blade = item(state, sword_key)
         self.assertEqual((blade['level'], blade['cell'], item(state, material_key)['cell']), (0, 1, 0))
+        # Grants take IDs from the shared allocator (F4 C7a), never MAX+1: above 2^32, and the counter moved past them.
+        granted = sorted(int(i['id']) for i in state['items'])
+        counter = int(SANDBOX.client.query('SELECT next_instance_id FROM player.item_instance_id_allocator')[0][0])
+        self.assertTrue(granted[0] >= 1 << 32 and counter > granted[-1], (granted, counter))
         state = use('move', item=blade['id'], cell=20)['state']; self.assertEqual(item(state, sword_key)['cell'], 20)
         with self.assertRaises(api.EditorError): use('move', item=blade['id'], cell=0)                       # occupied
         # +0 -> +1 always succeeds; Yang and both materials go in one commit.
@@ -179,6 +183,16 @@ class BenchTests(unittest.TestCase):
         reset = use('setup', owner=5, reset=True, gold=1)['state']
         self.assertEqual((reset['items'], reset['wallets'][0]['balance']), ([], 1))
         self.assertTrue(use('status')['pin_matches'])
+        # A package installed before C7a: 002 alone adds the allocator, above every ID already issued.
+        highest = int(SANDBOX.client.query('SELECT MAX(instance_id) FROM player.item_instance')[0][0])
+        SANDBOX.client.query('DROP TABLE player.item_instance_id_allocator')
+        self.assertFalse(use('status')['installed'])
+        for statement in statements(bench.migration(bench.MIGRATIONS[1]).read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
+        self.assertTrue(use('status')['installed'])
+        counter = int(SANDBOX.client.query('SELECT next_instance_id FROM player.item_instance_id_allocator')[0][0])
+        self.assertTrue(highest >= 1 << 32 and counter == highest + 1, (highest, counter))
+        after = use('grant', owner=5, category=6, local=material_key[1], count=1)['state']
+        self.assertEqual([int(i['id']) for i in after['items']], [counter])
 
 
 def main():

@@ -397,6 +397,77 @@ std::expected<ItemCommit,E> MakeConsumeCommit(const ItemCatalog& c,std::array<st
     if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
     return r;
 }
+std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> items,const ItemGrant& grant,std::span<const ItemInstanceId> ids)
+{
+    if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
+    const auto* entry=c.Find(grant.key);
+    if(!entry || entry->base.retired)return std::unexpected(E::InvalidItem);
+    if(!grant.count)return std::unexpected(E::InvalidChange);
+    std::vector<ItemStorageLayout> bags;
+    for(const auto& l:storages)if(l.storage.owner==owner.owner && l.storage.kind==ItemStorageKind::Inventory)bags.push_back(l);
+    if(bags.empty())return std::unexpected(E::InvalidStorage);
+    std::ranges::sort(bags,{},[](const ItemStorageLayout& l){return l.storage.id;});
+    const auto bagOf=[&](std::uint64_t id){return std::ranges::find_if(bags,[&](const ItemStorageLayout& l){return l.storage.id==id;});};
+    const std::uint32_t stack=entry->base.maxStack ? entry->base.maxStack : 1;
+    // The template of a new unit; each new item takes its own ID below.
+    PersistentItem fresh{ItemInstanceId::Create(1).value(),grant.key,owner.owner};fresh.refinementLevel=grant.refinementLevel;
+    if(entry->base.binding==BindingPolicy::OnAcquire)fresh.boundTo=owner.owner;
+    const auto sameState=[&](const PersistentItem& i){
+        return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
+               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory;};
+    std::vector<const PersistentItem*> carried;
+    for(const auto& i:items)
+        if(!i.destroyed && i.owner==owner.owner && i.placement && i.placement->kind==ItemStorageKind::Inventory && bagOf(i.placement->storageId)!=bags.end())
+            carried.push_back(&i);
+    std::ranges::sort(carried,{},[](const PersistentItem* i){return std::pair{i->placement->storageId,i->placement->anchor};});
+    std::vector<ItemChange> changes;std::uint32_t left=grant.count;
+    // 1. Top up matching stacks.
+    if(stack>1)
+        for(const auto* i:carried)
+        {
+            if(!left)break;
+            if(!sameState(*i) || i->count>=stack)continue;
+            const auto add=std::min(left,stack-i->count);
+            auto after=*i;after.revision++;after.count+=add;changes.push_back({*i,after});left-=add;
+        }
+    // 2. New items in the first free cells, bag by bag, cell by cell.
+    std::set<std::pair<std::uint64_t,std::uint32_t>> taken;
+    for(const auto* i:carried)
+    {
+        const auto cells=OccupiedItemCells(c,*i,*bagOf(i->placement->storageId));if(!cells)return std::unexpected(cells.error());
+        for(const auto cell:*cells)taken.emplace(i->placement->storageId,cell);
+    }
+    std::size_t used=0;
+    while(left)
+    {
+        if(used>=ids.size())return std::unexpected(E::LimitExceeded);
+        if(std::ranges::any_of(items,[&](const PersistentItem& i){return i.id==ids[used];}))return std::unexpected(E::InvalidChange);
+        auto next=fresh;next.id=ids[used];next.count=std::min(left,stack);
+        bool placed=false;
+        for(const auto& bag:bags)
+        {
+            const std::uint32_t size=std::uint32_t{bag.columns}*bag.rows*bag.pages;
+            for(std::uint32_t anchor=0;anchor<size && !placed;++anchor)
+            {
+                next.placement=ItemPlacement{ItemStorageKind::Inventory,bag.storage.id,anchor};
+                const auto cells=OccupiedItemCells(c,next,bag);
+                if(!cells || std::ranges::any_of(*cells,[&](std::uint32_t cell){return taken.contains({bag.storage.id,cell});}))continue;
+                for(const auto cell:*cells)taken.emplace(bag.storage.id,cell);
+                placed=true;
+            }
+            if(placed)break;
+        }
+        if(!placed)return std::unexpected(E::InvalidPlacement);
+        changes.push_back({std::nullopt,next});++used;left-=next.count;
+    }
+    ItemCommit r;r.operationId=operationId;r.catalogRevision=c.Revision();r.catalogHash=c.ContentHash();r.kind=ItemOperationKind::Grant;
+    r.owners={owner};r.items=std::move(changes);r.outcomeCode=1;r.result={static_cast<std::uint8_t>(ItemOperationKind::Grant)};
+    for(const auto& bag:bags)
+        if(std::ranges::any_of(r.items,[&](const ItemChange& ch){return ch.after.placement->storageId==bag.storage.id;}))r.storages.push_back(bag);
+    if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
+    return r;
+}
 std::expected<OwnerRefinement,OwnerRefinementError> MakeOwnerRefinement(const ItemCatalog& c,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> items,std::span<const ItemWallet> wallets,const OwnerRefinementRequest& request)
 {

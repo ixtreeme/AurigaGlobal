@@ -398,6 +398,12 @@ kiépítéskor tölti fel a pénztárcát.
 - **Napló:** a régi `RefineLog` 32 bites tárgyazonosítót vár; az új út a
   nyugtát és egy szervernapló-sort ír.
 
+## C7 — drop
+
+A drop szeletei és a hozzájuk tartozó döntések:
+[IC-035](item_combat_035_drops.md). Az első szelet (C7a) a futásidejű
+azonosító-kiosztás és a tárgyadás.
+
 ## Határ
 
 - **Helyi csomag (2026-10-30): bekapcsolva.**

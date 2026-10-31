@@ -41,6 +41,12 @@ std::expected<void, std::string> ItemStore::Start(const GameSqlConfig& player, s
 		catalog_.reset();
 		return std::unexpected(std::move(error));
 	}
+	std::lock_guard lock(mutex_);
+	ids_.clear();
+	if (firstIds_)
+		ids_.push_back(*firstIds_);
+	firstIds_.reset();
+	refillingIds_ = false;
 	return {};
 }
 
@@ -95,6 +101,56 @@ void ItemStore::Stop()
 	done_.clear();
 	catalog_.reset();
 	running_ = false;
+	ids_.clear();
+	refillingIds_ = false;
+}
+
+std::vector<ItemInstanceId> ItemStore::PeekIds(std::size_t count) const
+{
+	std::vector<ItemInstanceId> out;
+	for (const auto& block : ids_)
+		for (auto id = block.first; id < block.end && out.size() < count; ++id)
+			out.push_back(ItemInstanceId::Create(id).value());
+	return out;
+}
+
+void ItemStore::SpendIds(std::size_t used)
+{
+	while (used && !ids_.empty())
+	{
+		auto& block = ids_.front();
+		const auto take = std::min<std::uint64_t>(used, block.end - block.first);
+		block.first += take;
+		used -= static_cast<std::size_t>(take);
+		if (block.first == block.end)
+			ids_.pop_front();
+	}
+	if (AvailableIds() < IdBlockSize / 4)
+		RefillIds();
+}
+
+std::size_t ItemStore::AvailableIds() const
+{
+	std::uint64_t total = 0;
+	for (const auto& block : ids_)
+		total += block.end - block.first;
+	return static_cast<std::size_t>(total);
+}
+
+void ItemStore::RefillIds()
+{
+	if (refillingIds_)
+		return;
+	refillingIds_ = Submit([this](CAsyncSQL& sql, const ItemCatalog& catalog) -> Completion {
+		auto block = persistence::ReserveItemInstanceIds(sql, catalog, IdBlockSize);
+		if (!block)
+			LOG_ERROR("ItemStore: no new instance ID block (error {})", static_cast<int>(block.error()));
+		return [this, block] {
+			refillingIds_ = false;
+			if (block)
+				ids_.push_back(*block);
+		};
+	});
 }
 
 void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::string>> ready)
@@ -110,8 +166,17 @@ void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::stri
 	std::shared_ptr<const ItemCatalog> catalog;
 	{
 		std::lock_guard lock(mutex_);
-		running_ = true;
 		catalog = catalog_;
+	}
+	// Without IDs the store still loads and changes existing items; it only
+	// cannot create new ones (db/migrations/item_instance/002 missing?).
+	auto ids = persistence::ReserveItemInstanceIds(connection, *catalog, IdBlockSize);
+	if (!ids)
+		LOG_ERROR("ItemStore: no instance ID block (error {}); new typed items cannot be created", static_cast<int>(ids.error()));
+	{
+		std::lock_guard lock(mutex_);
+		running_ = true;
+		firstIds_ = ids ? std::optional(*ids) : std::nullopt;
 	}
 	ready->set_value({});
 	for (;;)
@@ -148,6 +213,14 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
 		}
 		return [done = std::move(done), result = std::move(result)]() mutable { done(std::move(result)); };
 	});
+}
+std::vector<ItemInstanceId> PeekInstanceIds(std::size_t count)
+{
+	return ItemStore::Instance().PeekIds(count);
+}
+void SpendInstanceIds(std::size_t used)
+{
+	ItemStore::Instance().SpendIds(used);
 }
 bool RequestCommit(ItemOwner owner, std::uint64_t session, ItemCommit commit, std::function<void(CommitOutcome)> done)
 {

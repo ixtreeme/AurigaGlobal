@@ -185,6 +185,47 @@ void Run()
         auto spent=MakeConsumeCommit(c,op,fence,bags,items,potion.id,plan->unitsToConsume);
         Check(spent && spent->items[0].after.count==4,"the plan's units are spent");
     }
+    // F4 C7a: a grant tops up matching stacks, then takes the first free cells; all or nothing.
+    {
+        namespace k=item_catalog_fixture;
+        std::array<std::uint8_t,16> op{};op[0]=0xC7;
+        const std::vector<ItemStorageLayout> bags{f::Inventory(),{{f::Character(),ItemStorageKind::Equipment,1},8,1,1}};
+        const std::vector<PersistentItem> items{f::Sword(),f::Leather()}; // sword: cells 0,5,10; three leather: cell 1
+        const std::array ids{ItemInstanceId::Create(500).value(),ItemInstanceId::Create(501).value(),ItemInstanceId::Create(502).value()};
+        auto topUp=MakeGrantCommit(c,op,fence,bags,items,{k::Leather(),0,7},ids);
+        Check(topUp && topUp->kind==ItemOperationKind::Grant && topUp->items.size()==1 && topUp->items[0].before &&
+              topUp->items[0].after.count==10 && topUp->items[0].after.revision==f::Leather().revision+1 && topUp->storages.size()==1,"a matching stack takes the units");
+        auto overflow=MakeGrantCommit(c,op,fence,bags,items,{k::Leather(),0,250},ids);
+        Check(overflow && overflow->items.size()==2 && overflow->items[0].after.count==200 && !overflow->items[1].before &&
+              overflow->items[1].after.count==53 && overflow->items[1].after.id==ids[0] && overflow->items[1].after.placement->anchor==2,"a full stack spills into a new one");
+        auto drills=MakeGrantCommit(c,op,fence,bags,items,{k::SocketDrill(),0,45},ids);
+        Check(drills && drills->items.size()==3 && drills->items[0].after.count==20 && drills->items[2].after.count==5 &&
+              drills->items[0].after.placement->anchor==2 && drills->items[1].after.placement->anchor==3 && drills->items[2].after.placement->anchor==4 &&
+              drills->items[2].after.id==ids[2],"new stacks of 20 in the first free cells, IDs from the front");
+        auto blade=MakeGrantCommit(c,op,fence,bags,items,{k::Sword(),9,1},ids);
+        Check(blade && blade->items.size()==1 && blade->items[0].after.refinementLevel==9 && blade->items[0].after.placement->anchor==2 &&
+              blade->items[0].after.revision==1 && !blade->items[0].after.boundTo,"a new sword at its level, where its three rows fit");
+        Check(MakeGrantCommit(c,op,fence,bags,items,{k::SocketDrill(),0,45},std::span(ids).first(2)).error()==ItemPersistenceError::LimitExceeded,"too few IDs");
+        const std::vector<ItemStorageLayout> tiny{{{f::Character(),ItemStorageKind::Inventory,1},2,2,1}};
+        Check(MakeGrantCommit(c,op,fence,tiny,{},{k::Sword(),0,1},ids).error()==ItemPersistenceError::InvalidPlacement,"no room is refused, nothing half given");
+        const std::vector<ItemStorageLayout> gearOnly{{{f::Character(),ItemStorageKind::Equipment,1},8,1,1}};
+        Check(MakeGrantCommit(c,op,fence,gearOnly,{},{k::Leather(),0,1},ids).error()==ItemPersistenceError::InvalidStorage,"no inventory storage");
+        Check(MakeGrantCommit(c,op,fence,bags,items,{k::Leather(),0,0},ids).error()==ItemPersistenceError::InvalidChange,"zero units");
+        Check(MakeGrantCommit(c,{},fence,bags,items,{k::Leather(),0,1},ids).error()==ItemPersistenceError::InvalidOperation,"null operation id");
+        Check(MakeGrantCommit(c,op,fence,bags,items,{ItemKey::Create(1,999).value(),0,1},ids).error()==ItemPersistenceError::InvalidItem,"unknown item");
+        const std::array taken{f::Leather().id};
+        Check(MakeGrantCommit(c,op,fence,bags,items,{k::SocketDrill(),0,1},taken).error()==ItemPersistenceError::InvalidChange,"an ID already in use");
+        // OnAcquire: a new unit is bound to its owner, and joins the owner's bound stack.
+        auto source=f::Catalog();
+        for(auto& base:source.items)if(base.key==k::Leather())base.binding=BindingPolicy::OnAcquire;
+        auto boundCatalog=BuildItemCatalog(source);Check(boundCatalog.has_value(),"OnAcquire fixture catalog");
+        const std::vector<PersistentItem> swordOnly{f::Sword()};
+        auto first=MakeGrantCommit(**boundCatalog,op,fence,bags,swordOnly,{k::Leather(),0,5},ids);
+        Check(first && first->items.size()==1 && !first->items[0].before && first->items[0].after.boundTo==f::Character(),"a new OnAcquire unit is bound to its owner");
+        auto mine=f::Leather();mine.boundTo=f::Character();const std::vector<PersistentItem> boundItems{f::Sword(),mine};
+        auto joined=MakeGrantCommit(**boundCatalog,op,fence,bags,boundItems,{k::Leather(),0,5},ids);
+        Check(joined && joined->items.size()==1 && joined->items[0].before && joined->items[0].after.count==8,"it joins the owner's bound stack");
+    }
     // F4 C6: refinement from the owner's state; equipment never takes part.
     {
         std::array<std::uint8_t,16> op{};op[0]=0xC6;

@@ -15,9 +15,11 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <thread>
+#include <vector>
 
 struct GameSqlConfig;
 class CAsyncSQL;
@@ -44,6 +46,16 @@ public:
 	// thread, then drops completions nobody will apply any more.
 	void Stop();
 
+	// Instance IDs for items the game creates (drops, purchases, rewards; F4
+	// C7a). The store reserves them in blocks from the shared allocator: the
+	// first at Start, the next in the background once a quarter is left.
+	// Game thread only. Peek returns up to `count` IDs without spending them;
+	// Spend then removes the first `used` of them.
+	static constexpr std::uint32_t IdBlockSize = 4096;
+	std::vector<ItemInstanceId> PeekIds(std::size_t count) const;
+	void SpendIds(std::size_t used);
+	std::size_t AvailableIds() const;
+
 	ItemStore() = default;
 	~ItemStore();
 	ItemStore(const ItemStore&) = delete;
@@ -51,6 +63,7 @@ public:
 
 private:
 	void Run(GameSqlConfig player, std::shared_ptr<std::promise<std::string>> ready);
+	void RefillIds();
 
 	mutable std::mutex mutex_;
 	std::condition_variable wake_;
@@ -59,7 +72,16 @@ private:
 	std::shared_ptr<const ItemCatalog> catalog_;
 	std::thread thread_;
 	bool running_ = false, stopping_ = false;
+	// Handed from the store thread to Start.
+	std::optional<persistence::ItemInstanceIdBlock> firstIds_;
+	// Game thread only.
+	std::deque<persistence::ItemInstanceIdBlock> ids_;
+	bool refillingIds_ = false;
 };
+
+// Game-thread shorthands for the store's ID pool.
+std::vector<ItemInstanceId> PeekInstanceIds(std::size_t count);
+void SpendInstanceIds(std::size_t used);
 
 // Login of a character: claim a new session generation, then load the owner
 // in one job. MissingOwner means the character has no typed items yet.

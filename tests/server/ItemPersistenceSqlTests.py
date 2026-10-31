@@ -29,6 +29,7 @@ def main():
         if [int(path.name[:3]) for path in paths] != list(range(31)):
             raise RuntimeError("expected complete native catalog drafts 000..030")
         paths.append(ROOT / "db/migrations/item_instance/001_item_persistence.sql")
+        paths.append(ROOT / "db/migrations/item_instance/002_instance_id_allocator.sql")
         for path in paths:
             for statement in statements(path.read_text(encoding="utf-8")):
                 sandbox.client.query(statement)
@@ -40,6 +41,7 @@ def main():
         for table in ("item_owner_fence", "item_wallet", "item_operation_receipt", "item_instance",
                       "item_instance_attribute", "item_instance_socket", "item_occupied_cell"):
             sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player." + table + " TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],
                     "owned_datadir_verified": True, "catalog_select_only": True,
                     "catalog_drafts": 31, "instance_schema": 1}

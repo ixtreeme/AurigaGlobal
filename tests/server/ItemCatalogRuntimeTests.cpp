@@ -241,6 +241,40 @@ int main(int argc, char** argv)
 				Check(got && got->write && got->state && !live(blade.id) && live(ore.id) && got->state->wallets.at(0).balance == 850,
 				      "the failure destroyed the sword and still cost its gold");
 			}
+			// C7a: the store reserved a block of instance IDs at start; a grant spends
+			// them, and a low pool is refilled in the background with a disjoint block.
+			{
+				Check(store.AvailableIds() == runtime::ItemStore::IdBlockSize, "a full ID block reserved at start");
+				const auto peeked = runtime::PeekInstanceIds(2);
+				Check(peeked.size() == 2 && peeked[0].Value() >= (std::uint64_t { 1 } << 32) && peeked[1].Value() == peeked[0].Value() + 1,
+				      "the pool hands out reserved IDs above the legacy ID space");
+				const ItemOwner receiver { ItemOwnerKind::Character, 7007 };
+				const ItemStorageLayout pack { { receiver, ItemStorageKind::Inventory, 1 }, 5, 9, 4 };
+				const ItemWallet purse { receiver, WalletCurrency::Gold, 1, 0 };
+				auto made = persistence::ProvisionOwner(importer, *catalog, receiver, std::span(&pack, 1), std::span(&purse, 1));
+				Check(made && *made, "receiver provisioned");
+				const auto session = persistence::ClaimOwnerSession(importer, *catalog, receiver);
+				Check(session.has_value(), "receiver session claimed");
+				auto before = persistence::LoadItemOwner(importer, *catalog, receiver, *session);
+				std::array<std::uint8_t, 16> op {}; op.fill(0x71);
+				auto grant = MakeGrantCommit(*catalog, op, before->fence, before->storages, before->items, { ItemKey::Create(6, 1).value(), 0, 250 }, peeked);
+				Check(grant && grant->items.size() == 2 && grant->items[0].after.count == 200 && grant->items[1].after.count == 50, "250 ore in two stacks");
+				runtime::SpendInstanceIds(2);
+				Check(store.AvailableIds() == runtime::ItemStore::IdBlockSize - 2, "the grant's IDs are spent");
+				std::optional<runtime::CommitOutcome> got;
+				const auto wait = [&] { for (int spins = 0; !got && spins < 1000; ++spins) { store.Drain(); std::this_thread::sleep_for(std::chrono::milliseconds(10)); } };
+				Check(runtime::RequestCommit(receiver, *session, *grant, [&](runtime::CommitOutcome outcome) { got = std::move(outcome); }), "grant not queued");
+				wait();
+				Check(got && got->write && got->state && got->state->items.size() == 2 &&
+				      std::ranges::all_of(got->state->items, [&](const PersistentItem& i) { return i.id == peeked[0] || i.id == peeked[1]; }),
+				      "granted with the reserved IDs and reloaded");
+				const auto last = peeked[1].Value();
+				runtime::SpendInstanceIds(store.AvailableIds() - 10);
+				for (int spins = 0; store.AvailableIds() <= 10 && spins < 1000; ++spins) { store.Drain(); std::this_thread::sleep_for(std::chrono::milliseconds(10)); }
+				Check(store.AvailableIds() == 10 + runtime::ItemStore::IdBlockSize, "a low pool is refilled with a whole block");
+				const auto next = runtime::PeekInstanceIds(11);
+				Check(next.size() == 11 && next[0].Value() > last && next[10].Value() >= next[9].Value() + 1, "the refill is a new block after the first");
+			}
 			// Queued work is finished at stop; its completion is dropped, not run late.
 			bool ran = false, applied = false;
 			Check(store.Submit([&ran, &applied](CAsyncSQL&, const ItemCatalog&) { ran = true; return runtime::ItemStore::Completion { [&applied] { applied = true; } }; }), "work refused");

@@ -614,6 +614,110 @@ bool HandleTypedItemRefinePacket(entt::entity character, const char* data)
 	return true;
 }
 
+// ---------------------------------------------------------------------------
+// Grant (F4 C7a): new units of one item state into the character's inventory.
+// MakeGrantCommit tops up matching stacks first, then takes free cells; the
+// new items' IDs come from the store's pool and are spent before the commit is
+// queued, so no other grant can take them meanwhile.
+
+std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity character, const items::ItemGrant& grant)
+{
+	if (!g_registry.valid(character))
+		return std::unexpected(TypedGrantRefusal::NotEnabled);
+	auto* typed = g_registry.try_get<ecs::TypedItems>(character);
+	const auto* login = g_registry.try_get<ecs::TypedItemLogin>(character);
+	const auto catalog = items::runtime::CurrentCatalog();
+	if (!typed || !login || !catalog)
+		return std::unexpected(TypedGrantRefusal::NotEnabled);
+	if (g_registry.all_of<ecs::TypedItemBusy>(character))
+		return std::unexpected(TypedGrantRefusal::Busy);
+	const auto* entry = catalog->Find(grant.key);
+	if (!entry || !grant.count)
+		return std::unexpected(TypedGrantRefusal::Invalid);
+	const std::uint32_t stack = entry->base.maxStack ? entry->base.maxStack : 1;
+	const std::size_t most = (std::size_t { grant.count } + stack - 1) / stack;
+	if (most > items::MaxItemCommitItems)
+		return std::unexpected(TypedGrantRefusal::Invalid);
+	const auto ids = items::runtime::PeekInstanceIds(most);
+	const auto& state = typed->state;
+	auto commit = items::MakeGrantCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, grant, ids);
+	if (!commit)
+	{
+		switch (commit.error())
+		{
+		case items::ItemPersistenceError::InvalidPlacement: return std::unexpected(TypedGrantRefusal::NoRoom);
+		case items::ItemPersistenceError::LimitExceeded:
+			if (ids.size() < most) return std::unexpected(TypedGrantRefusal::NoIds);
+			return std::unexpected(TypedGrantRefusal::Invalid);
+		default: return std::unexpected(TypedGrantRefusal::Invalid);
+		}
+	}
+	items::runtime::SpendInstanceIds(static_cast<std::size_t>(std::ranges::count_if(commit->items, [](const items::ItemChange& c) { return !c.before; })));
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
+	const uint64_t token = login->token;
+	g_registry.emplace_or_replace<ecs::TypedItemBusy>(character);
+	const bool queued = items::runtime::RequestCommit(typed->state.fence.owner, typed->state.fence.sessionGeneration, std::move(*commit),
+		[pid, token, grant, code = entry->base.contentCode](items::runtime::CommitOutcome outcome) {
+			const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
+			const auto* current = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
+			if (!current || current->token != token)
+				return; // that login is gone; the next login reloads anyway
+			g_registry.remove<ecs::TypedItemBusy>(entity);
+			if (outcome.state)
+				g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*outcome.state));
+			else
+				LOG_ERROR("TypedItems: pid {} reload after a grant failed (error {})", pid, static_cast<int>(outcome.state.error()));
+			if (outcome.write)
+			{
+				LOG_INFO("TypedItems: pid {} received {} x{} (+{})", pid, code, grant.count, grant.refinementLevel);
+				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "Új tárgy: %s ×%u.", code.c_str(), static_cast<unsigned>(grant.count));
+			}
+			else
+			{
+				LOG_INFO("TypedItems: pid {} grant refused by the store (error {})", pid, static_cast<int>(outcome.write.error()));
+				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A tárgy átadása nem sikerült: %s.", ErrorText(outcome.write.error()));
+			}
+			SendTypedInventory(entity);
+		});
+	if (!queued)
+	{
+		g_registry.remove<ecs::TypedItemBusy>(character);
+		return std::unexpected(TypedGrantRefusal::NotEnabled);
+	}
+	return {};
+}
+
+// /typed_give <category> <local id> [count] [level]: GM test grant (C7a), until drops arrive (C7b).
+ACMD(do_typed_give)
+{
+	char category[32], local[32], count[32], level[32];
+	const char* rest = two_arguments(argument, category, sizeof(category), local, sizeof(local));
+	two_arguments(rest, count, sizeof(count), level, sizeof(level));
+	std::optional<items::ItemKey> key;
+	if (*category && *local)
+		if (const auto made = items::ItemKey::Create(static_cast<std::uint16_t>(std::strtoul(category, nullptr, 10)),
+				static_cast<std::uint32_t>(std::strtoul(local, nullptr, 10))))
+			key = *made;
+	if (!key)
+	{
+		Tell(character, "Használat: /typed_give <kategória> <helyi azonosító> [darab] [szint]  (új tárgyrendszer)");
+		return;
+	}
+	const items::ItemGrant grant { *key, static_cast<std::uint16_t>(*level ? std::strtoul(level, nullptr, 10) : 0),
+		static_cast<std::uint32_t>(*count ? std::strtoul(count, nullptr, 10) : 1) };
+	const auto queued = RequestTypedItemGrant(character, grant);
+	if (queued)
+		return;
+	switch (queued.error())
+	{
+	case TypedGrantRefusal::NotEnabled: Tell(character, "Az új tárgyrendszer ennél a karakternél nincs bekapcsolva."); break;
+	case TypedGrantRefusal::Busy: Tell(character, "Az előző tárgyművelet még folyamatban van."); break;
+	case TypedGrantRefusal::Invalid: Tell(character, "Nincs ilyen tárgy, vagy érvénytelen a darabszám vagy a szint."); break;
+	case TypedGrantRefusal::NoRoom: Tell(character, "Nincs elég hely az inventoryban."); break;
+	case TypedGrantRefusal::NoIds: Tell(character, "Nincs lefoglalt tárgyazonosító; nézd meg a szervernaplót."); break;
+	}
+}
+
 // /typed_refine <inventory cell> [recipe]: refine at the nearest normal smith (C6 test command).
 ACMD(do_typed_refine)
 {

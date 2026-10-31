@@ -95,9 +95,11 @@ def main():
         if not (item_tools / (name + suffix)).is_file():
             parser.error('Missing native item tool: ' + str(item_tools / (name + suffix)))
     # The test bench installs the additive item persistence tables itself.
-    persistence_schema = source.parents[2] / 'db/migrations/item_instance/001_item_persistence.sql'
-    if not persistence_schema.is_file():
-        parser.error('Missing item persistence schema: ' + str(persistence_schema))
+    persistence_schemas = [source.parents[2] / 'db/migrations/item_instance' / name
+                           for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql')]
+    for schema in persistence_schemas:
+        if not schema.is_file():
+            parser.error('Missing item persistence schema: ' + str(schema))
     output, work = args.output.resolve(), args.work.resolve()
     if output.exists() or work.exists():
         parser.error('Output and work must be new directories')
@@ -121,7 +123,7 @@ def main():
                '--add-binary', str(validators / ('ServerPackageCheck' + suffix)) + os.pathsep + 'validators',
                '--add-binary', str(item_tools / ('CatalogEditorTool' + suffix)) + os.pathsep + 'validators',
                '--add-binary', str(item_tools / ('ItemBenchTool' + suffix)) + os.pathsep + 'validators',
-               '--add-data', str(persistence_schema) + os.pathsep + 'migrations',
+               *[part for schema in persistence_schemas for part in ('--add-data', str(schema) + os.pathsep + 'migrations')],
                '--exclude-module', 'PySide6.QtQml', '--exclude-module', 'PySide6.QtQuick',
                str(source / 'app.py')]
     code = subprocess.call(command, cwd=source)

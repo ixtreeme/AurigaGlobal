@@ -272,6 +272,27 @@ std::expected<std::uint64_t,E> ClaimOwnerSession(CAsyncSQL& db,const ItemCatalog
     catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
     catch(const std::out_of_range&){return std::unexpected(E::InvalidStoredData);}
 }
+std::expected<ItemInstanceIdBlock,E> ReserveItemInstanceIds(CAsyncSQL& db,const ItemCatalog& c,std::uint32_t count)
+{
+    if(!count || count>MaxItemInstanceIdBlock)return std::unexpected(E::LimitExceeded);
+    auto tx=Guards(c);const auto first=tx.size();
+    tx.push_back({"SELECT next_instance_id FROM player.item_instance_id_allocator WHERE singleton=1 FOR UPDATE",{},{},{}});
+    tx.push_back({"UPDATE player.item_instance_id_allocator SET next_instance_id=next_instance_id+? WHERE singleton=1 AND next_instance_id<=18446744073709551615-?",
+                  {U::UInt(count),U::UInt(count)},{},{}});
+    tx.push_back({"SELECT next_instance_id FROM player.item_instance_id_allocator WHERE singleton=1",{},{},{}});
+    Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
+    auto before=Result(*m,first,1,1),after=Result(*m,first+2,1,1);
+    if(!before)return std::unexpected(before.error());if(!after)return std::unexpected(after.error());
+    if(before->empty() || after->empty())return std::unexpected(E::InvalidStoredData);
+    try
+    {
+        const auto start=Number<std::uint64_t>((*before)[0][0]),next=Number<std::uint64_t>((*after)[0][0]);
+        if(next==start)return std::unexpected(E::LimitExceeded);
+        if(start<(std::uint64_t{1}<<32) || next!=start+count)return std::unexpected(E::InvalidStoredData);
+        return ItemInstanceIdBlock{start,next};
+    }
+    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
 std::expected<bool,E> ProvisionOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner,std::span<const ItemStorageLayout> storages,std::span<const ItemWallet> wallets)
 {
     if(!ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);

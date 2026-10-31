@@ -26,7 +26,7 @@ constexpr std::uint32_t TestCharacter=990001;
 ItemOwner BenchOwner{ItemOwnerKind::Character,TestCharacter};
 // Every working request claims a new session first, like a login does.
 std::uint64_t BenchSession=0;
-constexpr std::uint64_t BenchCatalogRevision=1,BenchIdBase=0x00BE000000000000ULL;
+constexpr std::uint64_t BenchCatalogRevision=1;
 ItemStorageLayout Inventory{{BenchOwner,ItemStorageKind::Inventory,1},5,9,4};
 // Slots 1..8 (weapon, body, head, shield, feet, wrist, neck, ear) at anchors 0..7.
 ItemStorageLayout Equipment{{BenchOwner,ItemStorageKind::Equipment,1},8,1,1};
@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell')").at(0).at(0)=="9";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator')").at(0).at(0)=="10";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -285,8 +285,10 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     const auto key=ItemKey::Create(static_cast<ItemCategory>(request.at("category").get<unsigned>()),request.at("local").get<std::uint32_t>());
     Require(key.has_value(),"Érvénytelen tárgykulcs.");
     const auto* entry=c->Find(*key);Require(entry,"Nincs ilyen tárgy a katalógusban.");
-    auto maxId=Rows(sql,"SELECT COALESCE(MAX(instance_id),?) FROM player.item_instance WHERE instance_id>=?",{SqlParam::UInt(BenchIdBase),SqlParam::UInt(BenchIdBase)});
-    PersistentItem item{ItemInstanceId::Create(std::stoull(maxId.at(0).at(0))+1).value(),*key,BenchOwner};
+    // The same shared allocator the game servers use, so a running server never collides with the bench.
+    const auto ids=p::ReserveItemInstanceIds(sql,*c,1);
+    Require(ids.has_value(),std::string("Nincs kiosztható tárgyazonosító: ")+(ids?"":PersistenceText(ids.error()))+".");
+    PersistentItem item{ItemInstanceId::Create(ids->first).value(),*key,BenchOwner};
     item.count=request.value("count",1u);item.refinementLevel=static_cast<std::uint16_t>(request.value("level",0u));
     if(entry->base.binding==BindingPolicy::OnAcquire)item.boundTo=BenchOwner;
     if(const auto* a=std::get_if<ItemAccessoryRow>(&entry->category); a && a->socketProfile)item.accessory=AccessorySocketState{};

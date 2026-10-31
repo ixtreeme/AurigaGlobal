@@ -17,8 +17,12 @@ import backend as api
 
 BENCH_OWNER = 990001
 # Child tables first: this is also the drop order of a failed install.
-TABLES = ('item_occupied_cell', 'item_instance_socket', 'item_instance_attribute', 'item_instance', 'item_operation_receipt',
-          'item_wallet', 'item_storage', 'item_owner_fence', 'item_persistence_format')
+BASE_TABLES = ('item_occupied_cell', 'item_instance_socket', 'item_instance_attribute', 'item_instance', 'item_operation_receipt',
+               'item_wallet', 'item_storage', 'item_owner_fence', 'item_persistence_format')
+# Added later (F4 C7a): the shared instance ID allocator of 002.
+ALLOCATOR = 'item_instance_id_allocator'
+TABLES = (ALLOCATOR, *BASE_TABLES)
+MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql')
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
 
@@ -35,9 +39,8 @@ def helper():
     return path
 
 
-def migration():
-    choices = [_bundled('migrations', '001_item_persistence.sql'),
-               Path(__file__).resolve().parents[3] / 'db/migrations/item_instance/001_item_persistence.sql']
+def migration(name=MIGRATIONS[0]):
+    choices = [_bundled('migrations', name), Path(__file__).resolve().parents[3] / 'db/migrations/item_instance' / name]
     path = next((path for path in choices if path.is_file()), None)
     if path is None: raise api.EditorError('Hiányzik a mentési táblák telepítőfájlja. A szerverkezelő frissítése szükséges.')
     return path
@@ -83,9 +86,10 @@ def _client(owner, root, *extra, **options):
 
 
 def install(root):
-    """Create the nine additive item persistence tables in the local `player`
-    database. The game server must be stopped; `player` is dumped first and a
-    failed install removes exactly the tables it created."""
+    """Create the additive item persistence tables in the local `player`
+    database, or add the ones a newer manager needs (an upgrade: 002 only).
+    The game server must be stopped; `player` is dumped first and a failed
+    install removes exactly the tables it created."""
     root, manager, owner, _ = connection(root)
     with manager.supervisor_lock():
         if api.describe(root)['running']: raise api.EditorError('A mentési táblák telepítéséhez állítsd le a helyi játékszervert.')
@@ -93,7 +97,10 @@ def install(root):
         names = ','.join("'" + name + "'" for name in TABLES)
         found = _client(owner, root, '-N', '-B', '-e', "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN (" + names + ")")
         if found.returncode: raise api.EditorError('A helyi adatbázis nem olvasható.')
-        if found.stdout.strip(): raise api.EditorError('Részben telepített mentési táblák vannak a player adatbázisban; kézi ellenőrzés szükséges.')
+        present = set(found.stdout.decode('utf-8', 'replace').split())
+        if not present: scripts, created = MIGRATIONS, TABLES
+        elif present == set(BASE_TABLES): scripts, created = MIGRATIONS[1:], (ALLOCATOR,)
+        else: raise api.EditorError('Részben telepített mentési táblák vannak a player adatbázisban; kézi ellenőrzés szükséges.')
         stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S-') + secrets.token_hex(4)
         folder = root / 'run/item-bench' / stamp; folder.mkdir(parents=True)
         binaries = Path(owner['binary_dir'])
@@ -104,13 +111,14 @@ def install(root):
                                      '--port=' + str(owner['port']), '--single-transaction', '--databases', 'player'],
                                     stdout=out, stderr=subprocess.PIPE, timeout=600, creationflags=NO_WINDOW)
         if result.returncode: raise api.EditorError('A player adatbázis mentése nem sikerült; semmi nem változott.')
-        script = migration()
-        with script.open('rb') as source:
-            applied = _client(owner, root, stdin=source)
-        if applied.returncode:
-            _client(owner, root, '-e', 'DROP TABLE IF EXISTS ' + ','.join('player.' + name for name in TABLES))
-            raise api.EditorError('A mentési táblák telepítése nem sikerült; a létrehozott táblák törölve. ' +
-                                  applied.stderr.decode('utf-8', 'replace').strip()[:300])
+        paths = [migration(name) for name in scripts]
+        for script in paths:
+            with script.open('rb') as source:
+                applied = _client(owner, root, stdin=source)
+            if applied.returncode:
+                _client(owner, root, '-e', 'DROP TABLE IF EXISTS ' + ','.join('player.' + name for name in created))
+                raise api.EditorError('A mentési táblák telepítése nem sikerült; a létrehozott táblák törölve. ' +
+                                      applied.stderr.decode('utf-8', 'replace').strip()[:300])
         if not call(root, 'status')['installed']: raise api.EditorError('A telepítés után a mentési táblák nem teljesek.')
-        (folder / 'receipt.json').write_text(json.dumps(dict(stamp=stamp, dump=dump.name, migration=script.name), indent=2), encoding='utf-8')
-        return dict(installed=True, folder=str(folder))
+        (folder / 'receipt.json').write_text(json.dumps(dict(stamp=stamp, dump=dump.name, migrations=[p.name for p in paths]), indent=2), encoding='utf-8')
+        return dict(installed=True, folder=str(folder), upgraded=len(scripts) < len(MIGRATIONS))
