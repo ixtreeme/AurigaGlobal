@@ -2001,6 +2001,57 @@ void RangeQueryMatchesTheSnapshotScan() {
     }
     g_registry.remove<SpyQuest::Actor>(actor);
 }
+// Refresh leaves out the pairs beyond every view distance. Every pair must
+// still end where the visibility rule puts it, and an edge left half in place
+// on a far member of the nine sectors must still come down.
+// The way movement commits a step: position first, then the sector change.
+void Place(entt::entity e, int x, int y) {
+    g_registry.get<ecs::Position>(e) = {x, y, 0};
+    auto* target = ecs::SectorAt(1, x, y);
+    if (ecs::SectorOf(g_registry, e) != target) Check(target->InsertEntity(e), "refresh fixture move");
+    ecs::SpatialService::UpdateSectree(g_registry, e);
+}
+void RefreshKeepsEveryPairExact() {
+    Reset(); MapFixture map;
+    std::mt19937 rng(13);
+    std::uniform_int_distribution<int> anyX(0, 4 * SECTREE_SIZE - 1), anyY(0, 2 * SECTREE_SIZE - 1);
+    std::vector<entt::entity> characters, all;
+    for (int i = 0; i < 120; ++i) {
+        const auto e = Entity(ecs::SpatialKind::Character);
+        if (i % 3) { g_registry.remove<ecs::TagPC>(e); g_registry.get<ecs::CharacterType>(e).value = CHAR_TYPE_MONSTER; }
+        Check(Spawn(e, 1, anyX(rng), anyY(rng)), "refresh fixture spawn");
+        characters.push_back(e); all.push_back(e);
+    }
+    for (int i = 0; i < 30; ++i) {
+        const auto item = Entity();
+        Check(Spawn(item, 1, anyX(rng), anyY(rng)), "refresh fixture item spawn");
+        all.push_back(item);
+    }
+    for (int round = 0; round < 3; ++round)
+        for (int i = 0; i < 40; ++i) Place(characters[rng() % characters.size()], anyX(rng), anyY(rng));
+    const int64_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
+    for (const auto source : all) for (const auto viewer : all) {
+        if (source == viewer) continue;
+        const auto& a = g_registry.get<ecs::Position>(source);
+        const auto& b = g_registry.get<ecs::Position>(viewer);
+        const auto dx = std::abs(int64_t(a.x) - b.x), dy = std::abs(int64_t(a.y) - b.y);
+        const bool expected = g_registry.get<ecs::SpatialKindTag>(viewer).kind == ecs::SpatialKind::Character &&
+            std::max(dx, dy) + std::min(dx, dy) / 2 <= range;
+        Check(Visible(source, viewer) == expected, "a pair ended away from the visibility rule");
+    }
+
+    Reset(); MapFixture again(2);
+    const auto e = Entity(ecs::SpatialKind::Character), distant = Entity(ecs::SpatialKind::Character);
+    Check(Spawn(e, 2, 100, 100) && Spawn(distant, 2, 12000, 100), "half edge fixture");
+    Check(again.At(12000, 100) != again.At(100, 100) && !Visible(e, distant), "half edge fixture visibility");
+    // Only the distant side still lists the edge; nothing on e's side names it.
+    g_registry.get_or_emplace<ecs::ViewMap>(distant).visible.insert(e);
+    packets.clear();
+    ecs::VisibilitySystem::Refresh(g_registry, e);
+    Check(!Visible(e, distant), "refresh kept a half edge on a distant member");
+    Check(packets.size() == 1 && !packets[0].add && packets[0].source == e && packets[0].viewer == distant,
+        "the half edge came down without its REMOVE");
+}
 }
 int main() {
     try {
@@ -2022,6 +2073,7 @@ int main() {
         NativeRecoveryTimers();
         BulkCharacterRetirement();
         RangeQueryMatchesTheSnapshotScan();
+        RefreshKeepsEveryPairExact();
         Reset(); ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

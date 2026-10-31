@@ -40,6 +40,22 @@ bool Active(entt::registry& reg, entt::entity e) {
     auto* tree = SectorOf(reg, e);
     return tree && tree->Contains(e) && !tree->IsDestroying();
 }
+int64_t Distance(const Position& a, const Position& b) {
+    const auto dx = std::abs(int64_t(a.x) - b.x), dy = std::abs(int64_t(a.y) - b.y);
+    return std::max(dx, dy) + std::min(dx, dy) / 2;
+}
+constexpr int64_t StoryReach = 10000;
+// How far a non-building pair sees each other, the same in both directions.
+// The investigation's safe following band is outside the normal 50 m
+// character view. Extend only this private owner/actor pair, never crowds;
+// caravan actors and riders reach players as far.
+int64_t PairReach(entt::registry& reg, entt::entity a, entt::entity b) {
+    const auto* aActor=reg.try_get<SpyQuest::Actor>(a);const auto* bActor=reg.try_get<SpyQuest::Actor>(b);
+    const auto* aId=reg.try_get<PlayerID>(a);const auto* bId=reg.try_get<PlayerID>(b);
+    if((aActor&&bId&&aActor->owner==bId->pid)||(bActor&&aId&&bActor->owner==aId->pid))return StoryReach;
+    if((bId&&reg.any_of<CaravanQuest::Actor,CaravanQuest::Rider>(a))||(aId&&reg.any_of<CaravanQuest::Actor,CaravanQuest::Rider>(b)))return StoryReach;
+    return VIEW_RANGE + VIEW_BONUS_RANGE;
+}
 bool CanSee(entt::registry& reg, entt::entity source, entt::entity viewer) {
     if(!SpyQuest::CanView(reg,source,viewer))return false;
     if (source == viewer || !Active(reg, source) || !Active(reg, viewer) ||
@@ -52,14 +68,25 @@ bool CanSee(entt::registry& reg, entt::entity source, entt::entity viewer) {
     if (reg.get<SpatialKindTag>(source).kind == SpatialKind::Building)
         return std::abs(int64_t(a.x / SECTREE_SIZE) - b.x / SECTREE_SIZE) <= 1 &&
             std::abs(int64_t(a.y / SECTREE_SIZE) - b.y / SECTREE_SIZE) <= 1;
-    const auto dx = std::abs(int64_t(a.x) - b.x), dy = std::abs(int64_t(a.y) - b.y);
-    // The investigation's safe following band is outside the normal 50 m
-    // character view. Extend only this private owner/actor pair, never crowds.
-    const auto* sourceActor=reg.try_get<SpyQuest::Actor>(source);const auto* viewerActor=reg.try_get<SpyQuest::Actor>(viewer);
-    const auto* sourceId=reg.try_get<PlayerID>(source);const auto* viewerId=reg.try_get<PlayerID>(viewer);
-    if((sourceActor&&viewerId&&sourceActor->owner==viewerId->pid)||(viewerActor&&sourceId&&viewerActor->owner==sourceId->pid))return std::max(dx,dy)+std::min(dx,dy)/2<=10000;
-    if((viewerId&&reg.any_of<CaravanQuest::Actor,CaravanQuest::Rider>(source))||(sourceId&&reg.any_of<CaravanQuest::Actor,CaravanQuest::Rider>(viewer)))return std::max(dx,dy)+std::min(dx,dy)/2<=10000;
-    return std::max(dx, dy) + std::min(dx, dy) / 2 <= VIEW_RANGE + VIEW_BONUS_RANGE;
+    return Distance(a, b) <= PairReach(reg, source, viewer);
+}
+// True when the pair has no view edge in either direction and CanSee is
+// false both ways on distance alone. Edge(.., false) is then a no-op for
+// both directions, so Refresh can leave the pair out. Buildings see by
+// sector, not distance, and are never left out.
+bool OutOfReach(entt::registry& reg, entt::entity e, const Position& origin, const ViewMap* view,
+                const ViewerMap* viewers, entt::entity other) {
+    if ((view && view->visible.contains(other)) || (viewers && viewers->viewers.contains(other))) return false;
+    if (const auto* otherView = reg.try_get<ViewMap>(other); otherView && otherView->visible.contains(e)) return false;
+    if (const auto* otherViewers = reg.try_get<ViewerMap>(other); otherViewers && otherViewers->viewers.contains(e)) return false;
+    const auto* kind = reg.try_get<SpatialKindTag>(other);
+    const auto* pos = reg.try_get<Position>(other);
+    if (!kind || !pos) return true; // CanSee needs Active on both ends.
+    if (kind->kind == SpatialKind::Building) return false;
+    const int64_t distance = Distance(origin, *pos);
+    if (distance <= VIEW_RANGE + VIEW_BONUS_RANGE) return false;
+    if (distance > std::max<int64_t>(StoryReach, VIEW_RANGE + VIEW_BONUS_RANGE)) return true;
+    return distance > PairReach(reg, e, other);
 }
 struct Snapshot {
     entt::entity e;
@@ -118,8 +145,15 @@ void Refresh(entt::registry& reg, entt::entity e) {
     if (!Active(reg, e)) return;
     const auto snapshot = Capture(reg, e);
     std::unordered_set<entt::entity> candidates;
-    auto collect = [&](entt::entity other) { if (other != e) candidates.insert(other); };
-    SectorOf(reg, e)->ForEachAround(collect);
+    // Most of the nine sectors lie beyond any view distance; the pairs there
+    // need no work. Collecting reads only, so the walk needs no snapshot.
+    const bool building = reg.get<SpatialKindTag>(e).kind == SpatialKind::Building;
+    const auto* view = reg.try_get<ViewMap>(e);
+    const auto* viewers = reg.try_get<ViewerMap>(e);
+    auto collect = [&](entt::entity other) {
+        if (other != e && (building || !OutOfReach(reg, e, snapshot.pos, view, viewers, other))) candidates.insert(other);
+    };
+    SectorOf(reg, e)->VisitAround(collect);
     // Explicitly include the private pair even across a sector-neighbour seam.
     if(const auto* actor=reg.try_get<SpyQuest::Actor>(e))collect(PlayerRuntime::FindByPlayerID(actor->owner));
     if(const auto* id=reg.try_get<PlayerID>(e))for(auto actor:reg.view<SpyQuest::Actor>())if(reg.get<SpyQuest::Actor>(actor).owner==id->pid)collect(actor);

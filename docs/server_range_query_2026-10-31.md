@@ -68,7 +68,41 @@ Negatív kontroll: elbukik, ha a bejárás nem hagyja ki a saját sectort a szom
 
 Teljes CTest (RelWithDebInfo, assertekkel): 139/139. A GameServer is fordul.
 
+## 2. kör: `VisibilitySystem::Refresh` (2026-10-31)
+
+A `Refresh` minden pozícióváltozásnál fut. A 9 sector minden tagjára, átlag 951-re, mindkét irányban `CanSee`-t,
+`Edge`-et és `Matches`-t futtatott, pedig csak átlag 226 volt hatótávon belül. Hívásonként 7 666 `SectorOf` jött ki,
+vagyis két-két `std::map`-keresés.
+
+**Javítás** (`ecs/systems/VisibilitySystem.cpp`):
+- A távolsági szabály külön függvénybe került (`Distance`, `PairReach`). A `CanSee` és az új szűrő ugyanezt használja.
+  Az alapeset `VIEW_RANGE + VIEW_BONUS_RANGE`, a nyomozós és a karavános pár 10 000.
+- `OutOfReach` kihagy egy jelöltet, ha egyszerre igaz rá, hogy
+  - egyik irányban sincs látótér-éle (mindkét fél `ViewMap`/`ViewerMap`-jét nézi);
+  - nem épület;
+  - messzebb van, mint amit a `CanSee` bármelyik irányban megenged.
+
+  Ilyenkor mindkét `CanSee` hamis, és mindkét `Edge(false)` üres művelet. A `ViewAgeMap.ageByEntity`-be sehol nem
+  kerül semmi, így annak törlése sem marad el.
+- A gyűjtés csak olvas, ezért `VisitAround`-dal megy, másolat nélkül.
+
+**Mérés** (`/Od`, ugyanaz az 1200 karakteres pálya):
+
+| | Előtte | Utána |
+|---|---|---|
+| `Refresh` | 28,9 ms | 13,1 ms |
+| `SectorOf` egy `Refresh`-ben | 7 666 | 2 692 |
+
+**Teszt:** `SpatialLifecycleTests::RefreshKeepsEveryPairExact`.
+- 150 entitás, három mozgatási kör után minden pár pontosan a láthatósági szabály szerint áll.
+- Egy távoli (11 900), csak a túloldalon nyilvántartott fél élt a `Refresh` lebont, és küld rá REMOVE-ot.
+- Negatív kontroll:
+  - a túloldali él-ellenőrzés nélkül a második rész elbukik;
+  - rossz küszöbbel az első.
+
 ## Nyitott
 
-- **`VisibilitySystem::Refresh`.** Ugyanezen a pályán 28,8 ms/hívás `/Od`-ben, és minden pozícióváltozásnál fut. Ez most a legdrágább láthatósági út: minden jelöltre mindkét irányban `CanSee` és `Edge`.
+- **`VisibilitySystem::Refresh` maradék költsége.** A hatótávon belüli jelöltenkénti munka (kétszer `CanSee`, `Edge`
+  és `Matches`) maradt; ebből 2,2 ms a `SectorOf` két `std::map`-keresése. Gyorsabb `SECTREE_MANAGER::Get`
+  (például `unordered_map` vagy sűrű rács) minden láthatósági és harci útnak segítene.
 - **A `ForEachAround` többi hívója** (harc, skill) továbbra is másol és újraellenőriz. Ott a callback módosíthatja a tagságot, ezért a `VisitAround` csak esetenként vezethető be.
