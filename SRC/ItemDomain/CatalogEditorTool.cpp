@@ -37,12 +37,12 @@ constexpr std::array<const char*,19> ReadNames{"InvalidPin","RowLimit","ByteBudg
     "InvalidText","InvalidKey","RegistryMismatch","FormatMismatch","OrphanRow","DuplicateRow","InvalidChild","InvalidCatalog",
     "HashMismatch","SqlFailure","IsolationRequired","SnapshotUnconfirmed","ResultShape"};
 static_assert(static_cast<std::size_t>(db::ReadErrorCode::ResultShape)==ReadNames.size()-1);
-constexpr std::array<const char*,27> CatalogNames{"InvalidVersion","LimitExceeded","InvalidIdentity","DuplicateProfile",
+constexpr std::array<const char*,28> CatalogNames{"InvalidVersion","LimitExceeded","InvalidIdentity","DuplicateProfile",
     "InvalidProfile","MissingProfile","InvalidRefinement","DuplicateItem","DuplicateContentCode","InvalidBase",
     "UnsupportedCategory","InvalidBonusProfile","WrongBonusSource","WrongCategory","DuplicateCategoryRow","MissingCategoryRow",
     "OrphanCategoryRow","WrongRefinementKind","StatOutOfRange","HashFailure","InvalidSocketProfile","InvalidSocketMaterial",
-    "InvalidRecoveryProfile","InvalidLootProfile","InvalidLootReward","InvalidContainer","InvalidRefinementRecipe"};
-static_assert(static_cast<std::size_t>(ItemCatalogErrorCode::InvalidRefinementRecipe)==CatalogNames.size()-1);
+    "InvalidRecoveryProfile","InvalidLootProfile","InvalidLootReward","InvalidContainer","InvalidRefinementRecipe","InvalidMobDrop"};
+static_assert(static_cast<std::size_t>(ItemCatalogErrorCode::InvalidMobDrop)==CatalogNames.size()-1);
 constexpr std::array<const char*,13> RefinementNames{"InvalidIdentity","InvalidKind","InvalidLevelRange","IncompleteLevels",
     "InvalidGain","NonzeroLevelZero","NonMonotonicGain","WrongStatKind","MissingBonusProfile","WrongBonusSource",
     "InvalidBonusContext","StatOutOfRange","AtMaximumLevel"};
@@ -69,6 +69,7 @@ Json Detail(const db::ReadError& error)
         if(c->bonusError)out["bonus"]=Name(*c->bonusError,BonusNames);
         if(c->recoveryError)out["recovery"]=Name(*c->recoveryError,RecoveryNames);
         if(c->lootError)out["loot"]=Name(*c->lootError,LootNames);
+        if(c->mobDropError)out["mob_drop"]=std::string(MobDropGroupErrorName(*c->mobDropError));
         if(c->socketError)out["socket"]=static_cast<int>(*c->socketError);
     }
     return out;
@@ -132,6 +133,7 @@ unsigned KeyColumns(T table) {
     case T::AttributeGroups:case T::AttributeBindings:case T::AttributeTiers:case T::PetAgeTiers:case T::PetSlotRules:case T::PetSkillDefinitions:case T::PetSupplies:return 2;
     case T::CostumeVisuals:return 4;
     case T::SocketMaterials:case T::RefinementIngredients:return 4;
+    case T::MobDropEntries:return 2;
     default:return 1;
     }
 }
@@ -218,7 +220,7 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
     constexpr T order[]={T::UsePolicies,T::TradePolicies,T::Appearances,T::Attacks,T::AmmoPolicies,T::Resistances,
         T::CompanionForms,T::PetTrainingProfiles,T::PetAgeTiers,T::PetSlotRules,T::PetSkillDefinitions,T::PetSkillRanks,T::PetSupplyProfiles,T::PetStudyRules,T::PetExtensionRules,T::PetEnchantRules,T::PetSkinRules,T::GrowthPetProfiles,T::GrowthPetLevels,T::GrowthPetStages,T::SoulProfiles,T::SoulLevels,T::PolymorphForms,T::PolymorphProfiles,T::PolymorphSkills,T::PolymorphMasteries,T::ToolProfiles,T::ToolLevels,T::BookProfiles,T::BookTargets,T::BookSteps,T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
         T::AttributeProfiles,T::AttributeGroups,T::AttributeCandidates,T::AttributeValues,T::AttributeServices,T::AttributeTiers,T::SocketServices,T::Cooldowns,T::TimedEffectGroups,T::TimedEffects,T::ToggleEffectGroups,T::ToggleEffects,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::Automatic,T::LootProfiles,T::Items,T::PetHatchProfiles,T::Weapons,T::Armors,T::Materials,
-        T::AttributeBindings,T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::SocketStones,T::Costumes,T::CostumeVisuals,T::Tools,T::FishingItems,T::PolymorphItems,T::SoulItems,T::Companions,T::PetSupplies,T::PetFeedRules,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients};
+        T::AttributeBindings,T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::SocketStones,T::Costumes,T::CostumeVisuals,T::Tools,T::FishingItems,T::PolymorphItems,T::SoulItems,T::Companions,T::PetSupplies,T::PetFeedRules,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients,T::MobDropGroups,T::MobDropEntries};
     static_assert(std::size(order)==db::TableCount-3,"every editable table needs a commit position");
     for(T table:{T::Format,T::Categories,T::BonusDefinitions})Require(before.rows[table]==after[table],"A rendszerregiszter nem szerkesztheto.");
     // Published group IDs own common conflict/lifecycle rules. Item edits may

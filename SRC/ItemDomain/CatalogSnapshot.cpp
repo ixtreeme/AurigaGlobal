@@ -292,6 +292,10 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::AttributeServices,[&](const Reader& r){s.attributeServices.push_back({r.U32(0),r.Text(1,96),static_cast<AttributeOperation>(r.U8(2)),static_cast<AttributePool>(r.U8(3)),r.U16(4),r.U16(5),r.U8(6),r.U8(7),r.U8(8),r.U8(9),r.U16(10),r.Bool(11),{}});});
     const auto attributeServiceIndex=Index(s.attributeServices,Table::AttributeServices);
     Each(source,Table::AttributeTiers,[&](const Reader& r){Parent(s.attributeServices,attributeServiceIndex,r).tiers.push_back({r.U8(1),r.U16(2)});});
+    Each(source,Table::MobDropGroups,[&](const Reader& r){s.mobDropGroups.push_back({r.U32(0),r.Text(1,96),static_cast<MobDropTarget>(r.U8(2)),r.U32(3),
+        static_cast<MobDropRoll>(r.U8(4)),r.U32(5),r.U16(6),{}});});
+    const auto dropIndex=Index(s.mobDropGroups,Table::MobDropGroups);
+    Each(source,Table::MobDropEntries,[&](const Reader& r){Parent(s.mobDropGroups,dropIndex,r).entries.push_back({r.U16(1),r.Key(2),r.U16(4),r.U32(5),r.U32(6),r.U32(7),r.U16(8),r.U16(9),r.U16(10)});});
     return s;
 }
 }

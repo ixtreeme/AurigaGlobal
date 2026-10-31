@@ -22,7 +22,35 @@ from mariadb_client import Client, statements
 
 
 class CategorySchemaTests(unittest.TestCase):
-    def test_instance_attribute_constraints_and_rollback(self):
+    def test_mob_drop_constraints_and_rollback(self):
+        # F4 C7b: one kill group and one common (rank) group; every discriminator is checked in SQL too.
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.mob_drop_group VALUES(9930,'drop.sql_kill',1,101,2,50,0)")
+            self.q('INSERT INTO protos.mob_drop_entry VALUES(9930,1,1,1,0,1,0,3,0,1,65535)')
+            self.q("INSERT INTO protos.mob_drop_group VALUES(9931,'drop.sql_common',2,0,1,0,0)")
+            self.q('INSERT INTO protos.mob_drop_entry VALUES(9931,1,1,1,0,1,250000,0,0,1,30)')
+            for query,code in [
+                ("INSERT INTO protos.mob_drop_group VALUES(9932,'drop.bad_rank',2,6,1,0,0)",'4025'),
+                ("INSERT INTO protos.mob_drop_group VALUES(9932,'drop.bad_common',2,0,2,5,0)",'4025'),
+                ("INSERT INTO protos.mob_drop_group VALUES(9932,'drop.bad_mob',1,0,1,0,0)",'4025'),
+                ("INSERT INTO protos.mob_drop_group VALUES(9932,'drop.bad_kill',1,101,2,0,0)",'4025'),
+                ("INSERT INTO protos.mob_drop_group VALUES(9932,'drop.bad_level',1,101,3,0,0)",'4025'),
+                ("INSERT INTO protos.mob_drop_group VALUES(9932,'drop.bad_roll',1,101,5,0,0)",'4025'),
+                ('UPDATE protos.mob_drop_entry SET weight=0 WHERE group_id=9930','4025'),
+                ('UPDATE protos.mob_drop_entry SET chance_ppb=1 WHERE group_id=9930','4025'),
+                ('UPDATE protos.mob_drop_entry SET chance_ppb=1000000001 WHERE group_id=9931','4025'),
+                ('UPDATE protos.mob_drop_entry SET amount=0 WHERE group_id=9930','4025'),
+                ('UPDATE protos.mob_drop_entry SET killer_level_min=31 WHERE group_id=9931','4025'),
+                ('UPDATE protos.mob_drop_entry SET rare_attribute_chance_bp=10001 WHERE group_id=9930','4025'),
+                ('UPDATE protos.mob_drop_entry SET entry_no=257 WHERE group_id=9930','4025'),
+                ('INSERT INTO protos.mob_drop_entry VALUES(9930,2,1,99999,0,1,0,1,0,1,65535)','1452'),
+                ('INSERT INTO protos.mob_drop_entry VALUES(9999,1,1,1,0,1,0,1,0,1,65535)','1452'),
+                ('DELETE FROM protos.mob_drop_group WHERE group_id=9930','1451')]:
+                with self.subTest(sql=query), self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q(query)
+        finally:self.q('ROLLBACK')
+        self.assertEqual(self.q('SELECT COUNT(*) FROM protos.mob_drop_group'),[['0']])
+
         self.q('START TRANSACTION')
         try:
             self.q("INSERT INTO protos.attribute_profile VALUES(9920,'attribute.sql_fixture',1)")
@@ -175,7 +203,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql", "030_instance_attributes.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql", "030_instance_attributes.sql", "031_mob_drops.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -682,7 +710,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["24", "auriga.item_catalog.v24"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["25", "auriga.item_catalog.v25"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])

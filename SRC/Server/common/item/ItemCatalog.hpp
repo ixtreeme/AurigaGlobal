@@ -21,6 +21,7 @@
 #include "SkillBooks.hpp"
 #include "Containers.hpp"
 #include "CurrencyTokens.hpp"
+#include "MobDrops.hpp"
 #include <array>
 #include <cstdint>
 #include <expected>
@@ -172,7 +173,7 @@ using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryR
                                      ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 24;
+    std::uint32_t schemaVersion = 25;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -226,6 +227,7 @@ struct ItemCatalogSource
     std::vector<PolymorphForm> polymorphForms;
     std::vector<PolymorphProfile> polymorphProfiles;
     std::vector<ItemPolymorphRow> polymorphItems;
+    std::vector<MobDropGroup> mobDropGroups;
 };
 struct ItemCatalogLimits
 {
@@ -238,7 +240,7 @@ enum class ItemCatalogErrorCode
     InvalidRefinement, DuplicateItem, DuplicateContentCode, InvalidBase, UnsupportedCategory,
     InvalidBonusProfile, WrongBonusSource, WrongCategory, DuplicateCategoryRow, MissingCategoryRow, OrphanCategoryRow,
     WrongRefinementKind, StatOutOfRange, HashFailure, InvalidSocketProfile, InvalidSocketMaterial, InvalidRecoveryProfile,
-    InvalidLootProfile, InvalidLootReward, InvalidContainer, InvalidRefinementRecipe,
+    InvalidLootProfile, InvalidLootReward, InvalidContainer, InvalidRefinementRecipe, InvalidMobDrop,
 };
 struct ItemCatalogError
 {
@@ -251,6 +253,7 @@ struct ItemCatalogError
     std::optional<AccessorySocketError> socketError;
     std::optional<RecoveryProfileError> recoveryError;
     std::optional<LootProfileError> lootError;
+    std::optional<MobDropGroupError> mobDropError;
 };
 struct ItemCatalogEntry
 {
@@ -317,6 +320,9 @@ public:
     // Every recipe that starts from exactly this item state, in recipe-ID order.
     // Several smiths or scrolls may offer different recipes for the same state.
     std::vector<const RefinementRecipe*> RefinementRecipesFrom(ItemKey source, std::uint16_t level) const;
+    const MobDropGroup* FindMobDropGroup(std::uint32_t id) const noexcept;
+    // The drop groups of a mob's rank and of the mob itself, in group-ID order.
+    std::vector<const MobDropGroup*> MobDropGroupsFor(std::uint32_t mobVnum, std::uint8_t rank) const;
     std::expected<ItemBaseStats, ItemCatalogLookupError> RefinedBaseStats(ItemKey key, std::uint16_t level) const noexcept;
     // Exactly the current level's cumulative bonus profile, never a sum of
     // profiles from all preceding refinement steps. This does not apply stats.
@@ -334,6 +340,9 @@ private:
     std::map<std::uint32_t, ValidatedAccessorySocketProfile> accessorySockets_;
     std::map<std::uint32_t, ValidatedRecoveryProfile> recoveries_;
     std::map<std::uint32_t, ValidatedLootProfile> loots_;
+    // Indexes into source_.mobDropGroups, each in group-ID order.
+    std::map<std::uint32_t, std::vector<std::size_t>> mobDropsByMob_;
+    std::array<std::vector<std::size_t>, MaxMobRank + 1> mobDropsByRank_;
     ItemCatalogDigest digest_ {};
 };
 } // namespace auriga::item

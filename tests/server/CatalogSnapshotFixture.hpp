@@ -100,6 +100,11 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
             r.target.Category(),r.target.LocalId(),r.targetLevel,r.goldCost,r.successChanceBp,r.failure,r.failureLevel);
         for(const auto& i:r.ingredients) Add(s,T::RefinementIngredients,r.id,i.key.Category(),i.key.LocalId(),i.refinementLevel,i.count);
     }
+    for(const auto& g:source.mobDropGroups) {
+        Add(s,T::MobDropGroups,g.id,g.code,g.target,g.targetValue,g.roll,g.killsPerDrop,g.minimumKillerLevel);
+        for(const auto& e:g.entries) Add(s,T::MobDropEntries,g.id,e.entry,e.item.Category(),e.item.LocalId(),e.refinementLevel,e.amount,
+            e.chancePpb,e.weight,e.rareAttributeChanceBp,e.killerLevelMin,e.killerLevelMax);
+    }
     for(const auto& p:source.socketServiceProfiles)Add(s,T::SocketServices,p.id,p.code,p.kind,p.unitsPerUse);
     for(const auto& p:source.attributeProfiles){Add(s,T::AttributeProfiles,p.id,p.code,p.allowLock);for(const auto& g:p.groups)Add(s,T::AttributeGroups,p.id,g.pool,g.capacity,g.excludeStatic);for(const auto& a:p.candidates){Add(s,T::AttributeCandidates,p.id,a.pool,a.bonus,a.weight);for(const auto& v:a.values)Add(s,T::AttributeValues,p.id,a.pool,a.bonus,v.tier,v.value);}}
     for(const auto& p:source.attributeServices){Add(s,T::AttributeServices,p.id,p.code,p.operation,p.pool,p.units,p.successBp,p.targetMask,p.minimumCount,p.maximumCount,p.addCount,p.maximumTargetLevel,p.consumeOnFailure);for(const auto& t:p.tiers)Add(s,T::AttributeTiers,p.id,t.tier,t.chanceBp);}

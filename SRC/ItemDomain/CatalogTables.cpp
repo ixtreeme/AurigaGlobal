@@ -93,6 +93,8 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::AttributeBindings,"item_attribute_binding","category_id,local_id,profile_id",Items},
     {Table::AttributeServices,"attribute_service_profile","profile_id,code,operation_kind,pool_kind,units_per_use,success_bp,target_mask,minimum_count,maximum_count,add_count,maximum_target_level,consume_on_failure",Profiles},
     {Table::AttributeTiers,"attribute_tier_chance","profile_id,tier,chance_bp",Profiles*MaxAttributeTiers},
+    {Table::MobDropGroups,"mob_drop_group","group_id,code,target_kind,target_value,roll_kind,kills_per_drop,minimum_killer_level",MaxMobDropGroups},
+    {Table::MobDropEntries,"mob_drop_entry","group_id,entry_no,category_id,local_id,refinement_level,amount,chance_ppb,weight,rare_attribute_chance_bp,killer_level_min,killer_level_max",MaxMobDropGroups*MaxMobDropEntries},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

@@ -26,8 +26,8 @@ def main():
         sandbox.verify()
         sandbox.client.query("CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
         paths = sorted((ROOT / "db/migrations/item_combat").glob("[0-9][0-9][0-9]_*.sql"))
-        if [int(path.name[:3]) for path in paths] != list(range(31)):
-            raise RuntimeError("expected complete native catalog drafts 000..030")
+        if [int(path.name[:3]) for path in paths] != list(range(32)):
+            raise RuntimeError("expected complete native catalog drafts 000..031")
         paths.append(ROOT / "db/migrations/item_instance/001_item_persistence.sql")
         paths.append(ROOT / "db/migrations/item_instance/002_instance_id_allocator.sql")
         for path in paths:
@@ -44,7 +44,7 @@ def main():
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],
                     "owned_datadir_verified": True, "catalog_select_only": True,
-                    "catalog_drafts": 31, "instance_schema": 1}
+                    "catalog_drafts": 32, "instance_schema": 1}
         (sandbox.work / "environment.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
         result = subprocess.run([str(args.test_executable.resolve()), "--owned-sandbox"],
                                 input=f"{sandbox.port}\n{sandbox.password}\n{token}\n",

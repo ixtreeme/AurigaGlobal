@@ -94,6 +94,11 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
     for (const auto& profile : source.lootProfiles)
         if (profile.entries.size() > MaxLootEntries)
             return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "loot.entries", {}, profile.id));
+    if (source.mobDropGroups.size() > MaxMobDropGroups)
+        return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "mob_drop_groups"));
+    for (const auto& group : source.mobDropGroups)
+        if (group.entries.size() > MaxMobDropEntries || !add(group.code.size()))
+            return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "mob_drop.entries", {}, group.id));
     for (const auto& profile : source.bonuses)
         if (profile.entries.size() > MaxBonusEntriesPerProfile)
             return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded, "bonus.entries", {}, profile.id));
@@ -134,7 +139,7 @@ auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.char
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 24 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 25 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     for(auto& p:source.attributeProfiles){std::ranges::sort(p.groups,{},&AttributeGroup::pool);std::ranges::sort(p.candidates,[](const auto& a,const auto& b){return std::pair{a.pool,a.bonus}<std::pair{b.pool,b.bonus};});for(auto& a:p.candidates)std::ranges::sort(a.values,{},&AttributeValue::tier);}
     for(auto& p:source.attributeServices)std::ranges::sort(p.tiers,{},&AttributeTierChance::tier);
@@ -230,6 +235,14 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     if (auto r = Profiles(source.refinementRecipes, "refinement_recipe", [](const auto&) { return true; }); !r) return std::unexpected(r.error());
     for (auto& recipe : source.refinementRecipes)
         std::ranges::sort(recipe.ingredients, {}, [](const auto& row) { return std::pair{row.key, row.refinementLevel}; });
+    if (auto r = Profiles(source.mobDropGroups, "mob_drop", [](const auto&) { return true; }); !r) return std::unexpected(r.error());
+    for (auto& group : source.mobDropGroups)
+        if (auto valid = ValidateMobDropGroup(group); !valid)
+        {
+            auto error = Error(ItemCatalogErrorCode::InvalidMobDrop, "mob_drop", {}, group.id);
+            error.mobDropError = valid.error();
+            return std::unexpected(std::move(error));
+        }
     for (auto& p : source.skillBookProfiles)
     {
         std::ranges::sort(p.targets, {}, &SkillBookTarget::skillId);
@@ -741,6 +754,13 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     for (const auto& recipe : source.refinementRecipes)
         if (!ValidateRefinementRecipe(recipe, *catalog))
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidRefinementRecipe, "refinement_recipe", recipe.source, recipe.id));
+    for (const auto& group : source.mobDropGroups)
+        if (auto valid = ValidateMobDropItems(group, *catalog); !valid)
+        {
+            auto error = Error(ItemCatalogErrorCode::InvalidMobDrop, "mob_drop.item", {}, group.id);
+            error.mobDropError = valid.error();
+            return std::unexpected(std::move(error));
+        }
     std::ranges::sort(source.attributeBindings,{},&ItemAttributeBinding::key);
     std::optional<ItemKey> priorAttributeKey;
     for(const auto& b:source.attributeBindings){
@@ -753,6 +773,12 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     if (!digest) return std::unexpected(Error(digest.error(), "content_hash"));
     catalog->digest_ = *digest;
     catalog->source_ = std::move(source);
+    for (std::size_t i = 0; i < catalog->source_.mobDropGroups.size(); ++i)
+    {
+        const auto& group = catalog->source_.mobDropGroups[i];
+        if (group.target == MobDropTarget::Rank) catalog->mobDropsByRank_[group.targetValue].push_back(i);
+        else catalog->mobDropsByMob_[group.targetValue].push_back(i);
+    }
     return std::shared_ptr<const ItemCatalog>(std::move(catalog));
 }
 
@@ -789,6 +815,18 @@ const PolymorphProfile* ItemCatalog::FindPolymorphProfile(std::uint32_t id) cons
 const ToolProfile* ItemCatalog::FindToolProfile(std::uint32_t id) const noexcept { return FindProfile(source_.toolProfiles,id); }
 const ItemUsePolicy* ItemCatalog::FindUsePolicy(std::uint32_t id) const noexcept { return FindProfile(source_.usePolicies, id); }
 const RefinementRecipe* ItemCatalog::FindRefinementRecipe(std::uint32_t id) const noexcept { return FindProfile(source_.refinementRecipes, id); }
+const MobDropGroup* ItemCatalog::FindMobDropGroup(std::uint32_t id) const noexcept { return FindProfile(source_.mobDropGroups, id); }
+std::vector<const MobDropGroup*> ItemCatalog::MobDropGroupsFor(std::uint32_t mobVnum, std::uint8_t rank) const
+{
+    std::vector<std::size_t> indexes;
+    if (rank <= MaxMobRank) indexes = mobDropsByRank_[rank];
+    if (const auto found = mobDropsByMob_.find(mobVnum); found != mobDropsByMob_.end())
+        indexes.insert(indexes.end(), found->second.begin(), found->second.end());
+    std::ranges::sort(indexes); // the source is in group-ID order
+    std::vector<const MobDropGroup*> out;
+    for (const auto index : indexes) out.push_back(&source_.mobDropGroups[index]);
+    return out;
+}
 std::vector<const RefinementRecipe*> ItemCatalog::RefinementRecipesFrom(ItemKey source, std::uint16_t level) const
 {
     std::vector<const RefinementRecipe*> out;

@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v24");
+    out.Text("auriga.item_catalog.v25");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -378,6 +378,19 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     out.Table(52,source.attributeServices.size());
     for(const auto& p:source.attributeServices){out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.operation));out.Integer(static_cast<std::uint8_t>(p.pool));out.Integer(p.units);out.Integer(p.successBp);out.Integer(p.targetMask);out.Integer(p.minimumCount);out.Integer(p.maximumCount);out.Integer(p.addCount);out.Integer(p.maximumTargetLevel);out.Boolean(p.consumeOnFailure);out.Integer(static_cast<std::uint32_t>(p.tiers.size()));for(const auto& t:p.tiers){out.Integer(t.tier);out.Integer(t.chanceBp);}}
     out.Table(53,source.attributeBindings.size());for(const auto& b:source.attributeBindings){out.Key(b.key);out.Integer(b.profile);}
+    // Monster drop tables (v25): group, then its entries in entry order.
+    out.Table(54, source.mobDropGroups.size());
+    for (const auto& g : source.mobDropGroups)
+    {
+        out.Identity(g.id, g.code); out.Integer(static_cast<std::uint8_t>(g.target)); out.Integer(g.targetValue);
+        out.Integer(static_cast<std::uint8_t>(g.roll)); out.Integer(g.killsPerDrop); out.Integer(g.minimumKillerLevel);
+        out.Integer(static_cast<std::uint32_t>(g.entries.size()));
+        for (const auto& e : g.entries)
+        {
+            out.Integer(e.entry); out.Key(e.item); out.Integer(e.refinementLevel); out.Integer(e.amount); out.Integer(e.chancePpb);
+            out.Integer(e.weight); out.Integer(e.rareAttributeChanceBp); out.Integer(e.killerLevelMin); out.Integer(e.killerLevelMax);
+        }
+    }
     return out.Finish();
 }
 } // namespace auriga::item::detail
