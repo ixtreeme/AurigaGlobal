@@ -375,5 +375,5 @@ server.json
 /run/
 /config/run/
 
-# Claude Code session worktrees
-.claude/worktrees/
+# Claude Code session worktrees, at any level (the app puts them under SRC/)
+**/.claude/worktrees/
