@@ -836,6 +836,99 @@ class RecipeModelTests(unittest.TestCase):
         self.assertIsNone(catalog.Catalog(packet).target_levels((1, 999)))
 
 
+def drop_document(target_kind='1', target_value='101', roll='1', entries=(), code=None, kills='0', minimum='0'):
+    """A drop table document; entries are (key, amount, chance_ppb, weight[, level])."""
+    group = dict(group_id=None, code=code or 'drop.test_%s_%s_%s' % (target_kind, target_value, roll), target_kind=target_kind,
+                 target_value=target_value, roll_kind=roll, kills_per_drop=kills, minimum_killer_level=minimum)
+    rows = []
+    for key, amount, chance, weight, *level in entries:
+        rows.append(dict(category_id=str(key[0]), local_id=str(key[1]), refinement_level=str(level[0] if level else 0),
+                         amount=str(amount), chance_ppb=str(chance), weight=str(weight), rare_attribute_chance_bp='0',
+                         killer_level_min='1', killer_level_max='65535'))
+    return dict(group=group, entries=rows)
+
+
+def drop_fixture():
+    """A 200-stack material, a +2 sword and one mob table that drops both."""
+    packet, material = create(catalog.blank(TOOL), 6, lambda d: d['base'].update(max_stack='200'))
+    packet, sword = create(packet, 1, lambda d: curve(d, 2))
+    document = drop_document(entries=[(material, 5, 2_500_000, 0), (sword, 1, 1000, 0, 2)], code='drop.mob_101')
+    packet = saved(packet, catalog.Catalog(packet).apply_drops(document))
+    return packet, material, sword
+
+
+class DropTableModelTests(unittest.TestCase):
+    """Monster drop tables (IC-035): document round trip and native checks."""
+
+    def check(self, packet):
+        return catalog.run_tool(dict(action='validate', tables=packet['tables']), packet['columns'], TOOL)['hash']
+
+    def test_round_trip_renumber_mode_switch_and_delete(self):
+        packet, material, sword = drop_fixture(); self.check(packet)
+        model = catalog.Catalog(packet)
+        self.assertEqual([(g['group_id'], g['code'], g['entries']) for g in model.drop_groups()], [('1', 'drop.mob_101', 2)])
+        document = model.drop_group('1')
+        self.assertEqual(document['group']['roll_kind'], '1')
+        self.assertEqual([(e['local_id'], e['amount'], e['chance_ppb'], e['refinement_level']) for e in document['entries']],
+                         [(str(material[1]), '5', '2500000', '0'), (str(sword[1]), '1', '1000', '2')])
+        # One in 300 kills by weight: the chances drop, the weights stay, and
+        # a removed first entry renumbers the rest from 1.
+        document['group'].update(roll_kind='2', kills_per_drop='300', minimum_killer_level='7')
+        document['entries'][0]['weight'] = '3'; document['entries'][1]['weight'] = '1'
+        packet = saved(packet, catalog.Catalog(packet).apply_drops(document, '1')); self.check(packet)
+        stored = rows(packet, 'mob_drop_entry')
+        self.assertEqual([(r['entry_no'], r['chance_ppb'], r['weight']) for r in stored], [('1', '0', '3'), ('2', '0', '1')])
+        self.assertEqual(rows(packet, 'mob_drop_group')[0]['minimum_killer_level'], '0')
+        document = catalog.Catalog(packet).drop_group('1'); document['entries'] = document['entries'][1:]
+        packet = saved(packet, catalog.Catalog(packet).apply_drops(document, '1')); self.check(packet)
+        self.assertEqual([(r['entry_no'], r['local_id']) for r in rows(packet, 'mob_drop_entry')], [('1', str(sword[1]))])
+        # A rank's common drop next to it; codes stay unique.
+        model = catalog.Catalog(packet)
+        self.assertEqual(model.drop_code('2', '4', '1'), 'drop.rank_4')
+        self.assertEqual(model.drop_code('1', '101', '1'), 'drop.mob_101_2')
+        self.assertEqual(model.drop_code('1', '101', '1', '1'), 'drop.mob_101')
+        self.assertEqual(model.drop_code('1', '7', '3'), 'drop.mob_7_limit')
+        rank = drop_document('2', '4', entries=[(material, 1, 40_000, 0)], code='drop.rank_4')
+        packet = saved(packet, catalog.Catalog(packet).apply_drops(rank)); self.check(packet)
+        self.assertEqual([g['group_id'] for g in catalog.Catalog(packet).drop_groups()], ['1', '2'])
+        with self.assertRaisesRegex(api.EditorError, 'foglalt'): catalog.Catalog(packet).apply_drops(rank)
+        with self.assertRaisesRegex(api.EditorError, 'nem található'): catalog.Catalog(packet).apply_drops(rank, '99')
+        with self.assertRaisesRegex(api.EditorError, 'nem található'): catalog.Catalog(packet).drop_group('99')
+        packet = saved(packet, catalog.Catalog(packet).delete_drop_group('1')); self.check(packet)
+        self.assertEqual([g['code'] for g in catalog.Catalog(packet).drop_groups()], ['drop.rank_4'])
+        self.assertEqual({r['group_id'] for r in rows(packet, 'mob_drop_entry')}, {'2'})
+        with self.assertRaisesRegex(api.EditorError, 'nem található'): catalog.Catalog(packet).delete_drop_group('1')
+
+    def test_invalid_tables_are_rejected_natively_in_hungarian(self):
+        packet, material, sword = drop_fixture()
+        cases = [
+            (drop_document(entries=[]), 'üres'),
+            (drop_document('2', '4', '2', [(material, 1, 0, 5)], kills='10'), 'szörnyrang'),
+            (drop_document('2', '6', '1', [(material, 1, 1000, 0)]), 'szörnyrang'),
+            (drop_document(roll='2', entries=[(material, 1, 0, 5)]), 'sorsolási mód'),
+            (drop_document(entries=[(material, 1, 0, 0)]), 'esély'),
+            (drop_document(entries=[(material, 1, 1_000_000_001, 0)]), 'esély'),
+            (drop_document(roll='2', kills='10', entries=[(material, 1, 0, 0)]), 'súly'),
+            (drop_document(entries=[(sword, 2, 1000, 0)]), 'darabszám'),
+            (drop_document(entries=[(sword, 1, 1000, 0, 3)]), 'fejlesztési szint'),
+            (drop_document(entries=[(material, 1, 1000, 0)], code='Drop.Bad'), 'érvénytelen kód'),
+        ]
+        for document, expected in cases:
+            with self.subTest(expected=expected, group=document['group']), self.assertRaises(api.EditorError) as raised:
+                catalog.validate_drops(packet, document, executable=TOOL)
+            self.assertIn(expected, str(raised.exception).lower())
+            self.assertIn('droptábla', str(raised.exception).lower())
+        levels = drop_document(entries=[(material, 1, 1000, 0)]); levels['entries'][0].update(killer_level_min='50', killer_level_max='40')
+        with self.assertRaisesRegex(api.EditorError, 'szintablak'): catalog.validate_drops(packet, levels, executable=TOOL)
+        rare = drop_document(entries=[(material, 1, 1000, 0)]); rare['entries'][0]['rare_attribute_chance_bp'] = '10001'
+        with self.assertRaisesRegex(api.EditorError, 'ritka bónusz'): catalog.validate_drops(packet, rare, executable=TOOL)
+        # Retiring an item that a drop table still gives is refused, by name.
+        retired = catalog.Catalog(packet).item(material); retired['base']['retired'] = '1'
+        with self.assertRaises(api.EditorError) as raised: catalog.validate(packet, retired, material, TOOL)
+        self.assertIn('Droptábla tárgya', str(raised.exception)); self.assertIn('#1', str(raised.exception))
+        catalog.validate_drops(packet, drop_document(entries=[(material, 200, 1_000_000_000, 0)]), executable=TOOL)
+
+
 class PageCase(unittest.TestCase):
     def setUp(self):
         self.qt_signal_errors=[];previous=sys.excepthook
@@ -1676,6 +1769,145 @@ class RecipePanelTests(PageCase):
         self.assertEqual(self.page.refinement.recipe_column(), 2)
 
 
+class DropPageTests(PageCase):
+    """Droptáblák view and dialog; saves are stubbed, no database."""
+
+    def setUp(self):
+        super().setUp()
+        from unittest import mock
+        self.packet, self.material, self.sword = drop_fixture()
+        rank = drop_document('2', '4', entries=[(self.material, 1, 40_000, 0)], code='drop.rank_4')
+        self.packet = saved(self.packet, catalog.Catalog(self.packet).apply_drops(rank))
+        for patch in (mock.patch.object(self.page, 'local', return_value=True),):
+            patch.start(); self.addCleanup(patch.stop)
+        self.page.state = dict(database_running=True, running=False)
+        self.addCleanup(setattr, self.page, 'state', None)
+        self.page.drop_list.clearSelection(); self.page.drop_search.clear()
+        self.page.loaded(self.packet)
+
+    def sync_run(self):
+        """Run page tasks inline, so a save completes inside the call."""
+        from unittest import mock
+        def run(function, done, message, failed=None):
+            try: value = function()
+            except api.EditorError as error:
+                if failed: failed(str(error))
+                else: self.owner.error(str(error))
+            else: done(value)
+        return mock.patch.object(self.page, 'run', side_effect=run)
+
+    def test_list_search_and_controls(self):
+        p = self.page
+        p.show_drops()
+        self.assertIs(p.workspace.currentWidget(), p.drops_page)
+        self.assertEqual(p.drop_list.rowCount(), 2)
+        self.assertEqual([p.drop_list.item(r, 2).text() for r in range(2)], ['Szörny #101', 'Rang: Főnök (BOSS)'])
+        self.assertIn('2 ·', p.drop_list.item(0, 4).text())
+        self.assertFalse(p.edit_drop_button.isEnabled())
+        p.drop_search.setText('BOSS'); self.assertEqual(p.drop_list.rowCount(), 1)
+        p.drop_search.setText('weapon.'); self.assertEqual(p.drop_list.rowCount(), 1)
+        self.assertEqual(p.drop_list.item(0, 1).text(), 'drop.mob_101')
+        p.drop_list.selectRow(0)
+        self.assertEqual(p.chosen_drop(), '1')
+        self.assertTrue(p.edit_drop_button.isEnabled()); self.assertTrue(p.delete_drop_button.isEnabled())
+        p.drop_search.setText('nincs ilyen'); self.assertEqual(p.drop_list.rowCount(), 0)
+        self.assertIn('Nincs találat', p.empty_drops.text())
+        p.drop_search.clear()
+        p.state = dict(database_running=True, running=True); p.controls()
+        self.assertIn('állítsd le', p.drop_note.text())
+        # A reload keeps the drop view open.
+        p.loaded(self.packet); self.assertIs(p.workspace.currentWidget(), p.drops_page)
+        p.back_to_catalog(); self.assertIs(p.workspace.currentWidget(), p.catalog_page)
+
+    def test_dialog_modes_code_and_collect(self):
+        from drop_editor import DropGroupDialog, CHANCE, WEIGHT, PER_KILL, ITEM, AMOUNT
+        model = catalog.Catalog(self.packet)
+        dialog = DropGroupDialog(self.page, model)
+        self.assertEqual(dialog.code.text(), 'drop.mob_1')
+        dialog.mob.setValue(101); self.assertEqual(dialog.code.text(), 'drop.mob_101_2')
+        dialog.roll.setCurrentIndex(dialog.roll.findData('2')); self.assertEqual(dialog.code.text(), 'drop.mob_101_kill')
+        dialog.kills.setValue(50)
+        self.assertFalse(dialog.form.isRowVisible(dialog.minimum)); self.assertTrue(dialog.form.isRowVisible(dialog.kills))
+        with self.assertRaisesRegex(api.EditorError, 'üres'): dialog.collect()
+        dialog.append(None)
+        self.assertFalse(dialog.table.cellWidget(0, CHANCE).isEnabled()); self.assertTrue(dialog.table.cellWidget(0, WEIGHT).isEnabled())
+        self.assertTrue(dialog.table.isColumnHidden(CHANCE)); self.assertFalse(dialog.table.isColumnHidden(WEIGHT))
+        with self.assertRaisesRegex(api.EditorError, '1. sor: válassz'): dialog.collect()
+        combo = dialog.table.cellWidget(0, ITEM); combo.setCurrentIndex(combo.findData('%d:%d' % self.material))
+        self.assertEqual(dialog.table.cellWidget(0, AMOUNT).maximum(), 200)
+        dialog.table.cellWidget(0, WEIGHT).setText('3'); dialog.refresh()
+        self.assertEqual(dialog.table.item(0, PER_KILL).text(), '2% (≈ 1/50)')
+        document = dialog.collect()
+        self.assertEqual((document['group']['roll_kind'], document['group']['kills_per_drop']), ('2', '50'))
+        self.assertEqual((document['entries'][0]['weight'], document['entries'][0]['chance_ppb']), ('3', '0'))
+        catalog.validate_drops(self.packet, document, executable=TOOL)
+        # A rank target forces "every entry"; chances accept seven decimals.
+        dialog.target.setCurrentIndex(dialog.target.findData('2'))
+        self.assertEqual(dialog.roll_kind(), '1'); self.assertFalse(dialog.roll.isEnabled())
+        self.assertFalse(dialog.table.isColumnHidden(CHANCE)); self.assertTrue(dialog.table.isColumnHidden(WEIGHT))
+        self.assertEqual(dialog.code.text(), 'drop.rank_0')
+        dialog.rank.setCurrentIndex(dialog.rank.findData('5')); self.assertEqual(dialog.code.text(), 'drop.rank_5')
+        dialog.table.cellWidget(0, CHANCE).setText('0,0004'); dialog.refresh()
+        self.assertEqual(dialog.table.item(0, PER_KILL).text(), '0.0004% (≈ 1/250 000)')
+        document = dialog.collect()
+        self.assertEqual((document['group']['target_kind'], document['group']['target_value']), ('2', '5'))
+        self.assertEqual((document['entries'][0]['chance_ppb'], document['entries'][0]['weight']), ('4000', '0'))
+        catalog.validate_drops(self.packet, document, executable=TOOL)
+        dialog.table.cellWidget(0, CHANCE).setText('100.5')
+        dialog.accept_group(); self.assertIsNone(dialog.result_document)
+        self.assertIn('esély', dialog.error.text()); self.assertFalse(dialog.error.isHidden())
+        dialog.deleteLater()
+        # A saved table keeps its code and offers deletion; a blocked save says why.
+        saved_dialog = DropGroupDialog(self.page, model, model.drop_group('1'), '1', 'Előző hiba', 'Állítsd le a szervert.')
+        saved_dialog.mob.setValue(202); self.assertEqual(saved_dialog.code.text(), 'drop.mob_101')
+        self.assertFalse(saved_dialog.save_button.isEnabled()); self.assertFalse(saved_dialog.delete_button.isEnabled())
+        self.assertIn('Előző hiba', saved_dialog.error.text())
+        self.assertEqual(saved_dialog.table.rowCount(), 2)
+        self.assertEqual(saved_dialog.table.cellWidget(1, 1).value(), 2)
+        saved_dialog.deleteLater()
+
+    def test_save_keeps_item_draft_and_reopens_on_rejection(self):
+        from unittest import mock
+        p = self.page
+        p.open_item(self.sword); p.mark_dirty(); self.assertTrue(p.dirty)
+        p.show_drops()
+        document = drop_document(entries=[(self.material, 7, 5_000_000, 0)], code='drop.mob_303', target_value='303')
+        stub = lambda root, before, document, original_id=None: saved(before, catalog.Catalog(before).apply_drops(document, original_id))
+        with self.sync_run(), mock.patch.object(catalog, 'save_drops', side_effect=stub):
+            p.save_drop_group(document, None)
+        self.assertEqual([g['code'] for g in catalog.Catalog(p.packet).drop_groups()], ['drop.mob_101', 'drop.rank_4', 'drop.mob_303'])
+        self.assertEqual(p.chosen_drop(), '3'); self.assertIn('mentve', p.status.text())
+        self.assertTrue(p.dirty); self.assertEqual(p.original_key, self.sword)
+        self.assertIs(p.workspace.currentWidget(), p.drops_page)
+        # A rejected save writes nothing and reopens the dialog with the input.
+        reopened = []; errors = len(self.owner.errors)
+        with self.sync_run(), mock.patch.object(catalog, 'save_drops', side_effect=api.EditorError('Droptábla: hiba.')), \
+                mock.patch.object(p, 'open_drop_dialog', side_effect=lambda *args: reopened.append(args)):
+            p.save_drop_group(document, '3')
+            self.app.processEvents()
+        self.assertEqual(reopened, [(document, '3', 'Droptábla: hiba.')])
+        self.assertEqual(len(self.owner.errors), errors)
+        # The dialog round trip: Mentés hands the document to the save.
+        from drop_editor import DropGroupDialog
+        def accept(dialog):
+            dialog.accept_group(); return dialog.result()
+        with mock.patch.object(DropGroupDialog, 'exec', new=accept), \
+                mock.patch.object(p, 'save_drop_group') as save:
+            p.open_drop_dialog(catalog.Catalog(p.packet).drop_group('3'), '3')
+        self.assertEqual(save.call_args.args[1], '3')
+        self.assertEqual(save.call_args.args[0]['entries'][0]['amount'], '7')
+        # Deletion asks first and keeps the draft too.
+        p.drop_list.selectRow(0)
+        remove = lambda root, before, group_id: saved(before, catalog.Catalog(before).delete_drop_group(group_id))
+        with self.sync_run(), mock.patch.object(catalog, 'delete_drops', side_effect=remove), \
+                mock.patch.object(p, 'confirm_drop_delete', side_effect=[False, True]):
+            p.delete_selected_drop(); self.assertEqual(len(catalog.Catalog(p.packet).drop_groups()), 3)
+            p.delete_selected_drop()
+        self.assertEqual([g['code'] for g in catalog.Catalog(p.packet).drop_groups()], ['drop.rank_4', 'drop.mob_303'])
+        self.assertTrue(p.dirty)
+        p.dirty = False; p.show_document(None)
+
+
 class BenchPageTests(PageCase):
     """Tárgyteszt page rendering from a bench state; no database."""
 
@@ -1738,6 +1970,35 @@ class BenchPageTests(PageCase):
 
 
 class SqlCommitTests(unittest.TestCase):
+    def test_zzzzzzzzzzzzzz_drop_tables_commit_edit_rollback_and_delete(self):
+        packet=self.call('read')
+        material=catalog.Catalog(packet).new(6);material['base']['max_stack']='200';material_key=key_of(material);packet=self.commit(packet,material)
+        sword=catalog.Catalog(packet).new(1);curve(sword,2);sword_key=key_of(sword);packet=self.commit(packet,sword)
+        document=drop_document(entries=[(material_key,5,2_500_000,0),(sword_key,1,1000,0,2)],code='drop.sql_mob_101')
+        packet=self.call('commit',tables=catalog.Catalog(packet).apply_drops(document),expected_hash=packet['hash'])
+        group=next(g for g in catalog.Catalog(packet).drop_groups() if g['code']=='drop.sql_mob_101')
+        stored=catalog.Catalog(packet).drop_group(group['group_id'])
+        self.assertEqual([(e['local_id'],e['refinement_level'],e['chance_ppb']) for e in stored['entries']],
+                         [(str(material_key[1]),'0','2500000'),(str(sword_key[1]),'2','1000')])
+        # Edit in place: weighted mode, one entry fewer.
+        stored['group'].update(roll_kind='2',kills_per_drop='300');stored['entries']=stored['entries'][1:];stored['entries'][0]['weight']='4'
+        packet=self.call('commit',tables=catalog.Catalog(packet).apply_drops(stored,group['group_id']),expected_hash=packet['hash'])
+        self.assertEqual(catalog.Catalog(packet).drop_group(group['group_id'])['entries'][0]['weight'],'4')
+        self.assertEqual(sum(1 for r in rows(packet,'mob_drop_entry') if r['group_id']==group['group_id']),1)
+        # A failing entry write rolls the whole group back.
+        self.sandbox.client.query("CREATE TRIGGER protos.ic_reject_drop BEFORE INSERT ON protos.mob_drop_entry FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='test drop write failure'")
+        try:
+            with self.assertRaises(api.EditorError):
+                self.call('commit',tables=catalog.Catalog(packet).apply_drops(drop_document('2','4',entries=[(material_key,1,40_000,0)],code='drop.sql_rank_4')),expected_hash=packet['hash'])
+        finally:self.sandbox.client.query('DROP TRIGGER protos.ic_reject_drop')
+        after=self.call('read');self.assertEqual(after['hash'],packet['hash']);self.assertEqual(ordered(after['tables']),ordered(packet['tables']))
+        # Retiring a dropped item is refused natively, before any write.
+        retired=catalog.Catalog(packet).item(sword_key);retired['base']['retired']='1'
+        with self.assertRaisesRegex(api.EditorError,'Droptábla tárgya'):self.commit(packet,retired,sword_key)
+        packet=self.call('commit',tables=catalog.Catalog(packet).delete_drop_group(group['group_id']),expected_hash=packet['hash'])
+        self.assertFalse([r for r in rows(packet,'mob_drop_entry') if r['group_id']==group['group_id']])
+        self.assertEqual(self.call('read')['hash'],packet['hash'])
+
     def test_zzzzzzzzzzzzz_instance_attributes_atomic_copy_and_rollback(self):
         packet=self.call('read');d=catalog.Catalog(packet).new(1);attributes(d);key=key_of(d);packet=self.commit(packet,d)
         original=catalog.Catalog(packet).item(key);clone=catalog.Catalog(packet).duplicate(key);clone['attribute_values'][0]['value_scaled']='3500';packet=self.commit(packet,clone)

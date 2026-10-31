@@ -1,8 +1,8 @@
 # ADR IC-035 — Drop az új tárgyrendszeren
 
 2026-10-31. Fázis: F4 ([IC-034](item_combat_034_runtime_integration_plan.md),
-C csomag, „drop”). Állapot: **döntés elfogadva; a C7a (b92fe955) és a
-C7b-1 kész; a C7b-2 és a C7b-3 hátravan**.
+C csomag, „drop”). Állapot: **döntés elfogadva; a C7a (b92fe955), a
+C7b-1 (cff05d52) és a C7b-2 kész; a C7b-3 hátravan**.
 
 ## Régi működés (forrásaudit)
 
@@ -40,7 +40,7 @@ C7b-1 kész; a C7b-2 és a C7b-3 hátravan**.
   tárgyának eldobása.** A javaslat: a földi zsákmány a régihez hasonlóan nem
   tartós, a tárgypéldány a felvételkor jön létre. Ezt a C7c előtt egyeztetjük.
 
-## C7b — droptáblák a katalógusban (C7b-1 kész)
+## C7b — droptáblák a katalógusban (C7b-1 és C7b-2 kész)
 
 Három lépésben készül:
 - **C7b-1:** katalógusréteg és tiszta sorsoló;
@@ -96,6 +96,31 @@ egész aritmetika eredménye változatlan marad.
   szerverszabályok, nem droptáblák; ezek külön szeletek.
 - A ritka bónusz esélye tárolódik, de az új tárgy még nem kap véletlen
   bónuszt.
+
+**C7b-2 — szerkesztőfelület** (2026-10-31):
+- **Modell** (`item_catalog.py`): `drop_groups`, `drop_group`, `drop_code`,
+  `new_drop_group`, `apply_drops`, `delete_drop_group`.
+  - Mentéskor a bejegyzések a dokumentum sorrendjében 1-től számozódnak.
+  - A mód által nem használt esély vagy súly, valamint a többi mód paramétere
+    nullázódik, ahogy a séma kéri.
+  - Foglalt kódnál magyar hibaüzenet jön.
+- **Mentés:** `save_drops` és `delete_drops`. A közös `commit_tables` út
+  ugyanazt a zárat, nyugtamappát és natív commitot használja, mint a
+  tárgymentés.
+- **Hibaszöveg:** a natív `InvalidMobDrop` minden oka magyarul jelenik meg, a
+  droptábla azonosítójával.
+  - A droptáblában szereplő tárgy kivezetése név szerint utasítódik el.
+- **Felület:** „Droptáblák” nézet a Tárgyak oldalon, `DropGroupDialog`
+  (`drop_editor.py`).
+  - A mentés csak a `mob_drop_*` táblákat érinti, ezért a nyitott
+    tárgypiszkozat megmarad.
+  - Elutasításkor az ablak a beírt értékekkel újranyílik.
+- **Tesztek:**
+  - `DropTableModelTests`: oda-vissza út, módváltás, törlés, és minden natív
+    elutasítás magyar szövege;
+  - `DropPageTests`: lista, kereső, ablak, mentés, újranyitás és törlés;
+  - `SqlCommitTests`: commit, szerkesztés, triggeres visszagörgetés, a
+    kivezetés tiltása és törlés privát MariaDB-n.
 
 ## C7a — futásidejű azonosítók és tárgyadás
 

@@ -24,6 +24,7 @@ from pet_care_editor import PetHatchPanel,PetFoodPanel
 from pet_lifecycle_editor import PetSupplyPanel
 from attribute_editor import AttributePanel,AttributeServicePanel
 from item_workflows import NewItemDialog, CATEGORY_HELP, SECTION_HELP, TYPE_SECTION, readable_name, summary_lines
+from drop_editor import DropGroupDialog, roll_text, target_text
 from manager_ui import card_layout, line_icon
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
@@ -1168,7 +1169,9 @@ class ItemPage(QWidget):
         self.reload_button.setIcon(line_icon('refresh'))
         self.new_button = QPushButton('Új tárgytípus…'); self.new_button.setObjectName('Primary')
         self.new_button.clicked.connect(self.new_item_wizard)
-        for widget in (self.start_db_button, self.reload_button, self.new_button): bar.addWidget(widget)
+        self.drops_button = QPushButton('Droptáblák'); self.drops_button.clicked.connect(self.show_drops)
+        self.drops_button.setToolTip('Mit ejtenek a szörnyek: droptáblák szörnyenként és szörnyrangonként.')
+        for widget in (self.start_db_button, self.reload_button, self.drops_button, self.new_button): bar.addWidget(widget)
         layout.addLayout(bar)
         self.status = QLabel('Válassz helyi szervercsomagot.'); self.status.setWordWrap(True); self.status.setObjectName('Subtle')
         self.status.setTextFormat(Qt.TextFormat.PlainText)
@@ -1223,6 +1226,7 @@ class ItemPage(QWidget):
         for signal in (self.category_filter.currentIndexChanged, self.search.textChanged, self.show_retired.toggled):
             signal.connect(lambda *_: self.fill_list())
         self.workspace.addWidget(self.catalog_page)
+        self.build_drops_page()
         self.editor_page = QWidget(); body = QVBoxLayout(self.editor_page); body.setContentsMargins(0, 0, 0, 0)
         head = QHBoxLayout()
         self.back_button = QPushButton('← Katalógus'); self.back_button.clicked.connect(self.back_to_catalog); head.addWidget(self.back_button)
@@ -1294,6 +1298,164 @@ class ItemPage(QWidget):
                       'ellenőrzője vizsgálja. A többi tárgy által is használt profilok védettek maradnak.')
         note.setObjectName('FieldHint'); note.setWordWrap(True); layout.addWidget(note)
         return page
+
+    # --- monster drop tables ---------------------------------------------------
+    def build_drops_page(self):
+        self.drops_page, side = card_layout()
+        head = QHBoxLayout()
+        self.drops_back_button = QPushButton('← Katalógus'); self.drops_back_button.clicked.connect(self.back_to_catalog)
+        title = QLabel('Szörnyek droptáblái'); title.setObjectName('SectionTitle')
+        self.drop_count = QLabel(''); self.drop_count.setObjectName('Subtle')
+        for widget in (self.drops_back_button, title, self.drop_count): head.addWidget(widget)
+        head.addStretch(); side.addLayout(head)
+        hint = QLabel('Itt dől el, mit ejthet egy szörny vagy egy szörnyrang az új tárgyrendszerben. Az esély ölésenként, '
+                      'semleges szorzókkal értendő; a szintkülönbség, a prémium és az események a régi szabályok szerint '
+                      'módosítják. Mentés előtt a játék a teljes katalógust ellenőrzi. A játékszerver még nem sorsol ezekből '
+                      'a táblákból: a szörny halálához kötés a következő lépés.')
+        hint.setObjectName('FieldHint'); hint.setWordWrap(True); side.addWidget(hint)
+        self.drop_search = QLineEdit(); self.drop_search.setPlaceholderText('Keresés kódra, szörny-vnumra, rangra vagy tárgyra…')
+        self.drop_search.setAccessibleName('Keresés a droptáblákban'); self.drop_search.textChanged.connect(lambda *_: self.fill_drops())
+        side.addWidget(self.drop_search)
+        self.drop_list = QTableWidget(0, 5)
+        self.drop_list.setHorizontalHeaderLabels(['Azonosító', 'Kód', 'Kinek a dropja', 'Sorsolás', 'Tárgyak'])
+        header = self.drop_list.horizontalHeader()
+        for column in (0, 2, 3): header.setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
+        for column in (1, 4): header.setSectionResizeMode(column, QHeaderView.ResizeMode.Stretch)
+        self.drop_list.verticalHeader().hide(); self.drop_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.drop_list.verticalHeader().setDefaultSectionSize(36)
+        self.drop_list.setAlternatingRowColors(True); self.drop_list.setShowGrid(False)
+        self.drop_list.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.drop_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.drop_list.itemSelectionChanged.connect(self.controls)
+        self.drop_list.itemDoubleClicked.connect(lambda *_: self.edit_selected_drop())
+        side.addWidget(self.drop_list, 1)
+        self.empty_drops = QLabel(''); self.empty_drops.setObjectName('Subtle'); self.empty_drops.setWordWrap(True)
+        self.empty_drops.setAlignment(Qt.AlignmentFlag.AlignCenter); side.addWidget(self.empty_drops)
+        actions = QHBoxLayout()
+        self.drop_note = QLabel(''); self.drop_note.setObjectName('Subtle'); self.drop_note.setWordWrap(True)
+        self.new_drop_button = QPushButton('Új droptábla…'); self.new_drop_button.setObjectName('Primary')
+        self.new_drop_button.clicked.connect(self.new_drop_group)
+        self.edit_drop_button = QPushButton('Megnyitás…'); self.edit_drop_button.clicked.connect(self.edit_selected_drop)
+        self.delete_drop_button = QPushButton('Törlés…'); self.delete_drop_button.clicked.connect(self.delete_selected_drop)
+        actions.addWidget(self.drop_note, 1)
+        for widget in (self.delete_drop_button, self.edit_drop_button, self.new_drop_button): actions.addWidget(widget)
+        side.addLayout(actions)
+        self.workspace.addWidget(self.drops_page)
+
+    def show_drops(self):
+        if self.packet is None: return
+        self.workspace.setCurrentWidget(self.drops_page); self.fill_drops(); self.controls()
+
+    def chosen_drop(self):
+        items = self.drop_list.selectedItems()
+        return items[0].data(KEY_ROLE) if items else None
+
+    def fill_drops(self, select=None):
+        if self.packet is None:
+            self.drop_list.setRowCount(0); self.drop_count.setText(''); return
+        model = catalog.Catalog(self.packet)
+        select = select or self.chosen_drop()
+        codes = {(r['category_id'], r['local_id']): r['content_code'] for r in model.tables['item_base']}
+        entries = {}
+        for row in sorted(model.tables['mob_drop_entry'], key=lambda r: int(r['entry_no'])): entries.setdefault(row['group_id'], []).append(row)
+        needle = self.drop_search.text().strip().lower(); groups = model.drop_groups(); shown = []
+        for group in groups:
+            keys = ['%s:%s' % (e['category_id'], e['local_id']) for e in entries.get(group['group_id'], [])]
+            names = [codes.get((e['category_id'], e['local_id']), key) for e, key in zip(entries.get(group['group_id'], []), keys)]
+            cells = ['#' + group['group_id'], group['code'], target_text(group), roll_text(group),
+                     '%d · %s' % (len(names), ', '.join(names[:3]) + (', …' if len(names) > 3 else ''))]
+            if needle and needle not in ' '.join(cells + keys + names).lower(): continue
+            shown.append((group['group_id'], cells, '\n'.join('%s  %s' % pair for pair in zip(keys, names))))
+        self.drop_list.blockSignals(True); self.drop_list.setRowCount(len(shown)); target = -1
+        for index, (identity, cells, tooltip) in enumerate(shown):
+            for column, value in enumerate(cells):
+                item = QTableWidgetItem(value); item.setData(KEY_ROLE, identity); item.setToolTip(tooltip)
+                self.drop_list.setItem(index, column, item)
+            if identity == select: target = index
+        self.drop_list.clearSelection()
+        if target >= 0: self.drop_list.selectRow(target)
+        self.drop_list.blockSignals(False)
+        self.drop_count.setText('%d találat / %d droptábla' % (len(shown), len(groups)))
+        self.empty_drops.setText('Még nincs droptábla. Az „Új droptábla…” gombbal hozhatsz létre egyet.' if not groups else
+                                 'Nincs találat. Módosítsd a keresést.' if not shown else '')
+        self.empty_drops.setVisible(not shown); self.controls()
+
+    def drop_save_note(self):
+        """Why a drop table cannot be saved now, or None."""
+        state = getattr(self, 'state', None) or {}
+        if not self.local(): return 'Droptábla csak helyi szervercsomagon menthető.'
+        if self.active() or self.owner.busy(): return 'Művelet folyamatban…'
+        if not state.get('database_running'): return 'Az adatbázis nem fut; a mentéshez indítsd el.'
+        if state.get('running'): return 'A mentéshez állítsd le a helyi játékszervert.'
+        return None
+
+    def new_drop_group(self):
+        if self.packet is not None: self.open_drop_dialog(None, None)
+
+    def edit_selected_drop(self):
+        identity = self.chosen_drop()
+        if identity is None or self.packet is None: return
+        try: document = catalog.Catalog(self.packet).drop_group(identity)
+        except api.EditorError as error: self.owner.error(str(error)); return
+        self.open_drop_dialog(document, identity)
+
+    def open_drop_dialog(self, document, original_id, error=None):
+        if self.packet is None: return
+        dialog = DropGroupDialog(self, catalog.Catalog(self.packet), document, original_id, error, self.drop_save_note())
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        result, deleted = dialog.result_document, dialog.deleted
+        dialog.deleteLater()
+        if not accepted: return
+        if deleted: self.delete_drop_group(original_id)
+        else: self.save_drop_group(result, original_id)
+
+    def drops_saved(self, packet, select=None):
+        """A drop table save changes only the mob_drop tables, so an open item
+        draft stays as it is and saves later onto the new catalog."""
+        self.packet = packet; self.checked_document = None
+        self.status.setToolTip('Katalógus-ellenőrzőösszeg: ' + packet['hash'])
+        self.fill_drops(select); self.controls()
+
+    def save_drop_group(self, document, original_id):
+        note = self.drop_save_note()
+        if note: self.owner.error(note); return
+        root, packet, code = self.owner.root, self.packet, document['group']['code']
+        def done(result):
+            identity = next((g['group_id'] for g in catalog.Catalog(result).drop_groups() if g['code'] == code), None)
+            self.drops_saved(result, identity)
+            self.status.setText('Droptábla mentve: %s (#%s). A lista a mentett állapotot mutatja.' % (code, identity))
+            self.owner.statusBar().showMessage('Droptábla mentve: ' + code, 6000)
+        def failed(message):
+            # Reopen with the user's input; nothing was written.
+            QTimer.singleShot(0, lambda: self.open_drop_dialog(document, original_id, message))
+        self.run(lambda: catalog.save_drops(root, packet, document, original_id), done,
+                 'Droptábla ellenőrzése és mentése a helyi katalógusba…', failed)
+
+    def delete_selected_drop(self):
+        identity = self.chosen_drop()
+        if identity is not None: self.delete_drop_group(identity)
+
+    def confirm_drop_delete(self, group):
+        dialog = QMessageBox(QMessageBox.Icon.Warning, 'Droptábla törlése',
+            'A(z) „%s” droptábla (#%s, %s) minden tárgysorával együtt törlődik a helyi katalógusból. '
+            'Az előző állapot a run/catalog-editor mappában megmarad.' % (group['code'], group['group_id'], target_text(group)), parent=self)
+        delete = dialog.addButton('Droptábla törlése', QMessageBox.ButtonRole.DestructiveRole)
+        keep = dialog.addButton('Mégse', QMessageBox.ButtonRole.RejectRole)
+        dialog.setDefaultButton(keep); dialog.exec()
+        return dialog.clickedButton() is delete
+
+    def delete_drop_group(self, group_id):
+        if self.packet is None: return
+        note = self.drop_save_note()
+        if note: self.owner.error(note); return
+        group = catalog.Catalog(self.packet).row('mob_drop_group', group_id, 'group_id')
+        if group is None: self.owner.error('A droptábla már nem található; frissítsd a listát.'); return
+        if not self.confirm_drop_delete(group): return
+        root, packet = self.owner.root, self.packet
+        def done(result):
+            self.drops_saved(result)
+            self.status.setText('Droptábla törölve: %s (#%s).' % (group['code'], group['group_id']))
+        self.run(lambda: catalog.delete_drops(root, packet, group_id), done, 'Droptábla törlése a helyi katalógusból…')
 
     def chosen_key(self):
         items = self.list.selectedItems()
@@ -1876,7 +2038,7 @@ class ItemPage(QWidget):
     def tick(self, state):
         if self.target != self.owner.target_id():
             self.target = self.owner.target_id(); self.attempted = None
-            self.packet = None; self.dirty = False; self.show_document(None); self.list.setRowCount(0)
+            self.packet = None; self.dirty = False; self.show_document(None); self.list.setRowCount(0); self.fill_drops()
         if not self.local():
             self.status.setText('A tárgyszerkesztő csak helyi szervercsomagon érhető el; a távoli gép protos adatbázisa nem szerkeszthető innen.')
         elif state and not state.get('database_running') and not self.active():
@@ -1893,6 +2055,16 @@ class ItemPage(QWidget):
         self.start_db_button.setEnabled(local and not busy and bool(state.get('database_initialized')))
         self.reload_button.setEnabled(local and db and not busy)
         self.new_button.setEnabled(local and db and not busy and self.packet is not None)
+        loaded = self.packet is not None; chosen_drop = self.chosen_drop() is not None
+        self.drops_button.setEnabled(not busy and loaded)
+        self.drop_list.setEnabled(not busy and loaded)
+        self.drops_back_button.setEnabled(not busy)
+        self.new_drop_button.setEnabled(not busy and loaded)
+        self.edit_drop_button.setEnabled(not busy and loaded and chosen_drop)
+        self.delete_drop_button.setEnabled(local and db and not busy and loaded and chosen_drop and not state.get('running'))
+        self.drop_note.setText('Művelet folyamatban…' if busy else 'A droptáblák mentéséhez állítsd le a helyi játékszervert.' if state.get('running')
+                               else 'Az adatbázis nem fut; a mentéshez indítsd el.' if loaded and not db else
+                               'Jelölj ki egy droptáblát. Dupla kattintás: megnyitás.' if loaded and not chosen_drop else '')
         self.list.setEnabled(not busy and self.packet is not None)
         has = self.document is not None
         self.tabs.setEnabled(has and not busy)
@@ -1922,7 +2094,9 @@ class ItemPage(QWidget):
         self.save_button.setToolTip(self.save_note.text() if not can_save else 'Ellenőrzés és mentés a helyi tárgykatalógusba.')
 
     # --- background work ---------------------------------------------------------
-    def run(self, function, done, message):
+    def run(self, function, done, message, failed=None):
+        """Run `function` off the GUI thread. A rejection goes to `failed` if
+        given (it shows the error itself), else to the item form and a box."""
         if self.active(): return
         task = Task(function, self); self.task = task; outcome = {}
         self.status.setText(message)
@@ -1930,7 +2104,9 @@ class ItemPage(QWidget):
         def finished():
             if self.task is task: self.task = None
             task.deleteLater()
-            if 'error' in outcome:
+            if 'error' in outcome and failed is not None:
+                self.status.setText(outcome['error']); failed(outcome['error'])
+            elif 'error' in outcome:
                 self.status.setText(outcome['error']); self.show_form_error(outcome['error']); self.owner.error(outcome['error'])
             elif 'value' in outcome:
                 try: done(outcome['value'])
@@ -1950,6 +2126,7 @@ class ItemPage(QWidget):
         self.run(lambda: catalog.request(root), lambda packet: self.loaded(packet, keep), 'Katalógus olvasása a helyi protos adatbázisból…')
 
     def loaded(self, packet, select=None):
+        on_drops = self.workspace.currentWidget() is self.drops_page
         self.packet = packet
         model = catalog.Catalog(packet)
         self.bonuses.set_definitions(packet['bonuses'])
@@ -1968,7 +2145,8 @@ class ItemPage(QWidget):
         select = tuple(select) if select is not None else None
         if select is not None and any((int(r['category_id']), int(r['local_id'])) == select for r in items): self.open_item(select)
         else: self.original_key = None; self.show_document(None)
-        self.fill_list()
+        self.fill_list(); self.fill_drops()
+        if on_drops: self.workspace.setCurrentWidget(self.drops_page)
 
     def fill_list(self):
         if self.packet is None: return

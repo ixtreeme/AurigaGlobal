@@ -214,6 +214,22 @@ A **Fejlesztési értékek kitöltése** ablak élő előnézetet ad. Csak az
 bezárása visszaállítja a korábbi értékeket. A katalógusba ezután is külön
 mentés szükséges.
 
+A **Droptáblák** gomb a szörnyek droptábláit mutatja (IC-035). Egy tábla
+egy szörnyhöz (régi mob-vnum) vagy egy szörnyranghoz tartozik; a rang a közös
+drop, és csak „minden bejegyzés” módú lehet. A kereső a kódra, a szörnyre, a
+rangra és a tárgyakra is szűr. A **Megnyitás…** és az **Új droptábla…**
+ablakban a sorsolási módtól függően esélyt (százalékban, legfeljebb hét
+tizedesjeggyel) vagy súlyt adsz meg; a másik oszlop rejtve marad, de módváltáskor
+nem vész el. Az **Ölésenként** oszlop a várható esélyt mutatja semleges
+szorzókkal. A kód a célból és a módból készül, amíg kézzel nem írod át.
+
+A **Mentés** csak ezt az egy táblát módosítja, a teljes katalógus natív
+ellenőrzése után. Elutasításkor semmi nem íródik, és az ablak a beírt
+értékekkel, a hibával együtt nyílik újra. A megnyitott tárgypiszkozat
+megmarad. A törlés megerősítést kér; az előző állapot a `run/catalog-editor`
+mappában marad. Droptáblában szereplő tárgy csak akkor vezethető ki, ha előbb
+kiveszed a táblából. A játékszerver a C7b-3-ig nem sorsol ezekből.
+
 A próbapad külön részekben mutatja a karakter előkészítését, a
 tárgypéldány készítését és a karakter leltárát. A példányazonosító a
 részletekben érhető el, a listában az olvasható elnevezés kap elsőbbséget.
@@ -224,6 +240,8 @@ kijelentkezve.
 Ellenőrzés: `tests/server/ItemWorkflowTests.py` a létrehozást, másolást,
 kódütközést, azonosítókimerülést, piszkozatvédelmet, előnézetet, a változások
 áttekintését és a biztonságos párbeszédeket vizsgálja adatbázisírás nélkül.
+A droptáblákat a `tests/server/CatalogEditorTests.py` `DropTableModelTests`,
+`DropPageTests` és (privát MariaDB-vel) `SqlCommitTests` osztálya ellenőrzi.
 
 ## Forráskódszerkesztő
 

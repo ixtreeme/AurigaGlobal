@@ -174,7 +174,8 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set_tests_properties(catalog_sql_completion PROPERTIES LABELS server TIMEOUT 60)
     # Editor model, native validation and (when PySide6 is present) the Qt form.
     add_test(NAME catalog_editor COMMAND "${Python3_EXECUTABLE}" -B "${_item_repository}/tests/server/CatalogEditorTests.py"
-        --tool "$<TARGET_FILE:CatalogEditorTool>" OfflineModelTests RecipeModelTests EditorPageTests RefinementPanelTests RecipePanelTests BenchPageTests)
+        --tool "$<TARGET_FILE:CatalogEditorTool>" OfflineModelTests RecipeModelTests DropTableModelTests EditorPageTests RefinementPanelTests
+        RecipePanelTests DropPageTests BenchPageTests)
     set_tests_properties(catalog_editor PROPERTIES LABELS server TIMEOUT 120)
 endif()
 

@@ -35,7 +35,19 @@ RECIPE_FIELDS = ['source_level', 'target_category_id', 'target_local_id', 'targe
 INGREDIENT_FIELDS = ['category_id', 'local_id', 'refinement_level', 'amount']
 # Tools, polymorph, soul and companion items have their own training paths.
 RECIPE_CATEGORIES = (1, 2, 3, 4, 7)
-GAINS = ['physical_attack_gain_raw','magical_attack_gain_raw','physical_defense_gain_raw','magical_defense_gain_raw']
+# Monster drop tables (IC-035). A group targets a legacy mob vnum or a mob
+# rank (the common drop); chances are parts per billion per kill.
+DROP_GROUP_FIELDS = ['target_kind', 'target_value', 'roll_kind', 'kills_per_drop', 'minimum_killer_level']
+DROP_ENTRY_FIELDS = ['category_id', 'local_id', 'refinement_level', 'amount', 'chance_ppb', 'weight',
+                     'rare_attribute_chance_bp', 'killer_level_min', 'killer_level_max']
+DROP_TARGETS = {1: 'Szörny', 2: 'Szörnyrang (közös drop)'}
+DROP_ROLLS = {1: 'Minden bejegyzés külön esélyt kap', 2: 'Egy tárgy N ölésenként (súlyozott)',
+              3: 'Szinthez kötött (szorzók nélkül)', 4: 'Dupla drop (kesztyű, prémium)'}
+MOB_RANKS = {0: 'Gyalog (PAWN)', 1: 'Erős gyalog (S_PAWN)', 2: 'Lovag (KNIGHT)', 3: 'Erős lovag (S_KNIGHT)',
+             4: 'Főnök (BOSS)', 5: 'Király (KING)'}
+DROP_CHANCE_SCALE = 10 ** 7   # ppb per percent
+MAX_DROP_ENTRIES = 256
+GAINS =['physical_attack_gain_raw','magical_attack_gain_raw','physical_defense_gain_raw','magical_defense_gain_raw']
 # Profile table -> (id column, referencing (table, column) pairs, child tables).
 PROFILES = {
     'item_use_policy': ('policy_id', [('item_base', 'use_policy_id')], []),
@@ -887,6 +899,64 @@ class Catalog:
         self.replace('skill_book_target', {'profile_id': profile}, [dict(r, profile_id=profile) for r in document['book_targets']])
         self.replace('skill_book_step', {'profile_id': profile}, [dict(r, profile_id=profile) for r in document['book_steps']])
 
+    # --- monster drop tables -------------------------------------------------
+    def drop_groups(self):
+        """Every drop group by ID, with its number of entries."""
+        counts = {}
+        for row in self.tables['mob_drop_entry']: counts[row['group_id']] = counts.get(row['group_id'], 0) + 1
+        return [dict(row, entries=counts.get(row['group_id'], 0))
+                for row in sorted(self.tables['mob_drop_group'], key=lambda r: int(r['group_id']))]
+
+    def drop_group(self, group_id):
+        head = self.row('mob_drop_group', group_id, 'group_id')
+        if head is None: raise api.EditorError('A droptábla már nem található; frissítsd a listát.')
+        rows = sorted((r for r in self.tables['mob_drop_entry'] if r['group_id'] == str(group_id)), key=lambda r: int(r['entry_no']))
+        return dict(group=copy.deepcopy(head), entries=[{name: r[name] for name in DROP_ENTRY_FIELDS} for r in rows])
+
+    def drop_code(self, target_kind, target_value, roll_kind, group_id=None):
+        """A free code that names the target and the roll, e.g. drop.mob_101_kill."""
+        base = 'drop.%s_%s%s' % ('rank' if str(target_kind) == '2' else 'mob', target_value,
+                                 {'2': '_kill', '3': '_limit', '4': '_double'}.get(str(roll_kind), ''))
+        taken = {r['code'] for r in self.tables['mob_drop_group'] if r['group_id'] != text(group_id)}
+        number = 1
+        while (code := base + ('_%d' % number if number > 1 else '')) in taken: number += 1
+        return code
+
+    def new_drop_group(self):
+        group = dict(group_id=None, target_kind='1', target_value='1', roll_kind='1', kills_per_drop='0', minimum_killer_level='0')
+        group['code'] = self.drop_code('1', '1', '1')
+        return dict(group=group, entries=[])
+
+    def apply_drops(self, document, original_id=None):
+        """Replace one drop group. Entries are numbered in document order;
+        the chance or weight the roll does not use is zeroed, and so are the
+        roll parameters of the other modes, as the schema requires."""
+        group = {name: text(document['group'].get(name)) for name in DROP_GROUP_FIELDS}
+        code = str(document['group'].get('code') or '').strip()
+        if original_id is None: identity = self.allocate('mob_drop_group', 'group_id')
+        else:
+            identity = str(original_id)
+            if self.row('mob_drop_group', identity, 'group_id') is None: raise api.EditorError('A droptábla már nem található; frissítsd a listát.')
+        if any(r['code'] == code and r['group_id'] != identity for r in self.tables['mob_drop_group']):
+            raise api.EditorError('A droptábla kódja már foglalt: ' + code)
+        roll = group['roll_kind']
+        if roll != '2': group['kills_per_drop'] = '0'
+        if roll != '3': group['minimum_killer_level'] = '0'
+        entries = []
+        for number, entry in enumerate(document.get('entries') or [], 1):
+            row = {name: text(entry.get(name)) for name in DROP_ENTRY_FIELDS}
+            row['chance_ppb' if roll == '2' else 'weight'] = '0'
+            entries.append(dict(row, group_id=identity, entry_no=str(number)))
+        self.replace('mob_drop_group', {'group_id': identity}, [dict(group, group_id=identity, code=code)])
+        self.replace('mob_drop_entry', {'group_id': identity}, entries)
+        return self.encode()
+
+    def delete_drop_group(self, group_id):
+        if self.row('mob_drop_group', group_id, 'group_id') is None: raise api.EditorError('A droptábla már nem található; frissítsd a listát.')
+        self.replace('mob_drop_entry', {'group_id': group_id}, [])
+        self.replace('mob_drop_group', {'group_id': group_id}, [])
+        return self.encode()
+
     def encode(self):
         return {name: [[row[column] for column in self.packet['columns'][name]] for row in rows] for name, rows in self.tables.items()}
 
@@ -928,6 +998,7 @@ FIELDS = {
     'appearance': 'megjelenés', 'attack': 'támadási profil', 'ammo': 'lőszerszabály', 'resistance': 'ellenállás',
     'container': 'tároló', 'container.kind': 'tároló', 'container.loot': 'tárolótartalom', 'container_key': 'kulcs',
     'container_key.lock': 'kulcs', 'currency_token': 'pénzjegy', 'loot': 'tárolótartalom', 'loot.item': 'tárolótartalom', 'loot.entries': 'tárolótartalom',
+    'mob_drop': 'droptábla', 'mob_drop.item': 'droptábla tárgya',
 }
 CATALOG_TEXT = {
     'DuplicateContentCode': 'Ez a tartalomkód már foglalt egy másik tárgynál.',
@@ -954,6 +1025,22 @@ LOOT_TEXT = {
     'InvalidWeight': 'A súly legalább 1; soronkénti esélynél legfeljebb 100%.',
     'InvalidRareChance': 'Ritka bónusz esélye csak tárgyjutalomnál adható, legfeljebb 100%.',
     'WeightOverflow': 'A súlyok összege túl nagy.',
+}
+DROP_TEXT = {
+    'InvalidIdentity': 'Érvénytelen kód: kisbetűvel kezdődjön, és csak a–z, 0–9, _ és . (nem kettőzött) legyen benne.',
+    'InvalidTarget': 'szörnynél a vnum legalább 1; a szörnyrang 0–5 között lehet, és a rang közös dropja csak „minden bejegyzés” módú.',
+    'InvalidRoll': 'a sorsolási mód ismeretlen, vagy az „N ölésenként” szám, illetve a szinthatár nem illik hozzá.',
+    'EmptyGroup': 'üres: adj meg legalább egy tárgyat.',
+    'TooManyEntries': 'legfeljebb 256 bejegyzés lehet.',
+    'InvalidEntryOrder': 'a bejegyzések számozása hiányos.',
+    'InvalidItem': 'nem létező vagy kivezetett tárgyra mutat. Kivezetés előtt vedd ki a tárgyat a droptáblákból.',
+    'InvalidLevel': 'a tárgynak nincs ilyen fejlesztési szintje.',
+    'InvalidAmount': 'a darabszám legalább 1, és legfeljebb a tárgy halommérete.',
+    'InvalidChance': 'az esély 0%-nál nagyobb és legfeljebb 100% legyen.',
+    'InvalidWeight': 'súlyozott módban minden súly legalább 1.',
+    'WeightOverflow': 'a súlyok összege túl nagy.',
+    'InvalidRareChance': 'a ritka bónusz esélye legfeljebb 100%.',
+    'InvalidKillerLevels': 'a gyilkos szintablaka 1-től indul, és az alsó határ nem lehet nagyobb a felsőnél.',
 }
 BASE_TEXT = {
     'polymorph.book_stack': 'A gyakorlókönyv nem halmozható; a maximális halomméret 1 legyen.',
@@ -1010,6 +1097,7 @@ def describe(detail, columns=None):
         elif code == 'InvalidBonusProfile': message = BONUS_TEXT.get(detail.get('bonus'), 'Hibás bónuszprofil.')
         elif code == 'InvalidRecoveryProfile': message = RECOVERY_TEXT.get(detail.get('recovery'), 'Hibás gyógyító hatás.')
         elif code == 'InvalidLootProfile': message = LOOT_TEXT.get(detail.get('loot'), 'Hibás tárolótartalom.')
+        elif code == 'InvalidMobDrop': message = DROP_TEXT.get(detail.get('mob_drop'), 'hibás beállítás.')
         elif code == 'InvalidBase': message = BASE_TEXT.get(field, 'Hibás alapadat.')
         elif field=='loot.polymorph_binding': message='Példányhoz kötött formájú gömbhöz és gyakorlókönyvhöz külön példányadatok kellenek; általános ládajutalomként nem adhatók.'
         elif code in CATALOG_TEXT: message = CATALOG_TEXT[code]
@@ -1020,6 +1108,7 @@ def describe(detail, columns=None):
         where = FIELDS.get(field)
         if where and code not in ('DuplicateContentCode', 'InvalidBase', 'InvalidContainer'): message = where[0].upper() + where[1:] + ': ' + message[0].lower() + message[1:]
         if detail.get('key'): message += ' (tárgy: %s:%s)' % tuple(detail['key'])
+        if field.startswith('mob_drop') and detail.get('profile'): message += ' (droptábla #%s)' % detail['profile']
         return message
     read = detail.get('read')
     message = READ_TEXT.get(read, 'Adatellenőrzési hiba')
@@ -1087,8 +1176,9 @@ def request(root, tables=None, expected_hash=None, columns=None):
     return run_tool(payload, columns)
 
 
-def save(root, before, document, original_key=None):
-    model = Catalog(before); tables = model.apply(document, original_key)
+def commit_tables(root, before, tables, record):
+    """Write edited tables to the package's protos with a receipt folder
+    (before, requested, result). `record` names what changed in result.json."""
     root = api.package_root(root)
     # Local process lock also prevents a concurrent server start during editing.
     manager = api.load_manager(root)
@@ -1099,5 +1189,26 @@ def save(root, before, document, original_key=None):
         (folder / 'before.json').write_text(json.dumps(before, ensure_ascii=True), encoding='utf-8')
         (folder / 'requested.json').write_text(json.dumps(dict(expected_hash=before['hash'], tables=tables), ensure_ascii=True), encoding='utf-8')
         result = request(root, tables, before['hash'], before['columns'])
-        (folder / 'result.json').write_text(json.dumps(dict(hash=result['hash'], key=[document['base']['category_id'], document['base']['local_id']])), encoding='utf-8')
+        (folder / 'result.json').write_text(json.dumps(dict(record, hash=result['hash'])), encoding='utf-8')
         return result
+
+
+def save(root, before, document, original_key=None):
+    tables = Catalog(before).apply(document, original_key)
+    return commit_tables(root, before, tables, dict(key=[document['base']['category_id'], document['base']['local_id']]))
+
+
+def validate_drops(packet, document, original_id=None, executable=None):
+    """Offline check of one drop group with the game's catalog builder."""
+    tables = Catalog(packet).apply_drops(document, original_id)
+    return run_tool(dict(action='validate', tables=tables), packet['columns'], executable)['hash']
+
+
+def save_drops(root, before, document, original_id=None):
+    tables = Catalog(before).apply_drops(document, original_id)
+    return commit_tables(root, before, tables, dict(drop_group=text(original_id), drop_code=document['group']['code']))
+
+
+def delete_drops(root, before, group_id):
+    tables = Catalog(before).delete_drop_group(group_id)
+    return commit_tables(root, before, tables, dict(deleted_drop_group=str(group_id)))
