@@ -73,15 +73,6 @@ endif()
 
 project(Auriga_Global VERSION 0.1 LANGUAGES C CXX)
 enable_testing()
-# ============================================================
-# Python fajlok Visual Studio-ban
-# ============================================================
-file(GLOB_RECURSE AURIGA_ROOT_PYTHON CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/root/*.py")
-if(AURIGA_ROOT_PYTHON)
-    add_custom_target(auriga_root_python_files ALL SOURCES ${AURIGA_ROOT_PYTHON})
-    set_target_properties(auriga_root_python_files PROPERTIES FOLDER Root)
-    source_group(TREE ${CMAKE_SOURCE_DIR}/root FILES ${AURIGA_ROOT_PYTHON})
-endif()
 
 # ============================================================
 # vcpkg csomagok telepitese
